@@ -125,7 +125,6 @@ static u8 SaveYesNoCallback(void);
 static u8 SaveConfirmInputCallback(void);
 static u8 SaveFileExistsCallback(void);
 static u8 SaveConfirmOverwriteDefaultNoCallback(void);
-static u8 SaveConfirmOverwriteCallback(void);
 static u8 SaveOverwriteInputCallback(void);
 static u8 SaveSavingMessageCallback(void);
 static u8 SaveDoSaveCallback(void);
@@ -330,24 +329,24 @@ static void AddStartMenuAction(u8 action)
 
 static void BuildNormalStartMenu(void)
 {
+    if (FlagGet(FLAG_SYS_POKEMON_GET) == TRUE)
+        AddStartMenuAction(MENU_ACTION_POKEMON);
+
     if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE)
         AddStartMenuAction(MENU_ACTION_POKEDEX);
 
     if (DN_FLAG_DEXNAV_GET != 0 && FlagGet(DN_FLAG_DEXNAV_GET))
         AddStartMenuAction(MENU_ACTION_DEXNAV);
 
-    if (FlagGet(FLAG_SYS_POKEMON_GET) == TRUE)
-        AddStartMenuAction(MENU_ACTION_POKEMON);
-
     AddStartMenuAction(MENU_ACTION_BAG);
 
     if (FlagGet(FLAG_SYS_POKENAV_GET) == TRUE)
         AddStartMenuAction(MENU_ACTION_POKENAV);
 
-    AddStartMenuAction(MENU_ACTION_PLAYER);
+    // AddStartMenuAction(MENU_ACTION_PLAYER);
     AddStartMenuAction(MENU_ACTION_SAVE);
     AddStartMenuAction(MENU_ACTION_OPTION);
-    AddStartMenuAction(MENU_ACTION_EXIT);
+    // AddStartMenuAction(MENU_ACTION_EXIT);
 }
 
 static void BuildDebugStartMenu(void)
@@ -953,6 +952,35 @@ void SaveGame(void)
     CreateTask(SaveGameTask, 0x50);
 }
 
+static const u8 sText_Autosaving[] = _("Autosaving...");
+
+void RunAutosaveSteps(void) {
+    StringExpandPlaceholders(gStringVar4, sText_Autosaving);
+    DrawDialogueFrame(0, TRUE);
+    AddTextPrinterForMessage(TRUE);
+    // Force the text printer to finish so the message appears immediately
+    while (RunTextPrintersAndIsPrinter0Active())
+        ;
+    SaveMapView();
+    TrySavingData(SAVE_NORMAL);
+    ClearDialogWindowAndFrame(0, TRUE);
+}
+
+void AutosaveGame(void)
+{
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled) {
+        if (IsPartyEmpty()) {
+            // DO NOTHING
+        }
+        else {
+            RunAutosaveSteps();
+        }
+    }
+    else {
+        RunAutosaveSteps();
+    }
+}
+
 static void ShowSaveMessage(const u8 *message, u8 (*saveCallback)(void))
 {
     StringExpandPlaceholders(gStringVar4, message);
@@ -1094,7 +1122,7 @@ static u8 SaveFileExistsCallback(void)
     }
     else
     {
-        ShowSaveMessage(gText_AlreadySavedFile, SaveConfirmOverwriteCallback);
+        sSaveDialogCallback = SaveSavingMessageCallback;
     }
 
     return SAVE_IN_PROGRESS;
@@ -1103,13 +1131,6 @@ static u8 SaveFileExistsCallback(void)
 static u8 SaveConfirmOverwriteDefaultNoCallback(void)
 {
     DisplayYesNoMenuWithDefault(1); // Show Yes/No menu (No selected as default)
-    sSaveDialogCallback = SaveOverwriteInputCallback;
-    return SAVE_IN_PROGRESS;
-}
-
-static u8 SaveConfirmOverwriteCallback(void)
-{
-    DisplayYesNoMenuDefaultYes(); // Show Yes/No menu
     sSaveDialogCallback = SaveOverwriteInputCallback;
     return SAVE_IN_PROGRESS;
 }

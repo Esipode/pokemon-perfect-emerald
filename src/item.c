@@ -31,7 +31,7 @@ EWRAM_DATA struct BagPocket gBagPockets[POCKETS_COUNT] = {0};
 #include "data/pokemon/item_effects.h"
 #include "data/items.h"
 
-static u16 GetBagItemQuantity(u16 *quantity)
+u16 GetBagItemQuantity(u16 *quantity)
 {
     return gSaveBlock2Ptr->encryptionKey ^ *quantity;
 }
@@ -551,6 +551,15 @@ void SwapRegisteredBike(void)
         break;
     case ITEM_ACRO_BIKE:
         gSaveBlock1Ptr->registeredItem = ITEM_MACH_BIKE;
+        break;
+    }
+    switch (gSaveBlock1Ptr->registeredLongItem)
+    {
+    case ITEM_MACH_BIKE:
+        gSaveBlock1Ptr->registeredLongItem = ITEM_ACRO_BIKE;
+        break;
+    case ITEM_ACRO_BIKE:
+        gSaveBlock1Ptr->registeredLongItem = ITEM_MACH_BIKE;
         break;
     }
 }

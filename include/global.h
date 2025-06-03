@@ -1043,6 +1043,8 @@ struct ExternalEventFlags
 
 } __attribute__((packed));/*size = 0x15*/
 
+#define NUM_WILD_ENCOUNTER_MAPS 116
+
 struct SaveBlock1
 {
     /*0x00*/ struct Coords16 pos;
@@ -1075,7 +1077,11 @@ struct SaveBlock1
     /*0x988*/ u8 filler1[0x34]; // Previously Dex Flags, feel free to remove.
 #endif //FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK1
     /*0x9BC*/ u16 berryBlenderRecords[3];
-    /*0x9C2*/ u8 unused_9C2[6];
+    /*0x9C2*/ u8 nuzlockeModeEnabled;
+    /*0x9C3*/ u8 autosaveModeEnabled;
+    /*0x9C4*/ u8 difficulty;
+    /*0x9C5*/ u8 unused_9C5;
+    /*0x9C6*/ u16 registeredLongItem; // Registered for long press of SELECT button
 #if FREE_MATCH_CALL == FALSE
     /*0x9C8*/ u16 trainerRematchStepCounter;
     /*0x9CA*/ u8 trainerRematches[MAX_REMATCH_ENTRIES];
@@ -1154,6 +1160,7 @@ struct SaveBlock1
     /*0x3???*/ struct TrainerHillSave trainerHill;
 #endif //FREE_TRAINER_HILL
     /*0x3???*/ struct WaldaPhrase waldaPhrase;
+    /*0x3???*/ u8 nuzlockeCaughtFlags[(NUM_WILD_ENCOUNTER_MAPS / 8)];
     // sizeof: 0x3???
 };
 
@@ -1165,6 +1172,10 @@ struct MapPosition
     s16 y;
     s8 elevation;
 };
+
+// Helper macros
+#define GET_NUZLOCKE_FLAG(route) (gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] & (1 << ((route) % 8)))
+#define SET_NUZLOCKE_FLAG(route) (gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] |= (1 << ((route) % 8)))
 
 #if T_SHOULD_RUN_MOVE_ANIM
 extern bool32 gLoadFail;

@@ -1,53 +1,69 @@
-# About `pokeemerald-expansion`
+## Major features
+- All Pokémon from Gen 1 to Gen 9 obtainable
+- Evolution-Methods/Moves/Abilities/Types from Gen 1 to Gen 9 added
+- Physical/Special/Status move categories added
+- Gen 6+ XP (All Pokémon in party receive XP)
+- New starter selection screen featuring all Gen 1 to Gen 9 starter Pokémon
+- Difficulty Settings (Easy/Normal/Hard)
+	- Easy: Trainers use lower level Pokémon and have simpler AI
+	- Normal: Intended experience, simple basic trainer AI for random trainers and more complex AI for story battles
+	- Hard: Trainers use higher level Pokémon and have more complex AI
+- Revamped trainer AI
+	- By default trainers now don't pick moves with no advantage to them
+	- Smarter trainer options for story encounters that are more aware of the current state of the battle and their options
+    - Story event trainers have been hand-crafted to be more challenging and engaging
+- Level caps based on story progress (Never over-level for content)
+- First (non-fainted) Pokémon in party follows player in overworld
+- Upgraded Pokédex
+	- Show evolution requirements for each (seen) Pokémon
+	- Show compatible moves and how they can be learned (Level, TM/HM, Move Tutor)
+	- Show base stats, catch rate, XP curve, abilities, etc.
 
-![Gif that shows debugging functionality that is unique to pokeemerald-expansion such as rerolling Trainer Id, Cheat Start, PC from Debug Menu, Debug PC Fill, Pokemon Sprite Visualizer, Debug Warp to Map, and Battle Debug Menu](https://github.com/user-attachments/assets/cf9dfbee-4c6b-4bca-8e0a-07f116ef891c) ![Gif that shows overworld functionality that is unique to pokeemerald-expansion such as indoor running, BW2 style map popups, overworld followers, DNA Splicers, Gen 1 style fishing, OW Item descriptions, Quick Run from Battle, Use Last Ball, Wild Double Battles, and Catch from EXP](https://github.com/user-attachments/assets/383af243-0904-4d41-bced-721492fbc48e) ![Gif that shows off a number of modern Pokemon battle mechanics happening in the pokeemerald-expansion engine: 2 vs 1 battles, modern Pokemon, items, moves, abilities, fully customizable opponents and partners, Trainer Slides, and generational gimmicks](https://github.com/user-attachments/assets/50c576bc-415e-4d66-a38f-ad712f3316be)
+## Optional Features
+- Nuzlocke Mode
+	- Can only catch first encountered Pokémon in a route, and no more after that
+	- If a Pokémon faints, it is immediately removed from the party after battle
+	- Upon Whiteout, save file is wiped and game resets to the beginning.
+    - Breeding Pokémon is disabled in this mode
+- Auto-Battle Mode
+	- Allows AI to do your trainer battles for you (uses a simple AI so you can't brute-force challenging encounters)
+- Randomizer Mode
+	- Every starter choice, wild encounter, and trainer battle will use randomized Pokémon
+- Autosave Mode
+	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
+- Auto-skip dialogue
+    - When enabled, messages automatically continue until you reach the final dialogue of the message box
 
-<!-- If you want to re-record or change these gifs, here are some notes that I used: https://files.catbox.moe/05001g.md -->
+## Minor features
+- Breeding Improvements
+	- Level 1 eggs
+    - Poké Ball inheriting
+    - Egg Move Transfer
+    - Nature inheriting 100% of the time with Everstone
+- Dexnav
+    - Available from pause menu after receiving Pokédex
+	- Allows target-farming specific Pokémon on a route for specific moves/abilities
+	- Increases shiny encounter chance as chain increases (Max chain = 250)
+- Add critical capture chance when throwing Pokéball
+- Add second item register slot (one for button push, and one for button hold)
 
-**`pokeemerald-expansion`** is a GBA ROM hack base that equips developers with a comprehensive toolkit for creating Pokémon ROM hacks. **`pokeemerald-expansion`** is built on top of [pret's `pokeemerald`](https://github.com/pret/pokeemerald) decompilation project. **It is not a playable Pokémon game on its own.** 
-
-# [Features](FEATURES.md)
-
-**`pokeemerald-expansion`** offers hundreds of features from various [core series Pokémon games](https://bulbapedia.bulbagarden.net/wiki/Core_series), along with popular quality-of-life enhancements designed to streamline development and improve the player experience. A full list of those featues can be found in [`FEATURES.md`](FEATURES.md).
-
-# [Credits](CREDITS.md)
-
- [![](https://img.shields.io/github/all-contributors/rh-hideout/pokeemerald-expansion/upcoming)](CREDITS.md)
-
-If you use **`pokeemerald-expansion`**, please credit **RHH (Rom Hacking Hideout)**. Optionally, include the version number for clarity.
-
-```
-Based off RHH's pokeemerald-expansion 1.12.0 https://github.com/rh-hideout/pokeemerald-expansion/
-```
-
-Please consider [crediting all contributors](CREDITS.md) involved in the project!
-
-# Choosing `pokeemerald` or **`pokeemerald-expansion`**
-
-- **`pokeemerald-expansion`** supports multiplayer functionality with other games built on **`pokeemerald-expansion`**. It is not compatible with official Pokémon games.
-- If compatibility with official games is important, use [`pokeemerald`](https://github.com/pret/pokeemerald). Otherwise, we recommend using **`pokeemerald-expansion`**.
-- **`pokeemerald-expansion`** incorporates regular updates from `pokeemerald`, including bug fixes and documentation improvements.
-
-# [Getting Started](INSTALL.md)
-
-❗❗ **Important**: Do not use GitHub's "Download Zip" option as it will not include commit history. This is necessary if you want to update or merge other feature branches. 
-
-If you're new to git and GitHub, [Team Aqua's Asset Repo](https://github.com/Pawkkie/Team-Aquas-Asset-Repo/) has a [guide on forking and cloning the repository](https://github.com/Pawkkie/Team-Aquas-Asset-Repo/wiki/The-Basics-of-GitHub). Then you can follow one of the following guides:
-
-## 📥 [Installing **`pokeemerald-expansion`**](INSTALL.md)
-## 🏗️ [Building **`pokeemerald-expansion`**](INSTALL.md#Building-pokeemerald-expansion)
-## 🚚 [Migrating from **`pokeemerald`**](INSTALL.md#Migrating-from-pokeemerald)
-## 🚀 [Updating **`pokeemerald-expansion`**](INSTALL.md#Updating-pokeemerald-expansion)
-
-# [Documentation](https://rh-hideout.github.io/pokeemerald-expansion/)
-
-For detailed documentation, visit the [pokeemerald-expansion documentation page](https://rh-hideout.github.io/pokeemerald-expansion/).
-
-# [Contributions](CONTRIBUTING.md)
-If you are looking to [report a bug](CONTRIBUTING.md#Bug-Report), [open a pull request](CONTRIBUTING.md#Pull-Requests), or [request a feature](CONTRIBUTING.md#Feature-Request), our [`CONTRIBUTING.md`](CONTRIBUTING.md) has guides for each.
-
-# [Community](https://discord.gg/6CzjAG6GZk)
-
-[![](https://dcbadge.limes.pink/api/server/6CzjAG6GZk)](https://discord.gg/6CzjAG6GZk)
-
-Our community uses the [Rom Hacking Hideout (RHH) Discord server](https://discord.gg/6CzjAG6GZk) to communicate and organize. Most of our discussions take place there, and we welcome anybody to join us!
+## Quality of life improvements
+- TM/HM changes
+	- Do not need to teach HM moves to party, only need badge/story requirement to use them in overworld
+    - Fly is accessed from the map in the Pokenav upon getting the 6th gym badge
+    - Flash happens automatically in dark areas upon receiving HM Flash and getting 2nd gym badge
+- Quick Pokéball selection in wild battles
+	- Hold `R` to change selection with the D-Pad.
+    - Press `R` to use last selected Poké Ball.
+- Sort items in your bag by pressing `START` and selecting a sort type
+- New location transition animation, shows in-game time in bottom right corner 
+- Max level Pokémon can still earn EVs
+- Changed player running from holding `B` to a toggle (press `B` to activate/de-activate) and allow running indoors
+- From the Pokémon Summary screen:
+	- View IV/EV values for each Pokémon (Press `A` when viewing "SKILLS" screen to switch between view modes)
+	- Change Nickname (Press `A` when viewing "INFO" screen)
+	- Re-learn moves (Press `START` when viewing "MOVES" screen)
+	- Stat changes caused by nature highlighted
+- When repel runs out, prompt appears to enable another one (listing any tiers of repel currently in bag)
+- Disable poison damage over time when walking in the overworld
+- Speed up Pokécenter healing interaction and saving interaction

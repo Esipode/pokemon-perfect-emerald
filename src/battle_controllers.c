@@ -956,7 +956,7 @@ static void Task_HandleCopyReceivedLinkBuffersData(u8 taskId)
         switch (BYTE_TO_RECEIVE(0))
         {
         case B_COMM_TO_CONTROLLER:
-            if (IsBattleControllerActiveOnLocal(battler))
+            if (IS_BATTLE_CONTROLLER_ACTIVE_ON_LOCAL(battler))
                 return;
 
             memcpy(gBattleResources->bufferA[battler], &BYTE_TO_RECEIVE(LINK_BUFF_DATA), blockSize);
@@ -975,7 +975,7 @@ static void Task_HandleCopyReceivedLinkBuffersData(u8 taskId)
             break;
         case B_COMM_CONTROLLER_IS_DONE:
             playerId = BYTE_TO_RECEIVE(LINK_BUFF_DATA);
-            MarkBattleControllerIdleForPlayer(battler, playerId);
+            MARK_BATTLE_CONTROLLER_IDLE_FOR_PLAYER(battler, playerId);
             break;
         }
 

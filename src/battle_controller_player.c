@@ -182,13 +182,13 @@ static void PlayerBufferExecCompleted(u32 battler)
     }
     else
     {
-        MarkBattleControllerIdleOnLocal(battler);
+        gBattleControllerExecFlags &= ~(1u << battler);
     }
 }
 
 static void PlayerBufferRunCommand(u32 battler)
 {
-    if (IsBattleControllerActiveOnLocal(battler))
+    if (gBattleControllerExecFlags & (1u << battler))
     {
         if (gBattleResources->bufferA[battler][0] < ARRAY_COUNT(sPlayerBufferCommands))
             sPlayerBufferCommands[gBattleResources->bufferA[battler][0]](battler);

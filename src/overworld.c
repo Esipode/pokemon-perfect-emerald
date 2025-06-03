@@ -69,6 +69,7 @@
 #include "vs_seeker.h"
 #include "frontier_util.h"
 #include "constants/abilities.h"
+#include "constants/items.h"
 #include "constants/event_object_movement.h"
 #include "constants/event_objects.h"
 #include "constants/layouts.h"
@@ -77,6 +78,9 @@
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
 #include "constants/weather.h"
+#include "pokemon.h"
+#include "constants/species.h"
+#include "title_screen.h"
 
 STATIC_ASSERT((B_FLAG_FOLLOWERS_DISABLED == 0 || OW_FOLLOWERS_ENABLED), FollowersFlagAssignedWithoutEnablingThem);
 
@@ -192,6 +196,8 @@ static u8 sPlayerLinkStates[MAX_LINK_PLAYERS];
 static u16 (*sPlayerKeyInterceptCallback)(u32);
 static bool8 sReceivingFromLink;
 static u8 sRfuKeepAliveTimer;
+bool8 gDoAutosave = FALSE;
+bool8 gDoAutosaveAfterBattle = FALSE;
 
 COMMON_DATA u16 *gOverworldTilemapBuffer_Bg2 = NULL;
 COMMON_DATA u16 *gOverworldTilemapBuffer_Bg1 = NULL;
@@ -1052,6 +1058,8 @@ bool32 Overworld_IsBikingAllowed(void)
 // Flash level of 8 is fully black
 void SetDefaultFlashLevel(void)
 {
+    if (CheckBagHasItem(ITEM_HM05, 1))
+        FlagSet(FLAG_SYS_USE_FLASH);
     if (!gMapHeader.cave)
         gSaveBlock1Ptr->flashLevel = 0;
     else if (FlagGet(FLAG_SYS_USE_FLASH))
@@ -1740,6 +1748,10 @@ void CB2_Overworld(void)
         SetFieldVBlankCallback();
         return;
     }
+    if (gDoAutosaveAfterBattle) {
+        gDoAutosaveAfterBattle = FALSE;
+        AutosaveGame();
+    }
 }
 
 void SetMainCallback1(MainCallback cb)
@@ -1808,6 +1820,9 @@ void CB2_WhiteOut(void)
         StopMapMusic();
         ResetSafariZoneFlag_();
         DoWhiteOut();
+        if (gSaveBlock1Ptr->nuzlockeModeEnabled) {
+            RemoveFaintedMonsFromParty();
+        }
         ResetInitialPlayerAvatarState();
         ScriptContext_Init();
         UnlockPlayerFieldControls();
@@ -1878,6 +1893,14 @@ static void CB2_LoadMapOnReturnToFieldCableClub(void)
 
 void CB2_ReturnToField(void)
 {
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+    {
+        gDoAutosave = TRUE;
+        RemoveFaintedMonsFromParty();
+    }
+    else if (gSaveBlock1Ptr->autosaveModeEnabled) {
+        gDoAutosave = TRUE;
+    }
     if (IsOverworldLinkActive() == TRUE)
     {
         SetMainCallback2(CB2_ReturnToFieldLink);
@@ -1928,8 +1951,55 @@ void CB2_ReturnToFieldWithOpenMenu(void)
     CB2_ReturnToField();
 }
 
+bool8 IsPartyEmpty(void)
+{
+    int i;
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE &&
+            GetMonData(&gPlayerParty[i], MON_DATA_HP) > 0)
+            return FALSE; // At least one usable Pokémon remains
+    }
+    return TRUE; // No usable Pokémon left
+}
+
+void RemoveFaintedMonsFromParty(void)
+{
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled) {
+        int i, j;
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE &&
+                GetMonData(&gPlayerParty[i], MON_DATA_HP) == 0)
+            {
+                // Shift all Pokémon above this one down by one
+                for (j = i; j < PARTY_SIZE - 1; j++)
+                    gPlayerParty[j] = gPlayerParty[j + 1];
+                // Clear the last slot
+                ZeroMonData(&gPlayerParty[PARTY_SIZE - 1]);
+                i--; // Stay at the same index to check the new Pokémon in this slot
+            }
+        }
+        
+        if (IsPartyEmpty()){
+            // Wipe the save file
+            ClearSaveData();
+        }
+        else {
+            gDoAutosave = TRUE;
+        }
+    }
+}
+
 void CB2_ReturnToFieldContinueScript(void)
 {
+
+    if (IsPartyEmpty() && gSaveBlock1Ptr->nuzlockeModeEnabled)
+    {
+        gFieldCallback = CB2_NewGame;
+        return;
+    }
+
     FieldClearVBlankHBlankCallbacks();
     gFieldCallback = FieldCB_ContinueScript;
     CB2_ReturnToField();

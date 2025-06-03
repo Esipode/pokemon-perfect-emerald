@@ -205,6 +205,29 @@ static u64 GetAiFlags(u16 trainerId)
             flags = AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_CHECK_VIABILITY | AI_FLAG_TRY_TO_FAINT;
         else
             flags = GetTrainerAIFlagsFromId(trainerId);
+        // --- DIFFICULTY PATCH START ---
+        if (gSaveBlock1Ptr != NULL) // Make sure save is loaded
+        {
+            switch (gSaveBlock1Ptr->difficulty)
+            {
+            case 0: // Easy: downgrade SMART to BASIC
+                if (flags & AI_FLAG_SMART_TRAINER)
+                {
+                    flags &= ~AI_FLAG_SMART_TRAINER;
+                    flags |= AI_FLAG_BASIC_TRAINER;
+                }
+                break;
+            case 2: // Hard: upgrade BASIC to SMART
+                if (flags & AI_FLAG_BASIC_TRAINER)
+                {
+                    flags &= ~AI_FLAG_BASIC_TRAINER;
+                    flags |= AI_FLAG_SMART_TRAINER;
+                }
+                break;
+            // Normal: do nothing
+            }
+        }
+        // --- DIFFICULTY PATCH END ---
     }
 
     if (IsDoubleBattle())
@@ -229,7 +252,7 @@ static u64 GetAiFlags(u16 trainerId)
 void BattleAI_SetupFlags(void)
 {
     if (IsAiVsAiBattle())
-        gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = GetAiFlags(gPartnerTrainerId);
+        gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = GetAiFlags(gPartnerTrainerId) | AI_FLAG_CHECK_BAD_MOVE;
     else
         gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = 0; // player has no AI
 

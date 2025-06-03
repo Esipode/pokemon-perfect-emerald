@@ -988,29 +988,29 @@ static void UNUSED MarkAllBattlersForControllerExec(void)
     if (gBattleTypeFlags & BATTLE_TYPE_LINK)
     {
         for (i = 0; i < gBattlersCount; i++)
-            MarkBattleControllerMessageOutboundOverLink(i);
+            gBattleControllerExecFlags |= 1u << (i + 32 - MAX_BATTLERS_COUNT);
     }
     else
     {
         for (i = 0; i < gBattlersCount; i++)
-            MarkBattleControllerActiveOnLocal(i);
+            gBattleControllerExecFlags |= 1u << i;
     }
 }
 
 bool32 IsBattlerMarkedForControllerExec(u32 battler)
 {
     if (gBattleTypeFlags & BATTLE_TYPE_LINK)
-        return IsBattleControllerMessageSynchronizedOverLink(battler);
+        return (gBattleControllerExecFlags & (1u << (battler + 28))) != 0;
     else
-        return IsBattleControllerActiveOnLocal(battler);
+        return (gBattleControllerExecFlags & (1u << battler)) != 0;
 }
 
 void MarkBattlerForControllerExec(u32 battler)
 {
     if (gBattleTypeFlags & BATTLE_TYPE_LINK)
-        MarkBattleControllerMessageOutboundOverLink(battler);
+        gBattleControllerExecFlags |= 1u << (battler + 32 - MAX_BATTLERS_COUNT);
     else
-        MarkBattleControllerActiveOnLocal(battler);
+        gBattleControllerExecFlags |= 1u << battler;
 }
 
 void MarkBattlerReceivedLinkData(u32 battler)
@@ -1018,9 +1018,9 @@ void MarkBattlerReceivedLinkData(u32 battler)
     s32 i;
 
     for (i = 0; i < GetLinkPlayerCount(); i++)
-        MarkBattleControllerActiveForPlayer(battler, i);
+        gBattleControllerExecFlags |= 1u << (battler + (i << 2));
 
-    MarkBattleControllerMessageSynchronizedOverLink(battler);
+    gBattleControllerExecFlags &= ~(1u << (28 + battler));
 }
 
 const u8 *CheckSkyDropState(u32 battler, enum SkyDropState skyDropState)

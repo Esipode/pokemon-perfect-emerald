@@ -26,6 +26,14 @@ BattleFrontier_Mart_Pokemart:
 	.2byte ITEM_ZINC
 	.2byte ITEM_CARBOS
 	.2byte ITEM_HP_UP
+	.2byte ITEM_HEALTH_MOCHI
+	.2byte ITEM_MUSCLE_MOCHI
+	.2byte ITEM_RESIST_MOCHI
+	.2byte ITEM_GENIUS_MOCHI
+	.2byte ITEM_CLEVER_MOCHI
+	.2byte ITEM_SWIFT_MOCHI
+	.2byte ITEM_FRESH_START_MOCHI
+	.2byte ITEM_EXP_CANDY_XL
 	pokemartlistend
 
 BattleFrontier_Mart_EventScript_OldMan::

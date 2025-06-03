@@ -3815,10 +3815,10 @@ static void BufferLeftColumnStats(void)
 
     DynamicPlaceholderTextUtil_Reset();
 
-    BufferStat(currentHPString, STAT_HP, sMonSummaryScreen->summary.currentHP, 0, 3);
-    BufferStat(maxHPString, STAT_HP, sMonSummaryScreen->summary.maxHP, 1, 3);
-    BufferStat(attackString, STAT_ATK, sMonSummaryScreen->summary.atk, 2, 7);
-    BufferStat(defenseString, STAT_DEF, sMonSummaryScreen->summary.def, 3, 7);
+    BufferStat(currentHPString, STAT_HP, sMonSummaryScreen->summary.currentHP, 0, 4);
+    BufferStat(maxHPString, STAT_HP, sMonSummaryScreen->summary.maxHP, 1, 4);
+    BufferStat(attackString, STAT_ATK, sMonSummaryScreen->summary.atk, 2, 9);
+    BufferStat(defenseString, STAT_DEF, sMonSummaryScreen->summary.def, 3, 9);
 
     DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4, sStatsLeftColumnLayout);
 
@@ -3836,9 +3836,9 @@ static void BufferLeftColumnIvEvStats(void)
 
     DynamicPlaceholderTextUtil_Reset();
 
-    BufferStat(hpIvEvString, STAT_HP, sMonSummaryScreen->summary.currentHP, 0, 7);
-    BufferStat(attackIvEvString, STAT_ATK, sMonSummaryScreen->summary.atk, 1, 7);
-    BufferStat(defenseIvEvString, STAT_DEF, sMonSummaryScreen->summary.def, 2, 7);
+    BufferStat(hpIvEvString, STAT_HP, sMonSummaryScreen->summary.currentHP, 0, 8);
+    BufferStat(attackIvEvString, STAT_ATK, sMonSummaryScreen->summary.atk, 1, 8);
+    BufferStat(defenseIvEvString, STAT_DEF, sMonSummaryScreen->summary.def, 2, 8);
 
     DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4, sStatsLeftIVEVColumnLayout);
 
@@ -3852,20 +3852,20 @@ static void PrintLeftColumnStats(void)
     int x;
 
     if (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_IVS && !P_SUMMARY_SCREEN_IV_EV_VALUES)
-        x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar4, 46);
+        x = GetStringRightAlignXOffset(FONT_NARROW, gStringVar4, 46);
     else
         x = 4;
 
-    PrintTextOnWindow(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT), gStringVar4, x, 1, 0, 0);
+    PrintTextOnWindowWithFont(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT), gStringVar4, x, 1, 0, 0, FONT_NARROW);
 }
 
 static void BufferRightColumnStats(void)
 {
     DynamicPlaceholderTextUtil_Reset();
 
-    BufferStat(gStringVar1, STAT_SPATK, sMonSummaryScreen->summary.spatk, 0, 3);
-    BufferStat(gStringVar2, STAT_SPDEF, sMonSummaryScreen->summary.spdef, 1, 3);
-    BufferStat(gStringVar3, STAT_SPEED, sMonSummaryScreen->summary.speed, 2, 3);
+    BufferStat(gStringVar1, STAT_SPATK, sMonSummaryScreen->summary.spatk, 0, 4);
+    BufferStat(gStringVar2, STAT_SPDEF, sMonSummaryScreen->summary.spdef, 1, 4);
+    BufferStat(gStringVar3, STAT_SPEED, sMonSummaryScreen->summary.speed, 2, 4);
 
     DynamicPlaceholderTextUtil_ExpandPlaceholders(gStringVar4, sStatsRightColumnLayout);
 }
@@ -3875,11 +3875,11 @@ static void PrintRightColumnStats(void)
     int x;
 
     if (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_IVS && !P_SUMMARY_SCREEN_IV_EV_VALUES)
-        x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar4, 20);
+        x = GetStringRightAlignXOffset(FONT_NARROW, gStringVar4, 20);
     else
         x = 2;
 
-    PrintTextOnWindow(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_RIGHT), gStringVar4, x, 1, 0, 0);
+    PrintTextOnWindowWithFont(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_RIGHT), gStringVar4, x, 1, 0, 0, FONT_NARROW);
 }
 
 static void PrintExpPointsNextLevel(void)

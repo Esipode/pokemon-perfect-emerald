@@ -1261,9 +1261,6 @@ static u8 DexNavTryGenerateMonLevel(u16 species, enum EncounterType environment)
     if (levelBase == MON_LEVEL_NONEXISTENT)
         return MON_LEVEL_NONEXISTENT;   //species not found in the area
 
-    if (Random() % 100 < 4)
-        levelBonus += 10; //4% chance of having a +10 level
-
     if (levelBase + levelBonus > MAX_LEVEL)
         return MAX_LEVEL;
     else
@@ -2682,9 +2679,9 @@ u32 CalculateDexNavShinyRolls(void)
     u32 chainBonus, rndBonus;
     u8 chain = gSaveBlock3Ptr->dexNavChain;
 
-    chainBonus = (chain >= 100) ? 10 : (chain >= 50) ? 5 : 0;
-    rndBonus = (Random() % 100 < 4) ? 4 : 0;
-    return chainBonus + rndBonus;
+    chainBonus = chain;
+    rndBonus = (Random() % 100 < 8) ? 8 : 0;
+    return (chainBonus + rndBonus) * 3;
 }
 
 void TryIncrementSpeciesSearchLevel()

@@ -43,6 +43,7 @@
 
 static EWRAM_DATA u8 sWildEncounterImmunitySteps = 0;
 static EWRAM_DATA u16 sPrevMetatileBehavior = 0;
+static EWRAM_DATA u8 sPlayerSelectHoldFrames = 0;
 
 COMMON_DATA u8 gSelectedObjectEvent = 0;
 
@@ -97,6 +98,8 @@ void FieldClearPlayerInput(struct FieldInput *input)
     input->input_field_1_1 = FALSE;
     input->input_field_1_2 = FALSE;
     input->input_field_1_3 = FALSE;
+    input->input_field_1_6 = FALSE;
+    input->input_field_1_7 = FALSE;
     input->dpadDirection = 0;
 }
 
@@ -118,6 +121,19 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
                 input->pressedAButton = TRUE;
             if (newKeys & B_BUTTON)
                 input->pressedBButton = TRUE;
+
+            // CUSTOM - Logic for holding select on secondary registered item
+            if (sPlayerSelectHoldFrames == 60)
+                input->input_field_1_7 = TRUE;
+            if (JOY_HELD(SELECT_BUTTON))
+                sPlayerSelectHoldFrames = sPlayerSelectHoldFrames < 0xFF ? sPlayerSelectHoldFrames + 1 : 0xFF;
+            else if (sPlayerSelectHoldFrames != 0)
+            {
+               if (sPlayerSelectHoldFrames < 60)
+                    input->input_field_1_6 = TRUE;
+                sPlayerSelectHoldFrames = 0;
+            }
+
             if (newKeys & R_BUTTON && !FlagGet(DN_FLAG_SEARCHING))
                 input->pressedRButton = TRUE;
         }
@@ -145,6 +161,13 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
         input->dpadDirection = DIR_WEST;
     else if (heldKeys & DPAD_RIGHT)
         input->dpadDirection = DIR_EAST;
+    
+    // If B is pressed, field controls are allowed, and the player is either running or walking.
+    if ((newKeys & B_BUTTON) && (!ArePlayerFieldControlsLocked())
+    && (gPlayerAvatar.flags & (PLAYER_AVATAR_FLAG_DASH | PLAYER_AVATAR_FLAG_ON_FOOT)))
+    {
+        gRunToggleBtnSet = TRUE;
+    }
 
     if(DEBUG_OVERWORLD_MENU && !DEBUG_OVERWORLD_IN_MENU)
     {
@@ -230,7 +253,10 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     if (input->tookStep && TryFindHiddenPokemon())
         return TRUE;
 
-    if (input->pressedSelectButton && UseRegisteredKeyItemOnField() == TRUE)
+    if (input->input_field_1_6 && UseRegisteredKeyItemOnField(FALSE) == TRUE)
+        return TRUE;
+    
+    if (input->input_field_1_7 && UseRegisteredKeyItemOnField(TRUE) == TRUE)
         return TRUE;
 
     if (input->pressedRButton && TryStartDexNavSearch())

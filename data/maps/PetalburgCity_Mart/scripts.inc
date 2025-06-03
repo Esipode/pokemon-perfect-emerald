@@ -25,6 +25,14 @@ PetalburgCity_Mart_Pokemart_Basic:
 	.2byte ITEM_X_ATTACK
 	.2byte ITEM_X_DEFENSE
 	.2byte ITEM_ORANGE_MAIL
+	.2byte ITEM_HEALTH_MOCHI
+	.2byte ITEM_MUSCLE_MOCHI
+	.2byte ITEM_RESIST_MOCHI
+	.2byte ITEM_GENIUS_MOCHI
+	.2byte ITEM_CLEVER_MOCHI
+	.2byte ITEM_SWIFT_MOCHI
+	.2byte ITEM_FRESH_START_MOCHI
+	.2byte ITEM_EXP_CANDY_XS
 	pokemartlistend
 
 PetalburgCity_Mart_EventScript_ExpandedItems::
@@ -48,6 +56,14 @@ PetalburgCity_Mart_Pokemart_Expanded:
 	.2byte ITEM_X_ATTACK
 	.2byte ITEM_X_DEFENSE
 	.2byte ITEM_ORANGE_MAIL
+	.2byte ITEM_HEALTH_MOCHI
+	.2byte ITEM_MUSCLE_MOCHI
+	.2byte ITEM_RESIST_MOCHI
+	.2byte ITEM_GENIUS_MOCHI
+	.2byte ITEM_CLEVER_MOCHI
+	.2byte ITEM_SWIFT_MOCHI
+	.2byte ITEM_FRESH_START_MOCHI
+	.2byte ITEM_EXP_CANDY_M
 	pokemartlistend
 
 PetalburgCity_Mart_EventScript_Woman::

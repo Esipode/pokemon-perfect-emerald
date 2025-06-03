@@ -656,41 +656,41 @@
 #define FLAG_HIDDEN_ITEM_ROUTE_123_RARE_CANDY                (FLAG_HIDDEN_ITEMS_START + 0x6E)
 #define FLAG_HIDDEN_ITEM_ROUTE_105_BIG_PEARL                 (FLAG_HIDDEN_ITEMS_START + 0x6F)
 
-#define FLAG_UNUSED_0x264  0x264 // Unused Flag
-#define FLAG_UNUSED_0x265  0x265 // Unused Flag
-#define FLAG_UNUSED_0x266  0x266 // Unused Flag
-#define FLAG_UNUSED_0x267  0x267 // Unused Flag
-#define FLAG_UNUSED_0x268  0x268 // Unused Flag
-#define FLAG_UNUSED_0x269  0x269 // Unused Flag
-#define FLAG_UNUSED_0x26A  0x26A // Unused Flag
-#define FLAG_UNUSED_0x26B  0x26B // Unused Flag
-#define FLAG_UNUSED_0x26C  0x26C // Unused Flag
-#define FLAG_UNUSED_0x26D  0x26D // Unused Flag
-#define FLAG_UNUSED_0x26E  0x26E // Unused Flag
-#define FLAG_UNUSED_0x26F  0x26F // Unused Flag
-#define FLAG_UNUSED_0x270  0x270 // Unused Flag
-#define FLAG_UNUSED_0x271  0x271 // Unused Flag
-#define FLAG_UNUSED_0x272  0x272 // Unused Flag
-#define FLAG_UNUSED_0x273  0x273 // Unused Flag
-#define FLAG_UNUSED_0x274  0x274 // Unused Flag
-#define FLAG_UNUSED_0x275  0x275 // Unused Flag
-#define FLAG_UNUSED_0x276  0x276 // Unused Flag
-#define FLAG_UNUSED_0x277  0x277 // Unused Flag
-#define FLAG_UNUSED_0x278  0x278 // Unused Flag
-#define FLAG_UNUSED_0x279  0x279 // Unused Flag
-#define FLAG_UNUSED_0x27A  0x27A // Unused Flag
-#define FLAG_UNUSED_0x27B  0x27B // Unused Flag
-#define FLAG_UNUSED_0x27C  0x27C // Unused Flag
-#define FLAG_UNUSED_0x27D  0x27D // Unused Flag
-#define FLAG_UNUSED_0x27E  0x27E // Unused Flag
-#define FLAG_UNUSED_0x27F  0x27F // Unused Flag
-#define FLAG_UNUSED_0x280  0x280 // Unused Flag
-#define FLAG_UNUSED_0x281  0x281 // Unused Flag
-#define FLAG_UNUSED_0x282  0x282 // Unused Flag
-#define FLAG_UNUSED_0x283  0x283 // Unused Flag
-#define FLAG_UNUSED_0x284  0x284 // Unused Flag
-#define FLAG_UNUSED_0x285  0x285 // Unused Flag
-#define FLAG_UNUSED_0x286  0x286 // Unused Flag
+#define FLAG_GEN_6_EXP_SHARE             0x264 // Toggles Gen 6 style exp share
+#define FLAG_DEXNAV_SEARCHING            0x265 // Toggles if dexnav is searching for pokemon
+#define FLAG_DEXNAV_IN_MENU              0x266 // Toggles dexnav in the start menu
+#define FLAG_DEXNAV_FIND_HIDDEN          0x267 // Toggles dexnav allowing finding hidden pokemon
+#define FLAG_DEXNAV_REGISTER_SPECIES     0x268 // Registered dexnav species
+#define FLAG_DEXNAV_STEP_COUNTER         0x269 // Step counter for hidden dexnav pokemon
+#define FLAG_FLY_FROM_TOWN_MAP           0x26A // Allows flying from the town map
+#define FLAG_OW_FLAG_NO_ENCOUNTER        0x26B // In debug menu, toggles this feature
+#define FLAG_OW_FLAG_NO_TRAINER_SEE      0x26C // In debug menu, toggles this feature
+#define FLAG_OW_FLAG_NO_COLLISION        0x26D // In debug menu, toggles this feature
+#define FLAG_AI_BATTLES                  0x26E // Sets whether AI battles for you
+#define FLAG_RUNNING_SHOES_TOGGLE        0x26F // Toggles running state
+#define FLAG_IS_CHALLENGING_CHAMPION     0x270 // Toggles if a champion challenge is taking place
+#define FLAG_HIDE_CHAMPION_CHALLENGER_1  0x271 // Toggle hiding the first champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_1  0x272 // Toggle defeating the first champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_2  0x273 // Toggle hiding the second champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_2  0x274 // Toggle defeating the second champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_3  0x275 // Toggle hiding the third champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_3  0x276 // Toggle defeating the third champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_4  0x277 // Toggle hiding the fourth champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_4  0x278 // Toggle defeating the fourth champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_5  0x279 // Toggle hiding the fifth champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_5  0x27A // Toggle defeating the fifth champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_6  0x27B // Toggle hiding the sixth champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_6  0x27C // Toggle defeating the sixth champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_7  0x27D // Toggle hiding the seventh champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_7  0x27E // Toggle defeating the seventh champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_8  0x27F // Toggle hiding the eight champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_8  0x280 // Toggle defeating the eight champion challenger
+#define FLAG_HIDE_CHAMPION_CHALLENGER_9  0x281 // Toggle hiding the ninth champion challenger
+#define FLAG_BEAT_CHAMPION_CHALLENGER_9  0x282 // Toggle defeating the ninth champion challenger
+#define FLAG_AUTO_SCROLL_TEXT            0x283 // Toggles auto-scrolling text
+#define FLAG_RANDOMIZE_MON               0x284 // Flag for toggling trainer partyies having random Pokemon
+#define FLAG_NUZLOCKE_CATCH_MODE         0x285 // Sets nuzlocke catch mode rules (1 mon per route)
+#define FLAG_AUTOSAVE                    0x286 // Toggles the autosave feature
 #define FLAG_UNUSED_0x287  0x287 // Unused Flag
 #define FLAG_UNUSED_0x288  0x288 // Unused Flag
 #define FLAG_UNUSED_0x289  0x289 // Unused Flag

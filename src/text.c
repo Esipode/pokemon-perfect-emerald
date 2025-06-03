@@ -12,6 +12,7 @@
 #include "menu.h"
 #include "dynamic_placeholder_text_util.h"
 #include "fonts.h"
+#include "event_data.h"
 
 static u16 RenderText(struct TextPrinter *);
 static u32 RenderFont(struct TextPrinter *);
@@ -983,11 +984,11 @@ void SetResultWithButtonPress(bool32 *result)
 bool32 TextPrinterWaitWithDownArrow(struct TextPrinter *textPrinter)
 {
     bool32 result = FALSE;
-    if (gTextFlags.autoScroll != 0 || AUTO_SCROLL_TEXT)
+    if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
     {
         result = TextPrinterWaitAutoMode(textPrinter);
 
-        if (AUTO_SCROLL_TEXT)
+        if (FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
             SetResultWithButtonPress(&result);
     }
     else
@@ -1001,11 +1002,11 @@ bool32 TextPrinterWaitWithDownArrow(struct TextPrinter *textPrinter)
 bool32 TextPrinterWait(struct TextPrinter *textPrinter)
 {
     bool32 result = FALSE;
-    if (gTextFlags.autoScroll != 0 || AUTO_SCROLL_TEXT)
+    if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
     {
         result = TextPrinterWaitAutoMode(textPrinter);
 
-        if (AUTO_SCROLL_TEXT)
+        if (FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
             SetResultWithButtonPress(&result);
     }
     else

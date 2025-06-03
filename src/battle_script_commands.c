@@ -66,6 +66,7 @@
 #include "constants/pokemon.h"
 #include "config/battle.h"
 #include "data/battle_move_effects.h"
+#include "battle_main.h"
 
 // table to avoid ugly powing on gba (courtesy of doesnt)
 // this returns (i^2.5)/4
@@ -4941,7 +4942,6 @@ static void Cmd_getexp(void)
     {
     case 0: // check if should receive exp at all
         if (IsOnPlayerSide(gBattlerFainted)
-            || IsAiVsAiBattle()
             || !BattleTypeAllowsExp())
         {
             gBattleScripting.getexpState = 6; // goto last case
@@ -5022,11 +5022,14 @@ static void Cmd_getexp(void)
             else
             {
                 *exp = calculatedExp;
-                gBattleStruct->expShareExpValue = calculatedExp / 2;
+                // Custom - Reduce xp gained to align with expanded exp tables
+                gBattleStruct->expShareExpValue = (calculatedExp / 2) / 10;
                 if (gBattleStruct->expShareExpValue == 0)
                     gBattleStruct->expShareExpValue = 1;
             }
 
+            // CUSTOM - Reduce xp gained to align with expanded exp tables
+            *exp /= 10;
             gBattleScripting.getexpState++;
             gBattleStruct->expOrderId = 0;
             *expMonId = gBattleStruct->expGettersOrder[0];
@@ -5077,7 +5080,7 @@ static void Cmd_getexp(void)
                     if ((holdEffect == HOLD_EFFECT_EXP_SHARE || IsGen6ExpShareEnabled())
                         && (B_SPLIT_EXP < GEN_6 || gBattleStruct->battlerExpReward == 0)) // only give exp share bonus in later gens if the mon wasn't sent out
                     {
-                        gBattleStruct->battlerExpReward += GetSoftLevelCapExpValue(gPlayerParty[*expMonId].level, gBattleStruct->expShareExpValue);;
+                        gBattleStruct->battlerExpReward += GetSoftLevelCapExpValue(gPlayerParty[*expMonId].level, gBattleStruct->expShareExpValue);
                     }
 
                     ApplyExperienceMultipliers(&gBattleStruct->battlerExpReward, *expMonId, gBattlerFainted);
@@ -15704,6 +15707,17 @@ static void Cmd_handleballthrow(void)
         u32 odds, i;
         u32 catchRate;
         u32 ballId = ItemIdToBallId(gLastUsedItem);
+
+        if (gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE))
+        {
+            u16 route = GetCurrentMapId();
+            if (GET_NUZLOCKE_FLAG(route))
+            {
+                BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
+                MarkBattlerForControllerExec(gBattlerAttacker);
+                gBattlescriptCurrInstr = BattleScript_Nuzlocke_CannotCatch;
+            }
+        }
 
         gBallToDisplay = gLastThrownBall = gLastUsedItem;
         if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)

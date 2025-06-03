@@ -51,6 +51,7 @@ void ItemUseOutOfBattle_PokeFlute(u8 taskId);
 void ItemUseOutOfBattle_TownMap(u8 taskId);
 
 enum {
+    BALL_THROW_UNABLE_NUZLOCKE,
     BALL_THROW_UNABLE_TWO_MONS,
     BALL_THROW_UNABLE_NO_ROOM,
     BALL_THROW_UNABLE_SEMI_INVULNERABLE,

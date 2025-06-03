@@ -110,11 +110,35 @@ static const u8 sStarterLabelCoords[STARTER_MON_COUNT][2] =
     {8, 4},
 };
 
-static const u16 sStarterMon[STARTER_MON_COUNT] =
+static const u16 sStarterMon[27] =
 {
     SPECIES_TREECKO,
     SPECIES_TORCHIC,
     SPECIES_MUDKIP,
+    SPECIES_CHIKORITA,
+    SPECIES_CYNDAQUIL,
+    SPECIES_TOTODILE,
+    SPECIES_BULBASAUR,
+    SPECIES_CHARMANDER,
+    SPECIES_SQUIRTLE,
+    SPECIES_TURTWIG,
+    SPECIES_CHIMCHAR,
+    SPECIES_PIPLUP,
+    SPECIES_SNIVY,
+    SPECIES_TEPIG,
+    SPECIES_OSHAWOTT,
+    SPECIES_CHESPIN,
+    SPECIES_FENNEKIN,
+    SPECIES_FROAKIE,
+    SPECIES_ROWLET,
+    SPECIES_LITTEN,
+    SPECIES_POPPLIO,
+    SPECIES_GROOKEY,
+    SPECIES_SCORBUNNY,
+    SPECIES_SOBBLE,
+    SPECIES_SPRIGATITO,
+    SPECIES_FUECOCO,
+    SPECIES_QUAXLY,
 };
 
 static const struct BgTemplate sBgTemplates[3] =
@@ -350,9 +374,14 @@ static const struct SpriteTemplate sSpriteTemplate_StarterCircle =
 // .text
 u16 GetStarterPokemon(u16 chosenStarterId)
 {
-    if (chosenStarterId > STARTER_MON_COUNT)
+    if (chosenStarterId == SPECIES_BULBASAUR || chosenStarterId == SPECIES_CHIKORITA || chosenStarterId == SPECIES_TREECKO || chosenStarterId == SPECIES_TURTWIG || chosenStarterId == SPECIES_SNIVY || chosenStarterId == SPECIES_CHESPIN || chosenStarterId == SPECIES_ROWLET || chosenStarterId == SPECIES_GROOKEY || chosenStarterId == SPECIES_SPRIGATITO)
         chosenStarterId = 0;
-    return sStarterMon[chosenStarterId];
+    if (chosenStarterId == SPECIES_CHARMANDER || chosenStarterId == SPECIES_CYNDAQUIL || chosenStarterId == SPECIES_TORCHIC || chosenStarterId == SPECIES_CHIMCHAR || chosenStarterId == SPECIES_TEPIG || chosenStarterId == SPECIES_FENNEKIN || chosenStarterId == SPECIES_LITTEN || chosenStarterId == SPECIES_SCORBUNNY || chosenStarterId == SPECIES_FUECOCO)
+        chosenStarterId = 1;
+    if (chosenStarterId == SPECIES_SQUIRTLE || chosenStarterId == SPECIES_TOTODILE || chosenStarterId == SPECIES_MUDKIP || chosenStarterId == SPECIES_PIPLUP || chosenStarterId == SPECIES_OSHAWOTT || chosenStarterId == SPECIES_FROAKIE || chosenStarterId == SPECIES_POPPLIO || chosenStarterId == SPECIES_SOBBLE || chosenStarterId == SPECIES_QUAXLY)
+        chosenStarterId = 2;
+
+    return chosenStarterId;
 }
 
 static void VblankCB_StarterChoose(void)

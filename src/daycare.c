@@ -1079,7 +1079,7 @@ static void _GiveEggFromDaycare(struct DayCare *daycare)
     u8 parentSlots[DAYCARE_MON_COUNT] = {0};
     bool8 isEgg;
 
-    if (GetDaycareCompatibilityScore(daycare) == PARENTS_INCOMPATIBLE)
+    if ((GetDaycareCompatibilityScore(daycare) == PARENTS_INCOMPATIBLE) || gSaveBlock1Ptr->nuzlockeModeEnabled)
         return;
 
     species = DetermineEggSpeciesAndParentSlots(daycare, parentSlots);

@@ -76,6 +76,7 @@
 #include "constants/trainers.h"
 #include "constants/weather.h"
 #include "cable_club.h"
+#include "start_menu.h"
 
 extern const struct BgTemplate gBattleBgTemplates[];
 extern const struct WindowTemplate *const gBattleWindowTemplates[];
@@ -1880,6 +1881,39 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
     }
 }
 
+// Returns the level adjustment for a given base level and difficulty
+static s8 GetDifficultyLevelAdjustment(u8 baseLevel, u8 difficulty)
+{
+    // Clamp baseLevel between 5 and 60
+    if (baseLevel < 5)
+        baseLevel = 5;
+    if (baseLevel > 60)
+        baseLevel = 60;
+
+    // Linear scaling: 1 at level 5, 5 at level 60
+    u8 diff = 1 + ((baseLevel - 5) * 4) / 55; // 4 = 5-1, 55 = 60-5
+
+    switch (difficulty)
+    {
+    case 0: // Easy
+        return -diff;
+    case 2: // Hard
+        return diff;
+    default: // Normal
+        return 0;
+    }
+}
+
+// Linear scaling: 30 at level 1, 252 at level 60
+static u8 GetMaxRandomizedEVForLevel(u8 level)
+{
+    if (level < 1)
+        level = 1;
+    if (level > 60)
+        level = 60;
+    return 30 + ((level - 1) * (252 - 30)) / (60 - 1);
+}
+
 u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, bool32 firstTrainer, u32 battleTypeFlags)
 {
     u32 personalityValue;
@@ -1915,7 +1949,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             const struct TrainerMon *partyData = trainer->party;
             u32 otIdType = OT_ID_RANDOM_NO_SHINY;
             u32 fixedOtId = 0;
-            u32 abilityNum = 0;
+            u32 ability = 0;
 
             if (trainer->battleType != TRAINER_BATTLE_TYPE_SINGLES)
                 personalityValue = 0x80;
@@ -1937,75 +1971,128 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 otIdType = OT_ID_PRESET;
                 fixedOtId = HIHALF(personalityValue) ^ LOHALF(personalityValue);
             }
-            CreateMon(&party[i], partyData[monIndex].species, partyData[monIndex].lvl, 0, TRUE, personalityValue, otIdType, fixedOtId);
+            u16 species = FlagGet(FLAG_RANDOMIZE_MON) ? Random() % NUM_SPECIES : partyData[monIndex].species;
+
+            u8 baseLevel = partyData[monIndex].lvl;
+            s8 adjustment = GetDifficultyLevelAdjustment(baseLevel, gSaveBlock1Ptr->difficulty);
+            u8 newLevel = baseLevel + adjustment;
+
+            if (newLevel < 1)
+                newLevel = 1;
+            else if (newLevel > MAX_LEVEL)
+                newLevel = MAX_LEVEL;
+
+            CreateMon(&party[i], species, newLevel, 0, TRUE, personalityValue, otIdType, fixedOtId);
             SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
 
-            CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
-            SetMonData(&party[i], MON_DATA_IVS, &(partyData[monIndex].iv));
-            if (partyData[monIndex].ev != NULL)
-            {
-                SetMonData(&party[i], MON_DATA_HP_EV, &(partyData[monIndex].ev[0]));
-                SetMonData(&party[i], MON_DATA_ATK_EV, &(partyData[monIndex].ev[1]));
-                SetMonData(&party[i], MON_DATA_DEF_EV, &(partyData[monIndex].ev[2]));
-                SetMonData(&party[i], MON_DATA_SPATK_EV, &(partyData[monIndex].ev[3]));
-                SetMonData(&party[i], MON_DATA_SPDEF_EV, &(partyData[monIndex].ev[4]));
-                SetMonData(&party[i], MON_DATA_SPEED_EV, &(partyData[monIndex].ev[5]));
-            }
-            if (partyData[monIndex].ability != ABILITY_NONE)
-            {
-                const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[partyData[monIndex].species];
-                u32 maxAbilityNum = ARRAY_COUNT(speciesInfo->abilities);
-                for (abilityNum = 0; abilityNum < maxAbilityNum; ++abilityNum)
-                {
-                    if (speciesInfo->abilities[abilityNum] == partyData[monIndex].ability)
+            if (FlagGet(FLAG_RANDOMIZE_MON)) {
+                
+                // Randomize EVs
+                u8 evs[6] = {0};
+                u16 total = 0;
+                u8 maxEV = GetMaxRandomizedEVForLevel(newLevel);
+
+                while (total < 510) {
+                    u8 stat = Random() % 6;
+                    if (evs[stat] < maxEV) {
+                        evs[stat]++;
+                        total++;
+                    }
+                    // If all stats hit maxEV before 510, break to avoid infinite loop
+                    u8 capped = 0;
+                    for (int i = 0; i < 6; i++)
+                        if (evs[i] == maxEV) capped++;
+                    if (capped == 6)
                         break;
                 }
-                if (abilityNum >= maxAbilityNum)
-                    abilityNum = 0;
-            }
-            else if (B_TRAINER_MON_RANDOM_ABILITY)
-            {
-                const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[partyData[monIndex].species];
-                abilityNum = personalityHash % 3;
-                while (speciesInfo->abilities[abilityNum] == ABILITY_NONE)
-                {
-                    abilityNum--;
-                }
-            }
-            SetMonData(&party[i], MON_DATA_ABILITY_NUM, &abilityNum);
-            SetMonData(&party[i], MON_DATA_FRIENDSHIP, &(partyData[monIndex].friendship));
-            if (partyData[monIndex].ball != ITEM_NONE)
-            {
-                ball = partyData[monIndex].ball;
+
+                SetMonData(&party[i], MON_DATA_HP_EV, &evs[0]);
+                SetMonData(&party[i], MON_DATA_ATK_EV, &evs[1]);
+                SetMonData(&party[i], MON_DATA_DEF_EV, &evs[2]);
+                SetMonData(&party[i], MON_DATA_SPATK_EV, &evs[3]);
+                SetMonData(&party[i], MON_DATA_SPDEF_EV, &evs[4]);
+                SetMonData(&party[i], MON_DATA_SPEED_EV, &evs[5]);
+
+                // Randomize ability
+                u32 randomizedAbility = Random() % 3;
+                SetMonData(&party[i], MON_DATA_ABILITY_NUM, &randomizedAbility);
+
+                // Randomize ball
+                ball = (Random() % 27) + 1;
                 SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
             }
-            if (partyData[monIndex].nickname != NULL)
-            {
-                SetMonData(&party[i], MON_DATA_NICKNAME, partyData[monIndex].nickname);
+
+            // Don't set these stats in randomized mons
+            if (!FlagGet(FLAG_RANDOMIZE_MON)) {
+                CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
+            
+                SetMonData(&party[i], MON_DATA_IVS, &(partyData[monIndex].iv));
+                if (partyData[monIndex].ev != NULL)
+                {
+                    SetMonData(&party[i], MON_DATA_HP_EV, &(partyData[monIndex].ev[0]));
+                    SetMonData(&party[i], MON_DATA_ATK_EV, &(partyData[monIndex].ev[1]));
+                    SetMonData(&party[i], MON_DATA_DEF_EV, &(partyData[monIndex].ev[2]));
+                    SetMonData(&party[i], MON_DATA_SPATK_EV, &(partyData[monIndex].ev[3]));
+                    SetMonData(&party[i], MON_DATA_SPDEF_EV, &(partyData[monIndex].ev[4]));
+                    SetMonData(&party[i], MON_DATA_SPEED_EV, &(partyData[monIndex].ev[5]));
+                }
+                if (partyData[monIndex].ability != ABILITY_NONE)
+                {
+                    const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[partyData[monIndex].species];
+                    u32 maxAbilities = ARRAY_COUNT(speciesInfo->abilities);
+                    for (ability = 0; ability < maxAbilities; ++ability)
+                    {
+                        if (speciesInfo->abilities[ability] == partyData[monIndex].ability)
+                            break;
+                    }
+                    if (ability >= maxAbilities)
+                        ability = 0;
+                }
+                else if (B_TRAINER_MON_RANDOM_ABILITY)
+                {
+                    const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[partyData[monIndex].species];
+                    ability = personalityHash % 3;
+                    while (speciesInfo->abilities[ability] == ABILITY_NONE)
+                    {
+                        ability--;
+                    }
+                }
+                SetMonData(&party[i], MON_DATA_ABILITY_NUM, &ability);
+                SetMonData(&party[i], MON_DATA_FRIENDSHIP, &(partyData[monIndex].friendship));
+                if (partyData[monIndex].ball != ITEM_NONE)
+                {
+                    ball = partyData[monIndex].ball;
+                    SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
+                }
+                if (partyData[monIndex].nickname != NULL)
+                {
+                    SetMonData(&party[i], MON_DATA_NICKNAME, partyData[monIndex].nickname);
+                }
+                if (partyData[monIndex].isShiny)
+                {
+                    u32 data = TRUE;
+                    SetMonData(&party[i], MON_DATA_IS_SHINY, &data);
+                }
+                if (partyData[monIndex].dynamaxLevel > 0)
+                {
+                    u32 data = partyData[monIndex].dynamaxLevel;
+                    if (partyData[monIndex].shouldUseDynamax)
+                        gBattleStruct->opponentMonCanDynamax |= 1 << i;
+                    SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &data);
+                }
+                if (partyData[monIndex].gigantamaxFactor)
+                {
+                    u32 data = partyData[monIndex].gigantamaxFactor;
+                    SetMonData(&party[i], MON_DATA_GIGANTAMAX_FACTOR, &data);
+                }
+                if (partyData[monIndex].teraType > 0)
+                {
+                    gBattleStruct->opponentMonCanTera |= 1 << i;
+                    u32 data = partyData[monIndex].teraType;
+                    SetMonData(&party[i], MON_DATA_TERA_TYPE, &data);
+                }
             }
-            if (partyData[monIndex].isShiny)
-            {
-                u32 data = TRUE;
-                SetMonData(&party[i], MON_DATA_IS_SHINY, &data);
-            }
-            if (partyData[monIndex].dynamaxLevel > 0)
-            {
-                u32 data = partyData[monIndex].dynamaxLevel;
-                if (partyData[monIndex].shouldUseDynamax)
-                    gBattleStruct->opponentMonCanDynamax |= 1 << i;
-                SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &data);
-            }
-            if (partyData[monIndex].gigantamaxFactor)
-            {
-                u32 data = partyData[monIndex].gigantamaxFactor;
-                SetMonData(&party[i], MON_DATA_GIGANTAMAX_FACTOR, &data);
-            }
-            if (partyData[monIndex].teraType > 0)
-            {
-                gBattleStruct->opponentMonCanTera |= 1 << i;
-                u32 data = partyData[monIndex].teraType;
-                SetMonData(&party[i], MON_DATA_TERA_TYPE, &data);
-            }
+
             CalculateMonStats(&party[i]);
 
             if (B_TRAINER_CLASS_POKE_BALLS >= GEN_7 && ball == -1)
@@ -2986,7 +3073,7 @@ static void ClearSetBScriptingStruct(void)
     memset(&gBattleScripting, 0, sizeof(gBattleScripting));
 
     gBattleScripting.windowsType = temp;
-    gBattleScripting.battleStyle = gSaveBlock2Ptr->optionsBattleStyle;
+    gBattleScripting.battleStyle = FlagGet(FLAG_AI_BATTLES) ? TRUE : gSaveBlock2Ptr->optionsBattleStyle;
     gBattleScripting.expOnCatch = (B_EXP_CATCH >= GEN_6);
     gBattleScripting.specialTrainerBattleType = specialBattleType;
 }
@@ -4210,7 +4297,7 @@ static void HandleTurnActionSelectionState(void)
             }
             break;
         case STATE_WAIT_ACTION_CHOSEN: // Try to perform an action.
-            if (!IsBattleControllerActiveOrPendingSyncAnywhere(battler))
+            if (!(gBattleControllerExecFlags & (((1u << battler)) | (0xF << 28) | ((1u << battler) << 4) | ((1u << battler) << 8) | ((1u << battler) << 12))))
             {
                 RecordedBattle_SetBattlerAction(battler, gBattleResources->bufferB[battler][1]);
                 gChosenActionByBattler[battler] = gBattleResources->bufferB[battler][1];
@@ -4414,7 +4501,7 @@ static void HandleTurnActionSelectionState(void)
             }
             break;
         case STATE_WAIT_ACTION_CASE_CHOSEN:
-            if (!IsBattleControllerActiveOrPendingSyncAnywhere(battler))
+            if (!(gBattleControllerExecFlags & (((1u << battler)) | (0xF << 28) | ((1u << battler) << 4) | ((1u << battler) << 8) | ((1u << battler) << 12))))
             {
                 switch (gChosenActionByBattler[battler])
                 {
@@ -4544,7 +4631,11 @@ static void HandleTurnActionSelectionState(void)
             }
             break;
         case STATE_WAIT_ACTION_CONFIRMED_STANDBY:
-            if (!IsBattleControllerActiveOrPendingSyncAnywhere(battler))
+            if (!(gBattleControllerExecFlags & ((1u << battler)
+                                                | (0xF << 28)
+                                                | (1u << (battler + 4))
+                                                | (1u << (battler + 8))
+                                                | (1u << (battler + 12)))))
             {
                 if (AllAtActionConfirmed())
                     i = TRUE;
@@ -4566,7 +4657,7 @@ static void HandleTurnActionSelectionState(void)
             }
             break;
         case STATE_WAIT_ACTION_CONFIRMED:
-            if (!IsBattleControllerActiveOrPendingSyncAnywhere(battler))
+            if (!(gBattleControllerExecFlags & ((1u << battler) | (0xF << 28) | (1u << (battler + 4)) | (1u << (battler + 8)) | (1u << (battler + 12)))))
             {
                 gBattleCommunication[ACTIONS_CONFIRMED_COUNT]++;
             }
@@ -4580,7 +4671,7 @@ static void HandleTurnActionSelectionState(void)
             {
                 gBattlerAttacker = battler;
                 gBattlescriptCurrInstr = gSelectionBattleScripts[battler];
-                if (!IsBattleControllerActiveOrPendingSyncAnywhere(battler))
+                if (!(gBattleControllerExecFlags & ((1u << battler) | (0xF << 28) | (1u << (battler + 4)) | (1u << (battler + 8)) | (1u << (battler + 12)))))
                 {
                     gBattleScriptingCommandsTable[gBattlescriptCurrInstr[0]]();
                 }
@@ -4588,7 +4679,7 @@ static void HandleTurnActionSelectionState(void)
             }
             break;
         case STATE_WAIT_SET_BEFORE_ACTION:
-            if (!IsBattleControllerActiveOrPendingSyncAnywhere(battler))
+                if (!(gBattleControllerExecFlags & ((1u << battler) | (0xF << 28) | (1u << (battler + 4)) | (1u << (battler + 8)) | (1u << (battler + 12)))))
             {
                 gBattleCommunication[battler] = STATE_BEFORE_ACTION_CHOSEN;
             }
@@ -4612,7 +4703,7 @@ static void HandleTurnActionSelectionState(void)
             {
                 gBattlerAttacker = battler;
                 gBattlescriptCurrInstr = gSelectionBattleScripts[battler];
-                if (!IsBattleControllerActiveOrPendingSyncAnywhere(battler))
+                if (!(gBattleControllerExecFlags & ((1u << battler) | (0xF << 28) | (1u << (battler + 4)) | (1u << (battler + 8)) | (1u << (battler + 12)))))
                 {
                     gBattleScriptingCommandsTable[gBattlescriptCurrInstr[0]]();
                 }
@@ -4647,7 +4738,7 @@ static void HandleTurnActionSelectionState(void)
             for (i = 0; i < gBattlersCount; i++)
             {
                 if (gChosenActionByBattler[i] == B_ACTION_SWITCH)
-                    SwitchPartyOrderInGameMulti(i, gBattleStruct->monToSwitchIntoId[i]);
+                    SwitchPartyOrderInGameMulti(i, gBattleStruct->monToSwitchIntoId[battler]);
             }
         }
     }
@@ -5064,6 +5155,11 @@ static void SetActionsAndBattlersTurnOrder(void)
     }
     gBattleMainFunc = CheckChangingTurnOrderEffects;
     gBattleStruct->quickClawBattlerId = 0;
+}
+
+u16 GetCurrentMapId(void)
+{
+    return gSaveBlock1Ptr->location.mapNum;
 }
 
 static void TurnValuesCleanUp(bool8 var0)
@@ -5608,7 +5704,7 @@ static void FreeResetData_ReturnToOvOrDoEvolutions(void)
     {
         gIsFishingEncounter = FALSE;
         gIsSurfingEncounter = FALSE;
-        if (gDexNavSpecies && (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT))
+        if (gDexNavSpecies && (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT || gBattleOutcome == B_OUTCOME_RAN))
         {
             IncrementDexNavChain();
             TryIncrementSpeciesSearchLevel();
@@ -5718,11 +5814,15 @@ static void ReturnFromBattleToOverworld(void)
 #else
         if ((gBattleOutcome == B_OUTCOME_WON) || gBattleOutcome == B_OUTCOME_CAUGHT) // Bug: When Roar is used by roamer, gBattleOutcome is B_OUTCOME_PLAYER_TELEPORTED (5).
 #endif                                                                               // & with B_OUTCOME_WON (1) will return TRUE and deactivates the roamer.
-            SetRoamerInactive(gEncounteredRoamerIndex);
+            // CUSTOM - Disable original roamer state set to use custom multi-roamer script
+            // SetRoamerInactive(gEncounteredRoamerIndex);
+            NextRoamer(gEncounteredRoamerIndex);
     }
 
     m4aSongNumStop(SE_LOW_HEALTH);
     SetMainCallback2(gMain.savedCallback);
+    // After every battle, move all roamer locations
+    MoveAllRoamersToOtherLocationSets();
 }
 
 void RunBattleScriptCommands_PopCallbacksStack(void)

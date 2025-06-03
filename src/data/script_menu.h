@@ -778,6 +778,41 @@ static const struct MenuAction MultichoiceList_BerryPlot[] =
     {gText_Exit},
 };
 
+static const struct MenuAction MultiChoiceList_Starter_Gen_Options[] =
+{
+    {COMPOUND_STRING("Gen 1-3")},
+    {COMPOUND_STRING("Gen 4-6")},
+    {COMPOUND_STRING("Gen 7-9")},
+};
+
+static const struct MenuAction MultiChoiceList_ChampionChallenge_Page1[] =
+{
+    {gText_Exit},
+    {COMPOUND_STRING("Lv. 70")},
+    {COMPOUND_STRING("Lv. 80")},
+    {COMPOUND_STRING("Lv. 90")},
+    {COMPOUND_STRING("Lv. 100")},
+    {COMPOUND_STRING("Next Page")},
+};
+
+static const struct MenuAction MultiChoiceList_ChampionChallenge_Page2[] =
+{
+    {gText_Exit},
+    {COMPOUND_STRING("Prev Page")},
+    {COMPOUND_STRING("Lv. 110")},
+    {COMPOUND_STRING("Lv. 120")},
+    {COMPOUND_STRING("Lv. 130")},
+    {COMPOUND_STRING("Next Page")},
+};
+
+static const struct MenuAction MultiChoiceList_ChampionChallenge_Page3[] =
+{
+    {gText_Exit},
+    {COMPOUND_STRING("Prev Page")},
+    {COMPOUND_STRING("Lv. 140")},
+    {COMPOUND_STRING("Lv. 150")},
+};
+
 static const struct MenuAction MultichoiceList_Exit[] =
 {
     {gText_Exit},
@@ -906,6 +941,10 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_FALLARBOR_TENT_RULES]       = MULTICHOICE(MultichoiceList_FallarborTentRules),
     [MULTI_TAG_MATCH_TYPE]             = MULTICHOICE(MultichoiceList_TagMatchType),
     [MULTI_BERRY_PLOT]                 = MULTICHOICE(MultichoiceList_BerryPlot),
+    [STARTER_GEN_OPTIONS]              = MULTICHOICE(MultiChoiceList_Starter_Gen_Options),
+    [CHAMPION_CHALLENGE_CHOICE_PAGE1]  = MULTICHOICE(MultiChoiceList_ChampionChallenge_Page1),
+    [CHAMPION_CHALLENGE_CHOICE_PAGE2]  = MULTICHOICE(MultiChoiceList_ChampionChallenge_Page2),
+    [CHAMPION_CHALLENGE_CHOICE_PAGE3]  = MULTICHOICE(MultiChoiceList_ChampionChallenge_Page3),
 };
 
 const u8 *const gStdStrings[] =

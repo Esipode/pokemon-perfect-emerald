@@ -15,9 +15,20 @@ u32 GetCurrentLevelCap(void)
         {FLAG_BADGE04_GET, 29},
         {FLAG_BADGE05_GET, 31},
         {FLAG_BADGE06_GET, 33},
+        {FLAG_HIDE_MAGMA_HIDEOUT_GRUNTS, 39},
         {FLAG_BADGE07_GET, 42},
-        {FLAG_BADGE08_GET, 46},
-        {FLAG_IS_CHAMPION, 58},
+        {FLAG_HIDE_SEAFLOOR_CAVERN_AQUA_GRUNTS, 46},
+        {FLAG_BADGE08_GET, 50},
+        {FLAG_IS_CHAMPION, 60},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_1, 70},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_2, 80},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_3, 90},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_4, 100},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_5, 110},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_6, 120},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_7, 130},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_8, 140},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_9, 150},
     };
 
     u32 i;
@@ -35,7 +46,9 @@ u32 GetCurrentLevelCap(void)
         return VarGet(B_LEVEL_CAP_VARIABLE);
     }
 
-    return MAX_LEVEL;
+    // CUSTOM - CAP PLAYER (100) BELOW MAX LEVEL (250)
+    // return MAX_LEVEL;
+    return 100;
 }
 
 u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)
@@ -84,16 +97,17 @@ u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)
 
 u32 GetCurrentEVCap(void)
 {
+
     static const u16 sEvCapFlagMap[][2] = {
         // Define EV caps for each milestone
-        {FLAG_BADGE01_GET, MAX_TOTAL_EVS *  1 / 17},
-        {FLAG_BADGE02_GET, MAX_TOTAL_EVS *  3 / 17},
-        {FLAG_BADGE03_GET, MAX_TOTAL_EVS *  5 / 17},
-        {FLAG_BADGE04_GET, MAX_TOTAL_EVS *  7 / 17},
-        {FLAG_BADGE05_GET, MAX_TOTAL_EVS *  9 / 17},
-        {FLAG_BADGE06_GET, MAX_TOTAL_EVS * 11 / 17},
-        {FLAG_BADGE07_GET, MAX_TOTAL_EVS * 13 / 17},
-        {FLAG_BADGE08_GET, MAX_TOTAL_EVS * 15 / 17},
+        {FLAG_BADGE01_GET, 30},
+        {FLAG_BADGE02_GET, 60},
+        {FLAG_BADGE03_GET, 90},
+        {FLAG_BADGE04_GET, 120},
+        {FLAG_BADGE05_GET, 150},
+        {FLAG_BADGE06_GET, 200},
+        {FLAG_BADGE07_GET, 240},
+        {FLAG_BADGE08_GET, 300},
         {FLAG_IS_CHAMPION, MAX_TOTAL_EVS},
     };
 

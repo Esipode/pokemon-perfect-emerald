@@ -9,6 +9,10 @@
 #include "constants/flags.h"
 #include "constants/map_scripts.h"
 #include "field_message_box.h"
+#include "ui_birch_case.h"
+#include "task.h"
+#include "field_weather.h"
+#include "overworld.h"
 
 #define RAM_SCRIPT_MAGIC 51
 
@@ -204,6 +208,9 @@ void LockPlayerFieldControls(void)
 void UnlockPlayerFieldControls(void)
 {
     sLockFieldControls = FALSE;
+
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled || gSaveBlock1Ptr->autosaveModeEnabled)
+        gDoAutosave = TRUE;
 }
 
 bool8 ArePlayerFieldControlsLocked(void)
@@ -636,4 +643,10 @@ void Script_RequestWriteVar_Internal(u32 varId)
     if (SPECIAL_VARS_START <= varId && varId <= SPECIAL_VARS_END)
         return;
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+}
+
+void StartNewPokeballCaseUI(void)
+{
+    FadeScreen(FADE_TO_BLACK, 0);
+    CreateTask(Task_OpenBirchCase, 0);
 }

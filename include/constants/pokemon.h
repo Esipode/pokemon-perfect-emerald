@@ -145,7 +145,7 @@
 #define MAX_GIFT_RIBBON 64
 
 #define MIN_LEVEL 1
-#define MAX_LEVEL 100
+#define MAX_LEVEL 250
 
 #define MAX_DYNAMAX_LEVEL 10
 

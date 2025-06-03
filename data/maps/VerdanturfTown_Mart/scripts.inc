@@ -24,6 +24,14 @@ VerdanturfTown_Mart_Pokemart:
 	.2byte ITEM_REPEL
 	.2byte ITEM_X_SP_ATK
 	.2byte ITEM_FLUFFY_TAIL
+	.2byte ITEM_HEALTH_MOCHI
+	.2byte ITEM_MUSCLE_MOCHI
+	.2byte ITEM_RESIST_MOCHI
+	.2byte ITEM_GENIUS_MOCHI
+	.2byte ITEM_CLEVER_MOCHI
+	.2byte ITEM_SWIFT_MOCHI
+	.2byte ITEM_FRESH_START_MOCHI
+	.2byte ITEM_EXP_CANDY_S
 	pokemartlistend
 
 VerdanturfTown_Mart_EventScript_Boy::

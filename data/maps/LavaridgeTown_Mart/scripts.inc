@@ -22,6 +22,13 @@ LavaridgeTown_Mart_Pokemart:
 	.2byte ITEM_REVIVE
 	.2byte ITEM_SUPER_REPEL
 	.2byte ITEM_X_SPEED
+	.2byte ITEM_HEALTH_MOCHI
+	.2byte ITEM_MUSCLE_MOCHI
+	.2byte ITEM_RESIST_MOCHI
+	.2byte ITEM_GENIUS_MOCHI
+	.2byte ITEM_CLEVER_MOCHI
+	.2byte ITEM_SWIFT_MOCHI
+	.2byte ITEM_FRESH_START_MOCHI
 	pokemartlistend
 
 LavaridgeTown_Mart_EventScript_ExpertM::

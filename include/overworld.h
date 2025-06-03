@@ -59,6 +59,8 @@ extern u8 gLocalLinkPlayerId;
 extern u8 gFieldLinkPlayerCount;
 extern bool8 gExitStairsMovementDisabled;
 extern bool8 gSkipShowMonAnim;
+extern bool8 gDoAutosave;
+extern bool8 gDoAutosaveAfterBattle;
 extern u8 gTimeOfDay;
 extern s16 gTimeUpdateCounter;
 
@@ -171,6 +173,8 @@ bool32 Overworld_RecvKeysFromLinkIsRunning(void);
 bool32 Overworld_SendKeysToLinkIsRunning(void);
 bool32 IsSendingKeysOverCable(void);
 void ClearLinkPlayerObjectEvents(void);
+void RemoveFaintedMonsFromParty(void);
+bool8 IsPartyEmpty(void);
 bool16 SetTimeOfDay(u16 hours);
 
 // Item Description Headers

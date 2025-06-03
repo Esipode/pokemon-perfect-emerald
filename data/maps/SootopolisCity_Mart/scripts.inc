@@ -22,6 +22,13 @@ SootopolisCity_Mart_Pokemart:
 	.2byte ITEM_X_ATTACK
 	.2byte ITEM_X_DEFENSE
 	.2byte ITEM_SHADOW_MAIL
+	.2byte ITEM_HEALTH_MOCHI
+	.2byte ITEM_MUSCLE_MOCHI
+	.2byte ITEM_RESIST_MOCHI
+	.2byte ITEM_GENIUS_MOCHI
+	.2byte ITEM_CLEVER_MOCHI
+	.2byte ITEM_SWIFT_MOCHI
+	.2byte ITEM_EXP_CANDY_L
 	pokemartlistend
 
 SootopolisCity_Mart_EventScript_FatMan::

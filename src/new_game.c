@@ -188,6 +188,7 @@ void NewGameInitData(void)
     ResetPokemonStorageSystem();
     DeactivateAllRoamers();
     gSaveBlock1Ptr->registeredItem = ITEM_NONE;
+    gSaveBlock1Ptr->registeredLongItem = ITEM_NONE;
     ClearBag();
     NewGameInitPCItems();
     ClearPokeblocks();
@@ -209,7 +210,8 @@ void NewGameInitData(void)
     WipeTrainerNameRecords();
     ResetTrainerHillResults();
     ResetContestLinkResults();
-    SetCurrentDifficultyLevel(DIFFICULTY_NORMAL);
+    // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
+    gSaveBlock1Ptr->difficulty = 1;
     ResetItemFlags();
     ResetDexNav();
     ClearFollowerNPCData();
