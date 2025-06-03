@@ -46,3 +46,5 @@ tools/trainerproc/trainerproc
 *.fastSmol
 *.smolTM
 __pycache__
+__decomps/
+__BUILD_INSTRUCTIONS.txt
