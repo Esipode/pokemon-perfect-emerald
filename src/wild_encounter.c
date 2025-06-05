@@ -9,6 +9,7 @@
 #include "event_data.h"
 #include "safari_zone.h"
 #include "overworld.h"
+#include "new_game.h"
 #include "pokeblock.h"
 #include "battle_setup.h"
 #include "roamer.h"
@@ -588,7 +589,10 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum 
 
     if (FlagGet(FLAG_RANDOMIZE_MON))
     {
-        CreateWildMon(Random() % NUM_SPECIES, level);
+        u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+        // Optionally add map/slot to seed for more variety
+        rng_value_t rngState = LocalRandomSeed(trainerId + wildMonInfo->wildPokemon[wildMonIndex].species + area);
+        CreateWildMon(LocalRandom(&rngState) % NUM_SPECIES, level);
     }
     else {
         CreateWildMon(wildMonInfo->wildPokemon[wildMonIndex].species, level);
