@@ -5029,7 +5029,7 @@ static void Cmd_getexp(void)
             }
 
             // CUSTOM - Reduce xp gained to align with expanded exp tables
-            *exp /= 10;
+            *exp /= 12;
             gBattleScripting.getexpState++;
             gBattleStruct->expOrderId = 0;
             *expMonId = gBattleStruct->expGettersOrder[0];
