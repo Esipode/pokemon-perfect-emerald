@@ -4,6 +4,7 @@
 - Physical/Special/Status move categories added
 - Gen 6+ XP (All Pokémon in party receive XP)
 - New starter selection screen featuring all Gen 1 to Gen 9 starter Pokémon
+- Day/Night cycle system with time-based wild Pokémon encounters
 - Difficulty Settings (Easy/Normal/Hard)
 	- Easy: Trainers use lower level Pokémon and have simpler AI
 	- Normal: Intended experience, simple basic trainer AI for random trainers and more complex AI for story battles
