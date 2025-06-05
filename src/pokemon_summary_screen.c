@@ -3854,7 +3854,7 @@ static void PrintLeftColumnStats(void)
     if (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_IVS && !P_SUMMARY_SCREEN_IV_EV_VALUES)
         x = GetStringRightAlignXOffset(FONT_NARROW, gStringVar4, 46);
     else
-        x = 4;
+        x = 2;
 
     PrintTextOnWindowWithFont(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT), gStringVar4, x, 1, 0, 0, FONT_NARROW);
 }
@@ -3877,7 +3877,7 @@ static void PrintRightColumnStats(void)
     if (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_IVS && !P_SUMMARY_SCREEN_IV_EV_VALUES)
         x = GetStringRightAlignXOffset(FONT_NARROW, gStringVar4, 20);
     else
-        x = 2;
+        x = 3;
 
     PrintTextOnWindowWithFont(AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_RIGHT), gStringVar4, x, 1, 0, 0, FONT_NARROW);
 }
