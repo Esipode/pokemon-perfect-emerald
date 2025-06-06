@@ -5023,7 +5023,7 @@ static void Cmd_getexp(void)
             {
                 *exp = calculatedExp;
                 // Custom - Reduce xp gained to align with expanded exp tables
-                gBattleStruct->expShareExpValue = (calculatedExp / 2) / 10;
+                gBattleStruct->expShareExpValue = (calculatedExp / 2) / 12;
                 if (gBattleStruct->expShareExpValue == 0)
                     gBattleStruct->expShareExpValue = 1;
             }
