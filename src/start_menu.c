@@ -3,6 +3,7 @@
 #include "battle_pyramid.h"
 #include "battle_pyramid_bag.h"
 #include "bg.h"
+#include "clock.h"
 #include "debug.h"
 #include "event_data.h"
 #include "event_object_movement.h"
@@ -30,6 +31,7 @@
 #include "party_menu.h"
 #include "pokedex.h"
 #include "pokenav.h"
+#include "rtc.h"
 #include "safari_zone.h"
 #include "save.h"
 #include "scanline_effect.h"
@@ -42,6 +44,7 @@
 #include "text.h"
 #include "text_window.h"
 #include "trainer_card.h"
+#include "wallclock.h"
 #include "window.h"
 #include "union_room.h"
 #include "dexnav.h"
@@ -68,6 +71,7 @@ enum
     MENU_ACTION_PYRAMID_BAG,
     MENU_ACTION_DEBUG,
     MENU_ACTION_DEXNAV,
+    MENU_ACTION_CHANGE_TIME,
 };
 
 // Save status
@@ -110,6 +114,7 @@ static bool8 StartMenuBattlePyramidRetireCallback(void);
 static bool8 StartMenuBattlePyramidBagCallback(void);
 static bool8 StartMenuDebugCallback(void);
 static bool8 StartMenuDexNavCallback(void);
+static bool8 StartMenuChangeTimeCallback(void);
 
 // Menu callbacks
 static bool8 SaveStartCallback(void);
@@ -186,6 +191,7 @@ static const struct WindowTemplate sWindowTemplate_PyramidPeak = {
 };
 
 static const u8 sText_MenuDebug[] = _("DEBUG");
+static const u8 sText_MenuTime[] = _("SET TIME");
 
 static const struct MenuAction sStartMenuItems[] =
 {
@@ -204,6 +210,7 @@ static const struct MenuAction sStartMenuItems[] =
     [MENU_ACTION_PYRAMID_BAG]     = {gText_MenuBag,     {.u8_void = StartMenuBattlePyramidBagCallback}},
     [MENU_ACTION_DEBUG]           = {sText_MenuDebug,   {.u8_void = StartMenuDebugCallback}},
     [MENU_ACTION_DEXNAV]          = {gText_MenuDexNav,  {.u8_void = StartMenuDexNavCallback}},
+    [MENU_ACTION_CHANGE_TIME]     = {sText_MenuTime,  {.u8_void = StartMenuChangeTimeCallback}},
 };
 
 static const struct BgTemplate sBgTemplates_LinkBattleSave[] =
@@ -345,6 +352,12 @@ static void BuildNormalStartMenu(void)
 
     // AddStartMenuAction(MENU_ACTION_PLAYER);
     AddStartMenuAction(MENU_ACTION_SAVE);
+    
+    if (FlagGet(FLAG_SYS_CLOCK_SET))
+    {   
+        AddStartMenuAction(MENU_ACTION_CHANGE_TIME);
+    }
+
     AddStartMenuAction(MENU_ACTION_OPTION);
     // AddStartMenuAction(MENU_ACTION_EXIT);
 }
@@ -691,8 +704,23 @@ static bool8 StartMenuPokemonCallback(void)
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
+        RtcCalcLocalTime();
         SetMainCallback2(CB2_PartyMenuFromStartMenu); // Display party menu
 
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static bool8 StartMenuChangeTimeCallback(void)
+{
+    if (!gPaletteFade.active)
+    {
+        PlayRainStoppingSoundEffect();
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        StartWallClock();
         return TRUE;
     }
 
