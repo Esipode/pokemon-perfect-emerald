@@ -691,7 +691,7 @@
 #define FLAG_RANDOMIZE_MON               0x284 // Flag for toggling trainer partyies having random Pokemon
 #define FLAG_NUZLOCKE_CATCH_MODE         0x285 // Sets nuzlocke catch mode rules (1 mon per route)
 #define FLAG_AUTOSAVE                    0x286 // Toggles the autosave feature
-#define FLAG_UNUSED_0x287  0x287 // Unused Flag
+#define FLAG_BEAT_FIRST_GRUNT            0x287 // Toggle defeating the Grunt in Petalburg Woods
 #define FLAG_UNUSED_0x288  0x288 // Unused Flag
 #define FLAG_UNUSED_0x289  0x289 // Unused Flag
 #define FLAG_UNUSED_0x28A  0x28A // Unused Flag
