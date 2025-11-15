@@ -53,15 +53,15 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidLeft::
 
 	.align 2
 LilycoveCity_DepartmentStore_5F_Pokemart_Cushions:
-	.2byte ITEM_TM79
-	.2byte ITEM_TM80
-	.2byte ITEM_TM81
-	.2byte ITEM_TM82
-	.2byte ITEM_TM83
-	.2byte ITEM_TM84
-	.2byte ITEM_TM85
-	.2byte ITEM_TM86
-	.2byte ITEM_TM87
+	.2byte ITEM_ADAMANT_CRYSTAL
+	.2byte ITEM_DNA_SPLICERS
+	.2byte ITEM_GRACIDEA
+	.2byte ITEM_GRISEOUS_CORE
+	.2byte ITEM_GRISEOUS_ORB
+	.2byte ITEM_LUSTROUS_GLOBE
+	.2byte ITEM_METEORITE
+	.2byte ITEM_N_LUNARIZER
+	.2byte ITEM_N_SOLARIZER
 	pokemartlistend
 
 LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidRight::
@@ -76,19 +76,19 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidRight::
 
 	.align 2
 LilycoveCity_DepartmentStore_5F_Pokemart_Posters:
-	.2byte ITEM_TM88
-	.2byte ITEM_TM89
-	.2byte ITEM_TM90
-	.2byte ITEM_TM91
-	.2byte ITEM_TM92
-	.2byte ITEM_TM93
-	.2byte ITEM_TM94
-	.2byte ITEM_TM95
-	.2byte ITEM_TM96
-	.2byte ITEM_TM97
-	.2byte ITEM_TM98
-	.2byte ITEM_TM99
-	.2byte ITEM_TM100
+	.2byte ITEM_PINK_NECTAR
+	.2byte ITEM_PURPLE_NECTAR
+	.2byte ITEM_RED_NECTAR
+	.2byte ITEM_YELLOW_NECTAR
+	.2byte ITEM_PRISON_BOTTLE
+	.2byte ITEM_REINS_OF_UNITY
+	.2byte ITEM_REVEAL_GLASS
+	.2byte ITEM_ROTOM_CATALOG
+	.2byte ITEM_CORNERSTONE_MASK
+	.2byte ITEM_BURN_DRIVE
+	.2byte ITEM_CHILL_DRIVE
+	.2byte ITEM_DOUSE_DRIVE
+	.2byte ITEM_SHOCK_DRIVE
 	pokemartlistend
 
 LilycoveCity_DepartmentStore_5F_EventScript_ClerkFarRight::
@@ -103,28 +103,6 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkFarRight::
 
 	.align 2
 LilycoveCity_DepartmentStore_5F_Pokemart_Mats:
-	.2byte ITEM_ADAMANT_CRYSTAL
-	.2byte ITEM_DNA_SPLICERS
-	.2byte ITEM_GRACIDEA
-	.2byte ITEM_GRISEOUS_CORE
-	.2byte ITEM_GRISEOUS_ORB
-	.2byte ITEM_LUSTROUS_GLOBE
-	.2byte ITEM_METEORITE
-	.2byte ITEM_N_LUNARIZER
-	.2byte ITEM_N_SOLARIZER
-	.2byte ITEM_PINK_NECTAR
-	.2byte ITEM_PURPLE_NECTAR
-	.2byte ITEM_RED_NECTAR
-	.2byte ITEM_YELLOW_NECTAR
-	.2byte ITEM_PRISON_BOTTLE
-	.2byte ITEM_REINS_OF_UNITY
-	.2byte ITEM_REVEAL_GLASS
-	.2byte ITEM_ROTOM_CATALOG
-	.2byte ITEM_CORNERSTONE_MASK
-	.2byte ITEM_BURN_DRIVE
-	.2byte ITEM_CHILL_DRIVE
-	.2byte ITEM_DOUSE_DRIVE
-	.2byte ITEM_SHOCK_DRIVE
 	.2byte ITEM_HEARTHFLAME_MASK
 	.2byte ITEM_RUSTED_SHIELD
 	.2byte ITEM_RUSTED_SWORD
