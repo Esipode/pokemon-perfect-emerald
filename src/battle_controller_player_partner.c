@@ -266,25 +266,23 @@ static void PlayerPartnerHandleDrawTrainerPic(u32 battler)
         trainerPicId = gBattlePartners[difficulty][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic;
         xPos = 90;
         yPos = (8 - gTrainerBacksprites[trainerPicId].coordinates.size) * 4 + 80;
+        isFrontPic = FALSE;
     }
     else if (IsAiVsAiBattle())
     {
+        // Use trainer back (player-side) sprite for AI-vs-AI (auto-trainer) so it behaves like player back sprite.
         trainerPicId = GetTrainerPicFromId(gPartnerTrainerId);
-        xPos = 60;
-        yPos = 80;
+        xPos = 90;
+        yPos = (8 - gTrainerBacksprites[trainerPicId].coordinates.size) * 4 + 80;
+        isFrontPic = FALSE; // draw back sprite (not front)
     }
     else
     {
         trainerPicId = GetFrontierTrainerFrontSpriteId(gPartnerTrainerId);
         xPos = 32;
         yPos = 80;
-    }
-
-    // Use back pic only if the partner Steven or is custom.
-    if (gPartnerTrainerId > TRAINER_PARTNER(PARTNER_NONE))
-        isFrontPic = FALSE;
-    else
         isFrontPic = TRUE;
+    }
 
     BtlController_HandleDrawTrainerPic(battler, trainerPicId, isFrontPic, xPos, yPos, -1);
 }
@@ -396,7 +394,8 @@ static void PlayerPartnerHandleIntroTrainerBallThrow(u32 battler)
     if (gPartnerTrainerId > TRAINER_PARTNER(PARTNER_NONE))
         trainerPal = gTrainerBacksprites[gBattlePartners[difficulty][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic].palette.data;
     else if (IsAiVsAiBattle())
-        trainerPal = gTrainerSprites[GetTrainerPicFromId(gPartnerTrainerId)].palette.data;
+        // use the trainer back palette for auto-trainer (player-side) instead of front palette
+        trainerPal = gTrainerBacksprites[GetTrainerPicFromId(gPartnerTrainerId)].palette.data;
     else
         trainerPal = gTrainerSprites[GetFrontierTrainerFrontSpriteId(gPartnerTrainerId)].palette.data; // 2 vs 2 multi battle in Battle Frontier, load front sprite and pal.
 
