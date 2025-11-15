@@ -720,6 +720,10 @@ static bool8 StartMenuChangeTimeCallback(void)
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
+
+        ScriptUnfreezeObjectEvents();
+        UnlockPlayerFieldControls();
+
         StartWallClock();
         return TRUE;
     }
