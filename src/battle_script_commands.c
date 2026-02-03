@@ -604,6 +604,9 @@ static void Cmd_setnonvolatilestatus(void);
 static void Cmd_tryworryseed(void);
 static void Cmd_callnative(void);
 
+// Auto-close timer for level-up box when AI battles option is enabled
+static u16 sLvlUpAutoCloseCounter = 0;
+
 void (*const gBattleScriptingCommandsTable[])(void) =
 {
     Cmd_attackcanceler,                          //0x0
@@ -9270,22 +9273,50 @@ static void Cmd_drawlvlupbox(void)
         }
         break;
     case 6:
+        // If player pressed a key or we're in a recorded battle, advance.
+        // If AI battles option is enabled, auto-advance after ~3 seconds (180 frames).
         if (gMain.newKeys != 0 || RECORDED_WILD_BATTLE)
         {
             // Draw page 2 of level up box
             PlaySE(SE_SELECT);
             DrawLevelUpWindow2();
             CopyWindowToVram(B_WIN_LEVEL_UP_BOX, COPYWIN_GFX);
+            sLvlUpAutoCloseCounter = 0;
             gBattleScripting.drawlvlupboxState++;
+        }
+        else if (FlagGet(FLAG_AI_BATTLES))
+        {
+            if (sLvlUpAutoCloseCounter++ >= 90)
+            {
+                // Auto-advance after delay
+                PlaySE(SE_SELECT);
+                DrawLevelUpWindow2();
+                CopyWindowToVram(B_WIN_LEVEL_UP_BOX, COPYWIN_GFX);
+                sLvlUpAutoCloseCounter = 0;
+                gBattleScripting.drawlvlupboxState++;
+            }
         }
         break;
     case 8:
+        // If player pressed a key or we're in a recorded battle, advance.
+        // If AI battles option is enabled, auto-close after ~3 seconds (180 frames).
         if (gMain.newKeys != 0 || RECORDED_WILD_BATTLE)
         {
             // Close level up box
             PlaySE(SE_SELECT);
             HandleBattleWindow(18, 7, 29, 19, WINDOW_BG1 | WINDOW_CLEAR);
+            sLvlUpAutoCloseCounter = 0;
             gBattleScripting.drawlvlupboxState++;
+        }
+        else if (FlagGet(FLAG_AI_BATTLES))
+        {
+            if (sLvlUpAutoCloseCounter++ >= 90)
+            {
+                PlaySE(SE_SELECT);
+                HandleBattleWindow(18, 7, 29, 19, WINDOW_BG1 | WINDOW_CLEAR);
+                sLvlUpAutoCloseCounter = 0;
+                gBattleScripting.drawlvlupboxState++;
+            }
         }
         break;
     case 9:
