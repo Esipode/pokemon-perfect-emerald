@@ -13,7 +13,7 @@
 	- By default trainers now don't pick moves with no advantage to them
 	- Smarter trainer options for story encounters that are more aware of the current state of the battle and their options
     - Story event trainers have been hand-crafted to be more challenging and engaging
-- Level caps based on story progress (Never over-level for content)
+- Level caps based on story progress (Never over-level for content - Can be toggled off in options)
 - First (non-fainted) Pokémon in party follows player in overworld
 - Upgraded Pokédex
 	- Show evolution requirements for each (seen) Pokémon

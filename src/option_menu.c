@@ -33,6 +33,7 @@
 #define tNuzlocke data[12]
 #define tAutosave data[13]
 #define tDifficulty data[14]
+#define tLevelCapOff data[15]
 
 enum
 {
@@ -64,6 +65,7 @@ enum
     MENUITEM_RANDOMIZER,
     MENUITEM_RANDOMIZER_TYPE,
     MENUITEM_RANDOMIZER_MOVES,
+    MENUITEM_LEVEL_CAP_OFF,
     MENUITEM_CANCEL_PG3,
     MENUITEM_COUNT_PG3,
 };
@@ -93,6 +95,7 @@ enum
 #define YPOS_RANDOMIZER   (MENUITEM_RANDOMIZER * 16)
 #define YPOS_RANDOMIZER_TYPE (MENUITEM_RANDOMIZER_TYPE * 16)
 #define YPOS_RANDOMIZER_MOVES (MENUITEM_RANDOMIZER_MOVES * 16)
+#define YPOS_LEVEL_CAP_OFF (MENUITEM_LEVEL_CAP_OFF * 16)
 
 #define PAGE_COUNT 3
 
@@ -121,6 +124,8 @@ static u8   RandomizerType_ProcessInput(u8 selection);
 static void RandomizerType_DrawChoices(u8 selection);
 static u8   RandomizerMoves_ProcessInput(u8 selection);
 static void RandomizerMoves_DrawChoices(u8 selection);
+static u8   LevelCapOff_ProcessInput(u8 selection);
+static void LevelCapOff_DrawChoices(u8 selection);
 static u8   Nuzlocke_ProcessInput(u8 selection);
 static void Nuzlocke_DrawChoices(u8 selection);
 static u8   Autosave_ProcessInput(u8 selection);
@@ -170,6 +175,7 @@ static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
     [MENUITEM_RANDOMIZER]        = gText_SpeciesRandomizer,
     [MENUITEM_RANDOMIZER_TYPE]   = gText_TypeRandomizer,
     [MENUITEM_RANDOMIZER_MOVES]  = gText_MovesRandomizer,
+    [MENUITEM_LEVEL_CAP_OFF]     = gText_LevelCap,
     [MENUITEM_CANCEL_PG3]        = gText_OptionMenuCancel,
 };
 
@@ -252,6 +258,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tNuzlocke = gSaveBlock1Ptr->nuzlockeModeEnabled;
     gTasks[taskId].tAutosave = gSaveBlock1Ptr->autosaveModeEnabled;
     gTasks[taskId].tDifficulty = gSaveBlock1Ptr->difficulty;
+    gTasks[taskId].tLevelCapOff = FlagGet(FLAG_LEVEL_CAP_OFF);
 }
 
 static void DrawOptionsPg1(u8 taskId)
@@ -285,6 +292,7 @@ static void DrawOptionsPg3(u8 taskId)
     Randomizer_DrawChoices(gTasks[taskId].tRandomizer);
     RandomizerType_DrawChoices(gTasks[taskId].tRandomizerType);
     RandomizerMoves_DrawChoices(gTasks[taskId].tRandomizerMoves);
+    LevelCapOff_DrawChoices(gTasks[taskId].tLevelCapOff);
     HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -694,6 +702,13 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
             if (previousOption != gTasks[taskId].tRandomizerMoves)
                 RandomizerMoves_DrawChoices(gTasks[taskId].tRandomizerMoves);
             break;
+        case MENUITEM_LEVEL_CAP_OFF:
+            previousOption = gTasks[taskId].tLevelCapOff;
+            gTasks[taskId].tLevelCapOff = LevelCapOff_ProcessInput(gTasks[taskId].tLevelCapOff);
+
+            if (previousOption != gTasks[taskId].tLevelCapOff)
+                LevelCapOff_DrawChoices(gTasks[taskId].tLevelCapOff);
+            break;
         default:
             return;
         }
@@ -719,6 +734,7 @@ static void Task_OptionMenuSave(u8 taskId)
     gTasks[taskId].tRandomizer == 0 ? FlagClear(FLAG_RANDOMIZE_MON) : FlagSet(FLAG_RANDOMIZE_MON);
     gTasks[taskId].tRandomizerType == 0 ? FlagClear(FLAG_RANDOMIZE_TYPE) : FlagSet(FLAG_RANDOMIZE_TYPE);
     gTasks[taskId].tRandomizerMoves == 0 ? FlagClear(FLAG_RANDOMIZE_MOVES) : FlagSet(FLAG_RANDOMIZE_MOVES);
+    gTasks[taskId].tLevelCapOff == 0 ? FlagClear(FLAG_LEVEL_CAP_OFF) : FlagSet(FLAG_LEVEL_CAP_OFF);
     gSaveBlock1Ptr->nuzlockeModeEnabled = gTasks[taskId].tNuzlocke;
     gSaveBlock1Ptr->autosaveModeEnabled = gTasks[taskId].tAutosave;
     gSaveBlock1Ptr->difficulty = gTasks[taskId].tDifficulty;
@@ -888,6 +904,27 @@ static void RandomizerMoves_DrawChoices(u8 selection)
     styles[selection] = 1;
     DrawOptionMenuChoice(gText_MovesRandomizerOff, 104, YPOS_RANDOMIZER_MOVES, styles[0]);
     DrawOptionMenuChoice(gText_MovesRandomizerOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_MovesRandomizerOn, 198), YPOS_RANDOMIZER_MOVES, styles[1]);
+}
+
+static u8 LevelCapOff_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+        sArrowPressed = TRUE;
+    }
+
+    return selection;
+}
+
+static void LevelCapOff_DrawChoices(u8 selection)
+{
+    u8 styles[2];
+    styles[0] = 0;
+    styles[1] = 0;
+    styles[selection] = 1;
+    DrawOptionMenuChoice(gText_LevelCapOn, 104, YPOS_LEVEL_CAP_OFF, styles[0]);
+    DrawOptionMenuChoice(gText_LevelCapOff, GetStringRightAlignXOffset(FONT_NORMAL, gText_LevelCapOff, 198), YPOS_LEVEL_CAP_OFF, styles[1]);
 }
 
 static u8 Nuzlocke_ProcessInput(u8 selection)

@@ -33,6 +33,14 @@ u32 GetCurrentLevelCap(void)
     };
 
     u32 i;
+    // CUSTOM - CAP PLAYER (100) BELOW MAX LEVEL (250)
+    u32 playerLevelCap = 100;
+
+    // Check if level cap is disabled
+    if (FlagGet(FLAG_LEVEL_CAP_OFF))
+    {
+        return playerLevelCap;
+    }
 
     if (B_LEVEL_CAP_TYPE == LEVEL_CAP_FLAG_LIST)
     {
@@ -47,9 +55,7 @@ u32 GetCurrentLevelCap(void)
         return VarGet(B_LEVEL_CAP_VARIABLE);
     }
 
-    // CUSTOM - CAP PLAYER (100) BELOW MAX LEVEL (250)
-    // return MAX_LEVEL;
-    return 100;
+    return playerLevelCap;
 }
 
 u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)

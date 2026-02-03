@@ -694,7 +694,8 @@
 #define FLAG_BEAT_FIRST_GRUNT            0x287 // Toggle defeating the Grunt in Petalburg Woods
 #define FLAG_RANDOMIZE_TYPE              0x288 // Flag for toggling random Pokemon types
 #define FLAG_RANDOMIZE_MOVES             0x289 // Flag for toggling random Pokemon moves
-#define FLAG_UNUSED_0x28A  0x28A // Unused Flag
+#define FLAG_LEVEL_CAP_OFF               0x28A // Flag for toggling level cap off
+#define FLAG_UNUSED_0x28B  0x28B // Unused Flag
 #define FLAG_UNUSED_0x28B  0x28B // Unused Flag
 #define FLAG_UNUSED_0x28C  0x28C // Unused Flag
 #define FLAG_UNUSED_0x28D  0x28D // Unused Flag
