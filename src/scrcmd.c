@@ -1747,6 +1747,8 @@ static bool8 WaitForAorBPress(void)
         return TRUE;
     if (JOY_NEW(B_BUTTON))
         return TRUE;
+    if (FlagGet(FLAG_AUTO_SCROLL_TEXT))
+        return TRUE;
     return FALSE;
 }
 

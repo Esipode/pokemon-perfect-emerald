@@ -987,9 +987,6 @@ bool32 TextPrinterWaitWithDownArrow(struct TextPrinter *textPrinter)
     if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
     {
         result = TextPrinterWaitAutoMode(textPrinter);
-
-        if (FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
-            SetResultWithButtonPress(&result);
     }
     else
     {
@@ -1005,9 +1002,6 @@ bool32 TextPrinterWait(struct TextPrinter *textPrinter)
     if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
     {
         result = TextPrinterWaitAutoMode(textPrinter);
-
-        if (FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
-            SetResultWithButtonPress(&result);
     }
     else
     {
