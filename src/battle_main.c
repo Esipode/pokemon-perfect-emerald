@@ -48,6 +48,7 @@
 #include "roamer.h"
 #include "safari_zone.h"
 #include "scanline_effect.h"
+#include "ui_birch_case.h"
 #include "script.h"
 #include "sound.h"
 #include "sprite.h"
@@ -59,6 +60,7 @@
 #include "trainer_pools.h"
 #include "trig.h"
 #include "tv.h"
+#include "ui_birch_case.h"
 #include "util.h"
 #include "wild_encounter.h"
 #include "window.h"
@@ -2096,12 +2098,34 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     u32 data = partyData[monIndex].gigantamaxFactor;
                     SetMonData(&party[i], MON_DATA_GIGANTAMAX_FACTOR, &data);
                 }
-                if (partyData[monIndex].teraType > 0)
+                if (partyData[monIndex].teraType > 0 && !FlagGet(FLAG_RANDOMIZE_TYPE))
                 {
                     gBattleStruct->opponentMonCanTera |= 1 << i;
                     u32 data = partyData[monIndex].teraType;
                     SetMonData(&party[i], MON_DATA_TERA_TYPE, &data);
                 }
+            }
+
+            // Moves randomization (independent of species randomization)
+            if (FlagGet(FLAG_RANDOMIZE_MOVES)) {
+                u16 randomMove1 = GetRandomMove(monIndex, 0);
+                u16 randomMove2 = GetRandomMove(monIndex, 1);
+                u16 randomMove3 = GetRandomMove(monIndex, 2);
+                u16 randomMove4 = GetRandomMove(monIndex, 3);
+                
+                u32 pp1 = GetMovePP(randomMove1);
+                u32 pp2 = GetMovePP(randomMove2);
+                u32 pp3 = GetMovePP(randomMove3);
+                u32 pp4 = GetMovePP(randomMove4);
+                
+                SetMonData(&party[i], MON_DATA_MOVE1, &randomMove1);
+                SetMonData(&party[i], MON_DATA_PP1, &pp1);
+                SetMonData(&party[i], MON_DATA_MOVE2, &randomMove2);
+                SetMonData(&party[i], MON_DATA_PP2, &pp2);
+                SetMonData(&party[i], MON_DATA_MOVE3, &randomMove3);
+                SetMonData(&party[i], MON_DATA_PP3, &pp3);
+                SetMonData(&party[i], MON_DATA_MOVE4, &randomMove4);
+                SetMonData(&party[i], MON_DATA_PP4, &pp4);
             }
 
             CalculateMonStats(&party[i]);
@@ -3459,9 +3483,24 @@ const u8* FaintClearSetData(u32 battler)
         gBattleStruct->lastTakenMoveFrom[i][battler] = 0;
     }
 
-    gBattleMons[battler].types[0] = gSpeciesInfo[gBattleMons[battler].species].types[0];
-    gBattleMons[battler].types[1] = gSpeciesInfo[gBattleMons[battler].species].types[1];
-    gBattleMons[battler].types[2] = TYPE_MYSTERY;
+    // Apply type randomization if enabled
+    {
+        u8 partyIndex = gBattlerPartyIndexes[battler];
+        u8 type1, type2;
+        if (FlagGet(FLAG_RANDOMIZE_TYPE))
+        {
+            type1 = GetRandomType(partyIndex);
+            type2 = type1;  // When randomized, both types are the same
+        }
+        else
+        {
+            type1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
+            type2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
+        }
+        gBattleMons[battler].types[0] = type1;
+        gBattleMons[battler].types[1] = type2;
+        gBattleMons[battler].types[2] = TYPE_MYSTERY;
+    }
 
     Ai_UpdateFaintData(battler);
     TryBattleFormChange(battler, FORM_CHANGE_FAINT);
@@ -3572,6 +3611,38 @@ static void DoBattleIntro(void)
                         gBattleMons[battler].ability = gDisableStructs[battler].overwrittenAbility = TestRunner_Battle_GetForcedAbility(side, partyIndex);
                 }
                 #endif
+                
+                // Apply type randomization if enabled
+                {
+                    u32 side = GetBattlerSide(battler);
+                    u32 partyIndex = gBattlerPartyIndexes[battler];
+                    u8 type1, type2;
+                    if (FlagGet(FLAG_RANDOMIZE_TYPE))
+                    {
+                        type1 = GetRandomType(partyIndex);
+                        type2 = type1;  // When randomized, both types are the same
+                    }
+                    else
+                    {
+                        type1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
+                        type2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
+                    }
+                    gBattleMons[battler].types[0] = type1;
+                    gBattleMons[battler].types[1] = type2;
+                    gBattleMons[battler].types[2] = TYPE_MYSTERY;
+                }
+
+                // Apply move randomization if enabled
+                if (FlagGet(FLAG_RANDOMIZE_MOVES))
+                {
+                    u32 partyIndex = gBattlerPartyIndexes[battler];
+                    u32 moveIdx;
+                    for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
+                    {
+                        gBattleMons[battler].moves[moveIdx] = GetRandomMove(partyIndex, moveIdx);
+                        gBattleMons[battler].pp[moveIdx] = GetMovePP(gBattleMons[battler].moves[moveIdx]);
+                    }
+                }
             }
 
             // Draw sprite.
@@ -4558,7 +4629,19 @@ static void HandleTurnActionSelectionState(void)
 
                             // Get the chosen move position (and thus the chosen move) and target from the returned buffer.
                             gBattleStruct->chosenMovePositions[battler] = gBattleResources->bufferB[battler][2] & ~RET_GIMMICK;
-                            gChosenMoveByBattler[battler] = gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
+                            
+                            // Get the actual move to use (apply randomization if enabled)
+                            u16 moveId;
+                            if (FlagGet(FLAG_RANDOMIZE_MOVES))
+                            {
+                                u32 partyIndex = gBattlerPartyIndexes[battler];
+                                moveId = GetRandomMove(partyIndex, gBattleStruct->chosenMovePositions[battler]);
+                            }
+                            else
+                            {
+                                moveId = gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
+                            }
+                            gChosenMoveByBattler[battler] = moveId;
                             gBattleStruct->moveTarget[battler] = gBattleResources->bufferB[battler][3];
 
                             // Check to see if any gimmicks need to be prepared.

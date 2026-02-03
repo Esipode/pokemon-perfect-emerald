@@ -370,6 +370,29 @@ u16 GetRandomSpecies(u8 setIndex, u8 slotIndex)
     return (LocalRandom(&rngState) % NUM_SPECIES) + 1;
 }
 
+// Generate a random type
+u8 GetRandomType(u8 monIndex)
+{
+    u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+    rng_value_t rngState = LocalRandomSeed(trainerId + monIndex);
+    u8 type = (LocalRandom(&rngState) % (NUMBER_OF_MON_TYPES - 2)) + 1;
+    // Skip TYPE_MYSTERY (10) if selected
+    if (type >= TYPE_MYSTERY)
+        type++;
+    return type;
+}
+
+// Generate a random move
+u16 GetRandomMove(u8 monIndex, u8 moveSlot)
+{
+    u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+    rng_value_t rngState = LocalRandomSeed(trainerId + monIndex * 100 + moveSlot);
+    u16 move = LocalRandom(&rngState) % MOVES_COUNT;
+    if (move == MOVE_NONE)
+        move = MOVE_TACKLE;
+    return move;
+}
+
 static void GenerateIVs(u8 ivs[6])
 {
     for (int i = 0; i < 6; i++)

@@ -30,6 +30,7 @@
 #include "palette.h"
 #include "pokeball.h"
 #include "pokemon.h"
+#include "ui_birch_case.h"
 #include "pokemon_sprite_visualizer.h"
 #include "pokemon_storage_system.h"
 #include "pokemon_summary_screen.h"
@@ -165,6 +166,8 @@ static EWRAM_DATA struct PokemonSummaryScreenData
         u8 OTName[17]; // 0x36
         u32 OTID; // 0x48
         u8 teraType;
+        u8 type1;
+        u8 type2;
         u8 mintNature;
     } summary;
     u16 bgTilemapBuffers[PSS_PAGE_COUNT][2][0x400];
@@ -1513,8 +1516,17 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
     case 1:
         for (i = 0; i < MAX_MON_MOVES; i++)
         {
-            sum->moves[i] = GetMonData(mon, MON_DATA_MOVE1+i);
-            sum->pp[i] = GetMonData(mon, MON_DATA_PP1+i);
+            if (FlagGet(FLAG_RANDOMIZE_MOVES) && !sMonSummaryScreen->isBoxMon)
+            {
+                u8 idx = sMonSummaryScreen->curMonIndex;
+                sum->moves[i] = GetRandomMove(idx, i);
+                sum->pp[i] = GetMovePP(sum->moves[i]);
+            }
+            else
+            {
+                sum->moves[i] = GetMonData(mon, MON_DATA_MOVE1+i);
+                sum->pp[i] = GetMonData(mon, MON_DATA_PP1+i);
+            }
         }
         sum->ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
         break;
@@ -1535,6 +1547,18 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
     default:
         sum->ribbonCount = GetMonData(mon, MON_DATA_RIBBON_COUNT);
         sum->teraType = GetMonData(mon, MON_DATA_TERA_TYPE);
+        // Determine displayed types for the summary (respect type randomizer)
+        if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
+        {
+            u8 idx = sMonSummaryScreen->curMonIndex;
+            sum->type1 = GetRandomType(idx);
+            sum->type2 = sum->type1;
+        }
+        else
+        {
+            sum->type1 = gSpeciesInfo[sum->species].types[0];
+            sum->type2 = gSpeciesInfo[sum->species].types[1];
+        }
         sum->isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
         sMonSummaryScreen->relearnableMovesNum = P_SUMMARY_SCREEN_MOVE_RELEARNER ? GetNumberOfRelearnableMoves(mon) : 0;
         return TRUE;
@@ -4269,6 +4293,7 @@ void SetTypeSpritePosAndPal(u8 typeId, u8 x, u8 y, u8 spriteArrayId)
 static void SetMonTypeIcons(void)
 {
     struct PokeSummary *summary = &sMonSummaryScreen->summary;
+    struct Pokemon *mon = &sMonSummaryScreen->currentMon;
     if (summary->isEgg)
     {
         SetTypeSpritePosAndPal(TYPE_MYSTERY, 120, 48, SPRITE_ARR_ID_TYPE);
@@ -4276,10 +4301,12 @@ static void SetMonTypeIcons(void)
     }
     else
     {
-        SetTypeSpritePosAndPal(gSpeciesInfo[summary->species].types[0], 120, 48, SPRITE_ARR_ID_TYPE);
-        if (gSpeciesInfo[summary->species].types[0] != gSpeciesInfo[summary->species].types[1])
+        u8 type1 = summary->type1;
+        u8 type2 = summary->type2;
+        SetTypeSpritePosAndPal(type1, 120, 48, SPRITE_ARR_ID_TYPE);
+        if (type1 != type2)
         {
-            SetTypeSpritePosAndPal(gSpeciesInfo[summary->species].types[1], 160, 48, SPRITE_ARR_ID_TYPE + 1);
+            SetTypeSpritePosAndPal(type2, 160, 48, SPRITE_ARR_ID_TYPE + 1);
             SetSpriteInvisibility(SPRITE_ARR_ID_TYPE + 1, FALSE);
         }
         else

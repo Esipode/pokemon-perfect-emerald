@@ -45,6 +45,7 @@
 #include "test_runner.h"
 #include "text.h"
 #include "trainer_hill.h"
+#include "ui_birch_case.h"
 #include "util.h"
 #include "constants/abilities.h"
 #include "constants/battle_frontier.h"
@@ -7172,4 +7173,35 @@ u32 GetTeraTypeFromPersonality(struct Pokemon *mon)
 {
     const u8 *types = gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES)].types;
     return (GetMonData(mon, MON_DATA_PERSONALITY) & 0x1) == 0 ? types[0] : types[1];
+}
+
+// Helper function to get a Pokémon's type considering type randomization
+u8 GetMonType1(struct Pokemon *mon)
+{
+    u16 species = GetMonData(mon, MON_DATA_SPECIES);
+    if (FlagGet(FLAG_RANDOMIZE_TYPE))
+    {
+        // Find which party slot this mon is in (if any) to apply deterministic randomization
+        u8 i;
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if (&gPlayerParty[i] == mon)
+            {
+                return GetRandomType(i);
+            }
+        }
+    }
+    return gSpeciesInfo[species].types[0];
+}
+
+// Helper function to get a Pokémon's secondary type considering type randomization
+u8 GetMonType2(struct Pokemon *mon)
+{
+    if (FlagGet(FLAG_RANDOMIZE_TYPE))
+    {
+        // When types are randomized, both types are the same as type1
+        return GetMonType1(mon);
+    }
+    u16 species = GetMonData(mon, MON_DATA_SPECIES);
+    return gSpeciesInfo[species].types[1];
 }

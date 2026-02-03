@@ -28,9 +28,11 @@
 #define tAIBattles data[7]
 #define tAutoScroll data[8]
 #define tRandomizer data[9]
-#define tNuzlocke data[10]
-#define tAutosave data[11]
-#define tDifficulty data[12]
+#define tRandomizerType data[10]
+#define tRandomizerMoves data[11]
+#define tNuzlocke data[12]
+#define tAutosave data[13]
+#define tDifficulty data[14]
 
 enum
 {
@@ -49,7 +51,6 @@ enum
 {
     MENUITEM_AIBATTLES,
     MENUITEM_AUTOSCROLL,
-    MENUITEM_RANDOMIZER,
     MENUITEM_NUZLOCKE,
     MENUITEM_AUTOSAVE,
     MENUITEM_DIFFICULTY,
@@ -57,9 +58,12 @@ enum
     MENUITEM_COUNT_PG2,
 };
 
-// Menu items Pg3
+// Menu items Pg3 (Randomizer options)
 enum
 {
+    MENUITEM_RANDOMIZER,
+    MENUITEM_RANDOMIZER_TYPE,
+    MENUITEM_RANDOMIZER_MOVES,
     MENUITEM_CANCEL_PG3,
     MENUITEM_COUNT_PG3,
 };
@@ -81,19 +85,23 @@ enum
 //Pg2
 #define YPOS_AIBATTLES    (MENUITEM_AIBATTLES * 16)
 #define YPOS_AUTOSCROLL   (MENUITEM_AUTOSCROLL * 16)
-#define YPOS_RANDOMIZER   (MENUITEM_RANDOMIZER * 16)
 #define YPOS_NUZLOCKE     (MENUITEM_NUZLOCKE * 16)
 #define YPOS_AUTOSAVE     (MENUITEM_AUTOSAVE * 16)
 #define YPOS_DIFFICULTY   (MENUITEM_DIFFICULTY * 16)
 
-#define PAGE_COUNT 2
+//Pg3
+#define YPOS_RANDOMIZER   (MENUITEM_RANDOMIZER * 16)
+#define YPOS_RANDOMIZER_TYPE (MENUITEM_RANDOMIZER_TYPE * 16)
+#define YPOS_RANDOMIZER_MOVES (MENUITEM_RANDOMIZER_MOVES * 16)
+
+#define PAGE_COUNT 3
 
 static void Task_OptionMenuFadeIn(u8 taskId);
 static void Task_OptionMenuProcessInput(u8 taskId);
 static void Task_OptionMenuFadeIn_Pg2(u8 taskId);
 static void Task_OptionMenuProcessInput_Pg2(u8 taskId);
-// static void Task_OptionMenuFadeIn_Pg3(u8 taskId); // Re-enable when adding new options
-// static void Task_OptionMenuProcessInput_Pg3(u8 taskId); // Re-enable when adding new options
+static void Task_OptionMenuFadeIn_Pg3(u8 taskId);
+static void Task_OptionMenuProcessInput_Pg3(u8 taskId);
 static void Task_OptionMenuSave(u8 taskId);
 static void Task_OptionMenuFadeOut(u8 taskId);
 static void HighlightOptionMenuItem(u8 selection);
@@ -109,6 +117,10 @@ static u8   AutoScroll_ProcessInput(u8 selection);
 static void AutoScroll_DrawChoices(u8 selection);
 static u8   Randomizer_ProcessInput(u8 selection);
 static void Randomizer_DrawChoices(u8 selection);
+static u8   RandomizerType_ProcessInput(u8 selection);
+static void RandomizerType_DrawChoices(u8 selection);
+static u8   RandomizerMoves_ProcessInput(u8 selection);
+static void RandomizerMoves_DrawChoices(u8 selection);
 static u8   Nuzlocke_ProcessInput(u8 selection);
 static void Nuzlocke_DrawChoices(u8 selection);
 static u8   Autosave_ProcessInput(u8 selection);
@@ -147,11 +159,18 @@ static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
 {
     [MENUITEM_AIBATTLES]         = gText_AIBattles,
     [MENUITEM_AUTOSCROLL]        = gText_AutoScroll,
-    [MENUITEM_RANDOMIZER]        = gText_Randomizer,
     [MENUITEM_NUZLOCKE]          = gText_Nuzlocke,
     [MENUITEM_AUTOSAVE]          = gText_Autosave,
     [MENUITEM_DIFFICULTY]        = gText_Difficulty,
     [MENUITEM_CANCEL_PG2]        = gText_OptionMenuCancel,
+};
+
+static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
+{
+    [MENUITEM_RANDOMIZER]        = gText_SpeciesRandomizer,
+    [MENUITEM_RANDOMIZER_TYPE]   = gText_TypeRandomizer,
+    [MENUITEM_RANDOMIZER_MOVES]  = gText_MovesRandomizer,
+    [MENUITEM_CANCEL_PG3]        = gText_OptionMenuCancel,
 };
 
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
@@ -228,6 +247,8 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tAIBattles = FlagGet(FLAG_AI_BATTLES);
     gTasks[taskId].tAutoScroll = FlagGet(FLAG_AUTO_SCROLL_TEXT);
     gTasks[taskId].tRandomizer = FlagGet(FLAG_RANDOMIZE_MON);
+    gTasks[taskId].tRandomizerType = FlagGet(FLAG_RANDOMIZE_TYPE);
+    gTasks[taskId].tRandomizerMoves = FlagGet(FLAG_RANDOMIZE_MOVES);
     gTasks[taskId].tNuzlocke = gSaveBlock1Ptr->nuzlockeModeEnabled;
     gTasks[taskId].tAutosave = gSaveBlock1Ptr->autosaveModeEnabled;
     gTasks[taskId].tDifficulty = gSaveBlock1Ptr->difficulty;
@@ -251,7 +272,6 @@ static void DrawOptionsPg2(u8 taskId)
     ReadAllCurrentSettings(taskId);
     AIBattles_DrawChoices(gTasks[taskId].tAIBattles);
     AutoScroll_DrawChoices(gTasks[taskId].tAutoScroll);
-    Randomizer_DrawChoices(gTasks[taskId].tRandomizer);
     Nuzlocke_DrawChoices(gTasks[taskId].tNuzlocke);
     Autosave_DrawChoices(gTasks[taskId].tAutosave);
     Difficulty_DrawChoices(gTasks[taskId].tDifficulty);
@@ -259,13 +279,15 @@ static void DrawOptionsPg2(u8 taskId)
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
-// Re-enable when adding new options
-// static void DrawOptionsPg3(u8 taskId)
-// {
-//     ReadAllCurrentSettings(taskId);
-//     HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
-//     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
-// }
+static void DrawOptionsPg3(u8 taskId)
+{
+    ReadAllCurrentSettings(taskId);
+    Randomizer_DrawChoices(gTasks[taskId].tRandomizer);
+    RandomizerType_DrawChoices(gTasks[taskId].tRandomizerType);
+    RandomizerMoves_DrawChoices(gTasks[taskId].tRandomizerMoves);
+    HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
+    CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
+}
 
 void CB2_InitOptionMenu(void)
 {
@@ -344,22 +366,22 @@ void CB2_InitOptionMenu(void)
         break;
     case 10:
     {
+        taskId = CreateTask(Task_OptionMenuFadeIn, 0);
         switch(sCurrPage)
         {
         case 0:
-            taskId = CreateTask(Task_OptionMenuFadeIn, 0);
             DrawOptionsPg1(taskId);
+            gTasks[taskId].func = Task_OptionMenuFadeIn;
             break;
         case 1:
-            taskId = CreateTask(Task_OptionMenuFadeIn_Pg2, 0);
             DrawOptionsPg2(taskId);
-            break;            
+            gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
+            break;
+        case 2:
+            DrawOptionsPg3(taskId);
+            gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
+            break;
         }
-        // Re-enable when adding new options
-        // case 2:
-        //     taskId = CreateTask(Task_OptionMenuFadeIn_Pg3, 0);
-        //     DrawOptionsPg3(taskId);
-        //     break;    
         gMain.state++;
         break;
     }
@@ -405,11 +427,10 @@ static void Task_ChangePage(u8 taskId)
         DrawOptionsPg2(taskId);
         gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
         break;
-    // Re-enable when adding new options
-    // case 2:
-    //     DrawOptionsPg3(taskId);
-    //     gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
-    //     break;
+    case 2:
+        DrawOptionsPg3(taskId);
+        gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
+        break;
     }
 }
 
@@ -573,13 +594,6 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
             if (previousOption != gTasks[taskId].tAutoScroll)
                 AutoScroll_DrawChoices(gTasks[taskId].tAutoScroll);
             break;
-        case MENUITEM_RANDOMIZER:
-            previousOption = gTasks[taskId].tRandomizer;
-            gTasks[taskId].tRandomizer = Randomizer_ProcessInput(gTasks[taskId].tRandomizer);
-
-            if (previousOption != gTasks[taskId].tRandomizer)
-                Randomizer_DrawChoices(gTasks[taskId].tRandomizer);
-            break;
         case MENUITEM_NUZLOCKE:
             previousOption = gTasks[taskId].tNuzlocke;
             gTasks[taskId].tNuzlocke = Nuzlocke_ProcessInput(gTasks[taskId].tNuzlocke);
@@ -613,64 +627,84 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
     }
 }
 
-// Re-enable when adding new options
-// static void Task_OptionMenuFadeIn_Pg3(u8 taskId)
-// {
-//     if (!gPaletteFade.active)
-//         gTasks[taskId].func = Task_OptionMenuProcessInput_Pg3;
-// }
+static void Task_OptionMenuFadeIn_Pg3(u8 taskId)
+{
+    if (!gPaletteFade.active)
+        gTasks[taskId].func = Task_OptionMenuProcessInput_Pg3;
+}
 
-// static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
-// {
-//     if (JOY_NEW(L_BUTTON) || JOY_NEW(R_BUTTON))
-//     {
-//         FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
-//         ClearStdWindowAndFrame(WIN_OPTIONS, FALSE);
-//         sCurrPage = Process_ChangePage(sCurrPage);
-//         gTasks[taskId].func = Task_ChangePage;
-//     }
-//     else if (JOY_NEW(A_BUTTON))
-//     {
-//         if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG3)
-//             gTasks[taskId].func = Task_OptionMenuSave;
-//     }
-//     else if (JOY_NEW(B_BUTTON))
-//     {
-//         gTasks[taskId].func = Task_OptionMenuSave;
-//     }
-//     else if (JOY_NEW(DPAD_UP))
-//     {
-//         if (gTasks[taskId].tMenuSelection > 0)
-//             gTasks[taskId].tMenuSelection--;
-//         else
-//             gTasks[taskId].tMenuSelection = MENUITEM_CANCEL_PG3;
-//         HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
-//     }
-//     else if (JOY_NEW(DPAD_DOWN))
-//     {
-//         if (gTasks[taskId].tMenuSelection < MENUITEM_CANCEL_PG3)
-//             gTasks[taskId].tMenuSelection++;
-//         else
-//             gTasks[taskId].tMenuSelection = 0;
-//         HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
-//     }
-//     else
-//     {
-//         // u8 previousOption; // Re-Enable when adding new options
+static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
+{
+    if (JOY_NEW(L_BUTTON) || JOY_NEW(R_BUTTON))
+    {
+        FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
+        ClearStdWindowAndFrame(WIN_OPTIONS, FALSE);
+        sCurrPage = Process_ChangePage(sCurrPage);
+        gTasks[taskId].func = Task_ChangePage;
+    }
+    else if (JOY_NEW(A_BUTTON))
+    {
+        if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG3)
+            gTasks[taskId].func = Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        gTasks[taskId].func = Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(DPAD_UP))
+    {
+        if (gTasks[taskId].tMenuSelection > 0)
+            gTasks[taskId].tMenuSelection--;
+        else
+            gTasks[taskId].tMenuSelection = MENUITEM_CANCEL_PG3;
+        HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
+    }
+    else if (JOY_NEW(DPAD_DOWN))
+    {
+        if (gTasks[taskId].tMenuSelection < MENUITEM_CANCEL_PG3)
+            gTasks[taskId].tMenuSelection++;
+        else
+            gTasks[taskId].tMenuSelection = 0;
+        HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
+    }
+    else
+    {
+        u8 previousOption;
 
-//         switch (gTasks[taskId].tMenuSelection)
-//         {
-//         default:
-//             return;
-//         }
+        switch (gTasks[taskId].tMenuSelection)
+        {
+        case MENUITEM_RANDOMIZER:
+            previousOption = gTasks[taskId].tRandomizer;
+            gTasks[taskId].tRandomizer = Randomizer_ProcessInput(gTasks[taskId].tRandomizer);
 
-//         if (sArrowPressed)
-//         {
-//             sArrowPressed = FALSE;
-//             CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
-//         }
-//     }
-// }
+            if (previousOption != gTasks[taskId].tRandomizer)
+                Randomizer_DrawChoices(gTasks[taskId].tRandomizer);
+            break;
+        case MENUITEM_RANDOMIZER_TYPE:
+            previousOption = gTasks[taskId].tRandomizerType;
+            gTasks[taskId].tRandomizerType = RandomizerType_ProcessInput(gTasks[taskId].tRandomizerType);
+
+            if (previousOption != gTasks[taskId].tRandomizerType)
+                RandomizerType_DrawChoices(gTasks[taskId].tRandomizerType);
+            break;
+        case MENUITEM_RANDOMIZER_MOVES:
+            previousOption = gTasks[taskId].tRandomizerMoves;
+            gTasks[taskId].tRandomizerMoves = RandomizerMoves_ProcessInput(gTasks[taskId].tRandomizerMoves);
+
+            if (previousOption != gTasks[taskId].tRandomizerMoves)
+                RandomizerMoves_DrawChoices(gTasks[taskId].tRandomizerMoves);
+            break;
+        default:
+            return;
+        }
+
+        if (sArrowPressed)
+        {
+            sArrowPressed = FALSE;
+            CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
+        }
+    }
+}
 
 static void Task_OptionMenuSave(u8 taskId)
 {
@@ -683,6 +717,8 @@ static void Task_OptionMenuSave(u8 taskId)
     gTasks[taskId].tAIBattles == 0 ? FlagClear(FLAG_AI_BATTLES) : FlagSet(FLAG_AI_BATTLES);
     gTasks[taskId].tAutoScroll == 0 ? FlagClear(FLAG_AUTO_SCROLL_TEXT) : FlagSet(FLAG_AUTO_SCROLL_TEXT);
     gTasks[taskId].tRandomizer == 0 ? FlagClear(FLAG_RANDOMIZE_MON) : FlagSet(FLAG_RANDOMIZE_MON);
+    gTasks[taskId].tRandomizerType == 0 ? FlagClear(FLAG_RANDOMIZE_TYPE) : FlagSet(FLAG_RANDOMIZE_TYPE);
+    gTasks[taskId].tRandomizerMoves == 0 ? FlagClear(FLAG_RANDOMIZE_MOVES) : FlagSet(FLAG_RANDOMIZE_MOVES);
     gSaveBlock1Ptr->nuzlockeModeEnabled = gTasks[taskId].tNuzlocke;
     gSaveBlock1Ptr->autosaveModeEnabled = gTasks[taskId].tAutosave;
     gSaveBlock1Ptr->difficulty = gTasks[taskId].tDifficulty;
@@ -810,6 +846,48 @@ static void Randomizer_DrawChoices(u8 selection)
     styles[selection] = 1;
     DrawOptionMenuChoice(gText_RandomizerOff, 104, YPOS_RANDOMIZER, styles[0]);
     DrawOptionMenuChoice(gText_RandomizerOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_RandomizerOn, 198), YPOS_RANDOMIZER, styles[1]);
+}
+
+static u8 RandomizerType_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+        sArrowPressed = TRUE;
+    }
+
+    return selection;
+}
+
+static void RandomizerType_DrawChoices(u8 selection)
+{
+    u8 styles[2];
+    styles[0] = 0;
+    styles[1] = 0;
+    styles[selection] = 1;
+    DrawOptionMenuChoice(gText_TypeRandomizerOff, 104, YPOS_RANDOMIZER_TYPE, styles[0]);
+    DrawOptionMenuChoice(gText_TypeRandomizerOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_TypeRandomizerOn, 198), YPOS_RANDOMIZER_TYPE, styles[1]);
+}
+
+static u8 RandomizerMoves_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+        sArrowPressed = TRUE;
+    }
+
+    return selection;
+}
+
+static void RandomizerMoves_DrawChoices(u8 selection)
+{
+    u8 styles[2];
+    styles[0] = 0;
+    styles[1] = 0;
+    styles[selection] = 1;
+    DrawOptionMenuChoice(gText_MovesRandomizerOff, 104, YPOS_RANDOMIZER_MOVES, styles[0]);
+    DrawOptionMenuChoice(gText_MovesRandomizerOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_MovesRandomizerOn, 198), YPOS_RANDOMIZER_MOVES, styles[1]);
 }
 
 static u8 Nuzlocke_ProcessInput(u8 selection)
@@ -1140,11 +1218,10 @@ static void DrawOptionMenuTexts(void)
         items = MENUITEM_COUNT_PG2;
         menu = sOptionMenuItemsNames_Pg2;
         break;
-    // Re-enable when adding new options
-    // case 2:
-    //     items = MENUITEM_COUNT_PG3;
-    //     menu = sOptionMenuItemsNames_Pg3;
-    //     break;    
+    case 2:
+        items = MENUITEM_COUNT_PG3;
+        menu = sOptionMenuItemsNames_Pg3;
+        break;    
     }
 
     FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));

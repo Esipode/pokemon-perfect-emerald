@@ -692,8 +692,8 @@
 #define FLAG_NUZLOCKE_CATCH_MODE         0x285 // Sets nuzlocke catch mode rules (1 mon per route)
 #define FLAG_AUTOSAVE                    0x286 // Toggles the autosave feature
 #define FLAG_BEAT_FIRST_GRUNT            0x287 // Toggle defeating the Grunt in Petalburg Woods
-#define FLAG_UNUSED_0x288  0x288 // Unused Flag
-#define FLAG_UNUSED_0x289  0x289 // Unused Flag
+#define FLAG_RANDOMIZE_TYPE              0x288 // Flag for toggling random Pokemon types
+#define FLAG_RANDOMIZE_MOVES             0x289 // Flag for toggling random Pokemon moves
 #define FLAG_UNUSED_0x28A  0x28A // Unused Flag
 #define FLAG_UNUSED_0x28B  0x28B // Unused Flag
 #define FLAG_UNUSED_0x28C  0x28C // Unused Flag
