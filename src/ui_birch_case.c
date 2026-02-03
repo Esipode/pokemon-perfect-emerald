@@ -371,26 +371,46 @@ u16 GetRandomSpecies(u8 setIndex, u8 slotIndex)
 }
 
 // Generate a random type
-u8 GetRandomType(u8 monIndex)
+u8 GetRandomType(u16 species, u32 typeOffset)
 {
     u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-    rng_value_t rngState = LocalRandomSeed(trainerId + monIndex);
-    u8 type = (LocalRandom(&rngState) % (NUMBER_OF_MON_TYPES - 2)) + 1;
-    // Skip TYPE_MYSTERY (10) if selected
-    if (type >= TYPE_MYSTERY)
-        type++;
+    u16 baseSpecies = GET_BASE_SPECIES_ID(species);
+    u32 combinedSeed = trainerId + baseSpecies + typeOffset;
+    // Generate value 0-17 (18 possible values: 1-9 and 11-19, skipping TYPE_MYSTERY=10 and TYPE_STELLAR=20)
+    u32 typeValue = (combinedSeed * 7) % 18;  // 18 = 9 types (1-9) + 9 types (11-19)
+    u8 type;
+    if (typeValue < 9)
+        type = typeValue + 1;  // 1-9
+    else
+        type = typeValue + 2;  // 11-19 (skipping 10 and 20)
     return type;
 }
 
 // Generate a random move
-u16 GetRandomMove(u8 monIndex, u8 moveSlot)
+u16 GetRandomMove(u16 species, u16 originalMove)
 {
     u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-    rng_value_t rngState = LocalRandomSeed(trainerId + monIndex * 100 + moveSlot);
+    u16 baseSpecies = GET_BASE_SPECIES_ID(species);
+    rng_value_t rngState = LocalRandomSeed(trainerId + baseSpecies * 100 + originalMove);
     u16 move = LocalRandom(&rngState) % MOVES_COUNT;
     if (move == MOVE_NONE)
         move = MOVE_TACKLE;
     return move;
+}
+
+// Generate a random move type
+u8 GetRandomMoveType(u16 moveId)
+{
+    u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+    u32 combinedSeed = trainerId + moveId;
+    // Generate value 0-17 (18 possible values: 1-9 and 11-19, skipping TYPE_MYSTERY=10 and TYPE_STELLAR=20)
+    u32 typeValue = (combinedSeed * 7) % 18;  // 18 = 9 types (1-9) + 9 types (11-19)
+    u8 type;
+    if (typeValue < 9)
+        type = typeValue + 1;  // 1-9
+    else
+        type = typeValue + 2;  // 11-19 (skipping 10 and 20)
+    return type;
 }
 
 static void GenerateIVs(u8 ivs[6])

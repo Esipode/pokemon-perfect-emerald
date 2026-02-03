@@ -169,6 +169,8 @@ static EWRAM_DATA struct PokemonSummaryScreenData
         u8 type1;
         u8 type2;
         u8 mintNature;
+        u16 originalMoves[MAX_MON_MOVES]; // Store original (non-randomized) moves for proper seed generation
+        bool8 isOriginalDualType; // Track if the original species had a dual type
     } summary;
     u16 bgTilemapBuffers[PSS_PAGE_COUNT][2][0x400];
     u8 mode;
@@ -1512,21 +1514,47 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         else
             sum->isEgg = GetMonData(mon, MON_DATA_IS_EGG);
 
+        // Extract types early so they're available for display
+        sum->teraType = GetMonData(mon, MON_DATA_TERA_TYPE);
+        
+        // Check if original species has a dual type
+        u8 originalType1 = gSpeciesInfo[sum->species].types[0];
+        u8 originalType2 = gSpeciesInfo[sum->species].types[1];
+        sum->isOriginalDualType = (originalType2 != TYPE_NONE && originalType2 != originalType1);
+        
+        if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
+        {
+            sum->type1 = GetRandomType(sum->species, 0);
+            // Only randomize type2 if the original species had a dual type
+            if (sum->isOriginalDualType)
+            {
+                sum->type2 = GetRandomType(sum->species, 1);
+            }
+            else
+            {
+                sum->type2 = sum->type1;
+            }
+        }
+        else
+        {
+            sum->type1 = originalType1;
+            sum->type2 = gSpeciesInfo[sum->species].types[1];
+        }
+
         break;
     case 1:
         for (i = 0; i < MAX_MON_MOVES; i++)
         {
-            if (FlagGet(FLAG_RANDOMIZE_MOVES) && !sMonSummaryScreen->isBoxMon)
+            // Always store the original (non-randomized) move for proper seed generation
+            sum->originalMoves[i] = GetMonData(mon, MON_DATA_MOVE1+i);
+            sum->moves[i] = sum->originalMoves[i];
+            
+            // Apply randomization for display if enabled, but always use original move as seed
+            if (FlagGet(FLAG_RANDOMIZE_MOVES) && !sMonSummaryScreen->isBoxMon && sum->moves[i] != MOVE_NONE)
             {
-                u8 idx = sMonSummaryScreen->curMonIndex;
-                sum->moves[i] = GetRandomMove(idx, i);
-                sum->pp[i] = GetMovePP(sum->moves[i]);
+                sum->moves[i] = GetRandomMove(sum->species, sum->originalMoves[i]);
             }
-            else
-            {
-                sum->moves[i] = GetMonData(mon, MON_DATA_MOVE1+i);
-                sum->pp[i] = GetMonData(mon, MON_DATA_PP1+i);
-            }
+            sum->pp[i] = GetMovePP(sum->moves[i]);
         }
         sum->ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
         break;
@@ -1546,19 +1574,6 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         break;
     default:
         sum->ribbonCount = GetMonData(mon, MON_DATA_RIBBON_COUNT);
-        sum->teraType = GetMonData(mon, MON_DATA_TERA_TYPE);
-        // Determine displayed types for the summary (respect type randomizer)
-        if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
-        {
-            u8 idx = sMonSummaryScreen->curMonIndex;
-            sum->type1 = GetRandomType(idx);
-            sum->type2 = sum->type1;
-        }
-        else
-        {
-            sum->type1 = gSpeciesInfo[sum->species].types[0];
-            sum->type2 = gSpeciesInfo[sum->species].types[1];
-        }
         sum->isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
         sMonSummaryScreen->relearnableMovesNum = P_SUMMARY_SCREEN_MOVE_RELEARNER ? GetNumberOfRelearnableMoves(mon) : 0;
         return TRUE;
@@ -2504,6 +2519,8 @@ static void SwapMonMoves(struct Pokemon *mon, u8 moveIndex1, u8 moveIndex2)
 
     u16 move1 = summary->moves[moveIndex1];
     u16 move2 = summary->moves[moveIndex2];
+    u16 originalMove1 = summary->originalMoves[moveIndex1];
+    u16 originalMove2 = summary->originalMoves[moveIndex2];
     u8 move1pp = summary->pp[moveIndex1];
     u8 move2pp = summary->pp[moveIndex2];
     u8 ppBonuses = summary->ppBonuses;
@@ -2517,15 +2534,20 @@ static void SwapMonMoves(struct Pokemon *mon, u8 moveIndex1, u8 moveIndex2)
     ppBonuses &= ~ppUpMask2;
     ppBonuses |= (ppBonusMove1 << (moveIndex2 * 2)) + (ppBonusMove2 << (moveIndex1 * 2));
 
-    // Swap the moves
-    SetMonData(mon, MON_DATA_MOVE1 + moveIndex1, &move2);
-    SetMonData(mon, MON_DATA_MOVE1 + moveIndex2, &move1);
+    // Swap the original moves (save these to Pokémon data, not the randomized ones)
+    SetMonData(mon, MON_DATA_MOVE1 + moveIndex1, &originalMove2);
+    SetMonData(mon, MON_DATA_MOVE1 + moveIndex2, &originalMove1);
     SetMonData(mon, MON_DATA_PP1 + moveIndex1, &move2pp);
     SetMonData(mon, MON_DATA_PP1 + moveIndex2, &move1pp);
     SetMonData(mon, MON_DATA_PP_BONUSES, &ppBonuses);
 
+    // Swap the displayed moves
     summary->moves[moveIndex1] = move2;
     summary->moves[moveIndex2] = move1;
+    
+    // Swap the original moves
+    summary->originalMoves[moveIndex1] = originalMove2;
+    summary->originalMoves[moveIndex2] = originalMove1;
 
     summary->pp[moveIndex1] = move2pp;
     summary->pp[moveIndex2] = move1pp;
@@ -2539,6 +2561,8 @@ static void SwapBoxMonMoves(struct BoxPokemon *mon, u8 moveIndex1, u8 moveIndex2
 
     u16 move1 = summary->moves[moveIndex1];
     u16 move2 = summary->moves[moveIndex2];
+    u16 originalMove1 = summary->originalMoves[moveIndex1];
+    u16 originalMove2 = summary->originalMoves[moveIndex2];
     u8 move1pp = summary->pp[moveIndex1];
     u8 move2pp = summary->pp[moveIndex2];
     u8 ppBonuses = summary->ppBonuses;
@@ -2552,15 +2576,20 @@ static void SwapBoxMonMoves(struct BoxPokemon *mon, u8 moveIndex1, u8 moveIndex2
     ppBonuses &= ~ppUpMask2;
     ppBonuses |= (ppBonusMove1 << (moveIndex2 * 2)) + (ppBonusMove2 << (moveIndex1 * 2));
 
-    // Swap the moves
-    SetBoxMonData(mon, MON_DATA_MOVE1 + moveIndex1, &move2);
-    SetBoxMonData(mon, MON_DATA_MOVE1 + moveIndex2, &move1);
+    // Swap the original moves (save these to Pokémon data, not the randomized ones)
+    SetBoxMonData(mon, MON_DATA_MOVE1 + moveIndex1, &originalMove2);
+    SetBoxMonData(mon, MON_DATA_MOVE1 + moveIndex2, &originalMove1);
     SetBoxMonData(mon, MON_DATA_PP1 + moveIndex1, &move2pp);
     SetBoxMonData(mon, MON_DATA_PP1 + moveIndex2, &move1pp);
     SetBoxMonData(mon, MON_DATA_PP_BONUSES, &ppBonuses);
 
+    // Swap the displayed moves
     summary->moves[moveIndex1] = move2;
     summary->moves[moveIndex2] = move1;
+    
+    // Swap the original moves
+    summary->originalMoves[moveIndex1] = originalMove2;
+    summary->originalMoves[moveIndex2] = originalMove1;
 
     summary->pp[moveIndex1] = move2pp;
     summary->pp[moveIndex2] = move1pp;
@@ -4337,6 +4366,12 @@ static void SetMoveTypeIcons(void)
                 enum MonState state = gMain.inBattle ? MON_IN_BATTLE : MON_OUTSIDE_BATTLE;
                 type = CheckDynamicMoveType(mon, summary->moves[i], 0, state); // Bug: in battle, this only shows the dynamic type of battler in position 0
             }
+            
+            // Apply type randomization if enabled (after dynamic type to override it)
+            if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
+            {
+                type = GetRandomMoveType(summary->moves[i]);
+            }
 
             SetTypeSpritePosAndPal(type, 85, 32 + (i * 16), i + SPRITE_ARR_ID_TYPE);
         }
@@ -4364,11 +4399,18 @@ static void SetNewMoveTypeIcon(void)
 {
     u32 type = GetMoveType(sMonSummaryScreen->newMove);
     struct Pokemon *mon = &sMonSummaryScreen->currentMon;
+    struct PokeSummary *summary = &sMonSummaryScreen->summary;
 
     if (P_SHOW_DYNAMIC_TYPES)
     {
         enum MonState state = gMain.inBattle ? MON_IN_BATTLE : MON_OUTSIDE_BATTLE;
         type = CheckDynamicMoveType(mon, sMonSummaryScreen->newMove, 0, state);  // Bug: in battle, this only shows the dynamic type of battler in position 0
+    }
+    
+    // Apply type randomization if enabled (after dynamic type to override it)
+    if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
+    {
+        type = GetRandomMoveType(sMonSummaryScreen->newMove);
     }
 
     if (sMonSummaryScreen->newMove == MOVE_NONE)

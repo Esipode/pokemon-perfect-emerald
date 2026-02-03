@@ -7187,7 +7187,8 @@ u8 GetMonType1(struct Pokemon *mon)
         {
             if (&gPlayerParty[i] == mon)
             {
-                return GetRandomType(i);
+                u16 species = GetMonData(mon, MON_DATA_SPECIES);
+                return GetRandomType(species, 0);
             }
         }
     }

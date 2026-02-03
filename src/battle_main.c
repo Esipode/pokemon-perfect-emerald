@@ -2108,10 +2108,11 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
 
             // Moves randomization (independent of species randomization)
             if (FlagGet(FLAG_RANDOMIZE_MOVES)) {
-                u16 randomMove1 = GetRandomMove(monIndex, 0);
-                u16 randomMove2 = GetRandomMove(monIndex, 1);
-                u16 randomMove3 = GetRandomMove(monIndex, 2);
-                u16 randomMove4 = GetRandomMove(monIndex, 3);
+                u16 species = partyData[monIndex].species;
+                u16 randomMove1 = (partyData[monIndex].moves[0] != MOVE_NONE) ? GetRandomMove(species, partyData[monIndex].moves[0]) : MOVE_NONE;
+                u16 randomMove2 = (partyData[monIndex].moves[1] != MOVE_NONE) ? GetRandomMove(species, partyData[monIndex].moves[1]) : MOVE_NONE;
+                u16 randomMove3 = (partyData[monIndex].moves[2] != MOVE_NONE) ? GetRandomMove(species, partyData[monIndex].moves[2]) : MOVE_NONE;
+                u16 randomMove4 = (partyData[monIndex].moves[3] != MOVE_NONE) ? GetRandomMove(species, partyData[monIndex].moves[3]) : MOVE_NONE;
                 
                 u32 pp1 = GetMovePP(randomMove1);
                 u32 pp2 = GetMovePP(randomMove2);
@@ -3485,12 +3486,23 @@ const u8* FaintClearSetData(u32 battler)
 
     // Apply type randomization if enabled
     {
-        u8 partyIndex = gBattlerPartyIndexes[battler];
         u8 type1, type2;
+        u8 originalType1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
+        u8 originalType2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
+        bool8 isOriginalDualType = (originalType2 != TYPE_NONE && originalType2 != originalType1);
+        
         if (FlagGet(FLAG_RANDOMIZE_TYPE))
         {
-            type1 = GetRandomType(partyIndex);
-            type2 = type1;  // When randomized, both types are the same
+            type1 = GetRandomType(gBattleMons[battler].species, 0);
+            // Only randomize type2 if the original species had a dual type
+            if (isOriginalDualType)
+            {
+                type2 = GetRandomType(gBattleMons[battler].species, 1);
+            }
+            else
+            {
+                type2 = type1;
+            }
         }
         else
         {
@@ -3614,13 +3626,23 @@ static void DoBattleIntro(void)
                 
                 // Apply type randomization if enabled
                 {
-                    u32 side = GetBattlerSide(battler);
-                    u32 partyIndex = gBattlerPartyIndexes[battler];
                     u8 type1, type2;
+                    u8 originalType1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
+                    u8 originalType2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
+                    bool8 isOriginalDualType = (originalType2 != TYPE_NONE && originalType2 != originalType1);
+                    
                     if (FlagGet(FLAG_RANDOMIZE_TYPE))
                     {
-                        type1 = GetRandomType(partyIndex);
-                        type2 = type1;  // When randomized, both types are the same
+                        type1 = GetRandomType(gBattleMons[battler].species, 0);
+                        // Only randomize type2 if the original species had a dual type
+                        if (isOriginalDualType)
+                        {
+                            type2 = GetRandomType(gBattleMons[battler].species, 1);
+                        }
+                        else
+                        {
+                            type2 = type1;
+                        }
                     }
                     else
                     {
@@ -3635,12 +3657,15 @@ static void DoBattleIntro(void)
                 // Apply move randomization if enabled
                 if (FlagGet(FLAG_RANDOMIZE_MOVES))
                 {
-                    u32 partyIndex = gBattlerPartyIndexes[battler];
                     u32 moveIdx;
                     for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
                     {
-                        gBattleMons[battler].moves[moveIdx] = GetRandomMove(partyIndex, moveIdx);
-                        gBattleMons[battler].pp[moveIdx] = GetMovePP(gBattleMons[battler].moves[moveIdx]);
+                        if (gBattleMons[battler].moves[moveIdx] != MOVE_NONE)
+                        {
+                            u16 originalMove = gBattleMons[battler].moves[moveIdx];
+                            gBattleMons[battler].moves[moveIdx] = GetRandomMove(gBattleMons[battler].species, originalMove);
+                            gBattleMons[battler].pp[moveIdx] = GetMovePP(gBattleMons[battler].moves[moveIdx]);
+                        }
                     }
                 }
             }
@@ -4634,8 +4659,15 @@ static void HandleTurnActionSelectionState(void)
                             u16 moveId;
                             if (FlagGet(FLAG_RANDOMIZE_MOVES))
                             {
-                                u32 partyIndex = gBattlerPartyIndexes[battler];
-                                moveId = GetRandomMove(partyIndex, gBattleStruct->chosenMovePositions[battler]);
+                                u16 originalMove = gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
+                                if (originalMove != MOVE_NONE)
+                                {
+                                    moveId = GetRandomMove(gBattleMons[battler].species, originalMove);
+                                }
+                                else
+                                {
+                                    moveId = originalMove;
+                                }
                             }
                             else
                             {

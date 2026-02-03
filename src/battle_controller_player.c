@@ -29,6 +29,8 @@
 #include "task.h"
 #include "test_runner.h"
 #include "text.h"
+#include "ui_birch_case.h"
+#include "event_data.h"
 #include "util.h"
 #include "window.h"
 #include "line_break.h"
@@ -1760,6 +1762,13 @@ static void MoveSelectionDisplayMoveType(u32 battler)
         struct Pokemon *mon = GetBattlerMon(battler);
         type = CheckDynamicMoveType(mon, move, battler, MON_IN_BATTLE);
     }
+    
+    // Apply type randomization if enabled (after dynamic type to override it)
+    if (FlagGet(FLAG_RANDOMIZE_TYPE))
+    {
+        type = GetRandomMoveType(move);
+    }
+    
     end = StringCopy(txtPtr, gTypesInfo[type].name);
 
     PrependFontIdToFit(txtPtr, end, FONT_NORMAL, WindowWidthPx(B_WIN_MOVE_TYPE) - 25);
@@ -2441,6 +2450,13 @@ static u32 CheckTypeEffectiveness(u32 targetId, u32 battler)
     struct Pokemon *mon = GetBattlerMon(battler);
     u32 move = moveInfo->moves[gMoveSelectionCursor[battler]];
     u32 moveType = CheckDynamicMoveType(mon, move, battler, MON_IN_BATTLE);
+    
+    // Apply type randomization if enabled (after dynamic type to override it)
+    if (FlagGet(FLAG_RANDOMIZE_TYPE))
+    {
+        moveType = GetRandomMoveType(move);
+    }
+    
     uq4_12_t modifier = CalcTypeEffectivenessMultiplier(move, moveType, battler, targetId, GetBattlerAbility(targetId), FALSE);
 
     if (!ShouldShowTypeEffectiveness(targetId))
