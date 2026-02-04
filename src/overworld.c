@@ -1951,8 +1951,15 @@ void CB2_ReturnToFieldWithOpenMenu(void)
     CB2_ReturnToField();
 }
 
+
 bool8 IsPartyEmpty(void)
 {
+    // Do not perform check if the player hasn't gotten their starter mon yet
+    if (!FlagGet(FLAG_HIDE_ROUTE_101_BIRCH_STARTERS_BAG))
+    {
+        return FALSE;
+    }
+
     int i;
     for (i = 0; i < PARTY_SIZE; i++)
     {
