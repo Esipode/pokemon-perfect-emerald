@@ -25,7 +25,7 @@
 #define tSound data[4]
 #define tButtonMode data[5]
 #define tWindowFrameType data[6]
-#define tAIBattles data[7]
+#define tAIBattles data[7] // bit0 = trainer AI, bit1 = wild AI
 #define tAutoScroll data[8]
 #define tRandomizer data[9]
 #define tRandomizerType data[10]
@@ -50,7 +50,8 @@ enum
 // Menu items Pg2
 enum
 {
-    MENUITEM_AIBATTLES,
+    MENUITEM_AIBATTLES_TRAINER,
+    MENUITEM_AIBATTLES_WILD,
     MENUITEM_AUTOSCROLL,
     MENUITEM_NUZLOCKE,
     MENUITEM_AUTOSAVE,
@@ -85,11 +86,12 @@ enum
 #define YPOS_FRAMETYPE    (MENUITEM_FRAMETYPE * 16)
 
 //Pg2
-#define YPOS_AIBATTLES    (MENUITEM_AIBATTLES * 16)
-#define YPOS_AUTOSCROLL   (MENUITEM_AUTOSCROLL * 16)
-#define YPOS_NUZLOCKE     (MENUITEM_NUZLOCKE * 16)
-#define YPOS_AUTOSAVE     (MENUITEM_AUTOSAVE * 16)
-#define YPOS_DIFFICULTY   (MENUITEM_DIFFICULTY * 16)
+#define YPOS_AIBATTLES_TRAINER    (MENUITEM_AIBATTLES_TRAINER * 16)
+#define YPOS_AIBATTLES_WILD       (MENUITEM_AIBATTLES_WILD * 16)
+#define YPOS_AUTOSCROLL           (MENUITEM_AUTOSCROLL * 16)
+#define YPOS_NUZLOCKE             (MENUITEM_NUZLOCKE * 16)
+#define YPOS_AUTOSAVE             (MENUITEM_AUTOSAVE * 16)
+#define YPOS_DIFFICULTY           (MENUITEM_DIFFICULTY * 16)
 
 //Pg3
 #define YPOS_RANDOMIZER   (MENUITEM_RANDOMIZER * 16)
@@ -116,6 +118,7 @@ static u8 BattleStyle_ProcessInput(u8 selection);
 static void BattleStyle_DrawChoices(u8 selection);
 static u8 AIBattles_ProcessInput(u8 selection);
 static void AIBattles_DrawChoices(u8 selection);
+static void WildAIBattles_DrawChoices(u8 selection);
 static u8   AutoScroll_ProcessInput(u8 selection);
 static void AutoScroll_DrawChoices(u8 selection);
 static u8   Randomizer_ProcessInput(u8 selection);
@@ -141,6 +144,7 @@ static void ButtonMode_DrawChoices(u8 selection);
 static void DrawHeaderText(void);
 static void DrawOptionMenuTexts(void);
 static void DrawBgWindowFrames(void);
+static void DrawOptionMenuChoice(const u8 *text, u8 x, u8 y, u8 style);
 
 EWRAM_DATA static bool8 sArrowPressed = FALSE;
 EWRAM_DATA static u8 sCurrPage = 0;
@@ -162,7 +166,8 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
 
 static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
 {
-    [MENUITEM_AIBATTLES]         = gText_AIBattles,
+    [MENUITEM_AIBATTLES_TRAINER] = gText_AIBattlesTrainer,
+    [MENUITEM_AIBATTLES_WILD]    = gText_AIBattlesWild,
     [MENUITEM_AUTOSCROLL]        = gText_AutoScroll,
     [MENUITEM_NUZLOCKE]          = gText_Nuzlocke,
     [MENUITEM_AUTOSAVE]          = gText_Autosave,
@@ -250,7 +255,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tSound = gSaveBlock2Ptr->optionsSound;
     gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
     gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
-    gTasks[taskId].tAIBattles = FlagGet(FLAG_AI_BATTLES);
+    gTasks[taskId].tAIBattles = (FlagGet(FLAG_AI_BATTLES) ? 1 : 0) | (FlagGet(FLAG_AI_WILD_BATTLES) ? 2 : 0);
     gTasks[taskId].tAutoScroll = FlagGet(FLAG_AUTO_SCROLL_TEXT);
     gTasks[taskId].tRandomizer = FlagGet(FLAG_RANDOMIZE_MON);
     gTasks[taskId].tRandomizerType = FlagGet(FLAG_RANDOMIZE_TYPE);
@@ -277,7 +282,8 @@ static void DrawOptionsPg1(u8 taskId)
 static void DrawOptionsPg2(u8 taskId)
 {
     ReadAllCurrentSettings(taskId);
-    AIBattles_DrawChoices(gTasks[taskId].tAIBattles);
+    AIBattles_DrawChoices(gTasks[taskId].tAIBattles & 1);
+    WildAIBattles_DrawChoices((gTasks[taskId].tAIBattles & 2) ? 1 : 0);
     AutoScroll_DrawChoices(gTasks[taskId].tAutoScroll);
     Nuzlocke_DrawChoices(gTasks[taskId].tNuzlocke);
     Autosave_DrawChoices(gTasks[taskId].tAutosave);
@@ -588,13 +594,34 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
 
         switch (gTasks[taskId].tMenuSelection)
         {
-        case MENUITEM_AIBATTLES:
-            previousOption = gTasks[taskId].tAIBattles;
-            gTasks[taskId].tAIBattles = AIBattles_ProcessInput(gTasks[taskId].tAIBattles);
-
-            if (previousOption != gTasks[taskId].tAIBattles)
-                AIBattles_DrawChoices(gTasks[taskId].tAIBattles);
+        case MENUITEM_AIBATTLES_TRAINER:
+        {
+            u8 prev = gTasks[taskId].tAIBattles & 1;
+            u8 sel = AIBattles_ProcessInput(prev);
+            if (prev != sel)
+            {
+                if (sel)
+                    gTasks[taskId].tAIBattles |= 1;
+                else
+                    gTasks[taskId].tAIBattles &= ~1;
+                AIBattles_DrawChoices(sel);
+            }
             break;
+        }
+        case MENUITEM_AIBATTLES_WILD:
+        {
+            u8 prev = (gTasks[taskId].tAIBattles & 2) ? 1 : 0;
+            u8 sel = AIBattles_ProcessInput(prev);
+            if (prev != sel)
+            {
+                if (sel)
+                    gTasks[taskId].tAIBattles |= 2;
+                else
+                    gTasks[taskId].tAIBattles &= ~2;
+                WildAIBattles_DrawChoices(sel);
+            }
+            break;
+        }
         case MENUITEM_AUTOSCROLL:
             previousOption = gTasks[taskId].tAutoScroll;
             gTasks[taskId].tAutoScroll = AutoScroll_ProcessInput(gTasks[taskId].tAutoScroll);
@@ -729,7 +756,9 @@ static void Task_OptionMenuSave(u8 taskId)
     gSaveBlock2Ptr->optionsSound = gTasks[taskId].tSound;
     gSaveBlock2Ptr->optionsButtonMode = gTasks[taskId].tButtonMode;
     gSaveBlock2Ptr->optionsWindowFrameType = gTasks[taskId].tWindowFrameType;
-    gTasks[taskId].tAIBattles == 0 ? FlagClear(FLAG_AI_BATTLES) : FlagSet(FLAG_AI_BATTLES);
+    /* Save trainer and wild AI flags from the bitmask */
+    (gTasks[taskId].tAIBattles & 1) == 0 ? FlagClear(FLAG_AI_BATTLES) : FlagSet(FLAG_AI_BATTLES);
+    (gTasks[taskId].tAIBattles & 2) == 0 ? FlagClear(FLAG_AI_WILD_BATTLES) : FlagSet(FLAG_AI_WILD_BATTLES);
     gTasks[taskId].tAutoScroll == 0 ? FlagClear(FLAG_AUTO_SCROLL_TEXT) : FlagSet(FLAG_AUTO_SCROLL_TEXT);
     gTasks[taskId].tRandomizer == 0 ? FlagClear(FLAG_RANDOMIZE_MON) : FlagSet(FLAG_RANDOMIZE_MON);
     gTasks[taskId].tRandomizerType == 0 ? FlagClear(FLAG_RANDOMIZE_TYPE) : FlagSet(FLAG_RANDOMIZE_TYPE);
@@ -817,8 +846,18 @@ static void AIBattles_DrawChoices(u8 selection)
     styles[0] = 0;
     styles[1] = 0;
     styles[selection] = 1;
-    DrawOptionMenuChoice(gText_AIBattlesOff, 104, YPOS_AIBATTLES, styles[0]);
-    DrawOptionMenuChoice(gText_AIBattlesOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_AIBattlesOn, 198), YPOS_AIBATTLES, styles[1]);
+    DrawOptionMenuChoice(gText_AIBattlesOff, 104, YPOS_AIBATTLES_TRAINER, styles[0]);
+    DrawOptionMenuChoice(gText_AIBattlesOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_AIBattlesOn, 198), YPOS_AIBATTLES_TRAINER, styles[1]);
+}
+
+static void WildAIBattles_DrawChoices(u8 selection)
+{
+    u8 styles[2];
+    styles[0] = 0;
+    styles[1] = 0;
+    styles[selection] = 1;
+    DrawOptionMenuChoice(gText_AIBattlesOff, 104, YPOS_AIBATTLES_WILD, styles[0]);
+    DrawOptionMenuChoice(gText_AIBattlesOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_AIBattlesOn, 198), YPOS_AIBATTLES_WILD, styles[1]);
 }
 
 static u8 AutoScroll_ProcessInput(u8 selection)

@@ -27,13 +27,15 @@
 	- Upon Whiteout, save file is wiped and game resets to the beginning.
     - Breeding Pokémon is disabled in this mode
 - Auto-Battle Mode
-	- Allows AI to do your trainer battles for you (uses a simple AI so you can't brute-force challenging encounters)
+	- Allows AI to do your battles for you (uses a simple AI so you can't brute-force challenging encounters)
+	- Comes with two options: `Wild` AI battles and `Trainer` AI battles, which can be toggled separately
 - Randomizer Mode
-	- Every starter choice, wild encounter, and trainer battle will use randomized Pokémon
+	- Every starter choice, wild encounter, and trainer battle can be randomized
+	- You can also randomize moves and types (separately)
 - Autosave Mode
 	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
 - Auto-skip dialogue
-    - When enabled, messages automatically continue until you reach the final dialogue of the message box
+    - When enabled, message boxes automatically continue without player input
 
 ## Minor features
 - Breeding Improvements

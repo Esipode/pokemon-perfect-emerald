@@ -666,7 +666,7 @@
 #define FLAG_OW_FLAG_NO_ENCOUNTER        0x26B // In debug menu, toggles this feature
 #define FLAG_OW_FLAG_NO_TRAINER_SEE      0x26C // In debug menu, toggles this feature
 #define FLAG_OW_FLAG_NO_COLLISION        0x26D // In debug menu, toggles this feature
-#define FLAG_AI_BATTLES                  0x26E // Sets whether AI battles for you
+#define FLAG_AI_BATTLES                  0x26E // Sets whether AI battles for you (trainer battles)
 #define FLAG_RUNNING_SHOES_TOGGLE        0x26F // Toggles running state
 #define FLAG_IS_CHALLENGING_CHAMPION     0x270 // Toggles if a champion challenge is taking place
 #define FLAG_HIDE_CHAMPION_CHALLENGER_1  0x271 // Toggle hiding the first champion challenger
@@ -695,8 +695,7 @@
 #define FLAG_RANDOMIZE_TYPE              0x288 // Flag for toggling random Pokemon types
 #define FLAG_RANDOMIZE_MOVES             0x289 // Flag for toggling random Pokemon moves
 #define FLAG_LEVEL_CAP_OFF               0x28A // Flag for toggling level cap off
-#define FLAG_UNUSED_0x28B  0x28B // Unused Flag
-#define FLAG_UNUSED_0x28B  0x28B // Unused Flag
+#define FLAG_AI_WILD_BATTLES             0x28B // Sets whether AI controls wild battles
 #define FLAG_UNUSED_0x28C  0x28C // Unused Flag
 #define FLAG_UNUSED_0x28D  0x28D // Unused Flag
 #define FLAG_UNUSED_0x28E  0x28E // Unused Flag

@@ -183,7 +183,7 @@ static u64 GetAiFlags(u16 trainerId)
 {
     u64 flags = 0;
 
-    if (!(gBattleTypeFlags & BATTLE_TYPE_HAS_AI) && !IsWildMonSmart())
+    if (!(gBattleTypeFlags & BATTLE_TYPE_HAS_AI) && !IsWildMonSmart() && (gBattleTypeFlags & BATTLE_TYPE_TRAINER || !FlagGet(FLAG_AI_WILD_BATTLES)))
         return 0;
     if (trainerId == 0xFFFF)
     {
@@ -251,8 +251,11 @@ static u64 GetAiFlags(u16 trainerId)
 
 void BattleAI_SetupFlags(void)
 {
-    if (IsAiVsAiBattle())
-        gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = GetAiFlags(gPartnerTrainerId) | AI_FLAG_CHECK_BAD_MOVE;
+    if (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)))
+    {
+        u16 trainerId = IsAiVsAiBattle() ? gPartnerTrainerId : 0xFFFF;
+        gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = GetAiFlags(trainerId) | AI_FLAG_CHECK_BAD_MOVE;
+    }
     else
         gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = 0; // player has no AI
 
@@ -282,7 +285,7 @@ void BattleAI_SetupFlags(void)
     {
         gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_RIGHT] = GetAiFlags(gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE));
     }
-    else if (IsDoubleBattle() && IsAiVsAiBattle())
+    else if (IsDoubleBattle() && (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES))))
     {
         gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_RIGHT] = gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT];
     }
@@ -391,9 +394,11 @@ void SetupAIPredictionData(u32 battler, enum SwitchType switchType)
 
 void ComputeBattlerDecisions(u32 battler)
 {
-    if ((gBattleTypeFlags & BATTLE_TYPE_HAS_AI || IsWildMonSmart())
-        && (BattlerHasAi(battler)
-        && !(gBattleTypeFlags & BATTLE_TYPE_PALACE)))
+    bool32 shouldComputeAI = (gBattleTypeFlags & BATTLE_TYPE_HAS_AI) 
+                          || IsWildMonSmart() 
+                          || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES));
+    
+    if (shouldComputeAI && BattlerHasAi(battler) && !(gBattleTypeFlags & BATTLE_TYPE_PALACE))
     {
         // If ai is about to flee or chosen to watch player, no need to calc anything
         if (BattlerChoseNonMoveAction())
@@ -611,7 +616,7 @@ void SetAiLogicDataForTurn(struct AiLogicData *aiData)
     u32 battlerAtk, battlersCount, weather;
 
     memset(aiData, 0, sizeof(struct AiLogicData));
-    if (!(gBattleTypeFlags & BATTLE_TYPE_HAS_AI) && !IsWildMonSmart())
+    if (!(gBattleTypeFlags & BATTLE_TYPE_HAS_AI) && !IsWildMonSmart() && (gBattleTypeFlags & BATTLE_TYPE_TRAINER || !FlagGet(FLAG_AI_WILD_BATTLES)))
         return;
 
     // Set delay timer to count how long it takes for AI to choose action/move

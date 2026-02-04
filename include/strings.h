@@ -295,6 +295,9 @@ extern const u8 gText_OptionMenuCancel[];
 extern const u8 gText_ButtonMode[];
 extern const u8 gText_AIBattles[];
 extern const u8 gText_AutoScroll[];
+
+extern const u8 gText_AIBattlesTrainer[];
+extern const u8 gText_AIBattlesWild[];
 extern const u8 gText_Randomizer[];
 extern const u8 gText_SpeciesRandomizer[];
 extern const u8 gText_TypeRandomizer[];

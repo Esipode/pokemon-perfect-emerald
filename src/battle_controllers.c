@@ -27,6 +27,7 @@
 #include "constants/abilities.h"
 #include "constants/songs.h"
 #include "pokemon_animation.h"
+#include "event_data.h"
 
 static EWRAM_DATA u8 sLinkSendTaskId = 0;
 static EWRAM_DATA u8 sLinkReceiveTaskId = 0;
@@ -187,7 +188,7 @@ static void InitSinglePlayerBtlControllers(void)
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToSafari;
         else if (gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL)
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToWally;
-        else if (IsAiVsAiBattle())
+        else if (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)))
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayerPartner;
         else
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayer;
@@ -240,7 +241,7 @@ static void InitSinglePlayerBtlControllers(void)
     {
         gBattleMainFunc = BeginBattleIntro;
 
-        if (IsAiVsAiBattle())
+        if (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)))
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayerPartner;
         else
             gBattlerControllerFuncs[B_BATTLER_0] = SetControllerToPlayer;
@@ -249,7 +250,7 @@ static void InitSinglePlayerBtlControllers(void)
         gBattlerControllerFuncs[B_BATTLER_1] = SetControllerToOpponent;
         gBattlerPositions[B_BATTLER_1] = B_POSITION_OPPONENT_LEFT;
 
-        if (IsAiVsAiBattle())
+        if (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)))
             gBattlerControllerFuncs[B_BATTLER_2] = SetControllerToPlayerPartner;
         else
             gBattlerControllerFuncs[B_BATTLER_2] = SetControllerToPlayer;

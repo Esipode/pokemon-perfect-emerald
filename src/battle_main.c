@@ -3109,7 +3109,7 @@ static void ClearSetBScriptingStruct(void)
     memset(&gBattleScripting, 0, sizeof(gBattleScripting));
 
     gBattleScripting.windowsType = temp;
-    gBattleScripting.battleStyle = FlagGet(FLAG_AI_BATTLES) ? TRUE : gSaveBlock2Ptr->optionsBattleStyle;
+    gBattleScripting.battleStyle = ((FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)) || (FlagGet(FLAG_AI_WILD_BATTLES) && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER))) ? TRUE : gSaveBlock2Ptr->optionsBattleStyle;
     gBattleScripting.expOnCatch = (B_EXP_CATCH >= GEN_6);
     gBattleScripting.specialTrainerBattleType = specialBattleType;
 }

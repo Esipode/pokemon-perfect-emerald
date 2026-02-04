@@ -9284,7 +9284,7 @@ static void Cmd_drawlvlupbox(void)
             sLvlUpAutoCloseCounter = 0;
             gBattleScripting.drawlvlupboxState++;
         }
-        else if (FlagGet(FLAG_AI_BATTLES))
+        else if ((FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)) || (FlagGet(FLAG_AI_WILD_BATTLES) && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
         {
             if (sLvlUpAutoCloseCounter++ >= 90)
             {
@@ -9308,7 +9308,7 @@ static void Cmd_drawlvlupbox(void)
             sLvlUpAutoCloseCounter = 0;
             gBattleScripting.drawlvlupboxState++;
         }
-        else if (FlagGet(FLAG_AI_BATTLES))
+        else if ((FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)) || (FlagGet(FLAG_AI_WILD_BATTLES) && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
         {
             if (sLvlUpAutoCloseCounter++ >= 90)
             {
