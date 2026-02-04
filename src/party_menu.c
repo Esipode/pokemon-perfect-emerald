@@ -2700,13 +2700,24 @@ static void DisplayPartyPokemonHP(u16 hp, u16 maxhp, struct PartyMenuBox *menuBo
     bool32 fourDigits = (maxhp >= 1000);
     u8 *strOut = ConvertIntToDecimalStringN(gStringVar1, hp, STR_CONV_MODE_LEFT_ALIGN, fourDigits ? 4 : 3);
 
-    strOut[0] = CHAR_SLASH;
-    strOut[1] = EOS;
+    strOut[0] = EOS;
 
     if (fourDigits)
+    {
         DisplayParty4DigitsHP(menuBox, gStringVar1, &menuBox->infoRects->dimensions[12], 0);
+    }
     else
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[12]);
+    {
+        // Adjust the width of strOut
+        u8 strOutWidth = fourDigits ? 4 : 3;
+        strOut[strOutWidth] = EOS;
+
+        // Adjust the alignment
+        u8 newAligns[4];
+        memcpy(newAligns, &menuBox->infoRects->dimensions[12], sizeof(newAligns));
+        newAligns[0] -= (4 - strOutWidth) / 2; // Adjust the x alignment
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, newAligns);
+    }
 }
 
 static void DisplayPartyPokemonMaxHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
