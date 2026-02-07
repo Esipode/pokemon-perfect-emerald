@@ -4959,7 +4959,7 @@ EVs: 0 HP / 30 Atk / 0 Def / 0 SpA / 0SpD / 30 Spe
 Minior
 Level: 13
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
-EVs: 80 HP / 0 Atk / 80 Def / 0 SpA / 80SpD / 0 Spe
+EVs: 60 HP / 20 Atk / 60 Def / 20 SpA / 60SpD / 20 Spe
 - Tackle
 - Defense Curl
 - Rock Throw
@@ -4968,7 +4968,7 @@ EVs: 80 HP / 0 Atk / 80 Def / 0 SpA / 80SpD / 0 Spe
 Nosepass @ Oran Berry
 Level: 15
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-EVs: 50 HP / 50 Atk / 100 Def / 0 SpA / 100SpD / 0 Spe
+EVs: 40 HP / 60 Atk / 80 Def / 20 SpA / 80SpD / 20 Spe
 - Block
 - Harden
 - Tackle
@@ -5047,8 +5047,8 @@ Kilowattrel
 Level: 22
 Ability: Competitive
 Nature: Timid
-IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
-EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 60 Spe
+IVs: 30 HP / 0 Atk / 20 Def / 0 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 40 Spe
 - Thunderbolt
 - Air Slash
 - Volt Switch
