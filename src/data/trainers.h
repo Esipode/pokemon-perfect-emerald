@@ -12190,7 +12190,7 @@ F_TRAINER_FEMALE |
             .species = SPECIES_MINIOR,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 4962
-            .ev = TRAINER_PARTY_EVS(80, 0, 80, 0, 0, 80),
+            .ev = TRAINER_PARTY_EVS(60, 20, 60, 20, 20, 60),
 #line 4961
             .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20),
 #line 4960
@@ -12212,7 +12212,7 @@ F_TRAINER_FEMALE |
 #line 4968
             .heldItem = ITEM_ORAN_BERRY,
 #line 4971
-            .ev = TRAINER_PARTY_EVS(50, 50, 100, 0, 0, 100),
+            .ev = TRAINER_PARTY_EVS(40, 60, 80, 20, 20, 80),
 #line 4970
             .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31),
 #line 4969
@@ -12386,9 +12386,9 @@ F_TRAINER_FEMALE |
             .species = SPECIES_KILOWATTREL,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 5051
-            .ev = TRAINER_PARTY_EVS(0, 0, 0, 60, 0, 0),
+            .ev = TRAINER_PARTY_EVS(0, 0, 0, 40, 0, 0),
 #line 5050
-            .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20),
+            .iv = TRAINER_PARTY_IVS(30, 0, 20, 20, 0, 20),
 #line 5048
             .ability = ABILITY_COMPETITIVE,
 #line 5047
@@ -12399,7 +12399,7 @@ F_TRAINER_FEMALE |
             .moves = {
 #line 5052
                 MOVE_THUNDERBOLT,
-                MOVE_AIR_SLASH,
+                MOVE_PLUCK,
                 MOVE_VOLT_SWITCH,
                 MOVE_TAILWIND,
             },

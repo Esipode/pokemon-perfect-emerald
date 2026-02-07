@@ -5037,8 +5037,8 @@ Level: 21
 Ability: Hunger Switch
 Nature: Jolly
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
-EVs: 0 HP / 30 Atk / 0 Def / 0 SpA / 0 SpD / 30 Spe
-- Aura Wheel
+EVs: 0 HP / 40 Atk / 0 Def / 0 SpA / 0 SpD / 40 Spe
+- Spark
 - Psychic Fangs
 - Fake Out
 - Parting Shot
@@ -5047,8 +5047,8 @@ Kilowattrel
 Level: 22
 Ability: Competitive
 Nature: Timid
-IVs: 30 HP / 0 Atk / 20 Def / 0 SpA / 20 SpD / 20 Spe
-EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 40 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 60 Spe
 - Thunderbolt
 - Pluck
 - Volt Switch
@@ -5059,7 +5059,7 @@ Level: 23
 Ability: Lightning Rod
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-EVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 30 HP / 30 Atk / 20 Def / 30 SpA / 20 SpD / 60 Spe
 - Thunderbolt
 - Flamethrower
 - Snarl
