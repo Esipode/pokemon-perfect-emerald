@@ -12363,7 +12363,7 @@ F_TRAINER_FEMALE |
             .species = SPECIES_MORPEKO,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 5040
-            .ev = TRAINER_PARTY_EVS(0, 30, 0, 30, 0, 0),
+            .ev = TRAINER_PARTY_EVS(0, 40, 0, 40, 0, 0),
 #line 5039
             .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20),
 #line 5037
@@ -12375,7 +12375,7 @@ F_TRAINER_FEMALE |
             .dynamaxLevel = MAX_DYNAMAX_LEVEL,
             .moves = {
 #line 5041
-                MOVE_AURA_WHEEL,
+                MOVE_SPARK,
                 MOVE_PSYCHIC_FANGS,
                 MOVE_FAKE_OUT,
                 MOVE_PARTING_SHOT,
@@ -12386,9 +12386,9 @@ F_TRAINER_FEMALE |
             .species = SPECIES_KILOWATTREL,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 5051
-            .ev = TRAINER_PARTY_EVS(0, 0, 0, 40, 0, 0),
+            .ev = TRAINER_PARTY_EVS(0, 0, 0, 60, 0, 0),
 #line 5050
-            .iv = TRAINER_PARTY_IVS(30, 0, 20, 20, 0, 20),
+            .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20),
 #line 5048
             .ability = ABILITY_COMPETITIVE,
 #line 5047
@@ -12409,7 +12409,7 @@ F_TRAINER_FEMALE |
             .species = SPECIES_MANECTRIC,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 5062
-            .ev = TRAINER_PARTY_EVS(20, 20, 20, 20, 20, 20),
+            .ev = TRAINER_PARTY_EVS(30, 30, 20, 60, 30, 20),
 #line 5061
             .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31),
 #line 5059

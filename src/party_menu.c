@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "global.h"
 #include "malloc.h"
 #include "battle.h"
@@ -2636,10 +2637,22 @@ static void DisplayPartyPokemonLevelCheck(struct Pokemon *mon, struct PartyMenuB
 
 static void DisplayPartyPokemonLevel(u8 level, struct PartyMenuBox *menuBox)
 {
+    u32 levelCap = GetCurrentLevelCap();
+    bool isAtLevelCap = (level >= levelCap);
+
+    // Prepare the level string
     ConvertIntToDecimalStringN(gStringVar2, level, STR_CONV_MODE_LEFT_ALIGN, 3);
     StringCopy(gStringVar1, gText_LevelSymbol);
     StringAppend(gStringVar1, gStringVar2);
-    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[4]);
+
+    // If at level cap, add color control code
+    if (B_EXP_CAP_TYPE == EXP_CAP_HARD && isAtLevelCap)
+    {
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 2, &menuBox->infoRects->dimensions[4]);
+    }
+    else {
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[4]);
+    }
 }
 
 static void DisplayPartyPokemonGenderNidoranCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
