@@ -39,6 +39,7 @@ LilycoveCity_DepartmentStore_5F_Pokemart_Dolls:
 	.2byte ITEM_REAPER_CLOTH
 	.2byte ITEM_SACHET
 	.2byte ITEM_WHIPPED_DREAM
+	.2byte ITEM_PRISM_SCALE
 	pokemartlistend
 
 LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidLeft::
