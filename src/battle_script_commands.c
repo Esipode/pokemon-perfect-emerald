@@ -5026,34 +5026,33 @@ static void Cmd_getexp(void)
             {
                 *exp = calculatedExp;
                 // Custom - Reduce xp gained to align with expanded exp tables
-                gBattleStruct->expShareExpValue = (calculatedExp / 2) / 12;
+
+                // Count empty party slots and pokemon in party at level cap, apply xp multiplier for each match in party slots
+                u32 incapableCount = 0;
+                for (u8 i = 0; i < PARTY_SIZE; i++)
+                {
+                    struct Pokemon *mon = &gPlayerParty[i];
+
+                    if (!mon) {
+                        incapableCount++;
+                        continue;
+                    }
+
+                    u32 currentLevel = GetMonData(mon, MON_DATA_LEVEL, 0);
+                    u32 levelCap = GetCurrentLevelCap();
+
+                    if (currentLevel == levelCap)
+                    {
+                        incapableCount++;
+                    }
+                }
+
+                gBattleStruct->expShareExpValue = (((calculatedExp / 2) / (14 - incapableCount)) * (1 + (0.1 * incapableCount)));
                 if (gBattleStruct->expShareExpValue == 0)
                     gBattleStruct->expShareExpValue = 1;
             }
 
-            // Count empty party slots and pokemon in party at level cap, apply xp multiplier for each match in party slots
-            u32 incapableCount = 0;
-
-            for (u8 i = 0; i < PARTY_SIZE; i++)
-            {
-                struct Pokemon *mon = &gPlayerParty[i];
-
-                if (!mon) {
-                    incapableCount++;
-                    continue;
-                }
-
-                u32 currentLevel = GetMonData(mon, MON_DATA_LEVEL, 0);
-                u32 levelCap = GetCurrentLevelCap();
-
-                if (currentLevel == levelCap)
-                {
-                    incapableCount++;
-                }
-            }
-
-            // CUSTOM - Reduce xp gained to align with expanded exp tables
-            *exp /= (14 - incapableCount);
+            *exp /= 9;
             gBattleScripting.getexpState++;
             gBattleStruct->expOrderId = 0;
             *expMonId = gBattleStruct->expGettersOrder[0];
