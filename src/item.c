@@ -17,6 +17,7 @@
 #include "graphics.h"
 #include "constants/battle.h"
 #include "constants/items.h"
+#include "constants/flags.h"
 #include "constants/moves.h"
 #include "constants/item_effects.h"
 #include "constants/hold_effects.h"
@@ -881,7 +882,9 @@ const u8 *GetItemName(u16 itemId)
 
 u32 GetItemPrice(u16 itemId)
 {
-    return gItemsInfo[SanitizeItemId(itemId)].price;
+    u32 price = gItemsInfo[SanitizeItemId(itemId)].price;
+    price /= FlagGet(FLAG_IS_CHAMPION) ? 10 : 1;
+    return price;
 }
 
 static bool32 DoesItemHavePluralName(u16 itemId)

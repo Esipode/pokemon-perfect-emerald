@@ -173,7 +173,7 @@ const struct Item gItemsInfo[] =
     [ITEM_POKE_BALL] =
     {
         .name = _("Poké Ball"),
-        .price = 20,
+        .price = 100,
         .description = COMPOUND_STRING(
             "A tool used for\n"
             "catching wild\n"
@@ -189,7 +189,7 @@ const struct Item gItemsInfo[] =
     [ITEM_GREAT_BALL] =
     {
         .name = _("Great Ball"),
-        .price = 60,
+        .price = 150,
         .description = COMPOUND_STRING(
             "A good Ball with a\n"
             "higher catch rate\n"
@@ -205,7 +205,7 @@ const struct Item gItemsInfo[] =
     [ITEM_ULTRA_BALL] =
     {
         .name = _("Ultra Ball"),
-        .price = 120,
+        .price = 200,
         .description = COMPOUND_STRING(
             "A better Ball with\n"
             "a higher catch rate\n"
@@ -237,7 +237,7 @@ const struct Item gItemsInfo[] =
     [ITEM_PREMIER_BALL] =
     {
         .name = _("Premier Ball"),
-        .price = 20,
+        .price = 200,
         .description = COMPOUND_STRING(
             "A rare Ball made\n"
             "in commemoration\n"
@@ -253,7 +253,7 @@ const struct Item gItemsInfo[] =
     [ITEM_HEAL_BALL] =
     {
         .name = _("Heal Ball"),
-        .price = 30,
+        .price = 300,
         .description = COMPOUND_STRING(
             "A remedial Ball\n"
             "that restores\n"
@@ -397,7 +397,7 @@ const struct Item gItemsInfo[] =
     [ITEM_LEVEL_BALL] =
     {
         .name = _("Level Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "A Ball that works\n"
             "well on lower\n"
@@ -413,7 +413,7 @@ const struct Item gItemsInfo[] =
     [ITEM_LURE_BALL] =
     {
         .name = _("Lure Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "A Ball that works\n"
             "well on fished\n"
@@ -429,7 +429,7 @@ const struct Item gItemsInfo[] =
     [ITEM_MOON_BALL] =
     {
         .name = _("Moon Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "A Ball that works\n"
             "well on Moon\n"
@@ -445,7 +445,7 @@ const struct Item gItemsInfo[] =
     [ITEM_FRIEND_BALL] =
     {
         .name = _("Friend Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "A Ball that makes\n"
             "a Pokémon friendly\n"
@@ -461,7 +461,7 @@ const struct Item gItemsInfo[] =
     [ITEM_LOVE_BALL] =
     {
         .name = _("Love Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Works well on\n"
             "Pokémon of the\n"
@@ -477,7 +477,7 @@ const struct Item gItemsInfo[] =
     [ITEM_FAST_BALL] =
     {
         .name = _("Fast Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Works well on\n"
             "very fast\n"
@@ -493,7 +493,7 @@ const struct Item gItemsInfo[] =
     [ITEM_HEAVY_BALL] =
     {
         .name = _("Heavy Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Works well on\n"
             "very heavy\n"
@@ -546,7 +546,7 @@ const struct Item gItemsInfo[] =
     [ITEM_SPORT_BALL] =
     {
         .name = _("Sport Ball"),
-        .price = 30,
+        .price = 100,
         .description = COMPOUND_STRING(
             "A special Ball\n"
             "used in the Bug-\n"
@@ -1916,7 +1916,7 @@ const struct Item gItemsInfo[] =
     {
         .name = _("Rare Candy"),
         .pluralName = _("Rare Candies"),
-        .price = 100,
+        .price = 2800,
         .description = COMPOUND_STRING(
             "Raises the level\n"
             "of a Pokémon by\n"
@@ -1934,7 +1934,7 @@ const struct Item gItemsInfo[] =
     {
         .name = _("Exp. Candy XS"),
         .pluralName = _("Exp. Candies XS"),
-        .price = 20,
+        .price = 100,
         .holdEffectParam = EXP_20,
         .description = COMPOUND_STRING(
             "Gives a very small\n"
@@ -1953,7 +1953,7 @@ const struct Item gItemsInfo[] =
     {
         .name = _("Exp. Candy S"),
         .pluralName = _("Exp. Candies S"),
-        .price = 60,
+        .price = 200,
         .holdEffectParam = EXP_150,
         .description = COMPOUND_STRING(
             "Gives a small\n"
@@ -1972,7 +1972,7 @@ const struct Item gItemsInfo[] =
     {
         .name = _("Exp. Candy M"),
         .pluralName = _("Exp. Candies M"),
-        .price = 80,
+        .price = 300,
         .holdEffectParam = EXP_800,
         .description = COMPOUND_STRING(
             "Gives a moderate\n"
@@ -1991,7 +1991,7 @@ const struct Item gItemsInfo[] =
     {
         .name = _("Exp. Candy L"),
         .pluralName = _("Exp. Candies L"),
-        .price = 100,
+        .price = 400,
         .holdEffectParam = EXP_3000,
         .description = COMPOUND_STRING(
             "Gives a large\n"
@@ -2010,7 +2010,7 @@ const struct Item gItemsInfo[] =
     {
         .name = _("Exp. Candy XL"),
         .pluralName = _("Exp. Candies XL"),
-        .price = 150,
+        .price = 500,
         .holdEffectParam = EXP_30000,
         .description = COMPOUND_STRING(
             "Gives a very large\n"
