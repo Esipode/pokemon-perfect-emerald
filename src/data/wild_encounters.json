@@ -8789,7 +8789,7 @@
           "map": "MAP_SAFARI_ZONE_SOUTH",
           "base_label": "gSafariZone_South_Day",
           "land_mons": {
-            "encounter_rate": 4,
+            "encounter_rate": 20,
             "mons": [
               {
                 "min_level": 5,
@@ -27541,7 +27541,7 @@
           "map": "MAP_SAFARI_ZONE_SOUTHWEST",
           "base_label": "gSafariZone_Southwest_Day",
           "land_mons": {
-            "encounter_rate": 4,
+            "encounter_rate": 20,
             "mons": [
               {
                 "min_level": 5,
@@ -27847,7 +27847,7 @@
           "map": "MAP_SAFARI_ZONE_NORTH",
           "base_label": "gSafariZone_North_Day",
           "land_mons": {
-            "encounter_rate": 4,
+            "encounter_rate": 20,
             "mons": [
               {
                 "min_level": 5,
@@ -28213,7 +28213,7 @@
           "map": "MAP_SAFARI_ZONE_NORTHWEST",
           "base_label": "gSafariZone_Northwest_Day",
           "land_mons": {
-            "encounter_rate": 4,
+            "encounter_rate": 20,
             "mons": [
               {
                 "min_level": 5,
@@ -37306,7 +37306,7 @@
           "map": "MAP_SAFARI_ZONE_SOUTHEAST",
           "base_label": "gSafariZone_Southeast_Day",
           "land_mons": {
-            "encounter_rate": 25,
+            "encounter_rate": 20,
             "mons": [
               {
                 "min_level": 33,
@@ -37867,7 +37867,7 @@
           "map": "MAP_SAFARI_ZONE_NORTHEAST",
           "base_label": "gSafariZone_Northeast_Day",
           "land_mons": {
-            "encounter_rate": 25,
+            "encounter_rate": 20,
             "mons": [
               {
                 "min_level": 33,
