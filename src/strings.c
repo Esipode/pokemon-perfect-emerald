@@ -1004,6 +1004,7 @@ const u8 gText_SpeciesRandomizer[] = _("RANDOMIZE MONS");
 const u8 gText_TypeRandomizer[] = _("RANDOMIZE TYPES");
 const u8 gText_MovesRandomizer[] = _("RANDOMIZE MOVES");
 const u8 gText_LevelCap[] = _("LEVEL CAP");
+const u8 gText_LevelCapIncreased[] = _("The level cap has increased!");
 const u8 gText_Nuzlocke[] = _("NUZLOCKE");
 const u8 gText_Autosave[] = _("AUTOSAVE");
 const u8 gText_Difficulty[] = _("DIFFICULTY");

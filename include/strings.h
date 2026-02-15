@@ -303,6 +303,7 @@ extern const u8 gText_SpeciesRandomizer[];
 extern const u8 gText_TypeRandomizer[];
 extern const u8 gText_MovesRandomizer[];
 extern const u8 gText_LevelCap[];
+extern const u8 gText_LevelCapIncreased[];
 extern const u8 gText_Nuzlocke[];
 extern const u8 gText_Autosave[];
 extern const u8 gText_Difficulty[];
