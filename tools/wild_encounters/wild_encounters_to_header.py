@@ -242,7 +242,12 @@ def ImportWildEncounterFile():
                     for group in encounter[areaTable]:
                         if "mons" in group:
                             for mon in encounter[areaTable][group]:
-                                baseStructContent.append(list(mon.values()))
+                                mon_copy = mon.copy()
+                                # This is for the custom offset logic added to make adjusting groups of wild mon levels in bulk simpler
+                                if "level_offset" in encounter:
+                                    mon_copy["min_level"] += encounter["level_offset"]
+                                    mon_copy["max_level"] += encounter["level_offset"]
+                                baseStructContent.append(list(mon_copy.values()))
 
                         if "encounter_rate" in group:
                             infoStructRate = encounter[areaTable][group]

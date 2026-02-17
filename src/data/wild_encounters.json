@@ -6095,63 +6095,63 @@
             "encounter_rate": 20,
             "mons": [
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_JOLTIK"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_EMOLGA"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_BLIPBUG"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_JOLTIK"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_EMOLGA"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_BLIPBUG"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_JOLTIK"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_EMOLGA"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_BLIPBUG"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               }
             ]
@@ -6249,63 +6249,63 @@
             "encounter_rate": 20,
             "mons": [
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 30,
                 "species": "SPECIES_MINCCINO"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_LINOONE"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MANECTRIC"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_MINCCINO"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_LINOONE"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MANECTRIC"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_MINCCINO"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_LINOONE"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MANECTRIC"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               }
             ]
@@ -6403,63 +6403,63 @@
             "encounter_rate": 20,
             "mons": [
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_TEDDIURSA"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_GRUBBIN"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MANECTRIC"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_TEDDIURSA"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_GRUBBIN"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MANECTRIC"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_TEDDIURSA"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_GRUBBIN"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_KECLEON"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MANECTRIC"
               }
             ]
@@ -6557,63 +6557,63 @@
             "encounter_rate": 20,
             "mons": [
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_SHINX"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_AIPOM"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MURKROW"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_LINOONE"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_SHINX"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_AIPOM"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MURKROW"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_LINOONE"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_SHINX"
               },
               {
-                "min_level": 24,
-                "max_level": 24,
+                "min_level": 26,
+                "max_level": 28,
                 "species": "SPECIES_AIPOM"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_MURKROW"
               },
               {
-                "min_level": 26,
-                "max_level": 26,
+                "min_level": 28,
+                "max_level": 30,
                 "species": "SPECIES_LINOONE"
               }
             ]
@@ -8167,6 +8167,7 @@
         {
           "map": "MAP_MT_PYRE_1F",
           "base_label": "gMtPyre_1F_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -8443,6 +8444,7 @@
         {
           "map": "MAP_VICTORY_ROAD_1F",
           "base_label": "gVictoryRoad_1F_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -8512,6 +8514,7 @@
         {
           "map": "MAP_VICTORY_ROAD_1F",
           "base_label": "gVictoryRoad_1F_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -8581,6 +8584,7 @@
         {
           "map": "MAP_VICTORY_ROAD_1F",
           "base_label": "gVictoryRoad_1F_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -8650,6 +8654,7 @@
         {
           "map": "MAP_VICTORY_ROAD_1F",
           "base_label": "gVictoryRoad_1F_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -13367,6 +13372,7 @@
         {
           "map": "MAP_ROUTE119",
           "base_label": "gRoute119_Morning",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 15,
             "mons": [
@@ -13521,6 +13527,7 @@
         {
           "map": "MAP_ROUTE119",
           "base_label": "gRoute119_Day",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 15,
             "mons": [
@@ -13675,6 +13682,7 @@
         {
           "map": "MAP_ROUTE119",
           "base_label": "gRoute119_Evening",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 15,
             "mons": [
@@ -13829,6 +13837,7 @@
         {
           "map": "MAP_ROUTE119",
           "base_label": "gRoute119_Night",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 15,
             "mons": [
@@ -13983,6 +13992,7 @@
         {
           "map": "MAP_ROUTE120",
           "base_label": "gRoute120_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -14137,6 +14147,7 @@
         {
           "map": "MAP_ROUTE120",
           "base_label": "gRoute120_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -14291,6 +14302,7 @@
         {
           "map": "MAP_ROUTE120",
           "base_label": "gRoute120_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -14445,6 +14457,7 @@
         {
           "map": "MAP_ROUTE120",
           "base_label": "gRoute120_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -14599,6 +14612,7 @@
         {
           "map": "MAP_ROUTE121",
           "base_label": "gRoute121_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -14753,6 +14767,7 @@
         {
           "map": "MAP_ROUTE121",
           "base_label": "gRoute121_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -14907,6 +14922,7 @@
         {
           "map": "MAP_ROUTE121",
           "base_label": "gRoute121_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -15061,6 +15077,7 @@
         {
           "map": "MAP_ROUTE121",
           "base_label": "gRoute121_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -15215,6 +15232,7 @@
         {
           "map": "MAP_ROUTE122",
           "base_label": "gRoute122_Morning",
+          "level_offset": 5,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -15304,6 +15322,7 @@
         {
           "map": "MAP_ROUTE122",
           "base_label": "gRoute122_Day",
+          "level_offset": 5,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -15393,6 +15412,7 @@
         {
           "map": "MAP_ROUTE122",
           "base_label": "gRoute122_Evening",
+          "level_offset": 5,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -15482,6 +15502,7 @@
         {
           "map": "MAP_ROUTE122",
           "base_label": "gRoute122_Night",
+          "level_offset": 5,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -15571,6 +15592,7 @@
         {
           "map": "MAP_ROUTE123",
           "base_label": "gRoute123_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -15725,6 +15747,7 @@
         {
           "map": "MAP_ROUTE123",
           "base_label": "gRoute123_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -15879,6 +15902,7 @@
         {
           "map": "MAP_ROUTE123",
           "base_label": "gRoute123_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -16033,6 +16057,7 @@
         {
           "map": "MAP_ROUTE123",
           "base_label": "gRoute123_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 20,
             "mons": [
@@ -17567,6 +17592,7 @@
         {
           "map": "MAP_MT_PYRE_EXTERIOR",
           "base_label": "gMtPyre_Exterior_Morning",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -17636,6 +17662,7 @@
         {
           "map": "MAP_MT_PYRE_EXTERIOR",
           "base_label": "gMtPyre_Exterior_Day",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -17705,6 +17732,7 @@
         {
           "map": "MAP_MT_PYRE_EXTERIOR",
           "base_label": "gMtPyre_Exterior_Evening",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -17774,6 +17802,7 @@
         {
           "map": "MAP_MT_PYRE_EXTERIOR",
           "base_label": "gMtPyre_Exterior_Night",
+          "level_offset": 4,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -17843,6 +17872,7 @@
         {
           "map": "MAP_MT_PYRE_SUMMIT",
           "base_label": "gMtPyre_Summit_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -17912,6 +17942,7 @@
         {
           "map": "MAP_MT_PYRE_SUMMIT",
           "base_label": "gMtPyre_Summit_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -17981,6 +18012,7 @@
         {
           "map": "MAP_MT_PYRE_SUMMIT",
           "base_label": "gMtPyre_Summit_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -18050,6 +18082,7 @@
         {
           "map": "MAP_MT_PYRE_SUMMIT",
           "base_label": "gMtPyre_Summit_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -22571,6 +22604,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM1",
           "base_label": "gSeafloorCavern_Room1_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -22640,6 +22674,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM1",
           "base_label": "gSeafloorCavern_Room1_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -22709,6 +22744,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM1",
           "base_label": "gSeafloorCavern_Room1_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -22778,6 +22814,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM1",
           "base_label": "gSeafloorCavern_Room1_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -22847,6 +22884,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM2",
           "base_label": "gSeafloorCavern_Room2_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -22916,6 +22954,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM2",
           "base_label": "gSeafloorCavern_Room2_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -22985,6 +23024,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM2",
           "base_label": "gSeafloorCavern_Room2_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23054,6 +23094,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM2",
           "base_label": "gSeafloorCavern_Room2_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23123,6 +23164,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM3",
           "base_label": "gSeafloorCavern_Room3_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23192,6 +23234,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM3",
           "base_label": "gSeafloorCavern_Room3_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23261,6 +23304,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM3",
           "base_label": "gSeafloorCavern_Room3_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23330,6 +23374,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM3",
           "base_label": "gSeafloorCavern_Room3_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23399,6 +23444,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM4",
           "base_label": "gSeafloorCavern_Room4_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23468,6 +23514,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM4",
           "base_label": "gSeafloorCavern_Room4_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23537,6 +23584,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM4",
           "base_label": "gSeafloorCavern_Room4_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23606,6 +23654,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM4",
           "base_label": "gSeafloorCavern_Room4_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23675,6 +23724,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM5",
           "base_label": "gSeafloorCavern_Room5_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23744,6 +23794,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM5",
           "base_label": "gSeafloorCavern_Room5_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23813,6 +23864,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM5",
           "base_label": "gSeafloorCavern_Room5_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23882,6 +23934,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM5",
           "base_label": "gSeafloorCavern_Room5_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -23951,6 +24004,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM6",
           "base_label": "gSeafloorCavern_Room6_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -24105,6 +24159,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM6",
           "base_label": "gSeafloorCavern_Room6_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -24259,6 +24314,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM6",
           "base_label": "gSeafloorCavern_Room6_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -24413,6 +24469,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM6",
           "base_label": "gSeafloorCavern_Room6_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -24567,6 +24624,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM7",
           "base_label": "gSeafloorCavern_Room7_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -24721,6 +24779,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM7",
           "base_label": "gSeafloorCavern_Room7_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -24875,6 +24934,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM7",
           "base_label": "gSeafloorCavern_Room7_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25029,6 +25089,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM7",
           "base_label": "gSeafloorCavern_Room7_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25183,6 +25244,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM8",
           "base_label": "gSeafloorCavern_Room8_Morning",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25252,6 +25314,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM8",
           "base_label": "gSeafloorCavern_Room8_Day",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25321,6 +25384,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM8",
           "base_label": "gSeafloorCavern_Room8_Evening",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25390,6 +25454,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ROOM8",
           "base_label": "gSeafloorCavern_Room8_Night",
+          "level_offset": 6,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25459,6 +25524,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ENTRANCE",
           "base_label": "gSeafloorCavern_Entrance_Morning",
+          "level_offset": 6,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25548,6 +25614,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ENTRANCE",
           "base_label": "gSeafloorCavern_Entrance_Day",
+          "level_offset": 6,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25637,6 +25704,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ENTRANCE",
           "base_label": "gSeafloorCavern_Entrance_Evening",
+          "level_offset": 6,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25726,6 +25794,7 @@
         {
           "map": "MAP_SEAFLOOR_CAVERN_ENTRANCE",
           "base_label": "gSeafloorCavern_Entrance_Night",
+          "level_offset": 6,
           "water_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25815,6 +25884,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_ENTRANCE",
           "base_label": "gCaveOfOrigin_Entrance_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25884,6 +25954,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_ENTRANCE",
           "base_label": "gCaveOfOrigin_Entrance_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -25953,6 +26024,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_ENTRANCE",
           "base_label": "gCaveOfOrigin_Entrance_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26022,6 +26094,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_ENTRANCE",
           "base_label": "gCaveOfOrigin_Entrance_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26091,6 +26164,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_1F",
           "base_label": "gCaveOfOrigin_1F_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26160,6 +26234,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_1F",
           "base_label": "gCaveOfOrigin_1F_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26229,6 +26304,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_1F",
           "base_label": "gCaveOfOrigin_1F_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26298,6 +26374,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_1F",
           "base_label": "gCaveOfOrigin_1F_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26367,6 +26444,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP1",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap1_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26436,6 +26514,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP1",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap1_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26505,6 +26584,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP1",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap1_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26574,6 +26654,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP1",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap1_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26643,6 +26724,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP2",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap2_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26712,6 +26794,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP2",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap2_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26781,6 +26864,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP2",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap2_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26850,6 +26934,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP2",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap2_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26919,6 +27004,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP3",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap3_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -26988,6 +27074,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP3",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap3_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -27057,6 +27144,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP3",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap3_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -27126,6 +27214,7 @@
         {
           "map": "MAP_CAVE_OF_ORIGIN_UNUSED_RUBY_SAPPHIRE_MAP3",
           "base_label": "gCaveOfOrigin_UnusedRubySapphireMap3_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 4,
             "mons": [
@@ -28419,6 +28508,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B1F",
           "base_label": "gVictoryRoad_B1F_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -28518,6 +28608,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B1F",
           "base_label": "gVictoryRoad_B1F_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -28617,6 +28708,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B1F",
           "base_label": "gVictoryRoad_B1F_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -28716,6 +28808,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B1F",
           "base_label": "gVictoryRoad_B1F_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -28815,6 +28908,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B2F",
           "base_label": "gVictoryRoad_B2F_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -28969,6 +29063,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B2F",
           "base_label": "gVictoryRoad_B2F_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -29123,6 +29218,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B2F",
           "base_label": "gVictoryRoad_B2F_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -29277,6 +29373,7 @@
         {
           "map": "MAP_VICTORY_ROAD_B2F",
           "base_label": "gVictoryRoad_B2F_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31279,6 +31376,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM",
           "base_label": "gShoalCave_LowTideStairsRoom_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31348,6 +31446,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM",
           "base_label": "gShoalCave_LowTideStairsRoom_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31417,6 +31516,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM",
           "base_label": "gShoalCave_LowTideStairsRoom_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31486,6 +31586,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_STAIRS_ROOM",
           "base_label": "gShoalCave_LowTideStairsRoom_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31555,6 +31656,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM",
           "base_label": "gShoalCave_LowTideLowerRoom_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31624,6 +31726,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM",
           "base_label": "gShoalCave_LowTideLowerRoom_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31693,6 +31796,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM",
           "base_label": "gShoalCave_LowTideLowerRoom_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31762,6 +31866,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_LOWER_ROOM",
           "base_label": "gShoalCave_LowTideLowerRoom_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31831,6 +31936,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_LowTideInnerRoom_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -31985,6 +32091,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_LowTideInnerRoom_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -32139,6 +32246,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_LowTideInnerRoom_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -32293,6 +32401,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_LowTideInnerRoom_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -32447,6 +32556,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_LowTideEntranceRoom_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -32601,6 +32711,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_LowTideEntranceRoom_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -32755,6 +32866,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_LowTideEntranceRoom_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -32909,6 +33021,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_LowTideEntranceRoom_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -35691,6 +35804,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM",
           "base_label": "gShoalCave_LowTideIceRoom_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -35760,6 +35874,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM",
           "base_label": "gShoalCave_LowTideIceRoom_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -35829,6 +35944,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM",
           "base_label": "gShoalCave_LowTideIceRoom_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -35898,6 +36014,7 @@
         {
           "map": "MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM",
           "base_label": "gShoalCave_LowTideIceRoom_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -35967,6 +36084,7 @@
         {
           "map": "MAP_SKY_PILLAR_1F",
           "base_label": "gSkyPillar_1F_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36036,6 +36154,7 @@
         {
           "map": "MAP_SKY_PILLAR_1F",
           "base_label": "gSkyPillar_1F_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36105,6 +36224,7 @@
         {
           "map": "MAP_SKY_PILLAR_1F",
           "base_label": "gSkyPillar_1F_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36174,6 +36294,7 @@
         {
           "map": "MAP_SKY_PILLAR_1F",
           "base_label": "gSkyPillar_1F_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36599,6 +36720,7 @@
         {
           "map": "MAP_SKY_PILLAR_3F",
           "base_label": "gSkyPillar_3F_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36668,6 +36790,7 @@
         {
           "map": "MAP_SKY_PILLAR_3F",
           "base_label": "gSkyPillar_3F_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36737,6 +36860,7 @@
         {
           "map": "MAP_SKY_PILLAR_3F",
           "base_label": "gSkyPillar_3F_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36806,6 +36930,7 @@
         {
           "map": "MAP_SKY_PILLAR_3F",
           "base_label": "gSkyPillar_3F_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36875,6 +37000,7 @@
         {
           "map": "MAP_SKY_PILLAR_5F",
           "base_label": "gSkyPillar_5F_Morning",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -36944,6 +37070,7 @@
         {
           "map": "MAP_SKY_PILLAR_5F",
           "base_label": "gSkyPillar_5F_Day",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -37013,6 +37140,7 @@
         {
           "map": "MAP_SKY_PILLAR_5F",
           "base_label": "gSkyPillar_5F_Evening",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -37082,6 +37210,7 @@
         {
           "map": "MAP_SKY_PILLAR_5F",
           "base_label": "gSkyPillar_5F_Night",
+          "level_offset": 10,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38163,6 +38292,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_1F",
           "base_label": "gMagmaHideout_1F_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38232,6 +38362,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_1F",
           "base_label": "gMagmaHideout_1F_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38301,6 +38432,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_1F",
           "base_label": "gMagmaHideout_1F_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38370,6 +38502,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_1F",
           "base_label": "gMagmaHideout_1F_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38439,6 +38572,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_1R",
           "base_label": "gMagmaHideout_2F_1R_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38508,6 +38642,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_1R",
           "base_label": "gMagmaHideout_2F_1R_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38577,6 +38712,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_1R",
           "base_label": "gMagmaHideout_2F_1R_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38646,6 +38782,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_1R",
           "base_label": "gMagmaHideout_2F_1R_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38715,6 +38852,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_2R",
           "base_label": "gMagmaHideout_2F_2R_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38784,6 +38922,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_2R",
           "base_label": "gMagmaHideout_2F_2R_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38853,6 +38992,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_2R",
           "base_label": "gMagmaHideout_2F_2R_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38922,6 +39062,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_2R",
           "base_label": "gMagmaHideout_2F_2R_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -38991,6 +39132,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_1R",
           "base_label": "gMagmaHideout_3F_1R_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39060,6 +39202,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_1R",
           "base_label": "gMagmaHideout_3F_1R_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39129,6 +39272,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_1R",
           "base_label": "gMagmaHideout_3F_1R_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39198,6 +39342,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_1R",
           "base_label": "gMagmaHideout_3F_1R_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39267,6 +39412,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_2R",
           "base_label": "gMagmaHideout_3F_2R_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39336,6 +39482,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_2R",
           "base_label": "gMagmaHideout_3F_2R_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39405,6 +39552,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_2R",
           "base_label": "gMagmaHideout_3F_2R_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39474,6 +39622,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_2R",
           "base_label": "gMagmaHideout_3F_2R_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39543,6 +39692,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_4F",
           "base_label": "gMagmaHideout_4F_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39612,6 +39762,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_4F",
           "base_label": "gMagmaHideout_4F_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39681,6 +39832,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_4F",
           "base_label": "gMagmaHideout_4F_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39750,6 +39902,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_4F",
           "base_label": "gMagmaHideout_4F_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39819,6 +39972,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_3R",
           "base_label": "gMagmaHideout_3F_3R_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39888,6 +40042,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_3R",
           "base_label": "gMagmaHideout_3F_3R_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -39957,6 +40112,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_3R",
           "base_label": "gMagmaHideout_3F_3R_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -40026,6 +40182,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_3F_3R",
           "base_label": "gMagmaHideout_3F_3R_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -40095,6 +40252,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_3R",
           "base_label": "gMagmaHideout_2F_3R_Morning",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -40164,6 +40322,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_3R",
           "base_label": "gMagmaHideout_2F_3R_Day",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -40233,6 +40392,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_3R",
           "base_label": "gMagmaHideout_2F_3R_Evening",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -40302,6 +40462,7 @@
         {
           "map": "MAP_MAGMA_HIDEOUT_2F_3R",
           "base_label": "gMagmaHideout_2F_3R_Night",
+          "level_offset": 3,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45063,6 +45224,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_HighTideEntranceRoom0_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45132,6 +45294,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_HighTideEntranceRoom0_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45201,6 +45364,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_HighTideEntranceRoom0_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45270,6 +45434,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM",
           "base_label": "gShoalCave_HighTideEntranceRoom0_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45339,6 +45504,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_HighTideInnerRoom0_Morning",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45408,6 +45574,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_HighTideInnerRoom0_Day",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45477,6 +45644,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_HighTideInnerRoom0_Evening",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [
@@ -45546,6 +45714,7 @@
         {
           "map": "MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM",
           "base_label": "gShoalCave_HighTideInnerRoom0_Night",
+          "level_offset": 5,
           "land_mons": {
             "encounter_rate": 10,
             "mons": [

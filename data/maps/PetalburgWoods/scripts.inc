@@ -81,7 +81,6 @@ PetalburgWoods_EventScript_DevonResearcherIntro::
 	closemessage
 	return
 
-
 PetalburgWoods_EventScript_DevonResearcherPostBattle::
 	msgbox PetalburgWoods_Text_YouveGotSomeNerve, MSGBOX_DEFAULT
 	closemessage
