@@ -40,56 +40,56 @@
         {
             {
 #line 15
-            .species = SPECIES_METANG,
+            .species = SPECIES_CORVIKNIGHT,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 19
             .ev = TRAINER_PARTY_EVS(0, 252, 252, 0, 6, 0),
 #line 18
             .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31),
 #line 17
-            .lvl = 42,
+            .lvl = 48,
 #line 16
             .nature = NATURE_BRAVE,
             .dynamaxLevel = MAX_DYNAMAX_LEVEL,
             .moves = {
 #line 20
-                MOVE_LIGHT_SCREEN,
-                MOVE_PSYCHIC,
-                MOVE_REFLECT,
-                MOVE_METAL_CLAW,
+                MOVE_AIR_SLASH,
+                MOVE_U_TURN,
+                MOVE_BODY_SLAM,
+                MOVE_MAGNET_BOMB,
             },
             },
             {
 #line 25
-            .species = SPECIES_SKARMORY,
+            .species = SPECIES_GHOLDENGO,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 29
             .ev = TRAINER_PARTY_EVS(252, 0, 0, 0, 6, 252),
 #line 28
             .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31),
 #line 27
-            .lvl = 43,
+            .lvl = 49,
 #line 26
             .nature = NATURE_IMPISH,
             .dynamaxLevel = MAX_DYNAMAX_LEVEL,
             .moves = {
 #line 30
-                MOVE_TOXIC,
-                MOVE_AERIAL_ACE,
+                MOVE_SHADOW_BALL,
+                MOVE_FLASH_CANNON,
                 MOVE_PROTECT,
-                MOVE_STEEL_WING,
+                MOVE_POWER_GEM,
             },
             },
             {
 #line 35
-            .species = SPECIES_AGGRON,
+            .species = SPECIES_ARCHALUDON,
             .gender = TRAINER_MON_RANDOM_GENDER,
 #line 39
             .ev = TRAINER_PARTY_EVS(0, 252, 0, 0, 252, 6),
 #line 38
             .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31),
 #line 37
-            .lvl = 44,
+            .lvl = 50,
 #line 36
             .nature = NATURE_ADAMANT,
             .dynamaxLevel = MAX_DYNAMAX_LEVEL,
