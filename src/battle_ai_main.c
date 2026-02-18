@@ -254,7 +254,20 @@ void BattleAI_SetupFlags(void)
     if (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)))
     {
         u16 trainerId = IsAiVsAiBattle() ? gPartnerTrainerId : 0xFFFF;
-        gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = GetAiFlags(trainerId) | AI_FLAG_CHECK_BAD_MOVE;
+        u64 playerFlags = GetAiFlags(trainerId) | AI_FLAG_CHECK_BAD_MOVE;
+    
+        // If auto-trainer battles are enabled and the game difficulty is Easy,
+        // give the player's AI the SMART trainer flags instead of BASIC.
+        if (IsAiVsAiBattle() && gSaveBlock1Ptr != NULL && gSaveBlock1Ptr->difficulty == DIFFICULTY_EASY)
+        {
+            if (playerFlags & AI_FLAG_BASIC_TRAINER)
+            {
+                playerFlags &= ~AI_FLAG_BASIC_TRAINER;
+                playerFlags |= AI_FLAG_UNFAIR_TRAINER;
+            }
+        }
+    
+        gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = playerFlags;
     }
     else
         gAiThinkingStruct->aiFlags[B_POSITION_PLAYER_LEFT] = 0; // player has no AI
