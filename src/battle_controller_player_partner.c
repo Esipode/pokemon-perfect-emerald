@@ -31,6 +31,7 @@
 #include "constants/songs.h"
 #include "constants/party_menu.h"
 #include "constants/trainers.h"
+#include "event_data.h"
 
 static void PlayerPartnerHandleLoadMonSprite(u32 battler);
 static void PlayerPartnerHandleSwitchInAnim(u32 battler);
@@ -250,6 +251,32 @@ static void PlayerPartnerHandleSwitchInAnim(u32 battler)
     BtlController_HandleSwitchInAnim(battler, TRUE, SwitchIn_TryShinyAnim);
 }
 
+// Local copy of PlayerGetTrainerBackPicId from battle_controller_player.c
+static u32 PlayerGetTrainerBackPicId(void)
+{
+    u32 trainerPicId;
+
+    if (gBattleTypeFlags & BATTLE_TYPE_LINK)
+    {
+        u8 multiplayerId = GetMultiplayerId();
+        u8 gender = gLinkPlayers[multiplayerId].gender;
+        u8 version = gLinkPlayers[multiplayerId].version & 0xFF;
+
+        if (version == VERSION_FIRE_RED || version == VERSION_LEAF_GREEN)
+            trainerPicId = gender + TRAINER_BACK_PIC_RED;
+        else if (version == VERSION_RUBY || version == VERSION_SAPPHIRE)
+            trainerPicId = gender + TRAINER_BACK_PIC_RUBY_SAPPHIRE_BRENDAN;
+        else
+            trainerPicId = gender + TRAINER_BACK_PIC_BRENDAN;
+    }
+    else
+    {
+        trainerPicId = gSaveBlock2Ptr->playerGender + TRAINER_BACK_PIC_BRENDAN;
+    }
+
+    return trainerPicId;
+}
+
 // some explanation here
 // in emerald it's possible to have a tag battle in the battle frontier facilities with AI
 // which use the front sprite for both the player and the partner as opposed to any other battles (including the one with Steven) that use the back pic as well as animate it
@@ -261,14 +288,27 @@ static void PlayerPartnerHandleDrawTrainerPic(u32 battler)
 
     enum DifficultyLevel difficulty = GetBattlePartnerDifficultyLevel(gPartnerTrainerId);
 
-    if (gPartnerTrainerId > TRAINER_PARTNER(PARTNER_NONE))
+    // If this controller is being used for a player-side battler, draw the player's
+    // back trainer pic (so AI-controlled player uses player sprite). For actual
+    // in-game partners use partner data, otherwise use frontier/front sprites.
+    if (GetBattlerSide(battler) == B_SIDE_PLAYER && gPartnerTrainerId <= TRAINER_PARTNER(PARTNER_NONE))
+    {
+        trainerPicId = PlayerGetTrainerBackPicId();
+        if (gBattleTypeFlags & BATTLE_TYPE_MULTI)
+            xPos = 32;
+        else
+            xPos = 80;
+        yPos = (8 - gTrainerBacksprites[trainerPicId].coordinates.size) * 4 + 80;
+        isFrontPic = FALSE;
+    }
+    else if (gPartnerTrainerId > TRAINER_PARTNER(PARTNER_NONE))
     {
         trainerPicId = gBattlePartners[difficulty][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic;
         xPos = 90;
         yPos = (8 - gTrainerBacksprites[trainerPicId].coordinates.size) * 4 + 80;
         isFrontPic = FALSE;
     }
-    else if (IsAiVsAiBattle())
+    else if (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)))
     {
         // Use trainer back (player-side) sprite for AI-vs-AI (auto-trainer) so it behaves like player back sprite.
         trainerPicId = GetTrainerPicFromId(gPartnerTrainerId);
@@ -391,9 +431,13 @@ static void PlayerPartnerHandleIntroTrainerBallThrow(u32 battler)
     const u16 *trainerPal;
     enum DifficultyLevel difficulty = GetBattlePartnerDifficultyLevel(gPartnerTrainerId);
 
-    if (gPartnerTrainerId > TRAINER_PARTNER(PARTNER_NONE))
+    // Choose palette based on whether this is a player-side battler, an in-game partner,
+    // or a frontier/front sprite.
+    if (GetBattlerSide(battler) == B_SIDE_PLAYER && gPartnerTrainerId <= TRAINER_PARTNER(PARTNER_NONE))
+        trainerPal = gTrainerBacksprites[PlayerGetTrainerBackPicId()].palette.data;
+    else if (gPartnerTrainerId > TRAINER_PARTNER(PARTNER_NONE))
         trainerPal = gTrainerBacksprites[gBattlePartners[difficulty][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic].palette.data;
-    else if (IsAiVsAiBattle())
+    else if (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)))
         // use the trainer back palette for auto-trainer (player-side) instead of front palette
         trainerPal = gTrainerBacksprites[GetTrainerPicFromId(gPartnerTrainerId)].palette.data;
     else
