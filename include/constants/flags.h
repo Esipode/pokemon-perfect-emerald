@@ -698,7 +698,7 @@
 #define FLAG_AI_WILD_BATTLES             0x28B // Sets whether AI controls wild battles
 #define FLAG_BEAT_RIVAL_ROUTE_103        0x28C // Toggle defeating your rival on Route 103
 #define FLAG_ALLOW_STAT_EDITOR           0x28D // Toggle stat editing in the party menu
-#define FLAG_UNUSED_0x28E  0x28E // Unused Flag
+#define FLAG_SPACE_CENTER_LEVEL_CAP      0x28E // Toggle for defeating Maxie in the Space Center
 #define FLAG_UNUSED_0x28F  0x28F // Unused Flag
 #define FLAG_UNUSED_0x290  0x290 // Unused Flag
 #define FLAG_UNUSED_0x291  0x291 // Unused Flag
