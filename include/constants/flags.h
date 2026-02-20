@@ -697,7 +697,7 @@
 #define FLAG_LEVEL_CAP_OFF               0x28A // Flag for toggling level cap off
 #define FLAG_AI_WILD_BATTLES             0x28B // Sets whether AI controls wild battles
 #define FLAG_BEAT_RIVAL_ROUTE_103        0x28C // Toggle defeating your rival on Route 103
-#define FLAG_UNUSED_0x28D  0x28D // Unused Flag
+#define FLAG_ALLOW_STAT_EDITOR           0x28D // Toggle stat editing in the party menu
 #define FLAG_UNUSED_0x28E  0x28E // Unused Flag
 #define FLAG_UNUSED_0x28F  0x28F // Unused Flag
 #define FLAG_UNUSED_0x290  0x290 // Unused Flag

@@ -277,6 +277,9 @@ extern const u8 gText_NuzlockeOff[];
 extern const u8 gText_NuzlockeOn[];
 extern const u8 gText_AutosaveOff[];
 extern const u8 gText_AutosaveOn[];
+extern const u8 gText_AllowStatEditor[];
+extern const u8 gText_AllowStatEditorOff[];
+extern const u8 gText_AllowStatEditorOn[];
 extern const u8 gText_DifficultyEasy[];
 extern const u8 gText_DifficultyNormal[];
 extern const u8 gText_DifficultyHard[];
@@ -307,6 +310,9 @@ extern const u8 gText_LevelCapIncreased[];
 extern const u8 gText_Nuzlocke[];
 extern const u8 gText_Autosave[];
 extern const u8 gText_Difficulty[];
+extern const u8 gText_AllowStatEditor[];
+extern const u8 gText_AllowStatEditorOff[];
+extern const u8 gText_AllowStatEditorOn[];
 
 extern const u8 gText_MaleSymbol[];
 extern const u8 gText_FemaleSymbol[];
@@ -437,6 +443,7 @@ extern const u8 gText_SpDef[];
 extern const u8 gText_Speed[];
 extern const u8 gText_Dash[];
 extern const u8 gText_Plus[];
+extern const u8 gText_StatEditor[];
 
 //Pokédex text
 extern const u8 gText_CryOf[];
