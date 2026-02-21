@@ -2694,7 +2694,7 @@
     {
       "id": "LAYOUT_EVER_GRANDE_CITY_POKEMON_LEAGUE_1F",
       "name": "EverGrandeCity_PokemonLeague_1F_Layout",
-      "width": 31,
+      "width": 19,
       "height": 12,
       "primary_tileset": "gTileset_Building",
       "secondary_tileset": "gTileset_PokemonCenter",
