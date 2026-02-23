@@ -19,6 +19,7 @@
 #include "battle_debug.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
+#include "caps.h"
 #include "constants/abilities.h"
 #include "constants/game_stat.h"
 #include "constants/item.h"
@@ -495,6 +496,9 @@ void CreateWildMon(u16 species, u8 level)
 {
     bool32 checkCuteCharm = TRUE;
 
+    /* Apply New Game+ level offset */
+    level = (u8)min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+
     ZeroEnemyPartyMons();
 
     switch (gSpeciesInfo[species].genderRatio)
@@ -591,7 +595,7 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum 
     {
         u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
         // Optionally add map/slot to seed for more variety
-        rng_value_t rngState = LocalRandomSeed(trainerId + wildMonInfo->wildPokemon[wildMonIndex].species);
+        rng_value_t rngState = LocalRandomSeed(trainerId + wildMonInfo->wildPokemon[wildMonIndex].species + GetNewGamePlusLevelOffset());
         CreateWildMon(LocalRandom(&rngState) % NUM_SPECIES, level);
     }
     else {

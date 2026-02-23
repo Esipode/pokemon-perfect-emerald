@@ -48,6 +48,7 @@
 #include "constants/items.h"
 #include "difficulty.h"
 #include "follower_npc.h"
+#include "malloc.h"
 
 extern const u8 EventScript_ResetAllMapFlags[];
 
@@ -59,6 +60,7 @@ static void ResetDexNav(void);
 
 EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
 EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
+EWRAM_DATA bool8 gIsNewGamePlus = FALSE;
 
 static const struct ContestWinner sContestWinnerPicDummy =
 {
@@ -153,44 +155,122 @@ void ResetMenuAndMonGlobals(void)
 
 void NewGameInitData(void)
 {
+    bool8 isNewGamePlus = gIsNewGamePlus;
+    struct Pokemon *playerPartyBackup = NULL;
+    u8 playerPartyCountBackup = 0;
+    void *pcStorageBackup = NULL;
+    void *pcItemsBackup = NULL;
+    void *bagItemsBackup = NULL;
+    // void *bagKeyItemsBackup = NULL;
+    void *bagPokeBallsBackup = NULL;
+    // void *bagTMHMsBackup = NULL;
+    void *bagBerriesBackup = NULL;
+    void *dexCaughtBackup = NULL;
+    void *dexSeenBackup = NULL;
+    void *flagsBackup = NULL;
+    void *optionsBackup = NULL;
+    void *playerSettingsBackup = NULL;
+    u8 savedTrainerId[TRAINER_ID_LENGTH];
+
     if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
         RtcReset();
 
+    if (isNewGamePlus)
+    {
+        /* Backup things we want to preserve */
+        CopyTrainerId(savedTrainerId, gSaveBlock2Ptr->playerTrainerId);
+
+        playerPartyBackup = Alloc(sizeof(gSaveBlock1Ptr->playerParty));
+        memcpy(playerPartyBackup, gSaveBlock1Ptr->playerParty, sizeof(gSaveBlock1Ptr->playerParty));
+        playerPartyCountBackup = gSaveBlock1Ptr->playerPartyCount;
+
+        pcStorageBackup = Alloc(sizeof(*gPokemonStoragePtr));
+        memcpy(pcStorageBackup, gPokemonStoragePtr, sizeof(*gPokemonStoragePtr));
+
+        pcItemsBackup = Alloc(sizeof(gSaveBlock1Ptr->pcItems));
+        memcpy(pcItemsBackup, gSaveBlock1Ptr->pcItems, sizeof(gSaveBlock1Ptr->pcItems));
+
+        bagItemsBackup = Alloc(sizeof(gSaveBlock1Ptr->bagPocket_Items));
+        memcpy(bagItemsBackup, gSaveBlock1Ptr->bagPocket_Items, sizeof(gSaveBlock1Ptr->bagPocket_Items));
+
+        // bagKeyItemsBackup = Alloc(sizeof(gSaveBlock1Ptr->bagPocket_KeyItems));
+        // memcpy(bagKeyItemsBackup, gSaveBlock1Ptr->bagPocket_KeyItems, sizeof(gSaveBlock1Ptr->bagPocket_KeyItems));
+
+        bagPokeBallsBackup = Alloc(sizeof(gSaveBlock1Ptr->bagPocket_PokeBalls));
+        memcpy(bagPokeBallsBackup, gSaveBlock1Ptr->bagPocket_PokeBalls, sizeof(gSaveBlock1Ptr->bagPocket_PokeBalls));
+
+        // bagTMHMsBackup = Alloc(sizeof(gSaveBlock1Ptr->bagPocket_TMHM));
+        // memcpy(bagTMHMsBackup, gSaveBlock1Ptr->bagPocket_TMHM, sizeof(gSaveBlock1Ptr->bagPocket_TMHM));
+
+        bagBerriesBackup = Alloc(sizeof(gSaveBlock1Ptr->bagPocket_Berries));
+        memcpy(bagBerriesBackup, gSaveBlock1Ptr->bagPocket_Berries, sizeof(gSaveBlock1Ptr->bagPocket_Berries));
+
+        dexCaughtBackup = Alloc(sizeof(gSaveBlock1Ptr->dexCaught));
+        memcpy(dexCaughtBackup, gSaveBlock1Ptr->dexCaught, sizeof(gSaveBlock1Ptr->dexCaught));
+
+        dexSeenBackup = Alloc(sizeof(gSaveBlock1Ptr->dexSeen));
+        memcpy(dexSeenBackup, gSaveBlock1Ptr->dexSeen, sizeof(gSaveBlock1Ptr->dexSeen));
+        
+        /* Backup only option-related flag bytes (minimize restoring unrelated flags) */
+        flagsBackup = Alloc(3);
+        ((u8 *)flagsBackup)[0] = gSaveBlock1Ptr->flags[FLAG_AI_BATTLES / 8];
+        ((u8 *)flagsBackup)[1] = gSaveBlock1Ptr->flags[FLAG_AUTO_SCROLL_TEXT / 8];
+        ((u8 *)flagsBackup)[2] = gSaveBlock1Ptr->flags[FLAG_RANDOMIZE_TYPE / 8];
+
+        /* Backup SaveBlock2 options (packed bitfields occupy 2 bytes at offset 0x14) */
+        optionsBackup = Alloc(sizeof(u16));
+        memcpy(optionsBackup, (u8 *)gSaveBlock2Ptr + 0x14, sizeof(u16));
+        /* Backup a few SaveBlock1 player settings stored in SaveBlock1 */
+        playerSettingsBackup = Alloc(3);
+        ((u8 *)playerSettingsBackup)[0] = gSaveBlock1Ptr->nuzlockeModeEnabled;
+        ((u8 *)playerSettingsBackup)[1] = gSaveBlock1Ptr->autosaveModeEnabled;
+        ((u8 *)playerSettingsBackup)[2] = gSaveBlock1Ptr->difficulty;
+
+        gIsNewGamePlus = FALSE; // consume flag
+    }
+
     gDifferentSaveFile = TRUE;
-    gSaveBlock2Ptr->encryptionKey = 0;
-    ZeroPlayerPartyMons();
+    /* Keep existing encryptionKey when doing New Game+ to avoid re-encryption issues */
+    if (!isNewGamePlus)
+    {
+        gSaveBlock2Ptr->encryptionKey = 0;
+        ZeroPlayerPartyMons();
+        ResetPokedex();
+        InitPlayerTrainerId();
+        PlayTimeCounter_Reset();
+        ClearPokedexFlags();
+        ResetPokemonStorageSystem();
+        SetMoney(&gSaveBlock1Ptr->money, 5000);
+        SetCoins(0);
+        gPlayerPartyCount = 0;
+        NewGameInitPCItems();
+        // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
+        gSaveBlock1Ptr->difficulty = 1;
+        ResetItemFlags();
+        ResetDexNav();
+    }
     ZeroEnemyPartyMons();
-    ResetPokedex();
     ClearFrontierRecord();
     ClearSav1();
     ClearSav3();
     ClearAllMail();
     gSaveBlock2Ptr->specialSaveWarpFlags = 0;
     gSaveBlock2Ptr->gcnLinkFlags = 0;
-    InitPlayerTrainerId();
-    PlayTimeCounter_Reset();
-    ClearPokedexFlags();
     InitEventData();
     ClearTVShowData();
     ResetGabbyAndTy();
     ClearSecretBases();
     ClearBerryTrees();
-    SetMoney(&gSaveBlock1Ptr->money, 5000);
-    SetCoins(0);
     ResetLinkContestBoolean();
     ResetGameStats();
     ClearAllContestWinnerPics();
     ClearPlayerLinkBattleRecords();
     InitSeedotSizeRecord();
     InitLotadSizeRecord();
-    gPlayerPartyCount = 0;
-    ZeroPlayerPartyMons();
-    ResetPokemonStorageSystem();
     DeactivateAllRoamers();
     gSaveBlock1Ptr->registeredItem = ITEM_NONE;
     gSaveBlock1Ptr->registeredLongItem = ITEM_NONE;
     ClearBag();
-    NewGameInitPCItems();
     ClearPokeblocks();
     ClearDecorationInventories();
     InitEasyChatPhrases();
@@ -210,11 +290,88 @@ void NewGameInitData(void)
     WipeTrainerNameRecords();
     ResetTrainerHillResults();
     ResetContestLinkResults();
-    // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
-    gSaveBlock1Ptr->difficulty = 1;
-    ResetItemFlags();
-    ResetDexNav();
     ClearFollowerNPCData();
+
+    /* Restore preserved data for New Game+ */
+    if (isNewGamePlus)
+    {
+        if (playerPartyBackup != NULL)
+        {
+            memcpy(gSaveBlock1Ptr->playerParty, playerPartyBackup, sizeof(gSaveBlock1Ptr->playerParty));
+            gSaveBlock1Ptr->playerPartyCount = playerPartyCountBackup;
+            memcpy(gPokemonStoragePtr, pcStorageBackup, sizeof(*gPokemonStoragePtr));
+            memcpy(gSaveBlock1Ptr->pcItems, pcItemsBackup, sizeof(gSaveBlock1Ptr->pcItems));
+            memcpy(gSaveBlock1Ptr->bagPocket_Items, bagItemsBackup, sizeof(gSaveBlock1Ptr->bagPocket_Items));
+            // memcpy(gSaveBlock1Ptr->bagPocket_KeyItems, bagKeyItemsBackup, sizeof(gSaveBlock1Ptr->bagPocket_KeyItems));
+            memcpy(gSaveBlock1Ptr->bagPocket_PokeBalls, bagPokeBallsBackup, sizeof(gSaveBlock1Ptr->bagPocket_PokeBalls));
+            // memcpy(gSaveBlock1Ptr->bagPocket_TMHM, bagTMHMsBackup, sizeof(gSaveBlock1Ptr->bagPocket_TMHM));
+            memcpy(gSaveBlock1Ptr->bagPocket_Berries, bagBerriesBackup, sizeof(gSaveBlock1Ptr->bagPocket_Berries));
+            CopyTrainerId(gSaveBlock2Ptr->playerTrainerId, savedTrainerId);
+
+            /* Restore Pokédex flags preserved across ClearSav1 */
+            if (dexCaughtBackup != NULL)
+                memcpy(gSaveBlock1Ptr->dexCaught, dexCaughtBackup, sizeof(gSaveBlock1Ptr->dexCaught));
+            if (dexSeenBackup != NULL)
+                memcpy(gSaveBlock1Ptr->dexSeen, dexSeenBackup, sizeof(gSaveBlock1Ptr->dexSeen));
+
+            /* Restore option-related flags from backup (only these specific settings) */
+            if (flagsBackup != NULL)
+            {
+                u8 *fb = (u8 *)flagsBackup;
+                (fb[0] & (1 << (FLAG_AI_BATTLES % 8))) ? FlagSet(FLAG_AI_BATTLES) : FlagClear(FLAG_AI_BATTLES);
+                (fb[1] & (1 << (FLAG_AUTO_SCROLL_TEXT % 8))) ? FlagSet(FLAG_AUTO_SCROLL_TEXT) : FlagClear(FLAG_AUTO_SCROLL_TEXT);
+                (fb[1] & (1 << (FLAG_RANDOMIZE_MON % 8))) ? FlagSet(FLAG_RANDOMIZE_MON) : FlagClear(FLAG_RANDOMIZE_MON);
+                (fb[2] & (1 << (FLAG_RANDOMIZE_TYPE % 8))) ? FlagSet(FLAG_RANDOMIZE_TYPE) : FlagClear(FLAG_RANDOMIZE_TYPE);
+                (fb[2] & (1 << (FLAG_RANDOMIZE_MOVES % 8))) ? FlagSet(FLAG_RANDOMIZE_MOVES) : FlagClear(FLAG_RANDOMIZE_MOVES);
+                (fb[2] & (1 << (FLAG_LEVEL_CAP_OFF % 8))) ? FlagSet(FLAG_LEVEL_CAP_OFF) : FlagClear(FLAG_LEVEL_CAP_OFF);
+                (fb[2] & (1 << (FLAG_AI_WILD_BATTLES % 8))) ? FlagSet(FLAG_AI_WILD_BATTLES) : FlagClear(FLAG_AI_WILD_BATTLES);
+                (fb[2] & (1 << (FLAG_ALLOW_STAT_EDITOR % 8))) ? FlagSet(FLAG_ALLOW_STAT_EDITOR) : FlagClear(FLAG_ALLOW_STAT_EDITOR);
+            }
+
+            if (optionsBackup != NULL)
+                memcpy((u8 *)gSaveBlock2Ptr + 0x14, optionsBackup, sizeof(u16));
+
+            if (playerSettingsBackup != NULL)
+            {
+                gSaveBlock1Ptr->nuzlockeModeEnabled = ((u8 *)playerSettingsBackup)[0];
+                gSaveBlock1Ptr->autosaveModeEnabled = ((u8 *)playerSettingsBackup)[1];
+                gSaveBlock1Ptr->difficulty = ((u8 *)playerSettingsBackup)[2];
+            }
+
+            /* Load restored party into runtime structures so follower code has mons available. */
+            LoadPlayerParty();
+
+            /* Increase New Game+ counter in save (0-255) */
+            gSaveBlock2Ptr->newGamePlus++;
+        }
+
+        if (playerPartyBackup != NULL)
+            Free(playerPartyBackup);
+        if (pcStorageBackup != NULL)
+            Free(pcStorageBackup);
+        if (pcItemsBackup != NULL)
+            Free(pcItemsBackup);
+        if (bagItemsBackup != NULL)
+            Free(bagItemsBackup);
+        if (dexCaughtBackup != NULL)
+            Free(dexCaughtBackup);
+        if (dexSeenBackup != NULL)
+            Free(dexSeenBackup);
+        if (flagsBackup != NULL)
+            Free(flagsBackup);
+        if (optionsBackup != NULL)
+            Free(optionsBackup);
+        if (playerSettingsBackup != NULL)
+            Free(playerSettingsBackup);
+        // if (bagKeyItemsBackup != NULL)
+        //     Free(bagKeyItemsBackup);
+        if (bagPokeBallsBackup != NULL)
+            Free(bagPokeBallsBackup);
+        // if (bagTMHMsBackup != NULL)
+        //     Free(bagTMHMsBackup);
+        if (bagBerriesBackup != NULL)
+            Free(bagBerriesBackup);
+    }
 }
 
 static void ResetMiniGamesRecords(void)
@@ -238,4 +395,11 @@ static void ResetDexNav(void)
     memset(gSaveBlock3Ptr->dexNavSearchLevels, 0, sizeof(gSaveBlock3Ptr->dexNavSearchLevels));
 #endif
     gSaveBlock3Ptr->dexNavChain = 0;
+}
+
+// Script-native: sets VAR_RESULT to 1 if save's newGamePlus counter is > 0, otherwise 0
+void CheckNewGamePlus(struct ScriptContext *ctx)
+{
+    u16 val = (gSaveBlock2Ptr->newGamePlus > 0) ? 1 : 0;
+    VarSet(VAR_RESULT, val);
 }

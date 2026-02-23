@@ -15007,7 +15007,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Torkoal @ Heat Rock
-Level: 68
+Level: 66
 Ability: Drought
 Nature: Relaxed
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15018,7 +15018,7 @@ EVs: 200 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Rapid Spin
 
 Venusaur @ Life Orb
-Level: 68
+Level: 66
 Ability: Chlorophyll
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15029,7 +15029,7 @@ EVs: 200 HP / 0 Atk / 100 Def / 50 SpA / 100 SpD / 50 Spe
 - Weather Ball
 
 Coalossal @ Leftovers
-Level: 68
+Level: 66
 Ability: Flame Body
 Nature: Bold
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15040,7 +15040,7 @@ EVs: 200 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Rapid Spin
 
 Pelipper @ Damp Rock
-Level: 68
+Level: 66
 Ability: Drizzle
 Nature: Calm
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15051,7 +15051,7 @@ EVs: 200 HP / 100 Atk / 50 Def / 0 SpA / 50 SpD / 100 Spe
 - U-Turn
 
 Barraskewda @ Choice Band
-Level: 68
+Level: 66
 Ability: Swift Swim
 Nature: Adamant
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15062,7 +15062,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Crunch
 
 Infernape @ Firium Z
-Level: 68
+Level: 66
 Ability: Blaze
 Nature: Jolly
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15083,7 +15083,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Rillaboom @ Miracle Seed
-Level: 72
+Level: 67
 Ability: Grassy Surge
 Nature: Adamant
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15094,7 +15094,7 @@ EVs: 250 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Swords Dance
 
 Lilligant Hisui @ Wide Lens
-Level: 72
+Level: 67
 Ability: Hustle
 Nature: Jolly
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15105,7 +15105,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Sleep Powder
 
 Mudsdale @ Leftovers
-Level: 72
+Level: 67
 Ability: Stamina
 Nature: Impish
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15116,7 +15116,7 @@ EVs: 250 HP / 0 Atk / 250 Def / 0 SpA / 0 SpD / 0 Spe
 - Toxic
 
 Pincurchin @ Shuca Berry
-Level: 72
+Level: 67
 Ability: Electric Surge
 Nature: Bold
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15127,7 +15127,7 @@ EVs: 250 HP / 0 Atk / 250 Def / 0 SpA / 0 SpD / 0 Spe
 - Protect
 
 Raichu Alola @ Focus Sash
-Level: 72
+Level: 67
 Ability: Surge Surfer
 Nature: Timid
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15138,7 +15138,7 @@ EVs: 0 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 250 Spe
 - Nasty Plot
 
 Vikavolt @ Electrium Z
-Level: 72
+Level: 67
 Ability: Levitate
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15159,7 +15159,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Bisharp @ Black Glasses
-Level: 76
+Level: 68
 Ability: Defiant
 Nature: Adamant
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15170,7 +15170,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Pursuit
 
 Gyarados @ Leftovers
-Level: 76
+Level: 68
 Ability: Moxie
 Nature: Jolly
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15181,7 +15181,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Bounce
 
 Togekiss @ Leftovers
-Level: 76
+Level: 68
 Ability: Serene Grace
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15192,7 +15192,7 @@ EVs: 250 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 0 Spe
 - Roost
 
 Lucario @ Life Orb
-Level: 76
+Level: 68
 Ability: Inner Focus
 Nature: Jolly
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15203,7 +15203,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Extreme Speed
 
 Exeggutor @ Leftovers
-Level: 76
+Level: 68
 Ability: Harvest
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15214,7 +15214,7 @@ EVs: 50 HP / 0 Atk / 100 Def / 250 SpA / 100 SpD / 0 Spe
 - Protect
 
 Heracross @ Heracronite
-Level: 76
+Level: 68
 Ability: Moxie
 Nature: Adamant
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15235,7 +15235,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Hippowdon @ Leftovers
-Level: 80
+Level: 69
 Ability: Sand Stream
 Nature: Impish
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15246,7 +15246,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Slack Off
 
 Toxapex @ Black Sludge
-Level: 80
+Level: 69
 Ability: Regenerator
 Nature: Bold
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15257,7 +15257,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Recover
 
 Corviknight @ Rocky Helmet
-Level: 80
+Level: 69
 Ability: Pressure
 Nature: Careful
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15268,7 +15268,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Brave Bird
 
 Gliscor @ Toxic Orb
-Level: 80
+Level: 69
 Ability: Poison Heal
 Nature: Impish
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15279,7 +15279,7 @@ EVs: 250 HP / 0 Atk / 80 Def / 0 SpA / 80 SpD / 80 Spe
 - Roost
 
 Umbreon @ Leftovers
-Level: 80
+Level: 69
 Ability: Synchronize
 Nature: Calm
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15290,7 +15290,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Heal Bell
 
 Snorlax @ Figy Berry
-Level: 80
+Level: 69
 Ability: Thick Fat
 Nature: Adamant
 Dynamax Level: 5
@@ -15312,7 +15312,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Oranguru @ Mental Herb
-Level: 84
+Level: 70
 Ability: Telepathy
 Nature: Sassy
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15323,7 +15323,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Foul Play
 
 Cofagrigus @ Colbur Berry
-Level: 84
+Level: 70
 Ability: Mummy
 Nature: Relaxed
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15334,7 +15334,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Pain Split
 
 Copperajah @ Life Orb
-Level: 84
+Level: 70
 Ability: Sheer Force
 Nature: Brave
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15345,7 +15345,7 @@ EVs: 250 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Power Whip
 
 Marowak Alola @ Thick Club
-Level: 84
+Level: 70
 Ability: Lightning Rod
 Nature: Brave
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15356,7 +15356,7 @@ EVs: 250 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Protect
 
 Slowbro @ Leftovers
-Level: 84
+Level: 70
 Ability: Regenerator
 Nature: Relaxed
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15367,7 +15367,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Ice Beam
 
 Camerupt @ Cameruptite
-Level: 84
+Level: 70
 Ability: Sheer Force
 Nature: Quiet
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15388,7 +15388,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Vileplume @ Black Sludge
-Level: 88
+Level: 71
 Ability: Effect Spore
 Nature: Bold
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15399,7 +15399,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Stun Spore
 
 Froslass @ Focus Sash
-Level: 88
+Level: 71
 Ability: Cursed Body
 Nature: Timid
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15410,7 +15410,7 @@ EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Hex
 
 Eelektross @ Assault Vest
-Level: 88
+Level: 71
 Ability: Levitate
 Nature: Sassy
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15421,7 +15421,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Thunder Wave
 
 Musharna @ Leftovers
-Level: 88
+Level: 71
 Ability: Synchronize
 Nature: Bold
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15432,7 +15432,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Heal Bell
 
 Sableye @ Eviolite
-Level: 88
+Level: 71
 Ability: Prankster
 Nature: Careful
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15443,7 +15443,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Knock Off
 
 Mismagius @ Expert Belt
-Level: 88
+Level: 71
 Ability: Levitate
 Nature: Timid
 Tera Type: Fairy
@@ -15465,7 +15465,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Weavile @ Razor Claw
-Level: 92
+Level: 72
 Ability: Keen Eye
 Nature: Jolly
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15476,7 +15476,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Aerial Ace
 
 Sharpedo @ Life Orb
-Level: 92
+Level: 72
 Ability: Speed Boost
 Nature: Jolly
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15487,7 +15487,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Protect
 
 Kingdra @ Scope Lens
-Level: 92
+Level: 72
 Ability: Sniper
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15498,7 +15498,7 @@ EVs: 0 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 250 Spe
 - Focus Energy
 
 Haxorus @ Lum Berry
-Level: 92
+Level: 72
 Ability: Rivalry
 Nature: Adamant
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15509,7 +15509,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Dragon Claw
 
 Gardevoir @ Choice Scarf
-Level: 92
+Level: 72
 Ability: Trace
 Nature: Timid
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15520,7 +15520,7 @@ EVs: 0 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 250 Spe
 - Focus Blast
 
 Houndoom @ Houndoominite
-Level: 92
+Level: 72
 Ability: Flash Fire
 Nature: Timid
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15541,7 +15541,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Grimmsnarl @ Light Clay
-Level: 96
+Level: 73
 Ability: Prankster
 Nature: Careful
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15552,7 +15552,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Thunder Wave
 
 Forretress @ Rocky Helmet
-Level: 96
+Level: 73
 Ability: Sturdy
 Nature: Relaxed
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15563,7 +15563,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Volt Switch
 
 Glimmora @ Black Sludge
-Level: 96
+Level: 73
 Ability: Toxic Debris
 Nature: Timid
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15574,7 +15574,7 @@ EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Memento
 
 Hawlucha @ Psychic Seed
-Level: 96
+Level: 73
 Ability: Unburden
 Nature: Adamant
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15585,7 +15585,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Substitute
 
 Hydreigon @ Choice Specs
-Level: 96
+Level: 73
 Ability: Levitate
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15596,7 +15596,7 @@ EVs: 0 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 250 Spe
 - Flash Cannon
 
 Mimikyu @ Life Orb
-Level: 96
+Level: 73
 Ability: Disguise
 Nature: Jolly
 Tera Type: Ghost
@@ -15618,7 +15618,7 @@ Items: Full Restore / Full Restore / Full Restore
 AI: Smart Trainer / Prediction / Ace Pokemon
 
 Empoleon @ Leftovers
-Level: 100
+Level: 74
 Ability: Torrent
 Nature: Calm
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15629,7 +15629,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Protect
 
 Decidueye @ Heavy-Duty Boots
-Level: 100
+Level: 74
 Ability: Overgrow
 Nature: Careful
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15640,7 +15640,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - U-Turn
 
 Typhlosion Hisui @ Black Sludge
-Level: 100
+Level: 74
 Ability: Frisk
 Nature: Modest
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15651,7 +15651,7 @@ EVs: 250 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 0 Spe
 - Hex
 
 Torterra @ Rocky Helmet
-Level: 100
+Level: 74
 Ability: Overgrow
 Nature: Impish
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15662,7 +15662,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Synthesis
 
 Primarina @ Leftovers
-Level: 100
+Level: 74
 Ability: Liquid Voice
 Nature: Bold
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
@@ -15673,7 +15673,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 - Rest
 
 Sceptile @ Sceptilite
-Level: 100
+Level: 74
 Ability: Lightning Rod
 Nature: Timid
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe

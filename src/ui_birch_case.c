@@ -2,6 +2,7 @@
 #include "ui_birch_case.h"
 #include "strings.h"
 #include "bg.h"
+#include "caps.h"
 #include "data.h"
 #include "decompress.h"
 #include "event_data.h"
@@ -366,7 +367,7 @@ static void CursorCallback(struct Sprite *sprite)
 u16 GetRandomSpecies(u8 setIndex, u8 slotIndex)
 {
     u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-    rng_value_t rngState = LocalRandomSeed(trainerId + setIndex * 100 + slotIndex);
+    rng_value_t rngState = LocalRandomSeed(trainerId + setIndex * 100 + slotIndex + GetNewGamePlusLevelOffset());
     return (LocalRandom(&rngState) % NUM_SPECIES) + 1;
 }
 

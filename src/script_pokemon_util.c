@@ -29,6 +29,7 @@
 #include "constants/battle_frontier.h"
 #include "title_screen.h"
 #include "start_menu.h"
+#include "caps.h"
 
 static void CB2_ReturnFromChooseHalfParty(void);
 static void CB2_ReturnFromChooseBattleFrontierParty(void);
@@ -139,6 +140,8 @@ void CreateScriptedWildMon(u16 species, u8 level, u16 item)
     u8 heldItem[2];
 
     ZeroEnemyPartyMons();
+    /* Apply New Game+ level offset */
+    level = (u8)min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
     if (OW_SYNCHRONIZE_NATURE > GEN_3)
         CreateMonWithNature(&gEnemyParty[0], species, level, USE_RANDOM_IVS, PickWildMonNature());
     else
@@ -156,6 +159,10 @@ void CreateScriptedDoubleWildMon(u16 species1, u8 level1, u16 item1, u16 species
     u8 heldItem2[2];
 
     ZeroEnemyPartyMons();
+
+    /* Apply New Game+ level offset to both wild mons */
+    level1 = (u8)min(level1 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+    level2 = (u8)min(level2 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
     if (OW_SYNCHRONIZE_NATURE > GEN_3)
         CreateMonWithNature(&gEnemyParty[0], species1, level1, 32, PickWildMonNature());

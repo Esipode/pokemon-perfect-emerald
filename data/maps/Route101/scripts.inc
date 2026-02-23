@@ -215,11 +215,7 @@ Route101_EventScript_RouteSign::
 	msgbox Route101_Text_RouteSign, MSGBOX_SIGN
 	end
 
-Route101_EventScript_BirchsBag::
-	lock
-	faceplayer
-	setflag FLAG_SYS_POKEMON_GET
-	setflag FLAG_RESCUED_BIRCH
+Route101_EventScript_OpenStarterCase::
 	message Route101_Text_GenSelect
 	waitmessage
 	multichoice 25, 6, STARTER_GEN_OPTIONS TRUE
@@ -229,6 +225,15 @@ Route101_EventScript_BirchsBag::
 	delay 30
 	callnative StartNewPokeballCaseUI
 	waitstate
+	return
+
+Route101_EventScript_BirchsBag::
+	lock
+	faceplayer
+	setflag FLAG_SYS_POKEMON_GET
+	setflag FLAG_RESCUED_BIRCH
+	callnative CheckNewGamePlus
+	goto_if_ne VAR_RESULT, 1, Route101_EventScript_OpenStarterCase
 	setwildbattle SPECIES_ZIGZAGOON 2
 	waitse
 	playmoncry SPECIES_ZIGZAGOON, CRY_MODE_ENCOUNTER

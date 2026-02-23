@@ -38,6 +38,7 @@
 #include "malloc.h"
 #include "m4a.h"
 #include "new_game.h"
+#include "caps.h"
 #include "palette.h"
 #include "party_menu.h"
 #include "pokeball.h"
@@ -1978,7 +1979,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             if (FlagGet(FLAG_RANDOMIZE_MON))
             {
                 u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-                rng_value_t rngState = LocalRandomSeed(trainerId + partyData[monIndex].species);
+                rng_value_t rngState = LocalRandomSeed(trainerId + partyData[monIndex].species + GetNewGamePlusLevelOffset());
                 species = LocalRandom(&rngState) % NUM_SPECIES;
             }
             else {
@@ -1989,6 +1990,9 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             u8 baseLevel = partyData[monIndex].lvl;
             s8 adjustment = GetDifficultyLevelAdjustment(baseLevel, gSaveBlock1Ptr->difficulty);
             u8 newLevel = baseLevel + adjustment;
+
+            /* Apply New Game+ level offset */
+            newLevel = (u8)min((u32)newLevel + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
             if (newLevel < 1)
                 newLevel = 1;

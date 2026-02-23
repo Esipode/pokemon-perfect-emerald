@@ -2,6 +2,7 @@
 #include "battle_main.h"
 #include "battle_setup.h"
 #include "bg.h"
+#include "caps.h"
 #include "data.h"
 #include "daycare.h"
 #include "decompress.h"
@@ -1944,7 +1945,7 @@ u16 getRandomizedWildSpecies(u16 species)
 {
     if (FlagGet(FLAG_RANDOMIZE_MON)) {
         u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-        rng_value_t rngState = LocalRandomSeed(trainerId + species);
+        rng_value_t rngState = LocalRandomSeed(trainerId + species + GetNewGamePlusLevelOffset());
         return LocalRandom(&rngState) % NUM_SPECIES;
     }
     else {

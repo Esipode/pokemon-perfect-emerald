@@ -3,7 +3,18 @@
 #include "event_data.h"
 #include "caps.h"
 #include "pokemon.h"
+#include "save.h"
 
+
+u32 GetNewGamePlusLevelOffset(void)
+{
+    u32 ngpRuns = gSaveBlock2Ptr->newGamePlus;
+
+    if (ngpRuns > 0)
+        return ngpRuns * 75;
+
+    return 0;
+}
 
 u32 GetCurrentLevelCap(void)
 {
@@ -25,20 +36,24 @@ u32 GetCurrentLevelCap(void)
         {FLAG_HIDE_SEAFLOOR_CAVERN_AQUA_GRUNTS, 54},
         {FLAG_BADGE08_GET, 58},
         {FLAG_IS_CHAMPION, 65},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_1, 68},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_2, 72},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_3, 76},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_4, 80},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_5, 84},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_6, 88},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_7, 92},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_8, 96},
-        {FLAG_BEAT_CHAMPION_CHALLENGER_9, 100},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_1, 66},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_2, 67},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_3, 68},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_4, 69},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_5, 70},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_6, 71},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_7, 72},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_8, 73},
+        {FLAG_BEAT_CHAMPION_CHALLENGER_9, 74},
     };
 
     u32 i;
     // CUSTOM - CAP PLAYER (100) BELOW MAX LEVEL (250)
-    u32 playerLevelCap = 100;
+    u32 playerLevelCap = 100 + GetNewGamePlusLevelOffset();
+
+    if (playerLevelCap > 250) {
+        playerLevelCap = 250;
+    }
 
     // Check if level cap is disabled
     if (FlagGet(FLAG_LEVEL_CAP_OFF))
@@ -51,7 +66,16 @@ u32 GetCurrentLevelCap(void)
         for (i = 0; i < ARRAY_COUNT(sLevelCapFlagMap); i++)
         {
             if (!FlagGet(sLevelCapFlagMap[i][0]))
-                return sLevelCapFlagMap[i][1];
+            {
+                u32 baseCap = sLevelCapFlagMap[i][1];
+                baseCap += GetNewGamePlusLevelOffset();
+
+                if (baseCap > 250) {
+                    return 250;
+                }
+
+                return baseCap;
+            }
         }
     }
     else if (B_LEVEL_CAP_TYPE == LEVEL_CAP_VARIABLE)
@@ -108,7 +132,6 @@ u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)
 
 u32 GetCurrentEVCap(void)
 {
-
     static const u16 sEvCapFlagMap[][2] = {
         // Define EV caps for each milestone
         {FLAG_BADGE01_GET, 30},

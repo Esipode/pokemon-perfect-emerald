@@ -788,10 +788,10 @@ static const struct MenuAction MultiChoiceList_Starter_Gen_Options[] =
 static const struct MenuAction MultiChoiceList_ChampionChallenge_Page1[] =
 {
     {gText_Exit},
-    {COMPOUND_STRING("Lv. 70")},
+    {COMPOUND_STRING("Lv. 68")},
+    {COMPOUND_STRING("Lv. 72")},
+    {COMPOUND_STRING("Lv. 76")},
     {COMPOUND_STRING("Lv. 80")},
-    {COMPOUND_STRING("Lv. 90")},
-    {COMPOUND_STRING("Lv. 100")},
     {COMPOUND_STRING("Next Page")},
 };
 
@@ -799,9 +799,9 @@ static const struct MenuAction MultiChoiceList_ChampionChallenge_Page2[] =
 {
     {gText_Exit},
     {COMPOUND_STRING("Prev Page")},
-    {COMPOUND_STRING("Lv. 110")},
-    {COMPOUND_STRING("Lv. 120")},
-    {COMPOUND_STRING("Lv. 130")},
+    {COMPOUND_STRING("Lv. 84")},
+    {COMPOUND_STRING("Lv. 88")},
+    {COMPOUND_STRING("Lv. 92")},
     {COMPOUND_STRING("Next Page")},
 };
 
@@ -809,8 +809,8 @@ static const struct MenuAction MultiChoiceList_ChampionChallenge_Page3[] =
 {
     {gText_Exit},
     {COMPOUND_STRING("Prev Page")},
-    {COMPOUND_STRING("Lv. 140")},
-    {COMPOUND_STRING("Lv. 150")},
+    {COMPOUND_STRING("Lv. 96")},
+    {COMPOUND_STRING("Lv. 100")},
 };
 
 static const struct MenuAction MultichoiceList_Exit[] =
