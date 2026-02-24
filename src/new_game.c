@@ -171,6 +171,8 @@ void NewGameInitData(void)
     void *optionsBackup = NULL;
     void *playerSettingsBackup = NULL;
     u8 savedTrainerId[TRAINER_ID_LENGTH];
+    u32 moneyBackup = 0;
+    u16 coinsBackup = 0;
 
     if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
         RtcReset();
@@ -210,6 +212,9 @@ void NewGameInitData(void)
 
         dexSeenBackup = Alloc(sizeof(gSaveBlock1Ptr->dexSeen));
         memcpy(dexSeenBackup, gSaveBlock1Ptr->dexSeen, sizeof(gSaveBlock1Ptr->dexSeen));
+        /* Backup money and coins so they persist through ClearSav1 */
+        moneyBackup = GetMoney(&gSaveBlock1Ptr->money);
+        coinsBackup = GetCoins();
         
         /* Backup only option-related flag bytes (minimize restoring unrelated flags) */
         flagsBackup = Alloc(3);
@@ -337,6 +342,10 @@ void NewGameInitData(void)
                 gSaveBlock1Ptr->autosaveModeEnabled = ((u8 *)playerSettingsBackup)[1];
                 gSaveBlock1Ptr->difficulty = ((u8 *)playerSettingsBackup)[2];
             }
+
+            /* Restore money and coins preserved across ClearSav1 */
+            SetMoney(&gSaveBlock1Ptr->money, moneyBackup);
+            SetCoins(coinsBackup);
 
             /* Load restored party into runtime structures so follower code has mons available. */
             LoadPlayerParty();
