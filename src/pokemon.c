@@ -27,6 +27,7 @@
 #include "main.h"
 #include "overworld.h"
 #include "m4a.h"
+#include "new_game.h"
 #include "party_menu.h"
 #include "pokedex.h"
 #include "pokeblock.h"
@@ -63,6 +64,7 @@
 #include "constants/moves.h"
 #include "constants/regions.h"
 #include "constants/songs.h"
+#include "constants/species.h"
 #include "constants/trainers.h"
 #include "constants/union_room.h"
 #include "constants/weather.h"
@@ -1099,9 +1101,18 @@ void ZeroEnemyPartyMons(void)
 
 void CreateMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
 {
+    u16 speciesWithOptionalRandomization = species;
+
+    if (FlagGet(FLAG_RANDOMIZE_MON))
+    {
+        u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+        rng_value_t rngState = LocalRandomSeed(trainerId + species + GetNewGamePlusLevelOffset());
+        speciesWithOptionalRandomization = LocalRandom(&rngState) % NUM_SPECIES;
+    }
+
     u32 mail;
     ZeroMonData(mon);
-    CreateBoxMon(&mon->box, species, level, fixedIV, hasFixedPersonality, fixedPersonality, otIdType, fixedOtId);
+    CreateBoxMon(&mon->box, speciesWithOptionalRandomization, level, fixedIV, hasFixedPersonality, fixedPersonality, otIdType, fixedOtId);
     SetMonData(mon, MON_DATA_LEVEL, &level);
     mail = MAIL_NONE;
     SetMonData(mon, MON_DATA_MAIL, &mail);

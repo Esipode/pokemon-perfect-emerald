@@ -144,14 +144,7 @@ void CreateScriptedWildMon(u16 species, u8 level, u16 item)
     /* Apply New Game+ level offset */
     level = (u8)min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
-    if (FlagGet(FLAG_RANDOMIZE_MON))
-    {
-        u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-        // Optionally add map/slot to seed for more variety
-        rng_value_t rngState = LocalRandomSeed(trainerId + species + GetNewGamePlusLevelOffset());
-        CreateMon(&gEnemyParty[0], LocalRandom(&rngState) % NUM_SPECIES, level, USE_RANDOM_IVS, 0, 0, OT_ID_PLAYER_ID, 0);
-    }
-    else if (OW_SYNCHRONIZE_NATURE > GEN_3)
+    if (OW_SYNCHRONIZE_NATURE > GEN_3)
         CreateMonWithNature(&gEnemyParty[0], species, level, USE_RANDOM_IVS, PickWildMonNature());
     else
         CreateMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, 0, 0, OT_ID_PLAYER_ID, 0);
@@ -173,14 +166,7 @@ void CreateScriptedDoubleWildMon(u16 species1, u8 level1, u16 item1, u16 species
     level1 = (u8)min(level1 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
     level2 = (u8)min(level2 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
-    if (FlagGet(FLAG_RANDOMIZE_MON))
-    {
-        u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-        // Optionally add map/slot to seed for more variety
-        rng_value_t rngState = LocalRandomSeed(trainerId + species1 + GetNewGamePlusLevelOffset());
-        CreateMon(&gEnemyParty[0], LocalRandom(&rngState) % NUM_SPECIES, level1, USE_RANDOM_IVS, 0, 0, OT_ID_PLAYER_ID, 0);
-    }
-    else if (OW_SYNCHRONIZE_NATURE > GEN_3)
+    if (OW_SYNCHRONIZE_NATURE > GEN_3)
         CreateMonWithNature(&gEnemyParty[0], species1, level1, 32, PickWildMonNature());
     else
         CreateMon(&gEnemyParty[0], species1, level1, 32, 0, 0, OT_ID_PLAYER_ID, 0);
@@ -191,13 +177,6 @@ void CreateScriptedDoubleWildMon(u16 species1, u8 level1, u16 item1, u16 species
         SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, heldItem1);
     }
 
-    if (FlagGet(FLAG_RANDOMIZE_MON))
-    {
-        u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-        // Optionally add map/slot to seed for more variety
-        rng_value_t rngState = LocalRandomSeed(trainerId + species2 + GetNewGamePlusLevelOffset());
-        CreateMon(&gEnemyParty[0], LocalRandom(&rngState) % NUM_SPECIES, level2, USE_RANDOM_IVS, 0, 0, OT_ID_PLAYER_ID, 0);
-    }
     if (OW_SYNCHRONIZE_NATURE > GEN_3)
         CreateMonWithNature(&gEnemyParty[1], species2, level2, 32, PickWildMonNature());
     else

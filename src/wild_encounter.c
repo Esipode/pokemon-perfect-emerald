@@ -594,7 +594,6 @@ static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum 
     if (FlagGet(FLAG_RANDOMIZE_MON))
     {
         u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-        // Optionally add map/slot to seed for more variety
         rng_value_t rngState = LocalRandomSeed(trainerId + wildMonInfo->wildPokemon[wildMonIndex].species + GetNewGamePlusLevelOffset());
         CreateWildMon(LocalRandom(&rngState) % NUM_SPECIES, level);
     }
