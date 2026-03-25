@@ -251,6 +251,7 @@ void NewGameInitData(void)
         NewGameInitPCItems();
         // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
         gSaveBlock1Ptr->difficulty = 1;
+        gSaveBlock2Ptr->newGamePlus = 0;
         ResetItemFlags();
         ResetDexNav();
     }

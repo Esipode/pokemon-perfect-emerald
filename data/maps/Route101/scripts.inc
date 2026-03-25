@@ -225,15 +225,18 @@ Route101_EventScript_OpenStarterCase::
 	delay 30
 	callnative StartNewPokeballCaseUI
 	waitstate
-	return
+	goto Route101_EventScript_BirchsBag
 
-Route101_EventScript_BirchsBag::
+Route101_EventScript_StartBirchsBag::
 	lock
 	faceplayer
 	setflag FLAG_SYS_POKEMON_GET
 	setflag FLAG_RESCUED_BIRCH
 	callnative CheckNewGamePlus
 	goto_if_ne VAR_RESULT, 1, Route101_EventScript_OpenStarterCase
+	goto Route101_EventScript_BirchsBag
+
+Route101_EventScript_BirchsBag::
 	setwildbattle SPECIES_ZIGZAGOON 2
 	waitse
 	playmoncry SPECIES_ZIGZAGOON, CRY_MODE_ENCOUNTER
