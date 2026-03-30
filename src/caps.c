@@ -145,6 +145,10 @@ u32 GetCurrentEVCap(void)
         {FLAG_IS_CHAMPION, MAX_TOTAL_EVS},
     };
 
+    if (FlagGet(FLAG_LEVEL_CAP_OFF)) {
+        return MAX_TOTAL_EVS;
+    }
+
     if (B_EV_CAP_TYPE == EV_CAP_FLAG_LIST)
     {
         for (u32 evCap = 0; evCap < ARRAY_COUNT(sEvCapFlagMap); evCap++)
