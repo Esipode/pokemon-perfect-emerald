@@ -368,7 +368,7 @@ u16 GetRandomSpecies(u8 setIndex, u8 slotIndex)
 {
     u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
     rng_value_t rngState = LocalRandomSeed(trainerId + setIndex * 100 + slotIndex + GetNewGamePlusLevelOffset());
-    return (LocalRandom(&rngState) % NUM_SPECIES) + 1;
+    return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
 }
 
 // Generate a random type
@@ -628,6 +628,11 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
     u8 *evs = (u8 *) sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].evs;
     u8 *ivs = (u8 *) sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].ivs;
     u16 *moves = (u16 *) sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].moves;
+    bool8 wasRandomizeMon = FlagGet(FLAG_RANDOMIZE_MON);
+
+    if (wasRandomizeMon)
+        FlagClear(FLAG_RANDOMIZE_MON);
+
     FlagSet(FLAG_SYS_POKEMON_GET);
     gSpecialVar_Result = BirchCase_GiveMonParameterized(sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].species, sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].level, \
                 sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].item, sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].ball || 4, \
@@ -635,7 +640,11 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
                 sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].gender, evs, ivs, moves, \
                 sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].ggMaxFactor, sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].teraType,\
                 sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].isShinyExpansion);
-    *GetVarPointer(VAR_STARTER_MON) = FlagGet(FLAG_RANDOMIZE_MON) ? 0 : GetStarterPokemon(sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].species);
+
+    if (wasRandomizeMon)
+        FlagSet(FLAG_RANDOMIZE_MON);
+
+    *GetVarPointer(VAR_STARTER_MON) = wasRandomizeMon ? 0 : GetStarterPokemon(sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].species);
 }
 
 //==========FUNCTIONS==========//
