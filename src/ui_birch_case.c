@@ -555,7 +555,7 @@ static void CreatePokeballSprites()
     for(i=0; i<9; i++)
     {
         u16 x, y;
-        if(sStarterChoices[gSpecialVar_Result][i].species == SPECIES_NONE)
+        if(sCurrentChoices[gSpecialVar_Result][i].species == SPECIES_NONE)
             continue;
 
         if(i <= 3)

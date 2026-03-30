@@ -216,6 +216,8 @@ Route101_EventScript_RouteSign::
 	end
 
 Route101_EventScript_OpenStarterCase::
+	getpartysize
+	goto_if_gt VAR_RESULT, 0, Route101_EventScript_BirchsBag
 	message Route101_Text_GenSelect
 	waitmessage
 	multichoice 25, 6, STARTER_GEN_OPTIONS TRUE
