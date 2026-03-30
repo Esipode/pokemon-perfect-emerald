@@ -34,6 +34,7 @@
 #include "constants/songs.h"
 #include "constants/items.h"
 #include "caps.h"
+#include "event_data.h"
 
 enum
 {   // Corresponds to gHealthboxElementsGfxTable (and the tables after it) in graphics.c
@@ -168,6 +169,8 @@ enum
     HEALTHBOX_GFX_123,
     HEALTHBOX_GFX_FRAME_END,
     HEALTHBOX_GFX_FRAME_END_BAR,
+    HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH,      // Nuzlocke: checkmark for can catch
+    HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH,   // Nuzlocke: X for cannot catch
 };
 
 static const u8 *GetHealthboxElementGfxPtr(u8);
@@ -1774,6 +1777,8 @@ static void UpdateNickInHealthbox(u8 healthboxSpriteId, struct Pokemon *mon)
 static void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
 {
     u8 battler, healthBarSpriteId;
+    u16 species;
+    u8 gfxId;
 
     if (gBattleTypeFlags & BATTLE_TYPE_WALLY_TUTORIAL)
         return;
@@ -1783,15 +1788,52 @@ static void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     battler = gSprites[healthboxSpriteId].hMain_Battler;
     if (IsOnPlayerSide(battler))
         return;
-    if (!GetSetPokedexFlag(SpeciesToNationalPokedexNum(GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES)), FLAG_GET_CAUGHT))
-        return;
 
+    species = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
-    if (noStatus)
-        CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT), (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+    // Nuzlocke Mode indicator
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE))
+    {
+        bool8 isCaught = GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT);
+        
+        // If already caught in this game, show pokeball
+        if (isCaught)
+        {
+            gfxId = HEALTHBOX_GFX_STATUS_BALL_CAUGHT;
+        }
+        else
+        {
+            // Check if already caught one pokemon in this zone
+            u16 route = GetCurrentMapId();
+            if (GET_NUZLOCKE_FLAG(route))
+            {
+                // Cannot catch - already caught one in this zone
+                gfxId = HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH;
+            }
+            else
+            {
+                // Can catch - haven't caught one yet in this zone
+                gfxId = HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH;
+            }
+        }
+
+        if (noStatus)
+            CpuCopy32(GetHealthboxElementGfxPtr(gfxId), (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+        else
+            CpuFill32(0, (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+    }
+    // Regular mode - show pokeball if caught
     else
-        CpuFill32(0, (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+    {
+        if (!GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT))
+            return;
+
+        if (noStatus)
+            CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT), (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+        else
+            CpuFill32(0, (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+    }
 }
 
 static void UpdateStatusIconInHealthbox(u8 healthboxSpriteId)
