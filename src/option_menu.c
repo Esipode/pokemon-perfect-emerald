@@ -270,6 +270,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tAutosave = gSaveBlock1Ptr->autosaveModeEnabled;
     gTasks[taskId].tDifficulty = gSaveBlock1Ptr->difficulty;
     gTasks[taskId].tLevelCapOff = FlagGet(FLAG_LEVEL_CAP_OFF);
+    gTasks[taskId].tStatEditor = FlagGet(FLAG_ALLOW_STAT_EDITOR);
 }
 
 static void DrawOptionsPg1(u8 taskId)

@@ -245,12 +245,9 @@ void NewGameInitData(void)
         PlayTimeCounter_Reset();
         ClearPokedexFlags();
         ResetPokemonStorageSystem();
-        SetMoney(&gSaveBlock1Ptr->money, 5000);
-        SetCoins(0);
         gPlayerPartyCount = 0;
         NewGameInitPCItems();
         // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
-        gSaveBlock1Ptr->difficulty = 1;
         gSaveBlock2Ptr->newGamePlus = 0;
         ResetItemFlags();
         ResetDexNav();
@@ -258,6 +255,12 @@ void NewGameInitData(void)
     ZeroEnemyPartyMons();
     ClearFrontierRecord();
     ClearSav1();
+    if (!isNewGamePlus)
+    {
+        gSaveBlock1Ptr->difficulty = 1;
+        SetMoney(&gSaveBlock1Ptr->money, 5000);
+        SetCoins(0);
+    }
     ClearSav3();
     ClearAllMail();
     gSaveBlock2Ptr->specialSaveWarpFlags = 0;
