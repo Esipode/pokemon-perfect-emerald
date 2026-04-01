@@ -5790,7 +5790,7 @@ u8 GetNumberOfRelearnableMoves(struct Pokemon *mon)
                     ;
 
                 if (k == numMoves)
-                    moves[numMoves++] = learnset[i].move;
+                    moves[numMoves++] = GetEffectiveMove(learnset[i].move, species);
             }
         }
     }

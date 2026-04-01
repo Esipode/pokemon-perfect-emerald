@@ -10,5 +10,6 @@ u16 GetRandomSpecies(u8 setIndex, u8 slotIndex);
 u8 GetRandomType(u16 species, u32 typeOffset);
 u16 GetRandomMove(u16 species, u16 originalMove);
 u8 GetRandomMoveType(u16 moveId);
+u16 GetEffectiveMove(u16 move, u16 species);
 
 #endif // GUARD_UI_MENU_H

@@ -5622,13 +5622,15 @@ void ItemUseCB_TMHM(u8 taskId, TaskFunc task)
 {
     struct Pokemon *mon;
     u16 item = gSpecialVar_ItemId;
-    u16 move = ItemIdToBattleMoveId(item);
+    u16 move;
 
-    gPartyMenu.data1 = move;
     gPartyMenu.learnMoveState = 0;
 
     PlaySE(SE_SELECT);
     mon = &gPlayerParty[gPartyMenu.slotId];
+    move = ItemIdToBattleMoveId(item);
+
+    gPartyMenu.data1 = move;
 
     GetMonNickname(mon, gStringVar1);
     StringCopy(gStringVar2, GetMoveName(move));

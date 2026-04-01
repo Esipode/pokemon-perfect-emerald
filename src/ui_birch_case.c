@@ -414,6 +414,15 @@ u8 GetRandomMoveType(u16 moveId)
     return type;
 }
 
+// Get the effective move, applying randomization if enabled
+u16 GetEffectiveMove(u16 move, u16 species)
+{
+    if (FlagGet(FLAG_RANDOMIZE_MOVES))
+        return GetRandomMove(species, move);
+    else
+        return move;
+}
+
 static void GenerateIVs(u8 ivs[6])
 {
     for (int i = 0; i < 6; i++)
