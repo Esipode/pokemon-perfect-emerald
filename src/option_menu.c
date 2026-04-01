@@ -275,7 +275,6 @@ static void ReadAllCurrentSettings(u8 taskId)
 
 static void DrawOptionsPg1(u8 taskId)
 {  
-    ReadAllCurrentSettings(taskId);
     TextSpeed_DrawChoices(gTasks[taskId].tTextSpeed);
     BattleScene_DrawChoices(gTasks[taskId].tBattleSceneOff);
     BattleStyle_DrawChoices(gTasks[taskId].tBattleStyle);
@@ -288,7 +287,6 @@ static void DrawOptionsPg1(u8 taskId)
 
 static void DrawOptionsPg2(u8 taskId)
 {
-    ReadAllCurrentSettings(taskId);
     AIBattles_DrawChoices(gTasks[taskId].tAIBattles & 1);
     WildAIBattles_DrawChoices((gTasks[taskId].tAIBattles & 2) ? 1 : 0);
     AutoScroll_DrawChoices(gTasks[taskId].tAutoScroll);
@@ -301,7 +299,6 @@ static void DrawOptionsPg2(u8 taskId)
 
 static void DrawOptionsPg3(u8 taskId)
 {
-    ReadAllCurrentSettings(taskId);
     Randomizer_DrawChoices(gTasks[taskId].tRandomizer);
     RandomizerType_DrawChoices(gTasks[taskId].tRandomizerType);
     RandomizerMoves_DrawChoices(gTasks[taskId].tRandomizerMoves);
@@ -389,6 +386,7 @@ void CB2_InitOptionMenu(void)
     case 10:
     {
         taskId = CreateTask(Task_OptionMenuFadeIn, 0);
+        ReadAllCurrentSettings(taskId);
         switch(sCurrPage)
         {
         case 0:
