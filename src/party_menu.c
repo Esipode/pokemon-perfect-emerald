@@ -63,6 +63,7 @@
 #include "strings.h"
 #include "task.h"
 #include "text.h"
+#include "ui_birch_case.h"
 #include "text_window.h"
 #include "trade.h"
 #include "union_room.h"
@@ -6103,8 +6104,10 @@ static void PartyMenuTryEvolution(u8 taskId)
 
 static void DisplayMonNeedsToReplaceMove(u8 taskId)
 {
+    u16 displayMove = GetEffectiveMove(gMoveToLearn, GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES, NULL));
+
     GetMonNickname(&gPlayerParty[gPartyMenu.slotId], gStringVar1);
-    StringCopy(gStringVar2, GetMoveName(gMoveToLearn));
+    StringCopy(gStringVar2, GetMoveName(displayMove));
     StringExpandPlaceholders(gStringVar4, gText_PkmnNeedsToReplaceMove);
     DisplayPartyMenuMessage(gStringVar4, TRUE);
     ScheduleBgCopyTilemapToVram(2);
@@ -6114,8 +6117,10 @@ static void DisplayMonNeedsToReplaceMove(u8 taskId)
 
 static void DisplayMonLearnedMove(u8 taskId, u16 move)
 {
+    u16 displayMove = GetEffectiveMove(move, GetMonData(&gPlayerParty[gPartyMenu.slotId], MON_DATA_SPECIES, NULL));
+
     GetMonNickname(&gPlayerParty[gPartyMenu.slotId], gStringVar1);
-    StringCopy(gStringVar2, GetMoveName(move));
+    StringCopy(gStringVar2, GetMoveName(displayMove));
     StringExpandPlaceholders(gStringVar4, gText_PkmnLearnedMove3);
     DisplayPartyMenuMessage(gStringVar4, TRUE);
     ScheduleBgCopyTilemapToVram(2);

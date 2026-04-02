@@ -2358,6 +2358,19 @@ static bool8 HasMoreThanOneMove(void)
     return FALSE;
 }
 
+static u16 GetDisplayedNewMove(void)
+{
+    u16 newMove = sMonSummaryScreen->newMove;
+
+    if (newMove == MOVE_NONE)
+        return MOVE_NONE;
+
+    if (FlagGet(FLAG_RANDOMIZE_MOVES) && !sMonSummaryScreen->isBoxMon)
+        return GetEffectiveMove(newMove, sMonSummaryScreen->summary.species);
+
+    return newMove;
+}
+
 static void ChangeSelectedMove(s16 *taskData, s8 direction, u8 *moveIndexPtr)
 {
     s8 i, newMoveIndex;
@@ -2375,7 +2388,7 @@ static void ChangeSelectedMove(s16 *taskData, s8 direction, u8 *moveIndexPtr)
 
         if (newMoveIndex == MAX_MON_MOVES)
         {
-            move = sMonSummaryScreen->newMove;
+            move = GetDisplayedNewMove();
             break;
         }
         move = sMonSummaryScreen->summary.moves[newMoveIndex];
@@ -3967,8 +3980,9 @@ static void PrintBattleMoves(void)
         PrintNewMoveDetailsOrCancelText();
         if (sMonSummaryScreen->firstMoveIndex == MAX_MON_MOVES)
         {
-            if (sMonSummaryScreen->newMove != MOVE_NONE)
-                PrintMoveDetails(sMonSummaryScreen->newMove);
+            u16 move = GetDisplayedNewMove();
+            if (move != MOVE_NONE)
+                PrintMoveDetails(move);
         }
         else
         {
@@ -4003,7 +4017,7 @@ static void Task_PrintBattleMoves(u8 taskId)
         if (sMonSummaryScreen->mode == SUMMARY_MODE_SELECT_MOVE)
         {
             if (sMonSummaryScreen->firstMoveIndex == MAX_MON_MOVES)
-                data[1] = sMonSummaryScreen->newMove;
+                data[1] = GetDisplayedNewMove();
             else
                 data[1] = sMonSummaryScreen->summary.moves[sMonSummaryScreen->firstMoveIndex];
         }
@@ -4196,7 +4210,7 @@ static void PrintNewMoveDetailsOrCancelText(void)
     }
     else
     {
-        u16 move = sMonSummaryScreen->newMove;
+        u16 move = GetDisplayedNewMove();
 
         if (sMonSummaryScreen->currPageIndex == PSS_PAGE_BATTLE_MOVES)
             PrintTextOnWindowToFit(windowId1, GetMoveName(move), 0, 65, 0, 6);
@@ -4397,23 +4411,23 @@ static void SetContestMoveTypeIcons(void)
 
 static void SetNewMoveTypeIcon(void)
 {
-    u32 type = GetMoveType(sMonSummaryScreen->newMove);
+    u16 move = GetDisplayedNewMove();
+    u32 type = GetMoveType(move);
     struct Pokemon *mon = &sMonSummaryScreen->currentMon;
-    struct PokeSummary *summary = &sMonSummaryScreen->summary;
 
     if (P_SHOW_DYNAMIC_TYPES)
     {
         enum MonState state = gMain.inBattle ? MON_IN_BATTLE : MON_OUTSIDE_BATTLE;
-        type = CheckDynamicMoveType(mon, sMonSummaryScreen->newMove, 0, state);  // Bug: in battle, this only shows the dynamic type of battler in position 0
+        type = CheckDynamicMoveType(mon, move, 0, state);
     }
     
     // Apply type randomization if enabled (after dynamic type to override it)
     if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
     {
-        type = GetRandomMoveType(sMonSummaryScreen->newMove);
+        type = GetRandomMoveType(move);
     }
 
-    if (sMonSummaryScreen->newMove == MOVE_NONE)
+    if (move == MOVE_NONE)
     {
         SetSpriteInvisibility(SPRITE_ARR_ID_TYPE + 4, TRUE);
     }
@@ -4425,7 +4439,7 @@ static void SetNewMoveTypeIcon(void)
         }
         else
         {
-            SetTypeSpritePosAndPal(NUMBER_OF_MON_TYPES + GetMoveContestCategory(sMonSummaryScreen->newMove), 85, 96, SPRITE_ARR_ID_TYPE + 4);
+            SetTypeSpritePosAndPal(NUMBER_OF_MON_TYPES + GetMoveContestCategory(move), 85, 96, SPRITE_ARR_ID_TYPE + 4);
         }
     }
 }

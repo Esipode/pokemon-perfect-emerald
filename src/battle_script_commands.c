@@ -30,6 +30,7 @@
 #include "mail.h"
 #include "event_data.h"
 #include "pokemon_storage_system.h"
+#include "ui_birch_case.h"
 #include "task.h"
 #include "naming_screen.h"
 #include "battle_setup.h"
@@ -9586,7 +9587,11 @@ static void Cmd_recordability(void)
 
 void BufferMoveToLearnIntoBattleTextBuff2(void)
 {
-    PREPARE_MOVE_BUFFER(gBattleTextBuff2, gMoveToLearn);
+    u16 move = gMoveToLearn;
+    u16 species = GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_SPECIES, NULL);
+
+    move = GetEffectiveMove(move, species);
+    PREPARE_MOVE_BUFFER(gBattleTextBuff2, move);
 }
 
 static void Cmd_buffermovetolearn(void)
