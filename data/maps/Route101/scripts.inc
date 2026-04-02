@@ -227,6 +227,7 @@ Route101_EventScript_OpenStarterCase::
 	delay 30
 	callnative StartNewPokeballCaseUI
 	waitstate
+	goto_if_eq VAR_0x8004, 1, Route101_EventScript_OpenStarterCase
 	goto Route101_EventScript_BirchsBag
 
 Route101_EventScript_StartBirchsBag::

@@ -634,6 +634,7 @@ static void ChangePositionUpdateSpriteAnims(u16 oldPosition, u8 taskId) // turn 
 
 static void BirchCase_GiveMon() // Function that calls the GiveMon function pulled from Expansion by Lunos and Ghoulslash
 {
+    VarSet(VAR_0x8004, 0);
     u8 *evs = (u8 *) sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].evs;
     u8 *ivs = (u8 *) sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].ivs;
     u16 *moves = (u16 *) sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].moves;
@@ -663,6 +664,7 @@ void Task_OpenBirchCase(u8 taskId)
     if (!gPaletteFade.active)
     {
         CleanupOverworldWindowsAndTilemaps();
+        VarSet(VAR_0x8004, 0);
         InitializeStarterChoices();
         BirchCase_Init(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         DestroyTask(taskId);
@@ -1056,6 +1058,16 @@ static void Task_BirchCaseConfirmSelection(u8 taskId)
 static void Task_BirchCaseMain(u8 taskId)
 {
     u16 oldPosition = sBirchCaseDataPtr->handPosition;
+
+    if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        VarSet(VAR_0x8004, 1);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_BirchCaseTurnOff;
+        return;
+    }
+
     if(JOY_NEW(DPAD_UP))
     {
         PlaySE(SE_SELECT);
