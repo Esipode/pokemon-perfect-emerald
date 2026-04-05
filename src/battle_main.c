@@ -1918,6 +1918,53 @@ static u8 GetMaxRandomizedEVForLevel(u8 level)
     return 30 + ((level - 1) * (252 - 30)) / (60 - 1);
 }
 
+static void SetTrainerMonEVsByHighestBaseStats(struct Pokemon *mon, u16 species)
+{
+    const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];
+    u16 evs[NUM_STATS] = {0};
+    u16 baseStats[NUM_STATS];
+    s16 statOrder[NUM_STATS];
+    u16 remaining = MAX_TOTAL_EVS;
+    int i, j;
+
+    baseStats[STAT_HP] = speciesInfo->baseHP;
+    baseStats[STAT_ATK] = speciesInfo->baseAttack;
+    baseStats[STAT_DEF] = speciesInfo->baseDefense;
+    baseStats[STAT_SPEED] = speciesInfo->baseSpeed;
+    baseStats[STAT_SPATK] = speciesInfo->baseSpAttack;
+    baseStats[STAT_SPDEF] = speciesInfo->baseSpDefense;
+
+    for (i = 0; i < NUM_STATS; i++)
+        statOrder[i] = i;
+
+    for (i = 0; i < NUM_STATS - 1; i++)
+    {
+        for (j = i + 1; j < NUM_STATS; j++)
+        {
+            if (baseStats[statOrder[j]] > baseStats[statOrder[i]] ||
+               (baseStats[statOrder[j]] == baseStats[statOrder[i]] && statOrder[j] < statOrder[i]))
+            {
+                s16 tmp = statOrder[i];
+                statOrder[i] = statOrder[j];
+                statOrder[j] = tmp;
+            }
+        }
+    }
+
+    for (i = 0; i < NUM_STATS && remaining > 0; i++)
+    {
+        u16 allocation = remaining;
+        if (allocation > MAX_PER_STAT_EVS)
+            allocation = MAX_PER_STAT_EVS;
+
+        evs[statOrder[i]] = allocation;
+        remaining -= allocation;
+    }
+
+    for (i = 0; i < NUM_STATS; i++)
+        SetMonData(mon, MON_DATA_HP_EV + i, &evs[i]);
+}
+
 u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, bool32 firstTrainer, u32 battleTypeFlags)
 {
     u32 personalityValue;
@@ -2113,6 +2160,9 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     SetMonData(&party[i], MON_DATA_TERA_TYPE, &data);
                 }
             }
+
+            if (gSaveBlock2Ptr->newGamePlus > 0)
+                SetTrainerMonEVsByHighestBaseStats(&party[i], species);
 
             // Moves randomization (independent of species randomization)
             if (FlagGet(FLAG_RANDOMIZE_MOVES)) {
