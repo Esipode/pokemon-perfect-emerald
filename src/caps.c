@@ -145,6 +145,9 @@ u32 GetCurrentEVCap(void)
         {FLAG_IS_CHAMPION, MAX_TOTAL_EVS},
     };
 
+    if (gSaveBlock2Ptr->newGamePlus > 0)
+        return MAX_TOTAL_EVS;
+
     if (FlagGet(FLAG_LEVEL_CAP_OFF)) {
         return MAX_TOTAL_EVS;
     }
