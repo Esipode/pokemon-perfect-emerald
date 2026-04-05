@@ -1861,15 +1861,230 @@ u32 GeneratePersonalityForGender(u32 gender, u32 species)
         return speciesInfo->genderRatio / 2;
 }
 
+static bool32 IsNewGamePlusDamageMove(u16 move)
+{
+    if (move == MOVE_NONE || move == MOVE_UNAVAILABLE)
+        return FALSE;
+
+    return GetMoveCategory(move) != DAMAGE_CATEGORY_STATUS;
+}
+
+static bool32 ShouldReplaceMoveForNewGamePlus(u16 move)
+{
+    if (move == MOVE_NONE || move == MOVE_UNAVAILABLE)
+        return TRUE;
+
+    if (!IsNewGamePlusDamageMove(move))
+        return TRUE;
+
+    if (GetMovePower(move) < 70)
+        return TRUE;
+
+    return FALSE;
+}
+
+static bool32 IsMoveInArray(const u16 *moves, u8 count, u16 move)
+{
+    u8 i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (moves[i] == move)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+static u8 GetSpeciesLearnableMoves(u16 species, u16 *moves)
+{
+    u8 numMoves = 0;
+    int i;
+    const u16 *teachableLearnset = GetSpeciesTeachableLearnset(species);
+
+    numMoves = GetLevelUpMovesBySpecies(species, moves);
+
+    for (i = 0; teachableLearnset[i] != MOVE_UNAVAILABLE; i++)
+    {
+        if (!IsMoveInArray(moves, numMoves, teachableLearnset[i]))
+            moves[numMoves++] = teachableLearnset[i];
+    }
+
+    return numMoves;
+}
+
+static u8 GetMonPrimaryType(u16 species)
+{
+    u8 primaryType = gSpeciesInfo[species].types[0];
+    u8 secondaryType = gSpeciesInfo[species].types[1];
+
+    if (secondaryType != TYPE_NONE && primaryType == TYPE_NORMAL)
+        return secondaryType;
+
+    return primaryType;
+}
+
+static u16 GetBestNewGamePlusMoveCandidate(u16 species, const u16 *currentMoves, u8 currentMoveCount, const bool32 *typeUsed, u8 preferredCategory, bool32 usePreferredCategory, u8 primaryType, bool32 requirePrimaryType)
+{
+    u16 learnableMoves[256];
+    u8 numLearnableMoves = GetSpeciesLearnableMoves(species, learnableMoves);
+    u16 bestMove = MOVE_NONE;
+    s32 bestScore = -1;
+    u8 i;
+
+    for (i = 0; i < numLearnableMoves; i++)
+    {
+        u16 move = learnableMoves[i];
+
+        if (!IsNewGamePlusDamageMove(move))
+            continue;
+        if (IsMoveInArray(currentMoves, currentMoveCount, move))
+            continue;
+
+        u8 moveType = GetMoveType(move);
+        u8 moveCategory = GetMoveCategory(move);
+        s32 score = GetMovePower(move) * 10;
+
+        if (!usePreferredCategory || moveCategory == preferredCategory)
+            score += 100;
+
+        if (moveType == primaryType)
+            score += 200;
+
+        if (moveType < NUMBER_OF_MON_TYPES && !typeUsed[moveType])
+            score += 50;
+
+        if (requirePrimaryType && moveType != primaryType)
+            continue;
+
+        if (score > bestScore || (score == bestScore && move < bestMove))
+        {
+            bestScore = score;
+            bestMove = move;
+        }
+    }
+
+    return bestMove;
+}
+
+static s8 FindMoveReplacementSlot(const u16 *moves, u8 primaryType, u8 preferredCategory)
+{
+    s8 worstSlot = -1;
+    s32 worstValue = 0x7FFFFFFF;
+    u8 j;
+
+    for (j = 0; j < MAX_MON_MOVES; j++)
+    {
+        u16 move = moves[j];
+
+        if (move == MOVE_NONE || move == MOVE_UNAVAILABLE)
+            return j;
+        if (!IsNewGamePlusDamageMove(move))
+            return j;
+
+        u8 moveType = GetMoveType(move);
+        u8 moveCategory = GetMoveCategory(move);
+        s32 score = GetMovePower(move) * 10;
+
+        if (moveType == primaryType)
+            score += 100;
+        if (moveCategory == preferredCategory)
+            score += 50;
+
+        if (score < worstValue)
+        {
+            worstValue = score;
+            worstSlot = j;
+        }
+    }
+
+    return worstSlot >= 0 ? worstSlot : 0;
+}
+
+static void AssignNewGamePlusTrainerPokemonMoves(struct Pokemon *mon, u16 *moves)
+{
+    u16 species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    u8 atk = GetMonData(mon, MON_DATA_ATK, NULL);
+    u8 spatk = GetMonData(mon, MON_DATA_SPATK, NULL);
+    u8 primaryType = GetMonPrimaryType(species);
+    u8 preferredCategory = (atk > spatk) ? DAMAGE_CATEGORY_PHYSICAL : ((spatk > atk) ? DAMAGE_CATEGORY_SPECIAL : DAMAGE_CATEGORY_PHYSICAL);
+    bool32 usePreferredCategory = atk != spatk;
+    bool32 typeUsed[NUMBER_OF_MON_TYPES] = {0};
+    bool32 hasValidPrimaryTypeMove = FALSE;
+    u8 j;
+
+    for (j = 0; j < MAX_MON_MOVES; j++)
+    {
+        u16 move = moves[j];
+
+        if (move == MOVE_NONE || move == MOVE_UNAVAILABLE)
+            continue;
+
+        if (IsNewGamePlusDamageMove(move))
+            typeUsed[GetMoveType(move)] = TRUE;
+
+        if (!ShouldReplaceMoveForNewGamePlus(move) && GetMoveType(move) == primaryType)
+            hasValidPrimaryTypeMove = TRUE;
+    }
+
+    if (!hasValidPrimaryTypeMove)
+    {
+        for (j = 0; j < MAX_MON_MOVES; j++)
+        {
+            if (ShouldReplaceMoveForNewGamePlus(moves[j]))
+            {
+                u16 candidate = GetBestNewGamePlusMoveCandidate(species, moves, MAX_MON_MOVES, typeUsed, preferredCategory, usePreferredCategory, primaryType, TRUE);
+                if (candidate != MOVE_NONE)
+                {
+                    moves[j] = candidate;
+                    typeUsed[GetMoveType(candidate)] = TRUE;
+                    hasValidPrimaryTypeMove = TRUE;
+                    break;
+                }
+            }
+        }
+
+        if (!hasValidPrimaryTypeMove)
+        {
+            s8 slot = FindMoveReplacementSlot(moves, primaryType, preferredCategory);
+            if (slot >= 0)
+            {
+                u16 candidate = GetBestNewGamePlusMoveCandidate(species, moves, MAX_MON_MOVES, typeUsed, preferredCategory, usePreferredCategory, primaryType, TRUE);
+                if (candidate != MOVE_NONE)
+                {
+                    moves[slot] = candidate;
+                    typeUsed[GetMoveType(candidate)] = TRUE;
+                    hasValidPrimaryTypeMove = TRUE;
+                }
+            }
+        }
+    }
+
+    for (j = 0; j < MAX_MON_MOVES; j++)
+    {
+        if (ShouldReplaceMoveForNewGamePlus(moves[j]))
+        {
+            u16 candidate = GetBestNewGamePlusMoveCandidate(species, moves, MAX_MON_MOVES, typeUsed, preferredCategory, usePreferredCategory, primaryType, FALSE);
+            if (candidate != MOVE_NONE)
+            {
+                moves[j] = candidate;
+                typeUsed[GetMoveType(candidate)] = TRUE;
+            }
+        }
+    }
+}
+
 void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
 {
     bool32 noMoveSet = TRUE;
     u32 j;
+    u16 assignedMoves[MAX_MON_MOVES];
 
     for (j = 0; j < MAX_MON_MOVES; ++j)
     {
         if (partyEntry->moves[j] != MOVE_NONE)
             noMoveSet = FALSE;
+        assignedMoves[j] = partyEntry->moves[j];
     }
     if (noMoveSet)
     {
@@ -1877,10 +2092,13 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
         return;
     }
 
+    if (gSaveBlock2Ptr->newGamePlus > 0)
+        AssignNewGamePlusTrainerPokemonMoves(mon, assignedMoves);
+
     for (j = 0; j < MAX_MON_MOVES; ++j)
     {
-        u32 pp = GetMovePP(partyEntry->moves[j]);
-        SetMonData(mon, MON_DATA_MOVE1 + j, &partyEntry->moves[j]);
+        u32 pp = GetMovePP(assignedMoves[j]);
+        SetMonData(mon, MON_DATA_MOVE1 + j, &assignedMoves[j]);
         SetMonData(mon, MON_DATA_PP1 + j, &pp);
     }
 }
