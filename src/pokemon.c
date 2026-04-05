@@ -3657,6 +3657,24 @@ const struct Evolution *GetSpeciesEvolutions(u16 species)
     return evolutions;
 }
 
+u16 GetFinalEvolution(u16 species)
+{
+    const struct Evolution *evolutions = GetSpeciesEvolutions(species);
+    if (evolutions == NULL || evolutions[0].method == EVOLUTIONS_END)
+        return species; // No evolutions
+
+    // Count evolutions
+    int count = 0;
+    while (evolutions[count].method != EVOLUTIONS_END)
+        count++;
+
+    if (count != 1)
+        return species; // Branched or none, don't change
+
+    // Recurse
+    return GetFinalEvolution(evolutions[0].targetSpecies);
+}
+
 const u16 *GetSpeciesFormTable(u16 species)
 {
     const u16 *formTable = gSpeciesInfo[SanitizeSpeciesId(species)].formSpeciesIdTable;

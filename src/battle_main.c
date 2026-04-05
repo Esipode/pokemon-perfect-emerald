@@ -1985,6 +1985,10 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             else {
                 species = partyData[monIndex].species;
             }
+
+            // Apply New Game+ evolution
+            if (gSaveBlock2Ptr->newGamePlus > 0)
+                species = GetFinalEvolution(species);
             
 
             u8 baseLevel = partyData[monIndex].lvl;
