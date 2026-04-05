@@ -371,6 +371,12 @@ u16 GetRandomSpecies(u8 setIndex, u8 slotIndex)
     return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
 }
 
+u16 GetRandomSpeciesFromBaseSpecies(u16 seed)
+{
+    rng_value_t rngState = LocalRandomSeed(seed + GetNewGamePlusLevelOffset());
+    return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
+}
+
 // Generate a random type
 u8 GetRandomType(u16 species, u32 typeOffset)
 {

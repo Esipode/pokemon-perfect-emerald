@@ -49,7 +49,6 @@
 #include "roamer.h"
 #include "safari_zone.h"
 #include "scanline_effect.h"
-#include "ui_birch_case.h"
 #include "script.h"
 #include "sound.h"
 #include "sprite.h"
@@ -2187,7 +2186,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
 {
     u32 personalityValue;
     s32 i;
-    u8 monsCount;
+    u8 monsCount = 0;
     if (battleTypeFlags & BATTLE_TYPE_TRAINER && !(battleTypeFlags & (BATTLE_TYPE_FRONTIER
                                                                         | BATTLE_TYPE_EREADER_TRAINER
                                                                         | BATTLE_TYPE_TRAINER_HILL)))
@@ -2412,6 +2411,128 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 ball = gTrainerClasses[trainer->trainerClass].ball ?: ITEM_POKE_BALL;
                 SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
             }
+        }
+    }
+
+    if (gSaveBlock2Ptr->newGamePlus > 0 && monsCount < PARTY_SIZE && !(battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS))
+    {
+        u8 extraCount = min(gSaveBlock2Ptr->newGamePlus, PARTY_SIZE - monsCount);
+        u16 usedSpecies[monsCount];
+        u8 usedTypes[monsCount];
+        s32 i;
+        for (i = 0; i < monsCount; i++)
+        {
+            usedSpecies[i] = GetFinalEvolution(GetMonData(&party[i], MON_DATA_SPECIES, NULL));
+            usedTypes[i] = GetMonPrimaryType(usedSpecies[i]);
+        }
+
+        // Create randomization seed based on original party
+        u32 seed = 0;
+        for (i = 0; i < monsCount; i++)
+        {
+            seed += usedSpecies[i];
+        }
+        u8 typeCounts[NUMBER_OF_MON_TYPES] = {0};
+        for (i = 0; i < monsCount; i++)
+        {
+            typeCounts[usedTypes[i]]++;
+        }
+        u8 themeType = TYPE_MYSTERY;
+        u8 maxCount = 0;
+        for (i = 0; i < NUMBER_OF_MON_TYPES; i++)
+        {
+            if (typeCounts[i] > maxCount)
+            {
+                maxCount = typeCounts[i];
+                themeType = i;
+            }
+        }
+        bool8 hasTheme = (monsCount > 1 && maxCount > monsCount / 2);
+        rng_value_t rngState = LocalRandomSeed(seed);
+        u8 level = GetMonData(&party[monsCount - 1], MON_DATA_LEVEL, NULL);
+        for (u8 extra = 0; extra < extraCount; extra++)
+        {
+            u16 chosenSpecies = SPECIES_NONE;
+            u8 attempts = 0;
+            while (chosenSpecies == SPECIES_NONE && attempts < 100)
+            {
+                u16 candidate = GetRandomSpeciesFromBaseSpecies(seed);
+                u16 candidateFinal = GetFinalEvolution(candidate);
+
+                if (gSpeciesInfo[candidateFinal].isLegendary)
+                {
+                    attempts++;
+                    continue;
+                }
+                bool8 alreadyInParty = FALSE;
+                for (u8 k = 0; k < monsCount + extra; k++)
+                {
+                    if (usedSpecies[k] == candidateFinal)
+                    {
+                        alreadyInParty = TRUE;
+                        break;
+                    }
+                }
+                if (alreadyInParty)
+                {
+                    attempts++;
+                    continue;
+                }
+                if (hasTheme && GetMonPrimaryType(candidate) != themeType)
+                {
+                    attempts++;
+                    continue;
+                }
+                chosenSpecies = candidateFinal;
+            }
+            if (chosenSpecies == SPECIES_NONE)
+            {
+                // Fallback: check for any valid pokemon
+                for (u16 candidate = 1; candidate < NUM_SPECIES; candidate++)
+                {
+                    u16 candidateFinal = GetFinalEvolution(candidate);
+
+                    if (gSpeciesInfo[candidateFinal].isLegendary)
+                        continue;
+
+                    bool8 alreadyInParty = FALSE;
+                    for (u8 k = 0; k < monsCount + extra; k++)
+                    {
+                        if (usedSpecies[k] == candidateFinal)
+                        {
+                            alreadyInParty = TRUE;
+                            break;
+                        }
+                    }
+
+                    if (alreadyInParty)
+                        continue;
+
+                    if (hasTheme && GetMonPrimaryType(candidateFinal) != themeType)
+                        continue;
+
+                    chosenSpecies = candidateFinal;
+                    break;
+                }
+            }
+            u32 personalityValue = Random32();
+            CreateMon(&party[monsCount + extra], chosenSpecies, level, 0, TRUE, personalityValue, OT_ID_RANDOM_NO_SHINY, 0);
+            SetTrainerMonEVsByHighestBaseStats(&party[monsCount + extra], chosenSpecies);
+            GiveMonInitialMoveset(&party[monsCount + extra]);
+            u16 moves[MAX_MON_MOVES];
+            u8 j;
+            for (j = 0; j < MAX_MON_MOVES; j++)
+            {
+                moves[j] = GetMonData(&party[monsCount + extra], MON_DATA_MOVE1 + j, NULL);
+            }
+            AssignNewGamePlusTrainerPokemonMoves(&party[monsCount + extra], moves);
+            for (j = 0; j < MAX_MON_MOVES; j++)
+            {
+                u32 pp = GetMovePP(moves[j]);
+                SetMonData(&party[monsCount + extra], MON_DATA_MOVE1 + j, &moves[j]);
+                SetMonData(&party[monsCount + extra], MON_DATA_PP1 + j, &pp);
+            }
+            CalculateMonStats(&party[monsCount + extra]);
         }
     }
 
