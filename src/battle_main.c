@@ -2414,7 +2414,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         }
     }
 
-    if (gSaveBlock2Ptr->newGamePlus > 0 && monsCount < PARTY_SIZE && !(battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS))
+    if (gSaveBlock2Ptr->newGamePlus > 0 && battleTypeFlags && BATTLE_TYPE_TRAINER && monsCount < PARTY_SIZE && !(battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS))
     {
         u8 extraCount = min(gSaveBlock2Ptr->newGamePlus, PARTY_SIZE - monsCount);
         u16 usedSpecies[monsCount];
