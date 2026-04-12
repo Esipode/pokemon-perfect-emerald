@@ -371,10 +371,20 @@ u16 GetRandomSpecies(u8 setIndex, u8 slotIndex)
     return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
 }
 
-u16 GetRandomSpeciesFromBaseSpecies(u16 seed)
+u16 GetRandomBaseSpecies(rng_value_t *rngState)
 {
-    rng_value_t rngState = LocalRandomSeed(seed + GetNewGamePlusLevelOffset());
-    return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
+    u16 species;
+
+    // Choose a random Pokémon species until a base species is found.
+    // This makes the selection uniform across base species rather than
+    // across all form/species IDs.
+    do
+    {
+        species = (LocalRandom(rngState) % (NUM_SPECIES - 1)) + 1;
+    }
+    while (GET_BASE_SPECIES_ID(species) != species);
+
+    return species;
 }
 
 // Generate a random type

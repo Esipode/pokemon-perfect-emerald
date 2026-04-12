@@ -2462,14 +2462,14 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 party[monsCount + extraCount - numAces + i] = party[monsCount - numAces + i];
             }
         }
-        rng_value_t rngState = LocalRandomSeed(seed);
+        rng_value_t rngState = LocalRandomSeed(seed + GetNewGamePlusLevelOffset());
         for (u8 extra = 0; extra < extraCount; extra++)
         {
             u16 chosenSpecies = SPECIES_NONE;
             u8 attempts = 0;
             while (chosenSpecies == SPECIES_NONE && attempts < 100)
             {
-                u16 candidate = GetRandomSpeciesFromBaseSpecies(seed);
+                u16 candidate = GetRandomBaseSpecies(&rngState);
                 u16 candidateFinal = GetFinalEvolution(candidate);
 
                 if (
