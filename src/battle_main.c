@@ -2417,8 +2417,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
     if (gSaveBlock2Ptr->newGamePlus > 0 && battleTypeFlags && BATTLE_TYPE_TRAINER && monsCount < PARTY_SIZE && !(battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS))
     {
         u8 extraCount = min(gSaveBlock2Ptr->newGamePlus, PARTY_SIZE - monsCount);
-        u16 usedSpecies[monsCount];
-        u8 usedTypes[monsCount];
+        u8 numAces = 0;
+        if (trainer->aiFlags & AI_FLAG_DOUBLE_ACE_POKEMON)
+            numAces = 2;
+        else if (trainer->aiFlags & AI_FLAG_ACE_POKEMON)
+            numAces = 1;
+        u16 usedSpecies[PARTY_SIZE];
+        u8 usedTypes[PARTY_SIZE];
         s32 i;
         for (i = 0; i < monsCount; i++)
         {
@@ -2448,8 +2453,16 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             }
         }
         bool8 hasTheme = (monsCount > 1 && maxCount > monsCount / 2);
-        rng_value_t rngState = LocalRandomSeed(seed);
         u8 level = GetMonData(&party[monsCount - 1], MON_DATA_LEVEL, NULL);
+        if (extraCount > 0 && numAces > 0)
+        {
+            // Shift aces to the end
+            for (u8 i = 0; i < numAces; i++)
+            {
+                party[monsCount + extraCount - numAces + i] = party[monsCount - numAces + i];
+            }
+        }
+        rng_value_t rngState = LocalRandomSeed(seed);
         for (u8 extra = 0; extra < extraCount; extra++)
         {
             u16 chosenSpecies = SPECIES_NONE;
@@ -2459,7 +2472,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 u16 candidate = GetRandomSpeciesFromBaseSpecies(seed);
                 u16 candidateFinal = GetFinalEvolution(candidate);
 
-                if (gSpeciesInfo[candidateFinal].isLegendary)
+                if (
+                    gSpeciesInfo[candidateFinal].isLegendary
+                    || gSpeciesInfo[candidateFinal].isMythical
+                    || gSpeciesInfo[candidateFinal].isGigantamax
+                    || gSpeciesInfo[candidateFinal].isUltraBeast
+                    || gSpeciesInfo[candidateFinal].isTotem
+                )
                 {
                     attempts++;
                     continue;
@@ -2492,7 +2511,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 {
                     u16 candidateFinal = GetFinalEvolution(candidate);
 
-                    if (gSpeciesInfo[candidateFinal].isLegendary)
+                    if (
+                        gSpeciesInfo[candidateFinal].isLegendary
+                        || gSpeciesInfo[candidateFinal].isMythical
+                        || gSpeciesInfo[candidateFinal].isGigantamax
+                        || gSpeciesInfo[candidateFinal].isUltraBeast
+                        || gSpeciesInfo[candidateFinal].isTotem
+                    )
                         continue;
 
                     bool8 alreadyInParty = FALSE;
@@ -2516,23 +2541,25 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 }
             }
             u32 personalityValue = Random32();
-            CreateMon(&party[monsCount + extra], chosenSpecies, level, 0, TRUE, personalityValue, OT_ID_RANDOM_NO_SHINY, 0);
-            SetTrainerMonEVsByHighestBaseStats(&party[monsCount + extra], chosenSpecies);
-            GiveMonInitialMoveset(&party[monsCount + extra]);
+            CreateMon(&party[monsCount - numAces + extra], chosenSpecies, level, 0, TRUE, personalityValue, OT_ID_RANDOM_NO_SHINY, 0);
+            SetTrainerMonEVsByHighestBaseStats(&party[monsCount - numAces + extra], chosenSpecies);
+            GiveMonInitialMoveset(&party[monsCount - numAces + extra]);
             u16 moves[MAX_MON_MOVES];
             u8 j;
             for (j = 0; j < MAX_MON_MOVES; j++)
             {
-                moves[j] = GetMonData(&party[monsCount + extra], MON_DATA_MOVE1 + j, NULL);
+                moves[j] = GetMonData(&party[monsCount - numAces + extra], MON_DATA_MOVE1 + j, NULL);
             }
-            AssignNewGamePlusTrainerPokemonMoves(&party[monsCount + extra], moves);
+            AssignNewGamePlusTrainerPokemonMoves(&party[monsCount - numAces + extra], moves);
             for (j = 0; j < MAX_MON_MOVES; j++)
             {
                 u32 pp = GetMovePP(moves[j]);
-                SetMonData(&party[monsCount + extra], MON_DATA_MOVE1 + j, &moves[j]);
-                SetMonData(&party[monsCount + extra], MON_DATA_PP1 + j, &pp);
+                SetMonData(&party[monsCount - numAces + extra], MON_DATA_MOVE1 + j, &moves[j]);
+                SetMonData(&party[monsCount - numAces + extra], MON_DATA_PP1 + j, &pp);
             }
-            CalculateMonStats(&party[monsCount + extra]);
+            CalculateMonStats(&party[monsCount - numAces + extra]);
+            usedSpecies[monsCount + extra] = chosenSpecies;
+            usedTypes[monsCount + extra] = GetMonPrimaryType(chosenSpecies);
         }
     }
 
