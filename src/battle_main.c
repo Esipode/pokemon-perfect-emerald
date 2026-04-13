@@ -304,6 +304,7 @@ const struct OamData gOamData_BattleSpritePlayerSide =
 static const s8 sCenterToCornerVecXs[8] ={-32, -16, -16, -32, -32};
 
 #include "data/types_info.h"
+#include <stdbool.h>
 
 // [TRAINER_CLASS_XYZ] = { _("name"), <money=5>, <ball=BALL_POKE> }
 const struct TrainerClass gTrainerClasses[TRAINER_CLASS_COUNT] =
@@ -2209,6 +2210,43 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         u32 monIndices[monsCount];
         DoTrainerPartyPool(trainer, monIndices, monsCount, battleTypeFlags);
 
+        bool to_replace[PARTY_SIZE] = {};
+        u32 effective_size = trainer->partySize + GetNewGamePlusLevelOffset();
+        u32 num_to_replace = 0;
+        if (monsCount == PARTY_SIZE && effective_size > PARTY_SIZE) {
+            num_to_replace = effective_size - PARTY_SIZE;
+            if (num_to_replace > PARTY_SIZE) {
+                num_to_replace = PARTY_SIZE;
+            }
+        }
+        if (num_to_replace > 0) {
+            typedef struct {
+                u32 index;
+                u32 total;
+            } StatEntry;
+            StatEntry stats[PARTY_SIZE];
+            for (u32 i = 0; i < monsCount; i++) {
+                u16 species = trainer->party[monIndices[i]].species;
+                u32 total = gSpeciesInfo[species].baseHP + gSpeciesInfo[species].baseAttack + gSpeciesInfo[species].baseDefense + gSpeciesInfo[species].baseSpeed + gSpeciesInfo[species].baseSpAttack + gSpeciesInfo[species].baseSpDefense;
+                stats[i].index = i;
+                stats[i].total = total;
+            }
+            // bubble sort by total ascending
+            for (u32 i = 0; i < monsCount - 1; i++) {
+                for (u32 j = 0; j < monsCount - i - 1; j++) {
+                    if (stats[j].total > stats[j+1].total) {
+                        StatEntry temp = stats[j];
+                        stats[j] = stats[j+1];
+                        stats[j+1] = temp;
+                    }
+                }
+            }
+            u32 replace_count = num_to_replace < monsCount ? num_to_replace : monsCount;
+            for (u32 k = 0; k < replace_count; k++) {
+                to_replace[stats[k].index] = true;
+            }
+        }
+
         for (i = 0; i < monsCount; i++)
         {
             u32 monIndex = monIndices[i];
@@ -2240,7 +2278,15 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 fixedOtId = HIHALF(personalityValue) ^ LOHALF(personalityValue);
             }
             u16 species;
-            if (FlagGet(FLAG_RANDOMIZE_MON))
+            if (to_replace[i])
+            {
+                u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+                rng_value_t rngState = LocalRandomSeed(trainerId + monIndex + GetNewGamePlusLevelOffset());
+                do {
+                    species = LocalRandom(&rngState) % NUM_SPECIES;
+                } while (!(gSpeciesInfo[species].isLegendary || gSpeciesInfo[species].isMythical || gSpeciesInfo[candidateFinal].isParadox));
+            }
+            else if (FlagGet(FLAG_RANDOMIZE_MON))
             {
                 u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
                 rng_value_t rngState = LocalRandomSeed(trainerId + partyData[monIndex].species + GetNewGamePlusLevelOffset());
@@ -2452,7 +2498,6 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 themeType = i;
             }
         }
-        bool8 hasTheme = (monsCount > 1 && maxCount > monsCount / 2);
         u8 level = GetMonData(&party[monsCount - 1], MON_DATA_LEVEL, NULL);
         if (extraCount > 0 && numAces > 0)
         {
@@ -2477,6 +2522,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     || gSpeciesInfo[candidateFinal].isMythical
                     || gSpeciesInfo[candidateFinal].isGigantamax
                     || gSpeciesInfo[candidateFinal].isUltraBeast
+                    || gSpeciesInfo[candidateFinal].isParadox
                     || gSpeciesInfo[candidateFinal].isTotem
                 )
                 {
@@ -2497,7 +2543,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     attempts++;
                     continue;
                 }
-                if (hasTheme && GetMonPrimaryType(candidate) != themeType)
+                if (GetMonPrimaryType(candidate) != themeType)
                 {
                     attempts++;
                     continue;
@@ -2516,6 +2562,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                         || gSpeciesInfo[candidateFinal].isMythical
                         || gSpeciesInfo[candidateFinal].isGigantamax
                         || gSpeciesInfo[candidateFinal].isUltraBeast
+                        || gSpeciesInfo[candidateFinal].isParadox
                         || gSpeciesInfo[candidateFinal].isTotem
                     )
                         continue;
@@ -2533,7 +2580,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     if (alreadyInParty)
                         continue;
 
-                    if (hasTheme && GetMonPrimaryType(candidateFinal) != themeType)
+                    if (GetMonPrimaryType(candidateFinal) != themeType)
                         continue;
 
                     chosenSpecies = candidateFinal;
