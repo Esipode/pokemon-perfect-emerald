@@ -16957,55 +16957,73 @@ Gender: Male
 Music: Male
 Items: Full Restore / Full Restore / Full Restore / Full Restore
 Double Battle: No
-AI: Basic Trainer
+AI: Smart Trainer / Prediction / Ace Pokemon
 
-Skarmory
-Level: 77
-IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-- Toxic
-- Aerial Ace
-- Spikes
-- Steel Wing
-
-Claydol
+Dragonite @ Heavy-Duty Boots
+Ability: Multiscale
+Nature: Jolly
 Level: 75
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-- Reflect
-- Light Screen
-- Ancient Power
+EVs: 6 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+- Dragon Dance
+- Extreme Speed
 - Earthquake
+- Roost
 
-Aggron
-Level: 76
+Ursaluna @ Flame Orb
+Ability: Guts
+Nature: Adamant
+Level: 75
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-- Thunder
-- Earthquake
-- Solar Beam
-- Dragon Claw
+EVs: 252 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 6 Spe
+- Facade
+- Headlong Rush
+- Fire Punch
+- Protect
 
-Cradily
-Level: 76
+Togekiss @ Leftovers
+Ability: Serene Grace
+Nature: Timid
+Level: 75
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 252 HP / 0 Atk / 0 Def / 4 SpA / 0 SpD / 252 Spe
+- Nasty Plot
+- Thunder Wave
+- Air Slash
+- Roost
+
+Tangrowth @ Rocky Helmet
+Ability: Regenerator
+Nature: Relaxed
+Level: 75
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 252 HP / 0 Atk / 166 Def / 0 SpA / 88 SpD / 0 Spe
 - Giga Drain
-- Ancient Power
-- Ingrain
-- Confuse Ray
+- Knock Off
+- Sleep Powder
+- Sludge Bomb
 
-Armaldo
-Level: 76
+Toxtricity @ Choice Specs
+Ability: Punk Rock
+Nature: Modest
+Level: 75
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-- Water Pulse
-- Ancient Power
-- Aerial Ace
-- Slash
+EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 6 SpD / 252 Spe
+- Boomburst
+- Overdrive
+- Sludge Bomb
+- Volt Switch
 
-Metagross @ Sitrus Berry
-Level: 78
+Metagross @ Choice Band
+Ability: Clear Body
+Nature: Adamant
+Level: 75
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 6 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
+- Heavy Slam
 - Earthquake
-- Psychic
-- Meteor Mash
-- Shadow Ball
+- Thunder Punch
+- Bullet Punch
 
 === TRAINER_ANABEL ===
 Name: ANABEL

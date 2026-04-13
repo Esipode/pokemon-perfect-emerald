@@ -452,6 +452,8 @@ PlayersHouse_1F_EventScript_GetSSTicketAndSeeLatiTV::
 	delay 20
 	msgbox PlayersHouse_1F_Text_DadShouldStayLonger, MSGBOX_DEFAULT
 	closemessage
+	callnative CheckNewGamePlus
+	goto_if_eq VAR_RESULT, 1, PlayersHouse_1F_EventScript_AfterNextRoamer
 	setflag FLAG_SYS_TV_LATIAS_LATIOS
 	special TurnOnTVScreen
 	delay 60
@@ -470,6 +472,10 @@ PlayersHouse_1F_EventScript_GetSSTicketAndSeeLatiTV::
 	call_if_eq VAR_0x8008, FEMALE, PlayersHouse_1F_EventScript_MomApproachPlayerAfterTVFemale
 	msgbox PlayersHouse_1F_Text_WhatColorDidTheySay, MSGBOX_DEFAULT
 	special NextRoamer
+	releaseall
+	end
+
+PlayersHouse_1F_EventScript_AfterNextRoamer::
 	msgbox PlayersHouse_1F_Text_StillUnknownPokemon, MSGBOX_DEFAULT
 	closemessage
 	setvar VAR_LITTLEROOT_HOUSES_STATE_MAY, 4
