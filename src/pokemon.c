@@ -1763,14 +1763,23 @@ static u16 CalculateBoxMonChecksum(struct BoxPokemon *boxMon)
     return checksum;
 }
 
-#define CALC_STAT(base, iv, ev, statIndex, field)               \
-{                                                               \
-    u8 baseStat = gSpeciesInfo[species].base;                   \
-    s32 n = (((2 * baseStat + iv + ev / 4) * level) / 100) + 5; \
-    n = ModifyStatByNature(nature, n, statIndex);               \
-    if (B_FRIENDSHIP_BOOST == TRUE)                             \
-        n = n + ((n * 10 * friendship) / (MAX_FRIENDSHIP * 100));\
-    SetMonData(mon, field, &n);                                 \
+static s32 GetScaledStatLevel(s32 level)
+{
+    if (level <= 100)
+        return level * 1000;
+
+    s32 over = level - 100;
+    return (level * 1000) - (5 * over * (over + 1) / 2);
+}
+
+#define CALC_STAT(base, iv, ev, statIndex, field, levelScaled)             \
+{                                                                          \
+    u8 baseStat = gSpeciesInfo[species].base;                              \
+    s32 n = (((2 * baseStat + iv + ev / 4) * (levelScaled)) / 100000) + 5; \
+    n = ModifyStatByNature(nature, n, statIndex);                          \
+    if (B_FRIENDSHIP_BOOST == TRUE)                                        \
+        n = n + ((n * 10 * friendship) / (MAX_FRIENDSHIP * 100));          \
+    SetMonData(mon, field, &n);                                            \
 }
 
 void CalculateMonStats(struct Pokemon *mon)
@@ -1795,6 +1804,7 @@ void CalculateMonStats(struct Pokemon *mon)
     s32 newMaxHP;
 
     u8 nature = GetMonData(mon, MON_DATA_HIDDEN_NATURE, NULL);
+    s32 levelScaled = GetScaledStatLevel(level);
 
     SetMonData(mon, MON_DATA_LEVEL, &level);
 
@@ -1805,7 +1815,7 @@ void CalculateMonStats(struct Pokemon *mon)
     else
     {
         s32 n = 2 * gSpeciesInfo[species].baseHP + hpIV;
-        newMaxHP = (((n + hpEV / 4) * level) / 100) + level + 10;
+        newMaxHP = (((n + hpEV / 4) * levelScaled) / 100000) + (levelScaled / 1000) + 10;
     }
 
     gBattleScripting.levelUpHP = newMaxHP - oldMaxHP;
@@ -1814,11 +1824,11 @@ void CalculateMonStats(struct Pokemon *mon)
 
     SetMonData(mon, MON_DATA_MAX_HP, &newMaxHP);
 
-    CALC_STAT(baseAttack, attackIV, attackEV, STAT_ATK, MON_DATA_ATK)
-    CALC_STAT(baseDefense, defenseIV, defenseEV, STAT_DEF, MON_DATA_DEF)
-    CALC_STAT(baseSpeed, speedIV, speedEV, STAT_SPEED, MON_DATA_SPEED)
-    CALC_STAT(baseSpAttack, spAttackIV, spAttackEV, STAT_SPATK, MON_DATA_SPATK)
-    CALC_STAT(baseSpDefense, spDefenseIV, spDefenseEV, STAT_SPDEF, MON_DATA_SPDEF)
+    CALC_STAT(baseAttack, attackIV, attackEV, STAT_ATK, MON_DATA_ATK, levelScaled)
+    CALC_STAT(baseDefense, defenseIV, defenseEV, STAT_DEF, MON_DATA_DEF, levelScaled)
+    CALC_STAT(baseSpeed, speedIV, speedEV, STAT_SPEED, MON_DATA_SPEED, levelScaled)
+    CALC_STAT(baseSpAttack, spAttackIV, spAttackEV, STAT_SPATK, MON_DATA_SPATK, levelScaled)
+    CALC_STAT(baseSpDefense, spDefenseIV, spDefenseEV, STAT_SPDEF, MON_DATA_SPDEF, levelScaled)
 
     // Since a pokemon's maxHP data could either not have
     // been initialized at this point or this pokemon is
