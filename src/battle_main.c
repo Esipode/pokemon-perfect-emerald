@@ -2460,7 +2460,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         }
     }
 
-    if (gSaveBlock2Ptr->newGamePlus > 0 && battleTypeFlags && BATTLE_TYPE_TRAINER && monsCount < PARTY_SIZE)
+    if (gSaveBlock2Ptr->newGamePlus > 0 && (battleTypeFlags & BATTLE_TYPE_TRAINER) && monsCount < PARTY_SIZE)
     {
         u8 extraCount = min(gSaveBlock2Ptr->newGamePlus, PARTY_SIZE - monsCount);
         u8 numAces = 0;
