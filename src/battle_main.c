@@ -2284,7 +2284,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 rng_value_t rngState = LocalRandomSeed(trainerId + monIndex + GetNewGamePlusLevelOffset());
                 do {
                     species = LocalRandom(&rngState) % NUM_SPECIES;
-                } while (!(gSpeciesInfo[species].isLegendary || gSpeciesInfo[species].isMythical || gSpeciesInfo[candidateFinal].isParadox));
+                } while (!(gSpeciesInfo[species].isLegendary || gSpeciesInfo[species].isMythical || gSpeciesInfo[species].isParadox));
             }
             else if (FlagGet(FLAG_RANDOMIZE_MON))
             {
@@ -2460,7 +2460,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         }
     }
 
-    if (gSaveBlock2Ptr->newGamePlus > 0 && battleTypeFlags && BATTLE_TYPE_TRAINER && monsCount < PARTY_SIZE && !(battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS))
+    if (gSaveBlock2Ptr->newGamePlus > 0 && battleTypeFlags && BATTLE_TYPE_TRAINER && monsCount < PARTY_SIZE)
     {
         u8 extraCount = min(gSaveBlock2Ptr->newGamePlus, PARTY_SIZE - monsCount);
         u8 numAces = 0;
