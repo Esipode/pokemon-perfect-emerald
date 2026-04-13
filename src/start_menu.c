@@ -360,7 +360,7 @@ static void BuildNormalStartMenu(void)
     if (FlagGet(FLAG_SYS_POKENAV_GET) == TRUE)
         AddStartMenuAction(MENU_ACTION_POKENAV);
 
-    // AddStartMenuAction(MENU_ACTION_PLAYER);
+    AddStartMenuAction(MENU_ACTION_PLAYER);
     AddStartMenuAction(MENU_ACTION_SAVE);
     
     if (FlagGet(FLAG_SYS_CLOCK_SET))
@@ -369,10 +369,14 @@ static void BuildNormalStartMenu(void)
     }
 
     AddStartMenuAction(MENU_ACTION_OPTION);
-    // AddStartMenuAction(MENU_ACTION_EXIT);
 
     if (FlagGet(FLAG_BEAT_CHAMPION_CHALLENGER_9) == TRUE)
+    {
         AddStartMenuAction(MENU_ACTION_NEW_GAME_PLUS);
+    }
+
+    // AddStartMenuAction(MENU_ACTION_EXIT);
+
 }
 
 static void BuildDebugStartMenu(void)
@@ -494,18 +498,25 @@ static void RemoveExtraStartMenuWindows(void)
 static bool32 PrintStartMenuActions(s8 *pIndex, u32 count)
 {
     s8 index = *pIndex;
+    u8 lineHeight = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
 
     do
     {
-        if (sStartMenuItems[sCurrentStartMenuActions[index]].func.u8_void == StartMenuPlayerNameCallback)
-        {
-            PrintPlayerNameOnWindow(GetStartMenuWindowId(), sStartMenuItems[sCurrentStartMenuActions[index]].text, 8, (index << 4) + 9);
-        }
-        else
-        {
-            StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[index]].text);
-            AddTextPrinterParameterized(GetStartMenuWindowId(), FONT_NORMAL, gStringVar4, 8, (index << 4) + 9, TEXT_SKIP_DRAW, NULL);
-        }
+        // ORIGINAL LOGIC - For when start menu was vanilla size
+
+        // if (sStartMenuItems[sCurrentStartMenuActions[index]].func.u8_void == StartMenuPlayerNameCallback)
+        // {
+        //     PrintPlayerNameOnWindow(GetStartMenuWindowId(), sStartMenuItems[sCurrentStartMenuActions[index]].text, 8, 9 + (index * lineHeight));
+        // }
+        // else
+        // {
+        //     StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[index]].text);
+        //     AddTextPrinterParameterized(GetStartMenuWindowId(), FONT_SMALL, gStringVar4, 8, 9 + (index * lineHeight), TEXT_SKIP_DRAW, NULL);
+        // }
+
+        // NEW LOGIC - For smaller font size start menu
+        StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[index]].text);
+        AddTextPrinterParameterized(GetStartMenuWindowId(), FONT_SMALL, gStringVar4, 8, 9 + (index * lineHeight), TEXT_SKIP_DRAW, NULL);
 
         index++;
         if (index >= sNumStartMenuActions)
@@ -553,9 +564,12 @@ static bool32 InitStartMenuStep(void)
             sInitStartMenuData[0]++;
         break;
     case 5:
-        sStartMenuCursorPos = InitMenuNormal(GetStartMenuWindowId(), FONT_NORMAL, 0, 9, 16, sNumStartMenuActions, sStartMenuCursorPos);
+    {
+        u8 cursorHeight = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
+        sStartMenuCursorPos = InitMenuNormal(GetStartMenuWindowId(), FONT_SMALL, 0, 9, cursorHeight, sNumStartMenuActions, sStartMenuCursorPos);
         CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_MAP);
         return TRUE;
+    }
     }
 
     return FALSE;

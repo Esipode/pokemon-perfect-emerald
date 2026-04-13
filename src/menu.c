@@ -608,7 +608,12 @@ u8 GetPlayerTextSpeedDelay(void)
 u8 AddStartMenuWindow(u8 numActions)
 {
     if (sStartMenuWindowId == WINDOW_NONE)
-        sStartMenuWindowId = AddWindowParameterized(0, 22, 1, 7, (numActions * 2) + 2, 15, 0x139);
+    {
+        u8 width = 7;
+        u8 left = 22;
+        u8 height = (numActions * 2) - 2;
+        sStartMenuWindowId = AddWindowParameterized(0, left, 1, width, height, 15, 0x139);
+    }
     return sStartMenuWindowId;
 }
 
