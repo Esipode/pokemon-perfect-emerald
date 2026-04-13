@@ -5,6 +5,7 @@
 #include "roamer.h"
 #include "pokedex.h"
 #include "string_util.h"
+#include "caps.h"
 #include "constants/global.h"
 #include "constants/species.h"
 #include "constants/characters.h"
@@ -497,7 +498,7 @@ void NextRoamer(u32 roamerIndex)
         }
     
         // Determine the level for the new roamer.
-        u8 nextRoamerLevel = 40; // Replace with your desired level
+        u8 nextRoamerLevel = gSaveBlock2Ptr->newGamePlus ? GetCurrentLevelCap() : 40;
     
         // Create the new roamer in the available slot
         TryAddRoamer(nextRoamerSpecies, nextRoamerLevel);
