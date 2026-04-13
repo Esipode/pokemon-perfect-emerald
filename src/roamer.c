@@ -498,7 +498,7 @@ void NextRoamer(u32 roamerIndex)
         }
     
         // Determine the level for the new roamer.
-        u8 nextRoamerLevel = gSaveBlock2Ptr->newGamePlus ? GetCurrentLevelCap() : 40;
+        u8 nextRoamerLevel = GetCurrentLevelCap();
     
         // Create the new roamer in the available slot
         TryAddRoamer(nextRoamerSpecies, nextRoamerLevel);
