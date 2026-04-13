@@ -173,6 +173,9 @@ void NewGameInitData(void)
     u8 savedTrainerId[TRAINER_ID_LENGTH];
     u32 moneyBackup = 0;
     u16 coinsBackup = 0;
+    void *roamersBackup = NULL;
+    void *locationHistoryBackup = NULL;
+    void *roamerLocationBackup = NULL;
 
     if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
         RtcReset();
@@ -215,6 +218,15 @@ void NewGameInitData(void)
         /* Backup money and coins so they persist through ClearSav1 */
         moneyBackup = GetMoney(&gSaveBlock1Ptr->money);
         coinsBackup = GetCoins();
+        
+        roamersBackup = Alloc(sizeof(gSaveBlock1Ptr->roamer));
+        memcpy(roamersBackup, gSaveBlock1Ptr->roamer, sizeof(gSaveBlock1Ptr->roamer));
+        
+        locationHistoryBackup = Alloc(sizeof(sLocationHistory));
+        memcpy(locationHistoryBackup, sLocationHistory, sizeof(sLocationHistory));
+        
+        roamerLocationBackup = Alloc(sizeof(sRoamerLocation));
+        memcpy(roamerLocationBackup, sRoamerLocation, sizeof(sRoamerLocation));
         
         /* Backup only option-related flag bytes (minimize restoring unrelated flags) */
         flagsBackup = Alloc(3);
@@ -259,6 +271,7 @@ void NewGameInitData(void)
     {
         gSaveBlock1Ptr->difficulty = 1;
         SetMoney(&gSaveBlock1Ptr->money, 5000);
+        DeactivateAllRoamers();
         SetCoins(0);
     }
     ClearSav3();
@@ -276,7 +289,6 @@ void NewGameInitData(void)
     ClearPlayerLinkBattleRecords();
     InitSeedotSizeRecord();
     InitLotadSizeRecord();
-    DeactivateAllRoamers();
     gSaveBlock1Ptr->registeredItem = ITEM_NONE;
     gSaveBlock1Ptr->registeredLongItem = ITEM_NONE;
     ClearBag();
@@ -347,6 +359,13 @@ void NewGameInitData(void)
                 gSaveBlock1Ptr->difficulty = ((u8 *)playerSettingsBackup)[2];
             }
 
+            if (roamersBackup != NULL)
+                memcpy(gSaveBlock1Ptr->roamer, roamersBackup, sizeof(gSaveBlock1Ptr->roamer));
+            if (locationHistoryBackup != NULL)
+                memcpy(sLocationHistory, locationHistoryBackup, sizeof(sLocationHistory));
+            if (roamerLocationBackup != NULL)
+                memcpy(sRoamerLocation, roamerLocationBackup, sizeof(sRoamerLocation));
+
             /* Restore money and coins preserved across ClearSav1 */
             SetMoney(&gSaveBlock1Ptr->money, moneyBackup);
             SetCoins(coinsBackup);
@@ -376,6 +395,12 @@ void NewGameInitData(void)
             Free(optionsBackup);
         if (playerSettingsBackup != NULL)
             Free(playerSettingsBackup);
+        if (roamersBackup != NULL)
+            Free(roamersBackup);
+        if (locationHistoryBackup != NULL)
+            Free(locationHistoryBackup);
+        if (roamerLocationBackup != NULL)
+            Free(roamerLocationBackup);
         // if (bagKeyItemsBackup != NULL)
         //     Free(bagKeyItemsBackup);
         if (bagPokeBallsBackup != NULL)

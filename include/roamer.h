@@ -17,5 +17,7 @@ void MoveAllRoamersToOtherLocationSets(void);
 void MoveAllRoamers(void);
 
 extern u8 gEncounteredRoamerIndex;
+extern u8 sLocationHistory[ROAMER_COUNT][3][2];
+extern u8 sRoamerLocation[ROAMER_COUNT][2];
 
 #endif // GUARD_ROAMER_H

@@ -20,8 +20,8 @@ enum
 };
 
 #define ROAMER(index) (&gSaveBlock1Ptr->roamer[index])
-EWRAM_DATA static u8 sLocationHistory[ROAMER_COUNT][3][2] = {0};
-EWRAM_DATA static u8 sRoamerLocation[ROAMER_COUNT][2] = {0};
+EWRAM_DATA u8 sLocationHistory[ROAMER_COUNT][3][2] = {0};
+EWRAM_DATA u8 sRoamerLocation[ROAMER_COUNT][2] = {0};
 EWRAM_DATA u8 gEncounteredRoamerIndex = 0;
 
 #define ___ MAP_NUM(MAP_UNDEFINED) // For empty spots in the location table
