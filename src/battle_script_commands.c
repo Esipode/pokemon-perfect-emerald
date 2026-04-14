@@ -15786,7 +15786,7 @@ static void Cmd_handleballthrow(void)
             if (ballId == BALL_BEAST)
                 ballMultiplier = 500;
             else
-                ballMultiplier = 10;
+                ballMultiplier = 100;
         }
         else
         {
@@ -15943,7 +15943,7 @@ static void Cmd_handleballthrow(void)
                     ballMultiplier = 400;
                 break;
             case BALL_BEAST:
-                ballMultiplier = 10;
+                ballMultiplier = 100;
                 break;
             }
         }
@@ -15954,9 +15954,49 @@ static void Cmd_handleballthrow(void)
         else
             catchRate = catchRate + ballAddition;
 
-        odds = (catchRate * ballMultiplier / 100)
-            * (gBattleMons[gBattlerTarget].maxHP * 3 - gBattleMons[gBattlerTarget].hp * 2)
-            / (3 * gBattleMons[gBattlerTarget].maxHP);
+        // Adjust for New Game Plus level offset
+        {
+            u32 offset = GetNewGamePlusLevelOffset();
+            s32 effective_maxHP = gBattleMons[gBattlerTarget].maxHP;
+            s32 effective_hp = gBattleMons[gBattlerTarget].hp;
+
+            if (offset > 0)
+            {
+                s32 effective_level = gBattleMons[gBattlerTarget].level - offset;
+                if (effective_level < 1)
+                    effective_level = 1;
+
+                struct Pokemon *mon = GetBattlerMon(gBattlerTarget);
+                s32 hpIV = GetMonData(mon, MON_DATA_HP_IV, NULL);
+                s32 hpEV = GetMonData(mon, MON_DATA_HP_EV, NULL);
+                u16 species = gBattleMons[gBattlerTarget].species;
+                s32 baseHP = gSpeciesInfo[species].baseHP;
+                s32 n = 2 * baseHP + hpIV;
+                s32 levelScaled;
+
+                if (effective_level <= 100)
+                    levelScaled = effective_level * 1000;
+                else
+                {
+                    s32 over = effective_level - 100;
+                    levelScaled = (effective_level * 1000) - (5 * over * (over + 1) / 2);
+                }
+
+                if (species == SPECIES_SHEDINJA)
+                    effective_maxHP = 1;
+                else
+                    effective_maxHP = (((n + hpEV / 4) * levelScaled) / 100000) + (levelScaled / 1000) + 10;
+
+                effective_hp = effective_maxHP * gBattleMons[gBattlerTarget].hp / gBattleMons[gBattlerTarget].maxHP;
+            }
+
+            odds = (catchRate * ballMultiplier / 100)
+                * (effective_maxHP * 3 - effective_hp * 2)
+                / (3 * effective_maxHP);
+        }
+
+        // Apply overall catch rate multiplier
+        odds = (odds * 13) / 10;
 
         if (gBattleMons[gBattlerTarget].status1 & (STATUS1_SLEEP | STATUS1_FREEZE))
             odds *= 2;
