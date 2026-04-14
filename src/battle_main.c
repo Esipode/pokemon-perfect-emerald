@@ -2211,7 +2211,24 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         DoTrainerPartyPool(trainer, monIndices, monsCount, battleTypeFlags);
 
         bool to_replace[PARTY_SIZE] = {};
-        u32 effective_size = trainer->partySize + GetNewGamePlusLevelOffset();
+        u8 themeType = TYPE_MYSTERY;
+        if (monsCount == PARTY_SIZE)
+        {
+            u8 typeCounts[NUMBER_OF_MON_TYPES] = {0};
+            u8 maxCount = 0;
+            for (u32 i = 0; i < monsCount; i++)
+            {
+                u16 species = GetFinalEvolution(trainer->party[monIndices[i]].species);
+                u8 type = GetMonPrimaryType(species);
+                typeCounts[type]++;
+                if (typeCounts[type] > maxCount)
+                {
+                    maxCount = typeCounts[type];
+                    themeType = type;
+                }
+            }
+        }
+        u32 effective_size = trainer->partySize + gSaveBlock2Ptr->newGamePlus;
         u32 num_to_replace = 0;
         if (monsCount == PARTY_SIZE && effective_size > PARTY_SIZE) {
             num_to_replace = effective_size - PARTY_SIZE;
@@ -2282,9 +2299,19 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             {
                 u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
                 rng_value_t rngState = LocalRandomSeed(trainerId + monIndex + GetNewGamePlusLevelOffset());
+                u32 attempts = 0;
                 do {
                     species = LocalRandom(&rngState) % NUM_SPECIES;
-                } while (!(gSpeciesInfo[species].isLegendary || gSpeciesInfo[species].isMythical || gSpeciesInfo[species].isParadox));
+                    u16 speciesFinal = GetFinalEvolution(species);
+                    if (gSpeciesInfo[species].isLegendary || gSpeciesInfo[species].isMythical || gSpeciesInfo[species].isParadox)
+                    {
+                        if (themeType == TYPE_MYSTERY || GetMonPrimaryType(speciesFinal) == themeType)
+                            break;
+                    }
+                    attempts++;
+                    if (attempts > 500 && themeType != TYPE_MYSTERY)
+                        themeType = TYPE_MYSTERY;
+                } while (TRUE);
             }
             else if (FlagGet(FLAG_RANDOMIZE_MON))
             {
