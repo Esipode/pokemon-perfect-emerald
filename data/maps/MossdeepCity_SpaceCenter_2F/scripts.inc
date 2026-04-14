@@ -246,7 +246,14 @@ MossdeepCity_SpaceCenter_2F_EventScript_ChoosePartyForMultiBattle::
 	goto MossdeepCity_SpaceCenter_2F_EventScript_ReadyForBattlePrompt
 
 MossdeepCity_SpaceCenter_2F_EventScript_DoStevenMultiBattle::
-	multi_2_vs_2 TRAINER_MAXIE_MOSSDEEP, MossdeepCity_SpaceCenter_2F_Text_JustWantToExpandLand, TRAINER_TABITHA_MOSSDEEP, MossdeepCity_SpaceCenter_Text_TabithaDefeat, PARTNER_STEVEN
+	trainerbattle TRAINER_BATTLE_SET_TRAINERS_FOR_MULTI_BATTLE, OBJ_ID_NONE, TRAINER_MAXIE_MOSSDEEP, NULL, MossdeepCity_SpaceCenter_2F_Text_JustWantToExpandLand, NULL, OBJ_ID_NONE, TRAINER_TABITHA_MOSSDEEP, NULL, MossdeepCity_SpaceCenter_Text_TabithaDefeat, NULL, NULL, NULL, FALSE, TRUE, FALSE, FALSE
+	special ReducePlayerPartyToSelectedMons
+	setvar VAR_0x8004, SPECIAL_BATTLE_MULTI
+	setvar VAR_0x8005, MULTI_BATTLE_2_VS_2 | MULTI_BATTLE_CHOOSE_MONS
+	setvar VAR_0x8006, PARTNER_STEVEN
+	special DoSpecialTrainerBattle
+	waitstate
+	special LoadPlayerParty
 	switch VAR_RESULT
 	case 1, MossdeepCity_SpaceCenter_2F_EventScript_DefeatedMaxieTabitha
 	fadescreen FADE_TO_BLACK
