@@ -15990,13 +15990,10 @@ static void Cmd_handleballthrow(void)
                 effective_hp = effective_maxHP * gBattleMons[gBattlerTarget].hp / gBattleMons[gBattlerTarget].maxHP;
             }
 
-            odds = (catchRate * ballMultiplier / 100)
+            odds = (catchRate * ((ballMultiplier * 15) / 10) / 100)
                 * (effective_maxHP * 3 - effective_hp * 2)
                 / (3 * effective_maxHP);
         }
-
-        // Apply overall catch rate multiplier
-        odds = (odds * 13) / 10;
 
         if (gBattleMons[gBattlerTarget].status1 & (STATUS1_SLEEP | STATUS1_FREEZE))
             odds *= 2;
