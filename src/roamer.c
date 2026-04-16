@@ -239,6 +239,7 @@ void CreateRoamerMonInstance(u32 roamerIndex)
     u32 status = ROAMER(roamerIndex)->statusA + (ROAMER(roamerIndex)->statusB << 8);
     struct Pokemon *mon = &gEnemyParty[0];
     ZeroEnemyPartyMons();
+    ROAMER(roamerIndex)->level = GetCurrentLevelCap();
     CreateMonWithIVsPersonality(mon, ROAMER(roamerIndex)->species, ROAMER(roamerIndex)->level, ROAMER(roamerIndex)->ivs, ROAMER(roamerIndex)->personality);
     // The roamer's status field is u16, but SetMonData expects status to be u32, so will set the roamer's status
     // using the status field and the following 3 bytes (cool, beauty, and cute).
@@ -259,6 +260,7 @@ bool8 TryStartRoamerEncounter(void)
     {
         if (IsRoamerAt(i, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) == TRUE && (Random() % 4) == 0)
         {
+            ROAMER(i)->level = GetCurrentLevelCap();
             CreateRoamerMonInstance(i);
             gEncounteredRoamerIndex = i;
             return TRUE;
