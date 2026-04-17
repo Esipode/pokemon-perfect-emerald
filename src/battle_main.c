@@ -91,7 +91,7 @@ static void CB2_HandleStartMultiPartnerBattle(void);
 static void CB2_HandleStartMultiBattle(void);
 static void CB2_HandleStartBattle(void);
 static void TryCorrectShedinjaLanguage(struct Pokemon *mon);
-static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum, bool8 firstTrainer);
+static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum, bool8 firstTrainer, u8 maxPartySize);
 static void BattleMainCB1(void);
 static void CB2_EndLinkBattle(void);
 static void EndLinkBattleInSteps(void);
@@ -572,9 +572,9 @@ static void CB2_InitBattleInternal(void)
     {
         if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
         {
-            CreateNPCTrainerParty(&gEnemyParty[0], TRAINER_BATTLE_PARAM.opponentA, TRUE);
-            if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && !BATTLE_TWO_VS_ONE_OPPONENT)
-                CreateNPCTrainerParty(&gEnemyParty[PARTY_SIZE / 2], TRAINER_BATTLE_PARAM.opponentB, FALSE);
+            u8 firstTrainerCount = CreateNPCTrainerParty(&gEnemyParty[0], TRAINER_BATTLE_PARAM.opponentA, TRUE, PARTY_SIZE);
+            if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && !BATTLE_TWO_VS_ONE_OPPONENT && firstTrainerCount < PARTY_SIZE)
+                CreateNPCTrainerParty(&gEnemyParty[firstTrainerCount], TRAINER_BATTLE_PARAM.opponentB, FALSE, PARTY_SIZE - firstTrainerCount);
             SetWildMonHeldItem();
             CalculateEnemyPartyCount();
         }
@@ -2183,11 +2183,15 @@ static void SetTrainerMonEVsByHighestBaseStats(struct Pokemon *mon, u16 species)
         SetMonData(mon, MON_DATA_HP_EV + i, &evs[i]);
 }
 
-u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, bool32 firstTrainer, u32 battleTypeFlags)
+u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, bool32 firstTrainer, u32 battleTypeFlags, u8 maxPartySize)
 {
     u32 personalityValue;
     s32 i;
     u8 monsCount = 0;
+    u8 startIndex = 0;
+    u8 actualCount = 0;
+    if (maxPartySize > PARTY_SIZE)
+        maxPartySize = PARTY_SIZE;
     if (battleTypeFlags & BATTLE_TYPE_TRAINER && !(battleTypeFlags & (BATTLE_TYPE_FRONTIER
                                                                         | BATTLE_TYPE_EREADER_TRAINER
                                                                         | BATTLE_TYPE_TRAINER_HILL)))
@@ -2197,22 +2201,34 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
 
         if (battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS)
         {
-            if (trainer->partySize > PARTY_SIZE / 2)
+            monsCount = trainer->partySize > (maxPartySize) ? maxPartySize : trainer->partySize;
+            if (monsCount > PARTY_SIZE / 2)
                 monsCount = PARTY_SIZE / 2;
-            else
-                monsCount = trainer->partySize;
         }
         else
         {
-            monsCount = trainer->partySize;
+            monsCount = trainer->partySize > maxPartySize ? maxPartySize : trainer->partySize;
         }
+        if (monsCount > maxPartySize)
+            monsCount = maxPartySize;
 
         u32 monIndices[monsCount];
         DoTrainerPartyPool(trainer, monIndices, monsCount, battleTypeFlags);
 
+        if (battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && !firstTrainer)
+        {
+            for (startIndex = 0; startIndex < maxPartySize; startIndex++)
+            {
+                if (GetMonData(&party[startIndex], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
+                    break;
+            }
+            if (startIndex + monsCount > maxPartySize)
+                monsCount = maxPartySize - startIndex;
+        }
+
         bool to_replace[PARTY_SIZE] = {};
         u8 themeType = TYPE_MYSTERY;
-        if (monsCount == PARTY_SIZE)
+        if (monsCount == maxPartySize)
         {
             u8 typeCounts[NUMBER_OF_MON_TYPES] = {0};
             u8 maxCount = 0;
@@ -2230,10 +2246,10 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         }
         u32 effective_size = trainer->partySize + gSaveBlock2Ptr->newGamePlus;
         u32 num_to_replace = 0;
-        if (monsCount == PARTY_SIZE && effective_size > PARTY_SIZE) {
-            num_to_replace = effective_size - PARTY_SIZE;
-            if (num_to_replace > PARTY_SIZE) {
-                num_to_replace = PARTY_SIZE;
+        if (monsCount == maxPartySize && effective_size > maxPartySize) {
+            num_to_replace = effective_size - maxPartySize;
+            if (num_to_replace > maxPartySize) {
+                num_to_replace = maxPartySize;
             }
         }
         if (num_to_replace > 0) {
@@ -2264,11 +2280,11 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             }
         }
 
-        for (i = 0; i < monsCount; i++)
+        for (u8 i = startIndex; i < startIndex + monsCount; i++)
         {
-            u32 monIndex = monIndices[i];
+            u32 monIndex = monIndices[i - startIndex];
             s32 ball = -1;
-            u32 personalityHash = GeneratePartyHash(trainer, i);
+            u32 personalityHash = GeneratePartyHash(trainer, i - startIndex);
             const struct TrainerMon *partyData = trainer->party;
             u32 otIdType = OT_ID_RANDOM_NO_SHINY;
             u32 fixedOtId = 0;
@@ -2487,9 +2503,12 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         }
     }
 
-    if (gSaveBlock2Ptr->newGamePlus > 0 && (battleTypeFlags & BATTLE_TYPE_TRAINER) && monsCount < PARTY_SIZE)
+    actualCount = startIndex + monsCount;
+    if (gSaveBlock2Ptr->newGamePlus > 0 && (battleTypeFlags & BATTLE_TYPE_TRAINER) && startIndex + monsCount < maxPartySize)
     {
-        u8 extraCount = min(gSaveBlock2Ptr->newGamePlus, PARTY_SIZE - monsCount);
+        u8 extraCount = 0;
+        if (startIndex + monsCount < maxPartySize)
+            extraCount = min(gSaveBlock2Ptr->newGamePlus, maxPartySize - (startIndex + monsCount));
         u8 numAces = 0;
         if (trainer->aiFlags & AI_FLAG_DOUBLE_ACE_POKEMON)
             numAces = 2;
@@ -2498,7 +2517,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
         u16 usedSpecies[PARTY_SIZE];
         u8 usedTypes[PARTY_SIZE];
         s32 i;
-        for (i = 0; i < monsCount; i++)
+        for (i = 0; i < startIndex + monsCount; i++)
         {
             usedSpecies[i] = GetFinalEvolution(GetMonData(&party[i], MON_DATA_SPECIES, NULL));
             usedTypes[i] = GetMonPrimaryType(usedSpecies[i]);
@@ -2506,12 +2525,12 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
 
         // Create randomization seed based on original party
         u32 seed = 0;
-        for (i = 0; i < monsCount; i++)
+        for (i = 0; i < startIndex + monsCount; i++)
         {
             seed += usedSpecies[i];
         }
         u8 typeCounts[NUMBER_OF_MON_TYPES] = {0};
-        for (i = 0; i < monsCount; i++)
+        for (i = 0; i < startIndex + monsCount; i++)
         {
             typeCounts[usedTypes[i]]++;
         }
@@ -2525,13 +2544,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 themeType = i;
             }
         }
-        u8 level = GetMonData(&party[monsCount - 1], MON_DATA_LEVEL, NULL);
+        u8 level = GetMonData(&party[startIndex + monsCount - 1], MON_DATA_LEVEL, NULL);
         if (extraCount > 0 && numAces > 0)
         {
             // Shift aces to the end
             for (u8 i = 0; i < numAces; i++)
             {
-                party[monsCount + extraCount - numAces + i] = party[monsCount - numAces + i];
+                party[startIndex + monsCount + extraCount - numAces + i] = party[startIndex + monsCount - numAces + i];
             }
         }
         rng_value_t rngState = LocalRandomSeed(seed + GetNewGamePlusLevelOffset());
@@ -2557,7 +2576,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     continue;
                 }
                 bool8 alreadyInParty = FALSE;
-                for (u8 k = 0; k < monsCount + extra; k++)
+                for (u8 k = 0; k < startIndex + monsCount + extra; k++)
                 {
                     if (usedSpecies[k] == candidateFinal)
                     {
@@ -2595,7 +2614,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                         continue;
 
                     bool8 alreadyInParty = FALSE;
-                    for (u8 k = 0; k < monsCount + extra; k++)
+                    for (u8 k = 0; k < startIndex + monsCount + extra; k++)
                     {
                         if (usedSpecies[k] == candidateFinal)
                         {
@@ -2615,37 +2634,41 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 }
             }
             u32 personalityValue = Random32();
-            CreateMon(&party[monsCount - numAces + extra], chosenSpecies, level, 0, TRUE, personalityValue, OT_ID_RANDOM_NO_SHINY, 0);
-            SetTrainerMonEVsByHighestBaseStats(&party[monsCount - numAces + extra], chosenSpecies);
-            GiveMonInitialMoveset(&party[monsCount - numAces + extra]);
+            CreateMon(&party[startIndex + monsCount - numAces + extra], chosenSpecies, level, 0, TRUE, personalityValue, OT_ID_RANDOM_NO_SHINY, 0);
+            SetTrainerMonEVsByHighestBaseStats(&party[startIndex + monsCount - numAces + extra], chosenSpecies);
+            GiveMonInitialMoveset(&party[startIndex + monsCount - numAces + extra]);
             u16 moves[MAX_MON_MOVES];
             u8 j;
             for (j = 0; j < MAX_MON_MOVES; j++)
             {
-                moves[j] = GetMonData(&party[monsCount - numAces + extra], MON_DATA_MOVE1 + j, NULL);
+                moves[j] = GetMonData(&party[startIndex + monsCount - numAces + extra], MON_DATA_MOVE1 + j, NULL);
             }
-            AssignNewGamePlusTrainerPokemonMoves(&party[monsCount - numAces + extra], moves);
+            AssignNewGamePlusTrainerPokemonMoves(&party[startIndex + monsCount - numAces + extra], moves);
             for (j = 0; j < MAX_MON_MOVES; j++)
             {
                 u32 pp = GetMovePP(moves[j]);
-                SetMonData(&party[monsCount - numAces + extra], MON_DATA_MOVE1 + j, &moves[j]);
-                SetMonData(&party[monsCount - numAces + extra], MON_DATA_PP1 + j, &pp);
+                SetMonData(&party[startIndex + monsCount - numAces + extra], MON_DATA_MOVE1 + j, &moves[j]);
+                SetMonData(&party[startIndex + monsCount - numAces + extra], MON_DATA_PP1 + j, &pp);
             }
-            CalculateMonStats(&party[monsCount - numAces + extra]);
-            usedSpecies[monsCount + extra] = chosenSpecies;
-            usedTypes[monsCount + extra] = GetMonPrimaryType(chosenSpecies);
+            CalculateMonStats(&party[startIndex + monsCount - numAces + extra]);
+            usedSpecies[startIndex + monsCount + extra] = chosenSpecies;
+            usedTypes[startIndex + monsCount + extra] = GetMonPrimaryType(chosenSpecies);
         }
+        actualCount += extraCount;
     }
 
-    return trainer->partySize;
+    if (actualCount == 0)
+        actualCount = startIndex + monsCount;
+
+    return actualCount;
 }
 
-static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum, bool8 firstTrainer)
+static u8 CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum, bool8 firstTrainer, u8 maxPartySize)
 {
     u8 retVal;
     if (trainerNum == TRAINER_SECRET_BASE)
         return 0;
-    retVal = CreateNPCTrainerPartyFromTrainer(party, GetTrainerStructFromId(trainerNum), firstTrainer, gBattleTypeFlags);
+    retVal = CreateNPCTrainerPartyFromTrainer(party, GetTrainerStructFromId(trainerNum), firstTrainer, gBattleTypeFlags, maxPartySize);
     return retVal;
 }
 
@@ -2655,7 +2678,7 @@ void CreateTrainerPartyForPlayer(void)
 
     ZeroPlayerPartyMons();
     gPartnerTrainerId = gSpecialVar_0x8004;
-    CreateNPCTrainerPartyFromTrainer(gPlayerParty, GetTrainerStructFromId(gSpecialVar_0x8004), TRUE, BATTLE_TYPE_TRAINER);
+    CreateNPCTrainerPartyFromTrainer(gPlayerParty, GetTrainerStructFromId(gSpecialVar_0x8004), TRUE, BATTLE_TYPE_TRAINER, PARTY_SIZE);
 }
 
 void VBlankCB_Battle(void)
