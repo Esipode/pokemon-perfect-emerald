@@ -2223,7 +2223,39 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     break;
             }
             if (startIndex + monsCount > maxPartySize)
-                monsCount = maxPartySize - startIndex;
+            {
+                u8 keepCount = maxPartySize - startIndex;
+                struct MonEntry {
+                    u32 idx;
+                    u32 total;
+                } entries[PARTY_SIZE];
+
+                for (u8 j = 0; j < monsCount; j++)
+                {
+                    u16 species = trainer->party[monIndices[j]].species;
+                    entries[j].idx = j;
+                    entries[j].total = gSpeciesInfo[species].baseHP + gSpeciesInfo[species].baseAttack + gSpeciesInfo[species].baseDefense + gSpeciesInfo[species].baseSpeed + gSpeciesInfo[species].baseSpAttack + gSpeciesInfo[species].baseSpDefense;
+                }
+
+                for (u8 a = 0; a + 1 < monsCount; a++)
+                {
+                    for (u8 b = 0; b + 1 < monsCount - a; b++)
+                    {
+                        if (entries[b].total < entries[b + 1].total || (entries[b].total == entries[b + 1].total && entries[b].idx > entries[b + 1].idx))
+                        {
+                            struct MonEntry temp = entries[b];
+                            entries[b] = entries[b + 1];
+                            entries[b + 1] = temp;
+                        }
+                    }
+                }
+
+                for (u8 j = 0; j < keepCount; j++)
+                {
+                    monIndices[j] = monIndices[entries[j].idx];
+                }
+                monsCount = keepCount;
+            }
         }
 
         bool to_replace[PARTY_SIZE] = {};
