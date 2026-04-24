@@ -2650,7 +2650,7 @@ static void DisplayPartyPokemonLevel(u8 level, struct PartyMenuBox *menuBox)
     StringAppend(gStringVar1, gStringVar2);
 
     // If at level cap, add color control code
-    if (B_EXP_CAP_TYPE == EXP_CAP_HARD && isAtLevelCap && level < 100)
+    if (B_EXP_CAP_TYPE == EXP_CAP_HARD && isAtLevelCap && (level != MAX_LEVEL))
     {
         DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 5, &menuBox->infoRects->dimensions[4]);
     }
