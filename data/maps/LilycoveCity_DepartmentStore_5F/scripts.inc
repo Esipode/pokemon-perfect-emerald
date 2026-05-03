@@ -47,7 +47,7 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidLeft::
 	faceplayer
 	message gText_HowMayIServeYou
 	waitmessage
-	pokemartdecoration2 LilycoveCity_DepartmentStore_5F_Pokemart_Cushions
+	pokemart LilycoveCity_DepartmentStore_5F_Pokemart_Cushions
 	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
 	release
 	end
@@ -70,7 +70,7 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidRight::
 	faceplayer
 	message gText_HowMayIServeYou
 	waitmessage
-	pokemartdecoration2 LilycoveCity_DepartmentStore_5F_Pokemart_Posters
+	pokemart LilycoveCity_DepartmentStore_5F_Pokemart_Posters
 	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
 	release
 	end
@@ -105,10 +105,10 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkFarRight::
 	.align 2
 LilycoveCity_DepartmentStore_5F_Pokemart_Mats:
 	.2byte ITEM_HEARTHFLAME_MASK
+	.2byte ITEM_WELLSPRING_MASK
 	.2byte ITEM_RUSTED_SHIELD
 	.2byte ITEM_RUSTED_SWORD
 	.2byte ITEM_ULTRANECROZIUM_Z
-	.2byte ITEM_WELLSPRING_MASK
 	.2byte ITEM_DRACO_PLATE
 	.2byte ITEM_DREAD_PLATE
 	.2byte ITEM_EARTH_PLATE
