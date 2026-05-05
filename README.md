@@ -9,6 +9,10 @@
 	- Easy: Trainers use lower level Pokémon and have simpler AI
 	- Normal: Intended experience, simple basic trainer AI for random trainers and more complex AI for story battles
 	- Hard: Trainers use higher level Pokémon and have more complex AI
+- New Game + mode unlocked upon completing the post Elite Four "Champion Challenge" battles
+	- Restarts the game with all your party, stored Pokémon, and non-unique items (TMs/HMs & Key Items)
+	- Both wild and trainer Pokémon are higher levels per NG+ cycle
+	- Trainer parties get updated per NG+ cycle to have more Pokémon (Or if the party is already full, sometimes Legendary Pokémon)
 - Revamped trainer AI
 	- By default trainers now don't pick moves with no advantage to them
 	- Smarter trainer options for story encounters that are more aware of the current state of the battle and their options
