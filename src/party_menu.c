@@ -164,6 +164,17 @@ enum {
 
 enum {
     TAG_POKEBALL = 1200,
+    TAG_GREATBALL,
+    TAG_ULTRABALL,
+    TAG_MASTERBALL,
+    TAG_SAFARIBALL,
+    TAG_NETBALL,
+    TAG_DIVEBALL,
+    TAG_NESTBALL,
+    TAG_REPEATBALL,
+    TAG_TIMERBALL,
+    TAG_LUXURYBALL,
+    TAG_PREMIERBALL,
     TAG_POKEBALL_SMALL,
     TAG_STATUS_ICONS,
 };
@@ -4587,8 +4598,52 @@ static void SpriteCB_HeldItem(struct Sprite *sprite)
 
 static void CreatePartyMonPokeballSprite(struct Pokemon *mon, struct PartyMenuBox *menuBox)
 {
+    u8 ballType = GetMonData(mon, MON_DATA_POKEBALL);
     if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
-        menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuPokeball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+    {
+        switch (ballType)
+        {
+        default: //Cancel/confirm buttons and Fallback
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuPokeball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_MASTER_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuMasterball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_ULTRA_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuUltraball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_GREAT_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuGreatball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_POKE_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuPokeball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_SAFARI_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuSafariball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_NET_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuNetball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_DIVE_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuDiveball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_NEST_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuNestball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_REPEAT_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuRepeatball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_TIMER_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuTimerball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_LUXURY_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuLuxuryball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        case ITEM_PREMIER_BALL:
+            menuBox->pokeballSpriteId = CreateSprite(&sSpriteTemplate_MenuPremierball, menuBox->spriteCoords[6], menuBox->spriteCoords[7], 8);
+            break;
+        }
+    }
 }
 
 static void CreatePartyMonPokeballSpriteParameterized(u16 species, struct PartyMenuBox *menuBox)
@@ -4642,9 +4697,70 @@ static void UNUSED SpriteCB_BounceConfirmCancelButton(u8 spriteId, u8 spriteId2,
 
 static void LoadPartyMenuPokeballGfx(void)
 {
-    LoadCompressedSpriteSheet(&sSpriteSheet_MenuPokeball);
+    u8 i;
+    u8 ballType;
+ 
+    //Always load Pokeballs for Cancel/Confirm buttons and as a Fallback
     LoadCompressedSpriteSheet(&sSpriteSheet_MenuPokeballSmall);
+    LoadCompressedSpriteSheet(&sSpriteSheet_MenuPokeball);
     LoadSpritePalette(&sSpritePalette_MenuPokeball);
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        //Only check if the slot isnt empty
+        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) != SPECIES_NONE)
+        {
+            ballType = GetMonData(&gPlayerParty[i], MON_DATA_POKEBALL);
+    
+            //Switch through types to load the sheets/palettes only as needed
+            switch (ballType)
+            {
+                case ITEM_MASTER_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuMasterball);
+                    LoadSpritePalette(&sSpritePalette_MenuMasterball);
+                    break;
+                case ITEM_ULTRA_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuUltraball);
+                    LoadSpritePalette(&sSpritePalette_MenuUltraball);
+                    break;
+                case ITEM_GREAT_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuGreatball);
+                    LoadSpritePalette(&sSpritePalette_MenuGreatball);
+                    break;
+                case ITEM_SAFARI_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuSafariball);
+                    LoadSpritePalette(&sSpritePalette_MenuSafariball);
+                    break;
+                case ITEM_NET_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuNetball);
+                    LoadSpritePalette(&sSpritePalette_MenuNetball);
+                    break;
+                case ITEM_DIVE_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuDiveball);
+                    LoadSpritePalette(&sSpritePalette_MenuDiveball);
+                    break;
+                case ITEM_NEST_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuNestball);
+                    LoadSpritePalette(&sSpritePalette_MenuNestball);
+                    break;
+                case ITEM_REPEAT_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuRepeatball);
+                    LoadSpritePalette(&sSpritePalette_MenuRepeatball);
+                    break;
+                case ITEM_TIMER_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuTimerball);
+                    LoadSpritePalette(&sSpritePalette_MenuTimerball);
+                    break;
+                case ITEM_LUXURY_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuLuxuryball);
+                    LoadSpritePalette(&sSpritePalette_MenuLuxuryball);
+                    break;
+                case ITEM_PREMIER_BALL:
+                    LoadCompressedSpriteSheet(&sSpriteSheet_MenuPremierball);
+                    LoadSpritePalette(&sSpritePalette_MenuPremierball);
+                    break;
+            }
+        }
+    }
 }
 
 static void CreatePartyMonStatusSprite(struct Pokemon *mon, struct PartyMenuBox *menuBox)

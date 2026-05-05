@@ -1107,6 +1107,205 @@ static const struct SpriteTemplate sSpriteTemplate_MenuPokeball =
     .callback = SpriteCallbackDummy,
 };
 
+static const struct CompressedSpriteSheet sSpriteSheet_MenuGreatball =
+{
+    gPartyMenuGreatball_Gfx, 0x400, TAG_GREATBALL
+};
+static const struct SpritePalette sSpritePalette_MenuGreatball =
+{
+    gPartyMenuGreatball_Pal, TAG_GREATBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuGreatball =
+{
+    .tileTag = TAG_GREATBALL,
+    .paletteTag = TAG_GREATBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuUltraball =
+{
+    gPartyMenuUltraball_Gfx, 0x400, TAG_ULTRABALL
+};
+static const struct SpritePalette sSpritePalette_MenuUltraball =
+{
+    gPartyMenuUltraball_Pal, TAG_ULTRABALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuUltraball =
+{
+    .tileTag = TAG_ULTRABALL,
+    .paletteTag = TAG_ULTRABALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuMasterball =
+{
+    gPartyMenuMasterball_Gfx, 0x400, TAG_MASTERBALL
+};
+static const struct SpritePalette sSpritePalette_MenuMasterball =
+{
+    gPartyMenuMasterball_Pal, TAG_MASTERBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuMasterball =
+{
+    .tileTag = TAG_MASTERBALL,
+    .paletteTag = TAG_MASTERBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuSafariball =
+{
+    gPartyMenuSafariball_Gfx, 0x400, TAG_SAFARIBALL
+};
+static const struct SpritePalette sSpritePalette_MenuSafariball =
+{
+    gPartyMenuSafariball_Pal, TAG_SAFARIBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuSafariball =
+{
+    .tileTag = TAG_SAFARIBALL,
+    .paletteTag = TAG_SAFARIBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuNetball =
+{
+    gPartyMenuNetball_Gfx, 0x400, TAG_NETBALL
+};
+static const struct SpritePalette sSpritePalette_MenuNetball =
+{
+    gPartyMenuNetball_Pal, TAG_NETBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuNetball =
+{
+    .tileTag = TAG_NETBALL,
+    .paletteTag = TAG_NETBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuDiveball =
+{
+    gPartyMenuDiveball_Gfx, 0x400, TAG_DIVEBALL
+};
+static const struct SpritePalette sSpritePalette_MenuDiveball =
+{
+    gPartyMenuDiveball_Pal, TAG_DIVEBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuDiveball =
+{
+    .tileTag = TAG_DIVEBALL,
+    .paletteTag = TAG_DIVEBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuNestball =
+{
+    gPartyMenuNestball_Gfx, 0x400, TAG_NESTBALL
+};
+static const struct SpritePalette sSpritePalette_MenuNestball =
+{
+    gPartyMenuNestball_Pal, TAG_NESTBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuNestball =
+{
+    .tileTag = TAG_NESTBALL,
+    .paletteTag = TAG_NESTBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuRepeatball =
+{
+    gPartyMenuRepeatball_Gfx, 0x400, TAG_REPEATBALL
+};
+static const struct SpritePalette sSpritePalette_MenuRepeatball =
+{
+    gPartyMenuRepeatball_Pal, TAG_REPEATBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuRepeatball =
+{
+    .tileTag = TAG_REPEATBALL,
+    .paletteTag = TAG_REPEATBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuTimerball =
+{
+    gPartyMenuTimerball_Gfx, 0x400, TAG_TIMERBALL
+};
+static const struct SpritePalette sSpritePalette_MenuTimerball =
+{
+    gPartyMenuTimerball_Pal, TAG_TIMERBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuTimerball =
+{
+    .tileTag = TAG_TIMERBALL,
+    .paletteTag = TAG_TIMERBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuLuxuryball =
+{
+    gPartyMenuLuxuryball_Gfx, 0x400, TAG_LUXURYBALL
+};
+static const struct SpritePalette sSpritePalette_MenuLuxuryball =
+{
+    gPartyMenuLuxuryball_Pal, TAG_LUXURYBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuLuxuryball =
+{
+    .tileTag = TAG_LUXURYBALL,
+    .paletteTag = TAG_LUXURYBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+static const struct CompressedSpriteSheet sSpriteSheet_MenuPremierball =
+{
+    gPartyMenuPremierball_Gfx, 0x400, TAG_PREMIERBALL
+};
+static const struct SpritePalette sSpritePalette_MenuPremierball =
+{
+    gPartyMenuPremierball_Pal, TAG_PREMIERBALL
+};
+static const struct SpriteTemplate sSpriteTemplate_MenuPremierball =
+{
+    .tileTag = TAG_PREMIERBALL,
+    .paletteTag = TAG_PREMIERBALL,
+    .oam = &sOamData_MenuPokeball,
+    .anims = sSpriteAnimTable_MenuPokeball,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+
 static const struct OamData sOamData_MenuPokeballSmall =
 {
     .y = 0,
