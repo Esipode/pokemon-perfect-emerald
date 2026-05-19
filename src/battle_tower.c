@@ -1656,7 +1656,7 @@ static void FillTrainerParty(u16 trainerId, u8 firstMonId, u8 monCount)
 {
     s32 i, j;
     u16 chosenMonIndices[MAX_FRONTIER_PARTY_SIZE];
-    u8 level = SetFacilityPtrsGetLevel();
+    u16 level = SetFacilityPtrsGetLevel();
     u8 fixedIV = 0;
     u8 bfMonCount;
     const u16 *monSet = NULL;
@@ -1761,7 +1761,7 @@ static void FillTrainerParty(u16 trainerId, u8 firstMonId, u8 monCount)
 
 u16 GetRandomFrontierMonFromSet(u16 trainerId)
 {
-    u8 level = SetFacilityPtrsGetLevel();
+    u16 level = SetFacilityPtrsGetLevel();
     const u16 *monSet = gFacilityTrainers[trainerId].monSet;
     u8 numMons = 0;
     u32 monId = monSet[numMons];
@@ -1796,7 +1796,7 @@ static void FillFactoryTrainerParty(void)
 static void FillFactoryFrontierTrainerParty(u16 trainerId, u8 firstMonId)
 {
     u8 i;
-    u8 level;
+    u16 level;
     u8 fixedIV;
     u32 otID;
 
@@ -1849,7 +1849,7 @@ static void FillFactoryFrontierTrainerParty(u16 trainerId, u8 firstMonId)
 static void FillFactoryTentTrainerParty(u16 trainerId, u8 firstMonId)
 {
     u8 i;
-    u8 level = TENT_MIN_LEVEL;
+    u16 level = TENT_MIN_LEVEL;
     u8 fixedIV = 0;
     u32 otID = T1_READ_32(gSaveBlock2Ptr->playerTrainerId);
 
@@ -3290,7 +3290,7 @@ u8 SetFacilityPtrsGetLevel(void)
 
 u8 GetFrontierEnemyMonLevel(u8 lvlMode)
 {
-    u8 level;
+    u16 level;
 
     switch (lvlMode)
     {
@@ -3371,7 +3371,7 @@ static u16 GetBattleTentTrainerId(void)
 
 static u8 SetTentPtrsGetLevel(void)
 {
-    u8 level = TENT_MIN_LEVEL;
+    u16 level = TENT_MIN_LEVEL;
     u32 facility = VarGet(VAR_FRONTIER_FACILITY);
 
     if (facility == FRONTIER_FACILITY_FACTORY)
@@ -3427,7 +3427,7 @@ static void FillTentTrainerParty_(u16 trainerId, u8 firstMonId, u8 monCount)
 {
     s32 i, j;
     u16 chosenMonIndices[MAX_FRONTIER_PARTY_SIZE];
-    u8 level = SetTentPtrsGetLevel();
+    u16 level = SetTentPtrsGetLevel();
     u8 fixedIV = 0;
     u8 bfMonCount;
     const u16 *monSet = NULL;
@@ -3558,14 +3558,17 @@ void TrySetLinkBattleTowerEnemyPartyLevel(void)
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
     {
         s32 i;
-        u8 enemyLevel = SetFacilityPtrsGetLevel();
+        u16 enemyLevel = SetFacilityPtrsGetLevel();
 
         for (i = 0; i < PARTY_SIZE; i++)
         {
             u32 species = GetMonData(&gEnemyParty[i], MON_DATA_SPECIES, NULL);
             if (species)
             {
-                SetMonData(&gEnemyParty[i], MON_DATA_EXP, &gExperienceTables[gSpeciesInfo[species].growthRate][enemyLevel]);
+                {
+                    u32 exp = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, enemyLevel);
+                    SetMonData(&gEnemyParty[i], MON_DATA_EXP, &exp);
+                }
                 CalculateMonStats(&gEnemyParty[i]);
             }
         }

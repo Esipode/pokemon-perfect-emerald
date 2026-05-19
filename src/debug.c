@@ -315,7 +315,7 @@ enum ROMInfoDebugMenu
 struct DebugMonData
 {
     u16 species;
-    u8 level;
+    u16 level;
     bool8 isShiny:1;
     u8 nature:5;
     u8 abilityNum:2;
@@ -3679,7 +3679,7 @@ static void DebugAction_Give_Pokemon_ComplexCreateMon(u8 taskId) //https://githu
     u8 EVs[NUM_STATS];
     u8 ev_val;
     u16 species     = sDebugMonData->species;
-    u8 level        = sDebugMonData->level;
+    u16 level        = sDebugMonData->level;
     bool8 isShiny   = sDebugMonData->isShiny;
     u8 nature       = sDebugMonData->nature;
     u8 abilityNum   = sDebugMonData->abilityNum;

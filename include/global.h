@@ -337,7 +337,7 @@ struct BattleTowerPokemon
     u16 species;
     u16 heldItem;
     u16 moves[MAX_MON_MOVES];
-    u8 level;
+    u16 level;
     u8 ppBonuses;
     u8 hpEV;
     u8 attackEV;
@@ -611,7 +611,7 @@ struct SecretBaseParty
     u16 moves[PARTY_SIZE * MAX_MON_MOVES];
     u16 species[PARTY_SIZE];
     u16 heldItems[PARTY_SIZE];
-    u8 levels[PARTY_SIZE];
+    u16 levels[PARTY_SIZE];
     u8 EVs[PARTY_SIZE];
 };
 
@@ -672,16 +672,16 @@ struct Roamer
     /*0x04*/ u32 personality;
     /*0x08*/ u16 species;
     /*0x0A*/ u16 hp;
-    /*0x0C*/ u8 level;
-    /*0x0D*/ u8 statusA;
-    /*0x0E*/ u8 cool;
-    /*0x0F*/ u8 beauty;
-    /*0x10*/ u8 cute;
-    /*0x11*/ u8 smart;
-    /*0x12*/ u8 tough;
-    /*0x13*/ bool8 active;
-    /*0x14*/ u8 statusB; // Stores frostbite
-    /*0x14*/ u8 filler[0x7];
+    /*0x0C*/ u16 level;
+    /*0x0E*/ u8 statusA;
+    /*0x0F*/ u8 cool;
+    /*0x10*/ u8 beauty;
+    /*0x11*/ u8 cute;
+    /*0x12*/ u8 smart;
+    /*0x13*/ u8 tough;
+    /*0x14*/ bool8 active;
+    /*0x15*/ u8 statusB; // Stores frostbite
+    /*0x15*/ u8 filler[0x7];
 };
 
 struct RamScriptData
@@ -1111,37 +1111,37 @@ struct SaveBlock1
     /*0x2B90*/ u16 outbreakPokemonSpecies;
     /*0x2B92*/ u8 outbreakLocationMapNum;
     /*0x2B93*/ u8 outbreakLocationMapGroup;
-    /*0x2B94*/ u8 outbreakPokemonLevel;
-    /*0x2B95*/ u8 outbreakUnused1;
-    /*0x2B96*/ u16 outbreakUnused2;
-    /*0x2B98*/ u16 outbreakPokemonMoves[MAX_MON_MOVES];
-    /*0x2BA0*/ u8 outbreakUnused3;
-    /*0x2BA1*/ u8 outbreakPokemonProbability;
-    /*0x2BA2*/ u16 outbreakDaysLeft;
-    /*0x2BA4*/ struct GabbyAndTyData gabbyAndTyData;
-    /*0x2BB0*/ u16 easyChatProfile[EASY_CHAT_BATTLE_WORDS_COUNT];
-    /*0x2BBC*/ u16 easyChatBattleStart[EASY_CHAT_BATTLE_WORDS_COUNT];
-    /*0x2BC8*/ u16 easyChatBattleWon[EASY_CHAT_BATTLE_WORDS_COUNT];
-    /*0x2BD4*/ u16 easyChatBattleLost[EASY_CHAT_BATTLE_WORDS_COUNT];
-    /*0x2BE0*/ struct Mail mail[MAIL_COUNT];
-    /*0x2E20*/ u8 unlockedTrendySayings[NUM_TRENDY_SAYING_BYTES]; // Bitfield for unlockable Easy Chat words in EC_GROUP_TRENDY_SAYING
-    /*0x2E25*/ //u8 padding5[3];
-    /*0x2E28*/ OldMan oldMan;
-    /*0x2e64*/ struct DewfordTrend dewfordTrends[SAVED_TRENDS_COUNT];
-    /*0x2e90*/ struct ContestWinner contestWinners[NUM_CONTEST_WINNERS]; // see CONTEST_WINNER_*
-    /*0x3030*/ struct DayCare daycare;
+    /*0x2B94*/ u16 outbreakPokemonLevel;
+    /*0x2B96*/ u8 outbreakUnused1;
+    /*0x2B97*/ u16 outbreakUnused2;
+    /*0x2B99*/ u16 outbreakPokemonMoves[MAX_MON_MOVES];
+    /*0x2BA1*/ u8 outbreakUnused3;
+    /*0x2BA2*/ u8 outbreakPokemonProbability;
+    /*0x2BA3*/ u16 outbreakDaysLeft;
+    /*0x2BA5*/ struct GabbyAndTyData gabbyAndTyData;
+    /*0x2BB1*/ u16 easyChatProfile[EASY_CHAT_BATTLE_WORDS_COUNT];
+    /*0x2BBD*/ u16 easyChatBattleStart[EASY_CHAT_BATTLE_WORDS_COUNT];
+    /*0x2BC9*/ u16 easyChatBattleWon[EASY_CHAT_BATTLE_WORDS_COUNT];
+    /*0x2BD5*/ u16 easyChatBattleLost[EASY_CHAT_BATTLE_WORDS_COUNT];
+    /*0x2BE1*/ struct Mail mail[MAIL_COUNT];
+    /*0x2E21*/ u8 unlockedTrendySayings[NUM_TRENDY_SAYING_BYTES]; // Bitfield for unlockable Easy Chat words in EC_GROUP_TRENDY_SAYING
+    /*0x2E26*/ //u8 padding5[3];
+    /*0x2E29*/ OldMan oldMan;
+    /*0x2E65*/ struct DewfordTrend dewfordTrends[SAVED_TRENDS_COUNT];
+    /*0x2E91*/ struct ContestWinner contestWinners[NUM_CONTEST_WINNERS]; // see CONTEST_WINNER_*
+    /*0x3031*/ struct DayCare daycare;
 #if FREE_LINK_BATTLE_RECORDS == FALSE
-    /*0x3150*/ struct LinkBattleRecords linkBattleRecords;
+    /*0x3151*/ struct LinkBattleRecords linkBattleRecords;
 #endif //FREE_LINK_BATTLE_RECORDS
-    /*0x31A8*/ u8 giftRibbons[GIFT_RIBBONS_COUNT];
-    /*0x31B3*/ struct ExternalEventData externalEventData;
-    /*0x31C7*/ struct ExternalEventFlags externalEventFlags;
-    /*0x31DC*/ struct Roamer roamer[ROAMER_COUNT];
+    /*0x31A9*/ u8 giftRibbons[GIFT_RIBBONS_COUNT];
+    /*0x31B4*/ struct ExternalEventData externalEventData;
+    /*0x31C8*/ struct ExternalEventFlags externalEventFlags;
+    /*0x31DD*/ struct Roamer roamer[ROAMER_COUNT];
 #if FREE_ENIGMA_BERRY == FALSE
-    /*0x31F8*/ struct EnigmaBerry enigmaBerry;
+    /*0x31F9*/ struct EnigmaBerry enigmaBerry;
 #endif //FREE_ENIGMA_BERRY
 #if FREE_MYSTERY_GIFT == FALSE
-    /*0x322C*/ struct MysteryGiftSave mysteryGift;
+    /*0x322D*/ struct MysteryGiftSave mysteryGift;
 #endif //FREE_MYSTERY_GIFT
     /*0x3???*/ u8 dexSeen[NUM_DEX_FLAG_BYTES];
     /*0x3???*/ u8 dexCaught[NUM_DEX_FLAG_BYTES];

@@ -127,9 +127,8 @@ struct PokemonSubstruct0
     u16 teraType:5; // 30 types.
     u16 heldItem:10; // 1023 items.
     u16 unused_02:6;
-    u32 experience:21;
-    u32 nickname11:8; // 11th character of nickname.
-    u32 unused_04:3;
+    u32 experience; // Experience (now full 32 bits to support levels beyond 255)
+    u8 nickname11; // 11th character of nickname.
     u8 ppBonuses;
     u8 friendship;
     u16 pokeball:6; // 63 balls.
@@ -179,10 +178,10 @@ struct PokemonSubstruct3
 {
     u8 pokerus;
     u8 metLocation;
-    u16 metLevel:7;
-    u16 metGame:4;
-    u16 dynamaxLevel:4;
-    u16 otGender:1;
+    u32 metLevel:16;
+    u32 metGame:4;
+    u32 dynamaxLevel:4;
+    u32 otGender:1;
     u32 hpIV:5;
     u32 attackIV:5;
     u32 defenseIV:5;
@@ -271,7 +270,7 @@ struct Pokemon
 {
     struct BoxPokemon box;
     u32 status;
-    u8 level;
+    u16 level;
     u8 mail;
     u16 hp;
     u16 maxHP;
@@ -329,9 +328,9 @@ struct BattlePokemon
     /*0x22*/ u8 types[3];
     /*0x25*/ u8 pp[MAX_MON_MOVES];
     /*0x29*/ u16 hp;
-    /*0x2B*/ u8 level;
-    /*0x2C*/ u8 friendship;
-    /*0x2D*/ u16 maxHP;
+    /*0x2B*/ u16 level;
+    /*0x2D*/ u8 friendship;
+    /*0x2E*/ u16 maxHP;
     /*0x2F*/ u16 item;
     /*0x31*/ u8 nickname[POKEMON_NAME_LENGTH + 1];
     /*0x3C*/ u8 ppBonuses;
@@ -341,8 +340,8 @@ struct BattlePokemon
     /*0x4D*/ u32 status1;
     /*0x51*/ u32 status2;
     /*0x55*/ u32 otId;
-    /*0x59*/ u8 metLevel;
-    /*0x5A*/ bool8 isShiny;
+    /*0x59*/ u16 metLevel;
+    /*0x5B*/ bool8 isShiny;
 };
 
 struct EvolutionParam
@@ -644,18 +643,18 @@ void ZeroBoxMonData(struct BoxPokemon *boxMon);
 void ZeroMonData(struct Pokemon *mon);
 void ZeroPlayerPartyMons(void);
 void ZeroEnemyPartyMons(void);
-void CreateMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId);
-void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId);
-void CreateMonWithNature(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 nature);
-void CreateMonWithGenderNatureLetter(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 gender, u8 nature, u8 unownLetter);
-void CreateMaleMon(struct Pokemon *mon, u16 species, u8 level);
-void CreateMonWithIVsPersonality(struct Pokemon *mon, u16 species, u8 level, u32 ivs, u32 personality);
-void CreateMonWithIVsOTID(struct Pokemon *mon, u16 species, u8 level, u8 *ivs, u32 otId);
-void CreateMonWithEVSpread(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 evSpread);
+void CreateMon(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId);
+void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u16 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId);
+void CreateMonWithNature(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 nature);
+void CreateMonWithGenderNatureLetter(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 gender, u8 nature, u8 unownLetter);
+void CreateMaleMon(struct Pokemon *mon, u16 species, u16 level);
+void CreateMonWithIVsPersonality(struct Pokemon *mon, u16 species, u16 level, u32 ivs, u32 personality);
+void CreateMonWithIVsOTID(struct Pokemon *mon, u16 species, u16 level, u8 *ivs, u32 otId);
+void CreateMonWithEVSpread(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 evSpread);
 void CreateBattleTowerMon(struct Pokemon *mon, struct BattleTowerPokemon *src);
 void CreateBattleTowerMon_HandleLevel(struct Pokemon *mon, struct BattleTowerPokemon *src, bool8 lvl50);
 void CreateApprenticeMon(struct Pokemon *mon, const struct Apprentice *src, u8 monId);
-void CreateMonWithEVSpreadNatureOTID(struct Pokemon *mon, u16 species, u8 level, u8 nature, u8 fixedIV, u8 evSpread, u32 otId);
+void CreateMonWithEVSpreadNatureOTID(struct Pokemon *mon, u16 species, u16 level, u8 nature, u8 fixedIV, u8 evSpread, u32 otId);
 void ConvertPokemonToBattleTowerPokemon(struct Pokemon *mon, struct BattleTowerPokemon *dest);
 bool8 ShouldIgnoreDeoxysForm(u8 caseId, u8 battler);
 u16 GetUnionRoomTrainerPic(void);
@@ -663,8 +662,9 @@ u16 GetUnionRoomTrainerClass(void);
 void CreateEnemyEventMon(void);
 void CalculateMonStats(struct Pokemon *mon);
 void BoxMonToMon(const struct BoxPokemon *src, struct Pokemon *dest);
-u8 GetLevelFromMonExp(struct Pokemon *mon);
-u8 GetLevelFromBoxMonExp(struct BoxPokemon *boxMon);
+u16 GetLevelFromMonExp(struct Pokemon *mon);
+u16 GetLevelFromBoxMonExp(struct BoxPokemon *boxMon);
+u32 GetExperienceAtLevel(u8 growthRate, u16 level);
 u16 GiveMoveToMon(struct Pokemon *mon, u16 move);
 u16 GiveMoveToBoxMon(struct BoxPokemon *boxMon, u16 move);
 u16 GiveMoveToBattleMon(struct BattlePokemon *mon, u16 move);

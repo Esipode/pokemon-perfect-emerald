@@ -46,16 +46,16 @@ extern const u8 EventScript_SprayWoreOff[];
 static u16 FeebasRandom(void);
 static void FeebasSeedRng(u16 seed);
 static void UpdateChainFishingStreak();
-static bool8 IsWildLevelAllowedByRepel(u8 level);
+static bool8 IsWildLevelAllowedByRepel(u16 level);
 static void ApplyFluteEncounterRateMod(u32 *encRate);
 static void ApplyCleanseTagEncounterRateMod(u32 *encRate);
-static u8 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemon *wildMon, u16 species, enum WildPokemonArea area);
+static u16 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemon *wildMon, u16 species, enum WildPokemonArea area);
 #ifdef BUGFIX
 static bool8 TryGetAbilityInfluencedWildMonIndex(const struct WildPokemon *wildMon, u8 type, u16 ability, u8 *monIndex, u32 size);
 #else
 static bool8 TryGetAbilityInfluencedWildMonIndex(const struct WildPokemon *wildMon, u8 type, u16 ability, u8 *monIndex);
 #endif
-static bool8 IsAbilityAllowingEncounter(u8 level);
+static bool8 IsAbilityAllowingEncounter(u16 level);
 
 EWRAM_DATA static u8 sWildEncountersDisabled = 0;
 EWRAM_DATA static u32 sFeebasRngValue = 0;
@@ -299,11 +299,11 @@ static u8 ChooseWildMonIndex_Fishing(u8 rod)
     return wildMonIndex;
 }
 
-static u8 ChooseWildMonLevel(const struct WildPokemon *wildPokemon, u8 wildMonIndex, enum WildPokemonArea area)
+static u16 ChooseWildMonLevel(const struct WildPokemon *wildPokemon, u8 wildMonIndex, enum WildPokemonArea area)
 {
-    u8 min;
-    u8 max;
-    u8 range;
+    u16 min;
+    u16 max;
+    u16 range;
     u8 rand;
 
     if (LURE_STEP_COUNT == 0)
@@ -492,12 +492,12 @@ u8 PickWildMonNature(void)
     return Random() % NUM_NATURES;
 }
 
-void CreateWildMon(u16 species, u8 level)
+void CreateWildMon(u16 species, u16 level)
 {
     bool32 checkCuteCharm = TRUE;
 
     /* Apply New Game+ level offset */
-    level = (u8)min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+    level = min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
     ZeroEnemyPartyMons();
 
@@ -540,7 +540,7 @@ void CreateWildMon(u16 species, u8 level)
 static bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPokemonArea area, u8 flags)
 {
     u8 wildMonIndex = 0;
-    u8 level;
+    u16 level;
 
     switch (area)
     {
@@ -607,7 +607,7 @@ static u16 GenerateFishingWildMon(const struct WildPokemonInfo *wildMonInfo, u8 
 {
     u8 wildMonIndex = ChooseWildMonIndex_Fishing(rod);
     u16 wildMonSpecies = wildMonInfo->wildPokemon[wildMonIndex].species;
-    u8 level = ChooseWildMonLevel(wildMonInfo->wildPokemon, wildMonIndex, WILD_AREA_FISHING);
+    u16 level = ChooseWildMonLevel(wildMonInfo->wildPokemon, wildMonIndex, WILD_AREA_FISHING);
 
     UpdateChainFishingStreak();
     CreateWildMon(wildMonSpecies, level);
@@ -1015,7 +1015,7 @@ void FishingWildEncounter(u8 rod)
     gIsFishingEncounter = TRUE;
     if (CheckFeebas() == TRUE)
     {
-        u8 level = ChooseWildMonLevel(&sWildFeebas, 0, WILD_AREA_FISHING);
+        u16 level = ChooseWildMonLevel(&sWildFeebas, 0, WILD_AREA_FISHING);
 
         species = sWildFeebas.species;
         CreateWildMon(species, level);
@@ -1128,7 +1128,7 @@ bool8 UpdateRepelCounter(void)
     return FALSE;
 }
 
-static bool8 IsWildLevelAllowedByRepel(u8 wildLevel)
+static bool8 IsWildLevelAllowedByRepel(u16 wildLevel)
 {
     u8 i;
 
@@ -1147,7 +1147,7 @@ static bool8 IsWildLevelAllowedByRepel(u8 wildLevel)
     return FALSE;
 }
 
-static bool8 IsAbilityAllowingEncounter(u8 level)
+static bool8 IsAbilityAllowingEncounter(u16 level)
 {
     u16 ability;
 
@@ -1157,7 +1157,7 @@ static bool8 IsAbilityAllowingEncounter(u8 level)
     ability = GetMonAbility(&gPlayerParty[0]);
     if (ability == ABILITY_KEEN_EYE || ability == ABILITY_INTIMIDATE)
     {
-        u8 playerMonLevel = GetMonData(&gPlayerParty[0], MON_DATA_LEVEL);
+        u16 playerMonLevel = GetMonData(&gPlayerParty[0], MON_DATA_LEVEL);
         if (playerMonLevel > 5 && level <= playerMonLevel - 5 && !(Random() % 2))
             return FALSE;
     }
@@ -1188,9 +1188,10 @@ static bool8 TryGetRandomWildMonIndexByType(const struct WildPokemon *wildMon, u
 
 #include "data.h"
 
-static u8 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemon *wildMon, u16 species, enum WildPokemonArea area)
+static u16 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemon *wildMon, u16 species, enum WildPokemonArea area)
 {
-    u8 i, maxLevel = 0, numMon = 0;
+    u8 i, numMon = 0;
+    u16 maxLevel = 0;
 
     switch (area)
     {

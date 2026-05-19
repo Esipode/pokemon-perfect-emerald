@@ -7544,8 +7544,8 @@ u8 GetAttackerObedienceForAction()
 {
     s32 rnd;
     s32 calc;
-    u8 obedienceLevel = 0;
-    u8 levelReferenced;
+    u16 obedienceLevel = 0;
+    u16 levelReferenced;
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
         return OBEYS;
@@ -7564,7 +7564,7 @@ u8 GetAttackerObedienceForAction()
         return OBEYS;
 
     u32 currentLevelCap = GetCurrentLevelCap();
-    obedienceLevel = (u8)currentLevelCap;
+    obedienceLevel = (u16)currentLevelCap;
 
     if (B_OBEDIENCE_MECHANICS >= GEN_8
      && !IsOtherTrainer(gBattleMons[gBattlerAttacker].otId, gBattleMons[gBattlerAttacker].otName))

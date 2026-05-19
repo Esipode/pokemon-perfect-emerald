@@ -404,7 +404,7 @@ static void SetRentalsToOpponentParty(void)
 static void SetPlayerAndOpponentParties(void)
 {
     int i;
-    u8 monLevel;
+    u16 monLevel;
     u16 monId;
     u8 ivs;
 

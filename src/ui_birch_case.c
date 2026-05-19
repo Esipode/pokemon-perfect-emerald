@@ -118,7 +118,7 @@ enum BallPositions
 
 struct MonChoiceData{ // This is the format used to define a mon, everything left out will default to 0 and be blank or use the in game defaults
     u16 species; // Mon Species ID
-    u8 level;   // Mon Level 5
+    u16 level;   // Mon Level 5
     u16 item;   // Held item, just ITEM_POTION
     u8 ball; // this ballid does not change the design of the ball in the case, only in summary/throwing out to battle 
     u8 nature; // NATURE_JOLLY, NATURE_ETC...

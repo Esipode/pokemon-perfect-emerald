@@ -1442,9 +1442,9 @@ static void Task_GiveExpToMon(u8 taskId)
     {
         struct Pokemon *mon = &gPlayerParty[monId];
         u16 species = GetMonData(mon, MON_DATA_SPECIES);
-        u8 level = GetMonData(mon, MON_DATA_LEVEL);
+        u16 level = GetMonData(mon, MON_DATA_LEVEL);
         u32 currExp = GetMonData(mon, MON_DATA_EXP);
-        u32 nextLvlExp = gExperienceTables[gSpeciesInfo[species].growthRate][level + 1];
+        u32 nextLvlExp = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level + 1);
         u32 expAfterGain = currExp + gainedExp;
         u32 oldMaxHP = GetMonData(mon, MON_DATA_MAX_HP);
 
@@ -1487,14 +1487,14 @@ static void Task_PrepareToGiveExpWithExpBar(u8 taskId)
     s32 gainedExp = GetTaskExpValue(taskId);
     u8 battler = gTasks[taskId].tExpTask_battler;
     struct Pokemon *mon = &gPlayerParty[monIndex];
-    u8 level = GetMonData(mon, MON_DATA_LEVEL);
+    u16 level = GetMonData(mon, MON_DATA_LEVEL);
     u16 species = GetMonData(mon, MON_DATA_SPECIES);
     u32 exp = GetMonData(mon, MON_DATA_EXP);
-    u32 currLvlExp = gExperienceTables[gSpeciesInfo[species].growthRate][level];
+    u32 currLvlExp = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level);
     u32 expToNextLvl;
 
     exp -= currLvlExp;
-    expToNextLvl = gExperienceTables[gSpeciesInfo[species].growthRate][level + 1] - currLvlExp;
+    expToNextLvl = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level + 1) - currLvlExp;
     SetBattleBarStruct(battler, gHealthboxSpriteIds[battler], expToNextLvl, exp, -gainedExp);
     TestRunner_Battle_RecordExp(battler, exp, -gainedExp);
     PlaySE(SE_EXP);
@@ -1528,7 +1528,7 @@ static void Task_GiveExpWithExpBar(u8 taskId)
             currExp = GetMonData(mon, MON_DATA_EXP);
             species = GetMonData(mon, MON_DATA_SPECIES);
             oldMaxHP = GetMonData(mon, MON_DATA_MAX_HP);
-            expOnNextLvl = gExperienceTables[gSpeciesInfo[species].growthRate][level + 1];
+            expOnNextLvl = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level + 1);
 
             expAfterGain = currExp + gainedExp;
             if (expAfterGain >= expOnNextLvl)

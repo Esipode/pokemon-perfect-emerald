@@ -1030,15 +1030,72 @@ static const u32 sCompressedStatuses[] =
 STATIC_ASSERT(NUM_SPECIES < (1 << 11), PokemonSubstruct0_species_TooSmall);
 STATIC_ASSERT(NUMBER_OF_MON_TYPES + 1 <= (1 << 5), PokemonSubstruct0_teraType_TooSmall);
 STATIC_ASSERT(ITEMS_COUNT < (1 << 10), PokemonSubstruct0_heldItem_TooSmall);
-STATIC_ASSERT(MAX_LEVEL <= 250, PokemonSubstruct0_experience_PotentiallTooSmall); // Maximum of ~16 million exp.
+STATIC_ASSERT(MAX_LEVEL <= 65535, PokemonSubstruct0_experience_PotentiallTooSmall); // Level can be stored in u16.
 STATIC_ASSERT(POKEBALL_COUNT <= (1 << 6), PokemonSubstruct0_pokeball_TooSmall);
 STATIC_ASSERT(MOVES_COUNT_ALL < (1 << 11), PokemonSubstruct1_moves_TooSmall);
 STATIC_ASSERT(ARRAY_COUNT(sCompressedStatuses) <= (1 << 4), PokemonSubstruct3_compressedStatus_TooSmall);
-STATIC_ASSERT(MAX_LEVEL < (1 << 8), PokemonSubstruct3_metLevel_TooSmall);
+STATIC_ASSERT(MAX_LEVEL < (1 << 16), PokemonSubstruct3_metLevel_TooSmall);
 STATIC_ASSERT(NUM_VERSIONS < (1 << 4), PokemonSubstruct3_metGame_TooSmall);
 STATIC_ASSERT(MAX_DYNAMAX_LEVEL < (1 << 4), PokemonSubstruct3_dynamaxLevel_TooSmall);
 STATIC_ASSERT(MAX_PER_STAT_IVS < (1 << 5), PokemonSubstruct3_ivs_TooSmall);
 STATIC_ASSERT(NUM_NATURES <= (1 << 5), BoxPokemon_hiddenNatureModifier_TooSmall);
+
+u32 GetExperienceAtLevel(u8 growthRate, u16 level)
+{
+    if (level == 0)
+        return 0;
+
+    if (level == 1)
+        return 1;
+
+    u64 n = level;
+    u64 exp = 0;
+
+    switch (growthRate)
+    {
+    case GROWTH_MEDIUM_FAST:
+        exp = EXP_MEDIUM_FAST(n);
+        break;
+    case GROWTH_ERRATIC:
+        if (n <= 50)
+            exp = (100 - n) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR);
+        else if (n <= 68)
+            exp = (150 - n) * CUBE(n) / (100 * CUSTOM_XP_SCALING_FACTOR);
+        else if (n <= 98)
+            exp = ((1911 - 10 * n) / 3) * CUBE(n) / (500 * CUSTOM_XP_SCALING_FACTOR);
+        else
+            exp = (160 - n) * CUBE(n) / (100 * CUSTOM_XP_SCALING_FACTOR);
+        exp += BASE_XP_OFFSET;
+        break;
+    case GROWTH_FLUCTUATING:
+        if (n <= 15)
+            exp = (((n + 1) / 3 + 24) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
+        else if (n <= 36)
+            exp = ((n + 14) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
+        else
+            exp = (((n / 2) + 32) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
+        exp += BASE_XP_OFFSET;
+        break;
+    case GROWTH_MEDIUM_SLOW:
+        exp = (6 * CUBE(n)) / (5 * CUSTOM_XP_SCALING_FACTOR) - (15 * SQUARE(n)) / CUSTOM_XP_SCALING_FACTOR + (100 * n) / CUSTOM_XP_SCALING_FACTOR - (140 / CUSTOM_XP_SCALING_FACTOR);
+        exp += BASE_XP_OFFSET;
+        break;
+    case GROWTH_FAST:
+        exp = EXP_FAST(n);
+        break;
+    case GROWTH_SLOW:
+        exp = EXP_SLOW(n);
+        break;
+    default:
+        exp = 0;
+        break;
+    }
+
+    if (exp > UINT32_MAX)
+        exp = UINT32_MAX;
+
+    return (u32)exp;
+}
 
 static u32 CompressStatus(u32 status)
 {
@@ -1099,7 +1156,7 @@ void ZeroEnemyPartyMons(void)
         ZeroMonData(&gEnemyParty[i]);
 }
 
-void CreateMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
+void CreateMon(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
 {
     u16 speciesWithOptionalRandomization = species;
 
@@ -1119,7 +1176,7 @@ void CreateMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 hasFix
     CalculateMonStats(mon);
 }
 
-void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
+void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u16 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
 {
     u8 speciesName[POKEMON_NAME_LENGTH + 1];
     u32 personality = Random32();
@@ -1203,7 +1260,10 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
     SetBoxMonData(boxMon, MON_DATA_LANGUAGE, &gGameLanguage);
     SetBoxMonData(boxMon, MON_DATA_OT_NAME, gSaveBlock2Ptr->playerName);
     SetBoxMonData(boxMon, MON_DATA_SPECIES, &species);
-    SetBoxMonData(boxMon, MON_DATA_EXP, &gExperienceTables[gSpeciesInfo[species].growthRate][level]);
+    {
+        u32 exp = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level);
+        SetBoxMonData(boxMon, MON_DATA_EXP, &exp);
+    }
     SetBoxMonData(boxMon, MON_DATA_FRIENDSHIP, &gSpeciesInfo[species].friendship);
     value = GetCurrentRegionMapSectionId();
     SetBoxMonData(boxMon, MON_DATA_MET_LOCATION, &value);
@@ -1299,7 +1359,7 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
     GiveBoxMonInitialMoveset(boxMon);
 }
 
-void CreateMonWithNature(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 nature)
+void CreateMonWithNature(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 nature)
 {
     u32 personality;
 
@@ -1312,7 +1372,7 @@ void CreateMonWithNature(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV,
     CreateMon(mon, species, level, fixedIV, TRUE, personality, OT_ID_PLAYER_ID, 0);
 }
 
-void CreateMonWithGenderNatureLetter(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 gender, u8 nature, u8 unownLetter)
+void CreateMonWithGenderNatureLetter(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 gender, u8 nature, u8 unownLetter)
 {
     u32 personality;
 
@@ -1343,7 +1403,7 @@ void CreateMonWithGenderNatureLetter(struct Pokemon *mon, u16 species, u8 level,
 }
 
 // This is only used to create Wally's Ralts.
-void CreateMaleMon(struct Pokemon *mon, u16 species, u8 level)
+void CreateMaleMon(struct Pokemon *mon, u16 species, u16 level)
 {
     u32 personality;
     u32 otId;
@@ -1357,14 +1417,14 @@ void CreateMaleMon(struct Pokemon *mon, u16 species, u8 level)
     CreateMon(mon, species, level, USE_RANDOM_IVS, TRUE, personality, OT_ID_PRESET, otId);
 }
 
-void CreateMonWithIVsPersonality(struct Pokemon *mon, u16 species, u8 level, u32 ivs, u32 personality)
+void CreateMonWithIVsPersonality(struct Pokemon *mon, u16 species, u16 level, u32 ivs, u32 personality)
 {
     CreateMon(mon, species, level, 0, TRUE, personality, OT_ID_PLAYER_ID, 0);
     SetMonData(mon, MON_DATA_IVS, &ivs);
     CalculateMonStats(mon);
 }
 
-void CreateMonWithIVsOTID(struct Pokemon *mon, u16 species, u8 level, u8 *ivs, u32 otId)
+void CreateMonWithIVsOTID(struct Pokemon *mon, u16 species, u16 level, u8 *ivs, u32 otId)
 {
     CreateMon(mon, species, level, 0, FALSE, 0, OT_ID_PRESET, otId);
     SetMonData(mon, MON_DATA_HP_IV, &ivs[STAT_HP]);
@@ -1376,7 +1436,7 @@ void CreateMonWithIVsOTID(struct Pokemon *mon, u16 species, u8 level, u8 *ivs, u
     CalculateMonStats(mon);
 }
 
-void CreateMonWithEVSpread(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 evSpread)
+void CreateMonWithEVSpread(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 evSpread)
 {
     s32 i;
     s32 statCount = 0;
@@ -1466,7 +1526,7 @@ void CreateBattleTowerMon_HandleLevel(struct Pokemon *mon, struct BattleTowerPok
 {
     s32 i;
     u8 nickname[max(32, POKEMON_NAME_BUFFER_SIZE)];
-    u8 level;
+    u16 level;
     u8 language;
     u8 value;
 
@@ -1556,7 +1616,7 @@ void CreateApprenticeMon(struct Pokemon *mon, const struct Apprentice *src, u8 m
     CalculateMonStats(mon);
 }
 
-void CreateMonWithEVSpreadNatureOTID(struct Pokemon *mon, u16 species, u8 level, u8 nature, u8 fixedIV, u8 evSpread, u32 otId)
+void CreateMonWithEVSpreadNatureOTID(struct Pokemon *mon, u16 species, u16 level, u8 nature, u8 fixedIV, u8 evSpread, u32 otId)
 {
     s32 i;
     s32 statCount = 0;
@@ -1627,7 +1687,7 @@ void ConvertPokemonToBattleTowerPokemon(struct Pokemon *mon, struct BattleTowerP
     GetMonData(mon, MON_DATA_NICKNAME10, dest->nickname);
 }
 
-static void CreateEventMon(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
+static void CreateEventMon(struct Pokemon *mon, u16 species, u16 level, u8 fixedIV, u8 hasFixedPersonality, u32 fixedPersonality, u8 otIdType, u32 fixedOtId)
 {
     bool32 isModernFatefulEncounter = TRUE;
 
@@ -1765,11 +1825,101 @@ static u16 CalculateBoxMonChecksum(struct BoxPokemon *boxMon)
 
 static s32 GetScaledStatLevel(s32 level)
 {
+    // -------------------------------------------------------------------------
+    // LEVEL SCALING OVERVIEW
+    //
+    // Pokémon stats normally scale almost linearly with level.
+    // Since this project supports levels up to 1000, linear scaling would
+    // produce absurdly large stats that overflow 16-bit limits.
+    //
+    // This function creates a "soft cap" where levels continue increasing,
+    // but their contribution to stats gradually slows down.
+    //
+    // -------------------------------------------------------------------------
+
+    // Vanilla-style scaling up to level 100.
     if (level <= 100)
         return level * 1000;
 
+    // Amount above level 100.
     s32 over = level - 100;
-    return (level * 1000) - (5 * over * (over + 1) / 2);
+
+    // BASE
+    //
+    // Starting scaled value at level 100.
+    //
+    // Normally should remain 100000 unless you redesign
+    // the entire stat progression system.
+    //
+    const s32 BASE = 100000;
+
+    // MAX_BONUS
+    //
+    // Maximum additional scaling obtainable AFTER level 100.
+    //
+    // Final theoretical cap:
+    //
+    //     BASE + MAX_BONUS
+    //
+    // Example:
+    //
+    //     100000 + 800000 = 900000
+    //     Level 1000 behaves approximately like level 900.
+    //
+    // Increasing this:
+    // - Raises late-game stat growth
+    // - Makes high levels more powerful
+    // - Increases overflow risk
+    //
+    // Decreasing this:
+    // - Makes progression harsher
+    // - Compresses stats more aggressively
+    //
+    const s32 MAX_BONUS = 800000;
+
+    // CURVE
+    //
+    // Controls how quickly diminishing returns kick in.
+    //
+    // Smaller values:
+    // - Faster growth
+    // - Higher stats earlier
+    // - Softer diminishing returns
+    //
+    // Larger values:
+    // - Slower growth
+    // - Harsher diminishing returns
+    // - More compressed endgame stats
+    //
+    // Examples:
+    //
+    //   CURVE = 100
+    //     Level 250 ≈ very strong growth
+    //
+    //   CURVE = 300
+    //     Level 250 ≈ heavily slowed
+    //
+    const s32 CURVE = 250;
+
+    // -------------------------------------------------------------------------
+    // DIMINISHING RETURNS FORMULA
+    // -------------------------------------------------------------------------
+    //
+    // Formula:
+    //
+    //     bonus = (MAX_BONUS * over) / (over + CURVE)
+    //
+    // Behavior:
+    //
+    // - Early levels gain noticeable stats
+    // - Later levels gain less and less
+    // - Growth approaches a limit asymptotically
+    //
+    // The bonus can NEVER exceed MAX_BONUS.
+    //
+    s32 bonus = (MAX_BONUS * over) / (over + CURVE);
+
+    return BASE + bonus;
 }
 
 #define CALC_STAT(base, iv, ev, statIndex, field, levelScaled)             \
@@ -1862,25 +2012,25 @@ void BoxMonToMon(const struct BoxPokemon *src, struct Pokemon *dest)
     SetMonData(dest, MON_DATA_HP, &value);
 }
 
-u8 GetLevelFromMonExp(struct Pokemon *mon)
+u16 GetLevelFromMonExp(struct Pokemon *mon)
 {
     u16 species = GetMonData(mon, MON_DATA_SPECIES, NULL);
     u32 exp = GetMonData(mon, MON_DATA_EXP, NULL);
-    s32 level = 1;
+    u16 level = 1;
 
-    while (level <= MAX_LEVEL && gExperienceTables[gSpeciesInfo[species].growthRate][level] <= exp)
+    while (level <= MAX_LEVEL && GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level) <= exp)
         level++;
 
     return level - 1;
 }
 
-u8 GetLevelFromBoxMonExp(struct BoxPokemon *boxMon)
+u16 GetLevelFromBoxMonExp(struct BoxPokemon *boxMon)
 {
     u16 species = GetBoxMonData(boxMon, MON_DATA_SPECIES, NULL);
     u32 exp = GetBoxMonData(boxMon, MON_DATA_EXP, NULL);
-    s32 level = 1;
+    u16 level = 1;
 
-    while (level <= MAX_LEVEL && gExperienceTables[gSpeciesInfo[species].growthRate][level] <= exp)
+    while (level <= MAX_LEVEL && GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level) <= exp)
         level++;
 
     return level - 1;
@@ -2941,7 +3091,7 @@ void SetMonData(struct Pokemon *mon, s32 field, const void *dataArg)
         SetBoxMonData(&mon->box, MON_DATA_STATUS, dataArg);
         break;
     case MON_DATA_LEVEL:
-        SET8(mon->level);
+        SET16(mon->level);
         break;
     case MON_DATA_HP:
     {
@@ -3125,7 +3275,7 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
             SET8(substruct3->metLocation);
             break;
         case MON_DATA_MET_LEVEL:
-            SET8(substruct3->metLevel);
+            SET16(substruct3->metLevel);
             break;
         case MON_DATA_MET_GAME:
             SET8(substruct3->metGame);
@@ -3889,7 +4039,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
 
                 if (param == 0) // Rare Candy
                 {
-                    dataUnsigned = gExperienceTables[gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES, NULL)].growthRate][GetMonData(mon, MON_DATA_LEVEL, NULL) + 1];
+                    dataUnsigned = GetExperienceAtLevel(gSpeciesInfo[GetMonData(mon, MON_DATA_SPECIES, NULL)].growthRate, GetMonData(mon, MON_DATA_LEVEL, NULL) + 1);
                 }
                 else if (param - 1 < ARRAY_COUNT(sExpCandyExperienceTable)) // EXP Candies
                 {
@@ -3899,12 +4049,12 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
                     if (B_RARE_CANDY_CAP && B_EXP_CAP_TYPE == EXP_CAP_HARD)
                     {
                         u32 currentLevelCap = GetCurrentLevelCap();
-                        if (dataUnsigned > gExperienceTables[gSpeciesInfo[species].growthRate][currentLevelCap])
-                            dataUnsigned = gExperienceTables[gSpeciesInfo[species].growthRate][currentLevelCap];
+                        if (dataUnsigned > GetExperienceAtLevel(gSpeciesInfo[species].growthRate, currentLevelCap))
+                            dataUnsigned = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, currentLevelCap);
                     }
-                    else if (dataUnsigned > gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL])
+                    else if (dataUnsigned > GetExperienceAtLevel(gSpeciesInfo[species].growthRate, MAX_LEVEL))
                     {
-                        dataUnsigned = gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL];
+                        dataUnsigned = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, MAX_LEVEL);
                     }
                 }
 
@@ -5018,7 +5168,7 @@ bool8 IsMonPastEvolutionLevel(struct Pokemon *mon)
 {
     int i;
     u16 species = GetMonData(mon, MON_DATA_SPECIES, 0);
-    u8 level = GetMonData(mon, MON_DATA_LEVEL, 0);
+    u16 level = GetMonData(mon, MON_DATA_LEVEL, 0);
     const struct Evolution *evolutions = GetSpeciesEvolutions(species);
 
     if (evolutions == NULL)
@@ -5627,14 +5777,14 @@ void PartySpreadPokerus(struct Pokemon *party)
 bool8 TryIncrementMonLevel(struct Pokemon *mon)
 {
     u16 species = GetMonData(mon, MON_DATA_SPECIES, 0);
-    u8 nextLevel = GetMonData(mon, MON_DATA_LEVEL, 0) + 1;
+    u16 nextLevel = GetMonData(mon, MON_DATA_LEVEL, 0) + 1;
     u32 expPoints = GetMonData(mon, MON_DATA_EXP, 0);
-    if (expPoints > gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL])
+    if (expPoints > GetExperienceAtLevel(gSpeciesInfo[species].growthRate, MAX_LEVEL))
     {
-        expPoints = gExperienceTables[gSpeciesInfo[species].growthRate][MAX_LEVEL];
+        expPoints = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, MAX_LEVEL);
         SetMonData(mon, MON_DATA_EXP, &expPoints);
     }
-    if (nextLevel > GetCurrentLevelCap() || expPoints < gExperienceTables[gSpeciesInfo[species].growthRate][nextLevel])
+    if (nextLevel > GetCurrentLevelCap() || expPoints < GetExperienceAtLevel(gSpeciesInfo[species].growthRate, nextLevel))
     {
         return FALSE;
     }
@@ -5735,7 +5885,7 @@ u8 GetMoveRelearnerMoves(struct Pokemon *mon, u16 *moves)
     u16 learnedMoves[4];
     u8 numMoves = 0;
     u16 species = GetMonData(mon, MON_DATA_SPECIES, 0);
-    u8 level = GetMonData(mon, MON_DATA_LEVEL, 0);
+    u16 level = GetMonData(mon, MON_DATA_LEVEL, 0);
     const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset(species);
     int i, j, k;
 
@@ -5788,7 +5938,7 @@ u8 GetNumberOfRelearnableMoves(struct Pokemon *mon)
     u16 moves[MAX_LEVEL_UP_MOVES];
     u8 numMoves = 0;
     u16 species = GetMonData(mon, MON_DATA_SPECIES_OR_EGG, 0);
-    u8 level = GetMonData(mon, MON_DATA_LEVEL, 0);
+    u16 level = GetMonData(mon, MON_DATA_LEVEL, 0);
     const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset(species);
     int i, j, k;
 
@@ -6796,7 +6946,7 @@ bool32 DoesSpeciesHaveFormChangeMethod(u16 species, enum FormChanges method)
 u16 MonTryLearningNewMoveEvolution(struct Pokemon *mon, bool8 firstMove)
 {
     u16 species = GetMonData(mon, MON_DATA_SPECIES, NULL);
-    u8 level = GetMonData(mon, MON_DATA_LEVEL, NULL);
+    u16 level = GetMonData(mon, MON_DATA_LEVEL, NULL);
     const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset(species);
 
     // Since you can learn more than one move per level,

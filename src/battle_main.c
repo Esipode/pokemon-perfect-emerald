@@ -526,7 +526,7 @@ static void CB2_InitBattleInternal(void)
     gBattle_BG3_X = 0;
     gBattle_BG3_Y = 0;
 
-    if (!DEBUG_OVERWORLD_MENU || (DEBUG_OVERWORLD_MENU && !gIsDebugBattle))
+    if (!FlagGet(FLAG_DEBUG) || (FlagGet(FLAG_DEBUG) && !gIsDebugBattle))
     {
         gBattleEnvironment = BattleSetup_GetEnvironmentId();
     }
@@ -568,7 +568,7 @@ static void CB2_InitBattleInternal(void)
     else
         SetMainCallback2(CB2_HandleStartBattle);
 
-    if (!DEBUG_OVERWORLD_MENU || (DEBUG_OVERWORLD_MENU && !gIsDebugBattle))
+    if (!FlagGet(FLAG_DEBUG) || (FlagGet(FLAG_DEBUG) && !gIsDebugBattle))
     {
         if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
         {
@@ -2104,7 +2104,7 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
 }
 
 // Returns the level adjustment for a given base level and difficulty
-static s8 GetDifficultyLevelAdjustment(u8 baseLevel, u8 difficulty)
+static s8 GetDifficultyLevelAdjustment(u16 baseLevel, u8 difficulty)
 {
     // Clamp baseLevel between 5 and 60
     if (baseLevel < 5)
@@ -2127,7 +2127,7 @@ static s8 GetDifficultyLevelAdjustment(u8 baseLevel, u8 difficulty)
 }
 
 // Linear scaling: 30 at level 1, 252 at level 60
-static u8 GetMaxRandomizedEVForLevel(u8 level)
+static u8 GetMaxRandomizedEVForLevel(u16 level)
 {
     if (level < 1)
         level = 1;
@@ -2376,12 +2376,12 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 species = GetFinalEvolution(species);
             
 
-            u8 baseLevel = partyData[monIndex].lvl;
+            u16 baseLevel = partyData[monIndex].lvl;
             s8 adjustment = GetDifficultyLevelAdjustment(baseLevel, gSaveBlock1Ptr->difficulty);
-            u8 newLevel = baseLevel + adjustment;
+            u16 newLevel = baseLevel + adjustment;
 
             /* Apply New Game+ level offset */
-            newLevel = (u8)min((u32)newLevel + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+            newLevel = min((u32)newLevel + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
             if (newLevel < 1)
                 newLevel = 1;
@@ -2576,7 +2576,7 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                 themeType = i;
             }
         }
-        u8 level = GetMonData(&party[startIndex + monsCount - 1], MON_DATA_LEVEL, NULL);
+        u16 level = GetMonData(&party[startIndex + monsCount - 1], MON_DATA_LEVEL, NULL);
         if (extraCount > 0 && numAces > 0)
         {
             // Shift aces to the end

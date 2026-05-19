@@ -5117,8 +5117,8 @@ static void Cmd_getexp(void)
 
                         if (GetMonData(&gPlayerParty[*expMonId], MON_DATA_LEVEL) >= levelCap)
                             gBattleStruct->battlerExpReward = 0;
-                        else if (gExperienceTables[growthRate][levelCap] < currentExp + gBattleStruct->battlerExpReward)
-                            gBattleStruct->battlerExpReward = gExperienceTables[growthRate][levelCap] - currentExp;
+                        else if (GetExperienceAtLevel(growthRate, levelCap) < currentExp + gBattleStruct->battlerExpReward)
+                            gBattleStruct->battlerExpReward = GetExperienceAtLevel(growthRate, levelCap) - currentExp;
                     }
 
                     if (IsTradedMon(&gPlayerParty[*expMonId]))
@@ -8830,7 +8830,7 @@ static void Cmd_getmoneyreward(void)
     CMD_ARGS();
 
     u32 money;
-    u8 sPartyLevel = 1;
+    u16 sPartyLevel = 1;
 
     if (gBattleOutcome == B_OUTCOME_WON)
     {
@@ -15416,7 +15416,7 @@ static void Cmd_pickup(void)
 
     u32 i, j;
     u16 species, heldItem, ability;
-    u8 lvlDivBy10;
+    u16 lvlDivBy10;
 
     if (!InBattlePike()) // No items in Battle Pike.
     {
@@ -17065,8 +17065,8 @@ void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBat
         // Note: There is an edge case where if a pokemon receives a large amount of exp, it wouldn't be properly calculated
         //       because of multiplying by scaling factor(the value would simply be larger than an u32 can hold). Hence u64 is needed.
         u64 value = *expAmount;
-        u8 faintedLevel = gBattleMons[faintedBattler].level;
-        u8 expGetterLevel = GetMonData(&gPlayerParty[expGetterMonId], MON_DATA_LEVEL);
+        u16 faintedLevel = gBattleMons[faintedBattler].level;
+        u16 expGetterLevel = GetMonData(&gPlayerParty[expGetterMonId], MON_DATA_LEVEL);
 
         value *= sExperienceScalingFactors[(faintedLevel * 2) + 10];
         value /= sExperienceScalingFactors[faintedLevel + expGetterLevel + 10];

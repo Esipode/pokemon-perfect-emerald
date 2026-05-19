@@ -136,13 +136,13 @@ bool8 DoesPartyHaveEnigmaBerry(void)
     return hasItem;
 }
 
-void CreateScriptedWildMon(u16 species, u8 level, u16 item)
+void CreateScriptedWildMon(u16 species, u16 level, u16 item)
 {
     u8 heldItem[2];
 
     ZeroEnemyPartyMons();
     /* Apply New Game+ level offset */
-    level = (u8)min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+    level = min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
     if (OW_SYNCHRONIZE_NATURE > GEN_3)
         CreateMonWithNature(&gEnemyParty[0], species, level, USE_RANDOM_IVS, PickWildMonNature());
@@ -155,7 +155,7 @@ void CreateScriptedWildMon(u16 species, u8 level, u16 item)
         SetMonData(&gEnemyParty[0], MON_DATA_HELD_ITEM, heldItem);
     }
 }
-void CreateScriptedDoubleWildMon(u16 species1, u8 level1, u16 item1, u16 species2, u8 level2, u16 item2)
+void CreateScriptedDoubleWildMon(u16 species1, u16 level1, u16 item1, u16 species2, u16 level2, u16 item2)
 {
     u8 heldItem1[2];
     u8 heldItem2[2];
@@ -163,8 +163,8 @@ void CreateScriptedDoubleWildMon(u16 species1, u8 level1, u16 item1, u16 species
     ZeroEnemyPartyMons();
 
     /* Apply New Game+ level offset to both wild mons */
-    level1 = (u8)min(level1 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
-    level2 = (u8)min(level2 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+    level1 = min(level1 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+    level2 = min(level2 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
     if (OW_SYNCHRONIZE_NATURE > GEN_3)
         CreateMonWithNature(&gEnemyParty[0], species1, level1, 32, PickWildMonNature());
@@ -364,7 +364,7 @@ void SetTeraType(struct ScriptContext *ctx)
  * if side/slot are assigned, it will create the mon at the assigned party location
  * if slot == PARTY_SIZE, it will give the mon to first available party or storage slot
  */
-static u32 ScriptGiveMonParameterized(u8 side, u8 slot, u16 species, u8 level, u16 item, enum PokeBall ball, u8 nature, u8 abilityNum, u8 gender, u8 *evs, u8 *ivs, u16 *moves, bool8 isShiny, bool8 gmaxFactor, u8 teraType, u8 dmaxLevel)
+static u32 ScriptGiveMonParameterized(u8 side, u8 slot, u16 species, u16 level, u16 item, enum PokeBall ball, u8 nature, u8 abilityNum, u8 gender, u8 *evs, u8 *ivs, u16 *moves, bool8 isShiny, bool8 gmaxFactor, u8 teraType, u8 dmaxLevel)
 {
     u16 nationalDexNum;
     int sentToPc;
@@ -504,7 +504,7 @@ static u32 ScriptGiveMonParameterized(u8 side, u8 slot, u16 species, u8 level, u
     return sentToPc;
 }
 
-u32 ScriptGiveMon(u16 species, u8 level, u16 item)
+u32 ScriptGiveMon(u16 species, u16 level, u16 item)
 {
     u8 evs[NUM_STATS]        = {0, 0, 0, 0, 0, 0};
     u8 ivs[NUM_STATS]        = {MAX_PER_STAT_IVS + 1, MAX_PER_STAT_IVS + 1, MAX_PER_STAT_IVS + 1,   // We pass "MAX_PER_STAT_IVS + 1" here to ensure that
@@ -523,7 +523,7 @@ void ScrCmd_createmon(struct ScriptContext *ctx)
     u8 side           = ScriptReadByte(ctx);
     u8 slot           = ScriptReadByte(ctx);
     u16 species       = VarGet(ScriptReadHalfword(ctx));
-    u8 level          = VarGet(ScriptReadHalfword(ctx));
+    u16 level          = VarGet(ScriptReadHalfword(ctx));
 
     u32 flags         = ScriptReadWord(ctx);
     u16 item          = PARSE_FLAG(0, ITEM_NONE);
@@ -657,7 +657,7 @@ void Script_SetStatus1(struct ScriptContext *ctx)
     }
 }
 
-u32 BirchCase_GiveMonParameterized(u16 species, u8 level, u16 item, u8 ball, u8 nature, u8 abilityNum, u8 gender, u8 *evs, u8 *ivs, u16 *moves, bool8 ggMaxFactor, u8 teraType, bool8 isShinyExpansion)
+u32 BirchCase_GiveMonParameterized(u16 species, u16 level, u16 item, u8 ball, u8 nature, u8 abilityNum, u8 gender, u8 *evs, u8 *ivs, u16 *moves, bool8 ggMaxFactor, u8 teraType, bool8 isShinyExpansion)
 {
     u16 nationalDexNum;
     int sentToPc;

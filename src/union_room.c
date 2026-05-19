@@ -4105,7 +4105,7 @@ static void TradeBoardPrintItemInfo(u8 windowId, u8 y, struct RfuGameData *data,
     u8 levelStr[4];
     u16 species = data->tradeSpecies;
     u8 type = data->tradeType;
-    u8 level = data->tradeLevel;
+    u16 level = data->tradeLevel;
 
     PrintUnionRoomText(windowId, FONT_NORMAL, playerName, 8, y, colorIdx);
     if (species == SPECIES_EGG)

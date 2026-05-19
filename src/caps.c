@@ -51,8 +51,8 @@ u32 GetCurrentLevelCap(void)
     // CUSTOM - CAP PLAYER (100) BELOW MAX LEVEL (250)
     u32 playerLevelCap = 100 + GetNewGamePlusLevelOffset();
 
-    if (playerLevelCap > 250) {
-        playerLevelCap = 250;
+    if (playerLevelCap > MAX_LEVEL) {
+        playerLevelCap = MAX_LEVEL;
     }
 
     // Check if level cap is disabled
@@ -70,8 +70,8 @@ u32 GetCurrentLevelCap(void)
                 u32 baseCap = sLevelCapFlagMap[i][1];
                 baseCap += GetNewGamePlusLevelOffset();
 
-                if (baseCap > 250) {
-                    return 250;
+                if (baseCap > MAX_LEVEL) {
+                    return MAX_LEVEL;
                 }
 
                 return baseCap;

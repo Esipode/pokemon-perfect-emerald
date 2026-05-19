@@ -5181,7 +5181,7 @@ static void PrintStatsScreen_Moves_Top(u8 taskId)
     u8 numTutorMoves    = sPokedexView->numTutorMoves;
     u16 movesTotal      = sPokedexView->movesTotal;
     u16 selected        = sPokedexView->moveSelected;
-    u8 level;
+    u16 level;
     u8 moves_x = 5;
     u8 moves_y = 3;
     u16 move;

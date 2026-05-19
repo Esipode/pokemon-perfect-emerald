@@ -897,7 +897,7 @@ struct BattleScripting
     u8 savedBattler;
     u8 reshowMainState;
     u8 reshowHelperState;
-    u8 levelUpHP;
+    u16 levelUpHP;
     u8 windowsType; // B_WIN_TYPE_*
     u8 multiplayerId;
     u8 specialTrainerBattleType;

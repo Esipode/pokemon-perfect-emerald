@@ -16,8 +16,8 @@ enum WildPokemonArea {
 
 struct WildPokemon
 {
-    u8 minLevel;
-    u8 maxLevel;
+    u16 minLevel;
+    u16 maxLevel;
     u16 species;
 };
 
@@ -61,7 +61,7 @@ bool8 UpdateRepelCounter(void);
 bool8 TryDoDoubleWildBattle(void);
 bool8 StandardWildEncounter_Debug(void);
 u32 CalculateChainFishingShinyRolls(void);
-void CreateWildMon(u16 species, u8 level);
+void CreateWildMon(u16 species, u16 level);
 u16 GetCurrentMapWildMonHeaderId(void);
 u8 ChooseWildMonIndex_Land(void);
 u8 ChooseWildMonIndex_WaterRock(void);

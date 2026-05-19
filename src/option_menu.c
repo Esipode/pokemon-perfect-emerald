@@ -35,6 +35,7 @@
 #define tDifficulty data[14]
 #define tLevelCapOff data[15]
 #define tStatEditor data[16]
+#define tDebug data[17]
 
 enum
 {
@@ -69,6 +70,7 @@ enum
     MENUITEM_RANDOMIZER_MOVES,
     MENUITEM_LEVEL_CAP_OFF,
     MENUITEM_ALLOW_STAT_EDITOR,
+    MENUITEM_DEBUG,
     MENUITEM_CANCEL_PG3,
     MENUITEM_COUNT_PG3,
 };
@@ -101,6 +103,7 @@ enum
 #define YPOS_RANDOMIZER_MOVES (MENUITEM_RANDOMIZER_MOVES * 16)
 #define YPOS_LEVEL_CAP_OFF (MENUITEM_LEVEL_CAP_OFF * 16)
 #define YPOS_STAT_EDITOR (MENUITEM_ALLOW_STAT_EDITOR * 16)
+#define YPOS_DEBUG (MENUITEM_DEBUG * 16)
 
 #define PAGE_COUNT 3
 
@@ -130,10 +133,12 @@ static u8   RandomizerType_ProcessInput(u8 selection);
 static void RandomizerType_DrawChoices(u8 selection);
 static u8   RandomizerMoves_ProcessInput(u8 selection);
 static void RandomizerMoves_DrawChoices(u8 selection);
-static u8   LevelCapOff_ProcessInput(u8 selection);
+static u16  LevelCapOff_ProcessInput(u8 selection);
 static void LevelCapOff_DrawChoices(u8 selection);
 static u8   StatEditor_ProcessInput(u8 selection);
 static void StatEditor_DrawChoices(u8 selection);
+static u8   Debug_ProcessInput(u8 selection);
+static void Debug_DrawChoices(u8 selection);
 static u8   Nuzlocke_ProcessInput(u8 selection);
 static void Nuzlocke_DrawChoices(u8 selection);
 static u8   Autosave_ProcessInput(u8 selection);
@@ -187,6 +192,7 @@ static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
     [MENUITEM_RANDOMIZER_MOVES]  = gText_MovesRandomizer,
     [MENUITEM_LEVEL_CAP_OFF]     = gText_LevelCap,
     [MENUITEM_ALLOW_STAT_EDITOR] = gText_StatEditor,
+    [MENUITEM_DEBUG]             = gText_Debug,
     [MENUITEM_CANCEL_PG3]        = gText_OptionMenuCancel,
 };
 
@@ -271,6 +277,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tDifficulty = gSaveBlock1Ptr->difficulty;
     gTasks[taskId].tLevelCapOff = FlagGet(FLAG_LEVEL_CAP_OFF);
     gTasks[taskId].tStatEditor = FlagGet(FLAG_ALLOW_STAT_EDITOR);
+    gTasks[taskId].tDebug = FlagGet(FLAG_DEBUG);
 }
 
 static void DrawOptionsPg1(u8 taskId)
@@ -304,6 +311,7 @@ static void DrawOptionsPg3(u8 taskId)
     RandomizerMoves_DrawChoices(gTasks[taskId].tRandomizerMoves);
     LevelCapOff_DrawChoices(gTasks[taskId].tLevelCapOff);
     StatEditor_DrawChoices(gTasks[taskId].tStatEditor);
+    Debug_DrawChoices(gTasks[taskId].tDebug);
     HighlightOptionMenuItem(gTasks[taskId].tMenuSelection);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -749,6 +757,13 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
             if (previousOption != gTasks[taskId].tStatEditor)
                 StatEditor_DrawChoices(gTasks[taskId].tStatEditor);
             break;
+        case MENUITEM_DEBUG:
+            previousOption = gTasks[taskId].tDebug;
+            gTasks[taskId].tDebug = Debug_ProcessInput(gTasks[taskId].tDebug);
+
+            if (previousOption != gTasks[taskId].tDebug)
+                Debug_DrawChoices(gTasks[taskId].tDebug);
+            break;
         default:
             return;
         }
@@ -778,6 +793,7 @@ static void Task_OptionMenuSave(u8 taskId)
     gTasks[taskId].tRandomizerMoves == 0 ? FlagClear(FLAG_RANDOMIZE_MOVES) : FlagSet(FLAG_RANDOMIZE_MOVES);
     gTasks[taskId].tLevelCapOff == 0 ? FlagClear(FLAG_LEVEL_CAP_OFF) : FlagSet(FLAG_LEVEL_CAP_OFF);
     gTasks[taskId].tStatEditor == 0 ? FlagClear(FLAG_ALLOW_STAT_EDITOR) : FlagSet(FLAG_ALLOW_STAT_EDITOR);
+    gTasks[taskId].tDebug == 0 ? FlagClear(FLAG_DEBUG) : FlagSet(FLAG_DEBUG);
     gSaveBlock1Ptr->nuzlockeModeEnabled = gTasks[taskId].tNuzlocke;
     gSaveBlock1Ptr->autosaveModeEnabled = gTasks[taskId].tAutosave;
     gSaveBlock1Ptr->difficulty = gTasks[taskId].tDifficulty;
@@ -959,7 +975,7 @@ static void RandomizerMoves_DrawChoices(u8 selection)
     DrawOptionMenuChoice(gText_MovesRandomizerOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_MovesRandomizerOn, 198), YPOS_RANDOMIZER_MOVES, styles[1]);
 }
 
-static u8 LevelCapOff_ProcessInput(u8 selection)
+static u16 LevelCapOff_ProcessInput(u8 selection)
 {
     if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
     {
@@ -999,6 +1015,27 @@ static void StatEditor_DrawChoices(u8 selection)
     styles[selection] = 1;
     DrawOptionMenuChoice(gText_AllowStatEditorOff, 104, YPOS_STAT_EDITOR, styles[0]);
     DrawOptionMenuChoice(gText_AllowStatEditorOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_AllowStatEditorOn, 198), YPOS_STAT_EDITOR, styles[1]);
+}
+
+static u8 Debug_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+        sArrowPressed = TRUE;
+    }
+
+    return selection;
+}
+
+static void Debug_DrawChoices(u8 selection)
+{
+    u8 styles[2];
+    styles[0] = 0;
+    styles[1] = 0;
+    styles[selection] = 1;
+    DrawOptionMenuChoice(gText_DebugOff, 104, YPOS_DEBUG, styles[0]);
+    DrawOptionMenuChoice(gText_DebugOn, GetStringRightAlignXOffset(FONT_NORMAL, gText_DebugOn, 198), YPOS_DEBUG, styles[1]);
 }
 
 static u8 Nuzlocke_ProcessInput(u8 selection)

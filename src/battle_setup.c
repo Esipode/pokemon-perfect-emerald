@@ -740,10 +740,10 @@ static u16 GetSumOfPlayerPartyLevel(u8 numMons)
     return sum;
 }
 
-static u8 GetSumOfEnemyPartyLevel(u16 opponentId, u8 numMons)
+static u16 GetSumOfEnemyPartyLevel(u16 opponentId, u8 numMons)
 {
     u8 i;
-    u8 sum;
+    u16 sum;
     u32 count = numMons;
     const struct TrainerMon *party;
 
@@ -762,8 +762,8 @@ static u8 GetSumOfEnemyPartyLevel(u16 opponentId, u8 numMons)
 u8 GetWildBattleTransition(void)
 {
     u8 transitionType = GetBattleTransitionTypeByMap();
-    u8 enemyLevel = GetMonData(&gEnemyParty[0], MON_DATA_LEVEL);
-    u8 playerLevel = GetSumOfPlayerPartyLevel(1);
+    u16 enemyLevel = GetMonData(&gEnemyParty[0], MON_DATA_LEVEL);
+    u16 playerLevel = GetSumOfPlayerPartyLevel(1);
 
     if (enemyLevel < playerLevel)
     {
@@ -785,8 +785,8 @@ u8 GetTrainerBattleTransition(void)
 {
     u8 minPartyCount = 1;
     u8 transitionType;
-    u8 enemyLevel;
-    u8 playerLevel;
+    u16 enemyLevel;
+    u16 playerLevel;
     u32 trainerId = SanitizeTrainerId(TRAINER_BATTLE_PARAM.opponentA);
     u32 trainerClass = GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA);
 
@@ -827,8 +827,8 @@ u8 GetTrainerBattleTransition(void)
 u8 GetSpecialBattleTransition(s32 id)
 {
     u16 var;
-    u8 enemyLevel = GetMonData(&gEnemyParty[0], MON_DATA_LEVEL);
-    u8 playerLevel = GetSumOfPlayerPartyLevel(1);
+    u16 enemyLevel = GetMonData(&gEnemyParty[0], MON_DATA_LEVEL);
+    u16 playerLevel = GetSumOfPlayerPartyLevel(1);
 
     if (enemyLevel < playerLevel)
     {

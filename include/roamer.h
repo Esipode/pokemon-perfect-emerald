@@ -12,7 +12,7 @@ void UpdateRoamerHPStatus(struct Pokemon *mon);
 void NextRoamer(u32 roamerIndex);
 void SetRoamerInactive(u32 roamerIndex);
 void GetRoamerLocation(u32 roamerIndex, u8 *mapGroup, u8 *mapNum);
-bool8 TryAddRoamer(u16 species, u8 level);
+bool8 TryAddRoamer(u16 species, u16 level);
 void MoveAllRoamersToOtherLocationSets(void);
 void MoveAllRoamers(void);
 

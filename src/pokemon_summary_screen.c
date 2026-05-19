@@ -139,32 +139,32 @@ static EWRAM_DATA struct PokemonSummaryScreenData
         u8 isEgg:1; // 0x4
         u8 isShiny:1;
         u8 padding:6;
-        u8 level; // 0x5
-        u8 ribbonCount; // 0x6
-        u8 ailment; // 0x7
-        u8 abilityNum; // 0x8
-        u8 metLocation; // 0x9
-        u8 metLevel; // 0xA
-        u8 metGame; // 0xB
-        u32 pid; // 0xC
-        u32 exp; // 0x10
-        u16 moves[MAX_MON_MOVES]; // 0x14
-        u8 pp[MAX_MON_MOVES]; // 0x1C
-        u16 currentHP; // 0x20
-        u16 maxHP; // 0x22
-        u16 atk; // 0x24
-        u16 def; // 0x26
-        u16 spatk; // 0x28
-        u16 spdef; // 0x2A
-        u16 speed; // 0x2C
-        u16 item; // 0x2E
-        u16 friendship; // 0x30
-        u8 OTGender; // 0x32
-        u8 nature; // 0x33
-        u8 ppBonuses; // 0x34
-        u8 sanity; // 0x35
-        u8 OTName[17]; // 0x36
-        u32 OTID; // 0x48
+        u16 level; // 0x5
+        u8 ribbonCount; // 0x7
+        u8 ailment; // 0x8
+        u8 abilityNum; // 0x9
+        u8 metLocation; // 0xA
+        u16 metLevel; // 0xB
+        u8 metGame; // 0xD
+        u32 pid; // 0xE
+        u32 exp; // 0x12
+        u16 moves[MAX_MON_MOVES]; // 0x16
+        u8 pp[MAX_MON_MOVES]; // 0x1E
+        u16 currentHP; // 0x22
+        u16 maxHP; // 0x24
+        u16 atk; // 0x26
+        u16 def; // 0x28
+        u16 spatk; // 0x2A
+        u16 spdef; // 0x2C
+        u16 speed; // 0x2E
+        u16 item; // 0x30
+        u16 friendship; // 0x32
+        u8 OTGender; // 0x34
+        u8 nature; // 0x35
+        u8 ppBonuses; // 0x36
+        u8 sanity; // 0x37
+        u8 OTName[17]; // 0x38
+        u32 OTID; // 0x4A
         u8 teraType;
         u8 type1;
         u8 type2;
@@ -3063,8 +3063,8 @@ static void DrawExperienceProgressBar(struct Pokemon *unused)
 
     if (summary->level < MAX_LEVEL)
     {
-        u32 expBetweenLevels = gExperienceTables[gSpeciesInfo[summary->species].growthRate][summary->level + 1] - gExperienceTables[gSpeciesInfo[summary->species].growthRate][summary->level];
-        u32 expSinceLastLevel = summary->exp - gExperienceTables[gSpeciesInfo[summary->species].growthRate][summary->level];
+        u32 expBetweenLevels = GetExperienceAtLevel(gSpeciesInfo[summary->species].growthRate, summary->level + 1) - GetExperienceAtLevel(gSpeciesInfo[summary->species].growthRate, summary->level);
+        u32 expSinceLastLevel = summary->exp - GetExperienceAtLevel(gSpeciesInfo[summary->species].growthRate, summary->level);
 
         // Calculate the number of 1-pixel "ticks" to illuminate in the experience progress bar.
         // There are 8 tiles that make up the bar, and each tile has 8 "ticks". Hence, the numerator
@@ -3217,9 +3217,9 @@ static void PrintNotEggInfo(void)
             SetMonPicBackgroundPalette(TRUE);
     }
     StringCopy(gStringVar1, gText_LevelSymbol);
-    ConvertIntToDecimalStringN(gStringVar2, summary->level, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ConvertIntToDecimalStringN(gStringVar2, summary->level, STR_CONV_MODE_LEFT_ALIGN, 4);
     StringAppend(gStringVar1, gStringVar2);
-    PrintTextOnWindow(PSS_LABEL_WINDOW_PORTRAIT_SPECIES, gStringVar1, 24, 17, 0, 1);
+    PrintTextOnWindow(PSS_LABEL_WINDOW_PORTRAIT_SPECIES, gStringVar1, 20, 17, 0, 1);
     GetMonNickname(mon, gStringVar1);
     PrintTextOnWindowToFitPx(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME, gStringVar1, 0, 1, 0, 1, WindowWidthPx(PSS_LABEL_WINDOW_PORTRAIT_NICKNAME) - 9);
     PrintTextOnWindow(PSS_LABEL_WINDOW_PORTRAIT_SPECIES, gText_Slash, 0, 1, 0, 1);
@@ -3608,7 +3608,7 @@ static void BufferNatureString(void)
 
 static void GetMetLevelString(u8 *output)
 {
-    u8 level = sMonSummaryScreen->summary.metLevel;
+    u16 level = sMonSummaryScreen->summary.metLevel;
     if (level == 0)
         level = EGG_HATCH_LEVEL;
     ConvertIntToDecimalStringN(output, level, STR_CONV_MODE_LEFT_ALIGN, 3);
@@ -3955,17 +3955,17 @@ static void PrintExpPointsNextLevel(void)
     int x;
     u32 expToNextLevel;
 
-    ConvertIntToDecimalStringN(gStringVar1, sum->exp, STR_CONV_MODE_RIGHT_ALIGN, 7);
-    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 42) + 2;
+    ConvertIntToDecimalStringN(gStringVar1, sum->exp, STR_CONV_MODE_RIGHT_ALIGN, 8);
+    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 42) - 4;
     PrintTextOnWindow(windowId, gStringVar1, x, 1, 0, 0);
 
     if (sum->level < MAX_LEVEL)
-        expToNextLevel = gExperienceTables[gSpeciesInfo[sum->species].growthRate][sum->level + 1] - sum->exp;
+        expToNextLevel = GetExperienceAtLevel(gSpeciesInfo[sum->species].growthRate, sum->level + 1) - sum->exp;
     else
         expToNextLevel = 0;
 
-    ConvertIntToDecimalStringN(gStringVar1, expToNextLevel, STR_CONV_MODE_RIGHT_ALIGN, 6);
-    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 42) + 2;
+    ConvertIntToDecimalStringN(gStringVar1, expToNextLevel, STR_CONV_MODE_RIGHT_ALIGN, 8);
+    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 42) - 4;
     PrintTextOnWindow(windowId, gStringVar1, x, 17, 0, 0);
 }
 

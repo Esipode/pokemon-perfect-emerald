@@ -103,7 +103,7 @@ void MoveAllRoamers(void)
         RoamerMove(i);
 }
 
-static void CreateInitialRoamerMon(u8 index, u16 species, u8 level)
+static void CreateInitialRoamerMon(u8 index, u16 species, u16 level)
 {
     ClearRoamerLocationHistory(index);
     CreateMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, FALSE, 0, OT_ID_PLAYER_ID, 0);
@@ -136,7 +136,7 @@ static u8 GetFirstInactiveRoamerIndex(void)
     return ROAMER_COUNT;
 }
 
-bool8 TryAddRoamer(u16 species, u8 level)
+bool8 TryAddRoamer(u16 species, u16 level)
 {
     u8 index = GetFirstInactiveRoamerIndex();
 
@@ -500,7 +500,7 @@ void NextRoamer(u32 roamerIndex)
         }
     
         // Determine the level for the new roamer.
-        u8 nextRoamerLevel = GetCurrentLevelCap();
+        u16 nextRoamerLevel = GetCurrentLevelCap();
     
         // Create the new roamer in the available slot
         TryAddRoamer(nextRoamerSpecies, nextRoamerLevel);

@@ -332,7 +332,7 @@ static void BuildStartMenuActions(void)
     }
     else
     {
-        if (DEBUG_OVERWORLD_MENU == TRUE && DEBUG_OVERWORLD_IN_MENU == TRUE)
+        if (DEBUG_OVERWORLD_MENU == TRUE && DEBUG_OVERWORLD_IN_MENU == TRUE && FlagGet(FLAG_DEBUG))
             BuildDebugStartMenu();
         else
             BuildNormalStartMenu();
@@ -855,13 +855,13 @@ static bool8 StartMenuDebugCallback(void)
     RemoveExtraStartMenuWindows();
     HideStartMenuDebug(); // Hide start menu without enabling movement
 
-    if (DEBUG_OVERWORLD_MENU)
+    if (DEBUG_OVERWORLD_MENU && FlagGet(FLAG_DEBUG))
     {
         FreezeObjectEvents();
         Debug_ShowMainMenu();
     }
 
-return TRUE;
+    return TRUE;
 }
 
 static bool8 StartMenuSafariZoneRetireCallback(void)
