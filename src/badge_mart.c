@@ -169,9 +169,13 @@ static u8 CountPlayerBadges(void)
     return badgeCount;
 }
 
-// Get the appropriate mart inventory based on badge count
+// Get the appropriate mart inventory based on badge count.
+// In New Game + mode, always use the final tier.
 const u16 *GetBadgeBasedMartInventory(void)
 {
+    if (gSaveBlock2Ptr->newGamePlus > 0)
+        return sMartInventory_Tier4;
+
     u8 badgeCount = CountPlayerBadges();
 
     if (badgeCount >= 7)
