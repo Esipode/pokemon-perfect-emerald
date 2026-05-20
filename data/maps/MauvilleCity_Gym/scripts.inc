@@ -94,6 +94,9 @@ MauvilleCity_Gym_EventScript_WattsonDefeated::
 	setflag FLAG_DEFEATED_MAUVILLE_GYM
 	setflag FLAG_BADGE03_GET
 	call Common_EventScript_CheckLevelCapIncrease
+	giveitem ITEM_Z_POWER_RING
+	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
+	msgbox MauvilleCity_Gym_Text_ExplainZPowerRing, MSGBOX_DEFAULT
 	addvar VAR_PETALBURG_GYM_STATE, 1
 	call_if_eq VAR_PETALBURG_GYM_STATE, 6, Common_EventScript_ReadyPetalburgGymForBattle
 	setvar VAR_0x8008, 3
@@ -364,6 +367,12 @@ MauvilleCity_Gym_Text_ExplainDynamoBadgeTakeThis:
 	.string "bit faster, too.\p"
 	.string "Hmm…\n"
 	.string "You should take this, too!$"
+
+MauvilleCity_Gym_Text_ExplainZPowerRing:
+	.string "This Z-POWER RING lets you use Z-MOVES\n"
+	.string "in battle when a POKéMON is ready.\p"
+	.string "You will need a matching type\n"
+	.string "Z-MOVES stone first though.$"
 
 MauvilleCity_Gym_Text_ExplainShockWave:
 	.string "That TM34 there contains SHOCK WAVE.\p"

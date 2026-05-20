@@ -71,6 +71,9 @@ MossdeepCity_Gym_EventScript_TateAndLizaDefeated::
 	setflag FLAG_DEFEATED_MOSSDEEP_GYM
 	setflag FLAG_BADGE07_GET
 	call Common_EventScript_CheckLevelCapIncrease
+	giveitem ITEM_TERA_ORB
+	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
+	msgbox MossdeepCity_Gym_Text_ExplainTeraOrb, MSGBOX_DEFAULT
 	setflag FLAG_HIDE_AQUA_HIDEOUT_GRUNTS
 	clearflag FLAG_HIDE_SLATEPORT_CITY_STERNS_SHIPYARD_MR_BRINEY
 	clearflag FLAG_UNKNOWN_0x393
@@ -582,6 +585,12 @@ MossdeepCity_Gym_Text_ExplainMindBadgeTakeThis:
 	.string "LIZA: It also lets you use the HM move\n"
 	.string "DIVE outside of battle.\p"
 	.string "TATE: You should also take this, too.$"
+
+MossdeepCity_Gym_Text_ExplainTeraOrb:
+	.string "Use this TERA ORB to TERASTALLIZE a\n"
+	.string "POKéMON in battle and change its type.\p"
+	.string "It can give your POKéMON a powerful\n"
+	.string "advantage in battle.$"
 
 MossdeepCity_Gym_Text_ExplainCalmMind:
 	.string "TATE: That TM04 contains…\n"
