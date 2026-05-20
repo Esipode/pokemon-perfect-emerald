@@ -47,6 +47,7 @@
 #include "script_movement.h"
 #include "script_pokemon_util.h"
 #include "shop.h"
+#include "badge_mart.h"
 #include "slot_machine.h"
 #include "sound.h"
 #include "string_util.h"
@@ -2556,6 +2557,17 @@ bool8 ScrCmd_pokemartdecoration2(struct ScriptContext *ctx)
     Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
 
     CreateDecorationShop2Menu(ptr);
+    ScriptContext_Stop();
+    return TRUE;
+}
+
+bool8 ScrCmd_pokemartbadgebased(struct ScriptContext *ctx)
+{
+    const u16 *inventory = GetBadgeBasedMartInventory();
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
+
+    CreatePokemartMenu(inventory);
     ScriptContext_Stop();
     return TRUE;
 }

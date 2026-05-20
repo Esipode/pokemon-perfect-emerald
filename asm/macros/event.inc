@@ -1240,6 +1240,11 @@
 	.4byte \products
 	.endm
 
+	@ Opens the Pokemart system with a dynamic inventory based on the player's collected gym badges.
+	.macro pokemartbadgebased
+	.byte SCR_OP_POKEMARTBADGEBASED
+	.endm
+
 	@ Starts up the slot machine minigame. id is a SLOT_MACHINE_* value that influences probabilities of certain reel outcomes.
 	.macro playslotmachine id:req
 	.byte SCR_OP_PLAYSLOTMACHINE
