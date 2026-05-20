@@ -362,6 +362,7 @@ static void Cmd_waitanimation(void);
 static void Cmd_healthbarupdate(void);
 static void Cmd_datahpupdate(void);
 static void Cmd_critmessage(void);
+static enum StringID GetAnnouncerVariantStringId(enum StringID stringId);
 static void Cmd_effectivenesssound(void);
 static void Cmd_resultmessage(void);
 static void Cmd_printstring(void);
@@ -2757,6 +2758,459 @@ static void Cmd_datahpupdate(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+static enum StringID GetAnnouncerVariantStringId(enum StringID stringId)
+{
+    switch (stringId)
+    {
+    case STRINGID_CRITICALHIT:
+        switch (Random() % 3)
+        {
+        case 1:
+            return STRINGID_CRITICALHIT_2;
+        case 2:
+            return STRINGID_CRITICALHIT_3;
+        default:
+            return STRINGID_CRITICALHIT;
+        }
+    case STRINGID_SUPEREFFECTIVE:
+        switch (Random() % 3)
+        {
+        case 1:
+            return STRINGID_SUPEREFFECTIVE_2;
+        case 2:
+            return STRINGID_SUPEREFFECTIVE_3;
+        default:
+            return STRINGID_SUPEREFFECTIVE;
+        }
+    case STRINGID_NOTVERYEFFECTIVE:
+        switch (Random() % 3)
+        {
+        case 1:
+            return STRINGID_NOTVERYEFFECTIVE_2;
+        case 2:
+            return STRINGID_NOTVERYEFFECTIVE_3;
+        default:
+            return STRINGID_NOTVERYEFFECTIVE;
+        }
+    case STRINGID_ONEHITKO:
+        switch (Random() % 3)
+        {
+        case 1:
+            return STRINGID_ONEHITKO_2;
+        case 2:
+            return STRINGID_ONEHITKO_3;
+        default:
+            return STRINGID_ONEHITKO;
+        }
+    case STRINGID_ATTACKMISSED:
+        switch (Random() % 3)
+        {
+        case 1:
+            return STRINGID_ATTACKMISSED_2;
+        case 2:
+            return STRINGID_ATTACKMISSED_3;
+        default:
+            return STRINGID_ATTACKMISSED;
+        }
+    case STRINGID_PKMNPROTECTEDITSELF:
+        switch (Random() % 3)
+        {
+        case 1:
+            return STRINGID_PKMNPROTECTEDITSELF_2;
+        case 2:
+            return STRINGID_PKMNPROTECTEDITSELF_3;
+        default:
+            return STRINGID_PKMNPROTECTEDITSELF;
+        }
+    case STRINGID_AVOIDEDDAMAGE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_AVOIDEDDAMAGE_2;
+        default:
+            return STRINGID_AVOIDEDDAMAGE;
+        }
+    case STRINGID_ITDOESNTAFFECT:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_ITDOESNTAFFECT_2;
+        default:
+            return STRINGID_ITDOESNTAFFECT;
+        }
+    case STRINGID_ATTACKERFAINTED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_ATTACKERFAINTED_2;
+        default:
+            return STRINGID_ATTACKERFAINTED;
+        }
+    case STRINGID_TARGETFAINTED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_TARGETFAINTED_2;
+        default:
+            return STRINGID_TARGETFAINTED;
+        }
+    case STRINGID_PREVENTSESCAPE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PREVENTSESCAPE_2;
+        default:
+            return STRINGID_PREVENTSESCAPE;
+        }
+    case STRINGID_HITXTIMES:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_HITXTIMES_2;
+        default:
+            return STRINGID_HITXTIMES;
+        }
+    case STRINGID_PKMNFELLASLEEP:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNFELLASLEEP_2;
+        default:
+            return STRINGID_PKMNFELLASLEEP;
+        }
+    case STRINGID_STATSWONTINCREASE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_STATSWONTINCREASE_2;
+        default:
+            return STRINGID_STATSWONTINCREASE;
+        }
+    case STRINGID_STATSWONTDECREASE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_STATSWONTDECREASE_2;
+        default:
+            return STRINGID_STATSWONTDECREASE;
+        }
+    case STRINGID_PKMNISCONFUSED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNISCONFUSED_2;
+        default:
+            return STRINGID_PKMNISCONFUSED;
+        }
+    case STRINGID_PKMNHEALEDCONFUSION:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNHEALEDCONFUSION_2;
+        default:
+            return STRINGID_PKMNHEALEDCONFUSION;
+        }
+    case STRINGID_PKMNFELLINLOVE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNFELLINLOVE_2;
+        default:
+            return STRINGID_PKMNFELLINLOVE;
+        }
+    case STRINGID_PKMNINLOVE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNINLOVE_2;
+        default:
+            return STRINGID_PKMNINLOVE;
+        }
+    case STRINGID_PKMNIMMOBILIZEDBYLOVE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNIMMOBILIZEDBYLOVE_2;
+        default:
+            return STRINGID_PKMNIMMOBILIZEDBYLOVE;
+        }
+    case STRINGID_PKMNBLOWNAWAY:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNBLOWNAWAY_2;
+        default:
+            return STRINGID_PKMNBLOWNAWAY;
+        }
+    case STRINGID_PKMNFLINCHED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNFLINCHED_2;
+        default:
+            return STRINGID_PKMNFLINCHED;
+        }
+    case STRINGID_PKMNREGAINEDHEALTH:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNREGAINEDHEALTH_2;
+        default:
+            return STRINGID_PKMNREGAINEDHEALTH;
+        }
+    case STRINGID_PKMNHURTBY:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNHURTBY_2;
+        default:
+            return STRINGID_PKMNHURTBY;
+        }
+    case STRINGID_PKMNEVADEDATTACK:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNEVADEDATTACK_2;
+        default:
+            return STRINGID_PKMNEVADEDATTACK;
+        }
+    case STRINGID_PKMNFASTASLEEP:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNFASTASLEEP_2;
+        default:
+            return STRINGID_PKMNFASTASLEEP;
+        }
+    case STRINGID_PKMNWOKEUP:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNWOKEUP_2;
+        default:
+            return STRINGID_PKMNWOKEUP;
+        }
+    case STRINGID_PKMNFLEDFROMBATTLE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNFLEDFROMBATTLE_2;
+        default:
+            return STRINGID_PKMNFLEDFROMBATTLE;
+        }
+    case STRINGID_PKMNTOOKATTACK:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNTOOKATTACK_2;
+        default:
+            return STRINGID_PKMNTOOKATTACK;
+        }
+    case STRINGID_PKMNATTACK:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNATTACK_2;
+        default:
+            return STRINGID_PKMNATTACK;
+        }
+    case STRINGID_PKMNRAISEDSPEED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNRAISEDSPEED_2;
+        default:
+            return STRINGID_PKMNRAISEDSPEED;
+        }
+    case STRINGID_PKMNPROTECTEDBY:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNPROTECTEDBY_2;
+        default:
+            return STRINGID_PKMNPROTECTEDBY;
+        }
+    case STRINGID_PKMNPREVENTSUSAGE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNPREVENTSUSAGE_2;
+        default:
+            return STRINGID_PKMNPREVENTSUSAGE;
+        }
+    case STRINGID_STATSHARPLY:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_STATSHARPLY_2;
+        default:
+            return STRINGID_STATSHARPLY;
+        }
+    case STRINGID_STATROSE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_STATROSE_2;
+        default:
+            return STRINGID_STATROSE;
+        }
+    case STRINGID_STATHARSHLY:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_STATHARSHLY_2;
+        default:
+            return STRINGID_STATHARSHLY;
+        }
+    case STRINGID_STATFELL:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_STATFELL_2;
+        default:
+            return STRINGID_STATFELL;
+        }
+    case STRINGID_ATTACKERSSTATROSE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_ATTACKERSSTATROSE_2;
+        default:
+            return STRINGID_ATTACKERSSTATROSE;
+        }
+    case STRINGID_DEFENDERSSTATROSE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_DEFENDERSSTATROSE_2;
+        default:
+            return STRINGID_DEFENDERSSTATROSE;
+        }
+    case STRINGID_ATTACKERSSTATFELL:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_ATTACKERSSTATFELL_2;
+        default:
+            return STRINGID_ATTACKERSSTATFELL;
+        }
+    case STRINGID_DEFENDERSSTATFELL:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_DEFENDERSSTATFELL_2;
+        default:
+            return STRINGID_DEFENDERSSTATFELL;
+        }
+    case STRINGID_CANTESCAPE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_CANTESCAPE_2;
+        default:
+            return STRINGID_CANTESCAPE;
+        }
+    case STRINGID_BUTNOTHINGHAPPENED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_BUTNOTHINGHAPPENED_2;
+        default:
+            return STRINGID_BUTNOTHINGHAPPENED;
+        }
+    case STRINGID_BUTITFAILED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_BUTITFAILED_2;
+        default:
+            return STRINGID_BUTITFAILED;
+        }
+    case STRINGID_PLAYERUSEDITEM:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PLAYERUSEDITEM_2;
+        default:
+            return STRINGID_PLAYERUSEDITEM;
+        }
+    case STRINGID_PKMNBROKEFREE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_PKMNBROKEFREE_2;
+        default:
+            return STRINGID_PKMNBROKEFREE;
+        }
+    case STRINGID_ITAPPEAREDCAUGHT:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_ITAPPEAREDCAUGHT_2;
+        default:
+            return STRINGID_ITAPPEAREDCAUGHT;
+        }
+    case STRINGID_AARGHALMOSTHADIT:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_AARGHALMOSTHADIT_2;
+        default:
+            return STRINGID_AARGHALMOSTHADIT;
+        }
+    case STRINGID_SHOOTSOCLOSE:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_SHOOTSOCLOSE_2;
+        default:
+            return STRINGID_SHOOTSOCLOSE;
+        }
+    case STRINGID_GOTCHAPKMNCAUGHTPLAYER:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_GOTCHAPKMNCAUGHTPLAYER_2;
+        default:
+            return STRINGID_GOTCHAPKMNCAUGHTPLAYER;
+        }
+    case STRINGID_GIVENICKNAMECAPTURED:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_GIVENICKNAMECAPTURED_2;
+        default:
+            return STRINGID_GIVENICKNAMECAPTURED;
+        }
+    case STRINGID_ITISRAINING:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_ITISRAINING_2;
+        default:
+            return STRINGID_ITISRAINING;
+        }
+    case STRINGID_SANDSTORMISRAGING:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_SANDSTORMISRAGING_2;
+        default:
+            return STRINGID_SANDSTORMISRAGING;
+        }
+    case STRINGID_ENEMYABOUTTOSWITCHPKMN:
+        switch (Random() % 2)
+        {
+        case 1:
+            return STRINGID_ENEMYABOUTTOSWITCHPKMN_2;
+        default:
+            return STRINGID_ENEMYABOUTTOSWITCHPKMN;
+        }
+    default:
+        return stringId;
+    }
+}
+
 static void Cmd_critmessage(void)
 {
     CMD_ARGS();
@@ -2765,7 +3219,7 @@ static void Cmd_critmessage(void)
     {
         if (gSpecialStatuses[gBattlerTarget].criticalHit && !(gBattleStruct->moveResultFlags[gBattlerTarget] & MOVE_RESULT_NO_EFFECT))
         {
-            PrepareStringBattle(STRINGID_CRITICALHIT, gBattlerAttacker);
+            PrepareStringBattle(GetAnnouncerVariantStringId(STRINGID_CRITICALHIT), gBattlerAttacker);
 
             TryInitializeTrainerSlideEnemyLandsFirstCriticalHit(gBattlerTarget);
             TryInitializeTrainerSlidePlayerLandsFirstCriticalHit(gBattlerTarget);
@@ -3017,7 +3471,7 @@ static void Cmd_resultmessage(void)
         }
     }
     if (stringId)
-        PrepareStringBattle(stringId, gBattlerAttacker);
+        PrepareStringBattle(GetAnnouncerVariantStringId(stringId), gBattlerAttacker);
     else
         gBattleCommunication[MSG_DISPLAY] = 0;
 
@@ -3033,7 +3487,7 @@ static void Cmd_printstring(void)
         u16 id = (cmd->id == 0 ? gBattleScripting.savedStringId : cmd->id);
 
         gBattlescriptCurrInstr = cmd->nextInstr;
-        PrepareStringBattle(id, gBattlerAttacker);
+        PrepareStringBattle(GetAnnouncerVariantStringId(id), gBattlerAttacker);
         gBattleCommunication[MSG_DISPLAY] = 1;
     }
 }
