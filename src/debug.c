@@ -2363,12 +2363,12 @@ static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId)
             gTasks[taskId].data[6] = gTasks[taskId].tInput; // store new game+
             gSaveBlock2Ptr->newGamePlus = (u8)gTasks[taskId].data[6];
             gIsNewGamePlus = (gSaveBlock2Ptr->newGamePlus > 0);
-            gTasks[taskId].tInput = gTasks[taskId].data[6] = gSaveBlock1Ptr->weatherCycleStage;
+            gTasks[taskId].tInput = gTasks[taskId].data[6] = gSaveBlock2Ptr->newGamePlus;
             gTasks[taskId].tDigit = 0;
             gTasks[taskId].data[5] = 1; // switch to editing cycle
 
             ConvertIntToDecimalStringN(gStringVar1, gSaveBlock2Ptr->newGamePlus, STR_CONV_MODE_LEADING_ZEROS, 3);
-            ConvertIntToDecimalStringN(gStringVar2, gTasks[taskId].tInput, STR_CONV_MODE_LEADING_ZEROS, 1);
+            ConvertIntToDecimalStringN(gStringVar2, gTasks[taskId].tInput, STR_CONV_MODE_LEADING_ZEROS, 3);
             StringCopy(gStringVar3, gText_DigitIndicator[gTasks[taskId].tDigit]);
             StringExpandPlaceholders(gStringVar4, sDebugText_Util_NewGameCycle);
             AddTextPrinterParameterized(gTasks[taskId].tSubWindowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
@@ -2384,10 +2384,10 @@ static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId)
         if (JOY_NEW(DPAD_ANY))
         {
             PlaySE(SE_SELECT);
-            Debug_HandleInput_Numeric(taskId, 0, 3, 1);
+            Debug_HandleInput_Numeric(taskId, 0, 100, 3);
 
             ConvertIntToDecimalStringN(gStringVar1, gTasks[taskId].data[6], STR_CONV_MODE_LEADING_ZEROS, 3);
-            ConvertIntToDecimalStringN(gStringVar2, gTasks[taskId].tInput, STR_CONV_MODE_LEADING_ZEROS, 1);
+            ConvertIntToDecimalStringN(gStringVar2, gTasks[taskId].tInput, STR_CONV_MODE_LEADING_ZEROS, 3);
             StringCopy(gStringVar3, gText_DigitIndicator[gTasks[taskId].tDigit]);
             StringExpandPlaceholders(gStringVar4, sDebugText_Util_NewGameCycle);
             AddTextPrinterParameterized(gTasks[taskId].tSubWindowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
@@ -2396,7 +2396,7 @@ static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId)
         if (JOY_NEW(A_BUTTON))
         {
             PlaySE(SE_SELECT);
-            gSaveBlock2Ptr->newGamePlus = (u8)gTasks[taskId].data[6];
+            gSaveBlock2Ptr->newGamePlus = (u8)gTasks[taskId].tInput;
             gIsNewGamePlus = (gSaveBlock2Ptr->newGamePlus > 0);
             DebugAction_DestroyExtraWindow(taskId);
         }
