@@ -876,9 +876,9 @@
     },
     {
       "type": "hidden_item",
-      "x": 24,
-      "y": 85,
-      "elevation": 3,
+      "x": 19,
+      "y": 93,
+      "elevation": 5,
       "item": "ITEM_ABSOLITE",
       "flag": "FLAG_ITEM_ABSOLITE"
     }
