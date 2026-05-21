@@ -534,6 +534,14 @@
       "elevation": 3,
       "item": "ITEM_MAX_REVIVE",
       "flag": "FLAG_HIDDEN_ITEM_ROUTE_121_MAX_REVIVE"
+    },
+    {
+      "type": "hidden_item",
+      "x": 56,
+      "y": 5,
+      "elevation": 3,
+      "item": "ITEM_BANETTITE",
+      "flag": "FLAG_ITEM_BANETTITE"
     }
   ]
 }

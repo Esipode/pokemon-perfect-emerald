@@ -26,6 +26,32 @@
       "trainer_sight_or_berry_tree_id": "ITEM_TM78",
       "script": "Common_EventScript_FindItem",
       "flag": "FLAG_ITEM_ARTISAN_CAVE_B1F_TM78"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
+      "x": 16,
+      "y": 10,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
+      "movement_range_x": 1,
+      "movement_range_y": 1,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "ITEM_SCIZORITE",
+      "script": "Common_EventScript_FindItem",
+      "flag": "FLAG_ITEM_SCIZORITE"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
+      "x": 23,
+      "y": 41,
+      "elevation": 3,
+      "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
+      "movement_range_x": 1,
+      "movement_range_y": 1,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "ITEM_HERACRONITE",
+      "script": "Common_EventScript_FindItem",
+      "flag": "FLAG_ITEM_HERACRONITE"
     }
   ],
   "warp_events": [
@@ -77,6 +103,14 @@
       "elevation": 0,
       "item": "ITEM_IRON",
       "flag": "FLAG_HIDDEN_ITEM_ARTISAN_CAVE_B1F_IRON"
+    },
+    {
+      "type": "hidden_item",
+      "x": 29,
+      "y": 22,
+      "elevation": 0,
+      "item": "ITEM_LUCARIONITE",
+      "flag": "FLAG_ITEM_LUCARIONITE"
     }
   ]
 }

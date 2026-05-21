@@ -54,15 +54,20 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidLeft::
 
 	.align 2
 LilycoveCity_DepartmentStore_5F_Pokemart_Cushions:
-	.2byte ITEM_ADAMANT_CRYSTAL
-	.2byte ITEM_DNA_SPLICERS
-	.2byte ITEM_GRACIDEA
-	.2byte ITEM_GRISEOUS_CORE
-	.2byte ITEM_GRISEOUS_ORB
-	.2byte ITEM_LUSTROUS_GLOBE
-	.2byte ITEM_METEORITE
-	.2byte ITEM_N_LUNARIZER
-	.2byte ITEM_N_SOLARIZER
+	.2byte ITEM_MEWNIUM_Z
+	.2byte ITEM_TAPUNIUM_Z
+	.2byte ITEM_SOLGANIUM_Z
+	.2byte ITEM_LUNALIUM_Z
+	.2byte ITEM_MARSHADIUM_Z
+	.2byte ITEM_VENUSAURITE
+	.2byte ITEM_CHARIZARDITE_X
+	.2byte ITEM_CHARIZARDITE_Y
+	.2byte ITEM_BLASTOISINITE
+	.2byte ITEM_DIANCITE
+	.2byte ITEM_LATIASITE
+	.2byte ITEM_LATIOSITE
+	.2byte ITEM_MEWTWONITE_X
+	.2byte ITEM_MEWTWONITE_Y
 	pokemartlistend
 
 LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidRight::
@@ -77,6 +82,15 @@ LilycoveCity_DepartmentStore_5F_EventScript_ClerkMidRight::
 
 	.align 2
 LilycoveCity_DepartmentStore_5F_Pokemart_Posters:
+	.2byte ITEM_ADAMANT_CRYSTAL
+	.2byte ITEM_DNA_SPLICERS
+	.2byte ITEM_GRACIDEA
+	.2byte ITEM_GRISEOUS_CORE
+	.2byte ITEM_GRISEOUS_ORB
+	.2byte ITEM_LUSTROUS_GLOBE
+	.2byte ITEM_METEORITE
+	.2byte ITEM_N_LUNARIZER
+	.2byte ITEM_N_SOLARIZER
 	.2byte ITEM_PINK_NECTAR
 	.2byte ITEM_PURPLE_NECTAR
 	.2byte ITEM_RED_NECTAR

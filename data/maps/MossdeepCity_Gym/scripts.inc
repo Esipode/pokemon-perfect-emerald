@@ -74,6 +74,8 @@ MossdeepCity_Gym_EventScript_TateAndLizaDefeated::
 	giveitem ITEM_TERA_ORB
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
 	msgbox MossdeepCity_Gym_Text_ExplainTeraOrb, MSGBOX_DEFAULT
+	setflag FLAG_TERA_ORB_CHARGED
+	setflag FLAG_TERA_ORB_NO_COST
 	setflag FLAG_HIDE_AQUA_HIDEOUT_GRUNTS
 	clearflag FLAG_HIDE_SLATEPORT_CITY_STERNS_SHIPYARD_MR_BRINEY
 	clearflag FLAG_UNKNOWN_0x393

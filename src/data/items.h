@@ -2253,7 +2253,7 @@ const struct Item gItemsInfo[] =
             "instantly from a\n"
             "cave or a dungeon."),
         #if I_KEY_ESCAPE_ROPE >= GEN_8
-            .price = 0,
+            .price = 3000,
             .importance = 1,
             .pocket = POCKET_KEY_ITEMS,
         #else
