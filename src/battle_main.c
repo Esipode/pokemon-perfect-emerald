@@ -572,9 +572,12 @@ static void CB2_InitBattleInternal(void)
     {
         if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
         {
-            u8 firstTrainerCount = CreateNPCTrainerParty(&gEnemyParty[0], TRAINER_BATTLE_PARAM.opponentA, TRUE, PARTY_SIZE);
-            if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && !BATTLE_TWO_VS_ONE_OPPONENT && firstTrainerCount < PARTY_SIZE)
-                CreateNPCTrainerParty(&gEnemyParty[firstTrainerCount], TRAINER_BATTLE_PARAM.opponentB, FALSE, PARTY_SIZE - firstTrainerCount);
+            CreateNPCTrainerParty(&gEnemyParty[0], TRAINER_BATTLE_PARAM.opponentA, TRUE, PARTY_SIZE);
+            if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && !BATTLE_TWO_VS_ONE_OPPONENT)
+            {
+                // Put the second trainer's party in the second half of the enemy party array.
+                CreateNPCTrainerParty(&gEnemyParty[PARTY_SIZE / 2], TRAINER_BATTLE_PARAM.opponentB, FALSE, PARTY_SIZE / 2);
+            }
             SetWildMonHeldItem();
             CalculateEnemyPartyCount();
         }

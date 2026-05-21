@@ -3594,7 +3594,23 @@ u8 CalculatePlayerPartyCount(void)
 
 u8 CalculateEnemyPartyCount(void)
 {
-    gEnemyPartyCount = CalculatePartyCount(gEnemyParty);
+    if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS)
+    {
+        u8 partyCount = 0;
+
+        for (u8 i = 0; i < PARTY_SIZE; i++)
+        {
+            if (GetMonData(&gEnemyParty[i], MON_DATA_SPECIES, NULL) != SPECIES_NONE)
+                partyCount++;
+        }
+
+        gEnemyPartyCount = partyCount;
+    }
+    else
+    {
+        gEnemyPartyCount = CalculatePartyCount(gEnemyParty);
+    }
+
     return gEnemyPartyCount;
 }
 
