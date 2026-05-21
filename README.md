@@ -5,6 +5,7 @@
 - Gen 6+ XP (All Pokémon in party receive XP)
 - New starter selection screen featuring all Gen 1 to Gen 9 starter Pokémon
 - Day/Night cycle system with time-based wild Pokémon encounters
+- Mega Evolution, Z Moves, and Terastalization features (unlock at various points as you progress)
 - Difficulty Settings (Easy/Normal/Hard)
 	- Easy: Trainers use lower level Pokémon and have simpler AI
 	- Normal: Intended experience, simple basic trainer AI for random trainers and more complex AI for story battles
@@ -22,7 +23,7 @@
 - First (non-fainted) Pokémon in party follows player in overworld
 - Upgraded Pokédex
 	- Show evolution requirements for each (seen) Pokémon
-	- Show compatible moves and how they can be learned (Level, TM/HM, Move Tutor)
+	- Show compatible moves and how they can be learned (Level, TM/HM, Move Tutor, Egg)
 	- Show base stats, catch rate, XP curve, abilities, etc.
 
 ## Optional Features

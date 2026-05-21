@@ -4356,7 +4356,7 @@ static void SetMonTypeIcons(void)
         {
             SetSpriteInvisibility(SPRITE_ARR_ID_TYPE + 1, TRUE);
         }
-        if (P_SHOW_TERA_TYPE >= GEN_9)
+        if (P_SHOW_TERA_TYPE >= GEN_9 && FlagGet(FLAG_BADGE07_GET))
         {
             SetTypeSpritePosAndPal(summary->teraType, 200, 48, SPRITE_ARR_ID_TYPE + 2);
         }

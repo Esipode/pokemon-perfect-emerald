@@ -13464,7 +13464,7 @@ const struct Item gItemsInfo[] =
     [ITEM_BUG_TERA_SHARD] =
     {
         .name = _("Bug Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13476,7 +13476,7 @@ const struct Item gItemsInfo[] =
     [ITEM_DARK_TERA_SHARD] =
     {
         .name = _("Dark Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13488,7 +13488,7 @@ const struct Item gItemsInfo[] =
     [ITEM_DRAGON_TERA_SHARD] =
     {
         .name = _("Dragon Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13500,7 +13500,7 @@ const struct Item gItemsInfo[] =
     [ITEM_ELECTRIC_TERA_SHARD] =
     {
         .name = _("Electric Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13512,7 +13512,7 @@ const struct Item gItemsInfo[] =
     [ITEM_FAIRY_TERA_SHARD] =
     {
         .name = _("Fairy Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13524,7 +13524,7 @@ const struct Item gItemsInfo[] =
     [ITEM_FIGHTING_TERA_SHARD] =
     {
         .name = _("Fighting Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13536,7 +13536,7 @@ const struct Item gItemsInfo[] =
     [ITEM_FIRE_TERA_SHARD] =
     {
         .name = _("Fire Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13548,7 +13548,7 @@ const struct Item gItemsInfo[] =
     [ITEM_FLYING_TERA_SHARD] =
     {
         .name = _("Flying Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13560,7 +13560,7 @@ const struct Item gItemsInfo[] =
     [ITEM_GHOST_TERA_SHARD] =
     {
         .name = _("Ghost Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13572,7 +13572,7 @@ const struct Item gItemsInfo[] =
     [ITEM_GRASS_TERA_SHARD] =
     {
         .name = _("Grass Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13584,7 +13584,7 @@ const struct Item gItemsInfo[] =
     [ITEM_GROUND_TERA_SHARD] =
     {
         .name = _("Ground Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13596,7 +13596,7 @@ const struct Item gItemsInfo[] =
     [ITEM_ICE_TERA_SHARD] =
     {
         .name = _("Ice Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13608,7 +13608,7 @@ const struct Item gItemsInfo[] =
     [ITEM_NORMAL_TERA_SHARD] =
     {
         .name = _("Normal Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13620,7 +13620,7 @@ const struct Item gItemsInfo[] =
     [ITEM_POISON_TERA_SHARD] =
     {
         .name = _("Poison Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13632,7 +13632,7 @@ const struct Item gItemsInfo[] =
     [ITEM_PSYCHIC_TERA_SHARD] =
     {
         .name = _("Psychic Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13644,7 +13644,7 @@ const struct Item gItemsInfo[] =
     [ITEM_ROCK_TERA_SHARD] =
     {
         .name = _("Rock Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13656,7 +13656,7 @@ const struct Item gItemsInfo[] =
     [ITEM_STEEL_TERA_SHARD] =
     {
         .name = _("Steel Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
@@ -13668,7 +13668,7 @@ const struct Item gItemsInfo[] =
     [ITEM_WATER_TERA_SHARD] =
     {
         .name = _("Water Tera Shard"),
-        .price = 0,
+        .price = 3000,
         .description = sTeraShardDesc,
         .pocket = POCKET_ITEMS,
         .type = ITEM_USE_BAG_MENU,
