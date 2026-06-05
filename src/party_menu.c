@@ -317,7 +317,7 @@ static void DisplayPartyPokemonDescriptionText(u8, struct PartyMenuBox *, u8);
 static bool8 IsMonAllowedInMinigame(u8);
 static void DisplayPartyPokemonDataToTeachMove(u8, u16);
 static u8 CanTeachMove(struct Pokemon *, u16);
-static void DisplayPartyPokemonBarDetail(u8, const u8 *, u8, const u8 *);
+static void DisplayPartyPokemonBarDetail(u8, const u8 *, u8, const u8 *, u8);
 static void DisplayPartyPokemonLevel(u16, struct PartyMenuBox *);
 static void DisplayPartyPokemonGender(u8, u16, u8 *, struct PartyMenuBox *);
 static void DisplayPartyPokemonHP(u16 hp, u16 maxHp, struct PartyMenuBox *menuBox);
@@ -1220,7 +1220,7 @@ static void DisplayPartyPokemonDataForMultiBattle(u8 slot)
         StringCopy(gStringVar1, gMultiPartnerParty[actualSlot].nickname);
         StringGet_Nickname(gStringVar1);
         ConvertInternationalPlayerName(gStringVar1);
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, menuBox->infoRects->dimensions);
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, menuBox->infoRects->dimensions, FONT_SMALL);
         DisplayPartyPokemonLevel(gMultiPartnerParty[actualSlot].level, menuBox);
         DisplayPartyPokemonGender(gMultiPartnerParty[actualSlot].gender, gMultiPartnerParty[actualSlot].species, gMultiPartnerParty[actualSlot].nickname, menuBox);
         DisplayPartyPokemonHP(gMultiPartnerParty[actualSlot].hp, gMultiPartnerParty[actualSlot].maxhp, menuBox);
@@ -2612,9 +2612,9 @@ static void LoadPartyBoxPalette(struct PartyMenuBox *menuBox, u8 palFlags)
     }
 }
 
-static void DisplayPartyPokemonBarDetail(u8 windowId, const u8 *str, u8 color, const u8 *align)
+static void DisplayPartyPokemonBarDetail(u8 windowId, const u8 *str, u8 color, const u8 *align, u8 fontId)
 {
-    AddTextPrinterParameterized3(windowId, FONT_SMALL, align[0], align[1], sFontColorTable[color], 0, str);
+    AddTextPrinterParameterized3(windowId, fontId, align[0], align[1], sFontColorTable[color], 0, str);
 }
 
 static void DisplayPartyPokemonBarDetailToFit(u8 windowId, const u8 *str, u8 color, const u8 *align, u32 width)
@@ -2661,14 +2661,12 @@ static void DisplayPartyPokemonLevel(u16 level, struct PartyMenuBox *menuBox)
     StringAppend(gStringVar1, gStringVar2);
 
     // If at level cap, add color control code
-    if (B_EXP_CAP_TYPE == EXP_CAP_HARD && isAtLevelCap && (level != MAX_LEVEL))
-    {
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 5, &menuBox->infoRects->dimensions[4]);
-    }
-    else {
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[4]);
-    }
+    u8 fontId = (level >= 1000) ? FONT_SMALL_NARROW : FONT_SMALL;
+    u8 color = (B_EXP_CAP_TYPE == EXP_CAP_HARD && isAtLevelCap && (level != MAX_LEVEL)) ? 5 : 0;
+
+    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, color, &menuBox->infoRects->dimensions[4], fontId);
 }
+
 
 static void DisplayPartyPokemonGenderNidoranCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
 {
@@ -2693,12 +2691,12 @@ static void DisplayPartyPokemonGender(u8 gender, u16 species, u8 *nickname, stru
     case MON_MALE:
         LoadPalette(GetPartyMenuPalBufferPtr(sGenderMalePalIds[0]), sGenderPalOffsets[0] + palOffset, PLTT_SIZEOF(1));
         LoadPalette(GetPartyMenuPalBufferPtr(sGenderMalePalIds[1]), sGenderPalOffsets[1] + palOffset, PLTT_SIZEOF(1));
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gText_MaleSymbol, 2, &menuBox->infoRects->dimensions[8]);
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gText_MaleSymbol, 2, &menuBox->infoRects->dimensions[8], FONT_SMALL);
         break;
     case MON_FEMALE:
         LoadPalette(GetPartyMenuPalBufferPtr(sGenderFemalePalIds[0]), sGenderPalOffsets[0] + palOffset, PLTT_SIZEOF(1));
         LoadPalette(GetPartyMenuPalBufferPtr(sGenderFemalePalIds[1]), sGenderPalOffsets[1] + palOffset, PLTT_SIZEOF(1));
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gText_FemaleSymbol, 2, &menuBox->infoRects->dimensions[8]);
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gText_FemaleSymbol, 2, &menuBox->infoRects->dimensions[8], FONT_SMALL);
         break;
     }
 }
@@ -2720,7 +2718,7 @@ static void DisplayParty4DigitsHP(struct PartyMenuBox *menuBox, const u8 *str, c
 
     memcpy(newAligns, origAlings, sizeof(newAligns));
     newAligns[0] -= toSub; // x, so that the hp fits
-    DisplayPartyPokemonBarDetail(menuBox->windowId, str, 0, newAligns);
+    DisplayPartyPokemonBarDetail(menuBox->windowId, str, 0, newAligns, FONT_SMALL);
 }
 
 static void DisplayPartyPokemonHP(u16 hp, u16 maxhp, struct PartyMenuBox *menuBox)
@@ -2744,7 +2742,7 @@ static void DisplayPartyPokemonHP(u16 hp, u16 maxhp, struct PartyMenuBox *menuBo
         u8 newAligns[4];
         memcpy(newAligns, &menuBox->infoRects->dimensions[12], sizeof(newAligns));
         newAligns[0] -= (4 - strOutWidth) / 2; // Adjust the x alignment
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, newAligns);
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, newAligns, FONT_SMALL);
     }
 }
 
@@ -2770,7 +2768,7 @@ static void DisplayPartyPokemonMaxHP(u16 maxhp, struct PartyMenuBox *menuBox)
     if (fourDigits)
         DisplayParty4DigitsHP(menuBox, gStringVar1, &menuBox->infoRects->dimensions[16], -5);
     else
-        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[16]);
+        DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[16], FONT_SMALL);
 }
 
 static void DisplayPartyPokemonHPBarCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox)
@@ -4500,6 +4498,11 @@ static void CreatePartyMonHeldItemSprite(struct Pokemon *mon, struct PartyMenuBo
     if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
     {
         menuBox->itemSpriteId = CreateSprite(&sSpriteTemplate_HeldItem, menuBox->spriteCoords[2], menuBox->spriteCoords[3], 0);
+        if (GetMonData(mon, MON_DATA_LEVEL) >= 1000)
+        {
+            gSprites[menuBox->itemSpriteId].x -= 3;
+            gSprites[menuBox->itemSpriteId].y -= 9;
+        }
         UpdatePartyMonHeldItemSprite(mon, menuBox);
     }
 }
