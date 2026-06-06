@@ -3611,7 +3611,7 @@ static void GetMetLevelString(u8 *output)
     u16 level = sMonSummaryScreen->summary.metLevel;
     if (level == 0)
         level = EGG_HATCH_LEVEL;
-    ConvertIntToDecimalStringN(output, level, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ConvertIntToDecimalStringN(output, level, STR_CONV_MODE_LEFT_ALIGN, 4);
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(3, output);
 }
 
