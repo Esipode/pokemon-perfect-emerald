@@ -4640,7 +4640,7 @@ Double Battle: No
 AI: Smart Trainer / Force Setup First Turn
 Mugshot: Purple
 
-Hydreigon
+Hydreigon @ Dragonium Z
 Level: 59
 Ability: Levitate
 Nature: Timid
@@ -4651,16 +4651,16 @@ EVs: 50 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 200 Spe
 - Flash Cannon
 - Nasty Plot
 
-Tyranitar
+Bisharp @ Focus Sash
 Level: 60
-Ability: Sand Stream
-Nature: Sassy
+Ability: Overcoat
+Nature: Impish
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
-EVs: 250 HP / 80 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
-- Stealth Rock
-- Rock Slide
-- Crunch
-- Thunder Wave
+EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
+- Swords Dance
+- Iron Head
+- Knock Off
+- Sucker Punch
 
 Grimmsnarl
 Level: 60
@@ -4688,6 +4688,7 @@ Mandibuzz
 Level: 61
 Ability: Overcoat
 Nature: Impish
+Tera Type: Ghost
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Foul Play
@@ -4695,16 +4696,16 @@ EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Defog
 - U-Turn
 
-Bisharp @ Focus Sash
+Tyranitar @ Tyranitarite
 Level: 61
-Ability: Overcoat
-Nature: Impish
+Ability: Sand Stream
+Nature: Sassy
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
-EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
-- Swords Dance
-- Iron Head
-- Knock Off
-- Sucker Punch
+EVs: 250 HP / 80 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Stealth Rock
+- Rock Slide
+- Crunch
+- Thunder Wave
 
 === TRAINER_PHOEBE ===
 Name: PHOEBE
@@ -4732,6 +4733,7 @@ Dragapult
 Level: 62
 Ability: Infiltrator
 Nature: Timid
+Tera Type: Fairy
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 EVs: 50 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 200 Spe
 - Shadow Ball
@@ -4739,7 +4741,7 @@ EVs: 50 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 200 Spe
 - Thunderbolt
 - U-Turn
 
-Sableye
+Sableye @ Sablenite
 Level: 61
 Ability: Prankster
 Nature: Careful
@@ -4772,7 +4774,7 @@ EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Pain Split
 - Shadow Punch
 
-Aegislash @ Weakness Policy
+Aegislash @ Ghostium Z
 Level: 63
 Ability: Stance Change
 Nature: Quiet
@@ -4794,7 +4796,7 @@ Double Battle: No
 AI: Smart Trainer
 Mugshot: Pink
 
-Ninetales Alola
+Ninetales Alola @ Icium Z
 Level: 62
 Ability: Snow Warning
 Nature: Timid
@@ -4805,7 +4807,7 @@ EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Freeze-Dry
 - Hypnosis
 
-Baxcalibur
+Baxcalibur @ Dragonium Z
 Level: 63
 Ability: Thermal Exchange
 Nature: Adamant
@@ -4820,6 +4822,7 @@ Avalugg
 Level: 63
 Ability: Sturdy
 Nature: Impish
+Tera Type: Steel
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Rapid Spin
@@ -4838,7 +4841,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 200 Spe
 - Ice Beam
 - Giga Drain
 
-Mamoswine
+Mamoswine @ Leftovers
 Level: 63
 Ability: Thick Fat
 Nature: Jolly
@@ -4849,7 +4852,7 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 200 Spe
 - Ice Shard
 - Stone Edge
 
-Glaceon @ Leftovers
+Glaceon @ Focus Sash
 Level: 64
 Ability: Ice Body
 Nature: Modest
@@ -4871,7 +4874,7 @@ Double Battle: No
 AI: Smart Trainer / Ace Pokemon
 Mugshot: Blue
 
-Noivern
+Noivern @ Firium Z
 Level: 63
 Ability: Infiltrator
 Nature: Timid
@@ -4882,7 +4885,7 @@ EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Flamethrower
 - U-Turn
 
-Haxorus
+Haxorus @ Dragonium Z
 Level: 63
 Ability: Mold Breaker
 Nature: Jolly
@@ -4908,6 +4911,7 @@ Turtonator
 Level: 64
 Ability: Shell Armor
 Nature: Bold
+Tera Type: Grass
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Shell Smash
@@ -4926,7 +4930,7 @@ EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 200 Spe
 - Dragon Claw
 - U-Turn
 
-Druddigon @ Rocky Helmet
+Druddigon @ Groundium Z
 Level: 65
 Ability: Rough Skin
 Nature: Impish
@@ -5054,7 +5058,7 @@ EVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 60 Spe
 - Volt Switch
 - Tailwind
 
-Manectric
+Manectric @ Electrium Z
 Level: 23
 Ability: Lightning Rod
 Nature: Modest
@@ -5075,7 +5079,7 @@ Items: Hyper Potion / Hyper Potion
 Double Battle: No
 AI: Smart Trainer
 
-Scovillain
+Scovillain @ Firium Z
 Level: 27
 Ability: Chlorophyll
 Nature: Timid
@@ -5131,7 +5135,7 @@ Double Battle: No
 AI: Smart Trainer
 
 Cinccino
-Level: 30
+Level: 29
 Ability: Skill Link
 Nature: Jolly
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
@@ -5140,16 +5144,6 @@ EVs: 0 HP / 30 Atk / 0 Def / 0 SpA / 0 SpD / 10 Spe
 - Rock Blast
 - Bullet Seed
 - Knock Off
-
-Oranguru
-Level: 30
-Ability: Inner Focus
-IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
-EVs: 60 HP / 0 Atk / 30 Def / 0 SpA / 30 SpD / 0 Spe
-- Trick Room
-- Psychic
-- Foul Play
-- Yawn
 
 Tauros
 Level: 30
@@ -5162,16 +5156,27 @@ EVs: 30 HP / 40 Atk / 0 Def / 0 SpA / 0 SpD / 30 Spe
 - Dig
 - Lash Out
 
-Slaking @ Sitrus Berry
-Level: 31
+Slaking @ Normalium Z
+Level: 30
 Ability: Truant
 Nature: Brave
-IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-EVs: 60 HP / 30 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 40 HP / 0 Atk / 30 Def / 0 SpA / 0 SpD / 0 Spe
 - Giga Impact
 - Earthquake
 - Sucker Punch
 - Slack Off
+
+Kangaskhan @ Kangaskhanite
+Level: 31
+Ability: Scrappy
+Nature: Adamant
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 60 HP / 30 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Body Slam
+- Crunch
+- Power-Up Punch
+- Fake Out
 
 === TRAINER_WINONA_1 ===
 Name: WINONA
@@ -5194,19 +5199,8 @@ EVs: 40 HP / 80 Atk / 0 Def / 0 SpA / 0 SpD / 120 Spe
 - Close Combat
 - U-Turn
 
-Togetic
-Level: 35
-Ability: Serene Grace
-Nature: Bold
-IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
-EVs: 100 HP / 0 Atk / 80 Def / 0 SpA / 80 SpD / 0 Spe
-- Air Slash
-- Dazzling Gleam
-- Thunder Wave
-- Roost
-
 Gligar
-Level: 35
+Level: 34
 Ability: Immunity
 Nature: Impish
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
@@ -5217,7 +5211,7 @@ EVs: 80 HP / 0 Atk / 80 Def / 0 SpA / 80 SpD / 0 Spe
 - Roost
 
 Talonflame
-Level: 36
+Level: 35
 Ability: Gale Wings
 Nature: Adamant
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
@@ -5227,14 +5221,27 @@ EVs: 0 HP / 70 Atk / 30 Def / 0 SpA / 30 SpD / 140 Spe
 - Swords Dance
 - Roost
 
-Altaria @ Oran Berry
+Altaria @ Flyinium Z
 Level: 36
-IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-EVs: 30 HP / 70 Atk / 30 Def / 0 SpA / 30 SpD / 90 Spe
+Ability: Cloud Nine
+Nature: Modest
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 60 HP / 0 Atk / 80 Def / 80 SpA / 80 SpD / 20 Spe
 - Fire Blast
 - Dragon Breath
 - Dragon Dance
 - Aerial Ace
+
+Pidgeot @ Pidgeotite
+Level: 36
+Ability: Keen Eye
+Nature: Timid
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 60 HP / 0 Atk / 0 Def / 60 SpA / 0 SpD / 100 Spe
+- Hurricane
+- Heat Wave
+- Ominous Wind
+- Work Up
 
 === TRAINER_TATE_AND_LIZA_1 ===
 Name: TATE&LIZA
@@ -5272,6 +5279,7 @@ Gothitelle
 Level: 46
 Ability: Shadow Tag
 Nature: Calm
+Tera Type: Fairy
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 EVs: 100 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Psychic
@@ -5279,7 +5287,7 @@ EVs: 100 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Calm Mind
 - Protect
 
-Gallade
+Gallade @ Galladite
 Level: 48
 Ability: Justified
 Nature: Jolly
@@ -5290,7 +5298,7 @@ EVs: 0 HP / 150 Atk / 0 Def / 0 SpA / 0 SpD / 120 Spe
 - Shadow Sneak
 - Leaf Blade
 
-Malamar
+Malamar @ Darkinium Z
 Level: 48
 Ability: Contrary
 Nature: Brave
@@ -5315,6 +5323,7 @@ Slowking
 Level: 55
 Ability: Regenerator
 Nature: Calm
+Tera Type: Grass
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 EVs: 150 HP / 50 Atk / 150 Def / 50 SpA / 150 SpD / 0 Spe
 - Scald
@@ -5333,18 +5342,7 @@ EVs: 200 HP / 80 Atk / 150 Def / 80 SpA / 150 SpD / 80 Spe
 - Toxic
 - Rest
 
-Gyarados
-Level: 56
-Ability: Intimidate
-Nature: Adamant
-IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
-EVs: 0 HP / 200 Atk / 80 Def / 0 SpA / 80 SpD / 150 Spe
-- Dragon Dance
-- Waterfall
-- Crunch
-- Earthquake
-
-Kingdra
+Kingdra @ Dragonium Z
 Level: 56
 Ability: Sniper
 Nature: Timid
@@ -5355,16 +5353,16 @@ EVs: 0 HP / 0 Atk / 80 Def / 200 SpA / 80 SpD / 150 Spe
 - Focus Energy
 - Agility
 
-Wailord @ Leftovers
+Basculegion @ Leftovers
 Level: 57
-Ability: Water Veil
-Nature: Modest
+Ability: Swift Swim
+Nature: Jolly
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
-EVs: 250 HP / 0 Atk / 250 Def / 0 SpA / 250 SpD / 0 Spe
-- Water Spout
-- Ice Beam
-- Hyper Voice
-- Rest
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Wave Crash
+- Aqua Jet
+- Crunch
+- Psychic Fangs
 
 Milotic @ Focus Sash
 Level: 58
@@ -5376,6 +5374,17 @@ EVs: 160 HP / 160 Atk / 160 Def / 160 SpA / 160 SpD / 160 Spe
 - Recover
 - Haze
 - Ice Beam
+
+Gyarados @ Gyaradosite
+Level: 56
+Ability: Intimidate
+Nature: Adamant
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 80 Def / 0 SpA / 80 SpD / 150 Spe
+- Dragon Dance
+- Waterfall
+- Crunch
+- Earthquake
 
 === TRAINER_JERRY_1 ===
 Name: JERRY
@@ -6511,6 +6520,7 @@ Obstagoon @ Flame Orb
 Level: 65
 Ability: Guts
 Nature: Adamant
+Tera Type: Ghost
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 EVs: 250 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Facade
@@ -6518,7 +6528,7 @@ EVs: 250 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Close Combat
 - Taunt
 
-Annihilape @ Choice Band
+Annihilape @ Fightinium Z
 Level: 65
 Ability: Defiant
 Nature: Jolly
@@ -6528,17 +6538,6 @@ EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
 - Close Combat
 - U-Turn
 - Ice Punch
-
-Garchomp @ Life Orb
-Level: 65
-Ability: Rough Skin
-Nature: Jolly
-IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
-EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
-- Earthquake
-- Dragon Claw
-- Swords Dance
-- Fire Fang
 
 Metagross @ Assault Vest
 Level: 65
@@ -6550,6 +6549,17 @@ EVs: 250 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Zen Headbutt
 - Pursuit
 - Bullet Punch
+
+Garchomp @ Garchompite
+Level: 65
+Ability: Rough Skin
+Nature: Jolly
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
+- Earthquake
+- Dragon Claw
+- Swords Dance
+- Fire Fang
 
 === TRAINER_ANDREW ===
 Name: ANDREW
@@ -9729,7 +9739,7 @@ EVs: 200 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
 - Scald
 - Haze
 
-Krookodile
+Krookodile @ Groundium Z
 Level: 58
 Ability: Intimidate
 Nature: Jolly
@@ -9766,6 +9776,7 @@ Magnezone
 Level: 59
 Ability: Magnet Pull
 Nature: Modest
+Tera Type: Flying
 IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
 EVs: 250 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 100 Spe
 - Thunderbolt
@@ -9773,7 +9784,7 @@ EVs: 250 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 100 Spe
 - Volt Switch
 - Protect
 
-Gardevoir @ Wise Glasses
+Gardevoir @ Gardevoirite
 Level: 60
 Ability: Trace
 Nature: Modest
@@ -9877,7 +9888,7 @@ EVs: 90 HP / 0 Atk / 40 Def / 50 SpA / 40 SpD / 0 Spe
 - Giga Drain
 - Knock Off
 
-Grovyle
+Grovyle @ Grassium Z
 Level: 34
 Ability: Overgrow
 Nature: Modest
@@ -9981,7 +9992,7 @@ EVs: 90 HP / 0 Atk / 40 Def / 50 SpA / 40 SpD / 0 Spe
 - Giga Drain
 - Knock Off
 
-Combusken
+Combusken @ Firium Z
 Level: 34
 Ability: Speed Boost
 Nature: Adamant
@@ -10085,7 +10096,7 @@ EVs: 90 HP / 0 Atk / 40 Def / 50 SpA / 40 SpD / 0 Spe
 - Giga Drain
 - Knock Off
 
-Marshtomp
+Marshtomp @ Waterium Z
 Level: 34
 Ability: Torrent
 Nature: Impish
@@ -10189,7 +10200,7 @@ EVs: 90 HP / 0 Atk / 40 Def / 50 SpA / 40 SpD / 0 Spe
 - Giga Drain
 - Knock Off
 
-Grovyle
+Grovyle @ Grassium Z
 Level: 34
 Ability: Overgrow
 Nature: Modest
@@ -10293,7 +10304,7 @@ EVs: 90 HP / 0 Atk / 40 Def / 50 SpA / 40 SpD / 0 Spe
 - Giga Drain
 - Knock Off
 
-Combusken
+Combusken @ Firium Z
 Level: 34
 Ability: Speed Boost
 Nature: Adamant
@@ -10397,7 +10408,7 @@ EVs: 90 HP / 0 Atk / 40 Def / 50 SpA / 40 SpD / 0 Spe
 - Giga Drain
 - Knock Off
 
-Marshtomp
+Marshtomp @ Waterium Z
 Level: 34
 Ability: Torrent
 Nature: Impish
@@ -12721,45 +12732,72 @@ Items: Full Restore / Full Restore
 Double Battle: No
 AI: Basic Trainer
 
-Altaria
+Toxapex
 Level: 62
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Aerial Ace
-- Safeguard
-- Dragon Breath
-- Dragon Dance
+Ability: Regenerator
+Nature: Bold
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 200 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
+- Toxic Spikes
+- Recover
+- Scald
+- Haze
 
-Delcatty
-Level: 61
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Sing
-- Assist
-- Charm
-- Feint Attack
-
-Roselia
-Level: 61
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Magical Leaf
-- Leech Seed
-- Giga Drain
-- Toxic
-
-Magneton
+Krookodile @ Groundium Z
 Level: 62
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Supersonic
-- Thunderbolt
-- Tri Attack
-- Screech
+Ability: Intimidate
+Nature: Jolly
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Earthquake
+- Knock Off
+- Stone Edge
+- Crunch
 
-Gardevoir
+Breloom
 Level: 63
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Double Team
-- Calm Mind
+Ability: Technician
+Nature: Adamant
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Spore
+- Mach Punch
+- Bullet Seed
+- Rock Tomb
+
+Goodra
+Level: 62
+Ability: Sap Sipper
+Nature: Careful
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Power Whip
+- Dragon Tail
+- Earthquake
+- Iron Tail
+
+Magnezone
+Level: 63
+Ability: Magnet Pull
+Nature: Modest
+Tera Type: Water
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 100 Spe
+- Thunderbolt
+- Flash Cannon
+- Volt Switch
+- Protect
+
+Gardevoir @ Gardevoirite
+Level: 64
+Ability: Trace
+Nature: Modest
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 180 HP / 180 Atk / 180 Def / 180 SpA / 180 SpD / 180 Spe
 - Psychic
-- Future Sight
+- Moonblast
+- Calm Mind
+- Shadow Ball
 
 === TRAINER_WALLY_VR_3 ===
 Name: WALLY
@@ -12771,45 +12809,72 @@ Items: Full Restore / Full Restore
 Double Battle: No
 AI: Basic Trainer
 
-Altaria
+Toxapex
 Level: 50
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Aerial Ace
-- Safeguard
-- Dragon Breath
-- Dragon Dance
+Ability: Regenerator
+Nature: Bold
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 200 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
+- Toxic Spikes
+- Recover
+- Scald
+- Haze
 
-Delcatty
-Level: 49
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Sing
-- Assist
-- Charm
-- Feint Attack
-
-Roselia
+Krookodile @ Groundium Z
 Level: 50
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Magical Leaf
-- Leech Seed
-- Giga Drain
-- Toxic
+Ability: Intimidate
+Nature: Jolly
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Earthquake
+- Knock Off
+- Stone Edge
+- Crunch
 
-Magneton
-Level: 47
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Supersonic
-- Thunderbolt
-- Tri Attack
-- Screech
-
-Gardevoir
+Breloom
 Level: 51
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Double Team
-- Calm Mind
+Ability: Technician
+Nature: Adamant
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Spore
+- Mach Punch
+- Bullet Seed
+- Rock Tomb
+
+Goodra
+Level: 50
+Ability: Sap Sipper
+Nature: Careful
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Power Whip
+- Dragon Tail
+- Earthquake
+- Iron Tail
+
+Magnezone
+Level: 52
+Ability: Magnet Pull
+Nature: Modest
+Tera Type: Water
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 100 Spe
+- Thunderbolt
+- Flash Cannon
+- Volt Switch
+- Protect
+
+Gardevoir @ Gardevoirite
+Level: 53
+Ability: Trace
+Nature: Modest
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 180 HP / 180 Atk / 180 Def / 180 SpA / 180 SpD / 180 Spe
 - Psychic
-- Future Sight
+- Moonblast
+- Calm Mind
+- Shadow Ball
 
 === TRAINER_WALLY_VR_4 ===
 Name: WALLY
@@ -12821,45 +12886,72 @@ Items: Full Restore / Full Restore
 Double Battle: No
 AI: Basic Trainer
 
-Altaria
-Level: 53
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Aerial Ace
-- Safeguard
-- Dragon Breath
-- Dragon Dance
+Toxapex
+Level: 58
+Ability: Regenerator
+Nature: Bold
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 200 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
+- Toxic Spikes
+- Recover
+- Scald
+- Haze
 
-Delcatty
+Krookodile @ Groundium Z
+Level: 53
+Ability: Intimidate
+Nature: Jolly
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Earthquake
+- Knock Off
+- Stone Edge
+- Crunch
+
+Breloom
 Level: 52
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Sing
-- Assist
-- Charm
-- Feint Attack
+Ability: Technician
+Nature: Adamant
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Spore
+- Mach Punch
+- Bullet Seed
+- Rock Tomb
 
-Roselia
+Goodra
 Level: 53
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Magical Leaf
-- Leech Seed
-- Giga Drain
-- Toxic
+Ability: Sap Sipper
+Nature: Careful
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Power Whip
+- Dragon Tail
+- Earthquake
+- Iron Tail
 
-Magneton
-Level: 50
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Supersonic
-- Thunderbolt
-- Tri Attack
-- Screech
-
-Gardevoir
+Magnezone
 Level: 54
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Double Team
-- Calm Mind
+Ability: Magnet Pull
+Nature: Modest
+Tera Type: Water
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 100 Spe
+- Thunderbolt
+- Flash Cannon
+- Volt Switch
+- Protect
+
+Gardevoir @ Gardevoirite
+Level: 55
+Ability: Trace
+Nature: Modest
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 180 HP / 180 Atk / 180 Def / 180 SpA / 180 SpD / 180 Spe
 - Psychic
-- Future Sight
+- Moonblast
+- Calm Mind
+- Shadow Ball
 
 === TRAINER_WALLY_VR_5 ===
 Name: WALLY
@@ -12871,45 +12963,72 @@ Items: Full Restore / Full Restore
 Double Battle: No
 AI: Basic Trainer
 
-Altaria
+Toxapex
 Level: 56
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Aerial Ace
-- Safeguard
-- Dragon Breath
-- Dragon Dance
+Ability: Regenerator
+Nature: Bold
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 200 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
+- Toxic Spikes
+- Recover
+- Scald
+- Haze
 
-Delcatty
-Level: 55
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Sing
-- Assist
-- Charm
-- Feint Attack
-
-Roselia
+Krookodile @ Groundium Z
 Level: 56
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Magical Leaf
-- Leech Seed
-- Giga Drain
-- Toxic
+Ability: Intimidate
+Nature: Jolly
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Earthquake
+- Knock Off
+- Stone Edge
+- Crunch
 
-Magneton
-Level: 53
-IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
-- Supersonic
-- Thunderbolt
-- Tri Attack
-- Screech
-
-Gardevoir
+Breloom
 Level: 57
-IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
-- Double Team
-- Calm Mind
+Ability: Technician
+Nature: Adamant
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 0 HP / 200 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Spore
+- Mach Punch
+- Bullet Seed
+- Rock Tomb
+
+Goodra
+Level: 56
+Ability: Sap Sipper
+Nature: Careful
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 150 Spe
+- Power Whip
+- Dragon Tail
+- Earthquake
+- Iron Tail
+
+Magnezone
+Level: 57
+Ability: Magnet Pull
+Nature: Modest
+Tera Type: Water
+IVs: 20 HP / 20 Atk / 20 Def / 20 SpA / 20 SpD / 20 Spe
+EVs: 250 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 100 Spe
+- Thunderbolt
+- Flash Cannon
+- Volt Switch
+- Protect
+
+Gardevoir @ Gardevoirite
+Level: 58
+Ability: Trace
+Nature: Modest
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 180 HP / 180 Atk / 180 Def / 180 SpA / 180 SpD / 180 Spe
 - Psychic
-- Future Sight
+- Moonblast
+- Calm Mind
+- Shadow Ball
 
 === TRAINER_BRENDAN_LILYCOVE_MUDKIP ===
 Name: BRENDAN
@@ -12921,7 +13040,7 @@ Double Battle: No
 Items: Hyper Potion
 AI: Smart Trainer / Ace Pokemon
 
-Zoroark
+Zoroark @ Darkinium Z
 Level: 37
 Ability: Illusion
 Nature: Timid
@@ -12954,7 +13073,7 @@ EVs: 140 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 60 Spe
 - Scald
 - Toxic Spikes
 
-Sceptile @ Sitrus Berry
+Sceptile @ Sceptilite
 Level: 39
 Ability: Unburden
 Nature: Timid
@@ -12975,7 +13094,7 @@ Double Battle: No
 Items: Hyper Potion
 AI: Smart Trainer / Ace Pokemon
 
-Zoroark
+Zoroark @ Darkinium Z
 Level: 37
 Ability: Illusion
 Nature: Timid
@@ -13008,7 +13127,7 @@ EVs: 140 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 60 Spe
 - Scald
 - Toxic Spikes
 
-Blaziken @ Sitrus Berry
+Blaziken @ Blazikenite
 Level: 39
 Ability: Speed Boost
 Nature: Jolly
@@ -13029,7 +13148,7 @@ Double Battle: No
 Items: Hyper Potion
 AI: Smart Trainer / Ace Pokemon
 
-Zoroark
+Zoroark @ Darkinium Z
 Level: 37
 Ability: Illusion
 Nature: Timid
@@ -13062,7 +13181,7 @@ EVs: 140 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 60 Spe
 - Scald
 - Toxic Spikes
 
-Swampert @ Sitrus Berry
+Swampert @ Swampertite
 Level: 39
 Ability: Torrent
 Nature: Adamant
@@ -13083,7 +13202,7 @@ Double Battle: No
 Items: Hyper Potion
 AI: Smart Trainer / Ace Pokemon
 
-Zoroark
+Zoroark @ Darkinium Z
 Level: 37
 Ability: Illusion
 Nature: Timid
@@ -13116,7 +13235,7 @@ EVs: 140 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 60 Spe
 - Scald
 - Toxic Spikes
 
-Sceptile @ Sitrus Berry
+Sceptile @ Sceptilite
 Level: 39
 Ability: Unburden
 Nature: Timid
@@ -13137,7 +13256,7 @@ Double Battle: No
 Items: Hyper Potion
 AI: Smart Trainer / Ace Pokemon
 
-Zoroark
+Zoroark @ Darkinium Z
 Level: 37
 Ability: Illusion
 Nature: Timid
@@ -13170,7 +13289,7 @@ EVs: 140 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 60 Spe
 - Scald
 - Toxic Spikes
 
-Blaziken @ Sitrus Berry
+Blaziken @ Blazikenite
 Level: 39
 Ability: Speed Boost
 Nature: Jolly
@@ -13191,7 +13310,7 @@ Double Battle: No
 Items: Hyper Potion
 AI: Smart Trainer / Ace Pokemon
 
-Zoroark
+Zoroark @ Darkinium Z
 Level: 37
 Ability: Illusion
 Nature: Timid
@@ -13224,7 +13343,7 @@ EVs: 140 HP / 0 Atk / 0 Def / 100 SpA / 0 SpD / 60 Spe
 - Scald
 - Toxic Spikes
 
-Swampert @ Sitrus Berry
+Swampert @ Swampertite
 Level: 39
 Ability: Torrent
 Nature: Adamant
@@ -16959,16 +17078,17 @@ Items: Full Restore / Full Restore / Full Restore / Full Restore
 Double Battle: No
 AI: Smart Trainer / Prediction / Ace Pokemon
 
-Dragonite @ Heavy-Duty Boots
+Dragonite @ Flyinium Z
 Ability: Multiscale
 Nature: Jolly
 Level: 75
+Tera Type: Normal
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 EVs: 6 HP / 252 Atk / 0 Def / 0 SpA / 0 SpD / 252 Spe
 - Dragon Dance
 - Extreme Speed
 - Earthquake
-- Roost
+- Fly
 
 Ursaluna @ Flame Orb
 Ability: Guts
@@ -17014,7 +17134,7 @@ EVs: 0 HP / 0 Atk / 0 Def / 252 SpA / 6 SpD / 252 Spe
 - Sludge Bomb
 - Volt Switch
 
-Metagross @ Choice Band
+Metagross @ Metagrossite
 Ability: Clear Body
 Nature: Adamant
 Level: 75
