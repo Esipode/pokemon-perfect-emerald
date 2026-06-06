@@ -2106,6 +2106,107 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
     }
 }
 
+static u16 GetMegaStoneForSpecies(u16 species)
+{
+    const struct FormChange *formChanges = GetSpeciesFormChanges(species);
+    u32 i;
+
+    if (formChanges == NULL)
+        return ITEM_NONE;
+
+    for (i = 0; formChanges[i].method != FORM_CHANGE_TERMINATOR; i++)
+    {
+        if (formChanges[i].method == FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM)
+            return formChanges[i].param1;
+    }
+
+    return ITEM_NONE;
+}
+
+static u16 GetTypeBasedZCrystal(u8 type)
+{
+    switch (type)
+    {
+    case TYPE_NORMAL:  return ITEM_NORMALIUM_Z;
+    case TYPE_FIGHTING: return ITEM_FIGHTINIUM_Z;
+    case TYPE_FLYING:  return ITEM_FLYINIUM_Z;
+    case TYPE_POISON:  return ITEM_POISONIUM_Z;
+    case TYPE_GROUND:  return ITEM_GROUNDIUM_Z;
+    case TYPE_ROCK:    return ITEM_ROCKIUM_Z;
+    case TYPE_BUG:     return ITEM_BUGINIUM_Z;
+    case TYPE_GHOST:   return ITEM_GHOSTIUM_Z;
+    case TYPE_STEEL:   return ITEM_STEELIUM_Z;
+    case TYPE_FIRE:    return ITEM_FIRIUM_Z;
+    case TYPE_WATER:   return ITEM_WATERIUM_Z;
+    case TYPE_GRASS:   return ITEM_GRASSIUM_Z;
+    case TYPE_ELECTRIC:return ITEM_ELECTRIUM_Z;
+    case TYPE_PSYCHIC: return ITEM_PSYCHIUM_Z;
+    case TYPE_ICE:     return ITEM_ICIUM_Z;
+    case TYPE_DRAGON:  return ITEM_DRAGONIUM_Z;
+    case TYPE_DARK:    return ITEM_DARKINIUM_Z;
+    case TYPE_FAIRY:   return ITEM_FAIRIUM_Z;
+    default:          return ITEM_NONE;
+    }
+}
+
+static u16 GetRandomMonZCrystal(struct Pokemon *mon, rng_value_t *rngState)
+{
+    u16 candidates[MAX_MON_MOVES];
+    bool32 typeSeen[NUMBER_OF_MON_TYPES] = {0};
+    u8 candidateCount = 0;
+    u8 i;
+    u16 move;
+    u16 item;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        move = GetMonData(mon, MON_DATA_MOVE1 + i, NULL);
+        if (move == MOVE_NONE || move == MOVE_UNAVAILABLE)
+            continue;
+
+        item = GetTypeBasedZCrystal(GetMoveType(move));
+        if (item == ITEM_NONE)
+            continue;
+
+        u8 type = GetMoveType(move);
+        if (type >= NUMBER_OF_MON_TYPES || typeSeen[type])
+            continue;
+
+        typeSeen[type] = TRUE;
+        candidates[candidateCount++] = item;
+    }
+
+    if (candidateCount == 0)
+        return ITEM_NONE;
+
+    return candidates[LocalRandom(rngState) % candidateCount];
+}
+
+static void ApplyNewGamePlusHoldItem(struct Pokemon *mon, u16 species, rng_value_t *rngState)
+{
+    u16 heldItem = GetMonData(mon, MON_DATA_HELD_ITEM, NULL);
+    u8 ngpRuns = gSaveBlock2Ptr->newGamePlus;
+    u8 chance = ngpRuns > 20 ? 100 : (ngpRuns * 5);
+    u16 newItem;
+
+    if (heldItem != ITEM_NONE || ngpRuns == 0)
+        return;
+
+    if (LocalRandom(rngState) % 100 >= chance)
+        return;
+
+    newItem = GetMegaStoneForSpecies(species);
+    if (newItem != ITEM_NONE)
+    {
+        SetMonData(mon, MON_DATA_HELD_ITEM, &newItem);
+        return;
+    }
+
+    newItem = GetRandomMonZCrystal(mon, rngState);
+    if (newItem != ITEM_NONE)
+        SetMonData(mon, MON_DATA_HELD_ITEM, &newItem);
+}
+
 // Returns the level adjustment for a given base level and difficulty
 static s8 GetDifficultyLevelAdjustment(u16 baseLevel, u8 difficulty)
 {
@@ -2394,6 +2495,13 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
 
             CreateMon(&party[i], species, newLevel, 0, TRUE, personalityValue, otIdType, fixedOtId);
             SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
+
+            if (isNGPlus)
+            {
+                u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+                rng_value_t holdItemRngState = LocalRandomSeed(trainerId + monIndex + GetNewGamePlusLevelOffset());
+                ApplyNewGamePlusHoldItem(&party[i], species, &holdItemRngState);
+            }
 
             if (FlagGet(FLAG_RANDOMIZE_MON)) {
                 
