@@ -629,7 +629,7 @@ u8 AddStartMenuWindow(u8 numActions)
     {
         u8 width = 7;
         u8 left = 22;
-        u8 calculatedHeight = (numActions * 3) - 6;
+        u8 calculatedHeight = (numActions * 3) - 4;
         u8 height = calculatedHeight > 18 ? 18 : calculatedHeight;  // Fixed maximum height to prevent menu resizing (accommodates up to 11 menu items)
         sStartMenuWindowId = AddWindowParameterized(0, left, 1, width, height, 15, 0x139);
     }

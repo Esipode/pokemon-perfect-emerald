@@ -29,6 +29,7 @@ extern const u8 EventScript_FollowerFaceResult[];
 extern const u8 EnterPokeballMovement[];
 
 extern const u8 EventScript_TestSignpostMsg[];
+extern const u8 EventScript_RoamerNearby[];
 extern const u8 EventScript_TryGetTrainerScript[];
 extern const u8 EventScript_StartTrainerApproach[];
 extern const u8 EventScript_DoNoIntroTrainerBattle[];

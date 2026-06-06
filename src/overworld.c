@@ -843,6 +843,37 @@ bool8 SetDiveWarpDive(u16 x, u16 y)
     return SetDiveWarp(CONNECTION_DIVE, x, y);
 }
 
+void Task_ShowRoamerMessageDelayed(u8 taskId)
+{
+    struct Task *task = &gTasks[taskId];
+    s16 *data = task->data;
+
+    switch (data[0])
+    {
+    case 0: // waiting for map popup / transitions to finish
+        if (!FuncIsActiveTask(Task_MapNamePopUpWindow) && IsFieldMessageBoxHidden() && !gPaletteFade.active && !ScriptContext_IsEnabled())
+        {
+            data[0] = 1;
+            // play cry
+            s8 pan = (Random() % 88) + 212;
+            u16 species = data[1];
+            if (species != SPECIES_NONE)
+                PlayCry_NormalNoDucking(species, pan, CRY_VOLUME, CRY_PRIORITY_AMBIENT);
+            // start script; the script itself handles locking/release and wait-for-input
+            ScriptContext_SetupScript(EventScript_RoamerNearby);
+        }
+        break;
+    case 1: // wait for script to finish and message box to be closed
+        if (!ScriptContext_IsEnabled() && IsFieldMessageBoxHidden())
+        {
+            UnfreezeObjectEvents();
+            UnlockPlayerFieldControls();
+            DestroyTask(taskId);
+        }
+        break;
+    }
+}
+
 void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
 {
     SetWarpDestination(mapGroup, mapNum, WARP_ID_NONE, -1, -1);
@@ -881,6 +912,39 @@ if (I_VS_SEEKER_CHARGING != 0)
     InitSecondaryTilesetAnimation();
     UpdateLocationHistoryForRoamer();
     MoveAllRoamers();
+        {
+            bool8 roamerNearby = FALSE;
+            u16 roamerSpecies = SPECIES_NONE;
+            u8 roamerIndex = ROAMER_COUNT;
+
+            for (u8 i = 0; i < ROAMER_COUNT; i++)
+            {
+                if (IsRoamerAt(i, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) && gSaveBlock1Ptr->roamer[i].active)
+                {
+                    roamerNearby = TRUE;
+                    roamerSpecies = gSaveBlock1Ptr->roamer[i].species;
+                    roamerIndex = i;
+                    break;
+                }
+            }
+
+            if (roamerNearby)
+            {
+                // Remember which roamer index was detected so TryStartRoamerEncounter
+                // can deterministically spawn it for the next wild encounter.
+                gRoamerNearbyIndexOverride = roamerIndex;
+
+                // Create a delayed task that waits for map popup/transition to finish
+                // before showing the roamer message. Store species in task data[1].
+                if (!FuncIsActiveTask(Task_ShowRoamerMessageDelayed))
+                {
+                    u8 t = CreateTask(Task_ShowRoamerMessageDelayed, 80);
+                    gTasks[t].data[0] = 0; // initial state
+                    gTasks[t].data[1] = roamerSpecies;
+                    gTasks[t].data[2] = roamerIndex;
+                }
+            }
+    }
     DoCurrentWeather();
     ResetFieldTasksArgs();
     RunOnResumeMapScript();
@@ -2303,6 +2367,37 @@ static bool32 ReturnToFieldLocal(u8 *state)
         ResetMirageTowerAndSaveBlockPtrs();
         ResetScreenForMapLoad();
         ResumeMap(FALSE);
+        /* Roamer: update history, move roamers, and show nearby message if present */
+        UpdateLocationHistoryForRoamer();
+        MoveAllRoamers();
+        {
+            bool8 roamerNearby = FALSE;
+            u16 roamerSpecies = SPECIES_NONE;
+            u8 roamerIndex = ROAMER_COUNT;
+
+            for (u8 i = 0; i < ROAMER_COUNT; i++)
+            {
+                if (IsRoamerAt(i, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) && gSaveBlock1Ptr->roamer[i].active)
+                {
+                    roamerNearby = TRUE;
+                    roamerSpecies = gSaveBlock1Ptr->roamer[i].species;
+                    roamerIndex = i;
+                    break;
+                }
+            }
+
+            if (roamerNearby)
+            {
+                gRoamerNearbyIndexOverride = roamerIndex;
+                if (!FuncIsActiveTask(Task_ShowRoamerMessageDelayed))
+                {
+                    u8 t = CreateTask(Task_ShowRoamerMessageDelayed, 80);
+                    gTasks[t].data[0] = 0;
+                    gTasks[t].data[1] = roamerSpecies;
+                    gTasks[t].data[2] = roamerIndex;
+                }
+            }
+        }
         InitObjectEventsReturnToField();
         if (gFieldCallback == FieldCallback_UseFly)
             RemoveFollowingPokemon();

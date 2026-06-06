@@ -256,6 +256,23 @@ bool8 TryStartRoamerEncounter(void)
 {
     u32 i;
 
+    // If an overworld code recently detected a nearby roamer and set an override,
+    // prefer that roamer for the next wild encounter.
+    if (gRoamerNearbyIndexOverride < ROAMER_COUNT)
+    {
+        u8 idx = gRoamerNearbyIndexOverride;
+        if (IsRoamerAt(idx, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) == TRUE && ROAMER(idx)->active)
+        {
+            ROAMER(idx)->level = GetCurrentLevelCap();
+            CreateRoamerMonInstance(idx);
+            gEncounteredRoamerIndex = idx;
+            gRoamerNearbyIndexOverride = ROAMER_COUNT;
+            return TRUE;
+        }
+        // If override doesn't match current location/active state, clear it
+        gRoamerNearbyIndexOverride = ROAMER_COUNT;
+    }
+
     for (i = 0; i < ROAMER_COUNT; i++)
     {
         if (IsRoamerAt(i, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) == TRUE && (Random() % 4) == 0)
@@ -266,6 +283,7 @@ bool8 TryStartRoamerEncounter(void)
             return TRUE;
         }
     }
+
     return FALSE;
 }
 
@@ -414,7 +432,7 @@ const u16 gRoamableSpecies[] = {
 };
 
 #define NUM_ROAMABLE_SPECIES ARRAY_COUNT(gRoamableSpecies)
-#define MAX_ACTIVE_ROAMERS 3
+#define MAX_ACTIVE_ROAMERS 5
 
 u8 GetActiveRoamerCount(void)
 {
@@ -426,6 +444,8 @@ u8 GetActiveRoamerCount(void)
     }
     return count;
 }
+
+EWRAM_DATA u8 gRoamerNearbyIndexOverride = 0;
 
 void NextRoamer(u32 roamerIndex)
 {
