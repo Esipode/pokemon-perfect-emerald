@@ -1040,6 +1040,84 @@ STATIC_ASSERT(MAX_DYNAMAX_LEVEL < (1 << 4), PokemonSubstruct3_dynamaxLevel_TooSm
 STATIC_ASSERT(MAX_PER_STAT_IVS < (1 << 5), PokemonSubstruct3_ivs_TooSmall);
 STATIC_ASSERT(NUM_NATURES <= (1 << 5), BoxPokemon_hiddenNatureModifier_TooSmall);
 
+// ORIGINAL CALCULATION, KEEPING IN CASE I DECIDE TO REVERT
+
+// u32 GetExperienceAtLevel(u8 growthRate, u16 level)
+// {
+//     if (level == 0)
+//         return 0;
+
+//     if (level == 1)
+//         return 1;
+
+//     u64 n = level;
+//     u64 exp = 0;
+
+//     switch (growthRate)
+//     {
+//     case GROWTH_MEDIUM_FAST:
+//         exp = EXP_MEDIUM_FAST(n);
+//         break;
+//     case GROWTH_ERRATIC:
+//         if (n <= 50)
+//             exp = (100 - n) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR);
+//         else if (n <= 68)
+//             exp = (150 - n) * CUBE(n) / (100 * CUSTOM_XP_SCALING_FACTOR);
+//         else if (n <= 100)
+//             exp = ((1911 - 10 * n) / 3) * CUBE(n) / (500 * CUSTOM_XP_SCALING_FACTOR);
+//         else
+//         {
+//             u64 xp99  = ((1911 - 10 * 99) / 3) * CUBE(99) / (500 * CUSTOM_XP_SCALING_FACTOR);
+//             u64 xp100 = ((1911 - 10 * 100) / 3) * CUBE(100) / (500 * CUSTOM_XP_SCALING_FACTOR);
+
+//             u64 slope = (xp100 - xp99);
+//             u64 extra = (n - 100);
+//             exp = xp100 + (slope * extra);
+//         }
+//         exp += BASE_XP_OFFSET;
+//         break;
+//     case GROWTH_FLUCTUATING:
+//         if (n <= 15)
+//             exp = (((n + 1) / 3 + 24) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
+//         else if (n <= 36)
+//             exp = ((n + 14) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
+//         else
+//             exp = (((n / 2) + 32) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
+//         exp += BASE_XP_OFFSET;
+//         break;
+//     case GROWTH_MEDIUM_SLOW:
+//         exp = (6 * CUBE(n)) / (5 * CUSTOM_XP_SCALING_FACTOR) - (15 * SQUARE(n)) / CUSTOM_XP_SCALING_FACTOR + (100 * n) / CUSTOM_XP_SCALING_FACTOR - (140 / CUSTOM_XP_SCALING_FACTOR);
+//         exp += BASE_XP_OFFSET;
+//         break;
+//     case GROWTH_FAST:
+//         exp = EXP_FAST(n);
+//         break;
+//     case GROWTH_SLOW:
+//         exp = EXP_SLOW(n);
+//         break;
+//     default:
+//         exp = 0;
+//         break;
+//     }
+
+//     if (exp > UINT32_MAX)
+//         exp = UINT32_MAX;
+
+//     return (u32)exp;
+// }
+
+// NEW FORMULA CALCULATION
+
+static double Oscillate(u32 n, u32 period)
+{
+    u32 pos = n % period;
+
+    if (pos < period / 2)
+        return ((double)pos / (period / 2));
+
+    return 2.0 - ((double)pos / (period / 2));
+}
+
 u32 GetExperienceAtLevel(u8 growthRate, u16 level)
 {
     if (level == 0)
@@ -1049,52 +1127,81 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
         return 1;
 
     u64 n = level;
-    u64 exp = 0;
+
+    // Base curve (shared foundation for all growth rates)
+    u64 base = (CUBE(n) / CUSTOM_XP_SCALING_FACTOR) + BASE_XP_OFFSET;
+
+    double t = (double)n / 1000.0;   // normalized level [0..1]
+    double multiplier = 1.0;
 
     switch (growthRate)
     {
-    case GROWTH_MEDIUM_FAST:
-        exp = EXP_MEDIUM_FAST(n);
-        break;
-    case GROWTH_ERRATIC:
-        if (n <= 50)
-            exp = (100 - n) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR);
-        else if (n <= 68)
-            exp = (150 - n) * CUBE(n) / (100 * CUSTOM_XP_SCALING_FACTOR);
-        else if (n <= 98)
-            exp = ((1911 - 10 * n) / 3) * CUBE(n) / (500 * CUSTOM_XP_SCALING_FACTOR);
-        else
-            exp = (160 - n) * CUBE(n) / (100 * CUSTOM_XP_SCALING_FACTOR);
-        exp += BASE_XP_OFFSET;
-        break;
-    case GROWTH_FLUCTUATING:
-        if (n <= 15)
-            exp = (((n + 1) / 3 + 24) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
-        else if (n <= 36)
-            exp = ((n + 14) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
-        else
-            exp = (((n / 2) + 32) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
-        exp += BASE_XP_OFFSET;
-        break;
-    case GROWTH_MEDIUM_SLOW:
-        exp = (6 * CUBE(n)) / (5 * CUSTOM_XP_SCALING_FACTOR) - (15 * SQUARE(n)) / CUSTOM_XP_SCALING_FACTOR + (100 * n) / CUSTOM_XP_SCALING_FACTOR - (140 / CUSTOM_XP_SCALING_FACTOR);
-        exp += BASE_XP_OFFSET;
-        break;
-    case GROWTH_FAST:
-        exp = EXP_FAST(n);
-        break;
-    case GROWTH_SLOW:
-        exp = EXP_SLOW(n);
-        break;
-    default:
-        exp = 0;
-        break;
+        // ---------------------------------------------------------
+        // MEDIUM FAST (baseline)
+        // ---------------------------------------------------------
+        case GROWTH_MEDIUM_FAST:
+            multiplier = 1.0;
+            break;
+
+        // ---------------------------------------------------------
+        // FAST (slightly easier early, converges to baseline)
+        // ---------------------------------------------------------
+        case GROWTH_FAST:
+            multiplier = 0.85 + 0.15 * t;
+            break;
+
+        // ---------------------------------------------------------
+        // SLOW (hard early, converges upward toward baseline)
+        // ---------------------------------------------------------
+        case GROWTH_SLOW:
+            multiplier = 1.15 - 0.15 * t;
+            break;
+
+        // ---------------------------------------------------------
+        // MEDIUM SLOW (curved easing)
+        // ---------------------------------------------------------
+        case GROWTH_MEDIUM_SLOW:
+            multiplier = 1.20 - 0.40 * t + 0.20 * t * t;
+            break;
+
+        // ---------------------------------------------------------
+        // FLUCTUATING (decaying oscillation)
+        // ---------------------------------------------------------
+        case GROWTH_FLUCTUATING:
+        {
+            double wave = (Oscillate(n, 120) - 0.5) * 0.5;
+            double decay = (1.0 - t) * (1.0 - t);
+
+            multiplier = 1.0 + wave * decay;
+            break;
+        }
+
+        // ---------------------------------------------------------
+        // ERRATIC (bounded chaos, stabilizing over time)
+        // ---------------------------------------------------------
+        case GROWTH_ERRATIC:
+        {
+            u32 seed = n * 1103515245u + 12345u;
+            double noise = ((seed >> 16) & 1023) / 512.0 - 1.0;
+
+            double decay = (1.0 - t) * (1.0 - t) * (1.0 - t);
+
+            multiplier = 1.0 + noise * 0.35 * decay;
+            break;
+        }
+
+        default:
+            multiplier = 1.0;
+            break;
     }
 
-    if (exp > UINT32_MAX)
-        exp = UINT32_MAX;
+    // Apply multiplier safely
+    double exp_d = (double)base * multiplier;
 
-    return (u32)exp;
+    if (exp_d > (double)UINT32_MAX)
+        exp_d = (double)UINT32_MAX;
+
+    return (u32)exp_d;
 }
 
 static u32 CompressStatus(u32 status)
