@@ -4002,6 +4002,16 @@ static void BufferLeftColumnIvEvStats(void)
     Free(defenseIvEvString);
 }
 
+// When displaying IV letter grades, the value string is a single character rather
+// than a number padded out to n digits, so it needs to be nudged right to line up
+// with where the padded number's right edge would have been.
+static int GetStatValueRightAlignX(const u8 *str, int baseX, u32 n)
+{
+    u8 refStr[12];
+    ConvertIntToDecimalStringN(refStr, 0, STR_CONV_MODE_RIGHT_ALIGN, n);
+    return baseX + GetStringRightAlignXOffset(FONT_NARROW, str, GetStringWidth(FONT_NARROW, refStr, 0));
+}
+
 static void PrintLeftColumnStats(void)
 {
     u8 windowId = AddWindowFromTemplateList(sPageSkillsTemplate, PSS_DATA_WINDOW_SKILLS_STATS_LEFT);
@@ -4011,22 +4021,43 @@ static void PrintLeftColumnStats(void)
     u8 hpString[40];
     u8 attack[20];
     u8 defense[20];
+    int hpX;
+    int attackX = 2;
+    int defenseX = 2;
 
     struct PokeSummary *sum = &sMonSummaryScreen->summary;
 
-    BufferStat(currentHP, STAT_HP, sum->currentHP, 0, 4);
-    BufferStat(maxHP, STAT_HP, sum->maxHP, 1, 4);
     BufferStat(attack, STAT_ATK, sum->atk, 2, 9);
     BufferStat(defense, STAT_DEF, sum->def, 3, 9);
 
-    StringCopy(hpString, currentHP);
-    StringAppend(hpString, COMPOUND_STRING("/"));
-    StringAppend(hpString, maxHP);
+    if (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_STATS)
+    {
+        // Only the actual stats view shows current/max HP as a fraction;
+        // IVs and EVs show a single HP value, same as Attack and Defense.
+        BufferStat(currentHP, STAT_HP, sum->currentHP, 0, 4);
+        BufferStat(maxHP, STAT_HP, sum->maxHP, 1, 4);
+        StringCopy(hpString, currentHP);
+        StringAppend(hpString, COMPOUND_STRING("/"));
+        StringAppend(hpString, maxHP);
+        hpX = 1; // HP moved 1 pixel left
+    }
+    else
+    {
+        BufferStat(currentHP, STAT_HP, sum->currentHP, 0, 9);
+        StringCopy(hpString, currentHP);
+        hpX = 2;
 
-    // HP moved 1 pixel left
-    PrintTextOnWindowWithFont(windowId, hpString, 1, 1, 0, 0, FONT_NARROW);
-    PrintTextOnWindowWithFont(windowId, attack, 2, 17, 0, 0, FONT_NARROW);
-    PrintTextOnWindowWithFont(windowId, defense, 2, 33, 0, 0, FONT_NARROW);
+        if (sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_IVS && !P_SUMMARY_SCREEN_IV_EV_VALUES)
+        {
+            hpX = GetStatValueRightAlignX(hpString, 2, 9);
+            attackX = GetStatValueRightAlignX(attack, 2, 9);
+            defenseX = GetStatValueRightAlignX(defense, 2, 9);
+        }
+    }
+
+    PrintTextOnWindowWithFont(windowId, hpString, hpX, 1, 0, 0, FONT_NARROW);
+    PrintTextOnWindowWithFont(windowId, attack, attackX, 17, 0, 0, FONT_NARROW);
+    PrintTextOnWindowWithFont(windowId, defense, defenseX, 33, 0, 0, FONT_NARROW);
 }
 
 static void BufferRightColumnStats(void)

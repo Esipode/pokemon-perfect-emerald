@@ -6224,11 +6224,10 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
 static void UpdateMonDisplayInfoAfterRareCandy(u8 slot, struct Pokemon *mon)
 {
     SetPartyMonAilmentGfx(mon, &sPartyMenuBoxes[slot]);
-    if (gSprites[sPartyMenuBoxes[slot].statusSpriteId].invisible)
-        DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[slot], 1);
-    DisplayPartyPokemonHPCheck(mon, &sPartyMenuBoxes[slot], 1);
-    DisplayPartyPokemonMaxHPCheck(mon, &sPartyMenuBoxes[slot], 1);
-    DisplayPartyPokemonHPBarCheck(mon, &sPartyMenuBoxes[slot]);
+    // Re-blit the whole box background before redrawing its text fields, rather than
+    // patching individual fixed-size erase rects, so a level/HP digit count change
+    // (e.g. 9 -> 10, 99 -> 100) can never leave a remnant of the old value behind.
+    DisplayPartyPokemonData(slot);
     UpdatePartyMonHPBar(sPartyMenuBoxes[slot].monSpriteId, mon);
     AnimatePartySlot(slot, 1);
     ScheduleBgCopyTilemapToVram(0);
