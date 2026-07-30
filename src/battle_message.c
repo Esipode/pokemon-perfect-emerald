@@ -2565,7 +2565,11 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
     case STRINGID_RETURNMON: // sending poke to ball msg
         if ((GetBattlerPosition(battler) & BIT_FLANK) == B_FLANK_LEFT) // battler 0 and 1
         {
-            if (BattlerIsPlayer(battler) || BattlerIsWally(battler)) // Player
+            // A partner-controller battler that isn't a real Link or in-game partner is just
+            // the AI controlling the player's own second mon (see IsPlayerAiControlled) - treat
+            // it as the player for message purposes rather than a distinct partner trainer.
+            if (BattlerIsPlayer(battler) || BattlerIsWally(battler)
+             || (BattlerIsPartner(battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
                 if (*(&gBattleStruct->hpScale) == 0)
                     stringPtr = sText_PkmnThatsEnough;
@@ -2595,7 +2599,10 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
         }
         else // battler 2 and 3
         {
-            if (BattlerIsPlayer(battler)) // Player
+            // See the battler 0/1 branch above: a partner-controller battler that isn't a
+            // real Link or in-game partner is just the AI controlling the player's own mon.
+            if (BattlerIsPlayer(battler)
+             || (BattlerIsPartner(battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
                 if (*(&gBattleStruct->hpScale) == 0)
                     stringPtr = sText_PkmnThatsEnough;
@@ -2634,7 +2641,11 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
     case STRINGID_SWITCHINMON: // switch-in msg
         if ((GetBattlerPosition(gBattleScripting.battler) & BIT_FLANK) == B_FLANK_LEFT) // battler 0 and 1
         {
-            if (BattlerIsPlayer(gBattleScripting.battler)) // Player
+            // A partner-controller battler that isn't a real Link or in-game partner is just
+            // the AI controlling the player's own second mon (see IsPlayerAiControlled) - treat
+            // it as the player for message purposes rather than a distinct partner trainer.
+            if (BattlerIsPlayer(gBattleScripting.battler)
+             || (BattlerIsPartner(gBattleScripting.battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
                 if (*(&gBattleStruct->hpScale) == 0)
                     stringPtr = sText_GoPkmn2;
@@ -2664,7 +2675,10 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
         }
         else // battler 2 and 3
         {
-            if (BattlerIsPlayer(gBattleScripting.battler)) // Player
+            // See the battler 0/1 branch above: a partner-controller battler that isn't a
+            // real Link or in-game partner is just the AI controlling the player's own mon.
+            if (BattlerIsPlayer(gBattleScripting.battler)
+             || (BattlerIsPartner(gBattleScripting.battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
                 if (*(&gBattleStruct->hpScale) == 0)
                     stringPtr = sText_GoPkmn2;
