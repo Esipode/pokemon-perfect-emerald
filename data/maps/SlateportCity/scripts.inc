@@ -525,20 +525,53 @@ SlateportCity_PokemartDecor:
 	.2byte DECOR_C_HIGH_NOTE_MAT
 	pokemartlistend
 
-SlateportCity_EventScript_PowerTMClerk::
+SlateportCity_EventScript_TMandMegaStoneClerk::
 	lock
 	faceplayer
 	message gText_HowMayIServeYou
 	waitmessage
-	pokemart SlateportCity_Pokemart_PowerTMs
+	goto_if_set FLAG_BADGE05_GET, SlateportCity_EventScript_TMandMegaStoneClerkExpanded
+	pokemart SlateportCity_Pokemart_TMandMegaStones
+	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
+	release
+	end
+
+SlateportCity_EventScript_TMandMegaStoneClerkExpanded::
+	pokemart SlateportCity_Pokemart_TMandMegaStonesExpanded
 	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
 	release
 	end
 
 	.align 2
-SlateportCity_Pokemart_PowerTMs:
+SlateportCity_Pokemart_TMandMegaStones:
 	.2byte ITEM_TM_HIDDEN_POWER
 	.2byte ITEM_TM_SECRET_POWER
+	pokemartlistend
+
+	.align 2
+SlateportCity_Pokemart_TMandMegaStonesExpanded:
+	.2byte ITEM_TM_HIDDEN_POWER
+	.2byte ITEM_TM_SECRET_POWER
+	.2byte ITEM_CLEFABLITE
+    .2byte ITEM_VICTREEBELITE
+    .2byte ITEM_STARMINITE
+    .2byte ITEM_DRAGONINITE
+    .2byte ITEM_MEGANIUMITE
+    .2byte ITEM_FERALIGITE
+    .2byte ITEM_SKARMORITE
+    .2byte ITEM_FROSLASSITE
+    .2byte ITEM_EMBOARITE
+    .2byte ITEM_EXCADRITE
+    .2byte ITEM_SCOLIPITE
+    .2byte ITEM_SCRAFTINITE
+    .2byte ITEM_EELEKTROSSITE
+    .2byte ITEM_CHANDELURITE
+    .2byte ITEM_CHESNAUGHTITE
+    .2byte ITEM_DELPHOXITE
+    .2byte ITEM_GRENINJITE
+    .2byte ITEM_PYROARITE
+    .2byte ITEM_FLOETTITE
+    .2byte ITEM_MALAMARITE
 	pokemartlistend
 
 @ Scene with Capt Sterns interview and Team Aqua announcing plans to steal Submarine

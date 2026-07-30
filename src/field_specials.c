@@ -2520,6 +2520,16 @@ void ShowScrollableMultichoice(void)
         task->tScrollOffset = sElevatorScroll;
         task->tSelectedRow = sElevatorCursorPos;
         break;
+    case SCROLL_MULTI_MAUVILLE_GAME_CORNER_TMS:
+        task->tMaxItemsOnScreen = MAX_SCROLL_MULTI_ON_SCREEN;
+        task->tNumItems = 31;
+        task->tLeft = 12;
+        task->tTop = 1;
+        task->tWidth = 14;
+        task->tHeight = 12;
+        task->tKeepOpenAfterSelect = FALSE;
+        task->tTaskId = taskId;
+        break;
     default:
         gSpecialVar_Result = MULTI_B_PRESSED;
         DestroyTask(taskId);
@@ -2706,6 +2716,40 @@ static const u8 *const sScrollableMultichoiceOptions[][MAX_SCROLL_MULTI_LENGTH] 
         gText_3F,
         gText_2F,
         gText_1F,
+        gText_Exit,
+    },
+    [SCROLL_MULTI_MAUVILLE_GAME_CORNER_TMS] =
+    {
+        COMPOUND_STRING("TM32{CLEAR_TO 78}1,500"),
+        COMPOUND_STRING("TM29{CLEAR_TO 78}3,500"),
+        COMPOUND_STRING("TM35{CLEAR_TO 78}4,000"),
+        COMPOUND_STRING("TM24{CLEAR_TO 78}4,000"),
+        COMPOUND_STRING("TM13{CLEAR_TO 78}4,000"),
+        COMPOUND_STRING("BARBARACITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("DRAGALGITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("HAWLUCHANITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("ZYGARDITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("DRAMPANITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("FALINKSITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("HEATRANITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("DARKRANITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("ZERAORITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("RAICHUNITE X{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("RAICHUNITE Y{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("CHIMECHITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("ABSOLITE Z{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("STARAPTITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("GARCHOMPITE Z{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("LUCARIONITE Z{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("GOLURKITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("MEOWSTICITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("CRABOMINITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("GOLISOPITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("MAGEARNITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("SCOVILLAINITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("BAXCALIBRITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("TATSUGIRINITE{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("GLIMMORANITE{CLEAR_TO 78}5,000"),
         gText_Exit,
     }
 };
@@ -5801,4 +5845,44 @@ bool8 CheckAddCoins(void)
         return FALSE;
     else
         return TRUE;
+}
+
+static const u16 sChampionChallengeBeatFlags[] =
+{
+    FLAG_BEAT_CHAMPION_CHALLENGER_1,
+    FLAG_BEAT_CHAMPION_CHALLENGER_2,
+    FLAG_BEAT_CHAMPION_CHALLENGER_3,
+    FLAG_BEAT_CHAMPION_CHALLENGER_4,
+    FLAG_BEAT_CHAMPION_CHALLENGER_5,
+    FLAG_BEAT_CHAMPION_CHALLENGER_6,
+    FLAG_BEAT_CHAMPION_CHALLENGER_7,
+    FLAG_BEAT_CHAMPION_CHALLENGER_8,
+    FLAG_BEAT_CHAMPION_CHALLENGER_9,
+};
+
+// Pushes each champion challenger onto the dynamic multichoice stack (see dynmultipush/dynmultistack), coloring
+// them green if already beaten, red if locked (the previous challenger hasn't been beaten), or white if available.
+void PushChampionChallengeMenuEntries(void)
+{
+    u32 i;
+    u32 offset = GetNewGamePlusLevelOffset();
+
+    for (i = 0; i < ARRAY_COUNT(sChampionChallengeBeatFlags); i++)
+    {
+        struct ListMenuItem item;
+        u8 *string = Alloc(32);
+
+        item.name = string;
+        item.id = i + 1;
+
+        if (FlagGet(sChampionChallengeBeatFlags[i]))
+            string = StringCopy(string, COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}"));
+        else if (i > 0 && !FlagGet(sChampionChallengeBeatFlags[i - 1]))
+            string = StringCopy(string, COMPOUND_STRING("{COLOR RED}{SHADOW LIGHT_RED}"));
+
+        string = StringCopy(string, COMPOUND_STRING("Lv. "));
+        ConvertIntToDecimalStringN(string, 65 + offset + i + 1, STR_CONV_MODE_LEFT_ALIGN, 3);
+
+        MultichoiceDynamic_PushElement(item);
+    }
 }

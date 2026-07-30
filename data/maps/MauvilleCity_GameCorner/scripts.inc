@@ -9,6 +9,33 @@ MauvilleCity_GameCorner_MapScripts::
 	.set TM_ICE_BEAM_COINS, 4000
 	.set DOLL_COINS, 1000
 
+	@ Expanded post badge 5 mega stone prizes
+	.set MEGA_BARBARACITE_COINS, 5000
+	.set MEGA_DRAGALGITE_COINS, 5000
+	.set MEGA_HAWLUCHANITE_COINS, 5000
+	.set MEGA_ZYGARDITE_COINS, 5000
+	.set MEGA_DRAMPANITE_COINS, 5000
+	.set MEGA_FALINKSITE_COINS, 5000
+	.set MEGA_HEATRANITE_COINS, 5000
+	.set MEGA_DARKRANITE_COINS, 5000
+	.set MEGA_ZERAORITE_COINS, 5000
+	.set MEGA_RAICHUNITE_X_COINS, 5000
+	.set MEGA_RAICHUNITE_Y_COINS, 5000
+	.set MEGA_CHIMECHITE_COINS, 5000
+	.set MEGA_ABSOLITE_Z_COINS, 5000
+	.set MEGA_STARAPTITE_COINS, 5000
+	.set MEGA_GARCHOMPITE_Z_COINS, 5000
+	.set MEGA_LUCARIONITE_Z_COINS, 5000
+	.set MEGA_GOLURKITE_COINS, 5000
+	.set MEGA_MEOWSTICITE_COINS, 5000
+	.set MEGA_CRABOMINITE_COINS, 5000
+	.set MEGA_GOLISOPITE_COINS, 5000
+	.set MEGA_MAGEARNITE_COINS, 5000
+	.set MEGA_SCOVILLAINITE_COINS, 5000
+	.set MEGA_BAXCALIBRITE_COINS, 5000
+	.set MEGA_TATSUGIRINITE_COINS, 5000
+	.set MEGA_GLIMMORANITE_COINS, 5000
+
 	.set COINS_PRICE_50,  1000
 	.set COINS_PRICE_500, 10000
 
@@ -234,6 +261,7 @@ MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize::
 	goto MauvilleCity_GameCorner_EventScript_ChooseTMPrize
 
 MauvilleCity_GameCorner_EventScript_ChooseTMPrize::
+	goto_if_set FLAG_BADGE05_GET, MauvilleCity_GameCorner_EventScript_ChooseTMPrizeExpanded
 	multichoice 12, 0, MULTI_GAME_CORNER_TMS, FALSE
 	switch VAR_RESULT
 	case 0, MauvilleCity_GameCorner_EventScript_TMDoubleTeam
@@ -243,6 +271,526 @@ MauvilleCity_GameCorner_EventScript_ChooseTMPrize::
 	case 4, MauvilleCity_GameCorner_EventScript_TMIceBeam
 	case 5, MauvilleCity_GameCorner_EventScript_CancelTMSelect
 	goto MauvilleCity_GameCorner_EventScript_CancelTMSelect
+	end
+
+MauvilleCity_GameCorner_EventScript_ChooseTMPrizeExpanded::
+	setvar VAR_0x8004, SCROLL_MULTI_MAUVILLE_GAME_CORNER_TMS
+	special ShowScrollableMultichoice
+	switch VAR_RESULT
+	case 0, MauvilleCity_GameCorner_EventScript_TMDoubleTeam
+	case 1, MauvilleCity_GameCorner_EventScript_TMPsychic
+	case 2, MauvilleCity_GameCorner_EventScript_TMFlamethrower
+	case 3, MauvilleCity_GameCorner_EventScript_TMThunderbolt
+	case 4, MauvilleCity_GameCorner_EventScript_TMIceBeam
+	case 5, MauvilleCity_GameCorner_EventScript_MegaBarbaracite
+	case 6, MauvilleCity_GameCorner_EventScript_MegaDragalgite
+	case 7, MauvilleCity_GameCorner_EventScript_MegaHawluchanite
+	case 8, MauvilleCity_GameCorner_EventScript_MegaZygardite
+	case 9, MauvilleCity_GameCorner_EventScript_MegaDrampanite
+	case 10, MauvilleCity_GameCorner_EventScript_MegaFalinksite
+	case 11, MauvilleCity_GameCorner_EventScript_MegaHeatranite
+	case 12, MauvilleCity_GameCorner_EventScript_MegaDarkranite
+	case 13, MauvilleCity_GameCorner_EventScript_MegaZeraorite
+	case 14, MauvilleCity_GameCorner_EventScript_MegaRaichuniteX
+	case 15, MauvilleCity_GameCorner_EventScript_MegaRaichuniteY
+	case 16, MauvilleCity_GameCorner_EventScript_MegaChimechite
+	case 17, MauvilleCity_GameCorner_EventScript_MegaAbsoliteZ
+	case 18, MauvilleCity_GameCorner_EventScript_MegaStaraptite
+	case 19, MauvilleCity_GameCorner_EventScript_MegaGarchompiteZ
+	case 20, MauvilleCity_GameCorner_EventScript_MegaLucarioniteZ
+	case 21, MauvilleCity_GameCorner_EventScript_MegaGolurkite
+	case 22, MauvilleCity_GameCorner_EventScript_MegaMeowsticite
+	case 23, MauvilleCity_GameCorner_EventScript_MegaCrabominite
+	case 24, MauvilleCity_GameCorner_EventScript_MegaGolisopite
+	case 25, MauvilleCity_GameCorner_EventScript_MegaMagearnite
+	case 26, MauvilleCity_GameCorner_EventScript_MegaScovillainite
+	case 27, MauvilleCity_GameCorner_EventScript_MegaBaxcalibrite
+	case 28, MauvilleCity_GameCorner_EventScript_MegaTatsugirinite
+	case 29, MauvilleCity_GameCorner_EventScript_MegaGlimmoranite
+	case 30, MauvilleCity_GameCorner_EventScript_CancelTMSelect
+	case MULTI_B_PRESSED, MauvilleCity_GameCorner_EventScript_CancelTMSelect
+	goto MauvilleCity_GameCorner_EventScript_CancelTMSelect
+	end
+
+MauvilleCity_GameCorner_EventScript_MegaBarbaracite::
+	setvar VAR_TEMP_1, 1
+	bufferitemname STR_VAR_1, ITEM_BARBARACITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaDragalgite::
+	setvar VAR_TEMP_1, 2
+	bufferitemname STR_VAR_1, ITEM_DRAGALGITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaHawluchanite::
+	setvar VAR_TEMP_1, 3
+	bufferitemname STR_VAR_1, ITEM_HAWLUCHANITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaZygardite::
+	setvar VAR_TEMP_1, 4
+	bufferitemname STR_VAR_1, ITEM_ZYGARDITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaDrampanite::
+	setvar VAR_TEMP_1, 5
+	bufferitemname STR_VAR_1, ITEM_DRAMPANITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaFalinksite::
+	setvar VAR_TEMP_1, 6
+	bufferitemname STR_VAR_1, ITEM_FALINKSITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaHeatranite::
+	setvar VAR_TEMP_1, 7
+	bufferitemname STR_VAR_1, ITEM_HEATRANITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaDarkranite::
+	setvar VAR_TEMP_1, 8
+	bufferitemname STR_VAR_1, ITEM_DARKRANITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaZeraorite::
+	setvar VAR_TEMP_1, 9
+	bufferitemname STR_VAR_1, ITEM_ZERAORITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaRaichuniteX::
+	setvar VAR_TEMP_1, 10
+	bufferitemname STR_VAR_1, ITEM_RAICHUNITE_X
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaRaichuniteY::
+	setvar VAR_TEMP_1, 11
+	bufferitemname STR_VAR_1, ITEM_RAICHUNITE_Y
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaChimechite::
+	setvar VAR_TEMP_1, 12
+	bufferitemname STR_VAR_1, ITEM_CHIMECHITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaAbsoliteZ::
+	setvar VAR_TEMP_1, 13
+	bufferitemname STR_VAR_1, ITEM_ABSOLITE_Z
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaStaraptite::
+	setvar VAR_TEMP_1, 14
+	bufferitemname STR_VAR_1, ITEM_STARAPTITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaGarchompiteZ::
+	setvar VAR_TEMP_1, 15
+	bufferitemname STR_VAR_1, ITEM_GARCHOMPITE_Z
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaLucarioniteZ::
+	setvar VAR_TEMP_1, 16
+	bufferitemname STR_VAR_1, ITEM_LUCARIONITE_Z
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaGolurkite::
+	setvar VAR_TEMP_1, 17
+	bufferitemname STR_VAR_1, ITEM_GOLURKITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaMeowsticite::
+	setvar VAR_TEMP_1, 18
+	bufferitemname STR_VAR_1, ITEM_MEOWSTICITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaCrabominite::
+	setvar VAR_TEMP_1, 19
+	bufferitemname STR_VAR_1, ITEM_CRABOMINITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaGolisopite::
+	setvar VAR_TEMP_1, 20
+	bufferitemname STR_VAR_1, ITEM_GOLISOPITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaMagearnite::
+	setvar VAR_TEMP_1, 21
+	bufferitemname STR_VAR_1, ITEM_MAGEARNITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaScovillainite::
+	setvar VAR_TEMP_1, 22
+	bufferitemname STR_VAR_1, ITEM_SCOVILLAINITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaBaxcalibrite::
+	setvar VAR_TEMP_1, 23
+	bufferitemname STR_VAR_1, ITEM_BAXCALIBRITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaTatsugirinite::
+	setvar VAR_TEMP_1, 24
+	bufferitemname STR_VAR_1, ITEM_TATSUGIRINITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_MegaGlimmoranite::
+	setvar VAR_TEMP_1, 25
+	bufferitemname STR_VAR_1, ITEM_GLIMMORANITE
+	goto MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize
+
+MauvilleCity_GameCorner_EventScript_ConfirmMegaPrize::
+	msgbox MauvilleCity_GameCorner_Text_SoYourChoiceIsX, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, MauvilleCity_GameCorner_EventScript_CancelTMSelect
+	switch VAR_TEMP_1
+	case 1, MauvilleCity_GameCorner_EventScript_BuyMegaBarbaracite
+	case 2, MauvilleCity_GameCorner_EventScript_BuyMegaDragalgite
+	case 3, MauvilleCity_GameCorner_EventScript_BuyMegaHawluchanite
+	case 4, MauvilleCity_GameCorner_EventScript_BuyMegaZygardite
+	case 5, MauvilleCity_GameCorner_EventScript_BuyMegaDrampanite
+	case 6, MauvilleCity_GameCorner_EventScript_BuyMegaFalinksite
+	case 7, MauvilleCity_GameCorner_EventScript_BuyMegaHeatranite
+	case 8, MauvilleCity_GameCorner_EventScript_BuyMegaDarkranite
+	case 9, MauvilleCity_GameCorner_EventScript_BuyMegaZeraorite
+	case 10, MauvilleCity_GameCorner_EventScript_BuyMegaRaichuniteX
+	case 11, MauvilleCity_GameCorner_EventScript_BuyMegaRaichuniteY
+	case 12, MauvilleCity_GameCorner_EventScript_BuyMegaChimechite
+	case 13, MauvilleCity_GameCorner_EventScript_BuyMegaAbsoliteZ
+	case 14, MauvilleCity_GameCorner_EventScript_BuyMegaStaraptite
+	case 15, MauvilleCity_GameCorner_EventScript_BuyMegaGarchompiteZ
+	case 16, MauvilleCity_GameCorner_EventScript_BuyMegaLucarioniteZ
+	case 17, MauvilleCity_GameCorner_EventScript_BuyMegaGolurkite
+	case 18, MauvilleCity_GameCorner_EventScript_BuyMegaMeowsticite
+	case 19, MauvilleCity_GameCorner_EventScript_BuyMegaCrabominite
+	case 20, MauvilleCity_GameCorner_EventScript_BuyMegaGolisopite
+	case 21, MauvilleCity_GameCorner_EventScript_BuyMegaMagearnite
+	case 22, MauvilleCity_GameCorner_EventScript_BuyMegaScovillainite
+	case 23, MauvilleCity_GameCorner_EventScript_BuyMegaBaxcalibrite
+	case 24, MauvilleCity_GameCorner_EventScript_BuyMegaTatsugirinite
+	case 25, MauvilleCity_GameCorner_EventScript_BuyMegaGlimmoranite
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaBarbaracite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_BARBARACITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_BARBARACITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_BARBARACITE_COINS
+	additem ITEM_BARBARACITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaDragalgite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_DRAGALGITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_DRAGALGITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_DRAGALGITE_COINS
+	additem ITEM_DRAGALGITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaHawluchanite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_HAWLUCHANITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_HAWLUCHANITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_HAWLUCHANITE_COINS
+	additem ITEM_HAWLUCHANITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaZygardite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_ZYGARDITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_ZYGARDITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_ZYGARDITE_COINS
+	additem ITEM_ZYGARDITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaDrampanite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_DRAMPANITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_DRAMPANITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_DRAMPANITE_COINS
+	additem ITEM_DRAMPANITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaFalinksite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_FALINKSITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_FALINKSITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_FALINKSITE_COINS
+	additem ITEM_FALINKSITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaHeatranite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_HEATRANITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_HEATRANITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_HEATRANITE_COINS
+	additem ITEM_HEATRANITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaDarkranite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_DARKRANITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_DARKRANITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_DARKRANITE_COINS
+	additem ITEM_DARKRANITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaZeraorite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_ZERAORITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_ZERAORITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_ZERAORITE_COINS
+	additem ITEM_ZERAORITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaRaichuniteX::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_RAICHUNITE_X_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_RAICHUNITE_X
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_RAICHUNITE_X_COINS
+	additem ITEM_RAICHUNITE_X
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaRaichuniteY::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_RAICHUNITE_Y_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_RAICHUNITE_Y
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_RAICHUNITE_Y_COINS
+	additem ITEM_RAICHUNITE_Y
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaChimechite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_CHIMECHITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_CHIMECHITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_CHIMECHITE_COINS
+	additem ITEM_CHIMECHITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaAbsoliteZ::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_ABSOLITE_Z_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_ABSOLITE_Z
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_ABSOLITE_Z_COINS
+	additem ITEM_ABSOLITE_Z
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaStaraptite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_STARAPTITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_STARAPTITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_STARAPTITE_COINS
+	additem ITEM_STARAPTITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaGarchompiteZ::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_GARCHOMPITE_Z_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_GARCHOMPITE_Z
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_GARCHOMPITE_Z_COINS
+	additem ITEM_GARCHOMPITE_Z
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaLucarioniteZ::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_LUCARIONITE_Z_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_LUCARIONITE_Z
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_LUCARIONITE_Z_COINS
+	additem ITEM_LUCARIONITE_Z
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaGolurkite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_GOLURKITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_GOLURKITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_GOLURKITE_COINS
+	additem ITEM_GOLURKITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaMeowsticite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_MEOWSTICITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_MEOWSTICITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_MEOWSTICITE_COINS
+	additem ITEM_MEOWSTICITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaCrabominite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_CRABOMINITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_CRABOMINITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_CRABOMINITE_COINS
+	additem ITEM_CRABOMINITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaGolisopite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_GOLISOPITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_GOLISOPITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_GOLISOPITE_COINS
+	additem ITEM_GOLISOPITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaMagearnite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_MAGEARNITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_MAGEARNITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_MAGEARNITE_COINS
+	additem ITEM_MAGEARNITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaScovillainite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_SCOVILLAINITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_SCOVILLAINITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_SCOVILLAINITE_COINS
+	additem ITEM_SCOVILLAINITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaBaxcalibrite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_BAXCALIBRITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_BAXCALIBRITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_BAXCALIBRITE_COINS
+	additem ITEM_BAXCALIBRITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaTatsugirinite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_TATSUGIRINITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_TATSUGIRINITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_TATSUGIRINITE_COINS
+	additem ITEM_TATSUGIRINITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
+	end
+
+MauvilleCity_GameCorner_EventScript_BuyMegaGlimmoranite::
+	checkcoins VAR_TEMP_2
+	goto_if_lt VAR_TEMP_2, MEGA_GLIMMORANITE_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForTM
+	checkitemspace ITEM_GLIMMORANITE
+	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForTM
+	removecoins MEGA_GLIMMORANITE_COINS
+	additem ITEM_GLIMMORANITE
+	updatecoinsbox 1, 1
+	playse SE_SHOP
+	msgbox MauvilleCity_GameCorner_Text_HereYouGo, MSGBOX_DEFAULT
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseTMPrize
 	end
 
 MauvilleCity_GameCorner_EventScript_TMDoubleTeam::
