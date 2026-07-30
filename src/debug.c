@@ -3056,7 +3056,13 @@ static void DebugAction_Give_Pokemon_SelectId(u8 taskId)
             return;
         }
 
+        // Debug menu species selection must not be re-randomized by FLAG_RANDOMIZE_MON.
+        bool8 wasRandomizeMon = FlagGet(FLAG_RANDOMIZE_MON);
+        if (wasRandomizeMon)
+            FlagClear(FLAG_RANDOMIZE_MON);
         ScriptGiveEgg(sDebugMonData->species);
+        if (wasRandomizeMon)
+            FlagSet(FLAG_RANDOMIZE_MON);
         PlaySE(SE_SELECT);
         Free(sDebugMonData);
         FreeMonIconPalettes();
@@ -3100,7 +3106,13 @@ static void DebugAction_Give_Pokemon_SelectLevel(u8 taskId)
         if (gTasks[taskId].tIsComplex == FALSE)
         {
             PlaySE(MUS_LEVEL_UP);
+            // Debug menu species selection must not be re-randomized by FLAG_RANDOMIZE_MON.
+            bool8 wasRandomizeMon = FlagGet(FLAG_RANDOMIZE_MON);
+            if (wasRandomizeMon)
+                FlagClear(FLAG_RANDOMIZE_MON);
             ScriptGiveMon(sDebugMonData->species, gTasks[taskId].tInput, ITEM_NONE);
+            if (wasRandomizeMon)
+                FlagSet(FLAG_RANDOMIZE_MON);
             // Set flag for user convenience
             FlagSet(FLAG_SYS_POKEMON_GET);
             Free(sDebugMonData);
@@ -3604,7 +3616,13 @@ static void DebugAction_Give_Pokemon_ComplexCreateMon(u8 taskId) //https://githu
 
     //Nature
     u32 personality = GetMonPersonality(species, MON_GENDER_RANDOM, nature, RANDOM_UNOWN_LETTER);
+    // Debug menu species selection must not be re-randomized by FLAG_RANDOMIZE_MON.
+    bool8 wasRandomizeMon = FlagGet(FLAG_RANDOMIZE_MON);
+    if (wasRandomizeMon)
+        FlagClear(FLAG_RANDOMIZE_MON);
     CreateMon(&mon, species, level, personality, OTID_STRUCT_PLAYER_ID);
+    if (wasRandomizeMon)
+        FlagSet(FLAG_RANDOMIZE_MON);
 
     //Shininess
     SetMonData(&mon, MON_DATA_IS_SHINY, &isShiny);

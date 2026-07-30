@@ -2540,11 +2540,20 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
                     }
                 }
 
-                for (u8 moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
+                if (moveCount == 0)
                 {
-                    u32 pp = GetMovePP(randomMoves[moveIdx]);
-                    SetMonData(&party[i], MON_DATA_MOVE1 + moveIdx, &randomMoves[moveIdx]);
-                    SetMonData(&party[i], MON_DATA_PP1 + moveIdx, &pp);
+                    // Trainer didn't hardcode any moves to randomize from (relies on the
+                    // default level-up moveset) - fall back to that instead of wiping moves.
+                    GiveMonInitialMoveset(&party[i]);
+                }
+                else
+                {
+                    for (u8 moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
+                    {
+                        u32 pp = GetMovePP(randomMoves[moveIdx]);
+                        SetMonData(&party[i], MON_DATA_MOVE1 + moveIdx, &randomMoves[moveIdx]);
+                        SetMonData(&party[i], MON_DATA_PP1 + moveIdx, &pp);
+                    }
                 }
             }
             else

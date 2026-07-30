@@ -50,6 +50,7 @@
 #include "test/battle.h"
 #include "ui_birch_case.h"
 #include "event_data.h"
+#include "battle_ai_switch.h"
 #include "battle_ai_util.h"
 
 static void PlayerHandleLoadMonSprite(enum BattlerId battler);
@@ -2219,6 +2220,49 @@ static void PlayerHandleChoosePokemon(enum BattlerId battler)
         && gBattleResources->bufferA[battler][1] != PARTY_ACTION_SEND_MON_TO_BOX)
     {
         BtlController_EmitChosenMonReturnValue(battler, B_COMM_TO_ENGINE, gBattlerPartyIndexes[battler] + 1, gBattlePartyCurrentOrder);
+        BtlController_Complete(battler);
+    }
+    // If AI is controlling the player, pick a replacement the same way the AI-controlled
+    // partner does (see PlayerPartnerHandleChoosePokemon) instead of opening the party menu
+    // and waiting on manual input nobody is going to provide.
+    else if (IsPlayerAiControlled())
+    {
+        s32 chosenMonId;
+        struct Pokemon *party = GetBattlerParty(battler);
+
+        if (gBattleResources->bufferA[battler][1] == PARTY_ACTION_CHOOSE_FAINTED_MON)
+        {
+            chosenMonId = gSelectedMonPartyId = GetFirstFaintedPartyIndex(battler);
+        }
+        else if (gBattleStruct->monToSwitchIntoId[battler] >= PARTY_SIZE || !IsValidForBattle(&party[gBattleStruct->monToSwitchIntoId[battler]]))
+        {
+            chosenMonId = GetMostSuitableMonToSwitchInto(battler, SWITCH_AFTER_KO);
+            if (chosenMonId == PARTY_SIZE || !IsValidForBattle(&party[chosenMonId])) // just switch to the next mon
+            {
+                enum BattlerId battler1 = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+                enum BattlerId battler2 = IsDoubleBattle() ? GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT) : battler1;
+
+                for (chosenMonId = 0; chosenMonId < PARTY_SIZE; chosenMonId++)
+                {
+                    if (GetMonData(&party[chosenMonId], MON_DATA_HP) != 0
+                        && !(chosenMonId == gBattlerPartyIndexes[battler1] && BattlersShareParty(battler, battler1))
+                        && !(chosenMonId == gBattlerPartyIndexes[battler2] && BattlersShareParty(battler, battler2)))
+                    {
+                        break;
+                    }
+                }
+            }
+            gBattleStruct->monToSwitchIntoId[battler] = chosenMonId;
+        }
+        else // Mon to switch out has been already chosen.
+        {
+            chosenMonId = gBattleStruct->monToSwitchIntoId[battler];
+        }
+        gBattleStruct->AI_monToSwitchIntoId[battler] = PARTY_SIZE;
+        #if TESTING
+        TestRunner_Battle_CheckSwitch(battler, chosenMonId);
+        #endif
+        BtlController_EmitChosenMonReturnValue(battler, B_COMM_TO_ENGINE, chosenMonId, NULL);
         BtlController_Complete(battler);
     }
     else
