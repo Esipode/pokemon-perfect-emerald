@@ -402,6 +402,10 @@ static bool8 WipeSectors(u32 sectorBits)
 {
     u16 i;
 
+    // Defensive mask: gDamagedSaveSectors should never set bits for the
+    // achievement sectors, but never let a wipe reach them regardless.
+    sectorBits &= (1 << NUM_SAVE_SLOT_SECTORS) - 1;
+
     for (i = 0; i < SECTORS_COUNT; i++)
         if ((sectorBits & (1 << i)) && !WipeSector(i))
             sectorBits &= ~(1 << i);

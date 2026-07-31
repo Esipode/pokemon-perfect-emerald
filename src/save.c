@@ -82,6 +82,17 @@ STATIC_ASSERT(sizeof(struct SaveBlock2) <= SECTOR_DATA_SIZE, SaveBlock2FreeSpace
 STATIC_ASSERT(sizeof(struct SaveBlock1) <= SECTOR_DATA_SIZE * (SECTOR_ID_SAVEBLOCK1_END - SECTOR_ID_SAVEBLOCK1_START + 1), SaveBlock1FreeSpace);
 STATIC_ASSERT(sizeof(struct PokemonStorage) <= SECTOR_DATA_SIZE * (SECTOR_ID_PKMN_STORAGE_END - SECTOR_ID_PKMN_STORAGE_START + 1), PokemonStorageFreeSpace);
 
+STATIC_ASSERT(SECTOR_ID_ACHIEVEMENTS >= NUM_SAVE_SLOT_SECTORS, AchievementSectorOutsideSaveSlots);
+
+// The achievement profile lives outside the save slots and must survive every
+// save wipe. Nothing in the save-slot code path may erase it.
+static u16 EraseSaveSlotSector(u16 sector)
+{
+    if (sector >= NUM_SAVE_SLOT_SECTORS)
+        return 0x80FF; // refuse
+    return EraseFlashSector(sector);
+}
+
 COMMON_DATA u16 gLastWrittenSector = 0;
 COMMON_DATA u32 gLastSaveCounter = 0;
 COMMON_DATA u16 gLastKnownGoodSector = 0;
@@ -102,8 +113,8 @@ void ClearSaveData(void)
 
     // Erases the two save slots only. Sectors at and above SECTOR_ID_ACHIEVEMENTS
     // (30-31) are deliberately preserved.
-    for (i = 0; i < NUM_SAVE_SLOTS * NUM_SECTORS_PER_SLOT; i++)
-        EraseFlashSector(i);
+    for (i = 0; i < NUM_SAVE_SLOT_SECTORS; i++)
+        EraseSaveSlotSector(i);
 }
 
 void Save_ResetSaveCounters(void)
@@ -323,7 +334,7 @@ static u8 HandleReplaceSector(u16 sectorId, const struct SaveSectorLocation *loc
     gReadWriteSector->checksum = CalculateChecksum(data, size);
 
     // Erase old save data
-    EraseFlashSector(sector);
+    EraseSaveSlotSector(sector);
 
     status = SAVE_STATUS_OK;
 

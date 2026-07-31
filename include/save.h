@@ -27,6 +27,10 @@
 #define SECTOR_ID_ACHIEVEMENTS_BACKUP 31
 #define SECTORS_COUNT                 32
 
+// Sectors 0 - (NUM_SAVE_SLOT_SECTORS - 1) belong to the two rotating save slots.
+// Nothing in that range may ever touch SECTOR_ID_ACHIEVEMENTS or its backup.
+#define NUM_SAVE_SLOT_SECTORS (NUM_SAVE_SLOTS * NUM_SECTORS_PER_SLOT) // 30
+
 #define NUM_HOF_SECTORS 2
 
 #define SAVE_STATUS_EMPTY    0
