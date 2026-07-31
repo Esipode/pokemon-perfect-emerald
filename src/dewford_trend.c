@@ -61,15 +61,18 @@ enum {
     SORT_MODE_FULL,
 };
 
+#if FREE_DEWFORD_TRENDS == FALSE
 static void SortTrends(struct DewfordTrend *, u16, u8);
 static bool8 CompareTrends(struct DewfordTrend *, struct DewfordTrend *, u8);
 static void SeedTrendRng(struct DewfordTrend *);
 static bool8 IsPhraseInSavedTrends(u16 *);
 static bool8 IsEasyChatPairEqual(u16 *, u16 *);
 static s16 GetSavedTrendIndex(struct DewfordTrend *, struct DewfordTrend *, u16);
+#endif //FREE_DEWFORD_TRENDS
 
 void InitDewfordTrend(void)
 {
+#if FREE_DEWFORD_TRENDS == FALSE
     u16 i;
 
     for (i = 0; i < SAVED_TRENDS_COUNT; i++)
@@ -85,10 +88,12 @@ void InitDewfordTrend(void)
         SeedTrendRng(&(gSaveBlock1Ptr->dewfordTrends[i]));
     }
     SortTrends(gSaveBlock1Ptr->dewfordTrends, SAVED_TRENDS_COUNT, SORT_MODE_NORMAL);
+#endif //FREE_DEWFORD_TRENDS
 }
 
 void UpdateDewfordTrendPerDay(u16 days)
 {
+#if FREE_DEWFORD_TRENDS == FALSE
     u16 i;
 
     if (days != 0)
@@ -142,6 +147,7 @@ void UpdateDewfordTrendPerDay(u16 days)
         }
         SortTrends(gSaveBlock1Ptr->dewfordTrends, SAVED_TRENDS_COUNT, SORT_MODE_NORMAL);
     }
+#endif //FREE_DEWFORD_TRENDS
 }
 
 // Returns TRUE if the current trendy phrase was successfully changed to the given phrase
@@ -150,6 +156,7 @@ void UpdateDewfordTrendPerDay(u16 days)
 // phrase is always saved in gSaveBlock1Ptr->dewfordTrends
 bool8 TrySetTrendyPhrase(u16 *phrase)
 {
+#if FREE_DEWFORD_TRENDS == FALSE
     struct DewfordTrend trend = {0};
     u16 i;
 
@@ -203,9 +210,14 @@ bool8 TrySetTrendyPhrase(u16 *phrase)
         TryPutTrendWatcherOnAir(phrase);
     }
     return FALSE;
+#else
+    // Nothing tracks trendiness; the submitted phrase is politely declined every time.
+    return FALSE;
+#endif //FREE_DEWFORD_TRENDS
 }
 
 
+#if FREE_DEWFORD_TRENDS == FALSE
 static void SortTrends(struct DewfordTrend *trends, u16 numTrends, u8 mode)
 {
     u16 i;
@@ -222,12 +234,14 @@ static void SortTrends(struct DewfordTrend *trends, u16 numTrends, u8 mode)
         }
     }
 }
+#endif //FREE_DEWFORD_TRENDS
 
 #define SAVED_TRENDS_SIZE (sizeof(struct DewfordTrend) * SAVED_TRENDS_COUNT)
 #define BUFFER_SIZE max(SAVED_TRENDS_SIZE * MAX_LINK_PLAYERS, 0x100) // More space was allocated than needed
 
 void ReceiveDewfordTrendData(struct DewfordTrend *linkedTrends, size_t size, u8 unused)
 {
+#if FREE_DEWFORD_TRENDS == FALSE
     u16 i, j, numTrends, players;
     struct DewfordTrend *linkedTrendsBuffer, *savedTrendsBuffer, *src, *dst, *temp;
 
@@ -285,18 +299,25 @@ void ReceiveDewfordTrendData(struct DewfordTrend *linkedTrends, size_t size, u8 
 
     Free(linkedTrendsBuffer);
     Free(savedTrendsBuffer);
+#endif //FREE_DEWFORD_TRENDS
 }
 
 void BufferTrendyPhraseString(void)
 {
+#if FREE_DEWFORD_TRENDS == FALSE
     struct DewfordTrend *trend = &gSaveBlock1Ptr->dewfordTrends[gSpecialVar_0x8004];
     ConvertEasyChatWordsToString(gStringVar1, trend->words, 2, 1);
+#else
+    static const u16 sGenericTrendyPhrase[2] = { EC_WORD_POKEMON, EC_WORD_FRIEND };
+    ConvertEasyChatWordsToString(gStringVar1, sGenericTrendyPhrase, 2, 1);
+#endif //FREE_DEWFORD_TRENDS
 }
 
 // Returns TRUE if the current trendy phrase is "boring", FALSE otherwise
 // This only influences the comment of an NPC inside the Dewford Town Hall
 void IsTrendyPhraseBoring(void)
 {
+#if FREE_DEWFORD_TRENDS == FALSE
     bool16 result = FALSE;
 
     do
@@ -311,6 +332,9 @@ void IsTrendyPhraseBoring(void)
     } while (0);
 
     gSpecialVar_Result = result;
+#else
+    gSpecialVar_Result = FALSE;
+#endif //FREE_DEWFORD_TRENDS
 }
 
 // A painting hangs on the wall of the Dewford Hall
@@ -319,9 +343,14 @@ void IsTrendyPhraseBoring(void)
 // See DewfordTown_Hall_EventScript_Painting
 void GetDewfordHallPaintingNameIndex(void)
 {
+#if FREE_DEWFORD_TRENDS == FALSE
     gSpecialVar_Result = (gSaveBlock1Ptr->dewfordTrends[0].words[0] + gSaveBlock1Ptr->dewfordTrends[0].words[1]) & 7;
+#else
+    gSpecialVar_Result = 0;
+#endif //FREE_DEWFORD_TRENDS
 }
 
+#if FREE_DEWFORD_TRENDS == FALSE
 // Returns TRUE if a > b (a is "trendier" than b), FALSE if a < b (b is "trendier" than a)
 // How one trend is compared to the other depends on the mode
 // In SORT_MODE_FULL if the trends are equal then TRUE is always returned, otherwise TRUE or FALSE is returned randomly
@@ -417,3 +446,4 @@ static s16 GetSavedTrendIndex(struct DewfordTrend *savedTrends, struct DewfordTr
     }
     return -1;
 }
+#endif //FREE_DEWFORD_TRENDS

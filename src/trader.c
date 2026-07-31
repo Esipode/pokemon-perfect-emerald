@@ -5,6 +5,7 @@
 #include "decoration_inventory.h"
 #include "event_data.h"
 #include "main.h"
+#include "mauville_old_man.h"
 #include "menu.h"
 #include "menu_helpers.h"
 #include "script.h"
@@ -14,6 +15,12 @@
 #include "strings.h"
 #include "task.h"
 #include "script_menu.h"
+
+#if FREE_OLD_MAN == FALSE
+#define OLD_MAN_PTR (&gSaveBlock1Ptr->oldMan)
+#else
+#define OLD_MAN_PTR (&gOldManBuffer)
+#endif //FREE_OLD_MAN
 
 static const u8 *const sDefaultTraderNames[NUM_TRADER_ITEMS] =
 {
@@ -34,7 +41,7 @@ static const u8 sDefaultTraderDecorations[NUM_TRADER_ITEMS] =
 void TraderSetup(void)
 {
     u8 i;
-    struct MauvilleOldManTrader *trader = &gSaveBlock1Ptr->oldMan.trader;
+    struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;
 
     trader->id = MAUVILLE_MAN_TRADER;
     trader->alreadyTraded = FALSE;
@@ -49,7 +56,7 @@ void TraderSetup(void)
 
 void Trader_ResetFlag(void)
 {
-    struct MauvilleOldManTrader *trader = &gSaveBlock1Ptr->oldMan.trader;
+    struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;
     trader->alreadyTraded = FALSE;
 }
 
@@ -59,7 +66,7 @@ void CreateAvailableDecorationsMenu(u8 taskId)
 {
     u8 i;
     s16 *data = gTasks[taskId].data;
-    struct MauvilleOldManTrader *trader = &gSaveBlock1Ptr->oldMan.trader;
+    struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;
     struct WindowTemplate windowTemplate = {
         .bg = 0,
         .tilemapLeft = 1,
@@ -114,7 +121,7 @@ void Task_BufferDecorSelectionAndCloseWindow(u8 taskId, u8 decorationId)
 
 void Task_HandleGetDecorationMenuInput(u8 taskId)
 {
-    struct MauvilleOldManTrader *trader = &gSaveBlock1Ptr->oldMan.trader;
+    struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;
     s8 input = Menu_ProcessInput();
 
     switch (input)
@@ -138,7 +145,7 @@ void Task_HandleGetDecorationMenuInput(u8 taskId)
 
 void GetTraderTradedFlag(void)
 {
-    struct MauvilleOldManTrader *trader = &gSaveBlock1Ptr->oldMan.trader;
+    struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;
     gSpecialVar_Result = trader->alreadyTraded;
 }
 
@@ -198,7 +205,7 @@ void ExitTraderMenu(u8 taskId)
 
 void TraderDoDecorationTrade(void)
 {
-    struct MauvilleOldManTrader *trader = &gSaveBlock1Ptr->oldMan.trader;
+    struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;
 
     DecorationRemove(gSpecialVar_0x8006);
     DecorationAdd(gSpecialVar_0x8004);

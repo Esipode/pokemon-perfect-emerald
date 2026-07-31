@@ -1072,9 +1072,15 @@ static void SaveBattleTowerRecord(void)
 
     for (i = 0; i < EASY_CHAT_BATTLE_WORDS_COUNT; i++)
     {
+#if FREE_EASY_CHAT_PROFILE == FALSE
         playerRecord->greeting[i] = gSaveBlock1Ptr->easyChatBattleStart[i];
         playerRecord->speechWon[i] = gSaveBlock1Ptr->easyChatBattleWon[i];
         playerRecord->speechLost[i] = gSaveBlock1Ptr->easyChatBattleLost[i];
+#else
+        playerRecord->greeting[i] = EC_EMPTY_WORD;
+        playerRecord->speechWon[i] = EC_EMPTY_WORD;
+        playerRecord->speechLost[i] = EC_EMPTY_WORD;
+#endif //FREE_EASY_CHAT_PROFILE
     }
 
     for (i = 0; i < MAX_FRONTIER_PARTY_SIZE; i++)

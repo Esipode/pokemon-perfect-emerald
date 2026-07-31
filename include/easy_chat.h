@@ -135,5 +135,6 @@ u16 GetRandomEasyChatWordFromUnlockedGroup(u16 groupId);
 void DoEasyChatScreen(u8 type, u16 *words, MainCallback exitCallback, u8 displayedPersonType);
 void InitQuestionnaireWords(void);
 void UnlockTrendySaying(u8 wordIndex);
+u16 GetDefaultEasyChatProfileWord(u8 idx);
 
 #endif // GUARD_EASYCHAT_H

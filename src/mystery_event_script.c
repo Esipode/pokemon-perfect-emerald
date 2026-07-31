@@ -100,6 +100,7 @@ void SetMysteryEventScriptStatus(u32 status)
     sMysteryEventScriptContext.mStatus = status;
 }
 
+#if FREE_RECORD_MIXING_GIFT == FALSE
 static int CalcRecordMixingGiftChecksum(void)
 {
     unsigned int i;
@@ -146,9 +147,11 @@ static void SetRecordMixingGift(u8 unk, u8 quantity, enum Item itemId)
         gSaveBlock1Ptr->recordMixingGift.checksum = CalcRecordMixingGiftChecksum();
     }
 }
+#endif //FREE_RECORD_MIXING_GIFT
 
 u16 GetRecordMixingGift(void)
 {
+#if FREE_RECORD_MIXING_GIFT == FALSE
     struct RecordMixingGiftData *data = &gSaveBlock1Ptr->recordMixingGift.data;
 
     if (!IsRecordMixingGiftValid())
@@ -167,6 +170,9 @@ u16 GetRecordMixingGift(void)
 
         return itemId;
     }
+#else
+    return 0;
+#endif //FREE_RECORD_MIXING_GIFT
 }
 
 bool8 MEScrCmd_end(struct ScriptContext *ctx)
@@ -306,7 +312,9 @@ bool8 MEScrCmd_setrecordmixinggift(struct ScriptContext *ctx)
     u8 unk = ScriptReadByte(ctx);
     u8 quantity = ScriptReadByte(ctx);
     enum Item itemId = ScriptReadHalfword(ctx);
+#if FREE_RECORD_MIXING_GIFT == FALSE
     SetRecordMixingGift(unk, quantity, itemId);
+#endif //FREE_RECORD_MIXING_GIFT
     return FALSE;
 }
 

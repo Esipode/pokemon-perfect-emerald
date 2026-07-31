@@ -84,6 +84,22 @@ union PlayerRecord
     struct PlayerRecordEmerald emerald;
 };
 
+// Record mixing is a link-only feature; when the FREE_* toggles below remove
+// their save data, these dummy (always-empty) buffers keep the record mixing
+// packet-copying logic below compiling without special-casing every site.
+#if FREE_SECRET_BASES == TRUE
+static EWRAM_DATA struct SecretBase sDummySecretBasesSave[SECRET_BASES_COUNT] = {0};
+#endif //FREE_SECRET_BASES
+#if FREE_OLD_MAN == TRUE
+static EWRAM_DATA OldMan sDummyOldManSave = {0};
+#endif //FREE_OLD_MAN
+#if FREE_DEWFORD_TRENDS == TRUE
+static EWRAM_DATA struct DewfordTrend sDummyDewfordTrendsSave[SAVED_TRENDS_COUNT] = {0};
+#endif //FREE_DEWFORD_TRENDS
+#if FREE_LILYCOVE_LADY == TRUE
+static EWRAM_DATA LilycoveLady sDummyLilycoveLadySave = {0};
+#endif //FREE_LILYCOVE_LADY
+
 static bool8 sReadyToReceive;
 static struct SecretBase *sSecretBasesSave;
 static TVShow *sTvShowsSave;
@@ -173,14 +189,30 @@ void RecordMixingPlayerSpotTriggered(void)
 // these variables were const in R/S, but had to become changeable because of saveblocks changing RAM position
 static void SetSrcLookupPointers(void)
 {
+#if FREE_SECRET_BASES == FALSE
     sSecretBasesSave = gSaveBlock1Ptr->secretBases;
+#else
+    sSecretBasesSave = sDummySecretBasesSave;
+#endif //FREE_SECRET_BASES
     sTvShowsSave = gSaveBlock1Ptr->tvShows;
     sPokeNewsSave = gSaveBlock1Ptr->pokeNews;
+#if FREE_OLD_MAN == FALSE
     sOldManSave = &gSaveBlock1Ptr->oldMan;
+#else
+    sOldManSave = &sDummyOldManSave;
+#endif //FREE_OLD_MAN
+#if FREE_DEWFORD_TRENDS == FALSE
     sDewfordTrendsSave = gSaveBlock1Ptr->dewfordTrends;
+#else
+    sDewfordTrendsSave = sDummyDewfordTrendsSave;
+#endif //FREE_DEWFORD_TRENDS
     sRecordMixMailSave = &sRecordMixMail;
     sBattleTowerSave = &gSaveBlock2Ptr->frontier.towerPlayer;
+#if FREE_LILYCOVE_LADY == FALSE
     sLilycoveLadySave = &gSaveBlock1Ptr->lilycoveLady;
+#else
+    sLilycoveLadySave = &sDummyLilycoveLadySave;
+#endif //FREE_LILYCOVE_LADY
     sApprenticesSave = gSaveBlock2Ptr->apprentices;
     sBattleTowerSave_Duplicate = &gSaveBlock2Ptr->frontier.towerPlayer;
 }

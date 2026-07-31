@@ -729,8 +729,13 @@ static void SetPlayerCardData(struct TrainerCard *trainerCard, u8 cardType)
 
     trainerCard->money = GetMoney(&gSaveBlock1Ptr->money);
 
+#if FREE_EASY_CHAT_PROFILE == FALSE
     for (i = 0; i < TRAINER_CARD_PROFILE_LENGTH; i++)
         trainerCard->easyChatProfile[i] = gSaveBlock1Ptr->easyChatProfile[i];
+#else
+    for (i = 0; i < TRAINER_CARD_PROFILE_LENGTH; i++)
+        trainerCard->easyChatProfile[i] = GetDefaultEasyChatProfileWord(i);
+#endif //FREE_EASY_CHAT_PROFILE
 
     StringCopy(trainerCard->playerName, gSaveBlock2Ptr->playerName);
 

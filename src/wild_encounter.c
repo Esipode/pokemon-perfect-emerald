@@ -136,7 +136,12 @@ bool8 CheckFeebasAtCoords(s16 x, s16 y)
         if (Random() % 100 > 49)
             return FALSE;
 
+#if FREE_DEWFORD_TRENDS == FALSE
         FeebasSeedRng(gSaveBlock1Ptr->dewfordTrends[0].rand);
+#else
+        // No persistent Dewford rand to seed with; fall back to a stable per-save value.
+        FeebasSeedRng(GetTrainerId(gSaveBlock2Ptr->playerTrainerId) & 0xFFFF);
+#endif //FREE_DEWFORD_TRENDS
 
         // Assign each Feebas spot to a random fishing spot.
         // Randomness is fixed depending on the seed above.

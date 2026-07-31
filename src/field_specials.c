@@ -1424,7 +1424,11 @@ u16 GetSlotMachineId(void)
         SLOT_MACHINE_LUCKIEST
     };
 
+#if FREE_DEWFORD_TRENDS == FALSE
     u32 rnd = gSaveBlock1Ptr->dewfordTrends[0].trendiness + gSaveBlock1Ptr->dewfordTrends[0].rand + sSlotMachineRandomSeeds[gSpecialVar_0x8004];
+#else
+    u32 rnd = Random() + sSlotMachineRandomSeeds[gSpecialVar_0x8004];
+#endif //FREE_DEWFORD_TRENDS
     if (IsPokeNewsActive(POKENEWS_GAME_CORNER))
         return sSlotMachineServiceDayIds[rnd % SLOT_MACHINE_COUNT];
 

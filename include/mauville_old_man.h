@@ -2,6 +2,9 @@
 #define GUARD_MAUVILLE_OLD_MAN_H
 
 extern struct BardSong gBardSong;
+#if FREE_OLD_MAN == TRUE
+extern union OldMan gOldManBuffer;
+#endif //FREE_OLD_MAN
 
 void SetMauvilleOldMan(void);
 u8 GetCurrentMauvilleOldMan(void);

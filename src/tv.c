@@ -912,6 +912,7 @@ u8 GetNextActiveShowIfMassOutbreak(void)
 
 void ResetGabbyAndTy(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     gSaveBlock1Ptr->gabbyAndTyData.mon1 = SPECIES_NONE;
     gSaveBlock1Ptr->gabbyAndTyData.mon2 = SPECIES_NONE;
     gSaveBlock1Ptr->gabbyAndTyData.lastMove = MOVE_NONE;
@@ -929,10 +930,12 @@ void ResetGabbyAndTy(void)
     gSaveBlock1Ptr->gabbyAndTyData.valB_4 = 0;
     gSaveBlock1Ptr->gabbyAndTyData.mapnum = 0;
     gSaveBlock1Ptr->gabbyAndTyData.battleNum = 0;
+#endif //FREE_GABBY_AND_TY
 }
 
 void GabbyAndTyBeforeInterview(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     u8 i;
 
     gSaveBlock1Ptr->gabbyAndTyData.mon1 = gBattleResults.playerMon1Species;
@@ -965,40 +968,57 @@ void GabbyAndTyBeforeInterview(void)
     TakeGabbyAndTyOffTheAir();
     if (gSaveBlock1Ptr->gabbyAndTyData.lastMove == MOVE_NONE)
         FlagSet(FLAG_TEMP_SKIP_GABBY_INTERVIEW);
+#else
+    // Nothing to report on; always skip straight past the interview scene.
+    FlagSet(FLAG_TEMP_SKIP_GABBY_INTERVIEW);
+#endif //FREE_GABBY_AND_TY
 }
 
 void GabbyAndTyAfterInterview(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     gSaveBlock1Ptr->gabbyAndTyData.battleTookMoreThanOneTurn2 = gSaveBlock1Ptr->gabbyAndTyData.battleTookMoreThanOneTurn;
     gSaveBlock1Ptr->gabbyAndTyData.playerLostAMon2 = gSaveBlock1Ptr->gabbyAndTyData.playerLostAMon;
     gSaveBlock1Ptr->gabbyAndTyData.playerUsedHealingItem2 = gSaveBlock1Ptr->gabbyAndTyData.playerUsedHealingItem;
     gSaveBlock1Ptr->gabbyAndTyData.playerThrewABall2 = gSaveBlock1Ptr->gabbyAndTyData.playerThrewABall;
     gSaveBlock1Ptr->gabbyAndTyData.onAir = TRUE;
     gSaveBlock1Ptr->gabbyAndTyData.mapnum = gMapHeader.regionMapSectionId;
+#endif //FREE_GABBY_AND_TY
     IncrementGameStat(GAME_STAT_GOT_INTERVIEWED);
 }
 
 static void TakeGabbyAndTyOffTheAir(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     gSaveBlock1Ptr->gabbyAndTyData.onAir = FALSE;
+#endif //FREE_GABBY_AND_TY
 }
 
 // See gabby_and_ty.inc for details
 u8 GabbyAndTyGetBattleNum(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     if (gSaveBlock1Ptr->gabbyAndTyData.battleNum > 5)
         return (gSaveBlock1Ptr->gabbyAndTyData.battleNum % 3) + 6;
 
     return gSaveBlock1Ptr->gabbyAndTyData.battleNum;
+#else
+    return 1;
+#endif //FREE_GABBY_AND_TY
 }
 
 bool8 IsGabbyAndTyShowOnTheAir(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     return gSaveBlock1Ptr->gabbyAndTyData.onAir;
+#else
+    return FALSE;
+#endif //FREE_GABBY_AND_TY
 }
 
 bool8 GabbyAndTyGetLastQuote(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     if (gSaveBlock1Ptr->gabbyAndTyData.quote[0] == EC_EMPTY_WORD)
     {
         return FALSE;
@@ -1006,10 +1026,14 @@ bool8 GabbyAndTyGetLastQuote(void)
     CopyEasyChatWord(gStringVar1, gSaveBlock1Ptr->gabbyAndTyData.quote[0]);
     gSaveBlock1Ptr->gabbyAndTyData.quote[0] = -1;
     return TRUE;
+#else
+    return FALSE;
+#endif //FREE_GABBY_AND_TY
 }
 
 u8 GabbyAndTyGetLastBattleTrivia(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     if (!gSaveBlock1Ptr->gabbyAndTyData.battleTookMoreThanOneTurn2)
         return 1;
 
@@ -1023,6 +1047,9 @@ u8 GabbyAndTyGetLastBattleTrivia(void)
         return 4;
 
     return 0;
+#else
+    return 1;
+#endif //FREE_GABBY_AND_TY
 }
 
 // See gabby_and_ty.inc for details
@@ -1974,7 +2001,11 @@ static void SecretBaseVisit_CalculateDecorationData(TVShow *show)
     // Count (and save) the unique decorations in the base
     for (u32 i = 0; i < DECOR_MAX_SECRET_BASE; i++)
     {
+#if FREE_SECRET_BASES == FALSE
         decoration = gSaveBlock1Ptr->secretBases[0].decorations[i];
+#else
+        decoration = DECOR_NONE;
+#endif //FREE_SECRET_BASES
         if (decoration != DECOR_NONE)
         {
             // Search for an empty spot to save decoration
@@ -2294,8 +2325,13 @@ void TryPutTrainerFanClubOnAir(void)
         show->trainerFanClub.kind = TVSHOW_TRAINER_FAN_CLUB;
         show->trainerFanClub.active = FALSE; // NOTE: Show is not active until passed via Record Mix.
         StringCopy(show->trainerFanClub.playerName, gSaveBlock2Ptr->playerName);
+#if FREE_EASY_CHAT_PROFILE == FALSE
         show->trainerFanClub.words[0] = gSaveBlock1Ptr->easyChatProfile[0];
         show->trainerFanClub.words[1] = gSaveBlock1Ptr->easyChatProfile[1];
+#else
+        show->trainerFanClub.words[0] = GetDefaultEasyChatProfileWord(0);
+        show->trainerFanClub.words[1] = GetDefaultEasyChatProfileWord(1);
+#endif //FREE_EASY_CHAT_PROFILE
         StorePlayerIdInRecordMixShow(show);
         show->trainerFanClub.language = gGameLanguage;
     }
@@ -2418,10 +2454,14 @@ void TryPutSecretBaseSecretsOnAir(void)
             show->secretBaseSecrets.flags = VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) + (VarGet(VAR_SECRET_BASE_HIGH_TV_FLAGS) << 16);
             StorePlayerIdInRecordMixShow(show);
             show->secretBaseSecrets.language = gGameLanguage;
+#if FREE_SECRET_BASES == FALSE
             if (show->secretBaseSecrets.language == LANGUAGE_JAPANESE || gSaveBlock1Ptr->secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].language == LANGUAGE_JAPANESE)
                 show->secretBaseSecrets.baseOwnersNameLanguage = LANGUAGE_JAPANESE;
             else
                 show->secretBaseSecrets.baseOwnersNameLanguage = gSaveBlock1Ptr->secretBases[VarGet(VAR_CURRENT_SECRET_BASE)].language;
+#else
+            show->secretBaseSecrets.baseOwnersNameLanguage = show->secretBaseSecrets.language;
+#endif //FREE_SECRET_BASES
         }
     }
 }
@@ -5383,6 +5423,7 @@ static void DoTVShow3CheersForPokeblocks(void)
 
 void DoTVShowInSearchOfTrainers(void)
 {
+#if FREE_GABBY_AND_TY == FALSE
     u8 state;
 
     gSpecialVar_Result = FALSE;
@@ -5433,6 +5474,10 @@ void DoTVShowInSearchOfTrainers(void)
         break;
     }
     ShowFieldMessage(sTVInSearchOfTrainersTextGroup[state]);
+#else
+    // Show can never be put on air when FREE_GABBY_AND_TY is on; unreachable.
+    TVShowDone();
+#endif //FREE_GABBY_AND_TY
 }
 
 static void DoTVShowPokemonAngler(void)

@@ -1142,7 +1142,9 @@ struct SaveBlock1
     /*0x139C*/ u16 vars[VARS_COUNT];
     /*0x159C*/ u32 gameStats[NUM_GAME_STATS];
     /*0x169C*/ struct BerryTree berryTrees[BERRY_TREES_COUNT];
+#if FREE_SECRET_BASES == FALSE
     /*0x1A9C*/ struct SecretBase secretBases[SECRET_BASES_COUNT];
+#endif //FREE_SECRET_BASES
     /*0x271C*/ u8 playerRoomDecorations[DECOR_MAX_PLAYERS_HOUSE];
     /*0x2728*/ u8 playerRoomDecorationPositions[DECOR_MAX_PLAYERS_HOUSE];
     /*0x2734*/ u8 decorationDesks[10];
@@ -1166,16 +1168,24 @@ struct SaveBlock1
     /*0x2BA0*/ u8 outbreakUnused3;
     /*0x2BA1*/ u8 outbreakPokemonProbability;
     /*0x2BA2*/ u16 outbreakDaysLeft;
+#if FREE_GABBY_AND_TY == FALSE
     /*0x2BA4*/ struct GabbyAndTyData gabbyAndTyData;
+#endif //FREE_GABBY_AND_TY
+#if FREE_EASY_CHAT_PROFILE == FALSE
     /*0x2BB0*/ u16 easyChatProfile[EASY_CHAT_BATTLE_WORDS_COUNT];
     /*0x2BBC*/ u16 easyChatBattleStart[EASY_CHAT_BATTLE_WORDS_COUNT];
     /*0x2BC8*/ u16 easyChatBattleWon[EASY_CHAT_BATTLE_WORDS_COUNT];
     /*0x2BD4*/ u16 easyChatBattleLost[EASY_CHAT_BATTLE_WORDS_COUNT];
+#endif //FREE_EASY_CHAT_PROFILE
     /*0x2BE0*/ struct Mail mail[MAIL_COUNT];
     /*0x2E20*/ u8 unlockedTrendySayings[NUM_TRENDY_SAYING_BYTES]; // Bitfield for unlockable Easy Chat words in EC_GROUP_TRENDY_SAYING
     /*0x2E25*/ //u8 padding5[3];
+#if FREE_OLD_MAN == FALSE
     /*0x2E28*/ OldMan oldMan;
+#endif //FREE_OLD_MAN
+#if FREE_DEWFORD_TRENDS == FALSE
     /*0x2e64*/ struct DewfordTrend dewfordTrends[SAVED_TRENDS_COUNT];
+#endif //FREE_DEWFORD_TRENDS
     /*0x2e90*/ struct ContestWinner contestWinners[NUM_CONTEST_WINNERS]; // see CONTEST_WINNER_*
     /*0x3030*/ struct DayCare daycare;
 #if FREE_LINK_BATTLE_RECORDS == FALSE
@@ -1183,8 +1193,10 @@ struct SaveBlock1
 #endif //FREE_LINK_BATTLE_RECORDS
     /*0x31A8*/ u8 giftRibbons[NUM_GIFT_RIBBONS];
                u8 padding[4];
+#if FREE_EXTERNAL_EVENT_DATA == FALSE
     /*0x31B3*/ struct ExternalEventData externalEventData;
     /*0x31C7*/ struct ExternalEventFlags externalEventFlags;
+#endif //FREE_EXTERNAL_EVENT_DATA
     /*0x31DC*/ struct Roamer roamer[ROAMER_COUNT];
 #if FREE_ENIGMA_BERRY == FALSE
     /*0x31F8*/ struct EnigmaBerry enigmaBerry;
@@ -1200,8 +1212,12 @@ struct SaveBlock1
 #if FREE_MYSTERY_EVENT_BUFFERS == FALSE
     /*0x3???*/ struct RamScript ramScript;
 #endif //FREE_MYSTERY_EVENT_BUFFERS
+#if FREE_RECORD_MIXING_GIFT == FALSE
     /*0x3???*/ struct RecordMixingGift recordMixingGift;
+#endif //FREE_RECORD_MIXING_GIFT
+#if FREE_LILYCOVE_LADY == FALSE
     /*0x3???*/ LilycoveLady lilycoveLady;
+#endif //FREE_LILYCOVE_LADY
     /*0x3???*/ struct TrainerNameRecord trainerNameRecords[4]; // ORIGINALLY 20
 #if FREE_UNION_ROOM_CHAT == FALSE
     /*0x3???*/ u8 registeredTexts[UNION_ROOM_KB_ROW_COUNT][21];

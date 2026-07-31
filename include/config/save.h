@@ -14,7 +14,15 @@
 #define FREE_ENIGMA_BERRY                   TRUE   // Frees up E-Reader Enigma Berry data (52 bytes).
 #define FREE_LINK_BATTLE_RECORDS            TRUE   // Frees up link battle record data (88 bytes).
 #define FREE_MYSTERY_GIFT                   TRUE   // Frees up Mystery Gift data (876 bytes).
-                                            // SaveBlock1 total: 2516 bytes
+#define FREE_EASY_CHAT_PROFILE              TRUE   // Frees up easyChatProfile and easyChatBattleStart/Won/Lost (48 bytes).
+#define FREE_DEWFORD_TRENDS                 TRUE   // Frees up Dewford Trend rumor data (40 bytes).
+#define FREE_GABBY_AND_TY                   TRUE   // Frees up Gabby and Ty interview data (12 bytes).
+#define FREE_OLD_MAN                        TRUE   // Frees up Mauville Old Man data (64 bytes).
+#define FREE_LILYCOVE_LADY                  TRUE   // Frees up Lilycove Lady data (48 bytes).
+#define FREE_SECRET_BASES                   TRUE   // Frees up Secret Base data (208 bytes).
+#define FREE_EXTERNAL_EVENT_DATA            TRUE   // Frees up external (e-Reader) event data and flags (41 bytes).
+#define FREE_RECORD_MIXING_GIFT             TRUE   // Frees up record mixing gift data (8 bytes).
+                                            // SaveBlock1 total: 2985 bytes
 // SaveBlock2 configs
 #define FREE_BATTLE_TOWER_E_READER          TRUE   // Frees up Battle Tower E-Reader data (188 bytes).
 #define FREE_POKEMON_JUMP                   TRUE   // Frees up Pokémon Jump data (16 bytes).
@@ -22,6 +30,6 @@
 #define FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2    TRUE   // Free up unused Pokédex seen flags (108 bytes).
                                             // SaveBlock2 total: 1274 bytes
 
-                                            // Grand Total: 3790
+                                            // Grand Total: 4259
 
 #endif // GUARD_CONFIG_SAVE_H
