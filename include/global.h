@@ -1094,6 +1094,16 @@ struct Bag
     struct ItemSlot berries[BAG_BERRIES_COUNT];
 };
 
+// design doc §17: per-run counters that achievement conditions read from.
+// Reset to zero every new game because ClearSav1 zeroes the whole SaveBlock1
+// (Stage 1.6). Deliberately just reserved space for now: named fields get
+// added here as Stage 2+ achievements need run-scoped tracking that isn't
+// already available elsewhere in the save block.
+struct AchievementRunData
+{
+    u8 reserved[64];
+};
+
 struct SaveBlock1
 {
     /*0x00*/ struct Coords16 pos;
@@ -1128,6 +1138,7 @@ struct SaveBlock1
     /*0x9C3*/ u8 autosaveModeEnabled;
     /*0x9C4*/ u8 difficulty;
     /*0x9C5*/ u8 achievementsBlocked; // design doc §1.5: set once debug mode is used, this playthrough can never earn achievements
+    struct AchievementRunData achievementRunData; // design doc §1.6
     /*0x9C6*/ u16 registeredLongItem; // Registered for long press of SELECT button
     /*0x9C2*/ u8 unused_9C2[2];
               u32 dailySeed;
