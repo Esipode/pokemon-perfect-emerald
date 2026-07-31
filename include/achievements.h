@@ -75,4 +75,16 @@ bool8 AchievementBoost_CanPurchase(u16 boostId);
 bool8 AchievementBoost_Purchase(u16 boostId);
 bool8 AchievementBoost_Reset(void);
 
+// Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
+// These bypass all the validation the real Stage 2/7/11 functions above will
+// eventually add (achievement points, boost costs/maxLevel, reset fee) since
+// none of that data exists yet -- they exist only to exercise the save/flush
+// plumbing while the rest of the system is still being built.
+void  Achievement_DebugSetCompleted(u16 achievementId, bool8 completed);
+void  Achievement_DebugSetPoints(u32 amount);
+void  Achievement_DebugSetBoostsUnlocked(bool8 unlocked);
+void  AchievementBoost_DebugSetLevel(u16 boostId, u8 level);
+void  AchievementBoost_DebugReset(void);
+void  Achievement_DebugMarkPlaythroughComplete(void);
+
 #endif // GUARD_ACHIEVEMENTS_H

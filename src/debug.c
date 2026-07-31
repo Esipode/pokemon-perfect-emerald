@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle.h"
 #include "battle_setup.h"
 #include "berry.h"
@@ -373,6 +374,20 @@ static void DebugAction_Player_Name(u8 taskId);
 static void DebugAction_Player_Gender(u8 taskId);
 static void DebugAction_Player_Id(u8 taskId);
 
+static void DebugAction_Achievements_GrantRevoke(u8 taskId);
+static void DebugAction_Achievements_GrantRevokeSelect(u8 taskId);
+static void DebugAction_Achievements_SetPoints(u8 taskId);
+static void DebugAction_Achievements_SetPointsSelect(u8 taskId);
+static void DebugAction_Achievements_ToggleBoostsUnlocked(u8 taskId);
+static void DebugAction_Achievements_SetBoostLevel(u8 taskId);
+static void DebugAction_Achievements_SetBoostLevelSelectId(u8 taskId);
+static void DebugAction_Achievements_SetBoostLevelSelectLevel(u8 taskId);
+static void DebugAction_Achievements_ResetBoosts(u8 taskId);
+static void DebugAction_Achievements_ToggleBoostsEnabled(u8 taskId);
+static void DebugAction_Achievements_MarkPlaythroughComplete(u8 taskId);
+static void DebugAction_Achievements_DumpProfile(u8 taskId);
+static void DebugAction_Achievements_DumpProfileInput(u8 taskId);
+
 extern const u8 Debug_FlagsNotSetOverworldConfigMessage[];
 extern const u8 Debug_FlagsNotSetBattleConfigMessage[];
 extern const u8 Debug_VarsNotSetBattleConfigMessage[];
@@ -709,6 +724,19 @@ static const struct DebugMenuOption sDebugMenu_Actions_ROMInfo2[] =
     { NULL }
 };
 
+static const struct DebugMenuOption sDebugMenu_Actions_Achievements[] =
+{
+    { COMPOUND_STRING("Grant/Revoke ID…"),      DebugAction_Achievements_GrantRevoke },
+    { COMPOUND_STRING("Set Points…"),           DebugAction_Achievements_SetPoints },
+    { COMPOUND_STRING("Toggle Boosts Unlocked"), DebugAction_Achievements_ToggleBoostsUnlocked },
+    { COMPOUND_STRING("Set Boost Level…"),      DebugAction_Achievements_SetBoostLevel },
+    { COMPOUND_STRING("Reset Boosts"),          DebugAction_Achievements_ResetBoosts },
+    { COMPOUND_STRING("Toggle Boost System"),   DebugAction_Achievements_ToggleBoostsEnabled },
+    { COMPOUND_STRING("Mark Playthrough Done"), DebugAction_Achievements_MarkPlaythroughComplete },
+    { COMPOUND_STRING("Dump Profile…"),         DebugAction_Achievements_DumpProfile },
+    { NULL }
+};
+
 static const struct DebugMenuOption sDebugMenu_Actions_Flags[] =
 {
     [DEBUG_FLAGVAR_MENU_ITEM_FLAGS]                = { COMPOUND_STRING("Set Flag XYZ…"),                     DebugAction_FlagsVars_Flags },
@@ -752,6 +780,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Main[] =
     { COMPOUND_STRING("Flags & Vars…"), DebugAction_OpenSubMenuFlagsVars, sDebugMenu_Actions_Flags, },
     { COMPOUND_STRING("Sound…"),        DebugAction_OpenSubMenu, sDebugMenu_Actions_Sound, },
     { COMPOUND_STRING("ROM Info…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_ROMInfo2, },
+    { COMPOUND_STRING("Achievements…"), DebugAction_OpenSubMenu, sDebugMenu_Actions_Achievements, },
     { COMPOUND_STRING("Cancel"),        DebugAction_Cancel, },
     { NULL }
 };
@@ -1747,6 +1776,304 @@ static void DebugAction_Player_Id(u8 taskId)
     Debug_DestroyMenu_Full(taskId);
     ScriptContext_Enable();
 }
+
+// *******************************
+// Actions Achievements (design doc §21, Stage 1.7)
+
+static u8 Debug_OpenAchievementsExtraWindow(u8 taskId)
+{
+    u8 windowId;
+
+    ClearStdWindowAndFrame(gTasks[taskId].tWindowId, TRUE);
+    RemoveWindow(gTasks[taskId].tWindowId);
+
+    HideMapNamePopUpWindow();
+    LoadMessageBoxAndBorderGfx();
+    windowId = AddWindow(&sDebugMenuWindowTemplateExtra);
+    DrawStdWindowFrame(windowId, FALSE);
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+
+    return windowId;
+}
+
+static void Debug_Display_AchievementCompletedInfo(u32 id, u32 digit, u8 windowId)
+{
+    ConvertIntToDecimalStringN(gStringVar1, id, STR_CONV_MODE_LEADING_ZEROS, 3);
+    if (Achievement_IsCompleted(id))
+        StringCopyPadded(gStringVar2, sDebugText_True, CHAR_SPACE, 15);
+    else
+        StringCopyPadded(gStringVar2, sDebugText_False, CHAR_SPACE, 15);
+    StringCopy(gStringVar3, gText_DigitIndicator[digit]);
+    StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("ID: {STR_VAR_1}{CLEAR_TO 90}\n{STR_VAR_2}{CLEAR_TO 90}\n{STR_VAR_3}"));
+    AddTextPrinterParameterized(windowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void DebugAction_Achievements_GrantRevoke(u8 taskId)
+{
+    u8 windowId = Debug_OpenAchievementsExtraWindow(taskId);
+
+    Debug_Display_AchievementCompletedInfo(0, 0, windowId);
+
+    gTasks[taskId].func = DebugAction_Achievements_GrantRevokeSelect;
+    gTasks[taskId].tSubWindowId = windowId;
+    gTasks[taskId].tInput = 0;
+    gTasks[taskId].tDigit = 0;
+}
+
+static void DebugAction_Achievements_GrantRevokeSelect(u8 taskId)
+{
+    if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        Achievement_DebugSetCompleted(gTasks[taskId].tInput, !Achievement_IsCompleted(gTasks[taskId].tInput));
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+        return;
+    }
+
+    Debug_HandleInput_Numeric(taskId, 0, MAX_ACHIEVEMENTS - 1, 3);
+
+    if (JOY_NEW(DPAD_ANY) || JOY_NEW(A_BUTTON))
+        Debug_Display_AchievementCompletedInfo(gTasks[taskId].tInput, gTasks[taskId].tDigit, gTasks[taskId].tSubWindowId);
+}
+
+#define ACHIEVEMENTS_DEBUG_MAX_POINTS 30000 // headroom under s16's range (Task.data), not a design limit
+
+static void Debug_Display_AchievementPoints(u32 amount, u32 digit, u8 windowId)
+{
+    StringCopy(gStringVar2, gText_DigitIndicator[digit]);
+    ConvertIntToDecimalStringN(gStringVar1, amount, STR_CONV_MODE_LEADING_ZEROS, 5);
+    StringCopyPadded(gStringVar1, gStringVar1, CHAR_SPACE, 15);
+    StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Points:{CLEAR_TO 90}\n{STR_VAR_1}{CLEAR_TO 90}\n\n{STR_VAR_2}"));
+    AddTextPrinterParameterized(windowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void DebugAction_Achievements_SetPoints(u8 taskId)
+{
+    u8 windowId = Debug_OpenAchievementsExtraWindow(taskId);
+    u32 current = min(Achievement_GetTotalPoints(), ACHIEVEMENTS_DEBUG_MAX_POINTS);
+
+    Debug_Display_AchievementPoints(current, 0, windowId);
+
+    gTasks[taskId].func = DebugAction_Achievements_SetPointsSelect;
+    gTasks[taskId].tSubWindowId = windowId;
+    gTasks[taskId].tInput = current;
+    gTasks[taskId].tDigit = 0;
+}
+
+static void DebugAction_Achievements_SetPointsSelect(u8 taskId)
+{
+    if (JOY_NEW(DPAD_ANY))
+    {
+        PlaySE(SE_SELECT);
+        Debug_HandleInput_Numeric(taskId, 0, ACHIEVEMENTS_DEBUG_MAX_POINTS, 5);
+        Debug_Display_AchievementPoints(gTasks[taskId].tInput, gTasks[taskId].tDigit, gTasks[taskId].tSubWindowId);
+    }
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        Achievement_DebugSetPoints(gTasks[taskId].tInput);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+}
+
+static void DebugAction_Achievements_ToggleBoostsUnlocked(u8 taskId)
+{
+    Achievement_DebugSetBoostsUnlocked(!Achievement_BoostsUnlocked());
+}
+
+#define tBoostId data[5]
+
+// Deliberately the same 4-line shape as Debug_Display_AchievementBoostLevel
+// below (label, value, blank, digit indicator) -- AddTextPrinterParameterized
+// doesn't clear the window first, so switching between two screens of
+// different shapes leaves the previous screen's leftover lines on-screen.
+static void Debug_Display_AchievementBoostId(u32 boostId, u32 digit, u8 windowId)
+{
+    StringCopy(gStringVar2, gText_DigitIndicator[digit]);
+    ConvertIntToDecimalStringN(gStringVar1, boostId, STR_CONV_MODE_LEADING_ZEROS, 2);
+    StringCopyPadded(gStringVar1, gStringVar1, CHAR_SPACE, 15);
+    StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Boost ID:{CLEAR_TO 90}\n{STR_VAR_1}{CLEAR_TO 90}\n\n{STR_VAR_2}"));
+    AddTextPrinterParameterized(windowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void Debug_Display_AchievementBoostLevel(u32 level, u32 digit, u8 windowId)
+{
+    ConvertIntToDecimalStringN(gStringVar1, level, STR_CONV_MODE_LEADING_ZEROS, 3);
+    StringCopy(gStringVar2, gText_DigitIndicator[digit]);
+    // No maxLevel ceiling exists yet (that's Stage 7's boost registry), so this
+    // just accepts any u8 value for now -- see AchievementBoost_DebugSetLevel.
+    StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("New level:{CLEAR_TO 90}\n{STR_VAR_1}{CLEAR_TO 90}\n\n{STR_VAR_2}"));
+    AddTextPrinterParameterized(windowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void DebugAction_Achievements_SetBoostLevel(u8 taskId)
+{
+    u8 windowId = Debug_OpenAchievementsExtraWindow(taskId);
+
+    Debug_Display_AchievementBoostId(0, 0, windowId);
+
+    gTasks[taskId].func = DebugAction_Achievements_SetBoostLevelSelectId;
+    gTasks[taskId].tSubWindowId = windowId;
+    gTasks[taskId].tInput = 0;
+    gTasks[taskId].tDigit = 0;
+}
+
+static void DebugAction_Achievements_SetBoostLevelSelectId(u8 taskId)
+{
+    if (JOY_NEW(DPAD_ANY))
+    {
+        PlaySE(SE_SELECT);
+        Debug_HandleInput_Numeric(taskId, 0, MAX_BOOSTS - 1, 2);
+        Debug_Display_AchievementBoostId(gTasks[taskId].tInput, gTasks[taskId].tDigit, gTasks[taskId].tSubWindowId);
+    }
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        gTasks[taskId].tBoostId = gTasks[taskId].tInput;
+        gTasks[taskId].tInput = AchievementBoost_GetLevel(gTasks[taskId].tBoostId);
+        gTasks[taskId].tDigit = 0;
+        Debug_Display_AchievementBoostLevel(gTasks[taskId].tInput, gTasks[taskId].tDigit, gTasks[taskId].tSubWindowId);
+        gTasks[taskId].func = DebugAction_Achievements_SetBoostLevelSelectLevel;
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+}
+
+static void DebugAction_Achievements_SetBoostLevelSelectLevel(u8 taskId)
+{
+    u16 boostId = gTasks[taskId].tBoostId;
+
+    if (JOY_NEW(DPAD_ANY))
+    {
+        PlaySE(SE_SELECT);
+        Debug_HandleInput_Numeric(taskId, 0, 255, 3);
+        Debug_Display_AchievementBoostLevel(gTasks[taskId].tInput, gTasks[taskId].tDigit, gTasks[taskId].tSubWindowId);
+    }
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        AchievementBoost_DebugSetLevel(boostId, (u8)gTasks[taskId].tInput);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+}
+
+#undef tBoostId
+
+static void DebugAction_Achievements_ResetBoosts(u8 taskId)
+{
+    AchievementBoost_DebugReset();
+}
+
+static void DebugAction_Achievements_ToggleBoostsEnabled(u8 taskId)
+{
+    Achievement_SetBoostsEnabled(!Achievement_BoostsEnabled());
+}
+
+static void DebugAction_Achievements_MarkPlaythroughComplete(u8 taskId)
+{
+    Achievement_DebugMarkPlaythroughComplete();
+}
+
+#define tDumpPage data[5]
+#define ACHIEVEMENTS_DUMP_PAGE_COUNT 5
+
+static void Debug_Display_AchievementDumpPage(u8 windowId, u32 page)
+{
+    switch (page)
+    {
+    case 0:
+    {
+        u32 i, completed = 0;
+
+        for (i = 0; i < MAX_ACHIEVEMENTS; i++)
+        {
+            if (Achievement_IsCompleted(i))
+                completed++;
+        }
+        ConvertIntToDecimalStringN(gStringVar1, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+        ConvertIntToDecimalStringN(gStringVar2, Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+        ConvertIntToDecimalStringN(gStringVar3, completed, STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Total: {STR_VAR_1}{CLEAR_TO 90}\nAvail: {STR_VAR_2}{CLEAR_TO 90}\nDone: {STR_VAR_3}/512{CLEAR_TO 90}"));
+        break;
+    }
+    case 1:
+        StringCopy(gStringVar1, Achievement_BoostsUnlocked() ? sDebugText_True : sDebugText_False);
+        StringCopy(gStringVar2, Achievement_BoostsEnabled() ? sDebugText_True : sDebugText_False);
+        ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.boostResets, STR_CONV_MODE_LEFT_ALIGN, 4);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Unlocked: {STR_VAR_1}{CLEAR_TO 90}\nEnabled: {STR_VAR_2}{CLEAR_TO 90}\nResets: {STR_VAR_3}{CLEAR_TO 90}"));
+        break;
+    case 2:
+        ConvertIntToDecimalStringN(gStringVar1, gAchievementProfile.playthroughsCompleted, STR_CONV_MODE_LEFT_ALIGN, 4);
+        ConvertIntToDecimalStringN(gStringVar2, gAchievementProfile.ngPlusCyclesCompleted, STR_CONV_MODE_LEFT_ALIGN, 4);
+        ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.highestNgPlusCycle, STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Playthroughs: {STR_VAR_1}{CLEAR_TO 90}\nNG+ done: {STR_VAR_2}{CLEAR_TO 90}\nNG+ high: {STR_VAR_3}{CLEAR_TO 90}"));
+        break;
+    case 3:
+        ConvertIntToDecimalStringN(gStringVar1, gAchievementProfile.nuzlockesCompleted, STR_CONV_MODE_LEFT_ALIGN, 4);
+        ConvertIntToDecimalStringN(gStringVar2, gAchievementProfile.randomizedRunsCompleted, STR_CONV_MODE_LEFT_ALIGN, 4);
+        ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.shiniesObtained, STR_CONV_MODE_LEFT_ALIGN, 4);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Nuzlockes: {STR_VAR_1}{CLEAR_TO 90}\nRandomized: {STR_VAR_2}{CLEAR_TO 90}\nShinies: {STR_VAR_3}{CLEAR_TO 90}"));
+        break;
+    default:
+        // Padded to the same 3-line shape as the other pages (two trailing
+        // clear-only lines) so nothing from a previous page bleeds through --
+        // AddTextPrinterParameterized never clears lines it doesn't draw to.
+        StringCopy(gStringVar1, gSaveBlock1Ptr->achievementsBlocked ? sDebugText_True : sDebugText_False);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Run blocked: {STR_VAR_1}{CLEAR_TO 90}\n{CLEAR_TO 90}\n{CLEAR_TO 90}"));
+        break;
+    }
+
+    AddTextPrinterParameterized(windowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
+}
+
+static void DebugAction_Achievements_DumpProfile(u8 taskId)
+{
+    u8 windowId = Debug_OpenAchievementsExtraWindow(taskId);
+
+    Debug_Display_AchievementDumpPage(windowId, 0);
+
+    gTasks[taskId].func = DebugAction_Achievements_DumpProfileInput;
+    gTasks[taskId].tSubWindowId = windowId;
+    gTasks[taskId].tDumpPage = 0;
+}
+
+static void DebugAction_Achievements_DumpProfileInput(u8 taskId)
+{
+    if (JOY_NEW(A_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        gTasks[taskId].tDumpPage = (gTasks[taskId].tDumpPage + 1) % ACHIEVEMENTS_DUMP_PAGE_COUNT;
+        Debug_Display_AchievementDumpPage(gTasks[taskId].tSubWindowId, gTasks[taskId].tDumpPage);
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        DebugAction_DestroyExtraWindow(taskId);
+    }
+}
+
+#undef tDumpPage
+#undef ACHIEVEMENTS_DUMP_PAGE_COUNT
 
 static void DebugAction_Util_CheatStart(u8 taskId)
 {

@@ -174,3 +174,52 @@ u8 AchievementBoost_GetLevel(u16 boostId)
 
     return gAchievementProfile.boostLevels[boostId];
 }
+
+// ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------
+
+void Achievement_DebugSetCompleted(u16 achievementId, bool8 completed)
+{
+    if (achievementId >= MAX_ACHIEVEMENTS)
+        return;
+
+    if (completed)
+        gAchievementProfile.achievementFlags[achievementId / 8] |= 1 << (achievementId % 8);
+    else
+        gAchievementProfile.achievementFlags[achievementId / 8] &= ~(1 << (achievementId % 8));
+
+    sAchievementProfileDirty = TRUE;
+}
+
+void Achievement_DebugSetPoints(u32 amount)
+{
+    gAchievementProfile.totalPointsEarned = amount;
+    sAchievementProfileDirty = TRUE;
+}
+
+void Achievement_DebugSetBoostsUnlocked(bool8 unlocked)
+{
+    gAchievementProfile.boostsUnlocked = unlocked;
+    sAchievementProfileDirty = TRUE;
+}
+
+void AchievementBoost_DebugSetLevel(u16 boostId, u8 level)
+{
+    if (boostId >= MAX_BOOSTS)
+        return;
+
+    gAchievementProfile.boostLevels[boostId] = level;
+    sAchievementProfileDirty = TRUE;
+}
+
+void AchievementBoost_DebugReset(void)
+{
+    memset(gAchievementProfile.boostLevels, 0, sizeof(gAchievementProfile.boostLevels));
+    gAchievementProfile.pointsInvested = 0;
+    sAchievementProfileDirty = TRUE;
+}
+
+void Achievement_DebugMarkPlaythroughComplete(void)
+{
+    gAchievementProfile.playthroughsCompleted++;
+    sAchievementProfileDirty = TRUE;
+}
