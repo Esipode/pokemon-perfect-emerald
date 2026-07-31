@@ -96,223 +96,6 @@
 #define CMD_ARGS(...) const struct __attribute__((packed)) { u8 opcode; RECURSIVELY(R_FOR_EACH(APPEND_SEMICOLON, __VA_ARGS__)) const u8 nextInstr[0]; } *const cmd UNUSED = (const void *)gBattlescriptCurrInstr
 #define NATIVE_ARGS(...) CMD_ARGS(void (*func)(void), ##__VA_ARGS__)
 
-// table to avoid ugly powing on gba (courtesy of doesnt)
-// this returns (i^2.5)/4
-// the quarters cancel so no need to re-quadruple them in actual calculation
-static const s32 sExperienceScalingFactors[] =
-{
-    0,
-    0,
-    1,
-    3,
-    8,
-    13,
-    22,
-    32,
-    45,
-    60,
-    79,
-    100,
-    124,
-    152,
-    183,
-    217,
-    256,
-    297,
-    343,
-    393,
-    447,
-    505,
-    567,
-    634,
-    705,
-    781,
-    861,
-    946,
-    1037,
-    1132,
-    1232,
-    1337,
-    1448,
-    1563,
-    1685,
-    1811,
-    1944,
-    2081,
-    2225,
-    2374,
-    2529,
-    2690,
-    2858,
-    3031,
-    3210,
-    3396,
-    3587,
-    3786,
-    3990,
-    4201,
-    4419,
-    4643,
-    4874,
-    5112,
-    5357,
-    5608,
-    5866,
-    6132,
-    6404,
-    6684,
-    6971,
-    7265,
-    7566,
-    7875,
-    8192,
-    8515,
-    8847,
-    9186,
-    9532,
-    9886,
-    10249,
-    10619,
-    10996,
-    11382,
-    11776,
-    12178,
-    12588,
-    13006,
-    13433,
-    13867,
-    14310,
-    14762,
-    15222,
-    15690,
-    16167,
-    16652,
-    17146,
-    17649,
-    18161,
-    18681,
-    19210,
-    19748,
-    20295,
-    20851,
-    21417,
-    21991,
-    22574,
-    23166,
-    23768,
-    24379,
-    25000,
-    25629,
-    26268,
-    26917,
-    27575,
-    28243,
-    28920,
-    29607,
-    30303,
-    31010,
-    31726,
-    32452,
-    33188,
-    33934,
-    34689,
-    35455,
-    36231,
-    37017,
-    37813,
-    38619,
-    39436,
-    40262,
-    41099,
-    41947,
-    42804,
-    43673,
-    44551,
-    45441,
-    46340,
-    47251,
-    48172,
-    49104,
-    50046,
-    50999,
-    51963,
-    52938,
-    53924,
-    54921,
-    55929,
-    56947,
-    57977,
-    59018,
-    60070,
-    61133,
-    62208,
-    63293,
-    64390,
-    65498,
-    66618,
-    67749,
-    68891,
-    70045,
-    71211,
-    72388,
-    73576,
-    74777,
-    75989,
-    77212,
-    78448,
-    79695,
-    80954,
-    82225,
-    83507,
-    84802,
-    86109,
-    87427,
-    88758,
-    90101,
-    91456,
-    92823,
-    94202,
-    95593,
-    96997,
-    98413,
-    99841,
-    101282,
-    102735,
-    104201,
-    105679,
-    107169,
-    108672,
-    110188,
-    111716,
-    113257,
-    114811,
-    116377,
-    117956,
-    119548,
-    121153,
-    122770,
-    124401,
-    126044,
-    127700,
-    129369,
-    131052,
-    132747,
-    134456,
-    136177,
-    137912,
-    139660,
-    141421,
-    143195,
-    144983,
-    146784,
-    148598,
-    150426,
-    152267,
-    154122,
-    155990,
-    157872,
-    159767,
-};
 
 static const u16 sWhiteOutBadgeMoney[9] = { 8, 16, 24, 36, 48, 64, 80, 100, 120 };
 
@@ -3889,19 +3672,39 @@ static void Cmd_getexp(void)
             u32 expShareBits = 0;
             s32 viaSentIn = 0;
             s32 viaExpShare = 0;
+            s32 totalShares = 0;
+            u32 levelCap = GetCurrentLevelCap();
 
             for (i = 0; i < PARTY_SIZE; i++)
             {
+                bool32 isSentIn, getsExpShare, isHardCapped;
+
                 if (!IsValidForBattle(&gParties[B_TRAINER_PLAYER][i]))
                     continue;
-                if ((1u << i) & sentInBits)
+
+                isSentIn = ((1u << i) & sentInBits) != 0;
+                if (isSentIn)
                     viaSentIn++;
 
                 holdEffect = GetMonHoldEffect(&gParties[B_TRAINER_PLAYER][i]);
-                if (holdEffect == HOLD_EFFECT_EXP_SHARE || IsGen6ExpShareEnabled())
+                getsExpShare = (holdEffect == HOLD_EFFECT_EXP_SHARE || IsGen6ExpShareEnabled());
+                if (getsExpShare)
                 {
                     expShareBits |= 1u << i;
                     viaExpShare++;
+                }
+
+                // A hard-capped mon can't gain any exp no matter what share
+                // it's given, so don't let it eat into the pool - free that
+                // share up for the rest of the party instead.
+                isHardCapped = (B_EXP_CAP_TYPE == EXP_CAP_HARD
+                                && GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_LEVEL) >= levelCap);
+                if (!isHardCapped)
+                {
+                    if (isSentIn)
+                        totalShares += 2;
+                    else if (getsExpShare)
+                        totalShares += 1;
                 }
             }
             // Get order of mons getting exp: 1. all mons via sent in, 2. all mons via exp share
@@ -3918,7 +3721,17 @@ static void Cmd_getexp(void)
             if (orderId < PARTY_SIZE)
                 gBattleStruct->expGettersOrder[orderId] = PARTY_SIZE;
 
-            calculatedExp = gSpeciesInfo[gBattleMons[gBattlerFainted].species].expYield * gBattleMons[gBattlerFainted].level;
+            {
+                // Reward scales with level + level^2/50 rather than level alone.
+                // Exp required to level up grows roughly with the cube of level
+                // (see GetExperienceAtLevel), so a purely linear reward falls
+                // further behind the higher a Pokemon's level gets. The quadratic
+                // term keeps kills-per-level roughly constant at high level while
+                // leaving low-level rewards close to the plain-linear original
+                // (level^2/50 truncates to 0 below level ~7).
+                u32 faintedLevel = gBattleMons[gBattlerFainted].level;
+                calculatedExp = gSpeciesInfo[gBattleMons[gBattlerFainted].species].expYield * (faintedLevel + (faintedLevel * faintedLevel) / 50);
+            }
             if (B_SCALED_EXP >= GEN_5 && B_SCALED_EXP != GEN_6)
                 calculatedExp /= 5;
             else
@@ -3946,38 +3759,30 @@ static void Cmd_getexp(void)
                         *exp = 1;
                     gBattleStruct->expShareExpValue = 0;
                 }
+
+                *exp /= 9;
             }
             else
             {
-                *exp = calculatedExp;
-                // Custom - Reduce xp gained to align with expanded exp tables
+                // Split the pool earned for defeating this Pokemon across the
+                // whole party: each participant counts as 2 shares, everyone
+                // else eligible for exp share counts as 1 share, so a battler
+                // always nets 2x what a benched teammate gets out of the same
+                // pool, and the pool never over-pays as the party gets bigger.
+                // Mons that are fainted or hard-capped were already excluded
+                // from totalShares above, freeing their share for the rest.
+                u32 pool = calculatedExp / 9; // Custom - reduce xp to align with expanded exp tables
+                u32 shareUnit = SAFE_DIV(pool, totalShares);
 
-                // Count empty party slots and pokemon in party at level cap, apply xp multiplier for each match in party slots
-                u32 incapableCount = 0;
-                for (u8 i = 0; i < PARTY_SIZE; i++)
-                {
-                    struct Pokemon *mon = &gPlayerParty[i];
+                *exp = shareUnit * 2;
+                if (*exp == 0)
+                    *exp = 1;
 
-                    if (!mon) {
-                        incapableCount++;
-                        continue;
-                    }
-
-                    u32 currentLevel = GetMonData(mon, MON_DATA_LEVEL, 0);
-                    u32 levelCap = GetCurrentLevelCap();
-
-                    if (currentLevel == levelCap)
-                    {
-                        incapableCount++;
-                    }
-                }
-
-                gBattleStruct->expShareExpValue = (((calculatedExp / 2) / (14 - incapableCount)) * (1 + (0.1 * incapableCount)));
+                gBattleStruct->expShareExpValue = shareUnit;
                 if (gBattleStruct->expShareExpValue == 0)
                     gBattleStruct->expShareExpValue = 1;
             }
 
-            *exp /= 9;
             gBattleScripting.getexpState++;
             gBattleStruct->expOrderId = 0;
             *expMonId = gBattleStruct->expGettersOrder[0];
@@ -4128,7 +3933,7 @@ static void Cmd_getexp(void)
                     HandleLowHpMusicChange(GetBattlerMon(expBattler), expBattler);
 
                 PREPARE_MON_NICK_WITH_PREFIX_BUFFER(gBattleTextBuff1, expBattler, *expMonId);
-                PREPARE_BYTE_NUMBER_BUFFER(gBattleTextBuff2, 3, GetMonData(&gParties[B_TRAINER_PLAYER][*expMonId], MON_DATA_LEVEL));
+                PREPARE_HWORD_NUMBER_BUFFER(gBattleTextBuff2, 5, GetMonData(&gParties[B_TRAINER_PLAYER][*expMonId], MON_DATA_LEVEL));
 
                 gLeveledUpInBattle |= 1 << *expMonId;
                 BattleScriptCall(BattleScript_LevelUp);
@@ -11311,18 +11116,20 @@ void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBat
     if (CheckBagHasItem(ITEM_EXP_CHARM, 1)) //is also for other exp boosting Powers if/when implemented
         *expAmount = (*expAmount * 150) / 100;
 
-    if (B_SCALED_EXP >= GEN_5 && B_SCALED_EXP != GEN_6)
     {
-        // Note: There is an edge case where if a Pokémon receives a large amount of exp, it wouldn't be properly calculated
-        //       because of multiplying by scaling factor(the value would simply be larger than an u32 can hold). Hence u64 is needed.
-        u64 value = *expAmount;
-        u16 faintedLevel = gBattleMons[faintedBattler].level;
-        u16 expGetterLevel = GetMonData(&gParties[B_TRAINER_PLAYER][expGetterMonId], MON_DATA_LEVEL);
+        // Custom - Linear level-difference scaling: +10% exp per level the
+        // fainted Pokemon is above the recipient, -10% per level the
+        // recipient is above the fainted Pokemon, floored at 0% once the
+        // recipient is 10+ levels above it (so stomping much weaker mons
+        // stops paying out).
+        s32 faintedLevel = gBattleMons[faintedBattler].level;
+        s32 expGetterLevel = GetMonData(&gParties[B_TRAINER_PLAYER][expGetterMonId], MON_DATA_LEVEL);
+        s32 percent = 100 + ((faintedLevel - expGetterLevel) * 10);
 
-        value *= sExperienceScalingFactors[(faintedLevel * 2) + 10];
-        value /= sExperienceScalingFactors[faintedLevel + expGetterLevel + 10];
+        if (percent < 0)
+            percent = 0;
 
-        *expAmount = value + 1;
+        *expAmount = (*expAmount * percent) / 100;
     }
 }
 

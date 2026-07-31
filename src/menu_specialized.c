@@ -1496,11 +1496,13 @@ static const u8 *const sLvlUpStatStrings[NUM_STATS] =
     gText_Speed
 };
 
+#define LVL_UP_WINDOW_WIDTH_PX 80
+
 void DrawLevelUpWindowPg1(u16 windowId, u16 *statsBefore, u16 *statsAfter, u8 bgClr, u8 fgClr, u8 shadowClr)
 {
-    u16 i, x;
+    u16 i, numDigits, x;
     s16 statsDiff[NUM_STATS];
-    u8 text[12];
+    u8 text[16];
     u8 color[3];
 
     FillWindowPixelBuffer(windowId, PIXEL_FILL(bgClr));
@@ -1518,32 +1520,30 @@ void DrawLevelUpWindowPg1(u16 windowId, u16 *statsBefore, u16 *statsAfter, u8 bg
 
     for (i = 0; i < NUM_STATS; i++)
     {
-
         AddTextPrinterParameterized3(windowId,
-                                     FONT_NORMAL,
+                                     FONT_NARROW,
                                      0,
                                      15 * i,
                                      color,
                                      TEXT_SKIP_DRAW,
                                      sLvlUpStatStrings[i]);
 
-        StringCopy(text, (statsDiff[i] >= 0) ? gText_Plus : gText_Dash);
-        AddTextPrinterParameterized3(windowId,
-                                     FONT_NORMAL,
-                                     56,
-                                     15 * i,
-                                     color,
-                                     TEXT_SKIP_DRAW,
-                                     text);
-        if (abs(statsDiff[i]) <= 9)
-            x = 18;
+        if (abs(statsDiff[i]) > 999)
+            numDigits = 4;
+        else if (abs(statsDiff[i]) > 99)
+            numDigits = 3;
+        else if (abs(statsDiff[i]) > 9)
+            numDigits = 2;
         else
-            x = 12;
+            numDigits = 1;
 
-        ConvertIntToDecimalStringN(text, abs(statsDiff[i]), STR_CONV_MODE_LEFT_ALIGN, 2);
+        StringCopy(text, (statsDiff[i] >= 0) ? gText_Plus : gText_Dash);
+        ConvertIntToDecimalStringN(text + StringLength(text), abs(statsDiff[i]), STR_CONV_MODE_LEFT_ALIGN, numDigits);
+        x = LVL_UP_WINDOW_WIDTH_PX - GetStringWidth(FONT_NARROW, text, 0);
+
         AddTextPrinterParameterized3(windowId,
-                                     FONT_NORMAL,
-                                     56 + x,
+                                     FONT_NARROW,
+                                     x,
                                      15 * i,
                                      color,
                                      TEXT_SKIP_DRAW,
@@ -1583,10 +1583,10 @@ void DrawLevelUpWindowPg2(u16 windowId, u16 *currStats, u8 bgClr, u8 fgClr, u8 s
             numDigits = 1;
 
         ConvertIntToDecimalStringN(text, stats[i], STR_CONV_MODE_LEFT_ALIGN, numDigits);
-        x = 6 * (4 - numDigits);
+        x = LVL_UP_WINDOW_WIDTH_PX - GetStringWidth(FONT_NARROW, text, 0);
 
         AddTextPrinterParameterized3(windowId,
-                                     FONT_NORMAL,
+                                     FONT_NARROW,
                                      0,
                                      15 * i,
                                      color,
@@ -1594,8 +1594,8 @@ void DrawLevelUpWindowPg2(u16 windowId, u16 *currStats, u8 bgClr, u8 fgClr, u8 s
                                      sLvlUpStatStrings[i]);
 
         AddTextPrinterParameterized3(windowId,
-                                     FONT_NORMAL,
-                                     56 + x,
+                                     FONT_NARROW,
+                                     x,
                                      15 * i,
                                      color,
                                      TEXT_SKIP_DRAW,

@@ -881,51 +881,65 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
             break;
 
         // ---------------------------------------------------------
-        // FAST (slightly easier early, converges to baseline)
+        // FAST (slightly easier early, converges to its own final
+        // total of 0.8x baseline - matches vanilla Fast's overall
+        // exp requirement relative to Medium Fast)
         // ---------------------------------------------------------
         case GROWTH_FAST:
-            multiplier1000 = 850 + (150 * t1000) / 1000;
+            multiplier1000 = 650 + (150 * t1000) / 1000;
             break;
 
         // ---------------------------------------------------------
-        // SLOW (hard early, converges upward toward baseline)
+        // SLOW (hard early, eases toward its own final total of
+        // 1.25x baseline - matches vanilla Slow)
         // ---------------------------------------------------------
         case GROWTH_SLOW:
-            multiplier1000 = 1150 - (150 * t1000) / 1000;
+            multiplier1000 = 1400 - (150 * t1000) / 1000;
             break;
 
         // ---------------------------------------------------------
-        // MEDIUM SLOW (curved easing)
+        // MEDIUM SLOW (curved easing toward a final total of 1.06x
+        // baseline - matches vanilla Medium Slow)
         // ---------------------------------------------------------
         case GROWTH_MEDIUM_SLOW:
-            // 1.20 - 0.40*t + 0.20*t^2, kept over a single common denominator (1e6) to limit rounding loss.
-            multiplier1000 = (1200000000 - 400000 * t1000 + 200 * t1000 * t1000) / 1000000;
+            // 1.26 - 0.40*t + 0.20*t^2, kept over a single common denominator (1e6) to limit rounding loss.
+            multiplier1000 = (1260000000 - 400000 * t1000 + 200 * t1000 * t1000) / 1000000;
             break;
 
         // ---------------------------------------------------------
-        // FLUCTUATING (decaying oscillation)
+        // FLUCTUATING (decaying oscillation around a final total of
+        // 1.64x baseline - matches vanilla Fluctuating, the slowest
+        // growth rate to max out)
         // ---------------------------------------------------------
         case GROWTH_FLUCTUATING:
         {
-            s64 wave1000 = ((s64)Oscillate1000(n, 120) - 500) / 2;
+            // Wave amplitude halved (divisor 2 -> 4) to keep the per-level swing
+            // from stacking with Fluctuating's already-higher 1.64x total and
+            // producing outsized exp requirements at unlucky points in the cycle.
+            s64 wave1000 = ((s64)Oscillate1000(n, 120) - 500) / 4;
             s64 decayBase = 1000 - t1000;
             s64 decay1000 = (decayBase * decayBase) / 1000;
 
-            multiplier1000 = 1000 + (wave1000 * decay1000) / 1000;
+            multiplier1000 = 1640 + (wave1000 * decay1000) / 1000;
             break;
         }
 
         // ---------------------------------------------------------
-        // ERRATIC (bounded chaos, stabilizing over time)
+        // ERRATIC (bounded chaos, stabilizing toward a final total
+        // of 0.6x baseline - matches vanilla Erratic, the fastest
+        // growth rate to max out)
         // ---------------------------------------------------------
         case GROWTH_ERRATIC:
         {
+            // Noise coefficient reduced (35 -> 3) so level-to-level swings stay
+            // survivable at Erratic's lower 0.6x total; still non-monotonic by
+            // design (see GetLevelFromExperience below) but far less severe.
             u32 seed = n * 1103515245u + 12345u;
             s64 noise1000 = (s64)((seed >> 16) & 1023) * 1000 / 512 - 1000;
             s64 decayBase = 1000 - t1000;
             s64 decay1000 = (decayBase * decayBase * decayBase) / 1000000;
 
-            multiplier1000 = 1000 + (noise1000 * 35 * decay1000) / 100000;
+            multiplier1000 = 600 + (noise1000 * 3 * decay1000) / 100000;
             break;
         }
 
@@ -1721,11 +1735,12 @@ static u32 GetGrowthRateMaxMultiplier1000(u8 growthRate)
 {
     switch (growthRate)
     {
-    case GROWTH_SLOW:        return 1150;
-    case GROWTH_MEDIUM_SLOW: return 1200;
-    case GROWTH_FLUCTUATING: return 1260;
-    case GROWTH_ERRATIC:     return 1360;
-    default:                 return 1000; // MEDIUM_FAST, FAST
+    case GROWTH_FAST:        return 800;
+    case GROWTH_SLOW:        return 1400;
+    case GROWTH_MEDIUM_SLOW: return 1260;
+    case GROWTH_FLUCTUATING: return 1800;
+    case GROWTH_ERRATIC:     return 650;
+    default:                 return 1000; // MEDIUM_FAST
     }
 }
 

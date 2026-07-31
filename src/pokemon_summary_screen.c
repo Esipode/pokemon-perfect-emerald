@@ -696,9 +696,9 @@ static const struct WindowTemplate sPageSkillsTemplate[] =
     },
     [PSS_DATA_WINDOW_EXP] = {
         .bg = 0,
-        .tilemapLeft = 24,
+        .tilemapLeft = 22,
         .tilemapTop = 14,
-        .width = 6,
+        .width = 8,
         .height = 4,
         .paletteNum = 6,
         .baseBlock = 561,
@@ -4090,8 +4090,8 @@ static void PrintExpPointsNextLevel(void)
     int x;
     u32 expToNextLevel;
 
-    ConvertIntToDecimalStringN(gStringVar1, sum->exp, STR_CONV_MODE_RIGHT_ALIGN, 8);
-    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 42) - 4;
+    ConvertIntToDecimalStringN(gStringVar1, sum->exp, STR_CONV_MODE_RIGHT_ALIGN, 10);
+    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 60);
     PrintTextOnWindow(windowId, gStringVar1, x, 1, 0, 0);
 
     if (sum->level < MAX_LEVEL)
@@ -4099,8 +4099,8 @@ static void PrintExpPointsNextLevel(void)
     else
         expToNextLevel = 0;
 
-    ConvertIntToDecimalStringN(gStringVar1, expToNextLevel, STR_CONV_MODE_RIGHT_ALIGN, 8);
-    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 42) - 4;
+    ConvertIntToDecimalStringN(gStringVar1, expToNextLevel, STR_CONV_MODE_RIGHT_ALIGN, 10);
+    x = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar1, 60);
     PrintTextOnWindow(windowId, gStringVar1, x, 17, 0, 0);
 }
 
