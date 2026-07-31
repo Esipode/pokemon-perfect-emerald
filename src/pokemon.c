@@ -837,15 +837,22 @@ STATIC_ASSERT(MAX_LEVEL <= 1000, PokemonSubstruct0_experience_PotentiallyTooSmal
 // }
 
 // NEW FORMULA CALCULATION
+//
+// Growth-rate curves below are fixed-point (parts-per-thousand, i.e. 1000 = 1.0x)
+// instead of floating point. The GBA's CPU has no FPU, so every double operation
+// is emulated in software and is dramatically slower than integer math; since this
+// function runs in a hot path (level lookups can call it dozens of times, see
+// GetLevelFromExperience below), floating point here was causing noticeable freezes.
 
-static double Oscillate(u32 n, u32 period)
+static u32 Oscillate1000(u32 n, u32 period)
 {
     u32 pos = n % period;
+    u32 half = period / 2;
 
-    if (pos < period / 2)
-        return ((double)pos / (period / 2));
+    if (pos < half)
+        return (pos * 1000) / half;
 
-    return 2.0 - ((double)pos / (period / 2));
+    return 2000 - (pos * 1000) / half;
 }
 
 u32 GetExperienceAtLevel(u8 growthRate, u16 level)
@@ -861,8 +868,8 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
     // Base curve (shared foundation for all growth rates)
     u64 base = (CUBE(n) / CUSTOM_XP_SCALING_FACTOR) + BASE_XP_OFFSET;
 
-    double t = (double)n / 1000.0;   // normalized level [0..1]
-    double multiplier = 1.0;
+    s64 t1000 = (s64)n; // normalized level [0..1], scaled by 1000 (n is already 0..MAX_LEVEL<=1000)
+    s64 multiplier1000 = 1000;
 
     switch (growthRate)
     {
@@ -870,28 +877,29 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
         // MEDIUM FAST (baseline)
         // ---------------------------------------------------------
         case GROWTH_MEDIUM_FAST:
-            multiplier = 1.0;
+            multiplier1000 = 1000;
             break;
 
         // ---------------------------------------------------------
         // FAST (slightly easier early, converges to baseline)
         // ---------------------------------------------------------
         case GROWTH_FAST:
-            multiplier = 0.85 + 0.15 * t;
+            multiplier1000 = 850 + (150 * t1000) / 1000;
             break;
 
         // ---------------------------------------------------------
         // SLOW (hard early, converges upward toward baseline)
         // ---------------------------------------------------------
         case GROWTH_SLOW:
-            multiplier = 1.15 - 0.15 * t;
+            multiplier1000 = 1150 - (150 * t1000) / 1000;
             break;
 
         // ---------------------------------------------------------
         // MEDIUM SLOW (curved easing)
         // ---------------------------------------------------------
         case GROWTH_MEDIUM_SLOW:
-            multiplier = 1.20 - 0.40 * t + 0.20 * t * t;
+            // 1.20 - 0.40*t + 0.20*t^2, kept over a single common denominator (1e6) to limit rounding loss.
+            multiplier1000 = (1200000000 - 400000 * t1000 + 200 * t1000 * t1000) / 1000000;
             break;
 
         // ---------------------------------------------------------
@@ -899,10 +907,11 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
         // ---------------------------------------------------------
         case GROWTH_FLUCTUATING:
         {
-            double wave = (Oscillate(n, 120) - 0.5) * 0.5;
-            double decay = (1.0 - t) * (1.0 - t);
+            s64 wave1000 = ((s64)Oscillate1000(n, 120) - 500) / 2;
+            s64 decayBase = 1000 - t1000;
+            s64 decay1000 = (decayBase * decayBase) / 1000;
 
-            multiplier = 1.0 + wave * decay;
+            multiplier1000 = 1000 + (wave1000 * decay1000) / 1000;
             break;
         }
 
@@ -912,26 +921,26 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
         case GROWTH_ERRATIC:
         {
             u32 seed = n * 1103515245u + 12345u;
-            double noise = ((seed >> 16) & 1023) / 512.0 - 1.0;
+            s64 noise1000 = (s64)((seed >> 16) & 1023) * 1000 / 512 - 1000;
+            s64 decayBase = 1000 - t1000;
+            s64 decay1000 = (decayBase * decayBase * decayBase) / 1000000;
 
-            double decay = (1.0 - t) * (1.0 - t) * (1.0 - t);
-
-            multiplier = 1.0 + noise * 0.35 * decay;
+            multiplier1000 = 1000 + (noise1000 * 35 * decay1000) / 100000;
             break;
         }
 
         default:
-            multiplier = 1.0;
+            multiplier1000 = 1000;
             break;
     }
 
     // Apply multiplier safely
-    double exp_d = (double)base * multiplier;
+    u64 exp = (base * multiplier1000) / 1000;
 
-    if (exp_d > (double)UINT32_MAX)
-        exp_d = (double)UINT32_MAX;
+    if (exp > UINT32_MAX)
+        exp = UINT32_MAX;
 
-    return (u32)exp_d;
+    return (u32)exp;
 }
 
 static u32 CompressStatus(u32 status)
@@ -1703,28 +1712,70 @@ void BoxMonToMon(const struct BoxPokemon *src, struct Pokemon *dest)
     SetMonData(dest, MON_DATA_HP, &value);
 }
 
+// Largest possible GetExperienceAtLevel multiplier (parts-per-thousand, padded)
+// for each growth rate. Used by GetLevelFromExperience below to derive a safe
+// (never-too-high) starting level for its search, instead of always starting
+// the scan at level 1.
+static u32 GetGrowthRateMaxMultiplier1000(u8 growthRate)
+{
+    switch (growthRate)
+    {
+    case GROWTH_SLOW:        return 1150;
+    case GROWTH_MEDIUM_SLOW: return 1200;
+    case GROWTH_FLUCTUATING: return 1260;
+    case GROWTH_ERRATIC:     return 1360;
+    default:                 return 1000; // MEDIUM_FAST, FAST
+    }
+}
+
+static u32 IntegerCubeRoot(u64 value)
+{
+    u32 lo = 0, hi = MAX_LEVEL + 100; // headroom above MAX_LEVEL
+
+    while (lo < hi)
+    {
+        u32 mid = (lo + hi + 1) / 2;
+        if ((u64)mid * mid * mid <= value)
+            lo = mid;
+        else
+            hi = mid - 1;
+    }
+    return lo;
+}
+
+// GetExperienceAtLevel's curves aren't all strictly monotonic (GROWTH_ERRATIC's
+// noise term can make a higher level require less exp than the one before it),
+// so this can't binary search the level. Instead it derives a cheap lower-bound
+// estimate (never above the true level) via an inverted cube root and scans
+// forward from there — this avoids the freezes caused by scanning from level 1
+// up to MAX_LEVEL (1000) every time a mon's level is looked up from its exp.
+static u16 GetLevelFromExperience(u8 growthRate, u32 exp)
+{
+    u64 target = ((u64)exp * 10000) / GetGrowthRateMaxMultiplier1000(growthRate);
+    s32 level = IntegerCubeRoot(target > 500 ? target - 500 : 0);
+
+    level = (level > 2) ? level - 2 : 1; // safety margin
+
+    while (level <= MAX_LEVEL && GetExperienceAtLevel(growthRate, level) <= exp)
+        level++;
+
+    return level - 1;
+}
+
 u16 GetLevelFromMonExp(struct Pokemon *mon)
 {
     enum Species species = GetMonData(mon, MON_DATA_SPECIES);
     u32 exp = GetMonData(mon, MON_DATA_EXP);
-    s32 level = 1;
 
-    while (level <= MAX_LEVEL && GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level) <= exp)
-        level++;
-
-    return level - 1;
+    return GetLevelFromExperience(gSpeciesInfo[species].growthRate, exp);
 }
 
 u16 GetLevelFromBoxMonExp(struct BoxPokemon *boxMon)
 {
     enum Species species = GetBoxMonData(boxMon, MON_DATA_SPECIES);
     u32 exp = GetBoxMonData(boxMon, MON_DATA_EXP);
-    s32 level = 1;
 
-    while (level <= MAX_LEVEL && GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level) <= exp)
-        level++;
-
-    return level - 1;
+    return GetLevelFromExperience(gSpeciesInfo[species].growthRate, exp);
 }
 
 u16 GiveMoveToMon(struct Pokemon *mon, enum Move move)
