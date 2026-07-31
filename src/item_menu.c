@@ -299,7 +299,7 @@ static const u8 sText_NothingToSort[] = _("There's nothing to sort!");
 static const struct MenuAction sItemMenuActions[] = {
     [ACTION_USE]               = {gMenuText_Use,                {ItemMenu_UseOutOfBattle}},
     [ACTION_TOSS]              = {gMenuText_Toss,               {ItemMenu_Toss}},
-    [ACTION_REGISTER]          = {gMenuText_Register,           {ItemMenu_Register}},
+    [ACTION_REGISTER]          = {gMenuText_Register,           {ItemMenu_CheckWhichRegister}},
     [ACTION_GIVE]              = {gMenuText_Give,               {ItemMenu_Give}},
     [ACTION_CANCEL]            = {gText_Cancel2,                {ItemMenu_Cancel}},
     [ACTION_BATTLE_USE]        = {gMenuText_Use,                {ItemMenu_UseInBattle}},
@@ -2037,9 +2037,15 @@ static void ItemMenu_Register(u8 taskId)
     u16 *cursorPos = &gBagPosition.cursorPosition[gBagPosition.pocket];
     u16 *registerSlot;
 
-    registerSlot = tIsRegisterHold ? &gSaveBlock1Ptr->registeredLongItem : &gSaveBlock1Ptr->registeredItem;
+    if (gSaveBlock1Ptr->registeredItem == gSpecialVar_ItemId)
+        registerSlot = &gSaveBlock1Ptr->registeredItem;
+    else if (gSaveBlock1Ptr->registeredLongItem == gSpecialVar_ItemId)
+        registerSlot = &gSaveBlock1Ptr->registeredLongItem;
+    else
+        registerSlot = tIsRegisterHold ? &gSaveBlock1Ptr->registeredLongItem : &gSaveBlock1Ptr->registeredItem;
+
     if (*registerSlot == gSpecialVar_ItemId)
-        *registerSlot = 0;
+        *registerSlot = ITEM_NONE;
     else
         *registerSlot = gSpecialVar_ItemId;
     tIsRegisterHold = FALSE;

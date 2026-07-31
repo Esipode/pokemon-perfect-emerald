@@ -5886,3 +5886,12 @@ void PushChampionChallengeMenuEntries(void)
         MultichoiceDynamic_PushElement(item);
     }
 }
+
+// The champion challenge trainers are battled directly via a scripted goto rather than by
+// the player interacting with their object event, so gSelectedObjectEvent is never set by the
+// usual interaction handler. Point it at the given trainer (by local id) before trainerbattle_single
+// runs, or SetTrainerFacingDirection will assert that it was called on the player's own object event.
+void SelectChampionChallengeTrainerObjEvent(void)
+{
+    gSelectedObjectEvent = GetObjectEventIdByLocalId(gSpecialVar_0x8004);
+}

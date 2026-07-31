@@ -30,6 +30,8 @@ EverGrandeCity_Champion_ChallengeRoom2_EventScript_Choose_Trainer_Battle::
 
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_1::
+	setvar VAR_0x8004, 1
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_BRANDON, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_1_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_1_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_1_SetFlag
 	end
 
@@ -50,6 +52,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_1_Defeat::
 // TRAINER 2 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_2::
+	setvar VAR_0x8004, 2
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_GRETA, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_2_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_2_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_2_SetFlag
 	end
 
@@ -69,6 +73,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_2_Defeat::
 // TRAINER 3 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_3::
+	setvar VAR_0x8004, 3
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_ANABEL, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_3_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_3_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_3_SetFlag
 	end
 
@@ -88,6 +94,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_3_Defeat::
 // TRAINER 4 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_4::
+	setvar VAR_0x8004, 4
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_SPENSER, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_4_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_4_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_4_SetFlag
 	end
 
@@ -108,6 +116,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_4_Defeat::
 // TRAINER 5 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_5::
+	setvar VAR_0x8004, 5
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_TUCKER, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_5_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_5_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_5_SetFlag
 	end
 
@@ -127,6 +137,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_5_Defeat::
 // TRAINER 6 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_6::
+	setvar VAR_0x8004, 6
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_LUCY, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_6_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_6_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_6_SetFlag
 	end
 
@@ -147,6 +159,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_6_Defeat::
 // TRAINER 7 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_7::
+	setvar VAR_0x8004, 7
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_NOLAND, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_7_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_7_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_7_SetFlag
 	end
 
@@ -166,6 +180,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_7_Defeat::
 // TRAINER 8 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_8::
+	setvar VAR_0x8004, 8
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_LEAF, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_8_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_8_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_8_SetFlag
 	end
 
@@ -185,6 +201,8 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_8_Defeat::
 // TRAINER 9 ----------------------------------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_9::
+	setvar VAR_0x8004, 9
+	special SelectChampionChallengeTrainerObjEvent
 	trainerbattle_single TRAINER_CHAMPION_RED, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_9_Intro, EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_9_Defeat, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Battle_9_SetFlag
 	end
 

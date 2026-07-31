@@ -4653,7 +4653,7 @@ EVs: 50 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 200 Spe
 
 Bisharp @ Focus Sash
 Level: 60
-Ability: Overcoat
+Ability: Pressure
 Nature: Impish
 IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 EVs: 250 HP / 0 Atk / 150 Def / 0 SpA / 150 SpD / 0 Spe
@@ -15487,7 +15487,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 
 Camerupt @ Cameruptite
 Level: 70
-Ability: Sheer Force
+Ability: Solid Rock
 Nature: Quiet
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 EVs: 250 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 0 Spe
@@ -15585,7 +15585,7 @@ AI: Smart Trainer / Prediction / Ace Pokemon
 
 Weavile @ Razor Claw
 Level: 72
-Ability: Keen Eye
+Ability: Pressure
 Nature: Jolly
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 EVs: 0 HP / 250 Atk / 0 Def / 0 SpA / 0 SpD / 250 Spe
@@ -15793,7 +15793,7 @@ EVs: 250 HP / 0 Atk / 125 Def / 0 SpA / 125 SpD / 0 Spe
 
 Sceptile @ Sceptilite
 Level: 74
-Ability: Lightning Rod
+Ability: Overgrow
 Nature: Timid
 IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 EVs: 0 HP / 0 Atk / 0 Def / 250 SpA / 0 SpD / 250 Spe

@@ -1014,19 +1014,47 @@ void CreateRandomMonWithIVs(struct Pokemon *mon, enum Species species, u16 level
     GiveMonInitialMoveset(mon);
 }
 
+// Battle-only/transformation forms (mega, primal, ultra burst, gigantamax, tera, totem, etc.)
+// have no standalone existence outside of a form change triggered mid-battle, so a mon can't
+// legitimately start a battle already in one of these forms. GetRandomizedSpecies must not
+// pick them, or reverting the form on faint/battle end has no valid target species to fall
+// back to and asserts (see TryBattleFormChange in battle_util.c).
+static bool32 IsSpeciesValidForRandomization(enum Species species)
+{
+    const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];
+
+    return !speciesInfo->isMegaEvolution
+        && !speciesInfo->isPrimalReversion
+        && !speciesInfo->isUltraBurst
+        && !speciesInfo->isGigantamax
+        && !speciesInfo->isTeraForm
+        && !speciesInfo->isTotem
+        && !speciesInfo->cannotBeTraded;
+}
+
 // Single point where FLAG_RANDOMIZE_MON swaps a species. Every mon goes through
 // CreateMon, so callers must not randomize beforehand or the species is rerolled twice.
 enum Species GetRandomizedSpecies(enum Species species)
 {
     u32 otId;
     rng_value_t rngState;
+    enum Species randomSpecies;
+    u32 attempts;
 
     if (species == SPECIES_NONE || !FlagGet(FLAG_RANDOMIZE_MON))
         return species;
 
     otId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
     rngState = LocalRandomSeed(otId + species + GetNewGamePlusLevelOffset());
-    return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
+
+    for (attempts = 0; attempts < NUM_SPECIES; attempts++)
+    {
+        randomSpecies = (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
+        if (IsSpeciesValidForRandomization(randomSpecies))
+            return randomSpecies;
+    }
+
+    return species;
 }
 
 void CreateMon(struct Pokemon *mon, enum Species species, u16 level, u32 personality, struct OriginalTrainerId trainerId)

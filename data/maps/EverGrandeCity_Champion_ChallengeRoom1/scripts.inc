@@ -40,42 +40,26 @@ EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Intro::
 	lock
 	message EverGrandeCity_Champion_ChallengeRoom1_Text_Receptionist1_Question1
 	waitmessage
-	goto EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice1	
+	goto EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice
 	release
 	end
 
-EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice1::
-	multichoice 25, 0, CHAMPION_CHALLENGE_CHOICE_PAGE1, FALSE
+EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice::
+	dynmultipush EverGrandeCity_Champion_ChallengeRoom1_Text_Exit, 0
+	special PushChampionChallengeMenuEntries
+	dynmultistack 25, 0, FALSE, 6, FALSE, 0, DYN_MULTICHOICE_CB_NONE
 	switch VAR_RESULT
 	case 0, EverGrandeCity_Champion_ChallengeRoom1_EventScript_ExitChallengeSelect
 	case 1, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option1
 	case 2, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option2
 	case 3, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option3
 	case 4, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option4
-	case 5, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice2
- 	case MULTI_B_PRESSED, EverGrandeCity_Champion_ChallengeRoom1_EventScript_ExitChallengeSelect
-	return
-
-EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice2::
-	multichoice 25, 0, CHAMPION_CHALLENGE_CHOICE_PAGE2, FALSE
-	switch VAR_RESULT
-	case 0, EverGrandeCity_Champion_ChallengeRoom1_EventScript_ExitChallengeSelect
-	case 1, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice1
-	case 2, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option5
-	case 3, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option6
-	case 4, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option7
-	case 5, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice3
- 	case MULTI_B_PRESSED, EverGrandeCity_Champion_ChallengeRoom1_EventScript_ExitChallengeSelect
-	return
-
-EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice3::
-	multichoice 25, 0, CHAMPION_CHALLENGE_CHOICE_PAGE3, FALSE
-	switch VAR_RESULT
-	case 0, EverGrandeCity_Champion_ChallengeRoom1_EventScript_ExitChallengeSelect
-	case 1, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Multichoice2
-	case 2, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option8
-	case 3, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option9
- 	case MULTI_B_PRESSED, EverGrandeCity_Champion_ChallengeRoom1_EventScript_ExitChallengeSelect
+	case 5, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option5
+	case 6, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option6
+	case 7, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option7
+	case 8, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option8
+	case 9, EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_Option9
+	case MULTI_B_PRESSED, EverGrandeCity_Champion_ChallengeRoom1_EventScript_ExitChallengeSelect
 	return
 
 
@@ -136,6 +120,9 @@ EverGrandeCity_Champion_ChallengeRoom1_Text_Receptionist1_NotAllowed::
 	.string "You must complete the previous\n"
 	.string "challenge tier before attempting this\l"
 	.string "challenge.$"
+
+EverGrandeCity_Champion_ChallengeRoom1_Text_Exit::
+	.string "Exit$"
 
 EverGrandeCity_Champion_ChallengeRoom1_EventScript_Receptionist1_MoveAway::
 	walk_up
