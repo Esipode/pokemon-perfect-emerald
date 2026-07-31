@@ -42,4 +42,9 @@ void ReadAchievementProfile(void);
 void WriteAchievementProfile(void);
 bool8 Achievement_ProfileWriteFailed(void);
 
+// Writes the profile to flash only if it's been marked dirty since the last
+// flush (see src/achievements.c). Safe to call unconditionally from any of
+// the flush points in design doc §1.3.
+void Achievement_FlushProfile(void);
+
 #endif // GUARD_ACHIEVEMENTS_H

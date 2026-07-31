@@ -17,6 +17,12 @@ EWRAM_DATA struct AchievementProfile gAchievementProfile = {0};
 // trailing /DISCARD/ silently drops, leaving .text with a dangling reference.
 static bool8 sAchievementProfileWriteFailed = FALSE;
 
+// Set by mutators in this file (Stage 1.4's Achievement_TryComplete, boost
+// purchase/reset, etc.) and cleared once Achievement_FlushProfile writes the
+// profile out. Keeps flash writes off the hot path: a mutation only costs a
+// flash write once, at the next safe flush point, not on every call.
+static bool8 sAchievementProfileDirty = FALSE;
+
 static u16 CalculateProfileChecksum(const struct AchievementProfile *profile)
 {
     u16 offset = offsetof(struct AchievementProfile, totalPointsEarned);
@@ -104,4 +110,18 @@ void WriteAchievementProfile(void)
 bool8 Achievement_ProfileWriteFailed(void)
 {
     return sAchievementProfileWriteFailed;
+}
+
+// Call sites (design doc §1.3): the overworld at the same safe point the
+// achievement popup task runs, TrySavingData (so a normal save always
+// flushes), and immediately after a boost purchase or boost reset. Achievements
+// earned mid-battle flush on return to the field, not in-battle: this fails in
+// the safe direction, where a hard reset can lose an award but never double-award it.
+void Achievement_FlushProfile(void)
+{
+    if (!sAchievementProfileDirty)
+        return;
+
+    WriteAchievementProfile();
+    sAchievementProfileDirty = FALSE;
 }
