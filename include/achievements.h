@@ -36,4 +36,10 @@ struct AchievementProfile
 
 extern struct AchievementProfile gAchievementProfile;
 
+// Flash I/O. Neither of these touch gDamagedSaveSectors or gSaveFileStatus:
+// a profile read/write failure must never trigger the save-failed screen.
+void ReadAchievementProfile(void);
+void WriteAchievementProfile(void);
+bool8 Achievement_ProfileWriteFailed(void);
+
 #endif // GUARD_ACHIEVEMENTS_H

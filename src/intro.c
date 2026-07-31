@@ -29,6 +29,7 @@
 #include "constants/rgb.h"
 #include "constants/battle_anim.h"
 #include "pokemon.h"
+#include "achievements.h"
 
 /*
     The intro is grouped into the following scenes
@@ -1144,6 +1145,9 @@ void CB2_InitCopyrightScreenAfterBootup(void)
         ResetMenuAndMonGlobals();
         Save_ResetSaveCounters();
         LoadGameSave(SAVE_NORMAL);
+        // Independent of gSaveFileStatus: the achievement profile lives outside
+        // the save slots and must be available before a save is loaded.
+        ReadAchievementProfile();
         if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
             Sav2_ClearSetDefault();
         SetPokemonCryStereo(gSaveBlock2Ptr->optionsSound);
