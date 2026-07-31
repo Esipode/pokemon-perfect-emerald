@@ -28,18 +28,17 @@ static void CopyFromSaveBlock3(u32, struct SaveSector *);
 /*
  * Sector Layout:
  *
- * Sectors 0 - 15:      Save Slot 1
- * Sectors 16 - 31:     Save Slot 2
- * Sectors 32 - 33:     Hall of Fame
- * Sector 34:           Trainer Hill
- * Sectors 35 - 36:     Recorded Battle
+ * Sectors 0 - 14:      Save Slot 1
+ * Sectors 15 - 29:     Save Slot 2
+ * Sector  30:          Achievement Profile (primary)
+ * Sector  31:          Achievement Profile (mirror)
  *
  * There are two save slots for saving the player's game data. We alternate between
  * them each time the game is saved, so that if the current save slot is corrupt,
  * we can load the previous one. We also rotate the sectors in each save slot
  * so that the same data is not always being written to the same sector. This
  * might be done to reduce wear on the flash memory, but I'm not sure, since all
- * 16 sectors get written anyway.
+ * 15 sectors get written anyway.
  *
  * See SECTOR_ID_* constants in save.h
  */
@@ -61,8 +60,7 @@ struct
 
     SAVEBLOCK_CHUNK(struct SaveBlock1, 0), // SECTOR_ID_SAVEBLOCK1_START
     SAVEBLOCK_CHUNK(struct SaveBlock1, 1),
-    SAVEBLOCK_CHUNK(struct SaveBlock1, 2),
-    SAVEBLOCK_CHUNK(struct SaveBlock1, 3), // SECTOR_ID_SAVEBLOCK1_END
+    SAVEBLOCK_CHUNK(struct SaveBlock1, 2), // SECTOR_ID_SAVEBLOCK1_END
 
     SAVEBLOCK_CHUNK(struct PokemonStorage, 0), // SECTOR_ID_PKMN_STORAGE_START
     SAVEBLOCK_CHUNK(struct PokemonStorage, 1),
@@ -102,12 +100,10 @@ void ClearSaveData(void)
 {
     u16 i;
 
-    // Clear the full save two sectors at a time
-    for (i = 0; i < SECTORS_COUNT / 2; i++)
-    {
+    // Erases the two save slots only. Sectors at and above SECTOR_ID_ACHIEVEMENTS
+    // (30-31) are deliberately preserved.
+    for (i = 0; i < NUM_SAVE_SLOTS * NUM_SECTORS_PER_SLOT; i++)
         EraseFlashSector(i);
-        EraseFlashSector(i + SECTORS_COUNT / 2);
-    }
 }
 
 void Save_ResetSaveCounters(void)
@@ -210,25 +206,6 @@ static u8 HandleWriteSector(u16 sectorId, const struct SaveSectorLocation *locat
     gReadWriteSector->checksum = CalculateChecksum(data, size);
 
     return TryWriteSector(sector, gReadWriteSector->data);
-}
-
-static u8 HandleWriteSectorNBytes(u8 sectorId, u8 *data, u16 size)
-{
-    u16 i;
-    struct SaveSector *sector = &gSaveDataBuffer;
-
-    // Clear temp save sector
-    for (i = 0; i < SECTOR_SIZE; i++)
-        ((u8 *)sector)[i] = 0;
-
-    sector->signature = SECTOR_SIGNATURE;
-
-    // Copy data to temp buffer for writing
-    for (i = 0; i < size; i++)
-        sector->data[i] = data[i];
-
-    sector->id = CalculateChecksum(data, size); // though this appears to be incorrect, it might be some sector checksum instead of a whole save checksum and only appears to be relevent to HOF data, if used.
-    return TryWriteSector(sectorId, sector->data);
 }
 
 static u8 TryWriteSector(u8 sector, u8 *data)
@@ -644,34 +621,6 @@ static u8 GetSaveValidStatus(const struct SaveSectorLocation *locations)
     return SAVE_STATUS_CORRUPT;
 }
 
-static u8 TryLoadSaveSector(u8 sectorId, u8 *data, u16 size)
-{
-    u16 i;
-    struct SaveSector *sector = &gSaveDataBuffer;
-    ReadFlashSector(sectorId, sector);
-    if (sector->signature == SECTOR_SIGNATURE)
-    {
-        u16 checksum = CalculateChecksum(sector->data, size);
-        if (sector->id == checksum)
-        {
-            // Signature and checksum are correct, copy data
-            for (i = 0; i < size; i++)
-                data[i] = sector->data[i];
-            return SAVE_STATUS_OK;
-        }
-        else
-        {
-            // Incorrect checksum
-            return SAVE_STATUS_CORRUPT;
-        }
-    }
-    else
-    {
-        // Incorrect signature value
-        return SAVE_STATUS_EMPTY;
-    }
-}
-
 // Return value always ignored
 static bool8 ReadFlashSector(u8 sectorId, struct SaveSector *sector)
 {
@@ -722,27 +671,14 @@ u8 HandleSavingData(u8 saveType)
     switch (saveType)
     {
     case SAVE_HALL_OF_FAME_ERASE_BEFORE:
-        // Unused. Erases the special save sectors (HOF, Trainer Hill, Recorded Battle)
-        // before overwriting HOF.
-        for (i = SECTOR_ID_HOF_1; i < SECTORS_COUNT; i++)
-            EraseFlashSector(i);
+        // Unused. Hall of Fame no longer has dedicated flash sectors (see the
+        // save.h sector remap), so there is nothing left to erase before saving it.
         // fallthrough
     case SAVE_HALL_OF_FAME:
         if (GetGameStat(GAME_STAT_ENTERED_HOF) < 999)
             IncrementGameStat(GAME_STAT_ENTERED_HOF);
-
-        // Write the full save slot first
-        CopyPartyAndObjectsToSave();
-        WriteSaveSectorOrSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
-
-        // Save the Hall of Fame
-        if (gHoFSaveBuffer != NULL)
-        {
-            u8 *tempAddr = (void *) gHoFSaveBuffer;
-            HandleWriteSectorNBytes(SECTOR_ID_HOF_1, tempAddr, SECTOR_DATA_SIZE);
-            HandleWriteSectorNBytes(SECTOR_ID_HOF_2, tempAddr + SECTOR_DATA_SIZE, SECTOR_DATA_SIZE);
-        }
-        break;
+        // fallthrough - Hall of Fame team data is no longer written to its own
+        // sectors; only the current save slot is written, same as SAVE_NORMAL.
     case SAVE_NORMAL:
     default:
         CopyPartyAndObjectsToSave();
@@ -759,11 +695,8 @@ u8 HandleSavingData(u8 saveType)
             WriteSectorSignatureByte_NoOffset(i, gRamSaveSectorLocations);
         break;
     case SAVE_OVERWRITE_DIFFERENT_FILE:
-        // Erase Hall of Fame
-        for (i = SECTOR_ID_HOF_1; i < SECTORS_COUNT; i++)
-            EraseFlashSector(i);
-
-        // Overwrite save slot
+        // Overwrite save slot. Previously also erased the Hall of Fame sectors
+        // first; those sectors no longer exist (see the save.h sector remap).
         CopyPartyAndObjectsToSave();
         WriteSaveSectorOrSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
         break;
@@ -899,17 +832,11 @@ u8 LoadGameSave(u8 saveType)
         gGameContinueCallback = NULL;
         break;
     case SAVE_HALL_OF_FAME:
-        if (gHoFSaveBuffer != NULL)
-        {
-            u8 *hofData = (u8 *) gHoFSaveBuffer;
-            status = TryLoadSaveSector(SECTOR_ID_HOF_1, hofData, SECTOR_DATA_SIZE);
-            if (status == SAVE_STATUS_OK)
-                status = TryLoadSaveSector(SECTOR_ID_HOF_2, &hofData[SECTOR_DATA_SIZE], SECTOR_DATA_SIZE);
-        }
-        else
-        {
-            status = SAVE_STATUS_ERROR;
-        }
+        // Hall of Fame team data no longer has a dedicated flash sector (see the
+        // save.h sector remap). Always report failure so callers (Sav2_HallOfFame
+        // and friends) treat the record list as empty, matching the pre-existing
+        // (already broken) Hall of Fame persistence behavior on this fork.
+        status = SAVE_STATUS_ERROR;
         break;
     }
 
@@ -941,50 +868,20 @@ u16 GetSaveBlocksPointersBaseOffset(void)
     return 0;
 }
 
+// Trainer Hill and Recorded Battle previously used dedicated flash sectors
+// (34 and 35) that already fell outside the physical 32-sector chip, so their
+// persistence was already non-functional. Those sector IDs are gone now that
+// sectors 30-31 are reserved for the achievement profile (see save.h), so
+// these always report failure, preserving the existing (broken) behavior
+// without touching flash sectors that don't belong to them.
 u32 TryReadSpecialSaveSector(u8 sector, u8 *dst)
 {
-    s32 i;
-    s32 size;
-    u8 *savData;
-
-    if (sector != SECTOR_ID_TRAINER_HILL && sector != SECTOR_ID_RECORDED_BATTLE)
-        return SAVE_STATUS_ERROR;
-
-    ReadFlash(sector, 0, (u8 *)&gSaveDataBuffer, SECTOR_SIZE);
-    if (*(u32 *)(&gSaveDataBuffer.data[0]) != SPECIAL_SECTOR_SENTINEL)
-        return SAVE_STATUS_ERROR;
-
-    // Copies whole save sector except u32 counter
-    i = 0;
-    size = SECTOR_COUNTER_OFFSET - 1;
-    savData = &gSaveDataBuffer.data[4]; // data[4] to skip past SPECIAL_SECTOR_SENTINEL
-    for (; i <= size; i++)
-        dst[i] = savData[i];
-    return SAVE_STATUS_OK;
+    return SAVE_STATUS_ERROR;
 }
 
 u32 TryWriteSpecialSaveSector(u8 sector, u8 *src)
 {
-    s32 i;
-    s32 size;
-    u8 *savData;
-    void *savDataBuffer;
-
-    if (sector != SECTOR_ID_TRAINER_HILL && sector != SECTOR_ID_RECORDED_BATTLE)
-        return SAVE_STATUS_ERROR;
-
-    savDataBuffer = &gSaveDataBuffer;
-    *(u32 *)(savDataBuffer) = SPECIAL_SECTOR_SENTINEL;
-
-    // Copies whole save sector except u32 counter
-    i = 0;
-    size = SECTOR_COUNTER_OFFSET - 1;
-    savData = &gSaveDataBuffer.data[4]; // data[4] to skip past SPECIAL_SECTOR_SENTINEL
-    for (; i <= size; i++)
-        savData[i] = src[i];
-    if (ProgramFlashSectorAndVerify(sector, savDataBuffer) != 0)
-        return SAVE_STATUS_ERROR;
-    return SAVE_STATUS_OK;
+    return SAVE_STATUS_ERROR;
 }
 
 #define tState         data[0]

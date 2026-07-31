@@ -145,6 +145,9 @@ void ReadFlash(u16 sectorNum, u32 offset, u8 *dest, u32 size)
     vu16 *funcDest;
     void (*readFlash_Core)(vu8 *, u8 *, u32);
 
+    if (sectorNum >= gFlash->sector.count)
+        return;
+
     REG_WAITCNT = (REG_WAITCNT & ~WAITCNT_SRAM_MASK) | WAITCNT_SRAM_8;
 
     if (gFlash->romSize == FLASH_ROM_SIZE_1M)
@@ -192,6 +195,9 @@ u32 VerifyFlashSector(u16 sectorNum, u8 *src)
     u8 *tgt;
     u16 size;
     u32 (*verifyFlashSector_Core)(u8 *, u8 *, u32);
+
+    if (sectorNum >= gFlash->sector.count)
+        return 0xFFFFFFFF;
 
     REG_WAITCNT = (REG_WAITCNT & ~WAITCNT_SRAM_MASK) | WAITCNT_SRAM_8;
 

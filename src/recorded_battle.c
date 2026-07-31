@@ -31,7 +31,7 @@ struct PlayerInfo
 };
 
 // Save data using TryWriteSpecialSaveSector is allowed to exceed SECTOR_DATA_SIZE (up to the counter field)
-// RecordedBattleSave is split across two sectors: SECTOR_ID_RECORDED_BATTLE and SECTOR_ID_RECORDED_BATTLE_2
+// Recorded Battle no longer has a dedicated flash sector (see save.h sector remap); persistence is inert.
 STATIC_ASSERT(sizeof(struct RecordedBattleSave) <= SECTOR_COUNTER_OFFSET * 2, RecordedBattleSaveFreeSpace);
 
 EWRAM_DATA rng_value_t gRecordedBattleRngSeed = RNG_VALUE_EMPTY;
@@ -278,7 +278,9 @@ static bool32 RecordedBattleToSave(struct RecordedBattleSave *battleSave, struct
 
     saveSector->checksum = CalcByteArraySum((void *)(saveSector), sizeof(*saveSector) - 4);
 
-    if (TryWriteSpecialSaveSector(SECTOR_ID_RECORDED_BATTLE, (void *)(saveSector)) != SAVE_STATUS_OK)
+    // Recorded Battle no longer has a dedicated flash sector (see save.h sector
+    // remap); TryWriteSpecialSaveSector always fails now, so the sector id is unused.
+    if (TryWriteSpecialSaveSector(0, (void *)(saveSector)) != SAVE_STATUS_OK)
         return FALSE;
     else
         return TRUE;
@@ -444,7 +446,9 @@ bool32 MoveRecordedBattleToSaveData(void)
 
 static bool32 TryCopyRecordedBattleSaveData(struct RecordedBattleSave *dst, struct SaveSector *saveBuffer)
 {
-    if (TryReadSpecialSaveSector(SECTOR_ID_RECORDED_BATTLE, (void *)(saveBuffer)) != SAVE_STATUS_OK)
+    // Recorded Battle no longer has a dedicated flash sector (see save.h sector
+    // remap); TryReadSpecialSaveSector always fails now, so the sector id is unused.
+    if (TryReadSpecialSaveSector(0, (void *)(saveBuffer)) != SAVE_STATUS_OK)
         return FALSE;
 
     memcpy(dst, saveBuffer, sizeof(struct RecordedBattleSave));

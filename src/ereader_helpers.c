@@ -463,7 +463,9 @@ static bool32 TryWriteTrainerHill_Internal(struct EReaderTrainerHillSet *hillSet
     }
 
     challenge->checksum = CalcByteArraySum((u8 *)challenge->floors, NUM_TRAINER_HILL_FLOORS * sizeof(struct TrainerHillFloor));
-    if (TryWriteSpecialSaveSector(SECTOR_ID_TRAINER_HILL, (u8 *)challenge) != SAVE_STATUS_OK)
+    // Trainer Hill no longer has a dedicated flash sector (see save.h sector
+    // remap); TryWriteSpecialSaveSector always fails now, so the sector id is unused.
+    if (TryWriteSpecialSaveSector(0, (u8 *)challenge) != SAVE_STATUS_OK)
         return FALSE;
 
     return TRUE;
@@ -479,7 +481,9 @@ bool32 TryWriteTrainerHill(struct EReaderTrainerHillSet *hillSet)
 
 static bool32 TryReadTrainerHill_Internal(struct EReaderTrainerHillSet *dest, u8 *buffer)
 {
-    if (TryReadSpecialSaveSector(SECTOR_ID_TRAINER_HILL, buffer) != SAVE_STATUS_OK)
+    // Trainer Hill no longer has a dedicated flash sector (see save.h sector
+    // remap); TryReadSpecialSaveSector always fails now, so the sector id is unused.
+    if (TryReadSpecialSaveSector(0, buffer) != SAVE_STATUS_OK)
         return FALSE;
 
     memcpy(dest, buffer, sizeof(struct EReaderTrainerHillSet));
