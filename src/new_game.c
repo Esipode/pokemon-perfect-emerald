@@ -1,6 +1,7 @@
 #include "global.h"
 #include "clock.h"
 #include "new_game.h"
+#include "new_game_settings_menu.h"
 #include "random.h"
 #include "pokemon.h"
 #include "roamer.h"
@@ -292,6 +293,8 @@ void NewGameInitData(void)
     gSaveBlock2Ptr->specialSaveWarpFlags = 0;
     gSaveBlock2Ptr->gcnLinkFlags = 0;
     InitEventData();
+    if (!isNewGamePlus)
+        ApplyPendingNewGameSettings();
     ClearTVShowData();
     ResetGabbyAndTy();
     ClearSecretBases();

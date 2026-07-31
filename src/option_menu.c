@@ -22,13 +22,11 @@
 static void ReadAllCurrentSettings(u8 taskId);
 static void DrawOptionsPg1(u8 taskId);
 static void DrawOptionsPg2(u8 taskId);
-static void DrawOptionsPg3(u8 taskId);
 
 #define tMenuSelection    data[0]
 #define tButtonMode       data[1]
 #define tWindowFrameType  data[2]
 #define tAIBattles        data[3]  // bit0 = trainer AI, bit1 = wild AI
-#define tDifficulty       data[4]
 #define tTextSpeed        data[5]
 
 // Packed flags for all boolean options (data[6], bits 0-15)
@@ -36,16 +34,9 @@ static void DrawOptionsPg3(u8 taskId);
 #define BATTLE_STYLE_SHIFT     1
 #define SOUND_SHIFT            2
 #define AUTO_SCROLL_SHIFT      3
-#define RANDOMIZER_SHIFT       4
-#define RANDOMIZER_TYPE_SHIFT  5
-#define RANDOMIZER_MOVES_SHIFT 6
-#define NUZLOCKE_SHIFT         7
 #define AUTOSAVE_SHIFT         8
-#define LEVEL_CAP_OFF_SHIFT    9
-#define STAT_EDITOR_SHIFT     10
-#define DEBUG_SHIFT           11
 
-#define tPackedFlags          data[6]  // 12 booleans packed into 16 bits
+#define tPackedFlags          data[6]  // booleans packed into 16 bits
 
 // Helper macros for packed flag access
 #define GET_FLAG(name) ((gTasks[taskId].tPackedFlags >> name##_SHIFT) & 1)
@@ -72,24 +63,9 @@ enum
     MENUITEM_AIBATTLES_TRAINER,
     MENUITEM_AIBATTLES_WILD,
     MENUITEM_AUTOSCROLL,
-    MENUITEM_NUZLOCKE,
     MENUITEM_AUTOSAVE,
-    MENUITEM_DIFFICULTY,
     MENUITEM_CANCEL_PG2,
     MENUITEM_COUNT_PG2,
-};
-
-// Menu items Pg3
-enum
-{
-    MENUITEM_RANDOMIZER,
-    MENUITEM_RANDOMIZER_TYPE,
-    MENUITEM_RANDOMIZER_MOVES,
-    MENUITEM_LEVEL_CAP_OFF,
-    MENUITEM_ALLOW_STAT_EDITOR,
-    MENUITEM_DEBUG,
-    MENUITEM_CANCEL_PG3,
-    MENUITEM_COUNT_PG3,
 };
 
 enum
@@ -110,26 +86,14 @@ enum
 #define YPOS_AIBATTLES_TRAINER    (MENUITEM_AIBATTLES_TRAINER * 16)
 #define YPOS_AIBATTLES_WILD       (MENUITEM_AIBATTLES_WILD * 16)
 #define YPOS_AUTOSCROLL           (MENUITEM_AUTOSCROLL * 16)
-#define YPOS_NUZLOCKE             (MENUITEM_NUZLOCKE * 16)
 #define YPOS_AUTOSAVE             (MENUITEM_AUTOSAVE * 16)
-#define YPOS_DIFFICULTY           (MENUITEM_DIFFICULTY * 16)
 
-//Pg3
-#define YPOS_RANDOMIZER   (MENUITEM_RANDOMIZER * 16)
-#define YPOS_RANDOMIZER_TYPE (MENUITEM_RANDOMIZER_TYPE * 16)
-#define YPOS_RANDOMIZER_MOVES (MENUITEM_RANDOMIZER_MOVES * 16)
-#define YPOS_LEVEL_CAP_OFF (MENUITEM_LEVEL_CAP_OFF * 16)
-#define YPOS_STAT_EDITOR (MENUITEM_ALLOW_STAT_EDITOR * 16)
-#define YPOS_DEBUG (MENUITEM_DEBUG * 16)
-
-#define PAGE_COUNT 3
+#define PAGE_COUNT 2
 
 static void Task_OptionMenuFadeIn(u8 taskId);
 static void Task_OptionMenuProcessInput(u8 taskId);
 static void Task_OptionMenuFadeIn_Pg2(u8 taskId);
 static void Task_OptionMenuProcessInput_Pg2(u8 taskId);
-static void Task_OptionMenuFadeIn_Pg3(u8 taskId);
-static void Task_OptionMenuProcessInput_Pg3(u8 taskId);
 static void Task_OptionMenuSave(u8 taskId);
 static void Task_OptionMenuFadeOut(u8 taskId);
 static void HighlightOptionMenuItem(u8 selection);
@@ -144,24 +108,8 @@ static void AIBattles_DrawChoices(u8 selection, bool8 isActive);
 static void WildAIBattles_DrawChoices(u8 selection, bool8 isActive);
 static u8   AutoScroll_ProcessInput(u8 selection);
 static void AutoScroll_DrawChoices(u8 selection, bool8 isActive);
-static u8   Randomizer_ProcessInput(u8 selection);
-static void Randomizer_DrawChoices(u8 selection, bool8 isActive);
-static u8   RandomizerType_ProcessInput(u8 selection);
-static void RandomizerType_DrawChoices(u8 selection, bool8 isActive);
-static u8   RandomizerMoves_ProcessInput(u8 selection);
-static void RandomizerMoves_DrawChoices(u8 selection, bool8 isActive);
-static u16  LevelCapOff_ProcessInput(u8 selection);
-static void LevelCapOff_DrawChoices(u8 selection, bool8 isActive);
-static u8   StatEditor_ProcessInput(u8 selection);
-static void StatEditor_DrawChoices(u8 selection, bool8 isActive);
-static u8   Debug_ProcessInput(u8 selection);
-static void Debug_DrawChoices(u8 selection, bool8 isActive);
-static u8   Nuzlocke_ProcessInput(u8 selection);
-static void Nuzlocke_DrawChoices(u8 selection, bool8 isActive);
 static u8   Autosave_ProcessInput(u8 selection);
 static void Autosave_DrawChoices(u8 selection, bool8 isActive);
-static u8   Difficulty_ProcessInput(u8 selection);
-static void Difficulty_DrawChoices(u8 selection, bool8 isActive);
 static u8 Sound_ProcessInput(u8 selection);
 static void Sound_DrawChoices(u8 selection, bool8 isActive);
 static u8 FrameType_ProcessInput(u8 selection);
@@ -205,35 +153,9 @@ static const u8 gText_AIBattlesOn[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_AutoScroll[]         = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}AUTO-SCROLL");
 static const u8 gText_AutoScrollOff[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_AutoScrollOn[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 gText_Nuzlocke[]           = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}NUZLOCKE");
-static const u8 gText_NuzlockeOff[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 gText_NuzlockeOn[]         = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
 static const u8 gText_Autosave[]           = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}AUTOSAVE");
 static const u8 gText_AutosaveOff[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_AutosaveOn[]         = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 gText_Difficulty[]         = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}DIFFICULTY");
-static const u8 gText_DifficultyEasy[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}EASY");
-static const u8 gText_DifficultyNormal[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}NORMAL");
-static const u8 gText_DifficultyHard[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD");
-
-// Page 3 strings
-static const u8 gText_SpeciesRandomizer[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SPECIES");
-static const u8 gText_RandomizerOff[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 gText_RandomizerOn[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 gText_TypeRandomizer[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}TYPE");
-static const u8 gText_TypeRandomizerOff[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 gText_TypeRandomizerOn[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 gText_MovesRandomizer[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MOVES");
-static const u8 gText_MovesRandomizerOff[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 gText_MovesRandomizerOn[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 gText_LevelCap[]           = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}LEVEL CAP");
-static const u8 gText_LevelCapOn[]         = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 gText_LevelCapOff[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 gText_AllowStatEditorOff[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 gText_AllowStatEditorOn[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-static const u8 gText_Debug[]              = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}DEBUG");
-static const u8 gText_DebugOff[]           = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
-static const u8 gText_DebugOn[]            = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
 
 static const u8 sText_ChevronLeft[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
@@ -258,21 +180,8 @@ static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
     [MENUITEM_AIBATTLES_TRAINER] = COMPOUND_STRING("AI TRAINER BATTLES"),
     [MENUITEM_AIBATTLES_WILD]    = COMPOUND_STRING("AI WILD BATTLES"),
     [MENUITEM_AUTOSCROLL]        = COMPOUND_STRING("AUTO SCROLL"),
-    [MENUITEM_NUZLOCKE]          = COMPOUND_STRING("NUZLOCKE"),
     [MENUITEM_AUTOSAVE]          = COMPOUND_STRING("AUTOSAVE"),
-    [MENUITEM_DIFFICULTY]        = COMPOUND_STRING("DIFFICULTY"),
     [MENUITEM_CANCEL_PG2]        = COMPOUND_STRING("CANCEL"),
-};
-
-static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
-{
-    [MENUITEM_RANDOMIZER]        = COMPOUND_STRING("RANDOMIZE MONS"),
-    [MENUITEM_RANDOMIZER_TYPE]   = COMPOUND_STRING("RANDOMIZE TYPES"),
-    [MENUITEM_RANDOMIZER_MOVES]  = COMPOUND_STRING("RANDOMIZE MOVES"),
-    [MENUITEM_LEVEL_CAP_OFF]     = COMPOUND_STRING("LEVEL CAP"),
-    [MENUITEM_ALLOW_STAT_EDITOR] = COMPOUND_STRING("STAT EDITOR"),
-    [MENUITEM_DEBUG]             = COMPOUND_STRING("DEBUG"),
-    [MENUITEM_CANCEL_PG3]        = COMPOUND_STRING("CANCEL"),
 };
 
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
@@ -344,20 +253,12 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
     gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
     gTasks[taskId].tAIBattles = (FlagGet(FLAG_AI_BATTLES) ? 1 : 0) | (FlagGet(FLAG_AI_WILD_BATTLES) ? 2 : 0);
-    gTasks[taskId].tDifficulty = gSaveBlock1Ptr->difficulty;
     gTasks[taskId].tPackedFlags = 0;
     if (gSaveBlock2Ptr->optionsBattleSceneOff)     SET_FLAG(BATTLE_SCENE, 1); else SET_FLAG(BATTLE_SCENE, 0);
     if (gSaveBlock2Ptr->optionsBattleStyle)        SET_FLAG(BATTLE_STYLE, 1); else SET_FLAG(BATTLE_STYLE, 0);
     if (gSaveBlock2Ptr->optionsSound)              SET_FLAG(SOUND, 1); else SET_FLAG(SOUND, 0);
     if (FlagGet(FLAG_AUTO_SCROLL_TEXT))            SET_FLAG(AUTO_SCROLL, 1); else SET_FLAG(AUTO_SCROLL, 0);
-    if (FlagGet(FLAG_RANDOMIZE_MON))               SET_FLAG(RANDOMIZER, 1); else SET_FLAG(RANDOMIZER, 0);
-    if (FlagGet(FLAG_RANDOMIZE_TYPE))              SET_FLAG(RANDOMIZER_TYPE, 1); else SET_FLAG(RANDOMIZER_TYPE, 0);
-    if (FlagGet(FLAG_RANDOMIZE_MOVES))             SET_FLAG(RANDOMIZER_MOVES, 1); else SET_FLAG(RANDOMIZER_MOVES, 0);
-    if (gSaveBlock1Ptr->nuzlockeModeEnabled)       SET_FLAG(NUZLOCKE, 1); else SET_FLAG(NUZLOCKE, 0);
     if (gSaveBlock1Ptr->autosaveModeEnabled)       SET_FLAG(AUTOSAVE, 1); else SET_FLAG(AUTOSAVE, 0);
-    if (FlagGet(FLAG_LEVEL_CAP_OFF))               SET_FLAG(LEVEL_CAP_OFF, 1); else SET_FLAG(LEVEL_CAP_OFF, 0);
-    if (FlagGet(FLAG_ALLOW_STAT_EDITOR))           SET_FLAG(STAT_EDITOR, 1); else SET_FLAG(STAT_EDITOR, 0);
-    if (FlagGet(FLAG_DEBUG))                       SET_FLAG(DEBUG, 1); else SET_FLAG(DEBUG, 0);
 }
 
 static void DrawOptionsPg1(u8 taskId)
@@ -381,23 +282,7 @@ static void DrawOptionsPg2(u8 taskId)
     AIBattles_DrawChoices(gTasks[taskId].tAIBattles & 1, sel == MENUITEM_AIBATTLES_TRAINER);
     WildAIBattles_DrawChoices((gTasks[taskId].tAIBattles & 2) ? 1 : 0, sel == MENUITEM_AIBATTLES_WILD);
     AutoScroll_DrawChoices(GET_FLAG(AUTO_SCROLL), sel == MENUITEM_AUTOSCROLL);
-    Nuzlocke_DrawChoices(GET_FLAG(NUZLOCKE), sel == MENUITEM_NUZLOCKE);
     Autosave_DrawChoices(GET_FLAG(AUTOSAVE), sel == MENUITEM_AUTOSAVE);
-    Difficulty_DrawChoices(gTasks[taskId].tDifficulty, sel == MENUITEM_DIFFICULTY);
-    HighlightOptionMenuItem(sel);
-    CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
-}
-
-static void DrawOptionsPg3(u8 taskId)
-{
-    u8 sel = gTasks[taskId].tMenuSelection;
-
-    Randomizer_DrawChoices(GET_FLAG(RANDOMIZER), sel == MENUITEM_RANDOMIZER);
-    RandomizerType_DrawChoices(GET_FLAG(RANDOMIZER_TYPE), sel == MENUITEM_RANDOMIZER_TYPE);
-    RandomizerMoves_DrawChoices(GET_FLAG(RANDOMIZER_MOVES), sel == MENUITEM_RANDOMIZER_MOVES);
-    LevelCapOff_DrawChoices(GET_FLAG(LEVEL_CAP_OFF), sel == MENUITEM_LEVEL_CAP_OFF);
-    StatEditor_DrawChoices(GET_FLAG(STAT_EDITOR), sel == MENUITEM_ALLOW_STAT_EDITOR);
-    Debug_DrawChoices(GET_FLAG(DEBUG), sel == MENUITEM_DEBUG);
     HighlightOptionMenuItem(sel);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -492,10 +377,6 @@ void CB2_InitOptionMenu(void)
             DrawOptionsPg2(taskId);
             gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
             break;
-        case 2:
-            DrawOptionsPg3(taskId);
-            gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
-            break;
         }
         gMain.state++;
         break;
@@ -547,10 +428,6 @@ static void Task_ChangePage(u8 taskId)
     case 1:
         DrawOptionsPg2(taskId);
         gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
-        break;
-    case 2:
-        DrawOptionsPg3(taskId);
-        gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
         break;
     }
 }
@@ -730,126 +607,12 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
             if (previousOption != GET_FLAG(AUTO_SCROLL))
                 AutoScroll_DrawChoices(GET_FLAG(AUTO_SCROLL), TRUE);
             break;
-        case MENUITEM_NUZLOCKE:
-            previousOption = GET_FLAG(NUZLOCKE);
-            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << NUZLOCKE_SHIFT)) | (Nuzlocke_ProcessInput(previousOption) << NUZLOCKE_SHIFT);
-
-            if (previousOption != GET_FLAG(NUZLOCKE))
-                Nuzlocke_DrawChoices(GET_FLAG(NUZLOCKE), TRUE);
-            break;
         case MENUITEM_AUTOSAVE:
             previousOption = GET_FLAG(AUTOSAVE);
             gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << AUTOSAVE_SHIFT)) | (Autosave_ProcessInput(previousOption) << AUTOSAVE_SHIFT);
 
             if (previousOption != GET_FLAG(AUTOSAVE))
                 Autosave_DrawChoices(GET_FLAG(AUTOSAVE), TRUE);
-            break;
-        case MENUITEM_DIFFICULTY:
-            previousOption = gTasks[taskId].tDifficulty;
-            gTasks[taskId].tDifficulty = Difficulty_ProcessInput(gTasks[taskId].tDifficulty);
-
-            if (previousOption != gTasks[taskId].tDifficulty)
-                Difficulty_DrawChoices(gTasks[taskId].tDifficulty, TRUE);
-            break;
-        default:
-            return;
-        }
-
-        if (sArrowPressed)
-        {
-            sArrowPressed = FALSE;
-            CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
-        }
-    }
-}
-
-static void Task_OptionMenuFadeIn_Pg3(u8 taskId)
-{
-    if (!gPaletteFade.active)
-        gTasks[taskId].func = Task_OptionMenuProcessInput_Pg3;
-}
-
-static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
-{
-    if (JOY_NEW(L_BUTTON) || JOY_NEW(R_BUTTON))
-    {
-        FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
-        ClearStdWindowAndFrame(WIN_OPTIONS, FALSE);
-        sCurrPage = Process_ChangePage(sCurrPage);
-        gTasks[taskId].func = Task_ChangePage;
-    }
-    else if (JOY_NEW(A_BUTTON))
-    {
-        if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG3)
-            gTasks[taskId].func = Task_OptionMenuSave;
-    }
-    else if (JOY_NEW(B_BUTTON))
-    {
-        gTasks[taskId].func = Task_OptionMenuSave;
-    }
-    else if (JOY_NEW(DPAD_UP))
-    {
-        if (gTasks[taskId].tMenuSelection > 0)
-            gTasks[taskId].tMenuSelection--;
-        else
-            gTasks[taskId].tMenuSelection = MENUITEM_CANCEL_PG3;
-        DrawOptionsPg3(taskId);
-    }
-    else if (JOY_NEW(DPAD_DOWN))
-    {
-        if (gTasks[taskId].tMenuSelection < MENUITEM_CANCEL_PG3)
-            gTasks[taskId].tMenuSelection++;
-        else
-            gTasks[taskId].tMenuSelection = 0;
-        DrawOptionsPg3(taskId);
-    }
-    else
-    {
-        u8 previousOption;
-
-        switch (gTasks[taskId].tMenuSelection)
-        {
-        case MENUITEM_RANDOMIZER:
-            previousOption = GET_FLAG(RANDOMIZER);
-            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << RANDOMIZER_SHIFT)) | (Randomizer_ProcessInput(previousOption) << RANDOMIZER_SHIFT);
-
-            if (previousOption != GET_FLAG(RANDOMIZER))
-                Randomizer_DrawChoices(GET_FLAG(RANDOMIZER), TRUE);
-            break;
-        case MENUITEM_RANDOMIZER_TYPE:
-            previousOption = GET_FLAG(RANDOMIZER_TYPE);
-            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << RANDOMIZER_TYPE_SHIFT)) | (RandomizerType_ProcessInput(previousOption) << RANDOMIZER_TYPE_SHIFT);
-
-            if (previousOption != GET_FLAG(RANDOMIZER_TYPE))
-                RandomizerType_DrawChoices(GET_FLAG(RANDOMIZER_TYPE), TRUE);
-            break;
-        case MENUITEM_RANDOMIZER_MOVES:
-            previousOption = GET_FLAG(RANDOMIZER_MOVES);
-            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << RANDOMIZER_MOVES_SHIFT)) | (RandomizerMoves_ProcessInput(previousOption) << RANDOMIZER_MOVES_SHIFT);
-
-            if (previousOption != GET_FLAG(RANDOMIZER_MOVES))
-                RandomizerMoves_DrawChoices(GET_FLAG(RANDOMIZER_MOVES), TRUE);
-            break;
-        case MENUITEM_LEVEL_CAP_OFF:
-            previousOption = GET_FLAG(LEVEL_CAP_OFF);
-            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << LEVEL_CAP_OFF_SHIFT)) | (LevelCapOff_ProcessInput(previousOption) << LEVEL_CAP_OFF_SHIFT);
-
-            if (previousOption != GET_FLAG(LEVEL_CAP_OFF))
-                LevelCapOff_DrawChoices(GET_FLAG(LEVEL_CAP_OFF), TRUE);
-            break;
-        case MENUITEM_ALLOW_STAT_EDITOR:
-            previousOption = GET_FLAG(STAT_EDITOR);
-            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << STAT_EDITOR_SHIFT)) | (StatEditor_ProcessInput(previousOption) << STAT_EDITOR_SHIFT);
-
-            if (previousOption != GET_FLAG(STAT_EDITOR))
-                StatEditor_DrawChoices(GET_FLAG(STAT_EDITOR), TRUE);
-            break;
-        case MENUITEM_DEBUG:
-            previousOption = GET_FLAG(DEBUG);
-            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << DEBUG_SHIFT)) | (Debug_ProcessInput(previousOption) << DEBUG_SHIFT);
-
-            if (previousOption != GET_FLAG(DEBUG))
-                Debug_DrawChoices(GET_FLAG(DEBUG), TRUE);
             break;
         default:
             return;
@@ -875,15 +638,7 @@ static void Task_OptionMenuSave(u8 taskId)
     (gTasks[taskId].tAIBattles & 1) == 0 ? FlagClear(FLAG_AI_BATTLES) : FlagSet(FLAG_AI_BATTLES);
     (gTasks[taskId].tAIBattles & 2) == 0 ? FlagClear(FLAG_AI_WILD_BATTLES) : FlagSet(FLAG_AI_WILD_BATTLES);
     GET_FLAG(AUTO_SCROLL) == 0 ? FlagClear(FLAG_AUTO_SCROLL_TEXT) : FlagSet(FLAG_AUTO_SCROLL_TEXT);
-    GET_FLAG(RANDOMIZER) == 0 ? FlagClear(FLAG_RANDOMIZE_MON) : FlagSet(FLAG_RANDOMIZE_MON);
-    GET_FLAG(RANDOMIZER_TYPE) == 0 ? FlagClear(FLAG_RANDOMIZE_TYPE) : FlagSet(FLAG_RANDOMIZE_TYPE);
-    GET_FLAG(RANDOMIZER_MOVES) == 0 ? FlagClear(FLAG_RANDOMIZE_MOVES) : FlagSet(FLAG_RANDOMIZE_MOVES);
-    GET_FLAG(LEVEL_CAP_OFF) == 0 ? FlagClear(FLAG_LEVEL_CAP_OFF) : FlagSet(FLAG_LEVEL_CAP_OFF);
-    GET_FLAG(STAT_EDITOR) == 0 ? FlagClear(FLAG_ALLOW_STAT_EDITOR) : FlagSet(FLAG_ALLOW_STAT_EDITOR);
-    GET_FLAG(DEBUG) == 0 ? FlagClear(FLAG_DEBUG) : FlagSet(FLAG_DEBUG);
-    GET_FLAG(NUZLOCKE) == 0 ? (gSaveBlock1Ptr->nuzlockeModeEnabled = 0) : (gSaveBlock1Ptr->nuzlockeModeEnabled = 1);
     GET_FLAG(AUTOSAVE) == 0 ? (gSaveBlock1Ptr->autosaveModeEnabled = 0) : (gSaveBlock1Ptr->autosaveModeEnabled = 1);
-    gSaveBlock1Ptr->difficulty = gTasks[taskId].tDifficulty;
 
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
@@ -1160,132 +915,6 @@ static void AutoScroll_DrawChoices(u8 selection, bool8 isActive)
 }
 
 
-static u8 Randomizer_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void Randomizer_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[2] = {gText_RandomizerOff, gText_RandomizerOn};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_RANDOMIZER, isActive);
-}
-
-static u8 RandomizerType_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void RandomizerType_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[2] = {gText_TypeRandomizerOff, gText_TypeRandomizerOn};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_RANDOMIZER_TYPE, isActive);
-}
-
-static u8 RandomizerMoves_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void RandomizerMoves_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[2] = {gText_MovesRandomizerOff, gText_MovesRandomizerOn};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_RANDOMIZER_MOVES, isActive);
-}
-
-static u16 LevelCapOff_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void LevelCapOff_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[2] = {gText_LevelCapOn, gText_LevelCapOff};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_LEVEL_CAP_OFF, isActive);
-}
-
-static u8 StatEditor_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void StatEditor_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[2] = {gText_AllowStatEditorOff, gText_AllowStatEditorOn};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_STAT_EDITOR, isActive);
-}
-
-static u8 Debug_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void Debug_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[2] = {gText_DebugOff, gText_DebugOn};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_DEBUG, isActive);
-}
-
-static u8 Nuzlocke_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
-    {
-        selection ^= 1;
-        sArrowPressed = TRUE;
-    }
-
-    return selection;
-}
-
-static void Nuzlocke_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[2] = {gText_NuzlockeOff, gText_NuzlockeOn};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_NUZLOCKE, isActive);
-}
-
 static u8 Autosave_ProcessInput(u8 selection)
 {
     if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
@@ -1302,36 +931,6 @@ static void Autosave_DrawChoices(u8 selection, bool8 isActive)
     static const u8 *const sTexts[2] = {gText_AutosaveOff, gText_AutosaveOn};
 
     DrawOptionMenuValue(sTexts[selection], YPOS_AUTOSAVE, isActive);
-}
-
-static u8 Difficulty_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_RIGHT))
-    {
-        if (selection <= 1)
-            selection++;
-        else
-            selection = 0;
-
-        sArrowPressed = TRUE;
-    }
-    if (JOY_NEW(DPAD_LEFT))
-    {
-        if (selection != 0)
-            selection--;
-        else
-            selection = 2;
-
-        sArrowPressed = TRUE;
-    }
-    return selection;
-}
-
-static void Difficulty_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[3] = {gText_DifficultyEasy, gText_DifficultyNormal, gText_DifficultyHard};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_DIFFICULTY, isActive);
 }
 
 static void DrawHeaderText(void)
@@ -1372,10 +971,6 @@ static void DrawOptionMenuTexts(void)
         items = MENUITEM_COUNT_PG2;
         menu = sOptionMenuItemsNames_Pg2;
         break;
-    case 2:
-        items = MENUITEM_COUNT_PG3;
-        menu = sOptionMenuItemsNames_Pg3;
-        break;    
     }
 
     FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
