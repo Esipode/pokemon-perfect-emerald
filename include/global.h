@@ -1127,7 +1127,7 @@ struct SaveBlock1
     /*0x9C2*/ u8 nuzlockeModeEnabled;
     /*0x9C3*/ u8 autosaveModeEnabled;
     /*0x9C4*/ u8 difficulty;
-    /*0x9C5*/ u8 unused_9C5;
+    /*0x9C5*/ u8 achievementsBlocked; // design doc §1.5: set once debug mode is used, this playthrough can never earn achievements
     /*0x9C6*/ u16 registeredLongItem; // Registered for long press of SELECT button
     /*0x9C2*/ u8 unused_9C2[2];
               u32 dailySeed;

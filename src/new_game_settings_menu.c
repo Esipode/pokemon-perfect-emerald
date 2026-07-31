@@ -516,4 +516,6 @@ void ApplyPendingNewGameSettings(void)
     gPendingNewGameSettings.levelCapOff      ? FlagSet(FLAG_LEVEL_CAP_OFF)     : FlagClear(FLAG_LEVEL_CAP_OFF);
     gPendingNewGameSettings.allowStatEditor  ? FlagSet(FLAG_ALLOW_STAT_EDITOR) : FlagClear(FLAG_ALLOW_STAT_EDITOR);
     gPendingNewGameSettings.debugMode        ? FlagSet(FLAG_DEBUG)             : FlagClear(FLAG_DEBUG);
+    if (gPendingNewGameSettings.debugMode)
+        gSaveBlock1Ptr->achievementsBlocked = TRUE;
 }

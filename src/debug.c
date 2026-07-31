@@ -808,6 +808,10 @@ static bool32 Debug_SaveCallbackMenu(struct DebugMenuOption *callbackItems);
 // Functions universal
 void Debug_ShowMainMenu(void)
 {
+    // design doc §1.5: opening the debug menu disqualifies the current run from
+    // earning achievements, even if it's opened mid-playthrough.
+    gSaveBlock1Ptr->achievementsBlocked = TRUE;
+
     sDebugMenuListData = AllocZeroed(sizeof(*sDebugMenuListData));
     sDebugMenuListData->menuType = DEBUG_BASIC_MENU;
     Debug_ShowMenu(DebugTask_HandleMenuInput_General, sDebugMenu_Actions_Main);
