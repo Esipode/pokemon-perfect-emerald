@@ -10540,6 +10540,13 @@ static void Cmd_trygivecaughtmonnick(void)
     switch (gBattleCommunication[MULTIUSE_STATE])
     {
     case 0:
+        // Nuzlocke mode forces every caught Pokémon to be nicknamed, so skip the Yes/No prompt entirely.
+        if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+        {
+            BeginFastPaletteFade(3);
+            gBattleCommunication[MULTIUSE_STATE] = 2;
+            break;
+        }
         HandleBattleWindow(YESNOBOX_X_Y, 0);
         BattlePutTextOnWindow(gText_BattleYesNoChoice, B_WIN_YESNO);
         gBattleCommunication[MULTIUSE_STATE]++;

@@ -1032,7 +1032,8 @@ static bool32 IsSpeciesValidForRandomization(enum Species species)
 {
     const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];
 
-    return !speciesInfo->isMegaEvolution
+    return IsSpeciesEnabled(species)
+        && !speciesInfo->isMegaEvolution
         && !speciesInfo->isPrimalReversion
         && !speciesInfo->isUltraBurst
         && !speciesInfo->isGigantamax

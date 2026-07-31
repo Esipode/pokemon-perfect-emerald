@@ -996,6 +996,7 @@ static void BirchCase_InitWindows(void)
 static const u8 sText_ChooseMon[] = _("Release a Pokémon!");
 static const u8 sText_AreYouSure[] = _("Are you sure?    {A_BUTTON} Yes  {B_BUTTON} No");
 static const u8 sText_RecievedMon[] = _("Give your Pokémon a Nickname?   {A_BUTTON} Yes  {B_BUTTON} No");
+static const u8 sText_RecievedMonForceNickname[] = _("Give your Pokémon a Nickname!   {A_BUTTON} OK");
 static void PrintTextToBottomBar(u8 textId)
 {
     u8 speciesNameArray[16];
@@ -1019,7 +1020,7 @@ static void PrintTextToBottomBar(u8 textId)
             mainBarAlternatingText = sText_AreYouSure;
             break;
         case 2:
-            mainBarAlternatingText = sText_RecievedMon;
+            mainBarAlternatingText = gSaveBlock1Ptr->nuzlockeModeEnabled ? sText_RecievedMonForceNickname : sText_RecievedMon;
             break;
         default:
             mainBarAlternatingText = sText_ChooseMon;
@@ -1108,7 +1109,8 @@ static void Task_BirchCaseRecievedMon(u8 taskId)
         gTasks[taskId].func = Task_WaitForFadeAndOpenNamingScreen;
         return;
     }
-    if (JOY_NEW(B_BUTTON))
+    // Nuzlocke mode forces every starter to be nicknamed, so declining is not allowed.
+    if (JOY_NEW(B_BUTTON) && !gSaveBlock1Ptr->nuzlockeModeEnabled)
     {
         PlaySE(SE_SELECT);
         BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);

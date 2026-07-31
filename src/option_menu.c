@@ -116,6 +116,8 @@ static u8 FrameType_ProcessInput(u8 selection);
 static void FrameType_DrawChoices(u8 selection, bool8 isActive);
 static u8 ButtonMode_ProcessInput(u8 selection);
 static void ButtonMode_DrawChoices(u8 selection, bool8 isActive);
+static bool8 IsAutosaveHidden(void);
+static u8 GetPg2CancelIndex(void);
 static void DrawHeaderText(void);
 static void DrawOptionMenuTexts(void);
 static void DrawBgWindowFrames(void);
@@ -282,7 +284,8 @@ static void DrawOptionsPg2(u8 taskId)
     AIBattles_DrawChoices(gTasks[taskId].tAIBattles & 1, sel == MENUITEM_AIBATTLES_TRAINER);
     WildAIBattles_DrawChoices((gTasks[taskId].tAIBattles & 2) ? 1 : 0, sel == MENUITEM_AIBATTLES_WILD);
     AutoScroll_DrawChoices(GET_FLAG(AUTO_SCROLL), sel == MENUITEM_AUTOSCROLL);
-    Autosave_DrawChoices(GET_FLAG(AUTOSAVE), sel == MENUITEM_AUTOSAVE);
+    if (!IsAutosaveHidden())
+        Autosave_DrawChoices(GET_FLAG(AUTOSAVE), sel == MENUITEM_AUTOSAVE);
     HighlightOptionMenuItem(sel);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -543,7 +546,7 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
     }
     else if (JOY_NEW(A_BUTTON))
     {
-        if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG2)
+        if (gTasks[taskId].tMenuSelection == GetPg2CancelIndex())
             gTasks[taskId].func = Task_OptionMenuSave;
     }
     else if (JOY_NEW(B_BUTTON))
@@ -555,12 +558,12 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
         if (gTasks[taskId].tMenuSelection > 0)
             gTasks[taskId].tMenuSelection--;
         else
-            gTasks[taskId].tMenuSelection = MENUITEM_CANCEL_PG2;
+            gTasks[taskId].tMenuSelection = GetPg2CancelIndex();
         DrawOptionsPg2(taskId);
     }
     else if (JOY_NEW(DPAD_DOWN))
     {
-        if (gTasks[taskId].tMenuSelection < MENUITEM_CANCEL_PG2)
+        if (gTasks[taskId].tMenuSelection < GetPg2CancelIndex())
             gTasks[taskId].tMenuSelection++;
         else
             gTasks[taskId].tMenuSelection = 0;
@@ -608,6 +611,8 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
                 AutoScroll_DrawChoices(GET_FLAG(AUTO_SCROLL), TRUE);
             break;
         case MENUITEM_AUTOSAVE:
+            if (IsAutosaveHidden())
+                break;
             previousOption = GET_FLAG(AUTOSAVE);
             gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << AUTOSAVE_SHIFT)) | (Autosave_ProcessInput(previousOption) << AUTOSAVE_SHIFT);
 
@@ -638,7 +643,8 @@ static void Task_OptionMenuSave(u8 taskId)
     (gTasks[taskId].tAIBattles & 1) == 0 ? FlagClear(FLAG_AI_BATTLES) : FlagSet(FLAG_AI_BATTLES);
     (gTasks[taskId].tAIBattles & 2) == 0 ? FlagClear(FLAG_AI_WILD_BATTLES) : FlagSet(FLAG_AI_WILD_BATTLES);
     GET_FLAG(AUTO_SCROLL) == 0 ? FlagClear(FLAG_AUTO_SCROLL_TEXT) : FlagSet(FLAG_AUTO_SCROLL_TEXT);
-    GET_FLAG(AUTOSAVE) == 0 ? (gSaveBlock1Ptr->autosaveModeEnabled = 0) : (gSaveBlock1Ptr->autosaveModeEnabled = 1);
+    if (!IsAutosaveHidden())
+        GET_FLAG(AUTOSAVE) == 0 ? (gSaveBlock1Ptr->autosaveModeEnabled = 0) : (gSaveBlock1Ptr->autosaveModeEnabled = 1);
 
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
@@ -956,26 +962,40 @@ static void DrawHeaderText(void)
     CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);
 }
 
+static bool8 IsAutosaveHidden(void)
+{
+    // Nuzlocke mode forcibly enables autosaving, so the option is redundant and hidden.
+    return gSaveBlock1Ptr->nuzlockeModeEnabled;
+}
+
+static u8 GetPg2CancelIndex(void)
+{
+    return IsAutosaveHidden() ? MENUITEM_AUTOSAVE : MENUITEM_CANCEL_PG2;
+}
+
 static void DrawOptionMenuTexts(void)
 {
-    u8 i, items;
-    const u8* const* menu = NULL;
+    u8 i, row;
+
+    FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
 
     switch (sCurrPage){
     default:
     case 0:
-        items = MENUITEM_COUNT;
-        menu = sOptionMenuItemsNames;
+        for (i = 0; i < MENUITEM_COUNT; i++)
+            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames[i], 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
         break;
     case 1:
-        items = MENUITEM_COUNT_PG2;
-        menu = sOptionMenuItemsNames_Pg2;
+        row = 0;
+        for (i = 0; i < MENUITEM_COUNT_PG2; i++)
+        {
+            if (i == MENUITEM_AUTOSAVE && IsAutosaveHidden())
+                continue;
+            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames_Pg2[i], 8, (row * 16) + 1, TEXT_SKIP_DRAW, NULL);
+            row++;
+        }
         break;
     }
-
-    FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
-    for (i = 0; i < items; i++)
-        AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, menu[i], 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 

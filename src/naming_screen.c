@@ -382,6 +382,8 @@ static void DeleteTextCharacter(void);
 static bool8 AddTextCharacter(void);
 static void BufferCharacter(u8);
 static void SaveInputText(void);
+static bool8 NuzlockeNicknameRequired(void);
+static bool8 EnteredNameMatchesSpeciesDefault(void);
 static void LoadGfx(void);
 static void CreateHelperTasks(void);
 static void LoadPalettes(void);
@@ -676,6 +678,13 @@ static bool8 MainState_MoveToOKButton(void)
 
 static bool8 MainState_PressedOKButton(void)
 {
+    if (NuzlockeNicknameRequired() && EnteredNameMatchesSpeciesDefault())
+    {
+        // Nuzlocke mode forces a real nickname, so refuse to close on the species' default name.
+        PlaySE(SE_FAILURE);
+        sNamingScreen->state = STATE_HANDLE_INPUT;
+        return FALSE;
+    }
     SaveInputText();
     SetInputState(INPUT_STATE_DISABLED);
     SetCursorFlashing(FALSE);
@@ -1930,6 +1939,37 @@ static void SaveInputText(void)
             break;
         }
     }
+}
+
+static bool8 NuzlockeNicknameRequired(void)
+{
+    return gSaveBlock1Ptr->nuzlockeModeEnabled
+        && (sNamingScreen->templateNum == NAMING_SCREEN_CAUGHT_MON
+         || sNamingScreen->templateNum == NAMING_SCREEN_NICKNAME);
+}
+
+// Mirrors SaveInputText's blank-input fallback to determine what the saved name would be, without committing it.
+static bool8 EnteredNameMatchesSpeciesDefault(void)
+{
+    u8 i;
+    u8 finalName[sizeof(sNamingScreen->textBuffer)];
+    bool8 isBlank = TRUE;
+
+    for (i = 0; i < sNamingScreen->template->maxChars; i++)
+    {
+        if (sNamingScreen->textBuffer[i] != CHAR_SPACE && sNamingScreen->textBuffer[i] != EOS)
+        {
+            isBlank = FALSE;
+            break;
+        }
+    }
+
+    if (isBlank)
+        StringCopy(finalName, sNamingScreen->destBuffer);
+    else
+        StringCopyN(finalName, sNamingScreen->textBuffer, sNamingScreen->template->maxChars + 1);
+
+    return StringCompare(finalName, GetSpeciesName(sNamingScreen->monSpecies)) == 0;
 }
 
 static void LoadGfx(void)
