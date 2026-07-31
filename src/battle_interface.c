@@ -879,30 +879,24 @@ static void UpdateLvlInHealthbox(u8 healthboxSpriteId, u16 lvl)
     {
         text[0] = CHAR_EXTRA_SYMBOL;
         text[1] = CHAR_LV_2;
-        if (lvl > 999)
-        {
-            // For 4+ digit levels, omit the "Lv" label to fit in the healthbox window
-            ConvertIntToDecimalStringN(text + 2, lvl, STR_CONV_MODE_LEFT_ALIGN, 5);
-        }
-        else
-        {
-            ConvertIntToDecimalStringN(text + 2, lvl, STR_CONV_MODE_LEFT_ALIGN, 4);
-        }
+        ConvertIntToDecimalStringN(text + 2, lvl, STR_CONV_MODE_LEFT_ALIGN, 4);
 
         UpdateIndicatorVisibilityAndType(healthboxSpriteId, TRUE);
     }
 
-    u32 width = GetStringWidth(FONT_SMALL, text, 0);
+    // Shrink to a narrower font if needed so 4-digit levels still fit alongside the "Lv" label.
+    u32 fontId = GetFontIdToFit(text, FONT_SMALL, 0, 24);
+    u32 width = GetStringWidth(fontId, text, 0);
 
     if (IsOnPlayerSide(battler))
     {
         FillSpriteRectColor(spriteId, 8, 5, 24, 11, HEALTHBOX_BG_INDEX);
-        AddSpriteTextPrinterParameterized6(spriteId, FONT_SMALL, 32 - width, 3, 0, 0, sHealthBoxTextColor, 0, text);
+        AddSpriteTextPrinterParameterized6(spriteId, fontId, 32 - width, 3, 0, 0, sHealthBoxTextColor, 0, text);
     }
     else
     {
         FillSpriteRectColor(spriteId, 0, 5, 24, 11, HEALTHBOX_BG_INDEX);
-        AddSpriteTextPrinterParameterized6(spriteId, FONT_SMALL, 24 - width, 3, 0, 0, sHealthBoxTextColor, 0, text);
+        AddSpriteTextPrinterParameterized6(spriteId, fontId, 24 - width, 3, 0, 0, sHealthBoxTextColor, 0, text);
     }
 }
 
