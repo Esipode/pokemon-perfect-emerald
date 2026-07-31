@@ -36,15 +36,40 @@ struct AchievementProfile
 
 extern struct AchievementProfile gAchievementProfile;
 
-// Flash I/O. Neither of these touch gDamagedSaveSectors or gSaveFileStatus:
-// a profile read/write failure must never trigger the save-failed screen.
-void ReadAchievementProfile(void);
-void WriteAchievementProfile(void);
+// A profile read/write failure must never be able to trigger the save-failed
+// screen (that's gDamagedSaveSectors/gSaveFileStatus's job, not this one).
 bool8 Achievement_ProfileWriteFailed(void);
 
 // Writes the profile to flash only if it's been marked dirty since the last
 // flush (see src/achievements.c). Safe to call unconditionally from any of
 // the flush points in design doc §1.3.
 void Achievement_FlushProfile(void);
+
+// Public API (design doc §24). Nothing outside src/achievements.c writes the
+// profile.
+
+// Loads the profile from flash. Call once at boot, before any save is loaded.
+void  Achievement_Init(void);
+bool8 Achievement_IsCompleted(u16 achievementId);
+
+u32   Achievement_GetTotalPoints(void);
+u32   Achievement_GetAvailablePoints(void);
+
+bool8 Achievement_BoostsUnlocked(void);
+bool8 Achievement_BoostsEnabled(void);
+void  Achievement_SetBoostsEnabled(bool8 enabled);
+
+u8    AchievementBoost_GetLevel(u16 boostId);
+
+// Declared here to complete the API surface, but implemented where the plan
+// defines their algorithm, once the data they depend on exists:
+//   Achievement_TryComplete     -> gAchievements[] test data,        Stage 2.3
+//   AchievementBoost_CanPurchase,
+//   AchievementBoost_Purchase   -> boost registry (costs/maxLevel),  Stage 7
+//   AchievementBoost_Reset      -> ACHIEVEMENT_BOOST_RESET_FEE,      Stage 11
+bool8 Achievement_TryComplete(u16 achievementId);
+bool8 AchievementBoost_CanPurchase(u16 boostId);
+bool8 AchievementBoost_Purchase(u16 boostId);
+bool8 AchievementBoost_Reset(void);
 
 #endif // GUARD_ACHIEVEMENTS_H

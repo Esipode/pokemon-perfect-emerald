@@ -64,7 +64,7 @@ static bool8 TryLoadAchievementProfileSector(u16 sector)
     return TRUE;
 }
 
-void ReadAchievementProfile(void)
+static void ReadAchievementProfile(void)
 {
     if (gFlashMemoryPresent != TRUE)
     {
@@ -87,7 +87,7 @@ void ReadAchievementProfile(void)
 // bytes from src, so it's given a full SECTOR_SIZE scratch buffer rather than
 // &gAchievementProfile directly. gSaveDataBuffer is save.c's own sector-sized
 // scratch space, already reused the same way by TryWriteSpecialSaveSector.
-void WriteAchievementProfile(void)
+static void WriteAchievementProfile(void)
 {
     if (gFlashMemoryPresent != TRUE)
         return;
@@ -124,4 +124,53 @@ void Achievement_FlushProfile(void)
 
     WriteAchievementProfile();
     sAchievementProfileDirty = FALSE;
+}
+
+// ---- Public API (design doc §24) -------------------------------------
+
+void Achievement_Init(void)
+{
+    ReadAchievementProfile();
+}
+
+bool8 Achievement_IsCompleted(u16 achievementId)
+{
+    if (achievementId >= MAX_ACHIEVEMENTS)
+        return FALSE;
+
+    return (gAchievementProfile.achievementFlags[achievementId / 8] >> (achievementId % 8)) & 1;
+}
+
+u32 Achievement_GetTotalPoints(void)
+{
+    return gAchievementProfile.totalPointsEarned;
+}
+
+u32 Achievement_GetAvailablePoints(void)
+{
+    return gAchievementProfile.totalPointsEarned - gAchievementProfile.pointsInvested;
+}
+
+bool8 Achievement_BoostsUnlocked(void)
+{
+    return gAchievementProfile.boostsUnlocked;
+}
+
+bool8 Achievement_BoostsEnabled(void)
+{
+    return gAchievementProfile.boostsEnabled;
+}
+
+void Achievement_SetBoostsEnabled(bool8 enabled)
+{
+    gAchievementProfile.boostsEnabled = enabled;
+    sAchievementProfileDirty = TRUE;
+}
+
+u8 AchievementBoost_GetLevel(u16 boostId)
+{
+    if (boostId >= MAX_BOOSTS)
+        return 0;
+
+    return gAchievementProfile.boostLevels[boostId];
 }
