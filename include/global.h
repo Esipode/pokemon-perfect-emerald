@@ -1148,10 +1148,10 @@ struct SaveBlock1
     /*0x2734*/ u8 decorationDesks[10];
     /*0x273E*/ u8 decorationChairs[10];
     /*0x2748*/ u8 decorationPlants[10];
-    /*0x2752*/ u8 decorationOrnaments[30];
-    /*0x2770*/ u8 decorationMats[30];
+    /*0x2752*/ u8 decorationOrnaments[15]; // ORIGINALLY 30
+    /*0x2770*/ u8 decorationMats[15]; // ORIGINALLY 30
     /*0x278E*/ u8 decorationPosters[10];
-    /*0x2798*/ u8 decorationDolls[40];
+    /*0x2798*/ u8 decorationDolls[20]; // ORIGINALLY 40
     /*0x27C0*/ u8 decorationCushions[10];
     /*0x27CC*/ TVShow tvShows[TV_SHOWS_COUNT];
     /*0x27CA*/ //u8 padding4[2];
@@ -1202,7 +1202,7 @@ struct SaveBlock1
 #endif //FREE_MYSTERY_EVENT_BUFFERS
     /*0x3???*/ struct RecordMixingGift recordMixingGift;
     /*0x3???*/ LilycoveLady lilycoveLady;
-    /*0x3???*/ struct TrainerNameRecord trainerNameRecords[20];
+    /*0x3???*/ struct TrainerNameRecord trainerNameRecords[4]; // ORIGINALLY 20
 #if FREE_UNION_ROOM_CHAT == FALSE
     /*0x3???*/ u8 registeredTexts[UNION_ROOM_KB_ROW_COUNT][21];
 #endif //FREE_UNION_ROOM_CHAT

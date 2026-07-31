@@ -67,12 +67,6 @@ EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
 EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
 EWRAM_DATA bool8 gIsNewGamePlus = FALSE;
 
-static const struct ContestWinner sContestWinnerPicDummy =
-{
-    .monName = _(""),
-    .trainerName = _("")
-};
-
 void SetTrainerId(u32 trainerId, u8 *dst)
 {
     dst[0] = trainerId;
@@ -119,13 +113,9 @@ static void ClearPokedexFlags(void)
 
 void ClearAllContestWinnerPics(void)
 {
-    s32 i;
-
     ClearContestWinnerPicsInContestHall();
 
-    // Clear Museum paintings
-    for (i = MUSEUM_CONTEST_WINNERS_START; i < NUM_CONTEST_WINNERS; i++)
-        gSaveBlock1Ptr->contestWinners[i] = sContestWinnerPicDummy;
+    // Museum paintings no longer have reserved slots (NUM_CONTEST_WINNERS == MUSEUM_CONTEST_WINNERS_START).
 }
 
 static void ClearFrontierRecord(void)

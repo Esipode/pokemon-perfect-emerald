@@ -5543,16 +5543,19 @@ void ResetContestLinkResults(void)
 bool8 SaveContestWinner(u8 rank)
 {
     s32 i;
-    u8 captionId = Random() % NUM_PAINTING_CAPTIONS;
+    u8 captionId;
+
+    // NUM_CONTEST_WINNERS no longer reserves museum slots (MUSEUM_CONTEST_WINNERS_START ==
+    // NUM_CONTEST_WINNERS), so there is nowhere left to save a museum painting.
+    if (rank == CONTEST_SAVE_FOR_MUSEUM)
+        return FALSE;
+
+    captionId = Random() % NUM_PAINTING_CAPTIONS;
 
     // Get the index of the winner among the contestants
     for (i = 0; i < CONTESTANT_COUNT - 1; i++)
         if (gContestFinalStandings[i] == 0)
             break;
-
-    // Exit if attempting to save a Pokémon other than the player's to the museum
-    if (rank == CONTEST_SAVE_FOR_MUSEUM && i != gContestPlayerMonIndex)
-        return FALSE;
 
     // Adjust the random painting caption depending on the category
     captionId += NUM_PAINTING_CAPTIONS * gSpecialVar_ContestCategory;

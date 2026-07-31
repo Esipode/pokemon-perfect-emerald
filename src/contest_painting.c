@@ -140,8 +140,16 @@ void SetContestWinnerForPainting(int contestWinnerId)
 {
     u8 *saveIdx = &gCurContestWinnerSaveIdx;
     u8 *isForArtist = &gCurContestWinnerIsForArtist;
-    gCurContestWinner = gSaveBlock1Ptr->contestWinners[contestWinnerId - 1];
-    *saveIdx = contestWinnerId - 1;
+    u8 idx = contestWinnerId - 1;
+
+    // NUM_CONTEST_WINNERS no longer reserves museum slots (idx 8-12); guard against
+    // reading past the end of contestWinners[] into the following struct fields.
+    if (idx < NUM_CONTEST_WINNERS)
+        gCurContestWinner = gSaveBlock1Ptr->contestWinners[idx];
+    else
+        memset(&gCurContestWinner, 0, sizeof(gCurContestWinner));
+
+    *saveIdx = idx;
     *isForArtist = FALSE;
 }
 
