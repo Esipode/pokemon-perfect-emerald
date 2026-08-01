@@ -153,13 +153,6 @@ static const u8 sText_AchievementPopupFormat[] = _("{STR_VAR_2} (+{STR_VAR_1})\n
 // tile block into a 32x32 (4x4 tile) sprite, leaving the bottom row and
 // right column of tiles blank. Reuses item_icon.h's public buffer helpers
 // directly rather than duplicating that padding logic.
-//
-// There's no PLATINUM entry despite graphics/achievements/icons/
-// star_platinum.png existing -- enum AchievementTier (include/constants/
-// achievements.h) only has 4 tiers (BRONZE/SILVER/GOLD/DIAMOND), matching the
-// Stage 2.1 catalog rather than the design doc's original 5-tier mockup (see
-// that discrepancy note in Achievement_Implementation_Plan.md's Stage 3.2
-// section). star_platinum.png is unused.
 static const u32 sAchievementTierIconGfx_Bronze[]  = INCGFX_U32("graphics/achievements/icons/star_bronze.png", ".4bpp.smol");
 static const u16 sAchievementTierIconPal_Bronze[]  = INCGFX_U16("graphics/achievements/icons/star_bronze.png", ".gbapal");
 static const u32 sAchievementTierIconGfx_Silver[]  = INCGFX_U32("graphics/achievements/icons/star_silver.png", ".4bpp.smol");
