@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "money.h"
 #include "graphics.h"
 #include "event_data.h"
@@ -102,6 +103,10 @@ void AddMoney(u32 *moneyPtr, u32 toAdd)
     }
 
     SetMoney(moneyPtr, toSet);
+
+    // Stage 13, category H. Checked post-clamp so a near-MAX_MONEY player
+    // doesn't get under-counted against a raw toAdd amount.
+    Achievement_CheckMoneyMilestones(GetMoney(moneyPtr));
 }
 
 void RemoveMoney(u32 *moneyPtr, u32 toSub)

@@ -646,6 +646,10 @@ static void DowngradeBadPoison(void)
 
 static void CB2_EndWildBattle(void)
 {
+    // Stage 13, category F. GAME_STAT_WILD_BATTLES is incremented at battle
+    // start, so it's already current here regardless of outcome.
+    Achievement_CheckWildBattleMilestones();
+
     CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
     ResetOamRange(0, 128);
 
@@ -1463,6 +1467,10 @@ static void HandleBattleVariantEndParty(void)
 
 static void CB2_EndTrainerBattle(void)
 {
+    // Stage 13, category E. GAME_STAT_TRAINER_BATTLES is incremented at
+    // battle start, so it's already current here regardless of outcome.
+    Achievement_CheckTrainerBattleMilestones();
+
     HandleBattleVariantEndParty();
 
     if (gSaveBlock1Ptr->nuzlockeModeEnabled)

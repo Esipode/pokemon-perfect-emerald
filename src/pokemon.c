@@ -3300,6 +3300,12 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     SetMonData(mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
     SetMonData(mon, MON_DATA_OT_ID, gSaveBlock2Ptr->playerTrainerId);
 
+    // Stage 13, categories C/D. GAME_STAT_POKEMON_CAPTURES is already
+    // incremented by the time this runs (see data/battle_scripts_2.s).
+    Achievement_CheckCaptureMilestones();
+    if (GetMonData(mon, MON_DATA_IS_SHINY))
+        Achievement_OnShinyObtained();
+
     for (i = 0; i < PARTY_SIZE; i++)
     {
         if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
@@ -6181,6 +6187,8 @@ void HandleSetPokedexFlag(enum NationalDexOrder nationalNum, u8 caseId, u32 pers
             gSaveBlock2Ptr->pokedex.unownPersonality = personality;
         if (NationalPokedexNumToSpecies(nationalNum) == SPECIES_SPINDA)
             gSaveBlock2Ptr->pokedex.spindaPersonality = personality;
+        // Stage 13, category B.
+        Achievement_CheckPokedexMilestones(caseId == FLAG_SET_CAUGHT);
     }
 }
 

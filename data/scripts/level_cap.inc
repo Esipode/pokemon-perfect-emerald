@@ -1,4 +1,5 @@
 Common_EventScript_CheckLevelCapIncrease::
+	callnative Achievement_CheckStoryMilestones
 	specialvar VAR_TEMP_1, GetCurrentLevelCapSpecial
 	compare VAR_RESULT, VAR_TEMP_1
 	goto_if_lt Common_EventScript_LevelCapIncreased

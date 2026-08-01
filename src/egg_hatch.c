@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "pokemon.h"
 #include "egg_hatch.h"
 #include "pokedex.h"
@@ -576,6 +577,9 @@ static void CB2_LoadEggHatch(void)
     case 4:
         CopyBgTilemapBufferToVram(0);
         AddHatchedMonToParty(sEggHatchData->eggPartyId);
+        // Stage 13, category I. GAME_STAT_HATCHED_EGGS is already incremented
+        // by field_control_avatar.c before this whole sequence starts.
+        Achievement_CheckEggMilestones(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_IS_SHINY));
         gMain.state++;
         break;
     case 5:

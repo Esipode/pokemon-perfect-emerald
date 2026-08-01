@@ -8,12 +8,131 @@
 // for in Stage 2.3, wired into AddBagItem/HandleEndTurn_BattleWon/GameClear
 // to exercise Achievement_TryComplete end to end. They're placeholders for
 // the real catalog, not part of the design doc's actual achievement list.
+// Stage 13 (design doc §15/§16, plan Stage 13): the first real catalog wave,
+// 60 entries across ten categories, each derived from state that already
+// exists (gameStats[], Pokedex flags, AchievementProfile counters, or a
+// handful of event flags) -- see src/achievements.c for each category's hook
+// function and include/achievements.h for the per-function doc comments.
+//
+//   A. ACHIEVEMENT_STORY_RIVAL_ROUTE103 .. ACHIEVEMENT_STORY_CHAMPION (15)
+//      Badges/story milestones -- Achievement_CheckStoryMilestones,
+//      callnative'd from Common_EventScript_CheckLevelCapIncrease.
+//   B. ACHIEVEMENT_DEX_SEEN_10 .. ACHIEVEMENT_DEX_CAUGHT_100 (8)
+//      Pokedex seen/caught percentage -- Achievement_CheckPokedexMilestones,
+//      HandleSetPokedexFlag (src/pokemon.c).
+//   C. ACHIEVEMENT_CATCH_1 .. ACHIEVEMENT_CATCH_500 (5)
+//      Total capture count -- Achievement_CheckCaptureMilestones,
+//      GiveCapturedMonToPlayer (src/pokemon.c).
+//   D. ACHIEVEMENT_SHINY_1 .. ACHIEVEMENT_SHINY_25 (3)
+//      shiniesObtained count -- Achievement_OnShinyObtained, also
+//      GiveCapturedMonToPlayer.
+//   E. ACHIEVEMENT_TRAINERS_10 .. ACHIEVEMENT_TRAINERS_500 (5)
+//      Trainer battle count -- Achievement_CheckTrainerBattleMilestones,
+//      CB2_EndTrainerBattle (src/battle_setup.c).
+//   F. ACHIEVEMENT_WILD_BATTLES_50 .. ACHIEVEMENT_WILD_BATTLES_500 (3)
+//      Wild battle count -- Achievement_CheckWildBattleMilestones,
+//      CB2_EndWildBattle (src/battle_setup.c).
+//   G. ACHIEVEMENT_ITEM_MASTER_BALL .. ACHIEVEMENT_ITEM_HEART_SCALE (4)
+//      Obtain a specific item -- Achievement_CheckItemMilestones,
+//      AddBagItem (src/item.c).
+//   H. ACHIEVEMENT_MONEY_10K .. ACHIEVEMENT_MONEY_MAX (3)
+//      Money held -- Achievement_CheckMoneyMilestones, AddMoney (src/money.c).
+//   I. ACHIEVEMENT_EGG_1 .. ACHIEVEMENT_EGG_SHINY (4)
+//      Hatched egg count/shiny -- Achievement_CheckEggMilestones,
+//      Task_EggHatch (src/egg_hatch.c).
+//   J. ACHIEVEMENT_PLAYTHROUGHS_2 .. ACHIEVEMENT_POINTS_1000 (10)
+//      Multi-run/persistent-profile milestones -- checked from inside the
+//      existing Achievement_OnFirstPlaythroughComplete /
+//      Achievement_OnNewGamePlusStarted / Achievement_OnNewGamePlusCycleCompleted
+//      wrapper functions (Stages 5/12); ACHIEVEMENT_POINTS_1000 is checked
+//      from inside Achievement_TryComplete itself.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
     ACHIEVEMENT_TEST_OBTAIN_POTION,
     ACHIEVEMENT_TEST_WIN_BATTLE,
     ACHIEVEMENT_TEST_COMPLETE_GAME,
+
+    // A. Badges & Story (15)
+    ACHIEVEMENT_STORY_RIVAL_ROUTE103,
+    ACHIEVEMENT_BADGE_STONE,
+    ACHIEVEMENT_STORY_PETALBURG_WOODS,
+    ACHIEVEMENT_BADGE_KNUCKLE,
+    ACHIEVEMENT_BADGE_DYNAMO,
+    ACHIEVEMENT_BADGE_HEAT,
+    ACHIEVEMENT_BADGE_BALANCE,
+    ACHIEVEMENT_STORY_AQUA_HIDEOUT,
+    ACHIEVEMENT_STORY_MT_PYRE,
+    ACHIEVEMENT_STORY_MAGMA_HIDEOUT,
+    ACHIEVEMENT_BADGE_FEATHER,
+    ACHIEVEMENT_STORY_SEAFLOOR_CAVERN,
+    ACHIEVEMENT_BADGE_MIND,
+    ACHIEVEMENT_BADGE_RAIN,
+    ACHIEVEMENT_STORY_CHAMPION,
+
+    // B. Pokedex (8)
+    ACHIEVEMENT_DEX_SEEN_10,
+    ACHIEVEMENT_DEX_SEEN_25,
+    ACHIEVEMENT_DEX_SEEN_50,
+    ACHIEVEMENT_DEX_SEEN_100,
+    ACHIEVEMENT_DEX_CAUGHT_10,
+    ACHIEVEMENT_DEX_CAUGHT_25,
+    ACHIEVEMENT_DEX_CAUGHT_50,
+    ACHIEVEMENT_DEX_CAUGHT_100,
+
+    // C. Captures (5)
+    ACHIEVEMENT_CATCH_1,
+    ACHIEVEMENT_CATCH_25,
+    ACHIEVEMENT_CATCH_100,
+    ACHIEVEMENT_CATCH_250,
+    ACHIEVEMENT_CATCH_500,
+
+    // D. Shiny (3)
+    ACHIEVEMENT_SHINY_1,
+    ACHIEVEMENT_SHINY_5,
+    ACHIEVEMENT_SHINY_25,
+
+    // E. Trainers Defeated (5)
+    ACHIEVEMENT_TRAINERS_10,
+    ACHIEVEMENT_TRAINERS_50,
+    ACHIEVEMENT_TRAINERS_150,
+    ACHIEVEMENT_TRAINERS_300,
+    ACHIEVEMENT_TRAINERS_500,
+
+    // F. Wild Battles (3)
+    ACHIEVEMENT_WILD_BATTLES_50,
+    ACHIEVEMENT_WILD_BATTLES_250,
+    ACHIEVEMENT_WILD_BATTLES_500,
+
+    // G. Items (4)
+    ACHIEVEMENT_ITEM_MASTER_BALL,
+    ACHIEVEMENT_ITEM_RARE_CANDY,
+    ACHIEVEMENT_ITEM_PP_UP,
+    ACHIEVEMENT_ITEM_HEART_SCALE,
+
+    // H. Money (3)
+    ACHIEVEMENT_MONEY_10K,
+    ACHIEVEMENT_MONEY_100K,
+    ACHIEVEMENT_MONEY_MAX,
+
+    // I. Eggs (4)
+    ACHIEVEMENT_EGG_1,
+    ACHIEVEMENT_EGG_10,
+    ACHIEVEMENT_EGG_50,
+    ACHIEVEMENT_EGG_SHINY,
+
+    // J. Multi-Run / Persistent Profile (10)
+    ACHIEVEMENT_PLAYTHROUGHS_2,
+    ACHIEVEMENT_PLAYTHROUGHS_5,
+    ACHIEVEMENT_NG_PLUS_STARTED,
+    ACHIEVEMENT_NG_PLUS_CYCLE_3,
+    ACHIEVEMENT_NG_PLUS_CYCLE_5,
+    ACHIEVEMENT_NG_PLUS_COMPLETED_3,
+    ACHIEVEMENT_NUZLOCKE_1,
+    ACHIEVEMENT_NUZLOCKE_3,
+    ACHIEVEMENT_RANDOMIZED_1,
+    ACHIEVEMENT_POINTS_1000,
+
     ACHIEVEMENTS_COUNT,
 };
 

@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "constants/achievements.h"
+#include "constants/items.h" // enum Item, for Achievement_CheckItemMilestones (Stage 13 category G)
 
 #define ACHIEVEMENT_PROFILE_MAGIC   0x50454143  // 'PEAC'
 #define ACHIEVEMENT_PROFILE_VERSION 1
@@ -305,6 +306,70 @@ bool8 AchievementBoost_HasStarterKit(void);
 // Hooked at generation rather than at the grant, so the Birch Case's preview
 // and the Pokemon actually received can never disagree.
 bool8 AchievementBoost_HasPerfectStarterIvs(void);
+
+// Stage 13 (design doc §15/§16, plan Stage 13): catalog wave 1's ten hook
+// functions. Each checks one category's thresholds against
+// Achievement_TryComplete -- already idempotent, so every one of these is
+// safe to call unconditionally every time its call site runs, not just when
+// a threshold might have just been crossed.
+
+// Common_EventScript_CheckLevelCapIncrease (data/scripts/level_cap.inc), via
+// a single callnative: loops a static {flag, achievementId} table covering
+// all 8 badges and the 7 non-badge story beats that already funnel through
+// this shared script. Every one of the 16 call sites already sets its own
+// milestone's flag on the line immediately before calling this script, so
+// checking all 15 flags unconditionally here is correct and cheap.
+void Achievement_CheckStoryMilestones(void);
+
+// HandleSetPokedexFlag (src/pokemon.c), from inside its existing
+// "not already set" guard -- caught should be TRUE only when caseId was
+// FLAG_SET_CAUGHT, so a newly-seen (not caught) entry only ever checks the
+// seen thresholds. Reads GetNationalPokedexCount as a percentage of
+// NATIONAL_DEX_COUNT rather than a hardcoded species count, so the
+// thresholds stay correct regardless of which expansion level a given build
+// is compiled with.
+void Achievement_CheckPokedexMilestones(bool8 caught);
+
+// GiveCapturedMonToPlayer (src/pokemon.c): reads
+// GetGameStat(GAME_STAT_POKEMON_CAPTURES), already incremented for the
+// current catch by the time this function runs (confirmed against
+// data/battle_scripts_2.s: incrementgamestat precedes givecaughtmon).
+void Achievement_CheckCaptureMilestones(void);
+
+// Also GiveCapturedMonToPlayer, called only when the mon being given is
+// shiny (MON_DATA_IS_SHINY). Increments gAchievementProfile.shiniesObtained
+// -- declared since early on but never wired up until this stage -- flushes,
+// then checks the three shiny-count thresholds. GiveCapturedMonToPlayer also
+// fires for a handful of scripted gift mons, not only wild catches, which is
+// why this is "obtained" in the catalog text, not "caught".
+void Achievement_OnShinyObtained(void);
+
+// CB2_EndTrainerBattle (src/battle_setup.c), called unconditionally at the
+// top regardless of outcome: GAME_STAT_TRAINER_BATTLES is incremented at
+// battle *start* (a dozen-plus scattered Do*Battle functions), so by the
+// time any given trainer battle ends the count is already final -- no need
+// to touch every start site.
+void Achievement_CheckTrainerBattleMilestones(void);
+
+// CB2_EndWildBattle (src/battle_setup.c), same reasoning as the trainer
+// version above, reading GAME_STAT_WILD_BATTLES.
+void Achievement_CheckWildBattleMilestones(void);
+
+// AddBagItem (src/item.c), alongside the existing
+// ACHIEVEMENT_TEST_OBTAIN_POTION hook -- one-off "obtain this specific item"
+// checks, gated by the caller on the add having actually succeeded.
+void Achievement_CheckItemMilestones(enum Item itemId);
+
+// AddMoney (src/money.c), called with the post-clamp balance
+// (GetMoney(moneyPtr) after SetMoney) -- checking the raw amount being added
+// would under-count once the player is near MAX_MONEY.
+void Achievement_CheckMoneyMilestones(u32 money);
+
+// Task_EggHatch (src/egg_hatch.c), called right after AddHatchedMonToParty
+// with whether the newly hatched mon is shiny -- GAME_STAT_HATCHED_EGGS is
+// already incremented well before this point (see
+// src/field_control_avatar.c, at the start of the whole hatch sequence).
+void Achievement_CheckEggMilestones(bool8 isShiny);
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add

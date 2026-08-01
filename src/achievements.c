@@ -8,8 +8,12 @@
 #include "achievements.h"
 #include "achievement_popup.h"
 #include "money.h"               // IsEnoughMoney/RemoveMoney, for AchievementBoost_Reset (Stage 11)
+#include "overworld.h"           // GetGameStat, for Stage 13's threshold checks
+#include "pokedex.h"             // GetNationalPokedexCount, for Achievement_CheckPokedexMilestones
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
+#include "constants/game_stat.h" // GAME_STAT_*, for Stage 13's threshold checks
+#include "constants/pokedex.h"   // NATIONAL_DEX_COUNT, FLAG_GET_SEEN/FLAG_GET_CAUGHT
 #include "data/achievements.h"
 #include "data/achievement_boosts.h"
 
@@ -168,6 +172,18 @@ const struct Achievement *Achievement_GetInfo(u16 achievementId)
     return &gAchievements[achievementId];
 }
 
+// Stage 13, category J: the one self-referential achievement. Called from
+// the tail of Achievement_TryComplete, after totalPointsEarned has already
+// been updated for whatever achievement just completed. Safe to recurse
+// through Achievement_TryComplete -- its own Achievement_IsCompleted guard
+// makes the recursive call a no-op after the first time, and this wave only
+// has one such meta-achievement, so there's no chain to unwind.
+static void Achievement_CheckPointMilestones(void)
+{
+    if (gAchievementProfile.totalPointsEarned >= 1000)
+        Achievement_TryComplete(ACHIEVEMENT_POINTS_1000);
+}
+
 // design doc §4.30: the flag and the points are written together, before any
 // UI is involved, so a UI failure can never withhold an already-earned
 // reward, and a reset can never cause a double award (design doc §6).
@@ -189,6 +205,8 @@ bool8 Achievement_TryComplete(u16 achievementId)
 
     QueueAchievementNotification(achievementId);
 
+    Achievement_CheckPointMilestones();
+
     return TRUE;
 }
 
@@ -209,6 +227,19 @@ void Achievement_OnFirstPlaythroughComplete(void)
     if (FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES))
         gAchievementProfile.randomizedRunsCompleted++;
 
+    // Stage 13, category J: multi-run milestones derived from the counters
+    // just updated above.
+    if (gAchievementProfile.playthroughsCompleted >= 2)
+        Achievement_TryComplete(ACHIEVEMENT_PLAYTHROUGHS_2);
+    if (gAchievementProfile.playthroughsCompleted >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_PLAYTHROUGHS_5);
+    if (gAchievementProfile.nuzlockesCompleted >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_1);
+    if (gAchievementProfile.nuzlockesCompleted >= 3)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_3);
+    if (gAchievementProfile.randomizedRunsCompleted >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZED_1);
+
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
 }
@@ -220,6 +251,14 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
     if (cycle > gAchievementProfile.highestNgPlusCycle)
         gAchievementProfile.highestNgPlusCycle = cycle;
 
+    // Stage 13, category J: this function only ever runs when NG+ actually
+    // just started, so the "started" achievement needs no threshold guard.
+    Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_STARTED);
+    if (gAchievementProfile.highestNgPlusCycle >= 3)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_3);
+    if (gAchievementProfile.highestNgPlusCycle >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_5);
+
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
 }
@@ -229,6 +268,10 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
 void Achievement_OnNewGamePlusCycleCompleted(void)
 {
     gAchievementProfile.ngPlusCyclesCompleted++;
+
+    // Stage 13, category J.
+    if (gAchievementProfile.ngPlusCyclesCompleted >= 3)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_COMPLETED_3);
 
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
@@ -606,6 +649,206 @@ bool8 AchievementBoost_HasStarterKit(void)
 bool8 AchievementBoost_HasPerfectStarterIvs(void)
 {
     return IsBinaryBoostActive(BOOST_PERFECT_STARTER_IVS);
+}
+
+// ---- Stage 13: catalog wave 1 hook functions ----------------------------
+
+// {flag, achievementId} pairs for every badge/story milestone that already
+// funnels through Common_EventScript_CheckLevelCapIncrease
+// (data/scripts/level_cap.inc). Each of the 16 call sites already sets its
+// own flag on the line immediately before calling that shared script, so
+// checking all 15 unconditionally on every call is correct -- Route 103's
+// two call sites (May/Brendan) both set FLAG_BEAT_RIVAL_ROUTE_103 and so
+// collapse into the one achievement below.
+static const struct
+{
+    u16 flag;
+    u16 achievementId;
+} sStoryMilestones[] =
+{
+    { FLAG_BEAT_RIVAL_ROUTE_103,                ACHIEVEMENT_STORY_RIVAL_ROUTE103 },
+    { FLAG_BADGE01_GET,                         ACHIEVEMENT_BADGE_STONE },
+    { FLAG_BEAT_FIRST_GRUNT,                    ACHIEVEMENT_STORY_PETALBURG_WOODS },
+    { FLAG_BADGE02_GET,                         ACHIEVEMENT_BADGE_KNUCKLE },
+    { FLAG_BADGE03_GET,                         ACHIEVEMENT_BADGE_DYNAMO },
+    { FLAG_BADGE04_GET,                         ACHIEVEMENT_BADGE_HEAT },
+    { FLAG_BADGE05_GET,                         ACHIEVEMENT_BADGE_BALANCE },
+    { FLAG_TEAM_AQUA_ESCAPED_IN_SUBMARINE,       ACHIEVEMENT_STORY_AQUA_HIDEOUT },
+    { FLAG_RECEIVED_RED_OR_BLUE_ORB,            ACHIEVEMENT_STORY_MT_PYRE },
+    { FLAG_HIDE_MAGMA_HIDEOUT_GRUNTS,           ACHIEVEMENT_STORY_MAGMA_HIDEOUT },
+    { FLAG_BADGE06_GET,                         ACHIEVEMENT_BADGE_FEATHER },
+    { FLAG_HIDE_SEAFLOOR_CAVERN_AQUA_GRUNTS,    ACHIEVEMENT_STORY_SEAFLOOR_CAVERN },
+    { FLAG_BADGE07_GET,                         ACHIEVEMENT_BADGE_MIND },
+    { FLAG_BADGE08_GET,                         ACHIEVEMENT_BADGE_RAIN },
+    { FLAG_IS_CHAMPION,                         ACHIEVEMENT_STORY_CHAMPION },
+};
+
+void Achievement_CheckStoryMilestones(void)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sStoryMilestones); i++)
+    {
+        if (FlagGet(sStoryMilestones[i].flag))
+            Achievement_TryComplete(sStoryMilestones[i].achievementId);
+    }
+}
+
+// Percentages of NATIONAL_DEX_COUNT rather than hardcoded species counts, so
+// the thresholds stay correct regardless of which expansion level a given
+// build is compiled with -- the same approach the Pokedex UI itself already
+// uses for its own percentage display.
+void Achievement_CheckPokedexMilestones(bool8 caught)
+{
+    u16 count;
+
+    if (!caught)
+    {
+        count = GetNationalPokedexCount(FLAG_GET_SEEN);
+        if (count >= NATIONAL_DEX_COUNT * 10 / 100)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_SEEN_10);
+        if (count >= NATIONAL_DEX_COUNT * 25 / 100)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_SEEN_25);
+        if (count >= NATIONAL_DEX_COUNT * 50 / 100)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_SEEN_50);
+        if (count >= NATIONAL_DEX_COUNT)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_SEEN_100);
+    }
+    else
+    {
+        count = GetNationalPokedexCount(FLAG_GET_CAUGHT);
+        if (count >= NATIONAL_DEX_COUNT * 10 / 100)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_10);
+        if (count >= NATIONAL_DEX_COUNT * 25 / 100)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_25);
+        if (count >= NATIONAL_DEX_COUNT * 50 / 100)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_50);
+        if (count >= NATIONAL_DEX_COUNT)
+            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_100);
+    }
+}
+
+// GAME_STAT_POKEMON_CAPTURES is already incremented for the current catch by
+// the time GiveCapturedMonToPlayer (this function's only caller) runs --
+// confirmed against data/battle_scripts_2.s, where incrementgamestat
+// precedes givecaughtmon.
+void Achievement_CheckCaptureMilestones(void)
+{
+    u32 count = GetGameStat(GAME_STAT_POKEMON_CAPTURES);
+
+    if (count >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_CATCH_1);
+    if (count >= 25)
+        Achievement_TryComplete(ACHIEVEMENT_CATCH_25);
+    if (count >= 100)
+        Achievement_TryComplete(ACHIEVEMENT_CATCH_100);
+    if (count >= 250)
+        Achievement_TryComplete(ACHIEVEMENT_CATCH_250);
+    if (count >= 500)
+        Achievement_TryComplete(ACHIEVEMENT_CATCH_500);
+}
+
+// shiniesObtained has existed in the profile since early on (already
+// surfaced in the debug menu's profile dump) but nothing ever incremented
+// it until this stage.
+void Achievement_OnShinyObtained(void)
+{
+    gAchievementProfile.shiniesObtained++;
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
+
+    if (gAchievementProfile.shiniesObtained >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_SHINY_1);
+    if (gAchievementProfile.shiniesObtained >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_SHINY_5);
+    if (gAchievementProfile.shiniesObtained >= 25)
+        Achievement_TryComplete(ACHIEVEMENT_SHINY_25);
+}
+
+// GAME_STAT_TRAINER_BATTLES is incremented at battle *start* (a dozen-plus
+// scattered Do*Battle functions in src/battle_setup.c), so by the time any
+// given trainer battle ends via CB2_EndTrainerBattle (this function's only
+// caller) the count is already final -- no need to touch every start site.
+void Achievement_CheckTrainerBattleMilestones(void)
+{
+    u32 count = GetGameStat(GAME_STAT_TRAINER_BATTLES);
+
+    if (count >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_TRAINERS_10);
+    if (count >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_TRAINERS_50);
+    if (count >= 150)
+        Achievement_TryComplete(ACHIEVEMENT_TRAINERS_150);
+    if (count >= 300)
+        Achievement_TryComplete(ACHIEVEMENT_TRAINERS_300);
+    if (count >= 500)
+        Achievement_TryComplete(ACHIEVEMENT_TRAINERS_500);
+}
+
+// Same reasoning as the trainer version above, reading GAME_STAT_WILD_BATTLES
+// from CB2_EndWildBattle.
+void Achievement_CheckWildBattleMilestones(void)
+{
+    u32 count = GetGameStat(GAME_STAT_WILD_BATTLES);
+
+    if (count >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_WILD_BATTLES_50);
+    if (count >= 250)
+        Achievement_TryComplete(ACHIEVEMENT_WILD_BATTLES_250);
+    if (count >= 500)
+        Achievement_TryComplete(ACHIEVEMENT_WILD_BATTLES_500);
+}
+
+void Achievement_CheckItemMilestones(enum Item itemId)
+{
+    switch (itemId)
+    {
+    case ITEM_MASTER_BALL:
+        Achievement_TryComplete(ACHIEVEMENT_ITEM_MASTER_BALL);
+        break;
+    case ITEM_RARE_CANDY:
+        Achievement_TryComplete(ACHIEVEMENT_ITEM_RARE_CANDY);
+        break;
+    case ITEM_PP_UP:
+        Achievement_TryComplete(ACHIEVEMENT_ITEM_PP_UP);
+        break;
+    case ITEM_HEART_SCALE:
+        Achievement_TryComplete(ACHIEVEMENT_ITEM_HEART_SCALE);
+        break;
+    default:
+        break;
+    }
+}
+
+// Called with the post-clamp balance (GetMoney(moneyPtr) after SetMoney) --
+// checking the raw amount being added would under-count once the player is
+// near MAX_MONEY.
+void Achievement_CheckMoneyMilestones(u32 money)
+{
+    if (money >= 10000)
+        Achievement_TryComplete(ACHIEVEMENT_MONEY_10K);
+    if (money >= 100000)
+        Achievement_TryComplete(ACHIEVEMENT_MONEY_100K);
+    if (money >= MAX_MONEY)
+        Achievement_TryComplete(ACHIEVEMENT_MONEY_MAX);
+}
+
+// GAME_STAT_HATCHED_EGGS is already incremented well before Task_EggHatch
+// (this function's only caller) reaches the point where the hatched mon's
+// data is valid -- see src/field_control_avatar.c, at the very start of the
+// hatch sequence.
+void Achievement_CheckEggMilestones(bool8 isShiny)
+{
+    u32 count = GetGameStat(GAME_STAT_HATCHED_EGGS);
+
+    if (count >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_EGG_1);
+    if (count >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_EGG_10);
+    if (count >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_EGG_50);
+    if (isShiny)
+        Achievement_TryComplete(ACHIEVEMENT_EGG_SHINY);
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------
