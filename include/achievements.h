@@ -92,6 +92,13 @@ u8    AchievementBoost_GetLevel(u16 boostId);
 // run is ineligible, the ID is out of range, or it's already completed.
 bool8 Achievement_TryComplete(u16 achievementId);
 
+// design doc §5.1/§5.2 (Stage 5): the one-time first-playthrough unlock.
+// Call this from GameClear() (src/post_battle_event_funcs.c) in the branch
+// that only runs the first time FLAG_SYS_GAME_CLEAR is set for this save --
+// that flag's own set-once semantics are what guarantee this runs exactly
+// once per playthrough, so this function has no completion guard of its own.
+void Achievement_OnFirstPlaythroughComplete(void);
+
 // Declared here to complete the API surface, but implemented where the plan
 // defines their algorithm, once the data they depend on exists:
 //   AchievementBoost_CanPurchase,

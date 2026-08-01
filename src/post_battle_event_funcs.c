@@ -30,8 +30,13 @@ int GameClear(void)
     {
         gHasHallOfFameRecords = FALSE;
         FlagSet(FLAG_SYS_GAME_CLEAR);
-        // Stage 2.3 throwaway test achievement. This branch only runs the
-        // first time FLAG_SYS_GAME_CLEAR is set (design doc Stage 5.1).
+        // design doc Stage 5.1: this branch only runs the first time
+        // FLAG_SYS_GAME_CLEAR is set for this save, which is what makes it
+        // the trigger for the one-time first-playthrough unlock.
+        Achievement_OnFirstPlaythroughComplete();
+        // Stage 2.3 throwaway test achievement, kept alongside the real
+        // Stage 5 hook above to keep exercising the end-to-end completion
+        // pipeline from this call site.
         Achievement_TryComplete(ACHIEVEMENT_TEST_COMPLETE_GAME);
     }
 

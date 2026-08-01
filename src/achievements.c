@@ -1,10 +1,12 @@
 #include "global.h"
 #include "gba/flash_internal.h"
 #include "agb_flash.h"
+#include "event_data.h"
 #include "load_save.h"
 #include "save.h"
 #include "achievements.h"
 #include "achievement_popup.h"
+#include "constants/flags.h"
 #include "data/achievements.h"
 
 // The whole struct is written as one blob to a sector (see WriteAchievementProfile).
@@ -184,6 +186,27 @@ bool8 Achievement_TryComplete(u16 achievementId)
     QueueAchievementNotification(achievementId);
 
     return TRUE;
+}
+
+// design doc §5.2 (Stage 5): called from GameClear() the one time
+// FLAG_SYS_GAME_CLEAR is newly set for this save (see the declaration in
+// achievements.h for why no completion guard is needed here). Flushes
+// immediately rather than waiting for the next §1.3 flush point, same as
+// the boost purchase/reset mutators -- this is a rare, important state
+// change, not a hot path.
+void Achievement_OnFirstPlaythroughComplete(void)
+{
+    gAchievementProfile.boostsUnlocked = TRUE;
+    gAchievementProfile.playthroughsCompleted++;
+
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+        gAchievementProfile.nuzlockesCompleted++;
+
+    if (FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES))
+        gAchievementProfile.randomizedRunsCompleted++;
+
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
 }
 
 u32 Achievement_GetTotalPoints(void)
