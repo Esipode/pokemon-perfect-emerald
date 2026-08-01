@@ -21,13 +21,19 @@
 
 // Stage 3.1 template (design doc §3.1): src/new_game_settings_menu.c's
 // skeleton copied wholesale -- BG/window templates, staged CB2 init,
-// ListMenu + scroll arrows, DrawBgWindowFrames chrome. Deliberately just a
-// single flat, ID-ordered list of every real achievement for now:
-//   - no tier grouping into the three-level TIER SELECT / LIST / DETAIL flow
-//     (design doc §3.2, Stage 3.2)
-//   - no hidden-achievement "???" masking (design doc §17, also Stage 3.2)
-//   - no Start Menu entry point yet (Stage 3.3) -- nothing calls
-//     CB2_InitAchievementsMenu() until then.
+// ListMenu + scroll arrows, DrawBgWindowFrames chrome.
+//
+// Stage 3.2 (design doc §3.2): the three-level TIER SELECT / LIST / DETAIL
+// flow. One CB2 boots the screen straight into TIER SELECT; the three levels
+// then swap the task's func and rebuild the same WIN_HEADER/WIN_LIST/
+// WIN_DESCRIPTION trio in place rather than re-running the CB2 state machine,
+// so moving between levels never fades. Only leaving the menu entirely (B
+// from TIER SELECT) fades out.
+//
+// Still not here: the Start Menu entry point (Stage 3.3) -- nothing calls
+// CB2_InitAchievementsMenu() until then -- and the "Boosts" row on the
+// TIER SELECT mockup, which depends on the unlock gate (Stage 5.3) and the
+// boost shop it opens (Stage 7).
 
 enum
 {
@@ -35,6 +41,8 @@ enum
     WIN_LIST,
     WIN_DESCRIPTION,
 };
+
+#define ACHIEVEMENT_TIER_COUNT (ACHIEVEMENT_TIER_DIAMOND + 1)
 
 #define ACHIEVEMENTS_MENU_MAX_SHOWED 4
 #define ACHIEVEMENTS_MENU_ITEM_COUNT (ACHIEVEMENTS_COUNT - 1) // excludes ACHIEVEMENT_NONE
@@ -49,37 +57,93 @@ enum
 #define ACHIEVEMENTS_ARROW_TOP_Y    36
 #define ACHIEVEMENTS_ARROW_BOTTOM_Y 100
 
-// "[x] " / "[ ] " prefix plus the name itself; the name's own encoded size is
-// already capped at ACHIEVEMENT_NAME_LENGTH (including its terminator) by
-// ACHIEVEMENT_NAME(), so this leaves generous headroom rather than computing
-// the exact minimum.
+// Checkbox/tier-name prefix plus the item text itself; the longest real
+// content (an achievement name) is already capped at ACHIEVEMENT_NAME_LENGTH
+// (including its terminator) by ACHIEVEMENT_NAME(), so this leaves generous
+// headroom rather than computing the exact minimum. Reused for both the
+// achievement list rows and the (shorter) tier select rows.
 #define ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE (ACHIEVEMENT_NAME_LENGTH + 8)
 
-EWRAM_DATA static u8 sAchievementsListNameBuffers[ACHIEVEMENTS_MENU_ITEM_COUNT][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE] = {0};
-EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_ITEM_COUNT] = {0};
+// Shared by both lists this menu ever shows (tier select's ACHIEVEMENT_TIER_
+// COUNT rows, or one tier's worth of achievement rows), sized to whichever is
+// larger. Right now the placeholder catalog (Stage 2.3's 3 test achievements)
+// is smaller than the tier count, so this must not just be
+// ACHIEVEMENTS_MENU_ITEM_COUNT -- that undersized the array and corrupted
+// memory past its end when tier select wrote all ACHIEVEMENT_TIER_COUNT rows.
+#define ACHIEVEMENTS_MENU_LIST_CAPACITY \
+    (ACHIEVEMENTS_MENU_ITEM_COUNT > ACHIEVEMENT_TIER_COUNT ? ACHIEVEMENTS_MENU_ITEM_COUNT : ACHIEVEMENT_TIER_COUNT)
+
+EWRAM_DATA static u8 sAchievementsListNameBuffers[ACHIEVEMENTS_MENU_LIST_CAPACITY][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE] = {0};
+EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_LIST_CAPACITY] = {0};
 
 EWRAM_DATA static struct
 {
-    u16 scrollOffset;
-    u16 selectedRow;
-} sAchievementsScroll = {0};
+    u8 selectedTier;
+    u16 listItemCount; // filtered count for the tier currently shown at LIST level
+    u16 tierScrollOffset;
+    u16 tierSelectedRow;
+    u16 listScrollOffset;
+    u16 listSelectedRow;
+} sAchievementsMenu = {0};
+
+// Cached once per TIER SELECT build (see BuildTierSelectListItems) so the
+// per-row itemPrintFunc doesn't re-scan every achievement on every redraw.
+EWRAM_DATA static struct
+{
+    u16 completed;
+    u16 total;
+} sTierCounts[ACHIEVEMENT_TIER_COUNT] = {0};
 
 static void Task_AchievementsMenuFadeIn(u8 taskId);
-static void Task_AchievementsMenuProcessInput(u8 taskId);
 static void Task_AchievementsMenuCancel(u8 taskId);
+static void Task_TierSelect_ProcessInput(u8 taskId);
+static void Task_List_ProcessInput(u8 taskId);
+static void Task_Detail_ProcessInput(u8 taskId);
+static void EnterTierSelectLevel(u8 taskId);
+static void EnterListLevel(u8 taskId, u8 tier);
+static void EnterDetailLevel(u8 taskId, u16 achievementId);
+static void DestroyCurrentAchievementsList(u8 taskId);
+static void TierSelect_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list);
+static void TierSelect_ItemPrintCallback(u8 windowId, u32 tier, u8 y);
 static void AchievementsMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list);
 static void AchievementsMenu_ItemPrintCallback(u8 windowId, u32 achievementId, u8 y);
-static void BuildAchievementsListItems(void);
+static void BuildTierSelectListItems(void);
+static void BuildAchievementListItems(u8 tier);
+static void PrintPointsSummary(void);
 static void PrintAchievementDescription(s32 achievementId);
-static void DrawHeaderText(void);
+static void DrawHeaderText(const u8 *title);
 static void DrawBgWindowFrames(void);
 
-static const u8 sText_AchievementsTitle[] = _("ACHIEVEMENTS");
-static const u8 sText_ControlHint[]       = _("{B_BUTTON}BACK");
+static const u8 sText_AchievementsTitle[]  = _("ACHIEVEMENTS");
+static const u8 sText_ControlHint[]        = _("{B_BUTTON}BACK");
 // '[' and ']' aren't in charmap.txt -- use the existing filled/hollow circle
 // glyphs instead of literal brackets.
-static const u8 sText_CompletedPrefix[]   = _("{CIRCLE_DOT} ");
-static const u8 sText_IncompletePrefix[]  = _("{CIRCLE_HOLLOW} ");
+static const u8 sText_CompletedPrefix[]    = _("{CIRCLE_DOT} ");
+static const u8 sText_IncompletePrefix[]   = _("{CIRCLE_HOLLOW} ");
+// design doc §17: hidden achievements show as "???" -- name and description
+// both -- until completed. Their point value and tier are not withheld
+// (mirrors the design doc §3.2 mockup: "[ ] ???                50").
+static const u8 sText_HiddenName[]         = _("???");
+static const u8 sText_HiddenDescription[]  = _("???");
+
+static const u8 sText_TierBronze[]  = _("BRONZE");
+static const u8 sText_TierSilver[]  = _("SILVER");
+static const u8 sText_TierGold[]    = _("GOLD");
+static const u8 sText_TierDiamond[] = _("DIAMOND");
+
+static const u8 *const sTierNames[ACHIEVEMENT_TIER_COUNT] =
+{
+    [ACHIEVEMENT_TIER_BRONZE]  = sText_TierBronze,
+    [ACHIEVEMENT_TIER_SILVER]  = sText_TierSilver,
+    [ACHIEVEMENT_TIER_GOLD]    = sText_TierGold,
+    [ACHIEVEMENT_TIER_DIAMOND] = sText_TierDiamond,
+};
+
+static const u8 sText_TierCountSeparator[]  = _(" / ");
+static const u8 sText_PointsSummaryFormat[] = _("Points: {STR_VAR_1} ({STR_VAR_2} free)");
+static const u8 sText_RewardFormat[]        = _("Reward: {STR_VAR_1} Points");
+static const u8 sText_StatusCompleted[]     = _("Status: Completed");
+static const u8 sText_StatusIncomplete[]    = _("Status: Not completed");
 
 static const struct WindowTemplate sAchievementsMenuWinTemplates[] =
 {
@@ -161,8 +225,7 @@ void CB2_InitAchievementsMenu(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
-        sAchievementsScroll.scrollOffset = 0;
-        sAchievementsScroll.selectedRow = 0;
+        memset(&sAchievementsMenu, 0, sizeof(sAchievementsMenu));
         gMain.state++;
         break;
     case 1:
@@ -210,7 +273,6 @@ void CB2_InitAchievementsMenu(void)
         break;
     case 6:
         PutWindowTilemap(WIN_HEADER);
-        DrawHeaderText();
         gMain.state++;
         break;
     case 7:
@@ -224,39 +286,10 @@ void CB2_InitAchievementsMenu(void)
         gMain.state++;
         break;
     case 9:
-    {
-        struct ListMenuTemplate template = {0};
-
-        BuildAchievementsListItems();
-
-        template.items = sAchievementsListItems;
-        template.moveCursorFunc = AchievementsMenu_MoveCursorCallback;
-        template.itemPrintFunc = AchievementsMenu_ItemPrintCallback;
-        template.totalItems = ACHIEVEMENTS_MENU_ITEM_COUNT;
-        template.maxShowed = ACHIEVEMENTS_MENU_MAX_SHOWED;
-        template.windowId = WIN_LIST;
-        template.header_X = 0;
-        template.item_X = 8;
-        template.cursor_X = 0;
-        template.upText_Y = 1;
-        template.cursorPal = 2;
-        template.fillValue = 1;
-        template.cursorShadowPal = 3;
-        template.lettersSpacing = 0;
-        template.itemVerticalPadding = 0;
-        template.scrollMultiple = LIST_NO_MULTIPLE_SCROLL;
-        template.fontId = FONT_NORMAL;
-        template.cursorKind = CURSOR_BLACK_ARROW;
-
         taskId = CreateTask(Task_AchievementsMenuFadeIn, 0);
-        gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsScroll.scrollOffset, sAchievementsScroll.selectedRow);
-        gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
-            SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
-            ACHIEVEMENTS_MENU_ITEM_COUNT - ACHIEVEMENTS_MENU_MAX_SHOWED, TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
-            &sAchievementsScroll.scrollOffset);
+        EnterTierSelectLevel(taskId);
         gMain.state++;
         break;
-    }
     case 10:
         BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
         SetVBlankCallback(VBlankCB);
@@ -268,13 +301,60 @@ void CB2_InitAchievementsMenu(void)
 static void Task_AchievementsMenuFadeIn(u8 taskId)
 {
     if (!gPaletteFade.active)
-        gTasks[taskId].func = Task_AchievementsMenuProcessInput;
+        gTasks[taskId].func = Task_TierSelect_ProcessInput;
 }
 
-static void Task_AchievementsMenuProcessInput(u8 taskId)
+static void Task_AchievementsMenuCancel(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        DestroyCurrentAchievementsList(taskId);
+        DestroyTask(taskId);
+        FreeAllWindowBuffers();
+        SetMainCallback2(gMain.savedCallback);
+    }
+}
+
+// ---- TIER SELECT ---------------------------------------------------------
+
+static void EnterTierSelectLevel(u8 taskId)
+{
+    struct ListMenuTemplate template = {0};
+
+    DrawHeaderText(sText_AchievementsTitle);
+    PrintPointsSummary();
+    BuildTierSelectListItems();
+
+    template.items = sAchievementsListItems;
+    template.moveCursorFunc = TierSelect_MoveCursorCallback;
+    template.itemPrintFunc = TierSelect_ItemPrintCallback;
+    template.totalItems = ACHIEVEMENT_TIER_COUNT;
+    template.maxShowed = ACHIEVEMENTS_MENU_MAX_SHOWED;
+    template.windowId = WIN_LIST;
+    template.header_X = 0;
+    template.item_X = 8;
+    template.cursor_X = 0;
+    template.upText_Y = 1;
+    template.cursorPal = 2;
+    template.fillValue = 1;
+    template.cursorShadowPal = 3;
+    template.lettersSpacing = 0;
+    template.itemVerticalPadding = 0;
+    template.scrollMultiple = LIST_NO_MULTIPLE_SCROLL;
+    template.fontId = FONT_NORMAL;
+    template.cursorKind = CURSOR_BLACK_ARROW;
+
+    gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenu.tierScrollOffset, sAchievementsMenu.tierSelectedRow);
+    gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
+        SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
+        ACHIEVEMENT_TIER_COUNT - ACHIEVEMENTS_MENU_MAX_SHOWED, TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
+        &sAchievementsMenu.tierScrollOffset);
+}
+
+static void Task_TierSelect_ProcessInput(u8 taskId)
 {
     s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
-    ListMenuGetScrollAndRow(gTasks[taskId].tListTaskId, &sAchievementsScroll.scrollOffset, &sAchievementsScroll.selectedRow);
+    ListMenuGetScrollAndRow(gTasks[taskId].tListTaskId, &sAchievementsMenu.tierScrollOffset, &sAchievementsMenu.tierSelectedRow);
 
     switch (itemId)
     {
@@ -286,22 +366,132 @@ static void Task_AchievementsMenuProcessInput(u8 taskId)
         gTasks[taskId].func = Task_AchievementsMenuCancel;
         break;
     default:
-        // Stage 3.2 hook: selecting an achievement will swap to the DETAIL
-        // screen here. No detail screen exists yet, so this is a no-op.
         PlaySE(SE_SELECT);
+        sAchievementsMenu.listScrollOffset = 0;
+        sAchievementsMenu.listSelectedRow = 0;
+        DestroyCurrentAchievementsList(taskId);
+        EnterListLevel(taskId, itemId);
+        gTasks[taskId].func = Task_List_ProcessInput;
         break;
     }
 }
 
-static void Task_AchievementsMenuCancel(u8 taskId)
+static void TierSelect_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list)
 {
-    if (!gPaletteFade.active)
+    if (!onInit)
+        PlaySE(SE_SELECT);
+}
+
+static void TierSelect_ItemPrintCallback(u8 windowId, u32 tier, u8 y)
+{
+    u8 *ptr;
+    s32 width;
+
+    ptr = ConvertIntToDecimalStringN(gStringVar4, sTierCounts[tier].completed, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ptr = StringCopy(ptr, sText_TierCountSeparator);
+    ConvertIntToDecimalStringN(ptr, sTierCounts[tier].total, STR_CONV_MODE_LEFT_ALIGN, 3);
+
+    width = GetStringWidth(FONT_NORMAL, gStringVar4, 0);
+    AddTextPrinterParameterized(windowId, FONT_NORMAL, gStringVar4, ACHIEVEMENTS_POINTS_RIGHT_X - width, y, TEXT_SKIP_DRAW, NULL);
+}
+
+static void BuildTierSelectListItems(void)
+{
+    u32 tier, id;
+
+    for (tier = 0; tier < ACHIEVEMENT_TIER_COUNT; tier++)
     {
-        DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
-        RemoveScrollIndicatorArrowPair(gTasks[taskId].tScrollArrowTaskId);
-        DestroyTask(taskId);
-        FreeAllWindowBuffers();
-        SetMainCallback2(gMain.savedCallback);
+        sTierCounts[tier].completed = 0;
+        sTierCounts[tier].total = 0;
+    }
+
+    for (id = ACHIEVEMENT_NONE + 1; id < ACHIEVEMENTS_COUNT; id++)
+    {
+        tier = Achievement_GetInfo(id)->tier;
+        sTierCounts[tier].total++;
+        if (Achievement_IsCompleted(id))
+            sTierCounts[tier].completed++;
+    }
+
+    for (tier = 0; tier < ACHIEVEMENT_TIER_COUNT; tier++)
+    {
+        u8 *buffer = sAchievementsListNameBuffers[tier];
+
+        StringCopy(buffer, sTierNames[tier]);
+        sAchievementsListItems[tier].name = buffer;
+        sAchievementsListItems[tier].id = tier;
+    }
+}
+
+static void PrintPointsSummary(void)
+{
+    ConvertIntToDecimalStringN(gStringVar1, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar2, Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+    StringExpandPlaceholders(gStringVar4, sText_PointsSummaryFormat);
+
+    FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
+    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
+}
+
+// ---- ACHIEVEMENT LIST -----------------------------------------------------
+
+static void EnterListLevel(u8 taskId, u8 tier)
+{
+    struct ListMenuTemplate template = {0};
+
+    sAchievementsMenu.selectedTier = tier;
+
+    DrawHeaderText(sTierNames[tier]);
+    BuildAchievementListItems(tier);
+
+    template.items = sAchievementsListItems;
+    template.moveCursorFunc = AchievementsMenu_MoveCursorCallback;
+    template.itemPrintFunc = AchievementsMenu_ItemPrintCallback;
+    template.totalItems = sAchievementsMenu.listItemCount;
+    template.maxShowed = ACHIEVEMENTS_MENU_MAX_SHOWED;
+    template.windowId = WIN_LIST;
+    template.header_X = 0;
+    template.item_X = 8;
+    template.cursor_X = 0;
+    template.upText_Y = 1;
+    template.cursorPal = 2;
+    template.fillValue = 1;
+    template.cursorShadowPal = 3;
+    template.lettersSpacing = 0;
+    template.itemVerticalPadding = 0;
+    template.scrollMultiple = LIST_NO_MULTIPLE_SCROLL;
+    template.fontId = FONT_NORMAL;
+    template.cursorKind = CURSOR_BLACK_ARROW;
+
+    gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenu.listScrollOffset, sAchievementsMenu.listSelectedRow);
+    gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
+        SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
+        sAchievementsMenu.listItemCount - ACHIEVEMENTS_MENU_MAX_SHOWED, TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
+        &sAchievementsMenu.listScrollOffset);
+}
+
+static void Task_List_ProcessInput(u8 taskId)
+{
+    s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
+    ListMenuGetScrollAndRow(gTasks[taskId].tListTaskId, &sAchievementsMenu.listScrollOffset, &sAchievementsMenu.listSelectedRow);
+
+    switch (itemId)
+    {
+    case LIST_NOTHING_CHOSEN:
+        break;
+    case LIST_CANCEL:
+        PlaySE(SE_SELECT);
+        DestroyCurrentAchievementsList(taskId);
+        EnterTierSelectLevel(taskId);
+        gTasks[taskId].func = Task_TierSelect_ProcessInput;
+        break;
+    default:
+        PlaySE(SE_SELECT);
+        DestroyCurrentAchievementsList(taskId);
+        EnterDetailLevel(taskId, itemId);
+        gTasks[taskId].func = Task_Detail_ProcessInput;
+        break;
     }
 }
 
@@ -322,40 +512,100 @@ static void AchievementsMenu_ItemPrintCallback(u8 windowId, u32 achievementId, u
     AddTextPrinterParameterized(windowId, FONT_NORMAL, gStringVar1, ACHIEVEMENTS_POINTS_RIGHT_X - width, y, TEXT_SKIP_DRAW, NULL);
 }
 
-// Builds the flat, ID-ordered item list (skips ACHIEVEMENT_NONE) and bakes
-// the completion checkbox into each row's label text. Achievement completion
-// can't change while this menu is open, so this only needs to run once, at
-// entry, rather than being recomputed per redraw.
-static void BuildAchievementsListItems(void)
+// Builds the tier-filtered item list (skips ACHIEVEMENT_NONE and any ID
+// outside this tier) and bakes the completion checkbox into each row's label
+// text. Hidden achievements (design doc §17) render their name as "???"
+// until completed. Achievement completion can't change while this menu is
+// open, so this only needs to run once, at entry to the tier, rather than
+// being recomputed per redraw.
+static void BuildAchievementListItems(u8 tier)
 {
     u32 id, index = 0;
 
-    for (id = ACHIEVEMENT_NONE + 1; id < ACHIEVEMENTS_COUNT; id++, index++)
+    for (id = ACHIEVEMENT_NONE + 1; id < ACHIEVEMENTS_COUNT; id++)
     {
-        u8 *buffer = sAchievementsListNameBuffers[index];
+        const struct Achievement *info = Achievement_GetInfo(id);
+        u8 *buffer;
+        bool8 completed;
 
-        StringCopy(buffer, Achievement_IsCompleted(id) ? sText_CompletedPrefix : sText_IncompletePrefix);
-        StringAppend(buffer, Achievement_GetInfo(id)->name);
+        if (info->tier != tier)
+            continue;
+
+        completed = Achievement_IsCompleted(id);
+        buffer = sAchievementsListNameBuffers[index];
+
+        StringCopy(buffer, completed ? sText_CompletedPrefix : sText_IncompletePrefix);
+        StringAppend(buffer, (info->hidden && !completed) ? sText_HiddenName : info->name);
 
         sAchievementsListItems[index].name = buffer;
         sAchievementsListItems[index].id = id;
+        index++;
     }
+
+    sAchievementsMenu.listItemCount = index;
 }
 
 static void PrintAchievementDescription(s32 achievementId)
 {
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
     if (achievementId >= ACHIEVEMENT_NONE + 1 && achievementId < ACHIEVEMENTS_COUNT)
-        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, Achievement_GetInfo(achievementId)->description, 8, 1, TEXT_SKIP_DRAW, NULL);
+    {
+        const struct Achievement *info = Achievement_GetInfo(achievementId);
+        bool8 masked = info->hidden && !Achievement_IsCompleted(achievementId);
+
+        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, masked ? sText_HiddenDescription : info->description, 8, 1, TEXT_SKIP_DRAW, NULL);
+    }
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
 
-static void DrawHeaderText(void)
+// ---- DETAIL ----------------------------------------------------------------
+
+static void EnterDetailLevel(u8 taskId, u16 achievementId)
+{
+    const struct Achievement *info = Achievement_GetInfo(achievementId);
+    bool8 completed = Achievement_IsCompleted(achievementId);
+    bool8 masked = info->hidden && !completed;
+
+    DrawHeaderText(sTierNames[info->tier]);
+
+    FillWindowPixelBuffer(WIN_LIST, PIXEL_FILL(1));
+    AddTextPrinterParameterized(WIN_LIST, FONT_NORMAL, masked ? sText_HiddenName : info->name, 8, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(WIN_LIST, FONT_NORMAL, masked ? sText_HiddenDescription : info->description, 8, 17, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+
+    ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
+    StringExpandPlaceholders(gStringVar4, sText_RewardFormat);
+
+    FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
+    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, completed ? sText_StatusCompleted : sText_StatusIncomplete, 8, 17, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
+}
+
+static void Task_Detail_ProcessInput(u8 taskId)
+{
+    if (JOY_NEW(A_BUTTON | B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        EnterListLevel(taskId, sAchievementsMenu.selectedTier);
+        gTasks[taskId].func = Task_List_ProcessInput;
+    }
+}
+
+// ---- Shared ----------------------------------------------------------------
+
+static void DestroyCurrentAchievementsList(u8 taskId)
+{
+    DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
+    RemoveScrollIndicatorArrowPair(gTasks[taskId].tScrollArrowTaskId);
+}
+
+static void DrawHeaderText(const u8 *title)
 {
     s32 hintX = GetStringRightAlignXOffset(FONT_NARROW, sText_ControlHint, 198);
 
     FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
-    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, sText_AchievementsTitle, 8, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, title, 8, 1, TEXT_SKIP_DRAW, NULL);
     AddTextPrinterParameterized(WIN_HEADER, FONT_NARROW, sText_ControlHint, hintX, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);
 }

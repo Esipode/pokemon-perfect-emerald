@@ -1,5 +1,6 @@
 #include "global.h"
 #include "achievements.h"
+#include "achievements_menu.h"
 #include "battle.h"
 #include "battle_setup.h"
 #include "berry.h"
@@ -387,6 +388,7 @@ static void DebugAction_Achievements_ToggleBoostsEnabled(u8 taskId);
 static void DebugAction_Achievements_MarkPlaythroughComplete(u8 taskId);
 static void DebugAction_Achievements_DumpProfile(u8 taskId);
 static void DebugAction_Achievements_DumpProfileInput(u8 taskId);
+static void DebugAction_Achievements_OpenMenu(u8 taskId);
 
 extern const u8 Debug_FlagsNotSetOverworldConfigMessage[];
 extern const u8 Debug_FlagsNotSetBattleConfigMessage[];
@@ -734,6 +736,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Achievements[] =
     { COMPOUND_STRING("Toggle Boost System"),   DebugAction_Achievements_ToggleBoostsEnabled },
     { COMPOUND_STRING("Mark Playthrough Done"), DebugAction_Achievements_MarkPlaythroughComplete },
     { COMPOUND_STRING("Dump Profile…"),         DebugAction_Achievements_DumpProfile },
+    { COMPOUND_STRING("Open Achievements Menu"), DebugAction_Achievements_OpenMenu },
     { NULL }
 };
 
@@ -2074,6 +2077,16 @@ static void DebugAction_Achievements_DumpProfileInput(u8 taskId)
 
 #undef tDumpPage
 #undef ACHIEVEMENTS_DUMP_PAGE_COUNT
+
+// Stage 3.2 testing aid: Stage 3.3 (Start Menu hookup) hasn't landed yet, so
+// nothing else in the game can reach CB2_InitAchievementsMenu. Mirrors
+// DebugAction_Util_WatchCredits's full-teardown-then-jump pattern.
+static void DebugAction_Achievements_OpenMenu(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    gMain.savedCallback = CB2_ReturnToField;
+    SetMainCallback2(CB2_InitAchievementsMenu);
+}
 
 static void DebugAction_Util_CheatStart(u8 taskId)
 {
