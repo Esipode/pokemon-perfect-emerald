@@ -15,11 +15,20 @@ void ShowAchievementPopup(u16 achievementId);
 
 // Stage 4.2 (design doc §4.2): the real entry point for actual awards.
 // src/achievements.c's QueueAchievementNotification calls this rather than
-// ShowAchievementPopup directly -- it pushes onto a small ring buffer that a
-// task drains one at a time, only once the previous popup has finished and
-// the field is in a safe state (not mid-battle, mid-cutscene, or mid-
-// transition), so simultaneous awards each get a full, un-truncated display
-// instead of clobbering one another.
+// ShowAchievementPopup directly -- it pushes onto a small ring buffer that
+// AchievementPopup_UpdateQueue drains one at a time, only once the previous
+// popup has finished and the field is in a safe state (not mid-battle,
+// mid-cutscene, or mid-transition), so simultaneous awards each get a full,
+// un-truncated display instead of clobbering one another.
 void AchievementPopup_Enqueue(u16 achievementId);
+
+// Polled once per frame from CB2_Overworld (src/overworld.c) -- attempts to
+// show the next queued achievement popup, if any, and if the field is
+// currently in a safe state to show one. A no-op when the queue is empty.
+// Deliberately a plain per-frame poll rather than a task: see the comment on
+// this function's definition (src/achievement_popup.c) for why a
+// self-perpetuating task doesn't survive the ResetTasks() calls scattered
+// through battle/menu transitions.
+void AchievementPopup_UpdateQueue(void);
 
 #endif // GUARD_ACHIEVEMENT_POPUP_H

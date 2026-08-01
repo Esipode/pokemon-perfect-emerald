@@ -33,13 +33,24 @@
 // ---- Stage 4.2 (design doc §4.2) -------------------------------------
 // AchievementPopup_Enqueue() adds a small ring buffer in front of
 // ShowAchievementPopup(): src/achievements.c's QueueAchievementNotification
-// calls it instead of the popup directly, and Task_DrainAchievementPopupQueue
-// shows one entry at a time, only once the previous popup has fully finished
-// and the field is in a safe state (see IsAchievementPopupSafeToShow) --
-// simultaneous awards each get their own full display window instead of
-// cutting each other short. ShowAchievementPopup itself is unchanged and
-// still reachable directly for an ungated, immediate render (the debug
-// menu's "Test Achievement Popup" action still uses it that way).
+// calls it instead of the popup directly, and AchievementPopup_UpdateQueue
+// (polled once per frame from CB2_Overworld, src/overworld.c) shows one
+// entry at a time, only once the previous popup has fully finished and the
+// field is in a safe state (see IsAchievementPopupSafeToShow) -- simultaneous
+// awards each get their own full display window instead of cutting each
+// other short. ShowAchievementPopup itself is unchanged and still reachable
+// directly for an ungated, immediate render (the debug menu's "Test
+// Achievement Popup" action still uses it that way).
+//
+// ---- Bug fix (post-Stage 13) -----------------------------------------
+// The queue used to be drained by a self-perpetuating task instead of a
+// per-frame poll. That broke when an achievement was queued off the field
+// (e.g. mid-battle): ResetTasks() runs unconditionally at battle start/end
+// and in most other menu transitions, which silently destroyed the drain
+// task while it was still waiting for a safe frame. The queued id itself
+// survived (plain EWRAM ring buffer), but nothing was left to drain it until
+// the next achievement re-armed the task and flushed both at once -- see
+// AchievementPopup_UpdateQueue's comment for the fix.
 //
 // Also added: PlayFanfare(MUS_OBTAIN_SYMBOL) on every show, and
 // Lock/UnlockPlayerFieldControls() around the popup's lifetime so the player
@@ -126,7 +137,6 @@ EWRAM_DATA static u8 sAchievementPopupQueueHead = 0;
 EWRAM_DATA static u8 sAchievementPopupQueueCount = 0;
 
 static void Task_HideAchievementPopupAfterDelay(u8 taskId);
-static void Task_DrainAchievementPopupQueue(u8 taskId);
 static bool8 IsAchievementPopupSafeToShow(void);
 static void ShowAchievementPopUpWindow(u16 achievementId);
 static void HideAchievementPopUpWindow(void);
@@ -250,8 +260,9 @@ void AchievementPopup_Enqueue(u16 achievementId)
     sAchievementPopupQueue[tail] = achievementId;
     sAchievementPopupQueueCount++;
 
-    if (!FuncIsActiveTask(Task_DrainAchievementPopupQueue))
-        CreateTask(Task_DrainAchievementPopupQueue, 90);
+    // Draining itself happens from AchievementPopup_UpdateQueue, polled every
+    // frame by CB2_Overworld -- see that function's comment for why this
+    // isn't a self-perpetuating task.
 }
 
 static void Task_HideAchievementPopupAfterDelay(u8 taskId)
@@ -263,18 +274,28 @@ static void Task_HideAchievementPopupAfterDelay(u8 taskId)
     }
 }
 
-// Runs continuously once anything's queued, and destroys itself once the
-// queue is drained -- AchievementPopup_Enqueue recreates it on the next
-// award if it's not already running.
-static void Task_DrainAchievementPopupQueue(u8 taskId)
+// Bug fix: this used to be driven by a self-perpetuating task
+// (Task_DrainAchievementPopupQueue), created on demand by
+// AchievementPopup_Enqueue and destroyed once the queue emptied. That broke
+// whenever an achievement was queued while off the field (e.g. mid-battle):
+// ResetTasks() is called unconditionally at battle start/end (and by nearly
+// every other menu/minigame transition in the codebase) with no way for this
+// file to know or intervene, so the drain task got wiped out while it was
+// still waiting for a safe frame. The queued entry itself survived (it's a
+// plain EWRAM ring buffer, not a task), but nothing was left to drain it --
+// until the *next* achievement re-armed the task and flushed both at once.
+//
+// Polling this once per frame from CB2_Overworld instead sidesteps the whole
+// class of bug: it needs no task to survive a transition it doesn't control,
+// and CB2_Overworld is already exactly "the player is back on the field,"
+// which IsAchievementPopupSafeToShow narrows down further to "and free to
+// act."
+void AchievementPopup_UpdateQueue(void)
 {
     u16 achievementId;
 
     if (sAchievementPopupQueueCount == 0)
-    {
-        DestroyTask(taskId);
         return;
-    }
 
     // Waits for the current popup (if any) to finish on its own rather than
     // cutting it short, and for the field to be in a state where it's safe

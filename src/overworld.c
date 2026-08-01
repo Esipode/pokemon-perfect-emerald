@@ -1,5 +1,6 @@
 #include "global.h"
 #include "overworld.h"
+#include "achievement_popup.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
 #include "battle_util.h"
@@ -1973,6 +1974,13 @@ void CB2_Overworld(void)
         gDoAutosave = FALSE;
         AutosaveGame();
     }
+
+    // Bug fix (post-Stage 13): drives the achievement popup queue from here
+    // rather than a self-perpetuating task -- see AchievementPopup_UpdateQueue's
+    // comment (src/achievement_popup.c) for why. This is a no-op whenever
+    // the queue is empty or the field isn't currently in a safe state to
+    // show a popup.
+    AchievementPopup_UpdateQueue();
 }
 
 void SetMainCallback1(MainCallback cb)
