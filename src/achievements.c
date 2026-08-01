@@ -303,17 +303,6 @@ void Achievement_SetBoostsEnabled(bool8 enabled)
     sAchievementProfileDirty = TRUE;
 }
 
-// design doc §1.5: exposes the same gSaveBlock1Ptr->achievementsBlocked flag
-// Achievement_TryComplete and AchievementBoost_CanPurchase already gate on,
-// so UI (the boost shop) can explain *why* a purchase is refused instead of
-// just failing silently. Set once by Debug_ShowMainMenu (src/debug.c) the
-// moment the debug menu is opened at all, for the rest of that save -- by
-// design, not reversible from within the game.
-bool8 Achievement_RunBlocked(void)
-{
-    return gSaveBlock1Ptr->achievementsBlocked;
-}
-
 u8 AchievementBoost_GetLevel(u16 boostId)
 {
     if (boostId >= MAX_BOOSTS)
@@ -339,17 +328,19 @@ const struct AchievementBoost *AchievementBoost_GetInfo(u16 boostId)
 // this validation), which is why AchievementBoost_GetInfo/GetLevel and this
 // function are the ones responsible for treating that as "already maxed"
 // rather than assuming level < maxLevel always holds.
+//
+// Deliberately NOT gated on gSaveBlock1Ptr->achievementsBlocked like
+// Achievement_TryComplete is: debug mode only disqualifies *earning* new
+// achievements/points (design doc §1.5), not spending points already
+// earned. Without this, opening the debug menu at all -- which several of
+// the achievement debug tools themselves require -- permanently locked out
+// the purchase flow those same tools exist to test.
 bool8 AchievementBoost_CanPurchase(u16 boostId)
 {
     const struct AchievementBoost *info;
     u8 level;
 
     if (!gAchievementProfile.boostsUnlocked)
-        return FALSE;
-
-    // design doc §1.5: debug mode disqualifies the current run, same rule
-    // Achievement_TryComplete enforces for earning points in the first place.
-    if (gSaveBlock1Ptr->achievementsBlocked)
         return FALSE;
 
     if (boostId >= BOOSTS_COUNT)

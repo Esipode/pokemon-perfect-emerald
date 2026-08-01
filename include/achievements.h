@@ -111,13 +111,6 @@ bool8 Achievement_BoostsUnlocked(void);
 bool8 Achievement_BoostsEnabled(void);
 void  Achievement_SetBoostsEnabled(bool8 enabled);
 
-// design doc §1.5: TRUE once the debug menu has been opened at all on this
-// save (set by Debug_ShowMainMenu, src/debug.c) -- permanent for the rest of
-// the save, by design. Achievement_TryComplete and AchievementBoost_
-// CanPurchase already gate on this internally; exposed so UI can explain a
-// refused purchase instead of failing silently.
-bool8 Achievement_RunBlocked(void);
-
 u8    AchievementBoost_GetLevel(u16 boostId);
 
 // gAchievementBoosts[] (src/data/achievement_boosts.h) is only ever included
@@ -154,12 +147,15 @@ void Achievement_OnNewGamePlusStarted(u8 cycle);
 // loop, distinct from the plain playthroughsCompleted total.
 void Achievement_OnNewGamePlusCycleCompleted(void);
 
-// design doc §7 (Stage 7): validates in order -- boosts unlocked, run not
-// blocked (§1.5, mirrors Achievement_TryComplete), current level < maxLevel,
-// availablePoints >= costs[level] -- refusing at the first failure. Purchase
-// re-runs the same checks (so it can never be called directly around a stale
-// CanPurchase result) before committing pointsInvested += cost,
-// boostLevels[id]++, and flushing immediately.
+// design doc §7 (Stage 7): validates in order -- boosts unlocked, current
+// level < maxLevel, availablePoints >= costs[level] -- refusing at the first
+// failure. Purchase re-runs the same checks (so it can never be called
+// directly around a stale CanPurchase result) before committing
+// pointsInvested += cost, boostLevels[id]++, and flushing immediately.
+// Deliberately NOT gated on gSaveBlock1Ptr->achievementsBlocked (§1.5) --
+// that flag disqualifies a run from *earning* new achievements/points
+// (enforced in Achievement_TryComplete), not from spending points already
+// on the books.
 bool8 AchievementBoost_CanPurchase(u16 boostId);
 bool8 AchievementBoost_Purchase(u16 boostId);
 
@@ -168,11 +164,11 @@ bool8 AchievementBoost_Purchase(u16 boostId);
 // fee just to find out the answer -- mirrors AchievementBoost_CanPurchase's
 // role for AchievementBoost_Purchase. Refuses in order: boosts not unlocked,
 // nothing invested (pointsInvested == 0 -- resetting a no-op configuration
-// would only ever cost the fee for zero refund), can't afford the fee.
-// Deliberately NOT gated on Achievement_RunBlocked() like CanPurchase is --
-// a blocked run can still hold boost levels purchased before the block took
-// effect, and a reset only ever refunds/clears what's already there, so it
-// can't grant anything a blocked run shouldn't have.
+// would only ever cost the fee for zero refund), can't afford the fee. Like
+// CanPurchase, not gated on gSaveBlock1Ptr->achievementsBlocked -- a blocked
+// run can still hold boost levels purchased before the block took effect,
+// and a reset only ever refunds/clears what's already there, so it can't
+// grant anything a blocked run shouldn't have.
 bool8 AchievementBoost_CanReset(void);
 
 // design doc Stage 11: re-runs AchievementBoost_CanReset (same "never trust a

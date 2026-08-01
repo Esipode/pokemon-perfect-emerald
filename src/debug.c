@@ -2098,14 +2098,10 @@ static void DebugAction_Achievements_OpenMenu(u8 taskId)
 // SELECT's own unlock/enabled gate (Stage 5/6) -- lets the shop be exercised
 // on a save that hasn't actually cleared the first-playthrough gate yet.
 // Mirrors DebugAction_Achievements_OpenMenu's full-teardown-then-jump
-// pattern.
-//
-// Caveat: opening the debug menu at all -- which this action requires --
-// already set Achievement_RunBlocked() for this save (Debug_ShowMainMenu,
-// design doc §1.5), permanently, before this action ever runs. Every
-// purchase attempted from here will be refused on that check regardless of
-// points; the shop's own status line will say so. To exercise a real
-// purchase end to end, use a save that has never opened the debug menu.
+// pattern. Real purchases work normally from here (AchievementBoost_
+// CanPurchase isn't gated on debug mode -- see its comment in
+// src/achievements.c) as long as boosts are unlocked and there are points
+// to spend; use "Toggle Boosts Unlocked"/"Set Points" first if needed.
 static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
