@@ -7,10 +7,23 @@
 
 // Stage 7 (design doc Stage 7: "Use temporary test boosts"): TEST_LEVELED
 // exercises the numerical/leveled path (design doc §10.1), TEST_BINARY the
-// locked -> purchased -> unlocked path (§10.2). Real boosts replace these
-// starting Stage 8; nothing here has a gameplay effect yet.
+// locked -> purchased -> unlocked path (§10.2). Kept alongside the real
+// catalog below (starting with BOOST_EXP_GAIN, Stage 8) for continued
+// framework testing -- not part of the design doc's actual boost list.
 static const u16 sBoostTestLeveledCosts[]   = {100, 200, 300};
 static const u16 sBoostTestBinaryCosts[]    = {500};
+
+// Stage 8 (design doc Stage 8): the first real boost. Costs rise steeply
+// per §12 ("prevents the player from acquiring every useful boost
+// immediately"); exact tuning is explicitly deferred to Stage 13/14
+// balancing, so these are placeholders in the same shape the real curve
+// will take, not a final balance pass.
+static const u16 sBoostExpGainCosts[]   = {200, 400, 700, 1100, 1600};
+// effects[0] (level 0) is never read -- AchievementBoost_ApplyExp short-
+// circuits on level == 0 before indexing this array. effects[level] is the
+// percent bonus applied at that level, matching the design doc §10.1
+// example (Level 1: +10% ... Level 5: +50%).
+static const u16 sBoostExpGainEffects[] = {0, 10, 20, 30, 40, 50};
 
 static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
 {
@@ -37,6 +50,14 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 1,
         .costs       = sBoostTestBinaryCosts,
         .effects     = NULL,
+    },
+    [BOOST_EXP_GAIN] = {
+        .name        = BOOST_NAME("EXP Gain"),
+        .description = COMPOUND_STRING("Increases EXP earned from battles."),
+        .type        = BOOST_TYPE_LEVELED,
+        .maxLevel    = 5,
+        .costs       = sBoostExpGainCosts,
+        .effects     = sBoostExpGainEffects,
     },
 };
 

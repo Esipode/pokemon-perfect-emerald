@@ -104,6 +104,13 @@ bool8 Achievement_BoostsUnlocked(void);
 bool8 Achievement_BoostsEnabled(void);
 void  Achievement_SetBoostsEnabled(bool8 enabled);
 
+// design doc §1.5: TRUE once the debug menu has been opened at all on this
+// save (set by Debug_ShowMainMenu, src/debug.c) -- permanent for the rest of
+// the save, by design. Achievement_TryComplete and AchievementBoost_
+// CanPurchase already gate on this internally; exposed so UI can explain a
+// refused purchase instead of failing silently.
+bool8 Achievement_RunBlocked(void);
+
 u8    AchievementBoost_GetLevel(u16 boostId);
 
 // gAchievementBoosts[] (src/data/achievement_boosts.h) is only ever included
@@ -136,6 +143,15 @@ bool8 AchievementBoost_Purchase(u16 boostId);
 // Declared here to complete the API surface, but implemented once
 // ACHIEVEMENT_BOOST_RESET_FEE exists (Stage 11).
 bool8 AchievementBoost_Reset(void);
+
+// design doc Stage 8: the first real boost effect. Wraps a raw exp value --
+// call this on the pre soft-level-cap amount (design doc's "wrap the
+// input"), not the post-cap result, so a purchased boost still gets
+// throttled by the level cap exactly like baseline exp does, rather than
+// letting it push past the ceiling the cap exists to enforce. Returns
+// expValue unchanged whenever boosts are disabled or BOOST_EXP_GAIN is at
+// level 0, so the disabled path is provably identical to baseline.
+u32 AchievementBoost_ApplyExp(u32 expValue);
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add

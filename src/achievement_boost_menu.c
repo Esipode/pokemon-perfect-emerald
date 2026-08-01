@@ -99,6 +99,8 @@ static const u8 sText_BoostLevelSep[]   = _("/");
 static const u8 sText_BoostCostFormat[]      = _("Cost: {STR_VAR_1} (have {STR_VAR_2})");
 static const u8 sText_BoostMaxLevelStatus[]  = _("Status: Max level reached");
 static const u8 sText_BoostOwnedStatus[]     = _("Status: Already unlocked");
+static const u8 sText_BoostSystemLockedStatus[] = _("Status: Boosts are locked");
+static const u8 sText_BoostRunBlockedStatus[]   = _("Status: Run ineligible (debug used)");
 // The status line's Y position always follows wherever the (possibly
 // wrapped, possibly multi-line) description ends, rather than a hardcoded
 // y=17 -- combining them into one printer call with an embedded "\n" lets
@@ -432,7 +434,24 @@ static void PrintBoostStatus(s32 boostId)
         u8 level = AchievementBoost_GetLevel(boostId);
         u8 statusBuf[40];
 
-        if (info->type == BOOST_TYPE_BINARY && level > 0)
+        // Same priority order as AchievementBoost_CanPurchase itself
+        // (src/achievements.c): unlocked, then run-not-blocked, then
+        // per-boost owned/maxed, then cost. Bug (reported after initial
+        // delivery): purchases were silently failing with only a rejection
+        // sound -- usually because opening the debug menu at all
+        // permanently sets Achievement_RunBlocked() for that save (design
+        // doc §1.5), which nothing in this window explained. Surfacing
+        // *why* here means the status line always matches what pressing
+        // [A] will actually do.
+        if (!Achievement_BoostsUnlocked())
+        {
+            StringCopy(statusBuf, sText_BoostSystemLockedStatus);
+        }
+        else if (Achievement_RunBlocked())
+        {
+            StringCopy(statusBuf, sText_BoostRunBlockedStatus);
+        }
+        else if (info->type == BOOST_TYPE_BINARY && level > 0)
         {
             StringCopy(statusBuf, sText_BoostOwnedStatus);
         }

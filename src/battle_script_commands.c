@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle.h"
 #include "battle_hold_effects.h"
 #include "battle_message.h"
@@ -3782,6 +3783,14 @@ static void Cmd_getexp(void)
                 if (gBattleStruct->expShareExpValue == 0)
                     gBattleStruct->expShareExpValue = 1;
             }
+
+            // Achievement Boosts Stage 8: applied once here, to both pools,
+            // rather than at each GetSoftLevelCapExpValue call site below --
+            // this is the raw pre-soft-cap value ("wrap the input"), so a
+            // purchased boost is still throttled by the level cap exactly
+            // like baseline exp is, instead of pushing past it.
+            *exp = AchievementBoost_ApplyExp(*exp);
+            gBattleStruct->expShareExpValue = AchievementBoost_ApplyExp(gBattleStruct->expShareExpValue);
 
             gBattleScripting.getexpState++;
             gBattleStruct->expOrderId = 0;

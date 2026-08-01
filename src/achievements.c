@@ -236,6 +236,17 @@ void Achievement_SetBoostsEnabled(bool8 enabled)
     sAchievementProfileDirty = TRUE;
 }
 
+// design doc §1.5: exposes the same gSaveBlock1Ptr->achievementsBlocked flag
+// Achievement_TryComplete and AchievementBoost_CanPurchase already gate on,
+// so UI (the boost shop) can explain *why* a purchase is refused instead of
+// just failing silently. Set once by Debug_ShowMainMenu (src/debug.c) the
+// moment the debug menu is opened at all, for the rest of that save -- by
+// design, not reversible from within the game.
+bool8 Achievement_RunBlocked(void)
+{
+    return gSaveBlock1Ptr->achievementsBlocked;
+}
+
 u8 AchievementBoost_GetLevel(u16 boostId)
 {
     if (boostId >= MAX_BOOSTS)
@@ -309,6 +320,28 @@ bool8 AchievementBoost_Purchase(u16 boostId)
     Achievement_FlushProfile();
 
     return TRUE;
+}
+
+// design doc Stage 8: the first real boost effect, and the shape every
+// subsequent one should follow -- centralized here rather than scattered at
+// each call site, an early return to plain baseline whenever boosts are
+// disabled or the level is 0, and u64 math so a New Game+-inflated expValue
+// (src/pokemon.c, commit 959a51b21a's reworked growth curves) can never
+// overflow computing expValue * percent before the /100 brings it back down.
+u32 AchievementBoost_ApplyExp(u32 expValue)
+{
+    u8 level;
+    u32 percent;
+
+    if (!gAchievementProfile.boostsEnabled)
+        return expValue;
+
+    level = AchievementBoost_GetLevel(BOOST_EXP_GAIN);
+    if (level == 0)
+        return expValue;
+
+    percent = 100 + AchievementBoost_GetInfo(BOOST_EXP_GAIN)->effects[level];
+    return (u32)(((u64)expValue * percent) / 100);
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

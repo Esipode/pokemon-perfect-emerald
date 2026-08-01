@@ -43,21 +43,26 @@ enum BoostType
     BOOST_TYPE_BINARY,
 };
 
-// Real entries land here once Stage 8+ implements actual gameplay hooks,
-// keyed to designated initializers in src/data/achievement_boosts.h.
-// BOOST_NONE is the reserved zero value AchievementBoost_GetInfo() falls
-// back to for an out-of-range ID (mirrors ACHIEVEMENT_NONE above).
+// Real entries land here as each stage implements its gameplay hook, keyed
+// to designated initializers in src/data/achievement_boosts.h. BOOST_NONE is
+// the reserved zero value AchievementBoost_GetInfo() falls back to for an
+// out-of-range ID (mirrors ACHIEVEMENT_NONE above).
 //
 // The two BOOST_TEST_* entries are Stage 7's throwaway boosts (design doc
 // Stage 7: "Use temporary test boosts") -- BOOST_TEST_LEVELED exercises the
 // numerical/leveled path (§10.1), BOOST_TEST_BINARY the binary path (§10.2).
-// They're placeholders for the real boost catalog, not part of the design
-// doc's actual boost list.
+// Kept around after Stage 8 for continued framework testing; not part of
+// the design doc's actual boost list.
+//
+// BOOST_EXP_GAIN (Stage 8, design doc Stage 8): the first real boost --
+// AchievementBoost_ApplyExp() (src/achievements.c) is its effect, hooked
+// into src/battle_script_commands.c's exp calculation.
 enum BoostId
 {
     BOOST_NONE,
     BOOST_TEST_LEVELED,
     BOOST_TEST_BINARY,
+    BOOST_EXP_GAIN,
     BOOSTS_COUNT,
 };
 
