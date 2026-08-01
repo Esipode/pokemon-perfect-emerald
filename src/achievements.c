@@ -4,6 +4,7 @@
 #include "load_save.h"
 #include "save.h"
 #include "achievements.h"
+#include "data/achievements.h"
 
 // The whole struct is written as one blob to a sector (see WriteAchievementProfile).
 STATIC_ASSERT(sizeof(struct AchievementProfile) <= SECTOR_SIZE, AchievementProfileFreeSpace);

@@ -2,11 +2,29 @@
 #define GUARD_ACHIEVEMENTS_H
 
 #include "global.h"
+#include "constants/achievements.h"
 
 #define ACHIEVEMENT_PROFILE_MAGIC   0x50454143  // 'PEAC'
 #define ACHIEVEMENT_PROFILE_VERSION 1
 #define MAX_ACHIEVEMENTS            512   // reserved ceiling -> 64 bytes of flags
 #define MAX_BOOSTS                  32
+
+// Cap for .name in gAchievements[] (src/data/achievements.h), enforced at
+// compile time via ACHIEVEMENT_NAME() there -- same pattern as ITEM_NAME_LENGTH.
+#define ACHIEVEMENT_NAME_LENGTH     24
+
+// Definition data (design doc §4, Stage 2.1/2.2) -- one const entry per
+// enum AchievementId, in src/data/achievements.h. Kept strictly separate
+// from struct AchievementProfile below, which is completion *state* only.
+struct Achievement
+{
+    const u8 *name;
+    const u8 *description;
+    enum AchievementTier tier;
+    enum AchievementScope scope;
+    u16 points;
+    bool8 hidden;
+};
 
 struct AchievementProfile
 {
