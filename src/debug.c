@@ -1,6 +1,7 @@
 #include "global.h"
 #include "achievements.h"
 #include "achievements_menu.h"
+#include "achievement_popup.h"
 #include "battle.h"
 #include "battle_setup.h"
 #include "berry.h"
@@ -389,6 +390,7 @@ static void DebugAction_Achievements_MarkPlaythroughComplete(u8 taskId);
 static void DebugAction_Achievements_DumpProfile(u8 taskId);
 static void DebugAction_Achievements_DumpProfileInput(u8 taskId);
 static void DebugAction_Achievements_OpenMenu(u8 taskId);
+static void DebugAction_Achievements_TestPopup(u8 taskId);
 
 extern const u8 Debug_FlagsNotSetOverworldConfigMessage[];
 extern const u8 Debug_FlagsNotSetBattleConfigMessage[];
@@ -737,6 +739,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Achievements[] =
     { COMPOUND_STRING("Mark Playthrough Done"), DebugAction_Achievements_MarkPlaythroughComplete },
     { COMPOUND_STRING("Dump Profile…"),         DebugAction_Achievements_DumpProfile },
     { COMPOUND_STRING("Open Achievements Menu"), DebugAction_Achievements_OpenMenu },
+    { COMPOUND_STRING("Test Achievement Popup"), DebugAction_Achievements_TestPopup },
     { NULL }
 };
 
@@ -2086,6 +2089,18 @@ static void DebugAction_Achievements_OpenMenu(u8 taskId)
     Debug_DestroyMenu_Full(taskId);
     gMain.savedCallback = CB2_ReturnToField;
     SetMainCallback2(CB2_InitAchievementsMenu);
+}
+
+// Stage 4.1 testing aid: nothing awards achievements through the popup yet
+// (QueueAchievementNotification is still a no-op stub until Stage 4.2 gives
+// it a real queue to hand off to), so this is the only way to see it render.
+// Closes the debug menu like DebugAction_Cancel, then shows the popup for one
+// of Stage 2.3's throwaway test achievements on the plain field.
+static void DebugAction_Achievements_TestPopup(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    ScriptContext_Enable();
+    ShowAchievementPopup(ACHIEVEMENT_TEST_OBTAIN_POTION);
 }
 
 static void DebugAction_Util_CheatStart(u8 taskId)

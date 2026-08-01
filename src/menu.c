@@ -408,14 +408,33 @@ void DisplayYesNoMenuWithDefault(u8 initialCursorPos)
     CreateYesNoMenu(&sYesNo_WindowTemplates, STD_WINDOW_BASE_TILE_NUM, STD_WINDOW_PALETTE_NUM, initialCursorPos);
 }
 
-u8 AddStartMenuWindow(u8 numActions)
+// Minimum width in tiles, so a start menu with only short labels doesn't look
+// oddly cramped -- this is roughly the old fixed width.
+#define MIN_START_MENU_WIDTH 7
+
+u8 AddStartMenuWindow(u8 numActions, u8 textWidthPx)
 {
     if (sStartMenuWindowId == WINDOW_NONE)
     {
-        u8 width = 7;
-        u8 left = 22;
-        u8 calculatedHeight = (numActions * 3) - 4;
-        u8 height = calculatedHeight > 18 ? 18 : calculatedHeight;  // Fixed maximum height to prevent menu resizing (accommodates up to 11 menu items)
+        u8 width, left, height, calculatedHeight;
+        u8 lineHeight = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
+
+        // PrintStartMenuActions (start_menu.c) prints each label at x = 8;
+        // mirror that margin on the right and round up to whole tiles.
+        width = (8 + textWidthPx + 8 + 7) / 8;
+        if (width < MIN_START_MENU_WIDTH)
+            width = MIN_START_MENU_WIDTH;
+        left = 29 - width; // keeps the right edge flush with the screen edge regardless of width
+
+        // PrintStartMenuActions prints row i at y = 9 + i * lineHeight; mirror
+        // that top margin on the bottom and round up to whole tiles. (The
+        // previous numActions * 3 - 4 formula was tuned for the vanilla
+        // FONT_NORMAL start menu and was never adjusted after this fork
+        // switched item rows to the shorter FONT_SMALL, which is why the
+        // window had extra blank space at the bottom for any item count.)
+        calculatedHeight = (9 + (numActions * lineHeight) + 9 + 7) / 8;
+        height = calculatedHeight > 18 ? 18 : calculatedHeight;  // Fixed maximum height to prevent menu resizing (accommodates up to 11 menu items)
+
         sStartMenuWindowId = AddWindowParameterized(0, left, 1, width, height, 15, 0x139);
     }
     return sStartMenuWindowId;

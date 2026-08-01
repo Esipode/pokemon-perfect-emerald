@@ -277,6 +277,7 @@ static const struct WindowTemplate sSaveInfoWindowTemplate = {
 // Local functions
 static void BuildStartMenuActions(void);
 static void AddStartMenuAction(u8 action);
+static u8 GetStartMenuTextWidth(void);
 static void BuildNormalStartMenu(void);
 static void BuildDebugStartMenu(void);
 static void BuildSafariZoneStartMenu(void);
@@ -356,6 +357,26 @@ static void BuildStartMenuActions(void)
 static void AddStartMenuAction(u8 action)
 {
     AppendToList(sCurrentStartMenuActions, &sNumStartMenuActions, action);
+}
+
+// Widest current label's pixel width, so AddStartMenuWindow (menu.c) can size
+// the window to actually fit every row instead of a hand-picked fixed width.
+static u8 GetStartMenuTextWidth(void)
+{
+    u8 i;
+    u8 maxWidth = 0;
+
+    for (i = 0; i < sNumStartMenuActions; i++)
+    {
+        u8 width;
+
+        StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[i]].text);
+        width = GetStringWidth(FONT_SMALL, gStringVar4, 0);
+        if (width > maxWidth)
+            maxWidth = width;
+    }
+
+    return maxWidth;
 }
 
 static void BuildNormalStartMenu(void)
@@ -573,7 +594,7 @@ static bool32 InitStartMenuStep(void)
         break;
     case 2:
         LoadMessageBoxAndBorderGfx();
-        DrawStdWindowFrame(AddStartMenuWindow(sNumStartMenuActions), FALSE);
+        DrawStdWindowFrame(AddStartMenuWindow(sNumStartMenuActions, GetStartMenuTextWidth()), FALSE);
         sInitStartMenuData[1] = 0;
         sInitStartMenuData[0]++;
         break;
