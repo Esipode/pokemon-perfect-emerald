@@ -1,6 +1,7 @@
 #include "global.h"
 #include "achievements.h"
 #include "achievements_menu.h"
+#include "achievement_boost_menu.h"
 #include "achievement_popup.h"
 #include "battle.h"
 #include "battle_setup.h"
@@ -390,6 +391,7 @@ static void DebugAction_Achievements_MarkPlaythroughComplete(u8 taskId);
 static void DebugAction_Achievements_DumpProfile(u8 taskId);
 static void DebugAction_Achievements_DumpProfileInput(u8 taskId);
 static void DebugAction_Achievements_OpenMenu(u8 taskId);
+static void DebugAction_Achievements_OpenBoostMenu(u8 taskId);
 static void DebugAction_Achievements_TestPopup(u8 taskId);
 
 extern const u8 Debug_FlagsNotSetOverworldConfigMessage[];
@@ -739,6 +741,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Achievements[] =
     { COMPOUND_STRING("Mark Playthrough Done"), DebugAction_Achievements_MarkPlaythroughComplete },
     { COMPOUND_STRING("Dump Profile…"),         DebugAction_Achievements_DumpProfile },
     { COMPOUND_STRING("Open Achievements Menu"), DebugAction_Achievements_OpenMenu },
+    { COMPOUND_STRING("Open Boost Shop"),        DebugAction_Achievements_OpenBoostMenu },
     { COMPOUND_STRING("Test Achievement Popup"), DebugAction_Achievements_TestPopup },
     { NULL }
 };
@@ -2089,6 +2092,18 @@ static void DebugAction_Achievements_OpenMenu(u8 taskId)
     Debug_DestroyMenu_Full(taskId);
     gMain.savedCallback = CB2_ReturnToField;
     SetMainCallback2(CB2_InitAchievementsMenu);
+}
+
+// Stage 7 testing aid: reaches the boost shop directly, bypassing both the
+// Start Menu hookup (still Stage 3.3, not landed) and TIER SELECT's own
+// unlock/enabled gate (Stage 5/6) -- lets the shop be exercised on a save
+// that hasn't actually cleared the first-playthrough gate yet. Mirrors
+// DebugAction_Achievements_OpenMenu's full-teardown-then-jump pattern.
+static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    gMain.savedCallback = CB2_ReturnToField;
+    SetMainCallback2(CB2_InitAchievementBoostMenu);
 }
 
 // Testing aid for src/achievement_popup.c: bypasses Stage 4.2's queue/safety

@@ -8,6 +8,7 @@
 #include "achievement_popup.h"
 #include "constants/flags.h"
 #include "data/achievements.h"
+#include "data/achievement_boosts.h"
 
 // The whole struct is written as one blob to a sector (see WriteAchievementProfile).
 STATIC_ASSERT(sizeof(struct AchievementProfile) <= SECTOR_SIZE, AchievementProfileFreeSpace);
@@ -241,6 +242,73 @@ u8 AchievementBoost_GetLevel(u16 boostId)
         return 0;
 
     return gAchievementProfile.boostLevels[boostId];
+}
+
+const struct AchievementBoost *AchievementBoost_GetInfo(u16 boostId)
+{
+    if (boostId >= BOOSTS_COUNT)
+        return &gAchievementBoosts[BOOST_NONE];
+
+    return &gAchievementBoosts[boostId];
+}
+
+// design doc §7/§23: refuses at the first failed check rather than
+// collecting all failures, since the caller (the boost shop, Stage 7) only
+// needs a yes/no to decide whether [A] Purchase is valid. This is the only
+// real (non-debug) path that increments boostLevels[id], and it never does
+// so past maxLevel -- AchievementBoost_DebugSetLevel (src/debug.c) can still
+// stuff an out-of-range level in directly, by design (debug tools bypass
+// this validation), which is why AchievementBoost_GetInfo/GetLevel and this
+// function are the ones responsible for treating that as "already maxed"
+// rather than assuming level < maxLevel always holds.
+bool8 AchievementBoost_CanPurchase(u16 boostId)
+{
+    const struct AchievementBoost *info;
+    u8 level;
+
+    if (!gAchievementProfile.boostsUnlocked)
+        return FALSE;
+
+    // design doc §1.5: debug mode disqualifies the current run, same rule
+    // Achievement_TryComplete enforces for earning points in the first place.
+    if (gSaveBlock1Ptr->achievementsBlocked)
+        return FALSE;
+
+    if (boostId >= BOOSTS_COUNT)
+        return FALSE;
+
+    info = AchievementBoost_GetInfo(boostId);
+    level = AchievementBoost_GetLevel(boostId);
+
+    if (level >= info->maxLevel)
+        return FALSE;
+
+    if (Achievement_GetAvailablePoints() < info->costs[level])
+        return FALSE;
+
+    return TRUE;
+}
+
+// design doc §23 "point underflow": pointsInvested can only grow here, and
+// only by an amount CanPurchase already verified is <= the available
+// balance, so totalPointsEarned - pointsInvested can never go negative.
+bool8 AchievementBoost_Purchase(u16 boostId)
+{
+    const struct AchievementBoost *info;
+    u8 level;
+
+    if (!AchievementBoost_CanPurchase(boostId))
+        return FALSE;
+
+    info = AchievementBoost_GetInfo(boostId);
+    level = AchievementBoost_GetLevel(boostId);
+
+    gAchievementProfile.pointsInvested += info->costs[level];
+    gAchievementProfile.boostLevels[boostId]++;
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
+
+    return TRUE;
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

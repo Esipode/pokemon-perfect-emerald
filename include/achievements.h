@@ -13,6 +13,10 @@
 // compile time via ACHIEVEMENT_NAME() there -- same pattern as ITEM_NAME_LENGTH.
 #define ACHIEVEMENT_NAME_LENGTH     24
 
+// Cap for .name in gAchievementBoosts[] (src/data/achievement_boosts.h),
+// enforced at compile time via BOOST_NAME() there.
+#define BOOST_NAME_LENGTH           24
+
 // Definition data (design doc §4, Stage 2.1/2.2) -- one const entry per
 // enum AchievementId, in src/data/achievements.h. Kept strictly separate
 // from struct AchievementProfile below, which is completion *state* only.
@@ -24,6 +28,22 @@ struct Achievement
     enum AchievementScope scope;
     u16 points;
     bool8 hidden;
+};
+
+// Boost definition data (design doc §11, Stage 7) -- one const entry per
+// enum BoostId, in src/data/achievement_boosts.h. Kept strictly separate
+// from struct AchievementProfile below, which is completion *state* only
+// (mirrors the Achievement/AchievementProfile split above): "a boost's
+// definition should describe its behavior; the persistent profile should
+// only store the player's state for that boost."
+struct AchievementBoost
+{
+    const u8 *name;
+    const u8 *description;
+    u8 type;                  // BOOST_TYPE_LEVELED | BOOST_TYPE_BINARY
+    u8 maxLevel;               // 1 for binary
+    const u16 *costs;          // costs[level] -- cost to go from level to level+1
+    const u16 *effects;        // effects[level]; units are per-boost, not rendered generically
 };
 
 struct AchievementProfile
@@ -86,6 +106,11 @@ void  Achievement_SetBoostsEnabled(bool8 enabled);
 
 u8    AchievementBoost_GetLevel(u16 boostId);
 
+// gAchievementBoosts[] (src/data/achievement_boosts.h) is only ever included
+// from src/achievements.c -- mirrors Achievement_GetInfo above. Returns the
+// BOOST_NONE entry for an out-of-range ID rather than NULL.
+const struct AchievementBoost *AchievementBoost_GetInfo(u16 boostId);
+
 // Runs the order in design doc §4.30 (Stage 2.3): checks run eligibility
 // (§1.5) and prior completion, then commits the flag and points together
 // before queuing a notification. Returns FALSE without side effects if the
@@ -99,20 +124,24 @@ bool8 Achievement_TryComplete(u16 achievementId);
 // once per playthrough, so this function has no completion guard of its own.
 void Achievement_OnFirstPlaythroughComplete(void);
 
-// Declared here to complete the API surface, but implemented where the plan
-// defines their algorithm, once the data they depend on exists:
-//   AchievementBoost_CanPurchase,
-//   AchievementBoost_Purchase   -> boost registry (costs/maxLevel),  Stage 7
-//   AchievementBoost_Reset      -> ACHIEVEMENT_BOOST_RESET_FEE,      Stage 11
+// design doc §7 (Stage 7): validates in order -- boosts unlocked, run not
+// blocked (§1.5, mirrors Achievement_TryComplete), current level < maxLevel,
+// availablePoints >= costs[level] -- refusing at the first failure. Purchase
+// re-runs the same checks (so it can never be called directly around a stale
+// CanPurchase result) before committing pointsInvested += cost,
+// boostLevels[id]++, and flushing immediately.
 bool8 AchievementBoost_CanPurchase(u16 boostId);
 bool8 AchievementBoost_Purchase(u16 boostId);
+
+// Declared here to complete the API surface, but implemented once
+// ACHIEVEMENT_BOOST_RESET_FEE exists (Stage 11).
 bool8 AchievementBoost_Reset(void);
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
-// These bypass all the validation the real Stage 2/7/11 functions above will
-// eventually add (achievement points, boost costs/maxLevel, reset fee) since
-// none of that data exists yet -- they exist only to exercise the save/flush
-// plumbing while the rest of the system is still being built.
+// These bypass all the validation the real Stage 2/7/11 functions above add
+// (achievement completion rules, boost costs/maxLevel, reset fee) by design,
+// so the rest of the system can be exercised and tested independently of
+// whatever real content/rules exist at a given point in development.
 void  Achievement_DebugSetCompleted(u16 achievementId, bool8 completed);
 void  Achievement_DebugSetPoints(u32 amount);
 void  Achievement_DebugSetBoostsUnlocked(bool8 unlocked);

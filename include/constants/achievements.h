@@ -34,4 +34,31 @@ enum AchievementScope
     ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,  // never resets -- lives only in AchievementProfile
 };
 
+// design doc §10: a boost either scales across levels (LEVELED) or is a
+// single locked -> purchased -> unlocked toggle (BINARY, §10.2) -- the
+// framework must not assume every boost has a meaningful level count.
+enum BoostType
+{
+    BOOST_TYPE_LEVELED,
+    BOOST_TYPE_BINARY,
+};
+
+// Real entries land here once Stage 8+ implements actual gameplay hooks,
+// keyed to designated initializers in src/data/achievement_boosts.h.
+// BOOST_NONE is the reserved zero value AchievementBoost_GetInfo() falls
+// back to for an out-of-range ID (mirrors ACHIEVEMENT_NONE above).
+//
+// The two BOOST_TEST_* entries are Stage 7's throwaway boosts (design doc
+// Stage 7: "Use temporary test boosts") -- BOOST_TEST_LEVELED exercises the
+// numerical/leveled path (§10.1), BOOST_TEST_BINARY the binary path (§10.2).
+// They're placeholders for the real boost catalog, not part of the design
+// doc's actual boost list.
+enum BoostId
+{
+    BOOST_NONE,
+    BOOST_TEST_LEVELED,
+    BOOST_TEST_BINARY,
+    BOOSTS_COUNT,
+};
+
 #endif // GUARD_CONSTANTS_ACHIEVEMENTS_H

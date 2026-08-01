@@ -1,9 +1,11 @@
 #include "global.h"
 #include "achievements.h"
 #include "achievements_menu.h"
+#include "achievement_boost_menu.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
+#include "line_break.h"
 #include "list_menu.h"
 #include "main.h"
 #include "menu.h"
@@ -30,10 +32,21 @@
 // so moving between levels never fades. Only leaving the menu entirely (B
 // from TIER SELECT) fades out.
 //
-// Still not here: the Start Menu entry point (Stage 3.3) -- nothing calls
-// CB2_InitAchievementsMenu() until then -- and the "Boosts" row on the
-// TIER SELECT mockup, which depends on the unlock gate (Stage 5.3) and the
-// boost shop it opens (Stage 7).
+// Stage 3.3 (Start Menu entry point) is wired separately in
+// src/start_menu.c (MENU_ACTION_ACHIEVEMENTS / StartMenuAchievementsCallback).
+//
+// The "Boosts" row on the TIER SELECT mockup (Stage 7): appended to the tier
+// list as one extra row, id TIER_SELECT_ITEM_BOOSTS, only when
+// Achievement_BoostsUnlocked() && Achievement_BoostsEnabled() (Stage 6: OFF
+// hides the shop, not just the toggle). Selecting it fades out and jumps to
+// src/achievement_boost_menu.c's CB2_InitAchievementBoostMenu, with
+// gMain.savedCallback pointed back at CB2_InitAchievementsMenu so its own
+// [B] Back re-enters here at a fresh TIER SELECT. Since that overwrites
+// gMain.savedCallback -- the same slot this screen's own [B] Back reads on
+// its way out -- sAchievementsMenuReturnCallback/sReturningFromBoostShop
+// stash the real caller (Start Menu/debug menu) beforehand and restore it on
+// the way back in, so leaving from TIER SELECT after a boost-shop visit
+// still returns to the real caller instead of looping back into this menu.
 
 enum
 {
@@ -57,6 +70,13 @@ enum
 #define ACHIEVEMENTS_ARROW_TOP_Y    36
 #define ACHIEVEMENTS_ARROW_BOTTOM_Y 100
 
+// WIN_DESCRIPTION/WIN_LIST are 26 tiles (208px) wide, text starts at x=8 --
+// AddTextPrinterParameterized never clips or wraps on its own (design doc/
+// src/achievement_popup.c's own ACHIEVEMENT_POPUP_DESC_MAX_WIDTH precedent),
+// so an unwrapped achievement description longer than this bleeds past the
+// window's right edge into the tile memory of the row below it.
+#define ACHIEVEMENTS_DESC_MAX_WIDTH 190
+
 // Checkbox/tier-name prefix plus the item text itself; the longest real
 // content (an achievement name) is already capped at ACHIEVEMENT_NAME_LENGTH
 // (including its terminator) by ACHIEVEMENT_NAME(), so this leaves generous
@@ -64,14 +84,19 @@ enum
 // achievement list rows and the (shorter) tier select rows.
 #define ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE (ACHIEVEMENT_NAME_LENGTH + 8)
 
-// Shared by both lists this menu ever shows (tier select's ACHIEVEMENT_TIER_
-// COUNT rows, or one tier's worth of achievement rows), sized to whichever is
-// larger. Right now the placeholder catalog (Stage 2.3's 3 test achievements)
-// is smaller than the tier count, so this must not just be
-// ACHIEVEMENTS_MENU_ITEM_COUNT -- that undersized the array and corrupted
-// memory past its end when tier select wrote all ACHIEVEMENT_TIER_COUNT rows.
+// TIER SELECT's own row count once the Stage 7 "BOOSTS" row is visible --
+// one past the last real tier ID, reused as that row's ListMenuItem.id too
+// (see TIER_SELECT_ITEM_BOOSTS below).
+#define TIER_SELECT_ROW_COUNT (ACHIEVEMENT_TIER_COUNT + 1)
+
+// Shared by both lists this menu ever shows (tier select's up to
+// TIER_SELECT_ROW_COUNT rows, or one tier's worth of achievement rows),
+// sized to whichever is larger. Right now the placeholder catalog (Stage
+// 2.3's 3 test achievements) is smaller than the tier count, so this must
+// not just be ACHIEVEMENTS_MENU_ITEM_COUNT -- that undersized the array and
+// corrupted memory past its end when tier select wrote all its rows.
 #define ACHIEVEMENTS_MENU_LIST_CAPACITY \
-    (ACHIEVEMENTS_MENU_ITEM_COUNT > ACHIEVEMENT_TIER_COUNT ? ACHIEVEMENTS_MENU_ITEM_COUNT : ACHIEVEMENT_TIER_COUNT)
+    (ACHIEVEMENTS_MENU_ITEM_COUNT > TIER_SELECT_ROW_COUNT ? ACHIEVEMENTS_MENU_ITEM_COUNT : TIER_SELECT_ROW_COUNT)
 
 EWRAM_DATA static u8 sAchievementsListNameBuffers[ACHIEVEMENTS_MENU_LIST_CAPACITY][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE] = {0};
 EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_LIST_CAPACITY] = {0};
@@ -94,12 +119,26 @@ EWRAM_DATA static struct
     u16 total;
 } sTierCounts[ACHIEVEMENT_TIER_COUNT] = {0};
 
+// Stage 7: this menu's own CB2 doubles as the boost shop's return point
+// (Task_TierSelect_OpenBoostMenu sets gMain.savedCallback =
+// CB2_InitAchievementsMenu before jumping there), which would otherwise
+// clobber the *real* caller (Start Menu/debug menu) recorded in
+// gMain.savedCallback on entry. sAchievementsMenuReturnCallback is that real
+// caller, stashed away before the overwrite and restored into
+// gMain.savedCallback the moment this screen is re-entered from the boost
+// shop -- sReturningFromBoostShop is what tells case 0 which of those two
+// things is happening.
+EWRAM_DATA static bool8 sReturningFromBoostShop = FALSE;
+EWRAM_DATA static void (*sAchievementsMenuReturnCallback)(void) = NULL;
+
 static void Task_AchievementsMenuFadeIn(u8 taskId);
 static void Task_AchievementsMenuCancel(u8 taskId);
 static void Task_TierSelect_ProcessInput(u8 taskId);
+static void Task_TierSelect_OpenBoostMenu(u8 taskId);
 static void Task_List_ProcessInput(u8 taskId);
 static void Task_Detail_ProcessInput(u8 taskId);
 static void EnterTierSelectLevel(u8 taskId);
+static bool8 IsBoostShopRowVisible(void);
 static void EnterListLevel(u8 taskId, u8 tier);
 static void EnterDetailLevel(u8 taskId, u16 achievementId);
 static void DestroyCurrentAchievementsList(u8 taskId);
@@ -140,6 +179,13 @@ static const u8 *const sTierNames[ACHIEVEMENT_TIER_COUNT] =
 };
 
 static const u8 sText_TierCountSeparator[]  = _(" / ");
+static const u8 sText_BoostsMenuRowLabel[]  = _("BOOSTS");
+
+// The extra TIER SELECT row (Stage 7) sits one past the last real tier ID --
+// safe as a ListMenuItem.id since tier IDs and this are otherwise disjoint,
+// and TierSelect_ItemPrintCallback/Task_TierSelect_ProcessInput both check
+// for it before treating an itemId as a tier.
+#define TIER_SELECT_ITEM_BOOSTS ACHIEVEMENT_TIER_COUNT
 static const u8 sText_PointsSummaryFormat[] = _("Points: {STR_VAR_1} ({STR_VAR_2} free)");
 static const u8 sText_RewardFormat[]        = _("Reward: {STR_VAR_1} Points");
 static const u8 sText_StatusCompleted[]     = _("Status: Completed");
@@ -225,6 +271,15 @@ void CB2_InitAchievementsMenu(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
+        if (sReturningFromBoostShop)
+        {
+            gMain.savedCallback = sAchievementsMenuReturnCallback;
+            sReturningFromBoostShop = FALSE;
+        }
+        else
+        {
+            sAchievementsMenuReturnCallback = gMain.savedCallback;
+        }
         memset(&sAchievementsMenu, 0, sizeof(sAchievementsMenu));
         gMain.state++;
         break;
@@ -320,6 +375,7 @@ static void Task_AchievementsMenuCancel(u8 taskId)
 static void EnterTierSelectLevel(u8 taskId)
 {
     struct ListMenuTemplate template = {0};
+    u8 itemCount = ACHIEVEMENT_TIER_COUNT + (IsBoostShopRowVisible() ? 1 : 0);
 
     DrawHeaderText(sText_AchievementsTitle);
     PrintPointsSummary();
@@ -328,7 +384,7 @@ static void EnterTierSelectLevel(u8 taskId)
     template.items = sAchievementsListItems;
     template.moveCursorFunc = TierSelect_MoveCursorCallback;
     template.itemPrintFunc = TierSelect_ItemPrintCallback;
-    template.totalItems = ACHIEVEMENT_TIER_COUNT;
+    template.totalItems = itemCount;
     template.maxShowed = ACHIEVEMENTS_MENU_MAX_SHOWED;
     template.windowId = WIN_LIST;
     template.header_X = 0;
@@ -347,7 +403,7 @@ static void EnterTierSelectLevel(u8 taskId)
     gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenu.tierScrollOffset, sAchievementsMenu.tierSelectedRow);
     gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
         SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
-        ACHIEVEMENT_TIER_COUNT - ACHIEVEMENTS_MENU_MAX_SHOWED, TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
+        itemCount - ACHIEVEMENTS_MENU_MAX_SHOWED, TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
         &sAchievementsMenu.tierScrollOffset);
 }
 
@@ -365,6 +421,11 @@ static void Task_TierSelect_ProcessInput(u8 taskId)
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_AchievementsMenuCancel;
         break;
+    case TIER_SELECT_ITEM_BOOSTS:
+        PlaySE(SE_SELECT);
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_TierSelect_OpenBoostMenu;
+        break;
     default:
         PlaySE(SE_SELECT);
         sAchievementsMenu.listScrollOffset = 0;
@@ -373,6 +434,24 @@ static void Task_TierSelect_ProcessInput(u8 taskId)
         EnterListLevel(taskId, itemId);
         gTasks[taskId].func = Task_List_ProcessInput;
         break;
+    }
+}
+
+// Fades out, tears down this screen exactly like Task_AchievementsMenuCancel
+// does, then jumps straight into the boost shop (src/achievement_boost_menu.c)
+// instead of gMain.savedCallback -- with gMain.savedCallback repointed at
+// CB2_InitAchievementsMenu first, so the shop's own [B] Back re-enters here
+// at a fresh TIER SELECT rather than returning to the field/debug menu.
+static void Task_TierSelect_OpenBoostMenu(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        DestroyCurrentAchievementsList(taskId);
+        DestroyTask(taskId);
+        FreeAllWindowBuffers();
+        sReturningFromBoostShop = TRUE;
+        gMain.savedCallback = CB2_InitAchievementsMenu;
+        SetMainCallback2(CB2_InitAchievementBoostMenu);
     }
 }
 
@@ -386,6 +465,11 @@ static void TierSelect_ItemPrintCallback(u8 windowId, u32 tier, u8 y)
 {
     u8 *ptr;
     s32 width;
+
+    // The Stage 7 "BOOSTS" row (id TIER_SELECT_ITEM_BOOSTS) isn't a tier --
+    // sTierCounts[] has no entry for it, and it doesn't need a count column.
+    if (tier >= ACHIEVEMENT_TIER_COUNT)
+        return;
 
     ptr = ConvertIntToDecimalStringN(gStringVar4, sTierCounts[tier].completed, STR_CONV_MODE_LEFT_ALIGN, 3);
     ptr = StringCopy(ptr, sText_TierCountSeparator);
@@ -421,6 +505,22 @@ static void BuildTierSelectListItems(void)
         sAchievementsListItems[tier].name = buffer;
         sAchievementsListItems[tier].id = tier;
     }
+
+    if (IsBoostShopRowVisible())
+    {
+        u8 *buffer = sAchievementsListNameBuffers[ACHIEVEMENT_TIER_COUNT];
+
+        StringCopy(buffer, sText_BoostsMenuRowLabel);
+        sAchievementsListItems[ACHIEVEMENT_TIER_COUNT].name = buffer;
+        sAchievementsListItems[ACHIEVEMENT_TIER_COUNT].id = TIER_SELECT_ITEM_BOOSTS;
+    }
+}
+
+// design doc Stage 6: OFF hides the shop (not just the toggle), so this
+// checks both -- unlocked but disabled must not show the row.
+static bool8 IsBoostShopRowVisible(void)
+{
+    return Achievement_BoostsUnlocked() && Achievement_BoostsEnabled();
 }
 
 static void PrintPointsSummary(void)
@@ -467,7 +567,17 @@ static void EnterListLevel(u8 taskId, u8 tier)
     gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenu.listScrollOffset, sAchievementsMenu.listSelectedRow);
     gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
         SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
-        sAchievementsMenu.listItemCount - ACHIEVEMENTS_MENU_MAX_SHOWED, TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
+        // Clamped, not a bare subtraction: every tier but BRONZE currently
+        // has fewer than ACHIEVEMENTS_MENU_MAX_SHOWED achievements (Stage
+        // 2.3's 3 test achievements are all BRONZE), so this can go
+        // negative. A negative threshold truncates into a huge u16 when
+        // stored (struct ScrollIndicatorPair.fullyDownThreshold,
+        // src/list_menu.c:29) that the real scroll offset can never match,
+        // leaving the down arrow stuck visible with nothing left to scroll
+        // to (same issue fixed for the Stage 7 boost list in
+        // src/achievement_boost_menu.c).
+        (sAchievementsMenu.listItemCount > ACHIEVEMENTS_MENU_MAX_SHOWED) ? (sAchievementsMenu.listItemCount - ACHIEVEMENTS_MENU_MAX_SHOWED) : 0,
+        TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
         &sAchievementsMenu.listScrollOffset);
 }
 
@@ -545,6 +655,17 @@ static void BuildAchievementListItems(u8 tier)
     sAchievementsMenu.listItemCount = index;
 }
 
+// Bug (reported after initial delivery): descriptions were printed raw, with
+// no width limit. AddTextPrinterParameterized doesn't clip or wrap on its
+// own, so anything wider than the window kept drawing past its right edge --
+// which (given how the window's tile buffer is laid out) bled into the tile
+// memory of the row below, showing up as leftover/overlapping text the next
+// time that row was drawn. StripLineBreaks + BreakStringAutomatic is the
+// same fix src/achievement_popup.c already uses for achievement descriptions
+// (see its ACHIEVEMENT_POPUP_DESC_MAX_WIDTH) -- strip any pre-existing manual
+// breaks so BreakStringAutomatic computes clean wrapping from scratch, then
+// let it insert real line breaks so long descriptions correctly use this
+// window's second line instead of spilling off the first one.
 static void PrintAchievementDescription(s32 achievementId)
 {
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
@@ -553,7 +674,10 @@ static void PrintAchievementDescription(s32 achievementId)
         const struct Achievement *info = Achievement_GetInfo(achievementId);
         bool8 masked = info->hidden && !Achievement_IsCompleted(achievementId);
 
-        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, masked ? sText_HiddenDescription : info->description, 8, 1, TEXT_SKIP_DRAW, NULL);
+        StringCopy(gStringVar1, masked ? sText_HiddenDescription : info->description);
+        StripLineBreaks(gStringVar1);
+        BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DESC_MAX_WIDTH, 2, FONT_NORMAL, HIDE_SCROLL_PROMPT);
+        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar1, 8, 1, TEXT_SKIP_DRAW, NULL);
     }
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
@@ -570,7 +694,10 @@ static void EnterDetailLevel(u8 taskId, u16 achievementId)
 
     FillWindowPixelBuffer(WIN_LIST, PIXEL_FILL(1));
     AddTextPrinterParameterized(WIN_LIST, FONT_NORMAL, masked ? sText_HiddenName : info->name, 8, 1, TEXT_SKIP_DRAW, NULL);
-    AddTextPrinterParameterized(WIN_LIST, FONT_NORMAL, masked ? sText_HiddenDescription : info->description, 8, 17, TEXT_SKIP_DRAW, NULL);
+    StringCopy(gStringVar1, masked ? sText_HiddenDescription : info->description);
+    StripLineBreaks(gStringVar1);
+    BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DESC_MAX_WIDTH, 3, FONT_NORMAL, HIDE_SCROLL_PROMPT);
+    AddTextPrinterParameterized(WIN_LIST, FONT_NORMAL, gStringVar1, 8, 17, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
 
     ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
