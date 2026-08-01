@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle.h"
 #include "battle_hold_effects.h"
 #include "battle_setup.h"
@@ -603,6 +604,60 @@ static bool32 HandleEndTurnFrostbite(enum BattlerId battler)
         BattleScriptCall(BattleScript_FrostbiteTurnDmg);
         effect = TRUE;
     }
+
+    return effect;
+}
+
+// Stage 10.1 (BOOST_STATUS_RECOVERY): a flat per-turn chance for one of the
+// player's Pokemon to shake off a non-volatile status on its own. The cure
+// sequence below is Shed Skin's (AbilityBattleEffects, ABILITYEFFECT_ENDTURN,
+// src/battle_util.c) -- same message chooser, same status1/nightmare clear,
+// same controller sync -- minus the ability popup, since no ability is
+// responsible for this one.
+//
+// Player side only, and never in a link or recorded battle: boost levels
+// differ between players, so an ungated roll would desync. The percent == 0
+// check keeps the baseline path from drawing RNG at all.
+static bool32 HandleEndTurnAchievementStatusRecovery(enum BattlerId battler)
+{
+    bool32 effect = FALSE;
+    u32 percent;
+
+    gBattleStruct->eventState.endTurnBattler++;
+
+    if (!(gBattleMons[battler].status1 & STATUS1_ANY)
+     || !IsBattlerAlive(battler)
+     || !IsOnPlayerSide(battler)
+     || (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+        return FALSE;
+
+    percent = AchievementBoost_GetStatusRecoveryPercent();
+    if (percent == 0 || !RandomPercentage(RNG_ACHIEVEMENT_STATUS_RECOVERY, percent))
+        return FALSE;
+
+    if (gBattleMons[battler].status1 & (STATUS1_POISON | STATUS1_TOXIC_POISON))
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CURED_POISON;
+    if (gBattleMons[battler].status1 & STATUS1_SLEEP)
+    {
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CURED_SLEEP;
+        TryDeactivateSleepClause(GetBattlerSide(battler), gBattlerPartyIndexes[battler]);
+    }
+    if (gBattleMons[battler].status1 & STATUS1_PARALYSIS)
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CURED_PARALYSIS;
+    if (gBattleMons[battler].status1 & STATUS1_BURN)
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CURED_BURN;
+    if (gBattleMons[battler].status1 & STATUS1_FREEZE)
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CURED_FREEZE;
+    if (gBattleMons[battler].status1 & STATUS1_FROSTBITE)
+        gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_CURED_FROSTBITE;
+
+    gBattleMons[battler].status1 = 0;
+    gBattleMons[battler].volatiles.nightmare = FALSE;
+    gBattleScripting.battler = battler;
+    BattleScriptCall(BattleScript_AchievementBoostStatusRecovery);
+    BtlController_EmitSetMonData(battler, B_COMM_TO_CONTROLLER, REQUEST_STATUS_BATTLE, 0, 4, &gBattleMons[battler].status1);
+    MarkBattlerForControllerExec(battler);
+    effect = TRUE;
 
     return effect;
 }
@@ -1560,6 +1615,7 @@ static bool32 (*const sEndTurnEffectHandlers[])(enum BattlerId battler) =
     [ENDTURN_POISON] = HandleEndTurnPoison,
     [ENDTURN_BURN] = HandleEndTurnBurn,
     [ENDTURN_FROSTBITE] = HandleEndTurnFrostbite,
+    [ENDTURN_ACHIEVEMENT_STATUS_RECOVERY] = HandleEndTurnAchievementStatusRecovery,
     [ENDTURN_NIGHTMARE] = HandleEndTurnNightmare,
     [ENDTURN_CURSE] = HandleEndTurnCurse,
     [ENDTURN_WRAP] = HandleEndTurnWrap,

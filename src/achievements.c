@@ -8,6 +8,7 @@
 #include "achievements.h"
 #include "achievement_popup.h"
 #include "constants/flags.h"
+#include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
 #include "data/achievements.h"
 #include "data/achievement_boosts.h"
 
@@ -438,6 +439,112 @@ bool8 AchievementBoost_ShouldRoamerSeekPlayer(void)
 
     percent = AchievementBoost_GetInfo(BOOST_LEGENDARY_ENCOUNTER)->effects[level];
     return (Random() % 100) < percent;
+}
+
+// ---- Stage 10.1: catalog wave 2 ---------------------------------------
+//
+// Same shape as everything above: a provable no-op when boosts are disabled
+// or the boost is at level 0.
+//
+// The three battle boosts (crit, PP saver, status recovery) return a raw
+// percent instead of rolling here, unlike AchievementBoost_ShouldRoamerSeekPlayer
+// above. Battle randomness in this fork goes through the tagged
+// RandomChance/RandomPercentage helpers so the test harness and recorded-battle
+// playback stay deterministic; rolling with a bare Random() from this file
+// would sidestep that. Returning 0 lets each call site skip its roll entirely,
+// so the baseline path consumes no RNG at all.
+
+// Shared by the three BOOST_TYPE_BINARY boosts below -- for those, "purchased"
+// is the whole effect, so there's no effects[] value to look up.
+static bool8 IsBinaryBoostActive(u16 boostId)
+{
+    return gAchievementProfile.boostsEnabled && AchievementBoost_GetLevel(boostId) != 0;
+}
+
+static u32 GetBoostEffectValue(u16 boostId)
+{
+    u8 level;
+
+    if (!gAchievementProfile.boostsEnabled)
+        return 0;
+
+    level = AchievementBoost_GetLevel(boostId);
+    if (level == 0)
+        return 0;
+
+    return AchievementBoost_GetInfo(boostId)->effects[level];
+}
+
+u32 AchievementBoost_GetCritChancePercent(void)
+{
+    return GetBoostEffectValue(BOOST_CRIT_CHANCE);
+}
+
+u32 AchievementBoost_GetPpSavePercent(void)
+{
+    return GetBoostEffectValue(BOOST_PP_SAVER);
+}
+
+u32 AchievementBoost_GetStatusRecoveryPercent(void)
+{
+    return GetBoostEffectValue(BOOST_STATUS_RECOVERY);
+}
+
+u8 AchievementBoost_ApplyBerryYield(u8 count)
+{
+    u32 boosted;
+
+    // A tree with nothing on it stays empty -- this adds to a harvest, it
+    // doesn't conjure one.
+    if (count == 0)
+        return 0;
+
+    boosted = count + GetBoostEffectValue(BOOST_BERRY_YIELD);
+    return (boosted > 255) ? 255 : (u8)boosted;
+}
+
+u16 AchievementBoost_ApplyBerryStageDuration(u16 minutes)
+{
+    u32 percent = GetBoostEffectValue(BOOST_BERRY_GROWTH);
+    u32 boosted;
+
+    if (percent == 0)
+        return minutes;
+
+    // Divide rather than subtract, so the top level (+100%) halves the wait
+    // instead of reaching zero. The floor of 1 keeps BerryTreeTimeUpdate's
+    // growth loop from ever seeing a zero countdown.
+    boosted = ((u32)minutes * 100) / (100 + percent);
+    return (boosted == 0) ? 1 : (u16)boosted;
+}
+
+u16 AchievementBoost_ApplySprayStepCount(u16 steps)
+{
+    u32 percent = GetBoostEffectValue(BOOST_SPRAY_DURATION);
+    u32 boosted;
+
+    if (percent == 0)
+        return steps;
+
+    // Clamped below bit 15 (REPEL_LURE_MASK, constants/item.h) so a boosted
+    // count can never bleed into the "this is a Lure" flag.
+    boosted = ((u32)steps * (100 + percent)) / 100;
+    return (boosted >= REPEL_LURE_MASK) ? (REPEL_LURE_MASK - 1) : (u16)boosted;
+}
+
+bool8 AchievementBoost_HasNuzlockeSecondChance(void)
+{
+    return IsBinaryBoostActive(BOOST_NUZLOCKE_SECOND_CHANCE);
+}
+
+bool8 AchievementBoost_HasStarterKit(void)
+{
+    return IsBinaryBoostActive(BOOST_STARTER_KIT);
+}
+
+bool8 AchievementBoost_HasPerfectStarterIvs(void)
+{
+    return IsBinaryBoostActive(BOOST_PERFECT_STARTER_IVS);
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

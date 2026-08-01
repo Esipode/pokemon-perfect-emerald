@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "berry.h"
 #include "event_data.h"
 #include "event_object_movement.h"
@@ -2564,9 +2565,14 @@ void BerryTreeTimeUpdate(s32 minutes)
                         break;
                     }
                     time -= tree->minutesUntilNextStage;
-                    tree->minutesUntilNextStage = GetMulchAffectedGrowthRate(GetStageDurationByBerryType(tree->berry), tree->mulch, tree->stage);
+                    // Stage 10.1 (BOOST_BERRY_GROWTH) shortens the wait for the
+                    // next growth stage...
+                    tree->minutesUntilNextStage = AchievementBoost_ApplyBerryStageDuration(GetMulchAffectedGrowthRate(GetStageDurationByBerryType(tree->berry), tree->mulch, tree->stage));
                     if (!BerryTreeGrow(tree))
                         break;
+                    // ...but deliberately not this one, which is how long the
+                    // ripe berries sit waiting to be picked. Shortening that
+                    // would make them expire sooner, which is a nerf.
                     if (tree->stage == BERRY_STAGE_BERRIES)
                         tree->minutesUntilNextStage = GetStageDurationByBerryType(tree->berry) * ((tree->mulch == ITEM_TO_MULCH(ITEM_STABLE_MULCH)) ? 6 : 4);
                 }
@@ -2580,7 +2586,7 @@ void PlantBerryTree(u8 id, enum BerryId berry, u8 stage, bool8 allowGrowth)
     struct BerryTree *tree = GetBerryTreeInfo(id);
 
     tree->berry = berry;
-    tree->minutesUntilNextStage = GetMulchAffectedGrowthRate(GetStageDurationByBerryType(berry), tree->mulch, stage);
+    tree->minutesUntilNextStage = AchievementBoost_ApplyBerryStageDuration(GetMulchAffectedGrowthRate(GetStageDurationByBerryType(berry), tree->mulch, stage));
     tree->stage = stage;
     tree->moistureLevel = 100;
     if (OW_BERRY_ALWAYS_WATERABLE)
@@ -2595,7 +2601,10 @@ void PlantBerryTree(u8 id, enum BerryId berry, u8 stage, bool8 allowGrowth)
     else if (stage == BERRY_STAGE_BERRIES)
     {
         tree->berryYield = CalcBerryYield(tree);
-        tree->minutesUntilNextStage *= ((tree->mulch == ITEM_TO_MULCH(ITEM_STABLE_MULCH)) ? 6 : 4);
+        // Recomputed from the unboosted duration rather than scaling the value
+        // assigned above: this is the ripe-berries window, which BOOST_BERRY_GROWTH
+        // must not shorten. Identical to the old `*= ...` for an unboosted tree.
+        tree->minutesUntilNextStage = GetMulchAffectedGrowthRate(GetStageDurationByBerryType(berry), tree->mulch, stage) * ((tree->mulch == ITEM_TO_MULCH(ITEM_STABLE_MULCH)) ? 6 : 4);
     }
 
     // Stop growth, to keep tree at this stage until the player has seen it
@@ -2717,7 +2726,14 @@ static u32 GetBerryTreeAge(u8 id, u8 stage)
 
 static u8 GetBerryCountByBerryTreeId(u8 id)
 {
-    return gSaveBlock1Ptr->berryTrees[id].berryYield;
+    // Stage 10.1 (BOOST_BERRY_YIELD) is applied here, at the read, rather than
+    // to the saved berryYield field CalcBerryYield writes at flowering time.
+    // Two reasons: the bonus would otherwise be baked permanently into
+    // already-grown trees (so switching the boost off wouldn't undo it), and
+    // berryYield is only a 5-bit field. Hooking the single reader also keeps
+    // the "N BERRIES" message, the bag-space check, and the two AddBagItem
+    // harvest calls in agreement automatically.
+    return AchievementBoost_ApplyBerryYield(gSaveBlock1Ptr->berryTrees[id].berryYield);
 }
 
 static u16 GetStageDurationByBerryType(u8 berry)

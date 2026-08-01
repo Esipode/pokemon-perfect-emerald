@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_arena.h"
@@ -7955,6 +7956,22 @@ static bool32 IsCriticalHit(struct DamageContext *ctx)
         isCrit = RandomChance(RNG_CRITICAL_HIT, GetCriticalHitOdds(critChance), 256);
     else
         isCrit = RandomChance(RNG_CRITICAL_HIT, 1, GetCriticalHitOdds(critChance));
+
+    // Stage 10.1 (BOOST_CRIT_CHANCE): a flat extra chance to upgrade a hit the
+    // roll above already declined. Deliberately after the CRITICAL_HIT_BLOCKED
+    // branch, so Battle Armor/Shell Armor still hard-block, and before the
+    // gPartyCriticalHits counter below, so a boosted crit still counts toward
+    // IF_CRITICAL_HITS_GE. Player side only, and never in a link or recorded
+    // battle -- boost levels differ between players, so an ungated roll would
+    // desync. The percent == 0 check keeps the baseline path from drawing RNG.
+    if (!isCrit && critChance != CRITICAL_HIT_BLOCKED && IsOnPlayerSide(ctx->battlerAtk)
+     && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+    {
+        u32 boostPercent = AchievementBoost_GetCritChancePercent();
+
+        if (boostPercent != 0)
+            isCrit = RandomPercentage(RNG_ACHIEVEMENT_CRIT, boostPercent);
+    }
 
     // Counter for IF_CRITICAL_HITS_GE evolution condition.
     if (isCrit && IsOnPlayerSide(ctx->battlerAtk)

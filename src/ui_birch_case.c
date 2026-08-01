@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "ui_birch_case.h"
 #include "strings.h"
 #include "bg.h"
@@ -441,8 +442,14 @@ u16 GetEffectiveMove(u16 move, u16 species)
 
 static void GenerateIVs(u8 ivs[6])
 {
+    // Stage 10.1 (BOOST_PERFECT_STARTER_IVS) is hooked here rather than at
+    // BirchCase_GiveMon, because this array feeds both the stats previewed in
+    // the case UI and the ivs[] eventually handed to ScriptGiveMonParameterized.
+    // Hooking only the grant would let the preview and the mon disagree.
+    bool8 perfect = AchievementBoost_HasPerfectStarterIvs();
+
     for (int i = 0; i < 6; i++)
-        ivs[i] = Random() % 32;
+        ivs[i] = perfect ? MAX_PER_STAT_IVS : (Random() % 32);
 }
 
 static u8 GenerateNature(void)

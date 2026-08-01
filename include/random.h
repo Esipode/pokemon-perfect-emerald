@@ -251,6 +251,13 @@ enum RandomTag
     RNG_AI_DMG_ROLL_RANDOM,
     RNG_RANDOM_BERRY,
     RNG_RANDOM_BALL,
+    // Stage 10.1 achievement boosts (src/achievements.c). Appended, never
+    // inserted -- these values must stay stable. Each of the three is only
+    // ever rolled when its boost is above level 0 and boosts are enabled, so
+    // the baseline game consumes no RNG from any of them.
+    RNG_ACHIEVEMENT_CRIT,
+    RNG_ACHIEVEMENT_PP_SAVE,
+    RNG_ACHIEVEMENT_STATUS_RECOVERY,
 };
 
 #define RandomWeighted(tag, ...) \

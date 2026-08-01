@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "item_use.h"
 #include "battle.h"
 #include "battle_anim.h"
@@ -1000,7 +1001,10 @@ static void Task_UseRepel(u8 taskId)
 {
     if (!IsSEPlaying())
     {
-        VarSet(VAR_REPEL_STEP_COUNT, GetItemHoldEffectParam(gSpecialVar_ItemId));
+        // Stage 10.1 (BOOST_SPRAY_DURATION) is applied at each step-count write
+        // rather than inside GetItemHoldEffectParam, which every held-item
+        // effect in the game shares.
+        VarSet(VAR_REPEL_STEP_COUNT, AchievementBoost_ApplySprayStepCount(GetItemHoldEffectParam(gSpecialVar_ItemId)));
     #if VAR_LAST_REPEL_LURE_USED != 0
         VarSet(VAR_LAST_REPEL_LURE_USED, gSpecialVar_ItemId);
     #endif
@@ -1014,7 +1018,7 @@ static void Task_UseRepel(u8 taskId)
 void HandleUseExpiredRepel(struct ScriptContext *ctx)
 {
 #if VAR_LAST_REPEL_LURE_USED != 0
-    VarSet(VAR_REPEL_STEP_COUNT, GetItemHoldEffectParam(VarGet(VAR_LAST_REPEL_LURE_USED)));
+    VarSet(VAR_REPEL_STEP_COUNT, AchievementBoost_ApplySprayStepCount(GetItemHoldEffectParam(VarGet(VAR_LAST_REPEL_LURE_USED))));
 #endif
 }
 
@@ -1044,7 +1048,9 @@ static void Task_UseLure(u8 taskId)
 {
     if (!IsSEPlaying())
     {
-        VarSet(VAR_REPEL_STEP_COUNT, GetItemHoldEffectParam(gSpecialVar_ItemId) | REPEL_LURE_MASK);
+        // Boost applied to the count before the flag bit is OR'd in -- see
+        // AchievementBoost_ApplySprayStepCount, which clamps below REPEL_LURE_MASK.
+        VarSet(VAR_REPEL_STEP_COUNT, AchievementBoost_ApplySprayStepCount(GetItemHoldEffectParam(gSpecialVar_ItemId)) | REPEL_LURE_MASK);
     #if VAR_LAST_REPEL_LURE_USED != 0
         VarSet(VAR_LAST_REPEL_LURE_USED, gSpecialVar_ItemId);
     #endif
@@ -1059,7 +1065,7 @@ static void Task_UseLure(u8 taskId)
 void HandleUseExpiredLure(struct ScriptContext *ctx)
 {
 #if VAR_LAST_REPEL_LURE_USED != 0
-    VarSet(VAR_REPEL_STEP_COUNT, GetItemHoldEffectParam(VarGet(VAR_LAST_REPEL_LURE_USED)) | REPEL_LURE_MASK);
+    VarSet(VAR_REPEL_STEP_COUNT, AchievementBoost_ApplySprayStepCount(GetItemHoldEffectParam(VarGet(VAR_LAST_REPEL_LURE_USED))) | REPEL_LURE_MASK);
 #endif
 }
 

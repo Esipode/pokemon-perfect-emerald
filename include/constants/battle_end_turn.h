@@ -21,6 +21,10 @@ enum EndTurnResolutionOrder
     ENDTURN_POISON,
     ENDTURN_BURN,
     ENDTURN_FROSTBITE,
+    // Stage 10.1 (BOOST_STATUS_RECOVERY). Deliberately after the three status
+    // damage handlers above: the status still ticks this turn, and only then
+    // does the mon get its chance to shake it off.
+    ENDTURN_ACHIEVEMENT_STATUS_RECOVERY,
     ENDTURN_NIGHTMARE,
     ENDTURN_CURSE,
     ENDTURN_WRAP,

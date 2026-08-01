@@ -63,10 +63,23 @@ enum BoostType
 // AchievementBoost_Extra* effect function in src/achievements.c, hooked at
 // the location named in the Stages 9-10 table. BOOST_LEGENDARY_ENCOUNTER
 // replaces an earlier BOOST_RARE_ENCOUNTER (biasing the wild-mon slot table
-// toward its rarer end) with something more concrete: it raises the flat
-// 25% per-route roamer encounter check in src/roamer.c, so a roaming
-// legendary already on the player's current route is more likely to
-// actually appear.
+// toward its rarer end) with something more concrete: it hooks RoamerMove
+// (src/roamer.c) so an active roamer is more likely to relocate onto the
+// player's current route. TryStartRoamerEncounter -- whether an already
+// present roamer's battle triggers -- is untouched.
+//
+// BOOST_CRIT_CHANCE .. BOOST_PERFECT_STARTER_IVS (Stage 10.1): the second
+// catalog wave, and the first real BOOST_TYPE_BINARY content (until now only
+// BOOST_TEST_BINARY exercised that path). Hooks, in order:
+//   BOOST_CRIT_CHANCE            IsCriticalHit,             src/battle_util.c
+//   BOOST_BERRY_YIELD            GetBerryCountByBerryTreeId, src/berry.c
+//   BOOST_BERRY_GROWTH           BerryTreeTimeUpdate/PlantBerryTree, src/berry.c
+//   BOOST_PP_SAVER               CancelerPPDeduction,       src/battle_move_resolution.c
+//   BOOST_STATUS_RECOVERY        ENDTURN_STATUS_RECOVERY,   src/battle_end_turn.c
+//   BOOST_SPRAY_DURATION         VAR_REPEL_STEP_COUNT sites, src/item_use.c + src/sprays.c
+//   BOOST_NUZLOCKE_SECOND_CHANCE CB2_EndWildBattle,         src/battle_setup.c
+//   BOOST_STARTER_KIT            NewGameInitData,           src/new_game.c
+//   BOOST_PERFECT_STARTER_IVS    GenerateIVs,               src/ui_birch_case.c
 enum BoostId
 {
     BOOST_NONE,
@@ -79,6 +92,15 @@ enum BoostId
     BOOST_EGG_HATCH_SPEED,
     BOOST_FRIENDSHIP_GAIN,
     BOOST_LEGENDARY_ENCOUNTER,
+    BOOST_CRIT_CHANCE,
+    BOOST_BERRY_YIELD,
+    BOOST_BERRY_GROWTH,
+    BOOST_PP_SAVER,
+    BOOST_STATUS_RECOVERY,
+    BOOST_SPRAY_DURATION,
+    BOOST_NUZLOCKE_SECOND_CHANCE,
+    BOOST_STARTER_KIT,
+    BOOST_PERFECT_STARTER_IVS,
     BOOSTS_COUNT,
 };
 

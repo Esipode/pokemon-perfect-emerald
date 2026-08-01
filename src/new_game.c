@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "clock.h"
 #include "new_game.h"
 #include "new_game_settings_menu.h"
@@ -307,6 +308,17 @@ void NewGameInitData(void)
     gSaveBlock1Ptr->registeredItem = ITEM_NONE;
     gSaveBlock1Ptr->registeredLongItem = ITEM_NONE;
     ClearBag();
+    // Stage 10.1 (BOOST_STARTER_KIT). Must come after ClearBag() above or the
+    // grant is wiped, and is guarded on !isNewGamePlus because the New Game+
+    // path restores the previous save's bag and money further down anyway.
+    if (!isNewGamePlus && AchievementBoost_HasStarterKit())
+    {
+        AddBagItem(ITEM_POTION, 5);
+        AddBagItem(ITEM_FULL_HEAL, 2);
+        AddBagItem(ITEM_REPEL, 3);
+        AddBagItem(ITEM_ESCAPE_ROPE, 2);
+        AddMoney(&gSaveBlock1Ptr->money, 3000); // on top of the 5000 set above
+    }
     ClearPokeblocks();
     ClearDecorationInventories();
     InitEasyChatPhrases();

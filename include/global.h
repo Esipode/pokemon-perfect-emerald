@@ -1085,6 +1085,16 @@ struct ExternalEventFlags
 
 #define NUM_WILD_ENCOUNTER_MAPS 116
 
+// Size of the nuzlocke per-route bitfields in struct SaveBlock1. These are
+// indexed by GetCurrentMapId() -- a raw mapNum, NOT a wild-encounter header
+// index -- so they must cover the highest mapNum in the game, which is 122
+// (map group 35). They were previously sized NUM_WILD_ENCOUNTER_MAPS / 8 == 14
+// bytes (112 bits), which let SET_NUZLOCKE_FLAG write past the array and
+// corrupt whatever followed it in SaveBlock1. 16 bytes gives 128 bits, and the
+// macros below bounds-check on top of that.
+#define NUM_NUZLOCKE_ROUTE_FLAG_BYTES 16
+#define NUM_NUZLOCKE_ROUTE_FLAGS      (NUM_NUZLOCKE_ROUTE_FLAG_BYTES * 8)
+
 struct Bag
 {
     struct ItemSlot items[BAG_ITEMS_COUNT];
@@ -1237,7 +1247,14 @@ struct SaveBlock1
     /*0x3???*/ struct TrainerHillSave trainerHill;
 #endif //FREE_TRAINER_HILL
     /*0x3???*/ struct WaldaPhrase waldaPhrase;
-    /*0x3???*/ u8 nuzlockeCaughtFlags[(NUM_WILD_ENCOUNTER_MAPS / 8)];
+    /*0x3???*/ u8 nuzlockeCaughtFlags[NUM_NUZLOCKE_ROUTE_FLAG_BYTES];
+    // Stage 10.1 (BOOST_NUZLOCKE_SECOND_CHANCE). Parallel to the array above,
+    // and only ever consulted when that boost is purchased: it records that a
+    // route's one-time free pass has been spent. nuzlockeCaughtFlags stays the
+    // single authoritative "this route is locked" bit, so every reader of it
+    // (Cmd_handleballthrow, GetBallThrowableState, the healthbox indicator) is
+    // untouched by this boost.
+    /*0x3???*/ u8 nuzlockeExtraEncounterFlags[NUM_NUZLOCKE_ROUTE_FLAG_BYTES];
 #if FREE_TRAINER_TOWER == FALSE && IS_FRLG
     u32 towerChallengeId;
     struct TrainerTower trainerTower[NUM_TOWER_CHALLENGE_TYPES];
@@ -1259,8 +1276,17 @@ struct MapPosition
 };
 
 // Helper macros
-#define GET_NUZLOCKE_FLAG(route) (gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] & (1 << ((route) % 8)))
-#define SET_NUZLOCKE_FLAG(route) (gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] |= (1 << ((route) % 8)))
+// The (route) < NUM_NUZLOCKE_ROUTE_FLAGS bounds check is not decoration: these
+// are indexed by raw mapNum, which is not guaranteed to stay under the array
+// size as maps are added. An unchecked SET_ writes into whatever follows the
+// array in SaveBlock1.
+#define GET_NUZLOCKE_FLAG(route) ((route) < NUM_NUZLOCKE_ROUTE_FLAGS && (gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] & (1 << ((route) % 8))))
+#define SET_NUZLOCKE_FLAG(route) do { if ((route) < NUM_NUZLOCKE_ROUTE_FLAGS) gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] |= (1 << ((route) % 8)); } while (0)
+
+// Stage 10.1 (BOOST_NUZLOCKE_SECOND_CHANCE): "this route's one-time free pass
+// has been spent." Only read/written by CB2_EndWildBattle (src/battle_setup.c).
+#define GET_NUZLOCKE_EXTRA_FLAG(route) ((route) < NUM_NUZLOCKE_ROUTE_FLAGS && (gSaveBlock1Ptr->nuzlockeExtraEncounterFlags[(route) / 8] & (1 << ((route) % 8))))
+#define SET_NUZLOCKE_EXTRA_FLAG(route) do { if ((route) < NUM_NUZLOCKE_ROUTE_FLAGS) gSaveBlock1Ptr->nuzlockeExtraEncounterFlags[(route) / 8] |= (1 << ((route) % 8)); } while (0)
 
 #if TESTING
 extern bool32 gLoadFail;

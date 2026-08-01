@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle.h"
 #include "battle_environment.h"
 #include "battle_hold_effects.h"
@@ -1005,14 +1006,35 @@ static enum CancelerResult CancelerPPDeduction(struct BattleCalcValues *cv)
     if (cv->move != gLastResultingMoves[cv->battlerAtk] || gBattleStruct->unableToUseMove)
         gBattleMons[cv->battlerAtk].volatiles.metronomeItemCounter = 0;
 
-    if (gBattleMons[cv->battlerAtk].pp[movePosition] > ppToDeduct)
-        gBattleMons[cv->battlerAtk].pp[movePosition] -= ppToDeduct;
-    else
-        gBattleMons[cv->battlerAtk].pp[movePosition] = 0;
+    // Stage 10.1 (BOOST_PP_SAVER): a flat chance this use costs no PP at all,
+    // Pressure surcharge included. Only the deduction and its controller sync
+    // are skipped -- everything else this canceler does (metronome counter,
+    // gLastMoves, the submove announcement below) still runs, and the early
+    // returns above mean this never fires on a use that wasn't going to cost
+    // PP anyway (Struggle, multi-turn moves, Dancer, bounced, snatched, Bide).
+    // Player side only, never in a link or recorded battle -- see
+    // AchievementBoost_GetPpSavePercent (include/achievements.h).
+    bool32 skipPPDeduction = FALSE;
+
+    if (IsOnPlayerSide(cv->battlerAtk) && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+    {
+        u32 ppSavePercent = AchievementBoost_GetPpSavePercent();
+
+        if (ppSavePercent != 0)
+            skipPPDeduction = RandomPercentage(RNG_ACHIEVEMENT_PP_SAVE, ppSavePercent);
+    }
+
+    if (!skipPPDeduction)
+    {
+        if (gBattleMons[cv->battlerAtk].pp[movePosition] > ppToDeduct)
+            gBattleMons[cv->battlerAtk].pp[movePosition] -= ppToDeduct;
+        else
+            gBattleMons[cv->battlerAtk].pp[movePosition] = 0;
+    }
 
     gLastMoves[cv->battlerAtk] = gChosenMove;
 
-    if (MOVE_IS_PERMANENT(cv->battlerAtk, movePosition))
+    if (!skipPPDeduction && MOVE_IS_PERMANENT(cv->battlerAtk, movePosition))
     {
         BtlController_EmitSetMonData(
             cv->battlerAtk,

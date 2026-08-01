@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle.h"
 #include "load_save.h"
 #include "battle_setup.h"
@@ -667,7 +668,24 @@ static void CB2_EndWildBattle(void)
         if ((gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE)))
         {
             u16 route = GetCurrentMapId();
-            SET_NUZLOCKE_FLAG(route);
+
+            // Note this branch runs for *any* wild battle that ended without a
+            // whiteout -- caught, KO'd, or fled -- so the flag has always meant
+            // "you've had your encounter here," not "you caught something here."
+            //
+            // Stage 10.1 (BOOST_NUZLOCKE_SECOND_CHANCE) reads exactly that
+            // distinction: an encounter the player didn't convert into a catch
+            // spends a one-time per-route free pass instead of locking the
+            // route, so you get one more shot at it. Catching still locks the
+            // route immediately, and the pass is only ever granted once, so
+            // this is a single retry rather than two catches.
+            if (gBattleOutcome != B_OUTCOME_CAUGHT
+             && AchievementBoost_HasNuzlockeSecondChance()
+             && !GET_NUZLOCKE_EXTRA_FLAG(route))
+                SET_NUZLOCKE_EXTRA_FLAG(route);
+            else
+                SET_NUZLOCKE_FLAG(route);
+
             gDoAutosaveAfterBattle = TRUE;
         }
         else if (gSaveBlock1Ptr->autosaveModeEnabled) {

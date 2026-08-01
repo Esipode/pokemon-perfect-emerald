@@ -198,6 +198,76 @@ s32 AchievementBoost_ApplyFriendshipGain(s32 bonus);
 // wanders to.
 bool8 AchievementBoost_ShouldRoamerSeekPlayer(void);
 
+// Stage 10.1: catalog wave 2. Same no-op-when-disabled guarantee as everything
+// above.
+//
+// The three Get*Percent functions return a raw 0-100 percent instead of
+// rolling internally, because their call sites are all in battle, where
+// randomness must go through the tagged RandomChance/RandomPercentage helpers
+// to keep the test harness and recorded-battle playback deterministic. They
+// return 0 on the baseline path so the caller can skip its roll and consume no
+// RNG at all. All three are additionally gated at their call sites on
+// IsOnPlayerSide() and on the battle not being a link/recorded battle -- boost
+// levels differ between players, so an ungated roll would desync a link battle.
+
+// IsCriticalHit (src/battle_util.c): a flat extra chance to upgrade a hit that
+// the normal crit-stage roll already declined. Applied after the
+// CRITICAL_HIT_BLOCKED check, so Battle Armor/Shell Armor/Lucky Chant still
+// hard-block, and before the gPartyCriticalHits counter, so a boosted crit
+// still counts toward the IF_CRITICAL_HITS_GE evolution condition.
+u32 AchievementBoost_GetCritChancePercent(void);
+
+// CancelerPPDeduction (src/battle_move_resolution.c): a flat chance that a
+// move's PP cost (including any Pressure surcharge) is skipped for that use.
+// The canceler's existing early-outs -- multi-turn moves, Dancer, bounced,
+// snatched, Bide, Struggle -- already return before this point, so the boost
+// only ever applies to a use that was actually going to cost PP.
+u32 AchievementBoost_GetPpSavePercent(void);
+
+// ENDTURN_STATUS_RECOVERY (src/battle_end_turn.c): rolled once per turn per
+// living battler as a flat chance to clear a non-volatile status, using the
+// same cure sequence Shed Skin does. Sits after the poison/burn/frostbite
+// handlers, so status damage still ticks before the mon gets its chance to
+// shake it off.
+u32 AchievementBoost_GetStatusRecoveryPercent(void);
+
+// GetBerryCountByBerryTreeId (src/berry.c): flat extra berries per harvest.
+// Hooks the read rather than the saved berryYield field, so the bonus is
+// recomputed every time -- switching the boost off restores baseline
+// immediately instead of leaving it baked into already-grown trees. Returns 0
+// unchanged, so a tree with no berries stays empty.
+u8 AchievementBoost_ApplyBerryYield(u8 count);
+
+// BerryTreeTimeUpdate and PlantBerryTree (src/berry.c): shortens the wait for
+// a berry tree's next growth stage. Deliberately NOT applied to the
+// BERRY_STAGE_BERRIES window (how long berries sit ready to pick) or to the
+// unattended-tree death threshold -- shortening either would be a nerf.
+u16 AchievementBoost_ApplyBerryStageDuration(u16 minutes);
+
+// Every VAR_REPEL_STEP_COUNT write site (src/item_use.c, src/sprays.c):
+// extends how many steps a Repel or Lure lasts. Clamped below REPEL_LURE_MASK
+// so a boosted count can never bleed into the "this is a Lure" flag bit.
+u16 AchievementBoost_ApplySprayStepCount(u16 steps);
+
+// The three binary boosts. For these, "purchased" is the entire effect -- no
+// effects[] value, no level to scale.
+
+// CB2_EndWildBattle (src/battle_setup.c): in nuzlocke mode, an encounter the
+// player didn't convert into a catch spends a one-time per-route free pass
+// instead of locking the route. Catching still locks it immediately, and the
+// free pass is only ever granted once per route.
+bool8 AchievementBoost_HasNuzlockeSecondChance(void);
+
+// NewGameInitData (src/new_game.c): grants starting items and extra money on a
+// fresh game. Never applies to New Game+, which restores the previous save's
+// bag and money afterward regardless.
+bool8 AchievementBoost_HasStarterKit(void);
+
+// GenerateIVs (src/ui_birch_case.c): the starter rolls 31 in every stat.
+// Hooked at generation rather than at the grant, so the Birch Case's preview
+// and the Pokemon actually received can never disagree.
+bool8 AchievementBoost_HasPerfectStarterIvs(void);
+
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add
 // (achievement completion rules, boost costs/maxLevel, reset fee) by design,

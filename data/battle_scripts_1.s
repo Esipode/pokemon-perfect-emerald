@@ -4633,6 +4633,16 @@ BattleScript_ShedSkinActivates::
 	updatestatusicon BS_ATTACKER
 	return
 
+@ Stage 10.1 (BOOST_STATUS_RECOVERY, HandleEndTurnAchievementStatusRecovery in
+@ src/battle_end_turn.c): Shed Skin's script without the ability popup, since
+@ no ability is responsible for this cure. Reuses gCureStatusStringIds, so it
+@ needs no new strings of its own.
+BattleScript_AchievementBoostStatusRecovery::
+	printfromtable gCureStatusStringIds
+	waitmessage B_WAIT_TIME_LONG
+	updatestatusicon BS_ATTACKER
+	return
+
 BattleScript_ActivateWeatherAbilities:
 	saveattacker
 	savetarget
