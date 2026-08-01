@@ -3,9 +3,17 @@
 
 // Real entries land here in Stage 2.2/2.3, keyed to designated initializers
 // in src/data/achievements.h. ACHIEVEMENT_NONE is the reserved zero value.
+//
+// The three ACHIEVEMENT_TEST_* entries are the throwaway achievements called
+// for in Stage 2.3, wired into AddBagItem/HandleEndTurn_BattleWon/GameClear
+// to exercise Achievement_TryComplete end to end. They're placeholders for
+// the real catalog, not part of the design doc's actual achievement list.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
+    ACHIEVEMENT_TEST_OBTAIN_POTION,
+    ACHIEVEMENT_TEST_WIN_BATTLE,
+    ACHIEVEMENT_TEST_COMPLETE_GAME,
     ACHIEVEMENTS_COUNT,
 };
 

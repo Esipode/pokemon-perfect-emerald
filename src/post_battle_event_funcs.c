@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "main.h"
 #include "credits.h"
 #include "event_data.h"
@@ -29,6 +30,9 @@ int GameClear(void)
     {
         gHasHallOfFameRecords = FALSE;
         FlagSet(FLAG_SYS_GAME_CLEAR);
+        // Stage 2.3 throwaway test achievement. This branch only runs the
+        // first time FLAG_SYS_GAME_CLEAR is set (design doc Stage 5.1).
+        Achievement_TryComplete(ACHIEVEMENT_TEST_COMPLETE_GAME);
     }
 
     if (GetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME) == 0)

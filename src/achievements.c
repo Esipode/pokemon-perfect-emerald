@@ -108,6 +108,16 @@ static void WriteAchievementProfile(void)
         sAchievementProfileWriteFailed = TRUE;
 }
 
+// Stage 4 (src/achievement_popup.c) will replace this with a real ring-buffer
+// queue that a task drains one popup at a time (design doc §4.2). Until then
+// it's a no-op -- Achievement_TryComplete must still commit the flag and
+// points unconditionally, so the popup not existing yet can never withhold
+// an award (design doc §6, §4.30 "Important rule").
+static void QueueAchievementNotification(u16 achievementId)
+{
+
+}
+
 bool8 Achievement_ProfileWriteFailed(void)
 {
     return sAchievementProfileWriteFailed;
@@ -140,6 +150,30 @@ bool8 Achievement_IsCompleted(u16 achievementId)
         return FALSE;
 
     return (gAchievementProfile.achievementFlags[achievementId / 8] >> (achievementId % 8)) & 1;
+}
+
+// design doc §4.30: the flag and the points are written together, before any
+// UI is involved, so a UI failure can never withhold an already-earned
+// reward, and a reset can never cause a double award (design doc §6).
+bool8 Achievement_TryComplete(u16 achievementId)
+{
+    if (achievementId >= ACHIEVEMENTS_COUNT)
+        return FALSE;
+
+    // design doc §1.5: debug mode disqualifies the current run.
+    if (gSaveBlock1Ptr->achievementsBlocked)
+        return FALSE;
+
+    if (Achievement_IsCompleted(achievementId))
+        return FALSE;
+
+    gAchievementProfile.achievementFlags[achievementId / 8] |= 1 << (achievementId % 8);
+    gAchievementProfile.totalPointsEarned += gAchievements[achievementId].points;
+    sAchievementProfileDirty = TRUE;
+
+    QueueAchievementNotification(achievementId);
+
+    return TRUE;
 }
 
 u32 Achievement_GetTotalPoints(void)

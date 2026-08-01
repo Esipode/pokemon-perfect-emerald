@@ -10,10 +10,7 @@
 // COMPOUND_STRING (no cap).
 #define ACHIEVEMENT_NAME(str) COMPOUND_STRING_SIZE_LIMIT(str, ACHIEVEMENT_NAME_LENGTH)
 
-// UNUSED until Stage 2.3's Achievement_TryComplete reads from this table --
-// -Wunused-const-variable (part of -Wall for C) would otherwise fail the
-// build over an empty placeholder table. Remove UNUSED once that lands.
-static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] UNUSED =
+static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
 {
     [ACHIEVEMENT_NONE] = {
         .name        = ACHIEVEMENT_NAME("-"),
@@ -23,7 +20,34 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] UNUSED =
         .points      = 0,
         .hidden      = TRUE,
     },
-    // Real entries populated in Stage 2.3.
+
+    // Throwaway test achievements (Stage 2.3): verify the award pipeline end
+    // to end (flag + points + persistence) before the real catalog exists.
+    // Replace with real entries once Stage 3+ needs actual content.
+    [ACHIEVEMENT_TEST_OBTAIN_POTION] = {
+        .name        = ACHIEVEMENT_NAME("Potion Collector"),
+        .description = COMPOUND_STRING("Obtain a Potion."),
+        .tier        = ACHIEVEMENT_TIER_BRONZE,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .points      = 10,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_TEST_WIN_BATTLE] = {
+        .name        = ACHIEVEMENT_NAME("First Victory"),
+        .description = COMPOUND_STRING("Win a battle."),
+        .tier        = ACHIEVEMENT_TIER_BRONZE,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .points      = 10,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_TEST_COMPLETE_GAME] = {
+        .name        = ACHIEVEMENT_NAME("Champion"),
+        .description = COMPOUND_STRING("Complete the game."),
+        .tier        = ACHIEVEMENT_TIER_GOLD,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .points      = 50,
+        .hidden      = FALSE,
+    },
 };
 
 STATIC_ASSERT(ACHIEVEMENTS_COUNT <= MAX_ACHIEVEMENTS, AchievementCountFitsProfile);

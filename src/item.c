@@ -1,5 +1,6 @@
 #include "global.h"
 #include "item.h"
+#include "achievements.h"
 #include "berry.h"
 #include "pokeball.h"
 #include "string_util.h"
@@ -349,6 +350,8 @@ static bool32 NONNULL BagPocket_AddItem(struct BagPocket *pocket, enum Item item
 
 bool32 AddBagItem(enum Item itemId, u16 count)
 {
+    bool32 added;
+
     itemId = SanitizeBagItemId(itemId);
     if (itemId == ITEM_NONE)
         return FALSE;
@@ -357,7 +360,13 @@ bool32 AddBagItem(enum Item itemId, u16 count)
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE)
         return AddPyramidBagItem(itemId, count);
 
-    return BagPocket_AddItem(&gBagPockets[GetItemPocket(itemId)], itemId, count);
+    added = BagPocket_AddItem(&gBagPockets[GetItemPocket(itemId)], itemId, count);
+
+    // Stage 2.3 throwaway test achievement.
+    if (added && itemId == ITEM_POTION)
+        Achievement_TryComplete(ACHIEVEMENT_TEST_OBTAIN_POTION);
+
+    return added;
 }
 
 static bool32 NONNULL BagPocket_RemoveItem(struct BagPocket *pocket, enum Item itemId, u16 count)

@@ -79,16 +79,17 @@ void  Achievement_SetBoostsEnabled(bool8 enabled);
 
 u8    AchievementBoost_GetLevel(u16 boostId);
 
+// Runs the order in design doc §4.30 (Stage 2.3): checks run eligibility
+// (§1.5) and prior completion, then commits the flag and points together
+// before queuing a notification. Returns FALSE without side effects if the
+// run is ineligible, the ID is out of range, or it's already completed.
+bool8 Achievement_TryComplete(u16 achievementId);
+
 // Declared here to complete the API surface, but implemented where the plan
 // defines their algorithm, once the data they depend on exists:
-//   Achievement_TryComplete     -> gAchievements[] test data,        Stage 2.3
-//                                  (must also return early when
-//                                  gSaveBlock1Ptr->achievementsBlocked is set,
-//                                  design doc §1.5)
 //   AchievementBoost_CanPurchase,
 //   AchievementBoost_Purchase   -> boost registry (costs/maxLevel),  Stage 7
 //   AchievementBoost_Reset      -> ACHIEVEMENT_BOOST_RESET_FEE,      Stage 11
-bool8 Achievement_TryComplete(u16 achievementId);
 bool8 AchievementBoost_CanPurchase(u16 boostId);
 bool8 AchievementBoost_Purchase(u16 boostId);
 bool8 AchievementBoost_Reset(void);

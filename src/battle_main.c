@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_ai_main.h"
@@ -6143,6 +6144,11 @@ static void RunTurnActionsFunctions(void)
 static void HandleEndTurn_BattleWon(void)
 {
     gCurrentActionFuncId = 0;
+
+    // Stage 2.3 throwaway test achievement. Runs for every winning outcome
+    // (wild, trainer, link, frontier, ...) since they all dispatch here via
+    // sEndTurnFuncs[B_OUTCOME_WON].
+    Achievement_TryComplete(ACHIEVEMENT_TEST_WIN_BATTLE);
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
     {
