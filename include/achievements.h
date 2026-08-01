@@ -70,6 +70,13 @@ void Achievement_FlushProfile(void);
 void  Achievement_Init(void);
 bool8 Achievement_IsCompleted(u16 achievementId);
 
+// gAchievements[] (src/data/achievements.h) is only ever included from
+// src/achievements.c -- this is how the rest of the game (e.g. the
+// Achievements Menu, Stage 3) reads definition data (name/description/tier/
+// points) for a given ID. Returns the ACHIEVEMENT_NONE entry for an
+// out-of-range ID rather than NULL, so callers never need a null check.
+const struct Achievement *Achievement_GetInfo(u16 achievementId);
+
 u32   Achievement_GetTotalPoints(void);
 u32   Achievement_GetAvailablePoints(void);
 

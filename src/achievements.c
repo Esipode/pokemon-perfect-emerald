@@ -152,6 +152,14 @@ bool8 Achievement_IsCompleted(u16 achievementId)
     return (gAchievementProfile.achievementFlags[achievementId / 8] >> (achievementId % 8)) & 1;
 }
 
+const struct Achievement *Achievement_GetInfo(u16 achievementId)
+{
+    if (achievementId >= ACHIEVEMENTS_COUNT)
+        return &gAchievements[ACHIEVEMENT_NONE];
+
+    return &gAchievements[achievementId];
+}
+
 // design doc §4.30: the flag and the points are written together, before any
 // UI is involved, so a UI failure can never withhold an already-earned
 // reward, and a reset can never cause a double award (design doc §6).
