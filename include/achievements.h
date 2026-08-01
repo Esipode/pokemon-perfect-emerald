@@ -137,6 +137,22 @@ bool8 Achievement_TryComplete(u16 achievementId);
 // once per playthrough, so this function has no completion guard of its own.
 void Achievement_OnFirstPlaythroughComplete(void);
 
+// design doc Stage 12: called from NewGameInitData (src/new_game.c) right
+// after gSaveBlock2Ptr->newGamePlus++, so `cycle` is always the just-started
+// cycle's number (1 for the first NG+ loop, 2 for the second, ...).
+// highestNgPlusCycle is a high-water mark, not a live counter --
+// gSaveBlock2Ptr->newGamePlus already is that -- so this only ever grows it.
+void Achievement_OnNewGamePlusStarted(u8 cycle);
+
+// design doc Stage 12: called from the same GameClear() branch as
+// Achievement_OnFirstPlaythroughComplete above, additionally gated there on
+// gSaveBlock2Ptr->newGamePlus > 0 -- FLAG_SYS_GAME_CLEAR isn't preserved
+// across New Game+ (see NewGameInitData), so that branch already re-runs on
+// every NG+ cycle's clear, not just the save's very first playthrough. This
+// counts specifically the subset of those clears that happened during an NG+
+// loop, distinct from the plain playthroughsCompleted total.
+void Achievement_OnNewGamePlusCycleCompleted(void);
+
 // design doc §7 (Stage 7): validates in order -- boosts unlocked, run not
 // blocked (§1.5, mirrors Achievement_TryComplete), current level < maxLevel,
 // availablePoints >= costs[level] -- refusing at the first failure. Purchase

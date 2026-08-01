@@ -213,6 +213,27 @@ void Achievement_OnFirstPlaythroughComplete(void)
     Achievement_FlushProfile();
 }
 
+// design doc Stage 12: flushes immediately, same as the function above --
+// starting a new NG+ cycle is rare and important, not a hot path.
+void Achievement_OnNewGamePlusStarted(u8 cycle)
+{
+    if (cycle > gAchievementProfile.highestNgPlusCycle)
+        gAchievementProfile.highestNgPlusCycle = cycle;
+
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
+}
+
+// design doc Stage 12: see the header doc comment for why this is separate
+// from Achievement_OnFirstPlaythroughComplete rather than folded into it.
+void Achievement_OnNewGamePlusCycleCompleted(void)
+{
+    gAchievementProfile.ngPlusCyclesCompleted++;
+
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
+}
+
 u32 Achievement_GetTotalPoints(void)
 {
     return gAchievementProfile.totalPointsEarned;

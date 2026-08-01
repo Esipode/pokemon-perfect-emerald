@@ -34,6 +34,14 @@ int GameClear(void)
         // FLAG_SYS_GAME_CLEAR is set for this save, which is what makes it
         // the trigger for the one-time first-playthrough unlock.
         Achievement_OnFirstPlaythroughComplete();
+        // Stage 12: FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
+        // (see NewGameInitData, src/new_game.c), so this branch already
+        // re-runs on every NG+ cycle's clear, not just the save's very first
+        // playthrough -- that's exactly what lets this count cycle
+        // completions specifically, alongside the plain playthrough count
+        // Achievement_OnFirstPlaythroughComplete already tracks above.
+        if (gSaveBlock2Ptr->newGamePlus > 0)
+            Achievement_OnNewGamePlusCycleCompleted();
         // Stage 2.3 throwaway test achievement, kept alongside the real
         // Stage 5 hook above to keep exercising the end-to-end completion
         // pipeline from this call site.

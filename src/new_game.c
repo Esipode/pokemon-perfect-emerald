@@ -241,10 +241,16 @@ void NewGameInitData(void)
         optionsBackup = Alloc(sizeof(u16));
         memcpy(optionsBackup, (u8 *)gSaveBlock2Ptr + 0x14, sizeof(u16));
         /* Backup a few SaveBlock1 player settings stored in SaveBlock1 */
-        playerSettingsBackup = Alloc(3);
+        playerSettingsBackup = Alloc(4);
         ((u8 *)playerSettingsBackup)[0] = gSaveBlock1Ptr->nuzlockeModeEnabled;
         ((u8 *)playerSettingsBackup)[1] = gSaveBlock1Ptr->autosaveModeEnabled;
         ((u8 *)playerSettingsBackup)[2] = gSaveBlock1Ptr->difficulty;
+        // Stage 12 (design doc §23 "NG+ reset"): achievementsBlocked lives in
+        // SaveBlock1 and ClearSav1() below wipes it back to FALSE like
+        // everything else that isn't explicitly preserved here -- without
+        // this, a run that got permanently blocked by opening the debug menu
+        // would come back clean (unblocked) on its next NG+ cycle.
+        ((u8 *)playerSettingsBackup)[3] = gSaveBlock1Ptr->achievementsBlocked;
 
         gIsNewGamePlus = FALSE; // consume flag
     }
@@ -407,6 +413,7 @@ void NewGameInitData(void)
                 gSaveBlock1Ptr->nuzlockeModeEnabled = ((u8 *)playerSettingsBackup)[0];
                 gSaveBlock1Ptr->autosaveModeEnabled = ((u8 *)playerSettingsBackup)[1];
                 gSaveBlock1Ptr->difficulty = ((u8 *)playerSettingsBackup)[2];
+                gSaveBlock1Ptr->achievementsBlocked = ((u8 *)playerSettingsBackup)[3];
             }
 
             if (roamersBackup != NULL)
@@ -430,6 +437,11 @@ void NewGameInitData(void)
 
             /* Increase New Game+ counter in save (0-255) */
             gSaveBlock2Ptr->newGamePlus++;
+            // Stage 12: highestNgPlusCycle is a high-water mark in the
+            // achievement profile (outside SaveBlock2, so it survives even a
+            // corrupted/reset save) -- newGamePlus itself is already the live
+            // counter, this just remembers the furthest the player has gone.
+            Achievement_OnNewGamePlusStarted(gSaveBlock2Ptr->newGamePlus);
         }
 
         if (playerPartyBackup != NULL)
