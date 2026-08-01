@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "pokemon.h"
 #include "battle.h"
 #include "daycare.h"
@@ -1182,7 +1183,7 @@ static bool8 TryProduceOrHatchEgg(struct DayCare *daycare)
      || (P_EGG_CYCLE_LENGTH >= GEN_8 && daycare->stepCounter >= 128))
     {
         u32 eggCycles;
-        u8 toSub = GetEggCyclesToSubtract();
+        u8 toSub = AchievementBoost_ApplyEggCyclesToSubtract(GetEggCyclesToSubtract());
 
         daycare->stepCounter = 0;
 

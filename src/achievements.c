@@ -3,6 +3,7 @@
 #include "agb_flash.h"
 #include "event_data.h"
 #include "load_save.h"
+#include "random.h"
 #include "save.h"
 #include "achievements.h"
 #include "achievement_popup.h"
@@ -342,6 +343,101 @@ u32 AchievementBoost_ApplyExp(u32 expValue)
 
     percent = 100 + AchievementBoost_GetInfo(BOOST_EXP_GAIN)->effects[level];
     return (u32)(((u64)expValue * percent) / 100);
+}
+
+// Stages 9-10: same shape as AchievementBoost_ApplyExp above -- each is a
+// provable no-op when boosts are disabled or the boost is at level 0.
+
+u32 AchievementBoost_ExtraShinyRerolls(void)
+{
+    u8 level;
+
+    if (!gAchievementProfile.boostsEnabled)
+        return 0;
+
+    level = AchievementBoost_GetLevel(BOOST_SHINY_CHANCE);
+    if (level == 0)
+        return 0;
+
+    return AchievementBoost_GetInfo(BOOST_SHINY_CHANCE)->effects[level];
+}
+
+u32 AchievementBoost_ApplyCatchOdds(u32 odds)
+{
+    u8 level;
+    u32 percent;
+
+    if (!gAchievementProfile.boostsEnabled)
+        return odds;
+
+    level = AchievementBoost_GetLevel(BOOST_CATCH_RATE);
+    if (level == 0)
+        return odds;
+
+    percent = 100 + AchievementBoost_GetInfo(BOOST_CATCH_RATE)->effects[level];
+    return (u32)(((u64)odds * percent) / 100);
+}
+
+u32 AchievementBoost_ApplyMoneyReward(u32 money)
+{
+    u8 level;
+    u32 percent;
+
+    if (!gAchievementProfile.boostsEnabled)
+        return money;
+
+    level = AchievementBoost_GetLevel(BOOST_MONEY_GAIN);
+    if (level == 0)
+        return money;
+
+    percent = 100 + AchievementBoost_GetInfo(BOOST_MONEY_GAIN)->effects[level];
+    return (u32)(((u64)money * percent) / 100);
+}
+
+u8 AchievementBoost_ApplyEggCyclesToSubtract(u8 toSub)
+{
+    u8 level;
+
+    if (!gAchievementProfile.boostsEnabled)
+        return toSub;
+
+    level = AchievementBoost_GetLevel(BOOST_EGG_HATCH_SPEED);
+    if (level == 0)
+        return toSub;
+
+    return toSub + AchievementBoost_GetInfo(BOOST_EGG_HATCH_SPEED)->effects[level];
+}
+
+s32 AchievementBoost_ApplyFriendshipGain(s32 bonus)
+{
+    u8 level;
+    u32 percent;
+
+    if (bonus <= 0 || !gAchievementProfile.boostsEnabled)
+        return bonus;
+
+    level = AchievementBoost_GetLevel(BOOST_FRIENDSHIP_GAIN);
+    if (level == 0)
+        return bonus;
+
+    percent = 100 + AchievementBoost_GetInfo(BOOST_FRIENDSHIP_GAIN)->effects[level];
+    return (s32)(((s64)bonus * percent) / 100);
+}
+
+bool8 AchievementBoost_ShouldRoamerSeekPlayer(void)
+{
+    u8 level;
+    u32 percent;
+
+    if (!gAchievementProfile.boostsEnabled)
+        return FALSE;
+
+    level = AchievementBoost_GetLevel(BOOST_LEGENDARY_ENCOUNTER);
+    if (level == 0)
+        return FALSE;
+
+    percent = AchievementBoost_GetInfo(BOOST_LEGENDARY_ENCOUNTER)->effects[level];
+    return (Random() % 100) < percent;
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

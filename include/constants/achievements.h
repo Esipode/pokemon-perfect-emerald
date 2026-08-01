@@ -57,12 +57,28 @@ enum BoostType
 // BOOST_EXP_GAIN (Stage 8, design doc Stage 8): the first real boost --
 // AchievementBoost_ApplyExp() (src/achievements.c) is its effect, hooked
 // into src/battle_script_commands.c's exp calculation.
+//
+// BOOST_SHINY_CHANCE .. BOOST_LEGENDARY_ENCOUNTER (Stages 9-10, design doc
+// §10.1's example list): each has its own AchievementBoost_Apply*/
+// AchievementBoost_Extra* effect function in src/achievements.c, hooked at
+// the location named in the Stages 9-10 table. BOOST_LEGENDARY_ENCOUNTER
+// replaces an earlier BOOST_RARE_ENCOUNTER (biasing the wild-mon slot table
+// toward its rarer end) with something more concrete: it raises the flat
+// 25% per-route roamer encounter check in src/roamer.c, so a roaming
+// legendary already on the player's current route is more likely to
+// actually appear.
 enum BoostId
 {
     BOOST_NONE,
     BOOST_TEST_LEVELED,
     BOOST_TEST_BINARY,
     BOOST_EXP_GAIN,
+    BOOST_SHINY_CHANCE,
+    BOOST_CATCH_RATE,
+    BOOST_MONEY_GAIN,
+    BOOST_EGG_HATCH_SPEED,
+    BOOST_FRIENDSHIP_GAIN,
+    BOOST_LEGENDARY_ENCOUNTER,
     BOOSTS_COUNT,
 };
 

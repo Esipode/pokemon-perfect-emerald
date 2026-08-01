@@ -153,6 +153,51 @@ bool8 AchievementBoost_Reset(void);
 // level 0, so the disabled path is provably identical to baseline.
 u32 AchievementBoost_ApplyExp(u32 expValue);
 
+// Stages 9-10: the remaining numerical boosts from the design doc's §10.1
+// example list. Each follows AchievementBoost_ApplyExp's shape -- a no-op
+// when boosts are disabled or the boost is at level 0, so the disabled path
+// is always provably identical to baseline.
+
+// ComputePlayerShinyOdds (src/pokemon.c) adds this to totalRerolls before
+// its reroll loop, alongside the Shiny Charm/Lure/chain-fishing/DexNav
+// rerolls it already accumulates -- one more independent source of rerolls,
+// not a flat probability multiplier.
+u32 AchievementBoost_ExtraShinyRerolls(void);
+
+// ComputeCaptureOdds (src/battle_script_commands.c) applies this to its
+// final 0-255 odds value, after the ball.guaranteedCapture (Master Ball)
+// early return -- so a Master Ball catch is untouched, but a boosted value
+// can still cross the existing odds > 254 "treat as guaranteed" threshold at
+// the call site. No separate clamp needed here.
+u32 AchievementBoost_ApplyCatchOdds(u32 odds);
+
+// Cmd_getmoneyreward (src/battle_script_commands.c) applies this to the
+// combined trainer money reward on a win, before AddMoney -- AddMoney's own
+// MAX_MONEY clamp (src/money.c) is the only clamp a boosted value needs.
+u32 AchievementBoost_ApplyMoneyReward(u32 money);
+
+// TryProduceOrHatchEgg (src/daycare.c) applies this to GetEggCyclesToSubtract
+// (src/egg_hatch.c)'s result before subtracting it from an egg's remaining
+// cycle count -- a flat addition, the same way Magma Armor/Flame Body/Steam
+// Engine already double the base value from 1 to 2.
+u8 AchievementBoost_ApplyEggCyclesToSubtract(u8 toSub);
+
+// CalculateFriendshipBonuses (src/pokemon.c) applies this to its final
+// bonus, right before returning it. Only scales positive gains -- a negative
+// bonus (e.g. fainting, a bitter herb) passes through unchanged, since this
+// is a "friendship gain" boost, not a friendship-loss shield.
+s32 AchievementBoost_ApplyFriendshipGain(s32 bonus);
+
+// RoamerMove (src/roamer.c) rolls this once per move (itself called on
+// every map transition) -- a flat 1% chance per level (maxLevel 5, so up to
+// 5%) that a roamer skips its normal random relocation and is drawn
+// straight onto the player's current route instead. Only ever fires while
+// the player is on a route the roamer table actually covers, never a town/
+// city/cave. Makes an inactive or absent roamer no more likely to exist or
+// to be assigned to your region -- only changes where an already-active one
+// wanders to.
+bool8 AchievementBoost_ShouldRoamerSeekPlayer(void);
+
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add
 // (achievement completion rules, boost costs/maxLevel, reset fee) by design,

@@ -1,5 +1,6 @@
 #include "global.h"
 #include "malloc.h"
+#include "achievements.h"
 #include "apprentice.h"
 #include "battle.h"
 #include "battle_ai_util.h"
@@ -1123,6 +1124,8 @@ bool32 ComputePlayerShinyOdds(u32 personality, u32 value)
 
     if (gDexNavSpecies)
         totalRerolls += CalculateDexNavShinyRolls();
+
+    totalRerolls += AchievementBoost_ExtraShinyRerolls();
 
     while (GET_SHINY_VALUE(value, personality) >= SHINY_ODDS && totalRerolls > 0)
     {
@@ -5373,7 +5376,7 @@ s32 CalculateFriendshipBonuses(struct Pokemon *mon, s32 modifier, enum HoldEffec
     if (GetMonData(mon, MON_DATA_MET_LOCATION) == GetCurrentRegionMapSectionId())
         bonus += ITEM_FRIENDSHIP_MAPSEC_BONUS;
 
-    return bonus;
+    return AchievementBoost_ApplyFriendshipGain(bonus);
 }
 
 void MonGainEVs(struct Pokemon *mon, enum Species defeatedSpecies)

@@ -5708,6 +5708,7 @@ static void Cmd_getmoneyreward(void)
         money = GetTrainerMoneyToGive(TRAINER_BATTLE_PARAM.opponentA);
         if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS)
             money += GetTrainerMoneyToGive(TRAINER_BATTLE_PARAM.opponentB);
+        money = AchievementBoost_ApplyMoneyReward(money);
         AddMoney(&gSaveBlock1Ptr->money, money);
     }
     else
@@ -9882,7 +9883,7 @@ static u32 ComputeCaptureOdds(u32 wildMonBattler, u32 playerBattler)
     if (battleMon->status1 & STATUS1_CAN_MOVE)
         odds = odds * 15 / 10;
 
-    return odds;
+    return AchievementBoost_ApplyCatchOdds(odds);
 }
 
 static bool32 CriticalCapture(u32 odds)

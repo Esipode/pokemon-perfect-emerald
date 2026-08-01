@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "event_data.h"
 #include "ow_abilities.h"
 #include "pokemon.h"
@@ -198,9 +199,44 @@ void RoamerMoveToOtherLocationSet(u32 roamerIndex)
     sRoamerLocation[roamerIndex][MAP_NUM] = mapNum;
 }
 
+// Stages 9-10: true only for a map that actually appears somewhere in
+// sRoamerLocations -- guards AchievementBoost_ShouldRoamerSeekPlayer's
+// teleport below from ever placing a roamer on a town/city/cave map, where
+// it could never be found (TryStartRoamerEncounter only ever fires from a
+// wild encounter roll, and non-route maps have no wild encounter table).
+static bool8 IsMapInRoamerLocations(u8 mapNum)
+{
+    u32 set, slot;
+
+    for (set = 0; set < NUM_LOCATION_SETS; set++)
+    {
+        for (slot = 0; slot < NUM_LOCATIONS_PER_SET; slot++)
+        {
+            if (mapNum != MAP_NUM(MAP_UNDEFINED) && sRoamerLocations[set][slot] == mapNum)
+                return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 void RoamerMove(u32 roamerIndex)
 {
     u8 locSet = 0;
+
+    if (!ROAMER(roamerIndex)->active)
+        return;
+
+    // Stages 9-10: each level of BOOST_LEGENDARY_ENCOUNTER adds a flat 1%
+    // chance, per move, that the roamer skips its normal random relocation
+    // and is instead drawn straight onto the player's current route.
+    if (gSaveBlock1Ptr->location.mapGroup == ROAMER_MAP_GROUP
+     && IsMapInRoamerLocations(gSaveBlock1Ptr->location.mapNum)
+     && AchievementBoost_ShouldRoamerSeekPlayer())
+    {
+        sRoamerLocation[roamerIndex][MAP_GRP] = ROAMER_MAP_GROUP;
+        sRoamerLocation[roamerIndex][MAP_NUM] = gSaveBlock1Ptr->location.mapNum;
+        return;
+    }
 
     if ((Random() % 16) == 0)
     {
@@ -208,9 +244,6 @@ void RoamerMove(u32 roamerIndex)
     }
     else
     {
-        if (!ROAMER(roamerIndex)->active)
-            return;
-
         while (locSet < NUM_LOCATION_SETS)
         {
             // Find the location set that starts with the roamer's current map
