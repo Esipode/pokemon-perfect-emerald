@@ -1,5 +1,6 @@
 #include "global.h"
 #include "option_menu.h"
+#include "achievements.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
@@ -35,6 +36,7 @@ static void DrawOptionsPg2(u8 taskId);
 #define SOUND_SHIFT            2
 #define AUTO_SCROLL_SHIFT      3
 #define AUTOSAVE_SHIFT         8
+#define ACHIEVEMENT_BOOSTS_SHIFT 9
 
 #define tPackedFlags          data[6]  // booleans packed into 16 bits
 
@@ -64,6 +66,7 @@ enum
     MENUITEM_AIBATTLES_WILD,
     MENUITEM_AUTOSCROLL,
     MENUITEM_AUTOSAVE,
+    MENUITEM_ACHIEVEMENT_BOOSTS,
     MENUITEM_CANCEL_PG2,
     MENUITEM_COUNT_PG2,
 };
@@ -110,6 +113,8 @@ static u8   AutoScroll_ProcessInput(u8 selection);
 static void AutoScroll_DrawChoices(u8 selection, bool8 isActive);
 static u8   Autosave_ProcessInput(u8 selection);
 static void Autosave_DrawChoices(u8 selection, bool8 isActive);
+static u8   AchievementBoosts_ProcessInput(u8 selection);
+static void AchievementBoosts_DrawChoices(u8 selection, bool8 isActive);
 static u8 Sound_ProcessInput(u8 selection);
 static void Sound_DrawChoices(u8 selection, bool8 isActive);
 static u8 FrameType_ProcessInput(u8 selection);
@@ -117,7 +122,11 @@ static void FrameType_DrawChoices(u8 selection, bool8 isActive);
 static u8 ButtonMode_ProcessInput(u8 selection);
 static void ButtonMode_DrawChoices(u8 selection, bool8 isActive);
 static bool8 IsAutosaveHidden(void);
-static u8 GetPg2CancelIndex(void);
+static bool8 IsAchievementBoostsHidden(void);
+static bool8 IsPg2ItemHidden(u8 item);
+static u8 GetPg2DisplayRow(u8 item);
+static u8 GetNextVisiblePg2Item(u8 sel);
+static u8 GetPrevVisiblePg2Item(u8 sel);
 static void DrawHeaderText(void);
 static void DrawOptionMenuTexts(void);
 static void DrawBgWindowFrames(void);
@@ -158,6 +167,8 @@ static const u8 gText_AutoScrollOn[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_Autosave[]           = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}AUTOSAVE");
 static const u8 gText_AutosaveOff[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_AutosaveOn[]         = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
+static const u8 gText_AchievementBoostsOff[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
+static const u8 gText_AchievementBoostsOn[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
 
 static const u8 sText_ChevronLeft[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
@@ -183,6 +194,7 @@ static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
     [MENUITEM_AIBATTLES_WILD]    = COMPOUND_STRING("AI WILD BATTLES"),
     [MENUITEM_AUTOSCROLL]        = COMPOUND_STRING("AUTO SCROLL"),
     [MENUITEM_AUTOSAVE]          = COMPOUND_STRING("AUTOSAVE"),
+    [MENUITEM_ACHIEVEMENT_BOOSTS] = COMPOUND_STRING("ACHIEVEMENT BOOSTS"),
     [MENUITEM_CANCEL_PG2]        = COMPOUND_STRING("CANCEL"),
 };
 
@@ -261,6 +273,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     if (gSaveBlock2Ptr->optionsSound)              SET_FLAG(SOUND, 1); else SET_FLAG(SOUND, 0);
     if (FlagGet(FLAG_AUTO_SCROLL_TEXT))            SET_FLAG(AUTO_SCROLL, 1); else SET_FLAG(AUTO_SCROLL, 0);
     if (gSaveBlock1Ptr->autosaveModeEnabled)       SET_FLAG(AUTOSAVE, 1); else SET_FLAG(AUTOSAVE, 0);
+    if (Achievement_BoostsEnabled())               SET_FLAG(ACHIEVEMENT_BOOSTS, 1); else SET_FLAG(ACHIEVEMENT_BOOSTS, 0);
 }
 
 static void DrawOptionsPg1(u8 taskId)
@@ -286,7 +299,9 @@ static void DrawOptionsPg2(u8 taskId)
     AutoScroll_DrawChoices(GET_FLAG(AUTO_SCROLL), sel == MENUITEM_AUTOSCROLL);
     if (!IsAutosaveHidden())
         Autosave_DrawChoices(GET_FLAG(AUTOSAVE), sel == MENUITEM_AUTOSAVE);
-    HighlightOptionMenuItem(sel);
+    if (!IsAchievementBoostsHidden())
+        AchievementBoosts_DrawChoices(GET_FLAG(ACHIEVEMENT_BOOSTS), sel == MENUITEM_ACHIEVEMENT_BOOSTS);
+    HighlightOptionMenuItem(GetPg2DisplayRow(sel));
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
@@ -546,7 +561,7 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
     }
     else if (JOY_NEW(A_BUTTON))
     {
-        if (gTasks[taskId].tMenuSelection == GetPg2CancelIndex())
+        if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG2)
             gTasks[taskId].func = Task_OptionMenuSave;
     }
     else if (JOY_NEW(B_BUTTON))
@@ -555,18 +570,12 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
     }
     else if (JOY_NEW(DPAD_UP))
     {
-        if (gTasks[taskId].tMenuSelection > 0)
-            gTasks[taskId].tMenuSelection--;
-        else
-            gTasks[taskId].tMenuSelection = GetPg2CancelIndex();
+        gTasks[taskId].tMenuSelection = GetPrevVisiblePg2Item(gTasks[taskId].tMenuSelection);
         DrawOptionsPg2(taskId);
     }
     else if (JOY_NEW(DPAD_DOWN))
     {
-        if (gTasks[taskId].tMenuSelection < GetPg2CancelIndex())
-            gTasks[taskId].tMenuSelection++;
-        else
-            gTasks[taskId].tMenuSelection = 0;
+        gTasks[taskId].tMenuSelection = GetNextVisiblePg2Item(gTasks[taskId].tMenuSelection);
         DrawOptionsPg2(taskId);
     }
     else
@@ -619,6 +628,15 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
             if (previousOption != GET_FLAG(AUTOSAVE))
                 Autosave_DrawChoices(GET_FLAG(AUTOSAVE), TRUE);
             break;
+        case MENUITEM_ACHIEVEMENT_BOOSTS:
+            if (IsAchievementBoostsHidden())
+                break;
+            previousOption = GET_FLAG(ACHIEVEMENT_BOOSTS);
+            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << ACHIEVEMENT_BOOSTS_SHIFT)) | (AchievementBoosts_ProcessInput(previousOption) << ACHIEVEMENT_BOOSTS_SHIFT);
+
+            if (previousOption != GET_FLAG(ACHIEVEMENT_BOOSTS))
+                AchievementBoosts_DrawChoices(GET_FLAG(ACHIEVEMENT_BOOSTS), TRUE);
+            break;
         default:
             return;
         }
@@ -645,6 +663,11 @@ static void Task_OptionMenuSave(u8 taskId)
     GET_FLAG(AUTO_SCROLL) == 0 ? FlagClear(FLAG_AUTO_SCROLL_TEXT) : FlagSet(FLAG_AUTO_SCROLL_TEXT);
     if (!IsAutosaveHidden())
         GET_FLAG(AUTOSAVE) == 0 ? (gSaveBlock1Ptr->autosaveModeEnabled = 0) : (gSaveBlock1Ptr->autosaveModeEnabled = 1);
+    if (!IsAchievementBoostsHidden())
+    {
+        Achievement_SetBoostsEnabled(GET_FLAG(ACHIEVEMENT_BOOSTS));
+        Achievement_FlushProfile();
+    }
 
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
@@ -939,6 +962,28 @@ static void Autosave_DrawChoices(u8 selection, bool8 isActive)
     DrawOptionMenuValue(sTexts[selection], YPOS_AUTOSAVE, isActive);
 }
 
+static u8 AchievementBoosts_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+        sArrowPressed = TRUE;
+    }
+
+    return selection;
+}
+
+// Row position depends on GetPg2DisplayRow rather than a fixed YPOS_* macro
+// -- AUTOSAVE (the row above this one) can be hidden (design doc Stage 6:
+// hidden until boosts are unlocked, mirroring IsAutosaveHidden()), which
+// would otherwise leave a gap between AUTO SCROLL and this row.
+static void AchievementBoosts_DrawChoices(u8 selection, bool8 isActive)
+{
+    static const u8 *const sTexts[2] = {gText_AchievementBoostsOff, gText_AchievementBoostsOn};
+
+    DrawOptionMenuValue(sTexts[selection], GetPg2DisplayRow(MENUITEM_ACHIEVEMENT_BOOSTS) * 16, isActive);
+}
+
 static void DrawHeaderText(void)
 {
     u32 i, widthOptions, xMid;
@@ -968,9 +1013,61 @@ static bool8 IsAutosaveHidden(void)
     return gSaveBlock1Ptr->nuzlockeModeEnabled;
 }
 
-static u8 GetPg2CancelIndex(void)
+// design doc Stage 6: hidden until the first-playthrough gate (Stage 5)
+// unlocks boosts -- Achievement_BoostsUnlocked() is the same profile flag
+// Achievement_OnFirstPlaythroughComplete() sets.
+static bool8 IsAchievementBoostsHidden(void)
 {
-    return IsAutosaveHidden() ? MENUITEM_AUTOSAVE : MENUITEM_CANCEL_PG2;
+    return !Achievement_BoostsUnlocked();
+}
+
+static bool8 IsPg2ItemHidden(u8 item)
+{
+    switch (item)
+    {
+    case MENUITEM_AUTOSAVE:
+        return IsAutosaveHidden();
+    case MENUITEM_ACHIEVEMENT_BOOSTS:
+        return IsAchievementBoostsHidden();
+    default:
+        return FALSE;
+    }
+}
+
+// Pg2 can now have more than one independently-hideable row above CANCEL
+// (AUTOSAVE, ACHIEVEMENT_BOOSTS), so a hidden row's slot has to be
+// compacted out of every row below it, not just the one right before
+// CANCEL. This counts how many *visible* rows come before `item`, which is
+// the row it actually gets drawn on -- DrawOptionMenuTexts's own `row`
+// counter below computes the same thing inline while it prints labels.
+static u8 GetPg2DisplayRow(u8 item)
+{
+    u8 row = 0, i;
+
+    for (i = 0; i < item; i++)
+    {
+        if (!IsPg2ItemHidden(i))
+            row++;
+    }
+    return row;
+}
+
+static u8 GetNextVisiblePg2Item(u8 sel)
+{
+    do
+    {
+        sel = (sel == MENUITEM_CANCEL_PG2) ? 0 : sel + 1;
+    } while (IsPg2ItemHidden(sel));
+    return sel;
+}
+
+static u8 GetPrevVisiblePg2Item(u8 sel)
+{
+    do
+    {
+        sel = (sel == 0) ? MENUITEM_CANCEL_PG2 : sel - 1;
+    } while (IsPg2ItemHidden(sel));
+    return sel;
 }
 
 static void DrawOptionMenuTexts(void)
@@ -989,7 +1086,7 @@ static void DrawOptionMenuTexts(void)
         row = 0;
         for (i = 0; i < MENUITEM_COUNT_PG2; i++)
         {
-            if (i == MENUITEM_AUTOSAVE && IsAutosaveHidden())
+            if (IsPg2ItemHidden(i))
                 continue;
             AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames_Pg2[i], 8, (row * 16) + 1, TEXT_SKIP_DRAW, NULL);
             row++;
