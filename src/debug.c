@@ -2091,15 +2091,22 @@ static void DebugAction_Achievements_OpenMenu(u8 taskId)
     SetMainCallback2(CB2_InitAchievementsMenu);
 }
 
-// Stage 4.1 testing aid: nothing awards achievements through the popup yet
-// (QueueAchievementNotification is still a no-op stub until Stage 4.2 gives
-// it a real queue to hand off to), so this is the only way to see it render.
-// Closes the debug menu like DebugAction_Cancel, then shows the popup for one
-// of Stage 2.3's throwaway test achievements on the plain field.
+// Testing aid for src/achievement_popup.c: bypasses Stage 4.2's queue/safety
+// gate and shows the popup immediately. Closes the debug menu like
+// DebugAction_Cancel, then shows the popup for one of Stage 2.3's throwaway
+// test achievements on the plain field.
+//
+// Used to call ScriptContext_Enable() here to keep the player from walking
+// off during the popup -- that's now handled by the popup itself
+// (LockPlayerFieldControls()/UnlockPlayerFieldControls() around its
+// lifetime, src/achievement_popup.c), so the old workaround was removed:
+// ScriptContext_Enable() sets the global script context to CONTEXT_RUNNING
+// with nothing to shut it back down again outside of an actual script, which
+// would have jammed Stage 4.2's IsAchievementPopupSafeToShow() (it requires
+// !ScriptContext_IsEnabled()) for the rest of the session after one use.
 static void DebugAction_Achievements_TestPopup(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
-    ScriptContext_Enable();
     ShowAchievementPopup(ACHIEVEMENT_TEST_OBTAIN_POTION);
 }
 

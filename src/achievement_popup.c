@@ -1,11 +1,18 @@
 #include "global.h"
 #include "achievements.h"
 #include "achievement_popup.h"
+#include "constants/songs.h"
 #include "decompress.h"
+#include "field_message_box.h"
 #include "item_icon.h"
 #include "line_break.h"
+#include "main.h"
+#include "map_name_popup.h"
 #include "menu.h"
+#include "overworld.h"
 #include "palette.h"
+#include "script.h"
+#include "sound.h"
 #include "sprite.h"
 #include "string_util.h"
 #include "task.h"
@@ -23,16 +30,22 @@
 // timer instead of paired script commands, since nothing here has a script
 // context to call an explicit "hide" at the right moment.
 //
-// Still not here:
-//   - a real ring buffer for back-to-back awards (Stage 4.2). For now a
-//     second call while one's showing just swaps the displayed content and
-//     restarts the display timer -- there's no animation to hurry through
-//     since there's no slide, so this is simpler than 4.1's original
-//     map_name_popup.c-style re-entrancy, not a queue.
-//   - PlayFanfare(MUS_OBTAIN_SYMBOL) and suppressing the popup during
-//     battles/cutscenes (Stage 4.2).
-//   - QueueAchievementNotification in src/achievements.c does not call this
-//     yet -- that hookup is Stage 4.2's, once the real queue exists.
+// ---- Stage 4.2 (design doc §4.2) -------------------------------------
+// AchievementPopup_Enqueue() adds a small ring buffer in front of
+// ShowAchievementPopup(): src/achievements.c's QueueAchievementNotification
+// calls it instead of the popup directly, and Task_DrainAchievementPopupQueue
+// shows one entry at a time, only once the previous popup has fully finished
+// and the field is in a safe state (see IsAchievementPopupSafeToShow) --
+// simultaneous awards each get their own full display window instead of
+// cutting each other short. ShowAchievementPopup itself is unchanged and
+// still reachable directly for an ungated, immediate render (the debug
+// menu's "Test Achievement Popup" action still uses it that way).
+//
+// Also added: PlayFanfare(MUS_OBTAIN_SYMBOL) on every show, and
+// Lock/UnlockPlayerFieldControls() around the popup's lifetime so the player
+// can't walk through it -- the same mechanism battle intros and cable club
+// links use (src/battle_setup.c, src/cable_club.c), instead of the debug
+// menu's old ScriptContext_Enable() workaround (removed; see src/debug.c).
 
 #define ACHIEVEMENT_POPUP_DISPLAY_FRAMES 150 // ~2.5 seconds
 
@@ -86,6 +99,15 @@
 // copy of this same derivation rather than a shared one.
 #define ACHIEVEMENT_TIER_COUNT (ACHIEVEMENT_TIER_DIAMOND + 1)
 
+// Sized generously above anything realistic (simultaneous awards are rare,
+// and only happen a handful at a time even off something like a Pokedex-
+// completion check). AchievementPopup_Enqueue drops on overflow rather than
+// blocking or overwriting the oldest entry -- safe because Achievement_
+// TryComplete already committed the flag and points before this queue ever
+// sees the id (design doc §4.30/§6): a dropped entry only means a missed
+// toast, never a missed award.
+#define ACHIEVEMENT_POPUP_QUEUE_SIZE 8
+
 EWRAM_DATA static u8 sAchievementPopupTaskId = 0;
 EWRAM_DATA static u8 sAchievementPopupWindowId = 0;
 EWRAM_DATA static u8 sAchievementPopupIconSpriteId = 0;
@@ -96,7 +118,16 @@ EWRAM_DATA static u8 sAchievementPopupIconSpriteId = 0;
 // rather than comparing them against a sentinel value.
 EWRAM_DATA static bool8 sAchievementPopupActive = FALSE;
 
+// Ring buffer: sAchievementPopupQueueHead is the next id to dequeue,
+// sAchievementPopupQueueCount is how many are pending (mod-indexing off of
+// head + count rather than tracking a separate tail).
+EWRAM_DATA static u16 sAchievementPopupQueue[ACHIEVEMENT_POPUP_QUEUE_SIZE] = {0};
+EWRAM_DATA static u8 sAchievementPopupQueueHead = 0;
+EWRAM_DATA static u8 sAchievementPopupQueueCount = 0;
+
 static void Task_HideAchievementPopupAfterDelay(u8 taskId);
+static void Task_DrainAchievementPopupQueue(u8 taskId);
+static bool8 IsAchievementPopupSafeToShow(void);
 static void ShowAchievementPopUpWindow(u16 achievementId);
 static void HideAchievementPopUpWindow(void);
 static u8 AddAchievementTierIconSprite(enum AchievementTier tier);
@@ -188,6 +219,8 @@ static const struct SpriteTemplate sAchievementTierIconSpriteTemplate =
 
 void ShowAchievementPopup(u16 achievementId)
 {
+    PlayFanfare(MUS_OBTAIN_SYMBOL);
+
     if (sAchievementPopupActive)
     {
         gTasks[sAchievementPopupTaskId].tTimer = 0;
@@ -203,6 +236,24 @@ void ShowAchievementPopup(u16 achievementId)
     sAchievementPopupActive = TRUE;
 }
 
+// Stage 4.2 entry point (design doc §4.2) -- src/achievements.c's
+// QueueAchievementNotification calls this, not ShowAchievementPopup
+// directly, so back-to-back awards each get a full, un-truncated display.
+void AchievementPopup_Enqueue(u16 achievementId)
+{
+    u8 tail;
+
+    if (sAchievementPopupQueueCount >= ACHIEVEMENT_POPUP_QUEUE_SIZE)
+        return;
+
+    tail = (sAchievementPopupQueueHead + sAchievementPopupQueueCount) % ACHIEVEMENT_POPUP_QUEUE_SIZE;
+    sAchievementPopupQueue[tail] = achievementId;
+    sAchievementPopupQueueCount++;
+
+    if (!FuncIsActiveTask(Task_DrainAchievementPopupQueue))
+        CreateTask(Task_DrainAchievementPopupQueue, 90);
+}
+
 static void Task_HideAchievementPopupAfterDelay(u8 taskId)
 {
     if (++gTasks[taskId].tTimer > ACHIEVEMENT_POPUP_DISPLAY_FRAMES)
@@ -210,6 +261,49 @@ static void Task_HideAchievementPopupAfterDelay(u8 taskId)
         HideAchievementPopUpWindow();
         DestroyTask(taskId);
     }
+}
+
+// Runs continuously once anything's queued, and destroys itself once the
+// queue is drained -- AchievementPopup_Enqueue recreates it on the next
+// award if it's not already running.
+static void Task_DrainAchievementPopupQueue(u8 taskId)
+{
+    u16 achievementId;
+
+    if (sAchievementPopupQueueCount == 0)
+    {
+        DestroyTask(taskId);
+        return;
+    }
+
+    // Waits for the current popup (if any) to finish on its own rather than
+    // cutting it short, and for the field to be in a state where it's safe
+    // to bring one up at all.
+    if (sAchievementPopupActive || !IsAchievementPopupSafeToShow())
+        return;
+
+    achievementId = sAchievementPopupQueue[sAchievementPopupQueueHead];
+    sAchievementPopupQueueHead = (sAchievementPopupQueueHead + 1) % ACHIEVEMENT_POPUP_QUEUE_SIZE;
+    sAchievementPopupQueueCount--;
+
+    ShowAchievementPopup(achievementId);
+}
+
+// Suppressed during battles/cutscenes/transitions (design doc §4.2): the
+// popup draws straight onto overworld bg 0 using tiles/palette rows that
+// only mean what this file assumes while CB2_Overworld is actually running.
+// Mirrors the same idle-point check src/overworld.c:892's
+// Task_ShowRoamerMessageDelayed uses before starting its own script, plus
+// the CB2_Overworld check src/dexnav.c:1829 uses for the same "are we
+// actually on the walkable field right now" question.
+static bool8 IsAchievementPopupSafeToShow(void)
+{
+    return (gMain.callback2 == CB2_Overworld
+         && !ScriptContext_IsEnabled()
+         && !ArePlayerFieldControlsLocked()
+         && !gPaletteFade.active
+         && IsFieldMessageBoxHidden()
+         && !FuncIsActiveTask(Task_MapNamePopUpWindow));
 }
 
 static void ShowAchievementPopUpWindow(u16 achievementId)
@@ -240,6 +334,13 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
         // *is* window 0) is up. Naming the bg directly drops that assumption.
         LoadUserWindowBorderGfxOnBg(0, ACHIEVEMENT_POPUP_FRAME_TILE, BG_PLTT_ID(ACHIEVEMENT_POPUP_FRAME_PAL));
         DrawStdFrameWithCustomTileAndPalette(sAchievementPopupWindowId, FALSE, ACHIEVEMENT_POPUP_FRAME_TILE, ACHIEVEMENT_POPUP_FRAME_PAL);
+
+        // Stage 4.2: block movement while the popup is up, same mechanism
+        // battle intros/cable club links use (src/battle_setup.c,
+        // src/cable_club.c). Paired with UnlockPlayerFieldControls() in
+        // HideAchievementPopUpWindow. Only on the fresh-show path -- a
+        // content swap on an already-active popup is already locked.
+        LockPlayerFieldControls();
     }
     else
     {
@@ -272,6 +373,7 @@ static void HideAchievementPopUpWindow(void)
 
     ClearStdWindowAndFrameToTransparent(sAchievementPopupWindowId, TRUE);
     RemoveWindow(sAchievementPopupWindowId);
+    UnlockPlayerFieldControls();
     sAchievementPopupActive = FALSE;
 }
 

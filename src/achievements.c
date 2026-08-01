@@ -4,6 +4,7 @@
 #include "load_save.h"
 #include "save.h"
 #include "achievements.h"
+#include "achievement_popup.h"
 #include "data/achievements.h"
 
 // The whole struct is written as one blob to a sector (see WriteAchievementProfile).
@@ -108,14 +109,15 @@ static void WriteAchievementProfile(void)
         sAchievementProfileWriteFailed = TRUE;
 }
 
-// Stage 4 (src/achievement_popup.c) will replace this with a real ring-buffer
-// queue that a task drains one popup at a time (design doc §4.2). Until then
-// it's a no-op -- Achievement_TryComplete must still commit the flag and
-// points unconditionally, so the popup not existing yet can never withhold
-// an award (design doc §6, §4.30 "Important rule").
+// Hands off to src/achievement_popup.c's own ring buffer (design doc §4.2),
+// which drains one popup at a time once the field is in a safe state to
+// show it. Achievement_TryComplete has already committed the flag and
+// points unconditionally by the time this runs, so nothing here can ever
+// withhold an award (design doc §6, §4.30 "Important rule") -- at worst, a
+// full queue drops the toast, never the achievement itself.
 static void QueueAchievementNotification(u16 achievementId)
 {
-
+    AchievementPopup_Enqueue(achievementId);
 }
 
 bool8 Achievement_ProfileWriteFailed(void)
