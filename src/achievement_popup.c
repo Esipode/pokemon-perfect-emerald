@@ -4,7 +4,6 @@
 #include "constants/songs.h"
 #include "decompress.h"
 #include "field_message_box.h"
-#include "item_icon.h"
 #include "line_break.h"
 #include "main.h"
 #include "map_name_popup.h"
@@ -94,10 +93,41 @@
 // (charBaseIndex 2 = VRAM 0x8000, first screen base 29 = VRAM 0xE800).
 #define ACHIEVEMENT_POPUP_BASE_BLOCK   0x220
 
-// Same offsets as ITEM_ICON_X/Y in src/overworld.c.
-#define ACHIEVEMENT_POPUP_ICON_X 26
-#define ACHIEVEMENT_POPUP_ICON_Y 24
-#define ACHIEVEMENT_POPUP_TEXT_X (ACHIEVEMENT_POPUP_ICON_X + 2)
+// ITEM_ICON_X/Y from src/overworld.c. Two things about these matter here:
+//
+// 1. They're a sprite's x2/y2, which this engine treats as the sprite's
+//    CENTER, not its top-left corner (src/sprite.c:342: oam.x = sprite->x +
+//    x2 + centerToCornerVecX, where centerToCornerVecX is -halfWidth, from
+//    CalcCenterToCornerVec's sCenterToCornerVecTable). The old tier icon
+//    sprite was 32x32 (halfWidth 16) with its visible 24x24 content
+//    top-left-aligned inside that buffer, so its visible top-left corner
+//    actually sat at (26 - 16, 24 - 16) = (10, 8) in absolute/OAM
+//    coordinates, occupying a 24x24px box from there.
+// 2. ACHIEVEMENT_POPUP_TEXT_X's "+2" below is unrelated to #1 -- it's a
+//    window-local pixel coordinate (AddTextPrinterParameterized draws into
+//    the window's own pixel buffer), a different coordinate space than the
+//    sprite math entirely. Kept as a literal reference to the original
+//    constant so reflowing the icon-centering math below can't silently
+//    drag the text position along with it.
+#define ACHIEVEMENT_POPUP_ICON_SLOT_CENTER_X 26
+#define ACHIEVEMENT_POPUP_ICON_SLOT_CENTER_Y 24
+#define ACHIEVEMENT_POPUP_ICON_SLOT_SPRITE_SIZE 32 // old sprite's own shape (for the halfWidth in #1)
+#define ACHIEVEMENT_POPUP_ICON_SLOT_SIZE 24 // old sprite's visible content size -- the box being centered within below
+
+#define ACHIEVEMENT_TIER_ICON_SIZE 16
+
+#define ACHIEVEMENT_POPUP_ICON_SLOT_LEFT (ACHIEVEMENT_POPUP_ICON_SLOT_CENTER_X - ACHIEVEMENT_POPUP_ICON_SLOT_SPRITE_SIZE / 2)
+#define ACHIEVEMENT_POPUP_ICON_SLOT_TOP  (ACHIEVEMENT_POPUP_ICON_SLOT_CENTER_Y - ACHIEVEMENT_POPUP_ICON_SLOT_SPRITE_SIZE / 2)
+
+// Centers the new, smaller, no-longer-padded 16x16 sprite within that same
+// 24x24 box: box corner + half the leftover space to get the new sprite's
+// own top-left, then + its own halfWidth to convert back to the center
+// coordinate x2/y2 actually needs.
+#define ACHIEVEMENT_POPUP_ICON_X (ACHIEVEMENT_POPUP_ICON_SLOT_LEFT + (ACHIEVEMENT_POPUP_ICON_SLOT_SIZE - ACHIEVEMENT_TIER_ICON_SIZE) / 2 + ACHIEVEMENT_TIER_ICON_SIZE / 2)
+#define ACHIEVEMENT_POPUP_ICON_Y (ACHIEVEMENT_POPUP_ICON_SLOT_TOP + (ACHIEVEMENT_POPUP_ICON_SLOT_SIZE - ACHIEVEMENT_TIER_ICON_SIZE) / 2 + ACHIEVEMENT_TIER_ICON_SIZE / 2)
+
+// Untouched by the icon-centering math above -- see point #2 above.
+#define ACHIEVEMENT_POPUP_TEXT_X (ACHIEVEMENT_POPUP_ICON_SLOT_CENTER_X + 2)
 #define ACHIEVEMENT_POPUP_TEXT_Y 0
 #define ACHIEVEMENT_POPUP_DESC_MAX_WIDTH 196 // matches ScriptShowItemDescription's own wrap width
 
@@ -145,14 +175,13 @@ static void DestroyAchievementTierIconSprite(u8 spriteId);
 
 static const u8 sText_AchievementPopupFormat[] = _("{STR_VAR_2} (+{STR_VAR_1})\n{STR_VAR_3}");
 
-// Tier icons are 24x24 (graphics/achievements/icons/*.png) -- the same
-// dimensions this fork's item icons use (see graphics/items/icons/*.png) --
-// so they're compressed and consumed exactly like item icon pics are in
-// src/item_icon.c: DecompressDataWithHeaderWram into
-// gItemIconDecompressionBuffer, then CopyItemIconPicTo4x4Buffer pads the 3x3
-// tile block into a 32x32 (4x4 tile) sprite, leaving the bottom row and
-// right column of tiles blank. Reuses item_icon.h's public buffer helpers
-// directly rather than duplicating that padding logic.
+// Tier icons are 16x16 (graphics/achievements/icons/*.png) -- a plain 2x2
+// tile block, unlike this fork's 24x24 (3x3 tile) item icons, so there's no
+// need for item_icon.c's DecompressDataWithHeaderWram-into-a-scratch-buffer/
+// CopyItemIconPicTo4x4Buffer dance that pads a non-square tile count out to
+// a 4x4 sprite shape. LoadCompressedSpriteSheet decompresses straight into
+// VRAM in one call, same as most other plain compressed icon sprites in the
+// engine (e.g. gSpriteSheet_CategoryIcons in src/pokemon_summary_screen.c).
 static const u32 sAchievementTierIconGfx_Bronze[]  = INCGFX_U32("graphics/achievements/icons/star_bronze.png", ".4bpp.smol");
 static const u16 sAchievementTierIconPal_Bronze[]  = INCGFX_U16("graphics/achievements/icons/star_bronze.png", ".gbapal");
 static const u32 sAchievementTierIconGfx_Silver[]  = INCGFX_U32("graphics/achievements/icons/star_silver.png", ".4bpp.smol");
@@ -178,12 +207,10 @@ static const u16 *const sAchievementTierIconPal[ACHIEVEMENT_TIER_COUNT] =
     [ACHIEVEMENT_TIER_DIAMOND] = sAchievementTierIconPal_Diamond,
 };
 
-// Matches src/item_icon.c's sOamData_ItemIcon/sSpriteAnim_ItemIcon/
-// gItemIconSpriteTemplate field-for-field -- same 32x32 shape the padded
-// buffer above produces, same single static frame. tileTag/paletteTag are
-// hardcoded (rather than runtime-parameterized like AddItemIconSprite's) --
-// this popup only ever needs the one fixed tag, unlike the item icon API
-// which has to serve arbitrary callers.
+// Plain single-frame 16x16 icon sprite -- tileTag/paletteTag are hardcoded
+// (rather than runtime-parameterized like AddItemIconSprite's) since this
+// popup only ever needs the one fixed tag, unlike the item icon API which
+// has to serve arbitrary callers.
 static const struct OamData sOamData_AchievementTierIcon =
 {
     .y = 0,
@@ -191,10 +218,10 @@ static const struct OamData sOamData_AchievementTierIcon =
     .objMode = ST_OAM_OBJ_NORMAL,
     .mosaic = FALSE,
     .bpp = ST_OAM_4BPP,
-    .shape = SPRITE_SHAPE(32x32),
+    .shape = SPRITE_SHAPE(16x16),
     .x = 0,
     .matrixNum = 0,
-    .size = SPRITE_SIZE(32x32),
+    .size = SPRITE_SIZE(16x16),
     .tileNum = 0,
     .priority = 1,
     .paletteNum = 2,
@@ -393,29 +420,19 @@ static void HideAchievementPopUpWindow(void)
 
 static u8 AddAchievementTierIconSprite(enum AchievementTier tier)
 {
-    u8 spriteId;
-    struct SpriteSheet spriteSheet;
+    struct CompressedSpriteSheet spriteSheet;
     struct SpritePalette spritePalette;
 
-    if (!AllocItemIconTemporaryBuffers())
-        return MAX_SPRITES;
-
-    DecompressDataWithHeaderWram(sAchievementTierIconGfx[tier], gItemIconDecompressionBuffer);
-    CopyItemIconPicTo4x4Buffer(gItemIconDecompressionBuffer, gItemIcon4x4Buffer);
-
-    spriteSheet.data = gItemIcon4x4Buffer;
-    spriteSheet.size = 0x200;
+    spriteSheet.data = sAchievementTierIconGfx[tier];
+    spriteSheet.size = ACHIEVEMENT_TIER_ICON_SIZE * ACHIEVEMENT_TIER_ICON_SIZE / 2; // 4bpp
     spriteSheet.tag = ACHIEVEMENT_POPUP_ICON_TAG;
-    LoadSpriteSheet(&spriteSheet);
+    LoadCompressedSpriteSheet(&spriteSheet);
 
     spritePalette.data = sAchievementTierIconPal[tier];
     spritePalette.tag = ACHIEVEMENT_POPUP_ICON_TAG;
     LoadSpritePalette(&spritePalette);
 
-    spriteId = CreateSprite(&sAchievementTierIconSpriteTemplate, 0, 0, 0);
-
-    FreeItemIconTemporaryBuffers();
-    return spriteId;
+    return CreateSprite(&sAchievementTierIconSpriteTemplate, 0, 0, 0);
 }
 
 static void DestroyAchievementTierIconSprite(u8 spriteId)
