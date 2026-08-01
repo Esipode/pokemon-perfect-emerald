@@ -1,9 +1,12 @@
 #include "global.h"
 #include "achievements.h"
 #include "achievement_popup.h"
+#include "decompress.h"
+#include "item_icon.h"
 #include "line_break.h"
 #include "menu.h"
 #include "palette.h"
+#include "sprite.h"
 #include "string_util.h"
 #include "task.h"
 #include "text.h"
@@ -21,12 +24,6 @@
 // context to call an explicit "hide" at the right moment.
 //
 // Still not here:
-//   - the tier icon sprite itself. The layout reserves its slot
-//     (ACHIEVEMENT_POPUP_ICON_X/Y, sized like AddItemIconSprite's 32x32) and
-//     the two spots it needs wiring (see the TODOs in
-//     ShowAchievementPopUpWindow/HideAchievementPopUpWindow), but there's no
-//     tier icon art or an equivalent of gItemsInfo[].iconPic in this repo --
-//     to be added separately.
 //   - a real ring buffer for back-to-back awards (Stage 4.2). For now a
 //     second call while one's showing just swaps the displayed content and
 //     restarts the display timer -- there's no animation to hurry through
@@ -80,19 +77,114 @@
 #define ACHIEVEMENT_POPUP_TEXT_Y 0
 #define ACHIEVEMENT_POPUP_DESC_MAX_WIDTH 196 // matches ScriptShowItemDescription's own wrap width
 
+// Arbitrary and only needs to not collide with whatever else can be loaded at
+// the same time as this popup (no registry of tags exists to check against).
+#define ACHIEVEMENT_POPUP_ICON_TAG 0xACE1
+
+// Not defined anywhere shared -- include/achievements.h doesn't have a tier
+// count constant, and src/achievements_menu.c already carries its own local
+// copy of this same derivation rather than a shared one.
+#define ACHIEVEMENT_TIER_COUNT (ACHIEVEMENT_TIER_DIAMOND + 1)
+
 EWRAM_DATA static u8 sAchievementPopupTaskId = 0;
 EWRAM_DATA static u8 sAchievementPopupWindowId = 0;
-// EWRAM's .sbss only allows zero initializers, so this can't default to
-// WINDOW_NONE/TASK_NONE the way a non-EWRAM sentinel would -- this flag is
-// the actual source of truth for whether a popup is currently up, rather
-// than comparing sAchievementPopupWindowId/TaskId against a sentinel value.
+EWRAM_DATA static u8 sAchievementPopupIconSpriteId = 0;
+// EWRAM's .sbss only allows zero initializers, so none of the three above can
+// default to WINDOW_NONE/TASK_NONE/MAX_SPRITES the way non-EWRAM sentinels
+// would -- this flag is the actual source of truth for whether a popup is
+// currently up (and therefore whether the ids above are meaningful yet),
+// rather than comparing them against a sentinel value.
 EWRAM_DATA static bool8 sAchievementPopupActive = FALSE;
 
 static void Task_HideAchievementPopupAfterDelay(u8 taskId);
 static void ShowAchievementPopUpWindow(u16 achievementId);
 static void HideAchievementPopUpWindow(void);
+static u8 AddAchievementTierIconSprite(enum AchievementTier tier);
+static void DestroyAchievementTierIconSprite(u8 spriteId);
 
 static const u8 sText_AchievementPopupFormat[] = _("{STR_VAR_2} (+{STR_VAR_1})\n{STR_VAR_3}");
+
+// Tier icons are 24x24 (graphics/achievements/icons/*.png) -- the same
+// dimensions this fork's item icons use (see graphics/items/icons/*.png) --
+// so they're compressed and consumed exactly like item icon pics are in
+// src/item_icon.c: DecompressDataWithHeaderWram into
+// gItemIconDecompressionBuffer, then CopyItemIconPicTo4x4Buffer pads the 3x3
+// tile block into a 32x32 (4x4 tile) sprite, leaving the bottom row and
+// right column of tiles blank. Reuses item_icon.h's public buffer helpers
+// directly rather than duplicating that padding logic.
+//
+// There's no PLATINUM entry despite graphics/achievements/icons/
+// star_platinum.png existing -- enum AchievementTier (include/constants/
+// achievements.h) only has 4 tiers (BRONZE/SILVER/GOLD/DIAMOND), matching the
+// Stage 2.1 catalog rather than the design doc's original 5-tier mockup (see
+// that discrepancy note in Achievement_Implementation_Plan.md's Stage 3.2
+// section). star_platinum.png is unused.
+static const u32 sAchievementTierIconGfx_Bronze[]  = INCGFX_U32("graphics/achievements/icons/star_bronze.png", ".4bpp.smol");
+static const u16 sAchievementTierIconPal_Bronze[]  = INCGFX_U16("graphics/achievements/icons/star_bronze.png", ".gbapal");
+static const u32 sAchievementTierIconGfx_Silver[]  = INCGFX_U32("graphics/achievements/icons/star_silver.png", ".4bpp.smol");
+static const u16 sAchievementTierIconPal_Silver[]  = INCGFX_U16("graphics/achievements/icons/star_silver.png", ".gbapal");
+static const u32 sAchievementTierIconGfx_Gold[]    = INCGFX_U32("graphics/achievements/icons/star_gold.png", ".4bpp.smol");
+static const u16 sAchievementTierIconPal_Gold[]    = INCGFX_U16("graphics/achievements/icons/star_gold.png", ".gbapal");
+static const u32 sAchievementTierIconGfx_Diamond[] = INCGFX_U32("graphics/achievements/icons/star_diamond.png", ".4bpp.smol");
+static const u16 sAchievementTierIconPal_Diamond[] = INCGFX_U16("graphics/achievements/icons/star_diamond.png", ".gbapal");
+
+static const u32 *const sAchievementTierIconGfx[ACHIEVEMENT_TIER_COUNT] =
+{
+    [ACHIEVEMENT_TIER_BRONZE]  = sAchievementTierIconGfx_Bronze,
+    [ACHIEVEMENT_TIER_SILVER]  = sAchievementTierIconGfx_Silver,
+    [ACHIEVEMENT_TIER_GOLD]    = sAchievementTierIconGfx_Gold,
+    [ACHIEVEMENT_TIER_DIAMOND] = sAchievementTierIconGfx_Diamond,
+};
+
+static const u16 *const sAchievementTierIconPal[ACHIEVEMENT_TIER_COUNT] =
+{
+    [ACHIEVEMENT_TIER_BRONZE]  = sAchievementTierIconPal_Bronze,
+    [ACHIEVEMENT_TIER_SILVER]  = sAchievementTierIconPal_Silver,
+    [ACHIEVEMENT_TIER_GOLD]    = sAchievementTierIconPal_Gold,
+    [ACHIEVEMENT_TIER_DIAMOND] = sAchievementTierIconPal_Diamond,
+};
+
+// Matches src/item_icon.c's sOamData_ItemIcon/sSpriteAnim_ItemIcon/
+// gItemIconSpriteTemplate field-for-field -- same 32x32 shape the padded
+// buffer above produces, same single static frame. tileTag/paletteTag are
+// hardcoded (rather than runtime-parameterized like AddItemIconSprite's) --
+// this popup only ever needs the one fixed tag, unlike the item icon API
+// which has to serve arbitrary callers.
+static const struct OamData sOamData_AchievementTierIcon =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(32x32),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(32x32),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 2,
+    .affineParam = 0
+};
+
+static const union AnimCmd sSpriteAnim_AchievementTierIcon[] =
+{
+    ANIMCMD_FRAME(0, 0),
+    ANIMCMD_END
+};
+
+static const union AnimCmd *const sSpriteAnimTable_AchievementTierIcon[] =
+{
+    sSpriteAnim_AchievementTierIcon
+};
+
+static const struct SpriteTemplate sAchievementTierIconSpriteTemplate =
+{
+    .tileTag = ACHIEVEMENT_POPUP_ICON_TAG,
+    .paletteTag = ACHIEVEMENT_POPUP_ICON_TAG,
+    .oam = &sOamData_AchievementTierIcon,
+    .anims = sSpriteAnimTable_AchievementTierIcon,
+};
 
 void ShowAchievementPopup(u16 achievementId)
 {
@@ -152,14 +244,16 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
     else
     {
         FillWindowPixelBuffer(sAchievementPopupWindowId, PIXEL_FILL(1));
-        // TODO: if a tier icon sprite already exists from the previous
-        // achievement, destroy it here before the new one's created below
-        // (mirrors DestroyItemIconSprite in src/overworld.c).
+        DestroyAchievementTierIconSprite(sAchievementPopupIconSpriteId);
     }
 
-    // TODO: create the tier icon sprite here, positioned at
-    // (ACHIEVEMENT_POPUP_ICON_X, ACHIEVEMENT_POPUP_ICON_Y) -- mirrors
-    // ShowItemIconSprite in src/overworld.c.
+    sAchievementPopupIconSpriteId = AddAchievementTierIconSprite(info->tier);
+    if (sAchievementPopupIconSpriteId != MAX_SPRITES)
+    {
+        gSprites[sAchievementPopupIconSpriteId].x2 = ACHIEVEMENT_POPUP_ICON_X;
+        gSprites[sAchievementPopupIconSpriteId].y2 = ACHIEVEMENT_POPUP_ICON_Y;
+        gSprites[sAchievementPopupIconSpriteId].oam.priority = 0;
+    }
 
     ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
     StringCopy(gStringVar2, info->name);
@@ -174,10 +268,47 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
 
 static void HideAchievementPopUpWindow(void)
 {
-    // TODO: destroy the tier icon sprite here (mirrors DestroyItemIconSprite
-    // in src/overworld.c), once one exists.
+    DestroyAchievementTierIconSprite(sAchievementPopupIconSpriteId);
 
     ClearStdWindowAndFrameToTransparent(sAchievementPopupWindowId, TRUE);
     RemoveWindow(sAchievementPopupWindowId);
     sAchievementPopupActive = FALSE;
+}
+
+static u8 AddAchievementTierIconSprite(enum AchievementTier tier)
+{
+    u8 spriteId;
+    struct SpriteSheet spriteSheet;
+    struct SpritePalette spritePalette;
+
+    if (!AllocItemIconTemporaryBuffers())
+        return MAX_SPRITES;
+
+    DecompressDataWithHeaderWram(sAchievementTierIconGfx[tier], gItemIconDecompressionBuffer);
+    CopyItemIconPicTo4x4Buffer(gItemIconDecompressionBuffer, gItemIcon4x4Buffer);
+
+    spriteSheet.data = gItemIcon4x4Buffer;
+    spriteSheet.size = 0x200;
+    spriteSheet.tag = ACHIEVEMENT_POPUP_ICON_TAG;
+    LoadSpriteSheet(&spriteSheet);
+
+    spritePalette.data = sAchievementTierIconPal[tier];
+    spritePalette.tag = ACHIEVEMENT_POPUP_ICON_TAG;
+    LoadSpritePalette(&spritePalette);
+
+    spriteId = CreateSprite(&sAchievementTierIconSpriteTemplate, 0, 0, 0);
+
+    FreeItemIconTemporaryBuffers();
+    return spriteId;
+}
+
+static void DestroyAchievementTierIconSprite(u8 spriteId)
+{
+    FreeSpriteTilesByTag(ACHIEVEMENT_POPUP_ICON_TAG);
+    FreeSpritePaletteByTag(ACHIEVEMENT_POPUP_ICON_TAG);
+    if (spriteId != MAX_SPRITES)
+    {
+        FreeSpriteOamMatrix(&gSprites[spriteId]);
+        DestroySprite(&gSprites[spriteId]);
+    }
 }

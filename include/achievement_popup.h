@@ -10,10 +10,6 @@
 // show/hide is driven by a task timer instead of paired script commands.
 //
 // Still not here:
-//   - the tier icon sprite itself -- the layout reserves its slot, but
-//     there's no tier icon art or an equivalent of gItemsInfo[].iconPic for
-//     achievement tiers in this repo yet (see the TODOs in
-//     src/achievement_popup.c).
 //   - a real ring buffer for back-to-back awards (Stage 4.2). A second call
 //     while one's showing currently just swaps the displayed content and
 //     restarts the display timer.
