@@ -8,6 +8,7 @@
 #include "list_menu.h"
 #include "main.h"
 #include "menu.h"
+#include "money.h"               // IsEnoughMoney, for the Stage 11 reset row's status text
 #include "palette.h"
 #include "scanline_effect.h"
 #include "sound.h"
@@ -34,6 +35,14 @@
 // (design doc Stage 6: OFF hides the shop, not just the toggle). Also
 // reachable unconditionally from the debug menu for testing before Stage 5's
 // unlock gate has actually been cleared on a given save.
+//
+// Stage 11 (design doc §13/Stage 11): a synthetic "RESET BOOSTS" row is
+// appended after the real boosts (BOOST_MENU_ITEM_RESET, same trick as
+// achievements_menu.c's own BOOSTS row). Unlike a purchase, [A] on it does
+// show a confirmation screen -- it swaps WIN_LIST's ListMenu for a throwaway
+// Yes/No list (see EnterResetConfirmLevel) rather than committing directly,
+// since AchievementBoost_Reset() is destructive to every purchased level at
+// once and costs real Poké money.
 
 enum
 {
@@ -43,7 +52,13 @@ enum
 };
 
 #define BOOST_MENU_MAX_SHOWED 4
-#define BOOST_MENU_ITEM_COUNT (BOOSTS_COUNT - 1) // excludes BOOST_NONE
+
+// Stage 11: a synthetic row appended after the real boosts, same "one past
+// the last real enum value" trick src/achievements_menu.c uses for its own
+// TIER_SELECT_ITEM_BOOSTS row -- never a real BoostId, never passed to
+// AchievementBoost_GetInfo.
+#define BOOST_MENU_ITEM_RESET BOOSTS_COUNT
+#define BOOST_MENU_ITEM_COUNT (BOOSTS_COUNT) // (BOOSTS_COUNT - 1) real boosts (excludes BOOST_NONE) + the reset row
 
 #define tListTaskId        data[0]
 #define tScrollArrowTaskId data[1]
@@ -89,6 +104,19 @@ static void PrintBoostStatus(s32 boostId);
 static void DrawHeaderText(void);
 static void DrawBgWindowFrames(void);
 
+// Stage 11: the reset-confirmation sub-flow. Reuses WIN_LIST/WIN_DESCRIPTION
+// and the same ListMenu plumbing as the main boost list -- "tear down and
+// re-enter with a different item set" is the same trick TryPurchaseBoost
+// already uses to refresh the list after a purchase, just pointed at a
+// throwaway 2-item Yes/No list instead of the real boost catalog.
+static void TryResetBoosts(u8 taskId);
+static void EnterResetConfirmLevel(u8 taskId);
+static void DestroyResetConfirmList(u8 taskId);
+static void ReturnToBoostList(u8 taskId);
+static void Task_BoostMenu_ConfirmResetInput(u8 taskId);
+static void ResetConfirmMoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list);
+static void PrintResetConfirmText(void);
+
 static const u8 sText_BoostMenuTitle[]  = _("ACHIEVEMENT BOOSTS");
 static const u8 sText_ControlHint[]     = _("{B_BUTTON}BACK");
 static const u8 sText_BoostLocked[]     = _("LOCKED");
@@ -107,6 +135,28 @@ static const u8 sText_BoostRunBlockedStatus[]   = _("Status: Run ineligible (deb
 // the text engine's own CHAR_NEWLINE handling (src/text.c) place it
 // correctly instead of this file guessing at line-height math.
 static const u8 sText_BoostDescriptionAndStatusFormat[] = _("{STR_VAR_1}\n{STR_VAR_2}");
+
+// Stage 11: the synthetic "RESET BOOSTS" row and its confirmation sub-flow.
+static const u8 sText_ResetBoostsRowLabel[]       = _("RESET BOOSTS");
+static const u8 sText_ResetBoostsDescription[]    = _("Refunds all points spent on boosts, for a fee.");
+static const u8 sText_ResetNothingStatus[]        = _("Status: Nothing to reset");
+static const u8 sText_ResetCantAffordStatus[]     = _("Status: Not enough money");
+static const u8 sText_ResetCostFormat[]           = _("Refund: {STR_VAR_1} pts (Fee: ¥{STR_VAR_2})");
+static const u8 sText_ResetConfirmFormat[]        = _("Refund: {STR_VAR_1} pts\nFee: ¥{STR_VAR_2}\nNew total: {STR_VAR_3} pts\nReset all boosts?");
+static const u8 sText_ResetConfirmYes[]           = _("YES");
+static const u8 sText_ResetConfirmNo[]            = _("NO");
+
+enum
+{
+    RESET_CONFIRM_YES,
+    RESET_CONFIRM_NO,
+};
+
+static const struct ListMenuItem sResetConfirmListItems[] =
+{
+    [RESET_CONFIRM_YES] = { .name = sText_ResetConfirmYes, .id = RESET_CONFIRM_YES },
+    [RESET_CONFIRM_NO]  = { .name = sText_ResetConfirmNo,  .id = RESET_CONFIRM_NO },
+};
 
 static const struct WindowTemplate sBoostMenuWinTemplates[] =
 {
@@ -334,6 +384,9 @@ static void Task_BoostMenu_ProcessInput(u8 taskId)
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_BoostMenuCancel;
         break;
+    case BOOST_MENU_ITEM_RESET:
+        TryResetBoosts(taskId);
+        break;
     default:
         TryPurchaseBoost(taskId, itemId);
         break;
@@ -359,6 +412,24 @@ static void TryPurchaseBoost(u8 taskId, u16 boostId)
     }
 }
 
+// Stage 11: unlike TryPurchaseBoost, this doesn't commit anything by itself
+// -- AchievementBoost_CanReset() gates entry into the confirmation sub-flow
+// (Task_BoostMenu_ConfirmResetInput), which is the only place that actually
+// calls AchievementBoost_Reset().
+static void TryResetBoosts(u8 taskId)
+{
+    if (!AchievementBoost_CanReset())
+    {
+        PlaySE(SE_FAILURE);
+        return;
+    }
+
+    PlaySE(SE_SELECT);
+    DestroyCurrentBoostList(taskId);
+    EnterResetConfirmLevel(taskId);
+    gTasks[taskId].func = Task_BoostMenu_ConfirmResetInput;
+}
+
 static void BoostMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list)
 {
     if (!onInit)
@@ -368,10 +439,19 @@ static void BoostMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct Lis
 
 static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y)
 {
-    const struct AchievementBoost *info = AchievementBoost_GetInfo(boostId);
-    u8 level = AchievementBoost_GetLevel(boostId);
+    const struct AchievementBoost *info;
+    u8 level;
     u8 *ptr;
     s32 width;
+
+    // Stage 11: the reset row has no level/cost to show on its right side --
+    // AchievementBoost_GetInfo(BOOST_MENU_ITEM_RESET) would otherwise fall
+    // back to the BOOST_NONE dummy entry (maxLevel 0) and misprint "MAX".
+    if (boostId == BOOST_MENU_ITEM_RESET)
+        return;
+
+    info = AchievementBoost_GetInfo(boostId);
+    level = AchievementBoost_GetLevel(boostId);
 
     if (info->type == BOOST_TYPE_BINARY)
     {
@@ -410,6 +490,11 @@ static void BuildBoostMenuListItems(void)
         sBoostMenuListItems[index].id = id;
         index++;
     }
+
+    // Stage 11: the synthetic "RESET BOOSTS" row, always last.
+    StringCopy(sBoostMenuNameBuffers[index], sText_ResetBoostsRowLabel);
+    sBoostMenuListItems[index].name = sBoostMenuNameBuffers[index];
+    sBoostMenuListItems[index].id = BOOST_MENU_ITEM_RESET;
 }
 
 // Bug (reported after initial delivery): the description and status line
@@ -428,7 +513,45 @@ static void PrintBoostStatus(s32 boostId)
 {
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
 
-    if (boostId >= BOOST_NONE + 1 && boostId < BOOSTS_COUNT)
+    if (boostId == BOOST_MENU_ITEM_RESET)
+    {
+        u8 statusBuf[40];
+
+        // Same priority order as AchievementBoost_CanReset (src/achievements.c),
+        // reimplemented here for messaging -- same precedent as the real-boost
+        // branch below, which reimplements AchievementBoost_CanPurchase's order
+        // rather than calling it, so it can explain *which* check failed.
+        if (!Achievement_BoostsUnlocked())
+        {
+            StringCopy(statusBuf, sText_BoostSystemLockedStatus);
+        }
+        else if (Achievement_GetAvailablePoints() == Achievement_GetTotalPoints())
+        {
+            // available == total iff pointsInvested == 0 -- nothing purchased
+            // to refund. Avoids needing a public pointsInvested accessor.
+            StringCopy(statusBuf, sText_ResetNothingStatus);
+        }
+        else if (!IsEnoughMoney(&gSaveBlock1Ptr->money, ACHIEVEMENT_BOOST_RESET_FEE))
+        {
+            StringCopy(statusBuf, sText_ResetCantAffordStatus);
+        }
+        else
+        {
+            u32 invested = Achievement_GetTotalPoints() - Achievement_GetAvailablePoints();
+            ConvertIntToDecimalStringN(gStringVar1, invested, STR_CONV_MODE_LEFT_ALIGN, 6);
+            ConvertIntToDecimalStringN(gStringVar2, ACHIEVEMENT_BOOST_RESET_FEE, STR_CONV_MODE_LEFT_ALIGN, 6);
+            StringExpandPlaceholders(statusBuf, sText_ResetCostFormat);
+        }
+
+        StringCopy(gStringVar1, sText_ResetBoostsDescription);
+        StripLineBreaks(gStringVar1);
+        BreakStringAutomatic(gStringVar1, BOOST_MENU_DESC_MAX_WIDTH, 2, FONT_NORMAL, HIDE_SCROLL_PROMPT);
+        StringCopy(gStringVar2, statusBuf);
+        StringExpandPlaceholders(gStringVar4, sText_BoostDescriptionAndStatusFormat);
+
+        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
+    }
+    else if (boostId >= BOOST_NONE + 1 && boostId < BOOSTS_COUNT)
     {
         const struct AchievementBoost *info = AchievementBoost_GetInfo(boostId);
         u8 level = AchievementBoost_GetLevel(boostId);
@@ -481,6 +604,108 @@ static void DestroyCurrentBoostList(u8 taskId)
 {
     DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
     RemoveScrollIndicatorArrowPair(gTasks[taskId].tScrollArrowTaskId);
+}
+
+// Stage 11: the two-item Yes/No confirmation list. Only 2 rows against
+// BOOST_MENU_MAX_SHOWED 4, so unlike EnterBoostMenuLevel this never needs
+// scroll arrows -- DestroyResetConfirmList (below) mirrors that by never
+// touching tScrollArrowTaskId, which still holds the main list's arrow pair
+// until DestroyCurrentBoostList tears it down on the way back in.
+static void EnterResetConfirmLevel(u8 taskId)
+{
+    struct ListMenuTemplate template = {0};
+
+    PrintResetConfirmText();
+
+    template.items = sResetConfirmListItems;
+    template.moveCursorFunc = ResetConfirmMoveCursorCallback;
+    template.itemPrintFunc = NULL;
+    template.totalItems = ARRAY_COUNT(sResetConfirmListItems);
+    template.maxShowed = ARRAY_COUNT(sResetConfirmListItems);
+    template.windowId = WIN_LIST;
+    template.header_X = 0;
+    template.item_X = 8;
+    template.cursor_X = 0;
+    template.upText_Y = 1;
+    template.cursorPal = 2;
+    template.fillValue = 1;
+    template.cursorShadowPal = 3;
+    template.lettersSpacing = 0;
+    template.itemVerticalPadding = 0;
+    template.scrollMultiple = LIST_NO_MULTIPLE_SCROLL;
+    template.fontId = FONT_NORMAL;
+    template.cursorKind = CURSOR_BLACK_ARROW;
+
+    gTasks[taskId].tListTaskId = ListMenuInit(&template, 0, 0);
+}
+
+static void DestroyResetConfirmList(u8 taskId)
+{
+    DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
+}
+
+static void ReturnToBoostList(u8 taskId)
+{
+    DestroyResetConfirmList(taskId);
+    EnterBoostMenuLevel(taskId);
+    gTasks[taskId].func = Task_BoostMenu_ProcessInput;
+}
+
+static void Task_BoostMenu_ConfirmResetInput(u8 taskId)
+{
+    s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
+
+    switch (itemId)
+    {
+    case LIST_NOTHING_CHOSEN:
+        break;
+    case LIST_CANCEL:
+    case RESET_CONFIRM_NO:
+        PlaySE(SE_SELECT);
+        ReturnToBoostList(taskId);
+        break;
+    case RESET_CONFIRM_YES:
+        // Re-verified inside AchievementBoost_Reset itself (same "never trust
+        // a stale Can* result" precedent as AchievementBoost_Purchase) -- this
+        // can still fail if something spent the fee's worth of money or the
+        // profile's boosts got re-locked between opening this prompt and
+        // choosing YES.
+        if (AchievementBoost_Reset())
+            PlaySE(SE_SHOP);
+        else
+            PlaySE(SE_FAILURE);
+        ReturnToBoostList(taskId);
+        break;
+    }
+}
+
+static void ResetConfirmMoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list)
+{
+    if (!onInit)
+        PlaySE(SE_SELECT);
+}
+
+// design doc §13/Stage 11 "the confirmation prompt shows the refund, the fee
+// and the resulting totals before committing": this view is only ever
+// entered when AchievementBoost_CanReset() already returned TRUE, so unlike
+// PrintBoostStatus's reset branch, this doesn't need to handle the
+// locked/nothing-to-reset/can't-afford cases -- there is always a real
+// refund and fee to show.
+static void PrintResetConfirmText(void)
+{
+    u32 invested = Achievement_GetTotalPoints() - Achievement_GetAvailablePoints();
+
+    FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
+
+    ConvertIntToDecimalStringN(gStringVar1, invested, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar2, ACHIEVEMENT_BOOST_RESET_FEE, STR_CONV_MODE_LEFT_ALIGN, 6);
+    // After a full refund pointsInvested becomes 0, so the new available
+    // total is exactly totalPointsEarned.
+    ConvertIntToDecimalStringN(gStringVar3, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+    StringExpandPlaceholders(gStringVar4, sText_ResetConfirmFormat);
+
+    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
 
 static void DrawHeaderText(void)

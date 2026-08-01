@@ -9,6 +9,12 @@
 #define MAX_ACHIEVEMENTS            512   // reserved ceiling -> 64 bytes of flags
 #define MAX_BOOSTS                  32
 
+// Stage 11 (design doc §13): single tunable fee, in Poké money, to reset every
+// boostLevels[] entry and refund pointsInvested in full. Real balancing is
+// Stage 14's job (design doc §13: "start conservative and tune after
+// playtesting") -- deliberately not an escalating fee yet.
+#define ACHIEVEMENT_BOOST_RESET_FEE 5000
+
 // Cap for .name in gAchievements[] (src/data/achievements.h), enforced at
 // compile time via ACHIEVEMENT_NAME() there -- same pattern as ITEM_NAME_LENGTH.
 #define ACHIEVEMENT_NAME_LENGTH     24
@@ -140,8 +146,24 @@ void Achievement_OnFirstPlaythroughComplete(void);
 bool8 AchievementBoost_CanPurchase(u16 boostId);
 bool8 AchievementBoost_Purchase(u16 boostId);
 
-// Declared here to complete the API surface, but implemented once
-// ACHIEVEMENT_BOOST_RESET_FEE exists (Stage 11).
+// Stage 11 (design doc §13/§23 "reset exploits"): a non-mutating query so the
+// boost shop can gate entry into its confirmation prompt without spending the
+// fee just to find out the answer -- mirrors AchievementBoost_CanPurchase's
+// role for AchievementBoost_Purchase. Refuses in order: boosts not unlocked,
+// nothing invested (pointsInvested == 0 -- resetting a no-op configuration
+// would only ever cost the fee for zero refund), can't afford the fee.
+// Deliberately NOT gated on Achievement_RunBlocked() like CanPurchase is --
+// a blocked run can still hold boost levels purchased before the block took
+// effect, and a reset only ever refunds/clears what's already there, so it
+// can't grant anything a blocked run shouldn't have.
+bool8 AchievementBoost_CanReset(void);
+
+// design doc Stage 11: re-runs AchievementBoost_CanReset (same "never trust a
+// stale Can* result" precedent as AchievementBoost_Purchase) before
+// committing pointsInvested = 0, zeroing every boostLevels[] entry, and
+// deducting ACHIEVEMENT_BOOST_RESET_FEE -- refund is always exactly the
+// pointsInvested that was there, so a reset can never generate points
+// (design doc §23).
 bool8 AchievementBoost_Reset(void);
 
 // design doc Stage 8: the first real boost effect. Wraps a raw exp value --

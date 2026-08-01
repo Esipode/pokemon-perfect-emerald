@@ -7,6 +7,7 @@
 #include "save.h"
 #include "achievements.h"
 #include "achievement_popup.h"
+#include "money.h"               // IsEnoughMoney/RemoveMoney, for AchievementBoost_Reset (Stage 11)
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
 #include "data/achievements.h"
@@ -318,6 +319,45 @@ bool8 AchievementBoost_Purchase(u16 boostId)
 
     gAchievementProfile.pointsInvested += info->costs[level];
     gAchievementProfile.boostLevels[boostId]++;
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
+
+    return TRUE;
+}
+
+// design doc §13/Stage 11: refuses at the first failed check, same style as
+// AchievementBoost_CanPurchase. "Nothing invested" is checked before "can
+// afford the fee" so a player with no boosts purchased is never told they
+// need more money for a reset that would refund them nothing anyway.
+bool8 AchievementBoost_CanReset(void)
+{
+    if (!gAchievementProfile.boostsUnlocked)
+        return FALSE;
+
+    if (gAchievementProfile.pointsInvested == 0)
+        return FALSE;
+
+    if (!IsEnoughMoney(&gSaveBlock1Ptr->money, ACHIEVEMENT_BOOST_RESET_FEE))
+        return FALSE;
+
+    return TRUE;
+}
+
+// design doc Stage 11/§23 "reset exploits": the refund is exactly
+// pointsInvested -- the same value AchievementBoost_Purchase only ever grew
+// it by -- so a reset can never generate points. Order matters: the refund
+// and level clear happen before RemoveMoney, so a failed CanReset (re-checked
+// here, not trusted from a stale caller-side result) leaves money, points and
+// levels all untouched together.
+bool8 AchievementBoost_Reset(void)
+{
+    if (!AchievementBoost_CanReset())
+        return FALSE;
+
+    gAchievementProfile.pointsInvested = 0;
+    memset(gAchievementProfile.boostLevels, 0, sizeof(gAchievementProfile.boostLevels));
+    RemoveMoney(&gSaveBlock1Ptr->money, ACHIEVEMENT_BOOST_RESET_FEE);
+    gAchievementProfile.boostResets++;
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
 
