@@ -1,5 +1,6 @@
 #include "global.h"
 #include "config/save.h"
+#include "achievements_menu.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
 #include "battle_pyramid_bag.h"
@@ -78,6 +79,8 @@ enum
     MENU_ACTION_DEBUG,
     MENU_ACTION_DEXNAV,
     MENU_ACTION_CHANGE_TIME,
+    MENU_ACTION_ACHIEVEMENTS,
+    NUM_MENU_ACTIONS,
 };
 
 // Save status
@@ -97,7 +100,12 @@ EWRAM_DATA static u8 sSafariBallsWindowId = 0;
 EWRAM_DATA static u8 sBattlePyramidFloorWindowId = 0;
 EWRAM_DATA static u8 sStartMenuCursorPos = 0;
 EWRAM_DATA static u8 sNumStartMenuActions = 0;
-EWRAM_DATA static u8 sCurrentStartMenuActions[9] = {0};
+// Sized to every possible action rather than a hand-counted magic number:
+// AppendToList (below) has no bounds check of its own, and a fully-progressed
+// save (Pokedex/Pokemon/DexNav/PokeNav/clock set/New Game+ all unlocked) was
+// already one action away from overflowing the old hardcoded 9 before
+// MENU_ACTION_ACHIEVEMENTS made that concretely reachable.
+EWRAM_DATA static u8 sCurrentStartMenuActions[NUM_MENU_ACTIONS] = {0};
 EWRAM_DATA static s8 sInitStartMenuData[2] = {0};
 
 EWRAM_DATA static u8 (*sSaveDialogCallback)(void) = NULL;
@@ -123,6 +131,7 @@ static bool8 StartMenuStatEditorCallback(void);
 static bool8 StartMenuDebugCallback(void);
 static bool8 StartMenuDexNavCallback(void);
 static bool8 StartMenuChangeTimeCallback(void);
+static bool8 StartMenuAchievementsCallback(void);
 
 // Menu callbacks
 static bool8 SaveStartCallback(void);
@@ -155,6 +164,7 @@ static void SaveGameTask(u8 taskId);
 static void Task_SaveAfterLinkBattle(u8 taskId);
 static void Task_WaitForBattleTowerLinkSave(u8 taskId);
 static bool8 FieldCB_ReturnToFieldStartMenu(void);
+static void Task_OpenAchievementsFromStartMenu(u8 taskId);
 
 static const struct WindowTemplate sWindowTemplate_SafariBalls = {
     .bg = 0,
@@ -202,6 +212,7 @@ static const u8 sText_MenuDebug[] = _("DEBUG");
 static const u8 sText_StatEditor[] = _("STAT EDITOR");
 static const u8 sText_MenuTime[] = _("SET TIME");
 static const u8 sText_MenuNewGamePlus[] = _("NEW GAME+");
+static const u8 sText_Achievements[] = _("ACHIEVEMENTS");
 
 static const struct MenuAction sStartMenuItems[] =
 {
@@ -223,6 +234,7 @@ static const struct MenuAction sStartMenuItems[] =
     [MENU_ACTION_DEBUG]           = {sText_MenuDebug,       {.u8_void = StartMenuDebugCallback}},
     [MENU_ACTION_DEXNAV]          = {gText_MenuDexNav,      {.u8_void = StartMenuDexNavCallback}},
     [MENU_ACTION_CHANGE_TIME]     = {sText_MenuTime,        {.u8_void = StartMenuChangeTimeCallback}},
+    [MENU_ACTION_ACHIEVEMENTS]    = {sText_Achievements,    {.u8_void = StartMenuAchievementsCallback}},
 };
 
 static const struct BgTemplate sBgTemplates_LinkBattleSave[] =
@@ -371,6 +383,7 @@ static void BuildNormalStartMenu(void)
     }
 
     AddStartMenuAction(MENU_ACTION_OPTION);
+    AddStartMenuAction(MENU_ACTION_ACHIEVEMENTS);
 
     if (FlagGet(FLAG_BEAT_CHAMPION_CHALLENGER_9) == TRUE)
     {
@@ -1602,6 +1615,28 @@ static bool8 StartMenuDexNavCallback(void)
 {
     CreateTask(Task_OpenDexNavFromStartMenu, 0);
     return TRUE;
+}
+
+static bool8 StartMenuAchievementsCallback(void)
+{
+    CreateTask(Task_OpenAchievementsFromStartMenu, 0);
+    return TRUE;
+}
+
+// CB2_InitAchievementsMenu (unlike StatEditor_Init/DexNav's equivalents) takes
+// no return-callback parameter -- it follows this fork's own convention of
+// reading gMain.savedCallback instead (see src/achievements_menu.c, and
+// CB2_InitNewGameSettingsMenu's callers for the same pattern), so that has to
+// be set here before the CB2 swap.
+static void Task_OpenAchievementsFromStartMenu(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        CleanupOverworldWindowsAndTilemaps();
+        gMain.savedCallback = CB2_ReturnToFieldWithOpenMenu;
+        SetMainCallback2(CB2_InitAchievementsMenu);
+        DestroyTask(taskId);
+    }
 }
 
 void Script_ForceSaveGame(struct ScriptContext *ctx)
