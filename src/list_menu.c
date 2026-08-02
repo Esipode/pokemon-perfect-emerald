@@ -476,6 +476,23 @@ void RedrawListMenu(u8 listTaskId)
     CopyWindowToVram(list->template.windowId, COPYWIN_GFX);
 }
 
+// Same repaint RedrawListMenu does, minus the ListMenuCallSelectionChangedCallback
+// call -- for callers whose moveCursorFunc needs to force every visible row to
+// redraw itself (e.g. a selected-row text/colour highlight that only
+// itemPrintFunc knows how to draw, not the cursor). ListMenuChangeSelectionFull
+// only calls ListMenuDrawCursor on a same-page move (see its case 1), which is
+// a no-op for CURSOR_INVISIBLE, so nothing else re-prints the rows when the
+// selection changes without scrolling -- a plain RedrawListMenu call from
+// inside moveCursorFunc would recurse back into the same callback forever,
+// since it re-invokes ListMenuCallSelectionChangedCallback itself.
+void ListMenuRepaintItems(struct ListMenu *list)
+{
+    FillWindowPixelBuffer(list->template.windowId, PIXEL_FILL(list->template.fillValue));
+    ListMenuPrintEntries(list, list->scrollOffset, 0, list->template.maxShowed);
+    ListMenuDrawCursor(list);
+    CopyWindowToVram(list->template.windowId, COPYWIN_GFX);
+}
+
 // unused
 void ChangeListMenuPals(u8 listTaskId, u8 cursorPal, u8 fillValue, u8 cursorShadowPal)
 {

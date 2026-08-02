@@ -136,6 +136,7 @@ u8 ListMenuInitInRect(struct ListMenuTemplate *listMenuTemplate, struct ListMenu
 s32 ListMenu_ProcessInput(u8 listTaskId);
 void DestroyListMenuTask(u8 listTaskId, u16 *scrollOffset, u16 *selectedRow);
 void RedrawListMenu(u8 listTaskId);
+void ListMenuRepaintItems(struct ListMenu *list);
 void ChangeListMenuPals(u8 listTaskId, u8 cursorPal, u8 fillValue, u8 cursorShadowPal);
 void ChangeListMenuCoords(u8 listTaskId, u8 x, u8 y);
 s32 ListMenuTestInput(struct ListMenuTemplate *template, u32 scrollOffset, u32 selectedRow, u16 keys, u16 *newScrollOffset, u16 *newSelectedRow);
