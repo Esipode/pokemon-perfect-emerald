@@ -311,6 +311,47 @@ u8 AchievementBoost_GetLevel(u16 boostId)
     return gAchievementProfile.boostLevels[boostId];
 }
 
+u8 AchievementBoost_GetActiveLevel(u16 boostId)
+{
+    u8 owned = AchievementBoost_GetLevel(boostId);
+    u8 reduction;
+
+    if (boostId >= MAX_BOOSTS)
+        return 0;
+
+    // A reduction >= owned (e.g. a debug tool dropping the purchased level
+    // below what was previously dialed back) means fully off, not a
+    // wrapped-around active level.
+    reduction = gAchievementProfile.boostLevelReduction[boostId];
+    if (reduction >= owned)
+        return 0;
+
+    return owned - reduction;
+}
+
+bool8 AchievementBoost_TryChangeActiveLevel(u16 boostId, s8 delta)
+{
+    u8 owned;
+    s16 newActive;
+
+    if (boostId >= MAX_BOOSTS)
+        return FALSE;
+
+    owned = AchievementBoost_GetLevel(boostId);
+    if (owned == 0)
+        return FALSE;
+
+    newActive = (s16)AchievementBoost_GetActiveLevel(boostId) + delta;
+    if (newActive < 0 || newActive > owned)
+        return FALSE;
+
+    gAchievementProfile.boostLevelReduction[boostId] = owned - (u8)newActive;
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
+
+    return TRUE;
+}
+
 const struct AchievementBoost *AchievementBoost_GetInfo(u16 boostId)
 {
     if (boostId >= BOOSTS_COUNT)
@@ -411,6 +452,7 @@ bool8 AchievementBoost_Reset(void)
 
     gAchievementProfile.pointsInvested = 0;
     memset(gAchievementProfile.boostLevels, 0, sizeof(gAchievementProfile.boostLevels));
+    memset(gAchievementProfile.boostLevelReduction, 0, sizeof(gAchievementProfile.boostLevelReduction));
     RemoveMoney(&gSaveBlock1Ptr->money, ACHIEVEMENT_BOOST_RESET_FEE);
     gAchievementProfile.boostResets++;
     sAchievementProfileDirty = TRUE;
@@ -433,7 +475,7 @@ u32 AchievementBoost_ApplyExp(u32 expValue)
     if (!gAchievementProfile.boostsEnabled)
         return expValue;
 
-    level = AchievementBoost_GetLevel(BOOST_EXP_GAIN);
+    level = AchievementBoost_GetActiveLevel(BOOST_EXP_GAIN);
     if (level == 0)
         return expValue;
 
@@ -451,7 +493,7 @@ u32 AchievementBoost_ExtraShinyRerolls(void)
     if (!gAchievementProfile.boostsEnabled)
         return 0;
 
-    level = AchievementBoost_GetLevel(BOOST_SHINY_CHANCE);
+    level = AchievementBoost_GetActiveLevel(BOOST_SHINY_CHANCE);
     if (level == 0)
         return 0;
 
@@ -466,7 +508,7 @@ u32 AchievementBoost_ApplyCatchOdds(u32 odds)
     if (!gAchievementProfile.boostsEnabled)
         return odds;
 
-    level = AchievementBoost_GetLevel(BOOST_CATCH_RATE);
+    level = AchievementBoost_GetActiveLevel(BOOST_CATCH_RATE);
     if (level == 0)
         return odds;
 
@@ -482,7 +524,7 @@ u32 AchievementBoost_ApplyMoneyReward(u32 money)
     if (!gAchievementProfile.boostsEnabled)
         return money;
 
-    level = AchievementBoost_GetLevel(BOOST_MONEY_GAIN);
+    level = AchievementBoost_GetActiveLevel(BOOST_MONEY_GAIN);
     if (level == 0)
         return money;
 
@@ -497,7 +539,7 @@ u8 AchievementBoost_ApplyEggCyclesToSubtract(u8 toSub)
     if (!gAchievementProfile.boostsEnabled)
         return toSub;
 
-    level = AchievementBoost_GetLevel(BOOST_EGG_HATCH_SPEED);
+    level = AchievementBoost_GetActiveLevel(BOOST_EGG_HATCH_SPEED);
     if (level == 0)
         return toSub;
 
@@ -512,7 +554,7 @@ s32 AchievementBoost_ApplyFriendshipGain(s32 bonus)
     if (bonus <= 0 || !gAchievementProfile.boostsEnabled)
         return bonus;
 
-    level = AchievementBoost_GetLevel(BOOST_FRIENDSHIP_GAIN);
+    level = AchievementBoost_GetActiveLevel(BOOST_FRIENDSHIP_GAIN);
     if (level == 0)
         return bonus;
 
@@ -528,7 +570,7 @@ bool8 AchievementBoost_ShouldRoamerSeekPlayer(void)
     if (!gAchievementProfile.boostsEnabled)
         return FALSE;
 
-    level = AchievementBoost_GetLevel(BOOST_LEGENDARY_ENCOUNTER);
+    level = AchievementBoost_GetActiveLevel(BOOST_LEGENDARY_ENCOUNTER);
     if (level == 0)
         return FALSE;
 
@@ -553,7 +595,7 @@ bool8 AchievementBoost_ShouldRoamerSeekPlayer(void)
 // is the whole effect, so there's no effects[] value to look up.
 static bool8 IsBinaryBoostActive(u16 boostId)
 {
-    return gAchievementProfile.boostsEnabled && AchievementBoost_GetLevel(boostId) != 0;
+    return gAchievementProfile.boostsEnabled && AchievementBoost_GetActiveLevel(boostId) != 0;
 }
 
 static u32 GetBoostEffectValue(u16 boostId)
@@ -563,7 +605,7 @@ static u32 GetBoostEffectValue(u16 boostId)
     if (!gAchievementProfile.boostsEnabled)
         return 0;
 
-    level = AchievementBoost_GetLevel(boostId);
+    level = AchievementBoost_GetActiveLevel(boostId);
     if (level == 0)
         return 0;
 
@@ -881,6 +923,7 @@ void AchievementBoost_DebugSetLevel(u16 boostId, u8 level)
 void AchievementBoost_DebugReset(void)
 {
     memset(gAchievementProfile.boostLevels, 0, sizeof(gAchievementProfile.boostLevels));
+    memset(gAchievementProfile.boostLevelReduction, 0, sizeof(gAchievementProfile.boostLevelReduction));
     gAchievementProfile.pointsInvested = 0;
     sAchievementProfileDirty = TRUE;
 }

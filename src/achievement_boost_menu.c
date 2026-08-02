@@ -29,7 +29,12 @@
 // Unlike achievements_menu.c there's no tier grouping here: BOOSTS_COUNT is
 // small and boosts aren't tiered, so this is a single flat list rather than
 // a tier -> list -> detail flow. [A] on a row attempts to purchase that
-// boost's next level directly; there's no separate confirmation screen.
+// boost's next level directly; there's no separate confirmation screen. Once
+// a boost is owned, [A] on a binary one instead flips it on/off, and L/R on
+// a leveled one dials its *active* level up/down without spending or
+// refunding anything (see AchievementBoost_GetActiveLevel/
+// _TryChangeActiveLevel in src/achievements.c and
+// TryPurchaseOrToggleBoost/TryChangeHighlightedBoostActiveLevel below).
 //
 // Reached from src/achievements_menu.c's TIER SELECT level via a "BOOSTS"
 // row appended when Achievement_BoostsUnlocked() && Achievement_BoostsEnabled()
@@ -74,8 +79,9 @@ enum
 
 #define TAG_BOOST_MENU_SCROLL_ARROWS 6002
 
-// Two right-aligned columns on each list row: the boost's current level, then
-// what its next level costs. Names top out around 100px from item_X 8
+// Two right-aligned columns on each list row: the boost's current level (a
+// lock icon or ON/OFF for a binary boost -- see BoostMenu_ItemPrintCallback),
+// then what its next level costs. Names top out around 100px from item_X 8
 // ("Legendary Encounter", the longest in the catalog), so neither column
 // collides with them.
 #define BOOST_MENU_LEVEL_RIGHT_X  152
@@ -118,6 +124,8 @@ static void Task_BoostMenu_ProcessInput(u8 taskId);
 static void EnterBoostMenuLevel(u8 taskId);
 static void DestroyCurrentBoostList(u8 taskId);
 static void TryPurchaseBoost(u8 taskId, u16 boostId);
+static void TryPurchaseOrToggleBoost(u8 taskId, u16 boostId);
+static void TryChangeHighlightedBoostActiveLevel(void);
 static void BoostMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list);
 static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y);
 static void BuildBoostMenuListItems(void);
@@ -143,8 +151,8 @@ static void PrintResetConfirmText(void);
 
 static const u8 sText_BoostMenuTitle[]  = _("ACHIEVEMENT BOOSTS");
 static const u8 sText_ControlHint[]     = _("{B_BUTTON}BACK");
-static const u8 sText_BoostLocked[]     = _("LOCKED");
-static const u8 sText_BoostOwned[]      = _("OWNED");
+static const u8 sText_BoostOn[]         = _("ON");
+static const u8 sText_BoostOff[]        = _("OFF");
 static const u8 sText_BoostMax[]        = _("MAX");
 static const u8 sText_BoostLevelSep[]   = _("/");
 
@@ -152,8 +160,19 @@ static const u8 sText_BoostLevelSep[]   = _("/");
 // in the header, where it stays visible whatever row is highlighted (see
 // DrawHeaderText). The points icon takes the place of naming the unit.
 static const u8 sText_BoostCostFormat[]      = _("Cost: {STR_VAR_1}");
-static const u8 sText_BoostMaxLevelStatus[]  = _("Status: Max level reached");
-static const u8 sText_BoostOwnedStatus[]     = _("Status: Already unlocked");
+
+// A boost's *active* level (AchievementBoost_GetActiveLevel) can sit below
+// what's actually been purchased -- the boost menu's dpad L/R dials it there
+// (see AchievementBoost_TryChangeActiveLevel) -- so once anything is owned,
+// the status line always leads with where the active level stands relative
+// to the purchased one, whether or not there's still a next level to buy.
+static const u8 sText_BoostLevelCostFormat[] = _("Status: Lv {STR_VAR_1}/{STR_VAR_2} Cost: {STR_VAR_3}");
+static const u8 sText_BoostLevelMaxFormat[]  = _("Status: Lv {STR_VAR_1}/{STR_VAR_2} (MAX)");
+
+// A binary boost (maxLevel 1) has no level to dial -- just the one on/off
+// switch, [A] on an owned row (see Task_BoostMenu_ProcessInput).
+static const u8 sText_BoostToggleOnStatus[]  = _("Status: ON ({A_BUTTON} to turn off)");
+static const u8 sText_BoostToggleOffStatus[] = _("Status: OFF ({A_BUTTON} to turn on)");
 static const u8 sText_BoostSystemLockedStatus[] = _("Status: Boosts are locked");
 
 // Stage 11: the synthetic "RESET BOOSTS" row and its confirmation sub-flow.
@@ -316,7 +335,7 @@ void CB2_InitAchievementBoostMenu(void)
         // Must follow the LoadPalette above, not precede it -- this appends
         // the points icon's colours to that same palette's unused high
         // entries (src/achievement_icons.c).
-        AchievementIcons_LoadPointsIcon(1);
+        AchievementIcons_Load(1);
         gMain.state++;
         break;
     case 6:
@@ -413,6 +432,10 @@ static void Task_BoostMenu_ProcessInput(u8 taskId)
     switch (itemId)
     {
     case LIST_NOTHING_CHOSEN:
+        // Neither an item selection nor a cursor move -- the only other
+        // input this screen reacts to is L/R dialing the highlighted
+        // leveled boost's active level.
+        TryChangeHighlightedBoostActiveLevel();
         break;
     case LIST_CANCEL:
         PlaySE(SE_SELECT);
@@ -423,8 +446,77 @@ static void Task_BoostMenu_ProcessInput(u8 taskId)
         TryResetBoosts(taskId);
         break;
     default:
-        TryPurchaseBoost(taskId, itemId);
+        TryPurchaseOrToggleBoost(taskId, itemId);
         break;
+    }
+}
+
+// [A] on a real boost row. A binary boost (maxLevel 1) has no next level to
+// buy once it's owned -- there's only the one copy of its effect -- so [A]
+// there instead flips AchievementBoost_GetActiveLevel between 0 and 1 (see
+// PrintBoostStatus/BoostMenu_ItemPrintCallback's ON/OFF). Everything else,
+// including a not-yet-owned binary boost, still goes through the purchase
+// path below unchanged.
+static void TryPurchaseOrToggleBoost(u8 taskId, u16 boostId)
+{
+    const struct AchievementBoost *info = AchievementBoost_GetInfo(boostId);
+
+    if (info->type == BOOST_TYPE_BINARY && AchievementBoost_GetLevel(boostId) > 0)
+    {
+        s8 delta = (AchievementBoost_GetActiveLevel(boostId) != 0) ? -1 : 1;
+
+        // The ON/OFF column lives in the list row itself (unlike a leveled
+        // boost's active level, which only ever shows in the status line),
+        // so this needs the same full list rebuild a purchase does, not just
+        // a PrintBoostStatus refresh.
+        if (AchievementBoost_TryChangeActiveLevel(boostId, delta))
+        {
+            PlaySE(SE_SELECT);
+            DestroyCurrentBoostList(taskId);
+            EnterBoostMenuLevel(taskId);
+        }
+        else
+        {
+            PlaySE(SE_FAILURE);
+        }
+        return;
+    }
+
+    TryPurchaseBoost(taskId, boostId);
+}
+
+// L/R dpad: dials the highlighted leveled boost's active level up or down
+// (AchievementBoost_TryChangeActiveLevel) without touching what's been
+// purchased. A no-op on the reset row and on binary boosts, which use [A]
+// instead (see TryPurchaseOrToggleBoost above). Unlike a purchase or a
+// binary toggle, dialing a leveled boost's active level never changes what a
+// list row shows -- only PrintBoostStatus's status line does -- so this is a
+// plain status-line refresh rather than a list rebuild.
+static void TryChangeHighlightedBoostActiveLevel(void)
+{
+    u16 boostId = sBoostMenuListItems[sBoostMenu.scrollOffset + sBoostMenu.selectedRow].id;
+    s8 delta;
+
+    if (boostId == BOOST_MENU_ITEM_RESET)
+        return;
+    if (AchievementBoost_GetInfo(boostId)->type == BOOST_TYPE_BINARY)
+        return;
+
+    if (JOY_NEW(DPAD_LEFT))
+        delta = -1;
+    else if (JOY_NEW(DPAD_RIGHT))
+        delta = 1;
+    else
+        return;
+
+    if (AchievementBoost_TryChangeActiveLevel(boostId, delta))
+    {
+        PlaySE(SE_SELECT);
+        PrintBoostStatus(boostId);
+    }
+    else
+    {
+        PlaySE(SE_FAILURE);
     }
 }
 
@@ -488,11 +580,26 @@ static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y)
     info = AchievementBoost_GetInfo(boostId);
     level = AchievementBoost_GetLevel(boostId);
 
+    // Binary boosts (maxLevel 1) have no level/cost columns of their own --
+    // a lock icon in place of the word "LOCKED" while unpurchased, then
+    // ON/OFF once owned, reflecting the active toggle (not just ownership) so
+    // the row matches whatever PrintBoostStatus's [A]-toggle hint says.
     if (info->type == BOOST_TYPE_BINARY)
     {
-        StringCopy(gStringVar4, level > 0 ? sText_BoostOwned : sText_BoostLocked);
+        if (level == 0)
+        {
+            AchievementIcons_Blit(ACHIEVEMENT_ICON_LOCK, windowId, BOOST_MENU_LEVEL_RIGHT_X - ACHIEVEMENT_ICON_SIZE, ACHIEVEMENT_ICON_Y(y));
+        }
+        else
+        {
+            StringCopy(gStringVar4, AchievementBoost_GetActiveLevel(boostId) != 0 ? sText_BoostOn : sText_BoostOff);
+            width = GetStringWidth(FONT_NORMAL, gStringVar4, 0);
+            AddTextPrinterParameterized(windowId, FONT_NORMAL, gStringVar4, BOOST_MENU_LEVEL_RIGHT_X - width, y, TEXT_SKIP_DRAW, NULL);
+        }
+        return;
     }
-    else if (level >= info->maxLevel)
+
+    if (level >= info->maxLevel)
     {
         StringCopy(gStringVar4, sText_BoostMax);
     }
@@ -573,8 +680,8 @@ static s32 PrintBoostLineText(const u8 *text, s32 x, u8 y)
 
 static s32 BlitBoostLinePointsIcon(s32 x, u8 y)
 {
-    AchievementIcons_BlitPointsIcon(WIN_DESCRIPTION, x, ACHIEVEMENT_POINTS_ICON_Y(y));
-    return x + ACHIEVEMENT_POINTS_ICON_SIZE + 4;
+    AchievementIcons_Blit(ACHIEVEMENT_ICON_POINTS, WIN_DESCRIPTION, x, ACHIEVEMENT_ICON_Y(y));
+    return x + ACHIEVEMENT_ICON_SIZE + 4;
 }
 
 static void PrintBoostStatus(s32 boostId)
@@ -638,14 +745,36 @@ static void PrintBoostStatus(s32 boostId)
         }
         else if (info->type == BOOST_TYPE_BINARY && level > 0)
         {
-            PrintBoostLineText(sText_BoostOwnedStatus, 8, BOOST_MENU_STATUS_Y);
+            // Owned: [A] no longer purchases (there's no level 2 of a binary
+            // boost), it flips AchievementBoost_GetActiveLevel between 0 and
+            // 1 -- see Task_BoostMenu_ProcessInput.
+            PrintBoostLineText(AchievementBoost_GetActiveLevel(boostId) != 0 ? sText_BoostToggleOnStatus : sText_BoostToggleOffStatus, 8, BOOST_MENU_STATUS_Y);
         }
-        else if (level >= info->maxLevel)
+        else if (level > 0 && level >= info->maxLevel)
         {
-            PrintBoostLineText(sText_BoostMaxLevelStatus, 8, BOOST_MENU_STATUS_Y);
+            // Leveled and maxed: still worth showing where the active level
+            // stands -- AchievementBoost_TryChangeActiveLevel can dial a
+            // maxed boost back just as freely as a partially-purchased one.
+            ConvertIntToDecimalStringN(gStringVar1, AchievementBoost_GetActiveLevel(boostId), STR_CONV_MODE_LEFT_ALIGN, 2);
+            ConvertIntToDecimalStringN(gStringVar2, level, STR_CONV_MODE_LEFT_ALIGN, 2);
+            StringExpandPlaceholders(statusBuf, sText_BoostLevelMaxFormat);
+            PrintBoostLineText(statusBuf, 8, BOOST_MENU_STATUS_Y);
+        }
+        else if (level > 0)
+        {
+            // Leveled, owned but not maxed: the active level shares the line
+            // with what the next purchase would cost.
+            ConvertIntToDecimalStringN(gStringVar1, AchievementBoost_GetActiveLevel(boostId), STR_CONV_MODE_LEFT_ALIGN, 2);
+            ConvertIntToDecimalStringN(gStringVar2, level, STR_CONV_MODE_LEFT_ALIGN, 2);
+            ConvertIntToDecimalStringN(gStringVar3, info->costs[level], STR_CONV_MODE_LEFT_ALIGN, 6);
+            StringExpandPlaceholders(statusBuf, sText_BoostLevelCostFormat);
+            BlitBoostLinePointsIcon(PrintBoostLineText(statusBuf, 8, BOOST_MENU_STATUS_Y), BOOST_MENU_STATUS_Y);
         }
         else
         {
+            // Nothing purchased yet (true of every binary boost still
+            // locked, and a leveled boost at level 0) -- nothing to dial,
+            // just the entry cost.
             ConvertIntToDecimalStringN(gStringVar1, info->costs[level], STR_CONV_MODE_LEFT_ALIGN, 6);
             StringExpandPlaceholders(statusBuf, sText_BoostCostFormat);
             BlitBoostLinePointsIcon(PrintBoostLineText(statusBuf, 8, BOOST_MENU_STATUS_Y), BOOST_MENU_STATUS_Y);
@@ -797,7 +926,7 @@ static void DrawHeaderText(void)
 
     FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, sText_BoostMenuTitle, 8, 1, TEXT_SKIP_DRAW, NULL);
-    AchievementIcons_BlitPointsIcon(WIN_HEADER, pointsX - ACHIEVEMENT_POINTS_ICON_SIZE, ACHIEVEMENT_POINTS_ICON_Y(1));
+    AchievementIcons_Blit(ACHIEVEMENT_ICON_POINTS, WIN_HEADER, pointsX - ACHIEVEMENT_ICON_SIZE, ACHIEVEMENT_ICON_Y(1));
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, gStringVar1, pointsX, 1, TEXT_SKIP_DRAW, NULL);
     AddTextPrinterParameterized(WIN_HEADER, FONT_NARROW, sText_ControlHint, hintX, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);

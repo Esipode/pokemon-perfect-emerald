@@ -76,7 +76,21 @@ struct AchievementProfile
     u16 shiniesObtained;
     u16 boostResets;
 
-    u8  reserved[64];             // forward compatibility
+    // Boost menu polish: how many purchased levels below boostLevels[i] that
+    // boost's *active* effect is currently dialed back to (0 = fully active
+    // at the purchased level). Deliberately placed here, at the front of what
+    // used to be reserved[64] rather than inserted earlier in the struct: it
+    // lands on bytes that were always zero in a profile saved before this
+    // field existed, so every field before it keeps its old offset and old
+    // saves aren't misread. (An earlier version of this field sat between
+    // boostLevels and boostsUnlocked, which shifted every later field's
+    // offset and made boostsUnlocked read as FALSE on old saves despite the
+    // player having actually unlocked boosts -- don't repeat that mistake.)
+    // Binary boosts (maxLevel 1) only ever use 0 or 1, i.e. on/off. See
+    // AchievementBoost_GetActiveLevel/_TryChangeActiveLevel below.
+    u8  boostLevelReduction[MAX_BOOSTS];
+
+    u8  reserved[32];             // forward compatibility
 };
 
 extern struct AchievementProfile gAchievementProfile;
@@ -112,6 +126,25 @@ bool8 Achievement_BoostsEnabled(void);
 void  Achievement_SetBoostsEnabled(bool8 enabled);
 
 u8    AchievementBoost_GetLevel(u16 boostId);
+
+// The level a boost's effect is currently dialed to, distinct from
+// AchievementBoost_GetLevel's *purchased* level -- always between 0 and the
+// purchased level, inclusive. Every AchievementBoost_Apply*/Get*Percent/Has*
+// effect function reads this, not the purchased level, so dialing a boost
+// back (or a binary boost off) takes effect immediately without touching
+// what was actually bought. Purchasing a new level leaves this unchanged
+// relative to the top of the purchased range (see
+// AchievementBoost_TryChangeActiveLevel), so it comes in already active.
+u8    AchievementBoost_GetActiveLevel(u16 boostId);
+
+// Boost menu (Stage 7 UI polish): moves the active level by delta, clamped to
+// [0, purchased level] -- refuses (returns FALSE, no state change) if delta
+// would go outside that range, including on a boost with nothing purchased
+// yet. The boost menu's dpad L/R calls this with delta = -1/+1 to dial a
+// leveled boost's active level; its [A] toggle on an already-owned binary
+// boost (maxLevel 1) calls it with delta = -1 or +1 to flip between the only
+// two levels that exist, 0 (off) and 1 (on).
+bool8 AchievementBoost_TryChangeActiveLevel(u16 boostId, s8 delta);
 
 // gAchievementBoosts[] (src/data/achievement_boosts.h) is only ever included
 // from src/achievements.c -- mirrors Achievement_GetInfo above. Returns the
