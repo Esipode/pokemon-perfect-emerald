@@ -2,6 +2,7 @@
 #include "achievements.h"
 #include "achievements_menu.h"
 #include "achievement_boost_menu.h"
+#include "achievement_icons.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
@@ -186,8 +187,12 @@ static const u8 sText_BoostsMenuRowLabel[]  = _("BOOSTS");
 // and TierSelect_ItemPrintCallback/Task_TierSelect_ProcessInput both check
 // for it before treating an itemId as a tier.
 #define TIER_SELECT_ITEM_BOOSTS ACHIEVEMENT_TIER_COUNT
-static const u8 sText_PointsSummaryFormat[] = _("Points: {STR_VAR_1} ({STR_VAR_2} free)");
-static const u8 sText_RewardFormat[]        = _("Reward: {STR_VAR_1} Points");
+// Both of these used to spell out "Points"/"Points:"; the points icon now
+// stands in for the word, blitted next to the figure it belongs to (see
+// PrintPointsSummary and EnterDetailLevel), so the strings themselves carry
+// only what the icon can't say.
+static const u8 sText_PointsSummaryFormat[] = _("{STR_VAR_1} ({STR_VAR_2} free)");
+static const u8 sText_RewardFormat[]        = _("Reward: {STR_VAR_1}");
 static const u8 sText_StatusCompleted[]     = _("Status: Completed");
 static const u8 sText_StatusIncomplete[]    = _("Status: Not completed");
 
@@ -324,6 +329,10 @@ void CB2_InitAchievementsMenu(void)
         break;
     case 5:
         LoadPalette(sAchievementsMenuText_Pal, BG_PLTT_ID(1), sizeof(sAchievementsMenuText_Pal));
+        // Must follow the LoadPalette above, not precede it -- this appends
+        // the points icon's colours to that same palette's unused high
+        // entries (src/achievement_icons.c).
+        AchievementIcons_LoadPointsIcon(1);
         gMain.state++;
         break;
     case 6:
@@ -530,7 +539,10 @@ static void PrintPointsSummary(void)
     StringExpandPlaceholders(gStringVar4, sText_PointsSummaryFormat);
 
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
-    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
+    // Icon first, then the figures indented past it -- it reads as a label for
+    // the line, which is what the "Points:" it replaced was.
+    AchievementIcons_BlitPointsIcon(WIN_DESCRIPTION, 8, ACHIEVEMENT_POINTS_ICON_Y(1));
+    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8 + ACHIEVEMENT_POINTS_ICON_SIZE + 2, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
 
@@ -705,6 +717,10 @@ static void EnterDetailLevel(u8 taskId, u16 achievementId)
 
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
     AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
+    // Trails the figure, where the word "Points" used to. Measured off the
+    // expanded string rather than a fixed offset, since the point value's
+    // digit count varies.
+    AchievementIcons_BlitPointsIcon(WIN_DESCRIPTION, 8 + GetStringWidth(FONT_NORMAL, gStringVar4, 0) + 2, ACHIEVEMENT_POINTS_ICON_Y(1));
     AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, completed ? sText_StatusCompleted : sText_StatusIncomplete, 8, 17, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }

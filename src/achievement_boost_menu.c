@@ -1,6 +1,7 @@
 #include "global.h"
 #include "achievements.h"
 #include "achievement_boost_menu.h"
+#include "achievement_icons.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
@@ -51,7 +52,15 @@ enum
     WIN_DESCRIPTION,
 };
 
-#define BOOST_MENU_MAX_SHOWED 4
+// Three rows rather than four (bug, reported after initial delivery): the
+// description window used to be 4 tiles (32px), which is two lines of
+// FONT_NORMAL, and PrintBoostStatus appended the status line after the
+// description. Any boost whose description wrapped to two lines pushed that
+// status onto a third line the window had no room for, so its cost simply
+// wasn't drawn -- which is most of the catalog. Giving the description window
+// a third line (see sBoostMenuWinTemplates) means the status always has a line
+// of its own, and the tile row for it comes from the list.
+#define BOOST_MENU_MAX_SHOWED 3
 
 // Stage 11: a synthetic row appended after the real boosts, same "one past
 // the last real enum value" trick src/achievements_menu.c uses for its own
@@ -65,10 +74,22 @@ enum
 
 #define TAG_BOOST_MENU_SCROLL_ARROWS 6002
 
-#define BOOST_MENU_POINTS_RIGHT_X 190
+// Two right-aligned columns on each list row: the boost's current level, then
+// what its next level costs. Names top out around 100px from item_X 8
+// ("Legendary Encounter", the longest in the catalog), so neither column
+// collides with them.
+#define BOOST_MENU_LEVEL_RIGHT_X  152
+#define BOOST_MENU_COST_RIGHT_X   190
+
+// Third text line of the description window, at a fixed y rather than
+// wherever the description above it happened to stop. See PrintBoostStatus.
+#define BOOST_MENU_STATUS_Y 33
+
 #define BOOST_MENU_ARROW_X        200
 #define BOOST_MENU_ARROW_TOP_Y    36
-#define BOOST_MENU_ARROW_BOTTOM_Y 100
+// Follows the shortened list window (tile rows 5-10, so pixel rows 40-88)
+// rather than the 4-row one it used to sit under.
+#define BOOST_MENU_ARROW_BOTTOM_Y 92
 
 // WIN_DESCRIPTION is 26 tiles (208px) wide, text starts at x=8 --
 // AddTextPrinterParameterized never clips or wraps on its own (same
@@ -100,6 +121,9 @@ static void TryPurchaseBoost(u8 taskId, u16 boostId);
 static void BoostMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list);
 static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y);
 static void BuildBoostMenuListItems(void);
+static void PrintBoostDescription(const u8 *description);
+static s32 PrintBoostLineText(const u8 *text, s32 x, u8 y);
+static s32 BlitBoostLinePointsIcon(s32 x, u8 y);
 static void PrintBoostStatus(s32 boostId);
 static void DrawHeaderText(void);
 static void DrawBgWindowFrames(void);
@@ -124,24 +148,26 @@ static const u8 sText_BoostOwned[]      = _("OWNED");
 static const u8 sText_BoostMax[]        = _("MAX");
 static const u8 sText_BoostLevelSep[]   = _("/");
 
-static const u8 sText_BoostCostFormat[]      = _("Cost: {STR_VAR_1} (have {STR_VAR_2})");
+// No "(have N)" any more -- the balance it used to tail every cost with is now
+// in the header, where it stays visible whatever row is highlighted (see
+// DrawHeaderText). The points icon takes the place of naming the unit.
+static const u8 sText_BoostCostFormat[]      = _("Cost: {STR_VAR_1}");
 static const u8 sText_BoostMaxLevelStatus[]  = _("Status: Max level reached");
 static const u8 sText_BoostOwnedStatus[]     = _("Status: Already unlocked");
 static const u8 sText_BoostSystemLockedStatus[] = _("Status: Boosts are locked");
-// The status line's Y position always follows wherever the (possibly
-// wrapped, possibly multi-line) description ends, rather than a hardcoded
-// y=17 -- combining them into one printer call with an embedded "\n" lets
-// the text engine's own CHAR_NEWLINE handling (src/text.c) place it
-// correctly instead of this file guessing at line-height math.
-static const u8 sText_BoostDescriptionAndStatusFormat[] = _("{STR_VAR_1}\n{STR_VAR_2}");
 
 // Stage 11: the synthetic "RESET BOOSTS" row and its confirmation sub-flow.
+// The two figures that used to be suffixed "pts" are drawn with the points
+// icon instead, which is why the refund and the fee are separate strings now
+// rather than one format -- the icon goes between them.
 static const u8 sText_ResetBoostsRowLabel[]       = _("RESET BOOSTS");
 static const u8 sText_ResetBoostsDescription[]    = _("Refunds all points spent on boosts, for a fee.");
 static const u8 sText_ResetNothingStatus[]        = _("Status: Nothing to reset");
 static const u8 sText_ResetCantAffordStatus[]     = _("Status: Not enough money");
-static const u8 sText_ResetCostFormat[]           = _("Refund: {STR_VAR_1} pts (Fee: ¥{STR_VAR_2})");
-static const u8 sText_ResetConfirmFormat[]        = _("Refund: {STR_VAR_1} pts\nFee: ¥{STR_VAR_2}\nNew total: {STR_VAR_3} pts\nReset all boosts?");
+static const u8 sText_ResetRefundFormat[]         = _("Refund: {STR_VAR_1}");
+static const u8 sText_ResetFeeFormat[]            = _("Fee: ¥{STR_VAR_1}");
+static const u8 sText_ResetNewTotalFormat[]       = _("New total: {STR_VAR_1}");
+static const u8 sText_ResetConfirmQuestion[]      = _("Reset all boosts?");
 static const u8 sText_ResetConfirmYes[]           = _("YES");
 static const u8 sText_ResetConfirmNo[]            = _("NO");
 
@@ -168,23 +194,29 @@ static const struct WindowTemplate sBoostMenuWinTemplates[] =
         .paletteNum = 1,
         .baseBlock = 2
     },
+    // One tile row of the list was given to the description window (see
+    // BOOST_MENU_MAX_SHOWED): 6 tiles each, three lines apiece. Both windows'
+    // baseBlocks moved with that -- bg 0 and bg 1 share charBaseIndex 1, so
+    // these are allocated end to end from the header's, and the description
+    // window's old 0x106 plus its new 26x6 tiles would have run into the
+    // window frame tiles at 0x1A2 (see DrawBgWindowFrames).
     [WIN_LIST] = {
         .bg = 0,
         .tilemapLeft = 2,
         .tilemapTop = 5,
         .width = 26,
-        .height = 8,
+        .height = 6,
         .paletteNum = 1,
         .baseBlock = 0x36
     },
     [WIN_DESCRIPTION] = {
         .bg = 0,
         .tilemapLeft = 2,
-        .tilemapTop = 15,
+        .tilemapTop = 13,
         .width = 26,
-        .height = 4,
+        .height = 6,
         .paletteNum = 1,
-        .baseBlock = 0x106
+        .baseBlock = 0xD2
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -281,6 +313,10 @@ void CB2_InitAchievementBoostMenu(void)
         break;
     case 5:
         LoadPalette(sBoostMenuText_Pal, BG_PLTT_ID(1), sizeof(sBoostMenuText_Pal));
+        // Must follow the LoadPalette above, not precede it -- this appends
+        // the points icon's colours to that same palette's unused high
+        // entries (src/achievement_icons.c).
+        AchievementIcons_LoadPointsIcon(1);
         gMain.state++;
         break;
     case 6:
@@ -356,9 +392,9 @@ static void EnterBoostMenuLevel(u8 taskId)
     gTasks[taskId].tListTaskId = ListMenuInit(&template, sBoostMenu.scrollOffset, sBoostMenu.selectedRow);
     gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
         SCROLL_ARROW_UP, BOOST_MENU_ARROW_X, BOOST_MENU_ARROW_TOP_Y, BOOST_MENU_ARROW_BOTTOM_Y,
-        // Clamped rather than a bare subtraction: with only 2 test boosts
-        // (BOOST_MENU_ITEM_COUNT) against 4 visible rows
-        // (BOOST_MENU_MAX_SHOWED), the raw difference is negative. That gets
+        // Clamped rather than a bare subtraction: a catalog smaller than
+        // BOOST_MENU_MAX_SHOWED (as it was back when this file was written
+        // against 2 test boosts) makes the raw difference negative. That gets
         // stored into struct ScrollIndicatorPair's fullyDownThreshold, which
         // is a u16 (src/list_menu.c:29) -- a negative s32 truncates into a
         // huge unsigned threshold the real (always-0) scroll offset can never
@@ -468,7 +504,20 @@ static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y)
     }
 
     width = GetStringWidth(FONT_NORMAL, gStringVar4, 0);
-    AddTextPrinterParameterized(windowId, FONT_NORMAL, gStringVar4, BOOST_MENU_POINTS_RIGHT_X - width, y, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(windowId, FONT_NORMAL, gStringVar4, BOOST_MENU_LEVEL_RIGHT_X - width, y, TEXT_SKIP_DRAW, NULL);
+
+    // Second column: what this boost's next level costs. Previously a cost
+    // was only ever shown for the highlighted row, down in the description
+    // window, so the catalog couldn't be compared by price without stopping
+    // on every row -- and for most boosts it wasn't shown even then (see
+    // BOOST_MENU_MAX_SHOWED). Anything already maxed or owned has no next
+    // level to price, and its level column already says so.
+    if (level >= info->maxLevel)
+        return;
+
+    ConvertIntToDecimalStringN(gStringVar4, info->costs[level], STR_CONV_MODE_LEFT_ALIGN, 6);
+    width = GetStringWidth(FONT_NORMAL, gStringVar4, 0);
+    AddTextPrinterParameterized(windowId, FONT_NORMAL, gStringVar4, BOOST_MENU_COST_RIGHT_X - width, y, TEXT_SKIP_DRAW, NULL);
 }
 
 // Achievement completion (and therefore available points) can't change
@@ -496,25 +545,47 @@ static void BuildBoostMenuListItems(void)
     sBoostMenuListItems[index].id = BOOST_MENU_ITEM_RESET;
 }
 
-// Bug (reported after initial delivery): the description and status line
-// were two separate AddTextPrinterParameterized calls at fixed y=1/y=17.
-// AddTextPrinterParameterized doesn't clip or wrap on its own, so a
-// description wider than the window (the real test descriptions are) kept
-// drawing text past its right edge -- which, given how the window's tile
-// buffer is laid out, bled into the status line's tile memory and showed up
-// as the two overlapping. Fixed the same way src/achievement_popup.c already
-// handles achievement descriptions: StripLineBreaks + BreakStringAutomatic
-// to get clean, real line breaks, then the status line is appended after an
-// explicit "\n" and both are drawn in a single printer call, so the text
-// engine's own newline handling (src/text.c) places the status line whatever
-// line the wrapped description actually ended on, instead of a hardcoded y.
+// Wraps the description into the window's first two lines and leaves the
+// third for the status. The wrapping (StripLineBreaks + BreakStringAutomatic,
+// the same fix src/achievement_popup.c uses) is what stops a long description
+// from drawing past the window's right edge and bleeding into the tile memory
+// of the line below it; reserving a fixed line for the status is what stops a
+// two-line description from pushing that status off the bottom of the window,
+// which is why most boosts never showed a cost here.
+static void PrintBoostDescription(const u8 *description)
+{
+    StringCopy(gStringVar1, description);
+    StripLineBreaks(gStringVar1);
+    BreakStringAutomatic(gStringVar1, BOOST_MENU_DESC_MAX_WIDTH, 2, FONT_NORMAL, HIDE_SCROLL_PROMPT);
+    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar1, 8, 1, TEXT_SKIP_DRAW, NULL);
+}
+
+// Prints text at x on the given line and returns where the next thing after it
+// should start, so a run of alternating strings and points icons can be laid
+// out left to right without any of them needing to know the widths of the
+// others. Returns an x rather than drawing everything itself because what
+// follows a figure differs per line: sometimes an icon, sometimes nothing.
+static s32 PrintBoostLineText(const u8 *text, s32 x, u8 y)
+{
+    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, text, x, y, TEXT_SKIP_DRAW, NULL);
+    return x + GetStringWidth(FONT_NORMAL, text, 0) + 2;
+}
+
+static s32 BlitBoostLinePointsIcon(s32 x, u8 y)
+{
+    AchievementIcons_BlitPointsIcon(WIN_DESCRIPTION, x, ACHIEVEMENT_POINTS_ICON_Y(y));
+    return x + ACHIEVEMENT_POINTS_ICON_SIZE + 4;
+}
+
 static void PrintBoostStatus(s32 boostId)
 {
+    u8 statusBuf[40];
+
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
 
     if (boostId == BOOST_MENU_ITEM_RESET)
     {
-        u8 statusBuf[40];
+        PrintBoostDescription(sText_ResetBoostsDescription);
 
         // Same priority order as AchievementBoost_CanReset (src/achievements.c),
         // reimplemented here for messaging -- same precedent as the real-boost
@@ -522,39 +593,38 @@ static void PrintBoostStatus(s32 boostId)
         // rather than calling it, so it can explain *which* check failed.
         if (!Achievement_BoostsUnlocked())
         {
-            StringCopy(statusBuf, sText_BoostSystemLockedStatus);
+            PrintBoostLineText(sText_BoostSystemLockedStatus, 8, BOOST_MENU_STATUS_Y);
         }
         else if (Achievement_GetAvailablePoints() == Achievement_GetTotalPoints())
         {
             // available == total iff pointsInvested == 0 -- nothing purchased
             // to refund. Avoids needing a public pointsInvested accessor.
-            StringCopy(statusBuf, sText_ResetNothingStatus);
+            PrintBoostLineText(sText_ResetNothingStatus, 8, BOOST_MENU_STATUS_Y);
         }
         else if (!IsEnoughMoney(&gSaveBlock1Ptr->money, ACHIEVEMENT_BOOST_RESET_FEE))
         {
-            StringCopy(statusBuf, sText_ResetCantAffordStatus);
+            PrintBoostLineText(sText_ResetCantAffordStatus, 8, BOOST_MENU_STATUS_Y);
         }
         else
         {
-            u32 invested = Achievement_GetTotalPoints() - Achievement_GetAvailablePoints();
-            ConvertIntToDecimalStringN(gStringVar1, invested, STR_CONV_MODE_LEFT_ALIGN, 6);
-            ConvertIntToDecimalStringN(gStringVar2, ACHIEVEMENT_BOOST_RESET_FEE, STR_CONV_MODE_LEFT_ALIGN, 6);
-            StringExpandPlaceholders(statusBuf, sText_ResetCostFormat);
+            s32 x;
+
+            ConvertIntToDecimalStringN(gStringVar1, Achievement_GetTotalPoints() - Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+            StringExpandPlaceholders(statusBuf, sText_ResetRefundFormat);
+            x = PrintBoostLineText(statusBuf, 8, BOOST_MENU_STATUS_Y);
+            x = BlitBoostLinePointsIcon(x, BOOST_MENU_STATUS_Y);
+
+            ConvertIntToDecimalStringN(gStringVar1, ACHIEVEMENT_BOOST_RESET_FEE, STR_CONV_MODE_LEFT_ALIGN, 6);
+            StringExpandPlaceholders(statusBuf, sText_ResetFeeFormat);
+            PrintBoostLineText(statusBuf, x, BOOST_MENU_STATUS_Y);
         }
-
-        StringCopy(gStringVar1, sText_ResetBoostsDescription);
-        StripLineBreaks(gStringVar1);
-        BreakStringAutomatic(gStringVar1, BOOST_MENU_DESC_MAX_WIDTH, 2, FONT_NORMAL, HIDE_SCROLL_PROMPT);
-        StringCopy(gStringVar2, statusBuf);
-        StringExpandPlaceholders(gStringVar4, sText_BoostDescriptionAndStatusFormat);
-
-        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
     }
     else if (boostId >= BOOST_NONE + 1 && boostId < BOOSTS_COUNT)
     {
         const struct AchievementBoost *info = AchievementBoost_GetInfo(boostId);
         u8 level = AchievementBoost_GetLevel(boostId);
-        u8 statusBuf[40];
+
+        PrintBoostDescription(info->description);
 
         // Same priority order as AchievementBoost_CanPurchase itself
         // (src/achievements.c): unlocked, then per-boost owned/maxed, then
@@ -564,30 +634,22 @@ static void PrintBoostStatus(s32 boostId)
         // disqualified from earning new ones.
         if (!Achievement_BoostsUnlocked())
         {
-            StringCopy(statusBuf, sText_BoostSystemLockedStatus);
+            PrintBoostLineText(sText_BoostSystemLockedStatus, 8, BOOST_MENU_STATUS_Y);
         }
         else if (info->type == BOOST_TYPE_BINARY && level > 0)
         {
-            StringCopy(statusBuf, sText_BoostOwnedStatus);
+            PrintBoostLineText(sText_BoostOwnedStatus, 8, BOOST_MENU_STATUS_Y);
         }
         else if (level >= info->maxLevel)
         {
-            StringCopy(statusBuf, sText_BoostMaxLevelStatus);
+            PrintBoostLineText(sText_BoostMaxLevelStatus, 8, BOOST_MENU_STATUS_Y);
         }
         else
         {
             ConvertIntToDecimalStringN(gStringVar1, info->costs[level], STR_CONV_MODE_LEFT_ALIGN, 6);
-            ConvertIntToDecimalStringN(gStringVar2, Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
             StringExpandPlaceholders(statusBuf, sText_BoostCostFormat);
+            BlitBoostLinePointsIcon(PrintBoostLineText(statusBuf, 8, BOOST_MENU_STATUS_Y), BOOST_MENU_STATUS_Y);
         }
-
-        StringCopy(gStringVar1, info->description);
-        StripLineBreaks(gStringVar1);
-        BreakStringAutomatic(gStringVar1, BOOST_MENU_DESC_MAX_WIDTH, 2, FONT_NORMAL, HIDE_SCROLL_PROMPT);
-        StringCopy(gStringVar2, statusBuf);
-        StringExpandPlaceholders(gStringVar4, sText_BoostDescriptionAndStatusFormat);
-
-        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
     }
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
@@ -683,29 +745,60 @@ static void ResetConfirmMoveCursorCallback(s32 itemIndex, bool8 onInit, struct L
 // PrintBoostStatus's reset branch, this doesn't need to handle the
 // locked/nothing-to-reset/can't-afford cases -- there is always a real
 // refund and fee to show.
+// Three lines, one per text row of the description window. This used to be a
+// single four-line format string in a window only two lines tall, so its last
+// two lines -- the new total and the question itself -- were drawn past the
+// bottom edge and never seen; the question leads now, and the figures follow
+// on the lines the window actually has.
 static void PrintResetConfirmText(void)
 {
-    u32 invested = Achievement_GetTotalPoints() - Achievement_GetAvailablePoints();
+    u8 lineBuf[40];
+    s32 x;
 
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
 
-    ConvertIntToDecimalStringN(gStringVar1, invested, STR_CONV_MODE_LEFT_ALIGN, 6);
-    ConvertIntToDecimalStringN(gStringVar2, ACHIEVEMENT_BOOST_RESET_FEE, STR_CONV_MODE_LEFT_ALIGN, 6);
+    PrintBoostLineText(sText_ResetConfirmQuestion, 8, 1);
+
+    ConvertIntToDecimalStringN(gStringVar1, Achievement_GetTotalPoints() - Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+    StringExpandPlaceholders(lineBuf, sText_ResetRefundFormat);
+    x = PrintBoostLineText(lineBuf, 8, 17);
+    x = BlitBoostLinePointsIcon(x, 17);
+
+    ConvertIntToDecimalStringN(gStringVar1, ACHIEVEMENT_BOOST_RESET_FEE, STR_CONV_MODE_LEFT_ALIGN, 6);
+    StringExpandPlaceholders(lineBuf, sText_ResetFeeFormat);
+    PrintBoostLineText(lineBuf, x, 17);
+
     // After a full refund pointsInvested becomes 0, so the new available
     // total is exactly totalPointsEarned.
-    ConvertIntToDecimalStringN(gStringVar3, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
-    StringExpandPlaceholders(gStringVar4, sText_ResetConfirmFormat);
+    ConvertIntToDecimalStringN(gStringVar1, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+    StringExpandPlaceholders(lineBuf, sText_ResetNewTotalFormat);
+    BlitBoostLinePointsIcon(PrintBoostLineText(lineBuf, 8, BOOST_MENU_STATUS_Y), BOOST_MENU_STATUS_Y);
 
-    AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, gStringVar4, 8, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
 
+// The header carries the player's spendable balance, between the title and the
+// [B] BACK hint. It lives here rather than in the description window (where it
+// used to tail every cost as "(have N)") so it's on screen whatever row is
+// highlighted, and whatever sub-screen the menu is on -- shopping without
+// knowing what you can afford was the other half of the reported problem.
+// Redrawn by EnterBoostMenuLevel, which every purchase re-runs, so the figure
+// tracks what was just spent.
 static void DrawHeaderText(void)
 {
     s32 hintX = GetStringRightAlignXOffset(FONT_NARROW, sText_ControlHint, 198);
+    s32 pointsX;
+
+    ConvertIntToDecimalStringN(gStringVar1, Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+    // Right-aligned against the hint rather than laid out left to right, so
+    // the balance holds its place as digits come and go instead of shuffling
+    // sideways after every purchase.
+    pointsX = hintX - 8 - GetStringWidth(FONT_NORMAL, gStringVar1, 0);
 
     FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, sText_BoostMenuTitle, 8, 1, TEXT_SKIP_DRAW, NULL);
+    AchievementIcons_BlitPointsIcon(WIN_HEADER, pointsX - ACHIEVEMENT_POINTS_ICON_SIZE, ACHIEVEMENT_POINTS_ICON_Y(1));
+    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, gStringVar1, pointsX, 1, TEXT_SKIP_DRAW, NULL);
     AddTextPrinterParameterized(WIN_HEADER, FONT_NARROW, sText_ControlHint, hintX, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);
 }
@@ -732,22 +825,23 @@ static void DrawBgWindowFrames(void)
     FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  3, 27,  1,  7);
     FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28,  3,  1,  1,  7);
 
-    // Boost list frame
+    // Boost list frame (one tile row shorter than it was, so the description
+    // frame below can be one taller -- see sBoostMenuWinTemplates)
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1,  8,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1,  8,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 13,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 13, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 13,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1,  6,  7);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1,  6,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 11,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 11, 26,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 11,  1,  1,  7);
 
     // Description frame
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1, 14,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2, 14, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28, 14,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1, 15,  1,  4,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28, 15,  1,  4,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1, 12,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2, 12, 26,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28, 12,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1, 13,  1,  6,  7);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28, 13,  1,  6,  7);
     FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  7);
     FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  7);
     FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  7);
