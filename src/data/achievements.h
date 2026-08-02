@@ -786,7 +786,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_BATTLE_AGAINST_THE_ODDS] = {
         .name        = ACHIEVEMENT_NAME("Against the Odds"),
-        .description = COMPOUND_STRING("Beat a major boss while heavily underleveled."),
+        .description = COMPOUND_STRING("Beat a major boss with a team at least 5 levels below theirs."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
