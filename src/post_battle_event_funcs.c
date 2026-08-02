@@ -42,10 +42,6 @@ int GameClear(void)
         // Achievement_OnFirstPlaythroughComplete already tracks above.
         if (gSaveBlock2Ptr->newGamePlus > 0)
             Achievement_OnNewGamePlusCycleCompleted();
-        // Stage 2.3 throwaway test achievement, kept alongside the real
-        // Stage 5 hook above to keep exercising the end-to-end completion
-        // pipeline from this call site.
-        Achievement_TryComplete(ACHIEVEMENT_TEST_COMPLETE_GAME);
     }
 
     if (GetGameStat(GAME_STAT_FIRST_HOF_PLAY_TIME) == 0)

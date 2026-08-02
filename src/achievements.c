@@ -10,10 +10,17 @@
 #include "money.h"               // IsEnoughMoney/RemoveMoney, for AchievementBoost_Reset (Stage 11)
 #include "overworld.h"           // GetGameStat, for Stage 13's threshold checks
 #include "pokedex.h"             // GetNationalPokedexCount, for Achievement_CheckPokedexMilestones
+#include "pokemon.h"             // GetMonData/gParties/gPartiesCount, for Stage 15's evaluation-time party queries
+#include "battle.h"               // gBattleMons/gBattlerPartyIndexes/gLastMoves/gBattleWeather/gBattleTypeFlags/gBattleResults, Stage 15
+#include "battle_setup.h"        // TRAINER_BATTLE_PARAM, for Achievement_IsMajorBattle (Stage 15)
+#include "data.h"                 // GetTrainerClassFromId, for Achievement_IsMajorBattle (Stage 15)
+#include "move.h"                 // GetMovePriority, for Achievement_RecordOpposingFaint (Stage 15)
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
 #include "constants/game_stat.h" // GAME_STAT_*, for Stage 13's threshold checks
 #include "constants/pokedex.h"   // NATIONAL_DEX_COUNT, FLAG_GET_SEEN/FLAG_GET_CAUGHT
+#include "constants/pokemon.h"    // MON_DATA_*, for Stage 15's evaluation-time party queries
+#include "constants/trainers.h"   // TRAINER_CLASS_*, for Achievement_IsMajorBattle (Stage 15)
 #include "data/achievements.h"
 #include "data/achievement_boosts.h"
 
@@ -882,6 +889,350 @@ void Achievement_CheckEggMilestones(bool8 isShiny)
         Achievement_TryComplete(ACHIEVEMENT_EGG_50);
     if (isShiny)
         Achievement_TryComplete(ACHIEVEMENT_EGG_SHINY);
+}
+
+// ---- Stage 15: catalog wave 2 (category K, Battle Mastery) -------------
+//
+// struct AchievementBattleData is EWRAM-only and never saved -- a battle
+// never spans a save, so nothing here belongs in AchievementRunData. Zeroed
+// by Achievement_ClearBattleData (BattleStartClearSetData, src/battle_main.c)
+// at the start of every battle, and read exactly once, by
+// Achievement_CheckBattleMilestones (HandleEndTurn_BattleWon, same file).
+// That single evaluation point means every category K entry is only
+// ever checked in a battle the player actually won (landing a crit in a
+// battle that's then lost doesn't earn Critical Success) -- a deliberate
+// simplification to keep this to the "one entry point" discipline Stage 13
+// established, not an attempt to track "did this ever happen this run".
+struct AchievementBattleData
+{
+    u32 typesUsed;                  // bitmask over enum Type -- the player's move types
+    u8  statusesInflicted;          // bitmask of ACHIEVEMENT_STATUS_BIT_*
+    u8  kosPerSlot[PARTY_SIZE];     // opposing KOs credited to each party slot
+    u8  slotsThatActed;             // bitmask over party slots -- "acted" means "used a move"
+    u8  moveSlotsUsed[PARTY_SIZE];  // bitmask over the 4 move slots, per party slot
+    u16 prevPlayerMove;             // for the "never the same move twice in a row" check
+    u8  lastThreeKoSlots[3];        // rolling window, party index + 1 (0 = no KO yet)
+    u8  statusKoCount;              // opposing mons that fainted to status damage
+    u8  pendingSetupBattler;        // 0 = none, else battlerId + 1 -- bookkeeping for setupThenKo
+    bool8 currentMoveFollowsSetup:1; // bookkeeping for setupThenKo, see Achievement_RecordMoveUsed
+    bool8 repeatedMove:1;
+    bool8 superEffectiveUsed:1;
+    bool8 stabUsed:1;
+    bool8 setupMoveUsed:1;
+    bool8 setupThenKo:1;
+    bool8 critLanded:1;
+    bool8 priorityKo:1;
+};
+
+EWRAM_DATA static struct AchievementBattleData sBattleData = {0};
+
+bool8 Achievement_IsMajorBattle(void)
+{
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return FALSE;
+
+    switch (GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA))
+    {
+    case TRAINER_CLASS_LEADER:
+    case TRAINER_CLASS_ELITE_FOUR:
+    case TRAINER_CLASS_CHAMPION:
+    case TRAINER_CLASS_RIVAL:
+    case TRAINER_CLASS_MAGMA_LEADER:
+    case TRAINER_CLASS_AQUA_LEADER:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
+void Achievement_ClearBattleData(void)
+{
+    memset(&sBattleData, 0, sizeof(sBattleData));
+}
+
+// CancelerPPDeduction (src/battle_move_resolution.c). See the header doc
+// comment (include/achievements.h) for why type/STAB/setup are pre-computed
+// by the caller instead of looked up here.
+void Achievement_RecordMoveUsed(u8 partyIndex, enum Move move, u32 typeBit, u32 movePosition, bool8 isSTAB, bool8 isSetupMove)
+{
+    if (partyIndex >= PARTY_SIZE)
+        return;
+
+    sBattleData.typesUsed |= typeBit;
+    sBattleData.slotsThatActed |= 1 << partyIndex;
+    if (movePosition < MAX_MON_MOVES)
+        sBattleData.moveSlotsUsed[partyIndex] |= 1 << movePosition;
+
+    if (isSTAB)
+        sBattleData.stabUsed = TRUE;
+
+    if (sBattleData.prevPlayerMove != MOVE_NONE && sBattleData.prevPlayerMove == move)
+        sBattleData.repeatedMove = TRUE;
+    sBattleData.prevPlayerMove = move;
+
+    // Bookkeeping for Achievement_RecordOpposingFaint's setupThenKo check:
+    // remember whether THIS move follows this same battler's own most recent
+    // setup move, before pendingSetupBattler gets overwritten below.
+    sBattleData.currentMoveFollowsSetup = (sBattleData.pendingSetupBattler == (u8)(partyIndex + 1));
+
+    if (isSetupMove)
+    {
+        sBattleData.setupMoveUsed = TRUE;
+        sBattleData.pendingSetupBattler = partyIndex + 1;
+    }
+    else
+    {
+        sBattleData.pendingSetupBattler = 0;
+    }
+}
+
+void Achievement_RecordSuperEffectiveHit(void)
+{
+    sBattleData.superEffectiveUsed = TRUE;
+}
+
+void Achievement_RecordCriticalHit(void)
+{
+    sBattleData.critLanded = TRUE;
+}
+
+void Achievement_RecordStatusInflicted(u8 statusBit)
+{
+    sBattleData.statusesInflicted |= statusBit;
+}
+
+// SetValuesOnFaint (src/battle_util.c)'s opponent-faint branch. See the
+// header doc comment for the attackerBattler == victimBattler reasoning
+// (status/passive damage vs. a real move-caused KO).
+void Achievement_RecordOpposingFaint(enum BattlerId victimBattler, enum BattlerId attackerBattler)
+{
+    u8 partyIndex;
+
+    if (attackerBattler == victimBattler
+     && (gBattleMons[victimBattler].status1 & (STATUS1_POISON | STATUS1_TOXIC_POISON | STATUS1_BURN | STATUS1_FROSTBITE)))
+    {
+        if (sBattleData.statusKoCount < 255)
+            sBattleData.statusKoCount++;
+        return;
+    }
+
+    partyIndex = gBattlerPartyIndexes[attackerBattler];
+    if (partyIndex >= PARTY_SIZE)
+        return;
+
+    if (sBattleData.kosPerSlot[partyIndex] < 255)
+        sBattleData.kosPerSlot[partyIndex]++;
+
+    sBattleData.lastThreeKoSlots[0] = sBattleData.lastThreeKoSlots[1];
+    sBattleData.lastThreeKoSlots[1] = sBattleData.lastThreeKoSlots[2];
+    sBattleData.lastThreeKoSlots[2] = partyIndex + 1;
+
+    if (GetMovePriority(gLastMoves[attackerBattler]) > 0)
+        sBattleData.priorityKo = TRUE;
+
+    if (sBattleData.currentMoveFollowsSetup)
+        sBattleData.setupThenKo = TRUE;
+}
+
+static u32 CountSetBits(u32 value)
+{
+    u32 count = 0;
+
+    while (value)
+    {
+        count += value & 1;
+        value >>= 1;
+    }
+
+    return count;
+}
+
+static u8 CountConsciousPartyMons(struct Pokemon *party, u8 count)
+{
+    u8 i, conscious = 0;
+
+    for (i = 0; i < count; i++)
+    {
+        if (GetMonData(&party[i], MON_DATA_HP) > 0)
+            conscious++;
+    }
+
+    return conscious;
+}
+
+// HandleEndTurn_BattleWon (src/battle_main.c), gated by the caller on not
+// being a link or recorded battle -- see the header doc comment for why.
+void Achievement_CheckBattleMilestones(void)
+{
+    bool8 isTrainerBattle = (gBattleTypeFlags & BATTLE_TYPE_TRAINER) != 0;
+    bool8 isMajorBattle = Achievement_IsMajorBattle();
+    bool8 weatherActiveOnWin = (gBattleWeather != 0);
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    u8 consciousCount = CountConsciousPartyMons(gParties[B_TRAINER_PLAYER], playerCount);
+    u8 i;
+
+    if (sBattleData.critLanded)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_CRITICAL_SUCCESS);
+
+    if (sBattleData.superEffectiveUsed)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_TYPE_ADVANTAGE);
+    if (isTrainerBattle && !sBattleData.superEffectiveUsed)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_TYPE_MASTER);
+
+    if (isTrainerBattle && gBattleResults.playerSwitchesCounter == 0)
+    {
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_CLEAN_SWEEP);
+        if (isMajorBattle)
+            Achievement_TryComplete(ACHIEVEMENT_BATTLE_PERFECT_SWEEP);
+    }
+
+    if (isTrainerBattle && !gBattleResults.playerMonWasDamaged)
+    {
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_DAMAGE);
+        if (isMajorBattle)
+            Achievement_TryComplete(ACHIEVEMENT_BATTLE_UNTOUCHABLE);
+    }
+
+    if (sBattleData.statusesInflicted != 0)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_STATUS_SPECIALIST);
+    if (CountSetBits(sBattleData.statusesInflicted) >= 3)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_STATUS_MASTER);
+
+    if (weatherActiveOnWin)
+    {
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_WEATHER_REPORT);
+        if (isMajorBattle)
+            Achievement_TryComplete(ACHIEVEMENT_BATTLE_WEATHER_MASTER);
+    }
+
+    if (sBattleData.setupMoveUsed)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_SETUP_SWEEP);
+    if (sBattleData.setupThenKo)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_ONE_TURN_FINISH);
+    if (sBattleData.priorityKo)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_PRIORITY_MATTERS);
+
+    if (gBattleResults.playerSwitchesCounter == 0)
+    {
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if (sBattleData.kosPerSlot[i] >= 3)
+            {
+                Achievement_TryComplete(ACHIEVEMENT_BATTLE_SPEED_DEMON);
+                break;
+            }
+        }
+    }
+
+    if (isMajorBattle && gBattleResults.battleTurnCounter >= 15)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_ATTRITION);
+
+    if (isMajorBattle && gBattleResults.playerFaintCounter == 0)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_STRATEGIC_VICTORY);
+
+    if (isTrainerBattle && playerCount != 0 && gBattleResults.playerFaintCounter * 2 >= playerCount)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_REVERSE_SWEEP);
+
+    if (isTrainerBattle && GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) == TRAINER_CLASS_CHAMPION
+     && CountSetBits(sBattleData.slotsThatActed) >= 4)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_CHAMPION_TACTICIAN);
+
+    if (isMajorBattle && sBattleData.slotsThatActed != 0)
+    {
+        bool8 allActedUsedTwoMoves = TRUE;
+
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if ((sBattleData.slotsThatActed & (1 << i)) && CountSetBits(sBattleData.moveSlotsUsed[i]) < 2)
+            {
+                allActedUsedTwoMoves = FALSE;
+                break;
+            }
+        }
+
+        if (allActedUsedTwoMoves)
+            Achievement_TryComplete(ACHIEVEMENT_BATTLE_MOVE_VARIETY);
+    }
+
+    if (isTrainerBattle && !sBattleData.repeatedMove)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_REPEATS);
+
+    // "Heavily underleveled": every party member at least 5 levels below the
+    // highest-level Pokemon on opponentA's team. Doesn't look at opponentB in
+    // a double/multi battle -- a rare enough case for a flavor achievement
+    // that the simplification isn't worth the extra bookkeeping.
+    if (isMajorBattle && playerCount != 0)
+    {
+        u8 maxEnemyLevel = 0;
+        u8 enemyCount = gPartiesCount[B_TRAINER_OPPONENT_A];
+        bool8 allUnderleveled = TRUE;
+
+        for (i = 0; i < enemyCount; i++)
+        {
+            u8 level = GetMonData(&gParties[B_TRAINER_OPPONENT_A][i], MON_DATA_LEVEL);
+            if (level > maxEnemyLevel)
+                maxEnemyLevel = level;
+        }
+
+        for (i = 0; i < playerCount; i++)
+        {
+            u8 level = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_LEVEL);
+            if (level + 5 > maxEnemyLevel)
+            {
+                allUnderleveled = FALSE;
+                break;
+            }
+        }
+
+        if (allUnderleveled)
+            Achievement_TryComplete(ACHIEVEMENT_BATTLE_AGAINST_THE_ODDS);
+    }
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (sBattleData.moveSlotsUsed[i] == ((1 << MAX_MON_MOVES) - 1))
+        {
+            Achievement_TryComplete(ACHIEVEMENT_BATTLE_FOUR_MOVE_PHILOSOPHER);
+            break;
+        }
+    }
+
+    if (isTrainerBattle && !sBattleData.stabUsed)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_STAB_NEEDED);
+
+    if (isMajorBattle && CountSetBits(sBattleData.typesUsed) >= 4)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_COVERAGE_ENJOYER);
+
+    if (sBattleData.statusKoCount >= 2)
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_STATUS_HOARDER);
+
+    if (sBattleData.lastThreeKoSlots[0] != 0 && sBattleData.lastThreeKoSlots[1] != 0 && sBattleData.lastThreeKoSlots[2] != 0
+     && sBattleData.lastThreeKoSlots[0] != sBattleData.lastThreeKoSlots[1]
+     && sBattleData.lastThreeKoSlots[1] != sBattleData.lastThreeKoSlots[2]
+     && sBattleData.lastThreeKoSlots[0] != sBattleData.lastThreeKoSlots[2])
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_THREE_PUNCH_FINISH);
+
+    if (sBattleData.slotsThatActed == ((1 << PARTY_SIZE) - 1))
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_TEAM_PLAYER);
+
+    if (consciousCount == 1)
+    {
+        Achievement_TryComplete(ACHIEVEMENT_BATTLE_COMEBACK_KID);
+
+        for (i = 0; i < playerCount; i++)
+        {
+            u32 hp = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HP);
+
+            if (hp > 0)
+            {
+                u32 maxHp = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_MAX_HP);
+
+                if (maxHp != 0 && hp * 10 <= maxHp)
+                    Achievement_TryComplete(ACHIEVEMENT_BATTLE_LAST_ONE_STANDING);
+                break;
+            }
+        }
+    }
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

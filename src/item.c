@@ -362,10 +362,6 @@ bool32 AddBagItem(enum Item itemId, u16 count)
 
     added = BagPocket_AddItem(&gBagPockets[GetItemPocket(itemId)], itemId, count);
 
-    // Stage 2.3 throwaway test achievement.
-    if (added && itemId == ITEM_POTION)
-        Achievement_TryComplete(ACHIEVEMENT_TEST_OBTAIN_POTION);
-
     // Stage 13, category G.
     if (added)
         Achievement_CheckItemMilestones(itemId);

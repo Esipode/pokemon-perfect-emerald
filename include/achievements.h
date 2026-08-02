@@ -4,6 +4,8 @@
 #include "global.h"
 #include "constants/achievements.h"
 #include "constants/items.h" // enum Item, for Achievement_CheckItemMilestones (Stage 13 category G)
+#include "constants/moves.h" // enum Move, for Achievement_RecordMoveUsed (Stage 15 category K)
+#include "constants/battle.h" // enum BattlerId, for Achievement_RecordOpposingFaint (Stage 15 category K)
 
 #define ACHIEVEMENT_PROFILE_MAGIC   0x50454143  // 'PEAC'
 #define ACHIEVEMENT_PROFILE_VERSION 1
@@ -24,6 +26,18 @@
 // enforced at compile time via BOOST_NAME() there.
 #define BOOST_NAME_LENGTH           24
 
+// Bits for struct AchievementBattleData.statusesInflicted (src/achievements.c,
+// Stage 15) -- SLP/PSN/BRN/PRZ/FRZ, matching enum MoveEffect's non-volatile
+// statuses one-for-one (Toxic folds into POISON, Frostbite into FREEZE).
+// Computed at each hook's call site (battle_script_commands.c) rather than
+// passing an enum MoveEffect in, so this header doesn't need move.h's full
+// effect table just to declare Achievement_RecordStatusInflicted below.
+#define ACHIEVEMENT_STATUS_BIT_SLEEP      (1 << 0)
+#define ACHIEVEMENT_STATUS_BIT_POISON     (1 << 1)
+#define ACHIEVEMENT_STATUS_BIT_BURN       (1 << 2)
+#define ACHIEVEMENT_STATUS_BIT_PARALYSIS  (1 << 3)
+#define ACHIEVEMENT_STATUS_BIT_FREEZE     (1 << 4)
+
 // Definition data (design doc §4, Stage 2.1/2.2) -- one const entry per
 // enum AchievementId, in src/data/achievements.h. Kept strictly separate
 // from struct AchievementProfile below, which is completion *state* only.
@@ -33,6 +47,7 @@ struct Achievement
     const u8 *description;
     enum AchievementTier tier;
     enum AchievementScope scope;
+    enum AchievementCategory category; // Stage 15: mirrors the draft catalog's own section headers
     u16 points;
     bool8 hidden;
 };
@@ -384,9 +399,8 @@ void Achievement_CheckTrainerBattleMilestones(void);
 // version above, reading GAME_STAT_WILD_BATTLES.
 void Achievement_CheckWildBattleMilestones(void);
 
-// AddBagItem (src/item.c), alongside the existing
-// ACHIEVEMENT_TEST_OBTAIN_POTION hook -- one-off "obtain this specific item"
-// checks, gated by the caller on the add having actually succeeded.
+// AddBagItem (src/item.c) -- one-off "obtain this specific item" checks,
+// gated by the caller on the add having actually succeeded.
 void Achievement_CheckItemMilestones(enum Item itemId);
 
 // AddMoney (src/money.c), called with the post-clamp balance
@@ -399,6 +413,68 @@ void Achievement_CheckMoneyMilestones(u32 money);
 // already incremented well before this point (see
 // src/field_control_avatar.c, at the start of the whole hatch sequence).
 void Achievement_CheckEggMilestones(bool8 isShiny);
+
+// Stage 15 (design doc catalog wave 2, plan Stage 15): battle-tracking
+// infrastructure. See src/achievements.c for struct AchievementBattleData and
+// the "one entry point" discipline the hooks below follow -- battle-side code
+// never calls Achievement_TryComplete directly for a category K entry.
+
+// GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) against the "boss"
+// trainer classes -- gym leaders, Elite Four, Champion, rival, Team
+// Aqua/Magma leaders. FALSE outside a trainer battle. Reused by later catalog
+// waves (design doc), not just Stage 15.
+bool8 Achievement_IsMajorBattle(void);
+
+// BattleStartClearSetData (src/battle_main.c), right after gBattleResults is
+// zeroed: resets the whole per-battle tracking struct. EWRAM only, never
+// saved -- a battle never spans a save, so nothing here belongs in
+// AchievementRunData.
+void Achievement_ClearBattleData(void);
+
+// CancelerPPDeduction (src/battle_move_resolution.c), the same funnel Stage
+// 10.1's BOOST_PP_SAVER hooks -- every early-out above that call means this
+// only ever fires for a move that's actually being used. Player side only,
+// never in a link or recorded battle (checked by the caller). typeBit is
+// 1u << GetMoveType(move), computed at the call site so this header doesn't
+// need enum Type's shape. movePosition >= MAX_MON_MOVES is tolerated (only
+// the per-slot move-variety bit is skipped; typesUsed/STAB/setup/repeat still
+// update) since Metronome/Z-move/Max Move call paths can reach this with an
+// unusual position.
+void Achievement_RecordMoveUsed(u8 partyIndex, enum Move move, u32 typeBit, u32 movePosition, bool8 isSTAB, bool8 isSetupMove);
+
+// CalcTypeEffectivenessMultiplier (src/battle_util.c), gated by the caller on
+// ctx->updateFlags (a real hit, not an AI damage estimate) -- same "is this
+// real" flag TryInitializeFirstSTABMoveTrainerSlide already keys off of in
+// that function.
+void Achievement_RecordSuperEffectiveHit(void);
+
+// IsCriticalHit (src/battle_util.c), the same funnel Stage 10.1's
+// BOOST_CRIT_CHANCE hooks, gated the same way (player side, not link/recorded).
+void Achievement_RecordCriticalHit(void);
+
+// SetNonVolatileStatus (src/battle_script_commands.c), gated by the caller on
+// the status landing on an opponent from a player-side move. statusBit is one
+// of the ACHIEVEMENT_STATUS_BIT_* constants above.
+void Achievement_RecordStatusInflicted(u8 statusBit);
+
+// SetValuesOnFaint (src/battle_util.c)'s opponent-faint branch, gated by the
+// caller the same way as every other battle-data write (never link/recorded).
+// victimBattler is the battler that just fainted, attackerBattler is
+// gBattlerAttacker at that exact moment. The two are equal for a
+// self-inflicted/passive cause (a non-volatile status tick, confusion,
+// recoil, Life Orb, ...); this function reads the still-intact status1 on
+// victimBattler to decide whether that counts as a status KO instead of
+// crediting a party slot.
+void Achievement_RecordOpposingFaint(enum BattlerId victimBattler, enum BattlerId attackerBattler);
+
+// HandleEndTurn_BattleWon (src/battle_main.c) -- evaluates every category K
+// entry against the battle that just ended, once. The caller gates this on
+// not being a link or recorded battle: gBattleResults (unlike
+// AchievementBattleData) is maintained unconditionally by the vanilla engine,
+// so without that gate a recorded-battle replay could satisfy a
+// gBattleResults-derived entry (e.g. Clean Sweep) a second time from stale
+// data rather than a live result.
+void Achievement_CheckBattleMilestones(void);
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add

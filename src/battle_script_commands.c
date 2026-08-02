@@ -2002,6 +2002,29 @@ static void SetNonVolatileStatus(enum BattlerId battlerAtk, enum BattlerId effec
         break;
     }
 
+    // Stage 15 (catalog wave 2): player-inflicted status on an opponent,
+    // never in a link or recorded battle.
+    if (IsOnPlayerSide(battlerAtk) && !IsOnPlayerSide(effectBattler)
+     && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+    {
+        u8 statusBit = 0;
+
+        switch (effect)
+        {
+        case MOVE_EFFECT_SLEEP:     statusBit = ACHIEVEMENT_STATUS_BIT_SLEEP;     break;
+        case MOVE_EFFECT_POISON:
+        case MOVE_EFFECT_TOXIC:     statusBit = ACHIEVEMENT_STATUS_BIT_POISON;    break;
+        case MOVE_EFFECT_BURN:      statusBit = ACHIEVEMENT_STATUS_BIT_BURN;      break;
+        case MOVE_EFFECT_PARALYSIS: statusBit = ACHIEVEMENT_STATUS_BIT_PARALYSIS; break;
+        case MOVE_EFFECT_FREEZE:
+        case MOVE_EFFECT_FROSTBITE: statusBit = ACHIEVEMENT_STATUS_BIT_FREEZE;    break;
+        default:                    break;
+        }
+
+        if (statusBit != 0)
+            Achievement_RecordStatusInflicted(statusBit);
+    }
+
     BtlController_EmitSetMonData(effectBattler, B_COMM_TO_CONTROLLER, REQUEST_STATUS_BATTLE, 0, sizeof(gBattleMons[effectBattler].status1), &gBattleMons[effectBattler].status1);
     MarkBattlerForControllerExec(effectBattler);
 

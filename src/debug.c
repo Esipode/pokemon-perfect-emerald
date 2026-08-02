@@ -2111,8 +2111,10 @@ static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
 
 // Testing aid for src/achievement_popup.c: bypasses Stage 4.2's queue/safety
 // gate and shows the popup immediately. Closes the debug menu like
-// DebugAction_Cancel, then shows the popup for one of Stage 2.3's throwaway
-// test achievements on the plain field.
+// DebugAction_Cancel, then shows the popup for a real (arbitrarily chosen)
+// achievement on the plain field -- ShowAchievementPopup only draws the UI,
+// it never touches completion state, so this is safe to fire regardless of
+// whether the achievement shown is actually completed.
 //
 // Used to call ScriptContext_Enable() here to keep the player from walking
 // off during the popup -- that's now handled by the popup itself
@@ -2125,7 +2127,7 @@ static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
 static void DebugAction_Achievements_TestPopup(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
-    ShowAchievementPopup(ACHIEVEMENT_TEST_OBTAIN_POTION);
+    ShowAchievementPopup(ACHIEVEMENT_STORY_RIVAL_ROUTE103);
 }
 
 static void DebugAction_Util_CheatStart(u8 taskId)

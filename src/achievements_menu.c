@@ -140,12 +140,25 @@ enum
 
 // Shared by both lists this menu ever shows (tier select's up to
 // TIER_SELECT_ROW_COUNT rows, or one tier's worth of achievement rows),
-// sized to whichever is larger. Right now the placeholder catalog (Stage
-// 2.3's 3 test achievements) is smaller than the tier count, so this must
-// not just be ACHIEVEMENTS_MENU_ITEM_COUNT -- that undersized the array and
-// corrupted memory past its end when tier select wrote all its rows.
+// sized to whichever is larger. Originally just ACHIEVEMENTS_MENU_ITEM_COUNT
+// (the *whole* catalog) -- correct (never undersized, unlike an earlier
+// version of this macro that corrupted memory past the array's end when tier
+// select wrote all its rows) but wasteful, since BuildAchievementListItems
+// below only ever shows one tier's rows at once, never the whole catalog.
+//
+// Stage 15 (catalog wave 2): replaced with a manually-tracked worst-case
+// single-tier count instead. At the end of Stage 15 the largest tier
+// (Silver) holds 32 entries; ACHIEVEMENTS_MENU_MAX_PER_TIER gives headroom
+// above that so it doesn't need bumping on every wave, but MUST be raised if
+// a future wave ever pushes a single tier's count above it.
+// BuildAchievementListItems' bounds check fails safe (truncates the list
+// rather than corrupting EWRAM) if this is ever wrong, but a truncated
+// achievement list is still a bug worth catching early -- bump this the
+// moment a future wave's tier totals approach it.
+#define ACHIEVEMENTS_MENU_MAX_PER_TIER 60
+
 #define ACHIEVEMENTS_MENU_LIST_CAPACITY \
-    (ACHIEVEMENTS_MENU_ITEM_COUNT > TIER_SELECT_ROW_COUNT ? ACHIEVEMENTS_MENU_ITEM_COUNT : TIER_SELECT_ROW_COUNT)
+    (ACHIEVEMENTS_MENU_MAX_PER_TIER > TIER_SELECT_ROW_COUNT ? ACHIEVEMENTS_MENU_MAX_PER_TIER : TIER_SELECT_ROW_COUNT)
 
 EWRAM_DATA static u8 sAchievementsListNameBuffers[ACHIEVEMENTS_MENU_LIST_CAPACITY][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE] = {0};
 EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_LIST_CAPACITY] = {0};
@@ -1132,6 +1145,12 @@ static void BuildAchievementListItems(u8 tier)
 
         if (info->tier != tier)
             continue;
+
+        // Stage 15 (catalog wave 2): ACHIEVEMENTS_MENU_MAX_PER_TIER is a
+        // manually-tracked bound, not a derived one -- fail safe (truncate)
+        // rather than write past the array if a future wave ever exceeds it.
+        if (index >= ACHIEVEMENTS_MENU_LIST_CAPACITY)
+            break;
 
         completed = Achievement_IsCompleted(id);
         buffer = sAchievementsListNameBuffers[index];

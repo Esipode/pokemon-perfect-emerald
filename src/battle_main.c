@@ -3784,6 +3784,10 @@ static void BattleStartClearSetData(void)
     memset(&gBattleResults, 0, sizeof(gBattleResults));
     ClearSetBScriptingStruct();
 
+    // Stage 15 (catalog wave 2): EWRAM-only, never saved -- reset alongside
+    // gBattleResults above, its closest vanilla analogue.
+    Achievement_ClearBattleData();
+
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
     {
         gBattleStruct->battlerState[i].isFirstTurn = 2;
@@ -6145,10 +6149,13 @@ static void HandleEndTurn_BattleWon(void)
 {
     gCurrentActionFuncId = 0;
 
-    // Stage 2.3 throwaway test achievement. Runs for every winning outcome
-    // (wild, trainer, link, frontier, ...) since they all dispatch here via
-    // sEndTurnFuncs[B_OUTCOME_WON].
-    Achievement_TryComplete(ACHIEVEMENT_TEST_WIN_BATTLE);
+    // Stage 15 (catalog wave 2): never during a link or recorded battle --
+    // gBattleResults (unlike AchievementBattleData) is maintained
+    // unconditionally by the vanilla engine, so without this gate a
+    // recorded-battle replay could satisfy a gBattleResults-derived entry
+    // from stale data rather than a live result.
+    if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+        Achievement_CheckBattleMilestones();
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
     {

@@ -1,6 +1,7 @@
 #include "global.h"
 #include "achievements.h"
 #include "battle.h"
+#include "battle_ai_util.h" // IsStatRaisingMove, for Stage 15's Achievement_RecordMoveUsed hook
 #include "battle_environment.h"
 #include "battle_hold_effects.h"
 #include "battle_ai_record.h"
@@ -984,6 +985,20 @@ static enum CancelerResult CancelerPPDeduction(struct BattleCalcValues *cv)
 
     if (gBattleStruct->submoveAnnouncement == SUBMOVE_SUCCESS)
         movePosition = gChosenMovePos;
+
+    // Stage 15 (catalog wave 2): every early-out above this function means
+    // this call only ever reaches here for a move that's actually being
+    // used -- the same funnel Stage 10.1's BOOST_PP_SAVER hooks below.
+    // Player side only, never in a link or recorded battle.
+    if (IsOnPlayerSide(cv->battlerAtk) && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+    {
+        u8 partyIndex = gBattlerPartyIndexes[cv->battlerAtk];
+        enum Type moveType = GetMoveType(cv->move);
+        bool8 isSTAB = IS_BATTLER_OF_TYPE(cv->battlerAtk, moveType);
+        bool8 isSetupMove = IsStatRaisingMove(cv->move);
+
+        Achievement_RecordMoveUsed(partyIndex, cv->move, 1u << moveType, movePosition, isSTAB, isSetupMove);
+    }
 
     if (IsSpreadMove(moveTarget)
      || moveTarget == TARGET_ALL_BATTLERS

@@ -4,10 +4,6 @@
 // Real entries land here in Stage 2.2/2.3, keyed to designated initializers
 // in src/data/achievements.h. ACHIEVEMENT_NONE is the reserved zero value.
 //
-// The three ACHIEVEMENT_TEST_* entries are the throwaway achievements called
-// for in Stage 2.3, wired into AddBagItem/HandleEndTurn_BattleWon/GameClear
-// to exercise Achievement_TryComplete end to end. They're placeholders for
-// the real catalog, not part of the design doc's actual achievement list.
 // Stage 13 (design doc §15/§16, plan Stage 13): the first real catalog wave,
 // 60 entries across ten categories, each derived from state that already
 // exists (gameStats[], Pokedex flags, AchievementProfile counters, or a
@@ -46,12 +42,20 @@
 //      Achievement_OnNewGamePlusStarted / Achievement_OnNewGamePlusCycleCompleted
 //      wrapper functions (Stages 5/12); ACHIEVEMENT_POINTS_1000 is checked
 //      from inside Achievement_TryComplete itself.
+//
+// Stage 15 (design doc catalog wave 2, plan Stage 15): the second catalog
+// wave, the first to observe a battle rather than derive from state that
+// already existed. Introduces enum AchievementCategory (below) -- every
+// entry above is backfilled with one in src/data/achievements.h -- and
+// struct AchievementBattleData (src/achievements.c), an EWRAM-only per-battle
+// scratchpad, never saved.
+//
+//   K. ACHIEVEMENT_BATTLE_CRITICAL_SUCCESS .. ACHIEVEMENT_BATTLE_LAST_ONE_STANDING (30)
+//      Battle Mastery -- Achievement_CheckBattleMilestones, called from
+//      HandleEndTurn_BattleWon (src/battle_main.c).
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
-    ACHIEVEMENT_TEST_OBTAIN_POTION,
-    ACHIEVEMENT_TEST_WIN_BATTLE,
-    ACHIEVEMENT_TEST_COMPLETE_GAME,
 
     // A. Badges & Story (15)
     ACHIEVEMENT_STORY_RIVAL_ROUTE103,
@@ -133,7 +137,62 @@ enum AchievementId
     ACHIEVEMENT_RANDOMIZED_1,
     ACHIEVEMENT_POINTS_1000,
 
+    // K. Battle Mastery (30)
+    ACHIEVEMENT_BATTLE_CRITICAL_SUCCESS,
+    ACHIEVEMENT_BATTLE_TYPE_ADVANTAGE,
+    ACHIEVEMENT_BATTLE_TYPE_MASTER,
+    ACHIEVEMENT_BATTLE_CLEAN_SWEEP,
+    ACHIEVEMENT_BATTLE_PERFECT_SWEEP,
+    ACHIEVEMENT_BATTLE_NO_DAMAGE,
+    ACHIEVEMENT_BATTLE_UNTOUCHABLE,
+    ACHIEVEMENT_BATTLE_STATUS_SPECIALIST,
+    ACHIEVEMENT_BATTLE_STATUS_MASTER,
+    ACHIEVEMENT_BATTLE_WEATHER_REPORT,
+    ACHIEVEMENT_BATTLE_WEATHER_MASTER,
+    ACHIEVEMENT_BATTLE_SETUP_SWEEP,
+    ACHIEVEMENT_BATTLE_ONE_TURN_FINISH,
+    ACHIEVEMENT_BATTLE_PRIORITY_MATTERS,
+    ACHIEVEMENT_BATTLE_SPEED_DEMON,
+    ACHIEVEMENT_BATTLE_ATTRITION,
+    ACHIEVEMENT_BATTLE_STRATEGIC_VICTORY,
+    ACHIEVEMENT_BATTLE_REVERSE_SWEEP,
+    ACHIEVEMENT_BATTLE_CHAMPION_TACTICIAN,
+    ACHIEVEMENT_BATTLE_MOVE_VARIETY,
+    ACHIEVEMENT_BATTLE_NO_REPEATS,
+    ACHIEVEMENT_BATTLE_AGAINST_THE_ODDS,
+    ACHIEVEMENT_BATTLE_FOUR_MOVE_PHILOSOPHER,
+    ACHIEVEMENT_BATTLE_NO_STAB_NEEDED,
+    ACHIEVEMENT_BATTLE_COVERAGE_ENJOYER,
+    ACHIEVEMENT_BATTLE_STATUS_HOARDER,
+    ACHIEVEMENT_BATTLE_THREE_PUNCH_FINISH,
+    ACHIEVEMENT_BATTLE_TEAM_PLAYER,
+    ACHIEVEMENT_BATTLE_COMEBACK_KID,
+    ACHIEVEMENT_BATTLE_LAST_ONE_STANDING,
+
     ACHIEVEMENTS_COUNT,
+};
+
+// design doc catalog wave 8 (Stage 21, not yet implemented): mirrors the
+// draft catalog's own section headers, so "complete every Bronze in a
+// category"-style Mastery/Prestige achievements can be checked with a single
+// helper once that wave exists. Added in Stage 15 and backfilled onto every
+// existing entry rather than retrofitted later, since retrofitting it across
+// ~270 entries would be far worse than authoring it from here on.
+enum AchievementCategory
+{
+    ACHIEVEMENT_CATEGORY_ADVENTURE,
+    ACHIEVEMENT_CATEGORY_COLLECTION,
+    ACHIEVEMENT_CATEGORY_BATTLE,
+    ACHIEVEMENT_CATEGORY_TEAM,
+    ACHIEVEMENT_CATEGORY_CHALLENGE,
+    ACHIEVEMENT_CATEGORY_NUZLOCKE,
+    ACHIEVEMENT_CATEGORY_RANDOMIZER,
+    ACHIEVEMENT_CATEGORY_NG_PLUS,
+    ACHIEVEMENT_CATEGORY_EXPLORATION,
+    ACHIEVEMENT_CATEGORY_ECONOMY,
+    ACHIEVEMENT_CATEGORY_RECORDS,
+    ACHIEVEMENT_CATEGORY_PROFILE,
+    ACHIEVEMENT_CATEGORIES_COUNT,
 };
 
 enum AchievementTier
@@ -167,12 +226,6 @@ enum BoostType
 // the reserved zero value AchievementBoost_GetInfo() falls back to for an
 // out-of-range ID (mirrors ACHIEVEMENT_NONE above).
 //
-// The two BOOST_TEST_* entries are Stage 7's throwaway boosts (design doc
-// Stage 7: "Use temporary test boosts") -- BOOST_TEST_LEVELED exercises the
-// numerical/leveled path (§10.1), BOOST_TEST_BINARY the binary path (§10.2).
-// Kept around after Stage 8 for continued framework testing; not part of
-// the design doc's actual boost list.
-//
 // BOOST_EXP_GAIN (Stage 8, design doc Stage 8): the first real boost --
 // AchievementBoost_ApplyExp() (src/achievements.c) is its effect, hooked
 // into src/battle_script_commands.c's exp calculation.
@@ -188,8 +241,7 @@ enum BoostType
 // present roamer's battle triggers -- is untouched.
 //
 // BOOST_CRIT_CHANCE .. BOOST_PERFECT_STARTER_IVS (Stage 10.1): the second
-// catalog wave, and the first real BOOST_TYPE_BINARY content (until now only
-// BOOST_TEST_BINARY exercised that path). Hooks, in order:
+// catalog wave, and the first real BOOST_TYPE_BINARY content. Hooks, in order:
 //   BOOST_CRIT_CHANCE            IsCriticalHit,             src/battle_util.c
 //   BOOST_BERRY_YIELD            GetBerryCountByBerryTreeId, src/berry.c
 //   BOOST_BERRY_GROWTH           BerryTreeTimeUpdate/PlantBerryTree, src/berry.c
@@ -202,8 +254,6 @@ enum BoostType
 enum BoostId
 {
     BOOST_NONE,
-    BOOST_TEST_LEVELED,
-    BOOST_TEST_BINARY,
     BOOST_EXP_GAIN,
     BOOST_SHINY_CHANCE,
     BOOST_CATCH_RATE,
