@@ -34,6 +34,10 @@ int GameClear(void)
         // FLAG_SYS_GAME_CLEAR is set for this save, which is what makes it
         // the trigger for the one-time first-playthrough unlock.
         Achievement_OnFirstPlaythroughComplete();
+        // Stage 16: category L's "complete the story" entries, gated on this
+        // same re-runs-every-NG+-cycle branch (see the comment below) so a
+        // different mono-type/rebuild/etc. run in NG+ is checked fresh.
+        Achievement_CheckTeamCompletionMilestones();
         // Stage 12: FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
         // (see NewGameInitData, src/new_game.c), so this branch already
         // re-runs on every NG+ cycle's clear, not just the save's very first

@@ -6155,7 +6155,12 @@ static void HandleEndTurn_BattleWon(void)
     // recorded-battle replay could satisfy a gBattleResults-derived entry
     // from stale data rather than a live result.
     if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+    {
         Achievement_CheckBattleMilestones();
+        // Stage 16 (catalog wave 3): same gate, same evaluation point --
+        // reads AchievementBattleData while it still reflects this battle.
+        Achievement_CheckTeamMilestones();
+    }
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
     {

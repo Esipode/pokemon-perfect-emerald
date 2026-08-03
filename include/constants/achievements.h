@@ -53,6 +53,20 @@
 //   K. ACHIEVEMENT_BATTLE_CRITICAL_SUCCESS .. ACHIEVEMENT_BATTLE_LAST_ONE_STANDING (30)
 //      Battle Mastery -- Achievement_CheckBattleMilestones, called from
 //      HandleEndTurn_BattleWon (src/battle_main.c).
+//
+// Stage 16 (design doc catalog wave 3, plan Stage 16): the third catalog
+// wave, the first real user of struct AchievementRunData (include/global.h).
+// Builds on Stage 15's Achievement_IsMajorBattle() and adds
+// Achievement_IsGymBattle() (TRAINER_CLASS_LEADER specifically). Checked from
+// three sites: Achievement_CheckTeamMilestones (same HandleEndTurn_BattleWon
+// call site as category K), Achievement_CheckPartyStateMilestones (piggybacks
+// on category A's existing Common_EventScript_CheckLevelCapIncrease
+// callnative), and Achievement_CheckTeamCompletionMilestones (GameClear,
+// src/post_battle_event_funcs.c).
+//
+//   L. ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL .. ACHIEVEMENT_TEAM_ACE_ROTATION (30)
+//      Team Building & Composition -- see src/achievements.c for the
+//      per-entry hook-site breakdown.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -168,6 +182,38 @@ enum AchievementId
     ACHIEVEMENT_BATTLE_TEAM_PLAYER,
     ACHIEVEMENT_BATTLE_COMEBACK_KID,
     ACHIEVEMENT_BATTLE_LAST_ONE_STANDING,
+
+    // L. Team Building & Composition (30)
+    ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL,
+    ACHIEVEMENT_TEAM_ONE_TYPE_JOURNEY,
+    ACHIEVEMENT_TEAM_MONO_TYPE_CHAMPION,
+    ACHIEVEMENT_TEAM_TRIAL_BY_FIRE,
+    ACHIEVEMENT_TEAM_NO_DUPLICATES,
+    ACHIEVEMENT_TEAM_SIX_OF_A_KIND,
+    ACHIEVEMENT_TEAM_UNDERSTUDY,
+    ACHIEVEMENT_TEAM_BENCHWARMER,
+    ACHIEVEMENT_TEAM_BOX_ROTATION,
+    ACHIEVEMENT_TEAM_DEEP_BENCH,
+    ACHIEVEMENT_TEAM_FULL_ROTATION,
+    ACHIEVEMENT_TEAM_NO_ACE,
+    ACHIEVEMENT_TEAM_TYPE_ROULETTE,
+    ACHIEVEMENT_TEAM_WELL_EQUIPPED,
+    ACHIEVEMENT_TEAM_FULL_HOUSE,
+    ACHIEVEMENT_TEAM_VARIETY_IS_POWER,
+    ACHIEVEMENT_TEAM_LINK_IN_THE_CHAIN,
+    ACHIEVEMENT_TEAM_DREAM_TEAM,
+    ACHIEVEMENT_TEAM_EVERYONE_GETS_A_TURN,
+    ACHIEVEMENT_TEAM_REBUILD,
+    ACHIEVEMENT_TEAM_RADICAL_REBUILD,
+    ACHIEVEMENT_TEAM_CAPPED_OUT,
+    ACHIEVEMENT_TEAM_FEATHERWEIGHT,
+    ACHIEVEMENT_TEAM_UNDERDOG_RUN,
+    ACHIEVEMENT_TEAM_DIVERSE_ROOTS,
+    ACHIEVEMENT_TEAM_FRESH_START,
+    ACHIEVEMENT_TEAM_SAME_SIX,
+    ACHIEVEMENT_TEAM_BALANCED_ROSTER,
+    ACHIEVEMENT_TEAM_NOBODY_BENCHED,
+    ACHIEVEMENT_TEAM_ACE_ROTATION,
 
     ACHIEVEMENTS_COUNT,
 };

@@ -1106,12 +1106,41 @@ struct Bag
 
 // design doc §17: per-run counters that achievement conditions read from.
 // Reset to zero every new game because ClearSav1 zeroes the whole SaveBlock1
-// (Stage 1.6). Deliberately just reserved space for now: named fields get
-// added here as Stage 2+ achievements need run-scoped tracking that isn't
-// already available elsewhere in the save block.
+// (Stage 1.6). Named fields get added here as achievements need run-scoped
+// tracking that isn't already available elsewhere in the save block.
+//
+// Stage 16 (catalog wave 3, category L): the first real user. Species sets
+// are tracked by species ID, not by individual (personality/OT), matching
+// the granularity Stage 15's AchievementBattleData already tracks party
+// members at (slot/species, never full identity) -- see src/achievements.c
+// for how each field is populated and consumed.
 struct AchievementRunData
 {
-    u8 reserved[64];
+    u16 majorBattleSpecies[32];      // distinct species that have acted in a major battle this run
+    u8  majorBattleSpeciesCount;
+    u8  monoTypeType;                // NUMBER_OF_MON_TYPES == not yet locked in / discipline broken
+    bool8 monoTypeBroken;
+    u8  monoTypeGymsCleared;         // Gym clears where the active party happened to be mono-type
+    u8  prevMajorBattleSlots;        // bitmask over party slots, for Benchwarmer
+    u32 prevGymTypeComposition;      // bitmask over enum Type, for Type Roulette
+    bool8 typeRouletteBroken;
+    u16 firstGymPartySpecies[PARTY_SIZE]; // baseline snapshot at Gym 1, for Same Six
+    bool8 sameSixBaselineSet;
+    bool8 sameSixBroken;
+    u16 prevGymPartySpecies[PARTY_SIZE];  // snapshot at the previous Gym, for Rebuild
+    bool8 prevGymSnapshotSet;
+    bool8 rebuildAchieved;
+    u16 gym4PartySpecies[PARTY_SIZE];     // snapshot at Gym 4, for Radical Rebuild
+    bool8 gym4SnapshotSet;
+    bool8 levelCapEverExceeded;      // for Capped Out
+    bool8 bstEverExceeded450;        // for Underdog Run
+    bool8 nobodyBenchedBroken;
+    u8  gymBattlesWon;               // Gym wins this run -- NOT the same as the badge flags,
+                                      // which aren't set until after HandleEndTurn_BattleWon returns
+    u16 gymFinalKoSpecies[NUM_BADGES]; // the species that landed the final KO in each Gym battle
+    u8  gymFinalKoCount;              // how many of the slots above are filled in, for Ace Rotation
+    u32 recentlyObtainedPersonality[8]; // ring buffer of mons obtained since the last Gym, for Fresh Start
+    u8  recentlyObtainedCount;
 };
 
 struct SaveBlock1

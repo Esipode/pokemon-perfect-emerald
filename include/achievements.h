@@ -476,6 +476,48 @@ void Achievement_RecordOpposingFaint(enum BattlerId victimBattler, enum BattlerI
 // data rather than a live result.
 void Achievement_CheckBattleMilestones(void);
 
+// ---- Stage 16: catalog wave 3 (category L, Team Building & Composition) -
+//
+// The first real user of struct AchievementRunData (include/global.h). Three
+// call sites, each reusing an existing hook rather than adding a new one:
+//   Achievement_CheckTeamMilestones          same site as Achievement_CheckBattleMilestones
+//   Achievement_CheckPartyStateMilestones    same callnative as Achievement_CheckStoryMilestones
+//   Achievement_CheckTeamCompletionMilestones GameClear (src/post_battle_event_funcs.c)
+
+// GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) == TRAINER_CLASS_LEADER
+// specifically -- the subset of Achievement_IsMajorBattle() that's an actual
+// Gym battle, not Elite Four/Champion/rival/Team leaders.
+bool8 Achievement_IsGymBattle(void);
+
+// HandleEndTurn_BattleWon (src/battle_main.c), immediately after
+// Achievement_CheckBattleMilestones, gated the same way (never link/
+// recorded). Reads AchievementBattleData.slotsThatActed/lastThreeKoSlots
+// alongside the live party, so this wave adds no new battle-side hooks of its
+// own -- it rides Stage 15's.
+void Achievement_CheckTeamMilestones(void);
+
+// Achievement_CheckStoryMilestones (src/achievements.c), called at the tail
+// of that function -- the same callnative already threaded through all 16
+// Common_EventScript_CheckLevelCapIncrease call sites (data/scripts/level_cap.inc).
+// Checks party state that isn't tied to a specific battle (held items,
+// level-cap standing).
+void Achievement_CheckPartyStateMilestones(void);
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_OnFirstPlaythroughComplete -- fires once per completed run,
+// including every New Game+ cycle (FLAG_SYS_GAME_CLEAR isn't preserved across
+// NG+, so that branch already re-runs each cycle; see Stage 12's notes).
+void Achievement_CheckTeamCompletionMilestones(void);
+
+// GiveCapturedMonToPlayer (src/pokemon.c) and Task_EggHatch (src/egg_hatch.c)
+// -- the same two call sites Achievement_CheckCaptureMilestones/
+// Achievement_CheckEggMilestones already hook. Gift and traded-in Pokemon
+// aren't tracked by this (no single funnel point exists for them the way
+// catches and hatches already have one); Fresh Start undercounts rather than
+// overcounts as a result, which is the safer direction for an achievement
+// condition to be wrong in.
+void Achievement_RecordMonObtained(u32 personality);
+
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add
 // (achievement completion rules, boost costs/maxLevel, reset fee) by design,

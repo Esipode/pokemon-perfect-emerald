@@ -580,6 +580,8 @@ static void CB2_LoadEggHatch(void)
         // Stage 13, category I. GAME_STAT_HATCHED_EGGS is already incremented
         // by field_control_avatar.c before this whole sequence starts.
         Achievement_CheckEggMilestones(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_IS_SHINY));
+        // Stage 16: same call site, for Fresh Start.
+        Achievement_RecordMonObtained(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_PERSONALITY));
         gMain.state++;
         break;
     case 5:

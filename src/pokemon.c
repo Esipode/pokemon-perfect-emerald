@@ -3305,6 +3305,10 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     Achievement_CheckCaptureMilestones();
     if (GetMonData(mon, MON_DATA_IS_SHINY))
         Achievement_OnShinyObtained();
+    // Stage 16: unconditional, before the party/box branch below -- a catch
+    // that lands in a box still counts as "obtained" for Fresh Start if it's
+    // withdrawn into the party before the next Gym.
+    Achievement_RecordMonObtained(GetMonData(mon, MON_DATA_PERSONALITY));
 
     for (i = 0; i < PARTY_SIZE; i++)
     {

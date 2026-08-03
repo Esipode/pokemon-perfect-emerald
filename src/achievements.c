@@ -15,6 +15,9 @@
 #include "battle_setup.h"        // TRAINER_BATTLE_PARAM, for Achievement_IsMajorBattle (Stage 15)
 #include "data.h"                 // GetTrainerClassFromId, for Achievement_IsMajorBattle (Stage 15)
 #include "move.h"                 // GetMovePriority, for Achievement_RecordOpposingFaint (Stage 15)
+#include "caps.h"                 // GetCurrentLevelCap, for Stage 16's level-cap checks
+#include "pokemon_storage_system.h" // TOTAL_BOXES_COUNT/IN_BOX_COUNT/GetBoxMonDataAt, for Stage 16's No Ace
+#include "constants/difficulty.h" // DIFFICULTY_HARD, for Stage 16's Trial by Fire
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
 #include "constants/game_stat.h" // GAME_STAT_*, for Stage 13's threshold checks
@@ -732,6 +735,10 @@ void Achievement_CheckStoryMilestones(void)
         if (FlagGet(sStoryMilestones[i].flag))
             Achievement_TryComplete(sStoryMilestones[i].achievementId);
     }
+
+    // Stage 16: piggyback on this same callnative for party-state checks that
+    // aren't tied to a specific battle. See that function's own doc comment.
+    Achievement_CheckPartyStateMilestones();
 }
 
 // Percentages of NATIONAL_DEX_COUNT rather than hardcoded species counts, so
@@ -1233,6 +1240,681 @@ void Achievement_CheckBattleMilestones(void)
             }
         }
     }
+}
+
+// ---- Stage 16: catalog wave 3 (category L, Team Building & Composition) -
+//
+// The first real user of struct AchievementRunData (include/global.h) --
+// see that struct's own comment for what each field tracks. Species sets are
+// tracked by species ID, not full individual identity (personality/OT), the
+// same granularity Stage 15 already tracks party members at.
+
+bool8 Achievement_IsGymBattle(void)
+{
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return FALSE;
+
+    return GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) == TRAINER_CLASS_LEADER;
+}
+
+// Returns a shared type if every one of the count members has it as one of
+// their (up to two) types, else NUMBER_OF_MON_TYPES. Starts at TYPE_NONE + 1
+// so two single-type members don't spuriously "share" TYPE_NONE via their
+// unused second type slot.
+static u8 Achievement_ComputePartyMonoType(struct Pokemon *party, u8 count)
+{
+    u32 type;
+
+    if (count == 0)
+        return NUMBER_OF_MON_TYPES;
+
+    for (type = TYPE_NONE + 1; type < NUMBER_OF_MON_TYPES; type++)
+    {
+        u8 i;
+        bool8 allHaveType = TRUE;
+
+        for (i = 0; i < count; i++)
+        {
+            enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
+
+            if (gSpeciesInfo[species].types[0] != type && gSpeciesInfo[species].types[1] != type)
+            {
+                allHaveType = FALSE;
+                break;
+            }
+        }
+
+        if (allHaveType)
+            return (u8)type;
+    }
+
+    return NUMBER_OF_MON_TYPES;
+}
+
+// Union of every type held by the party. TYPE_NONE itself is never set, so a
+// party of all single-type members doesn't inflate CountSetBits() of this.
+static u32 Achievement_PartyTypeComposition(struct Pokemon *party, u8 count)
+{
+    u32 mask = 0;
+    u8 i;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
+
+        mask |= 1u << gSpeciesInfo[species].types[0];
+        if (gSpeciesInfo[species].types[1] != TYPE_NONE)
+            mask |= 1u << gSpeciesInfo[species].types[1];
+    }
+
+    return mask;
+}
+
+static bool8 Achievement_AllTypesDisjoint(struct Pokemon *party, u8 count)
+{
+    u8 i, j;
+
+    if (count == 0)
+        return FALSE;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Species speciesI = GetMonData(&party[i], MON_DATA_SPECIES);
+
+        for (j = i + 1; j < count; j++)
+        {
+            enum Species speciesJ = GetMonData(&party[j], MON_DATA_SPECIES);
+            u8 k;
+
+            for (k = 0; k < 2; k++)
+            {
+                enum Type typeI = gSpeciesInfo[speciesI].types[k];
+
+                if (typeI == TYPE_NONE)
+                    continue;
+                if (typeI == gSpeciesInfo[speciesJ].types[0] || typeI == gSpeciesInfo[speciesJ].types[1])
+                    return FALSE;
+            }
+        }
+    }
+
+    return TRUE;
+}
+
+static bool8 Achievement_AllPrimaryTypesDistinct(struct Pokemon *party, u8 count)
+{
+    u8 i, j;
+
+    if (count == 0)
+        return FALSE;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Species speciesI = GetMonData(&party[i], MON_DATA_SPECIES);
+
+        for (j = i + 1; j < count; j++)
+        {
+            enum Species speciesJ = GetMonData(&party[j], MON_DATA_SPECIES);
+
+            if (gSpeciesInfo[speciesI].types[0] == gSpeciesInfo[speciesJ].types[0])
+                return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+static bool8 Achievement_AllPrimaryEggGroupsDistinct(struct Pokemon *party, u8 count)
+{
+    u8 i, j;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Species speciesI = GetMonData(&party[i], MON_DATA_SPECIES);
+
+        for (j = i + 1; j < count; j++)
+        {
+            enum Species speciesJ = GetMonData(&party[j], MON_DATA_SPECIES);
+
+            if (gSpeciesInfo[speciesI].eggGroups[0] == gSpeciesInfo[speciesJ].eggGroups[0])
+                return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+static bool8 Achievement_HasDuplicateSpecies(struct Pokemon *party, u8 count)
+{
+    u8 i, j;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Species speciesI = GetMonData(&party[i], MON_DATA_SPECIES);
+
+        for (j = i + 1; j < count; j++)
+        {
+            if (speciesI == GetMonData(&party[j], MON_DATA_SPECIES))
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+static u8 Achievement_HighestLevelPartySlot(struct Pokemon *party, u8 count)
+{
+    u8 i, bestSlot = 0, bestLevel = 0;
+
+    for (i = 0; i < count; i++)
+    {
+        u8 level = GetMonData(&party[i], MON_DATA_LEVEL);
+
+        if (level > bestLevel)
+        {
+            bestLevel = level;
+            bestSlot = i;
+        }
+    }
+
+    return bestSlot;
+}
+
+// Scans every PC box, not just the party -- "highest-level Pokemon" for No
+// Ace means across everything the player owns, not just the active six.
+static bool8 Achievement_HighestLevelMonIsOutsideParty(struct Pokemon *party, u8 count)
+{
+    u8 maxPartyLevel = 0;
+    u8 i, box, slot;
+
+    for (i = 0; i < count; i++)
+    {
+        u8 level = GetMonData(&party[i], MON_DATA_LEVEL);
+        if (level > maxPartyLevel)
+            maxPartyLevel = level;
+    }
+
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++)
+        {
+            if (GetBoxMonDataAt(box, slot, MON_DATA_SPECIES) != SPECIES_NONE
+             && GetBoxMonDataAt(box, slot, MON_DATA_LEVEL) > maxPartyLevel)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+static enum Species Achievement_GetEvolutionRoot(enum Species species)
+{
+    enum Species pre;
+
+    while ((pre = GetSpeciesPreEvolution(species)) != SPECIES_NONE)
+        species = pre;
+
+    return species;
+}
+
+// Whether any evolution family has at least minSize members in the party.
+static bool8 Achievement_HasEvolutionFamilyOfSize(struct Pokemon *party, u8 count, u8 minSize)
+{
+    u8 i, j;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Species rootI = Achievement_GetEvolutionRoot(GetMonData(&party[i], MON_DATA_SPECIES));
+        u8 familyCount = 1;
+
+        for (j = i + 1; j < count; j++)
+        {
+            enum Species rootJ = Achievement_GetEvolutionRoot(GetMonData(&party[j], MON_DATA_SPECIES));
+            if (rootJ == rootI)
+                familyCount++;
+        }
+
+        if (familyCount >= minSize)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+static u32 Achievement_PartyBaseStatTotal(struct Pokemon *party, u8 count)
+{
+    u32 sum = 0;
+    u8 i;
+
+    for (i = 0; i < count; i++)
+        sum += GetSpeciesBaseStatTotal(GetMonData(&party[i], MON_DATA_SPECIES));
+
+    return sum;
+}
+
+// Snapshots into a fixed PARTY_SIZE-length buffer, SPECIES_NONE-padded, so
+// the set helpers below never need to carry a separate count alongside it.
+static void Achievement_SnapshotPartySpecies(struct Pokemon *party, u8 count, u16 *dest)
+{
+    u8 i;
+
+    for (i = 0; i < PARTY_SIZE; i++)
+        dest[i] = (i < count) ? GetMonData(&party[i], MON_DATA_SPECIES) : SPECIES_NONE;
+}
+
+// Set equality (order-independent, SPECIES_NONE padding ignored). Duplicate
+// species within one snapshot are treated as a single set member -- an
+// acceptable simplification for these flavor achievements.
+static bool8 Achievement_SpeciesSetsEqual(const u16 *a, const u16 *b)
+{
+    u8 i, j;
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (a[i] == SPECIES_NONE)
+            continue;
+        for (j = 0; j < PARTY_SIZE; j++)
+        {
+            if (b[j] == a[i])
+                break;
+        }
+        if (j == PARTY_SIZE)
+            return FALSE;
+    }
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (b[i] == SPECIES_NONE)
+            continue;
+        for (j = 0; j < PARTY_SIZE; j++)
+        {
+            if (a[j] == b[i])
+                break;
+        }
+        if (j == PARTY_SIZE)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static bool8 Achievement_SpeciesSetsDisjoint(const u16 *a, const u16 *b)
+{
+    u8 i, j;
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (a[i] == SPECIES_NONE)
+            continue;
+        for (j = 0; j < PARTY_SIZE; j++)
+        {
+            if (b[j] == a[i])
+                return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+// Count of species in cur that aren't present in prevSet, for Rebuild.
+static u8 Achievement_CountSpeciesNotInSet(const u16 *cur, const u16 *prevSet)
+{
+    u8 i, j, diff = 0;
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        bool8 found = FALSE;
+
+        if (cur[i] == SPECIES_NONE)
+            continue;
+
+        for (j = 0; j < PARTY_SIZE; j++)
+        {
+            if (prevSet[j] == cur[i])
+            {
+                found = TRUE;
+                break;
+            }
+        }
+
+        if (!found)
+            diff++;
+    }
+
+    return diff;
+}
+
+static bool8 Achievement_AllDistinctU16(const u16 *arr, u8 count)
+{
+    u8 i, j;
+
+    for (i = 0; i < count; i++)
+    {
+        for (j = i + 1; j < count; j++)
+        {
+            if (arr[i] == arr[j])
+                return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+static void Achievement_RecordMajorBattleSpecies(enum Species species)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    u8 i;
+
+    if (species == SPECIES_NONE)
+        return;
+
+    for (i = 0; i < runData->majorBattleSpeciesCount; i++)
+    {
+        if (runData->majorBattleSpecies[i] == species)
+            return;
+    }
+
+    if (runData->majorBattleSpeciesCount < ARRAY_COUNT(runData->majorBattleSpecies))
+    {
+        runData->majorBattleSpecies[runData->majorBattleSpeciesCount] = species;
+        runData->majorBattleSpeciesCount++;
+    }
+}
+
+static bool8 Achievement_WasRecentlyObtained(struct AchievementRunData *runData, u32 personality)
+{
+    u8 validCount = (runData->recentlyObtainedCount < ARRAY_COUNT(runData->recentlyObtainedPersonality))
+                  ? runData->recentlyObtainedCount
+                  : ARRAY_COUNT(runData->recentlyObtainedPersonality);
+    u8 i;
+
+    for (i = 0; i < validCount; i++)
+    {
+        if (runData->recentlyObtainedPersonality[i] == personality)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+// GiveCapturedMonToPlayer (src/pokemon.c) / Task_EggHatch (src/egg_hatch.c).
+// See the header doc comment for why gift/traded-in mons aren't tracked.
+void Achievement_RecordMonObtained(u32 personality)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    u8 slot = runData->recentlyObtainedCount % ARRAY_COUNT(runData->recentlyObtainedPersonality);
+
+    runData->recentlyObtainedPersonality[slot] = personality;
+    if (runData->recentlyObtainedCount < 0xFF)
+        runData->recentlyObtainedCount++;
+}
+
+// HandleEndTurn_BattleWon (src/battle_main.c), right after
+// Achievement_CheckBattleMilestones, gated the same way by the caller (never
+// link/recorded). Mono-type discipline is tracked on every trainer win, not
+// just major ones -- adding an off-type Pokemon for a throwaway early
+// trainer breaks it just as much as adding one for a Gym.
+void Achievement_CheckTeamMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    bool8 isTrainerBattle = (gBattleTypeFlags & BATTLE_TYPE_TRAINER) != 0;
+    bool8 isMajorBattle = Achievement_IsMajorBattle();
+    bool8 isGymBattle = Achievement_IsGymBattle();
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 monoType = Achievement_ComputePartyMonoType(party, playerCount);
+    u8 i;
+
+    if (isTrainerBattle && !runData->monoTypeBroken)
+    {
+        if (runData->monoTypeType == NUMBER_OF_MON_TYPES)
+        {
+            if (monoType != NUMBER_OF_MON_TYPES)
+                runData->monoTypeType = monoType;
+            else
+                runData->monoTypeBroken = TRUE;
+        }
+        else if (monoType != runData->monoTypeType)
+        {
+            runData->monoTypeBroken = TRUE;
+        }
+    }
+
+    if (isGymBattle)
+    {
+        u16 curSpecies[PARTY_SIZE];
+        u32 composition = Achievement_PartyTypeComposition(party, playerCount);
+        u8 highestSlot = Achievement_HighestLevelPartySlot(party, playerCount);
+
+        if (runData->gymBattlesWon < 255)
+            runData->gymBattlesWon++;
+
+        Achievement_SnapshotPartySpecies(party, playerCount, curSpecies);
+
+        if (monoType != NUMBER_OF_MON_TYPES)
+        {
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL);
+            if (runData->monoTypeGymsCleared < 255)
+                runData->monoTypeGymsCleared++;
+        }
+        if (runData->monoTypeGymsCleared >= 4)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_ONE_TYPE_JOURNEY);
+
+        if (playerCount != 0 && !(sBattleData.slotsThatActed & (1 << highestSlot)))
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_UNDERSTUDY);
+
+        if (Achievement_HighestLevelMonIsOutsideParty(party, playerCount))
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_NO_ACE);
+
+        if (Achievement_PartyBaseStatTotal(party, playerCount) < 1800)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_FEATHERWEIGHT);
+
+        // Type Roulette: composition must differ from the previous Gym's.
+        if (runData->gymBattlesWon == 1)
+        {
+            runData->prevGymTypeComposition = composition;
+        }
+        else
+        {
+            if (composition == runData->prevGymTypeComposition)
+                runData->typeRouletteBroken = TRUE;
+            runData->prevGymTypeComposition = composition;
+        }
+
+        // Same Six: species set must match the Gym 1 baseline every time.
+        if (!runData->sameSixBaselineSet)
+        {
+            memcpy(runData->firstGymPartySpecies, curSpecies, sizeof(curSpecies));
+            runData->sameSixBaselineSet = TRUE;
+        }
+        else if (!Achievement_SpeciesSetsEqual(runData->firstGymPartySpecies, curSpecies))
+        {
+            runData->sameSixBroken = TRUE;
+        }
+
+        // Rebuild: >=4 species new since the immediately preceding Gym.
+        if (runData->prevGymSnapshotSet
+         && Achievement_CountSpeciesNotInSet(curSpecies, runData->prevGymPartySpecies) >= 4)
+            runData->rebuildAchieved = TRUE;
+        memcpy(runData->prevGymPartySpecies, curSpecies, sizeof(curSpecies));
+        runData->prevGymSnapshotSet = TRUE;
+
+        // Radical Rebuild's baseline.
+        if (runData->gymBattlesWon == 4)
+        {
+            memcpy(runData->gym4PartySpecies, curSpecies, sizeof(curSpecies));
+            runData->gym4SnapshotSet = TRUE;
+        }
+
+        if (playerCount == 0 || sBattleData.slotsThatActed != ((1 << playerCount) - 1))
+            runData->nobodyBenchedBroken = TRUE;
+
+        // Ace Rotation: the party slot that landed the final KO, translated
+        // to a species while the just-won battle's party is still current.
+        if (sBattleData.lastThreeKoSlots[2] != 0 && runData->gymFinalKoCount < NUM_BADGES)
+        {
+            u8 koSlot = sBattleData.lastThreeKoSlots[2] - 1;
+
+            if (koSlot < playerCount)
+            {
+                runData->gymFinalKoSpecies[runData->gymFinalKoCount] = GetMonData(&party[koSlot], MON_DATA_SPECIES);
+                runData->gymFinalKoCount++;
+            }
+        }
+
+        if (playerCount == PARTY_SIZE)
+        {
+            bool8 allFresh = TRUE;
+
+            for (i = 0; i < PARTY_SIZE; i++)
+            {
+                u32 personality = GetMonData(&party[i], MON_DATA_PERSONALITY);
+
+                if (!Achievement_WasRecentlyObtained(runData, personality))
+                {
+                    allFresh = FALSE;
+                    break;
+                }
+            }
+
+            if (allFresh)
+                Achievement_TryComplete(ACHIEVEMENT_TEAM_FRESH_START);
+        }
+        // The "since the previous Gym" window always resets here, win or not.
+        runData->recentlyObtainedCount = 0;
+
+        if (runData->gymBattlesWon >= NUM_BADGES)
+        {
+            if (!runData->typeRouletteBroken)
+                Achievement_TryComplete(ACHIEVEMENT_TEAM_TYPE_ROULETTE);
+            if (runData->sameSixBaselineSet && !runData->sameSixBroken)
+                Achievement_TryComplete(ACHIEVEMENT_TEAM_SAME_SIX);
+            if (!runData->nobodyBenchedBroken)
+                Achievement_TryComplete(ACHIEVEMENT_TEAM_NOBODY_BENCHED);
+            if (runData->gymFinalKoCount >= NUM_BADGES && Achievement_AllDistinctU16(runData->gymFinalKoSpecies, NUM_BADGES))
+                Achievement_TryComplete(ACHIEVEMENT_TEAM_ACE_ROTATION);
+        }
+    }
+
+    if (isMajorBattle)
+    {
+        if (Achievement_AllTypesDisjoint(party, playerCount))
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_NO_DUPLICATES);
+
+        if (playerCount == PARTY_SIZE && monoType != NUMBER_OF_MON_TYPES)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_SIX_OF_A_KIND);
+
+        if (!Achievement_HasDuplicateSpecies(party, playerCount))
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_VARIETY_IS_POWER);
+
+        if (playerCount == PARTY_SIZE && Achievement_AllPrimaryEggGroupsDistinct(party, playerCount))
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_DIVERSE_ROOTS);
+
+        if (Achievement_HasEvolutionFamilyOfSize(party, playerCount, 3))
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_LINK_IN_THE_CHAIN);
+
+        if (sBattleData.slotsThatActed != 0 && runData->prevMajorBattleSlots != 0
+         && (sBattleData.slotsThatActed & runData->prevMajorBattleSlots) == 0)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_BENCHWARMER);
+        runData->prevMajorBattleSlots = sBattleData.slotsThatActed;
+
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            if (sBattleData.slotsThatActed & (1 << i))
+                Achievement_RecordMajorBattleSpecies(GetMonData(&party[i], MON_DATA_SPECIES));
+        }
+
+        if (runData->majorBattleSpeciesCount >= 12)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_BOX_ROTATION);
+        if (runData->majorBattleSpeciesCount >= 18)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_DEEP_BENCH);
+        if (runData->majorBattleSpeciesCount >= 24)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_EVERYONE_GETS_A_TURN);
+        if (runData->majorBattleSpeciesCount >= 30)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_FULL_ROTATION);
+    }
+}
+
+// Common_EventScript_CheckLevelCapIncrease's callnative, via the tail of
+// Achievement_CheckStoryMilestones -- party state that isn't tied to a
+// specific battle. levelCapEverExceeded/bstEverExceeded450 are bookkeeping
+// only checked here, at these 16 checkpoints, rather than continuously; a
+// party member could transiently cross a threshold between two checkpoints
+// and be missed, the same fidelity tradeoff Stage 15's per-battle snapshots
+// already accept elsewhere in this file.
+void Achievement_CheckPartyStateMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    u32 levelCap = GetCurrentLevelCap();
+    u8 holdingItemCount = 0;
+    u8 atOrAboveCapCount = 0;
+    u8 i;
+
+    for (i = 0; i < playerCount; i++)
+    {
+        u32 level = GetMonData(&party[i], MON_DATA_LEVEL);
+
+        if (GetMonData(&party[i], MON_DATA_HELD_ITEM) != ITEM_NONE)
+            holdingItemCount++;
+
+        if (level >= levelCap)
+            atOrAboveCapCount++;
+        if (level > levelCap)
+            runData->levelCapEverExceeded = TRUE;
+
+        if (GetSpeciesBaseStatTotal(GetMonData(&party[i], MON_DATA_SPECIES)) > 450)
+            runData->bstEverExceeded450 = TRUE;
+    }
+
+    if (playerCount == PARTY_SIZE && holdingItemCount == PARTY_SIZE)
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_WELL_EQUIPPED);
+
+    if (playerCount == PARTY_SIZE && atOrAboveCapCount == PARTY_SIZE)
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_FULL_HOUSE);
+}
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_OnFirstPlaythroughComplete -- see that call site for why this
+// correctly re-fires once per New Game+ cycle, not just the save's first
+// clear.
+void Achievement_CheckTeamCompletionMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+
+    if (runData->monoTypeType != NUMBER_OF_MON_TYPES && !runData->monoTypeBroken)
+    {
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_MONO_TYPE_CHAMPION);
+        if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_TRIAL_BY_FIRE);
+    }
+
+    if (runData->rebuildAchieved)
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_REBUILD);
+
+    if (runData->gym4SnapshotSet)
+    {
+        u16 curSpecies[PARTY_SIZE];
+
+        Achievement_SnapshotPartySpecies(party, playerCount, curSpecies);
+        if (Achievement_SpeciesSetsDisjoint(curSpecies, runData->gym4PartySpecies))
+            Achievement_TryComplete(ACHIEVEMENT_TEAM_RADICAL_REBUILD);
+    }
+
+    if (!runData->levelCapEverExceeded)
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_CAPPED_OUT);
+
+    if (!runData->bstEverExceeded450)
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_UNDERDOG_RUN);
+
+    if (Achievement_AllPrimaryTypesDistinct(party, playerCount))
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_DREAM_TEAM);
+
+    if (CountSetBits(Achievement_PartyTypeComposition(party, playerCount)) >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_TEAM_BALANCED_ROSTER);
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------
