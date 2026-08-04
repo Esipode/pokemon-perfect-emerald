@@ -171,13 +171,14 @@ void NewGameInitData(void)
     void *bagItemsBackup = NULL;
     // void *bagKeyItemsBackup = NULL;
     void *bagPokeBallsBackup = NULL;
-    // void *bagTMHMsBackup = NULL;
+    void *bagTMHMsBackup = NULL;
     void *bagBerriesBackup = NULL;
     void *dexCaughtBackup = NULL;
     void *dexSeenBackup = NULL;
     void *flagsBackup = NULL;
     void *optionsBackup = NULL;
     void *playerSettingsBackup = NULL;
+    void *itemFlagsBackup = NULL;
     u8 savedTrainerId[TRAINER_ID_LENGTH];
     u32 moneyBackup = 0;
     u16 coinsBackup = 0;
@@ -215,8 +216,8 @@ void NewGameInitData(void)
         bagPokeBallsBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.pokeBalls));
         memcpy(bagPokeBallsBackup, gSaveBlock1Ptr->bag.pokeBalls, sizeof(gSaveBlock1Ptr->bag.pokeBalls));
 
-        // bagTMHMsBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.TMsHMs));
-        // memcpy(bagTMHMsBackup, gSaveBlock1Ptr->bag.TMsHMs, sizeof(gSaveBlock1Ptr->bag.TMsHMs));
+        bagTMHMsBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.TMsHMs));
+        memcpy(bagTMHMsBackup, gSaveBlock1Ptr->bag.TMsHMs, sizeof(gSaveBlock1Ptr->bag.TMsHMs));
 
         bagBerriesBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.berries));
         memcpy(bagBerriesBackup, gSaveBlock1Ptr->bag.berries, sizeof(gSaveBlock1Ptr->bag.berries));
@@ -277,6 +278,14 @@ void NewGameInitData(void)
         gSaveBlock2Ptr->newGamePlus = 0;
         ResetItemFlags();
         ResetDexNav();
+    }
+
+    if (isNewGamePlus)
+    {
+#if OW_SHOW_ITEM_DESCRIPTIONS == OW_ITEM_DESCRIPTIONS_FIRST_TIME
+        itemFlagsBackup = Alloc(sizeof(gSaveBlock3Ptr->itemFlags));
+        memcpy(itemFlagsBackup, gSaveBlock3Ptr->itemFlags, sizeof(gSaveBlock3Ptr->itemFlags));
+#endif
     }
     ZeroEnemyPartyMons();
     ClearFrontierRecord();
@@ -349,7 +358,22 @@ void NewGameInitData(void)
             memcpy(gSaveBlock1Ptr->bag.items, bagItemsBackup, sizeof(gSaveBlock1Ptr->bag.items));
             // memcpy(gSaveBlock1Ptr->bag.keyItems, bagKeyItemsBackup, sizeof(gSaveBlock1Ptr->bag.keyItems));
             memcpy(gSaveBlock1Ptr->bag.pokeBalls, bagPokeBallsBackup, sizeof(gSaveBlock1Ptr->bag.pokeBalls));
-            // memcpy(gSaveBlock1Ptr->bag.TMsHMs, bagTMHMsBackup, sizeof(gSaveBlock1Ptr->bag.TMsHMs));
+            if (bagTMHMsBackup != NULL)
+            {
+                struct ItemSlot *backupSlots = bagTMHMsBackup;
+                for (u32 i = 0; i < BAG_TMHM_COUNT; i++)
+                {
+                    enum Item itemId = backupSlots[i].itemId;
+                    if (itemId != ITEM_NONE && GetItemTMHMIndex(itemId) <= NUM_TECHNICAL_MACHINES)
+                        gSaveBlock1Ptr->bag.TMsHMs[i] = backupSlots[i];
+                    else
+                        gSaveBlock1Ptr->bag.TMsHMs[i] = (struct ItemSlot){ITEM_NONE, 0};
+                }
+            }
+            else
+            {
+                CpuFastFill16(0, gSaveBlock1Ptr->bag.TMsHMs, sizeof(gSaveBlock1Ptr->bag.TMsHMs));
+            }
             memcpy(gSaveBlock1Ptr->bag.berries, bagBerriesBackup, sizeof(gSaveBlock1Ptr->bag.berries));
             CopyTrainerId(gSaveBlock2Ptr->playerTrainerId, savedTrainerId);
 
@@ -390,6 +414,11 @@ void NewGameInitData(void)
             if (roamerLocationBackup != NULL)
                 memcpy(sRoamerLocation, roamerLocationBackup, sizeof(sRoamerLocation));
 
+#if OW_SHOW_ITEM_DESCRIPTIONS == OW_ITEM_DESCRIPTIONS_FIRST_TIME
+            if (itemFlagsBackup != NULL)
+                memcpy(gSaveBlock3Ptr->itemFlags, itemFlagsBackup, sizeof(gSaveBlock3Ptr->itemFlags));
+#endif
+
             /* Restore money and coins preserved across ClearSav1 */
             SetMoney(&gSaveBlock1Ptr->money, moneyBackup);
             SetCoins(coinsBackup);
@@ -429,8 +458,8 @@ void NewGameInitData(void)
         //     Free(bagKeyItemsBackup);
         if (bagPokeBallsBackup != NULL)
             Free(bagPokeBallsBackup);
-        // if (bagTMHMsBackup != NULL)
-        //     Free(bagTMHMsBackup);
+        if (bagTMHMsBackup != NULL)
+            Free(bagTMHMsBackup);
         if (bagBerriesBackup != NULL)
             Free(bagBerriesBackup);
     }
