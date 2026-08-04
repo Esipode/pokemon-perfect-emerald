@@ -77,6 +77,8 @@ extern bool8 gSkipShowMonAnim;
 extern bool8 gDoAutosave;
 extern bool8 gDoAutosaveAfterBattle;
 extern u8 gTimeOfDay;
+
+bool8 CanAutosaveNow(void);
 extern s16 gTimeUpdateCounter;
 extern u8 gDisableMapMusicChangeOnMapLoad;
 

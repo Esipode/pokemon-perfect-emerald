@@ -63,7 +63,7 @@ void HealPlayerParty(void)
         if (B_FLAG_TERA_ORB_CHARGED != 0 && CheckBagHasItem(ITEM_TERA_ORB, 1))
             FlagSet(B_FLAG_TERA_ORB_CHARGED);
 
-        if (gSaveBlock1Ptr->nuzlockeModeEnabled || gSaveBlock1Ptr->autosaveModeEnabled)
+        if ((gSaveBlock1Ptr->nuzlockeModeEnabled || gSaveBlock1Ptr->autosaveModeEnabled) && CanAutosaveNow())
         {
             AutosaveGame();
         }

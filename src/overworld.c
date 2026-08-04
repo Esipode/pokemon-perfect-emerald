@@ -210,6 +210,11 @@ static u8 sRfuKeepAliveTimer;
 bool8 gDoAutosave = FALSE;
 bool8 gDoAutosaveAfterBattle = FALSE;
 
+bool8 CanAutosaveNow(void)
+{
+    return !ArePlayerFieldControlsLocked() && TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_CONTROLLABLE);
+}
+
 COMMON_DATA u16 *gOverworldTilemapBuffer_Bg2 = NULL;
 COMMON_DATA u16 *gOverworldTilemapBuffer_Bg1 = NULL;
 COMMON_DATA u16 *gOverworldTilemapBuffer_Bg3 = NULL;
@@ -1960,8 +1965,12 @@ void CB2_Overworld(void)
         SetFieldVBlankCallback();
         return;
     }
-    if (gDoAutosaveAfterBattle) {
+    if (gDoAutosaveAfterBattle && CanAutosaveNow()) {
         gDoAutosaveAfterBattle = FALSE;
+        AutosaveGame();
+    }
+    if (gDoAutosave && CanAutosaveNow()) {
+        gDoAutosave = FALSE;
         AutosaveGame();
     }
 }
