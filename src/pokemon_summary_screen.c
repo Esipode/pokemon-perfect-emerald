@@ -1582,15 +1582,10 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
     case 1:
         for (i = 0; i < MAX_MON_MOVES; i++)
         {
-            // Always store the original (non-randomized) move for proper seed generation
+            // The move list should reflect the move that is actually stored on the Pokémon.
+            // Re-randomizing it here causes already-resolved moves to change again.
             sum->originalMoves[i] = GetMonData(mon, MON_DATA_MOVE1+i);
             sum->moves[i] = sum->originalMoves[i];
-
-            // Apply randomization for display if enabled, but always use original move as seed
-            if (FlagGet(FLAG_RANDOMIZE_MOVES) && !sMonSummaryScreen->isBoxMon && sum->moves[i] != MOVE_NONE)
-            {
-                sum->moves[i] = GetRandomMove(sum->species, sum->originalMoves[i]);
-            }
             sum->pp[i] = GetMovePP(sum->moves[i]);
         }
         sum->ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
@@ -2087,6 +2082,10 @@ static void Task_ChangeSummaryMon(u8 taskId)
         {
             gMoveRelearnerState = MOVE_RELEARNER_LEVEL_UP_MOVES;
             UpdateMoveRelearnerState(FALSE);
+            ClearWindowTilemap(PSS_LABEL_WINDOW_PROMPT_RELEARN);
+            if (ShouldShowMoveRelearner())
+                PutWindowTilemap(PSS_LABEL_WINDOW_PROMPT_RELEARN);
+            ScheduleBgCopyTilemapToVram(0);
         }
         break;
     case 5:
@@ -2439,9 +2438,8 @@ static u16 GetDisplayedNewMove(void)
     if (newMove == MOVE_NONE)
         return MOVE_NONE;
 
-    if (FlagGet(FLAG_RANDOMIZE_MOVES) && !sMonSummaryScreen->isBoxMon)
-        return GetEffectiveMove(newMove, sMonSummaryScreen->summary.species);
-
+    // The move being applied has already been resolved by the learning flow.
+    // Avoid randomizing it again here and changing the selection.
     return newMove;
 }
 
