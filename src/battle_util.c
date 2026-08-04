@@ -1706,10 +1706,23 @@ void TryToRevertMimicryAndFlags(void)
 }
 
 // Ingrain, Leech Seed, Strength Sap and Aqua Ring
-s32 GetDrainedBigRootHp(enum BattlerId battler, s32 hp)
+s32 GetDrainedBigRootHp(enum BattlerId battler, enum BattlerId sourceBattler, s32 hp)
 {
     if (GetBattlerHoldEffect(battler) == HOLD_EFFECT_BIG_ROOT)
         hp = (hp * 1300) / 1000;
+
+    if (sourceBattler != battler)
+    {
+        s32 levelDifference = gBattleMons[battler].level - gBattleMons[sourceBattler].level;
+        if (levelDifference > 0)
+        {
+            s32 levelScale = 100 - (levelDifference / 5);
+            if (levelScale < 0)
+                levelScale = 0;
+            hp = (hp * levelScale) / 100;
+        }
+    }
+
     if (hp == 0)
         hp = 1;
 

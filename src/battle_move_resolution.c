@@ -2581,7 +2581,7 @@ static enum MoveEndResult MoveEndProtectLikeEffect(struct BattleCalcValues *cv)
 
 static void SetHealScript(struct BattleCalcValues *cv, s32 healAmount)
 {
-    healAmount = GetDrainedBigRootHp(cv->battlerAtk, healAmount);
+    healAmount = GetDrainedBigRootHp(cv->battlerAtk, cv->battlerDef, healAmount);
     if (cv->abilities[cv->battlerDef] == ABILITY_LIQUID_OOZE
      && (cv->moveEffect != EFFECT_DREAM_EATER || GetConfig(B_DREAM_EATER_LIQUID_OOZE) >= GEN_5))
     {
