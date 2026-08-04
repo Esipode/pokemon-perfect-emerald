@@ -41,6 +41,7 @@
 #include "pokedex.h"
 #include "mail.h"
 #include "field_weather.h"
+#include "ui_birch_case.h"
 #include "constants/abilities.h"
 #include "constants/battle_anim.h"
 #include "constants/battle_move_effects.h"
@@ -9678,17 +9679,23 @@ bool32 IsBattlerUnaffectedByMove(enum BattlerId battler)
 
 enum Type GetBattleMoveType(enum Move move)
 {
+    enum Type moveType = GetMoveType(move);
+
     if (gMain.inBattle)
     {
         if (gBattleStruct->dynamicMoveType)
-            return gBattleStruct->dynamicMoveType & DYNAMIC_TYPE_MASK;
+            moveType = gBattleStruct->dynamicMoveType & DYNAMIC_TYPE_MASK;
 
         enum BattleMoveEffects effect = GetMoveEffect(move);
         if (B_UPDATED_MOVE_TYPES < GEN_5
          && (effect == EFFECT_BEAT_UP || effect == EFFECT_FUTURE_SIGHT))
-          return TYPE_MYSTERY;
+            moveType = TYPE_MYSTERY;
     }
-    return GetMoveType(move);
+
+    if (gMain.inBattle && FlagGet(FLAG_RANDOMIZE_TYPE))
+        return GetRandomMoveType(move);
+
+    return moveType;
 }
 
 void TryActivateSleepClause(enum BattlerId battler, u32 indexInParty)
