@@ -791,6 +791,14 @@ static void Task_SetClock_WaitFadeIn(u8 taskId)
 
 static void Task_SetClock_HandleInput(u8 taskId)
 {
+    if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_SetClock_Exit;
+        return;
+    }
+
     if (gTasks[taskId].tMinuteHandAngle % 6)
     {
         gTasks[taskId].tMinuteHandAngle = CalcNewMinHandAngle(gTasks[taskId].tMinuteHandAngle, gTasks[taskId].tMoveDir, gTasks[taskId].tMoveSpeed);
@@ -852,7 +860,8 @@ static void Task_SetClock_HandleConfirmInput(u8 taskId)
         PlaySE(SE_SELECT);
         ClearStdWindowAndFrameToTransparent(WIN_MSG, FALSE);
         ClearWindowTilemap(WIN_MSG);
-        gTasks[taskId].func = Task_SetClock_HandleInput;
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_SetClock_Exit;
         break;
     }
 }
