@@ -30,6 +30,142 @@
 #include "data/achievements.h"
 #include "data/achievement_boosts.h"
 
+// Forward declarations: Stage 16/18 helpers defined further down this file
+// that Stage 19 needs from the Stage 5/12 wrapper functions above them
+// (Achievement_OnFirstPlaythroughComplete/_OnNewGamePlusStarted/
+// _OnNewGamePlusCycleCompleted) -- those wrapper functions are this wave's
+// hooks (see include/constants/achievements.h's category O comment) and
+// stayed where Stage 5/12 put them rather than moving down next to
+// everything they now call.
+static void Achievement_SnapshotPartySpecies(struct Pokemon *party, u8 count, u16 *dest);
+static bool8 Achievement_SpeciesSetsDisjoint(const u16 *a, const u16 *b);
+static u8 Achievement_CountChallengeModifiers(void);
+
+// ---- Stage 19: catalog wave 6 (category O, Randomizer & New Game+) -----
+//
+// Small, self-contained helpers with no ordering dependency of their own,
+// defined up here (rather than down with Achievement_CheckRandomizerCaptureMilestone
+// and the rest of this wave's code) so both the Stage 5/12 wrapper functions
+// above and Stage 18's Achievement_CheckChallengeMilestones/
+// _CheckNuzlockeCompletionMilestones further down can call them.
+
+static bool8 Achievement_AnyRandomizerFlagSet(void)
+{
+    return FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES);
+}
+
+// A bitmask twin of Achievement_CountChallengeModifiers -- same seven New
+// Game Settings, but Cycle Collector needs to tell configurations apart, not
+// just count them.
+static u8 Achievement_ChallengeConfigSignature(void)
+{
+    u8 signature = 0;
+
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+        signature |= 1 << 0;
+    if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)
+        signature |= 1 << 1;
+    if (FlagGet(FLAG_RANDOMIZE_MON))
+        signature |= 1 << 2;
+    if (FlagGet(FLAG_RANDOMIZE_TYPE))
+        signature |= 1 << 3;
+    if (FlagGet(FLAG_RANDOMIZE_MOVES))
+        signature |= 1 << 4;
+    if (!FlagGet(FLAG_LEVEL_CAP_OFF))
+        signature |= 1 << 5;
+    if (!FlagGet(FLAG_ALLOW_STAT_EDITOR))
+        signature |= 1 << 6;
+
+    return signature;
+}
+
+// Bitmask over Achievement_IsMajorBattle's six trainer classes, for Boss
+// Gauntlet (NGP-014). "Every major boss" is simplified to "every major-boss
+// TRAINER CLASS" rather than every individual trainer -- Emerald's story
+// already mandates fighting at least one of each (all 8 Gym Leaders, the
+// full Elite Four, the Champion, every rival battle, and both Team Aqua/
+// Magma leader confrontations), so this is a real but low-friction check,
+// the same flavor as several other completion entries in this wave.
+#define ACHIEVEMENT_BOSS_GAUNTLET_ALL_CLASSES 0x3F
+static u8 Achievement_MajorBossClassBit(u8 trainerClass)
+{
+    switch (trainerClass)
+    {
+    case TRAINER_CLASS_LEADER:       return 1 << 0;
+    case TRAINER_CLASS_ELITE_FOUR:   return 1 << 1;
+    case TRAINER_CLASS_CHAMPION:     return 1 << 2;
+    case TRAINER_CLASS_RIVAL:        return 1 << 3;
+    case TRAINER_CLASS_MAGMA_LEADER: return 1 << 4;
+    case TRAINER_CLASS_AQUA_LEADER:  return 1 << 5;
+    default:                         return 0;
+    }
+}
+
+// Patchwork Team (RND-007): six party members caught on six different
+// routes. MON_DATA_MET_LOCATION is the region map section a Pokemon was
+// caught/received on -- a coarser unit than "route" for town/city entries,
+// but a reasonable and already-available proxy, the same kind of
+// simplification Achievement_AllPrimaryTypesDistinct's "primary type only"
+// already accepts for team-composition entries.
+static bool8 Achievement_AllMetLocationsDistinct(struct Pokemon *party, u8 count)
+{
+    u8 i, j;
+
+    if (count == 0)
+        return FALSE;
+
+    for (i = 0; i < count; i++)
+    {
+        u32 locI = GetMonData(&party[i], MON_DATA_MET_LOCATION);
+
+        for (j = i + 1; j < count; j++)
+        {
+            if (locI == GetMonData(&party[j], MON_DATA_MET_LOCATION))
+                return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+// Complete Reinvention (NGP-012): records the current Gym's party species
+// into AchievementRunDataExt.gymSpeciesUsedThisCycle (deduplicated), and
+// reports whether any of them had already appeared at an earlier Gym this
+// cycle -- the caller latches that into the sticky reinventionBroken flag,
+// the same idiom Stage 16 uses for mono-type/type-roulette/etc.
+static bool8 Achievement_RecordGymSpeciesUsed(struct AchievementRunDataExt *runDataExt, struct Pokemon *party, u8 playerCount)
+{
+    u16 curSpecies[PARTY_SIZE];
+    bool8 overlap = FALSE;
+    u8 i, j;
+
+    Achievement_SnapshotPartySpecies(party, playerCount, curSpecies);
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        bool8 alreadyListed = FALSE;
+
+        if (curSpecies[i] == SPECIES_NONE)
+            continue;
+
+        for (j = 0; j < runDataExt->gymSpeciesUsedThisCycleCount; j++)
+        {
+            if (runDataExt->gymSpeciesUsedThisCycle[j] == curSpecies[i])
+            {
+                alreadyListed = TRUE;
+                break;
+            }
+        }
+
+        if (alreadyListed)
+            overlap = TRUE;
+        else if (runDataExt->gymSpeciesUsedThisCycleCount < ARRAY_COUNT(runDataExt->gymSpeciesUsedThisCycle))
+            runDataExt->gymSpeciesUsedThisCycle[runDataExt->gymSpeciesUsedThisCycleCount++] = curSpecies[i];
+    }
+
+    return overlap;
+}
+
 // The whole struct is written as one blob to a sector (see WriteAchievementProfile).
 STATIC_ASSERT(sizeof(struct AchievementProfile) <= SECTOR_SIZE, AchievementProfileFreeSpace);
 
@@ -253,6 +389,60 @@ void Achievement_OnFirstPlaythroughComplete(void)
     if (gAchievementProfile.randomizedRunsCompleted >= 1)
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZED_1);
 
+    // Stage 19 (catalog wave 6): Chaos Begins/Seed Explorer/Randomizer
+    // Veteran/Truly Random/Pure Chaos/Species-Type-Move Chaos, all read
+    // directly off the flags/difficulty this exact completion ran under.
+    // Chaos Begins is also checked in Achievement_OnNewGamePlusStarted (the
+    // actual "begin" event for cycle >= 1); this is the only equivalent this
+    // wave's infra has for the very first playthrough, which never calls
+    // that function.
+    if (Achievement_AnyRandomizerFlagSet())
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS);
+    if (gAchievementProfile.randomizedRunsCompleted >= 2)
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER);
+    if (gAchievementProfile.randomizedRunsCompleted >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_VETERAN);
+    if (FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES))
+    {
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_TRULY_RANDOM);
+        if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD && !FlagGet(FLAG_LEVEL_CAP_OFF))
+            Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_PURE_CHAOS);
+    }
+    else if (FlagGet(FLAG_RANDOMIZE_MON) && !FlagGet(FLAG_RANDOMIZE_TYPE) && !FlagGet(FLAG_RANDOMIZE_MOVES))
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS);
+    else if (!FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && !FlagGet(FLAG_RANDOMIZE_MOVES))
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_TYPE_CHAOS);
+    else if (!FlagGet(FLAG_RANDOMIZE_MON) && !FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES))
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_MOVE_CHAOS);
+
+    // Full Circle (VAR-007) bookkeeping: a "conventional" completion is one
+    // that was neither a Nuzlocke nor randomized.
+    if (!gSaveBlock1Ptr->nuzlockeModeEnabled && !Achievement_AnyRandomizerFlagSet())
+        gAchievementProfile.completedConventionalRun = TRUE;
+    if (gAchievementProfile.completedConventionalRun
+     && gAchievementProfile.nuzlockesCompleted >= 1
+     && gAchievementProfile.randomizedRunsCompleted >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_VARIETY_FULL_CIRCLE);
+
+    // Escalation (NGP-010)/No Nostalgia (NGP-011) bookkeeping: only when this
+    // completion was NOT an NG+ cycle -- Achievement_OnNewGamePlusCycleCompleted
+    // (called right after this, from the same GameClear branch, whenever
+    // newGamePlus > 0) owns both fields the rest of the time. Consecutive
+    // cycles reset here because a plain/conventional completion -- on this
+    // save or any other, since the profile is shared across saves -- breaks
+    // an in-progress NG+ streak. previousCyclePartySpecies is seeded here
+    // (cycle 0 has no earlier Achievement_OnNewGamePlusCycleCompleted call to
+    // do it) so cycle 1's completion always has something valid to compare
+    // against.
+    if (gSaveBlock2Ptr->newGamePlus == 0)
+    {
+        struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+        gAchievementProfile.consecutiveNgPlusCyclesCompleted = 0;
+        Achievement_SnapshotPartySpecies(gParties[B_TRAINER_PLAYER], gPartiesCount[B_TRAINER_PLAYER], runDataExt->previousCyclePartySpecies);
+        runDataExt->previousCyclePartySpeciesSet = TRUE;
+    }
+
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
 }
@@ -261,6 +451,8 @@ void Achievement_OnFirstPlaythroughComplete(void)
 // starting a new NG+ cycle is rare and important, not a hot path.
 void Achievement_OnNewGamePlusStarted(u8 cycle)
 {
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
     if (cycle > gAchievementProfile.highestNgPlusCycle)
         gAchievementProfile.highestNgPlusCycle = cycle;
 
@@ -272,6 +464,22 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
     if (gAchievementProfile.highestNgPlusCycle >= 5)
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_5);
 
+    // Stage 19: Beyond the Beginning, and Chaos Begins for the case this
+    // wave's infra can actually observe as a true "begin" event (see
+    // Achievement_OnFirstPlaythroughComplete for the cycle-0 case).
+    if (gAchievementProfile.highestNgPlusCycle >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_BEYOND_THE_BEGINNING);
+    if (Achievement_AnyRandomizerFlagSet())
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS);
+
+    // Zero every per-cycle-scoped AchievementRunDataExt field -- see that
+    // struct's own comment for why ClearSav1 can't do this for us here.
+    // previousCyclePartySpecies is deliberately left untouched.
+    runDataExt->trainersDefeatedThisCycle = 0;
+    runDataExt->gymSpeciesUsedThisCycleCount = 0;
+    runDataExt->reinventionBroken = FALSE;
+    runDataExt->majorBossClassesDefeatedThisCycle = 0;
+
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
 }
@@ -280,11 +488,89 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
 // from Achievement_OnFirstPlaythroughComplete rather than folded into it.
 void Achievement_OnNewGamePlusCycleCompleted(void)
 {
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    u16 curSpecies[PARTY_SIZE];
+    u8 i;
+
     gAchievementProfile.ngPlusCyclesCompleted++;
 
     // Stage 13, category J.
     if (gAchievementProfile.ngPlusCyclesCompleted >= 3)
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_COMPLETED_3);
+
+    // Stage 19: every "complete an NG+ cycle with X" entry lives here, since
+    // this function only ever runs when that's exactly what just happened.
+    // Exact-equality checks (== 2) are used wherever an extra qualifier
+    // (boosts disabled) isn't itself monotonic across cycles -- an
+    // unqualified >= would let a later cycle's data wrongly satisfy an
+    // earlier cycle-specific condition.
+    if (gAchievementProfile.ngPlusCyclesCompleted == 2)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_ONE_MORE_TIME);
+    if (gAchievementProfile.ngPlusCyclesCompleted >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP);
+    if (gAchievementProfile.ngPlusCyclesCompleted == 2 && !gAchievementProfile.boostsEnabled)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE);
+
+    // Escalation (NGP-010): reset by Achievement_OnFirstPlaythroughComplete
+    // whenever a completion is NOT an NG+ cycle, so this only ever counts an
+    // unbroken run of cycle completions.
+    if (gAchievementProfile.consecutiveNgPlusCyclesCompleted < 255)
+        gAchievementProfile.consecutiveNgPlusCyclesCompleted++;
+    if (gAchievementProfile.consecutiveNgPlusCyclesCompleted >= 3)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_ESCALATION);
+
+    if (Achievement_CountChallengeModifiers() >= 3)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST);
+
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE);
+    if (gSaveBlock2Ptr->newGamePlus >= 5 && gSaveBlock1Ptr->nuzlockeModeEnabled && Achievement_AnyRandomizerFlagSet())
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR);
+
+    // Complete Reinvention/Boss Gauntlet: bookkeeping accumulated all cycle
+    // by Achievement_CheckChallengeMilestones (HandleEndTurn_BattleWon).
+    if (runData->gymBattlesWon >= NUM_BADGES && !runDataExt->reinventionBroken)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION);
+    if (runDataExt->majorBossClassesDefeatedThisCycle == ACHIEVEMENT_BOSS_GAUNTLET_ALL_CLASSES)
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET);
+
+    // No Nostalgia (NGP-011): compare against the snapshot from the PRIOR
+    // completion (seeded either by this same function last cycle, or by
+    // Achievement_OnFirstPlaythroughComplete's cycle-0 case for cycle 1's
+    // first comparison) before overwriting it with this cycle's.
+    Achievement_SnapshotPartySpecies(party, playerCount, curSpecies);
+    if (runDataExt->previousCyclePartySpeciesSet
+     && Achievement_SpeciesSetsDisjoint(curSpecies, runDataExt->previousCyclePartySpecies))
+        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA);
+    memcpy(runDataExt->previousCyclePartySpecies, curSpecies, sizeof(curSpecies));
+    runDataExt->previousCyclePartySpeciesSet = TRUE;
+
+    // Cycle Collector: distinct challenge-configuration signatures seen
+    // across every completed NG+ cycle -- profile-scoped, so this persists
+    // even across separate saves, same as every other gAchievementProfile
+    // field.
+    {
+        u8 signature = Achievement_ChallengeConfigSignature();
+        bool8 seen = FALSE;
+
+        for (i = 0; i < gAchievementProfile.ngPlusConfigsSeenCount; i++)
+        {
+            if (gAchievementProfile.ngPlusConfigsSeen[i] == signature)
+            {
+                seen = TRUE;
+                break;
+            }
+        }
+
+        if (!seen && gAchievementProfile.ngPlusConfigsSeenCount < ARRAY_COUNT(gAchievementProfile.ngPlusConfigsSeen))
+            gAchievementProfile.ngPlusConfigsSeen[gAchievementProfile.ngPlusConfigsSeenCount++] = signature;
+
+        if (gAchievementProfile.ngPlusConfigsSeenCount >= 3)
+            Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR);
+    }
 
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
@@ -2416,17 +2702,46 @@ static bool8 Achievement_HasDuplicateEvolutionFamilyAmongOwned(struct Pokemon *p
 // recorded). Covers every Challenge-category entry evaluated battle-by-
 // battle, plus the running bookkeeping Achievement_CheckChallengeCompletionMilestones
 // reads at GameClear.
+//
+// Stage 19: rides this same call site (see include/constants/achievements.h's
+// category O comment for why) rather than adding a new one -- Random by
+// Nature/Chaos Team/Never Seen It Coming/Patchwork Team, the
+// trainer-win/Boss-Gauntlet/Complete-Reinvention bookkeeping
+// Achievement_OnNewGamePlusCycleCompleted reads at GameClear, and Fresh
+// Faces/Never the Same Fight, checked immediately on crossing their
+// threshold rather than waiting for cycle-complete.
 void Achievement_CheckChallengeMilestones(void)
 {
     struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
     struct Pokemon *party = gParties[B_TRAINER_PLAYER];
     u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    bool8 isTrainerBattle = (gBattleTypeFlags & BATTLE_TYPE_TRAINER) != 0;
     bool8 isMajorBattle = Achievement_IsMajorBattle();
     bool8 isGymBattle = Achievement_IsGymBattle();
     u8 i;
 
     if (playerCount > runData->highestPartySizeThisRun)
         runData->highestPartySizeThisRun = playerCount;
+
+    // Stage 19: Fresh Faces/Never the Same Fight -- every trainer win, not
+    // only major/Gym ones.
+    if (isTrainerBattle)
+    {
+        if (runDataExt->trainersDefeatedThisCycle < 0xFFFF)
+            runDataExt->trainersDefeatedThisCycle++;
+        if (gSaveBlock2Ptr->newGamePlus > 0 && runDataExt->trainersDefeatedThisCycle >= 50)
+            Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_FRESH_FACES);
+
+        if (gSaveBlock2Ptr->newGamePlus > 0)
+        {
+            if (gAchievementProfile.trainersDefeatedAcrossNgPlus < 0xFFFF)
+                gAchievementProfile.trainersDefeatedAcrossNgPlus++;
+            if (gAchievementProfile.trainersDefeatedAcrossNgPlus >= 300)
+                Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_NEVER_THE_SAME_FIGHT);
+            sAchievementProfileDirty = TRUE;
+        }
+    }
 
     if (isMajorBattle)
     {
@@ -2468,6 +2783,23 @@ void Achievement_CheckChallengeMilestones(void)
                 }
             }
         }
+
+        // Stage 19: Patchwork Team -- no randomizer gate, per the roster's
+        // own condition text.
+        if (playerCount == PARTY_SIZE && Achievement_AllMetLocationsDistinct(party, playerCount))
+            Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_PATCHWORK_TEAM);
+
+        // Boss Gauntlet bookkeeping -- accumulates all cycle, checked at
+        // Achievement_OnNewGamePlusCycleCompleted.
+        runDataExt->majorBossClassesDefeatedThisCycle |= Achievement_MajorBossClassBit(GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA));
+
+        if (Achievement_AnyRandomizerFlagSet())
+        {
+            if (playerCount == PARTY_SIZE && Achievement_AllPrimaryTypesDistinct(party, playerCount))
+                Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_CHAOS_TEAM);
+            if (!sBattleData.superEffectiveUsed)
+                Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING);
+        }
     }
 
     if (isGymBattle)
@@ -2485,6 +2817,14 @@ void Achievement_CheckChallengeMilestones(void)
         }
         if (!anyAboveCap)
             Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE);
+
+        // Stage 19: Random by Nature, and Complete Reinvention's cumulative
+        // species tracking (checked at Achievement_OnNewGamePlusCycleCompleted).
+        if (Achievement_AnyRandomizerFlagSet())
+            Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_RANDOM_BY_NATURE);
+
+        if (Achievement_RecordGymSpeciesUsed(runDataExt, party, playerCount))
+            runDataExt->reinventionBroken = TRUE;
     }
 }
 
@@ -2645,6 +2985,14 @@ void Achievement_CheckNuzlockeCompletionMilestones(void)
 
     if (!gAchievementProfile.boostsEnabled)
         Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR);
+
+    // Stage 19: Nuzlocke Across Worlds/Chaos Survivor.
+    if (Achievement_AnyRandomizerFlagSet())
+    {
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_ACROSS_WORLDS);
+        if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)
+            Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_CHAOS_SURVIVOR);
+    }
 }
 
 // BuyMenuSubtractMoney (src/shop.c), alongside Achievement_RecordMoneySpent
@@ -2688,6 +3036,19 @@ void Achievement_RecordNuzlockeMonLost(void)
 void Achievement_RecordStarterPersonality(u32 personality)
 {
     gSaveBlock1Ptr->achievementRunData.starterPersonality = personality;
+}
+
+// GiveCapturedMonToPlayer (src/pokemon.c), alongside
+// Achievement_CheckCaptureMilestones -- one more call at that same funnel.
+// GAME_STAT_POKEMON_CAPTURES is this-run count (ResetGameStats zeroes every
+// game stat at the start of every new game and every NG+ cycle,
+// src/overworld.c), already incremented by the time this runs. See the top
+// of this file for Achievement_AnyRandomizerFlagSet and this wave's other
+// helpers.
+void Achievement_CheckRandomizerCaptureMilestone(void)
+{
+    if (Achievement_AnyRandomizerFlagSet() && GetGameStat(GAME_STAT_POKEMON_CAPTURES) >= 25)
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_ROOKIE);
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

@@ -619,6 +619,29 @@ struct AchievementRunDataExt
     // Gym-clears-without-shopping streaks for No Shopping.
     bool8 shoppedSinceLastGym;
     u8  consecutiveGymsNoShopping;
+
+    // Stage 19 (catalog wave 6, Randomizer & New Game+): SaveBlock1 has zero
+    // bytes of slack left after Stage 18 used exactly what Stage 17 left
+    // behind, so every run-scoped field this wave needs lands here instead --
+    // the same detour Stage 17 took, for the same reason.
+    //
+    // Two different reset cadences now share this struct. mapsVisited/etc.
+    // above are cleared only by a genuine new game (Sav2_ClearSetDefault) and
+    // deliberately span every NG+ cycle on the save, matching
+    // ACHIEVEMENT_SCOPE_NG_PLUS. The four fields below are "within a single
+    // NG+ cycle" instead, so they're explicitly zeroed by
+    // Achievement_OnNewGamePlusStarted -- ClearSav1 can't do it for us here,
+    // since that only ever touches SaveBlock1. previousCyclePartySpecies is
+    // the one exception in the other direction: its whole job is to survive
+    // the cycle boundary, so nothing ever resets it except being overwritten
+    // with the next cycle's snapshot.
+    u16 trainersDefeatedThisCycle;             // Fresh Faces (NGP-006)
+    u16 gymSpeciesUsedThisCycle[NUM_BADGES * PARTY_SIZE]; // cumulative distinct species across every Gym cleared so far this cycle, for Complete Reinvention
+    u8  gymSpeciesUsedThisCycleCount;
+    bool8 reinventionBroken;                   // sticky, same idiom as Stage 16's mono-type/type-roulette broken flags
+    u8  majorBossClassesDefeatedThisCycle;     // bitmask, Boss Gauntlet (NGP-014)
+    u16 previousCyclePartySpecies[PARTY_SIZE]; // the previous cycle's final party, for No Nostalgia (NGP-011)
+    bool8 previousCyclePartySpeciesSet;
 };
 
 struct SaveBlock2

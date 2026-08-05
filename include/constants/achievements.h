@@ -133,6 +133,30 @@
 //      Challenge Runs & Nuzlocke -- see src/achievements.c for the per-entry
 //      hook-site breakdown. Tagged across the existing CHALLENGE/NUZLOCKE
 //      categories.
+//
+// Stage 19 (design doc catalog wave 6, plan Stage 19): Randomizer & New
+// Game+. Both halves read state that already exists -- the three
+// FLAG_RANDOMIZE_* flags and Stage 12's ngPlusCyclesCompleted/
+// highestNgPlusCycle -- so per the plan doc this wave's hooks are the three
+// existing Stage 5/12 wrapper functions (Achievement_OnFirstPlaythroughComplete/
+// _OnNewGamePlusStarted/_OnNewGamePlusCycleCompleted) and Stage 18's existing
+// Achievement_CheckChallengeMilestones/_CheckNuzlockeCompletionMilestones
+// (HandleEndTurn_BattleWon/GameClear) -- no call site outside src/achievements.c
+// is touched except GiveCapturedMonToPlayer (src/pokemon.c), which gets one
+// more line alongside the four calls already there, the same "ride the
+// funnel" idiom Stage 16-18 already established. New profile counters
+// (AchievementProfile.reserved[]): trainersDefeatedAcrossNgPlus, consecutive
+// NG+ cycles completed, and challenge-configuration signatures seen (a
+// broader version of the plan's "randomized runs completed per flag
+// combination" -- see that field's own comment for why). New per-cycle
+// run-scoped fields live in AchievementRunDataExt (SaveBlock2), not
+// AchievementRunData (SaveBlock1, zero bytes of slack left after Stage 18) --
+// see that struct's own comment.
+//
+//   O. ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS .. ACHIEVEMENT_VARIETY_FULL_CIRCLE (30)
+//      Randomizer & New Game+ -- see src/achievements.c for the per-entry
+//      hook-site breakdown. Tagged across the existing RANDOMIZER/NUZLOCKE/
+//      NG_PLUS/PROFILE categories, not a new one.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -346,6 +370,38 @@ enum AchievementId
     ACHIEVEMENT_NUZLOCKE_GRAVEYARD,
     ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER,
     ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR,
+
+    // O. Randomizer & New Game+ (30)
+    ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS,
+    ACHIEVEMENT_RANDOMIZER_RANDOM_BY_NATURE,
+    ACHIEVEMENT_RANDOMIZER_TRULY_RANDOM,
+    ACHIEVEMENT_RANDOMIZER_CHAOS_TEAM,
+    ACHIEVEMENT_RANDOMIZER_PATCHWORK_TEAM,
+    ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING,
+    ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER,
+    ACHIEVEMENT_RANDOMIZER_VETERAN,
+    ACHIEVEMENT_RANDOMIZER_PURE_CHAOS,
+    ACHIEVEMENT_NUZLOCKE_ACROSS_WORLDS,
+    ACHIEVEMENT_NUZLOCKE_CHAOS_SURVIVOR,
+    ACHIEVEMENT_NG_PLUS_ONE_MORE_TIME,
+    ACHIEVEMENT_NG_PLUS_BEYOND_THE_BEGINNING,
+    ACHIEVEMENT_NG_PLUS_FRESH_FACES,
+    ACHIEVEMENT_NG_PLUS_NEVER_THE_SAME_FIGHT,
+    ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST,
+    ACHIEVEMENT_NG_PLUS_ESCALATION,
+    ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA,
+    ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION,
+    ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET,
+    ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE,
+    ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR,
+    ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS,
+    ACHIEVEMENT_RANDOMIZER_TYPE_CHAOS,
+    ACHIEVEMENT_RANDOMIZER_MOVE_CHAOS,
+    ACHIEVEMENT_RANDOMIZER_ROOKIE,
+    ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE,
+    ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP,
+    ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR,
+    ACHIEVEMENT_VARIETY_FULL_CIRCLE,
 
     ACHIEVEMENTS_COUNT,
 };

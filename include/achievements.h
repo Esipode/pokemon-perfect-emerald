@@ -105,7 +105,28 @@ struct AchievementProfile
     // AchievementBoost_GetActiveLevel/_TryChangeActiveLevel below.
     u8  boostLevelReduction[MAX_BOOSTS];
 
-    u8  reserved[32];             // forward compatibility
+    // Stage 19 (catalog wave 6, Randomizer & New Game+): same "front of
+    // reserved[]" precedent as boostLevelReduction above -- these bytes are
+    // guaranteed zero in any profile saved before this wave, so every
+    // existing field keeps its offset. Deviates from the plan doc's infra
+    // sketch, which also proposed a "randomized runs completed per flag
+    // combination" counter: dropped, because every roster entry that reads a
+    // specific flag combination (Truly Random, Pure Chaos, Species/Type/Move
+    // Chaos) is a one-shot completion check where Achievement_TryComplete's
+    // own idempotency guard is already sufficient -- no counter needed.
+    // ngPlusConfigsSeen ended up needing that same shape of tracking anyway,
+    // just for Cycle Collector's broader "challenge configuration" (all 7
+    // Achievement_CountChallengeModifiers modifiers, not only the randomizer
+    // ones) rather than the plan's narrower randomizer-only version.
+    u16 trainersDefeatedAcrossNgPlus;    // for Never the Same Fight (NGP-008)
+    u8  consecutiveNgPlusCyclesCompleted;// for Escalation (NGP-010) -- reset
+                                          // whenever Achievement_OnFirstPlaythroughComplete
+                                          // fires for a completion that was NOT an NG+ cycle
+    u8  ngPlusConfigsSeen[4];            // distinct Achievement_ChallengeConfigSignature values seen across completed NG+ cycles, for Cycle Collector
+    u8  ngPlusConfigsSeenCount;
+    bool8 completedConventionalRun;      // neither Nuzlocke nor randomized -- for Full Circle (VAR-007)
+
+    u8  reserved[23];             // forward compatibility (was 32)
 };
 
 extern struct AchievementProfile gAchievementProfile;
@@ -177,6 +198,18 @@ bool8 Achievement_TryComplete(u16 achievementId);
 // that only runs the first time FLAG_SYS_GAME_CLEAR is set for this save --
 // that flag's own set-once semantics are what guarantee this runs exactly
 // once per playthrough, so this function has no completion guard of its own.
+//
+// Stage 19 (catalog wave 6): per the plan doc, this wave's hooks are these
+// three existing wrapper functions rather than any new call site -- mirrors
+// how Stage 13's category J was checked. Also handles: Chaos Begins/Truly
+// Random/Pure Chaos/Species-Type-Move Chaos/Seed Explorer/Randomizer
+// Veteran (all read FlagGet(FLAG_RANDOMIZE_*)/gSaveBlock1Ptr->difficulty at
+// this exact completion moment); Full Circle's completedConventionalRun
+// bookkeeping; and, gated on gSaveBlock2Ptr->newGamePlus == 0 specifically
+// (i.e. this completion was NOT an NG+ cycle), resetting
+// consecutiveNgPlusCyclesCompleted and seeding previousCyclePartySpecies for
+// Escalation/No Nostalgia -- see Achievement_OnNewGamePlusCycleCompleted's
+// comment for why those two live on opposite sides of that gate.
 void Achievement_OnFirstPlaythroughComplete(void);
 
 // design doc Stage 12: called from NewGameInitData (src/new_game.c) right
@@ -184,6 +217,19 @@ void Achievement_OnFirstPlaythroughComplete(void);
 // cycle's number (1 for the first NG+ loop, 2 for the second, ...).
 // highestNgPlusCycle is a high-water mark, not a live counter --
 // gSaveBlock2Ptr->newGamePlus already is that -- so this only ever grows it.
+//
+// Stage 19: also Beyond the Beginning (highestNgPlusCycle >= 10) and Chaos
+// Begins (checked here too, since this is the one real "a run/cycle just
+// began" event this wave's infra has -- TryComplete's own guard makes the
+// duplicate check with Achievement_OnFirstPlaythroughComplete's cycle-0 case
+// harmless). Also zeroes every per-cycle-scoped field in
+// AchievementRunDataExt (trainersDefeatedThisCycle, gymSpeciesUsedThisCycle/
+// Count, reinventionBroken, majorBossClassesDefeatedThisCycle) -- SaveBlock1
+// has zero bytes of slack left after Stage 18 (see AchievementRunDataExt's
+// own comment), so these live in SaveBlock2 instead, which ClearSav1 can't
+// reset for us; this call is their substitute reset point. Deliberately NOT
+// zeroed: previousCyclePartySpecies, which is supposed to survive the cycle
+// boundary (see Achievement_OnNewGamePlusCycleCompleted).
 void Achievement_OnNewGamePlusStarted(u8 cycle);
 
 // design doc Stage 12: called from the same GameClear() branch as
@@ -193,6 +239,20 @@ void Achievement_OnNewGamePlusStarted(u8 cycle);
 // every NG+ cycle's clear, not just the save's very first playthrough. This
 // counts specifically the subset of those clears that happened during an NG+
 // loop, distinct from the plain playthroughsCompleted total.
+//
+// Stage 19: every "complete an NG+ cycle with X" entry lives here, since
+// this function only ever runs when that's exactly what just happened --
+// One More Time/Ten Cycles Deep/Unassisted Cycle (ngPlusCyclesCompleted),
+// Cycle Specialist/Cycle Collector (Achievement_CountChallengeModifiers/
+// Achievement_ChallengeConfigSignature), Escalation (consecutiveNgPlusCyclesCompleted,
+// incremented here -- see Achievement_OnFirstPlaythroughComplete for where
+// it resets), Cycle Nuzlocke/Endless Survivor (nuzlockeModeEnabled),
+// Complete Reinvention/Boss Gauntlet (AchievementRunDataExt's per-cycle
+// fields), and No Nostalgia (compares the current final party against
+// AchievementRunDataExt.previousCyclePartySpecies -- the PRIOR cycle's
+// snapshot, seeded either by this same function last cycle or, for cycle 1,
+// by Achievement_OnFirstPlaythroughComplete's cycle-0 case -- then
+// overwrites it with the current party for the next comparison).
 void Achievement_OnNewGamePlusCycleCompleted(void);
 
 // design doc §7 (Stage 7): validates in order -- boosts unlocked, current
@@ -630,6 +690,14 @@ void Achievement_CheckEconomyCompletionMilestones(void);
 // Minimalist/Level Discipline -- plus the running high-water mark
 // (highestPartySizeThisRun) and starter-tracking bookkeeping that
 // Achievement_CheckChallengeCompletionMilestones reads at GameClear.
+//
+// Stage 19 (catalog wave 6): rides this same call site rather than adding a
+// new one -- Random by Nature (Gym clear), Chaos Team/Never Seen It Coming/
+// Patchwork Team (major battle win), trainer-win bookkeeping
+// (AchievementRunDataExt.trainersDefeatedThisCycle/gAchievementProfile's
+// trainersDefeatedAcrossNgPlus for Fresh Faces/Never the Same Fight), and
+// the per-cycle Boss Gauntlet/Complete Reinvention bookkeeping that
+// Achievement_OnNewGamePlusCycleCompleted reads at GameClear.
 void Achievement_CheckChallengeMilestones(void);
 
 // Same call site as above, immediately after it. Every entry here is
@@ -662,6 +730,9 @@ void Achievement_CheckChallengeCompletionMilestones(void);
 // party + every PC box -- under Nuzlocke rules that's exactly the set of
 // Pokemon caught this run), No Second Chances, Full Encounter, Unassisted
 // Survivor.
+//
+// Stage 19: Nuzlocke Across Worlds/Chaos Survivor -- a completed Nuzlocke run
+// with any FLAG_RANDOMIZE_* flag set (plus HARD difficulty for the latter).
 void Achievement_CheckNuzlockeCompletionMilestones(void);
 
 // BuyMenuSubtractMoney (src/shop.c), alongside Achievement_RecordMoneySpent
@@ -690,6 +761,15 @@ void Achievement_RecordNuzlockeMonLost(void);
 // Achievement_CheckChallengeMilestones can tell whether it ever acts in a
 // major battle, for No Freebies.
 void Achievement_RecordStarterPersonality(u32 personality);
+
+// ---- Stage 19: catalog wave 6 (Randomizer & New Game+) -----------------
+//
+// GiveCapturedMonToPlayer (src/pokemon.c), alongside
+// Achievement_CheckCaptureMilestones -- one more call at that same funnel,
+// not a new one. Randomized Rookie: GetGameStat(GAME_STAT_POKEMON_CAPTURES)
+// (already incremented, this-run count -- see comment on ResetGameStats,
+// src/overworld.c) >= 25 while any FLAG_RANDOMIZE_* flag is set.
+void Achievement_CheckRandomizerCaptureMilestone(void);
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add
