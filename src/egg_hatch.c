@@ -582,6 +582,9 @@ static void CB2_LoadEggHatch(void)
         Achievement_CheckEggMilestones(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_IS_SHINY));
         // Stage 16: same call site, for Fresh Start.
         Achievement_RecordMonObtained(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_PERSONALITY));
+        // Stage 20 (catalog wave 7): Perfect Specimen, same call site as
+        // GiveCapturedMonToPlayer's own check (src/pokemon.c).
+        Achievement_CheckPerfectIvMilestone(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId]);
         gMain.state++;
         break;
     case 5:

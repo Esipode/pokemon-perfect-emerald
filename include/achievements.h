@@ -126,7 +126,19 @@ struct AchievementProfile
     u8  ngPlusConfigsSeenCount;
     bool8 completedConventionalRun;      // neither Nuzlocke nor randomized -- for Full Circle (VAR-007)
 
-    u8  reserved[23];             // forward compatibility (was 32)
+    // Stage 20 (catalog wave 7): same "front of reserved[]" precedent as
+    // every field above. No roster entry in this wave reads it directly --
+    // every REC-xxx streak threshold is checked against
+    // AchievementRunDataExt.currentTrainerWinStreak, which is run-scoped and
+    // already sufficient -- but the plan doc calls for a persistent
+    // high-water mark alongside the run-scoped one, both so a player can see
+    // their best streak survive a new game and as a hook Stage 21 (profile
+    // Mastery/Prestige, defined over the finished catalog) can read later.
+    // Mirrored here from AchievementRunDataExt.bestTrainerWinStreakThisRun on
+    // every party wipe (Achievement_RecordPartyWipe, src/achievements.c).
+    u16 bestTrainerWinStreakEver;
+
+    u8  reserved[21];             // forward compatibility (was 32)
 };
 
 extern struct AchievementProfile gAchievementProfile;
@@ -770,6 +782,70 @@ void Achievement_RecordStarterPersonality(u32 personality);
 // (already incremented, this-run count -- see comment on ResetGameStats,
 // src/overworld.c) >= 25 while any FLAG_RANDOMIZE_* flag is set.
 void Achievement_CheckRandomizerCaptureMilestone(void);
+
+// ---- Stage 20: catalog wave 7 (category P, Streaks, Records & Collection -
+// Remainder). Nine call sites; see include/constants/achievements.h's
+// category P comment for the full breakdown and src/achievements.c for
+// each function's own doc comment.
+
+// HandleEndTurn_BattleWon (src/battle_main.c), immediately after
+// Achievement_CheckNuzlockeMilestones, gated the same way (never link/
+// recorded). Covers every entry evaluated battle-by-battle: the trainer win
+// streak and Gym/League streaks, per-slot KO totals, Comeback Count, Oddball
+// and Underestimated.
+void Achievement_CheckBattleRecordsMilestones(void);
+
+// LoadCurrentMapData (src/overworld.c), alongside
+// Achievement_CheckExplorationMilestones (Stage 17) -- map transitions are
+// frequent enough during normal play to catch these live-state thresholds
+// (nothing here is tied causally to a specific event) without a hook of
+// their own: Growing Strong, One of Each, Century Club/Full Century,
+// Box Filler/Storage Baron, Devoted/Inseparable.
+void Achievement_CheckRecordsMilestones(void);
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_CheckNuzlockeCompletionMilestones -- Legend of the Run reads
+// AchievementRunDataExt.presentAtEveryMajorBattleSlots, which is only
+// meaningful once a completed run's major battles are all in.
+void Achievement_CheckRecordsCompletionMilestones(void);
+
+// RemoveFaintedMonsFromParty (src/overworld.c) and FldEff_PokecenterHeal
+// (src/field_effect.c), the same two IsPartyEmpty()-gated sites Stage 18's
+// Nuzlocke wipe detection already uses -- see that stage's own comment for
+// why no third detector is added. Mirrors the run's win-streak high-water
+// mark into gAchievementProfile.bestTrainerWinStreakEver, then zeroes the
+// streak counters this wipe just broke.
+void Achievement_RecordPartyWipe(void);
+
+// SetValuesOnFaint (src/battle_util.c)'s player-faint branch, gated by the
+// caller the same way as every other battle-data write (never link/
+// recorded). Sets sBattleData.wasDownToLastMon once the player is down to
+// their last conscious Pokemon, for Comeback Count -- read (and reset) by
+// Achievement_CheckBattleRecordsMilestones on the next win.
+void Achievement_RecordPlayerFaint(void);
+
+// HandleSetPokedexFlag (src/pokemon.c)'s FLAG_SET_CAUGHT branch, alongside
+// Achievement_CheckPokedexMilestones -- Family Reunion. species is the
+// species that was just newly caught; walks its evolution family (both
+// directions) and completes if every stage is also caught.
+void Achievement_CheckFamilyMilestone(enum Species species);
+
+// GiveCapturedMonToPlayer (src/pokemon.c) and Task_EggHatch (src/egg_hatch.c)
+// -- the same two funnels Achievement_CheckCaptureMilestones/
+// Achievement_CheckEggMilestones already hook. Perfect Specimen: all six IVs
+// at 31 on the Pokemon just obtained.
+void Achievement_CheckPerfectIvMilestone(struct Pokemon *mon);
+
+// Task_LearnedMove (src/party_menu.c), gated by the caller on move[1] == 0
+// (the TM/HM item-use path specifically, not the move relearner or a move
+// tutor NPC -- see that function's own comment) and on the item actually
+// being a TM rather than an HM. Move Tutor (backfill).
+void Achievement_RecordTMTaught(void);
+
+// FldEff_PokecenterHeal (src/field_effect.c), right after the vanilla
+// IncrementGameStat(GAME_STAT_USED_POKECENTER) call Stage 18 already added.
+// Nurse's Nightmare (backfill).
+void Achievement_CheckPokecenterMilestone(void);
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add

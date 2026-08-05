@@ -46,6 +46,8 @@ int GameClear(void)
         // gSaveBlock1Ptr->nuzlockeModeEnabled.
         Achievement_CheckChallengeCompletionMilestones();
         Achievement_CheckNuzlockeCompletionMilestones();
+        // Stage 20 (catalog wave 7): Legend of the Run, same gating.
+        Achievement_CheckRecordsCompletionMilestones();
         // Stage 12: FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
         // (see NewGameInitData, src/new_game.c), so this branch already
         // re-runs on every NG+ cycle's clear, not just the save's very first

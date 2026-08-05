@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include "global.h"
+#include "achievements.h"
 #include "malloc.h"
 #include "battle.h"
 #include "battle_anim.h"
@@ -5926,6 +5927,21 @@ static void Task_LearnedMove(u8 taskId)
     if (move[1] == 0)
     {
         AdjustFriendship(mon, FRIENDSHIP_EVENT_LEARN_TMHM);
+        // Stage 20 (catalog wave 7): Move Tutor. move[1] == 0 here means
+        // this teach came from the TM/HM item-use path specifically (the
+        // move relearner and move tutor NPCs set it to a nonzero marker
+        // before reaching this same task -- see TryTutorSelectedMon), so
+        // gSpecialVar_ItemId is guaranteed to be the TM/HM item that was
+        // just used, not a stale value left over from an unrelated flow.
+        // GetItemTMHMIndex separates TM from HM, matching the roster's
+        // "teach 25 TMs" wording -- checked here rather than via
+        // !GetItemImportance(item) below, since I_REUSABLE_TMS (this fork's
+        // default) marks every TM important too, so that flag alone can't
+        // tell TMs and HMs apart. GetItemTMHMIndex returns 0 for a
+        // non-TM/HM item (its default case), so the lower bound guards
+        // against that too, not just the HM range above NUM_TECHNICAL_MACHINES.
+        if (GetItemTMHMIndex(item) > 0 && GetItemTMHMIndex(item) <= NUM_TECHNICAL_MACHINES)
+            Achievement_RecordTMTaught();
         if (!GetItemImportance(item))
             RemoveBagItem(item, 1);
     }

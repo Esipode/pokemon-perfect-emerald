@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "data.h"
 #include "decompress.h"
 #include "event_data.h"
@@ -1133,6 +1134,11 @@ bool8 FldEff_PokecenterHeal(void)
 
     if (IsPartyEmpty() && gSaveBlock1Ptr->nuzlockeModeEnabled)
     {
+        // Stage 20 (catalog wave 7): the same IsPartyEmpty() state Stage
+        // 18's Nuzlocke wipe detection already keys off -- see the sibling
+        // call in RemoveFaintedMonsFromParty (src/overworld.c) for why no
+        // third detector is added instead.
+        Achievement_RecordPartyWipe();
         ClearSaveData();
         SetMainCallback2(CB2_NewGame);
         FieldEffectActiveListRemove(FLDEFF_POKECENTER_HEAL);
@@ -1143,6 +1149,9 @@ bool8 FldEff_PokecenterHeal(void)
         // gameStats overview) but never actually incremented anywhere in the
         // tree -- Who Needs Centers?/No Centers need it live.
         IncrementGameStat(GAME_STAT_USED_POKECENTER);
+        // Stage 20 (catalog wave 7): Nurse's Nightmare, same
+        // already-incremented count.
+        Achievement_CheckPokecenterMilestone();
         nPokemon = (OW_IGNORE_EGGS_ON_HEAL <= GEN_3) ? CalculatePlayerPartyCount() : CountPartyNonEggMons();
         task = &gTasks[CreateTask(Task_PokecenterHeal, 0xff)];
         task->tNumMons = nPokemon;

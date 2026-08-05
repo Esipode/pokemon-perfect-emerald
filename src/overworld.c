@@ -2235,6 +2235,12 @@ void RemoveFaintedMonsFromParty(void)
         }
 
         if (IsPartyEmpty()){
+            // Stage 20 (catalog wave 7): the same IsPartyEmpty() state
+            // Stage 18's Nuzlocke wipe detection already keys off -- mirror
+            // the run's streak high-water mark into the profile before
+            // ClearSaveData() below wipes the run-scoped counters that fed
+            // it.
+            Achievement_RecordPartyWipe();
             // Wipe the save file
             ClearSaveData();
         }

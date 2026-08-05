@@ -157,6 +157,37 @@
 //      Randomizer & New Game+ -- see src/achievements.c for the per-entry
 //      hook-site breakdown. Tagged across the existing RANDOMIZER/NUZLOCKE/
 //      NG_PLUS/PROFILE categories, not a new one.
+//
+// Stage 20 (design doc catalog wave 7, plan Stage 20): Streaks, Records &
+// Collection Remainder. The one remaining wave that needs genuinely new
+// persistent counters -- a win streak spans battles, so it can't live in
+// Stage 15's EWRAM-only AchievementBattleData; it belongs in
+// AchievementRunDataExt (SaveBlock2, same "SaveBlock1 has zero slack left"
+// detour Stage 19 already took) with a high-water mark mirrored into
+// AchievementProfile.reserved[] so a streak earned in one run stays earned.
+// Checked from nine call sites, most reusing an existing hook:
+// Achievement_CheckBattleRecordsMilestones/Achievement_RecordPlayerFaint
+// (HandleEndTurn_BattleWon/SetValuesOnFaint, alongside category K/N's battle
+// hooks) for the streak/KO/comeback entries; Achievement_CheckRecordsMilestones
+// (LoadCurrentMapData, alongside category M's exploration hook) for the
+// "live state, any time is fine" entries; Achievement_CheckRecordsCompletionMilestones
+// (GameClear, alongside category N's completion checks) for Legend of the
+// Run; Achievement_RecordPartyWipe (the same two IsPartyEmpty()-gated sites
+// Stage 18's Nuzlocke wipe detection already uses, RemoveFaintedMonsFromParty/
+// FldEff_PokecenterHeal -- no third detector added) for the streak reset;
+// Achievement_CheckFamilyMilestone (HandleSetPokedexFlag, alongside category
+// B's Pokedex checks) for Family Reunion; Achievement_CheckPerfectIvMilestone
+// (GiveCapturedMonToPlayer/Task_EggHatch, alongside categories C/I) for
+// Perfect Specimen; and Achievement_RecordTMTaught/Achievement_CheckPokecenterMilestone
+// (Task_LearnedMove/FldEff_PokecenterHeal) for the two remaining backfills
+// that needed a hook of their own. Every other backfill (steps, total
+// battles, hatched eggs) reads an existing GAME_STAT_* value live and needed
+// no new tracking at all.
+//
+//   P. ACHIEVEMENT_RECORD_HOT_STREAK .. ACHIEVEMENT_RECORD_NURSES_NIGHTMARE (30)
+//      Streaks, Records & Collection Remainder -- see src/achievements.c for
+//      the per-entry hook-site breakdown. Tagged across the existing
+//      RECORDS/COLLECTION/ADVENTURE categories, not a new one.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -402,6 +433,38 @@ enum AchievementId
     ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP,
     ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR,
     ACHIEVEMENT_VARIETY_FULL_CIRCLE,
+
+    // P. Streaks, Records & Collection Remainder (30)
+    ACHIEVEMENT_RECORD_HOT_STREAK,
+    ACHIEVEMENT_RECORD_UNBROKEN,
+    ACHIEVEMENT_RECORD_ON_A_ROLL,
+    ACHIEVEMENT_RECORD_UNTOUCHABLE_STREAK,
+    ACHIEVEMENT_RECORD_THREE_GYM_STREAK,
+    ACHIEVEMENT_RECORD_EIGHT_GYM_STREAK,
+    ACHIEVEMENT_RECORD_LEAGUE_STREAK,
+    ACHIEVEMENT_RECORD_VETERAN_TEAM,
+    ACHIEVEMENT_RECORD_OLD_RELIABLE,
+    ACHIEVEMENT_RECORD_LEGEND_OF_THE_RUN,
+    ACHIEVEMENT_RECORD_COMEBACK_COUNT,
+    ACHIEVEMENT_RECORD_GROWING_STRONG,
+    ACHIEVEMENT_COLLECT_ONE_OF_EACH,
+    ACHIEVEMENT_COLLECT_FAMILY_REUNION,
+    ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN,
+    ACHIEVEMENT_COLLECT_ODDBALL,
+    ACHIEVEMENT_COLLECT_UNDERESTIMATED,
+    ACHIEVEMENT_RECORD_MARATHON_TRAINER,
+    ACHIEVEMENT_RECORD_LONG_HAUL,
+    ACHIEVEMENT_RECORD_PROLIFIC,
+    ACHIEVEMENT_RECORD_BATTLE_MACHINE,
+    ACHIEVEMENT_RECORD_CENTURY_CLUB,
+    ACHIEVEMENT_RECORD_FULL_CENTURY,
+    ACHIEVEMENT_COLLECT_BOX_FILLER,
+    ACHIEVEMENT_COLLECT_STORAGE_BARON,
+    ACHIEVEMENT_RECORD_DEVOTED,
+    ACHIEVEMENT_RECORD_INSEPARABLE,
+    ACHIEVEMENT_RECORD_MOVE_TUTOR,
+    ACHIEVEMENT_RECORD_EGG_MARATHON,
+    ACHIEVEMENT_RECORD_NURSES_NIGHTMARE,
 
     ACHIEVEMENTS_COUNT,
 };

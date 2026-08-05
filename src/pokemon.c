@@ -3317,6 +3317,9 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     // reset only at battle end (after this catch script already ran).
     if (gDexNavSpecies != SPECIES_NONE)
         Achievement_CheckDexNavCaptureMilestone();
+    // Stage 20 (catalog wave 7): Perfect Specimen. Same funnel as every
+    // other capture check above.
+    Achievement_CheckPerfectIvMilestone(mon);
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
@@ -6227,6 +6230,10 @@ void HandleSetPokedexFlag(enum NationalDexOrder nationalNum, u8 caseId, u32 pers
             gSaveBlock2Ptr->pokedex.unownPersonality = personality;
         if (NationalPokedexNumToSpecies(nationalNum) == SPECIES_SPINDA)
             gSaveBlock2Ptr->pokedex.spindaPersonality = personality;
+        // Stage 20 (catalog wave 7): Family Reunion, checked only on a new
+        // catch (not a new sighting) -- one more line at this same funnel.
+        if (caseId == FLAG_SET_CAUGHT)
+            Achievement_CheckFamilyMilestone(NationalPokedexNumToSpecies(nationalNum));
         // Stage 13, category B.
         Achievement_CheckPokedexMilestones(caseId == FLAG_SET_CAUGHT);
     }

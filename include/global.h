@@ -642,6 +642,25 @@ struct AchievementRunDataExt
     u8  majorBossClassesDefeatedThisCycle;     // bitmask, Boss Gauntlet (NGP-014)
     u16 previousCyclePartySpecies[PARTY_SIZE]; // the previous cycle's final party, for No Nostalgia (NGP-011)
     bool8 previousCyclePartySpeciesSet;
+
+    // Stage 20 (catalog wave 7, Streaks, Records & Collection Remainder):
+    // same "SaveBlock1 has zero slack left" detour Stage 19 already took --
+    // see that wave's own fields above. Unlike those four, every field below
+    // spans the whole save the same way mapsVisited (top of this struct)
+    // does: cleared only by Sav2_ClearSetDefault, never reset per NG+ cycle.
+    // A win/Gym streak that happens to straddle an NG+ boundary is exactly
+    // what "since the last party wipe" should mean, not an artificial reset
+    // at the cycle line.
+    u16 currentTrainerWinStreak;         // Hot Streak..Untouchable Streak (REC-001..004)
+    u16 bestTrainerWinStreakThisRun;     // high-water mark; mirrored into gAchievementProfile.bestTrainerWinStreakEver on every party wipe
+    u8  gymLeadersSinceWipe;             // Three/Eight Gym Streak (REC-005/006)
+    u8  leagueWinsSinceWipe;             // Elite Four/Champion wins since the last party wipe, for League Streak (REC-007)
+    u16 koCountPerSlot[PARTY_SIZE];      // cumulative opposing KOs credited to whatever's in this party slot, any battle -- Veteran Team (REC-008)
+    u16 majorKoCountPerSlot[PARTY_SIZE]; // same, major battles only -- Old Reliable (REC-009)
+    u8  presentAtEveryMajorBattleSlots;  // bitmask over party slots, ANDed down at every major battle win -- Legend of the Run (REC-010)
+    bool8 anyMajorBattleThisRun;         // presentAtEveryMajorBattleSlots is meaningless until this is set
+    u8  comebackWinsThisRun;             // Comeback Count (REC-011)
+    u8  tmsTaughtThisRun;                // Move Tutor (backfill)
 };
 
 struct SaveBlock2

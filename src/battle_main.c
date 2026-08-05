@@ -6169,6 +6169,9 @@ static void HandleEndTurn_BattleWon(void)
         // gSaveBlock1Ptr->nuzlockeModeEnabled internally.
         Achievement_CheckChallengeMilestones();
         Achievement_CheckNuzlockeMilestones();
+        // Stage 20 (catalog wave 7): Streaks, Records & Collection
+        // Remainder. Same gate, same evaluation point.
+        Achievement_CheckBattleRecordsMilestones();
     }
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))

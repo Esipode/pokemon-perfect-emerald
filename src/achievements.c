@@ -1196,6 +1196,11 @@ void Achievement_CheckEggMilestones(bool8 isShiny)
         Achievement_TryComplete(ACHIEVEMENT_EGG_50);
     if (isShiny)
         Achievement_TryComplete(ACHIEVEMENT_EGG_SHINY);
+
+    // Stage 20 (catalog wave 7): Egg Marathon. Same already-incremented
+    // count as the thresholds above.
+    if (count >= 100)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_EGG_MARATHON);
 }
 
 // ---- Stage 15: catalog wave 2 (category K, Battle Mastery) -------------
@@ -1229,6 +1234,12 @@ struct AchievementBattleData
     bool8 setupThenKo:1;
     bool8 critLanded:1;
     bool8 priorityKo:1;
+    // Stage 20 (catalog wave 7): set by Achievement_RecordPlayerFaint the
+    // moment the player is down to exactly one conscious Pokemon, for
+    // Comeback Count. Like every other field here, per-battle only -- read
+    // (and implicitly reset, since the whole struct is zeroed at the start
+    // of the next battle) by Achievement_CheckBattleRecordsMilestones.
+    bool8 wasDownToLastMon:1;
 };
 
 EWRAM_DATA static struct AchievementBattleData sBattleData = {0};
@@ -2309,6 +2320,11 @@ void Achievement_CheckExplorationMilestones(void)
 
     if (FlagGet(FLAG_SYS_POKEDEX_GET) && FlagGet(FLAG_SYS_POKENAV_GET) && FlagGet(FLAG_SYS_B_DASH))
         Achievement_TryComplete(ACHIEVEMENT_EXPLORE_NO_LOOSE_ENDS);
+
+    // Stage 20 (catalog wave 7): same call site -- map transitions are
+    // frequent enough to double as this wave's "live state" sampling point.
+    // See that function's own doc comment.
+    Achievement_CheckRecordsMilestones();
 }
 
 // Achievement_CheckPokedexMilestones's FLAG_SET_SEEN branch (Stage 13
@@ -3049,6 +3065,454 @@ void Achievement_CheckRandomizerCaptureMilestone(void)
 {
     if (Achievement_AnyRandomizerFlagSet() && GetGameStat(GAME_STAT_POKEMON_CAPTURES) >= 25)
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_ROOKIE);
+}
+
+// ---- Stage 20: catalog wave 7 (category P, Streaks, Records & Collection -
+// Remainder) ---------------------------------------------------------------
+//
+// The one entry with genuinely new persistent state is the trainer win
+// streak (AchievementRunDataExt, SaveBlock2 -- see that struct's own comment
+// for why SaveBlock1 isn't an option). Every other entry here reads live
+// party/box/game-stat state, the same "cheap to evaluate" shape category M
+// (Stage 17) established -- Marathon Trainer/Long Haul/Prolific/Battle
+// Machine/Egg Marathon/Nurse's Nightmare need no tracking of their own at
+// all, just an existing GAME_STAT_* value.
+
+static u16 Achievement_SaturatingAddU16(u16 value, u8 amount)
+{
+    u32 sum = (u32)value + amount;
+    return (sum > 0xFFFF) ? 0xFFFF : (u16)sum;
+}
+
+// Short-circuits the moment `stopAt` distinct species have been seen -- One
+// of Each's threshold (10) is low enough that this almost never has to walk
+// every one of TOTAL_BOXES_COUNT*IN_BOX_COUNT box slots the way Species
+// Clause (Stage 18) unconditionally does. `seen`'s size only needs to cover
+// the largest `stopAt` any caller passes.
+static u32 Achievement_CountDistinctOwnedSpecies(struct Pokemon *party, u8 playerCount, u32 stopAt)
+{
+    enum Species seen[16];
+    u32 distinct = 0;
+    u8 i, box, slot;
+
+    if (stopAt > ARRAY_COUNT(seen))
+        stopAt = ARRAY_COUNT(seen);
+
+    for (i = 0; i < playerCount && distinct < stopAt; i++)
+    {
+        enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
+        u32 j;
+        bool8 alreadySeen = FALSE;
+
+        if (species == SPECIES_NONE)
+            continue;
+        for (j = 0; j < distinct; j++)
+        {
+            if (seen[j] == species)
+            {
+                alreadySeen = TRUE;
+                break;
+            }
+        }
+        if (!alreadySeen)
+            seen[distinct++] = species;
+    }
+
+    for (box = 0; box < TOTAL_BOXES_COUNT && distinct < stopAt; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT && distinct < stopAt; slot++)
+        {
+            enum Species species = GetBoxMonDataAt(box, slot, MON_DATA_SPECIES);
+            u32 j;
+            bool8 alreadySeen = FALSE;
+
+            if (species == SPECIES_NONE)
+                continue;
+            for (j = 0; j < distinct; j++)
+            {
+                if (seen[j] == species)
+                {
+                    alreadySeen = TRUE;
+                    break;
+                }
+            }
+            if (!alreadySeen)
+                seen[distinct++] = species;
+        }
+    }
+
+    return distinct;
+}
+
+// Walks an evolution family outward from `root` (assumed already the
+// family's root -- Achievement_GetEvolutionRoot, Stage 18) via
+// GetSpeciesEvolutions, BFS with de-duplication so a branching family
+// (Eevee) is only ever recorded once per target. Capped well above the
+// largest real family, so the cap is never actually hit.
+#define ACHIEVEMENT_MAX_FAMILY_MEMBERS 16
+
+static u8 Achievement_GetFamilyMembers(enum Species root, enum Species *membersOut)
+{
+    u8 count = 0;
+    u8 head = 0;
+
+    membersOut[count++] = root;
+
+    while (head < count && count < ACHIEVEMENT_MAX_FAMILY_MEMBERS)
+    {
+        const struct Evolution *evolutions = GetSpeciesEvolutions(membersOut[head++]);
+        u8 i;
+
+        if (evolutions == NULL)
+            continue;
+
+        for (i = 0; evolutions[i].method != EVOLUTIONS_END && count < ACHIEVEMENT_MAX_FAMILY_MEMBERS; i++)
+        {
+            enum Species target = SanitizeSpeciesId(evolutions[i].targetSpecies);
+            u8 j;
+            bool8 alreadyPresent = FALSE;
+
+            if (target == SPECIES_NONE)
+                continue;
+
+            for (j = 0; j < count; j++)
+            {
+                if (membersOut[j] == target)
+                {
+                    alreadyPresent = TRUE;
+                    break;
+                }
+            }
+            if (!alreadyPresent)
+                membersOut[count++] = target;
+        }
+    }
+
+    return count;
+}
+
+// HandleSetPokedexFlag (src/pokemon.c)'s FLAG_SET_CAUGHT branch, alongside
+// Achievement_CheckPokedexMilestones -- species is the species that was just
+// newly caught. "Register" is read as "caught" (the more demanding of the
+// two Pokedex flags), matching this entry's Gold value.
+void Achievement_CheckFamilyMilestone(enum Species species)
+{
+    enum Species members[ACHIEVEMENT_MAX_FAMILY_MEMBERS];
+    enum Species root = Achievement_GetEvolutionRoot(species);
+    u8 count = Achievement_GetFamilyMembers(root, members);
+    u8 i;
+
+    for (i = 0; i < count; i++)
+    {
+        enum NationalDexOrder dexNum = SpeciesToNationalPokedexNum(members[i]);
+
+        if (dexNum == NATIONAL_DEX_NONE || !GetSetPokedexFlag(dexNum, FLAG_GET_CAUGHT))
+            return;
+    }
+
+    Achievement_TryComplete(ACHIEVEMENT_COLLECT_FAMILY_REUNION);
+}
+
+// GiveCapturedMonToPlayer (src/pokemon.c) and Task_EggHatch (src/egg_hatch.c)
+// -- the same two funnels Achievement_CheckCaptureMilestones/
+// Achievement_CheckEggMilestones already hook.
+void Achievement_CheckPerfectIvMilestone(struct Pokemon *mon)
+{
+    if (GetMonData(mon, MON_DATA_HP_IV) == MAX_PER_STAT_IVS
+     && GetMonData(mon, MON_DATA_ATK_IV) == MAX_PER_STAT_IVS
+     && GetMonData(mon, MON_DATA_DEF_IV) == MAX_PER_STAT_IVS
+     && GetMonData(mon, MON_DATA_SPEED_IV) == MAX_PER_STAT_IVS
+     && GetMonData(mon, MON_DATA_SPATK_IV) == MAX_PER_STAT_IVS
+     && GetMonData(mon, MON_DATA_SPDEF_IV) == MAX_PER_STAT_IVS)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN);
+}
+
+// RemoveFaintedMonsFromParty (src/overworld.c) and FldEff_PokecenterHeal
+// (src/field_effect.c), both called from inside their existing
+// IsPartyEmpty() branch -- see Stage 18's own comment on those two functions
+// for why no third detector is added here either. Mirrors this run's streak
+// high-water mark into the persistent profile before zeroing the counters
+// this wipe just broke.
+void Achievement_RecordPartyWipe(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+    if (runDataExt->currentTrainerWinStreak > runDataExt->bestTrainerWinStreakThisRun)
+        runDataExt->bestTrainerWinStreakThisRun = runDataExt->currentTrainerWinStreak;
+    if (runDataExt->bestTrainerWinStreakThisRun > gAchievementProfile.bestTrainerWinStreakEver)
+    {
+        gAchievementProfile.bestTrainerWinStreakEver = runDataExt->bestTrainerWinStreakThisRun;
+        sAchievementProfileDirty = TRUE;
+    }
+
+    runDataExt->currentTrainerWinStreak = 0;
+    runDataExt->gymLeadersSinceWipe = 0;
+    runDataExt->leagueWinsSinceWipe = 0;
+}
+
+// SetValuesOnFaint (src/battle_util.c)'s player-faint branch, gated by the
+// caller the same way as every other battle-data write (never link/
+// recorded). The fainted mon's HP is already 0 by the time this runs, so
+// "exactly one conscious mon left" here really does mean the player is down
+// to their last one.
+void Achievement_RecordPlayerFaint(void)
+{
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+
+    if (CountConsciousPartyMons(party, playerCount) == 1)
+        sBattleData.wasDownToLastMon = TRUE;
+}
+
+// HandleEndTurn_BattleWon (src/battle_main.c), immediately after
+// Achievement_CheckNuzlockeMilestones, gated the same way (never link/
+// recorded).
+void Achievement_CheckBattleRecordsMilestones(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    bool8 isTrainerBattle = (gBattleTypeFlags & BATTLE_TYPE_TRAINER) != 0;
+    bool8 isMajorBattle = Achievement_IsMajorBattle();
+    bool8 isGymBattle = Achievement_IsGymBattle();
+    u8 i;
+
+    // Hot Streak..Untouchable Streak.
+    if (isTrainerBattle)
+    {
+        runDataExt->currentTrainerWinStreak = Achievement_SaturatingAddU16(runDataExt->currentTrainerWinStreak, 1);
+        if (runDataExt->currentTrainerWinStreak > runDataExt->bestTrainerWinStreakThisRun)
+            runDataExt->bestTrainerWinStreakThisRun = runDataExt->currentTrainerWinStreak;
+
+        if (runDataExt->currentTrainerWinStreak >= 5)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_HOT_STREAK);
+        if (runDataExt->currentTrainerWinStreak >= 20)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_UNBROKEN);
+        if (runDataExt->currentTrainerWinStreak >= 50)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_ON_A_ROLL);
+        if (runDataExt->currentTrainerWinStreak >= 100)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_UNTOUCHABLE_STREAK);
+
+        // League Streak -- Elite Four/Champion wins specifically, the
+        // subset of Achievement_IsMajorBattle() the roster's "full League
+        // sequence" means.
+        switch (GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA))
+        {
+        case TRAINER_CLASS_ELITE_FOUR:
+        case TRAINER_CLASS_CHAMPION:
+            if (runDataExt->leagueWinsSinceWipe < 0xFF)
+                runDataExt->leagueWinsSinceWipe++;
+            if (runDataExt->leagueWinsSinceWipe >= 5)
+                Achievement_TryComplete(ACHIEVEMENT_RECORD_LEAGUE_STREAK);
+            break;
+        default:
+            break;
+        }
+    }
+
+    // Three/Eight Gym Streak, Oddball.
+    if (isGymBattle)
+    {
+        if (runDataExt->gymLeadersSinceWipe < 0xFF)
+            runDataExt->gymLeadersSinceWipe++;
+        if (runDataExt->gymLeadersSinceWipe >= 3)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_THREE_GYM_STREAK);
+        if (runDataExt->gymLeadersSinceWipe >= 8)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_EIGHT_GYM_STREAK);
+
+        for (i = 0; i < playerCount; i++)
+        {
+            if (GetSpeciesBaseStatTotal(GetMonData(&party[i], MON_DATA_SPECIES)) < 350)
+            {
+                Achievement_TryComplete(ACHIEVEMENT_COLLECT_ODDBALL);
+                break;
+            }
+        }
+    }
+
+    // Veteran Team/Old Reliable: sBattleData.kosPerSlot (Stage 15) holds
+    // this battle's KOs only -- fold them into the cumulative per-slot
+    // totals here, once, right before that struct is cleared for the next
+    // battle (Achievement_ClearBattleData, BattleStartClearSetData).
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (sBattleData.kosPerSlot[i] == 0)
+            continue;
+
+        runDataExt->koCountPerSlot[i] = Achievement_SaturatingAddU16(runDataExt->koCountPerSlot[i], sBattleData.kosPerSlot[i]);
+        if (runDataExt->koCountPerSlot[i] >= 100)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_VETERAN_TEAM);
+
+        if (isMajorBattle)
+        {
+            runDataExt->majorKoCountPerSlot[i] = Achievement_SaturatingAddU16(runDataExt->majorKoCountPerSlot[i], sBattleData.kosPerSlot[i]);
+            if (runDataExt->majorKoCountPerSlot[i] >= 50)
+                Achievement_TryComplete(ACHIEVEMENT_RECORD_OLD_RELIABLE);
+        }
+    }
+
+    if (isMajorBattle)
+    {
+        // Legend of the Run bookkeeping -- checked at GameClear
+        // (Achievement_CheckRecordsCompletionMilestones), since it only
+        // means anything for a completed run.
+        u8 presentSlots = 0;
+
+        for (i = 0; i < playerCount; i++)
+        {
+            if (GetMonData(&party[i], MON_DATA_SPECIES) != SPECIES_NONE)
+                presentSlots |= 1 << i;
+        }
+        if (!runDataExt->anyMajorBattleThisRun)
+        {
+            runDataExt->presentAtEveryMajorBattleSlots = presentSlots;
+            runDataExt->anyMajorBattleThisRun = TRUE;
+        }
+        else
+        {
+            runDataExt->presentAtEveryMajorBattleSlots &= presentSlots;
+        }
+
+        // Underestimated: the party slot credited with the very last
+        // opposing faint of a won battle is exactly the one that ended it.
+        if (sBattleData.lastThreeKoSlots[2] != 0)
+        {
+            u8 finalKoSlot = sBattleData.lastThreeKoSlots[2] - 1;
+
+            if (finalKoSlot < playerCount
+             && GetSpeciesBaseStatTotal(GetMonData(&party[finalKoSlot], MON_DATA_SPECIES)) < 400)
+                Achievement_TryComplete(ACHIEVEMENT_COLLECT_UNDERESTIMATED);
+        }
+    }
+
+    // Comeback Count.
+    if (sBattleData.wasDownToLastMon)
+    {
+        if (runDataExt->comebackWinsThisRun < 0xFF)
+            runDataExt->comebackWinsThisRun++;
+        if (runDataExt->comebackWinsThisRun >= 10)
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_COMEBACK_COUNT);
+    }
+}
+
+// LoadCurrentMapData (src/overworld.c), alongside
+// Achievement_CheckExplorationMilestones (Stage 17). Every entry here reads
+// live party/box/game-stat state rather than a specific event -- map
+// transitions are frequent enough during normal play to catch a threshold
+// shortly after it's crossed, the same reasoning Stage 17 used for its own
+// map-transition checks.
+void Achievement_CheckRecordsMilestones(void)
+{
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    u32 storedCount = 0;
+    u8 level100Count = 0;
+    u8 maxFriendshipCount = 0;
+    u8 i, box, slot;
+
+    // Growing Strong.
+    for (i = 0; i < playerCount; i++)
+    {
+        u32 level = GetMonData(&party[i], MON_DATA_LEVEL);
+        u32 metLevel = GetMonData(&party[i], MON_DATA_MET_LEVEL);
+
+        if (level >= metLevel && level - metLevel >= 10)
+        {
+            Achievement_TryComplete(ACHIEVEMENT_RECORD_GROWING_STRONG);
+            break;
+        }
+    }
+
+    // Century Club/Full Century, Devoted/Inseparable.
+    for (i = 0; i < playerCount; i++)
+    {
+        if (GetMonData(&party[i], MON_DATA_LEVEL) >= 100)
+            level100Count++;
+        if (GetMonData(&party[i], MON_DATA_FRIENDSHIP) >= MAX_FRIENDSHIP)
+            maxFriendshipCount++;
+    }
+    if (level100Count >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_CENTURY_CLUB);
+    if (playerCount == PARTY_SIZE && level100Count == PARTY_SIZE)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_FULL_CENTURY);
+    if (maxFriendshipCount >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_DEVOTED);
+    if (playerCount == PARTY_SIZE && maxFriendshipCount == PARTY_SIZE)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_INSEPARABLE);
+
+    // Box Filler/Storage Baron -- PC boxes only ("in storage"), not the
+    // active party.
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++)
+        {
+            if (GetBoxMonDataAt(box, slot, MON_DATA_SPECIES) != SPECIES_NONE)
+                storedCount++;
+        }
+    }
+    if (storedCount >= 100)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_BOX_FILLER);
+    if (storedCount >= 300)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_STORAGE_BARON);
+
+    // One of Each -- party and boxes combined.
+    if (Achievement_CountDistinctOwnedSpecies(party, playerCount, 10) >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_ONE_OF_EACH);
+
+    // Marathon Trainer/Long Haul, Prolific/Battle Machine -- existing
+    // GAME_STAT_* values, no tracking of their own needed.
+    if (GetGameStat(GAME_STAT_STEPS) >= 50000)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_MARATHON_TRAINER);
+    if (GetGameStat(GAME_STAT_STEPS) >= 200000)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_LONG_HAUL);
+    if (GetGameStat(GAME_STAT_TOTAL_BATTLES) >= 1000)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_PROLIFIC);
+    if (GetGameStat(GAME_STAT_TOTAL_BATTLES) >= 2500)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_BATTLE_MACHINE);
+}
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_CheckNuzlockeCompletionMilestones -- Legend of the Run only
+// means anything for a completed run.
+void Achievement_CheckRecordsCompletionMilestones(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+    if (runDataExt->anyMajorBattleThisRun && runDataExt->presentAtEveryMajorBattleSlots != 0)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_LEGEND_OF_THE_RUN);
+
+    // Mirror the streak high-water mark here too, not only on a party wipe
+    // (Achievement_RecordPartyWipe) -- a save that finishes a run without
+    // ever wiping would otherwise never get its best streak recorded in the
+    // persistent profile at all.
+    if (runDataExt->currentTrainerWinStreak > runDataExt->bestTrainerWinStreakThisRun)
+        runDataExt->bestTrainerWinStreakThisRun = runDataExt->currentTrainerWinStreak;
+    if (runDataExt->bestTrainerWinStreakThisRun > gAchievementProfile.bestTrainerWinStreakEver)
+    {
+        gAchievementProfile.bestTrainerWinStreakEver = runDataExt->bestTrainerWinStreakThisRun;
+        sAchievementProfileDirty = TRUE;
+    }
+}
+
+// Task_LearnedMove (src/party_menu.c), gated by the caller on move[1] == 0
+// (the TM/HM item-use path specifically -- see that function's own comment)
+// and on the item actually being a TM rather than an HM.
+void Achievement_RecordTMTaught(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+    if (runDataExt->tmsTaughtThisRun < 0xFF)
+        runDataExt->tmsTaughtThisRun++;
+    if (runDataExt->tmsTaughtThisRun >= 25)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_MOVE_TUTOR);
+}
+
+// FldEff_PokecenterHeal (src/field_effect.c), right after the vanilla
+// IncrementGameStat(GAME_STAT_USED_POKECENTER) call Stage 18 already added.
+void Achievement_CheckPokecenterMilestone(void)
+{
+    if (GetGameStat(GAME_STAT_USED_POKECENTER) >= 200)
+        Achievement_TryComplete(ACHIEVEMENT_RECORD_NURSES_NIGHTMARE);
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

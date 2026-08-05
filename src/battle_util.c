@@ -11045,6 +11045,11 @@ void SetValuesOnFaint(enum BattlerId battler)
             gBattleResults.playerFaintCounter++;
         AdjustFriendshipOnBattleFaint(battler);
         gSideTimers[B_SIDE_PLAYER].retaliateTimer = 2;
+
+        // Stage 20 (catalog wave 7): same gate as every other battle-data
+        // write -- never in a link or recorded battle.
+        if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
+            Achievement_RecordPlayerFaint();
     }
     else
     {
