@@ -21,6 +21,7 @@
 #include "math_util.h"
 #include "pokemon.h"
 #include "random.h"
+#include "randomization.h"
 #include "recorded_battle.h"
 #include "util.h"
 #include "script.h"
@@ -646,11 +647,12 @@ void Ai_InitPartyStruct(void)
 
                 if (isOmniscient)
                 {
+                    u16 aiMonSpecies = GetMonData(mon, MON_DATA_SPECIES);
                     gAiPartyData->mons[trainer][monIndex].item = GetMonData(mon, MON_DATA_HELD_ITEM);
                     gAiPartyData->mons[trainer][monIndex].heldEffect = GetItemHoldEffect(gAiPartyData->mons[trainer][monIndex].item);
                     gAiPartyData->mons[trainer][monIndex].ability = GetMonAbility(mon);
                     for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
-                        gAiPartyData->mons[trainer][monIndex].moves[moveIndex] = GetMonData(mon, MON_DATA_MOVE1 + moveIndex);
+                        gAiPartyData->mons[trainer][monIndex].moves[moveIndex] = GetResolvedMove(aiMonSpecies, GetMonData(mon, MON_DATA_MOVE1 + moveIndex));
                 }
             }
         }

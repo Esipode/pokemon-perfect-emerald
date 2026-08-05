@@ -57,6 +57,7 @@
 #include "string_util.h"
 #include "strings.h"
 #include "task.h"
+#include "randomization.h"
 #include "test/battle.h"
 #include "test_runner.h"
 #include "text.h"
@@ -2508,58 +2509,12 @@ u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer 
             if (isNGPlus)
                 SetTrainerMonEVsByHighestBaseStats(&party[i], species);
 
-            // Move randomization (independent of species randomization)
-            if (FlagGet(FLAG_RANDOMIZE_MOVES))
-            {
-                u16 species = partyData[monIndex].species;
-                u16 randomMoves[MAX_MON_MOVES] = {MOVE_NONE, MOVE_NONE, MOVE_NONE, MOVE_NONE};
-                u8 moveCount = 0;
-
-                // Collect unique random moves from non-empty original slots
-                for (u8 moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
-                {
-                    if (partyData[monIndex].moves[moveIdx] == MOVE_NONE)
-                        continue;
-
-                    u16 randomMove = GetRandomMove(species, partyData[monIndex].moves[moveIdx]);
-
-                    // Check for duplicates before adding
-                    bool32 isDuplicate = FALSE;
-                    for (u8 j = 0; j < moveCount; j++)
-                    {
-                        if (randomMoves[j] == randomMove)
-                        {
-                            isDuplicate = TRUE;
-                            break;
-                        }
-                    }
-
-                    if (!isDuplicate && moveCount < MAX_MON_MOVES)
-                    {
-                        randomMoves[moveCount++] = randomMove;
-                    }
-                }
-
-                if (moveCount == 0)
-                {
-                    // Trainer didn't hardcode any moves to randomize from (relies on the
-                    // default level-up moveset) - fall back to that instead of wiping moves.
-                    GiveMonInitialMoveset(&party[i]);
-                }
-                else
-                {
-                    for (u8 moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
-                    {
-                        u32 pp = GetMovePP(randomMoves[moveIdx]);
-                        SetMonData(&party[i], MON_DATA_MOVE1 + moveIdx, &randomMoves[moveIdx]);
-                        SetMonData(&party[i], MON_DATA_PP1 + moveIdx, &pp);
-                    }
-                }
-            }
-            else
-            {
-                CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
-            }
+            // Always store the trainer's true original moveset here. Move
+            // randomization (FLAG_RANDOMIZE_MOVES) is applied later, once,
+            // when the mon enters battle (see DoBattleIntro) via the shared
+            // resolver - resolving here too would double-randomize, since
+            // this data gets read back as "original" at that point.
+            CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
 
             // IVs and EVs (only if not randomizing)
             if (!FlagGet(FLAG_RANDOMIZE_MON))
@@ -4180,31 +4135,11 @@ void FaintClearSetData(enum BattlerId battler)
         gBattleStruct->lastTakenMoveFrom[i][battler] = 0;
     }
 
-    // Apply type randomization if enabled
+    // Resolve type through the shared resolver so this always matches the
+    // type shown on the summary screen and used everywhere else in battle.
     {
         u8 type1, type2;
-        u8 originalType1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
-        u8 originalType2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
-        bool8 isOriginalDualType = (originalType2 != TYPE_NONE && originalType2 != originalType1);
-
-        if (FlagGet(FLAG_RANDOMIZE_TYPE))
-        {
-            type1 = GetRandomType(gBattleMons[battler].species, 0);
-            // Only randomize type2 if the original species had a dual type
-            if (isOriginalDualType)
-            {
-                type2 = GetRandomType(gBattleMons[battler].species, 1);
-            }
-            else
-            {
-                type2 = type1;
-            }
-        }
-        else
-        {
-            type1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
-            type2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
-        }
+        GetResolvedTypePair(gBattleMons[battler].species, &type1, &type2);
         gBattleMons[battler].types[0] = type1;
         gBattleMons[battler].types[1] = type2;
         gBattleMons[battler].types[2] = TYPE_MYSTERY;
@@ -4279,47 +4214,38 @@ static void DoBattleIntro(void)
                 }
                 #endif
 
-                // Apply type randomization if enabled
+                // Resolve type and moves through the shared resolver. This is
+                // the single point where randomization is applied to battle
+                // data: gBattleMons[battler].moves at this point still holds
+                // the mon's true original moveset (trainer-party building no
+                // longer pre-randomizes it), so this is safe to call exactly
+                // once per battler without compounding randomization.
                 {
                     u8 type1, type2;
-                    u8 originalType1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
-                    u8 originalType2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
-                    bool8 isOriginalDualType = (originalType2 != TYPE_NONE && originalType2 != originalType1);
-
-                    if (FlagGet(FLAG_RANDOMIZE_TYPE))
-                    {
-                        type1 = GetRandomType(gBattleMons[battler].species, 0);
-                        // Only randomize type2 if the original species had a dual type
-                        if (isOriginalDualType)
-                        {
-                            type2 = GetRandomType(gBattleMons[battler].species, 1);
-                        }
-                        else
-                        {
-                            type2 = type1;
-                        }
-                    }
-                    else
-                    {
-                        type1 = gSpeciesInfo[gBattleMons[battler].species].types[0];
-                        type2 = gSpeciesInfo[gBattleMons[battler].species].types[1];
-                    }
+                    GetResolvedTypePair(gBattleMons[battler].species, &type1, &type2);
                     gBattleMons[battler].types[0] = type1;
                     gBattleMons[battler].types[1] = type2;
                     gBattleMons[battler].types[2] = TYPE_MYSTERY;
                 }
 
-                // Apply move randomization if enabled
-                if (FlagGet(FLAG_RANDOMIZE_MOVES))
                 {
+                    u16 originalMoves[MAX_MON_MOVES];
+                    u16 resolvedMoves[MAX_MON_MOVES];
                     u32 moveIdx;
+
+                    for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
+                        originalMoves[moveIdx] = gBattleMons[battler].moves[moveIdx];
+
+                    ResolveMonMoves(gBattleMons[battler].species, originalMoves, resolvedMoves);
                     for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
                     {
-                        if (gBattleMons[battler].moves[moveIdx] != MOVE_NONE)
+                        // Only touch PP for slots that actually changed - the
+                        // mon's real, possibly-already-used PP for its
+                        // unrandomized moves must survive entering battle.
+                        if (resolvedMoves[moveIdx] != originalMoves[moveIdx])
                         {
-                            u16 originalMove = gBattleMons[battler].moves[moveIdx];
-                            gBattleMons[battler].moves[moveIdx] = GetRandomMove(gBattleMons[battler].species, originalMove);
-                            gBattleMons[battler].pp[moveIdx] = GetMovePP(gBattleMons[battler].moves[moveIdx]);
+                            gBattleMons[battler].moves[moveIdx] = resolvedMoves[moveIdx];
+                            gBattleMons[battler].pp[moveIdx] = GetMovePP(resolvedMoves[moveIdx]);
                         }
                     }
                 }
@@ -5301,24 +5227,10 @@ static void HandleTurnActionSelectionState(void)
                             gBattleStruct->chosenMovePositions[battler] = gBattleResources->bufferB[battler][2] & ~RET_GIMMICK;
                             gChosenMoveByBattler[battler] = GetBattlerChosenMove(battler);
 
-                            // Get the actual move to use (apply randomization if enabled)
-                            u16 moveId;
-                            if (FlagGet(FLAG_RANDOMIZE_MOVES))
-                            {
-                                u16 originalMove = gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
-                                if (originalMove != MOVE_NONE)
-                                {
-                                    moveId = GetRandomMove(gBattleMons[battler].species, originalMove);
-                                }
-                                else
-                                {
-                                    moveId = originalMove;
-                                }
-                            }
-                            else
-                            {
-                                moveId = gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
-                            }
+                            // gBattleMons[battler].moves was already resolved once,
+                            // in full, at battle intro (see DoBattleIntro) - re-randomizing
+                            // here would double-randomize an already-resolved move.
+                            u16 moveId = gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
                             gChosenMoveByBattler[battler] = moveId;
 
                             gBattleStruct->moveTarget[battler] = gBattleResources->bufferB[battler][3];

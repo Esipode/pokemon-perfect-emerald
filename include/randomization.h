@@ -45,8 +45,10 @@ u16 GetResolvedMove(u16 species, u16 originalMove);
 // it overrides with the resolved random move type.
 u8 GetResolvedMoveType(u16 move, u8 baseType);
 
-// Resolves an entire moveset in one pass (MAX_MON_MOVES slots), preserving
-// MOVE_NONE slots as-is. Safe to call with outMoves == originalMoves.
+// Resolves an entire moveset in one pass (MAX_MON_MOVES slots). Resolved
+// moves are deduplicated and packed to the front (two original moves that
+// happen to resolve to the same move don't waste a slot); unused trailing
+// slots are MOVE_NONE. Safe to call with outMoves == originalMoves.
 void ResolveMonMoves(u16 species, const u16 *originalMoves, u16 *outMoves);
 
 // Resolves a mon's full effective data (types + moveset) in one call from its

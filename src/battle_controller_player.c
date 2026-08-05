@@ -48,7 +48,7 @@
 #include "type_icons.h"
 #include "pokedex.h"
 #include "test/battle.h"
-#include "ui_birch_case.h"
+#include "randomization.h"
 #include "event_data.h"
 #include "battle_ai_switch.h"
 #include "battle_ai_util.h"
@@ -1760,11 +1760,8 @@ static void MoveSelectionDisplayMoveType(enum BattlerId battler)
         type = CheckDynamicMoveType(mon, move, battler, MON_IN_BATTLE);
     }
 
-    // Apply type randomization if enabled (after dynamic type to override it)
-    if (FlagGet(FLAG_RANDOMIZE_TYPE))
-    {
-        type = GetRandomMoveType(move);
-    }
+    // Resolve type through the shared resolver (after dynamic type to override it)
+    type = GetResolvedMoveType(move, type);
 
     end = StringCopy(txtPtr, gTypesInfo[type].name);
 
@@ -2492,12 +2489,9 @@ static u32 CheckTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId batt
     ctx.battlerDef = battlerDef;
     ctx.move = moveInfo->moves[gMoveSelectionCursor[battlerAtk]];
     ctx.moveType = CheckDynamicMoveType(GetBattlerMon(battlerAtk), ctx.move, battlerAtk, MON_IN_BATTLE);
-    
-    // Apply type randomization if enabled (after dynamic type to override it)
-    if (FlagGet(FLAG_RANDOMIZE_TYPE))
-    {
-        ctx.moveType = GetRandomMoveType(ctx.move);
-    }
+
+    // Resolve type through the shared resolver (after dynamic type to override it)
+    ctx.moveType = GetResolvedMoveType(ctx.move, ctx.moveType);
 
     ctx.updateFlags = FALSE;
     ctx.abilities[ctx.battlerAtk] = GetBattlerAbility(battlerAtk);

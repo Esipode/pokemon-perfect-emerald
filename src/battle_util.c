@@ -41,7 +41,7 @@
 #include "pokedex.h"
 #include "mail.h"
 #include "field_weather.h"
-#include "ui_birch_case.h"
+#include "randomization.h"
 #include "constants/abilities.h"
 #include "constants/battle_anim.h"
 #include "constants/battle_move_effects.h"
@@ -9692,8 +9692,8 @@ enum Type GetBattleMoveType(enum Move move)
             moveType = TYPE_MYSTERY;
     }
 
-    if (gMain.inBattle && FlagGet(FLAG_RANDOMIZE_TYPE))
-        return GetRandomMoveType(move);
+    if (gMain.inBattle)
+        return GetResolvedMoveType(move, moveType);
 
     return moveType;
 }

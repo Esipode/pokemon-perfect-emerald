@@ -14,6 +14,7 @@
 #include "party_menu.h"
 #include "pokemon.h"
 #include "random.h"
+#include "randomization.h"
 #include "util.h"
 #include "constants/abilities.h"
 #include "constants/item_effects.h"
@@ -444,9 +445,10 @@ static u32 FindMonWithMoveOfEffectiveness(struct SwitchAiContext *switchContext,
         if(!(switchContext->eligiblePartyMons & (1u << monIndex)))
             continue;
 
+        u16 monSpecies = GetMonData(&switchContext->party[monIndex], MON_DATA_SPECIES);
         for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
         {
-            move = GetMonData(&switchContext->party[monIndex], MON_DATA_MOVE1 + moveIndex);
+            move = GetResolvedMove(monSpecies, GetMonData(&switchContext->party[monIndex], MON_DATA_MOVE1 + moveIndex));
             if (move != MOVE_NONE && AI_GetMoveEffectiveness(move, switchContext->battler, switchContext->opposingBattler) >= effectiveness && GetMovePower(move) != 0)
             {
                 superEffectiveIds |= (1u << monIndex);
@@ -1127,9 +1129,10 @@ static bool32 CanMonSurviveHazardSwitchin(struct SwitchAiContext *switchContext)
             if (!(switchContext->eligiblePartyMons & (1u << monIndex)))
                 continue;
 
+            u16 monSpecies = GetMonData(&switchContext->party[monIndex], MON_DATA_SPECIES);
             for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
             {
-                aiMove = GetMonData(&switchContext->party[monIndex], MON_DATA_MOVE1 + moveIndex);
+                aiMove = GetResolvedMove(monSpecies, GetMonData(&switchContext->party[monIndex], MON_DATA_MOVE1 + moveIndex));
                 if (IsHazardClearingMove(aiMove)) // Have a mon that can clear the hazards, so switching out is okay
                     return TRUE;
             }

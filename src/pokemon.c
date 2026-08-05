@@ -55,7 +55,6 @@
 #include "trainer.h"
 #include "trainer_hill.h"
 #include "new_game.h"
-#include "ui_birch_case.h"
 #include "util.h"
 #include "constants/abilities.h"
 #include "constants/battle_frontier.h"
@@ -5524,11 +5523,14 @@ u8 CanLearnTeachableMove(enum Species species, enum Move move)
     const u16 *teachableLearnset = GetSpeciesTeachableLearnset(species);
     if (species == SPECIES_EGG)
         return FALSE;
-    // Apply move randomization at the earliest point in the chain
-    u16 effectiveMove = GetEffectiveMove(move, species);
+    // This is an eligibility check against real game data (which TMs/tutor
+    // moves a species can actually learn), so it must compare the real move
+    // - not a randomized stand-in - against the real learnset. Callers that
+    // need the effective (post-randomization) move for display resolve it
+    // separately once eligibility has already been confirmed.
     for (u32 i = 0; teachableLearnset[i] != MOVE_UNAVAILABLE; i++)
     {
-        if (teachableLearnset[i] == effectiveMove)
+        if (teachableLearnset[i] == move)
             return TRUE;
     }
     return FALSE;

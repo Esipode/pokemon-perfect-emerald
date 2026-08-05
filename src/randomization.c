@@ -55,10 +55,46 @@ u8 GetResolvedMoveType(u16 move, u8 baseType)
 
 void ResolveMonMoves(u16 species, const u16 *originalMoves, u16 *outMoves)
 {
+    u16 resolvedMoves[MAX_MON_MOVES];
     u32 moveIdx;
+    u32 outCount = 0;
 
     for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
-        outMoves[moveIdx] = GetResolvedMove(species, originalMoves[moveIdx]);
+        resolvedMoves[moveIdx] = MOVE_NONE;
+
+    for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
+    {
+        u16 originalMove = originalMoves[moveIdx];
+        u16 resolvedMove;
+        u32 dupIdx;
+        bool8 isDuplicate = FALSE;
+
+        if (originalMove == MOVE_NONE)
+            continue;
+
+        resolvedMove = GetResolvedMove(species, originalMove);
+
+        // Two different original moves can resolve to the same randomized
+        // move. Skip duplicates rather than wasting a move slot on a repeat,
+        // matching the dedup behavior trainer-party building used to do
+        // inline before it was centralized here.
+        for (dupIdx = 0; dupIdx < outCount; dupIdx++)
+        {
+            if (resolvedMoves[dupIdx] == resolvedMove)
+            {
+                isDuplicate = TRUE;
+                break;
+            }
+        }
+
+        if (!isDuplicate)
+            resolvedMoves[outCount++] = resolvedMove;
+    }
+
+    // Copy from a local buffer (not directly into outMoves) so this remains
+    // safe to call with outMoves == originalMoves.
+    for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
+        outMoves[moveIdx] = resolvedMoves[moveIdx];
 }
 
 void ResolveMonData(u16 species, const u16 *originalMoves, struct ResolvedMonData *out)

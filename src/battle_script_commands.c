@@ -36,7 +36,7 @@
 #include "mail.h"
 #include "event_data.h"
 #include "pokemon_storage_system.h"
-#include "ui_birch_case.h"
+#include "randomization.h"
 #include "task.h"
 #include "naming_screen.h"
 #include "battle_setup.h"
@@ -5429,7 +5429,7 @@ static void Cmd_handlelearnnewmove(void)
     {
         enum BattlerId battler = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
         // gBattleMons holds the effective (post-randomization) moves for the rest of the battle, unlike party data which always stores the original
-        enum Move effectiveLearnMove = GetEffectiveMove(learnMove, GetMonData(&gParties[B_TRAINER_PLAYER][monId], MON_DATA_SPECIES, NULL));
+        enum Move effectiveLearnMove = GetResolvedMove(GetMonData(&gParties[B_TRAINER_PLAYER][monId], MON_DATA_SPECIES, NULL), learnMove);
 
         if (gBattlerPartyIndexes[battler] == monId
             && !(gBattleMons[battler].volatiles.transformed))
@@ -5532,11 +5532,11 @@ static void Cmd_yesnoboxlearnmove(void)
                 {
                     // gBattleMons holds the effective (post-randomization) moves for the rest of the battle, unlike party data which always stores the original
                     enum Species learnerSpecies = GetMonData(&gParties[B_TRAINER_PLAYER][gBattleStruct->expGetterMonId], MON_DATA_SPECIES, NULL);
-                    enum Move effectiveLearnMove = GetEffectiveMove(gMoveToLearn, learnerSpecies);
+                    enum Move effectiveLearnMove = GetResolvedMove(learnerSpecies, gMoveToLearn);
 
                     gBattlescriptCurrInstr = cmd->forgotMovePtr;
 
-                    PREPARE_MOVE_BUFFER(gBattleTextBuff2, GetEffectiveMove(move, learnerSpecies))
+                    PREPARE_MOVE_BUFFER(gBattleTextBuff2, GetResolvedMove(learnerSpecies, move))
 
                     RemoveMonPPBonus(&gParties[B_TRAINER_PLAYER][gBattleStruct->expGetterMonId], movePosition);
                     SetMonMoveSlot(&gParties[B_TRAINER_PLAYER][gBattleStruct->expGetterMonId], gMoveToLearn, movePosition);
@@ -6441,7 +6441,7 @@ void BufferMoveToLearnIntoBattleTextBuff2(void)
     u16 move = gMoveToLearn;
     u16 species = GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_SPECIES, NULL);
 
-    move = GetEffectiveMove(move, species);
+    move = GetResolvedMove(species, move);
     PREPARE_MOVE_BUFFER(gBattleTextBuff2, move);
 }
 

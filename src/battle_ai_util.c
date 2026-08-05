@@ -16,6 +16,7 @@
 #include "move.h"
 #include "pokemon.h"
 #include "random.h"
+#include "randomization.h"
 #include "recorded_battle.h"
 #include "util.h"
 #include "constants/abilities.h"
@@ -4477,9 +4478,10 @@ bool32 PartyHasMoveCategory(enum BattlerId battlerId, enum DamageCategory catego
         if (GetMonData(&party[monIndex], MON_DATA_HP) == 0)
             continue;
 
+        u16 monSpecies = GetMonData(&party[monIndex], MON_DATA_SPECIES);
         for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
         {
-            enum Move move = GetMonData(&party[monIndex], MON_DATA_MOVE1 + moveIndex);
+            enum Move move = GetResolvedMove(monSpecies, GetMonData(&party[monIndex], MON_DATA_MOVE1 + moveIndex));
             u32 pp = GetMonData(&party[monIndex], MON_DATA_PP1 + moveIndex);
 
             if (pp > 0 && move != MOVE_NONE)
@@ -4661,10 +4663,11 @@ static enum AIScore IncreaseStatUpScoreInternal(enum BattlerId battlerAtk, enum 
     if (IsBattlerPredictedToSwitch(battlerDef))
     {
         struct Pokemon *playerParty = GetBattlerParty(battlerDef);
+        u16 predictedMonSpecies = GetMonData(&playerParty[gAiLogicData->mostSuitableMonId[battlerDef]], MON_DATA_SPECIES);
         // If expected switchin outspeeds and has Encore, don't increase
         for (u32 monIndex = 0; monIndex < MAX_MON_MOVES; monIndex++)
         {
-            if (GetMoveEffect(GetMonData(&playerParty[gAiLogicData->mostSuitableMonId[battlerDef]], MON_DATA_MOVE1 + monIndex)) == EFFECT_ENCORE
+            if (GetMoveEffect(GetResolvedMove(predictedMonSpecies, GetMonData(&playerParty[gAiLogicData->mostSuitableMonId[battlerDef]], MON_DATA_MOVE1 + monIndex))) == EFFECT_ENCORE
                 && GetMonData(&playerParty[gAiLogicData->mostSuitableMonId[battlerDef]], MON_DATA_PP1 + monIndex) > 0)
             {
                 if (GetMonData(&playerParty[gAiLogicData->mostSuitableMonId[battlerDef]], MON_DATA_SPEED) > gBattleMons[battlerAtk].speed)

@@ -66,7 +66,7 @@
 #include "strings.h"
 #include "task.h"
 #include "text.h"
-#include "ui_birch_case.h"
+#include "randomization.h"
 #include "text_window.h"
 #include "trade.h"
 #include "union_room.h"
@@ -6375,7 +6375,7 @@ static void PartyMenuTryEvolution(u8 taskId)
 
 static void DisplayMonNeedsToReplaceMove(u8 taskId)
 {
-    u16 displayMove = GetEffectiveMove(gMoveToLearn, GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_SPECIES, NULL));
+    u16 displayMove = GetResolvedMove(GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_SPECIES, NULL), gMoveToLearn);
 
     GetMonNickname(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], gStringVar1);
     StringCopy(gStringVar2, GetMoveName(displayMove));
@@ -6388,7 +6388,7 @@ static void DisplayMonNeedsToReplaceMove(u8 taskId)
 
 static void DisplayMonLearnedMove(u8 taskId, u16 move)
 {
-    u16 displayMove = GetEffectiveMove(move, GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_SPECIES, NULL));
+    u16 displayMove = GetResolvedMove(GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_SPECIES, NULL), move);
 
     GetMonNickname(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], gStringVar1);
     StringCopy(gStringVar2, GetMoveName(displayMove));
