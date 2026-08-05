@@ -20,6 +20,7 @@
 #include "pokedex.h"
 #include "pokemon.h"
 #include "pokemon_summary_screen.h"
+#include "randomization.h"
 #include "scanline_effect.h"
 #include "sound.h"
 #include "sprite.h"
@@ -1010,7 +1011,7 @@ static void Task_EvolutionScene(u8 taskId)
                     else
                     {
                         // Forget move
-                        PREPARE_MOVE_BUFFER(gBattleTextBuff2, move)
+                        PREPARE_MOVE_BUFFER(gBattleTextBuff2, GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), move))
 
                         RemoveMonPPBonus(mon, var);
                         SetMonMoveSlot(mon, gMoveToLearn, var);
@@ -1413,7 +1414,7 @@ static void Task_TradeEvolutionScene(u8 taskId)
                     else
                     {
                         // Forget move
-                        PREPARE_MOVE_BUFFER(gBattleTextBuff2, move)
+                        PREPARE_MOVE_BUFFER(gBattleTextBuff2, GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), move))
 
                         RemoveMonPPBonus(mon, var);
                         SetMonMoveSlot(mon, gMoveToLearn, var);

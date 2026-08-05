@@ -30,6 +30,7 @@
 #include "pokemon_summary_screen.h"
 #include "region_map.h"
 #include "pokemon.h"
+#include "randomization.h"
 #include "reset_rtc_screen.h"
 #include "rtc.h"
 #include "scanline_effect.h"
@@ -4353,15 +4354,17 @@ static void PrintCurrentSpeciesTypeInfo(u8 newEntry, enum Species species)
         species = NationalPokedexNumToSpeciesHGSS(sPokedexListItem->dexNum);
     }
     //type icon(s)
-    #ifdef TX_RANDOMIZER_AND_CHALLENGES
-        type1 = GetTypeBySpecies(species, 1);
-        type2 = GetTypeBySpecies(species, 2);
-    #else
-        type1 = GetSpeciesType(species, 0);
-        type2 = GetSpeciesType(species, 1);
-    #endif
     if (species == SPECIES_NONE)
+    {
         type1 = type2 = TYPE_MYSTERY;
+    }
+    else
+    {
+        u8 resolvedType1, resolvedType2;
+        GetResolvedTypePair(species, &resolvedType1, &resolvedType2);
+        type1 = resolvedType1;
+        type2 = resolvedType2;
+    }
 
     if (type1 == type2)
     {

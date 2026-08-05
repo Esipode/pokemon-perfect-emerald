@@ -56,7 +56,10 @@ struct RelearnType
 {
     bool32 (*isActive)(void);
     bool32 (*hasMoveToRelearn)(struct BoxPokemon*);
-    u32 (*getMoves)(struct BoxPokemon *, enum Move *);
+    // originalMoves receives the true move ids (for eligibility/storage);
+    // resolvedMoves receives their randomization-resolved counterparts, in
+    // the same order, for display.
+    u32 (*getMoves)(struct BoxPokemon *, u16 *originalMoves, u16 *resolvedMoves);
     const u8 *moveText;
 };
 
@@ -64,6 +67,13 @@ static EWRAM_DATA struct
 {
     u8 heartSpriteIds[16];
     u16 movesToLearn[MAX_RELEARNER_MOVES];
+    // Resolved (post-randomization) counterpart of movesToLearn[i], kept in
+    // lockstep with it. movesToLearn stays the true original move - needed
+    // for eligibility checks and for what actually gets stored when taught -
+    // while resolvedMovesToLearn is what the player is shown/told they're
+    // learning. Both are computed together once per list build so display
+    // and storage can never drift apart from each other.
+    u16 resolvedMovesToLearn[MAX_RELEARNER_MOVES];
     struct ListMenuItem menuItems[MAX_RELEARNER_MOVES + 1];
     u8 mainTask;
     u8 numMenuChoices;
@@ -255,6 +265,7 @@ static void InitMoveRelearnerBackgroundLayers(void);
 static void AddScrollArrows(void);
 static void ShowTeachMoveText();
 static s32 GetCurrentSelectedMove(void);
+static s32 GetCurrentSelectedMoveResolved(void);
 static void FreeMoveRelearnerResources(void);
 static void RemoveScrollArrows(void);
 static bool32 IsLevelUpMoveRelearnerActive(void);
@@ -265,16 +276,16 @@ static bool32 HasRelearnerLevelUpMoves(struct BoxPokemon *boxMon);
 static bool32 HasRelearnerEggMoves(struct BoxPokemon *boxMon);
 static bool32 HasRelearnerTMMoves(struct BoxPokemon *boxMon);
 static bool32 HasRelearnerTutorMoves(struct BoxPokemon *boxMon);
-static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves);
-static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves);
-static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves);
-static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves);
+static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves);
+static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves);
+static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves);
+static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves);
 
 static void Task_MoveRelearner_HandleInput(u8 taskId);
 static void Task_MoveRelearner_LearnMove(u8 taskId);
 static void Task_MoveRelearner_Quit(u8 taskId);
-static void SortMovesAlphabetically(u16 *moves, u32 numMoves);
-static void QuickSortMoves(u16 *moves, s32 left, s32 right);
+static void SortMovesAlphabetically(u16 *moves, u16 *resolvedMoves, u32 numMoves);
+static void QuickSortMoves(u16 *moves, u16 *resolvedMoves, s32 left, s32 right);
 
 static const struct RelearnType sRelearnTypes[MOVE_RELEARNER_COUNT] =
 {
@@ -367,7 +378,7 @@ static void CB2_InitLearnMove_Basic(void)
         break;
     case 4:
         ShowTeachMoveText();
-        MoveRelearnerShowHideHearts(GetCurrentSelectedMove());
+        MoveRelearnerShowHideHearts(GetCurrentSelectedMoveResolved());
         SetBackdropFromColor(RGB_BLACK);
         BeginNormalPaletteFade(PALETTES_ALL, -2, 16, 0, RGB_BLACK);
         gMain.state++;
@@ -633,11 +644,11 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
             gTasks[taskId].tCategory = BATTLE_INFO;
         }
 
-        MoveRelearnerShowHideHearts(GetCurrentSelectedMove());
+        MoveRelearnerShowHideHearts(GetCurrentSelectedMoveResolved());
 
         ScheduleBgCopyTilemapToVram(1);
         if (B_SHOW_CATEGORY_ICON == TRUE)
-            MoveRelearnerShowHideCategoryIcon(GetCurrentSelectedMove());
+            MoveRelearnerShowHideCategoryIcon(GetCurrentSelectedMoveResolved());
         AddScrollArrows();
         break;
     case LIST_CANCEL:
@@ -653,7 +664,9 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
     default:
         PlaySE(SE_SELECT);
         RemoveScrollArrows();
-        StringCopy(gStringVar2, GetMoveName(itemId));
+        // itemId is the true original move (menuItems.id); show the resolved
+        // (displayed) name in the confirmation text so it matches the list.
+        StringCopy(gStringVar2, GetMoveName(GetCurrentSelectedMoveResolved()));
         gTasks[taskId].func = Task_MoveRelearner_LearnMove;
         gTasks[taskId].tMove = GetCurrentSelectedMove();
         gTasks[taskId].tState = GetLearnMoveStartAfterPromptState();
@@ -673,6 +686,20 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
 static s32 GetCurrentSelectedMove(void)
 {
     return sMoveRelearnerStruct->menuItems[sMoveRelearnerScrollState.listRow + sMoveRelearnerScrollState.listOffset].id;
+}
+
+// Resolved counterpart of GetCurrentSelectedMove(), for display purposes
+// (hearts, category icon, confirmation text). GetCurrentSelectedMove() keeps
+// returning the true original move - what's needed for eligibility checks
+// and for what's actually taught/stored.
+static s32 GetCurrentSelectedMoveResolved(void)
+{
+    s32 idx = sMoveRelearnerScrollState.listRow + sMoveRelearnerScrollState.listOffset;
+
+    if (idx < 0 || idx >= sMoveRelearnerStruct->numMenuChoices - 1)
+        return LIST_CANCEL;
+
+    return sMoveRelearnerStruct->resolvedMovesToLearn[idx];
 }
 
 static void ShowTeachMoveText(void)
@@ -743,14 +770,18 @@ static void CreateLearnableMovesList(void)
 
     struct BoxPokemon *boxmon = GetSelectedBoxMonFromPcOrParty();
     if (gRelearnMode == RELEARN_MODE_SCRIPT || sRelearnTypes[gMoveRelearnerState].isActive())
-        sMoveRelearnerStruct->numMenuChoices = sRelearnTypes[gMoveRelearnerState].getMoves(boxmon, sMoveRelearnerStruct->movesToLearn);
+        sMoveRelearnerStruct->numMenuChoices = sRelearnTypes[gMoveRelearnerState].getMoves(boxmon, sMoveRelearnerStruct->movesToLearn, sMoveRelearnerStruct->resolvedMovesToLearn);
 
     if (P_SORT_MOVES)
-        SortMovesAlphabetically(sMoveRelearnerStruct->movesToLearn, sMoveRelearnerStruct->numMenuChoices);
+        SortMovesAlphabetically(sMoveRelearnerStruct->movesToLearn, sMoveRelearnerStruct->resolvedMovesToLearn, sMoveRelearnerStruct->numMenuChoices);
 
+    // menuItems.id stays the true original move (used for eligibility checks
+    // and for what actually gets taught/stored); the name shown is the
+    // resolved counterpart computed alongside it above, so what the player
+    // reads is always in lockstep with what selecting it will do.
     for (i = 0; i < sMoveRelearnerStruct->numMenuChoices; i++)
     {
-        sMoveRelearnerStruct->menuItems[i].name = GetMoveName(sMoveRelearnerStruct->movesToLearn[i]);
+        sMoveRelearnerStruct->menuItems[i].name = GetMoveName(sMoveRelearnerStruct->resolvedMovesToLearn[i]);
         sMoveRelearnerStruct->menuItems[i].id = sMoveRelearnerStruct->movesToLearn[i];
     }
 
@@ -823,19 +854,21 @@ void MoveRelearnerShowHideCategoryIcon(s32 moveId)
     }
 }
 
-static void QuickSortMoves(u16 *moves, s32 left, s32 right)
+// Sorts moves/resolvedMoves in lockstep, ordering by the resolved (displayed)
+// move name - what the player actually sees needs to be what's alphabetized.
+static void QuickSortMoves(u16 *moves, u16 *resolvedMoves, s32 left, s32 right)
 {
     if (left >= right)
         return;
 
-    u16 pivot = moves[(left + right) / 2];
+    u16 pivot = resolvedMoves[(left + right) / 2];
     s32 i = left, j = right;
 
     while (i <= j)
     {
-        while (moves[i] != MOVE_NONE && StringCompare(GetMoveName(moves[i]), GetMoveName(pivot)) < 0)
+        while (resolvedMoves[i] != MOVE_NONE && StringCompare(GetMoveName(resolvedMoves[i]), GetMoveName(pivot)) < 0)
             i++;
-        while (moves[j] != MOVE_NONE && StringCompare(GetMoveName(moves[j]), GetMoveName(pivot)) > 0)
+        while (resolvedMoves[j] != MOVE_NONE && StringCompare(GetMoveName(resolvedMoves[j]), GetMoveName(pivot)) > 0)
             j--;
 
         if (i <= j)
@@ -843,19 +876,24 @@ static void QuickSortMoves(u16 *moves, s32 left, s32 right)
             u16 temp = moves[i];
             moves[i] = moves[j];
             moves[j] = temp;
+
+            temp = resolvedMoves[i];
+            resolvedMoves[i] = resolvedMoves[j];
+            resolvedMoves[j] = temp;
+
             i++;
             j--;
         }
     }
 
-    QuickSortMoves(moves, left, j);
-    QuickSortMoves(moves, i, right);
+    QuickSortMoves(moves, resolvedMoves, left, j);
+    QuickSortMoves(moves, resolvedMoves, i, right);
 }
 
-static void SortMovesAlphabetically(u16 *moves, u32 numMoves)
+static void SortMovesAlphabetically(u16 *moves, u16 *resolvedMoves, u32 numMoves)
 {
     if (numMoves > 1)
-        QuickSortMoves(moves, 0, numMoves - 1);
+        QuickSortMoves(moves, resolvedMoves, 0, numMoves - 1);
 }
 
 static bool32 IsTmAvailable(enum Item item)
@@ -867,9 +905,15 @@ static bool32 IsTmAvailable(enum Item item)
     return CheckBagHasItem(item, 1);
 }
 
-static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves)
+static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves)
 {
-    enum Species species = GetBoxMonData(mon, MON_DATA_SPECIES);
+    // The mon's actual current species - always the resolution key, so this
+    // stays consistent with every other place a move gets resolved for this
+    // mon (chooseboxmon.c's LearnMove included). `species` below still walks
+    // pre-evolutions to pull older learnsets, but that's only for looking up
+    // which moves are eligible, never for seeding the resolved move.
+    enum Species actualSpecies = GetBoxMonData(mon, MON_DATA_SPECIES);
+    enum Species species = actualSpecies;
     u32 level = (P_ENABLE_ALL_LEVEL_UP_MOVES ? MAX_LEVEL : GetLevelFromBoxMonExp(mon));
     u32 numMoves = 0;
     do
@@ -884,16 +928,24 @@ static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves)
             if (BoxMonKnowsMove(mon, learnset[i].move))
                 continue;
 
+            u16 effectiveMove = GetResolvedMove(actualSpecies, learnset[i].move);
+
+            // Two different original moves can resolve to the same randomized
+            // move - dedupe on the resolved value so the list shown to the
+            // player never has the same move listed twice. moves[] keeps the
+            // true original (needed for eligibility/storage when taught);
+            // resolvedMoves[] keeps its resolved counterpart for display.
             bool32 alreadyInList = FALSE;
             for (u32 j = 0; j < numMoves; j++)
             {
-                if (learnset[i].move == moves[j])
+                if (effectiveMove == resolvedMoves[j])
                     alreadyInList = TRUE;
             }
             if (!alreadyInList)
             {
-                u16 effectiveMove = GetResolvedMove(species, learnset[i].move);
-                moves[numMoves++] = effectiveMove;
+                moves[numMoves] = learnset[i].move;
+                resolvedMoves[numMoves] = effectiveMove;
+                numMoves++;
             }
         }
 
@@ -903,9 +955,14 @@ static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves)
     return numMoves;
 }
 
-static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves)
+static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves)
 {
-    enum Species species = GetBoxMonData(mon, MON_DATA_SPECIES);
+    // Always resolve against the mon's actual current species (see the
+    // matching comment in GetRelearnerLevelUpMoves) - `species` below is only
+    // walked down to the base form to look up the family's egg-move table,
+    // which is legitimately keyed by the base species.
+    enum Species actualSpecies = GetBoxMonData(mon, MON_DATA_SPECIES);
+    enum Species species = actualSpecies;
     u32 numMoves = 0;
     while (GetSpeciesPreEvolution(species) != SPECIES_NONE)
         species = GetSpeciesPreEvolution(species);
@@ -919,15 +976,29 @@ static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves)
     {
         if (!BoxMonKnowsMove(mon, eggMoves[i]))
         {
-            u16 effectiveMove = GetResolvedMove(species, eggMoves[i]);
-            moves[numMoves++] = effectiveMove;
+            u16 effectiveMove = GetResolvedMove(actualSpecies, eggMoves[i]);
+
+            // Two different original moves can resolve to the same randomized
+            // move - dedupe on the resolved value so it's never listed twice.
+            bool32 alreadyInList = FALSE;
+            for (u32 j = 0; j < numMoves; j++)
+            {
+                if (effectiveMove == resolvedMoves[j])
+                    alreadyInList = TRUE;
+            }
+            if (!alreadyInList)
+            {
+                moves[numMoves] = eggMoves[i];
+                resolvedMoves[numMoves] = effectiveMove;
+                numMoves++;
+            }
         }
     }
 
     return numMoves;
 }
 
-static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves)
+static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves)
 {
     enum Species species = GetBoxMonData(mon, MON_DATA_SPECIES);
     u32 numMoves = 0;
@@ -949,14 +1020,28 @@ static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves)
         if (!BoxMonKnowsMove(mon, move))
         {
             u16 effectiveMove = GetResolvedMove(species, move);
-            moves[numMoves++] = effectiveMove;
+
+            // Two different original moves can resolve to the same randomized
+            // move - dedupe on the resolved value so it's never listed twice.
+            bool32 alreadyInList = FALSE;
+            for (u32 j = 0; j < numMoves; j++)
+            {
+                if (effectiveMove == resolvedMoves[j])
+                    alreadyInList = TRUE;
+            }
+            if (!alreadyInList)
+            {
+                moves[numMoves] = move;
+                resolvedMoves[numMoves] = effectiveMove;
+                numMoves++;
+            }
         }
     }
 
     return numMoves;
 }
 
-static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves)
+static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves)
 {
     enum Species species = GetBoxMonData(mon, MON_DATA_SPECIES);
     u32 numMoves = 0;
@@ -971,7 +1056,21 @@ static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves)
         if (!BoxMonKnowsMove(mon, move))
         {
             u16 effectiveMove = GetResolvedMove(species, move);
-            moves[numMoves++] = effectiveMove;
+
+            // Two different original moves can resolve to the same randomized
+            // move - dedupe on the resolved value so it's never listed twice.
+            bool32 alreadyInList = FALSE;
+            for (u32 j = 0; j < numMoves; j++)
+            {
+                if (effectiveMove == resolvedMoves[j])
+                    alreadyInList = TRUE;
+            }
+            if (!alreadyInList)
+            {
+                moves[numMoves] = move;
+                resolvedMoves[numMoves] = effectiveMove;
+                numMoves++;
+            }
         }
     }
 

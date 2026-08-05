@@ -14,6 +14,7 @@
 #include "pokemon.h"
 #include "pokemon_summary_screen.h"
 #include "pokemon_storage_system.h"
+#include "randomization.h"
 #include "script.h"
 #include "string_util.h"
 #include "strings.h"
@@ -238,6 +239,12 @@ static struct BoxPokemon *LearnMove_GetBoxMonFromTaskData(u8 partyIndex)
 s32 LearnMove(const struct MoveLearnUI *ui, u8 taskId)
 {
     struct BoxPokemon *boxmon = LearnMove_GetBoxMonFromTaskData(partyIndex);
+    // move (the TM/tutor/level-up move being taught) and the boxmon's stored
+    // moves are always the true, original move IDs - eligibility checks and
+    // SetBoxMonData/GiveMoveToBoxMon below must keep using them as-is. Only
+    // the player-facing messages resolve through GetResolvedMove, so the
+    // move name shown here matches what the summary screen/battle will show.
+    enum Species species = GetBoxMonData(boxmon, MON_DATA_SPECIES);
     switch (state)
     {
     case PROMPT_BEFORE_LEARNING_1:
@@ -255,7 +262,7 @@ s32 LearnMove(const struct MoveLearnUI *ui, u8 taskId)
         return state;
     case VALIDATE_BEFORE_LEARNING:
         GetBoxMonNickname(boxmon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(move));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(species, move)));
         gSpecialVar_Result = FALSE;
         switch(ChooseBoxMon_CanMonLearnMove(boxmon, move))
         {
@@ -277,7 +284,7 @@ s32 LearnMove(const struct MoveLearnUI *ui, u8 taskId)
             return ASK_REPLACEMENT_1;
     case ASK_REPLACEMENT_1:
         GetBoxMonNickname(boxmon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(move));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(species, move)));
         ui->printMessage(gText_PkmnNeedsToReplaceMove);
         return ASK_REPLACEMENT_2;
     case ASK_REPLACEMENT_2:
@@ -294,7 +301,7 @@ s32 LearnMove(const struct MoveLearnUI *ui, u8 taskId)
         }
         return state;
     case REFUSE_REPLACE_1:
-        StringCopy(gStringVar2, GetMoveName(move));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(species, move)));
         ui->printMessage(gText_StopLearningMove2);
         return REFUSE_REPLACE_2;
     case REFUSE_REPLACE_2:
@@ -323,7 +330,7 @@ s32 LearnMove(const struct MoveLearnUI *ui, u8 taskId)
             return FORGOT_MOVE_1;
     case LEARNED_MOVE_1:
         GetBoxMonNickname(boxmon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(move));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(species, move)));
         ui->printMessage(gText_PkmnLearnedMove4);
         return LEARNED_MOVE_2;
     case LEARNED_MOVE_2:
@@ -332,7 +339,7 @@ s32 LearnMove(const struct MoveLearnUI *ui, u8 taskId)
         return LEARN_MOVE_END;
     case FORGOT_MOVE_1:
         GetBoxMonNickname(boxmon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(GetBoxMonData(boxmon, MON_DATA_MOVE1 + GetMoveSlotToReplace())));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(species, GetBoxMonData(boxmon, MON_DATA_MOVE1 + GetMoveSlotToReplace()))));
         ui->printMessage(gText_12PoofForgotMove);
         return REPLACE_MOVE_1;
     case REPLACE_MOVE_1:
@@ -345,14 +352,14 @@ s32 LearnMove(const struct MoveLearnUI *ui, u8 taskId)
         if (recoverPP || (pp < originalPP))
             SetBoxMonData(boxmon, MON_DATA_PP1 + slot, &pp);
         GetBoxMonNickname(boxmon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(move));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(species, move)));
         gSpecialVar_Result = TRUE;
         ui->printMessage(gText_PkmnLearnedMove4);
         return LEARN_MOVE_END;
     }
     case DID_NOT_LEARN_1:
         GetBoxMonNickname(boxmon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(move));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(species, move)));
         gSpecialVar_Result = FALSE;
         ui->printMessage(gText_MoveNotLearned);
         return LEARN_MOVE_END;

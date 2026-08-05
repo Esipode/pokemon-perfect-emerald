@@ -5659,10 +5659,15 @@ static void ShowMoveSelectWindow(u8 slot)
     u8 moveCount = 0;
     u8 windowId = DisplaySelectionWindow(SELECTWINDOW_MOVES);
     enum Move move;
+    enum Species species = GetMonData(&gParties[B_TRAINER_PLAYER][slot], MON_DATA_SPECIES);
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
-        move = GetMonData(&gParties[B_TRAINER_PLAYER][slot], MON_DATA_MOVE1 + i);
+        // Resolve per-slot (not through ResolveMonMoves) so the displayed name
+        // matches the summary screen/battle for this move, while keeping this
+        // menu's slot index i - what the PP-restore selection below acts on -
+        // aligned with the mon's real move slots.
+        move = GetResolvedMove(species, GetMonData(&gParties[B_TRAINER_PLAYER][slot], MON_DATA_MOVE1 + i));
         u8 fontId = GetFontIdToFit(GetMoveName(move), FONT_NORMAL, 0, 72);
         AddTextPrinterParameterized(windowId, fontId, GetMoveName(move), 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
         if (move != MOVE_NONE)
@@ -5925,7 +5930,7 @@ static void Task_LearnedMove(u8 taskId)
             RemoveBagItem(item, 1);
     }
     GetMonNickname(mon, gStringVar1);
-    StringCopy(gStringVar2, GetMoveName(move[0]));
+    StringCopy(gStringVar2, GetMoveName(GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), move[0])));
     StringExpandPlaceholders(gStringVar4, gText_PkmnLearnedMove3);
     DisplayPartyMenuMessage(gStringVar4, TRUE);
     ScheduleBgCopyTilemapToVram(2);
@@ -6022,7 +6027,8 @@ static void Task_ReturnToPartyMenuWhileLearningMove(u8 taskId)
 static void DisplayPartyMenuForgotMoveMessage(u8 taskId)
 {
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
-    enum Move move = GetMonData(mon, MON_DATA_MOVE1 + GetMoveSlotToReplace());
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
+    enum Move move = GetResolvedMove(species, GetMonData(mon, MON_DATA_MOVE1 + GetMoveSlotToReplace()));
 
     GetMonNickname(mon, gStringVar1);
     StringCopy(gStringVar2, GetMoveName(move));
@@ -6047,13 +6053,12 @@ static void Task_PartyMenuReplaceMove(u8 taskId)
 
 static void StopLearningMovePrompt(u8 taskId)
 {
-    if (P_ASK_MOVE_CONFIRMATION == FALSE)
-    {
-        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
-        GetMonNickname(mon, gStringVar1);
-    }
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
 
-    StringCopy(gStringVar2, GetMoveName(gPartyMenu.data1));
+    if (P_ASK_MOVE_CONFIRMATION == FALSE)
+        GetMonNickname(mon, gStringVar1);
+
+    StringCopy(gStringVar2, GetMoveName(GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), gPartyMenu.data1)));
     StringExpandPlaceholders(gStringVar4, (P_ASK_MOVE_CONFIRMATION) ? gText_StopLearningMove2 : gText_MoveNotLearned);
     DisplayPartyMenuMessage(gStringVar4, TRUE);
     ScheduleBgCopyTilemapToVram(2);
@@ -6088,7 +6093,7 @@ static void Task_HandleStopLearningMoveYesNoInput(u8 taskId)
     {
     case 0:
         GetMonNickname(mon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(gPartyMenu.data1));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), gPartyMenu.data1)));
         StringExpandPlaceholders(gStringVar4, gText_MoveNotLearned);
         DisplayPartyMenuMessage(gStringVar4, TRUE);
         if (gPartyMenu.learnMoveState == 1)
@@ -6107,7 +6112,7 @@ static void Task_HandleStopLearningMoveYesNoInput(u8 taskId)
         // fallthrough
     case 1:
         GetMonNickname(mon, gStringVar1);
-        StringCopy(gStringVar2, GetMoveName(gPartyMenu.data1));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), gPartyMenu.data1)));
         DisplayLearnMoveMessage(gText_PkmnNeedsToReplaceMove);
         gTasks[taskId].func = Task_ReplaceMoveYesNo;
         break;
@@ -7365,7 +7370,7 @@ static void TryTutorSelectedMon(u8 taskId)
         move = &gPartyMenu.data1;
         GetMonNickname(mon, gStringVar1);
         gPartyMenu.data1 = gSpecialVar_0x8005;
-        StringCopy(gStringVar2, GetMoveName(gPartyMenu.data1));
+        StringCopy(gStringVar2, GetMoveName(GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), gPartyMenu.data1)));
         move[1] = 2;
         switch (CanTeachMove(mon, gPartyMenu.data1))
         {

@@ -1566,14 +1566,25 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
 
         break;
     case 1:
+    {
+        u16 resolvedMoves[MAX_MON_MOVES];
+
         for (i = 0; i < MAX_MON_MOVES; i++)
-        {
-            // The move list should reflect the move that is actually stored on the Pokémon.
-            // Re-randomizing it here causes already-resolved moves to change again.
             sum->originalMoves[i] = GetMonData(mon, MON_DATA_MOVE1+i);
-            sum->moves[i] = sum->originalMoves[i];
+
+        // Resolve through the same shared path battle setup uses (ResolveMonMoves),
+        // so what's shown here always matches what actually plays out in battle -
+        // same species, same original moves in, same dedup/pack-to-front behavior.
+        // Party data always holds the true original moveset now (randomization is
+        // never persisted back to it), so this is safe to call every time the
+        // summary screen is opened without compounding randomization.
+        ResolveMonMoves(sum->species, sum->originalMoves, resolvedMoves);
+        for (i = 0; i < MAX_MON_MOVES; i++)
+            sum->moves[i] = resolvedMoves[i];
+
+        for (i = 0; i < MAX_MON_MOVES; i++)
             sum->pp[i] = GetMovePP(sum->moves[i]);
-        }
+    }
         sum->ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
         break;
     case 2:
@@ -2424,9 +2435,12 @@ static u16 GetDisplayedNewMove(void)
     if (newMove == MOVE_NONE)
         return MOVE_NONE;
 
-    // The move being applied has already been resolved by the learning flow.
-    // Avoid randomizing it again here and changing the selection.
-    return newMove;
+    // sMonSummaryScreen->newMove is always the true original move id - the
+    // learning flow (party_menu.c / battle_script_commands.c) deliberately
+    // keeps it unresolved so the move that actually gets learned/stored is
+    // the real one. Resolve it here for display so it matches the "wants to
+    // learn X" message text shown when this screen was opened.
+    return GetResolvedMove(sMonSummaryScreen->summary.species, newMove);
 }
 
 static void ChangeSelectedMove(s16 *taskData, s8 direction, u8 *moveIndexPtr)
