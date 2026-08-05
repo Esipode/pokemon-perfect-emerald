@@ -121,7 +121,30 @@ enum
 // src/achievement_popup.c's own ACHIEVEMENT_POPUP_DESC_MAX_WIDTH precedent),
 // so an unwrapped achievement description longer than this bleeds past the
 // window's right edge into the tile memory of the row below it.
+//
+// This width is only actually safe for WIN_DESCRIPTION -- pixel-sampling
+// graphics/achievements/ui/bg_main.png's LIST/DETAIL panel (the same
+// pixel-sampling ACHIEVEMENTS_LIST_ITEM_X's own comment used) shows its
+// underlying box is one continuous panel nearly the full screen wide, well
+// past this window's own edges either way. WIN_LIST's box is narrower and
+// split in two -- see ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH below -- so DETAIL's
+// own name/description print does *not* reuse this constant.
 #define ACHIEVEMENTS_DESC_MAX_WIDTH 190
+
+// Bug (reported after initial delivery): EnterDetailLevel's name/description
+// still overflowed even after their x got fixed to ACHIEVEMENTS_LIST_ITEM_X,
+// because unlike WIN_DESCRIPTION's box (see ACHIEVEMENTS_DESC_MAX_WIDTH just
+// above), WIN_LIST's underlying art is actually *two* boxes side by side --
+// the same pixel-sampling shows a divider around screen x=165-170, with a
+// second, narrower box picking up right after it that's where the
+// achievement list's own points column (right-aligned to
+// ACHIEVEMENTS_POINTS_RIGHT_X) actually lives. The left box -- the one
+// achievement names/DETAIL's text sit in -- only runs from the window's own
+// left edge to screen x=~163, i.e. window-relative x=~147 once
+// WIN_LIST's 16px tilemapLeft is subtracted. 140 leaves a few px of margin
+// short of that measured edge, matching the achievement list's own text
+// column instead of the wider window/WIN_DESCRIPTION's own box.
+#define ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH 140
 
 // WIN_DESCRIPTION's two text lines. FONT_NORMAL's line height is exactly 16px
 // (src/text.c's fontAttributes[FONT_NORMAL].maxLetterHeight) and the window
@@ -232,6 +255,7 @@ static void RepaintListRow(void (*drawRow)(u8, u32, u8, const u8 *), u32 arrayIn
 static void BuildTierSelectListItems(void);
 static void BuildAchievementListItems(u8 tier);
 static void DrawTierSelectHeaderText(void);
+static bool8 StringHasScrollPrompt(const u8 *str);
 static void PrintAchievementDescription(s32 achievementId);
 static void DrawHeaderText(const u8 *title);
 static void LoadTierIcons(void);
@@ -524,6 +548,12 @@ static void MainCB2(void)
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();
+    // Drives the WIN_DESCRIPTION scroll printer PrintAchievementDescription
+    // registers for an overlong description (see its own comment) -- that
+    // printer only advances/scrolls one tick per call to this, same as every
+    // other screen with a live TextPrinter (e.g. src/berry_blender.c's own
+    // main callback).
+    RunTextPrinters();
     // Flushes bg1's art tilemap, which LoadMenuBackground only *schedules* via
     // ScheduleBgCopyTilemapToVram. Windows reach VRAM on their own (
     // CopyWindowToVram copies immediately), so without this the text shows but
@@ -1182,20 +1212,68 @@ static void BuildAchievementListItems(u8 tier)
 // same fix src/achievement_popup.c already uses for achievement descriptions
 // (see its ACHIEVEMENT_POPUP_DESC_MAX_WIDTH) -- strip any pre-existing manual
 // breaks so BreakStringAutomatic computes clean wrapping from scratch, then
-// let it insert real line breaks so long descriptions correctly use this
-// window's second line instead of spilling off the first one.
+// let it insert real line breaks.
+//
+// True for CHAR_PROMPT_SCROLL specifically (not CHAR_NEWLINE, which
+// StringHasManualBreaks/CountLineBreaks in src/line_break.c both treat the
+// same as a scroll prompt) -- lets PrintAchievementDescription below tell a
+// description that fits WIN_DESCRIPTION's 2 lines apart from one that
+// doesn't, since only the latter has one at all (see BuildNewString's own
+// maxLines check).
+static bool8 StringHasScrollPrompt(const u8 *str)
+{
+    u32 i;
+
+    for (i = 0; str[i] != EOS; i++)
+    {
+        if (str[i] == CHAR_PROMPT_SCROLL)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// Second bug (also reported after initial delivery): fixing the above just
+// moved the overflow -- WIN_DESCRIPTION only ever shows 2 lines, so a
+// description needing a 3rd line or more still had nowhere to go. Passing
+// SHOW_SCROLL_PROMPT (rather than HIDE_SCROLL_PROMPT above) has
+// BreakStringAutomatic insert a CHAR_PROMPT_SCROLL instead of a CHAR_NEWLINE
+// at that point -- the exact control character every other multi-line
+// message box in the game already uses to pause and scroll its window up by
+// one line (src/text.c's RENDER_STATE_SCROLL_START/SCROLL, driven by
+// RunTextPrinters -- see this file's own MainCB2). gTextFlags.autoScroll
+// makes that pause resolve on its own after NUM_FRAMES_AUTO_SCROLL_DELAY
+// frames instead of waiting on a button press, since nothing else about this
+// box expects the player to press A/B to advance it -- Up/Down already move
+// to a different row entirely.
+//
+// Only descriptions that actually need it pay for this: BreakStringAutomatic
+// never inserts CHAR_PROMPT_SCROLL for text that already fits in 2 lines (see
+// its own numLines > maxLines check), so those still print instantly
+// (TEXT_SKIP_DRAW, same as before) rather than paying a letter-by-letter
+// typing delay on every cursor move for the common case.
 static void PrintAchievementDescription(s32 achievementId)
 {
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(0));
+    // Cancels whatever printer the previously-selected row's description
+    // registered below -- without this, moving off a long description before
+    // its scroll finishes leaves that printer still ticking away against a
+    // window this FillWindowPixelBuffer just cleared for the new row.
+    DeactivateSingleTextPrinter(WIN_DESCRIPTION, WINDOW_TEXT_PRINTER);
+
     if (achievementId >= ACHIEVEMENT_NONE + 1 && achievementId < ACHIEVEMENTS_COUNT)
     {
         const struct Achievement *info = Achievement_GetInfo(achievementId);
         bool8 masked = info->hidden && !Achievement_IsCompleted(achievementId);
+        bool8 needsScroll;
 
         StringCopy(gStringVar1, masked ? sText_HiddenDescription : info->description);
         StripLineBreaks(gStringVar1);
-        BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DESC_MAX_WIDTH, 2, FONT_NORMAL, HIDE_SCROLL_PROMPT);
-        AddTextPrinterParameterized3(WIN_DESCRIPTION, FONT_NORMAL, 8, ACHIEVEMENTS_DESC_LINE1_Y, sAchievementsMenuTextColors, TEXT_SKIP_DRAW, gStringVar1);
+        BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DESC_MAX_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+        needsScroll = StringHasScrollPrompt(gStringVar1);
+
+        gTextFlags.autoScroll = needsScroll;
+        AddTextPrinterParameterized3(WIN_DESCRIPTION, FONT_NORMAL, 8, ACHIEVEMENTS_DESC_LINE1_Y, sAchievementsMenuTextColors,
+            needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, gStringVar1);
     }
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
@@ -1210,12 +1288,28 @@ static void EnterDetailLevel(u8 taskId, u16 achievementId)
 
     DrawHeaderText(sTierNames[info->tier]);
 
+    // Bug (reported after initial delivery): DETAIL's name/description sat at
+    // x=8 while WIN_LIST's own box art is the exact same art the achievement
+    // list draws its rows into at ACHIEVEMENTS_LIST_ITEM_X (LIST and DETAIL
+    // share one bg1 screen -- see this file's header comment) -- the extra
+    // 8px pushed long names/descriptions past that box's right edge instead
+    // of the window's. Matching the list rows' own left margin fixes it.
+    //
+    // The name prints in the same orange used to highlight the selected row
+    // elsewhere in this menu (sAchievementsListHighlightTextColors, not the
+    // plain white sAchievementsListTextColors the description below still
+    // uses) -- reported after initial delivery as hard to tell apart from
+    // the description at a glance with both in plain white; this box has no
+    // other visual cue (font size, box divider, etc.) marking which line is
+    // the title.
     FillWindowPixelBuffer(WIN_LIST, PIXEL_FILL(0));
-    AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, 8, 1, sAchievementsListTextColors, TEXT_SKIP_DRAW, masked ? sText_HiddenName : info->name);
+    AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 1, sAchievementsListHighlightTextColors, TEXT_SKIP_DRAW, masked ? sText_HiddenName : info->name);
     StringCopy(gStringVar1, masked ? sText_HiddenDescription : info->description);
     StripLineBreaks(gStringVar1);
-    BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DESC_MAX_WIDTH, 3, FONT_NORMAL, HIDE_SCROLL_PROMPT);
-    AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, 8, 17, sAchievementsListTextColors, TEXT_SKIP_DRAW, gStringVar1);
+    // ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, not ACHIEVEMENTS_DESC_MAX_WIDTH --
+    // see its own comment; WIN_LIST's box is narrower than WIN_DESCRIPTION's.
+    BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, 3, FONT_NORMAL, HIDE_SCROLL_PROMPT);
+    AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 17, sAchievementsListTextColors, TEXT_SKIP_DRAW, gStringVar1);
     CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
 
     ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
@@ -1247,6 +1341,16 @@ static void DestroyCurrentAchievementsList(u8 taskId)
 {
     DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
     RemoveScrollIndicatorArrowPair(gTasks[taskId].tScrollArrowTaskId);
+    // Called on every level transition (TIER SELECT <-> LIST, LIST -> DETAIL,
+    // and both ways out of this menu entirely), which covers every point a
+    // long description's WIN_DESCRIPTION scroll printer (see
+    // PrintAchievementDescription) needs to stop: DeactivateSingleTextPrinter
+    // so a still-scrolling printer doesn't keep ticking against a window this
+    // screen no longer owns, and clearing gTextFlags.autoScroll so a
+    // mid-scroll visit doesn't leave ordinary dialogue elsewhere in the game
+    // auto-advancing without a button press afterward.
+    DeactivateSingleTextPrinter(WIN_DESCRIPTION, WINDOW_TEXT_PRINTER);
+    gTextFlags.autoScroll = FALSE;
 }
 
 // Repaints one WIN_LIST row in place, used by Task_TierSelect_ProcessInput/
