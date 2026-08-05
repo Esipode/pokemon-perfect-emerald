@@ -1966,12 +1966,13 @@ static const u16 sVisitedTownFlags[] =
 };
 
 // LoadCurrentMapData (src/overworld.c) -- see that function's comment and
-// AchievementRunData.mapsVisited's comment (include/global.h) for why this
-// tracks (mapGroup, mapNum) pairs instead of the plan doc's original raw-
-// mapNum bitfield sketch.
+// AchievementRunDataExt.mapsVisited's comment (include/global.h, SaveBlock2)
+// for why this tracks (mapGroup, mapNum) pairs instead of the plan doc's
+// original raw-mapNum bitfield sketch, and why this data lives in SaveBlock2
+// rather than AchievementRunData (SaveBlock1).
 void Achievement_CheckExplorationMilestones(void)
 {
-    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct AchievementRunDataExt *runData = &gSaveBlock2Ptr->achievementRunDataExt;
     u16 key = ((u16)gSaveBlock1Ptr->location.mapGroup << 8) | (u8)gSaveBlock1Ptr->location.mapNum;
     u8 visitedTowns = 0;
     bool8 allTownsVisited = TRUE;
@@ -2123,7 +2124,7 @@ void Achievement_RecordNpcTalkedTo(void)
 // IncrementGameStat(GAME_STAT_SHOPPED) that site already does.
 void Achievement_RecordMoneySpent(u32 amountSpent)
 {
-    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct AchievementRunDataExt *runData = &gSaveBlock2Ptr->achievementRunDataExt;
     u32 shopCount = GetGameStat(GAME_STAT_SHOPPED);
     u32 spent;
 
@@ -2264,7 +2265,7 @@ void Achievement_CheckFishingMilestone(void)
 // Start's "since the last Gym" window (Stage 16).
 void Achievement_CheckGymEconomyMilestones(void)
 {
-    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct AchievementRunDataExt *runData = &gSaveBlock2Ptr->achievementRunDataExt;
 
     if (Achievement_IsGymBattle())
     {

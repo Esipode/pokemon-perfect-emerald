@@ -103,6 +103,13 @@ enum
 // text roughly the same right-hand budget ACHIEVEMENTS_POINTS_RIGHT_X used
 // to reserve when it was right-aligned instead.
 #define ACHIEVEMENTS_TIER_ICON_X    122
+// TierSelect_DrawRow's completed/total count right-aligns to this rather
+// than ACHIEVEMENTS_POINTS_RIGHT_X directly -- sat too close to the medal
+// icon/left edge of its own column at that value, so it's nudged 10px
+// further right. Kept separate from ACHIEVEMENTS_POINTS_RIGHT_X since that
+// one still governs the achievement list's points column (AchievementsMenu_
+// DrawRow), which isn't affected by this.
+#define ACHIEVEMENTS_TIER_COUNT_RIGHT_X (ACHIEVEMENTS_POINTS_RIGHT_X + 14)
 #define ACHIEVEMENTS_ARROW_X        200
 // Follows WIN_LIST's tilemapTop/height (see sAchievementsMenuWinTemplates):
 // 4px inside the window's top/bottom edge, same offset on both ends.
@@ -862,7 +869,7 @@ static void TierSelect_DrawRow(u8 windowId, u32 tier, u8 y, const u8 *colors)
     ConvertIntToDecimalStringN(ptr, sTierCounts[tier].total, STR_CONV_MODE_LEFT_ALIGN, 3);
 
     width = GetStringWidth(FONT_NORMAL, gStringVar4, 0);
-    AddTextPrinterParameterized3(windowId, FONT_NORMAL, ACHIEVEMENTS_POINTS_RIGHT_X - width, y, colors, TEXT_SKIP_DRAW, gStringVar4);
+    AddTextPrinterParameterized3(windowId, FONT_NORMAL, ACHIEVEMENTS_TIER_COUNT_RIGHT_X - width, y, colors, TEXT_SKIP_DRAW, gStringVar4);
 }
 
 static void TierSelect_ItemPrintCallback(u8 windowId, u32 tier, u8 y)

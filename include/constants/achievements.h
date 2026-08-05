@@ -72,10 +72,15 @@
 // wave -- Exploration, Economy & Collection. Cheapest wave to evaluate (no
 // new battle hooks), but not infrastructure-free like the plan sketch first
 // assumed: it adds a small, corrected run-scoped map tracker (see
-// AchievementRunData's mapsVisited comment, include/global.h, for why a raw
-// mapNum bitfield -- the original sketch -- would have collided across map
-// groups) plus two shop-tracking fields, and five new gameStats[] slots
-// (indices 53-57, still well under NUM_GAME_STATS). Entries are checked from
+// AchievementRunDataExt's mapsVisited comment, include/global.h, for why a
+// raw mapNum bitfield -- the original sketch -- would have collided across
+// map groups) plus two shop-tracking fields, and five new gameStats[] slots
+// (indices 53-57, still well under NUM_GAME_STATS). Those run-scoped fields
+// live in a new struct AchievementRunDataExt in SaveBlock2, NOT in
+// AchievementRunData (SaveBlock1) -- a real build caught that SaveBlock1 had
+// only 12 bytes of slack left after Stage 16, not enough for this wave's 163
+// bytes; SaveBlock2 had 1304 free instead. See AchievementRunDataExt's
+// comment for the full story. Entries are checked from
 // eleven call sites, each reusing an existing single-fire event rather than
 // adding a new one: LoadCurrentMapData (src/overworld.c), the object-event
 // branch of GetInteractionScript (src/field_control_avatar.c),

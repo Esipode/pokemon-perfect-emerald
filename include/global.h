@@ -584,6 +584,43 @@ struct RankingHall2P
     //u8 padding;
 };
 
+// Stage 17 (catalog wave 4): run-scoped data for the exploration/economy
+// entries, kept in SaveBlock2 rather than AchievementRunData (SaveBlock1) --
+// SaveBlock1 only had 12 bytes of slack left by the time Stage 16 finished
+// (confirmed via temporary compiler-error probes added to src/save.c after
+// a real build failed on the SaveBlock1FreeSpace STATIC_ASSERT), and this
+// wave's 163 bytes didn't fit. SaveBlock2 had 1304 bytes free, comfortably
+// enough. Kept as its own struct/field, not merged into SaveBlock2's
+// existing fields or into AchievementRunData, so this relocation only
+// touches Stage 17's own code (src/achievements.c) and not Stage 15/16's.
+struct AchievementRunDataExt
+{
+    // Distinct (mapGroup, mapNum) pairs entered this run, for
+    // Cartographer/etc. NOT a raw-mapNum bitfield -- the plan doc's original
+    // sketch proposed indexing 128 bits by mapNum alone, but mapNum resets
+    // per map GROUP (MAP_GROUPS_COUNT == 75), so two unrelated maps in
+    // different groups routinely share a mapNum. SaveBlock1's
+    // nuzlockeCaughtFlags bitfield only gets away with raw-mapNum indexing
+    // because Nuzlocke route-locking is scoped to a single map group; a
+    // general "maps visited" tracker doesn't have that precondition. Each
+    // entry is (mapGroup << 8) | (u8)mapNum, deduplicated by linear scan on
+    // write -- same idiom as AchievementRunData.majorBattleSpecies. Capped
+    // at 80 (the top achievement threshold): once full, additional distinct
+    // maps just stop being recorded, which is harmless since no entry needs
+    // more.
+    u16 mapsVisited[80];
+    u8  mapsVisitedCount;
+
+    // "Since the last Gym" shopping window, the same temporal shape Fresh
+    // Start's ring buffer (AchievementRunData.recentlyObtainedPersonality)
+    // uses. shoppedSinceLastGym is set by the shop hook and read/reset by
+    // Achievement_CheckGymEconomyMilestones (HandleEndTurn_BattleWon, same
+    // call site as category L). consecutiveGymsNoShopping counts unbroken
+    // Gym-clears-without-shopping streaks for No Shopping.
+    bool8 shoppedSinceLastGym;
+    u8  consecutiveGymsNoShopping;
+};
+
 struct SaveBlock2
 {
     /*0x00*/ u8 playerName[PLAYER_NAME_LENGTH + 1];
@@ -623,6 +660,7 @@ struct SaveBlock2
 #endif //FREE_RECORD_MIXING_HALL_RECORDS
     /*0x624*/ u16 contestLinkResults[CONTEST_CATEGORIES_COUNT][CONTESTANT_COUNT];
     /*0x64C*/ struct BattleFrontier frontier;
+    struct AchievementRunDataExt achievementRunDataExt; // Stage 17 (catalog wave 4) -- see that struct's comment
 }; // sizeof=0xF2C
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
@@ -1142,28 +1180,12 @@ struct AchievementRunData
     u32 recentlyObtainedPersonality[8]; // ring buffer of mons obtained since the last Gym, for Fresh Start
     u8  recentlyObtainedCount;
 
-    // Stage 17 (catalog wave 4): distinct (mapGroup, mapNum) pairs entered
-    // this run, for Cartographer/etc. NOT a raw-mapNum bitfield -- the plan
-    // doc's original sketch proposed indexing 128 bits by mapNum alone, but
-    // mapNum resets per map GROUP (MAP_GROUPS_COUNT == 75), so two unrelated
-    // maps in different groups routinely share a mapNum. The nuzlockeCaughtFlags
-    // bitfield above this struct only gets away with raw-mapNum indexing
-    // because Nuzlocke route-locking is scoped to a single map group; a
-    // general "maps visited" tracker doesn't have that precondition. Each
-    // entry is (mapGroup << 8) | (u8)mapNum, deduplicated by linear scan on
-    // write -- same idiom as majorBattleSpecies above. Capped at 80 (the
-    // top achievement threshold): once full, additional distinct maps just
-    // stop being recorded, which is harmless since no entry needs more.
-    u16 mapsVisited[80];
-    u8  mapsVisitedCount;
-
-    // Stage 17: "since the last Gym" shopping window, the same temporal
-    // shape Fresh Start's ring buffer above already uses. shoppedSinceLastGym
-    // is set by the shop hook and read/reset by Achievement_CheckGymEconomyMilestones
-    // (HandleEndTurn_BattleWon, same call site as category L). consecutiveGymsNoShopping
-    // counts unbroken Gym-clears-without-shopping streaks for No Shopping.
-    bool8 shoppedSinceLastGym;
-    u8  consecutiveGymsNoShopping;
+    // Stage 17's own run-scoped fields (maps visited, shop-since-last-Gym
+    // tracking) do NOT live here -- SaveBlock1 only had 12 bytes of slack
+    // left by the time Stage 16 finished (verified via temporary
+    // compiler-error probes in src/save.c), and Stage 17 needed 163 more.
+    // They live in struct AchievementRunDataExt (SaveBlock2) instead; see
+    // that struct's comment for why.
 };
 
 struct SaveBlock1
