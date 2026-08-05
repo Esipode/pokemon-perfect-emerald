@@ -30,11 +30,11 @@
 #include "palette.h"
 #include "pokeball.h"
 #include "pokemon.h"
-#include "ui_birch_case.h"
 #include "pokemon_sprite_visualizer.h"
 #include "pokemon_storage_system.h"
 #include "pokemon_summary_screen.h"
 #include "pokerus.h"
+#include "randomization.h"
 #include "region_map.h"
 #include "scanline_effect.h"
 #include "sound.h"
@@ -1559,24 +1559,10 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         u8 originalType2 = gSpeciesInfo[sum->species].types[1];
         sum->isOriginalDualType = (originalType2 != TYPE_NONE && originalType2 != originalType1);
 
-        if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
-        {
-            sum->type1 = GetRandomType(sum->species, 0);
-            // Only randomize type2 if the original species had a dual type
-            if (sum->isOriginalDualType)
-            {
-                sum->type2 = GetRandomType(sum->species, 1);
-            }
-            else
-            {
-                sum->type2 = sum->type1;
-            }
-        }
-        else
-        {
-            sum->type1 = originalType1;
-            sum->type2 = gSpeciesInfo[sum->species].types[1];
-        }
+        // Resolve through the shared resolver regardless of box vs. party —
+        // it's a pure function of species, so this always matches what the
+        // mon will actually have once withdrawn and sent into battle.
+        GetResolvedTypePair(sum->species, &sum->type1, &sum->type2);
 
         break;
     case 1:
@@ -4540,17 +4526,15 @@ static void SetMoveTypeIcons(void)
         {
             type = GetMoveType(summary->moves[i]);
             type = SummaryScreen_GetDynamicMoveType(mon, summary->moves[i], type);
+            // Apply type randomization if enabled (after dynamic type, before display).
+            // Resolved regardless of box vs. party so this matches what the move
+            // will actually show as once the mon is withdrawn and battles with it.
+            type = GetResolvedMoveType(summary->moves[i], type);
             SetTypeSpritePosAndPal(type, 85, 32 + (i * 16), i + SPRITE_ARR_ID_TYPE);
         }
         else
         {
             SetSpriteInvisibility(i + SPRITE_ARR_ID_TYPE, TRUE);
-        }
-
-        // Apply type randomization if enabled (after dynamic type to override it)
-        if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
-        {
-            type = GetRandomMoveType(summary->moves[i]);
         }
     }
 }
@@ -4574,12 +4558,10 @@ static void SetNewMoveTypeIcon(void)
     enum Move move = GetDisplayedNewMove();
     enum Type type = GetMoveType(move);
     type = SummaryScreen_GetDynamicMoveType(mon, move, type);
-    
-    // Apply type randomization if enabled (after dynamic type to override it)
-    if (FlagGet(FLAG_RANDOMIZE_TYPE) && !sMonSummaryScreen->isBoxMon)
-    {
-        type = GetRandomMoveType(move);
-    }
+
+    // Apply type randomization if enabled (after dynamic type to override it).
+    // Resolved regardless of box vs. party, same as SetMoveTypeIcons above.
+    type = GetResolvedMoveType(move, type);
 
     if (move == MOVE_NONE)
     {
