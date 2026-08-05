@@ -13,6 +13,18 @@
 
 #include "global.h"
 
+// The data contract for "effective" mon data: everything a UI, relearner,
+// battle-setup, or summary-screen caller needs after randomization has been
+// applied. Every field is derived from the mon's original stored data —
+// nothing in here is ever built from a previously-resolved value, so a
+// caller can freely re-resolve without compounding randomization.
+struct ResolvedMonData
+{
+    u8 type1;
+    u8 type2;
+    u16 moves[MAX_MON_MOVES];
+};
+
 // Resolves the effective type 1/2 for a species, applying FLAG_RANDOMIZE_TYPE.
 // When randomization is off, this simply mirrors the species' real types.
 // When on, a single-typed species stays single-typed (type2 == type1) and a
@@ -36,5 +48,11 @@ u8 GetResolvedMoveType(u16 move, u8 baseType);
 // Resolves an entire moveset in one pass (MAX_MON_MOVES slots), preserving
 // MOVE_NONE slots as-is. Safe to call with outMoves == originalMoves.
 void ResolveMonMoves(u16 species, const u16 *originalMoves, u16 *outMoves);
+
+// Resolves a mon's full effective data (types + moveset) in one call from its
+// original species and original stored moves. This is the entry point
+// display code (summary screen) and battle setup should share, so the two
+// paths can never independently drift from each other.
+void ResolveMonData(u16 species, const u16 *originalMoves, struct ResolvedMonData *out);
 
 #endif // GUARD_RANDOMIZATION_H

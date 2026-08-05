@@ -60,3 +60,9 @@ void ResolveMonMoves(u16 species, const u16 *originalMoves, u16 *outMoves)
     for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
         outMoves[moveIdx] = GetResolvedMove(species, originalMoves[moveIdx]);
 }
+
+void ResolveMonData(u16 species, const u16 *originalMoves, struct ResolvedMonData *out)
+{
+    GetResolvedTypePair(species, &out->type1, &out->type2);
+    ResolveMonMoves(species, originalMoves, out->moves);
+}
