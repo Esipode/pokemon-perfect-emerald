@@ -102,6 +102,37 @@
 //      Exploration, Economy & Collection -- see src/achievements.c for the
 //      per-entry hook-site breakdown. Tagged across the existing
 //      EXPLORATION/ECONOMY/COLLECTION/ADVENTURE categories, not a new one.
+//
+// Stage 18 (design doc catalog wave 5, plan Stage 18): Challenge Runs &
+// Nuzlocke. The New Game Settings menu (src/new_game_settings_menu.c)
+// already *is* a challenge-modifier list, so Achievement_CountChallengeModifiers
+// (src/achievements.c) -- Nuzlocke, HARD difficulty, the three FLAG_RANDOMIZE_*
+// flags, the level cap, and the Stat Editor -- turns CHA-001/002/003/004 into
+// a literal count/all-seven check. Nuzlocke entries key off explicit state
+// only (nuzlockeModeEnabled plus Stage 10.1's nuzlockeCaughtFlags/
+// nuzlockeExtraEncounterFlags), never incidental behaviour. Checked from four
+// call sites, each reusing an existing hook: Achievement_CheckChallengeMilestones/
+// Achievement_CheckNuzlockeMilestones (HandleEndTurn_BattleWon, alongside
+// category M's Achievement_CheckGymEconomyMilestones) for the mid-run
+// entries; Achievement_CheckChallengeCompletionMilestones/
+// Achievement_CheckNuzlockeCompletionMilestones (GameClear, alongside Stage
+// 16/17's completion checks) for the "complete the story"/"complete a
+// Nuzlocke" entries; and Achievement_CheckNuzlockeExplorationMilestones
+// (LoadCurrentMapData, alongside category M's exploration hook) for Full
+// Encounter. GAME_STAT_USED_POKECENTER, declared since early on but never
+// incremented, is made live at FldEff_PokecenterHeal (src/field_effect.c).
+// gBattleResults.numHealingItemsUsed (include/battle.h) had the same problem
+// -- declared, read by src/tv.c, never written -- and is wired up at
+// BS_ItemRestoreHP (src/battle_script_commands.c) alongside this wave's new
+// Achievement_RecordReviveUsed hook. No Freebies is narrowed to the starter
+// specifically (by personality, so it survives evolution) rather than every
+// scripted gift Pokemon in the game -- there's no single funnel point for
+// "this Pokemon was a gift" the way catches and hatches already have one.
+//
+//   N. ACHIEVEMENT_CHALLENGE_SELF_IMPOSED .. ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR (30)
+//      Challenge Runs & Nuzlocke -- see src/achievements.c for the per-entry
+//      hook-site breakdown. Tagged across the existing CHALLENGE/NUZLOCKE
+//      categories.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -282,8 +313,49 @@ enum AchievementId
     ACHIEVEMENT_COLLECT_GREEN_THUMB,
     ACHIEVEMENT_COLLECT_ANGLER,
 
+    // N. Challenge Runs (19)
+    ACHIEVEMENT_CHALLENGE_SELF_IMPOSED,
+    ACHIEVEMENT_CHALLENGE_HARD_WAY,
+    ACHIEVEMENT_CHALLENGE_BRUTAL_RULES,
+    ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE,
+    ACHIEVEMENT_CHALLENGE_NO_SHOPPING_RUN,
+    ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS,
+    ACHIEVEMENT_CHALLENGE_ITEMLESS_BATTLE,
+    ACHIEVEMENT_CHALLENGE_WHO_NEEDS_CENTERS,
+    ACHIEVEMENT_CHALLENGE_NO_CENTERS,
+    ACHIEVEMENT_CHALLENGE_SET_IN_STONE,
+    ACHIEVEMENT_CHALLENGE_HARDCORE_SET,
+    ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE,
+    ACHIEVEMENT_CHALLENGE_CAPSTONE,
+    ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED,
+    ACHIEVEMENT_CHALLENGE_MINIMALIST,
+    ACHIEVEMENT_CHALLENGE_THREE_POKEMON,
+    ACHIEVEMENT_CHALLENGE_SOLO_JOURNEY,
+    ACHIEVEMENT_CHALLENGE_NO_FREEBIES,
+    ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP,
+
+    // N. Nuzlocke (11)
+    ACHIEVEMENT_NUZLOCKE_FIRST_GYM,
+    ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR,
+    ACHIEVEMENT_NUZLOCKE_PERFECT,
+    ACHIEVEMENT_NUZLOCKE_CLOSE_CALL,
+    ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE,
+    ACHIEVEMENT_NUZLOCKE_NO_REVIVES,
+    ACHIEVEMENT_NUZLOCKE_SCRAPPY,
+    ACHIEVEMENT_NUZLOCKE_NO_ACE_ALLOWED,
+    ACHIEVEMENT_NUZLOCKE_GRAVEYARD,
+    ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER,
+    ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR,
+
     ACHIEVEMENTS_COUNT,
 };
+
+// Full Encounter bookkeeping (AchievementRunData.nuzlockePendingRoute,
+// include/global.h; Achievement_CheckNuzlockeExplorationMilestones,
+// src/achievements.c): sentinel for "no encounter-eligible route currently
+// awaiting resolution." Outside GET_NUZLOCKE_FLAG's own NUM_NUZLOCKE_ROUTE_FLAGS
+// (128) bounds check, so it can never collide with a real route id.
+#define ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE 0xFFFF
 
 // design doc catalog wave 8 (Stage 21, not yet implemented): mirrors the
 // draft catalog's own section headers, so "complete every Bronze in a

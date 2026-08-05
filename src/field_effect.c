@@ -1139,6 +1139,10 @@ bool8 FldEff_PokecenterHeal(void)
         return FALSE;
     }
     else {
+        // Stage 18 (catalog wave 5): declared since early on (design doc's
+        // gameStats overview) but never actually incremented anywhere in the
+        // tree -- Who Needs Centers?/No Centers need it live.
+        IncrementGameStat(GAME_STAT_USED_POKECENTER);
         nPokemon = (OW_IGNORE_EGGS_ON_HEAL <= GEN_3) ? CalculatePlayerPartyCount() : CountPartyNonEggMons();
         task = &gTasks[CreateTask(Task_PokecenterHeal, 0xff)];
         task->tNumMons = nPokemon;

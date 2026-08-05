@@ -11183,9 +11183,26 @@ void BS_ItemRestoreHP(void)
     }
     else
     {
-        // Track the number of Revives used in a battle.
-        if (hp == 0 && IsOnPlayerSide(gBattlerAttacker) && gBattleResults.numRevivesUsed < 255)
-            gBattleResults.numRevivesUsed++;
+        if (IsOnPlayerSide(gBattlerAttacker))
+        {
+            if (hp == 0)
+            {
+                // Track the number of Revives used in a battle.
+                if (gBattleResults.numRevivesUsed < 255)
+                    gBattleResults.numRevivesUsed++;
+                // Stage 18 (catalog wave 5): a cumulative per-run count, not
+                // gBattleResults' per-battle one -- No Second Chances needs
+                // "never, all run."
+                Achievement_RecordReviveUsed();
+            }
+            else if (gBattleResults.numHealingItemsUsed < 255)
+            {
+                // Stage 18 (catalog wave 5): declared (include/battle.h) and
+                // read by src/tv.c, but never actually incremented anywhere
+                // in the tree -- No Healing Items/Itemless Battle need it live.
+                gBattleResults.numHealingItemsUsed++;
+            }
+        }
 
         // Check if the recipient is an active battler.
         if (gBattleStruct->itemPartyIndex[gBattlerAttacker] == gBattlerPartyIndexes[gBattlerAttacker])

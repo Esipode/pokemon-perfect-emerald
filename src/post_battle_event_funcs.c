@@ -41,6 +41,11 @@ int GameClear(void)
         // Stage 17 (catalog wave 4): Investor, same re-runs-every-NG+-cycle
         // gating as the team-completion check above.
         Achievement_CheckEconomyCompletionMilestones();
+        // Stage 18 (catalog wave 5): Challenge Runs & Nuzlocke completion
+        // entries, same gating. The Nuzlocke half gates itself internally on
+        // gSaveBlock1Ptr->nuzlockeModeEnabled.
+        Achievement_CheckChallengeCompletionMilestones();
+        Achievement_CheckNuzlockeCompletionMilestones();
         // Stage 12: FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
         // (see NewGameInitData, src/new_game.c), so this branch already
         // re-runs on every NG+ cycle's clear, not just the save's very first

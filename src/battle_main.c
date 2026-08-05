@@ -6164,6 +6164,11 @@ static void HandleEndTurn_BattleWon(void)
         // Shopping/Resourceful. Same gate; internally checks whether this
         // win was a Gym battle.
         Achievement_CheckGymEconomyMilestones();
+        // Stage 18 (catalog wave 5): Challenge Runs & Nuzlocke. Same gate;
+        // the Nuzlocke half additionally gates itself on
+        // gSaveBlock1Ptr->nuzlockeModeEnabled internally.
+        Achievement_CheckChallengeMilestones();
+        Achievement_CheckNuzlockeMilestones();
     }
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))

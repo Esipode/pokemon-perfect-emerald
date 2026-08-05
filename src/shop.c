@@ -1177,9 +1177,18 @@ static void BuyMenuTryMakePurchase(u8 taskId)
 
 static void BuyMenuSubtractMoney(u8 taskId)
 {
+    s16 *data = gTasks[taskId].data;
+
     IncrementGameStat(GAME_STAT_SHOPPED);
     RemoveMoney(&gSaveBlock1Ptr->money, sShopData->totalCost);
     Achievement_RecordMoneySpent(sShopData->totalCost);
+    // Stage 18 (catalog wave 5): No Shopping Run needs to know whether this
+    // purchase was a consumable battle item (POCKET_ITEMS, the same pocket
+    // Stage 17's Resourceful already treats as "consumable"). Gated on
+    // MART_TYPE_NORMAL since tItemId holds a decoration id, not an item id,
+    // in the decoration-mart branch below.
+    if (sMartInfo.martType == MART_TYPE_NORMAL && GetItemPocket(tItemId) == POCKET_ITEMS)
+        Achievement_RecordConsumableItemPurchase();
     PlaySE(SE_SHOP);
     PrintMoneyAmountInMoneyBox(WIN_MONEY, GetMoney(&gSaveBlock1Ptr->money), 0);
 

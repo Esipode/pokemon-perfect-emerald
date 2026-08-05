@@ -741,6 +741,12 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
 
     gSpecialVar_Result = ScriptGiveMonParameterized(B_SIDE_PLAYER, PARTY_SIZE, (enum Species)choice->species, choice->level, (enum Item)choice->item, BALL_POKE, choice->nature, choice->abilityNum, choice->gender, evs, ivs, moves, choice->isShinyExpansion ? SHINY_MODE_ALWAYS : SHINY_MODE_NEVER, choice->ggMaxFactor, (enum Type)choice->teraType, 0);
 
+    // Stage 18 (catalog wave 5): No Freebies tracks the starter by
+    // personality (survives evolution, unlike species) -- read back from the
+    // party slot it was just placed into, since ScriptGiveMonParameterized's
+    // own return value is a slot/result code, not the generated personality.
+    Achievement_RecordStarterPersonality(GetMonData(&gPlayerParty[0], MON_DATA_PERSONALITY));
+
     if (wasRandomizeMonForMoves)
         FlagSet(FLAG_RANDOMIZE_MON);
 

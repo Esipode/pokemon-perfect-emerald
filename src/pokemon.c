@@ -4063,6 +4063,13 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             break;
                         }
 
+                        // Stage 18 (catalog wave 5): the out-of-battle
+                        // counterpart to BS_ItemRestoreHP's in-battle hook --
+                        // validity just confirmed effectFlags has the REVIVE
+                        // bit AND currentHP == 0, so this is a genuine revive.
+                        if (effectFlags & (ITEM4_REVIVE >> 2))
+                            Achievement_RecordReviveUsed();
+
                         // Get amount of HP to restore
                         dataUnsigned = itemEffect[itemEffectParam++];
                         switch (dataUnsigned)

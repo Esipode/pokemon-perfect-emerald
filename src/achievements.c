@@ -20,6 +20,7 @@
 #include "constants/difficulty.h" // DIFFICULTY_HARD, for Stage 16's Trial by Fire
 #include "item.h"                 // gBagPockets/POCKETS_COUNT, for Stage 17's Pack Rat/Resourceful
 #include "wild_encounter.h"       // gWildMonHeaders/GetCurrentMapWildMonHeaderId, for Stage 17's Local Expert
+#include "battle_main.h"          // GetCurrentMapId, for Stage 18's Full Encounter bookkeeping
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
 #include "constants/game_stat.h" // GAME_STAT_*, for Stage 13's threshold checks
@@ -737,6 +738,12 @@ void Achievement_CheckStoryMilestones(void)
         if (FlagGet(sStoryMilestones[i].flag))
             Achievement_TryComplete(sStoryMilestones[i].achievementId);
     }
+
+    // Stage 18 (catalog wave 5): Who Needs Centers?, checked at the exact
+    // moment of the 5th badge -- the same checkpoint the table above already
+    // uses for ACHIEVEMENT_BADGE_HEAT.
+    if (FlagGet(FLAG_BADGE05_GET) && GetGameStat(GAME_STAT_USED_POKECENTER) == 0)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_WHO_NEEDS_CENTERS);
 
     // Stage 16: piggyback on this same callnative for party-state checks that
     // aren't tied to a specific battle. See that function's own doc comment.
@@ -2301,6 +2308,386 @@ void Achievement_CheckEconomyCompletionMilestones(void)
 {
     if (GetMoney(&gSaveBlock1Ptr->money) >= 500000)
         Achievement_TryComplete(ACHIEVEMENT_ECONOMY_INVESTOR);
+}
+
+// ---- Stage 18: catalog wave 5 (category N, Challenge Runs & Nuzlocke) --
+//
+// See include/constants/achievements.h's category N doc comment for the
+// four call sites. Two latent gaps this wave has to fix before its roster
+// can read anything real from them: GAME_STAT_USED_POKECENTER (declared
+// since early on, never incremented -- fixed at FldEff_PokecenterHeal,
+// src/field_effect.c) and gBattleResults.numHealingItemsUsed (declared,
+// read by src/tv.c, never written -- fixed at BS_ItemRestoreHP,
+// src/battle_script_commands.c, alongside this wave's own
+// Achievement_RecordReviveUsed hook).
+
+// The seven New Game Settings that make a run harder (design doc §18/§19:
+// explicit state only, never incidental behaviour). Debug Mode is
+// deliberately excluded -- it doesn't make a run harder, it makes it
+// ineligible (achievementsBlocked, Stage 1.5).
+static u8 Achievement_CountChallengeModifiers(void)
+{
+    u8 count = 0;
+
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+        count++;
+    if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)
+        count++;
+    if (FlagGet(FLAG_RANDOMIZE_MON))
+        count++;
+    if (FlagGet(FLAG_RANDOMIZE_TYPE))
+        count++;
+    if (FlagGet(FLAG_RANDOMIZE_MOVES))
+        count++;
+    if (!FlagGet(FLAG_LEVEL_CAP_OFF))
+        count++;
+    if (!FlagGet(FLAG_ALLOW_STAT_EDITOR))
+        count++;
+
+    return count;
+}
+
+// Symmetric to Achievement_HighestLevelPartySlot (Stage 16), for Scrappy.
+static u8 Achievement_LowestLevelPartySlot(struct Pokemon *party, u8 count)
+{
+    u8 i, bestSlot = 0, bestLevel = 0xFF;
+
+    for (i = 0; i < count; i++)
+    {
+        u8 level = GetMonData(&party[i], MON_DATA_LEVEL);
+
+        if (level < bestLevel)
+        {
+            bestLevel = level;
+            bestSlot = i;
+        }
+    }
+
+    return bestSlot;
+}
+
+// Species Clause. Scans party + every PC box for a shared evolution-family
+// root, the same "everything the player owns" breadth
+// Achievement_HighestLevelMonIsOutsideParty (Stage 16) already scans -- under
+// Nuzlocke rules that's exactly the set of Pokemon caught this run, so no
+// separate catch-list tracking is needed. The scratch array is static EWRAM,
+// not a stack array: PARTY_SIZE + TOTAL_BOXES_COUNT * IN_BOX_COUNT entries
+// (~426) would be a needlessly large stack frame for a check that only ever
+// runs once, at GameClear.
+EWRAM_DATA static u16 sSpeciesClauseScratch[PARTY_SIZE + TOTAL_BOXES_COUNT * IN_BOX_COUNT] = {0};
+
+static bool8 Achievement_HasDuplicateEvolutionFamilyAmongOwned(struct Pokemon *party, u8 playerCount)
+{
+    u16 count = 0;
+    u8 i, box, slot;
+
+    for (i = 0; i < playerCount; i++)
+    {
+        enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
+        if (species != SPECIES_NONE)
+            sSpeciesClauseScratch[count++] = Achievement_GetEvolutionRoot(species);
+    }
+
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++)
+        {
+            enum Species species = GetBoxMonDataAt(box, slot, MON_DATA_SPECIES);
+            if (species != SPECIES_NONE)
+                sSpeciesClauseScratch[count++] = Achievement_GetEvolutionRoot(species);
+        }
+    }
+
+    for (i = 0; i < count; i++)
+    {
+        u16 j;
+        for (j = i + 1; j < count; j++)
+        {
+            if (sSpeciesClauseScratch[i] == sSpeciesClauseScratch[j])
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+// HandleEndTurn_BattleWon (src/battle_main.c), immediately after
+// Achievement_CheckGymEconomyMilestones, gated the same way (never link/
+// recorded). Covers every Challenge-category entry evaluated battle-by-
+// battle, plus the running bookkeeping Achievement_CheckChallengeCompletionMilestones
+// reads at GameClear.
+void Achievement_CheckChallengeMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    bool8 isMajorBattle = Achievement_IsMajorBattle();
+    bool8 isGymBattle = Achievement_IsGymBattle();
+    u8 i;
+
+    if (playerCount > runData->highestPartySizeThisRun)
+        runData->highestPartySizeThisRun = playerCount;
+
+    if (isMajorBattle)
+    {
+        bool8 noBagItemsUsed = (gBattleResults.numHealingItemsUsed == 0 && gBattleResults.numRevivesUsed == 0);
+        bool8 noHeldItems = TRUE;
+
+        if (gBattleResults.numHealingItemsUsed == 0)
+            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS);
+
+        for (i = 0; i < playerCount; i++)
+        {
+            if (GetMonData(&party[i], MON_DATA_HELD_ITEM) != ITEM_NONE)
+            {
+                noHeldItems = FALSE;
+                break;
+            }
+        }
+        if (noBagItemsUsed && noHeldItems)
+            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_ITEMLESS_BATTLE);
+
+        if (gSaveBlock2Ptr->optionsBattleStyle == OPTIONS_BATTLE_STYLE_SET)
+            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_SET_IN_STONE);
+
+        if (playerCount == 3)
+            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_MINIMALIST);
+
+        // No Freebies bookkeeping: did the starter (tracked by personality,
+        // so it survives evolution) act in this major battle? Sticky once
+        // set, same "Broken" idiom Stage 16 uses.
+        if (runData->starterPersonality != 0 && !runData->starterActedInMajorBattle)
+        {
+            for (i = 0; i < playerCount; i++)
+            {
+                if ((sBattleData.slotsThatActed & (1 << i))
+                 && GetMonData(&party[i], MON_DATA_PERSONALITY) == runData->starterPersonality)
+                {
+                    runData->starterActedInMajorBattle = TRUE;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (isGymBattle)
+    {
+        u32 levelCap = GetCurrentLevelCap();
+        bool8 anyAboveCap = FALSE;
+
+        for (i = 0; i < playerCount; i++)
+        {
+            if (GetMonData(&party[i], MON_DATA_LEVEL) > levelCap)
+            {
+                anyAboveCap = TRUE;
+                break;
+            }
+        }
+        if (!anyAboveCap)
+            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE);
+    }
+}
+
+// Same call site as above, immediately after it. Every entry here is
+// additionally gated on nuzlockeModeEnabled. Self-contained rather than
+// reusing Achievement_CheckTeamMilestones's locals -- that function's own
+// gym branch belongs to Stage 16, not this wave.
+void Achievement_CheckNuzlockeMilestones(void)
+{
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    bool8 isGymBattle = Achievement_IsGymBattle();
+    u8 i;
+
+    if (!gSaveBlock1Ptr->nuzlockeModeEnabled)
+        return;
+
+    if (isGymBattle)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_FIRST_GYM);
+
+    // Close Call: any party member survived the battle below 10% HP.
+    for (i = 0; i < playerCount; i++)
+    {
+        u32 hp = GetMonData(&party[i], MON_DATA_HP);
+
+        if (hp > 0)
+        {
+            u32 maxHp = GetMonData(&party[i], MON_DATA_MAX_HP);
+
+            if (maxHp != 0 && hp * 10 <= maxHp)
+            {
+                Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_CLOSE_CALL);
+                break;
+            }
+        }
+    }
+
+    if (isGymBattle && playerCount != 0)
+    {
+        u8 highestSlot = Achievement_HighestLevelPartySlot(party, playerCount);
+        u8 lowestSlot = Achievement_LowestLevelPartySlot(party, playerCount);
+
+        if (!(sBattleData.slotsThatActed & (1 << highestSlot)))
+            Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_NO_ACE_ALLOWED);
+
+        if (sBattleData.lastThreeKoSlots[2] != 0
+         && (sBattleData.lastThreeKoSlots[2] - 1) == lowestSlot)
+            Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_SCRAPPY);
+    }
+}
+
+// LoadCurrentMapData (src/overworld.c), alongside
+// Achievement_CheckExplorationMilestones (Stage 17) -- Full Encounter
+// bookkeeping. "Took the encounter" means the route's Nuzlocke flag
+// (GET_NUZLOCKE_FLAG or the second-chance _EXTRA_FLAG, both set from
+// CB2_EndWildBattle in src/battle_setup.c) got set before the player left
+// it; leaving an encounter-eligible route (GetCurrentMapWildMonHeaderId() !=
+// HEADER_NONE) without resolving it breaks Full Encounter for the rest of
+// the run -- a sticky flag, the same idiom Stage 16 uses for mono-type/
+// type-roulette/etc.
+void Achievement_CheckNuzlockeExplorationMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    u16 route;
+
+    if (!gSaveBlock1Ptr->nuzlockeModeEnabled)
+        return;
+
+    route = GetCurrentMapId();
+    if (route == runData->nuzlockePendingRoute)
+        return; // still on the same route (e.g. a sub-area warp within it)
+
+    if (runData->nuzlockePendingRoute != ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE
+     && !GET_NUZLOCKE_FLAG(runData->nuzlockePendingRoute)
+     && !GET_NUZLOCKE_EXTRA_FLAG(runData->nuzlockePendingRoute))
+        runData->nuzlockeRouteSkipped = TRUE;
+
+    runData->nuzlockePendingRoute = (GetCurrentMapWildMonHeaderId() != HEADER_NONE)
+                                   ? route
+                                   : ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE;
+}
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_CheckTeamCompletionMilestones/Achievement_CheckEconomyCompletionMilestones
+// -- same re-runs-every-NG+-cycle gating.
+void Achievement_CheckChallengeCompletionMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    u8 modifierCount = Achievement_CountChallengeModifiers();
+
+    if (modifierCount >= 3)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_SELF_IMPOSED);
+    if (modifierCount >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_HARD_WAY);
+    if (modifierCount >= 7)
+    {
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_BRUTAL_RULES);
+        if (!gAchievementProfile.boostsEnabled)
+            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE);
+    }
+
+    if (!runData->boughtConsumableItem)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NO_SHOPPING_RUN);
+
+    if (GetGameStat(GAME_STAT_USED_POKECENTER) == 0)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NO_CENTERS);
+
+    if (gSaveBlock2Ptr->optionsBattleStyle == OPTIONS_BATTLE_STYLE_SET
+     && gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_HARDCORE_SET);
+
+    if (!runData->levelCapEverExceeded)
+    {
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_CAPSTONE);
+        if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD
+         || FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES))
+            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED);
+    }
+
+    if (runData->highestPartySizeThisRun != 0 && runData->highestPartySizeThisRun <= 3)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_THREE_POKEMON);
+    if (runData->highestPartySizeThisRun != 0 && runData->highestPartySizeThisRun <= 1)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_SOLO_JOURNEY);
+
+    if (runData->starterPersonality != 0 && !runData->starterActedInMajorBattle)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NO_FREEBIES);
+
+    if (!gAchievementProfile.boostsEnabled && !FlagGet(FLAG_ALLOW_STAT_EDITOR))
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP);
+}
+
+// Same call site as above. Every entry here is gated on nuzlockeModeEnabled.
+void Achievement_CheckNuzlockeCompletionMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+
+    if (!gSaveBlock1Ptr->nuzlockeModeEnabled)
+        return;
+
+    if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD && !FlagGet(FLAG_LEVEL_CAP_OFF))
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR);
+
+    if (runData->nuzlockeMonsLost == 0)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_PERFECT);
+    if (runData->nuzlockeMonsLost >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_GRAVEYARD);
+
+    if (!Achievement_HasDuplicateEvolutionFamilyAmongOwned(party, playerCount))
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE);
+
+    if (runData->nuzlockeRevivesUsed == 0)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_NO_REVIVES);
+
+    if (!runData->nuzlockeRouteSkipped)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER);
+
+    if (!gAchievementProfile.boostsEnabled)
+        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR);
+}
+
+// BuyMenuSubtractMoney (src/shop.c), alongside Achievement_RecordMoneySpent
+// -- called only when the purchased item is POCKET_ITEMS (the same
+// "consumable" definition Stage 17's Resourceful uses).
+void Achievement_RecordConsumableItemPurchase(void)
+{
+    gSaveBlock1Ptr->achievementRunData.boughtConsumableItem = TRUE;
+}
+
+// BS_ItemRestoreHP (src/battle_script_commands.c, in-battle) and
+// PokemonUseItemEffects's ITEM4_HEAL_HP/ITEM4_REVIVE case (src/pokemon.c,
+// out-of-battle) -- both call this only after confirming currentHP == 0,
+// i.e. the item actually revived a fainted Pokemon. Accumulates for the
+// whole run, unlike gBattleResults.numRevivesUsed which resets every battle.
+void Achievement_RecordReviveUsed(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+
+    if (runData->nuzlockeRevivesUsed < 255)
+        runData->nuzlockeRevivesUsed++;
+}
+
+// RemoveFaintedMonsFromParty (src/overworld.c) -- the single function every
+// Nuzlocke fainted-mon removal funnels through, called once per Pokemon
+// actually removed.
+void Achievement_RecordNuzlockeMonLost(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+
+    if (runData->nuzlockeMonsLost < 255)
+        runData->nuzlockeMonsLost++;
+}
+
+// ui_birch_case.c, right after the starter is granted -- personality
+// survives evolution, unlike species, which is why No Freebies tracks it
+// instead. 0 is treated as "not yet recorded" (like Fresh Start's ring
+// buffer, Stage 16) rather than adding a separate bool -- a real starter
+// rolling personality 0 is a 1-in-4-billion coincidence, the same order of
+// risk already accepted elsewhere in this file.
+void Achievement_RecordStarterPersonality(u32 personality)
+{
+    gSaveBlock1Ptr->achievementRunData.starterPersonality = personality;
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

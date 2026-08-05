@@ -685,6 +685,9 @@ static void LoadCurrentMapData(void)
     gSaveBlock1Ptr->mapLayoutId = gMapHeader.mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout(gMapHeader.mapLayoutId);
     Achievement_CheckExplorationMilestones();
+    // Stage 18 (catalog wave 5): Full Encounter bookkeeping. Gates itself
+    // internally on nuzlockeModeEnabled.
+    Achievement_CheckNuzlockeExplorationMilestones();
 }
 
 static void LoadSaveblockMapHeader(void)
@@ -2217,6 +2220,11 @@ void RemoveFaintedMonsFromParty(void)
             if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE &&
                 GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HP) == 0)
             {
+                // Stage 18 (catalog wave 5): this is the single function
+                // every Nuzlocke fainted-mon removal funnels through --
+                // count it once per Pokemon actually removed, for Perfect
+                // Nuzlocke/The Graveyard.
+                Achievement_RecordNuzlockeMonLost();
                 // Shift all Pokémon above this one down by one
                 for (j = i; j < PARTY_SIZE - 1; j++)
                     gParties[B_TRAINER_PLAYER][j] = gParties[B_TRAINER_PLAYER][j + 1];

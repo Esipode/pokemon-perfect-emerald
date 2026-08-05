@@ -1186,6 +1186,26 @@ struct AchievementRunData
     // compiler-error probes in src/save.c), and Stage 17 needed 163 more.
     // They live in struct AchievementRunDataExt (SaveBlock2) instead; see
     // that struct's comment for why.
+
+    // Stage 18 (catalog wave 5, Challenge Runs & Nuzlocke): unlike Stage 17,
+    // this wave's additions are small enough (12 bytes) to fit the slack
+    // Stage 17 left behind here directly -- no SaveBlock2 detour needed. The
+    // plan doc's own infra sketch for this stage ("a party-wipe flag") didn't
+    // survive contact with the actual roster: every entry that sounded like
+    // it needed one turned out to be covered by nuzlockeMonsLost, revives
+    // used, or a route-skipped flag instead (a full party wipe already
+    // triggers ClearSaveData() -- src/overworld.c's RemoveFaintedMonsFromParty
+    // -- which erases this very struct, so a flag observing that event could
+    // never be read back on the same save). See src/achievements.c for the
+    // per-field hook-site breakdown.
+    u32 starterPersonality;          // the run's starter, by personality (survives evolution) -- for No Freebies; 0 == not yet recorded
+    u16 nuzlockePendingRoute;        // Full Encounter bookkeeping: the encounter-eligible route (GetCurrentMapId()) currently awaiting resolution; ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE when none
+    u8  highestPartySizeThisRun;     // high-water mark for Three-Pokemon Challenge/Solo Journey
+    u8  nuzlockeMonsLost;            // for Perfect Nuzlocke/The Graveyard
+    u8  nuzlockeRevivesUsed;         // for No Second Chances
+    bool8 starterActedInMajorBattle; // for No Freebies (sticky, same "Broken" idiom as Stage 16's fields)
+    bool8 boughtConsumableItem;      // for No Shopping Run (sticky)
+    bool8 nuzlockeRouteSkipped;      // for Full Encounter (sticky)
 };
 
 struct SaveBlock1

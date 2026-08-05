@@ -362,7 +362,8 @@ bool8 AchievementBoost_HasPerfectStarterIvs(void);
 // all 8 badges and the 7 non-badge story beats that already funnel through
 // this shared script. Every one of the 16 call sites already sets its own
 // milestone's flag on the line immediately before calling this script, so
-// checking all 15 flags unconditionally here is correct and cheap.
+// checking all 15 flags unconditionally here is correct and cheap. Also
+// checks Stage 18's Who Needs Centers? at the FLAG_BADGE05_GET checkpoint.
 void Achievement_CheckStoryMilestones(void);
 
 // HandleSetPokedexFlag (src/pokemon.c), from inside its existing
@@ -615,6 +616,80 @@ void Achievement_CheckGymEconomyMilestones(void);
 // Achievement_CheckTeamCompletionMilestones -- Investor's "finish the story
 // holding >= 500000" check.
 void Achievement_CheckEconomyCompletionMilestones(void);
+
+// ---- Stage 18: catalog wave 5 (category N, Challenge Runs & Nuzlocke) ---
+//
+// Four call sites, each reusing an existing hook rather than adding a new
+// one -- see include/constants/achievements.h's category N doc comment for
+// the overview.
+
+// HandleEndTurn_BattleWon (src/battle_main.c), immediately after
+// Achievement_CheckGymEconomyMilestones, gated the same way (never link/
+// recorded). Covers every Challenge-category entry that's evaluated
+// battle-by-battle -- No Healing Items/Itemless Battle/Set in Stone/
+// Minimalist/Level Discipline -- plus the running high-water mark
+// (highestPartySizeThisRun) and starter-tracking bookkeeping that
+// Achievement_CheckChallengeCompletionMilestones reads at GameClear.
+void Achievement_CheckChallengeMilestones(void);
+
+// Same call site as above, immediately after it. Every entry here is
+// additionally gated on gSaveBlock1Ptr->nuzlockeModeEnabled: First Nuzlocke,
+// Close Call, Scrappy, No Ace Allowed. Self-contained rather than reusing
+// Achievement_CheckTeamMilestones's locals (Stage 16 owns that function).
+void Achievement_CheckNuzlockeMilestones(void);
+
+// LoadCurrentMapData (src/overworld.c), alongside Achievement_CheckExplorationMilestones
+// (Stage 17) -- Full Encounter bookkeeping. Tracks whether the
+// encounter-eligible route (GetCurrentMapWildMonHeaderId() != HEADER_NONE)
+// the player most recently entered had its Nuzlocke flag resolved
+// (GET_NUZLOCKE_FLAG or the second-chance _EXTRA_FLAG) before they left it
+// for a different route; leaving one unresolved sets a sticky "broken" flag,
+// the same idiom Stage 16 uses for mono-type/type-roulette/etc.
+void Achievement_CheckNuzlockeExplorationMilestones(void);
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_CheckTeamCompletionMilestones/Achievement_CheckEconomyCompletionMilestones
+// -- same re-runs-every-NG+-cycle gating. Covers every "complete the story"
+// Challenge-category entry: Self-Imposed/Hard Way/Brutal Rules/Nightmare Mode
+// (Achievement_CountChallengeModifiers), No Shopping Run, No Centers,
+// Hardcore Set, Capstone/Perfectly Capped (reads Stage 16's
+// levelCapEverExceeded), Three-Pokemon Challenge/Solo Journey, No Freebies,
+// Hardly Any Help.
+void Achievement_CheckChallengeCompletionMilestones(void);
+
+// Same call site as above. Every entry here is gated on nuzlockeModeEnabled:
+// Hardcore Survivor, Perfect Nuzlocke/The Graveyard, Species Clause (scans
+// party + every PC box -- under Nuzlocke rules that's exactly the set of
+// Pokemon caught this run), No Second Chances, Full Encounter, Unassisted
+// Survivor.
+void Achievement_CheckNuzlockeCompletionMilestones(void);
+
+// BuyMenuSubtractMoney (src/shop.c), alongside Achievement_RecordMoneySpent
+// -- called only when the purchased item is in POCKET_ITEMS (the same
+// "consumable" definition Stage 17's Resourceful uses). Sets
+// AchievementRunData.boughtConsumableItem for No Shopping Run.
+void Achievement_RecordConsumableItemPurchase(void);
+
+// Two funnel points where a Revive-type item actually revives a fainted
+// Pokemon (the caller has already confirmed currentHP == 0): BS_ItemRestoreHP
+// (src/battle_script_commands.c, in-battle) and PokemonUseItemEffects's
+// ITEM4_HEAL_HP/ITEM4_REVIVE case (src/pokemon.c, out-of-battle). Accumulates
+// cumulatively for the whole run in AchievementRunData.nuzlockeRevivesUsed,
+// unlike gBattleResults.numRevivesUsed which resets every battle -- No Second
+// Chances needs "never, all run."
+void Achievement_RecordReviveUsed(void);
+
+// RemoveFaintedMonsFromParty (src/overworld.c), the single function every
+// Nuzlocke fainted-mon removal funnels through -- called once per Pokemon
+// actually removed. Increments AchievementRunData.nuzlockeMonsLost for
+// Perfect Nuzlocke/The Graveyard.
+void Achievement_RecordNuzlockeMonLost(void);
+
+// ui_birch_case.c, right after the starter is granted (ScriptGiveMonParameterized)
+// -- records its personality (survives evolution, unlike species) so
+// Achievement_CheckChallengeMilestones can tell whether it ever acts in a
+// major battle, for No Freebies.
+void Achievement_RecordStarterPersonality(u32 personality);
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add
