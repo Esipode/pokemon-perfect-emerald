@@ -1,6 +1,7 @@
 #include "global.h"
 #include "overworld.h"
 #include "achievement_popup.h"
+#include "achievements.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
 #include "battle_util.h"
@@ -683,6 +684,7 @@ static void LoadCurrentMapData(void)
     gMapHeader = *Overworld_GetMapHeaderByGroupAndId(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum);
     gSaveBlock1Ptr->mapLayoutId = gMapHeader.mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout(gMapHeader.mapLayoutId);
+    Achievement_CheckExplorationMilestones();
 }
 
 static void LoadSaveblockMapHeader(void)

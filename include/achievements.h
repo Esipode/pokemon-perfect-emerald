@@ -518,6 +518,104 @@ void Achievement_CheckTeamCompletionMilestones(void);
 // condition to be wrong in.
 void Achievement_RecordMonObtained(u32 personality);
 
+// ---- Stage 17: catalog wave 4 (category M, Exploration, Economy & -------
+// Collection). Nine call sites, each reusing an existing single-fire event.
+
+// LoadCurrentMapData (src/overworld.c), the one function all three real
+// map-transition paths funnel through -- see that function's own comment
+// for why hooking there instead of its three callers avoids tripling the
+// count. Updates AchievementRunData.mapsVisited and checks every
+// map-count/FLAG_VISITED_*/No Loose Ends threshold; none of those need a
+// battle or story hook of their own.
+void Achievement_CheckExplorationMilestones(void);
+
+// Achievement_CheckPokedexMilestones's FLAG_SET_SEEN branch (src/achievements.c,
+// Stage 13 category B) -- checked only when a species is newly seen, so
+// Local Expert can only complete at the exact moment the last species on the
+// player's current route becomes seen, on this route or any other.
+void Achievement_CheckLocalExpert(void);
+
+// SetHiddenItemFlag (src/field_specials.c), the native the hidden-item
+// script calls to mark a hidden item found -- already only reached once per
+// item (the overworld gates the script itself on the flag not being set
+// yet, src/field_control_avatar.c).
+void Achievement_CheckHiddenItemMilestones(void);
+
+// GetInteractionScript's object-event branch (src/field_control_avatar.c) --
+// fires once per NPC interaction *started*, not once per msgbox inside that
+// conversation's script, which is what the plan doc's Verify section
+// specifically warned against.
+void Achievement_RecordNpcTalkedTo(void);
+
+// BuyMenuSubtractMoney (src/shop.c), right after the vanilla
+// IncrementGameStat(GAME_STAT_SHOPPED) call -- amountSpent is
+// sShopData->totalCost. Checks First Purchase/Regular Customer (from the
+// stat vanilla already incremented) and Big Spender/Whale (from the new
+// GAME_STAT_MONEY_SPENT this adds to), and sets
+// AchievementRunData.shoppedSinceLastGym for Achievement_CheckGymEconomyMilestones.
+void Achievement_RecordMoneySpent(u32 amountSpent);
+
+// The sell-item AddMoney call in src/item_menu.c -- separate from
+// Achievement_RecordMoneySpent because Treasure Pays tracks proceeds, not
+// spending, and the two must never be confused with each other or with
+// Achievement_CheckMoneyMilestones's held-balance checks.
+void Achievement_RecordItemSaleProceeds(u32 amount);
+
+// AddBagItem (src/item.c), the same "added succeeded" guard
+// Achievement_CheckItemMilestones already sits behind (Stage 13 category G) --
+// scans every non-key-item Bag pocket for Pack Rat.
+void Achievement_CheckPackRatMilestone(void);
+
+// ObjectEventInteractionPickBerryTree (src/berry.c) -- one harvest action,
+// same "count the action, not the yield" convention GAME_STAT_PLANTED_BERRIES
+// already uses for planting.
+void Achievement_RecordBerryHarvest(void);
+
+// Both GAME_STAT_POKEMON_TRADES sites (src/trade.c): CB2_SaveAndEndTrade
+// (in-game trades and local link trades) and CB2_SaveAndEndWirelessTrade
+// (GTS/wireless trades) -- between them, every trade that actually completes.
+void Achievement_CheckTradeMilestones(void);
+
+// Both GAME_STAT_EVOLVED_POKEMON sites (src/evolution_scene.c) -- checks
+// Evolutionary Path/Evolution Expert against the count vanilla already
+// incremented at that exact point.
+void Achievement_CheckEvolutionCountMilestones(void);
+
+// GetEvolutionTargetSpecies's EVO_MODE_NORMAL/EVO_MODE_BATTLE_ONLY case
+// (src/pokemon.c), gated by the caller on evoState == DO_EVO -- CHECK_EVO
+// runs first and must never award anything, or eligibility checks alone
+// (e.g. opening the party menu) would complete this. Fires when the
+// evolution that's actually about to happen matched via an IF_MIN_FRIENDSHIP
+// condition.
+void Achievement_RecordFriendshipEvolution(void);
+
+// PokemonUseItemEffects's ITEM4_EVO_STONE case (src/pokemon.c), gated by the
+// caller on the item actually being one of the twelve stone items (not
+// every EVO_ITEM item is a stone in every expansion configuration).
+void Achievement_RecordStoneEvolution(void);
+
+// GiveCapturedMonToPlayer (src/pokemon.c), alongside
+// Achievement_RecordMonObtained (Stage 16) -- gDexNavSpecies is nonzero only
+// during a battle that a DexNav scan actually started (src/dexnav.c), so
+// this can't fire for an unrelated catch or a gift mon.
+void Achievement_CheckDexNavCaptureMilestone(void);
+
+// The GAME_STAT_FISHING_ENCOUNTERS increment in src/wild_encounter.c --
+// Angler's threshold check against the count vanilla already incremented.
+void Achievement_CheckFishingMilestone(void);
+
+// HandleEndTurn_BattleWon (src/battle_main.c), immediately after
+// Achievement_CheckTeamMilestones, gated the same way (never link/recorded).
+// Branches internally on Achievement_IsGymBattle()/Achievement_IsMajorBattle(),
+// the same style Achievement_CheckTeamMilestones uses -- not a new battle
+// hook, just more entries riding the one that already exists.
+void Achievement_CheckGymEconomyMilestones(void);
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_CheckTeamCompletionMilestones -- Investor's "finish the story
+// holding >= 500000" check.
+void Achievement_CheckEconomyCompletionMilestones(void);
+
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add
 // (achievement completion rules, boost costs/maxLevel, reset fee) by design,

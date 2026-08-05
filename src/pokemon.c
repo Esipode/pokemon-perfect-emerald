@@ -3309,6 +3309,11 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     // that lands in a box still counts as "obtained" for Fresh Start if it's
     // withdrawn into the party before the next Gym.
     Achievement_RecordMonObtained(GetMonData(mon, MON_DATA_PERSONALITY));
+    // Stage 17 (catalog wave 4): Rare Find. gDexNavSpecies is nonzero only
+    // while a battle a DexNav scan actually started is in progress, and is
+    // reset only at battle end (after this catch script already ran).
+    if (gDexNavSpecies != SPECIES_NONE)
+        Achievement_CheckDexNavCaptureMilestone();
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
@@ -4145,6 +4150,9 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             {
                                 GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, item, NULL, &canStopEvo, DO_EVO);
                                 BeginEvolutionScene(mon, targetSpecies, canStopEvo, partyIndex);
+                                // Stage 17 (catalog wave 4): Stone Age.
+                                if (item >= ITEM_FIRE_STONE && item <= ITEM_DAWN_STONE)
+                                    Achievement_RecordStoneEvolution();
                                 return FALSE;
                             }
                         }
@@ -4933,6 +4941,24 @@ enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode m
                 // This is different from vanilla where the loop continues.
                 // If you have overlapping evolutions, put the ones you want to happen first on top of the list.
                 targetSpecies = evolutions[i].targetSpecies;
+                // Stage 17 (catalog wave 4): Friendship Blossoms. Gated on
+                // DO_EVO (the real commit) so a mere eligibility check (e.g.
+                // opening the party menu, which runs CHECK_EVO) never awards
+                // it. This fork has no literal EVO_FRIENDSHIP method --
+                // friendship evolutions are EVO_LEVEL plus an
+                // IF_MIN_FRIENDSHIP condition attached to .params.
+                if (evoState == DO_EVO && evolutions[i].params != NULL)
+                {
+                    u32 paramIdx;
+                    for (paramIdx = 0; evolutions[i].params[paramIdx].condition != CONDITIONS_END; paramIdx++)
+                    {
+                        if (evolutions[i].params[paramIdx].condition == IF_MIN_FRIENDSHIP)
+                        {
+                            Achievement_RecordFriendshipEvolution();
+                            break;
+                        }
+                    }
+                }
                 break;
             }
         }

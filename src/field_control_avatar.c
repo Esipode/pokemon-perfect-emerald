@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle_setup.h"
 #include "bike.h"
 #include "coord_event_weather.h"
@@ -334,7 +335,10 @@ static const u8 *GetInteractionScript(struct MapPosition *position, u8 metatileB
 {
     const u8 *script = GetInteractedObjectEventScript(position, metatileBehavior, direction);
     if (script != NULL)
+    {
+        Achievement_RecordNpcTalkedTo();
         return script;
+    }
 
     script = GetInteractedBackgroundEventScript(position, metatileBehavior, direction);
     if (script != NULL)

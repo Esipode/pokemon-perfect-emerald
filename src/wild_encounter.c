@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle_setup.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -956,6 +957,7 @@ void FishingWildEncounter(u8 rod)
     }
 
     IncrementGameStat(GAME_STAT_FISHING_ENCOUNTERS);
+    Achievement_CheckFishingMilestone();
     SetPokemonAnglerSpecies(species);
     BattleSetup_StartWildBattle();
 }

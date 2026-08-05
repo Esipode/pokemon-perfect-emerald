@@ -2853,6 +2853,10 @@ void ObjectEventInteractionPickBerryTree(void)
     u8 berry = GetBerryTypeByBerryTreeId(id);
     u8 mutation = GetTreeMutationValue(id);
 
+    // Stage 17 (catalog wave 4): Green Thumb. Action-counted (one pick), not
+    // berry yield, matching the existing GAME_STAT_PLANTED_BERRIES precedent.
+    Achievement_RecordBerryHarvest();
+
     if (!OW_BERRY_MUTATIONS || mutation == 0)
     {
         gSpecialVar_0x8004 = AddBagItem(BerryTypeToItemId(berry), GetBerryCountByBerryTreeId(id));

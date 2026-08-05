@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "debug.h"
 #include "malloc.h"
 #include "battle.h"
@@ -991,6 +992,7 @@ void CableCarWarp(void)
 void SetHiddenItemFlag(void)
 {
     FlagSet(gSpecialVar_0x8004);
+    Achievement_CheckHiddenItemMilestones();
 }
 
 u16 GetWeekCount(void)

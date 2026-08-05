@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "item_menu.h"
 #include "battle.h"
 #include "battle_controllers.h"
@@ -2362,6 +2363,7 @@ static void SellItem(u8 taskId)
     PlaySE(SE_SHOP);
     RemoveBagItem(gSpecialVar_ItemId, tItemCount);
     AddMoney(&gSaveBlock1Ptr->money, GetItemSellPrice(gSpecialVar_ItemId) * tItemCount);
+    Achievement_RecordItemSaleProceeds(GetItemSellPrice(gSpecialVar_ItemId) * tItemCount);
     DestroyListMenuTask(tListTaskId, scrollPos, cursorPos);
     UpdatePocketItemList(gBagPosition.pocket);
     UpdatePocketListPosition(gBagPosition.pocket);

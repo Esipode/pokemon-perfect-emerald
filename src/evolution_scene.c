@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "malloc.h"
 #include "battle.h"
 #include "battle_message.h"
@@ -792,6 +793,7 @@ static void Task_EvolutionScene(u8 taskId)
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_SEEN);
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_CAUGHT);
             IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
+            Achievement_CheckEvolutionCountMilestones();
         }
         break;
     case EVOSTATE_TRY_LEARN_MOVE:
@@ -1219,6 +1221,7 @@ static void Task_TradeEvolutionScene(u8 taskId)
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_SEEN);
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_CAUGHT);
             IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
+            Achievement_CheckEvolutionCountMilestones();
         }
         break;
     case T_EVOSTATE_TRY_LEARN_MOVE:

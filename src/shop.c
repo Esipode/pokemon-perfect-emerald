@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "bg.h"
 #include "data.h"
 #include "decompress.h"
@@ -1178,6 +1179,7 @@ static void BuyMenuSubtractMoney(u8 taskId)
 {
     IncrementGameStat(GAME_STAT_SHOPPED);
     RemoveMoney(&gSaveBlock1Ptr->money, sShopData->totalCost);
+    Achievement_RecordMoneySpent(sShopData->totalCost);
     PlaySE(SE_SHOP);
     PrintMoneyAmountInMoneyBox(WIN_MONEY, GetMoney(&gSaveBlock1Ptr->money), 0);
 

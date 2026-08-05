@@ -6160,6 +6160,10 @@ static void HandleEndTurn_BattleWon(void)
         // Stage 16 (catalog wave 3): same gate, same evaluation point --
         // reads AchievementBattleData while it still reflects this battle.
         Achievement_CheckTeamMilestones();
+        // Stage 17 (catalog wave 4): Save Your Change/Frugal Trainer/No
+        // Shopping/Resourceful. Same gate; internally checks whether this
+        // win was a Gym battle.
+        Achievement_CheckGymEconomyMilestones();
     }
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))

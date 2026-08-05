@@ -1141,6 +1141,29 @@ struct AchievementRunData
     u8  gymFinalKoCount;              // how many of the slots above are filled in, for Ace Rotation
     u32 recentlyObtainedPersonality[8]; // ring buffer of mons obtained since the last Gym, for Fresh Start
     u8  recentlyObtainedCount;
+
+    // Stage 17 (catalog wave 4): distinct (mapGroup, mapNum) pairs entered
+    // this run, for Cartographer/etc. NOT a raw-mapNum bitfield -- the plan
+    // doc's original sketch proposed indexing 128 bits by mapNum alone, but
+    // mapNum resets per map GROUP (MAP_GROUPS_COUNT == 75), so two unrelated
+    // maps in different groups routinely share a mapNum. The nuzlockeCaughtFlags
+    // bitfield above this struct only gets away with raw-mapNum indexing
+    // because Nuzlocke route-locking is scoped to a single map group; a
+    // general "maps visited" tracker doesn't have that precondition. Each
+    // entry is (mapGroup << 8) | (u8)mapNum, deduplicated by linear scan on
+    // write -- same idiom as majorBattleSpecies above. Capped at 80 (the
+    // top achievement threshold): once full, additional distinct maps just
+    // stop being recorded, which is harmless since no entry needs more.
+    u16 mapsVisited[80];
+    u8  mapsVisitedCount;
+
+    // Stage 17: "since the last Gym" shopping window, the same temporal
+    // shape Fresh Start's ring buffer above already uses. shoppedSinceLastGym
+    // is set by the shop hook and read/reset by Achievement_CheckGymEconomyMilestones
+    // (HandleEndTurn_BattleWon, same call site as category L). consecutiveGymsNoShopping
+    // counts unbroken Gym-clears-without-shopping streaks for No Shopping.
+    bool8 shoppedSinceLastGym;
+    u8  consecutiveGymsNoShopping;
 };
 
 struct SaveBlock1

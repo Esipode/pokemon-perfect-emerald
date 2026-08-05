@@ -38,6 +38,9 @@ int GameClear(void)
         // same re-runs-every-NG+-cycle branch (see the comment below) so a
         // different mono-type/rebuild/etc. run in NG+ is checked fresh.
         Achievement_CheckTeamCompletionMilestones();
+        // Stage 17 (catalog wave 4): Investor, same re-runs-every-NG+-cycle
+        // gating as the team-completion check above.
+        Achievement_CheckEconomyCompletionMilestones();
         // Stage 12: FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
         // (see NewGameInitData, src/new_game.c), so this branch already
         // re-runs on every NG+ cycle's clear, not just the save's very first

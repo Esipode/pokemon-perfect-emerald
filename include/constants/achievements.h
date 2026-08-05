@@ -67,6 +67,36 @@
 //   L. ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL .. ACHIEVEMENT_TEAM_ACE_ROTATION (30)
 //      Team Building & Composition -- see src/achievements.c for the
 //      per-entry hook-site breakdown.
+//
+// Stage 17 (design doc catalog wave 4, plan Stage 17): the fourth catalog
+// wave -- Exploration, Economy & Collection. Cheapest wave to evaluate (no
+// new battle hooks), but not infrastructure-free like the plan sketch first
+// assumed: it adds a small, corrected run-scoped map tracker (see
+// AchievementRunData's mapsVisited comment, include/global.h, for why a raw
+// mapNum bitfield -- the original sketch -- would have collided across map
+// groups) plus two shop-tracking fields, and five new gameStats[] slots
+// (indices 53-57, still well under NUM_GAME_STATS). Entries are checked from
+// eleven call sites, each reusing an existing single-fire event rather than
+// adding a new one: LoadCurrentMapData (src/overworld.c), the object-event
+// branch of GetInteractionScript (src/field_control_avatar.c),
+// SetHiddenItemFlag (src/field_specials.c), BuyMenuSubtractMoney
+// (src/shop.c), the sell-item AddMoney call (src/item_menu.c), AddBagItem
+// (src/item.c), ObjectEventInteractionPickBerryTree (src/berry.c), both
+// GAME_STAT_POKEMON_TRADES sites (src/trade.c), both GAME_STAT_EVOLVED_POKEMON
+// sites (src/evolution_scene.c), GetEvolutionTargetSpecies's DO_EVO path and
+// GiveCapturedMonToPlayer (src/pokemon.c), the fishing-encounter stat
+// increment (src/wild_encounter.c), and GameClear
+// (src/post_battle_event_funcs.c). Local Expert piggybacks on Stage 13's
+// existing Achievement_CheckPokedexMilestones FLAG_SET_SEEN branch (in
+// src/achievements.c itself) rather than a new hook. Four entries (Save Your
+// Change, Frugal Trainer, No Shopping, Resourceful) ride Stage 16's existing
+// HandleEndTurn_BattleWon evaluation point via a new sibling function,
+// Achievement_CheckGymEconomyMilestones, rather than a new battle hook.
+//
+//   M. ACHIEVEMENT_EXPLORE_FIRST_STEPS_ABROAD .. ACHIEVEMENT_COLLECT_ANGLER (30)
+//      Exploration, Economy & Collection -- see src/achievements.c for the
+//      per-entry hook-site breakdown. Tagged across the existing
+//      EXPLORATION/ECONOMY/COLLECTION/ADVENTURE categories, not a new one.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -214,6 +244,38 @@ enum AchievementId
     ACHIEVEMENT_TEAM_BALANCED_ROSTER,
     ACHIEVEMENT_TEAM_NOBODY_BENCHED,
     ACHIEVEMENT_TEAM_ACE_ROTATION,
+
+    // M. Exploration, Economy & Collection (30)
+    ACHIEVEMENT_EXPLORE_FIRST_STEPS_ABROAD,
+    ACHIEVEMENT_EXPLORE_OFF_THE_BEATEN_PATH,
+    ACHIEVEMENT_EXPLORE_CARTOGRAPHER,
+    ACHIEVEMENT_EXPLORE_COMPLETIONIST_TOURIST,
+    ACHIEVEMENT_EXPLORE_ON_THE_ROAD,
+    ACHIEVEMENT_EXPLORE_TREASURE_HUNTER,
+    ACHIEVEMENT_EXPLORE_TREASURE_HOARD,
+    ACHIEVEMENT_EXPLORE_TALK_TO_THE_LOCALS,
+    ACHIEVEMENT_EXPLORE_PEOPLE_PERSON,
+    ACHIEVEMENT_EXPLORE_LOCAL_EXPERT,
+    ACHIEVEMENT_ECONOMY_FIRST_PURCHASE,
+    ACHIEVEMENT_ECONOMY_REGULAR_CUSTOMER,
+    ACHIEVEMENT_ECONOMY_BIG_SPENDER,
+    ACHIEVEMENT_ECONOMY_WHALE,
+    ACHIEVEMENT_ECONOMY_SAVE_YOUR_CHANGE,
+    ACHIEVEMENT_ECONOMY_FRUGAL_TRAINER,
+    ACHIEVEMENT_ECONOMY_NO_SHOPPING,
+    ACHIEVEMENT_ECONOMY_RESOURCEFUL,
+    ACHIEVEMENT_ECONOMY_TREASURE_PAYS,
+    ACHIEVEMENT_ECONOMY_INVESTOR,
+    ACHIEVEMENT_EXPLORE_PACK_RAT,
+    ACHIEVEMENT_EXPLORE_NO_LOOSE_ENDS,
+    ACHIEVEMENT_COLLECT_EVOLUTIONARY_PATH,
+    ACHIEVEMENT_COLLECT_EVOLUTION_EXPERT,
+    ACHIEVEMENT_COLLECT_FRIENDSHIP_BLOSSOMS,
+    ACHIEVEMENT_COLLECT_STONE_AGE,
+    ACHIEVEMENT_COLLECT_TRADE_SECRETS,
+    ACHIEVEMENT_COLLECT_RARE_FIND,
+    ACHIEVEMENT_COLLECT_GREEN_THUMB,
+    ACHIEVEMENT_COLLECT_ANGLER,
 
     ACHIEVEMENTS_COUNT,
 };

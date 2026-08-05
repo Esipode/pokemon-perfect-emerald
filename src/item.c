@@ -364,7 +364,11 @@ bool32 AddBagItem(enum Item itemId, u16 count)
 
     // Stage 13, category G.
     if (added)
+    {
         Achievement_CheckItemMilestones(itemId);
+        // Stage 17 (catalog wave 4): Pack Rat [distinct Bag items].
+        Achievement_CheckPackRatMilestone();
+    }
 
     return added;
 }

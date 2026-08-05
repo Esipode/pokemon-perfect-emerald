@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "malloc.h"
 #include "battle_anim.h"
 #include "battle_interface.h"
@@ -4724,7 +4725,10 @@ static void CB2_SaveAndEndTrade(void)
         break;
     case 50:
         if (!InUnionRoom())
+        {
             IncrementGameStat(GAME_STAT_POKEMON_TRADES);
+            Achievement_CheckTradeMilestones();
+        }
         if (gWirelessCommType)
             MysteryGift_TryIncrementStat(CARD_STAT_NUM_TRADES, gLinkPlayers[GetMultiplayerId() ^ 1].trainerId);
 
@@ -5026,6 +5030,7 @@ static void CB2_SaveAndEndWirelessTrade(void)
             StringExpandPlaceholders(gStringVar4, gText_SavingDontTurnOffPower);
             DrawTextOnTradeWindow(0, gStringVar4, 0);
             IncrementGameStat(GAME_STAT_POKEMON_TRADES);
+            Achievement_CheckTradeMilestones();
             LinkFullSave_Init();
             sTradeAnim->timer = 0;
         }

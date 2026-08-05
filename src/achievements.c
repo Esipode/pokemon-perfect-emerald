@@ -18,6 +18,8 @@
 #include "caps.h"                 // GetCurrentLevelCap, for Stage 16's level-cap checks
 #include "pokemon_storage_system.h" // TOTAL_BOXES_COUNT/IN_BOX_COUNT/GetBoxMonDataAt, for Stage 16's No Ace
 #include "constants/difficulty.h" // DIFFICULTY_HARD, for Stage 16's Trial by Fire
+#include "item.h"                 // gBagPockets/POCKETS_COUNT, for Stage 17's Pack Rat/Resourceful
+#include "wild_encounter.h"       // gWildMonHeaders/GetCurrentMapWildMonHeaderId, for Stage 17's Local Expert
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
 #include "constants/game_stat.h" // GAME_STAT_*, for Stage 13's threshold checks
@@ -760,6 +762,11 @@ void Achievement_CheckPokedexMilestones(bool8 caught)
             Achievement_TryComplete(ACHIEVEMENT_DEX_SEEN_50);
         if (count >= NATIONAL_DEX_COUNT)
             Achievement_TryComplete(ACHIEVEMENT_DEX_SEEN_100);
+
+        // Stage 17 (catalog wave 4): Local Expert. Piggybacks on this
+        // existing FLAG_SET_SEEN branch (Stage 13's HandleSetPokedexFlag
+        // call site) rather than adding a new hook.
+        Achievement_CheckLocalExpert();
     }
     else
     {
@@ -1915,6 +1922,384 @@ void Achievement_CheckTeamCompletionMilestones(void)
 
     if (CountSetBits(Achievement_PartyTypeComposition(party, playerCount)) >= 10)
         Achievement_TryComplete(ACHIEVEMENT_TEAM_BALANCED_ROSTER);
+}
+
+// ---- Stage 17: catalog wave 4 (category M, Exploration, Economy & -------
+// Collection). See include/achievements.h for the call-site breakdown; this
+// section only adds one battle-hook-free helper style beyond what Stages
+// 13/15/16 already established -- Achievement_AddToGameStat, since
+// IncrementGameStat (src/overworld.c) only ever adds 1 and GAME_STAT_MONEY_SPENT/
+// GAME_STAT_ITEM_SALES_MONEY both need to add a variable amount.
+static void Achievement_AddToGameStat(u8 index, u32 amount)
+{
+    u32 value = GetGameStat(index);
+
+    if (0xFFFFFFFF - value < amount)
+        value = 0xFFFFFFFF;
+    else
+        value += amount;
+
+    SetGameStat(index, value);
+}
+
+// The 16 town/city flags this fork already tracks (include/constants/flags.h),
+// reused as-is -- see that header for why On the Road/Completionist Tourist
+// need no tracking of their own.
+static const u16 sVisitedTownFlags[] =
+{
+    FLAG_VISITED_LITTLEROOT_TOWN,
+    FLAG_VISITED_OLDALE_TOWN,
+    FLAG_VISITED_DEWFORD_TOWN,
+    FLAG_VISITED_LAVARIDGE_TOWN,
+    FLAG_VISITED_FALLARBOR_TOWN,
+    FLAG_VISITED_VERDANTURF_TOWN,
+    FLAG_VISITED_PACIFIDLOG_TOWN,
+    FLAG_VISITED_PETALBURG_CITY,
+    FLAG_VISITED_SLATEPORT_CITY,
+    FLAG_VISITED_MAUVILLE_CITY,
+    FLAG_VISITED_RUSTBORO_CITY,
+    FLAG_VISITED_FORTREE_CITY,
+    FLAG_VISITED_LILYCOVE_CITY,
+    FLAG_VISITED_MOSSDEEP_CITY,
+    FLAG_VISITED_SOOTOPOLIS_CITY,
+    FLAG_VISITED_EVER_GRANDE_CITY,
+};
+
+// LoadCurrentMapData (src/overworld.c) -- see that function's comment and
+// AchievementRunData.mapsVisited's comment (include/global.h) for why this
+// tracks (mapGroup, mapNum) pairs instead of the plan doc's original raw-
+// mapNum bitfield sketch.
+void Achievement_CheckExplorationMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    u16 key = ((u16)gSaveBlock1Ptr->location.mapGroup << 8) | (u8)gSaveBlock1Ptr->location.mapNum;
+    u8 visitedTowns = 0;
+    bool8 allTownsVisited = TRUE;
+    u8 i;
+
+    for (i = 0; i < runData->mapsVisitedCount; i++)
+    {
+        if (runData->mapsVisited[i] == key)
+            break;
+    }
+    if (i == runData->mapsVisitedCount && runData->mapsVisitedCount < ARRAY_COUNT(runData->mapsVisited))
+    {
+        runData->mapsVisited[runData->mapsVisitedCount] = key;
+        runData->mapsVisitedCount++;
+    }
+
+    if (runData->mapsVisitedCount >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_FIRST_STEPS_ABROAD);
+    if (runData->mapsVisitedCount >= 40)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_OFF_THE_BEATEN_PATH);
+    if (runData->mapsVisitedCount >= 80)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_CARTOGRAPHER);
+
+    for (i = 0; i < ARRAY_COUNT(sVisitedTownFlags); i++)
+    {
+        if (FlagGet(sVisitedTownFlags[i]))
+            visitedTowns++;
+        else
+            allTownsVisited = FALSE;
+    }
+
+    if (visitedTowns >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_ON_THE_ROAD);
+
+    // "Before entering the League": gated on the Champion not yet beaten,
+    // the same flag category A's ACHIEVEMENT_STORY_CHAMPION already keys
+    // off (Stage 13). Checked on every map load, so it can only ever
+    // complete while that's still true.
+    if (allTownsVisited && !FlagGet(FLAG_IS_CHAMPION))
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_COMPLETIONIST_TOURIST);
+
+    if (FlagGet(FLAG_SYS_POKEDEX_GET) && FlagGet(FLAG_SYS_POKENAV_GET) && FlagGet(FLAG_SYS_B_DASH))
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_NO_LOOSE_ENDS);
+}
+
+// Achievement_CheckPokedexMilestones's FLAG_SET_SEEN branch (Stage 13
+// category B) -- only the current map's wild encounter table, unioned
+// across every time-of-day variant (species availability changes by time of
+// day; Pokedex "seen" state does not, so the achievement needs the union to
+// avoid missing a night-only species from an achievement checked at noon).
+// Land/water/rock/fishing tables only -- hiddenMonsInfo (DexNav-only
+// encounters) is deliberately excluded, the same "not a normal wild
+// encounter" reasoning Rare Find (below) treats as a distinct condition.
+void Achievement_CheckLocalExpert(void)
+{
+    u16 headerId = GetCurrentMapWildMonHeaderId();
+    enum Species scratch[32];
+    u8 count = 0;
+    u8 t, i;
+
+    if (headerId == HEADER_NONE)
+        return;
+
+    for (t = 0; t < TIMES_OF_DAY_COUNT; t++)
+    {
+        const struct WildEncounterTypes *types = &gWildMonHeaders[headerId].encounterTypes[t];
+        const struct WildPokemonInfo *infoTables[4];
+        u8 areaCounts[4] = { LAND_WILD_COUNT, WATER_WILD_COUNT, ROCK_WILD_COUNT, FISH_WILD_COUNT };
+
+        infoTables[0] = types->landMonsInfo;
+        infoTables[1] = types->waterMonsInfo;
+        infoTables[2] = types->rockSmashMonsInfo;
+        infoTables[3] = types->fishingMonsInfo;
+
+        for (i = 0; i < 4; i++)
+        {
+            const struct WildPokemonInfo *info = infoTables[i];
+            u8 j;
+
+            if (info == NULL || info->wildPokemon == NULL)
+                continue;
+
+            for (j = 0; j < areaCounts[i]; j++)
+            {
+                enum Species species = info->wildPokemon[j].species;
+                u8 k;
+                bool8 found = FALSE;
+
+                if (species == SPECIES_NONE)
+                    continue;
+
+                for (k = 0; k < count; k++)
+                {
+                    if (scratch[k] == species)
+                    {
+                        found = TRUE;
+                        break;
+                    }
+                }
+
+                if (!found && count < ARRAY_COUNT(scratch))
+                    scratch[count++] = species;
+            }
+        }
+    }
+
+    if (count == 0)
+        return;
+
+    for (i = 0; i < count; i++)
+    {
+        if (!GetSetPokedexFlag(SpeciesToNationalPokedexNum(scratch[i]), FLAG_GET_SEEN))
+            return;
+    }
+
+    Achievement_TryComplete(ACHIEVEMENT_EXPLORE_LOCAL_EXPERT);
+}
+
+// SetHiddenItemFlag (src/field_specials.c) -- already only reached once per
+// item (see that function's own comment).
+void Achievement_CheckHiddenItemMilestones(void)
+{
+    u32 count;
+
+    IncrementGameStat(GAME_STAT_HIDDEN_ITEMS_FOUND);
+    count = GetGameStat(GAME_STAT_HIDDEN_ITEMS_FOUND);
+
+    if (count >= 20)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_TREASURE_HUNTER);
+    if (count >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_TREASURE_HOARD);
+}
+
+// GetInteractionScript's object-event branch (src/field_control_avatar.c).
+void Achievement_RecordNpcTalkedTo(void)
+{
+    u32 count;
+
+    IncrementGameStat(GAME_STAT_NPCS_TALKED_TO);
+    count = GetGameStat(GAME_STAT_NPCS_TALKED_TO);
+
+    if (count >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_TALK_TO_THE_LOCALS);
+    if (count >= 150)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_PEOPLE_PERSON);
+}
+
+// BuyMenuSubtractMoney (src/shop.c), called after the vanilla
+// IncrementGameStat(GAME_STAT_SHOPPED) that site already does.
+void Achievement_RecordMoneySpent(u32 amountSpent)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    u32 shopCount = GetGameStat(GAME_STAT_SHOPPED);
+    u32 spent;
+
+    Achievement_AddToGameStat(GAME_STAT_MONEY_SPENT, amountSpent);
+    spent = GetGameStat(GAME_STAT_MONEY_SPENT);
+
+    if (shopCount >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_FIRST_PURCHASE);
+    if (shopCount >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_REGULAR_CUSTOMER);
+    if (spent >= 100000)
+        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_BIG_SPENDER);
+    if (spent >= 1000000)
+        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_WHALE);
+
+    runData->shoppedSinceLastGym = TRUE;
+}
+
+// The sell-item AddMoney call in src/item_menu.c.
+void Achievement_RecordItemSaleProceeds(u32 amount)
+{
+    u32 total;
+
+    Achievement_AddToGameStat(GAME_STAT_ITEM_SALES_MONEY, amount);
+    total = GetGameStat(GAME_STAT_ITEM_SALES_MONEY);
+
+    if (total >= 50000)
+        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_TREASURE_PAYS);
+}
+
+// Every non-key-item Bag pocket, via gBagPockets (include/item.h) rather
+// than struct Bag's named arrays directly -- one loop over POCKETS_COUNT
+// instead of five hardcoded ones.
+static u8 Achievement_CountDistinctBagItems(void)
+{
+    u8 pocket;
+    u16 count = 0;
+
+    for (pocket = 0; pocket < POCKETS_COUNT; pocket++)
+    {
+        u16 slot;
+
+        if (pocket == POCKET_KEY_ITEMS)
+            continue;
+
+        for (slot = 0; slot < gBagPockets[pocket].capacity; slot++)
+        {
+            if (gBagPockets[pocket].itemSlots[slot].itemId != ITEM_NONE)
+                count++;
+        }
+    }
+
+    return (count > 255) ? 255 : (u8)count;
+}
+
+// "Consumable" == the general Items pocket specifically (potions, revives,
+// status healers, repels, battle items), not Poke Balls/TMs/berries/key
+// items -- the same pocket the field Bag UI itself labels "Items".
+static u32 Achievement_CountConsumableItems(void)
+{
+    u16 slot;
+    u32 total = 0;
+
+    for (slot = 0; slot < gBagPockets[POCKET_ITEMS].capacity; slot++)
+        total += gBagPockets[POCKET_ITEMS].itemSlots[slot].quantity;
+
+    return total;
+}
+
+// AddBagItem (src/item.c), the same "added succeeded" guard
+// Achievement_CheckItemMilestones already sits behind.
+void Achievement_CheckPackRatMilestone(void)
+{
+    if (Achievement_CountDistinctBagItems() >= 20)
+        Achievement_TryComplete(ACHIEVEMENT_EXPLORE_PACK_RAT);
+}
+
+// ObjectEventInteractionPickBerryTree (src/berry.c).
+void Achievement_RecordBerryHarvest(void)
+{
+    IncrementGameStat(GAME_STAT_BERRIES_HARVESTED);
+
+    if (GetGameStat(GAME_STAT_BERRIES_HARVESTED) >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_GREEN_THUMB);
+}
+
+// Both GAME_STAT_POKEMON_TRADES sites (src/trade.c) -- any trade that
+// actually completes means a Pokemon was just obtained by trade.
+void Achievement_CheckTradeMilestones(void)
+{
+    Achievement_TryComplete(ACHIEVEMENT_COLLECT_TRADE_SECRETS);
+}
+
+// Both GAME_STAT_EVOLVED_POKEMON sites (src/evolution_scene.c).
+void Achievement_CheckEvolutionCountMilestones(void)
+{
+    u32 count = GetGameStat(GAME_STAT_EVOLVED_POKEMON);
+
+    if (count >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_EVOLUTIONARY_PATH);
+    if (count >= 25)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_EVOLUTION_EXPERT);
+}
+
+// GetEvolutionTargetSpecies's DO_EVO path (src/pokemon.c) -- gating (the
+// matched evolution's params actually containing IF_MIN_FRIENDSHIP, and
+// evoState == DO_EVO so a mere eligibility check never awards this) lives at
+// the call site; see the header doc comment.
+void Achievement_RecordFriendshipEvolution(void)
+{
+    Achievement_TryComplete(ACHIEVEMENT_COLLECT_FRIENDSHIP_BLOSSOMS);
+}
+
+// PokemonUseItemEffects's ITEM4_EVO_STONE case (src/pokemon.c) -- gating
+// (the item actually being one of the stone items) lives at the call site.
+void Achievement_RecordStoneEvolution(void)
+{
+    Achievement_TryComplete(ACHIEVEMENT_COLLECT_STONE_AGE);
+}
+
+// GiveCapturedMonToPlayer (src/pokemon.c) -- gating (gDexNavSpecies != SPECIES_NONE)
+// lives at the call site; see the header doc comment.
+void Achievement_CheckDexNavCaptureMilestone(void)
+{
+    Achievement_TryComplete(ACHIEVEMENT_COLLECT_RARE_FIND);
+}
+
+// The GAME_STAT_FISHING_ENCOUNTERS increment in src/wild_encounter.c.
+void Achievement_CheckFishingMilestone(void)
+{
+    if (GetGameStat(GAME_STAT_FISHING_ENCOUNTERS) >= 100)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_ANGLER);
+}
+
+// HandleEndTurn_BattleWon (src/battle_main.c), immediately after
+// Achievement_CheckTeamMilestones -- not a new battle hook, see the header
+// doc comment. shoppedSinceLastGym/consecutiveGymsNoShopping mirror Fresh
+// Start's "since the last Gym" window (Stage 16).
+void Achievement_CheckGymEconomyMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+
+    if (Achievement_IsGymBattle())
+    {
+        if (GetMoney(&gSaveBlock1Ptr->money) >= 50000)
+            Achievement_TryComplete(ACHIEVEMENT_ECONOMY_SAVE_YOUR_CHANGE);
+
+        if (!runData->shoppedSinceLastGym)
+        {
+            Achievement_TryComplete(ACHIEVEMENT_ECONOMY_FRUGAL_TRAINER);
+            if (runData->consecutiveGymsNoShopping < 255)
+                runData->consecutiveGymsNoShopping++;
+        }
+        else
+        {
+            runData->consecutiveGymsNoShopping = 0;
+        }
+
+        if (runData->consecutiveGymsNoShopping >= 4)
+            Achievement_TryComplete(ACHIEVEMENT_ECONOMY_NO_SHOPPING);
+
+        // The window always resets here, win or not -- same convention
+        // Fresh Start's ring buffer uses.
+        runData->shoppedSinceLastGym = FALSE;
+    }
+
+    if (Achievement_IsMajorBattle() && Achievement_CountConsumableItems() < 5)
+        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_RESOURCEFUL);
+}
+
+// GameClear (src/post_battle_event_funcs.c), alongside
+// Achievement_CheckTeamCompletionMilestones.
+void Achievement_CheckEconomyCompletionMilestones(void)
+{
+    if (GetMoney(&gSaveBlock1Ptr->money) >= 500000)
+        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_INVESTOR);
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------
