@@ -41,6 +41,14 @@ static void Achievement_SnapshotPartySpecies(struct Pokemon *party, u8 count, u1
 static bool8 Achievement_SpeciesSetsDisjoint(const u16 *a, const u16 *b);
 static u8 Achievement_CountChallengeModifiers(void);
 
+// Stage 21 (catalog wave 8, category Q): Achievement_CheckMasteryMilestones
+// is called from the tail of Achievement_TryComplete, defined far below it;
+// Achievement_CheckBoostMilestones is called from AchievementBoost_Purchase/
+// _Reset, both defined above where it lives. See include/achievements.h's
+// Stage 21 comment for why neither needs a header declaration.
+static void Achievement_CheckMasteryMilestones(void);
+static void Achievement_CheckBoostMilestones(void);
+
 // ---- Stage 19: catalog wave 6 (category O, Randomizer & New Game+) -----
 //
 // Small, self-contained helpers with no ordering dependency of their own,
@@ -350,11 +358,16 @@ bool8 Achievement_TryComplete(u16 achievementId)
 
     gAchievementProfile.achievementFlags[achievementId / 8] |= 1 << (achievementId % 8);
     gAchievementProfile.totalPointsEarned += gAchievements[achievementId].points;
+    // Stage 21 (No Easy Path, PRO-012): a separate running total of points
+    // earned specifically from Gold-or-better achievements.
+    if (gAchievements[achievementId].tier >= ACHIEVEMENT_TIER_GOLD)
+        gAchievementProfile.pointsFromGoldOrBetter += gAchievements[achievementId].points;
     sAchievementProfileDirty = TRUE;
 
     QueueAchievementNotification(achievementId);
 
     Achievement_CheckPointMilestones();
+    Achievement_CheckMasteryMilestones();
 
     return TRUE;
 }
@@ -437,10 +450,46 @@ void Achievement_OnFirstPlaythroughComplete(void)
     if (gSaveBlock2Ptr->newGamePlus == 0)
     {
         struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+        u16 curSpecies[PARTY_SIZE];
 
         gAchievementProfile.consecutiveNgPlusCyclesCompleted = 0;
-        Achievement_SnapshotPartySpecies(gParties[B_TRAINER_PLAYER], gPartiesCount[B_TRAINER_PLAYER], runDataExt->previousCyclePartySpecies);
+
+        // Stage 21, New Team, New Me (VAR-001): the same disjoint-species
+        // comparison Achievement_OnNewGamePlusCycleCompleted's No Nostalgia
+        // check makes below, just not gated on this completion being an NG+
+        // cycle -- "two playthroughs" means any two consecutive completions
+        // on this profile, NG+ or not.
+        Achievement_SnapshotPartySpecies(gParties[B_TRAINER_PLAYER], gPartiesCount[B_TRAINER_PLAYER], curSpecies);
+        if (runDataExt->previousCyclePartySpeciesSet && Achievement_SpeciesSetsDisjoint(curSpecies, runDataExt->previousCyclePartySpecies))
+            Achievement_TryComplete(ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME);
+        memcpy(runDataExt->previousCyclePartySpecies, curSpecies, sizeof(curSpecies));
         runDataExt->previousCyclePartySpeciesSet = TRUE;
+    }
+
+    // Stage 21, Replay Master (VAR-015): distinct challenge-configuration
+    // signatures seen across EVERY completed playthrough (this function runs
+    // on every GameClear, NG+ cycle or not) -- deliberately its own counter,
+    // not ngPlusConfigsSeen[]/_Count above, which is NG+-cycle-only and backs
+    // a different achievement (Cycle Collector) with a narrower meaning.
+    {
+        u8 signature = Achievement_ChallengeConfigSignature();
+        bool8 seen = FALSE;
+        u8 i;
+
+        for (i = 0; i < gAchievementProfile.playthroughConfigsSeenCount; i++)
+        {
+            if (gAchievementProfile.playthroughConfigsSeen[i] == signature)
+            {
+                seen = TRUE;
+                break;
+            }
+        }
+
+        if (!seen && gAchievementProfile.playthroughConfigsSeenCount < ARRAY_COUNT(gAchievementProfile.playthroughConfigsSeen))
+            gAchievementProfile.playthroughConfigsSeen[gAchievementProfile.playthroughConfigsSeenCount++] = signature;
+
+        if (gAchievementProfile.playthroughConfigsSeenCount >= 5)
+            Achievement_TryComplete(ACHIEVEMENT_VARIETY_REPLAY_MASTER);
     }
 
     sAchievementProfileDirty = TRUE;
@@ -544,7 +593,13 @@ void Achievement_OnNewGamePlusCycleCompleted(void)
     Achievement_SnapshotPartySpecies(party, playerCount, curSpecies);
     if (runDataExt->previousCyclePartySpeciesSet
      && Achievement_SpeciesSetsDisjoint(curSpecies, runDataExt->previousCyclePartySpecies))
+    {
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA);
+        // Stage 21, New Team, New Me (VAR-001): same condition, just not
+        // restricted to an NG+ cycle -- see Achievement_OnFirstPlaythroughComplete's
+        // cycle-0 branch for the non-NG+ half of this check.
+        Achievement_TryComplete(ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME);
+    }
     memcpy(runDataExt->previousCyclePartySpecies, curSpecies, sizeof(curSpecies));
     runDataExt->previousCyclePartySpeciesSet = TRUE;
 
@@ -715,6 +770,13 @@ bool8 AchievementBoost_Purchase(u16 boostId)
     gAchievementProfile.pointsInvested += info->costs[level];
     gAchievementProfile.boostLevels[boostId]++;
     sAchievementProfileDirty = TRUE;
+
+    // Stage 21: Boost Investor/Full Investment/Selective Mastery/Meta-Prog
+    // Master all depend on boostLevels[]/pointsInvested, which only ever
+    // change here and in AchievementBoost_Reset below -- neither is reached
+    // from Achievement_TryComplete's tail, so it needs its own call site.
+    Achievement_CheckBoostMilestones();
+
     Achievement_FlushProfile();
 
     return TRUE;
@@ -755,6 +817,11 @@ bool8 AchievementBoost_Reset(void)
     RemoveMoney(&gSaveBlock1Ptr->money, ACHIEVEMENT_BOOST_RESET_FEE);
     gAchievementProfile.boostResets++;
     sAchievementProfileDirty = TRUE;
+
+    // Stage 21: Reconfigured only ever needs re-checking after a reset (its
+    // "rebuild" half is re-checked from AchievementBoost_Purchase above).
+    Achievement_CheckBoostMilestones();
+
     Achievement_FlushProfile();
 
     return TRUE;
@@ -3513,6 +3580,397 @@ void Achievement_CheckPokecenterMilestone(void)
 {
     if (GetGameStat(GAME_STAT_USED_POKECENTER) >= 200)
         Achievement_TryComplete(ACHIEVEMENT_RECORD_NURSES_NIGHTMARE);
+}
+
+// ---- Stage 21 (catalog wave 8, category Q): Profile Meta, Mastery & -----
+// Prestige. See include/constants/achievements.h's category Q comment for
+// the roster-to-condition breakdown and the self-reference/known-gap notes
+// that apply to a few of the entries below.
+
+// The whole enabler (design doc, plan Stage 21.1): every category-scoped
+// entry in this wave is built from these two. Static/file-internal -- unlike
+// every prior wave's category, nothing outside src/achievements.c currently
+// needs a per-category count.
+static u16 Achievement_CountInCategory(enum AchievementCategory category, u8 tier)
+{
+    u16 count = 0;
+    u16 i;
+
+    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
+    {
+        if (gAchievements[i].category != category)
+            continue;
+        if (tier != ACHIEVEMENT_TIER_COUNT && gAchievements[i].tier != tier)
+            continue;
+        count++;
+    }
+
+    return count;
+}
+
+static u16 Achievement_CountCompletedInCategory(enum AchievementCategory category, u8 tier)
+{
+    u16 count = 0;
+    u16 i;
+
+    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
+    {
+        if (gAchievements[i].category != category)
+            continue;
+        if (tier != ACHIEVEMENT_TIER_COUNT && gAchievements[i].tier != tier)
+            continue;
+        if (Achievement_IsCompleted(i))
+            count++;
+    }
+
+    return count;
+}
+
+// Bronze/Silver/Gold/Diamond Master, Category Conqueror: true if ANY ONE
+// category is fully completed at the given tier (ACHIEVEMENT_TIER_COUNT ==
+// every tier, for Category Conqueror).
+static bool8 Achievement_AnyCategoryFullyCompletedAtTier(u8 tier)
+{
+    enum AchievementCategory category;
+
+    for (category = 0; category < ACHIEVEMENT_CATEGORIES_COUNT; category++)
+    {
+        u16 total = Achievement_CountInCategory(category, tier);
+
+        if (total > 0 && Achievement_CountCompletedInCategory(category, tier) == total)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+// Challenge Conqueror/Unbroken Will/Chaos Master: percent is an integer 0-100,
+// compared with completed*100 >= total*percent so no floating point is needed.
+static void Achievement_CheckCategoryPercentMilestone(enum AchievementCategory category, u8 percent, u16 achievementId)
+{
+    u16 total = Achievement_CountInCategory(category, ACHIEVEMENT_TIER_COUNT);
+    u16 completed = Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_COUNT);
+
+    if (total > 0 && (u32)completed * 100 >= (u32)total * percent)
+        Achievement_TryComplete(achievementId);
+}
+
+// Replay Architect: every Gold-or-better achievement across a fixed list of
+// categories. "Gold-or-better" is just Gold's count plus Diamond's count --
+// no third helper needed beyond the two documented ones above.
+static bool8 Achievement_GoldOrBetterFullyCompletedAcrossCategories(const enum AchievementCategory *categories, u8 numCategories)
+{
+    u16 total = 0;
+    u16 completed = 0;
+    u8 i;
+
+    for (i = 0; i < numCategories; i++)
+    {
+        total += Achievement_CountInCategory(categories[i], ACHIEVEMENT_TIER_GOLD)
+               + Achievement_CountInCategory(categories[i], ACHIEVEMENT_TIER_DIAMOND);
+        completed += Achievement_CountCompletedInCategory(categories[i], ACHIEVEMENT_TIER_GOLD)
+                   + Achievement_CountCompletedInCategory(categories[i], ACHIEVEMENT_TIER_DIAMOND);
+    }
+
+    return total > 0 && completed == total;
+}
+
+// Master of the Game/Nothing Left to Prove: totals over every non-hidden
+// achievement EXCEPT excludeId. Both callers pass their own ID -- see the
+// self-reference note in constants/achievements.h's category Q comment for
+// why that exclusion is required, not just tidy.
+static void Achievement_CountNonHiddenExcluding(u16 excludeId, u16 *totalOut, u16 *completedOut)
+{
+    u16 total = 0;
+    u16 completed = 0;
+    u16 i;
+
+    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
+    {
+        if (i == excludeId)
+            continue;
+        if (gAchievements[i].hidden)
+            continue;
+        total++;
+        if (Achievement_IsCompleted(i))
+            completed++;
+    }
+
+    *totalOut = total;
+    *completedOut = completed;
+}
+
+// Diamond Standard (backfill): every Diamond-tier achievement, excluding
+// itself for the same reason as Achievement_CountNonHiddenExcluding above --
+// it is itself Diamond-tier.
+static bool8 Achievement_AllDiamondCompleted(u16 excludeId)
+{
+    u16 total = 0;
+    u16 completed = 0;
+    u16 i;
+
+    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
+    {
+        if (i == excludeId)
+            continue;
+        if (gAchievements[i].tier != ACHIEVEMENT_TIER_DIAMOND)
+            continue;
+        total++;
+        if (Achievement_IsCompleted(i))
+            completed++;
+    }
+
+    return total > 0 && completed == total;
+}
+
+// Achievement Hunter: a completed Bronze in every category. NOTE (see
+// constants/achievements.h's category Q comment): CHALLENGE, NUZLOCKE and
+// PROFILE currently have zero Bronze-tier entries between them, so this is
+// unattainable until a future wave gives each of those three at least one.
+static bool8 Achievement_HasBronzeInEveryCategory(void)
+{
+    enum AchievementCategory category;
+
+    for (category = 0; category < ACHIEVEMENT_CATEGORIES_COUNT; category++)
+    {
+        if (Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_BRONZE) == 0)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Well Rounded: at least one completed achievement at every tier.
+static bool8 Achievement_HasCompletedEveryTier(void)
+{
+    bool8 seenTier[ACHIEVEMENT_TIER_COUNT] = {FALSE};
+    u16 i;
+
+    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
+    {
+        if (Achievement_IsCompleted(i))
+            seenTier[gAchievements[i].tier] = TRUE;
+    }
+
+    for (i = 0; i < ACHIEVEMENT_TIER_COUNT; i++)
+    {
+        if (!seenTier[i])
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Master of All: a completed Gold-or-better achievement in every category.
+static bool8 Achievement_HasGoldOrBetterInEveryCategory(void)
+{
+    enum AchievementCategory category;
+
+    for (category = 0; category < ACHIEVEMENT_CATEGORIES_COUNT; category++)
+    {
+        u16 completed = Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_GOLD)
+                       + Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_DIAMOND);
+
+        if (completed == 0)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static u16 Achievement_CountTotalCompleted(void)
+{
+    u16 count = 0;
+    u16 i;
+
+    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
+    {
+        if (Achievement_IsCompleted(i))
+            count++;
+    }
+
+    return count;
+}
+
+// Full Investment/Selective Mastery/Meta-Prog Master all need to look across
+// every real boost (BOOST_NONE excluded, hence starting at 1).
+static u32 AchievementBoost_TotalPurchasedLevels(void)
+{
+    u32 total = 0;
+    u16 boostId;
+
+    for (boostId = BOOST_NONE + 1; boostId < BOOSTS_COUNT; boostId++)
+        total += AchievementBoost_GetLevel(boostId);
+
+    return total;
+}
+
+static bool8 AchievementBoost_AllMaxed(void)
+{
+    u16 boostId;
+
+    for (boostId = BOOST_NONE + 1; boostId < BOOSTS_COUNT; boostId++)
+    {
+        if (AchievementBoost_GetLevel(boostId) < AchievementBoost_GetInfo(boostId)->maxLevel)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Easter Egg Hunter: hidden achievements completed, excluding itself for the
+// same self-reference reason as Achievement_AllDiamondCompleted above. NOTE
+// (see constants/achievements.h's category Q comment): it is currently the
+// only hidden achievement in the catalog, so this is unattainable until
+// secret content adds more.
+static u16 Achievement_CountHiddenCompleted(u16 excludeId)
+{
+    u16 count = 0;
+    u16 i;
+
+    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
+    {
+        if (i == excludeId)
+            continue;
+        if (!gAchievements[i].hidden)
+            continue;
+        if (Achievement_IsCompleted(i))
+            count++;
+    }
+
+    return count;
+}
+
+// Meta-Prog Master: re-checked from both Achievement_CheckMasteryMilestones
+// (an achievement completing is the "200 completed" half) and
+// Achievement_CheckBoostMilestones (a boost reaching max level is the other
+// half) below.
+static void Achievement_CheckMetaProgMaster(void)
+{
+    if (Achievement_CountTotalCompleted() >= 200 && AchievementBoost_AllMaxed())
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_META_PROG_MASTER);
+}
+
+// Replay Architect's four categories -- file scope, same convention as
+// sVisitedTownFlags[] above, rather than a function-local static.
+static const enum AchievementCategory sReplayArchitectCategories[] = {
+    ACHIEVEMENT_CATEGORY_TEAM, ACHIEVEMENT_CATEGORY_CHALLENGE,
+    ACHIEVEMENT_CATEGORY_NUZLOCKE, ACHIEVEMENT_CATEGORY_RANDOMIZER,
+};
+
+// Called from the tail of Achievement_TryComplete, alongside the existing
+// Achievement_CheckPointMilestones -- every entry here is a meta-achievement
+// over the finished catalog/profile state, so recomputing it after every
+// single completion is the simplest correct implementation. The recursion
+// through Achievement_TryComplete is bounded the same way
+// Achievement_CheckPointMilestones already documents: each nested call
+// either no-ops (already completed, per Achievement_IsCompleted's guard) or
+// completes exactly one new achievement and recurses one level deeper, and
+// there are only ACHIEVEMENTS_COUNT of those to ever exhaust.
+static void Achievement_CheckMasteryMilestones(void)
+{
+    u16 total, completed;
+
+    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_BRONZE))
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_BRONZE_MASTER);
+    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_SILVER))
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_SILVER_MASTER);
+    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_GOLD))
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_GOLD_MASTER);
+    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_DIAMOND))
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_DIAMOND_MASTER);
+    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_COUNT))
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_CATEGORY_CONQUEROR);
+
+    Achievement_CountNonHiddenExcluding(ACHIEVEMENT_MASTERY_MASTER_OF_THE_GAME, &total, &completed);
+    if (total > 0 && (u32)completed * 100 >= (u32)total * 90)
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_MASTER_OF_THE_GAME);
+
+    Achievement_CountNonHiddenExcluding(ACHIEVEMENT_MASTERY_NOTHING_LEFT_TO_PROVE, &total, &completed);
+    if (total > 0 && completed == total)
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_NOTHING_LEFT_TO_PROVE);
+
+    total = Achievement_CountInCategory(ACHIEVEMENT_CATEGORY_NG_PLUS, ACHIEVEMENT_TIER_COUNT);
+    if (total > 0 && Achievement_CountCompletedInCategory(ACHIEVEMENT_CATEGORY_NG_PLUS, ACHIEVEMENT_TIER_COUNT) == total)
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_ENDGAME_EXPLORER);
+
+    Achievement_CheckCategoryPercentMilestone(ACHIEVEMENT_CATEGORY_CHALLENGE, 80, ACHIEVEMENT_MASTERY_CHALLENGE_CONQUEROR);
+    Achievement_CheckCategoryPercentMilestone(ACHIEVEMENT_CATEGORY_NUZLOCKE, 80, ACHIEVEMENT_MASTERY_UNBROKEN_WILL);
+    Achievement_CheckCategoryPercentMilestone(ACHIEVEMENT_CATEGORY_RANDOMIZER, 80, ACHIEVEMENT_MASTERY_CHAOS_MASTER);
+
+    if (Achievement_GoldOrBetterFullyCompletedAcrossCategories(sReplayArchitectCategories, ARRAY_COUNT(sReplayArchitectCategories)))
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_REPLAY_ARCHITECT);
+
+    if (gAchievementProfile.playthroughsCompleted >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_FREQUENT_FLYER);
+    if (gAchievementProfile.playthroughsCompleted >= 25)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_VETERAN_TRAINER);
+    if (gAchievementProfile.playthroughsCompleted >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_RESIDENT_CHAMPION);
+
+    if (Achievement_HasBronzeInEveryCategory())
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER);
+    if (Achievement_HasCompletedEveryTier())
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_WELL_ROUNDED);
+    if (Achievement_HasGoldOrBetterInEveryCategory())
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_MASTER_OF_ALL);
+
+    if (gAchievementProfile.totalPointsEarned >= 5000)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_HOARDER);
+    if (gAchievementProfile.totalPointsEarned >= 10000)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_LEGEND);
+    if (gAchievementProfile.pointsFromGoldOrBetter >= 3000)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_NO_EASY_PATH);
+
+    if (Achievement_AllDiamondCompleted(ACHIEVEMENT_MASTERY_DIAMOND_STANDARD))
+        Achievement_TryComplete(ACHIEVEMENT_MASTERY_DIAMOND_STANDARD);
+
+    if (Achievement_CountHiddenCompleted(ACHIEVEMENT_HIDDEN_EASTER_EGG_HUNTER) >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_HIDDEN_EASTER_EGG_HUNTER);
+
+    Achievement_CheckMetaProgMaster();
+}
+
+// Called from AchievementBoost_Purchase/_Reset -- boostLevels[]/
+// pointsInvested/boostResets only ever change in those two functions, never
+// from Achievement_TryComplete's tail, so the boost-state entries in this
+// wave need their own call site instead of Achievement_CheckMasteryMilestones.
+static void Achievement_CheckBoostMilestones(void)
+{
+    if (gAchievementProfile.pointsInvested >= 2000)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_BOOST_INVESTOR);
+
+    if (AchievementBoost_TotalPurchasedLevels() >= 40)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_FULL_INVESTMENT);
+
+    // Reconfigured: at least one reset, and points invested again since
+    // (right after a reset pointsInvested is always 0, so this is only ever
+    // true once a purchase follows a reset).
+    if (gAchievementProfile.boostResets >= 1 && gAchievementProfile.pointsInvested > 0)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_RECONFIGURED);
+
+    // Selective Mastery: exactly one boost at its max level, and at least
+    // five other boosts still untouched (level 0).
+    {
+        u16 boostId;
+        u8 maxedCount = 0;
+        u8 zeroCount = 0;
+
+        for (boostId = BOOST_NONE + 1; boostId < BOOSTS_COUNT; boostId++)
+        {
+            u8 level = AchievementBoost_GetLevel(boostId);
+
+            if (level >= AchievementBoost_GetInfo(boostId)->maxLevel)
+                maxedCount++;
+            else if (level == 0)
+                zeroCount++;
+        }
+
+        if (maxedCount == 1 && zeroCount >= 5)
+            Achievement_TryComplete(ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY);
+    }
+
+    Achievement_CheckMetaProgMaster();
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

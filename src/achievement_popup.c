@@ -135,10 +135,10 @@
 // the same time as this popup (no registry of tags exists to check against).
 #define ACHIEVEMENT_POPUP_ICON_TAG 0xACE1
 
-// Not defined anywhere shared -- include/achievements.h doesn't have a tier
-// count constant, and src/achievements_menu.c already carries its own local
-// copy of this same derivation rather than a shared one.
-#define ACHIEVEMENT_TIER_COUNT (ACHIEVEMENT_TIER_DIAMOND + 1)
+// ACHIEVEMENT_TIER_COUNT itself now comes from enum AchievementTier
+// (constants/achievements.h, Stage 21) -- this and src/achievements_menu.c
+// used to each carry their own local derivation before that wave gave the
+// rest of the codebase a shared one.
 
 // Sized generously above anything realistic (simultaneous awards are rare,
 // and only happen a handful at a time even off something like a Pokedex-

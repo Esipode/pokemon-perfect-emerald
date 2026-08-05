@@ -78,7 +78,9 @@ enum
     WIN_DESCRIPTION,
 };
 
-#define ACHIEVEMENT_TIER_COUNT (ACHIEVEMENT_TIER_DIAMOND + 1)
+// ACHIEVEMENT_TIER_COUNT itself now comes from enum AchievementTier
+// (constants/achievements.h, Stage 21) -- this used to be its own local
+// derivation before that wave gave the rest of the codebase a shared one.
 
 #define ACHIEVEMENTS_MENU_MAX_SHOWED 5
 #define ACHIEVEMENTS_MENU_ITEM_COUNT (ACHIEVEMENTS_COUNT - 1) // excludes ACHIEVEMENT_NONE

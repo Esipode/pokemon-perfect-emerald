@@ -138,7 +138,21 @@ struct AchievementProfile
     // every party wipe (Achievement_RecordPartyWipe, src/achievements.c).
     u16 bestTrainerWinStreakEver;
 
-    u8  reserved[21];             // forward compatibility (was 32)
+    // Stage 21 (catalog wave 8, category Q): same "front of reserved[]"
+    // precedent as every field above.
+    u32 pointsFromGoldOrBetter;   // sum of .points over every Gold-or-better achievement completed, for No Easy Path (PRO-012)
+
+    // Distinct Achievement_ChallengeConfigSignature values seen across EVERY
+    // completed playthrough (Achievement_OnFirstPlaythroughComplete, which
+    // runs on every GameClear regardless of NG+), for Replay Master
+    // (VAR-015). Deliberately its own array, not a reuse of
+    // ngPlusConfigsSeen[]/_Count above -- that field is NG+-cycle-only and
+    // backs a different, narrower achievement (Cycle Collector); broadening
+    // it here would change what Cycle Collector means.
+    u8  playthroughConfigsSeen[5];
+    u8  playthroughConfigsSeenCount;
+
+    u8  reserved[11];             // forward compatibility (was 32)
 };
 
 extern struct AchievementProfile gAchievementProfile;
@@ -846,6 +860,17 @@ void Achievement_RecordTMTaught(void);
 // IncrementGameStat(GAME_STAT_USED_POKECENTER) call Stage 18 already added.
 // Nurse's Nightmare (backfill).
 void Achievement_CheckPokecenterMilestone(void);
+
+// ---- Stage 21: catalog wave 8 (category Q, Profile Meta, Mastery &
+// Prestige) -- no declarations here, unlike every prior wave: every entry is
+// a meta-achievement over state the rest of the system already exposes
+// (Achievement_IsCompleted, gAchievements[].category/.tier, and the profile
+// fields above), so it needs no new external call site. Checked entirely
+// from within src/achievements.c -- the tail of Achievement_TryComplete
+// (alongside Achievement_CheckPointMilestones) and AchievementBoost_Purchase/
+// _Reset (the only two places boostLevels[]/pointsInvested/boostResets
+// change). See include/constants/achievements.h's category Q comment for the
+// full roster-to-condition breakdown.
 
 // Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
 // These bypass all the validation the real Stage 2/7/11 functions above add

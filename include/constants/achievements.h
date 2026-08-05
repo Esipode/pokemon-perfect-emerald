@@ -188,6 +188,59 @@
 //      Streaks, Records & Collection Remainder -- see src/achievements.c for
 //      the per-entry hook-site breakdown. Tagged across the existing
 //      RECORDS/COLLECTION/ADVENTURE categories, not a new one.
+//
+// Stage 21 (design doc catalog wave 8, plan Stage 21): Profile Meta, Mastery
+// & Prestige, the last wave -- every entry here is defined over the finished
+// catalog ("every Bronze in a category", "90% of all non-hidden
+// achievements"), so it had to be authored after waves 2-7 landed. Every
+// entry is tagged ACHIEVEMENT_CATEGORY_PROFILE, the same as Stage 19's
+// ACHIEVEMENT_VARIETY_FULL_CIRCLE -- there is no separate "Mastery" category,
+// these ARE the profile-meta category. Two static helpers in
+// src/achievements.c, Achievement_CountInCategory/
+// Achievement_CountCompletedInCategory (pass ACHIEVEMENT_TIER_COUNT for "any
+// tier"), are the entire enabler; everything else is built from those two
+// plus fields the profile already carries (totalPointsEarned, pointsInvested,
+// boostLevels[], boostResets, playthroughsCompleted). Checked from the tail
+// of Achievement_TryComplete (Achievement_CheckMasteryMilestones, alongside
+// the existing Achievement_CheckPointMilestones) and from
+// AchievementBoost_Purchase/_Reset (Achievement_CheckBoostMilestones) for the
+// boost-state entries -- no new external call site, unlike every prior wave.
+// New profile fields: pointsFromGoldOrBetter (No Easy Path) and
+// playthroughConfigsSeen[]/_Count (Replay Master -- distinct challenge
+// configurations seen across EVERY completed playthrough, not only NG+
+// cycles like Stage 19's ngPlusConfigsSeen[]). New Team, New Me and Replay
+// Master's sibling, Cycle Collector's own NGP-011 "No Nostalgia" check,
+// reuse AchievementRunDataExt.previousCyclePartySpecies rather than adding
+// another snapshot field -- see Achievement_OnFirstPlaythroughComplete's
+// comment for why that field already means "the previous completion's
+// party", NG+ or not.
+//
+// Self-reference note: a handful of entries here quantify over "every X",
+// where the entry itself is a member of X (Nothing Left to Prove over every
+// non-hidden achievement; Diamond Standard over every Diamond-tier
+// achievement, and it is one). Each of those explicitly excludes itself from
+// its own total/completed count -- without that, the condition could never
+// become true, since the achievement's own flag is always still unset at the
+// moment its condition is evaluated (Achievement_TryComplete sets the flag
+// before running these checks, but a nested Achievement_TryComplete call for
+// the SAME id is refused by Achievement_IsCompleted's guard, so "itself" can
+// never contribute to its own count on the completing check). Master of the
+// Game's 90% target is left un-excluded from Nothing Left to Prove's count on
+// purpose -- the two entries only exclude themselves, not each other.
+//
+// Known catalog gaps, left as literally specified rather than reinterpreted:
+// Achievement Hunter (Bronze in every category) is currently unattainable --
+// CHALLENGE, NUZLOCKE and PROFILE have zero Bronze-tier entries between them
+// -- until a future wave gives each of those three at least one. Easter Egg
+// Hunter (five hidden achievements) is currently unattainable too -- it is
+// the only hidden achievement anywhere in the catalog (see the "Dropped"
+// note on Stage 20's HID-001..008 above); hidden achievements are meant to be
+// authored alongside whatever secret content they gate, not invented here to
+// fill the count.
+//
+//   Q. ACHIEVEMENT_MASTERY_BRONZE_MASTER .. ACHIEVEMENT_HIDDEN_EASTER_EGG_HUNTER (30)
+//      Profile Meta, Mastery & Prestige -- see src/achievements.c for the
+//      per-entry check-function breakdown. All ACHIEVEMENT_CATEGORY_PROFILE.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -466,6 +519,38 @@ enum AchievementId
     ACHIEVEMENT_RECORD_EGG_MARATHON,
     ACHIEVEMENT_RECORD_NURSES_NIGHTMARE,
 
+    // Q. Profile Meta, Mastery & Prestige (30)
+    ACHIEVEMENT_MASTERY_BRONZE_MASTER,
+    ACHIEVEMENT_MASTERY_SILVER_MASTER,
+    ACHIEVEMENT_MASTERY_GOLD_MASTER,
+    ACHIEVEMENT_MASTERY_DIAMOND_MASTER,
+    ACHIEVEMENT_MASTERY_CATEGORY_CONQUEROR,
+    ACHIEVEMENT_MASTERY_MASTER_OF_THE_GAME,
+    ACHIEVEMENT_MASTERY_NOTHING_LEFT_TO_PROVE,
+    ACHIEVEMENT_MASTERY_ENDGAME_EXPLORER,
+    ACHIEVEMENT_MASTERY_CHALLENGE_CONQUEROR,
+    ACHIEVEMENT_MASTERY_UNBROKEN_WILL,
+    ACHIEVEMENT_MASTERY_CHAOS_MASTER,
+    ACHIEVEMENT_MASTERY_REPLAY_ARCHITECT,
+    ACHIEVEMENT_PROFILE_FREQUENT_FLYER,
+    ACHIEVEMENT_PROFILE_VETERAN_TRAINER,
+    ACHIEVEMENT_PROFILE_RESIDENT_CHAMPION,
+    ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER,
+    ACHIEVEMENT_PROFILE_WELL_ROUNDED,
+    ACHIEVEMENT_PROFILE_MASTER_OF_ALL,
+    ACHIEVEMENT_PROFILE_POINT_HOARDER,
+    ACHIEVEMENT_PROFILE_POINT_LEGEND,
+    ACHIEVEMENT_PROFILE_NO_EASY_PATH,
+    ACHIEVEMENT_PROFILE_BOOST_INVESTOR,
+    ACHIEVEMENT_PROFILE_FULL_INVESTMENT,
+    ACHIEVEMENT_PROFILE_RECONFIGURED,
+    ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY,
+    ACHIEVEMENT_PROFILE_META_PROG_MASTER,
+    ACHIEVEMENT_MASTERY_DIAMOND_STANDARD,
+    ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME,
+    ACHIEVEMENT_VARIETY_REPLAY_MASTER,
+    ACHIEVEMENT_HIDDEN_EASTER_EGG_HUNTER,
+
     ACHIEVEMENTS_COUNT,
 };
 
@@ -476,12 +561,14 @@ enum AchievementId
 // (128) bounds check, so it can never collide with a real route id.
 #define ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE 0xFFFF
 
-// design doc catalog wave 8 (Stage 21, not yet implemented): mirrors the
-// draft catalog's own section headers, so "complete every Bronze in a
+// design doc catalog wave 8 (Stage 21, category Q): mirrors the draft
+// catalog's own section headers, so "complete every Bronze in a
 // category"-style Mastery/Prestige achievements can be checked with a single
-// helper once that wave exists. Added in Stage 15 and backfilled onto every
-// existing entry rather than retrofitted later, since retrofitting it across
-// ~270 entries would be far worse than authoring it from here on.
+// helper (Achievement_CountCompletedInCategory/Achievement_CountInCategory,
+// src/achievements.c) now that wave exists. Added in Stage 15 and backfilled
+// onto every existing entry rather than retrofitted later, since retrofitting
+// it across ~270 entries would have been far worse than authoring it from
+// there on.
 enum AchievementCategory
 {
     ACHIEVEMENT_CATEGORY_ADVENTURE,
@@ -505,6 +592,11 @@ enum AchievementTier
     ACHIEVEMENT_TIER_SILVER,
     ACHIEVEMENT_TIER_GOLD,
     ACHIEVEMENT_TIER_DIAMOND,
+
+    // Stage 21 (category Q): not a real tier -- passed to
+    // Achievement_CountInCategory/Achievement_CountCompletedInCategory
+    // (src/achievements.c) to mean "every tier" rather than one specific one.
+    ACHIEVEMENT_TIER_COUNT,
 };
 
 // design doc §4: how often the progress behind an achievement resets.
