@@ -62,30 +62,11 @@ static bool8 Achievement_AnyRandomizerFlagSet(void)
     return FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES);
 }
 
-// A bitmask twin of Achievement_CountChallengeModifiers -- same seven New
-// Game Settings, but Cycle Collector needs to tell configurations apart, not
-// just count them.
-static u8 Achievement_ChallengeConfigSignature(void)
-{
-    u8 signature = 0;
-
-    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
-        signature |= 1 << 0;
-    if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)
-        signature |= 1 << 1;
-    if (FlagGet(FLAG_RANDOMIZE_MON))
-        signature |= 1 << 2;
-    if (FlagGet(FLAG_RANDOMIZE_TYPE))
-        signature |= 1 << 3;
-    if (FlagGet(FLAG_RANDOMIZE_MOVES))
-        signature |= 1 << 4;
-    if (!FlagGet(FLAG_LEVEL_CAP_OFF))
-        signature |= 1 << 5;
-    if (!FlagGet(FLAG_ALLOW_STAT_EDITOR))
-        signature |= 1 << 6;
-
-    return signature;
-}
+// Stage 22 step 12: Achievement_ChallengeConfigSignature (a bitmask twin of
+// Achievement_CountChallengeModifiers -- same seven New Game Settings, but
+// distinguishing configurations rather than just counting them) removed --
+// it only ever backed Replay Master (ACHIEVEMENT_VARIETY_REPLAY_MASTER),
+// which is removed too. See src/data/achievements.h's own comment.
 
 // Bitmask over Achievement_IsMajorBattle's six trainer classes, for Boss
 // Gauntlet (NGP-014). "Every major boss" is simplified to "every major-boss
@@ -381,7 +362,21 @@ bool8 Achievement_TryComplete(u16 achievementId)
 void Achievement_OnFirstPlaythroughComplete(void)
 {
     gAchievementProfile.boostsUnlocked = TRUE;
-    gAchievementProfile.playthroughsCompleted++;
+
+    // Stage 22 step 3: this function runs on every Hall of Fame clear,
+    // including every NG+ cycle's clear (see the call site's comment in
+    // post_battle_event_funcs.c), so an ungated increment here would let
+    // playthroughsCompleted creep up from NG+ cycles alone. NG+ progress
+    // already has its own dedicated counter and achievements
+    // (ngPlusCyclesCompleted, ACHIEVEMENT_NG_PLUS_*), so gate this one to
+    // cycle 0 to keep "playthroughs" meaning distinct fresh saves
+    // specifically, with no overlap between the two tracks. Stage 22 step 12:
+    // ACHIEVEMENT_PLAYTHROUGHS_2/_5, the two achievements this counter used
+    // to back, are removed -- see src/data/achievements.h's own comment.
+    // playthroughsCompleted itself still increments; it's shown on the debug
+    // profile dump (src/debug.c) independent of any achievement.
+    if (gSaveBlock2Ptr->newGamePlus == 0)
+        gAchievementProfile.playthroughsCompleted++;
 
     if (gSaveBlock1Ptr->nuzlockeModeEnabled)
         gAchievementProfile.nuzlockesCompleted++;
@@ -391,41 +386,44 @@ void Achievement_OnFirstPlaythroughComplete(void)
 
     // Stage 13, category J: multi-run milestones derived from the counters
     // just updated above.
-    if (gAchievementProfile.playthroughsCompleted >= 2)
-        Achievement_TryComplete(ACHIEVEMENT_PLAYTHROUGHS_2);
-    if (gAchievementProfile.playthroughsCompleted >= 5)
-        Achievement_TryComplete(ACHIEVEMENT_PLAYTHROUGHS_5);
     if (gAchievementProfile.nuzlockesCompleted >= 1)
         Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_1);
-    if (gAchievementProfile.nuzlockesCompleted >= 3)
-        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_3);
+    // Stage 22 step 4: ACHIEVEMENT_NUZLOCKE_3 ("complete 3 Nuzlocke runs")
+    // removed -- NUZLOCKE_1 above already is the "do it once" version, and
+    // asking for the same challenge repeated is exactly what this step
+    // removes across the catalog. nuzlockesCompleted itself is left alone;
+    // Full Circle (VARIETY_FULL_CIRCLE) below still reads it.
     if (gAchievementProfile.randomizedRunsCompleted >= 1)
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZED_1);
 
-    // Stage 19 (catalog wave 6): Chaos Begins/Seed Explorer/Randomizer
-    // Veteran/Truly Random/Pure Chaos/Species-Type-Move Chaos, all read
-    // directly off the flags/difficulty this exact completion ran under.
-    // Chaos Begins is also checked in Achievement_OnNewGamePlusStarted (the
-    // actual "begin" event for cycle >= 1); this is the only equivalent this
-    // wave's infra has for the very first playthrough, which never calls
-    // that function.
+    // Stage 19 (catalog wave 6): Chaos Begins/Truly Random/Pure Chaos/
+    // Species-Type-Move Chaos, all read directly off the flags/difficulty
+    // this exact completion ran under. Chaos Begins is also checked in
+    // Achievement_OnNewGamePlusStarted (the actual "begin" event for cycle
+    // >= 1); this is the only equivalent this wave's infra has for the very
+    // first playthrough, which never calls that function.
+    // Stage 22 step 4: ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
+    // playthroughs) and _VETERAN (5) removed -- ACHIEVEMENT_RANDOMIZED_1
+    // above is already the "do it once" version of this same ladder.
+    // Stage 22 step 11: Chaos Begins deliberately only needs ANY ONE of the
+    // three randomizer flags (Achievement_AnyRandomizerFlagSet) -- it's the
+    // bronze entry point to the ladder Truly Random gold-tiers below with
+    // ALL three. Catalog descriptions (src/data/achievements.h) now spell
+    // this out explicitly instead of the old ambiguous "a randomized
+    // playthrough" wording.
     if (Achievement_AnyRandomizerFlagSet())
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS);
-    if (gAchievementProfile.randomizedRunsCompleted >= 2)
-        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER);
-    if (gAchievementProfile.randomizedRunsCompleted >= 5)
-        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_VETERAN);
     if (FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES))
     {
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_TRULY_RANDOM);
         if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD && !FlagGet(FLAG_LEVEL_CAP_OFF))
             Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_PURE_CHAOS);
     }
-    else if (FlagGet(FLAG_RANDOMIZE_MON) && !FlagGet(FLAG_RANDOMIZE_TYPE) && !FlagGet(FLAG_RANDOMIZE_MOVES))
+    if (FlagGet(FLAG_RANDOMIZE_MON))
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS);
-    else if (!FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && !FlagGet(FLAG_RANDOMIZE_MOVES))
+    if (FlagGet(FLAG_RANDOMIZE_TYPE))
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_TYPE_CHAOS);
-    else if (!FlagGet(FLAG_RANDOMIZE_MON) && !FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES))
+    if (FlagGet(FLAG_RANDOMIZE_MOVES))
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_MOVE_CHAOS);
 
     // Full Circle (VAR-007) bookkeeping: a "conventional" completion is one
@@ -437,60 +435,44 @@ void Achievement_OnFirstPlaythroughComplete(void)
      && gAchievementProfile.randomizedRunsCompleted >= 1)
         Achievement_TryComplete(ACHIEVEMENT_VARIETY_FULL_CIRCLE);
 
-    // Escalation (NGP-010)/No Nostalgia (NGP-011) bookkeeping: only when this
-    // completion was NOT an NG+ cycle -- Achievement_OnNewGamePlusCycleCompleted
-    // (called right after this, from the same GameClear branch, whenever
-    // newGamePlus > 0) owns both fields the rest of the time. Consecutive
-    // cycles reset here because a plain/conventional completion -- on this
-    // save or any other, since the profile is shared across saves -- breaks
-    // an in-progress NG+ streak. previousCyclePartySpecies is seeded here
-    // (cycle 0 has no earlier Achievement_OnNewGamePlusCycleCompleted call to
-    // do it) so cycle 1's completion always has something valid to compare
-    // against.
+    // No Nostalgia (NGP-011) bookkeeping: only when this completion was NOT
+    // an NG+ cycle -- Achievement_OnNewGamePlusCycleCompleted (called right
+    // after this, from the same GameClear branch, whenever newGamePlus > 0)
+    // owns previousCyclePartySpecies the rest of the time.
+    // previousCyclePartySpecies is seeded here (cycle 0 has no earlier
+    // Achievement_OnNewGamePlusCycleCompleted call to do it) so cycle 1's
+    // completion always has something valid to compare against.
+    //
+    // Stage 22 step 4: this branch used to also reset
+    // consecutiveNgPlusCyclesCompleted for ACHIEVEMENT_NG_PLUS_ESCALATION
+    // ("3 consecutive NG+ cycles"), removed along with the rest of the NG+
+    // repeat-count ladder -- see Achievement_OnNewGamePlusCycleCompleted for
+    // the single "beat one NG+ cycle" achievement that replaced it. The
+    // consecutiveNgPlusCyclesCompleted field itself is left in place, unused,
+    // to avoid reshuffling every later AchievementProfile field's offset.
     if (gSaveBlock2Ptr->newGamePlus == 0)
     {
         struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
         u16 curSpecies[PARTY_SIZE];
 
-        gAchievementProfile.consecutiveNgPlusCyclesCompleted = 0;
-
-        // Stage 21, New Team, New Me (VAR-001): the same disjoint-species
-        // comparison Achievement_OnNewGamePlusCycleCompleted's No Nostalgia
-        // check makes below, just not gated on this completion being an NG+
-        // cycle -- "two playthroughs" means any two consecutive completions
-        // on this profile, NG+ or not.
+        // Stage 22 step 12: ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME's own
+        // disjoint-species comparison/TryComplete removed here (see
+        // src/data/achievements.h's own comment) -- but this snapshot must
+        // stay: it's how previousCyclePartySpecies gets seeded for cycle 0
+        // (Achievement_OnNewGamePlusCycleCompleted's No Nostalgia check has
+        // no earlier call to do it otherwise -- see this function's own
+        // comment above).
         Achievement_SnapshotPartySpecies(gParties[B_TRAINER_PLAYER], gPartiesCount[B_TRAINER_PLAYER], curSpecies);
-        if (runDataExt->previousCyclePartySpeciesSet && Achievement_SpeciesSetsDisjoint(curSpecies, runDataExt->previousCyclePartySpecies))
-            Achievement_TryComplete(ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME);
         memcpy(runDataExt->previousCyclePartySpecies, curSpecies, sizeof(curSpecies));
         runDataExt->previousCyclePartySpeciesSet = TRUE;
     }
 
-    // Stage 21, Replay Master (VAR-015): distinct challenge-configuration
-    // signatures seen across EVERY completed playthrough (this function runs
-    // on every GameClear, NG+ cycle or not) -- deliberately its own counter,
-    // not ngPlusConfigsSeen[]/_Count above, which is NG+-cycle-only and backs
-    // a different achievement (Cycle Collector) with a narrower meaning.
-    {
-        u8 signature = Achievement_ChallengeConfigSignature();
-        bool8 seen = FALSE;
-        u8 i;
-
-        for (i = 0; i < gAchievementProfile.playthroughConfigsSeenCount; i++)
-        {
-            if (gAchievementProfile.playthroughConfigsSeen[i] == signature)
-            {
-                seen = TRUE;
-                break;
-            }
-        }
-
-        if (!seen && gAchievementProfile.playthroughConfigsSeenCount < ARRAY_COUNT(gAchievementProfile.playthroughConfigsSeen))
-            gAchievementProfile.playthroughConfigsSeen[gAchievementProfile.playthroughConfigsSeenCount++] = signature;
-
-        if (gAchievementProfile.playthroughConfigsSeenCount >= 5)
-            Achievement_TryComplete(ACHIEVEMENT_VARIETY_REPLAY_MASTER);
-    }
+    // Stage 22 step 12: ACHIEVEMENT_VARIETY_REPLAY_MASTER ("complete five
+    // playthroughs under five different rule configurations") removed here
+    // -- see src/data/achievements.h's own comment. Its dedicated tracking
+    // (Achievement_ChallengeConfigSignature, playthroughConfigsSeen[]/_Count)
+    // is removed with it; the persisted profile fields are left in place,
+    // marked unused (include/achievements.h).
 
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
@@ -505,19 +487,17 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
     if (cycle > gAchievementProfile.highestNgPlusCycle)
         gAchievementProfile.highestNgPlusCycle = cycle;
 
-    // Stage 13, category J: this function only ever runs when NG+ actually
-    // just started, so the "started" achievement needs no threshold guard.
-    Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_STARTED);
-    if (gAchievementProfile.highestNgPlusCycle >= 3)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_3);
-    if (gAchievementProfile.highestNgPlusCycle >= 5)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_5);
-
-    // Stage 19: Beyond the Beginning, and Chaos Begins for the case this
-    // wave's infra can actually observe as a true "begin" event (see
-    // Achievement_OnFirstPlaythroughComplete for the cycle-0 case).
-    if (gAchievementProfile.highestNgPlusCycle >= 10)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_BEYOND_THE_BEGINNING);
+    // Stage 22 step 4: ACHIEVEMENT_NG_PLUS_STARTED ("start a New Game+"),
+    // _CYCLE_3 ("reach cycle 3"), _CYCLE_5, and _BEYOND_THE_BEGINNING
+    // ("reach cycle 10") -- the whole "start/reach" half of the old NG+
+    // repeat-count ladder -- are removed, folded into the single
+    // ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE achievement checked in
+    // Achievement_OnNewGamePlusCycleCompleted below (that function only
+    // fires once a cycle is actually beaten, which is a more meaningful
+    // "did the thing" moment than merely starting one). highestNgPlusCycle
+    // is left as a high-water mark for the debug dump; Chaos Begins (the
+    // only achievement this function still checks) is still relevant here
+    // since NG+ can be started with randomizer flags freshly toggled on.
     if (Achievement_AnyRandomizerFlagSet())
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS);
 
@@ -542,42 +522,39 @@ void Achievement_OnNewGamePlusCycleCompleted(void)
     struct Pokemon *party = gParties[B_TRAINER_PLAYER];
     u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
     u16 curSpecies[PARTY_SIZE];
-    u8 i;
 
     gAchievementProfile.ngPlusCyclesCompleted++;
 
-    // Stage 13, category J.
-    if (gAchievementProfile.ngPlusCyclesCompleted >= 3)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_COMPLETED_3);
+    // Stage 22 step 4: this function only ever runs when an NG+ cycle was
+    // just beaten, so -- like ACHIEVEMENT_NG_PLUS_STARTED before it (see
+    // Achievement_OnNewGamePlusStarted) -- the "beat one NG+ cycle"
+    // achievement needs no threshold guard. This single achievement replaces
+    // the old ACHIEVEMENT_NG_PLUS_STARTED/_CYCLE_3/_CYCLE_5/_COMPLETED_3
+    // (category J) and _ONE_MORE_TIME/_BEYOND_THE_BEGINNING/_ESCALATION
+    // (category O) seven-entry ladder -- asking players to repeat the same
+    // long task (another full playthrough) over and over for more points
+    // was grindy rather than a genuine additional challenge.
+    Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE);
 
-    // Stage 19: every "complete an NG+ cycle with X" entry lives here, since
-    // this function only ever runs when that's exactly what just happened.
-    // Exact-equality checks (== 2) are used wherever an extra qualifier
-    // (boosts disabled) isn't itself monotonic across cycles -- an
-    // unqualified >= would let a later cycle's data wrongly satisfy an
-    // earlier cycle-specific condition.
-    if (gAchievementProfile.ngPlusCyclesCompleted == 2)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_ONE_MORE_TIME);
-    if (gAchievementProfile.ngPlusCyclesCompleted >= 10)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP);
-    if (gAchievementProfile.ngPlusCyclesCompleted == 2 && !gAchievementProfile.boostsEnabled)
+    // Stage 22 step 10: ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP
+    // (ngPlusCyclesCompleted >= 10) removed -- see the catalog entry's own
+    // comment (src/data/achievements.h).
+    // Stage 22 step 4: Unassisted Cycle used to require this be
+    // specifically cycle 2 (an exact-equality check, since "boosts
+    // disabled" isn't monotonic across cycles the way a plain count is) --
+    // now that the ladder above only asks for one cycle, any cycle
+    // completed with boosts off qualifies, same "do it once" treatment.
+    if (!gAchievementProfile.boostsEnabled)
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE);
-
-    // Escalation (NGP-010): reset by Achievement_OnFirstPlaythroughComplete
-    // whenever a completion is NOT an NG+ cycle, so this only ever counts an
-    // unbroken run of cycle completions.
-    if (gAchievementProfile.consecutiveNgPlusCyclesCompleted < 255)
-        gAchievementProfile.consecutiveNgPlusCyclesCompleted++;
-    if (gAchievementProfile.consecutiveNgPlusCyclesCompleted >= 3)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_ESCALATION);
 
     if (Achievement_CountChallengeModifiers() >= 3)
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST);
 
     if (gSaveBlock1Ptr->nuzlockeModeEnabled)
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE);
-    if (gSaveBlock2Ptr->newGamePlus >= 5 && gSaveBlock1Ptr->nuzlockeModeEnabled && Achievement_AnyRandomizerFlagSet())
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR);
+    // Stage 22 step 10: ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR (NG+ cycle 5+
+    // with Nuzlocke and the randomizer) removed -- see the catalog entry's
+    // own comment (src/data/achievements.h).
 
     // Complete Reinvention/Boss Gauntlet: bookkeeping accumulated all cycle
     // by Achievement_CheckChallengeMilestones (HandleEndTurn_BattleWon).
@@ -595,37 +572,19 @@ void Achievement_OnNewGamePlusCycleCompleted(void)
      && Achievement_SpeciesSetsDisjoint(curSpecies, runDataExt->previousCyclePartySpecies))
     {
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA);
-        // Stage 21, New Team, New Me (VAR-001): same condition, just not
-        // restricted to an NG+ cycle -- see Achievement_OnFirstPlaythroughComplete's
-        // cycle-0 branch for the non-NG+ half of this check.
-        Achievement_TryComplete(ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME);
+        // Stage 22 step 12: ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME removed --
+        // this was its NG+-cycle half (Achievement_OnFirstPlaythroughComplete's
+        // cycle-0 branch had the other half). See src/data/achievements.h's
+        // own comment.
     }
     memcpy(runDataExt->previousCyclePartySpecies, curSpecies, sizeof(curSpecies));
     runDataExt->previousCyclePartySpeciesSet = TRUE;
 
-    // Cycle Collector: distinct challenge-configuration signatures seen
-    // across every completed NG+ cycle -- profile-scoped, so this persists
-    // even across separate saves, same as every other gAchievementProfile
-    // field.
-    {
-        u8 signature = Achievement_ChallengeConfigSignature();
-        bool8 seen = FALSE;
-
-        for (i = 0; i < gAchievementProfile.ngPlusConfigsSeenCount; i++)
-        {
-            if (gAchievementProfile.ngPlusConfigsSeen[i] == signature)
-            {
-                seen = TRUE;
-                break;
-            }
-        }
-
-        if (!seen && gAchievementProfile.ngPlusConfigsSeenCount < ARRAY_COUNT(gAchievementProfile.ngPlusConfigsSeen))
-            gAchievementProfile.ngPlusConfigsSeen[gAchievementProfile.ngPlusConfigsSeenCount++] = signature;
-
-        if (gAchievementProfile.ngPlusConfigsSeenCount >= 3)
-            Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR);
-    }
+    // Stage 22 step 10: ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR (three distinct
+    // challenge-configuration signatures across completed NG+ cycles)
+    // removed -- see the catalog entry's own comment (src/data/achievements.h).
+    // gAchievementProfile.ngPlusConfigsSeen[]/ngPlusConfigsSeenCount are now
+    // unwritten but left in place.
 
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
@@ -1130,15 +1089,14 @@ void Achievement_CheckPokedexMilestones(bool8 caught)
     }
     else
     {
+        // Stage 22 step 1: the 10/25/50% catch thresholds were folded into
+        // Achievement_CheckCaptureMilestones's hard-number ladder below.
+        // Full dex completion stays here, since it's a distinct-species
+        // count (this function's own GetNationalPokedexCount) rather than
+        // the raw capture count that ladder tracks.
         count = GetNationalPokedexCount(FLAG_GET_CAUGHT);
-        if (count >= NATIONAL_DEX_COUNT * 10 / 100)
-            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_10);
-        if (count >= NATIONAL_DEX_COUNT * 25 / 100)
-            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_25);
-        if (count >= NATIONAL_DEX_COUNT * 50 / 100)
-            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_50);
         if (count >= NATIONAL_DEX_COUNT)
-            Achievement_TryComplete(ACHIEVEMENT_DEX_CAUGHT_100);
+            Achievement_TryComplete(ACHIEVEMENT_CATCH_ALL);
     }
 }
 
@@ -1146,20 +1104,21 @@ void Achievement_CheckPokedexMilestones(bool8 caught)
 // the time GiveCapturedMonToPlayer (this function's only caller) runs --
 // confirmed against data/battle_scripts_2.s, where incrementgamestat
 // precedes givecaughtmon.
+//
+// Stage 22 step 1: collapsed from five thresholds (1/25/100/250/500) down to
+// three -- the fourth tier, Diamond, is ACHIEVEMENT_CATCH_ALL, checked by
+// Achievement_CheckPokedexMilestones instead, since "catch them all" is a
+// distinct-species condition, not a raw-count one.
 void Achievement_CheckCaptureMilestones(void)
 {
     u32 count = GetGameStat(GAME_STAT_POKEMON_CAPTURES);
 
-    if (count >= 1)
-        Achievement_TryComplete(ACHIEVEMENT_CATCH_1);
-    if (count >= 25)
-        Achievement_TryComplete(ACHIEVEMENT_CATCH_25);
     if (count >= 100)
         Achievement_TryComplete(ACHIEVEMENT_CATCH_100);
-    if (count >= 250)
-        Achievement_TryComplete(ACHIEVEMENT_CATCH_250);
-    if (count >= 500)
-        Achievement_TryComplete(ACHIEVEMENT_CATCH_500);
+    if (count >= 350)
+        Achievement_TryComplete(ACHIEVEMENT_CATCH_350);
+    if (count >= 700)
+        Achievement_TryComplete(ACHIEVEMENT_CATCH_700);
 }
 
 // shiniesObtained has existed in the profile since early on (already
@@ -1183,9 +1142,20 @@ void Achievement_OnShinyObtained(void)
 // scattered Do*Battle functions in src/battle_setup.c), so by the time any
 // given trainer battle ends via CB2_EndTrainerBattle (this function's only
 // caller) the count is already final -- no need to touch every start site.
+//
+// Stage 22 step 2: reads gAchievementProfile.trainerBattlesLifetime instead
+// of GAME_STAT_TRAINER_BATTLES -- the game stat lives in SaveBlock1, which
+// ClearSav1 zeroes at every new game, so these thresholds used to reset
+// every playthrough instead of counting across all of them. Incremented
+// once here, since this function runs exactly once per battle end.
 void Achievement_CheckTrainerBattleMilestones(void)
 {
-    u32 count = GetGameStat(GAME_STAT_TRAINER_BATTLES);
+    u32 count;
+
+    if (gAchievementProfile.trainerBattlesLifetime < 0xFFFF)
+        gAchievementProfile.trainerBattlesLifetime++;
+    sAchievementProfileDirty = TRUE;
+    count = gAchievementProfile.trainerBattlesLifetime;
 
     if (count >= 10)
         Achievement_TryComplete(ACHIEVEMENT_TRAINERS_10);
@@ -1199,11 +1169,17 @@ void Achievement_CheckTrainerBattleMilestones(void)
         Achievement_TryComplete(ACHIEVEMENT_TRAINERS_500);
 }
 
-// Same reasoning as the trainer version above, reading GAME_STAT_WILD_BATTLES
-// from CB2_EndWildBattle.
+// Same reasoning as the trainer version above, reading
+// gAchievementProfile.wildBattlesLifetime from CB2_EndWildBattle instead of
+// GAME_STAT_WILD_BATTLES (Stage 22 step 2).
 void Achievement_CheckWildBattleMilestones(void)
 {
-    u32 count = GetGameStat(GAME_STAT_WILD_BATTLES);
+    u32 count;
+
+    if (gAchievementProfile.wildBattlesLifetime < 0xFFFF)
+        gAchievementProfile.wildBattlesLifetime++;
+    sAchievementProfileDirty = TRUE;
+    count = gAchievementProfile.wildBattlesLifetime;
 
     if (count >= 50)
         Achievement_TryComplete(ACHIEVEMENT_WILD_BATTLES_50);
@@ -1251,9 +1227,21 @@ void Achievement_CheckMoneyMilestones(u32 money)
 // (this function's only caller) reaches the point where the hatched mon's
 // data is valid -- see src/field_control_avatar.c, at the very start of the
 // hatch sequence.
+//
+// Stage 22 step 2: the count-based thresholds (It's Hatching! / Daycare
+// Regular / Egg Factory, and Egg Marathon below) now read
+// gAchievementProfile.eggsHatchedLifetime, incremented once per call, rather
+// than GAME_STAT_HATCHED_EGGS -- the game stat lives in SaveBlock1, which
+// ClearSav1 zeroes at every new game. Shiny From the Shell is a boolean
+// condition and is unaffected either way.
 void Achievement_CheckEggMilestones(bool8 isShiny)
 {
-    u32 count = GetGameStat(GAME_STAT_HATCHED_EGGS);
+    u32 count;
+
+    if (gAchievementProfile.eggsHatchedLifetime < 0xFFFF)
+        gAchievementProfile.eggsHatchedLifetime++;
+    sAchievementProfileDirty = TRUE;
+    count = gAchievementProfile.eggsHatchedLifetime;
 
     if (count >= 1)
         Achievement_TryComplete(ACHIEVEMENT_EGG_1);
@@ -1264,8 +1252,8 @@ void Achievement_CheckEggMilestones(bool8 isShiny)
     if (isShiny)
         Achievement_TryComplete(ACHIEVEMENT_EGG_SHINY);
 
-    // Stage 20 (catalog wave 7): Egg Marathon. Same already-incremented
-    // count as the thresholds above.
+    // Stage 20 (catalog wave 7): Egg Marathon. Same lifetime count as the
+    // thresholds above.
     if (count >= 100)
         Achievement_TryComplete(ACHIEVEMENT_RECORD_EGG_MARATHON);
 }
@@ -1461,10 +1449,16 @@ void Achievement_CheckBattleMilestones(void)
 
     if (sBattleData.superEffectiveUsed)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_TYPE_ADVANTAGE);
-    if (isTrainerBattle && !sBattleData.superEffectiveUsed)
-        Achievement_TryComplete(ACHIEVEMENT_BATTLE_TYPE_MASTER);
+    // Stage 22 step 5: ACHIEVEMENT_BATTLE_TYPE_MASTER ("win a trainer battle
+    // without landing a super-effective hit") removed -- most trainer teams
+    // aren't built to counter the player, so this happens by chance.
 
-    if (isTrainerBattle && gBattleResults.playerSwitchesCounter == 0)
+    // Stage 22 step 6: ACHIEVEMENT_BATTLE_CLEAN_SWEEP/_PERFECT_SWEEP were
+    // trivial against the many trainers who only field one or two Pokemon,
+    // so both now additionally require the opponent to have brought a full
+    // 6-Pokemon team.
+    if (isTrainerBattle && gBattleResults.playerSwitchesCounter == 0
+        && gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
     {
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_CLEAN_SWEEP);
         if (isMajorBattle)
@@ -1473,7 +1467,11 @@ void Achievement_CheckBattleMilestones(void)
 
     if (isTrainerBattle && !gBattleResults.playerMonWasDamaged)
     {
-        Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_DAMAGE);
+        // Stage 22 step 6: ACHIEVEMENT_BATTLE_NO_DAMAGE, same full-team
+        // requirement as CLEAN_SWEEP above. ACHIEVEMENT_BATTLE_UNTOUCHABLE
+        // below is unaffected -- it wasn't listed in step 6.
+        if (gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
+            Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_DAMAGE);
         if (isMajorBattle)
             Achievement_TryComplete(ACHIEVEMENT_BATTLE_UNTOUCHABLE);
     }
@@ -1509,7 +1507,7 @@ void Achievement_CheckBattleMilestones(void)
         }
     }
 
-    if (isMajorBattle && gBattleResults.battleTurnCounter >= 15)
+    if (isMajorBattle && gBattleResults.battleTurnCounter >= 30)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_ATTRITION);
 
     if (isMajorBattle && gBattleResults.playerFaintCounter == 0)
@@ -1600,7 +1598,9 @@ void Achievement_CheckBattleMilestones(void)
     if (sBattleData.slotsThatActed == ((1 << PARTY_SIZE) - 1))
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_TEAM_PLAYER);
 
-    if (consciousCount == 1)
+    // Stage 22 step 7: both now require a full 6-Pokemon party -- trivial to
+    // end a battle with only one Pokemon conscious if that's all you brought.
+    if (consciousCount == 1 && playerCount == PARTY_SIZE)
     {
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_COMEBACK_KID);
 
@@ -1760,24 +1760,6 @@ static bool8 Achievement_AllPrimaryEggGroupsDistinct(struct Pokemon *party, u8 c
     }
 
     return TRUE;
-}
-
-static bool8 Achievement_HasDuplicateSpecies(struct Pokemon *party, u8 count)
-{
-    u8 i, j;
-
-    for (i = 0; i < count; i++)
-    {
-        enum Species speciesI = GetMonData(&party[i], MON_DATA_SPECIES);
-
-        for (j = i + 1; j < count; j++)
-        {
-            if (speciesI == GetMonData(&party[j], MON_DATA_SPECIES))
-                return TRUE;
-        }
-    }
-
-    return FALSE;
 }
 
 static u8 Achievement_HighestLevelPartySlot(struct Pokemon *party, u8 count)
@@ -2071,7 +2053,12 @@ void Achievement_CheckTeamMilestones(void)
 
         if (monoType != NUMBER_OF_MON_TYPES)
         {
-            Achievement_TryComplete(ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL);
+            // Stage 22 step 7: now requires a full 6-Pokemon party --
+            // trivial to keep 1-2 Pokemon mono-type by accident. Doesn't
+            // gate monoTypeGymsCleared itself, since ACHIEVEMENT_TEAM_ONE_TYPE_JOURNEY
+            // below wasn't listed in step 7.
+            if (playerCount == PARTY_SIZE)
+                Achievement_TryComplete(ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL);
             if (runData->monoTypeGymsCleared < 255)
                 runData->monoTypeGymsCleared++;
         }
@@ -2084,7 +2071,9 @@ void Achievement_CheckTeamMilestones(void)
         if (Achievement_HighestLevelMonIsOutsideParty(party, playerCount))
             Achievement_TryComplete(ACHIEVEMENT_TEAM_NO_ACE);
 
-        if (Achievement_PartyBaseStatTotal(party, playerCount) < 1800)
+        // Stage 22 step 7: now requires a full 6-Pokemon party -- a small
+        // party trivially has a low combined base stat total.
+        if (playerCount == PARTY_SIZE && Achievement_PartyBaseStatTotal(party, playerCount) < 1800)
             Achievement_TryComplete(ACHIEVEMENT_TEAM_FEATHERWEIGHT);
 
         // Type Roulette: composition must differ from the previous Gym's.
@@ -2176,14 +2165,20 @@ void Achievement_CheckTeamMilestones(void)
 
     if (isMajorBattle)
     {
-        if (Achievement_AllTypesDisjoint(party, playerCount))
+        // Stage 22 step 7: now requires a full 6-Pokemon party -- trivial
+        // for no two party members to share a type if there's barely any
+        // party to begin with.
+        if (playerCount == PARTY_SIZE && Achievement_AllTypesDisjoint(party, playerCount))
             Achievement_TryComplete(ACHIEVEMENT_TEAM_NO_DUPLICATES);
 
         if (playerCount == PARTY_SIZE && monoType != NUMBER_OF_MON_TYPES)
             Achievement_TryComplete(ACHIEVEMENT_TEAM_SIX_OF_A_KIND);
 
-        if (!Achievement_HasDuplicateSpecies(party, playerCount))
-            Achievement_TryComplete(ACHIEVEMENT_TEAM_VARIETY_IS_POWER);
+        // Stage 22 step 5: ACHIEVEMENT_TEAM_VARIETY_IS_POWER ("win a major
+        // battle without two of the same species") removed -- most players
+        // never deliberately catch duplicate species for their party, so
+        // this was true of nearly every team. Achievement_HasDuplicateSpecies
+        // (the only caller of which this was) removed along with it.
 
         if (playerCount == PARTY_SIZE && Achievement_AllPrimaryEggGroupsDistinct(party, playerCount))
             Achievement_TryComplete(ACHIEVEMENT_TEAM_DIVERSE_ROOTS);
@@ -2469,12 +2464,22 @@ void Achievement_CheckLocalExpert(void)
 
 // SetHiddenItemFlag (src/field_specials.c) -- already only reached once per
 // item (see that function's own comment).
+//
+// Stage 22 step 2: Treasure Hunter/Treasure Hoard now read
+// gAchievementProfile.hiddenItemsFoundLifetime instead of
+// GAME_STAT_HIDDEN_ITEMS_FOUND -- the game stat lives in SaveBlock1, which
+// ClearSav1 zeroes at every new game. The game stat is still incremented
+// below in case anything else reads it.
 void Achievement_CheckHiddenItemMilestones(void)
 {
     u32 count;
 
     IncrementGameStat(GAME_STAT_HIDDEN_ITEMS_FOUND);
-    count = GetGameStat(GAME_STAT_HIDDEN_ITEMS_FOUND);
+
+    if (gAchievementProfile.hiddenItemsFoundLifetime < 0xFFFF)
+        gAchievementProfile.hiddenItemsFoundLifetime++;
+    sAchievementProfileDirty = TRUE;
+    count = gAchievementProfile.hiddenItemsFoundLifetime;
 
     if (count >= 20)
         Achievement_TryComplete(ACHIEVEMENT_EXPLORE_TREASURE_HUNTER);
@@ -2483,12 +2488,22 @@ void Achievement_CheckHiddenItemMilestones(void)
 }
 
 // GetInteractionScript's object-event branch (src/field_control_avatar.c).
+//
+// Stage 22 step 2: Talk to the Locals/People Person now read
+// gAchievementProfile.npcsTalkedToLifetime instead of
+// GAME_STAT_NPCS_TALKED_TO -- the game stat lives in SaveBlock1, which
+// ClearSav1 zeroes at every new game. The game stat is still incremented
+// below in case anything else reads it.
 void Achievement_RecordNpcTalkedTo(void)
 {
     u32 count;
 
     IncrementGameStat(GAME_STAT_NPCS_TALKED_TO);
-    count = GetGameStat(GAME_STAT_NPCS_TALKED_TO);
+
+    if (gAchievementProfile.npcsTalkedToLifetime < 0xFFFF)
+        gAchievementProfile.npcsTalkedToLifetime++;
+    sAchievementProfileDirty = TRUE;
+    count = gAchievementProfile.npcsTalkedToLifetime;
 
     if (count >= 50)
         Achievement_TryComplete(ACHIEVEMENT_EXPLORE_TALK_TO_THE_LOCALS);
@@ -2498,14 +2513,28 @@ void Achievement_RecordNpcTalkedTo(void)
 
 // BuyMenuSubtractMoney (src/shop.c), called after the vanilla
 // IncrementGameStat(GAME_STAT_SHOPPED) that site already does.
+//
+// Stage 22 step 2: First Purchase/Regular Customer and Big Spender/Whale now
+// read gAchievementProfile.shopPurchasesLifetime/moneySpentLifetime instead
+// of GAME_STAT_SHOPPED/GAME_STAT_MONEY_SPENT -- both game stats live in
+// SaveBlock1, which ClearSav1 zeroes at every new game. GAME_STAT_MONEY_SPENT
+// is still updated below in case anything else reads it; GAME_STAT_SHOPPED's
+// own increment is unchanged, at its existing call site in src/shop.c.
 void Achievement_RecordMoneySpent(u32 amountSpent)
 {
     struct AchievementRunDataExt *runData = &gSaveBlock2Ptr->achievementRunDataExt;
-    u32 shopCount = GetGameStat(GAME_STAT_SHOPPED);
+    u32 shopCount;
     u32 spent;
 
     Achievement_AddToGameStat(GAME_STAT_MONEY_SPENT, amountSpent);
-    spent = GetGameStat(GAME_STAT_MONEY_SPENT);
+
+    if (gAchievementProfile.shopPurchasesLifetime < 0xFFFF)
+        gAchievementProfile.shopPurchasesLifetime++;
+    gAchievementProfile.moneySpentLifetime += amountSpent;
+    sAchievementProfileDirty = TRUE;
+
+    shopCount = gAchievementProfile.shopPurchasesLifetime;
+    spent = gAchievementProfile.moneySpentLifetime;
 
     if (shopCount >= 1)
         Achievement_TryComplete(ACHIEVEMENT_ECONOMY_FIRST_PURCHASE);
@@ -2556,20 +2585,6 @@ static u8 Achievement_CountDistinctBagItems(void)
     return (count > 255) ? 255 : (u8)count;
 }
 
-// "Consumable" == the general Items pocket specifically (potions, revives,
-// status healers, repels, battle items), not Poke Balls/TMs/berries/key
-// items -- the same pocket the field Bag UI itself labels "Items".
-static u32 Achievement_CountConsumableItems(void)
-{
-    u16 slot;
-    u32 total = 0;
-
-    for (slot = 0; slot < gBagPockets[POCKET_ITEMS].capacity; slot++)
-        total += gBagPockets[POCKET_ITEMS].itemSlots[slot].quantity;
-
-    return total;
-}
-
 // AddBagItem (src/item.c), the same "added succeeded" guard
 // Achievement_CheckItemMilestones already sits behind.
 void Achievement_CheckPackRatMilestone(void)
@@ -2587,12 +2602,9 @@ void Achievement_RecordBerryHarvest(void)
         Achievement_TryComplete(ACHIEVEMENT_COLLECT_GREEN_THUMB);
 }
 
-// Both GAME_STAT_POKEMON_TRADES sites (src/trade.c) -- any trade that
-// actually completes means a Pokemon was just obtained by trade.
-void Achievement_CheckTradeMilestones(void)
-{
-    Achievement_TryComplete(ACHIEVEMENT_COLLECT_TRADE_SECRETS);
-}
+// Stage 22 step 5: Achievement_CheckTradeMilestones removed along with its
+// sole achievement, ACHIEVEMENT_COLLECT_TRADE_SECRETS -- see
+// include/achievements.h and its two former call sites in src/trade.c.
 
 // Both GAME_STAT_EVOLVED_POKEMON sites (src/evolution_scene.c).
 void Achievement_CheckEvolutionCountMilestones(void)
@@ -2667,8 +2679,11 @@ void Achievement_CheckGymEconomyMilestones(void)
         runData->shoppedSinceLastGym = FALSE;
     }
 
-    if (Achievement_IsMajorBattle() && Achievement_CountConsumableItems() < 5)
-        Achievement_TryComplete(ACHIEVEMENT_ECONOMY_RESOURCEFUL);
+    // Stage 22 step 5: ACHIEVEMENT_ECONOMY_RESOURCEFUL ("win a major battle
+    // carrying fewer than five consumables") removed -- most players don't
+    // stock up on more than a few consumables to begin with.
+    // Achievement_CountConsumableItems (the only caller of which this was)
+    // removed along with it.
 }
 
 // GameClear (src/post_battle_event_funcs.c), alongside
@@ -2735,50 +2750,10 @@ static u8 Achievement_LowestLevelPartySlot(struct Pokemon *party, u8 count)
     return bestSlot;
 }
 
-// Species Clause. Scans party + every PC box for a shared evolution-family
-// root, the same "everything the player owns" breadth
-// Achievement_HighestLevelMonIsOutsideParty (Stage 16) already scans -- under
-// Nuzlocke rules that's exactly the set of Pokemon caught this run, so no
-// separate catch-list tracking is needed. The scratch array is static EWRAM,
-// not a stack array: PARTY_SIZE + TOTAL_BOXES_COUNT * IN_BOX_COUNT entries
-// (~426) would be a needlessly large stack frame for a check that only ever
-// runs once, at GameClear.
-EWRAM_DATA static u16 sSpeciesClauseScratch[PARTY_SIZE + TOTAL_BOXES_COUNT * IN_BOX_COUNT] = {0};
-
-static bool8 Achievement_HasDuplicateEvolutionFamilyAmongOwned(struct Pokemon *party, u8 playerCount)
-{
-    u16 count = 0;
-    u8 i, box, slot;
-
-    for (i = 0; i < playerCount; i++)
-    {
-        enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
-        if (species != SPECIES_NONE)
-            sSpeciesClauseScratch[count++] = Achievement_GetEvolutionRoot(species);
-    }
-
-    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
-    {
-        for (slot = 0; slot < IN_BOX_COUNT; slot++)
-        {
-            enum Species species = GetBoxMonDataAt(box, slot, MON_DATA_SPECIES);
-            if (species != SPECIES_NONE)
-                sSpeciesClauseScratch[count++] = Achievement_GetEvolutionRoot(species);
-        }
-    }
-
-    for (i = 0; i < count; i++)
-    {
-        u16 j;
-        for (j = i + 1; j < count; j++)
-        {
-            if (sSpeciesClauseScratch[i] == sSpeciesClauseScratch[j])
-                return TRUE;
-        }
-    }
-
-    return FALSE;
-}
+// Stage 22 step 5: Achievement_HasDuplicateEvolutionFamilyAmongOwned (Species
+// Clause's sole helper, along with its static EWRAM scratch array) removed
+// along with ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE -- see
+// Achievement_CheckNuzlockeCompletionMilestones.
 
 // HandleEndTurn_BattleWon (src/battle_main.c), immediately after
 // Achievement_CheckGymEconomyMilestones, gated the same way (never link/
@@ -2831,7 +2806,11 @@ void Achievement_CheckChallengeMilestones(void)
         bool8 noBagItemsUsed = (gBattleResults.numHealingItemsUsed == 0 && gBattleResults.numRevivesUsed == 0);
         bool8 noHeldItems = TRUE;
 
-        if (gBattleResults.numHealingItemsUsed == 0)
+        // Stage 22 step 7: both now require a full 6-Pokemon party -- with
+        // only one or two Pokemon along, there's barely any HP pool to
+        // dip into and barely any held items to check, making both
+        // trivial to earn by accident.
+        if (playerCount == PARTY_SIZE && gBattleResults.numHealingItemsUsed == 0)
             Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS);
 
         for (i = 0; i < playerCount; i++)
@@ -2842,7 +2821,7 @@ void Achievement_CheckChallengeMilestones(void)
                 break;
             }
         }
-        if (noBagItemsUsed && noHeldItems)
+        if (playerCount == PARTY_SIZE && noBagItemsUsed && noHeldItems)
             Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_ITEMLESS_BATTLE);
 
         if (gSaveBlock2Ptr->optionsBattleStyle == OPTIONS_BATTLE_STYLE_SET)
@@ -2876,33 +2855,29 @@ void Achievement_CheckChallengeMilestones(void)
         // Achievement_OnNewGamePlusCycleCompleted.
         runDataExt->majorBossClassesDefeatedThisCycle |= Achievement_MajorBossClassBit(GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA));
 
+        // Stage 22 step 5: ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING ("beat
+        // a randomized major battle with no super-effective move available")
+        // removed here -- with move/type randomization scrambling coverage,
+        // this just happens by chance over a run's worth of major battles.
         if (Achievement_AnyRandomizerFlagSet())
         {
             if (playerCount == PARTY_SIZE && Achievement_AllPrimaryTypesDistinct(party, playerCount))
                 Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_CHAOS_TEAM);
-            if (!sBattleData.superEffectiveUsed)
-                Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING);
         }
     }
 
     if (isGymBattle)
     {
-        u32 levelCap = GetCurrentLevelCap();
-        bool8 anyAboveCap = FALSE;
-
-        for (i = 0; i < playerCount; i++)
-        {
-            if (GetMonData(&party[i], MON_DATA_LEVEL) > levelCap)
-            {
-                anyAboveCap = TRUE;
-                break;
-            }
-        }
-        if (!anyAboveCap)
-            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE);
+        // Stage 22 step 5: ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE ("beat a
+        // Gym Leader with no party member above the level cap") removed --
+        // a player playing through normally, without deliberately grinding,
+        // rarely ends up over the level cap anyway. The level-cap scan that
+        // used to back this check is removed along with it.
 
         // Stage 19: Random by Nature, and Complete Reinvention's cumulative
         // species tracking (checked at Achievement_OnNewGamePlusCycleCompleted).
+        // Stage 22 step 11: same ANY-one-flag criteria as Chaos Begins above
+        // (Achievement_AnyRandomizerFlagSet) -- see that call site's comment.
         if (Achievement_AnyRandomizerFlagSet())
             Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_RANDOM_BY_NATURE);
 
@@ -2947,48 +2922,25 @@ void Achievement_CheckNuzlockeMilestones(void)
 
     if (isGymBattle && playerCount != 0)
     {
-        u8 highestSlot = Achievement_HighestLevelPartySlot(party, playerCount);
         u8 lowestSlot = Achievement_LowestLevelPartySlot(party, playerCount);
 
-        if (!(sBattleData.slotsThatActed & (1 << highestSlot)))
-            Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_NO_ACE_ALLOWED);
-
+        // Stage 22 step 9: ACHIEVEMENT_NUZLOCKE_NO_ACE_ALLOWED removed --
+        // duplicate of ACHIEVEMENT_TEAM_UNDERSTUDY (Achievement_CheckTeamMilestones),
+        // the same "highest-level party member didn't act" check on the same
+        // gym battle, which isn't gated on nuzlockeModeEnabled so it already
+        // fires for Nuzlocke runs too.
         if (sBattleData.lastThreeKoSlots[2] != 0
          && (sBattleData.lastThreeKoSlots[2] - 1) == lowestSlot)
             Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_SCRAPPY);
     }
 }
 
-// LoadCurrentMapData (src/overworld.c), alongside
-// Achievement_CheckExplorationMilestones (Stage 17) -- Full Encounter
-// bookkeeping. "Took the encounter" means the route's Nuzlocke flag
-// (GET_NUZLOCKE_FLAG or the second-chance _EXTRA_FLAG, both set from
-// CB2_EndWildBattle in src/battle_setup.c) got set before the player left
-// it; leaving an encounter-eligible route (GetCurrentMapWildMonHeaderId() !=
-// HEADER_NONE) without resolving it breaks Full Encounter for the rest of
-// the run -- a sticky flag, the same idiom Stage 16 uses for mono-type/
-// type-roulette/etc.
-void Achievement_CheckNuzlockeExplorationMilestones(void)
-{
-    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
-    u16 route;
-
-    if (!gSaveBlock1Ptr->nuzlockeModeEnabled)
-        return;
-
-    route = GetCurrentMapId();
-    if (route == runData->nuzlockePendingRoute)
-        return; // still on the same route (e.g. a sub-area warp within it)
-
-    if (runData->nuzlockePendingRoute != ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE
-     && !GET_NUZLOCKE_FLAG(runData->nuzlockePendingRoute)
-     && !GET_NUZLOCKE_EXTRA_FLAG(runData->nuzlockePendingRoute))
-        runData->nuzlockeRouteSkipped = TRUE;
-
-    runData->nuzlockePendingRoute = (GetCurrentMapWildMonHeaderId() != HEADER_NONE)
-                                   ? route
-                                   : ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE;
-}
+// Stage 22 step 10: Achievement_CheckNuzlockeExplorationMilestones removed --
+// it existed solely for ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER's route-tracking,
+// which was removed too (see include/constants/achievements.h's Nuzlocke
+// category comment). Its call site in LoadCurrentMapData (src/overworld.c)
+// is removed along with it; runData->nuzlockePendingRoute/nuzlockeRouteSkipped
+// (include/global.h) are now unread but left in place.
 
 // GameClear (src/post_battle_event_funcs.c), alongside
 // Achievement_CheckTeamCompletionMilestones/Achievement_CheckEconomyCompletionMilestones
@@ -3019,13 +2971,14 @@ void Achievement_CheckChallengeCompletionMilestones(void)
      && gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_HARDCORE_SET);
 
-    if (!runData->levelCapEverExceeded)
-    {
-        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_CAPSTONE);
-        if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD
-         || FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES))
-            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED);
-    }
+    // Stage 22 step 9: ACHIEVEMENT_CHALLENGE_CAPSTONE removed -- it was this
+    // same !levelCapEverExceeded condition alone, a duplicate of
+    // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED minus its extra HARD/randomizer
+    // requirement.
+    if (!runData->levelCapEverExceeded
+     && (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD
+      || FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES)))
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED);
 
     if (runData->highestPartySizeThisRun != 0 && runData->highestPartySizeThisRun <= 3)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_THREE_POKEMON);
@@ -3057,17 +3010,26 @@ void Achievement_CheckNuzlockeCompletionMilestones(void)
     if (runData->nuzlockeMonsLost >= 5)
         Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_GRAVEYARD);
 
-    if (!Achievement_HasDuplicateEvolutionFamilyAmongOwned(party, playerCount))
-        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE);
+    // Stage 22 step 5: ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE ("no two catches
+    // from the same family") and ACHIEVEMENT_NUZLOCKE_NO_REVIVES ("never used
+    // a Revive") removed -- a genuine Nuzlocke already only keeps one catch
+    // per route and treats a fainted Pokemon as permanently boxed, so both
+    // conditions tend to hold on their own. Their sole helpers,
+    // Achievement_HasDuplicateEvolutionFamilyAmongOwned and
+    // Achievement_RecordReviveUsed, are removed along with them --
+    // runData->nuzlockeRevivesUsed is now unread but left in place (see the
+    // struct's own comment).
 
-    if (runData->nuzlockeRevivesUsed == 0)
-        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_NO_REVIVES);
+    // Stage 22 step 10: ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER removed -- see
+    // include/constants/achievements.h's Nuzlocke category comment.
+    // runData->nuzlockeRouteSkipped is now unread but left in place.
 
-    if (!runData->nuzlockeRouteSkipped)
-        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER);
-
-    if (!gAchievementProfile.boostsEnabled)
-        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR);
+    // Stage 22 step 9: ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR removed --
+    // too similar to ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP
+    // (Achievement_CheckChallengeCompletionMilestones, same GameClear call
+    // site): its !boostsEnabled condition is a strict subset of that
+    // achievement's, and it isn't gated on nuzlockeModeEnabled either, so it
+    // already fires for completed Nuzlocke runs too.
 
     // Stage 19: Nuzlocke Across Worlds/Chaos Survivor.
     if (Achievement_AnyRandomizerFlagSet())
@@ -3086,18 +3048,12 @@ void Achievement_RecordConsumableItemPurchase(void)
     gSaveBlock1Ptr->achievementRunData.boughtConsumableItem = TRUE;
 }
 
-// BS_ItemRestoreHP (src/battle_script_commands.c, in-battle) and
-// PokemonUseItemEffects's ITEM4_HEAL_HP/ITEM4_REVIVE case (src/pokemon.c,
-// out-of-battle) -- both call this only after confirming currentHP == 0,
-// i.e. the item actually revived a fainted Pokemon. Accumulates for the
-// whole run, unlike gBattleResults.numRevivesUsed which resets every battle.
-void Achievement_RecordReviveUsed(void)
-{
-    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
-
-    if (runData->nuzlockeRevivesUsed < 255)
-        runData->nuzlockeRevivesUsed++;
-}
+// Stage 22 step 5: Achievement_RecordReviveUsed (formerly called from
+// BS_ItemRestoreHP in src/battle_script_commands.c and PokemonUseItemEffects
+// in src/pokemon.c) removed along with its sole achievement,
+// ACHIEVEMENT_NUZLOCKE_NO_REVIVES -- see
+// Achievement_CheckNuzlockeCompletionMilestones. nuzlockeRevivesUsed is now
+// unread but left in AchievementRunData (see the struct's own comment).
 
 // RemoveFaintedMonsFromParty (src/overworld.c) -- the single function every
 // Nuzlocke fainted-mon removal funnels through, called once per Pokemon
@@ -3280,19 +3236,10 @@ void Achievement_CheckFamilyMilestone(enum Species species)
     Achievement_TryComplete(ACHIEVEMENT_COLLECT_FAMILY_REUNION);
 }
 
-// GiveCapturedMonToPlayer (src/pokemon.c) and Task_EggHatch (src/egg_hatch.c)
-// -- the same two funnels Achievement_CheckCaptureMilestones/
-// Achievement_CheckEggMilestones already hook.
-void Achievement_CheckPerfectIvMilestone(struct Pokemon *mon)
-{
-    if (GetMonData(mon, MON_DATA_HP_IV) == MAX_PER_STAT_IVS
-     && GetMonData(mon, MON_DATA_ATK_IV) == MAX_PER_STAT_IVS
-     && GetMonData(mon, MON_DATA_DEF_IV) == MAX_PER_STAT_IVS
-     && GetMonData(mon, MON_DATA_SPEED_IV) == MAX_PER_STAT_IVS
-     && GetMonData(mon, MON_DATA_SPATK_IV) == MAX_PER_STAT_IVS
-     && GetMonData(mon, MON_DATA_SPDEF_IV) == MAX_PER_STAT_IVS)
-        Achievement_TryComplete(ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN);
-}
+// Stage 22 step 5: Achievement_CheckPerfectIvMilestone (formerly called from
+// GiveCapturedMonToPlayer in src/pokemon.c and Task_EggHatch in
+// src/egg_hatch.c) removed along with its sole achievement,
+// ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN -- see src/data/achievements.h.
 
 // RemoveFaintedMonsFromParty (src/overworld.c) and FldEff_PokecenterHeal
 // (src/field_effect.c), both called from inside their existing
@@ -3423,21 +3370,41 @@ void Achievement_CheckBattleRecordsMilestones(void)
         // Legend of the Run bookkeeping -- checked at GameClear
         // (Achievement_CheckRecordsCompletionMilestones), since it only
         // means anything for a completed run.
-        u8 presentSlots = 0;
-
-        for (i = 0; i < playerCount; i++)
-        {
-            if (GetMonData(&party[i], MON_DATA_SPECIES) != SPECIES_NONE)
-                presentSlots |= 1 << i;
-        }
+        //
+        // Stage 22 step 8: fixed to track actual Pokemon (by personality,
+        // survives evolution), not party slots -- the old presentSlots
+        // bitmask (see its own field comment in include/global.h) tracked
+        // occupied slots instead, and slot 0 is never empty while you're
+        // able to battle at all, so it trivially always fired. This keeps
+        // legendCandidatePersonalities as the set of Pokemon that have
+        // appeared in every major battle so far, shrinking it to the
+        // intersection with the current party each time.
         if (!runDataExt->anyMajorBattleThisRun)
         {
-            runDataExt->presentAtEveryMajorBattleSlots = presentSlots;
+            runDataExt->legendCandidateCount = 0;
+            for (i = 0; i < playerCount && i < PARTY_SIZE; i++)
+                runDataExt->legendCandidatePersonalities[runDataExt->legendCandidateCount++] = GetMonData(&party[i], MON_DATA_PERSONALITY);
             runDataExt->anyMajorBattleThisRun = TRUE;
         }
-        else
+        else if (runDataExt->legendCandidateCount != 0)
         {
-            runDataExt->presentAtEveryMajorBattleSlots &= presentSlots;
+            u8 keep = 0;
+
+            for (i = 0; i < runDataExt->legendCandidateCount; i++)
+            {
+                u32 personality = runDataExt->legendCandidatePersonalities[i];
+                u8 j;
+
+                for (j = 0; j < playerCount; j++)
+                {
+                    if (GetMonData(&party[j], MON_DATA_PERSONALITY) == personality)
+                    {
+                        runDataExt->legendCandidatePersonalities[keep++] = personality;
+                        break;
+                    }
+                }
+            }
+            runDataExt->legendCandidateCount = keep;
         }
 
         // Underestimated: the party slot credited with the very last
@@ -3472,10 +3439,9 @@ void Achievement_CheckRecordsMilestones(void)
 {
     struct Pokemon *party = gParties[B_TRAINER_PLAYER];
     u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
-    u32 storedCount = 0;
     u8 level100Count = 0;
     u8 maxFriendshipCount = 0;
-    u8 i, box, slot;
+    u8 i;
 
     // Growing Strong.
     for (i = 0; i < playerCount; i++)
@@ -3507,20 +3473,11 @@ void Achievement_CheckRecordsMilestones(void)
     if (playerCount == PARTY_SIZE && maxFriendshipCount == PARTY_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_RECORD_INSEPARABLE);
 
-    // Box Filler/Storage Baron -- PC boxes only ("in storage"), not the
-    // active party.
-    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
-    {
-        for (slot = 0; slot < IN_BOX_COUNT; slot++)
-        {
-            if (GetBoxMonDataAt(box, slot, MON_DATA_SPECIES) != SPECIES_NONE)
-                storedCount++;
-        }
-    }
-    if (storedCount >= 100)
-        Achievement_TryComplete(ACHIEVEMENT_COLLECT_BOX_FILLER);
-    if (storedCount >= 300)
-        Achievement_TryComplete(ACHIEVEMENT_COLLECT_STORAGE_BARON);
+    // Stage 22 step 5: ACHIEVEMENT_COLLECT_BOX_FILLER ("store 100 Pokemon at
+    // once") and ACHIEVEMENT_COLLECT_STORAGE_BARON ("store 300 at once")
+    // removed -- a full playthrough's worth of catching fills PC boxes up on
+    // its own. The PC-box-scanning loop that used to back them (storedCount)
+    // is removed along with them.
 
     // One of Each -- party and boxes combined.
     if (Achievement_CountDistinctOwnedSpecies(party, playerCount, 10) >= 10)
@@ -3545,7 +3502,9 @@ void Achievement_CheckRecordsCompletionMilestones(void)
 {
     struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
 
-    if (runDataExt->anyMajorBattleThisRun && runDataExt->presentAtEveryMajorBattleSlots != 0)
+    // Stage 22 step 8: reads the fixed legendCandidateCount now -- see the
+    // bookkeeping's own comment in Achievement_CheckBattleRecordsMilestones.
+    if (runDataExt->anyMajorBattleThisRun && runDataExt->legendCandidateCount != 0)
         Achievement_TryComplete(ACHIEVEMENT_RECORD_LEGEND_OF_THE_RUN);
 
     // Mirror the streak high-water mark here too, not only on a party wipe
@@ -3584,30 +3543,19 @@ void Achievement_CheckPokecenterMilestone(void)
 
 // ---- Stage 21 (catalog wave 8, category Q): Profile Meta, Mastery & -----
 // Prestige. See include/constants/achievements.h's category Q comment for
-// the roster-to-condition breakdown and the self-reference/known-gap notes
-// that apply to a few of the entries below.
+// the roster-to-condition breakdown. Stage 22 step 12 cut this wave from 30
+// entries to 10 -- Achievement_CountInCategory, Achievement_AnyCategoryFullyCompletedAtTier,
+// Achievement_CheckCategoryPercentMilestone, Achievement_GoldOrBetterFullyCompletedAcrossCategories
+// (and its sReplayArchitectCategories list), and Achievement_CountNonHiddenExcluding
+// existed solely for entries removed in that step and are gone; see
+// src/data/achievements.h's own comments on each removed entry for the full
+// list and rationale.
 
-// The whole enabler (design doc, plan Stage 21.1): every category-scoped
-// entry in this wave is built from these two. Static/file-internal -- unlike
-// every prior wave's category, nothing outside src/achievements.c currently
-// needs a per-category count.
-static u16 Achievement_CountInCategory(enum AchievementCategory category, u8 tier)
-{
-    u16 count = 0;
-    u16 i;
-
-    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
-    {
-        if (gAchievements[i].category != category)
-            continue;
-        if (tier != ACHIEVEMENT_TIER_COUNT && gAchievements[i].tier != tier)
-            continue;
-        count++;
-    }
-
-    return count;
-}
-
+// The whole enabler (design doc, plan Stage 21.1) for what's left: category-
+// scoped completion counts. Static/file-internal -- unlike every prior
+// wave's category, nothing outside src/achievements.c currently needs a
+// per-category count. Only one caller remains post-step-12 (Achievement
+// Hunter's Achievement_HasBronzeInEveryCategory below).
 static u16 Achievement_CountCompletedInCategory(enum AchievementCategory category, u8 tier)
 {
     u16 count = 0;
@@ -3626,83 +3574,10 @@ static u16 Achievement_CountCompletedInCategory(enum AchievementCategory categor
     return count;
 }
 
-// Bronze/Silver/Gold/Diamond Master, Category Conqueror: true if ANY ONE
-// category is fully completed at the given tier (ACHIEVEMENT_TIER_COUNT ==
-// every tier, for Category Conqueror).
-static bool8 Achievement_AnyCategoryFullyCompletedAtTier(u8 tier)
-{
-    enum AchievementCategory category;
-
-    for (category = 0; category < ACHIEVEMENT_CATEGORIES_COUNT; category++)
-    {
-        u16 total = Achievement_CountInCategory(category, tier);
-
-        if (total > 0 && Achievement_CountCompletedInCategory(category, tier) == total)
-            return TRUE;
-    }
-
-    return FALSE;
-}
-
-// Challenge Conqueror/Unbroken Will/Chaos Master: percent is an integer 0-100,
-// compared with completed*100 >= total*percent so no floating point is needed.
-static void Achievement_CheckCategoryPercentMilestone(enum AchievementCategory category, u8 percent, u16 achievementId)
-{
-    u16 total = Achievement_CountInCategory(category, ACHIEVEMENT_TIER_COUNT);
-    u16 completed = Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_COUNT);
-
-    if (total > 0 && (u32)completed * 100 >= (u32)total * percent)
-        Achievement_TryComplete(achievementId);
-}
-
-// Replay Architect: every Gold-or-better achievement across a fixed list of
-// categories. "Gold-or-better" is just Gold's count plus Diamond's count --
-// no third helper needed beyond the two documented ones above.
-static bool8 Achievement_GoldOrBetterFullyCompletedAcrossCategories(const enum AchievementCategory *categories, u8 numCategories)
-{
-    u16 total = 0;
-    u16 completed = 0;
-    u8 i;
-
-    for (i = 0; i < numCategories; i++)
-    {
-        total += Achievement_CountInCategory(categories[i], ACHIEVEMENT_TIER_GOLD)
-               + Achievement_CountInCategory(categories[i], ACHIEVEMENT_TIER_DIAMOND);
-        completed += Achievement_CountCompletedInCategory(categories[i], ACHIEVEMENT_TIER_GOLD)
-                   + Achievement_CountCompletedInCategory(categories[i], ACHIEVEMENT_TIER_DIAMOND);
-    }
-
-    return total > 0 && completed == total;
-}
-
-// Master of the Game/Nothing Left to Prove: totals over every non-hidden
-// achievement EXCEPT excludeId. Both callers pass their own ID -- see the
-// self-reference note in constants/achievements.h's category Q comment for
-// why that exclusion is required, not just tidy.
-static void Achievement_CountNonHiddenExcluding(u16 excludeId, u16 *totalOut, u16 *completedOut)
-{
-    u16 total = 0;
-    u16 completed = 0;
-    u16 i;
-
-    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
-    {
-        if (i == excludeId)
-            continue;
-        if (gAchievements[i].hidden)
-            continue;
-        total++;
-        if (Achievement_IsCompleted(i))
-            completed++;
-    }
-
-    *totalOut = total;
-    *completedOut = completed;
-}
-
 // Diamond Standard (backfill): every Diamond-tier achievement, excluding
-// itself for the same reason as Achievement_CountNonHiddenExcluding above --
-// it is itself Diamond-tier.
+// itself -- it is itself Diamond-tier, and without the exclusion the
+// condition could never become true (see the self-reference note in
+// constants/achievements.h's category Q comment).
 static bool8 Achievement_AllDiamondCompleted(u16 excludeId)
 {
     u16 total = 0;
@@ -3761,39 +3636,8 @@ static bool8 Achievement_HasCompletedEveryTier(void)
     return TRUE;
 }
 
-// Master of All: a completed Gold-or-better achievement in every category.
-static bool8 Achievement_HasGoldOrBetterInEveryCategory(void)
-{
-    enum AchievementCategory category;
-
-    for (category = 0; category < ACHIEVEMENT_CATEGORIES_COUNT; category++)
-    {
-        u16 completed = Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_GOLD)
-                       + Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_DIAMOND);
-
-        if (completed == 0)
-            return FALSE;
-    }
-
-    return TRUE;
-}
-
-static u16 Achievement_CountTotalCompleted(void)
-{
-    u16 count = 0;
-    u16 i;
-
-    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
-    {
-        if (Achievement_IsCompleted(i))
-            count++;
-    }
-
-    return count;
-}
-
-// Full Investment/Selective Mastery/Meta-Prog Master all need to look across
-// every real boost (BOOST_NONE excluded, hence starting at 1).
+// Full Investment: needs to look across every real boost (BOOST_NONE
+// excluded, hence starting at 1).
 static u32 AchievementBoost_TotalPurchasedLevels(void)
 {
     u32 total = 0;
@@ -3804,59 +3648,6 @@ static u32 AchievementBoost_TotalPurchasedLevels(void)
 
     return total;
 }
-
-static bool8 AchievementBoost_AllMaxed(void)
-{
-    u16 boostId;
-
-    for (boostId = BOOST_NONE + 1; boostId < BOOSTS_COUNT; boostId++)
-    {
-        if (AchievementBoost_GetLevel(boostId) < AchievementBoost_GetInfo(boostId)->maxLevel)
-            return FALSE;
-    }
-
-    return TRUE;
-}
-
-// Easter Egg Hunter: hidden achievements completed, excluding itself for the
-// same self-reference reason as Achievement_AllDiamondCompleted above. NOTE
-// (see constants/achievements.h's category Q comment): it is currently the
-// only hidden achievement in the catalog, so this is unattainable until
-// secret content adds more.
-static u16 Achievement_CountHiddenCompleted(u16 excludeId)
-{
-    u16 count = 0;
-    u16 i;
-
-    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
-    {
-        if (i == excludeId)
-            continue;
-        if (!gAchievements[i].hidden)
-            continue;
-        if (Achievement_IsCompleted(i))
-            count++;
-    }
-
-    return count;
-}
-
-// Meta-Prog Master: re-checked from both Achievement_CheckMasteryMilestones
-// (an achievement completing is the "200 completed" half) and
-// Achievement_CheckBoostMilestones (a boost reaching max level is the other
-// half) below.
-static void Achievement_CheckMetaProgMaster(void)
-{
-    if (Achievement_CountTotalCompleted() >= 200 && AchievementBoost_AllMaxed())
-        Achievement_TryComplete(ACHIEVEMENT_PROFILE_META_PROG_MASTER);
-}
-
-// Replay Architect's four categories -- file scope, same convention as
-// sVisitedTownFlags[] above, rather than a function-local static.
-static const enum AchievementCategory sReplayArchitectCategories[] = {
-    ACHIEVEMENT_CATEGORY_TEAM, ACHIEVEMENT_CATEGORY_CHALLENGE,
-    ACHIEVEMENT_CATEGORY_NUZLOCKE, ACHIEVEMENT_CATEGORY_RANDOMIZER,
-};
 
 // Called from the tail of Achievement_TryComplete, alongside the existing
 // Achievement_CheckPointMilestones -- every entry here is a meta-achievement
@@ -3869,51 +3660,10 @@ static const enum AchievementCategory sReplayArchitectCategories[] = {
 // there are only ACHIEVEMENTS_COUNT of those to ever exhaust.
 static void Achievement_CheckMasteryMilestones(void)
 {
-    u16 total, completed;
-
-    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_BRONZE))
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_BRONZE_MASTER);
-    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_SILVER))
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_SILVER_MASTER);
-    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_GOLD))
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_GOLD_MASTER);
-    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_DIAMOND))
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_DIAMOND_MASTER);
-    if (Achievement_AnyCategoryFullyCompletedAtTier(ACHIEVEMENT_TIER_COUNT))
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_CATEGORY_CONQUEROR);
-
-    Achievement_CountNonHiddenExcluding(ACHIEVEMENT_MASTERY_MASTER_OF_THE_GAME, &total, &completed);
-    if (total > 0 && (u32)completed * 100 >= (u32)total * 90)
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_MASTER_OF_THE_GAME);
-
-    Achievement_CountNonHiddenExcluding(ACHIEVEMENT_MASTERY_NOTHING_LEFT_TO_PROVE, &total, &completed);
-    if (total > 0 && completed == total)
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_NOTHING_LEFT_TO_PROVE);
-
-    total = Achievement_CountInCategory(ACHIEVEMENT_CATEGORY_NG_PLUS, ACHIEVEMENT_TIER_COUNT);
-    if (total > 0 && Achievement_CountCompletedInCategory(ACHIEVEMENT_CATEGORY_NG_PLUS, ACHIEVEMENT_TIER_COUNT) == total)
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_ENDGAME_EXPLORER);
-
-    Achievement_CheckCategoryPercentMilestone(ACHIEVEMENT_CATEGORY_CHALLENGE, 80, ACHIEVEMENT_MASTERY_CHALLENGE_CONQUEROR);
-    Achievement_CheckCategoryPercentMilestone(ACHIEVEMENT_CATEGORY_NUZLOCKE, 80, ACHIEVEMENT_MASTERY_UNBROKEN_WILL);
-    Achievement_CheckCategoryPercentMilestone(ACHIEVEMENT_CATEGORY_RANDOMIZER, 80, ACHIEVEMENT_MASTERY_CHAOS_MASTER);
-
-    if (Achievement_GoldOrBetterFullyCompletedAcrossCategories(sReplayArchitectCategories, ARRAY_COUNT(sReplayArchitectCategories)))
-        Achievement_TryComplete(ACHIEVEMENT_MASTERY_REPLAY_ARCHITECT);
-
-    if (gAchievementProfile.playthroughsCompleted >= 10)
-        Achievement_TryComplete(ACHIEVEMENT_PROFILE_FREQUENT_FLYER);
-    if (gAchievementProfile.playthroughsCompleted >= 25)
-        Achievement_TryComplete(ACHIEVEMENT_PROFILE_VETERAN_TRAINER);
-    if (gAchievementProfile.playthroughsCompleted >= 50)
-        Achievement_TryComplete(ACHIEVEMENT_PROFILE_RESIDENT_CHAMPION);
-
     if (Achievement_HasBronzeInEveryCategory())
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER);
     if (Achievement_HasCompletedEveryTier())
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_WELL_ROUNDED);
-    if (Achievement_HasGoldOrBetterInEveryCategory())
-        Achievement_TryComplete(ACHIEVEMENT_PROFILE_MASTER_OF_ALL);
 
     if (gAchievementProfile.totalPointsEarned >= 5000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_HOARDER);
@@ -3924,11 +3674,6 @@ static void Achievement_CheckMasteryMilestones(void)
 
     if (Achievement_AllDiamondCompleted(ACHIEVEMENT_MASTERY_DIAMOND_STANDARD))
         Achievement_TryComplete(ACHIEVEMENT_MASTERY_DIAMOND_STANDARD);
-
-    if (Achievement_CountHiddenCompleted(ACHIEVEMENT_HIDDEN_EASTER_EGG_HUNTER) >= 5)
-        Achievement_TryComplete(ACHIEVEMENT_HIDDEN_EASTER_EGG_HUNTER);
-
-    Achievement_CheckMetaProgMaster();
 }
 
 // Called from AchievementBoost_Purchase/_Reset -- boostLevels[]/
@@ -3969,8 +3714,6 @@ static void Achievement_CheckBoostMilestones(void)
         if (maxedCount == 1 && zeroCount >= 5)
             Achievement_TryComplete(ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY);
     }
-
-    Achievement_CheckMetaProgMaster();
 }
 
 // ---- Debug-only mutators (design doc §21, Stage 1.7) -------------------

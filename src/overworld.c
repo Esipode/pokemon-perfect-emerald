@@ -685,9 +685,8 @@ static void LoadCurrentMapData(void)
     gSaveBlock1Ptr->mapLayoutId = gMapHeader.mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout(gMapHeader.mapLayoutId);
     Achievement_CheckExplorationMilestones();
-    // Stage 18 (catalog wave 5): Full Encounter bookkeeping. Gates itself
-    // internally on nuzlockeModeEnabled.
-    Achievement_CheckNuzlockeExplorationMilestones();
+    // Stage 22 step 10: Achievement_CheckNuzlockeExplorationMilestones call
+    // removed along with the function -- see src/achievements.c.
 }
 
 static void LoadSaveblockMapHeader(void)

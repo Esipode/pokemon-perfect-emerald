@@ -3317,9 +3317,9 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     // reset only at battle end (after this catch script already ran).
     if (gDexNavSpecies != SPECIES_NONE)
         Achievement_CheckDexNavCaptureMilestone();
-    // Stage 20 (catalog wave 7): Perfect Specimen. Same funnel as every
-    // other capture check above.
-    Achievement_CheckPerfectIvMilestone(mon);
+    // Stage 22 step 5: the Achievement_CheckPerfectIvMilestone(mon) call that
+    // used to be here (Perfect Specimen) was removed along with that
+    // achievement -- see src/achievements.c.
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
@@ -4069,12 +4069,11 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             break;
                         }
 
-                        // Stage 18 (catalog wave 5): the out-of-battle
-                        // counterpart to BS_ItemRestoreHP's in-battle hook --
-                        // validity just confirmed effectFlags has the REVIVE
-                        // bit AND currentHP == 0, so this is a genuine revive.
-                        if (effectFlags & (ITEM4_REVIVE >> 2))
-                            Achievement_RecordReviveUsed();
+                        // Stage 22 step 5: the Achievement_RecordReviveUsed()
+                        // call that used to be here (the out-of-battle
+                        // counterpart to BS_ItemRestoreHP's in-battle hook)
+                        // was removed along with ACHIEVEMENT_NUZLOCKE_NO_REVIVES
+                        // -- see src/achievements.c.
 
                         // Get amount of HP to restore
                         dataUnsigned = itemEffect[itemEffectParam++];

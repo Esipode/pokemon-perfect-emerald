@@ -11190,10 +11190,10 @@ void BS_ItemRestoreHP(void)
                 // Track the number of Revives used in a battle.
                 if (gBattleResults.numRevivesUsed < 255)
                     gBattleResults.numRevivesUsed++;
-                // Stage 18 (catalog wave 5): a cumulative per-run count, not
-                // gBattleResults' per-battle one -- No Second Chances needs
-                // "never, all run."
-                Achievement_RecordReviveUsed();
+                // Stage 22 step 5: the Achievement_RecordReviveUsed() call
+                // that used to be here (a cumulative per-run count for
+                // ACHIEVEMENT_NUZLOCKE_NO_REVIVES) was removed along with
+                // that achievement -- see src/achievements.c.
             }
             else if (gBattleResults.numHealingItemsUsed < 255)
             {

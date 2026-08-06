@@ -2004,7 +2004,7 @@ static void DebugAction_Achievements_MarkPlaythroughComplete(u8 taskId)
 }
 
 #define tDumpPage data[5]
-#define ACHIEVEMENTS_DUMP_PAGE_COUNT 5
+#define ACHIEVEMENTS_DUMP_PAGE_COUNT 7
 
 static void Debug_Display_AchievementDumpPage(u8 windowId, u32 page)
 {
@@ -2043,12 +2043,28 @@ static void Debug_Display_AchievementDumpPage(u8 windowId, u32 page)
         ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.shiniesObtained, STR_CONV_MODE_LEFT_ALIGN, 4);
         StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Nuzlockes: {STR_VAR_1}{CLEAR_TO 90}\nRandomized: {STR_VAR_2}{CLEAR_TO 90}\nShinies: {STR_VAR_3}{CLEAR_TO 90}"));
         break;
+    // Stage 22 step 2: the new lifetime counters backing the achievements
+    // that used to reset every new game (GetGameStat() lives in SaveBlock1,
+    // which ClearSav1 zeroes). Two pages, since there are seven fields.
+    case 4:
+        ConvertIntToDecimalStringN(gStringVar1, gAchievementProfile.trainerBattlesLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
+        ConvertIntToDecimalStringN(gStringVar2, gAchievementProfile.wildBattlesLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
+        ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.eggsHatchedLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Trainer btls: {STR_VAR_1}{CLEAR_TO 90}\nWild btls: {STR_VAR_2}{CLEAR_TO 90}\nEggs hatched: {STR_VAR_3}{CLEAR_TO 90}"));
+        break;
+    case 5:
+        ConvertIntToDecimalStringN(gStringVar1, gAchievementProfile.hiddenItemsFoundLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
+        ConvertIntToDecimalStringN(gStringVar2, gAchievementProfile.npcsTalkedToLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
+        ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.shopPurchasesLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Hidden items: {STR_VAR_1}{CLEAR_TO 90}\nNPCs talked: {STR_VAR_2}{CLEAR_TO 90}\nShop visits: {STR_VAR_3}{CLEAR_TO 90}"));
+        break;
     default:
-        // Padded to the same 3-line shape as the other pages (two trailing
-        // clear-only lines) so nothing from a previous page bleeds through --
+        // Padded to the same 3-line shape as the other pages (one trailing
+        // clear-only line) so nothing from a previous page bleeds through --
         // AddTextPrinterParameterized never clears lines it doesn't draw to.
-        StringCopy(gStringVar1, gSaveBlock1Ptr->achievementsBlocked ? sDebugText_True : sDebugText_False);
-        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Run blocked: {STR_VAR_1}{CLEAR_TO 90}\n{CLEAR_TO 90}\n{CLEAR_TO 90}"));
+        ConvertIntToDecimalStringN(gStringVar1, gAchievementProfile.moneySpentLifetime, STR_CONV_MODE_LEFT_ALIGN, 8);
+        StringCopy(gStringVar2, gSaveBlock1Ptr->achievementsBlocked ? sDebugText_True : sDebugText_False);
+        StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Money spent: {STR_VAR_1}{CLEAR_TO 90}\nRun blocked: {STR_VAR_2}{CLEAR_TO 90}\n{CLEAR_TO 90}"));
         break;
     }
 

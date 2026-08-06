@@ -657,10 +657,18 @@ struct AchievementRunDataExt
     u8  leagueWinsSinceWipe;             // Elite Four/Champion wins since the last party wipe, for League Streak (REC-007)
     u16 koCountPerSlot[PARTY_SIZE];      // cumulative opposing KOs credited to whatever's in this party slot, any battle -- Veteran Team (REC-008)
     u16 majorKoCountPerSlot[PARTY_SIZE]; // same, major battles only -- Old Reliable (REC-009)
-    u8  presentAtEveryMajorBattleSlots;  // bitmask over party slots, ANDed down at every major battle win -- Legend of the Run (REC-010)
-    bool8 anyMajorBattleThisRun;         // presentAtEveryMajorBattleSlots is meaningless until this is set
+    u8  presentAtEveryMajorBattleSlots;  // unused -- Stage 22 step 8: replaced by legendCandidatePersonalities/legendCandidateCount below. This bitmask tracked occupied party SLOTS rather than individual Pokemon, and slot 0 is never empty while you're able to battle at all, so it trivially always kept bit 0 set -- Legend of the Run fired on essentially every completed run. Left in place rather than reflowing this struct's fields.
+    bool8 anyMajorBattleThisRun;         // legendCandidatePersonalities is meaningless until this is set (still used by the Stage 22 step 8 fix)
     u8  comebackWinsThisRun;             // Comeback Count (REC-011)
     u8  tmsTaughtThisRun;                // Move Tutor (backfill)
+
+    // Stage 22 step 8: Legend of the Run (REC-010), fixed. Tracks actual
+    // Pokemon (by personality, survives evolution) rather than party
+    // slots -- the set of candidates still present in every major battle
+    // so far this run, shrunk by intersection each major battle win. Empty
+    // once no single Pokemon has made it into every major battle.
+    u32 legendCandidatePersonalities[PARTY_SIZE];
+    u8  legendCandidateCount;
 };
 
 struct SaveBlock2
@@ -703,7 +711,7 @@ struct SaveBlock2
     /*0x624*/ u16 contestLinkResults[CONTEST_CATEGORIES_COUNT][CONTESTANT_COUNT];
     /*0x64C*/ struct BattleFrontier frontier;
     struct AchievementRunDataExt achievementRunDataExt; // Stage 17 (catalog wave 4) -- see that struct's comment
-}; // sizeof=0xF2C
+}; // sizeof=0xF2C prior to Stage 22 step 8's ~28-byte addition to AchievementRunDataExt (legendCandidatePersonalities/legendCandidateCount) -- comfortably inside SaveBlock2FreeSpace's SECTOR_DATA_SIZE margin (src/save.c), exact new figure not recomputed here since it needs a build to measure precisely
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
 
@@ -1241,13 +1249,13 @@ struct AchievementRunData
     // never be read back on the same save). See src/achievements.c for the
     // per-field hook-site breakdown.
     u32 starterPersonality;          // the run's starter, by personality (survives evolution) -- for No Freebies; 0 == not yet recorded
-    u16 nuzlockePendingRoute;        // Full Encounter bookkeeping: the encounter-eligible route (GetCurrentMapId()) currently awaiting resolution; ACHIEVEMENT_NUZLOCKE_NO_PENDING_ROUTE when none
+    u16 nuzlockePendingRoute;        // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), removed Stage 22 step 10; left in place rather than reflowing this struct's fields
     u8  highestPartySizeThisRun;     // high-water mark for Three-Pokemon Challenge/Solo Journey
     u8  nuzlockeMonsLost;            // for Perfect Nuzlocke/The Graveyard
-    u8  nuzlockeRevivesUsed;         // for No Second Chances
+    u8  nuzlockeRevivesUsed;         // unused -- backed No Second Chances (ACHIEVEMENT_NUZLOCKE_NO_REVIVES), removed Stage 22 step 5; left in place rather than reflowing this struct's fields
     bool8 starterActedInMajorBattle; // for No Freebies (sticky, same "Broken" idiom as Stage 16's fields)
     bool8 boughtConsumableItem;      // for No Shopping Run (sticky)
-    bool8 nuzlockeRouteSkipped;      // for Full Encounter (sticky)
+    bool8 nuzlockeRouteSkipped;      // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), removed Stage 22 step 10; left in place rather than reflowing this struct's fields
 };
 
 struct SaveBlock1
