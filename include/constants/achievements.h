@@ -42,11 +42,11 @@
 //   I. ACHIEVEMENT_EGG_1 .. ACHIEVEMENT_EGG_SHINY (4)
 //      Hatched egg count/shiny -- Achievement_CheckEggMilestones,
 //      Task_EggHatch (src/egg_hatch.c).
-//   J. ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE .. ACHIEVEMENT_POINTS_1000 (4)
+//   J. ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE .. ACHIEVEMENT_POINTS_2000 (4)
 //      Multi-run/persistent-profile milestones -- checked from inside the
 //      existing Achievement_OnFirstPlaythroughComplete /
 //      Achievement_OnNewGamePlusStarted / Achievement_OnNewGamePlusCycleCompleted
-//      wrapper functions (Stages 5/12); ACHIEVEMENT_POINTS_1000 is checked
+//      wrapper functions (Stages 5/12); ACHIEVEMENT_POINTS_2000 is checked
 //      from inside Achievement_TryComplete itself. Stage 22 step 4: shrunk
 //      from 10 -- see category O's note for the repeat-count ladder this
 //      category and O were both trimmed of. Stage 22 step 12: down to 4 --
@@ -230,10 +230,8 @@
 // src/data/achievements.h's own comments on the removed entries for the full
 // list, and Achievement_CheckMasteryMilestones/Achievement_CheckBoostMilestones
 // (src/achievements.c) for the code-side removal. Achievement_CountInCategory
-// (used only by removed entries) is gone entirely; Achievement_CountCompletedInCategory
-// survives with a single remaining caller (Achievement Hunter's
-// Achievement_HasBronzeInEveryCategory). playthroughConfigsSeen[]/_Count
-// (backed the removed Replay Master) is left in place, unused, in
+// (used only by removed entries) is gone entirely. playthroughConfigsSeen[]/
+// _Count (backed the removed Replay Master) is left in place, unused, in
 // AchievementProfile (include/achievements.h).
 //
 // Self-reference note: Diamond Standard is the one surviving entry that
@@ -246,15 +244,18 @@
 // SAME id is refused by Achievement_IsCompleted's guard, so "itself" can
 // never contribute to its own count on the completing check).
 //
-// Known catalog gap, left as literally specified rather than reinterpreted:
-// Achievement Hunter (Bronze in every category) is currently unattainable --
-// CHALLENGE, NUZLOCKE and PROFILE have zero Bronze-tier entries between them
-// -- until a future wave gives each of those three at least one.
+// Stage 23: the wave's other known catalog gap -- Achievement Hunter (Bronze
+// in every category) was unattainable, since Challenge, NG+, Nuzlocke and
+// Profile have zero Bronze-tier entries between them -- is resolved by
+// removing Achievement Hunter itself, down to 9 entries. Its sole helpers,
+// Achievement_CountCompletedInCategory and
+// Achievement_HasBronzeInEveryCategory (src/achievements.c), go with it.
 //
-//   Q. ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER .. ACHIEVEMENT_MASTERY_DIAMOND_STANDARD (10)
+//   Q. ACHIEVEMENT_PROFILE_WELL_ROUNDED .. ACHIEVEMENT_MASTERY_DIAMOND_STANDARD (9)
 //      Profile Meta, Mastery & Prestige -- see src/achievements.c for the
 //      per-entry check-function breakdown. All ACHIEVEMENT_CATEGORY_PROFILE.
 //      Stage 22 step 12: down from 30, see the category's own comment above.
+//      Stage 23: down to 9, see the Stage 23 note above.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -333,7 +334,7 @@ enum AchievementId
     ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE,
     ACHIEVEMENT_NUZLOCKE_1,
     ACHIEVEMENT_RANDOMIZED_1,
-    ACHIEVEMENT_POINTS_1000,
+    ACHIEVEMENT_POINTS_2000,
 
     // K. Battle Mastery (29) -- Stage 22 step 5: was 30. ACHIEVEMENT_BATTLE_TYPE_MASTER
     // ("win a trainer battle without landing a super-effective hit") removed
@@ -569,14 +570,15 @@ enum AchievementId
     ACHIEVEMENT_RECORD_EGG_MARATHON,
     ACHIEVEMENT_RECORD_NURSES_NIGHTMARE,
 
-    // Q. Profile Meta, Mastery & Prestige (10) -- Stage 22 step 12: was 30.
+    // Q. Profile Meta, Mastery & Prestige (9) -- Stage 22 step 12: was 30.
     // Bronze/Silver/Gold/Diamond Master, Category Conqueror, Master of the
     // Game, Nothing Left to Prove, Endgame Explorer, Challenge Conqueror,
     // Unbroken Will, Chaos Master, Replay Architect, Frequent Flyer, Veteran
     // Trainer, Resident Champion, Master of All, Meta-Prog Master, New Team
     // New Me, Replay Master, and Easter Egg Hunter all removed -- see
     // src/data/achievements.h's own comments for each one's rationale.
-    ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER,
+    // Stage 23: down to 9 -- Achievement Hunter removed too, see
+    // src/data/achievements.h's own comment.
     ACHIEVEMENT_PROFILE_WELL_ROUNDED,
     ACHIEVEMENT_PROFILE_POINT_HOARDER,
     ACHIEVEMENT_PROFILE_POINT_LEGEND,
@@ -598,13 +600,15 @@ enum AchievementId
 
 // design doc catalog wave 8 (Stage 21, category Q): mirrors the draft
 // catalog's own section headers, so "complete every Bronze in a
-// category"-style Mastery/Prestige achievements can be checked with a single
-// helper (Achievement_CountCompletedInCategory, src/achievements.c) now that
-// wave exists -- Stage 22 step 12 cut most of that wave's entries, leaving
-// only Achievement Hunter still reading it. Added in Stage 15 and backfilled
-// onto every existing entry rather than retrofitted later, since retrofitting
-// it across ~270 entries would have been far worse than authoring it from
-// there on.
+// category"-style Mastery/Prestige achievements could be checked with a
+// single helper (Achievement_CountCompletedInCategory, src/achievements.c)
+// once that wave existed -- Stage 22 step 12 cut most of that wave's entries,
+// and Stage 23 removed the helper's last reader (Achievement Hunter) along
+// with the helper itself. The per-entry .category field stays: every other
+// category-scoped feature (achievements_menu.c's tier lists, etc.) still
+// reads it. Added in Stage 15 and backfilled onto every existing entry rather
+// than retrofitted later, since retrofitting it across ~270 entries would
+// have been far worse than authoring it from there on.
 enum AchievementCategory
 {
     ACHIEVEMENT_CATEGORY_ADVENTURE,
@@ -629,12 +633,13 @@ enum AchievementTier
     ACHIEVEMENT_TIER_GOLD,
     ACHIEVEMENT_TIER_DIAMOND,
 
-    // Stage 21 (category Q): not a real tier -- passed to
-    // Achievement_CountCompletedInCategory (src/achievements.c) to mean
-    // "every tier" rather than one specific one. No remaining caller passes
-    // it after Stage 22 step 12 (Achievement Hunter, the sole caller left,
-    // always asks for ACHIEVEMENT_TIER_BRONZE specifically), but the
-    // function itself still supports it.
+    // Stage 23: was also passed to Achievement_CountCompletedInCategory
+    // (src/achievements.c) to mean "every tier" rather than one specific
+    // one, for Achievement Hunter -- that function and achievement are both
+    // removed now (see category Q's comment above), so this is back to being
+    // an ordinary COUNT sentinel: loop bounds and array sizing for the four
+    // real tiers, same as any other *_COUNT (see src/achievements_menu.c and
+    // src/achievement_popup.c).
     ACHIEVEMENT_TIER_COUNT,
 };
 

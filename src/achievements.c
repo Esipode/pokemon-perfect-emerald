@@ -316,10 +316,13 @@ const struct Achievement *Achievement_GetInfo(u16 achievementId)
 // through Achievement_TryComplete -- its own Achievement_IsCompleted guard
 // makes the recursive call a no-op after the first time, and this wave only
 // has one such meta-achievement, so there's no chain to unwind.
+// Stage 23: 1000 -> 2000 (10% of the catalog's new 20,000-point total, see
+// src/data/achievements.h's own Stage 23 comment) -- the old threshold was
+// sized for the pre-rebalance ~8,600-point catalog.
 static void Achievement_CheckPointMilestones(void)
 {
-    if (gAchievementProfile.totalPointsEarned >= 1000)
-        Achievement_TryComplete(ACHIEVEMENT_POINTS_1000);
+    if (gAchievementProfile.totalPointsEarned >= 2000)
+        Achievement_TryComplete(ACHIEVEMENT_POINTS_2000);
 }
 
 // design doc §4.30: the flag and the points are written together, before any
@@ -3551,28 +3554,14 @@ void Achievement_CheckPokecenterMilestone(void)
 // src/data/achievements.h's own comments on each removed entry for the full
 // list and rationale.
 
-// The whole enabler (design doc, plan Stage 21.1) for what's left: category-
-// scoped completion counts. Static/file-internal -- unlike every prior
-// wave's category, nothing outside src/achievements.c currently needs a
-// per-category count. Only one caller remains post-step-12 (Achievement
-// Hunter's Achievement_HasBronzeInEveryCategory below).
-static u16 Achievement_CountCompletedInCategory(enum AchievementCategory category, u8 tier)
-{
-    u16 count = 0;
-    u16 i;
-
-    for (i = ACHIEVEMENT_NONE + 1; i < ACHIEVEMENTS_COUNT; i++)
-    {
-        if (gAchievements[i].category != category)
-            continue;
-        if (tier != ACHIEVEMENT_TIER_COUNT && gAchievements[i].tier != tier)
-            continue;
-        if (Achievement_IsCompleted(i))
-            count++;
-    }
-
-    return count;
-}
+// Stage 23: Achievement_CountCompletedInCategory and its sole caller,
+// Achievement_HasBronzeInEveryCategory (Achievement Hunter), are both removed
+// here -- the design doc's own Known Catalog Gap note (constants/
+// achievements.h, category Q) had flagged Achievement Hunter as unattainable
+// (CHALLENGE, NG+, NUZLOCKE and PROFILE have zero Bronze-tier entries between
+// them), and this stage resolves that by removing the achievement rather than
+// forcing a Bronze tier onto categories that were never designed to have an
+// "easy" entry.
 
 // Diamond Standard (backfill): every Diamond-tier achievement, excluding
 // itself -- it is itself Diamond-tier, and without the exclusion the
@@ -3596,23 +3585,6 @@ static bool8 Achievement_AllDiamondCompleted(u16 excludeId)
     }
 
     return total > 0 && completed == total;
-}
-
-// Achievement Hunter: a completed Bronze in every category. NOTE (see
-// constants/achievements.h's category Q comment): CHALLENGE, NUZLOCKE and
-// PROFILE currently have zero Bronze-tier entries between them, so this is
-// unattainable until a future wave gives each of those three at least one.
-static bool8 Achievement_HasBronzeInEveryCategory(void)
-{
-    enum AchievementCategory category;
-
-    for (category = 0; category < ACHIEVEMENT_CATEGORIES_COUNT; category++)
-    {
-        if (Achievement_CountCompletedInCategory(category, ACHIEVEMENT_TIER_BRONZE) == 0)
-            return FALSE;
-    }
-
-    return TRUE;
 }
 
 // Well Rounded: at least one completed achievement at every tier.
@@ -3660,16 +3632,17 @@ static u32 AchievementBoost_TotalPurchasedLevels(void)
 // there are only ACHIEVEMENTS_COUNT of those to ever exhaust.
 static void Achievement_CheckMasteryMilestones(void)
 {
-    if (Achievement_HasBronzeInEveryCategory())
-        Achievement_TryComplete(ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER);
     if (Achievement_HasCompletedEveryTier())
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_WELL_ROUNDED);
 
-    if (gAchievementProfile.totalPointsEarned >= 5000)
-        Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_HOARDER);
+    // Stage 23: thresholds rescaled for the catalog's new 20,000-point total
+    // -- see each achievement's own Stage 23 comment in
+    // src/data/achievements.h.
     if (gAchievementProfile.totalPointsEarned >= 10000)
+        Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_HOARDER);
+    if (gAchievementProfile.totalPointsEarned >= 18000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_LEGEND);
-    if (gAchievementProfile.pointsFromGoldOrBetter >= 3000)
+    if (gAchievementProfile.pointsFromGoldOrBetter >= 7000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_NO_EASY_PATH);
 
     if (Achievement_AllDiamondCompleted(ACHIEVEMENT_MASTERY_DIAMOND_STANDARD))
@@ -3682,7 +3655,10 @@ static void Achievement_CheckMasteryMilestones(void)
 // wave need their own call site instead of Achievement_CheckMasteryMilestones.
 static void Achievement_CheckBoostMilestones(void)
 {
-    if (gAchievementProfile.pointsInvested >= 2000)
+    // Stage 23: 2000 -> 1000 -- the boost economy this measures against
+    // shrank from 42,500 to 20,000 total (src/data/achievement_boosts.h's
+    // own Stage 23 comment).
+    if (gAchievementProfile.pointsInvested >= 1000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_BOOST_INVESTOR);
 
     if (AchievementBoost_TotalPurchasedLevels() >= 40)

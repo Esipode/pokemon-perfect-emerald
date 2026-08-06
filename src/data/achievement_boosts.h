@@ -7,10 +7,17 @@
 
 // Stage 8 (design doc Stage 8): the first real boost. Costs rise steeply
 // per §12 ("prevents the player from acquiring every useful boost
-// immediately"); exact tuning is explicitly deferred to Stage 13/14
-// balancing, so these are placeholders in the same shape the real curve
-// will take, not a final balance pass.
-static const u16 sBoostExpGainCosts[]   = {200, 400, 700, 1100, 1600};
+// immediately").
+//
+// Stage 23 (design doc Stage 14's deferred balancing pass): finalized here,
+// replacing the placeholder {200, 400, 700, 1100, 1600} curve every leveled
+// boost shipped with through Stage 10. Step 2 of Stage 23 requires the total
+// cost to max every boost in the catalog to equal the catalog's total
+// achievement points (20,000, see src/data/achievements.h's own Stage 23
+// comment) -- so every cost curve below is that same placeholder shape
+// scaled by ~0.4706x (20,000 / 42,500, the placeholder curves' own total)
+// and rounded to a clean number, not re-derived from scratch.
+static const u16 sBoostExpGainCosts[]   = {100, 200, 350, 500, 750};
 // effects[0] (level 0) is never read -- AchievementBoost_ApplyExp short-
 // circuits on level == 0 before indexing this array. effects[level] is the
 // percent bonus applied at that level, matching the design doc §10.1
@@ -18,10 +25,9 @@ static const u16 sBoostExpGainCosts[]   = {200, 400, 700, 1100, 1600};
 static const u16 sBoostExpGainEffects[] = {0, 10, 20, 30, 40, 50};
 
 // Stages 9-10: the rest of design doc §10.1's example list. Same cost curve
-// as EXP Gain above -- exact balancing is explicitly deferred to Stage 14
-// (design doc §12), so every boost below shares one placeholder curve rather
-// than six independently-guessed ones.
-static const u16 sBoostSharedCosts[] = {200, 400, 700, 1100, 1600};
+// as EXP Gain above -- every boost below shares one curve rather than six
+// independently-tuned ones. See the Stage 23 comment above.
+static const u16 sBoostSharedCosts[] = {100, 200, 350, 500, 750};
 
 // AchievementBoost_ExtraShinyRerolls returns this directly: an extra shiny
 // reroll per level, stacking with the Shiny Charm/Lure/chain-fishing/DexNav
@@ -55,11 +61,12 @@ static const u16 sBoostLegendaryEncounterEffects[] = {0, 1, 2, 3, 4, 5};
 // sBoostSharedCosts above rather than declaring 3- and 4-entry curves of their
 // own -- AchievementBoost_CanPurchase only ever indexes costs[level] for
 // level < maxLevel, so a 3-level boost simply reads the leading three entries.
-// Still placeholders; balancing is Stage 14's job (design doc §12).
 //
 // One shared price for all three binary boosts, for the same reason: each is a
 // single one-time purchase, so there's nothing to shape a curve around yet.
-static const u16 sBoostSharedBinaryCosts[] = {1500};
+// Stage 23: 1500 -> 600, same ~0.4706x scale as sBoostSharedCosts above (the
+// binary boosts' own slice of the 20,000 target).
+static const u16 sBoostSharedBinaryCosts[] = {600};
 
 // IsCriticalHit (src/battle_util.c) rolls this as a flat percent chance to
 // upgrade a non-critical hit, on top of whatever the normal crit-stage roll

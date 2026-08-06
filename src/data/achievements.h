@@ -8,6 +8,21 @@
 // designated initializers keyed by ID, .name wrapped in a *_NAME() macro that
 // enforces the length cap at compile time, .description left as a plain
 // COMPOUND_STRING (no cap).
+//
+// Stage 23 (design doc Stage 14's deferred balancing pass): every .points
+// value below is scaled by a single factor (~2.317x) from the raw per-tier
+// values the catalog waves originally shipped with, so the catalog's total
+// (20,000) lands on the same figure as maxing every boost in
+// src/data/achievement_boosts.h -- see that file's own Stage 23 comment.
+// Scaling preserves every entry's relative difficulty ranking (the tier
+// system -- Bronze < Silver < Gold < Diamond -- already tracked actual
+// difficulty reasonably well); a handful of entries that Stage 22 made
+// meaningfully harder without revisiting their tier (the "full 6-Pokemon
+// team" rewrites) were re-tiered first, so the scale applies to already-
+// corrected relative values, not the stale ones. Values are rounded to the
+// nearest 5 for readability, with a handful adjusted by a further +/-5 to
+// close the last few points of rounding error against the 20,000 target
+// exactly.
 #define ACHIEVEMENT_NAME(str) COMPOUND_STRING_SIZE_LIMIT(str, ACHIEVEMENT_NAME_LENGTH)
 
 static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
@@ -32,7 +47,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_STONE] = {
@@ -41,7 +56,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_STORY_PETALBURG_WOODS] = {
@@ -50,7 +65,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_KNUCKLE] = {
@@ -59,7 +74,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_DYNAMO] = {
@@ -68,7 +83,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_HEAT] = {
@@ -77,7 +92,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 20,
+        .points      = 45,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_BALANCE] = {
@@ -86,7 +101,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 20,
+        .points      = 45,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_STORY_AQUA_HIDEOUT] = {
@@ -95,7 +110,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_STORY_MT_PYRE] = {
@@ -104,7 +119,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_STORY_MAGMA_HIDEOUT] = {
@@ -113,7 +128,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_FEATHER] = {
@@ -122,7 +137,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_STORY_SEAFLOOR_CAVERN] = {
@@ -131,7 +146,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_MIND] = {
@@ -140,7 +155,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 35,
+        .points      = 80,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BADGE_RAIN] = {
@@ -149,7 +164,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 40,
+        .points      = 95,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_STORY_CHAMPION] = {
@@ -158,7 +173,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
 
@@ -169,7 +184,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_DEX_SEEN_25] = {
@@ -178,7 +193,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_DEX_SEEN_50] = {
@@ -187,7 +202,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 20,
+        .points      = 45,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_DEX_SEEN_100] = {
@@ -196,7 +211,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 40,
+        .points      = 95,
         .hidden      = FALSE,
     },
 
@@ -210,7 +225,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CATCH_350] = {
@@ -219,7 +234,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CATCH_700] = {
@@ -228,7 +243,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CATCH_ALL] = {
@@ -237,7 +252,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
 
@@ -248,7 +263,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_SHINY_5] = {
@@ -257,7 +272,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_SHINY_25] = {
@@ -266,7 +281,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
 
@@ -277,7 +292,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TRAINERS_50] = {
@@ -286,7 +301,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 20,
+        .points      = 45,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TRAINERS_150] = {
@@ -295,7 +310,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 35,
+        .points      = 80,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TRAINERS_300] = {
@@ -304,7 +319,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TRAINERS_500] = {
@@ -313,7 +328,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 90,
+        .points      = 205,
         .hidden      = FALSE,
     },
 
@@ -324,7 +339,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_WILD_BATTLES_250] = {
@@ -333,7 +348,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_WILD_BATTLES_500] = {
@@ -342,7 +357,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
 
@@ -353,7 +368,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 20,
+        .points      = 45,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ITEM_RARE_CANDY] = {
@@ -362,7 +377,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ITEM_PP_UP] = {
@@ -371,7 +386,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ITEM_HEART_SCALE] = {
@@ -380,7 +395,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
 
@@ -391,7 +406,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_MONEY_100K] = {
@@ -400,7 +415,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_MONEY_MAX] = {
@@ -409,7 +424,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
 
@@ -420,7 +435,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EGG_10] = {
@@ -429,7 +444,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 20,
+        .points      = 45,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EGG_50] = {
@@ -438,7 +453,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 35,
+        .points      = 80,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EGG_SHINY] = {
@@ -447,7 +462,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
 
@@ -474,7 +489,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 4: ACHIEVEMENT_NUZLOCKE_3 ("complete 3 Nuzlocke runs")
@@ -485,7 +500,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 4: ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
@@ -497,16 +512,18 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
-    [ACHIEVEMENT_POINTS_1000] = {
+    // Stage 23: 1,000 -> 2,000 -- see Achievement_CheckPointMilestones
+    // (src/achievements.c)'s own Stage 23 comment.
+    [ACHIEVEMENT_POINTS_2000] = {
         .name        = ACHIEVEMENT_NAME("Point Collector"),
-        .description = COMPOUND_STRING("Earn 1,000 total achievement points."),
+        .description = COMPOUND_STRING("Earn 2,000 total achievement points."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
 
@@ -526,7 +543,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_TYPE_ADVANTAGE] = {
@@ -535,7 +552,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_BATTLE_TYPE_MASTER ("win a trainer battle
@@ -546,35 +563,42 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // Stage 22 step 6: now requires the opponent to field a full 6-Pokemon
     // team (see Achievement_CheckBattleMilestones in src/achievements.c) --
     // was trivially easy against the many trainers who only carry one or two.
+    // Stage 23: Silver->Gold, 25->45 -- Stage 22 step 6's full-6-Pokemon-
+    // opponent requirement made this meaningfully harder than its old Silver
+    // points reflected.
     [ACHIEVEMENT_BATTLE_CLEAN_SWEEP] = {
         .name        = ACHIEVEMENT_NAME("Clean Sweep"),
         .description = COMPOUND_STRING("Defeat a trainer's full team of 6 Pokémon with a single Pokémon."),
-        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 105,
         .hidden      = FALSE,
     },
     // Stage 22 step 6: same full-6-Pokemon-opponent requirement as
     // ACHIEVEMENT_BATTLE_CLEAN_SWEEP above -- even major trainers can carry
     // fewer than 6 early on.
+    // Stage 23: 50->60 -- same full-6-Pokemon-opponent bump as Clean Sweep
+    // above, plus this one's already-harder "major trainer" requirement.
     [ACHIEVEMENT_BATTLE_PERFECT_SWEEP] = {
         .name        = ACHIEVEMENT_NAME("Perfect Sweep"),
         .description = COMPOUND_STRING("Defeat a major trainer's full team of 6 Pokémon with a single Pokémon."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 50,
+        .points      = 140,
         .hidden      = FALSE,
     },
     // Stage 22 step 6: same full-6-Pokemon-opponent requirement.
+    // Stage 23: Silver->Gold, 25->45 -- same full-6-Pokemon-opponent bump as
+    // Clean Sweep above.
     [ACHIEVEMENT_BATTLE_NO_DAMAGE] = {
         .name        = ACHIEVEMENT_NAME("No Damage"),
         .description = COMPOUND_STRING("Win a battle against a trainer's full team of 6 Pokémon without any of your Pokémon taking damage."),
-        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_UNTOUCHABLE] = {
@@ -583,7 +607,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_STATUS_SPECIALIST] = {
@@ -592,7 +616,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_STATUS_MASTER] = {
@@ -601,7 +625,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_WEATHER_REPORT] = {
@@ -610,7 +634,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 20,
+        .points      = 45,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_WEATHER_MASTER] = {
@@ -619,7 +643,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_SETUP_SWEEP] = {
@@ -628,7 +652,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: description clarified -- the check
@@ -641,7 +665,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 40,
+        .points      = 95,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_PRIORITY_MATTERS] = {
@@ -650,7 +674,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_SPEED_DEMON] = {
@@ -659,7 +683,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_ATTRITION] = {
@@ -668,7 +692,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_STRATEGIC_VICTORY] = {
@@ -677,7 +701,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_REVERSE_SWEEP] = {
@@ -686,7 +710,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_CHAMPION_TACTICIAN] = {
@@ -695,7 +719,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_MOVE_VARIETY] = {
@@ -704,7 +728,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_NO_REPEATS] = {
@@ -713,7 +737,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_AGAINST_THE_ODDS] = {
@@ -722,7 +746,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_FOUR_MOVE_PHILOSOPHER] = {
@@ -731,7 +755,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_NO_STAB_NEEDED] = {
@@ -740,7 +764,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_COVERAGE_ENJOYER] = {
@@ -749,7 +773,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_STATUS_HOARDER] = {
@@ -758,7 +782,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_THREE_PUNCH_FINISH] = {
@@ -767,7 +791,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_TEAM_PLAYER] = {
@@ -776,30 +800,35 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     // Stage 22 step 7: now requires a full 6-Pokemon party (see
     // Achievement_CheckBattleMilestones in src/achievements.c) -- was
     // trivial to earn by accident with only one or two Pokemon along.
+    // Stage 23: Silver->Gold, 25->45 -- Stage 22 step 7's full-6-Pokemon-party
+    // requirement made this meaningfully harder than its old Silver points
+    // reflected.
     [ACHIEVEMENT_BATTLE_COMEBACK_KID] = {
         .name        = ACHIEVEMENT_NAME("Comeback Kid"),
         .description = COMPOUND_STRING("Win a battle with a full team of 6 Pokémon, with only one still conscious at the end."),
-        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 25,
+        .points      = 105,
         .hidden      = FALSE,
     },
     // Stage 22 step 7: same full-6-Pokemon-party requirement as
     // ACHIEVEMENT_BATTLE_COMEBACK_KID above.
+    // Stage 23: 40->55 -- same full-6-Pokemon-party bump as Comeback Kid
+    // above, plus this one's tighter 10%-HP threshold.
     [ACHIEVEMENT_BATTLE_LAST_ONE_STANDING] = {
         .name        = ACHIEVEMENT_NAME("Last One Standing"),
         .description = COMPOUND_STRING("Win a battle with a full team of 6 Pokémon, with your last one at 10% HP or less."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 40,
+        .points      = 125,
         .hidden      = FALSE,
     },
 
@@ -810,13 +839,16 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // Stage 22 step 7: now requires a full 6-Pokemon party (see
     // Achievement_CheckTeamMilestones in src/achievements.c) -- was trivial
     // to keep 1-2 Pokemon mono-type by accident.
+    // Stage 23: Bronze->Silver, 15->25 -- Stage 22 step 7's full-6-Pokemon-
+    // party requirement made assembling a whole mono-type team this early
+    // meaningfully harder than its old Bronze points reflected.
     [ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL] = {
         .name        = ACHIEVEMENT_NAME("Mono-Type Trial"),
         .description = COMPOUND_STRING("Win a Gym battle with a full team of 6 Pokémon, all sharing a type."),
-        .tier        = ACHIEVEMENT_TIER_BRONZE,
+        .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 15,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_ONE_TYPE_JOURNEY] = {
@@ -825,7 +857,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_MONO_TYPE_CHAMPION] = {
@@ -834,7 +866,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_TRIAL_BY_FIRE] = {
@@ -843,20 +875,22 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
     // Stage 22 step 7: now requires a full 6-Pokemon party (see
     // Achievement_CheckTeamMilestones in src/achievements.c) -- was trivial
     // for no two party members to share a type with barely any party to
     // begin with.
+    // Stage 23: Bronze->Silver, 15->25 -- same full-6-Pokemon-party bump as
+    // Mono-Type Trial above.
     [ACHIEVEMENT_TEAM_NO_DUPLICATES] = {
         .name        = ACHIEVEMENT_NAME("No Duplicates"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, no two sharing a type."),
-        .tier        = ACHIEVEMENT_TIER_BRONZE,
+        .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 15,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_SIX_OF_A_KIND] = {
@@ -865,7 +899,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_UNDERSTUDY] = {
@@ -874,7 +908,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_BENCHWARMER] = {
@@ -883,7 +917,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_BOX_ROTATION] = {
@@ -892,7 +926,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_DEEP_BENCH] = {
@@ -901,7 +935,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_FULL_ROTATION] = {
@@ -910,7 +944,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 70,
+        .points      = 155,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_NO_ACE] = {
@@ -919,7 +953,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: description clarified -- the check compares your
@@ -931,7 +965,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_WELL_EQUIPPED] = {
@@ -940,7 +974,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_FULL_HOUSE] = {
@@ -949,7 +983,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_TEAM_VARIETY_IS_POWER ("win a major battle
@@ -963,7 +997,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_DREAM_TEAM] = {
@@ -972,7 +1006,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_EVERYONE_GETS_A_TURN] = {
@@ -981,7 +1015,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_REBUILD] = {
@@ -990,7 +1024,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: description clarified -- your final party's species
@@ -1002,7 +1036,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_CAPPED_OUT] = {
@@ -1011,19 +1045,23 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 7: now requires a full 6-Pokemon party (see
     // Achievement_CheckTeamMilestones in src/achievements.c) -- a small
     // party trivially has a low combined base stat total.
+    // Stage 23: Silver->Gold, 30->45 -- Stage 22 step 7's full-6-Pokemon-party
+    // requirement made this a genuine deliberate-underdog build, not just a
+    // side effect of a small party, harder than its old Silver points
+    // reflected.
     [ACHIEVEMENT_TEAM_FEATHERWEIGHT] = {
         .name        = ACHIEVEMENT_NAME("Featherweight"),
         .description = COMPOUND_STRING("Clear a Gym with a full team of 6 Pokémon whose combined base stat total is under 1800."),
-        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 30,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_UNDERDOG_RUN] = {
@@ -1032,7 +1070,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_DIVERSE_ROOTS] = {
@@ -1041,7 +1079,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_FRESH_START] = {
@@ -1050,7 +1088,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_SAME_SIX] = {
@@ -1059,7 +1097,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_BALANCED_ROSTER] = {
@@ -1068,7 +1106,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_NOBODY_BENCHED] = {
@@ -1077,7 +1115,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_ACE_ROTATION] = {
@@ -1086,7 +1124,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
 
@@ -1097,7 +1135,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_OFF_THE_BEATEN_PATH] = {
@@ -1106,7 +1144,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_CARTOGRAPHER] = {
@@ -1115,7 +1153,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_COMPLETIONIST_TOURIST] = {
@@ -1124,7 +1162,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_ON_THE_ROAD] = {
@@ -1133,7 +1171,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_TREASURE_HUNTER] = {
@@ -1142,7 +1180,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_TREASURE_HOARD] = {
@@ -1151,7 +1189,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_TALK_TO_THE_LOCALS] = {
@@ -1160,7 +1198,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_PEOPLE_PERSON] = {
@@ -1169,7 +1207,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_LOCAL_EXPERT] = {
@@ -1178,7 +1216,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_FIRST_PURCHASE] = {
@@ -1187,7 +1225,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_REGULAR_CUSTOMER] = {
@@ -1196,7 +1234,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_BIG_SPENDER] = {
@@ -1205,7 +1243,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_WHALE] = {
@@ -1214,7 +1252,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_SAVE_YOUR_CHANGE] = {
@@ -1223,7 +1261,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_FRUGAL_TRAINER] = {
@@ -1232,7 +1270,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_NO_SHOPPING] = {
@@ -1241,7 +1279,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_ECONOMY_RESOURCEFUL ("win a major battle
@@ -1255,7 +1293,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_ECONOMY_INVESTOR] = {
@@ -1264,7 +1302,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_PACK_RAT] = {
@@ -1273,7 +1311,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_EXPLORE_NO_LOOSE_ENDS] = {
@@ -1282,7 +1320,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_EVOLUTIONARY_PATH] = {
@@ -1291,7 +1329,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_EVOLUTION_EXPERT] = {
@@ -1300,7 +1338,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_FRIENDSHIP_BLOSSOMS] = {
@@ -1309,7 +1347,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_STONE_AGE] = {
@@ -1318,7 +1356,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_COLLECT_TRADE_SECRETS ("obtain a Pokemon
@@ -1331,7 +1369,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_GREEN_THUMB] = {
@@ -1340,7 +1378,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_ANGLER] = {
@@ -1349,7 +1387,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
 
@@ -1365,7 +1403,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: same clarified modifier list as
@@ -1376,7 +1414,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: same clarified modifier list as
@@ -1387,7 +1425,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: same clarified modifier list as
@@ -1401,7 +1439,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_NO_SHOPPING_RUN] = {
@@ -1410,32 +1448,37 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 7: now requires a full 6-Pokemon party (see
     // Achievement_CheckChallengeMilestones in src/achievements.c) -- with
     // only one or two Pokemon along there's barely any HP pool to dip
     // into, making this trivial to earn by accident.
+    // Stage 23: Silver->Gold, 25->40 -- Stage 22 step 7's full-6-Pokemon-party
+    // requirement made this meaningfully harder than its old Silver points
+    // reflected.
     [ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS] = {
         .name        = ACHIEVEMENT_NAME("No Healing Items"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, without using a single healing item."),
-        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 25,
+        .points      = 95,
         .hidden      = FALSE,
     },
     // Stage 22 step 7: same full-6-Pokemon-party requirement as
     // ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS above -- also barely any held
     // items to check with a small party.
+    // Stage 23: 45->55, same reasoning as No Healing Items above -- this one
+    // was already Gold, but under-priced relative to its now-stricter cousin.
     [ACHIEVEMENT_CHALLENGE_ITEMLESS_BATTLE] = {
         .name        = ACHIEVEMENT_NAME("Itemless Battle"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, using no Bag items and no held items."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 45,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_WHO_NEEDS_CENTERS] = {
@@ -1444,7 +1487,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_NO_CENTERS] = {
@@ -1453,7 +1496,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_SET_IN_STONE] = {
@@ -1462,7 +1505,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_HARDCORE_SET] = {
@@ -1471,7 +1514,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE ("beat a Gym
@@ -1492,7 +1535,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_MINIMALIST] = {
@@ -1501,7 +1544,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_THREE_POKEMON] = {
@@ -1510,7 +1553,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_SOLO_JOURNEY] = {
@@ -1519,7 +1562,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_NO_FREEBIES] = {
@@ -1528,7 +1571,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP] = {
@@ -1537,7 +1580,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NUZLOCKE_FIRST_GYM] = {
@@ -1546,7 +1589,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR] = {
@@ -1555,7 +1598,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NUZLOCKE_PERFECT] = {
@@ -1564,7 +1607,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NUZLOCKE_CLOSE_CALL] = {
@@ -1573,7 +1616,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE ("no two catches
@@ -1594,7 +1637,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NUZLOCKE_GRAVEYARD] = {
@@ -1603,7 +1646,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 10: ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER ("complete a
@@ -1640,7 +1683,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RANDOMIZER_RANDOM_BY_NATURE] = {
@@ -1649,7 +1692,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RANDOMIZER_TRULY_RANDOM] = {
@@ -1658,7 +1701,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RANDOMIZER_CHAOS_TEAM] = {
@@ -1667,7 +1710,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RANDOMIZER_PATCHWORK_TEAM] = {
@@ -1676,7 +1719,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING ("beat a
@@ -1694,7 +1737,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NUZLOCKE_ACROSS_WORLDS] = {
@@ -1703,7 +1746,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NUZLOCKE_CHAOS_SURVIVOR] = {
@@ -1712,7 +1755,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NUZLOCKE,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
     // Stage 22 step 4: ACHIEVEMENT_NG_PLUS_ONE_MORE_TIME (complete cycle 2)
@@ -1726,7 +1769,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NG_PLUS_NEVER_THE_SAME_FIGHT] = {
@@ -1735,7 +1778,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_NG_PLUS,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: same clarified modifier list as
@@ -1747,7 +1790,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     // Stage 22 step 4: ACHIEVEMENT_NG_PLUS_ESCALATION (3 consecutive NG+
@@ -1760,7 +1803,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_NG_PLUS,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION] = {
@@ -1769,7 +1812,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET] = {
@@ -1778,7 +1821,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE] = {
@@ -1787,7 +1830,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     // Stage 22 step 10: ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR ("complete NG+
@@ -1800,7 +1843,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RANDOMIZER_TYPE_CHAOS] = {
@@ -1809,7 +1852,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RANDOMIZER_MOVE_CHAOS] = {
@@ -1818,7 +1861,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RANDOMIZER_ROOKIE] = {
@@ -1827,7 +1870,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_RANDOMIZER,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     // Stage 22 step 4: used to require this be specifically NG+ cycle 2;
@@ -1840,7 +1883,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_NG_PLUS,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     // Stage 22 step 10: ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP ("complete ten
@@ -1857,7 +1900,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
 
@@ -1868,7 +1911,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_UNBROKEN] = {
@@ -1877,7 +1920,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_ON_A_ROLL] = {
@@ -1886,7 +1929,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_UNTOUCHABLE_STREAK] = {
@@ -1895,7 +1938,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_THREE_GYM_STREAK] = {
@@ -1904,7 +1947,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_EIGHT_GYM_STREAK] = {
@@ -1913,7 +1956,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_LEAGUE_STREAK] = {
@@ -1922,7 +1965,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_VETERAN_TEAM] = {
@@ -1931,7 +1974,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_OLD_RELIABLE] = {
@@ -1940,7 +1983,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: logic fixed, not just the description -- the old
@@ -1956,7 +1999,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_COMEBACK_COUNT] = {
@@ -1965,7 +2008,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_GROWING_STRONG] = {
@@ -1974,7 +2017,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 10,
+        .points      = 25,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_ONE_OF_EACH] = {
@@ -1983,7 +2026,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 15,
+        .points      = 35,
         .hidden      = FALSE,
     },
     // Stage 22 step 8: description clarified -- walks the whole family
@@ -1996,7 +2039,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN ("obtain a
@@ -2009,7 +2052,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_COLLECT_UNDERESTIMATED] = {
@@ -2018,7 +2061,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_MARATHON_TRAINER] = {
@@ -2027,7 +2070,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_LONG_HAUL] = {
@@ -2036,7 +2079,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_PROLIFIC] = {
@@ -2045,7 +2088,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_BATTLE_MACHINE] = {
@@ -2054,7 +2097,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_CENTURY_CLUB] = {
@@ -2063,7 +2106,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_FULL_CENTURY] = {
@@ -2072,7 +2115,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
     // Stage 22 step 5: ACHIEVEMENT_COLLECT_BOX_FILLER ("store 100 Pokemon at
@@ -2086,7 +2129,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_INSEPARABLE] = {
@@ -2095,7 +2138,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_MOVE_TUTOR] = {
@@ -2104,7 +2147,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 25,
+        .points      = 60,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_EGG_MARATHON] = {
@@ -2113,7 +2156,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 30,
+        .points      = 70,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECORD_NURSES_NIGHTMARE] = {
@@ -2122,7 +2165,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
 
@@ -2146,22 +2189,23 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // Achievement_CountNonHiddenExcluding,
     // Achievement_GoldOrBetterFullyCompletedAcrossCategories) are removed
     // along with them.
-    [ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER] = {
-        .name        = ACHIEVEMENT_NAME("Achievement Hunter"),
-        .description = COMPOUND_STRING("Earn a Bronze achievement in every category."),
-        .tier        = ACHIEVEMENT_TIER_SILVER,
-        .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
-        .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 30,
-        .hidden      = FALSE,
-    },
+    //
+    // Stage 23: ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER ("Earn a Bronze
+    // achievement in every category") removed here too -- the design doc's
+    // own Known Catalog Gap note above flagged it as unattainable (Challenge,
+    // NG+, Nuzlocke and Profile have no Bronze-tier entry between them), and
+    // rather than force a tier onto categories that were never designed to
+    // have an "easy" entry, the achievement itself goes. Its sole helpers,
+    // Achievement_HasBronzeInEveryCategory and
+    // Achievement_CountCompletedInCategory (src/achievements.c), are removed
+    // along with it.
     [ACHIEVEMENT_PROFILE_WELL_ROUNDED] = {
         .name        = ACHIEVEMENT_NAME("Well Rounded"),
         .description = COMPOUND_STRING("Earn at least one achievement of every tier."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     // Stage 22 step 12: ACHIEVEMENT_PROFILE_MASTER_OF_ALL ("earn a
@@ -2169,40 +2213,55 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // Achievement_CheckMasteryMilestones (src/achievements.c);
     // Achievement_HasGoldOrBetterInEveryCategory, which existed solely for
     // this achievement, is removed along with it.
+    // Stage 23: 5,000 -> 10,000 (50% of the catalog's new 20,000-point total)
+    // -- see Achievement_CheckMasteryMilestones (src/achievements.c)'s own
+    // Stage 23 comment.
     [ACHIEVEMENT_PROFILE_POINT_HOARDER] = {
         .name        = ACHIEVEMENT_NAME("Point Hoarder"),
-        .description = COMPOUND_STRING("Earn 5,000 total achievement points."),
+        .description = COMPOUND_STRING("Earn 10,000 total achievement points."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
+    // Stage 23: 10,000 -> 18,000 (90% of the new 20,000-point total, so it
+    // still means "you've all but finished the catalog," the same relative
+    // bar the old 10,000/8,630-max threshold used to clear on its own before
+    // the rebalance made it literally unreachable -- see
+    // src/data/achievements.h's top-of-file Stage 23 comment).
     [ACHIEVEMENT_PROFILE_POINT_LEGEND] = {
         .name        = ACHIEVEMENT_NAME("Point Legend"),
-        .description = COMPOUND_STRING("Earn 10,000 total achievement points."),
+        .description = COMPOUND_STRING("Earn 18,000 total achievement points."),
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 150,
+        .points      = 345,
         .hidden      = FALSE,
     },
+    // Stage 23: 3,000 -> 7,000 -- the new Gold-or-better pool is 14,580
+    // (11,780 Gold + 2,800 Diamond), and 7,000 keeps this at roughly the same
+    // ~49% share of that pool the old 3,000/6,090 threshold held.
     [ACHIEVEMENT_PROFILE_NO_EASY_PATH] = {
         .name        = ACHIEVEMENT_NAME("No Easy Path"),
-        .description = COMPOUND_STRING("Earn 3,000 points from Gold-or-better achievements."),
+        .description = COMPOUND_STRING("Earn 7,000 points from Gold-or-better achievements."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 60,
+        .points      = 140,
         .hidden      = FALSE,
     },
+    // Stage 23: 2,000 -> 1,000 -- the boost economy this measures against
+    // shrank from 42,500 to 20,000 total (src/data/achievement_boosts.h's own
+    // Stage 23 comment), and 1,000 keeps this at roughly the same ~5% share
+    // of that total the old 2,000/42,500 threshold held.
     [ACHIEVEMENT_PROFILE_BOOST_INVESTOR] = {
         .name        = ACHIEVEMENT_NAME("Boost Investor"),
-        .description = COMPOUND_STRING("Invest 2,000 points into boosts."),
+        .description = COMPOUND_STRING("Invest 1,000 points into boosts."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 50,
+        .points      = 115,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_PROFILE_FULL_INVESTMENT] = {
@@ -2211,7 +2270,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 70,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_PROFILE_RECONFIGURED] = {
@@ -2220,7 +2279,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 45,
+        .points      = 105,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY] = {
@@ -2229,7 +2288,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 55,
+        .points      = 125,
         .hidden      = FALSE,
     },
     // Stage 22 step 12: ACHIEVEMENT_PROFILE_META_PROG_MASTER ("complete 200
@@ -2246,7 +2305,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
-        .points      = 100,
+        .points      = 225,
         .hidden      = FALSE,
     },
     // Stage 22 step 12: ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME ("complete two
