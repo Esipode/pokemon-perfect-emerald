@@ -1,4 +1,5 @@
 #include "global.h"
+#include "ai_battles.h"
 #include "battle.h"
 #include "blit.h"
 #include "dynamic_placeholder_text_util.h"
@@ -1261,7 +1262,7 @@ void SetResultWithButtonPress(bool32 *result)
 bool32 TextPrinterWaitWithDownArrow(struct TextPrinter *textPrinter)
 {
     bool32 result = FALSE;
-    if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)) || (FlagGet(FLAG_AI_WILD_BATTLES) && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
+    if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || AiBattles_ShouldAutoAdvanceText())
     {
         result = TextPrinterWaitAutoMode(textPrinter);
     }
@@ -1276,7 +1277,7 @@ bool32 TextPrinterWaitWithDownArrow(struct TextPrinter *textPrinter)
 bool32 TextPrinterWait(struct TextPrinter *textPrinter)
 {
     bool32 result = FALSE;
-    if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || (FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)) || (FlagGet(FLAG_AI_WILD_BATTLES) && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
+    if (gTextFlags.autoScroll != 0 || FlagGet(FLAG_AUTO_SCROLL_TEXT) || AiBattles_ShouldAutoAdvanceText())
     {
         result = TextPrinterWaitAutoMode(textPrinter);
     }

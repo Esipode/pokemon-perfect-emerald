@@ -1,6 +1,7 @@
 #include "global.h"
 #include "option_menu.h"
 #include "achievements.h"
+#include "ai_battles.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
@@ -266,7 +267,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tTextSpeed = gSaveBlock2Ptr->optionsTextSpeed;
     gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
     gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
-    gTasks[taskId].tAIBattles = (FlagGet(FLAG_AI_BATTLES) ? 1 : 0) | (FlagGet(FLAG_AI_WILD_BATTLES) ? 2 : 0);
+    gTasks[taskId].tAIBattles = (AiBattles_GetSetting(AI_BATTLES_SETTING_TRAINER) ? 1 : 0) | (AiBattles_GetSetting(AI_BATTLES_SETTING_WILD) ? 2 : 0);
     gTasks[taskId].tPackedFlags = 0;
     if (gSaveBlock2Ptr->optionsBattleSceneOff)     SET_FLAG(BATTLE_SCENE, 1); else SET_FLAG(BATTLE_SCENE, 0);
     if (gSaveBlock2Ptr->optionsBattleStyle)        SET_FLAG(BATTLE_STYLE, 1); else SET_FLAG(BATTLE_STYLE, 0);
@@ -658,8 +659,8 @@ static void Task_OptionMenuSave(u8 taskId)
     gSaveBlock2Ptr->optionsButtonMode = gTasks[taskId].tButtonMode;
     gSaveBlock2Ptr->optionsWindowFrameType = gTasks[taskId].tWindowFrameType;
     /* Save trainer and wild AI flags from the bitmask */
-    (gTasks[taskId].tAIBattles & 1) == 0 ? FlagClear(FLAG_AI_BATTLES) : FlagSet(FLAG_AI_BATTLES);
-    (gTasks[taskId].tAIBattles & 2) == 0 ? FlagClear(FLAG_AI_WILD_BATTLES) : FlagSet(FLAG_AI_WILD_BATTLES);
+    AiBattles_SetSetting(AI_BATTLES_SETTING_TRAINER, (gTasks[taskId].tAIBattles & 1) != 0);
+    AiBattles_SetSetting(AI_BATTLES_SETTING_WILD, (gTasks[taskId].tAIBattles & 2) != 0);
     GET_FLAG(AUTO_SCROLL) == 0 ? FlagClear(FLAG_AUTO_SCROLL_TEXT) : FlagSet(FLAG_AUTO_SCROLL_TEXT);
     if (!IsAutosaveHidden())
         GET_FLAG(AUTOSAVE) == 0 ? (gSaveBlock1Ptr->autosaveModeEnabled = 0) : (gSaveBlock1Ptr->autosaveModeEnabled = 1);

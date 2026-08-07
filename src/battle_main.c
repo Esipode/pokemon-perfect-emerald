@@ -3764,7 +3764,7 @@ static void ClearSetBScriptingStruct(void)
     memset(&gBattleScripting, 0, sizeof(gBattleScripting));
 
     gBattleScripting.windowsType = temp;
-    gBattleScripting.battleStyle = ((FlagGet(FLAG_AI_BATTLES) && (gBattleTypeFlags & BATTLE_TYPE_TRAINER)) || (FlagGet(FLAG_AI_WILD_BATTLES) && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER))) ? TRUE : gSaveBlock2Ptr->optionsBattleStyle;
+    gBattleScripting.battleStyle = AiBattles_ForcesBattleStyleSet() ? OPTIONS_BATTLE_STYLE_SET : gSaveBlock2Ptr->optionsBattleStyle;
     #if TESTING
     gBattleScripting.battleStyle = OPTIONS_BATTLE_STYLE_SET;
     #endif

@@ -1,5 +1,6 @@
 #include "global.h"
 #include "achievements.h"
+#include "ai_battles.h"
 #include "clock.h"
 #include "new_game.h"
 #include "new_game_settings_menu.h"
@@ -167,6 +168,7 @@ void NewGameInitData(void)
     void *dexCaughtBackup = NULL;
     void *dexSeenBackup = NULL;
     void *flagsBackup = NULL;
+    u32 aiBattlesBackup = 0;
     void *optionsBackup = NULL;
     void *playerSettingsBackup = NULL;
     void *itemFlagsBackup = NULL;
@@ -232,10 +234,11 @@ void NewGameInitData(void)
         memcpy(roamerLocationBackup, sRoamerLocation, sizeof(sRoamerLocation));
 
         /* Backup only option-related flag bytes (minimize restoring unrelated flags) */
-        flagsBackup = Alloc(3);
-        ((u8 *)flagsBackup)[0] = gSaveBlock1Ptr->flags[FLAG_AI_BATTLES / 8];
-        ((u8 *)flagsBackup)[1] = gSaveBlock1Ptr->flags[FLAG_AUTO_SCROLL_TEXT / 8];
-        ((u8 *)flagsBackup)[2] = gSaveBlock1Ptr->flags[FLAG_RANDOMIZE_TYPE / 8];
+        flagsBackup = Alloc(2);
+        ((u8 *)flagsBackup)[0] = gSaveBlock1Ptr->flags[FLAG_AUTO_SCROLL_TEXT / 8];
+        ((u8 *)flagsBackup)[1] = gSaveBlock1Ptr->flags[FLAG_RANDOMIZE_TYPE / 8];
+        /* FLAG_AI_BATTLES / FLAG_AI_WILD_BATTLES go through ai_battles.h, not the raw-byte scheme above */
+        aiBattlesBackup = AiBattles_BackupSettings();
 
         /* Backup SaveBlock2 options (packed bitfields occupy 2 bytes at offset 0x14) */
         optionsBackup = Alloc(sizeof(u16));
@@ -395,15 +398,15 @@ void NewGameInitData(void)
             if (flagsBackup != NULL)
             {
                 u8 *fb = (u8 *)flagsBackup;
-                (fb[0] & (1 << (FLAG_AI_BATTLES % 8))) ? FlagSet(FLAG_AI_BATTLES) : FlagClear(FLAG_AI_BATTLES);
-                (fb[1] & (1 << (FLAG_AUTO_SCROLL_TEXT % 8))) ? FlagSet(FLAG_AUTO_SCROLL_TEXT) : FlagClear(FLAG_AUTO_SCROLL_TEXT);
-                (fb[1] & (1 << (FLAG_RANDOMIZE_MON % 8))) ? FlagSet(FLAG_RANDOMIZE_MON) : FlagClear(FLAG_RANDOMIZE_MON);
-                (fb[2] & (1 << (FLAG_RANDOMIZE_TYPE % 8))) ? FlagSet(FLAG_RANDOMIZE_TYPE) : FlagClear(FLAG_RANDOMIZE_TYPE);
-                (fb[2] & (1 << (FLAG_RANDOMIZE_MOVES % 8))) ? FlagSet(FLAG_RANDOMIZE_MOVES) : FlagClear(FLAG_RANDOMIZE_MOVES);
-                (fb[2] & (1 << (FLAG_LEVEL_CAP_OFF % 8))) ? FlagSet(FLAG_LEVEL_CAP_OFF) : FlagClear(FLAG_LEVEL_CAP_OFF);
-                (fb[2] & (1 << (FLAG_AI_WILD_BATTLES % 8))) ? FlagSet(FLAG_AI_WILD_BATTLES) : FlagClear(FLAG_AI_WILD_BATTLES);
-                (fb[2] & (1 << (FLAG_ALLOW_STAT_EDITOR % 8))) ? FlagSet(FLAG_ALLOW_STAT_EDITOR) : FlagClear(FLAG_ALLOW_STAT_EDITOR);
+                (fb[0] & (1 << (FLAG_AUTO_SCROLL_TEXT % 8))) ? FlagSet(FLAG_AUTO_SCROLL_TEXT) : FlagClear(FLAG_AUTO_SCROLL_TEXT);
+                (fb[0] & (1 << (FLAG_RANDOMIZE_MON % 8))) ? FlagSet(FLAG_RANDOMIZE_MON) : FlagClear(FLAG_RANDOMIZE_MON);
+                (fb[1] & (1 << (FLAG_RANDOMIZE_TYPE % 8))) ? FlagSet(FLAG_RANDOMIZE_TYPE) : FlagClear(FLAG_RANDOMIZE_TYPE);
+                (fb[1] & (1 << (FLAG_RANDOMIZE_MOVES % 8))) ? FlagSet(FLAG_RANDOMIZE_MOVES) : FlagClear(FLAG_RANDOMIZE_MOVES);
+                (fb[1] & (1 << (FLAG_LEVEL_CAP_OFF % 8))) ? FlagSet(FLAG_LEVEL_CAP_OFF) : FlagClear(FLAG_LEVEL_CAP_OFF);
+                (fb[1] & (1 << (FLAG_ALLOW_STAT_EDITOR % 8))) ? FlagSet(FLAG_ALLOW_STAT_EDITOR) : FlagClear(FLAG_ALLOW_STAT_EDITOR);
             }
+            /* FLAG_AI_BATTLES / FLAG_AI_WILD_BATTLES go through ai_battles.h, not the raw-byte scheme above */
+            AiBattles_RestoreSettings(aiBattlesBackup);
 
             if (optionsBackup != NULL)
                 memcpy((u8 *)gSaveBlock2Ptr + 0x14, optionsBackup, sizeof(u16));
