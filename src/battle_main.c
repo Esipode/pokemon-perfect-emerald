@@ -1,5 +1,6 @@
 #include "global.h"
 #include "achievements.h"
+#include "ai_battles.h"
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_ai_main.h"
@@ -3774,6 +3775,11 @@ static void ClearSetBScriptingStruct(void)
 static void BattleStartClearSetData(void)
 {
     s32 i;
+
+    // gBattleTypeFlags is final by this point; cache the AI-battle answer for the
+    // rest of the battle. Must run before ClearSetBScriptingStruct() below, which
+    // needs it. See include/ai_battles.h.
+    AiBattles_BeginBattle();
 
     TurnValuesCleanUp(FALSE);
     memset(&gSpecialStatuses, 0, sizeof(gSpecialStatuses));

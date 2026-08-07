@@ -1,4 +1,5 @@
 #include "global.h"
+#include "ai_battles.h"
 #include "battle.h"
 #include "battle_ai_main.h"
 #include "battle_ai_util.h"
@@ -57,19 +58,20 @@ static u32 ReturnAnimIdForBattler(bool32 isPlayerSide, u32 specificBattler);
 static void LaunchKOAnimation(enum BattlerId battlerId, u16 animId, bool32 isFront);
 static void AnimateMonAfterKnockout(enum BattlerId battler);
 
+// Kept as a thin alias so existing call sites don't need to change.
+// See include/ai_battles.h for the source of truth.
 bool32 IsAiVsAiBattle(void)
 {
-    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
-        return (B_FLAG_AI_VS_AI_BATTLE && FlagGet(B_FLAG_AI_VS_AI_BATTLE));
-    else
-        return FALSE;
+    return AiBattles_IsActiveTrainerBattle();
 }
 
 // Returns TRUE when player battlers should be controlled by AI.
 // Covers both trainer autobattles and wild AI battles.
+// Kept as a thin alias so existing call sites don't need to change.
+// See include/ai_battles.h for the source of truth.
 bool32 IsPlayerAiControlled(void)
 {
-    return (IsAiVsAiBattle() || (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER) && FlagGet(FLAG_AI_WILD_BATTLES)));
+    return AiBattles_IsActive();
 }
 
 bool32 BattlerIsPlayer(enum BattlerId battlerId)
