@@ -171,7 +171,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,
-        .points      = 225,
+        .points      = 250,
         .hidden      = FALSE,
     },
 
@@ -250,7 +250,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 225,
+        .points      = 250,
         .hidden      = FALSE,
     },
 
@@ -279,7 +279,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
-        .points      = 225,
+        .points      = 250,
         .hidden      = FALSE,
     },
 
@@ -326,7 +326,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 205,
+        .points      = 215,
         .hidden      = FALSE,
     },
 
@@ -659,10 +659,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     [ACHIEVEMENT_BATTLE_ONE_TURN_FINISH] = {
         .name        = ACHIEVEMENT_NAME("One-Turn Finish"),
         .description = COMPOUND_STRING("Have a Pokémon land a KO on its very next move right after using a stat-boosting move."),
-        .tier        = ACHIEVEMENT_TIER_GOLD,
+        .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
-        .points      = 95,
+        .points      = 10,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_BATTLE_PRIORITY_MATTERS] = {
