@@ -50,6 +50,7 @@
 #include "test/battle.h"
 #include "randomization.h"
 #include "event_data.h"
+#include "battle_ai_main.h"
 #include "battle_ai_switch.h"
 #include "battle_ai_util.h"
 
@@ -2035,14 +2036,14 @@ static void PlayerHandleChooseAction(enum BattlerId battler)
 {
     s32 i;
 
-    // If AI is controlling the player, skip the action menu entirely and go straight to
-    // B_ACTION_USE_MOVE, same as OpponentHandleChooseAction does for AI-controlled opponents.
-    // This lets the normal B_ACTION_USE_MOVE -> EmitChooseMove -> PlayerHandleChooseMove pipeline
-    // run so the AI's chosen move actually gets recorded (see HandleInputChooseMove).
+    // If AI is controlling the player, skip the action menu entirely and let the AI decide
+    // the action, same as OpponentHandleChooseAction does for AI-controlled opponents. This
+    // lets the AI switch out or use an item when it judges that better than attacking, rather
+    // than being forced to keep swinging with a mon it would rather pull -- see ai_battles.h.
     // BATTLE_TYPE_PALACE is excluded from AiBattles_IsActive() itself; see ai_battles.h.
     if (IsPlayerAiControlled())
     {
-        BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_USE_MOVE, BATTLE_OPPOSITE(battler) << 8);
+        AI_TrySwitchOrUseItem(battler);
         BtlController_Complete(battler);
         return;
     }

@@ -2772,7 +2772,10 @@ BattleScript_FaintedMonTryChoose:
 	jumpifbyte CMP_EQUAL, sBATTLE_STYLE, OPTIONS_BATTLE_STYLE_SET, BattleScript_FaintedMonSendOutNew
 	jumpifcantswitch BS_PLAYER1, BattleScript_FaintedMonSendOutNew
 	setbyte sILLUSION_NICK_HACK, 1
-@ Yes/No for sending out a new Pokémon when the opponent is switching
+@ Yes/No for sending out a new Pokémon when the opponent is switching.
+@ Currently unreachable when AI-controlled anyway (battleStyle is forced SET above), but
+@ guard explicitly so this doesn't silently depend on that coincidence -- see ai_battles.h.
+	jumpifbyte CMP_NOT_EQUAL, sAI_CONTROLLED, 0, BattleScript_FaintedMonSendOutNew
 	printstring STRINGID_ENEMYABOUTTOSWITCHPKMN
 	setbyte gBattleCommunication, 0
 	yesnobox
