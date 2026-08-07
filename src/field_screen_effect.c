@@ -15,6 +15,7 @@
 #include "follower_npc.h"
 #include "gpu_regs.h"
 #include "heal_location.h"
+#include "international_string_util.h"
 #include "io_reg.h"
 #include "link.h"
 #include "link_rfu.h"
@@ -35,6 +36,7 @@
 #include "string_util.h"
 #include "task.h"
 #include "text.h"
+#include "title_screen.h"
 #include "constants/event_object_movement.h"
 #include "constants/event_objects.h"
 #include "constants/heal_locations.h"
@@ -65,6 +67,9 @@ static const u8 sText_PlayerScurriedToCenter[] = _("{PLAYER} scurried to a POKé
 static const u8 sText_PlayerScurriedBackHome[] = _("{PLAYER} scurried back home, protecting\nthe exhausted and fainted POKéMON from\nfurther harm…\p");
 static const u8 sText_PlayerRegroupCenter[] = _("{PLAYER} scurried to a POKéMON CENTER,\nto regroup and reconsider the battle\nstrategy…\p");
 static const u8 sText_PlayerRegroupHome[] = _("{PLAYER} scurried back home, to regroup\nand reconsider the battle strategy…\p");
+
+static const u8 sText_NuzlockeRunFailed[] = _("The NUZLOCKE run has ended in defeat!\nAll of {PLAYER}'s POKéMON have fainted…\p");
+static const u8 sText_NuzlockeBeginNewRun[] = _("Begin a new NUZLOCKE run?");
 
 // data[0] is used universally by tasks in this file as a state for switches
 #define tState       data[0]
@@ -1492,6 +1497,168 @@ void FieldCB_RushInjuredPokemonToCenter(void)
     FillPalBufferBlack();
     taskId = CreateTask(Task_RushInjuredPokemonToCenter, 10);
     gTasks[taskId].tState = WHITEOUT_CUTSCENE_ENTER_MSG_SCREEN;
+}
+
+enum {
+    NUZLOCKE_FAILED_ENTER_MSG_SCREEN,
+    NUZLOCKE_FAILED_PRINT_FAILURE_MSG,
+    NUZLOCKE_FAILED_PRINT_QUESTION,
+    NUZLOCKE_FAILED_OPEN_YESNO,
+    NUZLOCKE_FAILED_PROCESS_YESNO,
+};
+
+// baseBlock 331 starts right after the 30x11 = 330 tile range
+// sWindowTemplate_WhiteoutText reserves starting at baseBlock 1 -- reusing
+// sYesNo_WindowTemplates (menu.c) here would collide with that range (its
+// baseBlock 0x125 falls inside it) and corrupt whichever window draws second.
+// width 6 (rather than gText_YesNo's usual 5) leaves room to center "YES"/"NO"
+// inside the box instead of hugging its left edge.
+// tilemapLeft centers the box in the 30-tile-wide screen: (30 - 6) / 2 = 12.
+static const struct WindowTemplate sNuzlockeFailedYesNoWindowTemplate =
+{
+    .bg = 0,
+    .tilemapLeft = 12,
+    .tilemapTop = 9,
+    .width = 6,
+    .height = 4,
+    .paletteNum = 15,
+    .baseBlock = 331,
+};
+
+#define tYesNoWindowId data[4]
+
+// Same job as PrintWhiteOutRecoveryMessage above, except the text is
+// horizontally centered in the window instead of left-aligned at a fixed x --
+// kept separate so the original whiteout cutscene's layout is untouched.
+static bool32 PrintNuzlockeFailedMessage(u8 taskId, const u8 *text, u32 y)
+{
+    u32 windowId = gTasks[taskId].tWindowId;
+
+    switch (gTasks[taskId].tPrintState)
+    {
+    case 0:
+    {
+        s32 x;
+
+        FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
+        StringExpandPlaceholders(gStringVar4, text);
+        x = GetStringCenterAlignXOffset(FONT_NORMAL, gStringVar4, sWindowTemplate_WhiteoutText.width * 8);
+        AddTextPrinterParameterized4(windowId, FONT_NORMAL, x, y, 1, 0, sWhiteoutTextColors, 1, gStringVar4);
+        gTextFlags.canABSpeedUpPrint = FALSE;
+        gTasks[taskId].tPrintState = 1;
+        break;
+    }
+    case 1:
+        RunTextPrinters();
+        if (!IsTextPrinterActiveOnWindow(windowId))
+        {
+            gTasks[taskId].tPrintState = 0;
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+
+// Shown instead of FieldCB_RushInjuredPokemonToCenter whenever the whiteout
+// that got us here also emptied the party under Nuzlocke rules. The save file
+// has already been wiped by this point (RemoveFaintedMonsFromParty, called
+// from DoWhiteOut before this field callback is ever chosen) -- achievements
+// and boosts live outside the save slots and are untouched either way -- so
+// this screen is purely about what the player does *next*, not about whether
+// the wipe happens.
+static void Task_NuzlockeRunFailed(u8 taskId)
+{
+    u32 windowId;
+
+    switch (gTasks[taskId].tState)
+    {
+    case NUZLOCKE_FAILED_ENTER_MSG_SCREEN:
+        windowId = AddWindow(&sWindowTemplate_WhiteoutText);
+        gTasks[taskId].tWindowId = windowId;
+        Menu_LoadStdPalAt(BG_PLTT_ID(15));
+        FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
+        PutWindowTilemap(windowId);
+        CopyWindowToVram(windowId, COPYWIN_FULL);
+        gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_FAILURE_MSG;
+        break;
+    case NUZLOCKE_FAILED_PRINT_FAILURE_MSG:
+        if (PrintNuzlockeFailedMessage(taskId, sText_NuzlockeRunFailed, 8))
+            gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_QUESTION;
+        break;
+    case NUZLOCKE_FAILED_PRINT_QUESTION:
+        if (PrintNuzlockeFailedMessage(taskId, sText_NuzlockeBeginNewRun, 8))
+            gTasks[taskId].tState = NUZLOCKE_FAILED_OPEN_YESNO;
+        break;
+    case NUZLOCKE_FAILED_OPEN_YESNO:
+    {
+        // Custom drawing instead of CreateYesNoMenu: that hard-codes the
+        // standard tan message-box frame and default (black-on-white) font
+        // colors, which would look like a separate popup instead of part of
+        // this same black full-screen text. Plain black fill + the same
+        // white text color as the message above keeps it visually unified.
+        u8 yesNoWindowId = AddWindow(&sNuzlockeFailedYesNoWindowTemplate);
+        // InitMenuInUpperLeftCornerNormal below draws the cursor arrow at the
+        // window's left edge (its own x=0..7), same as CreateYesNoMenu -- so
+        // centering starts after that 8px reserved for the arrow, not from
+        // the window's true left edge.
+        s32 x = 8 + GetStringCenterAlignXOffset(FONT_NORMAL, gText_YesNo, (sNuzlockeFailedYesNoWindowTemplate.width * 8) - 8);
+
+        gTasks[taskId].tYesNoWindowId = yesNoWindowId;
+        FillWindowPixelBuffer(yesNoWindowId, PIXEL_FILL(0));
+        AddTextPrinterParameterized4(yesNoWindowId, FONT_NORMAL, x, 1, 0, 0, sWhiteoutTextColors, TEXT_SKIP_DRAW, gText_YesNo);
+        PutWindowTilemap(yesNoWindowId);
+        CopyWindowToVram(yesNoWindowId, COPYWIN_FULL);
+        // Since we skipped CreateYesNoMenu, use InitMenuInUpperLeftCornerNormal
+        // directly to wire up cursor movement, and Menu_ProcessInputNoWrap
+        // (not the ClearOnChoose variant, which assumes CreateYesNoMenu's
+        // internal window and would try to erase the wrong graphics).
+        // Default the cursor to NO -- there's no undo once a new run starts.
+        InitMenuInUpperLeftCornerNormal(yesNoWindowId, 2, 1);
+        gTasks[taskId].tState = NUZLOCKE_FAILED_PROCESS_YESNO;
+        break;
+    }
+    case NUZLOCKE_FAILED_PROCESS_YESNO:
+        switch (Menu_ProcessInputNoWrap())
+        {
+        case 0: // YES -- start a new run, same as any other Nuzlocke-wipe entry point
+            RemoveWindow(gTasks[taskId].tYesNoWindowId);
+            RemoveWindow(gTasks[taskId].tWindowId);
+            // Both CB2_NewGame and CB2_InitTitleScreen assume they're being
+            // entered onto a blank slate (that's how every other caller of
+            // either uses them -- e.g. New Game+ in start_menu.c calls this
+            // same function before CB2_NewGame). We got here from a field
+            // callback with a fully loaded overworld map still behind us
+            // (windows, BG tilemap buffers, etc.), so skipping this leaves
+            // that map's buffers dangling; the next screen allocates its own
+            // over top of them, and whichever save gets continued afterwards
+            // ends up reading/rendering through corrupted leftovers (this is
+            // what caused the corrupted party/overworld graphics on "No").
+            CleanupOverworldWindowsAndTilemaps();
+            DestroyTask(taskId);
+            SetMainCallback2(CB2_NewGame);
+            break;
+        case 1: // NO
+        case MENU_B_PRESSED:
+            RemoveWindow(gTasks[taskId].tYesNoWindowId);
+            RemoveWindow(gTasks[taskId].tWindowId);
+            CleanupOverworldWindowsAndTilemaps();
+            DestroyTask(taskId);
+            SetMainCallback2(CB2_InitTitleScreen);
+            break;
+        }
+        break;
+    }
+}
+
+void FieldCB_NuzlockeRunFailed(void)
+{
+    u8 taskId;
+
+    LockPlayerFieldControls();
+    FillPalBufferBlack();
+    taskId = CreateTask(Task_NuzlockeRunFailed, 10);
+    gTasks[taskId].tState = NUZLOCKE_FAILED_ENTER_MSG_SCREEN;
 }
 
 static void GetStairsMovementDirection(u32 metatileBehavior, s16 *speedX, s16 *speedY)

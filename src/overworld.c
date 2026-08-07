@@ -2066,7 +2066,11 @@ void CB2_WhiteOut(void)
         ResetInitialPlayerAvatarState();
         ScriptContext_Init();
         UnlockPlayerFieldControls();
-        if (IsWhiteoutCutscene())
+        if (gSaveBlock1Ptr->nuzlockeModeEnabled && IsPartyEmpty())
+            // Save is already wiped by RemoveFaintedMonsFromParty above;
+            // this screen only decides where the player goes next.
+            gFieldCallback = FieldCB_NuzlockeRunFailed;
+        else if (IsWhiteoutCutscene())
             gFieldCallback = FieldCB_RushInjuredPokemonToCenter;
         else
             gFieldCallback = FieldCB_WarpExitFadeFromBlack;
@@ -2134,13 +2138,16 @@ static void CB2_LoadMapOnReturnToFieldCableClub(void)
 
 void CB2_ReturnToField(void)
 {
+    // Note: this callback fires on every return to the field, not just after
+    // a battle (closing the bag, PC, shop, party menu, etc. all funnel
+    // through here too), so it must not itself arm gDoAutosave -- that would
+    // autosave on those plain menu returns. RemoveFaintedMonsFromParty()
+    // still needs to run unconditionally under Nuzlocke rules (a fainted mon
+    // may be sitting in the party from the battle that just ended), but it
+    // only arms the autosave when it actually removed something.
     if (gSaveBlock1Ptr->nuzlockeModeEnabled)
     {
-        gDoAutosave = TRUE;
         RemoveFaintedMonsFromParty();
-    }
-    else if (gSaveBlock1Ptr->autosaveModeEnabled) {
-        gDoAutosave = TRUE;
     }
     if (IsOverworldLinkActive() == TRUE)
     {
@@ -2214,6 +2221,7 @@ void RemoveFaintedMonsFromParty(void)
 {
     if (gSaveBlock1Ptr->nuzlockeModeEnabled) {
         int i, j;
+        bool8 removedAny = FALSE;
         for (i = 0; i < PARTY_SIZE; i++)
         {
             if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE &&
@@ -2224,6 +2232,7 @@ void RemoveFaintedMonsFromParty(void)
                 // count it once per Pokemon actually removed, for Perfect
                 // Nuzlocke/The Graveyard.
                 Achievement_RecordNuzlockeMonLost();
+                removedAny = TRUE;
                 // Shift all Pokémon above this one down by one
                 for (j = i; j < PARTY_SIZE - 1; j++)
                     gParties[B_TRAINER_PLAYER][j] = gParties[B_TRAINER_PLAYER][j + 1];
@@ -2243,7 +2252,12 @@ void RemoveFaintedMonsFromParty(void)
             // Wipe the save file
             ClearSaveData();
         }
-        else {
+        else if (removedAny) {
+            // Only arm the autosave when a mon was actually removed here --
+            // this function is also called on every plain return to the
+            // field (CB2_ReturnToField) under Nuzlocke rules, and it must
+            // stay a no-op there when nothing fainted, or autosave would
+            // fire on simple menu closes and map transitions again.
             gDoAutosave = TRUE;
         }
     }

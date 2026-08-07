@@ -1473,7 +1473,7 @@ static void CB2_EndTrainerBattle(void)
 
     HandleBattleVariantEndParty();
 
-    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled || gSaveBlock1Ptr->autosaveModeEnabled)
     {
         gDoAutosaveAfterBattle = TRUE;
     }
