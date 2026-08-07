@@ -372,6 +372,10 @@ static const u8 sText_BoostsMenuRowLabel[]  = _("BOOSTS");
 // DrawTierSelectHeaderText and EnterDetailLevel), so the strings themselves
 // carry only what the icon can't say.
 static const u8 sText_PointsSummaryFormat[] = _("{STR_VAR_1}/{STR_VAR_2}");
+// Used in place of sText_PointsSummaryFormat until boosts unlock -- before
+// that, points can't be spent, so the "{available}/{total}" fraction would
+// always read "{total}/{total}" and just be noise; show the bare total.
+static const u8 sText_TotalPointsFormat[]   = _("{STR_VAR_1}");
 static const u8 sText_RewardFormat[]        = _("Reward: {STR_VAR_1}");
 static const u8 sText_StatusCompleted[]     = _("Status: Completed");
 static const u8 sText_StatusIncomplete[]    = _("Status: Not completed");
@@ -1096,10 +1100,21 @@ static void DrawTierSelectHeaderText(void)
     // {available points}/{total points earned} -- a fraction reads faster
     // and takes less horizontal space than the old "{total} ({available}
     // free)" wording did, which matters here since this line also has to
-    // fit the title and the [B] BACK hint.
-    ConvertIntToDecimalStringN(gStringVar1, Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
-    ConvertIntToDecimalStringN(gStringVar2, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
-    StringExpandPlaceholders(gStringVar4, sText_PointsSummaryFormat);
+    // fit the title and the [B] BACK hint. Boosts unlock is what makes
+    // "available" a meaningful concept at all -- until then nothing has
+    // ever been spent, so available == total and the fraction is just
+    // "{total}/{total}" noise; show the bare total instead.
+    if (Achievement_BoostsUnlocked())
+    {
+        ConvertIntToDecimalStringN(gStringVar1, Achievement_GetAvailablePoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+        ConvertIntToDecimalStringN(gStringVar2, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+        StringExpandPlaceholders(gStringVar4, sText_PointsSummaryFormat);
+    }
+    else
+    {
+        ConvertIntToDecimalStringN(gStringVar1, Achievement_GetTotalPoints(), STR_CONV_MODE_LEFT_ALIGN, 6);
+        StringExpandPlaceholders(gStringVar4, sText_TotalPointsFormat);
+    }
     fontId = GetFontIdToFit(gStringVar4, FONT_NORMAL, 0, availWidth);
 
     // Not ACHIEVEMENT_ICON_Y(0) -- that macro's -1 inset assumes text one
