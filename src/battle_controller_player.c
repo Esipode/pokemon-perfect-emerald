@@ -2039,7 +2039,8 @@ static void PlayerHandleChooseAction(enum BattlerId battler)
     // B_ACTION_USE_MOVE, same as OpponentHandleChooseAction does for AI-controlled opponents.
     // This lets the normal B_ACTION_USE_MOVE -> EmitChooseMove -> PlayerHandleChooseMove pipeline
     // run so the AI's chosen move actually gets recorded (see HandleInputChooseMove).
-    if (IsPlayerAiControlled() && !(gBattleTypeFlags & BATTLE_TYPE_PALACE))
+    // BATTLE_TYPE_PALACE is excluded from AiBattles_IsActive() itself; see ai_battles.h.
+    if (IsPlayerAiControlled())
     {
         BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_USE_MOVE, BATTLE_OPPOSITE(battler) << 8);
         BtlController_Complete(battler);
@@ -2143,7 +2144,8 @@ void PlayerHandleChooseMove(enum BattlerId battler)
     // If AI is controlling the player, emit the AI's chosen move immediately instead of
     // building/showing the move selection UI first (which would otherwise flash on screen
     // for a frame before HandleInputChooseMove's own AI check kicked in).
-    if (IsPlayerAiControlled() && !(gBattleTypeFlags & BATTLE_TYPE_PALACE))
+    // BATTLE_TYPE_PALACE is excluded from AiBattles_IsActive() itself; see ai_battles.h.
+    if (IsPlayerAiControlled())
     {
         SetFinalChosenTarget(battler, FALSE);
         BtlController_Complete(battler);

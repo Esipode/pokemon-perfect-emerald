@@ -823,7 +823,7 @@ struct BattleScripting
     u8 animArg2;
     u16 savedStringId;
     u8 moveendState;
-    u8 unused_0x15;
+    u8 aiControlled; // Cached AiBattles_ShouldAutoConfirmSendOut() for the current battle; see include/ai_battles.h.
     u8 shiftSwitched; // When the game tells you the next enemy's pokemon and you switch.
     enum BattlerId battler;
     u8 animTurn;

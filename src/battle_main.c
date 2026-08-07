@@ -3765,6 +3765,7 @@ static void ClearSetBScriptingStruct(void)
 
     gBattleScripting.windowsType = temp;
     gBattleScripting.battleStyle = AiBattles_ForcesBattleStyleSet() ? OPTIONS_BATTLE_STYLE_SET : gSaveBlock2Ptr->optionsBattleStyle;
+    gBattleScripting.aiControlled = AiBattles_ShouldAutoConfirmSendOut();
     #if TESTING
     gBattleScripting.battleStyle = OPTIONS_BATTLE_STYLE_SET;
     #endif
@@ -4912,7 +4913,7 @@ static void HandleTurnActionSelectionState(void)
         case STATE_TURN_START_RECORD: // Recorded battle related action on start of every turn.
             RecordedBattle_CopyBattlerMoves(battler);
             gBattleCommunication[battler] = STATE_BEFORE_ACTION_CHOSEN;
-            bool32 isAiBattler = (((gBattleTypeFlags & BATTLE_TYPE_HAS_AI) || IsWildMonSmart() || IsPlayerAiControlled())) && (BattlerHasAi(battler) && !(gBattleTypeFlags & BATTLE_TYPE_PALACE));
+            bool32 isAiBattler = IsSmartBattle() && BattlerHasAi(battler) && !(gBattleTypeFlags & BATTLE_TYPE_PALACE);
             if (isAiBattler)
             {
                 ComputeAiBattlerDecisions(battler); // Do AI score computations here so we can use them in AI_TrySwitchOrUseItem

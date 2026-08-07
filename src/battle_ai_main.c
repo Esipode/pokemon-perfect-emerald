@@ -1,6 +1,7 @@
 #include "global.h"
 #include "main.h"
 #include "malloc.h"
+#include "ai_battles.h"
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_ai_util.h"
@@ -244,23 +245,22 @@ static u64 GetWildAiFlags(void)
     return flags;
 }
 
-static bool32 IsSmartBattle(void)
+bool32 IsSmartBattle(void)
 {
     if (IsSpecialTrainer(TRAINER_BATTLE_PARAM.opponentA))
         return FALSE; // Don't set flags for link battle unless Battle Tower link multi mode
 
-    return gBattleTypeFlags & BATTLE_TYPE_HAS_AI || IsWildMonSmart();
+    // AiBattles_IsActive() covers wild AI battles, which aren't BATTLE_TYPE_HAS_AI and
+    // don't set the WE_SMART_WILD_AI_FLAG that IsWildMonSmart() checks. See ai_battles.h.
+    return (gBattleTypeFlags & BATTLE_TYPE_HAS_AI) || IsWildMonSmart() || AiBattles_IsActive();
 }
 
 static u64 GetAiFlags(u16 trainerId, enum BattlerId battler)
 {
     u64 flags = 0;
 
-    // Allow wild battles (non-trainer) to proceed regardless of FLAG_AI_WILD_BATTLES
-    if (!IsSmartBattle() && gBattleTypeFlags & BATTLE_TYPE_TRAINER && !FlagGet(FLAG_AI_WILD_BATTLES))
-    {
+    if (!IsSmartBattle())
         return 0;
-    }
     // Wild battle: use wild AI flags when opponentA is 0 (wild battles have opponentA = 0 from ResetTrainerOpponentIds)
     if (trainerId == 0xFFFF || (trainerId == 0 && !(gBattleTypeFlags & BATTLE_TYPE_TRAINER)))
     {

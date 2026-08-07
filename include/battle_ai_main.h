@@ -100,6 +100,7 @@ enum MoveComparisonResult
     return score;                   \
 }
 
+bool32 IsSmartBattle(void);
 void BattleAI_SetupAIData(u8 defaultScoreMoves, enum BattlerId battler);
 void BattleAI_SetupItems(void);
 void BattleAI_SetupFlags(void);
