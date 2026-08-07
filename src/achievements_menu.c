@@ -24,9 +24,8 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
-// Stage 3.1 template (design doc §3.1): src/new_game_settings_menu.c's
-// skeleton copied wholesale -- BG/window templates, staged CB2 init,
-// ListMenu + scroll arrows.
+// src/new_game_settings_menu.c's skeleton copied wholesale -- BG/window
+// templates, staged CB2 init, ListMenu + scroll arrows.
 //
 // UI art pass: bg1 is a dedicated art layer (its own charBaseIndex, separate
 // from every window's font tiles) showing one of two full-screen pictures --
@@ -42,8 +41,8 @@
 // mockup and src/ui_stat_editor.c for the same bg1-art/bg0-window split this
 // borrows from.
 //
-// Stage 3.2 (design doc §3.2): the three-level TIER SELECT / LIST / DETAIL
-// flow. One CB2 boots the screen straight into TIER SELECT; the three levels
+// The three-level TIER SELECT / LIST / DETAIL flow. One CB2 boots the
+// screen straight into TIER SELECT; the three levels
 // then swap the task's func and rebuild the same WIN_HEADER/WIN_LIST/
 // WIN_DESCRIPTION trio in place rather than re-running the CB2 state machine.
 // TIER SELECT and LIST each load their own bg1 screen (LoadMenuBackground,
@@ -55,13 +54,13 @@
 // doesn't land until the next vblank. LIST and DETAIL share one bg1 screen
 // and never swap it, so moving between those two still doesn't fade.
 //
-// Stage 3.3 (Start Menu entry point) is wired separately in
-// src/start_menu.c (MENU_ACTION_ACHIEVEMENTS / StartMenuAchievementsCallback).
+// The Start Menu entry point is wired separately in src/start_menu.c
+// (MENU_ACTION_ACHIEVEMENTS / StartMenuAchievementsCallback).
 //
-// The "Boosts" row on the TIER SELECT mockup (Stage 7): appended to the tier
-// list as one extra row, id TIER_SELECT_ITEM_BOOSTS, only when
-// Achievement_BoostsUnlocked() && Achievement_BoostsEnabled() (Stage 6: OFF
-// hides the shop, not just the toggle). Selecting it fades out and jumps to
+// The "Boosts" row on the TIER SELECT screen: appended to the tier list as
+// one extra row, id TIER_SELECT_ITEM_BOOSTS, only when
+// Achievement_BoostsUnlocked() && Achievement_BoostsEnabled() (OFF hides the
+// shop, not just the toggle). Selecting it fades out and jumps to
 // src/achievement_boost_menu.c's CB2_InitAchievementBoostMenu, with
 // gMain.savedCallback pointed back at CB2_InitAchievementsMenu so its own
 // [B] Back re-enters here at a fresh TIER SELECT. Since that overwrites
@@ -79,8 +78,8 @@ enum
 };
 
 // ACHIEVEMENT_TIER_COUNT itself now comes from enum AchievementTier
-// (constants/achievements.h, Stage 21) -- this used to be its own local
-// derivation before that wave gave the rest of the codebase a shared one.
+// (constants/achievements.h) -- this used to be its own local derivation
+// before it was given a shared one.
 
 #define ACHIEVEMENTS_MENU_MAX_SHOWED 5
 #define ACHIEVEMENTS_MENU_ITEM_COUNT (ACHIEVEMENTS_COUNT - 1) // excludes ACHIEVEMENT_NONE
@@ -119,7 +118,7 @@ enum
 #define ACHIEVEMENTS_ARROW_BOTTOM_Y 100
 
 // WIN_DESCRIPTION/WIN_LIST are 26 tiles (208px) wide, text starts at x=8 --
-// AddTextPrinterParameterized never clips or wraps on its own (design doc/
+// AddTextPrinterParameterized never clips or wraps on its own (see
 // src/achievement_popup.c's own ACHIEVEMENT_POPUP_DESC_MAX_WIDTH precedent),
 // so an unwrapped achievement description longer than this bleeds past the
 // window's right edge into the tile memory of the row below it.
@@ -183,32 +182,35 @@ enum
 // achievement list rows and the (shorter) tier select rows.
 #define ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE (ACHIEVEMENT_NAME_LENGTH + 8)
 
-// TIER SELECT's own row count once the Stage 7 "BOOSTS" row is visible --
-// one past the last real tier ID, reused as that row's ListMenuItem.id too
+// TIER SELECT's own row count once the "BOOSTS" row is visible -- one past
+// the last real tier ID, reused as that row's ListMenuItem.id too
 // (see TIER_SELECT_ITEM_BOOSTS below).
 #define TIER_SELECT_ROW_COUNT (ACHIEVEMENT_TIER_COUNT + 1)
 
 // Shared by both lists this menu ever shows (tier select's up to
 // TIER_SELECT_ROW_COUNT rows, or one tier's worth of achievement rows),
-// sized to whichever is larger. Originally just ACHIEVEMENTS_MENU_ITEM_COUNT
-// (the *whole* catalog) -- correct (never undersized, unlike an earlier
-// version of this macro that corrupted memory past the array's end when tier
-// select wrote all its rows) but wasteful, since BuildAchievementListItems
-// below only ever shows one tier's rows at once, never the whole catalog.
+// sized to whichever is larger.
 //
-// Stage 15 (catalog wave 2): replaced with a manually-tracked worst-case
-// single-tier count instead. At the end of Stage 15 the largest tier
-// (Silver) holds 32 entries; ACHIEVEMENTS_MENU_MAX_PER_TIER gives headroom
-// above that so it doesn't need bumping on every wave, but MUST be raised if
-// a future wave ever pushes a single tier's count above it.
-// BuildAchievementListItems' bounds check fails safe (truncates the list
-// rather than corrupting EWRAM) if this is ever wrong, but a truncated
-// achievement list is still a bug worth catching early -- bump this the
-// moment a future wave's tier totals approach it.
-#define ACHIEVEMENTS_MENU_MAX_PER_TIER 60
-
+// Bug (reported after the catalog grew further): this used to be a
+// manually-tracked worst-case single-tier count (ACHIEVEMENTS_MENU_MAX_PER_
+// TIER, fixed at 60 with a comment claiming the largest tier -- Silver --
+// held only 32 entries). BuildAchievementListItems' bounds check fails safe
+// (truncates rather than corrupting EWRAM past the array's end), so nothing
+// crashed -- the SILVER and GOLD lists just silently stopped rendering past
+// their first 60 entries once those tiers' catalogs grew past that guess
+// (Silver: 70, Gold: 98 as of this fix), with no compiler warning to catch
+// it. A fixed guess needs a human to notice and bump it every time the
+// catalog grows; nothing forced that to happen.
+//
+// Back to ACHIEVEMENTS_MENU_ITEM_COUNT (the whole catalog) instead, so this
+// is always at least as large as any single tier's rows can ever be --
+// derived from ACHIEVEMENTS_COUNT, so it grows with the catalog
+// automatically and can't go stale again. Costs a few KB more EWRAM than a
+// tight per-tier bound would (sAchievementsListNameBuffers/
+// sAchievementsListItems below are sized off this), which is well within
+// budget for a menu that owns none of the game's other EWRAM-heavy state.
 #define ACHIEVEMENTS_MENU_LIST_CAPACITY \
-    (ACHIEVEMENTS_MENU_MAX_PER_TIER > TIER_SELECT_ROW_COUNT ? ACHIEVEMENTS_MENU_MAX_PER_TIER : TIER_SELECT_ROW_COUNT)
+    (ACHIEVEMENTS_MENU_ITEM_COUNT > TIER_SELECT_ROW_COUNT ? ACHIEVEMENTS_MENU_ITEM_COUNT : TIER_SELECT_ROW_COUNT)
 
 EWRAM_DATA static u8 sAchievementsListNameBuffers[ACHIEVEMENTS_MENU_LIST_CAPACITY][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE] = {0};
 EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_LIST_CAPACITY] = {0};
@@ -289,7 +291,7 @@ EWRAM_DATA static struct
     u16 total;
 } sTierCounts[ACHIEVEMENT_TIER_COUNT] = {0};
 
-// Stage 7: this menu's own CB2 doubles as the boost shop's return point
+// This menu's own CB2 doubles as the boost shop's return point
 // (Task_TierSelect_OpenBoostMenu sets gMain.savedCallback =
 // CB2_InitAchievementsMenu before jumping there), which would otherwise
 // clobber the *real* caller (Start Menu/debug menu) recorded in
@@ -338,9 +340,9 @@ static const u8 sText_ControlHint[]        = _("{B_BUTTON} BACK");
 // glyphs instead of literal brackets.
 static const u8 sText_CompletedPrefix[]    = _("{CIRCLE_DOT} ");
 static const u8 sText_IncompletePrefix[]   = _("{CIRCLE_HOLLOW} ");
-// design doc §17: hidden achievements show as "???" -- name and description
-// both -- until completed. Their point value and tier are not withheld
-// (mirrors the design doc §3.2 mockup: "[ ] ???                50").
+// Hidden achievements show as "???" -- name and description both -- until
+// completed. Their point value and tier are not withheld
+// (e.g. "[ ] ???                50").
 static const u8 sText_HiddenName[]         = _("???");
 static const u8 sText_HiddenDescription[]  = _("???");
 
@@ -360,7 +362,7 @@ static const u8 *const sTierNames[ACHIEVEMENT_TIER_COUNT] =
 static const u8 sText_TierCountSeparator[]  = _(" / ");
 static const u8 sText_BoostsMenuRowLabel[]  = _("BOOSTS");
 
-// The extra TIER SELECT row (Stage 7) sits one past the last real tier ID --
+// The extra TIER SELECT row sits one past the last real tier ID --
 // safe as a ListMenuItem.id since tier IDs and this are otherwise disjoint,
 // and TierSelect_ItemPrintCallback/Task_TierSelect_ProcessInput both check
 // for it before treating an itemId as a tier.
@@ -832,8 +834,8 @@ static void EnterTierSelectLevel(u8 taskId)
         SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
         // Clamped like EnterListLevel's own scroll arrows below -- now that
         // ACHIEVEMENTS_MENU_MAX_SHOWED is 5, itemCount is 4 whenever the
-        // Stage 7 BOOSTS row is hidden, and a bare subtraction would go
-        // negative (see EnterListLevel's own comment on this exact bug).
+        // BOOSTS row is hidden, and a bare subtraction would go negative
+        // (see EnterListLevel's own comment on this exact bug).
         (itemCount > ACHIEVEMENTS_MENU_MAX_SHOWED) ? (itemCount - ACHIEVEMENTS_MENU_MAX_SHOWED) : 0,
         TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
         &sAchievementsMenu.tierScrollOffset);
@@ -986,7 +988,7 @@ static void TierSelect_DrawRow(u8 windowId, u32 tier, u8 y, const u8 *colors)
     u8 *ptr;
     s32 width;
 
-    // The Stage 7 "BOOSTS" row (id TIER_SELECT_ITEM_BOOSTS) isn't a tier --
+    // The "BOOSTS" row (id TIER_SELECT_ITEM_BOOSTS) isn't a tier --
     // sTierCounts[] has no entry for it, and it has no medal icon or count
     // column of its own.
     if (tier >= ACHIEVEMENT_TIER_COUNT)
@@ -1055,8 +1057,8 @@ static void BuildTierSelectListItems(void)
     }
 }
 
-// design doc Stage 6: OFF hides the shop (not just the toggle), so this
-// checks both -- unlocked but disabled must not show the row.
+// OFF hides the shop (not just the toggle), so this checks both -- unlocked
+// but disabled must not show the row.
 static bool8 IsBoostShopRowVisible(void)
 {
     return Achievement_BoostsUnlocked() && Achievement_BoostsEnabled();
@@ -1159,14 +1161,13 @@ static void EnterListLevel(u8 taskId, u8 tier)
     gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenu.listScrollOffset, sAchievementsMenu.listSelectedRow);
     gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
         SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
-        // Clamped, not a bare subtraction: every tier but BRONZE currently
-        // has fewer than ACHIEVEMENTS_MENU_MAX_SHOWED achievements (Stage
-        // 2.3's 3 test achievements are all BRONZE), so this can go
+        // Clamped, not a bare subtraction: a tier can have fewer than
+        // ACHIEVEMENTS_MENU_MAX_SHOWED achievements, so this can go
         // negative. A negative threshold truncates into a huge u16 when
         // stored (struct ScrollIndicatorPair.fullyDownThreshold,
         // src/list_menu.c:29) that the real scroll offset can never match,
         // leaving the down arrow stuck visible with nothing left to scroll
-        // to (same issue fixed for the Stage 7 boost list in
+        // to (same issue fixed for the boost list in
         // src/achievement_boost_menu.c).
         (sAchievementsMenu.listItemCount > ACHIEVEMENTS_MENU_MAX_SHOWED) ? (sAchievementsMenu.listItemCount - ACHIEVEMENTS_MENU_MAX_SHOWED) : 0,
         TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
@@ -1304,8 +1305,8 @@ static void AchievementsMenu_ItemPrintCallback(u8 windowId, u32 achievementId, u
 
 // Builds the tier-filtered item list (skips ACHIEVEMENT_NONE and any ID
 // outside this tier) and bakes the completion checkbox into each row's label
-// text. Hidden achievements (design doc §17) render their name as "???"
-// until completed. Achievement completion can't change while this menu is
+// text. Hidden achievements render their name as "???" until completed.
+// Achievement completion can't change while this menu is
 // open, so this only needs to run once, at entry to the tier, rather than
 // being recomputed per redraw.
 static void BuildAchievementListItems(u8 tier)
@@ -1321,9 +1322,10 @@ static void BuildAchievementListItems(u8 tier)
         if (info->tier != tier)
             continue;
 
-        // Stage 15 (catalog wave 2): ACHIEVEMENTS_MENU_MAX_PER_TIER is a
-        // manually-tracked bound, not a derived one -- fail safe (truncate)
-        // rather than write past the array if a future wave ever exceeds it.
+        // ACHIEVEMENTS_MENU_LIST_CAPACITY is derived from ACHIEVEMENTS_COUNT
+        // (see its own comment above) so this can't undersize as the catalog
+        // grows, but keep the fail-safe truncate rather than trust that
+        // invariant blindly.
         if (index >= ACHIEVEMENTS_MENU_LIST_CAPACITY)
             break;
 

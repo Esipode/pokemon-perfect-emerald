@@ -55,10 +55,10 @@
 #define GAME_STAT_PLAYED_BERRY_CRUSH          51
 #define GAME_STAT_DEXNAV_SCANNED              52
 
-// Stage 17 (catalog wave 4, plan Stage 17): the plan doc's infra section
-// budgeted four new slots (money spent, hidden items found, NPCs talked to,
-// berries harvested); Treasure Pays [ECO-011] needs cumulative item-sale
-// proceeds tracked separately from money spent/held, so this wave uses five.
+// Money spent, hidden items found, NPCs talked to, and berries harvested
+// each need their own slot; Treasure Pays [ECO-011] needs cumulative
+// item-sale proceeds tracked separately from money spent/held, so this adds
+// a fifth slot alongside those four.
 #define GAME_STAT_MONEY_SPENT                 53
 #define GAME_STAT_HIDDEN_ITEMS_FOUND          54
 #define GAME_STAT_NPCS_TALKED_TO              55

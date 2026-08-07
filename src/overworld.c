@@ -685,7 +685,7 @@ static void LoadCurrentMapData(void)
     gSaveBlock1Ptr->mapLayoutId = gMapHeader.mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout(gMapHeader.mapLayoutId);
     Achievement_CheckExplorationMilestones();
-    // Stage 22 step 10: Achievement_CheckNuzlockeExplorationMilestones call
+    // Achievement_CheckNuzlockeExplorationMilestones call
     // removed along with the function -- see src/achievements.c.
 }
 
@@ -1979,7 +1979,7 @@ void CB2_Overworld(void)
         AutosaveGame();
     }
 
-    // Bug fix (post-Stage 13): drives the achievement popup queue from here
+    // Bug fix: drives the achievement popup queue from here
     // rather than a self-perpetuating task -- see AchievementPopup_UpdateQueue's
     // comment (src/achievement_popup.c) for why. This is a no-op whenever
     // the queue is empty or the field isn't currently in a safe state to
@@ -2219,7 +2219,7 @@ void RemoveFaintedMonsFromParty(void)
             if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE &&
                 GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HP) == 0)
             {
-                // Stage 18 (catalog wave 5): this is the single function
+                // This is the single function
                 // every Nuzlocke fainted-mon removal funnels through --
                 // count it once per Pokemon actually removed, for Perfect
                 // Nuzlocke/The Graveyard.
@@ -2234,8 +2234,8 @@ void RemoveFaintedMonsFromParty(void)
         }
 
         if (IsPartyEmpty()){
-            // Stage 20 (catalog wave 7): the same IsPartyEmpty() state
-            // Stage 18's Nuzlocke wipe detection already keys off -- mirror
+            // The same IsPartyEmpty() state the
+            // Nuzlocke wipe detection above already keys off -- mirror
             // the run's streak high-water mark into the profile before
             // ClearSaveData() below wipes the run-scoped counters that fed
             // it.

@@ -1134,8 +1134,8 @@ bool8 FldEff_PokecenterHeal(void)
 
     if (IsPartyEmpty() && gSaveBlock1Ptr->nuzlockeModeEnabled)
     {
-        // Stage 20 (catalog wave 7): the same IsPartyEmpty() state Stage
-        // 18's Nuzlocke wipe detection already keys off -- see the sibling
+        // The same IsPartyEmpty() state the
+        // Nuzlocke wipe detection already keys off -- see the sibling
         // call in RemoveFaintedMonsFromParty (src/overworld.c) for why no
         // third detector is added instead.
         Achievement_RecordPartyWipe();
@@ -1145,11 +1145,10 @@ bool8 FldEff_PokecenterHeal(void)
         return FALSE;
     }
     else {
-        // Stage 18 (catalog wave 5): declared since early on (design doc's
-        // gameStats overview) but never actually incremented anywhere in the
+        // Declared since early on but never actually incremented anywhere in the
         // tree -- Who Needs Centers?/No Centers need it live.
         IncrementGameStat(GAME_STAT_USED_POKECENTER);
-        // Stage 20 (catalog wave 7): Nurse's Nightmare, same
+        // Nurse's Nightmare, same
         // already-incremented count.
         Achievement_CheckPokecenterMilestone();
         nPokemon = (OW_IGNORE_EGGS_ON_HEAL <= GEN_3) ? CalculatePlayerPartyCount() : CountPartyNonEggMons();

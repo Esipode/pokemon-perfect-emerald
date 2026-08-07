@@ -11,7 +11,7 @@
 #include "main.h"
 #include "malloc.h"
 #include "menu.h"
-#include "money.h"               // IsEnoughMoney, for the Stage 11 reset row's status text
+#include "money.h"               // IsEnoughMoney, for the reset row's status text
 #include "palette.h"
 #include "scanline_effect.h"
 #include "sound.h"
@@ -24,10 +24,9 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
-// Stage 7 (design doc Stage 7 / plan §7): skeleton copied wholesale from
-// src/achievements_menu.c (same BG/window templates, staged CB2 init,
-// ListMenu + scroll arrows) -- same precedent achievements_menu.c itself
-// followed from src/new_game_settings_menu.c.
+// Skeleton copied wholesale from src/achievements_menu.c (same BG/window
+// templates, staged CB2 init, ListMenu + scroll arrows) -- same precedent
+// achievements_menu.c itself followed from src/new_game_settings_menu.c.
 //
 // UI art pass: bg1 is a dedicated art layer (own charBaseIndex, separate
 // from every window's font tiles) showing the "boosts" screen of
@@ -53,17 +52,17 @@
 //
 // Reached from src/achievements_menu.c's TIER SELECT level via a "BOOSTS"
 // row appended when Achievement_BoostsUnlocked() && Achievement_BoostsEnabled()
-// (design doc Stage 6: OFF hides the shop, not just the toggle). Also
-// reachable unconditionally from the debug menu for testing before Stage 5's
-// unlock gate has actually been cleared on a given save.
+// (OFF hides the shop, not just the toggle). Also reachable unconditionally
+// from the debug menu for testing before the unlock gate has actually been
+// cleared on a given save.
 //
-// Stage 11 (design doc §13/Stage 11): a synthetic "RESET BOOSTS" row is
-// appended after the real boosts (BOOST_MENU_ITEM_RESET, same trick as
-// achievements_menu.c's own BOOSTS row). Unlike a purchase, [A] on it does
-// show a confirmation screen -- it swaps WIN_LIST's ListMenu for a throwaway
-// Yes/No list (see EnterResetConfirmLevel) rather than committing directly,
-// since AchievementBoost_Reset() is destructive to every purchased level at
-// once and costs real Poké money.
+// A synthetic "RESET BOOSTS" row is appended after the real boosts
+// (BOOST_MENU_ITEM_RESET, same trick as achievements_menu.c's own BOOSTS
+// row). Unlike a purchase, [A] on it does show a confirmation screen -- it
+// swaps WIN_LIST's ListMenu for a throwaway Yes/No list (see
+// EnterResetConfirmLevel) rather than committing directly, since
+// AchievementBoost_Reset() is destructive to every purchased level at once
+// and costs real Poké money.
 
 enum
 {
@@ -79,8 +78,8 @@ enum
 // height reserved for a status line (see that window's own comment).
 #define BOOST_MENU_MAX_SHOWED 5
 
-// Stage 11: a synthetic row appended after the real boosts, same "one past
-// the last real enum value" trick src/achievements_menu.c uses for its own
+// A synthetic row appended after the real boosts, same "one past the last
+// real enum value" trick src/achievements_menu.c uses for its own
 // TIER_SELECT_ITEM_BOOSTS row -- never a real BoostId, never passed to
 // AchievementBoost_GetInfo.
 #define BOOST_MENU_ITEM_RESET BOOSTS_COUNT
@@ -165,8 +164,8 @@ static s32 BlitBoostLinePointsIcon(s32 x, u8 y);
 static void PrintBoostStatus(s32 boostId);
 static void DrawHeaderText(void);
 
-// Stage 11: the reset-confirmation sub-flow. Reuses WIN_LIST/WIN_DESCRIPTION
-// and the same ListMenu plumbing as the main boost list -- "tear down and
+// The reset-confirmation sub-flow. Reuses WIN_LIST/WIN_DESCRIPTION and the
+// same ListMenu plumbing as the main boost list -- "tear down and
 // re-enter with a different item set" is the same trick TryPurchaseBoost
 // already uses to refresh the list after a purchase, just pointed at a
 // throwaway 2-item Yes/No list instead of the real boost catalog.
@@ -197,8 +196,8 @@ static const u8 sText_BoostLevelSep[]   = _("/");
 // boost row beyond its plain description.
 static const u8 sText_BoostSystemLockedStatus[] = _("Boosts are locked.");
 
-// Stage 11: the synthetic "RESET BOOSTS" row and its confirmation sub-flow.
-// The two figures that used to be suffixed "pts" are drawn with the points
+// The synthetic "RESET BOOSTS" row and its confirmation sub-flow. The two
+// figures that used to be suffixed "pts" are drawn with the points
 // icon instead, which is why the refund and the fee are separate strings now
 // rather than one format -- the icon goes between them.
 static const u8 sText_ResetBoostsRowLabel[]       = _("RESET BOOSTS");
@@ -658,8 +657,8 @@ static void TryPurchaseBoost(u8 taskId, u16 boostId)
     }
 }
 
-// Stage 11: unlike TryPurchaseBoost, this doesn't commit anything by itself
-// -- AchievementBoost_CanReset() gates entry into the confirmation sub-flow
+// Unlike TryPurchaseBoost, this doesn't commit anything by itself --
+// AchievementBoost_CanReset() gates entry into the confirmation sub-flow
 // (Task_BoostMenu_ConfirmResetInput), which is the only place that actually
 // calls AchievementBoost_Reset().
 static void TryResetBoosts(u8 taskId)
@@ -732,7 +731,7 @@ static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y)
     if (selected)
         ListMenuOverrideSetColors(colors[1], colors[0], colors[2]);
 
-    // Stage 11: the reset row has no level/cost to show on its right side --
+    // The reset row has no level/cost to show on its right side --
     // AchievementBoost_GetInfo(BOOST_MENU_ITEM_RESET) would otherwise fall
     // back to the BOOST_NONE dummy entry (maxLevel 0) and misprint "MAX".
     if (boostId == BOOST_MENU_ITEM_RESET)
@@ -799,7 +798,7 @@ static void BuildBoostMenuListItems(void)
         index++;
     }
 
-    // Stage 11: the synthetic "RESET BOOSTS" row, always last.
+    // The synthetic "RESET BOOSTS" row, always last.
     StringCopy(sBoostMenuNameBuffers[index], sText_ResetBoostsRowLabel);
     sBoostMenuListItems[index].name = sBoostMenuNameBuffers[index];
     sBoostMenuListItems[index].id = BOOST_MENU_ITEM_RESET;
@@ -901,7 +900,7 @@ static void DestroyCurrentBoostList(u8 taskId)
     RemoveScrollIndicatorArrowPair(gTasks[taskId].tScrollArrowTaskId);
 }
 
-// Stage 11: the two-item Yes/No confirmation list. Only 2 rows against
+// The two-item Yes/No confirmation list. Only 2 rows against
 // BOOST_MENU_MAX_SHOWED 5, so unlike EnterBoostMenuLevel this never needs
 // scroll arrows -- DestroyResetConfirmList (below) mirrors that by never
 // touching tScrollArrowTaskId, which still holds the main list's arrow pair
@@ -980,9 +979,9 @@ static void ResetConfirmMoveCursorCallback(s32 itemIndex, bool8 onInit, struct L
         PlaySE(SE_SELECT);
 }
 
-// design doc §13/Stage 11 "the confirmation prompt shows the refund, the fee
-// and the resulting totals before committing": this view is only ever
-// entered when AchievementBoost_CanReset() already returned TRUE, so unlike
+// The confirmation prompt shows the refund, the fee, and the resulting
+// totals before committing. This view is only ever entered when
+// AchievementBoost_CanReset() already returned TRUE, so unlike
 // PrintBoostStatus's reset branch, this doesn't need to handle the
 // locked/nothing-to-reset/can't-afford cases -- there is always a real
 // refund and fee to show.

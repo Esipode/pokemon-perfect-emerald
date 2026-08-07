@@ -3784,8 +3784,7 @@ static void BattleStartClearSetData(void)
     memset(&gBattleResults, 0, sizeof(gBattleResults));
     ClearSetBScriptingStruct();
 
-    // Stage 15 (catalog wave 2): EWRAM-only, never saved -- reset alongside
-    // gBattleResults above, its closest vanilla analogue.
+    // EWRAM-only, never saved -- reset alongside gBattleResults above
     Achievement_ClearBattleData();
 
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
@@ -6149,27 +6148,23 @@ static void HandleEndTurn_BattleWon(void)
 {
     gCurrentActionFuncId = 0;
 
-    // Stage 15 (catalog wave 2): never during a link or recorded battle --
-    // gBattleResults (unlike AchievementBattleData) is maintained
-    // unconditionally by the vanilla engine, so without this gate a
-    // recorded-battle replay could satisfy a gBattleResults-derived entry
-    // from stale data rather than a live result.
+    // Never during a link or recorded battle
     if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
     {
         Achievement_CheckBattleMilestones();
-        // Stage 16 (catalog wave 3): same gate, same evaluation point --
+        // Same gate, same evaluation point --
         // reads AchievementBattleData while it still reflects this battle.
         Achievement_CheckTeamMilestones();
-        // Stage 17 (catalog wave 4): Save Your Change/Frugal Trainer/No
+        // Save Your Change/Frugal Trainer/No
         // Shopping/Resourceful. Same gate; internally checks whether this
         // win was a Gym battle.
         Achievement_CheckGymEconomyMilestones();
-        // Stage 18 (catalog wave 5): Challenge Runs & Nuzlocke. Same gate;
+        // Challenge Runs & Nuzlocke. Same gate;
         // the Nuzlocke half additionally gates itself on
         // gSaveBlock1Ptr->nuzlockeModeEnabled internally.
         Achievement_CheckChallengeMilestones();
         Achievement_CheckNuzlockeMilestones();
-        // Stage 20 (catalog wave 7): Streaks, Records & Collection
+        // Streaks, Records & Collection
         // Remainder. Same gate, same evaluation point.
         Achievement_CheckBattleRecordsMilestones();
     }

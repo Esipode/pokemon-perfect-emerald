@@ -2002,8 +2002,7 @@ static void SetNonVolatileStatus(enum BattlerId battlerAtk, enum BattlerId effec
         break;
     }
 
-    // Stage 15 (catalog wave 2): player-inflicted status on an opponent,
-    // never in a link or recorded battle.
+    // Achievement check - Player-inflicted status on an opponent, never in a link or recorded battle.
     if (IsOnPlayerSide(battlerAtk) && !IsOnPlayerSide(effectBattler)
      && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
     {
@@ -3807,7 +3806,7 @@ static void Cmd_getexp(void)
                     gBattleStruct->expShareExpValue = 1;
             }
 
-            // Achievement Boosts Stage 8: applied once here, to both pools,
+            // Achievement Boosts: applied once here, to both pools,
             // rather than at each GetSoftLevelCapExpValue call site below --
             // this is the raw pre-soft-cap value ("wrap the input"), so a
             // purchased boost is still throttled by the level cap exactly
@@ -11190,16 +11189,9 @@ void BS_ItemRestoreHP(void)
                 // Track the number of Revives used in a battle.
                 if (gBattleResults.numRevivesUsed < 255)
                     gBattleResults.numRevivesUsed++;
-                // Stage 22 step 5: the Achievement_RecordReviveUsed() call
-                // that used to be here (a cumulative per-run count for
-                // ACHIEVEMENT_NUZLOCKE_NO_REVIVES) was removed along with
-                // that achievement -- see src/achievements.c.
             }
             else if (gBattleResults.numHealingItemsUsed < 255)
             {
-                // Stage 18 (catalog wave 5): declared (include/battle.h) and
-                // read by src/tv.c, but never actually incremented anywhere
-                // in the tree -- No Healing Items/Itemless Battle need it live.
                 gBattleResults.numHealingItemsUsed++;
             }
         }

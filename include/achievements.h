@@ -3,19 +3,18 @@
 
 #include "global.h"
 #include "constants/achievements.h"
-#include "constants/items.h" // enum Item, for Achievement_CheckItemMilestones (Stage 13 category G)
-#include "constants/moves.h" // enum Move, for Achievement_RecordMoveUsed (Stage 15 category K)
-#include "constants/battle.h" // enum BattlerId, for Achievement_RecordOpposingFaint (Stage 15 category K)
+#include "constants/items.h" // enum Item, for Achievement_CheckItemMilestones (category G)
+#include "constants/moves.h" // enum Move, for Achievement_RecordMoveUsed (category K)
+#include "constants/battle.h" // enum BattlerId, for Achievement_RecordOpposingFaint (category K)
 
 #define ACHIEVEMENT_PROFILE_MAGIC   0x50454143  // 'PEAC'
 #define ACHIEVEMENT_PROFILE_VERSION 1
 #define MAX_ACHIEVEMENTS            512   // reserved ceiling -> 64 bytes of flags
 #define MAX_BOOSTS                  32
 
-// Stage 11 (design doc §13): single tunable fee, in Poké money, to reset every
-// boostLevels[] entry and refund pointsInvested in full. Real balancing is
-// Stage 14's job (design doc §13: "start conservative and tune after
-// playtesting") -- deliberately not an escalating fee yet.
+// Single tunable fee, in Poké money, to reset every boostLevels[] entry and
+// refund pointsInvested in full. Deliberately not an escalating fee, and
+// deliberately conservative until playtesting suggests a better value.
 #define ACHIEVEMENT_BOOST_RESET_FEE 5000
 
 // Cap for .name in gAchievements[] (src/data/achievements.h), enforced at
@@ -26,8 +25,8 @@
 // enforced at compile time via BOOST_NAME() there.
 #define BOOST_NAME_LENGTH           24
 
-// Bits for struct AchievementBattleData.statusesInflicted (src/achievements.c,
-// Stage 15) -- SLP/PSN/BRN/PRZ/FRZ, matching enum MoveEffect's non-volatile
+// Bits for struct AchievementBattleData.statusesInflicted (src/achievements.c)
+// -- SLP/PSN/BRN/PRZ/FRZ, matching enum MoveEffect's non-volatile
 // statuses one-for-one (Toxic folds into POISON, Frostbite into FREEZE).
 // Computed at each hook's call site (battle_script_commands.c) rather than
 // passing an enum MoveEffect in, so this header doesn't need move.h's full
@@ -38,8 +37,8 @@
 #define ACHIEVEMENT_STATUS_BIT_PARALYSIS  (1 << 3)
 #define ACHIEVEMENT_STATUS_BIT_FREEZE     (1 << 4)
 
-// Definition data (design doc §4, Stage 2.1/2.2) -- one const entry per
-// enum AchievementId, in src/data/achievements.h. Kept strictly separate
+// Definition data -- one const entry per enum AchievementId, in
+// src/data/achievements.h. Kept strictly separate
 // from struct AchievementProfile below, which is completion *state* only.
 struct Achievement
 {
@@ -47,13 +46,13 @@ struct Achievement
     const u8 *description;
     enum AchievementTier tier;
     enum AchievementScope scope;
-    enum AchievementCategory category; // Stage 15: mirrors the draft catalog's own section headers
+    enum AchievementCategory category; // mirrors the catalog's own section headers
     u16 points;
     bool8 hidden;
 };
 
-// Boost definition data (design doc §11, Stage 7) -- one const entry per
-// enum BoostId, in src/data/achievement_boosts.h. Kept strictly separate
+// Boost definition data -- one const entry per enum BoostId, in
+// src/data/achievement_boosts.h. Kept strictly separate
 // from struct AchievementProfile below, which is completion *state* only
 // (mirrors the Achievement/AchievementProfile split above): "a boost's
 // definition should describe its behavior; the persistent profile should
@@ -83,15 +82,14 @@ struct AchievementProfile
     bool8 boostsUnlocked;
     bool8 boostsEnabled;          // defaults TRUE
 
-    // Stage 22 step 3: fresh-save Hall of Fame clears only (newGamePlus == 0
-    // at the time of the clear) -- New Game+ cycle clears are deliberately
-    // excluded and counted separately by ngPlusCyclesCompleted below. See
-    // Achievement_OnFirstPlaythroughComplete. Stage 22 step 12:
-    // ACHIEVEMENT_PLAYTHROUGHS_2/_5 and Frequent Flyer/Veteran Trainer/
-    // Resident Champion, the achievements this counter used to back, are all
-    // removed -- no achievement reads it anymore, but it's still shown on
-    // the debug profile dump (src/debug.c) independent of any achievement,
-    // so the counter stays live.
+    // Fresh-save Hall of Fame clears only (newGamePlus == 0 at the time of
+    // the clear) -- New Game+ cycle clears are deliberately excluded and
+    // counted separately by ngPlusCyclesCompleted below. See
+    // Achievement_OnFirstPlaythroughComplete. ACHIEVEMENT_PLAYTHROUGHS_2/_5
+    // and Frequent Flyer/Veteran Trainer/Resident Champion, the achievements
+    // this counter used to back, are all removed -- no achievement reads it
+    // anymore, but it's still shown on the debug profile dump (src/debug.c)
+    // independent of any achievement, so the counter stays live.
     u16 playthroughsCompleted;
     u16 ngPlusCyclesCompleted;
     u8  highestNgPlusCycle;
@@ -114,57 +112,54 @@ struct AchievementProfile
     // AchievementBoost_GetActiveLevel/_TryChangeActiveLevel below.
     u8  boostLevelReduction[MAX_BOOSTS];
 
-    // Stage 19 (catalog wave 6, Randomizer & New Game+): same "front of
-    // reserved[]" precedent as boostLevelReduction above -- these bytes are
-    // guaranteed zero in any profile saved before this wave, so every
-    // existing field keeps its offset. Deviates from the plan doc's infra
-    // sketch, which also proposed a "randomized runs completed per flag
-    // combination" counter: dropped, because every roster entry that reads a
-    // specific flag combination (Truly Random, Pure Chaos, Species/Type/Move
-    // Chaos) is a one-shot completion check where Achievement_TryComplete's
-    // own idempotency guard is already sufficient -- no counter needed.
-    // ngPlusConfigsSeen ended up needing that same shape of tracking anyway,
-    // just for Cycle Collector's broader "challenge configuration" (all 7
-    // Achievement_CountChallengeModifiers modifiers, not only the randomizer
-    // ones) rather than the plan's narrower randomizer-only version.
+    // Randomizer & New Game+ fields. Same "front of reserved[]" precedent as
+    // boostLevelReduction above -- these bytes are guaranteed zero in any
+    // profile saved before these fields existed, so every existing field
+    // keeps its offset. A "randomized runs completed per flag combination"
+    // counter was considered and dropped, because every roster entry that
+    // reads a specific flag combination (Truly Random, Pure Chaos,
+    // Species/Type/Move Chaos) is a one-shot completion check where
+    // Achievement_TryComplete's own idempotency guard is already sufficient
+    // -- no counter needed. ngPlusConfigsSeen ended up needing that same
+    // shape of tracking anyway, just for Cycle Collector's broader
+    // "challenge configuration" (all 7 Achievement_CountChallengeModifiers
+    // modifiers, not only the randomizer ones).
     u16 trainersDefeatedAcrossNgPlus;    // for Never the Same Fight (NGP-008)
-    // Stage 22 step 4: no longer read by anything -- backed
-    // ACHIEVEMENT_NG_PLUS_ESCALATION (NGP-010), removed along with the rest
-    // of the old NG+ repeat-count ladder. Left in place, unused, rather than
-    // removed outright, to avoid reshuffling every later field's offset.
+    // No longer read by anything -- backed ACHIEVEMENT_NG_PLUS_ESCALATION
+    // (NGP-010), removed along with the rest of the old NG+ repeat-count
+    // ladder. Left in place, unused, rather than removed outright, to avoid
+    // reshuffling every later field's offset.
     u8  consecutiveNgPlusCyclesCompleted;
-    u8  ngPlusConfigsSeen[4];            // unused -- backed Cycle Collector (ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR), removed Stage 22 step 10; left in place rather than reflowing this struct's fields
+    u8  ngPlusConfigsSeen[4];            // unused -- backed Cycle Collector (ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR), now removed; left in place rather than reflowing this struct's fields
     u8  ngPlusConfigsSeenCount;          // unused, same removal as above
     bool8 completedConventionalRun;      // neither Nuzlocke nor randomized -- for Full Circle (VAR-007)
 
-    // Stage 20 (catalog wave 7): same "front of reserved[]" precedent as
-    // every field above. No roster entry in this wave reads it directly --
-    // every REC-xxx streak threshold is checked against
-    // AchievementRunDataExt.currentTrainerWinStreak, which is run-scoped and
-    // already sufficient -- but the plan doc calls for a persistent
-    // high-water mark alongside the run-scoped one, both so a player can see
-    // their best streak survive a new game and as a hook Stage 21 (profile
-    // Mastery/Prestige, defined over the finished catalog) can read later.
-    // Mirrored here from AchievementRunDataExt.bestTrainerWinStreakThisRun on
-    // every party wipe (Achievement_RecordPartyWipe, src/achievements.c).
+    // Same "front of reserved[]" precedent as every field above. No roster
+    // entry reads it directly -- every REC-xxx streak threshold is checked
+    // against AchievementRunDataExt.currentTrainerWinStreak, which is
+    // run-scoped and already sufficient -- but a persistent high-water mark
+    // alongside the run-scoped one lets a player's best streak survive a
+    // new game, and gives the profile Mastery/Prestige category (defined
+    // over the finished catalog) a hook it can read later. Mirrored here
+    // from AchievementRunDataExt.bestTrainerWinStreakThisRun on every party
+    // wipe (Achievement_RecordPartyWipe, src/achievements.c).
     u16 bestTrainerWinStreakEver;
 
-    // Stage 21 (catalog wave 8, category Q): same "front of reserved[]"
-    // precedent as every field above.
+    // Same "front of reserved[]" precedent as every field above.
     u32 pointsFromGoldOrBetter;   // sum of .points over every Gold-or-better achievement completed, for No Easy Path (PRO-012)
 
     // unused -- backed Replay Master (ACHIEVEMENT_VARIETY_REPLAY_MASTER),
-    // removed Stage 22 step 12 along with the Achievement_ChallengeConfigSignature
-    // helper that fed it; left in place rather than reflowing this struct's
+    // removed along with the Achievement_ChallengeConfigSignature helper
+    // that fed it; left in place rather than reflowing this struct's
     // fields. Used to track distinct challenge-configuration signatures seen
     // across EVERY completed playthrough, deliberately its own array rather
     // than a reuse of ngPlusConfigsSeen[]/_Count above (that field is
     // NG+-cycle-only and backed a different, narrower achievement, Cycle
-    // Collector, also removed -- Stage 22 step 10).
+    // Collector, also removed).
     u8  playthroughConfigsSeen[5];       // unused, see above
     u8  playthroughConfigsSeenCount;     // unused, same removal as above
 
-    // Stage 22 step 2: lifetime counters for achievements that used to read
+    // Lifetime counters for achievements that used to read
     // GetGameStat() directly and were scoped ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH
     // as a result -- GAME_STAT_* values live in SaveBlock1, which ClearSav1
     // zeroes at every new game, so progress toward these thresholds used to
@@ -197,11 +192,10 @@ bool8 Achievement_ProfileWriteFailed(void);
 
 // Writes the profile to flash only if it's been marked dirty since the last
 // flush (see src/achievements.c). Safe to call unconditionally from any of
-// the flush points in design doc §1.3.
+// the flush points.
 void Achievement_FlushProfile(void);
 
-// Public API (design doc §24). Nothing outside src/achievements.c writes the
-// profile.
+// Public API. Nothing outside src/achievements.c writes the profile.
 
 // Loads the profile from flash. Call once at boot, before any save is loaded.
 void  Achievement_Init(void);
@@ -209,7 +203,7 @@ bool8 Achievement_IsCompleted(u16 achievementId);
 
 // gAchievements[] (src/data/achievements.h) is only ever included from
 // src/achievements.c -- this is how the rest of the game (e.g. the
-// Achievements Menu, Stage 3) reads definition data (name/description/tier/
+// Achievements Menu) reads definition data (name/description/tier/
 // points) for a given ID. Returns the ACHIEVEMENT_NONE entry for an
 // out-of-range ID rather than NULL, so callers never need a null check.
 const struct Achievement *Achievement_GetInfo(u16 achievementId);
@@ -233,7 +227,7 @@ u8    AchievementBoost_GetLevel(u16 boostId);
 // AchievementBoost_TryChangeActiveLevel), so it comes in already active.
 u8    AchievementBoost_GetActiveLevel(u16 boostId);
 
-// Boost menu (Stage 7 UI polish): moves the active level by delta, clamped to
+// Boost menu polish: moves the active level by delta, clamped to
 // [0, purchased level] -- refuses (returns FALSE, no state change) if delta
 // would go outside that range, including on a boost with nothing purchased
 // yet. The boost menu's dpad L/R calls this with delta = -1/+1 to dial a
@@ -247,58 +241,56 @@ bool8 AchievementBoost_TryChangeActiveLevel(u16 boostId, s8 delta);
 // BOOST_NONE entry for an out-of-range ID rather than NULL.
 const struct AchievementBoost *AchievementBoost_GetInfo(u16 boostId);
 
-// Runs the order in design doc §4.30 (Stage 2.3): checks run eligibility
-// (§1.5) and prior completion, then commits the flag and points together
+// Checks run eligibility and prior completion in order, then commits the
+// flag and points together
 // before queuing a notification. Returns FALSE without side effects if the
 // run is ineligible, the ID is out of range, or it's already completed.
 bool8 Achievement_TryComplete(u16 achievementId);
 
-// design doc §5.1/§5.2 (Stage 5): the one-time first-playthrough unlock.
-// Call this from GameClear() (src/post_battle_event_funcs.c) in the branch
-// that only runs the first time FLAG_SYS_GAME_CLEAR is set for this save --
-// that flag's own set-once semantics are what guarantee this runs exactly
-// once per playthrough, so this function has no completion guard of its own.
+// The one-time first-playthrough unlock. Call this from GameClear()
+// (src/post_battle_event_funcs.c) in the branch that only runs the first
+// time FLAG_SYS_GAME_CLEAR is set for this save -- that flag's own
+// set-once semantics are what guarantee this runs exactly once per
+// playthrough, so this function has no completion guard of its own.
 //
-// Stage 19 (catalog wave 6): per the plan doc, this wave's hooks are these
-// three existing wrapper functions rather than any new call site -- mirrors
-// how Stage 13's category J was checked. Also handles: Chaos Begins/Truly
-// Random/Pure Chaos/Species-Type-Move Chaos (all read
-// FlagGet(FLAG_RANDOMIZE_*)/gSaveBlock1Ptr->difficulty at this exact
-// completion moment); Full Circle's completedConventionalRun bookkeeping;
-// and, gated on gSaveBlock2Ptr->newGamePlus == 0 specifically (i.e. this
-// completion was NOT an NG+ cycle), seeding previousCyclePartySpecies for
-// No Nostalgia -- see Achievement_OnNewGamePlusCycleCompleted's comment for
-// why that lives on the opposite side of that gate.
+// Also handles: Chaos Begins/Truly Random/Pure Chaos/Species-Type-Move
+// Chaos (all read FlagGet(FLAG_RANDOMIZE_*)/gSaveBlock1Ptr->difficulty at
+// this exact completion moment); Full Circle's completedConventionalRun
+// bookkeeping; and, gated on gSaveBlock2Ptr->newGamePlus == 0 specifically
+// (i.e. this completion was NOT an NG+ cycle), seeding
+// previousCyclePartySpecies for No Nostalgia -- see
+// Achievement_OnNewGamePlusCycleCompleted's comment for why that lives on
+// the opposite side of that gate.
 //
-// Stage 22 step 4: used to also check Seed Explorer/Randomizer Veteran
-// (removed -- ACHIEVEMENT_RANDOMIZED_1 is already the "do it once" version)
-// and reset consecutiveNgPlusCyclesCompleted for Escalation (removed along
-// with the rest of the NG+ repeat-count ladder).
+// Used to also check Seed Explorer/Randomizer Veteran (removed --
+// ACHIEVEMENT_RANDOMIZED_1 is already the "do it once" version) and reset
+// consecutiveNgPlusCyclesCompleted for Escalation (removed along with the
+// rest of the NG+ repeat-count ladder).
 void Achievement_OnFirstPlaythroughComplete(void);
 
-// design doc Stage 12: called from NewGameInitData (src/new_game.c) right
-// after gSaveBlock2Ptr->newGamePlus++, so `cycle` is always the just-started
+// Called from NewGameInitData (src/new_game.c) right after
+// gSaveBlock2Ptr->newGamePlus++, so `cycle` is always the just-started
 // cycle's number (1 for the first NG+ loop, 2 for the second, ...).
 // highestNgPlusCycle is a high-water mark, not a live counter --
 // gSaveBlock2Ptr->newGamePlus already is that -- so this only ever grows it.
-// Stage 22 step 4: used to also check ACHIEVEMENT_NG_PLUS_STARTED/_CYCLE_3/
-// _CYCLE_5 here (the "start/reach" half of the old NG+ ladder); removed --
-// see Achievement_OnNewGamePlusCycleCompleted's ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE.
+// Used to also check ACHIEVEMENT_NG_PLUS_STARTED/_CYCLE_3/_CYCLE_5 here (the
+// "start/reach" half of the old NG+ ladder); removed -- see
+// Achievement_OnNewGamePlusCycleCompleted's ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE.
 //
-// Stage 19: also Chaos Begins (checked here too, since this is the one real
-// "a run/cycle just began" event this wave's infra has -- TryComplete's own
+// Also checks Chaos Begins (checked here too, since this is the one real
+// "a run/cycle just began" event this system has -- TryComplete's own
 // guard makes the duplicate check with Achievement_OnFirstPlaythroughComplete's
 // cycle-0 case harmless). Also zeroes every per-cycle-scoped field in
 // AchievementRunDataExt (trainersDefeatedThisCycle, gymSpeciesUsedThisCycle/
-// Count, reinventionBroken, majorBossClassesDefeatedThisCycle) -- SaveBlock1
-// has zero bytes of slack left after Stage 18 (see AchievementRunDataExt's
-// own comment), so these live in SaveBlock2 instead, which ClearSav1 can't
+// Count, reinventionBroken, majorBossClassesDefeatedThisCycle) --
+// SaveBlock1 has very little slack left (see AchievementRunDataExt's own
+// comment), so these live in SaveBlock2 instead, which ClearSav1 can't
 // reset for us; this call is their substitute reset point. Deliberately NOT
 // zeroed: previousCyclePartySpecies, which is supposed to survive the cycle
 // boundary (see Achievement_OnNewGamePlusCycleCompleted).
 void Achievement_OnNewGamePlusStarted(u8 cycle);
 
-// design doc Stage 12: called from the same GameClear() branch as
+// Called from the same GameClear() branch as
 // Achievement_OnFirstPlaythroughComplete above, additionally gated there on
 // gSaveBlock2Ptr->newGamePlus > 0 -- FLAG_SYS_GAME_CLEAR isn't preserved
 // across New Game+ (see NewGameInitData), so that branch already re-runs on
@@ -306,15 +298,15 @@ void Achievement_OnNewGamePlusStarted(u8 cycle);
 // counts specifically the subset of those clears that happened during an NG+
 // loop, distinct from the plain playthroughsCompleted total.
 //
-// Stage 22 step 4: checks ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE unconditionally
-// here, same "no threshold guard needed, this function only runs when it
-// just happened" reasoning ACHIEVEMENT_NG_PLUS_STARTED used to rely on --
-// this single achievement replaces the old seven-entry NG+ ladder (see
+// Checks ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE unconditionally here, same "no
+// threshold guard needed, this function only runs when it just happened"
+// reasoning ACHIEVEMENT_NG_PLUS_STARTED used to rely on -- this single
+// achievement replaces the old seven-entry NG+ ladder (see
 // src/data/achievements.h for the full list). Escalation
 // (consecutiveNgPlusCyclesCompleted) was part of that ladder and is gone too.
 //
-// Stage 19: every "complete an NG+ cycle with X" entry lives here, since
-// this function only ever runs when that's exactly what just happened --
+// Every "complete an NG+ cycle with X" entry lives here, since this
+// function only ever runs when that's exactly what just happened --
 // Unassisted Cycle (ngPlusCyclesCompleted), Cycle Specialist
 // (Achievement_CountChallengeModifiers), Cycle Nuzlocke (nuzlockeModeEnabled),
 // Complete Reinvention/Boss Gauntlet (AchievementRunDataExt's per-cycle
@@ -322,27 +314,27 @@ void Achievement_OnNewGamePlusStarted(u8 cycle);
 // AchievementRunDataExt.previousCyclePartySpecies -- the PRIOR cycle's
 // snapshot, seeded either by this same function last cycle or, for cycle 1,
 // by Achievement_OnFirstPlaythroughComplete's cycle-0 case -- then
-// overwrites it with the current party for the next comparison). Stage 22
-// steps 10/12: Ten Cycles Deep, Cycle Collector, Endless Survivor, and New
-// Team New Me's NG+-cycle half, all once checked here too, are removed --
-// see src/data/achievements.h for each one's own comment.
+// overwrites it with the current party for the next comparison). Ten Cycles
+// Deep, Cycle Collector, Endless Survivor, and New Team New Me's NG+-cycle
+// half, all once checked here too, are removed -- see
+// src/data/achievements.h for each one's own comment.
 void Achievement_OnNewGamePlusCycleCompleted(void);
 
-// design doc §7 (Stage 7): validates in order -- boosts unlocked, current
+// Validates in order -- boosts unlocked, current
 // level < maxLevel, availablePoints >= costs[level] -- refusing at the first
 // failure. Purchase re-runs the same checks (so it can never be called
 // directly around a stale CanPurchase result) before committing
 // pointsInvested += cost, boostLevels[id]++, and flushing immediately.
-// Deliberately NOT gated on gSaveBlock1Ptr->achievementsBlocked (§1.5) --
-// that flag disqualifies a run from *earning* new achievements/points
-// (enforced in Achievement_TryComplete), not from spending points already
-// on the books.
+// Deliberately NOT gated on gSaveBlock1Ptr->achievementsBlocked -- that
+// flag disqualifies a run from *earning* new achievements/points (enforced
+// in Achievement_TryComplete), not from spending points already on the
+// books.
 bool8 AchievementBoost_CanPurchase(u16 boostId);
 bool8 AchievementBoost_Purchase(u16 boostId);
 
-// Stage 11 (design doc §13/§23 "reset exploits"): a non-mutating query so the
-// boost shop can gate entry into its confirmation prompt without spending the
-// fee just to find out the answer -- mirrors AchievementBoost_CanPurchase's
+// A non-mutating query so the boost shop can gate entry into its
+// confirmation prompt without spending the fee just to find out the
+// answer -- mirrors AchievementBoost_CanPurchase's
 // role for AchievementBoost_Purchase. Refuses in order: boosts not unlocked,
 // nothing invested (pointsInvested == 0 -- resetting a no-op configuration
 // would only ever cost the fee for zero refund), can't afford the fee. Like
@@ -352,25 +344,24 @@ bool8 AchievementBoost_Purchase(u16 boostId);
 // grant anything a blocked run shouldn't have.
 bool8 AchievementBoost_CanReset(void);
 
-// design doc Stage 11: re-runs AchievementBoost_CanReset (same "never trust a
+// Re-runs AchievementBoost_CanReset (same "never trust a
 // stale Can* result" precedent as AchievementBoost_Purchase) before
 // committing pointsInvested = 0, zeroing every boostLevels[] entry, and
 // deducting ACHIEVEMENT_BOOST_RESET_FEE -- refund is always exactly the
-// pointsInvested that was there, so a reset can never generate points
-// (design doc §23).
+// pointsInvested that was there, so a reset can never generate points.
 bool8 AchievementBoost_Reset(void);
 
-// design doc Stage 8: the first real boost effect. Wraps a raw exp value --
-// call this on the pre soft-level-cap amount (design doc's "wrap the
-// input"), not the post-cap result, so a purchased boost still gets
-// throttled by the level cap exactly like baseline exp does, rather than
-// letting it push past the ceiling the cap exists to enforce. Returns
-// expValue unchanged whenever boosts are disabled or BOOST_EXP_GAIN is at
-// level 0, so the disabled path is provably identical to baseline.
+// The first real boost effect. Wraps a raw exp value -- call this on the
+// pre soft-level-cap amount ("wrap the input"), not the post-cap result, so
+// a purchased boost still gets throttled by the level cap exactly like
+// baseline exp does, rather than letting it push past the ceiling the cap
+// exists to enforce. Returns expValue unchanged whenever boosts are
+// disabled or BOOST_EXP_GAIN is at level 0, so the disabled path is provably
+// identical to baseline.
 u32 AchievementBoost_ApplyExp(u32 expValue);
 
-// Stages 9-10: the remaining numerical boosts from the design doc's §10.1
-// example list. Each follows AchievementBoost_ApplyExp's shape -- a no-op
+// The remaining numerical boosts from the example boost list. Each follows
+// AchievementBoost_ApplyExp's shape -- a no-op
 // when boosts are disabled or the boost is at level 0, so the disabled path
 // is always provably identical to baseline.
 
@@ -414,8 +405,7 @@ s32 AchievementBoost_ApplyFriendshipGain(s32 bonus);
 // wanders to.
 bool8 AchievementBoost_ShouldRoamerSeekPlayer(void);
 
-// Stage 10.1: catalog wave 2. Same no-op-when-disabled guarantee as everything
-// above.
+// Same no-op-when-disabled guarantee as everything above.
 //
 // The three Get*Percent functions return a raw 0-100 percent instead of
 // rolling internally, because their call sites are all in battle, where
@@ -484,9 +474,9 @@ bool8 AchievementBoost_HasStarterKit(void);
 // and the Pokemon actually received can never disagree.
 bool8 AchievementBoost_HasPerfectStarterIvs(void);
 
-// Stage 13 (design doc §15/§16, plan Stage 13): catalog wave 1's ten hook
-// functions. Each checks one category's thresholds against
-// Achievement_TryComplete -- already idempotent, so every one of these is
+// The first ten catalog hook functions. Each checks one category's
+// thresholds against Achievement_TryComplete -- already idempotent, so
+// every one of these is
 // safe to call unconditionally every time its call site runs, not just when
 // a threshold might have just been crossed.
 
@@ -496,7 +486,7 @@ bool8 AchievementBoost_HasPerfectStarterIvs(void);
 // this shared script. Every one of the 16 call sites already sets its own
 // milestone's flag on the line immediately before calling this script, so
 // checking all 15 flags unconditionally here is correct and cheap. Also
-// checks Stage 18's Who Needs Centers? at the FLAG_BADGE05_GET checkpoint.
+// checks Who Needs Centers? at the FLAG_BADGE05_GET checkpoint.
 void Achievement_CheckStoryMilestones(void);
 
 // HandleSetPokedexFlag (src/pokemon.c), from inside its existing
@@ -505,39 +495,37 @@ void Achievement_CheckStoryMilestones(void);
 // seen thresholds. Reads GetNationalPokedexCount as a percentage of
 // NATIONAL_DEX_COUNT rather than a hardcoded species count, so the
 // thresholds stay correct regardless of which expansion level a given build
-// is compiled with. Stage 22 step 1: the caught branch now only checks full
-// completion (ACHIEVEMENT_CATCH_ALL) -- the 10/25/50% caught thresholds were
-// dropped in favor of Achievement_CheckCaptureMilestones's hard-number
-// ladder.
+// is compiled with. The caught branch only checks full completion
+// (ACHIEVEMENT_CATCH_ALL) -- the 10/25/50% caught thresholds were dropped in
+// favor of Achievement_CheckCaptureMilestones's hard-number ladder.
 void Achievement_CheckPokedexMilestones(bool8 caught);
 
 // GiveCapturedMonToPlayer (src/pokemon.c): reads
 // GetGameStat(GAME_STAT_POKEMON_CAPTURES), already incremented for the
 // current catch by the time this function runs (confirmed against
 // data/battle_scripts_2.s: incrementgamestat precedes givecaughtmon).
-// Stage 22 step 1: hard-number ladder (100/350/700); the top tier,
+// A hard-number ladder (100/350/700); the top tier,
 // ACHIEVEMENT_CATCH_ALL, is a distinct-species check and lives in
 // Achievement_CheckPokedexMilestones instead.
 void Achievement_CheckCaptureMilestones(void);
 
 // Also GiveCapturedMonToPlayer, called only when the mon being given is
 // shiny (MON_DATA_IS_SHINY). Increments gAchievementProfile.shiniesObtained
-// -- declared since early on but never wired up until this stage -- flushes,
+// -- declared since early on but never wired up until now -- flushes,
 // then checks the three shiny-count thresholds. GiveCapturedMonToPlayer also
 // fires for a handful of scripted gift mons, not only wild catches, which is
 // why this is "obtained" in the catalog text, not "caught".
 void Achievement_OnShinyObtained(void);
 
 // CB2_EndTrainerBattle (src/battle_setup.c), called unconditionally at the
-// top regardless of outcome. Stage 22 step 2: reads/increments
+// top regardless of outcome. Reads/increments
 // gAchievementProfile.trainerBattlesLifetime instead of
 // GAME_STAT_TRAINER_BATTLES, so progress counts across every playthrough on
 // this profile rather than resetting each new game.
 void Achievement_CheckTrainerBattleMilestones(void);
 
 // CB2_EndWildBattle (src/battle_setup.c), same reasoning as the trainer
-// version above -- reads/increments gAchievementProfile.wildBattlesLifetime
-// (Stage 22 step 2).
+// version above -- reads/increments gAchievementProfile.wildBattlesLifetime.
 void Achievement_CheckWildBattleMilestones(void);
 
 // AddBagItem (src/item.c) -- one-off "obtain this specific item" checks,
@@ -550,22 +538,22 @@ void Achievement_CheckItemMilestones(enum Item itemId);
 void Achievement_CheckMoneyMilestones(u32 money);
 
 // Task_EggHatch (src/egg_hatch.c), called right after AddHatchedMonToParty
-// with whether the newly hatched mon is shiny. Stage 22 step 2: the
-// count-based thresholds now read/increment
+// with whether the newly hatched mon is shiny. The
+// count-based thresholds read/increment
 // gAchievementProfile.eggsHatchedLifetime instead of GAME_STAT_HATCHED_EGGS,
 // so progress counts across every playthrough on this profile rather than
 // resetting each new game.
 void Achievement_CheckEggMilestones(bool8 isShiny);
 
-// Stage 15 (design doc catalog wave 2, plan Stage 15): battle-tracking
-// infrastructure. See src/achievements.c for struct AchievementBattleData and
-// the "one entry point" discipline the hooks below follow -- battle-side code
+// Battle-tracking infrastructure. See src/achievements.c for struct
+// AchievementBattleData and the "one entry point" discipline the hooks
+// below follow -- battle-side code
 // never calls Achievement_TryComplete directly for a category K entry.
 
 // GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) against the "boss"
 // trainer classes -- gym leaders, Elite Four, Champion, rival, Team
-// Aqua/Magma leaders. FALSE outside a trainer battle. Reused by later catalog
-// waves (design doc), not just Stage 15.
+// Aqua/Magma leaders. FALSE outside a trainer battle. Reused by many later
+// hook functions, not just this one.
 bool8 Achievement_IsMajorBattle(void);
 
 // BattleStartClearSetData (src/battle_main.c), right after gBattleResults is
@@ -591,8 +579,8 @@ void Achievement_RecordMoveUsed(u8 partyIndex, enum Move move, u32 typeBit, u32 
 // that function.
 void Achievement_RecordSuperEffectiveHit(void);
 
-// IsCriticalHit (src/battle_util.c), the same funnel Stage 10.1's
-// BOOST_CRIT_CHANCE hooks, gated the same way (player side, not link/recorded).
+// IsCriticalHit (src/battle_util.c), the same funnel BOOST_CRIT_CHANCE
+// hooks, gated the same way (player side, not link/recorded).
 void Achievement_RecordCriticalHit(void);
 
 // SetNonVolatileStatus (src/battle_script_commands.c), gated by the caller on
@@ -619,7 +607,7 @@ void Achievement_RecordOpposingFaint(enum BattlerId victimBattler, enum BattlerI
 // data rather than a live result.
 void Achievement_CheckBattleMilestones(void);
 
-// ---- Stage 16: catalog wave 3 (category L, Team Building & Composition) -
+// ---- Team Building & Composition (category L) -------------------------
 //
 // The first real user of struct AchievementRunData (include/global.h). Three
 // call sites, each reusing an existing hook rather than adding a new one:
@@ -635,8 +623,8 @@ bool8 Achievement_IsGymBattle(void);
 // HandleEndTurn_BattleWon (src/battle_main.c), immediately after
 // Achievement_CheckBattleMilestones, gated the same way (never link/
 // recorded). Reads AchievementBattleData.slotsThatActed/lastThreeKoSlots
-// alongside the live party, so this wave adds no new battle-side hooks of its
-// own -- it rides Stage 15's.
+// alongside the live party, so this adds no new battle-side hooks of its
+// own -- it rides Achievement_CheckBattleMilestones's.
 void Achievement_CheckTeamMilestones(void);
 
 // Achievement_CheckStoryMilestones (src/achievements.c), called at the tail
@@ -649,7 +637,8 @@ void Achievement_CheckPartyStateMilestones(void);
 // GameClear (src/post_battle_event_funcs.c), alongside
 // Achievement_OnFirstPlaythroughComplete -- fires once per completed run,
 // including every New Game+ cycle (FLAG_SYS_GAME_CLEAR isn't preserved across
-// NG+, so that branch already re-runs each cycle; see Stage 12's notes).
+// NG+, so that branch already re-runs each cycle; see
+// Achievement_OnNewGamePlusStarted's notes).
 void Achievement_CheckTeamCompletionMilestones(void);
 
 // GiveCapturedMonToPlayer (src/pokemon.c) and Task_EggHatch (src/egg_hatch.c)
@@ -661,8 +650,8 @@ void Achievement_CheckTeamCompletionMilestones(void);
 // condition to be wrong in.
 void Achievement_RecordMonObtained(u32 personality);
 
-// ---- Stage 17: catalog wave 4 (category M, Exploration, Economy & -------
-// Collection). Nine call sites, each reusing an existing single-fire event.
+// ---- Exploration, Economy & Collection (category M) --------------------
+// Nine call sites, each reusing an existing single-fire event.
 
 // LoadCurrentMapData (src/overworld.c), the one function all three real
 // map-transition paths funnel through -- see that function's own comment
@@ -673,7 +662,7 @@ void Achievement_RecordMonObtained(u32 personality);
 void Achievement_CheckExplorationMilestones(void);
 
 // Achievement_CheckPokedexMilestones's FLAG_SET_SEEN branch (src/achievements.c,
-// Stage 13 category B) -- checked only when a species is newly seen, so
+// category B) -- checked only when a species is newly seen, so
 // Local Expert can only complete at the exact moment the last species on the
 // player's current route becomes seen, on this route or any other.
 void Achievement_CheckLocalExpert(void);
@@ -681,25 +670,25 @@ void Achievement_CheckLocalExpert(void);
 // SetHiddenItemFlag (src/field_specials.c), the native the hidden-item
 // script calls to mark a hidden item found -- already only reached once per
 // item (the overworld gates the script itself on the flag not being set
-// yet, src/field_control_avatar.c). Stage 22 step 2: reads/increments
+// yet, src/field_control_avatar.c). Reads/increments
 // gAchievementProfile.hiddenItemsFoundLifetime instead of
 // GAME_STAT_HIDDEN_ITEMS_FOUND, so progress counts across every playthrough.
 void Achievement_CheckHiddenItemMilestones(void);
 
 // GetInteractionScript's object-event branch (src/field_control_avatar.c) --
 // fires once per NPC interaction *started*, not once per msgbox inside that
-// conversation's script, which is what the plan doc's Verify section
-// specifically warned against. Stage 22 step 2: reads/increments
-// gAchievementProfile.npcsTalkedToLifetime instead of
-// GAME_STAT_NPCS_TALKED_TO, so progress counts across every playthrough.
+// conversation's script, which would otherwise over-count a single
+// conversation. Reads/increments gAchievementProfile.npcsTalkedToLifetime
+// instead of GAME_STAT_NPCS_TALKED_TO, so progress counts across every
+// playthrough.
 void Achievement_RecordNpcTalkedTo(void);
 
 // BuyMenuSubtractMoney (src/shop.c), right after the vanilla
 // IncrementGameStat(GAME_STAT_SHOPPED) call -- amountSpent is
 // sShopData->totalCost. Checks First Purchase/Regular Customer and Big
 // Spender/Whale, and sets AchievementRunData.shoppedSinceLastGym for
-// Achievement_CheckGymEconomyMilestones. Stage 22 step 2: the four
-// thresholds now read/increment gAchievementProfile.shopPurchasesLifetime/
+// Achievement_CheckGymEconomyMilestones. The four
+// thresholds read/increment gAchievementProfile.shopPurchasesLifetime/
 // moneySpentLifetime instead of GAME_STAT_SHOPPED/GAME_STAT_MONEY_SPENT, so
 // progress counts across every playthrough rather than resetting each new
 // game; GAME_STAT_MONEY_SPENT is still updated in case anything else reads
@@ -713,7 +702,7 @@ void Achievement_RecordMoneySpent(u32 amountSpent);
 void Achievement_RecordItemSaleProceeds(u32 amount);
 
 // AddBagItem (src/item.c), the same "added succeeded" guard
-// Achievement_CheckItemMilestones already sits behind (Stage 13 category G) --
+// Achievement_CheckItemMilestones already sits behind (category G) --
 // scans every non-key-item Bag pocket for Pack Rat.
 void Achievement_CheckPackRatMilestone(void);
 
@@ -722,7 +711,7 @@ void Achievement_CheckPackRatMilestone(void);
 // already uses for planting.
 void Achievement_RecordBerryHarvest(void);
 
-// Stage 22 step 5: Achievement_CheckTradeMilestones (called from both
+// Achievement_CheckTradeMilestones (called from both
 // GAME_STAT_POKEMON_TRADES sites in src/trade.c) removed along with its sole
 // achievement, ACHIEVEMENT_COLLECT_TRADE_SECRETS -- see src/data/achievements.h.
 
@@ -745,7 +734,7 @@ void Achievement_RecordFriendshipEvolution(void);
 void Achievement_RecordStoneEvolution(void);
 
 // GiveCapturedMonToPlayer (src/pokemon.c), alongside
-// Achievement_RecordMonObtained (Stage 16) -- gDexNavSpecies is nonzero only
+// Achievement_RecordMonObtained -- gDexNavSpecies is nonzero only
 // during a battle that a DexNav scan actually started (src/dexnav.c), so
 // this can't fire for an unrelated catch or a gift mon.
 void Achievement_CheckDexNavCaptureMilestone(void);
@@ -766,7 +755,7 @@ void Achievement_CheckGymEconomyMilestones(void);
 // holding >= 500000" check.
 void Achievement_CheckEconomyCompletionMilestones(void);
 
-// ---- Stage 18: catalog wave 5 (category N, Challenge Runs & Nuzlocke) ---
+// ---- Challenge Runs & Nuzlocke (category N) ----------------------------
 //
 // Four call sites, each reusing an existing hook rather than adding a new
 // one -- see include/constants/achievements.h's category N doc comment for
@@ -780,8 +769,8 @@ void Achievement_CheckEconomyCompletionMilestones(void);
 // (highestPartySizeThisRun) and starter-tracking bookkeeping that
 // Achievement_CheckChallengeCompletionMilestones reads at GameClear.
 //
-// Stage 19 (catalog wave 6): rides this same call site rather than adding a
-// new one -- Random by Nature (Gym clear), Chaos Team/Never Seen It Coming/
+// Randomizer & New Game+ entries ride this same call site rather than
+// adding a new one -- Random by Nature (Gym clear), Chaos Team/Never Seen It Coming/
 // Patchwork Team (major battle win), trainer-win bookkeeping
 // (AchievementRunDataExt.trainersDefeatedThisCycle/gAchievementProfile's
 // trainersDefeatedAcrossNgPlus for Fresh Faces/Never the Same Fight), and
@@ -792,18 +781,18 @@ void Achievement_CheckChallengeMilestones(void);
 // Same call site as above, immediately after it. Every entry here is
 // additionally gated on gSaveBlock1Ptr->nuzlockeModeEnabled: First Nuzlocke,
 // Close Call, Scrappy, No Ace Allowed. Self-contained rather than reusing
-// Achievement_CheckTeamMilestones's locals (Stage 16 owns that function).
+// Achievement_CheckTeamMilestones's locals (that function owns those locals).
 void Achievement_CheckNuzlockeMilestones(void);
 
-// Stage 22 step 10: Achievement_CheckNuzlockeExplorationMilestones removed --
-// see src/achievements.c's own comment where the function used to be.
+// Achievement_CheckNuzlockeExplorationMilestones removed -- see
+// src/achievements.c's own comment where the function used to be.
 
 // GameClear (src/post_battle_event_funcs.c), alongside
 // Achievement_CheckTeamCompletionMilestones/Achievement_CheckEconomyCompletionMilestones
 // -- same re-runs-every-NG+-cycle gating. Covers every "complete the story"
 // Challenge-category entry: Self-Imposed/Hard Way/Brutal Rules/Nightmare Mode
 // (Achievement_CountChallengeModifiers), No Shopping Run, No Centers,
-// Hardcore Set, Capstone/Perfectly Capped (reads Stage 16's
+// Hardcore Set, Capstone/Perfectly Capped (reads
 // levelCapEverExceeded), Three-Pokemon Challenge/Solo Journey, No Freebies,
 // Hardly Any Help.
 void Achievement_CheckChallengeCompletionMilestones(void);
@@ -814,7 +803,7 @@ void Achievement_CheckChallengeCompletionMilestones(void);
 // Pokemon caught this run), No Second Chances, Full Encounter, Unassisted
 // Survivor.
 //
-// Stage 19: Nuzlocke Across Worlds/Chaos Survivor -- a completed Nuzlocke run
+// Also Nuzlocke Across Worlds/Chaos Survivor -- a completed Nuzlocke run
 // with any FLAG_RANDOMIZE_* flag set (plus HARD difficulty for the latter).
 void Achievement_CheckNuzlockeCompletionMilestones(void);
 
@@ -825,7 +814,7 @@ void Achievement_CheckNuzlockeCompletionMilestones(void);
 // Shopping Run.
 void Achievement_RecordConsumableItemPurchase(void);
 
-// Stage 22 step 5: Achievement_RecordReviveUsed (formerly called from
+// Achievement_RecordReviveUsed (formerly called from
 // BS_ItemRestoreHP in src/battle_script_commands.c and PokemonUseItemEffects
 // in src/pokemon.c) removed along with its sole achievement,
 // ACHIEVEMENT_NUZLOCKE_NO_REVIVES -- see src/data/achievements.h.
@@ -842,7 +831,7 @@ void Achievement_RecordNuzlockeMonLost(void);
 // major battle, for No Freebies.
 void Achievement_RecordStarterPersonality(u32 personality);
 
-// ---- Stage 19: catalog wave 6 (Randomizer & New Game+) -----------------
+// ---- Randomizer & New Game+ ---------------------------------------------
 //
 // GiveCapturedMonToPlayer (src/pokemon.c), alongside
 // Achievement_CheckCaptureMilestones -- one more call at that same funnel,
@@ -851,8 +840,8 @@ void Achievement_RecordStarterPersonality(u32 personality);
 // src/overworld.c) >= 25 while any FLAG_RANDOMIZE_* flag is set.
 void Achievement_CheckRandomizerCaptureMilestone(void);
 
-// ---- Stage 20: catalog wave 7 (category P, Streaks, Records & Collection -
-// Remainder). Nine call sites; see include/constants/achievements.h's
+// ---- Streaks, Records & Collection Remainder (category P) --------------
+// Nine call sites; see include/constants/achievements.h's
 // category P comment for the full breakdown and src/achievements.c for
 // each function's own doc comment.
 
@@ -864,7 +853,7 @@ void Achievement_CheckRandomizerCaptureMilestone(void);
 void Achievement_CheckBattleRecordsMilestones(void);
 
 // LoadCurrentMapData (src/overworld.c), alongside
-// Achievement_CheckExplorationMilestones (Stage 17) -- map transitions are
+// Achievement_CheckExplorationMilestones -- map transitions are
 // frequent enough during normal play to catch these live-state thresholds
 // (nothing here is tied causally to a specific event) without a hook of
 // their own: Growing Strong, One of Each, Century Club/Full Century,
@@ -878,9 +867,10 @@ void Achievement_CheckRecordsMilestones(void);
 void Achievement_CheckRecordsCompletionMilestones(void);
 
 // RemoveFaintedMonsFromParty (src/overworld.c) and FldEff_PokecenterHeal
-// (src/field_effect.c), the same two IsPartyEmpty()-gated sites Stage 18's
-// Nuzlocke wipe detection already uses -- see that stage's own comment for
-// why no third detector is added. Mirrors the run's win-streak high-water
+// (src/field_effect.c), the same two IsPartyEmpty()-gated sites the
+// Nuzlocke wipe detection (Achievement_CheckNuzlockeMilestones) already
+// uses -- see that function's own comment for why no third detector is
+// added. Mirrors the run's win-streak high-water
 // mark into gAchievementProfile.bestTrainerWinStreakEver, then zeroes the
 // streak counters this wipe just broke.
 void Achievement_RecordPartyWipe(void);
@@ -898,7 +888,7 @@ void Achievement_RecordPlayerFaint(void);
 // directions) and completes if every stage is also caught.
 void Achievement_CheckFamilyMilestone(enum Species species);
 
-// Stage 22 step 5: Achievement_CheckPerfectIvMilestone (formerly called from
+// Achievement_CheckPerfectIvMilestone (formerly called from
 // GiveCapturedMonToPlayer in src/pokemon.c and Task_EggHatch in
 // src/egg_hatch.c) removed along with its sole achievement,
 // ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN -- see src/data/achievements.h.
@@ -910,12 +900,12 @@ void Achievement_CheckFamilyMilestone(enum Species species);
 void Achievement_RecordTMTaught(void);
 
 // FldEff_PokecenterHeal (src/field_effect.c), right after the vanilla
-// IncrementGameStat(GAME_STAT_USED_POKECENTER) call Stage 18 already added.
+// IncrementGameStat(GAME_STAT_USED_POKECENTER) call.
 // Nurse's Nightmare (backfill).
 void Achievement_CheckPokecenterMilestone(void);
 
-// ---- Stage 21: catalog wave 8 (category Q, Profile Meta, Mastery &
-// Prestige) -- no declarations here, unlike every prior wave: every entry is
+// ---- Profile Meta, Mastery & Prestige (category Q) ----------------------
+// No declarations here, unlike every prior category: every entry is
 // a meta-achievement over state the rest of the system already exposes
 // (Achievement_IsCompleted, gAchievements[].category/.tier, and the profile
 // fields above), so it needs no new external call site. Checked entirely
@@ -925,8 +915,8 @@ void Achievement_CheckPokecenterMilestone(void);
 // change). See include/constants/achievements.h's category Q comment for the
 // full roster-to-condition breakdown.
 
-// Debug-only (design doc §21, Stage 1.7). src/debug.c is the only caller.
-// These bypass all the validation the real Stage 2/7/11 functions above add
+// Debug-only. src/debug.c is the only caller.
+// These bypass all the validation the real functions above add
 // (achievement completion rules, boost costs/maxLevel, reset fee) by design,
 // so the rest of the system can be exercised and tested independently of
 // whatever real content/rules exist at a given point in development.

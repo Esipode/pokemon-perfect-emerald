@@ -2565,7 +2565,7 @@ void BerryTreeTimeUpdate(s32 minutes)
                         break;
                     }
                     time -= tree->minutesUntilNextStage;
-                    // Stage 10.1 (BOOST_BERRY_GROWTH) shortens the wait for the
+                    // BOOST_BERRY_GROWTH shortens the wait for the
                     // next growth stage...
                     tree->minutesUntilNextStage = AchievementBoost_ApplyBerryStageDuration(GetMulchAffectedGrowthRate(GetStageDurationByBerryType(tree->berry), tree->mulch, tree->stage));
                     if (!BerryTreeGrow(tree))
@@ -2726,7 +2726,7 @@ static u32 GetBerryTreeAge(u8 id, u8 stage)
 
 static u8 GetBerryCountByBerryTreeId(u8 id)
 {
-    // Stage 10.1 (BOOST_BERRY_YIELD) is applied here, at the read, rather than
+    // BOOST_BERRY_YIELD is applied here, at the read, rather than
     // to the saved berryYield field CalcBerryYield writes at flowering time.
     // Two reasons: the bonus would otherwise be baked permanently into
     // already-grown trees (so switching the boost off wouldn't undo it), and
@@ -2853,7 +2853,7 @@ void ObjectEventInteractionPickBerryTree(void)
     u8 berry = GetBerryTypeByBerryTreeId(id);
     u8 mutation = GetTreeMutationValue(id);
 
-    // Stage 17 (catalog wave 4): Green Thumb. Action-counted (one pick), not
+    // Green Thumb. Action-counted (one pick), not
     // berry yield, matching the existing GAME_STAT_PLANTED_BERRIES precedent.
     Achievement_RecordBerryHarvest();
 

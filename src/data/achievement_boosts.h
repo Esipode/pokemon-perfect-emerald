@@ -1,32 +1,29 @@
 // One entry per enum BoostId (constants/achievements.h), keyed by designated
 // initializer -- mirrors src/data/achievements.h's convention. Included from
-// src/achievements.c only (Stage 7); nothing else should reference
+// src/achievements.c only; nothing else should reference
 // gAchievementBoosts directly -- go through the public API in
 // include/achievements.h instead.
 #define BOOST_NAME(str) COMPOUND_STRING_SIZE_LIMIT(str, BOOST_NAME_LENGTH)
 
-// Stage 8 (design doc Stage 8): the first real boost. Costs rise steeply
-// per §12 ("prevents the player from acquiring every useful boost
-// immediately").
+// The first real boost. Costs rise steeply so the player can't acquire
+// every useful boost immediately.
 //
-// Stage 23 (design doc Stage 14's deferred balancing pass): finalized here,
-// replacing the placeholder {200, 400, 700, 1100, 1600} curve every leveled
-// boost shipped with through Stage 10. Step 2 of Stage 23 requires the total
-// cost to max every boost in the catalog to equal the catalog's total
-// achievement points (20,000, see src/data/achievements.h's own Stage 23
-// comment) -- so every cost curve below is that same placeholder shape
-// scaled by ~0.4706x (20,000 / 42,500, the placeholder curves' own total)
-// and rounded to a clean number, not re-derived from scratch.
+// Every cost curve below is scaled so the total cost to max every boost in
+// the catalog equals the catalog's total achievement points (20,000, see
+// src/data/achievements.h's own note on that total) -- each curve is the
+// original placeholder shape ({200, 400, 700, 1100, 1600}) scaled by
+// ~0.4706x (20,000 / 42,500, the placeholder curves' own total) and rounded
+// to a clean number, not re-derived from scratch.
 static const u16 sBoostExpGainCosts[]   = {100, 200, 350, 500, 750};
 // effects[0] (level 0) is never read -- AchievementBoost_ApplyExp short-
 // circuits on level == 0 before indexing this array. effects[level] is the
-// percent bonus applied at that level, matching the design doc §10.1
-// example (Level 1: +10% ... Level 5: +50%).
+// percent bonus applied at that level, matching the example curve
+// (Level 1: +10% ... Level 5: +50%).
 static const u16 sBoostExpGainEffects[] = {0, 10, 20, 30, 40, 50};
 
-// Stages 9-10: the rest of design doc §10.1's example list. Same cost curve
-// as EXP Gain above -- every boost below shares one curve rather than six
-// independently-tuned ones. See the Stage 23 comment above.
+// The rest of the example boost list. Same cost curve as EXP Gain above --
+// every boost below shares one curve rather than six independently-tuned
+// ones. See the cost-curve comment above.
 static const u16 sBoostSharedCosts[] = {100, 200, 350, 500, 750};
 
 // AchievementBoost_ExtraShinyRerolls returns this directly: an extra shiny
@@ -57,15 +54,15 @@ static const u16 sBoostFriendshipGainEffects[] = {0, 10, 20, 30, 40, 50};
 // normal random relocation.
 static const u16 sBoostLegendaryEncounterEffects[] = {0, 1, 2, 3, 4, 5};
 
-// Stage 10.1: the second catalog wave. The six leveled boosts below reuse
-// sBoostSharedCosts above rather than declaring 3- and 4-entry curves of their
-// own -- AchievementBoost_CanPurchase only ever indexes costs[level] for
-// level < maxLevel, so a 3-level boost simply reads the leading three entries.
+// The six leveled boosts below reuse sBoostSharedCosts above rather than
+// declaring 3- and 4-entry curves of their own -- AchievementBoost_CanPurchase
+// only ever indexes costs[level] for level < maxLevel, so a 3-level boost
+// simply reads the leading three entries.
 //
 // One shared price for all three binary boosts, for the same reason: each is a
 // single one-time purchase, so there's nothing to shape a curve around yet.
-// Stage 23: 1500 -> 600, same ~0.4706x scale as sBoostSharedCosts above (the
-// binary boosts' own slice of the 20,000 target).
+// Scaled down from 1500 to 600, the same ~0.4706x scale as sBoostSharedCosts
+// above (the binary boosts' own slice of the 20,000 target).
 static const u16 sBoostSharedBinaryCosts[] = {600};
 
 // IsCriticalHit (src/battle_util.c) rolls this as a flat percent chance to

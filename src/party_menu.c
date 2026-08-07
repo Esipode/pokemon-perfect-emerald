@@ -5927,7 +5927,7 @@ static void Task_LearnedMove(u8 taskId)
     if (move[1] == 0)
     {
         AdjustFriendship(mon, FRIENDSHIP_EVENT_LEARN_TMHM);
-        // Stage 20 (catalog wave 7): Move Tutor. move[1] == 0 here means
+        // Move Tutor. move[1] == 0 here means
         // this teach came from the TM/HM item-use path specifically (the
         // move relearner and move tutor NPCs set it to a nonzero marker
         // before reaching this same task -- see TryTutorSelectedMon), so

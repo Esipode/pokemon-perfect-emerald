@@ -1,7 +1,7 @@
 #include "global.h"
 #include "achievements.h"
 #include "battle.h"
-#include "battle_ai_util.h" // IsStatRaisingMove, for Stage 15's Achievement_RecordMoveUsed hook
+#include "battle_ai_util.h"
 #include "battle_environment.h"
 #include "battle_hold_effects.h"
 #include "battle_ai_record.h"
@@ -986,9 +986,9 @@ static enum CancelerResult CancelerPPDeduction(struct BattleCalcValues *cv)
     if (gBattleStruct->submoveAnnouncement == SUBMOVE_SUCCESS)
         movePosition = gChosenMovePos;
 
-    // Stage 15 (catalog wave 2): every early-out above this function means
+    // Every early-out above this function means
     // this call only ever reaches here for a move that's actually being
-    // used -- the same funnel Stage 10.1's BOOST_PP_SAVER hooks below.
+    // used -- the same funnel BOOST_PP_SAVER hooks below.
     // Player side only, never in a link or recorded battle.
     if (IsOnPlayerSide(cv->battlerAtk) && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
     {
@@ -1021,7 +1021,7 @@ static enum CancelerResult CancelerPPDeduction(struct BattleCalcValues *cv)
     if (cv->move != gLastResultingMoves[cv->battlerAtk] || gBattleStruct->unableToUseMove)
         gBattleMons[cv->battlerAtk].volatiles.metronomeItemCounter = 0;
 
-    // Stage 10.1 (BOOST_PP_SAVER): a flat chance this use costs no PP at all,
+    // BOOST_PP_SAVER: a flat chance this use costs no PP at all,
     // Pressure surcharge included. Only the deduction and its controller sync
     // are skipped -- everything else this canceler does (metronome counter,
     // gLastMoves, the submove announcement below) still runs, and the early

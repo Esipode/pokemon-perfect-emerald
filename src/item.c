@@ -362,11 +362,11 @@ bool32 AddBagItem(enum Item itemId, u16 count)
 
     added = BagPocket_AddItem(&gBagPockets[GetItemPocket(itemId)], itemId, count);
 
-    // Stage 13, category G.
+    // Category G.
     if (added)
     {
         Achievement_CheckItemMilestones(itemId);
-        // Stage 17 (catalog wave 4): Pack Rat [distinct Bag items].
+        // Pack Rat [distinct Bag items].
         Achievement_CheckPackRatMilestone();
     }
 

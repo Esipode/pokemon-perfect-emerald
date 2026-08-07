@@ -110,7 +110,7 @@ void HandleSprayMenuChoice(void)
 
     LOCAL_VAR_SPRAY = VarGet(LOCAL_VAR_SPRAY_CONST + gSpecialVar_Result);
 
-    // Stage 10.1 (BOOST_SPRAY_DURATION), applied to the count before lureMask
+    // BOOST_SPRAY_DURATION, applied to the count before lureMask
     // is OR'd in -- see AchievementBoost_ApplySprayStepCount, which clamps
     // below REPEL_LURE_MASK so a boosted count can't reach the flag bit.
     VarSet(VAR_REPEL_STEP_COUNT, AchievementBoost_ApplySprayStepCount(GetItemHoldEffectParam(LOCAL_VAR_SPRAY)) | lureMask);

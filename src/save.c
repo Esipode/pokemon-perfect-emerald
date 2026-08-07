@@ -720,7 +720,7 @@ u8 HandleSavingData(u8 saveType)
 u8 TrySavingData(u8 saveType)
 {
     // Independent of the save slots below: flushes the achievement profile
-    // (design doc §1.3) whenever a normal save happens, success or not.
+    // whenever a normal save happens, success or not.
     Achievement_FlushProfile();
 
     if (gFlashMemoryPresent != TRUE)

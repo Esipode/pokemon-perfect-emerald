@@ -104,7 +104,7 @@ void AddMoney(u32 *moneyPtr, u32 toAdd)
 
     SetMoney(moneyPtr, toSet);
 
-    // Stage 13, category H. Checked post-clamp so a near-MAX_MONEY player
+    // Category H. Checked post-clamp so a near-MAX_MONEY player
     // doesn't get under-counted against a raw toAdd amount.
     Achievement_CheckMoneyMilestones(GetMoney(moneyPtr));
 }

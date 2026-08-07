@@ -442,7 +442,7 @@ u16 GetEffectiveMove(u16 move, u16 species)
 
 static void GenerateIVs(u8 ivs[6])
 {
-    // Stage 10.1 (BOOST_PERFECT_STARTER_IVS) is hooked here rather than at
+    // BOOST_PERFECT_STARTER_IVS is hooked here rather than at
     // BirchCase_GiveMon, because this array feeds both the stats previewed in
     // the case UI and the ivs[] eventually handed to ScriptGiveMonParameterized.
     // Hooking only the grant would let the preview and the mon disagree.
@@ -741,7 +741,7 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
 
     gSpecialVar_Result = ScriptGiveMonParameterized(B_SIDE_PLAYER, PARTY_SIZE, (enum Species)choice->species, choice->level, (enum Item)choice->item, BALL_POKE, choice->nature, choice->abilityNum, choice->gender, evs, ivs, moves, choice->isShinyExpansion ? SHINY_MODE_ALWAYS : SHINY_MODE_NEVER, choice->ggMaxFactor, (enum Type)choice->teraType, 0);
 
-    // Stage 18 (catalog wave 5): No Freebies tracks the starter by
+    // No Freebies tracks the starter by
     // personality (survives evolution, unlike species) -- read back from the
     // party slot it was just placed into, since ScriptGiveMonParameterized's
     // own return value is a slot/result code, not the generated personality.

@@ -245,7 +245,7 @@ void NewGameInitData(void)
         ((u8 *)playerSettingsBackup)[0] = gSaveBlock1Ptr->nuzlockeModeEnabled;
         ((u8 *)playerSettingsBackup)[1] = gSaveBlock1Ptr->autosaveModeEnabled;
         ((u8 *)playerSettingsBackup)[2] = gSaveBlock1Ptr->difficulty;
-        // Stage 12 (design doc §23 "NG+ reset"): achievementsBlocked lives in
+        // achievementsBlocked lives in
         // SaveBlock1 and ClearSav1() below wipes it back to FALSE like
         // everything else that isn't explicitly preserved here -- without
         // this, a run that got permanently blocked by opening the debug menu
@@ -314,7 +314,7 @@ void NewGameInitData(void)
     gSaveBlock1Ptr->registeredItem = ITEM_NONE;
     gSaveBlock1Ptr->registeredLongItem = ITEM_NONE;
     ClearBag();
-    // Stage 10.1 (BOOST_STARTER_KIT). Must come after ClearBag() above or the
+    // BOOST_STARTER_KIT. Must come after ClearBag() above or the
     // grant is wiped, and is guarded on !isNewGamePlus because the New Game+
     // path restores the previous save's bag and money further down anyway.
     if (!isNewGamePlus && AchievementBoost_HasStarterKit())
@@ -437,7 +437,7 @@ void NewGameInitData(void)
 
             /* Increase New Game+ counter in save (0-255) */
             gSaveBlock2Ptr->newGamePlus++;
-            // Stage 12: highestNgPlusCycle is a high-water mark in the
+            // highestNgPlusCycle is a high-water mark in the
             // achievement profile (outside SaveBlock2, so it survives even a
             // corrupted/reset save) -- newGamePlus itself is already the live
             // counter, this just remembers the furthest the player has gone.

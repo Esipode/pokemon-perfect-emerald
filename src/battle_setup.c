@@ -646,7 +646,7 @@ static void DowngradeBadPoison(void)
 
 static void CB2_EndWildBattle(void)
 {
-    // Stage 13, category F. GAME_STAT_WILD_BATTLES is incremented at battle
+    // Category F. GAME_STAT_WILD_BATTLES is incremented at battle
     // start, so it's already current here regardless of outcome.
     Achievement_CheckWildBattleMilestones();
 
@@ -677,7 +677,7 @@ static void CB2_EndWildBattle(void)
             // whiteout -- caught, KO'd, or fled -- so the flag has always meant
             // "you've had your encounter here," not "you caught something here."
             //
-            // Stage 10.1 (BOOST_NUZLOCKE_SECOND_CHANCE) reads exactly that
+            // BOOST_NUZLOCKE_SECOND_CHANCE reads exactly that
             // distinction: an encounter the player didn't convert into a catch
             // spends a one-time per-route free pass instead of locking the
             // route, so you get one more shot at it. Catching still locks the
@@ -1467,7 +1467,7 @@ static void HandleBattleVariantEndParty(void)
 
 static void CB2_EndTrainerBattle(void)
 {
-    // Stage 13, category E. GAME_STAT_TRAINER_BATTLES is incremented at
+    // Category E. GAME_STAT_TRAINER_BATTLES is incremented at
     // battle start, so it's already current here regardless of outcome.
     Achievement_CheckTrainerBattleMilestones();
 

@@ -7957,7 +7957,7 @@ static bool32 IsCriticalHit(struct DamageContext *ctx)
     else
         isCrit = RandomChance(RNG_CRITICAL_HIT, 1, GetCriticalHitOdds(critChance));
 
-    // Stage 10.1 (BOOST_CRIT_CHANCE): a flat extra chance to upgrade a hit the
+    // BOOST_CRIT_CHANCE: a flat extra chance to upgrade a hit the
     // roll above already declined. Deliberately after the CRITICAL_HIT_BLOCKED
     // branch, so Battle Armor/Shell Armor still hard-block, and before the
     // gPartyCriticalHits counter below, so a boosted crit still counts toward
@@ -7978,7 +7978,7 @@ static bool32 IsCriticalHit(struct DamageContext *ctx)
      && !(gBattleTypeFlags & BATTLE_TYPE_MULTI && GetBattlerPosition(ctx->battlerAtk) == B_POSITION_PLAYER_LEFT))
         gPartyCriticalHits[gBattlerPartyIndexes[ctx->battlerAtk]]++;
 
-    // Stage 15 (catalog wave 2): same player-side/no-link-or-recorded gate as
+    // Same player-side/no-link-or-recorded gate as
     // the BOOST_CRIT_CHANCE roll above.
     if (isCrit && IsOnPlayerSide(ctx->battlerAtk)
      && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
@@ -8272,9 +8272,6 @@ uq4_12_t CalcTypeEffectivenessMultiplier(struct DamageContext *ctx)
     {
         UpdateMoveResultFlags(modifier, &gBattleStruct->moveResultFlags[ctx->battlerDef]);
 
-        // Stage 15 (catalog wave 2): ctx->updateFlags is the same "is this a
-        // real hit, not an AI damage estimate" gate the line above already
-        // uses. Player side only, never in a link or recorded battle.
         if (modifier > UQ_4_12(1.0) && IsOnPlayerSide(ctx->battlerAtk)
          && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
             Achievement_RecordSuperEffectiveHit();
@@ -11046,8 +11043,6 @@ void SetValuesOnFaint(enum BattlerId battler)
         AdjustFriendshipOnBattleFaint(battler);
         gSideTimers[B_SIDE_PLAYER].retaliateTimer = 2;
 
-        // Stage 20 (catalog wave 7): same gate as every other battle-data
-        // write -- never in a link or recorded battle.
         if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
             Achievement_RecordPlayerFaint();
     }
@@ -11058,8 +11053,6 @@ void SetValuesOnFaint(enum BattlerId battler)
         gBattleResults.lastOpponentSpecies = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
         gSideTimers[B_SIDE_OPPONENT].retaliateTimer = 2;
 
-        // Stage 15 (catalog wave 2): same gate as every other battle-data
-        // write -- never in a link or recorded battle.
         if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
             Achievement_RecordOpposingFaint(battler, gBattlerAttacker);
     }

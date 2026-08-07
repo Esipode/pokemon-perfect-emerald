@@ -1,22 +1,20 @@
 // One entry per enum AchievementId (constants/achievements.h), keyed by
-// designated initializer -- see design doc §4 and Stage 2.2 for the table
-// format. Included from src/achievements.c only (Stage 2.1); nothing else
-// should reference gAchievements directly -- go through the public API in
-// include/achievements.h instead.
+// designated initializer. Included from src/achievements.c only; nothing
+// else should reference gAchievements directly -- go through the public API
+// in include/achievements.h instead.
 //
 // Matches the src/data/items.h:632 / src/data/moves_info.h:46 convention:
 // designated initializers keyed by ID, .name wrapped in a *_NAME() macro that
 // enforces the length cap at compile time, .description left as a plain
 // COMPOUND_STRING (no cap).
 //
-// Stage 23 (design doc Stage 14's deferred balancing pass): every .points
-// value below is scaled by a single factor (~2.317x) from the raw per-tier
-// values the catalog waves originally shipped with, so the catalog's total
-// (20,000) lands on the same figure as maxing every boost in
-// src/data/achievement_boosts.h -- see that file's own Stage 23 comment.
+// Every .points value below is scaled by a single factor (~2.317x) from the
+// raw per-tier values the catalog originally shipped with, so the catalog's
+// total (20,000) lands on the same figure as maxing every boost in
+// src/data/achievement_boosts.h -- see that file's own note on the scaling.
 // Scaling preserves every entry's relative difficulty ranking (the tier
 // system -- Bronze < Silver < Gold < Diamond -- already tracked actual
-// difficulty reasonably well); a handful of entries that Stage 22 made
+// difficulty reasonably well); a handful of entries that were made
 // meaningfully harder without revisiting their tier (the "full 6-Pokemon
 // team" rewrites) were re-tiered first, so the scale applies to already-
 // corrected relative values, not the stale ones. Values are rounded to the
@@ -37,8 +35,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = TRUE,
     },
 
-    // Stage 13, catalog wave 1 (60 entries). See constants/achievements.h for
-    // the category breakdown and src/achievements.c for each category's hook.
+    // See constants/achievements.h for the category breakdown and
+    // src/achievements.c for each category's hook.
 
     // A. Badges & Story
     [ACHIEVEMENT_STORY_RIVAL_ROUTE103] = {
@@ -216,9 +214,9 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
 
     // C. Captures
-    // Stage 22 step 1: the old percentage-based Pokedex-caught ladder
-    // (10/25/50/100%) and the old raw-count ladder (1/25/100/250/500) are
-    // collapsed into this single hard-number ladder, one entry per tier.
+    // The old percentage-based Pokedex-caught ladder (10/25/50/100%) and
+    // the old raw-count ladder (1/25/100/250/500) are collapsed into this
+    // single hard-number ladder, one entry per tier.
     [ACHIEVEMENT_CATCH_100] = {
         .name        = ACHIEVEMENT_NAME("Serial Catcher"),
         .description = COMPOUND_STRING("Catch 100 Pokémon."),
@@ -467,7 +465,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
 
     // J. Multi-Run / Persistent Profile
-    // Stage 22 step 12: ACHIEVEMENT_PLAYTHROUGHS_2 ("Second Wind", complete
+    // ACHIEVEMENT_PLAYTHROUGHS_2 ("Second Wind", complete
     // the game from a fresh save 2 times) and ACHIEVEMENT_PLAYTHROUGHS_5
     // ("Serial Champion", 5 times) removed -- see
     // Achievement_OnFirstPlaythroughComplete (src/achievements.c).
@@ -476,7 +474,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // Champion removals below (category Q), but it's still shown on the
     // debug profile dump (src/debug.c) independent of any achievement, so
     // the counter stays live.
-    // Stage 22 step 4: replaces the old seven-entry NG+ repeat-count ladder
+    // Replaces the old seven-entry NG+ repeat-count ladder
     // (ACHIEVEMENT_NG_PLUS_STARTED/_CYCLE_3/_CYCLE_5/_COMPLETED_3 here, plus
     // _ONE_MORE_TIME/_BEYOND_THE_BEGINNING/_ESCALATION in category O) with a
     // single "beat one NG+ cycle" achievement -- checked, unconditionally,
@@ -492,7 +490,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 4: ACHIEVEMENT_NUZLOCKE_3 ("complete 3 Nuzlocke runs")
+    // ACHIEVEMENT_NUZLOCKE_3 ("complete 3 Nuzlocke runs")
     // removed -- this is already the "do it once" version of that ladder.
     [ACHIEVEMENT_NUZLOCKE_1] = {
         .name        = ACHIEVEMENT_NAME("Survivor"),
@@ -503,7 +501,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 4: ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
+    // ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
     // playthroughs) and _VETERAN (5), category O, removed -- this is already
     // the "do it once" version of that ladder.
     [ACHIEVEMENT_RANDOMIZED_1] = {
@@ -515,8 +513,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 70,
         .hidden      = FALSE,
     },
-    // Stage 23: 1,000 -> 2,000 -- see Achievement_CheckPointMilestones
-    // (src/achievements.c)'s own Stage 23 comment.
+    // Scaled up from 1,000 to 2,000 -- see Achievement_CheckPointMilestones
+    // (src/achievements.c)'s own comment on the point-total rescale.
     [ACHIEVEMENT_POINTS_2000] = {
         .name        = ACHIEVEMENT_NAME("Point Collector"),
         .description = COMPOUND_STRING("Earn 2,000 total achievement points."),
@@ -527,15 +525,15 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // Stage 15, catalog wave 2 (30 entries), category K: Battle Mastery. See
-    // constants/achievements.h for the ID list and src/achievements.c for
-    // struct AchievementBattleData and Achievement_CheckBattleMilestones.
-    // Every entry below is ACHIEVEMENT_SCOPE_CURRENT_RUN: the underlying data
-    // is a per-battle EWRAM struct that resets every single battle, an even
-    // tighter cadence than "current run" names, but there's no narrower scope
-    // value and CURRENT_RUN is the closest fit -- these are also its first
-    // real consumers (the scope has existed since Stage 2 with nothing using
-    // it until now).
+    // Category K: Battle Mastery. See constants/achievements.h for the ID
+    // list and src/achievements.c for struct AchievementBattleData and
+    // Achievement_CheckBattleMilestones. Every entry below is
+    // ACHIEVEMENT_SCOPE_CURRENT_RUN: the underlying data is a per-battle
+    // EWRAM struct that resets every single battle, an even tighter cadence
+    // than "current run" names, but there's no narrower scope value and
+    // CURRENT_RUN is the closest fit -- these are also its first real
+    // consumers (the scope has existed since early on with nothing using it
+    // until now).
 
     [ACHIEVEMENT_BATTLE_CRITICAL_SUCCESS] = {
         .name        = ACHIEVEMENT_NAME("Critical Success"),
@@ -555,15 +553,15 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 25,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_BATTLE_TYPE_MASTER ("win a trainer battle
+    // ACHIEVEMENT_BATTLE_TYPE_MASTER ("win a trainer battle
     // without landing a super-effective hit") removed here -- most trainer
     // teams aren't built to counter the player, so this happens by chance
     // rather than deliberate effort. See include/constants/achievements.h's
     // category K comment.
-    // Stage 22 step 6: now requires the opponent to field a full 6-Pokemon
+    // Now requires the opponent to field a full 6-Pokemon
     // team (see Achievement_CheckBattleMilestones in src/achievements.c) --
     // was trivially easy against the many trainers who only carry one or two.
-    // Stage 23: Silver->Gold, 25->45 -- Stage 22 step 6's full-6-Pokemon-
+    // Scaled up from Silver/25 to Gold/45 -- the full-6-Pokemon-
     // opponent requirement made this meaningfully harder than its old Silver
     // points reflected.
     [ACHIEVEMENT_BATTLE_CLEAN_SWEEP] = {
@@ -575,10 +573,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 105,
         .hidden      = FALSE,
     },
-    // Stage 22 step 6: same full-6-Pokemon-opponent requirement as
+    // Same full-6-Pokemon-opponent requirement as
     // ACHIEVEMENT_BATTLE_CLEAN_SWEEP above -- even major trainers can carry
     // fewer than 6 early on.
-    // Stage 23: 50->60 -- same full-6-Pokemon-opponent bump as Clean Sweep
+    // Scaled up from 50 to 60 -- same full-6-Pokemon-opponent bump as Clean Sweep
     // above, plus this one's already-harder "major trainer" requirement.
     [ACHIEVEMENT_BATTLE_PERFECT_SWEEP] = {
         .name        = ACHIEVEMENT_NAME("Perfect Sweep"),
@@ -589,9 +587,9 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 140,
         .hidden      = FALSE,
     },
-    // Stage 22 step 6: same full-6-Pokemon-opponent requirement.
-    // Stage 23: Silver->Gold, 25->45 -- same full-6-Pokemon-opponent bump as
-    // Clean Sweep above.
+    // Same full-6-Pokemon-opponent requirement.
+    // Scaled up from Silver/25 to Gold/45 -- same full-6-Pokemon-opponent
+    // bump as Clean Sweep above.
     [ACHIEVEMENT_BATTLE_NO_DAMAGE] = {
         .name        = ACHIEVEMENT_NAME("No Damage"),
         .description = COMPOUND_STRING("Win a battle against a trainer's full team of 6 Pokémon without any of your Pokémon taking damage."),
@@ -655,8 +653,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: description clarified -- the check
-    // (sBattleData.setupThenKo, Achievement_RecordMoveUsed/
+    // The check (sBattleData.setupThenKo, Achievement_RecordMoveUsed/
     // _RecordOpposingFaint) fires on any KO in the won battle, not
     // specifically the finishing blow.
     [ACHIEVEMENT_BATTLE_ONE_TURN_FINISH] = {
@@ -803,10 +800,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Stage 22 step 7: now requires a full 6-Pokemon party (see
+    // Now requires a full 6-Pokemon party (see
     // Achievement_CheckBattleMilestones in src/achievements.c) -- was
     // trivial to earn by accident with only one or two Pokemon along.
-    // Stage 23: Silver->Gold, 25->45 -- Stage 22 step 7's full-6-Pokemon-party
+    // Scaled up from Silver/25 to Gold/45 -- the full-6-Pokemon-party
     // requirement made this meaningfully harder than its old Silver points
     // reflected.
     [ACHIEVEMENT_BATTLE_COMEBACK_KID] = {
@@ -818,9 +815,9 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 105,
         .hidden      = FALSE,
     },
-    // Stage 22 step 7: same full-6-Pokemon-party requirement as
+    // Same full-6-Pokemon-party requirement as
     // ACHIEVEMENT_BATTLE_COMEBACK_KID above.
-    // Stage 23: 40->55 -- same full-6-Pokemon-party bump as Comeback Kid
+    // Scaled up from 40 to 55 -- same full-6-Pokemon-party bump as Comeback Kid
     // above, plus this one's tighter 10%-HP threshold.
     [ACHIEVEMENT_BATTLE_LAST_ONE_STANDING] = {
         .name        = ACHIEVEMENT_NAME("Last One Standing"),
@@ -832,14 +829,13 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // Stage 16, catalog wave 3 (30 entries), category L. All
-    // ACHIEVEMENT_SCOPE_CURRENT_RUN -- struct AchievementRunData resets every
-    // new game and every New Game+ cycle, and every condition below is
-    // meaningless once carried across a reset.
-    // Stage 22 step 7: now requires a full 6-Pokemon party (see
+    // Category L. All ACHIEVEMENT_SCOPE_CURRENT_RUN -- struct
+    // AchievementRunData resets every new game and every New Game+ cycle,
+    // and every condition below is meaningless once carried across a reset.
+    // Now requires a full 6-Pokemon party (see
     // Achievement_CheckTeamMilestones in src/achievements.c) -- was trivial
     // to keep 1-2 Pokemon mono-type by accident.
-    // Stage 23: Bronze->Silver, 15->25 -- Stage 22 step 7's full-6-Pokemon-
+    // Scaled up from Bronze/15 to Silver/25 -- the full-6-Pokemon-
     // party requirement made assembling a whole mono-type team this early
     // meaningfully harder than its old Bronze points reflected.
     [ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL] = {
@@ -878,12 +874,12 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 225,
         .hidden      = FALSE,
     },
-    // Stage 22 step 7: now requires a full 6-Pokemon party (see
+    // Now requires a full 6-Pokemon party (see
     // Achievement_CheckTeamMilestones in src/achievements.c) -- was trivial
     // for no two party members to share a type with barely any party to
     // begin with.
-    // Stage 23: Bronze->Silver, 15->25 -- same full-6-Pokemon-party bump as
-    // Mono-Type Trial above.
+    // Scaled up from Bronze/15 to Silver/25 -- same full-6-Pokemon-party
+    // bump as Mono-Type Trial above.
     [ACHIEVEMENT_TEAM_NO_DUPLICATES] = {
         .name        = ACHIEVEMENT_NAME("No Duplicates"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, no two sharing a type."),
@@ -956,9 +952,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: description clarified -- the check compares your
-    // party's type composition against the immediately PREVIOUS Gym's,
-    // every single Gym, not just "at some point."
+    // The check compares your party's type composition against the
+    // immediately PREVIOUS Gym's, every single Gym, not just "at some point."
     [ACHIEVEMENT_TEAM_TYPE_ROULETTE] = {
         .name        = ACHIEVEMENT_NAME("Type Roulette"),
         .description = COMPOUND_STRING("Clear all 8 Gyms with your party's type makeup different from the previous Gym's, every time."),
@@ -986,7 +981,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 105,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_TEAM_VARIETY_IS_POWER ("win a major battle
+    // ACHIEVEMENT_TEAM_VARIETY_IS_POWER ("win a major battle
     // without two of the same species") removed here -- most players never
     // deliberately catch duplicate species for their party, so this is true
     // of nearly every team without any effort. See
@@ -1027,7 +1022,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 105,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: description clarified -- your final party's species
+    // Your final party's species
     // must share none in common with the party you had right after
     // clearing the 4th Gym specifically.
     [ACHIEVEMENT_TEAM_RADICAL_REBUILD] = {
@@ -1048,10 +1043,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 7: now requires a full 6-Pokemon party (see
+    // Now requires a full 6-Pokemon party (see
     // Achievement_CheckTeamMilestones in src/achievements.c) -- a small
     // party trivially has a low combined base stat total.
-    // Stage 23: Silver->Gold, 30->45 -- Stage 22 step 7's full-6-Pokemon-party
+    // Scaled up from Silver/30 to Gold/45 -- the full-6-Pokemon-party
     // requirement made this a genuine deliberate-underdog build, not just a
     // side effect of a small party, harder than its old Silver points
     // reflected.
@@ -1128,10 +1123,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // M. Exploration, Economy & Collection (30) -- Stage 17, catalog wave 4.
+    // M. Exploration, Economy & Collection (30)
     [ACHIEVEMENT_EXPLORE_FIRST_STEPS_ABROAD] = {
         .name        = ACHIEVEMENT_NAME("First Steps Abroad"),
-        .description = COMPOUND_STRING("Enter 10 different maps."),
+        .description = COMPOUND_STRING("Enter 30 different areas."),
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
@@ -1140,7 +1135,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_EXPLORE_OFF_THE_BEATEN_PATH] = {
         .name        = ACHIEVEMENT_NAME("Off the Beaten Path"),
-        .description = COMPOUND_STRING("Enter 40 different maps."),
+        .description = COMPOUND_STRING("Enter 70 different areas."),
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
@@ -1149,7 +1144,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_EXPLORE_CARTOGRAPHER] = {
         .name        = ACHIEVEMENT_NAME("Cartographer"),
-        .description = COMPOUND_STRING("Enter 80 different maps in one playthrough."),
+        .description = COMPOUND_STRING("Enter 100 different areas in one playthrough."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_EXPLORATION,
@@ -1282,7 +1277,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 105,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_ECONOMY_RESOURCEFUL ("win a major battle
+    // ACHIEVEMENT_ECONOMY_RESOURCEFUL ("win a major battle
     // carrying fewer than five consumables") removed here -- most players
     // don't stock up on more than a few consumables to begin with, so this
     // holds without any deliberate effort. See
@@ -1359,7 +1354,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 25,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_COLLECT_TRADE_SECRETS ("obtain a Pokemon
+    // ACHIEVEMENT_COLLECT_TRADE_SECRETS ("obtain a Pokemon
     // by trade") removed here -- even a single in-game NPC trade satisfies
     // this, so most playthroughs pick it up without any deliberate effort.
     // See include/constants/achievements.h's category M comment.
@@ -1391,8 +1386,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // N. Challenge Runs & Nuzlocke (30) -- Stage 18, catalog wave 5.
-    // Stage 22 step 8: description clarified -- the 7 "challenge
+    // N. Challenge Runs & Nuzlocke (30). The 7 "challenge
     // modifiers" (Achievement_CountChallengeModifiers) are the New Game
     // settings menu's Nuzlocke Mode, HARD difficulty, each of the three
     // Randomize flags, Level Cap, and Stat Editor -- all on their harder
@@ -1406,7 +1400,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 70,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: same clarified modifier list as
+    // Same modifier list as
     // ACHIEVEMENT_CHALLENGE_SELF_IMPOSED above, higher threshold.
     [ACHIEVEMENT_CHALLENGE_HARD_WAY] = {
         .name        = ACHIEVEMENT_NAME("Hard Way"),
@@ -1417,7 +1411,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 125,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: same clarified modifier list as
+    // Same modifier list as
     // ACHIEVEMENT_CHALLENGE_SELF_IMPOSED above, all seven required.
     [ACHIEVEMENT_CHALLENGE_BRUTAL_RULES] = {
         .name        = ACHIEVEMENT_NAME("Brutal Rules"),
@@ -1428,11 +1422,11 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 160,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: same clarified modifier list as
+    // Same modifier list as
     // ACHIEVEMENT_CHALLENGE_SELF_IMPOSED above, all seven plus boosts off --
-    // spelled out here rather than just referencing Brutal Rules by name
-    // (self-contained descriptions, same principle Step 12 will apply to
-    // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED).
+    // spelled out here rather than just referencing Brutal Rules by name --
+    // self-contained descriptions, same principle
+    // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED's description follows too.
     [ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE] = {
         .name        = ACHIEVEMENT_NAME("Nightmare Mode"),
         .description = COMPOUND_STRING("Complete the game with all 7 challenge settings on (Nuzlocke Mode, HARD, all three Randomizer flags, Level Cap, Stat Editor off) and the boost system disabled."),
@@ -1451,11 +1445,11 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 7: now requires a full 6-Pokemon party (see
+    // Now requires a full 6-Pokemon party (see
     // Achievement_CheckChallengeMilestones in src/achievements.c) -- with
     // only one or two Pokemon along there's barely any HP pool to dip
     // into, making this trivial to earn by accident.
-    // Stage 23: Silver->Gold, 25->40 -- Stage 22 step 7's full-6-Pokemon-party
+    // Scaled up from Silver/25 to Gold/40 -- the full-6-Pokemon-party
     // requirement made this meaningfully harder than its old Silver points
     // reflected.
     [ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS] = {
@@ -1467,11 +1461,12 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 95,
         .hidden      = FALSE,
     },
-    // Stage 22 step 7: same full-6-Pokemon-party requirement as
+    // Same full-6-Pokemon-party requirement as
     // ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS above -- also barely any held
     // items to check with a small party.
-    // Stage 23: 45->55, same reasoning as No Healing Items above -- this one
-    // was already Gold, but under-priced relative to its now-stricter cousin.
+    // Scaled up from 45 to 55, same reasoning as No Healing Items above --
+    // this one was already Gold, but under-priced relative to its
+    // now-stricter cousin.
     [ACHIEVEMENT_CHALLENGE_ITEMLESS_BATTLE] = {
         .name        = ACHIEVEMENT_NAME("Itemless Battle"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, using no Bag items and no held items."),
@@ -1517,13 +1512,13 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 125,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE ("beat a Gym
+    // ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE ("beat a Gym
     // Leader with no party member above the level cap") removed here -- a
     // player just playing through normally, without deliberately grinding,
     // rarely ends up over the level cap anyway. See
     // include/constants/achievements.h's category N comment.
     //
-    // Stage 22 step 9: ACHIEVEMENT_CHALLENGE_CAPSTONE ("complete the story
+    // ACHIEVEMENT_CHALLENGE_CAPSTONE ("complete the story
     // without exceeding the level cap") removed here too -- it was the exact
     // same condition as ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED below, minus
     // that achievement's extra HARD/randomizer requirement, so completing
@@ -1619,14 +1614,14 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE ("no two catches
+    // ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE ("no two catches
     // from the same family") and ACHIEVEMENT_NUZLOCKE_NO_REVIVES ("never
     // used a Revive") removed here -- a genuine Nuzlocke already only keeps
     // one catch per route and treats a fainted Pokemon as permanently boxed,
     // so both conditions tend to hold on their own. See
     // include/constants/achievements.h's category N (Nuzlocke) comment.
     //
-    // Stage 22 step 9: ACHIEVEMENT_NUZLOCKE_NO_ACE_ALLOWED ("clear a Nuzlocke
+    // ACHIEVEMENT_NUZLOCKE_NO_ACE_ALLOWED ("clear a Nuzlocke
     // Gym without your highest-level Pokemon acting") also removed here --
     // duplicate of ACHIEVEMENT_TEAM_UNDERSTUDY (same check, unconditional on
     // Nuzlocke mode), which already fires for Nuzlocke runs too. See
@@ -1649,7 +1644,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 10: ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER ("complete a
+    // ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER ("complete a
     // Nuzlocke having taken the encounter on every route you entered")
     // removed -- one missed/fled encounter anywhere in the whole run
     // permanently breaks it (a sticky flag, per its own bookkeeping comment),
@@ -1659,7 +1654,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // it; runData->nuzlockePendingRoute/nuzlockeRouteSkipped are now unread
     // but left in place (see the struct's own comment).
     //
-    // Stage 22 step 9: ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR ("complete a
+    // ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR ("complete a
     // Nuzlocke with the boost system disabled") removed here -- too similar
     // to ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP (!boostsEnabled is a strict
     // subset of that achievement's condition, checked at the same GameClear
@@ -1667,8 +1662,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // gated on nuzlockeModeEnabled. See Achievement_CheckNuzlockeCompletionMilestones
     // (src/achievements.c).
 
-    // ---- Stage 19: catalog wave 6 (category O, Randomizer & New Game+) ----
-    // Stage 22 step 11: "a randomized playthrough" was ambiguous given there
+    // ---- Randomizer & New Game+ (category O) --------------------------
+    // "A randomized playthrough" was ambiguous given there
     // are three independent randomizer settings (species/FLAG_RANDOMIZE_MON,
     // type/FLAG_RANDOMIZE_TYPE, move/FLAG_RANDOMIZE_MOVES). This is a
     // three-tier ladder and each tier now spells out its own criteria
@@ -1722,13 +1717,13 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 105,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING ("beat a
+    // ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING ("beat a
     // randomized major battle with no super-effective move available")
     // removed here -- with move/type randomization scrambling coverage,
     // having zero super-effective options against some boss just happens by
     // chance over a run's worth of major battles. See
     // include/constants/achievements.h's category O comment.
-    // Stage 22 step 4: ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
+    // ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
     // playthroughs) and _VETERAN (5) removed here -- ACHIEVEMENT_RANDOMIZED_1
     // (category J) is already the "do it once" version of this ladder.
     [ACHIEVEMENT_RANDOMIZER_PURE_CHAOS] = {
@@ -1758,7 +1753,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 225,
         .hidden      = FALSE,
     },
-    // Stage 22 step 4: ACHIEVEMENT_NG_PLUS_ONE_MORE_TIME (complete cycle 2)
+    // ACHIEVEMENT_NG_PLUS_ONE_MORE_TIME (complete cycle 2)
     // and _BEYOND_THE_BEGINNING (reach cycle 10) removed here -- collapsed,
     // along with category J's old NG_PLUS_STARTED/_CYCLE_3/_CYCLE_5/
     // _COMPLETED_3, into the single ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE
@@ -1781,7 +1776,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: same clarified modifier list as
+    // Same modifier list as
     // ACHIEVEMENT_CHALLENGE_SELF_IMPOSED (src/data/achievements.h,
     // category N), checked at NG+ cycle completion instead of first clear.
     [ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST] = {
@@ -1793,7 +1788,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 125,
         .hidden      = FALSE,
     },
-    // Stage 22 step 4: ACHIEVEMENT_NG_PLUS_ESCALATION (3 consecutive NG+
+    // ACHIEVEMENT_NG_PLUS_ESCALATION (3 consecutive NG+
     // cycles) removed here -- part of the same collapse-to-one-completion
     // consolidation as the rest of the NG+ ladder (see category J's
     // ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE).
@@ -1833,7 +1828,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 140,
         .hidden      = FALSE,
     },
-    // Stage 22 step 10: ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR ("complete NG+
+    // ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR ("complete NG+
     // cycle 5 or higher with Nuzlocke and the randomizer enabled") removed
     // -- stacks a deep NG+ grind on top of a randomized Nuzlocke's own
     // permadeath pressure, closer to punishing than to a genuine challenge.
@@ -1873,10 +1868,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 35,
         .hidden      = FALSE,
     },
-    // Stage 22 step 4: used to require this be specifically NG+ cycle 2;
+    // Used to require this be specifically NG+ cycle 2;
     // narrowed to "a" cycle -- same "do it once" treatment as the rest of
-    // this step, since the boost-disabled condition doesn't get any harder
-    // to satisfy on a later cycle.
+    // the NG+ ladder collapse, since the boost-disabled condition doesn't
+    // get any harder to satisfy on a later cycle.
     [ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE] = {
         .name        = ACHIEVEMENT_NAME("Unassisted Cycle"),
         .description = COMPOUND_STRING("Complete a New Game+ cycle with the boost system disabled."),
@@ -1886,7 +1881,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 125,
         .hidden      = FALSE,
     },
-    // Stage 22 step 10: ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP ("complete ten
+    // ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP ("complete ten
     // New Game+ cycles") and ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR ("complete
     // NG+ cycles under three different challenge configurations") both
     // removed -- ten full replays (or three deliberately-varied ones) is a
@@ -1904,7 +1899,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // Stage 20 (catalog wave 7): Streaks, Records & Collection Remainder.
+    // Streaks, Records & Collection Remainder.
     [ACHIEVEMENT_RECORD_HOT_STREAK] = {
         .name        = ACHIEVEMENT_NAME("Hot Streak"),
         .description = COMPOUND_STRING("Win five Trainer battles in a row."),
@@ -1986,7 +1981,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: logic fixed, not just the description -- the old
+    // The logic was fixed, not just the description -- the old
     // check (a bitmask over party SLOTS, ANDed down) trivially always
     // fired, since party slot 0 is never empty while you're able to
     // battle at all. Achievement_CheckBattleRecordsMilestones now tracks
@@ -2029,7 +2024,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 35,
         .hidden      = FALSE,
     },
-    // Stage 22 step 8: description clarified -- walks the whole family
+    // Walks the whole family
     // tree from the base form outward (Achievement_GetFamilyMembers),
     // including every branch, so a branching family like Eevee's needs
     // every one of its evolutions caught, not just one.
@@ -2042,7 +2037,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 105,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN ("obtain a
+    // ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN ("obtain a
     // Pokemon with all six IVs at 31") removed here -- a lucky roll on any
     // catch or hatch, not something a player can deliberately work towards.
     // See include/constants/achievements.h's category P comment.
@@ -2118,7 +2113,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 140,
         .hidden      = FALSE,
     },
-    // Stage 22 step 5: ACHIEVEMENT_COLLECT_BOX_FILLER ("store 100 Pokemon at
+    // ACHIEVEMENT_COLLECT_BOX_FILLER ("store 100 Pokemon at
     // once") and ACHIEVEMENT_COLLECT_STORAGE_BARON ("store 300 at once")
     // removed here -- a full playthrough's worth of catching fills PC boxes
     // up on its own, no deliberate collecting required. See
@@ -2169,11 +2164,11 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // Stage 21 (catalog wave 8): Profile Meta, Mastery & Prestige. All
+    // Profile Meta, Mastery & Prestige. All
     // ACHIEVEMENT_CATEGORY_PROFILE -- see constants/achievements.h's category
     // Q comment for why there's no separate Mastery category.
     //
-    // Stage 22 step 12: removed here -- Bronze/Silver/Gold/Diamond Master and
+    // Removed here -- Bronze/Silver/Gold/Diamond Master and
     // Category Conqueror (complete every achievement of a tier / entirely in
     // one category), Master of the Game (90% of all non-hidden
     // achievements), Nothing Left to Prove (100% of all non-hidden
@@ -2190,10 +2185,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // Achievement_GoldOrBetterFullyCompletedAcrossCategories) are removed
     // along with them.
     //
-    // Stage 23: ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER ("Earn a Bronze
-    // achievement in every category") removed here too -- the design doc's
-    // own Known Catalog Gap note above flagged it as unattainable (Challenge,
-    // NG+, Nuzlocke and Profile have no Bronze-tier entry between them), and
+    // ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER ("Earn a Bronze
+    // achievement in every category") removed here too -- it was unattainable
+    // (Challenge, NG+, Nuzlocke and Profile have no Bronze-tier entry between
+    // them), and
     // rather than force a tier onto categories that were never designed to
     // have an "easy" entry, the achievement itself goes. Its sole helpers,
     // Achievement_HasBronzeInEveryCategory and
@@ -2208,14 +2203,14 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 115,
         .hidden      = FALSE,
     },
-    // Stage 22 step 12: ACHIEVEMENT_PROFILE_MASTER_OF_ALL ("earn a
+    // ACHIEVEMENT_PROFILE_MASTER_OF_ALL ("earn a
     // Gold-or-better achievement in every category") removed -- see
     // Achievement_CheckMasteryMilestones (src/achievements.c);
     // Achievement_HasGoldOrBetterInEveryCategory, which existed solely for
     // this achievement, is removed along with it.
-    // Stage 23: 5,000 -> 10,000 (50% of the catalog's new 20,000-point total)
-    // -- see Achievement_CheckMasteryMilestones (src/achievements.c)'s own
-    // Stage 23 comment.
+    // Scaled up from 5,000 to 10,000 (50% of the catalog's 20,000-point
+    // total) -- see Achievement_CheckMasteryMilestones (src/achievements.c)'s
+    // own comment on the rescale.
     [ACHIEVEMENT_PROFILE_POINT_HOARDER] = {
         .name        = ACHIEVEMENT_NAME("Point Hoarder"),
         .description = COMPOUND_STRING("Earn 10,000 total achievement points."),
@@ -2225,11 +2220,12 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 160,
         .hidden      = FALSE,
     },
-    // Stage 23: 10,000 -> 18,000 (90% of the new 20,000-point total, so it
+    // Scaled up from 10,000 to 18,000 (90% of the 20,000-point total, so it
     // still means "you've all but finished the catalog," the same relative
     // bar the old 10,000/8,630-max threshold used to clear on its own before
-    // the rebalance made it literally unreachable -- see
-    // src/data/achievements.h's top-of-file Stage 23 comment).
+    // the rescale made it literally unreachable -- see
+    // src/data/achievements.h's top-of-file comment on the point-total
+    // rescale).
     [ACHIEVEMENT_PROFILE_POINT_LEGEND] = {
         .name        = ACHIEVEMENT_NAME("Point Legend"),
         .description = COMPOUND_STRING("Earn 18,000 total achievement points."),
@@ -2239,7 +2235,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 345,
         .hidden      = FALSE,
     },
-    // Stage 23: 3,000 -> 7,000 -- the new Gold-or-better pool is 14,580
+    // Scaled up from 3,000 to 7,000 -- the Gold-or-better pool is 14,580
     // (11,780 Gold + 2,800 Diamond), and 7,000 keeps this at roughly the same
     // ~49% share of that pool the old 3,000/6,090 threshold held.
     [ACHIEVEMENT_PROFILE_NO_EASY_PATH] = {
@@ -2251,10 +2247,10 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 140,
         .hidden      = FALSE,
     },
-    // Stage 23: 2,000 -> 1,000 -- the boost economy this measures against
-    // shrank from 42,500 to 20,000 total (src/data/achievement_boosts.h's own
-    // Stage 23 comment), and 1,000 keeps this at roughly the same ~5% share
-    // of that total the old 2,000/42,500 threshold held.
+    // Scaled down from 2,000 to 1,000 -- the boost economy this measures
+    // against shrank from 42,500 to 20,000 total (src/data/achievement_boosts.h's
+    // own comment on the rescale), and 1,000 keeps this at roughly the same
+    // ~5% share of that total the old 2,000/42,500 threshold held.
     [ACHIEVEMENT_PROFILE_BOOST_INVESTOR] = {
         .name        = ACHIEVEMENT_NAME("Boost Investor"),
         .description = COMPOUND_STRING("Invest 1,000 points into boosts."),
@@ -2291,7 +2287,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 125,
         .hidden      = FALSE,
     },
-    // Stage 22 step 12: ACHIEVEMENT_PROFILE_META_PROG_MASTER ("complete 200
+    // ACHIEVEMENT_PROFILE_META_PROG_MASTER ("complete 200
     // achievements with every boost at max level") removed -- see
     // Achievement_CheckMetaProgMaster (src/achievements.c), which existed
     // solely for this achievement (called from both
@@ -2308,7 +2304,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 225,
         .hidden      = FALSE,
     },
-    // Stage 22 step 12: ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME ("complete two
+    // ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME ("complete two
     // playthroughs sharing no party species") removed -- see
     // Achievement_OnFirstPlaythroughComplete (src/achievements.c); the
     // disjoint-species comparison that backed it is removed, but the

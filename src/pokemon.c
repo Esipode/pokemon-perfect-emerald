@@ -3300,24 +3300,24 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     SetMonData(mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
     SetMonData(mon, MON_DATA_OT_ID, gSaveBlock2Ptr->playerTrainerId);
 
-    // Stage 13, categories C/D. GAME_STAT_POKEMON_CAPTURES is already
+    // Categories C/D. GAME_STAT_POKEMON_CAPTURES is already
     // incremented by the time this runs (see data/battle_scripts_2.s).
     Achievement_CheckCaptureMilestones();
     if (GetMonData(mon, MON_DATA_IS_SHINY))
         Achievement_OnShinyObtained();
-    // Stage 19 (catalog wave 6): Randomized Rookie. Same funnel, same
+    // Randomized Rookie. Same funnel, same
     // already-incremented stat as the capture check just above.
     Achievement_CheckRandomizerCaptureMilestone();
-    // Stage 16: unconditional, before the party/box branch below -- a catch
+    // Unconditional, before the party/box branch below -- a catch
     // that lands in a box still counts as "obtained" for Fresh Start if it's
     // withdrawn into the party before the next Gym.
     Achievement_RecordMonObtained(GetMonData(mon, MON_DATA_PERSONALITY));
-    // Stage 17 (catalog wave 4): Rare Find. gDexNavSpecies is nonzero only
+    // Rare Find. gDexNavSpecies is nonzero only
     // while a battle a DexNav scan actually started is in progress, and is
     // reset only at battle end (after this catch script already ran).
     if (gDexNavSpecies != SPECIES_NONE)
         Achievement_CheckDexNavCaptureMilestone();
-    // Stage 22 step 5: the Achievement_CheckPerfectIvMilestone(mon) call that
+    // The Achievement_CheckPerfectIvMilestone(mon) call that
     // used to be here (Perfect Specimen) was removed along with that
     // achievement -- see src/achievements.c.
 
@@ -4069,7 +4069,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             break;
                         }
 
-                        // Stage 22 step 5: the Achievement_RecordReviveUsed()
+                        // The Achievement_RecordReviveUsed()
                         // call that used to be here (the out-of-battle
                         // counterpart to BS_ItemRestoreHP's in-battle hook)
                         // was removed along with ACHIEVEMENT_NUZLOCKE_NO_REVIVES
@@ -4162,7 +4162,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             {
                                 GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, item, NULL, &canStopEvo, DO_EVO);
                                 BeginEvolutionScene(mon, targetSpecies, canStopEvo, partyIndex);
-                                // Stage 17 (catalog wave 4): Stone Age.
+                                // Stone Age.
                                 if (item >= ITEM_FIRE_STONE && item <= ITEM_DAWN_STONE)
                                     Achievement_RecordStoneEvolution();
                                 return FALSE;
@@ -4953,7 +4953,7 @@ enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode m
                 // This is different from vanilla where the loop continues.
                 // If you have overlapping evolutions, put the ones you want to happen first on top of the list.
                 targetSpecies = evolutions[i].targetSpecies;
-                // Stage 17 (catalog wave 4): Friendship Blossoms. Gated on
+                // Friendship Blossoms. Gated on
                 // DO_EVO (the real commit) so a mere eligibility check (e.g.
                 // opening the party menu, which runs CHECK_EVO) never awards
                 // it. This fork has no literal EVO_FRIENDSHIP method --
@@ -6229,11 +6229,11 @@ void HandleSetPokedexFlag(enum NationalDexOrder nationalNum, u8 caseId, u32 pers
             gSaveBlock2Ptr->pokedex.unownPersonality = personality;
         if (NationalPokedexNumToSpecies(nationalNum) == SPECIES_SPINDA)
             gSaveBlock2Ptr->pokedex.spindaPersonality = personality;
-        // Stage 20 (catalog wave 7): Family Reunion, checked only on a new
+        // Family Reunion, checked only on a new
         // catch (not a new sighting) -- one more line at this same funnel.
         if (caseId == FLAG_SET_CAUGHT)
             Achievement_CheckFamilyMilestone(NationalPokedexNumToSpecies(nationalNum));
-        // Stage 13, category B.
+        // Category B.
         Achievement_CheckPokedexMilestones(caseId == FLAG_SET_CAUGHT);
     }
 }

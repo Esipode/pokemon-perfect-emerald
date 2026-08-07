@@ -846,7 +846,7 @@ static bool32 Debug_SaveCallbackMenu(struct DebugMenuOption *callbackItems);
 // Functions universal
 void Debug_ShowMainMenu(void)
 {
-    // design doc §1.5: opening the debug menu disqualifies the current run from
+    // Opening the debug menu disqualifies the current run from
     // earning achievements, even if it's opened mid-playthrough.
     gSaveBlock1Ptr->achievementsBlocked = TRUE;
 
@@ -1787,7 +1787,7 @@ static void DebugAction_Player_Id(u8 taskId)
 }
 
 // *******************************
-// Actions Achievements (design doc §21, Stage 1.7)
+// Actions Achievements
 
 static u8 Debug_OpenAchievementsExtraWindow(u8 taskId)
 {
@@ -1919,8 +1919,9 @@ static void Debug_Display_AchievementBoostLevel(u32 level, u32 digit, u8 windowI
 {
     ConvertIntToDecimalStringN(gStringVar1, level, STR_CONV_MODE_LEADING_ZEROS, 3);
     StringCopy(gStringVar2, gText_DigitIndicator[digit]);
-    // No maxLevel ceiling exists yet (that's Stage 7's boost registry), so this
-    // just accepts any u8 value for now -- see AchievementBoost_DebugSetLevel.
+    // No maxLevel ceiling is enforced here (debug tools bypass it by
+    // design), so this just accepts any u8 value -- see
+    // AchievementBoost_DebugSetLevel.
     StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("New level:{CLEAR_TO 90}\n{STR_VAR_1}{CLEAR_TO 90}\n\n{STR_VAR_2}"));
     AddTextPrinterParameterized(windowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
 }
@@ -2043,7 +2044,7 @@ static void Debug_Display_AchievementDumpPage(u8 windowId, u32 page)
         ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.shiniesObtained, STR_CONV_MODE_LEFT_ALIGN, 4);
         StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Nuzlockes: {STR_VAR_1}{CLEAR_TO 90}\nRandomized: {STR_VAR_2}{CLEAR_TO 90}\nShinies: {STR_VAR_3}{CLEAR_TO 90}"));
         break;
-    // Stage 22 step 2: the new lifetime counters backing the achievements
+    // The lifetime counters backing the achievements
     // that used to reset every new game (GetGameStat() lives in SaveBlock1,
     // which ClearSav1 zeroes). Two pages, since there are seven fields.
     case 4:
@@ -2100,8 +2101,7 @@ static void DebugAction_Achievements_DumpProfileInput(u8 taskId)
 #undef tDumpPage
 #undef ACHIEVEMENTS_DUMP_PAGE_COUNT
 
-// Stage 3.2 testing aid: Stage 3.3 (Start Menu hookup) hasn't landed yet, so
-// nothing else in the game can reach CB2_InitAchievementsMenu. Mirrors
+// Testing aid: reaches CB2_InitAchievementsMenu directly. Mirrors
 // DebugAction_Util_WatchCredits's full-teardown-then-jump pattern.
 static void DebugAction_Achievements_OpenMenu(u8 taskId)
 {
@@ -2110,8 +2110,8 @@ static void DebugAction_Achievements_OpenMenu(u8 taskId)
     SetMainCallback2(CB2_InitAchievementsMenu);
 }
 
-// Stage 7 testing aid: reaches the boost shop directly, bypassing TIER
-// SELECT's own unlock/enabled gate (Stage 5/6) -- lets the shop be exercised
+// Testing aid: reaches the boost shop directly, bypassing TIER
+// SELECT's own unlock/enabled gate -- lets the shop be exercised
 // on a save that hasn't actually cleared the first-playthrough gate yet.
 // Mirrors DebugAction_Achievements_OpenMenu's full-teardown-then-jump
 // pattern. Real purchases work normally from here (AchievementBoost_
@@ -2125,7 +2125,7 @@ static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
     SetMainCallback2(CB2_InitAchievementBoostMenu);
 }
 
-// Testing aid for src/achievement_popup.c: bypasses Stage 4.2's queue/safety
+// Testing aid for src/achievement_popup.c: bypasses the queue/safety
 // gate and shows the popup immediately. Closes the debug menu like
 // DebugAction_Cancel, then shows the popup for a real (arbitrarily chosen)
 // achievement on the plain field -- ShowAchievementPopup only draws the UI,
@@ -2138,7 +2138,7 @@ static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
 // lifetime, src/achievement_popup.c), so the old workaround was removed:
 // ScriptContext_Enable() sets the global script context to CONTEXT_RUNNING
 // with nothing to shut it back down again outside of an actual script, which
-// would have jammed Stage 4.2's IsAchievementPopupSafeToShow() (it requires
+// would have jammed IsAchievementPopupSafeToShow() (it requires
 // !ScriptContext_IsEnabled()) for the rest of the session after one use.
 static void DebugAction_Achievements_TestPopup(u8 taskId)
 {

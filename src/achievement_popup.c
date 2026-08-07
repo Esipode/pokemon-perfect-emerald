@@ -19,7 +19,7 @@
 #include "text_window.h"
 #include "window.h"
 
-// ---- Stage 4.1 (design doc §4.1, revised during implementation) -----------
+// ---- Popup rendering ---------------------------------------------------
 // Reuses src/overworld.c's ScriptShowItemDescription/ShowItemIconSprite/
 // ScriptHideItemDescription almost verbatim -- same window position/size
 // (28x3 at tilemap (1,1)), same custom frame tile/palette (0x214/14), same
@@ -29,7 +29,7 @@
 // timer instead of paired script commands, since nothing here has a script
 // context to call an explicit "hide" at the right moment.
 //
-// ---- Stage 4.2 (design doc §4.2) -------------------------------------
+// ---- Award queue --------------------------------------------------------
 // AchievementPopup_Enqueue() adds a small ring buffer in front of
 // ShowAchievementPopup(): src/achievements.c's QueueAchievementNotification
 // calls it instead of the popup directly, and AchievementPopup_UpdateQueue
@@ -41,7 +41,7 @@
 // directly for an ungated, immediate render (the debug menu's "Test
 // Achievement Popup" action still uses it that way).
 //
-// ---- Bug fix (post-Stage 13) -----------------------------------------
+// ---- Bug fix -------------------------------------------------------------
 // The queue used to be drained by a self-perpetuating task instead of a
 // per-frame poll. That broke when an achievement was queued off the field
 // (e.g. mid-battle): ResetTasks() runs unconditionally at battle start/end
@@ -142,16 +142,15 @@
 #define ACHIEVEMENT_POPUP_ICON_TAG 0xACE1
 
 // ACHIEVEMENT_TIER_COUNT itself now comes from enum AchievementTier
-// (constants/achievements.h, Stage 21) -- this and src/achievements_menu.c
-// used to each carry their own local derivation before that wave gave the
-// rest of the codebase a shared one.
+// (constants/achievements.h) -- this and src/achievements_menu.c used to
+// each carry their own local derivation before it was given a shared one.
 
 // Sized generously above anything realistic (simultaneous awards are rare,
 // and only happen a handful at a time even off something like a Pokedex-
 // completion check). AchievementPopup_Enqueue drops on overflow rather than
 // blocking or overwriting the oldest entry -- safe because Achievement_
 // TryComplete already committed the flag and points before this queue ever
-// sees the id (design doc §4.30/§6): a dropped entry only means a missed
+// sees the id: a dropped entry only means a missed
 // toast, never a missed award.
 #define ACHIEVEMENT_POPUP_QUEUE_SIZE 8
 
@@ -296,7 +295,7 @@ void ShowAchievementPopup(u16 achievementId)
     sAchievementPopupActive = TRUE;
 }
 
-// Stage 4.2 entry point (design doc §4.2) -- src/achievements.c's
+// The real entry point for actual awards -- src/achievements.c's
 // QueueAchievementNotification calls this, not ShowAchievementPopup
 // directly, so back-to-back awards each get a full, un-truncated display.
 void AchievementPopup_Enqueue(u16 achievementId)
@@ -382,8 +381,8 @@ void AchievementPopup_UpdateQueue(void)
     ShowAchievementPopup(achievementId);
 }
 
-// Suppressed during battles/cutscenes/transitions (design doc §4.2): the
-// popup draws straight onto overworld bg 0 using tiles/palette rows that
+// Suppressed during battles/cutscenes/transitions: the popup draws straight
+// onto overworld bg 0 using tiles/palette rows that
 // only mean what this file assumes while CB2_Overworld is actually running.
 // Mirrors the same idle-point check src/overworld.c:892's
 // Task_ShowRoamerMessageDelayed uses before starting its own script, plus
@@ -428,7 +427,7 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
         LoadUserWindowBorderGfxOnBg(0, ACHIEVEMENT_POPUP_FRAME_TILE, BG_PLTT_ID(ACHIEVEMENT_POPUP_FRAME_PAL));
         DrawStdFrameWithCustomTileAndPalette(sAchievementPopupWindowId, FALSE, ACHIEVEMENT_POPUP_FRAME_TILE, ACHIEVEMENT_POPUP_FRAME_PAL);
 
-        // Stage 4.2: block movement while the popup is up, same mechanism
+        // Blocks movement while the popup is up, same mechanism
         // battle intros/cable club links use (src/battle_setup.c,
         // src/cable_club.c). Paired with UnlockPlayerFieldControls() in
         // HideAchievementPopUpWindow. Only on the fresh-show path -- a

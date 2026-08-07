@@ -30,25 +30,25 @@ int GameClear(void)
     {
         gHasHallOfFameRecords = FALSE;
         FlagSet(FLAG_SYS_GAME_CLEAR);
-        // design doc Stage 5.1: this branch only runs the first time
+        // This branch only runs the first time
         // FLAG_SYS_GAME_CLEAR is set for this save, which is what makes it
         // the trigger for the one-time first-playthrough unlock.
         Achievement_OnFirstPlaythroughComplete();
-        // Stage 16: category L's "complete the story" entries, gated on this
+        // Category L's "complete the story" entries, gated on this
         // same re-runs-every-NG+-cycle branch (see the comment below) so a
         // different mono-type/rebuild/etc. run in NG+ is checked fresh.
         Achievement_CheckTeamCompletionMilestones();
-        // Stage 17 (catalog wave 4): Investor, same re-runs-every-NG+-cycle
+        // Investor, same re-runs-every-NG+-cycle
         // gating as the team-completion check above.
         Achievement_CheckEconomyCompletionMilestones();
-        // Stage 18 (catalog wave 5): Challenge Runs & Nuzlocke completion
+        // Challenge Runs & Nuzlocke completion
         // entries, same gating. The Nuzlocke half gates itself internally on
         // gSaveBlock1Ptr->nuzlockeModeEnabled.
         Achievement_CheckChallengeCompletionMilestones();
         Achievement_CheckNuzlockeCompletionMilestones();
-        // Stage 20 (catalog wave 7): Legend of the Run, same gating.
+        // Legend of the Run, same gating.
         Achievement_CheckRecordsCompletionMilestones();
-        // Stage 12: FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
+        // FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
         // (see NewGameInitData, src/new_game.c), so this branch already
         // re-runs on every NG+ cycle's clear, not just the save's very first
         // playthrough -- that's exactly what lets this count cycle

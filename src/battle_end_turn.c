@@ -608,7 +608,7 @@ static bool32 HandleEndTurnFrostbite(enum BattlerId battler)
     return effect;
 }
 
-// Stage 10.1 (BOOST_STATUS_RECOVERY): a flat per-turn chance for one of the
+// BOOST_STATUS_RECOVERY: a flat per-turn chance for one of the
 // player's Pokemon to shake off a non-volatile status on its own. The cure
 // sequence below is Shed Skin's (AbilityBattleEffects, ABILITYEFFECT_ENDTURN,
 // src/battle_util.c) -- same message chooser, same status1/nightmare clear,

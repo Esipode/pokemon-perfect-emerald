@@ -974,9 +974,8 @@ static u8 AchievementBoosts_ProcessInput(u8 selection)
 }
 
 // Row position depends on GetPg2DisplayRow rather than a fixed YPOS_* macro
-// -- AUTOSAVE (the row above this one) can be hidden (design doc Stage 6:
-// hidden until boosts are unlocked, mirroring IsAutosaveHidden()), which
-// would otherwise leave a gap between AUTO SCROLL and this row.
+// -- AUTOSAVE (the row above this one) can be hidden (see IsAutosaveHidden()),
+// which would otherwise leave a gap between AUTO SCROLL and this row.
 static void AchievementBoosts_DrawChoices(u8 selection, bool8 isActive)
 {
     static const u8 *const sTexts[2] = {gText_AchievementBoostsOff, gText_AchievementBoostsOn};
@@ -1013,7 +1012,7 @@ static bool8 IsAutosaveHidden(void)
     return gSaveBlock1Ptr->nuzlockeModeEnabled;
 }
 
-// design doc Stage 6: hidden until the first-playthrough gate (Stage 5)
+// Hidden until the first-playthrough gate
 // unlocks boosts -- Achievement_BoostsUnlocked() is the same profile flag
 // Achievement_OnFirstPlaythroughComplete() sets.
 static bool8 IsAchievementBoostsHidden(void)

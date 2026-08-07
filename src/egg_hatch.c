@@ -577,12 +577,12 @@ static void CB2_LoadEggHatch(void)
     case 4:
         CopyBgTilemapBufferToVram(0);
         AddHatchedMonToParty(sEggHatchData->eggPartyId);
-        // Stage 13, category I. GAME_STAT_HATCHED_EGGS is already incremented
+        // Category I. GAME_STAT_HATCHED_EGGS is already incremented
         // by field_control_avatar.c before this whole sequence starts.
         Achievement_CheckEggMilestones(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_IS_SHINY));
-        // Stage 16: same call site, for Fresh Start.
+        // Same call site, for Fresh Start.
         Achievement_RecordMonObtained(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_PERSONALITY));
-        // Stage 22 step 5: the Achievement_CheckPerfectIvMilestone(...) call
+        // The Achievement_CheckPerfectIvMilestone(...) call
         // that used to be here (Perfect Specimen) was removed along with
         // that achievement -- see src/achievements.c.
         gMain.state++;

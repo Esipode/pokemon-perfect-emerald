@@ -584,19 +584,19 @@ struct RankingHall2P
     //u8 padding;
 };
 
-// Stage 17 (catalog wave 4): run-scoped data for the exploration/economy
+// Run-scoped data for the exploration/economy
 // entries, kept in SaveBlock2 rather than AchievementRunData (SaveBlock1) --
-// SaveBlock1 only had 12 bytes of slack left by the time Stage 16 finished
-// (confirmed via temporary compiler-error probes added to src/save.c after
-// a real build failed on the SaveBlock1FreeSpace STATIC_ASSERT), and this
-// wave's 163 bytes didn't fit. SaveBlock2 had 1304 bytes free, comfortably
+// SaveBlock1 only had 12 bytes of slack left by the time these fields were
+// added (confirmed via temporary compiler-error probes added to src/save.c
+// after a real build failed on the SaveBlock1FreeSpace STATIC_ASSERT), and
+// these 163 bytes didn't fit. SaveBlock2 had 1304 bytes free, comfortably
 // enough. Kept as its own struct/field, not merged into SaveBlock2's
 // existing fields or into AchievementRunData, so this relocation only
-// touches Stage 17's own code (src/achievements.c) and not Stage 15/16's.
+// touches this code (src/achievements.c) and not the rest of it.
 struct AchievementRunDataExt
 {
     // Distinct (mapGroup, mapNum) pairs entered this run, for
-    // Cartographer/etc. NOT a raw-mapNum bitfield -- the plan doc's original
+    // Cartographer/etc. NOT a raw-mapNum bitfield -- an earlier
     // sketch proposed indexing 128 bits by mapNum alone, but mapNum resets
     // per map GROUP (MAP_GROUPS_COUNT == 75), so two unrelated maps in
     // different groups routinely share a mapNum. SaveBlock1's
@@ -620,10 +620,10 @@ struct AchievementRunDataExt
     bool8 shoppedSinceLastGym;
     u8  consecutiveGymsNoShopping;
 
-    // Stage 19 (catalog wave 6, Randomizer & New Game+): SaveBlock1 has zero
-    // bytes of slack left after Stage 18 used exactly what Stage 17 left
-    // behind, so every run-scoped field this wave needs lands here instead --
-    // the same detour Stage 17 took, for the same reason.
+    // Randomizer & New Game+ fields: SaveBlock1 has zero
+    // bytes of slack left, so every run-scoped field these entries need
+    // lands here instead -- the same detour the fields above took, for the
+    // same reason.
     //
     // Two different reset cadences now share this struct. mapsVisited/etc.
     // above are cleared only by a genuine new game (Sav2_ClearSetDefault) and
@@ -638,14 +638,14 @@ struct AchievementRunDataExt
     u16 trainersDefeatedThisCycle;             // Fresh Faces (NGP-006)
     u16 gymSpeciesUsedThisCycle[NUM_BADGES * PARTY_SIZE]; // cumulative distinct species across every Gym cleared so far this cycle, for Complete Reinvention
     u8  gymSpeciesUsedThisCycleCount;
-    bool8 reinventionBroken;                   // sticky, same idiom as Stage 16's mono-type/type-roulette broken flags
+    bool8 reinventionBroken;                   // sticky, same idiom as the mono-type/type-roulette broken flags elsewhere
     u8  majorBossClassesDefeatedThisCycle;     // bitmask, Boss Gauntlet (NGP-014)
     u16 previousCyclePartySpecies[PARTY_SIZE]; // the previous cycle's final party, for No Nostalgia (NGP-011)
     bool8 previousCyclePartySpeciesSet;
 
-    // Stage 20 (catalog wave 7, Streaks, Records & Collection Remainder):
-    // same "SaveBlock1 has zero slack left" detour Stage 19 already took --
-    // see that wave's own fields above. Unlike those four, every field below
+    // Streaks, Records & Collection Remainder fields: same "SaveBlock1 has
+    // zero slack left" detour the fields above already took -- see those
+    // fields above. Unlike those four, every field below
     // spans the whole save the same way mapsVisited (top of this struct)
     // does: cleared only by Sav2_ClearSetDefault, never reset per NG+ cycle.
     // A win/Gym streak that happens to straddle an NG+ boundary is exactly
@@ -657,12 +657,12 @@ struct AchievementRunDataExt
     u8  leagueWinsSinceWipe;             // Elite Four/Champion wins since the last party wipe, for League Streak (REC-007)
     u16 koCountPerSlot[PARTY_SIZE];      // cumulative opposing KOs credited to whatever's in this party slot, any battle -- Veteran Team (REC-008)
     u16 majorKoCountPerSlot[PARTY_SIZE]; // same, major battles only -- Old Reliable (REC-009)
-    u8  presentAtEveryMajorBattleSlots;  // unused -- Stage 22 step 8: replaced by legendCandidatePersonalities/legendCandidateCount below. This bitmask tracked occupied party SLOTS rather than individual Pokemon, and slot 0 is never empty while you're able to battle at all, so it trivially always kept bit 0 set -- Legend of the Run fired on essentially every completed run. Left in place rather than reflowing this struct's fields.
-    bool8 anyMajorBattleThisRun;         // legendCandidatePersonalities is meaningless until this is set (still used by the Stage 22 step 8 fix)
+    u8  presentAtEveryMajorBattleSlots;  // unused -- replaced by legendCandidatePersonalities/legendCandidateCount below. This bitmask tracked occupied party SLOTS rather than individual Pokemon, and slot 0 is never empty while you're able to battle at all, so it trivially always kept bit 0 set -- Legend of the Run fired on essentially every completed run. Left in place rather than reflowing this struct's fields.
+    bool8 anyMajorBattleThisRun;         // legendCandidatePersonalities is meaningless until this is set (still used by the fix below)
     u8  comebackWinsThisRun;             // Comeback Count (REC-011)
     u8  tmsTaughtThisRun;                // Move Tutor (backfill)
 
-    // Stage 22 step 8: Legend of the Run (REC-010), fixed. Tracks actual
+    // Legend of the Run (REC-010), fixed. Tracks actual
     // Pokemon (by personality, survives evolution) rather than party
     // slots -- the set of candidates still present in every major battle
     // so far this run, shrunk by intersection each major battle win. Empty
@@ -710,8 +710,8 @@ struct SaveBlock2
 #endif //FREE_RECORD_MIXING_HALL_RECORDS
     /*0x624*/ u16 contestLinkResults[CONTEST_CATEGORIES_COUNT][CONTESTANT_COUNT];
     /*0x64C*/ struct BattleFrontier frontier;
-    struct AchievementRunDataExt achievementRunDataExt; // Stage 17 (catalog wave 4) -- see that struct's comment
-}; // sizeof=0xF2C prior to Stage 22 step 8's ~28-byte addition to AchievementRunDataExt (legendCandidatePersonalities/legendCandidateCount) -- comfortably inside SaveBlock2FreeSpace's SECTOR_DATA_SIZE margin (src/save.c), exact new figure not recomputed here since it needs a build to measure precisely
+    struct AchievementRunDataExt achievementRunDataExt; // see that struct's comment
+}; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
 
@@ -1192,14 +1192,14 @@ struct Bag
     struct ItemSlot berries[BAG_BERRIES_COUNT];
 };
 
-// design doc §17: per-run counters that achievement conditions read from.
-// Reset to zero every new game because ClearSav1 zeroes the whole SaveBlock1
-// (Stage 1.6). Named fields get added here as achievements need run-scoped
+// Per-run counters that achievement conditions read from.
+// Reset to zero every new game because ClearSav1 zeroes the whole SaveBlock1.
+// Named fields get added here as achievements need run-scoped
 // tracking that isn't already available elsewhere in the save block.
 //
-// Stage 16 (catalog wave 3, category L): the first real user. Species sets
+// Category L was the first real user. Species sets
 // are tracked by species ID, not by individual (personality/OT), matching
-// the granularity Stage 15's AchievementBattleData already tracks party
+// the granularity struct AchievementBattleData already tracks party
 // members at (slot/species, never full identity) -- see src/achievements.c
 // for how each field is populated and consumed.
 struct AchievementRunData
@@ -1230,17 +1230,18 @@ struct AchievementRunData
     u32 recentlyObtainedPersonality[8]; // ring buffer of mons obtained since the last Gym, for Fresh Start
     u8  recentlyObtainedCount;
 
-    // Stage 17's own run-scoped fields (maps visited, shop-since-last-Gym
-    // tracking) do NOT live here -- SaveBlock1 only had 12 bytes of slack
-    // left by the time Stage 16 finished (verified via temporary
-    // compiler-error probes in src/save.c), and Stage 17 needed 163 more.
-    // They live in struct AchievementRunDataExt (SaveBlock2) instead; see
-    // that struct's comment for why.
+    // The exploration/economy category's own run-scoped fields (maps
+    // visited, shop-since-last-Gym tracking) do NOT live here -- SaveBlock1
+    // only had 12 bytes of slack left by the time the fields above were
+    // added (verified via temporary compiler-error probes in src/save.c),
+    // and those fields needed 163 more. They live in struct
+    // AchievementRunDataExt (SaveBlock2) instead; see that struct's comment
+    // for why.
 
-    // Stage 18 (catalog wave 5, Challenge Runs & Nuzlocke): unlike Stage 17,
-    // this wave's additions are small enough (12 bytes) to fit the slack
-    // Stage 17 left behind here directly -- no SaveBlock2 detour needed. The
-    // plan doc's own infra sketch for this stage ("a party-wipe flag") didn't
+    // Challenge Runs & Nuzlocke: unlike the exploration/economy fields
+    // above, these additions are small enough (12 bytes) to fit the slack
+    // left behind here directly -- no SaveBlock2 detour needed. An earlier
+    // infra sketch for this category ("a party-wipe flag") didn't
     // survive contact with the actual roster: every entry that sounded like
     // it needed one turned out to be covered by nuzlockeMonsLost, revives
     // used, or a route-skipped flag instead (a full party wipe already
@@ -1249,13 +1250,13 @@ struct AchievementRunData
     // never be read back on the same save). See src/achievements.c for the
     // per-field hook-site breakdown.
     u32 starterPersonality;          // the run's starter, by personality (survives evolution) -- for No Freebies; 0 == not yet recorded
-    u16 nuzlockePendingRoute;        // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), removed Stage 22 step 10; left in place rather than reflowing this struct's fields
+    u16 nuzlockePendingRoute;        // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), now removed; left in place rather than reflowing this struct's fields
     u8  highestPartySizeThisRun;     // high-water mark for Three-Pokemon Challenge/Solo Journey
     u8  nuzlockeMonsLost;            // for Perfect Nuzlocke/The Graveyard
-    u8  nuzlockeRevivesUsed;         // unused -- backed No Second Chances (ACHIEVEMENT_NUZLOCKE_NO_REVIVES), removed Stage 22 step 5; left in place rather than reflowing this struct's fields
-    bool8 starterActedInMajorBattle; // for No Freebies (sticky, same "Broken" idiom as Stage 16's fields)
+    u8  nuzlockeRevivesUsed;         // unused -- backed No Second Chances (ACHIEVEMENT_NUZLOCKE_NO_REVIVES), now removed; left in place rather than reflowing this struct's fields
+    bool8 starterActedInMajorBattle; // for No Freebies (sticky, same "Broken" idiom used elsewhere)
     bool8 boughtConsumableItem;      // for No Shopping Run (sticky)
-    bool8 nuzlockeRouteSkipped;      // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), removed Stage 22 step 10; left in place rather than reflowing this struct's fields
+    bool8 nuzlockeRouteSkipped;      // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), now removed; left in place rather than reflowing this struct's fields
 };
 
 struct SaveBlock1
@@ -1291,8 +1292,8 @@ struct SaveBlock1
     /*0x9C2*/ u8 nuzlockeModeEnabled;
     /*0x9C3*/ u8 autosaveModeEnabled;
     /*0x9C4*/ u8 difficulty;
-    /*0x9C5*/ u8 achievementsBlocked; // design doc §1.5: set once debug mode is used, this playthrough can never earn achievements
-    struct AchievementRunData achievementRunData; // design doc §1.6
+    /*0x9C5*/ u8 achievementsBlocked; // set once debug mode is used, this playthrough can never earn achievements
+    struct AchievementRunData achievementRunData;
     /*0x9C6*/ u16 registeredLongItem; // Registered for long press of SELECT button
     /*0x9C2*/ u8 unused_9C2[2];
               u32 dailySeed;
@@ -1392,7 +1393,7 @@ struct SaveBlock1
 #endif //FREE_TRAINER_HILL
     /*0x3???*/ struct WaldaPhrase waldaPhrase;
     /*0x3???*/ u8 nuzlockeCaughtFlags[NUM_NUZLOCKE_ROUTE_FLAG_BYTES];
-    // Stage 10.1 (BOOST_NUZLOCKE_SECOND_CHANCE). Parallel to the array above,
+    // For BOOST_NUZLOCKE_SECOND_CHANCE. Parallel to the array above,
     // and only ever consulted when that boost is purchased: it records that a
     // route's one-time free pass has been spent. nuzlockeCaughtFlags stays the
     // single authoritative "this route is locked" bit, so every reader of it
@@ -1427,7 +1428,7 @@ struct MapPosition
 #define GET_NUZLOCKE_FLAG(route) ((route) < NUM_NUZLOCKE_ROUTE_FLAGS && (gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] & (1 << ((route) % 8))))
 #define SET_NUZLOCKE_FLAG(route) do { if ((route) < NUM_NUZLOCKE_ROUTE_FLAGS) gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] |= (1 << ((route) % 8)); } while (0)
 
-// Stage 10.1 (BOOST_NUZLOCKE_SECOND_CHANCE): "this route's one-time free pass
+// For BOOST_NUZLOCKE_SECOND_CHANCE: "this route's one-time free pass
 // has been spent." Only read/written by CB2_EndWildBattle (src/battle_setup.c).
 #define GET_NUZLOCKE_EXTRA_FLAG(route) ((route) < NUM_NUZLOCKE_ROUTE_FLAGS && (gSaveBlock1Ptr->nuzlockeExtraEncounterFlags[(route) / 8] & (1 << ((route) % 8))))
 #define SET_NUZLOCKE_EXTRA_FLAG(route) do { if ((route) < NUM_NUZLOCKE_ROUTE_FLAGS) gSaveBlock1Ptr->nuzlockeExtraEncounterFlags[(route) / 8] |= (1 << ((route) % 8)); } while (0)

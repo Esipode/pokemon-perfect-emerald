@@ -168,9 +168,6 @@ extern const u8 BattleScript_OrichalcumPulseActivatesInSun[];
 extern const u8 BattleScript_TraceActivates[];
 extern const u8 BattleScript_AbilityHpHeal[];
 extern const u8 BattleScript_ShedSkinActivates[];
-// Stage 10.1 (BOOST_STATUS_RECOVERY, src/battle_end_turn.c): Shed Skin's
-// script minus the ability popup -- no ability is responsible for this cure,
-// so it reuses gCureStatusStringIds and needs no new strings.
 extern const u8 BattleScript_AchievementBoostStatusRecovery[];
 extern const u8 BattleScript_IntimidateActivates[];
 extern const u8 BattleScript_TookAttack[];

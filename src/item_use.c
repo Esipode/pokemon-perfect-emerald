@@ -1001,7 +1001,7 @@ static void Task_UseRepel(u8 taskId)
 {
     if (!IsSEPlaying())
     {
-        // Stage 10.1 (BOOST_SPRAY_DURATION) is applied at each step-count write
+        // BOOST_SPRAY_DURATION is applied at each step-count write
         // rather than inside GetItemHoldEffectParam, which every held-item
         // effect in the game shares.
         VarSet(VAR_REPEL_STEP_COUNT, AchievementBoost_ApplySprayStepCount(GetItemHoldEffectParam(gSpecialVar_ItemId)));
