@@ -143,10 +143,21 @@ enum
 // ACHIEVEMENTS_POINTS_RIGHT_X) actually lives. The left box -- the one
 // achievement names/DETAIL's text sit in -- only runs from the window's own
 // left edge to screen x=~163, i.e. window-relative x=~147 once
-// WIN_LIST's 16px tilemapLeft is subtracted. 140 leaves a few px of margin
-// short of that measured edge, matching the achievement list's own text
-// column instead of the wider window/WIN_DESCRIPTION's own box.
-#define ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH 140
+// WIN_LIST's 16px tilemapLeft is subtracted.
+//
+// Bug (reported after initial delivery, round 2): even inside that measured
+// edge, some descriptions were still wrapping a line earlier than the box
+// actually has room for -- in-game testing showed ~15px of margin still
+// unused short of the divider. Raised from the original 140 to 155 to
+// reclaim it; still short of the ~163 hard edge above.
+#define ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH 155
+
+// DETAIL reuses WIN_LIST's own box -- the same one the achievement/tier
+// lists fit ACHIEVEMENTS_MENU_MAX_SHOWED (5) 16px rows into. DETAIL spends
+// the first row (y=1) on the name, leaving the remaining 4 rows (y=17
+// onward, see EnterDetailLevel) for the description -- one more line than
+// this used to be capped at.
+#define ACHIEVEMENTS_DETAIL_DESC_LINES 4
 
 // WIN_DESCRIPTION's two text lines. FONT_NORMAL's line height is exactly 16px
 // (src/text.c's fontAttributes[FONT_NORMAL].maxLetterHeight) and the window
@@ -157,6 +168,13 @@ enum
 // centered against the art's own description box.
 #define ACHIEVEMENTS_DESC_LINE1_Y 7
 #define ACHIEVEMENTS_DESC_LINE2_Y 23
+
+// How long an overlong description sits idle on its last screenful (see
+// PrintAchievementDescription/MainCB2's descriptionScrolling) before looping
+// back to the top and scrolling through again -- long enough to actually
+// read it before it resets. 120 frames/~2 seconds, same ballpark as other
+// one-off UI pauses elsewhere (e.g. src/hall_of_fame.c's own tFrameCount).
+#define ACHIEVEMENTS_DESC_RESTART_DELAY 120
 
 // Checkbox/tier-name prefix plus the item text itself; the longest real
 // content (an achievement name) is already capped at ACHIEVEMENT_NAME_LENGTH
@@ -195,6 +213,32 @@ enum
 EWRAM_DATA static u8 sAchievementsListNameBuffers[ACHIEVEMENTS_MENU_LIST_CAPACITY][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE] = {0};
 EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_LIST_CAPACITY] = {0};
 
+// Bug (found via playtesting): PrintAchievementDescription/PrintDetail
+// Description used to build their wrapped text straight into gStringVar1,
+// same as every other string in this file. That's fine for everything else
+// here, since those are always instant TEXT_SKIP_DRAW prints fully consumed
+// before anything else can touch the buffer -- but an overlong description's
+// auto-scroll print (needsScroll, both functions' own GetPlayerTextSpeedDelay
+// branch) runs across many frames, and AddTextPrinterParameterized3 only ever
+// keeps a raw pointer into whatever buffer it's given (TextPrinterTemplate.
+// currentChar, src/text.c), never a copy. gStringVar1 is the whole engine's
+// scratch space, reused everywhere -- most immediately by this file's own
+// AchievementsMenu_DrawRow, which rebuilds it with a row's points figure on
+// every single list repaint (RedrawListMenu/RepaintListRow, both called from
+// Task_List_ProcessInput right after the moveCursorFunc callback that starts
+// a new description printing). Scrolling the list while a description was
+// still mid-scroll let that write land underneath the still-running printer:
+// it kept reading from the same address and showed the row's points figure
+// -- followed by whatever leftover bytes gStringVar1's last unrelated use
+// elsewhere in the engine left past that shorter string's terminator,
+// occasionally including a stray colour-control byte, hence the orange tint
+// -- instead of the description it started out printing. Dedicated buffers
+// nothing else in the engine ever writes to can't be clobbered out from
+// under a printer still reading them.
+#define ACHIEVEMENTS_DESC_BUFFER_SIZE 0x100
+EWRAM_DATA static u8 sAchievementsDescriptionBuffer[ACHIEVEMENTS_DESC_BUFFER_SIZE] = {0};
+EWRAM_DATA static u8 sAchievementsDetailDescriptionBuffer[ACHIEVEMENTS_DESC_BUFFER_SIZE] = {0};
+
 EWRAM_DATA static struct
 {
     u8 selectedTier;
@@ -211,6 +255,30 @@ EWRAM_DATA static struct
     // (list_menu.c's ListMenuPrintEntries) has no other way to know which
     // row that is -- it's only ever given the row's own id.
     u16 highlightedId;
+    // Set by PrintAchievementDescription whenever the row currently on
+    // WIN_DESCRIPTION needed its 2-line auto-scroll (see that function's own
+    // needsScroll) -- MainCB2 watches this alongside the printer's own
+    // IsTextPrinterActiveOnWindow to know when a still-selected overlong
+    // description has finished scrolling and should loop back to the top
+    // after a pause, rather than leaving the last screenful on display
+    // forever. Cleared by DestroyCurrentAchievementsList so a leftover TRUE
+    // from LIST doesn't make MainCB2 try to restart a printer against
+    // DETAIL's differently laid out WIN_DESCRIPTION content.
+    bool8 descriptionScrolling;
+    // Frames since the printer above went idle at the end of its scroll --
+    // reset to 0 every time PrintAchievementDescription (re)starts one.
+    // MainCB2 waits ACHIEVEMENTS_DESC_RESTART_DELAY frames before looping.
+    u16 descriptionRestartTimer;
+    // Same pair as descriptionScrolling/descriptionRestartTimer just above,
+    // but for DETAIL's own overlong-description auto-scroll -- PrintDetail
+    // Description prints into WIN_LIST rather than WIN_DESCRIPTION, so it
+    // needs its own flag/timer to avoid colliding with (or being clobbered
+    // by) LIST's. Cleared alongside it in DestroyCurrentAchievementsList,
+    // and also when backing out of DETAIL back to LIST (see
+    // Task_Detail_ProcessInput), since DETAIL never calls
+    // DestroyCurrentAchievementsList itself (it owns no ListMenuTask).
+    bool8 detailDescriptionScrolling;
+    u16 detailDescriptionRestartTimer;
 } sAchievementsMenu = {0};
 
 // Cached once per TIER SELECT build (see BuildTierSelectListItems) so the
@@ -259,6 +327,7 @@ static void BuildAchievementListItems(u8 tier);
 static void DrawTierSelectHeaderText(void);
 static bool8 StringHasScrollPrompt(const u8 *str);
 static void PrintAchievementDescription(s32 achievementId);
+static void PrintDetailDescription(s32 achievementId);
 static void DrawHeaderText(const u8 *title);
 static void LoadTierIcons(void);
 static void BlitTierIcon(u8 tier, u8 windowId, u16 x, u16 y);
@@ -556,6 +625,25 @@ static void MainCB2(void)
     // other screen with a live TextPrinter (e.g. src/berry_blender.c's own
     // main callback).
     RunTextPrinters();
+    // Once that printer above finishes scrolling through an overlong
+    // description (IsTextPrinterActiveOnWindow going FALSE), loop it back to
+    // the top after a short pause instead of leaving the last screenful on
+    // display forever -- descriptionScrolling gates this to only overlong
+    // descriptions actually using the printer above (see its own comment on
+    // sAchievementsMenu), so this can't misfire against DETAIL's differently
+    // laid out WIN_DESCRIPTION content or a description that already fit in
+    // 2 lines (TEXT_SKIP_DRAW, no printer left active to go idle).
+    if (sAchievementsMenu.descriptionScrolling
+     && !IsTextPrinterActiveOnWindow(WIN_DESCRIPTION)
+     && ++sAchievementsMenu.descriptionRestartTimer >= ACHIEVEMENTS_DESC_RESTART_DELAY)
+        PrintAchievementDescription(sAchievementsMenu.highlightedId);
+    // Same loop as just above, for DETAIL's own overlong-description printer
+    // (PrintDetailDescription, WIN_LIST rather than WIN_DESCRIPTION) -- see
+    // detailDescriptionScrolling's own comment on sAchievementsMenu.
+    if (sAchievementsMenu.detailDescriptionScrolling
+     && !IsTextPrinterActiveOnWindow(WIN_LIST)
+     && ++sAchievementsMenu.detailDescriptionRestartTimer >= ACHIEVEMENTS_DESC_RESTART_DELAY)
+        PrintDetailDescription(sAchievementsMenu.highlightedId);
     // Flushes bg1's art tilemap, which LoadMenuBackground only *schedules* via
     // ScheduleBgCopyTilemapToVram. Windows reach VRAM on their own (
     // CopyWindowToVram copies immediately), so without this the text shows but
@@ -874,7 +962,17 @@ static void TierSelect_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct Li
     // that's a no-op for this cursor kind), so without this the orange
     // highlight would only ever show on whichever row happened to be
     // selected when the list was first drawn.
-    ListMenuRepaintItems(list);
+    //
+    // This used to be a ListMenuRepaintItems(list) call, but that's the same
+    // FillWindowPixelBuffer-then-redraw-every-visible-row RedrawListMenu does
+    // -- exactly the flicker RepaintListRow's own comment describes, and it
+    // ran on *every* selection change (including plain up/down, not just
+    // scrolls), since list_menu.c calls this callback before returning
+    // control here. Task_TierSelect_ProcessInput's own RepaintListRow/
+    // RedrawListMenu calls, right after ListMenu_ProcessInput returns, are
+    // what actually need to run this row's repaint -- highlightedId is
+    // already updated above by the time they do, so removing the call here
+    // costs nothing but the flicker.
 }
 
 // Icon stays at a fixed column (ACHIEVEMENTS_TIER_ICON_X) so every tier's
@@ -1097,6 +1195,42 @@ static void Task_List_ProcessInput(u8 taskId)
         CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
     }
 
+    // Bug (found via playtesting): an overlong description's first
+    // screenful sometimes rendered in this menu's orange row-highlight
+    // colour instead of plain white. GenerateFontHalfRowLookupTable
+    // (src/text.c) builds the glyph colour->pixel table every active
+    // printer draws through -- one *global* table, shared by every window,
+    // regenerated only when a printer is (re)registered or hits an
+    // in-string colour escape, never per glyph. Moving the cursor onto a row
+    // whose description needs the 2-line auto-scroll runs, in order, within
+    // this very call: ListMenu_ProcessInput above (via moveCursorFunc ->
+    // PrintAchievementDescription) registers WIN_DESCRIPTION's own overlong-
+    // description printer, regenerating that table for its white -- then the
+    // row repaint just above (RepaintListRow's second call is always the
+    // newly selected row, in this menu's orange) regenerates the very same
+    // table again for its own orange, as a side effect of its own instant
+    // TEXT_SKIP_DRAW print. WIN_DESCRIPTION's printer hasn't drawn a single
+    // glyph of its own yet at that point -- RunTextPrinters only runs once
+    // MainCB2's RunTasks (this function) returns -- so its first screenful
+    // came out in whatever colour was left behind above.
+    //
+    // Regenerating the table for WIN_DESCRIPTION's own colour here, every
+    // time this function runs while a description is still scrolling, keeps
+    // it the last word regardless of which row/colour got repainted last
+    // above (or whether either branch above even ran this frame) --
+    // GenerateFontHalfRowLookupTable's own unchanged-colour early-out makes
+    // the extra call a no-op on every frame this didn't need to fix anything.
+    if (sAchievementsMenu.descriptionScrolling)
+    {
+        union TextColor color;
+
+        color.background = sAchievementsMenuTextColors[0];
+        color.foreground = sAchievementsMenuTextColors[1];
+        color.shadow = sAchievementsMenuTextColors[2];
+        color.accent = sAchievementsMenuTextColors[0];
+        GenerateFontHalfRowLookupTable(color);
+    }
+
     switch (itemId)
     {
     case LIST_NOTHING_CHOSEN:
@@ -1139,8 +1273,10 @@ static void AchievementsMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, str
     if (!onInit)
         PlaySE(SE_SELECT);
     sAchievementsMenu.highlightedId = itemIndex;
-    // See the identical comment in TierSelect_MoveCursorCallback.
-    ListMenuRepaintItems(list);
+    // See the identical comment in TierSelect_MoveCursorCallback -- row
+    // repaint is Task_List_ProcessInput's own RepaintListRow/RedrawListMenu
+    // calls' job, right after ListMenu_ProcessInput (and this callback)
+    // return, not this callback's.
     PrintAchievementDescription(itemIndex);
 }
 
@@ -1268,27 +1404,47 @@ static void PrintAchievementDescription(s32 achievementId)
         bool8 masked = info->hidden && !Achievement_IsCompleted(achievementId);
         bool8 needsScroll;
 
-        StringCopy(gStringVar1, masked ? sText_HiddenDescription : info->description);
-        StripLineBreaks(gStringVar1);
-        BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DESC_MAX_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
-        needsScroll = StringHasScrollPrompt(gStringVar1);
+        // sAchievementsDescriptionBuffer, not gStringVar1 -- see that
+        // buffer's own comment for why an overlong (needsScroll) description
+        // can't be built in a buffer anything else in the engine might write
+        // to while this printer is still reading it.
+        StringCopy(sAchievementsDescriptionBuffer, masked ? sText_HiddenDescription : info->description);
+        StripLineBreaks(sAchievementsDescriptionBuffer);
+        BreakStringAutomatic(sAchievementsDescriptionBuffer, ACHIEVEMENTS_DESC_MAX_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+        needsScroll = StringHasScrollPrompt(sAchievementsDescriptionBuffer);
 
         gTextFlags.autoScroll = needsScroll;
         AddTextPrinterParameterized3(WIN_DESCRIPTION, FONT_NORMAL, 8, ACHIEVEMENTS_DESC_LINE1_Y, sAchievementsMenuTextColors,
-            needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, gStringVar1);
+            needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, sAchievementsDescriptionBuffer);
+
+        // See MainCB2's own use of these -- (re)starting this printer always
+        // resets the idle timer, whether this is the first print for a newly
+        // selected row or a loop back to the top of one already mid-scroll.
+        sAchievementsMenu.descriptionScrolling = needsScroll;
+        sAchievementsMenu.descriptionRestartTimer = 0;
     }
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
 
 // ---- DETAIL ----------------------------------------------------------------
 
-static void EnterDetailLevel(u8 taskId, u16 achievementId)
+// Mirrors PrintAchievementDescription just above -- same overlong-
+// description auto-scroll-then-loop treatment (see its own comment and
+// MainCB2's use of detailDescriptionScrolling), applied to DETAIL's own
+// name+description box (WIN_LIST) instead of LIST's (WIN_DESCRIPTION). Split
+// out of EnterDetailLevel so MainCB2's restart loop can re-run just this
+// part rather than redrawing the reward/status lines below it that never
+// change while the row stays selected.
+static void PrintDetailDescription(s32 achievementId)
 {
     const struct Achievement *info = Achievement_GetInfo(achievementId);
-    bool8 completed = Achievement_IsCompleted(achievementId);
-    bool8 masked = info->hidden && !completed;
+    bool8 masked = info->hidden && !Achievement_IsCompleted(achievementId);
+    bool8 needsScroll;
 
-    DrawHeaderText(sTierNames[info->tier]);
+    FillWindowPixelBuffer(WIN_LIST, PIXEL_FILL(0));
+    // Cancels whatever printer the previous restart/selection registered --
+    // see the identical comment in PrintAchievementDescription.
+    DeactivateSingleTextPrinter(WIN_LIST, WINDOW_TEXT_PRINTER);
 
     // Bug (reported after initial delivery): DETAIL's name/description sat at
     // x=8 while WIN_LIST's own box art is the exact same art the achievement
@@ -1304,15 +1460,44 @@ static void EnterDetailLevel(u8 taskId, u16 achievementId)
     // the description at a glance with both in plain white; this box has no
     // other visual cue (font size, box divider, etc.) marking which line is
     // the title.
-    FillWindowPixelBuffer(WIN_LIST, PIXEL_FILL(0));
     AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 1, sAchievementsListHighlightTextColors, TEXT_SKIP_DRAW, masked ? sText_HiddenName : info->name);
-    StringCopy(gStringVar1, masked ? sText_HiddenDescription : info->description);
-    StripLineBreaks(gStringVar1);
+
+    // sAchievementsDetailDescriptionBuffer, not gStringVar1 -- see that
+    // buffer's own comment. Matters here too: EnterDetailLevel reuses
+    // gStringVar1 for the reward figure immediately after this call returns,
+    // which would clobber an in-progress needsScroll printer built on it
+    // before a single frame had even drawn.
+    StringCopy(sAchievementsDetailDescriptionBuffer, masked ? sText_HiddenDescription : info->description);
+    StripLineBreaks(sAchievementsDetailDescriptionBuffer);
     // ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, not ACHIEVEMENTS_DESC_MAX_WIDTH --
     // see its own comment; WIN_LIST's box is narrower than WIN_DESCRIPTION's.
-    BreakStringAutomatic(gStringVar1, ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, 3, FONT_NORMAL, HIDE_SCROLL_PROMPT);
-    AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 17, sAchievementsListTextColors, TEXT_SKIP_DRAW, gStringVar1);
+    // SHOW_SCROLL_PROMPT/ACHIEVEMENTS_DETAIL_DESC_LINES, not the
+    // HIDE_SCROLL_PROMPT/3 this used to pass -- same reasoning as
+    // PrintAchievementDescription's own SHOW_SCROLL_PROMPT: a description
+    // that needs more than ACHIEVEMENTS_DETAIL_DESC_LINES lines now scrolls
+    // through the rest instead of silently running past WIN_LIST's own
+    // bottom edge.
+    BreakStringAutomatic(sAchievementsDetailDescriptionBuffer, ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, ACHIEVEMENTS_DETAIL_DESC_LINES, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+    needsScroll = StringHasScrollPrompt(sAchievementsDetailDescriptionBuffer);
+
+    gTextFlags.autoScroll = needsScroll;
+    AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 17, sAchievementsListTextColors,
+        needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, sAchievementsDetailDescriptionBuffer);
     CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+
+    // See PrintAchievementDescription's identical pair for why.
+    sAchievementsMenu.detailDescriptionScrolling = needsScroll;
+    sAchievementsMenu.detailDescriptionRestartTimer = 0;
+}
+
+static void EnterDetailLevel(u8 taskId, u16 achievementId)
+{
+    const struct Achievement *info = Achievement_GetInfo(achievementId);
+    bool8 completed = Achievement_IsCompleted(achievementId);
+
+    DrawHeaderText(sTierNames[info->tier]);
+
+    PrintDetailDescription(achievementId);
 
     ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
     StringExpandPlaceholders(gStringVar4, sText_RewardFormat);
@@ -1325,6 +1510,27 @@ static void EnterDetailLevel(u8 taskId, u16 achievementId)
     AchievementIcons_Blit(ACHIEVEMENT_ICON_POINTS, WIN_DESCRIPTION, 8 + GetStringWidth(FONT_NORMAL, gStringVar4, 0) + 2, ACHIEVEMENT_ICON_Y(ACHIEVEMENTS_DESC_LINE1_Y));
     AddTextPrinterParameterized3(WIN_DESCRIPTION, FONT_NORMAL, 8, ACHIEVEMENTS_DESC_LINE2_Y, sAchievementsMenuTextColors, TEXT_SKIP_DRAW, completed ? sText_StatusCompleted : sText_StatusIncomplete);
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
+
+    // Same fix as the identical block in Task_List_ProcessInput, for
+    // DETAIL's own overlong-description printer instead of LIST's -- see
+    // that comment for the full mechanism. Here the reward/status prints
+    // just above are the ones regenerating the shared glyph colour table
+    // out from under PrintDetailDescription's own printer a few lines
+    // earlier: sAchievementsMenuTextColors (shadow index 6) instead of
+    // sAchievementsListTextColors (shadow index 2), so a still-pending
+    // overlong name/description here would have its first screenful drawn
+    // with the wrong shadow colour instead of the wrong foreground -- same
+    // root cause, subtler result, but still wrong.
+    if (sAchievementsMenu.detailDescriptionScrolling)
+    {
+        union TextColor color;
+
+        color.background = sAchievementsListTextColors[0];
+        color.foreground = sAchievementsListTextColors[1];
+        color.shadow = sAchievementsListTextColors[2];
+        color.accent = sAchievementsListTextColors[0];
+        GenerateFontHalfRowLookupTable(color);
+    }
 }
 
 static void Task_Detail_ProcessInput(u8 taskId)
@@ -1332,6 +1538,17 @@ static void Task_Detail_ProcessInput(u8 taskId)
     if (JOY_NEW(A_BUTTON | B_BUTTON))
     {
         PlaySE(SE_SELECT);
+        // DETAIL owns no ListMenuTask of its own, so unlike every other
+        // level transition this one never routes through
+        // DestroyCurrentAchievementsList -- stop PrintDetailDescription's
+        // WIN_LIST printer/loop here instead, before EnterListLevel below
+        // reclaims WIN_LIST for its row list. Without this, a still-
+        // scrolling detailDescriptionScrolling would have MainCB2 call
+        // PrintDetailDescription again after the switch, clobbering the row
+        // list with DETAIL's name/description prints.
+        DeactivateSingleTextPrinter(WIN_LIST, WINDOW_TEXT_PRINTER);
+        gTextFlags.autoScroll = FALSE;
+        sAchievementsMenu.detailDescriptionScrolling = FALSE;
         EnterListLevel(taskId, sAchievementsMenu.selectedTier);
         gTasks[taskId].func = Task_List_ProcessInput;
     }
@@ -1353,6 +1570,17 @@ static void DestroyCurrentAchievementsList(u8 taskId)
     // auto-advancing without a button press afterward.
     DeactivateSingleTextPrinter(WIN_DESCRIPTION, WINDOW_TEXT_PRINTER);
     gTextFlags.autoScroll = FALSE;
+    // Stops MainCB2 from restarting a printer against a window this screen
+    // no longer owns once it goes idle, same reasoning as the two lines
+    // above -- see its own comment on sAchievementsMenu.descriptionScrolling.
+    sAchievementsMenu.descriptionScrolling = FALSE;
+    // Same pair, for DETAIL's own WIN_LIST scroll printer (PrintDetail
+    // Description) -- belt-and-suspenders here, since the current DETAIL ->
+    // LIST path stops it itself (see Task_Detail_ProcessInput) before this
+    // function ever runs, but this function is the one every *other*
+    // transition already routes through to stop LIST's own printer above.
+    DeactivateSingleTextPrinter(WIN_LIST, WINDOW_TEXT_PRINTER);
+    sAchievementsMenu.detailDescriptionScrolling = FALSE;
 }
 
 // Repaints one WIN_LIST row in place, used by Task_TierSelect_ProcessInput/

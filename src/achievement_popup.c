@@ -64,6 +64,12 @@
 #define ACHIEVEMENT_POPUP_TILEMAP_LEFT 1
 #define ACHIEVEMENT_POPUP_TILEMAP_TOP  1
 #define ACHIEVEMENT_POPUP_WIDTH        28
+// 3 tiles/24px tall. FONT_SMALL's line height is exactly 12px with no extra
+// lineSpacing (src/text.c's sFontInfos[FONT_SMALL]), so that's room for
+// exactly 2 lines of text -- the name/points row (ACHIEVEMENT_POPUP_TEXT_Y)
+// and a single line below it for the description. See
+// sAchievementPopupNeedsScroll's own comment for what happens once a
+// description needs more than that one line.
 #define ACHIEVEMENT_POPUP_HEIGHT       3
 #define ACHIEVEMENT_POPUP_TEXT_PAL     15
 // Same custom frame tile/palette as ScriptShowItemDescription's item box.
@@ -149,6 +155,29 @@
 // toast, never a missed award.
 #define ACHIEVEMENT_POPUP_QUEUE_SIZE 8
 
+// Bug fix: descriptions longer than the single line left below the name/
+// points row (see ACHIEVEMENT_POPUP_HEIGHT's own comment on the window only
+// having room for 2 lines of FONT_SMALL text total) used to just keep
+// printing past the window's own 3-tile-tall pixel buffer instead of
+// stopping -- same overflow bug src/achievements_menu.c's
+// PrintAchievementDescription hit and fixed the same way (see that
+// function's own comment): BreakStringAutomatic(..., SHOW_SCROLL_PROMPT)
+// instead of HIDE_SCROLL_PROMPT below, so an overlong description now
+// auto-scrolls through the rest a line at a time instead of overflowing.
+// sAchievementPopupNeedsScroll mirrors that file's descriptionScrolling --
+// Task_HideAchievementPopupAfterDelay reads it to hold off starting the
+// hide countdown until the player has actually seen every line.
+EWRAM_DATA static bool8 sAchievementPopupNeedsScroll = FALSE;
+
+// sAchievementPopupTextBuffer, not gStringVar4 -- see that buffer's own
+// comment (ShowAchievementPopUpWindow) for why an overlong (needsScroll)
+// popup can't be printed out of a buffer anything else in the engine might
+// write to while this printer is still reading it across multiple frames.
+// Same fix, same reasoning, as src/achievements_menu.c's own
+// sAchievementsDescriptionBuffer.
+#define ACHIEVEMENT_POPUP_TEXT_BUFFER_SIZE 0x100
+EWRAM_DATA static u8 sAchievementPopupTextBuffer[ACHIEVEMENT_POPUP_TEXT_BUFFER_SIZE] = {0};
+
 EWRAM_DATA static u8 sAchievementPopupTaskId = 0;
 EWRAM_DATA static u8 sAchievementPopupWindowId = 0;
 EWRAM_DATA static u8 sAchievementPopupIconSpriteId = 0;
@@ -172,6 +201,7 @@ static void ShowAchievementPopUpWindow(u16 achievementId);
 static void HideAchievementPopUpWindow(void);
 static u8 AddAchievementTierIconSprite(enum AchievementTier tier);
 static void DestroyAchievementTierIconSprite(u8 spriteId);
+static bool8 StringHasScrollPrompt(const u8 *str);
 
 static const u8 sText_AchievementPopupFormat[] = _("{STR_VAR_2} (+{STR_VAR_1})\n{STR_VAR_3}");
 
@@ -287,6 +317,28 @@ void AchievementPopup_Enqueue(u16 achievementId)
 
 static void Task_HideAchievementPopupAfterDelay(u8 taskId)
 {
+    // Drives the popup's own text printer -- unlike a field message box
+    // (src/field_message_box.c's Task_DrawFieldMessage), nothing else on the
+    // field calls RunTextPrinters() every frame the way this popup needs
+    // once a long description is auto-scrolling through it (see
+    // sAchievementPopupNeedsScroll's own comment). Harmless to call even
+    // when the current content printed instantly (TEXT_SKIP_DRAW) and left
+    // no printer active.
+    RunTextPrinters();
+
+    // Hold the hide countdown at zero for as long as an overlong
+    // description is still auto-scrolling through its own lines
+    // (IsTextPrinterActiveOnWindow), so the display window below always
+    // starts counting from "the player has now seen every line" instead of
+    // racing the scroll and cutting it off partway through. A description
+    // that fit on one line never sets sAchievementPopupNeedsScroll, so this
+    // is a no-op for the common case -- same instant countdown as before.
+    if (sAchievementPopupNeedsScroll && IsTextPrinterActiveOnWindow(sAchievementPopupWindowId))
+    {
+        gTasks[taskId].tTimer = 0;
+        return;
+    }
+
     if (++gTasks[taskId].tTimer > ACHIEVEMENT_POPUP_DISPLAY_FRAMES)
     {
         HideAchievementPopUpWindow();
@@ -387,6 +439,13 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
     {
         FillWindowPixelBuffer(sAchievementPopupWindowId, PIXEL_FILL(1));
         DestroyAchievementTierIconSprite(sAchievementPopupIconSpriteId);
+        // Cancels whatever scroll printer the previously-shown entry's
+        // description registered below -- without this, a back-to-back
+        // award landing while the last one was still mid-scroll leaves that
+        // printer still ticking away against a window this
+        // FillWindowPixelBuffer just cleared for the new one (same fix as
+        // src/achievements_menu.c's PrintAchievementDescription).
+        DeactivateSingleTextPrinter(sAchievementPopupWindowId, WINDOW_TEXT_PRINTER);
     }
 
     sAchievementPopupIconSpriteId = AddAchievementTierIconSprite(info->tier);
@@ -401,9 +460,24 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
     StringCopy(gStringVar2, info->name);
     StringCopy(gStringVar3, info->description);
     StripLineBreaks(gStringVar3);
-    BreakStringAutomatic(gStringVar3, ACHIEVEMENT_POPUP_DESC_MAX_WIDTH, 1, FONT_SMALL, HIDE_SCROLL_PROMPT);
-    StringExpandPlaceholders(gStringVar4, sText_AchievementPopupFormat);
-    AddTextPrinterParameterized(sAchievementPopupWindowId, FONT_SMALL, gStringVar4, ACHIEVEMENT_POPUP_TEXT_X, ACHIEVEMENT_POPUP_TEXT_Y, TEXT_SKIP_DRAW, NULL);
+    // SHOW_SCROLL_PROMPT, not HIDE_SCROLL_PROMPT -- see
+    // sAchievementPopupNeedsScroll's own comment above. StringHasScrollPrompt
+    // below tells a description that fit the single line apart from one
+    // that needed to scroll, same as src/achievements_menu.c's own
+    // StringHasScrollPrompt/needsScroll pairing.
+    BreakStringAutomatic(gStringVar3, ACHIEVEMENT_POPUP_DESC_MAX_WIDTH, 1, FONT_SMALL, SHOW_SCROLL_PROMPT);
+    sAchievementPopupNeedsScroll = StringHasScrollPrompt(gStringVar3);
+
+    // sAchievementPopupTextBuffer, not gStringVar4 -- see that buffer's own
+    // comment.
+    StringExpandPlaceholders(sAchievementPopupTextBuffer, sText_AchievementPopupFormat);
+
+    // Only descriptions that actually need it pay for the letter-by-letter
+    // typing delay -- one that already fit the single line still prints
+    // instantly (TEXT_SKIP_DRAW), same as before.
+    gTextFlags.autoScroll = sAchievementPopupNeedsScroll;
+    AddTextPrinterParameterized(sAchievementPopupWindowId, FONT_SMALL, sAchievementPopupTextBuffer, ACHIEVEMENT_POPUP_TEXT_X, ACHIEVEMENT_POPUP_TEXT_Y,
+        sAchievementPopupNeedsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, NULL);
 
     CopyWindowToVram(sAchievementPopupWindowId, COPYWIN_FULL);
 }
@@ -416,6 +490,14 @@ static void HideAchievementPopUpWindow(void)
     RemoveWindow(sAchievementPopupWindowId);
     UnlockPlayerFieldControls();
     sAchievementPopupActive = FALSE;
+    // gTextFlags.autoScroll is a shared global (see sAchievementPopupNeedsScroll's
+    // own comment) -- clear it along with the flag that gated it so a
+    // scrolled popup can't leak autoScroll into some unrelated field message
+    // box the next script prints, the same leak
+    // src/achievements_menu.c's DestroyCurrentAchievementsList guards against
+    // on its own way out.
+    gTextFlags.autoScroll = FALSE;
+    sAchievementPopupNeedsScroll = FALSE;
 }
 
 static u8 AddAchievementTierIconSprite(enum AchievementTier tier)
@@ -444,4 +526,21 @@ static void DestroyAchievementTierIconSprite(u8 spriteId)
         FreeSpriteOamMatrix(&gSprites[spriteId]);
         DestroySprite(&gSprites[spriteId]);
     }
+}
+
+// True for CHAR_PROMPT_SCROLL specifically (not CHAR_NEWLINE) -- lets
+// ShowAchievementPopUpWindow tell a description that fit the popup's single
+// line apart from one that needed BreakStringAutomatic's SHOW_SCROLL_PROMPT
+// treatment to scroll through the rest. Same helper, same reasoning, as
+// src/achievements_menu.c's own StringHasScrollPrompt.
+static bool8 StringHasScrollPrompt(const u8 *str)
+{
+    u32 i;
+
+    for (i = 0; str[i] != EOS; i++)
+    {
+        if (str[i] == CHAR_PROMPT_SCROLL)
+            return TRUE;
+    }
+    return FALSE;
 }
