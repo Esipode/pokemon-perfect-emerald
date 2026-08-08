@@ -234,9 +234,9 @@ static void CarryStorageIntoNewGame(void)
                 }
             }
         }
-        // If storage is full (420 slots), stop placing -- the remaining party mons
-        // are simply lost, which is no worse than the previous wipe-everything
-        // behaviour.
+        // If storage is full (TOTAL_BOXES_COUNT * IN_BOX_COUNT slots), stop placing --
+        // the remaining party mons are simply lost, which is no worse than the
+        // previous wipe-everything behaviour.
         if (!placed)
             break;
     }

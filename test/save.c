@@ -18,10 +18,14 @@
 // padding around neighboring 4-byte-aligned fields (struct DayCare's
 // BoxPokemon, struct TVShow, ...). If these don't match sizeof() on a real
 // build, that padding shift -- not a miscount -- is almost certainly why.
+// Stage 3: TOTAL_BOXES_COUNT 14 -> 16 adds 2 * (30 * sizeof(struct BoxPokemon)
+//   + BOX_NAME_LENGTH + 1 + 1 wallpaper byte) = 2 * (2880 + 9 + 1) = 5780 bytes
+//   to PokemonStorage. 40944 + 5780 = 46724. SaveBlock1/2/3 are untouched by
+//   this stage. Calculated, not yet confirmed by a real build.
 #define T_SAVEBLOCK1_SIZE 7664
 #define T_SAVEBLOCK2_SIZE 2968
 #define T_SAVEBLOCK3_SIZE 1576
-#define T_POKEMONSTORAGE_SIZE 40944
+#define T_POKEMONSTORAGE_SIZE 46724
 
 TEST("SaveBlock1 is backwards compatible")
 {
