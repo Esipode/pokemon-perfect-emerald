@@ -41,6 +41,7 @@
 #include "main_menu.h"
 #include "option_menu.h"
 #include "new_game_settings_menu.h"
+#include "keep_storage_prompt.h"
 #include "mystery_event_menu.h"
 #include "mystery_gift_menu.h"
 #include "link.h"
@@ -906,7 +907,7 @@ static void Task_MainMenuMain(u8 taskId)
                 break;
             case HW_WIN_NEW_GAME:
                 gMain.savedCallback = CB2_ReinitMainMenu;
-                sMainMenuDataPtr->savedCallback = CB2_InitNewGameSettingsMenu;
+                sMainMenuDataPtr->savedCallback = CB2_InitKeepStoragePrompt;
                 sSelectedOption = HW_WIN_CONTINUE;
                 break;
             case HW_WIN_OPTIONS:

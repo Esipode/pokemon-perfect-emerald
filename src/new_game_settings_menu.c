@@ -205,8 +205,8 @@ void CB2_InitNewGameSettingsMenu(void)
         gPendingNewGameSettings.randomizeTypes = FALSE;
         gPendingNewGameSettings.randomizeMoves = FALSE;
         gPendingNewGameSettings.allowStatEditor = FALSE;
-        gPendingNewGameSettings.debugMode = FALSE;
         gPendingNewGameSettings.levelCapOff = FALSE;
+        gPendingNewGameSettings.debugMode = FALSE;
         sSettingsScroll.scrollOffset = 0;
         sSettingsScroll.selectedRow = 0;
         gMain.state++;
@@ -437,8 +437,8 @@ static const u8 *GetSettingValueText(u8 settingId)
     case SETTING_RANDOMIZE_TYPES:   return gPendingNewGameSettings.randomizeTypes ? sText_On : sText_Off;
     case SETTING_RANDOMIZE_MOVES:   return gPendingNewGameSettings.randomizeMoves ? sText_On : sText_Off;
     case SETTING_STAT_EDITOR:       return gPendingNewGameSettings.allowStatEditor ? sText_On : sText_Off;
-    case SETTING_DEBUG:             return gPendingNewGameSettings.debugMode ? sText_On : sText_Off;
     case SETTING_LEVEL_CAP:         return gPendingNewGameSettings.levelCapOff ? sText_Off : sText_On;
+    case SETTING_DEBUG:             return gPendingNewGameSettings.debugMode ? sText_On : sText_Off;
     default:                        return sText_Off;
     }
 }

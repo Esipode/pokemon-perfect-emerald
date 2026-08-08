@@ -22,5 +22,6 @@ void InitTradeSequenceBgGpuRegs(void);
 void LinkTradeDrawWindow(void);
 void LoadTradeAnimGfx(void);
 void DrawTextOnTradeWindow(u8 windowId, const u8 *str, u8 speed);
+bool32 IsIngameTradeOtId(u32 otId);
 
 #endif //GUARD_TRADE_H

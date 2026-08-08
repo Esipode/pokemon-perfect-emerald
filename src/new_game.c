@@ -55,6 +55,9 @@
 #include "difficulty.h"
 #include "follower_npc.h"
 #include "malloc.h"
+#include "keep_storage_prompt.h"
+#include "trade.h"
+#include "constants/pokedex.h"
 
 extern const u8 EventScript_ResetAllMapFlags[];
 extern const u8 EventScript_ResetAllMapFlagsFrlg[];
@@ -64,6 +67,8 @@ static void WarpToTruck(void);
 static void ResetMiniGamesRecords(void);
 static void ResetItemFlags(void);
 static void ResetDexNav(void);
+static void CarryStorageIntoNewGame(void);
+static void ReregisterCarriedOverDexEntries(void);
 
 EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
 EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
@@ -153,6 +158,104 @@ void ResetMenuAndMonGlobals(void)
     ResetPokeblockScrollPositions();
 }
 
+// Storage_Retention_Plan.md Part 3a. Boxes the outgoing party (so ZeroPlayerPartyMons()
+// doesn't delete it) and re-stamps any of this run's own in-game-trade Pokémon still in
+// storage to the outgoing trainer ID. Both passes must run before InitPlayerTrainerId() --
+// the boxed party needs to keep its old OT ID, and the re-stamp needs the OLD id to stamp
+// with. Only called when keepStorage is set.
+static void CarryStorageIntoNewGame(void)
+{
+    u32 i, boxId, boxPosition;
+    u32 outgoingOtId;
+    u32 partyCount = CalculatePlayerPartyCount();
+
+    // Pass 1 -- move the party into the first free storage slots. Copied verbatim, so
+    // these mons keep their OLD OT ID and become locked automatically once the new
+    // trainer ID is issued.
+    for (i = 0; i < partyCount; i++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
+        enum Item heldItem = GetMonData(mon, MON_DATA_HELD_ITEM);
+        bool32 placed = FALSE;
+
+        // ClearAllMail() runs later in NewGameInitData(), so a boxed mon still
+        // holding a mail item would be left pointing at wiped mail data.
+        if (ItemIsMail(heldItem))
+        {
+            enum Item none = ITEM_NONE;
+            u8 mailNone = MAIL_NONE;
+            SetMonData(mon, MON_DATA_HELD_ITEM, &none);
+            SetMonData(mon, MON_DATA_MAIL, &mailNone);
+        }
+
+        // Full-heal it so it isn't sitting in the box fainted.
+        HealPokemon(mon);
+
+        for (boxId = 0; boxId < TOTAL_BOXES_COUNT && !placed; boxId++)
+        {
+            for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
+            {
+                struct BoxPokemon *slot = GetBoxedMonPtr(boxId, boxPosition);
+                if (!GetBoxMonData(slot, MON_DATA_SANITY_HAS_SPECIES))
+                {
+                    CopyMon(slot, &mon->box, sizeof(mon->box));
+                    placed = TRUE;
+                    break;
+                }
+            }
+        }
+        // If storage is full (420 slots), stop placing -- the remaining party mons
+        // are simply lost, which is no worse than the previous wipe-everything
+        // behaviour.
+        if (!placed)
+            break;
+    }
+
+    // Pass 2 -- re-stamp this run's own in-game-trade Pokémon still in storage.
+    // Without this, a trade mon obtained during the run being restarted would ride
+    // IsIngameTradeOtId()'s whitelist forever and stay withdrawable. Running this
+    // after pass 1 means a trade mon that was sitting in the party at restart time
+    // gets caught too, with no special-casing. Pokémon from an even earlier run keep
+    // their own historical OT ID -- still locked, since it likewise mismatches the
+    // incoming one, so there's no reason to touch them.
+    outgoingOtId = READ_OTID_FROM_SAVE;
+    for (boxId = 0; boxId < TOTAL_BOXES_COUNT; boxId++)
+    {
+        for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
+        {
+            struct BoxPokemon *boxMon = GetBoxedMonPtr(boxId, boxPosition);
+            if (GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES)
+             && IsIngameTradeOtId(GetBoxMonData(boxMon, MON_DATA_OT_ID)))
+                UpdateBoxMonOtId(boxMon, outgoingOtId);
+        }
+    }
+}
+
+// Storage_Retention_Plan.md Part 3d. Must run after ClearSav1() wipes dexCaught/dexSeen.
+// Re-registers every carried-over box mon as seen + caught so the dex progress the
+// player kept storage for is visible from turn one.
+static void ReregisterCarriedOverDexEntries(void)
+{
+    u32 boxId, boxPosition;
+
+    for (boxId = 0; boxId < TOTAL_BOXES_COUNT; boxId++)
+    {
+        for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
+        {
+            struct BoxPokemon *boxMon = GetBoxedMonPtr(boxId, boxPosition);
+            enum NationalDexOrder dexNum;
+
+            if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES)
+             || GetBoxMonData(boxMon, MON_DATA_SANITY_IS_EGG))
+                continue;
+
+            dexNum = SpeciesToNationalPokedexNum(GetBoxMonData(boxMon, MON_DATA_SPECIES));
+            GetSetPokedexFlag(dexNum, FLAG_SET_SEEN);
+            GetSetPokedexFlag(dexNum, FLAG_SET_CAUGHT);
+        }
+    }
+}
+
 void NewGameInitData(void)
 {
     bool8 isNewGamePlus = gIsNewGamePlus;
@@ -178,10 +281,15 @@ void NewGameInitData(void)
     void *roamersBackup = NULL;
     void *locationHistoryBackup = NULL;
     void *roamerLocationBackup = NULL;
+    // Storage_Retention_Plan.md Part 3. Never TRUE for New Game+ -- that path already
+    // preserves the PC via its own backup/restore below.
+    bool32 keepStorage = !isNewGamePlus && gKeepStorageOnNewGame && gSaveFileStatus == SAVE_STATUS_OK;
 
 #if IS_FRLG
     u8 rivalName[PLAYER_NAME_LENGTH + 1];
 #endif
+    gKeepStorageOnNewGame = FALSE; // consume, same as gIsNewGamePlus below
+
     if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
         RtcReset();
 
@@ -266,18 +374,33 @@ void NewGameInitData(void)
     if (!isNewGamePlus)
     {
         gSaveBlock2Ptr->encryptionKey = 0;
+        // Storage_Retention_Plan.md Part 3a. Must run before ZeroPlayerPartyMons()
+        // wipes the party below, and before InitPlayerTrainerId() a few lines later
+        // issues a new trainer ID -- the boxed party needs to keep its old OT ID,
+        // and the trade-mon re-stamp needs the outgoing one to stamp with.
+        if (keepStorage)
+            CarryStorageIntoNewGame();
         ZeroPlayerPartyMons();
         ResetPokedex();
         InitPlayerTrainerId();
         PlayTimeCounter_Reset();
         ClearPokedexFlags();
-        ResetPokemonStorageSystem();
+        // Storage_Retention_Plan.md Part 3b -- skip the wipe when carrying storage
+        // over. Box names, wallpapers, currentBox and fusions[] are deliberately
+        // left as-is.
+        if (!keepStorage)
+            ResetPokemonStorageSystem();
         gPartiesCount[B_TRAINER_PLAYER] = 0;
         NewGameInitPCItems();
         // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
         gSaveBlock2Ptr->newGamePlus = 0;
         ResetItemFlags();
         ResetDexNav();
+        // Storage_Retention_Plan.md Part 3c. Gates the OT-ID lock in
+        // pokemon_storage_system.c, and is what CB2_NewGame reads on the Nuzlocke
+        // restart path. Set unconditionally so a run started without keep-storage
+        // explicitly clears any earlier run's answer.
+        gSaveBlock2Ptr->keepStorageOnRestart = keepStorage;
     }
 
     if (isNewGamePlus)
@@ -302,6 +425,11 @@ void NewGameInitData(void)
     gSaveBlock2Ptr->specialSaveWarpFlags = 0;
     gSaveBlock2Ptr->gcnLinkFlags = 0;
     InitEventData();
+    // Storage_Retention_Plan.md Part 3d. Must run after ClearSav1() above wiped
+    // dexCaught/dexSeen -- re-registers every carried-over box mon so the dex
+    // progress the player kept storage for is visible from turn one.
+    if (keepStorage)
+        ReregisterCarriedOverDexEntries();
     if (!isNewGamePlus)
         ApplyPendingNewGameSettings();
     ClearTVShowData();

@@ -691,7 +691,8 @@ struct SaveBlock2
              //u16 padding1:4;
              //u16 padding2;
     /*0x18*/ struct Pokedex pokedex;
-    /*0x90*/ u8 filler_90[0x7];
+    /*0x90*/ u8 filler_90[0x6];
+    /*0x96*/ u8 keepStorageOnRestart; // this playthrough carried its PC over from the previous one; gates the OT-ID lock in pokemon_storage_system.c
     /*0x97*/ u8 newGamePlus; // New Game+ counter (0-255)
     /*0x98*/ struct Time localTimeOffset;
     /*0xA0*/ struct Time lastBerryTreeUpdate;

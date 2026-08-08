@@ -7039,6 +7039,23 @@ void UpdateMonPersonality(struct BoxPokemon *boxMon, u32 personality)
     SetBoxMonData(boxMon, MON_DATA_TERA_TYPE, &teraType);
 }
 
+// Rewrites a box Pokémon's OT ID. otId is half the substruct XOR key, so the secure block
+// has to be decrypted under the old key and re-encrypted under the new one -- writing the
+// field through SetBoxMonData alone would leave the substructs unreadable (Bad Egg).
+// Shininess is derived from otId ^ personality, so it's read before and re-applied after;
+// SetBoxMonData recomputes shinyModifier against the new otId to preserve the answer.
+// (Hidden nature and Tera type derive from personality only, so they need no re-apply.)
+void UpdateBoxMonOtId(struct BoxPokemon *boxMon, u32 otId)
+{
+    bool32 isShiny = GetBoxMonData(boxMon, MON_DATA_IS_SHINY);
+
+    DecryptBoxMon(boxMon);   // must run first -- uses the OLD otId as part of the key
+    boxMon->otId = otId;
+    boxMon->checksum = CalculateBoxMonChecksumReencrypt(boxMon);
+
+    SetBoxMonData(boxMon, MON_DATA_IS_SHINY, &isShiny);
+}
+
 void HealPokemon(struct Pokemon *mon)
 {
     u32 data;

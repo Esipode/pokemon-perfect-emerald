@@ -7,7 +7,7 @@
 - Day/Night cycle system with time-based wild Pokémon encounters
 - Mega Evolution, Z Moves, and Terastalization features (unlock at various points as you progress)
 - Achievements & Boosts
-    - Player can earn achievements by completing certain tasks
+    - Player can earn achievements by completing certain tasks (Total: 215 Achievements)
 	- Achievements persist across all playthroughs (Even if you start a new game)
 	- Once the first playthrough is completed (Elite 4 defeated), the player can spend points earned from achievements on "boosts". These are bonuses/tweaks than can be used on any subsequent playthroughs.
 - Difficulty Settings (Easy/Normal/Hard)
@@ -31,11 +31,14 @@
 	- Show base stats, catch rate, XP curve, abilities, etc.
 
 ## Optional Features
+- Keep Storage between New Games
+	- When selecting "New Game", player is prompted to keep the Pokémon in their storage
+	- Pokémon transferred to the New Game will be "locked" (Not withdrawable) until after defeating the Elite 4
 - Nuzlocke Mode
 	- Can only catch first encountered Pokémon in a route, and no more after that
 	- If a Pokémon faints, it is immediately removed from the party after battle
 	- Upon Whiteout with an empty party, the save file is wiped immediately (achievements/boosts are unaffected), and the player is asked whether to begin a new run or return to the title screen
-	- Players are forced to give nicknames to their Pokemon (You cannot pick the default name either)
+	- Players are forced to give nicknames to their Pokémon (You cannot pick the default name either)
     - Breeding Pokémon is disabled in this mode
 - Auto-Battle Mode
 	- Allows AI to do your battles for you (uses a simple AI so you can't brute-force challenging encounters)

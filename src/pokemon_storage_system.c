@@ -34,6 +34,7 @@
 #include "strings.h"
 #include "text.h"
 #include "text_window.h"
+#include "trade.h"
 #include "trig.h"
 #include "walda_phrase.h"
 #include "window.h"
@@ -109,6 +110,7 @@ enum {
     MSG_ITEM_IS_HELD,
     MSG_CHANGED_TO_ITEM,
     MSG_CANT_STORE_MAIL,
+    MSG_LOCKED_UNTIL_CHAMPION,
 };
 
 // IDs for how to resolve variables in the above messages
@@ -659,6 +661,7 @@ static void InitSummaryScreenData(void);
 static void SetSelectionAfterSummaryScreen(void);
 static void SetMonMarkings(u8);
 static bool8 IsRemovingLastPartyMon(void);
+static bool32 IsBoxMonLegacyLocked(struct BoxPokemon *boxMon);
 static bool8 CanPlaceMon(void);
 static bool8 CanShiftMon(void);
 static bool8 IsMonBeingMoved(void);
@@ -968,9 +971,9 @@ static const struct WindowTemplate sWindowTemplates[] =
     [WIN_MESSAGE] = {
         .bg = 0,
         .tilemapLeft = 11,
-        .tilemapTop = 17,
+        .tilemapTop = 13,
         .width = 18,
-        .height = 2,
+        .height = 6, // 3 lines -- MSG_LOCKED_UNTIL_CHAMPION needs more than the 1 line every other message fits on
         .paletteNum = 15,
         .baseBlock = 0x14,
     },
@@ -1079,6 +1082,10 @@ static const struct StorageMessage sMessages[] =
     [MSG_ITEM_IS_HELD]         = {COMPOUND_STRING("{DYNAMIC 0} is now held."),   MSG_VAR_ITEM_NAME},
     [MSG_CHANGED_TO_ITEM]      = {COMPOUND_STRING("Changed to {DYNAMIC 0}."),    MSG_VAR_ITEM_NAME},
     [MSG_CANT_STORE_MAIL]      = {COMPOUND_STRING("MAIL can't be stored!"),      MSG_VAR_NONE},
+    // WIN_MESSAGE is only 18 tiles wide -- every other entry above is one short line,
+    // so this is wrapped across 3 short lines instead of the 2 long ones it started as,
+    // which is too wide for the window and just runs off the edge.
+    [MSG_LOCKED_UNTIL_CHAMPION] = {COMPOUND_STRING("This POKéMON won't\ncome with you until\nyou defeat the LEAGUE!"), MSG_VAR_NONE},
 };
 
 static const struct WindowTemplate sYesNoWindowTemplate =
@@ -2235,6 +2242,7 @@ enum {
     MSTATE_WAIT_MSG,
     MSTATE_ERROR_LAST_PARTY_MON,
     MSTATE_ERROR_HAS_MAIL,
+    MSTATE_ERROR_LOCKED_MON,
     MSTATE_WAIT_ERROR_MSG,
     MSTATE_MULTIMOVE_RUN,
     MSTATE_MULTIMOVE_RUN_CANCEL,
@@ -2358,6 +2366,10 @@ static void Task_PokeStorageMain(u8 taskId)
             {
                 sStorage->state = MSTATE_ERROR_LAST_PARTY_MON;
             }
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            {
+                sStorage->state = MSTATE_ERROR_LOCKED_MON;
+            }
             else
             {
                 PlaySE(SE_SELECT);
@@ -2365,24 +2377,52 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_WITHDRAW:
-            PlaySE(SE_SELECT);
-            SetPokeStorageTask(Task_WithdrawMon);
+            if (IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            {
+                sStorage->state = MSTATE_ERROR_LOCKED_MON;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                SetPokeStorageTask(Task_WithdrawMon);
+            }
             break;
         case INPUT_PLACE_MON:
-            PlaySE(SE_SELECT);
-            SetPokeStorageTask(Task_PlaceMon);
+            if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            {
+                sStorage->state = MSTATE_ERROR_LOCKED_MON;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                SetPokeStorageTask(Task_PlaceMon);
+            }
             break;
         case INPUT_TAKE_ITEM:
-            PlaySE(SE_SELECT);
-            SetPokeStorageTask(Task_TakeItemForMoving);
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            {
+                sStorage->state = MSTATE_ERROR_LOCKED_MON;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                SetPokeStorageTask(Task_TakeItemForMoving);
+            }
             break;
         case INPUT_GIVE_ITEM:
             PlaySE(SE_SELECT);
             SetPokeStorageTask(Task_GiveMovingItemToMon);
             break;
         case INPUT_SWITCH_ITEMS:
-            PlaySE(SE_SELECT);
-            SetPokeStorageTask(Task_SwitchSelectedItem);
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            {
+                sStorage->state = MSTATE_ERROR_LOCKED_MON;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                SetPokeStorageTask(Task_SwitchSelectedItem);
+            }
             break;
         case INPUT_MULTIMOVE_START:
             PlaySE(SE_SELECT);
@@ -2468,6 +2508,11 @@ static void Task_PokeStorageMain(u8 taskId)
     case MSTATE_ERROR_HAS_MAIL:
         PlaySE(SE_FAILURE);
         PrintMessage(MSG_PLEASE_REMOVE_MAIL);
+        sStorage->state = MSTATE_WAIT_ERROR_MSG;
+        break;
+    case MSTATE_ERROR_LOCKED_MON:
+        PlaySE(SE_FAILURE);
+        PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
         sStorage->state = MSTATE_WAIT_ERROR_MSG;
         break;
     case MSTATE_WAIT_ERROR_MSG:
@@ -2597,14 +2642,25 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_PLACE:
-            PlaySE(SE_SELECT);
-            ClearBottomWindow();
-            SetPokeStorageTask(Task_PlaceMon);
+            if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            {
+                sStorage->state = 7;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_PlaceMon);
+            }
             break;
         case MENU_SHIFT:
             if (!CanShiftMon())
             {
                 sStorage->state = 3;
+            }
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            {
+                sStorage->state = 7;
             }
             else
             {
@@ -2614,9 +2670,16 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_WITHDRAW:
-            PlaySE(SE_SELECT);
-            ClearBottomWindow();
-            SetPokeStorageTask(Task_WithdrawMon);
+            if (IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            {
+                sStorage->state = 7;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                ClearBottomWindow();
+                SetPokeStorageTask(Task_WithdrawMon);
+            }
             break;
         case MENU_STORE:
             if (IsRemovingLastPartyMon())
@@ -2662,19 +2725,36 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_ShowMarkMenu);
             break;
         case MENU_TAKE:
-            PlaySE(SE_SELECT);
-            SetPokeStorageTask(Task_TakeItemForMoving);
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            {
+                sStorage->state = 7;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                SetPokeStorageTask(Task_TakeItemForMoving);
+            }
             break;
         case MENU_GIVE:
             PlaySE(SE_SELECT);
             SetPokeStorageTask(Task_GiveMovingItemToMon);
             break;
         case MENU_BAG:
-            SetPokeStorageTask(Task_ItemToBag);
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+                sStorage->state = 7;
+            else
+                SetPokeStorageTask(Task_ItemToBag);
             break;
         case MENU_SWITCH:
-            PlaySE(SE_SELECT);
-            SetPokeStorageTask(Task_SwitchSelectedItem);
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            {
+                sStorage->state = 7;
+            }
+            else
+            {
+                PlaySE(SE_SELECT);
+                SetPokeStorageTask(Task_SwitchSelectedItem);
+            }
             break;
         case MENU_GIVE_2:
             PlaySE(SE_SELECT);
@@ -2718,6 +2798,11 @@ static void Task_OnSelectedMon(u8 taskId)
     case 4:
         PlaySE(SE_FAILURE);
         PrintMessage(MSG_PLEASE_REMOVE_MAIL);
+        sStorage->state = 6;
+        break;
+    case 7:
+        PlaySE(SE_FAILURE);
+        PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
         sStorage->state = 6;
         break;
     case 6:
@@ -2796,6 +2881,11 @@ static void Task_WithdrawMon(u8 taskId)
         if (CalculatePlayerPartyCount() == PARTY_SIZE)
         {
             PrintMessage(MSG_PARTY_FULL);
+            sStorage->state = 1;
+        }
+        else if (IsBoxMonLegacyLocked(GetCursorBoxMon()))
+        {
+            PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
             sStorage->state = 1;
         }
         else
@@ -3685,8 +3775,17 @@ static void Task_OnBPressed(u8 taskId)
             }
             else if (CanPlaceMon())
             {
-                PlaySE(SE_SELECT);
-                SetPokeStorageTask(Task_PlaceMon);
+                if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+                {
+                    PlaySE(SE_FAILURE);
+                    PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
+                    sStorage->state = 1;
+                }
+                else
+                {
+                    PlaySE(SE_SELECT);
+                    SetPokeStorageTask(Task_PlaceMon);
+                }
             }
             else
             {
@@ -4464,6 +4563,9 @@ static bool32 ShouldBoxmonSpriteBeTransparent(u32 boxId, u32 boxPosition)
         return TRUE;
     if (sStorage->boxOption == OPTION_SELECT_MON
      && IsBoxMonExcluded(GetBoxedMonPtr(boxId, boxPosition)))
+        return TRUE;
+    if ((sStorage->boxOption == OPTION_WITHDRAW || sStorage->boxOption == OPTION_MOVE_MONS || sStorage->boxOption == OPTION_MOVE_ITEMS)
+     && IsBoxMonLegacyLocked(GetBoxedMonPtr(boxId, boxPosition)))
         return TRUE;
     return FALSE;
 }
@@ -6881,6 +6983,23 @@ static bool8 IsRemovingLastPartyMon(void)
         return TRUE;
     else
         return FALSE;
+}
+
+// A Pokémon carried over from a previous playthrough: its OT ID belongs to a trainer ID
+// that InitPlayerTrainerId() replaced when this run started. In-game trades are the only
+// legitimate source of a foreign OT ID in the player's own PC, so they're exempt -- ones
+// that predate the restart were re-stamped to the old trainer's ID at carry-over time.
+static bool32 IsBoxMonLegacyLocked(struct BoxPokemon *boxMon)
+{
+    u32 otId;
+
+    if (boxMon == NULL || !gSaveBlock2Ptr->keepStorageOnRestart)
+        return FALSE;
+    if (FlagGet(FLAG_SYS_GAME_CLEAR))
+        return FALSE;
+
+    otId = GetBoxMonData(boxMon, MON_DATA_OT_ID);
+    return otId != READ_OTID_FROM_SAVE && !IsIngameTradeOtId(otId);
 }
 
 static bool8 CanPlaceMon(void)

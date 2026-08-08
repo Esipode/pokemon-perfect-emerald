@@ -17,6 +17,7 @@
 #include "heal_location.h"
 #include "international_string_util.h"
 #include "io_reg.h"
+#include "keep_storage_prompt.h"
 #include "link.h"
 #include "link_rfu.h"
 #include "load_save.h"
@@ -1636,6 +1637,9 @@ static void Task_NuzlockeRunFailed(u8 taskId)
             // what caused the corrupted party/overworld graphics on "No").
             CleanupOverworldWindowsAndTilemaps();
             DestroyTask(taskId);
+            // Inherit this run's keep-storage answer; the prompt screen is bypassed on this path.
+            // ClearSaveData() has only erased flash -- the RAM SaveBlock2 (and gPokemonStorage) are intact.
+            gKeepStorageOnNewGame = gSaveBlock2Ptr->keepStorageOnRestart;
             SetMainCallback2(CB2_NewGame);
             break;
         case 1: // NO

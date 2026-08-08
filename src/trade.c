@@ -4542,6 +4542,21 @@ static void SpriteCB_BouncingPokeballArrive(struct Sprite *sprite)
     }
 }
 
+// The only way the player can legitimately own a Pokémon whose OT ID isn't their own
+// -- see IsBoxMonLegacyLocked in pokemon_storage_system.c. Derived from the trade table
+// itself so adding an in-game trade needs no matching whitelist edit here.
+bool32 IsIngameTradeOtId(u32 otId)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sIngameTrades); i++)
+    {
+        if (sIngameTrades[i].otId == otId)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 u16 GetInGameTradeSpeciesInfo(void)
 {
     const struct InGameTrade *inGameTrade = &sIngameTrades[gSpecialVar_0x8005];
