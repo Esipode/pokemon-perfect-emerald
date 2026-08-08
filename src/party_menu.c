@@ -3737,6 +3737,7 @@ static void Task_WriteMailToGiveMonAfterText(u8 taskId)
 
 static void CB2_WriteMailToGiveMon(void)
 {
+#if FREE_MAIL == FALSE
     u8 mail = GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_MAIL);
 
     DoEasyChatScreen(
@@ -3744,6 +3745,7 @@ static void CB2_WriteMailToGiveMon(void)
         gSaveBlock1Ptr->mail[mail].words,
         CB2_ReturnToPartyMenuFromWritingMail,
         EASY_CHAT_PERSON_DISPLAY_NONE);
+#endif //FREE_MAIL
 }
 
 static void CB2_ReturnToPartyMenuFromWritingMail(void)
@@ -3915,7 +3917,9 @@ static void CursorCb_Read(u8 taskId)
 
 static void CB2_ReadHeldMail(void)
 {
+#if FREE_MAIL == FALSE
     ReadMail(&gSaveBlock1Ptr->mail[GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_MAIL)], CB2_ReturnToPartyMenuFromReadingMail, TRUE);
+#endif //FREE_MAIL
 }
 
 static void CB2_ReturnToPartyMenuFromReadingMail(void)
@@ -7482,15 +7486,17 @@ static void Task_UpdateHeldItemSpriteAndClosePartyMenu(u8 taskId)
 
 static void CB2_WriteMailToGiveMonFromBag(void)
 {
-    u8 mail;
-
     GiveItemToMon(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], gPartyMenu.bagItem);
-    mail = GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_MAIL);
-    DoEasyChatScreen(
-        EASY_CHAT_TYPE_MAIL,
-        gSaveBlock1Ptr->mail[mail].words,
-        CB2_ReturnToPartyOrBagMenuFromWritingMail,
-        EASY_CHAT_PERSON_DISPLAY_NONE);
+#if FREE_MAIL == FALSE
+    {
+        u8 mail = GetMonData(&gParties[B_TRAINER_PLAYER][gPartyMenu.slotId], MON_DATA_MAIL);
+        DoEasyChatScreen(
+            EASY_CHAT_TYPE_MAIL,
+            gSaveBlock1Ptr->mail[mail].words,
+            CB2_ReturnToPartyOrBagMenuFromWritingMail,
+            EASY_CHAT_PERSON_DISPLAY_NONE);
+    }
+#endif //FREE_MAIL
 }
 
 static void CB2_ReturnToPartyOrBagMenuFromWritingMail(void)
@@ -7596,6 +7602,7 @@ void ChooseMonToGiveMailFromMailbox(void)
 
 static void TryGiveMailToSelectedMon(u8 taskId)
 {
+#if FREE_MAIL == FALSE
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
     struct Mail *mail;
 
@@ -7611,6 +7618,7 @@ static void TryGiveMailToSelectedMon(u8 taskId)
         ClearMail(mail);
         DisplayPartyMenuMessage(gText_MailTransferredFromMailbox, TRUE);
     }
+#endif //FREE_MAIL
     ScheduleBgCopyTilemapToVram(2);
     gTasks[taskId].func = Task_UpdateHeldItemSpriteAndClosePartyMenu;
 }

@@ -745,7 +745,11 @@ static void ReceiveLilycoveLadyData(LilycoveLady *records, size_t recordSize, u8
 
 static u8 GetDaycareMailItemId(struct DaycareMail *mail)
 {
+#if FREE_MAIL == FALSE
     return mail->message.itemId;
+#else
+    return ITEM_NONE;
+#endif //FREE_MAIL
 }
 
 // Indexes for a 2 element array used to store the multiplayer id and daycare
@@ -831,8 +835,12 @@ static void ReceiveDaycareMailData(struct RecordMixingDaycareMail *records, size
             enum Language otNameLanguage, nicknameLanguage;
             struct DaycareMail *daycareMail = &mixMail->mail[j];
 
+#if FREE_MAIL == FALSE
             if (daycareMail->message.itemId == ITEM_NONE)
                 continue;
+#else
+            continue; // FREE_MAIL: daycare mons never have mail to mix.
+#endif //FREE_MAIL
 
             if (anyRS)
             {
@@ -1409,7 +1417,9 @@ static void SanitizeDaycareMailForRuby(struct RecordMixingDaycareMail *src)
     for (i = 0; i < src->numDaycareMons; i++)
     {
         struct DaycareMail *mail = &src->mail[i];
+#if FREE_MAIL == FALSE
         if (mail->message.itemId != ITEM_NONE)
+#endif //FREE_MAIL
         {
             if (mail->gameLanguage != LANGUAGE_JAPANESE)
                 PadNameString(mail->otName, EXT_CTRL_CODE_BEGIN);

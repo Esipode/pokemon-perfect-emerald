@@ -1455,8 +1455,12 @@ void ShowEasyChatScreen(void)
         return;
 #endif //FREE_EASY_CHAT_PROFILE
     case EASY_CHAT_TYPE_MAIL:
+#if FREE_MAIL == FALSE
         words = gSaveBlock1Ptr->mail[gSpecialVar_0x8005].words;
         break;
+#else
+        return;
+#endif //FREE_MAIL
     case EASY_CHAT_TYPE_BARD_SONG:
 #if FREE_OLD_MAN == FALSE
         bard = &gSaveBlock1Ptr->oldMan.bard;
@@ -5623,7 +5627,10 @@ static u16 GetRandomUnlockedEasyChatPokemon(void)
 
 void InitEasyChatPhrases(void)
 {
-    u16 i, j;
+    u16 i;
+#if FREE_MAIL == FALSE
+    u16 j;
+#endif //FREE_MAIL
 
 #if FREE_EASY_CHAT_PROFILE == FALSE
     for (i = 0; i < ARRAY_COUNT(sDefaultProfileWords); i++)
@@ -5639,11 +5646,13 @@ void InitEasyChatPhrases(void)
         gSaveBlock1Ptr->easyChatBattleLost[i] = sDefaultBattleLostWords[i];
 #endif //FREE_EASY_CHAT_PROFILE
 
+#if FREE_MAIL == FALSE
     for (i = 0; i < MAIL_COUNT; i++)
     {
         for (j = 0; j < MAIL_WORDS_COUNT; j++)
             gSaveBlock1Ptr->mail[i].words[j] = EC_EMPTY_WORD;
     }
+#endif //FREE_MAIL
 
 #ifndef UBFIX
     // BUG: This is supposed to clear 64 bits, but this loop is clearing 64 bytes.

@@ -27,7 +27,9 @@ static void ApplyNewEncryptionKeyToAllEncryptedData(u32 encryptionKey);
 struct LoadedSaveData
 {
  /*0x0000*/ struct Bag bag;
+#if FREE_MAIL == FALSE
  /*0x02E8*/ struct Mail mail[MAIL_COUNT];
+#endif //FREE_MAIL
 };
 
 // EWRAM DATA
@@ -255,29 +257,36 @@ void CopyPartyAndObjectsFromSave(void)
 
 void LoadPlayerBag(void)
 {
-    int i;
-
     // load player bag.
     memcpy(&gLoadedSaveData.bag, &gSaveBlock1Ptr->bag, sizeof(struct Bag));
 
     // load mail.
-    for (i = 0; i < MAIL_COUNT; i++)
-        gLoadedSaveData.mail[i] = gSaveBlock1Ptr->mail[i];
+#if FREE_MAIL == FALSE
+    {
+        int i;
+        for (i = 0; i < MAIL_COUNT; i++)
+            gLoadedSaveData.mail[i] = gSaveBlock1Ptr->mail[i];
+    }
+#endif //FREE_MAIL
 
     gLastEncryptionKey = gSaveBlock2Ptr->encryptionKey;
 }
 
 void SavePlayerBag(void)
 {
-    int i;
     u32 encryptionKeyBackup;
 
     // save player bag.
     memcpy(&gSaveBlock1Ptr->bag, &gLoadedSaveData.bag, sizeof(struct Bag));
 
     // save mail.
-    for (i = 0; i < MAIL_COUNT; i++)
-        gSaveBlock1Ptr->mail[i] = gLoadedSaveData.mail[i];
+#if FREE_MAIL == FALSE
+    {
+        int i;
+        for (i = 0; i < MAIL_COUNT; i++)
+            gSaveBlock1Ptr->mail[i] = gLoadedSaveData.mail[i];
+    }
+#endif //FREE_MAIL
 
     encryptionKeyBackup = gSaveBlock2Ptr->encryptionKey;
     gSaveBlock2Ptr->encryptionKey = gLastEncryptionKey;

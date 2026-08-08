@@ -637,12 +637,14 @@ TEST("BoxPokemon encryption works")
     EXPECT_EQ(GetMonData(&mon, MON_DATA_PP3), 3);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_PP4), 4);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_PP_BONUSES), 255);
+#if FREE_CONTESTS == FALSE
     EXPECT_EQ(GetMonData(&mon, MON_DATA_COOL), 10);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_BEAUTY), 20);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_CUTE), 30);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_SMART), 40);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_TOUGH), 50);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_SHEEN), 150);
+#endif //FREE_CONTESTS
     EXPECT_EQ(GetMonData(&mon, MON_DATA_EXP), 12345);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_MET_LEVEL), 20);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_HP_EV), 11);
@@ -660,10 +662,12 @@ TEST("BoxPokemon encryption works")
     EXPECT_EQ(GetMonData(&mon, MON_DATA_SPEED_IV), 28);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_SPATK_IV), 27);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_SPDEF_IV), 26);
+#if FREE_CONTESTS == FALSE
     EXPECT_EQ(GetMonData(&mon, MON_DATA_CUTE_RIBBON), 1);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_BEAUTY_RIBBON), 0);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_TOUGH_RIBBON), 1);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_SMART_RIBBON), 0);
+#endif //FREE_CONTESTS
     EXPECT_EQ(GetMonData(&mon, MON_DATA_CHAMPION_RIBBON), 1);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_VICTORY_RIBBON), 1);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_EFFORT_RIBBON), 1);

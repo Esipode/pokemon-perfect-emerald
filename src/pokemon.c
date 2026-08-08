@@ -2524,6 +2524,7 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_SPDEF_EV:
             retVal = GetSubstruct2(boxMon)->spDefenseEV;
             break;
+#if FREE_CONTESTS == FALSE
         case MON_DATA_COOL:
             retVal = GetSubstruct2(boxMon)->cool;
             break;
@@ -2542,6 +2543,16 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_SHEEN:
             retVal = GetSubstruct2(boxMon)->sheen;
             break;
+#else
+        case MON_DATA_COOL: // FREE_CONTESTS: contest condition stats no longer exist.
+        case MON_DATA_BEAUTY:
+        case MON_DATA_CUTE:
+        case MON_DATA_SMART:
+        case MON_DATA_TOUGH:
+        case MON_DATA_SHEEN:
+            retVal = 0;
+            break;
+#endif //FREE_CONTESTS
         case MON_DATA_POKERUS:
             retVal = GetSubstruct3(boxMon)->pokerus;
             break;
@@ -2590,6 +2601,7 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_ABILITY_NUM:
             retVal = GetSubstruct3(boxMon)->abilityNum;
             break;
+#if FREE_CONTESTS == FALSE
         case MON_DATA_COOL_RIBBON:
             retVal = GetSubstruct3(boxMon)->coolRibbon;
             break;
@@ -2605,6 +2617,19 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_TOUGH_RIBBON:
             retVal = GetSubstruct3(boxMon)->toughRibbon;
             break;
+        case MON_DATA_ARTIST_RIBBON:
+            retVal = GetSubstruct3(boxMon)->artistRibbon;
+            break;
+#else
+        case MON_DATA_COOL_RIBBON: // FREE_CONTESTS: contest ribbons no longer exist.
+        case MON_DATA_BEAUTY_RIBBON:
+        case MON_DATA_CUTE_RIBBON:
+        case MON_DATA_SMART_RIBBON:
+        case MON_DATA_TOUGH_RIBBON:
+        case MON_DATA_ARTIST_RIBBON:
+            retVal = 0;
+            break;
+#endif //FREE_CONTESTS
         case MON_DATA_CHAMPION_RIBBON:
             retVal = GetSubstruct3(boxMon)->championRibbon;
             break;
@@ -2613,9 +2638,6 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
             break;
         case MON_DATA_VICTORY_RIBBON:
             retVal = GetSubstruct3(boxMon)->victoryRibbon;
-            break;
-        case MON_DATA_ARTIST_RIBBON:
-            retVal = GetSubstruct3(boxMon)->artistRibbon;
             break;
         case MON_DATA_EFFORT_RIBBON:
             retVal = GetSubstruct3(boxMon)->effortRibbon;
@@ -2684,15 +2706,19 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
             {
                 struct PokemonSubstruct3 *substruct3 = GetSubstruct3(boxMon);
                 retVal = 0;
+#if FREE_CONTESTS == FALSE
                 retVal += substruct3->coolRibbon;
                 retVal += substruct3->beautyRibbon;
                 retVal += substruct3->cuteRibbon;
                 retVal += substruct3->smartRibbon;
                 retVal += substruct3->toughRibbon;
+#endif //FREE_CONTESTS
                 retVal += substruct3->championRibbon;
                 retVal += substruct3->winningRibbon;
                 retVal += substruct3->victoryRibbon;
+#if FREE_CONTESTS == FALSE
                 retVal += substruct3->artistRibbon;
+#endif //FREE_CONTESTS
                 retVal += substruct3->effortRibbon;
                 retVal += substruct3->marineRibbon;
                 retVal += substruct3->landRibbon;
@@ -2708,14 +2734,18 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
             {
                 struct PokemonSubstruct3 *substruct3 = GetSubstruct3(boxMon);
                 retVal = substruct3->championRibbon
+#if FREE_CONTESTS == FALSE
                        | (substruct3->coolRibbon << 1)
                        | (substruct3->beautyRibbon << 4)
                        | (substruct3->cuteRibbon << 7)
                        | (substruct3->smartRibbon << 10)
                        | (substruct3->toughRibbon << 13)
+#endif //FREE_CONTESTS
                        | (substruct3->winningRibbon << 16)
                        | (substruct3->victoryRibbon << 17)
+#if FREE_CONTESTS == FALSE
                        | (substruct3->artistRibbon << 18)
+#endif //FREE_CONTESTS
                        | (substruct3->effortRibbon << 19)
                        | (substruct3->marineRibbon << 20)
                        | (substruct3->landRibbon << 21)
@@ -3039,6 +3069,7 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         case MON_DATA_SPDEF_EV:
             SET8(GetSubstruct2(boxMon)->spDefenseEV);
             break;
+#if FREE_CONTESTS == FALSE
         case MON_DATA_COOL:
             SET8(GetSubstruct2(boxMon)->cool);
             break;
@@ -3057,6 +3088,15 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         case MON_DATA_SHEEN:
             SET8(GetSubstruct2(boxMon)->sheen);
             break;
+#else
+        case MON_DATA_COOL: // FREE_CONTESTS: contest condition stats no longer exist.
+        case MON_DATA_BEAUTY:
+        case MON_DATA_CUTE:
+        case MON_DATA_SMART:
+        case MON_DATA_TOUGH:
+        case MON_DATA_SHEEN:
+            break;
+#endif //FREE_CONTESTS
         case MON_DATA_POKERUS:
             SET8(GetSubstruct3(boxMon)->pokerus);
             break;
@@ -3106,6 +3146,7 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         case MON_DATA_ABILITY_NUM:
             SET8(GetSubstruct3(boxMon)->abilityNum);
             break;
+#if FREE_CONTESTS == FALSE
         case MON_DATA_COOL_RIBBON:
             SET8(GetSubstruct3(boxMon)->coolRibbon);
             break;
@@ -3121,6 +3162,18 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         case MON_DATA_TOUGH_RIBBON:
             SET8(GetSubstruct3(boxMon)->toughRibbon);
             break;
+        case MON_DATA_ARTIST_RIBBON:
+            SET8(GetSubstruct3(boxMon)->artistRibbon);
+            break;
+#else
+        case MON_DATA_COOL_RIBBON: // FREE_CONTESTS: contest ribbons no longer exist.
+        case MON_DATA_BEAUTY_RIBBON:
+        case MON_DATA_CUTE_RIBBON:
+        case MON_DATA_SMART_RIBBON:
+        case MON_DATA_TOUGH_RIBBON:
+        case MON_DATA_ARTIST_RIBBON:
+            break;
+#endif //FREE_CONTESTS
         case MON_DATA_CHAMPION_RIBBON:
             SET8(GetSubstruct3(boxMon)->championRibbon);
             break;
@@ -3129,9 +3182,6 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
             break;
         case MON_DATA_VICTORY_RIBBON:
             SET8(GetSubstruct3(boxMon)->victoryRibbon);
-            break;
-        case MON_DATA_ARTIST_RIBBON:
-            SET8(GetSubstruct3(boxMon)->artistRibbon);
             break;
         case MON_DATA_EFFORT_RIBBON:
             SET8(GetSubstruct3(boxMon)->effortRibbon);

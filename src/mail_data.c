@@ -10,10 +10,12 @@
 
 void ClearAllMail(void)
 {
+#if FREE_MAIL == FALSE
     u8 i;
 
     for (i = 0; i < MAIL_COUNT; i++)
         ClearMail(&gSaveBlock1Ptr->mail[i]);
+#endif //FREE_MAIL
 }
 
 void ClearMail(struct Mail *mail)
@@ -44,6 +46,7 @@ bool8 MonHasMail(struct Pokemon *mon)
 
 u8 GiveMailToMonByItemId(struct Pokemon *mon, enum Item itemId)
 {
+#if FREE_MAIL == FALSE
     u8 heldItem[2];
     u8 id, i;
     enum Species species;
@@ -76,6 +79,7 @@ u8 GiveMailToMonByItemId(struct Pokemon *mon, enum Item itemId)
             return id;
         }
     }
+#endif //FREE_MAIL
 
     return MAIL_NONE;
 }
@@ -116,7 +120,9 @@ u8 GiveMailToMon(struct Pokemon *mon, struct Mail *mail)
     if (mailId == MAIL_NONE)
         return MAIL_NONE;
 
+#if FREE_MAIL == FALSE
     gSaveBlock1Ptr->mail[mailId] = *mail;
+#endif //FREE_MAIL
     return mailId;
 }
 
@@ -127,6 +133,7 @@ static bool32 UNUSED DummyMailFunc(void)
 
 void TakeMailFromMon(struct Pokemon *mon)
 {
+#if FREE_MAIL == FALSE
     u8 heldItem[2];
     u8 mailId;
 
@@ -140,15 +147,19 @@ void TakeMailFromMon(struct Pokemon *mon)
         SetMonData(mon, MON_DATA_MAIL, &mailId);
         SetMonData(mon, MON_DATA_HELD_ITEM, heldItem);
     }
+#endif //FREE_MAIL
 }
 
 void ClearMailItemId(u8 mailId)
 {
+#if FREE_MAIL == FALSE
     gSaveBlock1Ptr->mail[mailId].itemId = ITEM_NONE;
+#endif //FREE_MAIL
 }
 
 u8 SaveMailToPC(struct Mail *mail)
 {
+#if FREE_MAIL == FALSE
     for (u32 i = PARTY_SIZE; i < MAIL_COUNT; i++)
     {
         if (gSaveBlock1Ptr->mail[i].itemId == ITEM_NONE)
@@ -157,12 +168,14 @@ u8 SaveMailToPC(struct Mail *mail)
             return i;
         }
     }
+#endif //FREE_MAIL
     // No space to save mail
     return MAIL_NONE;
 }
 
 u8 TakeMailFromMonAndSave(struct Pokemon *mon)
 {
+#if FREE_MAIL == FALSE
     u32 heldItem;
     u32 mailId, newMailId;
 
@@ -177,10 +190,14 @@ u8 TakeMailFromMonAndSave(struct Pokemon *mon)
         SetMonData(mon, MON_DATA_HELD_ITEM, &heldItem);
     }
     return newMailId;
+#else
+    return MAIL_NONE;
+#endif //FREE_MAIL
 }
 
 bool8 ItemIsMail(enum Item itemId)
 {
+#if FREE_MAIL == FALSE
     switch (itemId)
     {
     case ITEM_ORANGE_MAIL:
@@ -199,4 +216,11 @@ bool8 ItemIsMail(enum Item itemId)
     default:
         return FALSE;
     }
+#else
+    // FREE_MAIL: mail data no longer exists. This is the single chokepoint most
+    // UI (party menu, PC, mailbox) uses to decide whether to offer mail actions
+    // at all, so returning FALSE here makes mail unreachable without touching
+    // every consumer individually.
+    return FALSE;
+#endif //FREE_MAIL
 }

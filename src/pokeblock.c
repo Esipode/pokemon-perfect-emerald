@@ -137,6 +137,9 @@ static const u8 sText_Var1ThrownAway[] = _("The {STR_VAR_1}\nwas thrown away.");
 
 EWRAM_DATA static struct PokeblockSavedData sSavedPokeblockData = {0};
 EWRAM_DATA static struct PokeblockMenuStruct *sPokeblockMenu = NULL;
+#if FREE_POKEBLOCKS == TRUE
+EWRAM_DATA struct Pokeblock gPokeblocksBuffer[POKEBLOCKS_COUNT] = {0};
+#endif //FREE_POKEBLOCKS
 
 const s8 gPokeblockFlavorCompatibilityTable[NUM_NATURES * FLAVOR_COUNT] =
 {
@@ -738,7 +741,7 @@ static void UpdatePokeblockList(void)
 
 static void PutPokeblockListMenuString(u8 *dst, u16 pkblId)
 {
-    struct Pokeblock *pkblock = &gSaveBlock1Ptr->pokeblocks[pkblId];
+    struct Pokeblock *pkblock = &POKEBLOCKS_PTR[pkblId];
     u8 *txtPtr = StringCopy(dst, gPokeblockNames[pkblock->color]);
 
     *(txtPtr++) = EXT_CTRL_CODE_BEGIN;
@@ -771,7 +774,7 @@ static void DrawPokeblockInfo(s32 pkblId)
 
     if (pkblId != LIST_CANCEL)
     {
-        pokeblock = &gSaveBlock1Ptr->pokeblocks[pkblId];
+        pokeblock = &POKEBLOCKS_PTR[pkblId];
         rectTilemapSrc[0] = 0x17;
         rectTilemapSrc[1] = 0x18;
         for (i = 0; i < FLAVOR_COUNT; i++)
@@ -825,11 +828,11 @@ static void CompactPokeblockSlots(void)
     {
         for (j = i + 1; j < POKEBLOCKS_COUNT; j++)
         {
-            if (gSaveBlock1Ptr->pokeblocks[i].color == PBLOCK_CLR_NONE)
+            if (POKEBLOCKS_PTR[i].color == PBLOCK_CLR_NONE)
             {
-                struct Pokeblock temp = gSaveBlock1Ptr->pokeblocks[i];
-                gSaveBlock1Ptr->pokeblocks[i] = gSaveBlock1Ptr->pokeblocks[j];
-                gSaveBlock1Ptr->pokeblocks[j] = temp;
+                struct Pokeblock temp = POKEBLOCKS_PTR[i];
+                POKEBLOCKS_PTR[i] = POKEBLOCKS_PTR[j];
+                POKEBLOCKS_PTR[j] = temp;
             }
         }
     }
@@ -838,7 +841,7 @@ static void CompactPokeblockSlots(void)
 static void SwapPokeblockMenuItems(u32 id1, u32 id2)
 {
     s16 i, count;
-    struct Pokeblock *pokeblocks = gSaveBlock1Ptr->pokeblocks;
+    struct Pokeblock *pokeblocks = POKEBLOCKS_PTR;
     struct Pokeblock *copyPokeblock1;
 
     if (id1 == id2)
@@ -877,7 +880,7 @@ static void SetMenuItemsCountAndMaxShowed(void)
 
     for (sPokeblockMenu->itemsNo = 0, i = 0; i < POKEBLOCKS_COUNT; i++)
     {
-        if (gSaveBlock1Ptr->pokeblocks[i].color != PBLOCK_CLR_NONE)
+        if (POKEBLOCKS_PTR[i].color != PBLOCK_CLR_NONE)
             sPokeblockMenu->itemsNo++;
     }
 
@@ -1191,7 +1194,7 @@ static void PokeblockAction_UseOnField(u8 taskId)
 
 static void UsePokeblockOnField(void)
 {
-    ChooseMonToGivePokeblock(&gSaveBlock1Ptr->pokeblocks[gSpecialVar_ItemId], ReturnToPokeblockCaseOnField);
+    ChooseMonToGivePokeblock(&POKEBLOCKS_PTR[gSpecialVar_ItemId], ReturnToPokeblockCaseOnField);
 }
 
 static void ReturnToPokeblockCaseOnField(void)
@@ -1204,7 +1207,7 @@ static void PokeblockAction_Toss(u8 taskId)
     s16 *data = gTasks[taskId].data;
 
     ClearStdWindowAndFrameToTransparent(tWindowId, FALSE);
-    StringCopy(gStringVar1, gPokeblockNames[gSaveBlock1Ptr->pokeblocks[gSpecialVar_ItemId].color]);
+    StringCopy(gStringVar1, gPokeblockNames[POKEBLOCKS_PTR[gSpecialVar_ItemId].color]);
     StringExpandPlaceholders(gStringVar4, sText_ThrowAwayVar1);
     DisplayMessageAndContinueTask(taskId, WIN_TOSS_MSG, 10, 13, FONT_NORMAL, GetPlayerTextSpeedDelay(), gStringVar4, CreateTossPokeblockYesNoMenu);
 }
@@ -1258,11 +1261,11 @@ static void CloseTossPokeblockWindow(u8 taskId)
 static void PokeblockAction_UseInBattle(u8 taskId)
 {
     u8 nature = GetNature(&gParties[B_TRAINER_OPPONENT_A][0]);
-    s16 gain = PokeblockGetGain(nature, &gSaveBlock1Ptr->pokeblocks[gSpecialVar_ItemId]);
-    StringCopy(gBattleTextBuff1, gPokeblockNames[gSaveBlock1Ptr->pokeblocks[gSpecialVar_ItemId].color]);
+    s16 gain = PokeblockGetGain(nature, &POKEBLOCKS_PTR[gSpecialVar_ItemId]);
+    StringCopy(gBattleTextBuff1, gPokeblockNames[POKEBLOCKS_PTR[gSpecialVar_ItemId].color]);
     TryClearPokeblock(gSpecialVar_ItemId);
 
-    gSpecialVar_ItemId = gSaveBlock1Ptr->pokeblocks[gSpecialVar_ItemId].color << 8;
+    gSpecialVar_ItemId = POKEBLOCKS_PTR[gSpecialVar_ItemId].color << 8;
     if (gain == 0)
         gSpecialVar_ItemId += 1;
     else if (gain > 0)
@@ -1276,7 +1279,7 @@ static void PokeblockAction_UseInBattle(u8 taskId)
 static void PokeblockAction_UseOnPokeblockFeeder(u8 taskId)
 {
     SafariZoneActivatePokeblockFeeder(gSpecialVar_ItemId);
-    StringCopy(gStringVar1, gPokeblockNames[gSaveBlock1Ptr->pokeblocks[gSpecialVar_ItemId].color]);
+    StringCopy(gStringVar1, gPokeblockNames[POKEBLOCKS_PTR[gSpecialVar_ItemId].color]);
     gSpecialVar_Result = gSpecialVar_ItemId;
     TryClearPokeblock(gSpecialVar_ItemId);
     gSpecialVar_ItemId = 0;
@@ -1285,7 +1288,7 @@ static void PokeblockAction_UseOnPokeblockFeeder(u8 taskId)
 
 static void PokeblockAction_GiveToContestLady(u8 taskId)
 {
-    gSpecialVar_0x8004 = GivePokeblockToContestLady(&gSaveBlock1Ptr->pokeblocks[gSpecialVar_ItemId]);
+    gSpecialVar_0x8004 = GivePokeblockToContestLady(&POKEBLOCKS_PTR[gSpecialVar_ItemId]);
     gSpecialVar_Result = gSpecialVar_ItemId;
     TryClearPokeblock(gSpecialVar_ItemId);
     gSpecialVar_ItemId = 0;
@@ -1304,13 +1307,13 @@ static void PokeblockAction_Cancel(u8 taskId)
 
 static void ClearPokeblock(u8 pkblId)
 {
-    gSaveBlock1Ptr->pokeblocks[pkblId].color = 0;
-    gSaveBlock1Ptr->pokeblocks[pkblId].spicy = 0;
-    gSaveBlock1Ptr->pokeblocks[pkblId].dry = 0;
-    gSaveBlock1Ptr->pokeblocks[pkblId].sweet = 0;
-    gSaveBlock1Ptr->pokeblocks[pkblId].bitter = 0;
-    gSaveBlock1Ptr->pokeblocks[pkblId].sour = 0;
-    gSaveBlock1Ptr->pokeblocks[pkblId].feel = 0;
+    POKEBLOCKS_PTR[pkblId].color = 0;
+    POKEBLOCKS_PTR[pkblId].spicy = 0;
+    POKEBLOCKS_PTR[pkblId].dry = 0;
+    POKEBLOCKS_PTR[pkblId].sweet = 0;
+    POKEBLOCKS_PTR[pkblId].bitter = 0;
+    POKEBLOCKS_PTR[pkblId].sour = 0;
+    POKEBLOCKS_PTR[pkblId].feel = 0;
 }
 
 void ClearPokeblocks(void)
@@ -1351,7 +1354,7 @@ s8 GetFirstFreePokeblockSlot(void)
 
     for (i = 0; i < POKEBLOCKS_COUNT; i++)
     {
-        if (gSaveBlock1Ptr->pokeblocks[i].color == PBLOCK_CLR_NONE)
+        if (POKEBLOCKS_PTR[i].color == PBLOCK_CLR_NONE)
             return i;
     }
 
@@ -1368,14 +1371,14 @@ bool32 AddPokeblock(const struct Pokeblock *pokeblock)
     }
     else
     {
-        gSaveBlock1Ptr->pokeblocks[slot] = *pokeblock;
+        POKEBLOCKS_PTR[slot] = *pokeblock;
         return TRUE;
     }
 }
 
 bool32 TryClearPokeblock(u8 pkblId)
 {
-    if (gSaveBlock1Ptr->pokeblocks[pkblId].color == PBLOCK_CLR_NONE)
+    if (POKEBLOCKS_PTR[pkblId].color == PBLOCK_CLR_NONE)
     {
         return FALSE;
     }

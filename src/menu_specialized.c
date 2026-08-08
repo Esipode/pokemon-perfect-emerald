@@ -253,7 +253,11 @@ static void MailboxMenu_ItemPrintFunc(u8 windowId, u32 itemId, u8 y)
     if (itemId == LIST_CANCEL)
         return;
 
+#if FREE_MAIL == FALSE
     StringCopy(buffer, gSaveBlock1Ptr->mail[PARTY_SIZE + itemId].playerName);
+#else
+    buffer[0] = EOS; // FREE_MAIL: mail no longer exists, so the mailbox list is always empty.
+#endif //FREE_MAIL
     ConvertInternationalPlayerName(buffer);
     length = StringLength(buffer);
     if (length < PLAYER_NAME_LENGTH - 1)

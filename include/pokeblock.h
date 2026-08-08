@@ -41,6 +41,18 @@ enum
     PBLOCK_CASE_GIVE
 };
 
+#if FREE_POKEBLOCKS == FALSE
+#define POKEBLOCKS_PTR (gSaveBlock1Ptr->pokeblocks)
+#else
+// FREE_POKEBLOCKS removes pokeblocks from SaveBlock1. AddPokeblock() (pokeblock.c)
+// is permanently gated to fail closed -- GetFirstFreePokeblockSlot() always
+// returns -1 -- so nothing ever writes into this always-empty stand-in; it
+// exists only so the many direct array-access sites across pokeblock.c,
+// pokeblock_feed.c, and safari_zone.c still have valid memory to compile against.
+extern struct Pokeblock gPokeblocksBuffer[POKEBLOCKS_COUNT];
+#define POKEBLOCKS_PTR (gPokeblocksBuffer)
+#endif //FREE_POKEBLOCKS
+
 // use pokeblock
 extern u8 gPokeblockMonId;
 extern s16 gPokeblockGain;

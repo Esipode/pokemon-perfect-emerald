@@ -144,9 +144,11 @@ void SetContestWinnerForPainting(int contestWinnerId)
 
     // NUM_CONTEST_WINNERS no longer reserves museum slots (idx 8-12); guard against
     // reading past the end of contestWinners[] into the following struct fields.
+#if FREE_CONTESTS == FALSE
     if (idx < NUM_CONTEST_WINNERS)
         gCurContestWinner = gSaveBlock1Ptr->contestWinners[idx];
     else
+#endif //FREE_CONTESTS
         memset(&gCurContestWinner, 0, sizeof(gCurContestWinner));
 
     *saveIdx = idx;

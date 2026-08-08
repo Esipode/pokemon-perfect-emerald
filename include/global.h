@@ -709,7 +709,9 @@ struct SaveBlock2
     /*0x21C*/ struct RankingHall1P hallRecords1P[HALL_FACILITIES_COUNT][FRONTIER_LVL_MODE_COUNT][HALL_RECORDS_COUNT]; // From record mixing.
     /*0x57C*/ struct RankingHall2P hallRecords2P[FRONTIER_LVL_MODE_COUNT][HALL_RECORDS_COUNT]; // From record mixing.
 #endif //FREE_RECORD_MIXING_HALL_RECORDS
+#if FREE_CONTESTS == FALSE
     /*0x624*/ u16 contestLinkResults[CONTEST_CATEGORIES_COUNT][CONTESTANT_COUNT];
+#endif //FREE_CONTESTS
     /*0x64C*/ struct BattleFrontier frontier;
     struct AchievementRunDataExt achievementRunDataExt; // see that struct's comment
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
@@ -950,7 +952,9 @@ struct Mail
 
 struct DaycareMail
 {
+#if FREE_MAIL == FALSE
     struct Mail message;
+#endif //FREE_MAIL
     u8 otName[PLAYER_NAME_LENGTH + 1];
     u8 monName[VANILLA_POKEMON_NAME_LENGTH + 1];
     u8 gameLanguage:4;
@@ -1283,7 +1287,9 @@ struct SaveBlock1
     u16 registeredItem; // registered for use with SELECT button
     struct ItemSlot pcItems[PC_ITEMS_COUNT];
     struct Bag bag;
+#if FREE_POKEBLOCKS == FALSE
     struct Pokeblock pokeblocks[POKEBLOCKS_COUNT];
+#endif //FREE_POKEBLOCKS
 #if FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK1 == FALSE
     u8 filler1[0x34]; // Previously Dex Flags, feel free to remove.
 #endif //FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK1
@@ -1310,6 +1316,7 @@ struct SaveBlock1
 #if FREE_SECRET_BASES == FALSE
     struct SecretBase secretBases[SECRET_BASES_COUNT];
 #endif //FREE_SECRET_BASES
+#if FREE_DECORATIONS == FALSE
     u8 playerRoomDecorations[DECOR_MAX_PLAYERS_HOUSE];
     u8 playerRoomDecorationPositions[DECOR_MAX_PLAYERS_HOUSE];
     u8 decorationDesks[10];
@@ -1320,6 +1327,7 @@ struct SaveBlock1
     u8 decorationPosters[10];
     u8 decorationDolls[20]; // ORIGINALLY 40
     u8 decorationCushions[10];
+#endif //FREE_DECORATIONS
     TVShow tvShows[TV_SHOWS_COUNT];
     //u8 padding4[2];
     PokeNews pokeNews[POKE_NEWS_COUNT];
@@ -1342,7 +1350,9 @@ struct SaveBlock1
     u16 easyChatBattleWon[EASY_CHAT_BATTLE_WORDS_COUNT];
     u16 easyChatBattleLost[EASY_CHAT_BATTLE_WORDS_COUNT];
 #endif //FREE_EASY_CHAT_PROFILE
+#if FREE_MAIL == FALSE
     struct Mail mail[MAIL_COUNT];
+#endif //FREE_MAIL
     u8 unlockedTrendySayings[NUM_TRENDY_SAYING_BYTES]; // Bitfield for unlockable Easy Chat words in EC_GROUP_TRENDY_SAYING
     //u8 padding5[3];
 #if FREE_OLD_MAN == FALSE
@@ -1351,7 +1361,9 @@ struct SaveBlock1
 #if FREE_DEWFORD_TRENDS == FALSE
     struct DewfordTrend dewfordTrends[SAVED_TRENDS_COUNT];
 #endif //FREE_DEWFORD_TRENDS
+#if FREE_CONTESTS == FALSE
     struct ContestWinner contestWinners[NUM_CONTEST_WINNERS]; // see CONTEST_WINNER_*
+#endif //FREE_CONTESTS
     struct DayCare daycare;
 #if FREE_LINK_BATTLE_RECORDS == FALSE
     struct LinkBattleRecords linkBattleRecords;

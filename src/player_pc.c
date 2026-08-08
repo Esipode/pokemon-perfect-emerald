@@ -172,6 +172,9 @@ static const u8 sText_WithdrawItem[] = _("WITHDRAW ITEM");
 static const u8 sText_DepositItem[] = _("DEPOSIT ITEM");
 static const u8 sText_TossItem[] = _("TOSS ITEM");
 static const u8 sText_Mailbox[] = _("MAILBOX");
+#if FREE_DECORATIONS == TRUE
+static const u8 sText_NoDecorationsToPlace[] = _("There's nothing to\nplace here.");
+#endif //FREE_DECORATIONS
 
 static const u8 sText_WithdrawHowManyItems[] = _("Withdraw how many\n{STR_VAR_1}?");
 static const u8 sText_WithdrawXItems[] = _("Withdrew {STR_VAR_2}\n{STR_VAR_1}.");
@@ -484,7 +487,13 @@ static void PlayerPC_Mailbox(u8 taskId)
 
 static void PlayerPC_Decoration(u8 taskId)
 {
+#if FREE_DECORATIONS == FALSE
     DoPlayerRoomDecorationMenu(taskId);
+#else
+    // FREE_DECORATIONS removes playerRoomDecorations from SaveBlock1, so there's
+    // nowhere to place anything -- refuse to open the placement UI at all.
+    DisplayItemMessageOnField(taskId, sText_NoDecorationsToPlace, ReshowPlayerPC);
+#endif //FREE_DECORATIONS
 }
 
 static void PlayerPC_TurnOff(u8 taskId)
@@ -667,6 +676,7 @@ static void ItemStorage_EraseMainMenu(u8 taskId)
 
 static u8 GetMailboxMailCount(void)
 {
+#if FREE_MAIL == FALSE
     u8 mailInPC, i;
 
     // Count mail in PC (by first skipping over mail in party)
@@ -675,10 +685,14 @@ static u8 GetMailboxMailCount(void)
             mailInPC++;
 
     return mailInPC;
+#else
+    return 0; // FREE_MAIL: mail no longer exists, so the mailbox is always empty (and PlayerPC_Mailbox refuses to open it).
+#endif //FREE_MAIL
 }
 
 static void Mailbox_CompactMailList(void)
 {
+#if FREE_MAIL == FALSE
     struct Mail temp;
     u8 i, j;
 
@@ -690,6 +704,7 @@ static void Mailbox_CompactMailList(void)
                 SWAP(gSaveBlock1Ptr->mail[i], gSaveBlock1Ptr->mail[j], temp);
         }
     }
+#endif //FREE_MAIL
 }
 
 static void Mailbox_DrawMailboxMenu(u8 taskId)
@@ -736,7 +751,9 @@ static void Mailbox_ProcessInput(u8 taskId)
 
 static void Mailbox_PrintWhatToDoWithPlayerMailText(u8 taskId)
 {
+#if FREE_MAIL == FALSE
     StringCopy(gStringVar1, gSaveBlock1Ptr->mail[gPlayerPCItemPageInfo.itemsAbove + PARTY_SIZE + gPlayerPCItemPageInfo.cursorPos].playerName);
+#endif //FREE_MAIL
     ConvertInternationalPlayerNameStripChar(gStringVar1, CHAR_SPACE);
     StringExpandPlaceholders(gStringVar4, gText_WhatToDoWithVar1sMail);
     DisplayItemMessageOnField(taskId, gStringVar4, Mailbox_PrintMailOptions);
@@ -794,7 +811,9 @@ static void Mailbox_FadeAndReadMail(u8 taskId)
     {
         MailboxMenu_Free();
         CleanupOverworldWindowsAndTilemaps();
+    #if FREE_MAIL == FALSE
         ReadMail(&gSaveBlock1Ptr->mail[gPlayerPCItemPageInfo.itemsAbove + PARTY_SIZE + gPlayerPCItemPageInfo.cursorPos], Mailbox_ReturnToFieldFromReadMail, TRUE);
+    #endif //FREE_MAIL
         DestroyTask(taskId);
     }
 }
@@ -855,6 +874,7 @@ static void Mailbox_HandleConfirmMoveToBag(u8 taskId)
 
 static void Mailbox_DoMailMoveToBag(u8 taskId)
 {
+#if FREE_MAIL == FALSE
     struct Mail *mail = &gSaveBlock1Ptr->mail[gPlayerPCItemPageInfo.itemsAbove + PARTY_SIZE + gPlayerPCItemPageInfo.cursorPos];
     if (!AddBagItem(mail->itemId, 1))
     {
@@ -870,6 +890,7 @@ static void Mailbox_DoMailMoveToBag(u8 taskId)
             gPlayerPCItemPageInfo.itemsAbove--;
         SetPlayerPCListCount(taskId);
     }
+#endif //FREE_MAIL
 }
 
 static void Mailbox_CancelMoveToBag(u8 taskId)

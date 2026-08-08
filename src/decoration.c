@@ -603,11 +603,13 @@ void InitDecorationContextItems(void)
     }
 #endif //FREE_SECRET_BASES
 
+#if FREE_DECORATIONS == FALSE
     if (sDecorationContext.isPlayerRoom == TRUE)
     {
         sDecorationContext.items = gSaveBlock1Ptr->playerRoomDecorations;
         sDecorationContext.pos = gSaveBlock1Ptr->playerRoomDecorationPositions;
     }
+#endif //FREE_DECORATIONS
 }
 
 static u8 AddDecorationWindow(u8 windowIndex)
@@ -670,6 +672,7 @@ void DoSecretBaseDecorationMenu(u8 taskId)
     gTasks[taskId].func = HandleDecorationActionsMenuInput;
 }
 
+#if FREE_DECORATIONS == FALSE
 void DoPlayerRoomDecorationMenu(u8 taskId)
 {
     InitDecorationActionsWindow();
@@ -679,6 +682,7 @@ void DoPlayerRoomDecorationMenu(u8 taskId)
     sDecorationContext.isPlayerRoom = TRUE;
     gTasks[taskId].func = HandleDecorationActionsMenuInput;
 }
+#endif //FREE_DECORATIONS
 
 static void HandleDecorationActionsMenuInput(u8 taskId)
 {
@@ -1151,8 +1155,12 @@ static bool8 IsDecorationIndexInPlayersRoom(u8 idx)
 
 static void IdentifyOwnedDecorationsCurrentlyInUseInternal(u8 taskId)
 {
-    u16 i, j, k;
-    u16 count;
+    // UNUSED: if both FREE_SECRET_BASES and FREE_DECORATIONS are TRUE (the
+    // default), neither loop below compiles and these go entirely unread.
+    u16 UNUSED i;
+    u16 UNUSED j;
+    u16 UNUSED k;
+    u16 UNUSED count;
 
     count = 0;
     memset(sSecretBaseItemsIndicesBuffer, 0, sizeof(sSecretBaseItemsIndicesBuffer));
@@ -1183,6 +1191,7 @@ static void IdentifyOwnedDecorationsCurrentlyInUseInternal(u8 taskId)
 #endif //FREE_SECRET_BASES
 
     count = 0;
+#if FREE_DECORATIONS == FALSE
     for (i = 0; i < ARRAY_COUNT(sPlayerRoomItemsIndicesBuffer); i++)
     {
         if (gSaveBlock1Ptr->playerRoomDecorations[i] != DECOR_NONE)
@@ -1202,6 +1211,7 @@ static void IdentifyOwnedDecorationsCurrentlyInUseInternal(u8 taskId)
             }
         }
     }
+#endif //FREE_DECORATIONS
 }
 
 static void IdentifyOwnedDecorationsCurrentlyInUse(u8 taskId)

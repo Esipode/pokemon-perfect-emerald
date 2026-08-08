@@ -172,12 +172,14 @@ struct PokemonSubstruct2
     u8 speedEV;
     u8 spAttackEV;
     u8 spDefenseEV;
+#if FREE_CONTESTS == FALSE
     u8 cool;
     u8 beauty;
     u8 cute;
     u8 smart;
     u8 tough;
     u8 sheen;
+#endif //FREE_CONTESTS
 };
 
 struct PokemonSubstruct3
@@ -196,15 +198,19 @@ struct PokemonSubstruct3
     u32 spDefenseIV:5;
     u32 isEgg:1;
     u32 gigantamaxFactor:1;
+#if FREE_CONTESTS == FALSE
     u32 coolRibbon:3;     // Stores the highest contest rank achieved in the Cool category.
     u32 beautyRibbon:3;   // Stores the highest contest rank achieved in the Beauty category.
     u32 cuteRibbon:3;     // Stores the highest contest rank achieved in the Cute category.
     u32 smartRibbon:3;    // Stores the highest contest rank achieved in the Smart category.
     u32 toughRibbon:3;    // Stores the highest contest rank achieved in the Tough category.
+#endif //FREE_CONTESTS
     u32 championRibbon:1; // Given when defeating the Champion. Because both RSE and FRLG use it, later generations don't specify from which region it comes from.
     u32 winningRibbon:1;  // Given at the Battle Tower's Level 50 challenge by winning a set of seven battles that extends the current streak to 56 or more.
     u32 victoryRibbon:1;  // Given at the Battle Tower's Level 100 challenge by winning a set of seven battles that extends the current streak to 56 or more.
+#if FREE_CONTESTS == FALSE
     u32 artistRibbon:1;   // Given at the Contest Hall by winning a Master Rank contest with at least 800 points, and agreeing to have the Pokémon's portrait placed in the museum after being offered.
+#endif //FREE_CONTESTS
     u32 effortRibbon:1;   // Given at Slateport's market to Pokémon with maximum EVs.
     u32 marineRibbon:1;   // Never distributed.
     u32 landRibbon:1;     // Never distributed.

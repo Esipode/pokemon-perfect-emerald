@@ -90,6 +90,20 @@ static EWRAM_DATA struct SecretBase sSecretBasesBuffer[SECRET_BASES_COUNT] = {0}
 #define SECRET_BASES_PTR (sSecretBasesBuffer)
 #endif //FREE_SECRET_BASES
 
+#if FREE_DECORATIONS == FALSE
+#define PLAYER_ROOM_DECORATIONS_PTR (gSaveBlock1Ptr->playerRoomDecorations)
+#define PLAYER_ROOM_DECORATION_POSITIONS_PTR (gSaveBlock1Ptr->playerRoomDecorationPositions)
+#else
+// FREE_DECORATIONS removes playerRoomDecorations from SaveBlock1. Always-empty
+// stand-in so this file's array-indexing code still has valid memory to
+// compile against; DoPlayerRoomDecorationMenu() (decoration.c) refuses to open
+// the placement UI at all, so nothing ever populates this buffer.
+static EWRAM_DATA u8 sPlayerRoomDecorationsBuffer[DECOR_MAX_PLAYERS_HOUSE] = {0};
+static EWRAM_DATA u8 sPlayerRoomDecorationPositionsBuffer[DECOR_MAX_PLAYERS_HOUSE] = {0};
+#define PLAYER_ROOM_DECORATIONS_PTR (sPlayerRoomDecorationsBuffer)
+#define PLAYER_ROOM_DECORATION_POSITIONS_PTR (sPlayerRoomDecorationPositionsBuffer)
+#endif //FREE_DECORATIONS
+
 static void Task_ShowSecretBaseRegistryMenu(u8);
 static void BuildRegistryMenuItems(u8);
 static void RegistryMenu_OnCursorMove(s32, bool8, struct ListMenu *);
@@ -574,8 +588,8 @@ void InitSecretBaseDecorationSprites(void)
     objectEventId = 0;
     if (!CurMapIsSecretBase())
     {
-        decorations = gSaveBlock1Ptr->playerRoomDecorations;
-        decorationPositions = gSaveBlock1Ptr->playerRoomDecorationPositions;
+        decorations = PLAYER_ROOM_DECORATIONS_PTR;
+        decorationPositions = PLAYER_ROOM_DECORATION_POSITIONS_PTR;
         numDecorations = DECOR_MAX_PLAYERS_HOUSE;
     }
     else

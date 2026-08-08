@@ -1604,7 +1604,11 @@ static void ShowLinkContestResultsWindow(void)
     {
         for (j = 0; j < CONTESTANT_COUNT; j++)
         {
+        #if FREE_CONTESTS == FALSE
             ConvertIntToDecimalStringN(gStringVar4, gSaveBlock2Ptr->contestLinkResults[i][j], STR_CONV_MODE_RIGHT_ALIGN, 4);
+        #else
+            ConvertIntToDecimalStringN(gStringVar4, 0, STR_CONV_MODE_RIGHT_ALIGN, 4);
+        #endif //FREE_CONTESTS
             AddTextPrinterParameterized(gRecordsWindowId, FONT_NORMAL, gStringVar4, (j * 38) + 64, (i * 16) + 41, TEXT_SKIP_DRAW, NULL);
         }
     }

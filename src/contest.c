@@ -3653,6 +3653,7 @@ static void DetermineFinalStandings(void)
 
 void SaveLinkContestResults(void)
 {
+#if FREE_CONTESTS == FALSE
     if ((gLinkContestFlags & LINK_CONTEST_FLAG_IS_LINK))
     {
         gSaveBlock2Ptr->contestLinkResults[gSpecialVar_ContestCategory][gContestFinalStandings[gContestPlayerMonIndex]] =
@@ -3660,6 +3661,7 @@ void SaveLinkContestResults(void)
         (gSaveBlock2Ptr->contestLinkResults[gSpecialVar_ContestCategory][gContestFinalStandings[gContestPlayerMonIndex]] + 1);
 
     }
+#endif //FREE_CONTESTS
 }
 
 static bool8 DidContestantPlaceHigher(s32 a, s32 b, struct ContestFinalStandings *standings)
@@ -5532,12 +5534,14 @@ static void Contest_SetBgCopyFlags(u32 flagIndex)
 
 void ResetContestLinkResults(void)
 {
+#if FREE_CONTESTS == FALSE
     s32 i;
     s32 j;
 
     for (i = 0; i < CONTEST_CATEGORIES_COUNT; i++)
         for (j = 0; j < CONTESTANT_COUNT; j++)
             gSaveBlock2Ptr->contestLinkResults[i][j] = 0;
+#endif //FREE_CONTESTS
 }
 
 bool8 SaveContestWinner(u8 rank)
@@ -5560,6 +5564,7 @@ bool8 SaveContestWinner(u8 rank)
     // Adjust the random painting caption depending on the category
     captionId += NUM_PAINTING_CAPTIONS * gSpecialVar_ContestCategory;
 
+#if FREE_CONTESTS == FALSE
     if (rank != CONTEST_SAVE_FOR_ARTIST)
     {
         // Save winner in the saveblock
@@ -5582,6 +5587,7 @@ bool8 SaveContestWinner(u8 rank)
             gSaveBlock1Ptr->contestWinners[id].contestCategory = captionId;
     }
     else
+#endif //FREE_CONTESTS
     {
         // Set the most recent winner so the artist can show the player their painting
         gCurContestWinner.personality = gContestMons[i].personality;
@@ -5601,7 +5607,9 @@ bool8 SaveContestWinner(u8 rank)
 // If actually preparing to insert the winner into the saveblock, shift is TRUE
 u8 GetContestWinnerSaveIdx(u8 rank, bool8 shift)
 {
+#if FREE_CONTESTS == FALSE
     s32 i;
+#endif //FREE_CONTESTS
 
     switch (rank)
     {
@@ -5609,11 +5617,13 @@ u8 GetContestWinnerSaveIdx(u8 rank, bool8 shift)
     case CONTEST_RANK_SUPER:
     case CONTEST_RANK_HYPER:
     case CONTEST_RANK_MASTER:
+    #if FREE_CONTESTS == FALSE
         if (shift)
         {
             for (i = NUM_CONTEST_HALL_WINNERS - 1; i > 0; i--)
                 memcpy(&gSaveBlock1Ptr->contestWinners[i], &gSaveBlock1Ptr->contestWinners[i - 1], sizeof(struct ContestWinner));
         }
+    #endif //FREE_CONTESTS
         return CONTEST_WINNER_HALL_1 - 1;
     default:
 //  case CONTEST_SAVE_FOR_MUSEUM:
@@ -5624,10 +5634,12 @@ u8 GetContestWinnerSaveIdx(u8 rank, bool8 shift)
 
 void ClearContestWinnerPicsInContestHall(void)
 {
+#if FREE_CONTESTS == FALSE
     s32 i;
 
     for (i = 0; i < MUSEUM_CONTEST_WINNERS_START; i++)
         gSaveBlock1Ptr->contestWinners[i] = gDefaultContestWinners[i];
+#endif //FREE_CONTESTS
 }
 
 static void SetContestLiveUpdateFlags(u8 contestant)

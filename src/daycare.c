@@ -248,6 +248,7 @@ static void TransferEggMoves(void)
 
 void StorePokemonInDaycare(struct Pokemon *mon, struct DaycareMon *daycareMon)
 {
+#if FREE_MAIL == FALSE
     if (MonHasMail(mon))
     {
         u8 mailId;
@@ -261,6 +262,7 @@ void StorePokemonInDaycare(struct Pokemon *mon, struct DaycareMon *daycareMon)
         daycareMon->mail.message = gSaveBlock1Ptr->mail[mailId];
         TakeMailFromMon(mon);
     }
+#endif //FREE_MAIL
 
     TryFormChange(mon, FORM_CHANGE_DEPOSIT, B_TRAINER_PLAYER);
 
@@ -371,11 +373,13 @@ static u16 TakeSelectedPokemonFromDaycare(struct DaycareMon *daycareMon)
     }
 
     gParties[B_TRAINER_PLAYER][PARTY_SIZE - 1] = pokemon;
+#if FREE_MAIL == FALSE
     if (daycareMon->mail.message.itemId)
     {
         GiveMailToMon(&gParties[B_TRAINER_PLAYER][PARTY_SIZE - 1], &daycareMon->mail.message);
         ClearDaycareMonMail(&daycareMon->mail);
     }
+#endif //FREE_MAIL
 
     ZeroBoxMonData(&daycareMon->mon);
     daycareMon->steps = 0;
@@ -469,7 +473,9 @@ static void ClearDaycareMonMail(struct DaycareMail *mail)
     for (i = 0; i < VANILLA_POKEMON_NAME_LENGTH + 1; i++)
         mail->monName[i] = 0;
 
+#if FREE_MAIL == FALSE
     ClearMail(&mail->message);
+#endif //FREE_MAIL
 }
 
 static void ClearDaycareMon(struct DaycareMon *daycareMon)
