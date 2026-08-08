@@ -27,6 +27,8 @@ SECTIONS {
     ALIGN(4)
     {
         *.o(.sbss);
+        . = ALIGN(4);
+        __ewram_sbss_end = .;
     } > EWRAM
 
     .iwram ORIGIN(IWRAM) : AT (__iwram_lma)

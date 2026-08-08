@@ -24,12 +24,12 @@
 #define FREE_RECORD_MIXING_GIFT             TRUE   // Frees up record mixing gift data (8 bytes).
                                             // SaveBlock1 total: 2985 bytes
 // SaveBlock2 configs
-#define FREE_BATTLE_TOWER_E_READER          TRUE   // Frees up Battle Tower E-Reader data (188 bytes).
+#define FREE_BATTLE_TOWER_E_READER          TRUE   // Frees up Battle Tower E-Reader data (200 bytes -- struct BattleTowerEReaderTrainer's stale /*0x..*/ offsets assume the vanilla 44-byte BattleTowerPokemon; it's 48 bytes here since `level` was widened to u16).
 #define FREE_POKEMON_JUMP                   TRUE   // Frees up Pokémon Jump data (16 bytes).
 #define FREE_RECORD_MIXING_HALL_RECORDS     TRUE   // Frees up hall records for record mixing (1032 bytes).
-#define FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2    TRUE   // Free up unused Pokédex seen flags (108 bytes).
-                                            // SaveBlock2 total: 1274 bytes
+#define FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2    TRUE   // Free up unused Pokédex seen flags (104 bytes).
+                                            // SaveBlock2 total: 1352 bytes
 
-                                            // Grand Total: 4259
+                                            // Grand Total: 4337
 
 #endif // GUARD_CONFIG_SAVE_H

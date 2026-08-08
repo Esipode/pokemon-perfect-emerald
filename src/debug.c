@@ -1614,6 +1614,16 @@ static void DebugAction_Util_Warp_SelectWarp(u8 taskId)
 #undef tMapNum
 #undef tWarp
 
+// Marks the end of the .ewram.sbss section (all .sbss-placed statics), set in
+// ld_script_modern.ld / ld_script_test.ld. Everything from here to EWRAM_END
+// is genuinely free at link time.
+extern u8 __ewram_sbss_end[];
+
+static u32 GetFreeEwramBytes(void)
+{
+    return EWRAM_END - (u32)__ewram_sbss_end;
+}
+
 void CheckSaveBlock1Size(struct ScriptContext *ctx)
 {
     u32 currSb1Size = sizeof(struct SaveBlock1);
@@ -1621,7 +1631,7 @@ void CheckSaveBlock1Size(struct ScriptContext *ctx)
     ConvertIntToDecimalStringN(gStringVar1, currSb1Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, maxSb1Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar3, maxSb1Size - currSb1Size, STR_CONV_MODE_LEFT_ALIGN, 6);
-    ConvertIntToDecimalStringN(gStringVar4, 1, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar4, GetFreeEwramBytes(), STR_CONV_MODE_LEFT_ALIGN, 6);
 }
 
 void CheckSaveBlock2Size(struct ScriptContext *ctx)
@@ -1631,6 +1641,7 @@ void CheckSaveBlock2Size(struct ScriptContext *ctx)
     ConvertIntToDecimalStringN(gStringVar1, currSb2Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, maxSb2Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar3, maxSb2Size - currSb2Size, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar4, GetFreeEwramBytes(), STR_CONV_MODE_LEFT_ALIGN, 6);
 }
 
 void CheckSaveBlock3Size(struct ScriptContext *ctx)
@@ -1640,6 +1651,7 @@ void CheckSaveBlock3Size(struct ScriptContext *ctx)
     ConvertIntToDecimalStringN(gStringVar1, currSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, maxSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar3, maxSb3Size - currSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar4, GetFreeEwramBytes(), STR_CONV_MODE_LEFT_ALIGN, 6);
 }
 
 void CheckPokemonStorageSize(struct ScriptContext *ctx)
@@ -1649,6 +1661,7 @@ void CheckPokemonStorageSize(struct ScriptContext *ctx)
     ConvertIntToDecimalStringN(gStringVar1, currPkmnStorageSize, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, maxPkmnStorageSize, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar3, maxPkmnStorageSize - currPkmnStorageSize, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar4, GetFreeEwramBytes(), STR_CONV_MODE_LEFT_ALIGN, 6);
 }
 
 enum RoundMode

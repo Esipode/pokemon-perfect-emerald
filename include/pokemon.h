@@ -295,6 +295,13 @@ struct Pokemon
     u16 spDefense;
 };
 
+// Baseline pin for the Saveblock Shrinking project (see "Saveblock Shrinking.md").
+// Stage 5 deliberately shrinks all three of these (96->80, 16->12, 120->100);
+// until then, any change here is unintentional and should fail the build.
+STATIC_ASSERT(sizeof(struct BoxPokemon) == 96, BoxPokemonBaselineSize);
+STATIC_ASSERT(NUM_SUBSTRUCT_BYTES == 16, NumSubstructBytesBaselineSize);
+STATIC_ASSERT(sizeof(struct Pokemon) == 120, PokemonBaselineSize);
+
 struct MonSpritesGfxManager
 {
     u32 numSprites:4;

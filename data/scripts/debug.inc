@@ -256,19 +256,23 @@ Debug_CheckSaveBlock::
 
 Debug_SaveBlock1Size::
 	.string "SaveBlock1 size: {STR_VAR_1}b/{STR_VAR_2}b.\n"
-	.string "Free space: {STR_VAR_3}b.$"
+	.string "Free space: {STR_VAR_3}b.\p"
+	.string "Free EWRAM: {STR_VAR_4}b.$"
 
 Debug_SaveBlock2Size::
 	.string "SaveBlock2 size: {STR_VAR_1}b/{STR_VAR_2}b.\n"
-	.string "Free space: {STR_VAR_3}b.$"
+	.string "Free space: {STR_VAR_3}b.\p"
+	.string "Free EWRAM: {STR_VAR_4}b.$"
 
 Debug_SaveBlock3Size::
 	.string "SaveBlock3 size: {STR_VAR_1}b/{STR_VAR_2}b.\n"
-	.string "Free space: {STR_VAR_3}b.$"
+	.string "Free space: {STR_VAR_3}b.\p"
+	.string "Free EWRAM: {STR_VAR_4}b.$"
 
 Debug_PokemonStorageSize::
 	.string "{PKMN}Storage size: {STR_VAR_1}b/{STR_VAR_2}b.\n"
-	.string "Free space: {STR_VAR_3}b.$"
+	.string "Free space: {STR_VAR_3}b.\p"
+	.string "Free EWRAM: {STR_VAR_4}b.$"
 
 Debug_CheckROMSpace::
 	callnative CheckROMSize
