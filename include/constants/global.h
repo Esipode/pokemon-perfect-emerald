@@ -107,7 +107,7 @@ enum Language
 #define UNION_ROOM_KB_ROW_COUNT 10
 #define SAVED_TRENDS_COUNT 5
 #define PYRAMID_BAG_ITEMS_COUNT 10
-#define ROAMER_COUNT 120 // Number of maximum roamers (Concurrently only 5 at a time) - ORIGINALLY 1
+#define ROAMER_COUNT 1 // Only one roamer is ever active; the next one is picked from gRoamableSpecies (src/roamer.c) by scanning the player's party/storage for a species they don't currently have
 
 // Bag constants
 #define BAG_ITEMS_COUNT 30

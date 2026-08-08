@@ -6564,7 +6564,7 @@ static void ReturnFromBattleToOverworld(void)
             // CUSTOM - Roamers now persist even when fainted, just respawn at full health
             // SetRoamerInactive(gEncounteredRoamerIndex);
             if (gBattleOutcome == B_OUTCOME_CAUGHT) {
-                NextRoamer(gEncounteredRoamerIndex);
+                NextRoamer();
             }
     }
 

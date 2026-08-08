@@ -3,6 +3,7 @@
 #include "event_data.h"
 #include "ow_abilities.h"
 #include "pokemon.h"
+#include "pokemon_storage_system.h"
 #include "random.h"
 #include "roamer.h"
 #include "pokedex.h"
@@ -470,101 +471,107 @@ const u16 gRoamableSpecies[] = {
 };
 
 #define NUM_ROAMABLE_SPECIES ARRAY_COUNT(gRoamableSpecies)
-#define MAX_ACTIVE_ROAMERS 5
-
-u8 GetActiveRoamerCount(void)
-{
-    u8 count = 0;
-    for (u8 i = 0; i < ROAMER_COUNT; i++)
-    {
-        if (ROAMER(i)->active)
-            count++;
-    }
-    return count;
-}
 
 EWRAM_DATA u8 gRoamerNearbyIndexOverride = 0;
 
-void NextRoamer(u32 roamerIndex)
+// Stage 1 (saveblock shrinking): only one roamer is ever active (ROAMER_COUNT == 1).
+// There is no longer a persistent "used species" list to consult -- instead, every
+// time a replacement roamer is needed, this scans the player's current party and
+// storage boxes directly and picks a roamable species they don't currently have.
+// Scanning live ownership (rather than e.g. Pokédex-caught flags) means a species
+// that was released or otherwise lost becomes eligible to roam again.
+static bool8 PlayerHasRoamableSpecies(u16 species)
 {
-    // Mark the current roamer as inactive
-    if (roamerIndex >= 0 && roamerIndex < ROAMER_COUNT) {
-        ROAMER(roamerIndex)->active = FALSE;
-    }
+    u32 i, j;
+    u32 partyCount = CalculatePlayerPartyCount();
 
-    u8 activeCount = GetActiveRoamerCount();
-
-    while (activeCount < MAX_ACTIVE_ROAMERS)
+    for (i = 0; i < partyCount; i++)
     {
-        // Ensure the roamerIndex is within valid bounds
-        if (roamerIndex >= ROAMER_COUNT)
-        {
-            // Handle invalid index
-            NextRoamer(Random() % NUM_ROAMABLE_SPECIES);
-        }
-
-        // Check if there are any available roamer slots
-        u8 availableRoamerIndex = ROAMER_COUNT; // Initialize to an invalid index
-        for (u8 i = 0; i < ROAMER_COUNT; i++)
-        {
-            if (!ROAMER(i)->active)
-            {
-                availableRoamerIndex = i;
-                break; // Found an available slot
-            }
-        }
-
-        // If no available roamer slots, we can't spawn a new roamer
-        if (availableRoamerIndex == ROAMER_COUNT)
-        {
-            // Handle case where all roamer slots are in use
-            activeCount = MAX_ACTIVE_ROAMERS;
-            return;
-        }
-
-        // Find an uncaught roamer species that hasn't been used in any roamer slot
-        u16 nextRoamerSpecies = SPECIES_NONE;
-        int attempts = 0; // Prevent infinite loops
-        while (nextRoamerSpecies == SPECIES_NONE && attempts < NUM_ROAMABLE_SPECIES * 2)
-        {
-            u32 randomIndex = Random() % NUM_ROAMABLE_SPECIES;
-            u16 potentialSpecies = gRoamableSpecies[randomIndex];
-
-            // Check if this species has already been used in any roamer slot
-            bool8 speciesAlreadyUsed = FALSE;
-            for (u8 i = 0; i < ROAMER_COUNT; i++)
-            {
-
-                if (ROAMER(i)->species == potentialSpecies)
-                {
-                    speciesAlreadyUsed = TRUE;
-                    break;
-                }
-            }
-
-            if (!speciesAlreadyUsed)
-            {
-                nextRoamerSpecies = potentialSpecies;
-            }
-            attempts++;
-        }
-
-        // If we failed to find an unused species (means all roamable species have been caught)
-        if (nextRoamerSpecies == SPECIES_NONE)
-        {
-            // All roamers have been caught. No new roamer will spawn.
-            activeCount = MAX_ACTIVE_ROAMERS;
-            return;
-        }
-
-        // Determine the level for the new roamer.
-        u16 nextRoamerLevel = GetProgressionLevelCap();
-
-        // Create the new roamer in the available slot
-        TryAddRoamer(nextRoamerSpecies, nextRoamerLevel);
-        StringCopy(gStringVar1, GetSpeciesName(nextRoamerSpecies));
-        activeCount++;
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == species)
+            return TRUE;
     }
+
+    for (i = 0; i < TOTAL_BOXES_COUNT; i++)
+    {
+        for (j = 0; j < IN_BOX_COUNT; j++)
+        {
+            if (GetBoxMonDataAt(i, j, MON_DATA_SPECIES) == species)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+// Returns a uniformly random roamable species the player doesn't currently have
+// (a single forward scan from a random start point would bias the pick toward
+// whichever missing species happens to follow the longest run of owned ones), or
+// SPECIES_NONE if the player already has every one.
+static u16 PickMissingRoamerSpecies(void)
+{
+    u32 i;
+    u32 missingCount = 0;
+    u32 pick;
+
+    for (i = 0; i < NUM_ROAMABLE_SPECIES; i++)
+    {
+        if (!PlayerHasRoamableSpecies(gRoamableSpecies[i]))
+            missingCount++;
+    }
+
+    if (missingCount == 0)
+        return SPECIES_NONE;
+
+    pick = Random() % missingCount;
+    for (i = 0; i < NUM_ROAMABLE_SPECIES; i++)
+    {
+        if (!PlayerHasRoamableSpecies(gRoamableSpecies[i]))
+        {
+            if (pick == 0)
+                return gRoamableSpecies[i];
+            pick--;
+        }
+    }
+
+    return SPECIES_NONE; // Unreachable: missingCount guarantees a match above
+}
+
+static void TryPickAndActivateRoamer(void)
+{
+    u16 species;
+
+    if (ROAMER(0)->active)
+        return;
+
+    species = PickMissingRoamerSpecies();
+    if (species == SPECIES_NONE)
+        return; // Player already has every roamable species; no roamer spawns
+
+    TryAddRoamer(species, GetProgressionLevelCap());
+    StringCopy(gStringVar1, GetSpeciesName(species));
+}
+
+// Called when the active roamer is caught (and by the initial roaming-legendary
+// story event, where the slot is already inactive and this is a no-op).
+void NextRoamer(void)
+{
+    SetRoamerInactive(0);
+    TryPickAndActivateRoamer();
+}
+
+// Guard against a save ending up with no active roamer despite the roaming
+// legendary storyline having started (e.g. the previous roamer was caught but no
+// replacement could be found at the time, and the player has since released or
+// traded away a species, freeing it back up). Meant to be called once whenever a
+// save is loaded (see CB2_ContinueSavedGame in src/overworld.c). A roamer slot
+// that has never been activated has species == SPECIES_NONE, which this uses to
+// avoid ever spawning a roamer before the story event first sets one up.
+void TryActivateRoamer(void)
+{
+    if (ROAMER(0)->species == SPECIES_NONE)
+        return;
+
+    TryPickAndActivateRoamer();
 }
 
 void GetRoamerLocation(u32 roamerIndex, u8 *mapGroup, u8 *mapNum)

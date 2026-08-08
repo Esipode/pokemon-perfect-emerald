@@ -2319,6 +2319,10 @@ void CB2_ContinueSavedGame(void)
     if (gSaveFileStatus == SAVE_STATUS_ERROR)
         ResetWinStreaks();
 
+    // Guard against a save loading with the roaming legendary storyline started
+    // but no roamer currently active (see src/roamer.c for why this can happen).
+    TryActivateRoamer();
+
     LoadSaveblockMapHeader();
     ClearDiveAndHoleWarps();
     trainerHillMapId = GetCurrentTrainerHillMapId();

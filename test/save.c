@@ -4,7 +4,9 @@
 
 // If you would like to ensure save compatibility, update the values below with those for your hack. You can find these through the debug menu.
 // Please note that this simple check is not 100% foolproof, but should be able to catch most unintended shifts.
-#define T_SAVEBLOCK1_SIZE 11764
+// Stage 1: ROAMER_COUNT 120 -> 1 removes 119 * sizeof(struct Roamer) (119 * 28 = 3332)
+// bytes from SaveBlock1 (11764 -> 8432). Calculated, not yet confirmed by a real build.
+#define T_SAVEBLOCK1_SIZE 8432
 #define T_SAVEBLOCK2_SIZE 3008
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 40944
