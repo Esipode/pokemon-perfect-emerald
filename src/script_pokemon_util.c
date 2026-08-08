@@ -43,13 +43,13 @@ void HealPlayerParty(void)
 {
     if (gSaveBlock1Ptr->nuzlockeModeEnabled)
     {
+        // Only cleans up a partial faint (some, not all, party members
+        // down) -- a full wipe can't reach here anymore. That now always
+        // ends the run immediately at the point of fainting (CB2_WhiteOut ->
+        // this same RemoveFaintedMonsFromParty -> FieldCB_NuzlockeRunFailed,
+        // before the player regains control), so there's no longer a path
+        // that reaches this heal script with an already-empty party.
         RemoveFaintedMonsFromParty();
-    }
-
-    if (gSaveBlock1Ptr->nuzlockeModeEnabled && IsPartyEmpty())
-    {
-        SetMainCallback2(CB2_NewGame);
-        return;
     }
 
     if (gPartiesCount[B_TRAINER_PLAYER] > 0) {

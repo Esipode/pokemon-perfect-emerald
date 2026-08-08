@@ -351,7 +351,24 @@ void Task_OpenMainMenu(u8 taskId)
             case HAS_NO_SAVED_GAME:
             default:
                 gMain.savedCallback = CB2_InitTitleScreen;
-                SetMainCallback2(CB2_InitNewGameSettingsMenu);
+                // Route through the keep-storage prompt rather than jumping
+                // straight to game settings. For a genuinely fresh cart this
+                // is a no-op detour: CB2_InitKeepStoragePrompt's own "nothing
+                // to keep" check (gSaveFileStatus != SAVE_STATUS_OK, true for
+                // an empty save) immediately forwards to
+                // CB2_InitNewGameSettingsMenu anyway, so behavior there is
+                // unchanged. But this menuType is also forced here for a
+                // save whose Nuzlocke run ended in defeat (see
+                // Task_MainMenuCheckSaveFile in main_menu.c) specifically to
+                // hide CONTINUE -- and in that case gSaveFileStatus is a
+                // genuine SAVE_STATUS_OK, with this run's real PC storage
+                // still on flash (RemoveFaintedMonsFromParty, overworld.c,
+                // persists it there instead of erasing it), so skipping this
+                // prompt would forfeit the player's storage carryover.
+                // Letting the prompt make its own call (using the real save
+                // status and storage/party counts) handles both cases
+                // correctly from one shared entry point.
+                SetMainCallback2(CB2_InitKeepStoragePrompt);
                 DestroyTask(taskId);
                 return;
             case HAS_SAVED_GAME:       

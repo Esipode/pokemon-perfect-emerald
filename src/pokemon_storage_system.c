@@ -358,6 +358,11 @@ enum {
     WIN_DISPLAY_INFO,
     WIN_MESSAGE,
     WIN_ITEM_DESC,
+    // Only MSG_LOCKED_UNTIL_CHAMPION needs 3 lines -- every other message printed
+    // through PrintMessage is one short line, so WIN_MESSAGE stays sized for that
+    // common case instead of being stretched (and overlapping neighboring windows'
+    // VRAM tiles -- see WIN_MESSAGE_LOCKED's .baseBlock below) for all of them.
+    WIN_MESSAGE_LOCKED,
 };
 
 struct Wallpaper
@@ -971,9 +976,9 @@ static const struct WindowTemplate sWindowTemplates[] =
     [WIN_MESSAGE] = {
         .bg = 0,
         .tilemapLeft = 11,
-        .tilemapTop = 13,
+        .tilemapTop = 17,
         .width = 18,
-        .height = 6, // 3 lines -- MSG_LOCKED_UNTIL_CHAMPION needs more than the 1 line every other message fits on
+        .height = 2,
         .paletteNum = 15,
         .baseBlock = 0x14,
     },
@@ -985,6 +990,26 @@ static const struct WindowTemplate sWindowTemplates[] =
         .height = 7,
         .paletteNum = 15,
         .baseBlock = 0x14,
+    },
+    // Same footprint the since-reverted taller WIN_MESSAGE briefly used. Needs its
+    // own .baseBlock rather than reusing WIN_MESSAGE/WIN_ITEM_DESC's 0x14: unlike
+    // those two (which alternate and are never both on screen at once), this window
+    // and the options popup (sStorage->menuWindow, .baseBlock = 92 -- see InitMenu)
+    // ARE shown together (e.g. picking WITHDRAW on a locked mon leaves the popup up
+    // behind the error). At width 18 / height 6 (108 tiles), starting at 0x14 (20)
+    // would run through tile 128 and stomp the popup's own tiles at 92, which reads
+    // as the popup's text getting corrupted/duplicated by this window's. The popup
+    // never grows past ~140 tiles from base 92 (longest label "WITHDRAW" -> width 10,
+    // at most 7 rows -> height 14), so 0x100 (256) clears it with room to spare, and
+    // still lands well short of WIN_DISPLAY_INFO's own block at 0xC0 (192, 63 tiles).
+    [WIN_MESSAGE_LOCKED] = {
+        .bg = 0,
+        .tilemapLeft = 11,
+        .tilemapTop = 13,
+        .width = 18,
+        .height = 6, // 3 lines -- see the comment on MSG_LOCKED_UNTIL_CHAMPION below
+        .paletteNum = 15,
+        .baseBlock = 0x100,
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -1082,9 +1107,9 @@ static const struct StorageMessage sMessages[] =
     [MSG_ITEM_IS_HELD]         = {COMPOUND_STRING("{DYNAMIC 0} is now held."),   MSG_VAR_ITEM_NAME},
     [MSG_CHANGED_TO_ITEM]      = {COMPOUND_STRING("Changed to {DYNAMIC 0}."),    MSG_VAR_ITEM_NAME},
     [MSG_CANT_STORE_MAIL]      = {COMPOUND_STRING("MAIL can't be stored!"),      MSG_VAR_NONE},
-    // WIN_MESSAGE is only 18 tiles wide -- every other entry above is one short line,
-    // so this is wrapped across 3 short lines instead of the 2 long ones it started as,
-    // which is too wide for the window and just runs off the edge.
+    // WIN_MESSAGE_LOCKED is only 18 tiles wide, same as WIN_MESSAGE -- so this is
+    // wrapped across 3 short lines instead of the 2 long ones it started as, which
+    // is too wide for the window and just runs off the edge.
     [MSG_LOCKED_UNTIL_CHAMPION] = {COMPOUND_STRING("This POKéMON won't\ncome with you until\nyou defeat the LEAGUE!"), MSG_VAR_NONE},
 };
 
@@ -4395,6 +4420,9 @@ static void InitPokeStorageBg0(void)
 static void PrintMessage(u8 id)
 {
     u8 *txtPtr;
+    // Every other message is one short line and fits WIN_MESSAGE; only this one
+    // needs the taller, separately-blocked WIN_MESSAGE_LOCKED (see its template).
+    u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
 
     DynamicPlaceholderTextUtil_Reset();
     switch (sMessages[id].format)
@@ -4426,11 +4454,11 @@ static void PrintMessage(u8 id)
     }
 
     DynamicPlaceholderTextUtil_ExpandPlaceholders(sStorage->messageText, sMessages[id].text);
-    FillWindowPixelBuffer(WIN_MESSAGE, PIXEL_FILL(1));
-    AddTextPrinterParameterized(WIN_MESSAGE, FONT_NORMAL, sStorage->messageText, 0, 1, TEXT_SKIP_DRAW, NULL);
-    DrawTextBorderOuter(WIN_MESSAGE, 2, 14);
-    PutWindowTilemap(WIN_MESSAGE);
-    CopyWindowToVram(WIN_MESSAGE, COPYWIN_GFX);
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
+    AddTextPrinterParameterized(windowId, FONT_NORMAL, sStorage->messageText, 0, 1, TEXT_SKIP_DRAW, NULL);
+    DrawTextBorderOuter(windowId, 2, 14);
+    PutWindowTilemap(windowId);
+    CopyWindowToVram(windowId, COPYWIN_GFX);
     ScheduleBgCopyTilemapToVram(0);
 }
 
@@ -4442,7 +4470,10 @@ static void ShowYesNoWindow(s8 cursorPos)
 
 static void ClearBottomWindow(void)
 {
+    // Clears both since PrintMessage can have left either one on screen -- clearing
+    // the one that's already blank is a harmless no-op.
     ClearStdWindowAndFrameToTransparent(WIN_MESSAGE, FALSE);
+    ClearStdWindowAndFrameToTransparent(WIN_MESSAGE_LOCKED, FALSE);
     ScheduleBgCopyTilemapToVram(0);
 }
 

@@ -2067,8 +2067,9 @@ void CB2_WhiteOut(void)
         ScriptContext_Init();
         UnlockPlayerFieldControls();
         if (gSaveBlock1Ptr->nuzlockeModeEnabled && IsPartyEmpty())
-            // Save is already wiped by RemoveFaintedMonsFromParty above;
-            // this screen only decides where the player goes next.
+            // The emptied-party state is already persisted to flash by
+            // RemoveFaintedMonsFromParty above; this screen only decides
+            // where the player goes next.
             gFieldCallback = FieldCB_NuzlockeRunFailed;
         else if (IsWhiteoutCutscene())
             gFieldCallback = FieldCB_RushInjuredPokemonToCenter;
@@ -2246,11 +2247,22 @@ void RemoveFaintedMonsFromParty(void)
             // The same IsPartyEmpty() state the
             // Nuzlocke wipe detection above already keys off -- mirror
             // the run's streak high-water mark into the profile before
-            // ClearSaveData() below wipes the run-scoped counters that fed
+            // this save below persists the run-scoped counters that fed
             // it.
             Achievement_RecordPartyWipe();
-            // Wipe the save file
-            ClearSaveData();
+            // Persist the true, now-emptied state to flash instead of
+            // erasing it (this used to be ClearSaveData()). Erasing meant PC
+            // storage only survived long enough to offer as a keep-storage
+            // carryover within the same power-on session -- close the game
+            // before starting (and saving) a new one, and it was gone for
+            // good on the next boot. Writing the real state keeps that
+            // storage on flash indefinitely. CONTINUE is blocked separately,
+            // by checking nuzlockeModeEnabled && IsPartyEmpty() against
+            // whatever's actually on flash wherever the title screen decides
+            // whether to offer it (see main_menu.c) -- since that's now
+            // honestly reflected here, no separate "this save is dead" state
+            // needs to be tracked or kept in sync with it.
+            TrySavingData(SAVE_NORMAL);
         }
         else if (removedAny) {
             // Only arm the autosave when a mon was actually removed here --

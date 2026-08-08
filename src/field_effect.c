@@ -41,7 +41,6 @@
 #include "constants/metatile_behaviors.h"
 #include "constants/rgb.h"
 #include "constants/songs.h"
-#include "save.h"
 #include "title_screen.h"
 
 #define subsprite_table(ptr) {.subsprites = ptr, .subspriteCount = (sizeof ptr) / (sizeof(struct Subsprite))}
@@ -1132,34 +1131,23 @@ bool8 FldEff_PokecenterHeal(void)
     u32 nPokemon;
     struct Task *task;
 
-    if (IsPartyEmpty() && gSaveBlock1Ptr->nuzlockeModeEnabled)
-    {
-        // The same IsPartyEmpty() state the
-        // Nuzlocke wipe detection already keys off -- see the sibling
-        // call in RemoveFaintedMonsFromParty (src/overworld.c) for why no
-        // third detector is added instead.
-        Achievement_RecordPartyWipe();
-        ClearSaveData();
-        SetMainCallback2(CB2_NewGame);
-        FieldEffectActiveListRemove(FLDEFF_POKECENTER_HEAL);
-        return FALSE;
-    }
-    else {
-        // Declared since early on but never actually incremented anywhere in the
-        // tree -- Who Needs Centers?/No Centers need it live.
-        IncrementGameStat(GAME_STAT_USED_POKECENTER);
-        // Nurse's Nightmare, same
-        // already-incremented count.
-        Achievement_CheckPokecenterMilestone();
-        nPokemon = (OW_IGNORE_EGGS_ON_HEAL <= GEN_3) ? CalculatePlayerPartyCount() : CountPartyNonEggMons();
-        task = &gTasks[CreateTask(Task_PokecenterHeal, 0xff)];
-        task->tNumMons = nPokemon;
-        task->tFirstBallX = 93;
-        task->tFirstBallY = 36;
-        task->tMonitorX = 124;
-        task->tMonitorY = 24;
-        return FALSE;
-    }
+    // A Nuzlocke run now always ends the moment the last party member
+    // faints (CB2_WhiteOut -> RemoveFaintedMonsFromParty -> the
+    // FieldCB_NuzlockeRunFailed screen, before the player regains control),
+    // so this field effect can never run with an empty party under Nuzlocke
+    // rules -- there's nowhere left to walk to a Pokémon Center from.
+    IncrementGameStat(GAME_STAT_USED_POKECENTER);
+    // Nurse's Nightmare, same
+    // already-incremented count.
+    Achievement_CheckPokecenterMilestone();
+    nPokemon = (OW_IGNORE_EGGS_ON_HEAL <= GEN_3) ? CalculatePlayerPartyCount() : CountPartyNonEggMons();
+    task = &gTasks[CreateTask(Task_PokecenterHeal, 0xff)];
+    task->tNumMons = nPokemon;
+    task->tFirstBallX = 93;
+    task->tFirstBallY = 36;
+    task->tMonitorX = 124;
+    task->tMonitorY = 24;
+    return FALSE;
 }
 
 static void Task_PokecenterHeal(u8 taskId)

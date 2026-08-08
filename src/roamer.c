@@ -279,7 +279,7 @@ void CreateRoamerMonInstance(u32 roamerIndex)
     u32 status = ROAMER(roamerIndex)->statusA + (ROAMER(roamerIndex)->statusB << 8);
     struct Pokemon *mon = &gParties[B_TRAINER_OPPONENT_A][0];
     ZeroEnemyPartyMons();
-    ROAMER(roamerIndex)->level = GetCurrentLevelCap();
+    ROAMER(roamerIndex)->level = GetProgressionLevelCap();
     CreateMonWithIVsPersonality(mon, ROAMER(roamerIndex)->species, ROAMER(roamerIndex)->level, ROAMER(roamerIndex)->ivs, ROAMER(roamerIndex)->personality);
     SetMonData(mon, MON_DATA_STATUS, &status);
     SetMonData(mon, MON_DATA_HP, &ROAMER(roamerIndex)->hp);
@@ -302,7 +302,7 @@ bool8 TryStartRoamerEncounter(void)
         u8 idx = gRoamerNearbyIndexOverride;
         if (IsRoamerAt(idx, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) == TRUE && ROAMER(idx)->active)
         {
-            ROAMER(idx)->level = GetCurrentLevelCap();
+            ROAMER(idx)->level = GetProgressionLevelCap();
             CreateRoamerMonInstance(idx);
             gEncounteredRoamerIndex = idx;
             gRoamerNearbyIndexOverride = ROAMER_COUNT;
@@ -316,7 +316,7 @@ bool8 TryStartRoamerEncounter(void)
     {
         if (IsRoamerAt(i, gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum) == TRUE && (Random() % 4) == 0)
         {
-            ROAMER(i)->level = GetCurrentLevelCap();
+            ROAMER(i)->level = GetProgressionLevelCap();
             CreateRoamerMonInstance(i);
             gEncounteredRoamerIndex = i;
             return TRUE;
@@ -558,7 +558,7 @@ void NextRoamer(u32 roamerIndex)
         }
 
         // Determine the level for the new roamer.
-        u16 nextRoamerLevel = GetCurrentLevelCap();
+        u16 nextRoamerLevel = GetProgressionLevelCap();
 
         // Create the new roamer in the available slot
         TryAddRoamer(nextRoamerSpecies, nextRoamerLevel);

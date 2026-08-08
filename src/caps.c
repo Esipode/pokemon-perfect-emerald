@@ -15,7 +15,11 @@ u32 GetNewGamePlusLevelOffset(void)
     return 0;
 }
 
-u32 GetCurrentLevelCap(void)
+// The level cap as dictated by story/badge progression, ignoring FLAG_LEVEL_CAP_OFF entirely.
+// Used anywhere a level needs to track the player's progression even when the player has
+// disabled their own level cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL
+// just because the player turned their cap off).
+u32 GetProgressionLevelCap(void)
 {
     static const u32 sLevelCapFlagMap[][2] =
     {
@@ -55,12 +59,6 @@ u32 GetCurrentLevelCap(void)
         playerLevelCap = MAX_LEVEL;
     }
 
-    // Check if level cap is disabled
-    if (FlagGet(FLAG_LEVEL_CAP_OFF))
-    {
-        return playerLevelCap;
-    }
-
     if (B_LEVEL_CAP_TYPE == LEVEL_CAP_FLAG_LIST)
     {
         for (i = 0; i < ARRAY_COUNT(sLevelCapFlagMap); i++)
@@ -84,6 +82,15 @@ u32 GetCurrentLevelCap(void)
     }
 
     return playerLevelCap;
+}
+
+u32 GetCurrentLevelCap(void)
+{
+    // Check if level cap is disabled
+    if (FlagGet(FLAG_LEVEL_CAP_OFF))
+        return MAX_LEVEL;
+
+    return GetProgressionLevelCap();
 }
 
 u32 GetSoftLevelCapExpValue(u32 level, u32 expValue)

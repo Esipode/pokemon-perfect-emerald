@@ -519,3 +519,29 @@ void ApplyPendingNewGameSettings(void)
     if (gPendingNewGameSettings.debugMode)
         gSaveBlock1Ptr->achievementsBlocked = TRUE;
 }
+
+// Mirror image of ApplyPendingNewGameSettings: reads the settings back out of
+// the *current* save instead of writing them into a new one. NewGameInitData
+// calls ApplyPendingNewGameSettings unconditionally for any non-New-Game-Plus
+// start, so gPendingNewGameSettings has to hold the right values by the time
+// CB2_NewGame runs -- normally guaranteed because this screen is the only
+// thing that ever sets it, right before handing off to CB2_NewGame itself.
+// The Nuzlocke-restart "YES" path (field_screen_effect.c) breaks that
+// guarantee: it calls CB2_NewGame directly, skipping this screen entirely.
+// gPendingNewGameSettings then still holds whatever was last chosen here
+// *this power-on session* -- stale, or still at its all-FALSE default, for a
+// save that was simply continued from a previous one -- so without this,
+// restarting would silently reset nuzlocke mode, difficulty, and every other
+// toggle back to their defaults instead of carrying the failed run's own
+// settings forward.
+void CaptureCurrentSaveIntoPendingNewGameSettings(void)
+{
+    gPendingNewGameSettings.difficulty = gSaveBlock1Ptr->difficulty;
+    gPendingNewGameSettings.nuzlockeEnabled = gSaveBlock1Ptr->nuzlockeModeEnabled;
+    gPendingNewGameSettings.randomizeSpecies = FlagGet(FLAG_RANDOMIZE_MON);
+    gPendingNewGameSettings.randomizeTypes = FlagGet(FLAG_RANDOMIZE_TYPE);
+    gPendingNewGameSettings.randomizeMoves = FlagGet(FLAG_RANDOMIZE_MOVES);
+    gPendingNewGameSettings.levelCapOff = FlagGet(FLAG_LEVEL_CAP_OFF);
+    gPendingNewGameSettings.allowStatEditor = FlagGet(FLAG_ALLOW_STAT_EDITOR);
+    gPendingNewGameSettings.debugMode = FlagGet(FLAG_DEBUG);
+}

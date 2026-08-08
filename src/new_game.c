@@ -52,6 +52,7 @@
 #include "union_room_chat.h"
 #include "constants/map_groups.h"
 #include "constants/items.h"
+#include "constants/flags.h"
 #include "difficulty.h"
 #include "follower_npc.h"
 #include "malloc.h"
@@ -96,7 +97,18 @@ void CopyTrainerId(u8 *dst, u8 *src)
 
 static void InitPlayerTrainerId(void)
 {
-    u32 trainerId = (Random() << 16) | GetGeneratedTrainerIdLower();
+    // Deliberately not GetGeneratedTrainerIdLower() here: that returns a value
+    // cached once by SeedRngAndSetTrainerId(), which only runs when the player
+    // types their name on the naming screen -- i.e. once per boot, on a truly
+    // fresh save. This function is also called on the Nuzlocke-restart path,
+    // which reaches CB2_NewGame without ever visiting the naming screen (the
+    // save was just continued, or this is a repeat restart within the same
+    // boot), so that cache would still hold its EWRAM_DATA default of 0, or a
+    // stale value from an earlier restart -- producing the same all-zero (or
+    // repeated) lower half every time instead of a fresh ID. Drawing both
+    // halves from Random() keeps every InitPlayerTrainerId() call self
+    // contained and independent of naming-screen state.
+    u32 trainerId = (Random() << 16) | (Random() & 0xFFFF);
     SetTrainerId(trainerId, gSaveBlock2Ptr->playerTrainerId);
 }
 
@@ -166,8 +178,17 @@ void ResetMenuAndMonGlobals(void)
 static void CarryStorageIntoNewGame(void)
 {
     u32 i, boxId, boxPosition;
-    u32 outgoingOtId;
+    u32 outgoingOtId = READ_OTID_FROM_SAVE;
     u32 partyCount = CalculatePlayerPartyCount();
+    // Storage_Retention_Plan.md Part 3e. FLAG_RANDOMIZE_MON bakes a randomized species
+    // straight into MON_DATA_SPECIES at CreateMon time (see GetRandomizedSpecies in
+    // pokemon.c) -- unlike the type/move randomizers, which randomization.c resolves live
+    // off the real species and never touch the saved data, so those are fine to carry
+    // over. A Pokémon caught -- or received as an in-game trade, which also runs through
+    // CreateMon -- under that flag this run is just a randomized species tied to this
+    // run's OT id, so it gets discarded below instead of carried into the next one. Must
+    // be read here, before ClearSav1() wipes the flag later in NewGameInitData().
+    bool32 discardRandomizedMons = FlagGet(FLAG_RANDOMIZE_MON);
 
     // Pass 1 -- move the party into the first free storage slots. Copied verbatim, so
     // these mons keep their OLD OT ID and become locked automatically once the new
@@ -175,8 +196,17 @@ static void CarryStorageIntoNewGame(void)
     for (i = 0; i < partyCount; i++)
     {
         struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
-        enum Item heldItem = GetMonData(mon, MON_DATA_HELD_ITEM);
+        enum Item heldItem;
         bool32 placed = FALSE;
+
+        if (discardRandomizedMons)
+        {
+            u32 otId = GetMonData(mon, MON_DATA_OT_ID);
+            if (otId == outgoingOtId || IsIngameTradeOtId(otId))
+                continue;
+        }
+
+        heldItem = GetMonData(mon, MON_DATA_HELD_ITEM);
 
         // ClearAllMail() runs later in NewGameInitData(), so a boxed mon still
         // holding a mail item would be left pointing at wiped mail data.
@@ -211,21 +241,31 @@ static void CarryStorageIntoNewGame(void)
             break;
     }
 
-    // Pass 2 -- re-stamp this run's own in-game-trade Pokémon still in storage.
-    // Without this, a trade mon obtained during the run being restarted would ride
-    // IsIngameTradeOtId()'s whitelist forever and stay withdrawable. Running this
-    // after pass 1 means a trade mon that was sitting in the party at restart time
-    // gets caught too, with no special-casing. Pokémon from an even earlier run keep
-    // their own historical OT ID -- still locked, since it likewise mismatches the
-    // incoming one, so there's no reason to touch them.
-    outgoingOtId = READ_OTID_FROM_SAVE;
+    // Pass 2 -- re-stamp this run's own in-game-trade Pokémon still in storage, or (Part
+    // 3e) discard any already-boxed Pokémon this run caught or traded for while
+    // FLAG_RANDOMIZE_MON was on. Without the re-stamp, a trade mon obtained during the
+    // run being restarted would ride IsIngameTradeOtId()'s whitelist forever and stay
+    // withdrawable. Running this after pass 1 means a trade mon that was sitting in the
+    // party at restart time gets caught too, with no special-casing. Pokémon from an even
+    // earlier run keep their own historical OT ID -- still locked, since it likewise
+    // mismatches the incoming one, so there's no reason to touch (or discard) them.
     for (boxId = 0; boxId < TOTAL_BOXES_COUNT; boxId++)
     {
         for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
         {
             struct BoxPokemon *boxMon = GetBoxedMonPtr(boxId, boxPosition);
-            if (GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES)
-             && IsIngameTradeOtId(GetBoxMonData(boxMon, MON_DATA_OT_ID)))
+            u32 otId;
+
+            if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES))
+                continue;
+
+            otId = GetBoxMonData(boxMon, MON_DATA_OT_ID);
+            if (discardRandomizedMons && (otId == outgoingOtId || IsIngameTradeOtId(otId)))
+            {
+                ZeroBoxMonData(boxMon);
+                continue;
+            }
+            if (IsIngameTradeOtId(otId))
                 UpdateBoxMonOtId(boxMon, outgoingOtId);
         }
     }

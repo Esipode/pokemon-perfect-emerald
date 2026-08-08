@@ -63,8 +63,8 @@ static const u8 sText_KeepStoragePromptTitle[] = _("{COLOR RED}{SHADOW LIGHT_RED
 static const u8 *const sKeepStoragePromptPages[] =
 {
     COMPOUND_STRING(
-        "You have POKéMON stored in\n"
-        "your PC."),
+        "You have (non-randomized)\n"
+        "POKéMON stored in your PC."),
     COMPOUND_STRING(
         "They can't join your party\n"
         "until you become the CHAMPION."),

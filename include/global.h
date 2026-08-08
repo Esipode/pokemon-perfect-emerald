@@ -1245,11 +1245,11 @@ struct AchievementRunData
     // infra sketch for this category ("a party-wipe flag") didn't
     // survive contact with the actual roster: every entry that sounded like
     // it needed one turned out to be covered by nuzlockeMonsLost, revives
-    // used, or a route-skipped flag instead (a full party wipe already
-    // triggers ClearSaveData() -- src/overworld.c's RemoveFaintedMonsFromParty
-    // -- which erases this very struct, so a flag observing that event could
-    // never be read back on the same save). See src/achievements.c for the
-    // per-field hook-site breakdown.
+    // used, or a route-skipped flag instead -- a full party wipe is already
+    // captured at the moment it happens via Achievement_RecordPartyWipe()
+    // (src/overworld.c's RemoveFaintedMonsFromParty), so a flag here
+    // observing the same event after the fact would be redundant. See
+    // src/achievements.c for the per-field hook-site breakdown.
     u32 starterPersonality;          // the run's starter, by personality (survives evolution) -- for No Freebies; 0 == not yet recorded
     u16 nuzlockePendingRoute;        // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), now removed; left in place rather than reflowing this struct's fields
     u8  highestPartySizeThisRun;     // high-water mark for Three-Pokemon Challenge/Solo Journey

@@ -686,6 +686,23 @@ static void Task_MainMenuCheckSaveFile(u8 taskId)
             gTasks[taskId].func = Task_WaitForSaveFileErrorWindow;
             break;
         }
+        if (tMenuType != HAS_NO_SAVED_GAME && gSaveBlock1Ptr->nuzlockeModeEnabled && IsPartyEmpty())
+        {
+            // A valid save (gSaveFileStatus == SAVE_STATUS_OK, otherwise
+            // tMenuType would already be HAS_NO_SAVED_GAME) whose Nuzlocke
+            // run nonetheless ended in defeat -- RemoveFaintedMonsFromParty
+            // (overworld.c) persists that emptied-party state to flash
+            // rather than erasing it, specifically so this save's PC storage
+            // stays available to the keep-storage prompt (see the
+            // HAS_NO_SAVED_GAME case in ui_main_menu.c's Task_OpenMainMenu)
+            // indefinitely, not just within the same power-on session. But
+            // CONTINUE must not be offered into it: there is no way to play
+            // on with zero usable POKéMON under Nuzlocke rules. Force the
+            // no-saved-game menu, same as a fresh cart -- this naturally
+            // reverts to normal once the player saves over this slot with an
+            // actual party, since IsPartyEmpty() will then read FALSE.
+            tMenuType = HAS_NO_SAVED_GAME;
+        }
         if (sCurrItemAndOptionMenuCheck & OPTION_MENU_FLAG)   // are we returning from the options menu?
         {
             switch (tMenuType)  // if so, highlight the OPTIONS item

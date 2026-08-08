@@ -17,5 +17,6 @@ extern struct NewGameSettings gPendingNewGameSettings;
 
 void CB2_InitNewGameSettingsMenu(void);
 void ApplyPendingNewGameSettings(void);
+void CaptureCurrentSaveIntoPendingNewGameSettings(void);
 
 #endif // GUARD_NEW_GAME_SETTINGS_MENU_H

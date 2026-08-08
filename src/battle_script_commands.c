@@ -11162,6 +11162,11 @@ void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBat
         if (percent < 0)
             percent = 0;
 
+        // Don't let the level difference penalty kick in until the recipient
+        // is at least level 10. Keeps early game levelling feeling smooth.
+        if (expGetterLevel < 10 && percent < 100)
+            percent = 100;
+
         *expAmount = (*expAmount * percent) / 100;
     }
 }
