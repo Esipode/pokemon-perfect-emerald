@@ -1923,6 +1923,10 @@ static bool32 ShouldTrainerRequestBattle(int matchCallId)
 
 static u16 GetFrontierStreakInfo(u16 facilityId, u32 *topicTextId)
 {
+#if FREE_BATTLE_FRONTIER == TRUE
+    // Stage 4: no frontier facility can ever have a win streak again.
+    return 0;
+#else
     int i;
     int j;
     u16 streak = 0;
@@ -2000,6 +2004,7 @@ static u16 GetFrontierStreakInfo(u16 facilityId, u32 *topicTextId)
     }
 
     return streak;
+#endif //FREE_BATTLE_FRONTIER
 }
 
 void BufferPokedexRatingForMatchCall(u8 *destStr)

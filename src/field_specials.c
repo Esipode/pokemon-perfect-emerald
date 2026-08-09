@@ -2181,6 +2181,10 @@ void UpdateFrontierManiac(u16 daysSince)
 
 void ShowFrontierManiacMessage(void)
 {
+#if FREE_BATTLE_FRONTIER == TRUE
+    // Stage 4: the Frontier Maniac NPC lives in the Battle Frontier lounge, now unreachable.
+    return;
+#else
     static const u8 *const sFrontierManiacMessages[][FRONTIER_MANIAC_MESSAGE_COUNT] =
     {
         [FRONTIER_MANIAC_TOWER_SINGLES] =
@@ -2324,18 +2328,24 @@ void ShowFrontierManiacMessage(void)
     for (i = 0; i < FRONTIER_MANIAC_MESSAGE_COUNT - 1 && sFrontierManiacStreakThresholds[facility][i] < winStreak; i++);
 
     ShowFieldMessage(sFrontierManiacMessages[facility][i]);
+#endif //FREE_BATTLE_FRONTIER
 }
 
 // gSpecialVar_0x8005 and 0x8006 here are used by MoveElevator
 void BufferBattleTowerElevatorFloors(void)
 {
+#if FREE_BATTLE_FRONTIER == TRUE
+    // Stage 4: the Battle Tower elevator is unreachable now.
+    gSpecialVar_0x8005 = 4;
+    gSpecialVar_0x8006 = 12;
+#else
     static const u16 sBattleTowerStreakThresholds[] = {
         7, 14, 21, 28, 35, 49, 63, 77, 91, 0
     };
 
     u8 i;
     u16 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     if (battleMode == FRONTIER_MODE_MULTIS && !FlagGet(FLAG_CHOSEN_MULTI_BATTLE_NPC_PARTNER))
     {
@@ -2356,6 +2366,7 @@ void BufferBattleTowerElevatorFloors(void)
 
     gSpecialVar_0x8005 = 4;
     gSpecialVar_0x8006 = 12;
+#endif //FREE_BATTLE_FRONTIER
 }
 
 // Scrollable Multichoice task data defines
@@ -3093,11 +3104,13 @@ void FrontierGamblerSetWonOrLost(bool8 won)
 
 void UpdateBattlePointsWindow(void)
 {
+#if FREE_BATTLE_FRONTIER == FALSE
     u8 string[32];
     u32 x;
     StringCopy(ConvertIntToDecimalStringN(string, gSaveBlock2Ptr->frontier.battlePoints, STR_CONV_MODE_RIGHT_ALIGN, 4), gText_BP);
     x = GetStringRightAlignXOffset(FONT_NORMAL, string, 48);
     AddTextPrinterParameterized(sBattlePointsWindowId, FONT_NORMAL, string, x, 1, 0, NULL);
+#endif //FREE_BATTLE_FRONTIER
 }
 
 void ShowBattlePointsWindow(void)
@@ -3127,23 +3140,31 @@ void CloseBattlePointsWindow(void)
 
 void TakeFrontierBattlePoints(void)
 {
+#if FREE_BATTLE_FRONTIER == FALSE
     if (gSaveBlock2Ptr->frontier.battlePoints < gSpecialVar_0x8004)
         gSaveBlock2Ptr->frontier.battlePoints = 0;
     else
         gSaveBlock2Ptr->frontier.battlePoints -= gSpecialVar_0x8004;
+#endif //FREE_BATTLE_FRONTIER
 }
 
 void GiveFrontierBattlePoints(void)
 {
+#if FREE_BATTLE_FRONTIER == FALSE
     if (gSaveBlock2Ptr->frontier.battlePoints + gSpecialVar_0x8004 > MAX_BATTLE_FRONTIER_POINTS)
         gSaveBlock2Ptr->frontier.battlePoints = MAX_BATTLE_FRONTIER_POINTS;
     else
         gSaveBlock2Ptr->frontier.battlePoints = gSaveBlock2Ptr->frontier.battlePoints + gSpecialVar_0x8004;
+#endif //FREE_BATTLE_FRONTIER
 }
 
 u16 GetFrontierBattlePoints(void)
 {
+#if FREE_BATTLE_FRONTIER == FALSE
     return gSaveBlock2Ptr->frontier.battlePoints;
+#else
+    return 0;
+#endif //FREE_BATTLE_FRONTIER
 }
 
 void ShowFrontierExchangeCornerItemIconWindow(void)

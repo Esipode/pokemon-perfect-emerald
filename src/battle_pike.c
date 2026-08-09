@@ -24,6 +24,8 @@
 #include "constants/party_menu.h"
 #include "constants/battle_pike.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 struct PikeRoomNPC
 {
     u16 graphicsId;
@@ -617,7 +619,7 @@ static void SetupRoomObjectEvents(void)
 
 static void GetBattlePikeData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     switch (gSpecialVar_0x8005)
     {
@@ -625,13 +627,13 @@ static void GetBattlePikeData(void)
         gSpecialVar_Result = gSaveBlock2Ptr->frontier.pikePrize;
         break;
     case PIKE_DATA_WIN_STREAK:
-        gSpecialVar_Result = gSaveBlock2Ptr->frontier.pikeWinStreaks[gSaveBlock2Ptr->frontier.lvlMode];
+        gSpecialVar_Result = gSaveBlock2Ptr->frontier.pikeWinStreaks[gSaveBlock2Ptr->lvlMode];
         break;
     case PIKE_DATA_RECORD_STREAK:
-        gSpecialVar_Result = gSaveBlock2Ptr->frontier.pikeRecordStreaks[gSaveBlock2Ptr->frontier.lvlMode];
+        gSpecialVar_Result = gSaveBlock2Ptr->frontier.pikeRecordStreaks[gSaveBlock2Ptr->lvlMode];
         break;
     case PIKE_DATA_TOTAL_STREAKS:
-        gSpecialVar_Result = gSaveBlock2Ptr->frontier.pikeTotalStreaks[gSaveBlock2Ptr->frontier.lvlMode];
+        gSpecialVar_Result = gSaveBlock2Ptr->frontier.pikeTotalStreaks[gSaveBlock2Ptr->lvlMode];
         break;
     case PIKE_DATA_WIN_STREAK_ACTIVE:
         if (lvlMode != FRONTIER_LVL_50)
@@ -644,7 +646,7 @@ static void GetBattlePikeData(void)
 
 static void SetBattlePikeData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     switch (gSpecialVar_0x8005)
     {
@@ -653,15 +655,15 @@ static void SetBattlePikeData(void)
         break;
     case PIKE_DATA_WIN_STREAK:
         if (gSpecialVar_0x8006 <= MAX_STREAK)
-            gSaveBlock2Ptr->frontier.pikeWinStreaks[gSaveBlock2Ptr->frontier.lvlMode] = gSpecialVar_0x8006;
+            gSaveBlock2Ptr->frontier.pikeWinStreaks[gSaveBlock2Ptr->lvlMode] = gSpecialVar_0x8006;
         break;
     case PIKE_DATA_RECORD_STREAK:
-        if (gSpecialVar_0x8006 <= MAX_STREAK && gSaveBlock2Ptr->frontier.pikeRecordStreaks[gSaveBlock2Ptr->frontier.lvlMode] < gSpecialVar_0x8006)
-            gSaveBlock2Ptr->frontier.pikeRecordStreaks[gSaveBlock2Ptr->frontier.lvlMode] = gSpecialVar_0x8006;
+        if (gSpecialVar_0x8006 <= MAX_STREAK && gSaveBlock2Ptr->frontier.pikeRecordStreaks[gSaveBlock2Ptr->lvlMode] < gSpecialVar_0x8006)
+            gSaveBlock2Ptr->frontier.pikeRecordStreaks[gSaveBlock2Ptr->lvlMode] = gSpecialVar_0x8006;
         break;
     case PIKE_DATA_TOTAL_STREAKS:
         if (gSpecialVar_0x8006 <= MAX_STREAK)
-            gSaveBlock2Ptr->frontier.pikeTotalStreaks[gSaveBlock2Ptr->frontier.lvlMode] = gSpecialVar_0x8006;
+            gSaveBlock2Ptr->frontier.pikeTotalStreaks[gSaveBlock2Ptr->lvlMode] = gSpecialVar_0x8006;
         break;
     case PIKE_DATA_WIN_STREAK_ACTIVE:
         if (lvlMode != FRONTIER_LVL_50)
@@ -1109,13 +1111,13 @@ bool32 TryGenerateBattlePikeWildMon(bool8 checkKeenEyeIntimidate)
     s32 i;
     s32 monLevel;
     u8 headerId = GetBattlePikeWildMonHeaderId();
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     const struct PikeWildMon *const *const wildMons = sWildMons[lvlMode];
     u32 abilityNum;
     s32 pikeMonId = GetMonData(&gParties[B_TRAINER_OPPONENT_A][0], MON_DATA_SPECIES);
     pikeMonId = SpeciesToPikeMonId(pikeMonId);
 
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_50)
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_50)
     {
         monLevel = GetHighestLevelInPlayerParty();
         if (monLevel < FRONTIER_MIN_LEVEL_OPEN)
@@ -1156,7 +1158,7 @@ bool32 TryGenerateBattlePikeWildMon(bool8 checkKeenEyeIntimidate)
 u8 GetBattlePikeWildMonHeaderId(void)
 {
     u8 headerId;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u16 winStreak = gSaveBlock2Ptr->frontier.pikeWinStreaks[lvlMode];
 
     if (winStreak <= 20 * NUM_PIKE_ROOMS)
@@ -1391,7 +1393,7 @@ static void PrepareOneTrainer(bool8 difficult)
     else
         battleNum = FRONTIER_STAGES_PER_CHALLENGE - 1;
 
-    lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    lvlMode = gSaveBlock2Ptr->lvlMode;
     challengeNum = gSaveBlock2Ptr->frontier.pikeWinStreaks[lvlMode] / NUM_PIKE_ROOMS;
     do
     {
@@ -1414,7 +1416,7 @@ static void PrepareTwoTrainers(void)
 {
     int i;
     u16 trainerId;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u16 challengeNum = gSaveBlock2Ptr->frontier.pikeWinStreaks[lvlMode] / NUM_PIKE_ROOMS;
 
     gFacilityTrainers = gBattleFrontierTrainers;
@@ -1498,7 +1500,7 @@ static u8 GetPikeQueenFightType(u8 nextRoom)
 
     u8 facility = FRONTIER_FACILITY_PIKE;
     u8 ret = FRONTIER_BRAIN_NOT_READY;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u16 winStreak = gSaveBlock2Ptr->frontier.pikeWinStreaks[lvlMode];
     winStreak += nextRoom;
     numPikeSymbols = GetPlayerSymbolCountForFacility(FRONTIER_FACILITY_PIKE);
@@ -1607,7 +1609,7 @@ static void RestoreMonHeldItems(void)
 
 static void InitPikeChallenge(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     gSaveBlock2Ptr->frontier.challengeStatus = 0;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = 0;
@@ -1648,3 +1650,14 @@ static u8 SpeciesToPikeMonId(enum Species species)
 
     return ret;
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: InBattlePike() returning FALSE unconditionally is the *correct* new behaviour for
+// its many callers elsewhere (battle_script_commands.c, field_poison.c, item_menu.c,
+// party_menu.c, pokemon.c, start_menu.c, wild_encounter*.c), not just a compatibility shim.
+// The other two are only ever called from inside an `if (InBattlePike())` branch, now dead.
+void CallBattlePikeFunction(void) { ScriptContext_Enable(); }
+u8 GetBattlePikeWildMonHeaderId(void) { return 0; }
+bool32 TryGenerateBattlePikeWildMon(bool8 checkKeenEyeIntimidate) { return FALSE; }
+bool8 InBattlePike(void) { return FALSE; }
+#endif // FREE_BATTLE_FRONTIER

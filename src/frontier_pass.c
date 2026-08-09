@@ -30,6 +30,8 @@
 #include "constants/region_map_sections.h"
 #include "constants/songs.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 // gFrontierPassBg_Pal has 8*16 colors, but they attempt to load 13*16 colors.
 // As a result it goes out of bounds and interprets 160 bytes of whatever comes
 // after gFrontierPassBg_Pal (by default, gFrontierPassBg_Gfx) as a palette.
@@ -1761,3 +1763,15 @@ static void HandleFrontierMapCursorMove(u8 direction)
     CopyBgTilemapBufferToVram(0);
     PlaySE(SE_DEX_SCROLL);
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: the Frontier Pass can never be obtained now (its only source was frontier progress),
+// so start_menu.c's "show frontier pass" option is already unreachable in practice; this stub
+// just avoids stranding the player if it's ever hit anyway.
+void ShowFrontierPass(void (*callback)(void))
+{
+    if (callback != NULL)
+        callback();
+}
+void CB2_ReshowFrontierPass(void) {}
+#endif // FREE_BATTLE_FRONTIER

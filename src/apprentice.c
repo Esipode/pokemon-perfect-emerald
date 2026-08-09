@@ -29,6 +29,7 @@
 #include "constants/trainers.h"
 #include "constants/moves.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
 /* Summary of Apprentice, because (as of writing at least) it's not very well documented online
  *
  * ## Basic info
@@ -1288,3 +1289,20 @@ static void UNUSED ExecuteFollowupFuncAfterButtonPress(TaskFunc task)
     u8 taskId = CreateTask(Task_SwitchToFollowupFuncAfterButtonPress, 1);
     SetTaskFuncWithFollowupFunc(taskId, Task_SwitchToFollowupFuncAfterButtonPress, task);
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: Apprentice save data (playerApprentice/apprentices[]) no longer exists.
+// Stubs keep the handful of external callers (battle_tower.c, frontier_util.c, new_game.c,
+// pokemon.c) linking; none of them are reachable in play once the frontier ferries are inert.
+void BufferApprenticeChallengeText(u8 saveApprenticeId) {}
+void Apprentice_ScriptContext_Enable(void) { ScriptContext_Enable(); }
+void ResetApprenticeStruct(struct Apprentice *apprentice) {}
+void ResetAllApprenticeData(void) {}
+void CallApprenticeFunction(void) { ScriptContext_Enable(); }
+
+const u8 *GetApprenticeNameInLanguage(u32 apprenticeId, enum Language language)
+{
+    static const u8 sEmptyApprenticeName[] = _("");
+    return sEmptyApprenticeName;
+}
+#endif // FREE_BATTLE_FRONTIER

@@ -22,8 +22,21 @@
 //   + BOX_NAME_LENGTH + 1 + 1 wallpaper byte) = 2 * (2880 + 9 + 1) = 5780 bytes
 //   to PokemonStorage. 40944 + 5780 = 46724. SaveBlock1/2/3 are untouched by
 //   this stage. Calculated, not yet confirmed by a real build.
+// Stage 4: FREE_BATTLE_FRONTIER removes struct BattleFrontier (~2,172, per this
+//   doc's own pre-stage measurement), struct Apprentice apprentices[4] (272), and
+//   struct PlayersApprentice playerApprentice (44) -- ~2,488 bytes -- and adds back
+//   two fields relocated OUT of struct BattleFrontier so generic (non-frontier)
+//   code still has somewhere to read/write them: disableRecordBattle:1 + lvlMode:2
+//   (1 byte, packed into the same byte) and selectedPartyMons[MAX_FRONTIER_PARTY_SIZE]
+//   (a u16[4], 8 bytes, 2-byte aligned -- likely costs 1 padding byte after the
+//   1-byte bitfield). 2968 - 2488 + 1 + 1 + 8 = 490. This is the least confident of
+//   any T_SAVEBLOCK size in this file: it wasn't hand-derived field-by-field the way
+//   Stage 2/3's were, it leans on this doc's own pre-stage BattleFrontier estimate,
+//   and struct BattleFrontier's #if FREE_BATTLE_TOWER_E_READER branch changes its
+//   size depending on that separate flag. Confirm against a real build before
+//   trusting this number over the doc's.
 #define T_SAVEBLOCK1_SIZE 7664
-#define T_SAVEBLOCK2_SIZE 2968
+#define T_SAVEBLOCK2_SIZE 490
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 46724
 

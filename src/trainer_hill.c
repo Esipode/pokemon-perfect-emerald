@@ -81,6 +81,7 @@ static void SetTrainerHillMonLevel(struct Pokemon *mon, u16 level);
 static u16 GetPrizeItemId(void);
 #endif //FREE_TRAINER_HILL
 
+#if FREE_BATTLE_FRONTIER == FALSE
 // const data
 #include "data/battle_frontier/trainer_hill.h"
 
@@ -1133,3 +1134,40 @@ static u16 GetPrizeItemId(void)
     return prizeList[id];
 }
 #endif //FREE_TRAINER_HILL
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: Trainer Hill retired along with the rest of the frontier (per this stage's dev
+// note, trainer_hill.c is kept but its content is dead code now -- not deleted). Every external
+// caller (battle_setup.c, battle_records.c, event_object_movement.c, field_control_avatar.c,
+// fieldmap.c, field_poison.c, overworld.c, pokemon.c, trainer_see.c, wild_encounter_ow.c) is
+// gated on InTrainerHill()/InTrainerHillChallenge()/GetCurrentTrainerHillMapId() returning
+// false/0, which is the correct permanent state now. gTrainerHillVBlankCounter (above, always
+// compiled) is untouched by this guard.
+void CallTrainerHillFunction(void) { ScriptContext_Enable(); }
+void ResetTrainerHillResults(void) {}
+enum TrainerClassID GetTrainerHillOpponentClass(u16 trainerId) { return 0; }
+void GetTrainerHillTrainerName(u8 *dst, u16 trainerId) { dst[0] = EOS; }
+u8 GetTrainerHillTrainerFrontSpriteId(u16 trainerId) { return 0; }
+void InitTrainerHillBattleStruct(void) {}
+void FreeTrainerHillBattleStruct(void) {}
+void CopyTrainerHillTrainerText(u8 which, u16 trainerId) {}
+bool8 InTrainerHillChallenge(void) { return FALSE; }
+void PrintOnTrainerHillRecordsWindow(void) {}
+void LoadTrainerHillObjectEventTemplates(void) {}
+bool32 LoadTrainerHillFloorObjectEventScripts(void) { return FALSE; }
+void GenerateTrainerHillFloorLayout(u16 *mapArg) {}
+bool32 InTrainerHill(void) { return FALSE; }
+u8 GetCurrentTrainerHillMapId(void) { return 0; }
+const struct WarpEvent* SetWarpDestinationTrainerHill4F(void) { return NULL; }
+const struct WarpEvent* SetWarpDestinationTrainerHillFinalFloor(u8 warpEventId) { return NULL; }
+u16 LocalIdToHillTrainerId(u8 localId) { return 0; }
+bool8 GetHillTrainerFlag(u8 objectEventId) { return FALSE; }
+void SetHillTrainerFlag(void) {}
+const u8 *GetTrainerHillTrainerScript(void) { return NULL; }
+void FillHillTrainerParty(void) {}
+void FillHillTrainersParties(void) {}
+u8 GetTrainerEncounterMusicIdInTrainerHill(u16 trainerId) { return 0; }
+u8 GetNumFloorsInTrainerHillChallenge(void) { return 0; }
+void TryLoadTrainerHillEReaderPalette(void) {}
+bool32 OnTrainerHillEReaderChallengeFloor(void) { return FALSE; }
+#endif // FREE_BATTLE_FRONTIER

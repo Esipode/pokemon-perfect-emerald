@@ -353,12 +353,16 @@ bool32 MoveRecordedBattleToSaveData(void)
     battleSave->opponentB = TRAINER_BATTLE_PARAM.opponentB;
     battleSave->partnerId = gPartnerTrainerId;
     battleSave->multiplayerId = gRecordedBattleMultiplayerId;
-    battleSave->lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    battleSave->lvlMode = gSaveBlock2Ptr->lvlMode;
     battleSave->frontierFacility = sFrontierFacility;
     battleSave->frontierBrainSymbol = sFrontierBrainSymbol;
     battleSave->battleScene = gSaveBlock2Ptr->optionsBattleSceneOff;
     battleSave->textSpeed = gSaveBlock2Ptr->optionsTextSpeed;
 
+#if FREE_BATTLE_FRONTIER == FALSE
+    // Stage 4: TRAINER_BATTLE_PARAM.opponentA/B and gPartnerTrainerId only ever land in the
+    // frontier tower-record/apprentice id space when set by battle_tower.c / apprentice.c,
+    // both unreachable now -- so this whole block is dead code, kept compiling only.
     if (TRAINER_BATTLE_PARAM.opponentA >= TRAINER_RECORD_MIXING_FRIEND && TRAINER_BATTLE_PARAM.opponentA < TRAINER_RECORD_MIXING_APPRENTICE)
     {
         for (i = 0; i < PLAYER_NAME_LENGTH + 1; i++)
@@ -424,6 +428,7 @@ bool32 MoveRecordedBattleToSaveData(void)
 
         battleSave->apprenticeLanguage = gSaveBlock2Ptr->apprentices[gPartnerTrainerId - TRAINER_RECORD_MIXING_APPRENTICE].language;
     }
+#endif //FREE_BATTLE_FRONTIER
 
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
         for (j = 0; j < BATTLER_RECORD_SIZE; j++)
@@ -470,7 +475,7 @@ static bool32 CopyRecordedBattleFromSave(struct RecordedBattleSave *dst)
 
 static void CB2_RecordedBattleEnd(void)
 {
-    gSaveBlock2Ptr->frontier.lvlMode = sLvlMode;
+    gSaveBlock2Ptr->lvlMode = sLvlMode;
     gBattleOutcome = 0;
     gBattleTypeFlags = 0;
     TRAINER_BATTLE_PARAM.opponentA = 0;
@@ -533,7 +538,7 @@ void SetVariablesForRecordedBattle(struct RecordedBattleSave *src)
     TRAINER_BATTLE_PARAM.opponentB = src->opponentB;
     gPartnerTrainerId = src->partnerId;
     gRecordedBattleMultiplayerId = src->multiplayerId;
-    sLvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    sLvlMode = gSaveBlock2Ptr->lvlMode;
     sFrontierFacility = src->frontierFacility;
     sFrontierBrainSymbol = src->frontierBrainSymbol;
     sBattleScene = src->battleScene;
@@ -550,7 +555,7 @@ void SetVariablesForRecordedBattle(struct RecordedBattleSave *src)
     for (i = 0; i < EASY_CHAT_BATTLE_WORDS_COUNT; i++)
         sEasyChatSpeech[i] = src->easyChatSpeech[i];
 
-    gSaveBlock2Ptr->frontier.lvlMode = src->lvlMode;
+    gSaveBlock2Ptr->lvlMode = src->lvlMode;
 
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
         for (j = 0; j < BATTLER_RECORD_SIZE; j++)

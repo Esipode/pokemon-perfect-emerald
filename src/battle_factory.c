@@ -19,6 +19,8 @@
 #include "constants/moves.h"
 #include "constants/items.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 static bool8 sPerformedRentalSwap;
 
 static void InitFactoryChallenge(void);
@@ -129,13 +131,13 @@ void CallBattleFactoryFunction(void)
 static void InitFactoryChallenge(void)
 {
     u8 i;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     gSaveBlock2Ptr->frontier.challengeStatus = 0;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = 0;
     gSaveBlock2Ptr->frontier.challengePaused = FALSE;
-    gSaveBlock2Ptr->frontier.disableRecordBattle = FALSE;
+    gSaveBlock2Ptr->disableRecordBattle = FALSE;
     if (!(gSaveBlock2Ptr->frontier.winStreakActiveFlags & sWinStreakFlags[battleMode][lvlMode]))
     {
         gSaveBlock2Ptr->frontier.factoryWinStreaks[battleMode][lvlMode] = 0;
@@ -154,7 +156,7 @@ static void InitFactoryChallenge(void)
 
 static void GetBattleFactoryData(void)
 {
-    int lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    int lvlMode = gSaveBlock2Ptr->lvlMode;
     int battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -173,7 +175,7 @@ static void GetBattleFactoryData(void)
 
 static void SetBattleFactoryData(void)
 {
-    int lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    int lvlMode = gSaveBlock2Ptr->lvlMode;
     int battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -239,7 +241,7 @@ static void GenerateOpponentMons(void)
     u16 heldItems[FRONTIER_PARTY_SIZE];
     int firstMonId = 0;
     u16 trainerId = 0;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     u32 winStreak = gSaveBlock2Ptr->frontier.factoryWinStreaks[battleMode][lvlMode];
     u32 challengeNum = winStreak / FRONTIER_STAGES_PER_CHALLENGE;
@@ -317,7 +319,7 @@ static void SetRentalsToOpponentParty(void)
 {
     u8 i;
 
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_TENT)
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_TENT)
         gFacilityTrainerMons = gBattleFrontierMons;
     else
         gFacilityTrainerMons = gSlateportBattleTentMons;
@@ -339,7 +341,7 @@ static void SetPlayerAndOpponentParties(void)
     u16 monId;
     u8 ivs;
 
-    if (gSaveBlock2Ptr->frontier.lvlMode == FRONTIER_LVL_TENT)
+    if (gSaveBlock2Ptr->lvlMode == FRONTIER_LVL_TENT)
     {
         gFacilityTrainerMons = gSlateportBattleTentMons;
         monLevel = TENT_MIN_LEVEL;
@@ -347,7 +349,7 @@ static void SetPlayerAndOpponentParties(void)
     else
     {
         gFacilityTrainerMons = gBattleFrontierMons;
-        if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_50)
+        if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_50)
             monLevel = FRONTIER_MAX_LEVEL_OPEN;
         else
             monLevel = FRONTIER_MAX_LEVEL_50;
@@ -402,7 +404,7 @@ static void GenerateInitialRentalMons(void)
         monIds[i] = 0;
         heldItems[i] = ITEM_NONE;
     }
-    lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    lvlMode = gSaveBlock2Ptr->lvlMode;
     battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     challengeNum = gSaveBlock2Ptr->frontier.factoryWinStreaks[battleMode][lvlMode] / FRONTIER_STAGES_PER_CHALLENGE;
     if (VarGet(VAR_FRONTIER_BATTLE_MODE) == FRONTIER_MODE_DOUBLES)
@@ -411,7 +413,7 @@ static void GenerateInitialRentalMons(void)
         factoryBattleMode = FRONTIER_MODE_SINGLES;
 
     gFacilityTrainerMons = gBattleFrontierMons;
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_50)
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_50)
     {
         factoryLvlMode = FRONTIER_LVL_OPEN;
         firstMonId = 0;
@@ -610,7 +612,7 @@ static void RestorePlayerPartyHeldItems(void)
 {
     u8 i;
 
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_TENT)
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_TENT)
         gFacilityTrainerMons = gBattleFrontierMons;
     else
         gFacilityTrainerMons = gSlateportBattleTentMons;
@@ -660,7 +662,7 @@ void FillFactoryBrainParty(void)
     u8 fixedIV;
     u32 otId;
 
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     u8 challengeNum = gSaveBlock2Ptr->frontier.factoryWinStreaks[battleMode][lvlMode] / FRONTIER_STAGES_PER_CHALLENGE;
     fixedIV = GetFactoryMonFixedIV(challengeNum + 2, FALSE);
@@ -772,7 +774,7 @@ u8 GetNumPastRentalsRank(u8 battleMode, enum FrontierLevelMode lvlMode)
 
 u64 GetAiScriptsInBattleFactory(void)
 {
-    int lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    int lvlMode = gSaveBlock2Ptr->lvlMode;
 
     if (lvlMode == FRONTIER_LVL_TENT)
     {
@@ -813,11 +815,11 @@ static void FillFactoryFrontierTrainerParty(u16 trainerId, u8 firstMonId)
     {
     // By mistake Battle Tower's Level 50 challenge number is used to determine the IVs for Battle Factory.
     #ifdef BUGFIX
-        enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+        enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
         u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
         u8 challengeNum = gSaveBlock2Ptr->frontier.factoryWinStreaks[battleMode][lvlMode] / FRONTIER_STAGES_PER_CHALLENGE;
     #else
-        enum FrontierLevelMode UNUSED lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+        enum FrontierLevelMode UNUSED lvlMode = gSaveBlock2Ptr->lvlMode;
         u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
         u8 challengeNum = gSaveBlock2Ptr->frontier.towerWinStreaks[battleMode][FRONTIER_LVL_50] / FRONTIER_STAGES_PER_CHALLENGE;
     #endif
@@ -874,8 +876,22 @@ static void FillFactoryTentTrainerParty(u16 trainerId, u8 firstMonId)
 void FillFactoryTrainerParty(void)
 {
     ZeroEnemyPartyMons();
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_TENT)
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_TENT)
         FillFactoryFrontierTrainerParty(TRAINER_BATTLE_PARAM.opponentA, 0);
     else
         FillFactoryTentTrainerParty(TRAINER_BATTLE_PARAM.opponentA, 0);
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: Battle Factory is unreachable; frontier.factory* fields no longer exist.
+// InBattleFactory() returning FALSE unconditionally is the *correct* new behaviour for its
+// external callers (pokemon_summary_screen.c), not just a compatibility shim.
+void CallBattleFactoryFunction(void) { ScriptContext_Enable(); }
+bool8 InBattleFactory(void) { return FALSE; }
+u8 GetFactoryMonFixedIV(u8 challengeNum, bool8 isLastBattle) { return 0; }
+void FillFactoryBrainParty(void) {}
+u8 GetNumPastRentalsRank(u8 battleMode, enum FrontierLevelMode lvlMode) { return 0; }
+u64 GetAiScriptsInBattleFactory(void) { return 0; }
+void SetMonMoveAvoidReturn(struct Pokemon *mon, enum Move moveArg, u8 moveSlot) {}
+void FillFactoryTrainerParty(void) {}
+#endif // FREE_BATTLE_FRONTIER

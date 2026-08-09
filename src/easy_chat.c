@@ -1543,8 +1543,12 @@ void ShowEasyChatScreen(void)
         return;
 #endif //FREE_LILYCOVE_LADY
     case EASY_CHAT_TYPE_APPRENTICE:
+#if FREE_BATTLE_FRONTIER == FALSE
         words = gSaveBlock2Ptr->apprentices[0].speechWon;
         break;
+#else
+        return;
+#endif //FREE_BATTLE_FRONTIER
     case EASY_CHAT_TYPE_QUESTIONNAIRE:
         words = GetQuestionnaireWordsPtr();
         break;

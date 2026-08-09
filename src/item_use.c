@@ -146,8 +146,10 @@ static void SetUpItemUseCallback(u8 taskId)
         }
         else
         {
+#if FREE_BATTLE_FRONTIER == FALSE
             gPyramidBagMenu->newScreenCallback = sItemUseCallbacks[type];
             CloseBattlePyramidBag(taskId);
+#endif
         }
     }
 }
@@ -1233,8 +1235,10 @@ static void ItemUseInBattle_ShowPartyMenu(u8 taskId)
     }
     else
     {
+#if FREE_BATTLE_FRONTIER == FALSE
         gPyramidBagMenu->newScreenCallback = ChooseMonForInBattleItem;
         CloseBattlePyramidBag(taskId);
+#endif
     }
 }
 

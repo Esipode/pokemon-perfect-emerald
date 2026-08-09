@@ -19,6 +19,8 @@
 #include "constants/region_map_sections.h"
 #include "constants/trainers.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 // This file's functions.
 static void InitVerdanturfTentChallenge(void);
 static void GetVerdanturfTentPrize(void);
@@ -427,3 +429,12 @@ static void GenerateOpponentMons(void)
         i++;
     }
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: "Battle Tents go too" -- InSlateportBattleTent() returning FALSE unconditionally is
+// the correct new behaviour for its external callers (pokemon_summary_screen.c, item_menu.c).
+void CallVerdanturfTentFunction(void) { ScriptContext_Enable(); }
+void CallFallarborTentFunction(void) { ScriptContext_Enable(); }
+void CallSlateportTentFunction(void) { ScriptContext_Enable(); }
+bool8 InSlateportBattleTent(void) { return FALSE; }
+#endif // FREE_BATTLE_FRONTIER

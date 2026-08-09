@@ -1111,7 +1111,9 @@ void InterviewAfter(void)
         InterviewAfter_BravoTrainerPokemonProfile();
         break;
     case TVSHOW_BRAVO_TRAINER_BATTLE_TOWER_PROFILE:
+#if FREE_BATTLE_FRONTIER == FALSE
         InterviewAfter_BravoTrainerBattleTowerProfile();
+#endif //FREE_BATTLE_FRONTIER
         break;
     case TVSHOW_CONTEST_LIVE_UPDATES:
         InterviewAfter_ContestLiveUpdates();
@@ -1490,6 +1492,7 @@ void BravoTrainerPokemonProfile_BeforeInterview2(u8 contestStandingPlace)
     }
 }
 
+#if FREE_BATTLE_FRONTIER == FALSE
 static void InterviewAfter_BravoTrainerBattleTowerProfile(void)
 {
     TVShow *show = &gSaveBlock1Ptr->tvShows[sCurTVShowSlot];
@@ -1513,6 +1516,7 @@ static void InterviewAfter_BravoTrainerBattleTowerProfile(void)
     else
         show->bravoTrainerTower.opponentLanguage = gSaveBlock2Ptr->frontier.towerInterview.opponentLanguage;
 }
+#endif //FREE_BATTLE_FRONTIER
 
 void TryPutSmartShopperOnAir(void)
 {
@@ -1879,7 +1883,11 @@ void TryPutTodaysRivalTrainerOnAir(void)
             if (FlagGet(sGoldSymbolFlags[i]) == TRUE)
                 show->rivalTrainer.nGoldSymbols++;
         }
+#if FREE_BATTLE_FRONTIER == FALSE
         show->rivalTrainer.battlePoints = gSaveBlock2Ptr->frontier.battlePoints;
+#else
+        show->rivalTrainer.battlePoints = 0;
+#endif //FREE_BATTLE_FRONTIER
         StringCopy(show->rivalTrainer.playerName, gSaveBlock2Ptr->playerName);
         StorePlayerIdInRecordMixShow(show);
         show->rivalTrainer.language = gGameLanguage;
@@ -2422,8 +2430,8 @@ void TryPutFrontierTVShowOnAir(u16 winStreak, u8 facilityAndMode)
             show->frontier.species2 = GetMonData(&gParties[B_TRAINER_PLAYER][1], MON_DATA_SPECIES);
             break;
         case FRONTIER_SHOW_TOWER_LINK_MULTIS:
-            show->frontier.species1 = GetMonData(GetSavedPlayerPartyMon(gSaveBlock2Ptr->frontier.selectedPartyMons[0] - 1), MON_DATA_SPECIES);
-            show->frontier.species2 = GetMonData(GetSavedPlayerPartyMon(gSaveBlock2Ptr->frontier.selectedPartyMons[1] - 1), MON_DATA_SPECIES);
+            show->frontier.species1 = GetMonData(GetSavedPlayerPartyMon(gSaveBlock2Ptr->selectedPartyMons[0] - 1), MON_DATA_SPECIES);
+            show->frontier.species2 = GetMonData(GetSavedPlayerPartyMon(gSaveBlock2Ptr->selectedPartyMons[1] - 1), MON_DATA_SPECIES);
             break;
         }
         StorePlayerIdInRecordMixShow(show);

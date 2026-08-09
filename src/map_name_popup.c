@@ -580,6 +580,7 @@ static void ShowMapNamePopUpWindow(void)
     const u8 *mapDisplayHeaderSource;
     u8 mapNamePopUpWindowId, secondaryPopUpWindowId;
 
+#if FREE_BATTLE_FRONTIER == FALSE
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
     {
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP)
@@ -595,6 +596,7 @@ static void ShowMapNamePopUpWindow(void)
         StringCopy(withoutPrefixPtr, mapDisplayHeaderSource);
     }
     else
+#endif //FREE_BATTLE_FRONTIER
     {
         withoutPrefixPtr = &(mapDisplayHeader[MAP_POPUP_PREFIX_BUFFER_LENGTH]);
         GetPopUpMapName(withoutPrefixPtr, &gMapHeader);

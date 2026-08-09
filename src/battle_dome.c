@@ -44,6 +44,8 @@
 #include "constants/battle_frontier.h"
 #include "constants/rgb.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 #define TAG_BUTTONS 0
 
 // Enough space to hold 2 match info cards worth of trainers and their parties
@@ -1760,13 +1762,13 @@ void CallBattleDomeFunction(void)
 
 static void InitDomeChallenge(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     gSaveBlock2Ptr->frontier.challengeStatus = 0;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = 0;
     gSaveBlock2Ptr->frontier.challengePaused = FALSE;
-    gSaveBlock2Ptr->frontier.disableRecordBattle = FALSE;
+    gSaveBlock2Ptr->disableRecordBattle = FALSE;
     if (!(gSaveBlock2Ptr->frontier.winStreakActiveFlags & sWinStreakFlags[battleMode][lvlMode]))
         gSaveBlock2Ptr->frontier.domeWinStreaks[battleMode][lvlMode] = 0;
 
@@ -1776,7 +1778,7 @@ static void InitDomeChallenge(void)
 
 static void GetDomeData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -1844,7 +1846,7 @@ static void GetDomeData(void)
 
 static void SetDomeData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -1926,7 +1928,7 @@ static void InitDomeTrainers(void)
     rankingScores = AllocZeroed(sizeof(u16) * DOME_TOURNAMENT_TRAINERS_COUNT);
     statValues = AllocZeroed(sizeof(int) * NUM_STATS);
 
-    gSaveBlock2Ptr->frontier.domeLvlMode = gSaveBlock2Ptr->frontier.lvlMode + 1;
+    gSaveBlock2Ptr->frontier.domeLvlMode = gSaveBlock2Ptr->lvlMode + 1;
     gSaveBlock2Ptr->frontier.domeBattleMode = VarGet(VAR_FRONTIER_BATTLE_MODE) + 1;
     DOME_TRAINERS[0].trainerId = TRAINER_PLAYER;
     DOME_TRAINERS[0].isEliminated = FALSE;
@@ -2591,7 +2593,7 @@ static void SaveDomeChallenge(void)
 
 static void IncrementDomeStreaks(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     if (gSaveBlock2Ptr->frontier.domeWinStreaks[battleMode][lvlMode] < 999)
@@ -4852,7 +4854,7 @@ static void ShowPreviousDomeTourneyTree(void)
     u8 taskId;
 
     SetFacilityTrainerAndMonPtrs();
-    gSaveBlock2Ptr->frontier.lvlMode = gSaveBlock2Ptr->frontier.domeLvlMode - 1;
+    gSaveBlock2Ptr->lvlMode = gSaveBlock2Ptr->frontier.domeLvlMode - 1;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = DOME_FINAL;
     taskId = CreateTask(Task_ShowTourneyTree, 0);
     gTasks[taskId].tState = 0;
@@ -5725,8 +5727,8 @@ static void InitRandomTourneyTreeResults(void)
 
     statSums = AllocZeroed(sizeof(u16) * DOME_TOURNAMENT_TRAINERS_COUNT);
     statValues = AllocZeroed(sizeof(int) * NUM_STATS);
-    lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
-    gSaveBlock2Ptr->frontier.lvlMode = FRONTIER_LVL_50;
+    lvlMode = gSaveBlock2Ptr->lvlMode;
+    gSaveBlock2Ptr->lvlMode = FRONTIER_LVL_50;
     zero1 = 0;
     zero2 = 0;
 
@@ -5830,7 +5832,7 @@ static void InitRandomTourneyTreeResults(void)
     for (i = 0; i < DOME_ROUNDS_COUNT; i++)
         DecideRoundWinners(i);
 
-    gSaveBlock2Ptr->frontier.lvlMode = lvlMode;
+    gSaveBlock2Ptr->lvlMode = lvlMode;
 }
 
 static int TrainerIdToTournamentId(u16 trainerId)
@@ -5999,3 +6001,10 @@ static void CopyDomeTrainerName(u8 *str, u16 trainerId)
         str[i] = EOS;
     }
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: Battle Dome is unreachable; frontier.domeTrainers/domeMonIds no longer exist.
+void CallBattleDomeFunction(void) { ScriptContext_Enable(); }
+int GetDomeTrainerSelectedMons(u16 tournamentTrainerId) { return 0; }
+int TrainerIdToDomeTournamentId(u16 trainerId) { return 0; }
+#endif // FREE_BATTLE_FRONTIER

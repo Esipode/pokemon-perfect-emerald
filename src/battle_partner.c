@@ -25,9 +25,12 @@ void FillPartnerParty(u16 trainerId)
 {
     s32 i, j, k;
     u32 firstIdPart = 0, secondIdPart = 0, thirdIdPart = 0;
-    u32 ivs, level, personality;
-    u16 monId;
+    u32 personality;
     u32 otID;
+#if FREE_BATTLE_FRONTIER == FALSE
+    u32 ivs, level;
+    u16 monId;
+#endif //FREE_BATTLE_FRONTIER
     u8 trainerName[(PLAYER_NAME_LENGTH * 3) + 1];
     enum DifficultyLevel difficulty = GetBattlePartnerDifficultyLevel(trainerId);
     SetFacilityPtrsGetLevel();
@@ -123,6 +126,7 @@ void FillPartnerParty(u16 trainerId)
         // Scrapped, lol.
         trainerName[0] = gGameLanguage;
     }
+#if FREE_BATTLE_FRONTIER == FALSE
     else if (trainerId < FRONTIER_TRAINERS_COUNT)
     {
         level = SetFacilityPtrsGetLevel();
@@ -176,4 +180,8 @@ void FillPartnerParty(u16 trainerId)
             SetMonData(&gParties[B_TRAINER_PARTNER][i], MON_DATA_OT_GENDER, &j);
         }
     }
+#endif //FREE_BATTLE_FRONTIER
+    // Stage 4: the frontier-multis and apprentice-multis branches above are unreachable once the
+    // frontier is gone -- gPartnerTrainerId is only ever set into that ID space by battle_tower.c
+    // / apprentice.c, both stubbed. Falling through with a zeroed party is harmless dead-code safety.
 }

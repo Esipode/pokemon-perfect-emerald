@@ -41,6 +41,8 @@
 #include "constants/species.h"
 #include "constants/trainers.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 #define NUM_LAYOUT_OFFSETS 8
 
 extern const struct MapLayout *const gMapLayouts[];
@@ -848,7 +850,7 @@ void CallBattlePyramidFunction(void)
 static void InitPyramidChallenge(void)
 {
     bool32 isCurrent;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     gSaveBlock2Ptr->frontier.challengeStatus = 0;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = 0;
@@ -871,7 +873,7 @@ static void InitPyramidChallenge(void)
 
 static void GetBattlePyramidData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     switch (gSpecialVar_0x8005)
     {
@@ -904,7 +906,7 @@ static void GetBattlePyramidData(void)
 
 static void SetBattlePyramidData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     switch (gSpecialVar_0x8005)
     {
@@ -948,7 +950,7 @@ static void SavePyramidChallenge(void)
 
 static void SetBattlePyramidPrize(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     if (gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvlMode] > 41)
         gSaveBlock2Ptr->frontier.pyramidPrize = sLongStreakRewardItems[Random() % ARRAY_COUNT(sLongStreakRewardItems)];
@@ -988,7 +990,7 @@ static void SetPickupItem(void)
     u32 randSeedIndex, randSeed;
     u8 id;
     rng_value_t rand;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 floor = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
     u32 round = (gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvlMode] / FRONTIER_STAGES_PER_CHALLENGE) % TOTAL_PYRAMID_ROUNDS;
 
@@ -1120,7 +1122,7 @@ static void ShowPostBattleHintText(void)
 
 static void UpdatePyramidWinStreak(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     if (gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvlMode] < 999)
         gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvlMode]++;
@@ -1400,7 +1402,7 @@ void GenerateBattlePyramidWildMon(enum Species forceSpecies)
     u8 name[POKEMON_NAME_LENGTH + 1];
     int i, j;
     u32 id;
-    u32 lvl = gSaveBlock2Ptr->frontier.lvlMode;
+    u32 lvl = gSaveBlock2Ptr->lvlMode;
     u16 round = (gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvl] / 7) % TOTAL_PYRAMID_ROUNDS;
     const struct BattlePyramidRequirement *reqs = &sBattlePyramidRequirementsByRound[round];
     enum Species species = forceSpecies;
@@ -1558,7 +1560,7 @@ void GenerateBattlePyramidWildMon(enum Species forceSpecies)
         Free(abilities);
     }
 
-    if (gSaveBlock2Ptr->frontier.pyramidWinStreaks[gSaveBlock2Ptr->frontier.lvlMode] >= 140)
+    if (gSaveBlock2Ptr->frontier.pyramidWinStreaks[gSaveBlock2Ptr->lvlMode] >= 140)
     {
         id = (Random() % 17) + 15;
         for (i = 0; i < NUM_STATS; i++)
@@ -1574,7 +1576,7 @@ void GenerateBattlePyramidWildMon(enum Species forceSpecies)
     int i;
     const struct PyramidWildMon *wildMons;
     u32 id;
-    enum FrontierLevelMode lvl = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvl = gSaveBlock2Ptr->lvlMode;
     u16 round = (gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvl] / FRONTIER_STAGES_PER_CHALLENGE) % TOTAL_PYRAMID_ROUNDS;
 
     if (round >= TOTAL_PYRAMID_ROUNDS)
@@ -1631,7 +1633,7 @@ void GenerateBattlePyramidWildMon(enum Species forceSpecies)
     #ifndef UBFIX
     if (gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvl] >= 140)
     #else
-    if (gSaveBlock2Ptr->frontier.pyramidWinStreaks[gSaveBlock2Ptr->frontier.lvlMode] >= 140)
+    if (gSaveBlock2Ptr->frontier.pyramidWinStreaks[gSaveBlock2Ptr->lvlMode] >= 140)
     #endif
     {
         id = (Random() % 17) + 15;
@@ -1717,7 +1719,7 @@ static u16 GetUniqueTrainerId(u8 objectEventId)
 {
     int i;
     u16 trainerId;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 challengeNum = gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvlMode] / FRONTIER_STAGES_PER_CHALLENGE;
     u32 floor = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
     if (floor == FRONTIER_STAGES_PER_CHALLENGE)
@@ -2189,7 +2191,7 @@ u16 GetBattlePyramidPickupItemId(void)
 {
     int rand;
     u32 i;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     int round = (gSaveBlock2Ptr->frontier.pyramidWinStreaks[lvlMode] / FRONTIER_STAGES_PER_CHALLENGE);
 
     if (round >= TOTAL_PYRAMID_ROUNDS)
@@ -2211,3 +2213,31 @@ u16 GetBattlePyramidPickupItemId(void)
     else
         return sPickupItemsLvl50[round][i];
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: CurrentBattlePyramidLocation() returning PYRAMID_LOCATION_NONE (0) unconditionally
+// is the *correct* new behaviour for its huge list of external callers (battle_setup.c,
+// battle_script_commands.c, battle_util.c, item*.c, party_menu.c, pokemon.c, start_menu.c,
+// trainer_see.c, wild_encounter*.c, event_object_movement.c, map_name_popup.c, frontier_pass.c),
+// not just a compatibility shim -- the player can never be in the Pyramid again. Everything
+// else here is only ever called from inside an `if` gated on that check, now permanently dead.
+void CallBattlePyramidFunction(void) { ScriptContext_Enable(); }
+u16 LocalIdToPyramidTrainerId(u8 localId) { return 0; }
+bool8 GetBattlePyramidTrainerFlag(u8 eventId) { return FALSE; }
+void MarkApproachingPyramidTrainersAsBattled(void) {}
+void GenerateBattlePyramidWildMon(enum Species forceSpecies) {}
+u8 GetPyramidRunMultiplier(void) { return 1; }
+u8 CurrentBattlePyramidLocation(void) { return PYRAMID_LOCATION_NONE; }
+bool8 InBattlePyramid_(void) { return FALSE; }
+void PausePyramidChallenge(void) {}
+void SoftResetInBattlePyramid(void) {}
+void CopyPyramidTrainerSpeechBefore(u16 trainerId) {}
+void CopyPyramidTrainerWinSpeech(u16 trainerId) {}
+void CopyPyramidTrainerLoseSpeech(u16 trainerId) {}
+u8 GetTrainerEncounterMusicIdInBattlePyramid(u16 trainerId) { return 0; }
+void GenerateBattlePyramidFloorLayout(u16 *backupMapData, bool8 setPlayerPosition) {}
+void LoadBattlePyramidObjectEventTemplates(void) {}
+void LoadBattlePyramidFloorObjectEventScripts(void) {}
+u8 GetNumBattlePyramidObjectEvents(void) { return 0; }
+u16 GetBattlePyramidPickupItemId(void) { return ITEM_NONE; }
+#endif // FREE_BATTLE_FRONTIER

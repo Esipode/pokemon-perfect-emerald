@@ -44,6 +44,7 @@
 #include "party_menu.h"
 #include "list_menu.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
 struct FrontierBrainMon
 {
     enum Species species;
@@ -914,7 +915,7 @@ static void GetFrontierData(void)
         gSpecialVar_Result = gSaveBlock2Ptr->frontier.challengeStatus;
         break;
     case FRONTIER_DATA_LVL_MODE:
-        gSpecialVar_Result = gSaveBlock2Ptr->frontier.lvlMode;
+        gSpecialVar_Result = gSaveBlock2Ptr->lvlMode;
         break;
     case FRONTIER_DATA_BATTLE_NUM:
         gSpecialVar_Result = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
@@ -927,7 +928,7 @@ static void GetFrontierData(void)
         gBattleOutcome = 0;
         break;
     case FRONTIER_DATA_RECORD_DISABLED:
-        gSpecialVar_Result = gSaveBlock2Ptr->frontier.disableRecordBattle;
+        gSpecialVar_Result = gSaveBlock2Ptr->disableRecordBattle;
         break;
     case FRONTIER_DATA_HEARD_BRAIN_SPEECH:
         gSpecialVar_Result = gSaveBlock2Ptr->frontier.battledBrainFlags & gFrontierBrainInfo[facility].battledBit[hasSymbol];
@@ -949,7 +950,7 @@ static void SetFrontierData(void)
         gSaveBlock2Ptr->frontier.challengeStatus = gSpecialVar_0x8006;
         break;
     case FRONTIER_DATA_LVL_MODE:
-        gSaveBlock2Ptr->frontier.lvlMode = gSpecialVar_0x8006;
+        gSaveBlock2Ptr->lvlMode = gSpecialVar_0x8006;
         break;
     case FRONTIER_DATA_BATTLE_NUM:
         gSaveBlock2Ptr->frontier.curChallengeBattleNum = gSpecialVar_0x8006;
@@ -962,7 +963,7 @@ static void SetFrontierData(void)
             gSaveBlock2Ptr->frontier.selectedPartyMons[i] = gSelectedOrderFromParty[i];
         break;
     case FRONTIER_DATA_RECORD_DISABLED:
-        gSaveBlock2Ptr->frontier.disableRecordBattle = gSpecialVar_0x8006;
+        gSaveBlock2Ptr->disableRecordBattle = gSpecialVar_0x8006;
         break;
     case FRONTIER_DATA_HEARD_BRAIN_SPEECH:
         gSaveBlock2Ptr->frontier.battledBrainFlags |= gFrontierBrainInfo[facility].battledBit[hasSymbol];
@@ -1620,7 +1621,7 @@ static void ShowLinkContestResultsWindow(void)
 static void CheckPutFrontierTVShowOnAir(void)
 {
     u8 name[32];
-    s32 lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    s32 lvlMode = gSaveBlock2Ptr->lvlMode;
     s32 facility = VarGet(VAR_FRONTIER_FACILITY);
     s32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
@@ -1903,7 +1904,7 @@ void ResetWinStreaks(void)
 
 u32 GetCurrentFacilityWinStreak(void)
 {
-    s32 lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    s32 lvlMode = gSaveBlock2Ptr->lvlMode;
     s32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     s32 facility = VarGet(VAR_FRONTIER_FACILITY);
 
@@ -1953,7 +1954,7 @@ u8 GetPlayerSymbolCountForFacility(u8 facility)
 static void GiveBattlePoints(void)
 {
     s32 challengeNum = 0;
-    s32 lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    s32 lvlMode = gSaveBlock2Ptr->lvlMode;
     s32 facility = VarGet(VAR_FRONTIER_FACILITY);
     s32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     s32 points;
@@ -2199,7 +2200,7 @@ static void CheckPartyIneligibility(void)
     else
     {
         gSpecialVar_0x8004 = FALSE;
-        gSaveBlock2Ptr->frontier.lvlMode = gSpecialVar_Result;
+        gSaveBlock2Ptr->lvlMode = gSpecialVar_Result;
     }
     #undef numEligibleMons
 }
@@ -2211,7 +2212,7 @@ static void ValidateVisitingTrainer(void)
 
 static void IncrementWinStreak(void)
 {
-    s32 lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    s32 lvlMode = gSaveBlock2Ptr->lvlMode;
     s32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     s32 facility = VarGet(VAR_FRONTIER_FACILITY);
 
@@ -2274,7 +2275,7 @@ static void RestoreHeldItems(void)
 static void SaveRecordBattle(void)
 {
     gSpecialVar_Result = MoveRecordedBattleToSaveData();
-    gSaveBlock2Ptr->frontier.disableRecordBattle = TRUE;
+    gSaveBlock2Ptr->disableRecordBattle = TRUE;
 }
 
 static void BufferFrontierTrainerName(void)
@@ -3259,7 +3260,7 @@ void FrontierSpeechToString(const u16 *words)
 
 u16 SetFacilityPtrsGetLevel(void)
 {
-    if (gSaveBlock2Ptr->frontier.lvlMode == FRONTIER_LVL_TENT)
+    if (gSaveBlock2Ptr->lvlMode == FRONTIER_LVL_TENT)
     {
         return SetTentPtrsGetLevel();
     }
@@ -3267,7 +3268,7 @@ u16 SetFacilityPtrsGetLevel(void)
     {
         gFacilityTrainers = gBattleFrontierTrainers;
         gFacilityTrainerMons = gBattleFrontierMons;
-        return GetFrontierEnemyMonLevel(gSaveBlock2Ptr->frontier.lvlMode);
+        return GetFrontierEnemyMonLevel(gSaveBlock2Ptr->lvlMode);
     }
 }
 
@@ -3441,3 +3442,51 @@ static void Task_BannedSpeciesWindowInput(u8 taskId)
 #undef tArrowTaskId
 #undef tScrollOffset
 #undef tListPointerElemId
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: every frontier facility is unreachable. Almost all external callers of these
+// (battle_message.c, overworld.c, new_game.c, recorded_battle.c, battle_controller_*.c) are
+// themselves gated on BATTLE_TYPE_FRONTIER/BATTLE_TYPE_TRAINER_HILL or a TRAINER_FRONTIER_BRAIN
+// trainerId check, both now permanently false/unreachable; ResetWinStreaks/ClearRankingHallRecords
+// are called unconditionally (save-corruption recovery, new game) but are correctly no-ops now.
+void CallFrontierUtilFunc(void) { ScriptContext_Enable(); }
+u8 GetFrontierBrainStatus(void) { return 0; }
+void CopyFrontierTrainerText(u8 whichText, u16 trainerId) {}
+void ResetWinStreaks(void) {}
+u32 GetCurrentFacilityWinStreak(void) { return 0; }
+void ResetFrontierTrainerIds(void) {}
+u8 GetPlayerSymbolCountForFacility(u8 facility) { return 0; }
+void ShowRankingHallRecordsWindow(void) {}
+void ScrollRankingHallRecordsWindow(void) {}
+void ClearRankingHallRecords(void) {}
+void SaveGameFrontier(void) {}
+enum TrainerPicID GetFrontierBrainTrainerPicIndex(void) { return 0; }
+enum TrainerClassID GetFrontierBrainTrainerClass(void) { return 0; }
+void CopyFrontierBrainTrainerName(u8 *dst) { dst[0] = EOS; }
+bool8 IsFrontierBrainFemale(void) { return FALSE; }
+void SetFrontierBrainObjEventGfx_2(void) {}
+void CreateFrontierBrainPokemon(void) {}
+enum Species GetFrontierBrainMonSpecies(u8 monId) { return SPECIES_NONE; }
+void SetFrontierBrainObjEventGfx(u8 facility) {}
+u16 GetFrontierBrainMonMove(u8 monId, u8 moveSlotId) { return MOVE_NONE; }
+u8 GetFrontierBrainMonNature(u8 monId) { return 0; }
+u8 GetFrontierBrainMonEvs(u8 monId, u8 evStatId) { return 0; }
+s32 GetFronterBrainSymbol(void) { return 0; }
+void ClearEnemyPartyAfterChallenge(void) {}
+bool8 IsFrontierTrainerFemale(u16 trainerId) { return FALSE; }
+u8 GetFrontierTrainerFixedIvs(u16 trainerId) { return 0; }
+u16 GetRandomScaledFrontierTrainerId(u8 challengeNum, u8 battleNum) { return 0; }
+void SetBattleFacilityTrainerGfxId(u16 trainerId, u8 tempVarId) {}
+u16 GetBattleFacilityTrainerGfxId(u16 trainerId) { return 0; }
+u8 GetFrontierTrainerFrontSpriteId(u16 trainerId) { return 0; }
+enum TrainerClassID GetFrontierOpponentClass(u16 trainerId) { return 0; }
+u8 GetFrontierTrainerFacilityClass(u16 trainerId) { return 0; }
+void GetFrontierTrainerName(u8 *dst, u16 trainerId) { dst[0] = EOS; }
+u16 GetRandomFrontierMonFromSet(u16 trainerId) { return 0; }
+void FrontierSpeechToString(const u16 *words) { gStringVar4[0] = EOS; }
+u16 SetFacilityPtrsGetLevel(void) { return 0; }
+u16 GetFrontierEnemyMonLevel(enum FrontierLevelMode lvlMode) { return 0; }
+s32 GetHighestLevelInPlayerParty(void) { return 0; }
+u16 FacilityClassToGraphicsId(u8 facilityClass) { return 0; }
+void ShowBattleFrontierCaughtBannedSpecies(void) {}
+#endif // FREE_BATTLE_FRONTIER

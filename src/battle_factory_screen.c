@@ -32,6 +32,8 @@
 #include "constants/songs.h"
 #include "constants/rgb.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 // Select_ refers to the first Pokémon selection screen where you choose your initial 3 rental Pokémon.
 // Swap_   refers to the subsequent selection screens where you can swap a Pokémon with one from the beaten trainer
 
@@ -1274,7 +1276,7 @@ static void Select_InitMonsData(void)
     for (i = 0; i < SELECTABLE_MONS_COUNT; i++)
         sFactorySelectScreen->mons[i].selectedId = 0;
 
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_TENT)
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_TENT)
         CreateFrontierFactorySelectableMons(0);
     else
         CreateSlateportTentSelectableMons(0);
@@ -1714,12 +1716,12 @@ static void CreateFrontierFactorySelectableMons(u8 firstMonId)
     u16 level = 0;
     u32 otId = 0;
     u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u8 challengeNum = gSaveBlock2Ptr->frontier.factoryWinStreaks[battleMode][lvlMode] / 7;
     u8 rentalRank = 0;
 
     gFacilityTrainerMons = gBattleFrontierMons;
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_50)
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_50)
         level = FRONTIER_MAX_LEVEL_OPEN;
     else
         level = FRONTIER_MAX_LEVEL_50;
@@ -4264,3 +4266,9 @@ static void Swap_CreateMonSprite(void)
 
     sFactorySwapScreen->monPicAnimating = FALSE;
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: only called from battle_factory.c / battle_tent.c, both unreachable.
+void DoBattleFactorySelectScreen(void) { ScriptContext_Enable(); }
+void DoBattleFactorySwapScreen(void) { ScriptContext_Enable(); }
+#endif // FREE_BATTLE_FRONTIER

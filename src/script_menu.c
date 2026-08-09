@@ -811,11 +811,13 @@ static void CreateLilycoveSSTidalMultichoice(void)
         sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SLATEPORT;
         selectionCount++;
 
+#if FREE_BATTLE_FRONTIER == FALSE
         if (FlagGet(FLAG_MET_SCOTT_ON_SS_TIDAL) == TRUE)
         {
             sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_BATTLE_FRONTIER;
             selectionCount++;
         }
+#endif //FREE_BATTLE_FRONTIER
     }
 
     if (CheckBagHasItem(ITEM_EON_TICKET, 1) == TRUE && FlagGet(FLAG_ENABLE_SHIP_SOUTHERN_ISLAND) == TRUE)

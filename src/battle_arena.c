@@ -29,6 +29,8 @@
 #include "constants/moves.h"
 #include "constants/rgb.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 static void InitArenaChallenge(void);
 static void GetArenaData(void);
 static void SetArenaData(void);
@@ -449,12 +451,12 @@ static void UNUSED UpdateHPAtStart(enum BattlerId battler)
 static void InitArenaChallenge(void)
 {
     bool32 isCurrent;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     gSaveBlock2Ptr->frontier.challengeStatus = 0;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = 0;
     gSaveBlock2Ptr->frontier.challengePaused = FALSE;
-    gSaveBlock2Ptr->frontier.disableRecordBattle = FALSE;
+    gSaveBlock2Ptr->disableRecordBattle = FALSE;
     if (lvlMode != FRONTIER_LVL_50)
         isCurrent = gSaveBlock2Ptr->frontier.winStreakActiveFlags & STREAK_ARENA_OPEN;
     else
@@ -469,7 +471,7 @@ static void InitArenaChallenge(void)
 
 static void GetArenaData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     switch (gSpecialVar_0x8005)
     {
@@ -490,7 +492,7 @@ static void GetArenaData(void)
 
 static void SetArenaData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     switch (gSpecialVar_0x8005)
     {
@@ -530,7 +532,7 @@ static void SaveArenaChallenge(void)
 
 static void SetArenaPrize(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     if (gSaveBlock2Ptr->frontier.arenaWinStreaks[lvlMode] > 41)
         gSaveBlock2Ptr->frontier.arenaPrize = sLongStreakPrizeItems[Random() % ARRAY_COUNT(sLongStreakPrizeItems)];
@@ -604,3 +606,17 @@ void EraseArenaRefereeTextBox(void)
     FillBgTilemapBufferRect(0, 0x10, 28, 19, 1, 1, palNum);
     FillBgTilemapBufferRect(0, 0x11, 29, 19, 1, 1, palNum);
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: Battle Arena is unreachable (facility gone), but the generic battle engine
+// (battle_main.c, battle_script_commands.c, battle_util.c, battle_controllers.c) still
+// calls these unconditionally guarded on BATTLE_TYPE_ARENA, which can now never be set.
+void CallBattleArenaFunction(void) { ScriptContext_Enable(); }
+u8 BattleArena_ShowJudgmentWindow(u8 *state) { return 0; }
+void BattleArena_InitPoints(void) {}
+void BattleArena_AddMindPoints(enum BattlerId battler) {}
+void BattleArena_AddSkillPoints(enum BattlerId battler) {}
+void BattleArena_DeductSkillPoints(enum BattlerId battler, enum StringID stringId) {}
+void DrawArenaRefereeTextBox(void) {}
+void EraseArenaRefereeTextBox(void) {}
+#endif // FREE_BATTLE_FRONTIER

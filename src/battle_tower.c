@@ -44,6 +44,7 @@
 #include "constants/moves.h"
 #include "test/battle.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
 // This file's functions.
 static void InitTowerChallenge(void);
 static void GetTowerData(void);
@@ -707,13 +708,13 @@ void CallBattleTowerFunc(void)
 
 static void InitTowerChallenge(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     gSaveBlock2Ptr->frontier.challengeStatus = CHALLENGE_STATUS_SAVING;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = 0;
     gSaveBlock2Ptr->frontier.challengePaused = FALSE;
-    gSaveBlock2Ptr->frontier.disableRecordBattle = FALSE;
+    gSaveBlock2Ptr->disableRecordBattle = FALSE;
     ResetFrontierTrainerIds();
     if (!(gSaveBlock2Ptr->frontier.winStreakActiveFlags & sWinStreakFlags[battleMode][lvlMode]))
         gSaveBlock2Ptr->frontier.towerWinStreaks[battleMode][lvlMode] = 0;
@@ -725,7 +726,7 @@ static void InitTowerChallenge(void)
 
 static void GetTowerData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -739,14 +740,14 @@ static void GetTowerData(void)
         gSpecialVar_Result = ((gSaveBlock2Ptr->frontier.winStreakActiveFlags & sWinStreakFlags[battleMode][lvlMode]) != 0);
         break;
     case TOWER_DATA_LVL_MODE:
-        gSaveBlock2Ptr->frontier.towerLvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+        gSaveBlock2Ptr->frontier.towerLvlMode = gSaveBlock2Ptr->lvlMode;
         break;
     }
 }
 
 static void SetTowerData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -763,7 +764,7 @@ static void SetTowerData(void)
             gSaveBlock2Ptr->frontier.winStreakActiveFlags &= sWinStreakMasks[battleMode][lvlMode];
         break;
     case TOWER_DATA_LVL_MODE:
-        gSaveBlock2Ptr->frontier.towerLvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+        gSaveBlock2Ptr->frontier.towerLvlMode = gSaveBlock2Ptr->lvlMode;
         break;
     }
 }
@@ -790,7 +791,7 @@ static bool8 ChooseSpecialBattleTowerTrainer(void)
     s32 trainerIds[9];
     s32 idsCount = 0;
     s32 winStreak = 0;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     if (VarGet(VAR_FRONTIER_FACILITY) != FRONTIER_FACILITY_TOWER)
@@ -854,7 +855,7 @@ static bool8 ChooseSpecialBattleTowerTrainer(void)
 
 static void SetNextTowerOpponent(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     if (lvlMode == FRONTIER_LVL_TENT)
     {
         SetNextBattleTentOpponent();
@@ -1032,7 +1033,7 @@ static void GetOpponentIntroSpeech(void)
 
 static void SaveCurrentWinStreak(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     u16 winStreak = GetCurrentBattleTowerWinStreak(lvlMode, battleMode);
 
@@ -1048,7 +1049,7 @@ static void SaveBattleTowerRecord(void)
     struct EmeraldBattleTowerRecord *playerRecord = &gSaveBlock2Ptr->frontier.towerPlayer;
 
     ClearBattleTowerRecord(playerRecord);
-    lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    lvlMode = gSaveBlock2Ptr->lvlMode;
     battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     if (gSaveBlock2Ptr->playerGender != MALE)
     {
@@ -1096,7 +1097,7 @@ static void SaveBattleTowerRecord(void)
 
 static void SaveTowerChallenge(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u16 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     s32 challengeNum = (signed)(gSaveBlock2Ptr->frontier.towerWinStreaks[battleMode][lvlMode] / FRONTIER_STAGES_PER_CHALLENGE);
 
@@ -1149,7 +1150,7 @@ static void GetRecordMixFriendMultiPartnerParty(u16 trainerId)
 {
     s32 i, count;
     enum Species validSpecies[3];
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     enum Species species1 = GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_SPECIES);
     enum Species species2 = GetMonData(&gParties[B_TRAINER_PLAYER][1], MON_DATA_SPECIES);
 
@@ -1188,7 +1189,7 @@ static void LoadMultiPartnerCandidatesData(void)
     struct ObjectEventTemplate *objEventTemplates;
 
     objEventTemplates = gSaveBlock1Ptr->objectEventTemplates;
-    lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    lvlMode = gSaveBlock2Ptr->lvlMode;
     battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     challengeNum = gSaveBlock2Ptr->frontier.towerWinStreaks[battleMode][lvlMode] / FRONTIER_STAGES_PER_CHALLENGE;
     species1 = GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_SPECIES);
@@ -1477,7 +1478,7 @@ static void LoadLinkMultiOpponentsData(void)
     s32 challengeNum;
     s32 i, j;
     s32 trainerId = 0;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     u32 battleNum = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
     GetMultiplayerId(); // Yet another pointless function call.
@@ -1681,7 +1682,7 @@ static void AwardBattleTowerRibbons(void)
     struct RibbonCounter ribbons[3]; // BUG: 4 Pokémon can receive ribbons in a double battle mode.
 #endif
     u8 ribbonType = 0;
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
     u8 monCount = GetMonCountForBattleMode(battleMode);
 
@@ -2098,3 +2099,25 @@ void TrySetLinkBattleTowerEnemyPartyLevel(void)
         }
     }
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: Battle Tower is unreachable and towerPlayer/towerRecords no longer exist.
+// Stubs keep the small set of external callers (record_mixing.c, battle_main.c, apprentice.c,
+// frontier_util.c, battle_partner.c via CreateApprenticeMon) linking. The link-multi-battle
+// path in battle_main.c that reads these only fires when BATTLE_TYPE_BATTLE_TOWER is set,
+// which now can never happen; regular in-game partner battles don't go through it.
+void CallBattleTowerFunc(void) { ScriptContext_Enable(); }
+void PutNewBattleTowerRecord(struct EmeraldBattleTowerRecord *newRecordEm) {}
+void CalcEmeraldBattleTowerChecksum(struct EmeraldBattleTowerRecord *record) {}
+void CalcRubyBattleTowerChecksum(struct RSBattleTowerRecord *record) {}
+u16 GetCurrentBattleTowerWinStreak(enum FrontierLevelMode lvlMode, u8 battleMode) { return 0; }
+void TryHideBattleTowerReporter(void) {}
+bool32 RubyBattleTowerRecordToEmerald(struct RSBattleTowerRecord *src, struct EmeraldBattleTowerRecord *dst) { return FALSE; }
+bool32 EmeraldBattleTowerRecordToRuby(struct EmeraldBattleTowerRecord *src, struct RSBattleTowerRecord *dst) { return FALSE; }
+void CalcApprenticeChecksum(struct Apprentice *apprentice) {}
+void GetBattleTowerTrainerLanguage(u8 *dst, u16 trainerId) { *dst = LANGUAGE_ENGLISH; }
+u16 SetTentPtrsGetLevel(void) { return 0; }
+bool32 ValidateBattleTowerRecord(u8 recordId) { return FALSE; } // unused
+void TrySetLinkBattleTowerEnemyPartyLevel(void) {}
+void FillTentTrainerParty(u8 monsCount) {}
+#endif // FREE_BATTLE_FRONTIER

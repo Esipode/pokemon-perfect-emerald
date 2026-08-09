@@ -461,10 +461,8 @@ struct BattleFrontier
     /*0xBEC*/ struct BattleTowerEReaderTrainer ereaderTrainer;  // 200 bytes (see include/config/save.h)
 #endif //FREE_BATTLE_TOWER_E_READER
     /*0xCA8*/ u8 challengeStatus;
-    /*0xCA9*/ u8 lvlMode:2;
-              u8 challengePaused:1;
-              u8 disableRecordBattle:1;
-              //u8 padding1:4;
+    /*0xCA9*/ u8 challengePaused:1;
+              //u8 padding1:7; // lvlMode and disableRecordBattle used to live in this byte; both relocated to top-level SaveBlock2 fields (see gSaveBlock2Ptr->lvlMode / disableRecordBattle) since generic battle/link/recorded-battle code needs them regardless of FREE_BATTLE_FRONTIER.
     /*0xCAA*/ u16 selectedPartyMons[MAX_FRONTIER_PARTY_SIZE];
     /*0xCB2*/ u16 curChallengeBattleNum; // Battle number / room number (Pike) / floor number (Pyramid)
     /*0xCB4*/ u16 trainerIds[20];
@@ -698,8 +696,20 @@ struct SaveBlock2
     /*0xA0*/ struct Time lastBerryTreeUpdate;
     /*0xA8*/ u32 gcnLinkFlags; // Read by Pokémon Colosseum/XD
     /*0xAC*/ u32 encryptionKey;
+    // Relocated out of struct BattleFrontier so generic (non-frontier) battle/link/recorded-battle
+    // code still has somewhere to read/write these regardless of FREE_BATTLE_FRONTIER.
+    u8 disableRecordBattle:1;
+    u8 lvlMode:2;
+             //u8 padding:5;
+    // Debug-menu scratch: which party mons were picked for a debug in-game-partner test battle
+    // (src/debug.c writes it, src/battle_setup.c's CB2_EndDebugBattle reads it back). This was
+    // squatting on struct BattleFrontier's selectedPartyMons purely for storage convenience, not
+    // as a frontier feature, so it gets its own always-present field instead of being gated away.
+    u16 selectedPartyMons[MAX_FRONTIER_PARTY_SIZE];
+#if FREE_BATTLE_FRONTIER == FALSE
     /*0xB0*/ struct PlayersApprentice playerApprentice;
     /*0xDC*/ struct Apprentice apprentices[APPRENTICE_COUNT];
+#endif //FREE_BATTLE_FRONTIER
     /*0x1EC*/ struct BerryCrush berryCrush;
 #if FREE_POKEMON_JUMP == FALSE
     /*0x1FC*/ struct PokemonJumpRecords pokeJump;
@@ -712,7 +722,9 @@ struct SaveBlock2
 #if FREE_CONTESTS == FALSE
     /*0x624*/ u16 contestLinkResults[CONTEST_CATEGORIES_COUNT][CONTESTANT_COUNT];
 #endif //FREE_CONTESTS
+#if FREE_BATTLE_FRONTIER == FALSE
     /*0x64C*/ struct BattleFrontier frontier;
+#endif //FREE_BATTLE_FRONTIER
     struct AchievementRunDataExt achievementRunDataExt; // see that struct's comment
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 

@@ -221,8 +221,10 @@ bool32 CheckBagHasItem(enum Item itemId, u16 count)
 {
     if (GetItemPocket(itemId) >= POCKETS_COUNT)
         return FALSE;
+#if FREE_BATTLE_FRONTIER == FALSE
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE)
         return CheckPyramidBagHasItem(itemId, count);
+#endif //FREE_BATTLE_FRONTIER
 
     return BagPocket_CheckHasItem(&gBagPockets[GetItemPocket(itemId)], itemId, count);
 }
@@ -253,8 +255,10 @@ bool32 CheckBagHasSpace(enum Item itemId, u16 count)
     if (GetItemPocket(itemId) >= POCKETS_COUNT)
         return FALSE;
 
+#if FREE_BATTLE_FRONTIER == FALSE
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || FlagGet(FLAG_STORING_ITEMS_IN_PYRAMID_BAG) == TRUE)
         return CheckPyramidBagHasSpace(itemId, count);
+#endif //FREE_BATTLE_FRONTIER
 
     return GetFreeSpaceForItemInBag(itemId) >= count;
 }
@@ -604,14 +608,15 @@ u16 CountTotalItemQuantityInBag(enum Item itemId)
     return BagPocket_CountTotalItemQuantity(&gBagPockets[GetItemPocket(itemId)], itemId);
 }
 
+#if FREE_BATTLE_FRONTIER == FALSE
 static bool32 CheckPyramidBagHasItem(enum Item itemId, u16 count)
 {
     u8 i;
-    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->lvlMode];
 #if MAX_PYRAMID_BAG_ITEM_CAPACITY > 255
-    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
 #else
-    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
 #endif
 
     for (i = 0; i < PYRAMID_BAG_ITEMS_COUNT; i++)
@@ -633,11 +638,11 @@ static bool32 CheckPyramidBagHasItem(enum Item itemId, u16 count)
 static bool32 CheckPyramidBagHasSpace(enum Item itemId, u16 count)
 {
     u8 i;
-    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->lvlMode];
 #if MAX_PYRAMID_BAG_ITEM_CAPACITY > 255
-    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
 #else
-    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
 #endif
 
     for (i = 0; i < PYRAMID_BAG_ITEMS_COUNT; i++)
@@ -660,14 +665,14 @@ bool32 AddPyramidBagItem(enum Item itemId, u16 count)
 {
     u16 i;
 
-    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->lvlMode];
     u16 *newItems = Alloc(PYRAMID_BAG_ITEMS_COUNT * sizeof(*newItems));
 
 #if MAX_PYRAMID_BAG_ITEM_CAPACITY > 255
-    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
     u16 *newQuantities = Alloc(PYRAMID_BAG_ITEMS_COUNT * sizeof(*newQuantities));
 #else
-    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
     u8 *newQuantities = Alloc(PYRAMID_BAG_ITEMS_COUNT * sizeof(*newQuantities));
 #endif
 
@@ -738,11 +743,11 @@ bool32 RemovePyramidBagItem(enum Item itemId, u16 count)
 {
     u16 i;
 
-    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *items = gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->lvlMode];
 #if MAX_PYRAMID_BAG_ITEM_CAPACITY > 255
-    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u16 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
 #else
-    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->frontier.lvlMode];
+    u8 *quantities = gSaveBlock2Ptr->frontier.pyramidBag.quantity[gSaveBlock2Ptr->lvlMode];
 #endif
 
     i = gPyramidBagMenuState.cursorPosition + gPyramidBagMenuState.scrollPosition;
@@ -804,6 +809,14 @@ bool32 RemovePyramidBagItem(enum Item itemId, u16 count)
         }
     }
 }
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: the only callers of these four (below, in this file) are gated on
+// CurrentBattlePyramidLocation()/FLAG_STORING_ITEMS_IN_PYRAMID_BAG, both permanently
+// false/unreachable now. AddPyramidBagItem/RemovePyramidBagItem are also called from
+// battle_pyramid_bag.c, itself stubbed.
+bool32 AddPyramidBagItem(enum Item itemId, u16 count) { return FALSE; }
+bool32 RemovePyramidBagItem(enum Item itemId, u16 count) { return FALSE; }
+#endif // FREE_BATTLE_FRONTIER
 
 static u16 SanitizeItemId(enum Item itemId)
 {

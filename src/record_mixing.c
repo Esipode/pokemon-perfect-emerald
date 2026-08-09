@@ -99,6 +99,10 @@ static EWRAM_DATA struct DewfordTrend sDummyDewfordTrendsSave[SAVED_TRENDS_COUNT
 #if FREE_LILYCOVE_LADY == TRUE
 static EWRAM_DATA LilycoveLady sDummyLilycoveLadySave = {0};
 #endif //FREE_LILYCOVE_LADY
+#if FREE_BATTLE_FRONTIER == TRUE
+static EWRAM_DATA struct EmeraldBattleTowerRecord sDummyBattleTowerSave = {0};
+static EWRAM_DATA struct Apprentice sDummyApprenticesSave[APPRENTICE_COUNT] = {0};
+#endif //FREE_BATTLE_FRONTIER
 
 static bool8 sReadyToReceive;
 static struct SecretBase *sSecretBasesSave;
@@ -207,14 +211,23 @@ static void SetSrcLookupPointers(void)
     sDewfordTrendsSave = sDummyDewfordTrendsSave;
 #endif //FREE_DEWFORD_TRENDS
     sRecordMixMailSave = &sRecordMixMail;
+#if FREE_BATTLE_FRONTIER == FALSE
     sBattleTowerSave = &gSaveBlock2Ptr->frontier.towerPlayer;
+#else
+    sBattleTowerSave = &sDummyBattleTowerSave;
+#endif //FREE_BATTLE_FRONTIER
 #if FREE_LILYCOVE_LADY == FALSE
     sLilycoveLadySave = &gSaveBlock1Ptr->lilycoveLady;
 #else
     sLilycoveLadySave = &sDummyLilycoveLadySave;
 #endif //FREE_LILYCOVE_LADY
+#if FREE_BATTLE_FRONTIER == FALSE
     sApprenticesSave = gSaveBlock2Ptr->apprentices;
     sBattleTowerSave_Duplicate = &gSaveBlock2Ptr->frontier.towerPlayer;
+#else
+    sApprenticesSave = sDummyApprenticesSave;
+    sBattleTowerSave_Duplicate = &sDummyBattleTowerSave;
+#endif //FREE_BATTLE_FRONTIER
 }
 
 static void PrepareUnknownExchangePacket(struct PlayerRecordRS *dest)
@@ -1095,12 +1108,15 @@ static void Task_DoRecordMixing(u8 taskId)
 
 static void GetSavedApprentices(struct Apprentice *dst, struct Apprentice *src)
 {
+    dst[0].playerName[0] = EOS;
+    dst[1].playerName[0] = EOS;
+#if FREE_BATTLE_FRONTIER == TRUE
+    // Stage 4: apprentices[] no longer exists -- nothing to send.
+    return;
+#else
     s32 i, id;
     s32 apprenticeSaveId, oldPlayerApprenticeSaveId;
     s32 numOldPlayerApprentices, numMixApprentices;
-
-    dst[0].playerName[0] = EOS;
-    dst[1].playerName[0] = EOS;
 
     dst[0] = src[0];
 
@@ -1145,6 +1161,7 @@ static void GetSavedApprentices(struct Apprentice *dst, struct Apprentice *src)
             dst[1] = src[((gSaveBlock2Ptr->playerApprentice.saveId + 1) % (APPRENTICE_COUNT - 1) + 1)];
         break;
     }
+#endif //FREE_BATTLE_FRONTIER
 }
 
 void GetPlayerHallRecords(struct PlayerHallRecords *dst)
@@ -1161,6 +1178,7 @@ void GetPlayerHallRecords(struct PlayerHallRecords *dst)
         }
     }
 
+#if FREE_BATTLE_FRONTIER == FALSE
     for (j = 0; j < FRONTIER_LVL_MODE_COUNT; j++)
     {
         dst->twoPlayers[j].language = GAME_LANGUAGE;
@@ -1184,8 +1202,18 @@ void GetPlayerHallRecords(struct PlayerHallRecords *dst)
 
         dst->twoPlayers[i].winStreak = gSaveBlock2Ptr->frontier.towerRecordWinStreaks[FRONTIER_MODE_LINK_MULTIS][i];
     }
+#else
+    // Stage 4: no frontier facility exists to have streaks or two-player opponent records for.
+    // sSentRecord (the caller's dst) comes from a plain Alloc(), not AllocZeroed(), so explicitly
+    // zero these fields rather than send whatever was left on the heap over the link.
+    memset(dst->twoPlayers, 0, sizeof(dst->twoPlayers));
+    for (i = 0; i < HALL_FACILITIES_COUNT; i++)
+        for (j = 0; j < FRONTIER_LVL_MODE_COUNT; j++)
+            dst->onePlayer[i][j].winStreak = 0;
+#endif //FREE_BATTLE_FRONTIER
 }
 
+#if FREE_BATTLE_FRONTIER == FALSE
 static bool32 IsApprenticeAlreadySaved(struct Apprentice *mixApprentice, struct Apprentice *apprentices)
 {
     s32 i;
@@ -1199,9 +1227,14 @@ static bool32 IsApprenticeAlreadySaved(struct Apprentice *mixApprentice, struct 
 
     return FALSE;
 }
+#endif //FREE_BATTLE_FRONTIER
 
 static void ReceiveApprenticeData(struct Apprentice *records, size_t recordSize, u32 multiplayerId)
 {
+#if FREE_BATTLE_FRONTIER == TRUE
+    // Stage 4: apprentices[] no longer exists -- nowhere to merge received apprentice data into.
+    return;
+#else
     s32 i, numApprentices, apprenticeId;
     struct Apprentice *mixApprentice;
     u32 mixIndices[MAX_LINK_PLAYERS];
@@ -1236,6 +1269,7 @@ static void ReceiveApprenticeData(struct Apprentice *records, size_t recordSize,
         gSaveBlock2Ptr->playerApprentice.saveId = (gSaveBlock2Ptr->playerApprentice.saveId + 2) % (APPRENTICE_COUNT - 1);
         break;
     }
+#endif //FREE_BATTLE_FRONTIER
 }
 
 #if FREE_RECORD_MIXING_HALL_RECORDS == FALSE

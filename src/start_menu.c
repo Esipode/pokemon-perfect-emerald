@@ -511,6 +511,7 @@ static void ShowSafariBallsWindow(void)
     CopyWindowToVram(sSafariBallsWindowId, COPYWIN_GFX);
 }
 
+#if FREE_BATTLE_FRONTIER == FALSE
 static void ShowPyramidFloorWindow(void)
 {
     if (gSaveBlock2Ptr->frontier.curChallengeBattleNum == FRONTIER_STAGES_PER_CHALLENGE)
@@ -525,6 +526,7 @@ static void ShowPyramidFloorWindow(void)
     AddTextPrinterParameterized(sBattlePyramidFloorWindowId, FONT_NORMAL, gStringVar4, 0, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(sBattlePyramidFloorWindowId, COPYWIN_GFX);
 }
+#endif //FREE_BATTLE_FRONTIER
 
 static void RemoveExtraStartMenuWindows(void)
 {
@@ -601,8 +603,10 @@ static bool32 InitStartMenuStep(void)
     case 3:
         if (GetSafariZoneFlag())
             ShowSafariBallsWindow();
+#if FREE_BATTLE_FRONTIER == FALSE
         if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
             ShowPyramidFloorWindow();
+#endif //FREE_BATTLE_FRONTIER
         sInitStartMenuData[0]++;
         break;
     case 4:

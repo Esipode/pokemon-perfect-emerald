@@ -1393,8 +1393,8 @@ void CreateBattleTowerMon_HandleLevel(struct Pokemon *mon, struct BattleTowerPok
     enum Language language;
     u8 value;
 
-    if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_50)
-        level = GetFrontierEnemyMonLevel(gSaveBlock2Ptr->frontier.lvlMode);
+    if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_50)
+        level = GetFrontierEnemyMonLevel(gSaveBlock2Ptr->lvlMode);
     else if (lvl50)
         level = FRONTIER_MAX_LEVEL_50;
     else
@@ -1449,6 +1449,7 @@ void CreateBattleTowerMon_HandleLevel(struct Pokemon *mon, struct BattleTowerPok
 
 void CreateApprenticeMon(struct Pokemon *mon, const struct Apprentice *src, u8 monId)
 {
+#if FREE_BATTLE_FRONTIER == FALSE
     s32 i;
     u16 evAmount;
     u8 language;
@@ -1474,6 +1475,7 @@ void CreateApprenticeMon(struct Pokemon *mon, const struct Apprentice *src, u8 m
     SetMonData(mon, MON_DATA_LANGUAGE, &language);
     SetMonData(mon, MON_DATA_OT_NAME, GetApprenticeNameInLanguage(src->id, language));
     CalculateMonStats(mon);
+#endif
 }
 
 void ConvertPokemonToBattleTowerPokemon(struct Pokemon *mon, struct BattleTowerPokemon *dest)

@@ -681,6 +681,7 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
             BattleSetup_StartBattlePikeWildBattle();
             return TRUE;
         }
+#if FREE_BATTLE_FRONTIER == FALSE
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
         {
             headerId = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
@@ -697,6 +698,7 @@ bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
             BattleSetup_StartWildBattle();
             return TRUE;
         }
+#endif //FREE_BATTLE_FRONTIER
     }
     else
     {
@@ -862,6 +864,7 @@ bool8 SweetScentWildEncounter(void)
             BattleSetup_StartBattlePikeWildBattle();
             return TRUE;
         }
+#if FREE_BATTLE_FRONTIER == FALSE
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
         {
             headerId = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
@@ -874,6 +877,7 @@ bool8 SweetScentWildEncounter(void)
             BattleSetup_StartWildBattle();
             return TRUE;
         }
+#endif //FREE_BATTLE_FRONTIER
     }
     else
     {

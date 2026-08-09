@@ -20,6 +20,8 @@
 #include "constants/battle_frontier.h"
 #include "constants/battle_frontier_mons.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 static void FillTrainerParty(u16 trainerId, enum BattleTrainer trainer, u8 monCount);
 
 // EWRAM vars.
@@ -117,7 +119,7 @@ static void DoFacilityTrainerBattleInternal(u8 facility)
         gBattleTypeFlags = BATTLE_TYPE_TRAINER | BATTLE_TYPE_PALACE;
         if (VarGet(VAR_FRONTIER_BATTLE_MODE) == FRONTIER_MODE_DOUBLES)
         gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
-        if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_TENT)
+        if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_TENT)
         FillFrontierTrainerParty(FRONTIER_PARTY_SIZE);
         else
         FillTentTrainerParty(FRONTIER_PARTY_SIZE);
@@ -127,7 +129,7 @@ static void DoFacilityTrainerBattleInternal(u8 facility)
         break;
     case FACILITY_BATTLE_ARENA:
         gBattleTypeFlags = BATTLE_TYPE_TRAINER | BATTLE_TYPE_ARENA;
-        if (gSaveBlock2Ptr->frontier.lvlMode != FRONTIER_LVL_TENT)
+        if (gSaveBlock2Ptr->lvlMode != FRONTIER_LVL_TENT)
         FillFrontierTrainerParty(FRONTIER_PARTY_SIZE);
         else
         FillTentTrainerParty(FRONTIER_PARTY_SIZE);
@@ -230,6 +232,7 @@ static void FillTrainerParty(u16 trainerId, enum BattleTrainer trainer, u8 monCo
     }
     else if (trainerId < TRAINER_RECORD_MIXING_APPRENTICE)
     {
+#if FREE_BATTLE_FRONTIER == FALSE
         // Record mixed player.
         for (j = 0, i = 0; i < monCount; j++, i++)
         {
@@ -239,13 +242,16 @@ static void FillTrainerParty(u16 trainerId, enum BattleTrainer trainer, u8 monCo
                 CreateBattleTowerMon_HandleLevel(&gParties[trainer][i], &gSaveBlock2Ptr->frontier.towerRecords[trainerId - TRAINER_RECORD_MIXING_FRIEND].party[j], FALSE);
             }
         }
+#endif
         return;
     }
     else
     {
         // Apprentice.
+#if FREE_BATTLE_FRONTIER == FALSE
         for (i = 0; i < FRONTIER_PARTY_SIZE; i++)
             CreateApprenticeMon(&gParties[trainer][i], &gSaveBlock2Ptr->apprentices[trainerId - TRAINER_RECORD_MIXING_APPRENTICE], i);
+#endif
         return;
     }
 
@@ -393,3 +399,28 @@ void CreateFacilityMon(const struct TrainerMon *fmon, u16 level, u8 fixedIV, u32
     SetMonData(dst, MON_DATA_POKEBALL, &ball);
     CalculateMonStats(dst);
 }
+
+#else // FREE_BATTLE_FRONTIER
+// Stage 4: every frontier facility is unreachable, but DoFacilityTrainerBattle/
+// FacilityTrainerBattle are `callnative`s referenced by asm/macros/event.inc and must stay
+// linkable, and CreateFacilityMon has callers across every other frontier file (all stubbed
+// the same way) plus battle_partner.c's dead multi-battle fallback.
+void DoFacilityTrainerBattle(struct ScriptContext *ctx)
+{
+    ScriptReadByte(ctx);
+}
+
+void FacilityTrainerBattle(struct ScriptContext *ctx)
+{
+    InitTrainerBattleParameter();
+    ScriptReadByte(ctx);
+}
+
+void FillFrontierTrainerParty(u8 monsCount) {}
+void FillFrontierTrainersParties(u8 monsCount) {}
+
+void CreateFacilityMon(const struct TrainerMon *fmon, u16 level, u8 fixedIV, u32 otID, u32 flags, struct Pokemon *dst)
+{
+    ZeroMonData(dst);
+}
+#endif // FREE_BATTLE_FRONTIER

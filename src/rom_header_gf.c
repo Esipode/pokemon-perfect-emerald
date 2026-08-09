@@ -145,8 +145,16 @@ __attribute__((section(".text.header_gf"))) USED static const struct GFRomHeader
     .trainerIdOffset = offsetof(struct SaveBlock2, playerTrainerId),
     .playerNameOffset = offsetof(struct SaveBlock2, playerName),
     .playerGenderOffset = offsetof(struct SaveBlock2, playerGender),
+#if FREE_BATTLE_FRONTIER == FALSE
     .frontierStatusOffset = offsetof(struct SaveBlock2, frontier.challengeStatus),
     .frontierStatusOffset2 = offsetof(struct SaveBlock2, frontier.challengeStatus),
+#else
+    // Stage 4: struct BattleFrontier (and its challengeStatus byte) no longer exists.
+    // This is external-tooling metadata (save editors/emulators), not read by the game
+    // itself, so 0 is a safe "not present" sentinel rather than a real offset.
+    .frontierStatusOffset = 0,
+    .frontierStatusOffset2 = 0,
+#endif //FREE_BATTLE_FRONTIER
 #if FREE_EXTERNAL_EVENT_DATA == FALSE
     .externalEventFlagsOffset = offsetof(struct SaveBlock1, externalEventFlags),
     .externalEventDataOffset = offsetof(struct SaveBlock1, externalEventData),

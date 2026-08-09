@@ -5015,7 +5015,11 @@ static void CB2_ReturnToBagMenu(void)
     if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
         GoToBagMenu(ITEMMENULOCATION_LAST, POCKETS_COUNT, NULL);
     else
+    {
+#if FREE_BATTLE_FRONTIER == FALSE
         GoToBattlePyramidBagMenu(PYRAMIDBAG_LOC_PREV, gPyramidBagMenuState.exitCallback);
+#endif
+    }
 }
 
 static void Task_SetSacredAshCB(u8 taskId)

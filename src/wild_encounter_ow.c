@@ -826,6 +826,7 @@ static bool32 CreateEnemyPartyOWE(struct InfoOWE *info, s32 x, s32 y)
             
             return TRUE;
         }
+#if FREE_BATTLE_FRONTIER == FALSE
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
         {
             headerId = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
@@ -838,6 +839,7 @@ static bool32 CreateEnemyPartyOWE(struct InfoOWE *info, s32 x, s32 y)
             SetMonData(&gParties[B_TRAINER_OPPONENT_A][0], MON_DATA_LEVEL, &id);
             return TRUE;
         }
+#endif //FREE_BATTLE_FRONTIER
 
         return FALSE;
     }
@@ -1075,12 +1077,14 @@ static bool32 CheckCurrentWildMonHeaderForOWE(bool32 shouldSpawnWaterMons)
             timeOfDay = GetTimeOfDayForEncounters(headerId, WILD_AREA_LAND);
             return gBattlePikeWildMonHeaders[headerId].encounterTypes[timeOfDay].landMonsInfo != NULL;
         }
+#if FREE_BATTLE_FRONTIER == FALSE
         if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
         {
             headerId = gSaveBlock2Ptr->frontier.curChallengeBattleNum;
             timeOfDay = GetTimeOfDayForEncounters(headerId, WILD_AREA_LAND);
             return gBattlePyramidWildMonHeaders[headerId].encounterTypes[timeOfDay].landMonsInfo != NULL;
         }
+#endif //FREE_BATTLE_FRONTIER
         return FALSE;
     }
 

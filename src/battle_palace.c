@@ -13,6 +13,8 @@
 #include "constants/frontier_util.h"
 #include "constants/trainers.h"
 
+#if FREE_BATTLE_FRONTIER == FALSE
+
 // This file's functions.
 static void InitPalaceChallenge(void);
 static void GetPalaceData(void);
@@ -83,13 +85,13 @@ void CallBattlePalaceFunction(void)
 
 static void InitPalaceChallenge(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     gSaveBlock2Ptr->frontier.challengeStatus = 0;
     gSaveBlock2Ptr->frontier.curChallengeBattleNum = 0;
     gSaveBlock2Ptr->frontier.challengePaused = FALSE;
-    gSaveBlock2Ptr->frontier.disableRecordBattle = FALSE;
+    gSaveBlock2Ptr->disableRecordBattle = FALSE;
     if (!(gSaveBlock2Ptr->frontier.winStreakActiveFlags & sWinStreakFlags[battleMode][lvlMode]))
         gSaveBlock2Ptr->frontier.palaceWinStreaks[battleMode][lvlMode] = 0;
 
@@ -99,7 +101,7 @@ static void InitPalaceChallenge(void)
 
 static void GetPalaceData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -118,7 +120,7 @@ static void GetPalaceData(void)
 
 static void SetPalaceData(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     switch (gSpecialVar_0x8005)
@@ -141,7 +143,7 @@ static void SetPalaceData(void)
 static void GetPalaceCommentId(void)
 {
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     if (gSaveBlock2Ptr->frontier.palaceWinStreaks[battleMode][lvlMode] < 50)
         gSpecialVar_Result = Random() % 3;
@@ -165,7 +167,7 @@ static void BufferOpponentIntroSpeech(void)
 
 static void IncrementPalaceStreak(void)
 {
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
     u8 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
 
     if (gSaveBlock2Ptr->frontier.palaceWinStreaks[battleMode][lvlMode] < MAX_STREAK)
@@ -190,7 +192,7 @@ static void SavePalaceChallenge(void)
 static void SetRandomPalacePrize(void)
 {
     u32 battleMode = VarGet(VAR_FRONTIER_BATTLE_MODE);
-    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->frontier.lvlMode;
+    enum FrontierLevelMode lvlMode = gSaveBlock2Ptr->lvlMode;
 
     if (gSaveBlock2Ptr->frontier.palaceWinStreaks[battleMode][lvlMode] > 41)
         gSaveBlock2Ptr->frontier.palacePrize = sBattlePalaceLatePrizes[Random() % ARRAY_COUNT(sBattlePalaceLatePrizes)];
@@ -211,3 +213,7 @@ static void GivePalacePrize(void)
         gSpecialVar_Result = FALSE;
     }
 }
+
+#else // FREE_BATTLE_FRONTIER
+void CallBattlePalaceFunction(void) { ScriptContext_Enable(); }
+#endif // FREE_BATTLE_FRONTIER

@@ -660,7 +660,7 @@ void HandleAction_Run(void)
         }
 
         gBattleOutcome |= B_OUTCOME_LINK_BATTLE_RAN;
-        gSaveBlock2Ptr->frontier.disableRecordBattle = TRUE;
+        gSaveBlock2Ptr->disableRecordBattle = TRUE;
     }
     else
     {
