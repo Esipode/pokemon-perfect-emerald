@@ -35,10 +35,22 @@
 //   and struct BattleFrontier's #if FREE_BATTLE_TOWER_E_READER branch changes its
 //   size depending on that separate flag. Confirm against a real build before
 //   trusting this number over the doc's.
-#define T_SAVEBLOCK1_SIZE 7664
+// Stage 5: sizeof(struct BoxPokemon) 96 -> 80 and sizeof(struct Pokemon) 120 -> 104
+//   (see the STATIC_ASSERTs and their comments in include/pokemon.h for why 104,
+//   not the planning doc's estimated 100). Two SaveBlock1 fields embed these:
+//   struct Pokemon playerParty[PARTY_SIZE] (6 * 16 = 96) and
+//   struct DayCare daycare.mons[DAYCARE_MON_COUNT].mon, a struct BoxPokemon
+//   (2 * 16 = 32). Neither array's own alignment changes (80 and 104 are both
+//   still multiples of 4), so this is a clean subtraction with no padding drift
+//   expected: 7664 - 96 - 32 = 7536. PokemonStorage embeds both types too: its
+//   TOTAL_BOXES_COUNT(16) * IN_BOX_COUNT(30) struct BoxPokemon boxes (16*30*16 =
+//   7680) and its MAX_FUSION_STORAGE(4) struct Pokemon fusions (4*16 = 64):
+//   46724 - 7680 - 64 = 38980. SaveBlock2/3 have no Pokemon/BoxPokemon fields and
+//   are untouched by this stage. Calculated, not yet confirmed by a real build.
+#define T_SAVEBLOCK1_SIZE 7536
 #define T_SAVEBLOCK2_SIZE 490
 #define T_SAVEBLOCK3_SIZE 1576
-#define T_POKEMONSTORAGE_SIZE 46724
+#define T_POKEMONSTORAGE_SIZE 38980
 
 TEST("SaveBlock1 is backwards compatible")
 {

@@ -2635,12 +2635,19 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_CHAMPION_RIBBON:
             retVal = GetSubstruct3(boxMon)->championRibbon;
             break;
+#if FREE_BATTLE_FRONTIER == FALSE
         case MON_DATA_WINNING_RIBBON:
             retVal = GetSubstruct3(boxMon)->winningRibbon;
             break;
         case MON_DATA_VICTORY_RIBBON:
             retVal = GetSubstruct3(boxMon)->victoryRibbon;
             break;
+#else
+        case MON_DATA_WINNING_RIBBON: // FREE_BATTLE_FRONTIER: no Battle Tower left to earn these.
+        case MON_DATA_VICTORY_RIBBON:
+            retVal = 0;
+            break;
+#endif //FREE_BATTLE_FRONTIER
         case MON_DATA_EFFORT_RIBBON:
             retVal = GetSubstruct3(boxMon)->effortRibbon;
             break;
@@ -2716,8 +2723,10 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
                 retVal += substruct3->toughRibbon;
 #endif //FREE_CONTESTS
                 retVal += substruct3->championRibbon;
+#if FREE_BATTLE_FRONTIER == FALSE
                 retVal += substruct3->winningRibbon;
                 retVal += substruct3->victoryRibbon;
+#endif //FREE_BATTLE_FRONTIER
 #if FREE_CONTESTS == FALSE
                 retVal += substruct3->artistRibbon;
 #endif //FREE_CONTESTS
@@ -2743,8 +2752,10 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
                        | (substruct3->smartRibbon << 10)
                        | (substruct3->toughRibbon << 13)
 #endif //FREE_CONTESTS
+#if FREE_BATTLE_FRONTIER == FALSE
                        | (substruct3->winningRibbon << 16)
                        | (substruct3->victoryRibbon << 17)
+#endif //FREE_BATTLE_FRONTIER
 #if FREE_CONTESTS == FALSE
                        | (substruct3->artistRibbon << 18)
 #endif //FREE_CONTESTS
@@ -3179,12 +3190,18 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         case MON_DATA_CHAMPION_RIBBON:
             SET8(GetSubstruct3(boxMon)->championRibbon);
             break;
+#if FREE_BATTLE_FRONTIER == FALSE
         case MON_DATA_WINNING_RIBBON:
             SET8(GetSubstruct3(boxMon)->winningRibbon);
             break;
         case MON_DATA_VICTORY_RIBBON:
             SET8(GetSubstruct3(boxMon)->victoryRibbon);
             break;
+#else
+        case MON_DATA_WINNING_RIBBON: // FREE_BATTLE_FRONTIER: no Battle Tower left to earn these.
+        case MON_DATA_VICTORY_RIBBON:
+            break;
+#endif //FREE_BATTLE_FRONTIER
         case MON_DATA_EFFORT_RIBBON:
             SET8(GetSubstruct3(boxMon)->effortRibbon);
             break;

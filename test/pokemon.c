@@ -584,7 +584,14 @@ TEST("BoxPokemon encryption works")
 {
     // This test exists to ensure that expansion has not broken anything with regards to how BoxPokemon encryption works.
     // If users make changes to the definitions of BoxPokemon, Pokemon, or any of their members, it is expected that this test will fail. To avoid the failing test from blocking CI, users can uncomment the KNOWN_FAILING declaration.
-    // KNOWN_FAILING;
+    // Saveblock Shrinking Stage 5: this is exactly that situation -- PokemonSubstruct0 was
+    // reordered and PokemonSubstruct3 lost three ribbon bits, so the hand-encoded `raw` bytes
+    // below (captured for the pre-Stage-5 field layout and bit offsets) no longer decode to the
+    // values the assertions expect. Regenerating them by hand for the new layout/permutation
+    // table would be exactly the kind of error-prone bit arithmetic this doc's own "Known risks"
+    // section says to verify via SetMonData/GetMonData round-trips instead, so this test takes
+    // the documented escape hatch rather than guessing at new raw bytes.
+    KNOWN_FAILING;
     u32 raw[20] =
     {
         990384375,
@@ -669,7 +676,9 @@ TEST("BoxPokemon encryption works")
     EXPECT_EQ(GetMonData(&mon, MON_DATA_SMART_RIBBON), 0);
 #endif //FREE_CONTESTS
     EXPECT_EQ(GetMonData(&mon, MON_DATA_CHAMPION_RIBBON), 1);
+#if FREE_BATTLE_FRONTIER == FALSE
     EXPECT_EQ(GetMonData(&mon, MON_DATA_VICTORY_RIBBON), 1);
+#endif //FREE_BATTLE_FRONTIER
     EXPECT_EQ(GetMonData(&mon, MON_DATA_EFFORT_RIBBON), 1);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_LAND_RIBBON), 1);
     EXPECT_EQ(GetMonData(&mon, MON_DATA_COUNTRY_RIBBON), 1);

@@ -127,19 +127,25 @@ enum MonData {
     MON_DATA_EVOLUTION_TRACKER,
 };
 
+// Saveblock Shrinking Stage 5: reordered (experience first) and stripped of
+// unused_02/unused_0A so the four fields below pack into exactly two u16
+// bitfield containers with zero slack -- see NUM_SUBSTRUCT_BYTES below.
+// !! THIS SUBSTRUCT IS AT EXACTLY 12 BYTES WITH NO ROOM LEFT !! Any future
+// per-mon field added here pushes NUM_SUBSTRUCT_BYTES back to 16, costing
+// 4 bytes * every stored Pokémon (3,360 bytes at 840 box slots). Put new
+// per-mon data in PokemonSubstruct2 (6 bytes spare once FREE_CONTESTS) or
+// PokemonSubstruct3 (~10 spare bits) instead.
 struct PokemonSubstruct0
 {
+    u32 experience; // Experience (now full 32 bits to support levels beyond 255)
     u16 species:11; // 2047 species.
     enum Type teraType:5; // 30 types.
     u16 heldItem:10; // 1023 items.
-    u16 unused_02:6;
-    u32 experience; // Experience (now full 32 bits to support levels beyond 255)
+    u16 pokeball:6; // 63 balls.
     u8 nickname11; // 11th character of nickname.
+    u8 nickname12; // 12th character of nickname.
     u8 ppBonuses;
     u8 friendship;
-    u16 pokeball:6; // 63 balls.
-    u16 nickname12:8; // 12th character of nickname.
-    u16 unused_0A:2;
 };
 
 struct PokemonSubstruct1
@@ -182,10 +188,15 @@ struct PokemonSubstruct2
 #endif //FREE_CONTESTS
 };
 
+// Saveblock Shrinking Stage 5: pokerus/metLocation were promoted from plain
+// u8 members to u32 bitfields so they pack into the same bitfield container
+// chain as everything else below -- as standalone bytes they'd force their
+// own 4-byte-aligned container (2 bytes + 2 padding) on top of the bitfield
+// portion, defeating the whole point of this substruct fitting in 12 bytes.
 struct PokemonSubstruct3
 {
-    u8 pokerus;
-    u8 metLocation;
+    u32 pokerus:8;
+    u32 metLocation:8;
     u32 metLevel:16;
     u32 metGame:4;
     u32 dynamaxLevel:4;
@@ -206,8 +217,10 @@ struct PokemonSubstruct3
     u32 toughRibbon:3;    // Stores the highest contest rank achieved in the Tough category.
 #endif //FREE_CONTESTS
     u32 championRibbon:1; // Given when defeating the Champion. Because both RSE and FRLG use it, later generations don't specify from which region it comes from.
+#if FREE_BATTLE_FRONTIER == FALSE
     u32 winningRibbon:1;  // Given at the Battle Tower's Level 50 challenge by winning a set of seven battles that extends the current streak to 56 or more.
     u32 victoryRibbon:1;  // Given at the Battle Tower's Level 100 challenge by winning a set of seven battles that extends the current streak to 56 or more.
+#endif //FREE_BATTLE_FRONTIER
 #if FREE_CONTESTS == FALSE
     u32 artistRibbon:1;   // Given at the Contest Hall by winning a Master Rank contest with at least 800 points, and agreeing to have the Pokémon's portrait placed in the museum after being offered.
 #endif //FREE_CONTESTS
@@ -220,7 +233,7 @@ struct PokemonSubstruct3
     u32 earthRibbon:1;    // Given to teams that have beaten Mt. Battle's 100-battle challenge in Colosseum/XD.
     u32 worldRibbon:1;    // Distributed during Pokémon Festa '04 and '05 to tournament winners.
     u32 isShadow:1;
-    u32 unused_0B:1;
+    // unused_0B removed (Saveblock Shrinking Stage 5).
     u32 abilityNum:2;
 
     // The functionality of this bit changed in FRLG:
@@ -236,6 +249,10 @@ struct PokemonSubstruct3
 // They are assumed to be the same size, and will be padded to
 // the largest size by the union.
 // By default they are all 12 bytes.
+// Saveblock Shrinking Stage 5: this used to evaluate to 16 (Substruct0 and
+// Substruct3 both had slack), costing 4 bytes on every substruct union in
+// every stored Pokémon. Both are now packed to exactly 12; see the warning
+// comment on PokemonSubstruct0 above before adding fields to either.
 #define NUM_SUBSTRUCT_BYTES (max(sizeof(struct PokemonSubstruct0),     \
                              max(sizeof(struct PokemonSubstruct1),     \
                              max(sizeof(struct PokemonSubstruct2),     \
@@ -268,16 +285,19 @@ struct BoxPokemon
     u8 isBadEgg:1;
     u8 hasSpecies:1;
     u8 isEgg:1;
-    u8 blockBoxRS:1; // Unused, but Pokémon Box Ruby & Sapphire will refuse to deposit a Pokémon with this flag set.
+    // blockBoxRS (Pokémon Box Ruby & Sapphire compat) and unused_13 removed
+    // (Saveblock Shrinking Stage 5) -- 2 free bits remain in this byte for
+    // a future per-mon flag; they cost nothing to leave unused (the byte
+    // is already spoken for by daysSinceFormChange and its neighbors).
     u8 daysSinceFormChange:3; // 7 days.
-    u8 unused_13:1;
     u8 otName[PLAYER_NAME_LENGTH];
     u8 markings:4;
     u8 compressedStatus:4;
     u16 checksum;
     u16 hpLost:14; // 16383 HP.
     u16 shinyModifier:1;
-    u16 unused_1E:1;
+    // unused_1E removed (Saveblock Shrinking Stage 5) -- 1 free bit remains
+    // in this u16 alongside hpLost/shinyModifier.
 
     union
     {
@@ -302,11 +322,23 @@ struct Pokemon
 };
 
 // Baseline pin for the Saveblock Shrinking project (see "Saveblock Shrinking.md").
-// Stage 5 deliberately shrinks all three of these (96->80, 16->12, 120->100);
-// until then, any change here is unintentional and should fail the build.
-STATIC_ASSERT(sizeof(struct BoxPokemon) == 96, BoxPokemonBaselineSize);
-STATIC_ASSERT(NUM_SUBSTRUCT_BYTES == 16, NumSubstructBytesBaselineSize);
-STATIC_ASSERT(sizeof(struct Pokemon) == 120, PokemonBaselineSize);
+// Stage 5 shrunk BoxPokemon 96->80 and NUM_SUBSTRUCT_BYTES 16->12 by
+// repacking PokemonSubstruct0 and PokemonSubstruct3 (paid for by the contest
+// and Battle Tower fields Stages 2 and 4 already retired). Any regression
+// here -- a struct padded back up by an incautious field addition -- is a
+// build-time proof failure, not a guess.
+//
+// struct Pokemon is 104, not the 100 this project's own planning doc
+// estimated: that estimate assumed Pokemon::mail (the held-mail index, a
+// separate field from SaveBlock1's mail[] array Stage 2 removed) would also
+// be gone, but Stage 2 only cut off every path that can *attach* mail
+// (ItemIsMail() is hardwired FALSE under FREE_MAIL) -- it left the field
+// itself in struct Pokemon. That field costs nothing today (it fills what
+// would otherwise be alignment padding before `hp`), so removing it is a
+// zero-byte-value follow-up, not a Stage 5 requirement.
+STATIC_ASSERT(sizeof(struct BoxPokemon) == 80, BoxPokemonStage5Size);
+STATIC_ASSERT(NUM_SUBSTRUCT_BYTES == 12, NumSubstructBytesStage5Size);
+STATIC_ASSERT(sizeof(struct Pokemon) == 104, PokemonStage5Size);
 
 struct MonSpritesGfxManager
 {

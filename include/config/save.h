@@ -32,7 +32,7 @@
 #define FREE_POKEMON_JUMP                   TRUE   // Frees up Pokémon Jump data (16 bytes).
 #define FREE_RECORD_MIXING_HALL_RECORDS     TRUE   // Frees up hall records for record mixing (1032 bytes).
 #define FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2    TRUE   // Free up unused Pokédex seen flags (104 bytes).
-#define FREE_BATTLE_FRONTIER                TRUE   // Frees up struct BattleFrontier, apprentices[], and playerApprentice (2,528 bytes). Also retires battlePoints/cardBattlePoints and the Battle Tents (which reuse the same struct). disableRecordBattle and lvlMode are relocated to top-level SaveBlock2 fields first, since generic (non-frontier) battle/link code still needs them.
+#define FREE_BATTLE_FRONTIER                TRUE   // Frees up struct BattleFrontier, apprentices[], and playerApprentice (2,528 bytes). Also retires battlePoints/cardBattlePoints and the Battle Tents (which reuse the same struct). disableRecordBattle and lvlMode are relocated to top-level SaveBlock2 fields first, since generic (non-frontier) battle/link code still needs them. Also drops winningRibbon/victoryRibbon from PokemonSubstruct3 -- 0 bytes on its own, but (together with FREE_CONTESTS) a precondition for Stage 5's BoxPokemon shrink.
                                             // FREE_CONTESTS also frees contestLinkResults (40 bytes) here.
                                             // SaveBlock2 total: 3920 bytes
 
