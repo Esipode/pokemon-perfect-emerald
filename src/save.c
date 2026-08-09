@@ -21,25 +21,35 @@ static u8 CopySaveSlotData(u16, struct SaveSectorLocation *);
 static u8 TryWriteSector(u8, u8 *);
 static u8 HandleWriteSector(u16, const struct SaveSectorLocation *);
 static u8 HandleReplaceSector(u16, const struct SaveSectorLocation *);
-static void CopyToSaveBlock3(u32, struct SaveSector *);
-static void CopyFromSaveBlock3(u32, struct SaveSector *);
+static u8 WriteStorageSectorJournaled(u16 chunk);
+static void WriteStorageSectorsIfDirty(void);
+static void InvalidatePokemonStorageSectorCache(void);
+static u8 LoadPokemonStorage(void);
 
 // Divide save blocks into individual chunks to be written to flash sectors
 
 /*
- * Sector Layout:
+ * Sector Layout: see the big comment block in save.h for the full 32-sector
+ * map. In short:
  *
- * Sectors 0 - 14:      Save Slot 1
- * Sectors 15 - 29:     Save Slot 2
- * Sector  30:          Achievement Profile (primary)
- * Sector  31:          Achievement Profile (mirror)
+ * Sectors 0-3:    Save Slot A (SaveBlock2 / SaveBlock1 / SaveBlock3)
+ * Sectors 4-7:    Save Slot B (SaveBlock2 / SaveBlock1 / SaveBlock3)
+ * Sectors 8-25:   PokemonStorage (single copy, not slot-rotated)
+ * Sector  26:     PokemonStorage journal scratch
+ * Sectors 27-29:  Spare
+ * Sector  30:     Achievement Profile (primary)
+ * Sector  31:     Achievement Profile (mirror)
  *
  * There are two save slots for saving the player's game data. We alternate between
  * them each time the game is saved, so that if the current save slot is corrupt,
  * we can load the previous one. We also rotate the sectors in each save slot
  * so that the same data is not always being written to the same sector. This
  * might be done to reduce wear on the flash memory, but I'm not sure, since all
- * 15 sectors get written anyway.
+ * 4 sectors get written anyway.
+ *
+ * PokemonStorage is deliberately NOT part of this slot rotation -- see the
+ * PokemonStorage persistence section further down this file for why and how
+ * its durability is handled instead.
  *
  * See SECTOR_ID_* constants in save.h
  */
@@ -62,7 +72,26 @@ struct
     SAVEBLOCK_CHUNK(struct SaveBlock1, 0), // SECTOR_ID_SAVEBLOCK1_START
     SAVEBLOCK_CHUNK(struct SaveBlock1, 1), // SECTOR_ID_SAVEBLOCK1_END
 
-    SAVEBLOCK_CHUNK(struct PokemonStorage, 0), // SECTOR_ID_PKMN_STORAGE_START
+    SAVEBLOCK_CHUNK(struct SaveBlock3, 0), // SECTOR_ID_SAVEBLOCK3 -- its own sector now, no more tail-smearing
+};
+
+// PokemonStorage's own per-sector layout table, sized to the full reserved
+// range (see NUM_PKMN_STORAGE_SECTORS in save.h) regardless of how many
+// sectors the struct currently needs -- SAVEBLOCK_CHUNK already produces
+// size 0 for chunks beyond sizeof(struct PokemonStorage), so unused reserve
+// sectors are simply never read or written. Indexed 0..NUM_PKMN_STORAGE_SECTORS-1;
+// add SECTOR_ID_PKMN_STORAGE_START to get the absolute flash sector.
+// offset is u32, not u16 like sSaveSlotLayout's: chunkNum * SECTOR_DATA_SIZE
+// is computed (then discarded via the size-0 case) even for reserve chunks
+// far past sizeof(struct PokemonStorage), and at chunk 17 that's 67,456 --
+// already past what a u16 can hold, regardless of the struct's current size.
+struct
+{
+    u32 offset;
+    u16 size;
+} static const sPkmnStorageLayout[NUM_PKMN_STORAGE_SECTORS] =
+{
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 0),
     SAVEBLOCK_CHUNK(struct PokemonStorage, 1),
     SAVEBLOCK_CHUNK(struct PokemonStorage, 2),
     SAVEBLOCK_CHUNK(struct PokemonStorage, 3),
@@ -73,17 +102,30 @@ struct
     SAVEBLOCK_CHUNK(struct PokemonStorage, 8),
     SAVEBLOCK_CHUNK(struct PokemonStorage, 9),
     SAVEBLOCK_CHUNK(struct PokemonStorage, 10),
-    SAVEBLOCK_CHUNK(struct PokemonStorage, 11), // SECTOR_ID_PKMN_STORAGE_END
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 11),
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 12),
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 13),
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 14),
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 15),
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 16),
+    SAVEBLOCK_CHUNK(struct PokemonStorage, 17),
 };
 
 // These will produce an error if a save struct is larger than the space
 // alloted for it in the flash.
-STATIC_ASSERT(sizeof(struct SaveBlock3) <= SAVE_BLOCK_3_CHUNK_SIZE * NUM_SECTORS_PER_SLOT, SaveBlock3FreeSpace);
+STATIC_ASSERT(sizeof(struct SaveBlock3) <= SECTOR_DATA_SIZE, SaveBlock3FreeSpace);
 STATIC_ASSERT(sizeof(struct SaveBlock2) <= SECTOR_DATA_SIZE, SaveBlock2FreeSpace);
 STATIC_ASSERT(sizeof(struct SaveBlock1) <= SECTOR_DATA_SIZE * (SECTOR_ID_SAVEBLOCK1_END - SECTOR_ID_SAVEBLOCK1_START + 1), SaveBlock1FreeSpace);
 STATIC_ASSERT(sizeof(struct PokemonStorage) <= SECTOR_DATA_SIZE * (SECTOR_ID_PKMN_STORAGE_END - SECTOR_ID_PKMN_STORAGE_START + 1), PokemonStorageFreeSpace);
 
 STATIC_ASSERT(SECTOR_ID_ACHIEVEMENTS >= NUM_SAVE_SLOT_SECTORS, AchievementSectorOutsideSaveSlots);
+// Guard rails for the Stage 6 sector remap: PokemonStorage and its journal
+// scratch sector must sit strictly between the rotating slots and the
+// achievement profile, and the whole map must still fit the physical chip.
+STATIC_ASSERT(SECTOR_ID_PKMN_STORAGE_START >= NUM_SAVE_SLOT_SECTORS, StorageSectorsOutsideSaveSlots);
+STATIC_ASSERT(SECTOR_ID_STORAGE_JOURNAL > SECTOR_ID_PKMN_STORAGE_END, JournalSectorAfterStorage);
+STATIC_ASSERT(SECTOR_ID_ACHIEVEMENTS > SECTOR_ID_STORAGE_JOURNAL, AchievementSectorAfterJournal);
+STATIC_ASSERT(SECTORS_COUNT == 32, SectorsCountMatchesFlashChip); // gFlash->sector.count is always 32 on this hardware (see src/agb_flash_mx.c / agb_flash_le.c)
 
 // The achievement profile lives outside the save slots and must survive every
 // save wipe. Nothing in the save-slot code path may erase it.
@@ -102,20 +144,38 @@ COMMON_DATA u32 gSaveCounter = 0;
 COMMON_DATA struct SaveSector *gReadWriteSector = NULL; // Pointer to a buffer for reading/writing a sector
 COMMON_DATA u16 gIncrementalSectorId = 0;
 COMMON_DATA u16 gSaveFileStatus = 0;
+COMMON_DATA u16 gPokemonStorageFileStatus = 0;
 COMMON_DATA MainCallback gGameContinueCallback = NULL;
 COMMON_DATA struct SaveSectorLocation gRamSaveSectorLocations[NUM_SECTORS_PER_SLOT] = {0};
 COMMON_DATA u16 gSaveAttemptStatus = 0;
 
 EWRAM_DATA struct SaveSector gSaveDataBuffer = {0}; // Buffer used for reading/writing sectors
 
+// Per-sector dirty-tracking cache for PokemonStorage -- see the persistence
+// section further down this file. Indexed the same way as sPkmnStorageLayout.
+static u16 sPkmnStorageSectorChecksum[NUM_PKMN_STORAGE_SECTORS];
+// Whether sPkmnStorageSectorChecksum[i] reflects data that is actually known
+// to be safely on flash right now (set on a successful load or write, and
+// deliberately zero-initialized to FALSE so the very first save of a fresh
+// game unconditionally writes every sector instead of assuming a match).
+static bool8 sPkmnStorageSectorValid[NUM_PKMN_STORAGE_SECTORS];
+
 void ClearSaveData(void)
 {
     u16 i;
 
-    // Erases the two save slots only. Sectors at and above SECTOR_ID_ACHIEVEMENTS
-    // (30-31) are deliberately preserved.
-    for (i = 0; i < NUM_SAVE_SLOT_SECTORS; i++)
-        EraseSaveSlotSector(i);
+    // Erases every sector except the achievement profile and its mirror
+    // (SECTOR_ID_ACHIEVEMENTS / _BACKUP, 30-31), which must survive every
+    // save wipe. This covers the two rotating SaveBlock1/2/3 slots (0-7),
+    // PokemonStorage (8-25), and its journal scratch sector (26) -- unlike
+    // pre-Stage-6, where storage only ever lived inside the rotating slots
+    // and the old NUM_SAVE_SLOT_SECTORS-bounded loop already covered it for
+    // free, storage now needs its own sectors explicitly included here.
+    // Deliberately calls EraseFlashSector directly rather than
+    // EraseSaveSlotSector: that helper's gate is intentionally narrower (see
+    // its own comment) and would refuse everything from sector 8 up.
+    for (i = 0; i < SECTOR_ID_ACHIEVEMENTS; i++)
+        EraseFlashSector(i);
 }
 
 void Save_ResetSaveCounters(void)
@@ -212,8 +272,6 @@ static u8 HandleWriteSector(u16 sectorId, const struct SaveSectorLocation *locat
     // Copy current data to temp buffer for writing
     for (i = 0; i < size; i++)
         gReadWriteSector->data[i] = data[i];
-
-    CopyFromSaveBlock3(sectorId, gReadWriteSector);
 
     gReadWriteSector->checksum = CalculateChecksum(data, size);
 
@@ -329,8 +387,6 @@ static u8 HandleReplaceSector(u16 sectorId, const struct SaveSectorLocation *loc
     // Copy current data to temp buffer for writing
     for (i = 0; i < size; i++)
         gReadWriteSector->data[i] = data[i];
-
-    CopyFromSaveBlock3(sectorId, gReadWriteSector);
 
     gReadWriteSector->checksum = CalculateChecksum(data, size);
 
@@ -501,7 +557,6 @@ static u8 CopySaveSlotData(u16 sectorId, struct SaveSectorLocation *locations)
             u16 j;
             for (j = 0; j < locations[id].size; j++)
                 ((u8 *)locations[id].data)[j] = gReadWriteSector->data[j];
-            CopyToSaveBlock3(id, gReadWriteSector);
         }
     }
 
@@ -654,6 +709,12 @@ static u16 CalculateChecksum(void *data, u16 size)
     return ((checksum >> 16) + checksum);
 }
 
+// Populates gRamSaveSectorLocations for the rotating slot only (SaveBlock2,
+// SaveBlock1, SaveBlock3). PokemonStorage is deliberately not part of this
+// table -- it's addressed directly via sPkmnStorageLayout + gPokemonStoragePtr
+// in the PokemonStorage persistence section further down this file, since it
+// isn't slot-rotated and needs none of gRamSaveSectorLocations' relative
+// addressing.
 static void UpdateSaveAddresses(void)
 {
     int i = SECTOR_ID_SAVEBLOCK2;
@@ -666,11 +727,9 @@ static void UpdateSaveAddresses(void)
         gRamSaveSectorLocations[i].size = sSaveSlotLayout[i].size;
     }
 
-    for (; i <= SECTOR_ID_PKMN_STORAGE_END; i++) //setting i to SECTOR_ID_PKMN_STORAGE_START does not match
-    {
-        gRamSaveSectorLocations[i].data = (void *)(gPokemonStoragePtr) + sSaveSlotLayout[i].offset;
-        gRamSaveSectorLocations[i].size = sSaveSlotLayout[i].size;
-    }
+    i = SECTOR_ID_SAVEBLOCK3;
+    gRamSaveSectorLocations[i].data = (void *)(gSaveBlock3Ptr) + sSaveSlotLayout[i].offset;
+    gRamSaveSectorLocations[i].size = sSaveSlotLayout[i].size;
 }
 
 u8 HandleSavingData(u8 saveType)
@@ -695,11 +754,14 @@ u8 HandleSavingData(u8 saveType)
     default:
         CopyPartyAndObjectsToSave();
         WriteSaveSectorOrSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
+        WriteStorageSectorsIfDirty();
         break;
     case SAVE_LINK:
     case SAVE_EREADER: // Dummied, now duplicate of SAVE_LINK
         // Used by link / Battle Frontier
-        // Write only SaveBlocks 1 and 2 (skips the PC)
+        // Write only SaveBlocks 1 and 2 (skips the PC) -- PokemonStorage was
+        // never included here even before Stage 6's sector remap, so this
+        // stays as-is.
         CopyPartyAndObjectsToSave();
         for (i = SECTOR_ID_SAVEBLOCK2; i <= SECTOR_ID_SAVEBLOCK1_END; i++)
             HandleReplaceSector(i, gRamSaveSectorLocations);
@@ -709,8 +771,13 @@ u8 HandleSavingData(u8 saveType)
     case SAVE_OVERWRITE_DIFFERENT_FILE:
         // Overwrite save slot. Previously also erased the Hall of Fame sectors
         // first; those sectors no longer exist (see the save.h sector remap).
+        // The storage dirty-tracking cache is invalidated first: it may still
+        // reflect whatever save file was previously loaded, which is not a
+        // safe baseline to diff a different logical save file against.
+        InvalidatePokemonStorageSectorCache();
         CopyPartyAndObjectsToSave();
         WriteSaveSectorOrSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
+        WriteStorageSectorsIfDirty();
         break;
     }
     gTrainerHillVBlankCounter = backupVar;
@@ -753,9 +820,40 @@ bool8 LinkFullSave_Init(void)
     return FALSE;
 }
 
+// Called repeatedly (once per frame-ish) until it returns TRUE. Writes
+// SaveBlock2 and SaveBlock1's sectors first (SaveBlock3, the slot's final
+// sector, is committed afterward by LinkFullSave_ReplaceLastSector /
+// LinkFullSave_SetLastSectorSignature's deferred-signature-byte trick,
+// unchanged by Stage 6), then continues into PokemonStorage's own dirty,
+// journaled sectors -- this is what the callers' "does save the PC data"
+// comments (see e.g. src/trade.c) refer to. Unlike the rotating slot,
+// storage has no second copy to fall back on, so each of its sectors commits
+// via WriteStorageSectorJournaled instead of the slot's atomic-last-sector
+// trick; per-sector journaling is what makes that safe (see the
+// PokemonStorage persistence section further down this file).
 bool8 LinkFullSave_WriteSector(void)
 {
-    u8 status = HandleWriteIncrementalSector(NUM_SECTORS_PER_SLOT, gRamSaveSectorLocations);
+    u8 status;
+
+    if (gIncrementalSectorId < NUM_SECTORS_PER_SLOT - 1)
+    {
+        status = HandleWriteIncrementalSector(NUM_SECTORS_PER_SLOT, gRamSaveSectorLocations);
+    }
+    else
+    {
+        u16 chunk = gIncrementalSectorId - (NUM_SECTORS_PER_SLOT - 1);
+        if (chunk < NUM_PKMN_STORAGE_SECTORS)
+        {
+            WriteStorageSectorJournaled(chunk);
+            gIncrementalSectorId++;
+            status = SAVE_STATUS_OK;
+        }
+        else
+        {
+            status = SAVE_STATUS_ERROR; // Exceeded max sector, finished (mirrors HandleWriteIncrementalSector's own sentinel).
+        }
+    }
+
     if (gDamagedSaveSectors)
         DoSaveFailedScreen(SAVE_NORMAL);
 
@@ -800,21 +898,23 @@ bool8 WriteSaveBlock2(void)
 }
 
 // Used in conjunction with WriteSaveBlock2 to write both for certain link saves.
-// This will be called repeatedly in a task, writing each sector of SaveBlock1 incrementally.
+// This will be called repeatedly in a task, writing each sector of SaveBlock1,
+// and now also SaveBlock3 (its own sector as of the Stage 6 remap, rather than
+// a tail smeared across every sector -- see save.h), incrementally.
 // It returns TRUE when finished.
 bool8 WriteSaveBlock1Sector(void)
 {
     bool32 finished = FALSE;
     u16 sectorId = ++gIncrementalSectorId; // Because WriteSaveBlock2 will have been called prior, this will be SECTOR_ID_SAVEBLOCK1_START
-    if (sectorId <= SECTOR_ID_SAVEBLOCK1_END)
+    if (sectorId <= NUM_SECTORS_PER_SLOT - 1) // walks SaveBlock1's chunks, then SaveBlock3, the slot's final sector
     {
-        // Write a single sector of SaveBlock1
+        // Write a single sector of SaveBlock1/SaveBlock3
         HandleReplaceSectorAndVerify(gIncrementalSectorId + 1, gRamSaveSectorLocations);
         WriteSectorSignatureByte(sectorId, gRamSaveSectorLocations);
     }
     else
     {
-        // Beyond SaveBlock1, don't write the sector.
+        // Beyond SaveBlock3, don't write the sector.
         // Does write 1 byte of the next sector's signature field, but as these
         // are the same for all valid sectors it doesn't matter.
         WriteSectorSignatureByte(sectorId, gRamSaveSectorLocations);
@@ -843,6 +943,10 @@ u8 LoadGameSave(u8 saveType)
     case SAVE_NORMAL:
     default:
         status = TryLoadSaveSlot(FULL_SAVE_SLOT, gRamSaveSectorLocations);
+        // Independent of the slot's own status -- see gPokemonStorageFileStatus's
+        // declaration in save.h for why a storage read failure can no longer
+        // make the whole save look invalid.
+        gPokemonStorageFileStatus = LoadPokemonStorage();
         CopyPartyAndObjectsFromSave();
         gSaveFileStatus = status;
         gGameContinueCallback = NULL;
@@ -982,21 +1086,237 @@ void Task_LinkFullSave(u8 taskId)
     }
 }
 
-static u32 SaveBlock3Size(u32 sectorId)
+// ---------------------------------------------------------------------------
+// PokemonStorage persistence (single copy, journaled, dirty-tracked)
+// ---------------------------------------------------------------------------
+//
+// PokemonStorage is not part of the SaveBlock1/2/3 slot rotation above: it
+// lives once, at a fixed absolute sector range (SECTOR_ID_PKMN_STORAGE_START
+// .. _END), addressed the same way regardless of gSaveCounter/gLastWrittenSector.
+// A second full copy would cost as many flash sectors as the rest of the
+// entire save combined, which is the opposite of what this whole project is
+// trying to buy back (see Saveblock Shrinking.md).
+//
+// Durability instead comes from two things working together:
+//
+//   1. Per-sector dirty tracking (sPkmnStorageSectorChecksum/Valid, declared
+//      near the top of this file): a save only ever rewrites sectors whose
+//      contents actually changed since the last successful read or write of
+//      that sector. Untouched boxes are never rewritten, which keeps flash
+//      wear down and -- more importantly for the point below -- keeps the
+//      window where a mid-write power loss can matter as small as possible.
+//
+//   2. A copy-on-write journal (SECTOR_ID_STORAGE_JOURNAL). Before a changed
+//      sector's home is ever touched, the exact candidate contents are
+//      written to the scratch sector and verified there first (this is what
+//      ProgramFlashSectorAndVerify already does per call). Only once that
+//      succeeds does the home sector get overwritten:
+//        - A power loss during the *journal* write leaves the home sector
+//          completely untouched -- still whatever it was before, still
+//          valid. The half-written journal sector simply fails its own
+//          checksum on the next boot and is ignored.
+//        - A power loss during the *home* write is the only way the home
+//          sector itself can end up corrupt. On the next boot,
+//          LoadPokemonStorageSector notices the home sector's checksum no
+//          longer matches, finds the journal sector still holds a verified,
+//          complete candidate for that exact sector id, and replays it back
+//          into the home sector to repair it.
+//      A single storage box spans at most two sectors, so this per-sector
+//      atomicity is sufficient -- there is never a need to make a write span
+//      multiple sectors atomically as one unit.
+//
+// Unlike gSaveFileStatus (which only reflects the small SaveBlock1/2/3 slot),
+// a corrupt or unrecoverable storage sector can no longer make the game
+// treat the whole save as invalid -- see gPokemonStorageFileStatus in save.h.
+
+// Assembles a full sector buffer (in gSaveDataBuffer) for storage chunk
+// `chunk`, ready to hand to ProgramFlashSectorAndVerify. `id` is stamped with
+// the chunk's absolute home sector -- unlike the rotating slot's sector `id`
+// field (which only ever holds a small 0..3 logical chunk index, because
+// slot sectors physically move between the two slots), storage never moves,
+// so its own `id` doubling as "which physical sector this candidate belongs
+// to" is unambiguous and is exactly what LoadPokemonStorageSector needs to
+// recognize a matching journal entry on replay.
+static void BuildStorageSectorBuffer(u16 chunk, const u8 *data, u16 size)
 {
-    s32 begin = sectorId * SAVE_BLOCK_3_CHUNK_SIZE;
-    s32 end = (sectorId + 1) * SAVE_BLOCK_3_CHUNK_SIZE;
-    return max(0, min(end, (s32)sizeof(gSaveblock3)) - begin);
+    u16 i;
+
+    for (i = 0; i < SECTOR_SIZE; i++)
+        ((u8 *)&gSaveDataBuffer)[i] = 0;
+
+    gSaveDataBuffer.id = SECTOR_ID_PKMN_STORAGE_START + chunk;
+    gSaveDataBuffer.signature = SECTOR_SIGNATURE;
+    gSaveDataBuffer.counter = gSaveCounter;
+    for (i = 0; i < size; i++)
+        gSaveDataBuffer.data[i] = data[i];
+    gSaveDataBuffer.checksum = CalculateChecksum((void *)data, size);
 }
 
-static void CopyToSaveBlock3(u32 sectorId, struct SaveSector *sector)
+// Journals and commits one storage sector if -- and only if -- it has
+// actually changed since the last successful read or write. Called once per
+// chunk, either in a tight loop (a normal full save) or one chunk per call
+// across many frames (the incremental link-save path -- see
+// LinkFullSave_WriteSector). Failures set gDamagedSaveSectors bits exactly
+// like the slot-sector writers above, so they participate in the same
+// DoSaveFailedScreen / retry-wipe flow as everything else (see
+// save_failed_screen.c's WipeSectors).
+static u8 WriteStorageSectorJournaled(u16 chunk)
 {
-    u32 size = SaveBlock3Size(sectorId);
-    memcpy((u8 *)&gSaveblock3 + (sectorId * SAVE_BLOCK_3_CHUNK_SIZE), sector->saveBlock3Chunk, size);
+    u8 *data;
+    u16 size;
+    u16 checksum;
+    u16 absoluteSector;
+
+    if (chunk >= NUM_PKMN_STORAGE_SECTORS)
+        return SAVE_STATUS_OK;
+
+    size = sPkmnStorageLayout[chunk].size;
+    if (size == 0)
+        return SAVE_STATUS_OK; // Reserved sector, not needed at the current box count.
+
+    data = (u8 *)gPokemonStoragePtr + sPkmnStorageLayout[chunk].offset;
+    checksum = CalculateChecksum(data, size);
+
+    if (sPkmnStorageSectorValid[chunk] && sPkmnStorageSectorChecksum[chunk] == checksum)
+        return SAVE_STATUS_OK; // Unchanged since the last successful read/write -- nothing to do.
+
+    absoluteSector = SECTOR_ID_PKMN_STORAGE_START + chunk;
+
+    // Copy-on-write: land the candidate in the scratch sector and verify it
+    // before ever touching the home sector (see the section comment above).
+    BuildStorageSectorBuffer(chunk, data, size);
+    if (ProgramFlashSectorAndVerify(SECTOR_ID_STORAGE_JOURNAL, (u8 *)&gSaveDataBuffer) != 0)
+    {
+        SetDamagedSectorBits(ENABLE, SECTOR_ID_STORAGE_JOURNAL);
+        return SAVE_STATUS_ERROR;
+    }
+    SetDamagedSectorBits(DISABLE, SECTOR_ID_STORAGE_JOURNAL);
+
+    // The journal write already verified this buffer byte-for-byte, so the
+    // home write can reuse it as-is.
+    if (ProgramFlashSectorAndVerify(absoluteSector, (u8 *)&gSaveDataBuffer) != 0)
+    {
+        SetDamagedSectorBits(ENABLE, absoluteSector);
+        sPkmnStorageSectorValid[chunk] = FALSE; // Cache is now unknown, not just stale -- force a retry next time.
+        return SAVE_STATUS_ERROR;
+    }
+    SetDamagedSectorBits(DISABLE, absoluteSector);
+
+    sPkmnStorageSectorChecksum[chunk] = checksum;
+    sPkmnStorageSectorValid[chunk] = TRUE;
+    return SAVE_STATUS_OK;
 }
 
-static void CopyFromSaveBlock3(u32 sectorId, struct SaveSector *sector)
+// Walks every storage sector, journaling and committing whichever ones are
+// actually dirty. Used by the ordinary (non-link) save paths in
+// HandleSavingData, which don't need the one-sector-per-call pacing the
+// incremental link-save path (LinkFullSave_WriteSector) uses instead.
+static void WriteStorageSectorsIfDirty(void)
 {
-    u32 size = SaveBlock3Size(sectorId);
-    memcpy(sector->saveBlock3Chunk, (u8 *)&gSaveblock3 + (sectorId * SAVE_BLOCK_3_CHUNK_SIZE), size);
+    u16 chunk;
+
+    for (chunk = 0; chunk < NUM_PKMN_STORAGE_SECTORS; chunk++)
+        WriteStorageSectorJournaled(chunk);
+}
+
+// Forces every storage sector to be treated as unknown, so the next
+// WriteStorageSectorsIfDirty/WriteStorageSectorJournaled call rewrites all of
+// them unconditionally instead of trusting a cached checksum. Used by
+// SAVE_OVERWRITE_DIFFERENT_FILE: the cache may have been seeded from
+// whatever save file was previously loaded, which is not a safe baseline to
+// diff a different logical save file against.
+static void InvalidatePokemonStorageSectorCache(void)
+{
+    u16 chunk;
+
+    for (chunk = 0; chunk < NUM_PKMN_STORAGE_SECTORS; chunk++)
+        sPkmnStorageSectorValid[chunk] = FALSE;
+}
+
+// Loads one storage sector's data into gPokemonStoragePtr, replaying the
+// journal scratch sector if the home sector is corrupt (see the section
+// comment above). Returns TRUE if the chunk's data in RAM is now known-good,
+// whether it came from the home sector or from a successful journal replay.
+// Returns FALSE if neither is usable, in which case RAM is left untouched --
+// the same thing happens, harmlessly, on a brand new save with nothing valid
+// on flash yet, since new_game.c already initializes PokemonStorage in RAM
+// before any of this ever runs.
+static bool8 LoadPokemonStorageSector(u16 chunk)
+{
+    u16 size = sPkmnStorageLayout[chunk].size;
+    u16 absoluteSector = SECTOR_ID_PKMN_STORAGE_START + chunk;
+    u8 *dest;
+    u16 checksum;
+
+    if (size == 0)
+        return TRUE; // Reserved sector, nothing to load.
+
+    dest = (u8 *)gPokemonStoragePtr + sPkmnStorageLayout[chunk].offset;
+
+    ReadFlashSector(absoluteSector, &gSaveDataBuffer);
+    if (gSaveDataBuffer.signature == SECTOR_SIGNATURE)
+    {
+        checksum = CalculateChecksum(gSaveDataBuffer.data, size);
+        if (gSaveDataBuffer.checksum == checksum)
+        {
+            memcpy(dest, gSaveDataBuffer.data, size);
+            sPkmnStorageSectorChecksum[chunk] = checksum;
+            sPkmnStorageSectorValid[chunk] = TRUE;
+            return TRUE;
+        }
+    }
+
+    // Home sector missing or corrupt -- see if the journal scratch sector
+    // holds a verified candidate for this exact sector and replay it.
+    ReadFlashSector(SECTOR_ID_STORAGE_JOURNAL, &gSaveDataBuffer);
+    if (gSaveDataBuffer.signature == SECTOR_SIGNATURE && gSaveDataBuffer.id == absoluteSector)
+    {
+        checksum = CalculateChecksum(gSaveDataBuffer.data, size);
+        if (gSaveDataBuffer.checksum == checksum)
+        {
+            // Repair the home sector so future saves aren't relying on the
+            // journal sector staying intact, then load from the same buffer.
+            ProgramFlashSectorAndVerify(absoluteSector, (u8 *)&gSaveDataBuffer);
+            memcpy(dest, gSaveDataBuffer.data, size);
+            sPkmnStorageSectorChecksum[chunk] = checksum;
+            sPkmnStorageSectorValid[chunk] = TRUE;
+            return TRUE;
+        }
+    }
+
+    // Neither home nor journal has a usable copy. Mark the cache unknown so
+    // the next save unconditionally (re)writes this sector rather than
+    // assuming it still matches whatever is on flash.
+    sPkmnStorageSectorValid[chunk] = FALSE;
+    return FALSE;
+}
+
+// Loads all of PokemonStorage from flash. Returns SAVE_STATUS_OK if every
+// sector loaded cleanly, SAVE_STATUS_EMPTY if none did (a brand new save,
+// not corruption -- there is nothing valid on flash yet for any sector),
+// or SAVE_STATUS_CORRUPT if some sectors loaded and others didn't (a
+// genuinely partial read). Deliberately independent of gSaveFileStatus --
+// see gPokemonStorageFileStatus's declaration in save.h for why.
+static u8 LoadPokemonStorage(void)
+{
+    u16 chunk;
+    bool8 anyValid = FALSE;
+    bool8 anyInvalid = FALSE;
+
+    for (chunk = 0; chunk < NUM_PKMN_STORAGE_SECTORS; chunk++)
+    {
+        if (sPkmnStorageLayout[chunk].size == 0)
+            continue;
+
+        if (LoadPokemonStorageSector(chunk))
+            anyValid = TRUE;
+        else
+            anyInvalid = TRUE;
+    }
+
+    if (!anyInvalid)
+        return anyValid ? SAVE_STATUS_OK : SAVE_STATUS_EMPTY;
+    if (anyValid)
+        return SAVE_STATUS_CORRUPT;
+    return SAVE_STATUS_EMPTY; // Nothing loaded anywhere: a fresh cart, not corruption.
 }

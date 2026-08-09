@@ -3,11 +3,19 @@
 
 #include "main.h"
 
-// Each 4 KiB flash sector contains 3968 bytes of actual data followed by 116 bytes of SaveBlock3 and then 12 bytes of footer.
+// Each 4 KiB flash sector contains 3968 bytes of actual data followed by a
+// reserved region and then 12 bytes of footer. The reserved region used to
+// carry a smeared-out SaveBlock3 chunk (see the Stage 6 sector remap in
+// Saveblock Shrinking.md); SaveBlock3 now has its own dedicated sector, so
+// this is just padding -- SECTOR_SIZE must stay exactly 4096 regardless,
+// because it's the physical flash sector size (see the `sector.size` field
+// of MX29L010 / LE26FV10N1TS / DefaultFlash in src/agb_flash_mx.c and
+// src/agb_flash_le.c) and ProgramFlashSectorAndVerify/VerifyFlashSector
+// always read/write that many bytes from whatever buffer they're given.
 #define SECTOR_DATA_SIZE 3968
-#define SAVE_BLOCK_3_CHUNK_SIZE 116
+#define SECTOR_RESERVED_SIZE 116
 #define SECTOR_FOOTER_SIZE 12
-#define SECTOR_SIZE (SECTOR_DATA_SIZE + SAVE_BLOCK_3_CHUNK_SIZE + SECTOR_FOOTER_SIZE)
+#define SECTOR_SIZE (SECTOR_DATA_SIZE + SECTOR_RESERVED_SIZE + SECTOR_FOOTER_SIZE)
 
 #define NUM_SAVE_SLOTS 2
 
@@ -16,20 +24,39 @@
 
 #define SPECIAL_SECTOR_SENTINEL 0xB39D
 
+// Sector map (32 sectors total, matching gFlash->sector.count -- see
+// SectorsCountMatchesFlashChip below):
+//
+//   0 / 1-2 / 3    Slot A: SaveBlock2 / SaveBlock1 / SaveBlock3
+//   4 / 5-6 / 7    Slot B: SaveBlock2 / SaveBlock1 / SaveBlock3
+//   8-25           PokemonStorage -- single copy, not slot-rotated
+//   26             PokemonStorage copy-on-write journal scratch
+//   27-29          Spare (headroom for future box-count growth)
+//   30-31          Achievement profile (primary + mirror), unchanged
+//
+// Unlike SaveBlock1/2/3, PokemonStorage is NOT duplicated across the two
+// rotating slots: at up to 18 sectors it would cost as much flash as the
+// rest of the save combined for a second copy. Its durability instead comes
+// from per-sector dirty tracking plus the journal sector -- see the
+// PokemonStorage persistence section of src/save.c for the full scheme.
 #define SECTOR_ID_SAVEBLOCK2          0
 #define SECTOR_ID_SAVEBLOCK1_START    1
 #define SECTOR_ID_SAVEBLOCK1_END      2
-#define SECTOR_ID_PKMN_STORAGE_START  3
-#define SECTOR_ID_PKMN_STORAGE_END   14
-#define NUM_SECTORS_PER_SLOT         15
-// Save Slot 1: 0-14;  Save Slot 2: 15-29
+#define SECTOR_ID_SAVEBLOCK3          3
+#define NUM_SECTORS_PER_SLOT          4
+// Save Slot A: 0-3;  Save Slot B: 4-7
+#define SECTOR_ID_PKMN_STORAGE_START  8
+#define SECTOR_ID_PKMN_STORAGE_END   25
+#define NUM_PKMN_STORAGE_SECTORS     (SECTOR_ID_PKMN_STORAGE_END - SECTOR_ID_PKMN_STORAGE_START + 1)
+#define SECTOR_ID_STORAGE_JOURNAL    26
 #define SECTOR_ID_ACHIEVEMENTS        30
 #define SECTOR_ID_ACHIEVEMENTS_BACKUP 31
 #define SECTORS_COUNT                 32
 
-// Sectors 0 - (NUM_SAVE_SLOT_SECTORS - 1) belong to the two rotating save slots.
-// Nothing in that range may ever touch SECTOR_ID_ACHIEVEMENTS or its backup.
-#define NUM_SAVE_SLOT_SECTORS (NUM_SAVE_SLOTS * NUM_SECTORS_PER_SLOT) // 30
+// Sectors 0 - (NUM_SAVE_SLOT_SECTORS - 1) belong to the two rotating save
+// slots (SaveBlock1/2/3 only, post Stage 6 -- PokemonStorage lives outside
+// this range and is never touched by the slot-rotation code path).
+#define NUM_SAVE_SLOT_SECTORS (NUM_SAVE_SLOTS * NUM_SECTORS_PER_SLOT) // 8
 
 #define NUM_HOF_SECTORS 2
 
@@ -73,7 +100,7 @@ struct SaveSectorLocation
 struct SaveSector
 {
     u8 data[SECTOR_DATA_SIZE];
-    u8 saveBlock3Chunk[SAVE_BLOCK_3_CHUNK_SIZE];
+    u8 reserved[SECTOR_RESERVED_SIZE]; // see the comment on SECTOR_RESERVED_SIZE above
     u16 id;
     u16 checksum;
     u32 signature;
@@ -91,6 +118,11 @@ extern u32 gSaveCounter;
 extern struct SaveSector *gFastSaveSector;
 extern u16 gIncrementalSectorId;
 extern u16 gSaveFileStatus;
+// Separate from gSaveFileStatus on purpose: PokemonStorage is no longer part
+// of the SaveBlock1/2/3 rotating slot, so its own read health (see
+// LoadPokemonStorage in save.c) is no longer able to affect -- or be masked
+// by -- whether the core save slot is considered valid.
+extern u16 gPokemonStorageFileStatus;
 extern MainCallback gGameContinueCallback;
 extern struct SaveSectorLocation gRamSaveSectorLocations[];
 

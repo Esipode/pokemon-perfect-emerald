@@ -404,7 +404,12 @@ static bool8 WipeSectors(u32 sectorBits)
 
     // Defensive mask: gDamagedSaveSectors should never set bits for the
     // achievement sectors, but never let a wipe reach them regardless.
-    sectorBits &= (1 << NUM_SAVE_SLOT_SECTORS) - 1;
+    // Bounded by SECTOR_ID_ACHIEVEMENTS rather than NUM_SAVE_SLOT_SECTORS --
+    // as of the Stage 6 sector remap (see save.h), HandleSavingData can also
+    // set damage bits for PokemonStorage's own sectors and its journal
+    // scratch sector (8-26), which sit above NUM_SAVE_SLOT_SECTORS (8) but
+    // must still be reachable by this retry-wipe flow like everything else.
+    sectorBits &= (1 << SECTOR_ID_ACHIEVEMENTS) - 1;
 
     for (i = 0; i < SECTORS_COUNT; i++)
         if ((sectorBits & (1 << i)) && !WipeSector(i))

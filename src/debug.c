@@ -1647,7 +1647,10 @@ void CheckSaveBlock2Size(struct ScriptContext *ctx)
 void CheckSaveBlock3Size(struct ScriptContext *ctx)
 {
     u32 currSb3Size = (sizeof(struct SaveBlock3));
-    u32 maxSb3Size = SAVE_BLOCK_3_CHUNK_SIZE * NUM_SECTORS_PER_SLOT;
+    // SaveBlock3 has its own dedicated sector as of the Stage 6 sector remap
+    // (see save.h) rather than being smeared across every sector's tail, so
+    // its budget is just a single sector's worth of data.
+    u32 maxSb3Size = SECTOR_DATA_SIZE;
     ConvertIntToDecimalStringN(gStringVar1, currSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, maxSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar3, maxSb3Size - currSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
