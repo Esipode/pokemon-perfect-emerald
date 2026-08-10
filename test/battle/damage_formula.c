@@ -417,3 +417,50 @@ DOUBLE_BATTLE_TEST("Transistor Damage calculation", s16 damage)
         EXPECT_EQ(damagePlayerRight, expectedDamageTransistorPhys);
     }
 }
+
+// Regression test for the base-damage overflow at high levels.
+//
+// CalculateBaseDamage computes `power * attack * (2 * level / 5 + 2) / defense / 50 + 2`.
+// The first three terms are multiplied together before any division brings the value back
+// down, so at MAX_LEVEL they can exceed UINT32_MAX and wrap if the expression is evaluated
+// in 32-bit.
+//
+// Every modifier here is deliberately 1.0x (no STAB, neutral matchup, no crit, no weather,
+// no items or damage-affecting abilities, max damage roll) so the test isolates the base
+// formula from the modifier-multiply chain in fpmath.h.
+//
+//   levelFactor = 2 * 1000 / 5 + 2                      = 402
+//   power * attack * levelFactor = 180 * 65535 * 402    = 4,742,112,600  (> UINT32_MAX)
+//
+//   64-bit:  4,742,112,600 / 60000 / 50 + 2             = 1582   <- correct
+//   32-bit:  wraps to 447,145,304, / 60000 / 50 + 2     = 151    <- what the bug produced
+//
+// The defense and target HP are set high so that the *correct* result still lands well
+// inside s16, keeping this test independent of the moveDamage/captureDamage widening.
+SINGLE_BATTLE_TEST("Base damage does not overflow at MAX_LEVEL")
+{
+    s16 dmg;
+    GIVEN {
+        ASSUME(GetMovePower(MOVE_V_CREATE) == 180);
+        ASSUME(GetMoveType(MOVE_V_CREATE) == TYPE_FIRE);
+        ASSUME(GetMoveCategory(MOVE_V_CREATE) == DAMAGE_CATEGORY_PHYSICAL);
+        // Psychic attacker: no STAB on a Fire move; Psychic defender: neutral to Fire.
+        PLAYER(SPECIES_WOBBUFFET) { Level(MAX_LEVEL); Attack(65535); }
+        OPPONENT(SPECIES_WOBBUFFET) { Level(MAX_LEVEL); Defense(60000); MaxHP(60000); HP(60000); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_V_CREATE, WITH_RNG(RNG_DAMAGE_MODIFIER, 0), criticalHit: FALSE);
+            MOVE(opponent, MOVE_SPLASH); // keep the opponent from countering back
+        }
+    }
+    SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_V_CREATE, player);
+        HP_BAR(opponent, captureDamage: &dmg);
+    }
+    THEN {
+        // Bounded rather than exact so a one-off rounding difference can't be mistaken for
+        // the overflow returning; the wrapped value (151) is nowhere near this range.
+        EXPECT_GT(dmg, 1400);
+        EXPECT_LT(dmg, 1700);
+    }
+}

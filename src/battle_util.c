@@ -7228,7 +7228,10 @@ static inline u32 CalcDefenseStat(struct DamageContext *ctx)
 // base damage formula before adding any modifiers
 static inline s32 CalculateBaseDamage(u32 power, u32 userFinalAttack, u32 level, u32 targetFinalDefense)
 {
-    return power * userFinalAttack * (2 * level / 5 + 2) / targetFinalDefense / 50 + 2;
+    // Computed in 64-bit: at high levels the product of the first three terms alone can
+    // exceed UINT32_MAX before the divisions bring it back down. Widen only - do not
+    // reorder the divisions, as that would change the exact result for existing values.
+    return (s32)((u64)power * userFinalAttack * (2 * level / 5 + 2) / targetFinalDefense / 50 + 2);
 }
 
 static inline uq4_12_t GetTargetDamageModifier(struct DamageContext *ctx)
