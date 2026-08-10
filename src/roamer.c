@@ -480,27 +480,59 @@ EWRAM_DATA u8 gRoamerNearbyIndexOverride = 0;
 // storage boxes directly and picks a roamable species they don't currently have.
 // Scanning live ownership (rather than e.g. Pokédex-caught flags) means a species
 // that was released or otherwise lost becomes eligible to roam again.
-static bool8 PlayerHasRoamableSpecies(u16 species)
+//
+// If `species` is roamable, marks its slot in `owned`. Called once per owned
+// Pokemon rather than once per (species, Pokemon) pair -- see
+// MarkOwnedRoamableSpecies just below for why that distinction is what makes
+// this affordable. The inner walk is over gRoamableSpecies, a ROM array of
+// plain u16s, so it costs nothing next to the storage read that produced
+// `species` in the first place.
+static void MarkRoamableSpecies(bool8 *owned, u16 species)
+{
+    u32 i;
+
+    if (species == SPECIES_NONE)
+        return;
+
+    for (i = 0; i < NUM_ROAMABLE_SPECIES; i++)
+    {
+        if (gRoamableSpecies[i] == species)
+        {
+            owned[i] = TRUE;
+            return;
+        }
+    }
+}
+
+// Fills `owned` (one entry per gRoamableSpecies index) in a single pass over
+// the party and every storage box.
+//
+// This used to be shaped as a PlayerHasRoamableSpecies(species) predicate that
+// PickMissingRoamerSpecies called once per roamable species, which meant
+// re-walking the whole PC once for each of the 118 entries in
+// gRoamableSpecies. Storage is TOTAL_BOXES_COUNT * IN_BOX_COUNT slots and
+// every GetBoxMonDataAt decrypts that mon's substructs, so the old shape cost
+// on the order of 150,000 decrypting reads per call -- seconds of completely
+// frozen screen on the save-load path (TryActivateRoamer, via
+// CB2_ContinueSavedGame) and again after a roamer battle (NextRoamer). One
+// pass costs one storage walk regardless of how long gRoamableSpecies gets,
+// and the cost no longer scales with TOTAL_BOXES_COUNT * NUM_ROAMABLE_SPECIES.
+static void MarkOwnedRoamableSpecies(bool8 *owned)
 {
     u32 i, j;
     u32 partyCount = CalculatePlayerPartyCount();
 
+    for (i = 0; i < NUM_ROAMABLE_SPECIES; i++)
+        owned[i] = FALSE;
+
     for (i = 0; i < partyCount; i++)
-    {
-        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == species)
-            return TRUE;
-    }
+        MarkRoamableSpecies(owned, GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES));
 
     for (i = 0; i < TOTAL_BOXES_COUNT; i++)
     {
         for (j = 0; j < IN_BOX_COUNT; j++)
-        {
-            if (GetBoxMonDataAt(i, j, MON_DATA_SPECIES) == species)
-                return TRUE;
-        }
+            MarkRoamableSpecies(owned, GetBoxMonDataAt(i, j, MON_DATA_SPECIES));
     }
-
-    return FALSE;
 }
 
 // Returns a uniformly random roamable species the player doesn't currently have
@@ -509,13 +541,16 @@ static bool8 PlayerHasRoamableSpecies(u16 species)
 // SPECIES_NONE if the player already has every one.
 static u16 PickMissingRoamerSpecies(void)
 {
+    bool8 owned[NUM_ROAMABLE_SPECIES];
     u32 i;
     u32 missingCount = 0;
     u32 pick;
 
+    MarkOwnedRoamableSpecies(owned);
+
     for (i = 0; i < NUM_ROAMABLE_SPECIES; i++)
     {
-        if (!PlayerHasRoamableSpecies(gRoamableSpecies[i]))
+        if (!owned[i])
             missingCount++;
     }
 
@@ -525,7 +560,7 @@ static u16 PickMissingRoamerSpecies(void)
     pick = Random() % missingCount;
     for (i = 0; i < NUM_ROAMABLE_SPECIES; i++)
     {
-        if (!PlayerHasRoamableSpecies(gRoamableSpecies[i]))
+        if (!owned[i])
         {
             if (pick == 0)
                 return gRoamableSpecies[i];

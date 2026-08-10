@@ -648,6 +648,14 @@ void Achievement_CheckTeamCompletionMilestones(void);
 // catches and hatches already have one); Fresh Start undercounts rather than
 // overcounts as a result, which is the safer direction for an achievement
 // condition to be wrong in.
+//
+// Also checks One of Each (moved here from Achievement_CheckRecordsMilestones):
+// obtaining a Pokemon is the only thing that can raise the distinct-species
+// count, so this funnel fires exactly when that threshold can be crossed. The
+// same gift/trade gap described above applies -- a gift or traded-in Pokemon
+// that takes the player to 10 distinct species won't award it until their next
+// catch or hatch, the same undercount-not-overcount tradeoff already accepted
+// for Fresh Start.
 void Achievement_RecordMonObtained(u32 personality);
 
 // ---- Exploration, Economy & Collection (category M) --------------------
@@ -856,8 +864,13 @@ void Achievement_CheckBattleRecordsMilestones(void);
 // Achievement_CheckExplorationMilestones -- map transitions are
 // frequent enough during normal play to catch these live-state thresholds
 // (nothing here is tied causally to a specific event) without a hook of
-// their own: Growing Strong, One of Each, Century Club/Full Century,
+// their own: Growing Strong, Century Club/Full Century,
 // Box Filler/Storage Baron, Devoted/Inseparable.
+//
+// One of Each was checked here too until it moved to
+// Achievement_RecordMonObtained -- it was the only entry that walked storage
+// rather than just the party, which made it far too expensive to re-run on
+// every map transition. See the note left at its old site in src/achievements.c.
 void Achievement_CheckRecordsMilestones(void);
 
 // GameClear (src/post_battle_event_funcs.c), alongside

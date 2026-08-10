@@ -49,6 +49,13 @@ static u8 Achievement_CountChallengeModifiers(void);
 static void Achievement_CheckMasteryMilestones(void);
 static void Achievement_CheckBoostMilestones(void);
 
+// Achievement_CountDistinctOwnedSpecies backs One of Each, whose check lives
+// in Achievement_RecordMonObtained (category N, far above where this helper is
+// defined down among the category M/records helpers). It stayed where it was
+// originally placed, next to the other collection helpers, rather than moving
+// up to its one remaining caller.
+static u32 Achievement_CountDistinctOwnedSpecies(struct Pokemon *party, u8 playerCount, u32 stopAt);
+
 // ---- Randomizer & New Game+ (category O) -------------------------------
 //
 // Small, self-contained helpers with no ordering dependency of their own,
@@ -2010,6 +2017,20 @@ void Achievement_RecordMonObtained(u32 personality)
     runData->recentlyObtainedPersonality[slot] = personality;
     if (runData->recentlyObtainedCount < 0xFF)
         runData->recentlyObtainedCount++;
+
+    // One of Each, moved here from Achievement_CheckRecordsMilestones (see the
+    // note left in its place there for why the map-transition sampling point
+    // was too expensive). Obtaining a Pokemon is the only thing that can raise
+    // the distinct-species count, so this is a strictly better trigger than
+    // sampling live state: it fires exactly when the threshold can be crossed.
+    //
+    // The Achievement_IsCompleted guard is what keeps the storage walk from
+    // running again on every subsequent catch once the achievement is already
+    // earned -- Achievement_TryComplete is idempotent, but the scan feeding it
+    // is not free.
+    if (!Achievement_IsCompleted(ACHIEVEMENT_COLLECT_ONE_OF_EACH)
+     && Achievement_CountDistinctOwnedSpecies(gParties[B_TRAINER_PLAYER], gPartiesCount[B_TRAINER_PLAYER], 10) >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_COLLECT_ONE_OF_EACH);
 }
 
 // HandleEndTurn_BattleWon (src/battle_main.c), right after
@@ -3109,11 +3130,17 @@ static u16 Achievement_SaturatingAddU16(u16 value, u8 amount)
     return (sum > 0xFFFF) ? 0xFFFF : (u16)sum;
 }
 
-// Short-circuits the moment `stopAt` distinct species have been seen -- One
-// of Each's threshold (10) is low enough that this almost never has to walk
-// every one of TOTAL_BOXES_COUNT*IN_BOX_COUNT box slots the way Species
-// Clause unconditionally does. `seen`'s size only needs to cover
-// the largest `stopAt` any caller passes.
+// Short-circuits the moment `stopAt` distinct species have been seen.
+// `seen`'s size only needs to cover the largest `stopAt` any caller passes.
+//
+// Note which direction that short-circuit actually helps in: it only fires
+// once the player already owns `stopAt` distinct species. Below the
+// threshold there is nothing to stop early on, so this walks all
+// TOTAL_BOXES_COUNT * IN_BOX_COUNT slots, decrypting every one -- and that is
+// exactly the state the achievement is still open in. Treating it as "cheap
+// because the threshold is low" is what made this affordable-looking enough
+// to sit on the map-transition path; call it from an event that can actually
+// change the count instead (see Achievement_RecordMonObtained).
 static u32 Achievement_CountDistinctOwnedSpecies(struct Pokemon *party, u8 playerCount, u32 stopAt)
 {
     enum Species seen[16];
@@ -3482,9 +3509,15 @@ void Achievement_CheckRecordsMilestones(void)
     // its own. The PC-box-scanning loop that used to back them (storedCount)
     // is removed along with them.
 
-    // One of Each -- party and boxes combined.
-    if (Achievement_CountDistinctOwnedSpecies(party, playerCount, 10) >= 10)
-        Achievement_TryComplete(ACHIEVEMENT_COLLECT_ONE_OF_EACH);
+    // One of Each's check used to live right here. It moved to
+    // Achievement_RecordMonObtained: unlike everything else in this function
+    // it walks storage rather than just the party, and
+    // Achievement_CountDistinctOwnedSpecies only short-circuits once it has
+    // found its 10 distinct species -- so below the threshold (exactly when
+    // the achievement is still open) it walked all
+    // TOTAL_BOXES_COUNT * IN_BOX_COUNT slots, decrypting each one, on every
+    // single map transition. That was ~15-50ms of hitch per map load at
+    // TOTAL_BOXES_COUNT 28, and it grew with the box count.
 
     // Marathon Trainer/Long Haul, Prolific/Battle Machine -- existing
     // GAME_STAT_* values, no tracking of their own needed.
