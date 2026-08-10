@@ -206,14 +206,12 @@ enum
 // is always at least as large as any single tier's rows can ever be --
 // derived from ACHIEVEMENTS_COUNT, so it grows with the catalog
 // automatically and can't go stale again. Costs a few KB more EWRAM than a
-// tight per-tier bound would (sAchievementsListNameBuffers/
-// sAchievementsListItems below are sized off this), which is well within
-// budget for a menu that owns none of the game's other EWRAM-heavy state.
+// tight per-tier bound would (listNameBuffers/listItems on
+// struct AchievementsMenuState, further down, are sized off this), which is
+// well within budget for a menu that owns none of the game's other
+// EWRAM-heavy state.
 #define ACHIEVEMENTS_MENU_LIST_CAPACITY \
     (ACHIEVEMENTS_MENU_ITEM_COUNT > TIER_SELECT_ROW_COUNT ? ACHIEVEMENTS_MENU_ITEM_COUNT : TIER_SELECT_ROW_COUNT)
-
-EWRAM_DATA static u8 sAchievementsListNameBuffers[ACHIEVEMENTS_MENU_LIST_CAPACITY][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE] = {0};
-EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_LIST_CAPACITY] = {0};
 
 // Bug (found via playtesting): PrintAchievementDescription/PrintDetail
 // Description used to build their wrapped text straight into gStringVar1,
@@ -238,58 +236,15 @@ EWRAM_DATA static struct ListMenuItem sAchievementsListItems[ACHIEVEMENTS_MENU_L
 // nothing else in the engine ever writes to can't be clobbered out from
 // under a printer still reading them.
 #define ACHIEVEMENTS_DESC_BUFFER_SIZE 0x100
-EWRAM_DATA static u8 sAchievementsDescriptionBuffer[ACHIEVEMENTS_DESC_BUFFER_SIZE] = {0};
-EWRAM_DATA static u8 sAchievementsDetailDescriptionBuffer[ACHIEVEMENTS_DESC_BUFFER_SIZE] = {0};
+// Stage 7: descriptionBuffer/detailDescriptionBuffer used to be their own
+// top-level EWRAM_DATA statics here -- they're now fields on
+// struct AchievementsMenuState (further down). The reasoning just above for
+// why they can't be gStringVar1 still applies unchanged.
 
-EWRAM_DATA static struct
-{
-    u8 selectedTier;
-    u16 listItemCount; // filtered count for the tier currently shown at LIST level
-    u16 tierScrollOffset;
-    u16 tierSelectedRow;
-    u16 listScrollOffset;
-    u16 listSelectedRow;
-    // id of the row currently highlighted in whichever list is on screen
-    // (a tier id / TIER_SELECT_ITEM_BOOSTS, or an achievement id) -- set
-    // right before ListMenuInit and kept in sync by the moveCursorFunc
-    // callbacks below. Needed because CURSOR_INVISIBLE means the row's own
-    // text colour is the only thing marking it selected, and itemPrintFunc
-    // (list_menu.c's ListMenuPrintEntries) has no other way to know which
-    // row that is -- it's only ever given the row's own id.
-    u16 highlightedId;
-    // Set by PrintAchievementDescription whenever the row currently on
-    // WIN_DESCRIPTION needed its 2-line auto-scroll (see that function's own
-    // needsScroll) -- MainCB2 watches this alongside the printer's own
-    // IsTextPrinterActiveOnWindow to know when a still-selected overlong
-    // description has finished scrolling and should loop back to the top
-    // after a pause, rather than leaving the last screenful on display
-    // forever. Cleared by DestroyCurrentAchievementsList so a leftover TRUE
-    // from LIST doesn't make MainCB2 try to restart a printer against
-    // DETAIL's differently laid out WIN_DESCRIPTION content.
-    bool8 descriptionScrolling;
-    // Frames since the printer above went idle at the end of its scroll --
-    // reset to 0 every time PrintAchievementDescription (re)starts one.
-    // MainCB2 waits ACHIEVEMENTS_DESC_RESTART_DELAY frames before looping.
-    u16 descriptionRestartTimer;
-    // Same pair as descriptionScrolling/descriptionRestartTimer just above,
-    // but for DETAIL's own overlong-description auto-scroll -- PrintDetail
-    // Description prints into WIN_LIST rather than WIN_DESCRIPTION, so it
-    // needs its own flag/timer to avoid colliding with (or being clobbered
-    // by) LIST's. Cleared alongside it in DestroyCurrentAchievementsList,
-    // and also when backing out of DETAIL back to LIST (see
-    // Task_Detail_ProcessInput), since DETAIL never calls
-    // DestroyCurrentAchievementsList itself (it owns no ListMenuTask).
-    bool8 detailDescriptionScrolling;
-    u16 detailDescriptionRestartTimer;
-} sAchievementsMenu = {0};
-
-// Cached once per TIER SELECT build (see BuildTierSelectListItems) so the
-// per-row itemPrintFunc doesn't re-scan every achievement on every redraw.
-EWRAM_DATA static struct
-{
-    u16 completed;
-    u16 total;
-} sTierCounts[ACHIEVEMENT_TIER_COUNT] = {0};
+// Stage 7: the per-screen state and the per-tier completion counts used to
+// each be their own anonymous-struct EWRAM_DATA static declared right here.
+// Both are now named fields on struct AchievementsMenuState -- see its own
+// comment, further down, for why.
 
 // This menu's own CB2 doubles as the boost shop's return point
 // (Task_TierSelect_OpenBoostMenu sets gMain.savedCallback =
@@ -300,6 +255,13 @@ EWRAM_DATA static struct
 // gMain.savedCallback the moment this screen is re-entered from the boost
 // shop -- sReturningFromBoostShop is what tells case 0 which of those two
 // things is happening.
+//
+// Deliberately kept as their own plain EWRAM_DATA statics rather than folded
+// into struct AchievementsMenuState below: both need to survive
+// Task_TierSelect_OpenBoostMenu's Free(sAchievementsMenuStatePtr) (that
+// exit path tears this whole screen down before jumping to the boost shop)
+// and still be readable by CB2_InitAchievementsMenu's case 0 on the way back
+// in, *before* that case's own AllocZeroed reallocates the struct.
 EWRAM_DATA static bool8 sReturningFromBoostShop = FALSE;
 EWRAM_DATA static void (*sAchievementsMenuReturnCallback)(void) = NULL;
 
@@ -532,7 +494,99 @@ static const struct
     [ACHIEVEMENT_TIER_DIAMOND] = { sTierDiamondIconGfx, sTierDiamondIconPal },
 };
 
-EWRAM_DATA static u8 sTierIconPixels[ACHIEVEMENT_TIER_COUNT][TIER_ICON_BYTE_COUNT] = {0};
+// Stage 7: every EWRAM_DATA static this menu used to keep around for its own
+// lifetime -- the two list buffers, the two description scratch buffers, the
+// tier-medal icon pixels (sTierIconPixels used to be its own top-level static
+// right here), the per-screen state, and the per-tier completion counts --
+// lives in one heap block instead, ~9.7 KB total. AllocZeroed'd on open
+// (CB2_InitAchievementsMenu case 0) and Free'd on every exit path
+// (Task_AchievementsMenuCancel, Task_TierSelect_OpenBoostMenu) -- same
+// pattern src/ui_stat_editor.c's sStatEditorDataPtr already uses. This menu
+// is entirely transient (nothing here needs to survive it being closed --
+// contrast sReturningFromBoostShop/sAchievementsMenuReturnCallback above,
+// which do), so there's no reason this sat in .ewram.sbss for the whole game
+// instead of only while the screen is actually open.
+//
+// Declared here, right before the two functions (LoadTierIcons/BlitTierIcon)
+// that need tierIconPixels, rather than up near this file's other #defines:
+// this is the first point every size constant a field below depends on --
+// ACHIEVEMENTS_MENU_LIST_CAPACITY, ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE,
+// ACHIEVEMENTS_DESC_BUFFER_SIZE, ACHIEVEMENT_TIER_COUNT, and
+// TIER_ICON_BYTE_COUNT -- is actually in scope.
+struct AchievementsMenuState
+{
+    u8 selectedTier;
+    u16 listItemCount; // filtered count for the tier currently shown at LIST level
+    u16 tierScrollOffset;
+    u16 tierSelectedRow;
+    u16 listScrollOffset;
+    u16 listSelectedRow;
+    // id of the row currently highlighted in whichever list is on screen
+    // (a tier id / TIER_SELECT_ITEM_BOOSTS, or an achievement id) -- set
+    // right before ListMenuInit and kept in sync by the moveCursorFunc
+    // callbacks below. Needed because CURSOR_INVISIBLE means the row's own
+    // text colour is the only thing marking it selected, and itemPrintFunc
+    // (list_menu.c's ListMenuPrintEntries) has no other way to know which
+    // row that is -- it's only ever given the row's own id.
+    u16 highlightedId;
+    // Set by PrintAchievementDescription whenever the row currently on
+    // WIN_DESCRIPTION needed its 2-line auto-scroll (see that function's own
+    // needsScroll) -- MainCB2 watches this alongside the printer's own
+    // IsTextPrinterActiveOnWindow to know when a still-selected overlong
+    // description has finished scrolling and should loop back to the top
+    // after a pause, rather than leaving the last screenful on display
+    // forever. Cleared by DestroyCurrentAchievementsList so a leftover TRUE
+    // from LIST doesn't make MainCB2 try to restart a printer against
+    // DETAIL's differently laid out WIN_DESCRIPTION content.
+    bool8 descriptionScrolling;
+    // Frames since the printer above went idle at the end of its scroll --
+    // reset to 0 every time PrintAchievementDescription (re)starts one.
+    // MainCB2 waits ACHIEVEMENTS_DESC_RESTART_DELAY frames before looping.
+    u16 descriptionRestartTimer;
+    // Same pair as descriptionScrolling/descriptionRestartTimer just above,
+    // but for DETAIL's own overlong-description auto-scroll -- PrintDetail
+    // Description prints into WIN_LIST rather than WIN_DESCRIPTION, so it
+    // needs its own flag/timer to avoid colliding with (or being clobbered
+    // by) LIST's. Cleared alongside it in DestroyCurrentAchievementsList,
+    // and also when backing out of DETAIL back to LIST (see
+    // Task_Detail_ProcessInput), since DETAIL never calls
+    // DestroyCurrentAchievementsList itself (it owns no ListMenuTask).
+    bool8 detailDescriptionScrolling;
+    u16 detailDescriptionRestartTimer;
+
+    // Cached once per TIER SELECT build (see BuildTierSelectListItems) so the
+    // per-row itemPrintFunc doesn't re-scan every achievement on every
+    // redraw.
+    struct
+    {
+        u16 completed;
+        u16 total;
+    } tierCounts[ACHIEVEMENT_TIER_COUNT];
+
+    // Backing storage for both lists this menu ever shows (tier select's up
+    // to TIER_SELECT_ROW_COUNT rows, or one tier's worth of achievement
+    // rows) -- see ACHIEVEMENTS_MENU_LIST_CAPACITY's own comment for why it's
+    // sized off the whole catalog rather than a tight per-tier bound.
+    u8 listNameBuffers[ACHIEVEMENTS_MENU_LIST_CAPACITY][ACHIEVEMENTS_LIST_NAME_BUFFER_SIZE];
+    struct ListMenuItem listItems[ACHIEVEMENTS_MENU_LIST_CAPACITY];
+
+    // Dedicated description scratch nothing else in the engine ever writes
+    // to -- see the full explanation on ACHIEVEMENTS_DESC_BUFFER_SIZE's
+    // #define above for why gStringVar1 isn't safe for an overlong
+    // (auto-scrolling) description.
+    u8 descriptionBuffer[ACHIEVEMENTS_DESC_BUFFER_SIZE];
+    u8 detailDescriptionBuffer[ACHIEVEMENTS_DESC_BUFFER_SIZE];
+
+    // Four 16x16 tier-medal icon bitmaps, remapped into WIN_LIST's own
+    // palette bank -- see LoadTierIcons just below.
+    u8 tierIconPixels[ACHIEVEMENT_TIER_COUNT][TIER_ICON_BYTE_COUNT];
+};
+
+// NULL whenever this menu is closed; AllocZeroed'd in CB2_InitAchievementsMenu
+// (case 0) and Free'd on every exit path (Task_AchievementsMenuCancel,
+// Task_TierSelect_OpenBoostMenu) -- see struct AchievementsMenuState's own
+// comment.
+EWRAM_DATA static struct AchievementsMenuState *sAchievementsMenuStatePtr = NULL;
 
 static void LoadTierIcons(void)
 {
@@ -568,13 +622,13 @@ static void LoadTierIcons(void)
         }
 
         for (i = 0; i < TIER_ICON_BYTE_COUNT; i++)
-            sTierIconPixels[tier][i] = remap[src[i] & 0xF] | (remap[(src[i] >> 4) & 0xF] << 4);
+            sAchievementsMenuStatePtr->tierIconPixels[tier][i] = remap[src[i] & 0xF] | (remap[(src[i] >> 4) & 0xF] << 4);
     }
 }
 
 static void BlitTierIcon(u8 tier, u8 windowId, u16 x, u16 y)
 {
-    BlitBitmapToWindow(windowId, sTierIconPixels[tier], x, y, TIER_ICON_SIZE, TIER_ICON_SIZE);
+    BlitBitmapToWindow(windowId, sAchievementsMenuStatePtr->tierIconPixels[tier], x, y, TIER_ICON_SIZE, TIER_ICON_SIZE);
 }
 
 // Deduped from graphics/achievements/ui/bg_main.png (a 720x160 mockup, three
@@ -636,20 +690,21 @@ static void MainCB2(void)
     // the top after a short pause instead of leaving the last screenful on
     // display forever -- descriptionScrolling gates this to only overlong
     // descriptions actually using the printer above (see its own comment on
-    // sAchievementsMenu), so this can't misfire against DETAIL's differently
-    // laid out WIN_DESCRIPTION content or a description that already fit in
-    // 2 lines (TEXT_SKIP_DRAW, no printer left active to go idle).
-    if (sAchievementsMenu.descriptionScrolling
+    // struct AchievementsMenuState), so this can't misfire against DETAIL's
+    // differently laid out WIN_DESCRIPTION content or a description that
+    // already fit in 2 lines (TEXT_SKIP_DRAW, no printer left active to go
+    // idle).
+    if (sAchievementsMenuStatePtr->descriptionScrolling
      && !IsTextPrinterActiveOnWindow(WIN_DESCRIPTION)
-     && ++sAchievementsMenu.descriptionRestartTimer >= ACHIEVEMENTS_DESC_RESTART_DELAY)
-        PrintAchievementDescription(sAchievementsMenu.highlightedId);
+     && ++sAchievementsMenuStatePtr->descriptionRestartTimer >= ACHIEVEMENTS_DESC_RESTART_DELAY)
+        PrintAchievementDescription(sAchievementsMenuStatePtr->highlightedId);
     // Same loop as just above, for DETAIL's own overlong-description printer
     // (PrintDetailDescription, WIN_LIST rather than WIN_DESCRIPTION) -- see
-    // detailDescriptionScrolling's own comment on sAchievementsMenu.
-    if (sAchievementsMenu.detailDescriptionScrolling
+    // detailDescriptionScrolling's own comment on struct AchievementsMenuState.
+    if (sAchievementsMenuStatePtr->detailDescriptionScrolling
      && !IsTextPrinterActiveOnWindow(WIN_LIST)
-     && ++sAchievementsMenu.detailDescriptionRestartTimer >= ACHIEVEMENTS_DESC_RESTART_DELAY)
-        PrintDetailDescription(sAchievementsMenu.highlightedId);
+     && ++sAchievementsMenuStatePtr->detailDescriptionRestartTimer >= ACHIEVEMENTS_DESC_RESTART_DELAY)
+        PrintDetailDescription(sAchievementsMenuStatePtr->highlightedId);
     // Flushes bg1's art tilemap, which LoadMenuBackground only *schedules* via
     // ScheduleBgCopyTilemapToVram. Windows reach VRAM on their own (
     // CopyWindowToVram copies immediately), so without this the text shows but
@@ -696,7 +751,11 @@ void CB2_InitAchievementsMenu(void)
         {
             sAchievementsMenuReturnCallback = gMain.savedCallback;
         }
-        memset(&sAchievementsMenu, 0, sizeof(sAchievementsMenu));
+        // AllocZeroed, not memset -- struct AchievementsMenuState now lives
+        // on the heap for exactly as long as this screen is open (see its
+        // own comment) rather than sitting in .ewram.sbss for the whole
+        // game, so it needs allocating here instead of just clearing.
+        sAchievementsMenuStatePtr = AllocZeroed(sizeof(struct AchievementsMenuState));
         gMain.state++;
         break;
     case 1:
@@ -782,6 +841,8 @@ static void Task_AchievementsMenuCancel(u8 taskId)
         FreeAllWindowBuffers();
         Free(sAchievementsMenuBg1Tilemap);
         sAchievementsMenuBg1Tilemap = NULL;
+        Free(sAchievementsMenuStatePtr);
+        sAchievementsMenuStatePtr = NULL;
         SetMainCallback2(gMain.savedCallback);
     }
 }
@@ -810,9 +871,9 @@ static void EnterTierSelectLevel(u8 taskId)
     // TierSelect_MoveCursorCallback ever fires (see ListMenuInitInternal),
     // so without this the initially-selected row wouldn't be highlighted
     // until the first time the player actually moves the cursor.
-    sAchievementsMenu.highlightedId = sAchievementsListItems[sAchievementsMenu.tierScrollOffset + sAchievementsMenu.tierSelectedRow].id;
+    sAchievementsMenuStatePtr->highlightedId = sAchievementsMenuStatePtr->listItems[sAchievementsMenuStatePtr->tierScrollOffset + sAchievementsMenuStatePtr->tierSelectedRow].id;
 
-    template.items = sAchievementsListItems;
+    template.items = sAchievementsMenuStatePtr->listItems;
     template.moveCursorFunc = TierSelect_MoveCursorCallback;
     template.itemPrintFunc = TierSelect_ItemPrintCallback;
     template.totalItems = itemCount;
@@ -833,7 +894,7 @@ static void EnterTierSelectLevel(u8 taskId)
     // (see TierSelect_ItemPrintCallback/sAchievementsListHighlightTextColors).
     template.cursorKind = CURSOR_INVISIBLE;
 
-    gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenu.tierScrollOffset, sAchievementsMenu.tierSelectedRow);
+    gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenuStatePtr->tierScrollOffset, sAchievementsMenuStatePtr->tierSelectedRow);
     gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
         SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
         // Clamped like EnterListLevel's own scroll arrows below -- now that
@@ -842,16 +903,16 @@ static void EnterTierSelectLevel(u8 taskId)
         // (see EnterListLevel's own comment on this exact bug).
         (itemCount > ACHIEVEMENTS_MENU_MAX_SHOWED) ? (itemCount - ACHIEVEMENTS_MENU_MAX_SHOWED) : 0,
         TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
-        &sAchievementsMenu.tierScrollOffset);
+        &sAchievementsMenuStatePtr->tierScrollOffset);
 }
 
 static void Task_TierSelect_ProcessInput(u8 taskId)
 {
-    u16 prevScrollOffset = sAchievementsMenu.tierScrollOffset;
-    u16 prevSelectedRow = sAchievementsMenu.tierSelectedRow;
+    u16 prevScrollOffset = sAchievementsMenuStatePtr->tierScrollOffset;
+    u16 prevSelectedRow = sAchievementsMenuStatePtr->tierSelectedRow;
     u8 prevRowY = ListMenuGetYCoordForPrintingArrowCursor(gTasks[taskId].tListTaskId);
     s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
-    ListMenuGetScrollAndRow(gTasks[taskId].tListTaskId, &sAchievementsMenu.tierScrollOffset, &sAchievementsMenu.tierSelectedRow);
+    ListMenuGetScrollAndRow(gTasks[taskId].tListTaskId, &sAchievementsMenuStatePtr->tierScrollOffset, &sAchievementsMenuStatePtr->tierSelectedRow);
 
     // CURSOR_INVISIBLE means moving the cursor within the same page (no
     // scroll) only updates ListMenu's internal state -- list_menu.c's own
@@ -867,16 +928,16 @@ static void Task_TierSelect_ProcessInput(u8 taskId)
     // same-page move only changes two rows' colour, so RepaintListRow patches
     // just those in place instead (see its own comment for why that also
     // fixes the flicker a full redraw caused here).
-    if (prevScrollOffset != sAchievementsMenu.tierScrollOffset)
+    if (prevScrollOffset != sAchievementsMenuStatePtr->tierScrollOffset)
     {
         RedrawListMenu(gTasks[taskId].tListTaskId);
     }
-    else if (prevSelectedRow != sAchievementsMenu.tierSelectedRow)
+    else if (prevSelectedRow != sAchievementsMenuStatePtr->tierSelectedRow)
     {
         u8 newRowY = ListMenuGetYCoordForPrintingArrowCursor(gTasks[taskId].tListTaskId);
 
         RepaintListRow(TierSelect_DrawRow, prevScrollOffset + prevSelectedRow, prevRowY);
-        RepaintListRow(TierSelect_DrawRow, prevScrollOffset + sAchievementsMenu.tierSelectedRow, newRowY);
+        RepaintListRow(TierSelect_DrawRow, prevScrollOffset + sAchievementsMenuStatePtr->tierSelectedRow, newRowY);
         CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
     }
 
@@ -896,7 +957,7 @@ static void Task_TierSelect_ProcessInput(u8 taskId)
         break;
     default:
         PlaySE(SE_SELECT);
-        sAchievementsMenu.selectedTier = itemId;
+        sAchievementsMenuStatePtr->selectedTier = itemId;
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_TierSelect_ToListLevel;
         break;
@@ -910,8 +971,8 @@ static void Task_TierSelect_ToListLevel(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
-        sAchievementsMenu.listScrollOffset = 0;
-        sAchievementsMenu.listSelectedRow = 0;
+        sAchievementsMenuStatePtr->listScrollOffset = 0;
+        sAchievementsMenuStatePtr->listSelectedRow = 0;
         DestroyCurrentAchievementsList(taskId);
 
         // Disabled around the swap: LoadPalette (called by EnterListLevel's
@@ -928,7 +989,7 @@ static void Task_TierSelect_ToListLevel(u8 taskId)
         // fixing. Same idiom src/party_menu.c, src/pokedex.c etc. use around
         // their own mid-transition palette loads.
         gPaletteFade.bufferTransferDisabled = TRUE;
-        EnterListLevel(taskId, sAchievementsMenu.selectedTier);
+        EnterListLevel(taskId, sAchievementsMenuStatePtr->selectedTier);
         BlendPalettes(PALETTES_ALL, 16, RGB_BLACK);
         gPaletteFade.bufferTransferDisabled = FALSE;
 
@@ -951,6 +1012,8 @@ static void Task_TierSelect_OpenBoostMenu(u8 taskId)
         FreeAllWindowBuffers();
         Free(sAchievementsMenuBg1Tilemap);
         sAchievementsMenuBg1Tilemap = NULL;
+        Free(sAchievementsMenuStatePtr);
+        sAchievementsMenuStatePtr = NULL;
         sReturningFromBoostShop = TRUE;
         gMain.savedCallback = CB2_InitAchievementsMenu;
         SetMainCallback2(CB2_InitAchievementBoostMenu);
@@ -961,7 +1024,7 @@ static void TierSelect_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct Li
 {
     if (!onInit)
         PlaySE(SE_SELECT);
-    sAchievementsMenu.highlightedId = itemIndex;
+    sAchievementsMenuStatePtr->highlightedId = itemIndex;
     // A same-page cursor move never reprints row text on its own (see
     // list_menu.c's ListMenuChangeSelectionFull case 1 -- with cursorKind
     // CURSOR_INVISIBLE, ListMenuDrawCursor is the only thing it calls, and
@@ -993,16 +1056,16 @@ static void TierSelect_DrawRow(u8 windowId, u32 tier, u8 y, const u8 *colors)
     s32 width;
 
     // The "BOOSTS" row (id TIER_SELECT_ITEM_BOOSTS) isn't a tier --
-    // sTierCounts[] has no entry for it, and it has no medal icon or count
+    // sAchievementsMenuStatePtr->tierCounts[] has no entry for it, and it has no medal icon or count
     // column of its own.
     if (tier >= ACHIEVEMENT_TIER_COUNT)
         return;
 
     BlitTierIcon(tier, windowId, ACHIEVEMENTS_TIER_ICON_X, ACHIEVEMENT_ICON_Y(y));
 
-    ptr = ConvertIntToDecimalStringN(gStringVar4, sTierCounts[tier].completed, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ptr = ConvertIntToDecimalStringN(gStringVar4, sAchievementsMenuStatePtr->tierCounts[tier].completed, STR_CONV_MODE_LEFT_ALIGN, 3);
     ptr = StringCopy(ptr, sText_TierCountSeparator);
-    ConvertIntToDecimalStringN(ptr, sTierCounts[tier].total, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ConvertIntToDecimalStringN(ptr, sAchievementsMenuStatePtr->tierCounts[tier].total, STR_CONV_MODE_LEFT_ALIGN, 3);
 
     width = GetStringWidth(FONT_NORMAL, gStringVar4, 0);
     AddTextPrinterParameterized3(windowId, FONT_NORMAL, ACHIEVEMENTS_TIER_COUNT_RIGHT_X - width, y, colors, TEXT_SKIP_DRAW, gStringVar4);
@@ -1010,7 +1073,7 @@ static void TierSelect_DrawRow(u8 windowId, u32 tier, u8 y, const u8 *colors)
 
 static void TierSelect_ItemPrintCallback(u8 windowId, u32 tier, u8 y)
 {
-    bool8 selected = (tier == sAchievementsMenu.highlightedId);
+    bool8 selected = (tier == sAchievementsMenuStatePtr->highlightedId);
     const u8 *colors = selected ? sAchievementsListHighlightTextColors : sAchievementsListTextColors;
 
     // Recolours the row name ListMenuPrint is about to draw right after this
@@ -1030,34 +1093,34 @@ static void BuildTierSelectListItems(void)
 
     for (tier = 0; tier < ACHIEVEMENT_TIER_COUNT; tier++)
     {
-        sTierCounts[tier].completed = 0;
-        sTierCounts[tier].total = 0;
+        sAchievementsMenuStatePtr->tierCounts[tier].completed = 0;
+        sAchievementsMenuStatePtr->tierCounts[tier].total = 0;
     }
 
     for (id = ACHIEVEMENT_NONE + 1; id < ACHIEVEMENTS_COUNT; id++)
     {
         tier = Achievement_GetInfo(id)->tier;
-        sTierCounts[tier].total++;
+        sAchievementsMenuStatePtr->tierCounts[tier].total++;
         if (Achievement_IsCompleted(id))
-            sTierCounts[tier].completed++;
+            sAchievementsMenuStatePtr->tierCounts[tier].completed++;
     }
 
     for (tier = 0; tier < ACHIEVEMENT_TIER_COUNT; tier++)
     {
-        u8 *buffer = sAchievementsListNameBuffers[tier];
+        u8 *buffer = sAchievementsMenuStatePtr->listNameBuffers[tier];
 
         StringCopy(buffer, sTierNames[tier]);
-        sAchievementsListItems[tier].name = buffer;
-        sAchievementsListItems[tier].id = tier;
+        sAchievementsMenuStatePtr->listItems[tier].name = buffer;
+        sAchievementsMenuStatePtr->listItems[tier].id = tier;
     }
 
     if (IsBoostShopRowVisible())
     {
-        u8 *buffer = sAchievementsListNameBuffers[ACHIEVEMENT_TIER_COUNT];
+        u8 *buffer = sAchievementsMenuStatePtr->listNameBuffers[ACHIEVEMENT_TIER_COUNT];
 
         StringCopy(buffer, sText_BoostsMenuRowLabel);
-        sAchievementsListItems[ACHIEVEMENT_TIER_COUNT].name = buffer;
-        sAchievementsListItems[ACHIEVEMENT_TIER_COUNT].id = TIER_SELECT_ITEM_BOOSTS;
+        sAchievementsMenuStatePtr->listItems[ACHIEVEMENT_TIER_COUNT].name = buffer;
+        sAchievementsMenuStatePtr->listItems[ACHIEVEMENT_TIER_COUNT].id = TIER_SELECT_ITEM_BOOSTS;
     }
 }
 
@@ -1133,7 +1196,7 @@ static void EnterListLevel(u8 taskId, u8 tier)
 {
     struct ListMenuTemplate template = {0};
 
-    sAchievementsMenu.selectedTier = tier;
+    sAchievementsMenuStatePtr->selectedTier = tier;
 
     LoadMenuBackground(ACHIEVEMENTS_BG_SCREEN_DETAIL);
     DrawHeaderText(sTierNames[tier]);
@@ -1142,12 +1205,12 @@ static void EnterListLevel(u8 taskId, u8 tier)
     // See the identical comment in EnterTierSelectLevel -- must be set
     // before ListMenuInit so the initially-selected row is highlighted from
     // the very first draw.
-    sAchievementsMenu.highlightedId = sAchievementsListItems[sAchievementsMenu.listScrollOffset + sAchievementsMenu.listSelectedRow].id;
+    sAchievementsMenuStatePtr->highlightedId = sAchievementsMenuStatePtr->listItems[sAchievementsMenuStatePtr->listScrollOffset + sAchievementsMenuStatePtr->listSelectedRow].id;
 
-    template.items = sAchievementsListItems;
+    template.items = sAchievementsMenuStatePtr->listItems;
     template.moveCursorFunc = AchievementsMenu_MoveCursorCallback;
     template.itemPrintFunc = AchievementsMenu_ItemPrintCallback;
-    template.totalItems = sAchievementsMenu.listItemCount;
+    template.totalItems = sAchievementsMenuStatePtr->listItemCount;
     template.maxShowed = ACHIEVEMENTS_MENU_MAX_SHOWED;
     template.windowId = WIN_LIST;
     template.header_X = 0;
@@ -1173,7 +1236,7 @@ static void EnterListLevel(u8 taskId, u8 tier)
     // ACHIEVEMENTS_LIST_ITEM_X sits closer to the cursor's old column.
     template.cursorKind = CURSOR_INVISIBLE;
 
-    gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenu.listScrollOffset, sAchievementsMenu.listSelectedRow);
+    gTasks[taskId].tListTaskId = ListMenuInit(&template, sAchievementsMenuStatePtr->listScrollOffset, sAchievementsMenuStatePtr->listSelectedRow);
     gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
         SCROLL_ARROW_UP, ACHIEVEMENTS_ARROW_X, ACHIEVEMENTS_ARROW_TOP_Y, ACHIEVEMENTS_ARROW_BOTTOM_Y,
         // Clamped, not a bare subtraction: a tier can have fewer than
@@ -1184,30 +1247,30 @@ static void EnterListLevel(u8 taskId, u8 tier)
         // leaving the down arrow stuck visible with nothing left to scroll
         // to (same issue fixed for the boost list in
         // src/achievement_boost_menu.c).
-        (sAchievementsMenu.listItemCount > ACHIEVEMENTS_MENU_MAX_SHOWED) ? (sAchievementsMenu.listItemCount - ACHIEVEMENTS_MENU_MAX_SHOWED) : 0,
+        (sAchievementsMenuStatePtr->listItemCount > ACHIEVEMENTS_MENU_MAX_SHOWED) ? (sAchievementsMenuStatePtr->listItemCount - ACHIEVEMENTS_MENU_MAX_SHOWED) : 0,
         TAG_ACHIEVEMENTS_SCROLL_ARROWS, TAG_ACHIEVEMENTS_SCROLL_ARROWS,
-        &sAchievementsMenu.listScrollOffset);
+        &sAchievementsMenuStatePtr->listScrollOffset);
 }
 
 static void Task_List_ProcessInput(u8 taskId)
 {
-    u16 prevScrollOffset = sAchievementsMenu.listScrollOffset;
-    u16 prevSelectedRow = sAchievementsMenu.listSelectedRow;
+    u16 prevScrollOffset = sAchievementsMenuStatePtr->listScrollOffset;
+    u16 prevSelectedRow = sAchievementsMenuStatePtr->listSelectedRow;
     u8 prevRowY = ListMenuGetYCoordForPrintingArrowCursor(gTasks[taskId].tListTaskId);
     s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
-    ListMenuGetScrollAndRow(gTasks[taskId].tListTaskId, &sAchievementsMenu.listScrollOffset, &sAchievementsMenu.listSelectedRow);
+    ListMenuGetScrollAndRow(gTasks[taskId].tListTaskId, &sAchievementsMenuStatePtr->listScrollOffset, &sAchievementsMenuStatePtr->listSelectedRow);
 
     // See the identical comment in Task_TierSelect_ProcessInput.
-    if (prevScrollOffset != sAchievementsMenu.listScrollOffset)
+    if (prevScrollOffset != sAchievementsMenuStatePtr->listScrollOffset)
     {
         RedrawListMenu(gTasks[taskId].tListTaskId);
     }
-    else if (prevSelectedRow != sAchievementsMenu.listSelectedRow)
+    else if (prevSelectedRow != sAchievementsMenuStatePtr->listSelectedRow)
     {
         u8 newRowY = ListMenuGetYCoordForPrintingArrowCursor(gTasks[taskId].tListTaskId);
 
         RepaintListRow(AchievementsMenu_DrawRow, prevScrollOffset + prevSelectedRow, prevRowY);
-        RepaintListRow(AchievementsMenu_DrawRow, prevScrollOffset + sAchievementsMenu.listSelectedRow, newRowY);
+        RepaintListRow(AchievementsMenu_DrawRow, prevScrollOffset + sAchievementsMenuStatePtr->listSelectedRow, newRowY);
         CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
     }
 
@@ -1236,7 +1299,7 @@ static void Task_List_ProcessInput(u8 taskId)
     // above (or whether either branch above even ran this frame) --
     // GenerateFontHalfRowLookupTable's own unchanged-colour early-out makes
     // the extra call a no-op on every frame this didn't need to fix anything.
-    if (sAchievementsMenu.descriptionScrolling)
+    if (sAchievementsMenuStatePtr->descriptionScrolling)
     {
         union TextColor color;
 
@@ -1288,7 +1351,7 @@ static void AchievementsMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, str
 {
     if (!onInit)
         PlaySE(SE_SELECT);
-    sAchievementsMenu.highlightedId = itemIndex;
+    sAchievementsMenuStatePtr->highlightedId = itemIndex;
     // See the identical comment in TierSelect_MoveCursorCallback -- row
     // repaint is Task_List_ProcessInput's own RepaintListRow/RedrawListMenu
     // calls' job, right after ListMenu_ProcessInput (and this callback)
@@ -1308,7 +1371,7 @@ static void AchievementsMenu_DrawRow(u8 windowId, u32 achievementId, u8 y, const
 
 static void AchievementsMenu_ItemPrintCallback(u8 windowId, u32 achievementId, u8 y)
 {
-    bool8 selected = (achievementId == sAchievementsMenu.highlightedId);
+    bool8 selected = (achievementId == sAchievementsMenuStatePtr->highlightedId);
     const u8 *colors = selected ? sAchievementsListHighlightTextColors : sAchievementsListTextColors;
 
     // See the identical comment in TierSelect_ItemPrintCallback.
@@ -1345,17 +1408,17 @@ static void BuildAchievementListItems(u8 tier)
             break;
 
         completed = Achievement_IsCompleted(id);
-        buffer = sAchievementsListNameBuffers[index];
+        buffer = sAchievementsMenuStatePtr->listNameBuffers[index];
 
         StringCopy(buffer, completed ? sText_CompletedPrefix : sText_IncompletePrefix);
         StringAppend(buffer, (info->hidden && !completed) ? sText_HiddenName : info->name);
 
-        sAchievementsListItems[index].name = buffer;
-        sAchievementsListItems[index].id = id;
+        sAchievementsMenuStatePtr->listItems[index].name = buffer;
+        sAchievementsMenuStatePtr->listItems[index].id = id;
         index++;
     }
 
-    sAchievementsMenu.listItemCount = index;
+    sAchievementsMenuStatePtr->listItemCount = index;
 }
 
 // Bug (reported after initial delivery): descriptions were printed raw, with
@@ -1421,24 +1484,24 @@ static void PrintAchievementDescription(s32 achievementId)
         bool8 masked = info->hidden && !Achievement_IsCompleted(achievementId);
         bool8 needsScroll;
 
-        // sAchievementsDescriptionBuffer, not gStringVar1 -- see that
+        // sAchievementsMenuStatePtr->descriptionBuffer, not gStringVar1 -- see that
         // buffer's own comment for why an overlong (needsScroll) description
         // can't be built in a buffer anything else in the engine might write
         // to while this printer is still reading it.
-        StringCopy(sAchievementsDescriptionBuffer, masked ? sText_HiddenDescription : info->description);
-        StripLineBreaks(sAchievementsDescriptionBuffer);
-        BreakStringAutomatic(sAchievementsDescriptionBuffer, ACHIEVEMENTS_DESC_MAX_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
-        needsScroll = StringHasScrollPrompt(sAchievementsDescriptionBuffer);
+        StringCopy(sAchievementsMenuStatePtr->descriptionBuffer, masked ? sText_HiddenDescription : info->description);
+        StripLineBreaks(sAchievementsMenuStatePtr->descriptionBuffer);
+        BreakStringAutomatic(sAchievementsMenuStatePtr->descriptionBuffer, ACHIEVEMENTS_DESC_MAX_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+        needsScroll = StringHasScrollPrompt(sAchievementsMenuStatePtr->descriptionBuffer);
 
         gTextFlags.autoScroll = needsScroll;
         AddTextPrinterParameterized3(WIN_DESCRIPTION, FONT_NORMAL, 8, ACHIEVEMENTS_DESC_LINE1_Y, sAchievementsMenuTextColors,
-            needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, sAchievementsDescriptionBuffer);
+            needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, sAchievementsMenuStatePtr->descriptionBuffer);
 
         // See MainCB2's own use of these -- (re)starting this printer always
         // resets the idle timer, whether this is the first print for a newly
         // selected row or a loop back to the top of one already mid-scroll.
-        sAchievementsMenu.descriptionScrolling = needsScroll;
-        sAchievementsMenu.descriptionRestartTimer = 0;
+        sAchievementsMenuStatePtr->descriptionScrolling = needsScroll;
+        sAchievementsMenuStatePtr->descriptionRestartTimer = 0;
     }
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
@@ -1479,13 +1542,13 @@ static void PrintDetailDescription(s32 achievementId)
     // the title.
     AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 1, sAchievementsListHighlightTextColors, TEXT_SKIP_DRAW, masked ? sText_HiddenName : info->name);
 
-    // sAchievementsDetailDescriptionBuffer, not gStringVar1 -- see that
+    // sAchievementsMenuStatePtr->detailDescriptionBuffer, not gStringVar1 -- see that
     // buffer's own comment. Matters here too: EnterDetailLevel reuses
     // gStringVar1 for the reward figure immediately after this call returns,
     // which would clobber an in-progress needsScroll printer built on it
     // before a single frame had even drawn.
-    StringCopy(sAchievementsDetailDescriptionBuffer, masked ? sText_HiddenDescription : info->description);
-    StripLineBreaks(sAchievementsDetailDescriptionBuffer);
+    StringCopy(sAchievementsMenuStatePtr->detailDescriptionBuffer, masked ? sText_HiddenDescription : info->description);
+    StripLineBreaks(sAchievementsMenuStatePtr->detailDescriptionBuffer);
     // ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, not ACHIEVEMENTS_DESC_MAX_WIDTH --
     // see its own comment; WIN_LIST's box is narrower than WIN_DESCRIPTION's.
     // SHOW_SCROLL_PROMPT/ACHIEVEMENTS_DETAIL_DESC_LINES, not the
@@ -1494,17 +1557,17 @@ static void PrintDetailDescription(s32 achievementId)
     // that needs more than ACHIEVEMENTS_DETAIL_DESC_LINES lines now scrolls
     // through the rest instead of silently running past WIN_LIST's own
     // bottom edge.
-    BreakStringAutomatic(sAchievementsDetailDescriptionBuffer, ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, ACHIEVEMENTS_DETAIL_DESC_LINES, FONT_NORMAL, SHOW_SCROLL_PROMPT);
-    needsScroll = StringHasScrollPrompt(sAchievementsDetailDescriptionBuffer);
+    BreakStringAutomatic(sAchievementsMenuStatePtr->detailDescriptionBuffer, ACHIEVEMENTS_DETAIL_DESC_MAX_WIDTH, ACHIEVEMENTS_DETAIL_DESC_LINES, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+    needsScroll = StringHasScrollPrompt(sAchievementsMenuStatePtr->detailDescriptionBuffer);
 
     gTextFlags.autoScroll = needsScroll;
     AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 17, sAchievementsListTextColors,
-        needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, sAchievementsDetailDescriptionBuffer);
+        needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, sAchievementsMenuStatePtr->detailDescriptionBuffer);
     CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
 
     // See PrintAchievementDescription's identical pair for why.
-    sAchievementsMenu.detailDescriptionScrolling = needsScroll;
-    sAchievementsMenu.detailDescriptionRestartTimer = 0;
+    sAchievementsMenuStatePtr->detailDescriptionScrolling = needsScroll;
+    sAchievementsMenuStatePtr->detailDescriptionRestartTimer = 0;
 }
 
 static void EnterDetailLevel(u8 taskId, u16 achievementId)
@@ -1538,7 +1601,7 @@ static void EnterDetailLevel(u8 taskId, u16 achievementId)
     // overlong name/description here would have its first screenful drawn
     // with the wrong shadow colour instead of the wrong foreground -- same
     // root cause, subtler result, but still wrong.
-    if (sAchievementsMenu.detailDescriptionScrolling)
+    if (sAchievementsMenuStatePtr->detailDescriptionScrolling)
     {
         union TextColor color;
 
@@ -1565,8 +1628,8 @@ static void Task_Detail_ProcessInput(u8 taskId)
         // list with DETAIL's name/description prints.
         DeactivateSingleTextPrinter(WIN_LIST, WINDOW_TEXT_PRINTER);
         gTextFlags.autoScroll = FALSE;
-        sAchievementsMenu.detailDescriptionScrolling = FALSE;
-        EnterListLevel(taskId, sAchievementsMenu.selectedTier);
+        sAchievementsMenuStatePtr->detailDescriptionScrolling = FALSE;
+        EnterListLevel(taskId, sAchievementsMenuStatePtr->selectedTier);
         gTasks[taskId].func = Task_List_ProcessInput;
     }
 }
@@ -1589,15 +1652,15 @@ static void DestroyCurrentAchievementsList(u8 taskId)
     gTextFlags.autoScroll = FALSE;
     // Stops MainCB2 from restarting a printer against a window this screen
     // no longer owns once it goes idle, same reasoning as the two lines
-    // above -- see its own comment on sAchievementsMenu.descriptionScrolling.
-    sAchievementsMenu.descriptionScrolling = FALSE;
+    // above -- see its own comment on sAchievementsMenuStatePtr->descriptionScrolling.
+    sAchievementsMenuStatePtr->descriptionScrolling = FALSE;
     // Same pair, for DETAIL's own WIN_LIST scroll printer (PrintDetail
     // Description) -- belt-and-suspenders here, since the current DETAIL ->
     // LIST path stops it itself (see Task_Detail_ProcessInput) before this
     // function ever runs, but this function is the one every *other*
     // transition already routes through to stop LIST's own printer above.
     DeactivateSingleTextPrinter(WIN_LIST, WINDOW_TEXT_PRINTER);
-    sAchievementsMenu.detailDescriptionScrolling = FALSE;
+    sAchievementsMenuStatePtr->detailDescriptionScrolling = FALSE;
 }
 
 // Repaints one WIN_LIST row in place, used by Task_TierSelect_ProcessInput/
@@ -1623,8 +1686,8 @@ static void DestroyCurrentAchievementsList(u8 taskId)
 // override machinery entirely, so nothing needs arming or resetting.
 static void RepaintListRow(void (*drawRow)(u8, u32, u8, const u8 *), u32 arrayIndex, u8 y)
 {
-    const struct ListMenuItem *item = &sAchievementsListItems[arrayIndex];
-    bool8 selected = (item->id == sAchievementsMenu.highlightedId);
+    const struct ListMenuItem *item = &sAchievementsMenuStatePtr->listItems[arrayIndex];
+    bool8 selected = (item->id == sAchievementsMenuStatePtr->highlightedId);
     const u8 *colors = selected ? sAchievementsListHighlightTextColors : sAchievementsListTextColors;
 
     drawRow(WIN_LIST, item->id, y, colors);
