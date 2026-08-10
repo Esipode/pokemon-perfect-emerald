@@ -91,8 +91,8 @@ struct ProtectStruct
     u16 revengeDoubled:4;
     u16 padding2:9;
     // End of 16-bit bitfield
-    u16 physicalDmg;
-    u16 specialDmg;
+    s32 physicalDmg;
+    s32 specialDmg;
     u8 physicalBattlerId:3;
     u8 specialBattlerId:3;
     u8 lastHitBySpecialMove:1;
@@ -697,8 +697,8 @@ struct BattleStruct
     u8 pursuitStoredSwitch; // Stored id for the Pursuit target's switch
     s32 battlerExpReward;
     enum Species prevTurnSpecies[MAX_BATTLERS_COUNT]; // Stores species the AI has in play at start of turn
-    s16 passiveHpUpdate[MAX_BATTLERS_COUNT]; // non-move damage and healing
-    s16 moveDamage[MAX_BATTLERS_COUNT];
+    s32 passiveHpUpdate[MAX_BATTLERS_COUNT]; // non-move damage and healing
+    s32 moveDamage[MAX_BATTLERS_COUNT];
     u16 innardsOutHpLost[MAX_BATTLERS_COUNT];
     u32 moveResultFlags[MAX_BATTLERS_COUNT];
     u32 savedMoveResultFlags[MAX_BATTLERS_COUNT]; // for Bounced moves

@@ -633,3 +633,41 @@ SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst works when surviving OHKO move w
         EXPECT_EQ(metalBurstDmg, 1);
     }
 }
+
+// Regression test for Bug C's required companion fix: `ProtectStruct.physicalDmg`/
+// `specialDmg` (was u16, max 65,535) store `moveDamage + 1` for Counter/Mirror Coat/
+// Metal Burst, then get reflected back through the damage chain. If `moveDamage`
+// is widened to s32 but these stay u16, the identical wraparound bug reappears one
+// hop downstream. See "Damage Calc Patch.md", Stage 4 / Bug C.
+//
+// A MAX_LEVEL opponent's Pound hit is sized so the raw computed damage clears not
+// only the old moveDamage s16 ceiling (32,767) but also the old physicalDmg u16
+// ceiling (65,535), so this exercises both truncation points at once:
+//
+//   levelFactor = 2 * 1000 / 5 + 2                        = 402
+//   base = 40 * 5000 * 402 / 20 / 50 + 2                  = 80,402
+//   (Wobbuffet is Psychic; Pound is Normal - no STAB, no type effectiveness change)
+//   damage roll (85%-100%, integer division)              = 68,341 .. 80,402
+//
+// Player's max HP (50) guarantees Focus Sash triggers (would otherwise be OHKO'd),
+// leaving it at 1 HP regardless of the exact roll. Counter then reflects double the
+// *raw* stored damage (not clamped to the target's HP) - comfortably >65,535 either
+// way - which is far more than any level-1000 Wobbuffet's natural max HP, so the
+// opponent faints outright. Pre-fix, the doubly-wrapped reflected value could have
+// come out as anything, including small enough for the opponent to survive.
+SINGLE_BATTLE_TEST("Reflect Damage: Counter reflects a sane, non-wrapped amount against a MAX_LEVEL hit")
+{
+    GIVEN {
+        ASSUME(GetMovePower(MOVE_POUND) == 40);
+        ASSUME(GetMoveType(MOVE_POUND) == TYPE_NORMAL);
+        PLAYER(SPECIES_WOBBUFFET) { Defense(20); HP(50); MaxHP(50); Item(ITEM_FOCUS_SASH); }
+        OPPONENT(SPECIES_WOBBUFFET) { Level(MAX_LEVEL); Attack(5000); }
+    } WHEN {
+        TURN { MOVE(opponent, MOVE_POUND, criticalHit: FALSE); MOVE(player, MOVE_COUNTER); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_POUND, opponent);
+        HP_BAR(player, hp: 1);
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_COUNTER, player);
+        HP_BAR(opponent, hp: 0);
+    }
+}
