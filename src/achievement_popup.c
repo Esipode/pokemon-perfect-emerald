@@ -56,8 +56,32 @@
 // can't walk through it -- the same mechanism battle intros and cable club
 // links use (src/battle_setup.c, src/cable_club.c), instead of the debug
 // menu's old ScriptContext_Enable() workaround (removed; see src/debug.c).
+//
+// ---- Dismissal -----------------------------------------------------------
+// Used to be a flat timeout. Now Task_WaitAchievementPopupDismiss waits for
+// an overlong description's first auto-scroll pass to finish, then a short
+// grace period, then an A or B press -- see that function's own comment for
+// the full sequence and why it can't just reuse the engine's normal
+// auto-scroll-aware text wait helpers. An overlong description also keeps
+// looping back to the top and re-scrolling on its own (independent of
+// dismissal) for as long as the popup stays up -- see
+// ACHIEVEMENT_POPUP_DESC_RESTART_DELAY.
 
-#define ACHIEVEMENT_POPUP_DISPLAY_FRAMES 150 // ~2.5 seconds
+// Grace period after the popup's text has fully settled (instant print, or
+// the last line of an auto-scrolled description) before a button press is
+// allowed to dismiss it -- without this, the same A/B press that opened a
+// menu, cleared a message box, or ended the battle that triggered the
+// achievement would double as the press that instantly closes the popup
+// before the player ever reads it.
+#define ACHIEVEMENT_POPUP_DISMISS_DELAY_FRAMES 30 // ~0.5 seconds
+
+// How long an overlong description sits idle on its last screenful (see
+// sAchievementPopupNeedsScroll) before looping back to the top and
+// scrolling through again -- so a player who glanced away, or just reads
+// slower than the auto-scroll, gets another full pass instead of the popup
+// sitting there cut off until they happen to press a button. Same value and
+// reasoning as src/achievements_menu.c's own ACHIEVEMENTS_DESC_RESTART_DELAY.
+#define ACHIEVEMENT_POPUP_DESC_RESTART_DELAY 120 // ~2 seconds
 
 #define tTimer data[0]
 
@@ -164,12 +188,36 @@
 // instead of HIDE_SCROLL_PROMPT below, so an overlong description now
 // auto-scrolls through the rest a line at a time instead of overflowing.
 // sAchievementPopupNeedsScroll mirrors that file's descriptionScrolling --
-// Task_HideAchievementPopupAfterDelay reads it to hold off starting the
-// hide countdown until the player has actually seen every line.
+// Task_WaitAchievementPopupDismiss reads it to hold off starting the
+// dismiss grace period until the player has actually seen every line, and
+// to know whether it's responsible for looping the scroll back to the top
+// once it finishes (see sAchievementPopupDescRestartTimer).
 EWRAM_DATA static bool8 sAchievementPopupNeedsScroll = FALSE;
 
+// Frames since an overlong description's printer went idle at the end of
+// its scroll -- reset to 0 every time PrintAchievementPopupText (re)starts
+// one, whether that's the first print or a loop back to the top. See
+// ACHIEVEMENT_POPUP_DESC_RESTART_DELAY.
+EWRAM_DATA static u16 sAchievementPopupDescRestartTimer = 0;
+
+// The achievement currently on display, so Task_WaitAchievementPopupDismiss
+// can re-invoke PrintAchievementPopupText on its own (the loop-back-to-top
+// restart above) without ShowAchievementPopUpWindow needing to hand it the
+// id again every frame.
+EWRAM_DATA static u16 sAchievementPopupCurrentId = 0;
+
+// Latches TRUE once the popup has cleared its one-time "just appeared"
+// grace period (first scroll pass, if any, plus
+// ACHIEVEMENT_POPUP_DISMISS_DELAY_FRAMES) and stays TRUE for the rest of
+// the popup's lifetime -- so a later loop-back-to-top restart doesn't
+// re-arm that hold-off and make an already-dismissible popup temporarily
+// undismissable again while it re-scrolls. Reset FALSE each time
+// ShowAchievementPopUpWindow puts up new content (fresh popup or a
+// back-to-back award swapping an active one).
+EWRAM_DATA static bool8 sAchievementPopupDismissible = FALSE;
+
 // sAchievementPopupTextBuffer, not gStringVar4 -- see that buffer's own
-// comment (ShowAchievementPopUpWindow) for why an overlong (needsScroll)
+// comment (PrintAchievementPopupText) for why an overlong (needsScroll)
 // popup can't be printed out of a buffer anything else in the engine might
 // write to while this printer is still reading it across multiple frames.
 // Same fix, same reasoning, as src/achievements_menu.c's own
@@ -194,9 +242,10 @@ EWRAM_DATA static u16 sAchievementPopupQueue[ACHIEVEMENT_POPUP_QUEUE_SIZE] = {0}
 EWRAM_DATA static u8 sAchievementPopupQueueHead = 0;
 EWRAM_DATA static u8 sAchievementPopupQueueCount = 0;
 
-static void Task_HideAchievementPopupAfterDelay(u8 taskId);
+static void Task_WaitAchievementPopupDismiss(u8 taskId);
 static bool8 IsAchievementPopupSafeToShow(void);
 static void ShowAchievementPopUpWindow(u16 achievementId);
+static void PrintAchievementPopupText(u16 achievementId);
 static void HideAchievementPopUpWindow(void);
 static u8 AddAchievementTierIconSprite(enum AchievementTier tier);
 static void DestroyAchievementTierIconSprite(u8 spriteId);
@@ -286,7 +335,7 @@ void ShowAchievementPopup(u16 achievementId)
     }
     else
     {
-        sAchievementPopupTaskId = CreateTask(Task_HideAchievementPopupAfterDelay, 90);
+        sAchievementPopupTaskId = CreateTask(Task_WaitAchievementPopupDismiss, 90);
     }
 
     // Reads sAchievementPopupActive itself to decide whether to create the
@@ -314,7 +363,47 @@ void AchievementPopup_Enqueue(u16 achievementId)
     // isn't a self-perpetuating task.
 }
 
-static void Task_HideAchievementPopupAfterDelay(u8 taskId)
+// Dismissal used to be a flat timeout (~2.5s) regardless of what the player
+// was doing. Now the popup instead waits for the player to actually press
+// A or B, once it's safe to read that as an intentional dismissal rather
+// than as animation-in, in-progress scrolling, or the tail end of whatever
+// button press triggered the achievement in the first place:
+//
+//   1. Any auto-scrolling description text has to finish its first pass
+//      first (below) -- otherwise a button press here would double as
+//      TextPrinterWait[WithDownArrow]'s own advance-to-next-line input
+//      (src/text.c) and blow through the rest of the description instead of
+//      just dismissing the popup.
+//   2. A short ACHIEVEMENT_POPUP_DISMISS_DELAY_FRAMES grace period after
+//      that (see its own comment) absorbs the triggering press.
+//   3. Only then does a new A/B press (JOY_NEW, not held) close it --
+//      sAchievementPopupDismissible latches at this point so a later loop
+//      restart (described next) can't re-arm step 1's hold-off.
+//
+// Independently of all that, an overlong description doesn't just sit on
+// its last screenful once its first scroll finishes -- it pauses for
+// ACHIEVEMENT_POPUP_DESC_RESTART_DELAY, then loops back to the top and
+// scrolls through again via PrintAchievementPopupText, for as long as the
+// popup stays up. This runs whether or not the popup is dismissible yet, so
+// a description shorter than the initial dismiss grace period still gets to
+// loop at least once before the player can act.
+//
+// Step 3 deliberately reads JOY_NEW(A_BUTTON | B_BUTTON) directly instead of
+// going through TextPrinterWait/TextPrinterWaitWithDownArrow, which would
+// fold in gTextFlags.autoScroll / FLAG_AUTO_SCROLL_TEXT and auto-close the
+// popup on a timer again for anyone with the AUTO SCROLL option on
+// (src/option_menu.c). Dismissal always needs real player input -- the
+// AUTO SCROLL option only ever governs description text advancing while
+// still in step 1 above, never whether the popup itself goes away.
+//
+// Note on A_BUTTON specifically: JOY_NEW only fires on the frame a button
+// goes from up to down, so a player who was already holding A (e.g. mashing
+// through the dialogue/battle messages that led to the achievement) won't
+// dismiss the popup until they actually release and press it again -- that
+// held-over press is exactly the kind of accidental input step 2's grace
+// period exists to filter out, working as intended rather than a missed
+// input.
+static void Task_WaitAchievementPopupDismiss(u8 taskId)
 {
     // Drives the popup's own text printer -- unlike a field message box
     // (src/field_message_box.c's Task_DrawFieldMessage), nothing else on the
@@ -325,21 +414,51 @@ static void Task_HideAchievementPopupAfterDelay(u8 taskId)
     // no printer active.
     RunTextPrinters();
 
-    // Hold the hide countdown at zero for as long as an overlong
-    // description is still auto-scrolling through its own lines
-    // (IsTextPrinterActiveOnWindow), so the display window below always
-    // starts counting from "the player has now seen every line" instead of
-    // racing the scroll and cutting it off partway through. A description
-    // that fit on one line never sets sAchievementPopupNeedsScroll, so this
-    // is a no-op for the common case -- same instant countdown as before.
-    if (sAchievementPopupNeedsScroll && IsTextPrinterActiveOnWindow(sAchievementPopupWindowId))
+    // Loop an overlong description back to the top once it's finished
+    // scrolling and sat idle for a bit -- see ACHIEVEMENT_POPUP_DESC_RESTART_
+    // DELAY's own comment. Same idle-then-restart pattern as
+    // src/achievements_menu.c's own MainCB2/descriptionRestartTimer.
+    if (sAchievementPopupNeedsScroll
+     && !IsTextPrinterActiveOnWindow(sAchievementPopupWindowId)
+     && ++sAchievementPopupDescRestartTimer >= ACHIEVEMENT_POPUP_DESC_RESTART_DELAY)
     {
-        gTasks[taskId].tTimer = 0;
-        return;
+        PrintAchievementPopupText(sAchievementPopupCurrentId);
     }
 
-    if (++gTasks[taskId].tTimer > ACHIEVEMENT_POPUP_DISPLAY_FRAMES)
+    // Once latched, the popup is dismissible for the rest of its lifetime --
+    // skip straight to the input check below even while a loop restart above
+    // is mid-scroll again.
+    if (!sAchievementPopupDismissible)
     {
+        // Hold the grace period at zero for as long as an overlong
+        // description is still auto-scrolling through its first pass
+        // (IsTextPrinterActiveOnWindow), so it always starts counting from
+        // "the player has now seen every line" instead of racing the scroll
+        // and cutting it off partway through. A description that fit on one
+        // line never sets sAchievementPopupNeedsScroll, so this is a no-op
+        // for the common case.
+        if (sAchievementPopupNeedsScroll && IsTextPrinterActiveOnWindow(sAchievementPopupWindowId))
+        {
+            gTasks[taskId].tTimer = 0;
+            return;
+        }
+
+        // Still inside the grace period -- keep counting, but don't look at
+        // input yet (see the function comment above for why).
+        if (gTasks[taskId].tTimer < ACHIEVEMENT_POPUP_DISMISS_DELAY_FRAMES)
+        {
+            gTasks[taskId].tTimer++;
+            return;
+        }
+
+        sAchievementPopupDismissible = TRUE;
+    }
+
+    // A/B only -- not gMain.newKeys != 0 -- so an idle D-pad tap or an
+    // incidental Start/Select press while reading doesn't close the popup.
+    if (JOY_NEW(A_BUTTON | B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
         HideAchievementPopUpWindow();
         DestroyTask(taskId);
     }
@@ -436,15 +555,7 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
     }
     else
     {
-        FillWindowPixelBuffer(sAchievementPopupWindowId, PIXEL_FILL(1));
         DestroyAchievementTierIconSprite(sAchievementPopupIconSpriteId);
-        // Cancels whatever scroll printer the previously-shown entry's
-        // description registered below -- without this, a back-to-back
-        // award landing while the last one was still mid-scroll leaves that
-        // printer still ticking away against a window this
-        // FillWindowPixelBuffer just cleared for the new one (same fix as
-        // src/achievements_menu.c's PrintAchievementDescription).
-        DeactivateSingleTextPrinter(sAchievementPopupWindowId, WINDOW_TEXT_PRINTER);
     }
 
     sAchievementPopupIconSpriteId = AddAchievementTierIconSprite(info->tier);
@@ -454,6 +565,36 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
         gSprites[sAchievementPopupIconSpriteId].y2 = ACHIEVEMENT_POPUP_ICON_Y;
         gSprites[sAchievementPopupIconSpriteId].oam.priority = 0;
     }
+
+    // New content (whether this is a fresh popup or a back-to-back award
+    // swapping the content of one that's already up) always needs to earn
+    // dismissibility again from scratch -- see sAchievementPopupDismissible's
+    // own comment.
+    sAchievementPopupCurrentId = achievementId;
+    sAchievementPopupDismissible = FALSE;
+    PrintAchievementPopupText(achievementId);
+}
+
+// Builds and prints the popup's name/points/description text -- split out of
+// ShowAchievementPopUpWindow so Task_WaitAchievementPopupDismiss can also
+// call it on its own, to loop an overlong description back to the top after
+// ACHIEVEMENT_POPUP_DESC_RESTART_DELAY (see that task's own comment).
+// Doesn't touch the icon sprite (unaffected by a text reprint) or
+// sAchievementPopupDismissible (a loop restart must NOT re-arm that latch --
+// see its own comment).
+static void PrintAchievementPopupText(u16 achievementId)
+{
+    const struct Achievement *info = Achievement_GetInfo(achievementId);
+
+    FillWindowPixelBuffer(sAchievementPopupWindowId, PIXEL_FILL(1));
+    // Cancels whatever scroll printer was previously running against this
+    // window -- without this, a back-to-back award landing (or a loop
+    // restart, below) while the last print was still mid-scroll leaves that
+    // printer still ticking away against a window this FillWindowPixelBuffer
+    // just cleared for the new one (same fix as src/achievements_menu.c's
+    // PrintAchievementDescription). Harmless no-op the first time a popup is
+    // shown, when there's no printer registered yet.
+    DeactivateSingleTextPrinter(sAchievementPopupWindowId, WINDOW_TEXT_PRINTER);
 
     ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
     StringCopy(gStringVar2, info->name);
@@ -479,6 +620,12 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
         sAchievementPopupNeedsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, NULL);
 
     CopyWindowToVram(sAchievementPopupWindowId, COPYWIN_FULL);
+
+    // (Re)starts the idle-then-loop countdown for an overlong description --
+    // see ACHIEVEMENT_POPUP_DESC_RESTART_DELAY's own comment. Reset
+    // unconditionally, including for a description that fits on one line, so
+    // a stale count from a previous (longer) description can't linger.
+    sAchievementPopupDescRestartTimer = 0;
 }
 
 static void HideAchievementPopUpWindow(void)
@@ -497,6 +644,8 @@ static void HideAchievementPopUpWindow(void)
     // on its own way out.
     gTextFlags.autoScroll = FALSE;
     sAchievementPopupNeedsScroll = FALSE;
+    sAchievementPopupDismissible = FALSE;
+    sAchievementPopupDescRestartTimer = 0;
 }
 
 static u8 AddAchievementTierIconSprite(enum AchievementTier tier)
@@ -528,7 +677,7 @@ static void DestroyAchievementTierIconSprite(u8 spriteId)
 }
 
 // True for CHAR_PROMPT_SCROLL specifically (not CHAR_NEWLINE) -- lets
-// ShowAchievementPopUpWindow tell a description that fit the popup's single
+// PrintAchievementPopupText tell a description that fit the popup's single
 // line apart from one that needed BreakStringAutomatic's SHOW_SCROLL_PROMPT
 // treatment to scroll through the rest. Same helper, same reasoning, as
 // src/achievements_menu.c's own StringHasScrollPrompt.

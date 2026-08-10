@@ -1985,6 +1985,19 @@ void CB2_Overworld(void)
     // the queue is empty or the field isn't currently in a safe state to
     // show a popup.
     AchievementPopup_UpdateQueue();
+
+    // Bug fix: Achievement_TryComplete only marks the profile dirty, it
+    // doesn't write it to flash -- src/achievements.c's own comment on
+    // Achievement_FlushProfile says this is meant to be the "safe point"
+    // flush call site, but it was never actually wired up here. Without it,
+    // an earned achievement lived only in EWRAM until some unrelated event
+    // (a manual save, autosave, or a handful of special achievement events
+    // that flush immediately) happened to trigger a flush, so an achievement
+    // earned right before a hard reset/power-off could be lost even though
+    // it's stored in its own sector, independent of the player's save file.
+    // Achievement_FlushProfile() is a no-op whenever nothing is dirty, so
+    // this costs nothing on the common frame.
+    Achievement_FlushProfile();
 }
 
 void SetMainCallback1(MainCallback cb)
