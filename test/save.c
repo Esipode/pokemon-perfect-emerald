@@ -47,10 +47,26 @@
 //   7680) and its MAX_FUSION_STORAGE(4) struct Pokemon fusions (4*16 = 64):
 //   46724 - 7680 - 64 = 38980. SaveBlock2/3 have no Pokemon/BoxPokemon fields and
 //   are untouched by this stage. Calculated, not yet confirmed by a real build.
+// Stage 6: pure flash-layout change (single-copy storage, journaled writes).
+//   No struct shrinks -- all four T_*_SIZE values are unchanged from Stage 5.
+// Stage 7: EWRAM-only change (achievements_menu.c statics moved to the heap).
+//   No save-block struct changes -- all four T_*_SIZE values are unchanged.
+// Stage 8: TOTAL_BOXES_COUNT 16 -> 28 adds 12 * (30 * sizeof(struct BoxPokemon)
+//   + BOX_NAME_LENGTH + 1 + 1 wallpaper byte) = 12 * (2400 + 9 + 1) = 28920 bytes
+//   to PokemonStorage. Unlike Stage 3's 14->16 jump, this was hand-verified against
+//   the struct's actual byte offsets (not just added on top of the Stage 5 total):
+//   currentBox(1) + 3 padding bytes (aligning `boxes` to 4, required because
+//   struct BoxPokemon's `secure` union contains u32s) + boxes(N*30*80) +
+//   boxNames(N*9) + boxWallpapers(N*1) + fusions(4*104). boxNames+boxWallpapers
+//   together cost 10 bytes/box, which only stays a multiple of 4 -- and so avoids
+//   shifting the offset fusions lands at -- when N is even; 16 and 28 both are,
+//   so no extra padding beyond the existing 3-byte header pad is expected either
+//   side of this stage. 38980 + 28920 = 67900. SaveBlock1/2/3 are untouched.
+//   Calculated, not yet confirmed by a real build.
 #define T_SAVEBLOCK1_SIZE 7536
 #define T_SAVEBLOCK2_SIZE 490
 #define T_SAVEBLOCK3_SIZE 1576
-#define T_POKEMONSTORAGE_SIZE 38980
+#define T_POKEMONSTORAGE_SIZE 67900
 
 TEST("SaveBlock1 is backwards compatible")
 {
