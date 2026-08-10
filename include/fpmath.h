@@ -69,14 +69,14 @@ static inline uq4_12_t uq4_12_divide(uq4_12_t dividend, uq4_12_t divisor)
 // Returns an integer, rounded to nearest (rounding down on n.5)
 static inline u32 uq4_12_multiply_by_int_half_down(uq4_12_t modifier, u32 value)
 {
-    return UQ_4_12_TO_INT((modifier * value) + UQ_4_12_ROUND - 1);
+    return UQ_4_12_TO_INT((u64)modifier * value + UQ_4_12_ROUND - 1);
 }
 
 // Multiplies value by the UQ_4_12 number modifier.
 // Returns an integer, rounded to nearest (rounding up on n.5)
 static inline u32 uq4_12_multiply_by_int_half_up(uq4_12_t modifier, u32 value)
 {
-    return UQ_4_12_TO_INT((modifier * value) + UQ_4_12_ROUND);
+    return UQ_4_12_TO_INT((u64)modifier * value + UQ_4_12_ROUND);
 }
 
 #endif // FPMATH_H_
