@@ -215,10 +215,10 @@ struct AiPartyData // Opposing battlers - party mons.
 
 struct SimulatedDamage
 {
-    u16 minimum;
-    u16 median;
-    u16 maximum;
-    u16 random;
+    s32 minimum;
+    s32 median;
+    s32 maximum;
+    s32 random;
 };
 
 // Ai Data used when deciding which move to use, computed only once before each turn's start.

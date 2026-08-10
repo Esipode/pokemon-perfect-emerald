@@ -741,13 +741,13 @@ static inline void AI_RestoreBattlerTypes(enum BattlerId battlerAtk, enum Type *
     gBattleMons[battlerAtk].types[2] = types[2];
 }
 
-static inline void CalcDynamicMoveDamage(struct DamageContext *ctx, u16 *medianDamage, u16 *minimumDamage, u16 *maximumDamage, u16 *randomDamage)
+static inline void CalcDynamicMoveDamage(struct DamageContext *ctx, s32 *medianDamage, s32 *minimumDamage, s32 *maximumDamage, s32 *randomDamage)
 {
     enum BattleMoveEffects effect = GetMoveEffect(ctx->move);
-    u16 median = *medianDamage;
-    u16 minimum = *minimumDamage;
-    u16 maximum = *maximumDamage;
-    u16 random = *randomDamage;
+    s32 median = *medianDamage;
+    s32 minimum = *minimumDamage;
+    s32 maximum = *maximumDamage;
+    s32 random = *randomDamage;
 
     u32 strikeCount = GetMoveStrikeCount(ctx->move);
 
