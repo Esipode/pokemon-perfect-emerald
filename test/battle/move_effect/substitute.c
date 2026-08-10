@@ -27,6 +27,57 @@ SINGLE_BATTLE_TEST("Substitute creates a Substitute at the cost of 1/4 users max
     }
 }
 
+// Substitute HP is stored in a bitfield in struct Volatiles. It used to be 8
+// bits wide, which silently wrapped mod 256 once maxHP passed 1020 -- reachable
+// by a bulky mon well before this fork's MAX_LEVEL of 1000. The two tests below
+// pin the field at maxHP/4 on both sides of the old 255 boundary: maxHP 1200
+// gives a 300 HP substitute, which an 8-bit field would have stored as 44.
+// Seismic Toss is used as the incoming hit because its damage is the attacker's
+// level exactly, so neither case depends on the damage formula.
+SINGLE_BATTLE_TEST("Substitute above 255 HP absorbs a hit without wrapping")
+{
+    u16 damage = 0;
+
+    GIVEN {
+        ASSUME(GetMoveEffect(MOVE_SEISMIC_TOSS) == EFFECT_LEVEL_DAMAGE);
+        PLAYER(SPECIES_WOBBUFFET) { Speed(50); MaxHP(1200); HP(1200); }
+        OPPONENT(SPECIES_WOBBUFFET) { Speed(1); }
+    } WHEN {
+        TURN { MOVE(player, MOVE_SUBSTITUTE); MOVE(opponent, MOVE_SEISMIC_TOSS); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_SUBSTITUTE, player);
+        MESSAGE("Wobbuffet put in a substitute!");
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_SEISMIC_TOSS, opponent);
+        SUB_HIT(player, subBreak: FALSE, captureDamage: &damage);
+        NOT MESSAGE("Wobbuffet's substitute faded!");
+    } THEN {
+        // The 100 damage would have broken a wrapped 44 HP substitute.
+        EXPECT_EQ(damage, 100);
+    }
+}
+
+SINGLE_BATTLE_TEST("Substitute above 255 HP absorbs exactly maxHP/4 before breaking")
+{
+    u16 damage = 0;
+
+    GIVEN {
+        ASSUME(GetMoveEffect(MOVE_SEISMIC_TOSS) == EFFECT_LEVEL_DAMAGE);
+        PLAYER(SPECIES_WOBBUFFET) { Speed(50); MaxHP(1200); HP(1200); }
+        OPPONENT(SPECIES_WOBBUFFET) { Level(400); Speed(1); }
+    } WHEN {
+        TURN { MOVE(player, MOVE_SUBSTITUTE); MOVE(opponent, MOVE_SEISMIC_TOSS); }
+    } SCENE {
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_SUBSTITUTE, player);
+        MESSAGE("Wobbuffet put in a substitute!");
+        ANIMATION(ANIM_TYPE_MOVE, MOVE_SEISMIC_TOSS, opponent);
+        SUB_HIT(player, subBreak: TRUE, captureDamage: &damage);
+        MESSAGE("Wobbuffet's substitute faded!");
+    } THEN {
+        // The substitute soaks its full HP before breaking, not 300 mod 256.
+        EXPECT_EQ(damage, 300);
+    }
+}
+
 SINGLE_BATTLE_TEST("Substitute fails if the user doesn't have enough HP")
 {
     GIVEN {

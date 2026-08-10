@@ -7729,7 +7729,7 @@ static void Cmd_setsubstitute(void)
     if (factor == 2)
         hp = (GetNonDynamaxMaxHP(gBattlerAttacker)+1) / factor; // shed tail rounds up
     else
-        hp = GetNonDynamaxMaxHP(gBattlerAttacker) / factor; // one bit value will only work for Pokémon which max hp can go to 1020(which is more than possible in games)
+        hp = GetNonDynamaxMaxHP(gBattlerAttacker) / factor;
 
     if (hp == 0)
         hp = 1;
