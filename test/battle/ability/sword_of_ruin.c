@@ -9,7 +9,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Sword of Ruin reduces Defense if opposing mon's ability doesn't match")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_CHIEN_PAO) { Ability(ABILITY_SWORD_OF_RUIN); }
@@ -74,7 +74,7 @@ SINGLE_BATTLE_TEST("Sword of Ruin's message displays correctly after all battler
     }
 }
 
-DOUBLE_BATTLE_TEST("Sword of Ruin increases damage taken by special moves in Wonder Room", s16 damage)
+DOUBLE_BATTLE_TEST("Sword of Ruin increases damage taken by special moves in Wonder Room", s32 damage)
 {
     bool32 useWonderRoom;
     enum Move move;
@@ -139,7 +139,7 @@ SINGLE_BATTLE_TEST("Sword of Ruin doesn't activate when dragged out by Mold Brea
     }
 }
 
-DOUBLE_BATTLE_TEST("Sword of Ruin's Defense reduction is not ignored by Mold Breaker", s16 damage)
+DOUBLE_BATTLE_TEST("Sword of Ruin's Defense reduction is not ignored by Mold Breaker", s32 damage)
 {
     enum Ability ability;
 
@@ -163,7 +163,7 @@ DOUBLE_BATTLE_TEST("Sword of Ruin's Defense reduction is not ignored by Mold Bre
     }
 }
 
-DOUBLE_BATTLE_TEST("Sword of Ruin's Defense reduction is ignored by Gastro Acid", s16 damage)
+DOUBLE_BATTLE_TEST("Sword of Ruin's Defense reduction is ignored by Gastro Acid", s32 damage)
 {
     enum Move move;
 

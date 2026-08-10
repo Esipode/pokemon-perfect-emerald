@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME_STAT_CHANGE(MOVE_IRON_DEFENSE, defense: +2);
 }
 
-SINGLE_BATTLE_TEST("Iron Defense raises Defense by 2 stages", s16 damage)
+SINGLE_BATTLE_TEST("Iron Defense raises Defense by 2 stages", s32 damage)
 {
     bool32 raiseDefense;
     PARAMETRIZE { raiseDefense = FALSE; }

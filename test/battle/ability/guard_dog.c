@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Guard Dog raises Attack when intimidated", s16 damage)
+SINGLE_BATTLE_TEST("Guard Dog raises Attack when intimidated", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_INTIMIDATE; }

@@ -2,7 +2,7 @@
 #include "event_data.h"
 #include "test/battle.h"
 
-WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_ATTACK boost Attack", s16 dmg)
+WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_ATTACK boost Attack", s32 dmg)
 {
     u32 badge = 0;
     u32 genConfig = 0;
@@ -34,7 +34,7 @@ WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_ATTACK boost Attack", s16 dmg)
     }
 }
 
-WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPATK boost Special Attack", s16 dmg)
+WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPATK boost Special Attack", s32 dmg)
 {
     u32 badge = 0;
     u32 genConfig = 0;
@@ -66,7 +66,7 @@ WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPATK boost Special Attack", s
     }
 }
 
-WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_DEFENSE boost Defense", s16 dmg)
+WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_DEFENSE boost Defense", s32 dmg)
 {
     u32 badge = 0;
     u32 genConfig = 0;
@@ -99,7 +99,7 @@ WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_DEFENSE boost Defense", s16 dm
     }
 }
 
-WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPDEF boost Special Defense", s16 dmg)
+WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPDEF boost Special Defense", s32 dmg)
 {
     u32 badge = 0;
     u32 genConfig = 0;
@@ -132,7 +132,7 @@ WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPDEF boost Special Defense", 
     }
 }
 
-WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPEED boost Speed", s16 dmg)
+WILD_BATTLE_TEST("Badge boost: B_FLAG_BADGE_BOOST_SPEED boost Speed", s32 dmg)
 {
     u32 badge = 0;
     u32 genConfig = 0;

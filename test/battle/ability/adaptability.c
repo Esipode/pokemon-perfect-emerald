@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Adaptability increases same-type attack bonus from x1.5 to x2", s16 damage)
+SINGLE_BATTLE_TEST("Adaptability increases same-type attack bonus from x1.5 to x2", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_HYPER_CUTTER; }
@@ -21,7 +21,7 @@ SINGLE_BATTLE_TEST("Adaptability increases same-type attack bonus from x1.5 to x
     }
 }
 
-SINGLE_BATTLE_TEST("(TERA) Terastallizing into a different type with Adaptability gives 2.0x STAB", s16 damage)
+SINGLE_BATTLE_TEST("(TERA) Terastallizing into a different type with Adaptability gives 2.0x STAB", s32 damage)
 {
     bool32 tera;
     PARAMETRIZE { tera = GIMMICK_NONE; }
@@ -41,7 +41,7 @@ SINGLE_BATTLE_TEST("(TERA) Terastallizing into a different type with Adaptabilit
     }
 }
 
-SINGLE_BATTLE_TEST("(TERA) Terastallizing into the same type with Adaptability gives 2.25x STAB", s16 damage)
+SINGLE_BATTLE_TEST("(TERA) Terastallizing into the same type with Adaptability gives 2.25x STAB", s32 damage)
 {
     bool32 tera;
     PARAMETRIZE { tera = GIMMICK_NONE; }
@@ -61,7 +61,7 @@ SINGLE_BATTLE_TEST("(TERA) Terastallizing into the same type with Adaptability g
     }
 }
 
-SINGLE_BATTLE_TEST("(TERA) Adaptability does not increase non-Tera base STAB beyond 1.5x", s16 damage)
+SINGLE_BATTLE_TEST("(TERA) Adaptability does not increase non-Tera base STAB beyond 1.5x", s32 damage)
 {
     u32 move;
     PARAMETRIZE { move = MOVE_GUST; }
@@ -80,7 +80,7 @@ SINGLE_BATTLE_TEST("(TERA) Adaptability does not increase non-Tera base STAB bey
     }
 }
 
-SINGLE_BATTLE_TEST("(TERA) Adaptability does not affect Stellar-type moves", s16 damage)
+SINGLE_BATTLE_TEST("(TERA) Adaptability does not affect Stellar-type moves", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_HYPER_CUTTER; }

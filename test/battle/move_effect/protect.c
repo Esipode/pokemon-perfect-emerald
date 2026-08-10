@@ -836,9 +836,9 @@ DOUBLE_BATTLE_TEST("Crafty Shield does not protect against moves that target all
     }
 }
 
-SINGLE_BATTLE_TEST("Protect: Quick Guard, Wide Guard and Crafty Shield don't reduce Max Move demage", s16 damage)
+SINGLE_BATTLE_TEST("Protect: Quick Guard, Wide Guard and Crafty Shield don't reduce Max Move demage", s32 damage)
 {
-    s16 dmg[2];
+    s32 dmg[2];
     enum Move move;
 
     PARAMETRIZE { move = MOVE_WIDE_GUARD; }
@@ -859,7 +859,7 @@ SINGLE_BATTLE_TEST("Protect: Quick Guard, Wide Guard and Crafty Shield don't red
     }
 }
 
-SINGLE_BATTLE_TEST("Protect: Quick Guard, Wide Guard and Crafty Shield don't reduce Z-Move demage", s16 damage)
+SINGLE_BATTLE_TEST("Protect: Quick Guard, Wide Guard and Crafty Shield don't reduce Z-Move demage", s32 damage)
 {
     bool32 protected;
     enum Move move;

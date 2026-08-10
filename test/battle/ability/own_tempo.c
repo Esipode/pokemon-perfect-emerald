@@ -146,7 +146,7 @@ SINGLE_BATTLE_TEST("Own Tempo prevents confusion from items")
 
 SINGLE_BATTLE_TEST("Own Tempo cured confusion should not persist toxic counter after switching")
 {
-    s16 firstTick, secondTick, postSwitchTick;
+    s32 firstTick, secondTick, postSwitchTick;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_CONFUSE_RAY) == EFFECT_CONFUSE);

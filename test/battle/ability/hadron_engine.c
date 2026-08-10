@@ -45,7 +45,7 @@ SINGLE_BATTLE_TEST("Hadron Engine announces Electric Terrain before triggering Q
     }
 }
 
-SINGLE_BATTLE_TEST("Hadron Engine boosts the Pokemon's Special Attack on Electric Terrain even if not grounded", s16 damage)
+SINGLE_BATTLE_TEST("Hadron Engine boosts the Pokemon's Special Attack on Electric Terrain even if not grounded", s32 damage)
 {
     bool32 overrideTerrain, airBalloon;
 

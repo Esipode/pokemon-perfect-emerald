@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(MoveIsAffectedBySheerForce(MOVE_ELECTRO_SHOT) == TRUE);
 }
 
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Magnitude", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Magnitude", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -23,7 +23,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Magnitude", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Eruption", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Eruption", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -40,7 +40,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Eruption", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Water Spout", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Water Spout", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -57,7 +57,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Water Spout", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Present", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Present", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -76,7 +76,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Present", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Psywave", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Psywave", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -93,7 +93,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Psywave", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Round", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Round", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -110,7 +110,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Round", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Gyro Ball", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Gyro Ball", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -127,7 +127,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Gyro Ball", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Electro Ball", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Electro Ball", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -144,7 +144,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Electro Ball", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Dragon Energy", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Dragon Energy", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -161,7 +161,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Dragon Energy", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Belch", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Belch", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -178,7 +178,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Belch", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Shell Trap", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Shell Trap", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -195,7 +195,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Shell Trap", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Burn Up", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Burn Up", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -212,7 +212,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Burn Up", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Double Shock", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Double Shock", s32 damage)
 {
     enum Move move = MOVE_NONE;
     PARAMETRIZE { move = MOVE_SKILL_SWAP; }
@@ -229,7 +229,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Double Shock", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Steel Roller", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Steel Roller", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -246,7 +246,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Steel Roller", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Synchronoise", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Synchronoise", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -263,7 +263,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Synchronoise", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Aura Wheel", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Aura Wheel", s32 damage)
 {
     enum Move move = MOVE_NONE;
     PARAMETRIZE { move = MOVE_SKILL_SWAP; }
@@ -280,7 +280,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Aura Wheel", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Hyperspace Fury", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Hyperspace Fury", s32 damage)
 {
     enum Move move = MOVE_NONE;
     PARAMETRIZE { move = MOVE_SKILL_SWAP; }
@@ -297,7 +297,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Hyperspace Fury", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Bolt Beak", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Bolt Beak", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -314,7 +314,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Bolt Beak", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Fishious Rend", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Fishious Rend", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -331,7 +331,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Fishious Rend", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Comeuppance", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Comeuppance", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -348,7 +348,7 @@ SINGLE_BATTLE_TEST("Sheer Force doesn't boost Comeuppance", s16 damage)
         EXPECT_NE(results[0].damage, 0);
     }
 }
-SINGLE_BATTLE_TEST("Sheer Force doesn't boost Payback", s16 damage)
+SINGLE_BATTLE_TEST("Sheer Force doesn't boost Payback", s32 damage)
 {
     enum Ability ability = ABILITY_NONE;
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -617,7 +617,7 @@ static inline bool32 IsMoveSheerForceBoosted(enum Move move)
 // Tests split by generation
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen1)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_POUND; j < MOVES_COUNT_GEN1; j++)
     {
@@ -705,7 +705,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen2)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_SKETCH; j < MOVES_COUNT_GEN2; j++)
     {
@@ -793,7 +793,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen3)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_FAKE_OUT; j < MOVES_COUNT_GEN3; j++)
     {
@@ -881,7 +881,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen4)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_ROOST; j < MOVES_COUNT_GEN4; j++)
     {
@@ -969,7 +969,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen5)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_HONE_CLAWS + 12; j < MOVES_COUNT_GEN5; j++)
     {
@@ -1057,7 +1057,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen6)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_FLYING_PRESS; j < MOVES_COUNT_GEN6; j++)
     {
@@ -1145,7 +1145,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen7)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_SHORE_UP; j < MOVES_COUNT_GEN7; j++)
     {
@@ -1233,7 +1233,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen8)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_DYNAMAX_CANNON; j < MOVES_COUNT_GEN8; j++)
     {
@@ -1322,7 +1322,7 @@ DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to
 // Last test should always go up to MOVES_COUNT to catch users moves
 DOUBLE_BATTLE_TEST("Sheer Force only boosts the damage of moves it's supposed to boost (Gen9)")
 {
-    s16 damage1, damage2;
+    s32 damage1, damage2;
     enum Move move = MOVE_NONE;
     for (enum Move j = MOVE_TERA_BLAST; j < MOVES_COUNT; j++)
     {

@@ -7,7 +7,7 @@ ASSUMPTIONS
     ASSUME(GetItemHoldEffect(ITEM_BINDING_BAND) == HOLD_EFFECT_BINDING_BAND);
 }
 
-SINGLE_BATTLE_TEST("Binding Band increases the damage taken from binding effects", s16 damage)
+SINGLE_BATTLE_TEST("Binding Band increases the damage taken from binding effects", s32 damage)
 {
     enum Item item;
 
@@ -29,7 +29,7 @@ SINGLE_BATTLE_TEST("Binding Band increases the damage taken from binding effects
     }
 }
 
-SINGLE_BATTLE_TEST("Binding Band increases the damage taken from binding effects even if holder's item gets nullified after", s16 damage)
+SINGLE_BATTLE_TEST("Binding Band increases the damage taken from binding effects even if holder's item gets nullified after", s32 damage)
 {
     enum Item item;
 

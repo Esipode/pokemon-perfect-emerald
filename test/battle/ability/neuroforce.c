@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Neuroforce increases the strength of super-effective moves by 25%", s16 damage)
+SINGLE_BATTLE_TEST("Neuroforce increases the strength of super-effective moves by 25%", s32 damage)
 {
     enum Move move;
     enum Ability ability;

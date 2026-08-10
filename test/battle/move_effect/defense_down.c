@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME_STAT_CHANGE(MOVE_TAIL_WHIP, defense: -1);
 }
 
-SINGLE_BATTLE_TEST("Tail Whip lowers Defense by 1 stage", s16 damage)
+SINGLE_BATTLE_TEST("Tail Whip lowers Defense by 1 stage", s32 damage)
 {
     bool32 lowerDefense;
     PARAMETRIZE { lowerDefense = FALSE; }

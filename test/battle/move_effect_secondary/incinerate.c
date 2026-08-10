@@ -49,7 +49,7 @@ SINGLE_BATTLE_TEST("Incinerate activates Occa Berry before destroying it")
 
 SINGLE_BATTLE_TEST("Incinerate destroys Oran Berry before it can restore HP")
 {
-    s16 damage;
+    s32 damage;
 
     GIVEN {
         ASSUME(GetItemHoldEffect(ITEM_ORAN_BERRY) == HOLD_EFFECT_RESTORE_HP);

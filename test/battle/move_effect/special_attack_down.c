@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME_STAT_CHANGE(MOVE_CONFIDE, spAtk: -1);
 }
 
-SINGLE_BATTLE_TEST("Confide lowers Special Attack", s16 damage)
+SINGLE_BATTLE_TEST("Confide lowers Special Attack", s32 damage)
 {
     bool32 lowerSpecialAttack;
     PARAMETRIZE { lowerSpecialAttack = FALSE; }

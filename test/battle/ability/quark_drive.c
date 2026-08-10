@@ -26,7 +26,7 @@ SINGLE_BATTLE_TEST("Quark Drive boosts either Attack or Special Attack, not both
 {
     u16 species;
     enum Move move;
-    s16 damage[2];
+    s32 damage[2];
 
     PARAMETRIZE { species = SPECIES_IRON_VALIANT; move = MOVE_SCRATCH; }
     PARAMETRIZE { species = SPECIES_IRON_VALIANT; move = MOVE_ROUND; }
@@ -56,7 +56,7 @@ SINGLE_BATTLE_TEST("Quark Drive boosts either Attack or Special Attack, not both
 
 SINGLE_BATTLE_TEST("Quark Drive keeps its initial boosted stat after Speed is lowered")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_IRON_MOTH) { Ability(ABILITY_QUARK_DRIVE); Attack(10); Defense(10); SpAttack(150); SpDefense(120); Speed(180); Moves(MOVE_ROUND, MOVE_CELEBRATE); }
@@ -80,7 +80,7 @@ SINGLE_BATTLE_TEST("Quark Drive keeps its initial boosted stat after Speed is lo
 
 SINGLE_BATTLE_TEST("Quark Drive retains its boosted stat after Neutralizing Gas briefly suppresses it")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_IRON_MOTH) { Ability(ABILITY_QUARK_DRIVE); Attack(10); Defense(10); SpAttack(150); SpDefense(120); Speed(180); Moves(MOVE_ELECTRIC_TERRAIN, MOVE_ROUND, MOVE_CELEBRATE); }

@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME_STAT_CHANGE(MOVE_MEDITATE, attack: +1);
 }
 
-SINGLE_BATTLE_TEST("Meditate raises Attack by 1 stage", s16 damage)
+SINGLE_BATTLE_TEST("Meditate raises Attack by 1 stage", s32 damage)
 {
     bool32 raiseAttack;
     PARAMETRIZE { raiseAttack = FALSE; }

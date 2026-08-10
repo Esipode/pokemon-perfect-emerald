@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Light Metal and Heavy Metal affect the power of Low Kick", s16 damage)
+SINGLE_BATTLE_TEST("Light Metal and Heavy Metal affect the power of Low Kick", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_LIGHT_METAL; } //  10.0 - 24.9 kg  (40 power)
@@ -27,7 +27,7 @@ SINGLE_BATTLE_TEST("Light Metal and Heavy Metal affect the power of Low Kick", s
     }
 }
 
-SINGLE_BATTLE_TEST("Autotomize applies before Light Metal and Heavy Metal when determining Heat Crash power", s16 damage)
+SINGLE_BATTLE_TEST("Autotomize applies before Light Metal and Heavy Metal when determining Heat Crash power", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_STALWART;    } // 40.0kg -> 0.1kg after Autotomize, ratio 1/1 => 40 BP

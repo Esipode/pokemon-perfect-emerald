@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Iron Fist increases the power of punching moves by 20%", s16 damage)
+SINGLE_BATTLE_TEST("Iron Fist increases the power of punching moves by 20%", s32 damage)
 {
     enum Move move;
     enum Ability ability;

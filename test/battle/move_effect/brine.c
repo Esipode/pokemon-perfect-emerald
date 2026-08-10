@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Brine's power doubles if the target is at 50% or below max HP", s16 damage)
+SINGLE_BATTLE_TEST("Brine's power doubles if the target is at 50% or below max HP", s32 damage)
 {
     bool32 halfHP;
     PARAMETRIZE { halfHP = FALSE; }

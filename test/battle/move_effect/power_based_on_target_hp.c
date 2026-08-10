@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_CRUSH_GRIP) == EFFECT_POWER_BASED_ON_TARGET_HP);
 }
 
-SINGLE_BATTLE_TEST("Crush Grip's damage is affected by the target's current HP", s16 damage)
+SINGLE_BATTLE_TEST("Crush Grip's damage is affected by the target's current HP", s32 damage)
 {
     s16 hp, maxHp = 256;
 

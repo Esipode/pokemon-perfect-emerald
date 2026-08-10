@@ -26,7 +26,7 @@ SINGLE_BATTLE_TEST("Protosynthesis boosts either Attack or Special Attack, not b
 {
     u16 species;
     enum Move move;
-    s16 damage[2];
+    s32 damage[2];
 
     PARAMETRIZE { species = SPECIES_ROARING_MOON; move = MOVE_SCRATCH; }
     PARAMETRIZE { species = SPECIES_ROARING_MOON; move = MOVE_ROUND; }
@@ -259,7 +259,7 @@ SINGLE_BATTLE_TEST("Protosynthesis accounts for Sticky Web when determining the 
 
 SINGLE_BATTLE_TEST("Protosynthesis keeps its initial boosted stat after Speed is lowered")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_FLUTTER_MANE) { Ability(ABILITY_PROTOSYNTHESIS); Attack(10); Defense(10); SpAttack(150); SpDefense(120); Speed(180); Moves(MOVE_ROUND); }
@@ -303,7 +303,7 @@ SINGLE_BATTLE_TEST("Protosynthesis recalculates the boosted stat after Neutraliz
 
 SINGLE_BATTLE_TEST("Protosynthesis retains its boosted stat after Neutralizing Gas briefly suppresses it")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_FLUTTER_MANE) { Ability(ABILITY_PROTOSYNTHESIS); Attack(10); Defense(10); SpAttack(150); SpDefense(120); Speed(180); Moves(MOVE_SUNNY_DAY, MOVE_ROUND, MOVE_CELEBRATE); }
@@ -332,7 +332,7 @@ SINGLE_BATTLE_TEST("Protosynthesis retains its boosted stat after Neutralizing G
 
 SINGLE_BATTLE_TEST("Protosynthesis damage calculation is correct")
 {
-    s16 dmg;
+    s32 dmg;
     s16 expectedDamage;
 
     PARAMETRIZE { expectedDamage = 127; }

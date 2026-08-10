@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_FOUL_PLAY) == EFFECT_FOUL_PLAY);
 }
 
-SINGLE_BATTLE_TEST("Foul Play uses the target's Attack stat and stat stages of target", s16 damage)
+SINGLE_BATTLE_TEST("Foul Play uses the target's Attack stat and stat stages of target", s32 damage)
 {
     enum Move move;
 

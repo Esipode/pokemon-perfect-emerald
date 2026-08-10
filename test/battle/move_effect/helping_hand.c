@@ -34,7 +34,7 @@ DOUBLE_BATTLE_TEST("Helping Hand fails if ally already acted")
     }
 }
 
-DOUBLE_BATTLE_TEST("Helping Hand boosts the power of attacking moves by 50%", s16 damage)
+DOUBLE_BATTLE_TEST("Helping Hand boosts the power of attacking moves by 50%", s32 damage)
 {
     bool32 useHelpingHand;
 
@@ -59,7 +59,7 @@ DOUBLE_BATTLE_TEST("Helping Hand boosts the power of attacking moves by 50%", s1
     }
 }
 
-DOUBLE_BATTLE_TEST("Helping Hand still boosts moves used due to Instruct", s16 damage)
+DOUBLE_BATTLE_TEST("Helping Hand still boosts moves used due to Instruct", s32 damage)
 {
     bool32 useHelpingHand;
 
@@ -94,7 +94,7 @@ DOUBLE_BATTLE_TEST("Helping Hand still boosts moves used due to Instruct", s16 d
     }
 }
 
-DOUBLE_BATTLE_TEST("Helping Hand boosts the power of attacking moves by 125% if Instructed into using it again", s16 damage)
+DOUBLE_BATTLE_TEST("Helping Hand boosts the power of attacking moves by 125% if Instructed into using it again", s32 damage)
 {
     bool32 useHelpingHandTwice;
 

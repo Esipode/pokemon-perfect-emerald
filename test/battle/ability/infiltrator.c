@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Infiltrator bypasses the opponent's Light Screen/Reflect/Aurora Veil", s16 damage)
+SINGLE_BATTLE_TEST("Infiltrator bypasses the opponent's Light Screen/Reflect/Aurora Veil", s32 damage)
 {
     u32 screenMove, attackingMove, ability;
 
@@ -33,7 +33,7 @@ SINGLE_BATTLE_TEST("Infiltrator bypasses the opponent's Light Screen/Reflect/Aur
     }
 }
 
-DOUBLE_BATTLE_TEST("Infiltrator doesn't bypass an ally's Light Screen/Reflect/Aurora Veil", s16 damage)
+DOUBLE_BATTLE_TEST("Infiltrator doesn't bypass an ally's Light Screen/Reflect/Aurora Veil", s32 damage)
 {
     u32 screenMove, attackingMove, ability;
 

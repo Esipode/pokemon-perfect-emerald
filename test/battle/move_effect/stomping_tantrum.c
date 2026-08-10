@@ -8,7 +8,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user flinched on the previous turn")
 {
-    s16 damage[3];
+    s32 damage[3];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WYNAUT);
@@ -38,7 +38,7 @@ SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user flinched on
 
 SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user failed to attack due to paralysis")
 {
-    s16 damage[3];
+    s32 damage[3];
     PASSES_RANDOMLY(25, 100, RNG_PARALYSIS);
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Speed(100); Item(ITEM_POTION); }
@@ -68,7 +68,7 @@ SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user failed to a
 
 SINGLE_BATTLE_TEST("Stomping Tantrum will not deal double damage if target protects")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
@@ -92,7 +92,7 @@ SINGLE_BATTLE_TEST("Stomping Tantrum will not deal double damage if target prote
 
 SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user failed a Protect")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
@@ -117,7 +117,7 @@ SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user failed a Pr
 
 SINGLE_BATTLE_TEST("Stomping Tantrum will not deal double if it missed")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET) { Item(ITEM_BRIGHTPOWDER); }
@@ -138,7 +138,7 @@ SINGLE_BATTLE_TEST("Stomping Tantrum will not deal double if it missed")
 
 SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user was immune to previous move")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_PIDGEY);
@@ -160,7 +160,7 @@ SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if user was immune 
 
 DOUBLE_BATTLE_TEST("Stomping Tantrum will not deal double damage if spread moved failed one target")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         ASSUME(GetMoveTarget(MOVE_EARTHQUAKE) == TARGET_FOES_AND_ALLY);
         PLAYER(SPECIES_WOBBUFFET);
@@ -186,7 +186,7 @@ DOUBLE_BATTLE_TEST("Stomping Tantrum will not deal double damage if spread moved
 
 SINGLE_BATTLE_TEST("Stomping Tantrum will deal double damage if hit into an immunity ability")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_ELECTRIFY) == EFFECT_ELECTRIFY);
         PLAYER(SPECIES_WOBBUFFET);

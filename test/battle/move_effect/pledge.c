@@ -216,8 +216,8 @@ DOUBLE_BATTLE_TEST("Swamp reduces the speed of the effected side by 1/4th")
 
 DOUBLE_BATTLE_TEST("The base power of a combined pledge move effect is 150")
 {
-    s16 hyperBeamDamage;
-    s16 combinedPledgeDamage;
+    s32 hyperBeamDamage;
+    s32 combinedPledgeDamage;
 
     GIVEN {
         ASSUME(GetMovePower(MOVE_HYPER_BEAM) == 150);
@@ -299,7 +299,7 @@ DOUBLE_BATTLE_TEST("Pledge status timer does not reset if combined move is used 
     }
 }
 
-DOUBLE_BATTLE_TEST("Pledge moves get same attack type bonus from partner", s16 damage)
+DOUBLE_BATTLE_TEST("Pledge moves get same attack type bonus from partner", s32 damage)
 {
     u32 species;
 
@@ -325,7 +325,7 @@ DOUBLE_BATTLE_TEST("Pledge moves get same attack type bonus from partner", s16 d
 
 DOUBLE_BATTLE_TEST("Damage calculation: Combined pledge move")
 {
-    s16 dmg;
+    s32 dmg;
     s16 expectedDamage;
     PARAMETRIZE { expectedDamage = 159; }
     PARAMETRIZE { expectedDamage = 156; }

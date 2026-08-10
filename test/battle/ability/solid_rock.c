@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Solid Rock reduces damage to Super Effective moves by 0.75", s16 damage)
+SINGLE_BATTLE_TEST("Solid Rock reduces damage to Super Effective moves by 0.75", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_STURDY; }

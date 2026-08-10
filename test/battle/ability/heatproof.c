@@ -9,7 +9,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Heatproof halves damage from fire type moves")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER (SPECIES_WOBBUFFET);
         OPPONENT (SPECIES_BRONZONG) { Ability(ABILITY_HEATPROOF); }

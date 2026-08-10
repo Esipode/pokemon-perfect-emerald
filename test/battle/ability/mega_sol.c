@@ -3,7 +3,7 @@
 
 SINGLE_BATTLE_TEST("Mega Sol multiplies the power of Fire-type moves by 1.5x")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveType(MOVE_EMBER) == TYPE_FIRE);
@@ -26,7 +26,7 @@ SINGLE_BATTLE_TEST("Mega Sol multiplies the power of Fire-type moves by 1.5x")
 
 SINGLE_BATTLE_TEST("Mega Sol halves the power of the user's Water-type moves")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveType(MOVE_WATER_GUN) == TYPE_WATER);
@@ -72,7 +72,7 @@ SINGLE_BATTLE_TEST("Weather Ball stays Fire-type under real weather if user has 
 
 SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Fire-type move if user has Mega Sol")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_WEATHER_BALL) == EFFECT_WEATHER_BALL);
@@ -115,7 +115,7 @@ SINGLE_BATTLE_TEST("Synthesis, Morning Sun and Moonlight recover 2/3 of the user
 
 SINGLE_BATTLE_TEST("Mega Sol ignores Sandstorm's solarbeam power reduction, and its rock defense boost")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_SOLARBEAM) == EFFECT_SOLAR_BEAM);
@@ -142,7 +142,7 @@ SINGLE_BATTLE_TEST("Mega Sol ignores Sandstorm's solarbeam power reduction, and 
 
 SINGLE_BATTLE_TEST("Mega Sol ignores Snow's Ice-type Defense boost")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(IsBattleMovePhysical(MOVE_SCRATCH));
@@ -167,7 +167,7 @@ SINGLE_BATTLE_TEST("Mega Sol ignores Snow's Ice-type Defense boost")
     }
 }
 
-SINGLE_BATTLE_TEST("Mega Sol doesn't trigger the foe's Leaf Guard", s16 damage)
+SINGLE_BATTLE_TEST("Mega Sol doesn't trigger the foe's Leaf Guard", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE;}
@@ -200,7 +200,7 @@ SINGLE_BATTLE_TEST("Mega Sol doesn't trigger the foe's Leaf Guard", s16 damage)
 
 SINGLE_BATTLE_TEST("Mega Sol ignores Cloud Nine")
 {
-    s16 damage[2];
+    s32 damage[2];
     u16 species;
     enum Ability ability;
 

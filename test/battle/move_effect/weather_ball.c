@@ -16,7 +16,7 @@ ASSUMPTIONS
     ASSUME(GetMoveWeatherType(MOVE_SNOWSCAPE) == BATTLE_WEATHER_SNOW);
 }
 
-SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Fire-type move in Sunlight", s16 damage)
+SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Fire-type move in Sunlight", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }
@@ -36,7 +36,7 @@ SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Fire-type move
     }
 }
 
-SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Water-type move in Rain", s16 damage)
+SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Water-type move in Rain", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }
@@ -56,7 +56,7 @@ SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Water-type mov
     }
 }
 
-SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Rock-type move in a Sandstorm", s16 damage)
+SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Rock-type move in a Sandstorm", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }
@@ -76,7 +76,7 @@ SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to a Rock-type move
     }
 }
 
-SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to an Ice-type move in Hail and Snow", s16 damage)
+SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to an Ice-type move in Hail and Snow", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }
@@ -97,7 +97,7 @@ SINGLE_BATTLE_TEST("Weather Ball doubles its power and turns to an Ice-type move
     }
 }
 
-DOUBLE_BATTLE_TEST("Weather Ball doesn't double its power and stays a Normal-type move in strong winds", s16 damage)
+DOUBLE_BATTLE_TEST("Weather Ball doesn't double its power and stays a Normal-type move in strong winds", s32 damage)
 {
     bool32 strongWinds;
     enum Species species;
@@ -136,7 +136,7 @@ DOUBLE_BATTLE_TEST("Weather Ball doesn't double its power and stays a Normal-typ
     }
 }
 
-SINGLE_BATTLE_TEST("Weather Ball doesn't double its power in Sunlight or Rain if Cloud Nine/Air Lock is on the field", s16 damage)
+SINGLE_BATTLE_TEST("Weather Ball doesn't double its power in Sunlight or Rain if Cloud Nine/Air Lock is on the field", s32 damage)
 {
     enum Move setupMove;
     enum Species species;
@@ -195,7 +195,7 @@ SINGLE_BATTLE_TEST("Weather Ball doesn't change type in Sunlight or Rain if Clou
     }
 }
 
-SINGLE_BATTLE_TEST("Weather Ball does not double its power in Sunlight or Rain if user holds Utility Umbrella", s16 damage)
+SINGLE_BATTLE_TEST("Weather Ball does not double its power in Sunlight or Rain if user holds Utility Umbrella", s32 damage)
 {
     enum Move setupMove;
 

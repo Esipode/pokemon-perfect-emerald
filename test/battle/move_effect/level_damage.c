@@ -8,7 +8,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Level Damage: Seismic Toss deals damage based on user's level")
 {
-    s16 dmg;
+    s32 dmg;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Level(50); }
         OPPONENT(SPECIES_WOBBUFFET);

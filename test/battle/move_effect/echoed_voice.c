@@ -8,7 +8,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Echoed Voice's power is multiplied for every consecutive turn used, capped at 5")
 {
-    s16 damage[6];
+    s32 damage[6];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_SOFT_BOILED) == EFFECT_SOFTBOILED);
@@ -45,7 +45,7 @@ SINGLE_BATTLE_TEST("Echoed Voice's power is multiplied for every consecutive tur
 
 SINGLE_BATTLE_TEST("Echoed Voice's power increases even if used by another battler")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -65,7 +65,7 @@ SINGLE_BATTLE_TEST("Echoed Voice's power increases even if used by another battl
 
 SINGLE_BATTLE_TEST("Echoed Voice's power does not change until the end of the turn")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -88,7 +88,7 @@ SINGLE_BATTLE_TEST("Echoed Voice's power does not change until the end of the tu
 
 SINGLE_BATTLE_TEST("Echoed Voice's power increase is reset when no battler uses it successfully during a turn")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         ASSUME(MoveHasAdditionalEffect(MOVE_BITE, MOVE_EFFECT_FLINCH));
@@ -116,7 +116,7 @@ SINGLE_BATTLE_TEST("Echoed Voice's power increase is reset when no battler uses 
 
 SINGLE_BATTLE_TEST("Echoed Voice's power is increased even if it misses")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         ASSUME_STAT_CHANGE(MOVE_SAND_ATTACK, accuracy: -1);
@@ -143,7 +143,7 @@ SINGLE_BATTLE_TEST("Echoed Voice's power is increased even if it misses")
 
 SINGLE_BATTLE_TEST("Echoed Voice's power is increased even if it's blocked by Protect")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_PROTECT) == EFFECT_PROTECT);

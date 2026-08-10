@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_TRUMP_CARD) == EFFECT_TRUMP_CARD);
 }
 
-SINGLE_BATTLE_TEST("Trump Card increases in power if its PP is low", s16 damage)
+SINGLE_BATTLE_TEST("Trump Card increases in power if its PP is low", s32 damage)
 {
     // pp + 1 is assigned as the move's PP as it will be reduced before its base power is determined
     u32 pp;
@@ -33,7 +33,7 @@ SINGLE_BATTLE_TEST("Trump Card increases in power if its PP is low", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Trump Card doesn't increase in power if its PP is low when called by a different move", s16 damage)
+SINGLE_BATTLE_TEST("Trump Card doesn't increase in power if its PP is low when called by a different move", s32 damage)
 {
     u32 pp;
 
@@ -55,7 +55,7 @@ SINGLE_BATTLE_TEST("Trump Card doesn't increase in power if its PP is low when c
     }
 }
 
-SINGLE_BATTLE_TEST("Trump Card increases in power if the move that called it has low PP", s16 damage)
+SINGLE_BATTLE_TEST("Trump Card increases in power if the move that called it has low PP", s32 damage)
 {
     // pp + 1 is assigned as the move's PP as it will be reduced before its base power is determined
     u32 pp;

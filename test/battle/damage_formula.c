@@ -5,7 +5,7 @@
 
 SINGLE_BATTLE_TEST("Damage calculation matches Gen5+")
 {
-    s16 dmg;
+    s32 dmg;
     s16 expectedDamage;
     PARAMETRIZE { expectedDamage = 196; }
     PARAMETRIZE { expectedDamage = 192; }
@@ -43,7 +43,7 @@ SINGLE_BATTLE_TEST("Damage calculation matches Gen5+")
 
 SINGLE_BATTLE_TEST("Damage calculation matches Gen6+ (Muscle Band, crit)")
 {
-    s16 dmg;
+    s32 dmg;
     s16 expectedDamage;
     PARAMETRIZE { expectedDamage = 324; }
     PARAMETRIZE { expectedDamage = 316; }
@@ -82,7 +82,7 @@ SINGLE_BATTLE_TEST("Damage calculation matches Gen6+ (Muscle Band, crit)")
 
 SINGLE_BATTLE_TEST("Damage calculation matches Gen5+ (Marshadow vs Mawile)")
 {
-    s16 dmg;
+    s32 dmg;
     s16 expectedDamage;
     PARAMETRIZE { expectedDamage = 145; }
     PARAMETRIZE { expectedDamage = 144; }
@@ -121,7 +121,7 @@ SINGLE_BATTLE_TEST("Damage calculation matches Gen5+ (Marshadow vs Mawile)")
 
 DOUBLE_BATTLE_TEST("A spread move will do correct damage to the second mon if the first target faints from first hit of the spread move (double battle)")
 {
-    s16 damage[6];
+    s32 damage[6];
     GIVEN {
         PLAYER(SPECIES_REGIROCK);
         PLAYER(SPECIES_REGIROCK);
@@ -155,7 +155,7 @@ DOUBLE_BATTLE_TEST("A spread move will do correct damage to the second mon if th
 
 MULTI_BATTLE_TEST("A spread move will do correct damage to the second mon if the first target faints from first hit of the spread move (multibattle)")
 {
-    s16 damage[6];
+    s32 damage[6];
     GIVEN {
         PLAYER(SPECIES_REGIROCK);
         PARTNER(SPECIES_REGIROCK);
@@ -189,7 +189,7 @@ MULTI_BATTLE_TEST("A spread move will do correct damage to the second mon if the
 
 TWO_VS_ONE_BATTLE_TEST("A spread move will do correct damage to the second mon if the first target faints from first hit of the spread move (2v1)")
 {
-    s16 damage[6];
+    s32 damage[6];
     GIVEN {
         PLAYER(SPECIES_REGIROCK);
         PARTNER(SPECIES_REGIROCK);
@@ -223,7 +223,7 @@ TWO_VS_ONE_BATTLE_TEST("A spread move will do correct damage to the second mon i
 
 ONE_VS_TWO_BATTLE_TEST("A spread move will do correct damage to the second mon if the first target faints from first hit of the spread move (1v2)")
 {
-    s16 damage[6];
+    s32 damage[6];
     GIVEN {
         PLAYER(SPECIES_REGIROCK);
         PLAYER(SPECIES_REGIROCK);
@@ -257,7 +257,7 @@ ONE_VS_TWO_BATTLE_TEST("A spread move will do correct damage to the second mon i
 
 SINGLE_BATTLE_TEST("Punching Glove vs Muscle Band Damage calculation")
 {
-    s16 dmgPlayer, dmgOpponent;
+    s32 dmgPlayer, dmgOpponent;
     s16 expectedDamagePlayer, expectedDamageOpponent;
     PARAMETRIZE { expectedDamagePlayer = 204, expectedDamageOpponent = 201; }
     PARAMETRIZE { expectedDamagePlayer = 201, expectedDamageOpponent = 198; }
@@ -298,7 +298,7 @@ SINGLE_BATTLE_TEST("Punching Glove vs Muscle Band Damage calculation")
 
 SINGLE_BATTLE_TEST("Gem boosted Damage calculation")
 {
-    s16 dmg;
+    s32 dmg;
     s16 expectedDamage;
 #if I_GEM_BOOST_POWER >= GEN_6
     PARAMETRIZE { expectedDamage = 240; }
@@ -361,10 +361,10 @@ static const s16 sWildChargeTransistorSpreadGen9[] = { 123, 124, 126, 127, 129, 
 static const s16 sWildChargeTransistorSpreadGen8[] = { 141, 143, 145, 147, 148, 150, 151, 153, 155, 156, 158, 160, 162, 163, 165, 167 };
 static const s16 sWildChargeRegularSpread[] = { 94, 96, 96, 98, 99, 100, 101, 102, 103, 105, 105, 107, 108, 109, 110, 111 };
 
-DOUBLE_BATTLE_TEST("Transistor Damage calculation", s16 damage)
+DOUBLE_BATTLE_TEST("Transistor Damage calculation", s32 damage)
 {
     s16 expectedDamageTransistorSpec = 0, expectedDamageRegularPhys = 0, expectedDamageRegularSpec = 0, expectedDamageTransistorPhys = 0;
-    s16 damagePlayerLeft, damagePlayerRight, damageOpponentLeft, damageOpponentRight;
+    s32 damagePlayerLeft, damagePlayerRight, damageOpponentLeft, damageOpponentRight;
     u32 gen = 0;
     for (u32 spread = 0; spread < 16; ++spread) {
         PARAMETRIZE { gen = GEN_9,
@@ -439,7 +439,7 @@ DOUBLE_BATTLE_TEST("Transistor Damage calculation", s16 damage)
 // inside s16, keeping this test independent of the moveDamage/captureDamage widening.
 SINGLE_BATTLE_TEST("Base damage does not overflow at MAX_LEVEL")
 {
-    s16 dmg;
+    s32 dmg;
     GIVEN {
         ASSUME(GetMovePower(MOVE_V_CREATE) == 180);
         ASSUME(GetMoveType(MOVE_V_CREATE) == TYPE_FIRE);
@@ -464,3 +464,40 @@ SINGLE_BATTLE_TEST("Base damage does not overflow at MAX_LEVEL")
         EXPECT_LT(dmg, 1700);
     }
 }
+
+// Deferred from Stage 3 - see "Damage Calc Patch.md", Stage 6.
+//
+// Correction (found while writing this test): a battle-level, HP_BAR-observed
+// end-to-end assertion for Bug A (the fpmath.h modifier-multiply helpers, overflow
+// threshold dmg > 1,048,576) and the damage-roll multiply (overflow threshold
+// dmg > 21,474,836) is not constructible, for a reason independent of everything
+// Stages 2-6 fixed: every HP_BAR observation - captureDamage *and* the hp:/
+// captureHP: forms - is a delta or snapshot of a Pokemon's actual `hp`/`maxHP`
+// fields, which are `u16` (max 65,535; see the stat-growth ceiling analysis at the
+// top of "Damage Calc Patch.md" for why that field is NOT being widened). Both
+// thresholds above are already 16-115x past that ceiling, so no battler can be
+// built - at any maxHP - whose observed HP change reflects the correct pre-clamp
+// value rather than a value already floored by fainting.
+//
+// That alone would only rule out an *exact-value* assertion; a qualitative one
+// (does the target faint vs. survive-or-heal, the technique recoil_overflow.c and
+// reflect_damage.c's MAX_LEVEL Counter test both use for Bug C) is still possible
+// in principle, but doesn't reliably discriminate fixed-from-broken *here*:
+//   - The fpmath helpers wrap via plain unsigned (u32) overflow - defined, but the
+//     wrapped result is uniformly distributed across [0, UINT32_MAX], not reliably
+//     small. For the numbers worked out above, "faints anyway" is roughly as likely
+//     as "survives/heals" pre-fix, which makes a single-scenario faint/no-faint
+//     assertion a coin flip, not a regression test.
+//   - The damage-roll multiply's overflow is *signed* (s32) overflow, i.e. undefined
+//     behavior, not a defined wrap - already flagged as compiler/-O-level-dependent
+//     in Stage 3. A test asserting one particular pre-fix outcome could pass or fail
+//     for reasons unrelated to whether the fix is present.
+//
+// What Stage 3 already covers this with is real, deterministic proof: four `TEST()`
+// cases in test/fpmath.c pin `uq4_12_multiply_by_int_half_{down,up}` against
+// products above UINT32_MAX, including an exact-.5 tie, independent of the battle
+// harness's u16 ceiling entirely. The damage-roll multiply's `s64` widening
+// (src/battle_util.c ~7617) has no equivalent unit test - it is small, inline,
+// non-reusable arithmetic rather than a helper function - which is the one
+// genuinely open gap this TO_DO records.
+TO_DO_BATTLE_TEST("Damage-roll multiply does not overflow s32 for dmg > 21.5M (needs a non-HP_BAR observation - see comment above)");

@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME_STAT_CHANGE(MOVE_COTTON_GUARD, defense: +3);
 }
 
-SINGLE_BATTLE_TEST("Cotton Guard raises Defense by 3 stages", s16 damage)
+SINGLE_BATTLE_TEST("Cotton Guard raises Defense by 3 stages", s32 damage)
 {
     bool32 raiseDefense;
     PARAMETRIZE { raiseDefense = FALSE; }

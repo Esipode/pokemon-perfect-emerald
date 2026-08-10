@@ -8,7 +8,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_WORRY_SEED) == EFFECT_OVERWRITE_ABILITY);
 }
 
-SINGLE_BATTLE_TEST("Thick Fat halves damage from fire and ice type moves", s16 damage[2])
+SINGLE_BATTLE_TEST("Thick Fat halves damage from fire and ice type moves", s32 damage[2])
 {
     enum Move move;
 

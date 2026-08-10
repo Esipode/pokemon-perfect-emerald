@@ -20,8 +20,8 @@ SINGLE_BATTLE_TEST("Poison Heal heals from (Toxic) Poison damage")
 
 SINGLE_BATTLE_TEST("Poison Heal heals from Toxic Poison damage are constant")
 {
-    s16 turnOneHit;
-    s16 turnTwoHit;
+    s32 turnOneHit;
+    s32 turnTwoHit;
 
     GIVEN {
         PLAYER(SPECIES_SHROOMISH) { Ability(ABILITY_POISON_HEAL); Status1(STATUS1_TOXIC_POISON);  HP(1), MaxHP(400); }
@@ -75,7 +75,7 @@ SINGLE_BATTLE_TEST("Poison Heal activates before Toxic Orb")
 
 SINGLE_BATTLE_TEST("Bad poison counter still increases each turn if the Pokemon has Poison Heal")
 {
-    s16 poisonDamage;
+    s32 poisonDamage;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_GASTRO_ACID) == EFFECT_GASTRO_ACID);
@@ -101,7 +101,7 @@ SINGLE_BATTLE_TEST("Bad poison counter still increases each turn if the Pokemon 
 
 SINGLE_BATTLE_TEST("Bad poison counter still increases each turn even if the Pokemon has Magic Guard")
 {
-    s16 poisonDamage;
+    s32 poisonDamage;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_GASTRO_ACID) == EFFECT_GASTRO_ACID);

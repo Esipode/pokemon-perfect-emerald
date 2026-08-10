@@ -63,7 +63,7 @@ SINGLE_BATTLE_TEST("Levitate does not activate if attacked by an opponent with M
 
 DOUBLE_BATTLE_TEST("Levitate does not cause single remaining target to take higher damage")
 {
-    s16 damage[3];
+    s32 damage[3];
     GIVEN {
         PLAYER(SPECIES_REGIROCK)  { Speed(1); }
         PLAYER(SPECIES_WOBBUFFET) { Speed(4); }

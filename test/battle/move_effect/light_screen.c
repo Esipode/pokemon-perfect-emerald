@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_LIGHT_SCREEN) == EFFECT_LIGHT_SCREEN);
 }
 
-SINGLE_BATTLE_TEST("Light Screen reduces special damage", s16 damage)
+SINGLE_BATTLE_TEST("Light Screen reduces special damage", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }
@@ -28,7 +28,7 @@ SINGLE_BATTLE_TEST("Light Screen reduces special damage", s16 damage)
 
 SINGLE_BATTLE_TEST("Light Screen applies for 5 turns")
 {
-    s16 damage[6];
+    s32 damage[6];
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_WATER_GUN) == DAMAGE_CATEGORY_SPECIAL);
         PLAYER(SPECIES_WOBBUFFET);

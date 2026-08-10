@@ -3,8 +3,8 @@
 
 DOUBLE_BATTLE_TEST("End Turn Effects: First Event Block is executed correctly (double battle)")
 {
-    s16 healed;
-    s16 damage;
+    s32 healed;
+    s32 damage;
 
     GIVEN {
         PLAYER(SPECIES_WYNAUT) { HP(100); Speed(1); }
@@ -56,8 +56,8 @@ DOUBLE_BATTLE_TEST("End Turn Effects: Effects are applied by Speed Order")
 
 MULTI_BATTLE_TEST("End Turn Effects: First Event Block is executed correctly (multibattle)")
 {
-    s16 healed;
-    s16 damage;
+    s32 healed;
+    s32 damage;
 
     GIVEN {
         PLAYER(SPECIES_WYNAUT) { HP(100); Speed(1); }
@@ -85,8 +85,8 @@ MULTI_BATTLE_TEST("End Turn Effects: First Event Block is executed correctly (mu
 
 TWO_VS_ONE_BATTLE_TEST("End Turn Effects: First Event Block is executed correctly (2v1)")
 {
-    s16 healed;
-    s16 damage;
+    s32 healed;
+    s32 damage;
 
     GIVEN {
         PLAYER(SPECIES_WYNAUT) { HP(100); Speed(1); }
@@ -114,8 +114,8 @@ TWO_VS_ONE_BATTLE_TEST("End Turn Effects: First Event Block is executed correctl
 
 ONE_VS_TWO_BATTLE_TEST("End Turn Effects: First Event Block is executed correctly (1v2)")
 {
-    s16 healed;
-    s16 damage;
+    s32 healed;
+    s32 damage;
 
     GIVEN {
         PLAYER(SPECIES_WYNAUT) { HP(100); Speed(1); }

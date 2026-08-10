@@ -63,7 +63,7 @@ SINGLE_BATTLE_TEST("Normalize affects status moves")
 }
 #undef FAILURE_MESSAGE
 
-SINGLE_BATTLE_TEST("Normalize still makes Freeze-Dry do super effective damage to Water-type Pokémon", s16 damage)
+SINGLE_BATTLE_TEST("Normalize still makes Freeze-Dry do super effective damage to Water-type Pokémon", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_CUTE_CHARM; }
@@ -83,7 +83,7 @@ SINGLE_BATTLE_TEST("Normalize still makes Freeze-Dry do super effective damage t
     }
 }
 
-SINGLE_BATTLE_TEST("Normalize doesn't boost power of unaffected moves by 20% (< Gen7)", s16 damage)
+SINGLE_BATTLE_TEST("Normalize doesn't boost power of unaffected moves by 20% (< Gen7)", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_CUTE_CHARM; }
@@ -102,7 +102,7 @@ SINGLE_BATTLE_TEST("Normalize doesn't boost power of unaffected moves by 20% (< 
     }
 }
 
-SINGLE_BATTLE_TEST("Normalize boosts power of unaffected moves by 20% (Gen7+)", s16 damage)
+SINGLE_BATTLE_TEST("Normalize boosts power of unaffected moves by 20% (Gen7+)", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_CUTE_CHARM; }
@@ -121,7 +121,7 @@ SINGLE_BATTLE_TEST("Normalize boosts power of unaffected moves by 20% (Gen7+)", 
     }
 }
 
-SINGLE_BATTLE_TEST("Normalize doesn't boost power of affected moves by 20% (< Gen7)", s16 damage)
+SINGLE_BATTLE_TEST("Normalize doesn't boost power of affected moves by 20% (< Gen7)", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_CUTE_CHARM; }
@@ -140,7 +140,7 @@ SINGLE_BATTLE_TEST("Normalize doesn't boost power of affected moves by 20% (< Ge
     }
 }
 
-SINGLE_BATTLE_TEST("Normalize boosts power of affected moves by 20% (Gen7+)", s16 damage)
+SINGLE_BATTLE_TEST("Normalize boosts power of affected moves by 20% (Gen7+)", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_CUTE_CHARM; }
@@ -185,7 +185,7 @@ SINGLE_BATTLE_TEST("Normalize-affected moves become Electric-type under Ion Delu
     }
 }
 
-SINGLE_BATTLE_TEST("Normalize doesn't affect Weather Ball's type", s16 damage)
+SINGLE_BATTLE_TEST("Normalize doesn't affect Weather Ball's type", s32 damage)
 {
     enum Move move;
     enum Ability ability;

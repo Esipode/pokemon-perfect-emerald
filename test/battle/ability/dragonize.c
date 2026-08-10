@@ -21,7 +21,7 @@ SINGLE_BATTLE_TEST("Dragonize turns a Normal-type move into a dragon-type move")
     }
 }
 
-SINGLE_BATTLE_TEST("Dragonize boosts power of affected moves by 20% (Gen7+) or 30% (Gen1-6)", s16 damage)
+SINGLE_BATTLE_TEST("Dragonize boosts power of affected moves by 20% (Gen7+) or 30% (Gen1-6)", s32 damage)
 {
     enum Ability ability;
     u32 genConfig;
@@ -46,7 +46,7 @@ SINGLE_BATTLE_TEST("Dragonize boosts power of affected moves by 20% (Gen7+) or 3
     }
 }
 
-SINGLE_BATTLE_TEST("Dragonize doesn't affect Weather Ball's type", s16 damage)
+SINGLE_BATTLE_TEST("Dragonize doesn't affect Weather Ball's type", s32 damage)
 {
     enum Move move;
     enum Ability ability;

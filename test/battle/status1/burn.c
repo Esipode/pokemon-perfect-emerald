@@ -26,7 +26,7 @@ SINGLE_BATTLE_TEST("Burn deals 1/8th damage (Gen2-6) or 1/16th (Gen1 and Gen7+) 
     }
 }
 
-SINGLE_BATTLE_TEST("Burn reduces Attack by 50%", s16 damage)
+SINGLE_BATTLE_TEST("Burn reduces Attack by 50%", s32 damage)
 {
     bool32 burned;
     PARAMETRIZE { burned = FALSE; }

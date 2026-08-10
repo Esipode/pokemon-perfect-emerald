@@ -6,8 +6,8 @@ TO_DO_BATTLE_TEST("TODO: Write Mud Sport (Move Effect) test titles")
 SINGLE_BATTLE_TEST("Mud Sport reduces the damage of Electric Type moves by 50% (Gen3-4) or 67% (Gen5+)")
 {
     u32 config;
-    s16 playerDmg[2];
-    s16 opponentDmg[2];
+    s32 playerDmg[2];
+    s32 opponentDmg[2];
     PARAMETRIZE { config = GEN_4; }
     PARAMETRIZE { config = GEN_5; }
     GIVEN {

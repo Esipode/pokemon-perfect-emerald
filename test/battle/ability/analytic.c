@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Analytic increases the power of moves by 30% if it's the last one that uses its move", s16 damage)
+SINGLE_BATTLE_TEST("Analytic increases the power of moves by 30% if it's the last one that uses its move", s32 damage)
 {
     u32 speed;
 
@@ -20,7 +20,7 @@ SINGLE_BATTLE_TEST("Analytic increases the power of moves by 30% if it's the las
     }
 }
 
-DOUBLE_BATTLE_TEST("Analytic activates correctly with empty slot after fainting", s16 damage)
+DOUBLE_BATTLE_TEST("Analytic activates correctly with empty slot after fainting", s32 damage)
 {
     u32 speed;
 
@@ -45,7 +45,7 @@ DOUBLE_BATTLE_TEST("Analytic activates correctly with empty slot after fainting"
     }
 }
 
-DOUBLE_BATTLE_TEST("Analytic does not activate when not moving last with empty slot", s16 damage)
+DOUBLE_BATTLE_TEST("Analytic does not activate when not moving last with empty slot", s32 damage)
 {
     u32 speed;
 

@@ -128,7 +128,7 @@
  *
  * This can be translated to an automated test as follows:
  *
- *    SINGLE_BATTLE_TEST("Meditate raises Attack", s16 damage)
+ *    SINGLE_BATTLE_TEST("Meditate raises Attack", s32 damage)
  *    {
  *        bool32 raiseAttack;
  *        PARAMETRIZE { raiseAttack = FALSE; }
@@ -239,7 +239,7 @@
  * PARAMETRIZE
  * Runs a test multiple times. i will be set to which parameter is
  * running, and results will contain an entry for each parameter, e.g.:
- *     SINGLE_BATTLE_TEST("Blaze boosts Fire-type moves in a pinch", s16 damage)
+ *     SINGLE_BATTLE_TEST("Blaze boosts Fire-type moves in a pinch", s32 damage)
  *     {
  *         u16 hp;
  *         PARAMETRIZE { hp = 99; }
@@ -1276,7 +1276,7 @@ struct HPEventContext
     bool8 explicitDamage;
     u16 *captureHP;
     bool8 explicitCaptureHP;
-    s16 *captureDamage;
+    s32 *captureDamage;
     bool8 explicitCaptureDamage;
 };
 

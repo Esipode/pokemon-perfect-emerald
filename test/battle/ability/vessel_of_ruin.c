@@ -9,7 +9,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Vessel of Ruin reduces Sp. Atk if opposing mon's ability doesn't match")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_TING_LU) { Ability(ABILITY_VESSEL_OF_RUIN); }
@@ -76,7 +76,7 @@ SINGLE_BATTLE_TEST("Vessel of Ruin's message displays correctly after all battle
 
 DOUBLE_BATTLE_TEST("Vessel of Ruin does not reduce Sp. Atk if Neutralizing Gas is on the field")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_WYNAUT);
@@ -104,7 +104,7 @@ DOUBLE_BATTLE_TEST("Vessel of Ruin does not reduce Sp. Atk if Neutralizing Gas i
 
 SINGLE_BATTLE_TEST("Vessel of Ruin is still active if removed by Mold Breaker + Entrainment")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_TING_LU) { Ability(ABILITY_VESSEL_OF_RUIN); }
@@ -149,7 +149,7 @@ DOUBLE_BATTLE_TEST("Vessel of Ruin is active if removed by Mold Breaker Entrainm
 
 DOUBLE_BATTLE_TEST("Vessel of Ruin affects a Gastro Acid-suppressed Vessel of Ruin user")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_GASTRO_ACID) == EFFECT_GASTRO_ACID);

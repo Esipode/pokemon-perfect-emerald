@@ -177,7 +177,7 @@ SINGLE_BATTLE_TEST("Booster Energy's Quark Drive boost is preserved when terrain
     }
 }
 
-SINGLE_BATTLE_TEST("Booster Energy increases special attack by 30% if it is the highest stat", s16 damage)
+SINGLE_BATTLE_TEST("Booster Energy increases special attack by 30% if it is the highest stat", s32 damage)
 {
     u32 species;
     enum Ability ability;
@@ -203,7 +203,7 @@ SINGLE_BATTLE_TEST("Booster Energy increases special attack by 30% if it is the 
     }
 }
 
-SINGLE_BATTLE_TEST("Booster Energy increases special defense by 30% if it is the highest stat", s16 damage)
+SINGLE_BATTLE_TEST("Booster Energy increases special defense by 30% if it is the highest stat", s32 damage)
 {
     u32 species;
     enum Ability ability;

@@ -86,7 +86,7 @@ SINGLE_BATTLE_TEST("Orichalcum Pulse triggers Protosynthesis before announcing i
     }
 }
 
-SINGLE_BATTLE_TEST("Orichalcum Pulse boosts physical moves by 33% in sun", s16 damage)
+SINGLE_BATTLE_TEST("Orichalcum Pulse boosts physical moves by 33% in sun", s32 damage)
 {
     u16 setupMove;
     PARAMETRIZE { setupMove = MOVE_CELEBRATE; }
@@ -107,7 +107,7 @@ SINGLE_BATTLE_TEST("Orichalcum Pulse boosts physical moves by 33% in sun", s16 d
     }
 }
 
-SINGLE_BATTLE_TEST("Orichalcum Pulse boost applies even if the target holds Utility Umbrella", s16 damage)
+SINGLE_BATTLE_TEST("Orichalcum Pulse boost applies even if the target holds Utility Umbrella", s32 damage)
 {
     u16 targetItem;
     PARAMETRIZE { targetItem = ITEM_NONE; }
@@ -129,7 +129,7 @@ SINGLE_BATTLE_TEST("Orichalcum Pulse boost applies even if the target holds Util
     }
 }
 
-SINGLE_BATTLE_TEST("Orichalcum Pulse does not boost physical moves if holder has Utility Umbrella", s16 damage)
+SINGLE_BATTLE_TEST("Orichalcum Pulse does not boost physical moves if holder has Utility Umbrella", s32 damage)
 {
     u16 holdItem;
     PARAMETRIZE { holdItem = ITEM_NONE; }

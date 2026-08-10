@@ -27,7 +27,7 @@ SINGLE_BATTLE_TEST("Innards Out deal dmg on fainting equal to the amount of dmg 
 
 SINGLE_BATTLE_TEST("Innards Out counters accumulated multihit damage after all strikes even if fainting on first hit")
 {
-    s16 captured;
+    s32 captured;
 
     GIVEN {
         ASSUME(GetMoveStrikeCount(MOVE_DOUBLE_KICK) == 2);
@@ -52,7 +52,7 @@ SINGLE_BATTLE_TEST("Innards Out counters accumulated multihit damage after all s
 
 SINGLE_BATTLE_TEST("Innards Out counters accumulated multihit damage for Parental Bond strikes even if fainting on first hit")
 {
-    s16 captured;
+    s32 captured;
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_SCRATCH) != DAMAGE_CATEGORY_STATUS);
@@ -76,7 +76,7 @@ SINGLE_BATTLE_TEST("Innards Out counters accumulated multihit damage for Parenta
 
 SINGLE_BATTLE_TEST("Innards Out includes mid-move Sitrus Berry recovery in accumulated multihit total")
 {
-    s16 captured;
+    s32 captured;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_SEISMIC_TOSS) == EFFECT_LEVEL_DAMAGE);
@@ -101,7 +101,7 @@ SINGLE_BATTLE_TEST("Innards Out includes mid-move Sitrus Berry recovery in accum
 
 SINGLE_BATTLE_TEST("Innards Out should not include Substitute damage in accumulated multihit total")
 {
-    s16 captured;
+    s32 captured;
 
     GIVEN {
         ASSUME(GetMoveStrikeCount(MOVE_DOUBLE_KICK) == 2);

@@ -3,7 +3,7 @@
 
 SINGLE_BATTLE_TEST("Electromorphosis sets up Charge when hit by any move")
 {
-    s16 dmgBefore, dmgAfter;
+    s32 dmgBefore, dmgAfter;
     enum Move move;
 
     PARAMETRIZE { move = MOVE_SCRATCH; }
@@ -71,7 +71,7 @@ SINGLE_BATTLE_TEST("Electromorphosis displays its message before fainting when t
 
 SINGLE_BATTLE_TEST("Electromorphosis triggers on each multistrike hit but Charge does not stack")
 {
-    s16 dmgBefore, dmgAfterSingleHit, dmgAfterMultiHit;
+    s32 dmgBefore, dmgAfterSingleHit, dmgAfterMultiHit;
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_SCRATCH) == DAMAGE_CATEGORY_PHYSICAL);
         ASSUME(GetMoveCategory(MOVE_DOUBLE_HIT) == DAMAGE_CATEGORY_PHYSICAL);

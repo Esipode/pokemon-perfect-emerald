@@ -23,7 +23,7 @@ static const u16 sMoveItemTable[][18] =
     { TYPE_FAIRY,    MOVE_DISARMING_VOICE, ITEM_FAIRY_FEATHER },
 };
 
-SINGLE_BATTLE_TEST("Type-enhancing items increase the base power of moves by 20%", s16 damage)
+SINGLE_BATTLE_TEST("Type-enhancing items increase the base power of moves by 20%", s32 damage)
 {
     enum Move move = MOVE_NONE;
     enum Item item = ITEM_NONE;
@@ -56,7 +56,7 @@ SINGLE_BATTLE_TEST("Type-enhancing items increase the base power of moves by 20%
     }
 }
 
-SINGLE_BATTLE_TEST("Type-enhancing items do not increase the power of Struggle", s16 damage)
+SINGLE_BATTLE_TEST("Type-enhancing items do not increase the power of Struggle", s32 damage)
 {
     enum Item item = ITEM_NONE;
 

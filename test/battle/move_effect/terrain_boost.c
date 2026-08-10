@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Terrain Boost: Expanding Force's power increases by 50% if the user is affected by Psychic Terrain", s16 damage)
+SINGLE_BATTLE_TEST("Terrain Boost: Expanding Force's power increases by 50% if the user is affected by Psychic Terrain", s32 damage)
 {
     bool32 terrain;
     PARAMETRIZE { terrain = FALSE; }
@@ -55,7 +55,7 @@ DOUBLE_BATTLE_TEST("Terrain Boost: Expanding Force hits both foes in Psychic Ter
 
 SINGLE_BATTLE_TEST("Terrain Boost: Rising Voltage doubles in power if target is grounded")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_RISING_VOLTAGE) == EFFECT_TERRAIN_BOOST);
@@ -86,7 +86,7 @@ SINGLE_BATTLE_TEST("Terrain Boost: Rising Voltage doubles in power if target is 
 
 SINGLE_BATTLE_TEST("Terrain Boost: Misty Explosion increases in power by 50% when affected by Misty Terrain")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_MISTY_EXPLOSION) == EFFECT_TERRAIN_BOOST);
@@ -121,7 +121,7 @@ SINGLE_BATTLE_TEST("Terrain Boost: Misty Explosion increases in power by 50% whe
 
 SINGLE_BATTLE_TEST("Terrain Boost: Psyblade power increases by 50% regardless if user is grounded or not")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_PSYBLADE) == EFFECT_TERRAIN_BOOST);

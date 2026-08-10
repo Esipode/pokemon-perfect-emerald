@@ -4,7 +4,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Transistor increases Electric-type attack / special attack", s16 damage)
+SINGLE_BATTLE_TEST("Transistor increases Electric-type attack / special attack", s32 damage)
 {
     enum Move move;
     enum Ability ability;
@@ -36,7 +36,7 @@ SINGLE_BATTLE_TEST("Transistor increases Electric-type attack / special attack",
     }
 }
 
-SINGLE_BATTLE_TEST("Transistor is blocked by neutralizing gas", s16 damage)
+SINGLE_BATTLE_TEST("Transistor is blocked by neutralizing gas", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_NEUTRALIZING_GAS; }

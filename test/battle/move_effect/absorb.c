@@ -8,8 +8,8 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Absorb recovers 50% of the damage dealt")
 {
-    s16 damage;
-    s16 healed;
+    s32 damage;
+    s32 healed;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(1); }
         OPPONENT(SPECIES_WOBBUFFET);
@@ -45,10 +45,10 @@ SINGLE_BATTLE_TEST("Absorb fails if Heal Block applies")
 
 DOUBLE_BATTLE_TEST("Matcha Gatcha recovers 50% of the damage dealt from both targets")
 {
-    s16 damageLeft;
-    s16 damageRight;
-    s16 healedLeft;
-    s16 healedRight;
+    s32 damageLeft;
+    s32 damageRight;
+    s32 healedLeft;
+    s32 healedRight;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_MATCHA_GOTCHA) == EFFECT_ABSORB);
@@ -72,8 +72,8 @@ DOUBLE_BATTLE_TEST("Matcha Gatcha recovers 50% of the damage dealt from both tar
 
 SINGLE_BATTLE_TEST("Draining Kiss recovers 75% of the damage dealt")
 {
-    s16 damage;
-    s16 healed;
+    s32 damage;
+    s32 healed;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(1); }
         OPPONENT(SPECIES_WOBBUFFET);
@@ -107,7 +107,7 @@ SINGLE_BATTLE_TEST("Absorb does not drain any HP if user flinched")
 SINGLE_BATTLE_TEST("Absorb recovers 50% of the damage dealt to a Substitute")
 {
     u16 damage;
-    s16 healing;
+    s32 healing;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET) { HP(1); }
@@ -153,8 +153,8 @@ SINGLE_BATTLE_TEST("Absorb does not drain any HP if the move is blocked by Disgu
 
 DOUBLE_BATTLE_TEST("Spread Move: Heals the correct amount from all Pokemon")
 {
-    s16 damage[3];
-    s16 healed[3];
+    s32 damage[3];
+    s32 healed[3];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_PARABOLIC_CHARGE) == EFFECT_ABSORB);

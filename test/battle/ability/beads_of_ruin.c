@@ -10,7 +10,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Beads of Ruin reduces Sp. Def if opposing mon's ability doesn't match")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_CHI_YU) { Ability(ABILITY_BEADS_OF_RUIN); }
@@ -75,7 +75,7 @@ SINGLE_BATTLE_TEST("Beads of Ruin's message displays correctly after all battler
     }
 }
 
-DOUBLE_BATTLE_TEST("Beads of Ruin increases damage taken by physical moves in Wonder Room", s16 damage)
+DOUBLE_BATTLE_TEST("Beads of Ruin increases damage taken by physical moves in Wonder Room", s32 damage)
 {
     bool32 useWonderRoom;
     enum Move move;
@@ -140,7 +140,7 @@ SINGLE_BATTLE_TEST("Beads of Ruin doesn't activate when dragged out by Mold Brea
     }
 }
 
-DOUBLE_BATTLE_TEST("Beads of Ruin's Sp. Def reduction is not ignored by Mold Breaker", s16 damage)
+DOUBLE_BATTLE_TEST("Beads of Ruin's Sp. Def reduction is not ignored by Mold Breaker", s32 damage)
 {
     enum Ability ability;
 
@@ -164,7 +164,7 @@ DOUBLE_BATTLE_TEST("Beads of Ruin's Sp. Def reduction is not ignored by Mold Bre
     }
 }
 
-DOUBLE_BATTLE_TEST("Beads of Ruin's Sp. Def reduction is ignored by Gastro Acid", s16 damage)
+DOUBLE_BATTLE_TEST("Beads of Ruin's Sp. Def reduction is ignored by Gastro Acid", s32 damage)
 {
     enum Move move;
 
@@ -192,7 +192,7 @@ DOUBLE_BATTLE_TEST("Beads of Ruin's Sp. Def reduction is ignored by Gastro Acid"
 
 SINGLE_BATTLE_TEST("Beads of Ruin reduces Sp. Def if opposing mon's ability doesn't match (Neutralizing switches in and out)")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_WATER_GUN) == DAMAGE_CATEGORY_SPECIAL);
@@ -220,7 +220,7 @@ SINGLE_BATTLE_TEST("Beads of Ruin reduces Sp. Def if opposing mon's ability does
 
 DOUBLE_BATTLE_TEST("Beads of Ruin will not reactivate after Sunsteel Strike faints Neutralizing Gas target")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_WATER_GUN) == DAMAGE_CATEGORY_SPECIAL);
@@ -259,7 +259,7 @@ DOUBLE_BATTLE_TEST("Beads of Ruin will not reactivate after Sunsteel Strike fain
 
 DOUBLE_BATTLE_TEST("Beads of Ruin will not be deactivated with Ability Shield")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_WATER_GUN) == DAMAGE_CATEGORY_SPECIAL);
@@ -289,7 +289,7 @@ DOUBLE_BATTLE_TEST("Beads of Ruin will not be deactivated with Ability Shield")
 
 DOUBLE_BATTLE_TEST("Beads of Ruin will still be active while suppressed after Ability Shield is removed")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_WATER_GUN) == DAMAGE_CATEGORY_SPECIAL);
@@ -325,7 +325,7 @@ DOUBLE_BATTLE_TEST("Beads of Ruin will still be active while suppressed after Ab
 
 SINGLE_BATTLE_TEST("Beads of Ruin does not apply any damage reduction on an opposing Beads of Ruin user even if it is deactivated")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_WATER_GUN) == DAMAGE_CATEGORY_SPECIAL);

@@ -41,8 +41,8 @@ SINGLE_BATTLE_TEST("If Glaive Rush is successful OHKO moves targeted at the user
 
 SINGLE_BATTLE_TEST("If Glaive Rush is successful, moves targeted at the user deal double damage")
 {
-    s16 glaiveRushEffectedDmg;
-    s16 normalDmg;
+    s32 glaiveRushEffectedDmg;
+    s32 normalDmg;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -64,8 +64,8 @@ SINGLE_BATTLE_TEST("If Glaive Rush is successful, moves targeted at the user dea
 
 SINGLE_BATTLE_TEST("If Glaive Rush is successful, moves targeted at the user deal double damage until the user moves again")
 {
-    s16 glaiveRushEffectedDmg;
-    s16 normalDmg;
+    s32 glaiveRushEffectedDmg;
+    s32 normalDmg;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -85,7 +85,7 @@ SINGLE_BATTLE_TEST("If Glaive Rush is successful, moves targeted at the user dea
     }
 }
 
-SINGLE_BATTLE_TEST("If Glaive Rush isn't successful moves targeted at the user don't deal double damage", s16 damage)
+SINGLE_BATTLE_TEST("If Glaive Rush isn't successful moves targeted at the user don't deal double damage", s32 damage)
 {
     bool32 missesGlaiveRush;
 
@@ -109,7 +109,7 @@ SINGLE_BATTLE_TEST("If Glaive Rush isn't successful moves targeted at the user d
     }
 }
 
-SINGLE_BATTLE_TEST("Glaive Rush doesn't affect the user if the effect is blocked", s16 damage)
+SINGLE_BATTLE_TEST("Glaive Rush doesn't affect the user if the effect is blocked", s32 damage)
 {
     u32 species;
 
@@ -135,8 +135,8 @@ SINGLE_BATTLE_TEST("Glaive Rush doesn't affect the user if the effect is blocked
 
 SINGLE_BATTLE_TEST("Glaive Rush status last until the the user's next turn")
 {
-    s16 normalDmgFirstHit;
-    s16 normalDmgSecondHit;
+    s32 normalDmgFirstHit;
+    s32 normalDmgSecondHit;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);

@@ -3,8 +3,8 @@
 
 SINGLE_BATTLE_TEST("Liquid Ooze causes Absorb users to lose HP instead of heal")
 {
-    s16 damage;
-    s16 healed;
+    s32 damage;
+    s32 healed;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_TENTACOOL) { Ability(ABILITY_LIQUID_OOZE); }
@@ -22,8 +22,8 @@ SINGLE_BATTLE_TEST("Liquid Ooze causes Absorb users to lose HP instead of heal")
 
 SINGLE_BATTLE_TEST("Liquid Ooze causes Leech Seed users to lose HP instead of heal")
 {
-    s16 damage;
-    s16 healed;
+    s32 damage;
+    s32 healed;
 
     GIVEN {
         PLAYER(SPECIES_WYNAUT);
@@ -79,7 +79,7 @@ DOUBLE_BATTLE_TEST("Liquid Ooze will faint Matcha Gatcha users if it deals enoug
 
 SINGLE_BATTLE_TEST("Liquid Ooze causes Strength Sap users to lose HP instead of heal")
 {
-    s16 lostHp;
+    s32 lostHp;
     s32 atkStat;
 
     PARAMETRIZE { atkStat = 100; }
@@ -140,7 +140,7 @@ SINGLE_BATTLE_TEST("Liquid Ooze causes leech seed victim to faint before seeder"
 
 SINGLE_BATTLE_TEST("Liquid Ooze causes Dream Eater users to lose HP instead of heal (Gen 5+)")
 {
-    s16 damage;
+    s32 damage;
     GIVEN {
         WITH_CONFIG(B_DREAM_EATER_LIQUID_OOZE, GEN_5);
         ASSUME(GetMoveEffect(MOVE_SPORE) == EFFECT_NON_VOLATILE_STATUS);
@@ -165,7 +165,7 @@ SINGLE_BATTLE_TEST("Liquid Ooze causes Dream Eater users to lose HP instead of h
 
 SINGLE_BATTLE_TEST("Liquid Ooze does not cause Dream Eater users to lose HP instead of heal (Gen 3-4)")
 {
-    s16 damage;
+    s32 damage;
     GIVEN {
         WITH_CONFIG(B_DREAM_EATER_LIQUID_OOZE, GEN_3);
         ASSUME(GetMoveEffect(MOVE_SPORE) == EFFECT_NON_VOLATILE_STATUS);

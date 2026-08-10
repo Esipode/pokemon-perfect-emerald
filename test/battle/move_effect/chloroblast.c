@@ -132,7 +132,7 @@ SINGLE_BATTLE_TEST("Chloroblast does not cause the user to lose HP if there is n
     }
 }
 
-SINGLE_BATTLE_TEST("Chloroblast is not affected by Reckless", s16 damage)
+SINGLE_BATTLE_TEST("Chloroblast is not affected by Reckless", s32 damage)
 {
     enum Move move;
 

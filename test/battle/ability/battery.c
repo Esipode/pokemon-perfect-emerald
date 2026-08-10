@@ -3,7 +3,7 @@
 
 DOUBLE_BATTLE_TEST("Battery increases Sp. Attack damage of allies by ~30%")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_CHARJABUG) { Speed(1); Ability(ABILITY_BATTERY); }
@@ -28,7 +28,7 @@ DOUBLE_BATTLE_TEST("Battery increases Sp. Attack damage of allies by ~30%")
 
 DOUBLE_BATTLE_TEST("Battery does not increase its own Sp. Attack damage")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_CHARJABUG) { Speed(1); Ability(ABILITY_BATTERY); }

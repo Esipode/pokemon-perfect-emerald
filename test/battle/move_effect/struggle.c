@@ -7,7 +7,7 @@ SINGLE_BATTLE_TEST("Struggle deals recoil 1/4 of user's hp (Gen 4+)")
 {
     ASSUME(GetMoveEffect(MOVE_STRUGGLE) == EFFECT_STRUGGLE);
 
-    s16 recoil;
+    s32 recoil;
     u32 atkStat = 0;
     u32 hpStat = 0;
 
@@ -32,7 +32,7 @@ SINGLE_BATTLE_TEST("Struggle can hit ghost types")
 {
     ASSUME(GetSpeciesType(SPECIES_DRIFBLIM, 0) == TYPE_GHOST);
 
-    s16 damage;
+    s32 damage;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -55,8 +55,8 @@ SINGLE_BATTLE_TEST("Struggle does not receive normal-type STAB")
     ASSUME(GetMoveCategory(MOVE_CUT) == GetMoveCategory(MOVE_STRUGGLE));
     ASSUME(GetMoveType(MOVE_CUT) == GetMoveType(MOVE_STRUGGLE));
 
-    s16 cutDamage;
-    s16 struggleDamage;
+    s32 cutDamage;
+    s32 struggleDamage;
 
     GIVEN {
         PLAYER(SPECIES_ZANGOOSE);

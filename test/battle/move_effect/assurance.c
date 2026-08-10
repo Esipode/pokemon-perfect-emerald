@@ -8,7 +8,7 @@ ASSUMPTIONS
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if False Swipe connected but didn't do any damage")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(1); }
@@ -35,7 +35,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if False Swipe connected but didn
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged in the same turn - Life Orb")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(gItemsInfo[ITEM_LIFE_ORB].holdEffect == HOLD_EFFECT_LIFE_ORB);

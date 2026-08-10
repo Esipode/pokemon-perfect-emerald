@@ -1056,10 +1056,16 @@ static s32 TryHP(s32 i, s32 n, enum BattlerId battlerId, u32 oldHP, u32 newHP)
                 switch (event->type)
                 {
                 case HP_EVENT_NEW_HP:
+                    // captureHP stays u16 - HP itself never needs more than u16 (see
+                    // the stat-growth ceiling analysis in "Damage Calc Patch.md").
                     *(u16 *)(u32)(event->address) = newHP;
                     break;
                 case HP_EVENT_DELTA_HP:
-                    *(s16 *)(u32)(event->address) = oldHP - newHP;
+                    // captureDamage is s32 (Stage 6) to match the now-s32
+                    // gBattleStruct->moveDamage/passiveHpUpdate (Stage 4) it ultimately
+                    // observes - a s16 store here silently re-truncated an already-correct
+                    // wide value right at the test boundary.
+                    *(s32 *)(u32)(event->address) = oldHP - newHP;
                     break;
                 }
                 return i;

@@ -205,7 +205,7 @@ DOUBLE_BATTLE_TEST("Revive does not grant a mon its pre-death types")
     }
 }
 
-DOUBLE_BATTLE_TEST("Revive force revived pokemon to replace absent battler immediately", s16 damage)
+DOUBLE_BATTLE_TEST("Revive force revived pokemon to replace absent battler immediately", s32 damage)
 {
     enum Ability ability;
 

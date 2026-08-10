@@ -8,7 +8,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Fury Cutter's power doubles with each use, up to 160 power")
 {
-    s16 damage[6];
+    s32 damage[6];
     int turn;
     int maxTurns;
 
@@ -39,7 +39,7 @@ SINGLE_BATTLE_TEST("Fury Cutter's power doubles with each use, up to 160 power")
 
 SINGLE_BATTLE_TEST("Fury Cutter's base power resets if the chain has been broken")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
@@ -63,7 +63,7 @@ SINGLE_BATTLE_TEST("Fury Cutter's base power resets if the chain has been broken
 
 SINGLE_BATTLE_TEST("Fury Cutter's base power resets if the it is used again but a different user switched in")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         PLAYER(SPECIES_WOBBUFFET);
@@ -88,7 +88,7 @@ TO_DO_BATTLE_TEST("Fury Cutter's power is reset if the trainer uses an item")
 
 SINGLE_BATTLE_TEST("Fury Cutter counter is the same for both hits of Parental Bond")
 {
-    s16 damage[4];
+    s32 damage[4];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Ability(ABILITY_PARENTAL_BOND); }
@@ -112,7 +112,7 @@ SINGLE_BATTLE_TEST("Fury Cutter counter is the same for both hits of Parental Bo
 
 SINGLE_BATTLE_TEST("Fury Cutter's base power resets if original user is forced to switch out")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_FURY_CUTTER); }
         PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_FURY_CUTTER); }

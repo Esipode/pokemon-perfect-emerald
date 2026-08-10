@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Bolt Beak's base power is doubled if it attacks before the target", s16 damage)
+SINGLE_BATTLE_TEST("Bolt Beak's base power is doubled if it attacks before the target", s32 damage)
 {
     u32 speed;
     PARAMETRIZE { speed = 1; }
@@ -26,7 +26,7 @@ SINGLE_BATTLE_TEST("Bolt Beak's base power is doubled if it attacks before the t
     }
 }
 
-SINGLE_BATTLE_TEST("Bolt Beak's base power is doubled the target switches out", s16 damage)
+SINGLE_BATTLE_TEST("Bolt Beak's base power is doubled the target switches out", s32 damage)
 {
     bool32 switchOut;
     PARAMETRIZE { switchOut = FALSE; }

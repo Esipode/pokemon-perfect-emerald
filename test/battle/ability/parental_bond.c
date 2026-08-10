@@ -281,7 +281,7 @@ SINGLE_BATTLE_TEST("Parental Bond Smack Down effect triggers after 2nd hit")
 
 SINGLE_BATTLE_TEST("Parental Bond Snore strikes twice while asleep")
 {
-    s16 damage[2];
+    s32 damage[2];
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_SNORE) == EFFECT_SNORE);
         PLAYER(SPECIES_KANGASKHAN) { Item(ITEM_KANGASKHANITE); Status1(STATUS1_SLEEP); }

@@ -3,7 +3,7 @@
 
 SINGLE_BATTLE_TEST("Lash Out damage is boosted if the user's stats are dropped the turn it is used")
 {
-    s16 damage[2];
+    s32 damage[2];
     enum Move move = MOVE_NONE;
 
     PARAMETRIZE { move = MOVE_TACKLE; }
@@ -52,7 +52,7 @@ SINGLE_BATTLE_TEST("Lash Out damage is boosted if the user's stats are dropped t
 
 SINGLE_BATTLE_TEST("Lash Out damage is only boosted on the turn that Intimidate switches in")
 {
-    s16 damage[3] = {0};
+    s32 damage[3] = {0};
     enum Move move = MOVE_NONE;
 
     PARAMETRIZE { move = MOVE_LASH_OUT; }
@@ -84,7 +84,7 @@ SINGLE_BATTLE_TEST("Lash Out damage is only boosted on the turn that Intimidate 
 
 SINGLE_BATTLE_TEST("Lash Out damage is boosted on turn 1 by switch in abilities")
 {
-    s16 damage[2] = {0};
+    s32 damage[2] = {0};
     u32 species = SPECIES_NONE;
     enum Ability ability = ABILITY_NONE;
 
@@ -118,7 +118,7 @@ SINGLE_BATTLE_TEST("Lash Out damage is boosted on turn 1 by switch in abilities"
 
 DOUBLE_BATTLE_TEST("Lash Out damage is boosted by Cotton Down activation in doubles")
 {
-    s16 damage[2] = {0};
+    s32 damage[2] = {0};
     enum Ability ability = ABILITY_NONE;
 
     PARAMETRIZE { ability = ABILITY_REGENERATOR; }
@@ -150,7 +150,7 @@ DOUBLE_BATTLE_TEST("Lash Out damage is boosted by Cotton Down activation in doub
 
 DOUBLE_BATTLE_TEST("Lash Out damage is not boosted by Treasure of Ruin ability activation in doubles")
 {
-    s16 damage[2] = {0};
+    s32 damage[2] = {0};
     u32 species = SPECIES_NONE;
     enum Ability ability = ABILITY_NONE;
 

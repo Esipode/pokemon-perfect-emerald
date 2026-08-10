@@ -549,7 +549,7 @@ SINGLE_BATTLE_TEST("Fling - thrown berry's effect activates for the target even 
 
 SINGLE_BATTLE_TEST("Fling deals damage based on items fling power")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMovePower(MOVE_CRUNCH) == 80);
@@ -571,7 +571,7 @@ SINGLE_BATTLE_TEST("Fling deals damage based on items fling power")
 
 SINGLE_BATTLE_TEST("Fling deals damage based on a TM's move power if reusable or fails if breakable")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         ASSUME(GetMovePower(MOVE_EARTHQUAKE) == GetMovePower(MOVE_EGG_BOMB));

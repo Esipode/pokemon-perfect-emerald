@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Slow Start halves physical damage during the first five turns", s16 damage)
+SINGLE_BATTLE_TEST("Slow Start halves physical damage during the first five turns", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_OVERCOAT; }
@@ -20,7 +20,7 @@ SINGLE_BATTLE_TEST("Slow Start halves physical damage during the first five turn
     }
 }
 
-SINGLE_BATTLE_TEST("Slow Start does not reduce special damage", s16 damage)
+SINGLE_BATTLE_TEST("Slow Start does not reduce special damage", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_OVERCOAT; }
@@ -40,7 +40,7 @@ SINGLE_BATTLE_TEST("Slow Start does not reduce special damage", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Slow Start lasts five turns and resets after switching out", s16 damageBefore, s16 damageAfter)
+SINGLE_BATTLE_TEST("Slow Start lasts five turns and resets after switching out", s32 damageBefore, s32 damageAfter)
 {
     bool32 switchOut;
     PARAMETRIZE { switchOut = FALSE; }
@@ -74,7 +74,7 @@ SINGLE_BATTLE_TEST("Slow Start lasts five turns and resets after switching out",
     }
 }
 
-SINGLE_BATTLE_TEST("Slow Start halves Body Press damage", s16 damage)
+SINGLE_BATTLE_TEST("Slow Start halves Body Press damage", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_OVERCOAT; }
@@ -94,7 +94,7 @@ SINGLE_BATTLE_TEST("Slow Start halves Body Press damage", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Slow Start halves Foul Play damage", s16 damage)
+SINGLE_BATTLE_TEST("Slow Start halves Foul Play damage", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_OVERCOAT; }

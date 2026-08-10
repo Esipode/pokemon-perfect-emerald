@@ -81,7 +81,7 @@ SINGLE_BATTLE_TEST("Beat Up doesn't list party member's name (Gen5+)")
     }
 }
 
-SINGLE_BATTLE_TEST("Beat Up's damage is Dark-typed (Gen5+)", s16 damage)
+SINGLE_BATTLE_TEST("Beat Up's damage is Dark-typed (Gen5+)", s32 damage)
 {
     bool32 targetIsFairy;
     PARAMETRIZE { targetIsFairy = FALSE; }
@@ -106,7 +106,7 @@ SINGLE_BATTLE_TEST("Beat Up's damage is Dark-typed (Gen5+)", s16 damage)
 
 SINGLE_BATTLE_TEST("Beat Up's base power is determined by each striking Pokémon (Gen5+)")
 {
-    s16 firstHit, secondHit;
+    s32 firstHit, secondHit;
 
     GIVEN {
         WITH_CONFIG(B_BEAT_UP, GEN_5);
@@ -128,7 +128,7 @@ SINGLE_BATTLE_TEST("Beat Up's base power is determined by each striking Pokémon
     }
 }
 
-SINGLE_BATTLE_TEST("Beat Up's damage considers stat stage changes (Gen5+)", s16 damage)
+SINGLE_BATTLE_TEST("Beat Up's damage considers stat stage changes (Gen5+)", s32 damage)
 {
     bool32 boosted;
     PARAMETRIZE { boosted = FALSE; }
@@ -153,7 +153,7 @@ SINGLE_BATTLE_TEST("Beat Up's damage considers stat stage changes (Gen5+)", s16 
     }
 }
 
-SINGLE_BATTLE_TEST("Beat Up's damage considers Huge Power and Choice Band (Gen5+)", s16 damage)
+SINGLE_BATTLE_TEST("Beat Up's damage considers Huge Power and Choice Band (Gen5+)", s32 damage)
 {
     enum Ability ability;
     enum Item item;
@@ -200,7 +200,7 @@ SINGLE_BATTLE_TEST("Beat Up lists each party member's name")
     }
 }
 
-SINGLE_BATTLE_TEST("Beat Up's damage is typeless (up to Gen4)", s16 damage)
+SINGLE_BATTLE_TEST("Beat Up's damage is typeless (up to Gen4)", s32 damage)
 {
     u16 defender = SPECIES_WOBBUFFET;
     u16 type1, type2;
@@ -244,7 +244,7 @@ SINGLE_BATTLE_TEST("Beat Up's damage is typeless (up to Gen4)", s16 damage)
 
 SINGLE_BATTLE_TEST("Beat Up's damage doesn't consider STAB")
 {
-    s16 damage;
+    s32 damage;
     GIVEN {
         WITH_CONFIG(B_BEAT_UP, GEN_3);
         damage = 0;
@@ -265,7 +265,7 @@ SINGLE_BATTLE_TEST("Beat Up's damage doesn't consider STAB")
 
 SINGLE_BATTLE_TEST("Beat Up's base power is the same for each strike")
 {
-    s16 firstHit, secondHit;
+    s32 firstHit, secondHit;
     GIVEN {
         WITH_CONFIG(B_BEAT_UP, GEN_3);
         firstHit = 0;
@@ -290,7 +290,7 @@ SINGLE_BATTLE_TEST("Beat Up's base power is the same for each strike")
 
 SINGLE_BATTLE_TEST("Beat Up's damage is determined by each striking Pokémon's base attack and level and the target's defense")
 {
-    s16 shuckleHit, deoxysHit;
+    s32 shuckleHit, deoxysHit;
     GIVEN {
         WITH_CONFIG(B_BEAT_UP, GEN_3);
         shuckleHit = 0;
@@ -319,7 +319,7 @@ SINGLE_BATTLE_TEST("Beat Up's damage is determined by each striking Pokémon's b
     }
 }
 
-SINGLE_BATTLE_TEST("Beat Up ignores stat stage changes", s16 damage)
+SINGLE_BATTLE_TEST("Beat Up ignores stat stage changes", s32 damage)
 {
     bool32 boosted;
     PARAMETRIZE { boosted = FALSE; }
@@ -344,7 +344,7 @@ SINGLE_BATTLE_TEST("Beat Up ignores stat stage changes", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Beat Up ignores Huge Power", s16 damage)
+SINGLE_BATTLE_TEST("Beat Up ignores Huge Power", s32 damage)
 {
     enum Ability ability;
 
@@ -367,7 +367,7 @@ SINGLE_BATTLE_TEST("Beat Up ignores Huge Power", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Beat Up ignores Choice Band", s16 damage)
+SINGLE_BATTLE_TEST("Beat Up ignores Choice Band", s32 damage)
 {
     enum Item item;
 

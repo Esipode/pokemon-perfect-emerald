@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Gorilla Tactics boosts physical damage by 50%", s16 damage)
+SINGLE_BATTLE_TEST("Gorilla Tactics boosts physical damage by 50%", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_ZEN_MODE; }
@@ -20,7 +20,7 @@ SINGLE_BATTLE_TEST("Gorilla Tactics boosts physical damage by 50%", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Gorilla Tactics stacks with Choice Band to reach 2.25x Attack", s16 damage)
+SINGLE_BATTLE_TEST("Gorilla Tactics stacks with Choice Band to reach 2.25x Attack", s32 damage)
 {
     enum Ability ability;
     enum Item item;
@@ -43,7 +43,7 @@ SINGLE_BATTLE_TEST("Gorilla Tactics stacks with Choice Band to reach 2.25x Attac
     }
 }
 
-SINGLE_BATTLE_TEST("Gorilla Tactics does not boost damage while Dynamaxed", s16 damage)
+SINGLE_BATTLE_TEST("Gorilla Tactics does not boost damage while Dynamaxed", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_ZEN_MODE; }

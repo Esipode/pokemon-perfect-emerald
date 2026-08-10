@@ -8,8 +8,8 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Dream Eater recovers 50% of the damage dealt")
 {
-    s16 damage;
-    s16 healed;
+    s32 damage;
+    s32 healed;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(1); }
         OPPONENT(SPECIES_WOBBUFFET) { Status1(STATUS1_SLEEP); }
@@ -57,8 +57,8 @@ SINGLE_BATTLE_TEST("Dream Eater fails if Heal Block applies")
 
 SINGLE_BATTLE_TEST("Dream Eater works on targets with Comatose")
 {
-    s16 damage;
-    s16 healed;
+    s32 damage;
+    s32 healed;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(1); }
         OPPONENT(SPECIES_KOMALA) { Ability(ABILITY_COMATOSE); }
@@ -95,7 +95,7 @@ SINGLE_BATTLE_TEST("Dream Eater fails if the target is behind a Substitute (Gen 
 SINGLE_BATTLE_TEST("Dream Eater works if the target is behind a Substitute (Gen 5+)")
 {
     u16 damage;
-    s16 healed;
+    s32 healed;
     GIVEN {
         WITH_CONFIG(B_DREAM_EATER_SUBSTITUTE, GEN_5);
         ASSUME(GetMoveEffect(MOVE_YAWN) == EFFECT_YAWN);

@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetItemHoldEffect(ITEM_FLOAT_STONE) == HOLD_EFFECT_FLOAT_STONE);
 }
 
-SINGLE_BATTLE_TEST("Float Stone halves the holder's weight", s16 damage)
+SINGLE_BATTLE_TEST("Float Stone halves the holder's weight", s32 damage)
 {
     u32 item;
     PARAMETRIZE { item = ITEM_FLOAT_STONE; } //  10.0 - 24.9 kg  (40 power)

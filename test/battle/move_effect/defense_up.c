@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME_STAT_CHANGE(MOVE_HARDEN, defense: +1);
 }
 
-SINGLE_BATTLE_TEST("Harden raises Defense by 1 stage", s16 damage)
+SINGLE_BATTLE_TEST("Harden raises Defense by 1 stage", s32 damage)
 {
     bool32 raiseDefense;
     PARAMETRIZE { raiseDefense = FALSE; }

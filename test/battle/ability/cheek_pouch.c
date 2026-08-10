@@ -3,7 +3,7 @@
 
 SINGLE_BATTLE_TEST("Cheek Pouch restores 33% max HP")
 {
-    s16 berryHeal, cheekPouchHeal;
+    s32 berryHeal, cheekPouchHeal;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_SUPER_FANG) == EFFECT_FIXED_PERCENT_DAMAGE);
@@ -53,7 +53,7 @@ SINGLE_BATTLE_TEST("Cheek Pouch restores HP after the berry's effect")
 SINGLE_BATTLE_TEST("Cheek Pouch activates via Bug Bite/Pluck if it would trigger an effect")
 {
     u16 move;
-    s16 berryHeal, cheekPouchHeal;
+    s32 berryHeal, cheekPouchHeal;
 
     PARAMETRIZE { move = MOVE_BUG_BITE; }
     PARAMETRIZE { move = MOVE_PLUCK; }
@@ -81,7 +81,7 @@ SINGLE_BATTLE_TEST("Cheek Pouch activates via Bug Bite/Pluck if it would trigger
 
 SINGLE_BATTLE_TEST("Cheek Pouch activates when receiving from Fling if it would trigger an effect")
 {
-    s16 berryHeal, cheekPouchHeal;
+    s32 berryHeal, cheekPouchHeal;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_FLING) == EFFECT_FLING);
@@ -172,7 +172,7 @@ SINGLE_BATTLE_TEST("Cheek Pouch doesn't activate under Heal Block's effect")
 
 SINGLE_BATTLE_TEST("Cheek Pouch activation doesn't mutate damage when restoring HP mid battle")
 {
-    s16 damage, healing;
+    s32 damage, healing;
 
     GIVEN {
         PLAYER(SPECIES_GREEDENT) { Ability(ABILITY_CHEEK_POUCH); Item(ITEM_CHOPLE_BERRY); HP(100); }

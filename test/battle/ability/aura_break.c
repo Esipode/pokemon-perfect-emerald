@@ -3,7 +3,7 @@
 
 DOUBLE_BATTLE_TEST("Aura Break inverts Fairy Aura's effect")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -34,7 +34,7 @@ DOUBLE_BATTLE_TEST("Aura Break inverts Fairy Aura's effect")
 
 DOUBLE_BATTLE_TEST("Aura Break inverts Dark Aura's effect")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);

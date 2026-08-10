@@ -8,7 +8,7 @@ ASSUMPTIONS
     ASSUME(MoveIgnoresTargetAbility(MOVE_PHOTON_GEYSER));
 }
 
-SINGLE_BATTLE_TEST("ignoresTargetAbility moves do not ignore the attacker's own ability", s16 damage)
+SINGLE_BATTLE_TEST("ignoresTargetAbility moves do not ignore the attacker's own ability", s32 damage)
 {
     enum Ability ability;
     enum Move move;
@@ -46,7 +46,7 @@ SINGLE_BATTLE_TEST("ignoresTargetAbility moves do not ignore the attacker's own 
     }
 }
 
-SINGLE_BATTLE_TEST("ignoresTargetAbility moves do ignore target's abilities", s16 damage)
+SINGLE_BATTLE_TEST("ignoresTargetAbility moves do ignore target's abilities", s32 damage)
 {
     enum Ability ability;
     enum Move move;

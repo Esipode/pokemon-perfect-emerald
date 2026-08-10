@@ -8,7 +8,7 @@ ASSUMPTIONS
 
 SINGLE_BATTLE_TEST("Sticky Barb hurts its holder at the end of the turn")
 {
-    s16 damage;
+    s32 damage;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Item(ITEM_STICKY_BARB); }
         OPPONENT(SPECIES_WOBBUFFET);

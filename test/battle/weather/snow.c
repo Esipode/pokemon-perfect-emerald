@@ -11,7 +11,7 @@ ASSUMPTIONS
     ASSUME(GetMoveCategory(MOVE_SCRATCH) == DAMAGE_CATEGORY_PHYSICAL);
 }
 
-SINGLE_BATTLE_TEST("Snow multiplies the defense of Ice-types by 1.5x", s16 damage)
+SINGLE_BATTLE_TEST("Snow multiplies the defense of Ice-types by 1.5x", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_SNOWSCAPE; }

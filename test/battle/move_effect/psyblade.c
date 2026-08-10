@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_PSYBLADE) == EFFECT_TERRAIN_BOOST);
 }
 
-SINGLE_BATTLE_TEST("Psyblade's power increases by 50% on Electric Terrain even if the user is not grounded", s16 damage)
+SINGLE_BATTLE_TEST("Psyblade's power increases by 50% on Electric Terrain even if the user is not grounded", s32 damage)
 {
     bool32 terrain, airBalloon;
 

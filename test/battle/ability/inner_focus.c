@@ -3,8 +3,8 @@
 
 SINGLE_BATTLE_TEST("Inner Focus doesn't prevent intimidate (Gen3-7)")
 {
-    s16 turnOneHit;
-    s16 turnTwoHit;
+    s32 turnOneHit;
+    s32 turnTwoHit;
 
     GIVEN {
         WITH_CONFIG(B_UPDATED_INTIMIDATE, GEN_7);
@@ -30,8 +30,8 @@ SINGLE_BATTLE_TEST("Inner Focus doesn't prevent intimidate (Gen3-7)")
 
 SINGLE_BATTLE_TEST("Inner Focus prevents intimidate (Gen8+)")
 {
-    s16 turnOneHit;
-    s16 turnTwoHit;
+    s32 turnOneHit;
+    s32 turnTwoHit;
 
     GIVEN {
         WITH_CONFIG(B_UPDATED_INTIMIDATE, GEN_8);

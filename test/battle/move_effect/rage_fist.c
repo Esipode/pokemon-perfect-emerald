@@ -10,7 +10,7 @@ ASSUMPTIONS
 SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 if the user takes damage")
 {
     u8 turns;
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -34,7 +34,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 if the user takes da
 SINGLE_BATTLE_TEST("Rage Fist base power is increased by each multi hit")
 {
     u8 turns;
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         ASSUME(IsMultiHitMove(MOVE_BULLET_SEED));
@@ -58,7 +58,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is increased by each multi hit")
 
 SINGLE_BATTLE_TEST("Rage Fist base power is not increased by a confusion hit")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -86,7 +86,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is not increased by a confusion hit")
 DOUBLE_BATTLE_TEST("Rage Fist maximum base power is 350")
 {
     u16 turns;
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -127,7 +127,7 @@ DOUBLE_BATTLE_TEST("Rage Fist maximum base power is 350")
 
 SINGLE_BATTLE_TEST("Rage Fist base power is not increased if a substitute was hit")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_CRUNCH) == DAMAGE_CATEGORY_PHYSICAL); // Substitute doesn't fade otherwise
@@ -153,7 +153,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is not increased if a substitute was hi
 
 SINGLE_BATTLE_TEST("Rage Fist base power is not lost if user switches out")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -180,7 +180,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is not lost if user switches out")
 SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 even if a damaging move does no damage - False Swipe")
 {
     u8 turns;
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(1); }
@@ -203,7 +203,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 even if a damaging m
 
 SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 even if a damaging move does no damage - Endure")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(2); }
@@ -228,7 +228,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 even if a damaging m
 SINGLE_BATTLE_TEST("Rage Fist base power is not increased if move had no affect")
 {
     u8 turns;
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_GASTLY);
@@ -251,7 +251,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is not increased if move had no affect"
 
 SINGLE_BATTLE_TEST("Rage Fist base power is increased if Disguise breaks (Gen7)")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
     u16 species = SPECIES_NONE;
 
     PARAMETRIZE { species = SPECIES_MIMIKYU_DISGUISED; }
@@ -278,7 +278,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is increased if Disguise breaks (Gen7)"
 
 SINGLE_BATTLE_TEST("Rage Fist base power is increased if Disguise breaks (Gen8+)")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
     u16 species = SPECIES_NONE;
 
     PARAMETRIZE { species = SPECIES_MIMIKYU_DISGUISED; }
@@ -305,7 +305,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is increased if Disguise breaks (Gen8+)
 
 SINGLE_BATTLE_TEST("Rage Fist number of hits is copied by Transform")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_REGIROCK);
@@ -327,7 +327,7 @@ SINGLE_BATTLE_TEST("Rage Fist number of hits is copied by Transform")
 
 SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 if user was hit and forces out")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_REGIROCK);
@@ -352,7 +352,7 @@ SINGLE_BATTLE_TEST("Rage Fist base power is increased by 50 if user was hit and 
 
 SINGLE_BATTLE_TEST("Rage Fist doesn't get increased power if Substitute is hit")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -373,7 +373,7 @@ SINGLE_BATTLE_TEST("Rage Fist doesn't get increased power if Substitute is hit")
 
 SINGLE_BATTLE_TEST("Rage Fist counter will be updated correctly after absorb move")
 {
-    s16 timesGotHit[2];
+    s32 timesGotHit[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_GIGA_DRAIN) == EFFECT_ABSORB);

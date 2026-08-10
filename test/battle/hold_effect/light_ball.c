@@ -26,7 +26,7 @@ static const u32 speciesToCheck[] = {
     SPECIES_PIKACHU_GMAX,
 };
 
-SINGLE_BATTLE_TEST("Light Ball doubles Pikachu's Special Attack", s16 damage)
+SINGLE_BATTLE_TEST("Light Ball doubles Pikachu's Special Attack", s32 damage)
 {
     u32 species = 0, item = 0;
 
@@ -60,7 +60,7 @@ SINGLE_BATTLE_TEST("Light Ball doubles Pikachu's Special Attack", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Light Ball doubles Pikachu's Attack (Gen4+)", s16 damage)
+SINGLE_BATTLE_TEST("Light Ball doubles Pikachu's Attack (Gen4+)", s32 damage)
 {
     u32 species = 0, item = 0, config = 0;
 

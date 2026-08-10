@@ -5,7 +5,7 @@ TO_DO_BATTLE_TEST("TODO: Write Rollout (Move Effect) test titles")
 
 SINGLE_BATTLE_TEST("Rollout's power doubles after each hit and resest after the 5th hit")
 {
-    s16 damage[6];
+    s32 damage[6];
     int turn;
     int maxTurns = 6;
 
@@ -33,7 +33,7 @@ SINGLE_BATTLE_TEST("Rollout's power doubles after each hit and resest after the 
 
 SINGLE_BATTLE_TEST("Rollout's base power resets if the chain has been broken")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_ROLLOUT, MOVE_CELEBRATE); }

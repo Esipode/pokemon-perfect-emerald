@@ -140,7 +140,7 @@ SINGLE_BATTLE_TEST("Defog does not lower evasiveness if target behind Substitute
     }
 }
 
-DOUBLE_BATTLE_TEST("Defog doesn't remove Reflect or Light Screen from the user's side", s16 damagePhysical, s16 damageSpecial)
+DOUBLE_BATTLE_TEST("Defog doesn't remove Reflect or Light Screen from the user's side", s32 damagePhysical, s32 damageSpecial)
 {
     enum Move move;
 
@@ -173,7 +173,7 @@ DOUBLE_BATTLE_TEST("Defog doesn't remove Reflect or Light Screen from the user's
     }
 }
 
-DOUBLE_BATTLE_TEST("Defog removes Reflect and Light Screen from target's side", s16 damagePhysical, s16 damageSpecial)
+DOUBLE_BATTLE_TEST("Defog removes Reflect and Light Screen from target's side", s32 damagePhysical, s32 damageSpecial)
 {
     enum Move move;
 
@@ -572,7 +572,7 @@ SINGLE_BATTLE_TEST("Defog removes Toxic Spikes from user's side (Gen 6+)")
     }
 }
 
-DOUBLE_BATTLE_TEST("Defog doesn't remove Aurora Veil from the user's side", s16 damagePhysical, s16 damageSpecial)
+DOUBLE_BATTLE_TEST("Defog doesn't remove Aurora Veil from the user's side", s32 damagePhysical, s32 damageSpecial)
 {
     enum Move move;
 
@@ -614,7 +614,7 @@ DOUBLE_BATTLE_TEST("Defog doesn't remove Aurora Veil from the user's side", s16 
     }
 }
 
-DOUBLE_BATTLE_TEST("Defog removes Aurora Veil from target's side", s16 damagePhysical, s16 damageSpecial)
+DOUBLE_BATTLE_TEST("Defog removes Aurora Veil from target's side", s32 damagePhysical, s32 damageSpecial)
 {
     enum Move move;
 

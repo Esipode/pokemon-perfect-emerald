@@ -8,7 +8,7 @@ ASSUMPTIONS
 
 DOUBLE_BATTLE_TEST("Throat Spray activates after both hits of a spread move")
 {
-    s16 firstHit, secondHit;
+    s32 firstHit, secondHit;
 
     GIVEN {
         ASSUME(IsSoundMove(MOVE_HYPER_VOICE) == TRUE);
@@ -69,8 +69,8 @@ DOUBLE_BATTLE_TEST("Throat Spray does not activate if both foes take no damage f
 
 SINGLE_BATTLE_TEST("Throat Spray increases Sp. Atk by one stage")
 {
-    s16 normalHit;
-    s16 boostedHit;
+    s32 normalHit;
+    s32 boostedHit;
 
     GIVEN {
         ASSUME(IsSoundMove(MOVE_HYPER_VOICE) == TRUE);

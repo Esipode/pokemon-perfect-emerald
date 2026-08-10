@@ -3,7 +3,7 @@
 
 SINGLE_BATTLE_TEST("Nightmare damages sleeping targets at end of turn")
 {
-    s16 damage;
+    s32 damage;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_NIGHTMARE) == EFFECT_NIGHTMARE);
@@ -22,7 +22,7 @@ SINGLE_BATTLE_TEST("Nightmare damages sleeping targets at end of turn")
 
 SINGLE_BATTLE_TEST("Nightmare affects Pokémon with Comatose")
 {
-    s16 damage;
+    s32 damage;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_NIGHTMARE) == EFFECT_NIGHTMARE);

@@ -5,7 +5,7 @@ TO_DO_BATTLE_TEST("Autotomize increases Speed by 2 stages")
 
 SINGLE_BATTLE_TEST("Autotomize decreases weight by 100kg (220 lbs.) each time it's used")
 {
-    s16 damage[3];
+    s32 damage[3];
 
     GIVEN {
         ASSUME(GetSpeciesWeight(SPECIES_METANG) == 2025);

@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Sharpness increases the power of slicing moves by 50%", s16 damage)
+SINGLE_BATTLE_TEST("Sharpness increases the power of slicing moves by 50%", s32 damage)
 {
     enum Move move;
     enum Ability ability;

@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Mold Breaker cancels damage reduction from Ice Scales", s16 damage)
+SINGLE_BATTLE_TEST("Mold Breaker cancels damage reduction from Ice Scales", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_SHADOW_TAG; }

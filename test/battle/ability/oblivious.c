@@ -102,7 +102,7 @@ SINGLE_BATTLE_TEST("Oblivious prevents Intimidate (Gen8+)")
 
 SINGLE_BATTLE_TEST("Oblivious cured infatuation should not persist toxic counter after switching")
 {
-    s16 firstTick, secondTick, postSwitchTick;
+    s32 firstTick, secondTick, postSwitchTick;
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_ATTRACT) == EFFECT_ATTRACT);

@@ -23,7 +23,7 @@ static const u16 sMoveItemTable[][4] =
     { TYPE_FAIRY,    MOVE_DISARMING_VOICE, ITEM_ROSELI_BERRY, SPECIES_DRAGONAIR },
 };
 
-SINGLE_BATTLE_TEST("Weakness berries decrease the base power of moves by half", s16 damage)
+SINGLE_BATTLE_TEST("Weakness berries decrease the base power of moves by half", s32 damage)
 {
     enum Move move = MOVE_NONE;
     enum Item item = ITEM_NONE;
@@ -63,7 +63,7 @@ SINGLE_BATTLE_TEST("Weakness berries decrease the base power of moves by half", 
     }
 }
 
-SINGLE_BATTLE_TEST("Weakness berries do not activate unless a move is super effective", s16 damage)
+SINGLE_BATTLE_TEST("Weakness berries do not activate unless a move is super effective", s32 damage)
 {
     enum Move move = MOVE_NONE;
     enum Item item = ITEM_NONE;
@@ -101,7 +101,7 @@ SINGLE_BATTLE_TEST("Weakness berries do not activate unless a move is super effe
     }
 }
 
-SINGLE_BATTLE_TEST("Weakness berries do not decrease the power of Struggle", s16 damage)
+SINGLE_BATTLE_TEST("Weakness berries do not decrease the power of Struggle", s32 damage)
 {
     enum Item item = ITEM_NONE;
 

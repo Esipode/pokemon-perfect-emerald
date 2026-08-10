@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_RETURN) == EFFECT_RETURN);
 }
 
-SINGLE_BATTLE_TEST("Return's power increases the higher friendship of the user is", s16 damage)
+SINGLE_BATTLE_TEST("Return's power increases the higher friendship of the user is", s32 damage)
 {
     u32 friendship;
     PARAMETRIZE { friendship = 0; }
@@ -31,7 +31,7 @@ TO_DO_BATTLE_TEST("Return does 0 damage at min Friendship (Gen2)")
 
 SINGLE_BATTLE_TEST("Return does 1 damage at min Friendship (Gen3+)")
 {
-    s16 damage;
+    s32 damage;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Friendship(0); }
         OPPONENT(SPECIES_WOBBUFFET);

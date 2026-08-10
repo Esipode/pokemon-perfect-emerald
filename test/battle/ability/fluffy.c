@@ -10,7 +10,7 @@ ASSUMPTIONS
     ASSUME(GetMoveType(MOVE_FIRE_PUNCH) == TYPE_FIRE);
 }
 
-SINGLE_BATTLE_TEST("Fluffy halves damage taken from moves that make direct contact", s16 damage)
+SINGLE_BATTLE_TEST("Fluffy halves damage taken from moves that make direct contact", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_KLUTZ; }
@@ -28,7 +28,7 @@ SINGLE_BATTLE_TEST("Fluffy halves damage taken from moves that make direct conta
     }
 }
 
-SINGLE_BATTLE_TEST("Fluffy doubles damage taken from fire type moves", s16 damage)
+SINGLE_BATTLE_TEST("Fluffy doubles damage taken from fire type moves", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_KLUTZ; }
@@ -46,7 +46,7 @@ SINGLE_BATTLE_TEST("Fluffy doubles damage taken from fire type moves", s16 damag
     }
 }
 
-SINGLE_BATTLE_TEST("Fluffy does not alter damage of fire-type moves that make direct contact", s16 damage)
+SINGLE_BATTLE_TEST("Fluffy does not alter damage of fire-type moves that make direct contact", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_KLUTZ; }
@@ -64,7 +64,7 @@ SINGLE_BATTLE_TEST("Fluffy does not alter damage of fire-type moves that make di
     }
 }
 
-SINGLE_BATTLE_TEST("Fluffy halves damage taken from moves that make direct contact even if protected by Protective Pads", s16 damage)
+SINGLE_BATTLE_TEST("Fluffy halves damage taken from moves that make direct contact even if protected by Protective Pads", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_KLUTZ; }
@@ -83,7 +83,7 @@ SINGLE_BATTLE_TEST("Fluffy halves damage taken from moves that make direct conta
     }
 }
 
-SINGLE_BATTLE_TEST("Fluffy does not halve damage taken from moves that make direct contact but are ignored by Punching Glove", s16 damage)
+SINGLE_BATTLE_TEST("Fluffy does not halve damage taken from moves that make direct contact but are ignored by Punching Glove", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_KLUTZ; }
@@ -103,7 +103,7 @@ SINGLE_BATTLE_TEST("Fluffy does not halve damage taken from moves that make dire
     }
 }
 
-SINGLE_BATTLE_TEST("Fluffy does not halve damage taken from moves that make direct contact but are ignored by Long Reach", s16 damage)
+SINGLE_BATTLE_TEST("Fluffy does not halve damage taken from moves that make direct contact but are ignored by Long Reach", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_KLUTZ; }

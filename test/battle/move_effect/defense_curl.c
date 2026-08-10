@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME_STAT_CHANGE(MOVE_DEFENSE_CURL, defense: +1);
 }
 
-SINGLE_BATTLE_TEST("Defense Curl raises Defense by 1 stage", s16 damage)
+SINGLE_BATTLE_TEST("Defense Curl raises Defense by 1 stage", s32 damage)
 {
     bool32 raiseDefense;
     PARAMETRIZE { raiseDefense = FALSE; }
@@ -31,7 +31,7 @@ SINGLE_BATTLE_TEST("Defense Curl raises Defense by 1 stage", s16 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("Defense Curl doubles the power of Rollout even if stat couldn't be changed", s16 damage)
+SINGLE_BATTLE_TEST("Defense Curl doubles the power of Rollout even if stat couldn't be changed", s32 damage)
 {
     bool32 acidArmor = FALSE;
 

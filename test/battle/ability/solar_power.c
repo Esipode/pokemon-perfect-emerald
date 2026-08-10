@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Solar Power increases a Sp. Attack by x1.5 in Sun", s16 damage)
+SINGLE_BATTLE_TEST("Solar Power increases a Sp. Attack by x1.5 in Sun", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }
@@ -22,7 +22,7 @@ SINGLE_BATTLE_TEST("Solar Power increases a Sp. Attack by x1.5 in Sun", s16 dama
     }
 }
 
-SINGLE_BATTLE_TEST("Solar Power doesn't increases a Sp. Attack if Cloud Nine/Air Lock is on the field", s16 damage)
+SINGLE_BATTLE_TEST("Solar Power doesn't increases a Sp. Attack if Cloud Nine/Air Lock is on the field", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }

@@ -33,7 +33,7 @@ SINGLE_BATTLE_TEST("Solar Beam does not need a charging turn if Sun is up")
     }
 }
 
-SINGLE_BATTLE_TEST("Solar Beam does half damage if Sandstorm is up (Gen3+)", s16 damage)
+SINGLE_BATTLE_TEST("Solar Beam does half damage if Sandstorm is up (Gen3+)", s32 damage)
 {
     enum Ability ability;
     u32 config;

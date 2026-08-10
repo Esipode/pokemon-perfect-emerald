@@ -3,7 +3,7 @@
 
 SINGLE_BATTLE_TEST("Clangorous Soul cuts the user's HP by 1/3")
 {
-    s16 dmg;
+    s32 dmg;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(300); MaxHP(300); }
         OPPONENT(SPECIES_WOBBUFFET);

@@ -18,7 +18,7 @@ DOUBLE_BATTLE_TEST("Life Dew fails if user and partner are both at full hp")
 
 DOUBLE_BATTLE_TEST("Life Dew recovers 25% of hp for both user and partner")
 {
-    s16 healing[2];
+    s32 healing[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { HP(1); }

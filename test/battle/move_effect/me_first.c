@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(GetMoveEffect(MOVE_ME_FIRST) == EFFECT_ME_FIRST);
 }
 
-SINGLE_BATTLE_TEST("Me First copies the move from the target and increases it's power by 1.5", s16 damage)
+SINGLE_BATTLE_TEST("Me First copies the move from the target and increases it's power by 1.5", s32 damage)
 {
     enum Move move;
 
@@ -53,7 +53,7 @@ SINGLE_BATTLE_TEST("Me First fails if target moves first")
 
 SINGLE_BATTLE_TEST("Me First: If a Consecutively Executed Move is copied, the boost only applies to the first hit")
 {
-    s16 dmg[2];
+    s32 dmg[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Speed(100); }

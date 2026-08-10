@@ -89,8 +89,8 @@ DOUBLE_BATTLE_TEST("Reflect Damage: Counter is affected by Protect effects if it
 
 SINGLE_BATTLE_TEST("Reflect Damage: Counter will do twice as much damage received from the opponent")
 {
-    s16 normalDmg;
-    s16 counterDmg;
+    s32 normalDmg;
+    s32 counterDmg;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
@@ -141,8 +141,8 @@ DOUBLE_BATTLE_TEST("Reflect Damage: Counter ignores ally Pokémon's attack from 
 
 DOUBLE_BATTLE_TEST("Reflect Damage: Counter hits the last opponent that hit the user")
 {
-    s16 normalDmg;
-    s16 counterDmg;
+    s32 normalDmg;
+    s32 counterDmg;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -210,7 +210,7 @@ DOUBLE_BATTLE_TEST("Reflect Damage: Counter fails if mon that damaged Counter us
 
 SINGLE_BATTLE_TEST("Reflect Damage: Counter deals 1 damage when the attack received is blocked by Disguise")
 {
-    s16 counterDmg;
+    s32 counterDmg;
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_SHADOW_SNEAK) == DAMAGE_CATEGORY_PHYSICAL);
         PLAYER(SPECIES_MIMIKYU) { Ability(ABILITY_DISGUISE); }
@@ -228,8 +228,8 @@ SINGLE_BATTLE_TEST("Reflect Damage: Counter deals 1 damage when the attack recei
 
 SINGLE_BATTLE_TEST("Reflect Damage: Counter works when surviving OHKO move")
 {
-    s16 normalDmg;
-    s16 counterDmg;
+    s32 normalDmg;
+    s32 counterDmg;
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_FISSURE) == DAMAGE_CATEGORY_PHYSICAL);
         PLAYER(SPECIES_WOBBUFFET) {MaxHP(100); HP(100); Item(ITEM_FOCUS_SASH);};
@@ -248,7 +248,7 @@ SINGLE_BATTLE_TEST("Reflect Damage: Counter works when surviving OHKO move")
 
 SINGLE_BATTLE_TEST("Reflect Damage: Counter works when surviving OHKO move with Disguise")
 {
-    s16 counterDmg;
+    s32 counterDmg;
     GIVEN {
         WITH_CONFIG(B_DISGUISE_HP_LOSS, GEN_8);
         ASSUME(GetMoveCategory(MOVE_FISSURE) == DAMAGE_CATEGORY_PHYSICAL);
@@ -283,8 +283,8 @@ TO_DO_BATTLE_TEST("Reflect Damage: Counter cannot return damage dealt to a subst
 
 SINGLE_BATTLE_TEST("Reflect Damage: Mirror Coat will do twice as much damage received from the opponent")
 {
-    s16 normalDmg;
-    s16 mirrorCoatDmg;
+    s32 normalDmg;
+    s32 mirrorCoatDmg;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
@@ -335,8 +335,8 @@ DOUBLE_BATTLE_TEST("Reflect Damage: Mirror Coat ignores ally Pokémon's attack f
 
 DOUBLE_BATTLE_TEST("Reflect Damage: Mirror Coat hits the last opponent that hit the user")
 {
-    s16 normalDmg;
-    s16 mirrorCoatDmg;
+    s32 normalDmg;
+    s32 mirrorCoatDmg;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -404,7 +404,7 @@ DOUBLE_BATTLE_TEST("Reflect Damage: Mirror Coat fails if mon that damaged Mirror
 
 SINGLE_BATTLE_TEST("Reflect Damage: Mirror Coat deals 1 damage when the attack received is blocked by Disguise")
 {
-    s16 mirrorCoatDmg;
+    s32 mirrorCoatDmg;
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_HEX) == DAMAGE_CATEGORY_SPECIAL);
         PLAYER(SPECIES_MIMIKYU) { Ability(ABILITY_DISGUISE); }
@@ -422,8 +422,8 @@ SINGLE_BATTLE_TEST("Reflect Damage: Mirror Coat deals 1 damage when the attack r
 
 SINGLE_BATTLE_TEST("Reflect Damage: Mirror Coat works when surviving OHKO move")
 {
-    s16 normalDmg;
-    s16 mirrorCoatDmg;
+    s32 normalDmg;
+    s32 mirrorCoatDmg;
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_SHEER_COLD) == DAMAGE_CATEGORY_SPECIAL);
         PLAYER(SPECIES_WOBBUFFET) {MaxHP(100); HP(100); Item(ITEM_FOCUS_SASH);};
@@ -442,7 +442,7 @@ SINGLE_BATTLE_TEST("Reflect Damage: Mirror Coat works when surviving OHKO move")
 
 SINGLE_BATTLE_TEST("Reflect Damage: Mirror Coat works when surviving OHKO move with Disguise")
 {
-    s16 mirrorCoatDmg;
+    s32 mirrorCoatDmg;
     GIVEN {
         WITH_CONFIG(B_DISGUISE_HP_LOSS, GEN_8);
         ASSUME(GetMoveCategory(MOVE_SHEER_COLD) == DAMAGE_CATEGORY_SPECIAL);
@@ -461,8 +461,8 @@ SINGLE_BATTLE_TEST("Reflect Damage: Mirror Coat works when surviving OHKO move w
 
 SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst will do 150% of the damage received from the opponent")
 {
-    s16 normalDmg;
-    s16 metalBurstDmg;
+    s32 normalDmg;
+    s32 metalBurstDmg;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
         OPPONENT(SPECIES_WOBBUFFET);
@@ -513,8 +513,8 @@ DOUBLE_BATTLE_TEST("Reflect Damage: Metal Burst ignores ally Pokémon's attack f
 
 DOUBLE_BATTLE_TEST("Reflect Damage: Metal Burst hits the last opponent that hit the user")
 {
-    s16 normalDmg;
-    s16 metalBurstDmg;
+    s32 normalDmg;
+    s32 metalBurstDmg;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -582,7 +582,7 @@ DOUBLE_BATTLE_TEST("Reflect Damage: Metal Burst fails if mon that damaged Metal 
 
 SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst deals 1 damage when the attack received is blocked by Disguise")
 {
-    s16 metalBurstDmg;
+    s32 metalBurstDmg;
     GIVEN {
         PLAYER(SPECIES_MIMIKYU) { Ability(ABILITY_DISGUISE); }
         OPPONENT(SPECIES_WOBBUFFET);
@@ -599,8 +599,8 @@ SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst deals 1 damage when the attack r
 
 SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst works when surviving OHKO move")
 {
-    s16 normalDmg;
-    s16 metalBurstDmg;
+    s32 normalDmg;
+    s32 metalBurstDmg;
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) {MaxHP(100); HP(100); Item(ITEM_FOCUS_SASH);};
         OPPONENT(SPECIES_WOBBUFFET) {MaxHP(500); HP(500);};
@@ -618,7 +618,7 @@ SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst works when surviving OHKO move")
 
 SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst works when surviving OHKO move with Disguise")
 {
-    s16 metalBurstDmg;
+    s32 metalBurstDmg;
     GIVEN {
         WITH_CONFIG(B_DISGUISE_HP_LOSS, GEN_8);
         PLAYER(SPECIES_MIMIKYU_DISGUISED) { Ability(ABILITY_DISGUISE); MaxHP(64); HP(64);};

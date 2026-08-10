@@ -3,7 +3,7 @@
 
 DOUBLE_BATTLE_TEST("Fairy Aura increases the power of all Fairy-type attacks by 33%")
 {
-    s16 damage[8];
+    s32 damage[8];
 
     GIVEN {
         PLAYER(SPECIES_XERNEAS) { Ability(ABILITY_FAIRY_AURA); }
@@ -60,7 +60,7 @@ DOUBLE_BATTLE_TEST("Fairy Aura increases the power of all Fairy-type attacks by 
 
 DOUBLE_BATTLE_TEST("Fairy Aura's effect doesn't stack multiple times")
 {
-    s16 damage[6];
+    s32 damage[6];
 
     GIVEN {
         PLAYER(SPECIES_XERNEAS) { Ability(ABILITY_FAIRY_AURA); }

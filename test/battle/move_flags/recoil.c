@@ -3,8 +3,8 @@
 
 SINGLE_BATTLE_TEST("Recoil: Take Down deals 25% of recoil damage to the user")
 {
-    s16 directDamage;
-    s16 recoilDamage;
+    s32 directDamage;
+    s32 recoilDamage;
 
     GIVEN {
         ASSUME(GetMoveRecoil(MOVE_TAKE_DOWN) == 25);
@@ -23,8 +23,8 @@ SINGLE_BATTLE_TEST("Recoil: Take Down deals 25% of recoil damage to the user")
 
 SINGLE_BATTLE_TEST("Recoil: Double Edge deals 33% of recoil damage to the user")
 {
-    s16 directDamage;
-    s16 recoilDamage;
+    s32 directDamage;
+    s32 recoilDamage;
 
     GIVEN {
         ASSUME(GetMoveRecoil(MOVE_DOUBLE_EDGE) == 33);
@@ -43,8 +43,8 @@ SINGLE_BATTLE_TEST("Recoil: Double Edge deals 33% of recoil damage to the user")
 
 SINGLE_BATTLE_TEST("Recoil: Head Smash deals 50% of recoil damage to the user")
 {
-    s16 directDamage;
-    s16 recoilDamage;
+    s32 directDamage;
+    s32 recoilDamage;
 
     GIVEN {
         ASSUME(GetMoveRecoil(MOVE_HEAD_SMASH) == 50);
@@ -63,8 +63,8 @@ SINGLE_BATTLE_TEST("Recoil: Head Smash deals 50% of recoil damage to the user")
 
 SINGLE_BATTLE_TEST("Recoil: Flare Blitz deals 33% of recoil damage to the user and can burn target")
 {
-    s16 directDamage;
-    s16 recoilDamage;
+    s32 directDamage;
+    s32 recoilDamage;
 
     GIVEN {
         ASSUME(GetMoveRecoil(MOVE_FLARE_BLITZ) == 33);
@@ -86,8 +86,8 @@ SINGLE_BATTLE_TEST("Recoil: Flare Blitz deals 33% of recoil damage to the user a
 
 SINGLE_BATTLE_TEST("Recoil: Flare Blitz still deals recoil damage when boosted by Sheer Force")
 {
-    s16 directDamage;
-    s16 recoilDamage;
+    s32 directDamage;
+    s32 recoilDamage;
     enum Ability ability;
 
     PARAMETRIZE { ability = ABILITY_SHEER_FORCE; }
@@ -130,8 +130,8 @@ SINGLE_BATTLE_TEST("Recoil: Flare Blitz is absorbed by Flash Fire and no recoil 
 
 SINGLE_BATTLE_TEST("Recoil: The correct amount of recoil damage is dealt after targets recovery berry proc")
 {
-    s16 directDamage;
-    s16 recoilDamage;
+    s32 directDamage;
+    s32 recoilDamage;
 
     GIVEN {
         ASSUME(GetMoveRecoil(MOVE_TAKE_DOWN) == 25);
@@ -166,7 +166,7 @@ SINGLE_BATTLE_TEST("Recoil: No recoil is taken if the move is blocked by Disguis
 SINGLE_BATTLE_TEST("Recoil: Hitting substitutes inflicts recoil")
 {
     u16 damage;
-    s16 recoil;
+    s32 recoil;
     GIVEN {
         ASSUME(GetMoveRecoil(MOVE_TAKE_DOWN) == 25);
         PLAYER(SPECIES_WOBBUFFET);

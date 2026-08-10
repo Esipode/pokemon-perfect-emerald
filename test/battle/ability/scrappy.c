@@ -3,8 +3,8 @@
 
 SINGLE_BATTLE_TEST("Scrappy doesn't prevent Intimidate (Gen4-7)")
 {
-    s16 turnOneHit;
-    s16 turnTwoHit;
+    s32 turnOneHit;
+    s32 turnTwoHit;
 
     GIVEN {
         WITH_CONFIG(B_UPDATED_INTIMIDATE, GEN_7);
@@ -31,8 +31,8 @@ SINGLE_BATTLE_TEST("Scrappy doesn't prevent Intimidate (Gen4-7)")
 
 SINGLE_BATTLE_TEST("Scrappy prevents Intimidate (Gen8+)")
 {
-    s16 turnOneHit;
-    s16 turnTwoHit;
+    s32 turnOneHit;
+    s32 turnTwoHit;
 
     GIVEN {
         WITH_CONFIG(B_UPDATED_INTIMIDATE, GEN_8);

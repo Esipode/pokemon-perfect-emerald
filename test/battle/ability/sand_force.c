@@ -18,7 +18,7 @@ SINGLE_BATTLE_TEST("Sand Force prevents damage from sandstorm")
     }
 }
 
-SINGLE_BATTLE_TEST("Sand Force increases the power of Rock-, Ground- and Steel-type moves by 30% in sandstorm", s16 damage)
+SINGLE_BATTLE_TEST("Sand Force increases the power of Rock-, Ground- and Steel-type moves by 30% in sandstorm", s32 damage)
 {
     enum Move moveOpponent, movePlayer;
     PARAMETRIZE { moveOpponent = MOVE_CELEBRATE; movePlayer = MOVE_ROCK_THROW; }
@@ -44,7 +44,7 @@ SINGLE_BATTLE_TEST("Sand Force increases the power of Rock-, Ground- and Steel-t
     }
 }
 
-SINGLE_BATTLE_TEST("Sand Force don't increase move power if Cloud Nine/Air Lock is on the field", s16 damage)
+SINGLE_BATTLE_TEST("Sand Force don't increase move power if Cloud Nine/Air Lock is on the field", s32 damage)
 {
     enum Move move;
     PARAMETRIZE { move = MOVE_CELEBRATE; }

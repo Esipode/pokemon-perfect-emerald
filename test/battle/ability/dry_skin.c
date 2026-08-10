@@ -73,7 +73,7 @@ SINGLE_BATTLE_TEST("Dry Skin doesn't heal in Rain if Cloud Nine/Air Lock is on t
     }
 }
 
-SINGLE_BATTLE_TEST("Dry Skin increases damage taken from Fire-type moves by 25%", s16 damage)
+SINGLE_BATTLE_TEST("Dry Skin increases damage taken from Fire-type moves by 25%", s32 damage)
 {
     enum Ability ability;
     PARAMETRIZE { ability = ABILITY_EFFECT_SPORE; }

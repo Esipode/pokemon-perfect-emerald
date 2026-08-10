@@ -6,7 +6,7 @@ ASSUMPTIONS
     ASSUME(gItemsInfo[ITEM_EVIOLITE].holdEffect == HOLD_EFFECT_EVIOLITE);
 }
 
-SINGLE_BATTLE_TEST("Eviolite boosts Defense and Sp. Def for unevolved Pokemon", s16 damage)
+SINGLE_BATTLE_TEST("Eviolite boosts Defense and Sp. Def for unevolved Pokemon", s32 damage)
 {
     u16 move;
     u32 item;
@@ -32,7 +32,7 @@ SINGLE_BATTLE_TEST("Eviolite boosts Defense and Sp. Def for unevolved Pokemon", 
     }
 }
 
-SINGLE_BATTLE_TEST("Eviolite does not boost Defense or Sp. Def for evolved Pokemon", s16 damage)
+SINGLE_BATTLE_TEST("Eviolite does not boost Defense or Sp. Def for evolved Pokemon", s32 damage)
 {
     u16 move;
     u32 item;
@@ -58,7 +58,7 @@ SINGLE_BATTLE_TEST("Eviolite does not boost Defense or Sp. Def for evolved Pokem
     }
 }
 
-SINGLE_BATTLE_TEST("Eviolite uses original species after Transform", s16 damage)
+SINGLE_BATTLE_TEST("Eviolite uses original species after Transform", s32 damage)
 {
     u32 item;
 

@@ -20,8 +20,8 @@ ASSUMPTIONS
 SINGLE_BATTLE_TEST("Future Sight uses Sp. Atk stat of the original user without modifiers")
 {
     enum Item item;
-    s16 seedFlareDmg;
-    s16 futureSightDmg;
+    s32 seedFlareDmg;
+    s32 futureSightDmg;
 
     PARAMETRIZE { item = ITEM_TWISTED_SPOON; }
     PARAMETRIZE { item = ITEM_PSYCHIC_GEM; }
@@ -49,8 +49,8 @@ SINGLE_BATTLE_TEST("Future Sight uses Sp. Atk stat of the original user without 
 
 SINGLE_BATTLE_TEST("Future Sight is not boosted by Life Orb is original user if not on the field")
 {
-    s16 seedFlareDmg;
-    s16 futureSightDmg;
+    s32 seedFlareDmg;
+    s32 futureSightDmg;
 
     GIVEN {
         ASSUME(GetItemHoldEffect(ITEM_LIFE_ORB) == HOLD_EFFECT_LIFE_ORB);
@@ -78,8 +78,8 @@ SINGLE_BATTLE_TEST("Future Sight is not boosted by Life Orb is original user if 
 TO_DO_BATTLE_TEST("Future Sight does not receive STAB from party mon (Gen 2-4)")
 SINGLE_BATTLE_TEST("Future Sight receives STAB from party mon (Gen 5+)")
 {
-    s16 seedFlareDmg;
-    s16 futureSightDmg;
+    s32 seedFlareDmg;
+    s32 futureSightDmg;
 
     GIVEN {
         PLAYER(SPECIES_RALTS);
@@ -307,7 +307,7 @@ SINGLE_BATTLE_TEST("Future Sight does not trigger Cursed Body")
     }
 }
 
-SINGLE_BATTLE_TEST("Future Sight flying type attacker in party receives no boost from Psychic Terrain", s16 damage)
+SINGLE_BATTLE_TEST("Future Sight flying type attacker in party receives no boost from Psychic Terrain", s32 damage)
 {
     bool32 terrain;
     u32 species;
@@ -343,7 +343,7 @@ SINGLE_BATTLE_TEST("Future Sight flying type attacker in party receives no boost
 
 SINGLE_BATTLE_TEST("Future Sight is affected by Beads of Ruin on the original slot")
 {
-    s16 damage[2];
+    s32 damage[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
