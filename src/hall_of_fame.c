@@ -1449,6 +1449,7 @@ static void StopDomeConfetti(void)
         DestroyTask(taskId);
 
     ConfettiUtil_Free();
+    gOamLimit = MAX_SPRITES; // Undo the clamp applied for the confetti's reserved OAM region
     FreeSpriteTilesByTag(TAG_CONFETTI);
     FreeSpritePaletteByTag(TAG_CONFETTI);
 }
@@ -1488,6 +1489,11 @@ static void Task_DoDomeConfetti(u8 taskId)
     switch (tState)
     {
     case 0:
+        // ConfettiUtil writes directly into OAM indices [64, 64+count), bypassing
+        // the normal sprite pipeline. gOamLimit defaults to MAX_SPRITES (which may
+        // be > 64), so clamp it back down here to keep regular sprite rendering
+        // from encroaching on the confetti's reserved OAM region.
+        gOamLimit = 64;
         if (!ConfettiUtil_Init(64))
         {
             // Init failed
