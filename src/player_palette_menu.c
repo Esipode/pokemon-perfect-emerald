@@ -85,7 +85,7 @@ static EWRAM_DATA struct
 } sPaletteMenu = {0};
 
 static const u8 sText_Title[] = _("PLAYER COLOURS");
-static const u8 sText_ControlHint[] = _("{SELECT_BUTTON}AXIS {A_BUTTON}OK {B_BUTTON}BACK");
+static const u8 sText_ControlHint[] = _("{SELECT_BUTTON}MODE {A_BUTTON}OK {B_BUTTON}BACK");
 
 static const u8 sText_Hue[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HUE   < ");
 static const u8 sText_Shade[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SHADE < ");
@@ -116,7 +116,7 @@ static const struct WindowTemplate sPaletteMenuWinTemplates[] =
         .bg = 0,
         .tilemapLeft = 2,
         .tilemapTop = 5,
-        .width = 17,
+        .width = 18,
         .height = ROW_COUNT * 2,
         .paletteNum = 1,
         .baseBlock = 0x36
@@ -134,7 +134,7 @@ static const struct WindowTemplate sPaletteMenuWinTemplates[] =
         .width = 2,
         .height = PLAYER_COLOR_REGION_COUNT * 2,
         .paletteNum = 2,
-        .baseBlock = 0x36 + 17 * (ROW_COUNT * 2)
+        .baseBlock = 0x36 + 18 * (ROW_COUNT * 2)
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -501,13 +501,13 @@ static void DrawBgWindowFrames(void)
 
     // List frame -- also frames WIN_SWATCH, which sits inside it
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 18,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 19,  4,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 19,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 20,  4,  1,  1,  7);
     FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, ROW_COUNT * 2,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   19,  5,  1, ROW_COUNT * 2,  7);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   20,  5,  1, ROW_COUNT * 2,  7);
     FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1,  5 + ROW_COUNT * 2,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  5 + ROW_COUNT * 2, 18,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 19,  5 + ROW_COUNT * 2,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2,  5 + ROW_COUNT * 2, 19,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 20,  5 + ROW_COUNT * 2,  1,  1,  7);
 
     CopyBgTilemapBufferToVram(1);
 }
