@@ -694,7 +694,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_BATTLE_STRATEGIC_VICTORY] = {
         .name        = ACHIEVEMENT_NAME("Strategic Victory"),
-        .description = COMPOUND_STRING("Beat a major boss without any of your Pokémon fainting."),
+        .description = COMPOUND_STRING("Beat a major boss's full team of 6 Pokémon without any of your Pokémon fainting."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
@@ -757,7 +757,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_BATTLE_NO_STAB_NEEDED] = {
         .name        = ACHIEVEMENT_NAME("No STAB Needed"),
-        .description = COMPOUND_STRING("Win a trainer battle without a single same-type move."),
+        .description = COMPOUND_STRING("Win a battle against a trainer's full team of 6 Pokémon without a single same-type move."),
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_BATTLE,
@@ -2052,7 +2052,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_COLLECT_UNDERESTIMATED] = {
         .name        = ACHIEVEMENT_NAME("Underestimated"),
-        .description = COMPOUND_STRING("Have a Pokémon below 400 base stat total land the final KO of a major battle."),
+        .description = COMPOUND_STRING("Have a Pokémon below 400 base stat total land the final KO against a major boss's full team of 6 Pokémon."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,

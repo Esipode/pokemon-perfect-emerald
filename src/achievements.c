@@ -1520,7 +1520,10 @@ void Achievement_CheckBattleMilestones(void)
     if (isMajorBattle && gBattleResults.battleTurnCounter >= 30)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_ATTRITION);
 
-    if (isMajorBattle && gBattleResults.playerFaintCounter == 0)
+    // Strategic Victory requires a full 6-Pokemon opposing team --
+    // trivial to avoid any faints against a boss who only fields one or two.
+    if (isMajorBattle && gBattleResults.playerFaintCounter == 0
+     && gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_STRATEGIC_VICTORY);
 
     if (isTrainerBattle && playerCount != 0 && gBattleResults.playerFaintCounter * 2 >= playerCount)
@@ -1590,7 +1593,10 @@ void Achievement_CheckBattleMilestones(void)
         }
     }
 
-    if (isTrainerBattle && !sBattleData.stabUsed)
+    // No STAB Needed requires a full 6-Pokemon opposing team --
+    // trivial to avoid STAB for a battle or two against a small trainer team.
+    if (isTrainerBattle && !sBattleData.stabUsed
+     && gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_STAB_NEEDED);
 
     if (isMajorBattle && CountSetBits(sBattleData.typesUsed) >= 4)
@@ -3439,7 +3445,10 @@ void Achievement_CheckBattleRecordsMilestones(void)
 
         // Underestimated: the party slot credited with the very last
         // opposing faint of a won battle is exactly the one that ended it.
-        if (sBattleData.lastThreeKoSlots[2] != 0)
+        // Requires a full 6-Pokemon opposing team -- trivial to land the
+        // finishing blow with a weak Pokemon against a one- or two-mon boss.
+        if (sBattleData.lastThreeKoSlots[2] != 0
+         && gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
         {
             u8 finalKoSlot = sBattleData.lastThreeKoSlots[2] - 1;
 
