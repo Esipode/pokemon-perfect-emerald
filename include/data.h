@@ -7,6 +7,7 @@
 #include "constants/pokeball.h"
 #include "difficulty.h"
 #include "debug.h"
+#include "player_customization.h" // PlayerCustomization_GetTrainerPaletteOverride -- no cycle, player_customization.h only pulls in constants/player_customization.h
 
 #define MAX_TRAINER_ITEMS 4
 
@@ -391,7 +392,11 @@ static inline const u32 *GetTrainerFrontPicData(enum TrainerPicID trainerPic)
 
 static inline const u16 *GetTrainerFrontPicPalette(enum TrainerPicID trainerPic)
 {
-    return gTrainerPicInfo[SanitizeFrontTrainerPic(trainerPic)].frontPic->paletteData;
+    enum TrainerPicID sanitized = SanitizeFrontTrainerPic(trainerPic);
+    const u16 *override = PlayerCustomization_GetTrainerPaletteOverride(sanitized);
+    if (override != NULL)
+        return override;
+    return gTrainerPicInfo[sanitized].frontPic->paletteData;
 }
 
 static inline const struct Coords16 GetTrainerFrontPicMugshotCoords(enum TrainerPicID trainerPic)
@@ -421,7 +426,11 @@ static inline const union AnimCmd *const *GetTrainerBackPicAnims(enum TrainerPic
 
 static inline const u16 *GetTrainerBackPicPalette(enum TrainerPicID trainerPic)
 {
-    return gTrainerPicInfo[SanitizeBackTrainerPic(trainerPic)].backPic->paletteData;
+    enum TrainerPicID sanitized = SanitizeBackTrainerPic(trainerPic);
+    const u16 *override = PlayerCustomization_GetTrainerPaletteOverride(sanitized);
+    if (override != NULL)
+        return override;
+    return gTrainerPicInfo[sanitized].backPic->paletteData;
 }
 
 #endif // GUARD_DATA_H
