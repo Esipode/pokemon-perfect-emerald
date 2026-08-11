@@ -6,7 +6,7 @@
   "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_ROUTE_120",
   "requires_flash": false,
-  "weather": "WEATHER_SUNNY",
+  "weather": "WEATHER_DYNAMIC",
   "map_type": "MAP_TYPE_ROUTE",
   "allow_cycling": true,
   "allow_escaping": false,
@@ -641,133 +641,133 @@
       "x": 7,
       "y": 15,
       "elevation": 0,
-      "weather": "COORD_EVENT_WEATHER_RAIN"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 7,
       "y": 16,
       "elevation": 0,
-      "weather": "COORD_EVENT_WEATHER_RAIN"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 22,
       "y": 61,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_RAIN"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 12,
       "y": 64,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_RAIN"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 35,
       "y": 63,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 36,
       "y": 63,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 37,
       "y": 63,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 38,
       "y": 63,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 32,
       "y": 88,
       "elevation": 5,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 28,
       "y": 15,
       "elevation": 0,
-      "weather": "COORD_EVENT_WEATHER_SUNNY"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 28,
       "y": 16,
       "elevation": 0,
-      "weather": "COORD_EVENT_WEATHER_SUNNY"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 28,
       "y": 17,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 32,
       "y": 89,
       "elevation": 5,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 32,
       "y": 90,
       "elevation": 5,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 32,
       "y": 91,
       "elevation": 5,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 10,
       "y": 75,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 11,
       "y": 75,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 12,
       "y": 75,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
       "x": 13,
       "y": 75,
       "elevation": 3,
-      "weather": "COORD_EVENT_WEATHER_SUNNY_CLOUDS"
+      "weather": "WEATHER_DYNAMIC"
     }
   ],
   "bg_events": [

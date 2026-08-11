@@ -2610,12 +2610,14 @@ struct DynamicWeatherPool
 static const u8 sDefaultDynamicWeathers[] =
 {
     WEATHER_SUNNY,
+    WEATHER_SUNNY_CLOUDS,
     WEATHER_RAIN,
     WEATHER_SNOW,
-    WEATHER_SANDSTORM,
-    WEATHER_VOLCANIC_ASH,
     WEATHER_RAIN_THUNDERSTORM,
+    WEATHER_FOG,
+    WEATHER_SHADE,
     WEATHER_DROUGHT,
+    WEATHER_DOWNPOUR,
 };
 
 /*static const u8 sDynamicWeathers_DewfordTown[] =
