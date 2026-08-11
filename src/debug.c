@@ -44,6 +44,7 @@
 #include "pokemon.h"
 #include "pokemon_icon.h"
 #include "pokemon_storage_system.h"
+#include "player_palette_menu.h"
 #include "random.h"
 #include "region_map.h"
 #include "rtc.h"
@@ -376,6 +377,7 @@ static void DebugAction_BerryFunctions_Weeds(u8 taskId);
 static void DebugAction_Player_Name(u8 taskId);
 static void DebugAction_Player_Gender(u8 taskId);
 static void DebugAction_Player_Id(u8 taskId);
+static void DebugAction_Player_OpenPaletteMenu(u8 taskId);
 
 static void DebugAction_Achievements_GrantRevoke(u8 taskId);
 static void DebugAction_Achievements_GrantRevokeSelect(u8 taskId);
@@ -685,6 +687,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Player[] =
     { COMPOUND_STRING("Player name"),    DebugAction_Player_Name },
     { COMPOUND_STRING("Toggle gender"),  DebugAction_Player_Gender },
     { COMPOUND_STRING("New Trainer ID"), DebugAction_Player_Id },
+    { COMPOUND_STRING("Open Player Colors Menu"), DebugAction_Player_OpenPaletteMenu },
     { NULL }
 };
 
@@ -1800,6 +1803,17 @@ static void DebugAction_Player_Id(u8 taskId)
     SetTrainerId(trainerId, gSaveBlock2Ptr->playerTrainerId);
     Debug_DestroyMenu_Full(taskId);
     ScriptContext_Enable();
+}
+
+// Testing aid: reaches CB2_InitPlayerPaletteMenu directly, ahead of Stages
+// 5/6 wiring it in via the Options menu and the new-game gender choice.
+// Mirrors DebugAction_Achievements_OpenMenu's full-teardown-then-jump
+// pattern -- see Customization.md, Stage 3.
+static void DebugAction_Player_OpenPaletteMenu(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    gMain.savedCallback = CB2_ReturnToField;
+    SetMainCallback2(CB2_InitPlayerPaletteMenu);
 }
 
 // *******************************

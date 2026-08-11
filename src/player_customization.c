@@ -248,6 +248,11 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
     return sTrainerPaletteBuffer;
 }
 
+u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region)
+{
+    return sPlayerColorRegions[gender][region].owIndices[0];
+}
+
 void PlayerCustomization_BuildPreviewPalette(u8 gender, const u8 *choices, u16 *dest)
 {
     const u16 *basePal = (gender == MALE) ? gObjectEventPal_Brendan : gObjectEventPal_May;

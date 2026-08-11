@@ -53,4 +53,11 @@ bool32 PlayerCustomization_IsDefault(void);
 // save block. Used by the customization menu's live preview.
 void PlayerCustomization_BuildPreviewPalette(u8 gender, const u8 *choices, u16 *dest);
 
+// A single representative overworld palette index for `region` (its first
+// owIndices entry) -- e.g. so the customization menu can paint a one-colour
+// swatch per row out of the same 16-colour buffer PlayerCustomization_
+// BuildPreviewPalette() just filled, without the menu needing its own copy
+// of sPlayerColorRegions (which is private to src/player_customization.c).
+u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region);
+
 #endif // GUARD_PLAYER_CUSTOMIZATION_H
