@@ -28,6 +28,7 @@
 #include "overworld.h"
 #include "palette.h"
 #include "party_menu.h"
+#include "player_customization.h"
 #include "pokemon.h"
 #include "pokeball.h"
 #include "random.h"
@@ -590,6 +591,22 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
         // If it's looking for a tag that isn't in this table, the game locks in an infinite loop.
 #endif
 };
+
+// Player palette customization (see Customization.md) overrides the player's
+// own entry in sObjectEventSpritePalettes[] with a recoloured copy. Callers
+// that read the table by index go through this accessor instead so the
+// override applies everywhere the vanilla palette would have been used.
+static struct SpritePalette sPlayerSpritePalette;
+
+static const struct SpritePalette *GetObjectEventSpritePalette(u8 index)
+{
+    const u16 *override = PlayerCustomization_GetOwPaletteOverride(sObjectEventSpritePalettes[index].tag);
+    if (override == NULL)
+        return &sObjectEventSpritePalettes[index];
+    sPlayerSpritePalette.data = override;
+    sPlayerSpritePalette.tag = sObjectEventSpritePalettes[index].tag;
+    return &sPlayerSpritePalette;
+}
 
 static const u16 sReflectionPaletteTags_Brendan[] = {
     OBJ_EVENT_PAL_TAG_BRENDAN_REFLECTION,
@@ -3112,7 +3129,7 @@ static void ObjectEventSetGraphics(struct ObjectEvent *objectEvent, const struct
     struct Sprite *sprite = &gSprites[objectEvent->spriteId];
     u32 i = FindObjectEventPaletteIndexByTag(graphicsInfo->paletteTag);
     if (i != 0xFF)
-        UpdateSpritePalette(&sObjectEventSpritePalettes[i], sprite);
+        UpdateSpritePalette(GetObjectEventSpritePalette(i), sprite);
 
     // If frame size changes, we need to reallocate tiles.
     if (OW_LARGE_OW_SUPPORT && !OW_GFX_COMPRESS && graphicsInfo->images->size != sprite->images->size)
@@ -3322,13 +3339,13 @@ u8 LoadObjectEventPalette(u16 paletteTag)
     u16 i = FindObjectEventPaletteIndexByTag(paletteTag);
     if (i == 0xFF)
         return i;
-    return LoadSpritePaletteIfTagExists(&sObjectEventSpritePalettes[i]);
+    return LoadSpritePaletteIfTagExists(GetObjectEventSpritePalette(i));
 }
 
 u8 LoadObjectEventPaletteCopy(u16 originalTag, u16 copyTag)
 {
     u32 i = FindObjectEventPaletteIndexByTag(originalTag);
-    const struct SpritePalette palette = {sObjectEventSpritePalettes[i].data, copyTag};
+    const struct SpritePalette palette = {GetObjectEventSpritePalette(i)->data, copyTag};
     return LoadSpritePalette(&palette);
 }
 
@@ -3373,7 +3390,7 @@ void PatchObjectPalette(u16 paletteTag, u8 paletteSlot)
     // paletteTag is assumed to exist in sObjectEventSpritePalettes
     u8 paletteIndex = FindObjectEventPaletteIndexByTag(paletteTag);
 
-    LoadPalette(sObjectEventSpritePalettes[paletteIndex].data, OBJ_PLTT_ID(paletteSlot), PLTT_SIZE_4BPP);
+    LoadPalette(GetObjectEventSpritePalette(paletteIndex)->data, OBJ_PLTT_ID(paletteSlot), PLTT_SIZE_4BPP);
 }
 
 void PatchObjectPaletteRange(const u16 *paletteTags, u8 minSlot, u8 maxSlot)
@@ -11111,7 +11128,7 @@ void SetVirtualObjectGraphics(u8 virtualObjId, u16 graphicsId)
         u16 tileNum = sprite->oam.tileNum;
         u8 i = FindObjectEventPaletteIndexByTag(graphicsInfo->paletteTag);
         if (i != 0xFF)
-            UpdateSpritePalette(&sObjectEventSpritePalettes[i], sprite);
+            UpdateSpritePalette(GetObjectEventSpritePalette(i), sprite);
 
         sprite->oam = *graphicsInfo->oam;
         sprite->oam.tileNum = tileNum;
