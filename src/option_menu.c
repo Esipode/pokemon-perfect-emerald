@@ -8,6 +8,7 @@
 #include "main.h"
 #include "menu.h"
 #include "palette.h"
+#include "player_palette_menu.h"
 #include "scanline_effect.h"
 #include "sprite.h"
 #include "strings.h"
@@ -68,6 +69,7 @@ enum
     MENUITEM_AUTOSCROLL,
     MENUITEM_AUTOSAVE,
     MENUITEM_ACHIEVEMENT_BOOSTS,
+    MENUITEM_PLAYER_COLORS,
     MENUITEM_CANCEL_PG2,
     MENUITEM_COUNT_PG2,
 };
@@ -99,7 +101,9 @@ static void Task_OptionMenuProcessInput(u8 taskId);
 static void Task_OptionMenuFadeIn_Pg2(u8 taskId);
 static void Task_OptionMenuProcessInput_Pg2(u8 taskId);
 static void Task_OptionMenuSave(u8 taskId);
+static void Task_OptionMenuOpenPlayerColors(u8 taskId);
 static void Task_OptionMenuFadeOut(u8 taskId);
+static void Task_OptionMenuFadeOutToPlayerColors(u8 taskId);
 static void HighlightOptionMenuItem(u8 selection);
 static u8 TextSpeed_ProcessInput(u8 selection);
 static void TextSpeed_DrawChoices(u8 selection, bool8 isActive);
@@ -136,6 +140,13 @@ static void DrawOptionMenuValue(const u8 *text, u8 y, bool8 isActive);
 
 EWRAM_DATA static bool8 sArrowPressed = FALSE;
 EWRAM_DATA static u8 sCurrPage = 0;
+// Stashes the real caller (field/main-menu CB2) across the round trip
+// through CB2_InitPlayerPaletteMenu, whose own savedCallback is pointed at
+// CB2_InitOptionMenu so it lands back on this screen (see Customization.md,
+// Stage 5). Restored into gMain.savedCallback the next time CB2_InitOptionMenu
+// runs; NULL the rest of the time, when gMain.savedCallback already holds
+// the real caller and needs no help.
+EWRAM_DATA static MainCallback sSavedCallback = NULL;
 
 static const u8 gText_Option[]             = _("OPTION");
 static const u8 gText_PageNav[]            = _("PAGE");
@@ -196,6 +207,7 @@ static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
     [MENUITEM_AUTOSCROLL]        = COMPOUND_STRING("AUTO SCROLL"),
     [MENUITEM_AUTOSAVE]          = COMPOUND_STRING("AUTOSAVE"),
     [MENUITEM_ACHIEVEMENT_BOOSTS] = COMPOUND_STRING("ACHIEVEMENT BOOSTS"),
+    [MENUITEM_PLAYER_COLORS]     = COMPOUND_STRING("PLAYER COLOURS"),
     [MENUITEM_CANCEL_PG2]        = COMPOUND_STRING("CANCEL"),
 };
 
@@ -314,6 +326,14 @@ void CB2_InitOptionMenu(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
+        // Landing back here from the player-colors screen -- restore the
+        // real caller that Task_OptionMenuOpenPlayerColors stashed before
+        // overwriting gMain.savedCallback with CB2_InitOptionMenu itself.
+        if (sSavedCallback != NULL)
+        {
+            gMain.savedCallback = sSavedCallback;
+            sSavedCallback = NULL;
+        }
         gMain.state++;
         break;
     case 1:
@@ -564,6 +584,8 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
     {
         if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG2)
             gTasks[taskId].func = Task_OptionMenuSave;
+        else if (gTasks[taskId].tMenuSelection == MENUITEM_PLAYER_COLORS)
+            gTasks[taskId].func = Task_OptionMenuOpenPlayerColors;
     }
     else if (JOY_NEW(B_BUTTON))
     {
@@ -650,7 +672,12 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
     }
 }
 
-static void Task_OptionMenuSave(u8 taskId)
+// Shared by Task_OptionMenuSave and Task_OptionMenuOpenPlayerColors -- the
+// pending settings need committing before either leaving the menu for good
+// or hopping to the player-colors screen and back (so a change made just
+// before opening PLAYER COLOURS isn't lost if the player never returns to
+// CANCEL, e.g. quits from the palette screen's own exit some other way).
+static void CommitPendingOptionSettings(u8 taskId)
 {
     gSaveBlock2Ptr->optionsTextSpeed = gTasks[taskId].tTextSpeed;
     gSaveBlock2Ptr->optionsBattleSceneOff = GET_FLAG(BATTLE_SCENE);
@@ -669,7 +696,11 @@ static void Task_OptionMenuSave(u8 taskId)
         Achievement_SetBoostsEnabled(GET_FLAG(ACHIEVEMENT_BOOSTS));
         Achievement_FlushProfile();
     }
+}
 
+static void Task_OptionMenuSave(u8 taskId)
+{
+    CommitPendingOptionSettings(taskId);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
 }
@@ -681,6 +712,30 @@ static void Task_OptionMenuFadeOut(u8 taskId)
         DestroyTask(taskId);
         FreeAllWindowBuffers();
         SetMainCallback2(gMain.savedCallback);
+    }
+}
+
+// PLAYER COLOURS is an action row like CANCEL, but instead of leaving the
+// option menu for good it hops to CB2_InitPlayerPaletteMenu and back --
+// see Customization.md, Stage 5.
+static void Task_OptionMenuOpenPlayerColors(u8 taskId)
+{
+    CommitPendingOptionSettings(taskId);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+    gTasks[taskId].func = Task_OptionMenuFadeOutToPlayerColors;
+}
+
+static void Task_OptionMenuFadeOutToPlayerColors(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        DestroyTask(taskId);
+        FreeAllWindowBuffers();
+        // sCurrPage (EWRAM) is untouched, so CB2_InitOptionMenu redraws page 2
+        // on return; sSavedCallback carries the real caller across the trip.
+        sSavedCallback = gMain.savedCallback;
+        gMain.savedCallback = CB2_InitOptionMenu;
+        SetMainCallback2(CB2_InitPlayerPaletteMenu);
     }
 }
 
