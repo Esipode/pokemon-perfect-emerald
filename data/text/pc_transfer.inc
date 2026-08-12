@@ -45,6 +45,10 @@ gText_NoMoreRoomForPokemon::
 	.string "The POKéMON BOXES are full and\n"
 	.string "can't accept any more!$"
 
+gText_MonoTypeCantAccept::
+	.string "Only {STR_VAR_1}-type Pokémon can be\n"
+	.string "accepted in this game!$"
+
 gText_NicknameThisPokemon::
 	.string "Do you want to give a nickname to\n"
 	.string "this {STR_VAR_1}?$"

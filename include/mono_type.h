@@ -41,4 +41,12 @@ void MonoType_PickStarterSpecies(u16 *out);
 // wrapping in both directions and skipping TYPE_MYSTERY and TYPE_STELLAR.
 u8 MonoType_CycleType(u8 current, bool8 forward);
 
+// One-shot flag set by the givemon/giveegg grant hooks (ScrCmd_createmon,
+// ScriptGiveMon, ScriptGiveEgg) when a player-side grant is skipped for
+// being the wrong type. Read (and cleared) by the shared
+// Common_EventScript_NoMoreRoomForPokemon terminal script so it can show the
+// Mono Type refusal instead of the generic "no room" message.
+void MonoType_SetGiveBlocked(void);
+bool32 MonoType_ConsumeGiveBlockedFlag(void);
+
 #endif // GUARD_MONO_TYPE_H

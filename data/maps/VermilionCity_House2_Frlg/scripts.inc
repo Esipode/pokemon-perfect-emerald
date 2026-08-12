@@ -6,6 +6,8 @@ VermilionCity_House2_EventScript_Elyssa::
 	faceplayer
 	setvar VAR_0x8008, INGAME_TRADE_FARFETCHD
 	call EventScript_GetInGameTradeSpeciesInfo
+	callnative CheckMonoTypeTradeBlocked
+	goto_if_eq VAR_RESULT, 1, Common_EventScript_MonoTypeTradeRefused
 	goto_if_set FLAG_DID_CH_DING_TRADE, VermilionCity_House2_EventScript_AlreadyTraded
 	msgbox VermilionCity_House2_Text_DoYouHaveMonWantToTradeForMyMon, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, VermilionCity_House2_EventScript_DeclineTrade

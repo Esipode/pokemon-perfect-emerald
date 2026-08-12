@@ -13,6 +13,7 @@
 #include "link_rfu.h"
 #include "main.h"
 #include "menu.h"
+#include "mono_type.h"
 #include "overworld.h"
 #include "ow_abilities.h"
 #include "palette.h"
@@ -93,6 +94,12 @@ u8 ScriptGiveEgg(enum Species species)
 {
     struct Pokemon mon;
     u8 isEgg;
+
+    if (!MonoType_IsSpeciesAllowed(species))
+    {
+        MonoType_SetGiveBlocked();
+        return MON_CANT_GIVE;
+    }
 
     CreateEgg(&mon, species, TRUE);
     isEgg = TRUE;
@@ -513,6 +520,12 @@ u32 ScriptGiveMon(enum Species species, u16 level, enum Item item)
     struct Pokemon mon;
     u8 heldItem[2];
 
+    if (!MonoType_IsSpeciesAllowed(species))
+    {
+        MonoType_SetGiveBlocked();
+        return MON_CANT_GIVE;
+    }
+
     CreateRandomMon(&mon, species, level);
     if (item)
     {
@@ -615,6 +628,13 @@ void ScrCmd_createmon(struct ScriptContext *ctx)
         gender = GetSynchronizedGender(origin, species);
     if (nature == NATURE_MAY_SYNCHRONIZE)
         nature = GetSynchronizedNature(origin, species);
+
+    if (side == B_SIDE_PLAYER && !MonoType_IsSpeciesAllowed(species))
+    {
+        MonoType_SetGiveBlocked();
+        gSpecialVar_Result = MON_CANT_GIVE;
+        return;
+    }
 
     gSpecialVar_Result = ScriptGiveMonParameterized(side, slot, species, level, item, ball, nature, abilityNum, gender, evs, ivs, moves, shinyMode, gmaxFactor, teraType, dmaxLevel);
 }

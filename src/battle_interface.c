@@ -35,6 +35,7 @@
 #include "constants/items.h"
 #include "caps.h"
 #include "event_data.h"
+#include "mono_type.h"
 #include "overworld.h"
 
 #define HEALTHBOX_BG_INDEX 2
@@ -1769,31 +1770,20 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     species = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
-    // Nuzlocke Mode indicator
-    if (gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE))
+    // Nuzlocke Mode / Mono Type indicator
+    bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
+    bool8 monoOn = MonoType_IsEnabled();
+    if (nuzlockeOn || monoOn)
     {
-        bool8 isCaught = GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT);
+        bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
+                       && (!nuzlockeOn || !GET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId()));
 
-        // If already caught in this game, show pokeball
-        if (isCaught)
-        {
+        if (!canCatch)
+            gfxId = HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH;
+        else if (nuzlockeOn && GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT))
             gfxId = HEALTHBOX_GFX_STATUS_BALL_CAUGHT;
-        }
         else
-        {
-            // Check if already caught one pokemon in this zone
-            u16 zone = GetCurrentRegionMapSectionId();
-            if (GET_NUZLOCKE_ZONE_FLAG(zone))
-            {
-                // Cannot catch - already caught one in this zone
-                gfxId = HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH;
-            }
-            else
-            {
-                // Can catch - haven't caught one yet in this zone
-                gfxId = HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH;
-            }
-        }
+            gfxId = HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH;
 
         if (noStatus)
             CpuCopy32(GetHealthboxElementGfxPtr(gfxId), (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);

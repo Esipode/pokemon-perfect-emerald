@@ -37,6 +37,7 @@
 #include "m4a.h"
 #include "mail.h"
 #include "event_data.h"
+#include "mono_type.h"
 #include "pokemon_storage_system.h"
 #include "randomization.h"
 #include "task.h"
@@ -9984,10 +9985,17 @@ static void Cmd_handleballthrow(void)
         MarkBattlerForControllerExec(gBattlerAttacker);
         gBattlescriptCurrInstr = BattleScript_WallyBallThrow;
     }
+    else if (MonoType_IsEnabled() && !MonoType_IsSpeciesAllowed(gBattleMons[gBattlerTarget].species))
+    {
+        PREPARE_TYPE_BUFFER(gBattleTextBuff1, MonoType_GetType());
+        BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
+        MarkBattlerForControllerExec(gBattlerAttacker);
+        gBattlescriptCurrInstr = BattleScript_MonoType_CannotCatch;
+    }
     else
     {
         gBallToDisplay = gLastThrownBall = gLastUsedItem;
-        u32 odds = ComputeCaptureOdds(gBattlerTarget, gBattlerAttacker);
+        u32 odds;
 
         if (gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE))
         {
@@ -9997,8 +10005,11 @@ static void Cmd_handleballthrow(void)
                 BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
                 MarkBattlerForControllerExec(gBattlerAttacker);
                 gBattlescriptCurrInstr = BattleScript_Nuzlocke_CannotCatch;
+                return;
             }
         }
+
+        odds = ComputeCaptureOdds(gBattlerTarget, gBattlerAttacker);
 
         if (gTestRunnerEnabled)
             TestRunner_Battle_RecordCatchChance(odds);

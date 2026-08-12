@@ -334,6 +334,7 @@ extern const u8 gText_RecordBattleToPass[];
 extern const u8 gText_BattleRecordedOnPass[];
 extern const u8 gText_BattleTourney[];
 extern const u8 gText_NuzlockeNoCatch[];
+extern const u8 gText_MonoTypeNoCatch[];
 extern const u16 gStatUpStringIds[];
 extern const u16 gStatDownStringIds[];
 

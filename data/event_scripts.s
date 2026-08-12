@@ -1531,6 +1531,10 @@ gText_LegendaryFlewAway::
 gText_WantWhichFloor::
 	.string "Which floor do you want?$"
 
+gText_MonoTypeTradeRefused::
+	.string "Sorry, I can't trade for anything but\n"
+	.string "a {STR_VAR_1}-type Pokémon in this game!$"
+
 	.include "data/text/pc_transfer.inc"
 	.include "data/text/questionnaire.inc"
 	.include "data/text/abnormal_weather.inc"
@@ -1556,6 +1560,12 @@ EventScript_DoInGameTrade::
 	lock
 	faceplayer
 	return
+
+Common_EventScript_MonoTypeTradeRefused::
+	callnative BufferMonoTypeName
+	msgbox gText_MonoTypeTradeRefused, MSGBOX_DEFAULT
+	release
+	end
 
 EventScript_SelectWithoutRegisteredItem::
 	msgbox gText_SelectWithoutRegisteredItem, MSGBOX_SIGN

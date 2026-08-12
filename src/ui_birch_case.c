@@ -770,7 +770,16 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
     if (wasRandomizeMonForMoves)
         FlagSet(FLAG_RANDOMIZE_MON);
 
-    *GetVarPointer(VAR_STARTER_MON) = wasRandomizeMon ? setIndex : GetStarterPokemon(choice->species);
+    // Mono Type's 3 picks aren't drawn from the canonical starter species, so
+    // GetStarterPokemon() can't map them to a starter index by species. Use
+    // the ball's position in the middle row instead (first/second/third ->
+    // 0/1/2), which lines up with GetStarterPokemon()'s own convention
+    // (0 = grass-type starter, 1 = fire, 2 = water) and is what every
+    // VAR_STARTER_MON-driven rival battle across the game expects.
+    if (MonoType_IsEnabled())
+        *GetVarPointer(VAR_STARTER_MON) = sBirchCaseDataPtr->handPosition - BALL_MIDDLE_FIRST;
+    else
+        *GetVarPointer(VAR_STARTER_MON) = wasRandomizeMon ? setIndex : GetStarterPokemon(choice->species);
 }
 
 //==========FUNCTIONS==========//
@@ -1177,7 +1186,10 @@ static void Task_BirchCaseMain(u8 taskId)
 {
     u16 oldPosition = sBirchCaseDataPtr->handPosition;
 
-    if (JOY_NEW(B_BUTTON))
+    // Mono type mode has no generation choice to back out to - exiting here
+    // would just reopen the same case (Route101_EventScript_OpenStarterCaseMonoType
+    // loops on VAR_0x8004 == 1), so B is a no-op instead of a flickery round-trip.
+    if (JOY_NEW(B_BUTTON) && !MonoType_IsEnabled())
     {
         PlaySE(SE_SELECT);
         VarSet(VAR_0x8004, 1);

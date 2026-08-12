@@ -62,6 +62,10 @@ static u32 CountStarterCandidates(const u8 *evolvedBitmap, u32 filterLevel);
 static u16 GetStarterCandidateAtIndex(const u8 *evolvedBitmap, u32 filterLevel, u32 index);
 static bool32 WasSpeciesAlreadyPicked(const u16 *picks, u32 count, u16 species);
 
+// Set by the givemon/giveegg hooks, consumed by the shared "no room" script.
+// See MonoType_SetGiveBlocked/MonoType_ConsumeGiveBlockedFlag in the header.
+static bool8 sGiveBlockedFlag = FALSE;
+
 bool32 MonoType_IsEnabled(void)
 {
     return gSaveBlock2Ptr->monoTypeSetting != TYPE_NONE;
@@ -168,6 +172,18 @@ void MonoType_PickStarterSpecies(u16 *out)
 
         out[slot] = species;
     }
+}
+
+void MonoType_SetGiveBlocked(void)
+{
+    sGiveBlockedFlag = TRUE;
+}
+
+bool32 MonoType_ConsumeGiveBlockedFlag(void)
+{
+    bool32 wasBlocked = sGiveBlockedFlag;
+    sGiveBlockedFlag = FALSE;
+    return wasBlocked;
 }
 
 static void BuildEvolvedSpeciesBitmap(u8 *bitmap)
