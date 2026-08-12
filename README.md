@@ -55,6 +55,9 @@
 - Mono Type Mode
 	- Commit to a single Pokémon type for the whole playthrough
 	- Obtaining any Pokémon not matching the set type is disabled
+- Mono Gen Mode
+	- Commit to a single Pokémon generation (1-9) for the whole playthrough
+	- Obtaining any Pokémon not introduced in that generation is disabled, including evolutions
 - Autosave Mode
 	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
 - Auto-skip dialogue

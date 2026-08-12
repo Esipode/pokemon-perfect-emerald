@@ -9,6 +9,7 @@
 #include "main.h"
 #include "main_menu.h"
 #include "menu.h"
+#include "mono_gen.h"
 #include "mono_type.h"
 #include "palette.h"
 #include "scanline_effect.h"
@@ -34,6 +35,7 @@ enum
 {
     SETTING_NUZLOCKE,
     SETTING_MONO_TYPE,
+    SETTING_MONO_GEN,
     SETTING_DIFFICULTY,
     SETTING_RANDOMIZE_SPECIES,
     SETTING_RANDOMIZE_TYPES,
@@ -98,6 +100,22 @@ static const u8 *const sDifficultyTexts[] =
     [DIFFICULTY_HARD]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD"),
 };
 
+// Indexed 1-9 (index 0 unused; "OFF" is sText_Off) - unlike the mono type
+// name, the generation label is a fixed literal, so no runtime composition
+// or scratch buffer is needed.
+static const u8 *const sMonoGenTexts[MONO_GEN_COUNT + 1] =
+{
+    [1] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 1"),
+    [2] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 2"),
+    [3] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 3"),
+    [4] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 4"),
+    [5] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 5"),
+    [6] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 6"),
+    [7] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 7"),
+    [8] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 8"),
+    [9] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 9"),
+};
+
 static const u8 *const sSettingDescriptions[SETTING_COUNT] =
 {
     [SETTING_NUZLOCKE]          = COMPOUND_STRING(
@@ -106,6 +124,9 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
     [SETTING_MONO_TYPE]         = COMPOUND_STRING(
                                        "Choose a starter of this type and only\n"
                                        "obtain Pokémon of this type."),
+    [SETTING_MONO_GEN]          = COMPOUND_STRING(
+                                       "Choose a starter of this Gen and only\n"
+                                       "obtain Pokémon from this Gen."),
     [SETTING_DIFFICULTY]        = COMPOUND_STRING(
                                        "Changes encountered Pokémon levels\n"
                                        "and Trainer AI complexity."),
@@ -130,6 +151,7 @@ static const struct ListMenuItem sSettingsListItems[SETTING_COUNT] =
 {
     [SETTING_NUZLOCKE]          = {COMPOUND_STRING("NUZLOCKE MODE"),    SETTING_NUZLOCKE},
     [SETTING_MONO_TYPE]         = {COMPOUND_STRING("MONO TYPE"),        SETTING_MONO_TYPE},
+    [SETTING_MONO_GEN]          = {COMPOUND_STRING("MONO GEN"),         SETTING_MONO_GEN},
     [SETTING_DIFFICULTY]        = {COMPOUND_STRING("DIFFICULTY"),       SETTING_DIFFICULTY},
     [SETTING_RANDOMIZE_SPECIES] = {COMPOUND_STRING("RANDOMIZE SPECIES"),SETTING_RANDOMIZE_SPECIES},
     [SETTING_RANDOMIZE_TYPES]   = {COMPOUND_STRING("RANDOMIZE TYPES"),  SETTING_RANDOMIZE_TYPES},
@@ -222,6 +244,7 @@ void CB2_InitNewGameSettingsMenu(void)
         gPendingNewGameSettings.difficulty = DIFFICULTY_NORMAL;
         gPendingNewGameSettings.nuzlockeEnabled = FALSE;
         gPendingNewGameSettings.monoType = TYPE_NONE;
+        gPendingNewGameSettings.monoGen = 0;
         gPendingNewGameSettings.randomizeSpecies = FALSE;
         gPendingNewGameSettings.randomizeTypes = FALSE;
         gPendingNewGameSettings.randomizeMoves = FALSE;
@@ -414,6 +437,9 @@ static void HandleValueChange(u8 settingId, bool8 rightPressed)
     case SETTING_MONO_TYPE:
         gPendingNewGameSettings.monoType = MonoType_CycleType(gPendingNewGameSettings.monoType, rightPressed);
         break;
+    case SETTING_MONO_GEN:
+        gPendingNewGameSettings.monoGen = MonoGen_CycleGen(gPendingNewGameSettings.monoGen, rightPressed);
+        break;
     case SETTING_RANDOMIZE_SPECIES:
         gPendingNewGameSettings.randomizeSpecies ^= 1;
         break;
@@ -464,6 +490,8 @@ static const u8 *GetSettingValueText(u8 settingId)
         StringCopy(sMonoTypeValueText, sText_ValueColorPrefix);
         StringAppend(sMonoTypeValueText, gTypesInfo[gPendingNewGameSettings.monoType].name);
         return sMonoTypeValueText;
+    case SETTING_MONO_GEN:
+        return gPendingNewGameSettings.monoGen == 0 ? sText_Off : sMonoGenTexts[gPendingNewGameSettings.monoGen];
     case SETTING_DIFFICULTY:        return sDifficultyTexts[gPendingNewGameSettings.difficulty];
     case SETTING_RANDOMIZE_SPECIES: return gPendingNewGameSettings.randomizeSpecies ? sText_On : sText_Off;
     case SETTING_RANDOMIZE_TYPES:   return gPendingNewGameSettings.randomizeTypes ? sText_On : sText_Off;
@@ -543,6 +571,7 @@ void ApplyPendingNewGameSettings(void)
     gSaveBlock1Ptr->difficulty = gPendingNewGameSettings.difficulty;
     gSaveBlock1Ptr->nuzlockeModeEnabled = gPendingNewGameSettings.nuzlockeEnabled;
     gSaveBlock2Ptr->monoTypeSetting = gPendingNewGameSettings.monoType;
+    gSaveBlock2Ptr->monoGenSetting = gPendingNewGameSettings.monoGen;
     gPendingNewGameSettings.randomizeSpecies ? FlagSet(FLAG_RANDOMIZE_MON)     : FlagClear(FLAG_RANDOMIZE_MON);
     gPendingNewGameSettings.randomizeTypes   ? FlagSet(FLAG_RANDOMIZE_TYPE)    : FlagClear(FLAG_RANDOMIZE_TYPE);
     gPendingNewGameSettings.randomizeMoves   ? FlagSet(FLAG_RANDOMIZE_MOVES)   : FlagClear(FLAG_RANDOMIZE_MOVES);
@@ -579,6 +608,7 @@ void CaptureCurrentSaveIntoPendingNewGameSettings(void)
     gPendingNewGameSettings.difficulty = gSaveBlock1Ptr->difficulty;
     gPendingNewGameSettings.nuzlockeEnabled = gSaveBlock1Ptr->nuzlockeModeEnabled;
     gPendingNewGameSettings.monoType = gSaveBlock2Ptr->monoTypeSetting;
+    gPendingNewGameSettings.monoGen = gSaveBlock2Ptr->monoGenSetting;
     gPendingNewGameSettings.randomizeSpecies = FlagGet(FLAG_RANDOMIZE_MON);
     gPendingNewGameSettings.randomizeTypes = FlagGet(FLAG_RANDOMIZE_TYPE);
     gPendingNewGameSettings.randomizeMoves = FlagGet(FLAG_RANDOMIZE_MOVES);
