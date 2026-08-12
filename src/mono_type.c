@@ -1,6 +1,7 @@
 #include "global.h"
 #include "mono_type.h"
 #include "caps.h"
+#include "mono_gen.h"
 #include "new_game.h"
 #include "pokemon.h"
 #include "random.h"
@@ -225,6 +226,9 @@ static bool32 IsStarterCandidate(u16 species, const u8 *evolvedBitmap, u32 filte
         return FALSE;
 
     if (!MonoType_IsSpeciesAllowed(species))
+        return FALSE;
+
+    if (!MonoGen_IsSpeciesAllowed(species))
         return FALSE;
 
     if (filterLevel < MONO_STARTER_FILTER_NO_BST_CAP

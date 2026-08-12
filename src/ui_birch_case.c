@@ -373,6 +373,18 @@ u16 PickRandomSpecies(u8 setIndex, u8 slotIndex)
     return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
 }
 
+// Reads a canonical starter straight out of sStarterChoices for Mono Gen.
+// sStarterChoices lays out three generations per set in consecutive slot
+// order (BALL_TOP_FIRST=0 .. BALL_BOTTOM_SECOND=8), so the mapping from
+// generation + starter slot to [set][slot] is pure arithmetic.
+u16 GetCanonicalStarterSpecies(u8 gen, u8 slot)
+{
+    u8 setIndex = (gen - 1) / 3;
+    u8 baseSlot = ((gen - 1) % 3) * 3;
+
+    return sStarterChoices[setIndex][baseSlot + slot].species;
+}
+
 u16 GetRandomBaseSpecies(rng_value_t *rngState)
 {
     u16 species;
