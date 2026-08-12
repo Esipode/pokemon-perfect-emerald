@@ -1113,7 +1113,7 @@ static const struct StorageMessage sMessages[] =
     // wrapped across 3 short lines instead of the 2 long ones it started as, which
     // is too wide for the window and just runs off the edge.
     [MSG_LOCKED_UNTIL_CHAMPION] = {COMPOUND_STRING("This POKéMON won't\ncome with you until\nyou defeat the LEAGUE!"), MSG_VAR_NONE},
-    [MSG_PARTY_SLOT_LOCKED]    = {COMPOUND_STRING("You can't use that\nparty slot yet!"),                          MSG_VAR_NONE},
+    [MSG_PARTY_SLOT_LOCKED]    = {COMPOUND_STRING("You can't use that slot yet!"), MSG_VAR_NONE},
 };
 
 static const struct WindowTemplate sYesNoWindowTemplate =
