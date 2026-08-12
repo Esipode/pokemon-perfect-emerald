@@ -2600,6 +2600,11 @@ static const u8 sWeatherCycleRoute123[WEATHER_CYCLE_LENGTH] =
 
 #define DYNAMIC_WEATHER_POOL(pool) pool, ARRAY_COUNT(pool)
 
+// The first entry of each dynamic weather pool is treated as that pool's
+// default (most common) weather. The rest of the pool only has a small
+// chance of being rolled instead.
+#define DYNAMIC_WEATHER_NON_DEFAULT_PERCENT 5
+
 struct DynamicWeatherPool
 {
     mapsec_u16_t mapSec;
@@ -2610,7 +2615,6 @@ struct DynamicWeatherPool
 static const u8 sDefaultDynamicWeathers[] =
 {
     WEATHER_SUNNY,
-    WEATHER_SUNNY_CLOUDS,
     WEATHER_RAIN,
     WEATHER_SNOW,
     WEATHER_RAIN_THUNDERSTORM,
@@ -2667,7 +2671,13 @@ static u8 GetDynamicWeather(void)
         return WEATHER_NONE;
 
     localRngState = LocalRandomSeed(Crc32B((const u8 *)hashPieces, sizeof(hashPieces)));
-    return weathers[LocalRandom32(&localRngState) % count];
+
+    // Weathers[0] is the default for the pool. Only roll one of the other,
+    // more unusual weathers a small percentage of the time.
+    if (count == 1 || LocalRandom32(&localRngState) % 100 >= DYNAMIC_WEATHER_NON_DEFAULT_PERCENT)
+        return weathers[0];
+
+    return weathers[1 + (LocalRandom32(&localRngState) % (count - 1))];
 }
 
 static u8 TranslateWeatherNum(u8 weather)
