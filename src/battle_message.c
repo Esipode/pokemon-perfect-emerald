@@ -76,7 +76,7 @@ const u8 gText_StatSharply[] = _(" sharply");
 const u8 gText_StatRose[] = _("rose!");
 const u8 gText_StatFell[] = _("fell!");
 const u8 gText_DefendersStatRose[] = _("{B_DEF_NAME_WITH_PREFIX}'s {B_BUFF1} rose{B_BUFF2}!");
-const u8 gText_NuzlockeNoCatch[] = _("You can't catch more than one Pokémon\nper route in Nuzlocke mode!");
+const u8 gText_NuzlockeNoCatch[] = _("You can't catch more than one Pokémon\nper area in Nuzlocke mode!");
 static const u8 sText_GotAwaySafely[] = _("{PLAY_SE SE_FLEE}You got away safely!\p");
 static const u8 sText_PlayerDefeatedLinkTrainer[] = _("You defeated {B_LINK_OPPONENT1_NAME}!");
 static const u8 sText_TwoLinkTrainersDefeated[] = _("You defeated {B_LINK_OPPONENT1_NAME} and {B_LINK_OPPONENT2_NAME}!");
@@ -154,7 +154,7 @@ static const u8 sText_SpAttack[] = _("Sp. Atk");
 static const u8 sText_SpDefense[] = _("Sp. Def");
 static const u8 sText_Accuracy[] = _("accuracy");
 static const u8 sText_Evasiveness[] = _("evasiveness");
-static const u8 sText_NuzlockeNoCatch[] = _("You can't catch more than one Pokémon\nper route in Nuzlocke mode!");
+static const u8 sText_NuzlockeNoCatch[] = _("You can't catch more than one Pokémon\nper area in Nuzlocke mode!");
 
 const u8 *const gStatNamesTable[NUM_BATTLE_STATS] =
 {

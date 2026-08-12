@@ -20,7 +20,6 @@
 #include "constants/difficulty.h" // DIFFICULTY_HARD, for Trial by Fire
 #include "item.h"                 // gBagPockets/POCKETS_COUNT, for Pack Rat/Resourceful
 #include "wild_encounter.h"       // gWildMonHeaders/GetCurrentMapWildMonHeaderId, for Local Expert
-#include "battle_main.h"          // GetCurrentMapId, for Full Encounter bookkeeping
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
 #include "constants/game_stat.h" // GAME_STAT_*, for threshold checks

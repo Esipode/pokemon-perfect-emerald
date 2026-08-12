@@ -668,10 +668,10 @@ static void CB2_EndWildBattle(void)
     }
     else
     {
-        // Handles nuzlocke mode setting pokemon being caught on this route
+        // Handles nuzlocke mode setting pokemon being caught in this zone
         if ((gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE)))
         {
-            u16 route = GetCurrentMapId();
+            u16 zone = GetCurrentRegionMapSectionId();
 
             // Note this branch runs for *any* wild battle that ended without a
             // whiteout -- caught, KO'd, or fled -- so the flag has always meant
@@ -679,16 +679,16 @@ static void CB2_EndWildBattle(void)
             //
             // BOOST_NUZLOCKE_SECOND_CHANCE reads exactly that
             // distinction: an encounter the player didn't convert into a catch
-            // spends a one-time per-route free pass instead of locking the
-            // route, so you get one more shot at it. Catching still locks the
-            // route immediately, and the pass is only ever granted once, so
+            // spends a one-time per-zone free pass instead of locking the
+            // zone, so you get one more shot at it. Catching still locks the
+            // zone immediately, and the pass is only ever granted once, so
             // this is a single retry rather than two catches.
             if (gBattleOutcome != B_OUTCOME_CAUGHT
              && AchievementBoost_HasNuzlockeSecondChance()
-             && !GET_NUZLOCKE_EXTRA_FLAG(route))
-                SET_NUZLOCKE_EXTRA_FLAG(route);
+             && !GET_NUZLOCKE_ZONE_EXTRA_FLAG(zone))
+                SET_NUZLOCKE_ZONE_EXTRA_FLAG(zone);
             else
-                SET_NUZLOCKE_FLAG(route);
+                SET_NUZLOCKE_ZONE_FLAG(zone);
 
             gDoAutosaveAfterBattle = TRUE;
         }

@@ -69,3 +69,5 @@ __pycache__
 .map_version
 __decomps/
 __BUILD_INSTRUCTIONS.txt
+CLAUDE.md
+.claude/*

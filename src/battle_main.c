@@ -5860,11 +5860,6 @@ static void SetActionsAndBattlersTurnOrder(void)
     gBattleScripting.battler = 0;
 }
 
-u16 GetCurrentMapId(void)
-{
-    return gSaveBlock1Ptr->location.mapNum;
-}
-
 static void TurnValuesCleanUp(bool8 var0)
 {
     for (enum BattlerId i = 0; i < gBattlersCount; i++)

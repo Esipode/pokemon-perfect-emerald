@@ -63,8 +63,8 @@
 //   so no extra padding beyond the existing 3-byte header pad is expected either
 //   side of this stage. 38980 + 28920 = 67900. SaveBlock1/2/3 are untouched.
 //   Calculated, not yet confirmed by a real build.
-#define T_SAVEBLOCK1_SIZE 7536
-#define T_SAVEBLOCK2_SIZE 490
+#define T_SAVEBLOCK1_SIZE 7504
+#define T_SAVEBLOCK2_SIZE 544
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 67900
 

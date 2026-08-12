@@ -35,6 +35,7 @@
 #include "constants/items.h"
 #include "caps.h"
 #include "event_data.h"
+#include "overworld.h"
 
 #define HEALTHBOX_BG_INDEX 2
 
@@ -1781,8 +1782,8 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
         else
         {
             // Check if already caught one pokemon in this zone
-            u16 route = GetCurrentMapId();
-            if (GET_NUZLOCKE_FLAG(route))
+            u16 zone = GetCurrentRegionMapSectionId();
+            if (GET_NUZLOCKE_ZONE_FLAG(zone))
             {
                 // Cannot catch - already caught one in this zone
                 gfxId = HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH;

@@ -1155,8 +1155,8 @@ static u32 GetBallThrowableState(void)
 {
     if (gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE))
     {
-        u16 route = GetCurrentMapId();
-        if (GET_NUZLOCKE_FLAG(route))
+        u16 zone = GetCurrentRegionMapSectionId();
+        if (GET_NUZLOCKE_ZONE_FLAG(zone))
             return BALL_THROW_UNABLE_NUZLOCKE;
     }
     else if (IsBattlerAlive(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT))

@@ -108,8 +108,9 @@
 // difficulty, the three FLAG_RANDOMIZE_* flags, the level cap, and the Stat
 // Editor -- turns CHA-001/002/003/004 into a literal count/all-seven check.
 // Nuzlocke entries key off explicit state only (nuzlockeModeEnabled plus
-// nuzlockeCaughtFlags/nuzlockeExtraEncounterFlags), never incidental
-// behaviour. Checked from four call sites, each reusing an existing hook:
+// SaveBlock2's nuzlockeZoneCaughtFlags/nuzlockeZoneExtraEncounterFlags),
+// never incidental behaviour. Checked from four call sites, each reusing an
+// existing hook:
 // Achievement_CheckChallengeMilestones/Achievement_CheckNuzlockeMilestones
 // (HandleEndTurn_BattleWon, alongside category M's
 // Achievement_CheckGymEconomyMilestones) for the mid-run entries;

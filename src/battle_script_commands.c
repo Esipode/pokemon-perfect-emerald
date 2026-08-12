@@ -9991,8 +9991,8 @@ static void Cmd_handleballthrow(void)
 
         if (gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE))
         {
-            u16 route = GetCurrentMapId();
-            if (GET_NUZLOCKE_FLAG(route))
+            u16 zone = GetCurrentRegionMapSectionId();
+            if (GET_NUZLOCKE_ZONE_FLAG(zone))
             {
                 BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
                 MarkBattlerForControllerExec(gBattlerAttacker);

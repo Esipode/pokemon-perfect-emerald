@@ -18,6 +18,7 @@
 #include "constants/apricorn_tree.h"
 #include "constants/berry.h"
 #include "constants/maps.h"
+#include "constants/region_map_sections.h" // MAPSEC_COUNT, for NUM_NUZLOCKE_ZONE_FLAG_BYTES
 #include "constants/pokemon.h"
 #include "constants/easy_chat.h"
 #include "constants/trainer_hill.h"
@@ -598,10 +599,9 @@ struct AchievementRunDataExt
     // Cartographer/etc. NOT a raw-mapNum bitfield -- an earlier
     // sketch proposed indexing 128 bits by mapNum alone, but mapNum resets
     // per map GROUP (MAP_GROUPS_COUNT == 75), so two unrelated maps in
-    // different groups routinely share a mapNum. SaveBlock1's
-    // nuzlockeCaughtFlags bitfield only gets away with raw-mapNum indexing
-    // because Nuzlocke route-locking is scoped to a single map group; a
-    // general "maps visited" tracker doesn't have that precondition. Each
+    // different groups routinely share a mapNum, and this tracker has no
+    // scoping precondition that would make raw-mapNum indexing safe (see
+    // NUM_NUZLOCKE_ZONE_FLAG_BYTES for a related indexing pitfall). Each
     // entry is (mapGroup << 8) | (u8)mapNum, deduplicated by linear scan on
     // write -- same idiom as AchievementRunData.majorBattleSpecies. Capped
     // at 80 (the top achievement threshold): once full, additional distinct
@@ -670,6 +670,22 @@ struct AchievementRunDataExt
     u8  legendCandidateCount;
 };
 
+// Size of the nuzlocke per-zone bitfields in struct SaveBlock2. Indexed by
+// GetCurrentRegionMapSectionId() -- the map's MAPSEC, i.e. the name shown on
+// the region map -- NOT by raw mapNum like these fields used to be (that
+// scheme, and the fields using it, have been removed). Keying off mapNum
+// meant every floor of a multi-floor location (e.g.
+// MAP_GRANITE_CAVE_1F/B1F/B2F/STEVENS_ROOM are four different mapNums in the
+// same map group) got its own "already caught here" bucket, so a Nuzlocke
+// run could catch one mon per floor of the same cave instead of one per
+// cave. MAPSEC is shared by every floor of a given named area, so keying off
+// it collapses them into a single bucket, matching what "one catch per area"
+// actually means. Sized off MAPSEC_COUNT (rather than a hardcoded number) so
+// it can't quietly fall out of sync the way the mapNum version did as new
+// maps were added.
+#define NUM_NUZLOCKE_ZONE_FLAG_BYTES ((MAPSEC_COUNT + 7) / 8)
+#define NUM_NUZLOCKE_ZONE_FLAGS      (NUM_NUZLOCKE_ZONE_FLAG_BYTES * 8)
+
 struct SaveBlock2
 {
     /*0x00*/ u8 playerName[PLAYER_NAME_LENGTH + 1];
@@ -728,6 +744,15 @@ struct SaveBlock2
     /*0x64C*/ struct BattleFrontier frontier;
 #endif //FREE_BATTLE_FRONTIER
     struct AchievementRunDataExt achievementRunDataExt; // see that struct's comment
+    // Nuzlocke "one catch per area" tracking, MAPSEC-indexed -- see
+    // NUM_NUZLOCKE_ZONE_FLAG_BYTES above. Lives here rather than SaveBlock1
+    // for the same reason achievementRunDataExt does: SaveBlock1 didn't have
+    // the room. Replaces the old raw-mapNum-indexed fields of the same
+    // purpose that used to live in SaveBlock1 (removed outright, along with
+    // the mapNum indexing bug that motivated this move -- see git history --
+    // save compatibility with pre-existing Nuzlocke runs was not a concern).
+    u8 nuzlockeZoneCaughtFlags[NUM_NUZLOCKE_ZONE_FLAG_BYTES];
+    u8 nuzlockeZoneExtraEncounterFlags[NUM_NUZLOCKE_ZONE_FLAG_BYTES];
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
@@ -1192,16 +1217,6 @@ struct ExternalEventFlags
 
 #define NUM_WILD_ENCOUNTER_MAPS 116
 
-// Size of the nuzlocke per-route bitfields in struct SaveBlock1. These are
-// indexed by GetCurrentMapId() -- a raw mapNum, NOT a wild-encounter header
-// index -- so they must cover the highest mapNum in the game, which is 122
-// (map group 35). They were previously sized NUM_WILD_ENCOUNTER_MAPS / 8 == 14
-// bytes (112 bits), which let SET_NUZLOCKE_FLAG write past the array and
-// corrupt whatever followed it in SaveBlock1. 16 bytes gives 128 bits, and the
-// macros below bounds-check on top of that.
-#define NUM_NUZLOCKE_ROUTE_FLAG_BYTES 16
-#define NUM_NUZLOCKE_ROUTE_FLAGS      (NUM_NUZLOCKE_ROUTE_FLAG_BYTES * 8)
-
 struct Bag
 {
     struct ItemSlot items[BAG_ITEMS_COUNT];
@@ -1417,14 +1432,6 @@ struct SaveBlock1
     struct TrainerHillSave trainerHill;
 #endif //FREE_TRAINER_HILL
     struct WaldaPhrase waldaPhrase;
-    u8 nuzlockeCaughtFlags[NUM_NUZLOCKE_ROUTE_FLAG_BYTES];
-    // For BOOST_NUZLOCKE_SECOND_CHANCE. Parallel to the array above,
-    // and only ever consulted when that boost is purchased: it records that a
-    // route's one-time free pass has been spent. nuzlockeCaughtFlags stays the
-    // single authoritative "this route is locked" bit, so every reader of it
-    // (Cmd_handleballthrow, GetBallThrowableState, the healthbox indicator) is
-    // untouched by this boost.
-    u8 nuzlockeExtraEncounterFlags[NUM_NUZLOCKE_ROUTE_FLAG_BYTES];
 #if FREE_TRAINER_TOWER == FALSE && IS_FRLG
     u32 towerChallengeId;
     struct TrainerTower trainerTower[NUM_TOWER_CHALLENGE_TYPES];
@@ -1449,17 +1456,18 @@ struct MapPosition
 };
 
 // Helper macros
-// The (route) < NUM_NUZLOCKE_ROUTE_FLAGS bounds check is not decoration: these
-// are indexed by raw mapNum, which is not guaranteed to stay under the array
-// size as maps are added. An unchecked SET_ writes into whatever follows the
-// array in SaveBlock1.
-#define GET_NUZLOCKE_FLAG(route) ((route) < NUM_NUZLOCKE_ROUTE_FLAGS && (gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] & (1 << ((route) % 8))))
-#define SET_NUZLOCKE_FLAG(route) do { if ((route) < NUM_NUZLOCKE_ROUTE_FLAGS) gSaveBlock1Ptr->nuzlockeCaughtFlags[(route) / 8] |= (1 << ((route) % 8)); } while (0)
+// The (zone) < NUM_NUZLOCKE_ZONE_FLAGS bounds check is not decoration: zone
+// is a MAPSEC id (see NUM_NUZLOCKE_ZONE_FLAG_BYTES's comment), and while it's
+// sized off MAPSEC_COUNT, an unchecked SET_ would write into whatever follows
+// the array in SaveBlock2 if that were ever to drift. gSaveBlock2Ptr's fields
+// are what actually gate catching -- see GetCurrentRegionMapSectionId().
+#define GET_NUZLOCKE_ZONE_FLAG(zone) ((zone) < NUM_NUZLOCKE_ZONE_FLAGS && (gSaveBlock2Ptr->nuzlockeZoneCaughtFlags[(zone) / 8] & (1 << ((zone) % 8))))
+#define SET_NUZLOCKE_ZONE_FLAG(zone) do { if ((zone) < NUM_NUZLOCKE_ZONE_FLAGS) gSaveBlock2Ptr->nuzlockeZoneCaughtFlags[(zone) / 8] |= (1 << ((zone) % 8)); } while (0)
 
-// For BOOST_NUZLOCKE_SECOND_CHANCE: "this route's one-time free pass
+// For BOOST_NUZLOCKE_SECOND_CHANCE: "this zone's one-time free pass
 // has been spent." Only read/written by CB2_EndWildBattle (src/battle_setup.c).
-#define GET_NUZLOCKE_EXTRA_FLAG(route) ((route) < NUM_NUZLOCKE_ROUTE_FLAGS && (gSaveBlock1Ptr->nuzlockeExtraEncounterFlags[(route) / 8] & (1 << ((route) % 8))))
-#define SET_NUZLOCKE_EXTRA_FLAG(route) do { if ((route) < NUM_NUZLOCKE_ROUTE_FLAGS) gSaveBlock1Ptr->nuzlockeExtraEncounterFlags[(route) / 8] |= (1 << ((route) % 8)); } while (0)
+#define GET_NUZLOCKE_ZONE_EXTRA_FLAG(zone) ((zone) < NUM_NUZLOCKE_ZONE_FLAGS && (gSaveBlock2Ptr->nuzlockeZoneExtraEncounterFlags[(zone) / 8] & (1 << ((zone) % 8))))
+#define SET_NUZLOCKE_ZONE_EXTRA_FLAG(zone) do { if ((zone) < NUM_NUZLOCKE_ZONE_FLAGS) gSaveBlock2Ptr->nuzlockeZoneExtraEncounterFlags[(zone) / 8] |= (1 << ((zone) % 8)); } while (0)
 
 #if TESTING
 extern bool32 gLoadFail;
