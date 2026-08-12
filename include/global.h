@@ -706,7 +706,8 @@ struct SaveBlock2
              //u16 padding1:4;
              //u16 padding2;
     /*0x18*/ struct Pokedex pokedex;
-    /*0x90*/ u8 filler_90[0x2];
+    /*0x90*/ u8 filler_90[0x1];
+    /*0x91*/ u8 monoTypeSetting; // Mono Type challenge: the one type the player may obtain. TYPE_NONE (0) means off, so old saves read as OFF.
     /*0x92*/ u8 playerColors[PLAYER_COLOR_REGION_COUNT]; // see player_customization.h; 0 means vanilla, so old saves render unchanged
     /*0x96*/ u8 keepStorageOnRestart; // this playthrough carried its PC over from the previous one; gates the OT-ID lock in pokemon_storage_system.c
     /*0x97*/ u8 newGamePlus; // New Game+ counter (0-255)
