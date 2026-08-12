@@ -48,6 +48,7 @@
 #include "starter_choose.h"
 #include "random.h"
 #include "pokemon.h"
+#include "mono_type.h"
 
  /*
     9 Starter Selection Birch Case
@@ -480,7 +481,26 @@ void InitializeStarterChoices(void)
 {
     u8 setIndex, slotIndex;
 
-    if (FlagGet(FLAG_RANDOMIZE_MON))
+    if (MonoType_IsEnabled())
+    {
+        // gSpecialVar_Result is pinned to 0 (Route101_EventScript_OpenStarterCaseMonoType),
+        // so only set 0 is ever shown; sets 1 and 2 are zeroed alongside it for safety.
+        u16 monoSpecies[MONO_TYPE_STARTER_COUNT];
+
+        MonoType_PickStarterSpecies(monoSpecies);
+
+        for (setIndex = 0; setIndex < 3; setIndex++)
+        {
+            for (slotIndex = 0; slotIndex < 9; slotIndex++)
+                sCurrentChoices[setIndex][slotIndex] = (struct MonChoiceData){0};
+        }
+
+        // Middle row is the horizontally centred 3-slot row.
+        sCurrentChoices[0][BALL_MIDDLE_FIRST]  = (struct MonChoiceData){.species = monoSpecies[0], .level = 5};
+        sCurrentChoices[0][BALL_MIDDLE_SECOND] = (struct MonChoiceData){.species = monoSpecies[1], .level = 5};
+        sCurrentChoices[0][BALL_MIDDLE_THIRD]  = (struct MonChoiceData){.species = monoSpecies[2], .level = 5};
+    }
+    else if (FlagGet(FLAG_RANDOMIZE_MON))
     {
         // Fill sCurrentChoices with random species
         for (setIndex = 0; setIndex < 3; setIndex++)
@@ -1189,6 +1209,11 @@ static void Task_BirchCaseMain(u8 taskId)
         {
             sBirchCaseDataPtr->handPosition = BALL_MIDDLE_SECOND;
         }
+        if (sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].species == SPECIES_NONE)
+        {
+            sBirchCaseDataPtr->handPosition = oldPosition;
+            return;
+        }
         ChangePositionUpdateSpriteAnims(oldPosition, taskId);
         return;
     }
@@ -1218,6 +1243,11 @@ static void Task_BirchCaseMain(u8 taskId)
             else
                 sBirchCaseDataPtr->handPosition = BALL_TOP_THIRD;
         }
+        if (sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].species == SPECIES_NONE)
+        {
+            sBirchCaseDataPtr->handPosition = oldPosition;
+            return;
+        }
         ChangePositionUpdateSpriteAnims(oldPosition, taskId);
         return;
     }
@@ -1245,6 +1275,11 @@ static void Task_BirchCaseMain(u8 taskId)
             else
                 sBirchCaseDataPtr->handPosition += 1;
         }
+        if (sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].species == SPECIES_NONE)
+        {
+            sBirchCaseDataPtr->handPosition = oldPosition;
+            return;
+        }
         ChangePositionUpdateSpriteAnims(oldPosition, taskId);
         return;
     }
@@ -1271,6 +1306,11 @@ static void Task_BirchCaseMain(u8 taskId)
                 sBirchCaseDataPtr->handPosition = BALL_BOTTOM_SECOND;
             else
                 sBirchCaseDataPtr->handPosition -= 1;
+        }
+        if (sCurrentChoices[gSpecialVar_Result][sBirchCaseDataPtr->handPosition].species == SPECIES_NONE)
+        {
+            sBirchCaseDataPtr->handPosition = oldPosition;
+            return;
         }
         ChangePositionUpdateSpriteAnims(oldPosition, taskId);
         return;

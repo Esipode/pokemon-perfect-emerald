@@ -16,6 +16,7 @@
 #include "task.h"
 #include "field_weather.h"
 #include "overworld.h"
+#include "mono_type.h"
 
 #include "dexnav.h"
 
@@ -664,6 +665,13 @@ void StartNewPokeballCaseUI(void)
 {
     FadeScreen(FADE_TO_BLACK, 0);
     CreateTask(Task_OpenBirchCase, 0);
+}
+
+// VAR_RESULT = 1 when Mono Type is on, so Route101_EventScript_OpenStarterCase
+// can skip the "which generation?" prompt and jump straight to the case.
+void CheckMonoTypeStarter(void)
+{
+    VarSet(VAR_RESULT, MonoType_IsEnabled() ? 1 : 0);
 }
 
 bool32 Script_MatchesCallNative(const u8 *script, void *funcPtr, bool32 requestEffects)
