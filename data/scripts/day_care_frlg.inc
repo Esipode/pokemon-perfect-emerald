@@ -68,8 +68,8 @@ Route5_PokemonDayCare_EventScript_NotEnoughTime::
 	return
 
 Route5_PokemonDayCare_EventScript_TryRetrieveMon::
-	specialvar VAR_RESULT, CalculatePlayerPartyCount
-	goto_if_eq VAR_RESULT, PARTY_SIZE, Route5_PokemonDayCare_EventScript_NoRoomInParty
+	specialvar VAR_RESULT, IsPlayerPartyFull
+	goto_if_eq VAR_RESULT, TRUE, Route5_PokemonDayCare_EventScript_NoRoomInParty
 	specialvar VAR_RESULT, IsEnoughForCostInVar0x8005
 	goto_if_eq VAR_RESULT, TRUE, Route5_PokemonDayCare_EventScript_RetrieveMon
 	msgbox Route5_PokemonDayCare_Text_DontHaveEnoughMoney
