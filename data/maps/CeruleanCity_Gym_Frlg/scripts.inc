@@ -13,10 +13,16 @@ CeruleanCity_Gym_EventScript_MistyDefeated::
 	famechecker FAMECHECKER_MISTY, 1
 	setflag FLAG_DEFEATED_MISTY
 	setflag FLAG_BADGE02_GET
+	specialvar VAR_RESULT, IsLimitedPartyEnabled
+	call_if_eq VAR_RESULT, TRUE, CeruleanCity_Gym_EventScript_LimitedPartySlotUnlocked
 	setrespawn HEAL_LOCATION_CERULEAN_CITY
 	set_gym_trainers_frlg 2
 	goto CeruleanCity_Gym_EventScript_GiveTM03
 	end
+
+CeruleanCity_Gym_EventScript_LimitedPartySlotUnlocked::
+	msgbox CeruleanCity_Gym_Text_LimitedPartySlotUnlocked, MSGBOX_DEFAULT
+	return
 
 CeruleanCity_Gym_EventScript_GiveTM03::
 	msgbox CeruleanCity_Gym_Text_ExplainCascadeBadge
@@ -96,6 +102,10 @@ CeruleanCity_Gym_Text_ExplainCascadeBadge::
 CeruleanCity_Gym_Text_ReceivedTM03FromMisty::
 	.string "{PLAYER} received TM03\n"
 	.string "from MISTY.$"
+
+CeruleanCity_Gym_Text_LimitedPartySlotUnlocked::
+	.string "You can now carry one more\n"
+	.string "POKéMON in your party!$"
 
 CeruleanCity_Gym_Text_BetterMakeRoomForThis::
 	.string "You better make room for this!$"

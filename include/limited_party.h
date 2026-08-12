@@ -40,4 +40,9 @@ bool32 LimitedParty_IsPartyFull(void);
 // plain TRUE/FALSE special instead. See data/specials.inc.
 u16 IsPlayerPartyFull(void);
 
+// Script special wrapper around LimitedParty_IsEnabled - lets Gym Leader
+// defeat scripts guard the "a party slot just unlocked" message. See
+// data/specials.inc.
+u16 IsLimitedPartyEnabled(void);
+
 #endif // GUARD_LIMITED_PARTY_H

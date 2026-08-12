@@ -45,3 +45,8 @@ u16 IsPlayerPartyFull(void)
 {
     return LimitedParty_IsPartyFull();
 }
+
+u16 IsLimitedPartyEnabled(void)
+{
+    return LimitedParty_IsEnabled();
+}

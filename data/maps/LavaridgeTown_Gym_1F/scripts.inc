@@ -61,6 +61,8 @@ LavaridgeTown_Gym_1F_EventScript_FlanneryDefeated::
 	setflag FLAG_WHITEOUT_TO_LAVARIDGE
 	setflag FLAG_DEFEATED_LAVARIDGE_GYM
 	setflag FLAG_BADGE04_GET
+	specialvar VAR_RESULT, IsLimitedPartyEnabled
+	call_if_eq VAR_RESULT, TRUE, LavaridgeTown_Gym_1F_EventScript_LimitedPartySlotUnlocked
 	call Common_EventScript_CheckLevelCapIncrease
 	addvar VAR_PETALBURG_GYM_STATE, 1
 	call_if_eq VAR_PETALBURG_GYM_STATE, 6, Common_EventScript_ReadyPetalburgGymForBattle
@@ -79,6 +81,10 @@ LavaridgeTown_Gym_1F_EventScript_FlanneryDefeated::
 	setflag FLAG_ENABLE_FLANNERY_MATCH_CALL
 	release
 	end
+
+LavaridgeTown_Gym_1F_EventScript_LimitedPartySlotUnlocked::
+	msgbox LavaridgeTown_Gym_1F_Text_LimitedPartySlotUnlocked, MSGBOX_DEFAULT
+	return
 
 LavaridgeTown_Gym_1F_EventScript_GiveOverheat2::
 	giveitem ITEM_TM_OVERHEAT
@@ -330,6 +336,10 @@ LavaridgeTown_Gym_1F_Text_FlanneryDefeat:
 LavaridgeTown_Gym_1F_Text_ReceivedHeatBadge:
 	.string "{PLAYER} received the HEAT BADGE\n"
 	.string "from FLANNERY.$"
+
+LavaridgeTown_Gym_1F_Text_LimitedPartySlotUnlocked:
+	.string "You can now carry one more\n"
+	.string "POKéMON in your party!$"
 
 LavaridgeTown_Gym_1F_Text_ExplainHeatBadgeTakeThis:
 	.string "If you have a HEAT BADGE, all POKéMON\n"

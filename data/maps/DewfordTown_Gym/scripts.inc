@@ -150,6 +150,8 @@ DewfordTown_Gym_EventScript_BrawlyDefeated::
 	msgbox DewfordTown_Gym_Text_KnuckleBadgeInfoTakeThis, MSGBOX_DEFAULT
 	setflag FLAG_DEFEATED_DEWFORD_GYM
 	setflag FLAG_BADGE02_GET
+	specialvar VAR_RESULT, IsLimitedPartyEnabled
+	call_if_eq VAR_RESULT, TRUE, DewfordTown_Gym_EventScript_LimitedPartySlotUnlocked
 	call Common_EventScript_CheckLevelCapIncrease
 	addvar VAR_PETALBURG_GYM_STATE, 1
 	call_if_eq VAR_PETALBURG_GYM_STATE, 6, Common_EventScript_ReadyPetalburgGymForBattle
@@ -168,6 +170,10 @@ DewfordTown_Gym_EventScript_BrawlyDefeated::
 	setflag FLAG_ENABLE_ROXANNE_FIRST_CALL
 	release
 	end
+
+DewfordTown_Gym_EventScript_LimitedPartySlotUnlocked::
+	msgbox DewfordTown_Gym_Text_LimitedPartySlotUnlocked, MSGBOX_DEFAULT
+	return
 
 DewfordTown_Gym_EventScript_GiveBulkUp::
 	giveitem ITEM_TM_BULK_UP
@@ -400,6 +406,10 @@ DewfordTown_Gym_Text_BrawlyDefeat:
 DewfordTown_Gym_Text_ReceivedKnuckleBadge:
 	.string "{PLAYER} received the KNUCKLE BADGE\n"
 	.string "from BRAWLY.$"
+
+DewfordTown_Gym_Text_LimitedPartySlotUnlocked:
+	.string "You can now carry one more\n"
+	.string "POKéMON in your party!$"
 
 DewfordTown_Gym_Text_KnuckleBadgeInfoTakeThis:
 	.string "The KNUCKLE BADGE makes all POKéMON\n"

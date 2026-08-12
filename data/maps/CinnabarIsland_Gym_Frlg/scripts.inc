@@ -57,12 +57,18 @@ CinnabarIsland_Gym_EventScript_DefeatedBlaine::
 	famechecker FAMECHECKER_BLAINE, 1
 	setflag FLAG_DEFEATED_BLAINE
 	setflag FLAG_BADGE07_GET
+	specialvar VAR_RESULT, IsLimitedPartyEnabled
+	call_if_eq VAR_RESULT, TRUE, CinnabarIsland_Gym_EventScript_LimitedPartySlotUnlocked
 	setrespawn HEAL_LOCATION_CINNABAR_ISLAND
 	setvar VAR_MAP_SCENE_CINNABAR_ISLAND, 1
 	clearflag FLAG_HIDE_CINNABAR_BILL
 	set_gym_trainers_frlg 7
 	goto CinnabarIsland_Gym_EventScript_GiveTM38
 	end
+
+CinnabarIsland_Gym_EventScript_LimitedPartySlotUnlocked::
+	msgbox CinnabarIsland_Gym_Text_LimitedPartySlotUnlocked, MSGBOX_DEFAULT
+	return
 
 CinnabarIsland_Gym_EventScript_GiveTM38::
 	msgbox CinnabarIsland_Gym_Text_ExplainVolcanoBadge
@@ -738,6 +744,10 @@ CinnabarIsland_Gym_Text_ExplainVolcanoBadge::
 CinnabarIsland_Gym_Text_ReceivedTM38FromBlaine::
 	.string "{PLAYER} received TM38\n"
 	.string "from BLAINE.$"
+
+CinnabarIsland_Gym_Text_LimitedPartySlotUnlocked::
+	.string "You can now carry one more\n"
+	.string "POKéMON in your party!$"
 
 CinnabarIsland_Gym_Text_BlainePostBattle::
 	.string "TM38 contains FIRE BLAST.\n"

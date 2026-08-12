@@ -37,6 +37,7 @@
 #include "item_menu.h"
 #include "item_use.h"
 #include "caps.h"
+#include "limited_party.h"
 #include "link.h"
 #include "link_rfu.h"
 #include "mail.h"
@@ -529,6 +530,7 @@ static const u8 sText_doneText[] = _("{STR_VAR_1}'s ability became\n{STR_VAR_2}!
 static const u8 sText_BasePointsResetToZero[] = _("{STR_VAR_1}'s base points\nwere all reset to zero!{PAUSE_UNTIL_PRESS}");
 static const u8 sText_CannotSendMonToBoxHM[] = _("Cannot send that mon to the box,\nbecause it knows a HM move.{PAUSE_UNTIL_PRESS}");
 static const u8 sText_CannotSendMonToBoxPartner[] = _("Cannot send a mon that doesn't\nbelong to you to the box.{PAUSE_UNTIL_PRESS}");
+static const u8 sText_PartySlotLocked[] = _("LOCKED");
 
 // static const data
 #include "data/party_menu.h"
@@ -1019,6 +1021,27 @@ static void LoadPartyMenuBoxes(enum PartyMenuLayout layout)
         sPartyMenuBoxes[1].infoRects = &sPartyBoxInfoRects[PARTY_BOX_LEFT_COLUMN];
 }
 
+// Limited Party: label empty slots at or above the current cap as LOCKED, so
+// the rule is visible without needing new "locked slot" graphics. Reuses the
+// per-layout description text region (e.g. where "NO USE" is printed for a
+// held item) since it's already positioned correctly for both the equal and
+// wide box layouts. A no-op when the mode is off, since GetMaxPartySize()
+// then returns PARTY_SIZE and no valid party slot is ever >= that.
+static void TryDisplayPartySlotLockedText(u8 slot)
+{
+    struct Pokemon *party;
+    s8 partySlot;
+
+    GetPartyAndSlotFromPartyMenuId(slot, &party, &partySlot);
+    if (party != gParties[B_TRAINER_PLAYER] || partySlot < LimitedParty_GetMaxPartySize())
+        return;
+
+    AddTextPrinterParameterized3(sPartyMenuBoxes[slot].windowId, FONT_NORMAL,
+                                  sPartyMenuBoxes[slot].infoRects->descTextLeft,
+                                  sPartyMenuBoxes[slot].infoRects->descTextTop,
+                                  sFontColorTable[0], 0, sText_PartySlotLocked);
+}
+
 static void RenderPartyMenuBox(u8 slot)
 {
     if (gPartyMenu.menuType == PARTY_MENU_TYPE_MULTI_FULL_SHOWCASE && gPartyMenu.layout == PARTY_LAYOUT_MULTI_FULL_SHOWCASE_PARTNER)
@@ -1049,6 +1072,7 @@ static void RenderPartyMenuBox(u8 slot)
         {
             DrawEmptySlot(sPartyMenuBoxes[slot].windowId);
             LoadPartyBoxPalette(&sPartyMenuBoxes[slot], PARTY_PAL_NO_MON);
+            TryDisplayPartySlotLockedText(slot);
             CopyWindowToVram(sPartyMenuBoxes[slot].windowId, COPYWIN_GFX);
         }
         else

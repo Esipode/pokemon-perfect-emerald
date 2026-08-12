@@ -70,6 +70,8 @@ MossdeepCity_Gym_EventScript_TateAndLizaDefeated::
 	msgbox MossdeepCity_Gym_Text_ExplainMindBadgeTakeThis, MSGBOX_DEFAULT
 	setflag FLAG_DEFEATED_MOSSDEEP_GYM
 	setflag FLAG_BADGE07_GET
+	specialvar VAR_RESULT, IsLimitedPartyEnabled
+	call_if_eq VAR_RESULT, TRUE, MossdeepCity_Gym_EventScript_LimitedPartySlotUnlocked
 	call Common_EventScript_CheckLevelCapIncrease
 	giveitem ITEM_TERA_ORB
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
@@ -100,6 +102,10 @@ MossdeepCity_Gym_EventScript_TateAndLizaDefeated::
 	setflag FLAG_ENABLE_TATE_AND_LIZA_MATCH_CALL
 	release
 	end
+
+MossdeepCity_Gym_EventScript_LimitedPartySlotUnlocked::
+	msgbox MossdeepCity_Gym_Text_LimitedPartySlotUnlocked, MSGBOX_DEFAULT
+	return
 
 MossdeepCity_Gym_EventScript_GiveCalmMind2::
 	giveitem ITEM_TM_CALM_MIND
@@ -580,6 +586,10 @@ MossdeepCity_Gym_Text_TateAndLizaDefeat:
 MossdeepCity_Gym_Text_ReceivedMindBadge:
 	.string "{PLAYER} received the MIND BADGE\n"
 	.string "from TATE and LIZA.$"
+
+MossdeepCity_Gym_Text_LimitedPartySlotUnlocked:
+	.string "You can now carry one more\n"
+	.string "POKéMON in your party!$"
 
 MossdeepCity_Gym_Text_ExplainMindBadgeTakeThis:
 	.string "TATE: The MIND BADGE enhances the\n"
