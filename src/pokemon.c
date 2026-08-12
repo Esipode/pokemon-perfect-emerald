@@ -27,6 +27,7 @@
 #include "frontier_util.h"
 #include "graphics.h"
 #include "item.h"
+#include "limited_party.h"
 #include "link.h"
 #include "m4a.h"
 #include "main.h"
@@ -3365,6 +3366,7 @@ void CopyMon(void *dest, void *src, size_t size)
 u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
 {
     s32 i;
+    u32 maxSize;
 
     SetMonData(mon, MON_DATA_OT_NAME, gSaveBlock2Ptr->playerName);
     SetMonData(mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
@@ -3391,13 +3393,14 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     // used to be here (Perfect Specimen) was removed along with that
     // achievement -- see src/achievements.c.
 
-    for (i = 0; i < PARTY_SIZE; i++)
+    maxSize = LimitedParty_GetMaxPartySize();
+    for (i = 0; i < maxSize; i++)
     {
         if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
             break;
     }
 
-    if (i >= PARTY_SIZE)
+    if (i >= maxSize)
         return CopyMonToPC(mon);
 
     CopyMon(&gParties[B_TRAINER_PLAYER][i], mon, sizeof(*mon));
@@ -7344,19 +7347,20 @@ u32 GiveScriptedMonToPlayer(struct Pokemon *mon, u8 slot)
 {
     u32 sentToPc;
     u32 i = 0;
-    if (slot < PARTY_SIZE)
+    u32 maxSize = LimitedParty_GetMaxPartySize();
+    if (slot < maxSize)
     {
         CopyMon(&gParties[B_TRAINER_PLAYER][slot], mon, sizeof(struct Pokemon));
         sentToPc = MON_GIVEN_TO_PARTY;
     }
     else
     {
-        for (i = 0; i < PARTY_SIZE; i++)
+        for (i = 0; i < maxSize; i++)
         {
             if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
                 break;
         }
-        if (i >= PARTY_SIZE)
+        if (i >= maxSize)
         {
             sentToPc = CopyMonToPC(mon);
         }

@@ -9,6 +9,7 @@
 #include "bg.h"
 #include "gpu_regs.h"
 #include "pokemon.h"
+#include "limited_party.h"
 #include "field_specials.h"
 #include "field_player_avatar.h"
 #include "event_object_movement.h"
@@ -707,7 +708,7 @@ static bool8 MainState_Exit(void)
         if (sNamingScreen->templateNum == NAMING_SCREEN_PLAYER)
             SeedRngAndSetTrainerId();
         if (sNamingScreen->templateNum == NAMING_SCREEN_CAUGHT_MON
-         && CalculatePlayerPartyCount() < PARTY_SIZE)
+         && CalculatePlayerPartyCount() < LimitedParty_GetMaxPartySize())
             SetMainCallback2(BattleMainCB2);
         else
             SetMainCallback2(sNamingScreen->returnCallback);
