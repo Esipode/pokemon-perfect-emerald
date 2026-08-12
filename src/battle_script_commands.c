@@ -38,6 +38,7 @@
 #include "mail.h"
 #include "event_data.h"
 #include "mono_type.h"
+#include "mono_gen.h"
 #include "pokemon_storage_system.h"
 #include "randomization.h"
 #include "task.h"
@@ -9991,6 +9992,13 @@ static void Cmd_handleballthrow(void)
         BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
         MarkBattlerForControllerExec(gBattlerAttacker);
         gBattlescriptCurrInstr = BattleScript_MonoType_CannotCatch;
+    }
+    else if (MonoGen_IsEnabled() && !MonoGen_IsSpeciesAllowed(gBattleMons[gBattlerTarget].species))
+    {
+        PREPARE_BYTE_NUMBER_BUFFER(gBattleTextBuff1, 1, MonoGen_GetGen());
+        BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
+        MarkBattlerForControllerExec(gBattlerAttacker);
+        gBattlescriptCurrInstr = BattleScript_MonoGen_CannotCatch;
     }
     else
     {

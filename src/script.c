@@ -679,26 +679,23 @@ void CheckStarterGenSelectSkipped(void)
 }
 
 // VAR_RESULT = 1 if the givemon/giveegg grant that just ran was skipped for
-// being the wrong type, so Common_EventScript_NoMoreRoomForPokemon can show
-// the Mono Type refusal instead of the generic "no room" message. Clears the
-// flag it reads, since this only ever runs on that shared terminal script.
+// violating Mono Type or Mono Gen, so Common_EventScript_NoMoreRoomForPokemon
+// can show the challenge refusal instead of the generic "no room" message.
+// Clears the flag it reads, since this only ever runs on that shared terminal
+// script.
 void CheckMonoTypeGiveBlocked(void)
 {
     VarSet(VAR_RESULT, MonoType_ConsumeGiveBlockedFlag() ? 1 : 0);
 }
 
-// STR_VAR_1 = the chosen Mono Type's name, for refusal messages.
-void BufferMonoTypeName(void)
+// VAR_RESULT = 1 if VAR_0x8009 (the species offered in an in-game trade)
+// violates Mono Type or Mono Gen, so the trade script can bail out before the
+// party menu opens and the player's Pokémon is taken.
+void CheckChallengeTradeBlocked(void)
 {
-    StringCopy(gStringVar1, gTypesInfo[MonoType_GetType()].name);
-}
-
-// VAR_RESULT = 1 if VAR_0x8009 (the species offered in an in-game trade) is
-// the wrong type, so the trade script can bail out before the party menu
-// opens and the player's Pokémon is taken.
-void CheckMonoTypeTradeBlocked(void)
-{
-    VarSet(VAR_RESULT, !MonoType_IsSpeciesAllowed(VarGet(VAR_0x8009)) ? 1 : 0);
+    u16 species = VarGet(VAR_0x8009);
+    VarSet(VAR_RESULT, (!MonoType_IsSpeciesAllowed(species)
+                      || !MonoGen_IsSpeciesAllowed(species)) ? 1 : 0);
 }
 
 bool32 Script_MatchesCallNative(const u8 *script, void *funcPtr, bool32 requestEffects)

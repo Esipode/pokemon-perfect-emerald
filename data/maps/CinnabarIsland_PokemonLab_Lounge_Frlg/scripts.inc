@@ -10,8 +10,8 @@ CinnabarIsland_PokemonLab_Lounge_EventScript_Clifton::
 	faceplayer
 	setvar VAR_0x8008, INGAME_TRADE_ELECTRODE
 	call EventScript_GetInGameTradeSpeciesInfo
-	callnative CheckMonoTypeTradeBlocked
-	goto_if_eq VAR_RESULT, 1, Common_EventScript_MonoTypeTradeRefused
+	callnative CheckChallengeTradeBlocked
+	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused
 	goto_if_set FLAG_DID_ESPHERE_TRADE, CinnabarIsland_PokemonLab_Lounge_EventScript_CliftonAlreadyTraded
 	msgbox Trade_Text_DoYouHaveMonWouldYouTradeForMon, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, CinnabarIsland_PokemonLab_Lounge_EventScript_CliftonDeclineTrade
@@ -48,8 +48,8 @@ CinnabarIsland_PokemonLab_Lounge_EventScript_Norma::
 	copyvar VAR_0x8004, VAR_0x8008
 	specialvar VAR_RESULT, GetInGameTradeSpeciesInfo
 	copyvar VAR_0x8009, VAR_RESULT
-	callnative CheckMonoTypeTradeBlocked
-	goto_if_eq VAR_RESULT, 1, Common_EventScript_MonoTypeTradeRefused
+	callnative CheckChallengeTradeBlocked
+	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused
 	goto_if_set FLAG_DID_TANGENY_TRADE, CinnabarIsland_PokemonLab_Lounge_EventScript_NormaAlreadyTraded
 	msgbox Trade_Text_DoYouHaveMonWantToTradeForMon, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, CinnabarIsland_PokemonLab_Lounge_EventScript_NormaDeclineTrade

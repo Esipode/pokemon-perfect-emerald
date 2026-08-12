@@ -30,6 +30,7 @@
 #include "link.h"
 #include "m4a.h"
 #include "main.h"
+#include "mono_gen.h"
 #include "move_relearner.h"
 #include "naming_screen.h"
 #include "overworld.h"
@@ -5177,6 +5178,14 @@ enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode m
     {
         return SPECIES_NONE;
     }
+
+    // Mono Gen blocks cross-generation evolutions (unlike Mono Type, which
+    // does not gate evolution at all). This single exit is the choke point
+    // for every evolution path - level-up, stones, trade, script triggers,
+    // and the party-menu EVO_MODE_ITEM_CHECK preview - so evolution stones
+    // correctly grey out rather than being usable and silently doing nothing.
+    if (targetSpecies != SPECIES_NONE && !MonoGen_IsSpeciesAllowed(targetSpecies))
+        return SPECIES_NONE;
 
     return targetSpecies;
 }

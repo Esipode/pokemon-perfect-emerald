@@ -2705,8 +2705,8 @@
 	.macro ingame_trade tradeId:req wantTradeMsg:req, declineTradeJump:req, wrongMonJump:req, tradeCompleteMsg:req
 	setvar VAR_0x8005, \tradeId
 	specialvar VAR_0x8009, GetInGameTradeSpeciesInfo
-	callnative CheckMonoTypeTradeBlocked
-	goto_if_eq VAR_RESULT, 1, Common_EventScript_MonoTypeTradeRefused
+	callnative CheckChallengeTradeBlocked
+	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused
 	msgbox \wantTradeMsg, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, \declineTradeJump
 	chooseboxmon SELECT_PC_MON_TRADE

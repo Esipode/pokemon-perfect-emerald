@@ -36,6 +36,7 @@
 #include "caps.h"
 #include "event_data.h"
 #include "mono_type.h"
+#include "mono_gen.h"
 #include "overworld.h"
 
 #define HEALTHBOX_BG_INDEX 2
@@ -1770,12 +1771,14 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     species = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
-    // Nuzlocke Mode / Mono Type indicator
+    // Nuzlocke Mode / Mono Type / Mono Gen indicator
     bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
     bool8 monoOn = MonoType_IsEnabled();
-    if (nuzlockeOn || monoOn)
+    bool8 genOn = MonoGen_IsEnabled();
+    if (nuzlockeOn || monoOn || genOn)
     {
         bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
+                       && (!genOn || MonoGen_IsSpeciesAllowed(species))
                        && (!nuzlockeOn || !GET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId()));
 
         if (!canCatch)

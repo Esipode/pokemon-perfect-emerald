@@ -14,6 +14,7 @@
 #include "main.h"
 #include "menu.h"
 #include "mono_type.h"
+#include "mono_gen.h"
 #include "overworld.h"
 #include "ow_abilities.h"
 #include "palette.h"
@@ -96,6 +97,12 @@ u8 ScriptGiveEgg(enum Species species)
     u8 isEgg;
 
     if (!MonoType_IsSpeciesAllowed(species))
+    {
+        MonoType_SetGiveBlocked();
+        return MON_CANT_GIVE;
+    }
+
+    if (!MonoGen_IsSpeciesAllowed(species))
     {
         MonoType_SetGiveBlocked();
         return MON_CANT_GIVE;
@@ -526,6 +533,12 @@ u32 ScriptGiveMon(enum Species species, u16 level, enum Item item)
         return MON_CANT_GIVE;
     }
 
+    if (!MonoGen_IsSpeciesAllowed(species))
+    {
+        MonoType_SetGiveBlocked();
+        return MON_CANT_GIVE;
+    }
+
     CreateRandomMon(&mon, species, level);
     if (item)
     {
@@ -630,6 +643,13 @@ void ScrCmd_createmon(struct ScriptContext *ctx)
         nature = GetSynchronizedNature(origin, species);
 
     if (side == B_SIDE_PLAYER && !MonoType_IsSpeciesAllowed(species))
+    {
+        MonoType_SetGiveBlocked();
+        gSpecialVar_Result = MON_CANT_GIVE;
+        return;
+    }
+
+    if (side == B_SIDE_PLAYER && !MonoGen_IsSpeciesAllowed(species))
     {
         MonoType_SetGiveBlocked();
         gSpecialVar_Result = MON_CANT_GIVE;

@@ -33,6 +33,7 @@
 #include "menu_helpers.h"
 #include "metatile_behavior.h"
 #include "mono_type.h"
+#include "mono_gen.h"
 #include "oras_dowse.h"
 #include "overworld.h"
 #include "palette.h"
@@ -1168,6 +1169,9 @@ static u32 GetBallThrowableState(void)
     if (MonoType_IsEnabled() && !MonoType_IsSpeciesAllowed(gBattleMons[GetCatchingBattler()].species))
         return BALL_THROW_UNABLE_MONO_TYPE;
 
+    if (MonoGen_IsEnabled() && !MonoGen_IsSpeciesAllowed(gBattleMons[GetCatchingBattler()].species))
+        return BALL_THROW_UNABLE_MONO_GEN;
+
     if (IsBattlerAlive(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT))
      && IsBattlerAlive(GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT)))
         return BALL_THROW_UNABLE_TWO_MONS;
@@ -1188,6 +1192,7 @@ bool32 CanThrowBall(void)
 
 static const u8 sText_CantThrowPokeBall_Nuzlocke[] = _("You cannot catch any more Pokémon\nin this area!\p");
 static const u8 sText_CantThrowPokeBall_MonoType[] = _("Only {STR_VAR_1}-type Pokémon can be\ncaught in this game!\p");
+static const u8 sText_CantThrowPokeBall_MonoGen[] = _("Only Gen {STR_VAR_1} Pokémon can be\ncaught in this game!\p");
 static const u8 sText_CantThrowPokeBall_TwoMons[] = _("Cannot throw a ball!\nThere are two Pokémon out there!\p");
 static const u8 sText_CantThrowPokeBall_SemiInvulnerable[] = _("Cannot throw a ball!\nThere's no Pokémon in sight!\p");
 static const u8 sText_CantThrowPokeBall_Disabled[] = _("POKé BALLS cannot be used\nright now!\p");
@@ -1212,6 +1217,14 @@ void ItemUseInBattle_PokeBall(u8 taskId)
     case BALL_THROW_UNABLE_MONO_TYPE:
         StringCopy(gStringVar1, gTypesInfo[MonoType_GetType()].name);
         StringExpandPlaceholders(gStringVar4, sText_CantThrowPokeBall_MonoType);
+        if (!InBattlePyramid_())
+            DisplayItemMessage(taskId, FONT_NORMAL, gStringVar4, CloseItemMessage);
+        else
+            DisplayItemMessageInBattlePyramid(taskId, gStringVar4, Task_CloseBattlePyramidBagMessage);
+        break;
+    case BALL_THROW_UNABLE_MONO_GEN:
+        ConvertIntToDecimalStringN(gStringVar1, MonoGen_GetGen(), STR_CONV_MODE_LEFT_ALIGN, 1);
+        StringExpandPlaceholders(gStringVar4, sText_CantThrowPokeBall_MonoGen);
         if (!InBattlePyramid_())
             DisplayItemMessage(taskId, FONT_NORMAL, gStringVar4, CloseItemMessage);
         else
@@ -1352,6 +1365,11 @@ bool32 CannotUseItemsInBattle(enum Item itemId, struct Pokemon *mon)
         case BALL_THROW_UNABLE_MONO_TYPE:
             StringCopy(gStringVar1, gTypesInfo[MonoType_GetType()].name);
             failStr = sText_CantThrowPokeBall_MonoType;
+            cannotUse = TRUE;
+            break;
+        case BALL_THROW_UNABLE_MONO_GEN:
+            ConvertIntToDecimalStringN(gStringVar1, MonoGen_GetGen(), STR_CONV_MODE_LEFT_ALIGN, 1);
+            failStr = sText_CantThrowPokeBall_MonoGen;
             cannotUse = TRUE;
             break;
         case BALL_THROW_UNABLE_TWO_MONS:

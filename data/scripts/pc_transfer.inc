@@ -46,13 +46,12 @@ EventScript_LanettesPCBoxFull::
 
 Common_EventScript_NoMoreRoomForPokemon::
 	callnative CheckMonoTypeGiveBlocked
-	goto_if_eq VAR_RESULT, 1, Common_EventScript_MonoTypeCantAccept
+	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeCantAccept
 	msgbox gText_NoMoreRoomForPokemon, MSGBOX_DEFAULT
 	release
 	end
 
-Common_EventScript_MonoTypeCantAccept::
-	callnative BufferMonoTypeName
-	msgbox gText_MonoTypeCantAccept, MSGBOX_DEFAULT
+Common_EventScript_ChallengeCantAccept::
+	msgbox gText_ChallengeCantAccept, MSGBOX_DEFAULT
 	release
 	end

@@ -507,6 +507,7 @@ extern const u8 BattleScript_DecreaseStatChangeMessageMinStat[];
 extern const u8 BattleScript_StatDidntChangeMessagePause[];
 extern const u8 BattleScript_Nuzlocke_CannotCatch[];
 extern const u8 BattleScript_MonoType_CannotCatch[];
+extern const u8 BattleScript_MonoGen_CannotCatch[];
 
 // zmoves
 extern const u8 BattleScript_ZMoveActivateDamaging[];
