@@ -34,8 +34,8 @@ enum
     SETTING_RANDOMIZE_TYPES,
     SETTING_RANDOMIZE_MOVES,
     SETTING_STAT_EDITOR,
-    SETTING_DEBUG,
     SETTING_LEVEL_CAP,
+    SETTING_DEBUG,
     SETTING_COUNT,
 };
 
@@ -100,11 +100,18 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
     [SETTING_RANDOMIZE_SPECIES] = COMPOUND_STRING("Pokémon species are randomized."),
     [SETTING_RANDOMIZE_TYPES]   = COMPOUND_STRING("Pokémon types are randomized."),
     [SETTING_RANDOMIZE_MOVES]   = COMPOUND_STRING("Pokémon movesets are randomized."),
-    [SETTING_STAT_EDITOR]       = COMPOUND_STRING("Change IV/EV values of your Pokémon."),
-    [SETTING_LEVEL_CAP]         = COMPOUND_STRING("Prevents over-levelling your Pokémon."),
+    [SETTING_STAT_EDITOR]       = COMPOUND_STRING(
+                                       "{COLOR RED}{SHADOW LIGHT_RED}(ON DISABLES ACHIEVEMENTS){COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}\n"
+                                       "Change IV/EV values of your Pokémon."),
+    [SETTING_LEVEL_CAP]         = COMPOUND_STRING(
+                                       "{COLOR RED}{SHADOW LIGHT_RED}(OFF DISABLES ACHIEVEMENTS){COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}\n"
+                                       "Prevents over-levelling your Pokémon."),
+    // Body condensed to a single line (from the original two) to make room for
+    // the achievements-disabled line above it -- WIN_DESCRIPTION only fits 2
+    // lines of FONT_NORMAL text (see sSettingsMenuWinTemplates[WIN_DESCRIPTION]).
     [SETTING_DEBUG]             = COMPOUND_STRING(
-                                       "Allows opening the Debug Menu\n"
-                                       "using {R_BUTTON}+{START_BUTTON}."),
+                                       "{COLOR RED}{SHADOW LIGHT_RED}(DISABLES ACHIEVEMENTS){COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}\n"
+                                       "Debug Menu: {R_BUTTON}+{START_BUTTON}"),
 };
 
 static const struct ListMenuItem sSettingsListItems[SETTING_COUNT] =
@@ -516,7 +523,14 @@ void ApplyPendingNewGameSettings(void)
     gPendingNewGameSettings.levelCapOff      ? FlagSet(FLAG_LEVEL_CAP_OFF)     : FlagClear(FLAG_LEVEL_CAP_OFF);
     gPendingNewGameSettings.allowStatEditor  ? FlagSet(FLAG_ALLOW_STAT_EDITOR) : FlagClear(FLAG_ALLOW_STAT_EDITOR);
     gPendingNewGameSettings.debugMode        ? FlagSet(FLAG_DEBUG)             : FlagClear(FLAG_DEBUG);
-    if (gPendingNewGameSettings.debugMode)
+    // Debug Mode, Stat Editor, and Level Cap Off all give the player tools
+    // that can trivially manufacture achievement-worthy state (arbitrary
+    // IV/EV values, uncapped levels, the Debug Menu itself), so all three
+    // permanently disqualify the run the same way -- see the matching
+    // [DISABLES ACHIEVEMENTS] callouts on their descriptions above.
+    if (gPendingNewGameSettings.debugMode
+     || gPendingNewGameSettings.allowStatEditor
+     || gPendingNewGameSettings.levelCapOff)
         gSaveBlock1Ptr->achievementsBlocked = TRUE;
 }
 

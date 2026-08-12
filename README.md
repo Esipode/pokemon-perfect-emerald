@@ -7,7 +7,7 @@
 - Day/Night cycle system with time-based wild Pokémon encounters
 - Mega Evolution, Z Moves, and Terastalization features (unlock at various points as you progress)
 - Achievements & Boosts
-    - Player can earn achievements by completing certain tasks (Total: 215 Achievements)
+	- Player can earn achievements by completing certain tasks (Total: 215 Achievements)
 	- Achievements persist across all playthroughs (Even if you start a new game)
 	- Once the first playthrough is completed (Elite 4 defeated), the player can spend points earned from achievements on "boosts". These are bonuses/tweaks than can be used on any subsequent playthroughs.
 - Difficulty Settings (Easy/Normal/Hard)
@@ -19,10 +19,16 @@
 	- Both wild and trainer Pokémon are higher levels per NG+ cycle
 	- Trainer parties get updated per NG+ cycle to have more Pokémon (Or if the party is already full, sometimes Legendary Pokémon)
 	- Level cap increases by 75 per NG+ cycle (Up to a max of 1000)
+- Pokemon Storage
+	- Doubled Pokémon PC space, from 420 slots to 840. Not enough for a living dex, but enough to have every final evolution for every Pokémon in gens 1-9, with room for at least the next 2 generations (10 & 11, possibly 12).
+	- When starting a new playthrough, you can carry your Pokemon over to the next playthrough, where they will not be withdrawable until you complete the Elite 4 in the new playthrough.
+- Player customization
+	- You can customize the colours of various aspects of your player character
+	- This is visible in the overworld, as well as in battles
 - Revamped trainer AI
 	- By default trainers now don't pick moves with no advantage to them
 	- Smarter trainer options for story encounters that are more aware of the current state of the battle and their options
-    - Story event trainers have been hand-crafted to be more challenging and engaging
+	- Story event trainers have been hand-crafted to be more challenging and engaging
 - Level caps based on story progress (Never over-level for content - Can be toggled off in options)
 - First (non-fainted) Pokémon in party follows player in overworld
 - Upgraded Pokédex
@@ -39,7 +45,7 @@
 	- If a Pokémon faints, it is immediately removed from the party after battle
 	- Upon Whiteout with an empty party, the save file is wiped immediately (achievements/boosts are unaffected), and the player is asked whether to begin a new run or return to the title screen
 	- Players are forced to give nicknames to their Pokémon (You cannot pick the default name either)
-    - Breeding Pokémon is disabled in this mode
+	- Breeding Pokémon is disabled in this mode
 - Auto-Battle Mode
 	- Allows AI to do your battles for you (uses a simple AI so you can't brute-force challenging encounters)
 	- Comes with two options: `Wild` AI battles and `Trainer` AI battles, which can be toggled separately
@@ -49,16 +55,16 @@
 - Autosave Mode
 	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
 - Auto-skip dialogue
-    - When enabled, message boxes automatically continue without player input
+	- When enabled, message boxes automatically continue without player input
 
 ## Minor features
 - Breeding Improvements
 	- Level 1 eggs
-    - Poké Ball inheriting
-    - Egg Move Transfer
-    - Nature inheriting 100% of the time with Everstone
+	- Poké Ball inheriting
+	- Egg Move Transfer
+	- Nature inheriting 100% of the time with Everstone
 - Dexnav
-    - Available from pause menu after receiving Pokédex
+	- Available from pause menu after receiving Pokédex
 	- Allows target-farming specific Pokémon on a route for specific moves/abilities
 	- Increases shiny encounter chance as chain increases (Max chain = 250)
 - Add critical capture chance when throwing Pokéball
@@ -67,11 +73,11 @@
 ## Quality of life improvements
 - TM/HM changes
 	- Do not need to teach HM moves to party, only need badge/story requirement to use them in overworld
-    - Fly is accessed from the map in the Pokenav upon getting the 6th gym badge
-    - Flash happens automatically in dark areas upon receiving HM Flash and getting 2nd gym badge
+	- Fly is accessed from the map in the Pokenav upon getting the 6th gym badge
+	- Flash happens automatically in dark areas upon receiving HM Flash and getting 2nd gym badge
 - Quick Pokéball selection in wild battles
 	- Hold `R` to change selection with the D-Pad.
-    - Press `R` to use last selected Poké Ball.
+	- Press `R` to use last selected Poké Ball.
 - Sort items in your bag by pressing `START` and selecting a sort type
 - New location transition animation, shows in-game time in bottom right corner 
 - Max level Pokémon can still earn EVs

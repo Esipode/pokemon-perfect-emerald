@@ -2736,9 +2736,12 @@ void Achievement_CheckEconomyCompletionMilestones(void)
 // Achievement_RecordReviveUsed hook).
 
 // The seven New Game Settings that make a run harder (explicit state only,
-// never incidental behaviour). Debug Mode is
-// deliberately excluded -- it doesn't make a run harder, it makes it
-// ineligible (achievementsBlocked).
+// never incidental behaviour). Debug Mode is deliberately excluded -- it
+// doesn't make a run harder, it makes it ineligible (achievementsBlocked).
+// Stat Editor and Level Cap Off are counted here only in their harder state
+// (disallowed / still on); flipping either the other way sets
+// achievementsBlocked too, same as Debug Mode -- see
+// ApplyPendingNewGameSettings, src/new_game_settings_menu.c.
 static u8 Achievement_CountChallengeModifiers(void)
 {
     u8 count = 0;
