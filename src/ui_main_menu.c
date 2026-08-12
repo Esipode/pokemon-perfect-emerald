@@ -21,6 +21,7 @@
 #include "menu_helpers.h"
 #include "palette.h"
 #include "party_menu.h"
+#include "player_customization.h"
 #include "scanline_effect.h"
 #include "script.h"
 #include "sound.h"
@@ -667,18 +668,28 @@ static bool8 MainMenu_LoadGraphics(void) // Load all the tilesets, tilemaps, spr
     {
         if(gSaveBlock2Ptr->playerGender == MALE)
         {
+            const u16 *mugshotPal = PlayerCustomization_GetMainMenuMugshotPaletteOverride(MALE, sBrendanMugshot_Pal);
+            struct SpritePalette spritePal = sSpritePal_BrendanMugshot;
+
             LoadCompressedSpriteSheet(&sSpriteSheet_IconBox);
             LoadSpritePalette(&sSpritePal_IconBox);
             LoadCompressedSpriteSheet(&sSpriteSheet_BrendanMugshot);
-            LoadSpritePalette(&sSpritePal_BrendanMugshot);
+            if (mugshotPal != NULL)
+                spritePal.data = mugshotPal;
+            LoadSpritePalette(&spritePal);
             LoadPalette(sMainBgPalette, 0, 32);
         }
         else
         {
+            const u16 *mugshotPal = PlayerCustomization_GetMainMenuMugshotPaletteOverride(FEMALE, sMayMugshot_Pal);
+            struct SpritePalette spritePal = sSpritePal_MayMugshot;
+
             LoadCompressedSpriteSheet(&sSpriteSheet_IconBoxFem);
             LoadSpritePalette(&sSpritePal_IconBoxFem);
             LoadCompressedSpriteSheet(&sSpriteSheet_MayMugshot);
-            LoadSpritePalette(&sSpritePal_MayMugshot);
+            if (mugshotPal != NULL)
+                spritePal.data = mugshotPal;
+            LoadSpritePalette(&spritePal);
             LoadPalette(sMainBgPaletteFem, 0, 32);
         }
         LoadPalette(sScrollBgPalette, 16, 32);

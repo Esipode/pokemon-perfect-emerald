@@ -17,6 +17,11 @@
 
 static EWRAM_DATA u16 sOwPaletteBuffer[16] = {0};
 static EWRAM_DATA u16 sTrainerPaletteBuffer[16] = {0};
+static EWRAM_DATA u16 sMainMenuMugshotPaletteBuffer[16] = {0};
+
+// The battle-transition mugshot BG is just a 6-colour gradient (no separate
+// hair/hat/outfit regions to map), so it's recoloured as one block.
+static const u8 sBattleTransitionBgIndices[] = {0, 1, 2, 3, 4, 5};
 
 // raw byte -> hue step (0-15) + signed shade offset (SHADE_MIN..SHADE_MAX).
 // 0x00 must decode to (hue = 0, shade = 0) so old saves stay vanilla.
@@ -251,6 +256,48 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
 u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region)
 {
     return sPlayerColorRegions[gender][region].owIndices[0];
+}
+
+const u16 *PlayerCustomization_GetMainMenuMugshotPaletteOverride(u8 gender, const u16 *basePal)
+{
+    u32 i;
+
+    if (PlayerCustomization_IsDefault())
+        return NULL;
+
+    for (i = 0; i < 16; i++)
+        sMainMenuMugshotPaletteBuffer[i] = basePal[i];
+
+    for (i = 0; i < PLAYER_COLOR_REGION_COUNT; i++)
+    {
+        const struct PlayerColorRegionInfo *info = &sMainMenuMugshotColorRegions[gender][i];
+        u8 hue;
+        s8 shade;
+
+        GetRegionChoice(i, &hue, &shade);
+        ApplyRegionToPalette(sMainMenuMugshotPaletteBuffer, info->owIndices, info->numOwIndices, hue, shade);
+    }
+
+    return sMainMenuMugshotPaletteBuffer;
+}
+
+void PlayerCustomization_GetBattleTransitionMugshotBgPalette(const u16 *basePal, u16 *dest)
+{
+    u8 hue;
+    s8 shade;
+    u32 i;
+
+    for (i = 0; i < 6; i++)
+        dest[i] = basePal[i];
+
+    if (PlayerCustomization_IsDefault())
+        return;
+
+    // Not character art -- just a themed background gradient -- so there are
+    // no separate hair/hat/outfit regions to map. OUTFIT stands in as the
+    // player's overall "theme colour" for the whole gradient.
+    GetRegionChoice(PLAYER_COLOR_REGION_OUTFIT, &hue, &shade);
+    ApplyRegionToPalette(dest, sBattleTransitionBgIndices, ARRAY_COUNT(sBattleTransitionBgIndices), hue, shade);
 }
 
 void PlayerCustomization_BuildPreviewPalette(u8 gender, const u8 *choices, u16 *dest)

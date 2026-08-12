@@ -60,4 +60,22 @@ void PlayerCustomization_BuildPreviewPalette(u8 gender, const u8 *choices, u16 *
 // of sPlayerColorRegions (which is private to src/player_customization.c).
 u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region);
 
+// Stage 8 (Customization.md): recolours for the remaining player appearances
+// that each use their own separate 16-colour palette (not the overworld or
+// trainer-pic ones Stages 2/4 already cover). Same "NULL unless customised"
+// contract as PlayerCustomization_GetOwPaletteOverride -- callers copy the
+// result immediately. `basePal` is the caller's own ROM palette (these
+// palettes are local statics in their respective source files, so they
+// aren't accessible from here); `gender` selects which region mapping and
+// save-block colours to apply -- callers already branch on gender to pick
+// basePal, so pass gSaveBlock2Ptr->playerGender through.
+const u16 *PlayerCustomization_GetMainMenuMugshotPaletteOverride(u8 gender, const u16 *basePal);
+
+// The battle-transition mugshot background is a plain 6-colour gradient
+// (graphics/battle_transitions/brendan_bg.pal / may_bg.pal), not character
+// art with separate hair/hat/outfit regions, so this recolours the whole
+// gradient by the player's OUTFIT hue/shade as a stand-in "theme colour"
+// rather than doing a per-region mapping. `dest` must hold at least 6 u16s.
+void PlayerCustomization_GetBattleTransitionMugshotBgPalette(const u16 *basePal, u16 *dest);
+
 #endif // GUARD_PLAYER_CUSTOMIZATION_H

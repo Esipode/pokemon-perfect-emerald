@@ -13,6 +13,7 @@
 #include "malloc.h"
 #include "overworld.h"
 #include "palette.h"
+#include "player_customization.h"
 #include "random.h"
 #include "scanline_effect.h"
 #include "sound.h"
@@ -2287,7 +2288,11 @@ static bool8 Mugshot_SetGfx(struct Task *task)
         mugshotColor = MUGSHOT_COLOR_PURPLE;
 
     LoadPalette(sOpponentMugshotsPals[mugshotColor], BG_PLTT_ID(15), PLTT_SIZE_4BPP);
-    LoadPalette(sPlayerMugshotsPals[gSaveBlock2Ptr->playerGender], BG_PLTT_ID(15) + 10, PLTT_SIZEOF(6));
+    {
+        u16 playerBgPal[6];
+        PlayerCustomization_GetBattleTransitionMugshotBgPalette(sPlayerMugshotsPals[gSaveBlock2Ptr->playerGender], playerBgPal);
+        LoadPalette(playerBgPal, BG_PLTT_ID(15) + 10, PLTT_SIZEOF(6));
+    }
 
     for (i = 0; i < 20; i++)
     {
