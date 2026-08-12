@@ -11,6 +11,7 @@ struct NewGameSettings
     bool8 allowStatEditor;
     bool8 levelCapOff;      // Same polarity as FLAG_LEVEL_CAP_OFF (flag ON means the level cap is disabled)
     bool8 debugMode;
+    u8 monoType;            // TYPE_NONE ("OFF") or one of the 18 real types; see mono_type.h
 };
 
 extern struct NewGameSettings gPendingNewGameSettings;

@@ -52,6 +52,9 @@
 - Randomizer Mode
 	- Every starter choice, wild encounter, and trainer battle can be randomized
 	- You can also randomize moves and types (separately)
+- Mono Type Mode
+	- Commit to a single Pokémon type for the whole playthrough
+	- Obtaining any Pokémon not matching the set type is disabled
 - Autosave Mode
 	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
 - Auto-skip dialogue

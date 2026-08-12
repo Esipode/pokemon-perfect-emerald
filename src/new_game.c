@@ -395,7 +395,7 @@ void NewGameInitData(void)
         optionsBackup = Alloc(sizeof(u16));
         memcpy(optionsBackup, (u8 *)gSaveBlock2Ptr + 0x14, sizeof(u16));
         /* Backup a few SaveBlock1 player settings stored in SaveBlock1 */
-        playerSettingsBackup = Alloc(4);
+        playerSettingsBackup = Alloc(5);
         ((u8 *)playerSettingsBackup)[0] = gSaveBlock1Ptr->nuzlockeModeEnabled;
         ((u8 *)playerSettingsBackup)[1] = gSaveBlock1Ptr->autosaveModeEnabled;
         ((u8 *)playerSettingsBackup)[2] = gSaveBlock1Ptr->difficulty;
@@ -405,6 +405,10 @@ void NewGameInitData(void)
         // this, a run that got permanently blocked by opening the debug menu
         // would come back clean (unblocked) on its next NG+ cycle.
         ((u8 *)playerSettingsBackup)[3] = gSaveBlock1Ptr->achievementsBlocked;
+        // monoTypeSetting actually lives in SaveBlock2, which ClearSav1() below
+        // never touches, so this isn't strictly needed for correctness -- kept
+        // here anyway so the challenge run's settings are backed up as one group.
+        ((u8 *)playerSettingsBackup)[4] = gSaveBlock2Ptr->monoTypeSetting;
 
         gIsNewGamePlus = FALSE; // consume flag
     }
@@ -588,6 +592,7 @@ void NewGameInitData(void)
                 gSaveBlock1Ptr->autosaveModeEnabled = ((u8 *)playerSettingsBackup)[1];
                 gSaveBlock1Ptr->difficulty = ((u8 *)playerSettingsBackup)[2];
                 gSaveBlock1Ptr->achievementsBlocked = ((u8 *)playerSettingsBackup)[3];
+                gSaveBlock2Ptr->monoTypeSetting = ((u8 *)playerSettingsBackup)[4];
             }
 
             if (roamersBackup != NULL)
