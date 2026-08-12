@@ -13,6 +13,7 @@ struct NewGameSettings
     bool8 debugMode;
     u8 monoType;            // TYPE_NONE ("OFF") or one of the 18 real types; see mono_type.h
     u8 monoGen;             // 0 ("OFF") or a generation 1-9; see mono_gen.h
+    bool8 limitedParty;     // Limited Party challenge: caps the party below PARTY_SIZE; see limited_party.h
 };
 
 extern struct NewGameSettings gPendingNewGameSettings;

@@ -58,6 +58,9 @@
 - Mono Gen Mode
 	- Commit to a single Pokémon generation (1-9) for the whole playthrough
 	- Obtaining any Pokémon not introduced in that generation is disabled, including evolutions
+- Limited Party Mode
+	- Party starts capped at 3 Pokémon; extra slots (up to the normal 6) are earned back from Gym Badges
+	- Does not restrict which Pokémon you may obtain, only how many you may carry at once
 - Autosave Mode
 	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
 - Auto-skip dialogue
