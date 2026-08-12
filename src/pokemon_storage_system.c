@@ -16,6 +16,7 @@
 #include "item.h"
 #include "item_icon.h"
 #include "item_menu.h"
+#include "limited_party.h"
 #include "mail.h"
 #include "main.h"
 #include "menu.h"
@@ -111,6 +112,7 @@ enum {
     MSG_CHANGED_TO_ITEM,
     MSG_CANT_STORE_MAIL,
     MSG_LOCKED_UNTIL_CHAMPION,
+    MSG_PARTY_SLOT_LOCKED,
 };
 
 // IDs for how to resolve variables in the above messages
@@ -1111,6 +1113,7 @@ static const struct StorageMessage sMessages[] =
     // wrapped across 3 short lines instead of the 2 long ones it started as, which
     // is too wide for the window and just runs off the edge.
     [MSG_LOCKED_UNTIL_CHAMPION] = {COMPOUND_STRING("This POKéMON won't\ncome with you until\nyou defeat the LEAGUE!"), MSG_VAR_NONE},
+    [MSG_PARTY_SLOT_LOCKED]    = {COMPOUND_STRING("You can't use that\nparty slot yet!"),                          MSG_VAR_NONE},
 };
 
 static const struct WindowTemplate sYesNoWindowTemplate =
@@ -1586,7 +1589,7 @@ static void Task_PCMainMenu(u8 taskId)
             DestroyTask(taskId);
             break;
         default:
-            if (task->tInput == OPTION_WITHDRAW && CountPartyMons() == PARTY_SIZE)
+            if (task->tInput == OPTION_WITHDRAW && CountPartyMons() >= LimitedParty_GetMaxPartySize())
             {
                 // Can't withdraw
                 FillWindowPixelBuffer(0, PIXEL_FILL(1));
@@ -2268,6 +2271,7 @@ enum {
     MSTATE_ERROR_LAST_PARTY_MON,
     MSTATE_ERROR_HAS_MAIL,
     MSTATE_ERROR_LOCKED_MON,
+    MSTATE_ERROR_PARTY_SLOT_LOCKED,
     MSTATE_WAIT_ERROR_MSG,
     MSTATE_MULTIMOVE_RUN,
     MSTATE_MULTIMOVE_RUN_CANCEL,
@@ -2413,7 +2417,11 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_PLACE_MON:
-            if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            if (sCursorArea == CURSOR_AREA_IN_PARTY && sCursorPosition >= LimitedParty_GetMaxPartySize())
+            {
+                sStorage->state = MSTATE_ERROR_PARTY_SLOT_LOCKED;
+            }
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
             {
                 sStorage->state = MSTATE_ERROR_LOCKED_MON;
             }
@@ -2538,6 +2546,11 @@ static void Task_PokeStorageMain(u8 taskId)
     case MSTATE_ERROR_LOCKED_MON:
         PlaySE(SE_FAILURE);
         PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
+        sStorage->state = MSTATE_WAIT_ERROR_MSG;
+        break;
+    case MSTATE_ERROR_PARTY_SLOT_LOCKED:
+        PlaySE(SE_FAILURE);
+        PrintMessage(MSG_PARTY_SLOT_LOCKED);
         sStorage->state = MSTATE_WAIT_ERROR_MSG;
         break;
     case MSTATE_WAIT_ERROR_MSG:
@@ -2667,7 +2680,11 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_PLACE:
-            if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            if (sCursorArea == CURSOR_AREA_IN_PARTY && sCursorPosition >= LimitedParty_GetMaxPartySize())
+            {
+                sStorage->state = 8;
+            }
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
             {
                 sStorage->state = 7;
             }
@@ -2830,6 +2847,11 @@ static void Task_OnSelectedMon(u8 taskId)
         PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
         sStorage->state = 6;
         break;
+    case 8:
+        PlaySE(SE_FAILURE);
+        PrintMessage(MSG_PARTY_SLOT_LOCKED);
+        sStorage->state = 6;
+        break;
     case 6:
         if (JOY_NEW(A_BUTTON | B_BUTTON | DPAD_ANY))
         {
@@ -2903,7 +2925,7 @@ static void Task_WithdrawMon(u8 taskId)
     switch (sStorage->state)
     {
     case 0:
-        if (CalculatePlayerPartyCount() == PARTY_SIZE)
+        if (CalculatePlayerPartyCount() >= LimitedParty_GetMaxPartySize())
         {
             PrintMessage(MSG_PARTY_FULL);
             sStorage->state = 1;
@@ -3796,6 +3818,12 @@ static void Task_OnBPressed(u8 taskId)
             {
                 PlaySE(SE_FAILURE);
                 PrintMessage(MSG_HOLDING_POKE);
+                sStorage->state = 1;
+            }
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && sCursorPosition >= LimitedParty_GetMaxPartySize())
+            {
+                PlaySE(SE_FAILURE);
+                PrintMessage(MSG_PARTY_SLOT_LOCKED);
                 sStorage->state = 1;
             }
             else if (CanPlaceMon())
@@ -6309,8 +6337,8 @@ static void SetCursorInParty(void)
     else
     {
         partyCount = CalculatePlayerPartyCount();
-        if (partyCount >= PARTY_SIZE)
-            partyCount = PARTY_SIZE - 1;
+        if (partyCount >= LimitedParty_GetMaxPartySize())
+            partyCount = LimitedParty_GetMaxPartySize() - 1;
     }
     if (sStorage->cursorSprite->vFlip)
         sStorage->cursorFlipTimer = 1;
@@ -7037,7 +7065,9 @@ static bool8 CanPlaceMon(void)
 {
     if (sIsMonBeingMoved)
     {
-        if (sCursorArea == CURSOR_AREA_IN_PARTY && GetMonData(&gParties[B_TRAINER_PLAYER][sCursorPosition], MON_DATA_SPECIES) == SPECIES_NONE)
+        if (sCursorArea == CURSOR_AREA_IN_PARTY
+         && sCursorPosition < LimitedParty_GetMaxPartySize()
+         && GetMonData(&gParties[B_TRAINER_PLAYER][sCursorPosition], MON_DATA_SPECIES) == SPECIES_NONE)
             return TRUE;
         else if (sCursorArea == CURSOR_AREA_IN_BOX && GetBoxMonDataAt(StorageGetCurrentBox(), sCursorPosition, MON_DATA_SPECIES_OR_EGG) == SPECIES_NONE)
             return TRUE;
