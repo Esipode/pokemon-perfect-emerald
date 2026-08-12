@@ -16,6 +16,7 @@
 #include "task.h"
 #include "field_weather.h"
 #include "overworld.h"
+#include "mono_gen.h"
 #include "mono_type.h"
 #include "battle_main.h"
 #include "string_util.h"
@@ -669,11 +670,12 @@ void StartNewPokeballCaseUI(void)
     CreateTask(Task_OpenBirchCase, 0);
 }
 
-// VAR_RESULT = 1 when Mono Type is on, so Route101_EventScript_OpenStarterCase
-// can skip the "which generation?" prompt and jump straight to the case.
-void CheckMonoTypeStarter(void)
+// VAR_RESULT = 1 when Mono Type or Mono Gen is on, so
+// Route101_EventScript_OpenStarterCase can skip the "which generation?"
+// prompt and jump straight to the case.
+void CheckStarterGenSelectSkipped(void)
 {
-    VarSet(VAR_RESULT, MonoType_IsEnabled() ? 1 : 0);
+    VarSet(VAR_RESULT, (MonoType_IsEnabled() || MonoGen_IsEnabled()) ? 1 : 0);
 }
 
 // VAR_RESULT = 1 if the givemon/giveegg grant that just ran was skipped for

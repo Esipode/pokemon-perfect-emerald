@@ -48,6 +48,7 @@
 #include "starter_choose.h"
 #include "random.h"
 #include "pokemon.h"
+#include "mono_gen.h"
 #include "mono_type.h"
 
  /*
@@ -493,13 +494,20 @@ void InitializeStarterChoices(void)
 {
     u8 setIndex, slotIndex;
 
-    if (MonoType_IsEnabled())
+    if (MonoType_IsEnabled() || MonoGen_IsEnabled())
     {
-        // gSpecialVar_Result is pinned to 0 (Route101_EventScript_OpenStarterCaseMonoType),
+        // gSpecialVar_Result is pinned to 0 (Route101_EventScript_OpenStarterCaseNoGenSelect),
         // so only set 0 is ever shown; sets 1 and 2 are zeroed alongside it for safety.
         u16 monoSpecies[MONO_TYPE_STARTER_COUNT];
 
-        MonoType_PickStarterSpecies(monoSpecies);
+        // Canonical starters only apply when Mono Gen is on by itself - with
+        // Mono Type also on, some gen+type combos (e.g. Gen 5 + Fairy) have
+        // zero canonical matches, so fall back to the type pool, which is
+        // gen-aware via IsStarterCandidate's MonoGen_IsSpeciesAllowed check.
+        if (MonoGen_IsEnabled() && !MonoType_IsEnabled())
+            MonoGen_GetCanonicalStarters(monoSpecies);
+        else
+            MonoType_PickStarterSpecies(monoSpecies);
 
         for (setIndex = 0; setIndex < 3; setIndex++)
         {
@@ -787,8 +795,10 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
     // the ball's position in the middle row instead (first/second/third ->
     // 0/1/2), which lines up with GetStarterPokemon()'s own convention
     // (0 = grass-type starter, 1 = fire, 2 = water) and is what every
-    // VAR_STARTER_MON-driven rival battle across the game expects.
-    if (MonoType_IsEnabled())
+    // VAR_STARTER_MON-driven rival battle across the game expects. Mono Gen's
+    // canonical-only picks would resolve fine through GetStarterPokemon() too,
+    // but reusing the same handPosition path keeps both modes on one code path.
+    if (MonoType_IsEnabled() || MonoGen_IsEnabled())
         *GetVarPointer(VAR_STARTER_MON) = sBirchCaseDataPtr->handPosition - BALL_MIDDLE_FIRST;
     else
         *GetVarPointer(VAR_STARTER_MON) = wasRandomizeMon ? setIndex : GetStarterPokemon(choice->species);
@@ -1198,10 +1208,11 @@ static void Task_BirchCaseMain(u8 taskId)
 {
     u16 oldPosition = sBirchCaseDataPtr->handPosition;
 
-    // Mono type mode has no generation choice to back out to - exiting here
-    // would just reopen the same case (Route101_EventScript_OpenStarterCaseMonoType
-    // loops on VAR_0x8004 == 1), so B is a no-op instead of a flickery round-trip.
-    if (JOY_NEW(B_BUTTON) && !MonoType_IsEnabled())
+    // Mono Type and Mono Gen both skip the generation choice, so there's
+    // nowhere for B to back out to - exiting here would just reopen the same
+    // case (Route101_EventScript_OpenStarterCaseNoGenSelect loops on
+    // VAR_0x8004 == 1), so B is a no-op instead of a flickery round-trip.
+    if (JOY_NEW(B_BUTTON) && !MonoType_IsEnabled() && !MonoGen_IsEnabled())
     {
         PlaySE(SE_SELECT);
         VarSet(VAR_0x8004, 1);
