@@ -340,6 +340,16 @@ STATIC_ASSERT(sizeof(struct BoxPokemon) == 80, BoxPokemonStage5Size);
 STATIC_ASSERT(NUM_SUBSTRUCT_BYTES == 12, NumSubstructBytesStage5Size);
 STATIC_ASSERT(sizeof(struct Pokemon) == 104, PokemonStage5Size);
 
+// Baseline pin for the Trading Codes project (see "Trading Codes.md").
+// Its offline trade code payload packs these four fields into fixed bit
+// widths (species 11, level 10, name lengths as literal byte counts); a
+// change to any of them silently desyncs the codec between two carts
+// instead of failing loudly, so it's a build-time proof failure here too.
+STATIC_ASSERT(NUM_SPECIES <= 2048, TradeCodeSpecies11Bits); // fits in 11 bits
+STATIC_ASSERT(MAX_LEVEL <= 1023, TradeCodeLevel10Bits); // fits in 10 bits
+STATIC_ASSERT(POKEMON_NAME_LENGTH == 12, TradeCodePokemonNameLength);
+STATIC_ASSERT(PLAYER_NAME_LENGTH == 7, TradeCodePlayerNameLength);
+
 struct MonSpritesGfxManager
 {
     u32 numSprites:4;
