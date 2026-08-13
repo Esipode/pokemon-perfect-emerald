@@ -57,6 +57,7 @@
 #include "trade_code.h"
 #include "trade_code_display.h"
 #include "trade_code_entry.h"
+#include "trade_code_session.h"
 #include "tv.h"
 #include "pokemon_summary_screen.h"
 #include "wild_encounter.h"
@@ -386,6 +387,8 @@ static void DebugAction_TradeCode_ViewSampleOffer(u8 taskId);
 static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId);
 static void DebugAction_TradeCode_EnterOffer(u8 taskId);
 static void DebugAction_TradeCode_EnterConfirm(u8 taskId);
+static void DebugAction_TradeCode_StartSession(u8 taskId);
+static void DebugAction_TradeCode_ClearPendingTrade(u8 taskId);
 
 static void DebugAction_Achievements_GrantRevoke(u8 taskId);
 static void DebugAction_Achievements_GrantRevokeSelect(u8 taskId);
@@ -629,6 +632,8 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("View Confirm Code…"), DebugAction_TradeCode_ViewSampleConfirm },
     { COMPOUND_STRING("Enter Trade Code…"),  DebugAction_TradeCode_EnterOffer },
     { COMPOUND_STRING("Enter Confirm Code…"), DebugAction_TradeCode_EnterConfirm },
+    { COMPOUND_STRING("Start Trade Code Session…"), DebugAction_TradeCode_StartSession },
+    { COMPOUND_STRING("Clear Pending Trade…"), DebugAction_TradeCode_ClearPendingTrade },
     { NULL }
 };
 
@@ -1834,13 +1839,15 @@ static void DebugAction_Player_OpenPaletteMenu(u8 taskId)
 // strings, not derived from a real TradeCode_Encode call, so the display
 // screen can be exercised independently of Stages 2/3/7 actually being
 // wired together yet. Sized to TRADE_CODE_MAX_CHARS' own worst-case
-// derivation (see include/config/trade_code.h): 86 symbols, 17 hyphens, 103
+// derivation (see include/config/trade_code.h): 87 symbols, 17 hyphens, 104
 // characters - specifically to exercise Stage 5's own acceptance line,
 // "verify a 78-character code renders without clipping on real hardware"
-// (now 103 chars, post Stage 2's 8-bits/character name-field fix).
+// (now 104 chars, post Stage 2's 8-bits/character name-field fix and
+// Stage 7's byte-alignment pad before the seal - see include/config/
+// trade_code.h's own TRADE_CODE_MAX_CHARS comment).
 static const u8 sDebugTradeCode_SampleOffer[] = _(
     "01234-56789-ABCDE-FGHJK-MNPQR-STVWX-YZ012-34567-89ABC-DEFGH-"
-    "JKMNP-QRSTV-WXYZ0-12345-6789A-BCDEF-GHJKM-N");
+    "JKMNP-QRSTV-WXYZ0-12345-6789A-BCDEF-GHJKM-N0");
 
 // A confirm code is always exactly TRADE_CODE_CONFIRM_CHARS (6) characters,
 // one group, no hyphens - see the payload spec.
@@ -1872,9 +1879,12 @@ static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId)
 // codec only, independent of Stages 3/4/7's session/seal/replay logic,
 // which don't exist yet from this debug entry point's perspective.
 static struct TradeCodeBits sDebugTradeCodeEntryBits;
-// Sized to the same 428-bit worst-case payload TRADE_CODE_MAX_CHARS itself
-// is derived from (include/config/trade_code.h) - 54 bytes.
-static u8 sDebugTradeCodeEntryBuffer[54];
+// Sized to the same 432-bit worst-case payload TRADE_CODE_MAX_CHARS itself
+// is derived from (include/config/trade_code.h) - 55 bytes (>= 87 symbols
+// * 5 bits = 435 decoded bits, matching src/trade_code_entry.c's own
+// TRADE_CODE_ENTRY_SCRATCH_BYTES for the same reason - see that file's own
+// comment on TRADE_CODE_ENTRY_MAX_SYMBOLS for why this grew from 86/54).
+static u8 sDebugTradeCodeEntryBuffer[55];
 static enum TradeCodeEntryStatus sDebugTradeCodeEntryStatus;
 
 static void DebugAction_TradeCode_EnterOfferThenShow(void)
@@ -1921,6 +1931,34 @@ static void DebugAction_TradeCode_EnterConfirm(u8 taskId)
     sDebugTradeCodeEntryBits.data = sDebugTradeCodeEntryBuffer;
     sDebugTradeCodeEntryBits.capacity = sizeof(sDebugTradeCodeEntryBuffer) * 8;
     TradeCodeEntry_Init(&sDebugTradeCodeEntryBits, TRADE_CODE_CONFIRM_CHARS, NULL, &sDebugTradeCodeEntryStatus, DebugAction_TradeCode_EnterConfirmThenShow);
+}
+
+// Stage 7 testing aid: the real entry point (src/trade_code_session.c),
+// exercising Steps 1-3 end to end - party gate, mon selection, offer code,
+// partner-code entry + preview, and the irreversible commit + force-save +
+// confirm code reveal. Debug_DestroyMenu_Full only tears down the debug
+// menu's own window/task and never touches gMain.callback2 (see that
+// function) - CB2_Overworld is still active here, exactly the precondition
+// TradeCodeSession_Start's own top-of-file comment documents needing.
+static void DebugAction_TradeCode_StartSession(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    TradeCodeSession_Start();
+}
+
+// Testing aid only: resets a COMMITTED (or any other) pending trade back to
+// TRADE_CODE_STATE_NONE, so Stage 7's own commit flow can be exercised
+// repeatedly from one save file without needing a fresh save each time.
+// Stage 9 (reset-resistant re-entry) doesn't exist yet, so nothing else in
+// the game currently reacts to a COMMITTED pendingTrade left over from a
+// prior test run - but clearing it here keeps testing honest rather than
+// relying on that gap. Zeroes the whole struct (not just .state), mirroring
+// Stage 4's own SetDefaultOptions() reset (src/new_game.c).
+static void DebugAction_TradeCode_ClearPendingTrade(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
+    SetMainCallback2(CB2_ReturnToField);
 }
 
 // *******************************

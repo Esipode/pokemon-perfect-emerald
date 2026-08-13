@@ -33,13 +33,22 @@
 
 //==========DEFINES==========//
 // Matches TRADE_CODE_MAX_CHARS' own derivation (include/config/trade_code.h)
-// minus hyphens/EOS: 428 worst-case payload bits -> 86 Base32 symbols. The
-// raw (unhyphenated) symbol buffer is sized to this rather than
-// TRADE_CODE_MAX_CHARS itself, which already budgets for hyphens this
-// buffer doesn't store (they're inserted only at display time). Declared
-// ahead of struct TradeCodeEntryResources below, which sizes two of its
-// own fields off these.
-#define TRADE_CODE_ENTRY_MAX_SYMBOLS 86
+// minus hyphens/EOS, bumped from Stage 5's original 428/86 figure by Stage
+// 7 (src/trade_code_session.c): building a real offer code turned out to
+// need a byte-aligned pad between the mon payload and the seal (see
+// TradeCodeSession_BuildOffer's own comment for why - TradeCode_SealOffer
+// hashes whole bytes, so anything less than byte alignment leaves the
+// seal's own documented "trailing bits must be zero" precondition
+// unsatisfiable between an honest sender and a receiver holding the real
+// decoded bytes). The worst case's own header+mon total (396 bits) needs
+// up to 4 pad bits to reach the next byte boundary, making the true
+// worst-case payload 432 bits (400 + a 32-bit seal), not 428 -> 87 Base32
+// symbols (ceil(432/5)), not 86. The raw (unhyphenated) symbol buffer is
+// sized to this rather than TRADE_CODE_MAX_CHARS itself, which already
+// budgets for hyphens this buffer doesn't store (they're inserted only at
+// display time). Declared ahead of struct TradeCodeEntryResources below,
+// which sizes two of its own fields off these.
+#define TRADE_CODE_ENTRY_MAX_SYMBOLS 87
 // ceil(TRADE_CODE_ENTRY_MAX_SYMBOLS * 5 / 8) - the decode scratch buffer
 // TradeCode_Decode writes into (see TradeCodeEntry_TrySubmit).
 #define TRADE_CODE_ENTRY_SCRATCH_BYTES ((TRADE_CODE_ENTRY_MAX_SYMBOLS * 5 + 7) / 8)

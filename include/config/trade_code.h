@@ -28,10 +28,13 @@
 // whose buffer this sizes): header-minus-presence (formatVersion 4 +
 // codeKind 2 + nonce 16 = 22, Stage 7) + worst-case mon payload (presence 8
 // + 93 bits of always-present core/OT-name + 214 bits of every optional
-// field present = 374, see TradeCode_SerializeMon) + seal (32) = 428 bits
-// -> 86 Base32 symbols -> 17 group hyphens -> 103 displayed characters.
-// 112 leaves a little headroom without wasting much EWRAM (the display and
-// entry screens' buffers are both sized off this).
+// field present = 374, see TradeCode_SerializeMon) + seal (32) = 428 bits.
+// Stage 7 (src/trade_code_session.c) then had to insert a byte-alignment
+// pad between the mon payload and the seal (TradeCode_SealOffer hashes
+// whole bytes - see TradeCodeSession_BuildOffer's own comment), pushing
+// the true worst case to 432 bits -> 87 Base32 symbols -> 17 group hyphens
+// -> 104 displayed characters. 112 still comfortably covers this (the
+// display and entry screens' buffers are both sized off this).
 #define TRADE_CODE_MAX_CHARS 112
 
 // Codes are displayed/entered in hyphen-separated groups of this many
