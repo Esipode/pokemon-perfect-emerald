@@ -1951,18 +1951,19 @@ static void DebugAction_TradeCode_StartSession(u8 taskId)
 }
 
 // Stage 8 testing aid (src/trade_code_receive.c): Step 4, entering the
-// confirm code and materialising a COMMITTED pendingTrade. Since Stage 9's
-// boot-time reset-resistant re-entry doesn't exist yet, this is the only
-// way to reach Step 4 from a save that already has a COMMITTED pending
-// trade (e.g. produced by "Start Trade Code Session..." above, run to
-// completion). TradeCodeReceive_Start guards its own "nothing pending"
+// confirm code and materialising a COMMITTED pendingTrade. This is a
+// mid-game entry point (unlike Stage 9's own boot-time reset-resistant
+// re-entry, src/overworld.c's CB2_ContinueSavedGame), so the field is
+// already loaded and running - CB2_ReturnToField is the right thing to
+// hand back to once this screen is done, same as every other debug menu
+// action here. TradeCodeReceive_Start guards its own "nothing pending"
 // case with an on-screen message rather than silently no-opping, so
 // calling it directly right after Debug_DestroyMenu_Full is safe
 // regardless of whether a trade is actually pending.
 static void DebugAction_TradeCode_ReceiveStep4(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
-    TradeCodeReceive_Start();
+    TradeCodeReceive_Start(CB2_ReturnToField);
 }
 
 // Testing aid only: resets a COMMITTED (or any other) pending trade back to

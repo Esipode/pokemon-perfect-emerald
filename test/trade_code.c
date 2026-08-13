@@ -855,3 +855,39 @@ TEST("TradeCode_IsOfferSealUsed/RecordOfferSeal: the ring rejects a repeat and e
     for (i = 0; i < TRADE_CODE_REPLAY_RING; i++)
         EXPECT(TradeCode_IsOfferSealUsed(ring, 0xA0000000 + i));
 }
+
+// Stage 9 of "Trading Codes.md": reset-resistance. Unlike Stage 4/8's own
+// UI/save-flow-orchestration logic (which the plan doc's own status blocks
+// for those stages note has no headless-testable unit beyond what Stages
+// 1-3 already cover), TradeCode_ValidatePendingBoxMon is a small pure
+// function over an already-materialised BoxPokemon - exactly the shape
+// every other Stage 1-3 primitive in this file already gets tests for.
+
+TEST("TradeCode_ValidatePendingBoxMon accepts a normal mon and rejects a bad checksum")
+{
+    struct BoxPokemon mon;
+
+    CreateBoxMon(&mon, SPECIES_PIDGEY, 30, 0x13572468, OTID_STRUCT_PRESET(0x87654321));
+    EXPECT(TradeCode_ValidatePendingBoxMon(&mon));
+
+    // Corrupt the checksum directly - the same kind of on-disk bit rot or
+    // hand-editing this function exists to catch. Poking the struct like
+    // this is exactly what TradeCode_SerializeMon itself is never allowed
+    // to do (it only reads through GetBoxMonData), but simulating real
+    // save-file corruption in a test has no other way to do it.
+    mon.checksum ^= 0xFFFF;
+    EXPECT(!TradeCode_ValidatePendingBoxMon(&mon));
+}
+
+TEST("TradeCode_ValidatePendingBoxMon rejects a species outside NUM_SPECIES")
+{
+    struct BoxPokemon mon;
+    u16 badSpecies = NUM_SPECIES; // one past the last valid species
+
+    CreateBoxMon(&mon, SPECIES_PIDGEY, 30, 0x13572468, OTID_STRUCT_PRESET(0x87654321));
+    // SetBoxMonData recomputes the checksum after the write, so this stays
+    // checksum-valid - isolates the species-range check from the checksum
+    // check the previous test already covers.
+    SetBoxMonData(&mon, MON_DATA_SPECIES, &badSpecies);
+    EXPECT(!TradeCode_ValidatePendingBoxMon(&mon));
+}

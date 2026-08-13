@@ -56,6 +56,20 @@
 // is deliberate - see the plan doc's own precedent for this kind of
 // honestly-flagged, small lossy tradeoff (Stage 2's personality/exp
 // quantisation).
+//
+// gSaveBlock2Ptr->pendingTrade.abandonedCount (struct PendingTrade, Stage
+// 4) is intentionally never written by this file. Stage 4 added it
+// anticipating Stage 11's own "abandoned-trade counter... soft social
+// deterrent" bullet, and an earlier draft of this file's own give-up path
+// (Stage 9, below) incremented it. Dropped after a design discussion: a
+// save file is trivially duplicable outside the game entirely, so nothing
+// here can actually stop a determined duper, and a player who trips the
+// give-up path is at least as likely to be the one who got ghosted as the
+// one doing the ghosting - tracking/surfacing it would punish the wrong
+// population to deter a threat it doesn't even catch. The field itself is
+// left in place (removing it would touch struct SaveBlock2's layout and
+// test/save.c's own size pin for no functional gain) but is now dead
+// weight - always zero, read by nothing.
 
 // TradeCodeEntry_Init's own outBits target for the confirm-code field:
 // TRADE_CODE_CONFIRM_CHARS (6) symbols * 5 bits = 30 bits, rounded up to a
@@ -64,6 +78,7 @@
 
 struct TradeCodeReceiveState
 {
+    MainCallback returnCallback; // Stage 9: see include/trade_code_receive.h
     struct TradeCodeBits entryBits;
     u8 entryScratch[TRADE_CODE_RECEIVE_CONFIRM_SCRATCH_BYTES];
     enum TradeCodeEntryStatus entryStatus;
@@ -80,9 +95,15 @@ static void TradeCodeReceive_ShowEntry(void);
 static enum TradeCodeEntryStatus TradeCodeReceive_ValidateConfirmEntry(struct TradeCodeBits *decoded);
 static void TradeCodeReceive_DoSwap(void);
 static void TradeCodeReceive_CheckEvolution(void);
-static void TradeCodeReceive_SaveAndFinish(void);
+static void TradeCodeReceive_ClearPendingTradeFields(void);
+static void TradeCodeReceive_SaveThenFinish(void);
+static void TradeCodeReceive_FinishToReturnCallback(void);
+static void TradeCodeReceive_ShowGiveUpPrompt(void);
+static void TradeCodeReceive_DoGiveUp(void);
 static void CB2_TradeCodeReceive_AfterNoTradeAck(void);
+static void CB2_TradeCodeReceive_AfterCorruptAck(void);
 static void CB2_TradeCodeReceive_AfterConfirmEntry(void);
+static void CB2_TradeCodeReceive_AfterGiveUpPrompt(void);
 static void CB2_TradeCodeReceive_AfterSentOverMsg(void);
 static void CB2_TradeCodeReceive_AfterTakeCareMsg(void);
 static void CB2_TradeCodeReceive_AfterBoxMsg(void);
@@ -91,6 +112,17 @@ static void CB2_TradeCodeReceive_AfterSaveFailedAck(void);
 
 //==========CONST=DATA==========//
 static const u8 sText_NoTradeAwaiting[]  = _("There's no trade code waiting\nto be completed.");
+// Stage 9: shown when gSaveBlock2Ptr->pendingTrade.incoming fails
+// TradeCode_ValidatePendingBoxMon on resume (a corrupted save sector, or a
+// hand-tampered one) - see this file's own CB2_TradeCodeReceive_AfterCorruptAck.
+static const u8 sText_TradeCodeCorrupt[] = _("Something went wrong with a\npending trade. It's been cancelled.");
+// Stage 9: the one way out of a COMMITTED trade, reached by pressing B on
+// an empty confirm-code field - see include/trade_code_receive.h's own
+// comment on TradeCodeReceive_Start for why this exists at all. Defaults
+// to NO (TradeCodeReceive_ShowGiveUpPrompt's own TradeCodePrompt_Init
+// call) - this is the irreversible half of an already-irreversible step,
+// and an accidental double-B-then-A must not be able to confirm it.
+static const u8 sText_ConfirmGiveUp[] = _("Give up on this trade?\nYou will not get {STR_VAR_1}.");
 // Split into two short messages rather than one \p-paged one - mirrors
 // vanilla's own two-message split for this exact moment (src/trade.c's
 // STATE_SEND_MSG/STATE_TAKE_CARE_OF_MON, gText_XSentOverY/gText_TakeGood
@@ -104,16 +136,17 @@ static const u8 sText_TakeGoodCareOfIt[] = _("Take good care of\n{STR_VAR_2}!");
 static const u8 sText_SentToBox[]     = _("Your party is full, so\n{STR_VAR_2} was sent to a Box.");
 
 //==========UI=SETUP==========//
-void TradeCodeReceive_Start(void)
+void TradeCodeReceive_Start(MainCallback returnCallback)
 {
     struct TradeCodeReceiveState *s;
 
     if ((s = AllocZeroed(sizeof(struct TradeCodeReceiveState))) == NULL)
     {
-        SetMainCallback2(CB2_ReturnToField);
+        SetMainCallback2(returnCallback);
         return;
     }
     sTradeCodeReceivePtr = s;
+    s->returnCallback = returnCallback;
 
     // Shouldn't be reachable through the real entry point once Stage 10
     // gates it behind this same state check, but the debug menu can call
@@ -125,14 +158,41 @@ void TradeCodeReceive_Start(void)
         return;
     }
 
+    // Stage 9: guard against a corrupted or hand-tampered pendingTrade
+    // before it's ever handed to the entry screen/preview/party-insert
+    // machinery below - see TradeCode_ValidatePendingBoxMon's own comment
+    // (include/trade_code.h) for exactly what this checks. Checked here,
+    // inside the one real entry point, rather than only at the Stage 9
+    // boot-hook call site (src/overworld.c) - the debug menu's own "Receive
+    // Trade Code (Step 4)..." action reaches this exact code path too, and
+    // deserves the same protection.
+    {
+        struct BoxPokemon incoming;
+        memcpy(&incoming, gSaveBlock2Ptr->pendingTrade.incoming, sizeof(incoming));
+        if (!TradeCode_ValidatePendingBoxMon(&incoming))
+        {
+            TradeCodePrompt_Init(sText_TradeCodeCorrupt, FALSE, FALSE, &s->promptResult, CB2_TradeCodeReceive_AfterCorruptAck);
+            return;
+        }
+    }
+
     TradeCodeReceive_ShowEntry();
 }
 
 static void CB2_TradeCodeReceive_AfterNoTradeAck(void)
 {
-    Free(sTradeCodeReceivePtr);
-    sTradeCodeReceivePtr = NULL;
-    SetMainCallback2(CB2_ReturnToField);
+    TradeCodeReceive_FinishToReturnCallback();
+}
+
+// Stage 9: pendingTrade.incoming failed TradeCode_ValidatePendingBoxMon.
+// Never materialised - cleared back to TRADE_CODE_STATE_NONE (keeping the
+// replay ring, same selective-clear as everywhere else in this feature)
+// and force-saved so the error doesn't keep reappearing on every future
+// boot once it's actually fixed.
+static void CB2_TradeCodeReceive_AfterCorruptAck(void)
+{
+    TradeCodeReceive_ClearPendingTradeFields();
+    TradeCodeReceive_SaveThenFinish();
 }
 
 static void TradeCodeReceive_ShowEntry(void)
@@ -179,16 +239,67 @@ static void CB2_TradeCodeReceive_AfterConfirmEntry(void)
         // message and loops the player back into the same field without
         // ever reaching this callback (see trade_code_entry.h's own
         // contract, and Stage 7's trade_code_session.c for the identical
-        // reasoning at its own offer-entry callback). There's nothing to
-        // cancel back to here either way - the offered mon already left in
-        // Step 3, and the doc's own "Lock-in" wording is explicit that no
-        // cancel affordance exists once COMMITTED - so just reopen the
-        // field.
-        TradeCodeReceive_ShowEntry();
+        // reasoning at its own offer-entry callback).
+        //
+        // Step 4 has no ordinary "cancel" - the offered mon already left
+        // in Step 3, and the doc's own "Lock-in" wording is explicit that
+        // no cancel affordance exists once COMMITTED. But Stage 9's own
+        // dev note raises a real, separate problem an unconditional
+        // "just reopen the field" doesn't solve: a partner who never sends
+        // back a valid confirm code would leave this player stuck
+        // re-entering this exact screen every single boot, forever, with
+        // no way out at all. Offer the one honest way out instead -
+        // forfeit the trade - rather than none.
+        TradeCodeReceive_ShowGiveUpPrompt();
         return;
     }
 
     TradeCodeReceive_DoSwap();
+}
+
+// Stage 9: see include/trade_code_receive.h's own comment on
+// TradeCodeReceive_Start for why this exists.
+static void TradeCodeReceive_ShowGiveUpPrompt(void)
+{
+    struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
+    struct BoxPokemon boxMon;
+
+    memcpy(&boxMon, gSaveBlock2Ptr->pendingTrade.incoming, sizeof(boxMon));
+    GetBoxMonData(&boxMon, MON_DATA_NICKNAME, gStringVar1);
+    StripExtCtrlCodes(gStringVar1);
+    // TradeCodePrompt_Init doesn't expand placeholders itself - see this
+    // file's own TradeCodeReceive_DoSwap for the identical reasoning.
+    StringExpandPlaceholders(gStringVar4, sText_ConfirmGiveUp);
+    TradeCodePrompt_Init(gStringVar4, TRUE, TRUE, &s->promptResult, CB2_TradeCodeReceive_AfterGiveUpPrompt);
+}
+
+static void CB2_TradeCodeReceive_AfterGiveUpPrompt(void)
+{
+    struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
+
+    if (s->promptResult == TRADE_CODE_PROMPT_YES)
+        TradeCodeReceive_DoGiveUp();
+    else
+        TradeCodeReceive_ShowEntry(); // "No" - keep waiting, back to the field
+}
+
+// The forfeit itself: permanently gives up the incoming mon. There is no
+// partial undo of Step 3's escrow - both sides already gave up their own
+// mon before either received anything, per the plan doc's own protocol
+// section - so this isn't a penalty being applied on top of anything; it's
+// just acknowledging a loss that already happened on the partner's side
+// and letting the player stop being blocked by it. No counter, no record
+// of this kept anywhere - a player giving up here is at least as likely to
+// be the one who got ghosted as the one doing the ghosting, and punishing
+// that population to (ineffectually) deter a save-duplicating scammer who
+// was never going to trip this path anyway isn't the goal. Keeps the
+// replay ring: the partner's offer seal stays burned regardless of which
+// side eventually walks away, the same anti-duplication guarantee a normal
+// completion gets - that part of the fair-exchange design still holds.
+static void TradeCodeReceive_DoGiveUp(void)
+{
+    TradeCodeReceive_ClearPendingTradeFields();
+    TradeCodeReceive_SaveThenFinish();
 }
 
 // The actual Step 4 swap: build the incoming BoxPokemon into a real
@@ -264,13 +375,7 @@ static void TradeCodeReceive_DoSwap(void)
     // pendingTrade is done with, except the replay ring and Stage 11's own
     // abandonedCount - see the plan doc's own Stage 8 bullet ("Clear
     // pendingTrade to NONE, keeping the replay ring and abandonedCount").
-    // Individual field clears, not a whole-struct memset, specifically so
-    // those two survive.
-    memset(gSaveBlock2Ptr->pendingTrade.incoming, 0, sizeof(gSaveBlock2Ptr->pendingTrade.incoming));
-    gSaveBlock2Ptr->pendingTrade.expectedConfirmTag = 0;
-    gSaveBlock2Ptr->pendingTrade.nonce = 0;
-    gSaveBlock2Ptr->pendingTrade.partySlot = 0;
-    gSaveBlock2Ptr->pendingTrade.state = TRADE_CODE_STATE_NONE;
+    TradeCodeReceive_ClearPendingTradeFields();
 
     GetMonData(&mon, MON_DATA_OT_NAME, gStringVar1);
     StripExtCtrlCodes(gStringVar1);
@@ -345,23 +450,46 @@ static void TradeCodeReceive_CheckEvolution(void)
         return;
     }
 
-    TradeCodeReceive_SaveAndFinish();
+    TradeCodeReceive_SaveThenFinish();
 }
 
 static void CB2_TradeCodeReceive_AfterEvolution(void)
 {
-    TradeCodeReceive_SaveAndFinish();
+    TradeCodeReceive_SaveThenFinish();
 }
 
-// The second force-save (see Stage 4's TrySavingData in trade_code_
-// session.c for the first one, at Step 3's commit). Deliberately after the
-// mon is already in the party/PC and after evolution has resolved, so a
-// power cut here can't let the animation replay into a second copy - the
-// worst a reset here does is leave pendingTrade.state at COMMITTED on the
-// *saved* file with everything still (correctly) un-materialised, which
-// Stage 9's reset-resistant re-entry re-runs this exact screen against
-// again, cleanly.
-static void TradeCodeReceive_SaveAndFinish(void)
+// Individual-field clear, not a whole-struct memset, so the replay ring (and
+// the now-unused abandonedCount field, left untouched rather than reclaimed
+// - see this file's own header comment) survive - see the plan doc's own
+// Stage 8 bullet ("Clear pendingTrade to NONE, keeping the replay ring and
+// abandonedCount"). Shared by every Step-4-ends-here path this file has:
+// a real completed swap (TradeCodeReceive_DoSwap), Stage 9's give-up
+// forfeit (TradeCodeReceive_DoGiveUp), and Stage 9's corrupted-pendingTrade
+// recovery (CB2_TradeCodeReceive_AfterCorruptAck) - all three want the
+// exact same fields cleared, they just differ in what (if anything) they
+// do around the clear.
+static void TradeCodeReceive_ClearPendingTradeFields(void)
+{
+    memset(gSaveBlock2Ptr->pendingTrade.incoming, 0, sizeof(gSaveBlock2Ptr->pendingTrade.incoming));
+    gSaveBlock2Ptr->pendingTrade.expectedConfirmTag = 0;
+    gSaveBlock2Ptr->pendingTrade.nonce = 0;
+    gSaveBlock2Ptr->pendingTrade.partySlot = 0;
+    gSaveBlock2Ptr->pendingTrade.state = TRADE_CODE_STATE_NONE;
+}
+
+// The force-save shared by every path through this file that ends by
+// handing control back out (see Stage 4's TrySavingData in trade_code_
+// session.c for the *first* force-save, at Step 3's commit - this is
+// always the second, and for Stage 9's give-up/corrupt-clear paths, the
+// only one). Deliberately after every RAM mutation the calling path makes
+// (the mon already in the party/PC and evolution resolved, for a real
+// swap; pendingTrade already cleared, for give-up or corrupt-clear) - a
+// power cut before this succeeds can't lose or duplicate anything, since
+// the *saved* file simply doesn't reflect whatever RAM-only change was in
+// progress yet, and Stage 9's own reset-resistant boot hook re-runs
+// whichever path was interrupted from scratch, cleanly, the next time the
+// game boots.
+static void TradeCodeReceive_SaveThenFinish(void)
 {
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
     u8 saveStatus = TrySavingData(SAVE_NORMAL);
@@ -372,9 +500,7 @@ static void TradeCodeReceive_SaveAndFinish(void)
         return;
     }
 
-    Free(s);
-    sTradeCodeReceivePtr = NULL;
-    SetMainCallback2(CB2_ReturnToField);
+    TradeCodeReceive_FinishToReturnCallback();
 }
 
 static void CB2_TradeCodeReceive_AfterSaveFailedAck(void)
@@ -384,6 +510,19 @@ static void CB2_TradeCodeReceive_AfterSaveFailedAck(void)
     // only touched gSaveBlock2Ptr/gParties in RAM - nothing reaches the
     // physical save file until TrySavingData itself succeeds - and
     // re-running the save just tries to persist that exact same state
-    // again.
-    TradeCodeReceive_SaveAndFinish();
+    // again, whichever path (swap/give-up/corrupt-clear) got here.
+    TradeCodeReceive_SaveThenFinish();
+}
+
+// Frees this screen's own state and hands control to whatever
+// TradeCodeReceive_Start was told to return to - see include/trade_code_
+// receive.h's own comment on why that's not always CB2_ReturnToField.
+static void TradeCodeReceive_FinishToReturnCallback(void)
+{
+    struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
+    MainCallback returnCallback = s->returnCallback;
+
+    Free(s);
+    sTradeCodeReceivePtr = NULL;
+    SetMainCallback2(returnCallback);
 }

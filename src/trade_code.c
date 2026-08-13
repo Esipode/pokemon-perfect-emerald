@@ -806,3 +806,30 @@ void TradeCode_RecordOfferSeal(u32 ring[TRADE_CODE_REPLAY_RING], u32 seal)
         ring[i] = ring[i - 1];
     ring[0] = seal;
 }
+
+// ---------------------------------------------------------------------
+// Stage 9 of "Trading Codes.md": reset-resistance. See this function's own
+// declaration in trade_code.h for exactly what it checks and why.
+// ---------------------------------------------------------------------
+
+bool32 TradeCode_ValidatePendingBoxMon(const struct BoxPokemon *boxMon)
+{
+    struct BoxPokemon copy;
+    u32 species;
+
+    // GetBoxMonData(MON_DATA_SANITY_IS_BAD_EGG) lazily writes back into its
+    // argument's own isBadEgg field the first time it notices a checksum
+    // mismatch (see IsBadEgg, src/pokemon.c) - working on a local copy
+    // keeps `boxMon` itself a pure read as far as this function's own
+    // caller is concerned.
+    memcpy(&copy, boxMon, sizeof(copy));
+
+    if (GetBoxMonData(&copy, MON_DATA_SANITY_IS_BAD_EGG))
+        return FALSE;
+
+    species = GetBoxMonData(&copy, MON_DATA_SPECIES);
+    if (species >= NUM_SPECIES || !IsSpeciesEnabled(species))
+        return FALSE;
+
+    return TRUE;
+}

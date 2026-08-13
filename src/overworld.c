@@ -68,6 +68,8 @@
 #include "task.h"
 #include "tileset_anims.h"
 #include "time_events.h"
+#include "trade_code.h"
+#include "trade_code_receive.h"
 #include "trainer_hill.h"
 #include "trainer_pokemon_sprites.h"
 #include "tv.h"
@@ -2325,6 +2327,33 @@ static void FieldCB_FadeTryShowMapPopup(void)
 void CB2_ContinueSavedGame(void)
 {
     u8 trainerHillMapId;
+
+    // Stage 9 of "Trading Codes.md": reset-resistance. A COMMITTED pending
+    // trade must be resolved - or explicitly given up on, see include/
+    // trade_code_receive.h - before the player ever regains control of the
+    // field. Checked and returned out of before any of this function's own
+    // map-loading work runs, so nothing below this block executes on this
+    // pass.
+    //
+    // TradeCodeReceive_Start (src/trade_code_receive.c) is a fully
+    // self-contained screen with no dependency on the overworld/field state
+    // at all (see that file's own header comment, and trade_code_session.c's
+    // for why this feature never routes through CB2_ReturnToField/
+    // gFieldCallback mid-flow) - safe to call this early, before
+    // LoadSaveblockMapHeader or anything else here has run. Passing this
+    // same function, CB2_ContinueSavedGame, as its returnCallback is what
+    // makes this reentrant rather than needing a second, parallel copy of
+    // the ordinary continue-game logic below: once the trade is resolved
+    // (materialised, or forfeited, or a corrupted pendingTrade is cleared -
+    // see TradeCodeReceive_Start's own guard), gSaveBlock2Ptr->pendingTrade.
+    // state is back at TRADE_CODE_STATE_NONE and force-saved, so the *next*
+    // call falls straight through to the ordinary path below and the player
+    // finally gets into the field for the first time this session.
+    if (gSaveBlock2Ptr->pendingTrade.state == TRADE_CODE_STATE_COMMITTED)
+    {
+        TradeCodeReceive_Start(CB2_ContinueSavedGame);
+        return;
+    }
 
     FieldClearVBlankHBlankCallbacks();
     StopMapMusic();

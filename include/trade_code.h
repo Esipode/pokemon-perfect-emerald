@@ -202,4 +202,32 @@ enum TradeCodeState
     TRADE_CODE_STATE_COMMITTED,
 };
 
+// ---------------------------------------------------------------------
+// Stage 9: reset-resistance. No UI, no new save data - src/trade_code_
+// receive.c calls this before ever materialising gSaveBlock2Ptr->
+// pendingTrade.incoming on a resumed COMMITTED session, including the very
+// first time the player boots straight into it out of CB2_ContinueSavedGame
+// (src/overworld.c).
+// ---------------------------------------------------------------------
+
+// TRUE if `boxMon` looks safe to materialise as the incoming half of a
+// pending trade. This is NOT a re-run of TradeCode_DeserializeMon's own
+// field-by-field validation - there's no wire payload left to re-parse
+// here, only an already-materialised BoxPokemon a corrupted save sector
+// (or a hand-edited one) could hold bytes TradeCode_DeserializeMon itself
+// never actually produced. Checks the two failure modes that would
+// otherwise misbehave (or worse) on use:
+//   - a checksum that no longer matches its own encrypted data - the same
+//     lazy-latching check every other read of a BoxPokemon in this
+//     codebase already goes through, via MON_DATA_SANITY_IS_BAD_EGG;
+//   - a species outside this ROM's valid/enabled range - the same bound
+//     TradeCode_DeserializeMon itself enforces at decode time, mirrored
+//     here since a raw BoxPokemon's species field isn't otherwise
+//     re-checked by anything in this read path.
+// Takes a copy internally (GetBoxMonData's own bad-egg check lazily
+// mutates its argument's isBadEgg field) so `boxMon` itself is left
+// untouched - callers don't need to treat this as anything but a pure
+// read.
+bool32 TradeCode_ValidatePendingBoxMon(const struct BoxPokemon *boxMon);
+
 #endif // GUARD_TRADE_CODE_H
