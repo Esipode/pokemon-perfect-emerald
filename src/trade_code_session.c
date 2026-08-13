@@ -3,58 +3,56 @@
 #include "trade_code.h"
 #include "trade_code_display.h"
 #include "trade_code_entry.h"
-#include "event_object_lock.h"
-#include "field_screen_effect.h"
+#include "trade_code_prompt.h"
 #include "link_rfu.h"
 #include "malloc.h"
-#include "menu.h"
 #include "overworld.h"
-#include "palette.h"
 #include "party_menu.h"
 #include "pokemon.h"
 #include "pokemon_storage_system.h"
 #include "pokemon_summary_screen.h"
 #include "random.h"
 #include "save.h"
-#include "script.h"
 #include "script_pokemon_util.h"
-#include "sound.h"
 #include "string_util.h"
 #include "strings.h"
-#include "task.h"
 #include "constants/battle.h"
-#include "constants/songs.h"
 #include "constants/species.h"
 #include "constants/union_room.h"
 
 // Stage 7 of "Trading Codes.md": Steps 1-3 of the protocol. See
 // include/trade_code_session.h for the scope/entry-point rationale.
 //
-// Screen transitions in this file fall into two shapes:
-//  - Full-screen takeovers (ChooseMonForTradingBoard, TradeCodeEntry_Init,
-//    ShowPokemonSummaryScreen, TradeCodeDisplay_Init) each fully replace
-//    gMain.callback2 and reset the task list as part of their own setup
-//    (mirrors ui_stat_editor.c's convention, already relied on by Stage
-//    5/6's own debug wiring chaining straight from one into the next with
-//    no explicit teardown in between) - so this file never needs to
-//    DestroyTask() before calling into one of them.
-//  - Native field prompts (a plain message, or a yes/no) reuse the
-//    overworld's own standard dialogue-box system (LoadMessageBoxAndBorderGfx
-//    / DrawDialogueFrame / AddTextPrinterForMessage / DisplayYesNoMenu* /
-//    Menu_ProcessInputNoWrapClearOnChoose - all public, all already used
-//    this same way by src/union_room.c's own native Task_-driven state
-//    machine, whose file-local PrintOnTextbox/UnionRoomHandleYesNo this
-//    file's TradeCodeSession_PrintMessage/_HandleYesNo mirror). Window 0
-//    and its dialogue-frame graphics are only guaranteed valid while
-//    CB2_Overworld is the active main callback - never inside this
-//    feature's own custom BG screens - so every prompt in this file is
-//    driven by one shared Task (Task_TradeCodeSession_FieldUI) reached via
-//    TradeCodeSession_GoToField(), which always re-enters through
-//    CB2_ReturnToField + gFieldCallback first. The one exception is this
-//    module's own very first entry (TradeCodeSession_Start): called
-//    directly from the debug menu (src/debug.c) after Debug_DestroyMenu_
-//    Full(), which never touches gMain.callback2 (see that function) - so
-//    CB2_Overworld is already active and the bounce isn't needed there.
+// Every screen this file transitions through - ChooseMonForTradingBoard,
+// TradeCodeEntry_Init, ShowPokemonSummaryScreen, TradeCodeDisplay_Init,
+// and this stage's own TradeCodePrompt_Init - is a full-screen takeover
+// that fully replaces gMain.callback2 and resets the task list as part of
+// its own setup, chaining into the next one via an explicit MainCallback
+// parameter (never through CB2_ReturnToField/the overworld's own field-
+// callback machinery mid-session). This file never returns to a walkable
+// overworld until the session genuinely ends - cancelled, or Step 3
+// completes and the confirm code has been shown - which also happens to
+// satisfy the plan doc's own "the session owns the screen - no returning
+// to the overworld" wording more literally than an earlier draft of this
+// file did.
+//
+// An earlier draft *did* bounce through CB2_ReturnToField + gFieldCallback
+// for every native message/yes-no prompt, reusing the overworld's own
+// standard dialogue-box system (window 0, DrawDialogueFrame, etc.) the way
+// src/union_room.c's own native Task_-driven state machine does. That hung
+// on real hardware: after Step 1's offer code screen, pressing A returned
+// to a visibly-normal overworld (NPCs still animating) with the player
+// locked and totally unresponsive. Even after finding and fixing one real
+// bug in that approach (window 0 not being the field's own message-box
+// window after a custom screen's own InitWindows call - see this stage's
+// status block for the first fix attempt), the hang persisted, meaning
+// something else about reusing CB2_ReturnToField's own field-callback
+// machinery this way still isn't safe to rely on. Rather than keep
+// patching around a class of problem this environment can't reproduce or
+// debug interactively, every prompt now uses TradeCodePrompt_Init (Stage
+// 7's own small addition) - a fully self-contained screen with no
+// dependency on the overworld's own state at all, the same proven shape
+// Stage 5/6 already use successfully.
 
 //==========DEFINES==========//
 
@@ -115,16 +113,6 @@ enum TradeCodeKind
 // the payload spec) is fixed and tiny - no worst-case derivation needed.
 #define TRADE_CODE_SESSION_CONFIRM_BYTES 4
 
-enum TradeCodeSessionUiStep
-{
-    UI_STEP_GATE_CHECK,       // party-count / Enigma Berry gate, then ChooseMonForTradingBoard
-    UI_STEP_MESSAGE_THEN_ABORT, // print s->pendingMessage, wait for A, unlock + done
-    UI_STEP_OFFER_READY,      // "Ready to enter your partner's trade code?"
-    UI_STEP_COMMIT,           // the irreversible commit prompt (doc's own wording)
-    UI_STEP_CANCEL_CONFIRM,   // "Cancel this trade? Your partner may be waiting."
-    UI_STEP_SAVE_FAILED,      // TrySavingData didn't return SAVE_STATUS_OK - retry on A
-};
-
 struct TradeCodeSessionState
 {
     // ---- Step 1: the offer I generate ----
@@ -142,6 +130,24 @@ struct TradeCodeSessionState
     u8 partnerOfferBytes[TRADE_CODE_SESSION_OFFER_BYTES];
     u32 partnerOfferSeal;
 
+    // BoxMonToMon target for the preview screen (Step 2's "show a preview
+    // screen" step) - deliberately NOT gParties[B_TRAINER_OPPONENT_A][0].
+    // pokemon_summary_screen.c's DoesMonOTMatchOwner() special-cases that
+    // exact array by pointer identity ("sMonSummaryScreen->monList.mons ==
+    // gParties[B_TRAINER_OPPONENT_A]") to mean "we're in an active link
+    // battle," and on that branch pulls the comparison OT from
+    // gLinkPlayers[GetMultiplayerId() ^ 1] instead of the mon's own data -
+    // there's no real link session here, so that reads meaningless
+    // link-session state (confirmed by a controlled test: the player's own
+    // known-good mon renders blank/garbled the exact same way once pushed
+    // through BoxMonToMon into gParties[B_TRAINER_OPPONENT_A], despite every
+    // field of the actual offer data checking out clean beforehand - see
+    // Trading Codes.md's Stage 7 status block). A dedicated buffer here
+    // means the pointer can never alias gParties[B_TRAINER_OPPONENT_A], so
+    // DoesMonOTMatchOwner() takes its normal (correct, for a mon that
+    // genuinely isn't the player's own) non-link branch instead.
+    struct Pokemon previewMon;
+
     // outBits target for TradeCodeEntry_Init - see trade_code_entry.h.
     // Its own contents aren't used after the fact (the validator already
     // did the real extraction into the fields above, since `decoded` is
@@ -151,34 +157,34 @@ struct TradeCodeSessionState
     u8 entryScratch[TRADE_CODE_SESSION_ENTRY_SCRATCH_BYTES];
     enum TradeCodeEntryStatus entryStatus;
 
-    // ---- native field prompt bookkeeping (Task_TradeCodeSession_FieldUI) ----
-    u8 uiStep;                    // enum TradeCodeSessionUiStep
-    u8 promptPhase;                // 0 = printing the message, 1 = awaiting input
-    u8 msgState;                   // TradeCodeSession_PrintMessage's own state
-    u8 yesNoState;                 // TradeCodeSession_HandleYesNo's own state
-    u8 cancelReturnStep;           // where UI_STEP_CANCEL_CONFIRM's "No" goes back to
-    const u8 *pendingMessage;      // for UI_STEP_MESSAGE_THEN_ABORT
+    // ---- TradeCodePrompt_Init's own out-param, and cancel-confirm bookkeeping ----
+    enum TradeCodePromptResult promptResult;
+    MainCallback cancelReturnCallback; // where "No" at the cancel-confirm goes back to
 };
 
 //==========EWRAM==========//
 static EWRAM_DATA struct TradeCodeSessionState *sTradeCodeSessionPtr = NULL;
 
 //==========STATIC=DEFINES==========//
-static void FieldCB_TradeCodeSession_Continue(void);
-static void Task_TradeCodeSession_FieldUI(u8 taskId);
-static void TradeCodeSession_GotoStep(enum TradeCodeSessionUiStep step);
-static void TradeCodeSession_GoToField(enum TradeCodeSessionUiStep step);
-static void TradeCodeSession_EndReturnToField(u8 taskId);
-static bool8 TradeCodeSession_PrintMessage(u8 *state, const u8 *str);
-static s8 TradeCodeSession_HandleYesNo(u8 *state, bool8 defaultNo);
 static bool8 TradeCodeSession_WouldLeavePartyEmpty(u8 slot);
 static void TradeCodeSession_BuildOffer(struct Pokemon *mon);
 static enum TradeCodeEntryStatus TradeCodeSession_ValidateOfferEntry(struct TradeCodeBits *decoded);
 static bool8 TradeCodeSession_DoCommit(void);
+static void TradeCodeSession_ShowCancelConfirm(MainCallback returnCallback);
+static void TradeCodeSession_ShowOfferReadyPrompt(void);
+static void TradeCodeSession_ShowCommitPrompt(void);
+static void TradeCodeSession_ShowSaveFailedPrompt(void);
+static void TradeCodeSession_AbortToField(void);
+static void CB2_TradeCodeSession_AfterGateFailAck(void);
+static void CB2_TradeCodeSession_AfterRejectAck(void);
 static void CB2_TradeCodeSession_AfterChooseMon(void);
 static void CB2_TradeCodeSession_AfterOfferShown(void);
+static void CB2_TradeCodeSession_AfterOfferReadyPrompt(void);
 static void CB2_TradeCodeSession_AfterOfferEntry(void);
 static void CB2_TradeCodeSession_AfterPreview(void);
+static void CB2_TradeCodeSession_AfterCommitPrompt(void);
+static void CB2_TradeCodeSession_AfterCancelConfirm(void);
+static void CB2_TradeCodeSession_AfterSaveFailedAck(void);
 
 //==========CONST=DATA==========//
 // CableClub_Text_NeedTwoMonsToTrade / _CantTradeEnigmaBerry (data/text/
@@ -193,7 +199,18 @@ static const u8 sText_CantTradeEnigmaBerry[] = _("A Pokémon holding the {STR_VA
 static const u8 sText_CantTradeEgg[]        = _("An Egg can't be traded like\nthis.");
 static const u8 sText_CantTradeLastMon[]    = _("You can't trade your last\nPokémon!");
 static const u8 sText_ReadyForPartnerCode[] = _("Ready to enter your partner's\ntrade code?");
-static const u8 sText_ConfirmCommit[]       = _("{STR_VAR_1} will be given up\nnow. You will only receive\n{STR_VAR_2} once you enter\nyour partner's confirm code.\nContinue?");
+// This screen's window (see trade_code_prompt.c's sTradeCodePromptWindow
+// Templates) is only 2 text-lines tall, same as every other message string
+// in this file - all of which are exactly 2 lines. This one alone has 5
+// lines' worth of content, so plain \n (a same-page line break) isn't
+// enough; it needs \p (the standard field-message "wait for A, then clear
+// and continue" page break - see charmap.txt's own "'\p' = FB @ new
+// paragraph") between each 2-line page. AddTextPrinterForMessage (called
+// by trade_code_prompt.c, same as any vanilla NPC message box) already
+// understands \p natively - this is a plain content fix, not a new code
+// path - the previous version simply had 5 lines of \n-joined text
+// silently overflowing a 2-line window with no pause in between.
+static const u8 sText_ConfirmCommit[]       = _("{STR_VAR_1} will be given up\nnow. You will only receive\p{STR_VAR_2} once you enter\nyour partner's confirm code.\pContinue?");
 static const u8 sText_CancelConfirm[]       = _("Cancel this trade? Your\npartner may be waiting.");
 
 //==========UI=SETUP==========//
@@ -202,268 +219,77 @@ void TradeCodeSession_Start(void)
     if ((sTradeCodeSessionPtr = AllocZeroed(sizeof(struct TradeCodeSessionState))) == NULL)
         return; // couldn't even allocate - nothing was touched, nothing to undo
 
-    sTradeCodeSessionPtr->uiStep = UI_STEP_GATE_CHECK;
-    // Called directly from the debug menu, right after Debug_DestroyMenu_
-    // Full() - which never changes gMain.callback2 (see that function) -
-    // so CB2_Overworld is already the active main callback and this task
-    // can be created directly, with no CB2_ReturnToField bounce needed for
-    // this one first entry (see this file's own top-of-file comment for
-    // why every *later* re-entry does need that bounce).
-    LockPlayerFieldControls();
-    CreateTask(Task_TradeCodeSession_FieldUI, 10);
+    // Mirrors CableClub_EventScript_CheckPartyTradeRequirements
+    // (data/scripts/cable_club.inc) - the same two gates the old
+    // link-trade path already runs before it will even attempt a trade.
+    // DoesPartyHaveEnigmaBerry() already fills gStringVar1 with the
+    // berry's name on TRUE (see src/script_pokemon_util.c) - no separate
+    // placeholder setup needed here.
+    if (CalculatePlayerPartyCount() < 2)
+    {
+        TradeCodePrompt_Init(sText_NeedTwoMons, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterGateFailAck);
+        return;
+    }
+    if (DoesPartyHaveEnigmaBerry())
+    {
+        // DoesPartyHaveEnigmaBerry() already filled gStringVar1 with the
+        // berry's name - TradeCodePrompt_Init itself only StringCopy's its
+        // message (matching TradeCodeDisplay_Init's own contract, see
+        // trade_code_display.c), it doesn't expand placeholders, so the
+        // {STR_VAR_1} substitution has to happen here before the copy.
+        StringExpandPlaceholders(gStringVar4, sText_CantTradeEnigmaBerry);
+        TradeCodePrompt_Init(gStringVar4, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterGateFailAck);
+        return;
+    }
+
+    // Populates gHostRfuGameData.compatibility.hasNationalDex (via
+    // IsNationalPokedexEnabled() - a plain local save-flag read, no RFU/
+    // link dependency - confirmed by reading src/link_rfu_3.c's
+    // InitHostRfuGameData before relying on it) so PARTY_MENU_TYPE_UNION_
+    // ROOM_REGISTER's own in-menu CanRegisterMonForTradingBoard gate
+    // (src/party_menu.c's CursorCb_Register) behaves correctly instead of
+    // defaulting to "no National Dex" - the rest of that struct (activity/
+    // partnerInfo/etc.) is irrelevant here, this screen never touches
+    // RFU/link state otherwise.
+    SetHostRfuGameData(ACTIVITY_NONE, 0, FALSE);
+    ChooseMonForTradingBoard(PARTY_MENU_TYPE_UNION_ROOM_REGISTER, CB2_TradeCodeSession_AfterChooseMon);
 }
 
-static void FieldCB_TradeCodeSession_Continue(void)
+static void TradeCodeSession_AbortToField(void)
 {
-    LockPlayerFieldControls();
-    FadeInFromBlack();
-    CreateTask(Task_TradeCodeSession_FieldUI, 10);
-}
-
-static void TradeCodeSession_GotoStep(enum TradeCodeSessionUiStep step)
-{
-    struct TradeCodeSessionState *s = sTradeCodeSessionPtr;
-
-    s->uiStep = step;
-    s->promptPhase = 0;
-    s->msgState = 0;
-    s->yesNoState = 0;
-}
-
-// Re-enters CB2_Overworld (if not already there) before showing a native
-// message/yes-no prompt - see this file's top-of-file comment for why.
-static void TradeCodeSession_GoToField(enum TradeCodeSessionUiStep step)
-{
-    TradeCodeSession_GotoStep(step);
-    gFieldCallback = FieldCB_TradeCodeSession_Continue;
+    Free(sTradeCodeSessionPtr);
+    sTradeCodeSessionPtr = NULL;
     SetMainCallback2(CB2_ReturnToField);
 }
 
-// The session is over (cancelled, or a gate/rejection message was
-// dismissed) - give full control back, exactly the way FieldCB_
-// ReturnToFieldNoScript's own Task_ReturnToFieldNoScript does (this file
-// doesn't reuse that pair directly since it's file-local to src/
-// field_screen_effect.c, but LockPlayerFieldControls/UnlockPlayerField
-// Controls are a plain flag - not a counter, confirmed by reading src/
-// script.c - so locking once up front and unlocking exactly once here,
-// regardless of how many field bounces happened in between, is safe).
-static void TradeCodeSession_EndReturnToField(u8 taskId)
+static void CB2_TradeCodeSession_AfterGateFailAck(void)
 {
-    UnlockPlayerFieldControls();
-    ScriptUnfreezeObjectEvents();
-    Free(sTradeCodeSessionPtr);
-    sTradeCodeSessionPtr = NULL;
-    DestroyTask(taskId);
+    TradeCodeSession_AbortToField();
 }
 
-// Mirrors src/union_room.c's own file-local PrintOnTextbox - reimplemented
-// here since that one isn't reachable from outside union_room.c - built
-// entirely from public primitives (see this file's own top comment).
-static bool8 TradeCodeSession_PrintMessage(u8 *state, const u8 *str)
+static void CB2_TradeCodeSession_AfterRejectAck(void)
 {
-    switch (*state)
-    {
-    case 0:
-        LoadMessageBoxAndBorderGfx();
-        DrawDialogueFrame(0, TRUE);
-        StringExpandPlaceholders(gStringVar4, str);
-        AddTextPrinterForMessage(TRUE);
-        (*state)++;
-        break;
-    case 1:
-        if (!RunTextPrintersAndIsPrinter0Active())
-        {
-            *state = 0;
-            return TRUE;
-        }
-        break;
-    }
-    return FALSE;
+    TradeCodeSession_AbortToField();
 }
 
-// Mirrors src/union_room.c's own file-local UnionRoomHandleYesNo, minus its
-// noDraw branch (not needed here - every call site in this file wants the
-// box drawn). Returns MENU_NOTHING_CHOSEN while still choosing, or the
-// final input (0 = YES, 1 = NO, MENU_B_PRESSED) once chosen.
-static s8 TradeCodeSession_HandleYesNo(u8 *state, bool8 defaultNo)
+// Shows "Cancel this trade? Your partner may be waiting." - Yes ends the
+// session entirely; No re-invokes `returnCallback` (whichever prompt asked
+// to cancel in the first place), so the player lands right back where
+// they were instead of being dropped somewhere unrelated.
+static void TradeCodeSession_ShowCancelConfirm(MainCallback returnCallback)
 {
-    if (*state == 0)
-    {
-        if (defaultNo)
-            DisplayYesNoMenuWithDefault(1);
-        else
-            DisplayYesNoMenuDefaultYes();
-        *state = 1;
-        return MENU_NOTHING_CHOSEN;
-    }
-    else
-    {
-        s8 input = Menu_ProcessInputNoWrapClearOnChoose();
-        if (input != MENU_NOTHING_CHOSEN)
-            *state = 0;
-        return input;
-    }
+    sTradeCodeSessionPtr->cancelReturnCallback = returnCallback;
+    TradeCodePrompt_Init(sText_CancelConfirm, TRUE, TRUE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterCancelConfirm);
 }
 
-//
-//       Trade Code Session specific code
-//
-static void Task_TradeCodeSession_FieldUI(u8 taskId)
+static void CB2_TradeCodeSession_AfterCancelConfirm(void)
 {
     struct TradeCodeSessionState *s = sTradeCodeSessionPtr;
-    s8 input;
 
-    if (gPaletteFade.active)
-        return;
-
-    switch (s->uiStep)
-    {
-    case UI_STEP_GATE_CHECK:
-        // Mirrors CableClub_EventScript_CheckPartyTradeRequirements
-        // (data/scripts/cable_club.inc) - the same two gates the old
-        // link-trade path already runs before it will even attempt a
-        // trade. DoesPartyHaveEnigmaBerry() already fills gStringVar1 with
-        // the berry's name on TRUE (see src/script_pokemon_util.c) - no
-        // separate placeholder setup needed here.
-        if (CalculatePlayerPartyCount() < 2)
-        {
-            s->pendingMessage = sText_NeedTwoMons;
-            TradeCodeSession_GotoStep(UI_STEP_MESSAGE_THEN_ABORT);
-        }
-        else if (DoesPartyHaveEnigmaBerry())
-        {
-            s->pendingMessage = sText_CantTradeEnigmaBerry;
-            TradeCodeSession_GotoStep(UI_STEP_MESSAGE_THEN_ABORT);
-        }
-        else
-        {
-            // Populates gHostRfuGameData.compatibility.hasNationalDex (via
-            // IsNationalPokedexEnabled() - a plain local save-flag read, no
-            // RFU/link dependency - confirmed by reading src/link_rfu_3.c's
-            // InitHostRfuGameData before relying on it) so PARTY_MENU_TYPE_
-            // UNION_ROOM_REGISTER's own in-menu CanRegisterMonForTrading
-            // Board gate (src/party_menu.c's CursorCb_Register) behaves
-            // correctly instead of defaulting to "no National Dex" - the
-            // rest of that struct (activity/partnerInfo/etc.) is irrelevant
-            // here, this screen never touches RFU/link state otherwise.
-            SetHostRfuGameData(ACTIVITY_NONE, 0, FALSE);
-            ChooseMonForTradingBoard(PARTY_MENU_TYPE_UNION_ROOM_REGISTER, CB2_TradeCodeSession_AfterChooseMon);
-        }
-        break;
-
-    case UI_STEP_MESSAGE_THEN_ABORT:
-        if (s->promptPhase == 0)
-        {
-            if (TradeCodeSession_PrintMessage(&s->msgState, s->pendingMessage))
-                s->promptPhase = 1;
-        }
-        else if (JOY_NEW(A_BUTTON))
-        {
-            PlaySE(SE_SELECT);
-            TradeCodeSession_EndReturnToField(taskId);
-        }
-        break;
-
-    case UI_STEP_OFFER_READY:
-        if (s->promptPhase == 0)
-        {
-            if (TradeCodeSession_PrintMessage(&s->msgState, sText_ReadyForPartnerCode))
-                s->promptPhase = 1;
-        }
-        else
-        {
-            input = TradeCodeSession_HandleYesNo(&s->yesNoState, FALSE);
-            if (input == 0)
-            {
-                PlaySE(SE_SELECT);
-                s->entryBits.data = s->entryScratch;
-                s->entryBits.capacity = sizeof(s->entryScratch) * 8;
-                TradeCodeEntry_Init(&s->entryBits, 0, TradeCodeSession_ValidateOfferEntry, &s->entryStatus, CB2_TradeCodeSession_AfterOfferEntry);
-            }
-            else if (input == 1 || input == MENU_B_PRESSED)
-            {
-                PlaySE(SE_SELECT);
-                s->cancelReturnStep = UI_STEP_OFFER_READY;
-                TradeCodeSession_GotoStep(UI_STEP_CANCEL_CONFIRM);
-            }
-        }
-        break;
-
-    case UI_STEP_COMMIT:
-        if (s->promptPhase == 0)
-        {
-            if (TradeCodeSession_PrintMessage(&s->msgState, sText_ConfirmCommit))
-                s->promptPhase = 1;
-        }
-        else
-        {
-            // Defaults to NO - this is the irreversible step, and an
-            // accidental double-A-press must not be able to confirm it
-            // (mirrors start_menu.c's own DisplayYesNoMenuWithDefault(1)
-            // choice for its similarly consequential prompts).
-            input = TradeCodeSession_HandleYesNo(&s->yesNoState, TRUE);
-            if (input == 0)
-            {
-                PlaySE(SE_SELECT);
-                if (!TradeCodeSession_DoCommit())
-                    TradeCodeSession_GotoStep(UI_STEP_SAVE_FAILED);
-                // On success, DoCommit() has already handed off to
-                // TradeCodeDisplay_Init - this task sits inert until that
-                // screen's own setup calls ResetTasks() (see this file's
-                // top comment).
-            }
-            else if (input == 1 || input == MENU_B_PRESSED)
-            {
-                PlaySE(SE_SELECT);
-                s->cancelReturnStep = UI_STEP_COMMIT;
-                TradeCodeSession_GotoStep(UI_STEP_CANCEL_CONFIRM);
-            }
-        }
-        break;
-
-    case UI_STEP_CANCEL_CONFIRM:
-        if (s->promptPhase == 0)
-        {
-            if (TradeCodeSession_PrintMessage(&s->msgState, sText_CancelConfirm))
-                s->promptPhase = 1;
-        }
-        else
-        {
-            input = TradeCodeSession_HandleYesNo(&s->yesNoState, TRUE);
-            if (input == 0)
-            {
-                PlaySE(SE_SELECT);
-                TradeCodeSession_EndReturnToField(taskId);
-            }
-            else if (input == 1 || input == MENU_B_PRESSED)
-            {
-                PlaySE(SE_SELECT);
-                TradeCodeSession_GotoStep(s->cancelReturnStep);
-            }
-        }
-        break;
-
-    case UI_STEP_SAVE_FAILED:
-        if (s->promptPhase == 0)
-        {
-            if (TradeCodeSession_PrintMessage(&s->msgState, gText_SaveError))
-                s->promptPhase = 1;
-        }
-        else if (JOY_NEW(A_BUTTON))
-        {
-            // Safe to just retry from the top: the escrow/tag/state writes
-            // TradeCodeSession_DoCommit makes are all to gSaveBlock2Ptr (in
-            // memory only) and are themselves idempotent (re-zeroing an
-            // already-empty slot, recomputing the same deterministic
-            // tags) - nothing has actually reached the save file yet,
-            // which is exactly why it's safe to sit here retrying rather
-            // than trying to roll anything back.
-            PlaySE(SE_SELECT);
-            if (!TradeCodeSession_DoCommit())
-                TradeCodeSession_GotoStep(UI_STEP_SAVE_FAILED);
-        }
-        break;
-    }
+    if (s->promptResult == TRADE_CODE_PROMPT_YES)
+        TradeCodeSession_AbortToField();
+    else
+        s->cancelReturnCallback();
 }
 
 // Mirrors src/trade.c's own (file-local) CanTradeSelectedMon's numMonsLeft
@@ -663,13 +489,29 @@ static bool8 TradeCodeSession_DoCommit(void)
 
     Free(s);
     sTradeCodeSessionPtr = NULL;
-    UnlockPlayerFieldControls();
     // Step 4 (materialising the incoming mon) is Stage 8's job - this
     // stage's own scope ends here, once the confirm code has been shown.
     // Pressing A on Stage 5's display screen returns straight to
     // CB2_ReturnToField, same as any other normal field return.
     TradeCodeDisplay_Init(encoded, SPECIES_NONE, NULL, TRUE, CB2_ReturnToField);
     return TRUE;
+}
+
+static void TradeCodeSession_ShowSaveFailedPrompt(void)
+{
+    TradeCodePrompt_Init(gText_SaveError, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterSaveFailedAck);
+}
+
+static void CB2_TradeCodeSession_AfterSaveFailedAck(void)
+{
+    // Safe to just retry unconditionally: every write TradeCodeSession_
+    // DoCommit makes before the save call is either to gSaveBlock2Ptr
+    // (nothing reaches the physical save file until TrySavingData itself
+    // succeeds) or idempotent (re-zeroing an already-empty party slot,
+    // recomputing the same deterministic tags) - there's nothing to roll
+    // back.
+    if (!TradeCodeSession_DoCommit())
+        TradeCodeSession_ShowSaveFailedPrompt();
 }
 
 static void CB2_TradeCodeSession_AfterChooseMon(void)
@@ -685,9 +527,7 @@ static void CB2_TradeCodeSession_AfterChooseMon(void)
         // Cancelled from the party menu itself - nothing was ever shown or
         // escrowed. Silent abort, matching every other ChooseMonForTrading
         // Board caller's own cancel behaviour (e.g. src/union_room.c).
-        Free(s);
-        sTradeCodeSessionPtr = NULL;
-        SetMainCallback2(CB2_ReturnToField);
+        TradeCodeSession_AbortToField();
         return;
     }
 
@@ -701,14 +541,12 @@ static void CB2_TradeCodeSession_AfterChooseMon(void)
     // regardless of National Dex status.
     if (GetMonData(mon, MON_DATA_IS_EGG))
     {
-        s->pendingMessage = sText_CantTradeEgg;
-        TradeCodeSession_GoToField(UI_STEP_MESSAGE_THEN_ABORT);
+        TradeCodePrompt_Init(sText_CantTradeEgg, FALSE, FALSE, &s->promptResult, CB2_TradeCodeSession_AfterRejectAck);
         return;
     }
     if (TradeCodeSession_WouldLeavePartyEmpty(slot))
     {
-        s->pendingMessage = sText_CantTradeLastMon;
-        TradeCodeSession_GoToField(UI_STEP_MESSAGE_THEN_ABORT);
+        TradeCodePrompt_Init(sText_CantTradeLastMon, FALSE, FALSE, &s->promptResult, CB2_TradeCodeSession_AfterRejectAck);
         return;
     }
 
@@ -724,7 +562,28 @@ static void CB2_TradeCodeSession_AfterChooseMon(void)
 
 static void CB2_TradeCodeSession_AfterOfferShown(void)
 {
-    TradeCodeSession_GoToField(UI_STEP_OFFER_READY);
+    TradeCodeSession_ShowOfferReadyPrompt();
+}
+
+static void TradeCodeSession_ShowOfferReadyPrompt(void)
+{
+    TradeCodePrompt_Init(sText_ReadyForPartnerCode, TRUE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterOfferReadyPrompt);
+}
+
+static void CB2_TradeCodeSession_AfterOfferReadyPrompt(void)
+{
+    struct TradeCodeSessionState *s = sTradeCodeSessionPtr;
+
+    if (s->promptResult == TRADE_CODE_PROMPT_YES)
+    {
+        s->entryBits.data = s->entryScratch;
+        s->entryBits.capacity = sizeof(s->entryScratch) * 8;
+        TradeCodeEntry_Init(&s->entryBits, 0, TradeCodeSession_ValidateOfferEntry, &s->entryStatus, CB2_TradeCodeSession_AfterOfferEntry);
+    }
+    else
+    {
+        TradeCodeSession_ShowCancelConfirm(TradeCodeSession_ShowOfferReadyPrompt);
+    }
 }
 
 static void CB2_TradeCodeSession_AfterOfferEntry(void)
@@ -736,40 +595,82 @@ static void CB2_TradeCodeSession_AfterOfferEntry(void)
         // The only other status TradeCodeEntry_Init's callback can report
         // is TRADE_CODE_ENTRY_CANCELLED (B on an empty field) - a failed
         // validator retries in place without leaving the screen (see
-        // trade_code_entry.h). Still OFFER_SHOWN, nothing escrowed yet -
+        // trade_code_entry.h). Still pre-commit, nothing escrowed yet -
         // routed to the same cancel-confirm the "ready?" prompt's own "No"
         // uses, rather than silently dropping back to the field on one B
         // press (matches the doc's "Cancel... with a confirm" for this
         // state).
-        s->cancelReturnStep = UI_STEP_OFFER_READY;
-        TradeCodeSession_GoToField(UI_STEP_CANCEL_CONFIRM);
+        TradeCodeSession_ShowCancelConfirm(TradeCodeSession_ShowOfferReadyPrompt);
         return;
     }
 
-    // Reuses gParties[B_TRAINER_OPPONENT_A][0] for the preview, the same
-    // "opponent slot" convention Stage 8 will use for the real materialise
-    // + CB2_InitInGameTrade animation - so both this preview and Stage 8's
-    // eventual reuse of the old in-game-trade path agree on where a
-    // not-yet-owned incoming mon temporarily lives.
-    BoxMonToMon(&s->partnerBoxMon, &gParties[B_TRAINER_OPPONENT_A][0]);
-    CalculateMonStats(&gParties[B_TRAINER_OPPONENT_A][0]);
-    ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, gParties[B_TRAINER_OPPONENT_A], 0, 0, CB2_TradeCodeSession_AfterPreview);
+    // Preview the reconstructed mon (Step 2 of the doc: "show a preview
+    // screen"). BoxMonToMon into a dedicated s->previewMon buffer, not
+    // gParties[B_TRAINER_OPPONENT_A][0] - pokemon_summary_screen.c's
+    // DoesMonOTMatchOwner() special-cases that exact array by pointer
+    // identity to mean "we're in an active link battle" and reads
+    // gLinkPlayers[]/GetMultiplayerId() instead of the mon's own data on
+    // that branch. There's no real link session here, so that read
+    // meaningless state and corrupted the summary screen's own scratch
+    // buffers (root-caused this Stage - see Trading Codes.md's Stage 7
+    // status block for the full diagnostic trail: every field of the
+    // deserialized mon checked out clean, and a controlled test proved the
+    // player's own known-good mon broke the exact same way once pushed
+    // through gParties[B_TRAINER_OPPONENT_A], isolating the bug to that
+    // array specifically rather than anything TradeCode_DeserializeMon
+    // produced). s->previewMon can never alias that array, so
+    // DoesMonOTMatchOwner() takes its normal non-link branch instead -
+    // correctly, since this mon's OT genuinely isn't the receiving player.
+    BoxMonToMon(&s->partnerBoxMon, &s->previewMon);
+    CalculateMonStats(&s->previewMon);
+    ShowPokemonSummaryScreen(SUMMARY_MODE_LOCK_MOVES, &s->previewMon, 0, 0, CB2_TradeCodeSession_AfterPreview);
 }
 
 static void CB2_TradeCodeSession_AfterPreview(void)
 {
-    struct TradeCodeSessionState *s = sTradeCodeSessionPtr;
-    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][s->partySlot];
-
     // The preview itself IS the acceptance, per the doc's own Step 2
     // wording ("show a preview screen... State -> PARTNER_OFFER_ACCEPTED") -
     // no separate "accept this offer?" prompt once the player has looked
     // at it and pressed B to move on; the very next thing shown is Step
     // 3's own irreversible commit prompt, which already asks a yes/no
     // question of its own.
+    TradeCodeSession_ShowCommitPrompt();
+}
+
+static void TradeCodeSession_ShowCommitPrompt(void)
+{
+    struct TradeCodeSessionState *s = sTradeCodeSessionPtr;
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][s->partySlot];
+
+    // Recomputed every time this prompt is (re-)shown, including after
+    // declining to cancel and looping back here - the offered mon is still
+    // in the party at every point this can be reached from (nothing is
+    // escrowed until YES is actually chosen), so this is always accurate.
     GetMonData(mon, MON_DATA_NICKNAME, gStringVar1);
     StripExtCtrlCodes(gStringVar1);
     GetBoxMonData(&s->partnerBoxMon, MON_DATA_NICKNAME, gStringVar2);
     StripExtCtrlCodes(gStringVar2);
-    TradeCodeSession_GoToField(UI_STEP_COMMIT);
+    // Same reasoning as TradeCodeSession_Start's own Enigma Berry message -
+    // TradeCodePrompt_Init doesn't expand placeholders itself, so {STR_VAR_
+    // 1}/{STR_VAR_2} have to be resolved here, before the copy.
+    StringExpandPlaceholders(gStringVar4, sText_ConfirmCommit);
+    TradeCodePrompt_Init(gStringVar4, TRUE, TRUE, &s->promptResult, CB2_TradeCodeSession_AfterCommitPrompt);
+}
+
+static void CB2_TradeCodeSession_AfterCommitPrompt(void)
+{
+    struct TradeCodeSessionState *s = sTradeCodeSessionPtr;
+
+    if (s->promptResult == TRADE_CODE_PROMPT_YES)
+    {
+        // Defaults to NO (see TradeCodeSession_ShowCommitPrompt's own
+        // TradeCodePrompt_Init call) - this is the irreversible step, and
+        // an accidental double-A-press must not be able to confirm it.
+        if (!TradeCodeSession_DoCommit())
+            TradeCodeSession_ShowSaveFailedPrompt();
+    }
+    else
+    {
+        TradeCodeSession_ShowCancelConfirm(TradeCodeSession_ShowCommitPrompt);
+    }
 }

@@ -1936,10 +1936,11 @@ static void DebugAction_TradeCode_EnterConfirm(u8 taskId)
 // Stage 7 testing aid: the real entry point (src/trade_code_session.c),
 // exercising Steps 1-3 end to end - party gate, mon selection, offer code,
 // partner-code entry + preview, and the irreversible commit + force-save +
-// confirm code reveal. Debug_DestroyMenu_Full only tears down the debug
-// menu's own window/task and never touches gMain.callback2 (see that
-// function) - CB2_Overworld is still active here, exactly the precondition
-// TradeCodeSession_Start's own top-of-file comment documents needing.
+// confirm code reveal. TradeCodeSession_Start doesn't depend on what
+// gMain.callback2 currently is (every prompt and screen it chains through
+// is a self-contained takeover - see that file's own top-of-file comment),
+// so calling it directly right after Debug_DestroyMenu_Full is safe
+// regardless.
 static void DebugAction_TradeCode_StartSession(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
