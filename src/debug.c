@@ -56,6 +56,7 @@
 #include "task.h"
 #include "trade_code.h"
 #include "trade_code_display.h"
+#include "trade_code_entry.h"
 #include "tv.h"
 #include "pokemon_summary_screen.h"
 #include "wild_encounter.h"
@@ -383,6 +384,8 @@ static void DebugAction_Player_OpenPaletteMenu(u8 taskId);
 
 static void DebugAction_TradeCode_ViewSampleOffer(u8 taskId);
 static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId);
+static void DebugAction_TradeCode_EnterOffer(u8 taskId);
+static void DebugAction_TradeCode_EnterConfirm(u8 taskId);
 
 static void DebugAction_Achievements_GrantRevoke(u8 taskId);
 static void DebugAction_Achievements_GrantRevokeSelect(u8 taskId);
@@ -624,6 +627,8 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Steven Multi"),      DebugAction_ExecuteScript, Debug_EventScript_Steven_Multi },
     { COMPOUND_STRING("View Trade Code…"),  DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"), DebugAction_TradeCode_ViewSampleConfirm },
+    { COMPOUND_STRING("Enter Trade Code…"),  DebugAction_TradeCode_EnterOffer },
+    { COMPOUND_STRING("Enter Confirm Code…"), DebugAction_TradeCode_EnterConfirm },
     { NULL }
 };
 
@@ -1855,6 +1860,67 @@ static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
     TradeCodeDisplay_Init(sDebugTradeCode_SampleConfirm, SPECIES_NONE, NULL, TRUE, CB2_ReturnToField);
+}
+
+// Stage 6 testing aid: exercises the real on-screen keyboard
+// (src/trade_code_entry.c) end to end, then hands the decoded result
+// straight back to Stage 5's read-only display after re-encoding it - if
+// what comes back out matches what was typed in, that's this stage's own
+// acceptance line ("debug-menu entry that round-trips a Stage 5 code back
+// through Stage 1's decoder") satisfied without needing a dedicated
+// message box just for this test. No validator (NULL): this exercises the
+// codec only, independent of Stages 3/4/7's session/seal/replay logic,
+// which don't exist yet from this debug entry point's perspective.
+static struct TradeCodeBits sDebugTradeCodeEntryBits;
+// Sized to the same 428-bit worst-case payload TRADE_CODE_MAX_CHARS itself
+// is derived from (include/config/trade_code.h) - 54 bytes.
+static u8 sDebugTradeCodeEntryBuffer[54];
+static enum TradeCodeEntryStatus sDebugTradeCodeEntryStatus;
+
+static void DebugAction_TradeCode_EnterOfferThenShow(void)
+{
+    u8 encoded[TRADE_CODE_MAX_CHARS + 1];
+
+    if (sDebugTradeCodeEntryStatus != TRADE_CODE_ENTRY_OK)
+    {
+        // Cancelled (B on an empty field) - nothing decoded, nothing to
+        // show.
+        SetMainCallback2(CB2_ReturnToField);
+        return;
+    }
+
+    TradeCode_Encode(sDebugTradeCodeEntryBits.data, sDebugTradeCodeEntryBits.capacity, encoded);
+    TradeCodeDisplay_Init(encoded, SPECIES_BULBASAUR, NULL, FALSE, CB2_ReturnToField);
+}
+
+static void DebugAction_TradeCode_EnterConfirmThenShow(void)
+{
+    u8 encoded[TRADE_CODE_CONFIRM_CHARS + 1];
+
+    if (sDebugTradeCodeEntryStatus != TRADE_CODE_ENTRY_OK)
+    {
+        SetMainCallback2(CB2_ReturnToField);
+        return;
+    }
+
+    TradeCode_Encode(sDebugTradeCodeEntryBits.data, sDebugTradeCodeEntryBits.capacity, encoded);
+    TradeCodeDisplay_Init(encoded, SPECIES_NONE, NULL, TRUE, CB2_ReturnToField);
+}
+
+static void DebugAction_TradeCode_EnterOffer(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    sDebugTradeCodeEntryBits.data = sDebugTradeCodeEntryBuffer;
+    sDebugTradeCodeEntryBits.capacity = sizeof(sDebugTradeCodeEntryBuffer) * 8;
+    TradeCodeEntry_Init(&sDebugTradeCodeEntryBits, 0, NULL, &sDebugTradeCodeEntryStatus, DebugAction_TradeCode_EnterOfferThenShow);
+}
+
+static void DebugAction_TradeCode_EnterConfirm(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    sDebugTradeCodeEntryBits.data = sDebugTradeCodeEntryBuffer;
+    sDebugTradeCodeEntryBits.capacity = sizeof(sDebugTradeCodeEntryBuffer) * 8;
+    TradeCodeEntry_Init(&sDebugTradeCodeEntryBits, TRADE_CODE_CONFIRM_CHARS, NULL, &sDebugTradeCodeEntryStatus, DebugAction_TradeCode_EnterConfirmThenShow);
 }
 
 // *******************************

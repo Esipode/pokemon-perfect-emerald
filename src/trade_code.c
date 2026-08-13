@@ -74,6 +74,11 @@ static const u8 sTradeCodeReverse[256] =
 // symbols -> 95 characters with hyphens) plus headroom.
 #define TRADE_CODE_DECODE_SCAN_LIMIT 512
 
+u8 TradeCode_AlphabetSymbol(u32 index)
+{
+    return sTradeCodeAlphabet[index];
+}
+
 void TradeCode_WriteBits(struct TradeCodeBits *stream, u32 value, u32 nBits)
 {
     u32 i;

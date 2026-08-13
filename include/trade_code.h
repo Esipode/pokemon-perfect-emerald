@@ -42,6 +42,15 @@ enum TradeCodeStatus
     TRADE_CODE_TOO_SHORT,  // no symbol characters at all
 };
 
+// The Base32/Crockford symbol (a game-charmap byte) at `index` (0-31). The
+// single source of truth for the alphabet - added for Stage 6's on-screen
+// keyboard (src/trade_code_entry.c), so its 8x4 symbol grid draws exactly
+// the glyphs TradeCode_Encode would produce, with no second copy of the
+// alphabet in another file to drift out of sync. `index` >= 32 is a caller
+// bug (asserted away, not clamped - Stage 6's grid is fixed 8x4 = 32 cells
+// and never generates an out-of-range index).
+u8 TradeCode_AlphabetSymbol(u32 index);
+
 // Writes the low `nBits` bits of `value` (1-32) into `stream`, MSB-first.
 void TradeCode_WriteBits(struct TradeCodeBits *stream, u32 value, u32 nBits);
 

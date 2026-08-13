@@ -51,22 +51,12 @@ enum WindowIds
     WINDOW_FOOTER,
 };
 
-// The code is laid out on a strict monospace grid (see TradeCodeDisplay_
-// PrintCode) rather than relying on a proportional font's advance widths -
-// with a 78-105 character code (see the plan doc's payload spec and Stage
-// 2's status block re: the 8-bits/character name fix), clipping on real
-// hardware is exactly the failure Stage 5's own acceptance line calls out,
-// and a manually-positioned fixed grid can't clip mid-glyph the way
-// proportional printing could.
-#define TRADE_CODE_DISPLAY_GROUPS_PER_ROW 5
-#define TRADE_CODE_DISPLAY_SYMBOLS_PER_ROW (TRADE_CODE_DISPLAY_GROUPS_PER_ROW * TRADE_CODE_GROUP_SIZE)
-#define TRADE_CODE_DISPLAY_MAX_ROWS 4
-// 25 symbols + 4 internal (mid-row) hyphens = 29 monospace cells/row.
-#define TRADE_CODE_DISPLAY_ROW_CAPACITY (TRADE_CODE_DISPLAY_SYMBOLS_PER_ROW + TRADE_CODE_DISPLAY_GROUPS_PER_ROW - 1)
-// FONT_SHORT_NARROW's own maxLetterWidth/maxLetterHeight (src/text.c) are
-// 5px/14px - an 8x16 cell gives every glyph clear margin on all sides.
-#define CODE_CELL_WIDTH  8
-#define CODE_CELL_HEIGHT 16
+// TRADE_CODE_DISPLAY_GROUPS_PER_ROW / _SYMBOLS_PER_ROW / _MAX_ROWS /
+// _ROW_CAPACITY / CODE_CELL_WIDTH / CODE_CELL_HEIGHT now live in
+// trade_code_display.h (public) rather than here, so Stage 6's entry
+// screen (src/trade_code_entry.c) can lay its typed-code field out on the
+// identical grid instead of re-deriving a second copy. See that header for
+// the reasoning.
 
 //==========EWRAM==========//
 static EWRAM_DATA struct TradeCodeDisplayResources *sTradeCodeDisplayDataPtr = NULL;
@@ -241,7 +231,7 @@ static bool8 TradeCodeDisplay_DoGfxSetup(void)
     switch (gMain.state)
     {
     case 0:
-        DmaClearLarge16(3, (void *)VRAM, VRAM_SIZE, 0x1000)
+        DmaClearLarge16(3, (void *)VRAM, VRAM_SIZE, 0x1000);
         SetVBlankHBlankCallbacksToNull();
         ResetVramOamAndBgCntRegs();
         ClearScheduledBgCopiesToVram();

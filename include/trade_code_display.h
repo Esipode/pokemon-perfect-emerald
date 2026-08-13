@@ -2,6 +2,30 @@
 #define GUARD_TRADE_CODE_DISPLAY_H
 
 #include "main.h"
+#include "config/trade_code.h"
+
+// Shared code-grid layout constants. Public (not file-local to
+// trade_code_display.c) specifically so Stage 6's entry screen
+// (src/trade_code_entry.c) can lay its own typed-code field out on the
+// identical grid - "Entry field mirrors Stage 5's layout" (the plan doc's
+// own words for that stage) means literally sharing these numbers, not
+// re-deriving a second copy that could drift out of sync.
+//
+// The code is laid out on a strict monospace grid rather than relying on a
+// proportional font's advance widths - with a 78-105 character code (see
+// the plan doc's payload spec and Stage 2's status block re: the 8-bits/
+// character name fix), clipping on real hardware is exactly the failure
+// Stage 5's own acceptance line calls out, and a manually-positioned fixed
+// grid can't clip mid-glyph the way proportional printing could.
+#define TRADE_CODE_DISPLAY_GROUPS_PER_ROW 5
+#define TRADE_CODE_DISPLAY_SYMBOLS_PER_ROW (TRADE_CODE_DISPLAY_GROUPS_PER_ROW * TRADE_CODE_GROUP_SIZE)
+#define TRADE_CODE_DISPLAY_MAX_ROWS 4
+// 25 symbols + 4 internal (mid-row) hyphens = 29 monospace cells/row.
+#define TRADE_CODE_DISPLAY_ROW_CAPACITY (TRADE_CODE_DISPLAY_SYMBOLS_PER_ROW + TRADE_CODE_DISPLAY_GROUPS_PER_ROW - 1)
+// FONT_SHORT_NARROW's own maxLetterWidth/maxLetterHeight (src/text.c) are
+// 5px/14px - an 8x16 cell gives every glyph clear margin on all sides.
+#define CODE_CELL_WIDTH  8
+#define CODE_CELL_HEIGHT 16
 
 // Stage 5 of "Trading Codes.md": a read-only, full-screen display for a
 // generated trade code (offer or confirm). Modelled on ui_stat_editor.c's
