@@ -56,11 +56,12 @@
 
 //==========DEFINES==========//
 
-enum TradeCodeKind
-{
-    TRADE_CODE_KIND_OFFER   = 0,
-    TRADE_CODE_KIND_CONFIRM = 1,
-};
+// enum TradeCodeKind (TRADE_CODE_KIND_OFFER/_CONFIRM) used to be defined
+// locally here (Stage 7) but has moved to trade_code.h - Stage 8's
+// trade_code_receive.c needs the same two values for its own confirm-code
+// validator, and an enum defined in a .c file with no header declaration
+// has no visibility outside that translation unit. See trade_code.h's own
+// comment on the enum for the full reasoning.
 
 // Rounds up to a whole byte. See TradeCodeSession_BuildOffer's own comment
 // for why this has to be byte alignment, not the plan doc's own suggested

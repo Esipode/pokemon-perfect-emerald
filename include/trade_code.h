@@ -42,6 +42,20 @@ enum TradeCodeStatus
     TRADE_CODE_TOO_SHORT,  // no symbol characters at all
 };
 
+// The payload spec's 2-bit `codeKind` header field (an offer code vs. a
+// confirm code - see the plan doc's "Payload spec" section). Lives here,
+// not in trade_code_session.c where Stage 7 first needed it, now that
+// Stage 8's trade_code_receive.c needs the same two values for its own
+// confirm-code validator - Stage 7's own status block anticipated this
+// exact promotion ("Stage 8 will need the same two values... rather than
+// this stage reaching forward to invent a shared header for a two-value
+// enum with exactly one other consumer that doesn't exist yet").
+enum TradeCodeKind
+{
+    TRADE_CODE_KIND_OFFER   = 0,
+    TRADE_CODE_KIND_CONFIRM = 1,
+};
+
 // The Base32/Crockford symbol (a game-charmap byte) at `index` (0-31). The
 // single source of truth for the alphabet - added for Stage 6's on-screen
 // keyboard (src/trade_code_entry.c), so its 8x4 symbol grid draws exactly

@@ -57,6 +57,7 @@
 #include "trade_code.h"
 #include "trade_code_display.h"
 #include "trade_code_entry.h"
+#include "trade_code_receive.h"
 #include "trade_code_session.h"
 #include "tv.h"
 #include "pokemon_summary_screen.h"
@@ -388,6 +389,7 @@ static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId);
 static void DebugAction_TradeCode_EnterOffer(u8 taskId);
 static void DebugAction_TradeCode_EnterConfirm(u8 taskId);
 static void DebugAction_TradeCode_StartSession(u8 taskId);
+static void DebugAction_TradeCode_ReceiveStep4(u8 taskId);
 static void DebugAction_TradeCode_ClearPendingTrade(u8 taskId);
 
 static void DebugAction_Achievements_GrantRevoke(u8 taskId);
@@ -633,6 +635,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Enter Trade Code…"),  DebugAction_TradeCode_EnterOffer },
     { COMPOUND_STRING("Enter Confirm Code…"), DebugAction_TradeCode_EnterConfirm },
     { COMPOUND_STRING("Start Trade Code Session…"), DebugAction_TradeCode_StartSession },
+    { COMPOUND_STRING("Receive Trade Code (Step 4)…"), DebugAction_TradeCode_ReceiveStep4 },
     { COMPOUND_STRING("Clear Pending Trade…"), DebugAction_TradeCode_ClearPendingTrade },
     { NULL }
 };
@@ -1945,6 +1948,21 @@ static void DebugAction_TradeCode_StartSession(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
     TradeCodeSession_Start();
+}
+
+// Stage 8 testing aid (src/trade_code_receive.c): Step 4, entering the
+// confirm code and materialising a COMMITTED pendingTrade. Since Stage 9's
+// boot-time reset-resistant re-entry doesn't exist yet, this is the only
+// way to reach Step 4 from a save that already has a COMMITTED pending
+// trade (e.g. produced by "Start Trade Code Session..." above, run to
+// completion). TradeCodeReceive_Start guards its own "nothing pending"
+// case with an on-screen message rather than silently no-opping, so
+// calling it directly right after Debug_DestroyMenu_Full is safe
+// regardless of whether a trade is actually pending.
+static void DebugAction_TradeCode_ReceiveStep4(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    TradeCodeReceive_Start();
 }
 
 // Testing aid only: resets a COMMITTED (or any other) pending trade back to
