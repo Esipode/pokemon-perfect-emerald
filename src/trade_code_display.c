@@ -146,12 +146,29 @@ static const struct WindowTemplate sTradeCodeDisplayWindowTemplates[] =
     DUMMY_WIN_TEMPLATE
 };
 
-// Reuses the same generic full-screen UI background as src/ui_stat_editor.c
-// and src/achievements_menu.c - the panel/border art lives in the tileset
-// itself, so BG0's windows above are plain transparent text overlays.
-static const u32 sTradeCodeDisplayBgTiles[] = INCBIN_U32("graphics/ui_menu/background_tileset.4bpp.smol");
-static const u32 sTradeCodeDisplayBgTilemap[] = INCBIN_U32("graphics/ui_menu/background_tileset.bin.smolTM");
-static const u16 sTradeCodeDisplayBgPalette[] = INCBIN_U16("graphics/ui_menu/background_pal.gbapal");
+// Purpose-built background for this screen (used for both the offer-code
+// and confirm-code views - see TradeCodeDisplay_Init's isConfirmCode param,
+// which only changes the title text printed over this art, not the art
+// itself). graphics/trade_codes/view_tileset.{png,pal,bin} are a deduped
+// tile sheet + GBA screen tilemap + JASC-PAL palette generated from the
+// source mockup graphics/trade_codes/bg_view_trade_code.png, the same way
+// graphics/ui_menu/background_tileset.png/.bin (see src/ui_stat_editor.c)
+// and graphics/achievements/ui/*_tileset.png/.bin (see src/achievements_
+// menu.c) were - those were hand-deduped with an external tool (Tilemap
+// Studio; see docs/tutorials/how_to_map_preview_screen.md) since the repo's
+// own Makefile has no generic mockup->tileset+tilemap dedup rule. This one
+// was instead deduped with a throwaway script (exact-tile-match dedup, no
+// flip detection) since gbagfx/Tilemap Studio aren't something this
+// environment can run - verified via a pixel-for-pixel round-trip
+// reconstruction against the source PNG before being wired in here, but
+// still only screen-verified, not hardware-verified (same caveat as
+// everything else in this file per the plan doc's "Not yet verified"
+// checklist). 37 unique tiles, 9 colors - comfortably inside both the
+// 512-tile BG1 charblock and the 16-color/32-byte palette budget the
+// existing LoadPalette(..., 32) call below already assumes.
+static const u32 sTradeCodeDisplayBgTiles[] = INCBIN_U32("graphics/trade_codes/view_tileset.4bpp.smol");
+static const u32 sTradeCodeDisplayBgTilemap[] = INCBIN_U32("graphics/trade_codes/view_tileset.bin.smolTM");
+static const u16 sTradeCodeDisplayBgPalette[] = INCBIN_U16("graphics/trade_codes/view_tileset.gbapal");
 
 static const u8 sTradeCodeDisplayFontColors[][3] =
 {
@@ -271,8 +288,14 @@ static bool8 TradeCodeDisplay_DoGfxSetup(void)
             // LoadMonIconPalettes() pair, which loads every species' icon
             // palette up front for its cycle-through-party use case that
             // this read-only, single-mon screen doesn't have.
+            // y=30, not the icon's native center of the WINDOW_MON row band
+            // (~40) - a standard 32x32 icon centered there extends a few
+            // pixels past WINDOW_MON's own bottom edge (tilemapTop=2,
+            // height=4 tiles -> y=16..48) and into WINDOW_CODE just below
+            // it (tilemapTop=6 -> y=48+), which is exactly the overlap this
+            // offset fixes.
             LoadMonIconPalette(sTradeCodeDisplayDataPtr->species);
-            sTradeCodeDisplayDataPtr->monIconSpriteId = CreateMonIconNoPersonality(sTradeCodeDisplayDataPtr->species, SpriteCallbackDummy, 24, 40, 0);
+            sTradeCodeDisplayDataPtr->monIconSpriteId = CreateMonIconNoPersonality(sTradeCodeDisplayDataPtr->species, SpriteCallbackDummy, 24, 30, 0);
         }
         gMain.state++;
         break;
