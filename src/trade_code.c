@@ -663,3 +663,141 @@ enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, s
 
     return TRADE_CODE_MON_OK;
 }
+
+// ---------------------------------------------------------------------
+// Stage 3 of "Trading Codes.md": sealing, nonces, replay protection.
+// Still no UI, no save data - the replay ring's storage is Stage 4's
+// struct PendingTrade; TradeCode_IsOfferSealUsed/RecordOfferSeal below are
+// the shared check/insert primitives operating on a caller-owned array.
+// ---------------------------------------------------------------------
+
+// Salts passed to TradeCode_Hash, purely to keep an offer seal, "I'm the
+// canonically-first offer" confirm tag and "I'm second" confirm tag from
+// ever landing on the same value for coincidentally-identical input bytes.
+// Not secret in themselves - TRADE_CODE_SECRET is what does the keying.
+#define TRADE_CODE_HASH_SALT_OFFER          0x00
+#define TRADE_CODE_HASH_SALT_CONFIRM_FIRST  0x01
+#define TRADE_CODE_HASH_SALT_CONFIRM_SECOND 0x02
+
+// Two full offer codes (header + mon payload + seal) concatenated. Sized
+// with the same "generous headroom over the largest real payload" approach
+// as test/trade_code.c's MON_TEST_BUF_BYTES, doubled for two payloads plus
+// each one's header/seal. If a future format version ever needs more, the
+// excess is silently truncated (TradeCode_WriteBits' existing capacity
+// latching, see Stage 1) rather than overflowed - both carts truncate
+// identically, so the tag would just cover less of the input, not desync.
+#define TRADE_CODE_CONFIRM_COMBINE_BYTES 128
+
+u32 TradeCode_Hash(const u8 *data, u32 len, u32 salt)
+{
+    u32 hash = 2166136261u ^ (TRADE_CODE_SECRET ^ salt); // FNV-1a offset basis, keyed
+    u32 i;
+
+    for (i = 0; i < len; i++)
+    {
+        hash ^= data[i];
+        hash *= 16777619u; // FNV-1a prime
+    }
+
+    // murmur3 fmix32: two xor-shift + multiply rounds, then a final
+    // xor-shift - the "avalanche mix (xor-shift-multiply, twice)" from the
+    // plan doc. FNV-1a alone leaves a short input's high bits weakly mixed;
+    // this spreads a single flipped input bit across roughly half the
+    // output bits.
+    hash ^= hash >> 16;
+    hash *= 0x85EBCA6Bu;
+    hash ^= hash >> 13;
+    hash *= 0xC2B2AE35u;
+    hash ^= hash >> 16;
+
+    return hash;
+}
+
+u32 TradeCode_SealOffer(const u8 *payload, u32 nBits)
+{
+    u32 nBytes = (nBits + 7) / 8;
+    return TradeCode_Hash(payload, nBytes, TRADE_CODE_HASH_SALT_OFFER);
+}
+
+// Copies `nBits` bits from an external byte buffer into `dest`, MSB-first,
+// via TradeCode_WriteBits - keeps all bit-packing logic in Stage 1's own
+// functions rather than duplicating it here. Chunked at 24 bits so the
+// per-chunk value can never approach a u32 shift overflow.
+static void TradeCode_AppendBits(struct TradeCodeBits *dest, const u8 *src, u32 nBits)
+{
+    u32 pos = 0;
+
+    while (pos < nBits && !dest->error)
+    {
+        u32 remaining = nBits - pos;
+        u32 chunk = (remaining < 24) ? remaining : 24;
+        u32 value = 0;
+        u32 i;
+
+        for (i = 0; i < chunk; i++)
+        {
+            u32 bitIndex = pos + i;
+            u32 byteIdx = bitIndex >> 3;
+            u32 bitInByte = 7 - (bitIndex & 7);
+            u32 bit = (src[byteIdx] >> bitInByte) & 1;
+            value = (value << 1) | bit;
+        }
+
+        TradeCode_WriteBits(dest, value, chunk);
+        pos += chunk;
+    }
+}
+
+u32 TradeCode_ConfirmTag(const u8 *offerSelf, u32 lenSelfBits, u32 otIdSelf, u16 nonceSelf,
+                          const u8 *offerPartner, u32 lenPartnerBits, u32 otIdPartner, u16 noncePartner)
+{
+    u8 buf[TRADE_CODE_CONFIRM_COMBINE_BYTES];
+    struct TradeCodeBits combined;
+    bool32 selfIsFirst = (otIdSelf != otIdPartner) ? (otIdSelf < otIdPartner) : (nonceSelf < noncePartner);
+    u32 salt = selfIsFirst ? TRADE_CODE_HASH_SALT_CONFIRM_FIRST : TRADE_CODE_HASH_SALT_CONFIRM_SECOND;
+    u32 hash;
+
+    memset(buf, 0, sizeof(buf));
+    combined.data = buf;
+    combined.bitPos = 0;
+    combined.capacity = sizeof(buf) * 8;
+    combined.error = FALSE;
+
+    // Canonical order: lower otId (tie-broken by lower nonce) always goes
+    // first, regardless of which mon was passed in as "self" - this is what
+    // lets both carts agree on the same concatenated bytes.
+    if (selfIsFirst)
+    {
+        TradeCode_AppendBits(&combined, offerSelf, lenSelfBits);
+        TradeCode_AppendBits(&combined, offerPartner, lenPartnerBits);
+    }
+    else
+    {
+        TradeCode_AppendBits(&combined, offerPartner, lenPartnerBits);
+        TradeCode_AppendBits(&combined, offerSelf, lenSelfBits);
+    }
+
+    hash = TradeCode_Hash(buf, (combined.bitPos + 7) / 8, salt);
+    return hash & 0x0FFFFFFF; // 28 bits, per the payload spec's confirm code
+}
+
+bool32 TradeCode_IsOfferSealUsed(const u32 ring[TRADE_CODE_REPLAY_RING], u32 seal)
+{
+    u32 i;
+
+    for (i = 0; i < TRADE_CODE_REPLAY_RING; i++)
+    {
+        if (ring[i] == seal)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+void TradeCode_RecordOfferSeal(u32 ring[TRADE_CODE_REPLAY_RING], u32 seal)
+{
+    u32 i;
+
+    for (i = TRADE_CODE_REPLAY_RING - 1; i > 0; i--)
+        ring[i] = ring[i - 1];
+    ring[0] = seal;
+}

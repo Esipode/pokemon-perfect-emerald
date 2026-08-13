@@ -95,4 +95,65 @@ void TradeCode_SerializeMon(const struct BoxPokemon *boxMon, struct TradeCodeBit
 // whole payload is known to be well-formed (TRADE_CODE_MON_OK).
 enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, struct BoxPokemon *outBoxMon);
 
+// ---------------------------------------------------------------------
+// Stage 3: sealing, nonces, replay protection. No UI, no save data - the
+// replay ring's *storage* is Stage 4's struct PendingTrade; these are the
+// shared check/insert primitives so the eviction policy lives in one place.
+// ---------------------------------------------------------------------
+
+// FNV-1a over `data[0..len)`, keyed with TRADE_CODE_SECRET ^ salt, then a
+// murmur3-style avalanche finalizer (xor-shift + multiply, twice, plus a
+// final xor-shift) so a single flipped input bit changes roughly half the
+// output bits. Deliberately NOT Crc32B (src/random.c) - CRC32 is linear, so
+// a forger can patch a payload and keep a CRC valid; this can't be
+// cancelled out the same way. Still not real cryptography - see the plan
+// doc's "Honest note on cryptographic strength" - the secret is a
+// compile-time constant baked into a public ROM.
+u32 TradeCode_Hash(const u8 *data, u32 len, u32 salt);
+
+// The offer code's anti-tamper seal: a keyed hash over every bit of the
+// already-assembled offer payload (header + mon fields; see the payload
+// spec's "Seal" row), appended by the caller as the payload's final 32
+// bits. `nBits` must not include the seal itself. The payload's core mon
+// fields already carry species/otId (Stage 2), so hashing the whole
+// payload already ties the seal to "this exact Pokemon" - no separate
+// species/otId/personality salt is needed. Deliberately NOT salted with
+// personality, unlike an earlier draft of this stage's plan: personality
+// is the one field Stage 2 chose not to transmit at all, and salting with
+// something the receiving cart can never reconstruct from the payload it
+// just decoded would make the seal unverifiable, not more secure. `data`'s
+// trailing bits past `nBits` in the final partial byte must be zero (every
+// existing caller already zeroes its buffer before writing, per Stage 1/2
+// convention).
+u32 TradeCode_SealOffer(const u8 *payload, u32 nBits);
+
+// The confirm code's 28-bit combined tag (see the payload spec: a confirm
+// code is codeKind (2 bits) + this tag = TRADE_CODE_CONFIRM_CHARS symbols).
+// Feeds both parties' full offer payloads (including each one's own seal)
+// into TradeCode_Hash in a canonical order - whichever offer's `otId` is
+// lower goes first, ties broken by the lower `nonce` - so both carts hash
+// an identical concatenation regardless of who calls this "self". What
+// makes the tag revealed to me differ from the tag I expect from my
+// partner is which mon is passed as `self`: call once with (mine,
+// partner's) for my own revealed code, and again with the two mons swapped
+// to compute the tag I expect to receive (see Stage 7). otId/nonce are
+// passed in rather than re-parsed out of the raw bit streams so this stays
+// independent of Stage 2's exact field layout - by Step 3 the caller has
+// already decoded and validated both mons and knows both nonces.
+u32 TradeCode_ConfirmTag(const u8 *offerSelf, u32 lenSelfBits, u32 otIdSelf, u16 nonceSelf,
+                          const u8 *offerPartner, u32 lenPartnerBits, u32 otIdPartner, u16 noncePartner);
+
+// TRUE if `seal` already appears in `ring` - this exact offer code has
+// already been redeemed on this cart. A zero entry means "unused slot" (a
+// freshly-zeroed save never false-positives); a genuinely redeemed code
+// whose seal happens to hash to exactly 0 would be indistinguishable from
+// an empty slot, but that's a 1-in-2^32 event, in the same spirit as the
+// otId collision handled in TradeCode_DeserializeMon.
+bool32 TradeCode_IsOfferSealUsed(const u32 ring[TRADE_CODE_REPLAY_RING], u32 seal);
+
+// Inserts `seal` at the front of `ring`, dropping the oldest entry (a
+// simple shift, not a cursor-indexed ring - TRADE_CODE_REPLAY_RING is small
+// enough that this needs no extra state in Stage 4's save struct).
+void TradeCode_RecordOfferSeal(u32 ring[TRADE_CODE_REPLAY_RING], u32 seal);
+
 #endif // GUARD_TRADE_CODE_H

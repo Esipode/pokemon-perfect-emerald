@@ -704,3 +704,154 @@ TEST("TradeCode_DeserializeMon rejects isEgg combined with a custom nickname")
     status = RoundTripMon(&orig, &decoded);
     EXPECT_EQ(status, TRADE_CODE_MON_EGG_WITH_NICKNAME);
 }
+
+// ---------------------------------------------------------------------
+// Stage 3 of "Trading Codes.md": sealing, nonces, replay protection.
+// ---------------------------------------------------------------------
+
+TEST("TradeCode_SealOffer changes when any single bit of the payload is flipped")
+{
+    struct BoxPokemon mon;
+    u8 original[MON_TEST_BUF_BYTES];
+    struct TradeCodeBits stream;
+    u32 nBits;
+    u32 originalSeal;
+    u32 bit;
+
+    CreateBoxMon(&mon, SPECIES_PIDGEY, 37, 0x1234, OTID_STRUCT_PRESET(0xCAFEBABE));
+
+    memset(original, 0, sizeof(original));
+    stream.data = original;
+    stream.bitPos = 0;
+    stream.capacity = sizeof(original) * 8;
+    stream.error = FALSE;
+    TradeCode_SerializeMon(&mon, &stream);
+    nBits = stream.bitPos;
+
+    originalSeal = TradeCode_SealOffer(original, nBits);
+
+    // Every single bit of the payload, one at a time - not just a sample -
+    // per the plan doc's own acceptance test.
+    for (bit = 0; bit < nBits; bit++)
+    {
+        u8 flipped[MON_TEST_BUF_BYTES];
+        u32 byteIdx = bit / 8;
+        u32 bitInByte = 7 - (bit % 8);
+        u32 flippedSeal;
+
+        memcpy(flipped, original, sizeof(flipped));
+        flipped[byteIdx] ^= (1 << bitInByte);
+
+        flippedSeal = TradeCode_SealOffer(flipped, nBits);
+        EXPECT(flippedSeal != originalSeal);
+    }
+}
+
+TEST("TradeCode_SealOffer differs for the same mon behind a different nonce")
+{
+    struct BoxPokemon mon;
+    u8 bufA[MON_TEST_BUF_BYTES], bufB[MON_TEST_BUF_BYTES];
+    struct TradeCodeBits streamA, streamB;
+    u32 sealA, sealB;
+
+    // A stand-in 16-bit nonce prefix ahead of the mon payload - Stage 7
+    // assembles the real header, but sealing itself only cares about "every
+    // preceding bit", so prefixing here exercises the same property without
+    // needing the header layer.
+    CreateBoxMon(&mon, SPECIES_PIDGEY, 37, 0x1234, OTID_STRUCT_PRESET(0xCAFEBABE));
+
+    memset(bufA, 0, sizeof(bufA));
+    streamA.data = bufA;
+    streamA.bitPos = 0;
+    streamA.capacity = sizeof(bufA) * 8;
+    streamA.error = FALSE;
+    TradeCode_WriteBits(&streamA, 0x1111, 16);
+    TradeCode_SerializeMon(&mon, &streamA);
+
+    memset(bufB, 0, sizeof(bufB));
+    streamB.data = bufB;
+    streamB.bitPos = 0;
+    streamB.capacity = sizeof(bufB) * 8;
+    streamB.error = FALSE;
+    TradeCode_WriteBits(&streamB, 0x2222, 16);
+    TradeCode_SerializeMon(&mon, &streamB);
+
+    sealA = TradeCode_SealOffer(bufA, streamA.bitPos);
+    sealB = TradeCode_SealOffer(bufB, streamB.bitPos);
+
+    EXPECT(sealA != sealB);
+}
+
+TEST("TradeCode_ConfirmTag is deterministic, differs by role, and fits 28 bits")
+{
+    struct BoxPokemon monA, monB;
+    u8 bufA[MON_TEST_BUF_BYTES], bufB[MON_TEST_BUF_BYTES];
+    struct TradeCodeBits streamA, streamB;
+    u32 otIdA, otIdB;
+    u16 nonceA, nonceB;
+    u32 tagSelfA, tagSelfARepeat, tagSelfB;
+
+    // Three relative orderings: A's otId below B's, above B's, and tied
+    // (nonce breaks the tie) - the canonical-order logic must keep A's tag
+    // distinct from B's tag in every case, not just the common one.
+    PARAMETRIZE { otIdA = 0x0000AAAA; otIdB = 0x0000BBBB; nonceA = 0x1111; nonceB = 0x2222; }
+    PARAMETRIZE { otIdA = 0x0000BBBB; otIdB = 0x0000AAAA; nonceA = 0x1111; nonceB = 0x2222; }
+    PARAMETRIZE { otIdA = 0x0000CCCC; otIdB = 0x0000CCCC; nonceA = 0x1111; nonceB = 0x2222; }
+
+    CreateBoxMon(&monA, SPECIES_PIDGEY, 10, 0x11111111, OTID_STRUCT_PRESET(otIdA));
+    CreateBoxMon(&monB, SPECIES_WOBBUFFET, 20, 0x22222222, OTID_STRUCT_PRESET(otIdB));
+
+    memset(bufA, 0, sizeof(bufA));
+    streamA.data = bufA;
+    streamA.bitPos = 0;
+    streamA.capacity = sizeof(bufA) * 8;
+    streamA.error = FALSE;
+    TradeCode_SerializeMon(&monA, &streamA);
+
+    memset(bufB, 0, sizeof(bufB));
+    streamB.data = bufB;
+    streamB.bitPos = 0;
+    streamB.capacity = sizeof(bufB) * 8;
+    streamB.error = FALSE;
+    TradeCode_SerializeMon(&monB, &streamB);
+
+    tagSelfA = TradeCode_ConfirmTag(bufA, streamA.bitPos, otIdA, nonceA,
+                                     bufB, streamB.bitPos, otIdB, nonceB);
+    tagSelfARepeat = TradeCode_ConfirmTag(bufA, streamA.bitPos, otIdA, nonceA,
+                                           bufB, streamB.bitPos, otIdB, nonceB);
+    EXPECT_EQ(tagSelfA, tagSelfARepeat); // pure function of its inputs
+
+    tagSelfB = TradeCode_ConfirmTag(bufB, streamB.bitPos, otIdB, nonceB,
+                                     bufA, streamA.bitPos, otIdA, nonceA);
+    // A's revealed code must differ from B's - "each player enters the
+    // other's, not their own" only means something if they're distinct.
+    EXPECT(tagSelfA != tagSelfB);
+
+    EXPECT_EQ(tagSelfA & ~0x0FFFFFFF, 0);
+    EXPECT_EQ(tagSelfB & ~0x0FFFFFFF, 0);
+}
+
+TEST("TradeCode_IsOfferSealUsed/RecordOfferSeal: the ring rejects a repeat and evicts the oldest")
+{
+    u32 ring[TRADE_CODE_REPLAY_RING];
+    u32 i;
+
+    memset(ring, 0, sizeof(ring));
+
+    EXPECT(!TradeCode_IsOfferSealUsed(ring, 0x12345678));
+
+    TradeCode_RecordOfferSeal(ring, 0x12345678);
+    EXPECT(TradeCode_IsOfferSealUsed(ring, 0x12345678));
+    // A seal that was never recorded must not collide with one that was.
+    EXPECT(!TradeCode_IsOfferSealUsed(ring, 0x87654321));
+
+    // Push TRADE_CODE_REPLAY_RING more distinct seals through - the very
+    // first one recorded above must fall off the back once the ring is
+    // full, pinning down the drop-oldest eviction policy.
+    for (i = 0; i < TRADE_CODE_REPLAY_RING; i++)
+        TradeCode_RecordOfferSeal(ring, 0xA0000000 + i);
+
+    EXPECT(!TradeCode_IsOfferSealUsed(ring, 0x12345678));
+    for (i = 0; i < TRADE_CODE_REPLAY_RING; i++)
+        EXPECT(TradeCode_IsOfferSealUsed(ring, 0xA0000000 + i));
+}
