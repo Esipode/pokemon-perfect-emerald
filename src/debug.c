@@ -54,6 +54,8 @@
 #include "strings.h"
 #include "string_util.h"
 #include "task.h"
+#include "trade_code.h"
+#include "trade_code_display.h"
 #include "tv.h"
 #include "pokemon_summary_screen.h"
 #include "wild_encounter.h"
@@ -379,6 +381,9 @@ static void DebugAction_Player_Gender(u8 taskId);
 static void DebugAction_Player_Id(u8 taskId);
 static void DebugAction_Player_OpenPaletteMenu(u8 taskId);
 
+static void DebugAction_TradeCode_ViewSampleOffer(u8 taskId);
+static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId);
+
 static void DebugAction_Achievements_GrantRevoke(u8 taskId);
 static void DebugAction_Achievements_GrantRevokeSelect(u8 taskId);
 static void DebugAction_Achievements_SetPoints(u8 taskId);
@@ -617,6 +622,8 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Follower NPC…"),     DebugAction_OpenSubMenu, sDebugMenu_Actions_FollowerNPCMenu },
     { COMPOUND_STRING("Wally Tutorial"),    DebugAction_ExecuteScript, Debug_EventScript_WallyTutorial },
     { COMPOUND_STRING("Steven Multi"),      DebugAction_ExecuteScript, Debug_EventScript_Steven_Multi },
+    { COMPOUND_STRING("View Trade Code…"),  DebugAction_TradeCode_ViewSampleOffer },
+    { COMPOUND_STRING("View Confirm Code…"), DebugAction_TradeCode_ViewSampleConfirm },
     { NULL }
 };
 
@@ -1813,6 +1820,41 @@ static void DebugAction_Player_OpenPaletteMenu(u8 taskId)
     Debug_DestroyMenu_Full(taskId);
     gMain.savedCallback = CB2_ReturnToField;
     SetMainCallback2(CB2_InitPlayerPaletteMenu);
+}
+
+// *******************************
+// Actions Trade Code
+
+// Stage 5 testing aid ("Trading Codes.md"): hardcoded Base32/Crockford
+// strings, not derived from a real TradeCode_Encode call, so the display
+// screen can be exercised independently of Stages 2/3/7 actually being
+// wired together yet. Sized to TRADE_CODE_MAX_CHARS' own worst-case
+// derivation (see include/config/trade_code.h): 86 symbols, 17 hyphens, 103
+// characters - specifically to exercise Stage 5's own acceptance line,
+// "verify a 78-character code renders without clipping on real hardware"
+// (now 103 chars, post Stage 2's 8-bits/character name-field fix).
+static const u8 sDebugTradeCode_SampleOffer[] = _(
+    "01234-56789-ABCDE-FGHJK-MNPQR-STVWX-YZ012-34567-89ABC-DEFGH-"
+    "JKMNP-QRSTV-WXYZ0-12345-6789A-BCDEF-GHJKM-N");
+
+// A confirm code is always exactly TRADE_CODE_CONFIRM_CHARS (6) characters,
+// one group, no hyphens - see the payload spec.
+static const u8 sDebugTradeCode_SampleConfirm[] = _("7Q2XKM");
+
+// Mirrors DebugAction_Player_OpenPaletteMenu's pattern, but TradeCodeDisplay_
+// Init takes its return callback directly (see include/trade_code_display.h)
+// rather than reading it back out of gMain.savedCallback, so there's no
+// separate gMain.savedCallback assignment needed here.
+static void DebugAction_TradeCode_ViewSampleOffer(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    TradeCodeDisplay_Init(sDebugTradeCode_SampleOffer, SPECIES_BULBASAUR, NULL, FALSE, CB2_ReturnToField);
+}
+
+static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId)
+{
+    Debug_DestroyMenu_Full(taskId);
+    TradeCodeDisplay_Init(sDebugTradeCode_SampleConfirm, SPECIES_NONE, NULL, TRUE, CB2_ReturnToField);
 }
 
 // *******************************

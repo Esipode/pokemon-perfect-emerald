@@ -17,11 +17,22 @@
 // round number.
 #define TRADE_CODE_SECRET 0x5C3A9F17
 
-// Upper bound on a displayed/entered code's length in characters,
-// including hyphens - the longest spec'd payload (a fully custom
-// competitive mon) is 78. Chosen with headroom for Stage 11's optional
-// fields.
-#define TRADE_CODE_MAX_CHARS 80
+// Upper bound on a displayed/entered code's length in characters, including
+// hyphens. The original 80 (headroom over the plan doc's published 78-char
+// worst case) was flagged as stale by Stage 1's status block: Stage 2 had
+// to switch both name fields from the doc's spec'd 7 bits/character to 8
+// (this fork's charmap puts every real character above 0x7F - see Stage 2's
+// status block), and met data/hyper-training were dropped instead, so the
+// true worst case is no longer 78. Recomputed bit-for-bit against the
+// actual Stage 2/3 implementation for Stage 5 (the code display screen,
+// whose buffer this sizes): header-minus-presence (formatVersion 4 +
+// codeKind 2 + nonce 16 = 22, Stage 7) + worst-case mon payload (presence 8
+// + 93 bits of always-present core/OT-name + 214 bits of every optional
+// field present = 374, see TradeCode_SerializeMon) + seal (32) = 428 bits
+// -> 86 Base32 symbols -> 17 group hyphens -> 103 displayed characters.
+// 112 leaves a little headroom without wasting much EWRAM (the display and
+// entry screens' buffers are both sized off this).
+#define TRADE_CODE_MAX_CHARS 112
 
 // Codes are displayed/entered in hyphen-separated groups of this many
 // Base32 symbols (e.g. "M4K7Q-2WXNB-...").
