@@ -670,6 +670,39 @@ struct AchievementRunDataExt
     u8  legendCandidateCount;
 };
 
+// Offline, code-based trading (see trade_code.h) -- a decoded but not-yet-
+// materialised partner Pokemon, held between the Step 3 escrow commit and
+// the Step 4 swap, plus the bookkeeping the session state machine needs to
+// survive a reset. See enum TradeCodeState (trade_code.h) for what `state`
+// holds; TRADE_CODE_STATE_NONE is guaranteed to be 0, so a save from before
+// this struct existed (or a freshly zeroed one) reads as "no pending trade"
+// with no migration needed.
+//
+// `incoming` is raw storage for a struct BoxPokemon (pinned to 80 bytes as
+// of Saveblock-Shrinking Stage 5; see the STATIC_ASSERT tying the two
+// together in pokemon.h), not a `struct BoxPokemon incoming;` member as
+// trade_code.h's own Stage 4 planning sketch has it -- pokemon.h isn't
+// #included until after struct SaveBlock2 below, so its full definition
+// (and therefore its size) isn't visible at this point in the header yet.
+// struct SecretBaseParty, a little further down, hits the same ordering
+// constraint for struct Pokemon and works around it the same way (raw
+// fields instead of an embedded struct). Moved in/out via memcpy from
+// src/trade_code.c, which does have pokemon.h visible.
+struct PendingTrade
+{
+    u8 incoming[80];                               // struct BoxPokemon, by value -- see above
+    u32 recentOfferSeals[TRADE_CODE_REPLAY_RING];  // Stage 3's replay ring
+    u32 expectedConfirmTag;                        // Stage 3's TradeCode_ConfirmTag, masked to 28 bits
+    u16 nonce;
+    u8 state;                                      // enum TradeCodeState (trade_code.h)
+    u8 partySlot;                                  // the vacated party slot, for Step 4
+    u8 abandonedCount;                             // Stage 11's soft fair-exchange deterrent
+    u8 padding[3];
+}; // sizeof == 124: 80 + 32 + 4 + 2 + 1 + 1 + 1 + 3, no compiler-inserted
+   // padding between members (every u32-then-narrower transition already
+   // lands on a natural boundary) -- see this stage's status block for the
+   // full accounting.
+
 // Size of the nuzlocke per-zone bitfields in struct SaveBlock2. Indexed by
 // GetCurrentRegionMapSectionId() -- the map's MAPSEC, i.e. the name shown on
 // the region map -- NOT by raw mapNum like these fields used to be (that
@@ -755,6 +788,10 @@ struct SaveBlock2
     // save compatibility with pre-existing Nuzlocke runs was not a concern).
     u8 nuzlockeZoneCaughtFlags[NUM_NUZLOCKE_ZONE_FLAG_BYTES];
     u8 nuzlockeZoneExtraEncounterFlags[NUM_NUZLOCKE_ZONE_FLAG_BYTES];
+    // Offline, code-based trading (trade_code.h) -- see struct PendingTrade's
+    // own comment above. A genuine new field, not filler reuse (see this
+    // stage's status block for why).
+    struct PendingTrade pendingTrade;
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;

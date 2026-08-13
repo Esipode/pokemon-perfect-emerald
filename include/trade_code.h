@@ -4,11 +4,13 @@
 #include "global.h"
 #include "config/trade_code.h"
 
-// Offline, code-based trading. This header is the public surface for 
+// Offline, code-based trading. This header is the public surface for
 // src/trade_code.c, filled in by the stages that need it:
 //   Stage 1 - the bit stream + Base32 codec.
-//   Stage 2 - the BoxPokemon serialiser/deserialiser (this stage).
+//   Stage 2 - the BoxPokemon serialiser/deserialiser.
 //   Stage 3 - sealing, nonces and replay protection.
+//   Stage 4 - save state (the TradeCodeState enum below; struct PendingTrade
+//             itself lives in global.h - see this stage's status block).
 
 // A bit stream over a caller-owned byte buffer, MSB-first.
 //
@@ -155,5 +157,26 @@ bool32 TradeCode_IsOfferSealUsed(const u32 ring[TRADE_CODE_REPLAY_RING], u32 sea
 // simple shift, not a cursor-indexed ring - TRADE_CODE_REPLAY_RING is small
 // enough that this needs no extra state in Stage 4's save struct).
 void TradeCode_RecordOfferSeal(u32 ring[TRADE_CODE_REPLAY_RING], u32 seal);
+
+// ---------------------------------------------------------------------
+// Stage 4: save state. struct PendingTrade itself lives in global.h (as a
+// SaveBlock2 member, it has to be declared before pokemon.h is #included
+// there - see the struct's own comment), but the state machine it carries
+// is this module's concern, so the enum lives here.
+//
+// Only COMMITTED is ever meaningfully read back after a reset (Stage 9)
+// - OFFER_SHOWN and PARTNER_OFFER_ACCEPTED are session-transient and are
+// never written to gSaveBlock2Ptr, so a reset during steps 1-2 simply loses
+// the in-progress session, which is correct (nothing was given up yet).
+// NONE is guaranteed to be zero, so a freshly-zeroed (or pre-Stage-4) save
+// reads as "no pending trade" with no migration needed.
+// ---------------------------------------------------------------------
+enum TradeCodeState
+{
+    TRADE_CODE_STATE_NONE,
+    TRADE_CODE_STATE_OFFER_SHOWN,
+    TRADE_CODE_STATE_PARTNER_OFFER_ACCEPTED,
+    TRADE_CODE_STATE_COMMITTED,
+};
 
 #endif // GUARD_TRADE_CODE_H

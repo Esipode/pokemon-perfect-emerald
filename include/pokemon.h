@@ -334,6 +334,16 @@ STATIC_ASSERT(MAX_LEVEL <= 1023, TradeCodeLevel10Bits); // fits in 10 bits
 STATIC_ASSERT(POKEMON_NAME_LENGTH == 12, TradeCodePokemonNameLength);
 STATIC_ASSERT(PLAYER_NAME_LENGTH == 7, TradeCodePlayerNameLength);
 
+// Stage 4: struct PendingTrade (global.h, a SaveBlock2 member) can't embed a
+// `struct BoxPokemon incoming;` by value - it's declared before this header
+// is #included from global.h, so the full type isn't visible there yet (see
+// the struct's own comment). It carries `incoming` as a raw u8[80] instead,
+// moved in/out via memcpy from trade_code.c. This pins that raw buffer to
+// stay exactly big enough for a real struct BoxPokemon, so the two can never
+// silently drift apart the way BoxPokemonStage5Size above already guards
+// against for sizeof(struct BoxPokemon) itself.
+STATIC_ASSERT(sizeof(((struct PendingTrade *)0)->incoming) == sizeof(struct BoxPokemon), PendingTradeIncomingSizeMatchesBoxPokemon);
+
 struct MonSpritesGfxManager
 {
     u32 numSprites:4;

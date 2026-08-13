@@ -122,6 +122,14 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+    // Offline trade codes (trade_code.h): explicit alongside the memset
+    // above, even though ClearSav2() (called just before this, in
+    // Sav2_ClearSetDefault()) already zeroes the whole SaveBlock2 -- Stage
+    // 11 will need this same reset on the New Game+ path, which does NOT
+    // run ClearSav2() first, so a committed trade can't survive into a
+    // fresh file. TRADE_CODE_STATE_NONE is 0, so this doubles as "no
+    // pending trade."
+    memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
 }
 
 static void ClearPokedexFlags(void)

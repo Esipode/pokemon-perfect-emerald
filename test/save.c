@@ -63,8 +63,24 @@
 //   so no extra padding beyond the existing 3-byte header pad is expected either
 //   side of this stage. 38980 + 28920 = 67900. SaveBlock1/2/3 are untouched.
 //   Calculated, not yet confirmed by a real build.
+//
+// Trading Codes Stage 4 (separate doc/stage numbering from the Saveblock
+// Shrinking stages above): appends struct PendingTrade to SaveBlock2 (see
+// include/global.h). The struct itself is a clean 124 bytes with no internal
+// compiler padding (80 + 32 + 4 + 2 + 1 + 1 + 1 + 3, every u32-then-narrower
+// transition already lands on a natural boundary -- see the struct's own
+// comment) and needs 4-byte alignment (it contains u32 members). The
+// pre-Stage-4 SaveBlock2 size (544, confirmed by a real build) is already a
+// multiple of 4, which is only possible if the struct's own alignment
+// requirement is 4 -- so whatever trailing pad the compiler was already
+// inserting after nuzlockeZoneExtraEncounterFlags to reach that multiple of
+// 4 is at most 3 bytes, meaning pendingTrade's own 4-byte-aligned starting
+// offset is forced to land at exactly 544 regardless of exactly how many of
+// those 3-or-fewer pad bytes existed. 544 + 124 = 668, itself already a
+// multiple of 4, so no further trailing pad is added. High confidence, but
+// still calculated rather than measured -- confirm against a real build.
 #define T_SAVEBLOCK1_SIZE 7504
-#define T_SAVEBLOCK2_SIZE 544
+#define T_SAVEBLOCK2_SIZE 668
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 67900
 
