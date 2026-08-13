@@ -11,7 +11,7 @@
 // into a negative number, which `MoveDamageDataHpUpdate`/`PassiveDataHpUpdate`
 // faithfully treat as "heal instead of damage" (a legitimate mechanic elsewhere,
 // disastrous here). Recoil then inherits and re-truncates the already-corrupted
-// value a second time. See "Damage Calc Patch.md", Stage 4 / Bug C.
+// value a second time.
 //
 // This test only exercises the reported symptom correctly once Stages 2-3 (the
 // upstream CalculateBaseDamage/fpmath overflow fixes) and this stage (widening

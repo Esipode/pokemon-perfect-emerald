@@ -1444,8 +1444,7 @@ struct SaveBlock1
 #endif
     // Actual size: see T_SAVEBLOCK1_SIZE in test/save.c (kept in sync by the
     // "SaveBlock1 is backwards compatible" test) or the in-game debug readout
-    // (CheckSaveBlock1Size, src/debug.c). Per-field offsets above are not
-    // tracked -- see "Saveblock Shrinking.md" Stage 0 for why.
+    // (CheckSaveBlock1Size, src/debug.c). Per-field offsets above are not tracked
 };
 
 extern struct SaveBlock1 *gSaveBlock1Ptr;

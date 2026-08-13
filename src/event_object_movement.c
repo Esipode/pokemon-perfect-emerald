@@ -592,7 +592,7 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
 #endif
 };
 
-// Player palette customization (see Customization.md) overrides the player's
+// Player palette customization overrides the player's
 // own entry in sObjectEventSpritePalettes[] with a recoloured copy. Callers
 // that read the table by index go through this accessor instead so the
 // override applies everywhere the vanilla palette would have been used.

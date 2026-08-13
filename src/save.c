@@ -1095,7 +1095,7 @@ void Task_LinkFullSave(u8 taskId)
 // .. _END), addressed the same way regardless of gSaveCounter/gLastWrittenSector.
 // A second full copy would cost as many flash sectors as the rest of the
 // entire save combined, which is the opposite of what this whole project is
-// trying to buy back (see Saveblock Shrinking.md).
+// trying to buy back.
 //
 // Durability instead comes from two things working together:
 //

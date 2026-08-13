@@ -5,9 +5,8 @@
 
 // Each 4 KiB flash sector contains 3968 bytes of actual data followed by a
 // reserved region and then 12 bytes of footer. The reserved region used to
-// carry a smeared-out SaveBlock3 chunk (see the Stage 6 sector remap in
-// Saveblock Shrinking.md); SaveBlock3 now has its own dedicated sector, so
-// this is just padding -- SECTOR_SIZE must stay exactly 4096 regardless,
+// carry a smeared-out SaveBlock3 chunk. SaveBlock3 now has its own dedicated sector,
+// so this is just padding -- SECTOR_SIZE must stay exactly 4096 regardless,
 // because it's the physical flash sector size (see the `sector.size` field
 // of MX29L010 / LE26FV10N1TS / DefaultFlash in src/agb_flash_mx.c and
 // src/agb_flash_le.c) and ProgramFlashSectorAndVerify/VerifyFlashSector

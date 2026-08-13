@@ -1,14 +1,13 @@
 #include "global.h"
 #include "test/battle.h"
 
-// Regression test for Bug E: struct SimulatedDamage (include/battle.h) is the AI's
+// Regression test for struct SimulatedDamage (include/battle.h) is the AI's
 // own damage estimate - a storage path entirely separate from gBattleStruct's
 // moveDamage/passiveHpUpdate (Bug C). Before Stage 5 its four fields were u16, so
 // even though CalculateMoveDamage's return value is a correctly-computed s32 (once
 // Stages 2-3 fix the upstream overflow), AI_CalcDamage's writes into
 // gAiLogicData->simulatedDmg silently wrapped modulo 65,536 for MAX_LEVEL matchups -
 // corrupting AI move/switch decisions independently of the player-visible HP bug.
-// See "Damage Calc Patch.md", Stage 5 / Bug E.
 //
 // Same Charizard/Flare Blitz-vs-Wobbuffet matchup as
 // test/battle/move_effect/recoil_overflow.c (Stage 4's primary repro), with the AI

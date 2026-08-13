@@ -1807,8 +1807,7 @@ static void DebugAction_Player_Id(u8 taskId)
 
 // Testing aid: reaches CB2_InitPlayerPaletteMenu directly, ahead of Stages
 // 5/6 wiring it in via the Options menu and the new-game gender choice.
-// Mirrors DebugAction_Achievements_OpenMenu's full-teardown-then-jump
-// pattern -- see Customization.md, Stage 3.
+// Mirrors DebugAction_Achievements_OpenMenu's full-teardown-then-jump pattern.
 static void DebugAction_Player_OpenPaletteMenu(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);

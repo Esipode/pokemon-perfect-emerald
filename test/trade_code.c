@@ -2,6 +2,10 @@
 #include "test/test.h"
 #include "trade_code.h"
 #include "constants/characters.h"
+#include "constants/moves.h"
+#include "constants/items.h"
+#include "pokemon.h"
+#include "string_util.h"
 #include "random.h"
 
 // Stage 1 of "Trading Codes.md": the bit stream + Base32/Crockford codec.
@@ -238,4 +242,465 @@ TEST("TradeCode_Encode groups symbols with a hyphen every TRADE_CODE_GROUP_SIZE"
         EXPECT_EQ(out[0], CHAR_Z);
         EXPECT_EQ(out[1], EOS);
     }
+}
+
+// ---------------------------------------------------------------------
+// Stage 2 of "Trading Codes.md": the BoxPokemon serialiser/deserialiser.
+// ---------------------------------------------------------------------
+
+#define MON_TEST_BUF_BYTES 64 // headroom over the largest Stage 2 payload (~374 bits -> 47 bytes)
+
+// Serialises `orig` and immediately decodes it back into `decoded`, as if
+// it had round-tripped through a real offer code (minus the Base32 layer,
+// which Stage 1 already covers on its own).
+static enum TradeCodeMonStatus RoundTripMon(const struct BoxPokemon *orig, struct BoxPokemon *decoded)
+{
+    u8 buf[MON_TEST_BUF_BYTES];
+    struct TradeCodeBits stream;
+
+    memset(buf, 0, sizeof(buf));
+    stream.data = buf;
+    stream.bitPos = 0;
+    stream.capacity = sizeof(buf) * 8;
+    stream.error = FALSE;
+
+    TradeCode_SerializeMon(orig, &stream);
+    EXPECT(!stream.error);
+
+    stream.capacity = stream.bitPos; // narrow to what was actually written
+    stream.bitPos = 0;
+    return TradeCode_DeserializeMon(&stream, decoded);
+}
+
+// Every field TradeCode_SerializeMon/DeserializeMon claim to preserve,
+// compared directly - deliberately excludes personality and experience,
+// the plan doc's two documented lossy fields. Reads exclusively through
+// Get(Box)MonData, matching the module's own contract.
+static void ExpectMonsMatch(struct BoxPokemon *orig, struct BoxPokemon *decoded)
+{
+    u8 origName[POKEMON_NAME_LENGTH + 1], decodedName[POKEMON_NAME_LENGTH + 1];
+    u32 i;
+
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_SPECIES), GetBoxMonData(orig, MON_DATA_SPECIES));
+    EXPECT_EQ(GetLevelFromBoxMonExp(decoded), GetLevelFromBoxMonExp(orig));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_HIDDEN_NATURE), GetBoxMonData(orig, MON_DATA_HIDDEN_NATURE));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_IS_SHINY), GetBoxMonData(orig, MON_DATA_IS_SHINY));
+    EXPECT_EQ(GetGenderFromSpeciesAndPersonality(GetBoxMonData(decoded, MON_DATA_SPECIES), decoded->personality),
+              GetGenderFromSpeciesAndPersonality(GetBoxMonData(orig, MON_DATA_SPECIES), orig->personality));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_ABILITY_NUM), GetBoxMonData(orig, MON_DATA_ABILITY_NUM));
+    for (i = 0; i < 6; i++)
+        EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_HP_IV + i), GetBoxMonData(orig, MON_DATA_HP_IV + i));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_POKEBALL), GetBoxMonData(orig, MON_DATA_POKEBALL));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_TERA_TYPE), GetBoxMonData(orig, MON_DATA_TERA_TYPE));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_OT_ID) & 0xFFFF, GetBoxMonData(orig, MON_DATA_OT_ID) & 0xFFFF);
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_OT_GENDER), GetBoxMonData(orig, MON_DATA_OT_GENDER));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_LANGUAGE), GetBoxMonData(orig, MON_DATA_LANGUAGE));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_IS_EGG), GetBoxMonData(orig, MON_DATA_IS_EGG));
+
+    GetBoxMonData(orig, MON_DATA_OT_NAME, origName);
+    GetBoxMonData(decoded, MON_DATA_OT_NAME, decodedName);
+    EXPECT_EQ(StringCompare(origName, decodedName), 0);
+
+    GetBoxMonData(orig, MON_DATA_NICKNAME, origName);
+    GetBoxMonData(decoded, MON_DATA_NICKNAME, decodedName);
+    EXPECT_EQ(StringCompare(origName, decodedName), 0);
+
+    for (i = 0; i < 6; i++)
+        EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_HP_EV + i), GetBoxMonData(orig, MON_DATA_HP_EV + i));
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_MOVE1 + i), GetBoxMonData(orig, MON_DATA_MOVE1 + i));
+        EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_PP1 + i), GetBoxMonData(orig, MON_DATA_PP1 + i));
+    }
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_PP_BONUSES), GetBoxMonData(orig, MON_DATA_PP_BONUSES));
+
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_HELD_ITEM), GetBoxMonData(orig, MON_DATA_HELD_ITEM));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_FRIENDSHIP), GetBoxMonData(orig, MON_DATA_FRIENDSHIP));
+    EXPECT_EQ(GetBoxMonData(decoded, MON_DATA_POKERUS), GetBoxMonData(orig, MON_DATA_POKERUS));
+}
+
+TEST("TradeCode_SerializeMon/DeserializeMon round-trip a hand-built mon")
+{
+    struct BoxPokemon orig, decoded;
+    enum TradeCodeMonStatus status;
+
+    // A plain wild-caught mon: nothing set past CreateBoxMon's own
+    // defaults, so every optional presence bit should end up clear and the
+    // round trip should still reproduce every field exactly.
+    PARAMETRIZE
+    {
+        CreateBoxMon(&orig, SPECIES_PIDGEY, 37, 0x1234, OTID_STRUCT_PRESET(0xCAFEBABE));
+    }
+
+    // A fully custom competitive mon: every optional field present at once
+    // (nickname, EVs, custom moves + PP Ups, held item, friendship,
+    // pokerus), maxing out the presence bitmap.
+    PARAMETRIZE
+    {
+        u8 nickname[POKEMON_NAME_LENGTH + 1] = _("STRIKER");
+        u8 ev, i;
+        enum Move moves[MAX_MON_MOVES] = { MOVE_POUND, MOVE_KARATE_CHOP, MOVE_DOUBLE_SLAP, MOVE_COMET_PUNCH };
+        u32 heldItem = ITEM_ORAN_BERRY;
+        u32 friendship = 200;
+        u32 pokerus = 0x31; // strain 3, 1 day left
+        u32 ppBonuses = 0xE4; // 2 bits/slot, PP Up counts 3,2,1,0 across the four slots
+
+        CreateBoxMon(&orig, SPECIES_PIDGEY, 50, 0x9E8D7C6B, OTID_STRUCT_PRESET(0x11223344));
+        SetBoxMonData(&orig, MON_DATA_NICKNAME, nickname);
+        ev = 252;
+        SetBoxMonData(&orig, MON_DATA_HP_EV, &ev);
+        ev = 4;
+        SetBoxMonData(&orig, MON_DATA_ATK_EV, &ev);
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            u32 move = moves[i];
+            u32 pp = CalculatePPWithBonus(moves[i], ppBonuses, i);
+            SetBoxMonData(&orig, MON_DATA_MOVE1 + i, &move);
+            SetBoxMonData(&orig, MON_DATA_PP1 + i, &pp);
+        }
+        SetBoxMonData(&orig, MON_DATA_PP_BONUSES, &ppBonuses);
+        SetBoxMonData(&orig, MON_DATA_HELD_ITEM, &heldItem);
+        SetBoxMonData(&orig, MON_DATA_FRIENDSHIP, &friendship);
+        SetBoxMonData(&orig, MON_DATA_POKERUS, &pokerus);
+    }
+
+    status = RoundTripMon(&orig, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+    ExpectMonsMatch(&orig, &decoded);
+}
+
+TEST("TradeCode round-trip preserves shininess independent of personality")
+{
+    struct BoxPokemon orig, decoded;
+    bool32 isShiny;
+    enum TradeCodeMonStatus status;
+
+    PARAMETRIZE { isShiny = FALSE; }
+    PARAMETRIZE { isShiny = TRUE; }
+
+    CreateBoxMon(&orig, SPECIES_WOBBUFFET, 20, 0x55667788, OTID_STRUCT_PRESET(0x99AABBCC));
+    SetBoxMonData(&orig, MON_DATA_IS_SHINY, &isShiny);
+
+    status = RoundTripMon(&orig, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+    EXPECT_EQ(GetBoxMonData(&decoded, MON_DATA_IS_SHINY), isShiny);
+    ExpectMonsMatch(&orig, &decoded);
+}
+
+TEST("TradeCode round-trip preserves a full 12-character nickname")
+{
+    struct BoxPokemon orig, decoded;
+    u8 nickname[POKEMON_NAME_LENGTH + 1] = _("ABCDEFGHIJKL"); // exactly 12 characters
+    enum TradeCodeMonStatus status;
+
+    CreateBoxMon(&orig, SPECIES_PIDGEY, 15, 0xABCDEF01, OTID_STRUCT_PRESET(0x22446688));
+    SetBoxMonData(&orig, MON_DATA_NICKNAME, nickname);
+
+    status = RoundTripMon(&orig, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+    ExpectMonsMatch(&orig, &decoded);
+}
+
+TEST("TradeCode round-trip preserves maxed-out EVs, quantised to multiples of 4")
+{
+    struct BoxPokemon orig, decoded;
+    u32 i;
+    enum TradeCodeMonStatus status;
+
+    CreateBoxMon(&orig, SPECIES_PIDGEY, 100, 0x13579BDF, OTID_STRUCT_PRESET(0x2468ACE0));
+    // 84 * 6 = 504, within MAX_TOTAL_EVS (510), and 84 is already a
+    // multiple of 4 so the /4 quantisation on the wire is lossless here.
+    for (i = 0; i < 6; i++)
+    {
+        u8 ev = 84;
+        SetBoxMonData(&orig, MON_DATA_HP_EV + i, &ev);
+    }
+
+    status = RoundTripMon(&orig, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+    ExpectMonsMatch(&orig, &decoded);
+}
+
+TEST("TradeCode round-trip preserves an egg")
+{
+    struct BoxPokemon orig, decoded;
+    bool32 isEgg = TRUE;
+    enum TradeCodeMonStatus status;
+
+    CreateBoxMon(&orig, SPECIES_TOGEPI, 5, 0x0F0F0F0F, OTID_STRUCT_PRESET(0x0C0C0C0C));
+    SetBoxMonData(&orig, MON_DATA_IS_EGG, &isEgg);
+
+    status = RoundTripMon(&orig, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+    EXPECT_EQ(GetBoxMonData(&decoded, MON_DATA_IS_EGG), TRUE);
+    ExpectMonsMatch(&orig, &decoded);
+}
+
+TEST("TradeCode round-trip preserves MAX_LEVEL")
+{
+    struct BoxPokemon orig, decoded;
+    enum TradeCodeMonStatus status;
+
+    CreateBoxMon(&orig, SPECIES_PIDGEY, MAX_LEVEL, 0x76543210, OTID_STRUCT_PRESET(0x01234567));
+
+    status = RoundTripMon(&orig, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+    EXPECT_EQ(GetLevelFromBoxMonExp(&decoded), MAX_LEVEL);
+    ExpectMonsMatch(&orig, &decoded);
+}
+
+TEST("TradeCode round-trip is stat-for-stat identical after CalculateMonStats")
+{
+    struct BoxPokemon origBox, decodedBox;
+    struct Pokemon origMon, decodedMon;
+    enum TradeCodeMonStatus status;
+    u8 ev = 80; // 6*80 = 480, within MAX_TOTAL_EVS (510)
+    u32 i;
+
+    CreateBoxMon(&origBox, SPECIES_PIDGEY, 42, 0x87654321, OTID_STRUCT_PRESET(0xFEDCBA98));
+    for (i = 0; i < 6; i++)
+        SetBoxMonData(&origBox, MON_DATA_HP_EV + i, &ev);
+
+    status = RoundTripMon(&origBox, &decodedBox);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+
+    BoxMonToMon(&origBox, &origMon);
+    BoxMonToMon(&decodedBox, &decodedMon);
+
+    EXPECT_EQ(GetMonData(&decodedMon, MON_DATA_MAX_HP), GetMonData(&origMon, MON_DATA_MAX_HP));
+    EXPECT_EQ(GetMonData(&decodedMon, MON_DATA_ATK), GetMonData(&origMon, MON_DATA_ATK));
+    EXPECT_EQ(GetMonData(&decodedMon, MON_DATA_DEF), GetMonData(&origMon, MON_DATA_DEF));
+    EXPECT_EQ(GetMonData(&decodedMon, MON_DATA_SPEED), GetMonData(&origMon, MON_DATA_SPEED));
+    EXPECT_EQ(GetMonData(&decodedMon, MON_DATA_SPATK), GetMonData(&origMon, MON_DATA_SPATK));
+    EXPECT_EQ(GetMonData(&decodedMon, MON_DATA_SPDEF), GetMonData(&origMon, MON_DATA_SPDEF));
+
+    // The two documented lossy fields: personality is never transmitted at
+    // all (no claim of equality either way), but experience is quantised
+    // to the level, so unless the original mon happened to have zero
+    // partial progress, the raw EXP values differ even though the level -
+    // and therefore every stat above - does not.
+    EXPECT_EQ(GetMonData(&decodedMon, MON_DATA_LEVEL), GetMonData(&origMon, MON_DATA_LEVEL));
+}
+
+TEST("TradeCode_SerializeMon omits optional fields already at their species/level default")
+{
+    struct BoxPokemon orig, decoded;
+    enum TradeCodeMonStatus status;
+    u8 buf[MON_TEST_BUF_BYTES];
+    struct TradeCodeBits stream;
+
+    CreateBoxMon(&orig, SPECIES_PIDGEY, 30, 0x22222222, OTID_STRUCT_PRESET(0x33333333));
+
+    memset(buf, 0, sizeof(buf));
+    stream.data = buf;
+    stream.bitPos = 0;
+    stream.capacity = sizeof(buf) * 8;
+    stream.error = FALSE;
+    TradeCode_SerializeMon(&orig, &stream);
+
+    // The presence byte is the very first 8 bits written.
+    EXPECT_EQ(buf[0], 0);
+
+    stream.capacity = stream.bitPos;
+    stream.bitPos = 0;
+    status = TradeCode_DeserializeMon(&stream, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_OK);
+    ExpectMonsMatch(&orig, &decoded);
+}
+
+TEST("TradeCode_DeserializeMon rejects malformed payloads and leaves outBoxMon untouched")
+{
+    struct BoxPokemon orig, decoded, sentinel;
+    u8 buf[MON_TEST_BUF_BYTES];
+    struct TradeCodeBits stream;
+    enum TradeCodeMonStatus expectedStatus;
+
+    CreateBoxMon(&orig, SPECIES_PIDGEY, 30, 0x44444444, OTID_STRUCT_PRESET(0x55555555));
+    memset(&sentinel, 0xAA, sizeof(sentinel));
+
+    memset(buf, 0, sizeof(buf));
+    stream.data = buf;
+    stream.bitPos = 0;
+    stream.capacity = sizeof(buf) * 8;
+    stream.error = FALSE;
+    TradeCode_SerializeMon(&orig, &stream);
+    stream.capacity = stream.bitPos;
+
+    PARAMETRIZE
+    {
+        // Corrupt the species field (the 8 presence bits are first, so bits
+        // 8-18 are species) to a value >= NUM_SPECIES.
+        u32 i;
+        for (i = 8; i < 19; i++)
+            buf[i / 8] |= (1 << (7 - (i % 8)));
+        expectedStatus = TRADE_CODE_MON_BAD_SPECIES;
+    }
+    PARAMETRIZE
+    {
+        // The presence byte is written MSB-first into a single, byte-aligned
+        // byte (buf[0] == the presence value itself) - 0x80 is bit 7, one of
+        // the two bits this format version reserves.
+        buf[0] |= 0x80;
+        expectedStatus = TRADE_CODE_MON_RESERVED_BITS_SET;
+    }
+    PARAMETRIZE
+    {
+        // Truncate the stream to fewer bits than the core fields need.
+        stream.capacity = 10;
+        expectedStatus = TRADE_CODE_MON_TRUNCATED;
+    }
+
+    decoded = sentinel;
+    stream.bitPos = 0;
+    EXPECT_EQ(TradeCode_DeserializeMon(&stream, &decoded), expectedStatus);
+    EXPECT_EQ(memcmp(&decoded, &sentinel, sizeof(decoded)), 0);
+}
+
+TEST("TradeCode_DeserializeMon rejects an EV total above MAX_TOTAL_EVS")
+{
+    struct TradeCodeBits stream;
+    u8 buf[MON_TEST_BUF_BYTES];
+    struct BoxPokemon decoded;
+    u32 i;
+
+    memset(buf, 0, sizeof(buf));
+    stream.data = buf;
+    stream.bitPos = 0;
+    stream.capacity = sizeof(buf) * 8;
+    stream.error = FALSE;
+
+    TradeCode_WriteBits(&stream, 0x02, 8); // presence: EVs bit (bit 1) set, nothing else
+    TradeCode_WriteBits(&stream, SPECIES_PIDGEY, 11);
+    TradeCode_WriteBits(&stream, 50, 10); // level
+    TradeCode_WriteBits(&stream, 0, 5);   // nature
+    TradeCode_WriteBits(&stream, 0, 2);   // gender
+    TradeCode_WriteBits(&stream, 0, 1);   // shiny
+    TradeCode_WriteBits(&stream, 0, 2);   // ability num
+    for (i = 0; i < 6; i++)
+        TradeCode_WriteBits(&stream, 0, 5); // IVs
+    TradeCode_WriteBits(&stream, 0, 6);   // pokeball
+    TradeCode_WriteBits(&stream, 0, 5);   // tera type
+    TradeCode_WriteBits(&stream, 0, 16);  // otId low
+    TradeCode_WriteBits(&stream, 0, 1);   // ot gender
+    TradeCode_WriteBits(&stream, 0, 3);   // language
+    TradeCode_WriteBits(&stream, 0, 1);   // isEgg
+    TradeCode_WriteBits(&stream, 0, 3);   // OT name length (0)
+    // Optional EVs block: every stat at the max 6-bit value (63 -> 252
+    // actual), for a total of 1512 - well past MAX_TOTAL_EVS (510).
+    for (i = 0; i < 6; i++)
+        TradeCode_WriteBits(&stream, 63, 6);
+    EXPECT(!stream.error);
+
+    stream.capacity = stream.bitPos;
+    stream.bitPos = 0;
+    EXPECT_EQ(TradeCode_DeserializeMon(&stream, &decoded), TRADE_CODE_MON_BAD_EV_TOTAL);
+}
+
+TEST("TradeCode_DeserializeMon rejects an unknown move and an unknown held item")
+{
+    struct TradeCodeBits stream;
+    u8 buf[MON_TEST_BUF_BYTES];
+    struct BoxPokemon decoded;
+    u32 i;
+    u8 presence;
+    enum TradeCodeMonStatus expectedStatus;
+
+    PARAMETRIZE { presence = 0x04; expectedStatus = TRADE_CODE_MON_BAD_MOVE; }   // presence bit 2: moves
+    PARAMETRIZE { presence = 0x08; expectedStatus = TRADE_CODE_MON_BAD_ITEM; }   // presence bit 3: held item
+
+    memset(buf, 0, sizeof(buf));
+    stream.data = buf;
+    stream.bitPos = 0;
+    stream.capacity = sizeof(buf) * 8;
+    stream.error = FALSE;
+
+    TradeCode_WriteBits(&stream, presence, 8);
+    TradeCode_WriteBits(&stream, SPECIES_PIDGEY, 11);
+    TradeCode_WriteBits(&stream, 50, 10);
+    TradeCode_WriteBits(&stream, 0, 5);
+    TradeCode_WriteBits(&stream, 0, 2);
+    TradeCode_WriteBits(&stream, 0, 1);
+    TradeCode_WriteBits(&stream, 0, 2);
+    for (i = 0; i < 6; i++)
+        TradeCode_WriteBits(&stream, 0, 5);
+    TradeCode_WriteBits(&stream, 0, 6);
+    TradeCode_WriteBits(&stream, 0, 5);
+    TradeCode_WriteBits(&stream, 0, 16);
+    TradeCode_WriteBits(&stream, 0, 1);
+    TradeCode_WriteBits(&stream, 0, 3);
+    TradeCode_WriteBits(&stream, 0, 1);
+    TradeCode_WriteBits(&stream, 0, 3); // OT name length
+
+    if (presence & 0x04)
+    {
+        // 2047 is the 11-bit field's max representable value - guaranteed
+        // >= MOVES_COUNT without risking an overflow wraparound the way
+        // "MOVES_COUNT + N" could if MOVES_COUNT is already close to 2047.
+        for (i = 0; i < MAX_MON_MOVES; i++)
+            TradeCode_WriteBits(&stream, 2047, 11);
+        TradeCode_WriteBits(&stream, 0, 8); // PP bonuses
+    }
+    if (presence & 0x08)
+        TradeCode_WriteBits(&stream, 1023, 10); // the 10-bit field's max - same reasoning
+    EXPECT(!stream.error);
+
+    stream.capacity = stream.bitPos;
+    stream.bitPos = 0;
+    EXPECT_EQ(TradeCode_DeserializeMon(&stream, &decoded), expectedStatus);
+}
+
+TEST("TradeCode_DeserializeMon rejects an oversized nickname length")
+{
+    struct TradeCodeBits stream;
+    u8 buf[MON_TEST_BUF_BYTES];
+    struct BoxPokemon decoded;
+    u32 i;
+
+    memset(buf, 0, sizeof(buf));
+    stream.data = buf;
+    stream.bitPos = 0;
+    stream.capacity = sizeof(buf) * 8;
+    stream.error = FALSE;
+
+    TradeCode_WriteBits(&stream, 0x01, 8); // presence: nickname bit (bit 0) set
+    TradeCode_WriteBits(&stream, SPECIES_PIDGEY, 11);
+    TradeCode_WriteBits(&stream, 50, 10);
+    TradeCode_WriteBits(&stream, 0, 5);
+    TradeCode_WriteBits(&stream, 0, 2);
+    TradeCode_WriteBits(&stream, 0, 1);
+    TradeCode_WriteBits(&stream, 0, 2);
+    for (i = 0; i < 6; i++)
+        TradeCode_WriteBits(&stream, 0, 5);
+    TradeCode_WriteBits(&stream, 0, 6);
+    TradeCode_WriteBits(&stream, 0, 5);
+    TradeCode_WriteBits(&stream, 0, 16);
+    TradeCode_WriteBits(&stream, 0, 1);
+    TradeCode_WriteBits(&stream, 0, 3);
+    TradeCode_WriteBits(&stream, 0, 1);
+    TradeCode_WriteBits(&stream, 0, 3); // OT name length
+    TradeCode_WriteBits(&stream, 15, 4); // nickname length: the 4-bit field's max, well past POKEMON_NAME_LENGTH (12)
+    EXPECT(!stream.error);
+
+    stream.capacity = stream.bitPos;
+    stream.bitPos = 0;
+    EXPECT_EQ(TradeCode_DeserializeMon(&stream, &decoded), TRADE_CODE_MON_BAD_NAME);
+}
+
+TEST("TradeCode_DeserializeMon rejects isEgg combined with a custom nickname")
+{
+    struct BoxPokemon orig, decoded;
+    bool32 isEgg = TRUE;
+    u8 nickname[POKEMON_NAME_LENGTH + 1] = _("NOTANEGG");
+    enum TradeCodeMonStatus status;
+
+    // The encoder itself never produces this combination - it just reports
+    // the mon's actual state honestly. A hostile/hand-edited code could
+    // still carry it, so the deserialiser has to catch it.
+    CreateBoxMon(&orig, SPECIES_TOGEPI, 5, 0x66666666, OTID_STRUCT_PRESET(0x77777777));
+    SetBoxMonData(&orig, MON_DATA_IS_EGG, &isEgg);
+    SetBoxMonData(&orig, MON_DATA_NICKNAME, nickname);
+
+    status = RoundTripMon(&orig, &decoded);
+    EXPECT_EQ(status, TRADE_CODE_MON_EGG_WITH_NICKNAME);
 }

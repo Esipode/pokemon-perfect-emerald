@@ -3,8 +3,7 @@
 
 // Offline, code-based trading. Two players each pick a Pokémon, read a
 // generated code to each other, and each cart materialises the other's
-// Pokémon locally - no link hardware, no simultaneity. See
-// "Trading Codes.md" for the full protocol and payload spec.
+// Pokémon locally - no link hardware, no simultaneity.
 #define TRADE_CODES TRUE
 
 // Bumped whenever the payload layout in trade_code.c changes. A code

@@ -321,27 +321,11 @@ struct Pokemon
     u16 spDefense;
 };
 
-// Baseline pin for the Saveblock Shrinking project (see "Saveblock Shrinking.md").
-// Stage 5 shrunk BoxPokemon 96->80 and NUM_SUBSTRUCT_BYTES 16->12 by
-// repacking PokemonSubstruct0 and PokemonSubstruct3 (paid for by the contest
-// and Battle Tower fields Stages 2 and 4 already retired). Any regression
-// here -- a struct padded back up by an incautious field addition -- is a
-// build-time proof failure, not a guess.
-//
-// struct Pokemon is 104, not the 100 this project's own planning doc
-// estimated: that estimate assumed Pokemon::mail (the held-mail index, a
-// separate field from SaveBlock1's mail[] array Stage 2 removed) would also
-// be gone, but Stage 2 only cut off every path that can *attach* mail
-// (ItemIsMail() is hardwired FALSE under FREE_MAIL) -- it left the field
-// itself in struct Pokemon. That field costs nothing today (it fills what
-// would otherwise be alignment padding before `hp`), so removing it is a
-// zero-byte-value follow-up, not a Stage 5 requirement.
 STATIC_ASSERT(sizeof(struct BoxPokemon) == 80, BoxPokemonStage5Size);
 STATIC_ASSERT(NUM_SUBSTRUCT_BYTES == 12, NumSubstructBytesStage5Size);
 STATIC_ASSERT(sizeof(struct Pokemon) == 104, PokemonStage5Size);
 
-// Baseline pin for the Trading Codes project (see "Trading Codes.md").
-// Its offline trade code payload packs these four fields into fixed bit
+// Offline trade code payload packs these four fields into fixed bit
 // widths (species 11, level 10, name lengths as literal byte counts); a
 // change to any of them silently desyncs the codec between two carts
 // instead of failing loudly, so it's a build-time proof failure here too.

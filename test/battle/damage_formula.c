@@ -465,39 +465,4 @@ SINGLE_BATTLE_TEST("Base damage does not overflow at MAX_LEVEL")
     }
 }
 
-// Deferred from Stage 3 - see "Damage Calc Patch.md", Stage 6.
-//
-// Correction (found while writing this test): a battle-level, HP_BAR-observed
-// end-to-end assertion for Bug A (the fpmath.h modifier-multiply helpers, overflow
-// threshold dmg > 1,048,576) and the damage-roll multiply (overflow threshold
-// dmg > 21,474,836) is not constructible, for a reason independent of everything
-// Stages 2-6 fixed: every HP_BAR observation - captureDamage *and* the hp:/
-// captureHP: forms - is a delta or snapshot of a Pokemon's actual `hp`/`maxHP`
-// fields, which are `u16` (max 65,535; see the stat-growth ceiling analysis at the
-// top of "Damage Calc Patch.md" for why that field is NOT being widened). Both
-// thresholds above are already 16-115x past that ceiling, so no battler can be
-// built - at any maxHP - whose observed HP change reflects the correct pre-clamp
-// value rather than a value already floored by fainting.
-//
-// That alone would only rule out an *exact-value* assertion; a qualitative one
-// (does the target faint vs. survive-or-heal, the technique recoil_overflow.c and
-// reflect_damage.c's MAX_LEVEL Counter test both use for Bug C) is still possible
-// in principle, but doesn't reliably discriminate fixed-from-broken *here*:
-//   - The fpmath helpers wrap via plain unsigned (u32) overflow - defined, but the
-//     wrapped result is uniformly distributed across [0, UINT32_MAX], not reliably
-//     small. For the numbers worked out above, "faints anyway" is roughly as likely
-//     as "survives/heals" pre-fix, which makes a single-scenario faint/no-faint
-//     assertion a coin flip, not a regression test.
-//   - The damage-roll multiply's overflow is *signed* (s32) overflow, i.e. undefined
-//     behavior, not a defined wrap - already flagged as compiler/-O-level-dependent
-//     in Stage 3. A test asserting one particular pre-fix outcome could pass or fail
-//     for reasons unrelated to whether the fix is present.
-//
-// What Stage 3 already covers this with is real, deterministic proof: four `TEST()`
-// cases in test/fpmath.c pin `uq4_12_multiply_by_int_half_{down,up}` against
-// products above UINT32_MAX, including an exact-.5 tie, independent of the battle
-// harness's u16 ceiling entirely. The damage-roll multiply's `s64` widening
-// (src/battle_util.c ~7617) has no equivalent unit test - it is small, inline,
-// non-reusable arithmetic rather than a helper function - which is the one
-// genuinely open gap this TO_DO records.
-TO_DO_BATTLE_TEST("Damage-roll multiply does not overflow s32 for dmg > 21.5M (needs a non-HP_BAR observation - see comment above)");
+TO_DO_BATTLE_TEST("Damage-roll multiply does not overflow s32 for dmg > 21.5M");

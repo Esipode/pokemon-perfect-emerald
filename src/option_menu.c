@@ -142,8 +142,8 @@ EWRAM_DATA static bool8 sArrowPressed = FALSE;
 EWRAM_DATA static u8 sCurrPage = 0;
 // Stashes the real caller (field/main-menu CB2) across the round trip
 // through CB2_InitPlayerPaletteMenu, whose own savedCallback is pointed at
-// CB2_InitOptionMenu so it lands back on this screen (see Customization.md,
-// Stage 5). Restored into gMain.savedCallback the next time CB2_InitOptionMenu
+// CB2_InitOptionMenu so it lands back on this screen.
+// Restored into gMain.savedCallback the next time CB2_InitOptionMenu
 // runs; NULL the rest of the time, when gMain.savedCallback already holds
 // the real caller and needs no help.
 EWRAM_DATA static MainCallback sSavedCallback = NULL;
@@ -716,8 +716,7 @@ static void Task_OptionMenuFadeOut(u8 taskId)
 }
 
 // PLAYER COLOURS is an action row like CANCEL, but instead of leaving the
-// option menu for good it hops to CB2_InitPlayerPaletteMenu and back --
-// see Customization.md, Stage 5.
+// option menu for good it hops to CB2_InitPlayerPaletteMenu and back.
 static void Task_OptionMenuOpenPlayerColors(u8 taskId)
 {
     CommitPendingOptionSettings(taskId);

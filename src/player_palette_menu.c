@@ -22,7 +22,7 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
-// See Customization.md, Stage 3. Structure mirrors src/new_game_settings_menu.c
+// Structure mirrors src/new_game_settings_menu.c
 // (gMain.state setup machine -> FadeIn -> ProcessInput -> FadeOut, ListMenu
 // for row/cursor handling) and reuses src/option_menu.c's bracket-value idiom
 // for the HUE/SHADE column, but printed as one literal "< 03 >" string rather

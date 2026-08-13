@@ -1,7 +1,6 @@
 // Palette index -> region mapping for the player customization screen
-// (Customization.md). Derived by dumping
-// graphics/object_events/pics/people/<gender>/walking.png and
-// graphics/trainers/front_pics/<gender>.png in PIL 'P' mode and reading off
+// Derived by dumping graphics/object_events/pics/people/<gender>/walking.png
+// and graphics/trainers/front_pics/<gender>.png in PIL 'P' mode and reading off
 // each region's pixels. Index 0 (transparency) and skin tones are
 // deliberately excluded, as is pure black (15). Included from
 // src/player_customization.c only.
@@ -89,7 +88,7 @@ static const struct PlayerColorRegionInfo sPlayerColorRegions[GENDER_COUNT][PLAY
     },
 };
 
-// Stage 8 (Customization.md): index -> region mapping for the main-menu
+// index -> region mapping for the main-menu
 // mugshot sprites (graphics/ui_main_menu/brendan_mugshot.png,
 // may_mugshot.png). Derived the same way as sPlayerColorRegions -- dumping
 // the indexed PNGs and reading off each region's pixels. These are separate

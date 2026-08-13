@@ -1056,8 +1056,7 @@ static s32 TryHP(s32 i, s32 n, enum BattlerId battlerId, u32 oldHP, u32 newHP)
                 switch (event->type)
                 {
                 case HP_EVENT_NEW_HP:
-                    // captureHP stays u16 - HP itself never needs more than u16 (see
-                    // the stat-growth ceiling analysis in "Damage Calc Patch.md").
+                    // captureHP stays u16 - HP itself never needs more than u16
                     *(u16 *)(u32)(event->address) = newHP;
                     break;
                 case HP_EVENT_DELTA_HP:

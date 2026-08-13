@@ -173,7 +173,7 @@ void ResetMenuAndMonGlobals(void)
     ResetPokeblockScrollPositions();
 }
 
-// Storage_Retention_Plan.md Part 3a. Boxes the outgoing party (so ZeroPlayerPartyMons()
+// Boxes the outgoing party (so ZeroPlayerPartyMons()
 // doesn't delete it) and re-stamps any of this run's own in-game-trade Pokémon still in
 // storage to the outgoing trainer ID. Both passes must run before InitPlayerTrainerId() --
 // the boxed party needs to keep its old OT ID, and the re-stamp needs the OLD id to stamp
@@ -183,7 +183,7 @@ static void CarryStorageIntoNewGame(void)
     u32 i, boxId, boxPosition;
     u32 outgoingOtId = READ_OTID_FROM_SAVE;
     u32 partyCount = CalculatePlayerPartyCount();
-    // Storage_Retention_Plan.md Part 3e. FLAG_RANDOMIZE_MON bakes a randomized species
+    // FLAG_RANDOMIZE_MON bakes a randomized species
     // straight into MON_DATA_SPECIES at CreateMon time (see GetRandomizedSpecies in
     // pokemon.c) -- unlike the type/move randomizers, which randomization.c resolves live
     // off the real species and never touch the saved data, so those are fine to carry
@@ -274,7 +274,7 @@ static void CarryStorageIntoNewGame(void)
     }
 }
 
-// Storage_Retention_Plan.md Part 3d. Must run after ClearSav1() wipes dexCaught/dexSeen.
+// Must run after ClearSav1() wipes dexCaught/dexSeen.
 // Re-registers every carried-over box mon as seen + caught so the dex progress the
 // player kept storage for is visible from turn one.
 static void ReregisterCarriedOverDexEntries(void)
@@ -324,7 +324,7 @@ void NewGameInitData(void)
     void *roamersBackup = NULL;
     void *locationHistoryBackup = NULL;
     void *roamerLocationBackup = NULL;
-    // Storage_Retention_Plan.md Part 3. Never TRUE for New Game+ -- that path already
+    // Never TRUE for New Game+ -- that path already
     // preserves the PC via its own backup/restore below.
     bool32 keepStorage = !isNewGamePlus && gKeepStorageOnNewGame && gSaveFileStatus == SAVE_STATUS_OK;
 
@@ -424,8 +424,8 @@ void NewGameInitData(void)
     if (!isNewGamePlus)
     {
         gSaveBlock2Ptr->encryptionKey = 0;
-        // Storage_Retention_Plan.md Part 3a. Must run before ZeroPlayerPartyMons()
-        // wipes the party below, and before InitPlayerTrainerId() a few lines later
+        // Must run before ZeroPlayerPartyMons() wipes the party below, 
+        // and before InitPlayerTrainerId() a few lines later
         // issues a new trainer ID -- the boxed party needs to keep its old OT ID,
         // and the trade-mon re-stamp needs the outgoing one to stamp with.
         if (keepStorage)
@@ -435,8 +435,8 @@ void NewGameInitData(void)
         InitPlayerTrainerId();
         PlayTimeCounter_Reset();
         ClearPokedexFlags();
-        // Storage_Retention_Plan.md Part 3b -- skip the wipe when carrying storage
-        // over. Box names, wallpapers, currentBox and fusions[] are deliberately
+        // Skip the wipe when carrying storage over.
+        // Box names, wallpapers, currentBox and fusions[] are deliberately
         // left as-is.
         if (!keepStorage)
             ResetPokemonStorageSystem();
@@ -446,9 +446,9 @@ void NewGameInitData(void)
         gSaveBlock2Ptr->newGamePlus = 0;
         ResetItemFlags();
         ResetDexNav();
-        // Storage_Retention_Plan.md Part 3c. Gates the OT-ID lock in
-        // pokemon_storage_system.c, and is what CB2_NewGame reads on the Nuzlocke
-        // restart path. Set unconditionally so a run started without keep-storage
+        // Gates the OT-ID lock in pokemon_storage_system.c, 
+        // and is what CB2_NewGame reads on the Nuzlocke restart path.
+        // Set unconditionally so a run started without keep-storage
         // explicitly clears any earlier run's answer.
         gSaveBlock2Ptr->keepStorageOnRestart = keepStorage;
     }
@@ -475,8 +475,8 @@ void NewGameInitData(void)
     gSaveBlock2Ptr->specialSaveWarpFlags = 0;
     gSaveBlock2Ptr->gcnLinkFlags = 0;
     InitEventData();
-    // Storage_Retention_Plan.md Part 3d. Must run after ClearSav1() above wiped
-    // dexCaught/dexSeen -- re-registers every carried-over box mon so the dex
+    // Must run after ClearSav1() above wiped dexCaught/dexSeen.
+    // Re-registers every carried-over box mon so the dex
     // progress the player kept storage for is visible from turn one.
     if (keepStorage)
         ReregisterCarriedOverDexEntries();

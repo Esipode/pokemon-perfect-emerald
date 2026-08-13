@@ -21,7 +21,7 @@
 #include "constants/songs.h"
 
 // Shown right after NEW GAME, before GAME SETTINGS, whenever the current save has
-// something in the PC or party worth keeping. See Storage_Retention_Plan.md Part 2.
+// something in the PC or party worth keeping.
 EWRAM_DATA bool8 gKeepStorageOnNewGame = FALSE;
 
 enum

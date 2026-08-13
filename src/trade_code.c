@@ -1,6 +1,11 @@
 #include "global.h"
 #include "trade_code.h"
 #include "constants/characters.h"
+#include "constants/pokemon.h"
+#include "constants/moves.h"
+#include "constants/items.h"
+#include "constants/region_map_sections.h"
+#include "string_util.h"
 
 // Stage 1 of "Trading Codes.md": a pure bit stream + Base32/Crockford codec.
 // No UI, no save data, no game state - see trade_code.h for the public
@@ -28,6 +33,13 @@ static const u8 sTradeCodeAlphabet[32] =
 // misreadings - I/i/l -> 1, O/o -> 0 - and lowercase -> uppercase. CHAR_U /
 // CHAR_u are deliberately left TRADE_CODE_CHAR_INVALID: U isn't in the
 // alphabet and doesn't stand in for anything else.
+//
+// The [0 ... 255] catch-all is deliberately then overridden per-symbol below
+// - exactly the pattern -Woverride-init exists to flag, but it's what makes
+// a 256-entry table buildable without hand-listing ~230 invalid entries.
+// Suppressed locally rather than dropping the warning project-wide.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverride-init"
 static const u8 sTradeCodeReverse[256] =
 {
     [0 ... 255] = TRADE_CODE_CHAR_INVALID,
@@ -50,6 +62,7 @@ static const u8 sTradeCodeReverse[256] =
     [CHAR_p] = 22, [CHAR_q] = 23, [CHAR_r] = 24, [CHAR_s] = 25, [CHAR_t] = 26,
     [CHAR_v] = 27, [CHAR_w] = 28, [CHAR_x] = 29, [CHAR_y] = 30, [CHAR_z] = 31,
 };
+#pragma GCC diagnostic pop
 
 // Defensive cap on how many raw characters TradeCode_Decode will scan
 // looking for EOS. This is deliberately independent of TRADE_CODE_MAX_CHARS
@@ -199,4 +212,454 @@ enum TradeCodeStatus TradeCode_Decode(const u8 *str, struct TradeCodeBits *out)
 
     out->capacity = bitPos; // narrow to the actual decoded length
     return TRADE_CODE_OK;
+}
+
+// ---------------------------------------------------------------------
+// Stage 2 of "Trading Codes.md": the BoxPokemon serialiser/deserialiser.
+// Still no UI, no save data - see trade_code.h for the payload's status
+// enum. MON_DATA_HP_IV.. and MON_DATA_HP_EV.. are contiguous in HP, ATK,
+// DEF, SPEED, SPATK, SPDEF order in enum MonData, so every 6-wide loop
+// below walks that order via `+ i`.
+// ---------------------------------------------------------------------
+
+// Presence bitmap bits (see the payload spec's "Optional block" table).
+// Bit 5 (met data) was dropped per the plan doc's own dev note: met data
+// is a poor value-per-bit spend, and a fixed "obtained via trade" location
+// is applied unconditionally below instead of transmitting a real one. Bit
+// 7 stays reserved for a future format version. Both must decode as 0.
+#define TRADE_CODE_PRESENCE_NICKNAME    (1 << 0)
+#define TRADE_CODE_PRESENCE_EVS         (1 << 1)
+#define TRADE_CODE_PRESENCE_MOVES       (1 << 2)
+#define TRADE_CODE_PRESENCE_HELD_ITEM   (1 << 3)
+#define TRADE_CODE_PRESENCE_FRIENDSHIP  (1 << 4)
+#define TRADE_CODE_PRESENCE_POKERUS     (1 << 6)
+#define TRADE_CODE_PRESENCE_RESERVED    ((1 << 5) | (1 << 7))
+
+// The payload's "gender" field is a compact 2-bit enum of its own, not a
+// MON_MALE(0x00)/MON_FEMALE(0xFE)/MON_GENDERLESS(0xFF) byte - those don't
+// fit in 2 bits. Converted at the edges via TradeCode_GenderToField /
+// TradeCode_FieldToGender.
+#define TRADE_CODE_GENDER_MALE       0
+#define TRADE_CODE_GENDER_FEMALE     1
+#define TRADE_CODE_GENDER_GENDERLESS 2
+// value 3 is reserved and rejected on decode.
+
+static u8 TradeCode_GenderToField(u8 gender)
+{
+    switch (gender)
+    {
+    case MON_FEMALE:
+        return TRADE_CODE_GENDER_FEMALE;
+    case MON_GENDERLESS:
+        return TRADE_CODE_GENDER_GENDERLESS;
+    default:
+        return TRADE_CODE_GENDER_MALE;
+    }
+}
+
+static u8 TradeCode_FieldToGender(u32 field)
+{
+    switch (field)
+    {
+    case TRADE_CODE_GENDER_FEMALE:
+        return MON_FEMALE;
+    case TRADE_CODE_GENDER_GENDERLESS:
+        return MON_GENDERLESS;
+    default:
+        return MON_MALE;
+    }
+}
+
+// Whether `actualMoves` matches the moveset GiveBoxMonInitialMoveset would
+// generate for `species` at `level` - the payload spec's definition of the
+// move presence bit's default. Built via a scratch BoxPokemon rather than
+// re-deriving the level-filtering/dedup logic by hand, so this can never
+// drift from what the deserialiser's own "moves absent" path applies.
+static bool32 TradeCode_MovesMatchDefault(enum Species species, u32 level, const enum Move actualMoves[MAX_MON_MOVES])
+{
+    struct BoxPokemon scratch;
+    u32 i;
+
+    CreateBoxMon(&scratch, species, level, 0, OTID_STRUCT_PRESET(0));
+    GiveBoxMonInitialMoveset(&scratch);
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (GetBoxMonData(&scratch, MON_DATA_MOVE1 + i) != actualMoves[i])
+            return FALSE;
+    }
+    return TRUE;
+}
+
+// True if any of the first `len` bytes of `chars` is EOS. A real name
+// character can never legitimately be EOS (it's the terminator, not part
+// of any fork's charmap alphabet), so one appearing inside the declared
+// length means the code is corrupt - decoding it further would desync the
+// fixed-width nickname/otName arrays downstream.
+static bool32 TradeCode_NameHasEosByte(const u8 *chars, u32 len)
+{
+    u32 i;
+
+    for (i = 0; i < len; i++)
+    {
+        if (chars[i] == EOS)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// Deterministic stand-in for the OT ID's high 16 bits, which the payload
+// never transmits (see "otId high half" in the plan doc). Not cryptographic
+// and doesn't need to be - its only job is to almost certainly differ from
+// the receiving player's own OT ID, which the caller double-checks and
+// perturbs on the rare exact collision.
+static u32 TradeCode_SynthesizeOtIdHigh(const u8 *otName, u32 otNameLen, u16 otIdLow)
+{
+    u32 hash = otIdLow;
+    u32 i;
+
+    for (i = 0; i < otNameLen; i++)
+        hash = hash * 33 + otName[i];
+
+    return hash & 0xFFFF;
+}
+
+void TradeCode_SerializeMon(const struct BoxPokemon *boxMon, struct TradeCodeBits *stream)
+{
+    // GetBoxMonData decrypts/re-encrypts its argument in place (restoring
+    // it before returning) - working on a local copy keeps the caller's
+    // struct untouched for the duration, matching how BoxMonToMon (Saveblock
+    // Shrinking-era code) already handles a const source.
+    struct BoxPokemon mon = *boxMon;
+    enum Species species = GetBoxMonData(&mon, MON_DATA_SPECIES);
+    u32 level = GetLevelFromBoxMonExp(&mon);
+    u8 presence = 0;
+    u8 nickname[POKEMON_NAME_LENGTH + 1];
+    u8 otName[PLAYER_NAME_LENGTH + 1];
+    u32 nicknameLen, otNameLen;
+    u32 evs[6];
+    bool32 hasEVs = FALSE;
+    enum Move moves[MAX_MON_MOVES];
+    u32 ppBonuses = GetBoxMonData(&mon, MON_DATA_PP_BONUSES);
+    bool32 hasMoves;
+    u32 heldItem = GetBoxMonData(&mon, MON_DATA_HELD_ITEM);
+    u32 friendship = GetBoxMonData(&mon, MON_DATA_FRIENDSHIP);
+    u32 pokerus = GetBoxMonData(&mon, MON_DATA_POKERUS);
+    u32 i;
+
+    GetBoxMonData(&mon, MON_DATA_NICKNAME, nickname);
+    nicknameLen = StringLength(nickname);
+    if (StringCompare(nickname, GetSpeciesName(species)) != 0)
+        presence |= TRADE_CODE_PRESENCE_NICKNAME;
+
+    for (i = 0; i < 6; i++)
+    {
+        evs[i] = GetBoxMonData(&mon, MON_DATA_HP_EV + i);
+        if (evs[i] != 0)
+            hasEVs = TRUE;
+    }
+    if (hasEVs)
+        presence |= TRADE_CODE_PRESENCE_EVS;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+        moves[i] = GetBoxMonData(&mon, MON_DATA_MOVE1 + i);
+    // PP Ups are carried in the same 52-bit block as the moves themselves
+    // (see the payload spec), so a mon that knows only its default moveset
+    // but has spent PP Ups on it still needs the block written - otherwise
+    // those PP Ups would silently vanish across the trade.
+    hasMoves = (ppBonuses != 0) || !TradeCode_MovesMatchDefault(species, level, moves);
+    if (hasMoves)
+        presence |= TRADE_CODE_PRESENCE_MOVES;
+
+    if (heldItem != ITEM_NONE)
+        presence |= TRADE_CODE_PRESENCE_HELD_ITEM;
+    if (friendship != gSpeciesInfo[species].friendship)
+        presence |= TRADE_CODE_PRESENCE_FRIENDSHIP;
+    if (pokerus != 0)
+        presence |= TRADE_CODE_PRESENCE_POKERUS;
+
+    TradeCode_WriteBits(stream, presence, 8);
+
+    // -- core (always present) --
+    TradeCode_WriteBits(stream, species, 11);
+    TradeCode_WriteBits(stream, level, 10);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_HIDDEN_NATURE), 5);
+    TradeCode_WriteBits(stream, TradeCode_GenderToField(GetGenderFromSpeciesAndPersonality(species, GetBoxMonData(&mon, MON_DATA_PERSONALITY))), 2);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_IS_SHINY) ? 1 : 0, 1);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_ABILITY_NUM), 2);
+    for (i = 0; i < 6; i++)
+        TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_HP_IV + i), 5);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_POKEBALL), 6);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_TERA_TYPE), 5);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_OT_ID) & 0xFFFF, 16);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_OT_GENDER), 1);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_LANGUAGE), 3);
+    TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_IS_EGG) ? 1 : 0, 1);
+
+    // -- OT name (always present) --
+    // Deviation from the plan doc: it specs 7 bits/character ("straight
+    // from the game's charmap"), but this fork's charmap puts CHAR_0 at
+    // 0xA1 and runs past 0xEE for lowercase letters - every real name
+    // character is outside 7 bits' 0-127 range, so a literal 7-bit pack
+    // would silently truncate every letter and digit. Using the full raw
+    // byte (8 bits/character) here and for the nickname below instead;
+    // flagged in the Stage 2 status block since it changes the spec's
+    // published code-length table.
+    GetBoxMonData(&mon, MON_DATA_OT_NAME, otName);
+    otNameLen = StringLength(otName);
+    TradeCode_WriteBits(stream, otNameLen, 3);
+    for (i = 0; i < otNameLen; i++)
+        TradeCode_WriteBits(stream, otName[i], 8);
+
+    // -- optional block, gated by `presence` --
+    if (presence & TRADE_CODE_PRESENCE_NICKNAME)
+    {
+        TradeCode_WriteBits(stream, nicknameLen, 4);
+        for (i = 0; i < nicknameLen; i++)
+            TradeCode_WriteBits(stream, nickname[i], 8);
+    }
+    if (presence & TRADE_CODE_PRESENCE_EVS)
+    {
+        for (i = 0; i < 6; i++)
+            TradeCode_WriteBits(stream, evs[i] / 4, 6); // stat calc floors EV/4 - not lossy
+    }
+    if (presence & TRADE_CODE_PRESENCE_MOVES)
+    {
+        for (i = 0; i < MAX_MON_MOVES; i++)
+            TradeCode_WriteBits(stream, moves[i], 11);
+        TradeCode_WriteBits(stream, ppBonuses, 8);
+    }
+    if (presence & TRADE_CODE_PRESENCE_HELD_ITEM)
+        TradeCode_WriteBits(stream, heldItem, 10);
+    if (presence & TRADE_CODE_PRESENCE_FRIENDSHIP)
+        TradeCode_WriteBits(stream, friendship, 8);
+    if (presence & TRADE_CODE_PRESENCE_POKERUS)
+        TradeCode_WriteBits(stream, pokerus, 8);
+}
+
+enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, struct BoxPokemon *outBoxMon)
+{
+    u8 presence;
+    u32 species, level, nature, genderField, shiny, abilityNum;
+    u32 ivs[6];
+    u32 pokeball, teraType, otIdLow, otGender, language, isEgg;
+    u32 otNameLen;
+    u8 otName[PLAYER_NAME_LENGTH + 1];
+    bool32 hasNickname;
+    u32 nicknameLen = 0;
+    u8 nickname[POKEMON_NAME_LENGTH + 1];
+    bool32 hasEVs;
+    u32 evs[6] = {0};
+    bool32 hasMoves;
+    enum Move moves[MAX_MON_MOVES] = {MOVE_NONE};
+    u32 ppBonuses = 0;
+    bool32 hasHeldItem;
+    u32 heldItem = ITEM_NONE;
+    bool32 hasFriendship;
+    u32 friendship = 0;
+    bool32 hasPokerus;
+    u32 pokerus = 0;
+    u32 i;
+
+    presence = TradeCode_ReadBits(stream, 8);
+    if (presence & TRADE_CODE_PRESENCE_RESERVED)
+        return TRADE_CODE_MON_RESERVED_BITS_SET;
+
+    species = TradeCode_ReadBits(stream, 11);
+    level = TradeCode_ReadBits(stream, 10);
+    nature = TradeCode_ReadBits(stream, 5);
+    genderField = TradeCode_ReadBits(stream, 2);
+    shiny = TradeCode_ReadBits(stream, 1);
+    abilityNum = TradeCode_ReadBits(stream, 2);
+    for (i = 0; i < 6; i++)
+        ivs[i] = TradeCode_ReadBits(stream, 5);
+    pokeball = TradeCode_ReadBits(stream, 6);
+    teraType = TradeCode_ReadBits(stream, 5);
+    otIdLow = TradeCode_ReadBits(stream, 16);
+    otGender = TradeCode_ReadBits(stream, 1);
+    language = TradeCode_ReadBits(stream, 3);
+    isEgg = TradeCode_ReadBits(stream, 1);
+
+    otNameLen = TradeCode_ReadBits(stream, 3); // 3 bits can't exceed PLAYER_NAME_LENGTH (7)
+    for (i = 0; i < otNameLen; i++)
+        otName[i] = TradeCode_ReadBits(stream, 8);
+    // SetBoxMonData(MON_DATA_OT_NAME) below copies all PLAYER_NAME_LENGTH
+    // bytes unconditionally, so every slot past the terminator needs a
+    // defined value too, not just otName[otNameLen] - otherwise this reads
+    // as uninitialised stack memory into save data.
+    for (i = otNameLen; i < PLAYER_NAME_LENGTH; i++)
+        otName[i] = EOS;
+    otName[PLAYER_NAME_LENGTH] = EOS;
+
+    hasNickname = (presence & TRADE_CODE_PRESENCE_NICKNAME) != 0;
+    if (hasNickname)
+    {
+        nicknameLen = TradeCode_ReadBits(stream, 4);
+        // Unlike otNameLen, this 4-bit field's max (15) DOES exceed
+        // POKEMON_NAME_LENGTH (12) - must bounds-check before using it to
+        // index `nickname`, or a corrupt/hostile code overflows the array.
+        if (nicknameLen > POKEMON_NAME_LENGTH)
+            return TRADE_CODE_MON_BAD_NAME;
+        for (i = 0; i < nicknameLen; i++)
+            nickname[i] = TradeCode_ReadBits(stream, 8);
+        // Same reasoning as otName above: SetBoxMonData(MON_DATA_NICKNAME)
+        // reads all POKEMON_NAME_LENGTH bytes unconditionally.
+        for (i = nicknameLen; i <= POKEMON_NAME_LENGTH; i++)
+            nickname[i] = EOS;
+    }
+
+    hasEVs = (presence & TRADE_CODE_PRESENCE_EVS) != 0;
+    if (hasEVs)
+    {
+        for (i = 0; i < 6; i++)
+            evs[i] = TradeCode_ReadBits(stream, 6) * 4;
+    }
+
+    hasMoves = (presence & TRADE_CODE_PRESENCE_MOVES) != 0;
+    if (hasMoves)
+    {
+        for (i = 0; i < MAX_MON_MOVES; i++)
+            moves[i] = TradeCode_ReadBits(stream, 11);
+        ppBonuses = TradeCode_ReadBits(stream, 8);
+    }
+
+    hasHeldItem = (presence & TRADE_CODE_PRESENCE_HELD_ITEM) != 0;
+    if (hasHeldItem)
+        heldItem = TradeCode_ReadBits(stream, 10);
+
+    hasFriendship = (presence & TRADE_CODE_PRESENCE_FRIENDSHIP) != 0;
+    if (hasFriendship)
+        friendship = TradeCode_ReadBits(stream, 8);
+
+    hasPokerus = (presence & TRADE_CODE_PRESENCE_POKERUS) != 0;
+    if (hasPokerus)
+        pokerus = TradeCode_ReadBits(stream, 8);
+
+    // A truncated stream latches TradeCode_ReadBits' error flag and hands
+    // back zeros for every field past the cut - checked once here, rather
+    // than after every single read, but before any of those zeros can leak
+    // into a validation decision below.
+    if (stream->error)
+        return TRADE_CODE_MON_TRUNCATED;
+
+    // -- validation, before anything is materialised --
+    if (species >= NUM_SPECIES || !IsSpeciesEnabled(species))
+        return TRADE_CODE_MON_BAD_SPECIES;
+    if (level == 0 || level > MAX_LEVEL)
+        return TRADE_CODE_MON_BAD_LEVEL;
+    if (nature >= NUM_NATURES)
+        return TRADE_CODE_MON_BAD_NATURE;
+    if (genderField > TRADE_CODE_GENDER_GENDERLESS)
+        return TRADE_CODE_MON_BAD_GENDER;
+    // IVs are already bounded to 0-31 by their 5-bit field width.
+    if (hasEVs)
+    {
+        u32 evTotal = 0;
+        for (i = 0; i < 6; i++)
+            evTotal += evs[i];
+        if (evTotal > MAX_TOTAL_EVS)
+            return TRADE_CODE_MON_BAD_EV_TOTAL;
+    }
+    if (hasMoves)
+    {
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            if (moves[i] != MOVE_NONE && moves[i] >= MOVES_COUNT)
+                return TRADE_CODE_MON_BAD_MOVE;
+        }
+    }
+    if (hasHeldItem && heldItem != ITEM_NONE && heldItem >= ITEMS_COUNT)
+        return TRADE_CODE_MON_BAD_ITEM;
+    if (isEgg && hasNickname)
+        return TRADE_CODE_MON_EGG_WITH_NICKNAME;
+    if (TradeCode_NameHasEosByte(otName, otNameLen)
+        || (hasNickname && TradeCode_NameHasEosByte(nickname, nicknameLen)))
+        return TRADE_CODE_MON_BAD_NAME;
+
+    // -- materialise --
+    {
+        u8 gender = TradeCode_FieldToGender(genderField);
+        u32 personality = GetMonPersonality(species, gender, NATURE_RANDOM, RANDOM_UNOWN_LETTER);
+        u32 otIdHigh = TradeCode_SynthesizeOtIdHigh(otName, otNameLen, otIdLow);
+        u32 otId = (otIdHigh << 16) | otIdLow;
+        bool32 isShinyFlag = shiny;
+        bool32 isEggFlag = isEgg;
+        u32 metLocation = METLOC_IN_GAME_TRADE;
+
+        // otId only has to differ from the receiver's own - a 16-bit-low-half
+        // match is 1-in-65536, so this is a defensive perturb, not a hot path.
+        if (otId == READ_OTID_FROM_SAVE)
+        {
+            otIdHigh ^= 1;
+            otId = (otIdHigh << 16) | otIdLow;
+        }
+
+        // CreateBoxMon sets species/personality/otId, encrypts, then guesses
+        // shininess/nature/ability/tera/pokeball/met-data from them. Every
+        // guess it makes is overwritten below with the transmitted value -
+        // the shiny/nature overwrites must come after personality/otId are
+        // set (they're read back through the personality-XOR-modifier
+        // trick), so nothing here can move above this call.
+        CreateBoxMon(outBoxMon, species, level, personality, OTID_STRUCT_PRESET(otId));
+
+        SetBoxMonData(outBoxMon, MON_DATA_IS_SHINY, &isShinyFlag);
+        SetBoxMonData(outBoxMon, MON_DATA_HIDDEN_NATURE, &nature);
+        SetBoxMonData(outBoxMon, MON_DATA_ABILITY_NUM, &abilityNum);
+        for (i = 0; i < 6; i++)
+            SetBoxMonData(outBoxMon, MON_DATA_HP_IV + i, &ivs[i]);
+        SetBoxMonData(outBoxMon, MON_DATA_POKEBALL, &pokeball);
+        SetBoxMonData(outBoxMon, MON_DATA_TERA_TYPE, &teraType);
+        SetBoxMonData(outBoxMon, MON_DATA_OT_GENDER, &otGender);
+        SetBoxMonData(outBoxMon, MON_DATA_LANGUAGE, &language);
+        SetBoxMonData(outBoxMon, MON_DATA_OT_NAME, otName);
+        SetBoxMonData(outBoxMon, MON_DATA_IS_EGG, &isEggFlag);
+
+        if (hasNickname)
+            SetBoxMonData(outBoxMon, MON_DATA_NICKNAME, nickname);
+        // else: CreateBoxMon already set the nickname to the species name -
+        // exactly the spec's default.
+
+        if (hasEVs)
+        {
+            for (i = 0; i < 6; i++)
+                SetBoxMonData(outBoxMon, MON_DATA_HP_EV + i, &evs[i]);
+        }
+        // else: ZeroBoxMonData (via CreateBoxMon) already left EVs at zero.
+
+        if (hasMoves)
+        {
+            for (i = 0; i < MAX_MON_MOVES; i++)
+            {
+                u32 move = moves[i];
+                u32 pp = CalculatePPWithBonus(moves[i], ppBonuses, i);
+                SetBoxMonData(outBoxMon, MON_DATA_MOVE1 + i, &move);
+                SetBoxMonData(outBoxMon, MON_DATA_PP1 + i, &pp);
+            }
+            SetBoxMonData(outBoxMon, MON_DATA_PP_BONUSES, &ppBonuses);
+        }
+        else
+        {
+            GiveBoxMonInitialMoveset(outBoxMon); // the spec's default: level-up moveset at `level`
+        }
+
+        if (hasHeldItem)
+            SetBoxMonData(outBoxMon, MON_DATA_HELD_ITEM, &heldItem);
+        // else: CreateBoxMon already left it at ITEM_NONE.
+
+        if (hasFriendship)
+            SetBoxMonData(outBoxMon, MON_DATA_FRIENDSHIP, &friendship);
+        // else: CreateBoxMon already set the species' base friendship.
+
+        if (hasPokerus)
+            SetBoxMonData(outBoxMon, MON_DATA_POKERUS, &pokerus);
+
+        // Met data was dropped from the payload (see the presence bitmap
+        // comment above) - CreateBoxMon's met level/game defaults (this
+        // level, this game version) stand as-is; only the location is
+        // overridden, to the same sentinel the existing in-game-trade path
+        // already uses for "no real overworld location" (src/trade.c).
+        SetBoxMonData(outBoxMon, MON_DATA_MET_LOCATION, &metLocation);
+    }
+
+    return TRADE_CODE_MON_OK;
 }

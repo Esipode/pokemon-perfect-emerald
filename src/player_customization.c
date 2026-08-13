@@ -5,8 +5,6 @@
 #include "constants/event_objects.h"
 #include "constants/rgb.h"
 
-// See Customization.md, Stage 1.
-
 // How much a single shade step (-3..+3) nudges brightness/saturation.
 // Chosen so the full range (+/-3 steps) stays a moderate, always-legible
 // adjustment rather than crushing a colour to black/white.

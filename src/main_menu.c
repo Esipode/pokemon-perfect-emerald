@@ -1633,8 +1633,7 @@ static void Task_NewGameBirchSpeech_ChooseGender(u8 taskId)
         gSaveBlock2Ptr->playerGender = gender;
         // A gender change invalidates the previous region meanings, and the
         // "No, choose again" path (Task_NewGameBirchSpeech_ProcessNameYesNoMenu)
-        // loops back here, so this must reset every time (Customization.md,
-        // Stage 6).
+        // loops back here, so this must reset every time.
         memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
         NewGameBirchSpeech_ClearGenderWindow(1, 1);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
@@ -1706,8 +1705,7 @@ static void Task_NewGameBirchSpeech_SlideInNewGenderSprite(u8 taskId)
 
 // Hands off to the player-colors screen once the fade started in
 // Task_NewGameBirchSpeech_ChooseGender completes. Mirrors
-// Task_NewGameBirchSpeech_StartNamingScreen's shape; see Customization.md,
-// Stage 6.
+// Task_NewGameBirchSpeech_StartNamingScreen's shape;
 static void Task_NewGameBirchSpeech_StartPlayerColors(u8 taskId)
 {
     if (!gPaletteFade.active)
@@ -2013,8 +2011,7 @@ static void CB2_NewGameBirchSpeech_ReturnFromNamingScreen(void)
 // Clone of CB2_NewGameBirchSpeech_ReturnFromNamingScreen -- same full
 // GPU/BG/window/sprite rebuild of the Birch scene, and it re-picks the
 // gender sprite the same way, but the task it creates resumes at
-// Task_NewGameBirchSpeech_WhatsYourName instead of the name-confirmation
-// text (see Customization.md, Stage 6).
+// Task_NewGameBirchSpeech_WhatsYourName instead of the name-confirmation text.
 static void CB2_NewGameBirchSpeech_ReturnFromPlayerColors(void)
 {
     u8 taskId;
@@ -2507,8 +2504,7 @@ static void Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox(u8 taskId)
 }
 
 // Same shape as Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox,
-// but resumes the "What's your name?" text instead of the name-confirmation
-// text (see Customization.md, Stage 6).
+// but resumes the "What's your name?" text instead of the name-confirmation text.
 static void Task_NewGameBirchSpeech_ReturnFromPlayerColorsShowTextbox(u8 taskId)
 {
     if (gTasks[taskId].tTimer-- <= 0)

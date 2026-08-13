@@ -1,10 +1,6 @@
 #ifndef GUARD_PLAYER_CUSTOMIZATION_H
 #define GUARD_PLAYER_CUSTOMIZATION_H
 
-// See Customization.md for the full design. Stage 1: data model, save
-// storage and palette generation only -- nothing here is wired into the
-// overworld/trainer-pic palette paths yet (that's Stages 2 and 4).
-
 #include "constants/player_customization.h" // enum PlayerColorRegion
 
 #define PLAYER_COLOR_HUE_COUNT 16
@@ -60,7 +56,7 @@ void PlayerCustomization_BuildPreviewPalette(u8 gender, const u8 *choices, u16 *
 // of sPlayerColorRegions (which is private to src/player_customization.c).
 u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region);
 
-// Stage 8 (Customization.md): recolours for the remaining player appearances
+// Recolours for the remaining player appearances
 // that each use their own separate 16-colour palette (not the overworld or
 // trainer-pic ones Stages 2/4 already cover). Same "NULL unless customised"
 // contract as PlayerCustomization_GetOwPaletteOverride -- callers copy the

@@ -634,11 +634,11 @@ SINGLE_BATTLE_TEST("Reflect Damage: Metal Burst works when surviving OHKO move w
     }
 }
 
-// Regression test for Bug C's required companion fix: `ProtectStruct.physicalDmg`/
+// Regression test for required companion fix: `ProtectStruct.physicalDmg`/
 // `specialDmg` (was u16, max 65,535) store `moveDamage + 1` for Counter/Mirror Coat/
 // Metal Burst, then get reflected back through the damage chain. If `moveDamage`
 // is widened to s32 but these stay u16, the identical wraparound bug reappears one
-// hop downstream. See "Damage Calc Patch.md", Stage 4 / Bug C.
+// hop downstream.
 //
 // A MAX_LEVEL opponent's Pound hit is sized so the raw computed damage clears not
 // only the old moveDamage s16 ceiling (32,767) but also the old physicalDmg u16
