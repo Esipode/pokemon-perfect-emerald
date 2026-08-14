@@ -109,6 +109,16 @@ void ItemUseCB_FormChange(u8 taskId, TaskFunc task);
 void ItemUseCB_FormChange_ConsumedOnUse(u8 taskId, TaskFunc task);
 void ItemUseCB_RotomCatalog(u8 taskId, TaskFunc task);
 void ItemUseCB_ZygardeCube(u8 taskId, TaskFunc task);
+// IsFusionMon's own return values - moved here (out of src/party_menu.c,
+// where they used to live file-local right above the function) so Trading
+// Codes.md Stage 11 (src/trade_code_session.c) can compare against
+// UNFUSE_MON by name instead of a bare magic number. FUSE_MON/
+// SECOND_FUSE_MON are exposed alongside it for the same reason, even
+// though nothing outside party_menu.c currently needs them.
+#define FUSE_MON        1
+#define UNFUSE_MON      2
+#define SECOND_FUSE_MON 3
+u8 IsFusionMon(enum Species species);
 void ItemUseCB_Fusion(u8 taskId, TaskFunc task);
 enum ItemEffectType GetItemEffectType(enum Item item);
 void CB2_PartyMenuFromStartMenu(void);

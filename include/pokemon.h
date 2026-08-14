@@ -286,10 +286,38 @@ struct BoxPokemon
     u8 hasSpecies:1;
     u8 isEgg:1;
     // blockBoxRS (Pokémon Box Ruby & Sapphire compat) and unused_13 removed
-    // (Saveblock Shrinking Stage 5) -- 2 free bits remain in this byte for
-    // a future per-mon flag; they cost nothing to leave unused (the byte
-    // is already spoken for by daysSinceFormChange and its neighbors).
+    // (Saveblock Shrinking Stage 5) -- 2 free bits remained in this byte
+    // for a future per-mon flag; Trading Codes.md Stage 11 claims both
+    // below, 0 free bits remain.
     u8 daysSinceFormChange:3; // 7 days.
+    // Trading Codes.md Stage 11 (dev decision): set only by TradeCodeReceive_
+    // DoSwap (src/trade_code_receive.c) when this exact mon's transmitted
+    // level exceeded GetCurrentLevelCap() at the moment it was received.
+    // Not re-evaluated afterward -- raising the cap later, or toggling
+    // FLAG_LEVEL_CAP_OFF, doesn't retroactively free it: a one-way "requires
+    // FLAG_SYS_GAME_CLEAR, not re-derived" lock, the same shape
+    // legacyCarryOverLocked below also uses. Read/written directly rather
+    // than through Get/SetBoxMonData -- pure internal bookkeeping with no
+    // script/UI surface, living in this same unencrypted header region as
+    // isBadEgg/hasSpecies/isEgg/daysSinceFormChange, so it never needs the
+    // checksum re-encrypt SetBoxMonData reserves for the substructs.
+    u8 tradeCodeAboveLevelCap:1;
+    // Trading Codes.md Stage 11: set only by CarryStorageIntoNewGame
+    // (src/new_game.c) on every box mon that survives a New-Game-Plus/
+    // Nuzlocke restart with storage kept -- an explicit "this mon predates
+    // the current playthrough" marker, checked by IsBoxMonWithdrawLocked
+    // (src/pokemon_storage_system.c) instead of the OT-ID-mismatch
+    // inference this replaced. That inference required exempting every
+    // legitimate same-run source of a foreign OT ID one at a time
+    // (IsIngameTradeOtId's whitelist, then a trade-code-specific carve-out)
+    // and needed CarryStorageIntoNewGame to actively re-stamp in-game-trade
+    // mons' real OT ID (via UpdateBoxMonOtId) just to keep them falling
+    // into the "old" bucket after a restart -- an explicit per-mon bit
+    // needs neither: nothing sets it during an ordinary run no matter
+    // where a foreign OT ID came from, so no exemption list to maintain,
+    // and no mon's real OT ID has to be rewritten to make the lock work.
+    // Same direct read/write reasoning as tradeCodeAboveLevelCap above.
+    u8 legacyCarryOverLocked:1;
     u8 otName[PLAYER_NAME_LENGTH];
     u8 markings:4;
     u8 compressedStatus:4;

@@ -124,11 +124,15 @@ static void SetDefaultOptions(void)
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     // Offline trade codes (trade_code.h): explicit alongside the memset
     // above, even though ClearSav2() (called just before this, in
-    // Sav2_ClearSetDefault()) already zeroes the whole SaveBlock2 -- Stage
-    // 11 will need this same reset on the New Game+ path, which does NOT
-    // run ClearSav2() first, so a committed trade can't survive into a
-    // fresh file. TRADE_CODE_STATE_NONE is 0, so this doubles as "no
-    // pending trade."
+    // Sav2_ClearSetDefault()) already zeroes the whole SaveBlock2 -- kept
+    // for the same "belt and suspenders, cheap and correct" reasoning as
+    // the playerColors memset right above it, not because anything still
+    // depends on it. TRADE_CODE_STATE_NONE is 0, so this doubles as "no
+    // pending trade." NewGameInitData's own New Game+ path -- which does
+    // NOT run ClearSav2() first, and Sav2_ClearSetDefault (so this
+    // function) never runs for it -- gets its own separate clear of the
+    // same field; see Trading Codes.md's Stage 11 status block for why
+    // that one couldn't just live here.
     memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
 }
 
@@ -181,11 +185,13 @@ void ResetMenuAndMonGlobals(void)
     ResetPokeblockScrollPositions();
 }
 
-// Boxes the outgoing party (so ZeroPlayerPartyMons()
-// doesn't delete it) and re-stamps any of this run's own in-game-trade Pokémon still in
-// storage to the outgoing trainer ID. Both passes must run before InitPlayerTrainerId() --
-// the boxed party needs to keep its old OT ID, and the re-stamp needs the OLD id to stamp
-// with. Only called when keepStorage is set.
+// Boxes the outgoing party (so ZeroPlayerPartyMons() doesn't delete it) and marks every
+// mon that survives into the new run's storage as legacy-carry-over-locked (Trading
+// Codes.md Stage 11 -- struct BoxPokemon's own legacyCarryOverLocked bit, include/
+// pokemon.h) so IsBoxMonWithdrawLocked (src/pokemon_storage_system.c) keeps it out of
+// reach until the player beats the league again. Must run before InitPlayerTrainerId() --
+// the boxed party needs to keep its old OT ID for the discardRandomizedMons comparisons
+// below, which still key off it. Only called when keepStorage is set.
 static void CarryStorageIntoNewGame(void)
 {
     u32 i, boxId, boxPosition;
@@ -201,9 +207,9 @@ static void CarryStorageIntoNewGame(void)
     // be read here, before ClearSav1() wipes the flag later in NewGameInitData().
     bool32 discardRandomizedMons = FlagGet(FLAG_RANDOMIZE_MON);
 
-    // Pass 1 -- move the party into the first free storage slots. Copied verbatim, so
-    // these mons keep their OLD OT ID and become locked automatically once the new
-    // trainer ID is issued.
+    // Pass 1 -- move the party into the first free storage slots. Copied verbatim; Pass 2
+    // below (which runs over the whole of storage, so it naturally covers these too) is
+    // what actually sets the legacy-carry-over lock bit, not anything in this pass.
     for (i = 0; i < partyCount; i++)
     {
         struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
@@ -252,14 +258,23 @@ static void CarryStorageIntoNewGame(void)
             break;
     }
 
-    // Pass 2 -- re-stamp this run's own in-game-trade Pokémon still in storage, or (Part
-    // 3e) discard any already-boxed Pokémon this run caught or traded for while
-    // FLAG_RANDOMIZE_MON was on. Without the re-stamp, a trade mon obtained during the
-    // run being restarted would ride IsIngameTradeOtId()'s whitelist forever and stay
-    // withdrawable. Running this after pass 1 means a trade mon that was sitting in the
-    // party at restart time gets caught too, with no special-casing. Pokémon from an even
-    // earlier run keep their own historical OT ID -- still locked, since it likewise
-    // mismatches the incoming one, so there's no reason to touch (or discard) them.
+    // Pass 2 -- lock every mon that survives into the new run's storage (Trading Codes.md
+    // Stage 11), or (Part 3e) discard any already-boxed Pokémon this run caught or traded
+    // for while FLAG_RANDOMIZE_MON was on. Running this after pass 1 means a mon that was
+    // sitting in the party at restart time gets locked too, with no special-casing.
+    // Pokémon from an even earlier run were already locked (this bit, once set, is never
+    // cleared short of FLAG_SYS_GAME_CLEAR -- see IsBoxMonWithdrawLocked, src/pokemon_
+    // storage_system.c) so re-setting it here is a harmless no-op for them.
+    //
+    // Pre-Stage-11 this pass instead re-stamped IsIngameTradeOtId() mons' OT ID (via
+    // UpdateBoxMonOtId, src/pokemon.c) to outgoingOtId, purely so they'd keep *looking*
+    // foreign to an OT-ID-mismatch-based lock check after this restart -- otherwise they'd
+    // ride that function's own hardcoded whitelist forever and stay withdrawable. An
+    // explicit lock bit needs no such trick: nothing about a mon's real OT ID matters to
+    // this pass anymore, so in-game-trade mons now keep their genuine OT ID forever, same
+    // as a real trade always would. UpdateBoxMonOtId itself is left in place (a legitimate
+    // general-purpose "rewrite this box mon's OT ID, correctly re-encrypting the substructs
+    // under the new key" utility, src/pokemon.c) even though this was its only caller.
     for (boxId = 0; boxId < TOTAL_BOXES_COUNT; boxId++)
     {
         for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
@@ -276,8 +291,7 @@ static void CarryStorageIntoNewGame(void)
                 ZeroBoxMonData(boxMon);
                 continue;
             }
-            if (IsIngameTradeOtId(otId))
-                UpdateBoxMonOtId(boxMon, outgoingOtId);
+            boxMon->legacyCarryOverLocked = TRUE;
         }
     }
 }
@@ -482,6 +496,24 @@ void NewGameInitData(void)
     ClearAllMail();
     gSaveBlock2Ptr->specialSaveWarpFlags = 0;
     gSaveBlock2Ptr->gcnLinkFlags = 0;
+    // Trading Codes.md Stage 11 ("New Game Plus / keep-storage" bullet):
+    // pendingTrade must be cleared on NG+ so a committed trade can't
+    // survive into a fresh file. SetDefaultOptions() (above in this file)
+    // already does this same memset, but only runs via Sav2_ClearSetDefault
+    // - reached from a truly fresh save (src/intro.c) or a corrupted-reload
+    // fallback (src/reload_save.c), both of which already ClearSav2() the
+    // whole SaveBlock2 anyway, making that particular memset redundant.
+    // This exact NG+ restart path (isNewGamePlus == TRUE) never calls
+    // either one - confirmed by reading this whole function before relying
+    // on the other one - so without this line, a trade COMMITTED right
+    // before restarting into New Game+ would carry its confirm-code-
+    // waiting state into the new file, and Stage 9's boot hook (src/
+    // overworld.c) would drop a fresh NG+ save straight into "enter your
+    // partner's confirm code" for a trade from the previous playthrough.
+    // Unconditional (not gated on isNewGamePlus) to match specialSaveWarp
+    // Flags/gcnLinkFlags immediately above - harmless on the non-NG+ path,
+    // where pendingTrade is already TRADE_CODE_STATE_NONE from ClearSav2().
+    memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
     InitEventData();
     // Must run after ClearSav1() above wiped dexCaught/dexSeen.
     // Re-registers every carried-over box mon so the dex

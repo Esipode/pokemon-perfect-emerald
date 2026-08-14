@@ -4553,9 +4553,15 @@ static void SpriteCB_BouncingPokeballArrive(struct Sprite *sprite)
     }
 }
 
-// The only way the player can legitimately own a Pokémon whose OT ID isn't their own
-// -- see IsBoxMonLegacyLocked in pokemon_storage_system.c. Derived from the trade table
-// itself so adding an in-game trade needs no matching whitelist edit here.
+// The whitelist of this ROM's own hardcoded in-game-trade NPC OT IDs. Derived from the
+// trade table itself so adding an in-game trade needs no matching whitelist edit here.
+// Used by src/new_game.c's CarryStorageIntoNewGame to decide what a FLAG_RANDOMIZE_MON
+// restart should discard from storage, not (as of Trading Codes.md Stage 11) by any
+// withdraw-lock check anymore -- IsBoxMonWithdrawLocked (src/pokemon_storage_system.c)
+// used to lean on this whitelist to tell a legitimate foreign OT ID apart from an
+// illegitimate one, but now checks two explicit struct BoxPokemon bits instead
+// (tradeCodeAboveLevelCap, legacyCarryOverLocked -- see include/pokemon.h), so it no
+// longer needs to reason about *why* an OT ID looks foreign at all.
 bool32 IsIngameTradeOtId(u32 otId)
 {
     u32 i;

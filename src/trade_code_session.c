@@ -219,6 +219,15 @@ static const u8 sText_NeedTwoMons[]         = _("For trading, you must have at\n
 static const u8 sText_CantTradeEnigmaBerry[] = _("A Pokémon holding the {STR_VAR_1}\nBerry can't be traded.");
 static const u8 sText_CantTradeEgg[]        = _("An Egg can't be traded like\nthis.");
 static const u8 sText_CantTradeLastMon[]    = _("You can't trade your last\nPokémon!");
+// Stage 11 (dev decision, Trading Codes.md's "Nuzlocke" bullet: "Nuzlocke
+// should disable trading entirely"). Matches this codebase's own existing
+// convention for the flag (a plain gSaveBlock1Ptr->nuzlockeModeEnabled
+// check at the call site, e.g. src/overworld.c/src/daycare.c/src/item_use.c)
+// rather than the docs/ai/systems/NUZLOCKE.md file's own aspirational
+// GameRules::CanX() wrapper wording, which no system in this codebase
+// (checked before writing this) actually implements.
+static const u8 sText_CantTradeNuzlocke[]   = _("Trading isn't allowed during\na Nuzlocke run.");
+static const u8 sText_CantTradeFusedMon[]   = _("A fused Pokémon can't be\ntraded like this.");
 static const u8 sText_ReadyForPartnerCode[] = _("Ready to enter your partner's\ntrade code?");
 // This screen's window (see trade_code_prompt.c's sTradeCodePromptWindow
 // Templates) is only 2 text-lines tall, same as every other message string
@@ -245,6 +254,24 @@ static const u8 sText_CancelConfirm[]       = _("Cancel this trade? Your\npartne
 //==========UI=SETUP==========//
 void TradeCodeSession_Start(void)
 {
+    // Stage 11 (dev decision): Nuzlocke disables trading entirely. Checked
+    // before even the COMMITTED-trade redirect below - nuzlockeModeEnabled
+    // is a new-game-only setting (see ApplyPendingNewGameSettings, src/
+    // new_game_settings_menu.c) that never changes mid-save, so a Nuzlocke
+    // save can never have a genuinely COMMITTED trade in the first place
+    // (Step 1 would already have been refused here). This doesn't touch
+    // Stage 9's own boot hook (src/overworld.c calls TradeCodeReceive_Start
+    // directly, never through this function) so a stale COMMITTED trade
+    // left over from before this gate existed still resolves normally on
+    // the next boot regardless of what this check does.
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+    {
+        if ((sTradeCodeSessionPtr = AllocZeroed(sizeof(struct TradeCodeSessionState))) == NULL)
+            return;
+        TradeCodePrompt_Init(sText_CantTradeNuzlocke, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterGateFailAck);
+        return;
+    }
+
     // Post-Stage-10 fix: the attendant is this feature's only entry point,
     // so it has to also be where a player with an already-COMMITTED trade
     // goes to enter their partner's confirm code - see this function's own
@@ -613,6 +640,24 @@ static void CB2_TradeCodeSession_AfterChooseMon(void)
     if (GetMonData(mon, MON_DATA_IS_EGG))
     {
         TradeCodePrompt_Init(sText_CantTradeEgg, FALSE, FALSE, &s->promptResult, CB2_TradeCodeSession_AfterRejectAck);
+        return;
+    }
+    // Stage 11 (dev decision, Trading Codes.md's "Fusions" bullet: "Do not
+    // allow fusion pokemon"). A mon in its fused form (e.g. Black/White
+    // Kyurem) has its "other half" sitting in gPokemonStoragePtr->
+    // fusions[], entirely outside this mon's own BoxPokemon data -
+    // TradeCode_SerializeMon has no way to carry that along, and unfusing
+    // it back on this cart after it's already gone to a partner would
+    // either silently fail or desync from whatever the receiving cart
+    // reconstructs. IsFusionMon (src/party_menu.c, declared in party_menu.h
+    // for this exact cross-file use) already tracks this for the item-
+    // based fuse/unfuse UI - UNFUSE_MON is specifically its "currently
+    // merged" return value; FUSE_MON/SECOND_FUSE_MON (an ordinary,
+    // not-yet-fused Reshiram/Zekrom/etc.) carry no hidden state and trade
+    // normally, so only UNFUSE_MON is rejected here.
+    if (IsFusionMon(GetMonData(mon, MON_DATA_SPECIES)) == UNFUSE_MON)
+    {
+        TradeCodePrompt_Init(sText_CantTradeFusedMon, FALSE, FALSE, &s->promptResult, CB2_TradeCodeSession_AfterRejectAck);
         return;
     }
     if (TradeCodeSession_WouldLeavePartyEmpty(slot))

@@ -6631,9 +6631,9 @@ void ItemUseCB_EvolutionStone(u8 taskId, TaskFunc task)
     }
 }
 
-#define FUSE_MON        1
-#define UNFUSE_MON      2
-#define SECOND_FUSE_MON 3
+// FUSE_MON/UNFUSE_MON/SECOND_FUSE_MON moved to include/party_menu.h
+// (Trading Codes.md Stage 11) so IsFusionMon's return value is nameable
+// from outside this file.
 
 #define tState          data[0]
 #define tTargetSpecies  data[1]
@@ -7084,9 +7084,9 @@ void ItemUseCB_Fusion(u8 taskId, TaskFunc taskFunc)
     return;
 }
 
-#undef FUSE_MON
-#undef UNFUSE_MON
-#undef SECOND_FUSE_MON
+// FUSE_MON/UNFUSE_MON/SECOND_FUSE_MON no longer #undef'd here - they now
+// live in include/party_menu.h (Trading Codes.md Stage 11), not as a
+// file-local #define, so there's nothing left for this file to undo.
 
 #undef fusionType
 #undef firstFusion

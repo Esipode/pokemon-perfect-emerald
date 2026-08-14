@@ -668,7 +668,7 @@ static void InitSummaryScreenData(void);
 static void SetSelectionAfterSummaryScreen(void);
 static void SetMonMarkings(u8);
 static bool8 IsRemovingLastPartyMon(void);
-static bool32 IsBoxMonLegacyLocked(struct BoxPokemon *boxMon);
+static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon);
 static bool8 CanPlaceMon(void);
 static bool8 CanShiftMon(void);
 static bool8 IsMonBeingMoved(void);
@@ -2395,7 +2395,7 @@ static void Task_PokeStorageMain(u8 taskId)
             {
                 sStorage->state = MSTATE_ERROR_LAST_PARTY_MON;
             }
-            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonWithdrawLocked(&sStorage->movingMon.box))
             {
                 sStorage->state = MSTATE_ERROR_LOCKED_MON;
             }
@@ -2406,7 +2406,7 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_WITHDRAW:
-            if (IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            if (IsBoxMonWithdrawLocked(GetCursorBoxMon()))
             {
                 sStorage->state = MSTATE_ERROR_LOCKED_MON;
             }
@@ -2421,7 +2421,7 @@ static void Task_PokeStorageMain(u8 taskId)
             {
                 sStorage->state = MSTATE_ERROR_PARTY_SLOT_LOCKED;
             }
-            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonWithdrawLocked(&sStorage->movingMon.box))
             {
                 sStorage->state = MSTATE_ERROR_LOCKED_MON;
             }
@@ -2432,7 +2432,7 @@ static void Task_PokeStorageMain(u8 taskId)
             }
             break;
         case INPUT_TAKE_ITEM:
-            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonWithdrawLocked(GetCursorBoxMon()))
             {
                 sStorage->state = MSTATE_ERROR_LOCKED_MON;
             }
@@ -2447,7 +2447,7 @@ static void Task_PokeStorageMain(u8 taskId)
             SetPokeStorageTask(Task_GiveMovingItemToMon);
             break;
         case INPUT_SWITCH_ITEMS:
-            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonWithdrawLocked(GetCursorBoxMon()))
             {
                 sStorage->state = MSTATE_ERROR_LOCKED_MON;
             }
@@ -2684,7 +2684,7 @@ static void Task_OnSelectedMon(u8 taskId)
             {
                 sStorage->state = 8;
             }
-            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonWithdrawLocked(&sStorage->movingMon.box))
             {
                 sStorage->state = 7;
             }
@@ -2700,7 +2700,7 @@ static void Task_OnSelectedMon(u8 taskId)
             {
                 sStorage->state = 3;
             }
-            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+            else if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonWithdrawLocked(&sStorage->movingMon.box))
             {
                 sStorage->state = 7;
             }
@@ -2712,7 +2712,7 @@ static void Task_OnSelectedMon(u8 taskId)
             }
             break;
         case MENU_WITHDRAW:
-            if (IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            if (IsBoxMonWithdrawLocked(GetCursorBoxMon()))
             {
                 sStorage->state = 7;
             }
@@ -2767,7 +2767,7 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_ShowMarkMenu);
             break;
         case MENU_TAKE:
-            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonWithdrawLocked(GetCursorBoxMon()))
             {
                 sStorage->state = 7;
             }
@@ -2782,13 +2782,13 @@ static void Task_OnSelectedMon(u8 taskId)
             SetPokeStorageTask(Task_GiveMovingItemToMon);
             break;
         case MENU_BAG:
-            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonWithdrawLocked(GetCursorBoxMon()))
                 sStorage->state = 7;
             else
                 SetPokeStorageTask(Task_ItemToBag);
             break;
         case MENU_SWITCH:
-            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonLegacyLocked(GetCursorBoxMon()))
+            if (sCursorArea == CURSOR_AREA_IN_BOX && IsBoxMonWithdrawLocked(GetCursorBoxMon()))
             {
                 sStorage->state = 7;
             }
@@ -2930,7 +2930,7 @@ static void Task_WithdrawMon(u8 taskId)
             PrintMessage(MSG_PARTY_FULL);
             sStorage->state = 1;
         }
-        else if (IsBoxMonLegacyLocked(GetCursorBoxMon()))
+        else if (IsBoxMonWithdrawLocked(GetCursorBoxMon()))
         {
             PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
             sStorage->state = 1;
@@ -3828,7 +3828,7 @@ static void Task_OnBPressed(u8 taskId)
             }
             else if (CanPlaceMon())
             {
-                if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonLegacyLocked(&sStorage->movingMon.box))
+                if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonWithdrawLocked(&sStorage->movingMon.box))
                 {
                     PlaySE(SE_FAILURE);
                     PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
@@ -4624,7 +4624,7 @@ static bool32 ShouldBoxmonSpriteBeTransparent(u32 boxId, u32 boxPosition)
      && IsBoxMonExcluded(GetBoxedMonPtr(boxId, boxPosition)))
         return TRUE;
     if ((sStorage->boxOption == OPTION_WITHDRAW || sStorage->boxOption == OPTION_MOVE_MONS || sStorage->boxOption == OPTION_MOVE_ITEMS)
-     && IsBoxMonLegacyLocked(GetBoxedMonPtr(boxId, boxPosition)))
+     && IsBoxMonWithdrawLocked(GetBoxedMonPtr(boxId, boxPosition)))
         return TRUE;
     return FALSE;
 }
@@ -7044,21 +7044,35 @@ static bool8 IsRemovingLastPartyMon(void)
         return FALSE;
 }
 
-// A Pokémon carried over from a previous playthrough: its OT ID belongs to a trainer ID
-// that InitPlayerTrainerId() replaced when this run started. In-game trades are the only
-// legitimate source of a foreign OT ID in the player's own PC, so they're exempt -- ones
-// that predate the restart were re-stamped to the old trainer's ID at carry-over time.
-static bool32 IsBoxMonLegacyLocked(struct BoxPokemon *boxMon)
+// Two independent reasons a box mon can be locked out of withdraw/move/shift/
+// item-swap, both surfaced through the same MSG_LOCKED_UNTIL_CHAMPION message
+// (see MSTATE_ERROR_LOCKED_MON below) since both boil down to "not withdrawable
+// until you've beaten the league (again) in this playthrough", and both now
+// (Trading Codes.md Stage 11) explicit per-mon bits on struct BoxPokemon
+// rather than inferred from OT ID -- see each bit's own comment (include/
+// pokemon.h) for the full reasoning on why that inference was replaced:
+//
+// 1. tradeCodeAboveLevelCap: a trade-code Pokémon that arrived above the
+//    level cap (TradeCodeReceive_DoSwap, src/trade_code_receive.c).
+//
+// 2. legacyCarryOverLocked: a Pokémon that predates the current New-Game-
+//    Plus/Nuzlocke-restart playthrough (CarryStorageIntoNewGame, src/
+//    new_game.c). gSaveBlock2Ptr->keepStorageOnRestart no longer needs to
+//    gate this check -- CarryStorageIntoNewGame only ever sets this bit
+//    when it itself runs, which is already conditioned on the equivalent
+//    "keep storage" choice at restart time, so a save that never carried
+//    storage over simply never has any box mon with this bit set.
+static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
 {
-    u32 otId;
-
-    if (boxMon == NULL || !gSaveBlock2Ptr->keepStorageOnRestart)
+    if (boxMon == NULL)
         return FALSE;
     if (FlagGet(FLAG_SYS_GAME_CLEAR))
         return FALSE;
 
-    otId = GetBoxMonData(boxMon, MON_DATA_OT_ID);
-    return otId != READ_OTID_FROM_SAVE && !IsIngameTradeOtId(otId);
+    if (B_EXP_CAP_TYPE != EXP_CAP_NONE && boxMon->tradeCodeAboveLevelCap)
+        return TRUE;
+
+    return boxMon->legacyCarryOverLocked;
 }
 
 static bool8 CanPlaceMon(void)

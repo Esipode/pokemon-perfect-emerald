@@ -1731,10 +1731,14 @@ static void Task_NuzlockeRunFailed(u8 taskId)
                 // FALSE on a player's very first-ever run (there was
                 // nothing to carry in yet) -- reading it here would
                 // silently discard real PC storage the first time anyone
-                // fails and restarts immediately. keepStorageOnRestart
-                // keeps its own separate job gating the OT-ID lock in
-                // pokemon_storage_system.c; it's just not read here as a
-                // stand-in for the player's answer.
+                // fails and restarts immediately. (As of Trading Codes.md
+                // Stage 11, this field is otherwise write-only -- it used to
+                // also gate the withdraw lock in pokemon_storage_system.c,
+                // but that check now reads an explicit per-mon bit,
+                // struct BoxPokemon's own legacyCarryOverLocked, instead.
+                // Left in place regardless; a save-wide "has this file ever
+                // carried storage over" record is reasonable bookkeeping to
+                // keep even with no current reader.)
                 gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_KEEP_STORAGE_INFO;
             }
             break;

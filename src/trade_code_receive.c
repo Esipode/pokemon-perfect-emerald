@@ -3,6 +3,7 @@
 #include "trade_code.h"
 #include "trade_code_entry.h"
 #include "trade_code_prompt.h"
+#include "caps.h"
 #include "evolution_scene.h"
 #include "limited_party.h"
 #include "malloc.h"
@@ -85,6 +86,10 @@ struct TradeCodeReceiveState
     enum TradeCodePromptResult promptResult;
     u8 partyIndex;    // valid only when !wentToPC
     bool8 wentToPC;
+    // Stage 11: distinguishes *why* wentToPC is set, so CB2_TradeCodeReceive_
+    // AfterTakeCareMsg can show the right one of two different "sent to a
+    // Box" messages - see TradeCodeReceive_DoSwap.
+    bool8 overLevelCap;
 };
 
 //==========EWRAM==========//
@@ -134,6 +139,10 @@ static const u8 sText_ConfirmGiveUp[] = _("Give up on this trade?\nYou will not 
 static const u8 sText_SentOver[]      = _("{STR_VAR_1} sent over\n{STR_VAR_2}!");
 static const u8 sText_TakeGoodCareOfIt[] = _("Take good care of\n{STR_VAR_2}!");
 static const u8 sText_SentToBox[]     = _("Your party is full, so\n{STR_VAR_2} was sent to a Box.");
+// Stage 11 (dev decision, Trading Codes.md): shown instead of sText_SentToBox
+// when the incoming mon is above the level cap, regardless of whether the
+// party had room - see TradeCodeReceive_DoSwap.
+static const u8 sText_SentToBoxLevelCap[] = _("{STR_VAR_2} is above your\nlevel cap, so it was boxed.");
 
 //==========UI=SETUP==========//
 void TradeCodeReceive_Start(MainCallback returnCallback)
@@ -317,7 +326,7 @@ static void TradeCodeReceive_DoSwap(void)
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
     struct BoxPokemon boxMon;
     struct Pokemon mon;
-    bool32 isEgg;
+    bool32 isEgg, overLevelCap;
     u8 friendship;
     u8 maxSize, i;
 
@@ -335,30 +344,80 @@ static void TradeCodeReceive_DoSwap(void)
         SetMonData(&mon, MON_DATA_FRIENDSHIP, &friendship);
     }
 
+    // Stage 11 (dev decision, Trading Codes.md's "Level cap" bullet): an
+    // egg's level isn't a real level yet (no cap concept applies before it
+    // hatches), so eggs are unconditionally exempt. Checked against
+    // MON_DATA_LEVEL post-CalculateMonStats, i.e. the same transmitted
+    // level TradeCode_DeserializeMon (Stage 2) already validated is
+    // 1..MAX_LEVEL - never the sender's live, possibly-since-changed level.
+    overLevelCap = !isEgg && B_EXP_CAP_TYPE != EXP_CAP_NONE
+                 && GetMonData(&mon, MON_DATA_LEVEL) > GetCurrentLevelCap();
+    s->overLevelCap = overLevelCap;
+
+    if (overLevelCap)
+    {
+        // Marks this exact mon for IsBoxMonWithdrawLocked (src/pokemon_
+        // storage_system.c) - see struct BoxPokemon's own comment
+        // (include/pokemon.h) for the full one-way-lock reasoning. Left
+        // with its partner-synthesised OT ID untouched - that lock check
+        // is its own explicit bit now, not an OT-ID inference, so the OT
+        // ID this mon carries has no bearing on whether it's locked. See
+        // this same "if" block's own history in the plan doc's Stage 11
+        // status for why this used to matter and no longer does: an
+        // earlier version of this function rewrote a *non*-over-cap mon's
+        // OT ID to the player's own here to dodge a since-removed false-
+        // positive in the legacy-carry-over lock. That inference is gone
+        // (see legacyCarryOverLocked, include/pokemon.h), so every
+        // trade-code receipt - over cap or not - now keeps its real,
+        // partner-synthesised OT ID, same as the payload spec's own
+        // "otId high half" section originally intended: IsTradedMon/
+        // IsOtherTrainer's (src/pokemon.c) traded-Pokemon EXP boost and
+        // obedience bypass apply normally.
+        mon.box.tradeCodeAboveLevelCap = TRUE;
+    }
+
     // Insert into the first empty party slot, else the PC - mirrors
     // GiveCapturedMonToPlayer's own party-then-PC shape (src/pokemon.c),
     // deliberately not calling that function directly since its
     // Achievement_CheckCaptureMilestones/Achievement_OnShinyObtained/etc.
     // calls are specifically about *catching*, not trading, and shouldn't
-    // fire here.
-    maxSize = LimitedParty_GetMaxPartySize();
-    for (i = 0; i < maxSize; i++)
-    {
-        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
-            break;
-    }
-    if (i < maxSize)
-    {
-        CopyMon(&gParties[B_TRAINER_PLAYER][i], &mon, sizeof(mon));
-        CalculatePlayerPartyCount();
-        s->partyIndex = i;
-        s->wentToPC = FALSE;
-    }
-    else
+    // fire here. An over-level-cap mon skips the party search entirely and
+    // always goes straight to the PC, even with open party slots - Stage
+    // 11's own "insert into storage" wording is unconditional, not just a
+    // fallback for a full party.
+    if (overLevelCap)
     {
         CopyMonToPC(&mon);
         s->wentToPC = TRUE;
     }
+    else
+    {
+        maxSize = LimitedParty_GetMaxPartySize();
+        for (i = 0; i < maxSize; i++)
+        {
+            if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
+                break;
+        }
+        if (i < maxSize)
+        {
+            CopyMon(&gParties[B_TRAINER_PLAYER][i], &mon, sizeof(mon));
+            CalculatePlayerPartyCount();
+            s->partyIndex = i;
+            s->wentToPC = FALSE;
+        }
+        else
+        {
+            CopyMonToPC(&mon);
+            s->wentToPC = TRUE;
+        }
+    }
+
+    // GAME_STAT_POKEMON_TRADES: mirrors both src/trade.c increment sites
+    // (the old link-trade path), which are unreachable under TRADE_CODES
+    // (Stage 10) - without this, the trainer card's own Pokemon Trades
+    // count (src/trainer_card.c) would stay frozen at 0 for every
+    // TRADE_CODES player no matter how many real trades they complete.
+    IncrementGameStat(GAME_STAT_POKEMON_TRADES);
 
     // Pokedex registration - mirrors src/trade.c's own (static, so not
     // reusable directly) UpdatePokedexForReceivedMon, but via Handle
@@ -402,7 +461,7 @@ static void CB2_TradeCodeReceive_AfterTakeCareMsg(void)
 
     if (s->wentToPC)
     {
-        StringExpandPlaceholders(gStringVar4, sText_SentToBox);
+        StringExpandPlaceholders(gStringVar4, s->overLevelCap ? sText_SentToBoxLevelCap : sText_SentToBox);
         TradeCodePrompt_Init(gStringVar4, FALSE, FALSE, &s->promptResult, CB2_TradeCodeReceive_AfterBoxMsg);
         return;
     }
