@@ -14,6 +14,7 @@
 #include "pokemon_storage_system.h"
 #include "pokemon_summary_screen.h"
 #include "random.h"
+#include "recruits_mode.h"
 #include "save.h"
 #include "script_pokemon_util.h"
 #include "string_util.h"
@@ -233,6 +234,10 @@ static const u8 sText_CantTradeNuzlocke[]   = _("Trading isn't allowed during\na
 // initiated code-trade flow is a real acquisition path and is refused
 // outright, same shape as the Nuzlocke gate right above.
 static const u8 sText_CantTradeDraft[]      = _("Trading isn't allowed during\na Draft run.");
+// Recruits Mode.md Stage 8: a traded-in mon carries its own recruitBattles
+// counter, so a mon from a non-Recruits save would arrive at 0/10 - a clean
+// laundering vector around the PC lock. Same shape as the Draft gate above.
+static const u8 sText_CantTradeRecruits[]   = _("Trading isn't allowed during\na Recruits run.");
 static const u8 sText_CantTradeFusedMon[]   = _("A fused Pokémon can't be\ntraded like this.");
 static const u8 sText_ReadyForPartnerCode[] = _("Ready to enter your partner's\ntrade code?");
 // This screen's window (see trade_code_prompt.c's sTradeCodePromptWindow
@@ -288,6 +293,17 @@ void TradeCodeSession_Start(void)
         if ((sTradeCodeSessionPtr = AllocZeroed(sizeof(struct TradeCodeSessionState))) == NULL)
             return;
         TradeCodePrompt_Init(sText_CantTradeDraft, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterGateFailAck);
+        return;
+    }
+
+    // Recruits Mode.md Stage 8: same shape as the Draft gate above, own
+    // message. Recruits_IsEnabled() (not _IsActive()) to match Draft's own
+    // blanket, whole-run gate rather than the post-Pokédex one.
+    if (Recruits_IsEnabled())
+    {
+        if ((sTradeCodeSessionPtr = AllocZeroed(sizeof(struct TradeCodeSessionState))) == NULL)
+            return;
+        TradeCodePrompt_Init(sText_CantTradeRecruits, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterGateFailAck);
         return;
     }
 

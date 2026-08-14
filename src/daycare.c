@@ -3,6 +3,7 @@
 #include "pokemon.h"
 #include "battle.h"
 #include "daycare.h"
+#include "recruits_mode.h"
 #include "string_util.h"
 #include "caps.h"
 #include "mail.h"
@@ -285,6 +286,17 @@ static void StorePokemonInEmptyDaycareSlot(struct Pokemon *mon, struct DayCare *
 void StoreSelectedPokemonInDaycare(void)
 {
     struct Pokemon *mon;
+
+    // Recruits Mode.md Stage 8: with the PC locked, the daycare would be the
+    // only off-party reserve left - a mon parked here sits out the
+    // retirement economy entirely. Route117_EventScript_GiveMonToRaise
+    // (data/scripts/day_care.inc) already refuses the offer itself with its
+    // own message before this special is ever reached; this is the backstop
+    // for the other entry points into this same special (e.g. the FRLG day
+    // care map), which don't have that script-level check.
+    if (Recruits_IsEnabled())
+        return;
+
     if (gSpecialVar_0x8004 == PC_MON_CHOSEN)
     {
         mon = Alloc(sizeof(struct Pokemon));
@@ -1621,7 +1633,13 @@ static u8 ModifyBreedingScoreForOvalCharm(u8 score)
 void PutMonInRoute5Daycare(void)
 {
 #if IS_FRLG
-    u8 monIdx = GetCursorSelectionMonId();
+    u8 monIdx;
+
+    // Recruits Mode.md Stage 8: same reasoning as StoreSelectedPokemonInDaycare.
+    if (Recruits_IsEnabled())
+        return;
+
+    monIdx = GetCursorSelectionMonId();
     StorePokemonInDaycare(&gParties[B_TRAINER_PLAYER][monIdx], &gSaveBlock1Ptr->route5DayCareMon);
 #endif
 }

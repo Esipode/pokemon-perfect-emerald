@@ -84,6 +84,11 @@ Route117_PokemonDayCare_EventScript_DaycareWoman::
 	end
 
 Route117_PokemonDayCare_EventScript_GiveMonToRaise::
+	@ Recruits Mode.md Stage 8: the daycare would otherwise be the only
+	@ off-party reserve left once the PC is locked, letting a mon sit out
+	@ the retirement economy. Refused before any mon is even offered.
+	specialvar VAR_RESULT, Recruits_IsEnabled
+	goto_if_eq VAR_RESULT, TRUE, Route117_PokemonDayCare_EventScript_CantRaiseRecruits
 	specialvar VAR_RESULT, CountPartyNonEggMons
 	goto_if_eq VAR_RESULT, 1, Route117_PokemonDayCare_EventScript_OnlyOneMon
 	specialvar VAR_RESULT, CountPartyAliveNonEggMons
@@ -109,6 +114,11 @@ Route117_PokemonDayCare_EventScript_GiveMonToRaise::
 
 Route117_PokemonDayCare_EventScript_ComeAgain::
 	msgbox Route117_PokemonDayCare_Text_ComeAgain, MSGBOX_DEFAULT
+	release
+	end
+
+Route117_PokemonDayCare_EventScript_CantRaiseRecruits::
+	msgbox Route117_PokemonDayCare_Text_CantRaiseRecruits, MSGBOX_DEFAULT
 	release
 	end
 
@@ -330,6 +340,10 @@ Route117_PokemonDayCare_Text_WouldYouLikeUsToRaiseAMon:
 Route117_PokemonDayCare_Text_WhichMonShouldWeRaise:
 	.string "Which POKéMON should we raise for\n"
 	.string "you?$"
+
+Route117_PokemonDayCare_Text_CantRaiseRecruits:
+	.string "Sorry, we can't take on any\n"
+	.string "POKéMON during a RECRUITS run!$"
 
 Route117_PokemonDayCare_Text_WellRaiseYourMon:
 	.string "Fine, we'll raise your {STR_VAR_1}\n"

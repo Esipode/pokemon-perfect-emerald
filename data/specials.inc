@@ -154,6 +154,7 @@ gSpecials::
 	def_special CalculatePlayerPartyCount
 	def_special IsPlayerPartyFull
 	def_special IsLimitedPartyEnabled
+	def_special Recruits_IsEnabled
 	def_special CountPartyNonEggMons
 	def_special CountPartyAliveNonEggMons_IgnoreVar0x8004Slot
 	def_special ShouldReadyContestArtist
