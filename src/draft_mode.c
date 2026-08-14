@@ -1,12 +1,17 @@
 #include "global.h"
 #include "draft_mode.h"
+#include "battle_util.h"
 #include "event_data.h"
+#include "limited_party.h"
 #include "new_game.h"
 #include "caps.h"
 #include "overworld.h"
+#include "party_menu.h"
 #include "pokemon.h"
 #include "random.h"
+#include "string_util.h"
 #include "wild_encounter.h"
+#include "constants/battle.h"
 #include "constants/flags.h"
 #include "constants/region_map_sections.h"
 
@@ -206,4 +211,89 @@ void Draft_QueuePendingMon(struct Pokemon *mon)
 {
     CopyMon(&sDraftPendingMon, mon, sizeof(struct Pokemon));
     sDraftPendingValid = TRUE;
+}
+
+// ---------------------------------------------------------------------
+// Script natives for the offer flow. See data/scripts/draft.inc and the
+// declarations in include/draft_mode.h.
+// ---------------------------------------------------------------------
+
+// Mirrors GiveCapturedMonToPlayer's "find an empty slot" half
+// (src/pokemon.c) - first empty slot below the Limited Party cap, or a
+// declined placement if none is free. Never falls back to the PC: a Draft
+// run has nowhere else for a Pokémon to go, so the caller (§5's
+// Draft_EventScript_ResolvePending) routes a full party to the replace
+// screen instead.
+void Draft_TryGiveToEmptySlot(void)
+{
+    u8 maxSize = LimitedParty_GetMaxPartySize();
+    u8 i;
+
+    for (i = 0; i < maxSize; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
+            break;
+    }
+
+    if (i >= maxSize)
+    {
+        gSpecialVar_Result = 1;
+        return;
+    }
+
+    CopyMon(&gParties[B_TRAINER_PLAYER][i], &sDraftPendingMon, sizeof(sDraftPendingMon));
+    gPartiesCount[B_TRAINER_PLAYER] = i + 1;
+    gSpecialVar_Result = 0;
+}
+
+// gStringVar1 = the pending mon's species name (not its nickname - it
+// doesn't have one yet). Also buffers gSpecialVar_0x8004 with the party
+// slot the mon just joined, so Draft_EventScript_OfferNickname can hand it
+// straight to `special ChangePokemonNickname`, the same convention
+// Common_EventScript_GetGiftMonPartySlot uses (data/scripts/pc_transfer.inc).
+// Only ever called right after Draft_TryGiveToEmptySlot succeeds, so the
+// pending mon and the party count it reads are both guaranteed current.
+void Draft_BufferPendingNickname(void)
+{
+    u16 species = GetMonData(&sDraftPendingMon, MON_DATA_SPECIES);
+
+    StringCopy(gStringVar1, GetSpeciesName(species));
+    gSpecialVar_0x8004 = gPartiesCount[B_TRAINER_PLAYER] - 1;
+}
+
+// gStringVar1 = the outgoing party mon at gSpecialVar_0x8004 (as chosen by
+// `special ChoosePartyMon`), gStringVar2 = the pending mon's species name.
+void Draft_BufferReplacementNames(void)
+{
+    u16 species = GetMonData(&sDraftPendingMon, MON_DATA_SPECIES);
+
+    GetMonNickname(&gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004], gStringVar1);
+    StringCopy(gStringVar2, GetSpeciesName(species));
+}
+
+// Replaces the party mon at gSpecialVar_0x8004 with the pending mon.
+// TryRevertPartyMonFormChange runs first, as Cmd_givecaughtmon does before
+// releasing a mon to the PC (src/battle_script_commands.c) - a battle-form
+// mon should always revert before it leaves the party for good.
+void Draft_DoReplacement(void)
+{
+    u8 slot = gSpecialVar_0x8004;
+
+    TryRevertPartyMonFormChange(slot);
+    ZeroMonData(&gParties[B_TRAINER_PLAYER][slot]);
+    CopyMon(&gParties[B_TRAINER_PLAYER][slot], &sDraftPendingMon, sizeof(sDraftPendingMon));
+}
+
+// Discards the pending mon without placing it anywhere - the decline path.
+void Draft_DiscardPending(void)
+{
+    sDraftPendingValid = FALSE;
+}
+
+// Marks the current area's draft as spent. Draft_EventScript_Finish is the
+// offer flow's single terminal node and its only caller - see the header
+// comment on this function in include/draft_mode.h.
+void Draft_MarkAreaSpent(void)
+{
+    SET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId());
 }

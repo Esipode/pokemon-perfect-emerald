@@ -68,4 +68,33 @@ u32 Draft_BuildPool(struct DraftChoice *out);
 bool32 Draft_HasPendingMon(void);
 void Draft_QueuePendingMon(struct Pokemon *mon);
 
+// Script natives for the offer flow (data/scripts/draft.inc). All of them
+// are callnative entry points - see the header comment above each
+// definition in draft_mode.c for what they actually do.
+
+// Places the pending mon in the first empty party slot below
+// LimitedParty_GetMaxPartySize(). gSpecialVar_Result: 0 = joined, 1 = no
+// room (the caller should fall back to the replace screen).
+void Draft_TryGiveToEmptySlot(void);
+
+// gStringVar1 = the pending mon's species name. Also sets gSpecialVar_0x8004
+// to the party slot it just joined (last party index), which
+// Draft_EventScript_OfferNickname passes straight to ChangePokemonNickname.
+void Draft_BufferPendingNickname(void);
+
+// gStringVar1 = the outgoing party mon at gSpecialVar_0x8004 (as chosen by
+// `special ChoosePartyMon`), gStringVar2 = the pending mon's species name.
+void Draft_BufferReplacementNames(void);
+
+// Replaces the party mon at gSpecialVar_0x8004 with the pending mon.
+void Draft_DoReplacement(void);
+
+// Discards the pending mon without placing it anywhere.
+void Draft_DiscardPending(void);
+
+// Marks the current area's draft as spent. The single terminal node of the
+// offer flow (Draft_EventScript_Finish) is the only caller, so this must
+// never run anywhere else in the flow.
+void Draft_MarkAreaSpent(void);
+
 #endif // GUARD_DRAFT_MODE_H
