@@ -855,7 +855,9 @@ Debug_EventScript_NoDraftPool::
 	end
 
 Debug_EventScript_NoDraftPool_Text_0:
-	.string "This map has no draft pool - no land\nor water encounters here.$"
+	.string "This map has no draftable Pokémon -\n"
+	.string "either no land/water encounters here,\l"
+	.string "or Mono Type/Gen filtered all of them out.$"
 
 
 Debug_EventScript_TellTheTime_Text_0:

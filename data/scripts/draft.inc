@@ -7,12 +7,26 @@
 
 Draft_EventScript_RouteDraft::
 	lockall
+	callnative Draft_CheckPoolEligible
+	goto_if_eq VAR_RESULT, FALSE, Draft_EventScript_NoEligiblePool
 	msgbox Draft_Text_AreaIntro, MSGBOX_DEFAULT
 	fadescreen FADE_TO_BLACK
 	callnative Draft_StartCaseUI
 	waitstate
 	goto_if_eq VAR_0x8004, 1, Draft_EventScript_ConfirmDecline
 	goto Draft_EventScript_ResolvePending
+
+@ Draft_IsAreaDraftable() (the field hook's gate) only confirms this area has
+@ *some* wild encounters - it's deliberately unfiltered by Mono Type/Mono
+@ Gen, so an organically-empty pool still reaches here rather than the field
+@ hook silently never firing. Draft_Text_AreaIntro would be misleading in
+@ that case (there's nothing this run could legally draft), so this is its
+@ own terminal node rather than falling into the normal offer.
+Draft_EventScript_NoEligiblePool::
+	msgbox Draft_Text_NoEligiblePool, MSGBOX_DEFAULT
+	callnative Draft_MarkAreaSpentNoOffer
+	releaseall
+	end
 
 @ Entry point for a gift/egg queued by the pending-buffer funnels in
 @ src/pokemon.c, and the tail of the draft pick above.
@@ -102,3 +116,8 @@ Draft_Text_ConfirmDecline:
 Draft_Text_AskNickname:
 	.string "Would you like to give your new\n"
 	.string "Pokémon a nickname?$"
+
+Draft_Text_NoEligiblePool:
+	.string "None of the Pokémon native to this\n"
+	.string "area fit your current rules. There's\l"
+	.string "nothing to draft here.$"

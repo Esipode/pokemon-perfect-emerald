@@ -3,6 +3,8 @@
 #include "battle_util.h"
 #include "event_data.h"
 #include "limited_party.h"
+#include "mono_type.h"
+#include "mono_gen.h"
 #include "new_game.h"
 #include "caps.h"
 #include "overworld.h"
@@ -156,9 +158,16 @@ static u32 SelectDraftSubset(const struct DraftChoice *scratch, u32 count, struc
     return DRAFT_MAX_CHOICES;
 }
 
-u32 Draft_BuildPool(struct DraftChoice *out)
+// Accumulates the current map's raw wild-encounter species (land + water,
+// unioned across all four times of day, deduped by species and keeping the
+// highest maxLevel seen) into `scratch`. Not filtered by Mono Type/Mono
+// Gen - this is "does this area have wild encounters at all", the ground
+// truth Draft_IsAreaDraftable uses to decide whether the field hook engages
+// here in the first place, independent of whether any of those species
+// turn out to be legal under a Mono restriction. See Draft_BuildPool for
+// the mono-filtered pool actually offered to the player.
+static u32 BuildRawPool(struct DraftChoice *scratch)
 {
-    struct DraftChoice scratch[DRAFT_SCRATCH_CAPACITY];
     const struct WildPokemonInfo *visited[DRAFT_MAX_VISITED_INFOS];
     u32 visitedCount = 0;
     u32 count = 0;
@@ -176,6 +185,40 @@ u32 Draft_BuildPool(struct DraftChoice *out)
         AccumulateWildInfo(types->waterMonsInfo, WATER_WILD_COUNT, scratch, &count, visited, &visitedCount);
     }
 
+    return count;
+}
+
+// Compacts `pool` in place down to the species legal under Mono Type/Mono
+// Gen (only checked when those modes are actually enabled), returning the
+// new count. A Draft pool otherwise offers whatever lives in the area
+// regardless of those restrictions - this is what actually enforces them on
+// a draft pick, the same job MonoType_SetGiveBlocked does for gifts
+// (src/script_pokemon_util.c). A no-op copy when neither mode is enabled.
+static u32 FilterPoolForMono(struct DraftChoice *pool, u32 count)
+{
+    u32 i, kept;
+    bool32 monoOn = MonoType_IsEnabled();
+    bool32 genOn = MonoGen_IsEnabled();
+
+    if (!monoOn && !genOn)
+        return count;
+
+    for (i = 0, kept = 0; i < count; i++)
+    {
+        if ((!monoOn || MonoType_IsSpeciesAllowed(pool[i].species))
+         && (!genOn || MonoGen_IsSpeciesAllowed(pool[i].species)))
+            pool[kept++] = pool[i];
+    }
+
+    return kept;
+}
+
+u32 Draft_BuildPool(struct DraftChoice *out)
+{
+    struct DraftChoice scratch[DRAFT_SCRATCH_CAPACITY];
+    u32 t;
+    u32 count = FilterPoolForMono(scratch, BuildRawPool(scratch));
+
     if (count == 0)
         return 0;
 
@@ -192,7 +235,7 @@ u32 Draft_BuildPool(struct DraftChoice *out)
 bool32 Draft_IsAreaDraftable(void)
 {
     mapsec_u8_t zone;
-    struct DraftChoice pool[DRAFT_MAX_CHOICES];
+    struct DraftChoice scratch[DRAFT_SCRATCH_CAPACITY];
 
     if (!Draft_IsActive())
         return FALSE;
@@ -204,7 +247,34 @@ bool32 Draft_IsAreaDraftable(void)
     if (GET_NUZLOCKE_ZONE_FLAG(zone))
         return FALSE;
 
-    return Draft_BuildPool(pool) > 0;
+    // Raw wild-encounter presence, NOT mono-filtered: an area whose pool
+    // Mono Type/Gen reduces to zero still needs the field hook to fire so
+    // Draft_EventScript_RouteDraft can show the "nothing eligible here"
+    // message (Draft_CheckPoolEligible) instead of silently never engaging.
+    return BuildRawPool(scratch) > 0;
+}
+
+// gSpecialVar_Result: TRUE if this area's Mono-filtered draft pool has at
+// least one legal pick, FALSE if Mono Type/Mono Gen filtered out every
+// species that lives here. Draft_IsAreaDraftable() already guarantees the
+// area has *some* wild encounters before this runs (unfiltered) - this is
+// what lets Draft_EventScript_RouteDraft pick between the normal offer and
+// Draft_EventScript_NoEligiblePool.
+void Draft_CheckPoolEligible(void)
+{
+    struct DraftChoice pool[DRAFT_MAX_CHOICES];
+
+    gSpecialVar_Result = (Draft_BuildPool(pool) > 0);
+}
+
+// Marks the current area's draft as spent with no offer ever having been
+// made - the Mono Type/Mono Gen "nothing eligible here" path
+// (Draft_EventScript_NoEligiblePool) is the only caller. Unlike
+// Draft_MarkAreaSpent, unconditional: there's no pending mon to key off of,
+// since the case UI never opened.
+void Draft_MarkAreaSpentNoOffer(void)
+{
+    SET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId());
 }
 
 // See the header comment above Draft_HasPendingMon/Draft_QueuePendingMon.

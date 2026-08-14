@@ -34,6 +34,7 @@
 #include "constants/songs.h"
 #include "constants/items.h"
 #include "caps.h"
+#include "draft_mode.h"
 #include "event_data.h"
 #include "mono_type.h"
 #include "mono_gen.h"
@@ -1772,15 +1773,16 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
     // Nuzlocke Mode / Mono Type / Mono Gen indicator. Draft mode
-    // deliberately doesn't participate here - catching is blocked outright
-    // in every wild battle, everywhere (src/item_use.c,
-    // src/battle_script_commands.c), so a per-battle can/cannot catch icon
-    // would just be a constant, redundant "no". A Draft run falls through to
-    // the regular caught-ball indicator below instead, same as a normal
-    // playthrough.
+    // deliberately overrides rather than joins this - catching is blocked
+    // outright in every wild battle, everywhere (src/item_use.c,
+    // src/battle_script_commands.c), regardless of whether the species on
+    // screen happens to be Mono-legal, so a per-battle can/cannot catch icon
+    // would just be a constant, redundant "no" even with Mono Type/Gen also
+    // on. A Draft run always falls through to the regular caught-ball
+    // indicator below instead, same as a normal playthrough.
     bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
-    bool8 monoOn = MonoType_IsEnabled();
-    bool8 genOn = MonoGen_IsEnabled();
+    bool8 monoOn = !Draft_IsActive() && MonoType_IsEnabled();
+    bool8 genOn = !Draft_IsActive() && MonoGen_IsEnabled();
     if (nuzlockeOn || monoOn || genOn)
     {
         bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
