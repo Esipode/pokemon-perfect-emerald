@@ -50,6 +50,7 @@
 #include "pokerus.h"
 #include "random.h"
 #include "recorded_battle.h"
+#include "recruits_mode.h"
 #include "roamer.h"
 #include "safari_zone.h"
 #include "scanline_effect.h"
@@ -6169,6 +6170,9 @@ static void HandleEndTurn_BattleWon(void)
         // Streaks, Records & Collection
         // Remainder. Same gate, same evaluation point.
         Achievement_CheckBattleRecordsMilestones();
+        // Recruits mode. Same gate; internally checks whether this is a
+        // battle type Recruits credits at all.
+        Recruits_TallyParticipants();
     }
 
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
