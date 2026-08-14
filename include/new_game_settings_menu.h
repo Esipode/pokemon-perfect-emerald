@@ -5,6 +5,7 @@ struct NewGameSettings
 {
     u8 difficulty;          // DIFFICULTY_EASY/NORMAL/HARD
     bool8 nuzlockeEnabled;
+    bool8 draftMode;        // Draft challenge mode: mutually exclusive with nuzlockeEnabled; see draft_mode.h
     bool8 randomizeSpecies;
     bool8 randomizeTypes;
     bool8 randomizeMoves;

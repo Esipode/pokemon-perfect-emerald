@@ -417,7 +417,7 @@ void NewGameInitData(void)
         optionsBackup = Alloc(sizeof(u16));
         memcpy(optionsBackup, (u8 *)gSaveBlock2Ptr + 0x14, sizeof(u16));
         /* Backup a few SaveBlock1 player settings stored in SaveBlock1 */
-        playerSettingsBackup = Alloc(7);
+        playerSettingsBackup = Alloc(8);
         ((u8 *)playerSettingsBackup)[0] = gSaveBlock1Ptr->nuzlockeModeEnabled;
         ((u8 *)playerSettingsBackup)[1] = gSaveBlock1Ptr->autosaveModeEnabled;
         ((u8 *)playerSettingsBackup)[2] = gSaveBlock1Ptr->difficulty;
@@ -434,6 +434,10 @@ void NewGameInitData(void)
         ((u8 *)playerSettingsBackup)[4] = gSaveBlock2Ptr->monoTypeSetting;
         ((u8 *)playerSettingsBackup)[5] = gSaveBlock2Ptr->monoGenSetting;
         ((u8 *)playerSettingsBackup)[6] = gSaveBlock2Ptr->limitedPartySetting;
+        // draftModeEnabled lives in SaveBlock1 (see draft_mode.h) and is
+        // wiped by ClearSav1() below like nuzlockeModeEnabled above, so it
+        // needs the same explicit save/restore.
+        ((u8 *)playerSettingsBackup)[7] = gSaveBlock1Ptr->draftModeEnabled;
 
         gIsNewGamePlus = FALSE; // consume flag
     }
@@ -514,6 +518,17 @@ void NewGameInitData(void)
     // Flags/gcnLinkFlags immediately above - harmless on the non-NG+ path,
     // where pendingTrade is already TRADE_CODE_STATE_NONE from ClearSav2().
     memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
+    // Draft Mode.md §2: nuzlockeZoneCaughtFlags (include/global.h) doubles as
+    // "this area's draft is spent" in a Draft run (src/draft_mode.c) and
+    // lives in SaveBlock2, which this NG+ path never runs ClearSav2() over -
+    // same reasoning as the pendingTrade memset immediately above. Without
+    // this, every area would still read as spent on a fresh NG+ cycle and a
+    // Draft run would have nothing left to offer. Nuzlocke has the same
+    // latent gap, but a Nuzlocke restart goes through CB2_NewGame instead,
+    // which does clear SaveBlock2. Unconditional to match pendingTrade -
+    // harmless on the non-NG+ path, where these bytes are already zero from
+    // ClearSav2().
+    memset(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags, 0, sizeof(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags));
     InitEventData();
     // Must run after ClearSav1() above wiped dexCaught/dexSeen.
     // Re-registers every carried-over box mon so the dex
@@ -637,6 +652,7 @@ void NewGameInitData(void)
                 gSaveBlock1Ptr->achievementsBlocked = ((u8 *)playerSettingsBackup)[3];
                 gSaveBlock2Ptr->monoTypeSetting = ((u8 *)playerSettingsBackup)[4];
                 gSaveBlock2Ptr->monoGenSetting = ((u8 *)playerSettingsBackup)[5];
+                gSaveBlock1Ptr->draftModeEnabled = ((u8 *)playerSettingsBackup)[7];
                 gSaveBlock2Ptr->limitedPartySetting = ((u8 *)playerSettingsBackup)[6];
             }
 

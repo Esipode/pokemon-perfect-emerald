@@ -16,6 +16,7 @@
 #include "data.h"                 // GetTrainerClassFromId, for Achievement_IsMajorBattle
 #include "move.h"                 // GetMovePriority, for Achievement_RecordOpposingFaint
 #include "caps.h"                 // GetCurrentLevelCap, for level-cap checks
+#include "draft_mode.h"           // Draft_IsEnabled, for Achievement_CountChallengeModifiers
 #include "limited_party.h"         // LimitedParty_IsEnabled, for Achievement_CountChallengeModifiers
 #include "mono_gen.h"              // MonoGen_IsEnabled, for Achievement_CountChallengeModifiers
 #include "mono_type.h"             // MonoType_IsEnabled, for Achievement_CountChallengeModifiers
@@ -2737,18 +2738,22 @@ void Achievement_CheckEconomyCompletionMilestones(void)
 // src/battle_script_commands.c, alongside the
 // Achievement_RecordReviveUsed hook).
 
-// The ten New Game Settings that make a run harder (explicit state only,
+// The eleven New Game Settings that make a run harder (explicit state only,
 // never incidental behaviour). Debug Mode is deliberately excluded -- it
 // doesn't make a run harder, it makes it ineligible (achievementsBlocked).
 // Stat Editor and Level Cap Off are counted here only in their harder state
 // (disallowed / still on); flipping either the other way sets
 // achievementsBlocked too, same as Debug Mode -- see
-// ApplyPendingNewGameSettings, src/new_game_settings_menu.c.
+// ApplyPendingNewGameSettings, src/new_game_settings_menu.c. Nuzlocke and
+// Draft (draft_mode.h) are mutually exclusive, so at most one of the two
+// ever contributes.
 static u8 Achievement_CountChallengeModifiers(void)
 {
     u8 count = 0;
 
     if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+        count++;
+    if (Draft_IsEnabled())
         count++;
     if (MonoType_IsEnabled())
         count++;

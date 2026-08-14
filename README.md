@@ -46,9 +46,11 @@
 	- Upon Whiteout with an empty party, the save file is wiped immediately (achievements/boosts are unaffected), and the player is asked whether to begin a new run or return to the title screen
 	- Players are forced to give nicknames to their Pokémon (You cannot pick the default name either)
 	- Breeding Pokémon is disabled in this mode
-- Auto-Battle Mode
-	- Allows AI to do your battles for you (uses a simple AI so you can't brute-force challenging encounters)
-	- Comes with two options: `Wild` AI battles and `Trainer` AI battles, which can be toggled separately
+- Draft Mode (mutually exclusive with Nuzlocke Mode)
+	- You never catch Pokémon. Each new area offers a one-time pick from the Pokémon that naturally live in that area.
+	- Take the pick into an empty party slot, or swap it with a party member you release forever - either way the area is spent
+	- The PC is completely locked; nothing is ever boxed
+	- Breeding Pokémon is disabled in this mode
 - Randomizer Mode
 	- Every starter choice, wild encounter, and trainer battle can be randomized
 	- You can also randomize moves and types (separately)
@@ -61,7 +63,10 @@
 - Limited Party Mode
 	- Party starts capped at 3 Pokémon; extra slots (up to the normal 6) are earned back from Gym Badges
 	- Does not restrict which Pokémon you may obtain, only how many you may carry at once
-- Autosave Mode
+- Auto-Battle
+	- Allows AI to do your battles for you (uses a simple AI so you can't brute-force challenging encounters)
+	- Comes with two options: `Wild` AI battles and `Trainer` AI battles, which can be toggled separately
+- Autosave
 	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
 - Auto-skip dialogue
 	- When enabled, message boxes automatically continue without player input
