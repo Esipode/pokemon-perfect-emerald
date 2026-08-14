@@ -1066,6 +1066,8 @@ static bool8 IsAutosaveHidden(void)
     // Nuzlocke mode forcibly enables autosaving, so the option is redundant and hidden.
     // Draft mode leaves it as a normal, player-controlled option instead - unlike
     // Nuzlocke's permadeath, nothing about Draft requires autosaving to be forced on.
+    // Recruits follows Draft here: retirement is autosave-armed (Recruits_DoRetirement)
+    // but not mandatory, so it doesn't force this on either.
     return gSaveBlock1Ptr->nuzlockeModeEnabled;
 }
 

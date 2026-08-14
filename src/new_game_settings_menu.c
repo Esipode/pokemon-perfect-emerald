@@ -2,7 +2,6 @@
 #include "new_game_settings_menu.h"
 #include "battle_main.h"
 #include "bg.h"
-#include "draft_mode.h"
 #include "event_data.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
@@ -35,8 +34,7 @@ struct NewGameSettings gPendingNewGameSettings;
 
 enum
 {
-    SETTING_NUZLOCKE,
-    SETTING_DRAFT,
+    SETTING_GAME_MODE,
     SETTING_MONO_TYPE,
     SETTING_MONO_GEN,
     SETTING_LIMITED_PARTY,
@@ -75,17 +73,6 @@ EWRAM_DATA static struct
     u16 selectedRow;
 } sSettingsScroll = {0};
 
-// Nuzlocke and Draft (draft_mode.h) are mutually exclusive, so the settings
-// list can't just be sSettingsListItems handed straight to ListMenuInit --
-// whichever one is off has to disappear from the list entirely rather than
-// merely being unselectable, since the two modes share the same per-area
-// save bytes and both being "on" makes no sense. These hold the filtered
-// copy actually shown, plus a row -> setting id map (row index no longer
-// equals setting id once a row is hidden).
-static EWRAM_DATA struct ListMenuItem sVisibleSettings[SETTING_COUNT] = {0};
-static EWRAM_DATA u8 sVisibleSettingIds[SETTING_COUNT] = {0};
-static EWRAM_DATA u8 sVisibleSettingCount = 0;
-
 static void Task_SettingsMenuFadeIn(u8 taskId);
 static void Task_SettingsMenuProcessInput(u8 taskId);
 static void Task_SettingsMenuConfirm(u8 taskId);
@@ -97,8 +84,6 @@ static const u8 *GetSettingValueText(u8 settingId);
 static void PrintSettingDescription(s32 settingId);
 static void DrawHeaderText(void);
 static void DrawBgWindowFrames(void);
-static void BuildVisibleSettings(void);
-static void RebuildVisibleSettingsList(u8 taskId);
 
 static const u8 sText_GameSettingsTitle[] = _("GAME SETTINGS");
 static const u8 sText_ControlHint[]       = _("{A_BUTTON}BEGIN {B_BUTTON}BACK {LEFT_ARROW}{RIGHT_ARROW}CHANGE");
@@ -133,14 +118,11 @@ static const u8 *const sMonoGenTexts[MONO_GEN_COUNT + 1] =
     [9] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 9"),
 };
 
+// GAME MODE's description depends on its current value, not its setting id,
+// so it's picked at runtime by PrintSettingDescription rather than being a
+// fixed entry here - see sGameModeDescriptions below.
 static const u8 *const sSettingDescriptions[SETTING_COUNT] =
 {
-    [SETTING_NUZLOCKE]          = COMPOUND_STRING(
-                                       "Pokémon are lost when fainted.\n"
-                                       "Can only catch one Pokémon per route."),
-    [SETTING_DRAFT]             = COMPOUND_STRING(
-                                       "Draft one Pokémon per area.\n"
-                                       "No catching, no storage."),
     [SETTING_MONO_TYPE]         = COMPOUND_STRING(
                                        "Choose a starter of this type and only\n"
                                        "obtain Pokémon of this type."),
@@ -170,10 +152,33 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
                                        "Debug Menu: {R_BUTTON}+{START_BUTTON}"),
 };
 
+// One description per GAME_MODE_* value, indexed by gPendingNewGameSettings.gameMode
+// rather than by setting id - see PrintSettingDescription.
+static const u8 *const sGameModeDescriptions[GAME_MODE_COUNT] =
+{
+    [GAME_MODE_NORMAL]   = COMPOUND_STRING("The standard Pokémon Emerald\nexperience, no extra rules."),
+    [GAME_MODE_NUZLOCKE] = COMPOUND_STRING(
+                                "Pokémon are lost when fainted.\n"
+                                "Can only catch one Pokémon per route."),
+    [GAME_MODE_DRAFT]    = COMPOUND_STRING(
+                                "Draft one Pokémon per area.\n"
+                                "No catching, no storage."),
+    [GAME_MODE_RECRUITS] = COMPOUND_STRING(
+                                "Every party Pokémon retires after 10\n"
+                                "won battles. No storage."),
+};
+
+static const u8 *const sGameModeTexts[GAME_MODE_COUNT] =
+{
+    [GAME_MODE_NORMAL]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}NORMAL"),
+    [GAME_MODE_NUZLOCKE] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}NUZLOCKE"),
+    [GAME_MODE_DRAFT]    = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}DRAFT"),
+    [GAME_MODE_RECRUITS] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}RECRUITS"),
+};
+
 static const struct ListMenuItem sSettingsListItems[SETTING_COUNT] =
 {
-    [SETTING_NUZLOCKE]          = {COMPOUND_STRING("NUZLOCKE MODE"),    SETTING_NUZLOCKE},
-    [SETTING_DRAFT]             = {COMPOUND_STRING("DRAFT MODE"),       SETTING_DRAFT},
+    [SETTING_GAME_MODE]         = {COMPOUND_STRING("GAME MODE"),        SETTING_GAME_MODE},
     [SETTING_MONO_TYPE]         = {COMPOUND_STRING("MONO TYPE"),        SETTING_MONO_TYPE},
     [SETTING_MONO_GEN]          = {COMPOUND_STRING("MONO GEN"),         SETTING_MONO_GEN},
     [SETTING_LIMITED_PARTY]     = {COMPOUND_STRING("LIMITED PARTY"),    SETTING_LIMITED_PARTY},
@@ -267,8 +272,7 @@ void CB2_InitNewGameSettingsMenu(void)
     case 0:
         SetVBlankCallback(NULL);
         gPendingNewGameSettings.difficulty = DIFFICULTY_NORMAL;
-        gPendingNewGameSettings.nuzlockeEnabled = FALSE;
-        gPendingNewGameSettings.draftMode = FALSE;
+        gPendingNewGameSettings.gameMode = GAME_MODE_NORMAL;
         gPendingNewGameSettings.monoType = TYPE_NONE;
         gPendingNewGameSettings.monoGen = 0;
         gPendingNewGameSettings.limitedParty = FALSE;
@@ -344,12 +348,10 @@ void CB2_InitNewGameSettingsMenu(void)
     {
         struct ListMenuTemplate template = {0};
 
-        BuildVisibleSettings();
-
-        template.items = sVisibleSettings;
+        template.items = sSettingsListItems;
         template.moveCursorFunc = SettingsMenu_MoveCursorCallback;
         template.itemPrintFunc = SettingsMenu_ItemPrintCallback;
-        template.totalItems = sVisibleSettingCount;
+        template.totalItems = SETTING_COUNT;
         template.maxShowed = SETTINGS_MAX_SHOWED;
         template.windowId = WIN_LIST;
         template.header_X = 0;
@@ -369,7 +371,7 @@ void CB2_InitNewGameSettingsMenu(void)
         gTasks[taskId].tListTaskId = ListMenuInit(&template, sSettingsScroll.scrollOffset, sSettingsScroll.selectedRow);
         gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
             SCROLL_ARROW_UP, SETTINGS_ARROW_X, SETTINGS_ARROW_TOP_Y, SETTINGS_ARROW_BOTTOM_Y,
-            sVisibleSettingCount - SETTINGS_MAX_SHOWED, TAG_SETTINGS_SCROLL_ARROWS, TAG_SETTINGS_SCROLL_ARROWS,
+            SETTING_COUNT - SETTINGS_MAX_SHOWED, TAG_SETTINGS_SCROLL_ARROWS, TAG_SETTINGS_SCROLL_ARROWS,
             &sSettingsScroll.scrollOffset);
         gMain.state++;
         break;
@@ -398,25 +400,12 @@ static void Task_SettingsMenuProcessInput(u8 taskId)
     case LIST_NOTHING_CHOSEN:
         if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
         {
-            u8 settingId = sVisibleSettingIds[sSettingsScroll.scrollOffset + sSettingsScroll.selectedRow];
+            u8 settingId = sSettingsScroll.scrollOffset + sSettingsScroll.selectedRow;
 
             PlaySE(SE_SELECT);
             HandleValueChange(settingId, JOY_NEW(DPAD_RIGHT));
-
-            // Nuzlocke and Draft are mutually exclusive (draft_mode.h) and
-            // hide each other's row -- toggling either one can change which
-            // rows are visible, so the list has to be torn down and rebuilt
-            // rather than just redrawn. Every other setting only ever
-            // changes its own value text, which RedrawListMenu handles.
-            if (settingId == SETTING_NUZLOCKE || settingId == SETTING_DRAFT)
-            {
-                RebuildVisibleSettingsList(taskId);
-            }
-            else
-            {
-                RedrawListMenu(gTasks[taskId].tListTaskId);
-                CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
-            }
+            RedrawListMenu(gTasks[taskId].tListTaskId);
+            CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
         }
         break;
     case LIST_CANCEL:
@@ -475,11 +464,21 @@ static void HandleValueChange(u8 settingId, bool8 rightPressed)
 {
     switch (settingId)
     {
-    case SETTING_NUZLOCKE:
-        gPendingNewGameSettings.nuzlockeEnabled ^= 1;
-        break;
-    case SETTING_DRAFT:
-        gPendingNewGameSettings.draftMode ^= 1;
+    case SETTING_GAME_MODE:
+        if (rightPressed)
+        {
+            if (gPendingNewGameSettings.gameMode < GAME_MODE_COUNT - 1)
+                gPendingNewGameSettings.gameMode++;
+            else
+                gPendingNewGameSettings.gameMode = GAME_MODE_NORMAL;
+        }
+        else
+        {
+            if (gPendingNewGameSettings.gameMode > GAME_MODE_NORMAL)
+                gPendingNewGameSettings.gameMode--;
+            else
+                gPendingNewGameSettings.gameMode = GAME_MODE_COUNT - 1;
+        }
         break;
     case SETTING_MONO_TYPE:
         gPendingNewGameSettings.monoType = MonoType_CycleType(gPendingNewGameSettings.monoType, rightPressed);
@@ -533,8 +532,7 @@ static const u8 *GetSettingValueText(u8 settingId)
 
     switch (settingId)
     {
-    case SETTING_NUZLOCKE:          return gPendingNewGameSettings.nuzlockeEnabled ? sText_On : sText_Off;
-    case SETTING_DRAFT:             return gPendingNewGameSettings.draftMode ? sText_On : sText_Off;
+    case SETTING_GAME_MODE:         return sGameModeTexts[gPendingNewGameSettings.gameMode];
     case SETTING_MONO_TYPE:
         if (gPendingNewGameSettings.monoType == TYPE_NONE)
             return sText_Off;
@@ -557,9 +555,16 @@ static const u8 *GetSettingValueText(u8 settingId)
 
 static void PrintSettingDescription(s32 settingId)
 {
+    const u8 *description = NULL;
+
+    if (settingId == SETTING_GAME_MODE)
+        description = sGameModeDescriptions[gPendingNewGameSettings.gameMode];
+    else if (settingId >= 0 && settingId < SETTING_COUNT)
+        description = sSettingDescriptions[settingId];
+
     FillWindowPixelBuffer(WIN_DESCRIPTION, PIXEL_FILL(1));
-    if (settingId >= 0 && settingId < SETTING_COUNT)
-        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, sSettingDescriptions[settingId], 8, 1, TEXT_SKIP_DRAW, NULL);
+    if (description != NULL)
+        AddTextPrinterParameterized(WIN_DESCRIPTION, FONT_NORMAL, description, 8, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);
 }
 
@@ -618,101 +623,12 @@ static void DrawBgWindowFrames(void)
     CopyBgTilemapBufferToVram(1);
 }
 
-// Filters sSettingsListItems down into sVisibleSettings, skipping
-// SETTING_DRAFT while Nuzlocke is enabled and SETTING_NUZLOCKE while Draft
-// mode is enabled. Each item's .id field is copied as-is (it's already the
-// setting's real enum value - see sSettingsListItems), so
-// SettingsMenu_ItemPrintCallback/SettingsMenu_MoveCursorCallback, which are
-// handed that id rather than the row, keep working untouched. What does
-// change is the row -> id mapping used to interpret D-pad input outside the
-// list menu (Task_SettingsMenuProcessInput), which this rebuilds into
-// sVisibleSettingIds.
-static void BuildVisibleSettings(void)
-{
-    u8 i;
-
-    sVisibleSettingCount = 0;
-    for (i = 0; i < SETTING_COUNT; i++)
-    {
-        if (i == SETTING_DRAFT && gPendingNewGameSettings.nuzlockeEnabled)
-            continue;
-        if (i == SETTING_NUZLOCKE && gPendingNewGameSettings.draftMode)
-            continue;
-
-        sVisibleSettings[sVisibleSettingCount] = sSettingsListItems[i];
-        sVisibleSettingIds[sVisibleSettingCount] = i;
-        sVisibleSettingCount++;
-    }
-}
-
-// Tears down and recreates the list menu after a toggle that changed which
-// rows are visible (SETTING_NUZLOCKE / SETTING_DRAFT only - see
-// BuildVisibleSettings). The setting the cursor was sitting on is never the
-// one that just vanished (toggling one of the pair only ever hides the
-// *other* one), so it's still present in the rebuilt list; this finds its
-// new row and lands the cursor there instead of snapping back to the top.
-static void RebuildVisibleSettingsList(u8 taskId)
-{
-    struct ListMenuTemplate template = {0};
-    u8 settingId = sVisibleSettingIds[sSettingsScroll.scrollOffset + sSettingsScroll.selectedRow];
-    u8 i, newRow = 0;
-
-    DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
-    RemoveScrollIndicatorArrowPair(gTasks[taskId].tScrollArrowTaskId);
-
-    BuildVisibleSettings();
-
-    for (i = 0; i < sVisibleSettingCount; i++)
-    {
-        if (sVisibleSettingIds[i] == settingId)
-        {
-            newRow = i;
-            break;
-        }
-    }
-
-    if (newRow < SETTINGS_MAX_SHOWED)
-    {
-        sSettingsScroll.scrollOffset = 0;
-        sSettingsScroll.selectedRow = newRow;
-    }
-    else
-    {
-        sSettingsScroll.scrollOffset = newRow - (SETTINGS_MAX_SHOWED - 1);
-        sSettingsScroll.selectedRow = SETTINGS_MAX_SHOWED - 1;
-    }
-
-    template.items = sVisibleSettings;
-    template.moveCursorFunc = SettingsMenu_MoveCursorCallback;
-    template.itemPrintFunc = SettingsMenu_ItemPrintCallback;
-    template.totalItems = sVisibleSettingCount;
-    template.maxShowed = SETTINGS_MAX_SHOWED;
-    template.windowId = WIN_LIST;
-    template.header_X = 0;
-    template.item_X = 8;
-    template.cursor_X = 0;
-    template.upText_Y = 1;
-    template.cursorPal = 2;
-    template.fillValue = 1;
-    template.cursorShadowPal = 3;
-    template.lettersSpacing = 0;
-    template.itemVerticalPadding = 0;
-    template.scrollMultiple = LIST_NO_MULTIPLE_SCROLL;
-    template.fontId = FONT_NORMAL;
-    template.cursorKind = CURSOR_BLACK_ARROW;
-
-    gTasks[taskId].tListTaskId = ListMenuInit(&template, sSettingsScroll.scrollOffset, sSettingsScroll.selectedRow);
-    gTasks[taskId].tScrollArrowTaskId = AddScrollIndicatorArrowPairParameterized(
-        SCROLL_ARROW_UP, SETTINGS_ARROW_X, SETTINGS_ARROW_TOP_Y, SETTINGS_ARROW_BOTTOM_Y,
-        sVisibleSettingCount > SETTINGS_MAX_SHOWED ? sVisibleSettingCount - SETTINGS_MAX_SHOWED : 0,
-        TAG_SETTINGS_SCROLL_ARROWS, TAG_SETTINGS_SCROLL_ARROWS, &sSettingsScroll.scrollOffset);
-}
-
 void ApplyPendingNewGameSettings(void)
 {
     gSaveBlock1Ptr->difficulty = gPendingNewGameSettings.difficulty;
-    gSaveBlock1Ptr->nuzlockeModeEnabled = gPendingNewGameSettings.nuzlockeEnabled;
-    gSaveBlock1Ptr->draftModeEnabled = gPendingNewGameSettings.draftMode;
+    gSaveBlock1Ptr->nuzlockeModeEnabled = (gPendingNewGameSettings.gameMode == GAME_MODE_NUZLOCKE);
+    gSaveBlock1Ptr->draftModeEnabled    = (gPendingNewGameSettings.gameMode == GAME_MODE_DRAFT);
+    gSaveBlock1Ptr->recruitsModeEnabled = (gPendingNewGameSettings.gameMode == GAME_MODE_RECRUITS);
     gSaveBlock2Ptr->monoTypeSetting = gPendingNewGameSettings.monoType;
     gSaveBlock2Ptr->monoGenSetting = gPendingNewGameSettings.monoGen;
     gSaveBlock2Ptr->limitedPartySetting = gPendingNewGameSettings.limitedParty;
@@ -750,8 +666,14 @@ void ApplyPendingNewGameSettings(void)
 void CaptureCurrentSaveIntoPendingNewGameSettings(void)
 {
     gPendingNewGameSettings.difficulty = gSaveBlock1Ptr->difficulty;
-    gPendingNewGameSettings.nuzlockeEnabled = gSaveBlock1Ptr->nuzlockeModeEnabled;
-    gPendingNewGameSettings.draftMode = gSaveBlock1Ptr->draftModeEnabled;
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+        gPendingNewGameSettings.gameMode = GAME_MODE_NUZLOCKE;
+    else if (gSaveBlock1Ptr->draftModeEnabled)
+        gPendingNewGameSettings.gameMode = GAME_MODE_DRAFT;
+    else if (gSaveBlock1Ptr->recruitsModeEnabled)
+        gPendingNewGameSettings.gameMode = GAME_MODE_RECRUITS;
+    else
+        gPendingNewGameSettings.gameMode = GAME_MODE_NORMAL;
     gPendingNewGameSettings.monoType = gSaveBlock2Ptr->monoTypeSetting;
     gPendingNewGameSettings.monoGen = gSaveBlock2Ptr->monoGenSetting;
     gPendingNewGameSettings.limitedParty = gSaveBlock2Ptr->limitedPartySetting;

@@ -1,11 +1,24 @@
 #ifndef GUARD_NEW_GAME_SETTINGS_MENU_H
 #define GUARD_NEW_GAME_SETTINGS_MENU_H
 
+// The four challenge modes are mutually exclusive, so the settings menu
+// exposes them as one cycling row rather than independent ON/OFF toggles.
+// Fanned back out to the three separate save bytes (nuzlockeModeEnabled,
+// draftModeEnabled, recruitsModeEnabled) by ApplyPendingNewGameSettings -
+// the save format itself is unchanged.
+enum GameMode
+{
+    GAME_MODE_NORMAL,
+    GAME_MODE_NUZLOCKE,
+    GAME_MODE_DRAFT,
+    GAME_MODE_RECRUITS,
+    GAME_MODE_COUNT,
+};
+
 struct NewGameSettings
 {
     u8 difficulty;          // DIFFICULTY_EASY/NORMAL/HARD
-    bool8 nuzlockeEnabled;
-    bool8 draftMode;        // Draft challenge mode: mutually exclusive with nuzlockeEnabled; see draft_mode.h
+    u8 gameMode;            // GAME_MODE_NORMAL/NUZLOCKE/DRAFT/RECRUITS
     bool8 randomizeSpecies;
     bool8 randomizeTypes;
     bool8 randomizeMoves;
