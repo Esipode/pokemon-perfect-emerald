@@ -3,6 +3,7 @@
 #include "achievements.h"
 #include "ai_battles.h"
 #include "bg.h"
+#include "draft_mode.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
 #include "main.h"
@@ -1064,7 +1065,10 @@ static void DrawHeaderText(void)
 static bool8 IsAutosaveHidden(void)
 {
     // Nuzlocke mode forcibly enables autosaving, so the option is redundant and hidden.
-    return gSaveBlock1Ptr->nuzlockeModeEnabled;
+    // Draft mode does the same for the same reason: a permanent draft pick (or a
+    // permanent gift/egg swap) should never be undoable with a soft-reset -
+    // see the gDoAutosave note on Draft_MarkAreaSpent (src/draft_mode.c).
+    return gSaveBlock1Ptr->nuzlockeModeEnabled || Draft_IsEnabled();
 }
 
 // Hidden until the first-playthrough gate

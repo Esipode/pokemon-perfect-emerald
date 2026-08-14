@@ -253,29 +253,34 @@ void Draft_TryGiveToEmptySlot(void)
     gSpecialVar_Result = 0;
 }
 
-// gStringVar1 = the pending mon's species name (not its nickname - it
-// doesn't have one yet). Also buffers gSpecialVar_0x8004 with the party
-// slot the mon just joined, so Draft_EventScript_OfferNickname can hand it
-// straight to `special ChangePokemonNickname`, the same convention
+// gStringVar1 = the pending mon's display name. Goes through GetMonNickname
+// rather than a MON_DATA_SPECIES + GetSpeciesName lookup on purpose: a fresh
+// draft pick has no custom nickname yet, so GetMonNickname just returns its
+// species name anyway, but a gift/egg routed in by §6b (GiveScriptedMonToPlayer
+// can hand over an unhatched egg, e.g. from the daycare) needs this to read
+// "EGG" rather than spoil the species hidden inside - GetMonNickname already
+// special-cases MON_DATA_NICKNAME to do that (src/pokemon.c). Also buffers
+// gSpecialVar_0x8004 with the party slot the mon just joined, so
+// Draft_EventScript_OfferNickname can hand it straight to
+// `special ChangePokemonNickname`, the same convention
 // Common_EventScript_GetGiftMonPartySlot uses (data/scripts/pc_transfer.inc).
 // Only ever called right after Draft_TryGiveToEmptySlot succeeds, so the
 // pending mon and the party count it reads are both guaranteed current.
 void Draft_BufferPendingNickname(void)
 {
-    u16 species = GetMonData(&sDraftPendingMon, MON_DATA_SPECIES);
-
-    StringCopy(gStringVar1, GetSpeciesName(species));
+    GetMonNickname(&sDraftPendingMon, gStringVar1);
     gSpecialVar_0x8004 = gPartiesCount[B_TRAINER_PLAYER] - 1;
 }
 
 // gStringVar1 = the outgoing party mon at gSpecialVar_0x8004 (as chosen by
-// `special ChoosePartyMon`), gStringVar2 = the pending mon's species name.
+// `special ChoosePartyMon`), gStringVar2 = the pending mon's display name.
+// See the GetMonNickname note on Draft_BufferPendingNickname above - the
+// same egg-safety applies here, since this is the confirmation prompt an
+// egg offered against a full party would otherwise leak its species through.
 void Draft_BufferReplacementNames(void)
 {
-    u16 species = GetMonData(&sDraftPendingMon, MON_DATA_SPECIES);
-
     GetMonNickname(&gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004], gStringVar1);
-    StringCopy(gStringVar2, GetSpeciesName(species));
+    GetMonNickname(&sDraftPendingMon, gStringVar2);
 }
 
 // Replaces the party mon at gSpecialVar_0x8004 with the pending mon.
@@ -285,6 +290,14 @@ void Draft_BufferReplacementNames(void)
 void Draft_DoReplacement(void)
 {
     u8 slot = gSpecialVar_0x8004;
+
+    // §5's Draft_EventScript_PartyFull only reaches this native once the
+    // party was already full (that's what routed the offer here instead of
+    // Draft_TryGiveToEmptySlot), and LIMITED_PARTY_BASE_SIZE (3) is the
+    // smallest a full party can ever be, so this never removes the last mon.
+    // No IsRemovingLastPartyMon-style guard is needed - this is just a
+    // trip wire in case that precondition is ever violated.
+    AGB_ASSERT(gPartiesCount[B_TRAINER_PLAYER] > 1);
 
     TryRevertPartyMonFormChange(slot);
     ZeroMonData(&gParties[B_TRAINER_PLAYER][slot]);
@@ -299,12 +312,25 @@ void Draft_DiscardPending(void)
 
 // Marks the current area's draft as spent. Draft_EventScript_Finish is the
 // offer flow's single terminal node and its only caller - see the header
-// comment on this function in include/draft_mode.h. No-ops for a gift/egg
-// that got routed through the pending buffer instead of the PC (§6b) -
-// otherwise accepting a gift on a fresh route would silently burn that
-// area's own draft.
+// comment on this function in include/draft_mode.h. No-ops the zone lock
+// for a gift/egg that got routed through the pending buffer instead of the
+// PC (§6b) - otherwise accepting a gift on a fresh route would silently
+// burn that area's own draft.
 void Draft_MarkAreaSpent(void)
 {
+    // Draft_EventScript_Finish is reached by every path through the offer
+    // flow - a route's own pick, a decline, and a gift/egg resolution
+    // (joined or swapped in) alike - and every one of them is permanent.
+    // Arm an autosave unconditionally, before the fromDraft early-out below,
+    // so a soft-reset right after a bad pick (or a regretted release) can't
+    // be used as a do-over. This is Draft's equivalent of Nuzlocke forcing
+    // autosave on (IsAutosaveHidden, src/option_menu.c) - Draft hides that
+    // same option row (Draft_IsEnabled() check added there) rather than
+    // duplicating the forcing logic at every trigger site Nuzlocke uses,
+    // since none of Draft's permanent moments (wild battles are freely
+    // repeatable - no catching) run through those sites.
+    gDoAutosave = TRUE;
+
     if (!sDraftPendingFromDraft)
         return;
 
