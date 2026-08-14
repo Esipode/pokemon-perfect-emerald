@@ -66,7 +66,13 @@ u32 Draft_BuildPool(struct DraftChoice *out);
 // soft-reset mid-offer loses the pending mon but leaves the area
 // re-draftable, which is the safe direction to fail.
 bool32 Draft_HasPendingMon(void);
-void Draft_QueuePendingMon(struct Pokemon *mon);
+
+// `fromDraft` is TRUE for a route's own draft pick (src/ui_birch_case.c) and
+// FALSE for a gift/egg funnelled in instead of going to the PC
+// (src/pokemon.c). It's remembered until Draft_MarkAreaSpent runs, which
+// must only ever spend the area for the former - accepting Steven's Beldum
+// in Granite Cave should never burn that area's own draft.
+void Draft_QueuePendingMon(struct Pokemon *mon, bool32 fromDraft);
 
 // Script natives for the offer flow (data/scripts/draft.inc). All of them
 // are callnative entry points - see the header comment above each
@@ -94,7 +100,19 @@ void Draft_DiscardPending(void);
 
 // Marks the current area's draft as spent. The single terminal node of the
 // offer flow (Draft_EventScript_Finish) is the only caller, so this must
-// never run anywhere else in the flow.
+// never run anywhere else in the flow. No-ops when the pending mon that just
+// resolved was a gift/egg rather than a draft pick - see the fromDraft note
+// on Draft_QueuePendingMon.
 void Draft_MarkAreaSpent(void);
+
+// Field hook for src/field_control_avatar.c's ProcessPlayerFieldInput, called
+// every frame the player has field control. Returns TRUE (having started the
+// relevant script with ScriptContext_SetupScript) when either a gift/egg is
+// waiting to be resolved or the current area has an unspent draft available;
+// the former is checked first so a gift handed over on a fresh route
+// resolves before that route's own draft does. Returns FALSE, touching
+// nothing, when neither applies (including whenever Draft_IsEnabled() is
+// false).
+bool32 Draft_TryStartFieldScript(void);
 
 #endif // GUARD_DRAFT_MODE_H

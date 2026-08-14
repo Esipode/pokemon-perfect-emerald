@@ -16,6 +16,7 @@
 #include "data.h"
 #include "daycare.h"
 #include "dexnav.h"
+#include "draft_mode.h"
 #include "event_data.h"
 #include "event_object_movement.h"
 #include "evolution_scene.h"
@@ -3401,7 +3402,20 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     }
 
     if (i >= maxSize)
+    {
+        // A Draft run has nowhere else for a Pokémon to go - the PC is
+        // locked for the whole run (src/pokemon_storage_system.c). Queue it
+        // into the offer flow instead; the wild-catch caller of this
+        // function is dead in Draft mode (ball throws are blocked), so in
+        // practice this only fires via ScriptGiveEgg. Draft_MarkAreaSpent
+        // no-ops for this mon since it isn't the area's own draft pick.
+        if (Draft_IsEnabled())
+        {
+            Draft_QueuePendingMon(mon, FALSE);
+            return MON_GIVEN_TO_PARTY;
+        }
         return CopyMonToPC(mon);
+    }
 
     CopyMon(&gParties[B_TRAINER_PLAYER][i], mon, sizeof(*mon));
     gPartiesCount[B_TRAINER_PLAYER] = i + 1;
@@ -7362,7 +7376,18 @@ u32 GiveScriptedMonToPlayer(struct Pokemon *mon, u8 slot)
         }
         if (i >= maxSize)
         {
-            sentToPc = CopyMonToPC(mon);
+            // See the matching comment in GiveCapturedMonToPlayer above -
+            // every gift, fossil and revival funnels through here, and none
+            // of them may reach the PC in a Draft run.
+            if (Draft_IsEnabled())
+            {
+                Draft_QueuePendingMon(mon, FALSE);
+                sentToPc = MON_GIVEN_TO_PARTY;
+            }
+            else
+            {
+                sentToPc = CopyMonToPC(mon);
+            }
         }
         else
         {

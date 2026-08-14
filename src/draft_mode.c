@@ -9,8 +9,10 @@
 #include "party_menu.h"
 #include "pokemon.h"
 #include "random.h"
+#include "script.h"
 #include "string_util.h"
 #include "wild_encounter.h"
+#include "event_scripts.h"
 #include "constants/battle.h"
 #include "constants/flags.h"
 #include "constants/region_map_sections.h"
@@ -201,16 +203,21 @@ bool32 Draft_IsAreaDraftable(void)
 // See the header comment above Draft_HasPendingMon/Draft_QueuePendingMon.
 static EWRAM_DATA struct Pokemon sDraftPendingMon = {0};
 static EWRAM_DATA bool8 sDraftPendingValid = FALSE;
+// TRUE when sDraftPendingMon came from this area's own draft pick rather
+// than a gift/egg funnelled in instead of going to the PC. Read only by
+// Draft_MarkAreaSpent - see the fromDraft note on Draft_QueuePendingMon.
+static EWRAM_DATA bool8 sDraftPendingFromDraft = FALSE;
 
 bool32 Draft_HasPendingMon(void)
 {
     return sDraftPendingValid;
 }
 
-void Draft_QueuePendingMon(struct Pokemon *mon)
+void Draft_QueuePendingMon(struct Pokemon *mon, bool32 fromDraft)
 {
     CopyMon(&sDraftPendingMon, mon, sizeof(struct Pokemon));
     sDraftPendingValid = TRUE;
+    sDraftPendingFromDraft = fromDraft;
 }
 
 // ---------------------------------------------------------------------
@@ -292,8 +299,35 @@ void Draft_DiscardPending(void)
 
 // Marks the current area's draft as spent. Draft_EventScript_Finish is the
 // offer flow's single terminal node and its only caller - see the header
-// comment on this function in include/draft_mode.h.
+// comment on this function in include/draft_mode.h. No-ops for a gift/egg
+// that got routed through the pending buffer instead of the PC (§6b) -
+// otherwise accepting a gift on a fresh route would silently burn that
+// area's own draft.
 void Draft_MarkAreaSpent(void)
 {
+    if (!sDraftPendingFromDraft)
+        return;
+
     SET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId());
+}
+
+// Field hook for ProcessPlayerFieldInput (src/field_control_avatar.c), run
+// every frame the player has field control. A pending mon (gift/egg) takes
+// priority over a fresh draft so the two never race for the same frame - see
+// the header comment on this function in include/draft_mode.h.
+bool32 Draft_TryStartFieldScript(void)
+{
+    if (Draft_HasPendingMon())
+    {
+        ScriptContext_SetupScript(Draft_EventScript_ResolvePending);
+        return TRUE;
+    }
+
+    if (Draft_IsAreaDraftable())
+    {
+        ScriptContext_SetupScript(Draft_EventScript_RouteDraft);
+        return TRUE;
+    }
+
+    return FALSE;
 }

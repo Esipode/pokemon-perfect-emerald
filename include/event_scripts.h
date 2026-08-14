@@ -789,4 +789,10 @@ extern const u8 CableClub_EventScript_ShowBattleRecords_Frlg[];
 extern const u8 EventScript_Indigo_UltimateGoal[];
 extern const u8 EventScript_Indigo_HighestAuthority[];
 
+// data/scripts/draft.inc - referenced from src/draft_mode.c's
+// Draft_TryStartFieldScript, the field hook in
+// src/field_control_avatar.c's ProcessPlayerFieldInput.
+extern const u8 Draft_EventScript_RouteDraft[];
+extern const u8 Draft_EventScript_ResolvePending[];
+
 #endif // GUARD_EVENT_SCRIPTS_H

@@ -6,6 +6,7 @@
 #include "daycare.h"
 #include "debug.h"
 #include "dexnav.h"
+#include "draft_mode.h"
 #include "faraway_island.h"
 #include "follower_npc.h"
 #include "event_data.h"
@@ -199,6 +200,13 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
         return TRUE;
 
     if (TryRunOnFrameMapScript() == TRUE)
+        return TRUE;
+
+    // Placed after CheckForTrainersWantingBattle so a trainer who spots the
+    // player takes priority (the draft fires once that battle's script
+    // finishes), and after TryRunOnFrameMapScript so a map's own on-frame
+    // script (Birch's rescue, etc.) is never pre-empted.
+    if (Draft_TryStartFieldScript() == TRUE)
         return TRUE;
 
     if (input->pressedBButton && TrySetupDiveEmergeScript() == TRUE)

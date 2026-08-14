@@ -915,7 +915,7 @@ static void BirchCase_QueueDraftMon(void)
 
     SetMonData(&mon, MON_DATA_POKEBALL, &ball);
 
-    Draft_QueuePendingMon(&mon);
+    Draft_QueuePendingMon(&mon, TRUE);
 }
 
 //==========FUNCTIONS==========//
