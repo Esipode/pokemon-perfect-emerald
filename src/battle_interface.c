@@ -34,7 +34,6 @@
 #include "constants/songs.h"
 #include "constants/items.h"
 #include "caps.h"
-#include "draft_mode.h"
 #include "event_data.h"
 #include "mono_type.h"
 #include "mono_gen.h"
@@ -1772,17 +1771,19 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     species = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
-    // Nuzlocke Mode / Draft Mode / Mono Type / Mono Gen indicator
+    // Nuzlocke Mode / Mono Type / Mono Gen indicator. Draft mode
+    // deliberately doesn't participate here - catching is blocked outright
+    // in every wild battle, everywhere (src/item_use.c,
+    // src/battle_script_commands.c), so a per-battle can/cannot catch icon
+    // would just be a constant, redundant "no". A Draft run falls through to
+    // the regular caught-ball indicator below instead, same as a normal
+    // playthrough.
     bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
-    bool8 draftOn = Draft_IsActive();
     bool8 monoOn = MonoType_IsEnabled();
     bool8 genOn = MonoGen_IsEnabled();
-    if (nuzlockeOn || draftOn || monoOn || genOn)
+    if (nuzlockeOn || monoOn || genOn)
     {
-        // Draft mode never allows a catch, so it always wins the icon --
-        // no per-species/per-zone carve-out like the other three have.
-        bool8 canCatch = !draftOn
-                       && (!monoOn || MonoType_IsSpeciesAllowed(species))
+        bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
                        && (!genOn || MonoGen_IsSpeciesAllowed(species))
                        && (!nuzlockeOn || !GET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId()));
 

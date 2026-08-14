@@ -26,7 +26,14 @@ bool32 Draft_IsEnabled(void)
 
 bool32 Draft_IsActive(void)
 {
-    return Draft_IsEnabled() && FlagGet(FLAG_SYS_POKEMON_GET);
+    // Not FLAG_SYS_POKEMON_GET (set the moment the starter is chosen) - Draft
+    // doesn't engage until the player is back in the lab with their Pokédex
+    // in hand, after the first rival battle. FLAG_SYS_POKEDEX_GET is set at
+    // LittlerootTown_ProfessorBirchsLab_EventScript_ReceivePokedex, the same
+    // script node that sets FLAG_NUZLOCKE_CATCH_MODE - so this genuinely
+    // mirrors when Nuzlocke's own catch restrictions start engaging, not
+    // just the "player has a Pokémon" convention the old flag suggested.
+    return Draft_IsEnabled() && FlagGet(FLAG_SYS_POKEDEX_GET);
 }
 
 // Upper bound on scratch entries while a pool is being built: LAND_WILD_COUNT
@@ -324,16 +331,13 @@ void Draft_MarkAreaSpent(void)
 {
     // Draft_EventScript_Finish is reached by every path through the offer
     // flow - a route's own pick, a decline, and a gift/egg resolution
-    // (joined or swapped in) alike - and every one of them is permanent.
-    // Arm an autosave unconditionally, before the fromDraft early-out below,
-    // so a soft-reset right after a bad pick (or a regretted release) can't
-    // be used as a do-over. This is Draft's equivalent of Nuzlocke forcing
-    // autosave on (IsAutosaveHidden, src/option_menu.c) - Draft hides that
-    // same option row (Draft_IsEnabled() check added there) rather than
-    // duplicating the forcing logic at every trigger site Nuzlocke uses,
-    // since none of Draft's permanent moments (wild battles are freely
-    // repeatable - no catching) run through those sites.
-    gDoAutosave = TRUE;
+    // (joined or swapped in) alike. Unlike Nuzlocke, Draft doesn't force
+    // autosave on (IsAutosaveHidden, src/option_menu.c leaves the option
+    // alone for Draft) - it's just another permanent-choice trigger point,
+    // same as any other autosave-eligible event for a regular player, so it
+    // only arms one if the player has actually opted into the option.
+    if (gSaveBlock1Ptr->autosaveModeEnabled)
+        gDoAutosave = TRUE;
 
     if (!sDraftPendingFromDraft)
         return;

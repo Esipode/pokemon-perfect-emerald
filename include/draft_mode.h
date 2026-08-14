@@ -35,9 +35,11 @@ struct DraftChoice
 // of whether a draft is currently obtainable anywhere.
 bool32 Draft_IsEnabled(void);
 
-// Draft_IsEnabled() plus FLAG_SYS_POKEMON_GET - mirrors the Nuzlocke/starter
-// convention that per-area challenge mechanics don't engage before the
-// player has their first Pokémon.
+// Draft_IsEnabled() plus FLAG_SYS_POKEDEX_GET - Draft doesn't engage until
+// the player has their Pokédex from Birch, after the first rival battle, not
+// merely their starter. This is the same script node that sets
+// FLAG_NUZLOCKE_CATCH_MODE, so it mirrors when Nuzlocke's own restrictions
+// actually start too - see the comment on this function in draft_mode.c.
 bool32 Draft_IsActive(void);
 
 // TRUE when the current map's MAPSEC is a real, eligible, unspent area with
