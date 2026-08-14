@@ -133,6 +133,7 @@ gStdScripts_End::
 	.include "data/scripts/level_cap.inc"
 	.include "data/scripts/roamer_message.inc"
 	.include "data/scripts/draft.inc"
+	.include "data/scripts/recruits.inc"
 	.include "data/maps/PetalburgCity/scripts.inc"
 	.include "data/maps/SlateportCity/scripts.inc"
 	.include "data/maps/MauvilleCity/scripts.inc"

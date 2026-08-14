@@ -46,6 +46,12 @@ void Recruits_TallyParticipants(void);
 // mons retire one at a time as the hook re-fires next frame. Returns FALSE,
 // touching nothing, when no mon qualifies (including whenever
 // Recruits_IsActive() is false).
+//
+// Known gap: ProcessPlayerFieldInput only runs when no script is active, so
+// a scripted chain of back-to-back trainer battles can let a mon fight one
+// or two battles past 10/10 before this ever gets a chance to fire. The
+// clamp in Recruits_TallyParticipants prevents overflow, and the mon retires
+// the instant field control actually returns.
 bool32 Recruits_TryStartFieldScript(void);
 
 // Script native (data/scripts/recruits.inc): permanently removes the party

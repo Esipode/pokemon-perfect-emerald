@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "dexnav.h"
 #include "draft_mode.h"
+#include "recruits_mode.h"
 #include "faraway_island.h"
 #include "follower_npc.h"
 #include "event_data.h"
@@ -206,6 +207,8 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     // player takes priority (the draft fires once that battle's script
     // finishes), and after TryRunOnFrameMapScript so a map's own on-frame
     // script (Birch's rescue, etc.) is never pre-empted.
+    if (Recruits_TryStartFieldScript() == TRUE)
+        return TRUE;
     if (Draft_TryStartFieldScript() == TRUE)
         return TRUE;
 
