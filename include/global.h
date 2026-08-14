@@ -1389,7 +1389,8 @@ struct SaveBlock1
     u8 achievementsBlocked; // set once debug mode is used, this playthrough can never earn achievements
     struct AchievementRunData achievementRunData;
     u16 registeredLongItem; // Registered for long press of SELECT button
-    u8 unused_9C2[2];
+    u8 draftModeEnabled; // Draft challenge mode - see include/draft_mode.h. Was unused_9C2[0]; 0 reads as OFF on old saves.
+    u8 unused_9C3[1];
     u32 dailySeed;
 #if FREE_MATCH_CALL == FALSE
     u16 trainerRematchStepCounter;
