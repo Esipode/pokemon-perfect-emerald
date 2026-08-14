@@ -57,6 +57,7 @@
 #include "pokemon_storage_system.h"
 #include "pokemon_summary_screen.h"
 #include "pokerus.h"
+#include "recruits_mode.h"
 #include "region_map.h"
 #include "reshow_battle_screen.h"
 #include "scanline_effect.h"
@@ -186,7 +187,7 @@ enum {
 struct PartyMenuBoxInfoRects
 {
     void (*blitFunc)(u8, u8, u8, u8, u8, bool8);
-    u8 dimensions[24];
+    u8 dimensions[28]; // Last quad (24-27) is Recruits mode's battles-left label
     u8 descTextLeft;
     u8 descTextTop;
     u8 descTextWidth;
@@ -278,6 +279,7 @@ static void DisplayPartyPokemonData(u8);
 static void DisplayPartyPokemonNickname(struct Pokemon *, struct PartyMenuBox *, u8);
 static void DisplayPartyPokemonLevelCheck(struct Pokemon *, struct PartyMenuBox *, u8);
 static void DisplayPartyPokemonGenderNidoranCheck(struct Pokemon *, struct PartyMenuBox *, u8);
+static void DisplayPartyPokemonRecruitBattlesLeftCheck(struct Pokemon *, struct PartyMenuBox *, u8);
 static void DisplayPartyPokemonHPCheck(struct Pokemon *, struct PartyMenuBox *, u8);
 static void DisplayPartyPokemonMaxHPCheck(struct Pokemon *, struct PartyMenuBox *, u8);
 static void DisplayPartyPokemonHPBarCheck(struct Pokemon *, struct PartyMenuBox *);
@@ -289,6 +291,7 @@ static void DisplayPartyPokemonBarDetail(u8, const u8 *, u8, const u8 *, u8);
 static void DisplayPartyPokemonBarDetailToFit(u8 windowId, const u8 *str, u8 color, const u8 *align, u32 width);
 static void DisplayPartyPokemonLevel(u16, struct PartyMenuBox *);
 static void DisplayPartyPokemonGender(u8, enum Species, u8 *, struct PartyMenuBox *);
+static void DisplayPartyPokemonRecruitBattlesLeft(u32, struct PartyMenuBox *);
 static void DisplayPartyPokemonHP(u16 hp, u16 maxHp, struct PartyMenuBox *menuBox);
 static void DisplayPartyPokemonMaxHP(u16, struct PartyMenuBox *);
 static void DisplayPartyPokemonHPBar(u16, u16, struct PartyMenuBox *);
@@ -1116,6 +1119,7 @@ static void DisplayPartyPokemonData(u8 slot)
         DisplayPartyPokemonNickname(mon, &sPartyMenuBoxes[slot], 0);
         DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[slot], 0);
         DisplayPartyPokemonGenderNidoranCheck(mon, &sPartyMenuBoxes[slot], 0);
+        DisplayPartyPokemonRecruitBattlesLeftCheck(mon, &sPartyMenuBoxes[slot], 0);
         DisplayPartyPokemonHPCheck(mon, &sPartyMenuBoxes[slot], 0);
         DisplayPartyPokemonMaxHPCheck(mon, &sPartyMenuBoxes[slot], 0);
         DisplayPartyPokemonHPBarCheck(mon, &sPartyMenuBoxes[slot]);
@@ -1132,6 +1136,7 @@ static void DisplayPartyPokemonDescriptionData(u8 slot, u8 stringID)
     {
         DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[slot], 0);
         DisplayPartyPokemonGenderNidoranCheck(mon, &sPartyMenuBoxes[slot], 0);
+        DisplayPartyPokemonRecruitBattlesLeftCheck(mon, &sPartyMenuBoxes[slot], 0);
     }
     DisplayPartyPokemonDescriptionText(stringID, &sPartyMenuBoxes[slot], 0);
 }
@@ -2804,6 +2809,29 @@ static void DisplayPartyPokemonGender(u8 gender, enum Species species, u8 *nickn
         DisplayPartyPokemonBarDetail(menuBox->windowId, gText_FemaleSymbol, 2, &menuBox->infoRects->dimensions[8], FONT_SMALL);
         break;
     }
+}
+
+// Recruits mode: how many more won battles this mon can fight before it
+// retires, drawn as a standalone "-N" label left of the gender icon.
+// dimensions[24-27] is tuned to fit "-10"; a max-length nickname or a
+// 3-digit level can still crowd it - see sPartyBoxInfoRects (src/data/party_menu.h).
+static void DisplayPartyPokemonRecruitBattlesLeftCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
+{
+    if (GetMonData(mon, MON_DATA_SPECIES) == SPECIES_NONE || GetMonData(mon, MON_DATA_IS_EGG))
+        return;
+    if (!Recruits_IsActive())
+        return;
+    if (c != 0)
+        menuBox->infoRects->blitFunc(menuBox->windowId, menuBox->infoRects->dimensions[24] >> 3, (menuBox->infoRects->dimensions[25] >> 3) + 1, menuBox->infoRects->dimensions[26] >> 3, menuBox->infoRects->dimensions[27] >> 3, FALSE);
+    DisplayPartyPokemonRecruitBattlesLeft(Recruits_GetBattlesLeft(mon), menuBox);
+}
+
+static void DisplayPartyPokemonRecruitBattlesLeft(u32 battlesLeft, struct PartyMenuBox *menuBox)
+{
+    ConvertIntToDecimalStringN(gStringVar2, battlesLeft, STR_CONV_MODE_LEFT_ALIGN, 2);
+    StringCopy(gStringVar1, gText_Dash);
+    StringAppend(gStringVar1, gStringVar2);
+    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[24], FONT_SMALL);
 }
 
 static void DisplayPartyPokemonHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)

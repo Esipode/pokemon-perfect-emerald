@@ -41,7 +41,8 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
             64, 20,  8,  8, // Gender
             38, 37, 24,  8, // HP
             53, 37, 24,  8, // Max HP
-            24, 35, 48,  3  // HP bar
+            24, 35, 48,  3, // HP bar
+            44, 20, 20,  8  // Recruits battles left (left of Gender)
         },
         12, 34, 64, 16      // Description text (e.g. NO USE)
     },
@@ -55,13 +56,14 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
              62, 12,  8,  8, // Gender
             102, 12, 24,  8, // HP
             117, 12, 24,  8, // Max HP
-             88, 10, 48,  3  // HP bar
+             88, 10, 48,  3, // HP bar
+             42, 12, 20,  8  // Recruits battles left (left of Gender)
         },
         77, 4, 64, 16        // Description text
     },
     [PARTY_BOX_EQUAL_COLUMN] = //Custom party menu
     {
-        BlitBitmapToPartyWindow_Equal, 
+        BlitBitmapToPartyWindow_Equal,
         {
             //The below are the x, y, width, and height for each of the following info
             33,  1, 40, 13, // Nickname
@@ -69,8 +71,9 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
            100,  1,  8,  8, // Gender 79,  1,  8,  8,
             33, 11, 24,  8, // HP
             48, 11, 24,  8, // Max HP
-            48, 26, 56,  3  // HP bar
-        }, 
+            48, 26, 56,  3, // HP bar
+            75,  1, 25,  8  // Recruits battles left (left of Gender)
+        },
         33, 13, 64, 16      // Description text (e.g. NO USE)
     },
 };
