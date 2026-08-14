@@ -688,20 +688,41 @@ struct AchievementRunDataExt
 // constraint for struct Pokemon and works around it the same way (raw
 // fields instead of an embedded struct). Moved in/out via memcpy from
 // src/trade_code.c, which does have pokemon.h visible.
+// myConfirmTag/myOfferBits/myOfferSpecies/myOfferBytes/myOfferNickname
+// (post-Stage-10 follow-up) are a player's own already-built Step 1 offer
+// and Step 3 confirm tag, kept verbatim so the Cable Club attendant's "view
+// offer code"/"view confirm code" options can redisplay either one exactly
+// as first shown, any number of times, without the original Pokemon still
+// existing in the party to re-derive them from (Step 3 already escrowed it
+// away). Populated once, at the same commit point expectedConfirmTag is
+// (src/trade_code_session.c's TradeCodeSession_DoCommit) -- everything
+// needed is already in that function's own EWRAM session state at that
+// point, right before it's freed. Left populated (not cleared) once the
+// trade actually completes or is given up, same as every other pendingTrade
+// field the doc's own "keeping the replay ring and abandonedCount" wording
+// already established isn't worth zeroing defensively -- harmless stale
+// bytes with `state` back at TRADE_CODE_STATE_NONE, since both view options
+// refuse to show anything unless `state == TRADE_CODE_STATE_COMMITTED`.
 struct PendingTrade
 {
     u8 incoming[80];                               // struct BoxPokemon, by value -- see above
     u32 recentOfferSeals[TRADE_CODE_REPLAY_RING];  // Stage 3's replay ring
     u32 expectedConfirmTag;                        // Stage 3's TradeCode_ConfirmTag, masked to 28 bits
+    u32 myConfirmTag;                              // my own confirm tag, shown to my partner (see comment above)
     u16 nonce;
+    u16 myOfferBits;                               // exact bit length within myOfferBytes below
+    u16 myOfferSpecies;                            // offered mon's species, for the redisplay icon (SPECIES_NONE if never set)
     u8 state;                                      // enum TradeCodeState (trade_code.h)
     u8 partySlot;                                  // the vacated party slot, for Step 4
     u8 abandonedCount;                             // Stage 11's soft fair-exchange deterrent
-    u8 padding[3];
-}; // sizeof == 124: 80 + 32 + 4 + 2 + 1 + 1 + 1 + 3, no compiler-inserted
-   // padding between members (every u32-then-narrower transition already
-   // lands on a natural boundary) -- see this stage's status block for the
-   // full accounting.
+    u8 myOfferBytes[TRADE_CODE_OFFER_PAYLOAD_BYTES]; // my own built Step 1 offer payload, raw bits
+    u8 myOfferNickname[POKEMON_NAME_LENGTH + 1];   // offered mon's nickname, for the redisplay icon
+    u8 padding[2];
+}; // sizeof == 200: 80 + 32 + 4 + 4 + 2 + 2 + 2 + 1 + 1 + 1 + 56 + 13 + 2,
+   // no compiler-inserted padding between members (every u32-then-narrower
+   // transition already lands on a natural boundary, same discipline as
+   // the original 124-byte layout) -- see this stage's status block for
+   // the full accounting.
 
 // Size of the nuzlocke per-zone bitfields in struct SaveBlock2. Indexed by
 // GetCurrentRegionMapSectionId() -- the map's MAPSEC, i.e. the name shown on

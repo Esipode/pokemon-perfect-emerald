@@ -566,6 +566,9 @@ gSpecials::
 	def_special UseBlankMessageToCancelPokemonPic
 	def_special EnterCode
 	def_special GetCodeFeedback
+	def_special TradeCodeSession_Start
+	def_special TradeCodeSession_ViewOfferCode
+	def_special TradeCodeSession_ViewConfirmCode
 	def_special GetCurrentLevelCapSpecial
 	def_special SetHiddenNature
 	def_special SetAbility

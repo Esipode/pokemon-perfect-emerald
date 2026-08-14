@@ -178,7 +178,7 @@ static const u8 sTradeCodeDisplayFontColors[][3] =
 static const u8 sText_TitleOffer[]   = _("YOUR TRADE CODE");
 static const u8 sText_TitleConfirm[] = _("YOUR CONFIRM CODE");
 static const u8 sText_Offering[]     = _("Offering:");
-static const u8 sText_Footer[]       = _("Read this to your partner.\nPress A when they have it.");
+static const u8 sText_Footer[]       = _("Send this to your partner.\nPress A when they have it.");
 
 //==========UI=SETUP==========// (mirrors ui_stat_editor.c)
 void TradeCodeDisplay_Init(const u8 *codeStr, u16 species, const u8 *nickname, bool8 isConfirmCode, MainCallback callback)

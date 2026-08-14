@@ -4,6 +4,7 @@
 #include "trade_code_display.h"
 #include "trade_code_entry.h"
 #include "trade_code_prompt.h"
+#include "trade_code_receive.h"
 #include "link_rfu.h"
 #include "malloc.h"
 #include "overworld.h"
@@ -86,8 +87,14 @@
 // overrunning it - see Stage 1), so this costs a few bytes of EWRAM per
 // buffer to turn "silently truncates the one worst-case Pokemon that
 // happens to hit this exactly" into "has slack," not "removes a check."
+//
+// Reuses TRADE_CODE_OFFER_PAYLOAD_BYTES (include/config/trade_code.h)
+// rather than an independent literal - struct PendingTrade needs a buffer
+// of this exact same shape post-Stage-10 (to persist a player's own
+// already-built offer for the attendant's "view offer code" option), and
+// the two would otherwise be two unlinked places encoding the same 56.
 #define TRADE_CODE_SESSION_OFFER_MAX_BITS 448
-#define TRADE_CODE_SESSION_OFFER_BYTES ((TRADE_CODE_SESSION_OFFER_MAX_BITS + 7) / 8)
+#define TRADE_CODE_SESSION_OFFER_BYTES TRADE_CODE_OFFER_PAYLOAD_BYTES
 
 // entryScratch (below) is different: it's TradeCodeEntry_Init's own outBits
 // target (include/trade_code_entry.h), which that screen fills with
@@ -122,6 +129,8 @@ struct TradeCodeSessionState
     u16 myNonce;
     u32 myOfferBits;    // exact bit length of header+mon+pad+seal
     u8 myOfferBytes[TRADE_CODE_SESSION_OFFER_BYTES];
+    u16 myOfferSpecies;                          // post-Stage-10: carried into pendingTrade at commit, for "view offer code"'s redisplay icon
+    u8 myOfferNickname[POKEMON_NAME_LENGTH + 1]; // post-Stage-10: same as above
 
     // ---- Step 2: the partner's offer, filled in by the validator ----
     struct BoxPokemon partnerBoxMon;
@@ -165,11 +174,22 @@ struct TradeCodeSessionState
 
 //==========EWRAM==========//
 static EWRAM_DATA struct TradeCodeSessionState *sTradeCodeSessionPtr = NULL;
+// Post-Stage-10: TradeCodePrompt_Init's out-param for the two standalone
+// "view code" entry points below. Unlike every other TradeCodePrompt_Init
+// call in this file, neither of those has a live sTradeCodeSessionPtr to
+// hang this off - they're reachable directly from the attendant's menu,
+// entirely outside the Steps 1-3 session state machine - so this gets its
+// own small, permanent slot instead. Never actually read back (both calls
+// are ACK-only - hasYesNo FALSE - so the only possible result is TRADE_
+// CODE_PROMPT_ACK), it exists purely because TradeCodePrompt_Init requires
+// a caller-owned out-pointer that outlives the call.
+static enum TradeCodePromptResult sViewCodePromptResult;
 
 //==========STATIC=DEFINES==========//
 static bool8 TradeCodeSession_WouldLeavePartyEmpty(u8 slot);
 static void TradeCodeSession_BuildOffer(struct Pokemon *mon);
 static enum TradeCodeEntryStatus TradeCodeSession_ValidateOfferEntry(struct TradeCodeBits *decoded);
+static void TradeCodeSession_EncodeConfirmTag(u32 tag, u8 *outEncoded);
 static bool8 TradeCodeSession_DoCommit(void);
 static void TradeCodeSession_ShowCancelConfirm(MainCallback returnCallback);
 static void TradeCodeSession_ShowOfferReadyPrompt(void);
@@ -212,11 +232,33 @@ static const u8 sText_ReadyForPartnerCode[] = _("Ready to enter your partner's\n
 // path - the previous version simply had 5 lines of \n-joined text
 // silently overflowing a 2-line window with no pause in between.
 static const u8 sText_ConfirmCommit[]       = _("{STR_VAR_1} will be given up\nnow. You will only receive\p{STR_VAR_2} once you enter\nyour partner's confirm code.\pContinue?");
+// Post-Stage-10: shown by both TradeCodeSession_ViewOfferCode and
+// TradeCodeSession_ViewConfirmCode when there's nothing to show
+// (pendingTrade.state != TRADE_CODE_STATE_COMMITTED) - the attendant's
+// menu is reachable with no trade in progress at all, and this is that
+// case's own plain "nothing waiting" message, the same shape trade_code_
+// receive.h's own contract already uses this file's "no trade pending"
+// case for.
+static const u8 sText_NoTradeCodeToShow[]   = _("You don't have a trade code\nto show right now.");
 static const u8 sText_CancelConfirm[]       = _("Cancel this trade? Your\npartner may be waiting.");
 
 //==========UI=SETUP==========//
 void TradeCodeSession_Start(void)
 {
+    // Post-Stage-10 fix: the attendant is this feature's only entry point,
+    // so it has to also be where a player with an already-COMMITTED trade
+    // goes to enter their partner's confirm code - see this function's own
+    // header comment (include/trade_code_session.h) for why. Checked before
+    // anything else, and before the AllocZeroed below - starting a brand
+    // new offer while one mon is already escrowed awaiting Step 4 would be
+    // wrong even setting the UX question aside, and this session's own
+    // struct isn't needed at all for that path.
+    if (gSaveBlock2Ptr->pendingTrade.state == TRADE_CODE_STATE_COMMITTED)
+    {
+        TradeCodeReceive_Start(CB2_ReturnToField);
+        return;
+    }
+
     if ((sTradeCodeSessionPtr = AllocZeroed(sizeof(struct TradeCodeSessionState))) == NULL)
         return; // couldn't even allocate - nothing was touched, nothing to undo
 
@@ -432,6 +474,28 @@ static enum TradeCodeEntryStatus TradeCodeSession_ValidateOfferEntry(struct Trad
     return TRADE_CODE_ENTRY_OK;
 }
 
+// Builds a confirm code's displayable text from a 28-bit tag - shared by
+// Step 3's own reveal (TradeCodeSession_DoCommit, below) and the
+// attendant's post-Stage-10 "view confirm code" option (TradeCodeSession_
+// ViewConfirmCode). Both need the exact same codeKind+tag packing
+// TradeCode_ConfirmTag's own comment (include/trade_code.h) documents -
+// factored out rather than duplicated a second time, a real place for the
+// two to quietly drift apart otherwise.
+static void TradeCodeSession_EncodeConfirmTag(u32 tag, u8 *outEncoded)
+{
+    struct TradeCodeBits confirmStream;
+    u8 confirmBuf[TRADE_CODE_SESSION_CONFIRM_BYTES];
+
+    memset(confirmBuf, 0, sizeof(confirmBuf));
+    confirmStream.data = confirmBuf;
+    confirmStream.capacity = sizeof(confirmBuf) * 8;
+    confirmStream.bitPos = 0;
+    confirmStream.error = FALSE;
+    TradeCode_WriteBits(&confirmStream, TRADE_CODE_KIND_CONFIRM, 2);
+    TradeCode_WriteBits(&confirmStream, tag, 28);
+    TradeCode_Encode(confirmBuf, confirmStream.bitPos, outEncoded);
+}
+
 // Step 3's commit: escrow, compute both confirm tags, force-save, and -
 // only once the save reports success - reveal the confirm code. Returns
 // FALSE (nothing further done) if TrySavingData didn't return SAVE_STATUS_
@@ -443,8 +507,6 @@ static bool8 TradeCodeSession_DoCommit(void)
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][s->partySlot];
     u32 myTag, expectedTag;
     u8 saveStatus;
-    struct TradeCodeBits confirmStream;
-    u8 confirmBuf[TRADE_CODE_SESSION_CONFIRM_BYTES];
     u8 encoded[TRADE_CODE_CONFIRM_CHARS + 1];
 
     // 1. Escrow - mirrors src/daycare.c's own StorePokemonInEmptyDaycareSlot
@@ -470,6 +532,22 @@ static bool8 TradeCodeSession_DoCommit(void)
     gSaveBlock2Ptr->pendingTrade.nonce = s->partnerNonce;
     gSaveBlock2Ptr->pendingTrade.partySlot = s->partySlot;
     TradeCode_RecordOfferSeal(gSaveBlock2Ptr->pendingTrade.recentOfferSeals, s->partnerOfferSeal);
+
+    // Post-Stage-10: also persist my own offer/confirm codes verbatim, so
+    // the attendant's "view offer code"/"view confirm code" options can
+    // redisplay either one later without `mon` (already escrowed above by
+    // the time either option could ever be reached) or this session's own
+    // struct (freed a few lines down) still existing. Both buffers are
+    // sized identically to their session-state counterparts (TRADE_CODE_
+    // SESSION_OFFER_BYTES == TRADE_CODE_OFFER_PAYLOAD_BYTES, POKEMON_NAME_
+    // LENGTH+1 either way), so this is a plain full-width memcpy, no
+    // truncation to reason about.
+    gSaveBlock2Ptr->pendingTrade.myConfirmTag = myTag;
+    gSaveBlock2Ptr->pendingTrade.myOfferBits = (u16)s->myOfferBits;
+    gSaveBlock2Ptr->pendingTrade.myOfferSpecies = s->myOfferSpecies;
+    memcpy(gSaveBlock2Ptr->pendingTrade.myOfferBytes, s->myOfferBytes, sizeof(gSaveBlock2Ptr->pendingTrade.myOfferBytes));
+    memcpy(gSaveBlock2Ptr->pendingTrade.myOfferNickname, s->myOfferNickname, sizeof(gSaveBlock2Ptr->pendingTrade.myOfferNickname));
+
     gSaveBlock2Ptr->pendingTrade.state = TRADE_CODE_STATE_COMMITTED;
 
     // 3. Force-save, and only reveal the confirm code on success - the
@@ -479,14 +557,7 @@ static bool8 TradeCodeSession_DoCommit(void)
     if (saveStatus != SAVE_STATUS_OK)
         return FALSE;
 
-    memset(confirmBuf, 0, sizeof(confirmBuf));
-    confirmStream.data = confirmBuf;
-    confirmStream.capacity = sizeof(confirmBuf) * 8;
-    confirmStream.bitPos = 0;
-    confirmStream.error = FALSE;
-    TradeCode_WriteBits(&confirmStream, TRADE_CODE_KIND_CONFIRM, 2);
-    TradeCode_WriteBits(&confirmStream, myTag, 28);
-    TradeCode_Encode(confirmBuf, confirmStream.bitPos, encoded);
+    TradeCodeSession_EncodeConfirmTag(myTag, encoded);
 
     Free(s);
     sTradeCodeSessionPtr = NULL;
@@ -521,7 +592,6 @@ static void CB2_TradeCodeSession_AfterChooseMon(void)
     u8 slot = GetCursorSelectionMonId();
     struct Pokemon *mon;
     u8 encoded[TRADE_CODE_MAX_CHARS + 1];
-    u8 nickname[POKEMON_NAME_LENGTH + 1];
 
     if (slot >= PARTY_SIZE)
     {
@@ -556,9 +626,17 @@ static void CB2_TradeCodeSession_AfterChooseMon(void)
     s->myNonce = (u16)Random32();
     TradeCodeSession_BuildOffer(mon);
 
+    // Species/nickname captured here (not re-read later) for the same
+    // reason myOtId/myNonce already are - this is the one point this file
+    // still has `mon` itself, before Step 3 escrows it away. Carried into
+    // pendingTrade at commit so the attendant's post-Stage-10 "view offer
+    // code" option has something to show alongside the redisplayed code,
+    // matching what this same screen showed the first time.
+    s->myOfferSpecies = GetMonData(mon, MON_DATA_SPECIES);
+    GetMonData(mon, MON_DATA_NICKNAME, s->myOfferNickname);
+
     TradeCode_Encode(s->myOfferBytes, s->myOfferBits, encoded);
-    GetMonData(mon, MON_DATA_NICKNAME, nickname);
-    TradeCodeDisplay_Init(encoded, GetMonData(mon, MON_DATA_SPECIES), nickname, FALSE, CB2_TradeCodeSession_AfterOfferShown);
+    TradeCodeDisplay_Init(encoded, s->myOfferSpecies, s->myOfferNickname, FALSE, CB2_TradeCodeSession_AfterOfferShown);
 }
 
 static void CB2_TradeCodeSession_AfterOfferShown(void)
@@ -674,4 +752,48 @@ static void CB2_TradeCodeSession_AfterCommitPrompt(void)
     {
         TradeCodeSession_ShowCancelConfirm(TradeCodeSession_ShowCommitPrompt);
     }
+}
+
+//==========VIEW=CODE=(post-Stage-10)==========//
+// Two more attendant menu options, alongside TradeCodeSession_Start itself:
+// re-display a code the player has already been shown once, without
+// re-running any part of the trade. Both are only ever meaningful once
+// pendingTrade.state == TRADE_CODE_STATE_COMMITTED - the attendant's menu
+// is reached either with no trade in progress at all, or after Step 3's
+// commit (TradeCodeSession_Start's own screens own the entire in-between,
+// per include/trade_code_session.h's own comment), so there's no third
+// state either of these could usefully distinguish. Neither takes or
+// returns anything - same parameterless `special`-callable shape as every
+// other real entry point in this feature - and both go straight back to
+// CB2_ReturnToField, matching TradeCodeSession_DoCommit's own confirm-code
+// reveal this file already uses that exact callback for.
+
+void TradeCodeSession_ViewOfferCode(void)
+{
+    struct PendingTrade *pending = &gSaveBlock2Ptr->pendingTrade;
+    u8 encoded[TRADE_CODE_MAX_CHARS + 1];
+
+    if (pending->state != TRADE_CODE_STATE_COMMITTED)
+    {
+        TradeCodePrompt_Init(sText_NoTradeCodeToShow, FALSE, FALSE, &sViewCodePromptResult, CB2_ReturnToField);
+        return;
+    }
+
+    TradeCode_Encode(pending->myOfferBytes, pending->myOfferBits, encoded);
+    TradeCodeDisplay_Init(encoded, pending->myOfferSpecies, pending->myOfferNickname, FALSE, CB2_ReturnToField);
+}
+
+void TradeCodeSession_ViewConfirmCode(void)
+{
+    struct PendingTrade *pending = &gSaveBlock2Ptr->pendingTrade;
+    u8 encoded[TRADE_CODE_CONFIRM_CHARS + 1];
+
+    if (pending->state != TRADE_CODE_STATE_COMMITTED)
+    {
+        TradeCodePrompt_Init(sText_NoTradeCodeToShow, FALSE, FALSE, &sViewCodePromptResult, CB2_ReturnToField);
+        return;
+    }
+
+    TradeCodeSession_EncodeConfirmTag(pending->myConfirmTag, encoded);
+    TradeCodeDisplay_Init(encoded, SPECIES_NONE, NULL, TRUE, CB2_ReturnToField);
 }

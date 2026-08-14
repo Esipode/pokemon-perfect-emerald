@@ -12,6 +12,10 @@ CableClub_Text_TradeUsingLinkCable::
 	.string "Trade POKéMON with another player\n"
 	.string "using a GBA Game Link cable.$"
 
+CableClub_Text_TradeUsingTradeCodes::
+	.string "Trade POKéMON with another player\n"
+	.string "using trade codes.$"
+
 CableClub_Text_BattleUsingLinkCable::
 	.string "You may battle another TRAINER\n"
 	.string "using a GBA Game Link cable.$"
@@ -19,6 +23,14 @@ CableClub_Text_BattleUsingLinkCable::
 CableClub_Text_RecordCornerUsingLinkCable::
 	.string "You can use the RECORD CORNER with\n"
 	.string "others using a GBA Game Link cable.$"
+
+CableClub_Text_ViewOfferCode::
+	.string "View the trade code for the\n"
+	.string "POKéMON you offered.$"
+
+CableClub_Text_ViewConfirmCode::
+	.string "View your confirm code for a\n"
+	.string "trade you've committed to.$"
 
 @ Unused
 CableClub_Text_CloseThisMenu:
@@ -446,6 +458,38 @@ CableClub_Text_ExplainWirelessClubFirstTime:
 	.string "I hope you enjoy the Wireless \n"
 	.string "Communication System.$"
 
+CableClub_Text_FirstTimeRightThisWayTradeCodes:
+	.string "Hello!\n"
+	.string "My name is TEALA.\p"
+	.string "This must be your first time\n"
+	.string "up here.\p"
+	.string "Let me show you how trading\n"
+	.string "POKéMON works on this floor.\p"
+	.string "Right this way, please.$"
+
+CableClub_Text_ExplainTradeCodesFirstTime:
+	.string "This is where you can trade\n"
+	.string "POKéMON with another player.\p"
+	.string "You don't need a Link Cable or a\n"
+	.string "Wireless Adapter - you can trade\l"
+	.string "with anyone, even over voice chat\l"
+	.string "or text.\p"
+	.string "Here's how it works. You and your\n"
+	.string "partner will each pick a POKéMON\l"
+	.string "and be given a TRADE CODE for it.\p"
+	.string "Share your code with your partner\n"
+	.string "however you like, then enter the\l"
+	.string "code they give you.\p"
+	.string "Once you confirm the trade, your\n"
+	.string "POKéMON is handed over for good,\l"
+	.string "so make sure you've got the right\l"
+	.string "one!\p"
+	.string "When you're ready to trade, talk to\n"
+	.string "the attendant on the far side of\l"
+	.string "this floor.\p"
+	.string "I hope you enjoy trading with\n"
+	.string "TRADE CODES!$"
+
 CableClub_Text_AskAboutLinking:
 	.string "Hello, {PLAYER}!\p"
 	.string "It's me, TEALA, the POKéMON\n"
@@ -479,6 +523,39 @@ CableClub_Text_ExplainWirelessClub:
 	.string "using a GBA Game Link cable.\p"
 	.string "If that is the case, you must go\n"
 	.string "to the DIRECT CORNER.\p"
+	.string "I hope you enjoy the Wireless \n"
+	.string "Communication System.$"
+
+CableClub_Text_ExplainWirelessClubTradeCodes:
+	.string "Let me explain how the POKéMON\n"
+	.string "WIRELESS CLUB works.\p"
+	.string "On this, the top floor, there are\n"
+	.string "two rooms.\p"
+	.string "First, the room on the left.\n"
+	.string "It's the UNION ROOM.\p"
+	.string "You may link up with TRAINERS\n"
+	.string "around you who have also entered\l"
+	.string "the UNION ROOM.\p"
+	.string "With them, you may chat and\n"
+	.string "battle.\p"
+	.string "Second, the room on the right is\n"
+	.string "the DIRECT CORNER.\p"
+	.string "You may battle POKéMON with your\n"
+	.string "friends in this room.\p"
+	.string "Sometimes, you may not be able to\n"
+	.string "find your friends in the UNION ROOM\l"
+	.string "or the DIRECT CORNER.\p"
+	.string "In that case, please move closer\n"
+	.string "to your friends.\p"
+	.string "If the Wireless Adapter isn't\n"
+	.string "connected, you may still link up\l"
+	.string "using a GBA Game Link cable.\p"
+	.string "If that is the case, you must go\n"
+	.string "to the DIRECT CORNER.\p"
+	.string "As for trading, you don't need any\n"
+	.string "of that anymore - just talk to the\l"
+	.string "DIRECT CORNER attendant for a\l"
+	.string "TRADE CODE trade.\p"
 	.string "I hope you enjoy the Wireless \n"
 	.string "Communication System.$"
 

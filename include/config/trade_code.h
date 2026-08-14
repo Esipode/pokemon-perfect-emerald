@@ -4,7 +4,18 @@
 // Offline, code-based trading. Two players each pick a Pokémon, read a
 // generated code to each other, and each cart materialises the other's
 // Pokémon locally - no link hardware, no simultaneity.
-#define TRADE_CODES TRUE
+//
+// Defined as a literal 1, not TRUE - unlike most config flags, this one is
+// tested with #if inside data/scripts/*.inc script files (preprocessed
+// through the assembler's own cpp pass), not just C files. TRUE/FALSE
+// (include/gba/defines.h) are never pulled into that preprocessing chain,
+// so `#if TRADE_CODES` would silently evaluate as false there if this were
+// defined as TRUE (an undefined identifier in a #if is treated as 0) -
+// exactly the failure mode this fork's own IS_FRLG already avoids by using
+// a literal 1/0 (include/constants/global.h) instead of TRUE/FALSE, for
+// the same reason. Still a real boolean value in C - TRUE is itself just
+// `#define TRUE 1` - so this changes nothing for any C-side #if TRADE_CODES.
+#define TRADE_CODES 1
 
 // Bumped whenever the payload layout in trade_code.c changes. A code
 // carrying a different version is rejected outright rather than
@@ -40,6 +51,20 @@
 // Codes are displayed/entered in hyphen-separated groups of this many
 // Base32 symbols (e.g. "M4K7Q-2WXNB-...").
 #define TRADE_CODE_GROUP_SIZE 5
+
+// Bytes needed to hold one already-built offer payload's raw bits (header +
+// mon + pad + seal) verbatim, before Base32 text encoding - see TRADE_CODE_
+// MAX_CHARS' own derivation above for the 432-bit worst case this is sized
+// off (a few bytes of headroom over the exact ceil(432/8)=54, matching
+// src/trade_code_session.c's own TRADE_CODE_SESSION_OFFER_MAX_BITS/8, which
+// reuses this same constant so the two can't quietly drift apart). Shared
+// here rather than left file-local because struct PendingTrade (include/
+// global.h) also needs to size a buffer of this shape: post-Stage-10, a
+// player's own already-built offer payload is kept around for as long as
+// their trade stays COMMITTED, so the attendant's "view offer code" option
+// can redisplay it verbatim without the original Pokemon still existing in
+// the party to re-derive it from.
+#define TRADE_CODE_OFFER_PAYLOAD_BYTES 56
 
 // A confirm code is always exactly this many characters (codeKind, 2 bits,
 // plus a 28-bit tag - see the payload spec), one group, no hyphens.

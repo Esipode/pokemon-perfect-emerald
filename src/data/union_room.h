@@ -435,6 +435,7 @@ static const u8 *const sTradeReactionTexts[GENDER_COUNT][4] = {
 };
 
 ALIGNED(4) static const u8 sText_XCheckedTradingBoard[] = _("{STR_VAR_1} checked the\nTRADING BOARD.\p");
+ALIGNED(4) static const u8 sText_TradingBoardUsesTradeCodes[] = _("The TRADING BOARD isn't in use.\pTrade POKéMON with TRADE CODES\nat the CABLE CLUB instead.");
 ALIGNED(4) static const u8 sText_RegisterMonAtTradingBoard[] = _("Welcome to the TRADING BOARD.\pYou may register your POKéMON\nand offer it up for a trade.\pWould you like to register one of\nyour POKéMON?");
 ALIGNED(4) static const u8 sText_TradingBoardInfo[] = _("This TRADING BOARD is used for\n"
                                                         "offering a POKéMON for a trade.\p"

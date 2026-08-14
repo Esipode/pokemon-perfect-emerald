@@ -79,8 +79,22 @@
 // those 3-or-fewer pad bytes existed. 544 + 124 = 668, itself already a
 // multiple of 4, so no further trailing pad is added. High confidence, but
 // still calculated rather than measured -- confirm against a real build.
+//
+// Trading Codes Stage 10 follow-up ("view offer/confirm code" attendant
+// options): struct PendingTrade grows from 124 to 200 bytes -- adds
+// myConfirmTag (u32, 4), myOfferBits/myOfferSpecies (u16 each, 2+2),
+// myOfferBytes[TRADE_CODE_OFFER_PAYLOAD_BYTES=56], and myOfferNickname
+// [POKEMON_NAME_LENGTH+1=13], with padding trimmed from 3 to 2 bytes to
+// land back on a multiple of 4 (124 + 4+2+2+56+13 - 1 = 200) -- see the
+// struct's own comment for the member-by-member accounting and why this
+// stays free of compiler-inserted padding the same way the original 124
+// did. pendingTrade's own alignment requirement is unchanged (still 4,
+// still has u32 members), so it's still forced to land at exactly the same
+// 544 offset within SaveBlock2 as before, by the identical reasoning above.
+// 544 + 200 = 744, itself already a multiple of 4, so no further trailing
+// pad is added. Calculated, not yet confirmed by a real build.
 #define T_SAVEBLOCK1_SIZE 7504
-#define T_SAVEBLOCK2_SIZE 668
+#define T_SAVEBLOCK2_SIZE 744
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 67900
 

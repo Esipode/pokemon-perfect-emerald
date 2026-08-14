@@ -170,6 +170,16 @@ enum
     MULTI_EGGS_VICTORIES_QUIT,
     MULTI_HOF_EGGS_VICTORIES_QUIT,
     STARTER_GEN_OPTIONS,
+    // Trading Codes: Direct Corner's Game-Link-cable fallback menu (no
+    // wireless adapter connected) with the COLOSSEUM/battle option removed -
+    // link battling doesn't work without a real second cart any more than
+    // link trading did. Kept separate from MULTI_CABLE_CLUB_NO_RECORD_MIX/
+    // _WITH_RECORD_MIX (still used under TRADE_CODES == 0) rather than
+    // shrinking those in place, since MULTI_CABLE_CLUB_NO_RECORD_MIX shares
+    // its underlying list with MULTI_WIRELESS_NO_RECORD_BERRY, which still
+    // needs its own battle option.
+    MULTI_CABLE_CLUB_TRADE_ONLY,
+    MULTI_CABLE_CLUB_TRADE_ONLY_WITH_RECORD_MIX,
 };
 
 #define MULTI_NONE 255

@@ -228,12 +228,20 @@ CableClub_EventScript_Tutorial::
 	lockall
 	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterUp
 	waitmovement 0
+#if TRADE_CODES
+	msgbox CableClub_Text_FirstTimeRightThisWayTradeCodes, MSGBOX_DEFAULT
+#else
 	msgbox CableClub_Text_FirstTimeRightThisWay, MSGBOX_DEFAULT
+#endif
 	closemessage
 	applymovement LOCALID_PLAYER, CableClub_Movement_PlayerApproachCounter
 	waitmovement 0
 	delay 30
+#if TRADE_CODES
+	msgbox CableClub_Text_ExplainTradeCodesFirstTime, MSGBOX_DEFAULT
+#else
 	msgbox CableClub_Text_ExplainWirelessClubFirstTime, MSGBOX_DEFAULT
+#endif
 	setvar VAR_CABLE_CLUB_TUTORIAL_STATE, 2
 	releaseall
 	end
@@ -258,6 +266,16 @@ CableClub_EventScript_UnusedWelcomeToCableClub::
 CableClub_EventScript_SelectCableClubRoom::
 	setvar VAR_0x8004, 0
 	goto_if_set FLAG_VISITED_MAUVILLE_CITY, CableClub_EventScript_CableClubUnlockedRecordCorner
+#if TRADE_CODES
+	multichoice 0, 0, MULTI_CABLE_CLUB_TRADE_ONLY, FALSE
+	switch VAR_RESULT
+	case 0, CableClub_EventScript_TradeCenter
+	case 1, CableClub_EventScript_ViewOfferCode
+	case 2, CableClub_EventScript_ViewConfirmCode
+	case 3, CableClub_EventScript_AbortLink
+	case MULTI_B_PRESSED, CableClub_EventScript_AbortLink
+	end
+#else
 	multichoice 0, 0, MULTI_CABLE_CLUB_NO_RECORD_MIX, FALSE
 	switch VAR_RESULT
 	case 0, CableClub_EventScript_TradeCenter
@@ -265,8 +283,20 @@ CableClub_EventScript_SelectCableClubRoom::
 	case 2, CableClub_EventScript_AbortLink
 	case MULTI_B_PRESSED, CableClub_EventScript_AbortLink
 	end
+#endif
 
 CableClub_EventScript_CableClubUnlockedRecordCorner::
+#if TRADE_CODES
+	multichoice 0, 0, MULTI_CABLE_CLUB_TRADE_ONLY_WITH_RECORD_MIX, FALSE
+	switch VAR_RESULT
+	case 0, CableClub_EventScript_TradeCenter
+	case 1, CableClub_EventScript_RecordCorner
+	case 2, CableClub_EventScript_ViewOfferCode
+	case 3, CableClub_EventScript_ViewConfirmCode
+	case 4, CableClub_EventScript_AbortLink
+	case MULTI_B_PRESSED, CableClub_EventScript_AbortLink
+	end
+#else
 	multichoice 0, 0, MULTI_CABLE_CLUB_WITH_RECORD_MIX, FALSE
 	switch VAR_RESULT
 	case 0, CableClub_EventScript_TradeCenter
@@ -275,6 +305,30 @@ CableClub_EventScript_CableClubUnlockedRecordCorner::
 	case 3, CableClub_EventScript_AbortLink
 	case MULTI_B_PRESSED, CableClub_EventScript_AbortLink
 	end
+#endif
+
+#if TRADE_CODES
+// Post-Stage-10 follow-up: re-display a code the player's already been
+// shown once (Step 1's offer, or Step 3's confirm reveal), without redoing
+// any part of the trade. TradeCodeSession_ViewOfferCode/_ViewConfirmCode
+// (src/trade_code_session.c) handle "nothing to show" themselves (no trade
+// COMMITTED) with their own plain message, so these two labels don't need
+// to check anything first. Same "special then release/end, no waitstate"
+// shape as CableClub_EventScript_TradeCenter's own TRADE_CODES branch -
+// both specials finish via a plain SetMainCallback2(CB2_ReturnToField),
+// and this script never warps, so it needs its own explicit `release`
+// (see that label's own comment on this file's `lock`/`release` caller
+// chain for why).
+CableClub_EventScript_ViewOfferCode::
+	special TradeCodeSession_ViewOfferCode
+	release
+	end
+
+CableClub_EventScript_ViewConfirmCode::
+	special TradeCodeSession_ViewConfirmCode
+	release
+	end
+#endif
 
 CableClub_EventScript_Colosseum::
 	copyvar VAR_0x8007, VAR_LAST_TALKED
@@ -410,6 +464,11 @@ CableClub_EventScript_ConfirmNumberAndRestart::
 	end
 
 CableClub_EventScript_TradeCenter::
+#if TRADE_CODES
+	special TradeCodeSession_Start
+	release
+	end
+#else
 	copyvar VAR_0x8007, VAR_LAST_TALKED
 	call CableClub_EventScript_CheckPartyTradeRequirements
 	goto_if_eq VAR_RESULT, 0, CableClub_EventScript_AbortLink
@@ -427,6 +486,7 @@ CableClub_EventScript_TradeCenter::
 	goto_if_eq VAR_RESULT, LINKUP_PLAYER_NOT_READY, CableClub_EventScript_AbortLinkPlayerNotReady
 	goto_if_eq VAR_RESULT, LINKUP_PARTNER_NOT_READY, CableClub_EventScript_AbortLinkOtherTrainerNotReady
 	end
+#endif
 
 CableClub_EventScript_EnterTradeCenter::
 	setvar VAR_0x8004, USING_TRADE_CENTER
@@ -912,7 +972,11 @@ CableClub_EventScript_WirelessClubAttendant::
 	goto_if_unset FLAG_SYS_POKEDEX_GET, CableClub_EventScript_WirelessClubAdjustements
 	msgbox CableClub_Text_AskAboutLinking, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, CableClub_EventScript_DontAskAboutLinking
+#if TRADE_CODES
+	msgbox CableClub_Text_ExplainWirelessClubTradeCodes, MSGBOX_DEFAULT
+#else
 	msgbox CableClub_Text_ExplainWirelessClub, MSGBOX_DEFAULT
+#endif
 	release
 	return
 
@@ -981,6 +1045,13 @@ CableClub_EventScript_DirectCornerHasRecordMix::
 	end
 
 CableClub_EventScript_WirelessTrade::
+#if TRADE_CODES
+	msgbox CableClub_Text_TradePokemon, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, CableClub_EventScript_AbortLink
+	special TradeCodeSession_Start
+	release
+	end
+#else
 	msgbox CableClub_Text_TradePokemon, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, CableClub_EventScript_AbortLink
 	call CableClub_EventScript_CheckPartyTradeRequirements
@@ -988,6 +1059,7 @@ CableClub_EventScript_WirelessTrade::
 	setvar VAR_0x8004, LINK_GROUP_TRADE
 	goto CableClub_EventScript_SaveAndChooseLinkLeader
 	end
+#endif
 
 CableClub_EventScript_WirelessBattleSelect::
 	message CableClub_Text_PlayWhichBattleMode

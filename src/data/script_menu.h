@@ -530,6 +530,37 @@ static const struct MenuAction MultichoiceList_LinkServicesNoRecordBerry[] =
     {gText_Exit},
 };
 
+// TRADE_CODES == 1 versions of the Direct Corner's Game-Link-cable fallback
+// menu (no wireless adapter connected), with COLOSSEUM dropped - see
+// sCableClubOptions_TradeOnly[WithRecordMix]'s own comment for why these are
+// separate lists rather than trimming MultichoiceList_LinkServicesNoRecordBerry/
+// _NoBerry in place.
+//
+// Post-Stage-10 follow-up: OFFER CODE/CONFIRM CODE added - the attendant's
+// own way to re-display a code the player's already been shown once
+// (Step 1's offer, or Step 3's confirm reveal), without redoing any part
+// of the trade. See TradeCodeSession_ViewOfferCode/_ViewConfirmCode
+// (src/trade_code_session.c) - both are effectively inert (a plain "no
+// trade code to show right now" message) unless a trade is actually
+// COMMITTED, so these two entries are always present rather than
+// conditionally shown/hidden based on that state.
+static const struct MenuAction MultichoiceList_CableClubTradeOnly[] =
+{
+    {gText_TradeCenter},
+    {COMPOUND_STRING("OFFER CODE")},
+    {COMPOUND_STRING("CONFIRM CODE")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_CableClubTradeOnlyWithRecordMix[] =
+{
+    {gText_TradeCenter},
+    {gText_RecordCorner},
+    {COMPOUND_STRING("OFFER CODE")},
+    {COMPOUND_STRING("CONFIRM CODE")},
+    {gText_Exit},
+};
+
 static const struct MenuAction MultichoiceList_WirelessMinigame[] =
 {
     {COMPOUND_STRING("POKéMON JUMP")},
@@ -1220,6 +1251,8 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_CABLE_CLUB_NO_RECORD_MIX]   = MULTICHOICE(MultichoiceList_LinkServicesNoRecordBerry),
     [MULTI_WIRELESS_NO_RECORD_BERRY]   = MULTICHOICE(MultichoiceList_LinkServicesNoRecordBerry),
     [MULTI_CABLE_CLUB_WITH_RECORD_MIX] = MULTICHOICE(MultichoiceList_LinkServicesNoBerry),
+    [MULTI_CABLE_CLUB_TRADE_ONLY]                 = MULTICHOICE(MultichoiceList_CableClubTradeOnly),
+    [MULTI_CABLE_CLUB_TRADE_ONLY_WITH_RECORD_MIX] = MULTICHOICE(MultichoiceList_CableClubTradeOnlyWithRecordMix),
     [MULTI_WIRELESS_NO_BERRY]          = MULTICHOICE(MultichoiceList_LinkServicesNoBerry),
     [MULTI_WIRELESS_NO_RECORD]         = MULTICHOICE(MultichoiceList_LinkServicesNoRecord),
     [MULTI_WIRELESS_ALL_SERVICES]      = MULTICHOICE(MultichoiceList_LinkServicesAll),
@@ -1377,6 +1410,9 @@ static const u8 *const sLilycoveSSTidalDestinations[SSTIDAL_SELECTION_COUNT] =
     [SSTIDAL_SELECTION_EXIT]            = gText_Exit,
 };
 
+// Reached only under TRADE_CODES == 0 (see MULTI_CABLE_CLUB_TRADE_ONLY_WITH_
+// RECORD_MIX and sCableClubOptions_TradeOnlyWithRecordMix below for the
+// TRADE_CODES == 1 equivalent, which drops the battle option entirely).
 static const u8 *const sCableClubOptions_WithRecordMix[] =
 {
     CableClub_Text_TradeUsingLinkCable,
@@ -1406,10 +1442,37 @@ static const u8 *const sWirelessOptions_AllServices[] =
     CableClub_Text_CanMakeBerryPowder,
     CableClub_Text_CancelSelectedItem,
 };
+// Reached only under TRADE_CODES == 0 - see MULTI_CABLE_CLUB_TRADE_ONLY and
+// sCableClubOptions_TradeOnly below for the TRADE_CODES == 1 equivalent.
 static const u8 *const sCableClubOptions_NoRecordMix[] =
 {
     CableClub_Text_TradeUsingLinkCable,
     CableClub_Text_BattleUsingLinkCable,
+    CableClub_Text_CancelSelectedItem,
+};
+
+// TRADE_CODES == 1 equivalents of the two lists just above, with the
+// COLOSSEUM/battle option dropped entirely (not just relabelled) - link
+// battling doesn't work without a real second cart any more than link
+// trading did. Deliberately separate MULTICHOICE lists/ids
+// (MULTI_CABLE_CLUB_TRADE_ONLY[_WITH_RECORD_MIX], include/constants/
+// script_menu.h) rather than shrinking MULTI_CABLE_CLUB_NO_RECORD_MIX/
+// _WITH_RECORD_MIX in place, since the former shares its underlying item
+// list (MultichoiceList_LinkServicesNoRecordBerry) with
+// MULTI_WIRELESS_NO_RECORD_BERRY, which still needs its own battle option.
+static const u8 *const sCableClubOptions_TradeOnly[] =
+{
+    CableClub_Text_TradeUsingTradeCodes,
+    CableClub_Text_ViewOfferCode,
+    CableClub_Text_ViewConfirmCode,
+    CableClub_Text_CancelSelectedItem,
+};
+static const u8 *const sCableClubOptions_TradeOnlyWithRecordMix[] =
+{
+    CableClub_Text_TradeUsingTradeCodes,
+    CableClub_Text_RecordCornerUsingLinkCable,
+    CableClub_Text_ViewOfferCode,
+    CableClub_Text_ViewConfirmCode,
     CableClub_Text_CancelSelectedItem,
 };
 static const u8 *const sWirelessOptions_NoRecordMixBerryCrush[] =

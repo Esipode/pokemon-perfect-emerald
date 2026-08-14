@@ -748,8 +748,11 @@ extern const u8 gText_TrainerHill4F[];
 
 // Cable Club multichoice text
 extern const u8 CableClub_Text_TradeUsingLinkCable[];
+extern const u8 CableClub_Text_TradeUsingTradeCodes[];
 extern const u8 CableClub_Text_BattleUsingLinkCable[];
 extern const u8 CableClub_Text_RecordCornerUsingLinkCable[];
+extern const u8 CableClub_Text_ViewOfferCode[];
+extern const u8 CableClub_Text_ViewConfirmCode[];
 extern const u8 CableClub_Text_CancelSelectedItem[];
 extern const u8 CableClub_Text_YouMayTradeHere[];
 extern const u8 CableClub_Text_YouMayBattleHere[];

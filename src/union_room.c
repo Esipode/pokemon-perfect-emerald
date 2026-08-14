@@ -2610,7 +2610,17 @@ static void Task_RunUnionRoom(u8 taskId)
                     PlaySE(SE_PC_LOGIN);
                     StartScriptInteraction();
                     StringCopy(gStringVar1, gSaveBlock2Ptr->playerName);
+#if TRADE_CODES
+                    // Trading Codes Stage 10: the Trading Board's own live-link
+                    // matching flow is repointed to nothing - trades go through
+                    // the Cable Club attendant's trade-code session instead. The
+                    // board's own state machine (UR_STATE_CHECK_TRADING_BOARD
+                    // onward) is left compiled, not deleted, per this feature's
+                    // "stop reaching the old code" convention.
+                    ScheduleFieldMessageAndExit(sText_TradingBoardUsesTradeCodes);
+#else
                     uroom->state = UR_STATE_CHECK_TRADING_BOARD;
+#endif
                     break;
                 }
             }
