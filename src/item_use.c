@@ -12,6 +12,7 @@
 #include "bike.h"
 #include "coins.h"
 #include "data.h"
+#include "draft_mode.h"
 #include "event_data.h"
 #include "event_object_lock.h"
 #include "event_object_movement.h"
@@ -1166,6 +1167,11 @@ static u32 GetBallThrowableState(void)
             return BALL_THROW_UNABLE_NUZLOCKE;
     }
 
+    // Draft mode: you never catch anything, full stop -- every drafted
+    // Pokémon comes from the case UI (src/ui_birch_case.c) instead.
+    if (Draft_IsActive())
+        return BALL_THROW_UNABLE_DRAFT;
+
     if (MonoType_IsEnabled() && !MonoType_IsSpeciesAllowed(gBattleMons[GetCatchingBattler()].species))
         return BALL_THROW_UNABLE_MONO_TYPE;
 
@@ -1191,6 +1197,7 @@ bool32 CanThrowBall(void)
 }
 
 static const u8 sText_CantThrowPokeBall_Nuzlocke[] = _("You cannot catch any more Pokémon\nin this area!\p");
+static const u8 sText_CantThrowPokeBall_Draft[] = _("You can't catch Pokémon in a\nDraft run!\p");
 static const u8 sText_CantThrowPokeBall_MonoType[] = _("Only {STR_VAR_1}-type Pokémon can be\ncaught in this game!\p");
 static const u8 sText_CantThrowPokeBall_MonoGen[] = _("Only Gen {STR_VAR_1} Pokémon can be\ncaught in this game!\p");
 static const u8 sText_CantThrowPokeBall_TwoMons[] = _("Cannot throw a ball!\nThere are two Pokémon out there!\p");
@@ -1213,6 +1220,12 @@ void ItemUseInBattle_PokeBall(u8 taskId)
             DisplayItemMessage(taskId, FONT_NORMAL, sText_CantThrowPokeBall_Nuzlocke, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, sText_CantThrowPokeBall_Nuzlocke, Task_CloseBattlePyramidBagMessage);
+        break;
+    case BALL_THROW_UNABLE_DRAFT:
+        if (!InBattlePyramid_())
+            DisplayItemMessage(taskId, FONT_NORMAL, sText_CantThrowPokeBall_Draft, CloseItemMessage);
+        else
+            DisplayItemMessageInBattlePyramid(taskId, sText_CantThrowPokeBall_Draft, Task_CloseBattlePyramidBagMessage);
         break;
     case BALL_THROW_UNABLE_MONO_TYPE:
         StringCopy(gStringVar1, gTypesInfo[MonoType_GetType()].name);
@@ -1360,6 +1373,10 @@ bool32 CannotUseItemsInBattle(enum Item itemId, struct Pokemon *mon)
         {
         case BALL_THROW_UNABLE_NUZLOCKE:
             failStr = sText_CantThrowPokeBall_Nuzlocke;
+            cannotUse = TRUE;
+            break;
+        case BALL_THROW_UNABLE_DRAFT:
+            failStr = sText_CantThrowPokeBall_Draft;
             cannotUse = TRUE;
             break;
         case BALL_THROW_UNABLE_MONO_TYPE:

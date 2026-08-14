@@ -668,7 +668,18 @@ static void CB2_EndWildBattle(void)
     }
     else
     {
-        // Handles nuzlocke mode setting pokemon being caught in this zone
+        // Handles nuzlocke mode setting pokemon being caught in this zone.
+        //
+        // Draft Mode.md §3b: in a Draft run this same SET_NUZLOCKE_ZONE_FLAG
+        // bit means "this area's draft is spent", so this block must never
+        // run for a wild battle that merely ended (caught, KO'd, or fled) --
+        // only an actual draft pick (Draft_MarkAreaSpent, src/draft_mode.c)
+        // may spend an area. Gating on nuzlockeModeEnabled here is what does
+        // that: Draft and Nuzlocke are mutually exclusive by construction
+        // (src/new_game_settings_menu.c), so nuzlockeModeEnabled reads FALSE
+        // for the entire duration of a Draft run and this block can't fire.
+        // Do not widen this condition or drop it in favor of something that
+        // also matches Draft saves.
         if ((gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE)))
         {
             u16 zone = GetCurrentRegionMapSectionId();

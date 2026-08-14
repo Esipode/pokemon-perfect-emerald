@@ -4,6 +4,7 @@
 #include "data.h"
 #include "decompress.h"
 #include "dma3.h"
+#include "draft_mode.h"
 #include "dynamic_placeholder_text_util.h"
 #include "event_data.h"
 #include "event_object_movement.h"
@@ -112,6 +113,7 @@ enum {
     MSG_CHANGED_TO_ITEM,
     MSG_CANT_STORE_MAIL,
     MSG_LOCKED_UNTIL_CHAMPION,
+    MSG_LOCKED_DRAFT,
     MSG_PARTY_SLOT_LOCKED,
 };
 
@@ -669,6 +671,7 @@ static void SetSelectionAfterSummaryScreen(void);
 static void SetMonMarkings(u8);
 static bool8 IsRemovingLastPartyMon(void);
 static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon);
+static u8 GetLockedMonMsgId(void);
 static bool8 CanPlaceMon(void);
 static bool8 CanShiftMon(void);
 static bool8 IsMonBeingMoved(void);
@@ -870,6 +873,8 @@ void UpdateSpeciesSpritePSS(struct BoxPokemon *boxmon);
 
 static const u8 gText_JustOnePkmn[] = _("There is just one POKéMON with you.");
 static const u8 gText_PartyFull[] = _("Your party is full!");
+// Draft Mode.md §3c: nothing ever enters or leaves the PC in a Draft run.
+static const u8 gText_CantUseStorageInDraft[] = _("You can't do that during\na Draft run!");
 static const u8 gText_Box[] = _("BOX");
 
 struct {
@@ -1113,6 +1118,10 @@ static const struct StorageMessage sMessages[] =
     // wrapped across 3 short lines instead of the 2 long ones it started as, which
     // is too wide for the window and just runs off the edge.
     [MSG_LOCKED_UNTIL_CHAMPION] = {COMPOUND_STRING("This POKéMON won't\ncome with you until\nyou defeat the LEAGUE!"), MSG_VAR_NONE},
+    // Draft Mode.md §3c: shown instead of MSG_LOCKED_UNTIL_CHAMPION whenever
+    // Draft mode is on -- the lock reason is the whole run, not the league,
+    // so it gets its own string. Same WIN_MESSAGE_LOCKED window, same reason.
+    [MSG_LOCKED_DRAFT]         = {COMPOUND_STRING("This POKéMON can't\nleave the BOX during\na Draft run!"), MSG_VAR_NONE},
     [MSG_PARTY_SLOT_LOCKED]    = {COMPOUND_STRING("You can't use that slot yet!"), MSG_VAR_NONE},
 };
 
@@ -1589,7 +1598,17 @@ static void Task_PCMainMenu(u8 taskId)
             DestroyTask(taskId);
             break;
         default:
-            if (task->tInput == OPTION_WITHDRAW && CountPartyMons() >= LimitedParty_GetMaxPartySize())
+            if (Draft_IsEnabled()
+             && (task->tInput == OPTION_WITHDRAW || task->tInput == OPTION_DEPOSIT || task->tInput == OPTION_MOVE_MONS))
+            {
+                // Draft Mode.md §3c: WITHDRAW/DEPOSIT/MOVE POKéMON are all
+                // refused outright. MOVE ITEMS stays available -- see
+                // IsBoxMonWithdrawLocked below for its own defence in depth.
+                FillWindowPixelBuffer(0, PIXEL_FILL(1));
+                AddTextPrinterParameterized2(0, FONT_NORMAL, gText_CantUseStorageInDraft, 0, NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
+                task->tState = STATE_ERROR_MSG;
+            }
+            else if (task->tInput == OPTION_WITHDRAW && CountPartyMons() >= LimitedParty_GetMaxPartySize())
             {
                 // Can't withdraw
                 FillWindowPixelBuffer(0, PIXEL_FILL(1));
@@ -2545,7 +2564,7 @@ static void Task_PokeStorageMain(u8 taskId)
         break;
     case MSTATE_ERROR_LOCKED_MON:
         PlaySE(SE_FAILURE);
-        PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
+        PrintMessage(GetLockedMonMsgId());
         sStorage->state = MSTATE_WAIT_ERROR_MSG;
         break;
     case MSTATE_ERROR_PARTY_SLOT_LOCKED:
@@ -2844,7 +2863,7 @@ static void Task_OnSelectedMon(u8 taskId)
         break;
     case 7:
         PlaySE(SE_FAILURE);
-        PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
+        PrintMessage(GetLockedMonMsgId());
         sStorage->state = 6;
         break;
     case 8:
@@ -2932,7 +2951,7 @@ static void Task_WithdrawMon(u8 taskId)
         }
         else if (IsBoxMonWithdrawLocked(GetCursorBoxMon()))
         {
-            PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
+            PrintMessage(GetLockedMonMsgId());
             sStorage->state = 1;
         }
         else
@@ -3831,7 +3850,7 @@ static void Task_OnBPressed(u8 taskId)
                 if (sCursorArea == CURSOR_AREA_IN_PARTY && IsBoxMonWithdrawLocked(&sStorage->movingMon.box))
                 {
                     PlaySE(SE_FAILURE);
-                    PrintMessage(MSG_LOCKED_UNTIL_CHAMPION);
+                    PrintMessage(GetLockedMonMsgId());
                     sStorage->state = 1;
                 }
                 else
@@ -4448,9 +4467,9 @@ static void InitPokeStorageBg0(void)
 static void PrintMessage(u8 id)
 {
     u8 *txtPtr;
-    // Every other message is one short line and fits WIN_MESSAGE; only this one
-    // needs the taller, separately-blocked WIN_MESSAGE_LOCKED (see its template).
-    u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
+    // Every other message is one short line and fits WIN_MESSAGE; only these
+    // two need the taller, separately-blocked WIN_MESSAGE_LOCKED (see its template).
+    u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION || id == MSG_LOCKED_DRAFT) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
 
     DynamicPlaceholderTextUtil_Reset();
     switch (sMessages[id].format)
@@ -7044,13 +7063,21 @@ static bool8 IsRemovingLastPartyMon(void)
         return FALSE;
 }
 
-// Two independent reasons a box mon can be locked out of withdraw/move/shift/
-// item-swap, both surfaced through the same MSG_LOCKED_UNTIL_CHAMPION message
-// (see MSTATE_ERROR_LOCKED_MON below) since both boil down to "not withdrawable
-// until you've beaten the league (again) in this playthrough", and both now
-// (Trading Codes.md Stage 11) explicit per-mon bits on struct BoxPokemon
-// rather than inferred from OT ID -- see each bit's own comment (include/
-// pokemon.h) for the full reasoning on why that inference was replaced:
+// Three independent reasons a box mon can be locked out of withdraw/move/
+// shift/item-swap, all surfaced through PrintMessage(GetLockedMonMsgId())
+// (see MSTATE_ERROR_LOCKED_MON below):
+//
+// 0. Draft Mode.md §3c: Draft mode locks the PC for the whole run, not any
+//    particular box mon -- checked before the FLAG_SYS_GAME_CLEAR early-out
+//    below on purpose, since that flag has nothing to do with Draft's lock.
+//    Surfaced with its own MSG_LOCKED_DRAFT rather than MSG_LOCKED_UNTIL_
+//    CHAMPION -- see GetLockedMonMsgId.
+//
+// The remaining two boil down to "not withdrawable until you've beaten the
+// league (again) in this playthrough", and are both (Trading Codes.md Stage
+// 11) explicit per-mon bits on struct BoxPokemon rather than inferred from
+// OT ID -- see each bit's own comment (include/pokemon.h) for the full
+// reasoning on why that inference was replaced:
 //
 // 1. tradeCodeAboveLevelCap: a trade-code Pokémon that arrived above the
 //    level cap (TradeCodeReceive_DoSwap, src/trade_code_receive.c).
@@ -7066,6 +7093,8 @@ static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
 {
     if (boxMon == NULL)
         return FALSE;
+    if (Draft_IsEnabled())
+        return TRUE;
     if (FlagGet(FLAG_SYS_GAME_CLEAR))
         return FALSE;
 
@@ -7073,6 +7102,15 @@ static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
         return TRUE;
 
     return boxMon->legacyCarryOverLocked;
+}
+
+// Draft mode's lock (above) is a blanket, run-wide lock rather than a
+// per-mon reason, so it gets its own message instead of reusing
+// MSG_LOCKED_UNTIL_CHAMPION's "beat the league" phrasing, which would be
+// misleading in a Draft run.
+static u8 GetLockedMonMsgId(void)
+{
+    return Draft_IsEnabled() ? MSG_LOCKED_DRAFT : MSG_LOCKED_UNTIL_CHAMPION;
 }
 
 static bool8 CanPlaceMon(void)

@@ -34,6 +34,7 @@
 #include "constants/songs.h"
 #include "constants/items.h"
 #include "caps.h"
+#include "draft_mode.h"
 #include "event_data.h"
 #include "mono_type.h"
 #include "mono_gen.h"
@@ -1771,13 +1772,17 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     species = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
-    // Nuzlocke Mode / Mono Type / Mono Gen indicator
+    // Nuzlocke Mode / Draft Mode / Mono Type / Mono Gen indicator
     bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
+    bool8 draftOn = Draft_IsActive();
     bool8 monoOn = MonoType_IsEnabled();
     bool8 genOn = MonoGen_IsEnabled();
-    if (nuzlockeOn || monoOn || genOn)
+    if (nuzlockeOn || draftOn || monoOn || genOn)
     {
-        bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
+        // Draft mode never allows a catch, so it always wins the icon --
+        // no per-species/per-zone carve-out like the other three have.
+        bool8 canCatch = !draftOn
+                       && (!monoOn || MonoType_IsSpeciesAllowed(species))
                        && (!genOn || MonoGen_IsSpeciesAllowed(species))
                        && (!nuzlockeOn || !GET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId()));
 

@@ -5,6 +5,7 @@
 #include "trade_code_entry.h"
 #include "trade_code_prompt.h"
 #include "trade_code_receive.h"
+#include "draft_mode.h"
 #include "link_rfu.h"
 #include "malloc.h"
 #include "overworld.h"
@@ -227,6 +228,11 @@ static const u8 sText_CantTradeLastMon[]    = _("You can't trade your last\nPok�
 // GameRules::CanX() wrapper wording, which no system in this codebase
 // (checked before writing this) actually implements.
 static const u8 sText_CantTradeNuzlocke[]   = _("Trading isn't allowed during\na Nuzlocke run.");
+// Draft Mode.md §3d: in-game trades (CreateInGameTradePokemon) are untouched
+// -- they swap in place and don't change party size -- but this attendant-
+// initiated code-trade flow is a real acquisition path and is refused
+// outright, same shape as the Nuzlocke gate right above.
+static const u8 sText_CantTradeDraft[]      = _("Trading isn't allowed during\na Draft run.");
 static const u8 sText_CantTradeFusedMon[]   = _("A fused Pokémon can't be\ntraded like this.");
 static const u8 sText_ReadyForPartnerCode[] = _("Ready to enter your partner's\ntrade code?");
 // This screen's window (see trade_code_prompt.c's sTradeCodePromptWindow
@@ -269,6 +275,19 @@ void TradeCodeSession_Start(void)
         if ((sTradeCodeSessionPtr = AllocZeroed(sizeof(struct TradeCodeSessionState))) == NULL)
             return;
         TradeCodePrompt_Init(sText_CantTradeNuzlocke, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterGateFailAck);
+        return;
+    }
+
+    // Draft Mode.md §3d: Draft disables this code-trade flow entirely too,
+    // for the same reason as Nuzlocke above -- Draft and Nuzlocke are
+    // mutually exclusive (src/new_game_settings_menu.c), so this and the
+    // block above never both apply, but each stands on its own here rather
+    // than folding into a combined condition, so each gets its own message.
+    if (Draft_IsEnabled())
+    {
+        if ((sTradeCodeSessionPtr = AllocZeroed(sizeof(struct TradeCodeSessionState))) == NULL)
+            return;
+        TradeCodePrompt_Init(sText_CantTradeDraft, FALSE, FALSE, &sTradeCodeSessionPtr->promptResult, CB2_TradeCodeSession_AfterGateFailAck);
         return;
     }
 

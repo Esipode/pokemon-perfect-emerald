@@ -245,6 +245,12 @@ BattleScript_Nuzlocke_CannotCatch::
 	waitmessage B_WAIT_TIME_LONG
 	finishaction
 
+BattleScript_Draft_CannotCatch::
+	waitmessage B_WAIT_TIME_LONG
+	printstring STRINGID_DRAFTCANTCATCH
+	waitmessage B_WAIT_TIME_LONG
+	finishaction
+
 BattleScript_MonoType_CannotCatch::
 	waitmessage B_WAIT_TIME_LONG
 	printstring STRINGID_MONOTYPECANTCATCH

@@ -39,6 +39,7 @@
 #include "event_data.h"
 #include "mono_type.h"
 #include "mono_gen.h"
+#include "draft_mode.h"
 #include "limited_party.h"
 #include "pokemon_storage_system.h"
 #include "randomization.h"
@@ -10000,6 +10001,15 @@ static void Cmd_handleballthrow(void)
         BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
         MarkBattlerForControllerExec(gBattlerAttacker);
         gBattlescriptCurrInstr = BattleScript_MonoGen_CannotCatch;
+    }
+    else if (Draft_IsActive())
+    {
+        // Draft mode: you never catch anything, full stop. Unlike the
+        // Nuzlocke check below, this doesn't depend on the current zone --
+        // every drafted Pokémon comes from the case UI, not a catch.
+        BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
+        MarkBattlerForControllerExec(gBattlerAttacker);
+        gBattlescriptCurrInstr = BattleScript_Draft_CannotCatch;
     }
     else
     {
