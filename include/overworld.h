@@ -195,6 +195,9 @@ bool32 IsSendingKeysOverCable(void);
 void ClearLinkPlayerObjectEvents(void);
 void RemoveFaintedMonsFromParty(void);
 bool8 IsPartyEmpty(void);
+// TRUE when the current save's challenge mode makes an empty usable party a
+// run-ending state (Nuzlocke, or Recruits - see src/recruits_mode.c).
+bool32 Run_IsFailed(void);
 bool16 SetTimeOfDay(u16 hours);
 bool8 MetatileBehavior_IsSurfableInSeafoamIslands(u16 metatileBehavior);
 

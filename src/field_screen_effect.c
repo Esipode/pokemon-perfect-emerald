@@ -32,6 +32,7 @@
 #include "overworld.h"
 #include "pokemon.h"
 #include "pokemon_storage_system.h"
+#include "recruits_mode.h"
 #include "scanline_effect.h"
 #include "script.h"
 #include "sound.h"
@@ -74,6 +75,10 @@ static const u8 sText_PlayerRegroupHome[] = _("{PLAYER} scurried back home, to r
 
 static const u8 sText_NuzlockeRunFailed[] = _("The NUZLOCKE run has ended in defeat!\nAll of {PLAYER}'s POKéMON have fainted…\p");
 static const u8 sText_NuzlockeBeginNewRun[] = _("Begin a new NUZLOCKE run?");
+// Recruits variants of the two texts above - this screen is shared between
+// both modes, see PrintNuzlockeFailedMessage's callers in Task_NuzlockeRunFailed.
+static const u8 sText_RecruitsRunFailed[] = _("Your last recruit's service has ended!\nAll of {PLAYER}'s POKéMON have fainted…\p");
+static const u8 sText_RecruitsBeginNewRun[] = _("Begin a new RECRUITS run?");
 // Split into two single-line pages rather than one two-line page: the box
 // below sits at a fixed screen position that only leaves room for a single
 // line above it once this text is the last thing on screen (see
@@ -1661,13 +1666,15 @@ static void FinishNuzlockeRestart(u8 taskId)
     SetMainCallback2(CB2_NewGame);
 }
 
-// Shown instead of FieldCB_RushInjuredPokemonToCenter whenever the whiteout
-// that got us here also emptied the party under Nuzlocke rules. The emptied
-// state has already been persisted to flash by this point
-// (RemoveFaintedMonsFromParty, called from DoWhiteOut before this field
-// callback is ever chosen) -- achievements and boosts live outside the save
-// slots and are untouched either way -- so this screen is purely about what
-// the player does *next*, not about what happens to the save.
+// Shared run-failed screen for both modes that can empty the party: Nuzlocke
+// (via CB2_WhiteOut, whenever the whiteout that got us here also emptied the
+// party) and Recruits (via Recruits_StartRunFailedScreen, whenever a
+// retirement does). Either way the emptied state is already persisted to
+// flash by this point -- RemoveFaintedMonsFromParty for Nuzlocke,
+// TrySavingData in Recruits_StartRunFailedScreen for Recruits -- and
+// achievements/boosts live outside the save slots and are untouched either
+// way, so this screen is purely about what the player does *next*, not about
+// what happens to the save.
 static void Task_NuzlockeRunFailed(u8 taskId)
 {
     u32 windowId;
@@ -1684,11 +1691,13 @@ static void Task_NuzlockeRunFailed(u8 taskId)
         gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_FAILURE_MSG;
         break;
     case NUZLOCKE_FAILED_PRINT_FAILURE_MSG:
-        if (PrintNuzlockeFailedMessage(taskId, sText_NuzlockeRunFailed, 8))
+        // Recruits shares this screen with Nuzlocke (see Run_IsFailed,
+        // src/overworld.c) - pick the matching pair of strings by mode.
+        if (PrintNuzlockeFailedMessage(taskId, Recruits_IsEnabled() ? sText_RecruitsRunFailed : sText_NuzlockeRunFailed, 8))
             gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_QUESTION;
         break;
     case NUZLOCKE_FAILED_PRINT_QUESTION:
-        if (PrintNuzlockeFailedMessage(taskId, sText_NuzlockeBeginNewRun, 8))
+        if (PrintNuzlockeFailedMessage(taskId, Recruits_IsEnabled() ? sText_RecruitsBeginNewRun : sText_NuzlockeBeginNewRun, 8))
             gTasks[taskId].tState = NUZLOCKE_FAILED_OPEN_YESNO;
         break;
     case NUZLOCKE_FAILED_OPEN_YESNO:
@@ -1748,13 +1757,14 @@ static void Task_NuzlockeRunFailed(u8 taskId)
             RemoveWindow(gTasks[taskId].tWindowId);
             CleanupOverworldWindowsAndTilemaps();
             DestroyTask(taskId);
-            // Nothing extra to do here: RemoveFaintedMonsFromParty already
-            // persisted the real (emptied-party) state to flash before this
-            // screen was ever reached, so gSaveFileStatus stays a genuine
-            // SAVE_STATUS_OK -- keep-storage carryover keeps working, on this
-            // boot or any later one. The title screen (main_menu.c) is what
-            // keeps CONTINUE hidden, by checking nuzlockeModeEnabled &&
-            // IsPartyEmpty() against that same saved state directly.
+            // Nothing extra to do here: the emptied-party state was already
+            // persisted to flash before this screen was ever reached
+            // (RemoveFaintedMonsFromParty for Nuzlocke, TrySavingData in
+            // Recruits_StartRunFailedScreen for Recruits), so gSaveFileStatus
+            // stays a genuine SAVE_STATUS_OK -- keep-storage carryover keeps
+            // working, on this boot or any later one. The title screen
+            // (main_menu.c) is what keeps CONTINUE hidden, by checking
+            // Run_IsFailed() against that same saved state directly.
             SetMainCallback2(CB2_InitTitleScreen);
             break;
         }

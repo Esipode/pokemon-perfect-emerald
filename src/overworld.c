@@ -53,6 +53,7 @@
 #include "palette.h"
 #include "play_time.h"
 #include "random.h"
+#include "recruits_mode.h"
 #include "roamer.h"
 #include "rotating_gate.h"
 #include "rtc.h"
@@ -2081,7 +2082,7 @@ void CB2_WhiteOut(void)
         ResetInitialPlayerAvatarState();
         ScriptContext_Init();
         UnlockPlayerFieldControls();
-        if (gSaveBlock1Ptr->nuzlockeModeEnabled && IsPartyEmpty())
+        if (Run_IsFailed())
             // The emptied-party state is already persisted to flash by
             // RemoveFaintedMonsFromParty above; this screen only decides
             // where the player goes next.
@@ -2233,6 +2234,16 @@ bool8 IsPartyEmpty(void)
     return TRUE; // No usable Pokémon left
 }
 
+// Generalizes the "empty party ends the run" rule Nuzlocke defines to every
+// mode that shares it. Recruits mons aren't stripped out on faint the way
+// RemoveFaintedMonsFromParty strips Nuzlocke's - a Recruits mon only ever
+// leaves via Recruits_DoRetirement - but an all-fainted party is still a
+// failed run under Recruits rules, same as Nuzlocke's.
+bool32 Run_IsFailed(void)
+{
+    return (gSaveBlock1Ptr->nuzlockeModeEnabled || Recruits_IsEnabled()) && IsPartyEmpty();
+}
+
 void RemoveFaintedMonsFromParty(void)
 {
     if (gSaveBlock1Ptr->nuzlockeModeEnabled) {
@@ -2272,11 +2283,11 @@ void RemoveFaintedMonsFromParty(void)
             // before starting (and saving) a new one, and it was gone for
             // good on the next boot. Writing the real state keeps that
             // storage on flash indefinitely. CONTINUE is blocked separately,
-            // by checking nuzlockeModeEnabled && IsPartyEmpty() against
-            // whatever's actually on flash wherever the title screen decides
-            // whether to offer it (see main_menu.c) -- since that's now
-            // honestly reflected here, no separate "this save is dead" state
-            // needs to be tracked or kept in sync with it.
+            // by checking Run_IsFailed() against whatever's actually on flash
+            // wherever the title screen decides whether to offer it (see
+            // main_menu.c) -- since that's now honestly reflected here, no
+            // separate "this save is dead" state needs to be tracked or kept
+            // in sync with it.
             TrySavingData(SAVE_NORMAL);
         }
         else if (removedAny) {
@@ -2292,7 +2303,7 @@ void RemoveFaintedMonsFromParty(void)
 
 void CB2_ReturnToFieldContinueScript(void)
 {
-    if (IsPartyEmpty() && gSaveBlock1Ptr->nuzlockeModeEnabled)
+    if (Run_IsFailed())
     {
         gFieldCallback = CB2_NewGame;
         return;

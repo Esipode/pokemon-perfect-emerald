@@ -33,6 +33,7 @@
 #include "party_menu.h"
 #include "pokedex.h"
 #include "pokenav.h"
+#include "recruits_mode.h"
 #include "rtc.h"
 #include "safari_zone.h"
 #include "save.h"
@@ -1084,8 +1085,8 @@ void RunAutosaveSteps(void) {
 
 void AutosaveGame(void)
 {
-    if (gSaveBlock1Ptr->nuzlockeModeEnabled) {
-        if (IsPartyEmpty()) {
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled || Recruits_IsEnabled()) {
+        if (Run_IsFailed()) {
             // DO NOTHING
         }
         else {
