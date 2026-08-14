@@ -139,8 +139,8 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
                                        "Pokémon are lost when fainted.\n"
                                        "Can only catch one Pokémon per route."),
     [SETTING_DRAFT]             = COMPOUND_STRING(
-                                       "Draft one Pokémon per area. No catching,\n"
-                                       "no PC. Choices are permanent."),
+                                       "Draft one Pokémon per area.\n"
+                                       "No catching, no storage."),
     [SETTING_MONO_TYPE]         = COMPOUND_STRING(
                                        "Choose a starter of this type and only\n"
                                        "obtain Pokémon of this type."),
