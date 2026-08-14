@@ -1780,9 +1780,18 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     // would just be a constant, redundant "no" even with Mono Type/Gen also
     // on. A Draft run always falls through to the regular caught-ball
     // indicator below instead, same as a normal playthrough.
+    //
+    // Mono Type/Gen are also gated on FLAG_SYS_POKEDEX_GET here, same as
+    // Nuzlocke's own FLAG_NUZLOCKE_CATCH_MODE check already is (both flags
+    // are set together, at LittlerootTown_ProfessorBirchsLab_EventScript_
+    // ReceivePokedex) - without it, the mandatory Zigzagoon-vs-Birch battle
+    // on Route 101 shows the icon before any challenge mode has actually
+    // engaged yet, since that battle happens well before the player's
+    // Pokédex (and hence Draft_IsActive()) does.
+    bool8 pokedexReceived = FlagGet(FLAG_SYS_POKEDEX_GET);
     bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
-    bool8 monoOn = !Draft_IsActive() && MonoType_IsEnabled();
-    bool8 genOn = !Draft_IsActive() && MonoGen_IsEnabled();
+    bool8 monoOn = !Draft_IsActive() && pokedexReceived && MonoType_IsEnabled();
+    bool8 genOn = !Draft_IsActive() && pokedexReceived && MonoGen_IsEnabled();
     if (nuzlockeOn || monoOn || genOn)
     {
         bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
