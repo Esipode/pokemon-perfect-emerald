@@ -251,6 +251,7 @@ void Draft_TryGiveToEmptySlot(void)
     CopyMon(&gParties[B_TRAINER_PLAYER][i], &sDraftPendingMon, sizeof(sDraftPendingMon));
     gPartiesCount[B_TRAINER_PLAYER] = i + 1;
     gSpecialVar_Result = 0;
+    sDraftPendingValid = FALSE;
 }
 
 // gStringVar1 = the pending mon's display name. Goes through GetMonNickname
@@ -302,6 +303,9 @@ void Draft_DoReplacement(void)
     TryRevertPartyMonFormChange(slot);
     ZeroMonData(&gParties[B_TRAINER_PLAYER][slot]);
     CopyMon(&gParties[B_TRAINER_PLAYER][slot], &sDraftPendingMon, sizeof(sDraftPendingMon));
+    // See the matching comment in Draft_TryGiveToEmptySlot - the mon has a
+    // home now, so it must stop reading as pending or the field hook loops.
+    sDraftPendingValid = FALSE;
 }
 
 // Discards the pending mon without placing it anywhere - the decline path.

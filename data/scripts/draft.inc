@@ -52,7 +52,18 @@ Draft_EventScript_ConfirmDecline_Accept::
 	callnative Draft_DiscardPending
 	goto Draft_EventScript_Finish
 
+@ Mirrors the starter case UI's own "Give your Pokémon a Nickname? A: Yes
+@ B: No" bottom-bar prompt (src/ui_birch_case.c's Task_BirchCaseRecievedMon) -
+@ a Draft pick should get the same choice, not a mandatory naming screen.
+@ Draft_Text_AskNickname stays species-generic rather than naming the mon
+@ (unlike gText_NicknameThisPokemon) because VAR_0x8004 already holds the
+@ right party slot coming from either path into here, but gStringVar1 does
+@ not: the join path (Draft_BufferPendingNickname) leaves the incoming mon's
+@ name there, while the replace path (Draft_BufferReplacementNames) leaves
+@ the *outgoing* mon's name there instead.
 Draft_EventScript_OfferNickname::
+	msgbox Draft_Text_AskNickname, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, Draft_EventScript_Finish
 	fadescreen FADE_TO_BLACK
 	special ChangePokemonNickname
 	goto Draft_EventScript_Finish
@@ -87,3 +98,7 @@ Draft_Text_ConfirmDecline:
 	.string "If you decline, this area's Pokémon\n"
 	.string "will be gone forever.\l"
 	.string "This can't be undone!$"
+
+Draft_Text_AskNickname:
+	.string "Would you like to give your new\n"
+	.string "Pokémon a nickname?$"
