@@ -15,6 +15,7 @@
 #include "debug.h"
 #include "decoration.h"
 #include "decoration_inventory.h"
+#include "draft_mode.h"
 #include "event_data.h"
 #include "event_object_movement.h"
 #include "event_scripts.h"
@@ -289,6 +290,7 @@ static void DebugAction_Util_Weather_SelectId(u8 taskId);
 static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId);
+static void DebugAction_Util_ForceDraft(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -452,6 +454,8 @@ extern const u8 Debug_EventScript_WallyTutorial[];
 extern const u8 Debug_EventScript_PrintTimeOfDay[];
 extern const u8 Debug_EventScript_TellTheTime[];
 extern const u8 Debug_EventScript_FakeRTCNotEnabled[];
+extern const u8 Debug_EventScript_ForceDraft[];
+extern const u8 Debug_EventScript_NoDraftPool[];
 
 extern const u8 Debug_BerryPestsDisabled[];
 extern const u8 Debug_BerryWeedsDisabled[];
@@ -623,6 +627,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Font Test…"),        DebugAction_ExecuteScript, Debug_EventScript_FontTest },
     { COMPOUND_STRING("Time Functions…"),   DebugAction_OpenSubMenu, sDebugMenu_Actions_TimeMenu, },
     { COMPOUND_STRING("NG+ Cycle…"),        DebugAction_Util_SetNewGamePlusCycle },
+    { COMPOUND_STRING("Force Draft (map)…"), DebugAction_Util_ForceDraft },
     { COMPOUND_STRING("Watch credits…"),    DebugAction_Util_WatchCredits },
     { COMPOUND_STRING("Cheat start"),       DebugAction_Util_CheatStart },
     { COMPOUND_STRING("Berry Functions…"),  DebugAction_OpenSubMenu, sDebugMenu_Actions_BerryFunctions },
@@ -2351,6 +2356,21 @@ static void DebugAction_Util_CheatStart(u8 taskId)
         Debug_DestroyMenu_Full_Script(taskId, Debug_CheatStartFrlg);
     else
         Debug_DestroyMenu_Full_Script(taskId, Debug_CheatStart);
+}
+
+// Runs the exact callnative the live offer flow uses (data/scripts/draft.inc,
+// Stage 5), so this exercises the same code path rather than a debug-only
+// shortcut. Ignores Draft_IsEnabled()/Draft_IsAreaDraftable() - this is for
+// testing the case UI (Stage 4) without walking to a fresh route or turning
+// Draft mode on first.
+static void DebugAction_Util_ForceDraft(u8 taskId)
+{
+    struct DraftChoice pool[DRAFT_MAX_CHOICES];
+
+    if (Draft_BuildPool(pool) == 0)
+        Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_NoDraftPool);
+    else
+        Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_ForceDraft);
 }
 
 static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId)

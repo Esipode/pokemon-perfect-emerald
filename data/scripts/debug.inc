@@ -832,6 +832,27 @@ Debug_EventScript_FakeRTCNotEnabled::
 Debug_EventScript_FakeRTCNotEnabled_Text_0:
 	.string "You currently do not have Fake RTC\nenabled. Please enable it in include/\lconfig/overworld.h$"
 
+@ Stage 4 test harness for the Draft case UI (src/ui_birch_case.c). Mirrors
+@ Route101_EventScript_OpenStarterCaseNoGenSelect's own fadescreen/delay/
+@ callnative/waitstate shape so Draft_StartCaseUI runs under a real,
+@ Debug_DestroyMenu_Full_Script-provided script context instead of guessing
+@ at one - see the comment on DebugAction_Util_ForceDraft.
+Debug_EventScript_ForceDraft::
+	fadescreen FADE_TO_BLACK
+	delay 30
+	callnative Draft_StartCaseUI
+	waitstate
+	releaseall
+	end
+
+Debug_EventScript_NoDraftPool::
+	msgbox Debug_EventScript_NoDraftPool_Text_0, MSGBOX_DEFAULT
+	releaseall
+	end
+
+Debug_EventScript_NoDraftPool_Text_0:
+	.string "This map has no draft pool - no land\nor water encounters here.$"
+
 
 Debug_EventScript_TellTheTime_Text_0:
 	.string "Time and date:\n"

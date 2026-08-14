@@ -7,6 +7,13 @@
 void Task_OpenBirchCase(u8 taskId);
 void BirchCase_Init(MainCallback callback);
 
+// Draft mode's entry point into this UI. callnative from data/scripts/draft.inc
+// (Draft_EventScript_RouteDraft) - mirrors Task_OpenBirchCase, but seeds the
+// case from the current map's draft pool (draft_mode.c) instead of the
+// starter choices, and queues the pick into Draft_QueuePendingMon rather than
+// handing it straight to the party.
+void Draft_StartCaseUI(void);
+
 u16 PickRandomSpecies(u8 setIndex, u8 slotIndex);
 u16 GetRandomBaseSpecies(rng_value_t *rngState);
 
