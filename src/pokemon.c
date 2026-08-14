@@ -2529,6 +2529,9 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_SPDEF_EV:
             retVal = GetSubstruct2(boxMon)->spDefenseEV;
             break;
+        case MON_DATA_RECRUIT_BATTLES:
+            retVal = GetSubstruct2(boxMon)->recruitBattles;
+            break;
 #if FREE_CONTESTS == FALSE
         case MON_DATA_COOL:
             retVal = GetSubstruct2(boxMon)->cool;
@@ -3084,6 +3087,9 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
             break;
         case MON_DATA_SPDEF_EV:
             SET8(GetSubstruct2(boxMon)->spDefenseEV);
+            break;
+        case MON_DATA_RECRUIT_BATTLES:
+            SET8(GetSubstruct2(boxMon)->recruitBattles);
             break;
 #if FREE_CONTESTS == FALSE
         case MON_DATA_COOL:

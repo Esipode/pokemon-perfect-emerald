@@ -125,6 +125,7 @@ enum MonData {
     MON_DATA_GIGANTAMAX_FACTOR,
     MON_DATA_TERA_TYPE,
     MON_DATA_EVOLUTION_TRACKER,
+    MON_DATA_RECRUIT_BATTLES,
 };
 
 // Saveblock Shrinking Stage 5: reordered (experience first) and stripped of
@@ -178,6 +179,7 @@ struct PokemonSubstruct2
     u8 speedEV;
     u8 spAttackEV;
     u8 spDefenseEV;
+    u8 recruitBattles; // Recruits mode: won trainer battles participated in. Counts to RECRUITS_MAX_BATTLES.
 #if FREE_CONTESTS == FALSE
     u8 cool;
     u8 beauty;
