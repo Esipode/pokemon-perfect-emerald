@@ -21,9 +21,10 @@ bool32 RotationMode_IsEnabled(void);
 // non-egg Pokémon that is not currently on the field.
 u32 RotationMode_PickReplacement(enum BattlerId battler);
 
-// Whether this battle allows Rotation Mode's end-turn switch at all. Always
-// TRUE for now; battle-type exclusions (link, recorded, Arena, Safari, etc.)
-// are added on top of this in a follow-up stage.
-bool32 RotationMode_IsBattleEligible(void);
+// Whether Rotation Mode's end-turn switch is allowed for this battler right now:
+// excludes link/recorded battles, Safari, Birch's rescue battle, Multi/Ingame
+// Partner battles and Frontier/Trainer Hill facilities, plus a battler that is
+// Commanded (Dondozo) or the target of Sky Drop.
+bool32 RotationMode_IsBattleEligible(enum BattlerId battler);
 
 #endif // GUARD_ROTATION_MODE_H

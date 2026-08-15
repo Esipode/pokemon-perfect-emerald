@@ -41,8 +41,27 @@ u32 RotationMode_PickReplacement(enum BattlerId battler)
     return validMons[RandomUniform(RNG_ROTATION_MODE, 0, validMonsCount - 1)];
 }
 
-// Placeholder pending battle-type exclusions (link, recorded, Arena, Safari, etc.).
-bool32 RotationMode_IsBattleEligible(void)
+// Battle types and battler states where an engine-initiated switch would desync,
+// break a scripted flow, or isn't implemented yet.
+bool32 RotationMode_IsBattleEligible(enum BattlerId battler)
 {
+    // BATTLE_TYPE_FRONTIER already covers Arena, Battle Tower, Dome, Palace,
+    // Factory, Pike and Pyramid.
+    if (gBattleTypeFlags & (BATTLE_TYPE_LINK
+                           | BATTLE_TYPE_RECORDED_LINK
+                           | BATTLE_TYPE_RECORDED
+                           | BATTLE_TYPE_SAFARI
+                           | BATTLE_TYPE_FIRST_BATTLE
+                           | BATTLE_TYPE_MULTI
+                           | BATTLE_TYPE_INGAME_PARTNER
+                           | BATTLE_TYPE_FRONTIER
+                           | BATTLE_TYPE_TRAINER_HILL))
+        return FALSE;
+
+    if (gBattleStruct->battlerState[battler].commanderSpecies != SPECIES_NONE)
+        return FALSE;
+    if (gBattleMons[battler].volatiles.semiInvulnerable == STATE_SKY_DROP_TARGET)
+        return FALSE;
+
     return TRUE;
 }

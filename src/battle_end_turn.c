@@ -1609,7 +1609,7 @@ static bool32 HandleEndTurnRotationMode(enum BattlerId battler)
         return FALSE;
     if (!IsOnPlayerSide(battler) || !IsBattlerAlive(battler))
         return FALSE;
-    if (!RotationMode_IsBattleEligible())
+    if (!RotationMode_IsBattleEligible(battler))
         return FALSE;
 
     u32 partyId = RotationMode_PickReplacement(battler);
