@@ -2620,7 +2620,6 @@ static const u8 sDefaultDynamicWeathers[] =
     WEATHER_RAIN_THUNDERSTORM,
     WEATHER_FOG_HORIZONTAL,
     WEATHER_SHADE,
-    WEATHER_DROUGHT,
     WEATHER_DOWNPOUR,
 };
 
