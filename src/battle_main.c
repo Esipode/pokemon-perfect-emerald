@@ -2058,34 +2058,62 @@ static void AssignNewGamePlusTrainerPokemonMoves(struct Pokemon *mon, u16 *moves
     }
 }
 
+// Writes a moveset to a mon, filling in the PP for each slot.
+static void SetMonMovesWithPP(struct Pokemon *mon, const u16 *moves)
+{
+    u32 j;
+
+    for (j = 0; j < MAX_MON_MOVES; ++j)
+    {
+        u32 pp = GetMovePP(moves[j]);
+        SetMonData(mon, MON_DATA_MOVE1 + j, &moves[j]);
+        SetMonData(mon, MON_DATA_PP1 + j, &pp);
+    }
+}
+
+// Gives a mon that has no authored moveset its level-up moves, then runs the
+// New Game+ upgrade pass over them. Used for Pokemon New Game+ generates
+// itself, which have no trainer data to draw moves from.
+static void AssignNewGamePlusGeneratedMoves(struct Pokemon *mon)
+{
+    u16 moves[MAX_MON_MOVES];
+    u32 j;
+
+    GiveMonInitialMoveset(mon);
+    for (j = 0; j < MAX_MON_MOVES; ++j)
+        moves[j] = GetMonData(mon, MON_DATA_MOVE1 + j, NULL);
+
+    AssignNewGamePlusTrainerPokemonMoves(mon, moves);
+    SetMonMovesWithPP(mon, moves);
+}
+
 void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon *partyEntry)
 {
     bool32 noMoveSet = TRUE;
     u32 j;
     u16 assignedMoves[MAX_MON_MOVES];
-    
-    if (gSaveBlock2Ptr->newGamePlus > 0)
-        AssignNewGamePlusTrainerPokemonMoves(mon, assignedMoves);
 
     for (j = 0; j < MAX_MON_MOVES; ++j)
     {
-        if (partyEntry->moves[j] != MOVE_NONE)
-            noMoveSet = FALSE;
         assignedMoves[j] = partyEntry->moves[j];
+        if (assignedMoves[j] != MOVE_NONE)
+            noMoveSet = FALSE;
     }
+
     if (noMoveSet)
     {
-        GiveMonInitialMoveset(mon);
         // TODO: Figure out a default strategy when moves are not set, to generate a good moveset
+        if (gSaveBlock2Ptr->newGamePlus > 0)
+            AssignNewGamePlusGeneratedMoves(mon);
+        else
+            GiveMonInitialMoveset(mon);
         return;
     }
 
-    for (j = 0; j < MAX_MON_MOVES; ++j)
-    {
-        u32 pp = GetMovePP(assignedMoves[j]);
-        SetMonData(mon, MON_DATA_MOVE1 + j, &assignedMoves[j]);
-        SetMonData(mon, MON_DATA_PP1 + j, &pp);
-    }
+    if (gSaveBlock2Ptr->newGamePlus > 0)
+        AssignNewGamePlusTrainerPokemonMoves(mon, assignedMoves);
+
+    SetMonMovesWithPP(mon, assignedMoves);
 }
 
 static u16 GetMegaStoneForSpecies(u16 species)
@@ -2269,511 +2297,609 @@ static void SetTrainerMonEVsByHighestBaseStats(struct Pokemon *mon, u16 species)
         SetMonData(mon, MON_DATA_HP_EV + i, &evs[i]);
 }
 
+// ============================================================================
+// New Game+ party generation
+//
+// On New Game+ a trainer's party is strengthened in three ways:
+//   - every Pokemon is pushed to its final evolution and levelled up,
+//   - the trainer gains one extra Pokemon per New Game+ cycle,
+//   - once the party is full, further additions replace the weakest members.
+//
+// Generated Pokemon follow the trainer's type theme (see
+// sTrainerClassThemeTypes) and have a small chance to roll a legendary.
+// ============================================================================
+
+// Marks a class whose theme differs from trainer to trainer, so it is read off
+// that trainer's own party rather than fixed here.
+#define THEME_TYPE_FROM_PARTY   TYPE_MYSTERY
+
+// Trainer classes whose parties in src/data/trainers.party clearly favour one
+// type. Generated Pokemon for these classes are drawn from that type, so a
+// Fisherman stays a Fisherman no matter what its authored party looks like.
+// Classes that are mixed by design (Cooltrainer, Leader, Rival, Champion, the
+// evil teams, ...) are deliberately absent and generate any type at all.
+static const u8 sTrainerClassThemeTypes[TRAINER_CLASS_COUNT] =
+{
+    [TRAINER_CLASS_AROMA_LADY]   = TYPE_GRASS,
+    [TRAINER_CLASS_BATTLE_GIRL]  = TYPE_FIGHTING,
+    [TRAINER_CLASS_BEAUTY]       = TYPE_WATER,
+    [TRAINER_CLASS_BIRD_KEEPER]  = TYPE_FLYING,
+    [TRAINER_CLASS_BLACK_BELT]   = TYPE_FIGHTING,
+    [TRAINER_CLASS_BUG_CATCHER]  = TYPE_BUG,
+    [TRAINER_CLASS_BUG_MANIAC]   = TYPE_BUG,
+    [TRAINER_CLASS_COLLECTOR]    = TYPE_GRASS,
+    [TRAINER_CLASS_DRAGON_TAMER] = TYPE_DRAGON,
+    // Each Elite Four member specialises in a different type.
+    [TRAINER_CLASS_ELITE_FOUR]   = THEME_TYPE_FROM_PARTY,
+    [TRAINER_CLASS_EXPERT]       = TYPE_FIGHTING,
+    [TRAINER_CLASS_FISHERMAN]    = TYPE_WATER,
+    [TRAINER_CLASS_GUITARIST]    = TYPE_ELECTRIC,
+    [TRAINER_CLASS_HEX_MANIAC]   = TYPE_GHOST,
+    [TRAINER_CLASS_HIKER]        = TYPE_ROCK,
+    [TRAINER_CLASS_KINDLER]      = TYPE_FIRE,
+    [TRAINER_CLASS_NINJA_BOY]    = TYPE_POISON,
+    [TRAINER_CLASS_OLD_COUPLE]   = TYPE_FIGHTING,
+    [TRAINER_CLASS_PKMN_RANGER]  = TYPE_GRASS,
+    [TRAINER_CLASS_POKEMANIAC]   = TYPE_ROCK,
+    [TRAINER_CLASS_PSYCHIC]      = TYPE_PSYCHIC,
+    [TRAINER_CLASS_RICH_BOY]     = TYPE_NORMAL,
+    [TRAINER_CLASS_RUIN_MANIAC]  = TYPE_GROUND,
+    [TRAINER_CLASS_SAILOR]       = TYPE_WATER,
+    [TRAINER_CLASS_SIS_AND_BRO]  = TYPE_WATER,
+    [TRAINER_CLASS_SWIMMER_F]    = TYPE_WATER,
+    [TRAINER_CLASS_SWIMMER_M]    = TYPE_WATER,
+    [TRAINER_CLASS_TUBER_F]      = TYPE_WATER,
+    [TRAINER_CLASS_TWINS]        = TYPE_ELECTRIC,
+    [TRAINER_CLASS_YOUNG_COUPLE] = TYPE_BUG,
+};
+
+// Limits on reading a theme off a party, which only applies to
+// THEME_TYPE_FROM_PARTY classes. A party smaller than this says nothing about
+// a theme, and one type has to make up this fraction of it to count. Classes
+// with a type listed above are not subject to either check.
+#define NGP_THEME_MIN_PARTY_SIZE    3
+#define NGP_THEME_MAJORITY_NUM      2
+#define NGP_THEME_MAJORITY_DEN      3
+
+// Chance, in percent, that a generated Pokemon rolls a legendary instead of an
+// ordinary species. Grows with each New Game+ cycle up to a cap.
+#define NGP_LEGENDARY_CHANCE_PER_CYCLE  3
+#define NGP_LEGENDARY_CHANCE_MAX       30
+
+// Random draws tried before falling back to a sweep of the whole species list.
+#define NGP_FILL_RANDOM_ATTEMPTS      100
+
+// Running state for one trainer's New Game+ additions. Sharing a single RNG
+// stream and species list across replacements and extra Pokemon keeps every
+// addition distinct from the rest of the party.
+struct NewGamePlusFill
+{
+    rng_value_t rng;
+    enum Type themeType;
+    u16 usedSpecies[PARTY_SIZE];
+    u8 usedCount;
+};
+
+// One relaxation step of the species search. Constraints are dropped in order
+// so a slot is never left empty just because the theme has no candidates left.
+struct NewGamePlusFillPass
+{
+    bool8 requireLegendary;
+    bool8 requireTheme;
+};
+
+static bool32 SpeciesHasType(u16 species, enum Type type)
+{
+    return gSpeciesInfo[species].types[0] == type || gSpeciesInfo[species].types[1] == type;
+}
+
+// Reads a theme off a party by counting both types of every member. Returns
+// TYPE_NONE unless the party is large enough and one type is a clear majority.
+static enum Type GetPartyThemeType(const u16 *species, u32 count)
+{
+    u8 typeCounts[NUMBER_OF_MON_TYPES] = {0};
+    enum Type bestType = TYPE_NONE;
+    u32 bestCount = 0;
+    u32 i;
+
+    if (count < NGP_THEME_MIN_PARTY_SIZE)
+        return TYPE_NONE;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Type primary = gSpeciesInfo[species[i]].types[0];
+        enum Type secondary = gSpeciesInfo[species[i]].types[1];
+
+        typeCounts[primary]++;
+        if (secondary != primary && secondary != TYPE_NONE)
+            typeCounts[secondary]++;
+    }
+
+    for (i = TYPE_NORMAL; i < NUMBER_OF_MON_TYPES; i++)
+    {
+        if (i != TYPE_MYSTERY && typeCounts[i] > bestCount)
+        {
+            bestCount = typeCounts[i];
+            bestType = (enum Type)i;
+        }
+    }
+
+    if (bestCount * NGP_THEME_MAJORITY_DEN < count * NGP_THEME_MAJORITY_NUM)
+        return TYPE_NONE;
+
+    return bestType;
+}
+
+// The trainer's class decides the theme, since that is what the authored
+// parties consistently favour. A class with no entry has no theme at all and
+// generates freely.
+static enum Type GetTrainerThemeType(const struct Trainer *trainer, const u16 *species, u32 count)
+{
+    enum Type themeType;
+
+    if (trainer->trainerClass >= TRAINER_CLASS_COUNT)
+        return TYPE_NONE;
+
+    themeType = sTrainerClassThemeTypes[trainer->trainerClass];
+    if (themeType == THEME_TYPE_FROM_PARTY)
+        return GetPartyThemeType(species, count);
+
+    return themeType;
+}
+
+static bool32 IsNewGamePlusLegendarySpecies(u16 species)
+{
+    const struct SpeciesInfo *info = &gSpeciesInfo[species];
+
+    return info->isRestrictedLegendary || info->isSubLegendary || info->isMythical
+        || info->isUltraBeast || info->isParadox;
+}
+
+// Excludes forms that are only ever reached through an in-battle transformation
+// or a special encounter, plus species this build has compiled out.
+static bool32 IsNewGamePlusFillableSpecies(u16 species)
+{
+    const struct SpeciesInfo *info = &gSpeciesInfo[species];
+
+    return info->baseHP != 0
+        && !info->isTotem && !info->isGigantamax && !info->isTeraForm
+        && !info->isMegaEvolution && !info->isPrimalReversion && !info->isUltraBurst;
+}
+
+static bool32 IsValidNewGamePlusFillSpecies(u16 species, enum Type themeType, const struct NewGamePlusFill *fill, bool32 requireLegendary)
+{
+    bool32 isLegendary;
+    u32 i;
+
+    if (species == SPECIES_NONE || !IsNewGamePlusFillableSpecies(species))
+        return FALSE;
+
+    isLegendary = IsNewGamePlusLegendarySpecies(species);
+    if (requireLegendary ? !isLegendary : isLegendary)
+        return FALSE;
+    if (themeType != TYPE_NONE && !SpeciesHasType(species, themeType))
+        return FALSE;
+
+    for (i = 0; i < fill->usedCount; i++)
+    {
+        if (fill->usedSpecies[i] == species)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void AddNewGamePlusFillPass(struct NewGamePlusFillPass *passes, u8 *passCount, bool8 requireLegendary, bool8 requireTheme)
+{
+    passes[*passCount].requireLegendary = requireLegendary;
+    passes[*passCount].requireTheme = requireTheme;
+    (*passCount)++;
+}
+
+// Picks one Pokemon for a New Game+ slot and records it, so later slots cannot
+// pick it again. Only returns SPECIES_NONE if no species at all is available.
+static u16 TakeNewGamePlusFillSpecies(struct NewGamePlusFill *fill)
+{
+    struct NewGamePlusFillPass passes[4];
+    u32 legendaryChance = gSaveBlock2Ptr->newGamePlus * NGP_LEGENDARY_CHANCE_PER_CYCLE;
+    bool32 wantLegendary;
+    u8 passCount = 0;
+    u32 pass, i;
+
+    if (legendaryChance > NGP_LEGENDARY_CHANCE_MAX)
+        legendaryChance = NGP_LEGENDARY_CHANCE_MAX;
+    wantLegendary = (LocalRandom(&fill->rng) % 100) < legendaryChance;
+
+    // A legendary keeps the theme first and drops it second; only after that is
+    // the legendary itself given up on.
+    if (wantLegendary)
+    {
+        if (fill->themeType != TYPE_NONE)
+            AddNewGamePlusFillPass(passes, &passCount, TRUE, TRUE);
+        AddNewGamePlusFillPass(passes, &passCount, TRUE, FALSE);
+    }
+    if (fill->themeType != TYPE_NONE)
+        AddNewGamePlusFillPass(passes, &passCount, FALSE, TRUE);
+    AddNewGamePlusFillPass(passes, &passCount, FALSE, FALSE);
+
+    for (pass = 0; pass < passCount; pass++)
+    {
+        enum Type passTheme = passes[pass].requireTheme ? fill->themeType : TYPE_NONE;
+        bool32 requireLegendary = passes[pass].requireLegendary;
+        u16 sweepStart;
+
+        for (i = 0; i < NGP_FILL_RANDOM_ATTEMPTS; i++)
+        {
+            u16 candidate = GetFinalEvolution(GetRandomBaseSpecies(&fill->rng));
+
+            if (IsValidNewGamePlusFillSpecies(candidate, passTheme, fill, requireLegendary))
+            {
+                fill->usedSpecies[fill->usedCount++] = candidate;
+                return candidate;
+            }
+        }
+
+        // Sweep every base species, starting at a random point so a rare theme
+        // does not always settle on the same low-numbered Pokemon.
+        sweepStart = LocalRandom(&fill->rng) % (NUM_SPECIES - 1);
+        for (i = 0; i < NUM_SPECIES - 1; i++)
+        {
+            u16 base = ((sweepStart + i) % (NUM_SPECIES - 1)) + 1;
+            u16 candidate;
+
+            if (GET_BASE_SPECIES_ID(base) != base)
+                continue;
+
+            candidate = GetFinalEvolution(base);
+            if (IsValidNewGamePlusFillSpecies(candidate, passTheme, fill, requireLegendary))
+            {
+                fill->usedSpecies[fill->usedCount++] = candidate;
+                return candidate;
+            }
+        }
+    }
+
+    return SPECIES_NONE;
+}
+
+// Orders positions 0..count-1 by the base stat total of the species each one
+// refers to. Stable, so equal totals keep their party order.
+static void SortTrainerMonsByBaseStatTotal(const struct Trainer *trainer, const u32 *monIndices, u32 count, bool32 weakestFirst, u8 *outOrder)
+{
+    u32 totals[PARTY_SIZE];
+    u32 i, j;
+
+    for (i = 0; i < count; i++)
+    {
+        totals[i] = GetSpeciesBaseStatTotal(trainer->party[monIndices[i]].species);
+        outOrder[i] = i;
+    }
+
+    for (i = 1; i < count; i++)
+    {
+        u8 moving = outOrder[i];
+
+        for (j = i; j > 0; j--)
+        {
+            u32 previous = totals[outOrder[j - 1]];
+
+            if (weakestFirst ? (previous <= totals[moving]) : (previous >= totals[moving]))
+                break;
+            outOrder[j] = outOrder[j - 1];
+        }
+        outOrder[j] = moving;
+    }
+}
+
+// New Game+ adds one Pokemon per cycle. Whatever does not fit in the party
+// instead replaces that many of the trainer's weakest Pokemon.
+static u8 GetNewGamePlusReplacementCount(u8 monsCount, u8 maxPartySize)
+{
+    u32 grownSize = (u32)monsCount + gSaveBlock2Ptr->newGamePlus;
+
+    if (grownSize <= maxPartySize)
+        return 0;
+
+    return min(grownSize - maxPartySize, monsCount);
+}
+
+// Moves the bits belonging to the ace slots along with them, so the Terastal
+// and Dynamax masks keep pointing at the Pokemon they were set for.
+static u32 ShiftAceSlotMask(u32 mask, u8 firstAce, u8 numAces, u8 shift)
+{
+    u32 aceBits = (mask >> firstAce) & ((1 << numAces) - 1);
+
+    mask &= ~(((1 << numAces) - 1) << firstAce);
+    return mask | (aceBits << (firstAce + shift));
+}
+
+// Appends New Game+ Pokemon to the end of an already-built party, keeping any
+// ace Pokemon last so they are still sent out at the end of the battle.
+static u8 AddNewGamePlusExtraMons(struct Pokemon *party, const struct Trainer *trainer, struct NewGamePlusFill *fill, u8 monsCount, u8 maxPartySize)
+{
+    u8 extraCount, numAces, i;
+    u16 level;
+
+    if (monsCount == 0 || monsCount >= maxPartySize)
+        return 0;
+
+    extraCount = min(gSaveBlock2Ptr->newGamePlus, maxPartySize - monsCount);
+
+    if (trainer->aiFlags & AI_FLAG_DOUBLE_ACE_POKEMON)
+        numAces = 2;
+    else if (trainer->aiFlags & AI_FLAG_ACE_POKEMON)
+        numAces = 1;
+    else
+        numAces = 0;
+    numAces = min(numAces, monsCount);
+
+    // Match the level of the Pokemon that used to be sent out last.
+    level = GetMonData(&party[monsCount - 1], MON_DATA_LEVEL, NULL);
+
+    // Slide the aces to the back of the grown party, highest slot first because
+    // the source and destination ranges overlap when extraCount < numAces.
+    for (i = 1; i <= numAces; i++)
+        party[monsCount + extraCount - i] = party[monsCount - i];
+
+    if (numAces > 0)
+    {
+        gBattleStruct->opponentMonCanTera = ShiftAceSlotMask(gBattleStruct->opponentMonCanTera, monsCount - numAces, numAces, extraCount);
+        gBattleStruct->opponentMonCanDynamax = ShiftAceSlotMask(gBattleStruct->opponentMonCanDynamax, monsCount - numAces, numAces, extraCount);
+    }
+
+    for (i = 0; i < extraCount; i++)
+    {
+        u8 slot = monsCount - numAces + i;
+        u16 species = TakeNewGamePlusFillSpecies(fill);
+
+        // Only reachable if no species at all is left; repeat the lead instead
+        // of leaving a hole in the middle of the party.
+        if (species == SPECIES_NONE)
+            species = GetMonData(&party[0], MON_DATA_SPECIES, NULL);
+
+        CreateMon(&party[slot], species, level, Random32(), OTID_STRUCT_RANDOM_NO_SHINY);
+        SetTrainerMonEVsByHighestBaseStats(&party[slot], species);
+        CalculateMonStats(&party[slot]);
+        AssignNewGamePlusGeneratedMoves(&party[slot]);
+    }
+
+    return extraCount;
+}
+
 u8 CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer, bool32 firstTrainer, u32 battleTypeFlags)
 {
-    u32 personalityValue;
-    u8 monsCount = 0;
-    u8 startIndex = 0;
-    u8 actualCount = 0;
-    u8 maxPartySize = PARTY_SIZE;
-    bool isNGPlus = gSaveBlock2Ptr->newGamePlus > 0;
+    const struct TrainerMon *partyData = trainer->party;
+    u32 monIndices[PARTY_SIZE];
+    u16 partySpecies[PARTY_SIZE];
+    bool8 isReplaced[PARTY_SIZE] = {0};
+    struct NewGamePlusFill fill = {0};
+    bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0;
+    u8 replaceCount = 0;
+    u8 monsCount;
+    u8 maxPartySize;
+    u32 seed = 0;
+    s32 i;
 
-    if (maxPartySize > PARTY_SIZE)
-        maxPartySize = PARTY_SIZE;
+    // Facility battles build their parties elsewhere and must not be touched.
+    if (!(battleTypeFlags & BATTLE_TYPE_TRAINER)
+     || (battleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_EREADER_TRAINER | BATTLE_TYPE_TRAINER_HILL)))
+        return 0;
 
-    if (battleTypeFlags & BATTLE_TYPE_TRAINER && !(battleTypeFlags & (BATTLE_TYPE_FRONTIER
-                                                                        | BATTLE_TYPE_EREADER_TRAINER
-                                                                        | BATTLE_TYPE_TRAINER_HILL)))
+    // When a side is shared by two trainers the battle engine only ever draws
+    // the first half of each party, so that is the real size limit here.
+    maxPartySize = firstTrainer ? MULTI_PARTY_SIZE : PARTY_SIZE;
+
+    ZeroPartyMons(party);
+
+    monsCount = min(trainer->partySize, maxPartySize);
+    if (monsCount == 0)
+        return 0;
+
+    DoTrainerPartyPool(trainer, monIndices, monsCount, battleTypeFlags);
+
+    if (isNGPlus)
     {
-        ZeroPartyMons(party);
+        u8 weakestFirst[PARTY_SIZE];
 
-        if (firstTrainer)
+        // The theme comes from the trainer as authored, so replacing members
+        // later cannot drag it away from what the trainer is meant to be.
+        for (i = 0; i < monsCount; i++)
         {
-            if (trainer->partySize > PARTY_SIZE / 2)
-                monsCount = PARTY_SIZE / 2;
-            else
-                monsCount = trainer->partySize;
+            partySpecies[i] = GetFinalEvolution(partyData[monIndices[i]].species);
+            seed += partySpecies[i];
+        }
+        fill.themeType = GetTrainerThemeType(trainer, partySpecies, monsCount);
+        fill.rng = LocalRandomSeed(GetTrainerId(gSaveBlock2Ptr->playerTrainerId) + seed + GetNewGamePlusLevelOffset());
+
+        replaceCount = GetNewGamePlusReplacementCount(monsCount, maxPartySize);
+        SortTrainerMonsByBaseStatTotal(trainer, monIndices, monsCount, TRUE, weakestFirst);
+        for (i = 0; i < replaceCount; i++)
+            isReplaced[weakestFirst[i]] = TRUE;
+
+        // Everything the trainer keeps is off-limits to generated Pokemon.
+        for (i = 0; i < monsCount; i++)
+        {
+            if (!isReplaced[i])
+                fill.usedSpecies[fill.usedCount++] = partySpecies[i];
+        }
+    }
+
+    for (i = 0; i < monsCount; i++)
+    {
+        u32 monIndex = monIndices[i];
+        u32 personalityHash = GeneratePartyHash(trainer, i);
+        struct OriginalTrainerId otId = OTID_STRUCT_RANDOM_NO_SHINY;
+        u32 personalityValue;
+        u32 abilityNum = 0;
+        s32 ball = -1;
+        u16 species;
+        u16 level;
+        s8 levelAdjustment;
+
+        if (isReplaced[i])
+        {
+            species = TakeNewGamePlusFillSpecies(&fill);
+            if (species == SPECIES_NONE)     // No species left to draw from.
+                species = GetFinalEvolution(partyData[monIndex].species);
         }
         else
         {
-            monsCount = trainer->partySize;
-        }
-
-        // New Game+: Handle two-opponent battles with party size capping
-        if (battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && isNGPlus)
-        {
-            if (monsCount > maxPartySize / 2)
-                monsCount = maxPartySize / 2;
-        }
-        else if (!firstTrainer && monsCount > maxPartySize)
-        {
-            monsCount = maxPartySize;
-        }
-
-        u32 monIndices[monsCount];
-        DoTrainerPartyPool(trainer, monIndices, monsCount, battleTypeFlags);
-
-        // New Game+: For second trainer in two-opponent, trim weakest if over capacity
-        if (battleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS && !firstTrainer && isNGPlus)
-        {
-            for (startIndex = 0; startIndex < maxPartySize; startIndex++)
-            {
-                if (GetMonData(&party[startIndex], MON_DATA_SPECIES, NULL) == SPECIES_NONE)
-                    break;
-            }
-            if (startIndex + monsCount > maxPartySize)
-            {
-                u8 keepCount = maxPartySize - startIndex;
-                struct MonEntry {
-                    u32 idx;
-                    u32 total;
-                } entries[PARTY_SIZE];
-
-                for (u8 j = 0; j < monsCount; j++)
-                {
-                    u16 species = trainer->party[monIndices[j]].species;
-                    entries[j].idx = j;
-                    entries[j].total = gSpeciesInfo[species].baseHP + gSpeciesInfo[species].baseAttack + gSpeciesInfo[species].baseDefense + gSpeciesInfo[species].baseSpeed + gSpeciesInfo[species].baseSpAttack + gSpeciesInfo[species].baseSpDefense;
-                }
-
-                // Bubble sort by total stats descending (strongest first)
-                for (u8 a = 0; a + 1 < monsCount; a++)
-                {
-                    for (u8 b = 0; b + 1 < monsCount - a; b++)
-                    {
-                        if (entries[b].total < entries[b + 1].total || (entries[b].total == entries[b + 1].total && entries[b].idx > entries[b + 1].idx))
-                        {
-                            struct MonEntry temp = entries[b];
-                            entries[b] = entries[b + 1];
-                            entries[b + 1] = temp;
-                        }
-                    }
-                }
-
-                for (u8 j = 0; j < keepCount; j++)
-                {
-                    monIndices[j] = monIndices[entries[j].idx];
-                }
-                monsCount = keepCount;
-            }
-        }
-
-        // New Game+: Determine theme type and which mons to replace
-        bool to_replace[PARTY_SIZE] = {};
-        u8 themeType = TYPE_MYSTERY;
-        if (isNGPlus)
-        {
-            u32 effective_size = trainer->partySize + gSaveBlock2Ptr->newGamePlus;
-            u32 num_to_replace = 0;
-
-            // Count type frequencies for theme detection
-            u8 typeCounts[NUMBER_OF_MON_TYPES] = {0};
-            u8 maxCount = 0;
-            for (u32 i = 0; i < monsCount; i++)
-            {
-                u16 species = GetFinalEvolution(trainer->party[monIndices[i]].species);
-                u8 type = GetMonPrimaryType(species);
-                typeCounts[type]++;
-                if (typeCounts[type] > maxCount)
-                {
-                    maxCount = typeCounts[type];
-                    themeType = type;
-                }
-            }
-
-            // Calculate how many mons to replace with NG+ additions
-            if (effective_size > maxPartySize)
-            {
-                num_to_replace = effective_size - maxPartySize;
-                if (num_to_replace > maxPartySize)
-                    num_to_replace = maxPartySize;
-            }
-
-            // Select weakest mons for replacement via stat total
-            if (num_to_replace > 0)
-            {
-                typedef struct {
-                    u32 index;
-                    u32 total;
-                } StatEntry;
-                StatEntry stats[PARTY_SIZE];
-                for (u32 i = 0; i < monsCount; i++)
-                {
-                    u16 species = trainer->party[monIndices[i]].species;
-                    u32 total = gSpeciesInfo[species].baseHP + gSpeciesInfo[species].baseAttack + gSpeciesInfo[species].baseDefense + gSpeciesInfo[species].baseSpeed + gSpeciesInfo[species].baseSpAttack + gSpeciesInfo[species].baseSpDefense;
-                    stats[i].index = i;
-                    stats[i].total = total;
-                }
-                // Bubble sort by total ascending (weakest first)
-                for (u32 i = 0; i < monsCount - 1; i++)
-                {
-                    for (u32 j = 0; j < monsCount - i - 1; j++)
-                    {
-                        if (stats[j].total > stats[j+1].total)
-                        {
-                            StatEntry temp = stats[j];
-                            stats[j] = stats[j+1];
-                            stats[j+1] = temp;
-                        }
-                    }
-                }
-                u32 replace_count = num_to_replace < monsCount ? num_to_replace : monsCount;
-                for (u32 k = 0; k < replace_count; k++)
-                {
-                    to_replace[stats[k].index] = true;
-                }
-            }
-        }
-
-        for (s32 i = 0; i < monsCount; i++)
-        {
-            u32 monIndex = monIndices[i];
-            s32 ball = -1;
-            u32 personalityHash = GeneratePartyHash(trainer, i);
-            const struct TrainerMon *partyData = trainer->party;
-            struct OriginalTrainerId otId = OTID_STRUCT_RANDOM_NO_SHINY;
-            u32 abilityNum = 0;
-
-            if (trainer->battleType != TRAINER_BATTLE_TYPE_SINGLES)
-                personalityValue = 0x80;
-            else if (trainer->gender == TRAINER_GENDER_FEMALE)
-                personalityValue = 0x78; // Use personality more likely to result in a female Pokémon
-            else
-                personalityValue = 0x88; // Use personality more likely to result in a male Pokémon
-
-            personalityValue += personalityHash << 8;
-            if (partyData[monIndex].gender == TRAINER_MON_MALE)
-                personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(MON_MALE, partyData[monIndex].species);
-            else if (partyData[monIndex].gender == TRAINER_MON_FEMALE)
-                personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(MON_FEMALE, partyData[monIndex].species);
-            else if (partyData[monIndex].gender == TRAINER_MON_RANDOM_GENDER)
-                personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(Random() & 1 ? MON_MALE : MON_FEMALE, partyData[monIndex].species);
-            ModifyPersonalityForNature(&personalityValue, partyData[monIndex].nature);
-            if (partyData[monIndex].isShiny)
-            {
-                otId.method = OT_ID_PRESET;
-                otId.value = HIHALF(personalityValue) ^ LOHALF(personalityValue);
-            }
-
-            // New Game+: Determine species (randomized or original)
-            u16 species;
-            if (to_replace[i] && isNGPlus)
-            {
-                u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-                rng_value_t rngState = LocalRandomSeed(trainerId + monIndex + GetNewGamePlusLevelOffset());
-                u32 attempts = 0;
-                do
-                {
-                    species = LocalRandom(&rngState) % NUM_SPECIES;
-                    u16 speciesFinal = GetFinalEvolution(species);
-                    if (gSpeciesInfo[species].isSubLegendary || gSpeciesInfo[species].isMythical || gSpeciesInfo[species].isParadox)
-                    {
-                        // Allow legendaries/mythicals/paradox only if they match theme
-                        if (themeType == TYPE_MYSTERY || GetMonPrimaryType(speciesFinal) == themeType)
-                            break;
-                    }
-                    attempts++;
-                    if (attempts > 500 && themeType != TYPE_MYSTERY)
-                        themeType = TYPE_MYSTERY;
-                } while (TRUE);
-            }
-            else
-            {
-                species = partyData[monIndex].species;
-            }
-
-            // Apply New Game+ evolution to final form
+            species = partyData[monIndex].species;
             if (isNGPlus)
                 species = GetFinalEvolution(species);
+        }
 
-            // New Game+: Difficulty-based level adjustment + NG+ level offset
-            u16 baseLevel = partyData[monIndex].lvl;
-            s8 adjustment = GetDifficultyLevelAdjustment(baseLevel, gSaveBlock1Ptr->difficulty);
-            u16 newLevel = baseLevel + adjustment;
-            newLevel = min((u32)newLevel + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+        if (trainer->battleType != TRAINER_BATTLE_TYPE_SINGLES)
+            personalityValue = 0x80;
+        else if (trainer->gender == TRAINER_GENDER_FEMALE)
+            personalityValue = 0x78; // Use personality more likely to result in a female Pokémon
+        else
+            personalityValue = 0x88; // Use personality more likely to result in a male Pokémon
 
-            if (newLevel < 1)
-                newLevel = 1;
-            else if (newLevel > MAX_LEVEL)
-                newLevel = MAX_LEVEL;
+        personalityValue += personalityHash << 8;
+        if (partyData[monIndex].gender == TRAINER_MON_MALE)
+            personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(MON_MALE, species);
+        else if (partyData[monIndex].gender == TRAINER_MON_FEMALE)
+            personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(MON_FEMALE, species);
+        else if (partyData[monIndex].gender == TRAINER_MON_RANDOM_GENDER)
+            personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(Random() & 1 ? MON_MALE : MON_FEMALE, species);
+        ModifyPersonalityForNature(&personalityValue, partyData[monIndex].nature);
+        if (partyData[monIndex].isShiny)
+        {
+            otId.method = OT_ID_PRESET;
+            otId.value = HIHALF(personalityValue) ^ LOHALF(personalityValue);
+        }
 
-            CreateMon(&party[i], species, newLevel, personalityValue, otId);
+        levelAdjustment = GetDifficultyLevelAdjustment(partyData[monIndex].lvl, gSaveBlock1Ptr->difficulty);
+        level = min((u32)partyData[monIndex].lvl + levelAdjustment + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+        if (level < 1)
+            level = 1;
+
+        CreateMon(&party[i], species, level, personalityValue, otId);
+
+        // A replaced Pokemon has nothing to do with the authored held item, so
+        // it is left empty for the New Game+ item roll to fill in.
+        if (!isReplaced[i])
             SetMonData(&party[i], MON_DATA_HELD_ITEM, &partyData[monIndex].heldItem);
 
-            // New Game+: Apply hold item modifications
-            if (isNGPlus)
-            {
-                u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-                rng_value_t holdItemRngState = LocalRandomSeed(trainerId + monIndex + GetNewGamePlusLevelOffset());
-                ApplyNewGamePlusHoldItem(&party[i], species, &holdItemRngState);
-            }
+        if (isNGPlus)
+        {
+            rng_value_t holdItemRng = LocalRandomSeed(GetTrainerId(gSaveBlock2Ptr->playerTrainerId) + monIndex + GetNewGamePlusLevelOffset());
 
-            // New Game+: Set EVs by highest base stats
-            if (isNGPlus)
-                SetTrainerMonEVsByHighestBaseStats(&party[i], species);
+            ApplyNewGamePlusHoldItem(&party[i], species, &holdItemRng);
+            SetTrainerMonEVsByHighestBaseStats(&party[i], species);
+        }
 
-            // Always store the trainer's true original moveset here. Move
-            // randomization (FLAG_RANDOMIZE_MOVES) is applied later, once,
-            // when the mon enters battle (see DoBattleIntro) via the shared
-            // resolver - resolving here too would double-randomize, since
-            // this data gets read back as "original" at that point.
+        // Always store the trainer's true original moveset here. Move
+        // randomization (FLAG_RANDOMIZE_MOVES) is applied later, once,
+        // when the mon enters battle (see DoBattleIntro) via the shared
+        // resolver - resolving here too would double-randomize, since
+        // this data gets read back as "original" at that point.
+        if (isReplaced[i])
+            AssignNewGamePlusGeneratedMoves(&party[i]);
+        else
             CustomTrainerPartyAssignMoves(&party[i], &partyData[monIndex]);
 
-            // IVs and EVs (only if not randomizing)
-            if (!FlagGet(FLAG_RANDOMIZE_MON))
+        // IVs and EVs (only if not randomizing)
+        if (!FlagGet(FLAG_RANDOMIZE_MON))
+        {
+            SetMonData(&party[i], MON_DATA_IVS, &(partyData[monIndex].iv));
+            if (partyData[monIndex].ev != NULL)
             {
-                SetMonData(&party[i], MON_DATA_IVS, &(partyData[monIndex].iv));
-                if (partyData[monIndex].ev != NULL)
-                {
-                    SetMonData(&party[i], MON_DATA_HP_EV, &(partyData[monIndex].ev[0]));
-                    SetMonData(&party[i], MON_DATA_ATK_EV, &(partyData[monIndex].ev[1]));
-                    SetMonData(&party[i], MON_DATA_DEF_EV, &(partyData[monIndex].ev[2]));
-                    SetMonData(&party[i], MON_DATA_SPATK_EV, &(partyData[monIndex].ev[3]));
-                    SetMonData(&party[i], MON_DATA_SPDEF_EV, &(partyData[monIndex].ev[4]));
-                    SetMonData(&party[i], MON_DATA_SPEED_EV, &(partyData[monIndex].ev[5]));
-                }
-            }
-
-            // Ability handling
-            if (partyData[monIndex].ability != ABILITY_NONE)
-            {
-                const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[partyData[monIndex].species];
-                u32 maxAbilityNum = ARRAY_COUNT(speciesInfo->abilities);
-                for (abilityNum = 0; abilityNum < maxAbilityNum; ++abilityNum)
-                {
-                    if (speciesInfo->abilities[abilityNum] == partyData[monIndex].ability)
-                        break;
-                }
-                assertf(abilityNum < maxAbilityNum, "illegal ability %S for %S", gAbilitiesInfo[partyData[monIndex].ability].name, speciesInfo->speciesName);
-            }
-            else if (B_TRAINER_MON_RANDOM_ABILITY)
-            {
-                const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[partyData[monIndex].species];
-                abilityNum = personalityHash % 3;
-                while (speciesInfo->abilities[abilityNum] == ABILITY_NONE)
-                {
-                    abilityNum--;
-                }
-            }
-            SetMonData(&party[i], MON_DATA_ABILITY_NUM, &abilityNum);
-            SetMonData(&party[i], MON_DATA_FRIENDSHIP, &(partyData[monIndex].friendship));
-
-            // Ball handling
-            if (partyData[monIndex].ball < POKEBALL_COUNT)
-            {
-                ball = partyData[monIndex].ball;
-                SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
-            }
-
-            // Nickname
-            if (partyData[monIndex].nickname != NULL)
-            {
-                SetMonData(&party[i], MON_DATA_NICKNAME, partyData[monIndex].nickname);
-            }
-
-            // Shiny flag
-            if (partyData[monIndex].isShiny)
-            {
-                bool32 data = TRUE;
-                SetMonData(&party[i], MON_DATA_IS_SHINY, &data);
-            }
-
-            // Dynamax level
-            if (partyData[monIndex].dynamaxLevel > 0)
-            {
-                u32 data = partyData[monIndex].dynamaxLevel;
-                if (partyData[monIndex].shouldUseDynamax)
-                    gBattleStruct->opponentMonCanDynamax |= 1 << i;
-                SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &data);
-            }
-
-            // Gigantamax factor
-            if (partyData[monIndex].gigantamaxFactor)
-            {
-                u32 data = partyData[monIndex].gigantamaxFactor;
-                SetMonData(&party[i], MON_DATA_GIGANTAMAX_FACTOR, &data);
-            }
-
-            // Tera type (only if not randomizing types)
-            if (partyData[monIndex].teraType > 0 && !FlagGet(FLAG_RANDOMIZE_TYPE))
-            {
-                gBattleStruct->opponentMonCanTera |= 1 << i;
-                enum Type data = partyData[monIndex].teraType;
-                SetMonData(&party[i], MON_DATA_TERA_TYPE, &data);
-            }
-
-            CalculateMonStats(&party[i]);
-
-            if (B_TRAINER_CLASS_POKE_BALLS >= GEN_7 && ball == -1)
-            {
-                ball = gTrainerClasses[trainer->trainerClass].ball ?: BALL_POKE;
-                SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
+                SetMonData(&party[i], MON_DATA_HP_EV, &(partyData[monIndex].ev[0]));
+                SetMonData(&party[i], MON_DATA_ATK_EV, &(partyData[monIndex].ev[1]));
+                SetMonData(&party[i], MON_DATA_DEF_EV, &(partyData[monIndex].ev[2]));
+                SetMonData(&party[i], MON_DATA_SPATK_EV, &(partyData[monIndex].ev[3]));
+                SetMonData(&party[i], MON_DATA_SPDEF_EV, &(partyData[monIndex].ev[4]));
+                SetMonData(&party[i], MON_DATA_SPEED_EV, &(partyData[monIndex].ev[5]));
             }
         }
-    }
 
-    actualCount = startIndex + monsCount;
+        // Ability handling. The ability is named against the authored species,
+        // so its slot is only reused when the species that actually joined the
+        // party - which New Game+ may have evolved - has an ability there.
+        if (!isReplaced[i] && partyData[monIndex].ability != ABILITY_NONE)
+        {
+            const struct SpeciesInfo *authoredInfo = &gSpeciesInfo[partyData[monIndex].species];
+            u32 maxAbilityNum = ARRAY_COUNT(authoredInfo->abilities);
 
-    // New Game+: Add extra Pokémon for ace trainers and party size overflow
-    if (isNGPlus && (battleTypeFlags & BATTLE_TYPE_TRAINER) && startIndex + monsCount < maxPartySize)
-    {
-        u8 extraCount = 0;
-        if (startIndex + monsCount < maxPartySize)
-            extraCount = min(gSaveBlock2Ptr->newGamePlus, maxPartySize - (startIndex + monsCount));
-        u8 numAces = 0;
-        if (trainer->aiFlags & AI_FLAG_DOUBLE_ACE_POKEMON)
-            numAces = 2;
-        else if (trainer->aiFlags & AI_FLAG_ACE_POKEMON)
-            numAces = 1;
-        u16 usedSpecies[PARTY_SIZE];
-        u8 usedTypes[PARTY_SIZE];
-        s32 i;
-        for (i = 0; i < startIndex + monsCount; i++)
-        {
-            usedSpecies[i] = GetFinalEvolution(GetMonData(&party[i], MON_DATA_SPECIES, NULL));
-            usedTypes[i] = GetMonPrimaryType(usedSpecies[i]);
-        }
-
-        // Create randomization seed based on original party
-        u32 seed = 0;
-        for (i = 0; i < startIndex + monsCount; i++)
-        {
-            seed += usedSpecies[i];
-        }
-        u8 typeCounts[NUMBER_OF_MON_TYPES] = {0};
-        for (i = 0; i < startIndex + monsCount; i++)
-        {
-            typeCounts[usedTypes[i]]++;
-        }
-        u8 themeType = TYPE_MYSTERY;
-        u8 maxCount = 0;
-        for (i = 0; i < NUMBER_OF_MON_TYPES; i++)
-        {
-            if (typeCounts[i] > maxCount)
+            for (abilityNum = 0; abilityNum < maxAbilityNum; ++abilityNum)
             {
-                maxCount = typeCounts[i];
-                themeType = i;
-            }
-        }
-        u16 level = GetMonData(&party[startIndex + monsCount - 1], MON_DATA_LEVEL, NULL);
-        if (extraCount > 0 && numAces > 0)
-        {
-            // Shift aces to the end
-            for (u8 i = 0; i < numAces; i++)
-            {
-                party[startIndex + monsCount + extraCount - numAces + i] = party[startIndex + monsCount - numAces + i];
-            }
-        }
-        rng_value_t rngState = LocalRandomSeed(seed + GetNewGamePlusLevelOffset());
-        for (u8 extra = 0; extra < extraCount; extra++)
-        {
-            u16 chosenSpecies = SPECIES_NONE;
-            u8 attempts = 0;
-            while (chosenSpecies == SPECIES_NONE && attempts < 100)
-            {
-                u16 candidate = GetRandomBaseSpecies(&rngState);
-                u16 candidateFinal = GetFinalEvolution(candidate);
-
-                if (
-                    gSpeciesInfo[candidateFinal].isSubLegendary
-                    || gSpeciesInfo[candidateFinal].isMythical
-                    || gSpeciesInfo[candidateFinal].isGigantamax
-                    || gSpeciesInfo[candidateFinal].isUltraBeast
-                    || gSpeciesInfo[candidateFinal].isParadox
-                    || gSpeciesInfo[candidateFinal].isTotem
-                )
-                {
-                    attempts++;
-                    continue;
-                }
-                bool8 alreadyInParty = FALSE;
-                for (u8 k = 0; k < startIndex + monsCount + extra; k++)
-                {
-                    if (usedSpecies[k] == candidateFinal)
-                    {
-                        alreadyInParty = TRUE;
-                        break;
-                    }
-                }
-                if (alreadyInParty)
-                {
-                    attempts++;
-                    continue;
-                }
-                if (GetMonPrimaryType(candidate) != themeType)
-                {
-                    attempts++;
-                    continue;
-                }
-                chosenSpecies = candidateFinal;
-            }
-            if (chosenSpecies == SPECIES_NONE)
-            {
-                // Fallback: check for any valid pokemon
-                for (u16 candidate = 1; candidate < NUM_SPECIES; candidate++)
-                {
-                    u16 candidateFinal = GetFinalEvolution(candidate);
-
-                    if (
-                        gSpeciesInfo[candidateFinal].isSubLegendary
-                        || gSpeciesInfo[candidateFinal].isMythical
-                        || gSpeciesInfo[candidateFinal].isGigantamax
-                        || gSpeciesInfo[candidateFinal].isUltraBeast
-                        || gSpeciesInfo[candidateFinal].isParadox
-                        || gSpeciesInfo[candidateFinal].isTotem
-                    )
-                        continue;
-
-                    bool8 alreadyInParty = FALSE;
-                    for (u8 k = 0; k < startIndex + monsCount + extra; k++)
-                    {
-                        if (usedSpecies[k] == candidateFinal)
-                        {
-                            alreadyInParty = TRUE;
-                            break;
-                        }
-                    }
-
-                    if (alreadyInParty)
-                        continue;
-
-                    if (GetMonPrimaryType(candidateFinal) != themeType)
-                        continue;
-
-                    chosenSpecies = candidateFinal;
+                if (authoredInfo->abilities[abilityNum] == partyData[monIndex].ability)
                     break;
-                }
             }
-            u32 personalityValue = Random32();
-            u8 selectedMonIndex = startIndex + monsCount - numAces + extra;
-            
-            CreateMon(&party[selectedMonIndex], chosenSpecies, level, personalityValue, OTID_STRUCT_RANDOM_NO_SHINY);
-            SetTrainerMonEVsByHighestBaseStats(&party[selectedMonIndex], chosenSpecies);
-            GiveMonInitialMoveset(&party[selectedMonIndex]);
-            u16 moves[MAX_MON_MOVES];
-            u8 j;
-            for (j = 0; j < MAX_MON_MOVES; j++)
-            {
-                moves[j] = GetMonData(&party[selectedMonIndex], MON_DATA_MOVE1 + j, NULL);
-            }
-            AssignNewGamePlusTrainerPokemonMoves(&party[selectedMonIndex], moves);
-            for (j = 0; j < MAX_MON_MOVES; j++)
-            {
-                u32 pp = GetMovePP(moves[j]);
-                SetMonData(&party[selectedMonIndex], MON_DATA_MOVE1 + j, &moves[j]);
-                SetMonData(&party[selectedMonIndex], MON_DATA_PP1 + j, &pp);
-            }
-            CalculateMonStats(&party[selectedMonIndex]);
-            usedSpecies[startIndex + monsCount + extra] = chosenSpecies;
-            usedTypes[startIndex + monsCount + extra] = GetMonPrimaryType(chosenSpecies);
+            assertf(abilityNum < maxAbilityNum, "illegal ability %S for %S", gAbilitiesInfo[partyData[monIndex].ability].name, authoredInfo->speciesName);
+            if (abilityNum >= maxAbilityNum || gSpeciesInfo[species].abilities[abilityNum] == ABILITY_NONE)
+                abilityNum = 0;
         }
-        actualCount += extraCount;
+        else if (B_TRAINER_MON_RANDOM_ABILITY)
+        {
+            const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];
+
+            abilityNum = personalityHash % 3;
+            while (abilityNum > 0 && speciesInfo->abilities[abilityNum] == ABILITY_NONE)
+                abilityNum--;
+        }
+        SetMonData(&party[i], MON_DATA_ABILITY_NUM, &abilityNum);
+        SetMonData(&party[i], MON_DATA_FRIENDSHIP, &(partyData[monIndex].friendship));
+
+        // Ball handling
+        if (partyData[monIndex].ball < POKEBALL_COUNT)
+        {
+            ball = partyData[monIndex].ball;
+            SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
+        }
+
+        // Nickname. Skipped for replaced Pokemon, whose name belonged to a
+        // different species.
+        if (partyData[monIndex].nickname != NULL && !isReplaced[i])
+            SetMonData(&party[i], MON_DATA_NICKNAME, partyData[monIndex].nickname);
+
+        // Shiny flag
+        if (partyData[monIndex].isShiny)
+        {
+            bool32 data = TRUE;
+            SetMonData(&party[i], MON_DATA_IS_SHINY, &data);
+        }
+
+        // Dynamax level
+        if (partyData[monIndex].dynamaxLevel > 0)
+        {
+            u32 data = partyData[monIndex].dynamaxLevel;
+            if (partyData[monIndex].shouldUseDynamax)
+                gBattleStruct->opponentMonCanDynamax |= 1 << i;
+            SetMonData(&party[i], MON_DATA_DYNAMAX_LEVEL, &data);
+        }
+
+        // Gigantamax factor. Tied to the authored species' form, so it is
+        // dropped along with a replaced Pokemon.
+        if (partyData[monIndex].gigantamaxFactor && !isReplaced[i])
+        {
+            u32 data = partyData[monIndex].gigantamaxFactor;
+            SetMonData(&party[i], MON_DATA_GIGANTAMAX_FACTOR, &data);
+        }
+
+        // Tera type (only if not randomizing types)
+        if (partyData[monIndex].teraType > 0 && !FlagGet(FLAG_RANDOMIZE_TYPE))
+        {
+            gBattleStruct->opponentMonCanTera |= 1 << i;
+            enum Type data = partyData[monIndex].teraType;
+            SetMonData(&party[i], MON_DATA_TERA_TYPE, &data);
+        }
+
+        CalculateMonStats(&party[i]);
+
+        if (B_TRAINER_CLASS_POKE_BALLS >= GEN_7 && ball == -1)
+        {
+            ball = gTrainerClasses[trainer->trainerClass].ball ?: BALL_POKE;
+            SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
+        }
     }
 
-    if (actualCount == 0)
-        actualCount = startIndex + monsCount;
+    if (isNGPlus)
+        monsCount += AddNewGamePlusExtraMons(party, trainer, &fill, monsCount, maxPartySize);
 
-    return actualCount;
+    return monsCount;
 }
 
 static enum BattleTrainer GetBattlerTrainerFromParty(struct Pokemon *party)
