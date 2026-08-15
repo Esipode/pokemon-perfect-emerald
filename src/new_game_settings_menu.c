@@ -38,6 +38,7 @@ enum
     SETTING_MONO_TYPE,
     SETTING_MONO_GEN,
     SETTING_LIMITED_PARTY,
+    SETTING_ROTATION_MODE,
     SETTING_DIFFICULTY,
     SETTING_RANDOMIZE_SPECIES,
     SETTING_RANDOMIZE_TYPES,
@@ -132,6 +133,9 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
     [SETTING_LIMITED_PARTY]     = COMPOUND_STRING(
                                        "Party starts at 3 Pokémon. Extra\n"
                                        "slots are earned from Gym Badges."),
+    [SETTING_ROTATION_MODE]     = COMPOUND_STRING(
+                                       "A random party Pokémon is sent out\n"
+                                       "at the start of each of your turns."),
     [SETTING_DIFFICULTY]        = COMPOUND_STRING(
                                        "Changes encountered Pokémon levels\n"
                                        "and Trainer AI complexity."),
@@ -182,6 +186,7 @@ static const struct ListMenuItem sSettingsListItems[SETTING_COUNT] =
     [SETTING_MONO_TYPE]         = {COMPOUND_STRING("MONO TYPE"),        SETTING_MONO_TYPE},
     [SETTING_MONO_GEN]          = {COMPOUND_STRING("MONO GEN"),         SETTING_MONO_GEN},
     [SETTING_LIMITED_PARTY]     = {COMPOUND_STRING("LIMITED PARTY"),    SETTING_LIMITED_PARTY},
+    [SETTING_ROTATION_MODE]     = {COMPOUND_STRING("ROTATION MODE"),    SETTING_ROTATION_MODE},
     [SETTING_DIFFICULTY]        = {COMPOUND_STRING("DIFFICULTY"),       SETTING_DIFFICULTY},
     [SETTING_RANDOMIZE_SPECIES] = {COMPOUND_STRING("RANDOMIZE SPECIES"),SETTING_RANDOMIZE_SPECIES},
     [SETTING_RANDOMIZE_TYPES]   = {COMPOUND_STRING("RANDOMIZE TYPES"),  SETTING_RANDOMIZE_TYPES},
@@ -276,6 +281,7 @@ void CB2_InitNewGameSettingsMenu(void)
         gPendingNewGameSettings.monoType = TYPE_NONE;
         gPendingNewGameSettings.monoGen = 0;
         gPendingNewGameSettings.limitedParty = FALSE;
+        gPendingNewGameSettings.rotationMode = FALSE;
         gPendingNewGameSettings.randomizeSpecies = FALSE;
         gPendingNewGameSettings.randomizeTypes = FALSE;
         gPendingNewGameSettings.randomizeMoves = FALSE;
@@ -489,6 +495,9 @@ static void HandleValueChange(u8 settingId, bool8 rightPressed)
     case SETTING_LIMITED_PARTY:
         gPendingNewGameSettings.limitedParty ^= 1;
         break;
+    case SETTING_ROTATION_MODE:
+        gPendingNewGameSettings.rotationMode ^= 1;
+        break;
     case SETTING_RANDOMIZE_SPECIES:
         gPendingNewGameSettings.randomizeSpecies ^= 1;
         break;
@@ -542,6 +551,7 @@ static const u8 *GetSettingValueText(u8 settingId)
     case SETTING_MONO_GEN:
         return gPendingNewGameSettings.monoGen == 0 ? sText_Off : sMonoGenTexts[gPendingNewGameSettings.monoGen];
     case SETTING_LIMITED_PARTY:     return gPendingNewGameSettings.limitedParty ? sText_On : sText_Off;
+    case SETTING_ROTATION_MODE:     return gPendingNewGameSettings.rotationMode ? sText_On : sText_Off;
     case SETTING_DIFFICULTY:        return sDifficultyTexts[gPendingNewGameSettings.difficulty];
     case SETTING_RANDOMIZE_SPECIES: return gPendingNewGameSettings.randomizeSpecies ? sText_On : sText_Off;
     case SETTING_RANDOMIZE_TYPES:   return gPendingNewGameSettings.randomizeTypes ? sText_On : sText_Off;
@@ -632,6 +642,7 @@ void ApplyPendingNewGameSettings(void)
     gSaveBlock2Ptr->monoTypeSetting = gPendingNewGameSettings.monoType;
     gSaveBlock2Ptr->monoGenSetting = gPendingNewGameSettings.monoGen;
     gSaveBlock2Ptr->limitedPartySetting = gPendingNewGameSettings.limitedParty;
+    gSaveBlock2Ptr->rotationModeSetting = gPendingNewGameSettings.rotationMode;
     gPendingNewGameSettings.randomizeSpecies ? FlagSet(FLAG_RANDOMIZE_MON)     : FlagClear(FLAG_RANDOMIZE_MON);
     gPendingNewGameSettings.randomizeTypes   ? FlagSet(FLAG_RANDOMIZE_TYPE)    : FlagClear(FLAG_RANDOMIZE_TYPE);
     gPendingNewGameSettings.randomizeMoves   ? FlagSet(FLAG_RANDOMIZE_MOVES)   : FlagClear(FLAG_RANDOMIZE_MOVES);
@@ -677,6 +688,7 @@ void CaptureCurrentSaveIntoPendingNewGameSettings(void)
     gPendingNewGameSettings.monoType = gSaveBlock2Ptr->monoTypeSetting;
     gPendingNewGameSettings.monoGen = gSaveBlock2Ptr->monoGenSetting;
     gPendingNewGameSettings.limitedParty = gSaveBlock2Ptr->limitedPartySetting;
+    gPendingNewGameSettings.rotationMode = gSaveBlock2Ptr->rotationModeSetting;
     gPendingNewGameSettings.randomizeSpecies = FlagGet(FLAG_RANDOMIZE_MON);
     gPendingNewGameSettings.randomizeTypes = FlagGet(FLAG_RANDOMIZE_TYPE);
     gPendingNewGameSettings.randomizeMoves = FlagGet(FLAG_RANDOMIZE_MOVES);
