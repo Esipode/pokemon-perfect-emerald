@@ -42,7 +42,7 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
             38, 37, 24,  8, // HP
             53, 37, 24,  8, // Max HP
             24, 35, 48,  3, // HP bar
-            44, 20, 20,  8  // Recruits battles left (left of Gender)
+            65, 30, 35,  18  // Recruits battles left (left of Gender)
         },
         12, 34, 64, 16      // Description text (e.g. NO USE)
     },
@@ -57,7 +57,7 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
             102, 12, 24,  8, // HP
             117, 12, 24,  8, // Max HP
              88, 10, 48,  3, // HP bar
-             42, 12, 20,  8  // Recruits battles left (left of Gender)
+             57, 22, 35,  18  // Recruits battles left (left of Gender)
         },
         77, 4, 64, 16        // Description text
     },
@@ -72,7 +72,7 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
             33, 11, 24,  8, // HP
             48, 11, 24,  8, // Max HP
             48, 26, 56,  3, // HP bar
-            75,  1, 25,  8  // Recruits battles left (left of Gender)
+            90,  11, 40, 18  // Recruits battles left (left of Gender)
         },
         33, 13, 64, 16      // Description text (e.g. NO USE)
     },
@@ -172,7 +172,7 @@ static const u8 sFontColorTable[][3] =
     {TEXT_COLOR_WHITE,       TEXT_COLOR_BLUE,       TEXT_COLOR_LIGHT_BLUE}, // Field moves
     {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE,      TEXT_COLOR_DARK_GRAY},  // Unused
     {TEXT_COLOR_WHITE,       TEXT_COLOR_RED,        TEXT_COLOR_LIGHT_RED},  // Move relearner
-    {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_RED,        TEXT_COLOR_LIGHT_RED},  // Recruits battles left
+    {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_BLUE,        TEXT_COLOR_LIGHT_BLUE},  // Recruits battles left
 };
 
 static const struct WindowTemplate sSinglePartyMenuWindowTemplate[] =
