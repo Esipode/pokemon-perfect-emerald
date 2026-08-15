@@ -85,6 +85,9 @@
 - Add second item register slot (one for button push, and one for button hold)
 
 ## Quality of life improvements
+- Sort Pokémon in storage
+	- When in the storage screen, pressing the `A` button on the box name will bring up a list of options, one of which is the new "Sort" option
+	- Pokémon can be sorted by Pokédex #, Name, Types, or Level
 - TM/HM changes
 	- Do not need to teach HM moves to party, only need badge/story requirement to use them in overworld
 	- Fly is accessed from the map in the Pokenav upon getting the 6th gym badge
