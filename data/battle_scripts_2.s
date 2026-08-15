@@ -263,6 +263,29 @@ BattleScript_MonoGen_CannotCatch::
 	waitmessage B_WAIT_TIME_LONG
 	finishaction
 
+@ Rotation Mode: free end-of-turn switch into gBattleStruct->monToSwitchIntoId.
+@ Entered via BattleScriptCall, so BS_SCRIPTING throughout and return (not end2).
+BattleScript_RotationModeSwitch::
+	undodynamax BS_SCRIPTING
+	waitstate
+	returntoball BS_SCRIPTING, FALSE
+	waitstate
+	switchoutabilities BS_SCRIPTING
+	drawpartystatussummary BS_SCRIPTING
+	switchhandleorder BS_SCRIPTING, 1
+	getswitchedmondata BS_SCRIPTING
+	switchindataupdate BS_SCRIPTING
+	hpthresholds BS_SCRIPTING
+	trytoclearprimalweather
+	flushtextbox
+	printstring STRINGID_SWITCHINMON
+	hidepartystatussummary BS_SCRIPTING
+	switchinanim BS_SCRIPTING, FALSE, FALSE
+	waitstate
+	switchineffects BS_SCRIPTING
+	switchinevents
+	return
+
 BattleScript_RunByUsingItem::
 	playse SE_FLEE
 	setbyte gBattleOutcome, B_OUTCOME_RAN
