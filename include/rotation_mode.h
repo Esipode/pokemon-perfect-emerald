@@ -21,4 +21,9 @@ bool32 RotationMode_IsEnabled(void);
 // non-egg Pokémon that is not currently on the field.
 u32 RotationMode_PickReplacement(enum BattlerId battler);
 
+// Whether this battle allows Rotation Mode's end-turn switch at all. Always
+// TRUE for now; battle-type exclusions (link, recorded, Arena, Safari, etc.)
+// are added on top of this in a follow-up stage.
+bool32 RotationMode_IsBattleEligible(void);
+
 #endif // GUARD_ROTATION_MODE_H

@@ -9,6 +9,7 @@
 #include "battle_stat_change.h"
 #include "battle_gimmick.h"
 #include "battle_scripts.h"
+#include "rotation_mode.h"
 #include "constants/battle.h"
 #include "constants/battle_string_ids.h"
 #include "constants/abilities.h"
@@ -1597,6 +1598,30 @@ static bool32 HandleEndTurnDynamax(enum BattlerId battler)
     return effect;
 }
 
+// Rotation Mode: after each turn resolves, the player's active Pokémon is
+// swapped for a random eligible party member, free of charge. See
+// include/rotation_mode.h.
+static bool32 HandleEndTurnRotationMode(enum BattlerId battler)
+{
+    gBattleStruct->eventState.endTurnBattler++;
+
+    if (!RotationMode_IsEnabled())
+        return FALSE;
+    if (!IsOnPlayerSide(battler) || !IsBattlerAlive(battler))
+        return FALSE;
+    if (!RotationMode_IsBattleEligible())
+        return FALSE;
+
+    u32 partyId = RotationMode_PickReplacement(battler);
+    if (partyId == PARTY_SIZE)
+        return FALSE;
+
+    gBattleScripting.battler = battler;
+    gBattleStruct->monToSwitchIntoId[battler] = partyId;
+    BattleScriptCall(BattleScript_RotationModeSwitch);
+    return TRUE;
+}
+
 static bool32 (*const sEndTurnEffectHandlers[])(enum BattlerId battler) =
 {
     [ENDTURN_ORDER] = HandleEndTurnOrder,
@@ -1647,6 +1672,7 @@ static bool32 (*const sEndTurnEffectHandlers[])(enum BattlerId battler) =
     [ENDTURN_FORM_CHANGE] = HandleEndTurnFormChange,
     [ENDTURN_EJECT_PACK] = HandleEndTurnEjectPack,
     [ENDTURN_SEND_OUT_REPLACEMENTS_5] = HandleEndTurnSendOutReplacements,
+    [ENDTURN_ROTATION_MODE] = HandleEndTurnRotationMode,
     [ENDTURN_TRAINER_A_SLIDES] = HandleEndTurnTrainerASlides,
     [ENDTURN_TRAINER_B_SLIDES] = HandleEndTurnTrainerBSlides,
     [ENDTURN_TRAINER_PARTNER_SLIDES] = HandleEndTurnTrainerPartnerSlides,

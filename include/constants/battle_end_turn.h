@@ -56,6 +56,7 @@ enum EndTurnResolutionOrder
     ENDTURN_FORM_CHANGE,
     ENDTURN_EJECT_PACK,
     ENDTURN_SEND_OUT_REPLACEMENTS_5, // For Eject Pack activations
+    ENDTURN_ROTATION_MODE, // Free random switch-in for the player, see rotation_mode.h
     ENDTURN_TRAINER_A_SLIDES,
     ENDTURN_TRAINER_B_SLIDES,
     ENDTURN_TRAINER_PARTNER_SLIDES,

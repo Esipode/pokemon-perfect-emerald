@@ -40,3 +40,9 @@ u32 RotationMode_PickReplacement(enum BattlerId battler)
 
     return validMons[RandomUniform(RNG_ROTATION_MODE, 0, validMonsCount - 1)];
 }
+
+// Placeholder pending battle-type exclusions (link, recorded, Arena, Safari, etc.).
+bool32 RotationMode_IsBattleEligible(void)
+{
+    return TRUE;
+}
