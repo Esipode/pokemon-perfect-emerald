@@ -2829,13 +2829,25 @@ static void DisplayPartyPokemonRecruitBattlesLeftCheck(struct Pokemon *mon, stru
 
 static void DisplayPartyPokemonRecruitBattlesLeft(u32 battlesLeft, struct PartyMenuBox *menuBox)
 {
+    u8 align[2];
+
     ConvertIntToDecimalStringN(gStringVar2, battlesLeft, STR_CONV_MODE_LEFT_ALIGN, 2);
     StringCopy(gStringVar1, gText_Dash);
     StringAppend(gStringVar1, gStringVar2);
+
+    // STR_CONV_MODE_LEFT_ALIGN drops the string down to a single digit once
+    // battlesLeft is under 10 ("-9" vs "-10") instead of padding it, which
+    // reads as the label drifting left. Checked by digit count rather than
+    // a literal cap value, since RECRUITS_MAX_BATTLES could change.
+    align[0] = menuBox->infoRects->dimensions[24];
+    if (StringLength(gStringVar2) == 1)
+        align[0] += 5;
+    align[1] = menuBox->infoRects->dimensions[25];
+
     // Red (sFontColorTable's dedicated "Recruits battles left" entry) so the
     // count stands out against its neighbors in the cramped space next to
     // the gender icon, rather than relocating it (see src/data/party_menu.h).
-    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 7, &menuBox->infoRects->dimensions[24], FONT_SMALL);
+    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 7, align, FONT_SMALL);
 }
 
 static void DisplayPartyPokemonHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
