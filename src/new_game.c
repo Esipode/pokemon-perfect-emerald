@@ -417,7 +417,7 @@ void NewGameInitData(void)
         optionsBackup = Alloc(sizeof(u16));
         memcpy(optionsBackup, (u8 *)gSaveBlock2Ptr + 0x14, sizeof(u16));
         /* Backup a few SaveBlock1 player settings stored in SaveBlock1 */
-        playerSettingsBackup = Alloc(9);
+        playerSettingsBackup = Alloc(10);
         ((u8 *)playerSettingsBackup)[0] = gSaveBlock1Ptr->nuzlockeModeEnabled;
         ((u8 *)playerSettingsBackup)[1] = gSaveBlock1Ptr->autosaveModeEnabled;
         ((u8 *)playerSettingsBackup)[2] = gSaveBlock1Ptr->difficulty;
@@ -442,6 +442,10 @@ void NewGameInitData(void)
         // is wiped by ClearSav1() below the same way; same reasoning as
         // draftModeEnabled above.
         ((u8 *)playerSettingsBackup)[8] = gSaveBlock1Ptr->recruitsModeEnabled;
+        // rotationModeSetting lives in SaveBlock2 like monoTypeSetting/etc.
+        // above, so this isn't strictly needed for correctness either -- kept
+        // here anyway for the same grouping reason.
+        ((u8 *)playerSettingsBackup)[9] = gSaveBlock2Ptr->rotationModeSetting;
 
         gIsNewGamePlus = FALSE; // consume flag
     }
@@ -659,6 +663,7 @@ void NewGameInitData(void)
                 gSaveBlock1Ptr->draftModeEnabled = ((u8 *)playerSettingsBackup)[7];
                 gSaveBlock2Ptr->limitedPartySetting = ((u8 *)playerSettingsBackup)[6];
                 gSaveBlock1Ptr->recruitsModeEnabled = ((u8 *)playerSettingsBackup)[8];
+                gSaveBlock2Ptr->rotationModeSetting = ((u8 *)playerSettingsBackup)[9];
             }
 
             if (roamersBackup != NULL)
