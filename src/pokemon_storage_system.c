@@ -30,6 +30,7 @@
 #include "pokemon_icon.h"
 #include "pokemon_summary_screen.h"
 #include "pokemon_storage_system.h"
+#include "pokemon_storage_sort.h"
 #include "recruits_mode.h"
 #include "script.h"
 #include "sound.h"
@@ -117,6 +118,11 @@ enum {
     MSG_LOCKED_DRAFT,
     MSG_LOCKED_RECRUITS,
     MSG_PARTY_SLOT_LOCKED,
+    MSG_PICK_A_SORT,
+    MSG_CONFIRM_SORT,
+    MSG_SORTING,
+    MSG_SORT_COMPLETE,
+    MSG_CANT_SORT_NOW,
 };
 
 // IDs for how to resolve variables in the above messages
@@ -129,6 +135,7 @@ enum {
     MSG_VAR_RELEASE_MON_2, // Unused
     MSG_VAR_RELEASE_MON_3,
     MSG_VAR_ITEM_NAME,
+    MSG_VAR_SORT_TYPE,
 };
 
 // IDs for menu selection items. See SetMenuText, HandleMenuInput, etc
@@ -173,9 +180,18 @@ enum {
     MENU_MACHINE,
     MENU_SIMPLE,
     MENU_SELECT,
+    MENU_SORT,
+    // Sort keys. Kept contiguous and in enum StorageSortType order so the
+    // handler can convert a menu id to a sort type by subtraction.
+    MENU_SORT_DEX,
+    MENU_SORT_NAME,
+    MENU_SORT_TYPE1,
+    MENU_SORT_TYPE2,
+    MENU_SORT_LEVEL,
 };
 #define MENU_WALLPAPER_SETS_START MENU_SCENERY_1
 #define MENU_WALLPAPERS_START MENU_FOREST
+#define MENU_SORT_TYPES_START MENU_SORT_DEX
 #define SPECIES_MASK 0x3FFF
 
 // Return IDs for input handlers
@@ -476,6 +492,7 @@ struct PokemonStorageSystemData
     u8 menuItemsCount;
     u8 menuWidth;
     u16 menuWindowId;
+    u8 sortType; // enum StorageSortType picked from the sort menu
     struct Sprite *cursorSprite;
     struct Sprite *cursorShadowSprite;
     s32 cursorNewX;
@@ -601,6 +618,7 @@ static void Task_ReshowPokeStorage(u8);
 static void Task_PokeStorageMain(u8);
 static void Task_JumpBox(u8);
 static void Task_HandleWallpapers(u8);
+static void Task_HandleSort(u8);
 static void Task_NameBox(u8);
 static void Task_PrintCantStoreMail(u8);
 static void Task_HandleMovingMonFromParty(u8);
@@ -611,6 +629,7 @@ static u8 InBoxInput_MovingMultiple(void);
 static u8 InBoxInput_SelectingMultiple(void);
 static u8 HandleInput(void);
 static void AddBoxOptionsMenu(void);
+static void AddSortOptionsMenu(void);
 static u8 SetSelectionMenuTexts(void);
 static bool8 SetMenuTexts_Mon(void);
 static bool8 SetMenuTexts_Item(void);
@@ -1132,6 +1151,25 @@ static const struct StorageMessage sMessages[] =
     // whenever Recruits mode is on -- same shape as MSG_LOCKED_DRAFT above.
     [MSG_LOCKED_RECRUITS]      = {COMPOUND_STRING("This POKéMON can't\nleave the BOX during\na Recruits run!"), MSG_VAR_NONE},
     [MSG_PARTY_SLOT_LOCKED]    = {COMPOUND_STRING("You can't use that slot yet!"), MSG_VAR_NONE},
+    // Storage sort. WIN_MESSAGE is one line, so these stay short -- the
+    // 25-char MSG_LAST_POKE above is the proven fit.
+    [MSG_PICK_A_SORT]          = {COMPOUND_STRING("Sort the BOXES how?"),       MSG_VAR_NONE},
+    [MSG_CONFIRM_SORT]         = {COMPOUND_STRING("This sorts every BOX. OK?"), MSG_VAR_NONE},
+    [MSG_SORTING]              = {COMPOUND_STRING("Sorting the BOXES…"),        MSG_VAR_NONE},
+    [MSG_SORT_COMPLETE]        = {COMPOUND_STRING("BOXES sorted by {DYNAMIC 0}!"), MSG_VAR_SORT_TYPE},
+    [MSG_CANT_SORT_NOW]        = {COMPOUND_STRING("Put that down first!"),      MSG_VAR_NONE},
+};
+
+// Human-facing names for the {DYNAMIC 0} in MSG_SORT_COMPLETE, indexed by
+// enum StorageSortType. Kept short: "BOXES sorted by X!" has to stay inside
+// the one line WIN_MESSAGE gives it.
+static const u8 *const sSortTypeNames[STORAGE_SORT_COUNT] =
+{
+    [STORAGE_SORT_DEX]   = COMPOUND_STRING("DEX No."),
+    [STORAGE_SORT_NAME]  = COMPOUND_STRING("name"),
+    [STORAGE_SORT_TYPE1] = COMPOUND_STRING("type"),
+    [STORAGE_SORT_TYPE2] = COMPOUND_STRING("2nd type"),
+    [STORAGE_SORT_LEVEL] = COMPOUND_STRING("level"),
 };
 
 static const struct WindowTemplate sYesNoWindowTemplate =
@@ -3587,6 +3625,11 @@ static void Task_HandleBoxOptions(u8 taskId)
             ClearBottomWindow();
             SetPokeStorageTask(Task_JumpBox);
             break;
+        case MENU_SORT:
+            PlaySE(SE_SELECT);
+            ClearBottomWindow();
+            SetPokeStorageTask(Task_HandleSort);
+            break;
         }
         break;
     }
@@ -3673,6 +3716,51 @@ static void Task_HandleWallpapers(u8 taskId)
             SetWallpaperForCurrentBox(sStorage->wallpaperId);
             sStorage->state = 5;
         }
+        break;
+    }
+}
+
+static void Task_HandleSort(u8 taskId)
+{
+    s16 input;
+
+    switch (sStorage->state)
+    {
+    case 0:
+        AddSortOptionsMenu();
+        PrintMessage(MSG_PICK_A_SORT);
+        sStorage->state++;
+        break;
+    case 1:
+        if (!IsMenuLoading())
+            sStorage->state++;
+        break;
+    case 2:
+        input = HandleMenuInput();
+        switch (input)
+        {
+        case MENU_NOTHING_CHOSEN:
+            break;
+        case MENU_B_PRESSED:
+        case MENU_CANCEL:
+            AnimateBoxScrollArrows(TRUE);
+            ClearBottomWindow();
+            SetPokeStorageTask(Task_PokeStorageMain);
+            break;
+        default:
+            // HandleMenuInput has already torn the menu window down.
+            PlaySE(SE_SELECT);
+            sStorage->sortType = input - MENU_SORT_TYPES_START;
+            sStorage->state++;
+            break;
+        }
+        break;
+    case 3:
+        // The sort itself is not wired up yet; the key is recorded and the
+        // menu backs out to the box view.
+        AnimateBoxScrollArrows(TRUE);
+        ClearBottomWindow();
+        SetPokeStorageTask(Task_PokeStorageMain);
         break;
     }
 }
@@ -4520,6 +4608,9 @@ static void PrintMessage(u8 id)
 
         *txtPtr = EOS;
         DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, sStorage->itemName);
+        break;
+    case MSG_VAR_SORT_TYPE:
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, sSortTypeNames[sStorage->sortType]);
         break;
     }
 
@@ -8005,7 +8096,21 @@ static void AddBoxOptionsMenu(void)
     SetMenuText(MENU_JUMP);
     SetMenuText(MENU_WALLPAPER);
     SetMenuText(MENU_NAME);
+    SetMenuText(MENU_SORT);
     SetMenuText(MENU_CANCEL);
+}
+
+// Second level of the box title menu: which key to sort every box by.
+static void AddSortOptionsMenu(void)
+{
+    InitMenu();
+    SetMenuText(MENU_SORT_DEX);
+    SetMenuText(MENU_SORT_NAME);
+    SetMenuText(MENU_SORT_TYPE1);
+    SetMenuText(MENU_SORT_TYPE2);
+    SetMenuText(MENU_SORT_LEVEL);
+    SetMenuText(MENU_CANCEL);
+    AddMenu();
 }
 
 static u8 SetSelectionMenuTexts(void)
@@ -8374,6 +8479,14 @@ static const u8 *const sMenuTexts[] =
     [MENU_MACHINE]    = COMPOUND_STRING("MACHINE"),
     [MENU_SIMPLE]     = COMPOUND_STRING("SIMPLE"),
     [MENU_SELECT]     = COMPOUND_STRING("SELECT"),
+    [MENU_SORT]       = COMPOUND_STRING("SORT"),
+    // MENU_SORT_NAME duplicates MENU_NAME's text on purpose -- the box-rename
+    // action and the name sort key have different handlers.
+    [MENU_SORT_DEX]   = COMPOUND_STRING("DEX NO."),
+    [MENU_SORT_NAME]  = COMPOUND_STRING("NAME"),
+    [MENU_SORT_TYPE1] = COMPOUND_STRING("TYPE 1"),
+    [MENU_SORT_TYPE2] = COMPOUND_STRING("TYPE 2"),
+    [MENU_SORT_LEVEL] = COMPOUND_STRING("LEVEL"),
 };
 
 static void SetMenuText(u8 textId)
