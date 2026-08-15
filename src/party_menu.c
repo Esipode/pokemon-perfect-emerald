@@ -2812,7 +2812,8 @@ static void DisplayPartyPokemonGender(u8 gender, enum Species species, u8 *nickn
 }
 
 // Recruits mode: how many more won battles this mon can fight before it
-// retires, drawn as a standalone "-N" label left of the gender icon.
+// retires, drawn as a standalone "-N" label left of the gender icon, in red
+// so it stands out in that cramped spot (see DisplayPartyPokemonRecruitBattlesLeft).
 // dimensions[24-27] is tuned to fit "-10"; a max-length nickname or a
 // 3-digit level can still crowd it - see sPartyBoxInfoRects (src/data/party_menu.h).
 static void DisplayPartyPokemonRecruitBattlesLeftCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
@@ -2831,7 +2832,10 @@ static void DisplayPartyPokemonRecruitBattlesLeft(u32 battlesLeft, struct PartyM
     ConvertIntToDecimalStringN(gStringVar2, battlesLeft, STR_CONV_MODE_LEFT_ALIGN, 2);
     StringCopy(gStringVar1, gText_Dash);
     StringAppend(gStringVar1, gStringVar2);
-    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 0, &menuBox->infoRects->dimensions[24], FONT_SMALL);
+    // Red (sFontColorTable's dedicated "Recruits battles left" entry) so the
+    // count stands out against its neighbors in the cramped space next to
+    // the gender icon, rather than relocating it (see src/data/party_menu.h).
+    DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 7, &menuBox->infoRects->dimensions[24], FONT_SMALL);
 }
 
 static void DisplayPartyPokemonHPCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
