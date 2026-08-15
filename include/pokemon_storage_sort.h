@@ -18,9 +18,16 @@
 // copies, never through Set(Box)MonData, which would re-encrypt them and turn
 // any checksum mismatch into a bad egg.
 //
+// The one thing the sort does not preserve is a mon that is *already* broken:
+// reading its species runs the engine's own checksum test, which flags a
+// mismatched mon as a bad egg. That happens on any read anywhere in the PC,
+// not just here - the sort only makes sure such a mon is then grouped as the
+// bad egg it has become.
+//
 // Eggs sort after every normal Pokémon, and bad eggs after eggs, in every
 // mode - their species, level and type are hidden or meaningless in the UI,
-// so interleaving them by those values reads as a bug.
+// so interleaving them by those values reads as a bug. Within a group they
+// keep their original order.
 //
 // Sorting is not saved until the player saves. A player who dislikes the
 // result can soft-reset; there is no in-game undo.

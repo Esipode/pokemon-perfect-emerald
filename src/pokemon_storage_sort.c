@@ -70,8 +70,9 @@ static void BuildSortOrder(struct StorageSortWork *work)
         struct SortSlotKey *key = &work->keys[slot];
 
         // The unencrypted sanity bit, not MON_DATA_SPECIES: species reads
-        // through the checksum path and reports SPECIES_NONE for a corrupted
-        // mon, which would make the sort silently delete it.
+        // through the checksum path and reports a placeholder for a corrupted
+        // mon rather than what it holds, so testing occupancy that way risks
+        // the sort silently dropping one.
         if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES))
         {
             // Empty slots fill from the back in any order - all of them are
@@ -81,6 +82,14 @@ static void BuildSortOrder(struct StorageSortWork *work)
         }
 
         work->order[head++] = slot;
+
+        // Read species before deciding the group, not after. Reading an
+        // encrypted field runs the engine's checksum test, which converts a mon
+        // whose checksum no longer matches into a bad egg (IsBadEgg,
+        // src/pokemon.c) and hands back SPECIES_EGG. Deciding first would sort
+        // a mon the rest of the PC already draws as a Bad Egg in among the
+        // normal Pokémon, under a meaningless species.
+        species = GetBoxMonData(boxMon, MON_DATA_SPECIES);
 
         // Eggs and bad eggs keep the zeroed key/dexNum/species they were
         // allocated with; group alone decides where they land, and equal
@@ -96,7 +105,6 @@ static void BuildSortOrder(struct StorageSortWork *work)
             continue;
         }
 
-        species = GetBoxMonData(boxMon, MON_DATA_SPECIES);
         key->species = species;
         key->dexNum = SpeciesToNationalPokedexNum(species);
 
@@ -139,6 +147,13 @@ static s32 CompareSlots(struct StorageSortWork *work, u32 slotA, u32 slotB)
 
     if (a->group != b->group)
         return a->group < b->group ? -1 : 1;
+
+    // Only normal Pokémon carry a key: an egg has no species, level or type
+    // worth comparing, and no cached nickname either - the name buffer is left
+    // zeroed for them, which is not an EOS-terminated string. Equal here, so
+    // the stable merge keeps them in their original flat order.
+    if (a->group != SORT_GROUP_NORMAL)
+        return 0;
 
     if (work->type == STORAGE_SORT_NAME)
     {
@@ -232,6 +247,24 @@ static void ApplyOrder(struct StorageSortWork *work)
         ZeroBoxMonAt(start / IN_BOX_COUNT, start % IN_BOX_COUNT);
 }
 
+// The sort must be a pure permutation: the number of occupied slots cannot
+// change across it. Compiled out of release builds along with AGB_ASSERT.
+static void AssertOccupancyUnchanged(const struct StorageSortWork *work)
+{
+#ifndef NDEBUG
+    u32 slot;
+    u32 count = 0;
+
+    for (slot = 0; slot < STORAGE_SLOT_COUNT; slot++)
+    {
+        if (GetBoxMonData(SlotPtr(slot), MON_DATA_SANITY_HAS_SPECIES))
+            count++;
+    }
+
+    AGB_ASSERT(count == work->count);
+#endif
+}
+
 bool32 SortPokemonStorage(enum StorageSortType type)
 {
     struct StorageSortWork *work;
@@ -257,10 +290,13 @@ bool32 SortPokemonStorage(enum StorageSortType type)
     }
 
     BuildSortOrder(work);
+    // An empty PC is a genuine no-op: nothing to permute, and no slot to zero
+    // that is not already zero. The caller still reports the sort as done.
     if (work->count != 0)
     {
         SortOrder(work);
         ApplyOrder(work);
+        AssertOccupancyUnchanged(work);
     }
 
     if (work->names != NULL)
