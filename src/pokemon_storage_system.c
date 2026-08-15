@@ -3756,11 +3756,34 @@ static void Task_HandleSort(u8 taskId)
         }
         break;
     case 3:
-        // The sort itself is not wired up yet; the key is recorded and the
-        // menu backs out to the box view.
-        AnimateBoxScrollArrows(TRUE);
-        ClearBottomWindow();
-        SetPokeStorageTask(Task_PokeStorageMain);
+        // A sort repacks every box and there is no in-game undo, so confirm
+        // first. Defaults to No, matching the release flow.
+        PrintMessage(MSG_CONFIRM_SORT);
+        ShowYesNoWindow(1);
+        sStorage->state++;
+        break;
+    case 4:
+        switch (Menu_ProcessInputNoWrapClearOnChoose())
+        {
+        case MENU_B_PRESSED:
+        case 1: // No
+            ClearBottomWindow();
+            sStorage->state++;
+            break;
+        case 0: // Yes
+            // The sort itself is not wired up yet; the key is recorded and the
+            // menu backs out to the box view.
+            AnimateBoxScrollArrows(TRUE);
+            ClearBottomWindow();
+            SetPokeStorageTask(Task_PokeStorageMain);
+            break;
+        }
+        break;
+    case 5:
+        // Declining returns to the sort-key menu; wait for the yes/no window's
+        // teardown before rebuilding a window over it.
+        if (!IsDma3ManagerBusyWithBgCopy())
+            sStorage->state = 0;
         break;
     }
 }
