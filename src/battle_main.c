@@ -4752,6 +4752,8 @@ bool32 EndTurnEvents(void) // Called from Battle Script
         gBattleStruct->eventState.arenaTurn++;
     }
 
+    gBattleStruct->rotationModeResolvedThisTurn = FALSE; // Rotation Mode: re-roll which battler rotates next turn.
+
     for (enum BattlerId battler = 0; battler < gBattlersCount; battler++)
     {
         gChosenActionByBattler[battler] = B_ACTION_NONE;

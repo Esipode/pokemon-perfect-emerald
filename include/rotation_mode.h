@@ -11,6 +11,10 @@
 // Nuzlocke / Draft / Recruits GAME MODE row, so it can be combined with any
 // other challenge mode.
 //
+// In doubles, exactly one of the player's two active battlers rotates each
+// turn - chosen at random between whichever of the two are currently
+// eligible - rather than both rotating at once.
+//
 // Whether the mode is on lives in gSaveBlock2Ptr->rotationModeSetting. 0
 // means the mode is off, which is also what old saves read back.
 
@@ -26,5 +30,11 @@ u32 RotationMode_PickReplacement(enum BattlerId battler);
 // Partner battles and Frontier/Trainer Hill facilities, plus a battler that is
 // Commanded (Dondozo) or the target of Sky Drop.
 bool32 RotationMode_IsBattleEligible(enum BattlerId battler);
+
+// Doubles arbitration: whether this particular battler is the one Rotation
+// Mode picked to rotate this turn. Always TRUE in singles. Resolves and
+// caches the random pick (gBattleStruct->rotationModeChosenBattler) the
+// first time either of the two player battlers asks this turn.
+bool32 RotationMode_ShouldRotate(enum BattlerId battler);
 
 #endif // GUARD_ROTATION_MODE_H

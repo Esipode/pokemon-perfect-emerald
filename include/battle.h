@@ -595,6 +595,8 @@ struct BattleStruct
     u8 battlerPartyIndexes[MAX_BATTLERS_COUNT];
     u8 monToSwitchIntoId[MAX_BATTLERS_COUNT];
     u8 battlerPartyOrders[MAX_BATTLERS_COUNT][PARTY_SIZE / 2];
+    u8 rotationModeChosenBattler; // Doubles: which player battler Rotation Mode picked to rotate this turn. See rotation_mode.c.
+    bool8 rotationModeResolvedThisTurn; // Whether rotationModeChosenBattler has been rolled for the current turn.
     u8 runTries;
     u8 caughtMonNick[POKEMON_NAME_LENGTH + 1];
     u8 safariGoNearCounter;

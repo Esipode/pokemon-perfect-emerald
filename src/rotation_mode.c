@@ -65,3 +65,28 @@ bool32 RotationMode_IsBattleEligible(enum BattlerId battler)
 
     return TRUE;
 }
+
+// Doubles: pick exactly one of the two player battlers to rotate this turn,
+// at random between whichever are currently eligible, and cache the pick so
+// both battlers' end-turn handler calls agree on it.
+bool32 RotationMode_ShouldRotate(enum BattlerId battler)
+{
+    if (!IsDoubleBattle())
+        return TRUE;
+
+    if (!gBattleStruct->rotationModeResolvedThisTurn)
+    {
+        enum BattlerId partner = BATTLE_PARTNER(battler);
+        u8 candidates[2];
+        u32 candidateCount = 0;
+
+        candidates[candidateCount++] = battler; // Already known alive and eligible by the caller.
+        if (IsBattlerAlive(partner) && RotationMode_IsBattleEligible(partner))
+            candidates[candidateCount++] = partner;
+
+        gBattleStruct->rotationModeChosenBattler = candidates[RandomUniform(RNG_ROTATION_MODE_DOUBLES, 0, candidateCount - 1)];
+        gBattleStruct->rotationModeResolvedThisTurn = TRUE;
+    }
+
+    return gBattleStruct->rotationModeChosenBattler == battler;
+}

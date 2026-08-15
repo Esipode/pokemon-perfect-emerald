@@ -1611,6 +1611,8 @@ static bool32 HandleEndTurnRotationMode(enum BattlerId battler)
         return FALSE;
     if (!RotationMode_IsBattleEligible(battler))
         return FALSE;
+    if (!RotationMode_ShouldRotate(battler)) // Doubles: only one player battler rotates per turn.
+        return FALSE;
 
     u32 partyId = RotationMode_PickReplacement(battler);
     if (partyId == PARTY_SIZE)
