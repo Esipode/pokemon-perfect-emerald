@@ -26,9 +26,9 @@ bool32 RotationMode_IsEnabled(void);
 u32 RotationMode_PickReplacement(enum BattlerId battler);
 
 // Whether Rotation Mode's end-turn switch is allowed for this battler right now:
-// excludes link/recorded battles, Safari, Birch's rescue battle, Multi/Ingame
-// Partner battles and Frontier/Trainer Hill facilities, plus a battler that is
-// Commanded (Dondozo) or the target of Sky Drop.
+// trainer battles only (wild battles never rotate), and even then excludes
+// link/recorded battles, Multi/Ingame Partner battles and Frontier/Trainer Hill
+// facilities, plus a battler that is Commanded (Dondozo) or the target of Sky Drop.
 bool32 RotationMode_IsBattleEligible(enum BattlerId battler);
 
 // Doubles arbitration: whether this particular battler is the one Rotation

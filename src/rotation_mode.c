@@ -45,13 +45,15 @@ u32 RotationMode_PickReplacement(enum BattlerId battler)
 // break a scripted flow, or isn't implemented yet.
 bool32 RotationMode_IsBattleEligible(enum BattlerId battler)
 {
+    // Trainer battles only -- wild battles never rotate.
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return FALSE;
+
     // BATTLE_TYPE_FRONTIER already covers Arena, Battle Tower, Dome, Palace,
     // Factory, Pike and Pyramid.
     if (gBattleTypeFlags & (BATTLE_TYPE_LINK
                            | BATTLE_TYPE_RECORDED_LINK
                            | BATTLE_TYPE_RECORDED
-                           | BATTLE_TYPE_SAFARI
-                           | BATTLE_TYPE_FIRST_BATTLE
                            | BATTLE_TYPE_MULTI
                            | BATTLE_TYPE_INGAME_PARTNER
                            | BATTLE_TYPE_FRONTIER
