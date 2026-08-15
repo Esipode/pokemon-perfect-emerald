@@ -568,6 +568,9 @@ enum
 #define OBJ_EVENT_PAL_TAG_METEORITE               0x1131
 #define OBJ_EVENT_PAL_TAG_SEAGALLOP               0x1132
 #define OBJ_EVENT_PAL_TAG_SS_ANNE                 0x1133
+// Dedicated so trainer-see emote icons (!, ?, !!, X) never end up sharing a
+// slot with a player/NPC palette tag that player customization recolors.
+#define OBJ_EVENT_PAL_TAG_EMOTE_ICONS             0x1134
 
 #if OW_FOLLOWERS_POKEBALLS
 // Vanilla

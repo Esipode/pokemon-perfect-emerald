@@ -2,6 +2,7 @@
 #define GUARD_POKEMON_SUMMARY_SCREEN_H
 
 #include "main.h"
+#include "config/save.h"
 #include "config/summary_screen.h"
 #include "constants/move_relearner.h"
 
@@ -31,7 +32,9 @@ enum PokemonSummaryScreenMode
     SUMMARY_MODE_BOX_CURSOR, // mon is being moved in PC
     SUMMARY_MODE_SELECT_MOVE,
     SUMMARY_MODE_RELEARNER_BATTLE, // returning from move relearner initiated from battle moves page
+#if FREE_CONTESTS == FALSE
     SUMMARY_MODE_RELEARNER_CONTEST, // returning from move relearner initiated from contest moves page
+#endif //FREE_CONTESTS
 };
 
 enum PokemonSummaryScreenPage
@@ -39,7 +42,9 @@ enum PokemonSummaryScreenPage
     PSS_PAGE_INFO,
     PSS_PAGE_SKILLS,
     PSS_PAGE_BATTLE_MOVES,
+#if FREE_CONTESTS == FALSE
     PSS_PAGE_CONTEST_MOVES,
+#endif //FREE_CONTESTS
     PSS_PAGE_COUNT,
 };
 

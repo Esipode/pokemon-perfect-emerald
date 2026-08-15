@@ -418,9 +418,11 @@ void CB2_InitLearnMove(void)
     gTasks[sMoveRelearnerStruct->mainTask].tState = 0;
     gTasks[sMoveRelearnerStruct->mainTask].tPartyIndex = gSpecialVar_0x8004;
     gTasks[sMoveRelearnerStruct->mainTask].tMove = MOVE_NONE;
+#if FREE_CONTESTS == FALSE
     if (gRelearnMode == RELEARN_MODE_PSS_PAGE_CONTEST_MOVES)
         gTasks[sMoveRelearnerStruct->mainTask].tCategory = CONTEST_INFO;
     else
+#endif //FREE_CONTESTS
         gTasks[sMoveRelearnerStruct->mainTask].tCategory = BATTLE_INFO;
     SetMainCallback2(CB2_InitLearnMove_Basic);
 }
@@ -567,9 +569,11 @@ static void Task_MoveRelearner_Quit(u8 taskId)
 
     if (gInitialSummaryScreenCallback != NULL)
     {
+#if FREE_CONTESTS == FALSE
         if (gRelearnMode == RELEARN_MODE_PSS_PAGE_CONTEST_MOVES)
             ShowPokemonSummaryScreen(SUMMARY_MODE_RELEARNER_CONTEST, gParties[B_TRAINER_PLAYER], gTasks[taskId].tPartyIndex, gPartiesCount[B_TRAINER_PLAYER] - 1, gInitialSummaryScreenCallback);
         else
+#endif //FREE_CONTESTS
             ShowPokemonSummaryScreen(SUMMARY_MODE_RELEARNER_BATTLE, gParties[B_TRAINER_PLAYER], gTasks[taskId].tPartyIndex, gPartiesCount[B_TRAINER_PLAYER] - 1, gInitialSummaryScreenCallback);
     }
     else

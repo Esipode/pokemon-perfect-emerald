@@ -6,7 +6,7 @@
 #define GENDER_RANDOM            2
 
 // Quickstart Settings
-#define ENABLE_QUICKSTART            TRUE  // If TRUE press SELECT to start a new game from the titlescreen (Disabled on Release Builds)
+#define ENABLE_QUICKSTART            FALSE  // If TRUE press SELECT to start a new game from the titlescreen (Disabled on Release Builds)
 #define QUICKSTART_HUD               TRUE  // Displays a small hud element on the titlescreen when Quickstart is enabled
 #define QUICKSTART_GENDER            GENDER_RANDOM
 

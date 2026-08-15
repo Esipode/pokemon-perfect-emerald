@@ -391,6 +391,9 @@ const u16 gObjectEventPal_Substitute[] = INCGFX_U16("graphics/object_events/pics
 
 const u16 gObjectEventPaletteEmotes[] = INCGFX_U16("graphics/misc/emotes.pal", ".gbapal");
 const u16 gObjectEventPaletteNeonLight[] = INCGFX_U16("graphics/object_events/palettes/neon_light.pal", ".gbapal");
+// Own copy of may.pal so the exclamation/question mark icons don't share a
+// palette slot with the player object, which player customization recolors.
+const u16 gObjectEventPal_EmoteIcons[] = INCGFX_U16("graphics/object_events/palettes/emote_icons.pal", ".gbapal");
 
 #if OW_FOLLOWERS_POKEBALLS
 const u32 gObjectEventPic_MasterBall[] = INCGFX_U32("graphics/object_events/pics/misc/ball_master.png", ".4bpp", "-mwidth 2 -mheight 4");

@@ -1,6 +1,7 @@
 #include "global.h"
 #include "malloc.h"
 #include "bg.h"
+#include "caps.h"
 #include "data.h"
 #include "decompress.h"
 #include "dma3.h"
@@ -115,6 +116,7 @@ enum {
     MSG_CHANGED_TO_ITEM,
     MSG_CANT_STORE_MAIL,
     MSG_LOCKED_UNTIL_CHAMPION,
+    MSG_LOCKED_LEVEL_CAP,
     MSG_LOCKED_DRAFT,
     MSG_LOCKED_RECRUITS,
     MSG_PARTY_SLOT_LOCKED,
@@ -380,8 +382,8 @@ enum {
     WIN_DISPLAY_INFO,
     WIN_MESSAGE,
     WIN_ITEM_DESC,
-    // Only the locked-mon messages (MSG_LOCKED_UNTIL_CHAMPION, MSG_LOCKED_DRAFT,
-    // MSG_LOCKED_RECRUITS) need 3 lines -- every other message printed through
+    // Only the locked-mon messages (MSG_LOCKED_UNTIL_CHAMPION, MSG_LOCKED_LEVEL_CAP,
+    // MSG_LOCKED_DRAFT, MSG_LOCKED_RECRUITS) need 3 lines -- every other message printed through
     // PrintMessage is one short line, so WIN_MESSAGE stays sized for that
     // common case instead of being stretched (and overlapping neighboring windows'
     // VRAM tiles -- see WIN_MESSAGE_LOCKED's .baseBlock below) for all of them.
@@ -588,6 +590,10 @@ EWRAM_DATA static u8 sMovingMonOrigBoxPos = 0;
 EWRAM_DATA static bool8 sAutoActionOn = 0;
 EWRAM_DATA static bool8 sJustOpenedBag = 0;
 EWRAM_DATA static bool8 sRefreshDisplayMonGfx = FALSE;
+// Which per-mon reason (see IsBoxMonWithdrawLocked's own comment) most
+// recently locked a box mon, for GetLockedMonMsgId to report the right
+// message. Only meaningful right after IsBoxMonWithdrawLocked returns TRUE.
+EWRAM_DATA static u8 sBoxMonLockMsgId = 0;
 
 // Main tasks
 static void Task_InitPokeStorage(u8);
@@ -1147,6 +1153,10 @@ static const struct StorageMessage sMessages[] =
     // wrapped across 3 short lines instead of the 2 long ones it started as, which
     // is too wide for the window and just runs off the edge.
     [MSG_LOCKED_UNTIL_CHAMPION] = {COMPOUND_STRING("This POKéMON won't\ncome with you until\nyou defeat the LEAGUE!"), MSG_VAR_NONE},
+    // Shown instead of MSG_LOCKED_UNTIL_CHAMPION for reason 3 in
+    // IsBoxMonWithdrawLocked's own comment (below) -- a box mon currently
+    // above the level cap. Same WIN_MESSAGE_LOCKED window, same reason.
+    [MSG_LOCKED_LEVEL_CAP]     = {COMPOUND_STRING("This POKéMON is\nabove your level cap\nand can't be withdrawn!"), MSG_VAR_NONE},
     // Draft Mode.md §3c: shown instead of MSG_LOCKED_UNTIL_CHAMPION whenever
     // Draft mode is on -- the lock reason is the whole run, not the league,
     // so it gets its own string. Same WIN_MESSAGE_LOCKED window, same reason.
@@ -4710,7 +4720,7 @@ static void PrintMessage(u8 id)
     u8 *txtPtr;
     // Every other message is one short line and fits WIN_MESSAGE; only these
     // need the taller, separately-blocked WIN_MESSAGE_LOCKED (see its template).
-    u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION || id == MSG_LOCKED_DRAFT || id == MSG_LOCKED_RECRUITS) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
+    u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION || id == MSG_LOCKED_LEVEL_CAP || id == MSG_LOCKED_DRAFT || id == MSG_LOCKED_RECRUITS) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
 
     DynamicPlaceholderTextUtil_Reset();
     switch (sMessages[id].format)
@@ -7307,7 +7317,7 @@ static bool8 IsRemovingLastPartyMon(void)
         return FALSE;
 }
 
-// Three independent reasons a box mon can be locked out of withdraw/move/
+// Four independent reasons a box mon can be locked out of withdraw/move/
 // shift/item-swap, all surfaced through PrintMessage(GetLockedMonMsgId())
 // (see MSTATE_ERROR_LOCKED_MON below):
 //
@@ -7318,14 +7328,16 @@ static bool8 IsRemovingLastPartyMon(void)
 //    MSG_LOCKED_DRAFT / MSG_LOCKED_RECRUITS rather than MSG_LOCKED_UNTIL_
 //    CHAMPION -- see GetLockedMonMsgId.
 //
-// The remaining two boil down to "not withdrawable until you've beaten the
-// league (again) in this playthrough", and are both (Trading Codes.md Stage
-// 11) explicit per-mon bits on struct BoxPokemon rather than inferred from
-// OT ID -- see each bit's own comment (include/pokemon.h) for the full
-// reasoning on why that inference was replaced:
+// The remaining three boil down to "not withdrawable until you've beaten the
+// league (again) in this playthrough":
 //
 // 1. tradeCodeAboveLevelCap: a trade-code Pokémon that arrived above the
-//    level cap (TradeCodeReceive_DoSwap, src/trade_code_receive.c).
+//    level cap (TradeCodeReceive_DoSwap, src/trade_code_receive.c). An
+//    explicit per-mon bit on struct BoxPokemon rather than inferred from OT
+//    ID -- see its own comment (include/pokemon.h) for the full reasoning
+//    on why that inference was replaced. Deliberately not re-evaluated
+//    against the current cap (unlike case 3 below): once flagged, a mon
+//    stays locked even if the cap later rises past its level.
 //
 // 2. legacyCarryOverLocked: a Pokémon that predates the current New-Game-
 //    Plus/Nuzlocke-restart playthrough (CarryStorageIntoNewGame, src/
@@ -7334,6 +7346,18 @@ static bool8 IsRemovingLastPartyMon(void)
 //    when it itself runs, which is already conditioned on the equivalent
 //    "keep storage" choice at restart time, so a save that never carried
 //    storage over simply never has any box mon with this bit set.
+//
+// 3. Any box mon currently above the level cap, regardless of how it got
+//    there (rare candy, in-game trade, hacked save, etc.) -- evaluated live
+//    against GetCurrentLevelCap() every call, so unlike case 1 this one
+//    clears itself as soon as the cap catches up to the mon's level. Reported
+//    with its own MSG_LOCKED_LEVEL_CAP rather than MSG_LOCKED_UNTIL_CHAMPION,
+//    since "defeat the league" would be misleading -- raising the cap (or
+//    beating the league, which also raises it) is enough on its own.
+//
+// Cases 1-3 stash which one fired in sBoxMonLockMsgId for GetLockedMonMsgId
+// to report, since by the time that's called the boxMon pointer itself is
+// no longer available (see MSTATE_ERROR_LOCKED_MON's state-machine delay).
 static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
 {
     if (boxMon == NULL)
@@ -7345,23 +7369,39 @@ static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
     if (FlagGet(FLAG_SYS_GAME_CLEAR))
         return FALSE;
 
-    if (B_EXP_CAP_TYPE != EXP_CAP_NONE && boxMon->tradeCodeAboveLevelCap)
-        return TRUE;
+    if (B_EXP_CAP_TYPE != EXP_CAP_NONE)
+    {
+        if (boxMon->tradeCodeAboveLevelCap)
+        {
+            sBoxMonLockMsgId = MSG_LOCKED_UNTIL_CHAMPION;
+            return TRUE;
+        }
+        if (GetLevelFromBoxMonExp(boxMon) > GetCurrentLevelCap())
+        {
+            sBoxMonLockMsgId = MSG_LOCKED_LEVEL_CAP;
+            return TRUE;
+        }
+    }
 
-    return boxMon->legacyCarryOverLocked;
+    if (boxMon->legacyCarryOverLocked)
+    {
+        sBoxMonLockMsgId = MSG_LOCKED_UNTIL_CHAMPION;
+        return TRUE;
+    }
+    return FALSE;
 }
 
 // Draft and Recruits' locks (above) are blanket, run-wide locks rather than a
 // per-mon reason, so each gets its own message instead of reusing
-// MSG_LOCKED_UNTIL_CHAMPION's "beat the league" phrasing, which would be
-// misleading in either run.
+// sBoxMonLockMsgId's per-mon result -- MSG_LOCKED_UNTIL_CHAMPION's "beat the
+// league" phrasing would be misleading in either run.
 static u8 GetLockedMonMsgId(void)
 {
     if (Draft_IsEnabled())
         return MSG_LOCKED_DRAFT;
     if (Recruits_IsEnabled())
         return MSG_LOCKED_RECRUITS;
-    return MSG_LOCKED_UNTIL_CHAMPION;
+    return sBoxMonLockMsgId;
 }
 
 static bool8 CanPlaceMon(void)

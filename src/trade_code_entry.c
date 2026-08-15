@@ -891,8 +891,9 @@ static void TradeCodeEntry_HandleBack(void)
 }
 
 // Decodes the field, optionally runs it past the caller's validator, and
-// either finishes the screen (TRADE_CODE_ENTRY_OK) or shows an error and
-// clears the field so the player can try again without leaving the screen.
+// either finishes the screen (TRADE_CODE_ENTRY_OK) or shows an error,
+// leaving the field as typed so the player can fix it without leaving the
+// screen.
 static void TradeCodeEntry_TrySubmit(void)
 {
     struct TradeCodeEntryResources *res = sTradeCodeEntryDataPtr;
@@ -950,10 +951,12 @@ static void TradeCodeEntry_TrySubmit(void)
     }
     else
     {
+        // Leave the typed symbols in place rather than wiping the field -
+        // a failed submit is usually one mistyped character, not a reason
+        // to make the player retype the whole code. They can just delete
+        // back to the mistake and fix it.
         PlaySE(SE_FAILURE);
         res->errorStatus = finalStatus;
-        res->symbolCount = 0;
-        res->rawSymbols[0] = EOS;
         TradeCodeEntry_PrintEntryField();
         TradeCodeEntry_PrintMessage();
     }

@@ -4559,9 +4559,10 @@ static void SpriteCB_BouncingPokeballArrive(struct Sprite *sprite)
 // restart should discard from storage, not (as of Trading Codes.md Stage 11) by any
 // withdraw-lock check anymore -- IsBoxMonWithdrawLocked (src/pokemon_storage_system.c)
 // used to lean on this whitelist to tell a legitimate foreign OT ID apart from an
-// illegitimate one, but now checks two explicit struct BoxPokemon bits instead
-// (tradeCodeAboveLevelCap, legacyCarryOverLocked -- see include/pokemon.h), so it no
-// longer needs to reason about *why* an OT ID looks foreign at all.
+// illegitimate one, but now checks two explicit struct BoxPokemon bits
+// (tradeCodeAboveLevelCap, legacyCarryOverLocked -- see include/pokemon.h) plus a live
+// level-cap comparison instead, so it no longer needs to reason about *why* an OT ID
+// looks foreign at all.
 bool32 IsIngameTradeOtId(u32 otId)
 {
     u32 i;
