@@ -697,6 +697,7 @@ static u8 GetLockedMonMsgId(void);
 static bool8 CanPlaceMon(void);
 static bool8 CanShiftMon(void);
 static bool8 IsMonBeingMoved(void);
+static bool32 CanSortStorage(void);
 static void TryRefreshDisplayMon(void);
 static void ReshowDisplayMon(void);
 static void SetDisplayMonData(void *, u8);
@@ -3626,10 +3627,29 @@ static void Task_HandleBoxOptions(u8 taskId)
             SetPokeStorageTask(Task_JumpBox);
             break;
         case MENU_SORT:
+            // Refuse here rather than hiding the row: a row that explains itself
+            // is clearer than one that appears and disappears, and it keeps
+            // AddBoxOptionsMenu free of state.
+            if (!CanSortStorage())
+            {
+                PlaySE(SE_FAILURE);
+                PrintMessage(MSG_CANT_SORT_NOW);
+                sStorage->state++;
+                break;
+            }
             PlaySE(SE_SELECT);
             ClearBottomWindow();
             SetPokeStorageTask(Task_HandleSort);
             break;
+        }
+        break;
+    case 3:
+        // Refusal message; wait for it to land before it can be dismissed.
+        if (!IsDma3ManagerBusyWithBgCopy() && JOY_NEW(A_BUTTON | B_BUTTON | DPAD_ANY))
+        {
+            AnimateBoxScrollArrows(TRUE);
+            ClearBottomWindow();
+            SetPokeStorageTask(Task_PokeStorageMain);
         }
         break;
     }
@@ -3718,6 +3738,27 @@ static void Task_HandleWallpapers(u8 taskId)
         }
         break;
     }
+}
+
+// A sort repacks every box, so it must not run while a Pokémon or item is held
+// outside the box arrays: the held mon/item would be placed back into a slot the
+// sort has already filled, and a MultiMove selection's origin slots would all be
+// invalidated.
+// Draft and Recruits runs are deliberately not blocked here. Those modes stop
+// Pokémon leaving the PC (IsBoxMonWithdrawLocked, and the option gate in
+// Task_PokeStorageMain); reordering inside the PC removes nothing and grants
+// nothing.
+static bool32 CanSortStorage(void)
+{
+    if (IsMonBeingMoved())
+        return FALSE;
+    // The live "item in hand" test -- sMovingItemId is only a screen-change cache.
+    if (IsMovingItem())
+        return FALSE;
+    if (sStorage->inBoxMovingMode != MOVE_MODE_NORMAL)
+        return FALSE;
+
+    return TRUE;
 }
 
 static void Task_HandleSort(u8 taskId)
