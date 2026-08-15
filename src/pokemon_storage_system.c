@@ -654,6 +654,8 @@ static void RemoveMenu(void);
 // Pokémon sprites
 static void InitMonIconFields(void);
 static void SpriteCB_BoxMonIconScrollOut(struct Sprite *);
+static void InitBoxMonSprites(u8);
+static void DestroyBoxMonIconAtPosition(u8);
 static void GetIncomingBoxMonData(u8);
 static void CreatePartyMonSprite(u8, bool8);
 static void CreatePartyMonsSprites(bool8);
@@ -698,6 +700,7 @@ static bool8 CanPlaceMon(void);
 static bool8 CanShiftMon(void);
 static bool8 IsMonBeingMoved(void);
 static bool32 CanSortStorage(void);
+static void RefreshBoxAfterSort(void);
 static void TryRefreshDisplayMon(void);
 static void ReshowDisplayMon(void);
 static void SetDisplayMonData(void *, u8);
@@ -3761,6 +3764,33 @@ static bool32 CanSortStorage(void)
     return TRUE;
 }
 
+// Every icon on screen was drawn from the pre-sort box contents, so throw them
+// all away and rebuild from live data. InitBoxMonSprites re-applies the
+// ShouldBoxmonSpriteBeTransparent blend, so withdraw-locked and excluded mons
+// come back greyed in their new slots.
+//
+// Not rebuilt here:
+//  - sStorage->boxSpecies/boxPersonalities/boxIsEgg. Only the box-scroll path
+//    reads them, and InitBoxMonIconScroll repopulates them for the incoming box
+//    every time, so they cannot be read stale.
+//  - Item icons. In MOVE ITEMS only the mon under the cursor gets one, and the
+//    cursor is on the box title for the whole sort flow.
+//
+// currentBox and the cursor are left where they are: after an all-boxes repack
+// the mon that was under the cursor may be in another box entirely, so there is
+// nothing meaningful to follow.
+static void RefreshBoxAfterSort(void)
+{
+    u32 boxPosition;
+
+    for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
+        DestroyBoxMonIconAtPosition(boxPosition);
+
+    InitBoxMonSprites(StorageGetCurrentBox());
+    TryRefreshDisplayMon();
+    RefreshDisplayMonData();
+}
+
 static void Task_HandleSort(u8 taskId)
 {
     s16 input;
@@ -3812,11 +3842,8 @@ static void Task_HandleSort(u8 taskId)
             sStorage->state++;
             break;
         case 0: // Yes
-            // The sort itself is not wired up yet; the key is recorded and the
-            // menu backs out to the box view.
-            AnimateBoxScrollArrows(TRUE);
             ClearBottomWindow();
-            SetPokeStorageTask(Task_PokeStorageMain);
+            sStorage->state = 6;
             break;
         }
         break;
@@ -3825,6 +3852,45 @@ static void Task_HandleSort(u8 taskId)
         // teardown before rebuilding a window over it.
         if (!IsDma3ManagerBusyWithBgCopy())
             sStorage->state = 0;
+        break;
+    case 6:
+        if (!IsDma3ManagerBusyWithBgCopy())
+        {
+            PrintMessage(MSG_SORTING);
+            sStorage->state++;
+        }
+        break;
+    case 7:
+        // The sort blocks for several frames, so let "Sorting…" reach the
+        // screen before starting it.
+        if (!IsDma3ManagerBusyWithBgCopy())
+            sStorage->state++;
+        break;
+    case 8:
+        // Run in one blocking call. The cost is the key pass' 840 decrypts -
+        // a few frames behind an already-drawn message - and chunking an
+        // in-place cycle-following permutation would risk leaving the boxes
+        // half-permuted across a soft reset.
+        if (!SortPokemonStorage(sStorage->sortType))
+        {
+            // Scratch allocation failed and nothing was touched. Back out
+            // silently rather than claim a sort that did not happen.
+            AnimateBoxScrollArrows(TRUE);
+            ClearBottomWindow();
+            SetPokeStorageTask(Task_PokeStorageMain);
+            break;
+        }
+        RefreshBoxAfterSort();
+        PrintMessage(MSG_SORT_COMPLETE);
+        sStorage->state++;
+        break;
+    case 9:
+        if (JOY_NEW(A_BUTTON | B_BUTTON))
+        {
+            AnimateBoxScrollArrows(TRUE);
+            ClearBottomWindow();
+            SetPokeStorageTask(Task_PokeStorageMain);
+        }
         break;
     }
 }
