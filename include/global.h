@@ -759,7 +759,7 @@ struct SaveBlock2
              u16 regionMapZoom:1; // whether the map is zoomed in
              //u16 padding1:4;
     /*0x16*/ u8 limitedPartySetting; // Limited Party challenge: nonzero means on. 0 means off, so old saves read as OFF.
-    /*0x17*/ u8 filler_17[1];
+    /*0x17*/ u8 rotationModeSetting; // Rotation Mode: nonzero means on. 0 means off, so old saves read as OFF.
     /*0x18*/ struct Pokedex pokedex;
     /*0x90*/ u8 monoGenSetting; // Mono Gen challenge: the one generation the player may obtain.
     /*0x91*/ u8 monoTypeSetting; // Mono Type challenge: the one type the player may obtain. TYPE_NONE (0) means off, so old saves read as OFF.
