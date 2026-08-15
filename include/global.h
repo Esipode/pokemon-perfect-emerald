@@ -668,6 +668,18 @@ struct AchievementRunDataExt
     // once no single Pokemon has made it into every major battle.
     u32 legendCandidatePersonalities[PARTY_SIZE];
     u8  legendCandidateCount;
+
+    // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen challenge-mode
+    // achievements -- same SaveBlock1-has-no-slack detour as every field
+    // above. Per-NG+-cycle scope, zeroed by Achievement_OnNewGamePlusStarted
+    // alongside trainersDefeatedThisCycle etc.
+    u8 recruitsRetiredThisCycle;      // Revolving Door/Full Turnover
+    bool8 recruitsRunFailedThisCycle; // Never Understaffed (must stay FALSE)
+    u8 limitedPartyWinsAtCap;         // No Room to Spare
+    u8 draftsCompletedThisCycle;      // The Case is Closed/Full Case Clear
+    u8 rotationTrainerWinsThisCycle;  // On a Rotation
+    u8 monoTypeObtainedThisCycle;     // Perfect Fit
+    u8 monoGenObtainedThisCycle;      // Gotta Catch Some of Them
 };
 
 // Offline, code-based trading (see trade_code.h) -- a decoded but not-yet-

@@ -6172,6 +6172,9 @@ static void HandleEndTurn_BattleWon(void)
         // Streaks, Records & Collection
         // Remainder. Same gate, same evaluation point.
         Achievement_CheckBattleRecordsMilestones();
+        // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen. Same
+        // gate, same evaluation point.
+        Achievement_CheckNewModeBattleMilestones();
         // Recruits mode. Same gate; internally checks whether this is a
         // battle type Recruits credits at all.
         Recruits_TallyParticipants();

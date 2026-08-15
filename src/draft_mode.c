@@ -1,5 +1,6 @@
 #include "global.h"
 #include "draft_mode.h"
+#include "achievements.h"
 #include "battle_util.h"
 #include "event_data.h"
 #include "limited_party.h"
@@ -383,6 +384,8 @@ void Draft_DoReplacement(void)
     // See the matching comment in Draft_TryGiveToEmptySlot - the mon has a
     // home now, so it must stop reading as pending or the field hook loops.
     sDraftPendingValid = FALSE;
+
+    Achievement_RecordDraftReplacement();
 }
 
 // Discards the pending mon without placing it anywhere - the decline path.
@@ -413,6 +416,7 @@ void Draft_MarkAreaSpent(void)
         return;
 
     SET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId());
+    Achievement_RecordDraftCompleted();
 }
 
 // Field hook for ProcessPlayerFieldInput (src/field_control_avatar.c), run

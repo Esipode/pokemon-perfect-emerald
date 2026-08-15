@@ -21,6 +21,8 @@
 #include "mono_gen.h"              // MonoGen_IsEnabled, for Achievement_CountChallengeModifiers
 #include "mono_type.h"             // MonoType_IsEnabled, for Achievement_CountChallengeModifiers
 #include "rotation_mode.h"         // RotationMode_IsEnabled, for Achievement_CountChallengeModifiers
+#include "recruits_mode.h"        // Recruits_IsEnabled/_IsActive, for the Recruits achievements
+#include "badge_mart.h"           // CountPlayerBadges, for the Limited Party achievements
 #include "pokemon_storage_system.h" // TOTAL_BOXES_COUNT/IN_BOX_COUNT/GetBoxMonDataAt, for No Ace
 #include "constants/difficulty.h" // DIFFICULTY_HARD, for Trial by Fire
 #include "item.h"                 // gBagPockets/POCKETS_COUNT, for Pack Rat/Resourceful
@@ -522,6 +524,16 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
     runDataExt->gymSpeciesUsedThisCycleCount = 0;
     runDataExt->reinventionBroken = FALSE;
     runDataExt->majorBossClassesDefeatedThisCycle = 0;
+
+    // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen achievements,
+    // same per-cycle reset as the fields above.
+    runDataExt->recruitsRetiredThisCycle = 0;
+    runDataExt->recruitsRunFailedThisCycle = FALSE;
+    runDataExt->limitedPartyWinsAtCap = 0;
+    runDataExt->draftsCompletedThisCycle = 0;
+    runDataExt->rotationTrainerWinsThisCycle = 0;
+    runDataExt->monoTypeObtainedThisCycle = 0;
+    runDataExt->monoGenObtainedThisCycle = 0;
 
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
@@ -1071,6 +1083,22 @@ void Achievement_CheckStoryMilestones(void)
     if (FlagGet(FLAG_BADGE05_GET) && GetGameStat(GAME_STAT_USED_POKECENTER) == 0)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_WHO_NEEDS_CENTERS);
 
+    // Earned Your Keep/Full Roster Restored. Both read the live derived
+    // cap rather than tracking a before/after snapshot -- the cap only ever
+    // grows, so "at least one slot unlocked"/"cap == PARTY_SIZE" is exactly
+    // as correct as diffing it, without new state.
+    if (LimitedParty_IsEnabled() && CountPlayerBadges() >= 2)
+        Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_EARNED_YOUR_KEEP);
+    if (LimitedParty_IsEnabled() && LimitedParty_GetMaxPartySize() == PARTY_SIZE)
+        Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_FULL_ROSTER_RESTORED);
+
+    // Type Specialist/Regional Purist, same Gym 4 checkpoint the table above
+    // uses for ACHIEVEMENT_BADGE_HEAT.
+    if (FlagGet(FLAG_BADGE04_GET) && MonoType_IsEnabled())
+        Achievement_TryComplete(ACHIEVEMENT_MONO_TYPE_TYPE_SPECIALIST);
+    if (FlagGet(FLAG_BADGE04_GET) && MonoGen_IsEnabled())
+        Achievement_TryComplete(ACHIEVEMENT_MONO_GEN_REGIONAL_PURIST);
+
     // Piggyback on this same callnative for party-state checks that
     // aren't tied to a specific battle. See that function's own doc comment.
     Achievement_CheckPartyStateMilestones();
@@ -1530,7 +1558,9 @@ void Achievement_CheckBattleMilestones(void)
      && gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_STRATEGIC_VICTORY);
 
-    if (isTrainerBattle && playerCount != 0 && gBattleResults.playerFaintCounter * 2 >= playerCount)
+    // Reverse Sweep requires a full 6-Pokemon player team -- otherwise
+    // "losing half the team" could mean as little as one faint out of two.
+    if (isTrainerBattle && playerCount == PARTY_SIZE && gBattleResults.playerFaintCounter * 2 >= playerCount)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_REVERSE_SWEEP);
 
     if (isTrainerBattle && GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) == TRAINER_CLASS_CHAMPION
@@ -1554,7 +1584,10 @@ void Achievement_CheckBattleMilestones(void)
             Achievement_TryComplete(ACHIEVEMENT_BATTLE_MOVE_VARIETY);
     }
 
-    if (isTrainerBattle && !sBattleData.repeatedMove)
+    // No Repeats requires a full 6-Pokemon opposing team -- trivial to avoid
+    // repeating a move against a trainer who only fields one Pokemon.
+    if (isTrainerBattle && !sBattleData.repeatedMove
+     && gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_REPEATS);
 
     // "Heavily underleveled": every party member at least 5 levels below the
@@ -3746,6 +3779,225 @@ static void Achievement_CheckBoostMilestones(void)
 
         if (maxedCount == 1 && zeroCount >= 5)
             Achievement_TryComplete(ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY);
+    }
+}
+
+// ---- Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen -----------
+
+// HandleEndTurn_BattleWon (src/battle_main.c), alongside
+// Achievement_CheckBattleRecordsMilestones/Recruits_TallyParticipants -- same
+// gate (never link/recorded), same evaluation point.
+void Achievement_CheckNewModeBattleMilestones(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
+    u8 i;
+
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+        return;
+
+    // Fresh Recruits/Tour of Duty.
+    if (Recruits_IsActive())
+    {
+        Achievement_TryComplete(ACHIEVEMENT_RECRUITS_FRESH_RECRUITS);
+        for (i = 0; i < playerCount; i++)
+        {
+            if (GetMonData(&party[i], MON_DATA_RECRUIT_BATTLES) >= 5)
+            {
+                Achievement_TryComplete(ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY);
+                break;
+            }
+        }
+    }
+
+    // Tight Squad/No Room to Spare. Opponent B (double trainer battles) isn't
+    // checked -- opponent A alone is already enough to earn Tight Squad in
+    // the common case, and this stays an undercount rather than an overcount
+    // in the rest.
+    if (LimitedParty_IsEnabled())
+    {
+        u8 cap = LimitedParty_GetMaxPartySize();
+
+        if (gPartiesCount[B_TRAINER_OPPONENT_A] > cap)
+            Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_TIGHT_SQUAD);
+
+        if (playerCount >= cap && runDataExt->limitedPartyWinsAtCap < 0xFF)
+        {
+            runDataExt->limitedPartyWinsAtCap++;
+            if (runDataExt->limitedPartyWinsAtCap >= 15)
+                Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_NO_ROOM_TO_SPARE);
+        }
+    }
+
+    // Spin the Wheel/On a Rotation/Gym Leader Roulette.
+    if (RotationMode_IsEnabled())
+    {
+        Achievement_TryComplete(ACHIEVEMENT_ROTATION_SPIN_THE_WHEEL);
+
+        if (runDataExt->rotationTrainerWinsThisCycle < 0xFF)
+        {
+            runDataExt->rotationTrainerWinsThisCycle++;
+            if (runDataExt->rotationTrainerWinsThisCycle >= 25)
+                Achievement_TryComplete(ACHIEVEMENT_ROTATION_ON_A_ROTATION);
+        }
+
+        if (Achievement_IsGymBattle())
+            Achievement_TryComplete(ACHIEVEMENT_ROTATION_GYM_LEADER_ROULETTE);
+    }
+}
+
+// GameClear (src/post_battle_event_funcs.c), alongside every other
+// completion check -- same re-runs-every-NG+-cycle gating. Every "complete
+// the story with X" entry for the six new modes, plus the Cross-Mode
+// stacking entries.
+void Achievement_CheckNewModeCompletionMilestones(void)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+    bool8 isHard = gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD;
+    bool8 stackedGameMode = gSaveBlock1Ptr->nuzlockeModeEnabled || Draft_IsEnabled() || Recruits_IsEnabled();
+    u8 newModeCount;
+    bool8 kitchenSink;
+
+    if (Recruits_IsEnabled())
+    {
+        if (!runDataExt->recruitsRunFailedThisCycle)
+            Achievement_TryComplete(ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED);
+        if (isHard)
+            Achievement_TryComplete(ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE);
+    }
+
+    if (LimitedParty_IsEnabled() && isHard && runData->highestPartySizeThisRun != 0
+     && runData->highestPartySizeThisRun <= LIMITED_PARTY_BASE_SIZE)
+        Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_BARE_MINIMUM_CHAMPION);
+
+    if (Draft_IsEnabled())
+    {
+        Achievement_TryComplete(ACHIEVEMENT_DRAFT_DRAFTED_NOT_CAUGHT);
+        if (isHard)
+            Achievement_TryComplete(ACHIEVEMENT_DRAFT_NO_BALL_NEEDED);
+    }
+
+    if (RotationMode_IsEnabled())
+    {
+        Achievement_TryComplete(ACHIEVEMENT_ROTATION_FULL_CIRCUIT);
+        if (stackedGameMode && FlagGet(FLAG_RANDOMIZE_MON))
+            Achievement_TryComplete(ACHIEVEMENT_ROTATION_CHAOS_ROTATION);
+    }
+
+    if (MonoType_IsEnabled())
+    {
+        Achievement_TryComplete(ACHIEVEMENT_MONO_TYPE_TRUE_BELIEVER);
+        if (isHard)
+            Achievement_TryComplete(ACHIEVEMENT_MONO_TYPE_ONE_TYPE_TO_RULE_THEM_ALL);
+    }
+    if (MonoGen_IsEnabled())
+    {
+        Achievement_TryComplete(ACHIEVEMENT_MONO_GEN_TRUE_TO_THE_ROOTS);
+        if (isHard)
+            Achievement_TryComplete(ACHIEVEMENT_MONO_GEN_OLD_SCHOOL_HARD_MODE);
+    }
+    if (MonoType_IsEnabled() && MonoGen_IsEnabled())
+        Achievement_TryComplete(ACHIEVEMENT_MONO_TYPE_SECOND_VERSE);
+
+    // Cross-Mode stacking. Recruits_IsEnabled()/etc. each resolve to a
+    // guaranteed 0/1 (see their own `!= 0` bodies), so summing them counts
+    // how many of the six are on.
+    newModeCount = Recruits_IsEnabled() + LimitedParty_IsEnabled() + Draft_IsEnabled()
+                 + RotationMode_IsEnabled() + MonoType_IsEnabled() + MonoGen_IsEnabled();
+    kitchenSink = LimitedParty_IsEnabled() && MonoType_IsEnabled()
+               && MonoGen_IsEnabled() && RotationMode_IsEnabled();
+
+    if (newModeCount >= 2)
+        Achievement_TryComplete(ACHIEVEMENT_CROSSMODE_MODE_COLLECTOR);
+    if (kitchenSink)
+        Achievement_TryComplete(ACHIEVEMENT_CROSSMODE_KITCHEN_SINK);
+    if (kitchenSink && stackedGameMode)
+        Achievement_TryComplete(ACHIEVEMENT_CROSSMODE_THE_FULL_STACK);
+}
+
+// Recruits_DoRetirement (src/recruits_mode.c). Honorable Discharge
+// unconditionally (only ever called while Recruits mode is on), plus the
+// retirement-count ladder.
+void Achievement_RecordRecruitRetirement(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+    Achievement_TryComplete(ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE);
+
+    if (runDataExt->recruitsRetiredThisCycle < 0xFF)
+        runDataExt->recruitsRetiredThisCycle++;
+    if (runDataExt->recruitsRetiredThisCycle >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_RECRUITS_REVOLVING_DOOR);
+    if (runDataExt->recruitsRetiredThisCycle >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_RECRUITS_FULL_TURNOVER);
+}
+
+// Recruits_StartRunFailedScreen (src/recruits_mode.c).
+void Achievement_RecordRecruitRunFailed(void)
+{
+    gSaveBlock2Ptr->achievementRunDataExt.recruitsRunFailedThisCycle = TRUE;
+}
+
+// Draft_MarkAreaSpent (src/draft_mode.c), only in the branch that just
+// resolved a real draft pick.
+void Achievement_RecordDraftCompleted(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+    Achievement_TryComplete(ACHIEVEMENT_DRAFT_FIRST_PICK);
+
+    if (runDataExt->draftsCompletedThisCycle < 0xFF)
+        runDataExt->draftsCompletedThisCycle++;
+    if (runDataExt->draftsCompletedThisCycle >= 10)
+        Achievement_TryComplete(ACHIEVEMENT_DRAFT_THE_CASE_IS_CLOSED);
+    if (runDataExt->draftsCompletedThisCycle >= 30)
+        Achievement_TryComplete(ACHIEVEMENT_DRAFT_FULL_CASE_CLEAR);
+}
+
+// Draft_DoReplacement (src/draft_mode.c).
+void Achievement_RecordDraftReplacement(void)
+{
+    Achievement_TryComplete(ACHIEVEMENT_DRAFT_TOUGH_CALL);
+}
+
+// BirchCase_GiveMon (src/ui_birch_case.c), alongside
+// Achievement_RecordStarterPersonality -- the normal (non-Draft) starter
+// grant. Draft's own starter-equivalent pick (BirchCase_QueueDraftMon)
+// doesn't call this -- a Draft+Mono run's very first pick goes through the
+// Draft offer flow instead, not this grant, the same gift/trade gap already
+// accepted elsewhere in this file.
+void Achievement_CheckMonoStarterMilestones(void)
+{
+    if (MonoType_IsEnabled())
+        Achievement_TryComplete(ACHIEVEMENT_MONO_TYPE_COMMITTED_TO_THE_BIT);
+    if (MonoGen_IsEnabled())
+        Achievement_TryComplete(ACHIEVEMENT_MONO_GEN_GENERATION_LOYALIST);
+}
+
+// GiveCapturedMonToPlayer (src/pokemon.c) and Task_EggHatch
+// (src/egg_hatch.c), alongside Achievement_RecordMonObtained. Every mon
+// obtainable while Mono Type/Mono Gen is enabled is already restricted to
+// the chosen type/generation (or an unresolved gen-0 species), so counting
+// obtains while each mode is on is equivalent to counting obtains of that
+// type/generation.
+void Achievement_RecordMonoModeObtain(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+    if (MonoType_IsEnabled() && runDataExt->monoTypeObtainedThisCycle < 0xFF)
+    {
+        runDataExt->monoTypeObtainedThisCycle++;
+        if (runDataExt->monoTypeObtainedThisCycle >= 15)
+            Achievement_TryComplete(ACHIEVEMENT_MONO_TYPE_PERFECT_FIT);
+    }
+
+    if (MonoGen_IsEnabled() && runDataExt->monoGenObtainedThisCycle < 0xFF)
+    {
+        runDataExt->monoGenObtainedThisCycle++;
+        if (runDataExt->monoGenObtainedThisCycle >= 15)
+            Achievement_TryComplete(ACHIEVEMENT_MONO_GEN_GOTTA_CATCH_SOME_OF_THEM);
     }
 }
 

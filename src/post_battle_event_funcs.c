@@ -48,6 +48,9 @@ int GameClear(void)
         Achievement_CheckNuzlockeCompletionMilestones();
         // Legend of the Run, same gating.
         Achievement_CheckRecordsCompletionMilestones();
+        // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen
+        // completion entries, plus Cross-Mode stacking. Same gating.
+        Achievement_CheckNewModeCompletionMilestones();
         // FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
         // (see NewGameInitData, src/new_game.c), so this branch already
         // re-runs on every NG+ cycle's clear, not just the save's very first

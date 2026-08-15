@@ -584,6 +584,8 @@ static void CB2_LoadEggHatch(void)
         Achievement_CheckEggMilestones(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_IS_SHINY));
         // Same call site, for Fresh Start.
         Achievement_RecordMonObtained(GetMonData(&gParties[B_TRAINER_PLAYER][sEggHatchData->eggPartyId], MON_DATA_PERSONALITY));
+        // Perfect Fit/Gotta Catch Some of Them. Same funnel.
+        Achievement_RecordMonoModeObtain();
         // The Achievement_CheckPerfectIvMilestone(...) call
         // that used to be here (Perfect Specimen) was removed along with
         // that achievement -- see src/achievements.c.

@@ -928,6 +928,53 @@ void Achievement_CheckPokecenterMilestone(void);
 // change). See include/constants/achievements.h's category Q comment for the
 // full roster-to-condition breakdown.
 
+// ---- Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen -----------
+
+// HandleEndTurn_BattleWon (src/battle_main.c), alongside
+// Achievement_CheckBattleRecordsMilestones/Recruits_TallyParticipants. Every
+// entry evaluated on a trainer-battle win for these six modes: Fresh
+// Recruits/Tour of Duty (Recruits), Tight Squad/No Room to Spare (Limited
+// Party), Spin the Wheel/On a Rotation/Gym Leader Roulette (Rotation).
+void Achievement_CheckNewModeBattleMilestones(void);
+
+// GameClear (src/post_battle_event_funcs.c), alongside every other
+// completion check. Every "complete the story with X" entry for these six
+// modes, plus the Cross-Mode stacking entries (Mode Collector/Kitchen Sink/
+// The Full Stack).
+void Achievement_CheckNewModeCompletionMilestones(void);
+
+// Recruits_DoRetirement (src/recruits_mode.c). Honorable Discharge
+// unconditionally, plus the Revolving Door/Full Turnover retirement-count
+// ladder.
+void Achievement_RecordRecruitRetirement(void);
+
+// Recruits_StartRunFailedScreen (src/recruits_mode.c). Marks this cycle as
+// having had a run failure, so Never Understaffed's GameClear check can
+// refuse.
+void Achievement_RecordRecruitRunFailed(void);
+
+// Draft_MarkAreaSpent (src/draft_mode.c), only in the branch that just
+// resolved a real draft pick (not a gift/egg or a no-offer area). First Pick
+// unconditionally, plus the drafts-completed ladder (The Case is Closed/Full
+// Case Clear).
+void Achievement_RecordDraftCompleted(void);
+
+// Draft_DoReplacement (src/draft_mode.c). Tough Call.
+void Achievement_RecordDraftReplacement(void);
+
+// BirchCase_GiveMon (src/ui_birch_case.c), alongside
+// Achievement_RecordStarterPersonality -- the normal (non-Draft) starter
+// grant. Committed to the Bit/Generation Loyalist.
+void Achievement_CheckMonoStarterMilestones(void);
+
+// GiveCapturedMonToPlayer (src/pokemon.c) and Task_EggHatch
+// (src/egg_hatch.c), alongside Achievement_RecordMonObtained. Every mon
+// obtainable while Mono Type/Mono Gen is enabled is already restricted to
+// the chosen type/generation (or an unresolved gen-0 species), so this just
+// counts obtains while each mode is on -- Perfect Fit/Gotta Catch Some of
+// Them.
+void Achievement_RecordMonoModeObtain(void);
+
 // Debug-only. src/debug.c is the only caller.
 // These bypass all the validation the real functions above add
 // (achievement completion rules, boost costs/maxLevel, reset fee) by design,

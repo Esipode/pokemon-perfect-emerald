@@ -562,6 +562,83 @@ enum AchievementId
     ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY,
     ACHIEVEMENT_MASTERY_DIAMOND_STANDARD,
 
+    // R. Recruits Mode (7). Achievement_CheckNewModeBattleMilestones
+    // (HandleEndTurn_BattleWon), Achievement_RecordRecruitRetirement/
+    // _RecordRecruitRunFailed (recruits_mode.c), and
+    // Achievement_CheckNewModeCompletionMilestones (GameClear).
+    ACHIEVEMENT_RECRUITS_FRESH_RECRUITS,
+    ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY,
+    ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE,
+    ACHIEVEMENT_RECRUITS_REVOLVING_DOOR,
+    ACHIEVEMENT_RECRUITS_FULL_TURNOVER,
+    ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED,
+    ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE,
+
+    // S. Limited Party (5). Achievement_CheckNewModeBattleMilestones,
+    // Achievement_CheckStoryMilestones's badge checkpoints (Earned Your
+    // Keep/Full Roster Restored -- both read the live derived cap, no new
+    // state needed), and Achievement_CheckNewModeCompletionMilestones.
+    // ACHIEVEMENT_LIMITED_PARTY_SMALL_BUT_MIGHTY ("complete the story never
+    // carrying more than 3 Pokemon") dropped -- identical condition to
+    // ACHIEVEMENT_CHALLENGE_THREE_POKEMON (category N), just gated on this
+    // mode too. Bare Minimum Champion below keeps the concept, distinguished
+    // by its HARD-difficulty requirement.
+    ACHIEVEMENT_LIMITED_PARTY_TIGHT_SQUAD,
+    ACHIEVEMENT_LIMITED_PARTY_EARNED_YOUR_KEEP,
+    ACHIEVEMENT_LIMITED_PARTY_FULL_ROSTER_RESTORED,
+    ACHIEVEMENT_LIMITED_PARTY_NO_ROOM_TO_SPARE,
+    ACHIEVEMENT_LIMITED_PARTY_BARE_MINIMUM_CHAMPION,
+
+    // T. Draft Mode (6). Achievement_RecordDraftCompleted/
+    // _RecordDraftReplacement (draft_mode.c) and
+    // Achievement_CheckNewModeCompletionMilestones.
+    ACHIEVEMENT_DRAFT_FIRST_PICK,
+    ACHIEVEMENT_DRAFT_TOUGH_CALL,
+    ACHIEVEMENT_DRAFT_THE_CASE_IS_CLOSED,
+    ACHIEVEMENT_DRAFT_FULL_CASE_CLEAR,
+    ACHIEVEMENT_DRAFT_DRAFTED_NOT_CAUGHT,
+    ACHIEVEMENT_DRAFT_NO_BALL_NEEDED,
+
+    // U. Rotation Mode (5). Achievement_CheckNewModeBattleMilestones and
+    // Achievement_CheckNewModeCompletionMilestones.
+    ACHIEVEMENT_ROTATION_SPIN_THE_WHEEL,
+    ACHIEVEMENT_ROTATION_ON_A_ROTATION,
+    ACHIEVEMENT_ROTATION_GYM_LEADER_ROULETTE,
+    ACHIEVEMENT_ROTATION_FULL_CIRCUIT,
+    ACHIEVEMENT_ROTATION_CHAOS_ROTATION,
+
+    // V. Mono Type Mode (6). Gated on MonoType_IsEnabled() specifically
+    // (not team composition) -- distinct from category L's existing
+    // MONO_TYPE_TRIAL/_ONE_TYPE_JOURNEY/_MONO_TYPE_CHAMPION/_TRIAL_BY_FIRE,
+    // which check party composition regardless of the challenge toggle.
+    // Achievement_CheckMonoStarterMilestones (ui_birch_case.c),
+    // Achievement_CheckStoryMilestones's Gym 4 checkpoint,
+    // Achievement_RecordMonoModeObtain (pokemon.c/egg_hatch.c), and
+    // Achievement_CheckNewModeCompletionMilestones.
+    ACHIEVEMENT_MONO_TYPE_COMMITTED_TO_THE_BIT,
+    ACHIEVEMENT_MONO_TYPE_TYPE_SPECIALIST,
+    ACHIEVEMENT_MONO_TYPE_PERFECT_FIT,
+    ACHIEVEMENT_MONO_TYPE_TRUE_BELIEVER,
+    ACHIEVEMENT_MONO_TYPE_SECOND_VERSE,
+    ACHIEVEMENT_MONO_TYPE_ONE_TYPE_TO_RULE_THEM_ALL,
+
+    // W. Mono Gen Mode (5). Parallel structure to category V.
+    ACHIEVEMENT_MONO_GEN_GENERATION_LOYALIST,
+    ACHIEVEMENT_MONO_GEN_REGIONAL_PURIST,
+    ACHIEVEMENT_MONO_GEN_GOTTA_CATCH_SOME_OF_THEM,
+    ACHIEVEMENT_MONO_GEN_TRUE_TO_THE_ROOTS,
+    ACHIEVEMENT_MONO_GEN_OLD_SCHOOL_HARD_MODE,
+
+    // X. Cross-Mode Stacking (3). Recruits/Limited Party/Draft/Rotation/Mono
+    // Type/Mono Gen are independent toggles (GAME MODE -- Nuzlocke/Draft/
+    // Recruits -- is the only mutually exclusive row), so up to 5 of them
+    // plus GAME MODE can be active together. Tagged
+    // ACHIEVEMENT_CATEGORY_CHALLENGE (stacking-challenge concept, same as
+    // Brutal Rules/Nightmare Mode). Achievement_CheckNewModeCompletionMilestones.
+    ACHIEVEMENT_CROSSMODE_MODE_COLLECTOR,
+    ACHIEVEMENT_CROSSMODE_KITCHEN_SINK,
+    ACHIEVEMENT_CROSSMODE_THE_FULL_STACK,
+
     ACHIEVEMENTS_COUNT,
 };
 
@@ -594,6 +671,12 @@ enum AchievementCategory
     ACHIEVEMENT_CATEGORY_ECONOMY,
     ACHIEVEMENT_CATEGORY_RECORDS,
     ACHIEVEMENT_CATEGORY_PROFILE,
+    ACHIEVEMENT_CATEGORY_RECRUITS,
+    ACHIEVEMENT_CATEGORY_LIMITED_PARTY,
+    ACHIEVEMENT_CATEGORY_DRAFT,
+    ACHIEVEMENT_CATEGORY_ROTATION,
+    ACHIEVEMENT_CATEGORY_MONO_TYPE,
+    ACHIEVEMENT_CATEGORY_MONO_GEN,
     ACHIEVEMENT_CATEGORIES_COUNT,
 };
 

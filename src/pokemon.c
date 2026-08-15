@@ -3391,6 +3391,8 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     // that lands in a box still counts as "obtained" for Fresh Start if it's
     // withdrawn into the party before the next Gym.
     Achievement_RecordMonObtained(GetMonData(mon, MON_DATA_PERSONALITY));
+    // Perfect Fit/Gotta Catch Some of Them. Same funnel.
+    Achievement_RecordMonoModeObtain();
     // Rare Find. gDexNavSpecies is nonzero only
     // while a battle a DexNav scan actually started is in progress, and is
     // reset only at battle end (after this catch script already ran).

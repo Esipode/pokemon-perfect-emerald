@@ -857,6 +857,8 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
     // party slot it was just placed into, since ScriptGiveMonParameterized's
     // own return value is a slot/result code, not the generated personality.
     Achievement_RecordStarterPersonality(GetMonData(&gPlayerParty[0], MON_DATA_PERSONALITY));
+    // Committed to the Bit/Generation Loyalist.
+    Achievement_CheckMonoStarterMilestones();
 
     if (wasRandomizeMonForMoves)
         FlagSet(FLAG_RANDOMIZE_MON);

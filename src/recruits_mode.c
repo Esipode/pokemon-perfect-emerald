@@ -1,5 +1,6 @@
 #include "global.h"
 #include "recruits_mode.h"
+#include "achievements.h"
 #include "battle.h"
 #include "battle_pyramid.h"
 #include "event_data.h"
@@ -135,6 +136,8 @@ void Recruits_DoRetirement(void)
     CompactPartySlots();
     CalculatePlayerPartyCount();
 
+    Achievement_RecordRecruitRetirement();
+
     if (gSaveBlock1Ptr->autosaveModeEnabled)
         gDoAutosave = TRUE;
 }
@@ -152,6 +155,7 @@ void Recruits_IsRunFailed(void)
 // winning the battle that emptied the party.
 void Recruits_StartRunFailedScreen(void)
 {
+    Achievement_RecordRecruitRunFailed();
     TrySavingData(SAVE_NORMAL);
     ScriptContext_Stop();
     FieldCB_NuzlockeRunFailed();
