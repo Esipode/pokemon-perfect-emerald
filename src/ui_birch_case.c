@@ -444,13 +444,24 @@ u8 GetRandomType(u16 species, u32 typeOffset)
     u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
     u16 baseSpecies = GET_BASE_SPECIES_ID(species);
     u32 combinedSeed = trainerId + baseSpecies + typeOffset;
-    // Generate value 0-17 (18 possible values: 1-9 and 11-19, skipping TYPE_MYSTERY=10 and TYPE_STELLAR=20)
-    u32 typeValue = (combinedSeed * 7) % 18;  // 18 = 9 types (1-9) + 9 types (11-19)
+    u8 originalType1 = gSpeciesInfo[species].types[0];
+    u8 originalType2 = gSpeciesInfo[species].types[1];
     u8 type;
-    if (typeValue < 9)
-        type = typeValue + 1;  // 1-9
-    else
-        type = typeValue + 2;  // 11-19 (skipping 10 and 20)
+
+    do
+    {
+        // Generate value 0-17 (18 possible values: 1-9 and 11-19, skipping TYPE_MYSTERY=10 and TYPE_STELLAR=20)
+        u32 typeValue = (combinedSeed * 7) % 18;  // 18 = 9 types (1-9) + 9 types (11-19)
+
+        if (typeValue < 9)
+            type = typeValue + 1;  // 1-9
+        else
+            type = typeValue + 2;  // 11-19 (skipping 10 and 20)
+
+        combinedSeed++;
+    }
+    while (type == TYPE_NONE || type == originalType1 || type == originalType2);
+
     return type;
 }
 
