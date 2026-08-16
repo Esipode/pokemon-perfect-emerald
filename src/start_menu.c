@@ -34,6 +34,8 @@
 #include "pokedex.h"
 #include "pokenav.h"
 #include "recruits_mode.h"
+#include "region_map.h"
+#include "route_tracker.h"
 #include "rtc.h"
 #include "safari_zone.h"
 #include "save.h"
@@ -47,6 +49,7 @@
 #include "text.h"
 #include "text_window.h"
 #include "trainer_card.h"
+#include "trainer_hill.h"
 #include "wallclock.h"
 #include "window.h"
 #include "union_room.h"
@@ -99,6 +102,7 @@ COMMON_DATA bool8 (*gMenuCallback)(void) = NULL;
 // EWRAM
 EWRAM_DATA static u8 sSafariBallsWindowId = 0;
 EWRAM_DATA static u8 sBattlePyramidFloorWindowId = 0;
+EWRAM_INIT static u8 sRouteTrackerWindowId = WINDOW_NONE;
 EWRAM_DATA static u8 sStartMenuCursorPos = 0;
 EWRAM_DATA static u8 sNumStartMenuActions = 0;
 // Sized to every possible action rather than a hand-counted magic number:
@@ -176,6 +180,21 @@ static const struct WindowTemplate sWindowTemplate_SafariBalls = {
     .paletteNum = 15,
     .baseBlock = 0x8
 };
+
+// Bottom-left mirror of the start menu box. baseBlock 0x40 sits between the
+// Safari window (0x08-0x2C) and the map name popup (0x107).
+static const struct WindowTemplate sWindowTemplate_RouteTracker = {
+    .bg = 0,
+    .tilemapLeft = 1,
+    .tilemapTop = 12,
+    .width = 13,
+    .height = 7,
+    .paletteNum = 15,
+    .baseBlock = 0x40
+};
+
+static const u8 sText_RouteTrackerItems[] = _("ITEMS");
+static const u8 sText_RouteTrackerTrainers[] = _("TRAINERS");
 
 static const u8 *const sPyramidFloorNames[FRONTIER_STAGES_PER_CHALLENGE + 1] =
 {
@@ -289,6 +308,8 @@ static void BuildBattlePyramidStartMenu(void);
 static void BuildMultiPartnerRoomStartMenu(void);
 static void ShowSafariBallsWindow(void);
 static void ShowPyramidFloorWindow(void);
+static bool32 ShouldShowRouteTracker(void);
+static void ShowRouteTrackerWindow(void);
 static void RemoveExtraStartMenuWindows(void);
 static bool32 PrintStartMenuActions(s8 *pIndex, u32 count);
 static bool32 InitStartMenuStep(void);
@@ -529,6 +550,60 @@ static void ShowPyramidFloorWindow(void)
 }
 #endif //FREE_BATTLE_FRONTIER
 
+// States where the counts would be meaningless (link/union menus are already reduced,
+// facility maps are randomised) or where a Safari-style box already occupies the corner.
+static bool32 ShouldShowRouteTracker(void)
+{
+    if (IsOverworldLinkActive() || InUnionRoom())
+        return FALSE;
+    if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InBattlePike() || InTrainerHill())
+        return FALSE;
+
+    return TRUE;
+}
+
+static void PrintRouteTrackerRow(const u8 *label, u8 y, u16 count, u16 total)
+{
+    u8 str[16];
+    u8 *end;
+
+    AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, label, 4, y, TEXT_SKIP_DRAW, NULL);
+
+    end = ConvertIntToDecimalStringN(str, count, STR_CONV_MODE_LEFT_ALIGN, 2);
+    *end++ = CHAR_SLASH;
+    end = ConvertIntToDecimalStringN(end, total, STR_CONV_MODE_LEFT_ALIGN, 2);
+    *end = EOS;
+
+    AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, str, GetStringRightAlignXOffset(FONT_SMALL, str, 96), y, TEXT_SKIP_DRAW, NULL);
+}
+
+static void ShowRouteTrackerWindow(void)
+{
+    struct RouteProgress progress;
+    u8 lineHeight = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
+    u8 y = 1;
+
+    // Map has nothing to track (e.g. a Poke Center) -- leave sRouteTrackerWindowId at WINDOW_NONE.
+    if (!GetCurrentRouteProgress(&progress))
+        return;
+
+    sRouteTrackerWindowId = AddWindow(&sWindowTemplate_RouteTracker);
+    PutWindowTilemap(sRouteTrackerWindowId);
+    DrawStdWindowFrame(sRouteTrackerWindowId, FALSE);
+
+    GetMapName(gStringVar4, gMapHeader.regionMapSectionId, 0);
+    AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, gStringVar4, 4, y, TEXT_SKIP_DRAW, NULL);
+    y += lineHeight;
+
+    PrintRouteTrackerRow(gText_MenuPokemon, y, progress.speciesCaught, progress.speciesTotal);
+    y += lineHeight;
+    PrintRouteTrackerRow(sText_RouteTrackerItems, y, progress.itemsCollected, progress.itemsTotal);
+    y += lineHeight;
+    PrintRouteTrackerRow(sText_RouteTrackerTrainers, y, progress.trainersDefeated, progress.trainersTotal);
+
+    CopyWindowToVram(sRouteTrackerWindowId, COPYWIN_GFX);
+}
+
 static void RemoveExtraStartMenuWindows(void)
 {
     if (GetSafariZoneFlag())
@@ -541,6 +616,13 @@ static void RemoveExtraStartMenuWindows(void)
     {
         ClearStdWindowAndFrameToTransparent(sBattlePyramidFloorWindowId, FALSE);
         RemoveWindow(sBattlePyramidFloorWindowId);
+    }
+    if (sRouteTrackerWindowId != WINDOW_NONE)
+    {
+        ClearStdWindowAndFrameToTransparent(sRouteTrackerWindowId, FALSE);
+        CopyWindowToVram(sRouteTrackerWindowId, COPYWIN_GFX);
+        RemoveWindow(sRouteTrackerWindowId);
+        sRouteTrackerWindowId = WINDOW_NONE;
     }
 }
 
@@ -608,6 +690,8 @@ static bool32 InitStartMenuStep(void)
         if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
             ShowPyramidFloorWindow();
 #endif //FREE_BATTLE_FRONTIER
+        if (gSaveBlock2Ptr->optionsRouteTracker && ShouldShowRouteTracker())
+            ShowRouteTrackerWindow();
         sInitStartMenuData[0]++;
         break;
     case 4:
