@@ -769,7 +769,8 @@ struct SaveBlock2
              u16 optionsBattleStyle:1; // OPTIONS_BATTLE_STYLE_[SHIFT/SET]
              u16 optionsBattleSceneOff:1; // whether battle animations are disabled
              u16 regionMapZoom:1; // whether the map is zoomed in
-             //u16 padding1:4;
+             u16 optionsRouteTracker:1; // show the route completion box on the start menu; 0 (off) on existing saves
+             //u16 padding1:3;
     /*0x16*/ u8 limitedPartySetting; // Limited Party challenge: nonzero means on. 0 means off, so old saves read as OFF.
     /*0x17*/ u8 rotationModeSetting; // Rotation Mode: nonzero means on. 0 means off, so old saves read as OFF.
     /*0x18*/ struct Pokedex pokedex;

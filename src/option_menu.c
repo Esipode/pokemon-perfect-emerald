@@ -25,6 +25,7 @@
 static void ReadAllCurrentSettings(u8 taskId);
 static void DrawOptionsPg1(u8 taskId);
 static void DrawOptionsPg2(u8 taskId);
+static void DrawOptionsPg3(u8 taskId);
 
 #define tMenuSelection    data[0]
 #define tButtonMode       data[1]
@@ -39,6 +40,7 @@ static void DrawOptionsPg2(u8 taskId);
 #define AUTO_SCROLL_SHIFT      3
 #define AUTOSAVE_SHIFT         8
 #define ACHIEVEMENT_BOOSTS_SHIFT 9
+#define ROUTE_TRACKER_SHIFT    10
 
 #define tPackedFlags          data[6]  // booleans packed into 16 bits
 
@@ -74,6 +76,14 @@ enum
     MENUITEM_COUNT_PG2,
 };
 
+// Menu items Pg3
+enum
+{
+    MENUITEM_ROUTE_TRACKER,
+    MENUITEM_CANCEL_PG3,
+    MENUITEM_COUNT_PG3,
+};
+
 enum
 {
     WIN_HEADER,
@@ -94,12 +104,17 @@ enum
 #define YPOS_AUTOSCROLL           (MENUITEM_AUTOSCROLL * 16)
 #define YPOS_AUTOSAVE             (MENUITEM_AUTOSAVE * 16)
 
-#define PAGE_COUNT 2
+//Pg3
+#define YPOS_ROUTE_TRACKER        (MENUITEM_ROUTE_TRACKER * 16)
+
+#define PAGE_COUNT 3
 
 static void Task_OptionMenuFadeIn(u8 taskId);
 static void Task_OptionMenuProcessInput(u8 taskId);
 static void Task_OptionMenuFadeIn_Pg2(u8 taskId);
 static void Task_OptionMenuProcessInput_Pg2(u8 taskId);
+static void Task_OptionMenuFadeIn_Pg3(u8 taskId);
+static void Task_OptionMenuProcessInput_Pg3(u8 taskId);
 static void Task_OptionMenuSave(u8 taskId);
 static void Task_OptionMenuOpenPlayerColors(u8 taskId);
 static void Task_OptionMenuFadeOut(u8 taskId);
@@ -120,6 +135,8 @@ static u8   Autosave_ProcessInput(u8 selection);
 static void Autosave_DrawChoices(u8 selection, bool8 isActive);
 static u8   AchievementBoosts_ProcessInput(u8 selection);
 static void AchievementBoosts_DrawChoices(u8 selection, bool8 isActive);
+static u8   RouteTracker_ProcessInput(u8 selection);
+static void RouteTracker_DrawChoices(u8 selection, bool8 isActive);
 static u8 Sound_ProcessInput(u8 selection);
 static void Sound_DrawChoices(u8 selection, bool8 isActive);
 static u8 FrameType_ProcessInput(u8 selection);
@@ -182,6 +199,10 @@ static const u8 gText_AutosaveOn[]         = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_AchievementBoostsOff[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_AchievementBoostsOn[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
 
+// Page 3 strings
+static const u8 gText_RouteTrackerOff[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
+static const u8 gText_RouteTrackerOn[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
+
 static const u8 sText_ChevronLeft[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
 
@@ -209,6 +230,12 @@ static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
     [MENUITEM_ACHIEVEMENT_BOOSTS] = COMPOUND_STRING("ACHIEVEMENT BOOSTS"),
     [MENUITEM_PLAYER_COLORS]     = COMPOUND_STRING("PLAYER COLOURS"),
     [MENUITEM_CANCEL_PG2]        = COMPOUND_STRING("CANCEL"),
+};
+
+static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
+{
+    [MENUITEM_ROUTE_TRACKER] = COMPOUND_STRING("ROUTE TRACKER"),
+    [MENUITEM_CANCEL_PG3]    = COMPOUND_STRING("CANCEL"),
 };
 
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
@@ -287,6 +314,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     if (FlagGet(FLAG_AUTO_SCROLL_TEXT))            SET_FLAG(AUTO_SCROLL, 1); else SET_FLAG(AUTO_SCROLL, 0);
     if (gSaveBlock1Ptr->autosaveModeEnabled)       SET_FLAG(AUTOSAVE, 1); else SET_FLAG(AUTOSAVE, 0);
     if (Achievement_BoostsEnabled())               SET_FLAG(ACHIEVEMENT_BOOSTS, 1); else SET_FLAG(ACHIEVEMENT_BOOSTS, 0);
+    if (gSaveBlock2Ptr->optionsRouteTracker)        SET_FLAG(ROUTE_TRACKER, 1); else SET_FLAG(ROUTE_TRACKER, 0);
 }
 
 static void DrawOptionsPg1(u8 taskId)
@@ -315,6 +343,15 @@ static void DrawOptionsPg2(u8 taskId)
     if (!IsAchievementBoostsHidden())
         AchievementBoosts_DrawChoices(GET_FLAG(ACHIEVEMENT_BOOSTS), sel == MENUITEM_ACHIEVEMENT_BOOSTS);
     HighlightOptionMenuItem(GetPg2DisplayRow(sel));
+    CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
+}
+
+static void DrawOptionsPg3(u8 taskId)
+{
+    u8 sel = gTasks[taskId].tMenuSelection;
+
+    RouteTracker_DrawChoices(GET_FLAG(ROUTE_TRACKER), sel == MENUITEM_ROUTE_TRACKER);
+    HighlightOptionMenuItem(sel);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
 
@@ -416,6 +453,10 @@ void CB2_InitOptionMenu(void)
             DrawOptionsPg2(taskId);
             gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
             break;
+        case 2:
+            DrawOptionsPg3(taskId);
+            gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
+            break;
         }
         gMain.state++;
         break;
@@ -467,6 +508,14 @@ static void Task_ChangePage(u8 taskId)
     case 1:
         DrawOptionsPg2(taskId);
         gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
+        break;
+    case 2:
+        // Pg3 has fewer rows than Pg1/Pg2, so a selection carried over from
+        // one of those (e.g. a row past CANCEL_PG3's index) needs clamping.
+        if (gTasks[taskId].tMenuSelection >= MENUITEM_COUNT_PG3)
+            gTasks[taskId].tMenuSelection = MENUITEM_CANCEL_PG3;
+        DrawOptionsPg3(taskId);
+        gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
         break;
     }
 }
@@ -672,6 +721,60 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
     }
 }
 
+static void Task_OptionMenuFadeIn_Pg3(u8 taskId)
+{
+    if (!gPaletteFade.active)
+        gTasks[taskId].func = Task_OptionMenuProcessInput_Pg3;
+}
+
+static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
+{
+    if (JOY_NEW(L_BUTTON) || JOY_NEW(R_BUTTON))
+    {
+        FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
+        ClearStdWindowAndFrame(WIN_OPTIONS, FALSE);
+        sCurrPage = Process_ChangePage(sCurrPage);
+        gTasks[taskId].func = Task_ChangePage;
+    }
+    else if (JOY_NEW(A_BUTTON))
+    {
+        if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG3)
+            gTasks[taskId].func = Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        gTasks[taskId].func = Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(DPAD_UP) || JOY_NEW(DPAD_DOWN))
+    {
+        gTasks[taskId].tMenuSelection ^= 1;
+        DrawOptionsPg3(taskId);
+    }
+    else
+    {
+        u8 previousOption;
+
+        switch (gTasks[taskId].tMenuSelection)
+        {
+        case MENUITEM_ROUTE_TRACKER:
+            previousOption = GET_FLAG(ROUTE_TRACKER);
+            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << ROUTE_TRACKER_SHIFT)) | (RouteTracker_ProcessInput(previousOption) << ROUTE_TRACKER_SHIFT);
+
+            if (previousOption != GET_FLAG(ROUTE_TRACKER))
+                RouteTracker_DrawChoices(GET_FLAG(ROUTE_TRACKER), TRUE);
+            break;
+        default:
+            return;
+        }
+
+        if (sArrowPressed)
+        {
+            sArrowPressed = FALSE;
+            CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
+        }
+    }
+}
+
 // Shared by Task_OptionMenuSave and Task_OptionMenuOpenPlayerColors -- the
 // pending settings need committing before either leaving the menu for good
 // or hopping to the player-colors screen and back (so a change made just
@@ -696,6 +799,7 @@ static void CommitPendingOptionSettings(u8 taskId)
         Achievement_SetBoostsEnabled(GET_FLAG(ACHIEVEMENT_BOOSTS));
         Achievement_FlushProfile();
     }
+    gSaveBlock2Ptr->optionsRouteTracker = GET_FLAG(ROUTE_TRACKER);
 }
 
 static void Task_OptionMenuSave(u8 taskId)
@@ -1038,6 +1142,24 @@ static void AchievementBoosts_DrawChoices(u8 selection, bool8 isActive)
     DrawOptionMenuValue(sTexts[selection], GetPg2DisplayRow(MENUITEM_ACHIEVEMENT_BOOSTS) * 16, isActive);
 }
 
+static u8 RouteTracker_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+        sArrowPressed = TRUE;
+    }
+
+    return selection;
+}
+
+static void RouteTracker_DrawChoices(u8 selection, bool8 isActive)
+{
+    static const u8 *const sTexts[2] = {gText_RouteTrackerOff, gText_RouteTrackerOn};
+
+    DrawOptionMenuValue(sTexts[selection], YPOS_ROUTE_TRACKER, isActive);
+}
+
 static void DrawHeaderText(void)
 {
     u32 i, widthOptions, xMid;
@@ -1149,6 +1271,10 @@ static void DrawOptionMenuTexts(void)
             AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames_Pg2[i], 8, (row * 16) + 1, TEXT_SKIP_DRAW, NULL);
             row++;
         }
+        break;
+    case 2:
+        for (i = 0; i < MENUITEM_COUNT_PG3; i++)
+            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames_Pg3[i], 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
         break;
     }
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
