@@ -47,12 +47,14 @@
 #include "script.h"
 #include "field_name_box.h"
 #include "wild_encounter_ow.h"
+#include "malloc.h"
 #include "constants/battle_frontier.h"
 #include "constants/battle_setup.h"
 #include "constants/event_objects.h"
 #include "constants/game_stat.h"
 #include "constants/items.h"
 #include "constants/songs.h"
+#include "constants/script_commands.h"
 #include "constants/trainers.h"
 #include "constants/trainer_hill.h"
 #include "constants/weather.h"
@@ -1282,6 +1284,26 @@ bool32 GetTrainerFlagFromScriptPointer(const u8 *data)
 {
     TrainerBattleParameter *temp = (TrainerBattleParameter*)(data + OPCODE_OFFSET);
     return FlagGet(TRAINER_FLAGS_START + temp->params.opponentA);
+}
+
+u16 GetTrainerFlagFromScript(const u8 *script)
+{
+    // The trainer flag is located 3 bytes (command + flags + localIdA) from the script pointer, assuming the trainerbattle command is first in the script.
+    // Because scripts are unaligned, and because the ARM processor requires shorts to be 16-bit aligned, this function needs to perform explicit bitwise operations to get the correct flag.
+    u16 trainerFlag = TRAINER_NONE;
+    struct ScriptContext *ctx = AllocZeroed(sizeof(struct ScriptContext));
+    if (script[0] == SCR_OP_TRAINERBATTLE)
+    {
+        ctx->scriptPtr = script + 3;
+        trainerFlag = ScriptPeekHalfword(ctx);
+    }
+    else if (Script_MatchesCallNative(script, NativeVsSeekerRematchId, TRUE))
+    {
+        ctx->scriptPtr = script + 5;
+        trainerFlag = ScriptPeekHalfword(ctx);
+    }
+    Free(ctx);
+    return trainerFlag;
 }
 
 bool32 GetRematchFromScriptPointer(const u8 *data)

@@ -29,7 +29,6 @@
 #include "constants/items.h"
 #include "constants/maps.h"
 #include "constants/songs.h"
-#include "constants/script_commands.h"
 #include "constants/trainer_types.h"
 #include "constants/field_effects.h"
 
@@ -92,7 +91,6 @@ static u8 GetVsSeekerResponseInArea(void);
 #if FREE_MATCH_CALL == FALSE
 static u8 GetResponseMovementTypeFromTrainerGraphicsId(u8 graphicsId);
 #endif //FREE_MATCH_CALL
-static u16 GetTrainerFlagFromScript(const u8 * script);
 static void ClearAllTrainerRematchStates(void);
 #if FREE_MATCH_CALL == FALSE
 static bool8 IsTrainerVisibleOnScreen(struct VsSeekerTrainerInfo * trainerInfo);
@@ -729,26 +727,6 @@ static u8 GetResponseMovementTypeFromTrainerGraphicsId(u8 graphicsId)
     return MOVEMENT_TYPE_FACE_DOWN;
 }
 #endif //FREE_MATCH_CALL
-
-static u16 GetTrainerFlagFromScript(const u8 *script)
-{
-    // The trainer flag is located 3 bytes (command + flags + localIdA) from the script pointer, assuming the trainerbattle command is first in the script.
-    // Because scripts are unaligned, and because the ARM processor requires shorts to be 16-bit aligned, this function needs to perform explicit bitwise operations to get the correct flag.
-    u16 trainerFlag = TRAINER_NONE;
-    struct ScriptContext *ctx = AllocZeroed(sizeof(struct ScriptContext));
-    if (script[0] == SCR_OP_TRAINERBATTLE)
-    {
-        ctx->scriptPtr = script + 3;
-        trainerFlag = ScriptPeekHalfword(ctx);
-    }
-    else if (Script_MatchesCallNative(script, NativeVsSeekerRematchId, TRUE))
-    {
-        ctx->scriptPtr = script + 5;
-        trainerFlag = ScriptPeekHalfword(ctx);
-    }
-    Free(ctx);
-    return trainerFlag;
-}
 
 static void ClearAllTrainerRematchStates(void)
 {
