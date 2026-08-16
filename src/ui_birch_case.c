@@ -2,6 +2,7 @@
 #include "achievements.h"
 #include "ui_birch_case.h"
 #include "strings.h"
+#include "battle.h"
 #include "bg.h"
 #include "caps.h"
 #include "data.h"
@@ -50,6 +51,7 @@
 #include "pokemon.h"
 #include "mono_gen.h"
 #include "mono_type.h"
+#include "move.h"
 #include "draft_mode.h"
 
  /*
