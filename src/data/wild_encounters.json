@@ -7429,7 +7429,7 @@
               {
                 "min_level": 6,
                 "max_level": 6,
-                "species": "SPECIES_DWEBBLE"
+                "species": "SPECIES_ARON"
               },
               {
                 "min_level": 6,
@@ -7449,7 +7449,7 @@
               {
                 "min_level": 6,
                 "max_level": 6,
-                "species": "SPECIES_DWEBBLE"
+                "species": "SPECIES_ARON"
               },
               {
                 "min_level": 6,
@@ -7469,7 +7469,7 @@
               {
                 "min_level": 6,
                 "max_level": 6,
-                "species": "SPECIES_DWEBBLE"
+                "species": "SPECIES_ARON"
               }
             ]
           }
