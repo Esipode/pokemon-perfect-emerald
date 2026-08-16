@@ -125,34 +125,34 @@ static const u8 *const sMonoGenTexts[MONO_GEN_COUNT + 1] =
 static const u8 *const sSettingDescriptions[SETTING_COUNT] =
 {
     [SETTING_MONO_TYPE]         = COMPOUND_STRING(
-                                       "Choose a starter of this type and only\n"
-                                       "obtain Pokémon of this type."),
+                                       "{COLOR GREEN}{SHADOW LIGHT_GREEN}Choose a starter of this type and\n"
+                                       "only obtain Pokémon of this type."),
     [SETTING_MONO_GEN]          = COMPOUND_STRING(
-                                       "Choose a starter of this Gen and only\n"
+                                       "{COLOR GREEN}{SHADOW LIGHT_GREEN}Choose a starter of this Gen and only\n"
                                        "obtain Pokémon from this Gen."),
     [SETTING_LIMITED_PARTY]     = COMPOUND_STRING(
-                                       "Party starts at 3 Pokémon. Extra\n"
+                                       "{COLOR GREEN}{SHADOW LIGHT_GREEN}Party starts at 3 Pokémon. Extra\n"
                                        "slots are earned from Gym Badges."),
     [SETTING_ROTATION_MODE]     = COMPOUND_STRING(
-                                       "A random party Pokémon is sent out\n"
+                                       "{COLOR GREEN}{SHADOW LIGHT_GREEN}A random party Pokémon is sent out\n"
                                        "at the start of each of your turns."),
     [SETTING_DIFFICULTY]        = COMPOUND_STRING(
-                                       "Changes encountered Pokémon levels\n"
+                                       "{COLOR GREEN}{SHADOW LIGHT_GREEN}Changes encountered Pokémon levels\n"
                                        "and Trainer AI complexity."),
-    [SETTING_RANDOMIZE_SPECIES] = COMPOUND_STRING("Pokémon species are randomized."),
-    [SETTING_RANDOMIZE_TYPES]   = COMPOUND_STRING("Pokémon types are randomized."),
-    [SETTING_RANDOMIZE_MOVES]   = COMPOUND_STRING("Pokémon movesets are randomized."),
+    [SETTING_RANDOMIZE_SPECIES] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}Pokémon species are randomized."),
+    [SETTING_RANDOMIZE_TYPES]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}Pokémon types are randomized."),
+    [SETTING_RANDOMIZE_MOVES]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}Pokémon movesets are randomized."),
     [SETTING_STAT_EDITOR]       = COMPOUND_STRING(
-                                       "{COLOR RED}{SHADOW LIGHT_RED}(ON DISABLES ACHIEVEMENTS){COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}\n"
+                                       "{COLOR RED}{SHADOW LIGHT_RED}(ON DISABLES ACHIEVEMENTS){COLOR GREEN}{SHADOW LIGHT_GREEN}\n"
                                        "Change IV/EV values of your Pokémon."),
     [SETTING_LEVEL_CAP]         = COMPOUND_STRING(
-                                       "{COLOR RED}{SHADOW LIGHT_RED}(OFF DISABLES ACHIEVEMENTS){COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}\n"
+                                       "{COLOR RED}{SHADOW LIGHT_RED}(OFF DISABLES ACHIEVEMENTS){COLOR GREEN}{SHADOW LIGHT_GREEN}\n"
                                        "Prevents over-levelling your Pokémon."),
     // Body condensed to a single line (from the original two) to make room for
     // the achievements-disabled line above it -- WIN_DESCRIPTION only fits 2
     // lines of FONT_NORMAL text (see sSettingsMenuWinTemplates[WIN_DESCRIPTION]).
     [SETTING_DEBUG]             = COMPOUND_STRING(
-                                       "{COLOR RED}{SHADOW LIGHT_RED}(DISABLES ACHIEVEMENTS){COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}\n"
+                                       "{COLOR RED}{SHADOW LIGHT_RED}(DISABLES ACHIEVEMENTS){COLOR GREEN}{SHADOW LIGHT_GREEN}\n"
                                        "Debug Menu: {R_BUTTON}+{START_BUTTON}"),
 };
 
@@ -160,16 +160,16 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
 // rather than by setting id - see PrintSettingDescription.
 static const u8 *const sGameModeDescriptions[GAME_MODE_COUNT] =
 {
-    [GAME_MODE_NORMAL]   = COMPOUND_STRING("The standard Pokémon Emerald\nexperience, no extra rules."),
+    [GAME_MODE_NORMAL]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}The standard Pokémon Emerald\nexperience, no extra rules."),
     [GAME_MODE_NUZLOCKE] = COMPOUND_STRING(
-                                "Pokémon are lost when fainted.\n"
+                                "{COLOR GREEN}{SHADOW LIGHT_GREEN}Pokémon are lost when fainted.\n"
                                 "Can only catch one Pokémon per route."),
     [GAME_MODE_DRAFT]    = COMPOUND_STRING(
-                                "Draft one Pokémon per area.\n"
+                                "{COLOR GREEN}{SHADOW LIGHT_GREEN}Draft one Pokémon per area.\n"
                                 "No catching, no storage."),
     [GAME_MODE_RECRUITS] = COMPOUND_STRING(
-                                "Every party Pokémon retires after 10\n"
-                                "won battles. No storage."),
+                                "{COLOR GREEN}{SHADOW LIGHT_GREEN}A participating Pokémon retires after\n"
+                                "10 won trainer battles. No storage."),
 };
 
 static const u8 *const sGameModeTexts[GAME_MODE_COUNT] =
@@ -182,12 +182,12 @@ static const u8 *const sGameModeTexts[GAME_MODE_COUNT] =
 
 static const struct ListMenuItem sSettingsListItems[SETTING_COUNT] =
 {
+    [SETTING_DIFFICULTY]        = {COMPOUND_STRING("DIFFICULTY"),       SETTING_DIFFICULTY},
     [SETTING_GAME_MODE]         = {COMPOUND_STRING("GAME MODE"),        SETTING_GAME_MODE},
     [SETTING_MONO_TYPE]         = {COMPOUND_STRING("MONO TYPE"),        SETTING_MONO_TYPE},
     [SETTING_MONO_GEN]          = {COMPOUND_STRING("MONO GEN"),         SETTING_MONO_GEN},
     [SETTING_LIMITED_PARTY]     = {COMPOUND_STRING("LIMITED PARTY"),    SETTING_LIMITED_PARTY},
     [SETTING_ROTATION_MODE]     = {COMPOUND_STRING("ROTATION MODE"),    SETTING_ROTATION_MODE},
-    [SETTING_DIFFICULTY]        = {COMPOUND_STRING("DIFFICULTY"),       SETTING_DIFFICULTY},
     [SETTING_RANDOMIZE_SPECIES] = {COMPOUND_STRING("RANDOMIZE SPECIES"),SETTING_RANDOMIZE_SPECIES},
     [SETTING_RANDOMIZE_TYPES]   = {COMPOUND_STRING("RANDOMIZE TYPES"),  SETTING_RANDOMIZE_TYPES},
     [SETTING_RANDOMIZE_MOVES]   = {COMPOUND_STRING("RANDOMIZE MOVES"),  SETTING_RANDOMIZE_MOVES},

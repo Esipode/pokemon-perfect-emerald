@@ -68,7 +68,7 @@ static const u16 sBoostSharedBinaryCosts[] = {600};
 // IsCriticalHit (src/battle_util.c) rolls this as a flat percent chance to
 // upgrade a non-critical hit, on top of whatever the normal crit-stage roll
 // already decided. Never overrides a hard block (Battle Armor, Lucky Chant).
-static const u16 sBoostCritChanceEffects[] = {0, 5, 10, 15};
+static const u16 sBoostCritChanceEffects[] = {0, 3, 6, 9};
 
 // Flat berries added to GetBerryCountByBerryTreeId's result (src/berry.c) --
 // applied at read time, never written into the saved berryYield field.

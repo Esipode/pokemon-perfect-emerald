@@ -2,9 +2,12 @@
 #include "item.h"
 #include "achievements.h"
 #include "berry.h"
+#include "caps.h"
 #include "pokeball.h"
+#include "pokemon.h"
 #include "string_util.h"
 #include "text.h"
+#include "dynamic_placeholder_text_util.h"
 #include "event_data.h"
 #include "malloc.h"
 #include "secret_base.h"
@@ -891,8 +894,47 @@ u32 GetItemHoldEffectParam(enum Item itemId)
     return gItemsInfo[SanitizeItemId(itemId)].holdEffectParam;
 }
 
+// EXP Candy descriptions are generated at runtime so the Exp. amount shown always reflects
+// GetNewGamePlusExpCandyBonusPercent's current New Game Plus bonus.
+static const u8 sExpCandyDescription[] = _("Gives {DYNAMIC 0} Exp.\nto a single Pokémon.");
+static const u8 sExpCandyDescriptionNewGamePlus[] = _("Gives {DYNAMIC 0} Exp.\nto a single Pokémon.\n(+{DYNAMIC 1}% from NG+)");
+
+static bool32 IsExpCandyItem(enum Item itemId)
+{
+    return itemId >= ITEM_EXP_CANDY_XS && itemId <= ITEM_EXP_CANDY_XL;
+}
+
+static const u8 *BuildExpCandyDescription(enum Item itemId)
+{
+    static u8 sDescriptionBuffer[64];
+    u8 expBuffer[8];
+    u32 expAmount = GetExpCandyExperienceAmount(GetItemHoldEffectParam(itemId) - 1);
+    u32 bonusPercent = GetNewGamePlusExpCandyBonusPercent();
+
+    ConvertIntToDecimalStringN(expBuffer, expAmount, STR_CONV_MODE_LEFT_ALIGN, 6);
+    DynamicPlaceholderTextUtil_Reset();
+    DynamicPlaceholderTextUtil_SetPlaceholderPtr(0, expBuffer);
+
+    if (bonusPercent == 0)
+    {
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(sDescriptionBuffer, sExpCandyDescription);
+    }
+    else
+    {
+        u8 percentBuffer[8];
+        ConvertIntToDecimalStringN(percentBuffer, bonusPercent, STR_CONV_MODE_LEFT_ALIGN, 3);
+        DynamicPlaceholderTextUtil_SetPlaceholderPtr(1, percentBuffer);
+        DynamicPlaceholderTextUtil_ExpandPlaceholders(sDescriptionBuffer, sExpCandyDescriptionNewGamePlus);
+    }
+
+    return sDescriptionBuffer;
+}
+
 const u8 *GetItemDescription(enum Item itemId)
 {
+    if (IsExpCandyItem(itemId))
+        return BuildExpCandyDescription(itemId);
+
     return gItemsInfo[SanitizeItemId(itemId)].description;
 }
 

@@ -15,6 +15,17 @@ u32 GetNewGamePlusLevelOffset(void)
     return 0;
 }
 
+// EXP Candies grant 15% more Exp. per completed New Game Plus cycle, so they stay useful
+// as level caps and encounter levels scale up with GetNewGamePlusLevelOffset(). Caps out
+// at cycle 10 (+150%) so the bonus doesn't spiral out of control on very high cycle saves.
+#define EXP_CANDY_BONUS_MAX_CYCLE 10
+u32 GetNewGamePlusExpCandyBonusPercent(void)
+{
+    u32 ngpRuns = min(gSaveBlock2Ptr->newGamePlus, EXP_CANDY_BONUS_MAX_CYCLE);
+
+    return ngpRuns * 15;
+}
+
 // The level cap as dictated by story/badge progression, ignoring FLAG_LEVEL_CAP_OFF entirely.
 // Used anywhere a level needs to track the player's progression even when the player has
 // disabled their own level cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL

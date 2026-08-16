@@ -3928,6 +3928,15 @@ const u32 sExpCandyExperienceTable[] = {
     [EXP_30000 - 1] = 30000,
 };
 
+// Applies the New Game Plus Exp. Candy bonus (GetNewGamePlusExpCandyBonusPercent) to a candy's base Exp.
+u32 GetExpCandyExperienceAmount(u8 candyIndex)
+{
+    u32 baseExp = sExpCandyExperienceTable[candyIndex];
+    u32 bonusPercent = GetNewGamePlusExpCandyBonusPercent();
+
+    return baseExp + (baseExp * bonusPercent) / 100;
+}
+
 // Returns TRUE if the item has no effect on the Pokémon, FALSE otherwise
 bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, u8 moveIndex, bool8 usedByAI)
 {
@@ -4009,7 +4018,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                 else if (param - 1 < ARRAY_COUNT(sExpCandyExperienceTable)) // EXP Candies
                 {
                     enum Species species = GetMonData(mon, MON_DATA_SPECIES);
-                    dataUnsigned = sExpCandyExperienceTable[param - 1] + GetMonData(mon, MON_DATA_EXP);
+                    dataUnsigned = GetExpCandyExperienceAmount(param - 1) + GetMonData(mon, MON_DATA_EXP);
 
                     if (B_RARE_CANDY_CAP && B_EXP_CAP_TYPE == EXP_CAP_HARD)
                     {

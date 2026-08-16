@@ -9875,8 +9875,7 @@ static u32 ComputeCaptureOdds(u32 wildMonBattler, u32 playerBattler)
         effective_hp = effective_maxHP * gBattleMons->hp / gBattleMons->maxHP;
     }
 
-    odds = (catchRate * ((ball.multiplier * 15) / 10) / 100)
-        * (effective_maxHP * 3 - effective_hp * 2)
+    odds = (catchRate * (effective_maxHP * 3 - effective_hp * 2))
         / (3 * effective_maxHP);
 
     odds = odds * ball.multiplier / ball.divider;

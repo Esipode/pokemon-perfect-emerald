@@ -21,6 +21,7 @@
 u32 GetCurrentLevelCap(void);
 u32 GetProgressionLevelCap(void);
 u32 GetNewGamePlusLevelOffset(void);
+u32 GetNewGamePlusExpCandyBonusPercent(void);
 u32 GetSoftLevelCapExpValue(u32 level, u32 expValue);
 u32 GetCurrentEVCap(void);
 

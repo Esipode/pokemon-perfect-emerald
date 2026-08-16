@@ -566,7 +566,7 @@ void NewGameInitData(void)
         AddBagItem(ITEM_POTION, 5);
         AddBagItem(ITEM_FULL_HEAL, 2);
         AddBagItem(ITEM_REPEL, 3);
-        AddBagItem(ITEM_ESCAPE_ROPE, 2);
+        AddBagItem(ITEM_ESCAPE_ROPE, 1);
         AddMoney(&gSaveBlock1Ptr->money, 3000); // on top of the 5000 set above
     }
     ClearPokeblocks();
