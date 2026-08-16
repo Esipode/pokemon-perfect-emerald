@@ -937,8 +937,8 @@ static bool8 StartMenuPlayerNameCallback(void)
 
 static bool8 StartMenuSaveCallback(void)
 {
-    if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
-        RemoveExtraStartMenuWindows();
+    // Extras (Route Tracker, Pyramid floor, Safari balls) overlap the save dialog windows, so close them first.
+    RemoveExtraStartMenuWindows();
 
     gMenuCallback = SaveStartCallback; // Display save menu
 
