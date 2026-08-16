@@ -1159,6 +1159,10 @@ static void SetInitialEggData(struct Pokemon *mon, enum Species species, struct 
 
     personality = daycare->offspringPersonality;
     CreateMonWithIVs(mon, species, EGG_HATCH_LEVEL, personality, OTID_STRUCT_PLAYER_ID, USE_RANDOM_IVS);
+    // BOOST_EGG_IV_REROLL. Must run before InheritIVs (_GiveEggFromDaycare)
+    // overwrites specific stats from the parents, so it only ever improves
+    // the portion of the spread that would've stayed random anyway.
+    AchievementBoost_ApplyEggIvReroll(mon);
     GiveMonInitialMoveset(mon);
     metLevel = 0;
     ball = BALL_POKE;

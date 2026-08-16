@@ -1575,6 +1575,10 @@ static void CB2_EndTrainerBattle(void)
     {
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         DowngradeBadPoison();
+        // BOOST_POST_BATTLE_HEAL. Only this win branch -- not the forfeit/
+        // defeat/early-rival-loss branches above, where the party either
+        // isn't rewarded or is about to be fully healed some other way.
+        AchievementBoost_ApplyPostBattleHeal();
         if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE && !InTrainerHillChallenge())
         {
             RegisterTrainerInMatchCall();
@@ -1601,6 +1605,7 @@ static void CB2_EndRematchBattle(void)
         SetBattledTrainersFlags();
         HandleRematchVarsOnBattleEnd();
         DowngradeBadPoison();
+        AchievementBoost_ApplyPostBattleHeal(); // BOOST_POST_BATTLE_HEAL, same win-only reasoning as CB2_EndTrainerBattle
     }
 }
 

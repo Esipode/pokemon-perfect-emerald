@@ -569,6 +569,14 @@ void NewGameInitData(void)
         AddBagItem(ITEM_ESCAPE_ROPE, 1);
         AddMoney(&gSaveBlock1Ptr->money, 3000); // on top of the 5000 set above
     }
+    // BOOST_SHINY_CHARM_START/BOOST_ABILITY_CAPSULE_START/BOOST_ABILITY_PATCH_START,
+    // same !isNewGamePlus reasoning as BOOST_STARTER_KIT above.
+    if (!isNewGamePlus && AchievementBoost_HasShinyCharmStart())
+        AddBagItem(ITEM_SHINY_CHARM, 1);
+    if (!isNewGamePlus && AchievementBoost_HasAbilityCapsuleStart())
+        AddBagItem(ITEM_ABILITY_CAPSULE, 1);
+    if (!isNewGamePlus && AchievementBoost_HasAbilityPatchStart())
+        AddBagItem(ITEM_ABILITY_PATCH, 1);
     ClearPokeblocks();
     ClearDecorationInventories();
     InitEasyChatPhrases();

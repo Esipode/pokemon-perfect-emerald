@@ -474,6 +474,59 @@ bool8 AchievementBoost_HasStarterKit(void);
 // and the Pokemon actually received can never disagree.
 bool8 AchievementBoost_HasPerfectStarterIvs(void);
 
+// The second wave of boosts. Same no-op-when-disabled guarantee as everything
+// above.
+
+// NewGameInitData (src/new_game.c): grants the Shiny Charm/an Ability
+// Capsule/an Ability Patch to a fresh game's key items, alongside
+// BOOST_STARTER_KIT. Never applies to New Game+, same reasoning as
+// AchievementBoost_HasStarterKit.
+bool8 AchievementBoost_HasShinyCharmStart(void);
+bool8 AchievementBoost_HasAbilityCapsuleStart(void);
+bool8 AchievementBoost_HasAbilityPatchStart(void);
+
+// Every genuine "use a consumable" RemoveBagItem call site (src/item_use.c,
+// src/party_menu.c) -- NOT the sell/give-as-held-item/discard sites in
+// src/item_menu.c, which must always remove the item regardless of this
+// boost. Rolls a flat percent chance (BOOST_CONSUMABLE_SAVE) that the item is
+// spared; returns TRUE (consume normally) for anything outside POCKET_ITEMS,
+// so Poke Balls/berries/TMs/key items are never affected, or when boosts are
+// disabled/the boost is at level 0/the roll fails. Callers still perform the
+// actual RemoveBagItem themselves -- this only decides whether to.
+bool8 AchievementBoost_ShouldConsumeItem(enum Item itemId);
+
+// SetInitialEggData (src/daycare.c): rerolls the egg's freshly-random IV
+// spread BOOST_EGG_IV_REROLL's level worth of extra times, keeping whichever
+// spread has the highest stat total. Runs before InheritIVs overwrites
+// specific stats from the parents, so it only ever improves the portion of
+// an egg's IVs that would've been random anyway -- the same portion this
+// boost is meant to touch.
+void AchievementBoost_ApplyEggIvReroll(struct Pokemon *mon);
+
+// CreateWildMon (src/wild_encounter.c): same reroll-and-keep-best shape as
+// the egg version above, against BOOST_WILD_IV_REROLL instead.
+void AchievementBoost_ApplyWildIvReroll(struct Pokemon *mon);
+
+// Every price computed for a Poke Mart purchase (src/shop.c) -- both the
+// list's displayed price and the confirmed purchase cost, so a discount is
+// never a UI-only display glitch. Also applied to decoration prices. Knocks
+// a flat percent off via BOOST_SHOP_DISCOUNT.
+u32 AchievementBoost_ApplyShopPrice(u32 price);
+
+// GetAdjustedDamage (src/battle_util.c): a flat extra chance, on top of
+// Sturdy/Focus Band/Focus Sash/Affection, that a hit which would otherwise
+// KO a player-side Pokemon leaves it at 1 HP instead. Raw percent, not
+// self-rolling, same reasoning as the three existing Get*Percent battle
+// boosts -- the call site is gated on IsOnPlayerSide()/not link-or-recorded
+// and rolls it alongside that function's own existing Random() % 100.
+u32 AchievementBoost_GetSurviveChancePercent(void);
+
+// CB2_EndTrainerBattle/CB2_EndRematchBattle (src/battle_setup.c), win
+// branches only -- restores BOOST_POST_BATTLE_HEAL's percent of max HP to
+// every living, non-egg party Pokemon. A no-op below level 1 or for a mon
+// already fainted/full/an egg.
+void AchievementBoost_ApplyPostBattleHeal(void);
+
 // The first ten catalog hook functions. Each checks one category's
 // thresholds against Achievement_TryComplete -- already idempotent, so
 // every one of these is

@@ -1035,6 +1035,141 @@ bool8 AchievementBoost_HasPerfectStarterIvs(void)
     return IsBinaryBoostActive(BOOST_PERFECT_STARTER_IVS);
 }
 
+// ---- The second wave of boosts -------------------------------------------
+
+bool8 AchievementBoost_HasShinyCharmStart(void)
+{
+    return IsBinaryBoostActive(BOOST_SHINY_CHARM_START);
+}
+
+bool8 AchievementBoost_HasAbilityCapsuleStart(void)
+{
+    return IsBinaryBoostActive(BOOST_ABILITY_CAPSULE_START);
+}
+
+bool8 AchievementBoost_HasAbilityPatchStart(void)
+{
+    return IsBinaryBoostActive(BOOST_ABILITY_PATCH_START);
+}
+
+bool8 AchievementBoost_ShouldConsumeItem(enum Item itemId)
+{
+    u32 percent;
+
+    if (GetItemPocket(itemId) != POCKET_ITEMS)
+        return TRUE;
+
+    percent = GetBoostEffectValue(BOOST_CONSUMABLE_SAVE);
+    if (percent == 0)
+        return TRUE;
+
+    return (Random() % 100) >= percent;
+}
+
+// Shared by the two IV-reroll boosts below: rolls a full IV spread
+// `rerolls` extra times on top of whatever's already on `mon`, keeping
+// whichever spread has the highest stat total. Operates through
+// SetBoxMonIVs (the same box-level randomizer CreateMonWithIVs itself calls
+// for USE_RANDOM_IVS), then restores the best spread and recalculates stats
+// -- the mon's level/species/etc. are already set by the time either call
+// site reaches this.
+static void RerollMonIvsKeepBest(struct Pokemon *mon, u8 rerolls)
+{
+    u8 bestIvs[NUM_STATS];
+    u32 bestSum, i, r;
+
+    if (rerolls == 0)
+        return;
+
+    bestSum = 0;
+    for (i = 0; i < NUM_STATS; i++)
+    {
+        bestIvs[i] = GetMonData(mon, MON_DATA_HP_IV + i);
+        bestSum += bestIvs[i];
+    }
+
+    for (r = 0; r < rerolls; r++)
+    {
+        u32 curSum = 0;
+
+        SetBoxMonIVs(&mon->box, USE_RANDOM_IVS);
+        for (i = 0; i < NUM_STATS; i++)
+            curSum += GetMonData(mon, MON_DATA_HP_IV + i);
+
+        if (curSum > bestSum)
+        {
+            bestSum = curSum;
+            for (i = 0; i < NUM_STATS; i++)
+                bestIvs[i] = GetMonData(mon, MON_DATA_HP_IV + i);
+        }
+    }
+
+    for (i = 0; i < NUM_STATS; i++)
+        SetMonData(mon, MON_DATA_HP_IV + i, &bestIvs[i]);
+    CalculateMonStats(mon);
+}
+
+void AchievementBoost_ApplyEggIvReroll(struct Pokemon *mon)
+{
+    if (!gAchievementProfile.boostsEnabled)
+        return;
+
+    RerollMonIvsKeepBest(mon, GetBoostEffectValue(BOOST_EGG_IV_REROLL));
+}
+
+void AchievementBoost_ApplyWildIvReroll(struct Pokemon *mon)
+{
+    if (!gAchievementProfile.boostsEnabled)
+        return;
+
+    RerollMonIvsKeepBest(mon, GetBoostEffectValue(BOOST_WILD_IV_REROLL));
+}
+
+u32 AchievementBoost_ApplyShopPrice(u32 price)
+{
+    u32 percent = GetBoostEffectValue(BOOST_SHOP_DISCOUNT);
+
+    if (percent == 0)
+        return price;
+
+    return price - (price * percent) / 100;
+}
+
+u32 AchievementBoost_GetSurviveChancePercent(void)
+{
+    return GetBoostEffectValue(BOOST_SURVIVE_1HP);
+}
+
+void AchievementBoost_ApplyPostBattleHeal(void)
+{
+    u32 percent = GetBoostEffectValue(BOOST_POST_BATTLE_HEAL);
+    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
+    u32 i;
+
+    if (percent == 0)
+        return;
+
+    for (i = 0; i < gPartiesCount[B_TRAINER_PLAYER]; i++)
+    {
+        u32 maxHp, hp, heal, newHp;
+
+        if (GetMonData(&party[i], MON_DATA_IS_EGG))
+            continue;
+
+        hp = GetMonData(&party[i], MON_DATA_HP);
+        if (hp == 0)
+            continue;
+
+        maxHp = GetMonData(&party[i], MON_DATA_MAX_HP);
+        heal = (maxHp * percent) / 100;
+        if (heal == 0)
+            continue;
+
+        newHp = min(hp + heal, maxHp);
+        SetMonData(&party[i], MON_DATA_HP, &newHp);
+    }
+}
+
 // ---- The first ten catalog hook functions -------------------------------
 
 // {flag, achievementId} pairs for every badge/story milestone that already

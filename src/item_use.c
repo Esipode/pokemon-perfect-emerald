@@ -966,7 +966,12 @@ static void UseTMHM(u8 taskId)
 
 static void RemoveUsedItem(void)
 {
-    RemoveBagItem(gSpecialVar_ItemId, 1);
+    // BOOST_CONSUMABLE_SAVE. This is the shared field/battle item-use
+    // remover (Repel, in-battle bag items, ...) -- AchievementBoost_ShouldConsumeItem
+    // pocket-gates itself to POCKET_ITEMS, so Poke Balls thrown through the
+    // same call site are untouched.
+    if (AchievementBoost_ShouldConsumeItem(gSpecialVar_ItemId))
+        RemoveBagItem(gSpecialVar_ItemId, 1);
     CopyItemName(gSpecialVar_ItemId, gStringVar2);
     StringExpandPlaceholders(gStringVar4, gText_PlayerUsedVar2);
     if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE)
@@ -1116,7 +1121,7 @@ void Task_UseDigEscapeRopeOnField(u8 taskId)
 static void ItemUseOnFieldCB_EscapeRope(u8 taskId)
 {
     Overworld_ResetStateAfterDigEscRope();
-    if (I_KEY_ESCAPE_ROPE < GEN_8)
+    if (I_KEY_ESCAPE_ROPE < GEN_8 && AchievementBoost_ShouldConsumeItem(gSpecialVar_ItemId)) // BOOST_CONSUMABLE_SAVE
         RemoveBagItem(gSpecialVar_ItemId, 1);
 
     CopyItemName(gSpecialVar_ItemId, gStringVar2);
@@ -1577,7 +1582,8 @@ void Task_UseHoneyOnField(u8 taskId)
 static void ItemUseOnFieldCB_Honey(u8 taskId)
 {
     Overworld_ResetStateAfterDigEscRope();
-    RemoveBagItem(gSpecialVar_ItemId, 1);
+    if (AchievementBoost_ShouldConsumeItem(gSpecialVar_ItemId)) // BOOST_CONSUMABLE_SAVE
+        RemoveBagItem(gSpecialVar_ItemId, 1);
     CopyItemName(gSpecialVar_ItemId, gStringVar2);
     StringExpandPlaceholders(gStringVar4, gText_PlayerUsedVar2);
     DisplayItemMessageOnField(taskId, gStringVar4, Task_UseHoneyOnField);

@@ -744,6 +744,21 @@ enum BoostType
 //   BOOST_NUZLOCKE_SECOND_CHANCE CB2_EndWildBattle,         src/battle_setup.c
 //   BOOST_STARTER_KIT            NewGameInitData,           src/new_game.c
 //   BOOST_PERFECT_STARTER_IVS    GenerateIVs,               src/ui_birch_case.c
+//
+// BOOST_SHINY_CHARM_START .. BOOST_POST_BATTLE_HEAL: the second wave of
+// content. Hooks, in order:
+//   BOOST_SHINY_CHARM_START      NewGameInitData,             src/new_game.c
+//   BOOST_ABILITY_CAPSULE_START  NewGameInitData,             src/new_game.c
+//   BOOST_ABILITY_PATCH_START    NewGameInitData,             src/new_game.c
+//   BOOST_CONSUMABLE_SAVE        every genuine item-use RemoveBagItem site
+//                                 (not sell/give/discard), src/item_use.c +
+//                                 src/party_menu.c
+//   BOOST_EGG_IV_REROLL          SetInitialEggData,           src/daycare.c
+//   BOOST_WILD_IV_REROLL         CreateWildMon,                src/wild_encounter.c
+//   BOOST_SHOP_DISCOUNT          every price computed for a mart purchase, src/shop.c
+//   BOOST_SURVIVE_1HP            GetAdjustedDamage,            src/battle_util.c
+//   BOOST_POST_BATTLE_HEAL       CB2_EndTrainerBattle/CB2_EndRematchBattle
+//                                 (win branches only),          src/battle_setup.c
 enum BoostId
 {
     BOOST_NONE,
@@ -763,6 +778,15 @@ enum BoostId
     BOOST_NUZLOCKE_SECOND_CHANCE,
     BOOST_STARTER_KIT,
     BOOST_PERFECT_STARTER_IVS,
+    BOOST_SHINY_CHARM_START,
+    BOOST_ABILITY_CAPSULE_START,
+    BOOST_ABILITY_PATCH_START,
+    BOOST_CONSUMABLE_SAVE,
+    BOOST_EGG_IV_REROLL,
+    BOOST_WILD_IV_REROLL,
+    BOOST_SHOP_DISCOUNT,
+    BOOST_SURVIVE_1HP,
+    BOOST_POST_BATTLE_HEAL,
     BOOSTS_COUNT,
 };
 

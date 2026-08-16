@@ -92,6 +92,34 @@ static const u16 sBoostStatusRecoveryEffects[] = {0, 5, 10, 15};
 // at every VAR_REPEL_STEP_COUNT write site.
 static const u16 sBoostSprayDurationEffects[] = {0, 25, 50, 75, 100};
 
+// Second wave of boosts. The three start-of-game key items are one-time
+// binary purchases like BOOST_STARTER_KIT above, so they reuse
+// sBoostSharedBinaryCosts. The five leveled boosts below are all maxLevel 3,
+// so they reuse sBoostSharedCosts' leading three entries, same as
+// BOOST_CRIT_CHANCE/BOOST_PP_SAVER/BOOST_STATUS_RECOVERY above.
+
+// AchievementBoost_ShouldConsumeItem rolls this as a flat percent chance,
+// per use, that a POCKET_ITEMS consumable isn't removed from the bag.
+static const u16 sBoostConsumableSaveEffects[] = {0, 10, 20, 30};
+
+// AchievementBoost_ApplyEggIvReroll/_ApplyWildIvReroll (src/achievements.c)
+// read this directly as an extra IV-spread reroll count -- the mon's IVs are
+// rolled once normally, then rerolled this many more times, keeping
+// whichever spread has the highest stat total.
+static const u16 sBoostIvRerollEffects[] = {0, 1, 2, 3};
+
+// AchievementBoost_ApplyShopPrice: percent knocked off every mart price.
+static const u16 sBoostShopDiscountEffects[] = {0, 10, 20, 30};
+
+// AchievementBoost_GetSurviveChancePercent: flat percent chance a lethal hit
+// on the player's side leaves 1 HP instead, same shape as the three existing
+// Get*Percent battle boosts.
+static const u16 sBoostSurvive1HpEffects[] = {0, 5, 10, 15};
+
+// AchievementBoost_ApplyPostBattleHeal: percent of each party mon's max HP
+// restored after winning a trainer battle.
+static const u16 sBoostPostBattleHealEffects[] = {0, 5, 10, 15};
+
 static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
 {
     [BOOST_NONE] = {
@@ -229,6 +257,78 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 1,
         .costs       = sBoostSharedBinaryCosts,
         .effects     = NULL,
+    },
+    [BOOST_SHINY_CHARM_START] = {
+        .name        = BOOST_NAME("Shiny Charm"),
+        .description = COMPOUND_STRING("Begin a new game with the Shiny Charm."),
+        .type        = BOOST_TYPE_BINARY,
+        .maxLevel    = 1,
+        .costs       = sBoostSharedBinaryCosts,
+        .effects     = NULL,
+    },
+    [BOOST_ABILITY_CAPSULE_START] = {
+        .name        = BOOST_NAME("Ability Capsule"),
+        .description = COMPOUND_STRING("Begin a new game with an Ability Capsule."),
+        .type        = BOOST_TYPE_BINARY,
+        .maxLevel    = 1,
+        .costs       = sBoostSharedBinaryCosts,
+        .effects     = NULL,
+    },
+    [BOOST_ABILITY_PATCH_START] = {
+        .name        = BOOST_NAME("Ability Patch"),
+        .description = COMPOUND_STRING("Begin a new game with an Ability Patch."),
+        .type        = BOOST_TYPE_BINARY,
+        .maxLevel    = 1,
+        .costs       = sBoostSharedBinaryCosts,
+        .effects     = NULL,
+    },
+    [BOOST_CONSUMABLE_SAVE] = {
+        .name        = BOOST_NAME("Frugal Use"),
+        .description = COMPOUND_STRING("Chance a used consumable isn't spent."),
+        .type        = BOOST_TYPE_LEVELED,
+        .maxLevel    = 3,
+        .costs       = sBoostSharedCosts,
+        .effects     = sBoostConsumableSaveEffects,
+    },
+    [BOOST_EGG_IV_REROLL] = {
+        .name        = BOOST_NAME("Egg IV Reroll"),
+        .description = COMPOUND_STRING("Hatched eggs get the best of several IV rolls."),
+        .type        = BOOST_TYPE_LEVELED,
+        .maxLevel    = 3,
+        .costs       = sBoostSharedCosts,
+        .effects     = sBoostIvRerollEffects,
+    },
+    [BOOST_WILD_IV_REROLL] = {
+        .name        = BOOST_NAME("Wild IV Reroll"),
+        .description = COMPOUND_STRING("Wild Pokemon get the best of several IV rolls."),
+        .type        = BOOST_TYPE_LEVELED,
+        .maxLevel    = 3,
+        .costs       = sBoostSharedCosts,
+        .effects     = sBoostIvRerollEffects,
+    },
+    [BOOST_SHOP_DISCOUNT] = {
+        .name        = BOOST_NAME("Shop Discount"),
+        .description = COMPOUND_STRING("Reduces prices at the Poke Mart."),
+        .type        = BOOST_TYPE_LEVELED,
+        .maxLevel    = 3,
+        .costs       = sBoostSharedCosts,
+        .effects     = sBoostShopDiscountEffects,
+    },
+    [BOOST_SURVIVE_1HP] = {
+        .name        = BOOST_NAME("Second Wind"),
+        .description = COMPOUND_STRING("Chance to survive a KO hit with 1 HP."),
+        .type        = BOOST_TYPE_LEVELED,
+        .maxLevel    = 3,
+        .costs       = sBoostSharedCosts,
+        .effects     = sBoostSurvive1HpEffects,
+    },
+    [BOOST_POST_BATTLE_HEAL] = {
+        .name        = BOOST_NAME("Battle Recovery"),
+        .description = COMPOUND_STRING("Party recovers HP after trainer battles."),
+        .type        = BOOST_TYPE_LEVELED,
+        .maxLevel    = 3,
+        .costs       = sBoostSharedCosts,
+        .effects     = sBoostPostBattleHealEffects,
     },
 };
 

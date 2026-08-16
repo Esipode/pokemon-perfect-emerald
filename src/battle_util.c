@@ -8044,6 +8044,17 @@ s32 GetAdjustedDamage(struct DamageContext *ctx, s32 damage)
             gBattleStruct->moveResultFlags[ctx->battlerDef] |= MOVE_RESULT_FOE_ENDURED_AFFECTION;
         }
     }
+    // BOOST_SURVIVE_1HP: lowest priority of every "leaves 1 HP" cause above,
+    // and gated the same way as this fork's other battle boosts -- player
+    // side only, never in a link/recorded battle where boost levels could
+    // differ or desync a replay.
+    else if (IsOnPlayerSide(ctx->battlerDef)
+          && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED))
+          && rand < AchievementBoost_GetSurviveChancePercent())
+    {
+        enduredHit = TRUE;
+        gBattleStruct->moveResultFlags[ctx->battlerDef] |= MOVE_RESULT_FOE_ENDURED;
+    }
 
     if (enduredHit)
     {
