@@ -3,7 +3,6 @@
   "name": "Route113",
   "layout": "LAYOUT_ROUTE113",
   "music": "MUS_ROUTE113",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_ROUTE_113",
   "requires_flash": false,
   "weather": "WEATHER_DYNAMIC",
@@ -478,5 +477,6 @@
       "item": "ITEM_AUDINITE",
       "flag": "FLAG_ITEM_AUDINITE"
     }
-  ]
+  ],
+  "region": "REGION_HOENN"
 }

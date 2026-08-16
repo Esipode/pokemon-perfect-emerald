@@ -3,7 +3,6 @@
   "name": "FieryPath",
   "layout": "LAYOUT_FIERY_PATH",
   "music": "MUS_PETALBURG_WOODS",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_FIERY_PATH",
   "requires_flash": false,
   "weather": "WEATHER_NONE",
@@ -146,5 +145,6 @@
       "item": "ITEM_MEDICHAMITE",
       "flag": "FLAG_ITEM_MEDICHAMITE"
     }
-  ]
+  ],
+  "region": "REGION_HOENN"
 }
