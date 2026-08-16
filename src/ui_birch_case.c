@@ -465,7 +465,9 @@ u8 GetRandomType(u16 species, u32 typeOffset)
     return type;
 }
 
-// Generate a random move
+// Generate a random move.
+// This remains general-purpose; starter generation uses GetRandomDamageMove to
+// guarantee at least one damaging option in the first moveset it receives.
 u16 GetRandomMove(u16 species, u16 originalMove)
 {
     u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
@@ -475,6 +477,28 @@ u16 GetRandomMove(u16 species, u16 originalMove)
     if (move == MOVE_NONE)
         move = MOVE_TACKLE;
     return move;
+}
+
+// Starter picks should always have at least one actual damage option at the
+// level they are granted, even with move randomization enabled.
+u16 GetRandomDamageMove(u16 species, u16 originalMove)
+{
+    u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+    u16 baseSpecies = GET_BASE_SPECIES_ID(species);
+    rng_value_t rngState = LocalRandomSeed(trainerId + baseSpecies * 100 + originalMove);
+    u16 move;
+
+    for (u32 i = 0; i < 8; i++)
+    {
+        move = LocalRandom(&rngState) % MOVES_COUNT;
+        if (move == MOVE_NONE)
+            move = MOVE_TACKLE;
+
+        if (GetMovePower(move) > 0 && !IsBattleMoveStatus(move))
+            return move;
+    }
+
+    return MOVE_TACKLE;
 }
 
 // Generate a random move type
@@ -810,16 +834,19 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
     }
     else if (wasRandomizeMon)
     {
-        // Randomize moves when flag is set, deduplicating to avoid assertion in ResolveRandomMoves
+        // Starter-gen path: keep one guaranteed damaging move in the received
+        // mon's starting moveset, then randomize the rest.
         FlagClear(FLAG_RANDOMIZE_MON);
         u8 moveCount = 0;
-        for (u8 i = 0; i < MAX_MON_MOVES && moveCount < MAX_MON_MOVES; i++)
+
+        moves[moveCount++] = GetRandomDamageMove(choice->species, MOVE_NONE);
+
+        while (moveCount < MAX_MON_MOVES)
         {
             enum Move randomMove = GetRandomMove(choice->species, MOVE_NONE);
             if (randomMove == MOVE_NONE)
                 randomMove = MOVE_TACKLE;
 
-            // Check for duplicates before adding
             bool32 isDuplicate = FALSE;
             for (u8 j = 0; j < moveCount; j++)
             {
@@ -832,8 +859,10 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
 
             if (!isDuplicate)
                 moves[moveCount++] = randomMove;
+            else
+                break;
         }
-        // Fill remaining slots with MOVE_NONE
+
         for (u8 i = moveCount; i < MAX_MON_MOVES; i++)
             moves[i] = MOVE_NONE;
         FlagSet(FLAG_RANDOMIZE_MON);
