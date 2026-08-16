@@ -70,6 +70,8 @@
 	- Game will save automatically after healing your party, exiting a wild encounter, exiting a trainer battle, or after story events
 - Auto-skip dialogue
 	- When enabled, message boxes automatically continue without player input
+- Stat Tracker
+	- When enabled in the options menu, the pause menu now shows a list of pokedex completion, items found, and trainers battled on the current route
 
 ## Minor features
 - Breeding Improvements
