@@ -16,6 +16,7 @@
 #include "link.h"
 #include "menu.h"
 #include "palette.h"
+#include "random.h"
 #include "recorded_battle.h"
 #include "string_util.h"
 #include "strings.h"
@@ -144,6 +145,8 @@ static const u8 sText_AllyPkmnPrefix2[] = _("Ally");
 static const u8 sText_FoePkmnPrefix4[] = _("Opposing");
 static const u8 sText_AllyPkmnPrefix3[] = _("Ally");
 static const u8 sText_AttackerUsedX[] = _("{B_ATK_NAME_WITH_PREFIX} used {B_BUFF3}!");
+static const u8 sText_AttackerUsedX2[] = _("{B_ATK_NAME_WITH_PREFIX} goes for {B_BUFF3}!");
+static const u8 sText_AttackerUsedX3[] = _("{B_ATK_NAME_WITH_PREFIX} unleashes {B_BUFF3}!");
 static const u8 sText_ExclamationMark[] = _("!");
 static const u8 sText_ExclamationMark2[] = _("!");
 static const u8 sText_ExclamationMark3[] = _("!");
@@ -210,6 +213,8 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ITDOESNTAFFECT]                       = COMPOUND_STRING("It doesn't affect {B_DEF_NAME_WITH_PREFIX2}…"),
     [STRINGID_ITDOESNTAFFECTSCR]                    = COMPOUND_STRING("It doesn't affect {B_SCR_NAME_WITH_PREFIX2}…"),
     [STRINGID_BATTLERFAINTED]                       = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} fainted!\p"),
+    [STRINGID_BATTLERFAINTED_2]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} went down!\p"),
+    [STRINGID_BATTLERFAINTED_3]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} is unable to battle!\p"),
     [STRINGID_PLAYERGOTMONEY]                       = COMPOUND_STRING("You got ¥{B_BUFF1} for winning!\p"),
     [STRINGID_PLAYERWHITEOUT]                       = COMPOUND_STRING("You have no more Pokémon that can fight!\p"),
     [STRINGID_PLAYERWHITEOUT2_WILD]                 = COMPOUND_STRING("You panicked and dropped ¥{B_BUFF1}…"),
@@ -282,6 +287,8 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_PKMNPELTEDBYHAIL]                     = COMPOUND_STRING("{B_ATK_NAME_WITH_PREFIX} is buffeted by the hail!"),
     [STRINGID_PKMNSEEDED]                           = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} was seeded!"),
     [STRINGID_PKMNAVOIDEDATTACK]                    = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} avoided the attack!"),
+    [STRINGID_PKMNAVOIDEDATTACK_2]                  = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} dodged the attack!"),
+    [STRINGID_PKMNAVOIDEDATTACK_3]                  = COMPOUND_STRING("The attack missed {B_DEF_NAME_WITH_PREFIX2}!"),
     [STRINGID_BATTLERAVOIDEDATTACK]                 = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} avoided the attack!"),
     [STRINGID_PKMNSAPPEDBYLEECHSEED]                = COMPOUND_STRING("{B_ATK_NAME_WITH_PREFIX}'s health is sapped by Leech Seed!"),
     [STRINGID_PKMNFASTASLEEP]                       = COMPOUND_STRING("{B_ATK_NAME_WITH_PREFIX} is fast asleep."),
@@ -384,18 +391,28 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_STATROSE]                             = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX}'s {B_BUFF1} rose{B_BUFF2}!"),
     [STRINGID_STATFELL]                             = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX}'s {B_BUFF1} {B_BUFF2}fell!"),
     [STRINGID_CRITICALHIT]                          = COMPOUND_STRING("A critical hit!"),
+    [STRINGID_CRITICALHIT_2]                        = COMPOUND_STRING("Critical hit!"),
+    [STRINGID_CRITICALHIT_3]                        = COMPOUND_STRING("A critical hit connects!"),
     [STRINGID_ONEHITKO]                             = COMPOUND_STRING("It's a one-hit KO!"),
     [STRINGID_123POOF]                              = COMPOUND_STRING("One…{PAUSE 10}two…{PAUSE 10}and…{PAUSE 10}{PAUSE 20}{PLAY_SE SE_BALL_BOUNCE_1}ta-da!\p"),
     [STRINGID_ANDELLIPSIS]                          = COMPOUND_STRING("And…\p"),
     [STRINGID_NOTVERYEFFECTIVE]                     = COMPOUND_STRING("It's not very effective…"),
+    [STRINGID_NOTVERYEFFECTIVE_2]                   = COMPOUND_STRING("It didn't do much…"),
+    [STRINGID_NOTVERYEFFECTIVE_3]                   = COMPOUND_STRING("That barely worked…"),
     [STRINGID_SUPEREFFECTIVE]                       = COMPOUND_STRING("It's super effective!"),
+    [STRINGID_SUPEREFFECTIVE_2]                     = COMPOUND_STRING("A devastating hit!"),
+    [STRINGID_SUPEREFFECTIVE_3]                     = COMPOUND_STRING("That did tremendous damage!"),
     [STRINGID_GOTAWAYSAFELY]                        = sText_GotAwaySafely,
     [STRINGID_WILDPKMNFLED]                         = COMPOUND_STRING("{PLAY_SE SE_FLEE}The wild {B_BUFF1} fled!"),
     [STRINGID_NORUNNINGFROMTRAINERS]                = COMPOUND_STRING("No! There's no running from a Trainer battle!\p"),
     [STRINGID_CANTESCAPE]                           = COMPOUND_STRING("You can't escape!\p"),
     [STRINGID_DONTLEAVEBIRCH]                       = COMPOUND_STRING("PROF. BIRCH: Don't leave me like this!\p"), //no decapitalize until it is everywhere
     [STRINGID_BUTNOTHINGHAPPENED]                   = COMPOUND_STRING("But nothing happened!"),
+    [STRINGID_BUTNOTHINGHAPPENED_2]                 = COMPOUND_STRING("Nothing happened!"),
+    [STRINGID_BUTNOTHINGHAPPENED_3]                 = COMPOUND_STRING("But nothing came of it!"),
     [STRINGID_BUTITFAILED]                          = COMPOUND_STRING("But it failed!"),
+    [STRINGID_BUTITFAILED_2]                        = COMPOUND_STRING("It failed!"),
+    [STRINGID_BUTITFAILED_3]                        = COMPOUND_STRING("But it didn't work!"),
     [STRINGID_ITHURTCONFUSION]                      = COMPOUND_STRING("It hurt itself in its confusion!"),
     [STRINGID_STARTEDTORAIN]                        = COMPOUND_STRING("It started to rain!"),
     [STRINGID_DOWNPOURSTARTED]                      = COMPOUND_STRING("A downpour started!"), // corresponds to DownpourText in pokegold and pokecrystal and is used by Rain Dance in GSC
@@ -2412,6 +2429,45 @@ static const struct BattleWindowText *const sBattleTextOnWindowsInfo[] =
 
 static const u8 sRecordedBattleTextSpeeds[] = {8, 4, 1, 0};
 
+static const u8 *const sUsedMoveStringVariants[] = {sText_AttackerUsedX, sText_AttackerUsedX2, sText_AttackerUsedX3};
+
+// Common, non-move-specific battle messages that are reworded at random for variety.
+static const u16 sCriticalHitStringVariants[] = {STRINGID_CRITICALHIT, STRINGID_CRITICALHIT_2, STRINGID_CRITICALHIT_3};
+static const u16 sSuperEffectiveStringVariants[] = {STRINGID_SUPEREFFECTIVE, STRINGID_SUPEREFFECTIVE_2, STRINGID_SUPEREFFECTIVE_3};
+static const u16 sNotVeryEffectiveStringVariants[] = {STRINGID_NOTVERYEFFECTIVE, STRINGID_NOTVERYEFFECTIVE_2, STRINGID_NOTVERYEFFECTIVE_3};
+static const u16 sFaintedStringVariants[] = {STRINGID_BATTLERFAINTED, STRINGID_BATTLERFAINTED_2, STRINGID_BATTLERFAINTED_3};
+static const u16 sAvoidedAttackStringVariants[] = {STRINGID_PKMNAVOIDEDATTACK, STRINGID_PKMNAVOIDEDATTACK_2, STRINGID_PKMNAVOIDEDATTACK_3};
+static const u16 sMoveFailedStringVariants[] = {STRINGID_BUTITFAILED, STRINGID_BUTITFAILED_2, STRINGID_BUTITFAILED_3};
+static const u16 sNothingHappenedStringVariants[] = {STRINGID_BUTNOTHINGHAPPENED, STRINGID_BUTNOTHINGHAPPENED_2, STRINGID_BUTNOTHINGHAPPENED_3};
+
+// Picks a random reworded variant for stringID if it has any, otherwise returns it unchanged.
+static enum StringID GetVariedStringId(enum StringID stringID)
+{
+    // Keep messages deterministic for the test runner, which expects exact text.
+    if (gTestRunnerEnabled)
+        return stringID;
+
+    switch (stringID)
+    {
+    case STRINGID_CRITICALHIT:
+        return sCriticalHitStringVariants[Random() % ARRAY_COUNT(sCriticalHitStringVariants)];
+    case STRINGID_SUPEREFFECTIVE:
+        return sSuperEffectiveStringVariants[Random() % ARRAY_COUNT(sSuperEffectiveStringVariants)];
+    case STRINGID_NOTVERYEFFECTIVE:
+        return sNotVeryEffectiveStringVariants[Random() % ARRAY_COUNT(sNotVeryEffectiveStringVariants)];
+    case STRINGID_BATTLERFAINTED:
+        return sFaintedStringVariants[Random() % ARRAY_COUNT(sFaintedStringVariants)];
+    case STRINGID_PKMNAVOIDEDATTACK:
+        return sAvoidedAttackStringVariants[Random() % ARRAY_COUNT(sAvoidedAttackStringVariants)];
+    case STRINGID_BUTITFAILED:
+        return sMoveFailedStringVariants[Random() % ARRAY_COUNT(sMoveFailedStringVariants)];
+    case STRINGID_BUTNOTHINGHAPPENED:
+        return sNothingHappenedStringVariants[Random() % ARRAY_COUNT(sNothingHappenedStringVariants)];
+    default:
+        return stringID;
+    }
+}
+
 void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
 {
     s32 i;
@@ -2727,7 +2783,11 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
             StringCopy(gBattleTextBuff3, gTypesInfo[*(&gBattleStruct->stringMoveType)].generic);
         else
             StringCopy(gBattleTextBuff3, GetMoveName(gBattleMsgDataPtr->currentMove));
-        stringPtr = sText_AttackerUsedX;
+        // Keep messages deterministic for the test runner, which expects exact text.
+        if (gTestRunnerEnabled)
+            stringPtr = sText_AttackerUsedX;
+        else
+            stringPtr = sUsedMoveStringVariants[Random() % ARRAY_COUNT(sUsedMoveStringVariants)];
         break;
     case STRINGID_BATTLEEND: // battle end
         if (gBattleTextBuff1[0] & B_OUTCOME_LINK_BATTLE_RAN)
@@ -2802,6 +2862,7 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
         stringPtr = gBattleStruct->trainerSlideMsg;
         break;
     default: // load a string from the table
+        stringID = GetVariedStringId(stringID);
         // Also guard against string IDs that exist in enum StringID but have no
         // gBattleStringsTable entry, otherwise the NULL would be expanded as text.
         if (stringID >= STRINGID_COUNT || gBattleStringsTable[stringID] == NULL)
