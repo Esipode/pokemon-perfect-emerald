@@ -284,9 +284,9 @@ void ResetSpriteData(void)
     // digit_obj_util.c's GetFirstOamId, and the RFU wireless icon at OAM
     // index 125) hardcode OAM indices at/above the old value of 64 as a
     // reserved region outside the normal sprite pipeline. Contexts that use
-    // those systems while relying on the default gOamLimit (e.g. the Hall of
-    // Fame confetti sequence) explicitly clamp gOamLimit back down before
-    // drawing into that region -- see hall_of_fame.c.
+    // those systems clamp gOamLimit back down for as long as they own that
+    // region and restore it afterwards -- see hall_of_fame.c for the confetti
+    // sequence and DigitObjUtil_Init/_Free for the digit printers.
     gOamLimit = MAX_SPRITES;
     gReservedSpriteTileCount = 0;
     AllocSpriteTiles(0);

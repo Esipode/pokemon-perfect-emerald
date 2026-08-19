@@ -4900,9 +4900,18 @@ static void Cmd_switchindataupdate(void)
         return;
     }
 
-    gBattleMons[battler].types[0] = GetSpeciesType(gBattleMons[battler].species, 0);
-    gBattleMons[battler].types[1] = GetSpeciesType(gBattleMons[battler].species, 1);
-    gBattleMons[battler].types[2] = TYPE_MYSTERY;
+    // Resolve type and moves for the mon that just switched in. The data copied
+    // above is the party mon's true stored data, so this is the switch-in
+    // counterpart of the resolve done at the battle intro - without it a mon
+    // sent out mid-battle fought with its unrandomized types and moves.
+    {
+        u8 type1, type2;
+        GetResolvedTypePair(gBattleMons[battler].species, &type1, &type2);
+        gBattleMons[battler].types[0] = type1;
+        gBattleMons[battler].types[1] = type2;
+        gBattleMons[battler].types[2] = TYPE_MYSTERY;
+    }
+    ApplyMoveRandomizationToBattleMon(battler);
     gBattleMons[battler].ability = GetAbilityBySpecies(gBattleMons[battler].species, gBattleMons[battler].abilityNum);
     #if TESTING
     if (gTestRunnerEnabled)
@@ -11387,7 +11396,7 @@ void BS_ItemRestorePP(void)
     {
         pp = GetMonData(mon, MON_DATA_PP1 + i);
         moveId = GetMonData(mon, MON_DATA_MOVE1 + i);
-        maxPP = CalculatePPWithBonus(moveId, GetMonData(mon, MON_DATA_PP_BONUSES), i);
+        maxPP = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), moveId, GetMonData(mon, MON_DATA_PP_BONUSES), i);
         if (pp != maxPP)
         {
             pp += effect[6];

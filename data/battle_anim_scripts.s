@@ -21241,7 +21241,7 @@ gBattleAnimMove_IcyWind::
 	delay 5
 	call IcyWindSwirlingSnowballs
 	playsewithpan SE_M_GUST2, SOUND_PAN_TARGET
-	delay 55
+	delay 5
 	call IceSpikesEffectLong
 	waitforvisualfinish
 	clearmonbg ANIM_DEF_PARTNER

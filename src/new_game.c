@@ -281,6 +281,7 @@ static void CarryStorageIntoNewGame(void)
         {
             struct BoxPokemon *boxMon = GetBoxedMonPtr(boxId, boxPosition);
             u32 otId;
+            u8 recruitBattles = 0;
 
             if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES))
                 continue;
@@ -292,6 +293,11 @@ static void CarryStorageIntoNewGame(void)
                 continue;
             }
             boxMon->legacyCarryOverLocked = TRUE;
+            // Recruits mode's battle counter is only meaningful within the run that
+            // tallied it -- strip it so a carried-over mon doesn't arrive already
+            // partway (or fully) toward retiring in a run that may not even have
+            // Recruits mode on.
+            SetBoxMonData(boxMon, MON_DATA_RECRUIT_BATTLES, &recruitBattles);
         }
     }
 }
@@ -537,6 +543,13 @@ void NewGameInitData(void)
     // harmless on the non-NG+ path, where these bytes are already zero from
     // ClearSav2().
     memset(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags, 0, sizeof(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags));
+    // playerColors (player_customization.h) has the same ClearSav2() gap as
+    // pendingTrade/nuzlockeZoneCaughtFlags above - without this, a New Game+
+    // file starts with the previous playthrough's hair/hat/outfit/accent
+    // colours still applied to the overworld and battle sprites. Unconditional
+    // to match those, harmless on the non-NG+ path where ClearSav2() already
+    // zeroed it.
+    memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     InitEventData();
     // Must run after ClearSav1() above wiped dexCaught/dexSeen.
     // Re-registers every carried-over box mon so the dex

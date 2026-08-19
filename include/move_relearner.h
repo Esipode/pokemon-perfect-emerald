@@ -6,6 +6,7 @@
 void TeachMoveRelearnerMove(void);
 void MoveRelearnerShowHideHearts(s32 move);
 void MoveRelearnerShowHideCategoryIcon(s32);
+s32 MoveRelearnerGetResolvedListMove(s32 originalMove);
 void CB2_InitLearnMove(void);
 bool32 CanBoxMonRelearnAnyMove(struct BoxPokemon *boxMon);
 bool32 CanBoxMonRelearnMoves(struct BoxPokemon *boxMon, enum MoveRelearnerStates state);

@@ -29,7 +29,6 @@ u16 GetCanonicalStarterSpecies(u8 gen, u8 slot);
 // randomization.c and this file's own internals should call these.
 u8 GetRandomType(u16 species, u32 typeOffset);
 u16 GetRandomMove(u16 species, u16 originalMove);
-u16 GetRandomDamageMove(u16 species, u16 originalMove);
 u8 GetRandomMoveType(u16 moveId);
 u16 GetEffectiveMove(u16 move, u16 species);
 

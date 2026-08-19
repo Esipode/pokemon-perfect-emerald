@@ -42,7 +42,7 @@
     {
       "local_id": "LOCALID_ROUTE101_BIRCH",
       "graphics_id": "OBJ_EVENT_GFX_PROF_BIRCH",
-      "x": 9,
+      "x": 4,
       "y": 13,
       "elevation": 0,
       "movement_type": "MOVEMENT_TYPE_JOG_IN_PLACE_RIGHT",
@@ -69,7 +69,7 @@
     {
       "local_id": "LOCALID_ROUTE101_ZIGZAGOON",
       "graphics_id": "OBJ_EVENT_GFX_ZIGZAGOON_1",
-      "x": 10,
+      "x": 5,
       "y": 13,
       "elevation": 0,
       "movement_type": "MOVEMENT_TYPE_JOG_IN_PLACE_LEFT",

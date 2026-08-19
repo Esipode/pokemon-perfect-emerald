@@ -204,8 +204,8 @@ void *Alloc_(u32 size, const char *location)
     void *p = AllocInternal(sHeapStart, size, location);
     if (!p)
     {
-        if (TESTING)
-            PrintHeap();
+        // Dump every live allocation so the log names what filled the heap.
+        PrintHeap();
         fatalf("%s: out of memory trying to allocate %d bytes", location, size);
     }
     return p;

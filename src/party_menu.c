@@ -5746,10 +5746,9 @@ static void ShowMoveSelectWindow(u8 slot)
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
-        // Resolve per-slot (not through ResolveMonMoves) so the displayed name
-        // matches the summary screen/battle for this move, while keeping this
-        // menu's slot index i - what the PP-restore selection below acts on -
-        // aligned with the mon's real move slots.
+        // Resolved per slot, so the displayed name matches the summary
+        // screen/battle while this menu's slot index i - what the PP-restore
+        // selection below acts on - stays aligned with the mon's real slots.
         move = GetResolvedMove(species, GetMonData(&gParties[B_TRAINER_PLAYER][slot], MON_DATA_MOVE1 + i));
         u8 fontId = GetFontIdToFit(GetMoveName(move), FONT_NORMAL, 0, 72);
         AddTextPrinterParameterized(windowId, fontId, GetMoveName(move), 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);

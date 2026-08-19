@@ -45,11 +45,18 @@ u16 GetResolvedMove(u16 species, u16 originalMove);
 // it overrides with the resolved random move type.
 u8 GetResolvedMoveType(u16 move, u8 baseType);
 
-// Resolves an entire moveset in one pass (MAX_MON_MOVES slots). Resolved
-// moves are deduplicated and packed to the front (two original moves that
-// happen to resolve to the same move don't waste a slot); unused trailing
-// slots are MOVE_NONE. Safe to call with outMoves == originalMoves.
+// Resolves an entire moveset in one pass (MAX_MON_MOVES slots), strictly
+// slot-for-slot: outMoves[i] is always the resolved counterpart of
+// originalMoves[i], and a MOVE_NONE slot stays MOVE_NONE. Slots are never
+// reordered or packed, so every caller keeps the mon's real slot layout.
+// Safe to call with outMoves == originalMoves.
 void ResolveMonMoves(u16 species, const u16 *originalMoves, u16 *outMoves);
+
+// Max PP of a stored move slot. A slot's stored PP always tracks the RESOLVED
+// move (that's the move the player sees and actually spends), so anything that
+// refills or caps a slot has to size it against the resolved move rather than
+// the original stored one.
+u8 GetResolvedMovePP(u16 species, u16 originalMove, u8 ppBonuses, u8 slot);
 
 // Resolves a mon's full effective data (types + moveset) in one call from its
 // original species and original stored moves. This is the entry point

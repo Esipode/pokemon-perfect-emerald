@@ -37,6 +37,7 @@
 #include "pokemon_icon.h"
 #include "pokemon_summary_screen.h"
 #include "random.h"
+#include "randomization.h"
 #include "region_map.h"
 #include "rtc.h"
 #include "scanline_effect.h"
@@ -2100,8 +2101,14 @@ static void PrintCurrentSpeciesInfo(void)
         AddTextPrinterParameterized3(WINDOW_INFO, FONT_SMALL, 0, SPECIES_INFO_Y, sFontColor_Black, 0, GetSpeciesName(species));
 
     //type icon(s)
-    type1 = GetSpeciesType(species, 0);
-    type2 = GetSpeciesType(species, 1);
+    // Resolve so the icons match the types the mon will actually have in
+    // battle and on the summary screen.
+    {
+        u8 resolvedType1, resolvedType2;
+        GetResolvedTypePair(species, &resolvedType1, &resolvedType2);
+        type1 = resolvedType1;
+        type2 = resolvedType2;
+    }
     if (species == SPECIES_NONE)
         type1 = type2 = TYPE_MYSTERY;
 

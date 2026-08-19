@@ -1155,12 +1155,22 @@ void SaveGame(void)
 
 static const u8 sText_Autosaving[] = _("Autosaving...");
 
+// Hard cap on the print loop below. RunTextPrinters is a no-op while
+// gDisableTextPrinters is set, and a printer that reaches a wait state never
+// goes inactive on its own -- an unbounded wait on either would hang the game
+// with no way out but a reset.
+#define AUTOSAVE_TEXT_MAX_PASSES 64
+
 void RunAutosaveSteps(void) {
+    u32 passes = 0;
+
     StringExpandPlaceholders(gStringVar4, sText_Autosaving);
     DrawDialogueFrame(0, TRUE);
-    AddTextPrinterForMessage(TRUE);
-    // Force the text printer to finish so the message appears immediately
-    while (RunTextPrintersAndIsPrinter0Active())
+    // Speed 0 renders the whole string in a single pass. The save below blocks
+    // the main loop for the rest of the frame, so there is no later frame for a
+    // normally-paced printer to finish on.
+    AddTextPrinterWithCustomSpeedForMessage(TRUE, 0);
+    while (RunTextPrintersAndIsPrinter0Active() && ++passes < AUTOSAVE_TEXT_MAX_PASSES)
         ;
     SaveMapView();
     TrySavingData(SAVE_NORMAL);

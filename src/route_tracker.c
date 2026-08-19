@@ -14,6 +14,10 @@
 // Route Stat Tracker: per-map completion counts for the start menu box (see route_tracker.h).
 // Wild Pokémon counting mirrors CapturedAllLandMons/CapturedAllWaterMons/CapturedAllHiddenMons
 // in dexnav.c, generalized to all encounter methods and unioned across all times of day.
+//
+// Item/trainer totals are cheap to recompute (a single pass over the map's own event list), so
+// they're redone on every start menu open to stay accurate. The wild species list is not cheap
+// (see RebuildEncounterCache), so it's cached per wild mon header instead.
 
 struct AreaSlots
 {
@@ -87,32 +91,64 @@ static bool32 SpeciesSeenEarlier(u32 headerId, enum Species species, u8 uptoTod,
     return FALSE;
 }
 
-static void CountEncounters(struct RouteProgress *progress)
+// The deduped species list only depends on the wild mon header (map + randomization seed), so it's
+// cached and rebuilt just once per header change instead of on every start menu open. Rebuilding is
+// the expensive part: it calls GetRandomizedSpecies (an O(NUM_SPECIES) search) for every (tod, area,
+// slot) combination, and SpeciesSeenEarlier re-walks all earlier combinations on top of that.
+#define MAX_TRACKED_SPECIES ((LAND_WILD_COUNT + WATER_WILD_COUNT + ROCK_WILD_COUNT + FISH_WILD_COUNT + HIDDEN_WILD_COUNT) * TIMES_OF_DAY_COUNT)
+
+EWRAM_DATA static struct
 {
-    u32 headerId = GetCurrentMapWildMonHeaderId();
+    u16 headerId;
+    bool8 valid;
+    u8 speciesCount;
+    u16 species[MAX_TRACKED_SPECIES];
+} sEncounterCache = {0};
+
+static void RebuildEncounterCache(u32 headerId)
+{
     u8 tod, areaIdx, slot;
     enum Species species;
 
-    if (headerId == HEADER_NONE)
-        return;
+    sEncounterCache.speciesCount = 0;
 
-    for (tod = 0; tod < TIMES_OF_DAY_COUNT; tod++)
+    if (headerId != HEADER_NONE)
     {
-        for (areaIdx = 0; areaIdx < ARRAY_COUNT(sAreaSlots); areaIdx++)
+        for (tod = 0; tod < TIMES_OF_DAY_COUNT; tod++)
         {
-            for (slot = 0; slot < sAreaSlots[areaIdx].count; slot++)
+            for (areaIdx = 0; areaIdx < ARRAY_COUNT(sAreaSlots); areaIdx++)
             {
-                species = GetEncounterSpecies(headerId, tod, sAreaSlots[areaIdx].area, slot);
-                if (species == SPECIES_NONE)
-                    continue;
-                if (SpeciesSeenEarlier(headerId, species, tod, areaIdx, slot))
-                    continue;
+                for (slot = 0; slot < sAreaSlots[areaIdx].count; slot++)
+                {
+                    species = GetEncounterSpecies(headerId, tod, sAreaSlots[areaIdx].area, slot);
+                    if (species == SPECIES_NONE)
+                        continue;
+                    if (SpeciesSeenEarlier(headerId, species, tod, areaIdx, slot))
+                        continue;
 
-                progress->speciesTotal++;
-                if (GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT))
-                    progress->speciesCaught++;
+                    sEncounterCache.species[sEncounterCache.speciesCount++] = species;
+                }
             }
         }
+    }
+
+    sEncounterCache.headerId = headerId;
+    sEncounterCache.valid = TRUE;
+}
+
+static void CountEncounters(struct RouteProgress *progress)
+{
+    u32 headerId = GetCurrentMapWildMonHeaderId();
+    u8 i;
+
+    if (!sEncounterCache.valid || sEncounterCache.headerId != headerId)
+        RebuildEncounterCache(headerId);
+
+    progress->speciesTotal = sEncounterCache.speciesCount;
+    for (i = 0; i < sEncounterCache.speciesCount; i++)
+    {
+        if (GetSetPokedexFlag(SpeciesToNationalPokedexNum(sEncounterCache.species[i]), FLAG_GET_CAUGHT))
+            progress->speciesCaught++;
     }
 }
 

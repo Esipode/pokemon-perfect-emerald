@@ -78,6 +78,9 @@ static void InitializeSwitchinCandidate(enum BattlerId switchinBattler, u32 monI
     PokemonToBattleMon(mon, &gBattleMons[switchinBattler]);
     gBattlerPartyIndexes[switchinBattler] = monIndex;
     CopyMonAbilityAndTypesToBattleMon(switchinBattler, mon);
+    // PokemonToBattleMon copied the party mon's true stored moveset, so the
+    // candidate has to be resolved to score the moves it will actually have.
+    ApplyMoveRandomizationToBattleMon(switchinBattler);
     // Setup switchin battler data
     gAiThinkingStruct->saved[switchinBattler].saved = TRUE;
     SetBattlerAiData(switchinBattler, gAiLogicData);

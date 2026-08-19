@@ -9410,9 +9410,46 @@ void CopyMonAbilityAndTypesToBattleMon(enum BattlerId battler, struct Pokemon *m
             gBattleMons[battler].ability = TestRunner_Battle_GetForcedAbility(array, partyIndex);
     }
     #endif
-    gBattleMons[battler].types[0] = GetSpeciesType(gBattleMons[battler].species, 0);
-    gBattleMons[battler].types[1] = GetSpeciesType(gBattleMons[battler].species, 1);
+    // Resolve through the shared resolver - this runs on form changes and stat
+    // recalcs mid-battle, and reading the raw species types here used to hand
+    // the mon its unrandomized types back partway through a battle.
+    u8 type1, type2;
+    GetResolvedTypePair(gBattleMons[battler].species, &type1, &type2);
+    gBattleMons[battler].types[0] = type1;
+    gBattleMons[battler].types[1] = type2;
     gBattleMons[battler].types[2] = TYPE_MYSTERY;
+}
+
+// Applies move randomization to a battler that was just loaded from party
+// data. gBattleMons[battler].moves still holds the mon's true stored moveset
+// at that point (randomization is never persisted back to the party), so this
+// must run exactly once per load - at battle intro and on every switch-in -
+// and never on already-resolved data.
+void ApplyMoveRandomizationToBattleMon(enum BattlerId battler)
+{
+    u16 originalMoves[MAX_MON_MOVES];
+    u16 resolvedMoves[MAX_MON_MOVES];
+
+    for (u32 i = 0; i < MAX_MON_MOVES; i++)
+        originalMoves[i] = gBattleMons[battler].moves[i];
+
+    ResolveMonMoves(gBattleMons[battler].species, originalMoves, resolvedMoves);
+
+    for (u32 i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (resolvedMoves[i] == originalMoves[i])
+            continue;
+
+        // Carry the mon's real remaining PP across the substitution rather than
+        // refilling it - refilling handed the player a full PP bar at the start
+        // of every battle. Only cap it, for slots whose stored PP was sized
+        // against a move with a larger PP pool.
+        u32 maxPP = CalculatePPWithBonus(resolvedMoves[i], gBattleMons[battler].ppBonuses, i);
+
+        gBattleMons[battler].moves[i] = resolvedMoves[i];
+        if (gBattleMons[battler].pp[i] > maxPP)
+            gBattleMons[battler].pp[i] = maxPP;
+    }
 }
 
 void RecalcBattlerStats(enum BattlerId battler, struct Pokemon *mon, bool32 isDynamaxing)

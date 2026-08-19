@@ -13,29 +13,29 @@
 
 // The order the settings menu cycles through. TYPE_NONE is the "OFF" entry --
 // it is the only way to turn the mode off, so it stays in the cycle. The 18
-// real types follow in enum order; TYPE_MYSTERY (10) and TYPE_STELLAR (20) are
+// real types follow alphabetically; TYPE_MYSTERY (10) and TYPE_STELLAR (20) are
 // deliberately absent because no obtainable species carries them.
 static const u8 sMonoTypeCycle[] =
 {
     TYPE_NONE, // OFF
-    TYPE_NORMAL,
-    TYPE_FIGHTING,
-    TYPE_FLYING,
-    TYPE_POISON,
-    TYPE_GROUND,
-    TYPE_ROCK,
     TYPE_BUG,
-    TYPE_GHOST,
-    TYPE_STEEL,
-    TYPE_FIRE,
-    TYPE_WATER,
-    TYPE_GRASS,
-    TYPE_ELECTRIC,
-    TYPE_PSYCHIC,
-    TYPE_ICE,
-    TYPE_DRAGON,
     TYPE_DARK,
+    TYPE_DRAGON,
+    TYPE_ELECTRIC,
     TYPE_FAIRY,
+    TYPE_FIGHTING,
+    TYPE_FIRE,
+    TYPE_FLYING,
+    TYPE_GHOST,
+    TYPE_GRASS,
+    TYPE_GROUND,
+    TYPE_ICE,
+    TYPE_NORMAL,
+    TYPE_POISON,
+    TYPE_PSYCHIC,
+    TYPE_ROCK,
+    TYPE_STEEL,
+    TYPE_WATER,
 };
 
 // Fallback ladder for the starter pool, applied in order until at least

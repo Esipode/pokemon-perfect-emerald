@@ -314,7 +314,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     if (FlagGet(FLAG_AUTO_SCROLL_TEXT))            SET_FLAG(AUTO_SCROLL, 1); else SET_FLAG(AUTO_SCROLL, 0);
     if (gSaveBlock1Ptr->autosaveModeEnabled)       SET_FLAG(AUTOSAVE, 1); else SET_FLAG(AUTOSAVE, 0);
     if (Achievement_BoostsEnabled())               SET_FLAG(ACHIEVEMENT_BOOSTS, 1); else SET_FLAG(ACHIEVEMENT_BOOSTS, 0);
-    if (gSaveBlock2Ptr->optionsRouteTracker)        SET_FLAG(ROUTE_TRACKER, 1); else SET_FLAG(ROUTE_TRACKER, 0);
+    if (gSaveBlock2Ptr->optionsRouteTracker)       SET_FLAG(ROUTE_TRACKER, 1); else SET_FLAG(ROUTE_TRACKER, 0);
 }
 
 static void DrawOptionsPg1(u8 taskId)

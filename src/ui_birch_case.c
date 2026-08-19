@@ -467,9 +467,7 @@ u8 GetRandomType(u16 species, u32 typeOffset)
     return type;
 }
 
-// Generate a random move.
-// This remains general-purpose; starter generation uses GetRandomDamageMove to
-// guarantee at least one damaging option in the first moveset it receives.
+// Generate a random move
 u16 GetRandomMove(u16 species, u16 originalMove)
 {
     u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
@@ -479,28 +477,6 @@ u16 GetRandomMove(u16 species, u16 originalMove)
     if (move == MOVE_NONE)
         move = MOVE_TACKLE;
     return move;
-}
-
-// Starter picks should always have at least one actual damage option at the
-// level they are granted, even with move randomization enabled.
-u16 GetRandomDamageMove(u16 species, u16 originalMove)
-{
-    u32 trainerId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-    u16 baseSpecies = GET_BASE_SPECIES_ID(species);
-    rng_value_t rngState = LocalRandomSeed(trainerId + baseSpecies * 100 + originalMove);
-    u16 move;
-
-    for (u32 i = 0; i < 8; i++)
-    {
-        move = LocalRandom(&rngState) % MOVES_COUNT;
-        if (move == MOVE_NONE)
-            move = MOVE_TACKLE;
-
-        if (GetMovePower(move) > 0 && !IsBattleMoveStatus(move))
-            return move;
-    }
-
-    return MOVE_TACKLE;
 }
 
 // Generate a random move type
@@ -790,6 +766,9 @@ static void ReloadNewPokemon(u8 taskId) // reload the pokeball after a 4 frame d
 {
     gSprites[sBirchCaseDataPtr->monSpriteId].invisible = TRUE;
     FreeResourcesAndDestroySprite(&gSprites[sBirchCaseDataPtr->monSpriteId], sBirchCaseDataPtr->monSpriteId);
+    // Task_DelayedSpriteLoad recreates it a few frames from now; until then
+    // there is no sprite left for BirchCaseFreeResources to tear down.
+    sBirchCaseDataPtr->monSpriteId = SPRITE_NONE;
     sBirchCaseDataPtr->movingSelector = TRUE;
     gTasks[taskId].func = Task_DelayedSpriteLoad;
     gTasks[taskId].data[11] = 0;
@@ -801,6 +780,30 @@ static void ChangePositionUpdateSpriteAnims(u16 oldPosition, u8 taskId) // turn 
     StartSpriteAnim(&gSprites[sBirchCaseDataPtr->pokeballSpriteIds[sBirchCaseDataPtr->handPosition]], 1);
     ReloadNewPokemon(taskId);
     PrintTextToBottomBar(CHOOSE_MON);
+}
+
+// Picks a damaging move from the species' own level-up learnset, for topping
+// up a randomized starter moveset that ended up with no way to deal damage.
+// Prefers a move already learnable by `level`; falls back to the first
+// damaging move the species ever learns, then MOVE_TACKLE if it has none.
+static u16 GetLearnsetDamageMove(u16 species, u8 level)
+{
+    const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset((enum Species)species);
+    u16 fallback = MOVE_NONE;
+
+    for (u8 i = 0; learnset[i].move != LEVEL_UP_MOVE_END; i++)
+    {
+        u16 move = learnset[i].move;
+        if (GetMovePower(move) > 0 && !IsBattleMoveStatus(move))
+        {
+            if (learnset[i].level <= level)
+                return move;
+            if (fallback == MOVE_NONE)
+                fallback = move;
+        }
+    }
+
+    return (fallback != MOVE_NONE) ? fallback : MOVE_TACKLE;
 }
 
 static void BirchCase_GiveMon() // Function that calls the GiveMon function pulled from Expansion by Lunos and Ghoulslash
@@ -836,19 +839,16 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
     }
     else if (wasRandomizeMon)
     {
-        // Starter-gen path: keep one guaranteed damaging move in the received
-        // mon's starting moveset, then randomize the rest.
+        // Randomize moves when flag is set, deduplicating to avoid assertion in ResolveRandomMoves
         FlagClear(FLAG_RANDOMIZE_MON);
         u8 moveCount = 0;
-
-        moves[moveCount++] = GetRandomDamageMove(choice->species, MOVE_NONE);
-
-        while (moveCount < MAX_MON_MOVES)
+        for (u8 i = 0; i < MAX_MON_MOVES && moveCount < MAX_MON_MOVES; i++)
         {
             enum Move randomMove = GetRandomMove(choice->species, MOVE_NONE);
             if (randomMove == MOVE_NONE)
                 randomMove = MOVE_TACKLE;
 
+            // Check for duplicates before adding
             bool32 isDuplicate = FALSE;
             for (u8 j = 0; j < moveCount; j++)
             {
@@ -861,12 +861,32 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
 
             if (!isDuplicate)
                 moves[moveCount++] = randomMove;
-            else
-                break;
         }
-
+        // Fill remaining slots with MOVE_NONE
         for (u8 i = moveCount; i < MAX_MON_MOVES; i++)
             moves[i] = MOVE_NONE;
+
+        // Safety net: only step in if randomization left the mon with nothing
+        // that can deal damage. An already-valid moveset is left untouched.
+        bool8 hasDamagingMove = FALSE;
+        for (u8 i = 0; i < moveCount; i++)
+        {
+            if (GetMovePower(moves[i]) > 0 && !IsBattleMoveStatus(moves[i]))
+            {
+                hasDamagingMove = TRUE;
+                break;
+            }
+        }
+
+        if (!hasDamagingMove)
+        {
+            u16 damageMove = GetLearnsetDamageMove(choice->species, choice->level);
+            if (moveCount < MAX_MON_MOVES)
+                moves[moveCount++] = damageMove;
+            else
+                moves[MAX_MON_MOVES - 1] = damageMove;
+        }
+
         FlagSet(FLAG_RANDOMIZE_MON);
     }
     else
@@ -1015,6 +1035,7 @@ void BirchCase_Init(MainCallback callback)
     sBirchCaseDataPtr->savedCallback = callback;
 
     sBirchCaseDataPtr->handSpriteId = SPRITE_NONE;
+    sBirchCaseDataPtr->monSpriteId = SPRITE_NONE;
 
     for(i=0; i < 9; i++)
     {
@@ -1109,20 +1130,31 @@ static bool8 BirchCaseDoGfxSetup(void)
     return FALSE;
 }
 
-#define try_free(ptr) ({        \
+// Nulls the pointer as well as freeing it: the bail path and the normal
+// turn-off path can both reach BirchCaseFreeResources, and a second pass
+// over an already-freed pointer would double free and corrupt the heap.
+#define try_free(ptr) ({               \
     void ** ptr__ = (void **)&(ptr);   \
     if (*ptr__ != NULL)                \
+    {                                  \
         Free(*ptr__);                  \
+        *ptr__ = NULL;                 \
+    }                                  \
 })
 
 static void BirchCaseFreeResources(void)
 {
+    // Sprite teardown reads sBirchCaseDataPtr, so it has to run before the
+    // struct itself is freed. monSpriteId is SPRITE_NONE until the mon pic is
+    // actually created, so the bail path (which gets here with no sprite yet)
+    // no longer destroys sprite 0.
+    if (sBirchCaseDataPtr != NULL && sBirchCaseDataPtr->monSpriteId != SPRITE_NONE)
+        FreeResourcesAndDestroySprite(&gSprites[sBirchCaseDataPtr->monSpriteId], sBirchCaseDataPtr->monSpriteId);
+    DestroyPokeballSprites();
+    DestroyHandSprite();
     try_free(sBirchCaseDataPtr);
     try_free(sBg1TilemapBuffer);
     try_free(sBg2TilemapBuffer);
-    FreeResourcesAndDestroySprite(&gSprites[sBirchCaseDataPtr->monSpriteId], sBirchCaseDataPtr->monSpriteId);
-    DestroyPokeballSprites();
-    DestroyHandSprite();
     FreeAllWindowBuffers();
 }
 

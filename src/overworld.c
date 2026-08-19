@@ -215,9 +215,21 @@ static u8 sRfuKeepAliveTimer;
 bool8 gDoAutosave = FALSE;
 bool8 gDoAutosaveAfterBattle = FALSE;
 
+// Gate for every blocking flash write CB2_Overworld can issue on an ordinary
+// game frame -- the autosave and the achievement-profile flush. Both end in
+// synchronous ProgramFlashSectorAndVerify calls, which mask interrupts and
+// hold Timer 3 for long enough to drop scheduled VBlank work (DMA3 requests,
+// palette fade steps, tileset transfers). Restricting them to a frame where
+// the field is genuinely idle -- controls unlocked, player in normal control,
+// no palette fade, no script running -- keeps them off every map transition,
+// warp fade and cutscene. Nothing is skipped by waiting: both callers keep
+// re-checking each frame and fire on the first idle one.
 bool8 CanAutosaveNow(void)
 {
-    return !ArePlayerFieldControlsLocked() && TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_CONTROLLABLE);
+    return !ArePlayerFieldControlsLocked()
+        && TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_CONTROLLABLE)
+        && !gPaletteFade.active
+        && !ScriptContext_IsEnabled();
 }
 
 COMMON_DATA u16 *gOverworldTilemapBuffer_Bg2 = NULL;
@@ -1999,8 +2011,13 @@ void CB2_Overworld(void)
     // earned right before a hard reset/power-off could be lost even though
     // it's stored in its own sector, independent of the player's save file.
     // Achievement_FlushProfile() is a no-op whenever nothing is dirty, so
-    // this costs nothing on the common frame.
-    Achievement_FlushProfile();
+    // this costs nothing on the common frame. When it isn't dirty-free it
+    // writes two flash sectors synchronously, so it shares the autosave's
+    // idle-frame gate -- Achievement_CheckExplorationMilestones runs from
+    // LoadCurrentMapData on every map load, which would otherwise land the
+    // write squarely on the frames a map transition is still fading in.
+    if (CanAutosaveNow())
+        Achievement_FlushProfile();
 }
 
 void SetMainCallback1(MainCallback cb)

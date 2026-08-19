@@ -42,8 +42,18 @@ static void DrawNumObjsMinusInBack(struct DigitPrinter *objWork, s32 num, bool32
 static bool32 SharesTileWithAnyActive(u32 id);
 static bool32 SharesPalWithAnyActive(u32 id);
 
+// This module writes straight into gMain.oamBuffer starting at this index
+// (see GetFirstOamId), bypassing the normal sprite pipeline. gOamLimit
+// defaults to MAX_SPRITES, which is above 64, so the pipeline would refill
+// those entries with sprite or dummy data every frame and erase the digits.
+// Clamp gOamLimit for as long as a printer is allocated and restore it on
+// free -- the same discipline hall_of_fame.c applies for the confetti's
+// reserved region.
+#define DIGIT_OBJ_OAM_BASE 64
+
 // ewram
 static EWRAM_DATA struct DigitPrinterAlloc *sOamWork = {0};
+static EWRAM_DATA u8 sSavedOamLimit = 0;
 
 // code
 bool32 DigitObjUtil_Init(u32 count)
@@ -71,6 +81,11 @@ bool32 DigitObjUtil_Init(u32 count)
         sOamWork->array[i].firstOamId = 0xFF;
     }
 
+    // After the DigitObjUtil_Free above, so a re-init doesn't save the
+    // already-clamped value as the one to restore.
+    sSavedOamLimit = gOamLimit;
+    gOamLimit = DIGIT_OBJ_OAM_BASE;
+
     return TRUE;
 }
 
@@ -89,6 +104,7 @@ void DigitObjUtil_Free(void)
         }
 
         FREE_AND_SET_NULL(sOamWork);
+        gOamLimit = sSavedOamLimit;
     }
 }
 
@@ -369,7 +385,7 @@ void DigitObjUtil_HideOrShow(u32 id, bool32 hide)
 static u8 GetFirstOamId(u8 oamCount)
 {
     u32 i;
-    u16 firstOamId = 64;
+    u16 firstOamId = DIGIT_OBJ_OAM_BASE;
 
     for (i = 0; i < sOamWork->count; i++)
     {

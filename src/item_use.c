@@ -41,6 +41,7 @@
 #include "party_menu.h"
 #include "pokeblock.h"
 #include "pokemon.h"
+#include "randomization.h"
 #include "script.h"
 #include "sound.h"
 #include "strings.h"
@@ -1177,6 +1178,13 @@ static u32 GetBallThrowableState(void)
     if (Draft_IsActive())
         return BALL_THROW_UNABLE_DRAFT;
 
+    // New Game+: flags (including FLAG_SYS_POKEDEX_GET) are wiped back to
+    // FALSE each cycle same as a fresh file, so catching stays locked until
+    // the player retraces their steps to Birch's lab and gets their own
+    // Pokédex again, same as the first playthrough.
+    if (gSaveBlock2Ptr->newGamePlus > 0 && !FlagGet(FLAG_SYS_POKEDEX_GET))
+        return BALL_THROW_UNABLE_NEW_GAME_PLUS;
+
     if (MonoType_IsEnabled() && !MonoType_IsSpeciesAllowed(gBattleMons[GetCatchingBattler()].species))
         return BALL_THROW_UNABLE_MONO_TYPE;
 
@@ -1203,6 +1211,7 @@ bool32 CanThrowBall(void)
 
 static const u8 sText_CantThrowPokeBall_Nuzlocke[] = _("You cannot catch any more Pokémon\nin this area!\p");
 static const u8 sText_CantThrowPokeBall_Draft[] = _("You can't catch Pokémon in a\nDraft run!\p");
+static const u8 sText_CantThrowPokeBall_NewGamePlus[] = _("You can't catch Pokémon until you've\nreceived your own Pokédex!\p");
 static const u8 sText_CantThrowPokeBall_MonoType[] = _("Only {STR_VAR_1}-type Pokémon can be\ncaught in this game!\p");
 static const u8 sText_CantThrowPokeBall_MonoGen[] = _("Only Gen {STR_VAR_1} Pokémon can be\ncaught in this game!\p");
 static const u8 sText_CantThrowPokeBall_TwoMons[] = _("Cannot throw a ball!\nThere are two Pokémon out there!\p");
@@ -1231,6 +1240,12 @@ void ItemUseInBattle_PokeBall(u8 taskId)
             DisplayItemMessage(taskId, FONT_NORMAL, sText_CantThrowPokeBall_Draft, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, sText_CantThrowPokeBall_Draft, Task_CloseBattlePyramidBagMessage);
+        break;
+    case BALL_THROW_UNABLE_NEW_GAME_PLUS:
+        if (!InBattlePyramid_())
+            DisplayItemMessage(taskId, FONT_NORMAL, sText_CantThrowPokeBall_NewGamePlus, CloseItemMessage);
+        else
+            DisplayItemMessageInBattlePyramid(taskId, sText_CantThrowPokeBall_NewGamePlus, Task_CloseBattlePyramidBagMessage);
         break;
     case BALL_THROW_UNABLE_MONO_TYPE:
         StringCopy(gStringVar1, gTypesInfo[MonoType_GetType()].name);
@@ -1384,6 +1399,10 @@ bool32 CannotUseItemsInBattle(enum Item itemId, struct Pokemon *mon)
             failStr = sText_CantThrowPokeBall_Draft;
             cannotUse = TRUE;
             break;
+        case BALL_THROW_UNABLE_NEW_GAME_PLUS:
+            failStr = sText_CantThrowPokeBall_NewGamePlus;
+            cannotUse = TRUE;
+            break;
         case BALL_THROW_UNABLE_MONO_TYPE:
             StringCopy(gStringVar1, gTypesInfo[MonoType_GetType()].name);
             failStr = sText_CantThrowPokeBall_MonoType;
@@ -1455,13 +1474,13 @@ bool32 CannotUseItemsInBattle(enum Item itemId, struct Pokemon *mon)
         {
             for (i = 0; i < MAX_MON_MOVES; i++)
             {
-                if (GetMonData(mon, MON_DATA_PP1 + i) < CalculatePPWithBonus(GetMonData(mon, MON_DATA_MOVE1 + i), GetMonData(mon, MON_DATA_PP_BONUSES), i))
+                if (GetMonData(mon, MON_DATA_PP1 + i) < GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), GetMonData(mon, MON_DATA_MOVE1 + i), GetMonData(mon, MON_DATA_PP_BONUSES), i))
                     break;
             }
             if (i == MAX_MON_MOVES)
                 cannotUse = TRUE;
         }
-        else if (GetMonData(mon, MON_DATA_PP1 + gPartyMenu.data1) == CalculatePPWithBonus(GetMonData(mon, MON_DATA_MOVE1 + gPartyMenu.data1), GetMonData(mon, MON_DATA_PP_BONUSES), gPartyMenu.data1))
+        else if (GetMonData(mon, MON_DATA_PP1 + gPartyMenu.data1) == GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), GetMonData(mon, MON_DATA_MOVE1 + gPartyMenu.data1), GetMonData(mon, MON_DATA_PP_BONUSES), gPartyMenu.data1))
         {
             cannotUse = TRUE;
         }

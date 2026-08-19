@@ -1610,7 +1610,7 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
 
         // Resolve through the same shared path battle setup uses (ResolveMonMoves),
         // so what's shown here always matches what actually plays out in battle -
-        // same species, same original moves in, same dedup/pack-to-front behavior.
+        // same species, same original moves in, same slot-for-slot mapping.
         // Party data always holds the true original moveset now (randomization is
         // never persisted back to it), so this is safe to call every time the
         // summary screen is opened without compounding randomization.
@@ -1618,10 +1618,21 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         for (i = 0; i < MAX_MON_MOVES; i++)
             sum->moves[i] = resolvedMoves[i];
 
-        for (i = 0; i < MAX_MON_MOVES; i++)
-            sum->pp[i] = GetMovePP(sum->moves[i]);
-    }
         sum->ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
+
+        // The mon's real remaining PP - not the resolved move's full PP, which
+        // made every mon look like it had a fresh PP bar. Capped to the
+        // resolved move's pool for saves whose stored PP was sized against the
+        // original move. sum->pp is written back on a move swap, so it has to
+        // stay the live value.
+        for (i = 0; i < MAX_MON_MOVES; i++)
+        {
+            u8 maxPP = CalculatePPWithBonus(sum->moves[i], sum->ppBonuses, i);
+            u8 currentPP = GetMonData(mon, MON_DATA_PP1 + i);
+
+            sum->pp[i] = min(currentPP, maxPP);
+        }
+    }
         break;
     case 2:
         ExtractMonSkillStatsData(mon, sum);

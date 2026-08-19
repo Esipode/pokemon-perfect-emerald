@@ -849,10 +849,14 @@ static void MoveRelearnerMenuLoadContestMoveDescription(u32 chosenMove)
 
 static void MoveRelearnerCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list)
 {
+    // itemIndex is the list entry's id, which is the true original move; the
+    // panels have to describe the resolved move whose name is in the list.
+    s32 displayedMove = MoveRelearnerGetResolvedListMove(itemIndex);
+
     if (onInit != TRUE)
         PlaySE(SE_SELECT);
-    MoveRelearnerLoadBattleMoveDescription(itemIndex);
-    MoveRelearnerMenuLoadContestMoveDescription(itemIndex);
+    MoveRelearnerLoadBattleMoveDescription(displayedMove);
+    MoveRelearnerMenuLoadContestMoveDescription(displayedMove);
 }
 
 void MoveRelearnerPrintMessage(u8 *str)

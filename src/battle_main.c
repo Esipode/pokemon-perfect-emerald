@@ -2061,11 +2061,12 @@ static void AssignNewGamePlusTrainerPokemonMoves(struct Pokemon *mon, u16 *moves
 // Writes a moveset to a mon, filling in the PP for each slot.
 static void SetMonMovesWithPP(struct Pokemon *mon, const u16 *moves)
 {
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
     u32 j;
 
     for (j = 0; j < MAX_MON_MOVES; ++j)
     {
-        u32 pp = GetMovePP(moves[j]);
+        u32 pp = GetMovePP(GetResolvedMove(species, moves[j]));
         SetMonData(mon, MON_DATA_MOVE1 + j, &moves[j]);
         SetMonData(mon, MON_DATA_PP1 + j, &pp);
     }
@@ -4353,10 +4354,11 @@ static void DoBattleIntro(void)
                 #endif
 
                 // Resolve type and moves through the shared resolver. This is
-                // the single point where randomization is applied to battle
-                // data: gBattleMons[battler].moves at this point still holds
-                // the mon's true original moveset (trainer-party building no
-                // longer pre-randomizes it), so this is safe to call exactly
+                // where randomization is applied to the battlers present at the
+                // battle intro; mid-battle switch-ins get the same treatment in
+                // Cmd_switchindataupdate. gBattleMons[battler].moves still
+                // holds the mon's true original moveset here (trainer-party
+                // building no longer pre-randomizes it), so this runs exactly
                 // once per battler without compounding randomization.
                 {
                     u8 type1, type2;
@@ -4366,27 +4368,7 @@ static void DoBattleIntro(void)
                     gBattleMons[battler].types[2] = TYPE_MYSTERY;
                 }
 
-                {
-                    u16 originalMoves[MAX_MON_MOVES];
-                    u16 resolvedMoves[MAX_MON_MOVES];
-                    u32 moveIdx;
-
-                    for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
-                        originalMoves[moveIdx] = gBattleMons[battler].moves[moveIdx];
-
-                    ResolveMonMoves(gBattleMons[battler].species, originalMoves, resolvedMoves);
-                    for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
-                    {
-                        // Only touch PP for slots that actually changed - the
-                        // mon's real, possibly-already-used PP for its
-                        // unrandomized moves must survive entering battle.
-                        if (resolvedMoves[moveIdx] != originalMoves[moveIdx])
-                        {
-                            gBattleMons[battler].moves[moveIdx] = resolvedMoves[moveIdx];
-                            gBattleMons[battler].pp[moveIdx] = GetMovePP(resolvedMoves[moveIdx]);
-                        }
-                    }
-                }
+                ApplyMoveRandomizationToBattleMon(battler);
             }
 
             // Draw sprite.

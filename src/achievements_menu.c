@@ -161,12 +161,24 @@ enum
 // WIN_DESCRIPTION's two text lines. FONT_NORMAL's line height is exactly 16px
 // (src/text.c's fontAttributes[FONT_NORMAL].maxLetterHeight) and the window
 // itself is 5 tiles/40px tall (see sAchievementsMenuWinTemplates) rather than
-// the 4 tiles/32px the two lines alone need, so there's an 8px margin split
-// 6px above LINE1_Y and 2px below LINE2_Y -- shifts the text up within the
-// box rather than leaving it hugging the top with zero margin, closer to
-// centered against the art's own description box.
-#define ACHIEVEMENTS_DESC_LINE1_Y 7
-#define ACHIEVEMENTS_DESC_LINE2_Y 23
+// the 4 tiles/32px the two lines alone need, so there's an 8px margin --
+// spent entirely below LINE2_Y rather than split above/below.
+//
+// Bug (reported after initial delivery): with the margin split 6px above
+// LINE1_Y/2px below LINE2_Y, an overlong description's auto-scroll (see
+// PrintAchievementDescription) left the bottom sliver of the retiring line
+// visibly sticking out above the new line 1. RunTextPrinters' scroll
+// (src/text.c RENDER_STATE_SCROLL, ScrollWindow) shifts the *whole window's*
+// pixel buffer up by one line height (16px) regardless of where the text
+// inside it actually sits -- with a 7px gap above line 1, only the top 9px of
+// the retiring line's 16px scrolled off the window's top edge, leaving its
+// bottom 7px behind in that gap. Standard 2-line message boxes elsewhere in
+// the game avoid this because their text starts flush with the window's own
+// top edge (y=1), so the same 16px shift clears the retiring line entirely.
+// Moving LINE1_Y to that same flush position fixes it here too, leaving the
+// window's extra tile as pure padding below LINE2_Y instead.
+#define ACHIEVEMENTS_DESC_LINE1_Y 1
+#define ACHIEVEMENTS_DESC_LINE2_Y 17
 
 // How long an overlong description sits idle on its last screenful (see
 // PrintAchievementDescription/MainCB2's descriptionScrolling) before looping
@@ -384,10 +396,11 @@ static const struct WindowTemplate sAchievementsMenuWinTemplates[] =
     //
     // tilemapTop 14, height 5 (not 15/4) -- the box only needs to fit two
     // 16px lines (32px), but a window sized exactly that tall leaves the text
-    // hugging the top edge with no margin at all (see ACHIEVEMENTS_DESC_LINE1_Y).
-    // Growing the window upward by a tile while keeping its bottom edge fixed
-    // (14 + 5 == 15 + 4) leaves room to shift both lines down off the very
-    // top without moving where the box itself ends on screen.
+    // hugging the bottom edge with no margin at all. Growing the window
+    // upward by a tile while keeping its bottom edge fixed (14 + 5 == 15 + 4)
+    // adds that margin below LINE2_Y instead of above LINE1_Y -- see
+    // ACHIEVEMENTS_DESC_LINE1_Y's own comment for why it has to stay flush
+    // with the window's top edge rather than shifted down too.
     [WIN_DESCRIPTION] = {
         .bg = 0,
         .tilemapLeft = 2,

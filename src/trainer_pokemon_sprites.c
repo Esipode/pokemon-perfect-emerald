@@ -14,7 +14,6 @@
 
 // Needs to be large enough to store either a decompressed Pokémon pic or trainer pic
 #define PIC_SPRITE_SIZE max(MON_PIC_SIZE, TRAINER_PIC_SIZE)
-#define MAX_PIC_FRAMES  max(MAX_MON_PIC_FRAMES, MAX_TRAINER_PIC_FRAMES)
 
 struct PicData
 {
@@ -127,8 +126,13 @@ static u16 CreatePicSprite(u16 species, bool8 isShiny, u32 personality, bool8 is
     u8 i;
     u8 *framePics;
     struct SpriteFrameImage *images;
-    int j;
+    u32 j;
     u8 spriteId;
+    // Mon pics only animate frames 0-1 (gAnims_MonPic); only trainer pics use
+    // all MAX_TRAINER_PIC_FRAMES. Sizing the buffer per pic type halves the
+    // allocation for mons, which matters on screens holding several pic sprites
+    // at once (e.g. the Pokedex list).
+    u32 frameCount = isTrainer ? MAX_TRAINER_PIC_FRAMES : MAX_MON_PIC_FRAMES;
 
     for (i = 0; i < PICS_COUNT; i ++)
     {
@@ -138,11 +142,11 @@ static u16 CreatePicSprite(u16 species, bool8 isShiny, u32 personality, bool8 is
     if (i == PICS_COUNT)
         return 0xFFFF;
 
-    framePics = Alloc(PIC_SPRITE_SIZE * MAX_PIC_FRAMES);
+    framePics = Alloc(PIC_SPRITE_SIZE * frameCount);
     if (!framePics)
         return 0xFFFF;
 
-    images = Alloc(sizeof(struct SpriteFrameImage) * MAX_PIC_FRAMES);
+    images = Alloc(sizeof(struct SpriteFrameImage) * frameCount);
     if (!images)
     {
         Free(framePics);
@@ -151,9 +155,11 @@ static u16 CreatePicSprite(u16 species, bool8 isShiny, u32 personality, bool8 is
     if (DecompressPic(species, personality, isFrontPic, framePics, isTrainer))
     {
         // debug trap?
+        Free(images);
+        Free(framePics);
         return 0xFFFF;
     }
-    for (j = 0; j < MAX_PIC_FRAMES; j ++)
+    for (j = 0; j < frameCount; j ++)
     {
         images[j].data = framePics + PIC_SPRITE_SIZE * j;
         images[j].size = PIC_SPRITE_SIZE;

@@ -43,7 +43,6 @@ enum {
     JAM_HEART_FULL,
 };
 
-#define TAG_MODE_ARROWS 5325
 #define TAG_LIST_ARROWS 5425
 #define GFXTAG_UI       5525
 #define PALTAG_UI       5526
@@ -80,8 +79,6 @@ static EWRAM_DATA struct
     u8 numToShowAtOnce;
     u8 moveListMenuTask;
     u8 moveListScrollArrowTask;
-    u8 moveDisplayArrowTask;
-    u16 scrollOffset;
     u8 categoryIconSpriteId;
 } *sMoveRelearnerStruct = {0};
 
@@ -161,21 +158,6 @@ static const struct SpritePalette sMoveRelearnerPalette =
 {
     .data = sUI_Pal,
     .tag = PALTAG_UI
-};
-
-static const struct ScrollArrowsTemplate sDisplayModeArrowsTemplate =
-{
-    .firstArrowType = SCROLL_ARROW_LEFT,
-    .firstX = 27,
-    .firstY = 16,
-    .secondArrowType = SCROLL_ARROW_RIGHT,
-    .secondX = 117,
-    .secondY = 16,
-    .fullyUpThreshold = -1,
-    .fullyDownThreshold = -1,
-    .tileTag = TAG_MODE_ARROWS,
-    .palTag = TAG_MODE_ARROWS,
-    .palNum = 0,
 };
 
 static const struct ScrollArrowsTemplate sMoveListScrollArrowsTemplate =
@@ -632,28 +614,7 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
     switch (itemId)
     {
     case LIST_NOTHING_CHOSEN:
-        if (!(JOY_NEW(DPAD_LEFT | DPAD_RIGHT)) && !GetLRKeysPressed())
-            break;
-
-        PlaySE(SE_SELECT);
-
-        if (gTasks[taskId].tCategory == BATTLE_INFO)
-        {
-            PutWindowTilemap(RELEARNERWIN_DESC_CONTEST);
-            gTasks[taskId].tCategory = CONTEST_INFO;
-        }
-        else
-        {
-            PutWindowTilemap(RELEARNERWIN_DESC_BATTLE);
-            gTasks[taskId].tCategory = BATTLE_INFO;
-        }
-
-        MoveRelearnerShowHideHearts(GetCurrentSelectedMoveResolved());
-
-        ScheduleBgCopyTilemapToVram(1);
-        if (B_SHOW_CATEGORY_ICON == TRUE)
-            MoveRelearnerShowHideCategoryIcon(GetCurrentSelectedMoveResolved());
-        AddScrollArrows();
+        // Battle/contest info switching removed - contests are disabled.
         break;
     case LIST_CANCEL:
         PlaySE(SE_SELECT);
@@ -706,6 +667,23 @@ static s32 GetCurrentSelectedMoveResolved(void)
     return sMoveRelearnerStruct->resolvedMovesToLearn[idx];
 }
 
+// Maps a list entry's id (the true original move) back to the resolved move
+// shown in the list, so the description panel describes the move the player is
+// actually reading the name of. The list's Cancel entry has no resolved
+// counterpart and passes straight through.
+s32 MoveRelearnerGetResolvedListMove(s32 originalMove)
+{
+    // numMenuChoices counts the trailing Cancel entry, which has no matching
+    // resolvedMovesToLearn slot.
+    for (u32 i = 0; i + 1 < sMoveRelearnerStruct->numMenuChoices; i++)
+    {
+        if (sMoveRelearnerStruct->menuItems[i].id == originalMove)
+            return sMoveRelearnerStruct->resolvedMovesToLearn[i];
+    }
+
+    return originalMove;
+}
+
 static void ShowTeachMoveText(void)
 {
     StringExpandPlaceholders(gStringVar4, gText_TeachWhichMoveToPkmn);
@@ -717,7 +695,6 @@ static void CreateUISprites(void)
 {
     int i;
 
-    sMoveRelearnerStruct->moveDisplayArrowTask = TASK_NONE;
     sMoveRelearnerStruct->moveListScrollArrowTask = TASK_NONE;
 
     sMoveRelearnerStruct->categoryIconSpriteId = 0xFF;
@@ -742,9 +719,6 @@ static void CreateUISprites(void)
 
 static void AddScrollArrows(void)
 {
-    if (sMoveRelearnerStruct->moveDisplayArrowTask == TASK_NONE)
-        sMoveRelearnerStruct->moveDisplayArrowTask = AddScrollIndicatorArrowPair(&sDisplayModeArrowsTemplate, &sMoveRelearnerStruct->scrollOffset);
-
     if (sMoveRelearnerStruct->moveListScrollArrowTask == TASK_NONE)
     {
         gTempScrollArrowTemplate = sMoveListScrollArrowsTemplate;
@@ -755,12 +729,6 @@ static void AddScrollArrows(void)
 
 static void RemoveScrollArrows(void)
 {
-    if (sMoveRelearnerStruct->moveDisplayArrowTask != TASK_NONE)
-    {
-        RemoveScrollIndicatorArrowPair(sMoveRelearnerStruct->moveDisplayArrowTask);
-        sMoveRelearnerStruct->moveDisplayArrowTask = TASK_NONE;
-    }
-
     if (sMoveRelearnerStruct->moveListScrollArrowTask != TASK_NONE)
     {
         RemoveScrollIndicatorArrowPair(sMoveRelearnerStruct->moveListScrollArrowTask);

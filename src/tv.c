@@ -800,8 +800,10 @@ u8 GetRandomActiveShowIdx(void)
                 return j;
         }
 
+        // Walk backwards through the same range j was drawn from, wrapping at
+        // 0, so the scan always comes back around to selIdx and terminates.
         if (j == 0)
-            j = ARRAY_COUNT(gSaveBlock1Ptr->tvShows) - 2;
+            j = i - 1;
         else
             j--;
 

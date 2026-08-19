@@ -92,9 +92,30 @@ static const u8 sText_ControlHint[]       = _("{A_BUTTON}BEGIN {B_BUTTON}BACK {L
 static const u8 sText_Off[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 sText_On[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
 
-// Prefix for values that have to be composed at runtime (i.e. the mono type
-// name, which comes from gTypesInfo rather than being a fixed literal).
-static const u8 sText_ValueColorPrefix[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}");
+// gTypesInfo[].name is mixed-case (used for in-battle text), so this menu
+// needs its own all-caps labels to match the other settings. Indexed by
+// TYPE_* constant; only the types reachable via sMonoTypeCycle are filled in.
+static const u8 *const sMonoTypeTexts[NUMBER_OF_MON_TYPES] =
+{
+    [TYPE_NORMAL]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}NORMAL"),
+    [TYPE_FIGHTING] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIGHTING"),
+    [TYPE_FLYING]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}FLYING"),
+    [TYPE_POISON]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}POISON"),
+    [TYPE_GROUND]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GROUND"),
+    [TYPE_ROCK]     = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}ROCK"),
+    [TYPE_BUG]      = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}BUG"),
+    [TYPE_GHOST]    = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GHOST"),
+    [TYPE_STEEL]    = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}STEEL"),
+    [TYPE_FIRE]     = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}FIRE"),
+    [TYPE_WATER]    = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}WATER"),
+    [TYPE_GRASS]    = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GRASS"),
+    [TYPE_ELECTRIC] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}ELECTRIC"),
+    [TYPE_PSYCHIC]  = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}PSYCHIC"),
+    [TYPE_ICE]      = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}ICE"),
+    [TYPE_DRAGON]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}DRAGON"),
+    [TYPE_DARK]     = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}DARK"),
+    [TYPE_FAIRY]    = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}FAIRY"),
+};
 
 static const u8 *const sDifficultyTexts[] =
 {
@@ -537,17 +558,11 @@ static void HandleValueChange(u8 settingId, bool8 rightPressed)
 
 static const u8 *GetSettingValueText(u8 settingId)
 {
-    static u8 sMonoTypeValueText[32];
-
     switch (settingId)
     {
     case SETTING_GAME_MODE:         return sGameModeTexts[gPendingNewGameSettings.gameMode];
     case SETTING_MONO_TYPE:
-        if (gPendingNewGameSettings.monoType == TYPE_NONE)
-            return sText_Off;
-        StringCopy(sMonoTypeValueText, sText_ValueColorPrefix);
-        StringAppend(sMonoTypeValueText, gTypesInfo[gPendingNewGameSettings.monoType].name);
-        return sMonoTypeValueText;
+        return gPendingNewGameSettings.monoType == TYPE_NONE ? sText_Off : sMonoTypeTexts[gPendingNewGameSettings.monoType];
     case SETTING_MONO_GEN:
         return gPendingNewGameSettings.monoGen == 0 ? sText_Off : sMonoGenTexts[gPendingNewGameSettings.monoGen];
     case SETTING_LIMITED_PARTY:     return gPendingNewGameSettings.limitedParty ? sText_On : sText_Off;

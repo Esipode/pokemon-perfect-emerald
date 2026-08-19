@@ -57,44 +57,24 @@ void ResolveMonMoves(u16 species, const u16 *originalMoves, u16 *outMoves)
 {
     u16 resolvedMoves[MAX_MON_MOVES];
     u32 moveIdx;
-    u32 outCount = 0;
 
+    // Strictly slot-for-slot: slot i out is always the resolved counterpart of
+    // slot i in. Slots are never packed or dropped - the stored moveset, the
+    // summary screen, the party menu and battle all address moves by slot, so
+    // emptying one here makes them disagree about how many moves the mon knows
+    // and makes a full moveset look like it still has a free slot.
     for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
-        resolvedMoves[moveIdx] = MOVE_NONE;
-
-    for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
-    {
-        u16 originalMove = originalMoves[moveIdx];
-        u16 resolvedMove;
-        u32 dupIdx;
-        bool8 isDuplicate = FALSE;
-
-        if (originalMove == MOVE_NONE)
-            continue;
-
-        resolvedMove = GetResolvedMove(species, originalMove);
-
-        // Two different original moves can resolve to the same randomized
-        // move. Skip duplicates rather than wasting a move slot on a repeat,
-        // matching the dedup behavior trainer-party building used to do
-        // inline before it was centralized here.
-        for (dupIdx = 0; dupIdx < outCount; dupIdx++)
-        {
-            if (resolvedMoves[dupIdx] == resolvedMove)
-            {
-                isDuplicate = TRUE;
-                break;
-            }
-        }
-
-        if (!isDuplicate)
-            resolvedMoves[outCount++] = resolvedMove;
-    }
+        resolvedMoves[moveIdx] = GetResolvedMove(species, originalMoves[moveIdx]);
 
     // Copy from a local buffer (not directly into outMoves) so this remains
     // safe to call with outMoves == originalMoves.
     for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
         outMoves[moveIdx] = resolvedMoves[moveIdx];
+}
+
+u8 GetResolvedMovePP(u16 species, u16 originalMove, u8 ppBonuses, u8 slot)
+{
+    return CalculatePPWithBonus(GetResolvedMove(species, originalMove), ppBonuses, slot);
 }
 
 void ResolveMonData(u16 species, const u16 *originalMoves, struct ResolvedMonData *out)

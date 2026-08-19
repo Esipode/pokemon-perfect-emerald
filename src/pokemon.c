@@ -47,6 +47,7 @@
 #include "pokemon_storage_system.h"
 #include "pokerus.h"
 #include "random.h"
+#include "randomization.h"
 #include "recorded_battle.h"
 #include "regions.h"
 #include "rtc.h"
@@ -1801,6 +1802,14 @@ u16 GetLevelFromBoxMonExp(struct BoxPokemon *boxMon)
     return GetLevelFromExperience(gSpeciesInfo[species].growthRate, exp);
 }
 
+// PP to store for a slot that is taking on `move`. A slot's stored PP always
+// tracks the RESOLVED move, because that's the move the player sees in the
+// summary screen and actually spends in battle.
+static u32 GetStoredMovePP(struct BoxPokemon *boxMon, enum Move move)
+{
+    return GetMovePP(GetResolvedMove(GetBoxMonData(boxMon, MON_DATA_SPECIES), move));
+}
+
 u16 GiveMoveToMon(struct Pokemon *mon, enum Move move)
 {
     return GiveMoveToBoxMon(&mon->box, move);
@@ -1814,7 +1823,7 @@ u16 GiveMoveToBoxMon(struct BoxPokemon *boxMon, enum Move move)
         enum Move existingMove = GetBoxMonData(boxMon, MON_DATA_MOVE1 + i);
         if (existingMove == MOVE_NONE)
         {
-            u32 pp = GetMovePP(move);
+            u32 pp = GetStoredMovePP(boxMon, move);
             SetBoxMonData(boxMon, MON_DATA_MOVE1 + i, &move);
             SetBoxMonData(boxMon, MON_DATA_PP1 + i, &pp);
             return move;
@@ -1850,7 +1859,7 @@ void SetMonMoveSlot(struct Pokemon *mon, enum Move move, u8 slot)
 void SetBoxMonMoveSlot(struct BoxPokemon *mon, enum Move move, u8 slot)
 {
     SetBoxMonData(mon, MON_DATA_MOVE1 + slot, &move);
-    u32 pp = GetMovePP(move);
+    u32 pp = GetStoredMovePP(mon, move);
     SetBoxMonData(mon, MON_DATA_PP1 + slot, &pp);
 }
 
@@ -1858,7 +1867,7 @@ static void SetMonMoveSlot_KeepPP(struct Pokemon *mon, enum Move move, u8 slot)
 {
     u8 ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
     u8 currPP = GetMonData(mon, MON_DATA_PP1 + slot);
-    u8 newPP = CalculatePPWithBonus(move, ppBonuses, slot);
+    u8 newPP = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), move, ppBonuses, slot);
     u16 finalPP = min(currPP, newPP);
 
     SetMonData(mon, MON_DATA_MOVE1 + slot, &move);
@@ -1923,7 +1932,7 @@ void GiveBoxMonInitialMoveset(struct BoxPokemon *boxMon) //Credit: AsparagusEdua
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
         SetBoxMonData(boxMon, MON_DATA_MOVE1 + i, &moves[i]);
-        u32 pp = GetMovePP(moves[i]);
+        u32 pp = GetMovePP(GetResolvedMove(species, moves[i]));
         SetBoxMonData(boxMon, MON_DATA_PP1 + i, &pp);
     }
 }
@@ -1962,7 +1971,7 @@ void GiveBoxMonDefaultMove(struct BoxPokemon *boxMon, u32 slot)
     }
 
     SetBoxMonData(boxMon, MON_DATA_MOVE1 + slot, &move);
-    u32 pp = GetMovePP(move);
+    u32 pp = GetMovePP(GetResolvedMove(species, move));
     SetBoxMonData(boxMon, MON_DATA_PP1 + slot, &pp);
 }
 
@@ -2039,7 +2048,7 @@ void DeleteFirstMoveAndGiveMoveToMon(struct Pokemon *mon, enum Move move)
     ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
     ppBonuses >>= 2;
     moves[MAX_MON_MOVES - 1] = move;
-    pp[MAX_MON_MOVES - 1] = GetMovePP(move);
+    pp[MAX_MON_MOVES - 1] = GetStoredMovePP(&mon->box, move);
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
@@ -2066,7 +2075,7 @@ void DeleteFirstMoveAndGiveMoveToBoxMon(struct BoxPokemon *boxMon, enum Move mov
     ppBonuses = GetBoxMonData(boxMon, MON_DATA_PP_BONUSES);
     ppBonuses >>= 2;
     moves[MAX_MON_MOVES - 1] = move;
-    pp[MAX_MON_MOVES - 1] = GetMovePP(move);
+    pp[MAX_MON_MOVES - 1] = GetStoredMovePP(boxMon, move);
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
@@ -4069,13 +4078,13 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                 u32 ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
                 effectFlags &= ~ITEM4_PP_UP;
                 dataUnsigned = (ppBonuses & gPPUpGetMask[moveIndex]) >> (moveIndex * 2);
-                temp1 = CalculatePPWithBonus(GetMonData(mon, MON_DATA_MOVE1 + moveIndex), ppBonuses, moveIndex);
+                temp1 = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), GetMonData(mon, MON_DATA_MOVE1 + moveIndex), ppBonuses, moveIndex);
                 if (dataUnsigned <= 2 && temp1 > 4)
                 {
                     dataUnsigned = ppBonuses + gPPUpAddValues[moveIndex];
                     SetMonData(mon, MON_DATA_PP_BONUSES, &dataUnsigned);
 
-                    dataUnsigned = CalculatePPWithBonus(GetMonData(mon, MON_DATA_MOVE1 + moveIndex), dataUnsigned, moveIndex) - temp1;
+                    dataUnsigned = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), GetMonData(mon, MON_DATA_MOVE1 + moveIndex), dataUnsigned, moveIndex) - temp1;
                     dataUnsigned = GetMonData(mon, MON_DATA_PP1 + moveIndex) + dataUnsigned;
                     SetMonData(mon, MON_DATA_PP1 + moveIndex, &dataUnsigned);
                     retVal = FALSE;
@@ -4224,7 +4233,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                                 u32 ppBonus;
                                 dataUnsigned = GetMonData(mon, MON_DATA_PP1 + temp2);
                                 move = GetMonData(mon, MON_DATA_MOVE1 + temp2);
-                                ppBonus = CalculatePPWithBonus(move, GetMonData(mon, MON_DATA_PP_BONUSES), temp2);
+                                ppBonus = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), move, GetMonData(mon, MON_DATA_PP_BONUSES), temp2);
                                 if (dataUnsigned != ppBonus)
                                 {
                                     dataUnsigned += itemEffect[itemEffectParam];
@@ -4242,7 +4251,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             enum Move move;
                             dataUnsigned = GetMonData(mon, MON_DATA_PP1 + moveIndex);
                             move = GetMonData(mon, MON_DATA_MOVE1 + moveIndex);
-                            u32 ppBonus = CalculatePPWithBonus(move, GetMonData(mon, MON_DATA_PP_BONUSES), moveIndex);
+                            u32 ppBonus = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), move, GetMonData(mon, MON_DATA_PP_BONUSES), moveIndex);
                             if (dataUnsigned != ppBonus)
                             {
                                 dataUnsigned += itemEffect[itemEffectParam++];
@@ -4363,7 +4372,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                     {
                         u32 ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
                         dataUnsigned = (ppBonuses & gPPUpGetMask[moveIndex]) >> (moveIndex * 2);
-                        temp2 = CalculatePPWithBonus(GetMonData(mon, MON_DATA_MOVE1 + moveIndex), ppBonuses, moveIndex);
+                        temp2 = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), GetMonData(mon, MON_DATA_MOVE1 + moveIndex), ppBonuses, moveIndex);
 
                         // Check if 3 PP Ups have been applied already, and that the move has a total PP of at least 5 (excludes Sketch)
                         if (dataUnsigned < 3 && temp2 >= 5)
@@ -4373,7 +4382,7 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             dataUnsigned += gPPUpAddValues[moveIndex] * 3; // Apply 3 PP Ups (max)
 
                             SetMonData(mon, MON_DATA_PP_BONUSES, &dataUnsigned);
-                            dataUnsigned = CalculatePPWithBonus(GetMonData(mon, MON_DATA_MOVE1 + moveIndex), dataUnsigned, moveIndex) - temp2;
+                            dataUnsigned = GetResolvedMovePP(GetMonData(mon, MON_DATA_SPECIES), GetMonData(mon, MON_DATA_MOVE1 + moveIndex), dataUnsigned, moveIndex) - temp2;
                             dataUnsigned = GetMonData(mon, MON_DATA_PP1 + moveIndex) + dataUnsigned;
                             SetMonData(mon, MON_DATA_PP1 + moveIndex, &dataUnsigned);
                             retVal = FALSE;
@@ -6012,7 +6021,7 @@ void BoxMonRestorePP(struct BoxPokemon *boxMon)
         {
             enum Move move = GetBoxMonData(boxMon, MON_DATA_MOVE1 + i, 0);
             u16 bonus = GetBoxMonData(boxMon, MON_DATA_PP_BONUSES, 0);
-            u8 pp = CalculatePPWithBonus(move, bonus, i);
+            u8 pp = GetResolvedMovePP(GetBoxMonData(boxMon, MON_DATA_SPECIES), move, bonus, i);
             SetBoxMonData(boxMon, MON_DATA_PP1 + i, &pp);
         }
     }
