@@ -155,7 +155,6 @@ void Recruits_IsRunFailed(void)
 // winning the battle that emptied the party.
 void Recruits_StartRunFailedScreen(void)
 {
-    Achievement_RecordRecruitRunFailed();
     TrySavingData(SAVE_NORMAL);
     ScriptContext_Stop();
     FieldCB_NuzlockeRunFailed();

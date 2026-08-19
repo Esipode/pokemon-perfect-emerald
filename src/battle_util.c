@@ -11092,9 +11092,6 @@ void SetValuesOnFaint(enum BattlerId battler)
             gBattleResults.playerFaintCounter++;
         AdjustFriendshipOnBattleFaint(battler);
         gSideTimers[B_SIDE_PLAYER].retaliateTimer = 2;
-
-        if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
-            Achievement_RecordPlayerFaint();
     }
     else
     {

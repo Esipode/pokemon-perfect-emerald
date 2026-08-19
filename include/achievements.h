@@ -132,7 +132,7 @@ struct AchievementProfile
     u8  consecutiveNgPlusCyclesCompleted;
     u8  ngPlusConfigsSeen[4];            // unused -- backed Cycle Collector (ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR), now removed; left in place rather than reflowing this struct's fields
     u8  ngPlusConfigsSeenCount;          // unused, same removal as above
-    bool8 completedConventionalRun;      // neither Nuzlocke nor randomized -- for Full Circle (VAR-007)
+    bool8 completedConventionalRun;      // unused -- backed Full Circle (ACHIEVEMENT_VARIETY_FULL_CIRCLE), removed; left in place rather than reflowing this struct's fields
 
     // Same "front of reserved[]" precedent as every field above. No roster
     // entry reads it directly -- every REC-xxx streak threshold is checked
@@ -255,17 +255,16 @@ bool8 Achievement_TryComplete(u16 achievementId);
 //
 // Also handles: Chaos Begins/Truly Random/Pure Chaos/Species-Type-Move
 // Chaos (all read FlagGet(FLAG_RANDOMIZE_*)/gSaveBlock1Ptr->difficulty at
-// this exact completion moment); Full Circle's completedConventionalRun
-// bookkeeping; and, gated on gSaveBlock2Ptr->newGamePlus == 0 specifically
-// (i.e. this completion was NOT an NG+ cycle), seeding
-// previousCyclePartySpecies for No Nostalgia -- see
-// Achievement_OnNewGamePlusCycleCompleted's comment for why that lives on
-// the opposite side of that gate.
+// this exact completion moment).
 //
 // Used to also check Seed Explorer/Randomizer Veteran (removed --
-// ACHIEVEMENT_RANDOMIZED_1 is already the "do it once" version) and reset
+// ACHIEVEMENT_RANDOMIZED_1 is already the "do it once" version), reset
 // consecutiveNgPlusCyclesCompleted for Escalation (removed along with the
-// rest of the NG+ repeat-count ladder).
+// rest of the NG+ repeat-count ladder), Full Circle's
+// completedConventionalRun bookkeeping, and, gated on
+// gSaveBlock2Ptr->newGamePlus == 0 specifically, seed previousCyclePartySpecies
+// for No Nostalgia -- Full Circle and No Nostalgia are both removed now too,
+// see src/data/achievements.h's own comment.
 void Achievement_OnFirstPlaythroughComplete(void);
 
 // Called from NewGameInitData (src/new_game.c) right after
@@ -280,14 +279,15 @@ void Achievement_OnFirstPlaythroughComplete(void);
 // Also checks Chaos Begins (checked here too, since this is the one real
 // "a run/cycle just began" event this system has -- TryComplete's own
 // guard makes the duplicate check with Achievement_OnFirstPlaythroughComplete's
-// cycle-0 case harmless). Also zeroes every per-cycle-scoped field in
-// AchievementRunDataExt (trainersDefeatedThisCycle, gymSpeciesUsedThisCycle/
-// Count, reinventionBroken, majorBossClassesDefeatedThisCycle) --
-// SaveBlock1 has very little slack left (see AchievementRunDataExt's own
-// comment), so these live in SaveBlock2 instead, which ClearSav1 can't
-// reset for us; this call is their substitute reset point. Deliberately NOT
-// zeroed: previousCyclePartySpecies, which is supposed to survive the cycle
-// boundary (see Achievement_OnNewGamePlusCycleCompleted).
+// cycle-0 case harmless). Also zeroes trainersDefeatedThisCycle
+// (AchievementRunDataExt) -- SaveBlock1 has very little slack left (see
+// AchievementRunDataExt's own comment), so it lives in SaveBlock2 instead,
+// which ClearSav1 can't reset for us; this call is its substitute reset
+// point. Used to also reset gymSpeciesUsedThisCycle/Count,
+// reinventionBroken, and majorBossClassesDefeatedThisCycle here -- those
+// backed Complete Reinvention/Boss Gauntlet, both removed now (see
+// src/data/achievements.h's own comment), so the fields are unwritten but
+// left in place.
 void Achievement_OnNewGamePlusStarted(u8 cycle);
 
 // Called from the same GameClear() branch as
@@ -306,17 +306,13 @@ void Achievement_OnNewGamePlusStarted(u8 cycle);
 // (consecutiveNgPlusCyclesCompleted) was part of that ladder and is gone too.
 //
 // Every "complete an NG+ cycle with X" entry lives here, since this
-// function only ever runs when that's exactly what just happened --
-// Unassisted Cycle (ngPlusCyclesCompleted), Cycle Specialist
-// (Achievement_CountChallengeModifiers), Cycle Nuzlocke (nuzlockeModeEnabled),
-// Complete Reinvention/Boss Gauntlet (AchievementRunDataExt's per-cycle
-// fields), and No Nostalgia (compares the current final party against
-// AchievementRunDataExt.previousCyclePartySpecies -- the PRIOR cycle's
-// snapshot, seeded either by this same function last cycle or, for cycle 1,
-// by Achievement_OnFirstPlaythroughComplete's cycle-0 case -- then
-// overwrites it with the current party for the next comparison). Ten Cycles
+// function only ever runs when that's exactly what just happened -- Cycle
+// Specialist (Achievement_CountChallengeModifiers) and Cycle Nuzlocke
+// (nuzlockeModeEnabled) are what's left. Unassisted Cycle, Complete
+// Reinvention/Boss Gauntlet, and No Nostalgia, all once checked here too,
+// are removed -- see src/data/achievements.h's own comment. Ten Cycles
 // Deep, Cycle Collector, Endless Survivor, and New Team New Me's NG+-cycle
-// half, all once checked here too, are removed -- see
+// half, also once checked here, are removed too -- see
 // src/data/achievements.h for each one's own comment.
 void Achievement_OnNewGamePlusCycleCompleted(void);
 
@@ -832,11 +828,9 @@ void Achievement_CheckEconomyCompletionMilestones(void);
 //
 // Randomizer & New Game+ entries ride this same call site rather than
 // adding a new one -- Random by Nature (Gym clear), Chaos Team/Never Seen It Coming/
-// Patchwork Team (major battle win), trainer-win bookkeeping
+// Patchwork Team (major battle win), and trainer-win bookkeeping
 // (AchievementRunDataExt.trainersDefeatedThisCycle/gAchievementProfile's
-// trainersDefeatedAcrossNgPlus for Fresh Faces/Never the Same Fight), and
-// the per-cycle Boss Gauntlet/Complete Reinvention bookkeeping that
-// Achievement_OnNewGamePlusCycleCompleted reads at GameClear.
+// trainersDefeatedAcrossNgPlus for Fresh Faces/Never the Same Fight).
 void Achievement_CheckChallengeMilestones(void);
 
 // Same call site as above, immediately after it. Every entry here is
@@ -851,15 +845,13 @@ void Achievement_CheckNuzlockeMilestones(void);
 // GameClear (src/post_battle_event_funcs.c), alongside
 // Achievement_CheckTeamCompletionMilestones/Achievement_CheckEconomyCompletionMilestones
 // -- same re-runs-every-NG+-cycle gating. Covers every "complete the story"
-// Challenge-category entry: Self-Imposed/Hard Way/Brutal Rules/Nightmare Mode
+// Challenge-category entry: Self-Imposed/Nightmare Mode
 // (Achievement_CountChallengeModifiers), No Shopping Run, No Centers,
-// Hardcore Set, Capstone/Perfectly Capped (reads
-// levelCapEverExceeded), Three-Pokemon Challenge/Solo Journey, No Freebies,
-// Hardly Any Help.
+// Hardcore Set, Solo Journey, No Freebies.
 void Achievement_CheckChallengeCompletionMilestones(void);
 
 // Same call site as above. Every entry here is gated on nuzlockeModeEnabled:
-// Hardcore Survivor, Perfect Nuzlocke/The Graveyard, Species Clause (scans
+// Perfect Nuzlocke/The Graveyard, Species Clause (scans
 // party + every PC box -- under Nuzlocke rules that's exactly the set of
 // Pokemon caught this run), No Second Chances, Full Encounter, Unassisted
 // Survivor.
@@ -909,8 +901,8 @@ void Achievement_CheckRandomizerCaptureMilestone(void);
 // HandleEndTurn_BattleWon (src/battle_main.c), immediately after
 // Achievement_CheckNuzlockeMilestones, gated the same way (never link/
 // recorded). Covers every entry evaluated battle-by-battle: the trainer win
-// streak and Gym/League streaks, per-slot KO totals, Comeback Count, Oddball
-// and Underestimated.
+// streak and Gym/League streaks, per-slot KO totals, Oddball and
+// Underestimated.
 void Achievement_CheckBattleRecordsMilestones(void);
 
 // LoadCurrentMapData (src/overworld.c), alongside
@@ -941,12 +933,9 @@ void Achievement_CheckRecordsCompletionMilestones(void);
 // streak counters this wipe just broke.
 void Achievement_RecordPartyWipe(void);
 
-// SetValuesOnFaint (src/battle_util.c)'s player-faint branch, gated by the
-// caller the same way as every other battle-data write (never link/
-// recorded). Sets sBattleData.wasDownToLastMon once the player is down to
-// their last conscious Pokemon, for Comeback Count -- read (and reset) by
-// Achievement_CheckBattleRecordsMilestones on the next win.
-void Achievement_RecordPlayerFaint(void);
+// Achievement_RecordPlayerFaint removed -- existed solely for Comeback
+// Count (ACHIEVEMENT_RECORD_COMEBACK_COUNT), also removed. See
+// src/data/achievements.h's own comment.
 
 // HandleSetPokedexFlag (src/pokemon.c)'s FLAG_SET_CAUGHT branch, alongside
 // Achievement_CheckPokedexMilestones -- Family Reunion. species is the
@@ -1001,10 +990,9 @@ void Achievement_CheckNewModeCompletionMilestones(void);
 // ladder.
 void Achievement_RecordRecruitRetirement(void);
 
-// Recruits_StartRunFailedScreen (src/recruits_mode.c). Marks this cycle as
-// having had a run failure, so Never Understaffed's GameClear check can
-// refuse.
-void Achievement_RecordRecruitRunFailed(void);
+// Achievement_RecordRecruitRunFailed removed -- existed solely for Never
+// Understaffed (ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED), also removed. See
+// src/data/achievements.h's own comment.
 
 // Draft_MarkAreaSpent (src/draft_mode.c), only in the branch that just
 // resolved a real draft pick (not a gift/egg or a no-offer area). First Pick

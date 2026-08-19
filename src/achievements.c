@@ -81,27 +81,9 @@ static bool8 Achievement_AnyRandomizerFlagSet(void)
 // it only ever backed Replay Master (ACHIEVEMENT_VARIETY_REPLAY_MASTER),
 // which is removed too. See src/data/achievements.h's own comment.
 
-// Bitmask over Achievement_IsMajorBattle's six trainer classes, for Boss
-// Gauntlet (NGP-014). "Every major boss" is simplified to "every major-boss
-// TRAINER CLASS" rather than every individual trainer -- Emerald's story
-// already mandates fighting at least one of each (all 8 Gym Leaders, the
-// full Elite Four, the Champion, every rival battle, and both Team Aqua/
-// Magma leader confrontations), so this is a real but low-friction check,
-// the same flavor as several other completion entries in this wave.
-#define ACHIEVEMENT_BOSS_GAUNTLET_ALL_CLASSES 0x3F
-static u8 Achievement_MajorBossClassBit(u8 trainerClass)
-{
-    switch (trainerClass)
-    {
-    case TRAINER_CLASS_LEADER:       return 1 << 0;
-    case TRAINER_CLASS_ELITE_FOUR:   return 1 << 1;
-    case TRAINER_CLASS_CHAMPION:     return 1 << 2;
-    case TRAINER_CLASS_RIVAL:        return 1 << 3;
-    case TRAINER_CLASS_MAGMA_LEADER: return 1 << 4;
-    case TRAINER_CLASS_AQUA_LEADER:  return 1 << 5;
-    default:                         return 0;
-    }
-}
+// Achievement_MajorBossClassBit/ACHIEVEMENT_BOSS_GAUNTLET_ALL_CLASSES
+// removed -- existed solely for ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET, also
+// removed. See src/data/achievements.h's own comment.
 
 // Patchwork Team (RND-007): six party members caught on six different
 // routes. MON_DATA_MET_LOCATION is the region map section a Pokemon was
@@ -130,43 +112,10 @@ static bool8 Achievement_AllMetLocationsDistinct(struct Pokemon *party, u8 count
     return TRUE;
 }
 
-// Complete Reinvention (NGP-012): records the current Gym's party species
-// into AchievementRunDataExt.gymSpeciesUsedThisCycle (deduplicated), and
-// reports whether any of them had already appeared at an earlier Gym this
-// cycle -- the caller latches that into the sticky reinventionBroken flag,
-// the same idiom used elsewhere for mono-type/type-roulette/etc.
-static bool8 Achievement_RecordGymSpeciesUsed(struct AchievementRunDataExt *runDataExt, struct Pokemon *party, u8 playerCount)
-{
-    u16 curSpecies[PARTY_SIZE];
-    bool8 overlap = FALSE;
-    u8 i, j;
-
-    Achievement_SnapshotPartySpecies(party, playerCount, curSpecies);
-
-    for (i = 0; i < PARTY_SIZE; i++)
-    {
-        bool8 alreadyListed = FALSE;
-
-        if (curSpecies[i] == SPECIES_NONE)
-            continue;
-
-        for (j = 0; j < runDataExt->gymSpeciesUsedThisCycleCount; j++)
-        {
-            if (runDataExt->gymSpeciesUsedThisCycle[j] == curSpecies[i])
-            {
-                alreadyListed = TRUE;
-                break;
-            }
-        }
-
-        if (alreadyListed)
-            overlap = TRUE;
-        else if (runDataExt->gymSpeciesUsedThisCycleCount < ARRAY_COUNT(runDataExt->gymSpeciesUsedThisCycle))
-            runDataExt->gymSpeciesUsedThisCycle[runDataExt->gymSpeciesUsedThisCycleCount++] = curSpecies[i];
-    }
-
-    return overlap;
-}
+// Achievement_RecordGymSpeciesUsed removed -- existed solely for
+// ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION, also removed. See
+// src/data/achievements.h's own comment. gymSpeciesUsedThisCycle/Count
+// (include/global.h) are now unwritten but left in place.
 
 // The whole struct is written as one blob to a sector (see WriteAchievementProfile).
 STATIC_ASSERT(sizeof(struct AchievementProfile) <= SECTOR_SIZE, AchievementProfileFreeSpace);
@@ -329,13 +278,12 @@ const struct Achievement *Achievement_GetInfo(u16 achievementId)
 // through Achievement_TryComplete -- its own Achievement_IsCompleted guard
 // makes the recursive call a no-op after the first time, and there's only
 // one such meta-achievement, so there's no chain to unwind.
-// Scaled up from 1000 to 2000 (10% of the catalog's 20,000-point total, see
-// src/data/achievements.h's own comment on the rescale) -- the old threshold
-// was sized for the pre-rescale ~8,600-point catalog.
+// Raised from 2000 to 6000 -- 2000 was clearable well before completing the
+// catalog, too easy for a Gold-tier profile milestone.
 static void Achievement_CheckPointMilestones(void)
 {
-    if (gAchievementProfile.totalPointsEarned >= 2000)
-        Achievement_TryComplete(ACHIEVEMENT_POINTS_2000);
+    if (gAchievementProfile.totalPointsEarned >= 6000)
+        Achievement_TryComplete(ACHIEVEMENT_POINTS_6000);
 }
 
 // The flag and the points are written together, before any
@@ -407,8 +355,9 @@ void Achievement_OnFirstPlaythroughComplete(void)
     // ACHIEVEMENT_NUZLOCKE_3 ("complete 3 Nuzlocke runs")
     // removed -- NUZLOCKE_1 above already is the "do it once" version, and
     // asking for the same challenge repeated is exactly what this
-    // removes across the catalog. nuzlockesCompleted itself is left alone;
-    // Full Circle (VARIETY_FULL_CIRCLE) below still reads it.
+    // removes across the catalog. nuzlockesCompleted itself is left alone --
+    // used to also back Full Circle (ACHIEVEMENT_VARIETY_FULL_CIRCLE), since
+    // removed too (see src/data/achievements.h's own comment).
     if (gAchievementProfile.randomizedRunsCompleted >= 1)
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZED_1);
 
@@ -430,34 +379,32 @@ void Achievement_OnFirstPlaythroughComplete(void)
     if (Achievement_AnyRandomizerFlagSet())
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS);
     if (FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES))
-    {
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_TRULY_RANDOM);
-        if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD && !FlagGet(FLAG_LEVEL_CAP_OFF))
+    if (FlagGet(FLAG_RANDOMIZE_MON))
+    {
+        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS);
+        // Pure Chaos: species randomizer stacked with Limited Party and Mono
+        // Type -- distinct from Nightmare Mode's Nuzlocke/HARD/all-3-flags combo.
+        if (LimitedParty_IsEnabled() && MonoType_IsEnabled())
             Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_PURE_CHAOS);
     }
-    if (FlagGet(FLAG_RANDOMIZE_MON))
-        Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS);
     if (FlagGet(FLAG_RANDOMIZE_TYPE))
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_TYPE_CHAOS);
     if (FlagGet(FLAG_RANDOMIZE_MOVES))
         Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_MOVE_CHAOS);
 
-    // Full Circle (VAR-007) bookkeeping: a "conventional" completion is one
-    // that was neither a Nuzlocke nor randomized.
-    if (!gSaveBlock1Ptr->nuzlockeModeEnabled && !Achievement_AnyRandomizerFlagSet())
-        gAchievementProfile.completedConventionalRun = TRUE;
-    if (gAchievementProfile.completedConventionalRun
-     && gAchievementProfile.nuzlockesCompleted >= 1
-     && gAchievementProfile.randomizedRunsCompleted >= 1)
-        Achievement_TryComplete(ACHIEVEMENT_VARIETY_FULL_CIRCLE);
-
-    // No Nostalgia (NGP-011) bookkeeping: only when this completion was NOT
-    // an NG+ cycle -- Achievement_OnNewGamePlusCycleCompleted (called right
-    // after this, from the same GameClear branch, whenever newGamePlus > 0)
-    // owns previousCyclePartySpecies the rest of the time.
-    // previousCyclePartySpecies is seeded here (cycle 0 has no earlier
-    // Achievement_OnNewGamePlusCycleCompleted call to do it) so cycle 1's
-    // completion always has something valid to compare against.
+    // ACHIEVEMENT_VARIETY_FULL_CIRCLE ("Full Circle") removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
+    // gAchievementProfile.completedConventionalRun is now unwritten but left
+    // in place; nuzlockesCompleted/randomizedRunsCompleted are still read
+    // above (ACHIEVEMENT_NUZLOCKE_1/ACHIEVEMENT_RANDOMIZED_1).
+    //
+    // ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA ("No Nostalgia") removed too, along
+    // with the AchievementRunDataExt.previousCyclePartySpecies/Set snapshot
+    // machinery that existed solely to back it (both here and in
+    // Achievement_OnNewGamePlusCycleCompleted below) -- see
+    // src/data/achievements.h's own comment. Those fields are now unwritten
+    // but left in place.
     //
     // This branch used to also reset
     // consecutiveNgPlusCyclesCompleted for ACHIEVEMENT_NG_PLUS_ESCALATION
@@ -466,22 +413,6 @@ void Achievement_OnFirstPlaythroughComplete(void)
     // the single "beat one NG+ cycle" achievement that replaced it. The
     // consecutiveNgPlusCyclesCompleted field itself is left in place, unused,
     // to avoid reshuffling every later AchievementProfile field's offset.
-    if (gSaveBlock2Ptr->newGamePlus == 0)
-    {
-        struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
-        u16 curSpecies[PARTY_SIZE];
-
-        // ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME's own
-        // disjoint-species comparison/TryComplete removed here (see
-        // src/data/achievements.h's own comment) -- but this snapshot must
-        // stay: it's how previousCyclePartySpecies gets seeded for cycle 0
-        // (Achievement_OnNewGamePlusCycleCompleted's No Nostalgia check has
-        // no earlier call to do it otherwise -- see this function's own
-        // comment above).
-        Achievement_SnapshotPartySpecies(gParties[B_TRAINER_PLAYER], gPartiesCount[B_TRAINER_PLAYER], curSpecies);
-        memcpy(runDataExt->previousCyclePartySpecies, curSpecies, sizeof(curSpecies));
-        runDataExt->previousCyclePartySpeciesSet = TRUE;
-    }
 
     // ACHIEVEMENT_VARIETY_REPLAY_MASTER ("complete five
     // playthroughs under five different rule configurations") removed here
@@ -519,21 +450,28 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
 
     // Zero every per-cycle-scoped AchievementRunDataExt field -- see that
     // struct's own comment for why ClearSav1 can't do this for us here.
-    // previousCyclePartySpecies is deliberately left untouched.
     runDataExt->trainersDefeatedThisCycle = 0;
-    runDataExt->gymSpeciesUsedThisCycleCount = 0;
-    runDataExt->reinventionBroken = FALSE;
-    runDataExt->majorBossClassesDefeatedThisCycle = 0;
 
     // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen achievements,
     // same per-cycle reset as the fields above.
     runDataExt->recruitsRetiredThisCycle = 0;
-    runDataExt->recruitsRunFailedThisCycle = FALSE;
     runDataExt->limitedPartyWinsAtCap = 0;
     runDataExt->draftsCompletedThisCycle = 0;
     runDataExt->rotationTrainerWinsThisCycle = 0;
     runDataExt->monoTypeObtainedThisCycle = 0;
     runDataExt->monoGenObtainedThisCycle = 0;
+
+    // Veteran Team/Old Reliable: same per-cycle reset. Both are
+    // CURRENT_PLAYTHROUGH scoped, so an NG+ cycle must start these back at
+    // zero KOs instead of carrying a total over from the previous cycle
+    // (the bug that let them complete almost immediately into a new cycle).
+    memset(runDataExt->koCountPerSlot, 0, sizeof(runDataExt->koCountPerSlot));
+    memset(runDataExt->majorKoCountPerSlot, 0, sizeof(runDataExt->majorKoCountPerSlot));
+
+    // Three/Eight Gym Streak: same bug, same fix -- also CURRENT_PLAYTHROUGH
+    // scoped, so a couple of Gym wins carried in from the previous cycle
+    // shouldn't let a fresh cycle complete Three Gym Streak immediately.
+    runDataExt->gymLeadersSinceWipe = 0;
 
     sAchievementProfileDirty = TRUE;
     Achievement_FlushProfile();
@@ -543,12 +481,6 @@ void Achievement_OnNewGamePlusStarted(u8 cycle)
 // from Achievement_OnFirstPlaythroughComplete rather than folded into it.
 void Achievement_OnNewGamePlusCycleCompleted(void)
 {
-    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
-    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
-    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
-    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
-    u16 curSpecies[PARTY_SIZE];
-
     gAchievementProfile.ngPlusCyclesCompleted++;
 
     // This function only ever runs when an NG+ cycle was
@@ -565,13 +497,9 @@ void Achievement_OnNewGamePlusCycleCompleted(void)
     // ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP
     // (ngPlusCyclesCompleted >= 10) removed -- see the catalog entry's own
     // comment (src/data/achievements.h).
-    // Unassisted Cycle used to require this be
-    // specifically cycle 2 (an exact-equality check, since "boosts
-    // disabled" isn't monotonic across cycles the way a plain count is) --
-    // now that the ladder above only asks for one cycle, any cycle
-    // completed with boosts off qualifies, same "do it once" treatment.
-    if (!gAchievementProfile.boostsEnabled)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE);
+    // ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE ("Unassisted Cycle") removed too
+    // -- see src/data/achievements.h's own comment on the points rebalance
+    // this fed.
 
     if (Achievement_CountChallengeModifiers() >= 3)
         Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST);
@@ -582,29 +510,14 @@ void Achievement_OnNewGamePlusCycleCompleted(void)
     // with Nuzlocke and the randomizer) removed -- see the catalog entry's
     // own comment (src/data/achievements.h).
 
-    // Complete Reinvention/Boss Gauntlet: bookkeeping accumulated all cycle
-    // by Achievement_CheckChallengeMilestones (HandleEndTurn_BattleWon).
-    if (runData->gymBattlesWon >= NUM_BADGES && !runDataExt->reinventionBroken)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION);
-    if (runDataExt->majorBossClassesDefeatedThisCycle == ACHIEVEMENT_BOSS_GAUNTLET_ALL_CLASSES)
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET);
-
-    // No Nostalgia (NGP-011): compare against the snapshot from the PRIOR
-    // completion (seeded either by this same function last cycle, or by
-    // Achievement_OnFirstPlaythroughComplete's cycle-0 case for cycle 1's
-    // first comparison) before overwriting it with this cycle's.
-    Achievement_SnapshotPartySpecies(party, playerCount, curSpecies);
-    if (runDataExt->previousCyclePartySpeciesSet
-     && Achievement_SpeciesSetsDisjoint(curSpecies, runDataExt->previousCyclePartySpecies))
-    {
-        Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA);
-        // ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME removed --
-        // this was its NG+-cycle half (Achievement_OnFirstPlaythroughComplete's
-        // cycle-0 branch had the other half). See src/data/achievements.h's
-        // own comment.
-    }
-    memcpy(runDataExt->previousCyclePartySpecies, curSpecies, sizeof(curSpecies));
-    runDataExt->previousCyclePartySpeciesSet = TRUE;
+    // ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION ("Complete Reinvention"),
+    // ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET ("Boss Gauntlet"), and
+    // ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA ("No Nostalgia") removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
+    // Their bookkeeping (reinventionBroken/majorBossClassesDefeatedThisCycle,
+    // accumulated by Achievement_CheckChallengeMilestones, and the
+    // previousCyclePartySpecies/Set snapshot) is now unwritten but left in
+    // place (see AchievementRunDataExt's own comment, include/global.h).
 
     // ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR (three distinct
     // challenge-configuration signatures across completed NG+ cycles)
@@ -1466,12 +1379,6 @@ struct AchievementBattleData
     bool8 setupThenKo:1;
     bool8 critLanded:1;
     bool8 priorityKo:1;
-    // Set by Achievement_RecordPlayerFaint the
-    // moment the player is down to exactly one conscious Pokemon, for
-    // Comeback Count. Like every other field here, per-battle only -- read
-    // (and implicitly reset, since the whole struct is zeroed at the start
-    // of the next battle) by Achievement_CheckBattleRecordsMilestones.
-    bool8 wasDownToLastMon:1;
 };
 
 EWRAM_DATA static struct AchievementBattleData sBattleData = {0};
@@ -1699,10 +1606,12 @@ void Achievement_CheckBattleMilestones(void)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_REVERSE_SWEEP);
 
     if (isTrainerBattle && GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) == TRAINER_CLASS_CHAMPION
-     && CountSetBits(sBattleData.slotsThatActed) >= 4)
+     && sBattleData.slotsThatActed != 0 && CountSetBits(sBattleData.slotsThatActed) <= 3)
         Achievement_TryComplete(ACHIEVEMENT_BATTLE_CHAMPION_TACTICIAN);
 
-    if (isMajorBattle && sBattleData.slotsThatActed != 0)
+    // Move Variety additionally requires at least 3 party members to have
+    // acted -- otherwise a 1v1 sweep with a varied moveset trivially clears it.
+    if (isMajorBattle && CountSetBits(sBattleData.slotsThatActed) >= 3)
     {
         bool8 allActedUsedTwoMoves = TRUE;
 
@@ -2412,11 +2321,11 @@ void Achievement_CheckTeamMilestones(void)
 
 // Common_EventScript_CheckLevelCapIncrease's callnative, via the tail of
 // Achievement_CheckStoryMilestones -- party state that isn't tied to a
-// specific battle. levelCapEverExceeded/bstEverExceeded450 are bookkeeping
-// only checked here, at these 16 checkpoints, rather than continuously; a
-// party member could transiently cross a threshold between two checkpoints
-// and be missed, the same fidelity tradeoff struct AchievementBattleData's
-// per-battle snapshots already accept elsewhere in this file.
+// specific battle. bstEverExceeded450 is bookkeeping only checked here, at
+// these 16 checkpoints, rather than continuously; a party member could
+// transiently cross the threshold between two checkpoints and be missed, the
+// same fidelity tradeoff struct AchievementBattleData's per-battle snapshots
+// already accept elsewhere in this file.
 void Achievement_CheckPartyStateMilestones(void)
 {
     struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
@@ -2436,8 +2345,6 @@ void Achievement_CheckPartyStateMilestones(void)
 
         if (level >= levelCap)
             atOrAboveCapCount++;
-        if (level > levelCap)
-            runData->levelCapEverExceeded = TRUE;
 
         if (GetSpeciesBaseStatTotal(GetMonData(&party[i], MON_DATA_SPECIES)) > 450)
             runData->bstEverExceeded450 = TRUE;
@@ -2479,8 +2386,8 @@ void Achievement_CheckTeamCompletionMilestones(void)
             Achievement_TryComplete(ACHIEVEMENT_TEAM_RADICAL_REBUILD);
     }
 
-    if (!runData->levelCapEverExceeded)
-        Achievement_TryComplete(ACHIEVEMENT_TEAM_CAPPED_OUT);
+    // ACHIEVEMENT_TEAM_CAPPED_OUT ("Capped Out") removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
 
     if (!runData->bstEverExceeded450)
         Achievement_TryComplete(ACHIEVEMENT_TEAM_UNDERDOG_RUN);
@@ -2907,16 +2814,16 @@ void Achievement_CheckEconomyCompletionMilestones(void)
 // src/battle_script_commands.c, alongside the
 // Achievement_RecordReviveUsed hook).
 
-// The twelve New Game Settings that make a run harder (explicit state only,
-// never incidental behaviour). Debug Mode is deliberately excluded -- it
-// doesn't make a run harder, it makes it ineligible (achievementsBlocked).
-// Stat Editor and Level Cap Off are counted here only in their harder state
-// (disallowed / still on); flipping either the other way sets
-// achievementsBlocked too, same as Debug Mode -- see
-// ApplyPendingNewGameSettings, src/new_game_settings_menu.c. Nuzlocke and
-// Draft (draft_mode.h) are mutually exclusive, so at most one of the two
-// ever contributes. Rotation Mode counts too -- it costs the player their
-// switch control, even though it can also save a low-HP Pokemon for free.
+// The ten New Game Settings that make a run harder (explicit state only,
+// never incidental behaviour). Debug Mode, Stat Editor, and Level Cap Off
+// are all excluded -- enabling any of the three sets achievementsBlocked
+// (see ApplyPendingNewGameSettings, src/new_game_settings_menu.c), so any
+// run this function's callers can even reach already has all three at
+// their default/harder setting; counting them here would just add a
+// constant that never varies. Nuzlocke and Draft (draft_mode.h) are
+// mutually exclusive, so at most one of the two ever contributes. Rotation
+// Mode counts too -- it costs the player their switch control, even though
+// it can also save a low-HP Pokemon for free.
 static u8 Achievement_CountChallengeModifiers(void)
 {
     u8 count = 0;
@@ -3065,10 +2972,6 @@ void Achievement_CheckChallengeMilestones(void)
         if (playerCount == PARTY_SIZE && Achievement_AllMetLocationsDistinct(party, playerCount))
             Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_PATCHWORK_TEAM);
 
-        // Boss Gauntlet bookkeeping -- accumulates all cycle, checked at
-        // Achievement_OnNewGamePlusCycleCompleted.
-        runDataExt->majorBossClassesDefeatedThisCycle |= Achievement_MajorBossClassBit(GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA));
-
         // ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING ("beat
         // a randomized major battle with no super-effective move available")
         // removed here -- with move/type randomization scrambling coverage,
@@ -3088,15 +2991,11 @@ void Achievement_CheckChallengeMilestones(void)
         // rarely ends up over the level cap anyway. The level-cap scan that
         // used to back this check is removed along with it.
 
-        // Random by Nature, and Complete Reinvention's cumulative
-        // species tracking (checked at Achievement_OnNewGamePlusCycleCompleted).
+        // Random by Nature.
         // Same ANY-one-flag criteria as Chaos Begins above
         // (Achievement_AnyRandomizerFlagSet) -- see that call site's comment.
         if (Achievement_AnyRandomizerFlagSet())
             Achievement_TryComplete(ACHIEVEMENT_RANDOMIZER_RANDOM_BY_NATURE);
-
-        if (Achievement_RecordGymSpeciesUsed(runDataExt, party, playerCount))
-            runDataExt->reinventionBroken = TRUE;
     }
 }
 
@@ -3166,14 +3065,16 @@ void Achievement_CheckChallengeCompletionMilestones(void)
 
     if (modifierCount >= 3)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_SELF_IMPOSED);
-    if (modifierCount >= 5)
-        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_HARD_WAY);
-    if (modifierCount >= 7)
-    {
-        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_BRUTAL_RULES);
-        if (!gAchievementProfile.boostsEnabled)
-            Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE);
-    }
+    // ACHIEVEMENT_CHALLENGE_HARD_WAY (modifierCount >= 5) and
+    // ACHIEVEMENT_CHALLENGE_BRUTAL_RULES (modifierCount >= 7) removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
+
+    // Nightmare Mode: a specific combo rather than "any 7 modifiers" --
+    // Nuzlocke, HARD, and all three Randomizer flags, with boosts off.
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled && gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD
+     && FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES)
+     && !gAchievementProfile.boostsEnabled)
+        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE);
 
     if (!runData->boughtConsumableItem)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NO_SHOPPING_RUN);
@@ -3187,23 +3088,23 @@ void Achievement_CheckChallengeCompletionMilestones(void)
 
     // ACHIEVEMENT_CHALLENGE_CAPSTONE removed -- it was this
     // same !levelCapEverExceeded condition alone, a duplicate of
-    // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED minus its extra HARD/randomizer
-    // requirement.
-    if (!runData->levelCapEverExceeded
-     && (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD
-      || FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES)))
-        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED);
+    // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED, minus that achievement's extra
+    // HARD/randomizer requirement.
+    // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED itself is now removed too --
+    // see src/data/achievements.h's own comment on the points rebalance this
+    // fed. runData->levelCapEverExceeded is now unread but left in place.
 
-    if (runData->highestPartySizeThisRun != 0 && runData->highestPartySizeThisRun <= 3)
-        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_THREE_POKEMON);
     if (runData->highestPartySizeThisRun != 0 && runData->highestPartySizeThisRun <= 1)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_SOLO_JOURNEY);
+    // ACHIEVEMENT_CHALLENGE_THREE_POKEMON (highestPartySizeThisRun <= 3)
+    // removed -- see src/data/achievements.h's own comment on the points
+    // rebalance this fed.
 
     if (runData->starterPersonality != 0 && !runData->starterActedInMajorBattle)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NO_FREEBIES);
 
-    if (!gAchievementProfile.boostsEnabled && !FlagGet(FLAG_ALLOW_STAT_EDITOR))
-        Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP);
+    // ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
 }
 
 // Same call site as above. Every entry here is gated on nuzlockeModeEnabled.
@@ -3216,8 +3117,8 @@ void Achievement_CheckNuzlockeCompletionMilestones(void)
     if (!gSaveBlock1Ptr->nuzlockeModeEnabled)
         return;
 
-    if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD && !FlagGet(FLAG_LEVEL_CAP_OFF))
-        Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR);
+    // ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
 
     if (runData->nuzlockeMonsLost == 0)
         Achievement_TryComplete(ACHIEVEMENT_NUZLOCKE_PERFECT);
@@ -3239,11 +3140,11 @@ void Achievement_CheckNuzlockeCompletionMilestones(void)
     // runData->nuzlockeRouteSkipped is now unread but left in place.
 
     // ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR removed --
-    // too similar to ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP
+    // too similar to the now-also-removed ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP
     // (Achievement_CheckChallengeCompletionMilestones, same GameClear call
-    // site): its !boostsEnabled condition is a strict subset of that
-    // achievement's, and it isn't gated on nuzlockeModeEnabled either, so it
-    // already fires for completed Nuzlocke runs too.
+    // site): its !boostsEnabled condition was a strict subset of that
+    // achievement's, and it wasn't gated on nuzlockeModeEnabled either, so it
+    // already fired for completed Nuzlocke runs too.
 
     // Nuzlocke Across Worlds/Chaos Survivor.
     if (Achievement_AnyRandomizerFlagSet())
@@ -3433,6 +3334,44 @@ static u8 Achievement_GetFamilyMembers(enum Species root, enum Species *membersO
     return count;
 }
 
+// A family only qualifies for Family Reunion if catching every member is
+// actually a distinct task -- one with a branching evolution (e.g. Eevee,
+// Wurmple) or a regional-variant chain (e.g. Meowth/Alolan Meowth). A
+// single-stage family with neither is already "complete" the instant its
+// one member is caught, so it's excluded rather than trivially awarding
+// the achievement on any old catch.
+static bool8 Achievement_FamilyQualifiesForReunion(const enum Species *members, u8 count)
+{
+    u8 i;
+
+    for (i = 0; i < count; i++)
+    {
+        const struct Evolution *evolutions = GetSpeciesEvolutions(members[i]);
+        enum Species firstTarget = SPECIES_NONE;
+        u8 j;
+
+        if (SpeciesHasRegionalForm(members[i]))
+            return TRUE;
+
+        if (evolutions == NULL)
+            continue;
+
+        for (j = 0; evolutions[j].method != EVOLUTIONS_END; j++)
+        {
+            enum Species target = SanitizeSpeciesId(evolutions[j].targetSpecies);
+
+            if (target == SPECIES_NONE)
+                continue;
+            if (firstTarget == SPECIES_NONE)
+                firstTarget = target;
+            else if (target != firstTarget)
+                return TRUE; // split evolution: more than one distinct target
+        }
+    }
+
+    return FALSE;
+}
+
 // HandleSetPokedexFlag (src/pokemon.c)'s FLAG_SET_CAUGHT branch, alongside
 // Achievement_CheckPokedexMilestones -- species is the species that was just
 // newly caught. "Register" is read as "caught" (the more demanding of the
@@ -3443,6 +3382,9 @@ void Achievement_CheckFamilyMilestone(enum Species species)
     enum Species root = Achievement_GetEvolutionRoot(species);
     u8 count = Achievement_GetFamilyMembers(root, members);
     u8 i;
+
+    if (!Achievement_FamilyQualifiesForReunion(members, count))
+        return;
 
     for (i = 0; i < count; i++)
     {
@@ -3484,19 +3426,10 @@ void Achievement_RecordPartyWipe(void)
     runDataExt->leagueWinsSinceWipe = 0;
 }
 
-// SetValuesOnFaint (src/battle_util.c)'s player-faint branch, gated by the
-// caller the same way as every other battle-data write (never link/
-// recorded). The fainted mon's HP is already 0 by the time this runs, so
-// "exactly one conscious mon left" here really does mean the player is down
-// to their last one.
-void Achievement_RecordPlayerFaint(void)
-{
-    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
-    u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
-
-    if (CountConsciousPartyMons(party, playerCount) == 1)
-        sBattleData.wasDownToLastMon = TRUE;
-}
+// Achievement_RecordPlayerFaint removed -- existed solely for
+// ACHIEVEMENT_RECORD_COMEBACK_COUNT, also removed. See
+// src/data/achievements.h's own comment; its call site (SetValuesOnFaint,
+// src/battle_util.c) is removed with it.
 
 // HandleEndTurn_BattleWon (src/battle_main.c), immediately after
 // Achievement_CheckNuzlockeMilestones, gated the same way (never link/
@@ -3556,7 +3489,7 @@ void Achievement_CheckBattleRecordsMilestones(void)
 
         for (i = 0; i < playerCount; i++)
         {
-            if (GetSpeciesBaseStatTotal(GetMonData(&party[i], MON_DATA_SPECIES)) < 350)
+            if (GetSpeciesBaseStatTotal(GetMonData(&party[i], MON_DATA_SPECIES)) < 200)
             {
                 Achievement_TryComplete(ACHIEVEMENT_COLLECT_ODDBALL);
                 break;
@@ -3642,14 +3575,10 @@ void Achievement_CheckBattleRecordsMilestones(void)
         }
     }
 
-    // Comeback Count.
-    if (sBattleData.wasDownToLastMon)
-    {
-        if (runDataExt->comebackWinsThisRun < 0xFF)
-            runDataExt->comebackWinsThisRun++;
-        if (runDataExt->comebackWinsThisRun >= 10)
-            Achievement_TryComplete(ACHIEVEMENT_RECORD_COMEBACK_COUNT);
-    }
+    // ACHIEVEMENT_RECORD_COMEBACK_COUNT removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
+    // AchievementRunDataExt.comebackWinsThisRun (include/global.h) is now
+    // unread but left in place.
 }
 
 // LoadCurrentMapData (src/overworld.c), alongside
@@ -3895,26 +3824,8 @@ static void Achievement_CheckBoostMilestones(void)
     if (gAchievementProfile.boostResets >= 1 && gAchievementProfile.pointsInvested > 0)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_RECONFIGURED);
 
-    // Selective Mastery: exactly one boost at its max level, and at least
-    // five other boosts still untouched (level 0).
-    {
-        u16 boostId;
-        u8 maxedCount = 0;
-        u8 zeroCount = 0;
-
-        for (boostId = BOOST_NONE + 1; boostId < BOOSTS_COUNT; boostId++)
-        {
-            u8 level = AchievementBoost_GetLevel(boostId);
-
-            if (level >= AchievementBoost_GetInfo(boostId)->maxLevel)
-                maxedCount++;
-            else if (level == 0)
-                zeroCount++;
-        }
-
-        if (maxedCount == 1 && zeroCount >= 5)
-            Achievement_TryComplete(ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY);
-    }
+    // ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
 }
 
 // ---- Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen -----------
@@ -3960,7 +3871,7 @@ void Achievement_CheckNewModeBattleMilestones(void)
         if (playerCount >= cap && runDataExt->limitedPartyWinsAtCap < 0xFF)
         {
             runDataExt->limitedPartyWinsAtCap++;
-            if (runDataExt->limitedPartyWinsAtCap >= 15)
+            if (runDataExt->limitedPartyWinsAtCap >= 50)
                 Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_NO_ROOM_TO_SPARE);
         }
     }
@@ -3989,21 +3900,19 @@ void Achievement_CheckNewModeBattleMilestones(void)
 void Achievement_CheckNewModeCompletionMilestones(void)
 {
     struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
-    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
     bool8 isHard = gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD;
     bool8 stackedGameMode = gSaveBlock1Ptr->nuzlockeModeEnabled || Draft_IsEnabled() || Recruits_IsEnabled();
     u8 newModeCount;
     bool8 kitchenSink;
 
-    if (Recruits_IsEnabled())
-    {
-        if (!runDataExt->recruitsRunFailedThisCycle)
-            Achievement_TryComplete(ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED);
-        if (isHard)
-            Achievement_TryComplete(ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE);
-    }
+    // ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
+    if (Recruits_IsEnabled() && isHard)
+        Achievement_TryComplete(ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE);
 
-    if (LimitedParty_IsEnabled() && isHard && runData->highestPartySizeThisRun != 0
+    // Not tied to Limited Party mode -- any HARD run that never carried more
+    // than 3 Pokemon qualifies, self-imposed or not.
+    if (isHard && runData->highestPartySizeThisRun != 0
      && runData->highestPartySizeThisRun <= LIMITED_PARTY_BASE_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_BARE_MINIMUM_CHAMPION);
 
@@ -4069,11 +3978,10 @@ void Achievement_RecordRecruitRetirement(void)
         Achievement_TryComplete(ACHIEVEMENT_RECRUITS_FULL_TURNOVER);
 }
 
-// Recruits_StartRunFailedScreen (src/recruits_mode.c).
-void Achievement_RecordRecruitRunFailed(void)
-{
-    gSaveBlock2Ptr->achievementRunDataExt.recruitsRunFailedThisCycle = TRUE;
-}
+// Achievement_RecordRecruitRunFailed removed -- existed solely for
+// ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED, also removed. See
+// src/data/achievements.h's own comment; its call site
+// (Recruits_StartRunFailedScreen, src/recruits_mode.c) is removed with it.
 
 // Draft_MarkAreaSpent (src/draft_mode.c), only in the branch that just
 // resolved a real draft pick.

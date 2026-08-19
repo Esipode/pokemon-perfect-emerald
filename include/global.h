@@ -627,38 +627,48 @@ struct AchievementRunDataExt
     // Two different reset cadences now share this struct. mapsVisited/etc.
     // above are cleared only by a genuine new game (Sav2_ClearSetDefault) and
     // deliberately span every NG+ cycle on the save, matching
-    // ACHIEVEMENT_SCOPE_NG_PLUS. The four fields below are "within a single
-    // NG+ cycle" instead, so they're explicitly zeroed by
+    // ACHIEVEMENT_SCOPE_NG_PLUS. trainersDefeatedThisCycle below is "within a
+    // single NG+ cycle" instead, so it's explicitly zeroed by
     // Achievement_OnNewGamePlusStarted -- ClearSav1 can't do it for us here,
-    // since that only ever touches SaveBlock1. previousCyclePartySpecies is
-    // the one exception in the other direction: its whole job is to survive
-    // the cycle boundary, so nothing ever resets it except being overwritten
-    // with the next cycle's snapshot.
+    // since that only ever touches SaveBlock1.
     u16 trainersDefeatedThisCycle;             // Fresh Faces (NGP-006)
-    u16 gymSpeciesUsedThisCycle[NUM_BADGES * PARTY_SIZE]; // cumulative distinct species across every Gym cleared so far this cycle, for Complete Reinvention
+    // gymSpeciesUsedThisCycle/Count, reinventionBroken,
+    // majorBossClassesDefeatedThisCycle, and previousCyclePartySpecies/Set
+    // below are all unused now -- they backed Complete Reinvention
+    // (ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION), Boss Gauntlet
+    // (ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET), and No Nostalgia
+    // (ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA), all removed -- see
+    // src/data/achievements.h's own comment. Left in place rather than
+    // removed, to avoid reshuffling every later field's offset.
+    u16 gymSpeciesUsedThisCycle[NUM_BADGES * PARTY_SIZE];
     u8  gymSpeciesUsedThisCycleCount;
-    bool8 reinventionBroken;                   // sticky, same idiom as the mono-type/type-roulette broken flags elsewhere
-    u8  majorBossClassesDefeatedThisCycle;     // bitmask, Boss Gauntlet (NGP-014)
-    u16 previousCyclePartySpecies[PARTY_SIZE]; // the previous cycle's final party, for No Nostalgia (NGP-011)
+    bool8 reinventionBroken;
+    u8  majorBossClassesDefeatedThisCycle;
+    u16 previousCyclePartySpecies[PARTY_SIZE];
     bool8 previousCyclePartySpeciesSet;
 
     // Streaks, Records & Collection Remainder fields: same "SaveBlock1 has
     // zero slack left" detour the fields above already took -- see those
-    // fields above. Unlike those four, every field below
-    // spans the whole save the same way mapsVisited (top of this struct)
-    // does: cleared only by Sav2_ClearSetDefault, never reset per NG+ cycle.
-    // A win/Gym streak that happens to straddle an NG+ boundary is exactly
-    // what "since the last party wipe" should mean, not an artificial reset
-    // at the cycle line.
+    // fields above. Most fields below span the whole save the same way
+    // mapsVisited (top of this struct) does: cleared only by
+    // Sav2_ClearSetDefault, never reset per NG+ cycle. A win streak that
+    // happens to straddle an NG+ boundary is exactly what "since the last
+    // party wipe" should mean, not an artificial reset at the cycle line.
+    // gymLeadersSinceWipe is the one exception (alongside koCountPerSlot/
+    // majorKoCountPerSlot further down): Three/Eight Gym Streak are
+    // CURRENT_PLAYTHROUGH scoped, and gym counts are a per-cycle notion the
+    // same way KOs are -- carrying it over let a couple of Gym wins into a
+    // fresh cycle complete Three Gym Streak immediately, so it's zeroed by
+    // Achievement_OnNewGamePlusStarted instead.
     u16 currentTrainerWinStreak;         // Hot Streak..Untouchable Streak (REC-001..004)
     u16 bestTrainerWinStreakThisRun;     // high-water mark; mirrored into gAchievementProfile.bestTrainerWinStreakEver on every party wipe
-    u8  gymLeadersSinceWipe;             // Three/Eight Gym Streak (REC-005/006)
+    u8  gymLeadersSinceWipe;             // Three/Eight Gym Streak (REC-005/006) -- per-NG+-cycle reset, see comment above
     u8  leagueWinsSinceWipe;             // Elite Four/Champion wins since the last party wipe, for League Streak (REC-007)
     u16 koCountPerSlot[PARTY_SIZE];      // cumulative opposing KOs credited to whatever's in this party slot, any battle -- Veteran Team (REC-008)
     u16 majorKoCountPerSlot[PARTY_SIZE]; // same, major battles only -- Old Reliable (REC-009)
     u8  presentAtEveryMajorBattleSlots;  // unused -- replaced by legendCandidatePersonalities/legendCandidateCount below. This bitmask tracked occupied party SLOTS rather than individual Pokemon, and slot 0 is never empty while you're able to battle at all, so it trivially always kept bit 0 set -- Legend of the Run fired on essentially every completed run. Left in place rather than reflowing this struct's fields.
     bool8 anyMajorBattleThisRun;         // legendCandidatePersonalities is meaningless until this is set (still used by the fix below)
-    u8  comebackWinsThisRun;             // Comeback Count (REC-011)
+    u8  comebackWinsThisRun;             // unused -- backed Comeback Count (ACHIEVEMENT_RECORD_COMEBACK_COUNT), removed. Left in place rather than reflowing this struct's fields.
     u8  tmsTaughtThisRun;                // Move Tutor (backfill)
 
     // Legend of the Run (REC-010), fixed. Tracks actual
@@ -674,7 +684,7 @@ struct AchievementRunDataExt
     // above. Per-NG+-cycle scope, zeroed by Achievement_OnNewGamePlusStarted
     // alongside trainersDefeatedThisCycle etc.
     u8 recruitsRetiredThisCycle;      // Revolving Door/Full Turnover
-    bool8 recruitsRunFailedThisCycle; // Never Understaffed (must stay FALSE)
+    bool8 recruitsRunFailedThisCycle; // unused -- backed Never Understaffed (ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED), removed. Left in place rather than reflowing this struct's fields.
     u8 limitedPartyWinsAtCap;         // No Room to Spare
     u8 draftsCompletedThisCycle;      // The Case is Closed/Full Case Clear
     u8 rotationTrainerWinsThisCycle;  // On a Rotation
@@ -1327,7 +1337,7 @@ struct AchievementRunData
     bool8 rebuildAchieved;
     u16 gym4PartySpecies[PARTY_SIZE];     // snapshot at Gym 4, for Radical Rebuild
     bool8 gym4SnapshotSet;
-    bool8 levelCapEverExceeded;      // for Capped Out
+    bool8 levelCapEverExceeded;      // unused -- backed Capped Out (ACHIEVEMENT_TEAM_CAPPED_OUT) and Perfectly Capped (ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED), both removed. Left in place rather than reflowing this struct's fields.
     bool8 bstEverExceeded450;        // for Underdog Run
     bool8 nobodyBenchedBroken;
     u8  gymBattlesWon;               // Gym wins this run -- NOT the same as the badge flags,

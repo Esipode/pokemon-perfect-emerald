@@ -39,11 +39,11 @@
 //   I. ACHIEVEMENT_EGG_1 .. ACHIEVEMENT_EGG_SHINY (4)
 //      Hatched egg count/shiny -- Achievement_CheckEggMilestones,
 //      Task_EggHatch (src/egg_hatch.c).
-//   J. ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE .. ACHIEVEMENT_POINTS_2000 (4)
+//   J. ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE .. ACHIEVEMENT_POINTS_6000 (4)
 //      Multi-run/persistent-profile milestones -- checked from inside the
 //      existing Achievement_OnFirstPlaythroughComplete /
 //      Achievement_OnNewGamePlusStarted / Achievement_OnNewGamePlusCycleCompleted
-//      wrapper functions; ACHIEVEMENT_POINTS_2000 is checked from inside
+//      wrapper functions; ACHIEVEMENT_POINTS_6000 is checked from inside
 //      Achievement_TryComplete itself. See category O's note for the
 //      repeat-count ladder this category and O were both trimmed of.
 //
@@ -130,10 +130,13 @@
 // point for "this Pokemon was a gift" the way catches and hatches already
 // have one.
 //
-//   N. ACHIEVEMENT_CHALLENGE_SELF_IMPOSED .. ACHIEVEMENT_NUZLOCKE_GRAVEYARD (23)
+//   N. ACHIEVEMENT_CHALLENGE_SELF_IMPOSED .. ACHIEVEMENT_NUZLOCKE_GRAVEYARD (17)
 //      Challenge Runs & Nuzlocke -- see src/achievements.c for the per-entry
 //      hook-site breakdown. Tagged across the existing CHALLENGE/NUZLOCKE
-//      categories.
+//      categories. Hard Way, Brutal Rules, Perfectly Capped, Three-Pokemon
+//      Challenge, Hardly Any Help, and Hardcore Survivor removed here -- see
+//      src/data/achievements.h's own comment; their points were folded into
+//      the catalog-wide rebalance that comment describes.
 //
 // Randomizer & New Game+. Both halves read state that already exists -- the
 // three FLAG_RANDOMIZE_* flags and ngPlusCyclesCompleted/highestNgPlusCycle
@@ -152,7 +155,7 @@
 // (SaveBlock1, which had very little slack left) -- see that struct's own
 // comment.
 //
-//   O. ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS .. ACHIEVEMENT_VARIETY_FULL_CIRCLE (21)
+//   O. ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS .. ACHIEVEMENT_RANDOMIZER_ROOKIE (16)
 //      Randomizer & New Game+ -- see src/achievements.c for the per-entry
 //      hook-site breakdown. Tagged across the existing
 //      RANDOMIZER/NUZLOCKE/NG_PLUS/PROFILE categories, not a new one.
@@ -161,6 +164,10 @@
 //      _BEYOND_THE_BEGINNING/_ESCALATION (repeat/streak NG+ cycles) were
 //      removed or collapsed into the single-completion versions that
 //      already existed or were added alongside them (see category J).
+//      ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA/_COMPLETE_REINVENTION/_BOSS_GAUNTLET/
+//      _UNASSISTED_CYCLE and ACHIEVEMENT_VARIETY_FULL_CIRCLE (this category's
+//      former last entry) removed too -- see src/data/achievements.h's own
+//      comment on the points rebalance this fed.
 //
 // Streaks, Records & Collection Remainder is the one category that needs
 // genuinely new persistent counters -- a win streak spans battles, so it
@@ -168,10 +175,12 @@
 // AchievementRunDataExt (SaveBlock2, the same "SaveBlock1 has no slack left"
 // reasoning as category O) with a high-water mark mirrored into
 // AchievementProfile.reserved[] so a streak earned in one run stays earned.
-// Checked from nine call sites, most reusing an existing hook:
-// Achievement_CheckBattleRecordsMilestones/Achievement_RecordPlayerFaint
-// (HandleEndTurn_BattleWon/SetValuesOnFaint, alongside category K/N's battle
-// hooks) for the streak/KO/comeback entries; Achievement_CheckRecordsMilestones
+// Checked from eight call sites, most reusing an existing hook:
+// Achievement_CheckBattleRecordsMilestones (HandleEndTurn_BattleWon,
+// alongside category K/N's battle hooks) for the streak/KO entries --
+// Achievement_RecordPlayerFaint (SetValuesOnFaint) used to also feed this
+// call site for Comeback Count, since removed (see this category's own
+// comment below); Achievement_CheckRecordsMilestones
 // (LoadCurrentMapData, alongside category M's exploration hook) for the
 // "live state, any time is fine" entries; Achievement_CheckRecordsCompletionMilestones
 // (GameClear, alongside category N's completion checks) for Legend of the
@@ -195,9 +204,8 @@
 //
 // Profile Meta, Mastery & Prestige is the last category -- every entry here
 // is defined over the finished catalog, so it had to be authored last. Every
-// remaining entry is tagged ACHIEVEMENT_CATEGORY_PROFILE, the same as
-// category O's ACHIEVEMENT_VARIETY_FULL_CIRCLE -- there is no separate
-// "Mastery" category, these ARE the profile-meta category. Checked from the
+// remaining entry is tagged ACHIEVEMENT_CATEGORY_PROFILE -- there is no
+// separate "Mastery" category, these ARE the profile-meta category. Checked from the
 // tail of Achievement_TryComplete (Achievement_CheckMasteryMilestones,
 // alongside the existing Achievement_CheckPointMilestones) and from
 // AchievementBoost_Purchase/_Reset (Achievement_CheckBoostMilestones) for the
@@ -230,9 +238,11 @@
 // Achievement_CountCompletedInCategory and
 // Achievement_HasBronzeInEveryCategory (src/achievements.c), go with it.
 //
-//   Q. ACHIEVEMENT_PROFILE_WELL_ROUNDED .. ACHIEVEMENT_MASTERY_DIAMOND_STANDARD (9)
+//   Q. ACHIEVEMENT_PROFILE_WELL_ROUNDED .. ACHIEVEMENT_MASTERY_DIAMOND_STANDARD (8)
 //      Profile Meta, Mastery & Prestige -- see src/achievements.c for the
 //      per-entry check-function breakdown. All ACHIEVEMENT_CATEGORY_PROFILE.
+//      ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY removed -- see
+//      src/data/achievements.h's own comment on the points rebalance this fed.
 enum AchievementId
 {
     ACHIEVEMENT_NONE,
@@ -311,7 +321,7 @@ enum AchievementId
     ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE,
     ACHIEVEMENT_NUZLOCKE_1,
     ACHIEVEMENT_RANDOMIZED_1,
-    ACHIEVEMENT_POINTS_2000,
+    ACHIEVEMENT_POINTS_6000,
 
     // K. Battle Mastery (29). ACHIEVEMENT_BATTLE_TYPE_MASTER
     // ("win a trainer battle without landing a super-effective hit") removed
@@ -348,10 +358,12 @@ enum AchievementId
     ACHIEVEMENT_BATTLE_COMEBACK_KID,
     ACHIEVEMENT_BATTLE_LAST_ONE_STANDING,
 
-    // L. Team Building & Composition (29). ACHIEVEMENT_TEAM_VARIETY_IS_POWER
+    // L. Team Building & Composition (28). ACHIEVEMENT_TEAM_VARIETY_IS_POWER
     // ("win a major battle without two of the same species") removed --
     // most players never deliberately catch duplicate species for their
     // party anyway, so this is true of nearly every team without any effort.
+    // ACHIEVEMENT_TEAM_CAPPED_OUT removed too -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
     ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL,
     ACHIEVEMENT_TEAM_ONE_TYPE_JOURNEY,
     ACHIEVEMENT_TEAM_MONO_TYPE_CHAMPION,
@@ -372,7 +384,6 @@ enum AchievementId
     ACHIEVEMENT_TEAM_EVERYONE_GETS_A_TURN,
     ACHIEVEMENT_TEAM_REBUILD,
     ACHIEVEMENT_TEAM_RADICAL_REBUILD,
-    ACHIEVEMENT_TEAM_CAPPED_OUT,
     ACHIEVEMENT_TEAM_FEATHERWEIGHT,
     ACHIEVEMENT_TEAM_UNDERDOG_RUN,
     ACHIEVEMENT_TEAM_DIVERSE_ROOTS,
@@ -418,7 +429,7 @@ enum AchievementId
     ACHIEVEMENT_COLLECT_GREEN_THUMB,
     ACHIEVEMENT_COLLECT_ANGLER,
 
-    // N. Challenge Runs (17). ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE ("beat
+    // N. Challenge Runs (12). ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE ("beat
     // a Gym Leader with no party member above the level cap") removed -- a
     // player just playing through normally, without deliberately grinding,
     // rarely ends up over the level cap anyway.
@@ -426,9 +437,10 @@ enum AchievementId
     // the level cap") removed too, as a duplicate of
     // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED below (same condition, minus
     // that achievement's extra HARD/randomizer requirement).
+    // ACHIEVEMENT_CHALLENGE_HARD_WAY, _BRUTAL_RULES, _PERFECTLY_CAPPED,
+    // _THREE_POKEMON, and _HARDLY_ANY_HELP removed too -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
     ACHIEVEMENT_CHALLENGE_SELF_IMPOSED,
-    ACHIEVEMENT_CHALLENGE_HARD_WAY,
-    ACHIEVEMENT_CHALLENGE_BRUTAL_RULES,
     ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE,
     ACHIEVEMENT_CHALLENGE_NO_SHOPPING_RUN,
     ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS,
@@ -437,14 +449,11 @@ enum AchievementId
     ACHIEVEMENT_CHALLENGE_NO_CENTERS,
     ACHIEVEMENT_CHALLENGE_SET_IN_STONE,
     ACHIEVEMENT_CHALLENGE_HARDCORE_SET,
-    ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED,
     ACHIEVEMENT_CHALLENGE_MINIMALIST,
-    ACHIEVEMENT_CHALLENGE_THREE_POKEMON,
     ACHIEVEMENT_CHALLENGE_SOLO_JOURNEY,
     ACHIEVEMENT_CHALLENGE_NO_FREEBIES,
-    ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP,
 
-    // N. Nuzlocke (7). ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE ("no two catches
+    // N. Nuzlocke (5). ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE ("no two catches
     // from the same family") and ACHIEVEMENT_NUZLOCKE_NO_REVIVES ("never
     // used a Revive") removed -- a genuine Nuzlocke already only keeps one
     // catch per route and treats a fainted Pokemon as permanently boxed, so
@@ -459,8 +468,9 @@ enum AchievementId
     // ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER removed: one missed/fled encounter
     // anywhere in the whole run permanently breaks it (a sticky flag), which
     // plays as punishing rather than as a genuine challenge.
+    // ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR removed too -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed.
     ACHIEVEMENT_NUZLOCKE_FIRST_GYM,
-    ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR,
     ACHIEVEMENT_NUZLOCKE_PERFECT,
     ACHIEVEMENT_NUZLOCKE_CLOSE_CALL,
     ACHIEVEMENT_NUZLOCKE_SCRAPPY,
@@ -500,22 +510,19 @@ enum AchievementId
     ACHIEVEMENT_NG_PLUS_FRESH_FACES,
     ACHIEVEMENT_NG_PLUS_NEVER_THE_SAME_FIGHT,
     ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST,
-    ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA,
-    ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION,
-    ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET,
     ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE,
     ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS,
     ACHIEVEMENT_RANDOMIZER_TYPE_CHAOS,
     ACHIEVEMENT_RANDOMIZER_MOVE_CHAOS,
     ACHIEVEMENT_RANDOMIZER_ROOKIE,
-    ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE,
-    ACHIEVEMENT_VARIETY_FULL_CIRCLE,
 
-    // P. Streaks, Records & Collection Remainder (27).
+    // P. Streaks, Records & Collection Remainder (26).
     // ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN (a lucky all-31-IV roll, pure
     // chance) and ACHIEVEMENT_COLLECT_BOX_FILLER/_STORAGE_BARON (storing
     // 100/300 Pokemon at once, something a full playthrough's worth of
-    // catching fills up on its own) removed.
+    // catching fills up on its own) removed. ACHIEVEMENT_RECORD_COMEBACK_COUNT
+    // removed too -- see src/data/achievements.h's own comment on the points
+    // rebalance this fed.
     ACHIEVEMENT_RECORD_HOT_STREAK,
     ACHIEVEMENT_RECORD_UNBROKEN,
     ACHIEVEMENT_RECORD_ON_A_ROLL,
@@ -526,7 +533,6 @@ enum AchievementId
     ACHIEVEMENT_RECORD_VETERAN_TEAM,
     ACHIEVEMENT_RECORD_OLD_RELIABLE,
     ACHIEVEMENT_RECORD_LEGEND_OF_THE_RUN,
-    ACHIEVEMENT_RECORD_COMEBACK_COUNT,
     ACHIEVEMENT_RECORD_GROWING_STRONG,
     ACHIEVEMENT_COLLECT_ONE_OF_EACH,
     ACHIEVEMENT_COLLECT_FAMILY_REUNION,
@@ -559,19 +565,20 @@ enum AchievementId
     ACHIEVEMENT_PROFILE_BOOST_INVESTOR,
     ACHIEVEMENT_PROFILE_FULL_INVESTMENT,
     ACHIEVEMENT_PROFILE_RECONFIGURED,
-    ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY,
     ACHIEVEMENT_MASTERY_DIAMOND_STANDARD,
 
-    // R. Recruits Mode (7). Achievement_CheckNewModeBattleMilestones
-    // (HandleEndTurn_BattleWon), Achievement_RecordRecruitRetirement/
-    // _RecordRecruitRunFailed (recruits_mode.c), and
-    // Achievement_CheckNewModeCompletionMilestones (GameClear).
+    // R. Recruits Mode (6). Achievement_CheckNewModeBattleMilestones
+    // (HandleEndTurn_BattleWon), Achievement_RecordRecruitRetirement
+    // (recruits_mode.c), and Achievement_CheckNewModeCompletionMilestones
+    // (GameClear).
+    // ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED removed -- see
+    // src/data/achievements.h's own comment on the points rebalance this fed;
+    // its sole helper, Achievement_RecordRecruitRunFailed, is removed with it.
     ACHIEVEMENT_RECRUITS_FRESH_RECRUITS,
     ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY,
     ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE,
     ACHIEVEMENT_RECRUITS_REVOLVING_DOOR,
     ACHIEVEMENT_RECRUITS_FULL_TURNOVER,
-    ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED,
     ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE,
 
     // S. Limited Party (5). Achievement_CheckNewModeBattleMilestones,
@@ -579,10 +586,10 @@ enum AchievementId
     // Keep/Full Roster Restored -- both read the live derived cap, no new
     // state needed), and Achievement_CheckNewModeCompletionMilestones.
     // ACHIEVEMENT_LIMITED_PARTY_SMALL_BUT_MIGHTY ("complete the story never
-    // carrying more than 3 Pokemon") dropped -- identical condition to
-    // ACHIEVEMENT_CHALLENGE_THREE_POKEMON (category N), just gated on this
-    // mode too. Bare Minimum Champion below keeps the concept, distinguished
-    // by its HARD-difficulty requirement.
+    // carrying more than 3 Pokemon") dropped -- identical condition to the
+    // now-also-removed ACHIEVEMENT_CHALLENGE_THREE_POKEMON (category N).
+    // Bare Minimum Champion below keeps the concept, distinguished by its
+    // HARD-difficulty requirement.
     ACHIEVEMENT_LIMITED_PARTY_TIGHT_SQUAD,
     ACHIEVEMENT_LIMITED_PARTY_EARNED_YOUR_KEEP,
     ACHIEVEMENT_LIMITED_PARTY_FULL_ROSTER_RESTORED,
