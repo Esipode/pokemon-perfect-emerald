@@ -2537,10 +2537,10 @@ static u32 CheckTargetTypeEffectiveness(enum BattlerId battler)
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler)
 {
     static const u8 noIcon[] =  _("");
-    static const u8 effectiveIcon[] =  _("{CIRCLE_HOLLOW}");
-    static const u8 superEffectiveIcon[] =  _("{CIRCLE_DOT}");
-    static const u8 notVeryEffectiveIcon[] =  _("{TRIANGLE}");
-    static const u8 immuneIcon[] =  _("{BIG_MULT_X}");
+    static const u8 effectiveIcon[] =  _("");
+    static const u8 superEffectiveIcon[] =  _("{COLOR CUSTOM_GREEN}{UP_ARROW}");
+    static const u8 notVeryEffectiveIcon[] =  _("{COLOR CUSTOM_RED}{DOWN_ARROW}");
+    static const u8 immuneIcon[] =  _("{COLOR DYNAMIC_COLOR6}{BIG_MULT_X}");
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
     u8 *txtPtr;
 

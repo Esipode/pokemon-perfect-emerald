@@ -500,6 +500,13 @@ GREEN = 06
 LIGHT_GREEN = 07
 BLUE = 08
 LIGHT_BLUE = 09
+@ aliases for the same indices above, filled with vibrant custom colors
+@ in graphics/battle_interface/text.pal (battle window text only)
+CUSTOM_RED = 05
+CUSTOM_GREEN = 06
+CUSTOM_ORANGE = 07
+CUSTOM_BLUE = 08
+CUSTOM_PURPLE = 09
 @ these next colors can be set to anything arbitrary at runtime
 @ usually though they'll have the textbox border colors as described below
 DYNAMIC_COLOR1 = 0A @ white
