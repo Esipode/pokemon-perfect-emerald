@@ -394,17 +394,25 @@ static const struct WindowTemplate sAchievementsMenuWinTemplates[] =
     // baseBlock follows WIN_LIST's own (0x36 + 26*10 tiles = 0x13A) now that
     // WIN_LIST is taller.
     //
-    // tilemapTop 14, height 5 (not 15/4) -- the box only needs to fit two
+    // tilemapTop 15 (not 14), height still 5 -- the box only needs to fit two
     // 16px lines (32px), but a window sized exactly that tall leaves the text
-    // hugging the bottom edge with no margin at all. Growing the window
-    // upward by a tile while keeping its bottom edge fixed (14 + 5 == 15 + 4)
-    // adds that margin below LINE2_Y instead of above LINE1_Y -- see
-    // ACHIEVEMENTS_DESC_LINE1_Y's own comment for why it has to stay flush
-    // with the window's top edge rather than shifted down too.
+    // hugging the bottom edge with no margin at all, so it's grown by a tile
+    // beyond the two lines' own height either way. That margin is spent
+    // below LINE2_Y rather than above LINE1_Y -- see ACHIEVEMENTS_DESC_LINE1_Y's
+    // own comment for why it has to stay flush with the window's top edge
+    // rather than shifted down.
+    //
+    // Bug (reported after initial delivery): even so, the box read as
+    // sitting too high against the surrounding art -- moved down one more
+    // tile (8px) by bumping tilemapTop alone, leaving height/LINE1_Y/LINE2_Y
+    // untouched so the auto-scroll fix above still applies unchanged. This
+    // exactly fills the remaining screen height (15 + 5 == 20 tiles == 160px,
+    // the screen's own height), so there's no margin left below the window
+    // at all now -- the 8px that used to sit unused past its old bottom edge.
     [WIN_DESCRIPTION] = {
         .bg = 0,
         .tilemapLeft = 2,
-        .tilemapTop = 14,
+        .tilemapTop = 15,
         .width = 26,
         .height = 5,
         .paletteNum = 1,
@@ -471,6 +479,17 @@ static const u8 sAchievementsListTextColors[3] = {
 // purpose as the thing that marks the selected row instead.
 static const u8 sAchievementsListHighlightTextColors[3] = {
     TEXT_COLOR_TRANSPARENT, 3, 2
+};
+
+// Marks an incomplete achievement the player can no longer earn this
+// playthrough (Achievement_IsEligible false) -- a game-mode toggle it needs
+// isn't active on this save, or a "never do X" condition it needs is already
+// broken. Reuses WIN_LIST's existing dark-gray index for both foreground and
+// shadow (a flat, grayed-out look) rather than a genuine red: bank 2 is
+// already full (these 3 text colors plus 4 tier icons x 3 colors each fill
+// all 16 slots), with no spare index left to load a new color into.
+static const u8 sAchievementsListIneligibleTextColors[3] = {
+    TEXT_COLOR_TRANSPARENT, 2, 2
 };
 
 // Four 16x16 tier-medal icons (one per ACHIEVEMENT_TIER_* row on TIER
@@ -1385,10 +1404,15 @@ static void AchievementsMenu_DrawRow(u8 windowId, u32 achievementId, u8 y, const
 static void AchievementsMenu_ItemPrintCallback(u8 windowId, u32 achievementId, u8 y)
 {
     bool8 selected = (achievementId == sAchievementsMenuStatePtr->highlightedId);
-    const u8 *colors = selected ? sAchievementsListHighlightTextColors : sAchievementsListTextColors;
+    // The selection highlight takes precedence over ineligibility (can't be
+    // earned this playthrough) -- the cursor's own orange still wins while
+    // sitting on the row; grey only shows up once it's not selected.
+    bool8 ineligible = !Achievement_IsCompleted(achievementId) && !Achievement_IsEligible(achievementId);
+    const u8 *colors = selected ? sAchievementsListHighlightTextColors
+        : ineligible ? sAchievementsListIneligibleTextColors : sAchievementsListTextColors;
 
     // See the identical comment in TierSelect_ItemPrintCallback.
-    if (selected)
+    if (selected || ineligible)
         ListMenuOverrideSetColors(colors[1], colors[0], colors[2]);
 
     AchievementsMenu_DrawRow(windowId, achievementId, y, colors);
@@ -1552,7 +1576,10 @@ static void PrintDetailDescription(s32 achievementId)
     // uses) -- reported after initial delivery as hard to tell apart from
     // the description at a glance with both in plain white; this box has no
     // other visual cue (font size, box divider, etc.) marking which line is
-    // the title.
+    // the title. Always orange, even when ineligible (can no longer be
+    // earned this playthrough) -- DETAIL only ever shows the one achievement
+    // that's "selected" from LIST's own list, so the selection highlight
+    // always wins here, same as a selected row never turning grey in LIST.
     AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, 1, sAchievementsListHighlightTextColors, TEXT_SKIP_DRAW, masked ? sText_HiddenName : info->name);
 
     // sAchievementsMenuStatePtr->detailDescriptionBuffer, not gStringVar1 -- see that
@@ -1701,7 +1728,15 @@ static void RepaintListRow(void (*drawRow)(u8, u32, u8, const u8 *), u32 arrayIn
 {
     const struct ListMenuItem *item = &sAchievementsMenuStatePtr->listItems[arrayIndex];
     bool8 selected = (item->id == sAchievementsMenuStatePtr->highlightedId);
-    const u8 *colors = selected ? sAchievementsListHighlightTextColors : sAchievementsListTextColors;
+    // drawRow == AchievementsMenu_DrawRow specifically -- TierSelect_DrawRow's
+    // item->id is a tier id (or TIER_SELECT_ITEM_BOOSTS), not an achievement
+    // id, and must never be run through Achievement_IsCompleted/_IsEligible.
+    // Selection still wins over ineligibility -- see the identical comment in
+    // AchievementsMenu_ItemPrintCallback.
+    bool8 ineligible = (drawRow == AchievementsMenu_DrawRow)
+        && !Achievement_IsCompleted(item->id) && !Achievement_IsEligible(item->id);
+    const u8 *colors = selected ? sAchievementsListHighlightTextColors
+        : ineligible ? sAchievementsListIneligibleTextColors : sAchievementsListTextColors;
 
     drawRow(WIN_LIST, item->id, y, colors);
     AddTextPrinterParameterized3(WIN_LIST, FONT_NORMAL, ACHIEVEMENTS_LIST_ITEM_X, y, colors, TEXT_SKIP_DRAW, item->name);

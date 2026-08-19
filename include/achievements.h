@@ -201,6 +201,18 @@ void Achievement_FlushProfile(void);
 void  Achievement_Init(void);
 bool8 Achievement_IsCompleted(u16 achievementId);
 
+// Whether achievementId can still be earned on the CURRENT save -- for an
+// achievement gated on a game-mode toggle (Nuzlocke/Randomizer/Mono Type/
+// Mono Gen/Limited Party/Draft/Recruits/Rotation/HARD difficulty) that isn't
+// active, or on an existing sticky/monotonic run-scoped field that already
+// proves a "never do X" condition has been violated, this returns FALSE.
+// Everything else in the catalog has no such precondition and is always
+// TRUE. Doesn't consider whether the achievement is already completed --
+// callers checking "should this show as unreachable" should test
+// Achievement_IsCompleted first. Used by the Achievements Menu to grey out
+// titles the player can no longer earn this playthrough.
+bool8 Achievement_IsEligible(u16 achievementId);
+
 // gAchievements[] (src/data/achievements.h) is only ever included from
 // src/achievements.c -- this is how the rest of the game (e.g. the
 // Achievements Menu) reads definition data (name/description/tier/

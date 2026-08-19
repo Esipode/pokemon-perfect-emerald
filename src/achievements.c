@@ -272,6 +272,186 @@ const struct Achievement *Achievement_GetInfo(u16 achievementId)
     return &gAchievements[achievementId];
 }
 
+// Most of the catalog has no precondition of its own -- a count/threshold or
+// an in-battle trick can always still be attempted later, so those fall
+// through to the default TRUE below. This only lists entries that either
+// require a game-mode toggle fixed for the save's whole lifetime
+// (ApplyPendingNewGameSettings, src/new_game_settings_menu.c, only runs on a
+// non-New-Game-Plus start) or read an existing sticky/monotonic field that
+// already proves a "never do X" condition has been permanently broken.
+// Deliberately does NOT try to detect every theoretically-already-impossible
+// case (e.g. a running tally that's mathematically too far behind to reach
+// its threshold before the game ends) -- only ones with a direct existing
+// boolean/flag to read.
+bool8 Achievement_IsEligible(u16 achievementId)
+{
+    struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+    bool8 isHard = (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD);
+    bool8 anyRandomizer = Achievement_AnyRandomizerFlagSet();
+    bool8 stackedGameMode = gSaveBlock1Ptr->nuzlockeModeEnabled || Draft_IsEnabled() || Recruits_IsEnabled();
+
+    switch (achievementId)
+    {
+    // J. Multi-Run / Persistent Profile
+    case ACHIEVEMENT_NUZLOCKE_1:
+        return gSaveBlock1Ptr->nuzlockeModeEnabled;
+    case ACHIEVEMENT_RANDOMIZED_1:
+        return anyRandomizer;
+
+    // L. Team Building & Composition -- sticky "broken" flags, set the
+    // instant the achievement's own no-longer-reversible condition is
+    // violated and never cleared for the rest of the run.
+    case ACHIEVEMENT_TEAM_MONO_TYPE_CHAMPION:
+        return !runData->monoTypeBroken;
+    case ACHIEVEMENT_TEAM_TRIAL_BY_FIRE:
+        return isHard && !runData->monoTypeBroken;
+    case ACHIEVEMENT_TEAM_TYPE_ROULETTE:
+        return !runData->typeRouletteBroken;
+    case ACHIEVEMENT_TEAM_UNDERDOG_RUN:
+        return !runData->bstEverExceeded450;
+    case ACHIEVEMENT_TEAM_SAME_SIX:
+        return !runData->sameSixBroken;
+    case ACHIEVEMENT_TEAM_NOBODY_BENCHED:
+        return !runData->nobodyBenchedBroken;
+
+    // N. Challenge Runs
+    case ACHIEVEMENT_CHALLENGE_SELF_IMPOSED:
+        return Achievement_CountChallengeModifiers() >= 3;
+    case ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE:
+        return gSaveBlock1Ptr->nuzlockeModeEnabled && isHard
+            && FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES);
+    case ACHIEVEMENT_CHALLENGE_NO_SHOPPING_RUN:
+        return !runData->boughtConsumableItem;
+    case ACHIEVEMENT_CHALLENGE_WHO_NEEDS_CENTERS:
+    case ACHIEVEMENT_CHALLENGE_NO_CENTERS:
+        return GetGameStat(GAME_STAT_USED_POKECENTER) == 0;
+    case ACHIEVEMENT_CHALLENGE_HARDCORE_SET:
+        return isHard;
+    case ACHIEVEMENT_CHALLENGE_SOLO_JOURNEY:
+        return runData->highestPartySizeThisRun <= 1;
+    case ACHIEVEMENT_CHALLENGE_NO_FREEBIES:
+        return !runData->starterActedInMajorBattle;
+
+    // N. Nuzlocke
+    case ACHIEVEMENT_NUZLOCKE_FIRST_GYM:
+    case ACHIEVEMENT_NUZLOCKE_CLOSE_CALL:
+    case ACHIEVEMENT_NUZLOCKE_SCRAPPY:
+    case ACHIEVEMENT_NUZLOCKE_GRAVEYARD:
+        return gSaveBlock1Ptr->nuzlockeModeEnabled;
+    case ACHIEVEMENT_NUZLOCKE_PERFECT:
+        return gSaveBlock1Ptr->nuzlockeModeEnabled && runData->nuzlockeMonsLost == 0;
+
+    // O. Randomizer & New Game+
+    case ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS:
+    case ACHIEVEMENT_RANDOMIZER_RANDOM_BY_NATURE:
+    case ACHIEVEMENT_RANDOMIZER_CHAOS_TEAM:
+    case ACHIEVEMENT_RANDOMIZER_ROOKIE:
+        return anyRandomizer;
+    case ACHIEVEMENT_RANDOMIZER_TRULY_RANDOM:
+        return FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES);
+    case ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS:
+        return FlagGet(FLAG_RANDOMIZE_MON);
+    case ACHIEVEMENT_RANDOMIZER_TYPE_CHAOS:
+        return FlagGet(FLAG_RANDOMIZE_TYPE);
+    case ACHIEVEMENT_RANDOMIZER_MOVE_CHAOS:
+        return FlagGet(FLAG_RANDOMIZE_MOVES);
+    case ACHIEVEMENT_RANDOMIZER_PURE_CHAOS:
+        return FlagGet(FLAG_RANDOMIZE_MON) && LimitedParty_IsEnabled() && MonoType_IsEnabled();
+    case ACHIEVEMENT_NUZLOCKE_ACROSS_WORLDS:
+        return gSaveBlock1Ptr->nuzlockeModeEnabled && anyRandomizer;
+    case ACHIEVEMENT_NUZLOCKE_CHAOS_SURVIVOR:
+        return gSaveBlock1Ptr->nuzlockeModeEnabled && anyRandomizer && isHard;
+    case ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST:
+        return Achievement_CountChallengeModifiers() >= 3;
+    case ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE:
+        return gSaveBlock1Ptr->nuzlockeModeEnabled;
+
+    // M. Exploration -- "before entering the League" is gone the instant
+    // FLAG_IS_CHAMPION is set without every town visited yet.
+    case ACHIEVEMENT_EXPLORE_COMPLETIONIST_TOURIST:
+        return !FlagGet(FLAG_IS_CHAMPION);
+
+    // P. Streaks, Records & Collection Remainder
+    case ACHIEVEMENT_RECORD_LEGEND_OF_THE_RUN:
+        return !(runDataExt->anyMajorBattleThisRun && runDataExt->legendCandidateCount == 0);
+
+    // R. Recruits Mode
+    case ACHIEVEMENT_RECRUITS_FRESH_RECRUITS:
+    case ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY:
+    case ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE:
+    case ACHIEVEMENT_RECRUITS_REVOLVING_DOOR:
+    case ACHIEVEMENT_RECRUITS_FULL_TURNOVER:
+        return Recruits_IsEnabled();
+    case ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE:
+        return Recruits_IsEnabled() && isHard;
+
+    // S. Limited Party
+    case ACHIEVEMENT_LIMITED_PARTY_TIGHT_SQUAD:
+    case ACHIEVEMENT_LIMITED_PARTY_NO_ROOM_TO_SPARE:
+    case ACHIEVEMENT_LIMITED_PARTY_EARNED_YOUR_KEEP:
+    case ACHIEVEMENT_LIMITED_PARTY_FULL_ROSTER_RESTORED:
+        return LimitedParty_IsEnabled();
+    case ACHIEVEMENT_LIMITED_PARTY_BARE_MINIMUM_CHAMPION:
+        // Not gated on LimitedParty_IsEnabled() -- any HARD run that never
+        // carried more than LIMITED_PARTY_BASE_SIZE qualifies, per
+        // Achievement_CheckNewModeCompletionMilestones.
+        return isHard && runData->highestPartySizeThisRun <= LIMITED_PARTY_BASE_SIZE;
+
+    // T. Draft Mode
+    case ACHIEVEMENT_DRAFT_FIRST_PICK:
+    case ACHIEVEMENT_DRAFT_TOUGH_CALL:
+    case ACHIEVEMENT_DRAFT_THE_CASE_IS_CLOSED:
+    case ACHIEVEMENT_DRAFT_FULL_CASE_CLEAR:
+    case ACHIEVEMENT_DRAFT_DRAFTED_NOT_CAUGHT:
+        return Draft_IsEnabled();
+    case ACHIEVEMENT_DRAFT_NO_BALL_NEEDED:
+        return Draft_IsEnabled() && isHard;
+
+    // U. Rotation Mode
+    case ACHIEVEMENT_ROTATION_SPIN_THE_WHEEL:
+    case ACHIEVEMENT_ROTATION_ON_A_ROTATION:
+    case ACHIEVEMENT_ROTATION_GYM_LEADER_ROULETTE:
+    case ACHIEVEMENT_ROTATION_FULL_CIRCUIT:
+        return RotationMode_IsEnabled();
+    case ACHIEVEMENT_ROTATION_CHAOS_ROTATION:
+        return RotationMode_IsEnabled() && stackedGameMode && FlagGet(FLAG_RANDOMIZE_MON);
+
+    // V. Mono Type Mode
+    case ACHIEVEMENT_MONO_TYPE_COMMITTED_TO_THE_BIT:
+    case ACHIEVEMENT_MONO_TYPE_TYPE_SPECIALIST:
+    case ACHIEVEMENT_MONO_TYPE_PERFECT_FIT:
+    case ACHIEVEMENT_MONO_TYPE_TRUE_BELIEVER:
+        return MonoType_IsEnabled();
+    case ACHIEVEMENT_MONO_TYPE_ONE_TYPE_TO_RULE_THEM_ALL:
+        return MonoType_IsEnabled() && isHard;
+    case ACHIEVEMENT_MONO_TYPE_SECOND_VERSE:
+        return MonoType_IsEnabled() && MonoGen_IsEnabled();
+
+    // W. Mono Gen Mode
+    case ACHIEVEMENT_MONO_GEN_GENERATION_LOYALIST:
+    case ACHIEVEMENT_MONO_GEN_REGIONAL_PURIST:
+    case ACHIEVEMENT_MONO_GEN_GOTTA_CATCH_SOME_OF_THEM:
+    case ACHIEVEMENT_MONO_GEN_TRUE_TO_THE_ROOTS:
+        return MonoGen_IsEnabled();
+    case ACHIEVEMENT_MONO_GEN_OLD_SCHOOL_HARD_MODE:
+        return MonoGen_IsEnabled() && isHard;
+
+    // X. Cross-Mode Stacking
+    case ACHIEVEMENT_CROSSMODE_MODE_COLLECTOR:
+        return (Recruits_IsEnabled() + LimitedParty_IsEnabled() + Draft_IsEnabled()
+              + RotationMode_IsEnabled() + MonoType_IsEnabled() + MonoGen_IsEnabled()) >= 2;
+    case ACHIEVEMENT_CROSSMODE_KITCHEN_SINK:
+        return LimitedParty_IsEnabled() && MonoType_IsEnabled() && MonoGen_IsEnabled() && RotationMode_IsEnabled();
+    case ACHIEVEMENT_CROSSMODE_THE_FULL_STACK:
+        return LimitedParty_IsEnabled() && MonoType_IsEnabled() && MonoGen_IsEnabled() && RotationMode_IsEnabled()
+            && stackedGameMode;
+
+    default:
+        return TRUE;
+    }
+}
+
 // Category J: the one self-referential achievement. Called from
 // the tail of Achievement_TryComplete, after totalPointsEarned has already
 // been updated for whatever achievement just completed. Safe to recurse
