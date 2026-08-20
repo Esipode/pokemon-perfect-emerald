@@ -129,6 +129,7 @@ extern const u16 gPokedexOrder_Weight[];
 
 static const u8 sText_No0000[] = _("0000");
 static const u8 sCaughtBall_Gfx[] = INCGFX_U8("graphics/pokedex/caught_ball.png", ".4bpp");
+static const u8 sCaughtBallPartial_Gfx[] = INCGFX_U8("graphics/pokedex/caught_ball_partial.png", ".4bpp");
 static const u8 sText_TenDashes[] = _("----------");
 ALIGNED(4) static const u8 sExpandedPlaceholder_PokedexDescription[] = _("");
 static const u16 sSizeScreenSilhouette_Pal[] = INCGFX_U16("graphics/pokedex/size_silhouette.pal", ".gbapal");
@@ -334,7 +335,7 @@ struct PokedexListItem
 {
     u16 dexNum;
     u16 seen:1;
-    u16 owned:1;
+    u16 owned:2;   // enum DexCaughtState
 };
 
 
@@ -468,7 +469,7 @@ static void LoadPokedexBgPalette(bool8);
 static void FreeWindowAndBgBuffers(void);
 static void CreatePokedexList(u8, u8);
 static void CreateMonDexNum(u16, u8, u8, u16);
-static void CreateCaughtBall(u16, u8, u8, u16);
+static void CreateCaughtBall(enum DexCaughtState, u8, u8, u16);
 static u8 CreateMonName(u16, u8, u8);
 static void ClearMonListEntry(u8 x, u8 y, u16 unused);
 static void CreateMonSpritesAtPos(u16, u16);
@@ -2448,7 +2449,7 @@ static bool8 LoadPokedexListPage(u8 page)
             // the original dexNum because the search results page doesn't rebuild the list
             sPokedexListItem->dexNum = sPokedexView->originalSearchSelectionNum;
             sPokedexListItem->seen   = GetSetPokedexFlag(sPokedexView->originalSearchSelectionNum, FLAG_GET_SEEN);
-            sPokedexListItem->owned  = GetSetPokedexFlag(sPokedexView->originalSearchSelectionNum, FLAG_GET_CAUGHT);
+            sPokedexListItem->owned  = GetDexEntryCaughtState(NationalPokedexNumToSpecies(sPokedexView->originalSearchSelectionNum));
             sPokedexView->originalSearchSelectionNum = 0;
         }
         CreateMonSpritesAtPos(sPokedexView->selectedPokemon, 0xE);
@@ -2520,7 +2521,7 @@ static void CreatePokedexList(u8 dexMode, u8 order)
             {
                 sPokedexView->pokedexList[r5].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[r5].seen = GetSetPokedexFlag(temp_dexNum, FLAG_GET_SEEN);
-                sPokedexView->pokedexList[r5].owned = GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT);
+                sPokedexView->pokedexList[r5].owned = GetDexEntryCaughtState(NationalPokedexNumToSpecies(temp_dexNum));
                 if (sPokedexView->pokedexList[r5].seen)
                     sPokedexView->pokemonListCount = r5 + 1;
                 r5++;
@@ -2537,7 +2538,7 @@ static void CreatePokedexList(u8 dexMode, u8 order)
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
-                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT);
+                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = GetDexEntryCaughtState(NationalPokedexNumToSpecies(temp_dexNum));
                 sPokedexView->pokemonListCount++;
             }
         }
@@ -2545,13 +2546,18 @@ static void CreatePokedexList(u8 dexMode, u8 order)
     case ORDER_HEAVIEST:
         for (i = NATIONAL_DEX_COUNT - 1; i >= 0; i--)
         {
+            enum Species species;
+            enum DexCaughtState caughtState;
             temp_dexNum = gPokedexOrder_Weight[i];
+            species = NationalPokedexNumToSpecies(temp_dexNum);
 
-            if (IsSpeciesInDexMode(NationalPokedexNumToSpecies(temp_dexNum), dexMode) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            // These orders only list caught mons, so the tri-state doubles as the
+            // membership test here -- a variant-only catch must still qualify.
+            if (IsSpeciesInDexMode(species, dexMode) && (caughtState = GetDexEntryCaughtState(species)) != DEX_CAUGHT_NONE)
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
-                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = TRUE;
+                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = caughtState;
                 sPokedexView->pokemonListCount++;
             }
         }
@@ -2559,13 +2565,16 @@ static void CreatePokedexList(u8 dexMode, u8 order)
     case ORDER_LIGHTEST:
         for (i = 0; i < NATIONAL_DEX_COUNT; i++)
         {
+            enum Species species;
+            enum DexCaughtState caughtState;
             temp_dexNum = gPokedexOrder_Weight[i];
+            species = NationalPokedexNumToSpecies(temp_dexNum);
 
-            if (IsSpeciesInDexMode(NationalPokedexNumToSpecies(temp_dexNum), dexMode) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            if (IsSpeciesInDexMode(species, dexMode) && (caughtState = GetDexEntryCaughtState(species)) != DEX_CAUGHT_NONE)
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
-                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = TRUE;
+                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = caughtState;
                 sPokedexView->pokemonListCount++;
             }
         }
@@ -2573,13 +2582,16 @@ static void CreatePokedexList(u8 dexMode, u8 order)
     case ORDER_TALLEST:
         for (i = NATIONAL_DEX_COUNT - 1; i >= 0; i--)
         {
+            enum Species species;
+            enum DexCaughtState caughtState;
             temp_dexNum = gPokedexOrder_Height[i];
+            species = NationalPokedexNumToSpecies(temp_dexNum);
 
-            if (IsSpeciesInDexMode(NationalPokedexNumToSpecies(temp_dexNum), dexMode) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            if (IsSpeciesInDexMode(species, dexMode) && (caughtState = GetDexEntryCaughtState(species)) != DEX_CAUGHT_NONE)
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
-                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = TRUE;
+                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = caughtState;
                 sPokedexView->pokemonListCount++;
             }
         }
@@ -2587,13 +2599,16 @@ static void CreatePokedexList(u8 dexMode, u8 order)
     case ORDER_SMALLEST:
         for (i = 0; i < NATIONAL_DEX_COUNT; i++)
         {
+            enum Species species;
+            enum DexCaughtState caughtState;
             temp_dexNum = gPokedexOrder_Height[i];
+            species = NationalPokedexNumToSpecies(temp_dexNum);
 
-            if (IsSpeciesInDexMode(NationalPokedexNumToSpecies(temp_dexNum), dexMode) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_CAUGHT))
+            if (IsSpeciesInDexMode(species, dexMode) && (caughtState = GetDexEntryCaughtState(species)) != DEX_CAUGHT_NONE)
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
-                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = TRUE;
+                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = caughtState;
                 sPokedexView->pokemonListCount++;
             }
         }
@@ -2736,12 +2751,20 @@ static void CreateMonDexNum(u16 entryNum, u8 left, u8 top, u16 unused)
     PrintMonDexNumAndName(0, FONT_NARROW, text, left, top);
 }
 
-static void CreateCaughtBall(bool16 owned, u8 x, u8 y, u16 unused)
+static void CreateCaughtBall(enum DexCaughtState owned, u8 x, u8 y, u16 unused)
 {
-    if (owned)
+    switch (owned)
+    {
+    case DEX_CAUGHT_ALL:
         BlitBitmapToWindow(0, sCaughtBall_Gfx, x * 6, y * 8, 8, 16);
-    else
+        break;
+    case DEX_CAUGHT_PARTIAL:
+        BlitBitmapToWindow(0, sCaughtBallPartial_Gfx, x * 6, y * 8, 8, 16);
+        break;
+    default:
         FillWindowPixelRect(0, PIXEL_FILL(0), x * 6, y * 8, 8, 16);
+        break;
+    }
 }
 
 static u8 CreateMonName(u16 num, u8 left, u8 top)
@@ -6131,7 +6154,7 @@ static void Task_HandleEvolutionScreenInput(u8 taskId)
 
             sPokedexListItem->dexNum = dexNum;
             sPokedexListItem->seen   = GetSetPokedexFlag(dexNum, FLAG_GET_SEEN);
-            sPokedexListItem->owned  = GetSetPokedexFlag(dexNum, FLAG_GET_CAUGHT);
+            sPokedexListItem->owned  = GetDexEntryCaughtState(targetSpecies);
 
                 if (GetSpeciesFormTable(targetSpecies) != NULL)
                     sPokedexView->formSpecies = targetSpecies;
@@ -6204,13 +6227,19 @@ static void HandleTargetSpeciesPrintIcon(u8 taskId, enum Species targetSpecies, 
 
 static void CreateCaughtBallEvolutionScreen(enum Species targetSpecies, u8 x, u8 y, u16 unused)
 {
-    bool32 owned = GetSetPokedexFlagBySpecies(targetSpecies, FLAG_GET_CAUGHT);
-    if (owned)
-        BlitBitmapToWindow(0, sCaughtBall_Gfx, x, y-1, 8, 16);
-    else
+    enum DexCaughtState owned = GetDexEntryCaughtState(targetSpecies);
+    switch (owned)
     {
+    case DEX_CAUGHT_ALL:
+        BlitBitmapToWindow(0, sCaughtBall_Gfx, x, y-1, 8, 16);
+        break;
+    case DEX_CAUGHT_PARTIAL:
+        BlitBitmapToWindow(0, sCaughtBallPartial_Gfx, x, y-1, 8, 16);
+        break;
+    default:
         //FillWindowPixelRect(0, PIXEL_FILL(0), x, y, 8, 16); //not sure why this was even here
         PrintInfoScreenTextSmall(gText_OneDash, FONT_SMALL, x+1, y-1);
+        break;
     }
 }
 
