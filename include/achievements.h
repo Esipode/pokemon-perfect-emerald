@@ -987,7 +987,7 @@ void Achievement_CheckPokecenterMilestone(void);
 // HandleEndTurn_BattleWon (src/battle_main.c), alongside
 // Achievement_CheckBattleRecordsMilestones/Recruits_TallyParticipants. Every
 // entry evaluated on a trainer-battle win for these six modes: Fresh
-// Recruits/Tour of Duty (Recruits), Tight Squad/No Room to Spare (Limited
+// Recruits (Recruits), Tight Squad/No Room to Spare (Limited
 // Party), Spin the Wheel/On a Rotation/Gym Leader Roulette (Rotation).
 void Achievement_CheckNewModeBattleMilestones(void);
 

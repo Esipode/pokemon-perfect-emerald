@@ -358,12 +358,13 @@ enum AchievementId
     ACHIEVEMENT_BATTLE_COMEBACK_KID,
     ACHIEVEMENT_BATTLE_LAST_ONE_STANDING,
 
-    // L. Team Building & Composition (28). ACHIEVEMENT_TEAM_VARIETY_IS_POWER
+    // L. Team Building & Composition (27). ACHIEVEMENT_TEAM_VARIETY_IS_POWER
     // ("win a major battle without two of the same species") removed --
     // most players never deliberately catch duplicate species for their
     // party anyway, so this is true of nearly every team without any effort.
-    // ACHIEVEMENT_TEAM_CAPPED_OUT removed too -- see
-    // src/data/achievements.h's own comment on the points rebalance this fed.
+    // ACHIEVEMENT_TEAM_CAPPED_OUT and ACHIEVEMENT_TEAM_FULL_HOUSE removed
+    // too -- see src/data/achievements.h's own comment on the points
+    // rebalance this fed.
     ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL,
     ACHIEVEMENT_TEAM_ONE_TYPE_JOURNEY,
     ACHIEVEMENT_TEAM_MONO_TYPE_CHAMPION,
@@ -378,7 +379,6 @@ enum AchievementId
     ACHIEVEMENT_TEAM_NO_ACE,
     ACHIEVEMENT_TEAM_TYPE_ROULETTE,
     ACHIEVEMENT_TEAM_WELL_EQUIPPED,
-    ACHIEVEMENT_TEAM_FULL_HOUSE,
     ACHIEVEMENT_TEAM_LINK_IN_THE_CHAIN,
     ACHIEVEMENT_TEAM_DREAM_TEAM,
     ACHIEVEMENT_TEAM_EVERYONE_GETS_A_TURN,
@@ -567,15 +567,15 @@ enum AchievementId
     ACHIEVEMENT_PROFILE_RECONFIGURED,
     ACHIEVEMENT_MASTERY_DIAMOND_STANDARD,
 
-    // R. Recruits Mode (6). Achievement_CheckNewModeBattleMilestones
+    // R. Recruits Mode (5). Achievement_CheckNewModeBattleMilestones
     // (HandleEndTurn_BattleWon), Achievement_RecordRecruitRetirement
     // (recruits_mode.c), and Achievement_CheckNewModeCompletionMilestones
     // (GameClear).
     // ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED removed -- see
     // src/data/achievements.h's own comment on the points rebalance this fed;
     // its sole helper, Achievement_RecordRecruitRunFailed, is removed with it.
+    // ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY removed too -- same note.
     ACHIEVEMENT_RECRUITS_FRESH_RECRUITS,
-    ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY,
     ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE,
     ACHIEVEMENT_RECRUITS_REVOLVING_DOOR,
     ACHIEVEMENT_RECRUITS_FULL_TURNOVER,
