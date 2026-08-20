@@ -2459,7 +2459,7 @@ static bool8 LoadPokedexListPage(u8 page)
             // when returning to search results after selecting an evo, we have to restore
             // the original dexNum because the search results page doesn't rebuild the list
             sPokedexListItem->dexNum = sPokedexView->originalSearchSelectionNum;
-            sPokedexListItem->seen   = GetSetPokedexFlag(sPokedexView->originalSearchSelectionNum, FLAG_GET_SEEN);
+            sPokedexListItem->seen   = GetDexEntrySeenState(NationalPokedexNumToSpecies(sPokedexView->originalSearchSelectionNum));
             sPokedexListItem->owned  = GetDexEntryCaughtState(NationalPokedexNumToSpecies(sPokedexView->originalSearchSelectionNum));
             sPokedexView->originalSearchSelectionNum = 0;
         }
@@ -2521,18 +2521,20 @@ static void CreatePokedexList(u8 dexMode, u8 order)
     case ORDER_NUMERICAL:
     {
         s16 r5, r10;
+        enum Species species;
         for (i = 0, r5 = 0, r10 = 0; i < NATIONAL_DEX_COUNT; i++)
         {
             temp_dexNum = i + 1;
-            if (!IsSpeciesInDexMode(NationalPokedexNumToSpecies(temp_dexNum), dexMode))
+            species = NationalPokedexNumToSpecies(temp_dexNum);
+            if (!IsSpeciesInDexMode(species, dexMode))
                 continue;
-            if (GetSetPokedexFlag(temp_dexNum, FLAG_GET_SEEN))
+            if (GetDexEntrySeenState(species))
                 r10 = 1;
             if (r10)
             {
                 sPokedexView->pokedexList[r5].dexNum = temp_dexNum;
-                sPokedexView->pokedexList[r5].seen = GetSetPokedexFlag(temp_dexNum, FLAG_GET_SEEN);
-                sPokedexView->pokedexList[r5].owned = GetDexEntryCaughtState(NationalPokedexNumToSpecies(temp_dexNum));
+                sPokedexView->pokedexList[r5].seen = GetDexEntrySeenState(species);
+                sPokedexView->pokedexList[r5].owned = GetDexEntryCaughtState(species);
                 if (sPokedexView->pokedexList[r5].seen)
                     sPokedexView->pokemonListCount = r5 + 1;
                 r5++;
@@ -2543,13 +2545,15 @@ static void CreatePokedexList(u8 dexMode, u8 order)
     case ORDER_ALPHABETICAL:
         for (i = 0; i < NATIONAL_DEX_COUNT; i++)
         {
+            enum Species species;
             temp_dexNum = gPokedexOrder_Alphabetical[i];
+            species = NationalPokedexNumToSpecies(temp_dexNum);
 
-            if (IsSpeciesInDexMode(NationalPokedexNumToSpecies(temp_dexNum), dexMode) && GetSetPokedexFlag(temp_dexNum, FLAG_GET_SEEN))
+            if (IsSpeciesInDexMode(species, dexMode) && GetDexEntrySeenState(species))
             {
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].dexNum = temp_dexNum;
                 sPokedexView->pokedexList[sPokedexView->pokemonListCount].seen = TRUE;
-                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = GetDexEntryCaughtState(NationalPokedexNumToSpecies(temp_dexNum));
+                sPokedexView->pokedexList[sPokedexView->pokemonListCount].owned = GetDexEntryCaughtState(species);
                 sPokedexView->pokemonListCount++;
             }
         }
@@ -4704,13 +4708,20 @@ static u16 GetNextPosition(u8 direction, u16 position, u16 min, u16 max)
 //************************************
 static u16 NationalPokedexNumToSpeciesHGSS(u16 nationalNum)
 {
+    enum Species baseSpecies, displaySpecies;
+
     if (!nationalNum)
         return 0;
 
     if (sPokedexView->formSpecies != 0)
         return sPokedexView->formSpecies;
-    else
-        return NationalPokedexNumToSpecies(nationalNum);
+
+    // Fall back to a seen regional-form variant when the base species itself
+    // hasn't been seen yet, so a variant-only catch still has a species to
+    // render (sprite, footprint, area/stats/cry screens, etc.) at this entry.
+    baseSpecies = NationalPokedexNumToSpecies(nationalNum);
+    displaySpecies = GetDexEntryDisplaySpecies(baseSpecies);
+    return displaySpecies != SPECIES_NONE ? displaySpecies : baseSpecies;
 }
 
 static void LoadTilesetTilemapHGSS(u8 page)
@@ -6164,7 +6175,7 @@ static void Task_HandleEvolutionScreenInput(u8 taskId)
                 sPokedexView->originalSearchSelectionNum = sPokedexListItem->dexNum;
 
             sPokedexListItem->dexNum = dexNum;
-            sPokedexListItem->seen   = GetSetPokedexFlag(dexNum, FLAG_GET_SEEN);
+            sPokedexListItem->seen   = GetDexEntrySeenState(targetSpecies);
             sPokedexListItem->owned  = GetDexEntryCaughtState(targetSpecies);
 
                 if (GetSpeciesFormTable(targetSpecies) != NULL)

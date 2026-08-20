@@ -4588,6 +4588,40 @@ enum DexCaughtState GetDexEntryCaughtState(enum Species baseSpecies)
     return DEX_CAUGHT_PARTIAL;
 }
 
+// Species to represent a dex entry with -- the base species if it's been
+// seen, else whichever regional-form variant has been (so catching a variant
+// before its base still has a sprite/species to show at that dex number).
+// Returns SPECIES_NONE if nothing under this entry has been seen at all.
+enum Species GetDexEntryDisplaySpecies(enum Species baseSpecies)
+{
+    const u16 *formTable = GetSpeciesFormTable(baseSpecies);
+    u32 i;
+
+    if (GetSetPokedexFlagBySpecies(baseSpecies, FLAG_GET_SEEN))
+        return baseSpecies;
+
+    if (formTable != NULL)
+    {
+        for (i = 0; formTable[i] != FORM_SPECIES_END; i++)
+        {
+            enum Species formSpecies = formTable[i];
+            if (formSpecies != baseSpecies && IsSpeciesRegionalForm(formSpecies)
+                && GetSetPokedexFlagBySpecies(formSpecies, FLAG_GET_SEEN))
+                return formSpecies;
+        }
+    }
+
+    return SPECIES_NONE;
+}
+
+// Whether a dex entry counts as seen -- true if the base species or any of
+// its regional-form variants has been seen. A variant-only catch implies a
+// sighting, so this can't just check the base species' own seen flag.
+bool32 GetDexEntrySeenState(enum Species baseSpecies)
+{
+    return GetDexEntryDisplaySpecies(baseSpecies) != SPECIES_NONE;
+}
+
 // Clamps a stored/selected dex mode to a valid value. gSaveBlock2Ptr->pokedex.mode
 // is just a remembered UI preference, so an old save or an out-of-range byte
 // falls back to National rather than reading garbage.

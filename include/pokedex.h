@@ -23,6 +23,8 @@ enum DexCaughtState
     DEX_CAUGHT_ALL,
 };
 enum DexCaughtState GetDexEntryCaughtState(enum Species baseSpecies);
+enum Species GetDexEntryDisplaySpecies(enum Species baseSpecies);
+bool32 GetDexEntrySeenState(enum Species baseSpecies);
 
 bool32 IsSpeciesInDexMode(enum Species species, u8 dexMode);
 u32 GetDexModeEntryCount(u8 dexMode);
