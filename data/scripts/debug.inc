@@ -680,6 +680,16 @@ Debug_EventScript_EWRAMCounters_Text::
 	.string "Follower Steps: {STR_VAR_1}.\n"
 	.string "Fishing Chain: {STR_VAR_2}.$"
 
+Debug_EventScript_HeapStats::
+	callnative CheckHeapStats
+	msgbox Debug_EventScript_HeapStats_Text, MSGBOX_DEFAULT
+	release
+	end
+
+Debug_EventScript_HeapStats_Text::
+	.string "Heap peak used: {STR_VAR_1}\n"
+	.string "Heap size: {STR_VAR_2}$"
+
 Debug_EventScript_FontTest_Text_1::
 	.string "{FONT_SMALL_NARROWER}"                 @ Edit this to test your font
 	.string "Angel Adept Blind Bodice Clique\n"

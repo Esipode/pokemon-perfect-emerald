@@ -9,6 +9,28 @@ static u32 sHeapSize;
 
 ALIGNED(4) EWRAM_DATA u8 gHeap[HEAP_SIZE] = {0};
 
+#if !defined(NDEBUG) || TESTING
+// Peak heap occupancy ever reached, in bytes. Used to right-size HEAP_SIZE
+// against measured worst cases rather than guessing.
+static u32 sHeapPeakUsed;
+
+static u32 CalcHeapFreeBytes(void *heapStart)
+{
+    struct MemBlock *head = (struct MemBlock *)heapStart;
+    struct MemBlock *pos = head;
+    u32 free = 0;
+
+    do
+    {
+        if (!pos->allocated)
+            free += pos->size;
+        pos = pos->next;
+    } while (pos != head);
+
+    return free;
+}
+#endif
+
 void PutMemBlockHeader(void *block, struct MemBlock *prev, struct MemBlock *next, u32 size)
 {
     struct MemBlock *header = (struct MemBlock *)block;
@@ -76,6 +98,14 @@ static void *AllocInternal(void *heapStart, u32 size, const char *location)
 
                 pos->locationHi = ((uintptr_t)location) >> 14;
                 pos->locationLo = (uintptr_t)location;
+
+#if !defined(NDEBUG) || TESTING
+                {
+                    u32 used = sHeapSize - CalcHeapFreeBytes(heapStart);
+                    if (used > sHeapPeakUsed)
+                        sHeapPeakUsed = used;
+                }
+#endif
 
                 return pos->data;
             }
@@ -259,6 +289,15 @@ bool32 CheckHeap()
 const struct MemBlock *HeapHead(void)
 {
     return (const struct MemBlock *)sHeapStart;
+}
+
+u32 GetHeapPeakUsed(void)
+{
+#if !defined(NDEBUG) || TESTING
+    return sHeapPeakUsed;
+#else
+    return 0;
+#endif
 }
 
 const char *MemBlockLocation(const struct MemBlock *block)

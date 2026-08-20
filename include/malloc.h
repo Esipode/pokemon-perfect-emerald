@@ -72,4 +72,8 @@ void PrintHeap(void);
 const struct MemBlock *HeapHead(void);
 const char *MemBlockLocation(const struct MemBlock *block);
 
+// Peak heap occupancy ever reached, in bytes. Tracked only in debug builds
+// (returns 0 in NDEBUG release builds); see src/malloc.c.
+u32 GetHeapPeakUsed(void);
+
 #endif // GUARD_ALLOC_H
