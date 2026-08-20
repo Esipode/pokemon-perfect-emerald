@@ -3107,7 +3107,9 @@ static void DebugAction_FlagsVars_SetValue(u8 taskId)
 static void DebugAction_FlagsVars_PokedexFlags_All(u8 taskId)
 {
     u16 i;
-    for (i = 0; i < NATIONAL_DEX_COUNT; i++)
+    // DEX_FLAG_SLOT_COUNT covers National Dex slots and the regional-form
+    // variant slots above them, so this also fills every variant's own bit.
+    for (i = 0; i < DEX_FLAG_SLOT_COUNT; i++)
     {
         GetSetPokedexFlag(i + 1, FLAG_SET_CAUGHT);
         GetSetPokedexFlag(i + 1, FLAG_SET_SEEN);
