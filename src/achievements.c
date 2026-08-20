@@ -294,6 +294,8 @@ bool8 Achievement_IsEligible(u16 achievementId)
     switch (achievementId)
     {
     // J. Multi-Run / Persistent Profile
+    case ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE:
+        return gSaveBlock2Ptr->newGamePlus > 0;
     case ACHIEVEMENT_NUZLOCKE_1:
         return gSaveBlock1Ptr->nuzlockeModeEnabled;
     case ACHIEVEMENT_RANDOMIZED_1:
@@ -362,8 +364,11 @@ bool8 Achievement_IsEligible(u16 achievementId)
         return gSaveBlock1Ptr->nuzlockeModeEnabled && anyRandomizer;
     case ACHIEVEMENT_NUZLOCKE_CHAOS_SURVIVOR:
         return gSaveBlock1Ptr->nuzlockeModeEnabled && anyRandomizer && isHard;
+    case ACHIEVEMENT_NG_PLUS_FRESH_FACES:
+    case ACHIEVEMENT_NG_PLUS_NEVER_THE_SAME_FIGHT:
+        return gSaveBlock2Ptr->newGamePlus > 0;
     case ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST:
-        return Achievement_CountChallengeModifiers() >= 3;
+        return gSaveBlock2Ptr->newGamePlus > 0 && Achievement_CountChallengeModifiers() >= 3;
     case ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE:
         return gSaveBlock1Ptr->nuzlockeModeEnabled;
 
@@ -378,7 +383,6 @@ bool8 Achievement_IsEligible(u16 achievementId)
 
     // R. Recruits Mode
     case ACHIEVEMENT_RECRUITS_FRESH_RECRUITS:
-    case ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY:
     case ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE:
     case ACHIEVEMENT_RECRUITS_REVOLVING_DOOR:
     case ACHIEVEMENT_RECRUITS_FULL_TURNOVER:
@@ -2511,20 +2515,13 @@ void Achievement_CheckPartyStateMilestones(void)
     struct AchievementRunData *runData = &gSaveBlock1Ptr->achievementRunData;
     struct Pokemon *party = gParties[B_TRAINER_PLAYER];
     u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
-    u32 levelCap = GetCurrentLevelCap();
     u8 holdingItemCount = 0;
-    u8 atOrAboveCapCount = 0;
     u8 i;
 
     for (i = 0; i < playerCount; i++)
     {
-        u32 level = GetMonData(&party[i], MON_DATA_LEVEL);
-
         if (GetMonData(&party[i], MON_DATA_HELD_ITEM) != ITEM_NONE)
             holdingItemCount++;
-
-        if (level >= levelCap)
-            atOrAboveCapCount++;
 
         if (GetSpeciesBaseStatTotal(GetMonData(&party[i], MON_DATA_SPECIES)) > 450)
             runData->bstEverExceeded450 = TRUE;
@@ -2532,9 +2529,8 @@ void Achievement_CheckPartyStateMilestones(void)
 
     if (playerCount == PARTY_SIZE && holdingItemCount == PARTY_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_TEAM_WELL_EQUIPPED);
-
-    if (playerCount == PARTY_SIZE && atOrAboveCapCount == PARTY_SIZE)
-        Achievement_TryComplete(ACHIEVEMENT_TEAM_FULL_HOUSE);
+    // ACHIEVEMENT_TEAM_FULL_HOUSE ("Full House") removed -- see
+    // src/data/achievements.h's top-of-file points rebalance note.
 }
 
 // GameClear (src/post_battle_event_funcs.c), alongside
@@ -3083,23 +3079,21 @@ void Achievement_CheckChallengeMilestones(void)
     if (playerCount > runData->highestPartySizeThisRun)
         runData->highestPartySizeThisRun = playerCount;
 
-    // Fresh Faces/Never the Same Fight -- every trainer win, not
-    // only major/Gym ones.
-    if (isTrainerBattle)
+    // Fresh Faces/Never the Same Fight -- every trainer win during an NG+
+    // cycle, not only major/Gym ones. Gated on newGamePlus so trainers
+    // defeated during the original pre-NG+ playthrough never count.
+    if (isTrainerBattle && gSaveBlock2Ptr->newGamePlus > 0)
     {
         if (runDataExt->trainersDefeatedThisCycle < 0xFFFF)
             runDataExt->trainersDefeatedThisCycle++;
-        if (gSaveBlock2Ptr->newGamePlus > 0 && runDataExt->trainersDefeatedThisCycle >= 50)
+        if (runDataExt->trainersDefeatedThisCycle >= 50)
             Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_FRESH_FACES);
 
-        if (gSaveBlock2Ptr->newGamePlus > 0)
-        {
-            if (gAchievementProfile.trainersDefeatedAcrossNgPlus < 0xFFFF)
-                gAchievementProfile.trainersDefeatedAcrossNgPlus++;
-            if (gAchievementProfile.trainersDefeatedAcrossNgPlus >= 300)
-                Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_NEVER_THE_SAME_FIGHT);
-            sAchievementProfileDirty = TRUE;
-        }
+        if (gAchievementProfile.trainersDefeatedAcrossNgPlus < 0xFFFF)
+            gAchievementProfile.trainersDefeatedAcrossNgPlus++;
+        if (gAchievementProfile.trainersDefeatedAcrossNgPlus >= 300)
+            Achievement_TryComplete(ACHIEVEMENT_NG_PLUS_NEVER_THE_SAME_FIGHT);
+        sAchievementProfileDirty = TRUE;
     }
 
     if (isMajorBattle)
@@ -4016,26 +4010,16 @@ static void Achievement_CheckBoostMilestones(void)
 void Achievement_CheckNewModeBattleMilestones(void)
 {
     struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
-    struct Pokemon *party = gParties[B_TRAINER_PLAYER];
     u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
-    u8 i;
 
     if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
         return;
 
-    // Fresh Recruits/Tour of Duty.
+    // Fresh Recruits. ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY ("Tour of Duty")
+    // removed -- see src/data/achievements.h's top-of-file points rebalance
+    // note.
     if (Recruits_IsActive())
-    {
         Achievement_TryComplete(ACHIEVEMENT_RECRUITS_FRESH_RECRUITS);
-        for (i = 0; i < playerCount; i++)
-        {
-            if (GetMonData(&party[i], MON_DATA_RECRUIT_BATTLES) >= 5)
-            {
-                Achievement_TryComplete(ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY);
-                break;
-            }
-        }
-    }
 
     // Tight Squad/No Room to Spare. Opponent B (double trainer battles) isn't
     // checked -- opponent A alone is already enough to earn Tight Squad in

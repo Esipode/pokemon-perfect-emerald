@@ -37,6 +37,15 @@
 // include/constants/achievements.h's per-category comments for where each
 // one sat in the enum, and src/achievements.c for the check-logic/helper
 // removals that went with them.
+//
+// Second rebalance: Full House (category TEAM, 120 points) and Tour of Duty
+// (category RECRUITS, 60 points) were removed, keeping the 25,000 total
+// unchanged. Full House's 120 points went +10 to each of the 12 remaining
+// Gold-tier TEAM entries (Benchwarmer, Deep Bench, Full Rotation, Type
+// Roulette, Dream Team, Everyone Gets a Turn, Rebuild, Radical Rebuild,
+// Featherweight, Underdog Run, Balanced Roster, Ace Rotation). Tour of
+// Duty's 60 points went +20 to each of the 3 remaining Gold/Diamond RECRUITS
+// entries (Revolving Door, Full Turnover, Recruitment Drive).
 #define ACHIEVEMENT_NAME(str) COMPOUND_STRING_SIZE_LIMIT(str, ACHIEVEMENT_NAME_LENGTH)
 
 static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
@@ -951,7 +960,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 120,
+        .points      = 130,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_BOX_ROTATION] = {
@@ -969,7 +978,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 130,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_FULL_ROTATION] = {
@@ -978,7 +987,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 170,
+        .points      = 180,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_NO_ACE] = {
@@ -998,7 +1007,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 130,
+        .points      = 140,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_WELL_EQUIPPED] = {
@@ -1010,15 +1019,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    [ACHIEVEMENT_TEAM_FULL_HOUSE] = {
-        .name        = ACHIEVEMENT_NAME("Full House"),
-        .description = COMPOUND_STRING("Have six Pokémon at or above the current level cap at once."),
-        .tier        = ACHIEVEMENT_TIER_GOLD,
-        .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
-        .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 120,
-        .hidden      = FALSE,
-    },
+    // ACHIEVEMENT_TEAM_FULL_HOUSE ("Full House") removed -- see this file's
+    // top-of-file points rebalance note.
     // ACHIEVEMENT_TEAM_VARIETY_IS_POWER ("win a major battle
     // without two of the same species") removed here -- most players never
     // deliberately catch duplicate species for their party, so this is true
@@ -1039,7 +1041,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 150,
+        .points      = 160,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_EVERYONE_GETS_A_TURN] = {
@@ -1048,7 +1050,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 140,
+        .points      = 150,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_REBUILD] = {
@@ -1057,7 +1059,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 120,
+        .points      = 130,
         .hidden      = FALSE,
     },
     // Your final party's species
@@ -1069,7 +1071,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 150,
+        .points      = 160,
         .hidden      = FALSE,
     },
     // ACHIEVEMENT_TEAM_CAPPED_OUT ("Capped Out") removed -- see this file's
@@ -1087,7 +1089,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 120,
+        .points      = 130,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_UNDERDOG_RUN] = {
@@ -1096,7 +1098,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 140,
+        .points      = 150,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_DIVERSE_ROOTS] = {
@@ -1132,7 +1134,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 120,
+        .points      = 130,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_TEAM_NOBODY_BENCHED] = {
@@ -1150,7 +1152,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_TEAM,
-        .points      = 130,
+        .points      = 140,
         .hidden      = FALSE,
     },
 
@@ -2263,15 +2265,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 30,
         .hidden      = FALSE,
     },
-    [ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY] = {
-        .name        = ACHIEVEMENT_NAME("Tour of Duty"),
-        .description = COMPOUND_STRING("Have a Pokémon reach 5 recruit-battle wins without retiring."),
-        .tier        = ACHIEVEMENT_TIER_SILVER,
-        .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
-        .category    = ACHIEVEMENT_CATEGORY_RECRUITS,
-        .points      = 60,
-        .hidden      = FALSE,
-    },
+    // ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY ("Tour of Duty") removed -- see this
+    // file's top-of-file points rebalance note.
     [ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE] = {
         .name        = ACHIEVEMENT_NAME("Honorable Discharge"),
         .description = COMPOUND_STRING("Have a recruit Pokémon retire."),
@@ -2287,7 +2282,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECRUITS,
-        .points      = 130,
+        .points      = 150,
         .hidden      = FALSE,
     },
     [ACHIEVEMENT_RECRUITS_FULL_TURNOVER] = {
@@ -2296,7 +2291,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECRUITS,
-        .points      = 160,
+        .points      = 180,
         .hidden      = FALSE,
     },
     // ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED ("Never Understaffed") removed
@@ -2310,7 +2305,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECRUITS,
-        .points      = 240,
+        .points      = 260,
         .hidden      = FALSE,
     },
 
