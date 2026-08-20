@@ -5261,22 +5261,40 @@ bool8 IsMonPastEvolutionLevel(struct Pokemon *mon)
     return FALSE;
 }
 
-enum Species NationalPokedexNumToSpecies(enum NationalDexOrder nationalNum)
+// Reverse of the species->natDexNum mapping, indexed by dex number. Built
+// once on first use instead of linear-scanning up to NUM_SPECIES species per
+// call -- this runs once per dex number in several O(NATIONAL_DEX_COUNT)
+// loops (Pokedex list building, per-mode entry counts), which made it the
+// real driver behind Pokedex-open lag. Sized to the enum's absolute max
+// (not the config-dependent NATIONAL_DEX_COUNT) so it stays valid across
+// every P_GEN_n_POKEMON configuration.
+EWRAM_DATA static u16 sNationalDexNumToSpecies[NATIONAL_DEX_PECHARUNT + 1] = {0};
+EWRAM_DATA static bool8 sNationalDexNumToSpeciesBuilt = FALSE;
+
+static void BuildNationalDexNumToSpeciesTable(void)
 {
     enum Species species;
 
+    // Lowest species ID wins a shared dex number, matching the original
+    // front-to-back scan; GET_BASE_SPECIES_ID resolves it to its base form.
+    for (species = 1; species < NUM_SPECIES; species++)
+    {
+        enum NationalDexOrder dexNum = gSpeciesInfo[species].natDexNum;
+        if (dexNum && sNationalDexNumToSpecies[dexNum] == SPECIES_NONE)
+            sNationalDexNumToSpecies[dexNum] = GET_BASE_SPECIES_ID(species);
+    }
+    sNationalDexNumToSpeciesBuilt = TRUE;
+}
+
+enum Species NationalPokedexNumToSpecies(enum NationalDexOrder nationalNum)
+{
     if (!nationalNum)
         return SPECIES_NONE;
 
-    species = 1;
+    if (!sNationalDexNumToSpeciesBuilt)
+        BuildNationalDexNumToSpeciesTable();
 
-    while (species < (NUM_SPECIES) && gSpeciesInfo[species].natDexNum != nationalNum)
-        species++;
-
-    if (species == NUM_SPECIES)
-        return SPECIES_NONE;
-
-    return GET_BASE_SPECIES_ID(species);
+    return sNationalDexNumToSpecies[nationalNum];
 }
 
 u32 NationalToRegionalOrder(enum NationalDexOrder nationalNum)
@@ -5331,13 +5349,32 @@ enum NationalDexOrder SpeciesToNationalPokedexNum(enum Species species)
     return gSpeciesInfo[species].natDexNum;
 }
 
+// Reverse of sDexVariantFlagSlotSpecies, indexed by species: 0 means "not a
+// variant slot", else it's the slot's 1-based position in that list. Built
+// once on first use instead of linear-scanning the 57-entry list on every
+// call -- SpeciesToDexFlagSlot runs for every species in the Pokédex list
+// (and plenty of other call sites), so that scan was showing up as real
+// Pokédex-open lag. Sized NUM_SPECIES + 1 to match SanitizeSpeciesId's
+// species <= NUM_SPECIES allowance.
+EWRAM_DATA static u16 sSpeciesDexFlagSlotOffset[NUM_SPECIES + 1] = {0};
+EWRAM_DATA static bool8 sSpeciesDexFlagSlotOffsetBuilt = FALSE;
+
+static void BuildSpeciesDexFlagSlotOffsets(void)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sDexVariantFlagSlotSpecies); i++)
+        sSpeciesDexFlagSlotOffset[sDexVariantFlagSlotSpecies[i]] = i + 1;
+    sSpeciesDexFlagSlotOffsetBuilt = TRUE;
+}
+
 // Storage key for a species' Pokédex seen/caught bit. Regional-form species
 // in sDexVariantFlagSlotSpecies get their own slot above NATIONAL_DEX_COUNT;
 // everything else falls back to its National Dex number, same as before
 // those slots existed.
 u32 SpeciesToDexFlagSlot(enum Species species)
 {
-    u32 i;
+    u32 offset;
 
     // Totem/battle-only forms aren't tracked separately -- they're the same
     // catch as their listed form, just a different presentation of it.
@@ -5356,11 +5393,12 @@ u32 SpeciesToDexFlagSlot(enum Species species)
         break;
     }
 
-    for (i = 0; i < ARRAY_COUNT(sDexVariantFlagSlotSpecies); i++)
-    {
-        if (sDexVariantFlagSlotSpecies[i] == species)
-            return DEX_FLAG_SLOT_VARIANT_START + i;
-    }
+    if (!sSpeciesDexFlagSlotOffsetBuilt)
+        BuildSpeciesDexFlagSlotOffsets();
+
+    offset = sSpeciesDexFlagSlotOffset[species];
+    if (offset != 0)
+        return DEX_FLAG_SLOT_VARIANT_START + offset - 1;
 
     return SpeciesToNationalPokedexNum(species);
 }

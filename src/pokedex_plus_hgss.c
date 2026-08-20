@@ -1940,17 +1940,31 @@ static const enum Type sDexSearchTypeIds[NUMBER_OF_MON_TYPES] =
 
 // Number pairs are the task data for tracking the cursor pos and scroll offset of each option list
 // See task data defines above Task_LoadSearchMenu
-// Not const: BuildVisibleDexModeList() below rewrites the SEARCH_MODE entry's
-// texts/numOptions once per dex session to hide empty-generation modes.
-static struct SearchOption sSearchOptions[] =
+// Must stay const -- this file's .data isn't linked into the ROM image (see
+// ld_script_modern.ld), so a non-const initialized global here is silently
+// discarded and any code referencing it fails to link. SEARCH_MODE's texts
+// points at sVisibleDexModeOptions (a stable address, populated at runtime
+// by BuildVisibleDexModeList); its option *count* is genuinely dynamic, so
+// that one field is read through GetSearchOptionCount() instead of here.
+static const struct SearchOption sSearchOptions[] =
 {
     [SEARCH_NAME]       = {sDexSearchNameOptions,  6,  7, ARRAY_COUNT(sDexSearchNameOptions) - 1},
     [SEARCH_COLOR]      = {sDexSearchColorOptions, 8,  9, ARRAY_COUNT(sDexSearchColorOptions) - 1},
     [SEARCH_TYPE_LEFT]  = {sDexSearchTypeOptions, 10, 11, ARRAY_COUNT(sDexSearchTypeOptions) - 1},
     [SEARCH_TYPE_RIGHT] = {sDexSearchTypeOptions, 12, 13, ARRAY_COUNT(sDexSearchTypeOptions) - 1},
     [SEARCH_ORDER]      = {sDexOrderOptions,       4,  5, ARRAY_COUNT(sDexOrderOptions) - 1},
-    [SEARCH_MODE]       = {sDexModeOptions,        2,  3, ARRAY_COUNT(sDexModeOptions) - 1},
+    [SEARCH_MODE]       = {sVisibleDexModeOptions, 2,  3, DEX_MODE_COUNT}, // numOptions unused, see above
 };
+
+// SEARCH_MODE's option count changes at runtime (BuildVisibleDexModeList
+// hides modes for disabled generations); every other menu's count is fixed
+// at compile time and read straight from sSearchOptions.
+static u16 GetSearchOptionCount(u8 menuItem)
+{
+    if (menuItem == SEARCH_MODE)
+        return sVisibleDexModeCount;
+    return sSearchOptions[menuItem].numOptions;
+}
 
 static void BuildVisibleDexModeList(void)
 {
@@ -1967,9 +1981,6 @@ static void BuildVisibleDexModeList(void)
     }
     sVisibleDexModeOptions[sVisibleDexModeCount].description = NULL;
     sVisibleDexModeOptions[sVisibleDexModeCount].title = NULL;
-
-    sSearchOptions[SEARCH_MODE].texts = sVisibleDexModeOptions;
-    sSearchOptions[SEARCH_MODE].numOptions = sVisibleDexModeCount;
 }
 
 // Cursor position of a dex mode within the (possibly compacted) visible list.
@@ -8341,7 +8352,7 @@ static void Task_HandleSearchParameterInput(u8 taskId)
     texts = sSearchOptions[menuItem].texts;
     cursorPos = &gTasks[taskId].data[sSearchOptions[menuItem].taskDataCursorPos];
     scrollOffset = &gTasks[taskId].data[sSearchOptions[menuItem].taskDataScrollOffset];
-    maxOption = sSearchOptions[menuItem].numOptions - 1;
+    maxOption = GetSearchOptionCount(menuItem) - 1;
     if (JOY_NEW(A_BUTTON))
     {
         PlaySE(SE_PIN);
@@ -8734,7 +8745,7 @@ static bool8 SearchParamCantScrollUp(u8 taskId)
 {
     u8 menuItem = gTasks[taskId].tMenuItem;
     const s16 *scrollOffset = &gTasks[taskId].data[sSearchOptions[menuItem].taskDataScrollOffset];
-    u16 lastOption = sSearchOptions[menuItem].numOptions - 1;
+    u16 lastOption = GetSearchOptionCount(menuItem) - 1;
 
     if (lastOption > MAX_SEARCH_PARAM_CURSOR_POS && *scrollOffset != 0)
         return FALSE;
@@ -8746,7 +8757,7 @@ static bool8 SearchParamCantScrollDown(u8 taskId)
 {
     u8 menuItem = gTasks[taskId].tMenuItem;
     const s16 *scrollOffset = &gTasks[taskId].data[sSearchOptions[menuItem].taskDataScrollOffset];
-    u16 lastOption = sSearchOptions[menuItem].numOptions - 1;
+    u16 lastOption = GetSearchOptionCount(menuItem) - 1;
 
     if (lastOption > MAX_SEARCH_PARAM_CURSOR_POS && *scrollOffset < lastOption - MAX_SEARCH_PARAM_CURSOR_POS)
         return FALSE;
