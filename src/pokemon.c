@@ -5352,6 +5352,8 @@ u32 SpeciesToDexFlagSlot(enum Species species)
     case SPECIES_DARMANITAN_GALAR_ZEN:
         species = SPECIES_DARMANITAN_GALAR_STANDARD;
         break;
+    default:
+        break;
     }
 
     for (i = 0; i < ARRAY_COUNT(sDexVariantFlagSlotSpecies); i++)

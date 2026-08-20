@@ -1089,6 +1089,15 @@ enum NationalDexOrder
 #define DEX_VARIANT_FORM_IF(config, ...) CAT(DEX_VARIANT_FORM_IF_, config)(__VA_ARGS__)
 #define DEX_VARIANT_FORM_IF_0(...)
 #define DEX_VARIANT_FORM_IF_1(...) __VA_ARGS__
+// P_*_FORMS ultimately expand to TRUE/FALSE (include/gba/defines.h), which
+// this header's own asm/script preprocessing pass (data/event_scripts.s
+// includes this file directly) never pulls in -- see config/trade_code.h's
+// TRADE_CODES comment for the same gotcha. There, config lands on the
+// literal text "TRUE"/"FALSE" instead of "1"/"0", so CAT() must resolve to
+// these too. Treated as enabled/disabled respectively -- this enum's actual
+// values are never read by any script, only its syntax needs to stay valid.
+#define DEX_VARIANT_FORM_IF_TRUE(...) __VA_ARGS__
+#define DEX_VARIANT_FORM_IF_FALSE(...)
 
 // Regional-form species that get their own Pokédex flag slot instead of
 // sharing their base form's (Feature 2, Stage 5). Order fixes the slot

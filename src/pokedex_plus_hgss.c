@@ -7158,26 +7158,30 @@ static void PrintForms(u8 taskId, enum Species species)
             u8 iconX = 0, iconY = 0;
             sPokedexView->sFormScreenData.formIds[j++] = i;
             times += 1;
+            // data[4] holds the base icon; data[5..15] (11 slots, two rows of
+            // up to 6/5) hold form icons. A species with more forms than that
+            // (only Unown, with 27) stops getting icons here instead of
+            // overflowing task data.
+            if (times > 11)
+                continue;
             LoadMonIconPalettePersonality(speciesForm, personality); //Loads pallete for current mon
             if (times < 7)
             {
                 iconX = 52 + 34*(times-1);
                 iconY = 31;
-                gTasks[taskId].data[4+times] = CreateMonIcon(speciesForm, SpriteCB_MonIcon, iconX, iconY, 4, personality); //Create Pokémon sprite
             }
-            else if (times < 14)
+            else
             {
                 iconX = 18 + 34*(times-7);
                 iconY = 70 - y_offset_icons;
-                gTasks[taskId].data[4+times] = CreateMonIcon(speciesForm, SpriteCB_MonIcon, iconX, iconY, 4, personality); //Create Pokémon sprite
             }
+            gTasks[taskId].data[4+times] = CreateMonIcon(speciesForm, SpriteCB_MonIcon, iconX, iconY, 4, personality); //Create Pokémon sprite
             gSprites[gTasks[taskId].data[4+times]].oam.priority = 0;
-            if (times < 14)
-                CreateCaughtBallFormsScreen(speciesForm, iconX + FORM_BALL_X_OFFSET, iconY + FORM_BALL_Y_OFFSET);
+            CreateCaughtBallFormsScreen(speciesForm, iconX + FORM_BALL_X_OFFSET, iconY + FORM_BALL_Y_OFFSET);
         }
     }
-    gTasks[taskId].data[3] = times;
-    sPokedexView->sFormScreenData.numForms = times;
+    gTasks[taskId].data[3] = min(times, 11);
+    sPokedexView->sFormScreenData.numForms = min(times, 11);
 
     //If there are no forms print text
     if (times == 0)
