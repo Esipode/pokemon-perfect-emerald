@@ -539,6 +539,8 @@ static void DrawOrEraseSearchParameterBox(bool8);
 static void PrintSearchParameterText(u8);
 static u8 GetSearchModeSelection(u8 taskId, u8 option);
 static void SetDefaultSearchModeAndOrder(u8);
+static void BuildVisibleDexModeList(void);
+static u8 FindVisibleDexModeCursorPos(u8 dexMode);
 static void CreateSearchParameterScrollArrows(u8);
 static void EraseAndPrintSearchTextBox(const u8 *);
 static void EraseSelectorArrow(u32);
@@ -1892,19 +1894,16 @@ static const struct SearchOptionText sDexSearchTypeOptions[] =
     {},
 };
 
-static const u8 sPokedexModes[] =
-{
-    DEX_MODE_NATIONAL,
-    DEX_MODE_GEN_1,
-    DEX_MODE_GEN_2,
-    DEX_MODE_GEN_3,
-    DEX_MODE_GEN_4,
-    DEX_MODE_GEN_5,
-    DEX_MODE_GEN_6,
-    DEX_MODE_GEN_7,
-    DEX_MODE_GEN_8,
-    DEX_MODE_GEN_9,
-};
+// Modes for generations with no enabled species (P_GEN_N_POKEMON off) are
+// omitted from the mode picker rather than shown as an empty list. Built once
+// per dex session by BuildVisibleDexModeList() below sSearchOptions -- generation
+// availability is compile-time config, not a runtime toggle. Replaces the old
+// dense sPokedexModes[] identity table (cursor position == mode value), since
+// hiding modes means position and mode value can now differ.
+static struct SearchOptionText sVisibleDexModeOptions[DEX_MODE_COUNT + 1];
+static u8 sVisibleDexModes[DEX_MODE_COUNT];
+static u8 sVisibleDexModeCount;
+
 static const u8 sOrderOptions[] =
 {
     ORDER_NUMERICAL,
@@ -1940,7 +1939,9 @@ static const enum Type sDexSearchTypeIds[NUMBER_OF_MON_TYPES] =
 
 // Number pairs are the task data for tracking the cursor pos and scroll offset of each option list
 // See task data defines above Task_LoadSearchMenu
-static const struct SearchOption sSearchOptions[] =
+// Not const: BuildVisibleDexModeList() below rewrites the SEARCH_MODE entry's
+// texts/numOptions once per dex session to hide empty-generation modes.
+static struct SearchOption sSearchOptions[] =
 {
     [SEARCH_NAME]       = {sDexSearchNameOptions,  6,  7, ARRAY_COUNT(sDexSearchNameOptions) - 1},
     [SEARCH_COLOR]      = {sDexSearchColorOptions, 8,  9, ARRAY_COUNT(sDexSearchColorOptions) - 1},
@@ -1949,6 +1950,41 @@ static const struct SearchOption sSearchOptions[] =
     [SEARCH_ORDER]      = {sDexOrderOptions,       4,  5, ARRAY_COUNT(sDexOrderOptions) - 1},
     [SEARCH_MODE]       = {sDexModeOptions,        2,  3, ARRAY_COUNT(sDexModeOptions) - 1},
 };
+
+static void BuildVisibleDexModeList(void)
+{
+    u8 mode;
+
+    sVisibleDexModeCount = 0;
+    for (mode = 0; mode < DEX_MODE_COUNT; mode++)
+    {
+        if (mode != DEX_MODE_NATIONAL && GetDexModeEntryCount(mode) == 0)
+            continue;
+        sVisibleDexModeOptions[sVisibleDexModeCount] = sDexModeOptions[mode];
+        sVisibleDexModes[sVisibleDexModeCount] = mode;
+        sVisibleDexModeCount++;
+    }
+    sVisibleDexModeOptions[sVisibleDexModeCount].description = NULL;
+    sVisibleDexModeOptions[sVisibleDexModeCount].title = NULL;
+
+    sSearchOptions[SEARCH_MODE].texts = sVisibleDexModeOptions;
+    sSearchOptions[SEARCH_MODE].numOptions = sVisibleDexModeCount;
+}
+
+// Cursor position of a dex mode within the (possibly compacted) visible list.
+// Falls back to National's position (always 0, always visible) if the mode
+// isn't currently visible, e.g. a saved mode whose generation got disabled.
+static u8 FindVisibleDexModeCursorPos(u8 dexMode)
+{
+    u8 i;
+
+    for (i = 0; i < sVisibleDexModeCount; i++)
+    {
+        if (sVisibleDexModes[i] == dexMode)
+            return i;
+    }
+    return 0;
+}
 
 static const struct BgTemplate sSearchMenu_BgTemplate[] =
 {
@@ -2038,6 +2074,7 @@ void CB2_OpenPokedexPlusHGSS(void)
     case 2:
         sPokedexView = AllocZeroed(sizeof(struct PokedexView));
         ResetPokedexView(sPokedexView);
+        BuildVisibleDexModeList();
         CreateTask(Task_OpenPokedexMainPage, 0);
         sPokedexView->dexMode = SanitizeDexMode(gSaveBlock2Ptr->pokedex.mode);
         sPokedexView->dexOrder = gSaveBlock2Ptr->pokedex.order;
@@ -8512,8 +8549,10 @@ static void PrintSelectedSearchParameters(u8 taskId)
 
     if (IsNationalPokedexEnabled())
     {
+        // Indexes the compacted visible-mode list, not sDexModeOptions directly --
+        // cursor+scroll position is relative to whichever modes are shown.
         searchParamId = gTasks[taskId].tCursorPos_Mode + gTasks[taskId].tScrollOffset_Mode;
-        PrintSearchText(sDexModeOptions[searchParamId].title, 0x2D, 0x51);
+        PrintSearchText(sVisibleDexModeOptions[searchParamId].title, 0x2D, 0x51);
     }
 }
 
@@ -8579,7 +8618,7 @@ static u8 GetSearchModeSelection(u8 taskId, u8 option)
     default:
         return 0;
     case SEARCH_MODE:
-        return sPokedexModes[id];
+        return sVisibleDexModes[id];
     case SEARCH_ORDER:
         return sOrderOptions[id];
     case SEARCH_NAME:
@@ -8602,9 +8641,10 @@ static void SetDefaultSearchModeAndOrder(u8 taskId)
 {
     u16 selected;
 
-    // sPokedexModes[] is ordered 0..DEX_MODE_COUNT-1, so the mode value is
-    // already its own cursor position - just clamp a stale/invalid value.
-    gTasks[taskId].tCursorPos_Mode = SanitizeDexMode(sPokedexView->dexModeBackup);
+    // Mode value and cursor position can differ now that empty-generation
+    // modes are hidden, so look up where the saved mode landed in the
+    // visible list rather than assuming they're the same number.
+    gTasks[taskId].tCursorPos_Mode = FindVisibleDexModeCursorPos(SanitizeDexMode(sPokedexView->dexModeBackup));
 
     switch (sPokedexView->dexOrderBackup)
     {
