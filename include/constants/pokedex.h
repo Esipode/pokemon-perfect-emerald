@@ -1102,8 +1102,8 @@ enum NationalDexOrder
 // Regional-form species that get their own Pokédex flag slot instead of
 // sharing their base form's (Feature 2, Stage 5). Order fixes the slot
 // index -- append only, it's save data. This is the single list; both the
-// slot count below and sDexVariantFlagSlotSpecies (src/data/pokemon/
-// pokedex_variant_slots.h) are generated from it, so they can't drift apart.
+// slot count below and sSpeciesDexFlagSlotOffset (src/pokemon.c) are
+// generated from it, so they can't drift apart.
 // Totem forms and Galarian Darmanitan's Zen Mode are deliberately absent --
 // they're battle-only/event variants of a form already in this list, and are
 // remapped onto that form's slot in SpeciesToDexFlagSlot instead.
