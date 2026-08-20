@@ -7,7 +7,26 @@ MauvilleCity_GameCorner_MapScripts::
 	.set TM_FLAMETHROWER_COINS, 4000
 	.set TM_THUNDERBOLT_COINS, 4000
 	.set TM_ICE_BEAM_COINS, 4000
-	.set DOLL_COINS, 1000
+	@ Rare Pokemon prizes
+	@ Keep MultichoiceList_GameCornerMons in src/data/script_menu.h in sync with these.
+	.set PRIZE_MON_1_SPECIES, SPECIES_DRATINI
+	.set PRIZE_MON_1_LEVEL,   20
+	.set PRIZE_MON_1_COINS,   3000
+	.set PRIZE_MON_2_SPECIES, SPECIES_LARVITAR
+	.set PRIZE_MON_2_LEVEL,   20
+	.set PRIZE_MON_2_COINS,   4000
+	.set PRIZE_MON_3_SPECIES, SPECIES_BELDUM
+	.set PRIZE_MON_3_LEVEL,   20
+	.set PRIZE_MON_3_COINS,   5000
+	.set PRIZE_MON_4_SPECIES, SPECIES_ZORUA_HISUI
+	.set PRIZE_MON_4_LEVEL,   20
+	.set PRIZE_MON_4_COINS,   6000
+	.set PRIZE_MON_5_SPECIES, SPECIES_DRAMPA
+	.set PRIZE_MON_5_LEVEL,   20
+	.set PRIZE_MON_5_COINS,   7000
+	.set PRIZE_MON_6_SPECIES, SPECIES_PORYGON
+	.set PRIZE_MON_6_LEVEL,   20
+	.set PRIZE_MON_6_COINS,   8000
 
 	@ Expanded post badge 5 mega stone prizes
 	.set MEGA_BARBARACITE_COINS, 5000
@@ -126,114 +145,141 @@ MauvilleCity_GameCorner_EventScript_NoRoomForCoins::
 	release
 	end
 
-MauvilleCity_GameCorner_EventScript_PrizeCornerDolls::
+MauvilleCity_GameCorner_EventScript_PrizeCornerMons::
 	lock
 	faceplayer
 	msgbox MauvilleCity_GameCorner_Text_ExchangeCoinsForPrizes, MSGBOX_DEFAULT
 	checkitem ITEM_COIN_CASE
-	goto_if_eq VAR_RESULT, TRUE, MauvilleCity_GameCorner_EventScript_ChooseDollPrizeMessage
+	goto_if_eq VAR_RESULT, TRUE, MauvilleCity_GameCorner_EventScript_ChoosePrizeMonMessage
 	release
 	end
 
-MauvilleCity_GameCorner_EventScript_ChooseDollPrizeMessage::
+MauvilleCity_GameCorner_EventScript_ChoosePrizeMonMessage::
 	message MauvilleCity_GameCorner_Text_WhichPrize
 	waitmessage
-	setvar VAR_TEMP_1, 0
 	showcoinsbox 1, 1
-	goto MauvilleCity_GameCorner_EventScript_ChooseDollPrize
+	goto MauvilleCity_GameCorner_EventScript_ChoosePrizeMon
 
-MauvilleCity_GameCorner_EventScript_ReturnToChooseDollPrize::
+MauvilleCity_GameCorner_EventScript_ReturnToChoosePrizeMon::
 	message MauvilleCity_GameCorner_Text_WhichPrize
 	waitmessage
-	goto MauvilleCity_GameCorner_EventScript_ChooseDollPrize
+	goto MauvilleCity_GameCorner_EventScript_ChoosePrizeMon
 
-MauvilleCity_GameCorner_EventScript_ChooseDollPrize::
-	multichoice 12, 0, MULTI_GAME_CORNER_DOLLS, FALSE
+MauvilleCity_GameCorner_EventScript_ChoosePrizeMon::
+	multichoice 12, 0, MULTI_GAME_CORNER_MONS, FALSE
 	switch VAR_RESULT
-	case 0, MauvilleCity_GameCorner_EventScript_TreeckoDoll
-	case 1, MauvilleCity_GameCorner_EventScript_TorchicDoll
-	case 2, MauvilleCity_GameCorner_EventScript_MudkipDoll
-	case 3, MauvilleCity_GameCorner_EventScript_CancelDollSelect
-	goto MauvilleCity_GameCorner_EventScript_CancelDollSelect
+	case 0, MauvilleCity_GameCorner_EventScript_SelectPrizeMon1
+	case 1, MauvilleCity_GameCorner_EventScript_SelectPrizeMon2
+	case 2, MauvilleCity_GameCorner_EventScript_SelectPrizeMon3
+	case 3, MauvilleCity_GameCorner_EventScript_SelectPrizeMon4
+	case 4, MauvilleCity_GameCorner_EventScript_SelectPrizeMon5
+	case 5, MauvilleCity_GameCorner_EventScript_SelectPrizeMon6
+	case 6, MauvilleCity_GameCorner_EventScript_CancelPrizeMonSelect
+	goto MauvilleCity_GameCorner_EventScript_CancelPrizeMonSelect
 	end
 
-MauvilleCity_GameCorner_EventScript_TreeckoDoll::
-	setvar VAR_TEMP_1, 1
-	bufferdecorationname STR_VAR_1, DECOR_TREECKO_DOLL
-	goto MauvilleCity_GameCorner_EventScript_ConfirmDollPrize
+@ Each slot buffers its species/cost/level into temp vars, then falls through
+@ to the shared confirm/give flow below. VAR_TEMP_1 doubles as
+@ VAR_TEMP_TRANSFERRED_SPECIES, so no separate species var is needed for the
+@ PC-transfer message.
+MauvilleCity_GameCorner_EventScript_SelectPrizeMon1::
+	setvar VAR_TEMP_1, PRIZE_MON_1_SPECIES
+	setvar VAR_TEMP_2, PRIZE_MON_1_COINS
+	setvar VAR_TEMP_3, PRIZE_MON_1_LEVEL
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	goto MauvilleCity_GameCorner_EventScript_ConfirmPrizeMon
 
-MauvilleCity_GameCorner_EventScript_TorchicDoll::
-	setvar VAR_TEMP_1, 2
-	bufferdecorationname STR_VAR_1, DECOR_TORCHIC_DOLL
-	goto MauvilleCity_GameCorner_EventScript_ConfirmDollPrize
+MauvilleCity_GameCorner_EventScript_SelectPrizeMon2::
+	setvar VAR_TEMP_1, PRIZE_MON_2_SPECIES
+	setvar VAR_TEMP_2, PRIZE_MON_2_COINS
+	setvar VAR_TEMP_3, PRIZE_MON_2_LEVEL
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	goto MauvilleCity_GameCorner_EventScript_ConfirmPrizeMon
 
-MauvilleCity_GameCorner_EventScript_MudkipDoll::
-	setvar VAR_TEMP_1, 3
-	bufferdecorationname STR_VAR_1, DECOR_MUDKIP_DOLL
-	goto MauvilleCity_GameCorner_EventScript_ConfirmDollPrize
+MauvilleCity_GameCorner_EventScript_SelectPrizeMon3::
+	setvar VAR_TEMP_1, PRIZE_MON_3_SPECIES
+	setvar VAR_TEMP_2, PRIZE_MON_3_COINS
+	setvar VAR_TEMP_3, PRIZE_MON_3_LEVEL
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	goto MauvilleCity_GameCorner_EventScript_ConfirmPrizeMon
 
-MauvilleCity_GameCorner_EventScript_ConfirmDollPrize::
+MauvilleCity_GameCorner_EventScript_SelectPrizeMon4::
+	setvar VAR_TEMP_1, PRIZE_MON_4_SPECIES
+	setvar VAR_TEMP_2, PRIZE_MON_4_COINS
+	setvar VAR_TEMP_3, PRIZE_MON_4_LEVEL
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	goto MauvilleCity_GameCorner_EventScript_ConfirmPrizeMon
+
+MauvilleCity_GameCorner_EventScript_SelectPrizeMon5::
+	setvar VAR_TEMP_1, PRIZE_MON_5_SPECIES
+	setvar VAR_TEMP_2, PRIZE_MON_5_COINS
+	setvar VAR_TEMP_3, PRIZE_MON_5_LEVEL
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	goto MauvilleCity_GameCorner_EventScript_ConfirmPrizeMon
+
+MauvilleCity_GameCorner_EventScript_SelectPrizeMon6::
+	setvar VAR_TEMP_1, PRIZE_MON_6_SPECIES
+	setvar VAR_TEMP_2, PRIZE_MON_6_COINS
+	setvar VAR_TEMP_3, PRIZE_MON_6_LEVEL
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	goto MauvilleCity_GameCorner_EventScript_ConfirmPrizeMon
+
+MauvilleCity_GameCorner_EventScript_ConfirmPrizeMon::
 	msgbox MauvilleCity_GameCorner_Text_SoYourChoiceIsX, MSGBOX_YESNO
-	goto_if_eq VAR_RESULT, NO, MauvilleCity_GameCorner_EventScript_CancelDollSelect
-	switch VAR_TEMP_1
-	case 1, MauvilleCity_GameCorner_EventScript_BuyTreeckoDoll
-	case 2, MauvilleCity_GameCorner_EventScript_BuyTorchicDoll
-	case 3, MauvilleCity_GameCorner_EventScript_BuyMudkipDoll
+	goto_if_eq VAR_RESULT, NO, MauvilleCity_GameCorner_EventScript_CancelPrizeMonSelect
+	checkcoins VAR_RESULT
+	goto_if_lt VAR_RESULT, VAR_TEMP_2, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForMon
+	givemon VAR_TEMP_1, VAR_TEMP_3
+	goto_if_eq VAR_RESULT, MON_GIVEN_TO_PARTY, MauvilleCity_GameCorner_EventScript_ReceivedPrizeMonParty
+	goto_if_eq VAR_RESULT, MON_GIVEN_TO_PC, MauvilleCity_GameCorner_EventScript_ReceivedPrizeMonPC
+	goto MauvilleCity_GameCorner_EventScript_NoRoomForPrizeMon
 	end
 
-MauvilleCity_GameCorner_EventScript_BuyTreeckoDoll::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, DOLL_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForDoll
-	bufferdecorationname STR_VAR_2, DECOR_TREECKO_DOLL
-	checkdecorspace DECOR_TREECKO_DOLL
-	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForDoll
-	removecoins DOLL_COINS
-	adddecoration DECOR_TREECKO_DOLL
+MauvilleCity_GameCorner_EventScript_ReceivedPrizeMonParty::
+	removecoins VAR_TEMP_2
 	updatecoinsbox 1, 1
-	playse SE_SHOP
-	msgbox MauvilleCity_GameCorner_Text_SendToYourHomePC, MSGBOX_DEFAULT
-	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseDollPrize
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	playfanfare MUS_LEVEL_UP
+	message gText_PlayerObtainedTheMon
+	waitmessage
+	waitfanfare
+	msgbox gText_NicknameThisPokemon, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, MauvilleCity_GameCorner_EventScript_ReturnToChoosePrizeMon
+	call Common_EventScript_GetGiftMonPartySlot
+	call Common_EventScript_NameReceivedPartyMon
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChoosePrizeMon
 	end
 
-MauvilleCity_GameCorner_EventScript_BuyTorchicDoll::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, DOLL_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForDoll
-	bufferdecorationname STR_VAR_2, DECOR_TORCHIC_DOLL
-	checkdecorspace DECOR_TORCHIC_DOLL
-	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForDoll
-	removecoins DOLL_COINS
-	adddecoration DECOR_TORCHIC_DOLL
+MauvilleCity_GameCorner_EventScript_ReceivedPrizeMonPC::
+	removecoins VAR_TEMP_2
 	updatecoinsbox 1, 1
-	playse SE_SHOP
-	msgbox MauvilleCity_GameCorner_Text_SendToYourHomePC, MSGBOX_DEFAULT
-	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseDollPrize
+	bufferspeciesname STR_VAR_1, VAR_TEMP_1
+	playfanfare MUS_LEVEL_UP
+	message gText_PlayerObtainedTheMon
+	waitmessage
+	waitfanfare
+	msgbox gText_NicknameThisPokemon, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, MauvilleCity_GameCorner_EventScript_PrizeMonTransferredToPC
+	call Common_EventScript_NameReceivedBoxMon
+	goto MauvilleCity_GameCorner_EventScript_PrizeMonTransferredToPC
 	end
 
-MauvilleCity_GameCorner_EventScript_BuyMudkipDoll::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, DOLL_COINS, MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForDoll
-	bufferdecorationname STR_VAR_2, DECOR_MUDKIP_DOLL
-	checkdecorspace DECOR_MUDKIP_DOLL
-	goto_if_eq VAR_RESULT, FALSE, MauvilleCity_GameCorner_EventScript_NoRoomForDoll
-	removecoins DOLL_COINS
-	adddecoration DECOR_MUDKIP_DOLL
-	updatecoinsbox 1, 1
-	playse SE_SHOP
-	msgbox MauvilleCity_GameCorner_Text_SendToYourHomePC, MSGBOX_DEFAULT
-	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseDollPrize
+MauvilleCity_GameCorner_EventScript_PrizeMonTransferredToPC::
+	call Common_EventScript_TransferredToPC
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChoosePrizeMon
 	end
 
-MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForDoll::
+MauvilleCity_GameCorner_EventScript_NotEnoughCoinsForMon::
 	msgbox MauvilleCity_GameCorner_Text_NotEnoughCoins, MSGBOX_DEFAULT
-	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseDollPrize
+	goto MauvilleCity_GameCorner_EventScript_ReturnToChoosePrizeMon
 	end
 
-MauvilleCity_GameCorner_EventScript_NoRoomForDoll::
-	call Common_EventScript_NoRoomForDecor
-	goto MauvilleCity_GameCorner_EventScript_ReturnToChooseDollPrize
+MauvilleCity_GameCorner_EventScript_NoRoomForPrizeMon::
+	hidecoinsbox 0, 0
+	goto Common_EventScript_NoMoreRoomForPokemon
 	end
 
-MauvilleCity_GameCorner_EventScript_CancelDollSelect::
+MauvilleCity_GameCorner_EventScript_CancelPrizeMonSelect::
 	msgbox MauvilleCity_GameCorner_Text_OhIsThatSo, MSGBOX_DEFAULT
 	hidecoinsbox 0, 0
 	release
@@ -1216,6 +1262,7 @@ MauvilleCity_GameCorner_Text_SoYourChoiceIsTheTMX:
 	.string "So your choice is\n"
 	.string "the {STR_VAR_1} {STR_VAR_2}?$"
 
+@ Unused (dolls used to be sent straight to the PC without a nickname prompt)
 MauvilleCity_GameCorner_Text_SendToYourHomePC:
 	.string "Thank you!\n"
 	.string "We'll send it to your PC at home.$"
