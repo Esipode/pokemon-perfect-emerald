@@ -26,10 +26,9 @@
 #define I_REUSABLE_TMS          TRUE       // In Gen5-8, TMs are reusable. Setting this to TRUE will make all vanilla TMs reusable, though they can also be cherry-picked by setting their importance to 1.
 
 // Exp. Share config
-// To use this feature, replace the 0 with the flag ID you're assigning it to.
-// Eg: Replace with FLAG_UNUSED_0x264 so you can use that flag to toggle the feature.
-#define I_EXP_SHARE_FLAG        FLAG_GEN_6_EXP_SHARE // If this flag is set, every Pokémon in the party will gain experience, regardless if they participated in the battle or not.
-#define I_EXP_SHARE_ITEM        GEN_LATEST           // In Gen6+, the Exp. Share was changed from a held item to a Key item that toggles the effect described above.
+// Whether the whole party gains exp is a SaveBlock2 option (gSaveBlock2Ptr->optionsExpShare,
+// toggleable in the options menu, on by default), not a flag.
+#define I_EXP_SHARE_ITEM        GEN_LATEST // In Gen6+, the Exp. Share was changed from a held item to a Key item that toggles the effect described above.
 
 // Repel/Lure config
 // These two settings are both independent and complementary.

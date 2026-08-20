@@ -3630,8 +3630,6 @@ static void Cmd_jumpbasedontype(void)
     }
 }
 
-FEATURE_FLAG_ASSERT(I_EXP_SHARE_FLAG, YouNeedToSetTheExpShareFlagToAnUnusedFlag);
-
 static bool32 BattleTypeAllowsExp(void)
 {
     if (RECORDED_WILD_BATTLE)
@@ -11186,6 +11184,10 @@ void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBat
         *expAmount = (*expAmount * 4915) / 4096;
     if (CheckBagHasItem(ITEM_EXP_CHARM, 1)) //is also for other exp boosting Powers if/when implemented
         *expAmount = (*expAmount * 150) / 100;
+    // Exp Share option off: no free exp for the rest of the party, so the
+    // mon that actually fought gets a flat 25% more to compensate.
+    if (!IsGen6ExpShareEnabled() && (gBattleStruct->expSentInMons & (1u << expGetterMonId)))
+        *expAmount = (*expAmount * 125) / 100;
 
     {
         // Custom - Linear level-difference scaling: +10% exp per level the

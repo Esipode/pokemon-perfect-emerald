@@ -666,7 +666,7 @@
 
 // Mega Stones and Z-Crystals will use existing unused `FLAG_ITEM_` slots
 // to avoid adding new hidden-item flags. See item flag region below.
-#define FLAG_GEN_6_EXP_SHARE             0x264 // Toggles Gen 6 style exp share
+#define FLAG_UNUSED_0x264                0x264 // Unused Flag
 #define FLAG_DEXNAV_SEARCHING            0x265 // Toggles if dexnav is searching for pokemon
 #define FLAG_DEXNAV_IN_MENU              0x266 // Toggles dexnav in the start menu
 #define FLAG_DEXNAV_FIND_HIDDEN          0x267 // Toggles dexnav allowing finding hidden pokemon

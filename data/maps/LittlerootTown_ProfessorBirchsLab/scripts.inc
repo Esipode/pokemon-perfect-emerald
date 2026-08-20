@@ -520,7 +520,6 @@ LittlerootTown_ProfessorBirchsLab_EventScript_GivePokedex::
 	setvar VAR_LITTLEROOT_TOWN_STATE, 3
 	setflag FLAG_SYS_NATIONAL_DEX
 	setflag FLAG_DEXNAV_IN_MENU
-	setflag FLAG_GEN_6_EXP_SHARE
 	setflag FLAG_NUZLOCKE_CATCH_MODE
 	special EnableNationalPokedex
 	releaseall

@@ -121,6 +121,7 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsBattleStyle = OPTIONS_BATTLE_STYLE_SHIFT;
     gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
+    gSaveBlock2Ptr->optionsExpShare = TRUE;
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     // Offline trade codes (trade_code.h): explicit alongside the memset
     // above, even though ClearSav2() (called just before this, in
@@ -482,6 +483,11 @@ void NewGameInitData(void)
             ResetPokemonStorageSystem();
         gPartiesCount[B_TRAINER_PLAYER] = 0;
         NewGameInitPCItems();
+        // Exp Share defaults on for every fresh (non-NG+) playthrough, not just a
+        // truly blank .sav -- SetDefaultOptions() alone only covers the latter,
+        // since NewGameInitData() otherwise leaves SaveBlock2's options untouched
+        // across a New Game started over an existing save.
+        gSaveBlock2Ptr->optionsExpShare = TRUE;
         // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
         gSaveBlock2Ptr->newGamePlus = 0;
         ResetItemFlags();

@@ -2,6 +2,7 @@
 #include "option_menu.h"
 #include "achievements.h"
 #include "ai_battles.h"
+#include "battle_util.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
@@ -41,6 +42,7 @@ static void DrawOptionsPg3(u8 taskId);
 #define AUTOSAVE_SHIFT         8
 #define ACHIEVEMENT_BOOSTS_SHIFT 9
 #define ROUTE_TRACKER_SHIFT    10
+#define EXP_SHARE_SHIFT        11
 
 #define tPackedFlags          data[6]  // booleans packed into 16 bits
 
@@ -80,6 +82,7 @@ enum
 enum
 {
     MENUITEM_ROUTE_TRACKER,
+    MENUITEM_EXPSHARE,
     MENUITEM_CANCEL_PG3,
     MENUITEM_COUNT_PG3,
 };
@@ -106,6 +109,7 @@ enum
 
 //Pg3
 #define YPOS_ROUTE_TRACKER        (MENUITEM_ROUTE_TRACKER * 16)
+#define YPOS_EXPSHARE             (MENUITEM_EXPSHARE * 16)
 
 #define PAGE_COUNT 3
 
@@ -137,6 +141,8 @@ static u8   AchievementBoosts_ProcessInput(u8 selection);
 static void AchievementBoosts_DrawChoices(u8 selection, bool8 isActive);
 static u8   RouteTracker_ProcessInput(u8 selection);
 static void RouteTracker_DrawChoices(u8 selection, bool8 isActive);
+static u8   ExpShareOption_ProcessInput(u8 selection);
+static void ExpShareOption_DrawChoices(u8 selection, bool8 isActive);
 static u8 Sound_ProcessInput(u8 selection);
 static void Sound_DrawChoices(u8 selection, bool8 isActive);
 static u8 FrameType_ProcessInput(u8 selection);
@@ -202,6 +208,10 @@ static const u8 gText_AchievementBoostsOn[]  = _("{COLOR GREEN}{SHADOW LIGHT_GRE
 // Page 3 strings
 static const u8 gText_RouteTrackerOff[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_RouteTrackerOn[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
+// Named distinctly from strings.h's gText_ExpShareOn/Off (those are full
+// field messages for the Exp. Share key item, not option-row value labels).
+static const u8 gText_ExpShareOptionOff[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
+static const u8 gText_ExpShareOptionOn[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
 
 static const u8 sText_ChevronLeft[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
@@ -235,6 +245,7 @@ static const u8 *const sOptionMenuItemsNames_Pg2[MENUITEM_COUNT_PG2] =
 static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
 {
     [MENUITEM_ROUTE_TRACKER] = COMPOUND_STRING("ROUTE TRACKER"),
+    [MENUITEM_EXPSHARE]      = COMPOUND_STRING("EXP SHARE"),
     [MENUITEM_CANCEL_PG3]    = COMPOUND_STRING("CANCEL"),
 };
 
@@ -315,6 +326,7 @@ static void ReadAllCurrentSettings(u8 taskId)
     if (gSaveBlock1Ptr->autosaveModeEnabled)       SET_FLAG(AUTOSAVE, 1); else SET_FLAG(AUTOSAVE, 0);
     if (Achievement_BoostsEnabled())               SET_FLAG(ACHIEVEMENT_BOOSTS, 1); else SET_FLAG(ACHIEVEMENT_BOOSTS, 0);
     if (gSaveBlock2Ptr->optionsRouteTracker)       SET_FLAG(ROUTE_TRACKER, 1); else SET_FLAG(ROUTE_TRACKER, 0);
+    if (IsGen6ExpShareEnabled())                   SET_FLAG(EXP_SHARE, 1); else SET_FLAG(EXP_SHARE, 0);
 }
 
 static void DrawOptionsPg1(u8 taskId)
@@ -351,6 +363,7 @@ static void DrawOptionsPg3(u8 taskId)
     u8 sel = gTasks[taskId].tMenuSelection;
 
     RouteTracker_DrawChoices(GET_FLAG(ROUTE_TRACKER), sel == MENUITEM_ROUTE_TRACKER);
+    ExpShareOption_DrawChoices(GET_FLAG(EXP_SHARE), sel == MENUITEM_EXPSHARE);
     HighlightOptionMenuItem(sel);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -745,9 +758,20 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
     {
         gTasks[taskId].func = Task_OptionMenuSave;
     }
-    else if (JOY_NEW(DPAD_UP) || JOY_NEW(DPAD_DOWN))
+    else if (JOY_NEW(DPAD_UP))
     {
-        gTasks[taskId].tMenuSelection ^= 1;
+        if (gTasks[taskId].tMenuSelection > 0)
+            gTasks[taskId].tMenuSelection--;
+        else
+            gTasks[taskId].tMenuSelection = MENUITEM_CANCEL_PG3;
+        DrawOptionsPg3(taskId);
+    }
+    else if (JOY_NEW(DPAD_DOWN))
+    {
+        if (gTasks[taskId].tMenuSelection < MENUITEM_CANCEL_PG3)
+            gTasks[taskId].tMenuSelection++;
+        else
+            gTasks[taskId].tMenuSelection = 0;
         DrawOptionsPg3(taskId);
     }
     else
@@ -762,6 +786,13 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
 
             if (previousOption != GET_FLAG(ROUTE_TRACKER))
                 RouteTracker_DrawChoices(GET_FLAG(ROUTE_TRACKER), TRUE);
+            break;
+        case MENUITEM_EXPSHARE:
+            previousOption = GET_FLAG(EXP_SHARE);
+            gTasks[taskId].tPackedFlags = (gTasks[taskId].tPackedFlags & ~(1 << EXP_SHARE_SHIFT)) | (ExpShareOption_ProcessInput(previousOption) << EXP_SHARE_SHIFT);
+
+            if (previousOption != GET_FLAG(EXP_SHARE))
+                ExpShareOption_DrawChoices(GET_FLAG(EXP_SHARE), TRUE);
             break;
         default:
             return;
@@ -800,6 +831,8 @@ static void CommitPendingOptionSettings(u8 taskId)
         Achievement_FlushProfile();
     }
     gSaveBlock2Ptr->optionsRouteTracker = GET_FLAG(ROUTE_TRACKER);
+    // Same field the Exp. Share key item toggles (IsGen6ExpShareEnabled), so both controls stay in sync.
+    gSaveBlock2Ptr->optionsExpShare = GET_FLAG(EXP_SHARE);
 }
 
 static void Task_OptionMenuSave(u8 taskId)
@@ -1158,6 +1191,24 @@ static void RouteTracker_DrawChoices(u8 selection, bool8 isActive)
     static const u8 *const sTexts[2] = {gText_RouteTrackerOff, gText_RouteTrackerOn};
 
     DrawOptionMenuValue(sTexts[selection], YPOS_ROUTE_TRACKER, isActive);
+}
+
+static u8 ExpShareOption_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+        sArrowPressed = TRUE;
+    }
+
+    return selection;
+}
+
+static void ExpShareOption_DrawChoices(u8 selection, bool8 isActive)
+{
+    static const u8 *const sTexts[2] = {gText_ExpShareOptionOff, gText_ExpShareOptionOn};
+
+    DrawOptionMenuValue(sTexts[selection], YPOS_EXPSHARE, isActive);
 }
 
 static void DrawHeaderText(void)
