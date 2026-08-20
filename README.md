@@ -35,6 +35,7 @@
 	- Show evolution requirements for each (seen) Pokémon
 	- Show compatible moves and how they can be learned (Level, TM/HM, Move Tutor, Egg)
 	- Show base stats, catch rate, XP curve, abilities, etc.
+	- Show partial caught status (for regional forms)
 
 ## Optional Features
 - Keep Storage between New Games
