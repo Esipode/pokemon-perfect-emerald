@@ -3108,7 +3108,10 @@ static enum Species GetRandomDifferentSpeciesSeenByPlayer(enum Species excludedS
         u32 tmp = gSaveBlock1Ptr->dexSeen[i];
         for (u32 j = 0; j < 8; j++)
         {
-            if (tmp & 1)
+            // Bit position doubles as a National Dex number here, so bits
+            // above NATIONAL_DEX_COUNT (regional-form flag slots) must be
+            // skipped -- they aren't dex numbers.
+            if ((tmp & 1) && i * 8 + j + 1 <= NATIONAL_DEX_COUNT)
                 natDexArray[count++] = i * 8 + j + 1;
             tmp >>= 1;
         }

@@ -495,6 +495,7 @@ const struct NatureInfo gNaturesInfo[NUM_NATURES] =
 #include "data/object_events/object_event_pic_tables_followers.h"
 
 #include "data/pokemon/species_info.h"
+#include "data/pokemon/pokedex_variant_slots.h"
 
 #define PP_UP_SHIFTS(val)           val,        (val) << 2,        (val) << 4,        (val) << 6
 #define PP_UP_SHIFTS_INV(val) (u8)~(val), (u8)~((val) << 2), (u8)~((val) << 4), (u8)~((val) << 6)
@@ -5330,11 +5331,35 @@ enum NationalDexOrder SpeciesToNationalPokedexNum(enum Species species)
     return gSpeciesInfo[species].natDexNum;
 }
 
-// Storage key for a species' Pokédex seen/caught bit. Equal to the National
-// Dex number today; regional-form species will route to their own slot above
-// NATIONAL_DEX_COUNT instead of collapsing onto their base form's slot.
+// Storage key for a species' Pokédex seen/caught bit. Regional-form species
+// in sDexVariantFlagSlotSpecies get their own slot above NATIONAL_DEX_COUNT;
+// everything else falls back to its National Dex number, same as before
+// those slots existed.
 u32 SpeciesToDexFlagSlot(enum Species species)
 {
+    u32 i;
+
+    // Totem/battle-only forms aren't tracked separately -- they're the same
+    // catch as their listed form, just a different presentation of it.
+    switch (species)
+    {
+    case SPECIES_RATICATE_ALOLA_TOTEM:
+        species = SPECIES_RATICATE_ALOLA;
+        break;
+    case SPECIES_MAROWAK_ALOLA_TOTEM:
+        species = SPECIES_MAROWAK_ALOLA;
+        break;
+    case SPECIES_DARMANITAN_GALAR_ZEN:
+        species = SPECIES_DARMANITAN_GALAR_STANDARD;
+        break;
+    }
+
+    for (i = 0; i < ARRAY_COUNT(sDexVariantFlagSlotSpecies); i++)
+    {
+        if (sDexVariantFlagSlotSpecies[i] == species)
+            return DEX_FLAG_SLOT_VARIANT_START + i;
+    }
+
     return SpeciesToNationalPokedexNum(species);
 }
 

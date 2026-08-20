@@ -4537,12 +4537,44 @@ s8 GetSetPokedexFlag(enum NationalDexOrder nationalDexNo, u8 caseID)
 }
 
 // Species-keyed wrapper around GetSetPokedexFlag -- the entry point for
-// callers that have a species rather than a raw dex number. Currently
-// equivalent to SpeciesToNationalPokedexNum; regional-form species will
-// route to their own slot once one exists.
+// callers that have a species rather than a raw dex number. Regional-form
+// species route to their own slot via SpeciesToDexFlagSlot; everything else
+// is equivalent to SpeciesToNationalPokedexNum.
 s8 GetSetPokedexFlagBySpecies(enum Species species, u8 caseID)
 {
     return GetSetPokedexFlag(SpeciesToDexFlagSlot(species), caseID);
+}
+
+// Per-row completion across a species' regional-form variants, for the
+// three-state caught indicator. DEX_CAUGHT_NONE == 0, so existing
+// `if (owned)` / `owned ? x : y` call sites keep working unchanged -- only
+// sites that want to distinguish partial from full need to check the enum.
+enum DexCaughtState GetDexEntryCaughtState(enum Species baseSpecies)
+{
+    const u16 *formTable = GetSpeciesFormTable(baseSpecies);
+    u32 total = 0;
+    u32 caught = 0;
+    u32 i;
+
+    if (formTable == NULL)
+        return GetSetPokedexFlagBySpecies(baseSpecies, FLAG_GET_CAUGHT) ? DEX_CAUGHT_ALL : DEX_CAUGHT_NONE;
+
+    for (i = 0; formTable[i] != FORM_SPECIES_END; i++)
+    {
+        enum Species formSpecies = formTable[i];
+        if (formSpecies != baseSpecies && !IsSpeciesRegionalForm(formSpecies))
+            continue;
+
+        total++;
+        if (GetSetPokedexFlagBySpecies(formSpecies, FLAG_GET_CAUGHT))
+            caught++;
+    }
+
+    if (caught == 0)
+        return DEX_CAUGHT_NONE;
+    if (caught == total)
+        return DEX_CAUGHT_ALL;
+    return DEX_CAUGHT_PARTIAL;
 }
 
 // Clamps a stored/selected dex mode to a valid value. gSaveBlock2Ptr->pokedex.mode

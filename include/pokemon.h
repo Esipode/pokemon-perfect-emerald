@@ -1028,6 +1028,7 @@ void TrySetDayLimitToFormChange(struct Pokemon *mon);
 enum Type CheckDynamicMoveType(struct Pokemon *mon, enum Move move, enum BattlerId battler, enum MonState state);
 uq4_12_t GetDynamaxLevelHPMultiplier(u32 dynamaxLevel, bool32 inverseMultiplier);
 u32 GetRegionalFormByRegion(enum Species species, u32 region);
+bool32 IsSpeciesRegionalForm(enum Species species);
 bool32 IsSpeciesForeignRegionalForm(enum Species species, u32 currentRegion);
 bool32 SpeciesHasRegionalForm(enum Species species);
 enum Type GetTeraTypeFromPersonality(struct Pokemon *mon);

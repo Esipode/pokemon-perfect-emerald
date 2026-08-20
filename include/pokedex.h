@@ -15,6 +15,15 @@ u32 Pokedex_CreateCaughtMonSprite(enum Species species, s32 x, s32 y);
 s8 GetSetPokedexFlag(enum NationalDexOrder nationalDexNo, u8 caseID);
 u32 SpeciesToDexFlagSlot(enum Species species);
 s8 GetSetPokedexFlagBySpecies(enum Species species, u8 caseID);
+
+enum DexCaughtState
+{
+    DEX_CAUGHT_NONE,      // keeps existing `if (owned)` tests working
+    DEX_CAUGHT_PARTIAL,
+    DEX_CAUGHT_ALL,
+};
+enum DexCaughtState GetDexEntryCaughtState(enum Species baseSpecies);
+
 bool32 IsSpeciesInDexMode(enum Species species, u8 dexMode);
 u32 GetDexModeEntryCount(u8 dexMode);
 u8 SanitizeDexMode(u8 dexMode);
