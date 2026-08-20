@@ -5374,6 +5374,34 @@ enum NationalDexOrder HoennToNationalOrder(enum HoennDexOrder hoennNum)
     return sHoennToNationalOrder[hoennNum - 1];
 }
 
+// Membership test for the Pokédex mode selector (National plus one dex per
+// generation). Reuses the Mono Gen generation classifier, which already
+// resolves regional/battle-only forms to the generation that introduced the
+// form rather than the base species' dex slot.
+bool32 IsSpeciesInDexMode(enum Species species, u8 dexMode)
+{
+    if (dexMode == DEX_MODE_NATIONAL)
+        return TRUE;
+    return MonoGen_GetSpeciesGeneration(species) == dexMode;
+}
+
+// Denominator for a dex mode's X/Y seen/owned display.
+u32 GetDexModeEntryCount(u8 dexMode)
+{
+    enum NationalDexOrder dexNum;
+    u32 count = 0;
+
+    if (dexMode == DEX_MODE_NATIONAL)
+        return NATIONAL_DEX_COUNT;
+
+    for (dexNum = 1; dexNum <= NATIONAL_DEX_COUNT; dexNum++)
+    {
+        if (IsSpeciesInDexMode(NationalPokedexNumToSpecies(dexNum), dexMode))
+            count++;
+    }
+    return count;
+}
+
 void EvolutionRenameMon(struct Pokemon *mon, enum Species oldSpecies, enum Species newSpecies)
 {
     u8 language;

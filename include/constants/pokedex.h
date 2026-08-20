@@ -1306,7 +1306,11 @@ enum NationalDexOrder
     F(JIRACHI) \
     F(DEOXYS)
 
-// Hoenn Pokédex order
+// Hoenn Pokédex order. Not a dex mode (the mode selector browses generation
+// ranges instead - see DEX_MODE_GEN_3); this authentic 211-entry order still
+// defines the completion set behind the Johto starter unlock, the Lilycove
+// diploma and a trainer card star, so it stays even though nothing displays
+// it as a list anymore.
 enum HoennDexOrder
 {
     HOENN_DEX_NONE,
@@ -1549,10 +1553,22 @@ enum KantoDexOrder
 #define DEX_HGSS_Y_BOTTOM_PADDING      4
 #define DEX_HGSS_MEASUREMENT_X_PADDING 51
 
+// DEX_MODE_GEN_n must equal n so a mode value doubles as a generation number
+// (see IsSpeciesInDexMode). Saved as gSaveBlock2Ptr->pokedex.mode (a u8),
+// which is just a remembered UI preference -- see SanitizeDexMode.
 enum
 {
-    DEX_MODE_HOENN,
-    DEX_MODE_NATIONAL
+    DEX_MODE_NATIONAL,
+    DEX_MODE_GEN_1,   // Kanto
+    DEX_MODE_GEN_2,   // Johto
+    DEX_MODE_GEN_3,   // Hoenn
+    DEX_MODE_GEN_4,   // Sinnoh
+    DEX_MODE_GEN_5,   // Unova
+    DEX_MODE_GEN_6,   // Kalos
+    DEX_MODE_GEN_7,   // Alola
+    DEX_MODE_GEN_8,   // Galar
+    DEX_MODE_GEN_9,   // Paldea
+    DEX_MODE_COUNT
 };
 
 enum
