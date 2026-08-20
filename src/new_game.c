@@ -356,6 +356,11 @@ void NewGameInitData(void)
     // Never TRUE for New Game+ -- that path already
     // preserves the PC via its own backup/restore below.
     bool32 keepStorage = !isNewGamePlus && gKeepStorageOnNewGame && gSaveFileStatus == SAVE_STATUS_OK;
+    // Read before ClearSav1() wipes every SaveBlock1 flag below, and restored
+    // after it for a plain New Game (New Game+ already backs up/restores this
+    // same flag further down) -- otherwise starting a new game over an
+    // existing save would silently turn Auto-Scroll Text back off.
+    bool8 autoScrollTextBackup = FlagGet(FLAG_AUTO_SCROLL_TEXT);
 
 #if IS_FRLG
     u8 rivalName[PLAYER_NAME_LENGTH + 1];
@@ -515,6 +520,10 @@ void NewGameInitData(void)
         SetMoney(&gSaveBlock1Ptr->money, 5000);
         DeactivateAllRoamers();
         SetCoins(0);
+        if (autoScrollTextBackup)
+            FlagSet(FLAG_AUTO_SCROLL_TEXT);
+        else
+            FlagClear(FLAG_AUTO_SCROLL_TEXT);
     }
     ClearSav3();
     ClearAllMail();
