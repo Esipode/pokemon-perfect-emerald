@@ -11478,7 +11478,6 @@ void BS_ItemRabutaBerry(void)
     {
         AdjustFriendship(mon, FRIENDSHIP_EVENT_BATTLE_ITEM);
         gBattleMons[gBattlerAttacker].friendship = GetMonData(mon, MON_DATA_FRIENDSHIP);
-        SetBattlerMonData(gBattlerAttacker, GetBattlerParty(gBattlerAttacker), gBattlerPartyIndexes[gBattlerAttacker]);
     }
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
