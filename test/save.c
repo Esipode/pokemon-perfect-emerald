@@ -93,7 +93,15 @@
 // 544 offset within SaveBlock2 as before, by the identical reasoning above.
 // 544 + 200 = 744, itself already a multiple of 4, so no further trailing
 // pad is added. Calculated, not yet confirmed by a real build.
-#define T_SAVEBLOCK1_SIZE 7504
+//
+// Pokedex Expansion Feature 2, Stage 5 (57 regional-form flag slots): grows
+// dexSeen/dexCaught from 129 to 136 bytes each (POKEMON_SLOTS_NUMBER 1026 ->
+// 1083, ROUND_BITS_TO_BYTES(1083) = 136). Both arrays are u8[], so the extra
+// 7 bytes each need no alignment padding: 7504 + 7 + 7 = 7518. Calculated
+// under the default species config (all regional-form families enabled, same
+// as test.h); toggling a P_*_FORMS off shifts this number, per the slot
+// table's own comment. Not yet confirmed by a real build.
+#define T_SAVEBLOCK1_SIZE 7518
 #define T_SAVEBLOCK2_SIZE 744
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 67900
