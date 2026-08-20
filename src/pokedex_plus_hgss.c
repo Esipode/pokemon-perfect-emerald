@@ -7110,6 +7110,21 @@ static void Task_HandleFormsScreenInput(u8 taskId)
 
 #define FORM_SPECIES_END (0xffff)
 
+// Small per-form caught indicator under each form icon in Form Mode. Unlike
+// the list row's ball, this is a single form's own bit -- always binary
+// (caught or not), never partial -- so it skips GetDexEntryCaughtState's
+// family aggregation and reads the flag directly.
+// x/y offsets are tuned for the icon grid below; recheck on hardware if that
+// grid ever moves (icon rows sit only ~7px apart, so there's little slack).
+#define FORM_BALL_X_OFFSET 12  // centers the 8px-wide ball under the 32px icon
+#define FORM_BALL_Y_OFFSET 20
+
+static void CreateCaughtBallFormsScreen(enum Species formSpecies, u8 x, u8 y)
+{
+    if (GetSetPokedexFlagBySpecies(formSpecies, FLAG_GET_CAUGHT))
+        BlitBitmapToWindow(WIN_INFO, sCaughtBall_Gfx, x, y, 8, 16);
+}
+
 static void PrintForms(u8 taskId, enum Species species)
 {
     u8 i;
@@ -7140,14 +7155,25 @@ static void PrintForms(u8 taskId, enum Species species)
         else
         {
             u32 personality = GetPokedexMonPersonality(speciesForm);
+            u8 iconX = 0, iconY = 0;
             sPokedexView->sFormScreenData.formIds[j++] = i;
             times += 1;
             LoadMonIconPalettePersonality(speciesForm, personality); //Loads pallete for current mon
             if (times < 7)
-                gTasks[taskId].data[4+times] = CreateMonIcon(speciesForm, SpriteCB_MonIcon, 52 + 34*(times-1), 31, 4, personality); //Create Pokémon sprite
+            {
+                iconX = 52 + 34*(times-1);
+                iconY = 31;
+                gTasks[taskId].data[4+times] = CreateMonIcon(speciesForm, SpriteCB_MonIcon, iconX, iconY, 4, personality); //Create Pokémon sprite
+            }
             else if (times < 14)
-                gTasks[taskId].data[4+times] = CreateMonIcon(speciesForm, SpriteCB_MonIcon, 18 + 34*(times-7), 70 - y_offset_icons, 4, personality); //Create Pokémon sprite
+            {
+                iconX = 18 + 34*(times-7);
+                iconY = 70 - y_offset_icons;
+                gTasks[taskId].data[4+times] = CreateMonIcon(speciesForm, SpriteCB_MonIcon, iconX, iconY, 4, personality); //Create Pokémon sprite
+            }
             gSprites[gTasks[taskId].data[4+times]].oam.priority = 0;
+            if (times < 14)
+                CreateCaughtBallFormsScreen(speciesForm, iconX + FORM_BALL_X_OFFSET, iconY + FORM_BALL_Y_OFFSET);
         }
     }
     gTasks[taskId].data[3] = times;
