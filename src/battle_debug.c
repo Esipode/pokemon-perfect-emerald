@@ -2290,6 +2290,12 @@ static const u8 *const sHoldEffectNames[HOLD_EFFECT_COUNT] =
     [HOLD_EFFECT_BOOSTER_ENERGY]   = COMPOUND_STRING("Booster Energy"),
     [HOLD_EFFECT_OGERPON_MASK]     = COMPOUND_STRING("Ogerpon Mask"),
     [HOLD_EFFECT_BERSERK_GENE]     = COMPOUND_STRING("Berserk Gene"),
+    [HOLD_EFFECT_BLUK_BERRY]       = COMPOUND_STRING("Bluk Berry"),
+    [HOLD_EFFECT_NOMEL_BERRY]      = COMPOUND_STRING("Nomel Berry"),
+    [HOLD_EFFECT_SPELON_BERRY]     = COMPOUND_STRING("Spelon Berry"),
+    [HOLD_EFFECT_NANAB_BERRY]      = COMPOUND_STRING("Nanab Berry"),
+    [HOLD_EFFECT_PINAP_BERRY]      = COMPOUND_STRING("Pinap Berry"),
+    [HOLD_EFFECT_DURIN_BERRY]      = COMPOUND_STRING("Durin Berry"),
 };
 
 static const u8 *GetHoldEffectName(enum HoldEffect holdEffect)

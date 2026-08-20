@@ -5703,6 +5703,22 @@ BattleScript_MicleBerryActivateRet_Anim:
 	removeitem BS_SCRIPTING
 	return
 
+BattleScript_PinapBerryActivate::
+	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_BERRY
+	printstring STRINGID_PINAPBERRYACTIVATES
+	waitmessage B_WAIT_TIME_LONG
+	removeitem BS_SCRIPTING
+	return
+
+BattleScript_DurinBerryActivate::
+	playanimation BS_SCRIPTING, B_ANIM_HELD_ITEM_BERRY
+	printstring STRINGID_DURINBERRYACTIVATES
+	waitmessage B_WAIT_TIME_LONG
+	healthbarupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	datahpupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	removeitem BS_SCRIPTING
+	return
+
 BattleScript_JabocaRowapBerryActivates::
 	jumpifability BS_TARGET, ABILITY_RIPEN, BattleScript_JabocaRowapBerryActivate_Ripen
 	goto BattleScript_JabocaRowapBerryActivate_Anim

@@ -7,6 +7,7 @@
 #include "battle_hold_effects.h"
 #include "battle_stat_change.h"
 #include "battle_scripts.h"
+#include "battle_script_commands.h"
 #include "item.h"
 #include "string_util.h"
 #include "data/hold_effects.h"
@@ -29,6 +30,7 @@ bool32 IsOnEffectActivation(enum HoldEffect holdEffect)            { return gHol
 bool32 IsOnBerryActivation(enum HoldEffect holdEffect)             { return GetItemPocket(gLastUsedItem) == POCKET_BERRIES; }
 bool32 IsOnFlingActivation(enum HoldEffect holdEffect)             { return gHoldEffectsInfo[holdEffect].onFling; }
 bool32 IsBoosterEnergyActivation(enum HoldEffect holdEffect)       { return gHoldEffectsInfo[holdEffect].boosterEnergy; }
+bool32 IsOnAttackerKOActivation(enum HoldEffect holdEffect)        { return gHoldEffectsInfo[holdEffect].onAttackerKO; }
 
 bool32 IsForceTriggerItemActivation(enum HoldEffect holdEffect)
 {
@@ -919,6 +921,70 @@ static u32 ItemRestorePp(enum BattlerId battler, enum Item itemId)
     return effect;
 }
 
+#define NOMEL_BERRY_PP_RESTORED 5
+
+// Shared by Nomel/Spelon Berry: picks the move with the lowest PP ratio (current/max PP),
+// ignoring moves already at full PP. Ratio comparison is cross-multiplied to avoid fixed-point division.
+static u32 GetLowestPpRatioMoveSlot(struct Pokemon *mon)
+{
+    u32 ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
+    u32 bestSlot = MAX_MON_MOVES;
+    u32 bestCurrentPP = 0, bestMaxPP = 1;
+
+    for (u32 i = 0; i < MAX_MON_MOVES; i++)
+    {
+        enum Move move = GetMonData(mon, MON_DATA_MOVE1 + i);
+        u32 currentPP, maxPP;
+        if (move == MOVE_NONE)
+            continue;
+
+        maxPP = CalculatePPWithBonus(move, ppBonuses, i);
+        currentPP = GetMonData(mon, MON_DATA_PP1 + i);
+        if (currentPP == maxPP)
+            continue;
+
+        if (bestSlot == MAX_MON_MOVES || currentPP * bestMaxPP < bestCurrentPP * maxPP)
+        {
+            bestSlot = i;
+            bestCurrentPP = currentPP;
+            bestMaxPP = maxPP;
+        }
+    }
+    return bestSlot;
+}
+
+static enum ItemEffect RestoreLowestPpRatioMove(enum BattlerId battler, bool32 fullRestore)
+{
+    enum ItemEffect effect = ITEM_NO_EFFECT;
+    struct Pokemon *mon = GetBattlerMon(battler);
+    u32 slot = GetLowestPpRatioMoveSlot(mon);
+
+    if (slot != MAX_MON_MOVES)
+    {
+        u32 ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
+        u32 move = GetMonData(mon, MON_DATA_MOVE1 + slot);
+        u32 currentPP = GetMonData(mon, MON_DATA_PP1 + slot);
+        u32 maxPP = CalculatePPWithBonus(move, ppBonuses, slot);
+
+        // Requires at least 5 PP missing on the chosen move to gain anything from using it.
+        if (maxPP - currentPP < 5)
+            return effect;
+
+        u32 changedPP = fullRestore ? maxPP : min(currentPP + NOMEL_BERRY_PP_RESTORED, maxPP);
+
+        PREPARE_MOVE_BUFFER(gBattleTextBuff1, move);
+        BattleScriptCall(BattleScript_BerryPPHeal);
+
+        gBattleScripting.battler = battler;
+        BtlController_EmitSetMonData(battler, B_COMM_TO_CONTROLLER, slot + REQUEST_PPMOVE1_BATTLE, 0, 1, &changedPP);
+        MarkBattlerForControllerExec(battler);
+        if (MOVE_IS_PERMANENT(battler, slot))
+            gBattleMons[battler].pp[slot] = changedPP;
+        effect = ITEM_PP_CHANGE;
+    }
+    return effect;
+}
+
 static enum ItemEffect HealConfuseBerry(enum BattlerId battler, enum Item itemId, enum Flavor flavorId)
 {
     enum ItemEffect effect = ITEM_NO_EFFECT;
@@ -1030,6 +1096,22 @@ static enum ItemEffect TrySetMicleBerry(enum BattlerId battler, enum Item itemId
     {
         gBattleStruct->battlerState[battler].usedMicleBerry = TRUE;
         BattleScriptCall(BattleScript_MicleBerryActivate);
+        effect = ITEM_EFFECT_OTHER;
+    }
+    return effect;
+}
+
+// Consumed when the holder scores a KO, unless that KO ended the battle. Boosts the power
+// of the holder's next move by 25% via VOLATILE_PINAP_BOOST, consumed in GetAttackerItemsModifier.
+static enum ItemEffect TryPinapBerry(enum BattlerId battlerAtk)
+{
+    enum ItemEffect effect = ITEM_NO_EFFECT;
+
+    if (NumFaintedBattlersByAttacker(battlerAtk) > 0 && !NoAliveMonsForEitherParty())
+    {
+        gBattleMons[battlerAtk].volatiles.pinapBoost = TRUE;
+        gBattleScripting.battler = battlerAtk;
+        BattleScriptCall(BattleScript_PinapBerryActivate);
         effect = ITEM_EFFECT_OTHER;
     }
     return effect;
@@ -1223,6 +1305,15 @@ enum ItemEffect ItemBattleEffects(enum BattlerId itemBattler, enum BattlerId bat
         break;
     case HOLD_EFFECT_MICLE_BERRY:
         effect = TrySetMicleBerry(itemBattler, item);
+        break;
+    case HOLD_EFFECT_NOMEL_BERRY:
+        effect = RestoreLowestPpRatioMove(itemBattler, FALSE);
+        break;
+    case HOLD_EFFECT_SPELON_BERRY:
+        effect = RestoreLowestPpRatioMove(itemBattler, TRUE);
+        break;
+    case HOLD_EFFECT_PINAP_BERRY:
+        effect = TryPinapBerry(itemBattler);
         break;
     default:
         break;

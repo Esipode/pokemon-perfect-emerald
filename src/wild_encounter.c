@@ -540,6 +540,8 @@ bool8 TryGenerateWildMon(const struct WildPokemonInfo *wildMonInfo, enum WildPok
     level = ChooseWildMonLevel(wildMonInfo->wildPokemon, wildMonIndex, area);
     if (flags & WILD_CHECK_REPEL && !IsWildLevelAllowedByRepel(level))
         return FALSE;
+    if (!IsWildLevelAllowedByBlukBerry(level))
+        return FALSE;
     if (gMapHeader.mapLayoutId != LAYOUT_BATTLE_FRONTIER_BATTLE_PIKE_ROOM_WILD_MONS && flags & WILD_CHECK_KEEN_EYE && !IsAbilityAllowingEncounter(level))
         return FALSE;
 
@@ -563,6 +565,8 @@ bool8 SetUpMassOutbreakEncounter(u8 flags)
     u16 i;
 
     if (flags & WILD_CHECK_REPEL && !IsWildLevelAllowedByRepel(gSaveBlock1Ptr->outbreakPokemonLevel))
+        return FALSE;
+    if (!IsWildLevelAllowedByBlukBerry(gSaveBlock1Ptr->outbreakPokemonLevel))
         return FALSE;
 
     CreateWildMon(gSaveBlock1Ptr->outbreakPokemonSpecies, gSaveBlock1Ptr->outbreakPokemonLevel);
@@ -1080,6 +1084,33 @@ bool8 IsWildLevelAllowedByRepel(u16 wildLevel)
     }
 
     return FALSE;
+}
+
+// Bluk Berry: while any party member holds it, wild Pokémon below the party's lowest level are repelled.
+bool8 IsWildLevelAllowedByBlukBerry(u16 wildLevel)
+{
+    u8 i;
+    u16 lowestLevel = MAX_LEVEL + 1;
+    bool8 blukHeld = FALSE;
+
+    for (i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE
+         || GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_IS_EGG))
+            continue;
+
+        if (GetItemHoldEffect(GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HELD_ITEM)) == HOLD_EFFECT_BLUK_BERRY)
+            blukHeld = TRUE;
+
+        u16 level = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_LEVEL);
+        if (level < lowestLevel)
+            lowestLevel = level;
+    }
+
+    if (!blukHeld)
+        return TRUE;
+
+    return wildLevel >= lowestLevel;
 }
 
 bool8 IsAbilityAllowingEncounter(u16 level)

@@ -63,6 +63,7 @@ u16 GetLocalWildMon(bool8 *isWaterMon);
 u16 GetLocalWaterMon(void);
 bool8 UpdateRepelCounter(void);
 bool8 IsWildLevelAllowedByRepel(u16 wildLevel);
+bool8 IsWildLevelAllowedByBlukBerry(u16 wildLevel);
 bool8 IsAbilityAllowingEncounter(u16 level);
 bool8 TryDoDoubleWildBattle(void);
 bool8 StandardWildEncounter_Debug(void);
