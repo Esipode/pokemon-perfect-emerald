@@ -5330,6 +5330,14 @@ enum NationalDexOrder SpeciesToNationalPokedexNum(enum Species species)
     return gSpeciesInfo[species].natDexNum;
 }
 
+// Storage key for a species' Pokédex seen/caught bit. Equal to the National
+// Dex number today; regional-form species will route to their own slot above
+// NATIONAL_DEX_COUNT instead of collapsing onto their base form's slot.
+u32 SpeciesToDexFlagSlot(enum Species species)
+{
+    return SpeciesToNationalPokedexNum(species);
+}
+
 u32 SpeciesToRegionalPokedexNum(enum Species species)
 {
     if (IS_FRLG)
@@ -6368,31 +6376,42 @@ enum TrainerPicID PlayerGenderToFrontTrainerPicId(enum Gender playerGender)
         return FacilityClassToPicIndex(IS_FRLG ? FACILITY_CLASS_RED : FACILITY_CLASS_BRENDAN);
 }
 
-void HandleSetPokedexFlag(enum NationalDexOrder nationalNum, u8 caseId, u32 personality)
+// Species-keyed funnel: the flag write, personality capture and both
+// achievement hooks. baseSpecies normalises Unown/Spinda letters and family
+// lookups the same way the old nationalNum-based path did, via
+// NationalPokedexNumToSpecies -- the flag write itself keeps the passed-in
+// species so a caller with form-specific info doesn't lose it.
+void HandleSetPokedexFlagBySpecies(enum Species species, u8 caseId, u32 personality)
 {
     u8 getFlagCaseId = (caseId == FLAG_SET_SEEN) ? FLAG_GET_SEEN : FLAG_GET_CAUGHT;
-    if (!GetSetPokedexFlag(nationalNum, getFlagCaseId)) // don't set if it's already set
+    if (!GetSetPokedexFlagBySpecies(species, getFlagCaseId)) // don't set if it's already set
     {
-        GetSetPokedexFlag(nationalNum, caseId);
-        if (NationalPokedexNumToSpecies(nationalNum) == SPECIES_UNOWN)
+        enum Species baseSpecies = GET_BASE_SPECIES_ID(species);
+        GetSetPokedexFlagBySpecies(species, caseId);
+        if (baseSpecies == SPECIES_UNOWN)
             gSaveBlock2Ptr->pokedex.unownPersonality = personality;
-        if (NationalPokedexNumToSpecies(nationalNum) == SPECIES_SPINDA)
+        if (baseSpecies == SPECIES_SPINDA)
             gSaveBlock2Ptr->pokedex.spindaPersonality = personality;
         // Family Reunion, checked only on a new
         // catch (not a new sighting) -- one more line at this same funnel.
         if (caseId == FLAG_SET_CAUGHT)
-            Achievement_CheckFamilyMilestone(NationalPokedexNumToSpecies(nationalNum));
+            Achievement_CheckFamilyMilestone(baseSpecies);
         // Category B.
         Achievement_CheckPokedexMilestones(caseId == FLAG_SET_CAUGHT);
     }
 }
 
+void HandleSetPokedexFlag(enum NationalDexOrder nationalNum, u8 caseId, u32 personality)
+{
+    HandleSetPokedexFlagBySpecies(NationalPokedexNumToSpecies(nationalNum), caseId, personality);
+}
+
 void HandleSetPokedexFlagFromMon(struct Pokemon *mon, u32 caseId)
 {
     u32 personality = GetMonData(mon, MON_DATA_PERSONALITY);
-    enum NationalDexOrder nationalNum = SpeciesToNationalPokedexNum(GetMonData(mon, MON_DATA_SPECIES));
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
 
-    HandleSetPokedexFlag(nationalNum, caseId, personality);
+    HandleSetPokedexFlagBySpecies(species, caseId, personality);
 }
 
 bool8 HasTwoFramesAnimation(enum Species species)

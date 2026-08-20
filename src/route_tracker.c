@@ -147,7 +147,7 @@ static void CountEncounters(struct RouteProgress *progress)
     progress->speciesTotal = sEncounterCache.speciesCount;
     for (i = 0; i < sEncounterCache.speciesCount; i++)
     {
-        if (GetSetPokedexFlag(SpeciesToNationalPokedexNum(sEncounterCache.species[i]), FLAG_GET_CAUGHT))
+        if (GetSetPokedexFlagBySpecies(sEncounterCache.species[i], FLAG_GET_CAUGHT))
             progress->speciesCaught++;
     }
 }

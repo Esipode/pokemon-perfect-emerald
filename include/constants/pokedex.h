@@ -1080,7 +1080,14 @@ enum NationalDexOrder
     #define NATIONAL_DEX_COUNT  NATIONAL_DEX_DEOXYS
 #endif
 
-#define POKEMON_SLOTS_NUMBER (NATIONAL_DEX_COUNT + 1)
+// Storage key for a Pokédex seen/caught bit. Slots 1..NATIONAL_DEX_COUNT are
+// the National Dex numbers; slots above that are regional-form slots, which
+// are NOT dex entries -- they never appear in a list and never count toward
+// any total. Append only: these indices are save data.
+#define DEX_FLAG_SLOT_VARIANT_START (NATIONAL_DEX_COUNT + 1)
+#define DEX_FLAG_SLOT_COUNT          NATIONAL_DEX_COUNT   // grows once regional-form slots are added
+
+#define POKEMON_SLOTS_NUMBER (DEX_FLAG_SLOT_COUNT + 1)
 
 #if P_NEW_EVOS_IN_REGIONAL_DEX
 #define HOENN_DEX_IF(config, ...) CAT(HOENN_DEX_IF_, config)(__VA_ARGS__)

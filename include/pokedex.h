@@ -13,6 +13,8 @@ u16 GetDexModePokedexCount(u8 dexMode, u8 caseID);
 u8 DisplayCaughtMonDexPage(enum Species species, bool32 isShiny, u32 personality);
 u32 Pokedex_CreateCaughtMonSprite(enum Species species, s32 x, s32 y);
 s8 GetSetPokedexFlag(enum NationalDexOrder nationalDexNo, u8 caseID);
+u32 SpeciesToDexFlagSlot(enum Species species);
+s8 GetSetPokedexFlagBySpecies(enum Species species, u8 caseID);
 bool32 IsSpeciesInDexMode(enum Species species, u8 dexMode);
 u32 GetDexModeEntryCount(u8 dexMode);
 u8 SanitizeDexMode(u8 dexMode);

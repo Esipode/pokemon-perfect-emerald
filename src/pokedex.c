@@ -4536,6 +4536,15 @@ s8 GetSetPokedexFlag(enum NationalDexOrder nationalDexNo, u8 caseID)
     return retVal;
 }
 
+// Species-keyed wrapper around GetSetPokedexFlag -- the entry point for
+// callers that have a species rather than a raw dex number. Currently
+// equivalent to SpeciesToNationalPokedexNum; regional-form species will
+// route to their own slot once one exists.
+s8 GetSetPokedexFlagBySpecies(enum Species species, u8 caseID)
+{
+    return GetSetPokedexFlag(SpeciesToDexFlagSlot(species), caseID);
+}
+
 // Clamps a stored/selected dex mode to a valid value. gSaveBlock2Ptr->pokedex.mode
 // is just a remembered UI preference, so an old save or an out-of-range byte
 // falls back to National rather than reading garbage.

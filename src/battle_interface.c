@@ -1800,7 +1800,7 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
 
         if (!canCatch)
             gfxId = HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH;
-        else if (nuzlockeOn && GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT))
+        else if (nuzlockeOn && GetSetPokedexFlagBySpecies(species, FLAG_GET_CAUGHT))
             gfxId = HEALTHBOX_GFX_STATUS_BALL_CAUGHT;
         else
             gfxId = HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH;
@@ -1813,7 +1813,7 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     // Regular mode - show pokeball if caught
     else
     {
-        if (!GetSetPokedexFlag(SpeciesToNationalPokedexNum(species), FLAG_GET_CAUGHT))
+        if (!GetSetPokedexFlagBySpecies(species, FLAG_GET_CAUGHT))
             return;
 
         if (noStatus)

@@ -315,15 +315,15 @@ static void ReregisterCarriedOverDexEntries(void)
         for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
         {
             struct BoxPokemon *boxMon = GetBoxedMonPtr(boxId, boxPosition);
-            enum NationalDexOrder dexNum;
+            enum Species species;
 
             if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES)
              || GetBoxMonData(boxMon, MON_DATA_SANITY_IS_EGG))
                 continue;
 
-            dexNum = SpeciesToNationalPokedexNum(GetBoxMonData(boxMon, MON_DATA_SPECIES));
-            GetSetPokedexFlag(dexNum, FLAG_SET_SEEN);
-            GetSetPokedexFlag(dexNum, FLAG_SET_CAUGHT);
+            species = GetBoxMonData(boxMon, MON_DATA_SPECIES);
+            GetSetPokedexFlagBySpecies(species, FLAG_SET_SEEN);
+            GetSetPokedexFlagBySpecies(species, FLAG_SET_CAUGHT);
         }
     }
 }

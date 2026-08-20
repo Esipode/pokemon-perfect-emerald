@@ -426,8 +426,7 @@ static void TradeCodeReceive_DoSwap(void)
     // personality extraction) rather than duplicating that extraction here.
     if (!isEgg)
     {
-        enum NationalDexOrder dexNum = SpeciesToNationalPokedexNum(GetMonData(&mon, MON_DATA_SPECIES));
-        GetSetPokedexFlag(dexNum, FLAG_SET_SEEN);
+        GetSetPokedexFlagBySpecies(GetMonData(&mon, MON_DATA_SPECIES), FLAG_SET_SEEN);
         HandleSetPokedexFlagFromMon(&mon, FLAG_SET_CAUGHT);
     }
 

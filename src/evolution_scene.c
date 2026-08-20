@@ -593,8 +593,8 @@ static void CreateShedinja(enum Species preEvoSpecies, enum Species postEvoSpeci
             CalculateMonStats(&gParties[B_TRAINER_PLAYER][gPartiesCount[B_TRAINER_PLAYER]]);
             CalculatePlayerPartyCount();
 
-            GetSetPokedexFlag(SpeciesToNationalPokedexNum(evolutions[i].targetSpecies), FLAG_SET_SEEN);
-            GetSetPokedexFlag(SpeciesToNationalPokedexNum(evolutions[i].targetSpecies), FLAG_SET_CAUGHT);
+            GetSetPokedexFlagBySpecies(evolutions[i].targetSpecies, FLAG_SET_SEEN);
+            GetSetPokedexFlagBySpecies(evolutions[i].targetSpecies, FLAG_SET_CAUGHT);
 
             if (GetMonData(shedinja, MON_DATA_SPECIES) == SPECIES_SHEDINJA
                 && GetMonData(shedinja, MON_DATA_LANGUAGE) == LANGUAGE_JAPANESE
@@ -790,8 +790,8 @@ static void Task_EvolutionScene(u8 taskId)
             SetMonData(mon, MON_DATA_EVOLUTION_TRACKER, &zero);
             CalculateMonStats(mon);
             EvolutionRenameMon(mon, gTasks[taskId].tPreEvoSpecies, gTasks[taskId].tPostEvoSpecies);
-            GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_SEEN);
-            GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_CAUGHT);
+            GetSetPokedexFlagBySpecies(gTasks[taskId].tPostEvoSpecies, FLAG_SET_SEEN);
+            GetSetPokedexFlagBySpecies(gTasks[taskId].tPostEvoSpecies, FLAG_SET_CAUGHT);
             IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
             Achievement_CheckEvolutionCountMilestones();
         }
@@ -1218,8 +1218,8 @@ static void Task_TradeEvolutionScene(u8 taskId)
             SetMonData(mon, MON_DATA_EVOLUTION_TRACKER, &zero);
             CalculateMonStats(mon);
             EvolutionRenameMon(mon, gTasks[taskId].tPreEvoSpecies, gTasks[taskId].tPostEvoSpecies);
-            GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_SEEN);
-            GetSetPokedexFlag(SpeciesToNationalPokedexNum(gTasks[taskId].tPostEvoSpecies), FLAG_SET_CAUGHT);
+            GetSetPokedexFlagBySpecies(gTasks[taskId].tPostEvoSpecies, FLAG_SET_SEEN);
+            GetSetPokedexFlagBySpecies(gTasks[taskId].tPostEvoSpecies, FLAG_SET_CAUGHT);
             IncrementGameStat(GAME_STAT_EVOLVED_POKEMON);
             Achievement_CheckEvolutionCountMilestones();
         }

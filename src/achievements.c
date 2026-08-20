@@ -2744,7 +2744,7 @@ void Achievement_CheckLocalExpert(void)
 
     for (i = 0; i < count; i++)
     {
-        if (!GetSetPokedexFlag(SpeciesToNationalPokedexNum(scratch[i]), FLAG_GET_SEEN))
+        if (!GetSetPokedexFlagBySpecies(scratch[i], FLAG_GET_SEEN))
             return;
     }
 
@@ -3570,7 +3570,7 @@ void Achievement_CheckFamilyMilestone(enum Species species)
     {
         enum NationalDexOrder dexNum = SpeciesToNationalPokedexNum(members[i]);
 
-        if (dexNum == NATIONAL_DEX_NONE || !GetSetPokedexFlag(dexNum, FLAG_GET_CAUGHT))
+        if (dexNum == NATIONAL_DEX_NONE || !GetSetPokedexFlagBySpecies(members[i], FLAG_GET_CAUGHT))
             return;
     }
 
