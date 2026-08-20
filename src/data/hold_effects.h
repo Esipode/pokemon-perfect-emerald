@@ -606,4 +606,36 @@ const struct HoldEffectInfo gHoldEffectsInfo[HOLD_EFFECT_COUNT] =
     {
         .onSwitchIn = TRUE,
     },
+
+    // Bluk Berry is checked directly in wild_encounter.c, never through ItemBattleEffects.
+    [HOLD_EFFECT_BLUK_BERRY] =
+    {
+    },
+
+    [HOLD_EFFECT_NOMEL_BERRY] =
+    {
+        .onSwitchIn = TRUE,
+        .sprayLeppaBlunder = TRUE,
+    },
+
+    [HOLD_EFFECT_SPELON_BERRY] =
+    {
+        .onSwitchIn = TRUE,
+        .sprayLeppaBlunder = TRUE,
+    },
+
+    // Checked directly in GetDefenderItemsModifier, like HOLD_EFFECT_RESIST_BERRY.
+    [HOLD_EFFECT_NANAB_BERRY] =
+    {
+    },
+
+    [HOLD_EFFECT_PINAP_BERRY] =
+    {
+        .onAttackerKO = TRUE,
+    },
+
+    // Checked directly in Cmd_tryfaintmon, like Focus Sash is in GetAdjustedDamage.
+    [HOLD_EFFECT_DURIN_BERRY] =
+    {
+    },
 };

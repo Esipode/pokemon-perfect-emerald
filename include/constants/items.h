@@ -1138,6 +1138,12 @@ enum EffectItem
     EFFECT_ITEM_RESTORE_PP,
     EFFECT_ITEM_INCREASE_ALL_STATS,
     EFFECT_ITEM_USE_POKE_FLUTE,
+    // Repurposed pokéblock-only berries - manual bag-use-in-battle, one-shot self effects
+    EFFECT_ITEM_CORNN_BERRY,
+    EFFECT_ITEM_MAGOST_BERRY,
+    EFFECT_ITEM_RABUTA_BERRY,
+    EFFECT_ITEM_RAZZ_BERRY,
+    EFFECT_ITEM_BELUE_BERRY,
 };
 
 #endif  // GUARD_CONSTANTS_ITEMS_H

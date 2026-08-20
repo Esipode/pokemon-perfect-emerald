@@ -28,6 +28,11 @@ gBattlescriptsForUsingItem::
 	.4byte BattleScript_ItemRestorePP                @ EFFECT_ITEM_RESTORE_PP
 	.4byte BattleScript_ItemIncreaseStat             @ EFFECT_ITEM_INCREASE_ALL_STATS
 	.4byte BattleScript_UsePokeFlute                 @ EFFECT_ITEM_USE_POKE_FLUTE
+	.4byte BattleScript_ItemCornnBerry               @ EFFECT_ITEM_CORNN_BERRY
+	.4byte BattleScript_ItemMagostBerry              @ EFFECT_ITEM_MAGOST_BERRY
+	.4byte BattleScript_ItemRabutaBerry              @ EFFECT_ITEM_RABUTA_BERRY
+	.4byte BattleScript_ItemRazzBerry                @ EFFECT_ITEM_RAZZ_BERRY
+	.4byte BattleScript_ItemBelueBerry               @ EFFECT_ITEM_BELUE_BERRY
 
 	.align 2
 gBattlescriptsForSafariActions::
@@ -158,6 +163,46 @@ BattleScript_ItemSetFocusEnergy::
 	waitanimation
 	copybyte sBATTLER, gBattlerAttacker
 	printstring STRINGID_PKMNUSEDXTOGETPUMPED
+	waitmessage B_WAIT_TIME_LONG
+	end
+
+BattleScript_ItemCornnBerry::
+	call BattleScript_UseItemMessage
+	itemcornnberry
+	copybyte sBATTLER, gBattlerAttacker
+	printstring STRINGID_CORNNBERRYUSED
+	waitmessage B_WAIT_TIME_LONG
+	end
+
+BattleScript_ItemMagostBerry::
+	call BattleScript_UseItemMessage
+	itemmagostberry
+	copybyte sBATTLER, gBattlerAttacker
+	printstring STRINGID_MAGOSTBERRYUSED
+	waitmessage B_WAIT_TIME_LONG
+	end
+
+BattleScript_ItemRabutaBerry::
+	call BattleScript_UseItemMessage
+	itemrabutaberry
+	copybyte sBATTLER, gBattlerAttacker
+	printstring STRINGID_RABUTABERRYUSED
+	waitmessage B_WAIT_TIME_LONG
+	end
+
+BattleScript_ItemRazzBerry::
+	call BattleScript_UseItemMessage
+	itemrazzberry
+	copybyte sBATTLER, gBattlerAttacker
+	printstring STRINGID_RAZZBERRYUSED
+	waitmessage B_WAIT_TIME_LONG
+	end
+
+BattleScript_ItemBelueBerry::
+	call BattleScript_UseItemMessage
+	itembelueberry
+	copybyte sBATTLER, gBattlerAttacker
+	printstring STRINGID_BELUEBERRYUSED
 	waitmessage B_WAIT_TIME_LONG
 	end
 

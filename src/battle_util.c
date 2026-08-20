@@ -7494,10 +7494,20 @@ static inline uq4_12_t GetDefenderPartnerAbilitiesModifier(struct DamageContext 
     return UQ_4_12(1.0);
 }
 
-static inline uq4_12_t GetAttackerItemsModifier(enum BattlerId battlerAtk, uq4_12_t typeEffectivenessModifier, enum HoldEffect holdEffectAtk)
+static inline uq4_12_t GetAttackerItemsModifier(enum BattlerId battlerAtk, uq4_12_t typeEffectivenessModifier, enum HoldEffect holdEffectAtk, bool32 aiCalc)
 {
     u32 metronomeTurns;
     uq4_12_t metronomeBoostBase;
+
+    // Pinap Berry's post-KO power boost. Not tied to holdEffectAtk since the berry
+    // is already gone by the time this fires - only consumed on a real (non-AI) hit.
+    if (gBattleMons[battlerAtk].volatiles.pinapBoost)
+    {
+        if (!aiCalc)
+            gBattleMons[battlerAtk].volatiles.pinapBoost = FALSE;
+        return UQ_4_12(1.25);
+    }
+
     switch (holdEffectAtk)
     {
     case HOLD_EFFECT_METRONOME:
@@ -7528,6 +7538,18 @@ static inline uq4_12_t GetDefenderItemsModifier(struct DamageContext *ctx)
         if (IsUnnerveBlocked(ctx->battlerDef, gBattleMons[ctx->battlerDef].item))
             return UQ_4_12(1.0);
         if (ctx->moveType == GetBattlerHoldEffectParam(ctx->battlerDef) && (ctx->moveType == TYPE_NORMAL || ctx->typeEffectivenessModifier >= UQ_4_12(2.0)))
+        {
+            if (ctx->updateFlags)
+                gSpecialStatuses[ctx->battlerDef].berryReduced = TRUE;
+            if (ctx->aiCalc && AI_DAMAGES_THROUGH_BERRIES)
+                ctx->aiCheckBerryModifier = TRUE;
+            return (ctx->abilities[ctx->battlerDef] == ABILITY_RIPEN) ? UQ_4_12(0.25) : UQ_4_12(0.5);
+        }
+        break;
+    case HOLD_EFFECT_NANAB_BERRY: // Any super-effective hit, not just a specific type
+        if (IsUnnerveBlocked(ctx->battlerDef, gBattleMons[ctx->battlerDef].item))
+            return UQ_4_12(1.0);
+        if (ctx->typeEffectivenessModifier >= UQ_4_12(2.0))
         {
             if (ctx->updateFlags)
                 gSpecialStatuses[ctx->battlerDef].berryReduced = TRUE;
@@ -7571,7 +7593,7 @@ static inline uq4_12_t GetOtherModifiers(struct DamageContext *ctx)
         DAMAGE_MULTIPLY_MODIFIER(GetAttackerAbilitiesModifier(ctx->battlerAtk, ctx->typeEffectivenessModifier, ctx->isCrit, ctx->abilities[ctx->battlerAtk]));
         DAMAGE_MULTIPLY_MODIFIER(GetDefenderAbilitiesModifier(ctx));
         DAMAGE_MULTIPLY_MODIFIER(GetDefenderPartnerAbilitiesModifier(ctx));
-        DAMAGE_MULTIPLY_MODIFIER(GetAttackerItemsModifier(ctx->battlerAtk, ctx->typeEffectivenessModifier, ctx->holdEffects[ctx->battlerAtk]));
+        DAMAGE_MULTIPLY_MODIFIER(GetAttackerItemsModifier(ctx->battlerAtk, ctx->typeEffectivenessModifier, ctx->holdEffects[ctx->battlerAtk], ctx->aiCalc));
         DAMAGE_MULTIPLY_MODIFIER(GetDefenderItemsModifier(ctx));
     }
     else
@@ -7580,7 +7602,7 @@ static inline uq4_12_t GetOtherModifiers(struct DamageContext *ctx)
         DAMAGE_MULTIPLY_MODIFIER(GetDefenderPartnerAbilitiesModifier(ctx));
         DAMAGE_MULTIPLY_MODIFIER(GetAttackerAbilitiesModifier(ctx->battlerAtk, ctx->typeEffectivenessModifier, ctx->isCrit, ctx->abilities[ctx->battlerAtk]));
         DAMAGE_MULTIPLY_MODIFIER(GetDefenderItemsModifier(ctx));
-        DAMAGE_MULTIPLY_MODIFIER(GetAttackerItemsModifier(ctx->battlerAtk, ctx->typeEffectivenessModifier, ctx->holdEffects[ctx->battlerAtk]));
+        DAMAGE_MULTIPLY_MODIFIER(GetAttackerItemsModifier(ctx->battlerAtk, ctx->typeEffectivenessModifier, ctx->holdEffects[ctx->battlerAtk], ctx->aiCalc));
     }
     return finalModifier;
 }
@@ -7874,6 +7896,9 @@ s32 CalcCritChanceStage(struct DamageContext *ctx)
         critChance = CRITICAL_HIT_BLOCKED;
     }
 
+    if (critChance != CRITICAL_HIT_BLOCKED && GetBattlerPartyState(ctx->battlerDef)->critImmuneBerry) // Belue Berry
+        critChance = CRITICAL_HIT_BLOCKED;
+
     return critChance;
 }
 
@@ -7913,9 +7938,10 @@ s32 CalcCritChanceStageGen1(struct DamageContext *ctx)
     if (critChance > 255)
         critChance = 255;
 
-    if (ctx->abilities[ctx->battlerDef] == ABILITY_BATTLE_ARMOR || ctx->abilities[ctx->battlerDef] == ABILITY_SHELL_ARMOR)
+    if (ctx->abilities[ctx->battlerDef] == ABILITY_BATTLE_ARMOR || ctx->abilities[ctx->battlerDef] == ABILITY_SHELL_ARMOR
+     || GetBattlerPartyState(ctx->battlerDef)->critImmuneBerry) // Belue Berry
     {
-        if (ctx->updateFlags)
+        if (ctx->updateFlags && ctx->abilities[ctx->battlerDef] != ABILITY_NONE)
             RecordAbilityBattle(ctx->battlerDef, ctx->abilities[ctx->battlerDef]);
         critChance = CRITICAL_HIT_BLOCKED;
     }

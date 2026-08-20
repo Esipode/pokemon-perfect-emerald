@@ -3437,6 +3437,18 @@ static void Cmd_tryfaintmon(void)
                 }
             }
 
+            if (GetBattlerHoldEffect(battler) == HOLD_EFFECT_DURIN_BERRY
+             && !IsUnnerveBlocked(battler, gBattleMons[battler].item))
+            {
+                gLastUsedItem = gBattleMons[battler].item;
+                GetBattlerPartyState(battler)->ateBerry = TRUE;
+                gBattleScripting.battler = battler;
+                SetHealAmount(battler, GetNonDynamaxMaxHP(battler) / 4);
+                BattleScriptPush(cmd->nextInstr);
+                gBattlescriptCurrInstr = BattleScript_DurinBerryActivate;
+                return;
+            }
+
             SetValuesOnFaint(battler);
             BattleScriptPush(cmd->nextInstr);
             gBattlescriptCurrInstr = BattleScript_FaintBattler;
@@ -5743,6 +5755,11 @@ static void Cmd_getmoneyreward(void)
         if (gBattleTypeFlags & BATTLE_TYPE_TWO_OPPONENTS)
             money += GetTrainerMoneyToGive(TRAINER_BATTLE_PARAM.opponentB);
         money = AchievementBoost_ApplyMoneyReward(money);
+        if (FlagGet(FLAG_MAGOST_BERRY_MONEY_BOOST)) // Magost Berry: next trainer battle's money reward is +25%
+        {
+            money = (money * 125) / 100;
+            FlagClear(FLAG_MAGOST_BERRY_MONEY_BOOST);
+        }
         AddMoney(&gSaveBlock1Ptr->money, money);
     }
     else
@@ -11183,6 +11200,8 @@ void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBat
         *expAmount = (*expAmount * 4915) / 4096;
     if (CheckBagHasItem(ITEM_EXP_CHARM, 1)) //is also for other exp boosting Powers if/when implemented
         *expAmount = (*expAmount * 150) / 100;
+    if (gBattleStruct->cornnBerryExpBoost) // Cornn Berry: +25% exp for the whole battle
+        *expAmount = (*expAmount * 125) / 100;
     // Exp Share option off: no free exp for the rest of the party, so the
     // mon that actually fought gets a flat 25% more to compensate.
     if (!IsGen6ExpShareEnabled() && (gBattleStruct->expSentInMons & (1u << expGetterMonId)))
@@ -11417,6 +11436,73 @@ void BS_ItemRestorePP(void)
     gBattleScripting.battler = battler;
     PREPARE_SPECIES_BUFFER(gBattleTextBuff1, GetMonData(mon, MON_DATA_SPECIES));
     PREPARE_MOVE_BUFFER(gBattleTextBuff2, moveId);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// Manual bag-use-in-battle berries below. All are self-targeted (ITEM_USE_BATTLER), so each
+// starts with the same doubles correction BS_ItemIncreaseStat uses to resolve which battler
+// the item was actually used on.
+
+void BS_ItemCornnBerry(void)
+{
+    NATIVE_ARGS();
+
+    if (gBattlerPartyIndexes[gBattlerAttacker] != gBattleStruct->itemPartyIndex[gBattlerAttacker])
+        gBattlerAttacker = BATTLE_PARTNER(gBattlerAttacker);
+
+    gBattleStruct->cornnBerryExpBoost = TRUE;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_ItemMagostBerry(void)
+{
+    NATIVE_ARGS();
+
+    if (gBattlerPartyIndexes[gBattlerAttacker] != gBattleStruct->itemPartyIndex[gBattlerAttacker])
+        gBattlerAttacker = BATTLE_PARTNER(gBattlerAttacker);
+
+    FlagSet(FLAG_MAGOST_BERRY_MONEY_BOOST);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_ItemRabutaBerry(void)
+{
+    NATIVE_ARGS();
+    struct Pokemon *mon;
+
+    if (gBattlerPartyIndexes[gBattlerAttacker] != gBattleStruct->itemPartyIndex[gBattlerAttacker])
+        gBattlerAttacker = BATTLE_PARTNER(gBattlerAttacker);
+
+    mon = &gParties[GetBattlerTrainer(gBattlerAttacker)][gBattlerPartyIndexes[gBattlerAttacker]];
+    if (!ShouldSkipFriendshipChange())
+    {
+        AdjustFriendship(mon, FRIENDSHIP_EVENT_BATTLE_ITEM);
+        gBattleMons[gBattlerAttacker].friendship = GetMonData(mon, MON_DATA_FRIENDSHIP);
+        SetBattlerMonData(gBattlerAttacker, GetBattlerParty(gBattlerAttacker), gBattlerPartyIndexes[gBattlerAttacker]);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_ItemRazzBerry(void)
+{
+    NATIVE_ARGS();
+
+    if (gBattlerPartyIndexes[gBattlerAttacker] != gBattleStruct->itemPartyIndex[gBattlerAttacker])
+        gBattlerAttacker = BATTLE_PARTNER(gBattlerAttacker);
+
+    if (gBattleMons[gBattlerAttacker].volatiles.bonusCritStages < 4) // max allowed by VOLATILE_BONUS_CRIT_STAGES
+        gBattleMons[gBattlerAttacker].volatiles.bonusCritStages++;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_ItemBelueBerry(void)
+{
+    NATIVE_ARGS();
+
+    if (gBattlerPartyIndexes[gBattlerAttacker] != gBattleStruct->itemPartyIndex[gBattlerAttacker])
+        gBattlerAttacker = BATTLE_PARTNER(gBattlerAttacker);
+
+    GetBattlerPartyState(gBattlerAttacker)->critImmuneBerry = TRUE;
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 

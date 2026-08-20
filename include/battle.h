@@ -540,7 +540,8 @@ struct PartyState
     u32 changedSpecies:11; // For forms when multiple mons can change into the same Pokémon.
     u32 sentOut:1;
     u32 isKnockedOff:1;
-    u32 padding:8;
+    u32 critImmuneBerry:1; // Belue Berry: immune to critical hits for the rest of the battle
+    u32 padding:7;
     u16 usedHeldItem;
 };
 
@@ -590,6 +591,7 @@ struct BattleStruct
     u8 moneyMultiplier:6;
     u8 moneyMultiplierItem:1;
     u8 moneyMultiplierMove:1;
+    u8 cornnBerryExpBoost:1; // Cornn Berry: +25% exp for the rest of this battle
     u8 savedTurnActionNumber;
     u8 scriptPartyIdx; // for printing the nickname
     u8 battlerPartyIndexes[MAX_BATTLERS_COUNT];

@@ -1217,6 +1217,26 @@
 	callnative BS_ItemIncreaseStat
 	.endm
 
+	.macro itemcornnberry
+	callnative BS_ItemCornnBerry
+	.endm
+
+	.macro itemmagostberry
+	callnative BS_ItemMagostBerry
+	.endm
+
+	.macro itemrabutaberry
+	callnative BS_ItemRabutaBerry
+	.endm
+
+	.macro itemrazzberry
+	callnative BS_ItemRazzBerry
+	.endm
+
+	.macro itembelueberry
+	callnative BS_ItemBelueBerry
+	.endm
+
 	.macro itemrestorepp
 	callnative BS_ItemRestorePP
 	.endm

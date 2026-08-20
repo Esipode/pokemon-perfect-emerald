@@ -5,6 +5,7 @@
 #include "battle_anim.h"
 #include "battle_main.h"
 #include "battle_stat_change.h"
+#include "battle_util.h"
 #include "battle_pyramid.h"
 #include "battle_pyramid_bag.h"
 #include "berry.h"
@@ -1482,6 +1483,26 @@ bool32 CannotUseItemsInBattle(enum Item itemId, struct Pokemon *mon)
         {
             cannotUse = TRUE;
         }
+        break;
+    case EFFECT_ITEM_CORNN_BERRY:
+        if (hp == 0 || gPartyMenu.slotId > 1 || gBattleStruct->cornnBerryExpBoost)
+            cannotUse = TRUE;
+        break;
+    case EFFECT_ITEM_MAGOST_BERRY:
+        if (hp == 0 || gPartyMenu.slotId > 1 || FlagGet(FLAG_MAGOST_BERRY_MONEY_BOOST))
+            cannotUse = TRUE;
+        break;
+    case EFFECT_ITEM_RABUTA_BERRY:
+        if (hp == 0 || gPartyMenu.slotId > 1 || GetMonData(mon, MON_DATA_FRIENDSHIP) >= MAX_FRIENDSHIP)
+            cannotUse = TRUE;
+        break;
+    case EFFECT_ITEM_RAZZ_BERRY:
+        if (hp == 0 || gPartyMenu.slotId > 1 || gBattleMons[battlerTarget].volatiles.bonusCritStages >= 4)
+            cannotUse = TRUE;
+        break;
+    case EFFECT_ITEM_BELUE_BERRY:
+        if (hp == 0 || gPartyMenu.slotId > 1 || GetBattlerPartyState(battlerTarget)->critImmuneBerry)
+            cannotUse = TRUE;
         break;
     }
 

@@ -140,6 +140,13 @@ enum __attribute__((packed)) HoldEffect
     HOLD_EFFECT_OGERPON_MASK,
     // Gen2 hold effect
     HOLD_EFFECT_BERSERK_GENE,
+    // Repurposed pokéblock-only berries
+    HOLD_EFFECT_BLUK_BERRY,
+    HOLD_EFFECT_NOMEL_BERRY,
+    HOLD_EFFECT_SPELON_BERRY,
+    HOLD_EFFECT_NANAB_BERRY,
+    HOLD_EFFECT_PINAP_BERRY,
+    HOLD_EFFECT_DURIN_BERRY,
     HOLD_EFFECT_COUNT
 };
 

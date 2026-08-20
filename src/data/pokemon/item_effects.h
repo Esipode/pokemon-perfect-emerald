@@ -346,6 +346,14 @@ const u8 gItemEffect_DireHit[8] = {
     [0] = 1 << 5, // ITEM0_DIRE_HIT
 };
 
+// Repurposed pokéblock-only berries below. Their effects are fully handled by their
+// own BS_Item* native (see EFFECT_ITEM_* dispatch), so no bitfield flags are needed.
+const u8 gItemEffect_CornnBerry[8] = {0};
+const u8 gItemEffect_MagostBerry[8] = {0};
+const u8 gItemEffect_RabutaBerry[8] = {0};
+const u8 gItemEffect_RazzBerry[8] = {0};
+const u8 gItemEffect_BelueBerry[8] = {0};
+
 const u8 gItemEffect_XAttack[8] = {
     [1] = ITEM1_X_ATTACK,
 };
