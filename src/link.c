@@ -56,12 +56,6 @@ static u32 sBlockSendDelayCounter;
 static u32 sPlayerDataExchangeStatus;
 static u8 sLinkTestLastBlockSendPos;
 static u8 sLinkTestLastBlockRecvPos[MAX_LINK_PLAYERS];
-static u8 sNumVBlanksWithoutSerialIntr;
-static bool8 sSendBufferEmpty;
-static u16 sSendNonzeroCheck;
-static u16 sRecvNonzeroCheck;
-static u8 sChecksumAvailable;
-static u8 sHandshakePlayerCount;
 
 COMMON_DATA u16 gLinkPartnersHeldKeys[6] = {0};
 COMMON_DATA u32 gLinkDebugSeed = 0;
@@ -71,6 +65,8 @@ COMMON_DATA u32 gLinkDebugFlags = 0;
 COMMON_DATA bool8 gRemoteLinkPlayersNotReceived[MAX_LINK_PLAYERS] = {0};
 COMMON_DATA u8 gBlockReceivedStatus[MAX_LINK_PLAYERS] = {0};
 COMMON_DATA u16 gLinkHeldKeys = 0;
+// Still a live comms scratchpad for src/berry_blender.c's own protocol, independent of the
+// LinkMain1 packet queues removed above.
 COMMON_DATA u16 ALIGNED(4) gRecvCmds[MAX_RFU_PLAYERS][CMD_LENGTH] = {0};
 COMMON_DATA u32 gLinkStatus = 0;
 COMMON_DATA bool8 gReadyToExitStandby[MAX_LINK_PLAYERS] = {0};
@@ -105,7 +101,6 @@ static EWRAM_DATA u8 sLinkTestDebugValuesEnabled = 0;
 EWRAM_DATA u32 gBerryBlenderKeySendAttempts = 0;
 EWRAM_DATA u16 gBlockRecvBuffer[MAX_RFU_PLAYERS][BLOCK_BUFFER_SIZE / 2] = {};
 EWRAM_DATA u8 gBlockSendBuffer[BLOCK_BUFFER_SIZE] = {};
-static EWRAM_DATA bool8 sLinkOpen = FALSE;
 EWRAM_DATA u16 gLinkType = 0;
 static EWRAM_DATA u16 sTimeOutCounter = 0;
 EWRAM_DATA struct LinkPlayer gLocalLinkPlayer = {};
@@ -122,7 +117,6 @@ static EWRAM_DATA u16 sReadyCloseLinkAttempts = 0; // never read
 static void InitLocalLinkPlayer(void);
 static void VBlankCB_LinkError(void);
 static void CB2_LinkTest(void);
-static void ProcessRecvCmds(u8);
 static void LinkCB_SendHeldKeys(void);
 static void ResetBlockSend(void);
 static bool32 InitBlockSend(const void *, size_t);
@@ -142,22 +136,10 @@ static void LinkCB_WaitCloseLinkWithJP(void);
 static void LinkCB_Standby(void);
 static void LinkCB_StandbyForAll(void);
 
-static void TrySetLinkErrorBuffer(void);
 static void CB2_PrintErrorMessage(void);
 static bool8 IsSioMultiMaster(void);
 static void DisableSerial(void);
 static void EnableSerial(void);
-static void CheckMasterOrSlave(void);
-static void InitTimer(void);
-static void EnqueueSendCmd(u16 *sendCmd);
-static void DequeueRecvCmds(u16 (*recvCmds)[CMD_LENGTH]);
-
-static void StartTransfer(void);
-static bool8 DoHandshake(void);
-static void DoRecv(void);
-static void DoSend(void);
-static void StopTimer(void);
-static void SendRecvDone(void);
 
 static const u16 sWirelessLinkDisplayPal[] = INCGFX_U16("graphics/link/wireless_display.png", ".gbapal");
 static const u32 sWirelessLinkDisplayGfx[] = INCGFX_U32("graphics/link/wireless_display.png", ".4bpp.smol");
@@ -340,7 +322,6 @@ static void InitLink(void)
     for (i = 0; i < CMD_LENGTH; i++)
         gSendCmd[i] = LINKCMD_NONE;
 
-    sLinkOpen = TRUE;
     EnableSerial();
 }
 
@@ -379,7 +360,6 @@ void OpenLink(void)
 void CloseLink(void)
 {
     gReceivedRemoteLinkPlayers = FALSE;
-    sLinkOpen = FALSE;
     DisableSerial();
 }
 
@@ -459,155 +439,12 @@ static void CB2_LinkTest(void)
     UpdatePaletteFade();
 }
 
+// No real link partner can ever connect (see LinkMain1 below), so the packet-processing loop
+// that used to run here on an established connection can never fire. Kept as a stub since
+// callers (src/main.c) still poll its return value every frame.
 u16 LinkMain2(const u16 *heldKeys)
 {
-    u8 i;
-
-    if (!sLinkOpen)
-        return 0;
-
-    for (i = 0; i < CMD_LENGTH; i++)
-        gSendCmd[i] = 0;
-
-    gLinkHeldKeys = *heldKeys;
-    if (gLinkStatus & LINK_STAT_CONN_ESTABLISHED)
-    {
-        ProcessRecvCmds(SIO_MULTI_CNT->id);
-        if (gLinkCallback != NULL)
-            gLinkCallback();
-        TrySetLinkErrorBuffer();
-    }
-    return gLinkStatus;
-}
-
-static void HandleReceiveRemoteLinkPlayer(u8 who)
-{
-    int i;
-    int count;
-
-    count = 0;
-    gRemoteLinkPlayersNotReceived[who] = FALSE;
-    for (i = 0; i < GetLinkPlayerCount_2(); i++)
-    {
-        count += gRemoteLinkPlayersNotReceived[i];
-    }
-    if (count == 0 && !gReceivedRemoteLinkPlayers)
-    {
-        gReceivedRemoteLinkPlayers = 1;
-    }
-}
-
-static void ProcessRecvCmds(u8 unused)
-{
-    u16 i;
-
-    for (i = 0; i < MAX_LINK_PLAYERS; i++)
-    {
-        gLinkPartnersHeldKeys[i] = 0;
-        if (gRecvCmds[i][0] == 0)
-        {
-            continue;
-        }
-        switch (gRecvCmds[i][0])
-        {
-        case LINKCMD_SEND_LINK_TYPE:
-        {
-            struct LinkPlayerBlock *block;
-
-            InitLocalLinkPlayer();
-            block = &gLocalLinkPlayerBlock;
-            block->linkPlayer = gLocalLinkPlayer;
-            memcpy(block->magic1, sASCIIGameFreakInc, sizeof(block->magic1) - 1);
-            memcpy(block->magic2, sASCIIGameFreakInc, sizeof(block->magic2) - 1);
-            InitBlockSend(block, sizeof(*block));
-            break;
-        }
-        case LINKCMD_BLENDER_SEND_KEYS:
-            gLinkPartnersHeldKeys[i] = gRecvCmds[i][1];
-            break;
-        case LINKCMD_DUMMY_1:
-            break;
-        case LINKCMD_DUMMY_2:
-            break;
-        case LINKCMD_INIT_BLOCK:
-        {
-            struct BlockTransfer *blockRecv;
-
-            blockRecv = &sBlockRecv[i];
-            blockRecv->pos = 0;
-            blockRecv->size = gRecvCmds[i][1];
-            blockRecv->multiplayerId = gRecvCmds[i][2];
-            break;
-        }
-        case LINKCMD_CONT_BLOCK:
-            {
-                if (sBlockRecv[i].size > BLOCK_BUFFER_SIZE)
-                {
-                    // Too large block was sent.
-                }
-                else
-                {
-                    u32 j;
-
-                    for (j = 0; j < CMD_LENGTH - 1; j++)
-                    {
-                        gBlockRecvBuffer[i][(sBlockRecv[i].pos / 2) + j] = gRecvCmds[i][j + 1];
-                    }
-                }
-
-                sBlockRecv[i].pos += (CMD_LENGTH - 1) * 2;
-
-                if (sBlockRecv[i].pos >= sBlockRecv[i].size)
-                {
-                    if (gRemoteLinkPlayersNotReceived[i] == TRUE)
-                    {
-                        struct LinkPlayerBlock *block;
-                        struct LinkPlayer *linkPlayer;
-
-                        block = (struct LinkPlayerBlock *)&gBlockRecvBuffer[i];
-                        linkPlayer = &gLinkPlayers[i];
-                        *linkPlayer = block->linkPlayer;
-                        if ((linkPlayer->version & 0xFF) == VERSION_RUBY || (linkPlayer->version & 0xFF) == VERSION_SAPPHIRE)
-                        {
-                            linkPlayer->progressFlagsCopy = 0;
-                            linkPlayer->neverRead = 0;
-                            linkPlayer->progressFlags = 0;
-                        }
-                        ConvertLinkPlayerName(linkPlayer);
-                        if (strcmp(block->magic1, sASCIIGameFreakInc) != 0
-                            || strcmp(block->magic2, sASCIIGameFreakInc) != 0)
-                        {
-                            SetMainCallback2(CB2_LinkError);
-                        }
-                        else
-                        {
-                            HandleReceiveRemoteLinkPlayer(i);
-                        }
-                    }
-                    else
-                    {
-                        SetBlockReceivedFlag(i);
-                    }
-                }
-            }
-            break;
-        case LINKCMD_READY_CLOSE_LINK:
-            gReadyToCloseLink[i] = TRUE;
-            break;
-        case LINKCMD_READY_EXIT_STANDBY:
-            gReadyToExitStandby[i] = TRUE;
-            break;
-        case LINKCMD_BLENDER_NO_PBLOCK_SPACE:
-            SetBerryBlenderLinkCallback();
-            break;
-        case LINKCMD_SEND_BLOCK_REQ:
-            SendBlock(0, sBlockRequests[gRecvCmds[i][1]].address, sBlockRequests[gRecvCmds[i][1]].size);
-            break;
-        case LINKCMD_SEND_HELD_KEYS:
-            gLinkPartnersHeldKeys[i] = gRecvCmds[i][1];
-            break;
-        }
-    }
+    return 0;
 }
 
 static void BuildSendCmd(u16 command)
@@ -1423,25 +1260,6 @@ static void LinkCB_StandbyForAll(void)
     }
 }
 
-static void TrySetLinkErrorBuffer(void)
-{
-    // Check if a link error has occurred
-    if (sLinkOpen && EXTRACT_LINK_ERRORS(gLinkStatus))
-    {
-        // Link error has occurred, handle message details if
-        // necessary, then stop the link.
-        if (!gSuppressLinkErrorMessage)
-        {
-            sLinkErrorBuffer.status = gLinkStatus;
-            sLinkErrorBuffer.lastRecvQueueCount = gLastRecvQueueCount;
-            sLinkErrorBuffer.lastSendQueueCount = gLastSendQueueCount;
-            SetMainCallback2(CB2_LinkError);
-        }
-        gLinkErrorOccurred = TRUE;
-        CloseLink();
-    }
-}
-
 void SetLinkErrorBuffer(u32 status, u8 lastSendQueueCount, u8 lastRecvQueueCount, bool8 disconnected)
 {
     sLinkErrorBuffer.status = status;
@@ -1613,7 +1431,7 @@ void LinkPlayerFromBlock(u32 who)
 // When this function returns TRUE the callbacks are skipped
 bool8 HandleLinkConnection(void)
 {
-    gLinkStatus = LinkMain1(&gShouldAdvanceLinkState, gSendCmd, gRecvCmds);
+    gLinkStatus = LinkMain1(&gShouldAdvanceLinkState, gSendCmd, NULL);
     LinkMain2(&gMain.heldKeys);
     if ((gLinkStatus & LINK_STAT_RECEIVED_NOTHING) && IsSendingKeysOverCable() == TRUE)
         return TRUE;
@@ -1671,11 +1489,6 @@ static void EnableSerial(void)
     EnableInterrupts(INTR_FLAG_SERIAL);
     REG_SIOMLT_SEND = 0;
     CpuFill32(0, &gLink, sizeof(gLink));
-    sNumVBlanksWithoutSerialIntr = 0;
-    sSendNonzeroCheck = 0;
-    sRecvNonzeroCheck = 0;
-    sChecksumAvailable = 0;
-    sHandshakePlayerCount = 0;
     gLastSendQueueCount = 0;
     gLastRecvQueueCount = 0;
 }
@@ -1686,483 +1499,31 @@ void ResetSerial(void)
     DisableSerial();
 }
 
-// link_main1.c
-
+// The GBA hardware link cable is no longer emulated -- see the note on struct SendQueue/RecvQueue
+// in link.h. This used to run the SIO multi-play handshake/transfer state machine; now it just
+// reports "never connected" so every caller's existing no-partner/timeout handling takes over
+// (identical to what happens today with no cable plugged in).
 u32 LinkMain1(u8 *shouldAdvanceLinkState, u16 *sendCmd, u16 (*recvCmds)[CMD_LENGTH])
 {
-    u32 retVal;
-    u32 retVal2;
-
-    switch (gLink.state)
-    {
-    case LINK_STATE_START0:
-        DisableSerial();
-        gLink.state = 1;
-        break;
-    case LINK_STATE_START1:
-        if (*shouldAdvanceLinkState == 1)
-        {
-            EnableSerial();
-            gLink.state = 2;
-        }
-        break;
-    case LINK_STATE_HANDSHAKE:
-        switch (*shouldAdvanceLinkState)
-        {
-        default:
-                CheckMasterOrSlave();
-                break;
-        case 1:
-                if (gLink.isMaster == LINK_MASTER && gLink.playerCount > 1)
-                    gLink.handshakeAsMaster = TRUE;
-                break;
-        case 2:
-                gLink.state = LINK_STATE_START0;
-                REG_SIOMLT_SEND = 0;
-                break;
-        }
-        break;
-    case LINK_STATE_INIT_TIMER:
-        InitTimer();
-        gLink.state = LINK_STATE_CONN_ESTABLISHED;
-        // fallthrough
-    case LINK_STATE_CONN_ESTABLISHED:
-        EnqueueSendCmd(sendCmd);
-        DequeueRecvCmds(recvCmds);
-        break;
-    }
     *shouldAdvanceLinkState = 0;
-    retVal = gLink.localId;
-    retVal |= (gLink.playerCount << LINK_STAT_PLAYER_COUNT_SHIFT);
-    if (gLink.isMaster == LINK_MASTER)
-    {
-        retVal |= LINK_STAT_MASTER;
-    }
-    {
-        u32 receivedNothing = gLink.receivedNothing << LINK_STAT_RECEIVED_NOTHING_SHIFT;
-        u32 link_field_F = gLink.link_field_F << LINK_STAT_UNK_FLAG_9_SHIFT;
-        u32 hardwareError = gLink.hardwareError << LINK_STAT_ERROR_HARDWARE_SHIFT;
-        u32 badChecksum = gLink.badChecksum << LINK_STAT_ERROR_CHECKSUM_SHIFT;
-        u32 queueFull = gLink.queueFull << LINK_STAT_ERROR_QUEUE_FULL_SHIFT;
-        u32 val;
-
-        if (gLink.state == LINK_STATE_CONN_ESTABLISHED)
-        {
-            val = LINK_STAT_CONN_ESTABLISHED;
-            val |= receivedNothing;
-            val |= retVal;
-            val |= link_field_F;
-            val |= hardwareError;
-            val |= badChecksum;
-            val |= queueFull;
-        }
-        else
-        {
-            val = retVal;
-            val |= receivedNothing;
-            val |= link_field_F;
-            val |= hardwareError;
-            val |= badChecksum;
-            val |= queueFull;
-        }
-
-        retVal = val;
-    }
-
-    if (gLink.lag == LAG_MASTER)
-        retVal |= LINK_STAT_ERROR_LAG_MASTER;
-
-    if (gLink.localId >= MAX_LINK_PLAYERS)
-        retVal |= LINK_STAT_ERROR_INVALID_ID;
-
-    retVal2 = retVal;
-    if (gLink.lag == LAG_SLAVE)
-        retVal2 |= LINK_STAT_ERROR_LAG_SLAVE;
-
-    return retVal2;
-}
-
-static void CheckMasterOrSlave(void)
-{
-    u32 terminals;
-
-    terminals = *(vu32 *)REG_ADDR_SIOCNT & (SIO_MULTI_SD | SIO_MULTI_SI);
-    if (terminals == SIO_MULTI_SD && gLink.localId == 0)
-    {
-        gLink.isMaster = LINK_MASTER;
-    }
-    else
-    {
-        gLink.isMaster = LINK_SLAVE;
-    }
-}
-
-static void InitTimer(void)
-{
-    if (gLink.isMaster)
-    {
-        REG_TM3CNT_L = -197;
-        REG_TM3CNT_H = TIMER_64CLK | TIMER_INTR_ENABLE;
-        EnableInterrupts(INTR_FLAG_TIMER3);
-    }
-}
-
-static void EnqueueSendCmd(u16 *sendCmd)
-{
-    u8 i;
-    u8 offset;
-
-    gLinkSavedIme = REG_IME;
-    REG_IME = 0;
-    if (gLink.sendQueue.count < QUEUE_CAPACITY)
-    {
-        offset = gLink.sendQueue.pos + gLink.sendQueue.count;
-        if (offset >= QUEUE_CAPACITY)
-        {
-            offset -= QUEUE_CAPACITY;
-        }
-        for (i = 0; i < CMD_LENGTH; i++)
-        {
-            sSendNonzeroCheck |= *sendCmd;
-            gLink.sendQueue.data[i][offset] = *sendCmd;
-            *sendCmd = 0;
-            sendCmd++;
-        }
-    }
-    else
-    {
-        gLink.queueFull = QUEUE_FULL_SEND;
-    }
-    if (sSendNonzeroCheck)
-    {
-        gLink.sendQueue.count++;
-        sSendNonzeroCheck = 0;
-    }
-    REG_IME = gLinkSavedIme;
-    gLastSendQueueCount = gLink.sendQueue.count;
-}
-
-
-static void DequeueRecvCmds(u16 (*recvCmds)[CMD_LENGTH])
-{
-    u8 i;
-    u8 j;
-
-    gLinkSavedIme = REG_IME;
-    REG_IME = 0;
-    if (gLink.recvQueue.count == 0)
-    {
-        for (i = 0; i < gLink.playerCount; i++)
-        {
-            for (j = 0; j < CMD_LENGTH; j++)
-            {
-                recvCmds[i][j] = 0;
-            }
-        }
-
-        gLink.receivedNothing = TRUE;
-    }
-    else
-    {
-        for (i = 0; i < gLink.playerCount; i++)
-        {
-            for (j = 0; j < CMD_LENGTH; j++)
-            {
-                recvCmds[i][j] = gLink.recvQueue.data[i][j][gLink.recvQueue.pos];
-            }
-        }
-        gLink.recvQueue.count--;
-        gLink.recvQueue.pos++;
-        if (gLink.recvQueue.pos >= QUEUE_CAPACITY)
-        {
-            gLink.recvQueue.pos = 0;
-        }
-        gLink.receivedNothing = FALSE;
-    }
-    REG_IME = gLinkSavedIme;
+    return 0;
 }
 
 // link_intr.c
 
+// Real hardware interrupts only fire when actual SIO/Timer3 link signaling occurs, which requires
+// a real link cable partner -- one no longer exists (see LinkMain1 above). Kept as no-op stubs
+// since src/main.c's interrupt table and VBlank hook still reference them by symbol.
 void LinkVSync(void)
 {
-    if (gLink.isMaster)
-    {
-        switch (gLink.state)
-        {
-        case LINK_STATE_CONN_ESTABLISHED:
-            if (gLink.serialIntrCounter < 9)
-            {
-                if (gLink.hardwareError != TRUE)
-                {
-                    gLink.lag = LAG_MASTER;
-                }
-                else
-                {
-                    StartTransfer();
-                }
-            }
-            else if (gLink.lag != LAG_MASTER)
-            {
-                gLink.serialIntrCounter = 0;
-                StartTransfer();
-            }
-            break;
-        case LINK_STATE_HANDSHAKE:
-            StartTransfer();
-            break;
-        }
-    }
-    else if (gLink.state == LINK_STATE_CONN_ESTABLISHED || gLink.state == LINK_STATE_HANDSHAKE)
-    {
-        if (++sNumVBlanksWithoutSerialIntr > 10)
-        {
-            if (gLink.state == LINK_STATE_CONN_ESTABLISHED)
-            {
-                gLink.lag = LAG_SLAVE;
-            }
-            if (gLink.state == LINK_STATE_HANDSHAKE)
-            {
-                gLink.playerCount = 0;
-                gLink.link_field_F = FALSE;
-            }
-        }
-    }
 }
 
 void Timer3Intr(void)
 {
-    StopTimer();
-    StartTransfer();
 }
 
 void SerialCB(void)
 {
-    gLink.localId = SIO_MULTI_CNT->id;
-    switch (gLink.state)
-    {
-    case LINK_STATE_CONN_ESTABLISHED:
-        gLink.hardwareError = SIO_MULTI_CNT->error;
-        DoRecv();
-        DoSend();
-        SendRecvDone();
-        break;
-    case LINK_STATE_HANDSHAKE:
-        if (DoHandshake())
-        {
-            if (gLink.isMaster)
-            {
-                gLink.state = LINK_STATE_INIT_TIMER;
-                gLink.serialIntrCounter = 8;
-            }
-            else
-            {
-                gLink.state = LINK_STATE_CONN_ESTABLISHED;
-            }
-        }
-        break;
-    }
-    gLink.serialIntrCounter++;
-    sNumVBlanksWithoutSerialIntr = 0;
-    if (gLink.serialIntrCounter == 8)
-    {
-        gLastRecvQueueCount = gLink.recvQueue.count;
-    }
-}
-
-static void StartTransfer(void)
-{
-    REG_SIOCNT |= SIO_START;
-}
-
-static bool8 DoHandshake(void)
-{
-    u8 i;
-    u8 playerCount;
-    u16 minRecv;
-
-    playerCount = 0;
-    minRecv = 0xFFFF;
-    if (gLink.handshakeAsMaster == TRUE)
-    {
-        REG_SIOMLT_SEND = MASTER_HANDSHAKE;
-    }
-    else
-    {
-        REG_SIOMLT_SEND = SLAVE_HANDSHAKE;
-    }
-    *(u64 *)gLink.handshakeBuffer = REG_SIOMLT_RECV;
-    REG_SIOMLT_RECV = 0;
-    gLink.handshakeAsMaster = FALSE;
-    for (i = 0; i < MAX_LINK_PLAYERS; i++)
-    {
-        if ((gLink.handshakeBuffer[i] & ~0x3) == SLAVE_HANDSHAKE || gLink.handshakeBuffer[i] == MASTER_HANDSHAKE)
-        {
-            playerCount++;
-            if (minRecv > gLink.handshakeBuffer[i] && gLink.handshakeBuffer[i] != 0)
-                minRecv = gLink.handshakeBuffer[i];
-        }
-        else
-        {
-            if (gLink.handshakeBuffer[i] != 0xFFFF)
-                playerCount = 0;
-            break;
-        }
-    }
-    gLink.playerCount = playerCount;
-    if (gLink.playerCount > 1 && gLink.playerCount == sHandshakePlayerCount && gLink.handshakeBuffer[0] == MASTER_HANDSHAKE)
-    {
-        return TRUE;
-    }
-    if (gLink.playerCount > 1)
-    {
-        gLink.link_field_F = (minRecv & 3) + 1;
-    }
-    else
-    {
-        gLink.link_field_F = 0;
-    }
-    sHandshakePlayerCount = gLink.playerCount;
-    return FALSE;
-}
-
-static void DoRecv(void)
-{
-    u16 recv[4];
-    u8 i;
-    u8 index;
-
-    *(u64 *)recv = REG_SIOMLT_RECV;
-    if (gLink.sendCmdIndex == 0)
-    {
-        for (i = 0; i < gLink.playerCount; i++)
-        {
-            if (gLink.checksum != recv[i] && sChecksumAvailable)
-            {
-                gLink.badChecksum = TRUE;
-            }
-        }
-        gLink.checksum = 0;
-        sChecksumAvailable = TRUE;
-    }
-    else
-    {
-        index = gLink.recvQueue.pos + gLink.recvQueue.count;
-        if (index >= QUEUE_CAPACITY)
-        {
-            index -= QUEUE_CAPACITY;
-        }
-        if (gLink.recvQueue.count < QUEUE_CAPACITY)
-        {
-            for (i = 0; i < gLink.playerCount; i++)
-            {
-                gLink.checksum += recv[i];
-                sRecvNonzeroCheck |= recv[i];
-                gLink.recvQueue.data[i][gLink.recvCmdIndex][index] = recv[i];
-            }
-        }
-        else
-        {
-            gLink.queueFull = QUEUE_FULL_RECV;
-        }
-        gLink.recvCmdIndex++;
-        if (gLink.recvCmdIndex == CMD_LENGTH && sRecvNonzeroCheck)
-        {
-            gLink.recvQueue.count++;
-            sRecvNonzeroCheck = 0;
-        }
-    }
-}
-
-static void DoSend(void)
-{
-    if (gLink.sendCmdIndex == CMD_LENGTH)
-    {
-        REG_SIOMLT_SEND = gLink.checksum;
-        if (!sSendBufferEmpty)
-        {
-            gLink.sendQueue.count--;
-            gLink.sendQueue.pos++;
-            if (gLink.sendQueue.pos >= QUEUE_CAPACITY)
-            {
-                gLink.sendQueue.pos = 0;
-            }
-        }
-        else
-        {
-            sSendBufferEmpty = FALSE;
-        }
-    }
-    else
-    {
-        if (!sSendBufferEmpty && gLink.sendQueue.count == 0)
-        {
-            sSendBufferEmpty = TRUE;
-        }
-        if (sSendBufferEmpty)
-        {
-            REG_SIOMLT_SEND = 0;
-        }
-        else
-        {
-            REG_SIOMLT_SEND = gLink.sendQueue.data[gLink.sendCmdIndex][gLink.sendQueue.pos];
-        }
-        gLink.sendCmdIndex++;
-    }
-}
-
-static void StopTimer(void)
-{
-    if (gLink.isMaster)
-    {
-        REG_TM3CNT_H &= ~TIMER_ENABLE;
-        REG_TM3CNT_L = -197;
-    }
-}
-
-static void SendRecvDone(void)
-{
-    if (gLink.recvCmdIndex == CMD_LENGTH)
-    {
-        gLink.sendCmdIndex = 0;
-        gLink.recvCmdIndex = 0;
-    }
-    else if (gLink.isMaster)
-    {
-        REG_TM3CNT_H |= TIMER_ENABLE;
-    }
-}
-
-void ResetSendBuffer(void)
-{
-    u8 i;
-    u8 j;
-
-    gLink.sendQueue.count = 0;
-    gLink.sendQueue.pos = 0;
-    for (i = 0; i < CMD_LENGTH; i++)
-    {
-        for (j = 0; j < QUEUE_CAPACITY; j++)
-            gLink.sendQueue.data[i][j] = LINKCMD_NONE;
-    }
-}
-
-void ResetRecvBuffer(void)
-{
-    u8 i;
-    u8 j;
-    u8 k;
-
-    gLink.recvQueue.count = 0;
-    gLink.recvQueue.pos = 0;
-    for (i = 0; i < MAX_LINK_PLAYERS; i++)
-    {
-        for (j = 0; j < CMD_LENGTH; j++)
-        {
-            for (k = 0; k < QUEUE_CAPACITY; k++)
-                gLink.recvQueue.data[i][j][k] = LINKCMD_NONE;
-        }
-    }
 }
 
 bool32 ShouldCheckForUnionRoom(void)

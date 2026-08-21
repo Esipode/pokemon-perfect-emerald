@@ -1,0 +1,124 @@
+== RAM report: pokeemerald.elf ==
+
+Region         Used   Capacity  Banner% Note
+EWRAM        254944     262144   97.25% 7200 bytes free
+IWRAM         18660      32768   56.95% banner overstates free space, see below
+
+Corrected IWRAM headroom (accounts for the system stack, src/crt0.s):
+  static .bss ends 0x030048e8, sp_sys = 0x03007e40 -> 13656 bytes free
+
+-- Top 25 EWRAM symbols --
+       Bytes  Address     Symbol
+      115968  0x0201adc4  gHeap
+       68028  0x02007d18  gPokemonStorage
+       20480  0x02002118  sBackupMapData
+        7560  0x020186d4  gSaveblock1
+        6596  0x0203baec  gSprites
+        4096  0x02039444  gSaveDataBuffer
+        3840  0x0203a46c  gScanlineEffectRegBuffers
+        2496  0x02037e78  gParties
+        2212  0x02001194  sPlaceDecorationGraphicsDataBuffer
+        1576  0x0201a790  gSaveblock3
+        1552  0x02038c2c  sBattleRecords
+        1280  0x02007464  gBlockRecvBuffer
+        1152  0x0203b66c  sSpriteCopyRequests
+        1024  0x02037908  gPlttBufferUnfaded
+        1024  0x02037508  gPlttBufferFaded
+        1000  0x0203d4e4  gStringVar4
+         920  0x02007980  gLoadedSaveData
+         832  0x020000e0  sBoostMenuNameBuffers
+         820  0x0201a45c  gSaveblock2
+         648  0x02001e60  gWeather
+         576  0x02001bd8  gObjectEvents
+         576  0x02000c08  gBattleMons
+         512  0x0203dbe0  sFontHalfRowLookupTable
+         425  0x02000e8c  gDisplayedStringBattle
+         384  0x0203e260  gWindows
+
+-- Top 25 IWRAM symbols --
+       Bytes  Address     Symbol
+        4016  0x03003124  gSoundInfo
+        2048  0x03000ad0  sDma3Requests
+        1084  0x0300411c  gMain
+         972  0x03001e54  sCurrentChoices
+         956  0x03000198  SoundMainRAM
+         800  0x03002260  gMPlayTrack_BGM
+         720  0x03002670  gMPlayTrack_SE2
+         700  0x03000554  SoundMainRAM_Unk1
+         640  0x03004630  gTasks
+         392  0x03001664  sItemIconGfxBuffer
+         384  0x03001b70  sSpriteTileRanges
+         384  0x030019f0  sAffineAnimStates
+         320  0x03002d14  gPokemonCryTracks
+         256  0x03002ed4  gCgbChans
+         256  0x0300148c  sExpandedMenuTextBuffer
+         256  0x030009c8  sWorkingYkTable
+         240  0x03002580  gMPlayTrack_SE1
+         192  0x03001cf0  sSpriteTileRangeTags
+         144  0x03002fd4  gMPlayJumpTable
+         140  0x03000810  SoundMainRAM_Unk2
+         132  0x03001db4  gCurGlyph
+         128  0x030030a4  gPokemonCryMusicPlayers
+         116  0x030018e4  sImmediateScriptContext
+         116  0x03001870  sGlobalScriptContext
+         104  0x03002c6c  gPokemonCrySongs
+
+-- Top 25 EWRAM object files --
+       Bytes  Object
+      115968  src/malloc.o
+       78908  src/load_save.o
+       20524  src/fieldmap.o
+        8244  src/sprite.o
+        4096  src/save.o
+        3868  src/scanline_effect.o
+        2536  src/pokemon.o
+        2248  src/decoration.o
+        2153  src/battle_main.o
+        2076  src/palette.o
+        1880  src/link.o
+        1792  src/recorded_battle.o
+        1784  src/string_util.o
+        1052  src/achievement_boost_menu.o
+         680  src/field_weather.o
+         628  src/field_player_avatar.o
+         612  src/record_mixing.o
+         532  src/text.o
+         384  src/window.o
+         356  src/trainer_card.o
+         288  src/trade.o
+         288  src/achievement_popup.o
+         284  src/route_tracker.o
+         256  src/achievement_icons.o
+         240  src/tileset_anims.o
+  ... 125 more files
+  attributed to files: 254851 bytes; measured (readelf section size): 254944 bytes; 93 bytes linker fill/alignment padding
+
+-- Top 25 IWRAM object files --
+       Bytes  Object
+        5292  src/m4a.o
+        2056  src/dma3_manager.o
+        1860  src/m4a_1.o
+        1840  data/sound_data.o
+        1156  src/main.o
+        1000  src/sprite.o
+         972  src/ui_birch_case.o
+         640  src/task.o
+         392  src/pokemon_storage_system.o
+         348  src/crt0.o
+         308  src/link.o
+         296  src/decompress.o
+         256  src/menu.o
+         240  src/script.o
+         196  src/gpu_regs.o
+         132  src/text.o
+         124  src/save.o
+         108  src/bg.o
+         106  src/battle_main.o
+         104  src/slot_machine.o
+         100  src/pokedex_plus_hgss.o
+          76  src/debug.o
+          64  src/item.o
+          56  src/pokemon_animation.o
+          54  src/overworld.o
+  ... 54 more files
+  attributed to files: 18616 bytes; measured (readelf section size): 18660 bytes; 44 bytes linker fill/alignment padding

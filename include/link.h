@@ -188,18 +188,17 @@ struct LinkPlayerBlock
     char magic2[16];
 };
 
-// circular queues
-
+// No real link partner can ever connect (see LinkMain1 in src/link.c), so the queues that used to
+// buffer packets in transit are permanently empty. Only pos/count remain, since a few overworld
+// throttling checks (src/overworld.c) still read the counts and always see zero backlog.
 struct SendQueue
 {
-    /* 0x000 */ u16 data[CMD_LENGTH][QUEUE_CAPACITY];
-    /* 0x320 */ u8 pos;
-    /* 0x321 */ u8 count;
+    u8 pos;
+    u8 count;
 };
 
 struct RecvQueue
 {
-    u16 data[MAX_LINK_PLAYERS][CMD_LENGTH][QUEUE_CAPACITY];
     u8 pos;
     u8 count;
 };
