@@ -301,6 +301,7 @@ struct PokemonJumpRecords
     u32 bestJumpScore;
 };
 
+#if FREE_DODRIO_BERRY_PICKING == FALSE
 struct BerryPickingResults
 {
     u32 bestScore;
@@ -315,6 +316,7 @@ struct BerryPickingResults
     u8 field_E;
     u8 field_F;
 };
+#endif //FREE_DODRIO_BERRY_PICKING
 
 struct PyramidBag
 {
@@ -328,9 +330,13 @@ struct PyramidBag
 
 struct BerryCrush
 {
+#if FREE_BERRY_CRUSH == FALSE
     u16 pressingSpeeds[4]; // For the record with each possible group size, 2-5 players
-    u32 berryPowderAmount;
+#endif //FREE_BERRY_CRUSH
+    u32 berryPowderAmount; // Shared currency with berry_powder.c -- kept regardless of FREE_BERRY_CRUSH
+#if FREE_BERRY_CRUSH == FALSE
     u32 unk;
+#endif //FREE_BERRY_CRUSH
 };
 
 struct ApprenticeMon
@@ -812,7 +818,9 @@ struct SaveBlock2
 #if FREE_POKEMON_JUMP == FALSE
     /*0x1FC*/ struct PokemonJumpRecords pokeJump;
 #endif //FREE_POKEMON_JUMP
+#if FREE_DODRIO_BERRY_PICKING == FALSE
     /*0x20C*/ struct BerryPickingResults berryPick;
+#endif //FREE_DODRIO_BERRY_PICKING
 #if FREE_RECORD_MIXING_HALL_RECORDS == FALSE
     /*0x21C*/ struct RankingHall1P hallRecords1P[HALL_FACILITIES_COUNT][FRONTIER_LVL_MODE_COUNT][HALL_RECORDS_COUNT]; // From record mixing.
     /*0x57C*/ struct RankingHall2P hallRecords2P[FRONTIER_LVL_MODE_COUNT][HALL_RECORDS_COUNT]; // From record mixing.
@@ -1509,7 +1517,9 @@ struct SaveBlock1
 #if FREE_LILYCOVE_LADY == FALSE
     LilycoveLady lilycoveLady;
 #endif //FREE_LILYCOVE_LADY
+#if FREE_UNION_ROOM == FALSE
     struct TrainerNameRecord trainerNameRecords[4]; // ORIGINALLY 20
+#endif //FREE_UNION_ROOM
 #if FREE_UNION_ROOM_CHAT == FALSE
     u8 registeredTexts[UNION_ROOM_KB_ROW_COUNT][21];
 #endif //FREE_UNION_ROOM_CHAT

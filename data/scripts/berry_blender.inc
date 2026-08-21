@@ -684,12 +684,13 @@ BerryBlender_EventScript_TryJoinGroup:
 	release
 	end
 
+@ Wireless-only; stubbed as a safe "failed" result now that the underlying RFU stack is gone.
 BerryBlender_EventScript_TryBecomeLinkLeader:
-	special TryBecomeLinkLeader
+	setvar VAR_RESULT, LINKUP_FAILED
 	return
 
 BerryBlender_EventScript_TryJoinLinkGroup:
-	special TryJoinLinkGroup
+	setvar VAR_RESULT, LINKUP_FAILED
 	return
 
 BerryBlender_EventScript_LinkLeaderDecided:

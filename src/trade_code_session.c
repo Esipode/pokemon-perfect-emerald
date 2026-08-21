@@ -6,7 +6,6 @@
 #include "trade_code_prompt.h"
 #include "trade_code_receive.h"
 #include "draft_mode.h"
-#include "link_rfu.h"
 #include "malloc.h"
 #include "overworld.h"
 #include "party_menu.h"
@@ -21,7 +20,6 @@
 #include "strings.h"
 #include "constants/battle.h"
 #include "constants/species.h"
-#include "constants/union_room.h"
 
 // Stage 7 of "Trading Codes.md": Steps 1-3 of the protocol. See
 // include/trade_code_session.h for the scope/entry-point rationale.
@@ -347,16 +345,9 @@ void TradeCodeSession_Start(void)
         return;
     }
 
-    // Populates gHostRfuGameData.compatibility.hasNationalDex (via
-    // IsNationalPokedexEnabled() - a plain local save-flag read, no RFU/
-    // link dependency - confirmed by reading src/link_rfu_3.c's
-    // InitHostRfuGameData before relying on it) so PARTY_MENU_TYPE_UNION_
-    // ROOM_REGISTER's own in-menu CanRegisterMonForTradingBoard gate
-    // (src/party_menu.c's CursorCb_Register) behaves correctly instead of
-    // defaulting to "no National Dex" - the rest of that struct (activity/
-    // partnerInfo/etc.) is irrelevant here, this screen never touches
-    // RFU/link state otherwise.
-    SetHostRfuGameData(ACTIVITY_NONE, 0, FALSE);
+    // PARTY_MENU_TYPE_UNION_ROOM_REGISTER's own in-menu CanRegisterMonForTradingBoard gate
+    // (src/party_menu.c's CursorCb_Register) reads IsNationalPokedexEnabled() directly now
+    // that RFU is gone -- nothing to prime here first.
     ChooseMonForTradingBoard(PARTY_MENU_TYPE_UNION_ROOM_REGISTER, CB2_TradeCodeSession_AfterChooseMon);
 }
 

@@ -29,9 +29,7 @@ enum PartyMenuType
     PARTY_MENU_TYPE_DAYCARE,
     PARTY_MENU_TYPE_MOVE_RELEARNER,
     PARTY_MENU_TYPE_UNION_ROOM_REGISTER,        // trading board
-    PARTY_MENU_TYPE_UNION_ROOM_TRADE,           // trading board
     PARTY_MENU_TYPE_SPIN_TRADE,                 // Unused beta for Gen IV's Spin Trade
-    PARTY_MENU_TYPE_MINIGAME,
     PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS,
     PARTY_MENU_TYPE_MULTI_FULL_SHOWCASE
 };
@@ -128,7 +126,6 @@ void InitChooseHalfPartyForBattle(u8 unused);
 void ClearSelectedPartyOrder(void);
 void ChooseMonForTradingBoard(enum PartyMenuType menuType, MainCallback callback);
 void ChooseMonForMoveTutor(void);
-void ChooseMonForWirelessMinigame(void);
 void OpenPartyMenuInBattle(u8 partyAction);
 void ChooseMonForInBattleItem(void);
 void BufferBattlePartyCurrentOrder(void);

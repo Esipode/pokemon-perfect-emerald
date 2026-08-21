@@ -831,17 +831,6 @@ const struct Tileset gTileset_MysteryEventsHouse =
     .callback = NULL,
 };
 
-const struct Tileset gTileset_UnionRoom =
-{
-    .isCompressed = TRUE,
-    .isSecondary = TRUE,
-    .tiles = gTilesetTiles_UnionRoom,
-    .palettes = gTilesetPalettes_UnionRoom,
-    .metatiles = gMetatiles_UnionRoom,
-    .metatileAttributes = gMetatileAttributes_UnionRoom,
-    .callback = NULL,
-};
-
 #else
 
 // FRLG tilesets

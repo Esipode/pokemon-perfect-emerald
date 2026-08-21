@@ -402,22 +402,10 @@ gSpecials::
 	def_special StartPlayerDescendMirageTower, waitstate=1
 	def_special BufferTMHMMoveName
 	def_special IsWirelessAdapterConnected
-	def_special TryBecomeLinkLeader, waitstate=1
-	def_special TryJoinLinkGroup, waitstate=1
-	def_special RunUnionRoom
-	def_special ShowWirelessCommunicationScreen, waitstate=1
-	def_special InitUnionRoom
-	def_special BufferUnionRoomPlayerName
 	def_special WonderNews_GetRewardInfo
-	def_special ChooseMonForWirelessMinigame, waitstate=1
-	def_special Script_ResetUnionRoomTrade
 	def_special IsBadEggInParty
 	def_special ValidateSavedWonderCard
 	def_special HasAtLeastOneBerry
-	def_special IsPokemonJumpSpeciesInParty
-	def_special ShowPokemonJumpRecords, waitstate=1
-	def_special IsDodrioInParty
-	def_special ShowDodrioBerryPickingRecords, waitstate=1
 	def_special OffsetCameraForBattle
 	def_special GetDeptStoreDefaultFloorChoice
 	def_special BufferVarsForIVRater
@@ -495,7 +483,6 @@ gSpecials::
 	def_special Script_DoRayquazaScene, waitstate=1 @ Listed twice
 	def_special LoopWingFlapSE
 	def_special DestroyMewEmergingGrassSprite
-	def_special ShowBerryCrushRankings, waitstate=1
 	def_special TryBufferWaldaPhrase
 	def_special DoWaldaNamingScreen, waitstate=1
 	def_special TryGetWallpaperWithWaldaPhrase

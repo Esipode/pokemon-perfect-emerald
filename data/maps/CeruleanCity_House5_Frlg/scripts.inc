@@ -167,9 +167,12 @@ CeruleanCity_House5_EventScript_NotEnoughBerryPowder::
 
 CeruleanCity_House5_EventScript_BerryCrushRankings::
 	lockall
-	special ShowBerryCrushRankings
+	msgbox CeruleanCity_House5_Text_BerryCrushRankingsGone, MSGBOX_DEFAULT
 	releaseall
 	end
+
+CeruleanCity_House5_Text_BerryCrushRankingsGone::
+	.string "The rankings board is blank.$"
 
 CeruleanCity_House1_Text_AnyInterestInBerries::
 	.string "I concoct a variety of medicine\n"

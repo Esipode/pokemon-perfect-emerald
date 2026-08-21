@@ -696,77 +696,7 @@ CableClub_EventScript_UnionRoomAttendant_Frlg::
 	specialvar VAR_RESULT, IsBadEggInParty
 	goto_if_eq VAR_RESULT, TRUE, CableClub_EventScript_AbortLinkPlayerHasBadEgg_Frlg
 	copyvar VAR_0x8007, VAR_LAST_TALKED
-	specialvar VAR_RESULT, IsWirelessAdapterConnected
-	goto_if_eq VAR_RESULT, FALSE, CableClub_EventScript_UnionRoomAdapterNotConnected_Frlg
-	message CableClub_Text_WelcomeUnionRoomEnter_Frlg
-	waitmessage
-	goto CableClub_EventScript_AskEnterUnionRoom_Frlg
-	end
-
-CableClub_EventScript_AskEnterUnionRoom_Frlg::
-	multichoice 18, 6, MULTI_YESNOINFO, FALSE
-	switch VAR_RESULT
-	case 0, CableClub_EventScript_EnterUnionRoom_Frlg
-	case 1, CableClub_EventScript_AbortLink_Frlg
-	case 2, CableClub_EventScript_UnionRoomInfo_Frlg
-	case MULTI_B_PRESSED, CableClub_EventScript_AbortLink_Frlg
-	end
-
-CableClub_EventScript_UnionRoomInfo_Frlg::
-	message CableClub_Text_UnionRoomInfo_Frlg
-	waitmessage
-	goto CableClub_EventScript_AskEnterUnionRoom_Frlg
-	end
-
-CableClub_EventScript_EnterUnionRoom_Frlg::
-	call CableClub_EventScript_CheckPartyUnionRoomRequirements_Frlg
-	goto_if_eq VAR_RESULT, FALSE, CableClub_EventScript_AbortLink_Frlg
-	call Common_EventScript_SaveGame
-	goto_if_eq VAR_RESULT, 0, CableClub_EventScript_AbortLink_Frlg
-	msgbox CableClub_Text_EnjoyUnionRoom_Frlg
-	closemessage
-	special HealPlayerParty
-	setvar VAR_0x8004, USING_UNION_ROOM
-	copyvar VAR_CABLE_CLUB_STATE, VAR_0x8004
-	call CableClub_EventScript_OpenUnionRoomBarrier_Frlg
-	special DrawWholeMapView
-	playse SE_CLICK
-	delay 60
-	applymovement VAR_LAST_TALKED, Movement_AttendantFaceLeft
-	waitmovement 0
-	applymovement LOCALID_PLAYER, Movement_PlayerApproachLinkRoomLeft
-	waitmovement 0
-	opendoor 5, 1
-	waitdooranim
-	applymovement LOCALID_PLAYER, Movement_PlayerEnterLinkRoom
-	waitmovement 0
-	hideplayer
-	closedoor 5, 1
-	waitdooranim
-	special Script_ResetUnionRoomTrade
-	special SetCableClubWarp
-	warpspinenter MAP_UNION_ROOM_FRLG, 7, 11
-	waitstate
-	special RunUnionRoom
-	waitstate
-	end
-
-CableClub_EventScript_CheckPartyUnionRoomRequirements_Frlg::
-	specialvar VAR_RESULT, CountPartyNonEggMons
-	goto_if_lt VAR_RESULT, 2, CableClub_EventScript_NeedTwoMonsForUnionRoom_Frlg
-	specialvar VAR_RESULT, DoesPartyHaveEnigmaBerry
-	goto_if_eq VAR_RESULT, TRUE, CableClub_EventScript_NoEnigmaBerryInUnionRoom_Frlg
-	setvar VAR_RESULT, TRUE
-	return
-
-CableClub_EventScript_NeedTwoMonsForUnionRoom_Frlg::
-	msgbox CableClub_Text_NeedTwoMonsForUnionRoom_Frlg
-	goto EventScript_SetResultFalse
-	end
-
-CableClub_EventScript_NoEnigmaBerryInUnionRoom_Frlg::
-	msgbox CableClub_Text_NoEnigmaBerryInUnionRoom_Frlg
-	goto EventScript_SetResultFalse
+	goto CableClub_EventScript_UnionRoomAdapterNotConnected_Frlg
 	end
 
 CableClub_EventScript_UnionRoomAdapterNotConnected_Frlg::
@@ -984,12 +914,14 @@ CableClub_EventScript_TryJoinGroupXPlayers_Frlg::
 	release
 	return
 
+@ Both wireless-only; unreachable now that IsWirelessAdapterConnected is always FALSE, but
+@ kept as a safe "failed" stub since the callers above still switch on this label's VAR_RESULT.
 CableClub_EventScript_TryBecomeLinkLeader_Frlg::
-	special TryBecomeLinkLeader
+	setvar VAR_RESULT, LINKUP_FAILED
 	return
 
 CableClub_EventScript_TryJoinLinkGroup_Frlg::
-	special TryJoinLinkGroup
+	setvar VAR_RESULT, LINKUP_FAILED
 	return
 
 CableClub_EventScript_EnterWirelessLinkRoom_Frlg::
@@ -1021,13 +953,7 @@ CableClub_EventScript_EnterWirelessLinkRoom_Frlg::
 CableClub_EventScript_ShowWirelessCommunicationScreen_Frlg::
 	lockall
 	goto_if_unset FLAG_SYS_POKEDEX_GET, CableClub_EventScript_NotReadyYet_Frlg
-	specialvar VAR_RESULT, IsWirelessAdapterConnected
-	goto_if_eq VAR_RESULT, FALSE, CableClub_EventScript_AdapterNotConnected_Frlg
-	fadescreen FADE_TO_BLACK
-	special ShowWirelessCommunicationScreen
-	msgbox CableClub_Text_ParticipantsStepUpToCounter_Frlg
-	releaseall
-	end
+	goto CableClub_EventScript_AdapterNotConnected_Frlg
 
 CableClub_EventScript_AdapterNotConnected_Frlg::
 	msgbox CableClub_Text_AdapterNotConnected_Frlg
@@ -1059,7 +985,6 @@ CableClub_EventScript_CloseGameCornerBarrier_Frlg::
 	return
 
 CableClub_OnResume_Frlg::
-	special InitUnionRoom
 	end
 
 JoyfulGameCorner_EventScript_InfoMan2_Frlg::
@@ -1095,94 +1020,7 @@ JoyfulGameCorner_EventScript_MinigameAttendant_Frlg::
 	faceplayer
 	message Text_WelcomeCanYouWait_Frlg
 	waitmessage
-	specialvar VAR_RESULT, IsWirelessAdapterConnected
-	goto_if_eq VAR_RESULT, FALSE, CableClub_EventScript_AdapterNotConnectedMinigame_Frlg
-	delay 60
-	message Text_PlayWhichGame_Frlg
-	waitmessage
-	multichoice 0, 0, MULTI_WIRELESS_MINIGAME, FALSE
-	switch VAR_RESULT
-	case 0, CableClub_EventScript_PlayPokemonJump_Frlg
-	case 1, CableClub_EventScript_PlayDodrioBerryPicking_Frlg
-	case 2, CableClub_EventScript_AbortMinigame_Frlg
-	case MULTI_B_PRESSED, CableClub_EventScript_AbortMinigame_Frlg
-	end
-
-CableClub_EventScript_PlayPokemonJump_Frlg::
-	setvar VAR_0x8005, 0
-	special IsPokemonJumpSpeciesInParty
-	goto_if_eq VAR_RESULT, FALSE, CableClub_EventScript_NoEligiblePkmn_Frlg
-	msgbox Text_EnterWhichPokemon_Frlg
-	setvar VAR_0x8005, 0
-	special ChooseMonForWirelessMinigame
-	goto_if_ge VAR_0x8004, PARTY_SIZE, CableClub_EventScript_AbortMinigame_Frlg
-	call Common_EventScript_SaveGame
-	goto_if_eq VAR_RESULT, 0, CableClub_EventScript_AbortMinigame_Frlg
-	setvar VAR_0x8004, LINK_GROUP_POKEMON_JUMP
-	goto CableClub_EventScript_ChooseLinkLeaderMinigame_Frlg
-	end
-
-CableClub_EventScript_PlayDodrioBerryPicking_Frlg::
-	setvar VAR_0x8005, 1
-	special IsDodrioInParty
-	goto_if_eq VAR_RESULT, 0, CableClub_EventScript_NoEligiblePkmn_Frlg
-	msgbox Text_EnterWhichPokemon_Frlg
-	setvar VAR_0x8005, 1
-	special ChooseMonForWirelessMinigame
-	goto_if_ge VAR_0x8004, PARTY_SIZE, CableClub_EventScript_AbortMinigame_Frlg
-	call Common_EventScript_SaveGame
-	goto_if_eq VAR_RESULT, 0, CableClub_EventScript_AbortMinigame_Frlg
-	setvar VAR_0x8004, LINK_GROUP_BERRY_PICKING
-	goto CableClub_EventScript_ChooseLinkLeaderMinigame_Frlg
-	end
-
-CableClub_EventScript_ChooseLinkLeaderMinigame_Frlg::
-	textcolor NPC_TEXT_COLOR_NEUTRAL
-	message CableClub_Text_ChooseGroupLeader_Frlg
-	waitmessage
-	call EventScript_RestorePrevTextColor
-	multichoice 13, 6, MULTI_LINK_LEADER, FALSE
-	switch VAR_RESULT
-	case 0, CableClub_EventScript_TryJoinMinigameLinkGroup_Frlg
-	case 1, CableClub_EventScript_TryBecomeMinigameLinkLeader_Frlg
-	case 2, CableClub_EventScript_AbortMinigame_Frlg
-	case MULTI_B_PRESSED, CableClub_EventScript_AbortMinigame_Frlg
-	end
-
-CableClub_EventScript_TryBecomeMinigameLinkLeader_Frlg::
-	call CableClub_EventScript_TryBecomeLinkLeader_Frlg
-	goto_if_eq VAR_RESULT, LINKUP_SUCCESS, CableClub_EventScript_EnterMinigame_Frlg
-	goto_if_eq VAR_RESULT, LINKUP_FAILED, CableClub_EventScript_ChooseLinkLeaderMinigame_Frlg
-	goto_if_eq VAR_RESULT, LINKUP_RETRY_ROLE_ASSIGN, CableClub_EventScript_TryBecomeMinigameLinkLeader_Frlg
-	release
-	return
-
-CableClub_EventScript_TryJoinMinigameLinkGroup_Frlg::
-	call CableClub_EventScript_TryJoinLinkGroup_Frlg
-	goto_if_eq VAR_RESULT, LINKUP_SUCCESS, CableClub_EventScript_EnterMinigame_Frlg
-	goto_if_eq VAR_RESULT, LINKUP_FAILED, CableClub_EventScript_ChooseLinkLeaderMinigame_Frlg
-	goto_if_eq VAR_RESULT, LINKUP_RETRY_ROLE_ASSIGN, CableClub_EventScript_TryJoinMinigameLinkGroup_Frlg
-	release
-	return
-
-CableClub_EventScript_EnterMinigame_Frlg::
-	messageautoscroll Text_AllGoodToGo_Frlg
-	waitmessage
-	delay 120
-	closemessage
-	copyvar VAR_0x8007, VAR_LAST_TALKED
-	call CableClub_EventScript_OpenGameCornerBarrier_Frlg
-	special DrawWholeMapView
-	playse SE_CLICK
-	delay 60
-	applymovement VAR_LAST_TALKED, Movement_AttendantFaceLeft
-	waitmovement 0
-	closemessage
-	applymovement LOCALID_PLAYER, Movement_PlayerEnterMinigameRoom
-	waitmovement 0
-	hideplayer
-	release
-	waitstate
+	goto CableClub_EventScript_AdapterNotConnectedMinigame_Frlg
 	end
 
 CableClub_EventScript_AdapterNotConnectedMinigame_Frlg::
@@ -1190,31 +1028,15 @@ CableClub_EventScript_AdapterNotConnectedMinigame_Frlg::
 	release
 	end
 
-CableClub_EventScript_NoEligiblePkmn_Frlg::
-	msgbox EventScript_ExplainPokemonJumpRequirements_Frlg, MSGBOX_YESNO
-	goto_if_eq VAR_RESULT, NO, CableClub_EventScript_AbortMinigame_Frlg
-	call_if_eq VAR_0x8005, 0, CableClub_EventScript_ExplainPokemonJumpRequirements_Frlg
-	call_if_eq VAR_0x8005, 1, CableClub_EventScript_ExplainDodrioBerryPickingRequirements_Frlg
-	goto CableClub_EventScript_AbortMinigame_Frlg
-	end
-
-CableClub_EventScript_ExplainPokemonJumpRequirements_Frlg::
-	msgbox Text_ShortJumpingPokemonAllowed_Frlg
-	return
-
-CableClub_EventScript_ExplainDodrioBerryPickingRequirements_Frlg::
-	msgbox Text_OnlyDodrioAllowed_Frlg
-	return
-
 TwoIsland_JoyfulGameCorner_EventScript_ShowPokemonJumpRecords::
 	lockall
-	special ShowPokemonJumpRecords
+	msgbox CableClub_Text_AdapterNotConnected_Frlg
 	releaseall
 	end
 
 TwoIsland_JoyfulGameCorner_EventScript_ShowDodrioBerryPickingRecords::
 	lockall
-	special ShowDodrioBerryPickingRecords
+	msgbox CableClub_Text_AdapterNotConnected_Frlg
 	releaseall
 	end
 

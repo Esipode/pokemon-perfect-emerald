@@ -2037,16 +2037,6 @@ const u32 gNamingScreenKeyboardUpper_Tilemap[]   = INCGFX_U32("graphics/naming_s
 const u32 gNamingScreenKeyboardLower_Tilemap[]   = INCGFX_U32("graphics/naming_screen/keyboard_lower.bin", ".smolTM");
 const u32 gNamingScreenKeyboardSymbols_Tilemap[] = INCGFX_U32("graphics/naming_screen/keyboard_symbols.bin", ".smolTM");
 
-// union room chat
-const u16 gUnionRoomChat_Background_Pal[] = INCGFX_U16("graphics/union_room_chat/background.png", ".gbapal");
-const u32 gUnionRoomChat_Background_Gfx[] = INCGFX_U32("graphics/union_room_chat/background.png", ".4bpp.smol");
-const u32 gUnionRoomChat_Background_Tilemap[] = INCGFX_U32("graphics/union_room_chat/background.bin", ".smolTM");
-const u16 gUnionRoomChat_InputText_Pal[] = INCGFX_U16("graphics/union_room_chat/input_text.pal", ".gbapal");
-const u16 gUnionRoomChat_Keyboard_Pal[] = INCGFX_U16("graphics/union_room_chat/keyboard.png", ".gbapal");
-const u32 gUnionRoomChat_Keyboard_Gfx[] = INCGFX_U32("graphics/union_room_chat/keyboard.png", ".4bpp.smol");
-const u32 gUnionRoomChat_Keyboard_Tilemap[] = INCGFX_U32("graphics/union_room_chat/keyboard.bin", ".smolTM");
-const u32 gUnionRoomChat_RButtonLabels[] = INCGFX_U32("graphics/union_room_chat/r_button_labels.png", ".4bpp.smol");
-
 const u16 ALIGNED(4) gTilesetPalettes_General[][16] =
 {
     INCGFX_U16("data/tilesets/primary/general/palettes/00.pal", ".gbapal"),
@@ -2144,11 +2134,6 @@ const u32 gFrontierPassMapAndCard_Gfx[]                  = INCGFX_U32("graphics/
 const u32 gFrontierPassBg_Tilemap[]                      = INCGFX_U32("graphics/frontier_pass/bg.bin", ".smolTM");
 const u32 gFrontierPassCancelButton_Tilemap[]            = INCBIN_U32("graphics/frontier_pass/cancel.bin");
 const u32 gFrontierPassCancelButtonHighlighted_Tilemap[] = INCBIN_U32("graphics/frontier_pass/cancel_highlighted.bin");
-
-// Berry Crush
-const u16 gBerryCrush_Crusher_Pal[] = INCGFX_U16("graphics/berry_crush/crusher.png", ".gbapal");
-const u32 gBerryCrush_Crusher_Gfx[] = INCGFX_U32("graphics/berry_crush/crusher.png", ".4bpp.smol");
-const u32 gBerryCrush_TextWindows_Tilemap[] = INCGFX_U32("graphics/berry_crush/text_windows.bin", ".smolTM");
 
 const u32 gBattleIcons_Gfx1[] = INCGFX_U32("graphics/types/battle_icons1.png", ".4bpp.smol");
 const u32 gBattleIcons_Gfx2[] = INCGFX_U32("graphics/types/battle_icons2.png", ".4bpp.smol");

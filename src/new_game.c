@@ -36,19 +36,16 @@
 #include "frontier_util.h"
 #include "pokedex.h"
 #include "save.h"
-#include "link_rfu.h"
 #include "main.h"
 #include "contest.h"
 #include "item_menu.h"
 #include "pokemon_storage_system.h"
-#include "pokemon_jump.h"
 #include "decoration_inventory.h"
 #include "string_util.h"
 #include "player_pc.h"
 #include "field_specials.h"
 #include "berry_powder.h"
 #include "mystery_gift.h"
-#include "union_room_chat.h"
 #include "constants/map_groups.h"
 #include "constants/items.h"
 #include "constants/flags.h"
@@ -620,13 +617,11 @@ void NewGameInitData(void)
         StringCopy(gSaveBlock1Ptr->rivalName, rivalName);
 #endif
     ResetMiniGamesRecords();
-    InitUnionRoomChatRegisteredTexts();
     InitLilycoveLady();
     ResetAllApprenticeData();
     ClearRankingHallRecords();
     InitMatchCallCounters();
     ClearMysteryGift();
-    WipeTrainerNameRecords();
     ResetTrainerHillResults();
     ResetTrainerTowerResults();
     ResetContestLinkResults();
@@ -767,8 +762,6 @@ static void ResetMiniGamesRecords(void)
 {
     CpuFill16(0, &gSaveBlock2Ptr->berryCrush, sizeof(struct BerryCrush));
     SetBerryPowder(&gSaveBlock2Ptr->berryCrush.berryPowderAmount, 0);
-    ResetPokemonJumpRecords();
-    CpuFill16(0, &gSaveBlock2Ptr->berryPick, sizeof(struct BerryPickingResults));
 }
 
 static void ResetItemFlags(void)

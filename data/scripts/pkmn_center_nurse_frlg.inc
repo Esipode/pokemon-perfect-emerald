@@ -40,12 +40,7 @@ EventScript_PkmnCenterNurse_TakeAndHealPkmn_Frlg::
 	return
 
 EventScript_PkmnCenterNurse_CheckTrainerTowerAndUnionRoom_Frlg::
-	specialvar VAR_RESULT, IsPlayerNotInTrainerTowerLobby
-	goto_if_eq VAR_RESULT, FALSE, EventScript_PkmnCenterNurse_ReturnPkmn_Frlg
-	specialvar VAR_RESULT, BufferUnionRoomPlayerName
-	copyvar VAR_0x8008, VAR_RESULT
-	goto_if_eq VAR_0x8008, 0, EventScript_PkmnCenterNurse_ReturnPkmn_Frlg
-	goto_if_eq VAR_0x8008, 1, EventScript_PkmnCenterNurse_PlayerWaitingInUnionRoom_Frlg
+	goto EventScript_PkmnCenterNurse_ReturnPkmn_Frlg
 	end
 
 EventScript_PkmnCenterNurse_ReturnPkmn_Frlg::

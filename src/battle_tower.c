@@ -1541,7 +1541,7 @@ static void LoadLinkMultiOpponentsData(void)
             TRAINER_BATTLE_PARAM.opponentB = gSaveBlock2Ptr->frontier.trainerIds[battleNum * 2 + 1];
             SetBattleFacilityTrainerGfxId(TRAINER_BATTLE_PARAM.opponentA, 0);
             SetBattleFacilityTrainerGfxId(TRAINER_BATTLE_PARAM.opponentB, 1);
-            if (gReceivedRemoteLinkPlayers && gWirelessCommType == 0)
+            if (gReceivedRemoteLinkPlayers)
                 gSpecialVar_Result = 4;
             else
                 gSpecialVar_Result = 6;
@@ -1564,8 +1564,6 @@ static void LoadLinkMultiOpponentsData(void)
 
 static void TowerTryCloseLink(void)
 {
-    if (gWirelessCommType != 0)
-        SetCloseLinkCallback();
 }
 
 static void SetMultiPartnerGfx(void)

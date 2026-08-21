@@ -26,16 +26,19 @@
 #define FREE_DECORATIONS                    TRUE   // Frees up playerRoomDecoration* and the 8 decoration* arrays (102 bytes).
 #define FREE_MAIL                           TRUE   // Frees up mail[MAIL_COUNT] (272 bytes) and the embedded struct Mail in both DaycareMail slots (68 bytes).
 #define FREE_POKEBLOCKS                     TRUE   // Frees up pokeblocks[POKEBLOCKS_COUNT] (70 bytes).
-                                            // SaveBlock1 total: 3685 bytes
+#define FREE_UNION_ROOM                     TRUE   // Frees up trainerNameRecords, used only by Union Room (48 bytes).
+                                            // SaveBlock1 total: 3733 bytes
 // SaveBlock2 configs
 #define FREE_BATTLE_TOWER_E_READER          TRUE   // Frees up Battle Tower E-Reader data (200 bytes -- struct BattleTowerEReaderTrainer's stale /*0x..*/ offsets assume the vanilla 44-byte BattleTowerPokemon; it's 48 bytes here since `level` was widened to u16).
 #define FREE_POKEMON_JUMP                   TRUE   // Frees up Pokémon Jump data (16 bytes).
+#define FREE_BERRY_CRUSH                    TRUE   // Frees up Berry Crush's pressing-speed records (12 bytes -- berryPowderAmount stays, it's shared currency with berry_powder.c).
+#define FREE_DODRIO_BERRY_PICKING            TRUE   // Frees up Berry Picking records (16 bytes).
 #define FREE_RECORD_MIXING_HALL_RECORDS     TRUE   // Frees up hall records for record mixing (1032 bytes).
 #define FREE_EXTRA_SEEN_FLAGS_SAVEBLOCK2    TRUE   // Free up unused Pokédex seen flags (104 bytes).
 #define FREE_BATTLE_FRONTIER                TRUE   // Frees up struct BattleFrontier, apprentices[], and playerApprentice (2,528 bytes). Also retires battlePoints/cardBattlePoints and the Battle Tents (which reuse the same struct). disableRecordBattle and lvlMode are relocated to top-level SaveBlock2 fields first, since generic (non-frontier) battle/link code still needs them. Also drops winningRibbon/victoryRibbon from PokemonSubstruct3 -- 0 bytes on its own, but (together with FREE_CONTESTS) a precondition for Stage 5's BoxPokemon shrink.
                                             // FREE_CONTESTS also frees contestLinkResults (40 bytes) here.
-                                            // SaveBlock2 total: 3920 bytes
+                                            // SaveBlock2 total: 3948 bytes
 
-                                            // Grand Total: 7605
+                                            // Grand Total: 7681
 
 #endif // GUARD_CONFIG_SAVE_H

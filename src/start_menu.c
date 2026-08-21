@@ -52,7 +52,6 @@
 #include "trainer_hill.h"
 #include "wallclock.h"
 #include "window.h"
-#include "union_room.h"
 #include "dexnav.h"
 #include "wild_encounter.h"
 #include "constants/battle_frontier.h"
@@ -759,9 +758,6 @@ void Task_ShowStartMenu(u8 taskId)
     switch (task->data[0])
     {
     case 0:
-        if (InUnionRoom() == TRUE)
-            SetUsingUnionRoomStartMenu();
-
         gMenuCallback = HandleStartMenuInput;
         task->data[0]++;
         break;
@@ -1564,23 +1560,8 @@ static void Task_SaveAfterLinkBattle(u8 taskId)
             PutWindowTilemap(0);
             CopyWindowToVram(0, COPYWIN_FULL);
             BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
-
-            if (gWirelessCommType != 0 && InUnionRoom())
-            {
-                if (Link_AnyPartnersPlayingFRLG_JP())
-                {
-                    *state = 1;
-                }
-                else
-                {
-                    *state = 5;
-                }
-            }
-            else
-            {
-                gSoftResetDisabled = TRUE;
-                *state = 1;
-            }
+            gSoftResetDisabled = TRUE;
+            *state = 1;
             break;
         case 1:
             SetContinueGameWarpStatusToDynamicWarp();

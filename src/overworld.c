@@ -36,7 +36,6 @@
 #include "item_icon.h"
 #include "line_break.h"
 #include "link.h"
-#include "link_rfu.h"
 #include "load_save.h"
 #include "main.h"
 #include "malloc.h"
@@ -210,7 +209,6 @@ static u8 sPlayerLinkStates[MAX_LINK_PLAYERS];
 // can process it.
 static u16 (*sPlayerKeyInterceptCallback)(u32);
 static bool8 sReceivingFromLink;
-static u8 sRfuKeepAliveTimer;
 bool8 gDoAutosave = FALSE;
 bool8 gDoAutosaveAfterBattle = FALSE;
 
@@ -2151,7 +2149,7 @@ void CB2_ReturnToFieldContestHall(void)
 void CB2_ReturnToFieldCableClub(void)
 {
     FieldClearVBlankHBlankCallbacks();
-    gFieldCallback = FieldCB_ReturnToFieldWirelessLink;
+    gFieldCallback = FieldCB_ReturnToFieldCableLink;
     SetMainCallback2(CB2_LoadMapOnReturnToFieldCableClub);
 }
 
@@ -2211,12 +2209,7 @@ void CB2_ReturnToFieldFromMultiplayer(void)
     StopMapMusic();
     SetMainCallback1(CB1_OverworldLink);
     ResetAllMultiplayerState();
-
-    if (gWirelessCommType != 0)
-        gFieldCallback = FieldCB_ReturnToFieldWirelessLink;
-    else
-        gFieldCallback = FieldCB_ReturnToFieldCableLink;
-
+    gFieldCallback = FieldCB_ReturnToFieldCableLink;
     ScriptContext_Init();
     UnlockPlayerFieldControls();
     CB2_ReturnToField();
@@ -2436,12 +2429,6 @@ static void FieldClearVBlankHBlankCallbacks(void)
     if (UsedPokemonCenterWarp() == TRUE)
         CloseLink();
 
-    if (gWirelessCommType != 0)
-    {
-        EnableInterrupts(INTR_FLAG_VBLANK | INTR_FLAG_VCOUNT | INTR_FLAG_TIMER3 | INTR_FLAG_SERIAL);
-        DisableInterrupts(INTR_FLAG_HBLANK);
-    }
-    else
     {
         u16 savedIme = REG_IME;
         REG_IME = 0;
@@ -2547,11 +2534,6 @@ static bool32 LoadMapInStepsLink(u8 *state)
         (*state)++;
         break;
     case 11:
-        if (gWirelessCommType != 0)
-        {
-            LoadWirelessStatusIndicatorSpriteGfx();
-            CreateWirelessStatusIndicatorSprite(0, 0);
-        }
         (*state)++;
         break;
     case 12:
@@ -2761,11 +2743,6 @@ static bool32 ReturnToFieldLink(u8 *state)
         (*state)++;
         break;
     case 11:
-        if (gWirelessCommType != 0)
-        {
-            LoadWirelessStatusIndicatorSpriteGfx();
-            CreateWirelessStatusIndicatorSprite(0, 0);
-        }
         (*state)++;
         break;
     case 12:
@@ -2990,25 +2967,22 @@ static void CreateLinkPlayerSprites(void)
 
 static void CB1_OverworldLink(void)
 {
-    if (gWirelessCommType == 0 || !IsRfuRecvQueueEmpty() || !IsSendingKeysToLink())
-    {
-        u8 selfId = gLocalLinkPlayerId;
-        UpdateAllLinkPlayers(gLinkPartnersHeldKeys, selfId);
+    u8 selfId = gLocalLinkPlayerId;
+    UpdateAllLinkPlayers(gLinkPartnersHeldKeys, selfId);
 
-        // Note: Because guestId is between 0 and 4, while the smallest key code is
-        // LINK_KEY_CODE_EMPTY, this is functionally equivalent to `sPlayerKeyInterceptCallback(0)`.
-        // It is expecting the callback to be KeyInterCB_SelfIdle, and that will
-        // completely ignore any input parameters.
-        //
-        // UpdateHeldKeyCode performs a sanity check on its input; if
-        // sPlayerKeyInterceptCallback echoes back the argument, which is selfId, then
-        // it'll use LINK_KEY_CODE_EMPTY instead.
-        //
-        // Note 2: There are some key intercept callbacks that treat the key as a player
-        // ID. It's so hacky.
-        UpdateHeldKeyCode(sPlayerKeyInterceptCallback(selfId));
-        ClearAllPlayerKeys();
-    }
+    // Note: Because guestId is between 0 and 4, while the smallest key code is
+    // LINK_KEY_CODE_EMPTY, this is functionally equivalent to `sPlayerKeyInterceptCallback(0)`.
+    // It is expecting the callback to be KeyInterCB_SelfIdle, and that will
+    // completely ignore any input parameters.
+    //
+    // UpdateHeldKeyCode performs a sanity check on its input; if
+    // sPlayerKeyInterceptCallback echoes back the argument, which is selfId, then
+    // it'll use LINK_KEY_CODE_EMPTY instead.
+    //
+    // Note 2: There are some key intercept callbacks that treat the key as a player
+    // ID. It's so hacky.
+    UpdateHeldKeyCode(sPlayerKeyInterceptCallback(selfId));
+    ClearAllPlayerKeys();
 }
 
 void ResetAllMultiplayerState(void)
@@ -3024,18 +2998,7 @@ static void ClearAllPlayerKeys(void)
 
 static void SetKeyInterceptCallback(u16 (*func)(u32))
 {
-    sRfuKeepAliveTimer = 0;
     sPlayerKeyInterceptCallback = func;
-}
-
-// Once every ~60 frames, if the link state hasn't changed (timer reset by calls
-// to SetKeyInterceptCallback), it does a bunch of sanity checks on the connection.
-// I'm not sure if sRfuKeepAliveTimer is reset in the process, though; rfu stuff is
-// still undocumented.
-static void CheckRfuKeepAliveTimer(void)
-{
-    if (gWirelessCommType != 0 && ++sRfuKeepAliveTimer > 60)
-        LinkRfu_FatalError();
 }
 
 static void ResetAllPlayerLinkStates(void)
@@ -3201,25 +3164,6 @@ static void UpdateHeldKeyCode(u16 key)
         gHeldKeyCodeToSend = key;
     else
         gHeldKeyCodeToSend = LINK_KEY_CODE_EMPTY;
-
-    if (gWirelessCommType != 0
-        && GetLinkSendQueueLength() > 1
-        && IsOverworldLinkActive() == TRUE
-        && IsSendingKeysToLink() == TRUE)
-    {
-        switch (key)
-        {
-        case LINK_KEY_CODE_EMPTY:
-        case LINK_KEY_CODE_DPAD_DOWN:
-        case LINK_KEY_CODE_DPAD_UP:
-        case LINK_KEY_CODE_DPAD_LEFT:
-        case LINK_KEY_CODE_DPAD_RIGHT:
-        case LINK_KEY_CODE_START_BUTTON:
-        case LINK_KEY_CODE_A_BUTTON:
-            gHeldKeyCodeToSend = LINK_KEY_CODE_NULL;
-            break;
-        }
-    }
 }
 
 static u16 KeyInterCB_ReadButtons(u32 key)
@@ -3278,7 +3222,6 @@ static u16 KeyInterCB_SelfIdle(u32 key)
 
 static u16 KeyInterCB_Idle(u32 key)
 {
-    CheckRfuKeepAliveTimer();
     return LINK_KEY_CODE_EMPTY;
 }
 
@@ -3334,7 +3277,6 @@ static u16 KeyInterCB_DeferToSendQueue(u32 key)
 
 static u16 KeyInterCB_ExitingSeat(u32 key)
 {
-    CheckRfuKeepAliveTimer();
     return LINK_KEY_CODE_EMPTY;
 }
 
@@ -3354,7 +3296,6 @@ static u16 KeyInterCB_Ready(u32 keyOrPlayerId)
     }
     else
     {
-        CheckRfuKeepAliveTimer();
         return LINK_KEY_CODE_EMPTY;
     }
 }
@@ -3375,8 +3316,6 @@ static u16 KeyInterCB_WaitForPlayersToExit(u32 keyOrPlayerId)
     // keyOrPlayerId could be any keycode. This callback does no sanity checking
     // on the size of the key. It's assuming that it is being called from
     // CB1_OverworldLink.
-    if (sPlayerLinkStates[keyOrPlayerId] != PLAYER_LINK_STATE_EXITING_ROOM)
-        CheckRfuKeepAliveTimer();
     if (AreAllPlayersInLinkState(PLAYER_LINK_STATE_EXITING_ROOM) == TRUE)
     {
         ScriptContext_SetupScript(EventScript_DoLinkRoomExit);
@@ -3647,9 +3586,7 @@ bool32 Overworld_SendKeysToLinkIsRunning(void)
 
 bool32 IsSendingKeysOverCable(void)
 {
-    if (gWirelessCommType != 0)
-        return FALSE;
-    else if (!IsSendingKeysToLink())
+    if (!IsSendingKeysToLink())
         return FALSE;
     else
         return TRUE;
@@ -3657,10 +3594,7 @@ bool32 IsSendingKeysOverCable(void)
 
 static u32 GetLinkSendQueueLength(void)
 {
-    if (gWirelessCommType != 0)
-        return gRfu.sendQueue.count;
-    else
-        return gLink.sendQueue.count;
+    return gLink.sendQueue.count;
 }
 
 static void ZeroLinkPlayerObjectEvent(struct LinkPlayerObjectEvent *linkPlayerObjEvent)

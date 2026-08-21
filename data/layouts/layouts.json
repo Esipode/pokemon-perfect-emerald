@@ -4050,17 +4050,6 @@
       "layout_version": "emerald"
     },
     {
-      "id": "LAYOUT_UNION_ROOM",
-      "name": "UnionRoom_Layout",
-      "width": 15,
-      "height": 12,
-      "primary_tileset": "gTileset_Building",
-      "secondary_tileset": "gTileset_UnionRoom",
-      "border_filepath": "data/layouts/UnionRoom/border.bin",
-      "blockdata_filepath": "data/layouts/UnionRoom/map.bin",
-      "layout_version": "emerald"
-    },
-    {
       "id": "LAYOUT_SAFARI_ZONE_NORTHEAST",
       "name": "SafariZone_Northeast_Layout",
       "width": 40,
@@ -7490,19 +7479,6 @@
       "secondary_tileset": "gTileset_PalletTown",
       "border_filepath": "data/layouts/Prototype_SeviiIsle_24_Frlg/border.bin",
       "blockdata_filepath": "data/layouts/Prototype_SeviiIsle_24_Frlg/map.bin",
-      "border_height": 2,
-      "border_width": 2,
-      "layout_version": "frlg"
-    },
-    {
-      "id": "LAYOUT_UNION_ROOM_FRLG",
-      "name": "UnionRoom_FRLG_Layout",
-      "width": 15,
-      "height": 12,
-      "primary_tileset": "gTileset_BuildingFrlg",
-      "secondary_tileset": "gTileset_HallOfFame",
-      "border_filepath": "data/layouts/UnionRoom_Frlg/border.bin",
-      "blockdata_filepath": "data/layouts/UnionRoom_Frlg/map.bin",
       "border_height": 2,
       "border_width": 2,
       "layout_version": "frlg"

@@ -11,13 +11,11 @@
 #include "field_weather.h"
 #include "international_string_util.h"
 #include "link.h"
-#include "link_rfu.h"
 #include "load_save.h"
 #include "m4a.h"
 #include "menu.h"
 #include "overworld.h"
 #include "palette.h"
-#include "union_room.h"
 #include "mystery_gift.h"
 #include "script.h"
 #include "script_pokemon_util.h"
@@ -875,72 +873,6 @@ static void Task_StartWiredCableClubBattle(u8 taskId)
     }
 }
 
-static void Task_StartWirelessCableClubBattle(u8 taskId)
-{
-    int i;
-    s16 *data = gTasks[taskId].data;
-
-    switch (tState)
-    {
-    case 0:
-        FadeScreen(FADE_TO_BLACK, 0);
-        gLinkType = LINKTYPE_BATTLE;
-        ClearLinkCallback_2();
-        tState = 1;
-        break;
-    case 1:
-        if (!gPaletteFade.active)
-            tState = 2;
-        break;
-    case 2:
-        SendBlock(0, &gLocalLinkPlayer, sizeof(gLocalLinkPlayer));
-        tState = 3;
-        break;
-    case 3:
-        if (GetBlockReceivedStatus() == GetLinkPlayerCountAsBitFlags())
-        {
-            for (i = 0; i < GetLinkPlayerCount(); i++)
-            {
-                struct LinkPlayer *player = (struct LinkPlayer *)gBlockRecvBuffer[i];
-                gLinkPlayers[i] = *player;
-                ConvertLinkPlayerName(&gLinkPlayers[i]);
-                ResetBlockReceivedFlag(i);
-            }
-            tState = 4;
-        }
-        break;
-    case 4:
-        tTimer++;
-        if (tTimer > 20)
-            tState = 5;
-        break;
-    case 5:
-        SetLinkStandbyCallback();
-        tState = 6;
-        break;
-    case 6:
-        if (IsLinkTaskFinished())
-        {
-            tState = 7;
-        }
-        break;
-    case 7:
-        if (gLinkPlayers[0].trainerId & 1)
-            PlayMapChosenOrBattleBGM(MUS_VS_GYM_LEADER);
-        else
-            PlayMapChosenOrBattleBGM(MUS_VS_TRAINER);
-
-        gLinkPlayers[0].linkType = LINKTYPE_BATTLE;
-        SetLinkBattleTypeFlags(gSpecialVar_0x8004);
-        CleanupOverworldWindowsAndTilemaps();
-        TRAINER_BATTLE_PARAM.opponentA = TRAINER_LINK_OPPONENT;
-        SetMainCallback2(CB2_InitBattle);
-        gMain.savedCallback = CB2_ReturnFromCableClubBattle;
-        DestroyTask(taskId);
-        break;
-    }
-}
-
 #undef tTimer
 
 static void CB2_ReturnFromUnionRoomBattle(void)
@@ -996,21 +928,7 @@ void CB2_ReturnFromCableClubBattle(void)
     UpdateTrainerFansAfterLinkBattle();
 
     if (gSpecialVar_0x8004 == USING_SINGLE_BATTLE || gSpecialVar_0x8004 == USING_DOUBLE_BATTLE)
-    {
         UpdatePlayerLinkBattleRecords(gLocalLinkPlayerId ^ 1);
-        if (gWirelessCommType)
-        {
-            switch (gBattleOutcome)
-            {
-            case B_OUTCOME_WON:
-                MysteryGift_TryIncrementStat(CARD_STAT_BATTLES_WON, gLinkPlayers[GetMultiplayerId() ^ 1].trainerId);
-                break;
-            case B_OUTCOME_LOST:
-                MysteryGift_TryIncrementStat(CARD_STAT_BATTLES_LOST, gLinkPlayers[GetMultiplayerId() ^ 1].trainerId);
-                break;
-            }
-        }
-    }
 
     if (InUnionRoom() == TRUE)
         gMain.savedCallback = CB2_ReturnFromUnionRoomBattle;
@@ -1124,45 +1042,9 @@ static void Task_StartWiredTrade(u8 taskId)
     }
 }
 
-static void Task_StartWirelessTrade(u8 taskId)
-{
-    s16 *data = gTasks[taskId].data;
-
-    switch (tState)
-    {
-    case 0:
-        LockPlayerFieldControls();
-        FadeScreen(FADE_TO_BLACK, 0);
-        ClearLinkRfuCallback();
-        tState++;
-        break;
-    case 1:
-        if (!gPaletteFade.active)
-            tState++;
-        break;
-    case 2:
-        gSelectedTradeMonPositions[TRADE_PLAYER] = 0;
-        gSelectedTradeMonPositions[TRADE_PARTNER] = 0;
-        m4aMPlayAllStop();
-        SetLinkStandbyCallback();
-        tState++;
-        break;
-    case 3:
-        if (IsLinkTaskFinished())
-        {
-            CreateTask_CreateTradeMenu();
-            DestroyTask(taskId);
-        }
-        break;
-    }
-}
-
 void PlayerEnteredTradeSeat(void)
 {
-    if (gWirelessCommType != 0)
-        CreateTask_EnterCableClubSeat(Task_StartWirelessTrade);
-    else
-        CreateTask_EnterCableClubSeat(Task_StartWiredTrade);
+    CreateTask_EnterCableClubSeat(Task_StartWiredTrade);
 }
 
 static void UNUSED CreateTask_StartWiredTrade(void)
@@ -1180,11 +1062,7 @@ void UNUSED Script_StartWiredTrade(void)
 void ColosseumPlayerSpotTriggered(void)
 {
     gLinkType = LINKTYPE_BATTLE;
-
-    if (gWirelessCommType)
-        CreateTask_EnterCableClubSeat(Task_StartWirelessCableClubBattle);
-    else
-        CreateTask_EnterCableClubSeat(Task_StartWiredCableClubBattle);
+    CreateTask_EnterCableClubSeat(Task_StartWiredCableClubBattle);
 }
 
 static UNUSED void CreateTask_EnterCableClubSeatNoFollowup(void)
@@ -1232,19 +1110,12 @@ void Task_WaitForLinkPlayerConnection(u8 taskId)
     if (gReceivedRemoteLinkPlayers)
     {
         // Players connected, destroy task
-        if (gWirelessCommType == 0)
+        if (!DoesLinkPlayerCountMatchSaved())
         {
-            if (!DoesLinkPlayerCountMatchSaved())
-            {
-                CloseLink();
-                SetMainCallback2(CB2_LinkError);
-            }
-            DestroyTask(taskId);
+            CloseLink();
+            SetMainCallback2(CB2_LinkError);
         }
-        else
-        {
-            DestroyTask(taskId);
-        }
+        DestroyTask(taskId);
     }
 }
 
@@ -1275,16 +1146,9 @@ void Task_ReconnectWithLinkPlayers(u8 taskId)
     switch (tState)
     {
     case 0:
-        if (gWirelessCommType != 0)
-        {
-            DestroyTask(taskId);
-        }
-        else
-        {
-            OpenLink();
-            CreateTask(Task_WaitForLinkPlayerConnection, 1);
-            tState++;
-        }
+        OpenLink();
+        CreateTask(Task_WaitForLinkPlayerConnection, 1);
+        tState++;
         break;
     case 1:
         if (++tTimer > 11)
@@ -1323,8 +1187,7 @@ void Task_ReconnectWithLinkPlayers(u8 taskId)
 
 void TrySetBattleTowerLinkType(void)
 {
-    if (gWirelessCommType == 0)
-        gLinkType = LINKTYPE_BATTLE_TOWER;
+    gLinkType = LINKTYPE_BATTLE_TOWER;
 }
 
 #undef tState

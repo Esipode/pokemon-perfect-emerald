@@ -10,7 +10,6 @@
 #include "pokemon.h"
 #include "cable_club.h"
 #include "link.h"
-#include "link_rfu.h"
 #include "tv.h"
 #include "battle_tower.h"
 #include "window.h"
@@ -386,9 +385,7 @@ static void Task_RecordMixing_Main(u8 taskId)
         if (!gTasks[tLinkTaskId].isActive)
         {
             tState = 4;
-            if (gWirelessCommType == 0)
-                tLinkTaskId = CreateTask_ReestablishCableClubLink();
-
+            tLinkTaskId = CreateTask_ReestablishCableClubLink();
             PrintTextOnRecordMixing(gText_RecordMixingComplete);
             tTimer = 0;
         }
@@ -403,8 +400,6 @@ static void Task_RecordMixing_Main(u8 taskId)
             Free(sReceivedRecords);
             Free(sSentRecord);
             SetLinkWaitingForScript();
-            if (gWirelessCommType != 0)
-                CreateTask(Task_ReturnToFieldRecordMixing, 10);
             ClearDialogWindowAndFrame(0, TRUE);
             DestroyTask(taskId);
             ScriptContext_Enable();
@@ -1070,25 +1065,12 @@ static void Task_DoRecordMixing(u8 taskId)
 
     // Mixing Emerald records.
     case 6:
-        if (!Rfu_SetLinkRecovery(FALSE))
-        {
-            CreateTask(Task_LinkFullSave, 5);
-            task->tState++;
-        }
+        CreateTask(Task_LinkFullSave, 5);
+        task->tState++;
         break;
     case 7: // wait for Task_LinkFullSave to finish.
         if (!FuncIsActiveTask(Task_LinkFullSave))
-        {
-            if (gWirelessCommType)
-            {
-                Rfu_SetLinkRecovery(TRUE);
-                task->tState = 8;
-            }
-            else
-            {
-                task->tState = 4;
-            }
-        }
+            task->tState = 4;
         break;
     case 8:
         SetLinkStandbyCallback();

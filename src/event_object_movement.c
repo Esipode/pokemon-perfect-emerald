@@ -57,7 +57,6 @@
 #include "constants/species.h"
 #include "constants/metatile_behaviors.h"
 #include "constants/trainer_types.h"
-#include "constants/union_room.h"
 #include "constants/weather.h"
 
 #define SPECIAL_LOCALIDS_START (min(LOCALID_CAMERA, \
@@ -11167,52 +11166,10 @@ void SetVirtualObjectSpriteAnim(u8 virtualObjId, u8 animNum)
     }
 }
 
-static void MoveUnionRoomObjectUp(struct Sprite *sprite)
-{
-    switch (sprite->sAnimState)
-    {
-    case 0:
-        sprite->y2 = 0;
-        sprite->sAnimState++;
-    case 1:
-        sprite->y2 -= 8;
-        if (sprite->y2 == -DISPLAY_HEIGHT)
-        {
-            sprite->y2 = 0;
-            sprite->sInvisible = TRUE;
-            sprite->sAnimNum = 0;
-            sprite->sAnimState = 0;
-        }
-    }
-}
-
-static void MoveUnionRoomObjectDown(struct Sprite *sprite)
-{
-    switch (sprite->sAnimState)
-    {
-    case 0:
-        sprite->y2 = -DISPLAY_HEIGHT;
-        sprite->sAnimState++;
-    case 1:
-        sprite->y2 += 8;
-        if (sprite->y2 == 0)
-        {
-            sprite->sAnimNum = 0;
-            sprite->sAnimState = 0;
-        }
-    }
-}
-
 static void VirtualObject_UpdateAnim(struct Sprite *sprite)
 {
     switch (sprite->sAnimNum)
     {
-    case UNION_ROOM_SPAWN_IN:
-        MoveUnionRoomObjectDown(sprite);
-        break;
-    case UNION_ROOM_SPAWN_OUT:
-        MoveUnionRoomObjectUp(sprite);
-        break;
     case 0:
         break;
     default:

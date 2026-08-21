@@ -866,12 +866,13 @@ LilycoveCity_ContestLobby_EventScript_TryJoinGroup::
 	release
 	end
 
+@ Wireless-only; stubbed as a safe "failed" result now that the underlying RFU stack is gone.
 LilycoveCity_ContestLobby_EventScript_TryBecomeLinkLeader::
-	special TryBecomeLinkLeader
+	setvar VAR_RESULT, LINKUP_FAILED
 	return
 
 LilycoveCity_ContestLobby_EventScript_TryJoinLinkGroup::
-	special TryJoinLinkGroup
+	setvar VAR_RESULT, LINKUP_FAILED
 	return
 
 LilycoveCity_ContestLobby_EventScript_LinkLeaderDecided::

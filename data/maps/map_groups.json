@@ -510,8 +510,7 @@
     "BattlePyramidSquare13",
     "BattlePyramidSquare14",
     "BattlePyramidSquare15",
-    "BattlePyramidSquare16",
-    "UnionRoom"
+    "BattlePyramidSquare16"
   ],
   "gMapGroup_SpecialArea": [
     "SafariZone_Northwest",
@@ -644,8 +643,7 @@
     "BattleColosseum_2P_Frlg",
     "TradeCenter_Frlg",
     "RecordCorner_Frlg",
-    "BattleColosseum_4P_Frlg",
-    "UnionRoom_Frlg"
+    "BattleColosseum_4P_Frlg"
   ],
   "gMapGroup_Dungeons_Frlg": [
     "ViridianForest_Frlg",

@@ -252,6 +252,7 @@ extern u32 gLinkStatus;
 
 
 bool8 IsWirelessAdapterConnected(void);
+void InitSTWIStatusDummy(void);
 void Task_DestroySelf(u8 taskId);
 void OpenLink(void);
 void CloseLink(void);
@@ -282,11 +283,8 @@ void LinkVSync(void);
 void Timer3Intr(void);
 void SerialCB(void);
 bool32 InUnionRoom(void);
-void LoadWirelessStatusIndicatorSpriteGfx(void);
 bool8 IsLinkTaskFinished(void);
-void CreateWirelessStatusIndicatorSprite(u8 x, u8 y);
 void SetLinkStandbyCallback(void);
-void SetWirelessCommType1(void);
 void CheckShouldAdvanceLinkState(void);
 void SetCloseLinkCallback(void);
 bool8 HandleLinkConnection(void);
@@ -301,7 +299,6 @@ void LinkPlayerFromBlock(u32 who);
 bool32 Link_AnyPartnersPlayingFRLG_JP(void);
 void ResetLinkPlayerCount(void);
 void SaveLinkPlayers(u8 playerCount);
-void SetWirelessCommType0(void);
 bool32 IsLinkRecvQueueAtOverworldMax(void);
 
 extern u16 gLinkPartnersHeldKeys[6];

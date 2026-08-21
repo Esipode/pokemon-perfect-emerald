@@ -946,9 +946,12 @@ SlateportCity_Movement_ScottExitAfterBattleTent:
 
 SlateportCity_EventScript_BerryCrushRankingsSign::
 	lockall
-	special ShowBerryCrushRankings
+	msgbox SlateportCity_Text_BerryCrushRankingsGone, MSGBOX_DEFAULT
 	releaseall
 	end
+
+SlateportCity_Text_BerryCrushRankingsGone:
+	.string "The rankings board is blank.$"
 
 SlateportCity_Text_EnergyGuruSellWhatYouNeed:
 	.string "I'm the ENERGY GURU! I'll go for it and\n"

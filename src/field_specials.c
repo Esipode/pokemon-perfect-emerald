@@ -2143,7 +2143,6 @@ bool8 UsedPokemonCenterWarp(void)
         MAP_EVER_GRANDE_CITY_POKEMON_CENTER_1F,
         MAP_EVER_GRANDE_CITY_POKEMON_LEAGUE_1F,
         MAP_BATTLE_FRONTIER_POKEMON_CENTER_1F,
-        MAP_UNION_ROOM,
         MAP_UNDEFINED
     };
 
@@ -3925,9 +3924,7 @@ static void Task_LinkRetireStatusWithBattleTowerPartner(u8 taskId)
             gTasks[taskId].tState++;
         break;
     case 9:
-        if (gWirelessCommType == 0)
-            SetCloseLinkCallback();
-
+        SetCloseLinkCallback();
         gBattleTypeFlags = sBattleTowerMultiBattleTypeFlags;
         ScriptContext_Enable();
         DestroyTask(taskId);

@@ -1223,31 +1223,15 @@ void HandleMoveSwitching(enum BattlerId battler)
 
 static void SetLinkBattleEndCallbacks(enum BattlerId battler)
 {
-    if (gWirelessCommType == 0)
+    if (!gReceivedRemoteLinkPlayers)
     {
-        if (!gReceivedRemoteLinkPlayers)
-        {
-            m4aSongNumStop(SE_LOW_HEALTH);
-            gMain.inBattle = FALSE;
-            gMain.callback1 = gPreBattleCallback1;
-            SetMainCallback2(CB2_InitEndLinkBattle);
-            if (gBattleOutcome == B_OUTCOME_WON)
-                TryPutLinkBattleTvShowOnAir();
-            FreeAllWindowBuffers();
-        }
-    }
-    else
-    {
-        if (IsLinkTaskFinished())
-        {
-            m4aSongNumStop(SE_LOW_HEALTH);
-            gMain.inBattle = FALSE;
-            gMain.callback1 = gPreBattleCallback1;
-            SetMainCallback2(CB2_InitEndLinkBattle);
-            if (gBattleOutcome == B_OUTCOME_WON)
-                TryPutLinkBattleTvShowOnAir();
-            FreeAllWindowBuffers();
-        }
+        m4aSongNumStop(SE_LOW_HEALTH);
+        gMain.inBattle = FALSE;
+        gMain.callback1 = gPreBattleCallback1;
+        SetMainCallback2(CB2_InitEndLinkBattle);
+        if (gBattleOutcome == B_OUTCOME_WON)
+            TryPutLinkBattleTvShowOnAir();
+        FreeAllWindowBuffers();
     }
 }
 
@@ -1260,11 +1244,7 @@ void SetBattleEndCallbacks(enum BattlerId battler)
         {
             if (IsLinkTaskFinished())
             {
-                if (gWirelessCommType == 0)
-                    SetCloseLinkCallback();
-                else
-                    SetLinkStandbyCallback();
-
+                SetCloseLinkCallback();
                 gBattlerControllerFuncs[battler] = SetLinkBattleEndCallbacks;
             }
         }

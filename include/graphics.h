@@ -3370,27 +3370,12 @@ extern const u16 gEasyChatButtonWindow_Pal[];
 // Use Pokeblock
 extern const u32 gUsePokeblockCondition_Gfx[];
 
-// Union Room Chat
-extern const u16 gUnionRoomChat_Background_Pal[];
-extern const u32 gUnionRoomChat_Background_Gfx[];
-extern const u32 gUnionRoomChat_Background_Tilemap[];
-extern const u16 gUnionRoomChat_InputText_Pal[];
-extern const u16 gUnionRoomChat_Keyboard_Pal[];
-extern const u32 gUnionRoomChat_Keyboard_Gfx[];
-extern const u32 gUnionRoomChat_Keyboard_Tilemap[];
-extern const u32 gUnionRoomChat_RButtonLabels[];
-
 // Use Pokeblock
 extern const u8 gPokenavConditionCancel_Gfx[];
 extern const u16 gPokenavConditionCancel_Pal[];
 extern const u8 gUsePokeblockUpDown_Gfx[];
 extern const u16 gUsePokeblockUpDown_Pal[];
 extern const u16 gUsePokeblockCondition_Pal[];
-
-// Berry Crush
-extern const u32 gBerryCrush_Crusher_Gfx[];
-extern const u16 gBerryCrush_Crusher_Pal[];
-extern const u32 gBerryCrush_TextWindows_Tilemap[];
 
 // PokéNav
 extern const u32 gPokenavMessageBox_Gfx[];
