@@ -108,7 +108,10 @@ enum BattleSide
 
 // Battle Type Flags
 #define BATTLE_TYPE_DOUBLE             (1 << 0)
-#define BATTLE_TYPE_LINK               (1 << 1)
+// Retired: no path can ever set this bit anymore (see src/link.c, src/cable_club.c) -
+// folded to 0 so every "& BATTLE_TYPE_LINK" check compile-time-collapses to false and
+// LTO drops the now-unreachable link controllers/branches instead of a manual edit per file.
+#define BATTLE_TYPE_LINK               0
 #define BATTLE_TYPE_IS_MASTER          (1 << 2) // In not-link battles, it's always set.
 #define BATTLE_TYPE_TRAINER            (1 << 3)
 #define BATTLE_TYPE_FIRST_BATTLE       (1 << 4)
