@@ -174,9 +174,6 @@ void InitBattleControllers(void)
     else
         RecordedBattle_Init(B_RECORD_MODE_PLAYBACK);
 
-    if (!(gBattleTypeFlags & BATTLE_TYPE_RECORDED))
-        RecordedBattle_SaveParties();
-
     InitBtlControllersInternal();
 
     SetBattlePartyIds();

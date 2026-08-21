@@ -4,7 +4,6 @@
 #include "trainer_card.h"
 #include "battle_anim.h"
 #include "event_data.h"
-#include "recorded_battle.h"
 #include "malloc.h"
 #include "sprite.h"
 #include "scanline_effect.h"
@@ -137,13 +136,6 @@ struct FrontierPassGfx
     u8 tilemapBuff3[BG_SCREEN_SIZE / 2];
 };
 
-struct FrontierPassSaved
-{
-    MainCallback callback;
-    s16 cursorX;
-    s16 cursorY;
-};
-
 struct FrontierMapData
 {
     MainCallback callback;
@@ -160,7 +152,6 @@ struct FrontierMapData
 static EWRAM_DATA struct FrontierPassData *sPassData = NULL;
 static EWRAM_DATA struct FrontierPassGfx *sPassGfx = NULL;
 static EWRAM_DATA struct FrontierMapData *sMapData = NULL;
-static EWRAM_DATA struct FrontierPassSaved sSavedPassData = {0};
 
 static u32 AllocateFrontierPassData(MainCallback callback);
 static void ShowFrontierMap(MainCallback callback);
@@ -626,7 +617,9 @@ static u32 AllocateFrontierPassData(MainCallback callback)
     }
 
     sPassData->battlePoints = gSaveBlock2Ptr->frontier.battlePoints;
-    sPassData->hasBattleRecord = CanCopyRecordedBattleSaveData();
+    // Recorded Battle no longer has a dedicated flash sector (see save.h sector remap);
+    // reading one back always fails now, so there is never a battle record to show.
+    sPassData->hasBattleRecord = FALSE;
     sPassData->areaToShow = CURSOR_AREA_NOTHING;
     sPassData->trainerStars = CountPlayerTrainerStars();
     for (i = 0; i < NUM_FRONTIER_FACILITIES; i++)
@@ -904,28 +897,6 @@ void CB2_ReshowFrontierPass(void)
     SetMainCallback2(CB2_FrontierPass);
 }
 
-static void CB2_ReturnFromRecord(void)
-{
-    AllocateFrontierPassData(sSavedPassData.callback);
-    sPassData->cursorX = sSavedPassData.cursorX;
-    sPassData->cursorY = sSavedPassData.cursorY;
-    memset(&sSavedPassData, 0, sizeof(sSavedPassData));
-    switch (CurrentBattlePyramidLocation())
-    {
-    case PYRAMID_LOCATION_FLOOR:
-        PlayBGM(MUS_B_PYRAMID);
-        break;
-    case PYRAMID_LOCATION_TOP:
-        PlayBGM(MUS_B_PYRAMID_TOP);
-        break;
-    default:
-        Overworld_PlaySpecialMapMusic();
-        break;
-    }
-
-    SetMainCallback2(CB2_ReshowFrontierPass);
-}
-
 static void CB2_ShowFrontierPassFeature(void)
 {
     if (!HideFrontierPass())
@@ -937,11 +908,8 @@ static void CB2_ShowFrontierPassFeature(void)
         ShowFrontierMap(CB2_ReshowFrontierPass);
         break;
     case CURSOR_AREA_RECORD:
-        sSavedPassData.callback = sPassData->callback;
-        sSavedPassData.cursorX = sPassData->cursorX;
-        sSavedPassData.cursorY = sPassData->cursorY;
-        FreeFrontierPassData();
-        PlayRecordedBattle(CB2_ReturnFromRecord);
+        // Unreachable: hasBattleRecord is always FALSE now, so the cursor can never
+        // land here (see the check further down in this file).
         break;
     case CURSOR_AREA_CARD:
         ShowPlayerTrainerCard(CB2_ReshowFrontierPass);

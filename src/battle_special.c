@@ -11,7 +11,6 @@
 #include "frontier_util.h"
 #include "new_game.h"
 #include "overworld.h"
-#include "recorded_battle.h"
 #include "string_util.h"
 #include "task.h"
 #include "text.h"
@@ -31,7 +30,6 @@ static void HandleSpecialTrainerBattleEnd(void)
 {
     s32 i;
 
-    RecordedBattle_SaveBattleOutcome();
     switch (gBattleScripting.specialTrainerBattleType)
     {
     case SPECIAL_BATTLE_SECRET_BASE:

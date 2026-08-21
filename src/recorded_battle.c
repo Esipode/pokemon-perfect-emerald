@@ -41,17 +41,14 @@ EWRAM_DATA static u16 sBattlerRecordSizes[MAX_BATTLERS_COUNT] = {0};
 EWRAM_DATA static u16 sBattlerPrevRecordSizes[MAX_BATTLERS_COUNT] = {0};
 EWRAM_DATA static u16 sBattlerSavedRecordSizes[MAX_BATTLERS_COUNT] = {0};
 EWRAM_DATA static u8 sRecordMode = 0;
-EWRAM_DATA static u8 sLvlMode = 0;
 EWRAM_DATA static u8 sFrontierFacility = 0;
 EWRAM_DATA static u8 sFrontierBrainSymbol = 0;
-EWRAM_DATA static MainCallback sCallback2_AfterRecordedBattle = NULL;
 EWRAM_DATA u8 gRecordedBattleMultiplayerId = 0;
 EWRAM_DATA static u8 sFrontierPassFlag = 0;
 EWRAM_DATA static u8 sBattleScene = 0;
 EWRAM_DATA static u8 sTextSpeed = 0;
 EWRAM_DATA static u32 sBattleFlags = 0;
 EWRAM_DATA static u64 sAI_Scripts[MAX_BATTLERS_COUNT] = {0};
-EWRAM_DATA static struct Pokemon *sSavedParties = NULL;
 EWRAM_DATA static u16 sPlayerMonMoves[MAX_BATTLERS_COUNT / 2][MAX_MON_MOVES] = {0};
 EWRAM_DATA static struct PlayerInfo sPlayers[MAX_LINK_PLAYERS] = {0};
 EWRAM_DATA static bool8 sIsPlaybackFinished = 0;
@@ -59,15 +56,11 @@ EWRAM_DATA static u8 sRecordMixFriendName[PLAYER_NAME_LENGTH + 1] = {0};
 EWRAM_DATA static u8 sRecordMixFriendClass = 0;
 EWRAM_DATA static u8 sApprenticeId = 0;
 EWRAM_DATA static u16 sEasyChatSpeech[EASY_CHAT_BATTLE_WORDS_COUNT] = {0};
-EWRAM_DATA static u8 sBattleOutcome = 0;
 
 static u8 sRecordMixFriendLanguage;
 static u8 sApprenticeLanguage;
 
 static u8 GetNextRecordedDataByte(u8 *, u8 *, u8 *);
-static bool32 CopyRecordedBattleFromSave(struct RecordedBattleSave *);
-static void RecordedBattle_RestoreSavedParties(void);
-static void CB2_RecordedBattle(void);
 
 void RecordedBattle_Init(u8 mode)
 {
@@ -251,26 +244,6 @@ static u8 GetNextRecordedDataByte(u8 *data, u8 *idx, u8 *size)
     return data[(*idx)++];
 }
 
-bool32 CanCopyRecordedBattleSaveData(void)
-{
-    struct RecordedBattleSave *dst = AllocZeroed(sizeof(struct RecordedBattleSave));
-    bool32 ret = CopyRecordedBattleFromSave(dst);
-    Free(dst);
-    return ret;
-}
-
-static bool32 IsRecordedBattleSaveValid(struct RecordedBattleSave *save)
-{
-    if (save->battleFlags == 0)
-        return FALSE;
-    if (save->battleFlags & BATTLE_TYPE_RECORDED_INVALID)
-        return FALSE;
-    if (CalcByteArraySum((void *)(save), sizeof(*save) - 4) != save->checksum)
-        return FALSE;
-
-    return TRUE;
-}
-
 static bool32 RecordedBattleToSave(struct RecordedBattleSave *battleSave, struct RecordedBattleSave *saveSector)
 {
     memset(saveSector, 0, SECTOR_SIZE);
@@ -449,55 +422,6 @@ bool32 MoveRecordedBattleToSaveData(void)
     return ret;
 }
 
-static bool32 TryCopyRecordedBattleSaveData(struct RecordedBattleSave *dst, struct SaveSector *saveBuffer)
-{
-    // Recorded Battle no longer has a dedicated flash sector (see save.h sector
-    // remap); TryReadSpecialSaveSector always fails now, so the sector id is unused.
-    if (TryReadSpecialSaveSector(0, (void *)(saveBuffer)) != SAVE_STATUS_OK)
-        return FALSE;
-
-    memcpy(dst, saveBuffer, sizeof(struct RecordedBattleSave));
-
-    if (!IsRecordedBattleSaveValid(dst))
-        return FALSE;
-
-    return TRUE;
-}
-
-static bool32 CopyRecordedBattleFromSave(struct RecordedBattleSave *dst)
-{
-    struct SaveSector *savBuffer = AllocZeroed(SECTOR_SIZE);
-    bool32 ret = TryCopyRecordedBattleSaveData(dst, savBuffer);
-    Free(savBuffer);
-
-    return ret;
-}
-
-static void CB2_RecordedBattleEnd(void)
-{
-    gSaveBlock2Ptr->lvlMode = sLvlMode;
-    gBattleOutcome = 0;
-    gBattleTypeFlags = 0;
-    TRAINER_BATTLE_PARAM.opponentA = 0;
-    TRAINER_BATTLE_PARAM.opponentB = 0;
-    gPartnerTrainerId = 0;
-
-    RecordedBattle_RestoreSavedParties();
-    SetMainCallback2(sCallback2_AfterRecordedBattle);
-}
-
-#define tFramesToWait data[0]
-
-static void Task_StartAfterCountdown(u8 taskId)
-{
-    if (--gTasks[taskId].tFramesToWait == 0)
-    {
-        gMain.savedCallback = CB2_RecordedBattleEnd;
-        SetMainCallback2(CB2_InitBattle);
-        DestroyTask(taskId);
-    }
-}
-
 void SetPartiesFromRecordedSave(struct RecordedBattleSave *src)
 {
     for (enum BattleTrainer trainer = B_TRAINER_PLAYER; trainer < MAX_BATTLE_TRAINERS; trainer++)
@@ -538,7 +462,6 @@ void SetVariablesForRecordedBattle(struct RecordedBattleSave *src)
     TRAINER_BATTLE_PARAM.opponentB = src->opponentB;
     gPartnerTrainerId = src->partnerId;
     gRecordedBattleMultiplayerId = src->multiplayerId;
-    sLvlMode = gSaveBlock2Ptr->lvlMode;
     sFrontierFacility = src->frontierFacility;
     sFrontierBrainSymbol = src->frontierBrainSymbol;
     sBattleScene = src->battleScene;
@@ -562,35 +485,6 @@ void SetVariablesForRecordedBattle(struct RecordedBattleSave *src)
             sBattleRecords[i][j] = src->battleRecord[i][j];
 }
 
-void PlayRecordedBattle(void (*CB2_After)(void))
-{
-    struct RecordedBattleSave *battleSave = AllocZeroed(sizeof(struct RecordedBattleSave));
-    if (CopyRecordedBattleFromSave(battleSave) == TRUE)
-    {
-        u8 taskId;
-
-        RecordedBattle_SaveParties();
-        SetVariablesForRecordedBattle(battleSave);
-
-        taskId = CreateTask(Task_StartAfterCountdown, 1);
-        gTasks[taskId].tFramesToWait = 128;
-
-        sCallback2_AfterRecordedBattle = CB2_After;
-        PlayMapChosenOrBattleBGM(FALSE);
-        SetMainCallback2(CB2_RecordedBattle);
-    }
-    Free(battleSave);
-}
-
-#undef tFramesToWait
-
-static void CB2_RecordedBattle(void)
-{
-    AnimateSprites();
-    BuildOamBuffer();
-    RunTasks();
-}
-
 u8 GetRecordedBattleFrontierFacility(void)
 {
     return sFrontierFacility;
@@ -599,20 +493,6 @@ u8 GetRecordedBattleFrontierFacility(void)
 u8 GetRecordedBattleFronterBrainSymbol(void)
 {
     return sFrontierBrainSymbol;
-}
-
-void RecordedBattle_SaveParties(void)
-{
-    sSavedParties = AllocZeroed(sizeof(struct Pokemon[MAX_BATTLE_TRAINERS][PARTY_SIZE]));
-
-    memcpy(sSavedParties, gParties, sizeof(struct Pokemon[MAX_BATTLE_TRAINERS][PARTY_SIZE]));
-}
-
-static void RecordedBattle_RestoreSavedParties(void)
-{
-    memcpy(gParties, sSavedParties, sizeof(struct Pokemon[MAX_BATTLE_TRAINERS][PARTY_SIZE]));
-
-    Free(sSavedParties);
 }
 
 u8 GetBattlerLinkPlayerGender(enum BattlerId battler)
@@ -825,11 +705,6 @@ u8 GetRecordedBattleRecordMixFriendLanguage(void)
 u8 GetRecordedBattleApprenticeLanguage(void)
 {
     return sApprenticeLanguage;
-}
-
-void RecordedBattle_SaveBattleOutcome(void)
-{
-    sBattleOutcome = gBattleOutcome;
 }
 
 u16 *GetRecordedBattleEasyChatSpeech(void)
