@@ -12,7 +12,6 @@
 #include "field_player_avatar.h"
 #include "fldeff.h"
 #include "fldeff_misc.h"
-#include "secret_base.h"
 #include "event_data.h"
 #include "event_scripts.h"
 #include "event_object_movement.h"
@@ -39,19 +38,18 @@ static void Task_WateringBerryTreeAnim_Start(u8);
 static void Task_WateringBerryTreeAnim_Continue(u8);
 static void Task_WateringBerryTreeAnim_End(u8);
 
-static void FieldCallback_SecretBaseCave(void);
+static void ToggleSecretBaseEntranceMetatile(void);
+
 static void SpriteCB_CaveEntranceInit(struct Sprite *);
 static void SpriteCB_CaveEntranceOpen(struct Sprite *);
 static void SpriteCB_CaveEntranceEnd(struct Sprite *);
 static void StartSecretBaseCaveFieldEffect(void);
 
-static void FieldCallback_SecretBaseTree(void);
 static void SpriteCB_TreeEntranceInit(struct Sprite *);
 static void SpriteCB_TreeEntranceOpen(struct Sprite *);
 static void SpriteCB_TreeEntranceEnd(struct Sprite *);
 static void StartSecretBaseTreeFieldEffect(void);
 
-static void FieldCallback_SecretBaseShrub(void);
 static void SpriteCB_ShrubEntranceInit(struct Sprite *);
 static void SpriteCB_ShrubEntranceOpen(struct Sprite *);
 static void SpriteCB_ShrubEntranceEnd(struct Sprite *);
@@ -60,6 +58,25 @@ static void StartSecretBaseShrubFieldEffect(void);
 static void SpriteCB_SandPillar_BreakTop(struct Sprite *);
 static void SpriteCB_SandPillar_BreakBase(struct Sprite *);
 static void SpriteCB_SandPillar_End(struct Sprite *);
+
+struct SecretBaseEntranceMetatiles
+{
+    u16 closedMetatileId;
+    u16 openMetatileId;
+};
+
+// Cave/tree/shrub entrance metatiles that the Secret Power field effect
+// toggles open/closed as its opening animation plays.
+static const struct SecretBaseEntranceMetatiles sSecretBaseEntranceMetatiles[] =
+{
+    {.closedMetatileId = METATILE_General_SecretBase_TreeLeft,  .openMetatileId = METATILE_General_SecretBase_VineLeft},
+    {.closedMetatileId = METATILE_General_SecretBase_TreeRight, .openMetatileId = METATILE_General_SecretBase_VineRight},
+    {.closedMetatileId = METATILE_General_RedCaveIndent,        .openMetatileId = METATILE_General_RedCaveOpen},
+    {.closedMetatileId = METATILE_General_YellowCaveIndent,     .openMetatileId = METATILE_General_YellowCaveOpen},
+    {.closedMetatileId = METATILE_General_BlueCaveIndent,       .openMetatileId = METATILE_General_BlueCaveOpen},
+    {.closedMetatileId = METATILE_Fallarbor_BrownCaveIndent,    .openMetatileId = METATILE_Fallarbor_BrownCaveOpen},
+    {.closedMetatileId = METATILE_Fortree_SecretBase_Shrub,     .openMetatileId = METATILE_Fortree_SecretBase_ShrubOpen},
+};
 
 static const u8 sSecretPowerCave_Gfx[] = INCGFX_U8("graphics/field_effects/pics/secret_power_cave.png", ".4bpp", "-mwidth 2 -mheight 2");
 static const u8 sFiller[32] = {0};
@@ -484,12 +501,6 @@ static void Task_ComputerScreenCloseEffect(u8 taskId)
 #undef tBlendCnt
 #undef tBlendY
 
-static void SetCurrentSecretBase(void)
-{
-    SetCurSecretBaseIdFromPosition(&gPlayerFacingPosition, gMapHeader.events);
-    TrySetCurSecretBaseIndex();
-}
-
 static void AdjustSecretPowerSpritePixelOffsets(void)
 {
     enum Direction direction = gFieldEffectArguments[1];
@@ -543,49 +554,44 @@ static void AdjustSecretPowerSpritePixelOffsets(void)
     }
 }
 
+// Secret bases no longer exist, so there's nowhere left for Secret Power to
+// open an entrance to -- always report the field move as unusable.
 bool32 SetUpFieldMove_SecretPower(void)
 {
-    u8 mb;
-
-    CheckPlayerHasSecretBase();
-
-    if (gSpecialVar_Result == 1 || GetPlayerFacingDirection() != DIR_NORTH)
-        return FALSE;
-
-    GetXYCoordsOneStepInFrontOfPlayer(&gPlayerFacingPosition.x, &gPlayerFacingPosition.y);
-    mb = MapGridGetMetatileBehaviorAt(gPlayerFacingPosition.x, gPlayerFacingPosition.y);
-
-    if (MetatileBehavior_IsSecretBaseCave(mb) == TRUE)
-    {
-        SetCurrentSecretBase();
-        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
-        gPostMenuFieldCallback = FieldCallback_SecretBaseCave;
-        return TRUE;
-    }
-
-    if (MetatileBehavior_IsSecretBaseTree(mb) == TRUE)
-    {
-        SetCurrentSecretBase();
-        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
-        gPostMenuFieldCallback = FieldCallback_SecretBaseTree;
-        return TRUE;
-    }
-
-    if (MetatileBehavior_IsSecretBaseShrub(mb) == TRUE)
-    {
-        SetCurrentSecretBase();
-        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
-        gPostMenuFieldCallback = FieldCallback_SecretBaseShrub;
-        return TRUE;
-    }
-
     return FALSE;
 }
 
-static void FieldCallback_SecretBaseCave(void)
+// Opens or closes the cave/tree/shrub entrance metatile in front of the player.
+static void ToggleSecretBaseEntranceMetatile(void)
 {
-    gFieldEffectArguments[0] = GetCursorSelectionMonId();
-    ScriptContext_SetupScript(SecretBase_EventScript_CaveUseSecretPower);
+    u16 i;
+    s16 x, y;
+    s16 metatileId;
+
+    GetXYCoordsOneStepInFrontOfPlayer(&x, &y);
+    metatileId = MapGridGetMetatileIdAt(x, y);
+
+    // Look for entrance metatiles to open
+    for (i = 0; i < ARRAY_COUNT(sSecretBaseEntranceMetatiles); i++)
+    {
+        if (sSecretBaseEntranceMetatiles[i].closedMetatileId == metatileId)
+        {
+            MapGridSetMetatileIdAt(x, y, sSecretBaseEntranceMetatiles[i].openMetatileId | MAPGRID_IMPASSABLE);
+            CurrentMapDrawMetatileAt(x, y);
+            return;
+        }
+    }
+
+    // Look for entrance metatiles to close
+    for (i = 0; i < ARRAY_COUNT(sSecretBaseEntranceMetatiles); i++)
+    {
+        if (sSecretBaseEntranceMetatiles[i].openMetatileId == metatileId)
+        {
+            MapGridSetMetatileIdAt(x, y, sSecretBaseEntranceMetatiles[i].closedMetatileId | MAPGRID_IMPASSABLE);
+            CurrentMapDrawMetatileAt(x, y);
+            return;
+        }
+    }
 }
 
 bool8 FldEff_UseSecretPowerCave(void)
@@ -640,12 +646,6 @@ static void SpriteCB_CaveEntranceEnd(struct Sprite *sprite)
 {
     FieldEffectStop(sprite, FLDEFF_SECRET_POWER_CAVE);
     ScriptContext_Enable();
-}
-
-static void FieldCallback_SecretBaseTree(void)
-{
-    gFieldEffectArguments[0] = GetCursorSelectionMonId();
-    ScriptContext_SetupScript(SecretBase_EventScript_TreeUseSecretPower);
 }
 
 bool8 FldEff_UseSecretPowerTree(void)
@@ -714,12 +714,6 @@ static void SpriteCB_TreeEntranceEnd(struct Sprite *sprite)
 {
     FieldEffectStop(sprite, FLDEFF_SECRET_POWER_TREE);
     ScriptContext_Enable();
-}
-
-static void FieldCallback_SecretBaseShrub(void)
-{
-    gFieldEffectArguments[0] = GetCursorSelectionMonId();
-    ScriptContext_SetupScript(SecretBase_EventScript_ShrubUseSecretPower);
 }
 
 bool8 FldEff_UseSecretPowerShrub(void)
@@ -1178,26 +1172,9 @@ void InteractWithShieldOrTVDecoration(void)
 }
 
 // As opposed to a small one (single metatile) like the balloons
-bool8 IsLargeBreakableDecoration(u16 metatileId, bool8 checkBase)
+// Secret bases no longer exist, so no map is ever one -- always FALSE.
+bool8 IsLargeBreakableDecoration(u16 UNUSED metatileId, bool8 UNUSED checkBase)
 {
-    if (!CurMapIsSecretBase())
-        return FALSE;
-
-    if (!checkBase)
-    {
-        if (metatileId == METATILE_SecretBase_SandOrnament_Top || metatileId == METATILE_SecretBase_SandOrnament_TopWall)
-            return TRUE;
-        if (metatileId == METATILE_SecretBase_BreakableDoor_TopClosed)
-            return TRUE;
-    }
-    else
-    {
-        if (metatileId == METATILE_SecretBase_SandOrnament_Base1)
-            return TRUE;
-        if (metatileId == METATILE_SecretBase_BreakableDoor_BottomClosed)
-            return TRUE;
-    }
-
     return FALSE;
 }
 

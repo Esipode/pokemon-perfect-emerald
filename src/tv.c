@@ -30,7 +30,6 @@
 #include "malloc.h"
 #include "region_map.h"
 #include "decoration.h"
-#include "secret_base.h"
 #include "tv.h"
 #include "pokeball.h"
 #include "data.h"
@@ -2456,7 +2455,7 @@ void TryPutSecretBaseSecretsOnAir(void)
             show->secretBaseSecrets.active = FALSE; // NOTE: Show is not active until passed via Record Mix.
             StringCopy(show->secretBaseSecrets.playerName, gSaveBlock2Ptr->playerName);
             show->secretBaseSecrets.stepsInBase = VarGet(VAR_SECRET_BASE_STEP_COUNTER);
-            CopyCurSecretBaseOwnerName_StrVar1();
+            gStringVar1[0] = EOS; // secret_base.c (and its owner-name lookup) has been removed
             StringCopy(strbuf, gStringVar1);
             StripExtCtrlCodes(strbuf);
             StringCopy(show->secretBaseSecrets.baseOwnersName, strbuf);
@@ -5568,9 +5567,6 @@ static void DoTVShowTodaysRivalTrainer(void)
         {
         default:
             sTVShowState = 7;
-            break;
-        case MAPSEC_SECRET_BASE:
-            sTVShowState = 8;
             break;
         case MAPSEC_DYNAMIC:
             switch (show->rivalTrainer.mapLayoutId)

@@ -1379,11 +1379,6 @@ u8 GetPokeblockNameByMonNature(void)
     return CopyMonFavoritePokeblockName(GetNature(&gParties[B_TRAINER_PLAYER][GetLeadMonIndex()]), gStringVar1);
 }
 
-void GetSecretBaseNearbyMapName(void)
-{
-    GetMapName(gStringVar1, VarGet(VAR_SECRET_BASE_MAP), 0);
-}
-
 u16 GetBattleTowerSinglesStreak(void)
 {
     return GetGameStat(GAME_STAT_BATTLE_TOWER_SINGLES_STREAK);

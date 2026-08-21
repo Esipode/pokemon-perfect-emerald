@@ -64,9 +64,6 @@ extern u8 *gCurDecorationItems;
 extern u8 gCurDecorationIndex;
 
 void InitDecorationContextItems(void);
-void DoSecretBaseDecorationMenu(u8 taskId);
-void ShowDecorationOnMap(u16 mapX, u16 mapY, u16 decoration);
-void DoPlayerRoomDecorationMenu(u8 taskId);
 void ShowDecorationCategoriesWindow(u8 taskId);
 void CopyDecorationCategoryName(u8 *dest, u8 category);
 bool8 IsSelectedDecorInThePC(void);

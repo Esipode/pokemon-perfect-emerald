@@ -1078,12 +1078,6 @@ static const struct Story sStorytellerStories[] = {
         MauvilleCity_PokemonCenter_1F_Text_UsedRockSmashStory
     },
     {
-        GAME_STAT_MOVED_SECRET_BASE, 1,
-        MauvilleCity_PokemonCenter_1F_Text_MovedBasesTitle,
-        MauvilleCity_PokemonCenter_1F_Text_MovedBasesAction,
-        MauvilleCity_PokemonCenter_1F_Text_MovedBasesStory
-    },
-    {
         GAME_STAT_USED_SPLASH, 1,
         MauvilleCity_PokemonCenter_1F_Text_UsedSplashTitle,
         MauvilleCity_PokemonCenter_1F_Text_UsedSplashAction,

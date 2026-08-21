@@ -152,8 +152,8 @@ static const struct MenuInfoIcon sMenuInfoIcons[] =
     [MENU_INFO_ICON_ACCURACY]  = { 42, 12, 0xC8 },
     [MENU_INFO_ICON_PP]        = { 42, 12, 0xE0 },
     [MENU_INFO_ICON_EFFECT]    = { 42, 12, 0xE8 }, // Unused
-    [MENU_INFO_ICON_BALL_RED]  = {  8,  8, 0xAE }, // For placed decorations in Secret Base
-    [MENU_INFO_ICON_BALL_BLUE] = {  8,  8, 0xAF }, // For placed decorations in player's room
+    [MENU_INFO_ICON_BALL_RED]  = {  8,  8, 0xAE }, // Decoration-in-use marker; unreachable now that decoration placement is removed
+    [MENU_INFO_ICON_BALL_BLUE] = {  8,  8, 0xAF }, // Decoration-in-use marker; unreachable now that decoration placement is removed
 };
 
 void InitStandardTextBoxWindows(void)

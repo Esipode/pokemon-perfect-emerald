@@ -487,13 +487,9 @@ static void PlayerPC_Mailbox(u8 taskId)
 
 static void PlayerPC_Decoration(u8 taskId)
 {
-#if FREE_DECORATIONS == FALSE
-    DoPlayerRoomDecorationMenu(taskId);
-#else
-    // FREE_DECORATIONS removes playerRoomDecorations from SaveBlock1, so there's
-    // nowhere to place anything -- refuse to open the placement UI at all.
+    // The decoration placement UI has been removed along with secret bases;
+    // there's nowhere to place anything anymore.
     DisplayItemMessageOnField(taskId, sText_NoDecorationsToPlace, ReshowPlayerPC);
-#endif //FREE_DECORATIONS
 }
 
 static void PlayerPC_TurnOff(u8 taskId)

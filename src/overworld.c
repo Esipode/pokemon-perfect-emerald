@@ -62,7 +62,6 @@
 #include "save_location.h"
 #include "script.h"
 #include "script_pokemon_util.h"
-#include "secret_base.h"
 #include "sound.h"
 #include "start_menu.h"
 #include "string_util.h"
@@ -1045,7 +1044,6 @@ static void LoadMapFromWarp(bool32 a1)
     isOutdoors = IsMapTypeOutdoors(gMapHeader.mapType);
     isIndoors = IsMapTypeIndoors(gMapHeader.mapType);
 
-    CheckLeftFriendsSecretBase();
     TrySetMapSaveWarpStatus();
     ClearTempFieldEventData();
     ResetDexNavSearch();
@@ -1082,7 +1080,6 @@ static void LoadMapFromWarp(bool32 a1)
     if (a1 != TRUE && isIndoors)
     {
         UpdateTVScreensOnMap(gBackupMapLayout.width, gBackupMapLayout.height);
-        InitSecretBaseAppearance(TRUE);
     }
     SetMinimumOWESpawnTimer();
 }
@@ -1666,8 +1663,7 @@ bool8 Overworld_MapTypeAllowsTeleportAndFly(enum MapType mapType)
 
 bool8 IsMapTypeIndoors(enum MapType mapType)
 {
-    if (mapType == MAP_TYPE_INDOOR
-     || mapType == MAP_TYPE_SECRET_BASE)
+    if (mapType == MAP_TYPE_INDOOR)
         return TRUE;
     else
         return FALSE;
@@ -2347,7 +2343,7 @@ void CB2_ReturnToFieldFadeFromBlack(void)
 
 static void FieldCB_FadeTryShowMapPopup(void)
 {
-    if (gMapHeader.showMapName == TRUE && SecretBaseMapPopupEnabled() == TRUE)
+    if (gMapHeader.showMapName == TRUE)
         ShowMapNamePopup();
     FieldCB_WarpExitFadeFromBlack();
 }
@@ -2631,7 +2627,7 @@ static bool32 LoadMapInStepsLocal(u8 *state, bool32 a2)
             MapPreview_LoadGfx(gMapHeader.regionMapSectionId);
             RunMapPreviewScreenFadeIn(gMapHeader.regionMapSectionId);
         }
-        else if (gMapHeader.showMapName == TRUE && SecretBaseMapPopupEnabled() == TRUE)
+        else if (gMapHeader.showMapName == TRUE)
             ShowMapNamePopup();
         (*state)++;
         break;

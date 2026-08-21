@@ -27,7 +27,6 @@
 #include "sound.h"
 #include "strings.h"
 #include "trainer_hill.h"
-#include "secret_base.h"
 #include "string_util.h"
 #include "overworld.h"
 #include "field_weather.h"
@@ -1771,12 +1770,7 @@ static const u8 *GetIntroSpeechOfApproachingTrainer(void)
 
 const u8 *GetTrainerALoseText(void)
 {
-    const u8 *string;
-
-    if (TRAINER_BATTLE_PARAM.opponentA == TRAINER_SECRET_BASE)
-        string = GetSecretBaseTrainerLoseText();
-    else
-        string = TRAINER_BATTLE_PARAM.defeatTextA;
+    const u8 *string = TRAINER_BATTLE_PARAM.defeatTextA;
 
     StringExpandPlaceholders(gStringVar4, ReturnEmptyStringIfNull(string));
     return gStringVar4;

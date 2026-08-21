@@ -43,7 +43,6 @@
 #include "pokemon_storage_system.h"
 #include "pokemon_jump.h"
 #include "decoration_inventory.h"
-#include "secret_base.h"
 #include "string_util.h"
 #include "player_pc.h"
 #include "field_specials.h"
@@ -575,7 +574,6 @@ void NewGameInitData(void)
         ApplyPendingNewGameSettings();
     ClearTVShowData();
     ResetGabbyAndTy();
-    ClearSecretBases();
     ClearBerryTrees();
     ResetLinkContestBoolean();
     ResetGameStats();

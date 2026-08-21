@@ -10,7 +10,6 @@
 #include "dynamic_placeholder_text_util.h"
 #include "event_data.h"
 #include "malloc.h"
-#include "secret_base.h"
 #include "item_menu.h"
 #include "party_menu.h"
 #include "strings.h"
@@ -403,12 +402,6 @@ static bool32 NONNULL BagPocket_RemoveItem(struct BagPocket *pocket, enum Item i
 
     if (totalQuantity >= count) // We have enough of the item
     {
-        if (CurMapIsSecretBase() == TRUE)
-        {
-            VarSet(VAR_SECRET_BASE_LOW_TV_FLAGS, VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | SECRET_BASE_USED_BAG);
-            VarSet(VAR_SECRET_BASE_LAST_ITEM_USED, itemId);
-        }
-
         // Update the quantities correctly with the items removed
         for (--itemRemoveIndex; itemRemoveIndex < itemLookupIndex; itemRemoveIndex++)
         {
