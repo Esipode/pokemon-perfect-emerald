@@ -583,10 +583,18 @@ struct EventStates
     u32 encounterTurnEnd:1;   // TRUE once the ENC_ON_TURN_END checkpoint has been dispatched this turn
 };
 
-// Placeholder; filled in once checkpoint dispatch exists.
+// What just happened, for the checkpoint currently dispatching. Not every checkpoint sets every
+// field - see sCheckpointEventFields in battle_encounter.c and read fields through
+// GetEncounterEventField, which asserts on a field the current checkpoint didn't populate rather
+// than returning a stale value from an earlier checkpoint.
 struct EncounterEvent
 {
-    u8 unused;
+    u8  battler;        // subject of the event
+    u8  target;         // secondary battler, where meaningful
+    u16 move;            // enum Move
+    u8  cause;           // enum EncounterEventCause
+    s16 oldValue;        // e.g. HP before the change - cannot be recovered from live state
+    s16 newValue;        // e.g. HP after
 };
 
 // Per-battle encounter state. Embedded (not pointed to) so BattleStruct's own
@@ -598,7 +606,11 @@ struct EncounterRuntime
     u32 firedTriggers;                          // bitmap, one bit per trigger (Stage 04)
     u8  scriptsThisCheckpoint;                  // runaway guard (Stage 07)
     u8  checkpoint;                             // enum EncounterCheckpoint currently dispatching
-    struct EncounterEvent event;                // one slot, overwritten per checkpoint (Stage 08)
+    // Cleared on checkpoint *entry* only (TryRunEncounterCheckpoint, when checkpoint changes), not
+    // on each dispatch. The Stage 07 re-evaluation loop calls TryRunEncounterCheckpoint repeatedly
+    // for the same checkpoint; the event must keep describing the original event that opened the
+    // checkpoint so a later pass's trigger can still see what an earlier pass was reacting to.
+    struct EncounterEvent event;
     u16 prevHp[MAX_BATTLERS_COUNT];             // threshold edge detection (Stage 10)
 };
 

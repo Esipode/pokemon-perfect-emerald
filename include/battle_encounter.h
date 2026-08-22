@@ -57,6 +57,21 @@ void TestSetEncounter(const struct Encounter *encounter);
 // 6. At most MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT scripts run per checkpoint.
 const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint);
 
+// Populates the current checkpoint's event context. Call sites only need to pass the fields their
+// checkpoint actually has data for (see sCheckpointEventFields in battle_encounter.c) - unset
+// fields are left zeroed and reading them via GetEncounterEventField asserts.
+//
+// Call this AFTER TryRunEncounterCheckpoint, not before: TryRunEncounterCheckpoint clears the
+// event context on checkpoint entry (the first pass of a checkpoint only), so calling this first
+// would have that clear wipe it straight back out on pass 1.
+void SetEncounterEvent(u8 battler, u8 target, u16 move, enum EncounterEventCause cause, s16 oldValue, s16 newValue);
+
+// Reads one field of the current checkpoint's event context. Asserts (recovery: return FALSE) if
+// field is not valid for the checkpoint currently dispatching, e.g. reading ENC_EVENT_MOVE at
+// ENC_ON_BATTLE_START - that would otherwise silently return a stale value from an earlier
+// checkpoint. field is one of the ENC_EVENT_* constants in constants/battle_encounter.h.
+bool32 GetEncounterEventField(u32 field, s32 *out);
+
 static inline bool32 IsEncounterActive(void)
 {
 #if B_ENCOUNTER_SCRIPTING

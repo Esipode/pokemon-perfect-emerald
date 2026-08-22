@@ -31,4 +31,30 @@ enum EncounterCheckpoint
 
 #define ENC_TRIGGER_ONCE   (1 << 0)   // disable this trigger after it executes
 
+// What caused the event context (struct EncounterEvent) to be populated.
+enum EncounterEventCause
+{
+    ENC_CAUSE_NONE,
+    ENC_CAUSE_MOVE_DAMAGE,
+    ENC_CAUSE_RECOIL,
+    ENC_CAUSE_DRAIN,
+    ENC_CAUSE_END_TURN,          // weather, status, Leftovers
+    ENC_CAUSE_ITEM,
+    ENC_CAUSE_ABILITY,
+    ENC_CAUSE_ENCOUNTER_SCRIPT,   // reserved; encounter scripts don't raise events yet
+};
+
+// Per-checkpoint validity bits for struct EncounterEvent (sCheckpointEventFields). A checkpoint
+// that doesn't set a bit didn't populate the matching field(s) this dispatch.
+#define ENC_EVENT_BATTLER   (1 << 0)
+#define ENC_EVENT_TARGET    (1 << 1)
+#define ENC_EVENT_MOVE      (1 << 2)
+#define ENC_EVENT_CAUSE     (1 << 3)
+#define ENC_EVENT_VALUES    (1 << 4)   // covers both oldValue and newValue
+
+// Field selectors for GetEncounterEventField. The battler/target/move/cause selectors double as
+// their own validity bit above; the value selectors both check ENC_EVENT_VALUES.
+#define ENC_EVENT_OLD_VALUE (1 << 5)
+#define ENC_EVENT_NEW_VALUE (1 << 6)
+
 #endif // GUARD_CONSTANTS_BATTLE_ENCOUNTER_H

@@ -6,6 +6,20 @@
 STATIC_ASSERT(MAX_ENCOUNTER_TRIGGERS == 32, EncounterFiredTriggersBitmapMismatch);
 STATIC_ASSERT(sizeof(struct EncounterRuntime) <= 64, EncounterRuntimeTooLarge);
 
+// Which struct EncounterEvent fields a checkpoint's dispatcher actually populates. Grows as each
+// checkpoint's call site is built out; a 0 row means the checkpoint has no event data at all
+// (e.g. ENC_ON_BATTLE_START - nothing has happened yet).
+static const u8 sCheckpointEventFields[ENC_CHECKPOINT_COUNT] =
+{
+    [ENC_ON_BATTLE_START] = 0,
+    [ENC_ON_TURN_START]   = 0,
+    [ENC_ON_MOVE_END]     = 0, // populated in Stage 09
+    [ENC_ON_FAINT]        = 0, // populated in Stage 09
+    [ENC_ON_SWITCH_IN]    = 0, // populated once ENC_ON_SWITCH_IN is dispatched
+    [ENC_ON_TURN_END]     = ENC_EVENT_BATTLER | ENC_EVENT_CAUSE,
+    [ENC_ON_BATTLE_END]   = 0,
+};
+
 #if TESTING
 static const struct Encounter *sTestEncounter;
 
@@ -46,12 +60,14 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
     if (!IsEncounterActive())
         return NULL;
 
-    // Entering a new checkpoint resets the runaway guard; repeated calls for the same
-    // checkpoint (the re-evaluation loop) keep accumulating against it.
+    // Entering a new checkpoint resets the runaway guard and clears the event context; repeated
+    // calls for the same checkpoint (the re-evaluation loop) keep accumulating against the guard
+    // and must NOT re-clear the event, or a later pass loses what an earlier pass was reacting to.
     if (checkpoint != runtime->checkpoint)
     {
         runtime->checkpoint = checkpoint;
         runtime->scriptsThisCheckpoint = 0;
+        memset(&runtime->event, 0, sizeof(runtime->event));
     }
 
     assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
@@ -102,6 +118,64 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
 
     runtime->scriptsThisCheckpoint++;
     return best->script;
+}
+
+// Populates the current checkpoint's event context. Caller only needs to pass the fields its
+// checkpoint's row in sCheckpointEventFields actually marks valid; the rest are ignored by
+// GetEncounterEventField regardless of what's passed here.
+void SetEncounterEvent(u8 battler, u8 target, u16 move, enum EncounterEventCause cause, s16 oldValue, s16 newValue)
+{
+    struct EncounterEvent *event = &gBattleStruct->encounter.event;
+
+    event->battler = battler;
+    event->target = target;
+    event->move = move;
+    event->cause = cause;
+    event->oldValue = oldValue;
+    event->newValue = newValue;
+}
+
+// Reads one field of the current checkpoint's event context. See include/battle_encounter.h.
+bool32 GetEncounterEventField(u32 field, s32 *out)
+{
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    u32 validityBit = (field == ENC_EVENT_OLD_VALUE || field == ENC_EVENT_NEW_VALUE) ? ENC_EVENT_VALUES : field;
+
+    assertf(runtime->checkpoint < ENC_CHECKPOINT_COUNT, "invalid checkpoint %d", runtime->checkpoint)
+    {
+        return FALSE;
+    }
+    assertf(sCheckpointEventFields[runtime->checkpoint] & validityBit,
+            "event field %d not valid at checkpoint %d", field, runtime->checkpoint)
+    {
+        return FALSE;
+    }
+
+    switch (field)
+    {
+    case ENC_EVENT_BATTLER:
+        *out = runtime->event.battler;
+        break;
+    case ENC_EVENT_TARGET:
+        *out = runtime->event.target;
+        break;
+    case ENC_EVENT_MOVE:
+        *out = runtime->event.move;
+        break;
+    case ENC_EVENT_CAUSE:
+        *out = runtime->event.cause;
+        break;
+    case ENC_EVENT_OLD_VALUE:
+        *out = runtime->event.oldValue;
+        break;
+    case ENC_EVENT_NEW_VALUE:
+        *out = runtime->event.newValue;
+        break;
+    default:
+        errorf("unknown encounter event field %d", field);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 // Set by the overworld script that starts the battle, taken exactly once by battle start.

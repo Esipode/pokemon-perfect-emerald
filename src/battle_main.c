@@ -4922,7 +4922,10 @@ bool32 EndTurnEvents(void) // Called from Battle Script
     // until the checkpoint has no more eligible triggers.
     if (!gBattleStruct->eventState.encounterTurnEnd)
     {
+        // TryRunEncounterCheckpoint clears the event context on checkpoint entry (first pass
+        // only); SetEncounterEvent must run after that, every pass, so the clear never wipes it.
         const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_END);
+        SetEncounterEvent(gBattlerAttacker, 0, MOVE_NONE, ENC_CAUSE_END_TURN, 0, 0);
         if (script != NULL)
         {
             BattleScriptCall(script);
