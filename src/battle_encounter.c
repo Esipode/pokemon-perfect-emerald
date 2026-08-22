@@ -155,31 +155,177 @@ s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapsh
     }
 }
 
-// NULL -> always eligible. Otherwise ANDs every comparison in conds, short-circuiting on the first
-// failure - cheaper, and it avoids asserting on an operand a failed earlier condition made moot.
+// Returns the number of array entries node spans, without evaluating any leaf comparison. Lets
+// ENC_OP_ALL/ENC_OP_ANY's short-circuit still walk (but never evaluate) the siblings it skips,
+// which is what keeps the parent's consumed length correct without duplicating EvalNode's walk.
+static u32 SkipNode(const struct EncounterCondition *node, u32 depth)
+{
+    u32 consumed;
+    u32 i;
+
+    switch (node->operand)
+    {
+    case ENC_OP_ALL:
+    case ENC_OP_ANY:
+        assertf(depth < MAX_ENCOUNTER_COND_DEPTH,
+                "encounter %d: condition nesting deeper than %d",
+                gBattleStruct->encounter.id, MAX_ENCOUNTER_COND_DEPTH)
+        {
+            return 1;
+        }
+        consumed = 1;
+        for (i = 0; i < node->arg; i++)
+        {
+            assertf(node[consumed].operand != ENC_OP_COUNT,
+                    "encounter %d: condition group claims more children than exist",
+                    gBattleStruct->encounter.id)
+            {
+                return consumed;
+            }
+            consumed += SkipNode(node + consumed, depth + 1);
+        }
+        return consumed;
+
+    case ENC_OP_NOT:
+        assertf(depth < MAX_ENCOUNTER_COND_DEPTH,
+                "encounter %d: condition nesting deeper than %d",
+                gBattleStruct->encounter.id, MAX_ENCOUNTER_COND_DEPTH)
+        {
+            return 1;
+        }
+        assertf(node[1].operand != ENC_OP_COUNT,
+                "encounter %d: NOT has no child to invert",
+                gBattleStruct->encounter.id)
+        {
+            return 1;
+        }
+        return 1 + SkipNode(node + 1, depth + 1);
+
+    default: // leaf
+        return 1;
+    }
+}
+
+// Returns the number of array entries node spans; writes node's result to *out. depth counts group
+// nesting (ALL/ANY/NOT), bounded against the stack budget in Free Space.md Sec0.1 - a leaf never
+// recurses, so it isn't itself subject to the bound.
+static u32 EvalNode(const struct EncounterCondition *node, bool32 useSnapshot, u32 depth, bool32 *out)
+{
+    switch (node->operand)
+    {
+    case ENC_OP_ALL:
+    case ENC_OP_ANY:
+    {
+        // ALL starts TRUE and short-circuits on the first FALSE child; ANY starts FALSE and
+        // short-circuits on the first TRUE child - one loop serves both by short-circuiting the
+        // moment a child's result matches the operand's own "deciding" value. Once decided, the
+        // remaining children are walked via SkipNode (measured, not evaluated) so the consumed
+        // length is still correct and a skipped child's assertion never trips.
+        bool32 decidesOn = (node->operand == ENC_OP_ANY);
+        bool32 result = !decidesOn;
+        bool32 decided = FALSE;
+        u32 consumed = 1;
+        u32 i;
+
+        assertf(depth < MAX_ENCOUNTER_COND_DEPTH,
+                "encounter %d: condition nesting deeper than %d",
+                gBattleStruct->encounter.id, MAX_ENCOUNTER_COND_DEPTH)
+        {
+            *out = FALSE;
+            return 1;
+        }
+
+        for (i = 0; i < node->arg; i++)
+        {
+            assertf(node[consumed].operand != ENC_OP_COUNT,
+                    "encounter %d: condition group claims more children than exist",
+                    gBattleStruct->encounter.id)
+            {
+                *out = FALSE;
+                return consumed;
+            }
+
+            if (decided)
+            {
+                consumed += SkipNode(node + consumed, depth + 1);
+            }
+            else
+            {
+                bool32 childResult;
+                consumed += EvalNode(node + consumed, useSnapshot, depth + 1, &childResult);
+                if (childResult == decidesOn)
+                {
+                    result = decidesOn;
+                    decided = TRUE;
+                }
+            }
+        }
+
+        *out = result;
+        return consumed;
+    }
+
+    case ENC_OP_NOT:
+    {
+        bool32 childResult;
+        u32 consumed;
+
+        assertf(depth < MAX_ENCOUNTER_COND_DEPTH,
+                "encounter %d: condition nesting deeper than %d",
+                gBattleStruct->encounter.id, MAX_ENCOUNTER_COND_DEPTH)
+        {
+            *out = FALSE;
+            return 1;
+        }
+        assertf(node[1].operand != ENC_OP_COUNT,
+                "encounter %d: NOT has no child to invert",
+                gBattleStruct->encounter.id)
+        {
+            *out = FALSE;
+            return 1;
+        }
+
+        consumed = 1 + EvalNode(node + 1, useSnapshot, depth + 1, &childResult);
+        *out = !childResult;
+        return consumed;
+    }
+
+    default: // leaf - Stage 11's comparison
+    {
+        s32 lhs = GetEncounterOperand(node->operand, node->arg, useSnapshot);
+
+        switch (node->cmp)
+        {
+        case ENC_CMP_EQ: *out = (lhs == node->value); break;
+        case ENC_CMP_NE: *out = (lhs != node->value); break;
+        case ENC_CMP_LT: *out = (lhs <  node->value); break;
+        case ENC_CMP_LE: *out = (lhs <= node->value); break;
+        case ENC_CMP_GT: *out = (lhs >  node->value); break;
+        case ENC_CMP_GE: *out = (lhs >= node->value); break;
+        default:
+            errorf("encounter %d: unknown comparison %d", gBattleStruct->encounter.id, node->cmp);
+            *out = FALSE;
+            break;
+        }
+        return 1;
+    }
+    }
+}
+
+// NULL -> always eligible. Otherwise ANDs every top-level node in conds - a leaf or a group tree
+// (Stage 12) - short-circuiting on the first failure. A conditions array with no group node is
+// exactly Stage 11's flat AND-list, evaluated identically.
 bool32 EvaluateConditions(const struct EncounterCondition *conds, bool32 useSnapshot)
 {
+    const struct EncounterCondition *node = conds;
+
     if (conds == NULL)
         return TRUE;
 
-    for (; conds->operand != ENC_OP_COUNT; conds++)
+    while (node->operand != ENC_OP_COUNT)
     {
-        s32 lhs = GetEncounterOperand(conds->operand, conds->arg, useSnapshot);
         bool32 result;
-
-        switch (conds->cmp)
-        {
-        case ENC_CMP_EQ: result = (lhs == conds->value); break;
-        case ENC_CMP_NE: result = (lhs != conds->value); break;
-        case ENC_CMP_LT: result = (lhs <  conds->value); break;
-        case ENC_CMP_LE: result = (lhs <= conds->value); break;
-        case ENC_CMP_GT: result = (lhs >  conds->value); break;
-        case ENC_CMP_GE: result = (lhs >= conds->value); break;
-        default:
-            errorf("encounter %d: unknown comparison %d", gBattleStruct->encounter.id, conds->cmp);
-            return FALSE;
-        }
-
+        node += EvalNode(node, useSnapshot, 0, &result);
         if (!result)
             return FALSE;
     }

@@ -98,10 +98,20 @@ enum EncounterBattlerRef
 // event context sources from the current checkpoint's struct EncounterEvent (Stage 08) via
 // GetEncounterEventField, so its validity mask applies automatically - reading an event operand at
 // a checkpoint that doesn't populate it asserts.
+//
+// The three group operands (Stage 12) are placed first so `operand < ENC_OP_FIRST_LEAF` is a cheap
+// "is this a group node, not a comparison" test. A group node reuses struct EncounterCondition's
+// arg field as a child count instead of an operand argument; see EvalNode in battle_encounter.c.
 enum EncounterOperand
 {
+    ENC_OP_ALL,    // arg = number of immediate child nodes; true if all are true
+    ENC_OP_ANY,    // arg = number of immediate child nodes; true if any is true
+    ENC_OP_NOT,    // arg unused; inverts the single node that follows
+
+    ENC_OP_FIRST_LEAF,
+
     // --- live battle state ---
-    ENC_OP_HP,              // arg = battler ref
+    ENC_OP_HP = ENC_OP_FIRST_LEAF,   // arg = battler ref
     ENC_OP_HP_PERCENT,      // arg = battler ref
     ENC_OP_MAX_HP,          // arg = battler ref
     ENC_OP_SPECIES,         // arg = battler ref

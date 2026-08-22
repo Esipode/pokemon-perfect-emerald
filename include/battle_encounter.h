@@ -5,13 +5,16 @@
 #include "constants/battle_encounter.h"
 
 // 6 bytes, ROM-resident. A trigger's conditions pointer addresses an array terminated by an
-// ENC_OP_COUNT operand, avoiding a separate count.
+// ENC_OP_COUNT operand, avoiding a separate count. ENC_OP_ALL/ENC_OP_ANY/ENC_OP_NOT (Stage 12)
+// reuse this same struct as group nodes rather than a separate tagged union - see EvalNode in
+// battle_encounter.c for how the tree is laid out prefix-encoded in one flat array.
 struct EncounterCondition
 {
     u8  operand;     // enum EncounterOperand
-    u8  cmp;         // enum EncounterCmp
-    u16 arg;         // operand-specific: battler ref, var index, ENC_PACK_STAT_ARG
-    s16 value;       // right-hand side
+    u8  cmp;         // enum EncounterCmp; unused by a group node
+    u16 arg;         // leaf: operand-specific (battler ref, var index, ENC_PACK_STAT_ARG)
+                      // ENC_OP_ALL/ENC_OP_ANY: number of immediate child nodes; ENC_OP_NOT: unused
+    s16 value;       // right-hand side; unused by a group node
 };
 
 struct EncounterTrigger
@@ -94,9 +97,11 @@ bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut);
 // of live HP; every other operand ignores it.
 s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapshot);
 
-// Walks conds - an array terminated by an ENC_OP_COUNT operand - ANDing every comparison and
-// short-circuiting on the first failure. NULL is vacuously TRUE: a trigger with no conditions is
-// always eligible.
+// Walks conds - an array terminated by an ENC_OP_COUNT operand - ANDing every top-level node,
+// short-circuiting on the first failure. A node is either a leaf comparison or an ENC_OP_ALL /
+// ENC_OP_ANY / ENC_OP_NOT group (Stage 12) that consumes its child nodes; nesting is bounded by
+// MAX_ENCOUNTER_COND_DEPTH, past which the offending subtree asserts and evaluates FALSE. NULL is
+// vacuously TRUE: a trigger with no conditions is always eligible.
 bool32 EvaluateConditions(const struct EncounterCondition *conds, bool32 useSnapshot);
 
 static inline bool32 IsEncounterActive(void)
