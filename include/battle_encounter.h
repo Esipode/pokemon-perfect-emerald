@@ -46,6 +46,18 @@ extern const u8 EncScript_TestSeedVarLow[];   // encsetvar var 0 to 2
 extern const u8 EncScript_TestBranch[];       // encjumpifvar on var 0 > 4; records which way into var 1
 extern const u8 EncScript_TestCallSub[];      // call/return through a shared sub-script
 
+// Stage 15 example encounters (outline Sec33/Sec34), built through the authoring path only.
+extern const u8 EncScript_LegendaryBarrier_PhaseTransition[];
+extern const u8 EncScript_TrainerMega_Reveal[];
+
+// Stage 15 command tests (test/battle/encounter/commands.c).
+extern const u8 EncScript_TestChangeHpDamage[];
+extern const u8 EncScript_TestChangeHpHeal[];
+extern const u8 EncScript_TestChangeHpAllFoes[];
+extern const u8 EncScript_TestChangeStat[];
+extern const u8 EncScript_TestChangeStatAllFoes[];
+extern const u8 EncScript_TestMegaEvolve[];
+
 // Engine-owned shim: all encounter scripts end with `return`; checkpoints dispatched
 // from a non-script engine callback (e.g. BATTLE_START) call the encounter script from
 // this shim so the callback stack still unwinds via `end2`.
@@ -119,6 +131,13 @@ bool32 GetEncounterEventField(u32 field, s32 *out);
 // singles battle (recovery: *battlerOut left untouched) rather than resolving to an inactive
 // battler's stale gBattleMons entry - never read that.
 bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut);
+
+// Resolves an EncounterTarget (constants/battle_encounter.h) to a battler bitmask, for commands.
+// Never fails outright - a single-slot target invalid for the current battle format just
+// contributes no bit, same as ResolveEncounterBattlerRef's _RIGHT-in-singles case. A
+// state-changing command must assert on a fainted/absent battler found in the returned mask
+// itself; that isn't checked here.
+u32 ResolveEncounterTarget(enum EncounterTarget target);
 
 // Reads one operand of live battle state or event context, for comparison against a condition's
 // value. useSnapshot (Stage 10) redirects ENC_OP_HP / ENC_OP_HP_PERCENT to runtime->prevHp instead

@@ -12538,3 +12538,147 @@ void BS_TryDoMoveEffectsBeforeMoves(void)
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
+
+// Stage 15: encounter command vocabulary. Each takes an EncounterTarget (constants/
+// battle_encounter.h) instead of a raw battler bank, so one call reaches every battler a target
+// resolves to in both singles and doubles - see ResolveEncounterTarget (battle_encounter.h).
+
+// CHANGE_HP begin/step pair (enchangehp, asm/macros/battle_script.inc). Begin resolves the target
+// once into runtime->changeHpRemaining; step consumes one battler per call, falling through into
+// the existing PASSIVE_HP_UPDATE healthbarupdate/datahpupdate opcodes for it so the health bar
+// still animates - CHANGE_HP reuses that presentation rather than mutating HP silently. Split in
+// two because a target set needs one healthbarupdate/datahpupdate pair per battler, and those can
+// each span multiple frames waiting on the controller; a single native call can't do that.
+void BS_EncounterChangeHpBegin(void)
+{
+    NATIVE_ARGS(u8 target, s16 amount);
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+
+    runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
+    runtime->changeHpAmount = cmd->amount;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_EncounterChangeHpStep(void)
+{
+    NATIVE_ARGS(const u8 *doneInstr);
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    enum BattlerId battler = B_BATTLER_0;
+    bool32 found = FALSE;
+
+    for (; battler < gBattlersCount; battler++)
+    {
+        if (!(runtime->changeHpRemaining & (1u << battler)))
+            continue;
+        runtime->changeHpRemaining &= ~(1u << battler);
+
+        assertf(IsBattlerAlive(battler),
+                "encounter %d: CHANGE_HP targets fainted/absent battler %d", runtime->id, battler)
+        {
+            continue; // skip this battler, the loop below picks up the rest
+        }
+        found = TRUE;
+        break;
+    }
+
+    if (!found)
+    {
+        gBattlescriptCurrInstr = cmd->doneInstr;
+        return;
+    }
+
+    gBattleScripting.battler = battler;
+    if (runtime->changeHpAmount > 0)
+        SetHealAmount(battler, runtime->changeHpAmount);
+    else if (runtime->changeHpAmount < 0)
+        SetPassiveDamageAmount(battler, -runtime->changeHpAmount);
+    else
+        gBattleStruct->passiveHpUpdate[battler] = 0; // amount 0 is a deliberate no-op, not a min-1 hit
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// CHANGE_STAT (encchangestat). Unlike CHANGE_HP this mutates statStages directly rather than going
+// through the animated trybattlerstatchange opcode - a pure mechanic with no presentation
+// (outline Sec31), safe to apply to an entire target set in one call since it never touches the
+// controller. An author who wants the stock "Defense rose!" message/animation for a single battler
+// can still call trybattlerstatchange directly instead of this wrapper.
+void BS_EncounterChangeStat(void)
+{
+    NATIVE_ARGS(u8 target, u8 stat, s8 stages);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        s32 newStage;
+        if (!(mask & (1u << battler)))
+            continue;
+
+        assertf(IsBattlerAlive(battler),
+                "encounter %d: CHANGE_STAT targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
+        {
+            continue;
+        }
+
+        newStage = (s32)gBattleMons[battler].statStages[cmd->stat] + cmd->stages;
+        if (newStage < MIN_STAT_STAGE)
+            newStage = MIN_STAT_STAGE;
+        else if (newStage > MAX_STAT_STAGE)
+            newStage = MAX_STAT_STAGE;
+        gBattleMons[battler].statStages[cmd->stat] = newStage;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// MEGA_EVOLVE's forced entry point (encmegaevolve). BattleScript_MegaEvolution already exists but
+// is reached only through ActivateMegaEvolution's Mega Ring / "already used this battle" gating,
+// which an encounter-forced evolution must bypass. This performs the same mechanic half
+// (ActivateMegaEvolution, src/battle_util.c) directly and lets the following battle-script
+// instructions (asm/macros/battle_script.inc) reuse the same presentation opcodes
+// BattleScript_MegaEvolution does - the whole point of finding a gap in an existing feature
+// instead of duplicating it. Single-target only: mega-evolving more than one Pokemon in one action
+// isn't a coherent single action, so a target resolving to zero or more than one battler fails.
+void BS_EncounterMegaEvolve(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    enum Ability ability;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: MEGA_EVOLVE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: MEGA_EVOLVE target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    assertf(!IsBattlerMegaEvolved(battler) && GetActiveGimmick(battler) == GIMMICK_NONE,
+            "encounter %d: MEGA_EVOLVE target %d can't mega evolve right now", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    // STRINGID_MEGAEVOEVOLVED (battle_message.c) reads {B_ATK_NAME_WITH_PREFIX} - true by
+    // construction when Mega Evolution is chosen as a move-selection gimmick (the attacker IS the
+    // evolving battler), which doesn't hold here since this can run from any checkpoint. Set it
+    // explicitly so the reused presentation names the right Pokemon.
+    gBattlerAttacker = battler;
+    gBattleScripting.battler = battler;
+    ability = GetBattlerAbility(battler);
+    gLastUsedItem = gBattleMons[battler].item;
+    SetActiveGimmick(battler, GIMMICK_MEGA);
+    SetGimmickAsActivated(battler, GIMMICK_MEGA);
+    TryBattleFormChange(battler, FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM, ability);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+

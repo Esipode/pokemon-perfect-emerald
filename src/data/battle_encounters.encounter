@@ -6,3 +6,23 @@ Flags: Once
 Script: EncScript_TestBattleStart
 Conditions:
     Turn >= 0
+
+Encounter: Legendary_Barrier
+
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_LegendaryBarrier_PhaseTransition
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Encounter: Trainer_Mega
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_TrainerMega_Reveal
+Conditions:
+    Turn >= 5
+    Var(MegaEvolved) == 0

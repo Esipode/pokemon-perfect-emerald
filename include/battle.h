@@ -614,6 +614,11 @@ struct EncounterRuntime
     // checkpoint so a later pass's trigger can still see what an earlier pass was reacting to.
     struct EncounterEvent event;
     u16 prevHp[MAX_BATTLERS_COUNT];             // threshold edge detection (Stage 10)
+    // CHANGE_HP's per-battler loop cursor (Stage 15). Lives here rather than as a callnative local
+    // because the loop spans multiple battle-script instructions (goto) that each can yield across
+    // frames waiting on the health-bar controller handshake - a plain C local can't survive that.
+    u32 changeHpRemaining;                      // bitmask of battlers the current CHANGE_HP hasn't done yet
+    s16 changeHpAmount;                         // its amount arg; positive = heal, negative = damage
 };
 
 // Cleared at the beginning of the battle. Fields need to be cleared when needed manually otherwise.

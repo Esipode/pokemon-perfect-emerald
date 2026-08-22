@@ -4,6 +4,8 @@
 #include "constants/battle_script_commands.h"
 #include "constants/battle_string_ids.h"
 #include "constants/battle_encounter.h"
+#include "constants/battle_anim.h"
+#include "constants/pokemon.h"
 	.include "asm/macros.inc"
 	.include "asm/macros/battle_script.inc"
 	.include "constants/constants.inc"
@@ -66,4 +68,66 @@ EncScript_TestCallSub::
 	return
 EncScript_TestSubroutine:
 	encsetvar 0, 1
+	return
+
+// Stage 15 example encounters (outline Sec33/Sec34), built through the authoring path only - no
+// encounter-specific C beyond the reusable commands in asm/macros/battle_script.inc. Var 0 in each
+// is the encounter's own phase/state flag, per src/data/battle_encounters.encounter.
+
+// outline Sec33: a boss that grows a defensive barrier the first time it drops to half HP.
+// "ADD_BARRIER" isn't a new mechanic (architecture doc Sec1.2) - it's Defense/Sp. Def stat stages.
+EncScript_LegendaryBarrier_PhaseTransition::
+	encsetvar 0, 2   @ phase = 2
+	trainerslidein BS_OPPONENT1
+	printstring STRINGID_ENCLEGENDARYGATHERSSTRENGTH
+	waitmessage B_WAIT_TIME_LONG
+	trainerslideout BS_OPPONENT1
+	encchangestat ENC_TARGET_BOSS, STAT_DEF, 3
+	encchangestat ENC_TARGET_BOSS, STAT_SPDEF, 3
+	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL   @ stand-in glow - no general-purpose "shield" anim exists outside move-specific ones
+	printstring STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS
+	waitmessage B_WAIT_TIME_LONG
+	return
+
+// outline Sec34: a trainer who Mega Evolves their boss once, on a fixed turn, outside the normal
+// player-facing gimmick flow.
+EncScript_TrainerMega_Reveal::
+	trainerslidein BS_OPPONENT1
+	printstring STRINGID_ENCTRAINERPUSHEDTHISFAR
+	waitmessage B_WAIT_TIME_LONG
+	printstring STRINGID_ENCTRAINERSHOWTRUEPOWER
+	waitmessage B_WAIT_TIME_LONG
+	trainerslideout BS_OPPONENT1
+	encmegaevolve ENC_TARGET_BOSS, EncScript_TrainerMega_Reveal_Done
+	encsetvar 0, 1   @ mega_evolved = true
+EncScript_TrainerMega_Reveal_Done:
+	return
+
+// Stage 15 command tests (test/battle/encounter/commands.c). Each exercises one command in
+// isolation through the real interpreter, the same way Stage 14's variables scripts do.
+
+EncScript_TestChangeHpDamage::
+	enchangehp ENC_TARGET_BOSS, -30
+	return
+
+EncScript_TestChangeHpHeal::
+	enchangehp ENC_TARGET_BOSS, 20
+	return
+
+EncScript_TestChangeHpAllFoes::
+	enchangehp ENC_TARGET_ALL_FOES, -15
+	return
+
+EncScript_TestChangeStat::
+	encchangestat ENC_TARGET_BOSS, STAT_DEF, 2
+	return
+
+EncScript_TestChangeStatAllFoes::
+	encchangestat ENC_TARGET_ALL_FOES, STAT_ATK, -1
+	return
+
+EncScript_TestMegaEvolve::
+	encmegaevolve ENC_TARGET_BOSS, EncScript_TestMegaEvolve_Done
+	encsetvar 0, 1
+EncScript_TestMegaEvolve_Done:
 	return

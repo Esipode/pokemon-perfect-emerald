@@ -1157,6 +1157,52 @@
 	.4byte \func
 	.endm
 
+@ Stage 15: encounter command vocabulary (constants/battle_encounter.h's enum EncounterTarget).
+@ callnative-first per outline Sec37 - none of these are real opcodes.
+
+	@ Changes HP for every battler \target resolves to by amount (positive = heal, negative =
+	@ damage), reusing the same PASSIVE_HP_UPDATE healthbarupdate/datahpupdate opcodes Leftovers
+	@ and status damage use, once per targeted battler so the health bar still animates for each.
+	.macro enchangehp target:req, amount:req
+	callnative BS_EncounterChangeHpBegin
+	.byte \target
+	.2byte \amount
+1:
+	callnative BS_EncounterChangeHpStep
+	.4byte 2f
+	healthbarupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	datahpupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	goto 1b
+2:
+	.endm
+
+	@ Adds \stages (signed) to \stat for every battler \target resolves to, clamped to the normal
+	@ stat stage range. Silent - no message, no animation (outline Sec31); pair with playanimation
+	@ or a literal trybattlerstatchange call if presentation is wanted.
+	.macro encchangestat target:req, stat:req, stages:req
+	callnative BS_EncounterChangeStat
+	.byte \target
+	.byte \stat
+	.byte \stages
+	.endm
+
+	@ Forces \target (must resolve to exactly one battler) to Mega Evolve outside the normal
+	@ gimmick-selection flow, then plays the same presentation BattleScript_MegaEvolution
+	@ (data/battle_scripts_1.s) uses. Jumps to \failInstr if the target can't mega evolve right now
+	@ (wrong shape, fainted, already mega evolved, or another gimmick active).
+	.macro encmegaevolve target:req, failInstr:req
+	callnative BS_EncounterMegaEvolve
+	.byte \target
+	.4byte \failInstr
+	handleformchange BS_SCRIPTING, 0
+	playanimation BS_SCRIPTING, B_ANIM_MEGA_EVOLUTION
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
+	printstring STRINGID_MEGAEVOEVOLVED
+	waitmessage B_WAIT_TIME_LONG
+	switchinabilities BS_SCRIPTING
+	.endm
+
 	.macro savetarget
 	callnative BS_SaveTarget
 	.endm

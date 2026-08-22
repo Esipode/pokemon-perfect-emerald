@@ -6,6 +6,8 @@ enum EncounterId
 {
     ENCOUNTER_NONE,
     ENCOUNTER_TEST,
+    ENCOUNTER_LEGENDARY_BARRIER,   // Stage 15 example, outline Sec33
+    ENCOUNTER_TRAINER_MEGA,        // Stage 15 example, outline Sec34
     ENCOUNTER_COUNT,
 };
 
@@ -98,6 +100,40 @@ enum EncounterBattlerRef
     ENC_OPPONENT_LEFT,
     ENC_OPPONENT_RIGHT,
     ENC_BATTLER_REF_COUNT,
+};
+
+// Battler-set targets for commands (Stage 15). Resolved through ResolveEncounterTarget
+// (battle_encounter.h) to a bitmask rather than a single battler id - the only representation that
+// treats ALL_FOES/ALL_ALLIES/ALL_BATTLERS and a single slot uniformly, so a command's "for each
+// targeted battler" logic is identical in singles and doubles. Every single-slot entry resolves
+// through the same lookup as EncounterBattlerRef above, so an author who knows one vocabulary knows
+// both; the entries that don't appear there (the three group targets, plus EVENT_TARGET) exist only
+// because a command needs a *set of battlers*, which a condition never does.
+//
+// Format validity is the point of this abstraction: a single-slot entry invalid for the current
+// battle format (e.g. ENC_TARGET_PLAYER_RIGHT in singles) resolves to an empty mask rather than an
+// inactive battler's stale gBattleMons entry - see ResolveEncounterTarget. A state-changing command
+// must still assert if the mask it gets back contains a fainted/absent battler; that check belongs
+// to the command, not to resolution.
+//
+// No `actor` field exists alongside this (outline Sec30). Presentation commands (trainerslidein,
+// printstring, playse, ...) already act on the trainer or the screen and take no battler; mechanic
+// commands take an EncounterTarget. That split is already structural in the existing opcode set, so
+// adding an actor field would be speculative generality against a distinction the engine already
+// encodes.
+enum EncounterTarget
+{
+    ENC_TARGET_BOSS,
+    ENC_TARGET_SELF,           // ENC_SELF - the battler that raised the current event
+    ENC_TARGET_EVENT_TARGET,   // the other side of the event: who it happened to, not who did it
+    ENC_TARGET_PLAYER_LEFT,
+    ENC_TARGET_PLAYER_RIGHT,
+    ENC_TARGET_OPPONENT_LEFT,
+    ENC_TARGET_OPPONENT_RIGHT,
+    ENC_TARGET_ALL_FOES,       // every battler not on the boss's side
+    ENC_TARGET_ALL_ALLIES,     // every battler on the boss's side, boss included
+    ENC_TARGET_ALL_BATTLERS,
+    ENC_TARGET_COUNT,
 };
 
 // ENC_OP_STAT_STAGE's arg packs a battler ref and an enum Stat into one u16 - both are small enough

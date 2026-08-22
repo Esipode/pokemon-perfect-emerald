@@ -61,6 +61,74 @@ bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut)
     return TRUE;
 }
 
+// Resolves an EncounterTarget to a battler bitmask (Stage 15). See include/battle_encounter.h.
+u32 ResolveEncounterTarget(enum EncounterTarget target)
+{
+    u8 battler;
+    u8 boss;
+    u32 mask;
+    enum BattleSide bossSide;
+
+    switch (target)
+    {
+    case ENC_TARGET_BOSS:
+        return ResolveEncounterBattlerRef(ENC_BOSS, &battler) ? (1u << battler) : 0;
+    case ENC_TARGET_SELF:
+        return ResolveEncounterBattlerRef(ENC_SELF, &battler) ? (1u << battler) : 0;
+    case ENC_TARGET_PLAYER_LEFT:
+        return ResolveEncounterBattlerRef(ENC_PLAYER_LEFT, &battler) ? (1u << battler) : 0;
+    case ENC_TARGET_PLAYER_RIGHT:
+        return ResolveEncounterBattlerRef(ENC_PLAYER_RIGHT, &battler) ? (1u << battler) : 0;
+    case ENC_TARGET_OPPONENT_LEFT:
+        return ResolveEncounterBattlerRef(ENC_OPPONENT_LEFT, &battler) ? (1u << battler) : 0;
+    case ENC_TARGET_OPPONENT_RIGHT:
+        return ResolveEncounterBattlerRef(ENC_OPPONENT_RIGHT, &battler) ? (1u << battler) : 0;
+
+    case ENC_TARGET_EVENT_TARGET:
+    {
+        s32 value;
+        if (!GetEncounterEventField(ENC_EVENT_TARGET, &value))
+            return 0;
+        battler = value;
+        // Mirrors ResolveEncounterBattlerRef's own guard: event.target is read as a raw battler id,
+        // not looked up through GetBattlerAtPosition, so it needs the same bounds check here.
+        assertf(battler < gBattlersCount,
+                "encounter %d: event target %d has no battler in this battle", gBattleStruct->encounter.id, battler)
+        {
+            return 0;
+        }
+        return (1u << battler);
+    }
+
+    case ENC_TARGET_ALL_FOES:
+    case ENC_TARGET_ALL_ALLIES:
+        // Both are relative to the boss's side - there's no actor battler to be relative to
+        // instead (Step 3: no actor field), so ENC_BOSS itself must resolve for either to mean
+        // anything.
+        if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+            return 0;
+        bossSide = GetBattlerSide(boss);
+        mask = 0;
+        for (battler = 0; battler < gBattlersCount; battler++)
+        {
+            bool32 onBossSide = (GetBattlerSide(battler) == bossSide);
+            if (target == ENC_TARGET_ALL_ALLIES ? onBossSide : !onBossSide)
+                mask |= (1u << battler);
+        }
+        return mask;
+
+    case ENC_TARGET_ALL_BATTLERS:
+        mask = 0;
+        for (battler = 0; battler < gBattlersCount; battler++)
+            mask |= (1u << battler);
+        return mask;
+
+    default:
+        errorf("encounter %d: unknown target %d", gBattleStruct->encounter.id, target);
+        return 0;
+    }
+}
+
 // Reads one operand for condition evaluation. See include/battle_encounter.h.
 s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapshot)
 {
