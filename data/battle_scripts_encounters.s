@@ -9,7 +9,18 @@
 
 	.section script_data, "aw", %progbits
 
+// Engine-owned shim: called via BattleScriptExecute from a non-script callback, with the
+// encounter script itself invoked via BattleScriptCall. All encounter scripts end with
+// `return`, which unwinds here; this is the only encounter script allowed to end2.
+BattleScript_EncounterCheckpointEnd2::
+	end2
+
 EncScript_TestBattleStart::
 	printstring STRINGID_EMPTYSTRING3
 	waitmessage B_WAIT_TIME_LONG
-	end2
+	return
+
+EncScript_TestTurnEnd::
+	printstring STRINGID_EMPTYSTRING3
+	waitmessage B_WAIT_TIME_LONG
+	return

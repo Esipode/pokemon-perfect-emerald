@@ -4823,9 +4823,14 @@ static void TryDoEventsBeforeFirstTurn(void)
         break;
     case FIRST_TURN_EVENTS_ENCOUNTER:
     {
+        // Encounter scripts always end with `return`; the shim supplies the `end2`
+        // needed to unwind back to this non-script callback.
         const u8 *script = TryRunEncounterCheckpoint(ENC_ON_BATTLE_START);
         if (script != NULL)
-            BattleScriptExecute(script);
+        {
+            BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
+            BattleScriptCall(script);
+        }
         gBattleStruct->eventState.beforeFirstTurn++;
         break;
     }
@@ -4853,6 +4858,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         gBattleScripting.moveendState = 0;
         gBattleStruct->eventState.faintedAction = 0;
         gBattleStruct->eventState.endTurn = 0;
+        gBattleStruct->eventState.encounterTurnEnd = 0;
 
         memset(gQueuedStatBoosts, 0, sizeof(gQueuedStatBoosts));
 
@@ -4908,7 +4914,22 @@ bool32 EndTurnEvents(void) // Called from Battle Script
     if (DoEndTurnEffects())
         return TRUE;
 
+    // ENC_ON_TURN_END: after end-turn effects (weather, status, Leftovers) have resolved,
+    // before the turn counter increments. Already inside a script, so BattleScriptCall
+    // (not Execute) pushes the cursor for `return` to resume BattleScript_EndTurnEvents.
+    if (!gBattleStruct->eventState.encounterTurnEnd)
+    {
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_END);
+        gBattleStruct->eventState.encounterTurnEnd = TRUE;
+        if (script != NULL)
+        {
+            BattleScriptCall(script);
+            return TRUE;
+        }
+    }
+
     gBattleStruct->eventState.faintedAction = 0;
+    gBattleStruct->eventState.encounterTurnEnd = FALSE; // re-arm for next turn
 
     TurnValuesCleanUp(FALSE);
     gHitMarker &= ~HITMARKER_PLAYER_FAINTED;

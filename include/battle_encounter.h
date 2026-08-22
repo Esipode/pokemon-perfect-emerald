@@ -22,8 +22,14 @@ struct Encounter
     u8 triggerCount;
 };
 
-// Test encounter script (data/battle_scripts_encounters.s).
+// Test encounter scripts (data/battle_scripts_encounters.s).
 extern const u8 EncScript_TestBattleStart[];
+extern const u8 EncScript_TestTurnEnd[];
+
+// Engine-owned shim: all encounter scripts end with `return`; checkpoints dispatched
+// from a non-script engine callback (e.g. BATTLE_START) call the encounter script from
+// this shim so the callback stack still unwinds via `end2`.
+extern const u8 BattleScript_EncounterCheckpointEnd2[];
 
 const struct Encounter *GetEncounter(enum EncounterId id);
 

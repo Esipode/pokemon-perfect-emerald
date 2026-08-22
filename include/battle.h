@@ -580,6 +580,7 @@ struct EventStates
     u32 battlerSwitchIn:8; // SwitchInFirstEventBlock, SwitchInSecondEventBlock
     u32 moveEndBlock:8;
     enum StatChangeResolution resolution:8;
+    u32 encounterTurnEnd:1;   // TRUE once the ENC_ON_TURN_END checkpoint has been dispatched this turn
 };
 
 // Placeholder; filled in once checkpoint dispatch exists.
