@@ -1,3 +1,170 @@
+# =================================================================================================
+# ENCOUNTER SHOWCASE (commented out; copy, rename, and uncomment the parts you need)
+#
+# An encounter is two pieces: this definition chooses WHEN it runs, and a battle-script label
+# chooses WHAT it does. Before enabling this example, add its `EncScript_Showcase_*` labels and
+# `STRINGID_ENCSHOWCASE_*` text to the appropriate battle-script/string files, then put
+# `setbattleencounter ENCOUNTER_SHOWCASE` immediately before the battle it should affect.
+#
+# This single boss demonstrates every checkpoint, priority/flag mode, author variables, grouped
+# conditions, event context, HP/stat changes, Mega Evolution, trainer presentation, and animation.
+# It is intentionally more comprehensive than a production encounter: copy the individual triggers
+# that match your design instead of enabling all of them at once.
+#
+# Encounter: Showcase
+#
+# # `OnBattleStart`: introduce the boss once, after all entry effects resolve.
+# Trigger: OnBattleStart
+# Priority: 10
+# Flags: Once
+# Script: EncScript_Showcase_Intro
+# Conditions:
+#     Battler(Boss).Species == SPECIES_RAYQUAZA
+#     BattlerCount == 2
+#
+# # `OnTurnStart`: a repeating reminder/control point. Omitting `Flags:` makes it
+# # run each turn while its conditions hold. `Turn` starts at 0, so `Turn >= 3` is the fourth turn.
+# Trigger: OnTurnStart
+# Priority: 30
+# Script: EncScript_Showcase_TurnStart
+# Conditions:
+#     Turn >= 3
+#     Var(TurnStartSeen) == 0
+#
+# # `OnMoveEnd`: a phase transition the moment HP crosses 50%. `Once, OnEnter` is the usual phase
+# # combination. `Event.*` fields below are only valid at the checkpoints documented in the tutorial.
+# Trigger: OnMoveEnd
+# Priority: 10
+# Flags: Once, OnEnter
+# Script: EncScript_Showcase_HalfHealth
+# Conditions:
+#     Battler(Boss).HpPercent <= 50
+#     Var(Phase) == 0
+#     Event.Target == BS_OPPONENT1
+#     Any:
+#         Event.Move == MOVE_SURF
+#         Event.Move == MOVE_THUNDERBOLT
+#         Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+#
+# # `OnMoveEnd`: react whenever the player uses a particular move. `OnEnter` alone can fire again
+# # after the condition becomes false and later true; use this for a repeatable edge, not a phase.
+# Trigger: OnMoveEnd
+# Priority: 20
+# Flags: OnEnter
+# Script: EncScript_Showcase_MoveReaction
+# Conditions:
+#     Event.Battler == BS_PLAYER1
+#     Event.Move == MOVE_DRAGON_ASCENT
+#     Not:
+#         Battler(Boss).Type == TYPE_DRAGON
+#
+# # `OnFaint`: react after a combatant's faint bookkeeping finishes. `Self` is the event battler.
+# Trigger: OnFaint
+# Priority: 10
+# Flags: Once
+# Script: EncScript_Showcase_FaintReaction
+# Conditions:
+#     Event.Battler == BS_PLAYER1
+#     Event.Cause != ENC_CAUSE_NONE
+#     Var(PlayerFainted) == 0
+#
+# # `OnSwitchIn`: reward or punish an incoming battler after its own entry effects resolve.
+# Trigger: OnSwitchIn
+# Priority: 10
+# Flags: OnEnter
+# Script: EncScript_Showcase_SwitchIn
+# Conditions:
+#     Battler(Self).Ability == ABILITY_INTIMIDATE
+#     Battler(Boss).Status == 0
+#
+# # `OnTurnEnd`: make a second phase depend on the first. `OldValue`/`NewValue` can inspect an
+# # end-of-turn HP/status/weather change; Weather and Terrain read the current field state.
+# Trigger: OnTurnEnd
+# Priority: 10
+# Flags: Once, OnEnter
+# Script: EncScript_Showcase_Desperation
+# Conditions:
+#     Battler(Boss).HpPercent <= 25
+#     Var(Phase) == 1
+#     Any:
+#         Weather == B_WEATHER_RAIN_NORMAL
+#         Terrain == STATUS_FIELD_ELECTRIC_TERRAIN
+#         Event.OldValue > 50`n#         Event.NewValue <= 50
+#
+# # `OnBattleEnd`: presentation only; the winner is already decided, so do not change battle state.
+# Trigger: OnBattleEnd
+# Priority: 10
+# Flags: Once
+# Script: EncScript_Showcase_Outro
+# Conditions:
+#     Var(Phase) >= 1
+#
+#
+# # Add the following labels to data/battle_scripts_encounters.s. The `Var(...)` names above receive
+# # indexes in first-use order: TurnStartSeen = 0, Phase = 1, PlayerFainted = 2. Using numeric
+# # indexes here matches the existing encounter scripts. Every encounter script must end in `return`.
+#
+# EncScript_Showcase_Intro::
+#     trainerslidein BS_OPPONENT1
+#     printstring STRINGID_ENCSHOWCASEINTRO
+#     waitmessage B_WAIT_TIME_LONG
+#     trainerslideout BS_OPPONENT1
+#     return
+#
+# EncScript_Showcase_TurnStart::
+#     encsetvar 0, 1                         @ TurnStartSeen = true
+#     printstring STRINGID_ENCSHOWCASETURNTHREE
+#     waitmessage B_WAIT_TIME_SHORT
+#     return
+#
+# EncScript_Showcase_HalfHealth::
+#     encsetvar 1, 1                         @ Phase = 1
+#     trainerslidein BS_OPPONENT1
+#     printstring STRINGID_ENCSHOWCASEBARRIER
+#     waitmessage B_WAIT_TIME_LONG
+#     trainerslideout BS_OPPONENT1
+#     enchangehp ENC_TARGET_BOSS, 25          @ positive heals; negative damages
+#     encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2
+#     playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
+#     return
+#
+# EncScript_Showcase_MoveReaction::
+#     encaddvar 1, 1                         @ Phase += 1 (shown for variable arithmetic)
+#     encjumpifvar CMP_GREATER_THAN, 1, 2, EncScript_Showcase_MoveReaction_Done
+#     encchangestat ENC_TARGET_ALL_FOES, STAT_SPEED, -1
+# EncScript_Showcase_MoveReaction_Done:
+#     return
+#
+# EncScript_Showcase_FaintReaction::
+#     encsetvar 2, 1                         @ PlayerFainted = true
+#     enchangehp ENC_TARGET_ALL_ALLIES, 10
+#     return
+#
+# EncScript_Showcase_SwitchIn::
+#     encsubvar 1, 1                         @ Phase -= 1
+#     encchangestat ENC_TARGET_SELF, STAT_DEF, -1
+#     return
+#
+# EncScript_Showcase_Desperation::
+#     encmegaevolve ENC_TARGET_BOSS, EncScript_Showcase_Desperation_Done
+#     # `encmegaevolve` plays the stock Mega Evolution animation itself. For other presentation,
+#     # use normal battle commands such as `playanimation` above; choose a valid `B_ANIM_*` id.
+# EncScript_Showcase_Desperation_Done:
+#     return
+#
+# EncScript_Showcase_Outro::
+#     trainerslidein BS_OPPONENT1
+#     printstring STRINGID_ENCSHOWCASEOUTRO
+#     waitmessage B_WAIT_TIME_LONG
+#     trainerslideout BS_OPPONENT1
+#     return
+#
+# # In the map script that starts the desired battle:
+# #     setbattleencounter ENCOUNTER_SHOWCASE
+# #     trainerbattle_single TRAINER_SOME_BOSS, IntroText, DefeatText
+# =================================================================================================
+
+
 Encounter: Test
 
 Trigger: OnBattleStart
@@ -27,8 +194,6 @@ Conditions:
     Turn >= 5
     Var(MegaEvolved) == 0
 
-// Stage 16 example: one boss, three phases, each gated on the last through Var(Phase) - the
-// escalation is spread across three different checkpoints instead of piling conditions onto one.
 Encounter: Storm_Herald
 
 Trigger: OnBattleStart

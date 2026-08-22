@@ -221,7 +221,7 @@ static void match_until_eol(struct Parser *p, struct Token *t)
     {
         if (!peek_char(p, &c))
             break;
-        if (c == '\n')
+        if (c == '\n' || c == '#')
             break;
         if (!pop_char(p, &c))
             assert(false);
@@ -243,6 +243,11 @@ static bool match_eol(struct Parser *p)
             return false;
         if (c == '\n')
             break;
+        else if (c == '#')
+        {
+            skip_line(&p_);
+            break;
+        }
         else
             return false;
     }

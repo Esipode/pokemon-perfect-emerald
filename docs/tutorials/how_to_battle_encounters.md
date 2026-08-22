@@ -345,3 +345,96 @@ yet, so the manual count is currently the reliable path.)
 - **A blank event-context cell is invalid, not zero.** Reading `Event.Move` at a checkpoint that
   doesn't populate it (see the [checkpoint table](#checkpoint-reference)) asserts rather than
   quietly returning 0 — that would otherwise be indistinguishable from a real "no move" case.
+
+---
+
+## `.encounter` authoring map
+
+This is the complete vocabulary `encounterproc` accepts in
+`src/data/battle_encounters.encounter`. The processor validates the keywords below, while an
+encounter name, script label, and condition value are passed through to the C compiler.
+
+Use `#` for a comment. A comment can occupy a whole line or follow a declaration/condition; the
+build strips `#` and everything after it through the end of that line before preprocessing.
+
+```text
+Encounter: <EncounterName>
+
+Trigger: <Checkpoint>
+Priority: <0-255>
+Flags: <optional flags>
+Script: <BattleScriptLabel>
+Conditions:                 # optional; requires at least one indented item
+    <operand> <comparison> <value>
+```
+
+### `Encounter:`
+
+| Part | Every valid form |
+| --- | --- |
+| Name | Any C identifier: begins with `A-Z`, `a-z`, or `_`; subsequent characters may also be digits. For example, `Storm_Herald`, which generates `ENCOUNTER_STORM_HERALD`. |
+| Contents | One or more `Trigger:` blocks; maximum 32. |
+
+### `Trigger:` fields
+
+| Field | Every valid value |
+| --- | --- |
+| `Trigger:` | `OnBattleStart`, `OnTurnStart`, `OnMoveEnd`, `OnFaint`, `OnSwitchIn`, `OnTurnEnd`, `OnBattleEnd` |
+| `Priority:` | Decimal integer `0` through `255` (required). Lower runs first; ties use file order. |
+| `Flags:` | Omit it, `Once`, `OnEnter`, or `Once, OnEnter`. No other flags are valid. |
+| `Script:` | Any C-identifier battle-script label (required), e.g. `EncScript_StormHerald_Surge`. It must exist and end with `return`. |
+| `Conditions:` | Omit for unconditional; otherwise one or more indented items, nested at most four levels. |
+
+### `Conditions:`
+
+A leaf is exactly `<operand> <comparison> <value>`. The only comparisons are `==`, `!=`, `<`,
+`<=`, `>`, and `>=`. Siblings are an implicit `All:`. The only explicit group forms are `All:`
+(one or more children), `Any:` (one or more children), and `Not:` (exactly one child).
+
+| Operand syntax | Every valid ref/field | Expected value |
+| --- | --- | --- |
+| `Battler(<ref>).HP` | `<ref>` is `Boss`, `Self`, `PlayerLeft`, `PlayerRight`, `OpponentLeft`, or `OpponentRight` | Current HP integer |
+| `Battler(<ref>).HpPercent` | Same six refs | `0` to `100` |
+| `Battler(<ref>).MaxHp` | Same six refs | Maximum HP integer |
+| `Battler(<ref>).Species` | Same six refs | `SPECIES_*` constant |
+| `Battler(<ref>).Ability` | Same six refs | `ABILITY_*` constant |
+| `Battler(<ref>).Status` | Same six refs | `STATUS1_*` constant or bitfield expression |
+| `Battler(<ref>).Type` | Same six refs | `TYPE_*` constant |
+| `Battler(<ref>).Stat(<stat>)` | Same six refs; `<stat>` is `STAT_ATK`, `STAT_DEF`, `STAT_SPEED`, `STAT_SPATK`, `STAT_SPDEF`, `STAT_ACC`, or `STAT_EVASION` | Stat-stage integer |
+| `Var(<name>)` | `<name>` is any C identifier | Encounter-local integer; first use declares it (maximum 16 per encounter). |
+| `Event.Battler` | No argument | Battler id |
+| `Event.Target` | No argument | Battler id |
+| `Event.Move` | No argument | `MOVE_*` constant |
+| `Event.Cause` | No argument | `ENC_CAUSE_NONE`, `ENC_CAUSE_MOVE_DAMAGE`, `ENC_CAUSE_RECOIL`, `ENC_CAUSE_DRAIN`, `ENC_CAUSE_END_TURN`, `ENC_CAUSE_ITEM`, `ENC_CAUSE_ABILITY`, or `ENC_CAUSE_ENCOUNTER_SCRIPT` |
+| `Event.OldValue`, `Event.NewValue` | No argument | Integer |
+| `Weather` | No argument | `B_WEATHER_*` constant |
+| `Terrain` | No argument | `STATUS_FIELD_*_TERRAIN` constant |
+| `Turn` | No argument | Turn-number integer |
+| `BattlerCount` | No argument | Usually `2` (singles) or `4` (doubles) |
+
+Event validity is fixed: `Event.Battler` and `Event.Cause` work at `OnMoveEnd`, `OnFaint`,
+`OnSwitchIn`, and `OnTurnEnd`; `Event.Target` and `Event.Move` only at `OnMoveEnd`; and
+`Event.OldValue`/`Event.NewValue` at `OnMoveEnd` and `OnTurnEnd`.
+
+The `<value>` text is copied into generated C, so it is not a closed encounter-language list: it
+can be any valid C integer expression. Use the matching constant family in the table; undefined
+constants are compiler errors.
+
+### Encounter script methods
+
+`Script:` uses all normal battle-script commands plus these encounter-specific methods:
+
+| Method | Valid arguments |
+| --- | --- |
+| `encsetvar <var>, <value>` | Generated `ENC_VAR_<ENCOUNTER>_<NAME>` (or numeric index) and a byte value. |
+| `encaddvar <var>, <value>` | Same as `encsetvar`. |
+| `encsubvar <var>, <value>` | Same as `encsetvar`. |
+| `encjumpifvar <comparison>, <var>, <value>, <label>` | Normal battle-script byte comparison, variable/index, byte value, and script label. |
+| `enchangehp <target>, <amount>` | Target below; signed 16-bit HP amount (positive heals, negative damages). |
+| `encchangestat <target>, <stat>, <stages>` | Target below; `STAT_*` id; signed stage change. |
+| `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |
+
+Every valid `<target>` is `ENC_TARGET_BOSS`, `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`,
+`ENC_TARGET_PLAYER_LEFT`, `ENC_TARGET_PLAYER_RIGHT`, `ENC_TARGET_OPPONENT_LEFT`,
+`ENC_TARGET_OPPONENT_RIGHT`, `ENC_TARGET_ALL_FOES`, `ENC_TARGET_ALL_ALLIES`, or
+`ENC_TARGET_ALL_BATTLERS`.
