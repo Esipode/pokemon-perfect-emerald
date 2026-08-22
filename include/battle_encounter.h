@@ -46,6 +46,15 @@ void TestSetEncounter(const struct Encounter *encounter);
 // priority 0 = highest, runs first; priority 255 = lowest, runs last.
 // Selects the highest-priority eligible trigger for checkpoint and returns its script,
 // or NULL if none is eligible. Does not run the script.
+//
+// Ordering guarantees (call sites loop on this until it returns NULL):
+// 1. At a checkpoint, the eligible trigger with the lowest priority runs first.
+// 2. Ties break by trigger table order, lowest index first.
+// 3. After a script completes, all triggers are re-evaluated against the new state.
+// 4. A trigger that lost on priority stays eligible and can run in a later pass.
+// 5. ENC_TRIGGER_ONCE triggers are marked fired on selection, so they cannot run twice
+//    even within one checkpoint.
+// 6. At most MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT scripts run per checkpoint.
 const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint);
 
 static inline bool32 IsEncounterActive(void)

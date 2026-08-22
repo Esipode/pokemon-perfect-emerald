@@ -34,6 +34,9 @@ const struct Encounter *GetEncounter(enum EncounterId id)
 
 // Selects the highest-priority (lowest value) eligible trigger for checkpoint, marks it
 // fired if it's ENC_TRIGGER_ONCE, and returns its script. Ties break by table order.
+// Call sites re-invoke this after each returned script runs, re-evaluating against the
+// new state, until it returns NULL - see include/battle_encounter.h for the ordering
+// guarantees that loop relies on.
 const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
 {
     struct EncounterRuntime *runtime = &gBattleStruct->encounter;
@@ -42,6 +45,21 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
 
     if (!IsEncounterActive())
         return NULL;
+
+    // Entering a new checkpoint resets the runaway guard; repeated calls for the same
+    // checkpoint (the re-evaluation loop) keep accumulating against it.
+    if (checkpoint != runtime->checkpoint)
+    {
+        runtime->checkpoint = checkpoint;
+        runtime->scriptsThisCheckpoint = 0;
+    }
+
+    assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
+            "encounter %d: %d scripts ran at checkpoint %d - runaway trigger chain?",
+            runtime->id, runtime->scriptsThisCheckpoint, checkpoint)
+    {
+        return NULL;
+    }
 
     const struct Encounter *encounter = GetEncounter(runtime->id);
     if (encounter == NULL)
@@ -82,7 +100,7 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
     if (best->flags & ENC_TRIGGER_ONCE)
         runtime->firedTriggers |= (1u << bestIndex);
 
-    runtime->checkpoint = checkpoint;
+    runtime->scriptsThisCheckpoint++;
     return best->script;
 }
 
