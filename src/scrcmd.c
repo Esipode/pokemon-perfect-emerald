@@ -1,6 +1,7 @@
 #include "global.h"
 #include "frontier_util.h"
 #include "badge_mart.h"
+#include "battle_encounter.h"
 #include "battle_setup.h"
 #include "battle_util.h"
 #include "berry.h"
@@ -3406,5 +3407,19 @@ bool8 ScrCmd_normalmsg(struct ScriptContext *ctx)
     Script_RequestEffects(SCREFF_V1);
 
     gMsgIsSignPost = FALSE;
+    return FALSE;
+}
+
+bool8 ScrCmd_setbattleencounter(struct ScriptContext *ctx)
+{
+    enum EncounterId id = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1);
+
+    assertf(id < ENCOUNTER_COUNT, "setbattleencounter called with invalid id %d", id)
+    {
+        return FALSE;
+    }
+    SetPendingBattleEncounter(id);
     return FALSE;
 }

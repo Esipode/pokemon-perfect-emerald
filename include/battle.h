@@ -5,6 +5,7 @@
 #include "constants/battle_end_turn.h"
 #include "constants/battle_switch_in.h"
 #include "constants/battle_stat_change.h"
+#include "constants/battle_encounter.h"
 #include "constants/abilities.h"
 #include "constants/battle.h"
 #include "constants/battle_move_resolution.h"
@@ -587,6 +588,7 @@ struct BattleStruct
     struct BattlerState battlerState[MAX_BATTLERS_COUNT];
     struct PartyState partyState[MAX_BATTLE_TRAINERS][PARTY_SIZE];
     struct EventStates eventState;
+    enum EncounterId encounterId;
     struct FutureSight futureSight[MAX_BATTLERS_COUNT];
     struct Wish wish[MAX_BATTLERS_COUNT];
     u16 moveTarget[MAX_BATTLERS_COUNT];

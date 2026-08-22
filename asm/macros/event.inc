@@ -1650,6 +1650,12 @@
 	.byte SCR_OP_DOWILDBATTLE
 	.endm
 
+	@ Marks the next battle started from the overworld as the given scripted encounter.
+	.macro setbattleencounter encounterId:req
+	.byte SCR_OP_SETBATTLEENCOUNTER
+	.2byte \encounterId
+	.endm
+
 	@ Sets a relative address to be used by the other vcommands as part of a Mystery Gift script.
 	.macro setvaddress pointer:req
 	.byte SCR_OP_SETVADDRESS

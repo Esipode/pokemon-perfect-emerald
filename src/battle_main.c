@@ -7,6 +7,7 @@
 #include "battle_ai_record.h"
 #include "battle_arena.h"
 #include "battle_controllers.h"
+#include "battle_encounter.h"
 #include "battle_end_turn.h"
 #include "battle_hold_effects.h"
 #include "battle_interface.h"
@@ -6646,6 +6647,7 @@ static void FreeResetData_ReturnToOvOrDoEvolutions(void)
     if (!gPaletteFade.active)
     {
         memset(&gBattleMons, 0, sizeof(struct BattlePokemon) * MAX_BATTLERS_COUNT);
+        TakePendingBattleEncounter(); // covers a battle aborted before it consumed the pending encounter id
         gIsFishingEncounter = FALSE;
         gIsSurfingEncounter = FALSE;
         if (gDexNavSpecies && (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT || gBattleOutcome == B_OUTCOME_RAN))

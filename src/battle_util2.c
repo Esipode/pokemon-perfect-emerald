@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_anim.h"
+#include "battle_encounter.h"
 #include "battle_controllers.h"
 #include "malloc.h"
 #include "pokemon.h"
@@ -40,6 +41,7 @@ void AllocateBattleResources(void)
         InitTrainerHillBattleStruct();
 
     gBattleStruct = AllocZeroed(sizeof(*gBattleStruct));
+    gBattleStruct->encounterId = TakePendingBattleEncounter();
     gAiBattleData = AllocZeroed(sizeof(*gAiBattleData));
     gAiThinkingStruct = AllocZeroed(sizeof(*gAiThinkingStruct));
     gAiLogicData = AllocZeroed(sizeof(*gAiLogicData));
