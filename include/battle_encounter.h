@@ -11,7 +11,7 @@ enum EncounterId TakePendingBattleEncounter(void);
 static inline bool32 IsEncounterActive(void)
 {
 #if B_ENCOUNTER_SCRIPTING
-    return gBattleStruct->encounterId != ENCOUNTER_NONE;
+    return gBattleStruct->encounter.id != ENCOUNTER_NONE;
 #else
     return FALSE;
 #endif

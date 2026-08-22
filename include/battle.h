@@ -582,13 +582,32 @@ struct EventStates
     enum StatChangeResolution resolution:8;
 };
 
+// Placeholder; filled in once checkpoint dispatch exists.
+struct EncounterEvent
+{
+    u8 unused;
+};
+
+// Per-battle encounter state. Embedded (not pointed to) so BattleStruct's own
+// zero-clear at battle start covers it for free.
+struct EncounterRuntime
+{
+    enum EncounterId id;                        // ENCOUNTER_NONE when inactive
+    u8  vars[MAX_ENCOUNTER_VARS];               // author-defined; battle-script addressable (Stage 14)
+    u32 firedTriggers;                          // bitmap, one bit per trigger (Stage 04)
+    u8  scriptsThisCheckpoint;                  // runaway guard (Stage 07)
+    u8  checkpoint;                             // enum EncounterCheckpoint currently dispatching
+    struct EncounterEvent event;                // one slot, overwritten per checkpoint (Stage 08)
+    u16 prevHp[MAX_BATTLERS_COUNT];             // threshold edge detection (Stage 10)
+};
+
 // Cleared at the beginning of the battle. Fields need to be cleared when needed manually otherwise.
 struct BattleStruct
 {
     struct BattlerState battlerState[MAX_BATTLERS_COUNT];
     struct PartyState partyState[MAX_BATTLE_TRAINERS][PARTY_SIZE];
     struct EventStates eventState;
-    enum EncounterId encounterId;
+    struct EncounterRuntime encounter;
     struct FutureSight futureSight[MAX_BATTLERS_COUNT];
     struct Wish wish[MAX_BATTLERS_COUNT];
     u16 moveTarget[MAX_BATTLERS_COUNT];
