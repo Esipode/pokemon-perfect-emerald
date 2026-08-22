@@ -4821,6 +4821,14 @@ static void TryDoEventsBeforeFirstTurn(void)
             BattleScriptExecute(BattleScript_TrainerPartnerSlideMsgEnd);
         gBattleStruct->eventState.beforeFirstTurn++;
         break;
+    case FIRST_TURN_EVENTS_ENCOUNTER:
+    {
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_BATTLE_START);
+        if (script != NULL)
+            BattleScriptExecute(script);
+        gBattleStruct->eventState.beforeFirstTurn++;
+        break;
+    }
     case FIRST_TURN_EVENTS_END:
         for (enum BattlerId battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
         {
