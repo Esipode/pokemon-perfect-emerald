@@ -56,6 +56,9 @@ void TestSetEncounter(const struct Encounter *encounter);
 // 5. ENC_TRIGGER_ONCE triggers are marked fired on selection, so they cannot run twice
 //    even within one checkpoint.
 // 6. At most MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT scripts run per checkpoint.
+// 7. runtime->prevHp is captured before ENC_ON_BATTLE_START's first pass and re-captured once a
+//    checkpoint has no more eligible triggers - the "previous" state ENC_TRIGGER_ON_ENTER compares
+//    against is always "as of the last checkpoint", never mid-checkpoint.
 const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint);
 
 // Populates the current checkpoint's event context. Call sites only need to pass the fields their

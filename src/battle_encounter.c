@@ -71,6 +71,16 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
         memset(&runtime->event, 0, sizeof(runtime->event));
     }
 
+    // ENC_ON_BATTLE_START is dispatched exactly once, and this is its first pass (nothing has
+    // fired at it yet this battle) - snapshot pre-battle HP now, before any trigger's script can
+    // change it. Without this, prevHp[] would still read its zeroed initial value and a boss
+    // starting below a threshold would look like it just crossed it.
+    if (checkpoint == ENC_ON_BATTLE_START && runtime->scriptsThisCheckpoint == 0)
+    {
+        for (u32 i = 0; i < MAX_BATTLERS_COUNT; i++)
+            runtime->prevHp[i] = gBattleMons[i].hp;
+    }
+
     assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
             "encounter %d: %d scripts ran at checkpoint %d - runaway trigger chain?",
             runtime->id, runtime->scriptsThisCheckpoint, checkpoint)
@@ -104,6 +114,18 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
             continue;
         // conditions always pass here; Stage 11 adds real evaluation.
 
+        if (trigger->flags & ENC_TRIGGER_ON_ENTER)
+        {
+            // Edge semantics: eligible only on the FALSE -> TRUE transition. Conditions don't
+            // exist yet (Stage 11), so nowTrue is vacuously TRUE and wasTrue is hardcoded FALSE -
+            // this makes ON_ENTER behave identically to no flag until Stage 11 wires both sides
+            // to the real evaluator (EvaluateConditions(trigger->conditions, useSnapshot)).
+            bool32 nowTrue = TRUE;
+            bool32 wasTrue = FALSE;
+            if (!(nowTrue && !wasTrue))
+                continue;
+        }
+
         if (best == NULL || trigger->priority < best->priority)
         {
             best = trigger;
@@ -112,7 +134,16 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
     }
 
     if (best == NULL)
+    {
+        // All of this checkpoint's dispatch passes are done - snapshot HP now, "since the last
+        // checkpoint" being the granularity an author reasons about. Must happen at the END of
+        // dispatch, not the start: updating here instead of on checkpoint entry is what lets a
+        // trigger's own script change HP without that change being invisible to ON_ENTER at the
+        // very next checkpoint.
+        for (u32 i = 0; i < MAX_BATTLERS_COUNT; i++)
+            runtime->prevHp[i] = gBattleMons[i].hp;
         return NULL;
+    }
 
     if (best->flags & ENC_TRIGGER_ONCE)
         runtime->firedTriggers |= (1u << bestIndex);
