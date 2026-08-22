@@ -1,0 +1,8 @@
+Encounter: Test
+
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_TestBattleStart
+Conditions:
+    Turn >= 0
