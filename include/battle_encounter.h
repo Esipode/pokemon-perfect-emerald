@@ -25,6 +25,7 @@ struct Encounter
 // Test encounter scripts (data/battle_scripts_encounters.s).
 extern const u8 EncScript_TestBattleStart[];
 extern const u8 EncScript_TestTurnEnd[];
+extern const u8 EncScript_TestGeneric[];
 
 // Engine-owned shim: all encounter scripts end with `return`; checkpoints dispatched
 // from a non-script engine callback (e.g. BATTLE_START) call the encounter script from

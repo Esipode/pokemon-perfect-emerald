@@ -8,6 +8,7 @@
 #include "battle_anim_scripts.h"
 #include "battle_ai_record.h"
 #include "battle_ai_util.h"
+#include "battle_encounter.h"
 #include "battle_scripts.h"
 #include "battle_switch_in.h"
 #include "battle_environment.h"
@@ -1006,9 +1007,12 @@ static void Cmd_datahpupdate(void)
 {
     CMD_ARGS(u8 battler, u8 assuranceDouble);
     enum BattlerId battler = GetBattlerForBattleScript(cmd->battler);
+    u16 hpBefore;
 
     if (gBattleControllerExecFlags)
         return;
+
+    hpBefore = gBattleMons[battler].hp;
 
     if (gBattleStruct->passiveHpUpdate[battler] < 0)
     {
@@ -1041,6 +1045,26 @@ static void Cmd_datahpupdate(void)
         0,
         sizeof(gBattleMons[battler].hp), &gBattleMons[battler].hp);
     MarkBattlerForControllerExec(battler);
+
+    // Record the HP change for encounter checkpoints; no dispatch here - a health-bar animation
+    // may still be in flight (see the gBattleControllerExecFlags guard above). ENC_ON_MOVE_END /
+    // ENC_ON_TURN_END pick this up once it's safe to run a script.
+    if (IsEncounterActive())
+    {
+        // Party state is committed for an absent battler by ENC_ON_FAINT time; an encounter
+        // script must not revive it. Recovery is to ignore the HP change.
+        assertf(!(gBattleStruct->encounter.checkpoint == ENC_ON_FAINT
+               && (gAbsentBattlerFlags & (1u << battler))
+               && gBattleMons[battler].hp > hpBefore),
+                "encounter script raised HP on absent battler %d at ENC_ON_FAINT", battler)
+        {
+            gBattleMons[battler].hp = hpBefore;
+        }
+
+        gBattleStruct->encounter.event.oldValue = hpBefore;
+        gBattleStruct->encounter.event.newValue = gBattleMons[battler].hp;
+        gBattleStruct->encounter.event.battler = battler;
+    }
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }

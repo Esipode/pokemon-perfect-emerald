@@ -4922,10 +4922,14 @@ bool32 EndTurnEvents(void) // Called from Battle Script
     // until the checkpoint has no more eligible triggers.
     if (!gBattleStruct->eventState.encounterTurnEnd)
     {
-        // TryRunEncounterCheckpoint clears the event context on checkpoint entry (first pass
-        // only); SetEncounterEvent must run after that, every pass, so the clear never wipes it.
+        // Weather/status damage is recorded into oldValue/newValue at the HP commit point
+        // (Cmd_datahpupdate), not here - read it before TryRunEncounterCheckpoint's
+        // checkpoint-entry clear (first pass only) can wipe it. SetEncounterEvent must run
+        // after TryRunEncounterCheckpoint, every pass, so that clear never wipes it either.
+        s16 oldValue = gBattleStruct->encounter.event.oldValue;
+        s16 newValue = gBattleStruct->encounter.event.newValue;
         const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_END);
-        SetEncounterEvent(gBattlerAttacker, 0, MOVE_NONE, ENC_CAUSE_END_TURN, 0, 0);
+        SetEncounterEvent(gBattlerAttacker, 0, MOVE_NONE, ENC_CAUSE_END_TURN, oldValue, newValue);
         if (script != NULL)
         {
             BattleScriptCall(script);
@@ -6331,6 +6335,21 @@ static void CheckChangingTurnOrderEffects(void)
                 }
                 return;
             }
+        }
+    }
+
+    // ENC_ON_TURN_START: turn order is now fixed (SetActionsAndBattlersTurnOrder already ran),
+    // before the first action of the turn dispatches. A script that changes Speed or forces a
+    // switch here does NOT re-sort turn order - it's already fixed; re-sorting mid-turn is out
+    // of scope. Not called from within a script - see FIRST_TURN_EVENTS_ENCOUNTER (BeforeFirstTurn)
+    // for the same BattleScriptExecute+Call shim pattern.
+    {
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_START);
+        if (script != NULL)
+        {
+            BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
+            BattleScriptCall(script);
+            return;
         }
     }
 

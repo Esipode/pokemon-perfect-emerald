@@ -13,10 +13,11 @@ static const u8 sCheckpointEventFields[ENC_CHECKPOINT_COUNT] =
 {
     [ENC_ON_BATTLE_START] = 0,
     [ENC_ON_TURN_START]   = 0,
-    [ENC_ON_MOVE_END]     = 0, // populated in Stage 09
-    [ENC_ON_FAINT]        = 0, // populated in Stage 09
-    [ENC_ON_SWITCH_IN]    = 0, // populated once ENC_ON_SWITCH_IN is dispatched
-    [ENC_ON_TURN_END]     = ENC_EVENT_BATTLER | ENC_EVENT_CAUSE,
+    [ENC_ON_MOVE_END]     = ENC_EVENT_BATTLER | ENC_EVENT_TARGET | ENC_EVENT_MOVE
+                          | ENC_EVENT_CAUSE   | ENC_EVENT_VALUES,
+    [ENC_ON_FAINT]        = ENC_EVENT_BATTLER | ENC_EVENT_CAUSE,
+    [ENC_ON_SWITCH_IN]    = ENC_EVENT_BATTLER,
+    [ENC_ON_TURN_END]     = ENC_EVENT_BATTLER | ENC_EVENT_CAUSE | ENC_EVENT_VALUES,
     [ENC_ON_BATTLE_END]   = 0,
 };
 

@@ -24,3 +24,9 @@ EncScript_TestTurnEnd::
 	printstring STRINGID_EMPTYSTRING3
 	waitmessage B_WAIT_TIME_LONG
 	return
+
+// Shared by tests for checkpoints that don't otherwise need a dedicated script (Stage 09+).
+EncScript_TestGeneric::
+	printstring STRINGID_EMPTYSTRING3
+	waitmessage B_WAIT_TIME_LONG
+	return

@@ -5,6 +5,7 @@
 #include "battle_anim_scripts.h"
 #include "battle_arena.h"
 #include "battle_emporium.h"
+#include "battle_encounter.h"
 #include "battle_environment.h"
 #include "battle_pyramid.h"
 #include "battle_util.h"
@@ -1912,11 +1913,24 @@ bool32 HandleFaintedMonActions(void)
             gBattleStruct->eventState.faintedAction = FAINTED_ACTIONS_MAX_CASE;
             break;
         case FAINTED_ACTIONS_HANDLE_NEXT_BATTLER:
+        {
+            // ENC_ON_FAINT: EXP and absent flags are settled, not during the faint animation.
+            // Called from a non-script callback, like ENC_ON_BATTLE_START - see battle_main.c's
+            // FIRST_TURN_EVENTS_ENCOUNTER for the same BattleScriptExecute+Call shim pattern.
+            const u8 *script = TryRunEncounterCheckpoint(ENC_ON_FAINT);
+            SetEncounterEvent(gBattlerFainted, 0, MOVE_NONE, ENC_CAUSE_NONE, 0, 0);
+            if (script != NULL)
+            {
+                BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
+                BattleScriptCall(script);
+                return TRUE;
+            }
             if (++gBattleStruct->eventState.faintedActionBattler == gBattlersCount)
                 gBattleStruct->eventState.faintedAction = FAINTED_ACTIONS_MAX_CASE;
             else
                 gBattleStruct->eventState.faintedAction = FAINTED_ACTIONS_HANDLE_FAINTED_MON;
             break;
+        }
         case FAINTED_ACTIONS_MAX_CASE:
             break;
         }
