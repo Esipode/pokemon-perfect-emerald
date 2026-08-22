@@ -42,6 +42,7 @@ void AllocateBattleResources(void)
 
     gBattleStruct = AllocZeroed(sizeof(*gBattleStruct));
     gBattleStruct->encounter.id = TakePendingBattleEncounter();
+    ResetEncounterVars(); // gEncounterVars lives outside gBattleStruct, so its own alloc doesn't cover this
     gAiBattleData = AllocZeroed(sizeof(*gAiBattleData));
     gAiThinkingStruct = AllocZeroed(sizeof(*gAiThinkingStruct));
     gAiLogicData = AllocZeroed(sizeof(*gAiLogicData));

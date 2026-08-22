@@ -253,6 +253,28 @@
 	.byte \value
 	.endm
 
+@ encounter script variables (constants/battle_encounter.h) - thin wrappers over the opcodes
+@ above, addressed into gEncounterVars so authors write a var index instead of a raw address.
+@ NOTE: this uses `gEncounterVars + \var` directly rather than the sENCOUNTER_VAR() cpp macro -
+@ .include (unlike #include) is never seen by the C preprocessor, so a #define referenced inside
+@ a macro body here would reach the assembler unexpanded. sENCOUNTER_VAR is still fine for a
+@ script to use directly, since a top-level .s file's own text *is* cpp-preprocessed.
+	.macro encsetvar var:req, value:req
+	setbyte gEncounterVars + \var, \value
+	.endm
+
+	.macro encaddvar var:req, value:req
+	addbyte gEncounterVars + \var, \value
+	.endm
+
+	.macro encsubvar var:req, value:req
+	subbyte gEncounterVars + \var, \value
+	.endm
+
+	.macro encjumpifvar comparison:req, var:req, value:req, jumpInstr:req
+	jumpifbyte \comparison, gEncounterVars + \var, \value, \jumpInstr
+	.endm
+
 	.macro copyarray dest:req, src:req, size:req
 	.byte B_SCR_OP_COPYARRAY
 	.4byte \dest

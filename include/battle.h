@@ -598,11 +598,13 @@ struct EncounterEvent
 };
 
 // Per-battle encounter state. Embedded (not pointed to) so BattleStruct's own
-// zero-clear at battle start covers it for free.
+// zero-clear at battle start covers it for free. Author-defined vars live outside this struct, in
+// gEncounterVars (src/battle_encounter.c) - see sENCOUNTER_VAR (constants/battle_encounter.h) for
+// why: they need a link-time constant address for battle scripts to encode, which a member of this
+// struct (reached only through the gBattleStruct heap pointer) can't offer.
 struct EncounterRuntime
 {
     enum EncounterId id;                        // ENCOUNTER_NONE when inactive
-    u8  vars[MAX_ENCOUNTER_VARS];               // author-defined; battle-script addressable (Stage 14)
     u32 firedTriggers;                          // bitmap, one bit per trigger (Stage 04)
     u8  scriptsThisCheckpoint;                  // runaway guard (Stage 07)
     u8  checkpoint;                             // enum EncounterCheckpoint currently dispatching

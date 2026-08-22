@@ -129,7 +129,7 @@ s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapsh
         {
             return 0;
         }
-        return runtime->vars[arg];
+        return gEncounterVars[arg];
 
     case ENC_OP_EVENT_BATTLER:
         return GetEncounterEventField(ENC_EVENT_BATTLER, &value) ? value : 0;
@@ -519,6 +519,16 @@ bool32 GetEncounterEventField(u32 field, s32 *out)
         return FALSE;
     }
     return TRUE;
+}
+
+// Author-defined script variables. Fixed EWRAM array outside gBattleStruct so sENCOUNTER_VAR
+// (constants/battle_encounter.h) is a link-time constant address a battle script can encode - see
+// the struct EncounterRuntime comment (battle.h). 16 bytes, unconditional.
+EWRAM_DATA u8 gEncounterVars[MAX_ENCOUNTER_VARS] = {0};
+
+void ResetEncounterVars(void)
+{
+    memset(gEncounterVars, 0, sizeof(gEncounterVars));
 }
 
 // Set by the overworld script that starts the battle, taken exactly once by battle start.

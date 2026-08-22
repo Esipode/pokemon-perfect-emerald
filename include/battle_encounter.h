@@ -37,12 +37,30 @@ extern const u8 EncScript_TestBattleStart[];
 extern const u8 EncScript_TestTurnEnd[];
 extern const u8 EncScript_TestGeneric[];
 
+// Test scripts for the sENCOUNTER_VAR addressing convention (Stage 14). See test/battle/encounter/
+// variables.c for what each one is used to prove.
+extern const u8 EncScript_TestSetVar[];       // encsetvar var 0 to 1
+extern const u8 EncScript_TestAddVar[];       // encaddvar var 0 by 1
+extern const u8 EncScript_TestSeedVarHigh[];  // encsetvar var 0 to 5
+extern const u8 EncScript_TestSeedVarLow[];   // encsetvar var 0 to 2
+extern const u8 EncScript_TestBranch[];       // encjumpifvar on var 0 > 4; records which way into var 1
+extern const u8 EncScript_TestCallSub[];      // call/return through a shared sub-script
+
 // Engine-owned shim: all encounter scripts end with `return`; checkpoints dispatched
 // from a non-script engine callback (e.g. BATTLE_START) call the encounter script from
 // this shim so the callback stack still unwinds via `end2`.
 extern const u8 BattleScript_EncounterCheckpointEnd2[];
 
 const struct Encounter *GetEncounter(enum EncounterId id);
+
+// Author-defined variables, addressed by battle scripts via sENCOUNTER_VAR (constants/
+// battle_encounter.h) and by conditions via ENC_OP_VAR. Fixed EWRAM array outside gBattleStruct -
+// see the struct EncounterRuntime comment (battle.h) for why.
+extern u8 gEncounterVars[MAX_ENCOUNTER_VARS];
+
+// Zeroes gEncounterVars. Called once per battle (AllocateBattleResources, battle_util2.c) so a
+// var an earlier battle left set can't leak into an unrelated one.
+void ResetEncounterVars(void);
 
 // Set by the overworld script that starts the battle; consumed once at battle start.
 void SetPendingBattleEncounter(enum EncounterId id);
@@ -69,6 +87,16 @@ void TestSetEncounter(const struct Encounter *encounter);
 // 7. runtime->prevHp is captured before ENC_ON_BATTLE_START's first pass and re-captured once a
 //    checkpoint has no more eligible triggers - the "previous" state ENC_TRIGGER_ON_ENTER compares
 //    against is always "as of the last checkpoint", never mid-checkpoint.
+//
+// A returned script reaches the interpreter via BattleScriptCall, which shares gBattleResources->
+// battleScriptsStack (8 entries, include/battle.h) with the rest of the engine; `call`/`return`
+// inside an encounter script (Cmd_call/Cmd_return - meaningfully usable now that scripts can
+// address their own state, Stage 14) spend from the same budget. Static reading of the checkpoint
+// call sites (battle_main.c, battle_move_resolution.c, battle_util.c, battle_switch_in.c) suggests
+// the engine's own script chains have already unwound by the time a checkpoint dispatches, leaving
+// ample headroom - but this hasn't been confirmed by measuring the stack's actual size in a running
+// build. BattleScriptPush already asserts loudly on overflow either way (src/battle_util.c), so a
+// wrong assumption here fails safe.
 const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint);
 
 // Populates the current checkpoint's event context. Call sites only need to pass the fields their

@@ -14,6 +14,18 @@ enum EncounterId
 #define MAX_ENCOUNTER_COND_DEPTH                4
 #define MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT    4
 
+// gEncounterVars (src/battle_encounter.c) is a fixed EWRAM array, not a member of gBattleStruct -
+// gBattleStruct is a heap pointer resolved only at runtime, so a battle script (which can only
+// encode a link-time constant address) couldn't address into it directly. This gives battle
+// scripts the same addressing convention gBattleScripting's s* macros use (sMOVEEND_STATE etc.,
+// battle_script_commands.h): `setbyte sENCOUNTER_VAR(n), value` assembles like any other bytePtr,
+// for a script that writes the opcode directly. n is a raw index (0..MAX_ENCOUNTER_VARS-1).
+// asm/macros/battle_script.inc's encsetvar/encaddvar/encjumpifvar cover the common case instead -
+// they expand to `gEncounterVars + n` directly rather than this macro, since a .inc file (pulled
+// in via .include, not #include) is never seen by the C preprocessor that would expand this one.
+// GetEncounterOperand's ENC_OP_VAR reads the same array for conditions.
+#define sENCOUNTER_VAR(n) (gEncounterVars + (n))
+
 // Points in battle logic where triggers can fire. ENC_ON_DAMAGE is deliberately
 // absent: HP changes are recorded at the damage commit point and dispatched at
 // ENC_ON_MOVE_END / ENC_ON_TURN_END instead.
@@ -123,7 +135,7 @@ enum EncounterOperand
     ENC_OP_TERRAIN,         // no arg
     ENC_OP_TURN,            // no arg
     ENC_OP_BATTLER_COUNT,   // no arg - for doubles-aware conditions
-    ENC_OP_VAR,             // arg = index into runtime->vars
+    ENC_OP_VAR,             // arg = index into gEncounterVars (Stage 14)
 
     // --- event context (Stage 08) ---
     ENC_OP_EVENT_BATTLER,

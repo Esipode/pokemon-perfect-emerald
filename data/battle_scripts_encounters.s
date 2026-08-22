@@ -3,6 +3,7 @@
 #include "constants/battle.h"
 #include "constants/battle_script_commands.h"
 #include "constants/battle_string_ids.h"
+#include "constants/battle_encounter.h"
 	.include "asm/macros.inc"
 	.include "asm/macros/battle_script.inc"
 	.include "constants/constants.inc"
@@ -29,4 +30,40 @@ EncScript_TestTurnEnd::
 EncScript_TestGeneric::
 	printstring STRINGID_EMPTYSTRING3
 	waitmessage B_WAIT_TIME_LONG
+	return
+
+// Exercise the sENCOUNTER_VAR addressing convention (Stage 14). Var 0 is whatever the test is
+// setting/branching/accumulating on; var 1 records a branch outcome. See test/battle/encounter/
+// variables.c for how each script is used.
+
+EncScript_TestSetVar::
+	encsetvar 0, 1
+	return
+
+EncScript_TestAddVar::
+	encaddvar 0, 1
+	return
+
+EncScript_TestSeedVarHigh::
+	encsetvar 0, 5
+	return
+
+EncScript_TestSeedVarLow::
+	encsetvar 0, 2
+	return
+
+EncScript_TestBranch::
+	encjumpifvar CMP_GREATER_THAN, 0, 4, EncScript_TestBranch_High
+	encsetvar 1, 0
+	return
+EncScript_TestBranch_High:
+	encsetvar 1, 1
+	return
+
+EncScript_TestCallSub::
+	call EncScript_TestSubroutine
+	encsetvar 1, 1   @ proves control returned here, not just that the subroutine ran
+	return
+EncScript_TestSubroutine:
+	encsetvar 0, 1
 	return
