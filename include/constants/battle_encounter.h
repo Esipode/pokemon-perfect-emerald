@@ -73,4 +73,69 @@ enum EncounterEventCause
 #define ENC_EVENT_OLD_VALUE (1 << 5)
 #define ENC_EVENT_NEW_VALUE (1 << 6)
 
+// Battler references, shared with Stage 15's command targeting so authors learn one vocabulary.
+// Resolved through ResolveEncounterBattlerRef (battle_encounter.h); the _RIGHT refs are invalid in
+// a singles battle and resolution fails safely rather than reading an inactive battler's stale
+// gBattleMons entry.
+enum EncounterBattlerRef
+{
+    ENC_BOSS,            // the encounter's subject; opponent slot 0
+    ENC_SELF,            // the battler that raised the event
+    ENC_PLAYER_LEFT,
+    ENC_PLAYER_RIGHT,
+    ENC_OPPONENT_LEFT,
+    ENC_OPPONENT_RIGHT,
+    ENC_BATTLER_REF_COUNT,
+};
+
+// ENC_OP_STAT_STAGE's arg packs a battler ref and an enum Stat into one u16 - both are small enough
+// to share it.
+#define ENC_PACK_STAT_ARG(battlerRef, stat) ((battlerRef) | ((stat) << 3))
+#define ENC_UNPACK_STAT_BATTLER(arg)        ((arg) & 0x7)
+#define ENC_UNPACK_STAT_ID(arg)             ((arg) >> 3)
+
+// What GetEncounterOperand reads. Live battle state sources straight from gBattleMons/field state;
+// event context sources from the current checkpoint's struct EncounterEvent (Stage 08) via
+// GetEncounterEventField, so its validity mask applies automatically - reading an event operand at
+// a checkpoint that doesn't populate it asserts.
+enum EncounterOperand
+{
+    // --- live battle state ---
+    ENC_OP_HP,              // arg = battler ref
+    ENC_OP_HP_PERCENT,      // arg = battler ref
+    ENC_OP_MAX_HP,          // arg = battler ref
+    ENC_OP_SPECIES,         // arg = battler ref
+    ENC_OP_ABILITY,         // arg = battler ref
+    ENC_OP_STATUS,          // arg = battler ref
+    ENC_OP_STAT_STAGE,      // arg packs battler + enum Stat, see ENC_PACK_STAT_ARG
+    ENC_OP_TYPE,            // arg = battler ref
+    ENC_OP_WEATHER,         // no arg
+    ENC_OP_TERRAIN,         // no arg
+    ENC_OP_TURN,            // no arg
+    ENC_OP_BATTLER_COUNT,   // no arg - for doubles-aware conditions
+    ENC_OP_VAR,             // arg = index into runtime->vars
+
+    // --- event context (Stage 08) ---
+    ENC_OP_EVENT_BATTLER,
+    ENC_OP_EVENT_TARGET,
+    ENC_OP_EVENT_MOVE,
+    ENC_OP_EVENT_CAUSE,
+    ENC_OP_EVENT_OLD_VALUE,
+    ENC_OP_EVENT_NEW_VALUE,
+
+    ENC_OP_COUNT,
+};
+
+// Deliberately not CMP_EQUAL/CMP_NOT_EQUAL/etc. (Cmd_jumpifbyte, battle_script_commands.c): that
+// vocabulary has no LE/GE and adds bitwise comparisons conditions don't need.
+enum EncounterCmp
+{
+    ENC_CMP_EQ,
+    ENC_CMP_NE,
+    ENC_CMP_LT,
+    ENC_CMP_LE,
+    ENC_CMP_GT,
+    ENC_CMP_GE,
+};
+
 #endif // GUARD_CONSTANTS_BATTLE_ENCOUNTER_H

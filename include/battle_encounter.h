@@ -4,8 +4,15 @@
 #include "battle.h"
 #include "constants/battle_encounter.h"
 
-// Defined in Stage 11; a pointer to an incomplete type is enough for now.
-struct EncounterCondition;
+// 6 bytes, ROM-resident. A trigger's conditions pointer addresses an array terminated by an
+// ENC_OP_COUNT operand, avoiding a separate count.
+struct EncounterCondition
+{
+    u8  operand;     // enum EncounterOperand
+    u8  cmp;         // enum EncounterCmp
+    u16 arg;         // operand-specific: battler ref, var index, ENC_PACK_STAT_ARG
+    s16 value;       // right-hand side
+};
 
 struct EncounterTrigger
 {
@@ -75,6 +82,22 @@ void SetEncounterEvent(u8 battler, u8 target, u16 move, enum EncounterEventCause
 // ENC_ON_BATTLE_START - that would otherwise silently return a stale value from an earlier
 // checkpoint. field is one of the ENC_EVENT_* constants in constants/battle_encounter.h.
 bool32 GetEncounterEventField(u32 field, s32 *out);
+
+// Resolves a battler reference (enum EncounterBattlerRef) to a concrete battler id. Shared with
+// Stage 15's command targeting so both use one vocabulary. Returns FALSE for a _RIGHT ref in a
+// singles battle (recovery: *battlerOut left untouched) rather than resolving to an inactive
+// battler's stale gBattleMons entry - never read that.
+bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut);
+
+// Reads one operand of live battle state or event context, for comparison against a condition's
+// value. useSnapshot (Stage 10) redirects ENC_OP_HP / ENC_OP_HP_PERCENT to runtime->prevHp instead
+// of live HP; every other operand ignores it.
+s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapshot);
+
+// Walks conds - an array terminated by an ENC_OP_COUNT operand - ANDing every comparison and
+// short-circuiting on the first failure. NULL is vacuously TRUE: a trigger with no conditions is
+// always eligible.
+bool32 EvaluateConditions(const struct EncounterCondition *conds, bool32 useSnapshot);
 
 static inline bool32 IsEncounterActive(void)
 {

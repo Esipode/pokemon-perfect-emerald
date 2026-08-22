@@ -21,6 +21,172 @@ static const u8 sCheckpointEventFields[ENC_CHECKPOINT_COUNT] =
     [ENC_ON_BATTLE_END]   = 0,
 };
 
+// Resolves a battler reference to a concrete battler id. Shared with Stage 15's command targeting.
+bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut)
+{
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    enum BattlerId battler;
+
+    switch (ref)
+    {
+    case ENC_BOSS:
+    case ENC_OPPONENT_LEFT:
+        battler = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+        break;
+    case ENC_SELF:
+        battler = runtime->event.battler;
+        break;
+    case ENC_PLAYER_LEFT:
+        battler = GetBattlerAtPosition(B_POSITION_PLAYER_LEFT);
+        break;
+    case ENC_PLAYER_RIGHT:
+        battler = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
+        break;
+    case ENC_OPPONENT_RIGHT:
+        battler = GetBattlerAtPosition(B_POSITION_OPPONENT_RIGHT);
+        break;
+    default:
+        errorf("encounter %d: unknown battler ref %d", runtime->id, ref);
+        return FALSE;
+    }
+
+    // GetBattlerAtPosition returns gBattlersCount when no battler holds that position - the
+    // _RIGHT refs in a singles battle, in particular. Never resolve to that; it isn't a battler.
+    assertf(battler < gBattlersCount, "encounter %d: battler ref %d has no battler in this battle", runtime->id, ref)
+    {
+        return FALSE;
+    }
+
+    *battlerOut = battler;
+    return TRUE;
+}
+
+// Reads one operand for condition evaluation. See include/battle_encounter.h.
+s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapshot)
+{
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    u8 battler;
+    s32 value;
+
+    switch (operand)
+    {
+    case ENC_OP_HP:
+        if (!ResolveEncounterBattlerRef(arg, &battler))
+            return 0;
+        return useSnapshot ? runtime->prevHp[battler] : gBattleMons[battler].hp;
+
+    case ENC_OP_HP_PERCENT:
+        if (!ResolveEncounterBattlerRef(arg, &battler))
+            return 0;
+        if (gBattleMons[battler].maxHP == 0)
+            return 0;
+        return (s32)(useSnapshot ? runtime->prevHp[battler] : gBattleMons[battler].hp) * 100 / gBattleMons[battler].maxHP;
+
+    case ENC_OP_MAX_HP:
+        if (!ResolveEncounterBattlerRef(arg, &battler))
+            return 0;
+        return gBattleMons[battler].maxHP;
+
+    case ENC_OP_SPECIES:
+        if (!ResolveEncounterBattlerRef(arg, &battler))
+            return 0;
+        return gBattleMons[battler].species;
+
+    case ENC_OP_ABILITY:
+        if (!ResolveEncounterBattlerRef(arg, &battler))
+            return 0;
+        return gBattleMons[battler].ability;
+
+    case ENC_OP_STATUS:
+        if (!ResolveEncounterBattlerRef(arg, &battler))
+            return 0;
+        return gBattleMons[battler].status1;
+
+    case ENC_OP_STAT_STAGE:
+        if (!ResolveEncounterBattlerRef(ENC_UNPACK_STAT_BATTLER(arg), &battler))
+            return 0;
+        return gBattleMons[battler].statStages[ENC_UNPACK_STAT_ID(arg)];
+
+    case ENC_OP_TYPE:
+        if (!ResolveEncounterBattlerRef(arg, &battler))
+            return 0;
+        return GetBattlerType(battler, 0, FALSE);
+
+    case ENC_OP_WEATHER:
+        return gBattleWeather;
+
+    case ENC_OP_TERRAIN:
+        return gFieldStatuses & STATUS_FIELD_TERRAIN_ANY;
+
+    case ENC_OP_TURN:
+        return gBattleTurnCounter;
+
+    case ENC_OP_BATTLER_COUNT:
+        return gBattlersCount;
+
+    case ENC_OP_VAR:
+        assertf(arg < MAX_ENCOUNTER_VARS, "encounter %d: var index %d out of range", runtime->id, arg)
+        {
+            return 0;
+        }
+        return runtime->vars[arg];
+
+    case ENC_OP_EVENT_BATTLER:
+        return GetEncounterEventField(ENC_EVENT_BATTLER, &value) ? value : 0;
+
+    case ENC_OP_EVENT_TARGET:
+        return GetEncounterEventField(ENC_EVENT_TARGET, &value) ? value : 0;
+
+    case ENC_OP_EVENT_MOVE:
+        return GetEncounterEventField(ENC_EVENT_MOVE, &value) ? value : 0;
+
+    case ENC_OP_EVENT_CAUSE:
+        return GetEncounterEventField(ENC_EVENT_CAUSE, &value) ? value : 0;
+
+    case ENC_OP_EVENT_OLD_VALUE:
+        return GetEncounterEventField(ENC_EVENT_OLD_VALUE, &value) ? value : 0;
+
+    case ENC_OP_EVENT_NEW_VALUE:
+        return GetEncounterEventField(ENC_EVENT_NEW_VALUE, &value) ? value : 0;
+
+    default:
+        errorf("encounter %d: unknown operand %d", gBattleStruct->encounter.id, operand);
+        return 0;
+    }
+}
+
+// NULL -> always eligible. Otherwise ANDs every comparison in conds, short-circuiting on the first
+// failure - cheaper, and it avoids asserting on an operand a failed earlier condition made moot.
+bool32 EvaluateConditions(const struct EncounterCondition *conds, bool32 useSnapshot)
+{
+    if (conds == NULL)
+        return TRUE;
+
+    for (; conds->operand != ENC_OP_COUNT; conds++)
+    {
+        s32 lhs = GetEncounterOperand(conds->operand, conds->arg, useSnapshot);
+        bool32 result;
+
+        switch (conds->cmp)
+        {
+        case ENC_CMP_EQ: result = (lhs == conds->value); break;
+        case ENC_CMP_NE: result = (lhs != conds->value); break;
+        case ENC_CMP_LT: result = (lhs <  conds->value); break;
+        case ENC_CMP_LE: result = (lhs <= conds->value); break;
+        case ENC_CMP_GT: result = (lhs >  conds->value); break;
+        case ENC_CMP_GE: result = (lhs >= conds->value); break;
+        default:
+            errorf("encounter %d: unknown comparison %d", gBattleStruct->encounter.id, conds->cmp);
+            return FALSE;
+        }
+
+        if (!result)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
 #if TESTING
 static const struct Encounter *sTestEncounter;
 
@@ -112,17 +278,16 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
             continue;
         if (runtime->firedTriggers & (1u << i))
             continue;
-        // conditions always pass here; Stage 11 adds real evaluation.
+        if (!EvaluateConditions(trigger->conditions, FALSE))
+            continue;
 
         if (trigger->flags & ENC_TRIGGER_ON_ENTER)
         {
-            // Edge semantics: eligible only on the FALSE -> TRUE transition. Conditions don't
-            // exist yet (Stage 11), so nowTrue is vacuously TRUE and wasTrue is hardcoded FALSE -
-            // this makes ON_ENTER behave identically to no flag until Stage 11 wires both sides
-            // to the real evaluator (EvaluateConditions(trigger->conditions, useSnapshot)).
-            bool32 nowTrue = TRUE;
-            bool32 wasTrue = FALSE;
-            if (!(nowTrue && !wasTrue))
+            // Edge semantics: eligible only on the FALSE -> TRUE transition. useSnapshot = TRUE
+            // evaluates the same conditions against prevHp - "as of the last checkpoint" - so a
+            // level condition that was already true last checkpoint doesn't re-fire just because
+            // it's still true now.
+            if (EvaluateConditions(trigger->conditions, TRUE))
                 continue;
         }
 
