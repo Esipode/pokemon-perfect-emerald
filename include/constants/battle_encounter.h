@@ -8,6 +8,7 @@ enum EncounterId
     ENCOUNTER_TEST,
     ENCOUNTER_LEGENDARY_BARRIER,   // Stage 15 example, outline Sec33
     ENCOUNTER_TRAINER_MEGA,        // Stage 15 example, outline Sec34
+    ENCOUNTER_STORM_HERALD,        // Stage 16 example: three chained phase transitions
     ENCOUNTER_COUNT,
 };
 

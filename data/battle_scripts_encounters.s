@@ -131,3 +131,37 @@ EncScript_TestMegaEvolve::
 	encsetvar 0, 1
 EncScript_TestMegaEvolve_Done:
 	return
+
+// Stage 16 example encounter: a boss whose escalation is spread across three checkpoints instead
+// of one, each phase gated by the same Var(Phase) the previous phase's script advances.
+
+EncScript_StormHerald_Intro::
+	trainerslidein BS_OPPONENT1
+	printstring STRINGID_ENCSTORMHERALDINTRO
+	waitmessage B_WAIT_TIME_LONG
+	trainerslideout BS_OPPONENT1
+	return
+
+// Phase 1 -> 2: first time the boss drops to half HP, it heals a portion back and its Sp. Atk rises.
+EncScript_StormHerald_Surge::
+	encsetvar 0, 2   @ phase = 2
+	trainerslidein BS_OPPONENT1
+	printstring STRINGID_ENCSTORMHERALDSURGE
+	waitmessage B_WAIT_TIME_LONG
+	trainerslideout BS_OPPONENT1
+	enchangehp ENC_TARGET_BOSS, 20
+	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2
+	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
+	return
+
+// Phase 2 -> 3: once the surge has happened and HP falls further, a desperation Attack/Speed boost.
+EncScript_StormHerald_Desperation::
+	encsetvar 0, 3   @ phase = 3
+	trainerslidein BS_OPPONENT1
+	printstring STRINGID_ENCSTORMHERALDDESPERATION
+	waitmessage B_WAIT_TIME_LONG
+	trainerslideout BS_OPPONENT1
+	encchangestat ENC_TARGET_BOSS, STAT_ATK, 2
+	encchangestat ENC_TARGET_BOSS, STAT_SPEED, 2
+	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
+	return

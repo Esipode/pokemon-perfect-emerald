@@ -26,3 +26,28 @@ Script: EncScript_TrainerMega_Reveal
 Conditions:
     Turn >= 5
     Var(MegaEvolved) == 0
+
+// Stage 16 example: one boss, three phases, each gated on the last through Var(Phase) - the
+// escalation is spread across three different checkpoints instead of piling conditions onto one.
+Encounter: Storm_Herald
+
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_StormHerald_Intro
+
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_StormHerald_Surge
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_StormHerald_Desperation
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 2

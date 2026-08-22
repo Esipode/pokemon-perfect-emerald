@@ -50,6 +50,13 @@ extern const u8 EncScript_TestCallSub[];      // call/return through a shared su
 extern const u8 EncScript_LegendaryBarrier_PhaseTransition[];
 extern const u8 EncScript_TrainerMega_Reveal[];
 
+// Stage 16 example encounter: three triggers chained across three checkpoints (OnBattleStart,
+// OnMoveEnd, OnTurnEnd), each phase gated on the last via the same Phase var - outline Sec1's
+// "multiple custom mechanics chained together" case, built through the authoring path only.
+extern const u8 EncScript_StormHerald_Intro[];
+extern const u8 EncScript_StormHerald_Surge[];
+extern const u8 EncScript_StormHerald_Desperation[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

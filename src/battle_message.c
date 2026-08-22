@@ -983,6 +983,11 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS]        = COMPOUND_STRING("A mysterious barrier surrounds it!"),
     [STRINGID_ENCTRAINERPUSHEDTHISFAR]              = COMPOUND_STRING("You've pushed me this far..."),
     [STRINGID_ENCTRAINERSHOWTRUEPOWER]              = COMPOUND_STRING("Then I'll show you its true power!"),
+
+    // Stage 16 example encounter (Storm_Herald).
+    [STRINGID_ENCSTORMHERALDINTRO]                  = COMPOUND_STRING("The sky churns as it senses a challenger!"),
+    [STRINGID_ENCSTORMHERALDSURGE]                  = COMPOUND_STRING("It calls forth the storm's fury!"),
+    [STRINGID_ENCSTORMHERALDDESPERATION]            = COMPOUND_STRING("Cornered, it lashes out with everything it has!"),
 };
 
 const u16 gOneHitKOStringIds[] =
