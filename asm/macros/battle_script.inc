@@ -1157,8 +1157,8 @@
 	.4byte \func
 	.endm
 
-@ Stage 15: encounter command vocabulary (constants/battle_encounter.h's enum EncounterTarget).
-@ callnative-first per outline Sec37 - none of these are real opcodes.
+@ Encounter command vocabulary (constants/battle_encounter.h's enum EncounterTarget).
+@ callnative-first - none of these are real opcodes.
 
 	@ Changes HP for every battler \target resolves to by amount (positive = heal, negative =
 	@ damage), reusing the same PASSIVE_HP_UPDATE healthbarupdate/datahpupdate opcodes Leftovers
