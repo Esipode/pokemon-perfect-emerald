@@ -603,6 +603,11 @@ static void CB2_InitBattleInternal(void)
     else
         SetMainCallback2(CB2_HandleStartBattle);
 
+    // Opponent parties exist now (built in battle_setup.c) and no gBattleMons have been built from
+    // them yet - the only window where an encounter's Level: property can restate what the
+    // opponents are (battle_encounter.c).
+    ApplyEncounterLevelOverride();
+
     gMain.inBattle = TRUE;
     gSaveBlock2Ptr->disableRecordBattle = FALSE;
 

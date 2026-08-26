@@ -12,19 +12,22 @@ engine: an ordinary battle that doesn't opt in behaves exactly as it always has.
 3. [Checkpoint reference](#checkpoint-reference)
 4. [Condition reference](#condition-reference)
 5. [Trigger flags](#trigger-flags)
-6. [Command reference](#command-reference)
-7. [Determinism rules](#determinism-rules)
-8. [Limits](#limits)
-9. [Debugging](#debugging)
+6. [Property reference](#property-reference)
+7. [Command reference](#command-reference)
+8. [Determinism rules](#determinism-rules)
+9. [Limits](#limits)
+10. [Debugging](#debugging)
 
 ---
 
 ## What this is, and when not to use it
 
-An **encounter** is a named bundle of **triggers**. Each trigger says: *at this checkpoint, if these
-conditions hold, run this battle script.* The system watches for eligible triggers at seven fixed
-points in the battle flow (the checkpoints — see below), runs the highest-priority one that's
-eligible, and lets the engine continue.
+An **encounter** is a named bundle of **triggers**, plus an optional bundle of **properties**. Each
+trigger says: *at this checkpoint, if these conditions hold, run this battle script.* The system
+watches for eligible triggers at seven fixed points in the battle flow (the checkpoints — see
+below), runs the highest-priority one that's eligible, and lets the engine continue. Properties are
+the other half: they configure the battle itself once at battle start (the boss's level, whether
+Poké Balls work, how tanky it is) instead of reacting to what happens in it.
 
 Use it for:
 
@@ -49,13 +52,22 @@ The whole system can also be compiled out entirely with `B_ENCOUNTER_SCRIPTING F
 ## A complete worked example
 
 This is a real encounter, taken from `src/data/battle_encounters.encounter` — copy it as a
-starting point. It's a boss that, the first time it drops to 50% HP or below, shows its trainer
-sprite, delivers a line, and raises its own Defense and Sp. Defense.
+starting point. It's a legendary that fights at the player's level cap, shrugs off most damage and
+can't be caught, then — the first time it drops to 50% HP or below — shows its trainer sprite,
+delivers a line, heals a fifth of its health back and raises its own Defense and Sp. Defense. Once
+it's nearly beaten, its guard drops and the player can finally throw a ball at it.
 
 ### 1. The `.encounter` definition
 
 ```text
 Encounter: Legendary_Barrier
+
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 70
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
 
 Trigger: OnMoveEnd
 Priority: 10
@@ -64,15 +76,26 @@ Script: EncScript_LegendaryBarrier_PhaseTransition
 Conditions:
     Battler(Boss).HpPercent <= 50
     Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_LegendaryBarrier_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
 ```
 
-Read it as: *at the end of any move, if the boss is at 50% HP or below and its `Phase` variable is
-still 0, run `EncScript_LegendaryBarrier_PhaseTransition` — and only the first time that becomes
-true.*
+Read the first trigger as: *at the end of any move, if the boss is at 50% HP or below and its
+`Phase` variable is still 0, run `EncScript_LegendaryBarrier_PhaseTransition` — and only the first
+time that becomes true.*
 
 - `Encounter: Legendary_Barrier` names the encounter. `encounterproc` (the tool that compiles this
   file) turns the name into `ENCOUNTER_LEGENDARY_BARRIER` for you — you don't declare the id
   yourself anywhere else.
+- `Properties:` is optional, appears at most once, and comes before the first `Trigger:`. Every
+  field can be omitted; an encounter with no `Properties:` block changes nothing about the battle.
+  See the [property reference](#property-reference).
 - `Trigger: OnMoveEnd` is the checkpoint (see the [reference](#checkpoint-reference) below).
 - `Priority: 10` — required on every trigger. Lower runs first if more than one trigger is eligible
   at the same checkpoint.
@@ -98,17 +121,34 @@ EncScript_LegendaryBarrier_PhaseTransition::
 	trainerslideout BS_OPPONENT1
 	encchangestat ENC_TARGET_BOSS, STAT_DEF, 3
 	encchangestat ENC_TARGET_BOSS, STAT_SPDEF, 3
+	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	printstring STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS
 	waitmessage B_WAIT_TIME_LONG
 	return
+
+EncScript_LegendaryBarrier_Weakened::
+	encsetvar 0, 3   @ phase = 3
+	encsetdamagereduction ENC_TARGET_BOSS, 0
+	encsetimmunity ENC_TARGET_BOSS, 0
+	encchangestatvalue ENC_TARGET_BOSS, STAT_DEF, -25, ENC_AMOUNT_PERCENT
+	encsetballs ENC_BALLS_ALLOWED
+	trainerslidein BS_OPPONENT1
+	printstring STRINGID_ENCLEGENDARYWEAKENED
+	waitmessage B_WAIT_TIME_LONG
+	trainerslideout BS_OPPONENT1
+	return
 ```
 
-Everything here except `encsetvar`/`encchangestat` is a normal battle-script opcode
+Everything except the `enc*` commands is a normal battle-script opcode
 (`asm/macros/battle_script.inc`) — `trainerslidein`/`trainerslideout` for the presentation
-interrupt, `printstring`/`waitmessage` for dialogue, `playanimation` for the visual. The only
-encounter-specific pieces are the two `enc*` commands (see the
-[command reference](#command-reference)).
+interrupt, `printstring`/`waitmessage` for dialogue, `playanimation` for the visual (see the
+[command reference](#command-reference) for the `enc*` set).
+
+Note `enchangehp ..., 20, ENC_AMOUNT_PERCENT` rather than a raw HP number: with `Level: LevelCap`
+this boss's max HP depends on the player's save, so a fixed figure can't be balanced against it.
+The second script is the mirror image of the `Properties:` block — the same three settings the
+battle started with, turned back off at the point the fight is meant to become winnable.
 
 `encsetvar 0, 2` writes the var this trigger's own condition reads (`ENC_VAR_LEGENDARY_BARRIER_PHASE`,
 i.e. index 0) so `Once`/`OnEnter` aren't the only thing stopping a re-fire — the condition itself
@@ -238,6 +278,78 @@ transition to be able to re-fire (e.g. a barrier that can be knocked down and re
 
 ---
 
+## Property reference
+
+`Properties:` is an optional indented block, at most one per encounter, placed before the first
+`Trigger:`. It answers "what kind of battle is this?", where a trigger answers "what happens when
+X?". Every field is optional and omitting one changes nothing.
+
+| Property | Value | Does |
+| --- | --- | --- |
+| `Level:` | `LevelCap`, or a level from 1 to `MAX_LEVEL` | Rebuilds every opponent Pokémon at that level — experience, stats and HP all restated, not healed. `LevelCap` reads `GetProgressionLevelCap()` (`src/caps.c`), so the fight tracks story progression and New Game Plus offsets |
+| `CatchRate:` | `0`–`255` | Replaces the species' own catch rate for this battle. Higher is easier |
+| `Balls:` | `Default`, `Blocked`, `Allowed` | Whether the player may throw a Poké Ball |
+| `DamageReduction:` | `0`–`99` | The boss takes this much less damage, as a percentage, from every source |
+| `Immunities:` | comma list of `Ohko`, `FixedDamage`, `HpSwap`, `SharedKo`, plus `All`/`None` | Move classes the boss ignores |
+
+`DamageReduction:` and `Immunities:` apply to the **boss** (the opponent's left slot). Any other
+battler — or any change to these mid-battle — is a job for `encsetdamagereduction` /
+`encsetimmunity` in a script.
+
+### `Level:` and when it applies
+
+The level override runs once, before the battle's Pokémon are built from the party, which is the
+only window where changing a level is a clean operation. It applies to **both opponent parties**
+(`B_TRAINER_OPPONENT_A` and `B_TRAINER_OPPONENT_B`), never to the player or their partner, and it
+skips empty slots and eggs. There is no per-slot form — an encounter that needs one opponent at a
+different level than the rest should set the levels in its trainer data instead.
+
+### `Balls:` — blocking, and the "now catch it" pattern
+
+`Allowed` only lifts a block **this encounter** imposed. It never makes a battle catchable that
+wouldn't be otherwise: a trainer battle, a Ghost without a Silph Scope, Nuzlocke's used-up zone and
+the other existing rules all still apply and are checked first.
+
+The pattern this exists for is a legendary that can't be caught until it's beaten down: start with
+`Balls: Blocked`, then have the final phase's script run `encsetballs ENC_BALLS_ALLOWED` (usually
+alongside `encsetcatchrate` and dropping the damage reduction, as in the worked example above). A
+blocked throw behaves exactly like the existing Nuzlocke and Mono-Type blocks: the ball animation
+plays, a message prints, and the turn ends.
+
+### `DamageReduction:` — what counts as "damage"
+
+A reduction of 70 means the battler takes 70% less from anything that goes through the damage
+formula or a passive HP tick: moves, weather, burn/poison, entry hazards, Leftovers-style chip,
+recoil, and ability/item damage. Damage is floored at 1, so a reduced hit is never silently turned
+into nothing.
+
+Three things deliberately **ignore** it:
+
+- **Fixed-damage moves** (Super Fang, Seismic Toss, Dragon Rage, Endeavor, …). They never touch the
+  damage formula, so they'd otherwise cut straight past a boss's reduction — which is exactly why
+  `Immunities: FixedDamage` exists.
+- **Perish Song and Destiny Bond.** These are lethal effects, not damage; reducing them to
+  survivable would be incoherent. `Immunities: SharedKo` is how you refuse them.
+- **`enchangehp` in an encounter script.** The number in the script is the encounter's own; another
+  encounter rule rescaling it would make phase scripts impossible to reason about.
+
+The maximum is 99 (`ENC_MAX_DAMAGE_REDUCTION`). A battler nothing at all can damage isn't a fight —
+if a specific move must not work, that's what the immunities are for.
+
+### `Immunities:` — the four classes
+
+| Name | Covers | Player sees |
+| --- | --- | --- |
+| `Ohko` | `EFFECT_OHKO`: Sheer Cold, Fissure, Guillotine, Horn Drill | "It doesn't affect …" |
+| `FixedDamage` | Every effect whose damage bypasses the damage formula: Super Fang, Night Shade, Seismic Toss, Dragon Rage, Sonic Boom, Psywave, Endeavor, Final Gambit, Counter/Mirror Coat/Metal Burst, Bide | "It doesn't affect …" |
+| `HpSwap` | Pain Split | "But it failed!" |
+| `SharedKo` | Destiny Bond, Perish Song | Destiny Bond doesn't take the boss down with it; a Perish Song count already on the boss is cancelled |
+
+`All` sets every bit; `None` sets none (the same as omitting the field). They're separate classes on
+purpose — giving every legendary the same immunity list makes every legendary fight the same fight.
+
+---
+
 ## Command reference
 
 Anything not listed here is an ordinary battle-script opcode
@@ -253,9 +365,42 @@ The commands below exist specifically for encounter scripts:
 | `encaddvar <var>, <value>` | Adds to author variable `<var>` | wraps `addbyte` |
 | `encsubvar <var>, <value>` | Subtracts from author variable `<var>` | wraps `subbyte` |
 | `encjumpifvar <cmp>, <var>, <value>, <label>` | Branches on author variable `<var>` | wraps `jumpifbyte` |
-| `enchangehp <target>, <amount>` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar | encounter-specific (`callnative`) |
+| `enchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar | encounter-specific (`callnative`) |
 | `encchangestat <target>, <stat>, <stages>` | Adds `<stages>` to `<stat>` for every battler `<target>` resolves to — silent, no message/animation | encounter-specific (`callnative`) |
+| `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Moves the **raw battle stat** (not the stage) of `<stat>` — silent, and not undone by Haze or switching out | encounter-specific (`callnative`) |
+| `encsetdamagereduction <target>, <percent>` | Sets how much less damage `<target>` takes, `0`–`99`. Replaces the current value | encounter-specific (`callnative`) |
+| `encsetimmunity <target>, <immunities>` | Replaces `<target>`'s `ENC_IMMUNE_*` mask (`0` clears it) | encounter-specific (`callnative`) |
+| `encsetballs <policy>` | `ENC_BALLS_DEFAULT` / `ENC_BALLS_BLOCKED` / `ENC_BALLS_ALLOWED` | encounter-specific (`callnative`) |
+| `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
+
+### Fixed vs. percentage amounts
+
+`enchangehp` and `encchangestatvalue` take an optional trailing `<mode>`:
+
+| Mode | Reads `<amount>` as |
+| --- | --- |
+| `ENC_AMOUNT_FIXED` (the default when omitted) | Raw HP / raw stat points |
+| `ENC_AMOUNT_PERCENT` | A percentage of that battler's own max HP / current value for that stat |
+
+Prefer `ENC_AMOUNT_PERCENT` in anything using `Level: LevelCap` or facing New Game Plus offsets: the
+boss's max HP and stats aren't known when the script is written, so a fixed number can't be balanced
+against them. A percentage that would round down to zero is floored at 1 HP, so a "heal 5%" never
+silently does nothing on a small Pokémon.
+
+`encchangestat` (stages) and `encchangestatvalue` (raw stats) are different tools. Stages are the
+standard, visible currency: clamped to ±6, cleared by Haze, undone by switching out. A raw stat
+change moves the number the boss was built with — permanent for the rest of the battle, invisible to
+the player, and unbounded past what a stage could reach. Reach for stages first; use the raw form
+when a phase transition is meant to make the boss *fundamentally* different, or when scaling a stat
+by a percentage is the only portable way to express it.
+
+### Setting vs. accumulating
+
+`encsetdamagereduction`, `encsetimmunity`, `encsetballs` and `encsetcatchrate` all **replace** the
+current value rather than adding to it. That's what lets a script raise a boss's guard for one phase
+and drop it in the next without tracking what it added — `encsetdamagereduction ENC_TARGET_BOSS, 0`
+always means "no reduction", whatever the `Properties:` block or an earlier phase set.
 
 `encsetvar`/`encaddvar`/`encsubvar`/`encjumpifvar` are thin wrappers: they're the same
 `setbyte`/`addbyte`/`subbyte`/`jumpifbyte` opcodes every other battle script uses, just pre-addressed
@@ -342,6 +487,17 @@ yet, so the manual count is currently the reliable path.)
   battler, rather than reading a stale/inactive battler's data) — silently doing nothing rather than
   acting on the wrong Pokémon. Guard doubles-only conditions/targets with a `BattlerCount == 4`
   check if the encounter can also run as a single battle.
+- **`Level:` restates the Pokémon, it doesn't level it up.** Experience is reset to the exact
+  threshold for that level and HP is refilled, so a `Level:` override on a battle the player can
+  re-enter always produces the same opponent. It runs before the battle's Pokémon are built, which
+  is also why nothing in a script can change a level — by then the level is baked into stats that
+  have already been derived from it.
+- **The AI sees the damage reduction.** It shares the damage-calculation path, so a boss the player
+  can barely dent reads as one when the AI picks a move. That's intentional; don't be surprised when
+  a heavily-reduced boss stops being predictable about which attack it leads with.
+- **`Immunities: FixedDamage` is not optional if you set `DamageReduction:`.** Super Fang and
+  friends compute their damage from the target's HP, never from the damage formula — a 70%-reduced
+  boss with no `FixedDamage` immunity still loses half its health to one Super Fang.
 - **A blank event-context cell is invalid, not zero.** Reading `Event.Move` at a checkpoint that
   doesn't populate it (see the [checkpoint table](#checkpoint-reference)) asserts rather than
   quietly returning 0 — that would otherwise be indistinguishable from a real "no move" case.
@@ -360,6 +516,13 @@ build strips `#` and everything after it through the end of that line before pre
 ```text
 Encounter: <EncounterName>
 
+Properties:                 # optional; at most one, before the first Trigger:
+    Level: <level or LevelCap>
+    CatchRate: <0-255>
+    Balls: <Default|Blocked|Allowed>
+    DamageReduction: <0-99>
+    Immunities: <immunity list>
+
 Trigger: <Checkpoint>
 Priority: <0-255>
 Flags: <optional flags>
@@ -373,7 +536,20 @@ Conditions:                 # optional; requires at least one indented item
 | Part | Every valid form |
 | --- | --- |
 | Name | Any C identifier: begins with `A-Z`, `a-z`, or `_`; subsequent characters may also be digits. For example, `Storm_Herald`, which generates `ENCOUNTER_STORM_HERALD`. |
-| Contents | One or more `Trigger:` blocks; maximum 32. |
+| Contents | At most one `Properties:` block, then one or more `Trigger:` blocks; maximum 32 triggers. |
+
+### `Properties:` fields
+
+Every field is optional, may appear at most once, and each takes exactly the values below — unlike a
+condition's right-hand side, none of these pass through to the C compiler unchecked.
+
+| Field | Every valid value |
+| --- | --- |
+| `Level:` | `LevelCap`, or a decimal integer `1` through `MAX_LEVEL` |
+| `CatchRate:` | Decimal integer `0` through `255` |
+| `Balls:` | `Default`, `Blocked`, or `Allowed` |
+| `DamageReduction:` | Decimal integer `0` through `99` |
+| `Immunities:` | Comma-separated list of `Ohko`, `FixedDamage`, `HpSwap`, `SharedKo`, `All`, or `None` |
 
 ### `Trigger:` fields
 
@@ -430,8 +606,13 @@ constants are compiler errors.
 | `encaddvar <var>, <value>` | Same as `encsetvar`. |
 | `encsubvar <var>, <value>` | Same as `encsetvar`. |
 | `encjumpifvar <comparison>, <var>, <value>, <label>` | Normal battle-script byte comparison, variable/index, byte value, and script label. |
-| `enchangehp <target>, <amount>` | Target below; signed 16-bit HP amount (positive heals, negative damages). |
+| `enchangehp <target>, <amount>[, <mode>]` | Target below; signed 16-bit amount (positive heals, negative damages); optional `ENC_AMOUNT_FIXED` (default) or `ENC_AMOUNT_PERCENT`. |
 | `encchangestat <target>, <stat>, <stages>` | Target below; `STAT_*` id; signed stage change. |
+| `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Target below; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); signed 16-bit amount; optional mode as above. |
+| `encsetdamagereduction <target>, <percent>` | Target below; `0` through `ENC_MAX_DAMAGE_REDUCTION` (99). |
+| `encsetimmunity <target>, <immunities>` | Target below; `0`, `ENC_IMMUNE_ALL`, or an OR of `ENC_IMMUNE_OHKO`, `ENC_IMMUNE_FIXED_DAMAGE`, `ENC_IMMUNE_HP_SWAP`, `ENC_IMMUNE_SHARED_KO`. |
+| `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
+| `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |
 
 Every valid `<target>` is `ENC_TARGET_BOSS`, `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`,

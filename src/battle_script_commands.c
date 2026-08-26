@@ -6130,7 +6130,8 @@ static void Cmd_painsplitdmgcalc(void)
 {
     CMD_ARGS(const u8 *failInstr);
 
-    if (!(DoesSubstituteBlockMove(gBattlerAttacker, gBattlerTarget, gCurrentMove)))
+    if (!(DoesSubstituteBlockMove(gBattlerAttacker, gBattlerTarget, gCurrentMove))
+     && !DoesEncounterGrantImmunity(gBattlerTarget, ENC_IMMUNE_HP_SWAP))
     {
         s32 hpDiff = (gBattleMons[gBattlerAttacker].hp + GetNonDynamaxHP(gBattlerTarget)) / 2;
 
@@ -8001,6 +8002,8 @@ static u32 ComputeCaptureOdds(u32 wildMonBattler, u32 playerBattler)
 
     if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
         catchRate = gBattleStruct->safariCatchFactor * 1275 / 100;
+    else if (GetEncounterCatchRate() != ENC_CATCH_RATE_NONE)
+        catchRate = GetEncounterCatchRate(); // encounter CatchRate: property / encsetcatchrate
     else
         catchRate = gSpeciesInfo[battleMon->species].catchRate;
 
@@ -8235,6 +8238,12 @@ static void Cmd_handleballthrow(void)
         BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_3_SHAKES_SUCCESS);
         MarkBattlerForControllerExec(gBattlerAttacker);
         gBattlescriptCurrInstr = BattleScript_WallyBallThrow;
+    }
+    else if (IsEncounterBlockingBalls())
+    {
+        BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
+        MarkBattlerForControllerExec(gBattlerAttacker);
+        gBattlescriptCurrInstr = BattleScript_EncounterCannotCatch;
     }
     else if (MonoType_IsEnabled() && !MonoType_IsSpeciesAllowed(gBattleMons[gBattlerTarget].species))
     {
@@ -8753,6 +8762,7 @@ static u16 *GetBattlerStat(struct BattlePokemon *battler, enum Stat stat)
     case STAT_DEF:   return &battler->defense;
     case STAT_SPATK: return &battler->spAttack;
     case STAT_SPDEF: return &battler->spDefense;
+    case STAT_SPEED: return &battler->speed;
     default:         return NULL;
     }
 }
@@ -12551,12 +12561,32 @@ void BS_TryDoMoveEffectsBeforeMoves(void)
 // each span multiple frames waiting on the controller; a single native call can't do that.
 void BS_EncounterChangeHpBegin(void)
 {
-    NATIVE_ARGS(u8 target, s16 amount);
+    NATIVE_ARGS(u8 target, s16 amount, u8 mode);
     struct EncounterRuntime *runtime = &gBattleStruct->encounter;
 
     runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
     runtime->changeHpAmount = cmd->amount;
+    runtime->changeHpMode = cmd->mode;
     gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// The HP one battler gains (positive) or loses (negative) for the current CHANGE_HP. ENC_AMOUNT_
+// PERCENT is resolved per battler rather than once in Begin, since in a group target each battler
+// has its own max HP. A non-zero percent never rounds down to nothing - a "heal 5%" that silently
+// did nothing on a small Pokemon would read as a broken script.
+static s32 EncounterChangeHpAmountFor(enum BattlerId battler)
+{
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    s32 amount = runtime->changeHpAmount;
+    s32 scaled;
+
+    if (runtime->changeHpMode != ENC_AMOUNT_PERCENT || amount == 0)
+        return amount;
+
+    scaled = (s32)(((s64)gBattleMons[battler].maxHP * (amount < 0 ? -amount : amount)) / 100);
+    if (scaled < 1)
+        scaled = 1;
+    return (amount < 0) ? -scaled : scaled;
 }
 
 void BS_EncounterChangeHpStep(void)
@@ -12588,10 +12618,15 @@ void BS_EncounterChangeHpStep(void)
     }
 
     gBattleScripting.battler = battler;
-    if (runtime->changeHpAmount > 0)
-        SetHealAmount(battler, runtime->changeHpAmount);
-    else if (runtime->changeHpAmount < 0)
-        SetPassiveDamageAmount(battler, -runtime->changeHpAmount);
+    s32 amount = EncounterChangeHpAmountFor(battler);
+    if (amount > 0)
+        SetHealAmount(battler, amount);
+    else if (amount < 0)
+    {
+        // Direct write, not SetPassiveDamageAmount: scripted damage is the encounter's own
+        // authored number, so its target's damage reduction must not silently rescale it.
+        gBattleStruct->passiveHpUpdate[battler] = -amount;
+    }
     else
         gBattleStruct->passiveHpUpdate[battler] = 0; // amount 0 is a deliberate no-op, not a min-1 hit
     gBattlescriptCurrInstr = cmd->nextInstr;
@@ -12679,6 +12714,107 @@ void BS_EncounterMegaEvolve(void)
     SetActiveGimmick(battler, GIMMICK_MEGA);
     SetGimmickAsActivated(battler, GIMMICK_MEGA);
     TryBattleFormChange(battler, FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM, ability);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// CHANGE_STAT_VALUE (encchangestatvalue). Sibling of CHANGE_STAT above, one level lower: stages are
+// the standard, visible, Haze-clearable currency, while this moves the raw battle stat a boss was
+// built with. That matters for an encounter whose level isn't known when the script is written -
+// ENC_AMOUNT_PERCENT scales whatever the boss ended up with. Silent, like CHANGE_STAT.
+void BS_EncounterChangeStatValue(void)
+{
+    NATIVE_ARGS(u8 target, u8 stat, s16 amount, u8 mode);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u16 *statPtr;
+        s32 delta;
+        s32 newValue;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        assertf(IsBattlerAlive(battler),
+                "encounter %d: CHANGE_STAT_VALUE targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
+        {
+            continue;
+        }
+
+        statPtr = GetBattlerStat(&gBattleMons[battler], cmd->stat);
+        assertf(statPtr != NULL,
+                "encounter %d: CHANGE_STAT_VALUE stat %d has no battle stat", gBattleStruct->encounter.id, cmd->stat)
+        {
+            continue;
+        }
+
+        delta = cmd->amount;
+        if (cmd->mode == ENC_AMOUNT_PERCENT)
+            delta = (s32)(((s64)(*statPtr) * delta) / 100); // s64: a u16 stat times a large percent overflows s32
+
+        // Clamped to 1..0xFFFF: a stat of 0 divides by zero in the damage formula, and struct
+        // BattlePokemon's stat fields are u16.
+        newValue = (s32)(*statPtr) + delta;
+        if (newValue < 1)
+            newValue = 1;
+        else if (newValue > 0xFFFF)
+            newValue = 0xFFFF;
+        *statPtr = newValue;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// DAMAGE_REDUCTION (encsetdamagereduction) and IMMUNITY (encsetimmunity). Both replace the target's
+// current value rather than accumulating, so a script can raise a boss's guard for one phase and
+// drop it again in the next without tracking what it added.
+void BS_EncounterSetDamageReduction(void)
+{
+    NATIVE_ARGS(u8 target, u8 percent);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterDamageReduction(battler, cmd->percent);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_EncounterSetImmunity(void)
+{
+    NATIVE_ARGS(u8 target, u8 immunities);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterImmunities(battler, cmd->immunities);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
+// describe the ball the player is about to throw, and there is only ever one catch target.
+void BS_EncounterSetBallPolicy(void)
+{
+    NATIVE_ARGS(u8 policy);
+
+    assertf(cmd->policy <= ENC_BALLS_ALLOWED,
+            "encounter %d: unknown ball policy %d", gBattleStruct->encounter.id, cmd->policy)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    gBattleStruct->encounter.ballPolicy = cmd->policy;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_EncounterSetCatchRate(void)
+{
+    NATIVE_ARGS(u8 catchRate);
+
+    gBattleStruct->encounter.catchRate = cmd->catchRate;
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 

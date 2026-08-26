@@ -7,11 +7,21 @@
 # `setbattleencounter ENCOUNTER_SHOWCASE` immediately before the battle it should affect.
 #
 # This single boss demonstrates every checkpoint, priority/flag mode, author variables, grouped
-# conditions, event context, HP/stat changes, Mega Evolution, trainer presentation, and animation.
-# It is intentionally more comprehensive than a production encounter: copy the individual triggers
-# that match your design instead of enabling all of them at once.
+# conditions, event context, battle-start properties, HP/stat changes, damage reduction and move
+# immunities, catching rules, Mega Evolution, trainer presentation, and animation. It is
+# intentionally more comprehensive than a production encounter: copy the individual triggers that
+# match your design instead of enabling all of them at once.
 #
 # Encounter: Showcase
+#
+# # `Properties:` is optional and appears at most once, before the first `Trigger:`. It configures
+# # the battle itself at battle start rather than reacting to it; every field may be omitted.
+# Properties:
+#     Level: LevelCap            # or a literal level; LevelCap tracks story progression
+#     CatchRate: 15              # replaces the species' own catch rate (0-255, higher is easier)
+#     Balls: Blocked             # Default, Blocked, or Allowed
+#     DamageReduction: 70        # the boss takes 70% less damage from every source (max 99)
+#     Immunities: Ohko, FixedDamage, HpSwap, SharedKo   # or None / All
 #
 # # `OnBattleStart`: introduce the boss once, after all entry effects resolve.
 # Trigger: OnBattleStart
@@ -123,9 +133,21 @@
 #     printstring STRINGID_ENCSHOWCASEBARRIER
 #     waitmessage B_WAIT_TIME_LONG
 #     trainerslideout BS_OPPONENT1
-#     enchangehp ENC_TARGET_BOSS, 25          @ positive heals; negative damages
-#     encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2
+#     enchangehp ENC_TARGET_BOSS, 25, ENC_AMOUNT_PERCENT   @ positive heals; negative damages
+#     encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2         @ stat STAGE, undone by Haze/switching
+#     encchangestatvalue ENC_TARGET_BOSS, STAT_SPEED, 20, ENC_AMOUNT_PERCENT   @ raw stat, permanent
+#     encsetdamagereduction ENC_TARGET_BOSS, 70
+#     encsetimmunity ENC_TARGET_BOSS, ENC_IMMUNE_OHKO | ENC_IMMUNE_FIXED_DAMAGE
 #     playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
+#     return
+#
+# # The catching rules the Properties: block set at battle start can be changed at any point - the
+# # usual legendary shape is "blocked until it's weak enough, then easier to catch than usual".
+# EncScript_Showcase_Weakened::
+#     encsetdamagereduction ENC_TARGET_BOSS, 0
+#     encsetimmunity ENC_TARGET_BOSS, 0
+#     encsetcatchrate 60
+#     encsetballs ENC_BALLS_ALLOWED
 #     return
 #
 # EncScript_Showcase_MoveReaction::
@@ -176,6 +198,17 @@ Conditions:
 
 Encounter: Legendary_Barrier
 
+# Battle-start configuration. Level: LevelCap keeps the boss at the player's progression cap, so
+# the fight scales with the save (New Game Plus offsets included) instead of a hardcoded level.
+# DamageReduction/Immunities make it a test of attrition rather than of one lucky Sheer Cold, and
+# Balls: Blocked holds the catch back until the weakened phase below unblocks it.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 70
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+
 Trigger: OnMoveEnd
 Priority: 10
 Flags: Once, OnEnter
@@ -183,6 +216,16 @@ Script: EncScript_LegendaryBarrier_PhaseTransition
 Conditions:
     Battler(Boss).HpPercent <= 50
     Var(Phase) == 0
+
+# The weakened phase: once the boss is nearly down, its guard drops and the player can finally
+# throw a ball at it.
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_LegendaryBarrier_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
 
 Encounter: Trainer_Mega
 
@@ -206,7 +249,7 @@ Priority: 10
 Flags: Once, OnEnter
 Script: EncScript_StormHerald_Surge
 Conditions:
-    Battler(Boss).HpPercent <= 50
+    Battler(Boss).HpPercent <= 80
     Var(Phase) == 0
 
 Trigger: OnTurnEnd
@@ -214,5 +257,5 @@ Priority: 10
 Flags: Once, OnEnter
 Script: EncScript_StormHerald_Desperation
 Conditions:
-    Battler(Boss).HpPercent <= 25
+    Battler(Boss).HpPercent <= 40
     Var(Phase) == 2

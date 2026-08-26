@@ -978,9 +978,13 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_LOSTSOMEOFITSHP]                      = COMPOUND_STRING("{B_ATK_NAME_WITH_PREFIX} lost some of its HP!"),
     [STRINGID_BELCHCANTUSE]                         = COMPOUND_STRING("{B_ATK_NAME_WITH_PREFIX} hasn't eaten any held Berries, so it can't possibly belch!\p"),
 
+    // Encounter properties.
+    [STRINGID_ENCCANTCATCHYET]                      = COMPOUND_STRING("It's far too strong to be caught right now!"),
+
     // Stage 15 example encounters (outline Sec33/Sec34).
     [STRINGID_ENCLEGENDARYGATHERSSTRENGTH]          = COMPOUND_STRING("The legendary gathers its strength!"),
     [STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS]        = COMPOUND_STRING("A mysterious barrier surrounds it!"),
+    [STRINGID_ENCLEGENDARYWEAKENED]                 = COMPOUND_STRING("The barrier shatters! It's weak enough to catch!"),
     [STRINGID_ENCTRAINERPUSHEDTHISFAR]              = COMPOUND_STRING("You've pushed me this far..."),
     [STRINGID_ENCTRAINERSHOWTRUEPOWER]              = COMPOUND_STRING("Then I'll show you its true power!"),
 

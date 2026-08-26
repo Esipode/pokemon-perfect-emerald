@@ -26,10 +26,24 @@ struct EncounterTrigger
     const u8 *script;                   // battle script label
 };
 
+// Battle-start configuration, authored in a '.encounter' file's 'Properties:' block. ROM-resident
+// and applied once per battle, unlike a trigger, which reacts to what happens during one. An
+// all-zero properties block means "change nothing", so an encounter that omits Properties: costs
+// only these bytes in ROM and no behavior at runtime.
+struct EncounterProperties
+{
+    u16 level;           // ENC_LEVEL_NONE / ENC_LEVEL_CAP / a literal level for every opponent
+    u8 catchRate;        // ENC_CATCH_RATE_NONE, or a catch rate replacing the species' own
+    u8 ballPolicy;       // enum EncounterBallPolicy
+    u8 damageReduction;  // percent, applied to the boss; 0..ENC_MAX_DAMAGE_REDUCTION
+    u8 immunities;       // ENC_IMMUNE_* bits, applied to the boss
+};
+
 struct Encounter
 {
     const struct EncounterTrigger *triggers;
     u8 triggerCount;
+    struct EncounterProperties properties;
 };
 
 // Test encounter scripts (data/battle_scripts_encounters.s).
@@ -48,6 +62,7 @@ extern const u8 EncScript_TestCallSub[];      // call/return through a shared su
 
 // Stage 15 example encounters (outline Sec33/Sec34), built through the authoring path only.
 extern const u8 EncScript_LegendaryBarrier_PhaseTransition[];
+extern const u8 EncScript_LegendaryBarrier_Weakened[];
 extern const u8 EncScript_TrainerMega_Reveal[];
 
 // Stage 16 example encounter: three triggers chained across three checkpoints (OnBattleStart,
@@ -84,6 +99,39 @@ void ResetEncounterVars(void);
 // Set by the overworld script that starts the battle; consumed once at battle start.
 void SetPendingBattleEncounter(enum EncounterId id);
 enum EncounterId TakePendingBattleEncounter(void);
+
+// --- Encounter properties (struct EncounterProperties) -------------------------------------------
+
+// Rebuilds every opponent Pokemon at the encounter's Level: property. Called from
+// CB2_InitBattleInternal (battle_main.c) after the opponent parties exist but before any
+// gBattleMons are built from them - a level change has to happen while the party is still the only
+// copy of the data, since stats, HP and the battler's own struct are all derived from it here.
+// No-op when the encounter has no Level: property.
+void ApplyEncounterLevelOverride(void);
+
+// Seeds the per-battler modifiers (damage reduction, immunities) from the encounter's properties.
+// Called once from TryRunEncounterCheckpoint's first ENC_ON_BATTLE_START pass, which is the
+// earliest point every battler exists and can be resolved through ENC_BOSS.
+void ApplyEncounterBattlerProperties(void);
+
+// Whether the player may throw a Poke Ball right now (Cmd_handleballthrow, battle_script_commands.c).
+// Only ever blocks - an encounter can't make a battle catchable that wouldn't be otherwise.
+bool32 IsEncounterBlockingBalls(void);
+
+// The catch rate to use instead of the species' own, or ENC_CATCH_RATE_NONE for no override
+// (ComputeCaptureOdds, battle_script_commands.c).
+u32 GetEncounterCatchRate(void);
+
+// TRUE if battler currently has every ENC_IMMUNE_* bit in immunity. Callers pass one bit; the
+// engine hooks that consult this are the OHKO accuracy check (battle_util.c), fixed-damage
+// calculation (battle_util.c), Pain Split (battle_script_commands.c), Destiny Bond
+// (battle_move_resolution.c) and Perish Song (battle_end_turn.c).
+bool32 DoesEncounterGrantImmunity(enum BattlerId battler, u32 immunity);
+
+// Setters behind encsetdamagereduction / encsetimmunity. Both replace the battler's current value
+// outright (0 clears it) and assert on an out-of-range argument rather than silently truncating.
+void SetEncounterDamageReduction(enum BattlerId battler, u32 percent);
+void SetEncounterImmunities(enum BattlerId battler, u32 immunities);
 
 #if TESTING
 // Overrides GetEncounter's id-indexed lookup so tests can supply their own trigger

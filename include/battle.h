@@ -619,7 +619,21 @@ struct EncounterRuntime
     // frames waiting on the health-bar controller handshake - a plain C local can't survive that.
     u32 changeHpRemaining;                      // bitmask of battlers the current CHANGE_HP hasn't done yet
     s16 changeHpAmount;                         // its amount arg; positive = heal, negative = damage
+    u8  changeHpMode;                           // enum EncounterAmountMode; PERCENT reads amount as % of max HP
+    // Per-battler combat modifiers. Seeded from the encounter's properties at ENC_ON_BATTLE_START
+    // (boss only) and changed afterwards by encsetdamagereduction / encsetimmunity.
+    u8 damageReduction[MAX_BATTLERS_COUNT];     // percent 0..ENC_MAX_DAMAGE_REDUCTION
+    u8 immunities[MAX_BATTLERS_COUNT];          // ENC_IMMUNE_* bits
+    u8 ballPolicy;                              // enum EncounterBallPolicy
+    u8 catchRate;                               // ENC_CATCH_RATE_NONE, or a catch rate to use instead of the species'
 };
+
+// Scales damage aimed at battler by its encounter damage reduction, floored at 1 so a reduced hit
+// is never silently turned into a no-op. Returns damage unchanged with no encounter active, with no
+// reduction set, or for a heal (a non-positive amount). Implemented in src/battle_encounter.c;
+// declared here because SetPassiveDamageAmount below is the choke point every passive HP tick goes
+// through, and battle_encounter.h can't be included from this header.
+s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage);
 
 // Cleared at the beginning of the battle. Fields need to be cleared when needed manually otherwise.
 struct BattleStruct
@@ -1242,6 +1256,7 @@ static inline void SetPassiveDamageAmount(enum BattlerId battler, s32 value)
 {
     if (value == 0)
         value = 1;
+    value = ApplyEncounterDamageReduction(battler, value);
     gBattleStruct->passiveHpUpdate[battler] = value;
 }
 

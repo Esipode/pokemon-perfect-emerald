@@ -991,3 +991,30 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
 
+LittlerootTown_EventScript_EncounterTest::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_BULBASAUR, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_LEGENDARY_BARRIER
+	setwildbattle SPECIES_BULBASAUR, 40
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	releaseall
+	end
+
+LittlerootTown_EventScript_EncounterTest2::
+	lock
+	setbattleencounter ENCOUNTER_STORM_HERALD
+	trainerbattle_single TRAINER_SAWYER_1, LittlerootTown_Text_EncounterTestIntro, LittlerootTown_Text_EncounterTestEnd
+	releaseall
+	end
+
+LittlerootTown_Text_EncounterTestIntro:
+	.string "This is the battle intro text.$"
+
+LittlerootTown_Text_EncounterTestEnd:
+	.string "This is the battle end text.$"

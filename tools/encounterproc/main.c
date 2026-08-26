@@ -1,8 +1,8 @@
 /* encounterproc
- * Parses the '.encounter' authoring format (Encounter / Trigger / Conditions blocks) into the
- * C initializers 'src/battle_encounter.c' expects: struct EncounterCondition, struct
- * EncounterTrigger, struct Encounter, gEncounters[]. See include/battle_encounter.h and
- * include/constants/battle_encounter.h for what those structs mean at runtime.
+ * Parses the '.encounter' authoring format (Encounter / Properties / Trigger / Conditions blocks)
+ * into the C initializers 'src/battle_encounter.c' expects: struct EncounterCondition, struct
+ * EncounterTrigger, struct EncounterProperties, struct Encounter, gEncounters[]. See
+ * include/battle_encounter.h and include/constants/battle_encounter.h for what those mean at runtime.
  *
  * Infrastructure (String/Token/Parser, the match_* primitives, show_parse_error) is copied from
  * tools/trainerproc/main.c, which solves the same "readable text -> C initializer, errors point
@@ -30,6 +30,8 @@
 #define MAX_VARS_PER_ENCOUNTER        16  // matches MAX_ENCOUNTER_VARS
 #define MAX_COND_DEPTH                 4  // matches MAX_ENCOUNTER_COND_DEPTH
 #define MAX_COND_LINES                256
+#define MAX_ENCOUNTER_LEVEL          1000  // matches MAX_LEVEL (constants/pokemon.h)
+#define MAX_DAMAGE_REDUCTION           99  // matches ENC_MAX_DAMAGE_REDUCTION
 #define ARG_EXPR_N                    128
 #define COND_LINE_N                   256
 
@@ -410,6 +412,18 @@ struct Trigger
     int trigger_keyword_line;        // for the TESTING source-location table
 };
 
+// The 'Properties:' block, one field per struct EncounterProperties member (include/
+// battle_encounter.h). Each holds the C expression to emit; parse_encounter seeds them with the
+// "change nothing" defaults, so an encounter with no Properties: block emits an inert initializer.
+struct Properties
+{
+    char level[ARG_EXPR_N];
+    char catch_rate[ARG_EXPR_N];
+    char ball_policy[ARG_EXPR_N];
+    char damage_reduction[ARG_EXPR_N];
+    char immunities[ARG_EXPR_N];
+};
+
 struct EncounterDef
 {
     struct Token name;
@@ -420,6 +434,9 @@ struct EncounterDef
 
     struct VarEntry vars[MAX_VARS_PER_ENCOUNTER];
     int vars_n;
+
+    struct Properties properties;
+    bool has_properties;
 };
 
 struct Parsed
@@ -503,6 +520,25 @@ static bool flag_const(const struct Token *t, const char **out)
 {
     if (is_literal_token(t, "Once"))    { *out = "ENC_TRIGGER_ONCE";     return true; }
     if (is_literal_token(t, "OnEnter")) { *out = "ENC_TRIGGER_ON_ENTER"; return true; }
+    return false;
+}
+
+static bool ball_policy_const(const struct Token *t, const char **out)
+{
+    if (is_literal_token(t, "Default")) { *out = "ENC_BALLS_DEFAULT"; return true; }
+    if (is_literal_token(t, "Blocked")) { *out = "ENC_BALLS_BLOCKED"; return true; }
+    if (is_literal_token(t, "Allowed")) { *out = "ENC_BALLS_ALLOWED"; return true; }
+    return false;
+}
+
+static bool immunity_const(const struct Token *t, const char **out)
+{
+    if (is_literal_token(t, "None"))        { *out = "0";                       return true; }
+    if (is_literal_token(t, "Ohko"))        { *out = "ENC_IMMUNE_OHKO";         return true; }
+    if (is_literal_token(t, "FixedDamage")) { *out = "ENC_IMMUNE_FIXED_DAMAGE"; return true; }
+    if (is_literal_token(t, "HpSwap"))      { *out = "ENC_IMMUNE_HP_SWAP";      return true; }
+    if (is_literal_token(t, "SharedKo"))    { *out = "ENC_IMMUNE_SHARED_KO";    return true; }
+    if (is_literal_token(t, "All"))         { *out = "ENC_IMMUNE_ALL";          return true; }
     return false;
 }
 
@@ -856,6 +892,174 @@ static bool parse_flags(struct Parser *p, char *flags_expr)
     return true;
 }
 
+// Parses a comma-separated 'Immunities:' list into an OR of ENC_IMMUNE_* constants.
+static bool parse_immunities(struct Parser *p, char *expr)
+{
+    bool first = true;
+
+    strcpy(expr, "0");
+    for (;;)
+    {
+        skip_whitespace(p);
+        struct SourceLocation loc = p->location;
+        struct Token id;
+        if (!match_c_identifier(p, &id))
+            return set_show_parse_error(p, loc, "expected an immunity name");
+
+        const char *name;
+        if (!immunity_const(&id, &name))
+            return set_show_parse_error(p, id.location,
+                "unknown immunity (expected None, Ohko, FixedDamage, HpSwap, SharedKo, or All)");
+
+        if (first)
+        {
+            strcpy(expr, name);
+            first = false;
+        }
+        else
+        {
+            strcat(expr, " | ");
+            strcat(expr, name);
+        }
+
+        skip_whitespace(p);
+        if (match_exact(p, ","))
+            continue;
+        break;
+    }
+
+    if (!match_eol(p))
+        return set_show_parse_error(p, p->location, "unexpected character after immunities");
+    return true;
+}
+
+// Parses one indented 'Key: value' line of a 'Properties:' block. Unlike a condition's right-hand
+// side, these are a closed vocabulary - each one feeds a fixed-width field of struct
+// EncounterProperties, so an out-of-range number is caught here rather than truncated silently.
+__attribute__((warn_unused_result))
+static bool parse_property(struct Parser *p, struct EncounterDef *enc, const struct Token *key)
+{
+    struct Properties *props = &enc->properties;
+    int value;
+
+    if (is_literal_token(key, "Level"))
+    {
+        skip_whitespace(p);
+        struct Parser p_ = *p;
+        struct Token id;
+        if (match_c_identifier(&p_, &id))
+        {
+            if (!is_literal_token(&id, "LevelCap"))
+                return set_show_parse_error(p, id.location, "expected a level or 'LevelCap'");
+            strcpy(props->level, "ENC_LEVEL_CAP");
+            *p = p_;
+        }
+        else if (!match_int(p, &value))
+        {
+            return set_show_parse_error(p, p->location, "expected a level or 'LevelCap'");
+        }
+        else if (value < 1 || value > MAX_ENCOUNTER_LEVEL)
+        {
+            return set_show_parse_error(p, p->location, "level must be between 1 and MAX_LEVEL");
+        }
+        else
+        {
+            snprintf(props->level, ARG_EXPR_N, "%d", value);
+        }
+    }
+    else if (is_literal_token(key, "CatchRate"))
+    {
+        skip_whitespace(p);
+        if (!match_int(p, &value))
+            return set_show_parse_error(p, p->location, "expected an integer");
+        if (value < 0 || value > 255)
+            return set_show_parse_error(p, p->location, "catch rate must be between 0 and 255");
+        snprintf(props->catch_rate, ARG_EXPR_N, "%d", value);
+    }
+    else if (is_literal_token(key, "Balls"))
+    {
+        skip_whitespace(p);
+        struct SourceLocation loc = p->location;
+        struct Token id;
+        const char *name;
+        if (!match_c_identifier(p, &id))
+            return set_show_parse_error(p, loc, "expected a ball policy");
+        if (!ball_policy_const(&id, &name))
+            return set_show_parse_error(p, id.location, "unknown ball policy (expected Default, Blocked, or Allowed)");
+        strcpy(props->ball_policy, name);
+    }
+    else if (is_literal_token(key, "DamageReduction"))
+    {
+        skip_whitespace(p);
+        if (!match_int(p, &value))
+            return set_show_parse_error(p, p->location, "expected an integer");
+        if (value < 0 || value > MAX_DAMAGE_REDUCTION)
+            return set_show_parse_error(p, p->location, "damage reduction must be between 0 and 99 percent");
+        snprintf(props->damage_reduction, ARG_EXPR_N, "%d", value);
+    }
+    else if (is_literal_token(key, "Immunities"))
+    {
+        return parse_immunities(p, props->immunities);
+    }
+    else
+    {
+        return set_show_parse_error(p, key->location,
+            "expected one of 'Level', 'CatchRate', 'Balls', 'DamageReduction', or 'Immunities'");
+    }
+
+    skip_whitespace(p);
+    if (!match_eol(p))
+        return set_show_parse_error(p, p->location, "unexpected character after property value");
+    return true;
+}
+
+// Parses the 'Properties:' block - indented 'Key: value' lines, ending at the first line that
+// isn't indented further than 'Properties:' itself.
+static void parse_properties(struct Parser *p, struct EncounterDef *enc, bool *any_error)
+{
+    int indent;
+
+    if (!peek_indent_after_blanks(p, &indent) || indent == 0)
+    {
+        *any_error = !set_show_parse_error(p, p->location, "expected an indented property after 'Properties:'");
+        return;
+    }
+
+    for (;;)
+    {
+        int next_indent;
+        while (match_empty_line(p)) {}
+        if (match_eof(p))
+            break;
+        if (!peek_indent_after_blanks(p, &next_indent) || next_indent < indent)
+            break;
+
+        skip_whitespace(p);
+        struct Token key;
+        struct SourceLocation loc = p->location;
+        if (!match_c_identifier(p, &key))
+        {
+            *any_error = !set_show_parse_error(p, loc, "expected a property name");
+            skip_line(p);
+            continue;
+        }
+        skip_whitespace(p);
+        if (!match_exact(p, ":"))
+        {
+            *any_error = !set_show_parse_error(p, p->location, "expected ':' after a property name");
+            skip_line(p);
+            continue;
+        }
+        if (!parse_property(p, enc, &key))
+        {
+            *any_error = true;
+            skip_line(p);
+        }
+    }
+
+    enc->has_properties = true;
+}
+
 // Parses one 'Trigger: <Checkpoint>' block and its attributes, up to (not including) the next
 // 'Trigger:'/'Encounter:' line.
 __attribute__((warn_unused_result))
@@ -990,6 +1194,14 @@ static bool parse_encounter(struct Parser *p, struct EncounterDef *enc)
     // (32 embedded triggers) is worse, around 70KB.
     memset(enc, 0, sizeof(*enc));
 
+    // "change nothing" defaults, so an encounter without a Properties: block still emits a valid
+    // (and inert) struct EncounterProperties initializer.
+    strcpy(enc->properties.level, "ENC_LEVEL_NONE");
+    strcpy(enc->properties.catch_rate, "ENC_CATCH_RATE_NONE");
+    strcpy(enc->properties.ball_policy, "ENC_BALLS_DEFAULT");
+    strcpy(enc->properties.damage_reduction, "0");
+    strcpy(enc->properties.immunities, "0");
+
     if (!match_exact(p, "Encounter"))
         return false;
     skip_whitespace(p);
@@ -1015,16 +1227,43 @@ static bool parse_encounter(struct Parser *p, struct EncounterDef *enc)
         struct Token key;
         if (!match_c_identifier(&p_, &key))
         {
-            any_error = !set_show_parse_error(p, p->location, "expected 'Trigger:' or 'Encounter:'");
+            any_error = !set_show_parse_error(p, p->location, "expected 'Trigger:', 'Properties:', or 'Encounter:'");
             skip_line(p);
             continue;
         }
         if (is_literal_token(&key, "Encounter"))
             break; // next encounter; let the top-level loop handle it
 
+        if (is_literal_token(&key, "Properties"))
+        {
+            skip_whitespace(&p_);
+            if (!match_exact(&p_, ":"))
+            {
+                any_error = !set_show_parse_error(p, p_.location, "expected ':' after 'Properties'");
+                skip_line(p);
+                continue;
+            }
+            skip_whitespace(&p_);
+            if (!match_eol(&p_))
+            {
+                any_error = !set_show_parse_error(p, p_.location, "unexpected character after 'Properties:'");
+                skip_line(p);
+                continue;
+            }
+            if (enc->has_properties)
+            {
+                any_error = !set_show_parse_error(p, key.location, "this encounter already has a 'Properties:' block");
+                skip_line(p);
+                continue;
+            }
+            *p = p_;
+            parse_properties(p, enc, &any_error);
+            continue;
+        }
+
         if (!is_literal_token(&key, "Trigger"))
         {
-            any_error = !set_show_parse_error(p, key.location, "expected 'Trigger:' or 'Encounter:'");
+            any_error = !set_show_parse_error(p, key.location, "expected 'Trigger:', 'Properties:', or 'Encounter:'");
             skip_line(p);
             continue;
         }
@@ -1216,10 +1455,18 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
         struct EncounterDef *enc = &parsed->encounters[i];
         char enc_const[64];
         constant_from_token("ENCOUNTER", &enc->name, enc_const, sizeof(enc_const));
-        fprintf(f, "    [%s] = { sTriggers_%.*s, ARRAY_COUNT(sTriggers_%.*s) },\n",
-                enc_const,
-                enc->name.end - enc->name.begin, &enc->name.source->buffer[enc->name.begin],
+        fprintf(f, "    [%s] =\n    {\n", enc_const);
+        fprintf(f, "        .triggers = sTriggers_%.*s,\n",
                 enc->name.end - enc->name.begin, &enc->name.source->buffer[enc->name.begin]);
+        fprintf(f, "        .triggerCount = ARRAY_COUNT(sTriggers_%.*s),\n",
+                enc->name.end - enc->name.begin, &enc->name.source->buffer[enc->name.begin]);
+        fprintf(f, "        .properties =\n        {\n");
+        fprintf(f, "            .level = %s,\n", enc->properties.level);
+        fprintf(f, "            .catchRate = %s,\n", enc->properties.catch_rate);
+        fprintf(f, "            .ballPolicy = %s,\n", enc->properties.ball_policy);
+        fprintf(f, "            .damageReduction = %s,\n", enc->properties.damage_reduction);
+        fprintf(f, "            .immunities = %s,\n", enc->properties.immunities);
+        fprintf(f, "        },\n    },\n");
     }
     fprintf(f, "};\n");
 }

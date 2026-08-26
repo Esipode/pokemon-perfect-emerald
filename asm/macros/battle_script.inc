@@ -1160,13 +1160,18 @@
 @ Encounter command vocabulary (constants/battle_encounter.h's enum EncounterTarget).
 @ callnative-first - none of these are real opcodes.
 
-	@ Changes HP for every battler \target resolves to by amount (positive = heal, negative =
+	@ Changes HP for every battler \target resolves to by \amount (positive = heal, negative =
 	@ damage), reusing the same PASSIVE_HP_UPDATE healthbarupdate/datahpupdate opcodes Leftovers
 	@ and status damage use, once per targeted battler so the health bar still animates for each.
-	.macro enchangehp target:req, amount:req
+	@ \mode is ENC_AMOUNT_FIXED (raw HP, the default) or ENC_AMOUNT_PERCENT (percent of that
+	@ battler's own max HP - the portable choice when the boss's level isn't fixed).
+	@ Scripted damage ignores the target's encounter damage reduction: the number here is the
+	@ encounter's own, not something for another encounter rule to rescale.
+	.macro enchangehp target:req, amount:req, mode=ENC_AMOUNT_FIXED
 	callnative BS_EncounterChangeHpBegin
 	.byte \target
 	.2byte \amount
+	.byte \mode
 1:
 	callnative BS_EncounterChangeHpStep
 	.4byte 2f
@@ -1184,6 +1189,51 @@
 	.byte \target
 	.byte \stat
 	.byte \stages
+	.endm
+
+	@ Moves the raw battle stat (not the stage) of \stat by \amount for every battler \target
+	@ resolves to. \mode is ENC_AMOUNT_FIXED (raw points, the default) or ENC_AMOUNT_PERCENT
+	@ (percent of the battler's current value for that stat). \stat must be STAT_ATK, STAT_DEF,
+	@ STAT_SPATK, STAT_SPDEF or STAT_SPEED - there is no battle stat behind STAT_ACC/STAT_EVASION.
+	@ Silent, like encchangestat; unlike a stage change, Haze and switching out don't undo it.
+	.macro encchangestatvalue target:req, stat:req, amount:req, mode=ENC_AMOUNT_FIXED
+	callnative BS_EncounterChangeStatValue
+	.byte \target
+	.byte \stat
+	.2byte \amount
+	.byte \mode
+	.endm
+
+	@ Sets how much damage every battler \target resolves to takes, as a percentage reduction:
+	@ 70 means it takes 70% less from every source that goes through the damage formula or a
+	@ passive HP tick. Replaces the current value; 0 clears it. Max ENC_MAX_DAMAGE_REDUCTION.
+	.macro encsetdamagereduction target:req, percent:req
+	callnative BS_EncounterSetDamageReduction
+	.byte \target
+	.byte \percent
+	.endm
+
+	@ Replaces the ENC_IMMUNE_* mask on every battler \target resolves to (0 clears it). See
+	@ constants/battle_encounter.h for what each bit covers; ENC_IMMUNE_ALL sets every one.
+	.macro encsetimmunity target:req, immunities:req
+	callnative BS_EncounterSetImmunity
+	.byte \target
+	.byte \immunities
+	.endm
+
+	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or
+	@ ENC_BALLS_ALLOWED. ALLOWED only lifts this encounter's own block - it never makes a battle
+	@ catchable that wouldn't be otherwise (trainer battle, Ghost without a Silph Scope, ...).
+	.macro encsetballs policy:req
+	callnative BS_EncounterSetBallPolicy
+	.byte \policy
+	.endm
+
+	@ Replaces the catch rate used for this battle's wild Pokemon; ENC_CATCH_RATE_NONE restores
+	@ the species' own. Higher is easier to catch, on the same 0-255 scale as species data.
+	.macro encsetcatchrate catchRate:req
+	callnative BS_EncounterSetCatchRate
+	.byte \catchRate
 	.endm
 
 	@ Forces \target (must resolve to exactly one battler) to Mega Evolve outside the normal

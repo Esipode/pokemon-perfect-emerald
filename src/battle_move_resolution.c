@@ -3783,6 +3783,9 @@ static enum MoveEndResult MoveEndFaintBlock(struct BattleCalcValues *cv)
              && IsBattlerTurnDamaged(cv->battlerDef, EXCLUDING_SUBSTITUTES)
              && IsBattlerAlive(cv->battlerAtk)
              && GetActiveGimmick(cv->battlerAtk) != GIMMICK_DYNAMAX
+             // Checked on the attacker, not the target: SHARED_KO protects the battler Destiny Bond
+             // would drag down, which is whoever landed the KO.
+             && !DoesEncounterGrantImmunity(cv->battlerAtk, ENC_IMMUNE_SHARED_KO)
              && !IsBattlerAlly(cv->battlerAtk, cv->battlerDef))
             {
                 gBattleStruct->passiveHpUpdate[cv->battlerAtk] = gBattleMons[cv->battlerAtk].hp;

@@ -526,6 +526,7 @@ extern const u8 BattleScript_Nuzlocke_CannotCatch[];
 extern const u8 BattleScript_Draft_CannotCatch[];
 extern const u8 BattleScript_MonoType_CannotCatch[];
 extern const u8 BattleScript_MonoGen_CannotCatch[];
+extern const u8 BattleScript_EncounterCannotCatch[];
 extern const u8 BattleScript_RotationModeSwitch[];
 extern const u8 BattleScript_WildBattleVictory[];
 extern const u8 BattleScript_BelchFails[];

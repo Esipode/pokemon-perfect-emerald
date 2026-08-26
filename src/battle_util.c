@@ -7846,6 +7846,18 @@ s32 DoFixedDamageMoveCalc(struct DamageContext *ctx)
     if (dmg == INT32_MAX)
         return dmg;
 
+    // dmg != INT32_MAX means one of the effects above produced a damage figure the damage formula
+    // never sees - and so one an encounter's damage reduction never scales. Blocked outright rather
+    // than reduced; EFFECT_OHKO has its own flag because it also has its own "no effect" path
+    // (DoesOHKOMoveMissTarget below).
+    if (GetMoveEffect(ctx->move) != EFFECT_OHKO
+     && DoesEncounterGrantImmunity(ctx->battlerDef, ENC_IMMUNE_FIXED_DAMAGE))
+    {
+        if (!ctx->aiCalc)
+            gBattleStruct->moveResultFlags[ctx->battlerDef] |= MOVE_RESULT_DOESNT_AFFECT_FOE;
+        return 0;
+    }
+
     gBattleStruct->moveResultFlags[ctx->battlerDef] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_MOSTLY_INEFFECTIVE | MOVE_RESULT_SUPER_EFFECTIVE | MOVE_RESULT_EXTREMELY_EFFECTIVE);
     gSpecialStatuses[ctx->battlerDef].criticalHit = FALSE;
 
@@ -8207,6 +8219,11 @@ s32 CalculateMoveDamage(struct DamageContext *ctx)
         damage = DoFutureSightAttackDamageCalc(ctx);
     else
         damage = DoMoveDamageCalc(ctx);
+
+    // Before GetAdjustedDamage, so Endure/Sturdy/Focus Sash all judge "would this KO?" against the
+    // damage the target actually takes. The AI shares this path deliberately: a boss it can't dent
+    // should read as one when it picks a move.
+    damage = ApplyEncounterDamageReduction(ctx->battlerDef, damage);
 
     return GetAdjustedDamage(ctx, damage);
 }
@@ -10654,6 +10671,13 @@ bool32 DoesOHKOMoveMissTarget(struct BattleCalcValues *cv)
 
     // Dynamaxed Pokemon cannot be hit by OHKO moves.
     if (GetActiveGimmick(cv->battlerDef) == GIMMICK_DYNAMAX)
+    {
+        gBattleStruct->moveResultFlags[cv->battlerDef] |= MOVE_RESULT_ONE_HIT_KO_NO_AFFECT;
+        return TRUE;
+    }
+
+    // Same treatment for an encounter's OHKO immunity: "it doesn't affect", not a miss.
+    if (DoesEncounterGrantImmunity(cv->battlerDef, ENC_IMMUNE_OHKO))
     {
         gBattleStruct->moveResultFlags[cv->battlerDef] |= MOVE_RESULT_ONE_HIT_KO_NO_AFFECT;
         return TRUE;

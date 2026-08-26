@@ -4,6 +4,7 @@
 #include "battle_hold_effects.h"
 #include "battle_setup.h"
 #include "battle_util.h"
+#include "battle_encounter.h"
 #include "battle_controllers.h"
 #include "battle_ai_record.h"
 #include "battle_stat_change.h"
@@ -1053,6 +1054,16 @@ static bool32 HandleEndTurnPerishSong(enum BattlerId battler)
 
     gBattleStruct->eventState.endTurnBattler++;
 
+    // Perish Song lands on every battler at once, so refusing it at cast time would spare the user
+    // as well - an encounter's SHARED_KO immunity instead drops the count already on the battler.
+    if (gBattleMons[battler].volatiles.perishSong
+     && DoesEncounterGrantImmunity(battler, ENC_IMMUNE_SHARED_KO))
+    {
+        gBattleMons[battler].volatiles.perishSong = FALSE;
+        gBattleMons[battler].volatiles.perishSongTimer = 0;
+        return FALSE;
+    }
+
     if (gBattleMons[battler].volatiles.perishSong
      && IsBattlerPresent(battler))
     {
@@ -1060,7 +1071,9 @@ static bool32 HandleEndTurnPerishSong(enum BattlerId battler)
         if (gBattleMons[battler].volatiles.perishSongTimer == 0)
         {
             gBattleMons[battler].volatiles.perishSong = FALSE;
-            SetPassiveDamageAmount(battler, gBattleMons[battler].hp);
+            // Direct write, not SetPassiveDamageAmount: Perish Song is a lethal effect rather than
+            // a damage source, so an encounter's damage reduction must not leave the battler alive.
+            gBattleStruct->passiveHpUpdate[battler] = gBattleMons[battler].hp;
             BattleScriptCall(BattleScript_PerishSongTakesLife);
         }
         else

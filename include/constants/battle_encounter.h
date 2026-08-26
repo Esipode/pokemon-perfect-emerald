@@ -137,6 +137,55 @@ enum EncounterTarget
     ENC_TARGET_COUNT,
 };
 
+// --- Encounter properties (battle-start configuration) ------------------------------------------
+// Authored in a '.encounter' file's 'Properties:' block and emitted into struct EncounterProperties
+// (include/battle_encounter.h). These configure the battle itself rather than react to it, so they
+// are applied once at battle start instead of by a trigger's script; the matching enc* commands
+// (asm/macros/battle_script.inc) change the same state mid-battle where that makes sense.
+
+#define ENC_LEVEL_NONE  0        // no level override; the opponents keep the level they were built with
+#define ENC_LEVEL_CAP   0xFFFF   // set every opponent to GetProgressionLevelCap()
+
+#define ENC_CATCH_RATE_NONE 0    // no override; the species' own catch rate applies
+
+// Whether the player may throw a Poke Ball. ENC_BALLS_ALLOWED only lifts an encounter's own block -
+// it never overrides a rule the battle itself imposes (trainer battle, Ghost without a Silph Scope,
+// Nuzlocke, ...). The usual legendary pattern is to start BLOCKED and have the boss's final-phase
+// script switch to ALLOWED once it's weakened enough to be worth catching.
+enum EncounterBallPolicy
+{
+    ENC_BALLS_DEFAULT,   // whatever the battle would normally allow
+    ENC_BALLS_BLOCKED,
+    ENC_BALLS_ALLOWED,
+};
+
+// Move classes an encounter can make a battler immune to. Each one either ignores the damage
+// formula (and so ignores an encounter's damage reduction) or ends a battler regardless of its HP -
+// the two ways a player can otherwise skip straight past a scripted boss fight.
+#define ENC_IMMUNE_OHKO         (1 << 0)  // EFFECT_OHKO: Sheer Cold, Fissure, Guillotine, Horn Drill
+#define ENC_IMMUNE_FIXED_DAMAGE (1 << 1)  // damage that bypasses the damage formula: Super Fang, Night
+                                          // Shade, Seismic Toss, Dragon Rage, Sonic Boom, Psywave,
+                                          // Endeavor, Final Gambit, Counter/Mirror Coat/Metal Burst, Bide
+#define ENC_IMMUNE_HP_SWAP      (1 << 2)  // Pain Split
+#define ENC_IMMUNE_SHARED_KO    (1 << 3)  // Destiny Bond, Perish Song
+#define ENC_IMMUNE_ALL          (ENC_IMMUNE_OHKO | ENC_IMMUNE_FIXED_DAMAGE | ENC_IMMUNE_HP_SWAP | ENC_IMMUNE_SHARED_KO)
+
+// Damage reduction is a percentage: 70 means the battler takes 70% less damage from every source
+// that runs through the damage formula or a passive HP tick. Capped below 100 deliberately - a
+// battler nothing can damage isn't a fight, and a move class that must not work at all belongs in
+// ENC_IMMUNE_* above.
+#define ENC_MAX_DAMAGE_REDUCTION 99
+
+// How an amount argument is read by the commands that take one (enchangehp, encchangestatvalue).
+// PERCENT is relative to the battler's max HP / current stat value, which is what a scripted
+// encounter usually wants: the level the boss ends up at isn't known when the script is written
+// (level caps, New Game Plus offsets), so a fixed HP number can't be balanced against it.
+enum EncounterAmountMode
+{
+    ENC_AMOUNT_FIXED,
+    ENC_AMOUNT_PERCENT,
+};
+
 // ENC_OP_STAT_STAGE's arg packs a battler ref and an enum Stat into one u16 - both are small enough
 // to share it.
 #define ENC_PACK_STAT_ARG(battlerRef, stat) ((battlerRef) | ((stat) << 3))

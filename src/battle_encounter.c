@@ -1,5 +1,7 @@
 #include "global.h"
 #include "battle_encounter.h"
+#include "caps.h"
+#include "pokemon.h"
 #include "data/battle_encounters.h"
 
 // firedTriggers is a u32 bitmap; one bit per trigger.
@@ -459,6 +461,10 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
     {
         for (u32 i = 0; i < MAX_BATTLERS_COUNT; i++)
             runtime->prevHp[i] = gBattleMons[i].hp;
+
+        // Seed the encounter's properties here too - the earliest point every battler exists, and
+        // before any trigger's script can run and change what the properties would have set.
+        ApplyEncounterBattlerProperties();
     }
 
     assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
@@ -597,6 +603,166 @@ EWRAM_DATA u8 gEncounterVars[MAX_ENCOUNTER_VARS] = {0};
 void ResetEncounterVars(void)
 {
     memset(gEncounterVars, 0, sizeof(gEncounterVars));
+}
+
+// --- Encounter properties ------------------------------------------------------------------------
+
+// The properties of the encounter this battle is running, or NULL when there isn't one. Every
+// property hook goes through this, so an inactive/invalid encounter costs one comparison and
+// changes nothing.
+static const struct EncounterProperties *GetEncounterProperties(void)
+{
+    const struct Encounter *encounter;
+
+    if (!IsEncounterActive())
+        return NULL;
+
+    encounter = GetEncounter(gBattleStruct->encounter.id);
+    if (encounter == NULL)
+        return NULL;
+
+    return &encounter->properties;
+}
+
+// Rebuilds one party Pokemon at level. Experience is reset to the exact threshold for that level
+// (the same GetExperienceAtLevel call CreateBoxMon uses) so the level and the experience bar agree,
+// then stats are recalculated and HP refilled - the mon is being defined at this level, not healed
+// or levelled up mid-run.
+static void SetPartyMonLevel(struct Pokemon *mon, u16 level)
+{
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    u32 exp = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level);
+    u16 hp;
+
+    SetMonData(mon, MON_DATA_EXP, &exp);
+    SetMonData(mon, MON_DATA_LEVEL, &level);
+    CalculateMonStats(mon);
+
+    hp = GetMonData(mon, MON_DATA_MAX_HP, NULL);
+    SetMonData(mon, MON_DATA_HP, &hp);
+}
+
+// The opponent parties, and only those - enum BattleTrainer interleaves B_TRAINER_PARTNER between
+// the two opponent slots, so this can't be a plain range over the enum.
+static const enum BattleTrainer sOpponentTrainers[] = { B_TRAINER_OPPONENT_A, B_TRAINER_OPPONENT_B };
+
+void ApplyEncounterLevelOverride(void)
+{
+    const struct EncounterProperties *properties = GetEncounterProperties();
+    u32 level;
+
+    if (properties == NULL || properties->level == ENC_LEVEL_NONE)
+        return;
+
+    // GetProgressionLevelCap, not GetCurrentLevelCap: a player who turned their own cap off gets
+    // MAX_LEVEL back from the latter, which would put the boss thousands of levels above them.
+    // The progression cap is what the encounter is actually being balanced against (caps.c).
+    level = (properties->level == ENC_LEVEL_CAP) ? GetProgressionLevelCap() : properties->level;
+    if (level < 1)
+        level = 1;
+    else if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    for (u32 t = 0; t < ARRAY_COUNT(sOpponentTrainers); t++)
+    {
+        for (u32 i = 0; i < PARTY_SIZE; i++)
+        {
+            struct Pokemon *mon = &gParties[sOpponentTrainers[t]][i];
+            if (GetMonData(mon, MON_DATA_SPECIES, NULL) == SPECIES_NONE
+             || GetMonData(mon, MON_DATA_IS_EGG, NULL))
+                continue;
+            SetPartyMonLevel(mon, level);
+        }
+    }
+}
+
+void ApplyEncounterBattlerProperties(void)
+{
+    const struct EncounterProperties *properties = GetEncounterProperties();
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    u8 boss;
+
+    if (properties == NULL)
+        return;
+
+    runtime->ballPolicy = properties->ballPolicy;
+    runtime->catchRate = properties->catchRate;
+
+    if (properties->damageReduction == 0 && properties->immunities == 0)
+        return;
+
+    // Properties describe the encounter's subject, so they seed the boss and nobody else. A script
+    // that wants a modifier on any other battler sets it with encsetdamagereduction/encsetimmunity.
+    if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+        return;
+
+    SetEncounterDamageReduction(boss, properties->damageReduction);
+    SetEncounterImmunities(boss, properties->immunities);
+}
+
+void SetEncounterDamageReduction(enum BattlerId battler, u32 percent)
+{
+    assertf(percent <= ENC_MAX_DAMAGE_REDUCTION,
+            "encounter %d: damage reduction %d above the maximum of %d percent",
+            gBattleStruct->encounter.id, percent, ENC_MAX_DAMAGE_REDUCTION)
+    {
+        percent = ENC_MAX_DAMAGE_REDUCTION;
+    }
+    gBattleStruct->encounter.damageReduction[battler] = percent;
+}
+
+void SetEncounterImmunities(enum BattlerId battler, u32 immunities)
+{
+    assertf((immunities & ~ENC_IMMUNE_ALL) == 0,
+            "encounter %d: unknown immunity bits %d", gBattleStruct->encounter.id, immunities & ~ENC_IMMUNE_ALL)
+    {
+        immunities &= ENC_IMMUNE_ALL;
+    }
+    gBattleStruct->encounter.immunities[battler] = immunities;
+}
+
+s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
+{
+    u32 percent;
+
+    // A non-positive amount is a heal (SetPassiveDamageAmount's callers encode healing as a
+    // negative), and reducing a heal is never what "takes less damage" means. The bounds check
+    // covers struct DamageContext's 3-bit battler fields, which are wider than MAX_BATTLERS_COUNT.
+    if (damage <= 0 || battler >= MAX_BATTLERS_COUNT || !IsEncounterActive())
+        return damage;
+
+    percent = gBattleStruct->encounter.damageReduction[battler];
+    if (percent == 0)
+        return damage;
+    if (percent > ENC_MAX_DAMAGE_REDUCTION)
+        percent = ENC_MAX_DAMAGE_REDUCTION;
+
+    damage = damage * (100 - percent) / 100;
+    return (damage < 1) ? 1 : damage;
+}
+
+bool32 DoesEncounterGrantImmunity(enum BattlerId battler, u32 immunity)
+{
+    if (!IsEncounterActive() || battler >= MAX_BATTLERS_COUNT)
+        return FALSE;
+
+    return (gBattleStruct->encounter.immunities[battler] & immunity) == immunity;
+}
+
+bool32 IsEncounterBlockingBalls(void)
+{
+    if (!IsEncounterActive())
+        return FALSE;
+
+    return gBattleStruct->encounter.ballPolicy == ENC_BALLS_BLOCKED;
+}
+
+u32 GetEncounterCatchRate(void)
+{
+    if (!IsEncounterActive())
+        return ENC_CATCH_RATE_NONE;
+
+    return gBattleStruct->encounter.catchRate;
 }
 
 // Set by the overworld script that starts the battle, taken exactly once by battle start.

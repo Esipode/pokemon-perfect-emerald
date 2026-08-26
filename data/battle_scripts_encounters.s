@@ -84,9 +84,24 @@ EncScript_LegendaryBarrier_PhaseTransition::
 	trainerslideout BS_OPPONENT1
 	encchangestat ENC_TARGET_BOSS, STAT_DEF, 3
 	encchangestat ENC_TARGET_BOSS, STAT_SPDEF, 3
+	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT   @ percent, not raw HP: the boss's level (and so its max HP) comes from the Level: property
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL   @ stand-in glow - no general-purpose "shield" anim exists outside move-specific ones
 	printstring STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS
 	waitmessage B_WAIT_TIME_LONG
+	return
+
+// Weakened phase: the boss's damage reduction and its immunities drop away, and the ball block the
+// Properties: block set at battle start is lifted so the player can attempt the catch.
+EncScript_LegendaryBarrier_Weakened::
+	encsetvar 0, 3   @ phase = 3
+	encsetdamagereduction ENC_TARGET_BOSS, 0
+	encsetimmunity ENC_TARGET_BOSS, 0
+	encchangestatvalue ENC_TARGET_BOSS, STAT_DEF, -25, ENC_AMOUNT_PERCENT
+	encsetballs ENC_BALLS_ALLOWED
+	trainerslidein BS_OPPONENT1
+	printstring STRINGID_ENCLEGENDARYWEAKENED
+	waitmessage B_WAIT_TIME_LONG
+	trainerslideout BS_OPPONENT1
 	return
 
 // outline Sec34: a trainer who Mega Evolves their boss once, on a fixed turn, outside the normal
@@ -149,7 +164,7 @@ EncScript_StormHerald_Surge::
 	printstring STRINGID_ENCSTORMHERALDSURGE
 	waitmessage B_WAIT_TIME_LONG
 	trainerslideout BS_OPPONENT1
-	enchangehp ENC_TARGET_BOSS, 20
+	enchangehp ENC_TARGET_BOSS, 60
 	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	return
