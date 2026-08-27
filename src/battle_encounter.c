@@ -2,6 +2,7 @@
 #include "battle_encounter.h"
 #include "caps.h"
 #include "pokemon.h"
+#include "constants/battle_ai.h"
 #include "data/battle_encounters.h"
 
 // firedTriggers is a u32 bitmap; one bit per trigger.
@@ -131,6 +132,17 @@ u32 ResolveEncounterTarget(enum EncounterTarget target)
     }
 }
 
+// TRUE for the set-valued targets. A state-changing command applying one of these skips a
+// fainted/absent battler in the resolved set silently - a group whose membership shifts as
+// battlers faint (a foe KO'd by the same move that triggered an OnMoveEnd checkpoint, before its
+// replacement is in) is normal, unlike naming one dead battler outright, which stays an assert.
+bool32 IsEncounterGroupTarget(enum EncounterTarget target)
+{
+    return target == ENC_TARGET_ALL_FOES
+        || target == ENC_TARGET_ALL_ALLIES
+        || target == ENC_TARGET_ALL_BATTLERS;
+}
+
 // Reads one operand for condition evaluation. See include/battle_encounter.h.
 s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapshot)
 {
@@ -209,6 +221,12 @@ s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapsh
 
     case ENC_OP_EVENT_MOVE:
         return GetEncounterEventField(ENC_EVENT_MOVE, &value) ? value : 0;
+
+    // Reads through ENC_EVENT_MOVE so it inherits that field's per-checkpoint validity mask, and
+    // asserts at the same wrong checkpoints ENC_OP_EVENT_MOVE does. This is the move's base type,
+    // not its runtime type after Normalize/-ate, Electrify or Tera.
+    case ENC_OP_EVENT_MOVE_TYPE:
+        return GetEncounterEventField(ENC_EVENT_MOVE, &value) ? GetMoveType(value) : 0;
 
     case ENC_OP_EVENT_CAUSE:
         return GetEncounterEventField(ENC_EVENT_CAUSE, &value) ? value : 0;
@@ -429,6 +447,8 @@ const struct Encounter *GetEncounter(enum EncounterId id)
     return &gEncounters[id];
 }
 
+static void UpdateEncounterCatchGuard(void);
+
 // Selects the highest-priority (lowest value) eligible trigger for checkpoint, marks it
 // fired if it's ENC_TRIGGER_ONCE, and returns its script. Ties break by table order.
 // Call sites re-invoke this after each returned script runs, re-evaluating against the
@@ -443,14 +463,16 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
     if (!IsEncounterActive())
         return NULL;
 
-    // Entering a new checkpoint resets the runaway guard and clears the event context; repeated
-    // calls for the same checkpoint (the re-evaluation loop) keep accumulating against the guard
-    // and must NOT re-clear the event, or a later pass loses what an earlier pass was reacting to.
+    // Entering a new checkpoint resets the runaway guard. Event-carrying checkpoints have their
+    // context set by the call site immediately before the first dispatch (so pass 1's conditions
+    // can read it), so it must NOT be cleared here for those - only for checkpoints that carry no
+    // event, where a stale field left by a prior checkpoint could otherwise leak into a read.
     if (checkpoint != runtime->checkpoint)
     {
         runtime->checkpoint = checkpoint;
         runtime->scriptsThisCheckpoint = 0;
-        memset(&runtime->event, 0, sizeof(runtime->event));
+        if (checkpoint >= ENC_CHECKPOINT_COUNT || sCheckpointEventFields[checkpoint] == 0)
+            memset(&runtime->event, 0, sizeof(runtime->event));
     }
 
     // ENC_ON_BATTLE_START is dispatched exactly once, and this is its first pass (nothing has
@@ -466,6 +488,11 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
         // before any trigger's script can run and change what the properties would have set.
         ApplyEncounterBattlerProperties();
     }
+
+    // Re-check the catch-window damage guard against HP as of the last checkpoint, before triggers
+    // run: a script this checkpoint may change the boss's reduction, and the guard owns that value
+    // while a Poke Ball can be thrown.
+    UpdateEncounterCatchGuard();
 
     assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
             "encounter %d: %d scripts ran at checkpoint %d - runaway trigger chain?",
@@ -676,6 +703,41 @@ void ApplyEncounterLevelOverride(void)
     }
 }
 
+void ApplyEncounterMoveOverride(void)
+{
+    const struct EncounterProperties *properties = GetEncounterProperties();
+    struct Pokemon *mon = &gParties[B_TRAINER_OPPONENT_A][0];
+
+    if (properties == NULL)
+        return;
+
+    if (GetMonData(mon, MON_DATA_SPECIES, NULL) == SPECIES_NONE
+     || GetMonData(mon, MON_DATA_IS_EGG, NULL))
+        return;
+
+    for (u32 i = 0; i < MAX_MON_MOVES; i++)
+    {
+        u16 move = properties->moves[i];
+        u8 pp;
+
+        if (move == MOVE_NONE)
+            continue;
+
+        // PP is set from the move's own maximum rather than carried over from whatever occupied the
+        // slot, and PP Ups aren't applied - a boss is being defined here, not taught a move.
+        pp = GetMovePP(move);
+        SetMonData(mon, MON_DATA_MOVE1 + i, &move);
+        SetMonData(mon, MON_DATA_PP1 + i, &pp);
+    }
+}
+
+u64 GetEncounterAiFlags(void)
+{
+    const struct EncounterProperties *properties = GetEncounterProperties();
+
+    return (properties != NULL) ? properties->aiFlags : 0;
+}
+
 void ApplyEncounterBattlerProperties(void)
 {
     const struct EncounterProperties *properties = GetEncounterProperties();
@@ -688,27 +750,80 @@ void ApplyEncounterBattlerProperties(void)
     runtime->ballPolicy = properties->ballPolicy;
     runtime->catchRate = properties->catchRate;
 
-    if (properties->damageReduction == 0 && properties->immunities == 0)
+    if (properties->damageReduction == 0 && properties->immunities == 0
+     && !properties->capTypeEffectiveness && !properties->flatToxicDamage)
         return;
 
     // Properties describe the encounter's subject, so they seed the boss and nobody else. A script
-    // that wants a modifier on any other battler sets it with encsetdamagereduction/encsetimmunity.
+    // that wants a modifier on any other battler sets it with encsetdamagereduction/encsetimmunity/
+    // encsetcaptypeeffectiveness/encsetflattoxicdamage.
     if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss))
         return;
 
     SetEncounterDamageReduction(boss, properties->damageReduction);
     SetEncounterImmunities(boss, properties->immunities);
+    SetEncounterCapTypeEffectiveness(boss, properties->capTypeEffectiveness);
+    SetEncounterFlatToxicDamage(boss, properties->flatToxicDamage);
 }
 
 void SetEncounterDamageReduction(enum BattlerId battler, u32 percent)
 {
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    u8 boss = 0;
+
     assertf(percent <= ENC_MAX_DAMAGE_REDUCTION,
             "encounter %d: damage reduction %d above the maximum of %d percent",
             gBattleStruct->encounter.id, percent, ENC_MAX_DAMAGE_REDUCTION)
     {
         percent = ENC_MAX_DAMAGE_REDUCTION;
     }
-    gBattleStruct->encounter.damageReduction[battler] = percent;
+
+    // While the catch-window guard is holding the boss's reduction at the maximum, a script setting
+    // the boss's reduction changes the value the guard will restore, not the live one.
+    if (runtime->catchGuard && ResolveEncounterBattlerRef(ENC_BOSS, &boss) && battler == boss)
+    {
+        runtime->catchGuardDr = percent;
+        return;
+    }
+
+    runtime->damageReduction[battler] = percent;
+}
+
+// The catch-window damage guard, absolute for every encounter rather than a property. While an
+// encounter allows Poke Balls the boss takes the maximum reduced damage so a stray hit - an attack,
+// a status tick, an ability - can't kill the Pokemon the player is trying to catch. Any HP the boss
+// recovers, for any reason, lifts the guard and restores the encounter's own reduction; the guard
+// re-arms once the boss is back in the catchable state at a checkpoint where it hasn't just healed.
+static void UpdateEncounterCatchGuard(void)
+{
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    bool32 catchable = (runtime->ballPolicy == ENC_BALLS_ALLOWED);
+    bool32 healed;
+    u8 boss;
+
+    // Nothing to arm until Poke Balls are allowed, and nothing to lift unless the guard is holding.
+    if (!catchable && !runtime->catchGuard)
+        return;
+
+    if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss) || gBattleMons[boss].hp == 0)
+        return;
+
+    healed = (gBattleMons[boss].hp > runtime->prevHp[boss]);
+
+    if (runtime->catchGuard)
+    {
+        if (healed || !catchable)
+        {
+            runtime->damageReduction[boss] = runtime->catchGuardDr;
+            runtime->catchGuard = FALSE;
+        }
+    }
+    else if (catchable && !healed)
+    {
+        runtime->catchGuardDr = runtime->damageReduction[boss];
+        runtime->damageReduction[boss] = ENC_MAX_DAMAGE_REDUCTION;
+        runtime->catchGuard = TRUE;
+    }
 }
 
 void SetEncounterImmunities(enum BattlerId battler, u32 immunities)
@@ -719,6 +834,32 @@ void SetEncounterImmunities(enum BattlerId battler, u32 immunities)
         immunities &= ENC_IMMUNE_ALL;
     }
     gBattleStruct->encounter.immunities[battler] = immunities;
+}
+
+void SetEncounterCapTypeEffectiveness(enum BattlerId battler, bool32 cap)
+{
+    gBattleStruct->encounter.capTypeEffectiveness[battler] = (cap != FALSE);
+}
+
+bool32 DoesEncounterCapTypeEffectiveness(enum BattlerId battler)
+{
+    if (!IsEncounterActive() || battler >= MAX_BATTLERS_COUNT)
+        return FALSE;
+
+    return gBattleStruct->encounter.capTypeEffectiveness[battler];
+}
+
+void SetEncounterFlatToxicDamage(enum BattlerId battler, bool32 flat)
+{
+    gBattleStruct->encounter.flatToxicDamage[battler] = (flat != FALSE);
+}
+
+bool32 DoesEncounterFlattenToxicDamage(enum BattlerId battler)
+{
+    if (!IsEncounterActive() || battler >= MAX_BATTLERS_COUNT)
+        return FALSE;
+
+    return gBattleStruct->encounter.flatToxicDamage[battler];
 }
 
 s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)

@@ -991,20 +991,10 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
 
+// Debug hook for the Articuno encounter; final placement (Shoal Cave's ice room is the likely
+// permanent home) is a separate decision.
 LittlerootTown_EventScript_EncounterTest::
-	lock
-	faceplayer
-	waitse
-	playmoncry SPECIES_BULBASAUR, CRY_MODE_ENCOUNTER
-	delay 40
-	waitmoncry
-	setbattleencounter ENCOUNTER_LEGENDARY_BARRIER
-	setwildbattle SPECIES_BULBASAUR, 40
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	releaseall
-	end
+	goto LegendaryEncounter_EventScript_Articuno
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

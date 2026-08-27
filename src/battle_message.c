@@ -992,6 +992,33 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCSTORMHERALDINTRO]                  = COMPOUND_STRING("The sky churns as it senses a challenger!"),
     [STRINGID_ENCSTORMHERALDSURGE]                  = COMPOUND_STRING("It calls forth the storm's fury!"),
     [STRINGID_ENCSTORMHERALDDESPERATION]            = COMPOUND_STRING("Cornered, it lashes out with everything it has!"),
+
+    // Articuno ("The Frozen Battlefield").
+    [STRINGID_ENCARTICUNOINTRO]                     = COMPOUND_STRING("Articuno's wings scatter a freezing gale!"),
+    [STRINGID_ENCARTICUNOFROST1]                    = COMPOUND_STRING("Snow begins to fall across the battlefield!"),
+    [STRINGID_ENCARTICUNOFROST2]                    = COMPOUND_STRING("The deepening frost drags at your team's footing!"),
+    [STRINGID_ENCARTICUNOFROST3]                    = COMPOUND_STRING("The ground has turned to sheet ice. Retreat is treacherous!"),
+    [STRINGID_ENCARTICUNOFROZENDOMAIN]              = COMPOUND_STRING("Articuno's FROZEN DOMAIN takes hold! The cold can no longer be driven back!"),
+    [STRINGID_ENCARTICUNOFLAMESPUSHBACK]            = COMPOUND_STRING("The flames drive the frost back!"),
+    [STRINGID_ENCARTICUNOCHILLLIFTS]                = COMPOUND_STRING("Your team shakes off the chill!"),
+    [STRINGID_ENCARTICUNOSNOWCLEARS]                = COMPOUND_STRING("The snow clears from the battlefield!"),
+    [STRINGID_ENCARTICUNOBARRIERUP]                 = COMPOUND_STRING("The swirling frost hardens into an ICE BARRIER around Articuno!"),
+    [STRINGID_ENCARTICUNOBARRIERTHIN]               = COMPOUND_STRING("The frost knits into an ICE BARRIER, but the heat leaves it thin and brittle!"),
+    [STRINGID_ENCARTICUNOBARRIERSEALEDSOLID]        = COMPOUND_STRING("The ICE BARRIER seals at full force!\pThe locked cold will rebuild it that strong every turn."),
+    [STRINGID_ENCARTICUNOBARRIERSEALEDTHIN]         = COMPOUND_STRING("The ICE BARRIER seals thin and brittle.\pThe locked cold can't reinforce it now."),
+    [STRINGID_ENCARTICUNOBARRIERSEALEDNONE]         = COMPOUND_STRING("The cold locks in place with too little frost left to raise any barrier at all!"),
+    [STRINGID_ENCARTICUNOBARRIERBLUNTED]            = COMPOUND_STRING("Articuno's ICE BARRIER swallowed most of that hit!\pThe frost in the air is already knitting it back together…"),
+    [STRINGID_ENCARTICUNOBARRIERSHATTERS]           = COMPOUND_STRING("The ICE BARRIER shatters!"),
+    [STRINGID_ENCARTICUNOSHOCKWAVE]                 = COMPOUND_STRING("An icy shockwave erupts from the broken ice!"),
+    [STRINGID_ENCARTICUNOFROZENGROUND]              = COMPOUND_STRING("The frozen ground bites at the newcomer!"),
+    [STRINGID_ENCARTICUNOSHRUGSOFFSLEEP]            = COMPOUND_STRING("Articuno's frozen aura shatters its slumber!"),
+    [STRINGID_ENCARTICUNOPHASE1]                    = COMPOUND_STRING("Articuno rises above the storm. The air itself turns to ice!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCARTICUNOABSOLUTEZERO]              = COMPOUND_STRING("Articuno unleashes ABSOLUTE ZERO! The battlefield freezes solid!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCARTICUNOTEMPPLUMMETS]              = COMPOUND_STRING("The temperature plummets! Only flame can hold it back!"),
+    [STRINGID_ENCARTICUNOCOLDDEEPENS]               = COMPOUND_STRING("The cold deepens…"),
+    [STRINGID_ENCARTICUNOFLAMESHOLD]                = COMPOUND_STRING("The flames hold the killing cold at bay!"),
+    [STRINGID_ENCARTICUNOFIELDFREEZES]              = COMPOUND_STRING("The battlefield freezes over! Your team is battered by the cold!"),
+    [STRINGID_ENCARTICUNOWEAKENED]                  = COMPOUND_STRING("Articuno's wings falter and\nthe frost thins around it.\pNow is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

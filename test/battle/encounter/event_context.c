@@ -34,10 +34,10 @@ TEST("GetEncounterEventField reads back what SetEncounterEvent wrote at ENC_ON_T
     struct BattleStruct *battleStruct = BeginEncounterTest(&sEncounter_TurnEnd);
     s32 value;
 
-    // Mirrors battle_main.c's ENC_ON_TURN_END call site: TryRunEncounterCheckpoint first (clears
-    // the event on checkpoint entry), then SetEncounterEvent (populates it).
-    TryRunEncounterCheckpoint(ENC_ON_TURN_END);
+    // Mirrors battle_main.c's ENC_ON_TURN_END call site: SetEncounterEvent populates the context,
+    // then TryRunEncounterCheckpoint dispatches against it.
     SetEncounterEvent(B_BATTLER_1, 0, MOVE_NONE, ENC_CAUSE_END_TURN, 0, 0);
+    TryRunEncounterCheckpoint(ENC_ON_TURN_END);
 
     EXPECT(GetEncounterEventField(ENC_EVENT_CAUSE, &value));
     EXPECT_EQ(value, ENC_CAUSE_END_TURN);
@@ -54,15 +54,15 @@ TEST("A later ENC_ON_TURN_END dispatch's event context does not carry the previo
     s32 value;
 
     // Turn 1's end-turn event.
-    TryRunEncounterCheckpoint(ENC_ON_TURN_END);
     SetEncounterEvent(B_BATTLER_0, 0, MOVE_NONE, ENC_CAUSE_END_TURN, 0, 0);
+    TryRunEncounterCheckpoint(ENC_ON_TURN_END);
     EXPECT(GetEncounterEventField(ENC_EVENT_BATTLER, &value));
     EXPECT_EQ(value, B_BATTLER_0);
 
     // Turn 2's end-turn event, a different battler. The real call site re-populates on every
     // dispatch of the checkpoint, so turn 1's battler must not leak through.
-    TryRunEncounterCheckpoint(ENC_ON_TURN_END);
     SetEncounterEvent(B_BATTLER_1, 0, MOVE_NONE, ENC_CAUSE_END_TURN, 0, 0);
+    TryRunEncounterCheckpoint(ENC_ON_TURN_END);
     EXPECT(GetEncounterEventField(ENC_EVENT_BATTLER, &value));
     EXPECT_EQ(value, B_BATTLER_1);
 

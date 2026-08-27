@@ -1221,6 +1221,24 @@
 	.byte \immunities
 	.endm
 
+	@ Clamps every battler \target resolves to at 2x incoming type effectiveness (TRUE) or removes
+	@ the clamp (FALSE). Unlike encsetimmunity, this never blocks a move - a double weakness still
+	@ lands, it just can't stack into a quadruple one.
+	.macro encsetcaptypeeffectiveness target:req, cap:req
+	callnative BS_EncounterSetCapTypeEffectiveness
+	.byte \target
+	.byte \cap
+	.endm
+
+	@ TRUE stops Toxic's counter from scaling every battler \target resolves to up each turn - it
+	@ takes the same flat 1/16 max HP regular Poison would, every turn, instead of that growing
+	@ turn over turn. FALSE restores the normal ramp.
+	.macro encsetflattoxicdamage target:req, flat:req
+	callnative BS_EncounterSetFlatToxicDamage
+	.byte \target
+	.byte \flat
+	.endm
+
 	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or
 	@ ENC_BALLS_ALLOWED. ALLOWED only lifts this encounter's own block - it never makes a battle
 	@ catchable that wouldn't be otherwise (trainer battle, Ghost without a Silph Scope, ...).
@@ -1234,6 +1252,19 @@
 	.macro encsetcatchrate catchRate:req
 	callnative BS_EncounterSetCatchRate
 	.byte \catchRate
+	.endm
+
+	@ Sets the battle weather to \weather (an enum BattleWeather value, e.g. BATTLE_WEATHER_SNOW).
+	@ setfieldweather can't do this from an encounter script - it reads the weather type off the
+	@ current move, and a checkpoint script has no current move. \turns is how many turns it lasts;
+	@ 0 (the default) means permanent, the same convention primal weather uses. Silent, like the
+	@ other enc* commands; pair with playanimation for presentation. Does nothing if that weather is
+	@ already up or primal weather is in force - losing a weather race is a legitimate outcome.
+	@ Use the existing removeweather to clear it again.
+	.macro encsetweather weather:req, turns=0
+	callnative BS_EncSetWeather
+	.byte \weather
+	.byte \turns
 	.endm
 
 	@ Forces \target (must resolve to exactly one battler) to Mega Evolve outside the normal

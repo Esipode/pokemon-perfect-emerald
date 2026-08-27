@@ -12565,6 +12565,19 @@ void BS_EncounterChangeHpBegin(void)
     struct EncounterRuntime *runtime = &gBattleStruct->encounter;
 
     runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
+
+    // A group target's membership can include a battler the triggering event just fainted (before
+    // its replacement is in); drop those up front so the per-battler assert in Step only fires for
+    // a single-slot target that names a dead battler outright.
+    if (IsEncounterGroupTarget(cmd->target))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            if (!IsBattlerAlive(battler))
+                runtime->changeHpRemaining &= ~(1u << battler);
+        }
+    }
+
     runtime->changeHpAmount = cmd->amount;
     runtime->changeHpMode = cmd->mode;
     gBattlescriptCurrInstr = cmd->nextInstr;
@@ -12641,6 +12654,7 @@ void BS_EncounterChangeStat(void)
 {
     NATIVE_ARGS(u8 target, u8 stat, s8 stages);
     u32 mask = ResolveEncounterTarget(cmd->target);
+    bool32 group = IsEncounterGroupTarget(cmd->target);
     enum BattlerId battler;
 
     for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
@@ -12649,9 +12663,12 @@ void BS_EncounterChangeStat(void)
         if (!(mask & (1u << battler)))
             continue;
 
-        assertf(IsBattlerAlive(battler),
-                "encounter %d: CHANGE_STAT targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
+        if (!IsBattlerAlive(battler))
         {
+            assertf(group,
+                    "encounter %d: CHANGE_STAT targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
+            {
+            }
             continue;
         }
 
@@ -12725,6 +12742,7 @@ void BS_EncounterChangeStatValue(void)
 {
     NATIVE_ARGS(u8 target, u8 stat, s16 amount, u8 mode);
     u32 mask = ResolveEncounterTarget(cmd->target);
+    bool32 group = IsEncounterGroupTarget(cmd->target);
     enum BattlerId battler;
 
     for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
@@ -12736,9 +12754,12 @@ void BS_EncounterChangeStatValue(void)
         if (!(mask & (1u << battler)))
             continue;
 
-        assertf(IsBattlerAlive(battler),
-                "encounter %d: CHANGE_STAT_VALUE targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
+        if (!IsBattlerAlive(battler))
         {
+            assertf(group,
+                    "encounter %d: CHANGE_STAT_VALUE targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
+            {
+            }
             continue;
         }
 
@@ -12794,6 +12815,36 @@ void BS_EncounterSetImmunity(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// CAP_TYPE_EFFECTIVENESS (encsetcaptypeeffectiveness). Clamps incoming type effectiveness to 2x
+// rather than blocking anything outright - a double weakness stays dangerous, just not a 4x spike.
+void BS_EncounterSetCapTypeEffectiveness(void)
+{
+    NATIVE_ARGS(u8 target, bool8 cap);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterCapTypeEffectiveness(battler, cmd->cap);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// FLAT_TOXIC_DAMAGE (encsetflattoxicdamage). Stops Toxic's counter from scaling its damage up each
+// turn - an encounter can run for far more turns than the ~16 the ramp is balanced around elsewhere.
+void BS_EncounterSetFlatToxicDamage(void)
+{
+    NATIVE_ARGS(u8 target, bool8 flat);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterFlatToxicDamage(battler, cmd->flat);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
 // describe the ball the player is about to throw, and there is only ever one catch target.
 void BS_EncounterSetBallPolicy(void)
@@ -12815,6 +12866,31 @@ void BS_EncounterSetCatchRate(void)
     NATIVE_ARGS(u8 catchRate);
 
     gBattleStruct->encounter.catchRate = cmd->catchRate;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_EncSetWeather(void)
+{
+    NATIVE_ARGS(u8 weather, u8 turns);
+    u8 boss;
+
+    assertf(cmd->weather < BATTLE_WEATHER_COUNT,
+            "encounter %d: unknown weather %d", gBattleStruct->encounter.id, cmd->weather)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    // The boss stands in as the setter; the argument only matters for the weather-rock duration
+    // bonus, which the script's own duration replaces below either way.
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss)
+     && TryChangeBattleWeather(boss, cmd->weather, ABILITY_NONE))
+    {
+        // TryChangeBattleWeather picks a move-length duration; an encounter states its own, with
+        // 0 meaning permanent - the same convention primal weather uses (battle_util.c).
+        gBattleStruct->weatherDuration = cmd->turns;
+    }
+
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 

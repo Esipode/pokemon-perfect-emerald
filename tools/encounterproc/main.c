@@ -32,7 +32,11 @@
 #define MAX_COND_LINES                256
 #define MAX_ENCOUNTER_LEVEL          1000  // matches MAX_LEVEL (constants/pokemon.h)
 #define MAX_DAMAGE_REDUCTION           99  // matches ENC_MAX_DAMAGE_REDUCTION
+#define MAX_MOVES_PER_ENCOUNTER         4  // matches MAX_MON_MOVES (constants/global.h)
 #define ARG_EXPR_N                    128
+// 'Moves:' and 'AiFlags:' hold a whole list, not one value, so they need more room than the
+// single-expression property fields ARG_EXPR_N was sized for.
+#define LIST_EXPR_N                   512
 #define COND_LINE_N                   256
 
 struct String
@@ -422,6 +426,10 @@ struct Properties
     char ball_policy[ARG_EXPR_N];
     char damage_reduction[ARG_EXPR_N];
     char immunities[ARG_EXPR_N];
+    char cap_type_effectiveness[ARG_EXPR_N];
+    char flat_toxic_damage[ARG_EXPR_N];
+    char moves[LIST_EXPR_N];      // a brace initializer for the moves[] array, e.g. "{ MOVE_TACKLE }"
+    char ai_flags[LIST_EXPR_N];   // an OR of AI_FLAG_* constants, passed through to the compiler
 };
 
 struct EncounterDef
@@ -528,6 +536,13 @@ static bool ball_policy_const(const struct Token *t, const char **out)
     if (is_literal_token(t, "Default")) { *out = "ENC_BALLS_DEFAULT"; return true; }
     if (is_literal_token(t, "Blocked")) { *out = "ENC_BALLS_BLOCKED"; return true; }
     if (is_literal_token(t, "Allowed")) { *out = "ENC_BALLS_ALLOWED"; return true; }
+    return false;
+}
+
+static bool bool_const(const struct Token *t, const char **out)
+{
+    if (is_literal_token(t, "True"))  { *out = "TRUE";  return true; }
+    if (is_literal_token(t, "False")) { *out = "FALSE"; return true; }
     return false;
 }
 
@@ -684,11 +699,12 @@ static bool parse_operand(struct Parser *p, struct EncounterDef *enc, const char
         if (is_literal_token(&field, "Battler"))       *operand_const = "ENC_OP_EVENT_BATTLER";
         else if (is_literal_token(&field, "Target"))   *operand_const = "ENC_OP_EVENT_TARGET";
         else if (is_literal_token(&field, "Move"))     *operand_const = "ENC_OP_EVENT_MOVE";
+        else if (is_literal_token(&field, "MoveType")) *operand_const = "ENC_OP_EVENT_MOVE_TYPE";
         else if (is_literal_token(&field, "Cause"))    *operand_const = "ENC_OP_EVENT_CAUSE";
         else if (is_literal_token(&field, "OldValue")) *operand_const = "ENC_OP_EVENT_OLD_VALUE";
         else if (is_literal_token(&field, "NewValue")) *operand_const = "ENC_OP_EVENT_NEW_VALUE";
         else
-            return set_parse_error(p, field.location, "unknown event field (expected Battler, Target, Move, Cause, OldValue, or NewValue)");
+            return set_parse_error(p, field.location, "unknown event field (expected Battler, Target, Move, MoveType, Cause, OldValue, or NewValue)");
 
         strcpy(arg_expr, "0");
         *p = p_;
@@ -933,9 +949,75 @@ static bool parse_immunities(struct Parser *p, char *expr)
     return true;
 }
 
-// Parses one indented 'Key: value' line of a 'Properties:' block. Unlike a condition's right-hand
-// side, these are a closed vocabulary - each one feeds a fixed-width field of struct
-// EncounterProperties, so an out-of-range number is caught here rather than truncated silently.
+// Parses a comma-separated 'Moves:' list into a brace initializer for struct EncounterProperties's
+// moves[]. Move names pass through to the C compiler unresolved, like a condition's right-hand side
+// - only the count is this tool's business.
+static bool parse_moves(struct Parser *p, char *expr)
+{
+    int count = 0;
+
+    strcpy(expr, "{");
+    for (;;)
+    {
+        skip_whitespace(p);
+        struct SourceLocation loc = p->location;
+        struct Token id;
+        if (!match_c_identifier(p, &id))
+            return set_show_parse_error(p, loc, "expected a move constant");
+        if (count == MAX_MOVES_PER_ENCOUNTER)
+            return set_show_parse_error(p, loc, "too many moves (max 4)");
+
+        strncat(expr, count > 0 ? ", " : " ", LIST_EXPR_N - strlen(expr) - 1);
+        append_token_text(expr, LIST_EXPR_N, &id);
+        count++;
+
+        skip_whitespace(p);
+        if (match_exact(p, ","))
+            continue;
+        break;
+    }
+    strncat(expr, " }", LIST_EXPR_N - strlen(expr) - 1);
+
+    if (!match_eol(p))
+        return set_show_parse_error(p, p->location, "unexpected character after moves");
+    return true;
+}
+
+// Parses a '|'-separated 'AiFlags:' list into an OR expression. Like Moves:, the AI_FLAG_* names
+// pass through unresolved - an unknown one is a clean compiler error, not this tool's problem.
+static bool parse_ai_flags(struct Parser *p, char *expr)
+{
+    bool first = true;
+
+    expr[0] = '\0';
+    for (;;)
+    {
+        skip_whitespace(p);
+        struct SourceLocation loc = p->location;
+        struct Token id;
+        if (!match_c_identifier(p, &id))
+            return set_show_parse_error(p, loc, "expected an AI flag constant");
+
+        if (!first)
+            strncat(expr, " | ", LIST_EXPR_N - strlen(expr) - 1);
+        append_token_text(expr, LIST_EXPR_N, &id);
+        first = false;
+
+        skip_whitespace(p);
+        if (match_exact(p, "|"))
+            continue;
+        break;
+    }
+
+    if (!match_eol(p))
+        return set_show_parse_error(p, p->location, "unexpected character after AI flags");
+    return true;
+}
+
+// Parses one indented 'Key: value' line of a 'Properties:' block. Most of these are a closed
+// vocabulary feeding a fixed-width field of struct EncounterProperties, so an out-of-range number is
+// caught here rather than truncated silently. 'Moves:'/'AiFlags:' hold game constants instead and
+// pass through to the C compiler like a condition's right-hand side; only their shape is checked.
 __attribute__((warn_unused_result))
 static bool parse_property(struct Parser *p, struct EncounterDef *enc, const struct Token *key)
 {
@@ -1001,10 +1083,43 @@ static bool parse_property(struct Parser *p, struct EncounterDef *enc, const str
     {
         return parse_immunities(p, props->immunities);
     }
+    else if (is_literal_token(key, "CapTypeEffectiveness"))
+    {
+        skip_whitespace(p);
+        struct SourceLocation loc = p->location;
+        struct Token id;
+        const char *name;
+        if (!match_c_identifier(p, &id))
+            return set_show_parse_error(p, loc, "expected 'True' or 'False'");
+        if (!bool_const(&id, &name))
+            return set_show_parse_error(p, id.location, "unknown value (expected True or False)");
+        strcpy(props->cap_type_effectiveness, name);
+    }
+    else if (is_literal_token(key, "FlatToxicDamage"))
+    {
+        skip_whitespace(p);
+        struct SourceLocation loc = p->location;
+        struct Token id;
+        const char *name;
+        if (!match_c_identifier(p, &id))
+            return set_show_parse_error(p, loc, "expected 'True' or 'False'");
+        if (!bool_const(&id, &name))
+            return set_show_parse_error(p, id.location, "unknown value (expected True or False)");
+        strcpy(props->flat_toxic_damage, name);
+    }
+    else if (is_literal_token(key, "Moves"))
+    {
+        return parse_moves(p, props->moves);
+    }
+    else if (is_literal_token(key, "AiFlags"))
+    {
+        return parse_ai_flags(p, props->ai_flags);
+    }
     else
     {
         return set_show_parse_error(p, key->location,
-            "expected one of 'Level', 'CatchRate', 'Balls', 'DamageReduction', or 'Immunities'");
+            "expected one of 'Level', 'CatchRate', 'Balls', 'DamageReduction', 'Immunities', "
+            "'CapTypeEffectiveness', 'FlatToxicDamage', 'Moves', or 'AiFlags'");
     }
 
     skip_whitespace(p);
@@ -1201,6 +1316,10 @@ static bool parse_encounter(struct Parser *p, struct EncounterDef *enc)
     strcpy(enc->properties.ball_policy, "ENC_BALLS_DEFAULT");
     strcpy(enc->properties.damage_reduction, "0");
     strcpy(enc->properties.immunities, "0");
+    strcpy(enc->properties.cap_type_effectiveness, "FALSE");
+    strcpy(enc->properties.flat_toxic_damage, "FALSE");
+    strcpy(enc->properties.moves, "{0}");
+    strcpy(enc->properties.ai_flags, "0");
 
     if (!match_exact(p, "Encounter"))
         return false;
@@ -1466,6 +1585,10 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
         fprintf(f, "            .ballPolicy = %s,\n", enc->properties.ball_policy);
         fprintf(f, "            .damageReduction = %s,\n", enc->properties.damage_reduction);
         fprintf(f, "            .immunities = %s,\n", enc->properties.immunities);
+        fprintf(f, "            .capTypeEffectiveness = %s,\n", enc->properties.cap_type_effectiveness);
+        fprintf(f, "            .flatToxicDamage = %s,\n", enc->properties.flat_toxic_damage);
+        fprintf(f, "            .moves = %s,\n", enc->properties.moves);
+        fprintf(f, "            .aiFlags = %s,\n", enc->properties.ai_flags);
         fprintf(f, "        },\n    },\n");
     }
     fprintf(f, "};\n");

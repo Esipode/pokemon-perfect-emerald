@@ -75,9 +75,8 @@ TEST("An event condition fires only when the event field satisfies the compariso
 {
     struct BattleStruct *battleStruct = BeginEncounterTest(&sEncounter_Earthquake);
 
-    // First pass establishes runtime->checkpoint; SetEncounterEvent after it (matching the real
-    // call sites) means the event is only visible from the next pass of this same checkpoint on.
-    TryRunEncounterCheckpoint(ENC_ON_MOVE_END);
+    // The real call sites populate the event before dispatching, so a condition sees it on the
+    // very first pass of the checkpoint.
     SetEncounterEvent(B_BATTLER_1, B_BATTLER_0, MOVE_TACKLE, ENC_CAUSE_MOVE_DAMAGE, 0, 0);
     EXPECT(TryRunEncounterCheckpoint(ENC_ON_MOVE_END) == NULL); // wrong move
 
@@ -108,7 +107,6 @@ TEST("A trigger with both an event and a battle-state condition fires only when 
 
     // Move matches, HP doesn't.
     gBattleMons[B_BATTLER_1].hp = 51;
-    TryRunEncounterCheckpoint(ENC_ON_MOVE_END); // establishes runtime->checkpoint
     SetEncounterEvent(B_BATTLER_1, B_BATTLER_0, MOVE_EARTHQUAKE, ENC_CAUSE_MOVE_DAMAGE, 0, 0);
     EXPECT(TryRunEncounterCheckpoint(ENC_ON_MOVE_END) == NULL);
 

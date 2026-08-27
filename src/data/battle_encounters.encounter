@@ -22,6 +22,8 @@
 #     Balls: Blocked             # Default, Blocked, or Allowed
 #     DamageReduction: 70        # the boss takes 70% less damage from every source (max 99)
 #     Immunities: Ohko, FixedDamage, HpSwap, SharedKo   # or None / All
+#     CapTypeEffectiveness: True # clamps incoming type effectiveness to 2x; no quadruple weaknesses
+#     FlatToxicDamage: True      # Toxic deals flat 1/16 max HP every turn instead of ramping up
 #
 # # `OnBattleStart`: introduce the boss once, after all entry effects resolve.
 # Trigger: OnBattleStart
@@ -50,7 +52,7 @@
 # Conditions:
 #     Battler(Boss).HpPercent <= 50
 #     Var(Phase) == 0
-#     Event.Target == BS_OPPONENT1
+#     Event.Battler == B_POSITION_OPPONENT_LEFT   # the boss is the one that got hit
 #     Any:
 #         Event.Move == MOVE_SURF
 #         Event.Move == MOVE_THUNDERBOLT
@@ -63,7 +65,7 @@
 # Flags: OnEnter
 # Script: EncScript_Showcase_MoveReaction
 # Conditions:
-#     Event.Battler == BS_PLAYER1
+#     Event.Target == B_POSITION_PLAYER_LEFT   # the player is the one that used the move
 #     Event.Move == MOVE_DRAGON_ASCENT
 #     Not:
 #         Battler(Boss).Type == TYPE_DRAGON
@@ -74,8 +76,7 @@
 # Flags: Once
 # Script: EncScript_Showcase_FaintReaction
 # Conditions:
-#     Event.Battler == BS_PLAYER1
-#     Event.Cause != ENC_CAUSE_NONE
+#     Event.Battler == B_POSITION_PLAYER_LEFT   # the fainted battler
 #     Var(PlayerFainted) == 0
 #
 # # `OnSwitchIn`: reward or punish an incoming battler after its own entry effects resolve.
@@ -99,7 +100,8 @@
 #     Any:
 #         Weather == B_WEATHER_RAIN_NORMAL
 #         Terrain == STATUS_FIELD_ELECTRIC_TERRAIN
-#         Event.OldValue > 50`n#         Event.NewValue <= 50
+#         Event.OldValue > 50
+#         Event.NewValue <= 50
 #
 # # `OnBattleEnd`: presentation only; the winner is already decided, so do not change battle state.
 # Trigger: OnBattleEnd
@@ -187,7 +189,11 @@
 # =================================================================================================
 
 
+#-------------------------------------------------------
+
 Encounter: Test
+
+#-------------------------------------------------------
 
 Trigger: OnBattleStart
 Priority: 10
@@ -196,7 +202,11 @@ Script: EncScript_TestBattleStart
 Conditions:
     Turn >= 0
 
+#-------------------------------------------------------
+
 Encounter: Legendary_Barrier
+
+#-------------------------------------------------------
 
 # Battle-start configuration. Level: LevelCap keeps the boss at the player's progression cap, so
 # the fight scales with the save (New Game Plus offsets included) instead of a hardcoded level.
@@ -227,7 +237,11 @@ Conditions:
     Battler(Boss).HpPercent <= 10
     Var(Phase) == 2
 
+#-------------------------------------------------------
+
 Encounter: Trainer_Mega
+
+#-------------------------------------------------------
 
 Trigger: OnTurnEnd
 Priority: 5
@@ -237,7 +251,11 @@ Conditions:
     Turn >= 5
     Var(MegaEvolved) == 0
 
+#-------------------------------------------------------
+
 Encounter: Storm_Herald
+
+#-------------------------------------------------------
 
 Trigger: OnBattleStart
 Priority: 10
@@ -259,3 +277,145 @@ Script: EncScript_StormHerald_Desperation
 Conditions:
     Battler(Boss).HpPercent <= 40
     Var(Phase) == 2
+
+#-------------------------------------------------------
+
+Encounter: Articuno
+
+#-------------------------------------------------------
+
+# Ice Barrier loop: Articuno's Ice moves raise Frost, the player's Fire moves lower it, and while
+# Frost >= 1 the barrier regrows every turn - at a strength that scales with Frost - until shattered
+# by a damaging hit. Absolute Zero locks Frost (sealing the barrier at its current strength) and
+# repurposes the Fire answer into a recurring timer instead.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 80
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_FREEZE_DRY, MOVE_BLIZZARD, MOVE_DUAL_WINGBEAT, MOVE_ANCIENT_POWER
+
+# The Conditions here are always true - they exist only to fix the variable numbering.
+# encounterproc assigns each Var() an index in the order it first appears in a Conditions block, so
+# naming all eleven here, in order, pins Phase..LastBlunt to 0..7 (the indices the battle scripts
+# hard-code) regardless of where they are actually used later, and lets the three re-entry guards
+# land on 8/9/10. IceGuard/FireGuard/SwitchGuard stop OnMoveEnd/OnSwitchIn triggers, whose Event
+# conditions stay true across the re-evaluation loop, from firing more than once per event.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Articuno_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Barrier) >= 0
+    Var(Plummet) >= 0
+    Var(Frost) >= 0
+    Var(Chill) >= 0
+    Var(FrostLock) >= 0
+    Var(Answered) >= 0
+    Var(LastBlunt) >= 0
+    Var(IceGuard) >= 0
+    Var(FireGuard) >= 0
+    Var(SwitchGuard) >= 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Articuno_PhaseFrozenField
+Conditions:
+    Battler(Boss).HpPercent <= 75
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Articuno_AbsoluteZero
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+# At OnMoveEnd, Event.Battler is the mon that got hit and Event.Target is the mon that used the
+# move (see MoveEndEncounter). Both compare against a battler id: B_POSITION_PLAYER_LEFT is the
+# player, B_POSITION_OPPONENT_LEFT is Articuno.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Articuno_BarrierShatter
+Conditions:
+    Var(Barrier) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Articuno_IceMove
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ICE
+    Var(IceGuard) == 0
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Articuno_FireResponse
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_FIRE
+    Var(FireGuard) == 0
+
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Articuno_ShakeOff
+Conditions:
+    Battler(Boss).Status == STATUS1_SLEEP
+
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Articuno_PlummetTick
+Conditions:
+    Var(Plummet) == 2
+
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Articuno_BarrierRaise
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) != 3
+    Var(Barrier) == 0
+    Var(Frost) >= 1
+
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_Articuno_FrozenGround
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(SwitchGuard) == 0
+    Any:
+        Var(Frost) >= 3
+        Var(Chill) == 1
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once
+Script: EncScript_Articuno_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Articuno_PlummetResolve
+Conditions:
+    Var(Plummet) == 1
+
+# Clears the per-event re-entry guards so each fires again next turn. Self-disabling: once all three
+# are 0 the Any is false and it stops.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Articuno_TurnReset
+Conditions:
+    Any:
+        Var(IceGuard) == 1
+        Var(FireGuard) == 1
+        Var(SwitchGuard) == 1

@@ -32,11 +32,15 @@ struct EncounterTrigger
 // only these bytes in ROM and no behavior at runtime.
 struct EncounterProperties
 {
+    u64 aiFlags;         // AI_FLAG_* mask for the opponent side; 0 = whatever the battle would use
     u16 level;           // ENC_LEVEL_NONE / ENC_LEVEL_CAP / a literal level for every opponent
+    u16 moves[MAX_MON_MOVES];  // the boss's moves; a MOVE_NONE slot is left as built
     u8 catchRate;        // ENC_CATCH_RATE_NONE, or a catch rate replacing the species' own
     u8 ballPolicy;       // enum EncounterBallPolicy
     u8 damageReduction;  // percent, applied to the boss; 0..ENC_MAX_DAMAGE_REDUCTION
     u8 immunities;       // ENC_IMMUNE_* bits, applied to the boss
+    bool8 capTypeEffectiveness;  // clamps the boss's incoming type-effectiveness multiplier to 2x
+    bool8 flatToxicDamage;       // disables Toxic's per-turn counter ramp on the boss
 };
 
 struct Encounter
@@ -71,6 +75,21 @@ extern const u8 EncScript_TrainerMega_Reveal[];
 extern const u8 EncScript_StormHerald_Intro[];
 extern const u8 EncScript_StormHerald_Surge[];
 extern const u8 EncScript_StormHerald_Desperation[];
+
+// Articuno ("The Frozen Battlefield") - see src/data/battle_encounters.encounter.
+extern const u8 EncScript_Articuno_Intro[];
+extern const u8 EncScript_Articuno_PhaseFrozenField[];
+extern const u8 EncScript_Articuno_AbsoluteZero[];
+extern const u8 EncScript_Articuno_BarrierShatter[];
+extern const u8 EncScript_Articuno_IceMove[];
+extern const u8 EncScript_Articuno_FireResponse[];
+extern const u8 EncScript_Articuno_ShakeOff[];
+extern const u8 EncScript_Articuno_PlummetTick[];
+extern const u8 EncScript_Articuno_BarrierRaise[];
+extern const u8 EncScript_Articuno_FrozenGround[];
+extern const u8 EncScript_Articuno_Weakened[];
+extern const u8 EncScript_Articuno_PlummetResolve[];
+extern const u8 EncScript_Articuno_TurnReset[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
@@ -109,6 +128,22 @@ enum EncounterId TakePendingBattleEncounter(void);
 // No-op when the encounter has no Level: property.
 void ApplyEncounterLevelOverride(void);
 
+// Replaces the boss's moves with the encounter's Moves: property. Called from CB2_InitBattleInternal
+// (battle_main.c) right after ApplyEncounterLevelOverride, in the same pre-build window - the level
+// override rebuilds stats but not moves, so at a high level cap the boss would otherwise roll
+// whatever its learnset hands it.
+//
+// The boss and nobody else, unlike the level override: a move list is inherently per-mon, so
+// applying one list to every opponent would be meaningless. A MOVE_NONE slot is left alone, so a
+// list shorter than MAX_MON_MOVES overrides only the slots it names.
+void ApplyEncounterMoveOverride(void);
+
+// The encounter's AiFlags: property, or 0 when it has none. A wild battle gets no AI scoring at all
+// by default (GetWildAiFlags is gated behind WE_SMART_WILD_AI_FLAG), so this is what gives a wild
+// boss a real AI - see BattleAI_SetupFlags/IsSmartBattle (battle_ai_main.c) and
+// OpponentHandleChooseMove (battle_controller_opponent.c), the three places that consult it.
+u64 GetEncounterAiFlags(void);
+
 // Seeds the per-battler modifiers (damage reduction, immunities) from the encounter's properties.
 // Called once from TryRunEncounterCheckpoint's first ENC_ON_BATTLE_START pass, which is the
 // earliest point every battler exists and can be resolved through ENC_BOSS.
@@ -132,6 +167,27 @@ bool32 DoesEncounterGrantImmunity(enum BattlerId battler, u32 immunity);
 // outright (0 clears it) and assert on an out-of-range argument rather than silently truncating.
 void SetEncounterDamageReduction(enum BattlerId battler, u32 percent);
 void SetEncounterImmunities(enum BattlerId battler, u32 immunities);
+
+// Setter behind encsetcaptypeeffectiveness; replaces the battler's current value outright. TRUE
+// clamps every type-effectiveness multiplier the battler takes (CalcTypeEffectivenessMultiplier,
+// battle_util.c) to 2x, so a double weakness stacked onto a double weakness can't spike to 4x.
+// Unlike ENC_IMMUNE_*, this only softens a matchup - it never blocks a move outright.
+void SetEncounterCapTypeEffectiveness(enum BattlerId battler, bool32 cap);
+
+// TRUE if battler's incoming type effectiveness should be clamped to 2x (see
+// SetEncounterCapTypeEffectiveness above). FALSE with no encounter active.
+bool32 DoesEncounterCapTypeEffectiveness(enum BattlerId battler);
+
+// Setter behind encsetflattoxicdamage; replaces the battler's current value outright. TRUE stops
+// Toxic's counter (HandleEndTurnPoison, battle_end_turn.c) from scaling its damage up each turn -
+// the battler still takes the same 1/16 max HP every turn regular Poison would, instead of that
+// amount growing every turn up to a full max-HP hit by turn 16. An encounter can run for far more
+// turns than a normal battle, so the ramp that's balanced for a ~16-turn fight elsewhere isn't here.
+void SetEncounterFlatToxicDamage(enum BattlerId battler, bool32 flat);
+
+// TRUE if battler's Toxic damage should stay flat instead of ramping (see
+// SetEncounterFlatToxicDamage above). FALSE with no encounter active.
+bool32 DoesEncounterFlattenToxicDamage(enum BattlerId battler);
 
 #if TESTING
 // Overrides GetEncounter's id-indexed lookup so tests can supply their own trigger
@@ -193,6 +249,11 @@ bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut);
 // state-changing command must assert on a fainted/absent battler found in the returned mask
 // itself; that isn't checked here.
 u32 ResolveEncounterTarget(enum EncounterTarget target);
+
+// TRUE for ENC_TARGET_ALL_FOES / ALL_ALLIES / ALL_BATTLERS. A state-changing command uses this to
+// decide whether a fainted/absent battler in the resolved set is tolerable (group: skip it) or an
+// authoring mistake (single slot: assert).
+bool32 IsEncounterGroupTarget(enum EncounterTarget target);
 
 // Reads one operand of live battle state or event context, for comparison against a condition's
 // value. useSnapshot (Stage 10) redirects ENC_OP_HP / ENC_OP_HP_PERCENT to runtime->prevHp instead

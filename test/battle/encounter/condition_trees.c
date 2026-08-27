@@ -65,7 +65,6 @@ TEST("The outline Sec14 tree fires in rain or sun, not in sandstorm, and not abo
     gBattleMons[B_BATTLER_1].maxHP = 100;
     gBattleMons[B_BATTLER_1].hp = 50; // at the HP threshold
 
-    TryRunEncounterCheckpoint(ENC_ON_MOVE_END); // establishes runtime->checkpoint
     SetEncounterEvent(B_BATTLER_1, B_BATTLER_0, MOVE_NONE, ENC_CAUSE_MOVE_DAMAGE, 0, 0);
 
     gBattleWeather = B_WEATHER_RAIN_NORMAL;

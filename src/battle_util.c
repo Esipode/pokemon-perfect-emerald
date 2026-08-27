@@ -1917,8 +1917,8 @@ bool32 HandleFaintedMonActions(void)
             // ENC_ON_FAINT: EXP and absent flags are settled, not during the faint animation.
             // Called from a non-script callback, like ENC_ON_BATTLE_START - see battle_main.c's
             // FIRST_TURN_EVENTS_ENCOUNTER for the same BattleScriptExecute+Call shim pattern.
-            const u8 *script = TryRunEncounterCheckpoint(ENC_ON_FAINT);
             SetEncounterEvent(gBattlerFainted, 0, MOVE_NONE, ENC_CAUSE_NONE, 0, 0);
+            const u8 *script = TryRunEncounterCheckpoint(ENC_ON_FAINT);
             if (script != NULL)
             {
                 BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
@@ -7846,10 +7846,6 @@ s32 DoFixedDamageMoveCalc(struct DamageContext *ctx)
     if (dmg == INT32_MAX)
         return dmg;
 
-    // dmg != INT32_MAX means one of the effects above produced a damage figure the damage formula
-    // never sees - and so one an encounter's damage reduction never scales. Blocked outright rather
-    // than reduced; EFFECT_OHKO has its own flag because it also has its own "no effect" path
-    // (DoesOHKOMoveMissTarget below).
     if (GetMoveEffect(ctx->move) != EFFECT_OHKO
      && DoesEncounterGrantImmunity(ctx->battlerDef, ENC_IMMUNE_FIXED_DAMAGE))
     {
@@ -8441,6 +8437,13 @@ uq4_12_t CalcTypeEffectivenessMultiplier(struct DamageContext *ctx)
             ctx->moveType = primaryType;
         }
     }
+
+    // A double weakness (4x) can spike well past what an encounter's flat damageReduction was
+    // balanced around, since reduction is a percentage on top of whatever the matchup already
+    // multiplied by. Clamped here, upstream of every consumer (damage calc, AI scoring, the
+    // super-effective message flags), so all three agree on what the boss actually took.
+    if (modifier > UQ_4_12(2.0) && DoesEncounterCapTypeEffectiveness(ctx->battlerDef))
+        modifier = UQ_4_12(2.0);
 
     if (ctx->updateFlags)
     {

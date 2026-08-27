@@ -6,6 +6,7 @@
 #include "constants/battle_ai.h"
 #include "battle_anim.h"
 #include "battle_arena.h"
+#include "battle_encounter.h"
 #include "battle_controllers.h"
 #include "battle_message.h"
 #include "battle_interface.h"
@@ -432,8 +433,10 @@ static void OpponentHandleChooseAction(enum BattlerId battler)
 
 static void OpponentHandleChooseMove(enum BattlerId battler)
 {
+    // An encounter with an AiFlags: property has already been given AI scoring (BattleAI_SetupFlags);
+    // without this it would fall through to the random-move path below and never consult it.
     if (gBattleTypeFlags & (BATTLE_TYPE_TRAINER | BATTLE_TYPE_FIRST_BATTLE | BATTLE_TYPE_SAFARI | BATTLE_TYPE_ROAMER)
-     || IsWildMonSmart())
+     || IsWildMonSmart() || GetEncounterAiFlags() != 0)
     {
         if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
         {

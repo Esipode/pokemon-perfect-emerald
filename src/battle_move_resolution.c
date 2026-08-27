@@ -5285,15 +5285,27 @@ static enum MoveEndResult MoveEndClearBits(struct BattleCalcValues *cv)
 // got hit - what an author means by "when the boss is hit" - target is the one who hit it.
 static enum MoveEndResult MoveEndEncounter(struct BattleCalcValues *cv)
 {
-    // Damage is recorded into oldValue/newValue at the HP commit point (TryMoveDamageUpdate above,
-    // or Cmd_datahpupdate for passive HP), not here -
-    // read it before TryRunEncounterCheckpoint's checkpoint-entry clear can wipe it.
-    s16 oldValue = gBattleStruct->encounter.event.oldValue;
-    s16 newValue = gBattleStruct->encounter.event.newValue;
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
 
-    const u8 *script = TryRunEncounterCheckpoint(ENC_ON_MOVE_END);
+    // Damage is recorded into oldValue/newValue at the HP commit point (TryMoveDamageUpdate above,
+    // or Cmd_datahpupdate for passive HP); carry those through unchanged when re-stamping the rest
+    // of the event.
+    s16 oldValue = runtime->event.oldValue;
+    s16 newValue = runtime->event.newValue;
+
+    // A different user/move than the event currently describes means this is a fresh move, not a
+    // re-evaluation pass of the current one - give it its own script budget so consecutive moves in
+    // one turn don't share (and exhaust) a single checkpoint's allowance. event.target/event.move
+    // are written only by SetEncounterEvent, never by the damage commit, so this stays accurate.
+    if (runtime->checkpoint != ENC_ON_MOVE_END
+     || runtime->event.target != cv->battlerAtk || runtime->event.move != cv->move)
+        runtime->scriptsThisCheckpoint = 0;
+
+    // Populate the event before dispatching so the first condition pass sees this move rather than
+    // a cleared context or the previous move's.
     SetEncounterEvent(cv->battlerDef, cv->battlerAtk, cv->move, ENC_CAUSE_MOVE_DAMAGE, oldValue, newValue);
 
+    const u8 *script = TryRunEncounterCheckpoint(ENC_ON_MOVE_END);
     if (script != NULL)
     {
         BattleScriptCall(script);

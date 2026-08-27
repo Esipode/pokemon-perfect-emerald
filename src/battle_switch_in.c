@@ -170,8 +170,8 @@ bool32 DoSwitchInEvents(void)
                 continue;
             }
 
-            const u8 *script = TryRunEncounterCheckpoint(ENC_ON_SWITCH_IN);
             SetEncounterEvent(battler, 0, MOVE_NONE, ENC_CAUSE_NONE, 0, 0);
+            const u8 *script = TryRunEncounterCheckpoint(ENC_ON_SWITCH_IN);
             if (script != NULL)
             {
                 BattleScriptCall(script);

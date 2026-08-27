@@ -9,6 +9,7 @@ enum EncounterId
     ENCOUNTER_LEGENDARY_BARRIER,   // Stage 15 example, outline Sec33
     ENCOUNTER_TRAINER_MEGA,        // Stage 15 example, outline Sec34
     ENCOUNTER_STORM_HERALD,        // Stage 16 example: three chained phase transitions
+    ENCOUNTER_ARTICUNO,            // Frozen Battlefield: Frost/barrier loop legendary fight
     ENCOUNTER_COUNT,
 };
 
@@ -227,6 +228,7 @@ enum EncounterOperand
     ENC_OP_EVENT_BATTLER,
     ENC_OP_EVENT_TARGET,
     ENC_OP_EVENT_MOVE,
+    ENC_OP_EVENT_MOVE_TYPE,  // the event move's base type, so a rule can key off "any Ice move"
     ENC_OP_EVENT_CAUSE,
     ENC_OP_EVENT_OLD_VALUE,
     ENC_OP_EVENT_NEW_VALUE,

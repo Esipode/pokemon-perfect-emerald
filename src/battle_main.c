@@ -604,9 +604,12 @@ static void CB2_InitBattleInternal(void)
         SetMainCallback2(CB2_HandleStartBattle);
 
     // Opponent parties exist now (built in battle_setup.c) and no gBattleMons have been built from
-    // them yet - the only window where an encounter's Level: property can restate what the
-    // opponents are (battle_encounter.c).
+    // them yet - the only window where an encounter's Level:/Moves: properties can restate what the
+    // opponents are (battle_encounter.c). Moves need their own property because the level rebuild
+    // recalculates stats only - without it the boss keeps the learnset moves it was created with,
+    // at whatever level the overworld script's setwildbattle happened to name.
     ApplyEncounterLevelOverride();
+    ApplyEncounterMoveOverride();
 
     gMain.inBattle = TRUE;
     gSaveBlock2Ptr->disableRecordBattle = FALSE;
@@ -4928,13 +4931,12 @@ bool32 EndTurnEvents(void) // Called from Battle Script
     if (!gBattleStruct->eventState.encounterTurnEnd)
     {
         // Weather/status damage is recorded into oldValue/newValue at the HP commit point
-        // (Cmd_datahpupdate), not here - read it before TryRunEncounterCheckpoint's
-        // checkpoint-entry clear (first pass only) can wipe it. SetEncounterEvent must run
-        // after TryRunEncounterCheckpoint, every pass, so that clear never wipes it either.
+        // (Cmd_datahpupdate); read them before re-stamping the event so they carry through. The
+        // event is set before dispatching so pass 1's conditions see this turn's end-turn context.
         s16 oldValue = gBattleStruct->encounter.event.oldValue;
         s16 newValue = gBattleStruct->encounter.event.newValue;
-        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_END);
         SetEncounterEvent(gBattlerAttacker, 0, MOVE_NONE, ENC_CAUSE_END_TURN, oldValue, newValue);
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_END);
         if (script != NULL)
         {
             BattleScriptCall(script);

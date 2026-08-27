@@ -562,7 +562,11 @@ static bool32 HandleEndTurnPoison(enum BattlerId battler)
             SetPassiveDamageAmount(battler, GetNonDynamaxMaxHP(battler) / 16);
             if ((gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) != STATUS1_TOXIC_TURN(15)) // not 16 turns
                 gBattleMons[battler].status1 += STATUS1_TOXIC_TURN(1);
-            gBattleStruct->passiveHpUpdate[battler] *= (gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) >> 8;
+            // An encounter can run for far more turns than the ~16 this ramp is balanced around
+            // elsewhere, so a flat-toxic-damage battler skips the multiply and just takes the same
+            // 1/16 max HP every turn - the counter itself still advances in case the flag is lifted.
+            if (!DoesEncounterFlattenToxicDamage(battler))
+                gBattleStruct->passiveHpUpdate[battler] *= (gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) >> 8;
             BattleScriptCall(BattleScript_PoisonTurnDmg);
             effect = TRUE;
         }

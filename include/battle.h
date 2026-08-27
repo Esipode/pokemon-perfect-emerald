@@ -621,11 +621,19 @@ struct EncounterRuntime
     s16 changeHpAmount;                         // its amount arg; positive = heal, negative = damage
     u8  changeHpMode;                           // enum EncounterAmountMode; PERCENT reads amount as % of max HP
     // Per-battler combat modifiers. Seeded from the encounter's properties at ENC_ON_BATTLE_START
-    // (boss only) and changed afterwards by encsetdamagereduction / encsetimmunity.
+    // (boss only) and changed afterwards by encsetdamagereduction / encsetimmunity /
+    // encsetcaptypeeffectiveness / encsetflattoxicdamage.
     u8 damageReduction[MAX_BATTLERS_COUNT];     // percent 0..ENC_MAX_DAMAGE_REDUCTION
     u8 immunities[MAX_BATTLERS_COUNT];          // ENC_IMMUNE_* bits
+    u8 capTypeEffectiveness[MAX_BATTLERS_COUNT]; // bool8: clamp incoming type effectiveness to 2x
+    u8 flatToxicDamage[MAX_BATTLERS_COUNT];     // bool8: disable Toxic's per-turn counter ramp
     u8 ballPolicy;                              // enum EncounterBallPolicy
     u8 catchRate;                               // ENC_CATCH_RATE_NONE, or a catch rate to use instead of the species'
+    // Catch-window damage guard (UpdateEncounterCatchGuard, battle_encounter.c). While Poke Balls
+    // are allowed the boss takes maximum reduced damage so a stray hit can't kill the catch target;
+    // any HP the boss recovers lifts it until it's back in the window without having healed.
+    u8 catchGuard;                              // bool8: guard currently forcing the boss's reduction
+    u8 catchGuardDr;                            // the encounter's own boss reduction, restored when it lifts
 };
 
 // Scales damage aimed at battler by its encounter damage reduction, floored at 1 so a reduced hit

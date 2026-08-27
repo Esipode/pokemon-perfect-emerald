@@ -219,9 +219,10 @@ together unless grouped (below). Comparisons are `==`, `!=`, `<`, `<=`, `>`, `>=
 | `Battler(<ref>).Type` | Primary type | compare against a `TYPE_*` constant |
 | `Battler(<ref>).Stat(<STAT>)` | Stat *stage* (not the stat value) | `<STAT>` is a `STAT_*` constant, e.g. `Stat(STAT_DEF)` |
 | `Var(<name>)` | An author-defined variable | first reference declares it; scoped to the encounter |
-| `Event.Battler` | The battler that raised the current checkpoint's event | see checkpoint table for validity |
-| `Event.Target` | The other battler involved (e.g. a move's target) | " |
+| `Event.Battler` | The battler the event is *about* | compare against a `B_POSITION_*` id (below); see checkpoint table for validity |
+| `Event.Target` | The other battler involved | " |
 | `Event.Move` | The move involved | " |
+| `Event.MoveType` | The type of the move involved | compare against a `TYPE_*` constant; `OnMoveEnd` only |
 | `Event.Cause` | Why the event happened (`ENC_CAUSE_*`) | " |
 | `Event.OldValue` / `Event.NewValue` | Before/after values (e.g. HP before/after a change) | " |
 | `Weather` | Current battle weather | |
@@ -239,6 +240,16 @@ together unless grouped (below). Comparisons are `==`, `!=`, `<`, `<=`, `>`, `>=
   valid).
 - The four positional refs resolve through the same battle-position lookup commands use for
   targeting; see the [`_RIGHT` gotcha](#debugging) for what happens in a singles battle.
+
+`Event.Battler` / `Event.Target` are not `Battler(...)` refs — they're raw battler ids, so compare
+them against `B_POSITION_PLAYER_LEFT` (0), `B_POSITION_OPPONENT_LEFT` (1),
+`B_POSITION_PLAYER_RIGHT` (2), `B_POSITION_OPPONENT_RIGHT` (3). In a legendary (singles) fight the
+player is `B_POSITION_PLAYER_LEFT` and the boss is `B_POSITION_OPPONENT_LEFT`.
+
+At `OnMoveEnd`, `Event.Battler` is the battler that **got hit** and `Event.Target` is the one that
+**used the move** — so "the boss used an Ice move" is `Event.Target == B_POSITION_OPPONENT_LEFT`,
+and "a move hit the boss" is `Event.Battler == B_POSITION_OPPONENT_LEFT`. At `OnSwitchIn` / `OnFaint`,
+`Event.Battler` is the battler that switched in / fainted and `Event.Target` is unused.
 
 ### Compound logic: `All:` / `Any:` / `Not:`
 
@@ -291,10 +302,15 @@ X?". Every field is optional and omitting one changes nothing.
 | `Balls:` | `Default`, `Blocked`, `Allowed` | Whether the player may throw a Poké Ball |
 | `DamageReduction:` | `0`–`99` | The boss takes this much less damage, as a percentage, from every source |
 | `Immunities:` | comma list of `Ohko`, `FixedDamage`, `HpSwap`, `SharedKo`, plus `All`/`None` | Move classes the boss ignores |
+| `CapTypeEffectiveness:` | `True`/`False` | Clamps the boss's incoming type-effectiveness multiplier at 2x — a double weakness stacked onto another double weakness can't spike to 4x |
+| `FlatToxicDamage:` | `True`/`False` | Toxic deals the same flat 1/16 max HP against the boss every turn instead of its counter ramping that up turn over turn |
+| `Moves:` | 1–4 `MOVE_*` constants, comma separated | Replaces the boss's moves, PP included. A slot the list doesn't reach keeps what it was built with |
+| `AiFlags:` | one or more `AI_FLAG_*` constants, `\|` separated | The AI the opponent side runs, replacing whatever the battle type would derive |
 
-`DamageReduction:` and `Immunities:` apply to the **boss** (the opponent's left slot). Any other
-battler — or any change to these mid-battle — is a job for `encsetdamagereduction` /
-`encsetimmunity` in a script.
+`DamageReduction:`, `Immunities:`, `CapTypeEffectiveness:`, `FlatToxicDamage:` and `Moves:` apply to
+the **boss** (the opponent's left slot). Any other battler — or any change to these mid-battle — is
+a job for `encsetdamagereduction` / `encsetimmunity` / `encsetcaptypeeffectiveness` /
+`encsetflattoxicdamage` in a script.
 
 ### `Level:` and when it applies
 
@@ -304,6 +320,42 @@ only window where changing a level is a clean operation. It applies to **both op
 skips empty slots and eggs. There is no per-slot form — an encounter that needs one opponent at a
 different level than the rest should set the levels in its trainer data instead.
 
+### `Moves:` — a curated boss moveset
+
+`Level:` restates stats, not moves, so without this a boss keeps whatever its learnset gave it at
+the level the overworld script's `setwildbattle` named — which is rarely the fight you designed.
+`Moves:` names the moveset outright:
+
+```text
+    Moves: MOVE_FREEZE_DRY, MOVE_BLIZZARD, MOVE_HURRICANE, MOVE_ANCIENT_POWER
+```
+
+It applies to the boss and nobody else — a move list is inherently per-mon, so there's no sensible
+"apply to every opponent" reading of it. It runs in the same pre-battle window as `Level:`. Each
+move's PP is set to that move's own maximum; PP Ups are not applied. A list shorter than four leaves
+the remaining slots as they were built, so `Moves: MOVE_BLIZZARD` replaces only the first slot.
+
+The move names pass through to the C compiler unchecked, so a typo is a compiler error, not an
+`encounterproc` error. Nothing verifies the species can legally learn them, either — that's a design
+decision, not a build-time one.
+
+### `AiFlags:` — giving a wild boss an AI
+
+A wild battle has **no AI scoring at all** by default: the opponent picks a random legal move.
+`AiFlags:` is what makes a scripted wild legendary play properly:
+
+```text
+    AiFlags: AI_FLAG_SMART_TRAINER
+```
+
+Multiple flags combine with `|`. The value replaces whatever the battle type would otherwise derive
+rather than adding to it, matching how the rest of `Properties:` works, and it applies to both
+opponent slots. In a doubles encounter `AI_FLAG_DOUBLE_BATTLE` is added automatically, the same way
+the normal trainer path adds it.
+
+This is per-encounter state in ROM, unlike `B_VAR_WILD_AI_FLAGS`, which is a global save variable
+that would have to be set and cleared around every battle.
+
 ### `Balls:` — blocking, and the "now catch it" pattern
 
 `Allowed` only lifts a block **this encounter** imposed. It never makes a battle catchable that
@@ -312,9 +364,17 @@ the other existing rules all still apply and are checked first.
 
 The pattern this exists for is a legendary that can't be caught until it's beaten down: start with
 `Balls: Blocked`, then have the final phase's script run `encsetballs ENC_BALLS_ALLOWED` (usually
-alongside `encsetcatchrate` and dropping the damage reduction, as in the worked example above). A
-blocked throw behaves exactly like the existing Nuzlocke and Mono-Type blocks: the ball animation
-plays, a message prints, and the turn ends.
+alongside `encsetcatchrate`, as in the worked example above). A blocked throw behaves exactly like
+the existing Nuzlocke and Mono-Type blocks: the ball animation plays, a message prints, and the turn
+ends.
+
+**The catch-window damage guard is automatic.** Whenever `ballPolicy` is `ENC_BALLS_ALLOWED`, the
+engine forces the boss's damage reduction to the maximum (`ENC_MAX_DAMAGE_REDUCTION`) so a stray hit
+can't KO the catch target — you don't script this, and it can't be turned off per-encounter. The
+guard lifts the moment the boss recovers any HP (restoring whatever reduction the encounter itself
+had set) and re-arms at the next checkpoint where the boss is catchable and hasn't just healed. A
+script that sets the boss's reduction while the guard holds is changing the value the guard will
+restore, not the live one. See `UpdateEncounterCatchGuard` in `src/battle_encounter.c`.
 
 ### `DamageReduction:` — what counts as "damage"
 
@@ -336,6 +396,14 @@ Three things deliberately **ignore** it:
 The maximum is 99 (`ENC_MAX_DAMAGE_REDUCTION`). A battler nothing at all can damage isn't a fight —
 if a specific move must not work, that's what the immunities are for.
 
+There is no on-screen indicator for any of this — a reduced hit just shows a smaller number. If a
+script raises, lowers, or gates the reduction as a *mechanic* (a regenerating barrier, a phase that
+hardens the boss, a stance that punishes a move type), the player has to be told through dialogue,
+or the fight just reads as "my attacks stopped working" with no cause. Point at the cause without
+spelling out the counter, and don't fire the line just once — a single message is easily missed.
+Stash the last-announced reduction in a script var and re-print the line whenever it changes, plus
+keep a short recurring line running while the mechanic is active.
+
 ### `Immunities:` — the four classes
 
 | Name | Covers | Player sees |
@@ -347,6 +415,35 @@ if a specific move must not work, that's what the immunities are for.
 
 `All` sets every bit; `None` sets none (the same as omitting the field). They're separate classes on
 purpose — giving every legendary the same immunity list makes every legendary fight the same fight.
+
+### `CapTypeEffectiveness:` — softening double weaknesses
+
+`DamageReduction:` is a flat percentage on top of whatever the type matchup already multiplied
+damage by, so a quadruple weakness (two 2x type matchups stacking to 4x, e.g. Rock into an Ice/Flying
+boss) can still land a disproportionate hit even at 90% reduction — the pre-reduction number was
+already four times larger than a neutral hit.
+
+`CapTypeEffectiveness: True` clamps the multiplier itself to 2x before reduction ever applies. It
+affects `CalcTypeEffectivenessMultiplier`, so the AI's move scoring and the "It's super effective!"
+messaging see the same capped value the damage calc uses — nothing reads as stronger than it hits.
+A double weakness alone is untouched; only a matchup that would exceed 2x gets clamped down to it.
+This never blocks a move outright — that's what `Immunities:` is for.
+
+### `FlatToxicDamage:` — Toxic without the ramp
+
+Toxic's counter (`STATUS1_TOXIC_COUNTER`) grows by one every turn it stays on a battler, up to 16,
+and each end-of-turn tick multiplies the base 1/16-max-HP poison damage by that counter — meaning by
+turn 16 a single tick is a full max-HP hit. That ramp is balanced around how long an ordinary battle
+runs. An encounter can run for many more turns than that (a multi-phase boss fight, a stalled-out
+`OnTurnEnd` loop), so left alone, `Toxic`ing the boss once and outlasting it eventually deals lethal
+damage regardless of `DamageReduction:` — the percentage is applied every turn to a number that keeps
+growing on its own.
+
+`FlatToxicDamage: True` keeps the counter advancing (so nothing else that reads it changes behavior)
+but skips the multiply: the boss takes the same flat 1/16 max HP every turn Toxic is active, exactly
+like ordinary Poison, for as long as the fight lasts. It only affects the multiply in
+`HandleEndTurnPoison` (`battle_end_turn.c`) — Toxic still applies and still stacks with everything
+else `DamageReduction:` already scales down.
 
 ---
 
@@ -370,8 +467,11 @@ The commands below exist specifically for encounter scripts:
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Moves the **raw battle stat** (not the stage) of `<stat>` — silent, and not undone by Haze or switching out | encounter-specific (`callnative`) |
 | `encsetdamagereduction <target>, <percent>` | Sets how much less damage `<target>` takes, `0`–`99`. Replaces the current value | encounter-specific (`callnative`) |
 | `encsetimmunity <target>, <immunities>` | Replaces `<target>`'s `ENC_IMMUNE_*` mask (`0` clears it) | encounter-specific (`callnative`) |
+| `encsetcaptypeeffectiveness <target>, <cap>` | `TRUE` clamps `<target>`'s incoming type effectiveness at 2x; `FALSE` removes the clamp | encounter-specific (`callnative`) |
+| `encsetflattoxicdamage <target>, <flat>` | `TRUE` stops Toxic's counter from ramping `<target>`'s damage up each turn; `FALSE` restores the ramp | encounter-specific (`callnative`) |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT` / `ENC_BALLS_BLOCKED` / `ENC_BALLS_ALLOWED` | encounter-specific (`callnative`) |
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
+| `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
 
 ### Fixed vs. percentage amounts
@@ -397,7 +497,7 @@ by a percentage is the only portable way to express it.
 
 ### Setting vs. accumulating
 
-`encsetdamagereduction`, `encsetimmunity`, `encsetballs` and `encsetcatchrate` all **replace** the
+`encsetdamagereduction`, `encsetimmunity`, `encsetcaptypeeffectiveness`, `encsetflattoxicdamage`, `encsetballs` and `encsetcatchrate` all **replace** the
 current value rather than adding to it. That's what lets a script raise a boss's guard for one phase
 and drop it in the next without tracking what it added — `encsetdamagereduction ENC_TARGET_BOSS, 0`
 always means "no reduction", whatever the `Properties:` block or an earlier phase set.
@@ -413,8 +513,11 @@ into the encounter's variable array so you write a var index instead of a raw ad
 command doubles-safe without writing two versions of a script — `ALL_FOES` hits both opposing
 battlers in a double battle and just the one in a single battle, automatically.
 
-A command that mutates a battler asserts if the resolved target is fainted or absent — targeting a
-gone battler is always an authoring mistake, never a state the command silently tolerates.
+A command that mutates a battler asserts if a **single-slot** target (`BOSS`, `SELF`,
+`EVENT_TARGET`, `PLAYER_LEFT`, …) resolves to a fainted or absent battler — naming a gone battler
+outright is an authoring mistake. A **group** target (`ALL_FOES`/`ALL_ALLIES`/`ALL_BATTLERS`) instead
+skips any fainted/absent member silently: at `OnMoveEnd`/`OnFaint` the event battler is often already
+down, and "everyone still standing" is the sensible reading of the set.
 
 ---
 
@@ -495,12 +598,41 @@ yet, so the manual count is currently the reliable path.)
 - **The AI sees the damage reduction.** It shares the damage-calculation path, so a boss the player
   can barely dent reads as one when the AI picks a move. That's intentional; don't be surprised when
   a heavily-reduced boss stops being predictable about which attack it leads with.
+- **The player does *not* see the damage reduction.** There's no UI for it — a blunted hit is just a
+  small number. Any script that moves or gates the reduction as a mechanic (regenerating barrier,
+  hardening phase, move-type stance) needs dialogue saying *something* is wrong and roughly what's
+  causing it. See [`DamageReduction:`](#damagereduction-what-counts-as-damage).
+- **`CapTypeEffectiveness:` doesn't replace `DamageReduction:`, it complements it.** Reduction is a
+  flat percentage applied after the type multiplier, so a quadruple weakness still hits several times
+  harder than a neutral move even at 90% reduction — it was that much larger before reduction ever
+  touched it. Set both on any boss with a real 4x matchup in its typing.
+- **`DamageReduction:` doesn't stop Toxic from eventually overwhelming a boss.** The counter ramp is
+  a multiplier on top of reduction, not something reduction caps — a long enough fight always reaches
+  the turn where 90% off a maxed-out counter is still lethal. `FlatToxicDamage: True` is what actually
+  bounds it.
 - **`Immunities: FixedDamage` is not optional if you set `DamageReduction:`.** Super Fang and
   friends compute their damage from the target's HP, never from the damage formula — a 70%-reduced
   boss with no `FixedDamage` immunity still loses half its health to one Super Fang.
 - **A blank event-context cell is invalid, not zero.** Reading `Event.Move` at a checkpoint that
   doesn't populate it (see the [checkpoint table](#checkpoint-reference)) asserts rather than
   quietly returning 0 — that would otherwise be indistinguishable from a real "no move" case.
+- **`Event.MoveType` is the move's base type.** It reads the type from move data, so a move
+  re-typed at runtime — Normalize and the `-ate` abilities, Electrify, Tera — still matches its
+  printed type here. Predictable to author against, but don't document it to players as "the type
+  the attack actually hit as".
+- **Split a countdown across two checkpoints.** Every trigger is re-evaluated after each script
+  runs (determinism rule 3), so a timer that both ticks and resolves at the same checkpoint chases
+  itself through all its states in one dispatch and fires instantly. Decrement it at `OnTurnStart`
+  and resolve it at `OnTurnEnd` (or any other two distinct checkpoints) so a real turn passes in
+  between.
+- **An event-reacting trigger must disable itself.** The re-evaluation loop keeps re-selecting any
+  trigger whose conditions still hold, and an `Event.*` condition (`Event.MoveType == TYPE_ICE`,
+  `Event.Battler == …`) stays true for the whole dispatch — a script can't change the event. So a
+  plain trigger that reacts to a move/switch/faint fires again and again until the per-checkpoint
+  script cap trips. `Once` is wrong (it means once per *battle*). Instead gate it on a variable it
+  sets — `Var(Handled) == 0`, script sets `Handled` to 1 — and clear that variable at `OnTurnEnd`
+  (or wherever the next occurrence should be allowed). `OnEnter` does **not** help here: its edge
+  check compares against an HP snapshot, which an event condition doesn't move.
 
 ---
 
@@ -522,6 +654,10 @@ Properties:                 # optional; at most one, before the first Trigger:
     Balls: <Default|Blocked|Allowed>
     DamageReduction: <0-99>
     Immunities: <immunity list>
+    CapTypeEffectiveness: <True|False>
+    FlatToxicDamage: <True|False>
+    Moves: <1-4 MOVE_* constants, comma separated>
+    AiFlags: <one or more AI_FLAG_* constants, '|' separated>
 
 Trigger: <Checkpoint>
 Priority: <0-255>
@@ -540,8 +676,9 @@ Conditions:                 # optional; requires at least one indented item
 
 ### `Properties:` fields
 
-Every field is optional, may appear at most once, and each takes exactly the values below — unlike a
-condition's right-hand side, none of these pass through to the C compiler unchecked.
+Every field is optional and may appear at most once. All but `Moves:`/`AiFlags:` take a closed
+vocabulary validated here; those two hold game constants, so — like a condition's right-hand side —
+their names pass through to the C compiler and a typo surfaces as a compiler error.
 
 | Field | Every valid value |
 | --- | --- |
@@ -550,6 +687,10 @@ condition's right-hand side, none of these pass through to the C compiler unchec
 | `Balls:` | `Default`, `Blocked`, or `Allowed` |
 | `DamageReduction:` | Decimal integer `0` through `99` |
 | `Immunities:` | Comma-separated list of `Ohko`, `FixedDamage`, `HpSwap`, `SharedKo`, `All`, or `None` |
+| `CapTypeEffectiveness:` | `True` or `False` |
+| `FlatToxicDamage:` | `True` or `False` |
+| `Moves:` | Comma-separated list of one to four `MOVE_*` constants. The names pass through to the C compiler unchecked; only the count is validated |
+| `AiFlags:` | One or more `AI_FLAG_*` constants separated by `\|`. Also passed through unchecked |
 
 ### `Trigger:` fields
 
@@ -581,6 +722,7 @@ A leaf is exactly `<operand> <comparison> <value>`. The only comparisons are `==
 | `Event.Battler` | No argument | Battler id |
 | `Event.Target` | No argument | Battler id |
 | `Event.Move` | No argument | `MOVE_*` constant |
+| `Event.MoveType` | No argument | `TYPE_*` constant |
 | `Event.Cause` | No argument | `ENC_CAUSE_NONE`, `ENC_CAUSE_MOVE_DAMAGE`, `ENC_CAUSE_RECOIL`, `ENC_CAUSE_DRAIN`, `ENC_CAUSE_END_TURN`, `ENC_CAUSE_ITEM`, `ENC_CAUSE_ABILITY`, or `ENC_CAUSE_ENCOUNTER_SCRIPT` |
 | `Event.OldValue`, `Event.NewValue` | No argument | Integer |
 | `Weather` | No argument | `B_WEATHER_*` constant |
@@ -611,6 +753,8 @@ constants are compiler errors.
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Target below; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); signed 16-bit amount; optional mode as above. |
 | `encsetdamagereduction <target>, <percent>` | Target below; `0` through `ENC_MAX_DAMAGE_REDUCTION` (99). |
 | `encsetimmunity <target>, <immunities>` | Target below; `0`, `ENC_IMMUNE_ALL`, or an OR of `ENC_IMMUNE_OHKO`, `ENC_IMMUNE_FIXED_DAMAGE`, `ENC_IMMUNE_HP_SWAP`, `ENC_IMMUNE_SHARED_KO`. |
+| `encsetcaptypeeffectiveness <target>, <cap>` | Target below; `TRUE` or `FALSE`. |
+| `encsetflattoxicdamage <target>, <flat>` | Target below; `TRUE` or `FALSE`. |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |

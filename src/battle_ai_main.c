@@ -3,6 +3,7 @@
 #include "malloc.h"
 #include "ai_battles.h"
 #include "battle.h"
+#include "battle_encounter.h"
 #include "battle_anim.h"
 #include "battle_ai_util.h"
 #include "battle_ai_items.h"
@@ -257,7 +258,10 @@ bool32 IsSmartBattle(void)
 
     // AiBattles_IsActive() covers wild AI battles, which aren't BATTLE_TYPE_HAS_AI and
     // don't set the WE_SMART_WILD_AI_FLAG that IsWildMonSmart() checks. See ai_battles.h.
-    return (gBattleTypeFlags & BATTLE_TYPE_HAS_AI) || IsWildMonSmart() || AiBattles_IsActive();
+    // An encounter's AiFlags: property does the same for a scripted wild boss - without this
+    // GetAiFlags returns 0 before it ever reaches the flags the encounter asked for.
+    return (gBattleTypeFlags & BATTLE_TYPE_HAS_AI) || IsWildMonSmart() || AiBattles_IsActive()
+        || GetEncounterAiFlags() != 0;
 }
 
 static u64 GetAiFlags(u16 trainerId, enum BattlerId battler)
@@ -395,6 +399,18 @@ void BattleAI_SetupFlags(void)
                     | GetAiFlags(TRAINER_BATTLE_PARAM.opponentB, B_BATTLER_3);
         gAiThinkingStruct->aiFlags[B_BATTLER_2] = aiFlags;
         gAiThinkingStruct->aiFlags[B_BATTLER_0] = aiFlags;
+    }
+
+    // An encounter states its opponent-side AI outright, replacing whatever the battle type derived
+    // rather than accumulating onto it - the same "replace" semantics the other properties use.
+    // Last, so it wins over every branch above.
+    u64 encounterAiFlags = GetEncounterAiFlags();
+    if (encounterAiFlags != 0)
+    {
+        if (IsDoubleBattle())
+            encounterAiFlags |= AI_FLAG_DOUBLE_BATTLE; // GetAiFlags adds this; scoring needs it
+        gAiThinkingStruct->aiFlags[B_BATTLER_1] = encounterAiFlags;
+        gAiThinkingStruct->aiFlags[B_BATTLER_3] = encounterAiFlags;
     }
 }
 
