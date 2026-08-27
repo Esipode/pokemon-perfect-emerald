@@ -1284,6 +1284,14 @@
 	switchinabilities BS_SCRIPTING
 	.endm
 
+	@ Branches to \jumpInstr with \percent probability (0-100), otherwise falls through. The roll is
+	@ tagged RNG_ENCOUNTER_SCRIPT, so it is seedable/observable like every other tagged battle roll.
+	.macro encjumpifchance percent:req, jumpInstr:req
+	callnative BS_EncJumpIfChance
+	.byte \percent
+	.4byte \jumpInstr
+	.endm
+
 	.macro savetarget
 	callnative BS_SaveTarget
 	.endm

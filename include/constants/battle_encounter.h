@@ -9,7 +9,8 @@ enum EncounterId
     ENCOUNTER_LEGENDARY_BARRIER,   // Stage 15 example, outline Sec33
     ENCOUNTER_TRAINER_MEGA,        // Stage 15 example, outline Sec34
     ENCOUNTER_STORM_HERALD,        // Stage 16 example: three chained phase transitions
-    ENCOUNTER_ARTICUNO,            // Frozen Battlefield: Frost/barrier loop legendary fight
+    ENCOUNTER_ARTICUNO,
+    ENCOUNTER_ZAPDOS,
     ENCOUNTER_COUNT,
 };
 

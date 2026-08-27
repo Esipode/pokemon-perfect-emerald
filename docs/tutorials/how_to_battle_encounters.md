@@ -473,6 +473,7 @@ The commands below exist specifically for encounter scripts:
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
+| `encjumpifchance <percent>, <label>` | Branches to `<label>` with `<percent>` (`0`–`100`) probability, otherwise falls through. The roll is tagged `RNG_ENCOUNTER_SCRIPT` | encounter-specific (`callnative`) |
 
 ### Fixed vs. percentage amounts
 
@@ -544,7 +545,7 @@ about a multi-trigger checkpoint with these, not by reading the dispatcher's sou
 
 | Limit | Value | What happens if you exceed it |
 | --- | --- | --- |
-| Scripts per checkpoint | 4 | Dispatch stops for that checkpoint; an `assertf` fires ("runaway trigger chain?") |
+| Scripts per checkpoint | 4 (design to **3**) | Dispatch stops for that checkpoint; an `assertf` fires ("runaway trigger chain?") |
 | Triggers per encounter | 32 | The whole encounter fails to load (`assertf`); no triggers dispatch |
 | Author variables per encounter | 16 | `encounterproc` refuses to compile — "too many named variables" |
 | Condition nesting depth (`All:`/`Any:`/`Not:`) | 4 | The offending subtree asserts and evaluates `FALSE`; `encounterproc` also flags it at compile time |
@@ -552,6 +553,11 @@ about a multi-trigger checkpoint with these, not by reading the dispatcher's sou
 
 All of these fail loud (an `assertf`) rather than silently misbehaving — see
 [Debugging](#debugging).
+
+**"Scripts per checkpoint" is effectively 3, not 4.** The runaway guard is checked on *dispatch
+entry*, and the dispatcher always makes one trailing pass after the last script to discover nothing
+is left — so a checkpoint that actually runs 4 scripts asserts on that final pass even though no
+5th trigger was eligible. Budget the busiest checkpoints (`OnTurnStart`, `OnTurnEnd`) to 3.
 
 ---
 
@@ -633,6 +639,17 @@ yet, so the manual count is currently the reliable path.)
   sets — `Var(Handled) == 0`, script sets `Handled` to 1 — and clear that variable at `OnTurnEnd`
   (or wherever the next occurrence should be allowed). `OnEnter` does **not** help here: its edge
   check compares against an HP snapshot, which an event condition doesn't move.
+- **A script that must run unconditionally once per turn needs a two-trigger scaffold.** The
+  re-evaluation loop can't express "run every turn regardless of state" — a trigger with no
+  self-disabling condition fires until the script cap trips. Use a guard var: an `OnTurnStart`
+  trigger conditioned only on `Var(TurnGuard) == 0` that sets it to 1 (unconditional-once-per-turn),
+  paired with an `OnTurnEnd` trigger conditioned only on `Var(TurnGuard) == 1` that clears it
+  (self-disabling too). Two triggers buy an arbitrarily complex once-per-turn script — clearing
+  other re-entry guards, ticking a passive counter, shedding a status.
+- **`Event.OldValue`/`Event.NewValue` are stale after a move that missed or had no effect.** They
+  are only written at the HP-commit point, so after a miss or an immunity they still hold the
+  previous change's values — they can't be used to prove a hit actually landed. A trigger keyed on
+  `Event.Battler` at `OnMoveEnd` still fires for a move that whiffed.
 
 ---
 
@@ -758,6 +775,7 @@ constants are compiler errors.
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |
+| `encjumpifchance <percent>, <label>` | An integer `0`–`255` (asserts if above `100`) and a script label. |
 
 Every valid `<target>` is `ENC_TARGET_BOSS`, `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`,
 `ENC_TARGET_PLAYER_LEFT`, `ENC_TARGET_PLAYER_RIGHT`, `ENC_TARGET_OPPONENT_LEFT`,

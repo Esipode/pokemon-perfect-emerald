@@ -12894,3 +12894,23 @@ void BS_EncSetWeather(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// encjumpifchance: takes the jump with cmd->percent probability, otherwise falls through. A
+// general-purpose random branch for encounter scripts - the engine's other random-branch opcodes
+// are all tied to a specific move.
+void BS_EncJumpIfChance(void)
+{
+    NATIVE_ARGS(u8 percent, const u8 *jumpInstr);
+
+    assertf(cmd->percent <= 100,
+            "encounter %d: encjumpifchance percent %d out of range", gBattleStruct->encounter.id, cmd->percent)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    if (RandomPercentage(RNG_ENCOUNTER_SCRIPT, cmd->percent))
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
+}
+

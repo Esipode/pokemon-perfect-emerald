@@ -16,3 +16,18 @@ LegendaryEncounter_EventScript_Articuno::
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	releaseall
 	end
+
+LegendaryEncounter_EventScript_Zapdos::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_ZAPDOS, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_ZAPDOS
+	setwildbattle SPECIES_ZAPDOS, 50        @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	releaseall
+	end

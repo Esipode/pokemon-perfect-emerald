@@ -419,3 +419,168 @@ Conditions:
         Var(IceGuard) == 1
         Var(FireGuard) == 1
         Var(SwitchGuard) == 1
+
+#-------------------------------------------------------
+
+Encounter: Zapdos
+
+#-------------------------------------------------------
+
+# Storm Overload: one number, Charge (0-4), drives Zapdos's guard, its Sp. Atk, the weather, and
+# its lightning strikes. Charge rises from Zapdos's Electric moves, the player's Electric moves,
+# a chance on any other hit, and every 3rd turn; it falls by 2 when a Ground move earths it out
+# (Ground can't damage Electric/Flying, so a discharge turn is a zero-damage turn) and by 1 when
+# Zapdos sheds a sleep/freeze. At Charge 4 it OVERLOADS - huge offense, a strike every turn, but a
+# soft guard - then BURNS OUT: Charge to 0, self-damage, guard collapses for one turn. Provoking
+# that cycle is the fast, dangerous way through its HP; holding Charge at 0 is the safe, slow way.
+# Below 25% HP it locks into permanent overload (Last Stand); below 10% the storm dies and it
+# becomes catchable.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 80
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_THUNDERBOLT, MOVE_THUNDER, MOVE_DRILL_PECK, MOVE_HEAT_WAVE
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all 13 here in order fixes
+# Phase..TickGuard to 0..12 regardless of where they are first used later.
+# 0 Phase, 1 Charge, 2 Overload, 3 Crash, 4 Mark, 5 Answered, 6 Tick, 7 LastGuard,
+# 8 TurnGuard, 9 HitGuard, 10 BossGuard, 11 SwitchGuard, 12 TickGuard.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Zapdos_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Charge) >= 0
+    Var(Overload) >= 0
+    Var(Crash) >= 0
+    Var(Mark) >= 0
+    Var(Answered) >= 0
+    Var(Tick) >= 0
+    Var(LastGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(HitGuard) >= 0
+    Var(BossGuard) >= 0
+    Var(SwitchGuard) >= 0
+    Var(TickGuard) >= 0
+
+# Last Stand: permanent overload, guard back up, no more burnout window. The final stage.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Zapdos_LastStand
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 0
+
+# The three "a move was aimed at Zapdos" triggers share HitGuard, so exactly one fires per hit and
+# priority order makes them mutually exclusive: Ground discharges, Electric charges at 100%, and
+# anything else falls through to the 25% roll.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Zapdos_GroundHit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_GROUND
+    Var(HitGuard) == 0
+    Var(Phase) <= 1
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Zapdos_ElectricHit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ELECTRIC
+    Var(HitGuard) == 0
+    Var(Phase) <= 1
+
+# Zapdos itself using an Electric move - separate guard, since this is "boss used" not "aimed at".
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Zapdos_BossElectric
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ELECTRIC
+    Var(BossGuard) == 0
+    Var(Phase) <= 1
+
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Zapdos_AnyHit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(HitGuard) == 0
+    Var(Phase) <= 1
+
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Zapdos_SwitchIn
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(SwitchGuard) == 0
+
+# Runs once at the top of every turn regardless of state: clears the per-turn guards, ticks the
+# passive-charge counter, sheds sleep/freeze. TurnGuard makes it unconditional-once-per-turn;
+# EncScript_Zapdos_TurnClose clears TurnGuard at end of turn.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Zapdos_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Burnout resolves off the exact sentinel Overload == 1 (set by the OnTurnEnd tick on its way down).
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Zapdos_Burnout
+Conditions:
+    Var(Overload) == 1
+
+# The mark/strike loop: resolves a pending strike and lays the next one while Charge >= 3 and not
+# overloaded (overload has its own every-turn strike).
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Zapdos_Storm
+Conditions:
+    Any:
+        Var(Mark) == 1
+        All:
+            Var(Mark) == 0
+            Var(Charge) >= 3
+            Var(Overload) == 0
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once
+Script: EncScript_Zapdos_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 1
+
+# Overload strike + step-down. TickGuard stops the tick from running itself to the sentinel inside
+# one OnTurnEnd dispatch; the step-down is skipped in Last Stand (permanent overload).
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Zapdos_OverloadTick
+Conditions:
+    Var(Overload) >= 2
+    Var(TickGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Zapdos_CrashEnd
+Conditions:
+    Var(Crash) == 1
+
+# Priority 90 - runs last at the checkpoint. Clears TurnGuard and steps a freshly-laid mark (2->1)
+# so the warning it gives is a full turn long.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Zapdos_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

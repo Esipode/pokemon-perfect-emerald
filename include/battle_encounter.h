@@ -76,7 +76,9 @@ extern const u8 EncScript_StormHerald_Intro[];
 extern const u8 EncScript_StormHerald_Surge[];
 extern const u8 EncScript_StormHerald_Desperation[];
 
-// Articuno ("The Frozen Battlefield") - see src/data/battle_encounters.encounter.
+// Legendary Encounter Messages - see src/data/battle_encounters.encounter
+
+// Articuno ("The Frozen Battlefield")
 extern const u8 EncScript_Articuno_Intro[];
 extern const u8 EncScript_Articuno_PhaseFrozenField[];
 extern const u8 EncScript_Articuno_AbsoluteZero[];
@@ -90,6 +92,22 @@ extern const u8 EncScript_Articuno_FrozenGround[];
 extern const u8 EncScript_Articuno_Weakened[];
 extern const u8 EncScript_Articuno_PlummetResolve[];
 extern const u8 EncScript_Articuno_TurnReset[];
+
+// Zapdos ("Storm Overload")
+extern const u8 EncScript_Zapdos_Intro[];
+extern const u8 EncScript_Zapdos_LastStand[];
+extern const u8 EncScript_Zapdos_GroundHit[];
+extern const u8 EncScript_Zapdos_ElectricHit[];
+extern const u8 EncScript_Zapdos_BossElectric[];
+extern const u8 EncScript_Zapdos_AnyHit[];
+extern const u8 EncScript_Zapdos_SwitchIn[];
+extern const u8 EncScript_Zapdos_TurnOpen[];
+extern const u8 EncScript_Zapdos_Burnout[];
+extern const u8 EncScript_Zapdos_Storm[];
+extern const u8 EncScript_Zapdos_Weakened[];
+extern const u8 EncScript_Zapdos_OverloadTick[];
+extern const u8 EncScript_Zapdos_CrashEnd[];
+extern const u8 EncScript_Zapdos_TurnClose[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];

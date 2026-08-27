@@ -991,10 +991,11 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
 
-// Debug hook for the Articuno encounter; final placement (Shoal Cave's ice room is the likely
-// permanent home) is a separate decision.
-LittlerootTown_EventScript_EncounterTest::
+LittlerootTown_EventScript_EncounterTESTArticuno::
 	goto LegendaryEncounter_EventScript_Articuno
+
+LittlerootTown_EventScript_EncounterTESTZapdos::
+	goto LegendaryEncounter_EventScript_Zapdos
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

@@ -267,6 +267,8 @@ enum RandomTag
     RNG_ACHIEVEMENT_CRIT,
     RNG_ACHIEVEMENT_PP_SAVE,
     RNG_ACHIEVEMENT_STATUS_RECOVERY,
+    // Chance-based branches in encounter scripts (encjumpifchance).
+    RNG_ENCOUNTER_SCRIPT,
 };
 
 #define RandomWeighted(tag, ...) \
