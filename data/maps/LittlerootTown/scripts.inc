@@ -1006,6 +1006,9 @@ LittlerootTown_EventScript_EncounterTESTMewtwo::
 LittlerootTown_EventScript_EncounterTESTMew::
 	goto LegendaryEncounter_EventScript_Mew
 
+LittlerootTown_EventScript_EncounterTESTRaikou::
+	goto LegendaryEncounter_EventScript_Raikou
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

@@ -513,6 +513,7 @@ The commands below exist specifically for encounter scripts:
 | `encsetcaptypeeffectiveness <target>, <cap>` | `TRUE` clamps `<target>`'s incoming type effectiveness at 2x; `FALSE` removes the clamp | encounter-specific (`callnative`) |
 | `encsetflattoxicdamage <target>, <flat>` | `TRUE` stops Toxic's counter from ramping `<target>`'s damage up each turn; `FALSE` restores the ramp | encounter-specific (`callnative`) |
 | `encsetsurvive <target>, <survive>` | `TRUE` guards `<target>`'s HP against dropping below 1 through the damage formula or a passive tick; `FALSE` removes the guard | encounter-specific (`callnative`) |
+| `encsetprotect <target>` | Gives `<target>` the same protection Protect itself grants, so Feint, never-miss moves and contact punishment resolve exactly as they do against a real Protect. `gProtectStructs` is cleared after end-of-turn effects, so this only has an effect at `OnTurnStart` — set there it covers the whole turn and expires on its own | encounter-specific (`callnative`) |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT` / `ENC_BALLS_BLOCKED` / `ENC_BALLS_ALLOWED` | encounter-specific (`callnative`) |
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
@@ -849,6 +850,7 @@ constants are compiler errors.
 | `encsetcaptypeeffectiveness <target>, <cap>` | Target below; `TRUE` or `FALSE`. |
 | `encsetflattoxicdamage <target>, <flat>` | Target below; `TRUE` or `FALSE`. |
 | `encsetsurvive <target>, <survive>` | Target below; `TRUE` or `FALSE`. |
+| `encsetprotect <target>` | Target below. |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |

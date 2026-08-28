@@ -152,6 +152,24 @@ extern const u8 EncScript_Mew_Mischief[];
 extern const u8 EncScript_Mew_WaitResolve[];
 extern const u8 EncScript_Mew_TurnClose[];
 
+// Raikou ("The Hunting Thunder")
+extern const u8 EncScript_Raikou_Intro[];
+extern const u8 EncScript_Raikou_Hunt[];
+extern const u8 EncScript_Raikou_Hunt[];
+extern const u8 EncScript_Raikou_Incarnate[];
+extern const u8 EncScript_Raikou_Incarnate[];
+extern const u8 EncScript_Raikou_Weakened[];
+extern const u8 EncScript_Raikou_Weakened[];
+extern const u8 EncScript_Raikou_PlayerGround[];
+extern const u8 EncScript_Raikou_PlayerAttack[];
+extern const u8 EncScript_Raikou_PlayerStatus[];
+extern const u8 EncScript_Raikou_BossMove[];
+extern const u8 EncScript_Raikou_Faint[];
+extern const u8 EncScript_Raikou_SwitchIn[];
+extern const u8 EncScript_Raikou_TurnOpen[];
+extern const u8 EncScript_Raikou_Discharge[];
+extern const u8 EncScript_Raikou_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

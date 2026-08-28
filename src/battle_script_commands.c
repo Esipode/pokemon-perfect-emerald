@@ -13043,6 +13043,23 @@ void BS_EncounterSetSurvive(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// PROTECT (encsetprotect). Sets the same gProtectStructs flag Protect itself sets, so every
+// existing interaction - Feint, never-miss moves, contact punishment, the "protected itself!"
+// message - resolves identically for a scripted evade turn. gProtectStructs is wiped after
+// end-of-turn effects, so this only has an effect when set at OnTurnStart.
+void BS_EncSetProtect(void)
+{
+    NATIVE_ARGS(u8 target);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            gProtectStructs[battler].protected = PROTECT_NORMAL;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
 // describe the ball the player is about to throw, and there is only ever one catch target.
 void BS_EncounterSetBallPolicy(void)

@@ -1259,6 +1259,15 @@
 	.byte \survive
 	.endm
 
+	@ Gives every battler \target resolves to the same protection Protect itself grants, so Feint,
+	@ never-miss moves and contact punishment all behave exactly as they do against a real Protect.
+	@ For a telegraphed evade/brace turn. Only useful at OnTurnStart: gProtectStructs is cleared
+	@ after end-of-turn effects, so a protect set there covers the whole turn and expires on its own.
+	.macro encsetprotect target:req
+	callnative BS_EncSetProtect
+	.byte \target
+	.endm
+
 	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or
 	@ ENC_BALLS_ALLOWED. ALLOWED only lifts this encounter's own block - it never makes a battle
 	@ catchable that wouldn't be otherwise (trainer battle, Ghost without a Silph Scope, ...).
