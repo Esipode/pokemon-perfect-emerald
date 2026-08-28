@@ -170,6 +170,25 @@ extern const u8 EncScript_Raikou_TurnOpen[];
 extern const u8 EncScript_Raikou_Discharge[];
 extern const u8 EncScript_Raikou_TurnClose[];
 
+// Entei ("The Walking Volcano")
+extern const u8 EncScript_Entei_Intro[];
+extern const u8 EncScript_Entei_Cycle[];
+extern const u8 EncScript_Entei_Cycle[];
+extern const u8 EncScript_Entei_Cataclysm[];
+extern const u8 EncScript_Entei_Cataclysm[];
+extern const u8 EncScript_Entei_Weakened[];
+extern const u8 EncScript_Entei_Weakened[];
+extern const u8 EncScript_Entei_PlayerWater[];
+extern const u8 EncScript_Entei_PlayerAttack[];
+extern const u8 EncScript_Entei_BossFire[];
+extern const u8 EncScript_Entei_Faint[];
+extern const u8 EncScript_Entei_SwitchIn[];
+extern const u8 EncScript_Entei_TurnOpen[];
+extern const u8 EncScript_Entei_Erupt[];
+extern const u8 EncScript_Entei_EruptSafe[];
+extern const u8 EncScript_Entei_Vent[];
+extern const u8 EncScript_Entei_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

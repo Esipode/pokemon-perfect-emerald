@@ -1009,6 +1009,9 @@ LittlerootTown_EventScript_EncounterTESTMew::
 LittlerootTown_EventScript_EncounterTESTRaikou::
 	goto LegendaryEncounter_EventScript_Raikou
 
+LittlerootTown_EventScript_EncounterTESTEntei::
+	goto LegendaryEncounter_EventScript_Entei
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD
