@@ -11,6 +11,7 @@ enum EncounterId
     ENCOUNTER_STORM_HERALD,        // Stage 16 example: three chained phase transitions
     ENCOUNTER_ARTICUNO,
     ENCOUNTER_ZAPDOS,
+    ENCOUNTER_MOLTRES,
     ENCOUNTER_COUNT,
 };
 

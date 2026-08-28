@@ -15,14 +15,10 @@ PowerPlant_EventScript_TryRemoveStaticMon::
 
 PowerPlant_OnTransition::
 	setworldmapflag FLAG_WORLD_MAP_POWER_PLANT
-	call_if_unset FLAG_FOUGHT_ZAPDOS, PowerPlant_EventScript_ShowZapdos
+	updatelegendaryvisibility SPECIES_ZAPDOS, FLAG_HIDE_ZAPDOS
 	call_if_unset FLAG_FOUGHT_POWER_PLANT_ELECTRODE_1, PowerPlant_EventScript_ShowElectrode1
 	call_if_unset FLAG_FOUGHT_POWER_PLANT_ELECTRODE_2, PowerPlant_EventScript_ShowElectrode2
 	end
-
-PowerPlant_EventScript_ShowZapdos::
-	clearflag FLAG_HIDE_ZAPDOS
-	return
 
 PowerPlant_EventScript_ShowElectrode1::
 	clearflag FLAG_HIDE_POWER_PLANT_ELECTRODE_1
@@ -48,22 +44,14 @@ PowerPlant_EventScript_Zapdos::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, PowerPlant_EventScript_DefeatedZapdos
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, PowerPlant_EventScript_RanFromZapdos
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, PowerPlant_EventScript_RanFromZapdos
-	setflag FLAG_FOUGHT_ZAPDOS
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, PowerPlant_EventScript_CaughtZapdos
 	release
 	end
 
-PowerPlant_EventScript_DefeatedZapdos::
+@ Only catching Zapdos removes it for good; any other outcome leaves it here to be rechallenged.
+PowerPlant_EventScript_CaughtZapdos::
 	setflag FLAG_FOUGHT_ZAPDOS
-	goto EventScript_RemoveStaticMon
-	end
-
-PowerPlant_EventScript_RanFromZapdos::
-	setvar VAR_0x8004, SPECIES_ZAPDOS
-	goto EventScript_MonFlewAway
-	end
+	return
 
 PowerPlant_EventScript_Electrode1::
 	lock

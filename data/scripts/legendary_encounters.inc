@@ -14,8 +14,7 @@ LegendaryEncounter_EventScript_Articuno::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	releaseall
-	end
+	goto LegendaryEncounter_EventScript_FinishBattle
 
 LegendaryEncounter_EventScript_Zapdos::
 	lock
@@ -29,5 +28,31 @@ LegendaryEncounter_EventScript_Zapdos::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Moltres::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_MOLTRES, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_MOLTRES
+	setwildbattle SPECIES_MOLTRES, 50        @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
+@ Shared post-battle tail. Only a caught legendary is removed from the overworld; fainting or
+@ fleeing leaves it in place so the fight can be retried. Each host map's ON_TRANSITION runs
+@ `updatelegendaryvisibility`, which brings the object back if the player later releases the mon.
+LegendaryEncounter_EventScript_FinishBattle::
+	specialvar VAR_RESULT, GetBattleOutcome
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_RemoveCaughtLegendary
 	releaseall
 	end
+
+LegendaryEncounter_EventScript_RemoveCaughtLegendary::
+	removeobject VAR_LAST_TALKED
+	return

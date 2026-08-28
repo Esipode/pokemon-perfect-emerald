@@ -1167,6 +1167,8 @@
 	@ battler's own max HP - the portable choice when the boss's level isn't fixed).
 	@ Scripted damage ignores the target's encounter damage reduction: the number here is the
 	@ encounter's own, not something for another encounter rule to rescale.
+	@ A battler taken to 0 HP faints in place, mirroring status/weather chip damage
+	@ (BattleScript_DoTurnDmg); checkteamslost ends the battle if that empties a side.
 	.macro enchangehp target:req, amount:req, mode=ENC_AMOUNT_FIXED
 	callnative BS_EncounterChangeHpBegin
 	.byte \target
@@ -1177,6 +1179,8 @@
 	.4byte 2f
 	healthbarupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
 	datahpupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	tryfaintmon BS_SCRIPTING
+	checkteamslost 2f
 	goto 1b
 2:
 	.endm
@@ -1237,6 +1241,16 @@
 	callnative BS_EncounterSetFlatToxicDamage
 	.byte \target
 	.byte \flat
+	.endm
+
+	@ TRUE guards every battler \target resolves to against dropping below 1 HP from anything that
+	@ goes through the damage formula or a passive HP tick (weather, Toxic, recoil, confusion). It
+	@ does NOT cover fixed-damage moves, Perish Song or Destiny Bond - pair with encsetimmunity.
+	@ FALSE removes the guard. For scripted last-stand / rebirth beats and guaranteed catch windows.
+	.macro encsetsurvive target:req, survive:req
+	callnative BS_EncounterSetSurvive
+	.byte \target
+	.byte \survive
 	.endm
 
 	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or

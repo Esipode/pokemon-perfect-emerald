@@ -3152,6 +3152,37 @@ bool8 Scrcmd_checkspecies(struct ScriptContext *ctx)
     return FALSE;
 }
 
+bool8 Scrcmd_checkspeciesowned(struct ScriptContext *ctx)
+{
+    enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    gSpecialVar_Result = CheckPlayerOwnsSpecies(givenSpecies);
+
+    return FALSE;
+}
+
+// Keeps a legendary's overworld object in sync with whether the player owns one: caught
+// legendaries stay gone, fainted ones can be challenged again, and releasing one brings its
+// encounter back. Also reports ownership in VAR_RESULT for any follow-up branching.
+bool8 Scrcmd_updatelegendaryvisibility(struct ScriptContext *ctx)
+{
+    enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));
+    u16 hideFlag = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    gSpecialVar_Result = CheckPlayerOwnsSpecies(givenSpecies);
+
+    if (gSpecialVar_Result == TRUE)
+        FlagSet(hideFlag);
+    else
+        FlagClear(hideFlag);
+
+    return FALSE;
+}
+
 bool8 Scrcmd_checkspecies_choose(struct ScriptContext *ctx)
 {
     enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));

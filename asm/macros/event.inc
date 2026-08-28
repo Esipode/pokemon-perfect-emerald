@@ -2567,6 +2567,21 @@
 	checkspecies \speciesId, OPEN_PARTY_SCREEN
 	.endm
 
+	@ Sets VAR_RESULT to TRUE if the player owns speciesId in their party or PC boxes.
+	.macro checkspeciesowned speciesId:req
+	callnative Scrcmd_checkspeciesowned, requests_effects=1
+	.2byte \speciesId
+	.endm
+
+	@ Sets hideFlag while the player owns speciesId and clears it otherwise, so a caught legendary's
+	@ overworld object stays gone and releasing the Pokémon brings its encounter back. Also sets
+	@ VAR_RESULT to whether the player owns one.
+	.macro updatelegendaryvisibility speciesId:req, hideFlag:req
+	callnative Scrcmd_updatelegendaryvisibility, requests_effects=1
+	.2byte \speciesId
+	.2byte \hideFlag
+	.endm
+
 	@ Gets the facing direction of a given event object and stores it in the variable dest.
 	.macro getobjectfacingdirection localId:req, dest:req
 	callnative Scrcmd_getobjectfacingdirection, requests_effects=1

@@ -751,7 +751,7 @@ void ApplyEncounterBattlerProperties(void)
     runtime->catchRate = properties->catchRate;
 
     if (properties->damageReduction == 0 && properties->immunities == 0
-     && !properties->capTypeEffectiveness && !properties->flatToxicDamage)
+     && !properties->capTypeEffectiveness && !properties->flatToxicDamage && !properties->survive)
         return;
 
     // Properties describe the encounter's subject, so they seed the boss and nobody else. A script
@@ -764,6 +764,7 @@ void ApplyEncounterBattlerProperties(void)
     SetEncounterImmunities(boss, properties->immunities);
     SetEncounterCapTypeEffectiveness(boss, properties->capTypeEffectiveness);
     SetEncounterFlatToxicDamage(boss, properties->flatToxicDamage);
+    SetEncounterSurvive(boss, properties->survive);
 }
 
 void SetEncounterDamageReduction(enum BattlerId battler, u32 percent)
@@ -862,6 +863,19 @@ bool32 DoesEncounterFlattenToxicDamage(enum BattlerId battler)
     return gBattleStruct->encounter.flatToxicDamage[battler];
 }
 
+void SetEncounterSurvive(enum BattlerId battler, bool32 survive)
+{
+    gBattleStruct->encounter.survive[battler] = (survive != FALSE);
+}
+
+bool32 DoesEncounterSurvive(enum BattlerId battler)
+{
+    if (!IsEncounterActive() || battler >= MAX_BATTLERS_COUNT)
+        return FALSE;
+
+    return gBattleStruct->encounter.survive[battler];
+}
+
 s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
 {
     u32 percent;
@@ -873,13 +887,22 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
         return damage;
 
     percent = gBattleStruct->encounter.damageReduction[battler];
-    if (percent == 0)
-        return damage;
     if (percent > ENC_MAX_DAMAGE_REDUCTION)
         percent = ENC_MAX_DAMAGE_REDUCTION;
+    if (percent != 0)
+    {
+        damage = damage * (100 - percent) / 100;
+        if (damage < 1)
+            damage = 1;
+    }
 
-    damage = damage * (100 - percent) / 100;
-    return (damage < 1) ? 1 : damage;
+    // Survive: this battler's HP can't be taken below 1. Clamped after the reduction so it judges the
+    // damage actually about to land, and before GetAdjustedDamage, whose `hp > damage` guard then
+    // short-circuits. At 1 HP this yields 0 - the same value False Swipe already produces there.
+    if (gBattleStruct->encounter.survive[battler] && damage >= gBattleMons[battler].hp)
+        damage = gBattleMons[battler].hp - 1;
+
+    return damage;
 }
 
 bool32 DoesEncounterGrantImmunity(enum BattlerId battler, u32 immunity)

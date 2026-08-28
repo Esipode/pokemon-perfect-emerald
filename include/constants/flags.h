@@ -51,13 +51,13 @@
 #else
 
 #define FLAG_MAGOST_BERRY_MONEY_BOOST 0x20 // Used Magost Berry: next trainer battle's money reward is +25%
-#define FLAG_EMPORIUM_ZMOVE_INTRO_DONE      0x21 // Battle Emporium: instructor's one-time mechanic explanation already shown
-#define FLAG_EMPORIUM_MEGA_INTRO_DONE       0x22
-#define FLAG_EMPORIUM_TERA_INTRO_DONE       0x23
-#define FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN 0x24 // Battle Emporium: set hides the battle-room challenger until a reward is chosen
-#define FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN  0x25
-#define FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN  0x26
-#define FLAG_EMPORIUM_NO_WHITEOUT  0x27 // Battle Emporium: armed around a challenger battle (outside Nuzlocke) so a loss returns to the lobby instead of a white-out. Assigned to B_FLAG_NO_WHITEOUT.
+#define FLAG_HIDE_ARTICUNO   0x21
+#define FLAG_HIDE_ZAPDOS     0x22
+#define FLAG_HIDE_MOLTRES    0x23
+#define FLAG_HIDE_MEWTWO     0x24
+#define FLAG_HIDE_BIRTH_ISLAND_METEORITE 0x25
+#define FLAG_UNUSED_0x026    0x26 // Unused Flag
+#define FLAG_UNUSED_0x027    0x27 // Unused Flag
 #define FLAG_UNUSED_0x028    0x28 // Unused Flag
 #define FLAG_UNUSED_0x029    0x29 // Unused Flag
 #define FLAG_UNUSED_0x02A    0x2A // Unused Flag
@@ -200,20 +200,20 @@
 #define FLAG_RECEIVED_TM_CALM_MIND           0xAB
 #define FLAG_RECEIVED_TM_WATER_PULSE         0xAC
 #define FLAG_HIDE_SECRET_BASE_TRAINER        0xAD
-#define FLAG_DECORATION_1                    0xAE
-#define FLAG_DECORATION_2                    0xAF
-#define FLAG_DECORATION_3                    0xB0
-#define FLAG_DECORATION_4                    0xB1
-#define FLAG_DECORATION_5                    0xB2
-#define FLAG_DECORATION_6                    0xB3
-#define FLAG_DECORATION_7                    0xB4
-#define FLAG_DECORATION_8                    0xB5
-#define FLAG_DECORATION_9                    0xB6
-#define FLAG_DECORATION_10                   0xB7
-#define FLAG_DECORATION_11                   0xB8
-#define FLAG_DECORATION_12                   0xB9
-#define FLAG_DECORATION_13                   0xBA
-#define FLAG_DECORATION_14                   0xBB
+#define FLAG_EMPORIUM_ZMOVE_INTRO_DONE       0xAE
+#define FLAG_EMPORIUM_MEGA_INTRO_DONE        0xAF
+#define FLAG_EMPORIUM_TERA_INTRO_DONE        0xB0
+#define FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN 0xB1
+#define FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN 0xB2
+#define FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN 0xB3
+#define FLAG_EMPORIUM_NO_WHITEOUT            0xB4
+#define FLAG_UNUSED_0xB5                     0xB5
+#define FLAG_UNUSED_0xB6                     0xB6
+#define FLAG_UNUSED_0xB7                     0xB7
+#define FLAG_UNUSED_0xB8                     0xB8
+#define FLAG_UNUSED_0xB9                     0xB9
+#define FLAG_UNUSED_0xBA                     0xBA
+#define FLAG_UNUSED_0xBB                     0xBB
 #define FLAG_RECEIVED_MAP                    0xBC
 #define FLAG_DELIVERED_STEVEN_LETTER         0xBD
 #define FLAG_DEFEATED_WALLY_MAUVILLE         0xBE
@@ -1701,7 +1701,6 @@
 #define FLAG_HIDE_ROUTE_22_RIVAL                           0
 #define FLAG_HIDE_PEWTER_MUSEUM_GUIDE                      0
 #define FLAG_HIDE_TOWER_RIVAL                              0
-#define FLAG_HIDE_MOLTRES                                  0
 #define FLAG_HIDE_SILPH_ROCKETS                            0
 #define FLAG_HIDE_ROUTE_12_SNORLAX                         0
 #define FLAG_HIDE_VIRIDIAN_GIOVANNI                        0
@@ -1712,7 +1711,6 @@
 #define FLAG_HIDE_OAK_IN_CHAMP_ROOM                        0
 #define FLAG_HIDE_GAME_CORNER_ROCKET                       0
 #define FLAG_HIDE_CERULEAN_CAVE_GUARD                      0
-#define FLAG_HIDE_ZAPDOS                                   0
 #define FLAG_HIDE_TOWER_ROCKET_1                           0
 #define FLAG_HIDE_CELADON_ROCKETS                          0
 #define FLAG_HIDE_DOJO_HITMONLEE_BALL                      0
@@ -1748,8 +1746,6 @@
 #define FLAG_HIDE_THREE_ISLAND_ANTIBIKERS                  0
 #define FLAG_0x07F                                         0
 #define FLAG_HIDE_ROUTE_16_SNORLAX                         0
-#define FLAG_HIDE_MEWTWO                                   0
-#define FLAG_HIDE_ARTICUNO                                 0
 #define FLAG_HIDE_TOWER_ROCKET_2                           0
 #define FLAG_HIDE_TOWER_ROCKET_3                           0
 #define FLAG_HIDE_POWER_PLANT_ELECTRODE_1                  0
@@ -1772,7 +1768,6 @@
 #define FLAG_HIDE_SELPHYS_BUTLER                           0
 #define FLAG_HIDE_FOUR_ISLAND_RIVAL                        0
 #define FLAG_HIDE_SIX_ISLAND_POKECENTER_RIVAL              0
-#define FLAG_HIDE_BIRTH_ISLAND_METEORITE                   0
 #define FLAG_HIDE_POSTGAME_GOSSIPERS                       0
 #define FLAG_HIDE_FAME_CHECKER_ERIKA_JOURNALS              0
 #define FLAG_HIDE_FAME_CHECKER_KOGA_JOURNAL                0

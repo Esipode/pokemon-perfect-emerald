@@ -1046,6 +1046,29 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCZAPDOSSTEADIES]                    = COMPOUND_STRING("Zapdos steadies itself and begins to gather the storm again."),
     [STRINGID_ENCZAPDOSLASTSTAND]                   = COMPOUND_STRING("Zapdos pours its life into one endless storm!\pIt won't burn out again!{PAUSE_UNTIL_PRESS}"),
     [STRINGID_ENCZAPDOSWEAKENED]                    = COMPOUND_STRING("The storm gutters out.\pZapdos is spent. Now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+
+    // Moltres ("The Everlasting Flame").
+    [STRINGID_ENCMOLTRESINTRO]                      = COMPOUND_STRING("Moltres descends in a pillar of living flame!"),
+    [STRINGID_ENCMOLTRESEMBERS]                     = COMPOUND_STRING("Embers scatter from Moltres's feathers."),
+    [STRINGID_ENCMOLTRESROARS]                      = COMPOUND_STRING("Moltres's flames roar. Its attacks are burning hotter!"),
+    [STRINGID_ENCMOLTRESAURA]                       = COMPOUND_STRING("An aura of fire wraps Moltres. Anything that strikes it will burn!"),
+    [STRINGID_ENCMOLTRESENGULFED]                   = COMPOUND_STRING("The battlefield ignites! The sky turns white with heat!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMOLTRESBURNSITSELF]                = COMPOUND_STRING("Moltres is burning itself away to keep the fire alive!"),
+    [STRINGID_ENCMOLTRESEVERLASTING]                = COMPOUND_STRING("MOLTRES BECOMES THE EVERLASTING FLAME!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMOLTRESGUARDSLACKENS]             = COMPOUND_STRING("The heat swells, and Moltres's body glows thin and open!"),
+    [STRINGID_ENCMOLTRESGUARDHARDENS]              = COMPOUND_STRING("The flames bank low and Moltres draws itself in tight."),
+    [STRINGID_ENCMOLTRESBANKS]                      = COMPOUND_STRING("Without fuel, the fire dies down…"),
+    [STRINGID_ENCMOLTRESDRINKSITIN]                = COMPOUND_STRING("Moltres drinks the fire in!"),
+    [STRINGID_ENCMOLTRESAURABURNS]                 = COMPOUND_STRING("The flame aura lashes back!"),
+    [STRINGID_ENCMOLTRESFIELDBURNS]                = COMPOUND_STRING("The burning ground scorches your Pokémon!"),
+    [STRINGID_ENCMOLTRESCONSUMESITSELF]            = COMPOUND_STRING("Moltres's own fire eats away at it!"),
+    [STRINGID_ENCMOLTRESBLAZESAWAKE]              = COMPOUND_STRING("Moltres blazes awake, and the fire leaps higher for it!"),
+    [STRINGID_ENCMOLTRESSTILLBURNING]             = COMPOUND_STRING("The heat has not let up…"),
+    [STRINGID_ENCMOLTRESFALLS]                      = COMPOUND_STRING("Moltres's fire gutters out. It falls…"),
+    [STRINGID_ENCMOLTRESEMBER]                      = COMPOUND_STRING("…but in the ashes, one ember still burns."),
+    [STRINGID_ENCMOLTRESREBIRTH]                    = COMPOUND_STRING("MOLTRES RISES FROM ITS OWN ASHES!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMOLTRESSCORCHED]                  = COMPOUND_STRING("The ground is scorched black. The flames will never leave it now."),
+    [STRINGID_ENCMOLTRESWEAKENED]                  = COMPOUND_STRING("The everlasting flame finally dims.\pMoltres is spent. Now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

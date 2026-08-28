@@ -41,6 +41,7 @@ struct EncounterProperties
     u8 immunities;       // ENC_IMMUNE_* bits, applied to the boss
     bool8 capTypeEffectiveness;  // clamps the boss's incoming type-effectiveness multiplier to 2x
     bool8 flatToxicDamage;       // disables Toxic's per-turn counter ramp on the boss
+    bool8 survive;               // boss's HP can't be taken below 1 by the damage formula or a passive tick
 };
 
 struct Encounter
@@ -108,6 +109,18 @@ extern const u8 EncScript_Zapdos_Weakened[];
 extern const u8 EncScript_Zapdos_OverloadTick[];
 extern const u8 EncScript_Zapdos_CrashEnd[];
 extern const u8 EncScript_Zapdos_TurnClose[];
+
+// Moltres ("The Everlasting Flame")
+extern const u8 EncScript_Moltres_Intro[];
+extern const u8 EncScript_Moltres_Rebirth[];
+extern const u8 EncScript_Moltres_Rebirth[];
+extern const u8 EncScript_Moltres_Weakened[];
+extern const u8 EncScript_Moltres_Weakened[];
+extern const u8 EncScript_Moltres_FireHit[];
+extern const u8 EncScript_Moltres_TookDamage[];
+extern const u8 EncScript_Moltres_BossFire[];
+extern const u8 EncScript_Moltres_TurnOpen[];
+extern const u8 EncScript_Moltres_TurnClose[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
@@ -206,6 +219,17 @@ void SetEncounterFlatToxicDamage(enum BattlerId battler, bool32 flat);
 // TRUE if battler's Toxic damage should stay flat instead of ramping (see
 // SetEncounterFlatToxicDamage above). FALSE with no encounter active.
 bool32 DoesEncounterFlattenToxicDamage(enum BattlerId battler);
+
+// Setter behind encsetsurvive; replaces the battler's current value outright. While TRUE the
+// battler's HP cannot be taken below 1 by anything that passes through ApplyEncounterDamageReduction
+// - move damage and every passive HP tick (weather, Toxic, recoil, confusion self-hits). Fixed-damage
+// moves, Perish Song and Destiny Bond bypass that path and are not covered; pair with Immunities:.
+// Intended for scripted last-stand / rebirth sequences and for guaranteeing the catch window opens.
+void SetEncounterSurvive(enum BattlerId battler, bool32 survive);
+
+// TRUE if battler's HP is currently guarded against dropping below 1 (see SetEncounterSurvive
+// above). FALSE with no encounter active.
+bool32 DoesEncounterSurvive(enum BattlerId battler);
 
 #if TESTING
 // Overrides GetEncounter's id-indexed lookup so tests can supply their own trigger

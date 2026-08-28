@@ -12845,6 +12845,22 @@ void BS_EncounterSetFlatToxicDamage(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// SURVIVE (encsetsurvive). Guards the target's HP against dropping below 1 through the damage formula
+// or a passive tick - for scripted last stands, form changes at death's door and guaranteed catch
+// windows. Does not cover fixed-damage / Perish Song / Destiny Bond; those are shut out by Immunities:.
+void BS_EncounterSetSurvive(void)
+{
+    NATIVE_ARGS(u8 target, bool8 survive);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterSurvive(battler, cmd->survive);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
 // describe the ball the player is about to throw, and there is only ever one catch target.
 void BS_EncounterSetBallPolicy(void)

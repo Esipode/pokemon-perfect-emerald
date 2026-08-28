@@ -14,12 +14,8 @@ MtEmber_Summit_EventScript_TryRemoveMoltres::
 	return
 
 MtEmber_Summit_OnTransition::
-	call_if_unset FLAG_FOUGHT_MOLTRES, MtEmber_Summit_EventScript_ShowMoltres
+	updatelegendaryvisibility SPECIES_MOLTRES, FLAG_HIDE_MOLTRES
 	end
-
-MtEmber_Summit_EventScript_ShowMoltres::
-	clearflag FLAG_HIDE_MOLTRES
-	return
 
 MtEmber_Summit_EventScript_Moltres::
 	lock
@@ -37,19 +33,11 @@ MtEmber_Summit_EventScript_Moltres::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, MtEmber_Summit_EventScript_DefeatedMoltres
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, MtEmber_Summit_EventScript_RanFromMoltres
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, MtEmber_Summit_EventScript_RanFromMoltres
-	setflag FLAG_FOUGHT_MOLTRES
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, MtEmber_Summit_EventScript_CaughtMoltres
 	release
 	end
 
-MtEmber_Summit_EventScript_DefeatedMoltres::
+@ Only catching Moltres removes it for good; any other outcome leaves it here to be rechallenged.
+MtEmber_Summit_EventScript_CaughtMoltres::
 	setflag FLAG_FOUGHT_MOLTRES
-	goto EventScript_RemoveStaticMon
-	end
-
-MtEmber_Summit_EventScript_RanFromMoltres::
-	setvar VAR_0x8004, SPECIES_MOLTRES
-	goto EventScript_MonFlewAway
-	end
+	return

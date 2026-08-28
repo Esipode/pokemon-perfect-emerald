@@ -35,12 +35,11 @@ FarawayIsland_Interior_EventScript_TryRemoveMew::
 FarawayIsland_Interior_OnTransition:
 	setvar VAR_FARAWAY_ISLAND_STEP_COUNTER, 0
 	setvar VAR_TEMP_1, 1
-	call_if_unset FLAG_CAUGHT_MEW, FarawayIsland_Interior_EventScript_TryShowMew
+	updatelegendaryvisibility SPECIES_MEW, FLAG_HIDE_MEW
+	call_if_eq VAR_RESULT, FALSE, FarawayIsland_Interior_EventScript_EnableMewScene
 	end
 
-FarawayIsland_Interior_EventScript_TryShowMew::
-	goto_if_set FLAG_DEFEATED_MEW, Common_EventScript_NopReturn
-	clearflag FLAG_HIDE_MEW
+FarawayIsland_Interior_EventScript_EnableMewScene::
 	setvar VAR_TEMP_1, 0
 	return
 
@@ -132,24 +131,14 @@ FarawayIsland_Interior_EventScript_Mew::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, FarawayIsland_Interior_EventScript_MewDefeated
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, FarawayIsland_Interior_EventScript_PlayerOrMewRan
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, FarawayIsland_Interior_EventScript_PlayerOrMewRan
-	goto_if_eq VAR_RESULT, B_OUTCOME_MON_TELEPORTED, FarawayIsland_Interior_EventScript_PlayerOrMewRan
-	setflag FLAG_CAUGHT_MEW
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, FarawayIsland_Interior_EventScript_CaughtMew
 	release
 	end
 
-FarawayIsland_Interior_EventScript_MewDefeated::
-	setflag FLAG_DEFEATED_MEW
-	setvar VAR_0x8004, SPECIES_MEW
-	goto Common_EventScript_LegendaryFlewAway
-	end
-
-FarawayIsland_Interior_EventScript_PlayerOrMewRan::
-	setvar VAR_0x8004, SPECIES_MEW
-	goto Common_EventScript_LegendaryFlewAway
-	end
+@ Only catching Mew removes it for good; any other outcome leaves it on the island to be found again.
+FarawayIsland_Interior_EventScript_CaughtMew::
+	setflag FLAG_CAUGHT_MEW
+	return
 
 FarawayIsland_Interior_EventScript_FoundMewNorth::
 	applymovement LOCALID_FARAWAY_ISLAND_MEW, FarawayIsland_Interior_Movement_MewFloatUpNorth

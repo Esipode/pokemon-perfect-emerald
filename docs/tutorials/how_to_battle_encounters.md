@@ -90,9 +90,10 @@ Read the first trigger as: *at the end of any move, if the boss is at 50% HP or 
 `Phase` variable is still 0, run `EncScript_LegendaryBarrier_PhaseTransition` — and only the first
 time that becomes true.*
 
-- `Encounter: Legendary_Barrier` names the encounter. `encounterproc` (the tool that compiles this
-  file) turns the name into `ENCOUNTER_LEGENDARY_BARRIER` for you — you don't declare the id
-  yourself anywhere else.
+- `Encounter: Legendary_Barrier` names the encounter; `encounterproc` (the tool that compiles this
+  file) emits its data as `gEncounters[ENCOUNTER_LEGENDARY_BARRIER]`. The `ENCOUNTER_*` id itself
+  lives in `enum EncounterId` (`include/constants/battle_encounter.h`), which is hand-maintained —
+  add the id there, before `ENCOUNTER_COUNT`, when you add the encounter.
 - `Properties:` is optional, appears at most once, and comes before the first `Trigger:`. Every
   field can be omitted; an encounter with no `Properties:` block changes nothing about the battle.
   See the [property reference](#property-reference).
@@ -170,6 +171,21 @@ The overworld side is one command, placed before the battle starts:
 `setbattleencounter` (a normal overworld script command, `asm/macros/event.inc`) just remembers the
 id; the next battle that starts consumes it. It works identically ahead of `dowildbattle` for a
 wild encounter — the system doesn't care whether the opponent is a trainer or wild.
+
+For a static legendary standing on the map, two more pieces make the object behave correctly:
+
+- Give the object event a real hide flag in the map's `map.json` (not `"0"`), and run
+  `updatelegendaryvisibility SPECIES_X, FLAG_HIDE_X` from the map's `MAP_SCRIPT_ON_TRANSITION`.
+  That command sets the flag while the player owns one of that species and clears it otherwise, so
+  a caught legendary stays gone and a released one reappears. It also leaves `VAR_RESULT` set to
+  whether the player owns one, for any follow-up branching the map needs.
+- End the trigger script with `goto LegendaryEncounter_EventScript_FinishBattle`
+  (`data/scripts/legendary_encounters.inc`), which removes the object only on `B_OUTCOME_CAUGHT`.
+  Fainting or fleeing leaves it in place so the fight can be retried.
+
+`checkspeciesowned SPECIES_X` is the same ownership test on its own, for encounters spawned by
+`addobject` rather than by a hide flag. Both scan the party and every PC box, and treat alternate
+forms as the same species.
 
 ---
 
@@ -304,13 +320,14 @@ X?". Every field is optional and omitting one changes nothing.
 | `Immunities:` | comma list of `Ohko`, `FixedDamage`, `HpSwap`, `SharedKo`, plus `All`/`None` | Move classes the boss ignores |
 | `CapTypeEffectiveness:` | `True`/`False` | Clamps the boss's incoming type-effectiveness multiplier at 2x — a double weakness stacked onto another double weakness can't spike to 4x |
 | `FlatToxicDamage:` | `True`/`False` | Toxic deals the same flat 1/16 max HP against the boss every turn instead of its counter ramping that up turn over turn |
+| `Survive:` | `True`/`False` | The boss's HP can't be taken below 1 by anything that goes through the damage formula or a passive HP tick. For scripted last stands and to guarantee a catch window opens. Does **not** cover fixed-damage moves, Perish Song or Destiny Bond — see the gotcha below |
 | `Moves:` | 1–4 `MOVE_*` constants, comma separated | Replaces the boss's moves, PP included. A slot the list doesn't reach keeps what it was built with |
 | `AiFlags:` | one or more `AI_FLAG_*` constants, `\|` separated | The AI the opponent side runs, replacing whatever the battle type would derive |
 
-`DamageReduction:`, `Immunities:`, `CapTypeEffectiveness:`, `FlatToxicDamage:` and `Moves:` apply to
-the **boss** (the opponent's left slot). Any other battler — or any change to these mid-battle — is
-a job for `encsetdamagereduction` / `encsetimmunity` / `encsetcaptypeeffectiveness` /
-`encsetflattoxicdamage` in a script.
+`DamageReduction:`, `Immunities:`, `CapTypeEffectiveness:`, `FlatToxicDamage:`, `Survive:` and
+`Moves:` apply to the **boss** (the opponent's left slot). Any other battler — or any change to these
+mid-battle — is a job for `encsetdamagereduction` / `encsetimmunity` / `encsetcaptypeeffectiveness` /
+`encsetflattoxicdamage` / `encsetsurvive` in a script.
 
 ### `Level:` and when it applies
 
@@ -445,6 +462,30 @@ like ordinary Poison, for as long as the fight lasts. It only affects the multip
 `HandleEndTurnPoison` (`battle_end_turn.c`) — Toxic still applies and still stacks with everything
 else `DamageReduction:` already scales down.
 
+### `Survive:` — a guaranteed last stand
+
+`Survive: True` clamps every incoming hit so the boss's HP lands at exactly 1 rather than 0. The
+clamp sits in `ApplyEncounterDamageReduction` (`battle_encounter.c`), the single choke point every
+reduced damage source already passes through — move damage and every passive HP tick (weather, Toxic,
+recoil, confusion self-hits). At 1 HP a further hit is clamped to 0 damage, the same value False
+Swipe produces there, so nothing crashes and the health bar doesn't desync.
+
+Use it for a scripted "refuses to fall" beat, a form change at death's door, or simply to guarantee
+the player reaches an HP-threshold catch window instead of losing it to one oversized overkill hit.
+A script clears it with `encsetsurvive <target>, FALSE` — typically in the weakened/catch-window
+script, after which the automatic catch-window damage guard keeps the catch target alive.
+
+**Gotcha — it does not cover everything.** Fixed-damage moves (Seismic Toss, Super Fang, Night
+Shade), Perish Song and Destiny Bond bypass the damage formula entirely and are not clamped. Every
+shipped legendary already shuts these out with `Immunities: Ohko, FixedDamage, HpSwap, SharedKo`, so
+the hole is closed in practice — but an encounter that sets `Survive:` **without** the matching
+`Immunities:` can still have its boss killed outright. The failure mode is graceful (the boss faints,
+the battle ends as a normal win, the scripted sequence just doesn't play).
+
+**Gotcha — the AI shares this path.** A boss the AI cannot KO through the reduced-damage path reads
+to it as one it can never KO when it scores moves. This is the same deliberate trade `DamageReduction:`
+already makes.
+
 ---
 
 ## Command reference
@@ -462,13 +503,14 @@ The commands below exist specifically for encounter scripts:
 | `encaddvar <var>, <value>` | Adds to author variable `<var>` | wraps `addbyte` |
 | `encsubvar <var>, <value>` | Subtracts from author variable `<var>` | wraps `subbyte` |
 | `encjumpifvar <cmp>, <var>, <value>, <label>` | Branches on author variable `<var>` | wraps `jumpifbyte` |
-| `enchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar | encounter-specific (`callnative`) |
+| `enchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar. A battler taken to 0 HP faints in place (and ends the battle if that empties a side), like status/weather chip damage | encounter-specific (`callnative`) |
 | `encchangestat <target>, <stat>, <stages>` | Adds `<stages>` to `<stat>` for every battler `<target>` resolves to — silent, no message/animation | encounter-specific (`callnative`) |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Moves the **raw battle stat** (not the stage) of `<stat>` — silent, and not undone by Haze or switching out | encounter-specific (`callnative`) |
 | `encsetdamagereduction <target>, <percent>` | Sets how much less damage `<target>` takes, `0`–`99`. Replaces the current value | encounter-specific (`callnative`) |
 | `encsetimmunity <target>, <immunities>` | Replaces `<target>`'s `ENC_IMMUNE_*` mask (`0` clears it) | encounter-specific (`callnative`) |
 | `encsetcaptypeeffectiveness <target>, <cap>` | `TRUE` clamps `<target>`'s incoming type effectiveness at 2x; `FALSE` removes the clamp | encounter-specific (`callnative`) |
 | `encsetflattoxicdamage <target>, <flat>` | `TRUE` stops Toxic's counter from ramping `<target>`'s damage up each turn; `FALSE` restores the ramp | encounter-specific (`callnative`) |
+| `encsetsurvive <target>, <survive>` | `TRUE` guards `<target>`'s HP against dropping below 1 through the damage formula or a passive tick; `FALSE` removes the guard | encounter-specific (`callnative`) |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT` / `ENC_BALLS_BLOCKED` / `ENC_BALLS_ALLOWED` | encounter-specific (`callnative`) |
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
@@ -498,7 +540,7 @@ by a percentage is the only portable way to express it.
 
 ### Setting vs. accumulating
 
-`encsetdamagereduction`, `encsetimmunity`, `encsetcaptypeeffectiveness`, `encsetflattoxicdamage`, `encsetballs` and `encsetcatchrate` all **replace** the
+`encsetdamagereduction`, `encsetimmunity`, `encsetcaptypeeffectiveness`, `encsetflattoxicdamage`, `encsetsurvive`, `encsetballs` and `encsetcatchrate` all **replace** the
 current value rather than adding to it. That's what lets a script raise a boss's guard for one phase
 and drop it in the next without tracking what it added — `encsetdamagereduction ENC_TARGET_BOSS, 0`
 always means "no reduction", whatever the `Properties:` block or an earlier phase set.
@@ -619,6 +661,12 @@ yet, so the manual count is currently the reliable path.)
 - **`Immunities: FixedDamage` is not optional if you set `DamageReduction:`.** Super Fang and
   friends compute their damage from the target's HP, never from the damage formula — a 70%-reduced
   boss with no `FixedDamage` immunity still loses half its health to one Super Fang.
+- **`Survive:` has the same blind spot as `DamageReduction:`.** It clamps everything that goes
+  through the damage formula or a passive tick, but fixed-damage moves, Perish Song and Destiny Bond
+  bypass that path and can still kill the boss outright. Pair `Survive:` with
+  `Immunities: Ohko, FixedDamage, HpSwap, SharedKo` — the same set every legendary already sets — or
+  accept that the scripted sequence won't play if the player finds the hole. The AI also reads a
+  `Survive:` boss as one it can never KO, exactly like a heavily-reduced one.
 - **A blank event-context cell is invalid, not zero.** Reading `Event.Move` at a checkpoint that
   doesn't populate it (see the [checkpoint table](#checkpoint-reference)) asserts rather than
   quietly returning 0 — that would otherwise be indistinguishable from a real "no move" case.
@@ -673,6 +721,7 @@ Properties:                 # optional; at most one, before the first Trigger:
     Immunities: <immunity list>
     CapTypeEffectiveness: <True|False>
     FlatToxicDamage: <True|False>
+    Survive: <True|False>
     Moves: <1-4 MOVE_* constants, comma separated>
     AiFlags: <one or more AI_FLAG_* constants, '|' separated>
 
@@ -688,7 +737,7 @@ Conditions:                 # optional; requires at least one indented item
 
 | Part | Every valid form |
 | --- | --- |
-| Name | Any C identifier: begins with `A-Z`, `a-z`, or `_`; subsequent characters may also be digits. For example, `Storm_Herald`, which generates `ENCOUNTER_STORM_HERALD`. |
+| Name | Any C identifier: begins with `A-Z`, `a-z`, or `_`; subsequent characters may also be digits. For example, `Storm_Herald`, whose data is emitted as `gEncounters[ENCOUNTER_STORM_HERALD]` (the id is hand-added to `enum EncounterId`). |
 | Contents | At most one `Properties:` block, then one or more `Trigger:` blocks; maximum 32 triggers. |
 
 ### `Properties:` fields
@@ -706,6 +755,7 @@ their names pass through to the C compiler and a typo surfaces as a compiler err
 | `Immunities:` | Comma-separated list of `Ohko`, `FixedDamage`, `HpSwap`, `SharedKo`, `All`, or `None` |
 | `CapTypeEffectiveness:` | `True` or `False` |
 | `FlatToxicDamage:` | `True` or `False` |
+| `Survive:` | `True` or `False` |
 | `Moves:` | Comma-separated list of one to four `MOVE_*` constants. The names pass through to the C compiler unchecked; only the count is validated |
 | `AiFlags:` | One or more `AI_FLAG_*` constants separated by `\|`. Also passed through unchecked |
 
@@ -772,6 +822,7 @@ constants are compiler errors.
 | `encsetimmunity <target>, <immunities>` | Target below; `0`, `ENC_IMMUNE_ALL`, or an OR of `ENC_IMMUNE_OHKO`, `ENC_IMMUNE_FIXED_DAMAGE`, `ENC_IMMUNE_HP_SWAP`, `ENC_IMMUNE_SHARED_KO`. |
 | `encsetcaptypeeffectiveness <target>, <cap>` | Target below; `TRUE` or `FALSE`. |
 | `encsetflattoxicdamage <target>, <flat>` | Target below; `TRUE` or `FALSE`. |
+| `encsetsurvive <target>, <survive>` | Target below; `TRUE` or `FALSE`. |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |

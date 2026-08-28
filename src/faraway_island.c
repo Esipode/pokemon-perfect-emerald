@@ -1,6 +1,7 @@
 #include "global.h"
 #include "event_data.h"
 #include "event_object_movement.h"
+#include "field_specials.h"
 #include "field_weather.h"
 #include "fieldmap.h"
 #include "metatile_behavior.h"
@@ -349,7 +350,8 @@ bool8 IsMewPlayingHideAndSeek(void)
     if (gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_FARAWAY_ISLAND_INTERIOR)
      && gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_FARAWAY_ISLAND_INTERIOR))
     {
-        if (FlagGet(FLAG_CAUGHT_MEW) != TRUE && FlagGet(FLAG_HIDE_MEW) != TRUE)
+        // Ownership rather than FLAG_CAUGHT_MEW, so releasing Mew restores the hide-and-seek encounter.
+        if (!CheckPlayerOwnsSpecies(SPECIES_MEW) && FlagGet(FLAG_HIDE_MEW) != TRUE)
             return TRUE;
     }
 

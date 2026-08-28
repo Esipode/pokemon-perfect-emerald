@@ -4943,7 +4943,14 @@ bool32 EndTurnEvents(void) // Called from Battle Script
             return TRUE;
         }
         gBattleStruct->eventState.encounterTurnEnd = TRUE;
+        gBattleStruct->eventState.faintedAction = 0; // re-arm the faint pass for scripted chip damage below
     }
+
+    // A turn-end trigger script (enchangehp) can leave a battler at 0 HP after the end-turn
+    // faint pass already ran - resolve it here with the same exp/replacement handling
+    // ENDTURN_FAINTED_MON_ACTIONS uses, before the turn advances.
+    if (IsEncounterActive() && HandleFaintedMonActions())
+        return TRUE;
 
     gBattleStruct->eventState.faintedAction = 0;
     gBattleStruct->eventState.encounterTurnEnd = FALSE; // re-arm for next turn

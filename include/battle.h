@@ -627,6 +627,7 @@ struct EncounterRuntime
     u8 immunities[MAX_BATTLERS_COUNT];          // ENC_IMMUNE_* bits
     u8 capTypeEffectiveness[MAX_BATTLERS_COUNT]; // bool8: clamp incoming type effectiveness to 2x
     u8 flatToxicDamage[MAX_BATTLERS_COUNT];     // bool8: disable Toxic's per-turn counter ramp
+    u8 survive[MAX_BATTLERS_COUNT];             // bool8: HP can't be taken below 1 through the damage formula or a passive tick
     u8 ballPolicy;                              // enum EncounterBallPolicy
     u8 catchRate;                               // ENC_CATCH_RATE_NONE, or a catch rate to use instead of the species'
     // Catch-window damage guard (UpdateEncounterCatchGuard, battle_encounter.c). While Poke Balls

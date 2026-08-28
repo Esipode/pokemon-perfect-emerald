@@ -428,6 +428,7 @@ struct Properties
     char immunities[ARG_EXPR_N];
     char cap_type_effectiveness[ARG_EXPR_N];
     char flat_toxic_damage[ARG_EXPR_N];
+    char survive[ARG_EXPR_N];
     char moves[LIST_EXPR_N];      // a brace initializer for the moves[] array, e.g. "{ MOVE_TACKLE }"
     char ai_flags[LIST_EXPR_N];   // an OR of AI_FLAG_* constants, passed through to the compiler
 };
@@ -1107,6 +1108,18 @@ static bool parse_property(struct Parser *p, struct EncounterDef *enc, const str
             return set_show_parse_error(p, id.location, "unknown value (expected True or False)");
         strcpy(props->flat_toxic_damage, name);
     }
+    else if (is_literal_token(key, "Survive"))
+    {
+        skip_whitespace(p);
+        struct SourceLocation loc = p->location;
+        struct Token id;
+        const char *name;
+        if (!match_c_identifier(p, &id))
+            return set_show_parse_error(p, loc, "expected 'True' or 'False'");
+        if (!bool_const(&id, &name))
+            return set_show_parse_error(p, id.location, "unknown value (expected True or False)");
+        strcpy(props->survive, name);
+    }
     else if (is_literal_token(key, "Moves"))
     {
         return parse_moves(p, props->moves);
@@ -1119,7 +1132,7 @@ static bool parse_property(struct Parser *p, struct EncounterDef *enc, const str
     {
         return set_show_parse_error(p, key->location,
             "expected one of 'Level', 'CatchRate', 'Balls', 'DamageReduction', 'Immunities', "
-            "'CapTypeEffectiveness', 'FlatToxicDamage', 'Moves', or 'AiFlags'");
+            "'CapTypeEffectiveness', 'FlatToxicDamage', 'Survive', 'Moves', or 'AiFlags'");
     }
 
     skip_whitespace(p);
@@ -1318,6 +1331,7 @@ static bool parse_encounter(struct Parser *p, struct EncounterDef *enc)
     strcpy(enc->properties.immunities, "0");
     strcpy(enc->properties.cap_type_effectiveness, "FALSE");
     strcpy(enc->properties.flat_toxic_damage, "FALSE");
+    strcpy(enc->properties.survive, "FALSE");
     strcpy(enc->properties.moves, "{0}");
     strcpy(enc->properties.ai_flags, "0");
 
@@ -1587,6 +1601,7 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
         fprintf(f, "            .immunities = %s,\n", enc->properties.immunities);
         fprintf(f, "            .capTypeEffectiveness = %s,\n", enc->properties.cap_type_effectiveness);
         fprintf(f, "            .flatToxicDamage = %s,\n", enc->properties.flat_toxic_damage);
+        fprintf(f, "            .survive = %s,\n", enc->properties.survive);
         fprintf(f, "            .moves = %s,\n", enc->properties.moves);
         fprintf(f, "            .aiFlags = %s,\n", enc->properties.ai_flags);
         fprintf(f, "        },\n    },\n");

@@ -997,6 +997,9 @@ LittlerootTown_EventScript_EncounterTESTArticuno::
 LittlerootTown_EventScript_EncounterTESTZapdos::
 	goto LegendaryEncounter_EventScript_Zapdos
 
+LittlerootTown_EventScript_EncounterTESTMoltres::
+	goto LegendaryEncounter_EventScript_Moltres
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

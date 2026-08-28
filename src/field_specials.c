@@ -4519,6 +4519,37 @@ bool32 CheckPartyHasSpecies(enum Species givenSpecies)
     return FALSE;
 }
 
+// Whether the player currently owns this species, counting the PC boxes as well as the party.
+// Legendary encounters gate on this instead of on a "defeated" flag, so releasing the Pokémon
+// makes its encounter available again. Alternate forms count as the same species.
+bool32 CheckPlayerOwnsSpecies(enum Species givenSpecies)
+{
+    u32 partyIndex, box, slot;
+    enum Species baseSpecies = GET_BASE_SPECIES_ID(givenSpecies);
+
+    for (partyIndex = 0; partyIndex < CalculatePlayerPartyCount(); partyIndex++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][partyIndex];
+
+        if (!GetMonData(mon, MON_DATA_IS_EGG)
+         && GET_BASE_SPECIES_ID(GetMonData(mon, MON_DATA_SPECIES)) == baseSpecies)
+            return TRUE;
+    }
+
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++)
+        {
+            if (GetBoxMonDataAt(box, slot, MON_DATA_SANITY_HAS_SPECIES)
+             && !GetBoxMonDataAt(box, slot, MON_DATA_SANITY_IS_EGG)
+             && GET_BASE_SPECIES_ID(GetBoxMonDataAt(box, slot, MON_DATA_SPECIES)) == baseSpecies)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 void UseBlankMessageToCancelPokemonPic(void)
 {
     DeactivateSingleTextPrinter(0, WINDOW_TEXT_PRINTER);
