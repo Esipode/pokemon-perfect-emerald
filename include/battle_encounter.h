@@ -137,6 +137,21 @@ extern const u8 EncScript_Mewtwo_OverloadEnd[];
 extern const u8 EncScript_Mewtwo_FirstAdapt[];
 extern const u8 EncScript_Mewtwo_Adapt[];
 
+// Mew ("The Genetic Wonder")
+extern const u8 EncScript_Mew_Intro[];
+extern const u8 EncScript_Mew_Playtime[];
+extern const u8 EncScript_Mew_Challenge[];
+extern const u8 EncScript_Mew_Weakened[];
+extern const u8 EncScript_Mew_PlayerPhysical[];
+extern const u8 EncScript_Mew_PlayerStatus[];
+extern const u8 EncScript_Mew_PlayerSpecial[];
+extern const u8 EncScript_Mew_SwitchIn[];
+extern const u8 EncScript_Mew_TurnOpen[];
+extern const u8 EncScript_Mew_WaitStep[];
+extern const u8 EncScript_Mew_Mischief[];
+extern const u8 EncScript_Mew_WaitResolve[];
+extern const u8 EncScript_Mew_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

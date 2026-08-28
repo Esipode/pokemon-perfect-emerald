@@ -518,6 +518,8 @@ The commands below exist specifically for encounter scripts:
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | Changes `<target>` (must resolve to exactly one battler) into `<species>` outright, outside any form-change table, then plays `<anim>`. The general form of `encmegaevolve`: repeatable, reversible, and not limited to a form the battler holds a stone for. Keeps HP and the moveset; stats, types and ability come from the new species. Prints nothing — supply your own dialogue | encounter-specific (`callnative`) |
+| `enctransform <target>, <source>, <failLabel>` | Turns `<target>` (exactly one battler) into `<source>` (likewise), copying species, stats, stat stages, types, ability and moveset — exactly as the Transform move does. Copies **not** HP, level, item or status, and never writes the party Pokémon, so a boss transformed this way is still its own species if caught. Jumps `<failLabel>` if `<source>` is semi-invulnerable, already transformed, or behind Illusion. Prints nothing | encounter-specific (`callnative`) |
+| `encuntransform <target>` | Reverts `<target>` from an `enctransform`/Transform copy to its own party species, rebuilding stats, types, ability and moves from the party Pokémon. Stat stages reset to neutral. Silent no-op if `<target>` isn't transformed, so it's safe to call unconditionally. Prints nothing | encounter-specific (`callnative`) |
 | `encjumpifchance <percent>, <label>` | Branches to `<label>` with `<percent>` (`0`–`100`) probability, otherwise falls through. The roll is tagged `RNG_ENCOUNTER_SCRIPT` | encounter-specific (`callnative`) |
 
 ### Fixed vs. percentage amounts
@@ -552,7 +554,7 @@ always means "no reduction", whatever the `Properties:` block or an earlier phas
 `setbyte`/`addbyte`/`subbyte`/`jumpifbyte`/`copybyte` opcodes every other battle script uses, just pre-addressed
 into the encounter's variable array so you write a var index instead of a raw address.
 
-`<target>` on `enchangehp`/`encchangestat`/`encmegaevolve`/`encformchange` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
+`<target>` on `enchangehp`/`encchangestat`/`encmegaevolve`/`encformchange`/`enctransform`/`encuntransform` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
 `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`, `ENC_TARGET_PLAYER_LEFT`/`_RIGHT`,
 `ENC_TARGET_OPPONENT_LEFT`/`_RIGHT`, `ENC_TARGET_ALL_FOES`, `ENC_TARGET_ALL_ALLIES`,
 `ENC_TARGET_ALL_BATTLERS`. The group targets (`ALL_FOES`/`ALL_ALLIES`/`ALL_BATTLERS`) are what make a
@@ -673,6 +675,13 @@ yet, so the manual count is currently the reliable path.)
   `Immunities: Ohko, FixedDamage, HpSwap, SharedKo` — the same set every legendary already sets — or
   accept that the scripted sequence won't play if the player finds the hole. The AI also reads a
   `Survive:` boss as one it can never KO, exactly like a heavily-reduced one.
+- **`enctransform` copies the battler, not the Pokémon.** It writes species, stats, stat stages,
+  types, ability and moveset onto the target's *battle* data — HP, level, item and status stay the
+  target's own, and the party Pokémon is never touched. So a boss the player transforms into their
+  own mon still catches as the boss's species, and its HP bar keeps ticking down from where it was.
+  Pair it with `Survive: True` if the copied moveset could include a self-KO move (Explosion, Final
+  Gambit). `encuntransform` puts it back and resets stat stages to neutral; it's a no-op on an
+  untransformed battler, so call it unconditionally in a revert script.
 - **A blank event-context cell is invalid, not zero.** Reading `Event.Move` at a checkpoint that
   doesn't populate it (see the [checkpoint table](#checkpoint-reference)) asserts rather than
   quietly returning 0 — that would otherwise be indistinguishable from a real "no move" case.
@@ -844,6 +853,8 @@ constants are compiler errors.
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | A target that resolves to exactly one battler, a `SPECIES_*` constant, a script label, and an optional `B_ANIM_*` id (defaults to `B_ANIM_MEGA_EVOLUTION`). |
+| `enctransform <target>, <source>, <failLabel>` | Two targets that each resolve to exactly one battler, plus a script label. |
+| `encuntransform <target>` | A target that resolves to exactly one battler. |
 | `encjumpifchance <percent>, <label>` | An integer `0`–`255` (asserts if above `100`) and a script label. |
 
 Every valid `<target>` is `ENC_TARGET_BOSS`, `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`,

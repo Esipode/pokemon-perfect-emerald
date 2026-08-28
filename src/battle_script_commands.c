@@ -2950,6 +2950,7 @@ static void PlayAnimation(enum BattlerId battler, u8 animId, const u16 *argPtr, 
      || animId == B_ANIM_MEGA_EVOLUTION
      || animId == B_ANIM_ILLUSION_OFF
      || animId == B_ANIM_FORM_CHANGE
+     || animId == B_ANIM_ENCOUNTER_TRANSFORM
      || animId == B_ANIM_SUBSTITUTE_FADE
      || animId == B_ANIM_PRIMAL_REVERSION
      || animId == B_ANIM_POWER_CONSTRUCT
@@ -5879,6 +5880,62 @@ static void Cmd_setfocusenergy(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// Copies species, stats, stat stages, types, ability and moveset from target onto attacker,
+// leaving attacker's HP, level, item and status alone. The success body of the Transform move,
+// shared with the encounter TRANSFORM command (BS_EncounterTransform). Re-copying an already
+// transformed battler keeps its first-captured original species so a later revert has a target.
+static void ApplyTransformInto(enum BattlerId attacker, enum BattlerId target)
+{
+    s32 i;
+    u8 *battleMonAttacker, *battleMonTarget;
+    u8 timesGotHit;
+    bool32 wasTransformed = gBattleMons[attacker].volatiles.transformed;
+
+    gChosenMove = MOVE_UNAVAILABLE;
+    gBattleMons[attacker].volatiles.transformed = TRUE;
+    gBattleMons[attacker].volatiles.disabledMove = MOVE_NONE;
+    gBattleMons[attacker].volatiles.disableTimer = 0;
+    if (!wasTransformed)
+        gBattleMons[attacker].volatiles.transformedMonSpecies = gBattleMons[attacker].species;
+    gBattleMons[attacker].volatiles.transformedMonPID = gBattleMons[target].personality;
+
+    if (B_TRANSFORM_SHINY >= GEN_4)
+        gBattleMons[attacker].volatiles.isTransformedMonShiny = gBattleMons[target].isShiny;
+    else
+        gBattleMons[attacker].volatiles.isTransformedMonShiny = gBattleMons[attacker].isShiny;
+    gBattleMons[attacker].volatiles.mimickedMoves = 0;
+    gBattleMons[attacker].volatiles.usedMoves = 0;
+
+    timesGotHit = GetBattlerPartyState(target)->timesGotHit;
+    GetBattlerPartyState(attacker)->timesGotHit = timesGotHit;
+
+    PREPARE_SPECIES_BUFFER(gBattleTextBuff1, gBattleMons[target].species)
+
+    battleMonAttacker = (u8 *)(&gBattleMons[attacker]);
+    battleMonTarget = (u8 *)(&gBattleMons[target]);
+
+    for (i = 0; i < offsetof(struct BattlePokemon, pp); i++)
+        battleMonAttacker[i] = battleMonTarget[i];
+
+    gBattleMons[attacker].volatiles.overwrittenAbility = GetBattlerAbility(target);
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        u32 pp = GetMovePP(gBattleMons[attacker].moves[i]);
+        if (pp < 5)
+            gBattleMons[attacker].pp[i] = pp;
+        else
+            gBattleMons[attacker].pp[i] = 5;
+    }
+
+    // update AI knowledge
+    RecordAllMoves(attacker);
+    RecordAbilityBattle(attacker, gBattleMons[attacker].ability);
+    SortBattlersByRawSpeed(gBattlersByRawSpeed);
+
+    BtlController_EmitResetActionMoveSelection(attacker, B_COMM_TO_CONTROLLER, RESET_MOVE_SELECTION);
+    MarkBattlerForControllerExec(attacker);
+}
+
 static void Cmd_transformdataexecution(void)
 {
     CMD_ARGS();
@@ -5894,52 +5951,7 @@ static void Cmd_transformdataexecution(void)
     }
     else
     {
-        s32 i;
-        u8 *battleMonAttacker, *battleMonTarget;
-        u8 timesGotHit;
-
-        gChosenMove = MOVE_UNAVAILABLE;
-        gBattleMons[gBattlerAttacker].volatiles.transformed = TRUE;
-        gBattleMons[gBattlerAttacker].volatiles.disabledMove = MOVE_NONE;
-        gBattleMons[gBattlerAttacker].volatiles.disableTimer = 0;
-        gBattleMons[gBattlerAttacker].volatiles.transformedMonSpecies = gBattleMons[gBattlerAttacker].species;
-        gBattleMons[gBattlerAttacker].volatiles.transformedMonPID = gBattleMons[gBattlerTarget].personality;
-
-        if (B_TRANSFORM_SHINY >= GEN_4)
-            gBattleMons[gBattlerAttacker].volatiles.isTransformedMonShiny = gBattleMons[gBattlerTarget].isShiny;
-        else
-            gBattleMons[gBattlerAttacker].volatiles.isTransformedMonShiny = gBattleMons[gBattlerAttacker].isShiny;
-        gBattleMons[gBattlerAttacker].volatiles.mimickedMoves = 0;
-        gBattleMons[gBattlerAttacker].volatiles.usedMoves = 0;
-
-        timesGotHit = GetBattlerPartyState(gBattlerTarget)->timesGotHit;
-        GetBattlerPartyState(gBattlerAttacker)->timesGotHit = timesGotHit;
-
-        PREPARE_SPECIES_BUFFER(gBattleTextBuff1, gBattleMons[gBattlerTarget].species)
-
-        battleMonAttacker = (u8 *)(&gBattleMons[gBattlerAttacker]);
-        battleMonTarget = (u8 *)(&gBattleMons[gBattlerTarget]);
-
-        for (i = 0; i < offsetof(struct BattlePokemon, pp); i++)
-            battleMonAttacker[i] = battleMonTarget[i];
-
-        gBattleMons[gBattlerAttacker].volatiles.overwrittenAbility = GetBattlerAbility(gBattlerTarget);
-        for (i = 0; i < MAX_MON_MOVES; i++)
-        {
-            u32 pp = GetMovePP(gBattleMons[gBattlerAttacker].moves[i]);
-            if (pp < 5)
-                gBattleMons[gBattlerAttacker].pp[i] = pp;
-            else
-                gBattleMons[gBattlerAttacker].pp[i] = 5;
-        }
-
-        // update AI knowledge
-        RecordAllMoves(gBattlerAttacker);
-        RecordAbilityBattle(gBattlerAttacker, gBattleMons[gBattlerAttacker].ability);
-        SortBattlersByRawSpeed(gBattlersByRawSpeed);
-
-        BtlController_EmitResetActionMoveSelection(gBattlerAttacker, B_COMM_TO_CONTROLLER, RESET_MOVE_SELECTION);
-        MarkBattlerForControllerExec(gBattlerAttacker);
+        ApplyTransformInto(gBattlerAttacker, gBattlerTarget);
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TRANSFORMED;
     }
 }
@@ -12778,6 +12790,129 @@ void BS_EncounterFormChange(void)
     // The presentation opcodes the macro appends address BS_SCRIPTING, and the dialogue a caller
     // prints around them may name the attacker; neither is meaningful at an arbitrary checkpoint.
     gBattlerAttacker = gBattleScripting.battler = battler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// TRANSFORM (enctransform). Makes target become source - species, stats, stat stages, types,
+// ability and moveset - through the Transform move's own copy (ApplyTransformInto) with none of its
+// move-context fail checks, so a scripted beat re-copies freely. HP, level, item and status are
+// untouched and the party mon is never written, so the boss caught afterwards is still its own
+// species. Jumps failInstr on the legitimate in-battle states that block a copy (source semi-
+// invulnerable, already transformed, or hiding behind Illusion). Prints nothing; the caller does.
+void BS_EncounterTransform(void)
+{
+    NATIVE_ARGS(u8 target, u8 source, const u8 *failInstr);
+    u32 targetMask = ResolveEncounterTarget(cmd->target);
+    u32 sourceMask = ResolveEncounterTarget(cmd->source);
+    enum BattlerId targetBattler, sourceBattler;
+
+    assertf(targetMask != 0 && (targetMask & (targetMask - 1)) == 0,
+            "encounter %d: TRANSFORM target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    assertf(sourceMask != 0 && (sourceMask & (sourceMask - 1)) == 0,
+            "encounter %d: TRANSFORM source %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->source)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (targetBattler = B_BATTLER_0; !(targetMask & (1u << targetBattler)); targetBattler++)
+        ;
+    for (sourceBattler = B_BATTLER_0; !(sourceMask & (1u << sourceBattler)); sourceBattler++)
+        ;
+
+    assertf(IsBattlerAlive(targetBattler) && IsBattlerAlive(sourceBattler),
+            "encounter %d: TRANSFORM target or source is fainted/absent", gBattleStruct->encounter.id)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    if (IsSemiInvulnerable(sourceBattler, EXCLUDE_COMMANDER)
+        || gBattleMons[sourceBattler].volatiles.transformed
+        || gBattleStruct->illusion[sourceBattler].state == ILLUSION_ON)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    ApplyTransformInto(targetBattler, sourceBattler);
+
+    // The move path gets these from the move animation's payload; the appended general animation
+    // carries none, so the copied mon's PID/shininess have to be published here or the new sprite
+    // is drawn with the boss's own.
+    gTransformedPersonalities[targetBattler] = gBattleMons[targetBattler].volatiles.transformedMonPID;
+    gTransformedShininess[targetBattler] = gBattleMons[targetBattler].volatiles.isTransformedMonShiny;
+
+    // The appended presentation opcodes and the caller's dialogue both address BS_SCRIPTING.
+    gBattlerAttacker = gBattleScripting.battler = targetBattler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// UNTRANSFORM (encuntransform). Reverts a battler transformed by enctransform (or the Transform
+// move) to its own party species, rebuilding stats, types, ability and moveset from the party mon
+// (which transform never touched). Silent no-op when the battler isn't transformed, so a script may
+// call it unconditionally. Stat stages are reset to neutral - they were the copied mon's stages,
+// and carrying them onto the reverted mon would be incoherent.
+void BS_EncounterUntransform(void)
+{
+    NATIVE_ARGS(u8 target);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *mon;
+    s32 i;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: UNTRANSFORM target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    // Set even on the no-op path: the macro's trailing handleformchange/playanimation opcodes
+    // address BS_SCRIPTING regardless of whether a revert happened.
+    gBattlerAttacker = gBattleScripting.battler = battler;
+
+    if (!gBattleMons[battler].volatiles.transformed)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    mon = GetBattlerMon(battler);
+
+    gBattleMons[battler].species = GetMonData(mon, MON_DATA_SPECIES);
+    gBattleMons[battler].ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        gBattleMons[battler].moves[i] = GetMonData(mon, MON_DATA_MOVE1 + i);
+        gBattleMons[battler].pp[i] = GetMonData(mon, MON_DATA_PP1 + i);
+    }
+
+    RecalcBattlerStats(battler, mon, FALSE);
+
+    for (i = 0; i < NUM_BATTLE_STATS; i++)
+        gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+
+    gBattleMons[battler].volatiles.transformed = FALSE;
+    gBattleMons[battler].volatiles.transformedMonSpecies = SPECIES_NONE;
+    gBattleMons[battler].volatiles.transformedMonPID = 0;
+    gBattleMons[battler].volatiles.isTransformedMonShiny = FALSE;
+    gBattleMons[battler].volatiles.overwrittenAbility = ABILITY_NONE;
+    gBattleMons[battler].volatiles.mimickedMoves = 0;
+    gBattleMons[battler].volatiles.usedMoves = 0;
+
+    RecordAllMoves(battler);
+    BtlController_EmitResetActionMoveSelection(battler, B_COMM_TO_CONTROLLER, RESET_MOVE_SELECTION);
+    MarkBattlerForControllerExec(battler);
+
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 

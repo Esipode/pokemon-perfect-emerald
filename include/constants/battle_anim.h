@@ -609,7 +609,8 @@ enum AnimBattler
 #define B_ANIM_FORM_CHANGE_DISGUISE     62
 #define B_ANIM_HELD_ITEM_BERRY          63
 #define B_ANIM_PROTECTED_ITSELF         64
-#define NUM_B_ANIMS_GENERAL             65
+#define B_ANIM_ENCOUNTER_TRANSFORM      65 // scripted transform/revert; renders the battle mon, not the party mon
+#define NUM_B_ANIMS_GENERAL             66
 
 // special animations table (sBattleAnims_Special)
 #define B_ANIM_LVL_UP                   0
@@ -700,6 +701,9 @@ enum SpeciesGfxChange
     SPECIES_GFX_CHANGE_FORM_CHANGE_INSTANT,
     SPECIES_GFX_CHANGE_ILLUSION_OFF,
     SPECIES_GFX_CHANGE_GHOST_UNVEIL,
+    // Renders whatever species gBattleMons[] currently holds, without reading or writing the party
+    // Pokemon. For a scripted transform whose party mon must stay the boss's real species.
+    SPECIES_GFX_CHANGE_BATTLE_MON,
 };
 
 // Flags given to various functions to indicate which palettes to consider.

@@ -899,3 +899,195 @@ Conditions:
     Var(Phase) <= 2
     Var(Cooldown) == 0
     Var(Overload) == 0
+
+#-------------------------------------------------------
+
+Encounter: Mew
+
+#-------------------------------------------------------
+
+# Mew, "The Genetic Wonder". The fight punishes a habit, not a resource. Two numbers: Wonder (0-6)
+# rises whenever the player changes what KIND of thing they do (a move category different from last
+# turn, or a switch) and drives Mew's guard DOWNWARD - it gets so absorbed in watching that it forgets
+# to shield itself. Bored (0-3) rises on repetition; at 3 it fires one Mischief roll off a fixed chaos
+# table and knocks Wonder back down, so spamming actively regresses. From Playtime (60% HP) on, Mew
+# uses enctransform to literally become the player's active Pokemon and re-copies on every switch. At
+# 30% HP it stops fighting for one turn and asks to be shown something new (answer: a status move or a
+# switch); either way the fight enters Genesis - raw offense +20% and Mischief every turn. Below 10%
+# it reverts to Mew, all guards off, Poke Balls unlocked. Survive: True the whole fight (a transformed
+# Mew can inherit a self-KO move, and the 30->10% stretch runs at guard 68 where a crit can overshoot).
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 92         # seeds Wonder 0; the ladder runs downward from here
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_PSYCHIC, MOVE_AURA_SPHERE, MOVE_ANCIENT_POWER, MOVE_SHADOW_BALL
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 15 here in order fixes
+# Phase..ChaosGuard to 0..14.
+# 0 Phase (0 curious / 1 playtime / 2 genesis / 3 weakened), 1 Wonder (0-6, drives the guard ladder
+# down), 2 Bored (0-3, repetition; 3 fires Mischief), 3 LastCat (last thing shown: 1 physical /
+# 2 special / 3 status / 4 switch), 4-7 SeenPhys/SeenSpec/SeenStatus/SeenSwitch (first-time mimicry
+# latches), 8 Wait (challenge state: 0 off / 1 armed / 2 waiting / 3 satisfied / 4 delighted /
+# 5 disappointed), 9 LastGuard (last ANNOUNCED guard tier - the re-fire latch), 10 Chant (recurring-
+# callout cadence), 11 TurnGuard, 12 MoveGuard, 13 SwitchGuard, 14 ChaosGuard (one Mischief roll/turn).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Mew_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Wonder) >= 0
+    Var(Bored) >= 0
+    Var(LastCat) >= 0
+    Var(SeenPhys) >= 0
+    Var(SeenSpec) >= 0
+    Var(SeenStatus) >= 0
+    Var(SeenSwitch) >= 0
+    Var(Wait) >= 0
+    Var(LastGuard) >= 0
+    Var(Chant) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(SwitchGuard) >= 0
+    Var(ChaosGuard) >= 0
+
+# The three phase transitions, each registered at both checkpoints because the threshold-crossing
+# blow can be a move or an end-of-turn tick. Both copies are Once and both gate on a Var(Phase) value
+# their script overwrites, so whichever fires first permanently disables the other. Mirrors Moltres.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mew_Playtime
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mew_Playtime
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mew_Challenge
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mew_Challenge
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mew_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mew_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The variety/repetition read. One logical rule split three ways because the category test must be a
+# condition (Event.MoveCategory is readable by the evaluator, not by a script branch). All three
+# share MoveGuard and priority orders them, so exactly one fires per move. Event.Target is the
+# battler that USED the move, so this is "the player acted", self-targeting setup included.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Mew_PlayerPhysical
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Mew_PlayerStatus
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 22
+Script: EncScript_Mew_PlayerSpecial
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+# Turn >= 1 so the opening send-out is not counted as "the player showed me a switch".
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Mew_SwitchIn
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Turn >= 1
+    Var(SwitchGuard) == 0
+    Var(Phase) <= 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (only gate is TurnGuard == 0, which
+# it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears).
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Mew_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The challenge state machine ticks across two checkpoints so a timer that resolves at the same
+# checkpoint it advances can't chase itself: WaitStep (OnTurnStart) moves Wait 1->2 and drops Mew's
+# offense; the player acts; WaitResolve (OnTurnEnd) reads 2 or 3 and sets 5 or 4.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Mew_WaitStep
+Conditions:
+    Var(Wait) == 1
+    Var(Phase) == 2
+
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Mew_Mischief
+Conditions:
+    Var(ChaosGuard) == 0
+    Var(Phase) <= 2
+    Any:
+        Var(Bored) >= 3
+        All:
+            Var(Phase) == 2
+            Var(Wait) >= 4
+
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Mew_WaitResolve
+Conditions:
+    Var(Wait) >= 2
+    Var(Wait) <= 3
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Mew_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

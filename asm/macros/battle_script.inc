@@ -1330,6 +1330,40 @@
 	switchinabilities BS_SCRIPTING
 	.endm
 
+	@ Turns \target (must resolve to exactly one live battler) into \source (likewise) outright:
+	@ species, stats, stat stages, types, ability and moveset are copied, exactly as the Transform
+	@ move does. \target keeps its own HP, level, held item and status, and its party Pokemon is
+	@ never written - so a boss transformed this way is still its own species if caught. Re-copying
+	@ preserves the first original species so encuntransform can revert. Jumps \failInstr if \source
+	@ is semi-invulnerable, is itself transformed, or is behind Illusion. Prints nothing - the caller
+	@ supplies dialogue. Leads with flushtextbox for the same OnTurnStart BG0 reason as encformchange.
+	@ Uses B_ANIM_ENCOUNTER_TRANSFORM, not the encformchange animation pair - that one repaints from
+	@ the party Pokemon and so requires writing it.
+	.macro enctransform target:req, source:req, failInstr:req
+	callnative BS_EncounterTransform
+	.byte \target
+	.byte \source
+	.4byte \failInstr
+	flushtextbox
+	playanimation BS_SCRIPTING, B_ANIM_ENCOUNTER_TRANSFORM
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
+	.endm
+
+	@ Reverts \target (must resolve to exactly one battler) from an enctransform/Transform copy back
+	@ to its own party species, rebuilding stats, types, ability and moves from the party Pokemon.
+	@ Silent no-op if \target isn't transformed, so it can be called unconditionally. Stat stages are
+	@ reset to neutral. Prints nothing - the caller supplies dialogue. Shares enctransform's animation,
+	@ which repaints from the battle mon and so needs no party write.
+	.macro encuntransform target:req
+	callnative BS_EncounterUntransform
+	.byte \target
+	flushtextbox
+	playanimation BS_SCRIPTING, B_ANIM_ENCOUNTER_TRANSFORM
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
+	.endm
+
 	@ Branches to \jumpInstr with \percent probability (0-100), otherwise falls through. The roll is
 	@ tagged RNG_ENCOUNTER_SCRIPT, so it is seedable/observable like every other tagged battle roll.
 	.macro encjumpifchance percent:req, jumpInstr:req

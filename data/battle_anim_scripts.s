@@ -28814,6 +28814,15 @@ gBattleAnimGeneral_FormChange::
 	clearmonbg ANIM_ATTACKER
 	end
 
+gBattleAnimGeneral_EncounterTransform::
+	monbg ANIM_ATTACKER
+	playsewithpan SE_M_TELEPORT, SOUND_PAN_ATTACKER
+	waitplaysewithpan SE_M_MINIMIZE, SOUND_PAN_ATTACKER, 48
+	createvisualtask AnimTask_TransformMon, 2, SPECIES_GFX_CHANGE_BATTLE_MON
+	waitforvisualfinish
+	clearmonbg ANIM_ATTACKER
+	end
+
 gBattleAnimGeneral_FormChangeDisguise::
 	playsewithpan SE_CONTEST_CONDITION_LOSE, SOUND_PAN_TARGET
 	createvisualtask AnimTask_ShakeMon2, 2, ANIM_TARGET, 2, 0, 10, 1
