@@ -228,6 +228,11 @@ s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapsh
     case ENC_OP_EVENT_MOVE_TYPE:
         return GetEncounterEventField(ENC_EVENT_MOVE, &value) ? GetMoveType(value) : 0;
 
+    // Same validity mask as ENC_OP_EVENT_MOVE_TYPE above. This is the move's base category, not a
+    // runtime flip (Photon Geyser, Tera Blast).
+    case ENC_OP_EVENT_MOVE_CATEGORY:
+        return GetEncounterEventField(ENC_EVENT_MOVE, &value) ? GetMoveCategory(value) : 0;
+
     case ENC_OP_EVENT_CAUSE:
         return GetEncounterEventField(ENC_EVENT_CAUSE, &value) ? value : 0;
 
@@ -494,13 +499,6 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
     // while a Poke Ball can be thrown.
     UpdateEncounterCatchGuard();
 
-    assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
-            "encounter %d: %d scripts ran at checkpoint %d - runaway trigger chain?",
-            runtime->id, runtime->scriptsThisCheckpoint, checkpoint)
-    {
-        return NULL;
-    }
-
     const struct Encounter *encounter = GetEncounter(runtime->id);
     if (encounter == NULL)
         return NULL;
@@ -554,6 +552,18 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
         // very next checkpoint.
         for (u32 i = 0; i < MAX_BATTLERS_COUNT; i++)
             runtime->prevHp[i] = gBattleMons[i].hp;
+        return NULL;
+    }
+
+    // Runaway guard: a trigger that never disables itself would be re-selected forever and hang the
+    // game, so turn that into a loud assert instead. Checked here rather than on dispatch entry so
+    // it only fires when a trigger is actually eligible - a checkpoint that legitimately runs the
+    // full budget would otherwise trip on the trailing discovery pass, which found nothing and was
+    // about to return NULL on its own.
+    assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
+            "encounter %d: %d scripts ran at checkpoint %d - runaway trigger chain?",
+            runtime->id, runtime->scriptsThisCheckpoint, checkpoint)
+    {
         return NULL;
     }
 

@@ -275,6 +275,12 @@
 	jumpifbyte \comparison, gEncounterVars + \var, \value, \jumpInstr
 	.endm
 
+	@ Copies var \src into var \dst. For a script that needs to consume a counter without losing it -
+	@ copy it to a scratch var and decrement that.
+	.macro enccopyvar dst:req, src:req
+	copybyte gEncounterVars + \dst, gEncounterVars + \src
+	.endm
+
 	.macro copyarray dest:req, src:req, size:req
 	.byte B_SCR_OP_COPYARRAY
 	.4byte \dest
@@ -1295,6 +1301,32 @@
 	handleformchange BS_SCRIPTING, 1
 	printstring STRINGID_MEGAEVOEVOLVED
 	waitmessage B_WAIT_TIME_LONG
+	switchinabilities BS_SCRIPTING
+	.endm
+
+	@ Changes \target (must resolve to exactly one battler) into \species outright, outside any
+	@ form-change table, then plays \anim with the same presentation opcodes
+	@ BattleScript_MegaEvolution uses. The general form of encmegaevolve: the destination is named
+	@ here instead of coming from a held Mega Stone, so a boss can change shape repeatedly, into a
+	@ form it has no stone for, and back again. Stats, types and ability come from the new species;
+	@ HP and the moveset are kept. Prints nothing - the caller supplies its own dialogue, since no
+	@ one string fits both an arrival and a revert. Jumps to \failInstr if the target does not
+	@ resolve to exactly one live battler.
+	@ Leads with flushtextbox because this animates before the caller's dialogue: the action/move
+	@ selection menu is shown by scrolling BG0 (gBattle_BG0_Y, battle_controller_player.c) and only
+	@ a printstring scrolls it back (BtlController_HandlePrintString). A script dispatched at
+	@ OnTurnStart runs while that scroll is still in place, so animating first would render over the
+	@ open menu. BattleScript_QuickClawActivation opens the same way for the same reason.
+	.macro encformchange target:req, species:req, failInstr:req, anim=B_ANIM_MEGA_EVOLUTION
+	callnative BS_EncounterFormChange
+	.byte \target
+	.2byte \species
+	.4byte \failInstr
+	flushtextbox
+	handleformchange BS_SCRIPTING, 0
+	playanimation BS_SCRIPTING, \anim
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
 	switchinabilities BS_SCRIPTING
 	.endm
 

@@ -239,6 +239,7 @@ together unless grouped (below). Comparisons are `==`, `!=`, `<`, `<=`, `>`, `>=
 | `Event.Target` | The other battler involved | " |
 | `Event.Move` | The move involved | " |
 | `Event.MoveType` | The type of the move involved | compare against a `TYPE_*` constant; `OnMoveEnd` only |
+| `Event.MoveCategory` | The category of the move involved | compare against `DAMAGE_CATEGORY_PHYSICAL`, `DAMAGE_CATEGORY_SPECIAL` or `DAMAGE_CATEGORY_STATUS`; `OnMoveEnd` only |
 | `Event.Cause` | Why the event happened (`ENC_CAUSE_*`) | " |
 | `Event.OldValue` / `Event.NewValue` | Before/after values (e.g. HP before/after a change) | " |
 | `Weather` | Current battle weather | |
@@ -503,6 +504,7 @@ The commands below exist specifically for encounter scripts:
 | `encaddvar <var>, <value>` | Adds to author variable `<var>` | wraps `addbyte` |
 | `encsubvar <var>, <value>` | Subtracts from author variable `<var>` | wraps `subbyte` |
 | `encjumpifvar <cmp>, <var>, <value>, <label>` | Branches on author variable `<var>` | wraps `jumpifbyte` |
+| `enccopyvar <dst>, <src>` | Copies author variable `<src>` into `<dst>` — for consuming a counter in a loop without losing it | wraps `copybyte` |
 | `enchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar. A battler taken to 0 HP faints in place (and ends the battle if that empties a side), like status/weather chip damage | encounter-specific (`callnative`) |
 | `encchangestat <target>, <stat>, <stages>` | Adds `<stages>` to `<stat>` for every battler `<target>` resolves to — silent, no message/animation | encounter-specific (`callnative`) |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Moves the **raw battle stat** (not the stage) of `<stat>` — silent, and not undone by Haze or switching out | encounter-specific (`callnative`) |
@@ -515,6 +517,7 @@ The commands below exist specifically for encounter scripts:
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
+| `encformchange <target>, <species>, <failLabel>[, <anim>]` | Changes `<target>` (must resolve to exactly one battler) into `<species>` outright, outside any form-change table, then plays `<anim>`. The general form of `encmegaevolve`: repeatable, reversible, and not limited to a form the battler holds a stone for. Keeps HP and the moveset; stats, types and ability come from the new species. Prints nothing — supply your own dialogue | encounter-specific (`callnative`) |
 | `encjumpifchance <percent>, <label>` | Branches to `<label>` with `<percent>` (`0`–`100`) probability, otherwise falls through. The roll is tagged `RNG_ENCOUNTER_SCRIPT` | encounter-specific (`callnative`) |
 
 ### Fixed vs. percentage amounts
@@ -545,11 +548,11 @@ current value rather than adding to it. That's what lets a script raise a boss's
 and drop it in the next without tracking what it added — `encsetdamagereduction ENC_TARGET_BOSS, 0`
 always means "no reduction", whatever the `Properties:` block or an earlier phase set.
 
-`encsetvar`/`encaddvar`/`encsubvar`/`encjumpifvar` are thin wrappers: they're the same
-`setbyte`/`addbyte`/`subbyte`/`jumpifbyte` opcodes every other battle script uses, just pre-addressed
+`encsetvar`/`encaddvar`/`encsubvar`/`encjumpifvar`/`enccopyvar` are thin wrappers: they're the same
+`setbyte`/`addbyte`/`subbyte`/`jumpifbyte`/`copybyte` opcodes every other battle script uses, just pre-addressed
 into the encounter's variable array so you write a var index instead of a raw address.
 
-`<target>` on `enchangehp`/`encchangestat`/`encmegaevolve` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
+`<target>` on `enchangehp`/`encchangestat`/`encmegaevolve`/`encformchange` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
 `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`, `ENC_TARGET_PLAYER_LEFT`/`_RIGHT`,
 `ENC_TARGET_OPPONENT_LEFT`/`_RIGHT`, `ENC_TARGET_ALL_FOES`, `ENC_TARGET_ALL_ALLIES`,
 `ENC_TARGET_ALL_BATTLERS`. The group targets (`ALL_FOES`/`ALL_ALLIES`/`ALL_BATTLERS`) are what make a
@@ -587,7 +590,7 @@ about a multi-trigger checkpoint with these, not by reading the dispatcher's sou
 
 | Limit | Value | What happens if you exceed it |
 | --- | --- | --- |
-| Scripts per checkpoint | 4 (design to **3**) | Dispatch stops for that checkpoint; an `assertf` fires ("runaway trigger chain?") |
+| Scripts per checkpoint | 8 | Dispatch stops for that checkpoint; an `assertf` fires ("runaway trigger chain?") |
 | Triggers per encounter | 32 | The whole encounter fails to load (`assertf`); no triggers dispatch |
 | Author variables per encounter | 16 | `encounterproc` refuses to compile — "too many named variables" |
 | Condition nesting depth (`All:`/`Any:`/`Not:`) | 4 | The offending subtree asserts and evaluates `FALSE`; `encounterproc` also flags it at compile time |
@@ -596,10 +599,13 @@ about a multi-trigger checkpoint with these, not by reading the dispatcher's sou
 All of these fail loud (an `assertf`) rather than silently misbehaving — see
 [Debugging](#debugging).
 
-**"Scripts per checkpoint" is effectively 3, not 4.** The runaway guard is checked on *dispatch
-entry*, and the dispatcher always makes one trailing pass after the last script to discover nothing
-is left — so a checkpoint that actually runs 4 scripts asserts on that final pass even though no
-5th trigger was eligible. Budget the busiest checkpoints (`OnTurnStart`, `OnTurnEnd`) to 3.
+**The script budget is a hang guard, not a resource limit.** Scripts are dispatched sequentially,
+never nested, so however many run at one checkpoint the battle-script call stack stays one frame
+deep. Its only job is to turn "a trigger with no self-disabling condition re-selects forever and
+the game hangs" into a loud assert. It counts only checkpoints where a trigger was actually
+eligible, so a checkpoint that legitimately runs all 8 is not tripped by the dispatcher's trailing
+discovery pass. Eight message boxes at one checkpoint is already more than a player can read —
+treat the limit as a design smoke alarm rather than something to budget against.
 
 ---
 
@@ -609,7 +615,7 @@ Every encounter assertion identifies **encounter, trigger/context, and reason**,
 
 ```text
 encounter 3: trigger 2: condition nesting deeper than 4
-encounter 3: 4 scripts ran at checkpoint 2 - runaway trigger chain?
+encounter 3: 8 scripts ran at checkpoint 2 - runaway trigger chain?
 ```
 
 In a dev build this shows a resumable crash screen and then still runs the assertion's recovery
@@ -673,7 +679,16 @@ yet, so the manual count is currently the reliable path.)
 - **`Event.MoveType` is the move's base type.** It reads the type from move data, so a move
   re-typed at runtime — Normalize and the `-ate` abilities, Electrify, Tera — still matches its
   printed type here. Predictable to author against, but don't document it to players as "the type
-  the attack actually hit as".
+  the attack actually hit as". `Event.MoveCategory` is the same deal one field over — it's the
+  category on the move's data, not a runtime flip like Photon Geyser's or Tera Blast's.
+- **An `OnTurnStart` script that animates must lead with `flushtextbox`.** The action/move selection
+  menu is shown by *scrolling BG0* (`gBattle_BG0_Y`), and the only thing that scrolls it back is a
+  `printstring` (`BtlController_HandlePrintString` resets `gBattle_BG0_X/Y`). `OnTurnStart` is
+  dispatched before the turn's first action, so that scroll is still in place — an animation played
+  before any dialogue renders on top of the still-open menu and corrupts it. Leading with dialogue
+  is enough on its own; `flushtextbox` is the no-dialogue version, and it's how vanilla's own
+  turn-start scripts (`BattleScript_QuickClawActivation`) open. `encformchange` already does this
+  for you. Every other checkpoint runs after the turn's first message, so this is `OnTurnStart` only.
 - **Split a countdown across two checkpoints.** Every trigger is re-evaluated after each script
   runs (determinism rule 3), so a timer that both ticks and resolves at the same checkpoint chases
   itself through all its states in one dispatch and fires instantly. Decrement it at `OnTurnStart`
@@ -790,6 +805,7 @@ A leaf is exactly `<operand> <comparison> <value>`. The only comparisons are `==
 | `Event.Target` | No argument | Battler id |
 | `Event.Move` | No argument | `MOVE_*` constant |
 | `Event.MoveType` | No argument | `TYPE_*` constant |
+| `Event.MoveCategory` | No argument | `DAMAGE_CATEGORY_PHYSICAL`, `DAMAGE_CATEGORY_SPECIAL`, or `DAMAGE_CATEGORY_STATUS` |
 | `Event.Cause` | No argument | `ENC_CAUSE_NONE`, `ENC_CAUSE_MOVE_DAMAGE`, `ENC_CAUSE_RECOIL`, `ENC_CAUSE_DRAIN`, `ENC_CAUSE_END_TURN`, `ENC_CAUSE_ITEM`, `ENC_CAUSE_ABILITY`, or `ENC_CAUSE_ENCOUNTER_SCRIPT` |
 | `Event.OldValue`, `Event.NewValue` | No argument | Integer |
 | `Weather` | No argument | `B_WEATHER_*` constant |
@@ -815,6 +831,7 @@ constants are compiler errors.
 | `encaddvar <var>, <value>` | Same as `encsetvar`. |
 | `encsubvar <var>, <value>` | Same as `encsetvar`. |
 | `encjumpifvar <comparison>, <var>, <value>, <label>` | Normal battle-script byte comparison, variable/index, byte value, and script label. |
+| `enccopyvar <dst>, <src>` | Two variables/indexes. |
 | `enchangehp <target>, <amount>[, <mode>]` | Target below; signed 16-bit amount (positive heals, negative damages); optional `ENC_AMOUNT_FIXED` (default) or `ENC_AMOUNT_PERCENT`. |
 | `encchangestat <target>, <stat>, <stages>` | Target below; `STAT_*` id; signed stage change. |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Target below; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); signed 16-bit amount; optional mode as above. |
@@ -826,6 +843,7 @@ constants are compiler errors.
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |
+| `encformchange <target>, <species>, <failLabel>[, <anim>]` | A target that resolves to exactly one battler, a `SPECIES_*` constant, a script label, and an optional `B_ANIM_*` id (defaults to `B_ANIM_MEGA_EVOLUTION`). |
 | `encjumpifchance <percent>, <label>` | An integer `0`–`255` (asserts if above `100`) and a script label. |
 
 Every valid `<target>` is `ENC_TARGET_BOSS`, `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`,

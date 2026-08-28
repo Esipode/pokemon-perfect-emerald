@@ -701,11 +701,12 @@ static bool parse_operand(struct Parser *p, struct EncounterDef *enc, const char
         else if (is_literal_token(&field, "Target"))   *operand_const = "ENC_OP_EVENT_TARGET";
         else if (is_literal_token(&field, "Move"))     *operand_const = "ENC_OP_EVENT_MOVE";
         else if (is_literal_token(&field, "MoveType")) *operand_const = "ENC_OP_EVENT_MOVE_TYPE";
+        else if (is_literal_token(&field, "MoveCategory")) *operand_const = "ENC_OP_EVENT_MOVE_CATEGORY";
         else if (is_literal_token(&field, "Cause"))    *operand_const = "ENC_OP_EVENT_CAUSE";
         else if (is_literal_token(&field, "OldValue")) *operand_const = "ENC_OP_EVENT_OLD_VALUE";
         else if (is_literal_token(&field, "NewValue")) *operand_const = "ENC_OP_EVENT_NEW_VALUE";
         else
-            return set_parse_error(p, field.location, "unknown event field (expected Battler, Target, Move, MoveType, Cause, OldValue, or NewValue)");
+            return set_parse_error(p, field.location, "unknown event field (expected Battler, Target, Move, MoveType, MoveCategory, Cause, OldValue, or NewValue)");
 
         strcpy(arg_expr, "0");
         *p = p_;

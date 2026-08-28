@@ -1069,6 +1069,24 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCMOLTRESREBIRTH]                    = COMPOUND_STRING("MOLTRES RISES FROM ITS OWN ASHES!{PAUSE_UNTIL_PRESS}"),
     [STRINGID_ENCMOLTRESSCORCHED]                  = COMPOUND_STRING("The ground is scorched black. The flames will never leave it now."),
     [STRINGID_ENCMOLTRESWEAKENED]                  = COMPOUND_STRING("The everlasting flame finally dims.\pMoltres is spent. Now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+
+    // Mewtwo ("The Perfect Weapon").
+    [STRINGID_ENCMEWTWOINTRO]                       = COMPOUND_STRING("Mewtwo's gaze follows your every movement."),
+    [STRINGID_ENCMEWTWOANALYZED]                    = COMPOUND_STRING("Mewtwo has finished analyzing you.\pIts body begins to change!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMEWTWOBECOMESX]                    = COMPOUND_STRING("Mewtwo's body swells with raw power!"),
+    [STRINGID_ENCMEWTWOBECOMESY]                    = COMPOUND_STRING("Mewtwo's mind expands beyond its body!"),
+    [STRINGID_ENCMEWTWOISEE]                        = COMPOUND_STRING("Mewtwo narrows its eyes, as if it can't decide something."),
+    [STRINGID_ENCMEWTWOWATCHES]                     = COMPOUND_STRING("Mewtwo studies your every movement…"),
+    [STRINGID_ENCMEWTWOSTRAINS]                     = COMPOUND_STRING("Mewtwo's body shudders as it holds its shape…"),
+    [STRINGID_ENCMEWTWOFLICKER]                     = COMPOUND_STRING("Mewtwo's outline flickers."),
+    [STRINGID_ENCMEWTWORIPPLES]                     = COMPOUND_STRING("Mewtwo's form ripples violently. It is straining to hold its shape!"),
+    [STRINGID_ENCMEWTWOERUPTS]                      = COMPOUND_STRING("MEWTWO'S GENETIC STRUCTURE ERUPTS!\pIts body won't hold!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMEWTWOREASSEMBLES]                 = COMPOUND_STRING("Mewtwo reassembles itself. Its guard is whole again."),
+    [STRINGID_ENCMEWTWOSHRUGS]                      = COMPOUND_STRING("Mewtwo's mind tears free of the effect, but something in it slips."),
+    [STRINGID_ENCMEWTWOFORCE]                       = COMPOUND_STRING("Mewtwo's strikes are building on each other!"),
+    [STRINGID_ENCMEWTWOFOCUS]                       = COMPOUND_STRING("Mewtwo's focus closes around your Pokémon!"),
+    [STRINGID_ENCMEWTWOPERFECT]                     = COMPOUND_STRING("Mewtwo abandons the line between its forms.\pIt won't settle again!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMEWTWOWEAKENED]                    = COMPOUND_STRING("Mewtwo's power finally gutters out.\pNow is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

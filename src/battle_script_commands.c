@@ -12734,6 +12734,53 @@ void BS_EncounterMegaEvolve(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// FORM_CHANGE (encformchange). The general form of MEGA_EVOLVE above: the destination species is
+// named outright instead of being looked up from a held Mega Stone, so a boss can change shape more
+// than once, change into a form it has no stone for, and change back. The mechanic half is
+// TryBattleFormChange's (battle_util.c) without its CanBattlerFormChange gate - a scripted encounter
+// beat is not asking permission from the form-change table.
+void BS_EncounterFormChange(void)
+{
+    NATIVE_ARGS(u8 target, u16 species, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum Species species = cmd->species;
+    enum BattlerId battler;
+    struct Pokemon *mon;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: FORM_CHANGE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: FORM_CHANGE target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    mon = GetBattlerMon(battler);
+
+    // Seeds the same field TryBattleFormChange does, so the species' own FORM_CHANGE_END_BATTLE /
+    // FORM_CHANGE_FAINT entries still restore the party mon however the battle ends.
+    if (GetBattlerPartyState(battler)->changedSpecies == SPECIES_NONE)
+        GetBattlerPartyState(battler)->changedSpecies = gBattleMons[battler].species;
+
+    SetMonData(mon, MON_DATA_SPECIES, &species);
+    gBattleMons[battler].species = species;
+    RecalcBattlerStats(battler, mon, FALSE);
+
+    // The presentation opcodes the macro appends address BS_SCRIPTING, and the dialogue a caller
+    // prints around them may name the attacker; neither is meaningful at an arbitrary checkpoint.
+    gBattlerAttacker = gBattleScripting.battler = battler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // CHANGE_STAT_VALUE (encchangestatvalue). Sibling of CHANGE_STAT above, one level lower: stages are
 // the standard, visible, Haze-clearable currency, while this moves the raw battle stat a boss was
 // built with. That matters for an encounter whose level isn't known when the script is written -

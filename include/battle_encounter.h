@@ -122,6 +122,21 @@ extern const u8 EncScript_Moltres_BossFire[];
 extern const u8 EncScript_Moltres_TurnOpen[];
 extern const u8 EncScript_Moltres_TurnClose[];
 
+// Mewtwo ("The Perfect Weapon")
+extern const u8 EncScript_Mewtwo_Intro[];
+extern const u8 EncScript_Mewtwo_PerfectAdaptation[];
+extern const u8 EncScript_Mewtwo_Weakened[];
+extern const u8 EncScript_Mewtwo_PlayerPhysical[];
+extern const u8 EncScript_Mewtwo_PlayerStatus[];
+extern const u8 EncScript_Mewtwo_PlayerSpecial[];
+extern const u8 EncScript_Mewtwo_BossHit[];
+extern const u8 EncScript_Mewtwo_TurnOpen[];
+extern const u8 EncScript_Mewtwo_TurnClose[];
+extern const u8 EncScript_Mewtwo_OverloadStart[];
+extern const u8 EncScript_Mewtwo_OverloadEnd[];
+extern const u8 EncScript_Mewtwo_FirstAdapt[];
+extern const u8 EncScript_Mewtwo_Adapt[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

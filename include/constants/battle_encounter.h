@@ -12,13 +12,14 @@ enum EncounterId
     ENCOUNTER_ARTICUNO,
     ENCOUNTER_ZAPDOS,
     ENCOUNTER_MOLTRES,
+    ENCOUNTER_MEWTWO,
     ENCOUNTER_COUNT,
 };
 
 #define MAX_ENCOUNTER_VARS                     16
 #define MAX_ENCOUNTER_TRIGGERS                 32
 #define MAX_ENCOUNTER_COND_DEPTH                4
-#define MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT    4
+#define MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT    8
 
 // gEncounterVars (src/battle_encounter.c) is a fixed EWRAM array, not a member of gBattleStruct -
 // gBattleStruct is a heap pointer resolved only at runtime, so a battle script (which can only
@@ -231,6 +232,7 @@ enum EncounterOperand
     ENC_OP_EVENT_TARGET,
     ENC_OP_EVENT_MOVE,
     ENC_OP_EVENT_MOVE_TYPE,  // the event move's base type, so a rule can key off "any Ice move"
+    ENC_OP_EVENT_MOVE_CATEGORY,  // the event move's base category, for a rule keyed off how the player attacks
     ENC_OP_EVENT_CAUSE,
     ENC_OP_EVENT_OLD_VALUE,
     ENC_OP_EVENT_NEW_VALUE,

@@ -1000,6 +1000,9 @@ LittlerootTown_EventScript_EncounterTESTZapdos::
 LittlerootTown_EventScript_EncounterTESTMoltres::
 	goto LegendaryEncounter_EventScript_Moltres
 
+LittlerootTown_EventScript_EncounterTESTMewtwo::
+	goto LegendaryEncounter_EventScript_Mewtwo
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD
