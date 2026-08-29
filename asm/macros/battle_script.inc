@@ -1268,6 +1268,17 @@
 	.byte \target
 	.endm
 
+	@ Strips every screen, Safeguard, Mist, Tailwind and Lucky Chant from the side \target resolves
+	@ to, along with the matching gSideTimers entries. Jumps \failInstr when that side had none, so
+	@ one command serves as both the test and the clear. Silent - the caller supplies its own
+	@ dialogue. Nothing else removes these generically: trydefog only ever clears the side opposite
+	@ gBattlerAttacker, which is stale outside a move's own resolution.
+	.macro encclearscreens target:req, failInstr:req
+	callnative BS_EncClearScreens
+	.byte \target
+	.4byte \failInstr
+	.endm
+
 	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or
 	@ ENC_BALLS_ALLOWED. ALLOWED only lifts this encounter's own block - it never makes a battle
 	@ catchable that wouldn't be otherwise (trainer battle, Ghost without a Silph Scope, ...).

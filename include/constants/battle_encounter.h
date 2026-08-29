@@ -16,6 +16,7 @@ enum EncounterId
     ENCOUNTER_MEW,
     ENCOUNTER_RAIKOU,
     ENCOUNTER_ENTEI,
+    ENCOUNTER_SUICUNE,
     ENCOUNTER_COUNT,
 };
 
@@ -154,6 +155,10 @@ enum EncounterTarget
 #define ENC_LEVEL_CAP   0xFFFF   // set every opponent to GetProgressionLevelCap()
 
 #define ENC_CATCH_RATE_NONE 0    // no override; the species' own catch rate applies
+
+// No ability override; the boss keeps the ability it was built with. Equal to ABILITY_NONE, which
+// is never a real ability, so the property doubles as its own "unset" marker.
+#define ENC_ABILITY_NONE 0
 
 // Whether the player may throw a Poke Ball. ENC_BALLS_ALLOWED only lifts an encounter's own block -
 // it never overrides a rule the battle itself imposes (trainer battle, Ghost without a Silph Scope,

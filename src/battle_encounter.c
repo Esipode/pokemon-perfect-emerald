@@ -741,6 +741,54 @@ void ApplyEncounterMoveOverride(void)
     }
 }
 
+void ApplyEncounterAbilityOverride(void)
+{
+    const struct EncounterProperties *properties = GetEncounterProperties();
+    struct Pokemon *mon = &gParties[B_TRAINER_OPPONENT_A][0];
+    enum Species species;
+
+    if (properties == NULL || properties->ability == ENC_ABILITY_NONE)
+        return;
+
+    species = GetMonData(mon, MON_DATA_SPECIES, NULL);
+    if (species == SPECIES_NONE || GetMonData(mon, MON_DATA_IS_EGG, NULL))
+        return;
+
+    // A party mon stores an ability slot, not an ability, so this only works for an ability the
+    // species actually has. Anything else falls through to ApplyEncounterBattlerAbilityOverride,
+    // which writes it onto the battler once one exists.
+    for (u32 slot = 0; slot < NUM_ABILITY_SLOTS; slot++)
+    {
+        if (GetSpeciesAbility(species, slot) == properties->ability)
+        {
+            SetMonData(mon, MON_DATA_ABILITY_NUM, &slot);
+            return;
+        }
+    }
+}
+
+void ApplyEncounterBattlerAbilityOverride(enum BattlerId battler)
+{
+    const struct EncounterProperties *properties = GetEncounterProperties();
+
+    if (properties == NULL || properties->ability == ENC_ABILITY_NONE)
+        return;
+
+    // Scoped to the mon, not to the boss position: after a switch a different Pokemon stands in the
+    // opponent's left slot, and it isn't the one the encounter's Ability: describes.
+    if (GetBattlerMon(battler) != &gParties[B_TRAINER_OPPONENT_A][0])
+        return;
+
+    // The species owns this ability, so the party's ability slot already carried it here.
+    if (gBattleMons[battler].ability == properties->ability)
+        return;
+
+    // overwrittenAbility is set alongside it so readers that would otherwise re-derive the ability
+    // from the species' slots - the AI's ability guessing above all - see the real one.
+    gBattleMons[battler].ability = properties->ability;
+    gBattleMons[battler].volatiles.overwrittenAbility = properties->ability;
+}
+
 u64 GetEncounterAiFlags(void)
 {
     const struct EncounterProperties *properties = GetEncounterProperties();

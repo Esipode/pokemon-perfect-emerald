@@ -604,12 +604,13 @@ static void CB2_InitBattleInternal(void)
         SetMainCallback2(CB2_HandleStartBattle);
 
     // Opponent parties exist now (built in battle_setup.c) and no gBattleMons have been built from
-    // them yet - the only window where an encounter's Level:/Moves: properties can restate what the
-    // opponents are (battle_encounter.c). Moves need their own property because the level rebuild
-    // recalculates stats only - without it the boss keeps the learnset moves it was created with,
-    // at whatever level the overworld script's setwildbattle happened to name.
+    // them yet - the only window where an encounter's Level:/Moves:/Ability: properties can restate
+    // what the opponents are (battle_encounter.c). Moves need their own property because the level
+    // rebuild recalculates stats only - without it the boss keeps the learnset moves it was created
+    // with, at whatever level the overworld script's setwildbattle happened to name.
     ApplyEncounterLevelOverride();
     ApplyEncounterMoveOverride();
+    ApplyEncounterAbilityOverride();
 
     gMain.inBattle = TRUE;
     gSaveBlock2Ptr->disableRecordBattle = FALSE;
@@ -4315,6 +4316,9 @@ void SwitchInClearSetData(enum BattlerId battler, struct Volatiles *volatilesCop
     }
     #endif // TESTING
 
+    // Before Ai_UpdateSwitchInData, so the AI records the ability the boss will actually fight with.
+    ApplyEncounterBattlerAbilityOverride(battler);
+
     Ai_UpdateSwitchInData(battler);
 }
 
@@ -4432,6 +4436,10 @@ static void DoBattleIntro(void)
                         gBattleMons[battler].ability = TestRunner_Battle_GetForcedAbility(trainer, partyIndex);
                 }
                 #endif
+
+                // After the volatiles memset above, which would otherwise clear the
+                // overwrittenAbility that carries an off-list encounter ability.
+                ApplyEncounterBattlerAbilityOverride(battler);
 
                 // Resolve type and moves through the shared resolver. This is
                 // where randomization is applied to the battlers present at the

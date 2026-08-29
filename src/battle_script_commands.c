@@ -13060,6 +13060,49 @@ void BS_EncSetProtect(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// CLEAR_SCREENS (encclearscreens). Wipes the side-wide barriers a player puts up - the three
+// screens, Safeguard, Mist, Tailwind and Lucky Chant - plus their timers, on every side <target>
+// resolves to. Jumps failInstr when nothing was there, which is what lets one command be both the
+// test and the clear. Rainbow is deliberately left out of the mask: it is a Pledge combo the field
+// produces, not a barrier the player raised. Nothing else in the engine does this generically -
+// trydefog only ever clears the side opposite gBattlerAttacker, which is stale outside a move.
+void BS_EncClearScreens(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+    bool32 cleared = FALSE;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u32 side;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; clear that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (!(gSideStatuses[side] & SIDE_STATUS_BARRIER_ANY))
+            continue;
+
+        gSideStatuses[side] &= ~SIDE_STATUS_BARRIER_ANY;
+        gSideTimers[side].reflectTimer = 0;
+        gSideTimers[side].lightscreenTimer = 0;
+        gSideTimers[side].auroraVeilTimer = 0;
+        gSideTimers[side].safeguardTimer = 0;
+        gSideTimers[side].mistTimer = 0;
+        gSideTimers[side].tailwindTimer = 0;
+        gSideTimers[side].luckyChantTimer = 0;
+        cleared = TRUE;
+    }
+
+    gBattlescriptCurrInstr = cleared ? cmd->nextInstr : cmd->failInstr;
+}
+
 // BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
 // describe the ball the player is about to throw, and there is only ever one catch target.
 void BS_EncounterSetBallPolicy(void)

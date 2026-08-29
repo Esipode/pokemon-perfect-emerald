@@ -411,6 +411,9 @@ enum QueuedSwitch
 #define SIDE_STATUS_GOOD_FOG       (SIDE_STATUS_SCREEN_ANY | SIDE_STATUS_SAFEGUARD | SIDE_STATUS_MIST)
 #define SIDE_STATUS_GOOD_COURT     (SIDE_STATUS_GOOD_FOG | SIDE_STATUS_TAILWIND | SIDE_STATUS_LUCKY_CHANT | SIDE_STATUS_RAINBOW)
 #define SIDE_STATUS_BAD_COURT      (SIDE_STATUS_DAMAGE_NON_TYPES | SIDE_STATUS_SEA_OF_FIRE | SIDE_STATUS_SWAMP)
+// Every side-wide barrier a battler deliberately puts up. GOOD_COURT without Rainbow, which the
+// field produces from a Pledge combo rather than anyone raising it. Used by encclearscreens.
+#define SIDE_STATUS_BARRIER_ANY    (SIDE_STATUS_GOOD_FOG | SIDE_STATUS_TAILWIND | SIDE_STATUS_LUCKY_CHANT)
 
 enum Hazards
 {

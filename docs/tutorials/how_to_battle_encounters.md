@@ -322,13 +322,14 @@ X?". Every field is optional and omitting one changes nothing.
 | `CapTypeEffectiveness:` | `True`/`False` | Clamps the boss's incoming type-effectiveness multiplier at 2x — a double weakness stacked onto another double weakness can't spike to 4x |
 | `FlatToxicDamage:` | `True`/`False` | Toxic deals the same flat 1/16 max HP against the boss every turn instead of its counter ramping that up turn over turn |
 | `Survive:` | `True`/`False` | The boss's HP can't be taken below 1 by anything that goes through the damage formula or a passive HP tick. For scripted last stands and to guarantee a catch window opens. Does **not** cover fixed-damage moves, Perish Song or Destiny Bond — see the gotcha below |
+| `Ability:` | an `ABILITY_*` constant | The ability the boss fights with, replacing the one its ability slot would give it. Not restricted to the species' own abilities |
 | `Moves:` | 1–4 `MOVE_*` constants, comma separated | Replaces the boss's moves, PP included. A slot the list doesn't reach keeps what it was built with |
 | `AiFlags:` | one or more `AI_FLAG_*` constants, `\|` separated | The AI the opponent side runs, replacing whatever the battle type would derive |
 
-`DamageReduction:`, `Immunities:`, `CapTypeEffectiveness:`, `FlatToxicDamage:`, `Survive:` and
-`Moves:` apply to the **boss** (the opponent's left slot). Any other battler — or any change to these
-mid-battle — is a job for `encsetdamagereduction` / `encsetimmunity` / `encsetcaptypeeffectiveness` /
-`encsetflattoxicdamage` / `encsetsurvive` in a script.
+`DamageReduction:`, `Immunities:`, `CapTypeEffectiveness:`, `FlatToxicDamage:`, `Survive:`,
+`Ability:` and `Moves:` apply to the **boss** (the opponent's left slot). Any other battler — or any
+change to these mid-battle — is a job for `encsetdamagereduction` / `encsetimmunity` /
+`encsetcaptypeeffectiveness` / `encsetflattoxicdamage` / `encsetsurvive` in a script.
 
 ### `Level:` and when it applies
 
@@ -356,6 +357,29 @@ the remaining slots as they were built, so `Moves: MOVE_BLIZZARD` replaces only 
 The move names pass through to the C compiler unchecked, so a typo is a compiler error, not an
 `encounterproc` error. Nothing verifies the species can legally learn them, either — that's a design
 decision, not a build-time one.
+
+### `Ability:` — a boss ability, on or off the species' list
+
+```text
+    Ability: ABILITY_SNOW_WARNING
+```
+
+Applied in the same pre-battle window as `Level:` and `Moves:`, to the boss and nobody else. When
+the ability is one the species actually has, all this does is pick that ability slot on the party
+mon — the battler, the AI and the summary screen derive the rest as they always would.
+
+An ability the species **doesn't** have works too, and is the interesting case for a boss. A party
+Pokémon can only store an ability *slot*, so there is nowhere on it to put one; the engine instead
+writes the ability onto the battler as it is built, exactly the way Skill Swap and Worry Seed do
+mid-battle. Two things follow from that:
+
+* It is applied before switch-in abilities activate, so an Intimidate or a Drought granted this way
+  still fires on entry, and the AI's opening read of the boss sees the real ability.
+* Outside the battle the mon is unchanged. A boss caught with an off-list ability keeps the ability
+  its slot names, not the one it fought with.
+
+The ability name passes through to the C compiler unchecked, like `Moves:` — a typo is a compiler
+error, not an `encounterproc` error.
 
 ### `AiFlags:` — giving a wild boss an AI
 
@@ -514,6 +538,7 @@ The commands below exist specifically for encounter scripts:
 | `encsetflattoxicdamage <target>, <flat>` | `TRUE` stops Toxic's counter from ramping `<target>`'s damage up each turn; `FALSE` restores the ramp | encounter-specific (`callnative`) |
 | `encsetsurvive <target>, <survive>` | `TRUE` guards `<target>`'s HP against dropping below 1 through the damage formula or a passive tick; `FALSE` removes the guard | encounter-specific (`callnative`) |
 | `encsetprotect <target>` | Gives `<target>` the same protection Protect itself grants, so Feint, never-miss moves and contact punishment resolve exactly as they do against a real Protect. `gProtectStructs` is cleared after end-of-turn effects, so this only has an effect at `OnTurnStart` — set there it covers the whole turn and expires on its own | encounter-specific (`callnative`) |
+| `encclearscreens <target>, <failLabel>` | Strips every screen, Safeguard, Mist, Tailwind and Lucky Chant (and their timers) from each side `<target>` resolves to, and jumps `<failLabel>` if there were none — so one command is both the test and the clear. Silent; supply your own dialogue. `trydefog` can't do this outside a move: it only ever clears the side opposite `gBattlerAttacker`, which is stale at `OnTurnStart`/`OnTurnEnd` | encounter-specific (`callnative`) |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT` / `ENC_BALLS_BLOCKED` / `ENC_BALLS_ALLOWED` | encounter-specific (`callnative`) |
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
@@ -747,6 +772,7 @@ Properties:                 # optional; at most one, before the first Trigger:
     CapTypeEffectiveness: <True|False>
     FlatToxicDamage: <True|False>
     Survive: <True|False>
+    Ability: <an ABILITY_* constant>
     Moves: <1-4 MOVE_* constants, comma separated>
     AiFlags: <one or more AI_FLAG_* constants, '|' separated>
 
@@ -767,9 +793,10 @@ Conditions:                 # optional; requires at least one indented item
 
 ### `Properties:` fields
 
-Every field is optional and may appear at most once. All but `Moves:`/`AiFlags:` take a closed
-vocabulary validated here; those two hold game constants, so — like a condition's right-hand side —
-their names pass through to the C compiler and a typo surfaces as a compiler error.
+Every field is optional and may appear at most once. All but `Ability:`/`Moves:`/`AiFlags:` take a
+closed vocabulary validated here; those three hold game constants, so — like a condition's
+right-hand side — their names pass through to the C compiler and a typo surfaces as a compiler
+error.
 
 | Field | Every valid value |
 | --- | --- |
@@ -781,6 +808,7 @@ their names pass through to the C compiler and a typo surfaces as a compiler err
 | `CapTypeEffectiveness:` | `True` or `False` |
 | `FlatToxicDamage:` | `True` or `False` |
 | `Survive:` | `True` or `False` |
+| `Ability:` | A single `ABILITY_*` constant. The name passes through to the C compiler unchecked; only its shape as an identifier is validated |
 | `Moves:` | Comma-separated list of one to four `MOVE_*` constants. The names pass through to the C compiler unchecked; only the count is validated |
 | `AiFlags:` | One or more `AI_FLAG_*` constants separated by `\|`. Also passed through unchecked |
 
@@ -851,6 +879,7 @@ constants are compiler errors.
 | `encsetflattoxicdamage <target>, <flat>` | Target below; `TRUE` or `FALSE`. |
 | `encsetsurvive <target>, <survive>` | Target below; `TRUE` or `FALSE`. |
 | `encsetprotect <target>` | Target below. |
+| `encclearscreens <target>, <failLabel>` | Target below, plus a script label taken when the side had nothing to clear. |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |

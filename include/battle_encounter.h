@@ -35,6 +35,7 @@ struct EncounterProperties
     u64 aiFlags;         // AI_FLAG_* mask for the opponent side; 0 = whatever the battle would use
     u16 level;           // ENC_LEVEL_NONE / ENC_LEVEL_CAP / a literal level for every opponent
     u16 moves[MAX_MON_MOVES];  // the boss's moves; a MOVE_NONE slot is left as built
+    u16 ability;         // ENC_ABILITY_NONE, or the ability the boss fights with
     u8 catchRate;        // ENC_CATCH_RATE_NONE, or a catch rate replacing the species' own
     u8 ballPolicy;       // enum EncounterBallPolicy
     u8 damageReduction;  // percent, applied to the boss; 0..ENC_MAX_DAMAGE_REDUCTION
@@ -189,6 +190,23 @@ extern const u8 EncScript_Entei_EruptSafe[];
 extern const u8 EncScript_Entei_Vent[];
 extern const u8 EncScript_Entei_TurnClose[];
 
+// Suicune ("The Purifier")
+extern const u8 EncScript_Suicune_Intro[];
+extern const u8 EncScript_Suicune_Cleansing[];
+extern const u8 EncScript_Suicune_Cleansing[];
+extern const u8 EncScript_Suicune_SacredBeast[];
+extern const u8 EncScript_Suicune_SacredBeast[];
+extern const u8 EncScript_Suicune_Weakened[];
+extern const u8 EncScript_Suicune_Weakened[];
+extern const u8 EncScript_Suicune_TurnOpen[];
+extern const u8 EncScript_Suicune_Rite[];
+extern const u8 EncScript_Suicune_SacredResolve[];
+extern const u8 EncScript_Suicune_SacredDraw[];
+extern const u8 EncScript_Suicune_ShatterType[];
+extern const u8 EncScript_Suicune_ShatterCrit[];
+extern const u8 EncScript_Suicune_StillWater[];
+extern const u8 EncScript_Suicune_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
@@ -235,6 +253,25 @@ void ApplyEncounterLevelOverride(void);
 // applying one list to every opponent would be meaningless. A MOVE_NONE slot is left alone, so a
 // list shorter than MAX_MON_MOVES overrides only the slots it names.
 void ApplyEncounterMoveOverride(void);
+
+// Gives the boss the encounter's Ability: property. Called from CB2_InitBattleInternal
+// (battle_main.c) alongside the level and move overrides, in the same pre-build window: when the
+// ability is one of the species' own slots this only has to move MON_DATA_ABILITY_NUM, and the
+// battler, the AI and the party UI all derive the rest for free.
+//
+// An ability the species doesn't have can't be stored on a party mon at all, so it is left to
+// ApplyEncounterBattlerAbilityOverride instead. The boss and nobody else, like Moves:.
+void ApplyEncounterAbilityOverride(void);
+
+// The off-list half of the Ability: property: writes the ability straight onto a battler once
+// gBattleMons exist. Called for every battler as it is built (DoBattleIntro) and as it switches in
+// (SwitchInClearSetData), and applies only to the mon ApplyEncounterAbilityOverride targeted, so a
+// trainer encounter's other Pokemon keep their own abilities. No-op when the party's ability slot
+// already carries the property, which is the common case.
+//
+// Both call sites sit before switch-in abilities activate, so an Intimidate or a Drought granted
+// this way still fires on entry.
+void ApplyEncounterBattlerAbilityOverride(enum BattlerId battler);
 
 // The encounter's AiFlags: property, or 0 when it has none. A wild battle gets no AI scoring at all
 // by default (GetWildAiFlags is gated behind WE_SMART_WILD_AI_FLAG), so this is what gives a wild
