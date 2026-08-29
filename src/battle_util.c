@@ -5139,7 +5139,7 @@ enum Stat GetHighestStatId(enum BattlerId battler)
     return highestId;
 }
 
-static u32 GetStatValueWithStages(enum BattlerId battler, enum Stat stat)
+u32 GetStatValueWithStages(enum BattlerId battler, enum Stat stat)
 {
     u32 statValue;
 

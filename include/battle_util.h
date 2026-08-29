@@ -222,6 +222,8 @@ bool32 IsElectricTerrainAffected(enum BattlerId battler, enum Ability ability, e
 bool32 IsAnyTerrainAffected(enum BattlerId battler, enum Ability ability, enum HoldEffect holdEffect, enum BattleTerrain currTerrain);
 bool32 IsBattlerTerrainAffected(enum BattlerId battler, enum Ability ability, enum HoldEffect holdEffect, enum BattleTerrain terrain, enum BattleTerrain currTerrain);
 enum Stat GetHighestStatId(enum BattlerId battler);
+// A battler's live battle stat with its stat stage applied - the number the damage calc reads.
+u32 GetStatValueWithStages(enum BattlerId battler, enum Stat stat);
 enum Stat GetParadoxHighestStatId(enum BattlerId battler);
 enum Stat GetParadoxBoostedStatId(enum BattlerId battler);
 

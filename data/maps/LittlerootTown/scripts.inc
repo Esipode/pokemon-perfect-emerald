@@ -1024,6 +1024,9 @@ LittlerootTown_EventScript_EncounterTESTLugia::
 LittlerootTown_EventScript_EncounterTESTHoOh::
 	goto LegendaryEncounter_EventScript_HoOh
 
+LittlerootTown_EventScript_EncounterTESTDeoxys::
+	goto LegendaryEncounter_EventScript_Deoxys
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

@@ -547,6 +547,7 @@ The commands below exist specifically for encounter scripts:
 | `encsnapshothp <target>, <var>[, <mode>[, <failLabel>]]` | Records `<target>`'s current HP as a **percentage of its max HP** (0-100) into author variable `<var>`. `<target>` must resolve to exactly one battler. `<mode>` is `ENC_SNAP_SET` (default, overwrite), `ENC_SNAP_LOWEST` (write only if lower than what `<var>` holds), `ENC_SNAP_RECOVERY` (write `max(0, currentPct - <var>)` — recovery since the mark) or `ENC_SNAP_DAMAGE` (write `max(0, <var> - currentPct)` — damage taken since the mark). Jumps `<failLabel>` when nothing was written, so one command is both the test and the record | encounter-specific (`callnative`) |
 | `encrewindhp <target>, <var>` | Moves `<target>`'s HP **to** the percentage held in `<var>`, healing or damaging as needed, with the same animated health bar `enchangehp` uses. The counterpart to `encsnapshothp` | encounter-specific (`callnative`) |
 | `encstoreprediction <target>, <var>` | Writes the AI's predicted move **category** for `<target>` into `<var>`: `0` no prediction this turn, `1` physical, `2` special, `3` status. The real `AI_FLAG_PREDICT_MOVE` answer, so it only means anything at `OnTurnStart` and only when the encounter's `AiFlags:` include that flag | encounter-specific (`callnative`) |
+| `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Writes the result of comparing `<targetA>`'s live `<stat>` against `<targetB>`'s into `<var>`: `0` A is lower, `1` equal, `2` A is higher. Both targets must resolve to exactly one battler. `STAT_SPEED` reads the full turn-order speed (Tailwind, Choice Scarf, paralysis, stages); the other stats read the stat-with-stages value. The var-to-var comparison conditions cannot express | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | Changes `<target>` (must resolve to exactly one battler) into `<species>` outright, outside any form-change table, then plays `<anim>`. The general form of `encmegaevolve`: repeatable, reversible, and not limited to a form the battler holds a stone for. Keeps HP and the moveset; stats, types and ability come from the new species. Prints nothing — supply your own dialogue | encounter-specific (`callnative`) |
@@ -740,8 +741,9 @@ yet, so the manual count is currently the reliable path.)
 - **Conditions and `encjumpifvar` only ever compare a variable against a literal.** There is no
   var-to-var comparison opcode. When a design wants one, express it as a command that leaves the
   answer in a variable a literal test can read - `ENC_SNAP_LOWEST` is "keep the smaller of two
-  values" and `ENC_SNAP_RECOVERY` / `ENC_SNAP_DAMAGE` are "subtract one from the other", in either
-  direction - or as several triggers whose
+  values", `ENC_SNAP_RECOVERY` / `ENC_SNAP_DAMAGE` are "subtract one from the other" in either
+  direction, and `enccomparestat` is "which of these two battlers has the bigger stat" - or as
+  several triggers whose
   conditions each pin one literal case, with a catch-all behind them at a lower priority.
 - **Split a countdown across two checkpoints.** Every trigger is re-evaluated after each script
   runs (determinism rule 3), so a timer that both ticks and resolves at the same checkpoint chases
@@ -889,6 +891,7 @@ constants are compiler errors.
 | `encsubvar <var>, <value>` | Same as `encsetvar`. |
 | `encjumpifvar <comparison>, <var>, <value>, <label>` | Normal battle-script byte comparison, variable/index, byte value, and script label. |
 | `enccopyvar <dst>, <src>` | Two variables/indexes. |
+| `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Two targets that each resolve to exactly one battler; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); a variable/index the `0`/`1`/`2` result is written into. |
 | `enchangehp <target>, <amount>[, <mode>]` | Target below; signed 16-bit amount (positive heals, negative damages); optional `ENC_AMOUNT_FIXED` (default) or `ENC_AMOUNT_PERCENT`. |
 | `encchangestat <target>, <stat>, <stages>` | Target below; `STAT_*` id; signed stage change. |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Target below; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); signed 16-bit amount; optional mode as above. |

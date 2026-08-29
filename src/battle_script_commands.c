@@ -12817,6 +12817,56 @@ void BS_EncStorePrediction(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// COMPARE_STAT (enccomparestat). Writes 0 (A lower) / 1 (equal) / 2 (A higher) into an author
+// variable. Conditions and encjumpifvar only ever compare a var against a literal, so any rule that
+// weighs one live battler's stat against another's has to be expressed as a command that leaves the
+// answer somewhere a literal test can read - the same reason ENC_SNAP_RECOVERY/ENC_SNAP_DAMAGE exist.
+//
+// STAT_SPEED goes through GetBattlerTotalSpeedStat so Tailwind, Choice Scarf, Chlorophyll and
+// paralysis all count - the same number the turn-order code compares. The other stats use the plain
+// stat-with-stages value.
+void BS_EncCompareStat(void)
+{
+    NATIVE_ARGS(u8 targetA, u8 targetB, u8 stat, u8 var);
+    u32 maskA = ResolveEncounterTarget(cmd->targetA);
+    u32 maskB = ResolveEncounterTarget(cmd->targetB);
+    enum BattlerId battlerA, battlerB;
+    u32 valueA, valueB;
+
+    assertf(maskA != 0 && (maskA & (maskA - 1)) == 0 && maskB != 0 && (maskB & (maskB - 1)) == 0,
+            "encounter %d: COMPARE_STAT targets %d/%d do not each resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->targetA, cmd->targetB)
+    {
+        gEncounterVars[cmd->var] = 1;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battlerA = B_BATTLER_0; !(maskA & (1u << battlerA)); battlerA++)
+        ;
+    for (battlerB = B_BATTLER_0; !(maskB & (1u << battlerB)); battlerB++)
+        ;
+
+    if (cmd->stat == STAT_SPEED)
+    {
+        valueA = GetBattlerTotalSpeedStat(battlerA, GetBattlerAbility(battlerA), GetBattlerHoldEffect(battlerA));
+        valueB = GetBattlerTotalSpeedStat(battlerB, GetBattlerAbility(battlerB), GetBattlerHoldEffect(battlerB));
+    }
+    else
+    {
+        valueA = GetStatValueWithStages(battlerA, (enum Stat)cmd->stat);
+        valueB = GetStatValueWithStages(battlerB, (enum Stat)cmd->stat);
+    }
+
+    if (valueA < valueB)
+        gEncounterVars[cmd->var] = 0;
+    else if (valueA == valueB)
+        gEncounterVars[cmd->var] = 1;
+    else
+        gEncounterVars[cmd->var] = 2;
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // CHANGE_STAT (encchangestat). Unlike CHANGE_HP this mutates statStages directly rather than going
 // through the animated trybattlerstatchange opcode - a pure mechanic with no presentation
 // (outline Sec31), safe to apply to an entire target set in one call since it never touches the

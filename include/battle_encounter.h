@@ -251,6 +251,24 @@ extern const u8 EncScript_HoOh_JudgeDefiant[];
 extern const u8 EncScript_HoOh_JudgeMerciful[];
 extern const u8 EncScript_HoOh_JudgeWorthy[];
 
+// Deoxys ("The Alien Organism")
+extern const u8 EncScript_Deoxys_Intro[];
+extern const u8 EncScript_Deoxys_TurnOpen[];
+extern const u8 EncScript_Deoxys_TurnClose[];
+extern const u8 EncScript_Deoxys_RebuildBegin[];
+extern const u8 EncScript_Deoxys_RebuildResolve[];
+extern const u8 EncScript_Deoxys_Instability[];
+extern const u8 EncScript_Deoxys_RapidMutation[];
+extern const u8 EncScript_Deoxys_PerfectAdaptation[];
+extern const u8 EncScript_Deoxys_HybridOne[];
+extern const u8 EncScript_Deoxys_HybridTwo[];
+extern const u8 EncScript_Deoxys_Collapse[];
+extern const u8 EncScript_Deoxys_HitBug[];
+extern const u8 EncScript_Deoxys_HitGhost[];
+extern const u8 EncScript_Deoxys_HitDark[];
+extern const u8 EncScript_Deoxys_HitOtherPhysical[];
+extern const u8 EncScript_Deoxys_HitOtherSpecial[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

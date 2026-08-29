@@ -1241,6 +1241,20 @@
 	.byte \var
 	.endm
 
+	@ Writes the result of comparing \targetA's live \stat against \targetB's into author variable
+	@ \var: 0 = A is lower, 1 = equal, 2 = A is higher. Both targets must resolve to exactly one
+	@ live battler. Conditions and encjumpifvar only compare a var against a literal, so a rule that
+	@ weighs one battler's stat against another's needs a command that parks the answer in a var.
+	@ STAT_SPEED reads the full turn-order speed (Tailwind, Choice Scarf, paralysis, stages); the
+	@ other stats read the plain stat-with-stages value. STAT_ACC/STAT_EVASION have no battle stat.
+	.macro enccomparestat targetA:req, targetB:req, stat:req, var:req
+	callnative BS_EncCompareStat
+	.byte \targetA
+	.byte \targetB
+	.byte \stat
+	.byte \var
+	.endm
+
 	@ Adds \stages (signed) to \stat for every battler \target resolves to, clamped to the normal
 	@ stat stage range. Silent - no message, no animation (outline Sec31); pair with playanimation
 	@ or a literal trybattlerstatchange call if presentation is wanted.
