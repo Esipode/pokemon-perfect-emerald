@@ -1191,6 +1191,56 @@
 2:
 	.endm
 
+	@ Records \target's current HP as a percentage of its max HP (0-100) into author variable \var.
+	@ \target must resolve to exactly one battler - a percentage is one byte, so there is no sensible
+	@ reading of "snapshot a whole set into it". A living battler never records 0.
+	@ \mode selects what gets written:
+	@   ENC_SNAP_SET      (default) the current percentage, overwriting whatever \var held
+	@   ENC_SNAP_LOWEST   the current percentage, but only if it is LOWER than what \var holds
+	@   ENC_SNAP_RECOVERY max(0, currentPct - \var) - how far \target has recovered since the mark
+	@ \failInstr (optional) is jumped to when nothing was written: for LOWEST, the value was not
+	@ lower; for RECOVERY, there was no recovery; for SET, never. So one command is both the test
+	@ and the record, the same way encclearscreens is both the test and the clear.
+	.macro encsnapshothp target:req, var:req, mode=ENC_SNAP_SET, failInstr=0
+	callnative BS_EncSnapshotHp
+	.byte \target
+	.byte \var
+	.byte \mode
+	.4byte \failInstr
+	.endm
+
+	@ Moves \target's HP TO the percentage held in author variable \var, healing or damaging as
+	@ needed, with the same animated health bar enchangehp uses. The counterpart to encsnapshothp:
+	@ record a percentage into a var, then snap the battler back to it later. Like enchangehp this
+	@ bypasses the target's damage reduction, and a battler taken to 0 HP faints in place.
+	.macro encrewindhp target:req, var:req
+	callnative BS_EncounterChangeHpBeginVar
+	.byte \target
+	.byte \var
+1:
+	callnative BS_EncounterChangeHpStep
+	.4byte 2f
+	healthbarupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	datahpupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	tryfaintmon BS_SCRIPTING
+	checkteamslost 2f
+	goto 1b
+2:
+	.endm
+
+	@ Writes the AI's predicted move CATEGORY for \target into author variable \var:
+	@   0 no prediction this turn   1 physical   2 special   3 status
+	@ \target must resolve to exactly one battler. This is the real AI_FLAG_PREDICT_MOVE prediction
+	@ (gAiLogicData->predictedMove), computed during action selection - so it is only meaningful at
+	@ OnTurnStart, and only in an encounter whose AiFlags: include AI_FLAG_PREDICT_MOVE.
+	@ The category rather than the move id: a move id doesn't fit in a byte, and three outcomes are
+	@ what a player can actually plan around.
+	.macro encstoreprediction target:req, var:req
+	callnative BS_EncStorePrediction
+	.byte \target
+	.byte \var
+	.endm
+
 	@ Adds \stages (signed) to \stat for every battler \target resolves to, clamped to the normal
 	@ stat stage range. Silent - no message, no animation (outline Sec31); pair with playanimation
 	@ or a literal trybattlerstatchange call if presentation is wanted.

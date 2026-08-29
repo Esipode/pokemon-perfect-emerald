@@ -17,6 +17,7 @@ enum EncounterId
     ENCOUNTER_RAIKOU,
     ENCOUNTER_ENTEI,
     ENCOUNTER_SUICUNE,
+    ENCOUNTER_CELEBI,
     ENCOUNTER_COUNT,
 };
 
@@ -196,6 +197,18 @@ enum EncounterAmountMode
 {
     ENC_AMOUNT_FIXED,
     ENC_AMOUNT_PERCENT,
+    ENC_AMOUNT_TO_PERCENT,   // move HP *to* this percent of max, healing or damaging as needed
+};
+
+// How encsnapshothp writes a battler's HP percentage into an author variable. LOWEST is what makes
+// a stored percentage a monotone floor without a var-to-var comparison (conditions and encjumpifvar
+// both compare a var against a literal); RECOVERY answers "how much has this battler healed since
+// the mark?" against a literal for the same reason.
+enum EncounterSnapshotMode
+{
+    ENC_SNAP_SET,        // write the current percentage, overwriting
+    ENC_SNAP_LOWEST,     // write only if the current percentage is lower than what the var holds
+    ENC_SNAP_RECOVERY,   // write max(0, currentPct - var): recovery since the mark
 };
 
 // ENC_OP_STAT_STAGE's arg packs a battler ref and an enum Stat into one u16 - both are small enough

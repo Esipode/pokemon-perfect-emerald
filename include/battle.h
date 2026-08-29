@@ -619,7 +619,8 @@ struct EncounterRuntime
     // frames waiting on the health-bar controller handshake - a plain C local can't survive that.
     u32 changeHpRemaining;                      // bitmask of battlers the current CHANGE_HP hasn't done yet
     s16 changeHpAmount;                         // its amount arg; positive = heal, negative = damage
-    u8  changeHpMode;                           // enum EncounterAmountMode; PERCENT reads amount as % of max HP
+    u8  changeHpMode;                           // enum EncounterAmountMode; PERCENT reads amount as % of max HP,
+                                                // TO_PERCENT as the destination % to move HP to
     // Per-battler combat modifiers. Seeded from the encounter's properties at ENC_ON_BATTLE_START
     // (boss only) and changed afterwards by encsetdamagereduction / encsetimmunity /
     // encsetcaptypeeffectiveness / encsetflattoxicdamage.

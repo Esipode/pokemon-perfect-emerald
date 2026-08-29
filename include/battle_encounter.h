@@ -207,6 +207,21 @@ extern const u8 EncScript_Suicune_ShatterCrit[];
 extern const u8 EncScript_Suicune_StillWater[];
 extern const u8 EncScript_Suicune_TurnClose[];
 
+// Celebi ("The Guardian of Time")
+extern const u8 EncScript_Celebi_Intro[];
+extern const u8 EncScript_Celebi_FutureSight[];
+extern const u8 EncScript_Celebi_Collapse[];
+extern const u8 EncScript_Celebi_TimeCollapse[];
+extern const u8 EncScript_Celebi_Weakened[];
+extern const u8 EncScript_Celebi_TurnOpen[];
+extern const u8 EncScript_Celebi_Rewind[];
+extern const u8 EncScript_Celebi_OpenWindow[];
+extern const u8 EncScript_Celebi_Foresee[];
+extern const u8 EncScript_Celebi_Anchor[];
+extern const u8 EncScript_Celebi_PredHeld[];
+extern const u8 EncScript_Celebi_PredBroken[];
+extern const u8 EncScript_Celebi_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

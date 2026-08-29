@@ -411,6 +411,18 @@ void BattleAI_SetupFlags(void)
             encounterAiFlags |= AI_FLAG_DOUBLE_BATTLE; // GetAiFlags adds this; scoring needs it
         gAiThinkingStruct->aiFlags[B_BATTLER_1] = encounterAiFlags;
         gAiThinkingStruct->aiFlags[B_BATTLER_3] = encounterAiFlags;
+
+        // AI_FLAG_PREDICT_MOVE predicts the player's move by scoring it with the *player's*
+        // simulated flags (SetupAIPredictionData). The branches above derive those from
+        // TRAINER_BATTLE_PARAM.opponentA/B, which is meaningless in a wild battle - so on a
+        // scripted wild boss the simulated player has no scoring flags and the prediction degrades
+        // to noise. Seed the player side from the encounter's flags too, exactly as the trainer
+        // path does one branch above. Controller-based, so this never makes the player AI-driven.
+        if (!IsPlayerAiControlled() && !(gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER))
+        {
+            gAiThinkingStruct->aiFlags[B_BATTLER_0] = encounterAiFlags;
+            gAiThinkingStruct->aiFlags[B_BATTLER_2] = encounterAiFlags;
+        }
     }
 }
 

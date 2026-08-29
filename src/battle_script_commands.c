@@ -12605,6 +12605,20 @@ static s32 EncounterChangeHpAmountFor(enum BattlerId battler)
     s32 amount = runtime->changeHpAmount;
     s32 scaled;
 
+    // TO_PERCENT is an absolute destination, not a delta: work out the HP that percentage of max
+    // stands for and return the difference from where the battler is now, so the same heal/damage
+    // path below carries it. A non-zero target percentage never resolves to 0 HP - that would faint
+    // a battler a script asked to restore.
+    if (runtime->changeHpMode == ENC_AMOUNT_TO_PERCENT)
+    {
+        s32 target = (s32)(((s64)gBattleMons[battler].maxHP * amount) / 100);
+        if (target < 1 && amount > 0)
+            target = 1;
+        else if (target > (s32)gBattleMons[battler].maxHP)
+            target = gBattleMons[battler].maxHP;   // a var holding >100 means "nothing recorded yet"
+        return target - (s32)gBattleMons[battler].hp;
+    }
+
     if (runtime->changeHpMode != ENC_AMOUNT_PERCENT || amount == 0)
         return amount;
 
@@ -12654,6 +12668,139 @@ void BS_EncounterChangeHpStep(void)
     }
     else
         gBattleStruct->passiveHpUpdate[battler] = 0; // amount 0 is a deliberate no-op, not a min-1 hit
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// encrewindhp: the Begin half of the CHANGE_HP pair, sourcing the amount from an author variable
+// and reading it as a destination percentage rather than a delta. Everything after this - the Step
+// loop, the health bar, the faint check - is the enchangehp machinery verbatim.
+void BS_EncounterChangeHpBeginVar(void)
+{
+    NATIVE_ARGS(u8 target, u8 var);
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+
+    runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
+
+    if (IsEncounterGroupTarget(cmd->target))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            if (!IsBattlerAlive(battler))
+                runtime->changeHpRemaining &= ~(1u << battler);
+        }
+    }
+
+    runtime->changeHpAmount = gEncounterVars[cmd->var];
+    runtime->changeHpMode = ENC_AMOUNT_TO_PERCENT;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// SNAPSHOT_HP (encsnapshothp). Stores a battler's HP as a percentage of max, which is the only
+// portable way to remember "where it was" in an encounter whose Level: is a moving target - and it
+// fits the u8 an author variable is. Single-slot targets only: there is no reading of a whole
+// target set collapsed into one byte.
+//
+// The three modes exist because encounter conditions and encjumpifvar only ever compare a variable
+// against a *literal*. LOWEST performs the var-to-var "keep the smaller" a script can't express,
+// and RECOVERY performs the var-to-var subtraction, each leaving a result a literal test can read.
+void BS_EncSnapshotHp(void)
+{
+    NATIVE_ARGS(u8 target, u8 var, u8 mode, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    u32 percent;
+    bool32 wrote = FALSE;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: SNAPSHOT_HP target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: SNAPSHOT_HP target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    // Floored at 1 for a living battler: 0 is the "it's gone" reading everywhere else, and a boss
+    // clinging on at a fraction of a percent has not been recorded as dead.
+    percent = ((u32)gBattleMons[battler].hp * 100) / gBattleMons[battler].maxHP;
+    if (percent < 1)
+        percent = 1;
+
+    switch (cmd->mode)
+    {
+    case ENC_SNAP_LOWEST:
+        if (percent < gEncounterVars[cmd->var])
+        {
+            gEncounterVars[cmd->var] = percent;
+            wrote = TRUE;
+        }
+        break;
+    case ENC_SNAP_RECOVERY:
+        if (percent > gEncounterVars[cmd->var])
+        {
+            gEncounterVars[cmd->var] = percent - gEncounterVars[cmd->var];
+            wrote = TRUE;
+        }
+        else
+        {
+            gEncounterVars[cmd->var] = 0;
+        }
+        break;
+    case ENC_SNAP_SET:
+    default:
+        gEncounterVars[cmd->var] = percent;
+        wrote = TRUE;
+        break;
+    }
+
+    // failInstr is optional (0 from the macro's default) - a script that doesn't care whether the
+    // value moved just falls through.
+    if (!wrote && cmd->failInstr != NULL)
+        gBattlescriptCurrInstr = cmd->failInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// STORE_PREDICTION (encstoreprediction). Surfaces the AI's own AI_FLAG_PREDICT_MOVE answer to the
+// script layer, as a damage category. gAiLogicData is a heap pointer, so a battle script can't
+// address into it directly - hence a command rather than a jumpifhalfword.
+//
+// predictedMove is written by SetupAIPredictionData during action selection and gAiLogicData is
+// memset at the top of every SetAiLogicDataForTurn, so MOVE_NONE unambiguously means "no prediction
+// this turn" rather than a stale one. Only meaningful at ENC_ON_TURN_START, which dispatches after
+// the AI has decided.
+void BS_EncStorePrediction(void)
+{
+    NATIVE_ARGS(u8 target, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    enum Move predicted;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: STORE_PREDICTION target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = 0;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    predicted = gAiLogicData->predictedMove[battler];
+    if (predicted == MOVE_NONE || predicted == MOVE_UNAVAILABLE)
+        gEncounterVars[cmd->var] = 0;
+    else
+        gEncounterVars[cmd->var] = GetMoveCategory(predicted) + 1;   // 1 physical / 2 special / 3 status
+
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 

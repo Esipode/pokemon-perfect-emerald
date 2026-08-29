@@ -541,6 +541,9 @@ The commands below exist specifically for encounter scripts:
 | `encclearscreens <target>, <failLabel>` | Strips every screen, Safeguard, Mist, Tailwind and Lucky Chant (and their timers) from each side `<target>` resolves to, and jumps `<failLabel>` if there were none — so one command is both the test and the clear. Silent; supply your own dialogue. `trydefog` can't do this outside a move: it only ever clears the side opposite `gBattlerAttacker`, which is stale at `OnTurnStart`/`OnTurnEnd` | encounter-specific (`callnative`) |
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT` / `ENC_BALLS_BLOCKED` / `ENC_BALLS_ALLOWED` | encounter-specific (`callnative`) |
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
+| `encsnapshothp <target>, <var>[, <mode>[, <failLabel>]]` | Records `<target>`'s current HP as a **percentage of its max HP** (0-100) into author variable `<var>`. `<target>` must resolve to exactly one battler. `<mode>` is `ENC_SNAP_SET` (default, overwrite), `ENC_SNAP_LOWEST` (write only if lower than what `<var>` holds) or `ENC_SNAP_RECOVERY` (write `max(0, currentPct - <var>)`). Jumps `<failLabel>` when nothing was written, so one command is both the test and the record | encounter-specific (`callnative`) |
+| `encrewindhp <target>, <var>` | Moves `<target>`'s HP **to** the percentage held in `<var>`, healing or damaging as needed, with the same animated health bar `enchangehp` uses. The counterpart to `encsnapshothp` | encounter-specific (`callnative`) |
+| `encstoreprediction <target>, <var>` | Writes the AI's predicted move **category** for `<target>` into `<var>`: `0` no prediction this turn, `1` physical, `2` special, `3` status. The real `AI_FLAG_PREDICT_MOVE` answer, so it only means anything at `OnTurnStart` and only when the encounter's `AiFlags:` include that flag | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | Changes `<target>` (must resolve to exactly one battler) into `<species>` outright, outside any form-change table, then plays `<anim>`. The general form of `encmegaevolve`: repeatable, reversible, and not limited to a form the battler holds a stone for. Keeps HP and the moveset; stats, types and ability come from the new species. Prints nothing — supply your own dialogue | encounter-specific (`callnative`) |
@@ -556,6 +559,7 @@ The commands below exist specifically for encounter scripts:
 | --- | --- |
 | `ENC_AMOUNT_FIXED` (the default when omitted) | Raw HP / raw stat points |
 | `ENC_AMOUNT_PERCENT` | A percentage of that battler's own max HP / current value for that stat |
+| `ENC_AMOUNT_TO_PERCENT` | A **destination**: the percentage of max HP to move the battler to. `enchangehp`'s modes are deltas; this one is an absolute target, and is what `encrewindhp` uses |
 
 Prefer `ENC_AMOUNT_PERCENT` in anything using `Level: LevelCap` or facing New Game Plus offsets: the
 boss's max HP and stats aren't known when the script is written, so a fixed number can't be balanced
@@ -724,6 +728,17 @@ yet, so the manual count is currently the reliable path.)
   is enough on its own; `flushtextbox` is the no-dialogue version, and it's how vanilla's own
   turn-start scripts (`BattleScript_QuickClawActivation`) open. `encformchange` already does this
   for you. Every other checkpoint runs after the turn's first message, so this is `OnTurnStart` only.
+- **A percentage is the only portable way to remember a battler's HP.** An author variable is a
+  `u8`, and the boss's max HP isn't known when the script is written (`Level: LevelCap`, New Game
+  Plus offsets), so `encsnapshothp`/`encrewindhp` work in percent throughout. The percentage is
+  floored at 1 for a living battler, and `encrewindhp` clamps at max HP - a variable holding more
+  than 100 is the usual "nothing recorded yet" sentinel for `ENC_SNAP_LOWEST`, which only writes a
+  value **lower** than what the variable already holds.
+- **Conditions and `encjumpifvar` only ever compare a variable against a literal.** There is no
+  var-to-var comparison opcode. When a design wants one, express it as a command that leaves the
+  answer in a variable a literal test can read - `ENC_SNAP_LOWEST` is "keep the smaller of two
+  values" and `ENC_SNAP_RECOVERY` is "subtract one from the other" - or as several triggers whose
+  conditions each pin one literal case, with a catch-all behind them at a lower priority.
 - **Split a countdown across two checkpoints.** Every trigger is re-evaluated after each script
   runs (determinism rule 3), so a timer that both ticks and resolves at the same checkpoint chases
   itself through all its states in one dispatch and fires instantly. Decrement it at `OnTurnStart`

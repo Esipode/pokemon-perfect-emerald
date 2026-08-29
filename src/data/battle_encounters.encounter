@@ -1700,3 +1700,228 @@ Priority: 90
 Script: EncScript_Suicune_TurnClose
 Conditions:
     Var(TurnGuard) == 1
+
+#-------------------------------------------------------
+
+Encounter: Celebi
+
+#-------------------------------------------------------
+
+# Celebi, "The Guardian of Time". Raikou is a slider you fight downward, Entei is a bomb timer you
+# cannot defuse, Suicune is a resource you are tempted to hand it. Celebi is a fight where damage is
+# not permanent until you make it permanent. Everything hangs off Echo, an HP percentage Celebi has
+# recorded: a record window opens, Celebi marks its HP, and TIME REWIND later snaps its HP back to
+# that mark. The mark only ever moves DOWN, and it is re-taken whenever the player lands a hit while
+# the window is open (an ANCHOR) - so roughly two turns in three of damage stick, and the player
+# chooses which. Then the fight adds a layer twice: Future Sight surfaces the AI's real move
+# prediction and pays the player for defying it, and Temporal Collapse shortens the cycle and ends
+# in one final TIME COLLAPSE that the banked anchors are what survive.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 86         # The Guardian of Time
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_UNFAIR_TRAINER   # AI_FLAG_SMART_TRAINER | AI_FLAG_PREDICTION; the prediction is the fight
+    Moves: MOVE_FUTURE_SIGHT, MOVE_PSYCHIC, MOVE_ENERGY_BALL, MOVE_ANCIENT_POWER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 14 here in order fixes Phase..Breach
+# to 0..13.
+# 0 Phase (0 The Guardian of Time / 1 Future Sight / 2 Temporal Collapse / 3 Weakened), 1 Echo
+# (recorded HP percentage; 101 = nothing recorded yet, so the first ENC_SNAP_LOWEST always writes),
+# 2 Cycle (rewind countdown; 0 idle, else 3->2->1 resolved at 1, 4 = spent sentinel), 3 Window
+# (0 closed, 1 open, 2 anchored this turn), 4 Anchored (0-5, read by TIME COLLAPSE), 5 Pred
+# (0 clouded / 1 physical / 2 special / 3 status / 4 consumed / 5 unread), 6 Broken (turns of open
+# guard left), 7 LastGuard (damage reduction last ANNOUNCED - the re-fire latch), 8 TurnGuard,
+# 9 PEcho (player HP percentage at record time), 10 Delta (scratch: player recovery since PEcho),
+# 11 Collapsed (TIME COLLAPSE has fired), 12 Prev (ApplyGuard's before-value scratch), 13 Breach
+# (which opening is live: 1 broken future, 2 failed collapse).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Celebi_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Echo) >= 0
+    Var(Cycle) >= 0
+    Var(Window) >= 0
+    Var(Anchored) >= 0
+    Var(Pred) >= 0
+    Var(Broken) >= 0
+    Var(LastGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(PEcho) >= 0
+    Var(Delta) >= 0
+    Var(Collapsed) >= 0
+    Var(Prev) >= 0
+    Var(Breach) >= 0
+
+# The phase transitions, each registered at both checkpoints because the threshold-crossing blow can
+# be a move or an end-of-turn tick. Both copies are Once and both gate on a variable their shared
+# script overwrites, so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Celebi_FutureSight
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Celebi_FutureSight
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Celebi_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Celebi_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+# TIME COLLAPSE sits AHEAD of the weakened trigger (4 vs 5) and the weakened trigger gates on
+# Var(Collapsed) == 1, so the finale always plays before the catch window opens even when one hit
+# crosses both thresholds. Var(Collapsed) is also what disables the second copy of this trigger -
+# unlike the other transitions, TIME COLLAPSE doesn't move Var(Phase).
+Trigger: OnMoveEnd
+Priority: 4
+Flags: Once
+Script: EncScript_Celebi_TimeCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 13
+    Var(Phase) == 2
+    Var(Collapsed) == 0
+
+Trigger: OnTurnEnd
+Priority: 4
+Flags: Once
+Script: EncScript_Celebi_TimeCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 13
+    Var(Phase) == 2
+    Var(Collapsed) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Celebi_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+    Var(Collapsed) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Celebi_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+    Var(Collapsed) == 1
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they own the per-turn scratch, every countdown, and the recurring callouts.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Celebi_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Cycle is stepped down in TurnClose and resolved here, one checkpoint later, so the countdown
+# cannot chase itself through every state in a single dispatch. It resolves to the spent sentinel 4,
+# which TurnClose skips and the next TurnOpen clears back to 0.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Celebi_Rewind
+Conditions:
+    Var(Cycle) == 1
+
+# Behind the rewind on purpose: on a turn that does both, the snapshot has to see the post-rewind HP
+# rather than the damage the rewind is about to erase.
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Celebi_OpenWindow
+Conditions:
+    Var(Cycle) == 0
+    Var(Phase) <= 2
+
+# Last thing said before the player picks a move. encstoreprediction writes Var(Pred), which is this
+# trigger's own self-disabling gate; TurnOpen re-arms it to 5 each turn from phase 1 on.
+Trigger: OnTurnStart
+Priority: 40
+Script: EncScript_Celebi_Foresee
+Conditions:
+    Var(Pred) == 5
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+
+# An anchor is earned by damaging Celebi during its record window. Var(Window) 1 -> 2 is the
+# self-disabling guard an event-reacting trigger needs: an Event.* condition stays true for the whole
+# dispatch, so without one this re-fires until the per-checkpoint script cap trips.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Celebi_Anchor
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(Window) == 1
+
+# The prediction comparison. Conditions compare a var against a literal, never against another var,
+# so "does Event.MoveCategory equal Var(Pred)?" is three matched pairs plus one catch-all behind
+# them. A matched trigger writes Pred = 4, which makes the catch-all's gate false in the same
+# dispatch - the lower-priority trigger is disabled by a variable the higher one wrote, not by
+# ordering alone. Event.Target is the battler that USED the move, so a self-targeting status move
+# (Swords Dance, Recover) still registers as the player having played a status move.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Celebi_PredHeld
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(Pred) == 1
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+
+Trigger: OnMoveEnd
+Priority: 26
+Script: EncScript_Celebi_PredHeld
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(Pred) == 2
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+
+Trigger: OnMoveEnd
+Priority: 27
+Script: EncScript_Celebi_PredHeld
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(Pred) == 3
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Celebi_PredBroken
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(Pred) >= 1
+    Var(Pred) <= 3
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Celebi_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
