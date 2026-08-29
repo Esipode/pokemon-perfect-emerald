@@ -1018,6 +1018,9 @@ LittlerootTown_EventScript_EncounterTESTSuicune::
 LittlerootTown_EventScript_EncounterTESTCelebi::
 	goto LegendaryEncounter_EventScript_Celebi
 
+LittlerootTown_EventScript_EncounterTESTLugia::
+	goto LegendaryEncounter_EventScript_Lugia
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

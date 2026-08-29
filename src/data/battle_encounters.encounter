@@ -1557,6 +1557,7 @@ Conditions:
     Var(Calm) >= 0
     Var(Breach) >= 0
     Var(Prev) >= 0
+    Var(Cycle) >= 0
     Var(Dirty) >= 0
     Var(Swept) >= 0
 
@@ -1923,5 +1924,201 @@ Conditions:
 Trigger: OnTurnEnd
 Priority: 90
 Script: EncScript_Celebi_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+#-------------------------------------------------------
+
+Encounter: Lugia
+
+#-------------------------------------------------------
+
+# Lugia, "The Storm Beneath the Sea". Raikou is a slider you fight downward, Entei is a bomb timer
+# you cannot defuse, Suicune is a resource you are tempted to hand it, Celebi is a fight where damage
+# is not permanent until you make it permanent. Lugia is a fight you have to make WORSE on purpose.
+# Everything hangs off Storm (0-5), which Lugia raises itself by attacking, and the ladder is real
+# battle weather: rain at 2-3, Strong Winds at 4 (which cancels Lugia's own Electric/Ice/Rock
+# weaknesses), primal rain at 5. Calm Lugia is SOFTER than storming Lugia and never tires; storming
+# Lugia is nearly untouchable, chips the field every turn and erodes accuracy - but it accrues Strain,
+# and capping Strain collapses its guard to 60 for two turns. That window is the only place real
+# damage happens, so the player's problem is not "survive the storm", it is "race the Strain" before
+# the Maelstrom cycle closes into a restful Eye that sheds it.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 86         # Guardian of the Sea at Storm 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_AEROBLAST, MOVE_HYDRO_PUMP, MOVE_THUNDER, MOVE_PSYCHIC
+    Ability: ABILITY_MULTISCALE
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 15 here in order fixes Phase..Cycle
+# to 0..14.
+# 0 Phase (0 Guardian of the Sea / 1 The Sea Erupts / 2 Ocean's Wrath / 3 Weakened), 1 Storm (0-5),
+# 2 Strain (0-6; capping it collapses the guard), 3 Eye (0 closed, else 2->1 countdown), 4 Hold
+# (Maelstrom cycle timer; 0 idle, 3 surface, 2 deep sea, 1 strike), 5 Break (turns of collapsed
+# guard left), 6 LastGuard (damage reduction last ANNOUNCED - the re-fire latch), 7 LastStorm (storm
+# tier last APPLIED - the weather/banner latch), 8 TurnGuard, 9 Rise (per-turn re-entry guard shared
+# by the two storm-rise triggers), 10 Vent (per-turn re-entry guard for the weather vent), 11 Swell
+# (per-switch re-entry guard for the Maelstrom switch-in toll), 12 HpMark (boss HP percentage at turn
+# open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 13 Prev (ApplyGuard's before-value scratch),
+# 14 Cycle (per-turn re-entry guard shared by the two Maelstrom cycle triggers).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Lugia_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Storm) >= 0
+    Var(Strain) >= 0
+    Var(Eye) >= 0
+    Var(Hold) >= 0
+    Var(Break) >= 0
+    Var(LastGuard) >= 0
+    Var(LastStorm) >= 0
+    Var(TurnGuard) >= 0
+    Var(Rise) >= 0
+    Var(Vent) >= 0
+    Var(Swell) >= 0
+    Var(HpMark) >= 0
+    Var(Prev) >= 0
+
+# The three phase transitions, each registered at both checkpoints because the threshold-crossing
+# blow can be a move or an end-of-turn tick. Both copies are Once and both gate on a Var(Phase) value
+# their shared script overwrites, so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Lugia_SeaErupts
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Lugia_SeaErupts
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Lugia_OceansWrath
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Lugia_OceansWrath
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Lugia_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Lugia_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they own every countdown, the whole Strain economy and the recurring callouts.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Lugia_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Hold is stepped down in TurnClose and read here, one checkpoint later, so a real turn always passes
+# between a tick and its resolution. The strike sits AHEAD of the dive so a resolving strike can never
+# be re-telegraphed in the same dispatch.
+# Both share Var(Cycle), cleared by TurnOpen at the same checkpoint one priority earlier: a level
+# condition on Hold alone stays true for the rest of the dispatch and would re-select forever.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Lugia_Strike
+Conditions:
+    Var(Hold) == 1
+    Var(Cycle) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Lugia_DeepSea
+Conditions:
+    Var(Hold) == 2
+    Var(Cycle) == 0
+    Var(Phase) <= 2
+
+# The two storm-rise triggers share Var(Rise), so exactly one rung is climbed per turn and a Psychic
+# turn is a free turn. Both are event-reacting, so they must disable themselves: an Event.* condition
+# stays true for the whole dispatch and Once would mean once per BATTLE.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Lugia_StormAeroblast
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT     # the boss USED the move
+    Event.Move == MOVE_AEROBLAST
+    Var(Rise) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Lugia_StormSurge
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(Rise) == 0
+    Var(Phase) <= 2
+    Any:
+        Event.MoveType == TYPE_WATER
+        Event.MoveType == TYPE_ELECTRIC
+
+# The vent: overwriting the weather while the storm is still overwritable knocks two rungs off it.
+# Only reachable at Storm 2-3 - Tempest and Maelstrom are primal-class weather, which
+# TryChangeBattleWeather refuses to let anything replace, so the door visibly closes as the ladder
+# climbs. Weather != B_WEATHER_RAIN_NORMAL is what makes Lugia's own rain not count as a vent.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Lugia_Vent
+Conditions:
+    Var(Storm) >= 2
+    Var(Storm) <= 3
+    Var(Vent) == 0
+    Var(Phase) <= 2
+    Weather != B_WEATHER_NONE
+    Weather != B_WEATHER_RAIN_NORMAL
+
+# The Maelstrom's answer to pivot stalling. Var(Swell) is cleared at TurnClose rather than TurnOpen,
+# so a mid-turn replacement after a faint is still tolled.
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_Lugia_Undertow
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(Storm) == 5
+    Var(Swell) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Lugia_TurnClose
 Conditions:
     Var(TurnGuard) == 1

@@ -12754,6 +12754,19 @@ void BS_EncSnapshotHp(void)
             gEncounterVars[cmd->var] = 0;
         }
         break;
+    // The mirror of RECOVERY: "how much has this battler lost since the mark", for a boss whose
+    // max HP isn't known at authoring time. failInstr fires when nothing was lost.
+    case ENC_SNAP_DAMAGE:
+        if (percent < gEncounterVars[cmd->var])
+        {
+            gEncounterVars[cmd->var] = gEncounterVars[cmd->var] - percent;
+            wrote = TRUE;
+        }
+        else
+        {
+            gEncounterVars[cmd->var] = 0;
+        }
+        break;
     case ENC_SNAP_SET:
     default:
         gEncounterVars[cmd->var] = percent;

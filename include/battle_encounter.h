@@ -222,6 +222,20 @@ extern const u8 EncScript_Celebi_PredHeld[];
 extern const u8 EncScript_Celebi_PredBroken[];
 extern const u8 EncScript_Celebi_TurnClose[];
 
+// Lugia ("The Storm Beneath the Sea")
+extern const u8 EncScript_Lugia_Intro[];
+extern const u8 EncScript_Lugia_SeaErupts[];
+extern const u8 EncScript_Lugia_OceansWrath[];
+extern const u8 EncScript_Lugia_Weakened[];
+extern const u8 EncScript_Lugia_TurnOpen[];
+extern const u8 EncScript_Lugia_DeepSea[];
+extern const u8 EncScript_Lugia_Strike[];
+extern const u8 EncScript_Lugia_StormAeroblast[];
+extern const u8 EncScript_Lugia_StormSurge[];
+extern const u8 EncScript_Lugia_Vent[];
+extern const u8 EncScript_Lugia_Undertow[];
+extern const u8 EncScript_Lugia_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

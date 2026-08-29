@@ -18,6 +18,7 @@ enum EncounterId
     ENCOUNTER_ENTEI,
     ENCOUNTER_SUICUNE,
     ENCOUNTER_CELEBI,
+    ENCOUNTER_LUGIA,
     ENCOUNTER_COUNT,
 };
 
@@ -209,6 +210,7 @@ enum EncounterSnapshotMode
     ENC_SNAP_SET,        // write the current percentage, overwriting
     ENC_SNAP_LOWEST,     // write only if the current percentage is lower than what the var holds
     ENC_SNAP_RECOVERY,   // write max(0, currentPct - var): recovery since the mark
+    ENC_SNAP_DAMAGE,     // write max(0, var - currentPct): damage taken since the mark
 };
 
 // ENC_OP_STAT_STAGE's arg packs a battler ref and an enum Stat into one u16 - both are small enough

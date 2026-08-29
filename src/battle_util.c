@@ -9624,6 +9624,11 @@ void CopyMonAbilityAndTypesToBattleMon(enum BattlerId battler, struct Pokemon *m
     gBattleMons[battler].types[0] = type1;
     gBattleMons[battler].types[1] = type2;
     gBattleMons[battler].types[2] = TYPE_MYSTERY;
+
+    // GetMonAbility above re-derives the ability from the party mon, which does not carry an
+    // encounter Ability: the species does not own. Without this a form change or any other
+    // RecalcBattlerStats hands the boss its species ability back mid-battle.
+    ApplyEncounterBattlerAbilityOverride(battler);
 }
 
 // Applies move randomization to a battler that was just loaded from party
