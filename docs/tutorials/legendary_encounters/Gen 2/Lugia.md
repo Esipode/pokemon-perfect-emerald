@@ -74,7 +74,7 @@ Strain builds from these, and only these:
 | --- | --- |
 | Ending a turn with the storm at rung 4 or 5 | +1 (+2 in Ocean's Wrath) |
 | The Maelstrom's dive strike resolving | +1 |
-| **You took ≥ 12% of Lugia's health off in one turn**, while the storm is at 4+ | +2 (≥ 8% → +3 in Ocean's Wrath) |
+| **You took ≥ 6% of Lugia's health off in one turn**, while the storm is at 4+ | +2 (≥ 8% → +3 in Ocean's Wrath) |
 | Every turn the **Eye** is open | −2 |
 
 At **6**, Lugia loses hold of it:
@@ -176,7 +176,7 @@ storm, which is precisely the window where damage matters.
 2. **The Sea Erupts** (50% HP or below) — guard **82–90%**. The cap comes off: Tempest, Maelstrom and
    Strain all go live, with half the fight still left to learn them in.
 3. **Ocean's Wrath** (25% HP or below) — guard **80–89%**. The storm is floored at rung 4, Strain
-   builds twice as fast, and the heavy-damage bonus triggers at 8% instead of 12%. Lugia cannot be
+   builds twice as fast, and the heavy-damage bonus triggers at 4% instead of 6%. Lugia cannot be
    knocked out here.
 4. **Weakened** (10% HP or below) — the storm falls out of the sky. Every mechanic switches off, the
    guard drops to 70%, and **Poké Balls work**. The only catch window. Its catch rate is generous

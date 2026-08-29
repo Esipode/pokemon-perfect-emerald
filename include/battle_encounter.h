@@ -236,6 +236,21 @@ extern const u8 EncScript_Lugia_Vent[];
 extern const u8 EncScript_Lugia_Undertow[];
 extern const u8 EncScript_Lugia_TurnClose[];
 
+// Ho-Oh ("The Rainbow Above the Ashes")
+extern const u8 EncScript_HoOh_Intro[];
+extern const u8 EncScript_HoOh_TheRainbow[];
+extern const u8 EncScript_HoOh_RebirthGate[];
+extern const u8 EncScript_HoOh_Weakened[];
+extern const u8 EncScript_HoOh_TurnOpen[];
+extern const u8 EncScript_HoOh_TurnClose[];
+extern const u8 EncScript_HoOh_FlameGain[];
+extern const u8 EncScript_HoOh_Fallen[];
+extern const u8 EncScript_HoOh_Flight[];
+extern const u8 EncScript_HoOh_JudgeImpure[];
+extern const u8 EncScript_HoOh_JudgeDefiant[];
+extern const u8 EncScript_HoOh_JudgeMerciful[];
+extern const u8 EncScript_HoOh_JudgeWorthy[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

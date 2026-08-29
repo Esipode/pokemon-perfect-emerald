@@ -19,6 +19,7 @@ enum EncounterId
     ENCOUNTER_SUICUNE,
     ENCOUNTER_CELEBI,
     ENCOUNTER_LUGIA,
+    ENCOUNTER_HO_OH,
     ENCOUNTER_COUNT,
 };
 
@@ -145,6 +146,26 @@ enum EncounterTarget
     ENC_TARGET_ALL_ALLIES,     // every battler on the boss's side, boss included
     ENC_TARGET_ALL_BATTLERS,
     ENC_TARGET_COUNT,
+};
+
+// Side-wide statuses encsetsidestatus / encclearsidestatus can raise or drop. A small enum rather
+// than a raw SIDE_STATUS_* bitmask because SIDE_STATUS_RAINBOW is 1 << 8 and a script argument is a
+// byte - and because an enum lets the command assert on a name it doesn't know. Each entry pairs a
+// status bit with the gSideTimers field that ticks it down; a 0 timer never ticks, so 0 turns means
+// permanent, the same convention encsetweather uses.
+enum EncounterSideStatus
+{
+    ENC_SIDE_REFLECT,
+    ENC_SIDE_LIGHT_SCREEN,
+    ENC_SIDE_AURORA_VEIL,
+    ENC_SIDE_SAFEGUARD,
+    ENC_SIDE_MIST,
+    ENC_SIDE_TAILWIND,
+    ENC_SIDE_LUCKY_CHANT,
+    ENC_SIDE_RAINBOW,
+    ENC_SIDE_SEA_OF_FIRE,
+    ENC_SIDE_SWAMP,
+    ENC_SIDE_COUNT,
 };
 
 // --- Encounter properties (battle-start configuration) ------------------------------------------

@@ -1329,6 +1329,40 @@
 	.4byte \failInstr
 	.endm
 
+	@ Raises one side-wide status (an ENC_SIDE_* selector) on every side \target resolves to, for
+	@ \turns turns; 0 (the default) is permanent, the same convention encsetweather uses. The
+	@ single-status counterpart to encclearscreens, which is all-or-nothing and deliberately skips
+	@ the Pledge statuses - this one can hand out a lone Safeguard, a Tailwind phase, a Lucky Chant
+	@ "no crits" stance, or raise a Rainbow / Sea of Fire / Swamp no Pledge combo produced. Silent.
+	.macro encsetsidestatus target:req, status:req, turns=0
+	callnative BS_EncSetSideStatus
+	.byte \target
+	.byte \status
+	.byte \turns
+	.byte TRUE
+	.endm
+
+	@ Drops one side-wide status from every side \target resolves to, timer included. The precise
+	@ inverse of encsetsidestatus, and the only way to remove a Pledge status (encclearscreens does
+	@ not touch them) or to strip one screen without the rest. Silent, and a no-op if it wasn't up.
+	.macro encclearsidestatus target:req, status:req
+	callnative BS_EncSetSideStatus
+	.byte \target
+	.byte \status
+	.byte 0
+	.byte FALSE
+	.endm
+
+	@ Revives the first fainted party member on every side \target resolves to, at \percent of its
+	@ max HP. Bench Pokemon only - a fainted battler still has replacement bookkeeping pending, so
+	@ it is skipped rather than pulled back mid-faint. Silent, and a no-op when a side has nobody to
+	@ revive, so it is safe to call unconditionally; supply your own dialogue.
+	.macro encrevive target:req, percent:req
+	callnative BS_EncRevive
+	.byte \target
+	.byte \percent
+	.endm
+
 	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or
 	@ ENC_BALLS_ALLOWED. ALLOWED only lifts this encounter's own block - it never makes a battle
 	@ catchable that wouldn't be otherwise (trainer battle, Ghost without a Silph Scope, ...).

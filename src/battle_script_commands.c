@@ -13263,6 +13263,145 @@ void BS_EncClearScreens(void)
     gBattlescriptCurrInstr = cleared ? cmd->nextInstr : cmd->failInstr;
 }
 
+// Maps an ENC_SIDE_* selector onto the status bit and the gSideTimers field that ticks it down.
+// Returns FALSE for a selector outside the enum so the caller can assert on it.
+static bool32 GetEncounterSideStatus(u32 side, u32 which, u32 *statusOut, u16 **timerOut)
+{
+    switch (which)
+    {
+    case ENC_SIDE_REFLECT:      *statusOut = SIDE_STATUS_REFLECT;     *timerOut = &gSideTimers[side].reflectTimer;     break;
+    case ENC_SIDE_LIGHT_SCREEN: *statusOut = SIDE_STATUS_LIGHTSCREEN; *timerOut = &gSideTimers[side].lightscreenTimer; break;
+    case ENC_SIDE_AURORA_VEIL:  *statusOut = SIDE_STATUS_AURORA_VEIL; *timerOut = &gSideTimers[side].auroraVeilTimer;  break;
+    case ENC_SIDE_SAFEGUARD:    *statusOut = SIDE_STATUS_SAFEGUARD;   *timerOut = &gSideTimers[side].safeguardTimer;   break;
+    case ENC_SIDE_MIST:         *statusOut = SIDE_STATUS_MIST;        *timerOut = &gSideTimers[side].mistTimer;        break;
+    case ENC_SIDE_TAILWIND:     *statusOut = SIDE_STATUS_TAILWIND;    *timerOut = &gSideTimers[side].tailwindTimer;    break;
+    case ENC_SIDE_LUCKY_CHANT:  *statusOut = SIDE_STATUS_LUCKY_CHANT; *timerOut = &gSideTimers[side].luckyChantTimer;  break;
+    case ENC_SIDE_RAINBOW:      *statusOut = SIDE_STATUS_RAINBOW;     *timerOut = &gSideTimers[side].rainbowTimer;     break;
+    case ENC_SIDE_SEA_OF_FIRE:  *statusOut = SIDE_STATUS_SEA_OF_FIRE; *timerOut = &gSideTimers[side].seaOfFireTimer;   break;
+    case ENC_SIDE_SWAMP:        *statusOut = SIDE_STATUS_SWAMP;       *timerOut = &gSideTimers[side].swampTimer;       break;
+    default:                                                                                                          return FALSE;
+    }
+    return TRUE;
+}
+
+// SIDE_STATUS (encsetsidestatus / encclearsidestatus). Raises or drops one side-wide status on
+// every side <target> resolves to. The inverse of encclearscreens, which is all-or-nothing and
+// deliberately excludes the Pledge statuses - this one names a single status, so a script can hand
+// out a Safeguard without touching the screens next to it, or raise a Rainbow no Pledge combo made.
+// A <turns> of 0 is permanent: battle_end_turn.c only ticks a timer that is already above 0.
+void BS_EncSetSideStatus(void)
+{
+    NATIVE_ARGS(u8 target, u8 status, u8 turns, bool8 set);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+
+    assertf(cmd->status < ENC_SIDE_COUNT,
+            "encounter %d: unknown side status %d", gBattleStruct->encounter.id, cmd->status)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u32 side, status;
+        u16 *timer;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; write that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (!GetEncounterSideStatus(side, cmd->status, &status, &timer))
+            continue;
+
+        if (cmd->set)
+        {
+            gSideStatuses[side] |= status;
+            *timer = cmd->turns;
+        }
+        else
+        {
+            gSideStatuses[side] &= ~status;
+            *timer = 0;
+        }
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// REVIVE (encrevive). Brings the first fainted party member back on every side <target> resolves
+// to, at <percent> of its max HP. Silent and a no-op when a side has nobody to revive, so it is
+// safe to call unconditionally; the script supplies its own dialogue.
+//
+// PokemonUseItemEffects with ITEM_MAX_REVIVE is the exact path a Max Revive from the bag runs, so
+// the HP restore and its validity checks are the game's own rather than a second copy of them. It
+// leaves status alone (Max Revive carries no ITEM3 bits), so the clear is explicit here.
+//
+// A party slot that is currently a battler is skipped: a fainted active battler still has its
+// gAbsentBattlerFlags bookkeeping and replacement pending, and reviving it behind the engine's back
+// would desync the two. Only bench Pokemon come back, which is also what "restores a fallen one"
+// means in a script.
+void BS_EncRevive(void)
+{
+    NATIVE_ARGS(u8 target, u8 percent);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        struct Pokemon *party;
+        u32 side;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        party = GetBattlerParty(battler);
+
+        for (u32 i = 0; i < PARTY_SIZE; i++)
+        {
+            u32 hp, maxHp, status = 0;
+            bool32 isBattler = FALSE;
+
+            if (GetMonData(&party[i], MON_DATA_SPECIES) == SPECIES_NONE
+             || GetMonData(&party[i], MON_DATA_IS_EGG)
+             || GetMonData(&party[i], MON_DATA_HP) != 0)
+                continue;
+
+            for (enum BattlerId other = B_BATTLER_0; other < gBattlersCount; other++)
+            {
+                if (GetBattlerSide(other) == side && gBattlerPartyIndexes[other] == i)
+                    isBattler = TRUE;
+            }
+            if (isBattler)
+                continue;
+
+            PokemonUseItemEffects(&party[i], ITEM_MAX_REVIVE, i, 0, TRUE);
+            SetMonData(&party[i], MON_DATA_STATUS, &status);
+
+            maxHp = GetMonData(&party[i], MON_DATA_MAX_HP);
+            hp = maxHp * cmd->percent / 100;
+            if (hp == 0)
+                hp = 1;
+            else if (hp > maxHp)
+                hp = maxHp;
+            SetMonData(&party[i], MON_DATA_HP, &hp);
+            break;
+        }
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
 // describe the ball the player is about to throw, and there is only ever one catch target.
 void BS_EncounterSetBallPolicy(void)

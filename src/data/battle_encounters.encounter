@@ -2122,3 +2122,238 @@ Priority: 90
 Script: EncScript_Lugia_TurnClose
 Conditions:
     Var(TurnGuard) == 1
+
+#-------------------------------------------------------
+
+# Ho-Oh, "The Rainbow Above the Ashes". Every legendary before it has a number the player pushes
+# DOWN. Ho-Oh inverts the target: Sacred Flame is at once its damage reduction, its entire heal
+# budget and its second life, and the only things that spend it are the things it does FOR you. It
+# mends when you hit hard, purifies when you poison it, blesses you when you fight cleanly, revives
+# your fallen, and rekindles the sun when you blow it out. All of that is Ho-Oh burning its own
+# resurrection. Income is the Rainbow's sunlight, its own Fire moves, and the two judgments that
+# punish you. Take it to 0 HP with 4 or more Flame and it is REBORN into a whole extra phase; take
+# it there with 3 or less and its fire gutters straight into the catch window. Turtle, stall or
+# play foul and it sits at full flame and comes back from the dead.
+Encounter: Ho_Oh
+
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 87         # The Rainbow Pokemon at the starting Flame of 3
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True               # released in the weakened script; the rebirth gate needs the 1 HP
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_SACRED_FIRE, MOVE_EXTRASENSORY, MOVE_EARTHQUAKE, MOVE_WEATHER_BALL
+    Ability: ABILITY_REGENERATOR
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 16 here in order fixes Phase..Toll
+# to 0..15.
+# 0 Phase (0 The Rainbow Pokemon / 1 The Rainbow / 2 Divine Rebirth / 3 Ashes), 1 Flame (Sacred
+# Flame, 0-8), 2 Trial (judgment countdown, 4 -> 0), 3 Flights (player switches since the last
+# judgment), 4 Fallen (player Pokemon lost since the last judgment), 5 Chosen (which blessing is
+# active; 0 none), 6 Grace (blessing timer, 3 -> 0), 7 Rite (Divine Rebirth cycle, 4 -> 1),
+# 8 LastGuard (damage reduction last ANNOUNCED - the re-fire latch), 9 LastFlame (flame tier last
+# announced), 10 TurnGuard, 11 Rise (per-turn flame-income cap shared by the Fire-move and faint
+# triggers), 12 Wake (per-turn re-entry guard for the switch-in toll), 13 HpMark (boss HP percentage
+# at turn open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 14 Prev (ApplyGuard's before-value
+# scratch, and encrewindhp's destination scratch), 15 Toll (per-turn re-entry guard for the faint
+# trigger).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_HoOh_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Flame) >= 0
+    Var(Trial) >= 0
+    Var(Flights) >= 0
+    Var(Fallen) >= 0
+    Var(Chosen) >= 0
+    Var(Grace) >= 0
+    Var(Rite) >= 0
+    Var(LastGuard) >= 0
+    Var(LastFlame) >= 0
+    Var(TurnGuard) >= 0
+    Var(Rise) >= 0
+    Var(Wake) >= 0
+    Var(HpMark) >= 0
+    Var(Prev) >= 0
+    Var(Toll) >= 0
+
+# The three phase transitions, each registered at both checkpoints because the threshold-crossing
+# blow can be a move or an end-of-turn tick. Both copies are Once and both gate on a Var(Phase)
+# value their shared script overwrites, so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_HoOh_TheRainbow
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_HoOh_TheRainbow
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+# The rebirth gate. HP <= 1 rather than a percentage: with Level: LevelCap, HpPercent rounds to 0
+# long before HP does, and Survive: True parks the killing blow at exactly 1. Phase <= 1 rather than
+# == 1 so a single hit that crosses both 50% and the floor still resolves - The Rainbow is declared
+# earlier at the same priority, so it wins the tie and the banner still plays before the gate.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once
+Script: EncScript_HoOh_RebirthGate
+Conditions:
+    Battler(Boss).HP <= 1
+    Var(Phase) <= 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once
+Script: EncScript_HoOh_RebirthGate
+Conditions:
+    Battler(Boss).HP <= 1
+    Var(Phase) <= 1
+
+# The Divine Rebirth tail. Phase == 2 only: the Ashes branch of the gate writes Phase 3 itself and
+# falls straight into the same script, so this pair never becomes eligible on that route.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_HoOh_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_HoOh_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they own the trial countdown, the Rite cycle, every flame spend that reacts to the turn, and the
+# recurring callouts.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_HoOh_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Ho-Oh drawing breath: one flame per turn from its own Fire moves, and never on the same turn a
+# faint already paid out. Event-reacting, so it disables itself through Var(Rise) - an Event.*
+# condition stays true for the whole dispatch and Once would mean once per BATTLE.
+# Event.MoveType is the move's BASE type, so this is Sacred Fire; Weather Ball feeds the Rainbow's
+# power, not its fuel.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_HoOh_FlameGain
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT     # the boss USED the move
+    Event.MoveType == TYPE_FIRE
+    Var(Rise) == 0
+    Var(Phase) <= 1
+
+# A death on the field is fuel, and it is also what buys Mercy at the next judgment. Var(Toll) is its
+# own re-entry guard rather than the shared Var(Rise): a Pokemon that faints TO Sacred Fire arrives
+# with Rise already set by the Fire-move trigger, and gating the whole script on that would silently
+# drop the Fallen tally the Merciful verdict reads. Rise still caps the FLAME at one event gain a
+# turn - the script checks it itself.
+Trigger: OnFaint
+Priority: 20
+Script: EncScript_HoOh_Fallen
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(Toll) == 0
+    Var(Phase) <= 1
+
+# Double duty: tallies the switch for the Defiant verdict and sheds an active blessing. Var(Wake) is
+# cleared at TurnClose rather than TurnOpen, so a mid-turn replacement after a faint is still
+# tolled. Turn >= 1 skips the opening send-out, which is a switch-in the engine raises like any
+# other but is not a decision the player made.
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_HoOh_Flight
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(Wake) == 0
+    Turn >= 1
+
+# Sacred Judgment. Four verdicts at one checkpoint, in strict order of severity: a player who is
+# both impure and down a Pokemon gets no mercy. Each verdict's script writes Trial = 4, which every
+# one of the four conditions rejects - so the first eligible verdict wins and the rest go false in
+# the re-evaluation pass. That is the guard; priority only fixes which is asked first.
+# Triggers 52 and 53 restate the negations of 50 and 51 as flat leaves rather than nesting Not:
+# blocks toward the depth-4 limit.
+Trigger: OnTurnEnd
+Priority: 50
+Script: EncScript_HoOh_JudgeImpure
+Conditions:
+    Var(Trial) == 0
+    Var(Phase) <= 1
+    Battler(Boss).Status != 0
+
+Trigger: OnTurnEnd
+Priority: 51
+Script: EncScript_HoOh_JudgeDefiant
+Conditions:
+    Var(Trial) == 0
+    Var(Phase) <= 1
+    Battler(Boss).Status == 0
+    Any:
+        Battler(PlayerLeft).Stat(STAT_ATK) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_DEF) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_SPATK) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_SPDEF) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_SPEED) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_EVASION) >= DEFAULT_STAT_STAGE + 1
+        Var(Flights) >= 2
+
+Trigger: OnTurnEnd
+Priority: 52
+Script: EncScript_HoOh_JudgeMerciful
+Conditions:
+    Var(Trial) == 0
+    Var(Phase) <= 1
+    Battler(Boss).Status == 0
+    Battler(PlayerLeft).Stat(STAT_ATK) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_DEF) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_SPATK) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_SPDEF) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_SPEED) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_EVASION) <= DEFAULT_STAT_STAGE
+    Var(Flights) <= 1
+    Var(Fallen) >= 1
+
+Trigger: OnTurnEnd
+Priority: 53
+Script: EncScript_HoOh_JudgeWorthy
+Conditions:
+    Var(Trial) == 0
+    Var(Phase) <= 1
+    Battler(Boss).Status == 0
+    Battler(PlayerLeft).Stat(STAT_ATK) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_DEF) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_SPATK) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_SPDEF) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_SPEED) <= DEFAULT_STAT_STAGE + 1
+    Battler(PlayerLeft).Stat(STAT_EVASION) <= DEFAULT_STAT_STAGE
+    Var(Flights) <= 1
+    Var(Fallen) == 0
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_HoOh_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
