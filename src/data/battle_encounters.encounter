@@ -2952,3 +2952,225 @@ Priority: 90
 Script: EncScript_Rayquaza_TurnClose
 Conditions:
     Var(TurnGuard) == 1
+
+
+#-------------------------------------------------------
+
+Encounter: Kyogre
+
+# No Ability: override. Base Kyogre's slot 0 is Drizzle so the species hands the opening ability
+# over for free, and RecalcBattlerStats re-applies an override on every form change - which would
+# stamp Primordial Sea straight back out the moment the Primal Reversion lands.
+# No Survive: either; it is set by the Phase 2 script instead, so the AI reads Kyogre as killable
+# for three quarters of the fight.
+# The moveset is all legal Kyogre: Origin Pulse is the signature Water STAB that spends Var(Flux) on
+# a tide rise before the player's ebb can, Thunder never misses under its own permanent rain and
+# punishes the reflexive Water wall, Ice Beam makes committing to a Grass ebber cost something, and
+# Body Slam is the one physical slot so a dedicated special wall does not blank the whole set.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 85         # Tide 0-1, the base rung of the tide ladder
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_ORIGIN_PULSE, MOVE_THUNDER, MOVE_ICE_BEAM, MOVE_BODY_SLAM
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming them all here in order fixes Tide..Woke
+# to 0..11.
+# 0 Tide (0-5, the water level everything else derives from), 1 Phase (0 Rising Waters / 1 Primal
+# Awakening / 2 Great Deluge / 3 Weakened), 2 LastTide (tide tier last ANNOUNCED - the re-fire
+# latch), 3 Rise (natural cadence countdown), 4 Mark (Undertow countdown, 0 or 3-1), 5 Switched
+# (per-turn guard for the Undertow bail), 6 Deluge (0 idle, 3-1 charging, 5 just resolved, 4 spent),
+# 7 Exhaust (exhaustion window countdown), 8 TurnGuard, 9 Cycle (per-turn guard shared by the two
+# Deluge clock triggers), 10 Flux (per-turn guard shared by the three move-event tide triggers, in
+# BOTH directions - the one-tide-change-per-turn cap is the fight's core tension), 11 Woke
+# (per-turn guard for the anti-cheese trigger).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Kyogre_Intro
+Conditions:
+    Var(Tide) >= 0
+    Var(Phase) >= 0
+    Var(LastTide) >= 0
+    Var(Rise) >= 0
+    Var(Mark) >= 0
+    Var(Switched) >= 0
+    Var(Deluge) >= 0
+    Var(Exhaust) >= 0
+    Var(TurnGuard) >= 0
+    Var(Cycle) >= 0
+    Var(Flux) >= 0
+    Var(Woke) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# the threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# selection, so whichever fires first permanently disables the other. Each is also gated on the
+# Phase value its own script overwrites, so a single huge hit that crosses two thresholds steps
+# through them in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Kyogre_PrimalReversion
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Kyogre_PrimalReversion
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Kyogre_GreatDeluge
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Kyogre_GreatDeluge
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+# The catch window. Phase 2 means the Deluge machine is already running, so this can never pre-empt
+# it.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Kyogre_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Kyogre_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Anti-cheese. A boss sitting behind 90-97% damage reduction is only ever trivialised by being
+# status-locked and farmed for free turns; Immunities: and FlatToxicDamage: close the fixed-damage,
+# Pain Split, Perish Song and Toxic-ramp holes, and this closes sleep and freeze. Paralysis and burn
+# are deliberately left working - they cost the player a turn to land and giving every legendary the
+# same immunity list makes every legendary the same fight.
+# STATUS1_SLEEP is a 3-bit turn counter, so the range test is the correct form; STATUS1_FREEZE is a
+# single bit with no counter, so == is exact there.
+# It runs ahead of TurnOpen so the cure lands before Kyogre's action this turn.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_Kyogre_WillNotBeStilled
+Conditions:
+    Var(Woke) == 0
+    Var(Phase) <= 2
+    Any:
+        All:
+            Battler(Boss).Status >= 1
+            Battler(Boss).Status <= 7
+        Battler(Boss).Status == STATUS1_FREEZE
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). TurnOpen owns
+# everything DERIVED from the Tide - the damage reduction, the swamp, the tier callout, the drowning
+# chip and the Undertow - and every per-turn guard; TurnClose owns every countdown.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Kyogre_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The Great Deluge clock, split across two triggers so the countdown cannot chase itself through all
+# its states in one dispatch. DelugeTick sits AHEAD of DelugeBegin so a charge that has just begun
+# can never be ticked in the same dispatch that started it, and both share Var(Cycle) - they are
+# mutually exclusive by their own Deluge conditions and do nothing but advance the same clock.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Kyogre_DelugeTick
+Conditions:
+    Var(Deluge) >= 2
+    Var(Deluge) <= 3
+    Var(Cycle) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnStart
+Priority: 25
+Script: EncScript_Kyogre_DelugeBegin
+Conditions:
+    Var(Phase) == 2
+    Var(Deluge) == 0
+    Var(Cycle) == 0
+
+# The Flux triggers. At OnMoveEnd, Event.Battler is the battler that GOT HIT and Event.Target is the
+# one that USED the move - hence the asymmetry below. All three set Var(Flux) themselves: an
+# event-reacting trigger must disable itself, because the event condition stays true for the whole
+# dispatch and Once would mean once per BATTLE.
+# Ebb is given the lowest priority number so it wins a same-checkpoint tie; the race that decides
+# whether the turn nets 0 or +2 is Kyogre's Speed against the player's, not this ordering.
+Trigger: OnMoveEnd
+Priority: 15
+Script: EncScript_Kyogre_Ebb
+Conditions:
+    Var(Flux) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Any:
+        Event.MoveType == TYPE_ELECTRIC
+        Event.MoveType == TYPE_GRASS
+
+# Phase 0 only: from the Primal Reversion on, Primordial Sea makes Fire moves fail outright, so
+# there is no Fire move left for this to react to.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Kyogre_SurgeFire
+Conditions:
+    Var(Flux) == 0
+    Var(Phase) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Kyogre_SurgeWater
+Conditions:
+    Var(Flux) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_WATER
+
+# Bailing out from under the Undertow. The position test also keeps this from firing for Kyogre's
+# own switch-in at battle start.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Kyogre_UndertowBail
+Conditions:
+    Var(Mark) >= 1
+    Var(Switched) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Kyogre_DelugeResolve
+Conditions:
+    Var(Deluge) == 1
+    Var(Phase) <= 2
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Kyogre_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

@@ -301,6 +301,25 @@ extern const u8 EncScript_Rayquaza_Vent[];
 extern const u8 EncScript_Rayquaza_ShootDown[];
 extern const u8 EncScript_Rayquaza_TurnClose[];
 
+// Kyogre ("The Endless Ocean")
+extern const u8 EncScript_Kyogre_Intro[];
+extern const u8 EncScript_Kyogre_PrimalReversion[];
+extern const u8 EncScript_Kyogre_PrimalReversion[];
+extern const u8 EncScript_Kyogre_GreatDeluge[];
+extern const u8 EncScript_Kyogre_GreatDeluge[];
+extern const u8 EncScript_Kyogre_Weakened[];
+extern const u8 EncScript_Kyogre_Weakened[];
+extern const u8 EncScript_Kyogre_WillNotBeStilled[];
+extern const u8 EncScript_Kyogre_TurnOpen[];
+extern const u8 EncScript_Kyogre_DelugeTick[];
+extern const u8 EncScript_Kyogre_DelugeBegin[];
+extern const u8 EncScript_Kyogre_Ebb[];
+extern const u8 EncScript_Kyogre_SurgeFire[];
+extern const u8 EncScript_Kyogre_SurgeWater[];
+extern const u8 EncScript_Kyogre_UndertowBail[];
+extern const u8 EncScript_Kyogre_DelugeResolve[];
+extern const u8 EncScript_Kyogre_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

@@ -1030,6 +1030,9 @@ LittlerootTown_EventScript_EncounterTESTDeoxys::
 LittlerootTown_EventScript_EncounterTESTJirachi::
 	goto LegendaryEncounter_EventScript_Jirachi
 
+LittlerootTown_EventScript_EncounterTESTKyogre::
+	goto LegendaryEncounter_EventScript_Kyogre
+
 LittlerootTown_EventScript_EncounterTESTRayquaza::
 	goto LegendaryEncounter_EventScript_Rayquaza
 
