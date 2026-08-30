@@ -1027,6 +1027,12 @@ LittlerootTown_EventScript_EncounterTESTHoOh::
 LittlerootTown_EventScript_EncounterTESTDeoxys::
 	goto LegendaryEncounter_EventScript_Deoxys
 
+LittlerootTown_EventScript_EncounterTESTJirachi::
+	goto LegendaryEncounter_EventScript_Jirachi
+
+LittlerootTown_EventScript_EncounterTESTRayquaza::
+	goto LegendaryEncounter_EventScript_Rayquaza
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

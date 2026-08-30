@@ -170,6 +170,34 @@ LegendaryEncounter_EventScript_Deoxys::
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 
+LegendaryEncounter_EventScript_Jirachi::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_JIRACHI, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_JIRACHI
+	setwildbattle SPECIES_JIRACHI, 70        @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Rayquaza::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_RAYQUAZA, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_RAYQUAZA
+	setwildbattle SPECIES_RAYQUAZA, 70        @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
 @ Shared post-battle tail. Only a caught legendary is removed from the overworld; fainting or
 @ fleeing leaves it in place so the fight can be retried. Each host map's ON_TRANSITION runs
 @ `updatelegendaryvisibility`, which brings the object back if the player later releases the mon.

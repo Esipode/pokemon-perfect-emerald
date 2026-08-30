@@ -5514,3 +5514,891 @@ EncScript_Deoxys_HitOtherSpecial::
 	encsetvar 13, 5
 	call EncScript_Deoxys_Adapt
 	return
+
+// ---------------------------------------------------------------------------------------------
+// Jirachi, "The Wish Pokemon" (src/data/battle_encounters.encounter). Var indices, pinned by the
+// always-true Conditions on EncScript_Jirachi_Intro:
+// 0 Phase (0 Awakening / 1 after wish 1 / 2 after wish 2 / 3 Miracle / 4 Wish Granted),
+// 1 Wishes (0-3, wishes spent), 2 Energy (Wish Energy, 0-3), 3 Heart (the read on the player,
+// 1-15, starts 8), 4 GuardBias (guard ladder rung, 0-4, starts 2), 5 Miracle (0 none / 1 Power /
+// 2 Life / 3 Stars), 6 LastGuard (reduction last ANNOUNCED, starts 90), 7 LastTier (Heart tier last
+// announced: 0 will / 1 balance / 2 force, starts 3 = never announced), 8 TurnGuard, 9 MoveGuard
+// (per-turn OnMoveEnd re-entry guard for the Heart tally), 10 Prev (ApplyGuard's before-value
+// scratch), 11 Scratch.
+//
+// Jirachi reacts to HOW the player fights rather than to what they did to it. Every turn it gathers
+// Wish Energy; at full energy it makes a wish, and WHICH wish is decided by the Heart meter - a
+// hidden read of the player moved up by attacking and down by using status moves. Every wish costs
+// it something, and then it asks whether the player wants the same boon: YES shares the wish and it
+// pays nothing, NO makes it pay in full. It gets three wishes. The third is the Miracle, the Heart
+// picks that one too, and surviving it puts Jirachi in the catch window.
+
+// --- Shared subroutines (call/return) ---
+
+// Sole owner of the damage reduction AND its callout. A live miracle overrides the ladder outright,
+// which is why the miracle leaves are tested first. The ladder itself is symmetric around the
+// opening 90: Peace wishes push it up (harder to reach), declined Power wishes pull it down.
+// Prev holds the value last announced so each leaf can write LastGuard before comparing; there is
+// no UI for damage reduction, so the line has to re-fire on every real change.
+EncScript_Jirachi_ApplyGuard:
+	enccopyvar 10, 6
+	encjumpifvar CMP_EQUAL, 5, 1, EncScript_Jirachi_Guard80   @ Miracle of Power: a glass cannon
+	encjumpifvar CMP_EQUAL, 5, 2, EncScript_Jirachi_Guard92   @ Miracle of Life: a wall
+	encjumpifvar CMP_EQUAL, 5, 3, EncScript_Jirachi_Guard86   @ Miracle of Stars: a clock
+	encjumpifvar CMP_EQUAL, 4, 0, EncScript_Jirachi_Guard84
+	encjumpifvar CMP_EQUAL, 4, 1, EncScript_Jirachi_Guard88
+	encjumpifvar CMP_EQUAL, 4, 3, EncScript_Jirachi_Guard92
+	encjumpifvar CMP_GREATER_THAN, 4, 3, EncScript_Jirachi_Guard94
+	goto EncScript_Jirachi_Guard90                            @ GuardBias 2, the opening rung
+
+EncScript_Jirachi_Guard80:
+	encsetdamagereduction ENC_TARGET_BOSS, 80
+	encsetvar 6, 80
+	encjumpifvar CMP_EQUAL, 10, 80, EncScript_Jirachi_ApplyGuard_Done
+	encjumpifvar CMP_LESS_THAN, 10, 80, EncScript_Jirachi_ApplyGuard_Rise
+	goto EncScript_Jirachi_ApplyGuard_Fall
+EncScript_Jirachi_Guard84:
+	encsetdamagereduction ENC_TARGET_BOSS, 84
+	encsetvar 6, 84
+	encjumpifvar CMP_EQUAL, 10, 84, EncScript_Jirachi_ApplyGuard_Done
+	encjumpifvar CMP_LESS_THAN, 10, 84, EncScript_Jirachi_ApplyGuard_Rise
+	goto EncScript_Jirachi_ApplyGuard_Fall
+EncScript_Jirachi_Guard86:
+	encsetdamagereduction ENC_TARGET_BOSS, 86
+	encsetvar 6, 86
+	encjumpifvar CMP_EQUAL, 10, 86, EncScript_Jirachi_ApplyGuard_Done
+	encjumpifvar CMP_LESS_THAN, 10, 86, EncScript_Jirachi_ApplyGuard_Rise
+	goto EncScript_Jirachi_ApplyGuard_Fall
+EncScript_Jirachi_Guard88:
+	encsetdamagereduction ENC_TARGET_BOSS, 88
+	encsetvar 6, 88
+	encjumpifvar CMP_EQUAL, 10, 88, EncScript_Jirachi_ApplyGuard_Done
+	encjumpifvar CMP_LESS_THAN, 10, 88, EncScript_Jirachi_ApplyGuard_Rise
+	goto EncScript_Jirachi_ApplyGuard_Fall
+EncScript_Jirachi_Guard90:
+	encsetdamagereduction ENC_TARGET_BOSS, 90
+	encsetvar 6, 90
+	encjumpifvar CMP_EQUAL, 10, 90, EncScript_Jirachi_ApplyGuard_Done
+	encjumpifvar CMP_LESS_THAN, 10, 90, EncScript_Jirachi_ApplyGuard_Rise
+	goto EncScript_Jirachi_ApplyGuard_Fall
+EncScript_Jirachi_Guard92:
+	encsetdamagereduction ENC_TARGET_BOSS, 92
+	encsetvar 6, 92
+	encjumpifvar CMP_EQUAL, 10, 92, EncScript_Jirachi_ApplyGuard_Done
+	encjumpifvar CMP_LESS_THAN, 10, 92, EncScript_Jirachi_ApplyGuard_Rise
+	goto EncScript_Jirachi_ApplyGuard_Fall
+EncScript_Jirachi_Guard94:
+	encsetdamagereduction ENC_TARGET_BOSS, 94
+	encsetvar 6, 94
+	encjumpifvar CMP_EQUAL, 10, 94, EncScript_Jirachi_ApplyGuard_Done
+	encjumpifvar CMP_LESS_THAN, 10, 94, EncScript_Jirachi_ApplyGuard_Rise
+	goto EncScript_Jirachi_ApplyGuard_Fall
+
+EncScript_Jirachi_ApplyGuard_Rise:
+	printstring STRINGID_ENCJIRACHIGUARDRISE
+	waitmessage B_WAIT_TIME_SHORT
+	return
+EncScript_Jirachi_ApplyGuard_Fall:
+	printstring STRINGID_ENCJIRACHIGUARDFALL
+	waitmessage B_WAIT_TIME_SHORT
+EncScript_Jirachi_ApplyGuard_Done:
+	return
+
+// The player's only window onto the Heart meter - the number itself is never shown, only the colour
+// of the tags. Latched on LastTier so it prints when the tier actually moves; LastTier starts on the
+// out-of-range sentinel 3, so the opening evaluation always prints and the mechanic is on screen
+// from turn one. This is the whole discovery mechanism: the colour answers the player's own play,
+// and then the wish matches the colour.
+EncScript_Jirachi_HeartTier:
+	encjumpifvar CMP_GREATER_THAN, 0, 2, EncScript_Jirachi_HeartTier_Done   @ Miracle locked in: silent
+	encjumpifvar CMP_GREATER_THAN, 3, 10, EncScript_Jirachi_HeartTier_Force
+	encjumpifvar CMP_GREATER_THAN, 3, 5, EncScript_Jirachi_HeartTier_Balance
+	encjumpifvar CMP_EQUAL, 7, 0, EncScript_Jirachi_HeartTier_Done
+	encsetvar 7, 0
+	printstring STRINGID_ENCJIRACHIHEARTWILL
+	waitmessage B_WAIT_TIME_SHORT
+	return
+EncScript_Jirachi_HeartTier_Balance:
+	encjumpifvar CMP_EQUAL, 7, 1, EncScript_Jirachi_HeartTier_Done
+	encsetvar 7, 1
+	printstring STRINGID_ENCJIRACHIHEARTBALANCE
+	waitmessage B_WAIT_TIME_SHORT
+	return
+EncScript_Jirachi_HeartTier_Force:
+	encjumpifvar CMP_EQUAL, 7, 2, EncScript_Jirachi_HeartTier_Done
+	encsetvar 7, 2
+	printstring STRINGID_ENCJIRACHIHEARTFORCE
+	waitmessage B_WAIT_TIME_SHORT
+EncScript_Jirachi_HeartTier_Done:
+	return
+
+// The wish clock, recurring rather than latched: energy is the one mechanic the player has to be
+// able to count down every single turn. Silent at 0-1 so the early turns are quiet.
+EncScript_Jirachi_EnergyCue:
+	encjumpifvar CMP_GREATER_THAN, 0, 2, EncScript_Jirachi_EnergyCue_Done   @ no wish left to promise
+	encjumpifvar CMP_GREATER_THAN, 2, 2, EncScript_Jirachi_EnergyCue_Ring
+	encjumpifvar CMP_LESS_THAN, 2, 2, EncScript_Jirachi_EnergyCue_Done
+	printstring STRINGID_ENCJIRACHITAGSCHIME
+	waitmessage B_WAIT_TIME_SHORT
+	return
+EncScript_Jirachi_EnergyCue_Ring:
+	printstring STRINGID_ENCJIRACHITAGSRING
+	waitmessage B_WAIT_TIME_SHORT
+EncScript_Jirachi_EnergyCue_Done:
+	return
+
+// --- Trigger scripts ---
+
+// gEncounterVars is zeroed at battle start, so this only has to write the four non-zero defaults.
+// The opening HeartTier call puts the tag colour on screen before the player's first move, which is
+// what makes the meter learnable rather than invisible.
+EncScript_Jirachi_Intro::
+	encsetvar 3, 8     @ Heart: dead centre of 1-15
+	encsetvar 4, 2     @ GuardBias: the middle rung, matching the Properties reduction
+	encsetvar 6, 90    @ LastGuard: seeded so the first real move reads as a change
+	encsetvar 7, 3     @ LastTier: out-of-range sentinel, so the first evaluation always prints
+	printstring STRINGID_ENCJIRACHIAWAKENS
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
+	call EncScript_Jirachi_HeartTier
+	return
+
+// Top of every turn (TurnGuard gate). Leads with flushtextbox: an OnTurnStart script that animates
+// before printing anything renders on top of the still-open action menu. Owns the per-turn guards,
+// the Miracle of Stars chip clock and the recurring miracle line.
+EncScript_Jirachi_TurnOpen::
+	flushtextbox
+	encsetvar 8, 1    @ TurnGuard
+	encsetvar 9, 0    @ MoveGuard
+	encjumpifvar CMP_EQUAL, 0, 4, EncScript_Jirachi_TurnOpen_Done   @ wishes spent: inert
+	encjumpifvar CMP_EQUAL, 5, 3, EncScript_Jirachi_TurnOpen_Star
+	encjumpifvar CMP_NOT_EQUAL, 5, 0, EncScript_Jirachi_TurnOpen_Burning
+	goto EncScript_Jirachi_TurnOpen_Clings
+	@ The star clock. Fires here rather than at the turn close so it lands BEFORE the player's
+	@ action, and because gBattlerAttacker is deterministically the opponent at OnTurnStart, which is
+	@ what makes playmoveanimation animate from Jirachi in the right direction.
+	@ ALL_FOES rather than PLAYER_LEFT so the tick is doubles-safe and skips a fainted battler.
+EncScript_Jirachi_TurnOpen_Star:
+	printstring STRINGID_ENCJIRACHISTARFALLS
+	waitmessage B_WAIT_TIME_SHORT
+	playmoveanimation MOVE_SWIFT
+	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	goto EncScript_Jirachi_TurnOpen_Done
+EncScript_Jirachi_TurnOpen_Burning:
+	printstring STRINGID_ENCJIRACHIMIRACLEBURNS
+	waitmessage B_WAIT_TIME_SHORT
+	goto EncScript_Jirachi_TurnOpen_Done
+	@ Survive is on until the Miracle has played, so a player who has already earned the kill needs
+	@ telling why it isn't landing. Only at a sliver of HP, so it is a rare line rather than a drone.
+EncScript_Jirachi_TurnOpen_Clings:
+	encsnapshothp ENC_TARGET_BOSS, 11, ENC_SNAP_SET
+	encjumpifvar CMP_GREATER_THAN, 11, 5, EncScript_Jirachi_TurnOpen_Done
+	printstring STRINGID_ENCJIRACHICLINGS
+	waitmessage B_WAIT_TIME_SHORT
+EncScript_Jirachi_TurnOpen_Done:
+	return
+
+// Wish Energy income, and the sleep inversion that is this encounter's anti-cheese. Jirachi is the
+// Pokemon that sleeps for a thousand years: putting it to sleep does not shut it down, it makes it
+// DREAM, and dreams are where wishes come from. Nothing is blocked and nothing is silently ignored -
+// a player who reaches for the standard boss lock simply finds the Miracle on a two-turn clock, and
+// can reverse it by waking it up. Energy is a plain turn counter besides, so Protect/recover
+// stalling accelerates the fight into the Miracle rather than avoiding it.
+EncScript_Jirachi_TurnClose::
+	encsetvar 8, 0    @ TurnGuard
+	encsetvar 9, 0    @ MoveGuard
+	@ Phase 3 and 4 stop the clock entirely: the third wish is the last one, so an energy cue past
+	@ that point would be promising a fourth that never arrives.
+	encjumpifvar CMP_GREATER_THAN, 0, 2, EncScript_Jirachi_TurnClose_Done
+	encjumpifvar CMP_GREATER_THAN, 2, 2, EncScript_Jirachi_TurnClose_Cue
+	jumpifstatus BS_OPPONENT1, STATUS1_SLEEP, EncScript_Jirachi_TurnClose_Dream
+	encaddvar 2, 1
+	goto EncScript_Jirachi_TurnClose_Cue
+EncScript_Jirachi_TurnClose_Dream:
+	printstring STRINGID_ENCJIRACHIDREAMS
+	waitmessage B_WAIT_TIME_SHORT
+	encaddvar 2, 2
+	encjumpifvar CMP_LESS_THAN, 2, 4, EncScript_Jirachi_TurnClose_Cue
+	encsetvar 2, 3
+EncScript_Jirachi_TurnClose_Cue:
+	call EncScript_Jirachi_EnergyCue
+EncScript_Jirachi_TurnClose_Done:
+	return
+
+// The Heart tally. Jirachi reads INTENT, not results: a move that missed still counts, because
+// swinging and missing is still swinging - and Event.OldValue/NewValue are unreliable after a miss
+// anyway. MoveGuard makes a five-hit move worth one point rather than five. The clamps are explicit
+// skips because encaddvar/encsubvar do not saturate.
+EncScript_Jirachi_HeartForce::
+	encsetvar 9, 1    @ MoveGuard
+	encjumpifvar CMP_GREATER_THAN, 3, 14, EncScript_Jirachi_HeartForce_Tier
+	encaddvar 3, 1
+EncScript_Jirachi_HeartForce_Tier:
+	call EncScript_Jirachi_HeartTier
+	return
+
+EncScript_Jirachi_HeartWill::
+	encsetvar 9, 1    @ MoveGuard
+	encjumpifvar CMP_LESS_THAN, 3, 2, EncScript_Jirachi_HeartWill_Tier
+	encsubvar 3, 1
+EncScript_Jirachi_HeartWill_Tier:
+	call EncScript_Jirachi_HeartTier
+	return
+
+// 30% HP fills the meter outright, so whichever wish is next arrives within a turn of the player
+// pushing Jirachi low rather than waiting out the clock. A hurt Jirachi wishes harder, and the
+// Miracle lands as a climax rather than on a timer.
+EncScript_Jirachi_TagsBlaze::
+	encsetvar 2, 3    @ Energy
+	printstring STRINGID_ENCJIRACHITAGSBLAZE
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
+	return
+
+// Wishes one and two. The tier branch decides WHAT it wishes for; the prompt decides whether the
+// player wishes alongside it. The right answer differs per wish, which is what stops the prompt
+// collapsing into a default: refusing Peace or Wonder buys a whole free turn, refusing Power buys
+// softened defences and a permanent rung off the guard ladder, and accepting anything hands the
+// player the same boon at the price of a faster clock.
+// Every player-facing effect targets ALL_FOES rather than PLAYER_LEFT. A group target drops a
+// fainted battler; a single-slot one asserts on it - and the Wonder falling-star outcome can KO the
+// player's active in the middle of this very script, before the prompt is even answered.
+EncScript_Jirachi_Wish::
+	flushtextbox
+	encjumpifvar CMP_EQUAL, 1, 1, EncScript_Jirachi_Wish_BannerTwo
+	printstring STRINGID_ENCJIRACHIWISHONE
+	goto EncScript_Jirachi_Wish_Open
+EncScript_Jirachi_Wish_BannerTwo:
+	printstring STRINGID_ENCJIRACHIWISHTWO
+EncScript_Jirachi_Wish_Open:
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
+	encjumpifvar CMP_GREATER_THAN, 3, 10, EncScript_Jirachi_Wish_Power
+	encjumpifvar CMP_GREATER_THAN, 3, 5, EncScript_Jirachi_Wish_Wonder
+	@ WISH OF PEACE - the answer to a player who fights with status moves. It walls up, and the
+	@ guard ladder climbs a rung whether or not the player wishes alongside it: the screens are the
+	@ visible half of the boon, the ladder is the half they have to infer from the callout.
+EncScript_Jirachi_Wish_Peace:
+	printstring STRINGID_ENCJIRACHIWISHPEACE
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_REFLECT, 5
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_LIGHT_SCREEN, 5
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_SAFEGUARD, 5
+	encjumpifvar CMP_GREATER_THAN, 4, 3, EncScript_Jirachi_Wish_PeaceAsk
+	encaddvar 4, 1
+EncScript_Jirachi_Wish_PeaceAsk:
+	encaskyesno STRINGID_ENCJIRACHILISTENING, EncScript_Jirachi_Wish_PeaceShared
+	printstring STRINGID_ENCJIRACHIPEACECOST
+	waitmessage B_WAIT_TIME_LONG
+	encsetrecharge ENC_TARGET_BOSS, 1
+	goto EncScript_Jirachi_Wish_Spend
+EncScript_Jirachi_Wish_PeaceShared:
+	printstring STRINGID_ENCJIRACHISHAREDPEACE
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_PLAYER1, B_ANIM_WISH_HEAL
+	encsetsidestatus ENC_TARGET_ALL_FOES, ENC_SIDE_REFLECT, 5
+	encsetsidestatus ENC_TARGET_ALL_FOES, ENC_SIDE_LIGHT_SCREEN, 5
+	encsetsidestatus ENC_TARGET_ALL_FOES, ENC_SIDE_SAFEGUARD, 5
+	goto EncScript_Jirachi_Wish_Share
+	@ WISH OF POWER - the answer to a player who only attacks. Refusing it is the aggressive line:
+	@ its defences drop two stages AND the guard ladder loses a rung for good.
+EncScript_Jirachi_Wish_Power:
+	printstring STRINGID_ENCJIRACHIWISHPOWER
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
+	encchangestat ENC_TARGET_BOSS, STAT_ATK, 2
+	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2
+	encaskyesno STRINGID_ENCJIRACHILISTENING, EncScript_Jirachi_Wish_PowerShared
+	printstring STRINGID_ENCJIRACHIPOWERCOST
+	waitmessage B_WAIT_TIME_LONG
+	encchangestat ENC_TARGET_BOSS, STAT_DEF, -1
+	encchangestat ENC_TARGET_BOSS, STAT_SPDEF, -1
+	encjumpifvar CMP_EQUAL, 4, 0, EncScript_Jirachi_Wish_Spend
+	encsubvar 4, 1
+	goto EncScript_Jirachi_Wish_Spend
+EncScript_Jirachi_Wish_PowerShared:
+	printstring STRINGID_ENCJIRACHISHAREDPOWER
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_PLAYER1, B_ANIM_TOTEM_FLARE
+	encchangestat ENC_TARGET_ALL_FOES, STAT_ATK, 2
+	encchangestat ENC_TARGET_ALL_FOES, STAT_SPATK, 2
+	goto EncScript_Jirachi_Wish_Share
+	@ WISH OF WONDER - the answer to a player who does a bit of everything, and the only wish whose
+	@ payload is a roll. Uniform 1-in-4 across the four outcomes (25 / 33 / 50 / fall-through).
+EncScript_Jirachi_Wish_Wonder:
+	printstring STRINGID_ENCJIRACHIWISHWONDER
+	waitmessage B_WAIT_TIME_LONG
+	encjumpifchance 25, EncScript_Jirachi_Wonder_Strength
+	encjumpifchance 33, EncScript_Jirachi_Wonder_Star
+	encjumpifchance 50, EncScript_Jirachi_Wonder_Still
+	@ It gains nothing at all. One beat in the fight is purely a gift, and this is it.
+	printstring STRINGID_ENCJIRACHIWONDERPLAY
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_PLAYER1, B_ANIM_SIMPLE_HEAL
+	enchangehp ENC_TARGET_ALL_FOES, 25, ENC_AMOUNT_PERCENT
+	goto EncScript_Jirachi_Wonder_Ask
+EncScript_Jirachi_Wonder_Strength:
+	printstring STRINGID_ENCJIRACHIWONDERSTRENGTH
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
+	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
+	goto EncScript_Jirachi_Wonder_Ask
+EncScript_Jirachi_Wonder_Star:
+	printstring STRINGID_ENCJIRACHIWONDERSTAR
+	waitmessage B_WAIT_TIME_LONG
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_TAILWIND, 4
+	playanimation BS_OPPONENT1, B_ANIM_TAILWIND
+	playmoveanimation MOVE_SWIFT
+	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	goto EncScript_Jirachi_Wonder_Ask
+	@ Cuts both ways - it wipes the player's setup AND Jirachi's own boosts - which is why this
+	@ outcome needs no drawback of its own.
+EncScript_Jirachi_Wonder_Still:
+	printstring STRINGID_ENCJIRACHIWONDERSTILL
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_TRICK_ROOM
+	normalisebuffs
+EncScript_Jirachi_Wonder_Ask:
+	encaskyesno STRINGID_ENCJIRACHILISTENING, EncScript_Jirachi_Wish_WonderShared
+	printstring STRINGID_ENCJIRACHIWONDERCOST
+	waitmessage B_WAIT_TIME_LONG
+	encsetrecharge ENC_TARGET_BOSS, 1
+	goto EncScript_Jirachi_Wish_Spend
+EncScript_Jirachi_Wish_WonderShared:
+	printstring STRINGID_ENCJIRACHISHAREDWONDER
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_PLAYER1, B_ANIM_SIMPLE_HEAL
+	enchangehp ENC_TARGET_ALL_FOES, 25, ENC_AMOUNT_PERCENT
+	goto EncScript_Jirachi_Wish_Share
+	@ Refused: the meter empties, so the next wish is a full three turns away.
+EncScript_Jirachi_Wish_Spend:
+	encsetvar 2, 0
+	goto EncScript_Jirachi_Wish_Advance
+	@ Shared: the wish cost it nothing and it comes round a turn sooner. The price the player will
+	@ not see coming on a first run - accept all three and the Miracle arrives early, against a
+	@ Jirachi that never paid for any of them.
+EncScript_Jirachi_Wish_Share:
+	encsetvar 2, 1
+	@ Both spend paths write Energy to a value this trigger's own condition rejects, so it cannot
+	@ re-select inside one dispatch. Phase tracks wishes spent, which is what opens the Miracle.
+EncScript_Jirachi_Wish_Advance:
+	encaddvar 1, 1
+	enccopyvar 0, 1
+	call EncScript_Jirachi_ApplyGuard
+	return
+
+// The third wish, and Jirachi's alone - no prompt. Taking the choice away at the climax is the
+// point. The Heart is read one last time, so the fight the player brought is the fight they get:
+// attackers race a glass cannon, stallers have to break a wall, and everyone else runs a clock.
+EncScript_Jirachi_Miracle::
+	flushtextbox
+	printstring STRINGID_ENCJIRACHIFINALWISH
+	waitmessage B_WAIT_TIME_LONG
+	encsetvar 0, 3    @ Phase 3
+	encsetvar 1, 3    @ Wishes
+	encsetvar 2, 0    @ Energy: this trigger's own gate, closed before anything else can run
+	encjumpifvar CMP_GREATER_THAN, 3, 10, EncScript_Jirachi_Miracle_Power
+	encjumpifvar CMP_GREATER_THAN, 3, 5, EncScript_Jirachi_Miracle_Stars
+	@ MIRACLE OF LIFE. The staller's own game handed back to them, and the answer is the setup they
+	@ have spent the fight accumulating and now finally have to cash in.
+	printstring STRINGID_ENCJIRACHIMIRACLELIFE
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
+	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_REFLECT, 0
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_LIGHT_SCREEN, 0
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_SAFEGUARD, 0
+	encsetvar 5, 2
+	goto EncScript_Jirachi_Miracle_Done
+	@ MIRACLE OF POWER. A race - it can end the player in two moves, they can end it in three.
+EncScript_Jirachi_Miracle_Power:
+	printstring STRINGID_ENCJIRACHIMIRACLEPOWER
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
+	encchangestatvalue ENC_TARGET_BOSS, STAT_ATK, 50, ENC_AMOUNT_PERCENT
+	encchangestatvalue ENC_TARGET_BOSS, STAT_SPATK, 50, ENC_AMOUNT_PERCENT
+	encsetvar 5, 1
+	goto EncScript_Jirachi_Miracle_Done
+	@ MIRACLE OF STARS. The softest guard of the three, permanent Tailwind, and a star falling on the
+	@ player every turn from here (TurnOpen). Finish it or lose.
+EncScript_Jirachi_Miracle_Stars:
+	printstring STRINGID_ENCJIRACHIMIRACLESTARS
+	waitmessage B_WAIT_TIME_LONG
+	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_TAILWIND, 0
+	playanimation BS_OPPONENT1, B_ANIM_TAILWIND
+	encsetvar 5, 3
+EncScript_Jirachi_Miracle_Done:
+	call EncScript_Jirachi_ApplyGuard
+	return
+
+// Survive the Miracle and the tags go dark: every encounter rule comes off and the fight becomes an
+// ordinary Pokemon battle. Clearing Miracle is load-bearing rather than tidiness - it is what stops
+// the star clock chipping the player's Pokemon down while they are trying to land a ball.
+// From here the engine's automatic catch-window damage guard keeps the catch target alive.
+EncScript_Jirachi_WishGranted::
+	encsetvar 0, 4    @ Phase 4
+	encsetvar 2, 0    @ Energy
+	encsetvar 5, 0    @ Miracle: stops the star clock and every recurring line
+	encclearscreens ENC_TARGET_BOSS, EncScript_Jirachi_WishGranted_Release
+EncScript_Jirachi_WishGranted_Release:
+	encsetsurvive ENC_TARGET_BOSS, FALSE
+	encsetimmunity ENC_TARGET_BOSS, 0
+	encsetcaptypeeffectiveness ENC_TARGET_BOSS, FALSE
+	@ The live reduction and the LastGuard latch are the same state; a mismatch would make the next
+	@ callout announce a move that never happened.
+	encsetdamagereduction ENC_TARGET_BOSS, 80
+	encsetvar 6, 0
+	encsetcatchrate 40
+	encsetballs ENC_BALLS_ALLOWED
+	printstring STRINGID_ENCJIRACHIWEAKENED
+	waitmessage B_WAIT_TIME_LONG
+	return
+
+// ---------------------------------------------------------------------------------------------
+// Rayquaza, "The Sky Guardian" (src/data/battle_encounters.encounter). Var indices, pinned by the
+// always-true Conditions on EncScript_Rayquaza_Intro:
+// 0 Phase (0 Sky Guardian / 1 Delta Ascension / 2 Atmosphere Breaks / 3 Weakened),
+// 1 Alt (0 Grounded, 1 Low, 2 High, 3 Stratospheric), 2 Press (Atmospheric Pressure, 0-5),
+// 3 Fall (Skyfall state: 0 idle, 2 gone, 1 descending), 4 Climb (climb cadence countdown),
+// 5 Chaos (Phase 2 weather-roll cadence), 6 TurnGuard, 7 Cycle (per-turn guard shared by the three
+// altitude/Skyfall OnTurnStart triggers), 8 Guarded (per-turn guard for SkyGuard), 9 Vent (per-turn
+// guard shared by the two weather triggers), 10 Shot (per-turn guard for ShootDown), 11 HpMark
+// (boss HP% at turn open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 12 LastPress (Pressure
+// tier last ANNOUNCED - the re-fire latch), 13 Pred (encstoreprediction scratch).
+//
+// Rayquaza is a fight over a POSITION rather than a number. Altitude sets how little damage it
+// takes and how fast Atmospheric Pressure builds; full Pressure means it vanishes and Skyfall lands
+// on the player. Two levers pull it back down - put weather on the field and it must descend to
+// tear the atmosphere apart (but it descends angry, and the anger stacks), or land enough damage in
+// one turn to shoot it out of the air. Grounded, its clock is stopped and it is finally hittable.
+// Mega Evolution at 50% locks the sky with Strong Winds and confiscates the weather lever; the
+// collapse at 22% hands weather back, hostile to Rayquaza too.
+
+// --- Shared subroutines (call/return) ---
+
+// Sole owner of the damage reduction. The altitude and phase lines already announce every change to
+// it, so unlike Jirachi's ladder this one needs no callout of its own - the player is told the
+// moment Rayquaza moves, every time it moves.
+// Mega Rayquaza gains 100/100 defences over base 90/90, so its rungs sit 1-2 points lower to keep
+// grounded damage roughly flat across the transition. The Phase 2 collapse is a real ~3x swing.
+EncScript_Rayquaza_ApplyGuard:
+	encjumpifvar CMP_EQUAL, 0, 2, EncScript_Rayquaza_GuardBroken
+	encjumpifvar CMP_EQUAL, 0, 1, EncScript_Rayquaza_GuardMega
+	encjumpifvar CMP_EQUAL, 1, 0, EncScript_Rayquaza_Guard87
+	encjumpifvar CMP_EQUAL, 1, 1, EncScript_Rayquaza_Guard89
+	goto EncScript_Rayquaza_Guard92
+EncScript_Rayquaza_GuardMega:
+	encjumpifvar CMP_EQUAL, 1, 0, EncScript_Rayquaza_Guard85
+	encjumpifvar CMP_EQUAL, 1, 1, EncScript_Rayquaza_Guard88
+	goto EncScript_Rayquaza_Guard91
+EncScript_Rayquaza_GuardBroken:
+	encjumpifvar CMP_EQUAL, 1, 0, EncScript_Rayquaza_Guard76
+	encjumpifvar CMP_EQUAL, 1, 1, EncScript_78
+	goto EncScript_Rayquaza_Guard80
+EncScript_Rayquaza_Guard76:
+	encsetdamagereduction ENC_TARGET_BOSS, 76
+	return
+EncScript_78:
+	encsetdamagereduction ENC_TARGET_BOSS, 78
+	return
+EncScript_Rayquaza_Guard80:
+	encsetdamagereduction ENC_TARGET_BOSS, 80
+	return
+EncScript_Rayquaza_Guard85:
+	encsetdamagereduction ENC_TARGET_BOSS, 85
+	return
+EncScript_Rayquaza_Guard87:
+	encsetdamagereduction ENC_TARGET_BOSS, 87
+	return
+EncScript_Rayquaza_Guard88:
+	encsetdamagereduction ENC_TARGET_BOSS, 88
+	return
+EncScript_Rayquaza_Guard89:
+	encsetdamagereduction ENC_TARGET_BOSS, 89
+	return
+EncScript_Rayquaza_Guard91:
+	encsetdamagereduction ENC_TARGET_BOSS, 91
+	return
+EncScript_Rayquaza_Guard92:
+	encsetdamagereduction ENC_TARGET_BOSS, 92
+	return
+
+// The tail both levers and the Skyfall landing share. Evasion is SET, not nudged: encchangestat
+// clamps at the stage bounds, so -12 then +6 lands on neutral from wherever the stage had drifted -
+// immune to Haze, Defog and the player's own accuracy drops.
+EncScript_Rayquaza_Descend:
+	encsetvar 1, 0    @ Alt: Grounded
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, -12
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, 6
+	call EncScript_Rayquaza_ApplyGuard
+	printstring STRINGID_ENCRAYQUAZAGROUNDED
+	waitmessage B_WAIT_TIME_LONG
+	return
+
+// The Pressure callout, latched on the tier last announced rather than on the raw value, so it
+// fires on every real change and never drones. Skyfall zeroes Press, which drops the latch back to
+// tier 0 through the leading branch here - so the whole build-up re-announces on the next cycle
+// instead of being a one-shot the player can miss.
+EncScript_Rayquaza_PressureCue:
+	encjumpifvar CMP_GREATER_THAN, 2, 3, EncScript_Rayquaza_PressureCue_Two
+	encjumpifvar CMP_GREATER_THAN, 2, 1, EncScript_Rayquaza_PressureCue_One
+	encsetvar 12, 0
+	return
+EncScript_Rayquaza_PressureCue_One:
+	encjumpifvar CMP_EQUAL, 12, 1, EncScript_Rayquaza_PressureCue_Done
+	encsetvar 12, 1
+	printstring STRINGID_ENCRAYQUAZAPRESSUREONE
+	waitmessage B_WAIT_TIME_SHORT
+	return
+EncScript_Rayquaza_PressureCue_Two:
+	encjumpifvar CMP_EQUAL, 12, 2, EncScript_Rayquaza_PressureCue_Done
+	encsetvar 12, 2
+	printstring STRINGID_ENCRAYQUAZAPRESSURETWO
+	waitmessage B_WAIT_TIME_SHORT
+EncScript_Rayquaza_PressureCue_Done:
+	return
+
+// --- Trigger scripts ---
+
+// gEncounterVars is zeroed at battle start, so only the climb counter needs seeding. Starting it at
+// 2 means Rayquaza spends two turns on the ground before it first lifts away, which is the window
+// the player is meant to learn the fight in. Air Lock announces itself on entry unprompted, and
+// that stock line is the first hint that weather is not going to behave.
+EncScript_Rayquaza_Intro::
+	encsetvar 4, 2    @ Climb: first climb lands on turn 3
+	printstring STRINGID_ENCRAYQUAZAAWAKENS
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_STRONG_WINDS
+	return
+
+// Top of every turn (TurnGuard gate). Leads with flushtextbox: an OnTurnStart script that animates
+// before printing anything renders on top of the still-open action menu.
+// It owns the four per-turn re-entry guards outright. TurnClose deliberately clears none of them -
+// Var(Shot) gates an OnTurnEnd trigger, and clearing it from the priority-90 close would make that
+// trigger eligible again inside the same dispatch.
+EncScript_Rayquaza_TurnOpen::
+	flushtextbox
+	encsetvar 6, 1     @ TurnGuard
+	encsetvar 7, 0     @ Cycle
+	encsetvar 8, 0     @ Guarded
+	encsetvar 9, 0     @ Vent
+	encsetvar 10, 0    @ Shot
+	encsnapshothp ENC_TARGET_BOSS, 11, ENC_SNAP_SET     @ the mark ShootDown reads at turn close
+	encjumpifvar CMP_GREATER_THAN, 0, 2, EncScript_Rayquaza_TurnOpen_Done   @ Weakened: inert
+	@ Atmospheric Pressure income. Grounded pays nothing, which is the whole reward for pulling it
+	@ down: the Skyfall clock simply stops. Stratospheric pays nothing either - it is already gone.
+	encjumpifvar CMP_EQUAL, 1, 1, EncScript_Rayquaza_TurnOpen_Low
+	encjumpifvar CMP_EQUAL, 1, 2, EncScript_Rayquaza_TurnOpen_High
+	goto EncScript_Rayquaza_TurnOpen_Cue
+EncScript_Rayquaza_TurnOpen_High:
+	encjumpifvar CMP_GREATER_THAN, 0, 0, EncScript_Rayquaza_TurnOpen_HighFast
+EncScript_Rayquaza_TurnOpen_Low:
+	encaddvar 2, 1
+	goto EncScript_Rayquaza_TurnOpen_Cue
+EncScript_Rayquaza_TurnOpen_HighFast:
+	encaddvar 2, 2
+EncScript_Rayquaza_TurnOpen_Cue:
+	call EncScript_Rayquaza_PressureCue
+	@ The recurring out-of-reach line, and the sleep line that replaces it. Nothing in this fight is
+	@ an ACTION - a sleeping Rayquaza still climbs, still builds Pressure and still lands Skyfall on
+	@ your head, because none of that is a move. That is this encounter's anti-cheese, and one line
+	@ makes the point without stating it.
+	encjumpifvar CMP_LESS_THAN, 1, 1, EncScript_Rayquaza_TurnOpen_Done
+	encjumpifvar CMP_EQUAL, 1, 3, EncScript_Rayquaza_TurnOpen_Done
+	jumpifstatus BS_OPPONENT1, STATUS1_SLEEP, EncScript_Rayquaza_TurnOpen_Drifts
+	encjumpifvar CMP_NOT_EQUAL, 1, 2, EncScript_Rayquaza_TurnOpen_Done
+	printstring STRINGID_ENCRAYQUAZAOUTOFREACH
+	waitmessage B_WAIT_TIME_SHORT
+	goto EncScript_Rayquaza_TurnOpen_Done
+EncScript_Rayquaza_TurnOpen_Drifts:
+	printstring STRINGID_ENCRAYQUAZADRIFTS
+	waitmessage B_WAIT_TIME_SHORT
+EncScript_Rayquaza_TurnOpen_Done:
+	return
+
+// Every countdown lives here, one checkpoint away from the OnTurnStart triggers that resolve them,
+// so a real turn always passes between a timer ticking and the beat it arms.
+// While Rayquaza is gone nothing else ticks: the Skyfall step is the only state change that turn.
+EncScript_Rayquaza_TurnClose::
+	encsetvar 6, 0    @ TurnGuard
+	encjumpifvar CMP_GREATER_THAN, 0, 2, EncScript_Rayquaza_TurnClose_Done
+	encjumpifvar CMP_EQUAL, 3, 2, EncScript_Rayquaza_TurnClose_Falling
+	encjumpifvar CMP_EQUAL, 4, 0, EncScript_Rayquaza_TurnClose_Chaos
+	encsubvar 4, 1
+EncScript_Rayquaza_TurnClose_Chaos:
+	encjumpifvar CMP_EQUAL, 5, 0, EncScript_Rayquaza_TurnClose_Done
+	encsubvar 5, 1
+	goto EncScript_Rayquaza_TurnClose_Done
+	@ 2 -> 1 is what makes SkyfallLand eligible next turn; SkyfallBegin writes 2 and SkyfallLand is
+	@ gated on 1, so no dispatch can run both.
+EncScript_Rayquaza_TurnClose_Falling:
+	encsetvar 3, 1
+EncScript_Rayquaza_TurnClose_Done:
+	return
+
+// One rung up the ladder. Sets Var(Cycle) because in Delta Ascension the re-arm value is 0 by
+// design (it climbs every turn) - without the shared guard this trigger's own condition would still
+// be true on re-evaluation and it would climb to the ceiling inside a single dispatch.
+EncScript_Rayquaza_Climb::
+	encsetvar 7, 1    @ Cycle
+	encaddvar 1, 1
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, -12
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, 7    @ absolute +1, not a nudge
+	call EncScript_Rayquaza_ApplyGuard
+	encjumpifvar CMP_EQUAL, 1, 2, EncScript_Rayquaza_Climb_High
+	printstring STRINGID_ENCRAYQUAZACLIMBSLOW
+	goto EncScript_Rayquaza_Climb_Arm
+EncScript_Rayquaza_Climb_High:
+	printstring STRINGID_ENCRAYQUAZACLIMBSHIGH
+EncScript_Rayquaza_Climb_Arm:
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_STRONG_WINDS
+	@ Cadence by phase: every 3rd turn as the Sky Guardian, EVERY turn in Delta Ascension, every 2nd
+	@ once the atmosphere breaks.
+	encjumpifvar CMP_EQUAL, 0, 1, EncScript_Rayquaza_Climb_ArmFast
+	encjumpifvar CMP_EQUAL, 0, 2, EncScript_Rayquaza_Climb_ArmMid
+	encsetvar 4, 2
+	return
+EncScript_Rayquaza_Climb_ArmMid:
+	encsetvar 4, 1
+	return
+EncScript_Rayquaza_Climb_ArmFast:
+	encsetvar 4, 0
+	return
+
+// High Rayquaza reads the player and slips the attack it expects. encstoreprediction writes the
+// predicted CATEGORY: 0 no read / 1 physical / 2 special / 3 status. A predicted special move is
+// never evaded, which is the rule the player can actually find - special attacks always reach it,
+// physical ones can be read. With no read at all it falls back to a flat roll so the sky is never
+// simply free.
+// encsetprotect blocks everything, so a player whose strongest option is physical but who fires a
+// special move that turn can still be stopped; the line claims Rayquaza read their INTENT, which is
+// exactly what the prediction is.
+EncScript_Rayquaza_SkyGuard::
+	encsetvar 8, 1    @ Guarded
+	encstoreprediction ENC_TARGET_PLAYER_LEFT, 13
+	encjumpifvar CMP_EQUAL, 13, 2, EncScript_Rayquaza_SkyGuard_Done
+	encjumpifvar CMP_NOT_EQUAL, 13, 0, EncScript_Rayquaza_SkyGuard_Evade
+	encjumpifchance 35, EncScript_Rayquaza_SkyGuard_Evade
+EncScript_Rayquaza_SkyGuard_Done:
+	return
+EncScript_Rayquaza_SkyGuard_Evade:
+	printstring STRINGID_ENCRAYQUAZAREADSYOU
+	waitmessage B_WAIT_TIME_SHORT
+	encsetprotect ENC_TARGET_BOSS
+	playanimation BS_OPPONENT1, B_ANIM_STRONG_WINDS
+	return
+
+// Skyfall, turn one. encsetprotect is only meaningful at OnTurnStart (gProtectStructs is wiped
+// after end-of-turn effects), which is exactly where this runs, and it expires on its own;
+// encsetrecharge 1 here costs Rayquaza THIS turn's action. Between them the turn is mutually dead,
+// which is the honest expression of "it is not on the field" - no command removes a battler, and
+// the one animation that genuinely slides a sprite away has nothing that slides it back.
+EncScript_Rayquaza_SkyfallBegin::
+	encsetvar 7, 1    @ Cycle
+	printstring STRINGID_ENCRAYQUAZASKYFALLWARN
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_STRONG_WINDS
+	printstring STRINGID_ENCRAYQUAZAVANISHED
+	waitmessage B_WAIT_TIME_LONG
+	encsetvar 2, 0    @ Press
+	encsetvar 3, 2    @ Fall: gone
+	encsetvar 1, 3    @ Alt: Stratospheric
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, -12
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, 7
+	call EncScript_Rayquaza_ApplyGuard
+	encsetprotect ENC_TARGET_BOSS
+	encsetrecharge ENC_TARGET_BOSS, 1
+	return
+
+// Skyfall, turn two - the hardest turn in the fight and the best one. Rayquaza is NOT protected and
+// NOT recharging on the way down, so its move and the player's both resolve on top of the scripted
+// hit; and it ends standing on the ground with its clock at zero. The Skyfall is how you get your
+// turn, which is the whole symmetry of the encounter.
+// ENC_TARGET_ALL_FOES rather than a single slot: a single-slot target asserts on a fainted battler,
+// a group target skips the absent silently.
+EncScript_Rayquaza_SkyfallLand::
+	encsetvar 7, 1    @ Cycle
+	encsetvar 3, 0    @ Fall: idle
+	printstring STRINGID_ENCRAYQUAZASKYFALLCOMING
+	waitmessage B_WAIT_TIME_LONG
+	playmoveanimation MOVE_SKY_ATTACK
+	printstring STRINGID_ENCRAYQUAZASKYFALL
+	waitmessage B_WAIT_TIME_LONG
+	encjumpifvar CMP_EQUAL, 0, 1, EncScript_Rayquaza_SkyfallLand_Delta
+	encjumpifvar CMP_EQUAL, 0, 2, EncScript_Rayquaza_SkyfallLand_Late
+	enchangehp ENC_TARGET_ALL_FOES, -30, ENC_AMOUNT_PERCENT
+	goto EncScript_Rayquaza_SkyfallLand_Down
+EncScript_Rayquaza_SkyfallLand_Delta:
+	enchangehp ENC_TARGET_ALL_FOES, -40, ENC_AMOUNT_PERCENT
+	goto EncScript_Rayquaza_SkyfallLand_Down
+EncScript_Rayquaza_SkyfallLand_Late:
+	enchangehp ENC_TARGET_ALL_FOES, -33, ENC_AMOUNT_PERCENT
+EncScript_Rayquaza_SkyfallLand_Down:
+	call EncScript_Rayquaza_Descend
+	return
+
+// Lever 1. Air Lock means the player's weather never DID anything, so setting it is purely a lure -
+// and the Air Lock entry message already told them so on turn one. The stat stages are the price
+// and they STACK; MAX_STAT_STAGE caps them for free, so nothing needs tracking. Pressure is
+// untouched: the reward for grounding it is that the clock stops, which is quieter and stronger
+// than any number.
+EncScript_Rayquaza_Vent::
+	encsetvar 9, 1    @ Vent
+	printstring STRINGID_ENCRAYQUAZATEARS
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_STRONG_WINDS
+	removeweather
+	call EncScript_Rayquaza_Descend
+	printstring STRINGID_ENCRAYQUAZAENOUGH
+	waitmessage B_WAIT_TIME_LONG
+	encchangestat ENC_TARGET_BOSS, STAT_ATK, 1
+	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 1
+	return
+
+// Lever 1b. Bring your own Kyogre or Groudon and Rayquaza silences it personally, for double the
+// anger. Primordial Sea and Desolate Land re-apply on switch-in, so pivoting the setter back in
+// re-triggers this - a learnable trap rather than an exploit, and the only weather the player
+// cannot normally lose.
+EncScript_Rayquaza_VentPrimal::
+	encsetvar 9, 1    @ Vent
+	printstring STRINGID_ENCRAYQUAZACONFLICT
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_STRONG_WINDS
+	removeweather
+	call EncScript_Rayquaza_Descend
+	printstring STRINGID_ENCRAYQUAZAENOUGH
+	waitmessage B_WAIT_TIME_LONG
+	encchangestat ENC_TARGET_BOSS, STAT_ATK, 2
+	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2
+	return
+
+// Lever 2. HpMark was written at turn open with ENC_SNAP_SET; ENC_SNAP_DAMAGE turns it into
+// "percentage of max HP lost this turn", cumulative across multi-hits, chip and status.
+// The guard ladder makes the threshold self-balancing: 6% through an 87 guard needs a raw hit worth
+// about 46% of max HP, through a 92 guard about 75%. It gets harder the higher Rayquaza is, which
+// is exactly right.
+EncScript_Rayquaza_ShootDown::
+	encsetvar 10, 1    @ Shot
+	encsnapshothp ENC_TARGET_BOSS, 11, ENC_SNAP_DAMAGE, EncScript_Rayquaza_ShootDown_None
+	encjumpifvar CMP_LESS_THAN, 11, 6, EncScript_Rayquaza_ShootDown_None
+	printstring STRINGID_ENCRAYQUAZASHOTDOWN
+	waitmessage B_WAIT_TIME_LONG
+	playanimation BS_OPPONENT1, B_ANIM_STRONG_WINDS
+	call EncScript_Rayquaza_Descend
+EncScript_Rayquaza_ShootDown_None:
+	return
+
+// Phase 2's broken sky. Uniform 1-in-5 across the five outcomes (20 / 25 / 33 / 50 / fall-through).
+// Air Lock left with the Mega, so this is the only phase where weather is mechanically live - and
+// Rayquaza is Dragon/Flying with no sand or hail immunity, so the atmosphere finally chips it too.
+// Each roll is announced, and each overwrites whatever the player set, which is the emergent way of
+// saying "you do not control the sky".
+EncScript_Rayquaza_WeatherChaos::
+	encsetvar 5, 2    @ Chaos: two-turn cadence
+	encjumpifchance 20, EncScript_Rayquaza_Chaos_Rain
+	encjumpifchance 25, EncScript_Rayquaza_Chaos_Sun
+	encjumpifchance 33, EncScript_Rayquaza_Chaos_Sand
+	encjumpifchance 50, EncScript_Rayquaza_Chaos_Hail
+	printstring STRINGID_ENCRAYQUAZACHAOSCLEAR
+	waitmessage B_WAIT_TIME_SHORT
+	removeweather
+	return
+EncScript_Rayquaza_Chaos_Rain:
+	printstring STRINGID_ENCRAYQUAZACHAOSRAIN
+	waitmessage B_WAIT_TIME_SHORT
+	encsetweather BATTLE_WEATHER_RAIN, 0
+	playanimation BS_OPPONENT1, B_ANIM_RAIN_CONTINUES
+	return
+EncScript_Rayquaza_Chaos_Sun:
+	printstring STRINGID_ENCRAYQUAZACHAOSSUN
+	waitmessage B_WAIT_TIME_SHORT
+	encsetweather BATTLE_WEATHER_SUN, 0
+	playanimation BS_OPPONENT1, B_ANIM_SUN_CONTINUES
+	return
+EncScript_Rayquaza_Chaos_Sand:
+	printstring STRINGID_ENCRAYQUAZACHAOSSAND
+	waitmessage B_WAIT_TIME_SHORT
+	encsetweather BATTLE_WEATHER_SANDSTORM, 0
+	playanimation BS_OPPONENT1, B_ANIM_SANDSTORM_CONTINUES
+	return
+EncScript_Rayquaza_Chaos_Hail:
+	printstring STRINGID_ENCRAYQUAZACHAOSHAIL
+	waitmessage B_WAIT_TIME_SHORT
+	encsetweather BATTLE_WEATHER_HAIL, 0
+	playanimation BS_OPPONENT1, B_ANIM_HAIL_CONTINUES
+	return
+
+// 50% - DELTA ASCENSION. The form change does three things for free, and each does real work:
+// both species are 105 base HP so the health bar does not jump; the macro's trailing
+// switchinabilities fires Delta Stream, whose Strong Winds are primal and so refuse every
+// subsequent weather - the player's grounding lever is confiscated on screen by a stock message;
+// and Air Lock leaves, which is what makes the Phase 2 collapse land later.
+// Strong Winds also neutralises Flying's own weaknesses, so the Ice/Rock/Electric matchups soften
+// on top of the guard - CapTypeEffectiveness had already clamped the 4x Ice weakness to 2x, and
+// this takes it to 1x. Ice-stacking a Mega Rayquaza is meant to stop working.
+// Dragon Ascent is written in only now: knowing it beforehand would have satisfied CanMegaEvolve
+// and let the AI spend a turn-1 gimmick, but once the species already IS the Mega the check can no
+// longer fire.
+EncScript_Rayquaza_DeltaAscension::
+	encsetvar 0, 1    @ Phase
+	printstring STRINGID_ENCRAYQUAZAABSORBS
+	waitmessage B_WAIT_TIME_LONG
+	printstring STRINGID_ENCRAYQUAZADELTAASCENSION
+	waitmessage B_WAIT_TIME_LONG
+	encformchange ENC_TARGET_BOSS, SPECIES_RAYQUAZA_MEGA, EncScript_Rayquaza_DeltaAscension_NoForm
+	encsetmove ENC_TARGET_BOSS, 0, MOVE_DRAGON_ASCENT
+EncScript_Rayquaza_DeltaAscension_NoForm:
+	encsetvar 4, 0    @ Climb: every turn from here
+	call EncScript_Rayquaza_ApplyGuard
+	return
+
+// 22% - THE ATMOSPHERE BREAKS. RemoveAllWeather clears primal weather unconditionally and Delta
+// Stream is a switch-in ability with no per-turn re-application, so Strong Winds stay gone.
+// Survive is set here so an oversized hit cannot skip the catch window at 10%; it is paired with
+// the Immunities: list, which closes the fixed-damage / Perish Song / Destiny Bond holes Survive
+// does not cover.
+EncScript_Rayquaza_AtmosphereBreaks::
+	encsetvar 0, 2    @ Phase
+	printstring STRINGID_ENCRAYQUAZACONTROLFAILING
+	waitmessage B_WAIT_TIME_LONG
+	removeweather
+	encsetvar 4, 1    @ Climb: every other turn
+	encsetvar 5, 1    @ Chaos: first roll next turn
+	encsetsurvive ENC_TARGET_BOSS, TRUE
+	call EncScript_Rayquaza_ApplyGuard
+	return
+
+// 10% - the catch window. Reverting to base Rayquaza is the guideline cue and housekeeping at once:
+// it guarantees the caught Pokemon is a plain Rayquaza whatever the form-change table does, and
+// 105 = 105 base HP means the bar still does not move.
+// Slot 0 is restored to Extreme Speed BEFORE the revert, and that is load-bearing rather than
+// tidiness: a base Rayquaza that merely knows Dragon Ascent satisfies CanMegaEvolve, and the AI
+// would Mega Evolve again in the middle of the player's catch attempts.
+// Every altitude, Pressure, Skyfall and chaos trigger is gated Var(Phase) <= 2, so the whole
+// machine goes quiet here. From this point the engine's automatic catch-window damage guard keeps
+// the catch target alive; encsetdamagereduction sets the value that guard will restore, not the
+// live one.
+EncScript_Rayquaza_Weakened::
+	encsetvar 0, 3    @ Phase
+	printstring STRINGID_ENCRAYQUAZAGIVESOUT
+	waitmessage B_WAIT_TIME_LONG
+	encsetmove ENC_TARGET_BOSS, 0, MOVE_EXTREME_SPEED
+	encformchange ENC_TARGET_BOSS, SPECIES_RAYQUAZA, EncScript_Rayquaza_Weakened_Release, B_ANIM_FORM_CHANGE
+EncScript_Rayquaza_Weakened_Release:
+	removeweather
+	encsetvar 1, 0    @ Alt
+	encsetvar 2, 0    @ Press
+	encsetvar 3, 0    @ Fall
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, -12
+	encchangestat ENC_TARGET_BOSS, STAT_EVASION, 6
+	encsetsurvive ENC_TARGET_BOSS, FALSE
+	encsetimmunity ENC_TARGET_BOSS, 0
+	encsetcaptypeeffectiveness ENC_TARGET_BOSS, FALSE
+	encsetdamagereduction ENC_TARGET_BOSS, 99
+	encsetcatchrate 30
+	encsetballs ENC_BALLS_ALLOWED
+	printstring STRINGID_ENCRAYQUAZAWEAKENED
+	waitmessage B_WAIT_TIME_LONG
+	return

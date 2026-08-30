@@ -551,9 +551,12 @@ The commands below exist specifically for encounter scripts:
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | Changes `<target>` (must resolve to exactly one battler) into `<species>` outright, outside any form-change table, then plays `<anim>`. The general form of `encmegaevolve`: repeatable, reversible, and not limited to a form the battler holds a stone for. Keeps HP and the moveset; stats, types and ability come from the new species. Prints nothing — supply your own dialogue | encounter-specific (`callnative`) |
+| `encsetmove <target>, <slot>, <move>` | Writes `<move>` into slot `<slot>` (`0`–`3`) of `<target>`'s **battle** mon with that move's full PP. The party Pokémon is never touched, so a boss caught afterwards keeps the moveset it was built with. `Moves:` is a battle-start property, so this is the only way a boss gains a move partway through a fight — the signature move a form unlocks when it transforms. Prints nothing | encounter-specific (`callnative`) |
 | `enctransform <target>, <source>, <failLabel>` | Turns `<target>` (exactly one battler) into `<source>` (likewise), copying species, stats, stat stages, types, ability and moveset — exactly as the Transform move does. Copies **not** HP, level, item or status, and never writes the party Pokémon, so a boss transformed this way is still its own species if caught. Jumps `<failLabel>` if `<source>` is semi-invulnerable, already transformed, or behind Illusion. Prints nothing | encounter-specific (`callnative`) |
 | `encuntransform <target>` | Reverts `<target>` from an `enctransform`/Transform copy to its own party species, rebuilding stats, types, ability and moves from the party Pokémon. Stat stages reset to neutral. Silent no-op if `<target>` isn't transformed, so it's safe to call unconditionally. Prints nothing | encounter-specific (`callnative`) |
 | `encjumpifchance <percent>, <label>` | Branches to `<label>` with `<percent>` (`0`–`100`) probability, otherwise falls through. The roll is tagged `RNG_ENCOUNTER_SCRIPT` | encounter-specific (`callnative`) |
+| `encsetrecharge <target>, <turns>` | Puts `<target>` on the engine's Hyper Beam recharge timer, so it loses an action and prints the stock "must recharge!" line when its move tries to resolve. The timer is decremented at the very end of the turn, *after* the `OnTurnEnd` checkpoint, so `<turns>` means different things depending on where you set it: `1` at `OnTurnStart` costs the battler **this** turn's action, `2` at `OnTurnEnd`/`OnMoveEnd` costs it **next** turn's. For an overexerted boss, a staggered beat, or any telegraphed free turn | encounter-specific (`callnative`) |
+| `encaskyesno <stringId>, <yesLabel>` | Prints `<stringId>`, opens the standard YES/NO window, and jumps `<yesLabel>` on YES; falls through on NO (and on B, which the box reads as NO). The player-decision primitive: a bargain, a bet, a mercy, a branching narrative beat. The leading `printstring` is what makes it safe at `OnTurnStart` — it resets `gBattle_BG0_X/Y`, scrolling the still-open action menu away before the window is drawn. A decided battle (`gBattleOutcome != 0`) skips the prompt and takes the NO path, so scripted damage earlier in the same script can't leave the player answering a question about a fight that is already over. Single-player only — a link battle would desync on the input | a macro over `printstring`/`setbyte`/`yesnobox`/`jumpifbyte` |
 
 ### Fixed vs. percentage amounts
 
@@ -588,7 +591,7 @@ always means "no reduction", whatever the `Properties:` block or an earlier phas
 `setbyte`/`addbyte`/`subbyte`/`jumpifbyte`/`copybyte` opcodes every other battle script uses, just pre-addressed
 into the encounter's variable array so you write a var index instead of a raw address.
 
-`<target>` on `enchangehp`/`encchangestat`/`encmegaevolve`/`encformchange`/`enctransform`/`encuntransform` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
+`<target>` on `enchangehp`/`encchangestat`/`encmegaevolve`/`encformchange`/`encsetmove`/`enctransform`/`encuntransform` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
 `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`, `ENC_TARGET_PLAYER_LEFT`/`_RIGHT`,
 `ENC_TARGET_OPPONENT_LEFT`/`_RIGHT`, `ENC_TARGET_ALL_FOES`, `ENC_TARGET_ALL_ALLIES`,
 `ENC_TARGET_ALL_BATTLERS`. The group targets (`ALL_FOES`/`ALL_ALLIES`/`ALL_BATTLERS`) are what make a
@@ -909,9 +912,12 @@ constants are compiler errors.
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | A target that resolves to exactly one battler, a `SPECIES_*` constant, a script label, and an optional `B_ANIM_*` id (defaults to `B_ANIM_MEGA_EVOLUTION`). |
+| `encsetmove <target>, <slot>, <move>` | A target that resolves to exactly one battler, a move slot `0`–`3`, and a `MOVE_*` constant. |
 | `enctransform <target>, <source>, <failLabel>` | Two targets that each resolve to exactly one battler, plus a script label. |
 | `encuntransform <target>` | A target that resolves to exactly one battler. |
 | `encjumpifchance <percent>, <label>` | An integer `0`–`255` (asserts if above `100`) and a script label. |
+| `encsetrecharge <target>, <turns>` | Target below; a turn count (`1` at `OnTurnStart` for one lost action, `2` elsewhere). |
+| `encaskyesno <stringId>, <yesLabel>` | A `STRINGID_*` constant and a script label taken on YES. |
 
 Every valid `<target>` is `ENC_TARGET_BOSS`, `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`,
 `ENC_TARGET_PLAYER_LEFT`, `ENC_TARGET_PLAYER_RIGHT`, `ENC_TARGET_OPPONENT_LEFT`,

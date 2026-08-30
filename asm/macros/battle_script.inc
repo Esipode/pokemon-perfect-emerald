@@ -1332,6 +1332,35 @@
 	.byte \target
 	.endm
 
+	@ Puts every battler \target resolves to on the engine's Hyper Beam recharge timer, so it loses
+	@ an action and prints the stock "must recharge!" line when its move tries to resolve. The
+	@ decrement lives at the very end of the turn, AFTER the OnTurnEnd checkpoint, so \turns means
+	@ different things depending on where it is set: 1 at OnTurnStart costs the battler THIS turn's
+	@ action, while 2 at OnTurnEnd/OnMoveEnd costs it NEXT turn's. For an overexerted boss, a
+	@ staggered beat, or any telegraphed free turn.
+	.macro encsetrecharge target:req, turns=1
+	callnative BS_EncSetRecharge
+	.byte \target
+	.byte \turns
+	.endm
+
+	@ Asks the player a yes/no question mid-battle. Prints \stringId, opens the standard YES/NO
+	@ window, and jumps \yesInstr on YES; falls through on NO (and on B, which the box treats as NO).
+	@ The leading printstring is what makes this safe at OnTurnStart - it resets gBattle_BG0_X/Y,
+	@ scrolling the still-open action menu back out of the way before the window is drawn.
+	@ A decided battle skips the prompt entirely and takes the NO path, so scripted damage earlier in
+	@ the same script can't leave the player answering a question about a fight that is already over -
+	@ the same gBattleOutcome guard vanilla puts in front of its own yes/no box.
+	@ Single-player only: a link battle would desync on the input. Encounters are single-player.
+	.macro encaskyesno stringId:req, yesInstr:req
+	jumpifbyte CMP_NOT_EQUAL, gBattleOutcome, 0, 8f
+	printstring \stringId
+	setbyte gBattleCommunication, 0
+	yesnobox
+	jumpifbyte CMP_EQUAL, gBattleCommunication + 1, 0, \yesInstr
+8:
+	.endm
+
 	@ Strips every screen, Safeguard, Mist, Tailwind and Lucky Chant from the side \target resolves
 	@ to, along with the matching gSideTimers entries. Jumps \failInstr when that side had none, so
 	@ one command serves as both the test and the clear. Silent - the caller supplies its own
@@ -1446,6 +1475,19 @@
 	waitanimation
 	handleformchange BS_SCRIPTING, 1
 	switchinabilities BS_SCRIPTING
+	.endm
+
+	@ Writes \move into slot \slot (0-3) of \target's BATTLE mon, with that move's full PP. \target
+	@ must resolve to exactly one live battler. The party Pokemon is never touched, so a boss caught
+	@ afterwards keeps the moveset it was built with.
+	@ Moves: is a battle-start property, so this is the only way a boss gains a move partway through
+	@ a fight - the signature move a form unlocks when it transforms. Silent; the caller supplies its
+	@ own dialogue.
+	.macro encsetmove target:req, slot:req, move:req
+	callnative BS_EncSetMove
+	.byte \target
+	.byte \slot
+	.2byte \move
 	.endm
 
 	@ Turns \target (must resolve to exactly one live battler) into \source (likewise) outright:

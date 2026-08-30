@@ -13003,6 +13003,46 @@ void BS_EncounterFormChange(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// SET MOVE (encsetmove). Writes move into one of target's battle-mon move slots, with that move's
+// full PP. `Moves:` is a battle-start property, so this is the only way a boss can gain a move at a
+// phase transition - the signature move a form unlocks when it transforms. Like Mimic and Transform
+// it writes gBattleMons and never the party Pokemon, so a boss caught afterwards keeps the moveset
+// it was built with.
+void BS_EncSetMove(void)
+{
+    NATIVE_ARGS(u8 target, u8 slot, u16 move);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: SET_MOVE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    assertf(cmd->slot < MAX_MON_MOVES,
+            "encounter %d: SET_MOVE slot %d is out of range", gBattleStruct->encounter.id, cmd->slot)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: SET_MOVE target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    gBattleMons[battler].moves[cmd->slot] = cmd->move;
+    gBattleMons[battler].pp[cmd->slot] = CalculatePPWithBonus(cmd->move, gBattleMons[battler].ppBonuses, cmd->slot);
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // TRANSFORM (enctransform). Makes target become source - species, stats, stat stages, types,
 // ability and moveset - through the Transform move's own copy (ApplyTransformInto) with none of its
 // move-context fail checks, so a scripted beat re-copies freely. HP, level, item and status are
@@ -13249,6 +13289,24 @@ void BS_EncounterSetSurvive(void)
     {
         if (mask & (1u << battler))
             SetEncounterSurvive(battler, cmd->survive);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// RECHARGE (encsetrecharge). Reuses the Hyper Beam recharge timer to make a battler lose an action:
+// CancelerRecharge cancels the move and prints the stock "must recharge!" line, and the action
+// selection path auto-picks B_ACTION_USE_MOVE so the turn is never left waiting on an input.
+// TurnValuesCleanUp decrements the timer at the very end of the turn, after the OnTurnEnd
+// checkpoint - so 1 set at OnTurnStart costs this turn's action, 2 set later costs next turn's.
+void BS_EncSetRecharge(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            gBattleMons[battler].volatiles.rechargeTimer = cmd->turns;
     }
     gBattlescriptCurrInstr = cmd->nextInstr;
 }

@@ -269,6 +269,38 @@ extern const u8 EncScript_Deoxys_HitDark[];
 extern const u8 EncScript_Deoxys_HitOtherPhysical[];
 extern const u8 EncScript_Deoxys_HitOtherSpecial[];
 
+// Jirachi ("The Wish Pokemon")
+extern const u8 EncScript_Jirachi_Intro[];
+extern const u8 EncScript_Jirachi_TagsBlaze[];
+extern const u8 EncScript_Jirachi_TagsBlaze[];
+extern const u8 EncScript_Jirachi_WishGranted[];
+extern const u8 EncScript_Jirachi_WishGranted[];
+extern const u8 EncScript_Jirachi_TurnOpen[];
+extern const u8 EncScript_Jirachi_Miracle[];
+extern const u8 EncScript_Jirachi_Wish[];
+extern const u8 EncScript_Jirachi_HeartForce[];
+extern const u8 EncScript_Jirachi_HeartWill[];
+extern const u8 EncScript_Jirachi_TurnClose[];
+
+// Rayquaza ("The Sky Guardian")
+extern const u8 EncScript_Rayquaza_Intro[];
+extern const u8 EncScript_Rayquaza_DeltaAscension[];
+extern const u8 EncScript_Rayquaza_DeltaAscension[];
+extern const u8 EncScript_Rayquaza_AtmosphereBreaks[];
+extern const u8 EncScript_Rayquaza_AtmosphereBreaks[];
+extern const u8 EncScript_Rayquaza_Weakened[];
+extern const u8 EncScript_Rayquaza_Weakened[];
+extern const u8 EncScript_Rayquaza_TurnOpen[];
+extern const u8 EncScript_Rayquaza_SkyfallLand[];
+extern const u8 EncScript_Rayquaza_SkyfallBegin[];
+extern const u8 EncScript_Rayquaza_Climb[];
+extern const u8 EncScript_Rayquaza_SkyGuard[];
+extern const u8 EncScript_Rayquaza_WeatherChaos[];
+extern const u8 EncScript_Rayquaza_VentPrimal[];
+extern const u8 EncScript_Rayquaza_Vent[];
+extern const u8 EncScript_Rayquaza_ShootDown[];
+extern const u8 EncScript_Rayquaza_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
