@@ -646,14 +646,6 @@
   "bg_events": [
     {
       "type": "sign",
-      "x": 15,
-      "y": 25,
-      "elevation": 0,
-      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
-      "script": "Route110_EventScript_VandalizedSign"
-    },
-    {
-      "type": "sign",
       "x": 9,
       "y": 51,
       "elevation": 0,

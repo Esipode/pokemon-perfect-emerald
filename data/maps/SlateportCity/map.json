@@ -3,7 +3,6 @@
   "name": "SlateportCity",
   "layout": "LAYOUT_SLATEPORT_CITY",
   "music": "MUS_SLATEPORT",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_SLATEPORT_CITY",
   "requires_flash": false,
   "weather": "WEATHER_DYNAMIC",
@@ -557,13 +556,6 @@
       "dest_warp_id": "0"
     },
     {
-      "x": 10,
-      "y": 12,
-      "elevation": 0,
-      "dest_map": "MAP_SLATEPORT_CITY_BATTLE_TENT_LOBBY",
-      "dest_warp_id": "0"
-    },
-    {
       "x": 4,
       "y": 26,
       "elevation": 0,
@@ -613,17 +605,7 @@
       "dest_warp_id": "0"
     }
   ],
-  "coord_events": [
-    {
-      "type": "trigger",
-      "x": 10,
-      "y": 13,
-      "elevation": 3,
-      "var": "VAR_SLATEPORT_OUTSIDE_MUSEUM_STATE",
-      "var_value": "2",
-      "script": "SlateportCity_EventScript_ScottBattleTentScene"
-    }
-  ],
+  "coord_events": [],
   "bg_events": [
     {
       "type": "sign",
@@ -707,14 +689,6 @@
     },
     {
       "type": "sign",
-      "x": 7,
-      "y": 13,
-      "elevation": 0,
-      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
-      "script": "SlateportCity_EventScript_BattleTentSign"
-    },
-    {
-      "type": "sign",
       "x": 23,
       "y": 38,
       "elevation": 0,
@@ -729,5 +703,6 @@
       "player_facing_dir": "BG_EVENT_PLAYER_FACING_NORTH",
       "script": "SlateportCity_EventScript_BerryCrushRankingsSign"
     }
-  ]
+  ],
+  "region": "REGION_HOENN"
 }
