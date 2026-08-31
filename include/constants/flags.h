@@ -370,7 +370,7 @@
 #define FLAG_MIRAGE_TOWER_VISIBLE            0x14E
 #define FLAG_CHOSE_ROOT_FOSSIL               0x14F
 #define FLAG_CHOSE_CLAW_FOSSIL               0x150
-#define FLAG_RECEIVED_POWDER_JAR             0x151
+#define FLAG_UNUSED_0x151                    0x151
 
 #define FLAG_CHOSEN_MULTI_BATTLE_NPC_PARTNER 0x152
 

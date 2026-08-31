@@ -7,27 +7,28 @@
 // Badge-based mart inventories
 // Tier 0: No badges, before Prof. Birch has given the player Poke Balls
 static const u16 sMartInventory_Tier0[] = {
+    ITEM_EXP_CANDY_XS,
     ITEM_POTION,
     ITEM_ANTIDOTE,
     ITEM_PARALYZE_HEAL,
     ITEM_AWAKENING,
-    ITEM_EXP_CANDY_XS,
     ITEM_NONE
 };
 
 // Tier 1: No badges
 static const u16 sMartInventory_Tier1[] = {
+    ITEM_EXP_CANDY_XS,
     ITEM_POKE_BALL,
     ITEM_POTION,
     ITEM_ANTIDOTE,
     ITEM_PARALYZE_HEAL,
     ITEM_AWAKENING,
-    ITEM_EXP_CANDY_XS,
     ITEM_NONE
 };
 
 // Tier 2: 1-2 badges
 static const u16 sMartInventory_Tier2[] = {
+    ITEM_EXP_CANDY_S,
     ITEM_POKE_BALL,
     ITEM_POTION,
     ITEM_ANTIDOTE,
@@ -38,12 +39,12 @@ static const u16 sMartInventory_Tier2[] = {
     ITEM_X_SPEED,
     ITEM_X_ATTACK,
     ITEM_X_DEFENSE,
-    ITEM_EXP_CANDY_S,
     ITEM_NONE
 };
 
 // Tier 3: 3-4 badges
 static const u16 sMartInventory_Tier3[] = {
+    ITEM_EXP_CANDY_M,
     ITEM_POKE_BALL,
     ITEM_GREAT_BALL,
     ITEM_POTION,
@@ -60,16 +61,14 @@ static const u16 sMartInventory_Tier3[] = {
     ITEM_X_DEFENSE,
     ITEM_GUARD_SPEC,
     ITEM_DIRE_HIT,
-    ITEM_EXP_CANDY_M,
     ITEM_NONE
 };
 
 // Tier 4: 5-6 badges
 static const u16 sMartInventory_Tier4[] = {
+    ITEM_EXP_CANDY_L,
     ITEM_POKE_BALL,
     ITEM_GREAT_BALL,
-    ITEM_TIMER_BALL,
-    ITEM_REPEAT_BALL,
     ITEM_HYPER_POTION,
     ITEM_ANTIDOTE,
     ITEM_PARALYZE_HEAL,
@@ -88,19 +87,15 @@ static const u16 sMartInventory_Tier4[] = {
     ITEM_GUARD_SPEC,
     ITEM_DIRE_HIT,
     ITEM_X_ACCURACY,
-    ITEM_EXP_CANDY_L,
     ITEM_NONE
 };
 
 // Tier 5: 7+ badges
 static const u16 sMartInventory_Tier5[] = {
+    ITEM_EXP_CANDY_XL,
     ITEM_POKE_BALL,
     ITEM_GREAT_BALL,
     ITEM_ULTRA_BALL,
-    ITEM_TIMER_BALL,
-    ITEM_REPEAT_BALL,
-    ITEM_NET_BALL,
-    ITEM_DIVE_BALL,
     ITEM_POTION,
     ITEM_MAX_POTION,
     ITEM_FULL_RESTORE,
@@ -128,25 +123,6 @@ static const u16 sMartInventory_Tier5[] = {
     ITEM_ZINC,
     ITEM_CARBOS,
     ITEM_HP_UP,
-    ITEM_BUG_TERA_SHARD,
-    ITEM_DARK_TERA_SHARD,
-    ITEM_DRAGON_TERA_SHARD,
-    ITEM_ELECTRIC_TERA_SHARD,
-    ITEM_FAIRY_TERA_SHARD,
-    ITEM_FIGHTING_TERA_SHARD,
-    ITEM_FIRE_TERA_SHARD,
-    ITEM_FLYING_TERA_SHARD,
-    ITEM_GHOST_TERA_SHARD,
-    ITEM_GRASS_TERA_SHARD,
-    ITEM_GROUND_TERA_SHARD,
-    ITEM_ICE_TERA_SHARD,
-    ITEM_NORMAL_TERA_SHARD,
-    ITEM_POISON_TERA_SHARD,
-    ITEM_PSYCHIC_TERA_SHARD,
-    ITEM_ROCK_TERA_SHARD,
-    ITEM_STEEL_TERA_SHARD,
-    ITEM_WATER_TERA_SHARD,
-    ITEM_EXP_CANDY_XL,
     ITEM_NONE
 };
 

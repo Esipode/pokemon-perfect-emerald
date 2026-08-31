@@ -499,11 +499,34 @@ SlateportCity_EventScript_ComeBackWithSecretPower::
 SlateportCity_EventScript_DecorClerk::
 	lock
 	faceplayer
-	goto_if_unset FLAG_RECEIVED_SECRET_POWER, SlateportCity_EventScript_ComeBackWithSecretPower
 	message gText_HowMayIServeYou
 	waitmessage
-	pokemartdecoration SlateportCity_PokemartDecor
+	pokemart SlateportCity_BallShop
 	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
+	release
+	end
+
+	.align 2
+SlateportCity_BallShop::
+	.2byte ITEM_QUICK_BALL
+	.2byte ITEM_TIMER_BALL
+	.2byte ITEM_REPEAT_BALL
+	.2byte ITEM_NET_BALL
+	.2byte ITEM_DIVE_BALL
+    .2byte ITEM_NEST_BALL
+    .2byte ITEM_LUXURY_BALL
+    .2byte ITEM_DUSK_BALL
+    .2byte ITEM_HEAL_BALL
+    .2byte ITEM_CHERISH_BALL
+    .2byte ITEM_FAST_BALL
+    .2byte ITEM_LEVEL_BALL
+    .2byte ITEM_LURE_BALL
+    .2byte ITEM_HEAVY_BALL
+    .2byte ITEM_LOVE_BALL
+    .2byte ITEM_FRIEND_BALL
+    .2byte ITEM_DREAM_BALL
+    .2byte ITEM_BEAST_BALL
+	.2byte ITEM_NONE
 	release
 	end
 
@@ -736,28 +759,41 @@ SlateportCity_EventScript_Man3::
 	msgbox SlateportCity_Text_WonderIfLighthouseStartlesPokemon, MSGBOX_NPC
 	end
 
-SlateportCity_EventScript_BerryPowderClerk::
+SlateportCity_EventScript_TeraShardClerk::
 	lock
 	faceplayer
-	goto_if_set FLAG_RECEIVED_POWDER_JAR, SlateportCity_EventScript_ReceivedPowderJar
-	msgbox SlateportCity_Text_ExplainBerries, MSGBOX_DEFAULT
-	giveitem ITEM_POWDER_JAR
-	setflag FLAG_RECEIVED_POWDER_JAR
-	msgbox SlateportCity_Text_ExplainBerryPowder, MSGBOX_DEFAULT
+	goto_if_set FLAG_BADGE07_GET, SlateportCity_EventScript_ViewTeraShop
+	msgbox SlateportCity_Text_ExplainPreGym7, MSGBOX_DEFAULT
 	release
 	end
 
-SlateportCity_EventScript_ReceivedPowderJar::
-	setvar VAR_0x8004, 1
-	specialvar VAR_RESULT, HasEnoughBerryPowder
-	goto_if_eq VAR_RESULT, FALSE, SlateportCity_EventScript_ExplainBerryPowder
-	msgbox SlateportCity_Text_BroughtMeSomeBerryPowder, MSGBOX_DEFAULT
-	special DisplayBerryPowderVendorMenu
-	goto SlateportCity_EventScript_ChooseBerryPowderItem
+SlateportCity_EventScript_ViewTeraShop::
+	msgbox SlateportCity_Text_TeraShopIntroText, MSGBOX_DEFAULT
+	pokemart SlateportCity_TeraShop
+	msgbox gText_PleaseComeAgain
 	end
 
-SlateportCity_EventScript_ExplainBerryPowder::
-	msgbox SlateportCity_Text_ExplainBerryPowder, MSGBOX_DEFAULT
+	.align 2
+SlateportCity_TeraShop::
+    .2byte ITEM_BUG_TERA_SHARD
+    .2byte ITEM_DARK_TERA_SHARD
+    .2byte ITEM_DRAGON_TERA_SHARD
+    .2byte ITEM_ELECTRIC_TERA_SHARD
+    .2byte ITEM_FAIRY_TERA_SHARD
+    .2byte ITEM_FIGHTING_TERA_SHARD
+    .2byte ITEM_FIRE_TERA_SHARD
+    .2byte ITEM_FLYING_TERA_SHARD
+    .2byte ITEM_GHOST_TERA_SHARD
+    .2byte ITEM_GRASS_TERA_SHARD
+    .2byte ITEM_GROUND_TERA_SHARD
+    .2byte ITEM_ICE_TERA_SHARD
+    .2byte ITEM_NORMAL_TERA_SHARD
+    .2byte ITEM_POISON_TERA_SHARD
+    .2byte ITEM_PSYCHIC_TERA_SHARD
+    .2byte ITEM_ROCK_TERA_SHARD
+    .2byte ITEM_STEEL_TERA_SHARD
+    .2byte ITEM_WATER_TERA_SHARD
+	.2byte ITEM_NONE
 	release
 	end
 
@@ -1286,35 +1322,18 @@ SlateportCity_Text_NameRatersHouseSign:
 	.string "NAME RATER'S HOUSE\n"
 	.string "“POKéMON nicknames rated.”$"
 
-SlateportCity_Text_ExplainBerries:
-	.string "If a wild POKéMON gets hurt, it heals\n"
-	.string "itself by chewing on BERRIES.\p"
-	.string "Did you know that?\p"
-	.string "Somebody saw that and got the idea\n"
-	.string "of making medicine from BERRIES.\p"
-	.string "Did you know that?\p"
-	.string "To turn BERRIES into medicine,\n"
-	.string "they must be crushed into powder.\p"
-	.string "Did you know that?\p"
-	.string "You seem to have an interest\n"
-	.string "in BERRIES!\p"
-	.string "I've got something good for someone\n"
-	.string "like you.$"
+SlateportCity_Text_ExplainPreGym7:
+	.string "Are you a POKEéMON TRAINER?\p"
+	.string "Then I have a few things\n"
+	.string "you might like!\p"
+	.string "Oh, but you seem to be missing\n"
+	.string "the MOSSDEEP CITY gym badge.\p"
+	.string "Once you have that, come back\n"
+	.string "and see me!$"
 
-SlateportCity_Text_ExplainBerryPowder:
-	.string "I recently had machines installed at\n"
-	.string "POKéMON CENTERS for crushing BERRIES.\p"
-	.string "The BERRY CRUSH machines are at\n"
-	.string "the DIRECT CORNER upstairs.\p"
-	.string "Did you know?\p"
-	.string "Could you make BERRY POWDER for\n"
-	.string "me using those machines?\p"
-	.string "I can make you all sorts of medicine\n"
-	.string "if you bring me lots of BERRY POWDER.$"
-
-SlateportCity_Text_BroughtMeSomeBerryPowder:
-	.string "Have you brought me some\n"
-	.string "BERRY POWDER?$"
+SlateportCity_Text_TeraShopIntroText:
+	.string "Can I interest you in some\n"
+	.string "TERA SHARDS?$"
 
 SlateportCity_Text_ExchangeWhatWithIt:
 	.string "What would you like to exchange\n"
