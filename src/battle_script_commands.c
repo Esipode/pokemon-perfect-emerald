@@ -13328,6 +13328,36 @@ void BS_EncSetProtect(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// TRAPPED (encsettrapped). Sets the same escape-prevention volatile Mean Look sets
+// (BS_TrySetEscapePrevention), so every existing rule around it applies unchanged: the Gen 6+
+// Ghost-type exemption in CanBattlerEscape, the trapper-faints cleanup in battle_main.c, Baton Pass
+// inheritance, and the AI's own switch scoring. The boss stands in as the trapper because that
+// cleanup keys off it - if the boss goes down, everything it trapped is released without the script
+// doing anything. Unlike encsetprotect this is not wiped at end of turn: it persists until a script
+// clears it again.
+void BS_EncSetTrapped(void)
+{
+    NATIVE_ARGS(u8 target, bool8 trapped);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u8 boss;
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            // A boss that traps itself is incoherent, and would make its own faint the thing that
+            // releases it.
+            if (!(mask & (1u << battler)) || battler == boss)
+                continue;
+
+            gBattleMons[battler].volatiles.escapePrevention = cmd->trapped;
+            if (cmd->trapped)
+                gBattleMons[battler].volatiles.battlerPreventingEscape = boss;
+        }
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // CLEAR_SCREENS (encclearscreens). Wipes the side-wide barriers a player puts up - the three
 // screens, Safeguard, Mist, Tailwind and Lucky Chant - plus their timers, on every side <target>
 // resolves to. Jumps failInstr when nothing was there, which is what lets one command be both the

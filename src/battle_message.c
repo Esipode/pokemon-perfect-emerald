@@ -1452,6 +1452,27 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCGROUDONCOLLAPSE]                   = COMPOUND_STRING("CONTINENTAL COLLAPSE! The ground caves in under everything standing on it!"),
     [STRINGID_ENCGROUDONUNSTABLE]                   = COMPOUND_STRING("The land will not hold. Groudon is being crushed under its own weight!"),
     [STRINGID_ENCGROUDONWEAKENED]                   = COMPOUND_STRING("The continent sinks away, and Groudon folds back into its true shape.\pIt's spent - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+
+    [STRINGID_ENCREGICEAWAKENS]                     = COMPOUND_STRING("Regice's core pulses once, and the air goes still."),
+    [STRINGID_ENCREGICEHAILFIELD]                   = COMPOUND_STRING("A freezing gale settles over the field."),
+    [STRINGID_ENCREGICEDEEPENS]                     = COMPOUND_STRING("The cold deepens."),
+    [STRINGID_ENCREGICECHILLONE]                    = COMPOUND_STRING("The air is thickening. Everything is getting slower."),
+    [STRINGID_ENCREGICECHILLTWO]                    = COMPOUND_STRING("The battlefield has almost stopped moving."),
+    [STRINGID_ENCREGICECHILLRECUR]                  = COMPOUND_STRING("The cold presses in from every side."),
+    [STRINGID_ENCREGICESHEDS]                       = COMPOUND_STRING("The cold no longer troubles Regice."),
+    [STRINGID_ENCREGICEFROZENYOU]                   = COMPOUND_STRING("The air locks solid. Your POKéMON can't move!"),
+    [STRINGID_ENCREGICEFROZENBOSS]                  = COMPOUND_STRING("The air locks solid. Regice can't move!"),
+    [STRINGID_ENCREGICETHAWFIRE]                    = COMPOUND_STRING("The flames drive the cold back!"),
+    [STRINGID_ENCREGICETHAWSTRIKE]                  = COMPOUND_STRING("The ice cracks under the weight of that blow!"),
+    [STRINGID_ENCREGICETHAWSUN]                     = COMPOUND_STRING("The sunlight burns the frost away."),
+    [STRINGID_ENCREGICEREFREEZE]                    = COMPOUND_STRING("Regice smothers the sky, and the frost comes back."),
+    [STRINGID_ENCREGICESLEEPS]                      = COMPOUND_STRING("Regice sleeps, but the cold keeps its own time."),
+    [STRINGID_ENCREGICEABSOLUTEZERO]                = COMPOUND_STRING("ABSOLUTE ZERO.\pEverything stops - except Regice.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCREGICEDEEPFREEZE]                  = COMPOUND_STRING("Regice stops moving entirely.\pThe temperature falls past anything the field can hold.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCREGICEFROZENTOMBPHASE]             = COMPOUND_STRING("The ice reaches for you. Regice won't let this end.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCREGICETOMBSEAL]                    = COMPOUND_STRING("The ice closes in. There's nowhere to go!"),
+    [STRINGID_ENCREGICETOMBBREAK]                   = COMPOUND_STRING("The ice splits apart! You can move again."),
+    [STRINGID_ENCREGICEWEAKENED]                    = COMPOUND_STRING("Regice's core has gone dark, and the cold with it.\pIt's worn out - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

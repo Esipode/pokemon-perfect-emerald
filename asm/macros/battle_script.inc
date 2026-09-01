@@ -1332,6 +1332,18 @@
 	.byte \target
 	.endm
 
+	@ Sets the same escape-prevention volatile Mean Look sets on every battler \target resolves to,
+	@ with the boss as the trapper - so switching and fleeing are both refused until a script clears
+	@ it again, or the boss faints and the engine's own cleanup releases everything it held.
+	@ Ghost-types are exempt (B_GHOSTS_ESCAPE >= GEN_6), the same way they are exempt from Mean Look.
+	@ Unlike encsetprotect this is NOT wiped at end of turn: it persists until cleared, which is the
+	@ point. The boss is skipped even when \target includes it.
+	.macro encsettrapped target:req, trapped:req
+	callnative BS_EncSetTrapped
+	.byte \target
+	.byte \trapped
+	.endm
+
 	@ Puts every battler \target resolves to on the engine's Hyper Beam recharge timer, so it loses
 	@ an action and prints the stock "must recharge!" line when its move tries to resolve. The
 	@ decrement lives at the very end of the turn, AFTER the OnTurnEnd checkpoint, so \turns means

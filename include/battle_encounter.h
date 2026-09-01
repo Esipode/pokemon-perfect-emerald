@@ -335,6 +335,25 @@ extern const u8 EncScript_Groudon_QuakeResolve[];
 extern const u8 EncScript_Groudon_CollapseTick[];
 extern const u8 EncScript_Groudon_TurnClose[];
 
+// Regice ("The Frozen Clock")
+extern const u8 EncScript_Regice_Intro[];
+extern const u8 EncScript_Regice_DeepFreeze[];
+extern const u8 EncScript_Regice_DeepFreeze[];
+extern const u8 EncScript_Regice_FrozenTomb[];
+extern const u8 EncScript_Regice_FrozenTomb[];
+extern const u8 EncScript_Regice_Weakened[];
+extern const u8 EncScript_Regice_Weakened[];
+extern const u8 EncScript_Regice_TurnOpen[];
+extern const u8 EncScript_Regice_Refreeze[];
+extern const u8 EncScript_Regice_AbsoluteZero[];
+extern const u8 EncScript_Regice_FrozenAction[];
+extern const u8 EncScript_Regice_ThawFire[];
+extern const u8 EncScript_Regice_ThawStrike[];
+extern const u8 EncScript_Regice_ColdLetsGo[];
+extern const u8 EncScript_Regice_TurnClose[];
+extern const u8 EncScript_Regice_TombSeal[];
+extern const u8 EncScript_Regice_TombRelease[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
