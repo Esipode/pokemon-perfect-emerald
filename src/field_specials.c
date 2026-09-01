@@ -2541,6 +2541,16 @@ void ShowScrollableMultichoice(void)
         task->tKeepOpenAfterSelect = FALSE;
         task->tTaskId = taskId;
         break;
+    case SCROLL_MULTI_MAUVILLE_GAME_CORNER_MONS:
+        task->tMaxItemsOnScreen = MAX_SCROLL_MULTI_ON_SCREEN;
+        task->tNumItems = 7;
+        task->tLeft = 12;
+        task->tTop = 1;
+        task->tWidth = 14;
+        task->tHeight = 12;
+        task->tKeepOpenAfterSelect = FALSE;
+        task->tTaskId = taskId;
+        break;
     default:
         gSpecialVar_Result = MULTI_B_PRESSED;
         DestroyTask(taskId);
@@ -2761,6 +2771,16 @@ static const u8 *const sScrollableMultichoiceOptions[][MAX_SCROLL_MULTI_LENGTH] 
         COMPOUND_STRING("BAXCALIBRITE{CLEAR_TO 78}5,000"),
         COMPOUND_STRING("TATSUGIRINITE{CLEAR_TO 78}5,000"),
         COMPOUND_STRING("GLIMMORANITE{CLEAR_TO 78}5,000"),
+        gText_Exit,
+    },
+    [SCROLL_MULTI_MAUVILLE_GAME_CORNER_MONS] =
+    {
+        COMPOUND_STRING("DRATINI{CLEAR_TO 78}3,000"),
+        COMPOUND_STRING("LARVITAR{CLEAR_TO 78}4,000"),
+        COMPOUND_STRING("BELDUM{CLEAR_TO 78}5,000"),
+        COMPOUND_STRING("ZORUA-HISUI{CLEAR_TO 78}6,000"),
+        COMPOUND_STRING("DRAMPA{CLEAR_TO 78}7,000"),
+        COMPOUND_STRING("PORYGON{CLEAR_TO 78}8,000"),
         gText_Exit,
     }
 };

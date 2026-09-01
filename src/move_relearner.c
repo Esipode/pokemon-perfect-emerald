@@ -424,7 +424,7 @@ static void CB2_InitLearnMoveReturnFromSelectMove(void)
 static void StoreMoveText(void)
 {
     if (P_ENABLE_MOVE_RELEARNERS || P_TM_MOVES_RELEARNER
-    || FlagGet(P_FLAG_EGG_MOVES) || FlagGet(P_FLAG_TUTOR_MOVES))
+    || P_FLAG_EGG_MOVES || P_FLAG_TUTOR_MOVES)
         StringCopy(gStringVar3, sRelearnTypes[gMoveRelearnerState].moveText);
     else
         StringCopy(gStringVar3, MoveRelearner_Text_MoveLWR);
@@ -1180,7 +1180,7 @@ static bool32 IsLevelUpMoveRelearnerActive(void)
 
 static bool32 IsEggMoveRelearnerActive(void)
 {
-    return (FlagGet(P_FLAG_EGG_MOVES) || P_ENABLE_MOVE_RELEARNERS);
+    return (P_FLAG_EGG_MOVES || P_ENABLE_MOVE_RELEARNERS);
 }
 
 static bool32 IsTMMoveRelearnerActive(void)
@@ -1190,5 +1190,5 @@ static bool32 IsTMMoveRelearnerActive(void)
 
 static bool32 IsTutorMoveRelearnerActive(void)
 {
-    return (FlagGet(P_FLAG_TUTOR_MOVES) || P_ENABLE_MOVE_RELEARNERS);
+    return (P_FLAG_TUTOR_MOVES || P_ENABLE_MOVE_RELEARNERS);
 }

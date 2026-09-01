@@ -5099,7 +5099,7 @@ static void UpdateRelearnPrompt(void)
         return;
 
     const u8 *relearnText;
-    if (P_ENABLE_MOVE_RELEARNERS || P_TM_MOVES_RELEARNER || FlagGet(P_FLAG_EGG_MOVES) || FlagGet(P_FLAG_TUTOR_MOVES))
+    if (P_ENABLE_MOVE_RELEARNERS || P_TM_MOVES_RELEARNER || P_FLAG_EGG_MOVES || P_FLAG_TUTOR_MOVES)
         relearnText = sRelearnTexts[gMoveRelearnerState];
     else
         relearnText = sText_Relearn;

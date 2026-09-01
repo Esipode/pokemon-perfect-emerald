@@ -375,6 +375,11 @@ bool32 AddBagItem(enum Item itemId, u16 count)
         // Pack Rat [distinct Bag items].
         Achievement_CheckPackRatMilestone();
     }
+    else
+    {
+        // Bag pocket full - divert the item to the PC.
+        added = AddPCItem(itemId, count);
+    }
 
     return added;
 }

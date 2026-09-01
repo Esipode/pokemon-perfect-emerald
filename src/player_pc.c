@@ -1405,7 +1405,10 @@ static void ItemStorage_DoItemWithdraw(u8 taskId)
     s16 *data = gTasks[taskId].data;
     u16 pos = gPlayerPCItemPageInfo.cursorPos + gPlayerPCItemPageInfo.itemsAbove;
 
-    if (AddBagItem(gSaveBlock1Ptr->pcItems[pos].itemId, tQuantity) == TRUE)
+    // Check the Bag directly: AddBagItem diverts to the PC when the Bag is full,
+    // which would silently re-store the item instead of withdrawing it.
+    if (CheckBagHasSpace(gSaveBlock1Ptr->pcItems[pos].itemId, tQuantity) == TRUE
+     && AddBagItem(gSaveBlock1Ptr->pcItems[pos].itemId, tQuantity) == TRUE)
     {
         // Item withdrawn
         u8 *end = CopyItemNameHandlePlural(gSaveBlock1Ptr->pcItems[pos].itemId, gStringVar1, tQuantity);

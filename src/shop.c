@@ -1148,11 +1148,14 @@ static void BuyMenuTryMakePurchase(u8 taskId)
 
     if (sMartInfo.martType == MART_TYPE_NORMAL)
     {
+        // AddBagItem diverts to the PC when the Bag is full - note where it landed.
+        bool32 toBag = CheckBagHasSpace(tItemId, tItemCount);
+
         if (AddBagItem(tItemId, tItemCount) == TRUE)
         {
             GetSetItemObtained(tItemId, FLAG_SET_ITEM_OBTAINED);
             RecordItemPurchase(taskId);
-            BuyMenuDisplayMessage(taskId, gText_HereYouGoThankYou, BuyMenuSubtractMoney);
+            BuyMenuDisplayMessage(taskId, toBag ? gText_HereYouGoThankYou : gText_HereYouGoItemSentToPC, BuyMenuSubtractMoney);
         }
         else
         {

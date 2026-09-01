@@ -98,6 +98,7 @@
 - Quick Pokéball selection in wild battles
 	- Hold `R` to change selection with the D-Pad.
 	- Press `R` to use last selected Poké Ball.
+- When the bag is full, items you pick up go straight to your PC
 - Sort items in your bag by pressing `START` and selecting a sort type
 - New location transition animation, shows in-game time in bottom right corner 
 - Max level Pokémon can still earn EVs

@@ -58,7 +58,7 @@ enum
     MULTI_SATISFACTION,
     MULTI_STERN_DEEPSEA,
     MULTI_UNUSED_ASH_VENDOR,            // Replaced by scrollable multichoice
-    MULTI_GAME_CORNER_MONS,
+    MULTI_UNUSED_GAME_CORNER_MONS,      // Replaced by scrollable multichoice
     MULTI_GAME_CORNER_COINS,
     MULTI_HOWS_FISHING,
     MULTI_UNUSED_51,

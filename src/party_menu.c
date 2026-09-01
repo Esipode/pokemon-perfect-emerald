@@ -2252,6 +2252,9 @@ static void Task_PartyMenuModifyHP(u8 taskId)
 
     SetMonData(&party[partySlot], MON_DATA_HP, &tHP);
     DisplayPartyPokemonHPCheck(&party[partySlot], &sPartyMenuBoxes[partySlot], 1);
+    // The HP text clear spans the tile holding the "/" separator and leading Max HP
+    // digit, so redraw Max HP each step to keep it from vanishing during the animation.
+    DisplayPartyPokemonMaxHPCheck(&party[partySlot], &sPartyMenuBoxes[partySlot], 0);
     DisplayPartyPokemonHPBarCheck(&party[partySlot], &sPartyMenuBoxes[partySlot]);
     if (tHPToAdd == 0 || tHP == 0 || tHP == tMaxHP)
     {

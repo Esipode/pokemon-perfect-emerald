@@ -3,6 +3,8 @@
 
 Std_ObtainItem::
 	copyvar VAR_0x8006, ITEMID
+	checkitemspace ITEMID, AMOUNT
+	copyvar VAR_0x8008, VAR_RESULT
 	additem ITEMID, AMOUNT
 	copyvar VAR_0x8007, VAR_RESULT
 	call EventScript_ObtainItemMessage
@@ -62,12 +64,24 @@ EventScript_ContinueObtainedItem:
 	delay 10
 	showitemdescription
 	waitfanfare
-	msgbox gText_PutItemInPocket, MSGBOX_DEFAULT
+	call_if_ne VAR_0x8008, FALSE, EventScript_PutObtainedItemAway
+	call_if_eq VAR_0x8008, FALSE, EventScript_PutObtainedItemInPC
 	hideitemdescription
 	setvar VAR_RESULT, TRUE
 	return
 
+EventScript_PutObtainedItemAway::
+	msgbox gText_PutItemInPocket, MSGBOX_DEFAULT
+	return
+
+EventScript_PutObtainedItemInPC::
+	msgbox gText_TheItemWasTransferredToThePC, MSGBOX_DEFAULT
+	return
+
+@ Reached only when the Bag and the PC are both full.
 EventScript_NoRoomForItem::
+	msgbox gText_ObtainedTheItem, MSGBOX_DEFAULT
+	msgbox gText_TooBadBagIsFull, MSGBOX_DEFAULT
 	setvar VAR_RESULT, FALSE
 	return
 
@@ -167,7 +181,20 @@ EventScript_FoundItemMessage::
 	return
 
 EventScript_NoRoomToPickUpItem::
-	msgbox gText_ObtainedTheItem, MSGBOX_DEFAULT
+	addpcitem VAR_0x8004, VAR_0x8005
+	copyvar VAR_0x8007, VAR_RESULT
+	call_if_eq VAR_0x8007, TRUE, EventScript_TransferredPickedUpItemToPC
+	call_if_eq VAR_0x8007, FALSE, EventScript_NoRoomForPickedUpItemInPC
+	return
+
+EventScript_TransferredPickedUpItemToPC::
+	removeobject VAR_LAST_TALKED
+	bufferitemnameplural STR_VAR_2, VAR_0x8004, VAR_0x8005
+	msgbox gText_TheItemWasTransferredToThePC, MSGBOX_DEFAULT
+	setvar VAR_RESULT, TRUE
+	return
+
+EventScript_NoRoomForPickedUpItemInPC::
 	msgbox gText_TooBadBagIsFull, MSGBOX_DEFAULT
 	setvar VAR_RESULT, FALSE
 	return
@@ -177,7 +204,7 @@ EventScript_HiddenItemScript::
 	waitse
 	goto_if_eq VAR_0x8005, 0, EventScript_TryPickUpHiddenCoins
 	copyvar VAR_0x8006, VAR_0x8005
-	additem VAR_0x8005, VAR_0x8009
+	checkitemspace VAR_0x8005, VAR_0x8009
 	copyvar VAR_0x8007, VAR_RESULT
 	bufferitemnameplural STR_VAR_2, VAR_0x8005, 1
 	checkitemtype VAR_0x8005
@@ -187,6 +214,7 @@ EventScript_HiddenItemScript::
 	end
 
 EventScript_PickUpHiddenItem::
+	additem VAR_0x8005, VAR_0x8009
 	copyvar VAR_0x8008, VAR_0x8004
 	copyvar VAR_0x8004, VAR_0x8005
 	specialvar VAR_RESULT, BufferTMHMMoveName
@@ -232,11 +260,24 @@ EventScript_PutHiddenItemInPocket::
 	end
 
 EventScript_NoRoomForHiddenItem::
-	msgbox gText_PlayerFoundOneItem, MSGBOX_DEFAULT
-	msgbox gText_TooBadBagIsFull, MSGBOX_DEFAULT
-	setvar VAR_RESULT, 0
+	addpcitem VAR_0x8005, VAR_0x8009
+	copyvar VAR_0x8007, VAR_RESULT
+	call_if_eq VAR_0x8007, TRUE, EventScript_TransferredHiddenItemToPC
+	call_if_eq VAR_0x8007, FALSE, EventScript_NoRoomForHiddenItemInPC
 	releaseall
 	end
+
+EventScript_TransferredHiddenItemToPC::
+	bufferitemnameplural STR_VAR_2, VAR_0x8005, VAR_0x8009
+	msgbox gText_TheItemWasTransferredToThePC, MSGBOX_DEFAULT
+	special SetHiddenItemFlag
+	setvar VAR_RESULT, 1
+	return
+
+EventScript_NoRoomForHiddenItemInPC::
+	msgbox gText_TooBadBagIsFull, MSGBOX_DEFAULT
+	setvar VAR_RESULT, 0
+	return
 
 EventScript_RestorePrevTextColor::
 	copyvar VAR_TEXT_COLOR, VAR_PREV_TEXT_COLOR

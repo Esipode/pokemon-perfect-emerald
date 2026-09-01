@@ -709,6 +709,27 @@ EWRAM_DATA static u8 *sAchievementsMenuBg1Tilemap = NULL;
 static void MainCB2(void)
 {
     RunTasks();
+    // Both teardown paths (Task_AchievementsMenuCancel and
+    // Task_TierSelect_OpenBoostMenu) run inside RunTasks above: they
+    // FreeAllWindowBuffers, free sAchievementsMenuBg1Tilemap/
+    // sAchievementsMenuStatePtr, and swap gMain.callback2 -- but this
+    // function keeps executing for the rest of the frame regardless. Every
+    // line below touches one of those, so bail out instead of dereferencing
+    // freed memory; the incoming callback takes over on the next frame
+    // anyway.
+    //
+    // Without this, the description-scroll blocks below read
+    // descriptionScrolling/highlightedId through a NULL
+    // sAchievementsMenuStatePtr -- which on GBA reads the BIOS open-bus
+    // latch, not zeroes -- so both PrintAchievementDescription and
+    // PrintDetailDescription would fire with a garbage achievement id on the
+    // way out, blitting into the just-freed window buffers and, in
+    // PrintDetailDescription's case, StringCopy'ing from an out-of-bounds
+    // Achievement_GetInfo()->description pointer that may never hit an EOS
+    // byte. That's the intermittent permanent black screen on exiting (or,
+    // via the wreckage it leaves behind, re-entering) this menu.
+    if (sAchievementsMenuStatePtr == NULL)
+        return;
     AnimateSprites();
     BuildOamBuffer();
     // Drives the WIN_DESCRIPTION scroll printer PrintAchievementDescription
@@ -743,6 +764,14 @@ static void MainCB2(void)
     // the background stays as whatever VRAM held at init. Same as
     // src/ui_stat_editor.c's main callback.
     DoScheduledBgTilemapCopiesToVram();
+    // LoadMenuBackground's DecompressAndCopyTileDataToVram parks its
+    // decompressed tiles in a heap buffer that only frees once the DMA
+    // manager has finished the copy -- which is never true at the moment
+    // LoadMenuBackground itself returns. Draining here (the usual pattern,
+    // e.g. src/hall_of_fame.c) keeps every TIER SELECT <-> LIST swap from
+    // stranding another ~1 KB block, and the global 32-slot buffer table
+    // from filling up and silently dropping later background loads.
+    FreeTempTileDataBuffersIfPossible();
     UpdatePaletteFade();
 }
 
@@ -760,7 +789,6 @@ static void VBlankCB(void)
 static void LoadMenuBackground(u8 screen)
 {
     DecompressAndCopyTileDataToVram(1, sAchievementsMenuBgGfx[screen].tiles, 0, 0, 0);
-    FreeTempTileDataBuffersIfPossible();
     DecompressDataWithHeaderWram(sAchievementsMenuBgGfx[screen].tilemap, sAchievementsMenuBg1Tilemap);
     ScheduleBgCopyTilemapToVram(1);
     LoadPalette(sAchievementsMenuBgGfx[screen].palette, BG_PLTT_ID(0), PLTT_SIZE_4BPP);
@@ -1554,9 +1582,18 @@ static void PrintAchievementDescription(s32 achievementId)
 // change while the row stays selected.
 static void PrintDetailDescription(s32 achievementId)
 {
-    const struct Achievement *info = Achievement_GetInfo(achievementId);
-    bool8 masked = info->hidden && !Achievement_IsCompleted(achievementId);
+    const struct Achievement *info;
+    bool8 masked;
     bool8 needsScroll;
+
+    // Same range guard PrintAchievementDescription already carries -- an
+    // out-of-range id indexes past the achievement table and hands
+    // info->name/description arbitrary ROM words to StringCopy.
+    if (achievementId < ACHIEVEMENT_NONE + 1 || achievementId >= ACHIEVEMENTS_COUNT)
+        return;
+
+    info = Achievement_GetInfo(achievementId);
+    masked = info->hidden && !Achievement_IsCompleted(achievementId);
 
     FillWindowPixelBuffer(WIN_LIST, PIXEL_FILL(0));
     // Cancels whatever printer the previous restart/selection registered --

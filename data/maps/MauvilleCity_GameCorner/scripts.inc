@@ -8,7 +8,7 @@ MauvilleCity_GameCorner_MapScripts::
 	.set TM_THUNDERBOLT_COINS, 4000
 	.set TM_ICE_BEAM_COINS, 4000
 	@ Rare Pokemon prizes
-	@ Keep MultichoiceList_GameCornerMons in src/data/script_menu.h in sync with these.
+	@ Keep SCROLL_MULTI_MAUVILLE_GAME_CORNER_MONS in src/field_specials.c in sync with these.
 	.set PRIZE_MON_1_SPECIES, SPECIES_DRATINI
 	.set PRIZE_MON_1_LEVEL,   20
 	.set PRIZE_MON_1_COINS,   3000
@@ -166,7 +166,8 @@ MauvilleCity_GameCorner_EventScript_ReturnToChoosePrizeMon::
 	goto MauvilleCity_GameCorner_EventScript_ChoosePrizeMon
 
 MauvilleCity_GameCorner_EventScript_ChoosePrizeMon::
-	multichoice 12, 0, MULTI_GAME_CORNER_MONS, FALSE
+	setvar VAR_0x8004, SCROLL_MULTI_MAUVILLE_GAME_CORNER_MONS
+	special ShowScrollableMultichoice
 	switch VAR_RESULT
 	case 0, MauvilleCity_GameCorner_EventScript_SelectPrizeMon1
 	case 1, MauvilleCity_GameCorner_EventScript_SelectPrizeMon2
@@ -175,6 +176,7 @@ MauvilleCity_GameCorner_EventScript_ChoosePrizeMon::
 	case 4, MauvilleCity_GameCorner_EventScript_SelectPrizeMon5
 	case 5, MauvilleCity_GameCorner_EventScript_SelectPrizeMon6
 	case 6, MauvilleCity_GameCorner_EventScript_CancelPrizeMonSelect
+	case MULTI_B_PRESSED, MauvilleCity_GameCorner_EventScript_CancelPrizeMonSelect
 	goto MauvilleCity_GameCorner_EventScript_CancelPrizeMonSelect
 	end
 
