@@ -878,6 +878,7 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
 
     s64 t1000 = (s64)n; // normalized level [0..1], scaled by 1000 (n is already 0..MAX_LEVEL<=1000)
     s64 multiplier1000 = 1000;
+    s64 offset = 0; // per-level adjustment applied after the multiplier (see GROWTH_ERRATIC)
 
     switch (growthRate)
     {
@@ -933,21 +934,25 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
         }
 
         // ---------------------------------------------------------
-        // ERRATIC (bounded chaos, stabilizing toward a final total
-        // of 0.6x baseline - matches vanilla Erratic, the fastest
-        // growth rate to max out)
+        // ERRATIC (bounded chaos around a final total of 0.6x
+        // baseline - matches vanilla Erratic, the fastest growth
+        // rate to max out)
         // ---------------------------------------------------------
         case GROWTH_ERRATIC:
         {
-            // Noise coefficient reduced (35 -> 3) so level-to-level swings stay
-            // survivable at Erratic's lower 0.6x total; still non-monotonic by
-            // design (see GetLevelFromExperience below) but far less severe.
+            // The noise is applied as an offset scaled to this level's own exp gap
+            // (at most a quarter of it) rather than as a swing on the multiplier, so
+            // the curve keeps its level-to-level chaos while staying strictly
+            // increasing. A level that costs less exp than the one below it strands
+            // any mon whose exp is clamped to it - level caps and the daycare both
+            // clamp to GetExperienceAtLevel(growthRate, cap), which would otherwise
+            // land below the previous level's threshold and make that mon unlevelable.
             u32 seed = n * 1103515245u + 12345u;
             s64 noise1000 = (s64)((seed >> 16) & 1023) * 1000 / 512 - 1000;
-            s64 decayBase = 1000 - t1000;
-            s64 decay1000 = (decayBase * decayBase * decayBase) / 1000000;
+            s64 levelGap = (s64)((CUBE(n) - CUBE(n - 1)) / CUSTOM_XP_SCALING_FACTOR);
 
-            multiplier1000 = 600 + (noise1000 * 3 * decay1000) / 100000;
+            multiplier1000 = 600;
+            offset = (noise1000 * ((levelGap * multiplier1000) / 1000)) / 4000;
             break;
         }
 
@@ -957,7 +962,7 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
     }
 
     // Apply multiplier safely
-    u64 exp = (base * multiplier1000) / 1000;
+    u64 exp = (base * multiplier1000) / 1000 + offset;
 
     if (exp > UINT32_MAX)
         exp = UINT32_MAX;
@@ -1776,12 +1781,10 @@ static u32 IntegerCubeRoot(u64 value)
     return lo;
 }
 
-// GetExperienceAtLevel's curves aren't all strictly monotonic (GROWTH_ERRATIC's
-// noise term can make a higher level require less exp than the one before it),
-// so this can't binary search the level. Instead it derives a cheap lower-bound
-// estimate (never above the true level) via an inverted cube root and scans
-// forward from there — this avoids the freezes caused by scanning from level 1
-// up to MAX_LEVEL (1000) every time a mon's level is looked up from its exp.
+// Derives a cheap lower-bound estimate of the level (never above the true one) via
+// an inverted cube root and scans forward from there — this avoids the freezes
+// caused by scanning from level 1 up to MAX_LEVEL (1000) every time a mon's level
+// is looked up from its exp.
 static u16 GetLevelFromExperience(u8 growthRate, u32 exp)
 {
     u64 target = ((u64)exp * 10000) / GetGrowthRateMaxMultiplier1000(growthRate);

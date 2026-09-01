@@ -26,10 +26,10 @@ u32 GetNewGamePlusExpCandyBonusPercent(void)
     return ngpRuns * 15;
 }
 
-// The level cap as dictated by story/badge progression, ignoring FLAG_LEVEL_CAP_OFF entirely.
-// Used anywhere a level needs to track the player's progression even when the player has
-// disabled their own level cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL
-// just because the player turned their cap off).
+// The level cap as dictated by story/badge progression. The flag ladder below ignores
+// FLAG_LEVEL_CAP_OFF entirely, so this still tracks progression for a player who disabled their own
+// cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL just because the player
+// turned their cap off). Only the post-game value reads that flag - see below.
 u32 GetProgressionLevelCap(void)
 {
     static const u32 sLevelCapFlagMap[][2] =
@@ -63,8 +63,11 @@ u32 GetProgressionLevelCap(void)
 
     u32 i;
 
-    // CUSTOM - CAP PLAYER (100) BELOW MAX LEVEL (1000)
-    u32 playerLevelCap = 100 + GetNewGamePlusLevelOffset();
+    // The post-game cap, reached once every flag below is set. 75 continues the ladder's last rung
+    // (74) without a gap. A player who turned their own cap off gets 100 instead: their team is free
+    // to outlevel the ladder, so the bosses and roamers reading this need the extra headroom.
+    // One New Game Plus cycle is worth a full cap span, so the terminal value scales with it too.
+    u32 playerLevelCap = (FlagGet(FLAG_LEVEL_CAP_OFF) ? 100 : 75) + GetNewGamePlusLevelOffset();
 
     if (playerLevelCap > MAX_LEVEL) {
         playerLevelCap = MAX_LEVEL;

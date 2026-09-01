@@ -1033,6 +1033,9 @@ LittlerootTown_EventScript_EncounterTESTJirachi::
 LittlerootTown_EventScript_EncounterTESTKyogre::
 	goto LegendaryEncounter_EventScript_Kyogre
 
+LittlerootTown_EventScript_EncounterTESTGroudon::
+	goto LegendaryEncounter_EventScript_Groudon
+
 LittlerootTown_EventScript_EncounterTESTRayquaza::
 	goto LegendaryEncounter_EventScript_Rayquaza
 

@@ -320,6 +320,21 @@ extern const u8 EncScript_Kyogre_UndertowBail[];
 extern const u8 EncScript_Kyogre_DelugeResolve[];
 extern const u8 EncScript_Kyogre_TurnClose[];
 
+// Groudon ("The Living Continent")
+extern const u8 EncScript_Groudon_Intro[];
+extern const u8 EncScript_Groudon_PrimalReversion[];
+extern const u8 EncScript_Groudon_ContinentalCollapse[];
+extern const u8 EncScript_Groudon_Weakened[];
+extern const u8 EncScript_Groudon_WillNotBeShaken[];
+extern const u8 EncScript_Groudon_LandWillNotBeWatered[];
+extern const u8 EncScript_Groudon_TurnOpen[];
+extern const u8 EncScript_Groudon_Erosion[];
+extern const u8 EncScript_Groudon_FeedFlame[];
+extern const u8 EncScript_Groudon_FeedBoss[];
+extern const u8 EncScript_Groudon_QuakeResolve[];
+extern const u8 EncScript_Groudon_CollapseTick[];
+extern const u8 EncScript_Groudon_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
