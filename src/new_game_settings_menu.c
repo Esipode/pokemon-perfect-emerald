@@ -173,7 +173,7 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
     // the achievements-disabled line above it -- WIN_DESCRIPTION only fits 2
     // lines of FONT_NORMAL text (see sSettingsMenuWinTemplates[WIN_DESCRIPTION]).
     [SETTING_DEBUG]             = COMPOUND_STRING(
-                                       "{COLOR RED}{SHADOW LIGHT_RED}(DISABLES ACHIEVEMENTS){COLOR GREEN}{SHADOW LIGHT_GREEN}\n"
+                                       "{COLOR RED}{SHADOW LIGHT_RED}(ON DISABLES ACHIEVEMENTS){COLOR GREEN}{SHADOW LIGHT_GREEN}\n"
                                        "Debug Menu: {R_BUTTON}+{START_BUTTON}"),
 };
 

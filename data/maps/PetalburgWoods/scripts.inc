@@ -92,6 +92,8 @@ PetalburgWoods_EventScript_DevonResearcherPostBattle::
 	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterDown
 	waitmovement 0
 	msgbox PetalburgWoods_Text_ThatWasAwfullyClose, MSGBOX_DEFAULT
+	callnative CheckNewGamePlus
+	goto_if_eq VAR_RESULT, 1, PetalburgWoods_EventScript_GiveUltraBall
 	giveitem ITEM_GREAT_BALL
 	goto_if_eq VAR_RESULT, FALSE, PetalburgWoods_EventScript_BagFull
 	goto PetalburgWoods_EventScript_DevonResearcherFinish
@@ -99,6 +101,12 @@ PetalburgWoods_EventScript_DevonResearcherPostBattle::
 
 PetalburgWoods_EventScript_BagFull::
 	msgbox PetalburgWoods_Text_YoureLoadedWithItems, MSGBOX_DEFAULT
+	goto PetalburgWoods_EventScript_DevonResearcherFinish
+	end
+
+PetalburgWoods_EventScript_GiveUltraBall::
+	giveitem ITEM_ULTRA_BALL
+	goto_if_eq VAR_RESULT, FALSE, PetalburgWoods_EventScript_BagFull
 	goto PetalburgWoods_EventScript_DevonResearcherFinish
 	end
 

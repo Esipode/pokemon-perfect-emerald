@@ -75,6 +75,11 @@ static bool8 Achievement_AnyRandomizerFlagSet(void)
     return FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES);
 }
 
+static bool8 Achievement_IsLimitedPartyFirstRun(void)
+{
+    return gSaveBlock2Ptr->newGamePlus == 0 && LimitedParty_IsEnabled();
+}
+
 // Achievement_ChallengeConfigSignature (a bitmask twin of
 // Achievement_CountChallengeModifiers -- same seven New Game Settings, but
 // distinguishing configurations rather than just counting them) removed --
@@ -395,12 +400,13 @@ bool8 Achievement_IsEligible(u16 achievementId)
     case ACHIEVEMENT_LIMITED_PARTY_NO_ROOM_TO_SPARE:
     case ACHIEVEMENT_LIMITED_PARTY_EARNED_YOUR_KEEP:
     case ACHIEVEMENT_LIMITED_PARTY_FULL_ROSTER_RESTORED:
-        return LimitedParty_IsEnabled();
+        return Achievement_IsLimitedPartyFirstRun();
     case ACHIEVEMENT_LIMITED_PARTY_BARE_MINIMUM_CHAMPION:
         // Not gated on LimitedParty_IsEnabled() -- any HARD run that never
         // carried more than LIMITED_PARTY_BASE_SIZE qualifies, per
-        // Achievement_CheckNewModeCompletionMilestones.
-        return isHard && runData->highestPartySizeThisRun <= LIMITED_PARTY_BASE_SIZE;
+        // Achievement_CheckNewModeCompletionMilestones. Still restricted to the
+        // first fresh save so NG+ cycles cannot retroactively qualify.
+        return gSaveBlock2Ptr->newGamePlus == 0 && isHard && runData->highestPartySizeThisRun <= LIMITED_PARTY_BASE_SIZE;
 
     // T. Draft Mode
     case ACHIEVEMENT_DRAFT_FIRST_PICK:
@@ -1318,10 +1324,11 @@ void Achievement_CheckStoryMilestones(void)
     // Earned Your Keep/Full Roster Restored. Both read the live derived
     // cap rather than tracking a before/after snapshot -- the cap only ever
     // grows, so "at least one slot unlocked"/"cap == PARTY_SIZE" is exactly
-    // as correct as diffing it, without new state.
-    if (LimitedParty_IsEnabled() && CountPlayerBadges() >= 2)
+    // as correct as diffing it, without new state. These must stay scoped to
+    // the first fresh save, not every NG+ cycle that reuses the same flag set.
+    if (Achievement_IsLimitedPartyFirstRun() && CountPlayerBadges() >= 2)
         Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_EARNED_YOUR_KEEP);
-    if (LimitedParty_IsEnabled() && LimitedParty_GetMaxPartySize() == PARTY_SIZE)
+    if (Achievement_IsLimitedPartyFirstRun() && LimitedParty_GetMaxPartySize() == PARTY_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_FULL_ROSTER_RESTORED);
 
     // Type Specialist/Regional Purist, same Gym 4 checkpoint the table above
@@ -4024,8 +4031,9 @@ void Achievement_CheckNewModeBattleMilestones(void)
     // Tight Squad/No Room to Spare. Opponent B (double trainer battles) isn't
     // checked -- opponent A alone is already enough to earn Tight Squad in
     // the common case, and this stays an undercount rather than an overcount
-    // in the rest.
-    if (LimitedParty_IsEnabled())
+    // in the rest. Keep these on the initial fresh save only; NG+ cycles reuse
+    // the same mode flags but are not a new first-run challenge.
+    if (Achievement_IsLimitedPartyFirstRun())
     {
         u8 cap = LimitedParty_GetMaxPartySize();
 
@@ -4075,8 +4083,9 @@ void Achievement_CheckNewModeCompletionMilestones(void)
         Achievement_TryComplete(ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE);
 
     // Not tied to Limited Party mode -- any HARD run that never carried more
-    // than 3 Pokemon qualifies, self-imposed or not.
-    if (isHard && runData->highestPartySizeThisRun != 0
+    // than 3 Pokemon qualifies, self-imposed or not. Keep it on the first
+    // fresh save only so NG+ cycles cannot satisfy it a second time.
+    if (gSaveBlock2Ptr->newGamePlus == 0 && isHard && runData->highestPartySizeThisRun != 0
      && runData->highestPartySizeThisRun <= LIMITED_PARTY_BASE_SIZE)
         Achievement_TryComplete(ACHIEVEMENT_LIMITED_PARTY_BARE_MINIMUM_CHAMPION);
 

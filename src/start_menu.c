@@ -116,6 +116,7 @@ EWRAM_DATA static u8 (*sSaveDialogCallback)(void) = NULL;
 EWRAM_DATA static u8 sSaveDialogTimer = 0;
 EWRAM_DATA static bool8 sSavingComplete = FALSE;
 EWRAM_DATA static u8 sSaveInfoWindowId = 0;
+EWRAM_DATA static bool8 sNewGamePlusPromptActive = FALSE;
 
 // Menu action callbacks
 static bool8 StartMenuPokedexCallback(void);
@@ -124,6 +125,10 @@ static bool8 StartMenuBagCallback(void);
 static bool8 StartMenuPokeNavCallback(void);
 static bool8 StartMenuPlayerNameCallback(void);
 static bool8 StartMenuNewGamePlusCallback(void);
+static void Task_NewGamePlusConfirm(u8 taskId);
+static void Task_NewGamePlusShowQuestion(u8 taskId);
+static void Task_NewGamePlusChoose(u8 taskId);
+static void Task_NewGamePlusHandleChoice(u8 taskId);
 static bool8 StartMenuSaveCallback(void);
 static bool8 StartMenuOptionCallback(void);
 static bool8 StartMenuExitCallback(void);
@@ -812,7 +817,8 @@ static bool8 HandleStartMenuInput(void)
             && gMenuCallback != StartMenuExitCallback
             && gMenuCallback != StartMenuDebugCallback
             && gMenuCallback != StartMenuSafariZoneRetireCallback
-            && gMenuCallback != StartMenuBattlePyramidRetireCallback)
+            && gMenuCallback != StartMenuBattlePyramidRetireCallback
+            && gMenuCallback != StartMenuNewGamePlusCallback)
         {
            FadeScreen(FADE_TO_BLACK, 0);
         }
@@ -961,16 +967,56 @@ static bool8 StartMenuNewGamePlusCallback(void)
 {
     if (!gPaletteFade.active)
     {
+        if (sNewGamePlusPromptActive)
+            return FALSE;
+
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
-        CleanupOverworldWindowsAndTilemaps();
-        gIsNewGamePlus = TRUE;
-        SetMainCallback2(CB2_NewGame);
-
+        HideStartMenuWindow();
+        LockPlayerFieldControls();
+        sNewGamePlusPromptActive = TRUE;
+        CreateTask(Task_NewGamePlusConfirm, 0x50);
         return TRUE;
     }
 
     return FALSE;
+}
+
+static void Task_NewGamePlusConfirm(u8 taskId)
+{
+    DisplayMessageAndContinueTask(taskId, 0, DLG_WINDOW_BASE_TILE_NUM, DLG_WINDOW_PALETTE_NUM, FONT_NORMAL, GetPlayerTextSpeedDelay(), gText_NewGamePlusConfirm, Task_NewGamePlusShowQuestion);
+}
+
+static void Task_NewGamePlusShowQuestion(u8 taskId)
+{
+    DisplayMessageAndContinueTask(taskId, 0, DLG_WINDOW_BASE_TILE_NUM, DLG_WINDOW_PALETTE_NUM, FONT_NORMAL, GetPlayerTextSpeedDelay(), gText_NewGamePlusAreYouSure, Task_NewGamePlusChoose);
+}
+
+static void Task_NewGamePlusChoose(u8 taskId)
+{
+    DisplayYesNoMenuWithDefault(1); // Show Yes/No menu (No selected as default)
+    gTasks[taskId].func = Task_NewGamePlusHandleChoice;
+}
+
+static void Task_NewGamePlusHandleChoice(u8 taskId)
+{
+    switch (Menu_ProcessInputNoWrapClearOnChoose())
+    {
+    case 0: // Yes
+        sNewGamePlusPromptActive = FALSE;
+        gIsNewGamePlus = TRUE;
+        UnlockPlayerFieldControls();
+        DestroyTask(taskId);
+        SetMainCallback2(CB2_NewGame);
+        break;
+    case MENU_B_PRESSED:
+    case 1: // No
+        sNewGamePlusPromptActive = FALSE;
+        UnlockPlayerFieldControls();
+        DestroyTask(taskId);
+        ClearDialogWindowAndFrameToTransparent(0, FALSE);
+        break;
+    }
 }
 
 static bool8 StartMenuExitCallback(void)

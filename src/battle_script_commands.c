@@ -121,6 +121,7 @@ enum GiveCaughtMonStates
 #define TAG_LVLUP_BANNER_MON_ICON 55130
 
 static bool32 IsMonGettingExpSentOut(void);
+static u16 GetTrainerMonExpLevel(u16 battleLevel, u8 difficulty);
 static void InitLevelUpBanner(void);
 static bool8 SlideInLevelUpBanner(void);
 static bool8 SlideOutLevelUpBanner(void);
@@ -3767,7 +3768,7 @@ static void Cmd_getexp(void)
                 // term keeps kills-per-level roughly constant at high level while
                 // leaving low-level rewards close to the plain-linear original
                 // (level^2/50 truncates to 0 below level ~7).
-                u32 faintedLevel = gBattleMons[gBattlerFainted].level;
+                u32 faintedLevel = GetTrainerMonExpLevel(gBattleMons[gBattlerFainted].level, gSaveBlock1Ptr->difficulty);
                 calculatedExp = gSpeciesInfo[gBattleMons[gBattlerFainted].species].expYield * (faintedLevel + (faintedLevel * faintedLevel) / 50);
             }
             if (B_SCALED_EXP >= GEN_5 && B_SCALED_EXP != GEN_6)
@@ -3929,11 +3930,11 @@ static void Cmd_getexp(void)
                     PREPARE_STRING_BUFFER(gBattleTextBuff2, i);
                     PREPARE_WORD_NUMBER_BUFFER(gBattleTextBuff3, 6, gBattleStruct->battlerExpReward);
 
-                    if (wasSentOut || holdEffect == HOLD_EFFECT_EXP_SHARE)
+                    if (gBattleStruct->battlerExpReward != 0 && (wasSentOut || holdEffect == HOLD_EFFECT_EXP_SHARE))
                     {
                         PrepareStringBattle(STRINGID_PKMNGAINEDEXP, gBattleStruct->expGetterBattlerId);
                     }
-                    else if (IsGen6ExpShareEnabled() && !gBattleStruct->teamGotExpMsgPrinted) // Print 'the rest of your team got exp' message once, when all of the sent-in mons were given experience
+                    else if (gBattleStruct->battlerExpReward != 0 && IsGen6ExpShareEnabled() && !gBattleStruct->teamGotExpMsgPrinted) // Print 'the rest of your team got exp' message once, when all of the sent-in mons were given experience
                     {
                         gLastUsedItem = ITEM_EXP_SHARE;
                         PrepareStringBattle(STRINGID_TEAMGAINEDEXP, gBattleStruct->expGetterBattlerId);
@@ -11186,6 +11187,34 @@ u8 GetFirstFaintedPartyIndex(enum BattlerId battler)
     return PARTY_SIZE;
 }
 
+static u16 GetTrainerMonExpLevel(u16 battleLevel, u8 difficulty)
+{
+    u8 diff;
+
+    if (difficulty == DIFFICULTY_EASY)
+    {
+        if (battleLevel < 5)
+            battleLevel = 5;
+        if (battleLevel > 60)
+            battleLevel = 60;
+
+        diff = 1 + ((battleLevel - 5) * 4) / 55;
+        return battleLevel + diff;
+    }
+    if (difficulty == DIFFICULTY_HARD)
+    {
+        if (battleLevel < 5)
+            battleLevel = 5;
+        if (battleLevel > 60)
+            battleLevel = 60;
+
+        diff = 1 + ((battleLevel - 5) * 4) / 55;
+        return battleLevel - diff;
+    }
+
+    return battleLevel;
+}
+
 void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBattler)
 {
     enum HoldEffect holdEffect = GetMonHoldEffect(&gParties[B_TRAINER_PLAYER][expGetterMonId]);
@@ -11213,7 +11242,7 @@ void ApplyExperienceMultipliers(s32 *expAmount, u8 expGetterMonId, u8 faintedBat
         // recipient is above the fainted Pokemon, floored at 0% once the
         // recipient is 10+ levels above it (so stomping much weaker mons
         // stops paying out).
-        s32 faintedLevel = gBattleMons[faintedBattler].level;
+        s32 faintedLevel = GetTrainerMonExpLevel(gBattleMons[faintedBattler].level, gSaveBlock1Ptr->difficulty);
         s32 expGetterLevel = GetMonData(&gParties[B_TRAINER_PLAYER][expGetterMonId], MON_DATA_LEVEL);
         s32 percent = 100 + ((faintedLevel - expGetterLevel) * 10);
 
