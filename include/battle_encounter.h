@@ -424,6 +424,23 @@ extern const u8 EncScript_Azelf_StatusCleared[];
 extern const u8 EncScript_Azelf_Undiminished[];
 extern const u8 EncScript_Azelf_TurnClose[];
 
+// Uxie ("The Being of Knowledge")
+extern const u8 EncScript_Uxie_Intro[];
+extern const u8 EncScript_Uxie_Understanding[];
+extern const u8 EncScript_Uxie_Understanding[];
+extern const u8 EncScript_Uxie_Omniscience[];
+extern const u8 EncScript_Uxie_Omniscience[];
+extern const u8 EncScript_Uxie_Weakened[];
+extern const u8 EncScript_Uxie_Weakened[];
+extern const u8 EncScript_Uxie_TurnOpen[];
+extern const u8 EncScript_Uxie_JudgePhys[];
+extern const u8 EncScript_Uxie_JudgeSpec[];
+extern const u8 EncScript_Uxie_JudgeStat[];
+extern const u8 EncScript_Uxie_Enlightened[];
+extern const u8 EncScript_Uxie_Reform[];
+extern const u8 EncScript_Uxie_RefusesSleep[];
+extern const u8 EncScript_Uxie_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
