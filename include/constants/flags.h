@@ -67,7 +67,7 @@
 #define FLAG_HIDE_ARCEUS     0x2E
 #define FLAG_HIDE_AZELF      0x2F
 #define FLAG_HIDE_UXIE       0x30
-#define FLAG_UNUSED_0x031    0x31 // Unused Flag
+#define FLAG_HIDE_MESPRIT    0x31
 #define FLAG_UNUSED_0x032    0x32 // Unused Flag
 #define FLAG_UNUSED_0x033    0x33 // Unused Flag
 #define FLAG_UNUSED_0x034    0x34 // Unused Flag

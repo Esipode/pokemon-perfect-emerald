@@ -441,6 +441,23 @@ extern const u8 EncScript_Uxie_Reform[];
 extern const u8 EncScript_Uxie_RefusesSleep[];
 extern const u8 EncScript_Uxie_TurnClose[];
 
+// Mesprit ("The Being of Emotion")
+extern const u8 EncScript_Mesprit_Intro[];
+extern const u8 EncScript_Mesprit_Unstable[];
+extern const u8 EncScript_Mesprit_Unstable[];
+extern const u8 EncScript_Mesprit_Empathy[];
+extern const u8 EncScript_Mesprit_Empathy[];
+extern const u8 EncScript_Mesprit_Weakened[];
+extern const u8 EncScript_Mesprit_Weakened[];
+extern const u8 EncScript_Mesprit_TurnOpen[];
+extern const u8 EncScript_Mesprit_ProvokeAnger[];
+extern const u8 EncScript_Mesprit_ProvokeJoy[];
+extern const u8 EncScript_Mesprit_ProvokeJoy[];
+extern const u8 EncScript_Mesprit_ProvokeSadness[];
+extern const u8 EncScript_Mesprit_ProvokeStatus[];
+extern const u8 EncScript_Mesprit_StatusCleared[];
+extern const u8 EncScript_Mesprit_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

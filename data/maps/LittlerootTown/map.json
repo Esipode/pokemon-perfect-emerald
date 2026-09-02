@@ -129,7 +129,7 @@
       "flag": "FLAG_HIDE_LITTLEROOT_TOWN_BIRCH"
     },
     {
-      "graphics_id": "OBJ_EVENT_GFX_SPECIES(AZELF)",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(MESPRIT)",
       "x": 2,
       "y": 2,
       "elevation": 0,
@@ -138,21 +138,8 @@
       "movement_range_y": 0,
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
-      "script": "LittlerootTown_EventScript_EncounterTESTAzelf",
-      "flag": "FLAG_HIDE_AZELF"
-    },
-    {
-      "graphics_id": "OBJ_EVENT_GFX_SPECIES(UXIE)",
-      "x": 3,
-      "y": 2,
-      "elevation": 0,
-      "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "0",
-      "script": "LittlerootTown_EventScript_EncounterTESTUxie",
-      "flag": "FLAG_HIDE_UXIE"
+      "script": "LittlerootTown_EventScript_EncounterTESTMesprit",
+      "flag": "FLAG_HIDE_MESPRIT"
     }
   ],
   "warp_events": [

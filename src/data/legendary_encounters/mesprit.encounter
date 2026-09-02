@@ -1,0 +1,203 @@
+Encounter: Mesprit
+
+# Mesprit, "The Being of Emotion". It has no fixed personality - it has a MOOD, and the player
+# authors it. Every turn the fight reads what the player did and files a pull: nothing much -> CALM,
+# healed/set up/used a status move/switched -> JOY, hurt it or hit it super-effectively -> ANGER,
+# hurt it badly -> FEAR, statused it or lost a Pokemon -> SADNESS. The strongest pull of the turn
+# wins, and it has to repeat before it commits (twice in Phase 0, once from Phase 1).
+# Each mood owns Mesprit's damage reduction, its stat stances, its slot-3 move and the contagion it
+# puts on the player, and the guard column is the strategic spine: ANGER (85) is the only mood the
+# player can really hurt it in and the mood that hurts them most, FEAR (94) is the mood their
+# attacks stop working in. Frightening it is what stops them frightening it again.
+# A mood left undisturbed festers: Var(Clock) counts turns in it and at the threshold the mood goes
+# EXTREME and stays there, re-firing a surge every turn, until the player's own behaviour moves it.
+# Var(Impression) runs the whole battle unannounced; at 20% Mesprit stops reacting and keeps
+# whatever the player taught it, locked and extreme, for the rest of the fight.
+# Survive: runs from battle start, so the catch window at 10% is guaranteed however the damage race
+# went. No Ability: override - Mesprit keeps Levitate, which leaves Ground off the table.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # the guideline baseline, and CALM's value; the mood owns it after
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_PSYCHIC, MOVE_DAZZLING_GLEAM, MOVE_ENERGY_BALL, MOVE_SWIFT
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fourteen here in order fixes
+# Phase..Contagion to 0..13.
+# 0 Phase (0 The Being of Emotion / 1 Emotional Instability / 2 Empathy / 3 Weakened),
+# 1 Mood (0 CALM / 1 JOY / 2 ANGER / 3 FEAR / 4 SADNESS), 2 Extreme (0 normal / 1 extreme),
+# 3 Announced (Mood + 5 * Extreme, the cue's re-fire latch; 255 = forced stale), 4 Clock (turns
+# spent in the current mood), 5 Pull (the mood currently being provoked), 6 PullCount (consecutive
+# turns that pull has landed), 7 TurnGuard, 8 HpMark (boss HP% at turn open; ENC_SNAP_DAMAGE turns
+# it into "lost this turn"), 9 PlayerHpMark (ENC_SNAP_RECOVERY turns it into "healed this turn"),
+# 10 Impression (0-8, starts 4; the Empathy scale), 11 Provoke (this turn's strongest pull, raised
+# monotonically, reset at turn open), 12 StatusGuard (a status has spent its SADNESS pull),
+# 13 Contagion (Mood + 1 of the contagion standing on the player, 0 = none, for the undo).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Mesprit_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Mood) >= 0
+    Var(Extreme) >= 0
+    Var(Announced) >= 0
+    Var(Clock) >= 0
+    Var(Pull) >= 0
+    Var(PullCount) >= 0
+    Var(TurnGuard) >= 0
+    Var(HpMark) >= 0
+    Var(PlayerHpMark) >= 0
+    Var(Impression) >= 0
+    Var(Provoke) >= 0
+    Var(StatusGuard) >= 0
+    Var(Contagion) >= 0
+
+# The phase ladder. Each transition is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# SELECTION, so whichever fires first permanently disables the other. Each is also gated on the
+# Phase value its own script overwrites, so one huge hit crossing two thresholds steps through them
+# in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_Mesprit_Unstable
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_Mesprit_Unstable
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Mesprit_Empathy
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Mesprit_Empathy
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Mesprit_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Mesprit_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold. TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets immediately, so no branch out of it can leave it re-armed) and owns the turn's HP
+# marks, the fester clock, the extreme's recurring surge and the heartbeat; TurnClose is
+# self-disabling (gate TurnGuard == 1, which it clears) and owns the turn verdict.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Mesprit_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The provocation triggers. They gate on Var(Provoke) rather than on Once - Once means once per
+# BATTLE, and these must be able to fire on any turn but only usefully once per turn. Provoke is a
+# monotonically-raised priority slot reset at every turn open, so a trigger whose level is already
+# met has nothing to write and is gated out by its own condition. Each carries Var(Phase) <= 1: in
+# Phase 2 the mood is locked and nothing should be writing pulls into a var nobody reads.
+#
+# ANGER. At OnMoveEnd Event.Battler is the battler that GOT HIT, so this is "a Dark, Ghost or Bug
+# move landed on Mesprit" - which is exactly "super-effective", because it is pure Psychic and has
+# no other weakness. The category test keeps Confuse Ray and friends out of the offensive reading.
+# Nothing in the event context exposes a critical hit, which is what the spec asked for; this and
+# the damage bar in TurnClose cover it between them.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Mesprit_ProvokeAnger
+Conditions:
+    Var(Phase) <= 1
+    Var(Provoke) < 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Any:
+        Event.MoveType == TYPE_DARK
+        Event.MoveType == TYPE_GHOST
+        Event.MoveType == TYPE_BUG
+
+# JOY, the player's half. Event.Target at OnMoveEnd is the battler that USED the move, so this
+# catches both self-targeting status moves (Recover, Swords Dance, Protect) and status moves aimed
+# at Mesprit (Toxic, Thunder Wave). The latter also raises SADNESS at a higher level, which wins.
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Mesprit_ProvokeJoy
+Conditions:
+    Var(Phase) <= 1
+    Var(Provoke) == 0
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+
+# JOY, the switch half. TurnGuard == 1 is the battle-start gate: TurnGuard is only ever set by
+# TurnOpen, so at the opening switch-in it is still 0 and this cannot fire on the player's lead.
+Trigger: OnSwitchIn
+Priority: 22
+Script: EncScript_Mesprit_ProvokeJoy
+Conditions:
+    Var(Phase) <= 1
+    Var(Provoke) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+Trigger: OnFaint
+Priority: 23
+Script: EncScript_Mesprit_ProvokeSadness
+Conditions:
+    Var(Phase) <= 1
+    Var(Provoke) < 4
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# SADNESS from status, and the anti-cheese bookkeeping behind it. StatusGuard is spent here and
+# handed back by StatusCleared only once Mesprit is clean, so each SADNESS pull costs a fresh
+# application rather than a standing burn. It also tells ClearOwnStatus whether there is anything
+# to shrug off, which is why it runs through Phase 2 rather than stopping with the pulls.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Mesprit_ProvokeStatus
+Conditions:
+    Var(Phase) <= 2
+    Var(StatusGuard) == 0
+    Battler(Boss).Status != 0
+
+Trigger: OnTurnEnd
+Priority: 31
+Script: EncScript_Mesprit_StatusCleared
+Conditions:
+    Var(StatusGuard) == 1
+    Battler(Boss).Status == 0
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Mesprit_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

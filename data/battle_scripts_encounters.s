@@ -206,3 +206,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/deoxys.inc"
 	.include "data/legendary_encounters/azelf.inc"
 	.include "data/legendary_encounters/uxie.inc"
+	.include "data/legendary_encounters/mesprit.inc"
