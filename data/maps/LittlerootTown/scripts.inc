@@ -1042,6 +1042,9 @@ LittlerootTown_EventScript_EncounterTESTRayquaza::
 LittlerootTown_EventScript_EncounterTESTRegice::
 	goto LegendaryEncounter_EventScript_Regice
 
+LittlerootTown_EventScript_EncounterTESTRegirock::
+	goto LegendaryEncounter_EventScript_Regirock
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

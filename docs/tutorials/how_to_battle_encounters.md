@@ -618,7 +618,7 @@ about a multi-trigger checkpoint with these, not by reading the dispatcher's sou
 4. A trigger that lost on priority (but is still eligible) isn't discarded — it can win a later pass.
 5. A `Once` trigger is marked fired the moment it's *selected*, so it can never run twice even
    within the same checkpoint's re-evaluation passes.
-6. At most 4 scripts run per checkpoint (see [Limits](#limits)) — after that the dispatcher stops,
+6. At most 8 scripts run per checkpoint (see [Limits](#limits)) — after that the dispatcher stops,
    even if more triggers are still eligible.
 7. The "previous state" `OnEnter` compares against is always "as of the last checkpoint", not
    "as of the start of this checkpoint's re-evaluation loop" — a script mid-checkpoint changing HP

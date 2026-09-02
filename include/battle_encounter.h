@@ -354,6 +354,23 @@ extern const u8 EncScript_Regice_TurnClose[];
 extern const u8 EncScript_Regice_TombSeal[];
 extern const u8 EncScript_Regice_TombRelease[];
 
+extern const u8 EncScript_Regirock_Intro[];
+extern const u8 EncScript_Regirock_MountainsWrath[];
+extern const u8 EncScript_Regirock_MountainsWrath[];
+extern const u8 EncScript_Regirock_Collapse[];
+extern const u8 EncScript_Regirock_Collapse[];
+extern const u8 EncScript_Regirock_Weakened[];
+extern const u8 EncScript_Regirock_Weakened[];
+extern const u8 EncScript_Regirock_WillNotSleep[];
+extern const u8 EncScript_Regirock_TurnOpen[];
+extern const u8 EncScript_Regirock_Break[];
+extern const u8 EncScript_Regirock_Build[];
+extern const u8 EncScript_Regirock_BossBuild[];
+extern const u8 EncScript_Regirock_RebuildResolve[];
+extern const u8 EncScript_Regirock_RockfallResolve[];
+extern const u8 EncScript_Regirock_CollapseTick[];
+extern const u8 EncScript_Regirock_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
