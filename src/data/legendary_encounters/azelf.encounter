@@ -1,0 +1,234 @@
+Encounter: Azelf
+
+# Azelf, "The Being of Willpower". One number and one bar. Every turn the fight MEASURES how much of
+# Azelf's max HP the player took off and returns a verdict: over the bar and its RESOLVE falters,
+# under it and the attempt only steels it. Resolve runs 0-5 and each rung is a named state that
+# turns back off when the player pushes it down - UNYIELDING throws off status, UNDIMINISHED refuses
+# stat drops, UNBOWED arms SECOND WIND, UNMATCHED moves first, UNBREAKABLE lashes back every turn it
+# is damaged. Chipping safely, the default answer to a 90%-reduction boss, is the losing strategy.
+# The whole economy exists to set up one moment: at 30% HP Azelf reaches for its will. Resolve >= 3
+# and it heals back to 45% and jumps straight to UNBREAKABLE; Resolve <= 2 and it finds nothing
+# there. Everything the player did for the first half of the fight is settled by one number.
+# Survive: is on from battle start rather than from a phase - it is what guarantees the catch window
+# exists and what makes LAST STAND a four-turn siege rather than a damage race.
+# No Ability: override. Azelf keeps Levitate, which leaves Ground off the table as an answer while
+# keeping the species authentic; both spec rungs that wanted an ability are expressed as scripts
+# instead, because an ability cannot be turned on and off mid-battle.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # the guideline baseline, held flat through Phases 0-1
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_EXTRASENSORY, MOVE_PSYCHIC, MOVE_DAZZLING_GLEAM, MOVE_SHADOW_BALL
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all ten here in order fixes
+# Phase..SecondWind to 0..9.
+# 0 Phase (0 The Being of Willpower / 1 Resolute / 2 Last Stand / 3 Will Broken / 4 Weakened),
+# 1 Resolve (0-5, the meter), 2 Tier (rung last APPLIED - ApplyResolve's idempotence latch),
+# 3 Announced (rung last ANNOUNCED - the re-fire latch), 4 TurnGuard, 5 HpMark (boss HP% at turn
+# open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 6 Clock (Last Stand countdown),
+# 7 StatusGuard (a status has spent its shrug), 8 EndureGuard (per-turn guard shared by the Endure
+# and Emboldened triggers), 9 SecondWind (0 unspent / 1 spent).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Azelf_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Resolve) >= 0
+    Var(Tier) >= 0
+    Var(Announced) >= 0
+    Var(TurnGuard) >= 0
+    Var(HpMark) >= 0
+    Var(Clock) >= 0
+    Var(StatusGuard) >= 0
+    Var(EndureGuard) >= 0
+    Var(SecondWind) >= 0
+
+# The phase ladder. Each transition is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# SELECTION, so whichever fires first permanently disables the other. Each is also gated on the
+# Phase value its own script overwrites, so one huge hit crossing two thresholds steps through them
+# in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_Azelf_Steeling
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_Azelf_Steeling
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Azelf_Resolute
+Conditions:
+    Battler(Boss).HpPercent <= 45
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Azelf_Resolute
+Conditions:
+    Battler(Boss).HpPercent <= 45
+    Var(Phase) == 0
+
+# SECOND WIND, the fight's decision point. Resolves in one of two directions and spends
+# Var(SecondWind) either way, so the heal can never happen twice. Sitting at priority 6 puts it
+# ahead of LAST STAND: a heal back to 45% pulls the 20% threshold out from under that trigger in
+# the same dispatch, which is exactly the intended reading.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Azelf_SecondWind
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+    Var(SecondWind) == 0
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Azelf_SecondWind
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+    Var(SecondWind) == 0
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Azelf_LastStand
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Azelf_LastStand
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# The Last Stand clock's resolution. Ticked at OnTurnStart and resolved here, one checkpoint away,
+# so a timer cannot chase itself through all its states in one dispatch. Self-disabling: the script
+# zeroes Clock and moves Phase past 2.
+Trigger: OnTurnEnd
+Priority: 8
+Script: EncScript_Azelf_WillBroken
+Conditions:
+    Var(Phase) == 2
+    Var(Clock) == 1
+
+# The catch window. Phase 3 is only reachable through the Last Stand clock expiring, and Survive:
+# has been on since battle start, so the fight is guaranteed to reach this point however the damage
+# race went.
+Trigger: OnMoveEnd
+Priority: 9
+Flags: Once
+Script: EncScript_Azelf_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+
+Trigger: OnTurnEnd
+Priority: 9
+Flags: Once
+Script: EncScript_Azelf_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+
+# Once-per-turn scaffold. TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets immediately, so no branch out of it can leave it re-armed) and owns the turn's HP
+# mark, the UNDIMINISHED re-assert, the Last Stand tick and the heartbeats; TurnClose is
+# self-disabling (gate TurnGuard == 1, which it clears) and owns the turn verdict.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Azelf_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# ENDURE. Azelf's Extrasensory resolved against the player's Pokemon and it is still standing. The
+# one break lever the player does not initiate, so it rewards durability rather than output.
+# At OnMoveEnd Event.Battler is the battler that GOT HIT and Event.Target the one that USED the
+# move. An Event.* condition stays true for the whole dispatch and a script cannot move it, so this
+# gates on EndureGuard, which the script sets - Once would be wrong, it means once per BATTLE.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Azelf_Endure
+Conditions:
+    Var(EndureGuard) == 0
+    Var(Phase) <= 1
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Move == MOVE_EXTRASENSORY
+    Battler(PlayerLeft).HP > 0
+
+# The spec's "has an ally faint", inverted: Azelf has no allies in a wild encounter, so it is the
+# player's struggle that steels it. Shares EndureGuard for the same self-disabling reason - a faint
+# and an endure in the same turn are mutually exclusive anyway, since a Pokemon that fainted to
+# Extrasensory never satisfied Endure's HP test.
+Trigger: OnFaint
+Priority: 20
+Script: EncScript_Azelf_Emboldened
+Conditions:
+    Var(EndureGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# UNYIELDING (Resolve >= 1). The anti-cheese, and a deliberate trap: statusing Azelf is a good idea
+# at Resolve 0 and a bad one from Resolve 1 on, because the shrug feeds the meter. Self-disabling
+# without a guard var of its own - the script cures the status the condition reads. StatusGuard is
+# spent here and handed back by StatusCleared only once the boss is clean, so each shrug costs a
+# fresh application rather than a standing burn.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Azelf_Unyielding
+Conditions:
+    Var(Resolve) >= 1
+    Var(Phase) <= 2
+    Var(StatusGuard) == 0
+    Battler(Boss).Status != 0
+
+Trigger: OnTurnEnd
+Priority: 31
+Script: EncScript_Azelf_StatusCleared
+Conditions:
+    Var(StatusGuard) == 1
+    Battler(Boss).Status == 0
+
+# UNDIMINISHED (Resolve >= 2). The announced half of the mechanism - the silent re-assert happens at
+# every turn open. Self-disabling: the script restores the stages the condition tests.
+Trigger: OnTurnEnd
+Priority: 35
+Script: EncScript_Azelf_Undiminished
+Conditions:
+    Var(Resolve) >= 2
+    Var(Phase) <= 2
+    Any:
+        Battler(Boss).Stat(STAT_ATK) < DEFAULT_STAT_STAGE
+        Battler(Boss).Stat(STAT_SPATK) < DEFAULT_STAT_STAGE
+        Battler(Boss).Stat(STAT_SPEED) < DEFAULT_STAT_STAGE
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Azelf_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

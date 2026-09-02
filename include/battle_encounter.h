@@ -354,12 +354,10 @@ extern const u8 EncScript_Regice_TurnClose[];
 extern const u8 EncScript_Regice_TombSeal[];
 extern const u8 EncScript_Regice_TombRelease[];
 
+// Regirock ("The Ancient Fortress")
 extern const u8 EncScript_Regirock_Intro[];
 extern const u8 EncScript_Regirock_MountainsWrath[];
-extern const u8 EncScript_Regirock_MountainsWrath[];
 extern const u8 EncScript_Regirock_Collapse[];
-extern const u8 EncScript_Regirock_Collapse[];
-extern const u8 EncScript_Regirock_Weakened[];
 extern const u8 EncScript_Regirock_Weakened[];
 extern const u8 EncScript_Regirock_WillNotSleep[];
 extern const u8 EncScript_Regirock_TurnOpen[];
@@ -371,12 +369,10 @@ extern const u8 EncScript_Regirock_RockfallResolve[];
 extern const u8 EncScript_Regirock_CollapseTick[];
 extern const u8 EncScript_Regirock_TurnClose[];
 
+// Registeel ("The Adaptive Machine")
 extern const u8 EncScript_Registeel_Intro[];
 extern const u8 EncScript_Registeel_Optimization[];
-extern const u8 EncScript_Registeel_Optimization[];
 extern const u8 EncScript_Registeel_PerfectConfig[];
-extern const u8 EncScript_Registeel_PerfectConfig[];
-extern const u8 EncScript_Registeel_Weakened[];
 extern const u8 EncScript_Registeel_Weakened[];
 extern const u8 EncScript_Registeel_TurnOpen[];
 extern const u8 EncScript_Registeel_Analyse[];
@@ -387,6 +383,7 @@ extern const u8 EncScript_Registeel_ForceReconfig[];
 extern const u8 EncScript_Registeel_StatusCleared[];
 extern const u8 EncScript_Registeel_TurnClose[];
 
+// Arceus ("The Original One")
 extern const u8 EncScript_Arceus_Intro[];
 extern const u8 EncScript_Arceus_PlatesAwaken[];
 extern const u8 EncScript_Arceus_Judgment[];
@@ -405,6 +402,27 @@ extern const u8 EncScript_Arceus_JudgmentFalls[];
 extern const u8 EncScript_Arceus_DecreeEnds[];
 extern const u8 EncScript_Arceus_JudgmentCreation[];
 extern const u8 EncScript_Arceus_TurnClose[];
+
+// Azelf ("The Being of Willpower")
+extern const u8 EncScript_Azelf_Intro[];
+extern const u8 EncScript_Azelf_Steeling[];
+extern const u8 EncScript_Azelf_Steeling[];
+extern const u8 EncScript_Azelf_Resolute[];
+extern const u8 EncScript_Azelf_Resolute[];
+extern const u8 EncScript_Azelf_SecondWind[];
+extern const u8 EncScript_Azelf_SecondWind[];
+extern const u8 EncScript_Azelf_LastStand[];
+extern const u8 EncScript_Azelf_LastStand[];
+extern const u8 EncScript_Azelf_WillBroken[];
+extern const u8 EncScript_Azelf_Weakened[];
+extern const u8 EncScript_Azelf_Weakened[];
+extern const u8 EncScript_Azelf_TurnOpen[];
+extern const u8 EncScript_Azelf_Endure[];
+extern const u8 EncScript_Azelf_Emboldened[];
+extern const u8 EncScript_Azelf_Unyielding[];
+extern const u8 EncScript_Azelf_StatusCleared[];
+extern const u8 EncScript_Azelf_Undiminished[];
+extern const u8 EncScript_Azelf_TurnClose[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
