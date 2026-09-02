@@ -1048,6 +1048,9 @@ LittlerootTown_EventScript_EncounterTESTRegirock::
 LittlerootTown_EventScript_EncounterTESTRegisteel::
 	goto LegendaryEncounter_EventScript_Registeel
 
+LittlerootTown_EventScript_EncounterTESTArceus::
+	goto LegendaryEncounter_EventScript_Arceus
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

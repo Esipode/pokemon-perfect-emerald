@@ -201,5 +201,6 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/regirock.inc"
 	.include "data/legendary_encounters/regice.inc"
 	.include "data/legendary_encounters/registeel.inc"
+	.include "data/legendary_encounters/arceus.inc"
 	.include "data/legendary_encounters/jirachi.inc"
 	.include "data/legendary_encounters/deoxys.inc"

@@ -1,0 +1,342 @@
+Encounter: Arceus
+
+# Arceus, "The Original One". Every other legendary here has ONE idea. Arceus is a RULEBOOK THAT
+# KEEPS REWRITING ITSELF, and each phase tests a different skill: adapt to a rule you did not agree
+# to (Decrees), type knowledge on a rotation (the Plates), target management under a clock
+# (Judgment), rebuilding after everything is taken away (Creation), and finally raw battle mastery.
+# The spine underneath all of it is one number. AUTHORITY runs 0-12: Arceus REGAINS +1 every turn
+# and SPENDS it to act (a Plate 1, a Decree 2, a Judgment 3, a Creation event 5), and it can never
+# act on credit - at 0 it can only attack. The player PUSHES IT DOWN by breaking Plates (-2),
+# breaking Judgment's concentration (-2), disrupting a Decree (-1) and shattering the finale (-5).
+# Authority <= 3 when the finale opens is the ONLY thing that earns the CHALLENGE option, so
+# everything the player did for the whole fight is settled by one number at one moment.
+# The Plates are real encformchanges into the matching Arceus form, so the typing, the damage calc,
+# the AI and the effectiveness message all agree - the rule the player has to learn is the rule they
+# already know. Each Plate is broken by a type its own form is weak to, damage-independently, which
+# is the safety valve that stops the rotation becoming a lockout.
+# Ability override rather than the species default is unnecessary here but stated anyway: every
+# Arceus form carries Multitype, and encformchange re-derives the ability from the new species, so
+# naming it keeps the intent explicit. Multitype is cantBeCopied/Swapped/Traced/Suppressed/
+# Overwritten, which is a free anti-cheese - Skill Swap, Entrainment, Worry Seed, Gastro Acid and
+# Trace all bounce off the Creator.
+# Deliberately NO Recover, which Arceus does learn, and no healing anywhere in the encounter: a boss
+# at 90% reduction that can undo the player's progress at all is not a hard fight, it is a war of
+# attrition the player cannot win. Every Plate Law takes something from the player instead.
+# No Survive: - the Phase 4 transition sets it, so the AI reads Arceus as killable for three
+# quarters of the fight and the finale is still guaranteed to run.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # the guideline baseline, held flat through Phases 0-3
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Ability: ABILITY_MULTITYPE
+    Moves: MOVE_JUDGMENT, MOVE_EXTREME_SPEED, MOVE_FUTURE_SIGHT, MOVE_COSMIC_POWER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..TurnGuard to 0..15.
+# 0 Phase (0 The Creator / 1 The Plates / 2 The Creator's Judgment / 3 Creation / 4 The Original One
+# / 5 The Final Moment / 6 Weakened), 1 Plate (0 none, 1-6 ACTIVE, 11-16 TELEGRAPHED), 2 PlateTimer,
+# 3 Authority (0-12, the spine), 4 LastAuth (the tier last ANNOUNCED - the re-fire latch), 5 Judge
+# (0 none / 1 Marked / 2 Condemned / 3 falls at this turn's end), 6 Decree (0 none, 1-5),
+# 7 DecreeTimer, 8 Phys and 9 Spec (Divine Observation - physical vs special moves that have landed
+# on Arceus; after the Creation read, Spec holds the stance flag), 10 Shift (per-turn
+# one-move-driven-change guard, shared by the six Plate breaks and the finale break - they can never
+# both be live), 11 Seen (per-turn Observation guard, separate from Shift so a break and a tally can
+# both land on the same turn), 12 HpMark (boss HP% mark at turn open, for the disrupt tests),
+# 13 Charge (the Phase 4 finale clock, 8 -> 0), 14 Breaks (0 submitted/not offered, 10-15 the
+# ladder), 15 TurnGuard.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Arceus_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Plate) >= 0
+    Var(PlateTimer) >= 0
+    Var(Authority) >= 0
+    Var(LastAuth) >= 0
+    Var(Judge) >= 0
+    Var(Decree) >= 0
+    Var(DecreeTimer) >= 0
+    Var(Phys) >= 0
+    Var(Spec) >= 0
+    Var(Shift) >= 0
+    Var(Seen) >= 0
+    Var(HpMark) >= 0
+    Var(Charge) >= 0
+    Var(Breaks) >= 0
+    Var(TurnGuard) >= 0
+
+# The four phase transitions plus the catch window. Each is registered at both checkpoints because
+# the blow that crosses a threshold can be a move or an end-of-turn tick; both copies are Once,
+# which is marked at SELECTION, so whichever fires first permanently disables the other. Each is
+# also gated on the Phase value its own script overwrites, so one enormous hit crossing two
+# thresholds steps through them in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Arceus_PlatesAwaken
+Conditions:
+    Battler(Boss).HpPercent <= 78
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Arceus_PlatesAwaken
+Conditions:
+    Battler(Boss).HpPercent <= 78
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Arceus_Judgment
+Conditions:
+    Battler(Boss).HpPercent <= 55
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Arceus_Judgment
+Conditions:
+    Battler(Boss).HpPercent <= 55
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Arceus_Creation
+Conditions:
+    Battler(Boss).HpPercent <= 34
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Arceus_Creation
+Conditions:
+    Battler(Boss).HpPercent <= 34
+    Var(Phase) == 2
+
+Trigger: OnMoveEnd
+Priority: 8
+Flags: Once, OnEnter
+Script: EncScript_Arceus_OriginalOne
+Conditions:
+    Battler(Boss).HpPercent <= 18
+    Var(Phase) == 3
+
+Trigger: OnTurnEnd
+Priority: 8
+Flags: Once, OnEnter
+Script: EncScript_Arceus_OriginalOne
+Conditions:
+    Battler(Boss).HpPercent <= 18
+    Var(Phase) == 3
+
+# The catch window. Phase 5 is only reachable through the finale's resolution, and Survive: is on
+# from Phase 4, so the fight is guaranteed to reach this point however the damage race went.
+Trigger: OnMoveEnd
+Priority: 9
+Flags: Once
+Script: EncScript_Arceus_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 5
+
+Trigger: OnTurnEnd
+Priority: 9
+Flags: Once
+Script: EncScript_Arceus_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 5
+
+# Anti-cheese. Regice traps, Groudon cures paralysis, Regirock punishes sleep with a thicker wall.
+# Arceus refuses to be DENIED ITS TURN, and charges the player for trying: everything it does is an
+# ACTION, so a permanently slept or frozen Arceus is a statue the player dismantles while the whole
+# encounter sits idle. The attempt feeds the meter instead.
+# Self-disabling without a guard var - the script clears the status the condition reads, so the
+# re-evaluation loop finds it false. Runs ahead of TurnOpen so the cure lands before the turn's
+# decisions are made off the Authority it just raised.
+# STATUS1_SLEEP is a 3-bit turn counter, hence the range test. Paralysis, burn and poison are
+# deliberately left alone - Arceus is fast, and the chip is one of the few things that beats a long
+# fight.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_Arceus_WillNotBeStilled
+Conditions:
+    Var(Phase) <= 5
+    Any:
+        All:
+            Battler(Boss).Status >= 1
+            Battler(Boss).Status <= 7
+        Battler(Boss).Status == STATUS1_FREEZE
+
+# Once-per-turn scaffold. TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets immediately, so no branch out of it can leave it re-armed) and owns every countdown,
+# every callout and every decision Arceus makes; TurnClose is self-disabling (gate TurnGuard == 1,
+# which it clears) and owns nothing but the per-turn guard resets.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Arceus_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The finale break, given a lower priority number than the six Plate breaks so it wins any tie. In
+# practice Plate is 0 from Phase 4 on, so they never compete - and they share Var(Shift), which is
+# what limits the player to one move-driven change per turn either way.
+Trigger: OnMoveEnd
+Priority: 14
+Script: EncScript_Arceus_FinaleBreak
+Conditions:
+    Var(Shift) == 0
+    Var(Breaks) >= 10
+    Var(Breaks) <= 14
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+
+# The six Plate breaks, all pointing at one shared script that reads Var(Plate) to know what to tear
+# down. Each break type is a type the Plate's own form is weak to, so nothing here needs a
+# type-effectiveness operand - encformchange already made the typing real.
+# Deliberately damage-INDEPENDENT: a 20-power Water Gun tears down the Flame Plate as thoroughly as
+# a Hydro Pump. The Plate is the lock, the type is the key, and how hard you turn it does not
+# matter. That is what stops the rotation locking out an under-levelled party.
+# Gated on Plate 1-6 (never 11-16), so a telegraphed Plate cannot be broken before it exists. An
+# Event.* condition stays true for the whole dispatch and cannot be moved by the script, so each
+# gates on Var(Shift), which the script sets - Once would be wrong, it means once per BATTLE.
+Trigger: OnMoveEnd
+Priority: 15
+Script: EncScript_Arceus_PlateBreak
+Conditions:
+    Var(Shift) == 0
+    Var(Plate) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Event.MoveType == TYPE_WATER
+
+Trigger: OnMoveEnd
+Priority: 16
+Script: EncScript_Arceus_PlateBreak
+Conditions:
+    Var(Shift) == 0
+    Var(Plate) == 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Event.MoveType == TYPE_ELECTRIC
+
+Trigger: OnMoveEnd
+Priority: 17
+Script: EncScript_Arceus_PlateBreak
+Conditions:
+    Var(Shift) == 0
+    Var(Plate) == 3
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Event.MoveType == TYPE_GROUND
+
+Trigger: OnMoveEnd
+Priority: 18
+Script: EncScript_Arceus_PlateBreak
+Conditions:
+    Var(Shift) == 0
+    Var(Plate) == 4
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Event.MoveType == TYPE_FIRE
+
+Trigger: OnMoveEnd
+Priority: 19
+Script: EncScript_Arceus_PlateBreak
+Conditions:
+    Var(Shift) == 0
+    Var(Plate) == 5
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Event.MoveType == TYPE_FIGHTING
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Arceus_PlateBreak
+Conditions:
+    Var(Shift) == 0
+    Var(Plate) == 6
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Event.MoveType == TYPE_PSYCHIC
+
+# Divine Observation. Two silent tallies of what the player has actually been hitting Arceus with,
+# read once at the Creation transition to decide the stance and the opening Plate of the second
+# half. The player is told nothing, which is the whole point - the fight adapts to them and never
+# says to what. Var(Seen) is its own per-turn charge, separate from Var(Shift), so a Plate break and
+# a tally can both land on the same turn.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Arceus_SeePhysical
+Conditions:
+    Var(Seen) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+
+Trigger: OnMoveEnd
+Priority: 26
+Script: EncScript_Arceus_SeeSpecial
+Conditions:
+    Var(Seen) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+
+# The Divine Mark rides whoever is on the field, so switching IS the spec's "the Judgment transfers"
+# - it costs a Pokemon's worth of tempo and buys back two turns of the clock. Self-disabling without
+# a guard var: the script writes Judge back to 1, which the condition already refuses.
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_Arceus_MarkTransfers
+Conditions:
+    Var(Judge) >= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# The OnTurnEnd resolutions. Each re-arms the counter it consumed to a value >= 2, so its own
+# condition is false the instant it finishes and no guard var is needed. Every countdown is ticked
+# at TurnOpen instead - one checkpoint away, so a tick can never eat a step off a fresh re-arm.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Arceus_PlateResolve
+Conditions:
+    Var(PlateTimer) == 1
+    Var(Phase) >= 1
+    Var(Phase) <= 3
+
+Trigger: OnTurnEnd
+Priority: 22
+Script: EncScript_Arceus_JudgmentFalls
+Conditions:
+    Var(Judge) == 3
+
+Trigger: OnTurnEnd
+Priority: 24
+Script: EncScript_Arceus_DecreeEnds
+Conditions:
+    Var(DecreeTimer) == 1
+
+Trigger: OnTurnEnd
+Priority: 26
+Script: EncScript_Arceus_JudgmentCreation
+Conditions:
+    Var(Charge) == 1
+    Var(Phase) == 4
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Arceus_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

@@ -387,6 +387,25 @@ extern const u8 EncScript_Registeel_ForceReconfig[];
 extern const u8 EncScript_Registeel_StatusCleared[];
 extern const u8 EncScript_Registeel_TurnClose[];
 
+extern const u8 EncScript_Arceus_Intro[];
+extern const u8 EncScript_Arceus_PlatesAwaken[];
+extern const u8 EncScript_Arceus_Judgment[];
+extern const u8 EncScript_Arceus_Creation[];
+extern const u8 EncScript_Arceus_OriginalOne[];
+extern const u8 EncScript_Arceus_Weakened[];
+extern const u8 EncScript_Arceus_WillNotBeStilled[];
+extern const u8 EncScript_Arceus_TurnOpen[];
+extern const u8 EncScript_Arceus_FinaleBreak[];
+extern const u8 EncScript_Arceus_PlateBreak[];
+extern const u8 EncScript_Arceus_SeePhysical[];
+extern const u8 EncScript_Arceus_SeeSpecial[];
+extern const u8 EncScript_Arceus_MarkTransfers[];
+extern const u8 EncScript_Arceus_PlateResolve[];
+extern const u8 EncScript_Arceus_JudgmentFalls[];
+extern const u8 EncScript_Arceus_DecreeEnds[];
+extern const u8 EncScript_Arceus_JudgmentCreation[];
+extern const u8 EncScript_Arceus_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

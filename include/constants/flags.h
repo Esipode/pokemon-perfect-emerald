@@ -64,7 +64,7 @@
 #define FLAG_HIDE_RAYQUAZA   0x2B
 #define FLAG_HIDE_KYOGRE     0x2C
 #define FLAG_HIDE_GROUDON    0x2D
-#define FLAG_UNUSED_0x02E    0x2E // Unused Flag
+#define FLAG_HIDE_ARCEUS     0x2E
 #define FLAG_UNUSED_0x02F    0x2F // Unused Flag
 #define FLAG_UNUSED_0x030    0x30 // Unused Flag
 #define FLAG_UNUSED_0x031    0x31 // Unused Flag
