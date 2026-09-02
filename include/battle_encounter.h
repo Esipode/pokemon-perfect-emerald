@@ -458,6 +458,23 @@ extern const u8 EncScript_Mesprit_ProvokeStatus[];
 extern const u8 EncScript_Mesprit_StatusCleared[];
 extern const u8 EncScript_Mesprit_TurnClose[];
 
+// Regigigas ("The Colossal Titan")
+extern const u8 EncScript_Regigigas_Intro[];
+extern const u8 EncScript_Regigigas_TitanMoves[];
+extern const u8 EncScript_Regigigas_FullAwakening[];
+extern const u8 EncScript_Regigigas_Weakened[];
+extern const u8 EncScript_Regigigas_TurnOpen[];
+extern const u8 EncScript_Regigigas_PlayerStruck[];
+extern const u8 EncScript_Regigigas_ArmSwitch[];
+extern const u8 EncScript_Regigigas_ArmSetup[];
+extern const u8 EncScript_Regigigas_ArmStatus[];
+extern const u8 EncScript_Regigigas_AwakenTick[];
+extern const u8 EncScript_Regigigas_ContinentalForce[];
+extern const u8 EncScript_Regigigas_Collapse[];
+extern const u8 EncScript_Regigigas_Recover[];
+extern const u8 EncScript_Regigigas_CrushBoosts[];
+extern const u8 EncScript_Regigigas_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

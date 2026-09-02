@@ -1060,6 +1060,9 @@ LittlerootTown_EventScript_EncounterTESTUxie::
 LittlerootTown_EventScript_EncounterTESTMesprit::
 	goto LegendaryEncounter_EventScript_Mesprit
 
+LittlerootTown_EventScript_EncounterTESTRegigigas::
+	goto LegendaryEncounter_EventScript_Regigigas
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD
