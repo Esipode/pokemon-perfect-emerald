@@ -1,0 +1,216 @@
+Encounter: Groudon
+
+# Ability: ABILITY_DROUGHT is present here for the opposite reason Rayquaza and Kyogre have no
+# Ability: line. RecalcBattlerStats re-applies an override on every form change, so the override is
+# what keeps Primal Groudon off Desolate Land - which would make Water moves fail outright and take
+# away the player's only erosion lever exactly halfway through the fight.
+# No Survive: either; it is set by the Phase 2 script instead, so the AI reads Groudon as killable
+# for three quarters of the fight.
+# The moveset is all legal Groudon: Precipice Blades is the signature Ground STAB that spends
+# Var(Shift) on a land rise before the player's erosion can, Eruption is a 150-power opening hammer
+# under Groudon's own sun that fades naturally as its HP drops (and is swapped out at Primal
+# Reversion), Solar Beam charges in one turn under that sun and is 4x into the bulky Water/Ground
+# mons brought specifically to erode, and Hammer Arm is the coverage slot for the Rock/Steel/Ice
+# walls Ground plus Fire can't break.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # Land 0-1, the base rung of the landmass ladder
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_DROUGHT
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_PRECIPICE_BLADES, MOVE_ERUPTION, MOVE_SOLAR_BEAM, MOVE_HAMMER_ARM
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming them all here in order fixes Land..Sunlit
+# to 0..10.
+# 0 Land (0-5, the landmass everything else derives from), 1 Phase (0 The Land Rises / 1 Primal
+# Groudon / 2 Continental Collapse / 3 Weakened), 2 LastLand (landmass tier last ANNOUNCED - the
+# re-fire latch), 3 Fuse (quake countdown, 1-4), 4 Grow (natural growth countdown), 5 Collapse
+# (Phase 2 collapse cadence), 6 Shift (per-turn guard shared by the three move-event triggers, in
+# BOTH directions - the one-landmass-change-per-turn cap is the fight's core tension), 7 Shaken
+# (per-turn guard for the paralysis anti-cheese trigger), 8 TurnGuard, 9 Snap (encsnapshothp scratch
+# for the collapse finisher), 10 Sunlit (per-turn guard for the sun re-assertion trigger).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Groudon_Intro
+Conditions:
+    Var(Land) >= 0
+    Var(Phase) >= 0
+    Var(LastLand) >= 0
+    Var(Fuse) >= 0
+    Var(Grow) >= 0
+    Var(Collapse) >= 0
+    Var(Shift) >= 0
+    Var(Shaken) >= 0
+    Var(TurnGuard) >= 0
+    Var(Snap) >= 0
+    Var(Sunlit) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# the threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# selection, so whichever fires first permanently disables the other. Each is also gated on the
+# Phase value its own script overwrites, so a single huge hit that crosses two thresholds steps
+# through them in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Groudon_PrimalReversion
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Groudon_PrimalReversion
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Groudon_ContinentalCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Groudon_ContinentalCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+# The catch window. Phase 2 means the collapse clock is already running, so this can never pre-empt
+# it - and the collapse's own finisher (EncScript_Groudon_CollapseTick) is what guarantees the fight
+# reaches this point at all.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Groudon_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Groudon_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Anti-cheese. Groudon deliberately does NOT reuse Kyogre's sleep/freeze immunity - freeze is already
+# impossible under permanent sun, and every clock in this fight (growth, quake, collapse) is a
+# checkpoint script rather than Groudon's action, so a sleeping Groudon still buries the player on
+# schedule. What it refuses is paralysis: Speed is what the Var(Shift) race turns on, and a
+# paralysed 90-Speed boss hands the player every erosion window for free.
+# STATUS1_PARALYSIS is a single bit with no counter, so == is exact - no range test of the kind
+# sleep's 3-bit counter needs. It runs ahead of TurnOpen so the cure lands before Groudon's action
+# this turn, and before the landmass ladder is re-derived from the value it just raised.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_Groudon_WillNotBeShaken
+Conditions:
+    Var(Shaken) == 0
+    Var(Phase) <= 2
+    Battler(Boss).Status == STATUS1_PARALYSIS
+
+# From the Primal Reversion on, the land refuses to be watered: any weather the player puts up is
+# burned straight back off, with its own dialogue so the refusal reads as Groudon doing something
+# rather than as Rain Dance quietly not mattering. In Phase 0 the player's weather moves work
+# normally - a Rain Dance in the first half is a real, rewarding play, and losing it at the halfway
+# mark is the phase transition telling the player the rules just got worse.
+# Var(Sunlit) rather than pure self-disabling: encsetweather does nothing while primal weather is in
+# force, so a player carrying Primordial Sea or Delta Stream would otherwise leave the condition
+# true forever and trip the runaway-trigger assert.
+Trigger: OnTurnStart
+Priority: 8
+Script: EncScript_Groudon_LandWillNotBeWatered
+Conditions:
+    Var(Sunlit) == 0
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Weather != B_WEATHER_SUN_NORMAL
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). TurnOpen owns
+# every countdown and everything DERIVED from the landmass; TurnClose owns nothing but the per-turn
+# guard resets.
+# The countdowns live at TurnOpen rather than TurnClose because both of this fight's resolutions
+# (QuakeResolve, CollapseTick) fire at OnTurnEnd and both re-arm the counter they just consumed - a
+# tick at the same checkpoint would eat one step off the fresh re-arm every single time.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Groudon_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The Shift triggers. At OnMoveEnd, Event.Battler is the battler that GOT HIT and Event.Target is
+# the one that USED the move - hence the asymmetry below. All three set Var(Shift) themselves: an
+# event-reacting trigger must disable itself, because the event condition stays true for the whole
+# dispatch and Once would mean once per BATTLE.
+# Erosion is given the lowest priority number so it wins a same-checkpoint tie; the race that decides
+# whether the turn nets 0 or +2 is Groudon's Speed against the player's, not this ordering.
+# Event.MoveType is the move's BASE type, so a Normal-type move turned Water by an ability does not
+# erode - consistent with how Lugia and Ho-Oh already read move types.
+Trigger: OnMoveEnd
+Priority: 15
+Script: EncScript_Groudon_Erosion
+Conditions:
+    Var(Shift) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Event.MoveType == TYPE_WATER
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Groudon_FeedFlame
+Conditions:
+    Var(Shift) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+
+# Groudon's own Ground and Fire moves feed the land; its Solar Beam and Hammer Arm do not. Two of
+# four moves growing the landmass is enough signal for the player to work the rule out.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Groudon_FeedBoss
+Conditions:
+    Var(Shift) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_GROUND
+        Event.MoveType == TYPE_FIRE
+
+# The quake needs no per-turn guard of its own: it re-arms Fuse to 2, 3 or 4 and never to 1, so its
+# condition is false the instant it finishes. CollapseTick re-arms to 3 for the same reason.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Groudon_QuakeResolve
+Conditions:
+    Var(Fuse) == 1
+    Var(Phase) <= 2
+
+Trigger: OnTurnEnd
+Priority: 25
+Script: EncScript_Groudon_CollapseTick
+Conditions:
+    Var(Phase) == 2
+    Var(Collapse) == 1
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Groudon_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

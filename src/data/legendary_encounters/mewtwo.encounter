@@ -1,0 +1,183 @@
+Encounter: Mewtwo
+
+# Mewtwo, "The Perfect Weapon". Two numbers drive the fight. Lean (0-6) is a tug-of-war the player
+# moves without meaning to: physical moves push it up, special and status moves push it down. When
+# Mewtwo's adaptation cooldown expires it mirrors whichever side won - Mega X at Lean >= 5, Mega Y
+# at Lean <= 1 - and the new species' stat spread does all the countering with no extra scripting.
+# Every form change costs it Instability (+1), as does shrugging off sleep/freeze, and Instability
+# drives its guard DOWNWARD. At Instability 3 it OVERLOADS: it collapses back to base Mewtwo and its
+# guard craters for two full turns. So the only way to open a damage window is to keep changing what
+# you do, which is also the counterplay to the mirroring - one lever, both payoffs. Stance (Force in
+# X, Focus in Y) builds toward a punish every third landed hit and resets on every form change.
+# Phase 2 (25% HP) makes the adaptation compulsory, so the thing that made Mewtwo unbeatable is what
+# kills it.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # seeds Instability tier 0; the ladder runs downward from here
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_PSYSTRIKE, MOVE_AURA_SPHERE, MOVE_PSYCHO_CUT, MOVE_BRICK_BREAK
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 14 here in order fixes Phase..Scratch
+# to 0..13.
+# 0 Phase (0 analysis / 1 adaptation / 2 perfect adaptation / 3 weakened), 1 Form (0 base / 1 Mega X
+# / 2 Mega Y), 2 Lean (0-6, starts 3), 3 Cooldown, 4 Instability (0-3), 5 Overload (3->1 countdown,
+# 0 = off), 6 Stance (0-3), 7 LastGuard (last ANNOUNCED guard tier - the re-fire latch), 8 Chant,
+# 9 TurnGuard, 10 MoveGuard, 11 BossGuard, 12 Power (banked Annihilation stacks), 13 Scratch.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Mewtwo_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Form) >= 0
+    Var(Lean) >= 0
+    Var(Cooldown) >= 0
+    Var(Instability) >= 0
+    Var(Overload) >= 0
+    Var(Stance) >= 0
+    Var(LastGuard) >= 0
+    Var(Chant) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(BossGuard) >= 0
+    Var(Power) >= 0
+    Var(Scratch) >= 0
+
+# The two phase transitions, each registered at both checkpoints because the threshold-crossing blow
+# can be a move or an end-of-turn tick. Both copies are Once and both gate on a Var(Phase) value
+# their script overwrites, so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mewtwo_PerfectAdaptation
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mewtwo_PerfectAdaptation
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+# The only catch window. Gated on Phase 2 so it can't precede Perfect Adaptation.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mewtwo_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Mewtwo_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The Lean tug-of-war. One logical rule split three ways because the physical/special/status test has
+# to be a condition - Event.MoveCategory is readable by the condition evaluator, not by a script
+# branch. All three share MoveGuard and priority orders them, so exactly one fires per move.
+# Event.Target is the battler that USED the move (Event.Battler is the one it happened to), so this
+# is "the player attacked", self-targeting setup moves included.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Mewtwo_PlayerPhysical
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Mewtwo_PlayerStatus
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 22
+Script: EncScript_Mewtwo_PlayerSpecial
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+# Mewtwo's own move landed on the player: Stance climbs. Mutually exclusive with the three above,
+# since Event.Target can't be the player and Mewtwo at once.
+Trigger: OnMoveEnd
+Priority: 23
+Script: EncScript_Mewtwo_BossHit
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(BossGuard) == 0
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (only gate is TurnGuard == 0, which
+# it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Both countdowns live
+# inside them - Cooldown ticks at TurnOpen, Overload steps down at TurnClose and resolves at
+# TurnOpen's checkpoint, so a real turn always passes between a countdown's tick and its resolution.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Mewtwo_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Mewtwo_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# Overload: the damage window. Start and End share a priority because Overload == 0 and == 1 are
+# mutually exclusive. OverloadStart sets Cooldown, so Adapt can never join it in one dispatch.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Mewtwo_OverloadEnd
+Conditions:
+    Var(Overload) == 1
+
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Mewtwo_OverloadStart
+Conditions:
+    Var(Instability) >= 3
+    Var(Overload) == 0
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+
+# Phase 0 ends on a turn count, not an HP threshold - Mewtwo spends the opening turns gathering
+# information, and the HP thresholds are spoken for by the later phases. Turn starts at 0, so
+# Turn >= 3 is the fourth turn. FirstAdapt sets Phase AND Cooldown, so Adapt can't follow it.
+Trigger: OnTurnStart
+Priority: 30
+Flags: Once
+Script: EncScript_Mewtwo_FirstAdapt
+Conditions:
+    Turn >= 3
+    Var(Phase) == 0
+
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Mewtwo_Adapt
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Cooldown) == 0
+    Var(Overload) == 0

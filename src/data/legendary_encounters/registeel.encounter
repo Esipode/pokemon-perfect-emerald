@@ -1,0 +1,203 @@
+Encounter: Registeel
+
+# Registeel, "The Adaptive Machine". Regirock is a wall you need the right tool for; Regice eats
+# your turns. Registeel is a wall that becomes the WRONG tool's wall - it learns whatever you keep
+# hitting it with, and the only fight it cannot solve is one it has never seen.
+# ANALYSIS files the TYPE of every damaging move that lands on it. A filed type is an ADAPTATION:
+# that type does far less damage from then on. The board is FIFO and small - 2 slots at 40%, 3 at
+# 50% once it optimizes, 4 at 55% in its final configuration - so a new type pushes the OLDEST one
+# out and it says which one it dropped. Re-hitting a held type HARDENS it instead. Spamming one
+# move loses, alternating two loses; the fight wants more distinct attacking types than it has
+# slots. Two things open the board back up: a non-volatile status landing on it purges the NEWEST
+# adaptation (once per application), and the decay clock drops the oldest on its own.
+# The board is also a DIAL, not only a wall. Everything Registeel puts into plating comes out of
+# its weapons: Load 0 ASSAULT (+2 Atk/SpAtk), Load 1-2 BALANCED (+1), Load 3+ FORTRESS (-1). A
+# player who cannot out-rotate it is not stuck - they are choosing the long, safe fight over the
+# short, dangerous one.
+# At 25% PERFECT CONFIGURATION pins the stance to ASSAULT while it holds a full undecaying board,
+# so for the first time it has both at once. That state runs a fixed clock the player cannot
+# influence and ends in CRITICAL OVERHEAT - board wiped, Analysis offline, guard collapsed for
+# three turns. It is a siege to survive, not a window to farm.
+# Ability override rather than a coincidence: Clear Body is Registeel's own ability, and it makes
+# the stance ladder the ONLY thing in the battle allowed to move its Atk/SpAtk - encchangestat
+# writes statStages directly and bypasses it, while every Intimidate/Growl/Charm the player brings
+# bounces. The Load dial cannot be short-circuited from either end.
+# No status immunity, deliberately: status is the player's lever here, and Steel already refuses
+# poison on its own. No Survive: - the catch window is an ordinary HP threshold and the guard never
+# rises above 84, so there is no scripted last stand for it to protect.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 84         # flat, and it stays here all fight - the board is the variable
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Ability: ABILITY_CLEAR_BODY
+    Moves: MOVE_IRON_HEAD, MOVE_FLASH_CANNON, MOVE_EARTHQUAKE, MOVE_THUNDERBOLT
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all eleven here in order fixes
+# Phase..Announced to 0..10.
+# 0 Phase (0 Analysis / 1 Optimization / 2 Perfect Configuration / 3 Weakened), 1 Load (adaptations
+# currently held, 0-4 - written ONLY by encadapt/encpurgeadapt so it can never drift from the real
+# board), 2 Stance (stance last APPLIED, the re-fire latch: 0 none yet / 1 Assault / 2 Balanced /
+# 3 Fortress), 3 Decay (countdown to the oldest adaptation expiring), 4 MoveGuard (per-turn
+# re-entry guard for the filing trigger), 5 StatusGuard (a status has spent its purge; cleared when
+# the boss is clean again), 6 TurnGuard (the once-per-turn scaffold), 7 Result (encadapt's outcome),
+# 8 Clock (Perfect Configuration countdown to Critical Overheat), 9 Cooling (post-overheat turns
+# remaining), 10 Announced (Load tier last announced - the recurring-cue latch).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Registeel_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Load) >= 0
+    Var(Stance) >= 0
+    Var(Decay) >= 0
+    Var(MoveGuard) >= 0
+    Var(StatusGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(Result) >= 0
+    Var(Clock) >= 0
+    Var(Cooling) >= 0
+    Var(Announced) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, marked at selection, so
+# whichever fires first permanently disables the other. Each is also gated on the Phase value its own
+# script overwrites, so one huge hit crossing two thresholds steps through them in order rather than
+# skipping one. Registered ahead of every resolution below so a transition always lands first.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Registeel_Optimization
+Conditions:
+    Battler(Boss).HpPercent <= 55
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Registeel_Optimization
+Conditions:
+    Battler(Boss).HpPercent <= 55
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Registeel_PerfectConfig
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Registeel_PerfectConfig
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Registeel_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Registeel_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately, so no
+# branch out of it can leave it re-armed; it owns every countdown. TurnClose is self-disabling and
+# owns nothing but the per-turn guard resets. Every clock ticks at TurnOpen and resolves at
+# OnTurnEnd, one checkpoint away, so a tick can never eat a step off a fresh re-arm.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Registeel_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# ANALYSIS. One filing per turn regardless of how many strikes a multi-hit move landed: an Event.*
+# condition stays true for the whole dispatch and cannot be moved by the script, so an event-reacting
+# trigger has to gate on a var it sets. Once would be wrong - it means once per BATTLE, and filing is
+# the thing this fight does over and over.
+# At OnMoveEnd, Event.Battler is the battler that GOT HIT. encadapt itself throws out anything that
+# missed, was blocked or had no effect, so the conditions do not have to try.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Registeel_Analyse
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Var(Cooling) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+
+# The three OnTurnEnd resolutions for the clocks TurnOpen ticks. Each fires at 1 rather than being
+# ticked to 0 and resolved in the same pass, and each re-arms to a value >= 2, so its own condition
+# is false the instant it finishes and no self-disabling guard var is needed.
+# SystemsOnline and CriticalOverheat cannot see each other's state: the overheat sets Cooling, and
+# every path that ticks or resolves the Perfect Configuration clock is gated on Cooling == 0.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Registeel_SystemsOnline
+Conditions:
+    Var(Cooling) == 1
+
+Trigger: OnTurnEnd
+Priority: 25
+Script: EncScript_Registeel_CriticalOverheat
+Conditions:
+    Var(Phase) == 2
+    Var(Cooling) == 0
+    Var(Clock) == 1
+
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Registeel_Decay
+Conditions:
+    Var(Phase) <= 1
+    Var(Decay) == 1
+
+# Force Reconfiguration. A non-volatile status landing on Registeel purges the NEWEST adaptation -
+# the freshest, most-likely-to-be-relevant one, and the one the player just watched it file.
+# Once per APPLICATION, not per turn: these two triggers each set the var the other reads, so each
+# disables itself and arms the other. Without that a single burn would purge every turn for the rest
+# of the fight and the board would never fill. Gated on Load >= 1 so a status applied to an empty
+# board does not silently spend the charge.
+# Steel refuses poison outright, so the live levers are burn, paralysis, sleep and freeze - each
+# costing a turn, a moveslot and an accuracy roll, which is the right price for the fight's only
+# on-demand answer. Available from turn 1: a tool that does nothing for the first half of a fight
+# teaches the player it does not work.
+Trigger: OnTurnEnd
+Priority: 35
+Script: EncScript_Registeel_ForceReconfig
+Conditions:
+    Var(StatusGuard) == 0
+    Var(Phase) <= 2
+    Var(Load) >= 1
+    Battler(Boss).Status != 0
+
+Trigger: OnTurnEnd
+Priority: 36
+Script: EncScript_Registeel_StatusCleared
+Conditions:
+    Var(StatusGuard) == 1
+    Battler(Boss).Status == 0
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Registeel_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

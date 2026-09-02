@@ -1,0 +1,122 @@
+Encounter: Moltres
+
+# Moltres, "The Everlasting Flame". One number, Flame Intensity (0-5), drives the whole fight: its
+# guard (which FALLS as Intensity rises, the inverse of Zapdos), its Sp. Atk, the weather, the flame
+# aura and the field burn. Intensity rises when a move damages Moltres, when a Fire move hits it
+# (which also HEALS it), when Moltres uses a Fire move, and when it sheds sleep/freeze; it decays by
+# 1 at end of turn only if Moltres took no damage and only while Intensity <= 3. At Intensity 4 the
+# fire sustains itself - permanent sun, Moltres burns 5% of its own HP per turn, and Intensity never
+# falls again. When Moltres would be KO'd it instead survives at 1 HP (Survive:) and REBIRTHS once:
+# HP restored, Intensity floored at 2, sun and aura made permanent. The second death is real.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # seeds Intensity 0; the ladder runs downward from here
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_FLAMETHROWER, MOVE_FIRE_BLAST, MOVE_AIR_SLASH, MOVE_SOLAR_BEAM
+    Ability: ABILITY_FLAME_BODY
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 7 here in order fixes
+# Phase..BossGuard to 0..6.
+# 0 Phase (0 first life / 1 reborn / 2 weakened), 1 Intensity (0-5), 2 Fed (a move damaged Moltres
+# this turn), 3 Chant (recurring-callout cadence), 4 TurnGuard, 5 HitGuard, 6 BossGuard.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Moltres_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Intensity) >= 0
+    Var(Fed) >= 0
+    Var(Chant) >= 0
+    Var(TurnGuard) >= 0
+    Var(HitGuard) >= 0
+    Var(BossGuard) >= 0
+
+# Rebirth: registered at both checkpoints because the lethal blow can be a move or an end-of-turn
+# tick. Both copies are Once and both gate on Var(Phase) == 0, which the script overwrites, so
+# whichever fires first permanently disables the other. HP <= 1 (not a percent) because the Survive
+# clamp lands Moltres at exactly 1 and, with Level: LevelCap, HpPercent rounds to 0 well before HP.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Moltres_Rebirth
+Conditions:
+    Battler(Boss).HP <= 1
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Moltres_Rebirth
+Conditions:
+    Battler(Boss).HP <= 1
+    Var(Phase) == 0
+
+# The only catch window. Same two-checkpoint pattern; gated on Phase 1 so it can't precede Rebirth.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Moltres_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Moltres_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 1
+
+# The two "a move hit Moltres" triggers share HitGuard, so exactly one fires per hit and priority
+# order makes them mutually exclusive: a Fire move is absorbed and heals Moltres (pri 10), anything
+# else damaging falls through to the ordinary flame-feeding response (pri 20).
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Moltres_FireHit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+    Var(HitGuard) == 0
+    Var(Phase) <= 1
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Moltres_TookDamage
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(HitGuard) == 0
+    Var(Phase) <= 1
+
+# Moltres itself using a Fire move - separate guard, since this is "boss used" not "aimed at".
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Moltres_BossFire
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+    Var(BossGuard) == 0
+    Var(Phase) <= 1
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (only gate is TurnGuard == 0, which
+# it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears).
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Moltres_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Moltres_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

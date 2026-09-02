@@ -288,19 +288,9 @@ static bool match_int(struct Parser *p, int *i)
 }
 
 __attribute__((warn_unused_result))
+// A blank line, or one holding only a '#' comment - match_eol skips a comment to end of line.
 static bool match_empty_line(struct Parser *p)
 {
-    struct Parser p_ = *p;
-    if (match_exact(&p_, "# ")) {
-        int line;
-        if (match_int(&p_, &line)) {
-            struct Token t;
-            match_until_eol(&p_, &t);
-            p_.location.line = line - 1;
-            *p = p_;
-        }
-    }
-
     return match_eol(p);
 }
 
@@ -451,7 +441,6 @@ struct EncounterDef
 
 struct Parsed
 {
-    const struct Source *source;
     // Heap-allocated and grown, not embedded: each EncounterDef is tens of KB (32 triggers, each
     // with a 256-entry cond_lines array), so a fixed-size array of these here would put several
     // MB on the stack.
@@ -470,8 +459,8 @@ static void append_cond_line(struct Trigger *trig, const char *text)
     trig->cond_lines[trig->cond_lines_n++] = strdup(text);
 }
 
-// Peeks past blank lines / GCC line markers (without consuming) and reports the indent (in
-// columns, 0-based) of the next real content line. Returns false at EOF.
+// Peeks past blank and comment lines (without consuming) and reports the indent (in columns,
+// 0-based) of the next real content line. Returns false at EOF.
 static bool peek_indent_after_blanks(struct Parser *p, int *indent_out)
 {
     struct Parser tmp = *p;
@@ -1434,13 +1423,16 @@ static bool parse_encounter(struct Parser *p, struct EncounterDef *enc)
     return !any_error;
 }
 
+// Appends to 'parsed'; called once per source file, so encounters from every file end up in one
+// gEncounters[]. Order doesn't matter - the array is built with designated initializers.
 static void parse(struct Parser *p, struct Parsed *parsed)
 {
-    parsed->source = p->source;
-    parsed->encounters_n = 0;
-    parsed->encounters_c = 4;
-    parsed->encounters = malloc(sizeof(*parsed->encounters) * parsed->encounters_c);
-    assert(parsed->encounters);
+    if (!parsed->encounters)
+    {
+        parsed->encounters_c = 4;
+        parsed->encounters = malloc(sizeof(*parsed->encounters) * parsed->encounters_c);
+        assert(parsed->encounters);
+    }
 
     for (;;)
     {
@@ -1523,10 +1515,12 @@ static void cond_array_name(const struct EncounterDef *enc, int trigger_index, c
         snprintf(out, out_n, "sConditions_%.*s", enc->name.end - enc->name.begin, &enc->name.source->buffer[enc->name.begin]);
 }
 
-static void fprint_encounters(FILE *f, struct Parsed *parsed)
+static void fprint_encounters(FILE *f, struct Parsed *parsed, const struct Source *sources, int sources_n)
 {
-    fprintf(f, "//\n// DO NOT MODIFY THIS FILE! It is auto-generated from %s\n//\n\n", parsed->source->path);
-    fprintf(f, "#line 1 \"%s\"\n\n", parsed->source->path);
+    fprintf(f, "//\n// DO NOT MODIFY THIS FILE! It is auto-generated from:\n");
+    for (int i = 0; i < sources_n; i++)
+        fprintf(f, "//   %s\n", sources[i].path);
+    fprintf(f, "//\n\n");
 
     fprintf(f, "#if TESTING\n");
     fprintf(f, "// Per-trigger authored source location - dev builds only, no release ROM cost (Outline Sec39).\n");
@@ -1538,8 +1532,9 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
         struct EncounterDef *enc = &parsed->encounters[i];
         char enc_const[64];
         constant_from_token("ENCOUNTER", &enc->name, enc_const, sizeof(enc_const));
+        const char *enc_path = enc->name.source->path;
 
-        fprintf(f, "#line %d\n", enc->name_line);
+        fprintf(f, "#line %d \"%s\"\n", enc->name_line, enc_path);
 
         if (enc->vars_n > 0)
         {
@@ -1562,14 +1557,14 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
             char name[80];
             cond_array_name(enc, t, name, sizeof(name));
 
-            fprintf(f, "#line %d\n", trig->trigger_keyword_line);
+            fprintf(f, "#line %d \"%s\"\n", trig->trigger_keyword_line, enc_path);
             fprintf(f, "static const struct EncounterCondition %s[] =\n{\n", name);
             for (int l = 0; l < trig->cond_lines_n; l++)
                 fprintf(f, "    %s\n", trig->cond_lines[l]);
             fprintf(f, "};\n\n");
         }
 
-        fprintf(f, "#line %d\n", enc->name_line);
+        fprintf(f, "#line %d \"%s\"\n", enc->name_line, enc_path);
         fprintf(f, "static const struct EncounterTrigger sTriggers_%.*s[] =\n{\n",
                 enc->name.end - enc->name.begin, &enc->name.source->buffer[enc->name.begin]);
         for (int t = 0; t < enc->triggers_n; t++)
@@ -1579,7 +1574,7 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
             if (trig->has_conditions)
                 cond_array_name(enc, t, cond_name, sizeof(cond_name));
 
-            fprintf(f, "#line %d\n", trig->trigger_keyword_line);
+            fprintf(f, "#line %d \"%s\"\n", trig->trigger_keyword_line, enc_path);
             fprintf(f, "    { .checkpoint = %s, .priority = %d, .flags = %s, .conditions = %s, .script = ",
                     trig->checkpoint_const, trig->priority, trig->flags_expr, cond_name);
             fprint_token(f, &trig->script);
@@ -1591,7 +1586,7 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
         fprintf(f, "static const struct EncounterTriggerSourceLocation sTriggersDebug_%.*s[] =\n{\n",
                 enc->name.end - enc->name.begin, &enc->name.source->buffer[enc->name.begin]);
         for (int t = 0; t < enc->triggers_n; t++)
-            fprintf(f, "    { \"%s\", %d },\n", parsed->source->path, enc->triggers[t].trigger_keyword_line);
+            fprintf(f, "    { \"%s\", %d },\n", enc_path, enc->triggers[t].trigger_keyword_line);
         fprintf(f, "};\n#endif\n\n");
     }
 
@@ -1601,6 +1596,7 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
         struct EncounterDef *enc = &parsed->encounters[i];
         char enc_const[64];
         constant_from_token("ENCOUNTER", &enc->name, enc_const, sizeof(enc_const));
+        fprintf(f, "#line %d \"%s\"\n", enc->name_line, enc->name.source->path);
         fprintf(f, "    [%s] =\n    {\n", enc_const);
         fprintf(f, "        .triggers = sTriggers_%.*s,\n",
                 enc->name.end - enc->name.begin, &enc->name.source->buffer[enc->name.begin]);
@@ -1625,29 +1621,68 @@ static void fprint_encounters(FILE *f, struct Parsed *parsed)
 
 static void usage(FILE *file, char *argv0)
 {
-    fprintf(file, "Usage: %s -o <output> <source>\n", argv0);
+    fprintf(file, "Usage: %s -o <output> <source>...\n", argv0);
+}
+
+// Reads the whole file into a malloc'd buffer. Tokens point into it for the rest of the run, so
+// the buffer outlives parsing and is only freed at exit.
+static bool read_source(const char *path, unsigned char **buffer_out, int *buffer_n_out)
+{
+    bool ok = false;
+    FILE *file = fopen(path, "r");
+    if (file == NULL)
+    {
+        fprintf(stderr, "could not open '%s' for reading\n", path);
+        return false;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long buffer_n = ftell(file);
+    if (buffer_n > INT_MAX)
+    {
+        fprintf(stderr, "could not read '%s': too big\n", path);
+        goto exit;
+    }
+
+    unsigned char *buffer = malloc(buffer_n);
+    if (!buffer)
+    {
+        fprintf(stderr, "could not allocate %ld bytes\n", buffer_n);
+        goto exit;
+    }
+
+    rewind(file);
+    if (fread(buffer, 1, buffer_n, file) < (size_t)buffer_n)
+    {
+        fprintf(stderr, "could not read '%s'\n", path);
+        free(buffer);
+        goto exit;
+    }
+
+    *buffer_out = buffer;
+    *buffer_n_out = buffer_n;
+    ok = true;
+
+exit:
+    fclose(file);
+    return ok;
 }
 
 int main(int argc, char *argv[])
 {
     int status = 1;
-    FILE *source_file = NULL;
     FILE *output_file = NULL;
-    unsigned char *source_buffer = NULL;
+    struct Source *sources = NULL;
+    int sources_n = 0;
     struct Parsed parsed = {};
 
-    const char *source_path = NULL;
     const char *output_path = NULL;
-    const char *real_source_path = NULL;
 
     int opt;
-    while ((opt = getopt(argc, argv, "i:o:")) != -1)
+    while ((opt = getopt(argc, argv, "o:")) != -1)
     {
         switch (opt)
         {
-        case 'i':
-            real_source_path = optarg;
-            break;
         case 'o':
             output_path = optarg;
             break;
@@ -1658,87 +1693,40 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!output_path)
+    if (!output_path || optind == argc)
     {
         usage(stderr, argv[0]);
         goto exit;
     }
 
-    if (optind != argc - 1)
+    // Every source is parsed into one gEncounters[], so an encounter can live in whichever file
+    // suits it (see src/data/legendary_encounters/) without the runtime knowing about the split.
+    sources = calloc(argc - optind, sizeof(*sources));
+    assert(sources);
+    for (; optind < argc; optind++)
     {
-        usage(stderr, argv[0]);
-        goto exit;
+        const char *source_path = argv[optind];
+        unsigned char *buffer;
+        int buffer_n;
+        if (!read_source(source_path, &buffer, &buffer_n))
+            goto exit;
+
+        struct Source *source = &sources[sources_n++];
+        *source = (struct Source) {
+            .path = source_path,
+            .buffer = buffer,
+            .buffer_n = buffer_n,
+        };
+
+        struct Parser parser = {
+            .source = source,
+            .location = { .line = 1, .column = 1 },
+            .offset = 0,
+        };
+        parse(&parser, &parsed);
+        if (parser.fatal_error)
+            goto exit;
     }
-    source_path = argv[optind++];
-
-    int source_buffer_n;
-    if (strcmp(source_path, "-") == 0)
-    {
-        source_file = stdin;
-        source_path = "<stdin>";
-
-        int source_buffer_c = 4096;
-        source_buffer_n = 0;
-        for (;;)
-        {
-            if (!(source_buffer = realloc(source_buffer, source_buffer_c)))
-            {
-                fprintf(stderr, "could not allocate %d bytes\n", source_buffer_c);
-                goto exit;
-            }
-
-            source_buffer_n += fread(&source_buffer[source_buffer_n], 1, source_buffer_c - source_buffer_n, source_file);
-            if (source_buffer_n < source_buffer_c)
-                break;
-
-            source_buffer_c += source_buffer_n / 2;
-        }
-    }
-    else
-    {
-        source_file = fopen(source_path, "r");
-        if (source_file == NULL)
-        {
-            fprintf(stderr, "could not open '%s' for reading\n", source_path);
-            goto exit;
-        }
-
-        fseek(source_file, 0, SEEK_END);
-        long source_buffer_n_ = ftell(source_file);
-        if (source_buffer_n_ > INT_MAX)
-        {
-            fprintf(stderr, "could not read '%s': too big\n", source_path);
-            goto exit;
-        }
-
-        source_buffer_n = source_buffer_n_;
-
-        if (!(source_buffer = malloc(source_buffer_n)))
-        {
-            fprintf(stderr, "could not allocate %d bytes\n", source_buffer_n);
-            goto exit;
-        }
-        rewind(source_file);
-        if (fread(source_buffer, 1, source_buffer_n, source_file) < (size_t)source_buffer_n)
-        {
-            fprintf(stderr, "could not read '%s'\n", source_path);
-            goto exit;
-        }
-    }
-
-    struct Source source = {
-        .path = real_source_path ? real_source_path : source_path,
-        .buffer = source_buffer,
-        .buffer_n = source_buffer_n,
-    };
-    struct Parser parser = {
-        .source = &source,
-        .location = { .line = 1, .column = 1 },
-        .offset = 0,
-    };
-    parse(&parser, &parsed);
-    if (parser.fatal_error)
-        goto exit;
 
     if (strcmp(output_path, "-") == 0)
     {
@@ -1754,14 +1742,15 @@ int main(int argc, char *argv[])
             goto exit;
         }
     }
-    fprint_encounters(output_file, &parsed);
+    fprint_encounters(output_file, &parsed, sources, sources_n);
 
     status = 0;
 
 exit:
     if (output_file && output_file != stdout) fclose(output_file);
     if (parsed.encounters) free(parsed.encounters);
-    if (source_buffer) free(source_buffer);
-    if (source_file && source_file != stdin) fclose(source_file);
+    for (int i = 0; i < sources_n; i++)
+        free((unsigned char *)sources[i].buffer);
+    free(sources);
     return status;
 }

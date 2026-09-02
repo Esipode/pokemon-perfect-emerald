@@ -1,0 +1,153 @@
+Encounter: Jirachi
+
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the Wish Granted script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # GuardBias 2, the opening rung of the ladder
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True               # released in the Wish Granted script
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_DOOM_DESIRE, MOVE_PSYCHIC, MOVE_METEOR_MASH, MOVE_THUNDERBOLT
+    Ability: ABILITY_SERENE_GRACE
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming them all here in order fixes
+# Phase..Scratch to 0..11.
+# 0 Phase (0 Awakening / 1 after wish 1 / 2 after wish 2 / 3 Miracle / 4 Wish Granted),
+# 1 Wishes (0-3, wishes spent), 2 Energy (Wish Energy, 0-3), 3 Heart (the read on the player, 1-15,
+# starts 8), 4 GuardBias (guard ladder rung, 0-4, starts 2), 5 Miracle (0 none / 1 Power / 2 Life /
+# 3 Stars), 6 LastGuard (damage reduction last ANNOUNCED - the re-fire latch, starts 90),
+# 7 LastTier (Heart tier last announced: 0 will / 1 balance / 2 force, starts 3 = never announced),
+# 8 TurnGuard, 9 MoveGuard (per-turn OnMoveEnd re-entry guard for the Heart tally),
+# 10 Prev (ApplyGuard's before-value scratch), 11 Scratch.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Jirachi_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Wishes) >= 0
+    Var(Energy) >= 0
+    Var(Heart) >= 0
+    Var(GuardBias) >= 0
+    Var(Miracle) >= 0
+    Var(LastGuard) >= 0
+    Var(LastTier) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(Prev) >= 0
+    Var(Scratch) >= 0
+
+# The tags blaze at 30%: Wish Energy is filled outright, so whatever wish is next arrives within one
+# turn of the player pushing it low rather than waiting out a clock. A hurt Jirachi wishes harder.
+# Registered at both checkpoints because the blow that crosses the threshold can be a move or an
+# end-of-turn tick; both copies are Once, which is marked at selection, so they disable each other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Jirachi_TagsBlaze
+Conditions:
+    Battler(Boss).HpPercent <= 40
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Jirachi_TagsBlaze
+Conditions:
+    Battler(Boss).HpPercent <= 40
+
+# The catch window. Phase 3 means the Miracle has played, so this can never pre-empt it.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Jirachi_WishGranted
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Jirachi_WishGranted
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they own the per-turn guards, the Wish Energy income and the recurring cues.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Jirachi_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The spend. Income is at OnTurnEnd and the spend is here, so a real turn always passes between
+# filling the meter and wishing on it. Both scripts write Energy to a value their own condition
+# rejects (0 on NO, 1 on YES) and advance Wishes/Phase, so neither can re-select inside one
+# dispatch; their conditions are disjoint on Wishes, so the 15/20 ordering is clarity, not a guard.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Jirachi_Miracle
+Conditions:
+    Var(Energy) >= 3
+    Var(Wishes) == 2
+    Var(Phase) == 2
+
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Jirachi_Wish
+Conditions:
+    Var(Energy) >= 3
+    Var(Wishes) <= 1
+    Var(Phase) <= 1
+
+# The Heart meter - how Jirachi reads the way the player fights. At OnMoveEnd, Event.Target is the
+# battler that USED the move, so these only tally the player's own actions and Jirachi's delayed
+# Doom Desire strike never counts. Event-reacting, so they self-disable through Var(MoveGuard) - an
+# Event.* condition stays true for the whole dispatch and Once would mean once per BATTLE. They
+# share the guard safely: one checkpoint, identical bookkeeping, exactly one meant to fire per turn.
+# The guard is also what makes a five-hit move one point instead of five. Phase <= 2 stops the tally
+# once the Miracle has locked in - the read is done, and the tags stop changing colour with it.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Jirachi_HeartForce
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 31
+Script: EncScript_Jirachi_HeartWill
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Jirachi_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+#-------------------------------------------------------
+
+# Rayquaza, "The Sky Guardian". Every legendary before it is a fight over a NUMBER; Rayquaza is a
+# fight over a POSITION. It has an altitude, and altitude decides whether your attacks are worth
+# anything. It climbs on its own, and while it is airborne Atmospheric Pressure builds; when the
+# Pressure fills it vanishes into the stratosphere and Skyfall lands on the player for a third of
+# their health. You cannot out-damage it in the sky, so you have to bring it down - either by
+# putting weather on the field (it must descend to tear the atmosphere apart, and it descends
+# ANGRY, and the anger stacks) or by landing enough damage in a single turn to shoot it out of the
+# air. Grounded Rayquaza is hittable AND its Pressure clock is stopped, so the whole encounter is
+# buying grounded turns and paying for them in tempo or in how hard it hits back.
+# At 50% it Mega Evolves and Delta Stream's Strong Winds lock the sky - primal weather cannot be
+
+# overwritten, so the weather lever dies exactly when the fight gets hardest. At 22% its grip fails,
+# the storm collapses and weather becomes real for the first time, hostile to Rayquaza too.

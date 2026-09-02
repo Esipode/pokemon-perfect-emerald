@@ -8219,6 +8219,10 @@ s32 CalculateMoveDamage(struct DamageContext *ctx)
     // Before GetAdjustedDamage, so Endure/Sturdy/Focus Sash all judge "would this KO?" against the
     // damage the target actually takes. The AI shares this path deliberately: a boss it can't dent
     // should read as one when it picks a move.
+    // The type-keyed adaptation runs first so the flat guard's floor-at-1 stays the last word.
+    // ctx->moveType is the runtime type - what the move actually hit as, after Normalize, the -ate
+    // abilities and Tera - which is the same basis encadapt files a type on.
+    damage = ApplyEncounterTypeAdaptation(ctx->battlerDef, ctx->moveType, damage);
     damage = ApplyEncounterDamageReduction(ctx->battlerDef, damage);
 
     return GetAdjustedDamage(ctx, damage);

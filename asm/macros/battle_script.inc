@@ -1241,6 +1241,38 @@
 	.byte \var
 	.endm
 
+	@ Files the type of the move that just landed as a type-keyed damage resistance on \target, at
+	@ \percent (capped at ENC_MAX_ADAPT_PERCENT), in a FIFO \slots deep (capped at
+	@ ENC_MAX_ADAPTATIONS). Re-filing a type already held raises it to \percent instead of taking a
+	@ second slot, and a \slots narrower than the board drops the overflow first.
+	@ \countVar takes the resulting adaptation count - the authoritative board size, so a script that
+	@ mirrors it can never drift. \resultVar takes an ENC_ADAPT_RESULT_* outcome:
+	@   ENC_ADAPT_RESULT_HARDENED   the type was already held; its percent was raised
+	@   ENC_ADAPT_RESULT_FILED      filed into a free slot
+	@   ENC_ADAPT_RESULT_EVICTED    filed, and the OLDEST adaptation was pushed out
+	@ The new type is buffered into B_BUFF1 and any evicted type into B_BUFF2.
+	@ OnMoveEnd only - it reads the event's move. A move that missed, was blocked or had no effect is
+	@ ignored outright and leaves both vars untouched, so a branch on \resultVar can't act on a whiff.
+	.macro encadapt target:req, percent:req, slots:req, countVar:req, resultVar:req
+	callnative BS_EncAdapt
+	.byte \target
+	.byte \percent
+	.byte \slots
+	.byte \countVar
+	.byte \resultVar
+	.endm
+
+	@ Drops one type adaptation from \target - ENC_ADAPT_OLDEST, ENC_ADAPT_NEWEST or ENC_ADAPT_ALL -
+	@ and writes the remaining count into \countVar. The dropped type is buffered into B_BUFF1
+	@ (ENC_ADAPT_ALL buffers the newest of what it wiped). Silent, and a no-op on an empty board, so
+	@ it is safe to call unconditionally - test \countVar afterwards to know whether anything fell.
+	.macro encpurgeadapt target:req, which:req, countVar:req
+	callnative BS_EncPurgeAdapt
+	.byte \target
+	.byte \which
+	.byte \countVar
+	.endm
+
 	@ Writes the result of comparing \targetA's live \stat against \targetB's into author variable
 	@ \var: 0 = A is lower, 1 = equal, 2 = A is higher. Both targets must resolve to exactly one
 	@ live battler. Conditions and encjumpifvar only compare a var against a literal, so a rule that

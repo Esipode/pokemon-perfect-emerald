@@ -12817,6 +12817,175 @@ void BS_EncStorePrediction(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// ANALYSIS (encadapt). Files the type of the move that just landed as a type-keyed damage
+// resistance on every battler <target> resolves to. Capacity comes from the call site rather than
+// from stored state, so a phase that widens the board is one changed literal in the script.
+//
+// Three outcomes, reported in <resultVar> (enum EncounterAdaptResult) so one command drives all
+// three lines of dialogue; <countVar> takes the resulting number of adaptations, which is the
+// authoritative board size and so can never drift from what a script mirrors it into.
+// The new type is buffered into B_BUFF1 and any evicted type into B_BUFF2, so a callout can name
+// both without a type-buffering opcode having to exist.
+//
+// OnMoveEnd only - it reads the event's move. A move that missed, was blocked or did nothing
+// teaches the boss nothing, and the checkpoint fires for those too (the event's oldValue/newValue
+// are only written at the HP-commit point, so they are stale after a whiff and can't be tested).
+// Screening on the move result here rather than in a condition keeps every future user correct.
+void BS_EncAdapt(void)
+{
+    NATIVE_ARGS(u8 target, u8 percent, u8 slots, u8 countVar, u8 resultVar);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 slots = cmd->slots;
+    u32 percent = cmd->percent;
+    enum Type moveType;
+    enum BattlerId battler;
+    u32 count = 0, result = ENC_ADAPT_RESULT_FILED;
+
+    if (slots > ENC_MAX_ADAPTATIONS)
+        slots = ENC_MAX_ADAPTATIONS;
+    if (percent > ENC_MAX_ADAPT_PERCENT)
+        percent = ENC_MAX_ADAPT_PERCENT;
+
+    moveType = GetBattleMoveType(gBattleStruct->encounter.event.move);
+
+    // Nothing landed, or nothing that carries a type - leave the board and both vars alone so the
+    // caller's branch on <resultVar> can't act on a whiff.
+    if (mask == 0 || slots == 0 || moveType == TYPE_NONE
+     || (gBattleStruct->moveResultFlags[gBattleStruct->encounter.event.battler] & MOVE_RESULT_NO_EFFECT))
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u8 *types = gBattleStruct->encounter.adaptType[battler];
+        u8 *percents = gBattleStruct->encounter.adaptPercent[battler];
+        u32 i, filled;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // Slots beyond the capacity this phase allows are dropped first, so a board narrowed by a
+        // later call can never leave an unreachable adaptation still resisting damage.
+        for (i = slots; i < ENC_MAX_ADAPTATIONS; i++)
+        {
+            types[i] = TYPE_NONE;
+            percents[i] = 0;
+        }
+        for (filled = 0; filled < slots && types[filled] != TYPE_NONE; filled++)
+            ;
+
+        for (i = 0; i < filled; i++)
+        {
+            if (types[i] != moveType)
+                continue;
+
+            // Already held: hardening. The percent only ever climbs, so a phase that files weaker
+            // than the board already holds can't soften an adaptation the player has fed.
+            if (percents[i] < percent)
+                percents[i] = percent;
+            result = ENC_ADAPT_RESULT_HARDENED;
+            break;
+        }
+
+        if (i == filled)
+        {
+            if (filled < slots)
+            {
+                result = ENC_ADAPT_RESULT_FILED;
+            }
+            else
+            {
+                // Full board: the oldest is pushed out to make room, and named so the player can
+                // see the board has a size and that they are the one deciding what falls off it.
+                PREPARE_TYPE_BUFFER(gBattleTextBuff2, types[0]);
+                for (i = 1; i < slots; i++)
+                {
+                    types[i - 1] = types[i];
+                    percents[i - 1] = percents[i];
+                }
+                filled = slots - 1;
+                result = ENC_ADAPT_RESULT_EVICTED;
+            }
+            types[filled] = moveType;
+            percents[filled] = percent;
+            filled++;
+        }
+
+        count = filled;
+    }
+
+    PREPARE_TYPE_BUFFER(gBattleTextBuff1, moveType);
+    gEncounterVars[cmd->countVar] = count;
+    gEncounterVars[cmd->resultVar] = result;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// The inverse of encadapt (encpurgeadapt): drops the oldest adaptation, the newest, or the whole
+// board from every battler <target> resolves to, and writes the remaining count into <countVar>.
+// The array is compacted on every removal so slot 0 stays the oldest and no emptiness test is
+// needed anywhere else. The dropped type is buffered into B_BUFF1; a silent no-op on an empty
+// board, so it is safe to call unconditionally.
+void BS_EncPurgeAdapt(void)
+{
+    NATIVE_ARGS(u8 target, u8 which, u8 countVar);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    u32 count = 0;
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u8 *types = gBattleStruct->encounter.adaptType[battler];
+        u8 *percents = gBattleStruct->encounter.adaptPercent[battler];
+        u32 i, filled;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        for (filled = 0; filled < ENC_MAX_ADAPTATIONS && types[filled] != TYPE_NONE; filled++)
+            ;
+
+        if (filled == 0)
+            continue;
+
+        if (cmd->which == ENC_ADAPT_ALL)
+        {
+            PREPARE_TYPE_BUFFER(gBattleTextBuff1, types[filled - 1]);
+            for (i = 0; i < ENC_MAX_ADAPTATIONS; i++)
+            {
+                types[i] = TYPE_NONE;
+                percents[i] = 0;
+            }
+            filled = 0;
+        }
+        else if (cmd->which == ENC_ADAPT_NEWEST)
+        {
+            PREPARE_TYPE_BUFFER(gBattleTextBuff1, types[filled - 1]);
+            filled--;
+            types[filled] = TYPE_NONE;
+            percents[filled] = 0;
+        }
+        else
+        {
+            PREPARE_TYPE_BUFFER(gBattleTextBuff1, types[0]);
+            for (i = 1; i < filled; i++)
+            {
+                types[i - 1] = types[i];
+                percents[i - 1] = percents[i];
+            }
+            filled--;
+            types[filled] = TYPE_NONE;
+            percents[filled] = 0;
+        }
+
+        count = filled;
+    }
+
+    gEncounterVars[cmd->countVar] = count;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // COMPARE_STAT (enccomparestat). Writes 0 (A lower) / 1 (equal) / 2 (A higher) into an author
 // variable. Conditions and encjumpifvar only ever compare a var against a literal, so any rule that
 // weighs one live battler's stat against another's has to be expressed as a command that leaves the

@@ -1,0 +1,197 @@
+Encounter: Suicune
+
+# Suicune, "The Purifier". Raikou is a slider you fight downward and Entei is a bomb timer you cannot
+# defuse; Suicune is a resource you are constantly tempted to hand it. Flow (0-5) is fed ONLY by
+# Suicune finding something on the field to wash away - weather, terrain, screens, hazards, a
+# Substitute, a status on itself, or a stat stage off neutral on either side. Every impurity the
+# player puts down is a point of Flow waiting to be collected, and a clean turn drains one back. Its
+# own kit punishes patience (Scald burns, Bulldoze grinds Speed) so playing clean is not free. Then
+# the fight inverts twice: Sacred Water at Flow 5 only heals if the field is CLEAN when it resolves,
+# and phase 2 is untouchable at any Flow above 0, so the player must drain it to empty and then land
+# a super-effective or critical hit to shatter it. No status immunity until phase 2 - a status on
+# Suicune is an impurity, so inflicting one just pays it a point of Flow to cure itself.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # Cleansing Current at Flow 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_SCALD, MOVE_ICE_BEAM, MOVE_EXTRASENSORY, MOVE_BULLDOZE
+    Ability: ABILITY_INNER_FOCUS
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 14 here in order fixes Phase..Still
+# to 0..13.
+# 0 Phase (0 Cleansing Current / 1 The Cleansing / 2 Sacred Beast / 3 Weakened), 1 Flow (0-5),
+# 2 Rite (purification countdown; 0 idle, else 3->2->1 resolved at 1), 3 Draw (Sacred Water
+# countdown; 0 idle, 2 telegraphed, 1 resolves), 4 Break (turns of open guard left), 5 LastGuard
+# (damage reduction last ANNOUNCED - the re-fire latch), 6 Cleansed (things removed by this turn's
+# purification; zeroed at TurnOpen, read by the Flow decay), 7 TurnGuard, 8 Shatter (per-turn
+# re-entry guard for the two OnMoveEnd shatter triggers), 9 Calm (consecutive clean turns),
+# 10 Breach (which opening is live: 1 broken draw, 2 shattered purity), 11 Prev (ApplyGuard's
+# before-value scratch), 12 Dirty (result of the read-only impurity sweep), 13 Swept (a purification
+# already ran this turn; set by Purify itself, cleared at TurnOpen).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Suicune_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Flow) >= 0
+    Var(Rite) >= 0
+    Var(Draw) >= 0
+    Var(Break) >= 0
+    Var(LastGuard) >= 0
+    Var(Cleansed) >= 0
+    Var(TurnGuard) >= 0
+    Var(Shatter) >= 0
+    Var(Calm) >= 0
+    Var(Breach) >= 0
+    Var(Prev) >= 0
+    Var(Cycle) >= 0
+    Var(Dirty) >= 0
+    Var(Swept) >= 0
+
+# The three phase transitions, each registered at both checkpoints because the threshold-crossing
+# blow can be a move or an end-of-turn tick. Both copies are Once and both gate on a Var(Phase) value
+# their shared script overwrites, so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Suicune_Cleansing
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Suicune_Cleansing
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Suicune_SacredBeast
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Suicune_SacredBeast
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Suicune_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Suicune_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they own every countdown, the Flow decay, the regen and the recurring callouts.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Suicune_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Rite is stepped down in TurnClose and resolved here, one checkpoint later, so the countdown cannot
+# chase itself through every state in a single dispatch. Phase 2 hands purification over to
+# StillWater instead, which runs at the end of every turn.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Suicune_Rite
+Conditions:
+    Var(Rite) == 1
+    Var(Phase) <= 1
+
+# Sacred Water. The draw is telegraphed a full turn ahead (Draw 2, stepped to 1 in TurnClose) and
+# resolves at priority 15 - ahead of the scheduled Rite at 20, so the check reads the field as the
+# player actually left it. Behind the Rite, a sweep that happened to land on the resolve turn would
+# wash the player's interrupt away and hand Suicune the heal it had just been denied.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Suicune_SacredResolve
+Conditions:
+    Var(Draw) == 1
+
+# Var(Swept) keeps the draw off a turn a Rite already swept. The draw opens with its own purification,
+# and nothing else in its gates goes false when a Rite runs first at priority 20 - so without this a
+# Flow-5 turn that also happened to be a rite turn played the whole PURIFICATION sequence twice back
+# to back, undertow included. Only reachable from Phase 1, which is where it was showing up.
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Suicune_SacredDraw
+Conditions:
+    Var(Flow) == 5
+    Var(Draw) == 0
+    Var(Break) == 0
+    Var(Swept) == 0
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+
+# The phase-2 puzzle. Both share Var(Shatter) as their re-entry guard, so exactly one fires per move -
+# an Event.* condition stays true for the whole dispatch, so an event-reacting trigger has to disable
+# itself. Once would be wrong: it means once per BATTLE, and the shatter is meant to be repeatable.
+# The crit test cannot be expressed as a condition, so ShatterCrit leads with jumpifnotcriticalhit
+# in-script and still consumes the guard on a non-crit rather than re-firing.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Suicune_ShatterType
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(Phase) == 2
+    Var(Flow) == 0
+    Var(Break) == 0
+    Var(Shatter) == 0
+    Any:
+        Event.MoveType == TYPE_GRASS
+        Event.MoveType == TYPE_ELECTRIC
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Suicune_ShatterCrit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(Phase) == 2
+    Var(Flow) == 0
+    Var(Break) == 0
+    Var(Shatter) == 0
+
+# Sacred Beast purifies at the end of every turn instead of on the Rite timer - but not while a
+# shatter has it open, so breaking through genuinely stops it working. Var(Swept) is its
+# self-disabling gate (set by Purify, cleared at TurnOpen); without one, a level trigger whose
+# conditions still hold re-selects until the per-checkpoint script cap trips.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Suicune_StillWater
+Conditions:
+    Var(Phase) == 2
+    Var(Break) == 0
+    Var(Swept) == 0
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Suicune_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

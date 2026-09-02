@@ -27,7 +27,30 @@ enum EncounterId
     ENCOUNTER_GROUDON,
     ENCOUNTER_REGICE,
     ENCOUNTER_REGIROCK,
+    ENCOUNTER_REGISTEEL,
     ENCOUNTER_COUNT,
+};
+
+// ANALYSIS (encadapt / encpurgeadapt): per-battler, type-keyed damage resistances held in a FIFO.
+// The depth here is the hard ceiling; a script asks for however many slots its phase allows.
+#define ENC_MAX_ADAPTATIONS      4
+#define ENC_MAX_ADAPT_PERCENT   90   // per-type reduction ceiling, deliberately short of a lockout
+
+// Which adaptation encpurgeadapt drops. Slot 0 is always the oldest, so the array is compacted on
+// every removal and OLDEST/NEWEST stay meaningful without storing timestamps.
+enum EncounterAdaptPurge
+{
+    ENC_ADAPT_OLDEST,
+    ENC_ADAPT_NEWEST,
+    ENC_ADAPT_ALL,
+};
+
+// encadapt's outcome, written into its result variable so one command can drive three lines.
+enum EncounterAdaptResult
+{
+    ENC_ADAPT_RESULT_HARDENED,   // the type was already held; its percent was raised
+    ENC_ADAPT_RESULT_FILED,      // filed into a free slot
+    ENC_ADAPT_RESULT_EVICTED,    // filed, and the oldest adaptation was pushed out to make room
 };
 
 #define MAX_ENCOUNTER_VARS                     16

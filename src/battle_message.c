@@ -1496,6 +1496,24 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCREGIROCKMOUNTAINFALLS]             = COMPOUND_STRING("MOUNTAIN'S COLLAPSE!\pRegirock brings everything down at once!{PAUSE_UNTIL_PRESS}"),
     [STRINGID_ENCREGIROCKNOSLEEP]                   = COMPOUND_STRING("Regirock doesn't sleep. The stone only settles harder."),
     [STRINGID_ENCREGIROCKWEAKENED]                  = COMPOUND_STRING("The rubble settles, and Regirock lies exposed.\pIt's worn out - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+
+    [STRINGID_ENCREGISTEELAWAKENS]                  = COMPOUND_STRING("Registeel's eyes light in sequence. It is measuring you."),
+    [STRINGID_ENCREGISTEELFILED]                    = COMPOUND_STRING("Registeel's plating reshapes itself against {B_BUFF1}-type attacks!"),
+    [STRINGID_ENCREGISTEELHARDENED]                 = COMPOUND_STRING("Registeel has already solved {B_BUFF1}.\pIts plating thickens further."),
+    [STRINGID_ENCREGISTEELEVICTED]                  = COMPOUND_STRING("Registeel discards its {B_BUFF2} configuration to make room for {B_BUFF1}."),
+    [STRINGID_ENCREGISTEELDEGRADED]                 = COMPOUND_STRING("Registeel's {B_BUFF1} configuration has degraded."),
+    [STRINGID_ENCREGISTEELCONTRADICTION]            = COMPOUND_STRING("Registeel's readings contradict each other!\pIts {B_BUFF1} configuration fails."),
+    [STRINGID_ENCREGISTEELASSAULT]                  = COMPOUND_STRING("Registeel routes everything into its weapons!"),
+    [STRINGID_ENCREGISTEELBALANCED]                 = COMPOUND_STRING("Registeel rebalances itself."),
+    [STRINGID_ENCREGISTEELFORTRESS]                 = COMPOUND_STRING("Registeel routes everything into its plating."),
+    [STRINGID_ENCREGISTEELLOADONE]                  = COMPOUND_STRING("Registeel is holding a configuration against you."),
+    [STRINGID_ENCREGISTEELLOADTWO]                  = COMPOUND_STRING("Registeel has an answer for almost everything you've shown it."),
+    [STRINGID_ENCREGISTEELOPTIMIZATION]             = COMPOUND_STRING("Registeel's processing accelerates.\pIt's filing far more than it was.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCREGISTEELPERFECTCONFIG]            = COMPOUND_STRING("PERFECT CONFIGURATION!\pRegisteel stops choosing between its plating and its weapons.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCREGISTEELOVERHEAT]                 = COMPOUND_STRING("CRITICAL OVERHEAT!\pRegisteel's configurations burn away, and it can't file anything new.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCREGISTEELCOOLING]                  = COMPOUND_STRING("Registeel's systems are still cooling."),
+    [STRINGID_ENCREGISTEELONLINE]                   = COMPOUND_STRING("Registeel's systems come back online."),
+    [STRINGID_ENCREGISTEELWEAKENED]                 = COMPOUND_STRING("Registeel's core dims, and its plating goes slack.\pIt's worn out - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

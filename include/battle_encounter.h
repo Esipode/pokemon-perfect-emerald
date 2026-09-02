@@ -78,7 +78,7 @@ extern const u8 EncScript_StormHerald_Intro[];
 extern const u8 EncScript_StormHerald_Surge[];
 extern const u8 EncScript_StormHerald_Desperation[];
 
-// Legendary Encounter Messages - see src/data/battle_encounters.encounter
+// Legendary Encounter Messages - see src/data/legendary_encounters/
 
 // Articuno ("The Frozen Battlefield")
 extern const u8 EncScript_Articuno_Intro[];
@@ -370,6 +370,22 @@ extern const u8 EncScript_Regirock_RebuildResolve[];
 extern const u8 EncScript_Regirock_RockfallResolve[];
 extern const u8 EncScript_Regirock_CollapseTick[];
 extern const u8 EncScript_Regirock_TurnClose[];
+
+extern const u8 EncScript_Registeel_Intro[];
+extern const u8 EncScript_Registeel_Optimization[];
+extern const u8 EncScript_Registeel_Optimization[];
+extern const u8 EncScript_Registeel_PerfectConfig[];
+extern const u8 EncScript_Registeel_PerfectConfig[];
+extern const u8 EncScript_Registeel_Weakened[];
+extern const u8 EncScript_Registeel_Weakened[];
+extern const u8 EncScript_Registeel_TurnOpen[];
+extern const u8 EncScript_Registeel_Analyse[];
+extern const u8 EncScript_Registeel_SystemsOnline[];
+extern const u8 EncScript_Registeel_CriticalOverheat[];
+extern const u8 EncScript_Registeel_Decay[];
+extern const u8 EncScript_Registeel_ForceReconfig[];
+extern const u8 EncScript_Registeel_StatusCleared[];
+extern const u8 EncScript_Registeel_TurnClose[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];

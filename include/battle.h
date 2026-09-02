@@ -636,6 +636,11 @@ struct EncounterRuntime
     // any HP the boss recovers lifts it until it's back in the window without having healed.
     u8 catchGuard;                              // bool8: guard currently forcing the boss's reduction
     u8 catchGuardDr;                            // the encounter's own boss reduction, restored when it lifts
+    // ANALYSIS (encadapt / encpurgeadapt). Per-battler FIFO of type-keyed damage resistances: slot 0
+    // is the oldest, and adding past the capacity a script asks for shifts the array down. TYPE_NONE
+    // marks an empty slot, so a zeroed struct starts every battler with an empty board for free.
+    u8 adaptType[MAX_BATTLERS_COUNT][ENC_MAX_ADAPTATIONS];     // enum Type
+    u8 adaptPercent[MAX_BATTLERS_COUNT][ENC_MAX_ADAPTATIONS];  // 0..ENC_MAX_ADAPT_PERCENT
 };
 
 // Scales damage aimed at battler by its encounter damage reduction, floored at 1 so a reduced hit
@@ -644,6 +649,12 @@ struct EncounterRuntime
 // declared here because SetPassiveDamageAmount below is the choke point every passive HP tick goes
 // through, and battle_encounter.h can't be included from this header.
 s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage);
+
+// Scales damage aimed at battler by whatever type-keyed adaptation it holds for moveType, floored
+// at 1 for the same reason. Separate from ApplyEncounterDamageReduction rather than a wider
+// signature on it: that function is also the choke point every passive HP tick goes through, and
+// weather, poison and recoil carry no move type for an adaptation to match against.
+s32 ApplyEncounterTypeAdaptation(enum BattlerId battler, enum Type moveType, s32 damage);
 
 // Cleared at the beginning of the battle. Fields need to be cleared when needed manually otherwise.
 struct BattleStruct

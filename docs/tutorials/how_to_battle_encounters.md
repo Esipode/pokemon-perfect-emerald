@@ -59,6 +59,11 @@ it's nearly beaten, its guard drops and the player can finally throw a ball at i
 
 ### 1. The `.encounter` definition
 
+Small demo and test encounters live in `src/data/battle_encounters.encounter`; a legendary gets its
+own file, `src/data/legendary_encounters/<pokemon>.encounter`. Every `.encounter` source is parsed
+into the same `gEncounters[]`, so where a definition lives is purely an organisational choice; a new
+file under `src/data/legendary_encounters/` is picked up automatically.
+
 ```text
 Encounter: Legendary_Barrier
 
@@ -112,6 +117,9 @@ time that becomes true.*
   the script to use.
 
 ### 2. The battle script
+
+Encounter scripts follow the same split: demo/test scripts sit in `data/battle_scripts_encounters.s`
+and each legendary gets `data/legendary_encounters/<pokemon>.inc`, `.include`d from that file.
 
 ```asm
 EncScript_LegendaryBarrier_PhaseTransition::
@@ -549,6 +557,8 @@ The commands below exist specifically for encounter scripts:
 | `encrewindhp <target>, <var>` | Moves `<target>`'s HP **to** the percentage held in `<var>`, healing or damaging as needed, with the same animated health bar `enchangehp` uses. The counterpart to `encsnapshothp` | encounter-specific (`callnative`) |
 | `encstoreprediction <target>, <var>` | Writes the AI's predicted move **category** for `<target>` into `<var>`: `0` no prediction this turn, `1` physical, `2` special, `3` status. The real `AI_FLAG_PREDICT_MOVE` answer, so it only means anything at `OnTurnStart` and only when the encounter's `AiFlags:` include that flag | encounter-specific (`callnative`) |
 | `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Writes the result of comparing `<targetA>`'s live `<stat>` against `<targetB>`'s into `<var>`: `0` A is lower, `1` equal, `2` A is higher. Both targets must resolve to exactly one battler. `STAT_SPEED` reads the full turn-order speed (Tailwind, Choice Scarf, paralysis, stages); the other stats read the stat-with-stages value. The var-to-var comparison conditions cannot express | encounter-specific (`callnative`) |
+| `encadapt <target>, <percent>, <slots>, <countVar>, <resultVar>` | **ANALYSIS.** Files the type of the move that just landed as a **type-keyed** damage resistance on `<target>`, at `<percent>` (capped at `ENC_MAX_ADAPT_PERCENT`), in a FIFO `<slots>` deep (capped at `ENC_MAX_ADAPTATIONS`). Re-filing a type already held raises its percent instead of taking a second slot; a full board pushes the **oldest** out; a `<slots>` narrower than the board drops the overflow first. `<countVar>` takes the resulting board size — the authoritative one, so a script mirroring it can't drift — and `<resultVar>` an `ENC_ADAPT_RESULT_*` outcome (`HARDENED` / `FILED` / `EVICTED`) so one command drives all three lines of dialogue. The new type is buffered into `{B_BUFF1}` and any evicted type into `{B_BUFF2}`. `OnMoveEnd` only, since it reads the event's move; a move that missed, was blocked or had no effect is ignored outright and leaves both vars untouched. `DamageReduction:` is flat and type-blind — this is the only per-type resistance in the engine | encounter-specific (`callnative`) |
+| `encpurgeadapt <target>, <which>, <countVar>` | The inverse of `encadapt`: drops `ENC_ADAPT_OLDEST`, `ENC_ADAPT_NEWEST` or `ENC_ADAPT_ALL` from `<target>`'s board and writes the remaining count into `<countVar>`. The array is compacted on every removal, so slot 0 is always the oldest. The dropped type is buffered into `{B_BUFF1}`. Silent, and a no-op on an empty board, so it is safe to call unconditionally — test `<countVar>` afterwards to know whether anything fell | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | Changes `<target>` (must resolve to exactly one battler) into `<species>` outright, outside any form-change table, then plays `<anim>`. The general form of `encmegaevolve`: repeatable, reversible, and not limited to a form the battler holds a stone for. Keeps HP and the moveset; stats, types and ability come from the new species. Prints nothing — supply your own dialogue | encounter-specific (`callnative`) |
@@ -778,12 +788,12 @@ yet, so the manual count is currently the reliable path.)
 
 ## `.encounter` authoring map
 
-This is the complete vocabulary `encounterproc` accepts in
-`src/data/battle_encounters.encounter`. The processor validates the keywords below, while an
-encounter name, script label, and condition value are passed through to the C compiler.
+This is the complete vocabulary `encounterproc` accepts in any `.encounter` source. The processor
+validates the keywords below, while an encounter name, script label, and condition value are passed
+through to the C compiler.
 
-Use `#` for a comment. A comment can occupy a whole line or follow a declaration/condition; the
-build strips `#` and everything after it through the end of that line before preprocessing.
+Use `#` for a comment. A comment can occupy a whole line or follow a declaration/condition;
+`encounterproc` ignores `#` and everything after it through the end of that line.
 
 ```text
 Encounter: <EncounterName>
@@ -896,6 +906,8 @@ constants are compiler errors.
 | `encjumpifvar <comparison>, <var>, <value>, <label>` | Normal battle-script byte comparison, variable/index, byte value, and script label. |
 | `enccopyvar <dst>, <src>` | Two variables/indexes. |
 | `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Two targets that each resolve to exactly one battler; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); a variable/index the `0`/`1`/`2` result is written into. |
+| `encadapt <target>, <percent>, <slots>, <countVar>, <resultVar>` | Target below; a reduction percent (`0`–`ENC_MAX_ADAPT_PERCENT`); a FIFO depth (`1`–`ENC_MAX_ADAPTATIONS`); a variable/index the resulting board size is written into; a variable/index the `ENC_ADAPT_RESULT_*` outcome is written into. `OnMoveEnd` only. |
+| `encpurgeadapt <target>, <which>, <countVar>` | Target below; `ENC_ADAPT_OLDEST`, `ENC_ADAPT_NEWEST` or `ENC_ADAPT_ALL`; a variable/index the remaining board size is written into. |
 | `enchangehp <target>, <amount>[, <mode>]` | Target below; signed 16-bit amount (positive heals, negative damages); optional `ENC_AMOUNT_FIXED` (default) or `ENC_AMOUNT_PERCENT`. |
 | `encchangestat <target>, <stat>, <stages>` | Target below; `STAT_*` id; signed stage change. |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Target below; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); signed 16-bit amount; optional mode as above. |

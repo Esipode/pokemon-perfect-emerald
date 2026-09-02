@@ -1,6 +1,6 @@
 // Shared home for every legendary encounter's overworld trigger script. A map just needs to
 // `call`/`goto` the entry point for its own legendary; the encounter's actual behavior lives in
-// src/data/battle_encounters.encounter and data/battle_scripts_encounters.s.
+// src/data/legendary_encounters/ and data/legendary_encounters/.
 
 LegendaryEncounter_EventScript_Articuno::
 	lock
@@ -249,6 +249,20 @@ LegendaryEncounter_EventScript_Regirock::
 	waitmoncry
 	setbattleencounter ENCOUNTER_REGIROCK
 	setwildbattle SPECIES_REGIROCK, 50      @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Registeel::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_REGISTEEL, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_REGISTEEL
+	setwildbattle SPECIES_REGISTEEL, 50     @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE

@@ -1,0 +1,193 @@
+Encounter: Raikou
+
+# Raikou, "The Hunting Thunder". One number runs the fight: Velocity (0-5), a TEMPO resource, not
+# an elemental one. It rises when Raikou gets to act before you and when it knocks something out, and
+# it falls whenever the initiative is taken away - a Ground move, a turn it never got to act, shedding
+# sleep/freeze, a negative Speed stage, quarry that refuses to break, a read Lightning Dash. Its guard
+# runs UPWARD with Velocity (78/84/89/93), so the fight is "never let it get going", and the counter-
+# tension is that every turn spent slowing it is a turn not spent damaging it. Exactly two windows
+# genuinely drop its guard and both must be earned: breaking the Mark (70 for a turn) and the final
+# phase's wild discharge (55 for two). Velocity moves a RAW Speed stat (+12%/-11%), never a stage, so
+# the "it is slowed" drain reads only the player's speed control. Paralysis is free (Electric type);
+# sleep and freeze are shed at turn start at a cost of 2 Velocity; burn, poison and confusion stick.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 78         # Velocity 0, the bottom of the ladder
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_THUNDERBOLT, MOVE_EXTREME_SPEED, MOVE_AURA_SPHERE, MOVE_CRUNCH
+    Ability: ABILITY_INNER_FOCUS
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 15 here in order fixes
+# Phase..FaintGuard to 0..14.
+# 0 Phase (0 prowl / 1 hunt / 2 lightning incarnate / 3 weakened), 1 Velocity (0-5), 2 Mark (0 none,
+# else a 3->2->1 countdown on the current quarry), 3 MarkCool (turns before it may re-mark), 4 Dash
+# (0 none / 2 telegraphed / 1 dashing this turn), 5 Instability (0-4, phase 2 only), 6 Soft (turns of
+# soft-guard window left), 7 LastGuard (damage reduction last ANNOUNCED - the re-fire latch),
+# 8 MoveSeen (1 once any move resolved this turn - the turn-order detector), 9 BossActed, 10 TurnGuard,
+# 11 PMove (0 none yet / 1 player used a status move / 2 player attacked - guard and fact in one var),
+# 12 BMoveGuard, 13 SwitchGuard, 14 FaintGuard.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Raikou_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Velocity) >= 0
+    Var(Mark) >= 0
+    Var(MarkCool) >= 0
+    Var(Dash) >= 0
+    Var(Instability) >= 0
+    Var(Soft) >= 0
+    Var(LastGuard) >= 0
+    Var(MoveSeen) >= 0
+    Var(BossActed) >= 0
+    Var(TurnGuard) >= 0
+    Var(PMove) >= 0
+    Var(BMoveGuard) >= 0
+    Var(SwitchGuard) >= 0
+    Var(FaintGuard) >= 0
+
+# The three phase transitions, each registered at both checkpoints because the threshold-crossing blow
+# can be a move or an end-of-turn tick. Both copies are Once and both gate on a Var(Phase) value their
+# shared script overwrites, so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Raikou_Hunt
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Raikou_Hunt
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Raikou_Incarnate
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Raikou_Incarnate
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Raikou_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Raikou_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The player's move, read three ways. All three share PMove as their guard, so priority makes them
+# mutually exclusive: a Ground move pulls the tempo lever and never falls through, anything else lands
+# on the attack/status pair by category. The value PMove is left holding is also the fact TurnClose
+# needs to score a read Lightning Dash, which is what keeps this inside the variable budget.
+# While a Dash is live the Ground lever is gated off and a Ground move falls through to _PlayerAttack -
+# a dashing Raikou dodges the lever too.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Raikou_PlayerGround
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_GROUND
+    Var(PMove) == 0
+    Var(Dash) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Raikou_PlayerAttack
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Var(PMove) == 0
+
+Trigger: OnMoveEnd
+Priority: 22
+Script: EncScript_Raikou_PlayerStatus
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(PMove) == 0
+
+# Raikou used a move. Separate guard, since this is "boss used" not "aimed at". If nothing else has
+# resolved this turn yet, it got there first - the whole thesis of the fight.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Raikou_BossMove
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(BMoveGuard) == 0
+
+Trigger: OnFaint
+Priority: 10
+Script: EncScript_Raikou_Faint
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(FaintGuard) == 0
+    Var(Phase) <= 2
+
+# Fires after a faint replacement too, which is correct - the hunt does not stop because you lost a
+# Pokemon. Turn >= 1 keeps the opening send-out from reading as a flinch from the mark.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Raikou_SwitchIn
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Turn >= 1
+    Var(SwitchGuard) == 0
+    Var(Phase) <= 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they absorb the storm roll, the mark lifecycle, the dash lifecycle and every countdown, which is
+# what keeps the scripts-per-checkpoint count at 2.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Raikou_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Instability climbs in TurnClose and resolves here, one checkpoint later, so the counter can't chase
+# itself through every state in a single dispatch. The HP floor is load-bearing: enchangehp bypasses
+# the damage-reduction path, so an unguarded 12% self-hit near death would faint Raikou before the
+# catch window ever opens.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Raikou_Discharge
+Conditions:
+    Var(Instability) >= 4
+    Var(Soft) == 0
+    Var(Phase) == 2
+    Battler(Boss).HpPercent >= 15
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Raikou_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

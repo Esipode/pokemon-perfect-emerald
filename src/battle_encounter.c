@@ -7,7 +7,12 @@
 
 // firedTriggers is a u32 bitmap; one bit per trigger.
 STATIC_ASSERT(MAX_ENCOUNTER_TRIGGERS == 32, EncounterFiredTriggersBitmapMismatch);
-STATIC_ASSERT(sizeof(struct EncounterRuntime) <= 64, EncounterRuntimeTooLarge);
+// A review tripwire, not a hardware limit: EncounterRuntime is embedded in BattleStruct and
+// zero-cleared with it every battle, so growth here is silent and worth being made to notice. The
+// 64 this started at was set when the struct held little more than an id and a trigger bitmap; the
+// type-keyed adaptation board (adaptType/adaptPercent, 32 bytes) is what took it past that. 92 of
+// 128 used - raise this again deliberately, not to get a build through.
+STATIC_ASSERT(sizeof(struct EncounterRuntime) <= 128, EncounterRuntimeTooLarge);
 
 // Which struct EncounterEvent fields a checkpoint's dispatcher actually populates. Grows as each
 // checkpoint's call site is built out; a 0 row means the checkpoint has no event data at all
@@ -959,6 +964,33 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
     // short-circuits. At 1 HP this yields 0 - the same value False Swipe already produces there.
     if (gBattleStruct->encounter.survive[battler] && damage >= gBattleMons[battler].hp)
         damage = gBattleMons[battler].hp - 1;
+
+    return damage;
+}
+
+// ANALYSIS. Scales damage aimed at battler by the adaptation it holds for this move's type, if any.
+// The board is a short unordered array, so a linear scan is cheaper than any index would be.
+s32 ApplyEncounterTypeAdaptation(enum BattlerId battler, enum Type moveType, s32 damage)
+{
+    u32 i, percent;
+
+    // TYPE_NONE is the empty-slot marker, so a typeless hit must never be allowed to match one.
+    if (damage <= 0 || moveType == TYPE_NONE || battler >= MAX_BATTLERS_COUNT || !IsEncounterActive())
+        return damage;
+
+    for (i = 0; i < ENC_MAX_ADAPTATIONS; i++)
+    {
+        if (gBattleStruct->encounter.adaptType[battler][i] != moveType)
+            continue;
+
+        percent = gBattleStruct->encounter.adaptPercent[battler][i];
+        if (percent > ENC_MAX_ADAPT_PERCENT)
+            percent = ENC_MAX_ADAPT_PERCENT;
+        damage = damage * (100 - percent) / 100;
+        if (damage < 1)
+            damage = 1;   // floored the same way the flat reduction is - never a silent no-op
+        break;
+    }
 
     return damage;
 }

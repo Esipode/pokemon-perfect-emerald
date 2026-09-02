@@ -1,0 +1,202 @@
+Encounter: Entei
+
+# Entei, "The Walking Volcano". Raikou is a slider you fight downward; Entei is a bomb timer you
+# cannot defuse. Pressure (0-5) NEVER falls on its own - it only ever rises, and is only ever spent
+# by erupting. The player does not choose whether the volcano goes off, only when, how big, and what
+# they are standing on. Its guard is a locked door, not a ladder: a flat value for the whole phase
+# (90/92/94), and the only thing that opens it is an eruption - its own (65 for two turns), a
+# Cataclysm (55 for three), or one the player forced early by turtling (78 for one). Scorch (0-3) is
+# a transition tax and eruption fuel, not a chip: it taxes switching in and sets the next eruption's
+# size, and is cooled only by Water moves and Rain. No status immunities at all - burn and freeze are
+# dead against a Fire type, and sleep/paralysis/poison all FEED Pressure every turn they last.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # Dormant; flat for the whole phase
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_SACRED_FIRE, MOVE_ERUPTION, MOVE_BULLDOZE, MOVE_EXTRASENSORY
+    Ability: ABILITY_INNER_FOCUS
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 12 here in order fixes Phase..FaintGuard
+# to 0..11.
+# 0 Phase (0 dormant / 1 eruption cycle / 2 cataclysm / 3 weakened), 1 Pressure (0-5), 2 Fuse (0
+# unlit, else 3->2->1 resolved at 1), 3 Scorch (0-3), 4 Window (turns of open guard left),
+# 5 LastGuard (damage reduction last ANNOUNCED - the re-fire latch), 6 VentCool (turns before it may
+# vent early again), 7 TurnGuard, 8 PMove, 9 BMoveGuard, 10 SwitchGuard, 11 FaintGuard.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Entei_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Pressure) >= 0
+    Var(Fuse) >= 0
+    Var(Scorch) >= 0
+    Var(Window) >= 0
+    Var(LastGuard) >= 0
+    Var(VentCool) >= 0
+    Var(TurnGuard) >= 0
+    Var(PMove) >= 0
+    Var(BMoveGuard) >= 0
+    Var(SwitchGuard) >= 0
+    Var(FaintGuard) >= 0
+
+# The three phase transitions, each registered at both checkpoints because the threshold-crossing blow
+# can be a move or an end-of-turn tick. Both copies are Once and both gate on a Var(Phase) value their
+# shared script overwrites, so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Entei_Cycle
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Entei_Cycle
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Entei_Cataclysm
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Entei_Cataclysm
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Entei_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Entei_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The player's move, read two ways, sharing PMove as their guard so priority makes them mutually
+# exclusive. A Water move that lands on Entei cools the field AND feeds Pressure in one script -
+# being the cooling lever does not exempt it from "Pressure cannot be prevented".
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Entei_PlayerWater
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_WATER
+    Var(PMove) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Entei_PlayerAttack
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Var(PMove) == 0
+    Var(Phase) <= 2
+
+# Entei stoking its own fire. Separate guard, since this is "boss used" not "aimed at".
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Entei_BossFire
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+    Var(BMoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnFaint
+Priority: 10
+Script: EncScript_Entei_Faint
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(FaintGuard) == 0
+    Var(Phase) <= 2
+
+# The switch tax. Turn >= 1 keeps the opening send-out off the burning ground, and Scorch > 0 means
+# an uncooked field costs nothing to pivot on.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Entei_SwitchIn
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Turn >= 1
+    Var(SwitchGuard) == 0
+    Var(Scorch) > 0
+    Var(Phase) <= 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they absorb the rain cooling, the status feed, every countdown and the fuse.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Entei_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The fuse is stepped down in TurnClose and resolved here, one checkpoint later, so the countdown
+# cannot chase itself through every state in a single dispatch. The HP split is load-bearing:
+# enchangehp bypasses the damage-reduction path, so the 8% recoil could faint Entei before the catch
+# window opens. Below 15% the eruption still fires, it just costs Entei nothing - a lit fuse can
+# never be un-lit, so blocking the event outright would stall it forever.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Entei_Erupt
+Conditions:
+    Var(Fuse) == 1
+    Battler(Boss).HpPercent >= 15
+
+Trigger: OnTurnStart
+Priority: 21
+Script: EncScript_Entei_EruptSafe
+Conditions:
+    Var(Fuse) == 1
+    Battler(Boss).HpPercent < 15
+
+# Pressure Break, the anti-turtle vent. "Preparing to heal" is not observable; holding a stat boost
+# is, and carries the same intent. Turtle up and you force a small, early, weak eruption; stay lean
+# and Pressure climbs to 5 on its own for a devastating one with the biggest window in the fight.
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Entei_Vent
+Conditions:
+    Var(Pressure) >= 3
+    Var(Fuse) == 0
+    Var(Window) == 0
+    Var(VentCool) == 0
+    Var(Phase) <= 1
+    Any:
+        Battler(PlayerLeft).Stat(STAT_ATK) > DEFAULT_STAT_STAGE
+        Battler(PlayerLeft).Stat(STAT_DEF) > DEFAULT_STAT_STAGE
+        Battler(PlayerLeft).Stat(STAT_SPATK) > DEFAULT_STAT_STAGE
+        Battler(PlayerLeft).Stat(STAT_SPDEF) > DEFAULT_STAT_STAGE
+        Battler(PlayerLeft).Stat(STAT_SPEED) > DEFAULT_STAT_STAGE
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Entei_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

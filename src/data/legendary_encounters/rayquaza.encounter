@@ -1,0 +1,214 @@
+Encounter: Rayquaza
+
+# No Ability: override. Air Lock is base Rayquaza's only ability so the species hands it over for
+# free, and an override would be re-applied by RecalcBattlerStats on the Mega form change and stamp
+# out Delta Stream - which is the entire mechanic of Phase 1.
+# Dragon Ascent is deliberately absent from Moves:. CanMegaEvolve returns TRUE for any Rayquaza that
+# merely KNOWS it, and the AI would spend its turn-1 gimmick and skip the phase structure; the Delta
+# Ascension script writes the move in with encsetmove once it is already Mega.
+# The set is mixed physical/special on purpose so the SkyGuard prediction has something to read, and
+# Fire Blast is there so a Steel-type wall does not blank three quarters of the moveset.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 87         # Grounded, Phase 0 - the opening rung of the altitude ladder
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER | AI_FLAG_PREDICT_MOVE
+    Moves: MOVE_EXTREME_SPEED, MOVE_AIR_SLASH, MOVE_DRAGON_CLAW, MOVE_FLAMETHROWER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming them all here in order fixes Phase..Pred
+# to 0..13.
+# 0 Phase (0 Sky Guardian / 1 Delta Ascension / 2 Atmosphere Breaks / 3 Weakened),
+# 1 Alt (0 Grounded, 1 Low, 2 High, 3 Stratospheric), 2 Press (Atmospheric Pressure, 0-5),
+# 3 Fall (Skyfall state: 0 idle, 2 gone, 1 descending), 4 Climb (climb cadence countdown),
+# 5 Chaos (Phase 2 weather-roll cadence), 6 TurnGuard, 7 Cycle (per-turn guard shared by the three
+# altitude/Skyfall OnTurnStart triggers), 8 Guarded (per-turn guard for SkyGuard), 9 Vent (per-turn
+# guard shared by the two weather triggers), 10 Shot (per-turn guard for ShootDown), 11 HpMark
+# (boss HP% at turn open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 12 LastPress (Pressure
+# tier last ANNOUNCED - the re-fire latch), 13 Pred (encstoreprediction scratch).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Rayquaza_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Alt) >= 0
+    Var(Press) >= 0
+    Var(Fall) >= 0
+    Var(Climb) >= 0
+    Var(Chaos) >= 0
+    Var(TurnGuard) >= 0
+    Var(Cycle) >= 0
+    Var(Guarded) >= 0
+    Var(Vent) >= 0
+    Var(Shot) >= 0
+    Var(HpMark) >= 0
+    Var(LastPress) >= 0
+    Var(Pred) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# the threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# selection, so whichever fires first permanently disables the other. Each is also gated on the
+# Phase value its own script overwrites, so a single huge hit that crosses two thresholds steps
+# through them in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Rayquaza_DeltaAscension
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Rayquaza_DeltaAscension
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Rayquaza_AtmosphereBreaks
+Conditions:
+    Battler(Boss).HpPercent <= 22
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Rayquaza_AtmosphereBreaks
+Conditions:
+    Battler(Boss).HpPercent <= 22
+    Var(Phase) == 1
+
+# The catch window. Phase 2 means the atmosphere has already broken, so this can never pre-empt it.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Rayquaza_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Rayquaza_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). TurnOpen owns
+# the HP mark ShootDown reads, the per-turn re-entry guards, the Pressure income and the recurring
+# cues; TurnClose owns every countdown.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Rayquaza_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The altitude ladder. Priority orders the FIRST pass only - it is not a guard - and every trigger
+# here is level-conditioned, so all three share Var(Cycle), which TurnOpen cleared one priority
+# earlier and each of these scripts sets. Without it the Phase 1 climb (which re-arms its counter to
+# 0 by design) would re-select until the script cap tripped, and a landing Skyfall would climb again
+# in the same dispatch.
+# SkyfallLand sits AHEAD of SkyfallBegin so a resolving Skyfall can never be re-telegraphed in one
+# dispatch; SkyGuard sits behind Climb so it reads the altitude Rayquaza reached THIS turn.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Rayquaza_SkyfallLand
+Conditions:
+    Var(Fall) == 1
+    Var(Cycle) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Rayquaza_SkyfallBegin
+Conditions:
+    Var(Press) >= 5
+    Var(Fall) == 0
+    Var(Cycle) == 0
+    Var(Phase) <= 2
+
+# Natural climbing stops at High, so "it has gone somewhere you cannot follow" only ever means
+# Skyfall.
+Trigger: OnTurnStart
+Priority: 25
+Script: EncScript_Rayquaza_Climb
+Conditions:
+    Var(Alt) <= 1
+    Var(Fall) == 0
+    Var(Climb) == 0
+    Var(Cycle) == 0
+    Var(Phase) <= 2
+
+# High Rayquaza reads the player. AI_FLAG_PREDICT_MOVE is in Properties for this and nothing else.
+Trigger: OnTurnStart
+Priority: 35
+Script: EncScript_Rayquaza_SkyGuard
+Conditions:
+    Var(Alt) == 2
+    Var(Fall) == 0
+    Var(Guarded) == 0
+    Var(Phase) <= 2
+
+# Phase 2's weather roll, on a two-turn cadence. The script re-arms Chaos itself, which is what
+# stops this level condition re-selecting.
+Trigger: OnTurnStart
+Priority: 40
+Script: EncScript_Rayquaza_WeatherChaos
+Conditions:
+    Var(Phase) == 2
+    Var(Chaos) == 0
+
+# Lever 1 - disturb the atmosphere. Air Lock means the player's weather never DID anything, so
+# setting it is purely a lure: Rayquaza has to come down to tear it away, and it comes down angry.
+# Both vent triggers set Var(Vent) themselves - a Weather-conditioned trigger must disable itself,
+# because the condition stays true for the whole dispatch and Once would mean once per BATTLE.
+# Gated to Phase 0 for a mechanical reason: from Phase 1 the field carries Rayquaza's own Strong
+# Winds, and a trigger that reacted to it would fire forever.
+# Alt >= 1 so weather set at ground level is not spent for nothing - it simply waits for the climb.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Rayquaza_VentPrimal
+Conditions:
+    Var(Phase) == 0
+    Var(Vent) == 0
+    Var(Alt) >= 1
+    Any:
+        Weather == B_WEATHER_RAIN_PRIMAL
+        Weather == B_WEATHER_SUN_PRIMAL
+
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Rayquaza_Vent
+Conditions:
+    Var(Phase) == 0
+    Var(Vent) == 0
+    Var(Alt) >= 1
+    Weather != B_WEATHER_NONE
+
+# Lever 2 - shoot it down. Available in every phase: it is the ONLY lever once Strong Winds lock the
+# sky, and it is the answer for a party that owns no weather move at all.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Rayquaza_ShootDown
+Conditions:
+    Var(Alt) >= 1
+    Var(Fall) == 0
+    Var(Shot) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Rayquaza_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
