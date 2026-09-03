@@ -475,6 +475,19 @@ extern const u8 EncScript_Regigigas_Recover[];
 extern const u8 EncScript_Regigigas_CrushBoosts[];
 extern const u8 EncScript_Regigigas_TurnClose[];
 
+// Rotom ("The Possessive Pokemon")
+extern const u8 EncScript_Rotom_Intro[];
+extern const u8 EncScript_Rotom_TurnOpen[];
+extern const u8 EncScript_Rotom_TurnClose[];
+extern const u8 EncScript_Rotom_FedTheMotor[];
+extern const u8 EncScript_Rotom_PossessTick[];
+extern const u8 EncScript_Rotom_Hijack[];
+extern const u8 EncScript_Rotom_SystemOverload[];
+extern const u8 EncScript_Rotom_Reboot[];
+extern const u8 EncScript_Rotom_RogueProgram[];
+extern const u8 EncScript_Rotom_Takeover[];
+extern const u8 EncScript_Rotom_Weakened[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

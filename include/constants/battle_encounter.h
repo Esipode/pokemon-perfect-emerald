@@ -33,6 +33,7 @@ enum EncounterId
     ENCOUNTER_UXIE,
     ENCOUNTER_MESPRIT,
     ENCOUNTER_REGIGIGAS,
+    ENCOUNTER_ROTOM,
     ENCOUNTER_COUNT,
 };
 
@@ -201,6 +202,19 @@ enum EncounterSideStatus
     ENC_SIDE_SEA_OF_FIRE,
     ENC_SIDE_SWAMP,
     ENC_SIDE_COUNT,
+};
+
+// Field terrains encsetterrain can raise. A small enum rather than a raw STATUS_FIELD_*_TERRAIN
+// bit for the same reason EncounterSideStatus exists: the terrain bits run to 1 << 9 and a script
+// argument is a byte - and an enum lets the command assert on a name it doesn't know. The stock
+// setterrain opcode reads its terrain off gCurrentMove, which a checkpoint script does not have.
+enum EncounterTerrain
+{
+    ENC_TERRAIN_ELECTRIC,
+    ENC_TERRAIN_GRASSY,
+    ENC_TERRAIN_MISTY,
+    ENC_TERRAIN_PSYCHIC,
+    ENC_TERRAIN_COUNT,
 };
 
 // --- Encounter properties (battle-start configuration) ------------------------------------------

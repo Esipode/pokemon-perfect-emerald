@@ -1478,6 +1478,43 @@
 	.byte \turns
 	.endm
 
+	@ Sets the field terrain to \terrain (an ENC_TERRAIN_* selector) for \turns turns; 0 (the
+	@ default) means permanent. The mirror of encsetweather one field over, and needed for the same
+	@ reason: the stock setterrain opcode reads its terrain type off the current move, and a
+	@ checkpoint script has no current move. Does nothing if that terrain is already up or the battle
+	@ is a sky battle. Silent - pair with playmoveanimation for presentation, and use the existing
+	@ removeterrain to clear it.
+	.macro encsetterrain terrain:req, turns=0
+	callnative BS_EncSetTerrain
+	.byte \terrain
+	.byte \turns
+	.endm
+
+	@ Shorts out the held item of every battler \target resolves to for \turns turns, by setting the
+	@ same volatile Embargo itself sets - so every existing item check behaves unchanged, and the
+	@ engine's own end-turn handler ticks the timer and prints the expiry line. \turns of 0 clears it
+	@ outright. The boss is skipped even when \target includes it, the same way encsettrapped skips
+	@ it. Silent; supply your own dialogue.
+	.macro encsetembargo target:req, turns:req
+	callnative BS_EncSetEmbargo
+	.byte \target
+	.byte \turns
+	.endm
+
+	@ Disables the move \target (must resolve to exactly one battler) used last, for \turns turns,
+	@ writing the same volatiles Disable does - so the engine already ticks the timer, already drops
+	@ the lock if the move leaves the moveset, and already prints its own "no longer disabled" line.
+	@ The move's name is buffered into {B_BUFF1} for the caller's string.
+	@ Jumps \failInstr when there is nothing to take: no move used yet (turn 1), the move is gone
+	@ from the moveset or out of PP, something is already disabled, or the target is not there. All of
+	@ those are ordinary battle states, so they branch rather than assert. Silent otherwise.
+	.macro encdisablemove target:req, turns:req, failInstr:req
+	callnative BS_EncDisableMove
+	.byte \target
+	.byte \turns
+	.4byte \failInstr
+	.endm
+
 	@ Forces \target (must resolve to exactly one battler) to Mega Evolve outside the normal
 	@ gimmick-selection flow, then plays the same presentation BattleScript_MegaEvolution
 	@ (data/battle_scripts_1.s) uses. Jumps to \failInstr if the target can't mega evolve right now

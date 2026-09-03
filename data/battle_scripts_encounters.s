@@ -208,3 +208,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/uxie.inc"
 	.include "data/legendary_encounters/mesprit.inc"
 	.include "data/legendary_encounters/regigigas.inc"
+	.include "data/legendary_encounters/rotom.inc"

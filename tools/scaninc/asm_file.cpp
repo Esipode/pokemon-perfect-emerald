@@ -87,7 +87,17 @@ IncDirectiveType AsmFile::ReadUntilIncDirective(std::string &path)
             if (c == -1)
                 return incDirectiveType;
 
-            if (c == ';')
+            // '@' is GNU as's comment character for ARM and is what this repo's .inc files
+            // actually use; '//' shows up in the .s/.inc sources that are run through cpp. Without
+            // these two cases a '"' inside an ordinary comment opens a string that is never closed,
+            // SkipString runs to EOF and the whole scan dies - taking the .d file with it, so every
+            // file the source .include'd silently stops being a make dependency.
+            if (c == ';' || c == '@')
+            {
+                SkipEndOfLineComment();
+                break;
+            }
+            else if (c == '/' && PeekChar() == '/')
             {
                 SkipEndOfLineComment();
                 break;

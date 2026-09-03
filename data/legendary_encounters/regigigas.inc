@@ -229,7 +229,9 @@ EncScript_Regigigas_ForceTick_Warn:
 	encjumpifvar CMP_NOT_EQUAL, 9, 2, EncScript_Regigigas_ForceTick_Done
 	printstring STRINGID_ENCREGIGIGASFORCECHARGE
 	waitmessage B_WAIT_TIME_LONG
-	playanimation BS_OPPONENT1, B_ANIM_TERA_CHARGE
+	@ Totem Flare, not Tera Charge: Tera Charge blends the screen to white and only Tera Activate
+	@ blends it back, so using it alone whites the battle out permanently.
+	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
 	encchangestat ENC_TARGET_BOSS, STAT_ATK, 1
 EncScript_Regigigas_ForceTick_Done:
 	return

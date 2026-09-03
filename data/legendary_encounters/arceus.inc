@@ -519,7 +519,10 @@ EncScript_Arceus_FinaleStep:
 	encjumpifvar CMP_GREATER_THAN, 13, 5, EncScript_Arceus_FinaleStep_Done
 	encjumpifvar CMP_EQUAL, 13, 5, EncScript_Arceus_FinaleStep_Prompt
 EncScript_Arceus_FinaleStep_Rung:
-	playanimation BS_OPPONENT1, B_ANIM_TERA_CHARGE
+	@ Totem Flare, not Tera Charge: Tera Charge blends the screen to white and only Tera Activate
+	@ blends it back, so using it alone whites the battle out permanently. The Creation script below
+	@ is the one place the pair is used correctly.
+	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
 	call EncScript_Arceus_Ladder
 EncScript_Arceus_FinaleStep_Done:
 	return

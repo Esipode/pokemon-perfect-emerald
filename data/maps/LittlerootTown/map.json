@@ -129,7 +129,7 @@
       "flag": "FLAG_HIDE_LITTLEROOT_TOWN_BIRCH"
     },
     {
-      "graphics_id": "OBJ_EVENT_GFX_SPECIES(REGIGIGAS)",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(ROTOM)",
       "x": 2,
       "y": 2,
       "elevation": 0,
@@ -138,8 +138,8 @@
       "movement_range_y": 0,
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
-      "script": "LittlerootTown_EventScript_EncounterTESTRegigigas",
-      "flag": "FLAG_HIDE_REGIGIGAS"
+      "script": "LittlerootTown_EventScript_EncounterTESTRotom",
+      "flag": "FLAG_HIDE_ROTOM"
     }
   ],
   "warp_events": [

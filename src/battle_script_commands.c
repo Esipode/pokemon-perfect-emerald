@@ -13527,6 +13527,81 @@ void BS_EncSetTrapped(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// EMBARGO (encsetembargo). Shorts out a battler's held item by setting the same volatile Embargo
+// itself sets, so every existing item check reads it unchanged. HandleEndTurnEmbargo
+// (battle_end_turn.c) already ticks the timer and prints the stock expiry line, so a non-zero
+// <turns> needs nothing on the way out; 0 clears it outright. The boss is skipped for the same
+// reason encsettrapped skips it - a boss shorting out its own item is incoherent.
+void BS_EncSetEmbargo(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u8 boss;
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            if (!(mask & (1u << battler)) || battler == boss)
+                continue;
+
+            gBattleMons[battler].volatiles.embargo = (cmd->turns != 0);
+            gBattleMons[battler].volatiles.embargoTimer = cmd->turns;
+        }
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// DISABLE_MOVE (encdisablemove). Cmd_disablelastusedattack with the target named by the script
+// instead of taken from gBattlerTarget, and the duration stated instead of derived from
+// B_DISABLE_TURNS. Writes the same volatiles Disable does, so HandleEndTurnDisable already ticks
+// the timer, already drops the lock if the move leaves the moveset, and already prints
+// BattleScript_DisabledNoMore on expiry. The move name is buffered into {B_BUFF1} so one string can
+// name what was taken.
+//
+// Every refusal branches to failInstr rather than asserting: nothing used yet (turn 1), the move
+// gone from the moveset, no PP left, something already disabled, or a target that isn't there are
+// all ordinary battle states, not authoring mistakes.
+void BS_EncDisableMove(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    u32 i;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: DISABLE_MOVE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (gBattleMons[battler].moves[i] == gLastMoves[battler])
+            break;
+    }
+
+    if (!IsBattlerAlive(battler)
+     || gLastMoves[battler] == MOVE_NONE
+     || i == MAX_MON_MOVES
+     || gBattleMons[battler].pp[i] == 0
+     || gBattleMons[battler].volatiles.disabledMove != MOVE_NONE)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    PREPARE_MOVE_BUFFER(gBattleTextBuff1, gBattleMons[battler].moves[i])
+
+    gBattleMons[battler].volatiles.disabledMove = gBattleMons[battler].moves[i];
+    gBattleMons[battler].volatiles.disableTimer = cmd->turns;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // CLEAR_SCREENS (encclearscreens). Wipes the side-wide barriers a player puts up - the three
 // screens, Safeguard, Mist, Tailwind and Lucky Chant - plus their timers, on every side <target>
 // resolves to. Jumps failInstr when nothing was there, which is what lets one command be both the
@@ -13753,6 +13828,45 @@ void BS_EncSetWeather(void)
         // TryChangeBattleWeather picks a move-length duration; an encounter states its own, with
         // 0 meaning permanent - the same convention primal weather uses (battle_util.c).
         gBattleStruct->weatherDuration = cmd->turns;
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// Maps an ENC_TERRAIN_* selector onto its field bit. The enum exists because those bits run past
+// what a byte-sized script argument holds.
+static const u16 sEncounterTerrainFlags[ENC_TERRAIN_COUNT] =
+{
+    [ENC_TERRAIN_ELECTRIC] = STATUS_FIELD_ELECTRIC_TERRAIN,
+    [ENC_TERRAIN_GRASSY]   = STATUS_FIELD_GRASSY_TERRAIN,
+    [ENC_TERRAIN_MISTY]    = STATUS_FIELD_MISTY_TERRAIN,
+    [ENC_TERRAIN_PSYCHIC]  = STATUS_FIELD_PSYCHIC_TERRAIN,
+};
+
+// TERRAIN (encsetterrain). The mirror of BS_EncSetWeather one field over: the stock setterrain
+// opcode reads its terrain off gCurrentMove, which a checkpoint script does not have.
+// TryChangeBattleTerrain handles the sky-battle refusal, swapping out whatever terrain was up, and
+// the terrainAbilityDone / paradox-stat resets. Silent; clear it again with removeterrain.
+void BS_EncSetTerrain(void)
+{
+    NATIVE_ARGS(u8 terrain, u8 turns);
+    u8 boss;
+
+    assertf(cmd->terrain < ENC_TERRAIN_COUNT,
+            "encounter %d: unknown terrain %d", gBattleStruct->encounter.id, cmd->terrain)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    // The boss stands in as the setter, as in BS_EncSetWeather; it only matters for the Terrain
+    // Extender duration bonus, which the script's own duration replaces below either way.
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss)
+     && TryChangeBattleTerrain(boss, sEncounterTerrainFlags[cmd->terrain]))
+    {
+        // TryChangeBattleTerrain picks a move-length duration; an encounter states its own, with
+        // 0 meaning permanent - the same convention encsetweather uses.
+        gFieldTimers.terrainTimer = cmd->turns;
     }
 
     gBattlescriptCurrInstr = cmd->nextInstr;

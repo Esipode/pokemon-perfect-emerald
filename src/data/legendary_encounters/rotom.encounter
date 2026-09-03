@@ -1,0 +1,190 @@
+Encounter: Rotom
+
+# Rotom, "The Possessive Pokemon". Every other legendary in the set fights the player; Rotom fights
+# the machine the battle runs on. Two numbers pull against each other:
+#   FORM      which appliance it is wearing - five of them, each a different matchup and field
+#   OVERCLOCK 0-5, how hard its systems are running. Everything it does raises it.
+# Guard is 88 at rest, 93 once OVERCLOCK reaches 3, and 55 (40 from 25%) for the three-turn SYSTEM
+# OVERLOAD window at 5 - out of form, stats on the floor, a lost turn. That window is the only time
+# the player's damage really lands, so the fight is a loop they learn to drive: wait for Rotom's own
+# clock and spend a long time hitting a wall, or push the meter and buy the window early.
+# THE LEVER IS ELECTRIC MOVES. +1 Overclock, once per turn. Rotom is Electric in every form, so an
+# Electric attack is the worst damage in the game against it (0.5x, 0.25x on Mow) - spending a turn
+# dealing almost nothing to force the window is a real trade rather than a free button.
+# Between possessions it seizes a system: CONTROL cuts power to the player's last move, POWER shorts
+# out their held item, FIELD raises a Sea of Fire or Swamp under them plus a screen for itself.
+# Every hijack is +1 Overclock: Rotom cannot take anything without cooking itself, which is what
+# turns the endgame's chaos into the player's win condition.
+# ANTI-ABUSE IS THE REBOOT, not an immunity: every possession clears Rotom's status. Status works
+# fully, and buys real turns - it just has a shelf life of 4 turns, then 2, then 1. A sleep landed
+# right after a possession is worth three landed just before it.
+# No Ability: override - Levitate is Rotom's own, it is a real defensive identity for a floating
+# appliance, and it does not absorb Electric, so the lever still costs the player their turn's damage
+# rather than vanishing into an immunity.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # at rest; EncScript_Rotom_ApplyGuard owns this from here on
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True               # the overload windows run at guard 40-55; an overkill there would
+                                # eat the catch window
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_THUNDERBOLT, MOVE_SHADOW_BALL, MOVE_CONFUSE_RAY, MOVE_ASTONISH
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all twelve here in order fixes
+# Phase..MoveGuard to 0..11.
+# 0 Phase (0 Idle Machine / 1 Rogue Program / 2 Total System Takeover / 3 Weakened), 1 Form (the
+# rotation position, 1-5; survives an overload so the cycle does not restart at Heat every time),
+# 2 Protocol (the LIVE form's per-turn behaviour, same values; 0 means out of form, which is what an
+# overload clears), 3 Clock (countdown to the next possession), 4 Overclock (0-5), 5 LastOC (last
+# ANNOUNCED Overclock - the re-fire guard for the callout), 6 Hardened (the Overclock >= 3 guard-bump
+# latch), 7 Overload (overload-window countdown; 0 = not in one), 8 Hijack (which hijack is next,
+# 0-2), 9 HijackDue (set by TurnOpen on the phase's schedule, cleared by the hijack script),
+# 10 TurnGuard (the once-per-turn scaffold), 11 MoveGuard (the Electric lever's per-turn re-entry
+# guard).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Rotom_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Form) >= 0
+    Var(Protocol) >= 0
+    Var(Clock) >= 0
+    Var(Overclock) >= 0
+    Var(LastOC) >= 0
+    Var(Hardened) >= 0
+    Var(Overload) >= 0
+    Var(Hijack) >= 0
+    Var(HijackDue) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. Each is also gated on the Phase value its
+# own script overwrites, so one huge hit crossing two thresholds steps through them in order.
+# Registered ahead of every resolution below so a threshold-crossing tick is resolved as a transition
+# first.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Rotom_RogueProgram
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Rotom_RogueProgram
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Rotom_Takeover
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Rotom_Takeover
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Rotom_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Rotom_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately, so no
+# branch out of it can leave it re-armed; it owns every countdown and the hijack schedule. TurnClose
+# owns the passive Overclock ticks, Wash's regen and the guard resets. Every clock ticks at TurnOpen
+# and resolves at OnTurnEnd, one checkpoint away, so a tick can never eat a step off a fresh re-arm.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Rotom_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# THE LEVER. At OnMoveEnd, Event.Battler is who GOT hit and Event.Target is who hit them, so this
+# reads "the player aimed an Electric move at Rotom". MoveGuard is the trigger's own self-disabling
+# gate: an Event.* condition stays true for the whole dispatch and no script can move it, so an
+# event-reacting trigger has to gate on a var it sets or the re-evaluation loop re-selects it until
+# the per-checkpoint script cap trips. Once would be wrong - it means once per BATTLE, and feeding
+# the motor is the fight's central mechanic.
+# Event.MoveType is the move's BASE type, so a Normalize/Electrify/Tera re-type does not count; the
+# cheat-sheet says "Electric-type moves" rather than "moves that hit as Electric".
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Rotom_FedTheMotor
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ELECTRIC
+
+# The overload cycle. Overload and Reboot cannot see each other: Overload requires Overload == 0 and
+# sets it to 4 or 5, Reboot requires Overload == 1. Registered ahead of Possess and Hijack so a
+# blown-out Rotom neither takes a new appliance nor seizes anything on the turn it fails.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Rotom_SystemOverload
+Conditions:
+    Var(Phase) <= 2
+    Var(Overload) == 0
+    Var(Overclock) >= 5
+
+Trigger: OnTurnEnd
+Priority: 31
+Script: EncScript_Rotom_Reboot
+Conditions:
+    Var(Phase) <= 2
+    Var(Overload) == 1
+
+# The possession clock resolving. Fires at 1 rather than being ticked to 0 and resolved in the same
+# pass; EncScript_Rotom_Possess re-arms the clock, so the condition is false the instant it finishes
+# and no guard var is needed.
+Trigger: OnTurnEnd
+Priority: 40
+Script: EncScript_Rotom_PossessTick
+Conditions:
+    Var(Phase) <= 2
+    Var(Overload) == 0
+    Var(Clock) == 1
+
+Trigger: OnTurnEnd
+Priority: 45
+Script: EncScript_Rotom_Hijack
+Conditions:
+    Var(Phase) <= 2
+    Var(Overload) == 0
+    Var(HijackDue) == 1
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Rotom_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
