@@ -804,7 +804,11 @@ struct SaveBlock2
     // code still has somewhere to read/write these regardless of FREE_BATTLE_FRONTIER.
     u8 disableRecordBattle:1;
     u8 lvlMode:2;
-             //u8 padding:5;
+    // Lives here rather than beside the other options at 0x14 because that halfword
+    // is exactly full and this needs 3 bits. Old saves read 0 (1x) either way, since
+    // these bits were zeroed padding.
+    u8 optionsBattleSpeed:3; // OPTIONS_BATTLE_SPEED_*; how much faster battles play out
+             //u8 padding:2;
     // Debug-menu scratch: which party mons were picked for a debug in-game-partner test battle
     // (src/debug.c writes it, src/battle_setup.c's CB2_EndDebugBattle reads it back). This was
     // squatting on struct BattleFrontier's selectedPartyMons purely for storage convenience, not

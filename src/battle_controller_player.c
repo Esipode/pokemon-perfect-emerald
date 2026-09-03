@@ -1334,7 +1334,7 @@ static void Intro_TryShinyAnimShowHealthbox(enum BattlerId battler)
     if (!gBattleSpritesDataPtr->healthBoxesData[battler].waitForCry
         && gBattleSpritesDataPtr->healthBoxesData[battler].healthboxSlideInStarted
         && !gBattleSpritesDataPtr->healthBoxesData[BATTLE_PARTNER(battler)].waitForCry
-        && !IsCryPlayingOrClearCrySongs())
+        && !IsBattleCryPlaying())
     {
         if (!gBattleSpritesDataPtr->healthBoxesData[battler].bgmRestored)
         {

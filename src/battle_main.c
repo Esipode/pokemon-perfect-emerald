@@ -249,6 +249,12 @@ EWRAM_DATA u16 gBallToDisplay = 0;
 EWRAM_DATA bool8 gLastUsedBallMenuPresent = FALSE;
 EWRAM_DATA u8 gPartyCriticalHits[PARTY_SIZE] = {0};
 EWRAM_DATA u8 gCategoryIconSpriteId = 0;
+// Battle speed: leftover half-step carried into the next frame (see GetBattleSpeedCatchUpPasses).
+static EWRAM_DATA u8 sBattleSpeedHalfStepRemainder = 0;
+// Battle speed: pass bookkeeping used to clip cry waits (see IsBattleCryPlaying).
+static EWRAM_DATA u8 sBattlePassCount = 0;
+static EWRAM_DATA u8 sBattleCryWaitPass = 0;
+static EWRAM_DATA u8 sBattleCryWaitPasses = 0;
 
 COMMON_DATA MainCallback gPreBattleCallback1 = NULL;
 COMMON_DATA void (*gBattleMainFunc)(void) = NULL;
@@ -636,6 +642,8 @@ static void CB2_InitBattleInternal(void)
         gPartiesCount[trainer] = CalculatePartyCount(trainer);
     #endif
 
+    sBattleSpeedHalfStepRemainder = 0;
+    sBattleCryWaitPasses = 0;
     gBattleCommunication[MULTIUSE_STATE] = 0;
 }
 
@@ -1727,14 +1735,137 @@ static void CB2_HandleStartMultiBattle(void)
     }
 }
 
-void BattleMainCB2(void)
+// Battle speed: passes are counted in half-steps so 1.5x can alternate between
+// running one and two battle passes per frame.
+static const u8 sBattleSpeedHalfSteps[OPTIONS_BATTLE_SPEED_COUNT] =
 {
+    [OPTIONS_BATTLE_SPEED_1X]   = 2,
+    [OPTIONS_BATTLE_SPEED_1_5X] = 3,
+    [OPTIONS_BATTLE_SPEED_2X]   = 4,
+    [OPTIONS_BATTLE_SPEED_3X]   = 6,
+    [OPTIONS_BATTLE_SPEED_4X]   = 8,
+    [OPTIONS_BATTLE_SPEED_5X]   = 10,
+};
+
+// The BATTLE SPEED setting in effect, or 1x where the battle must not be
+// accelerated: link battles are frame-synced with the other console, and the
+// test runner needs a fixed frame model.
+u32 GetBattleSpeedSetting(void)
+{
+    u32 setting;
+
+    if (gTestRunnerEnabled || (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))
+        return OPTIONS_BATTLE_SPEED_1X;
+
+    setting = gSaveBlock2Ptr->optionsBattleSpeed;
+    if (setting >= OPTIONS_BATTLE_SPEED_COUNT)
+        setting = OPTIONS_BATTLE_SPEED_1X;
+
+    return setting;
+}
+
+// Passes a cry may be waited on before it is cut off above 1x. Passes run at the
+// battle's accelerated rate, so the audible cry shortens in proportion to the
+// setting: a ~1s cry keeps ~0.67s at 1.5x, ~0.5s at 2x, ~0.33s at 3x and ~0.2s at 5x.
+#define BATTLE_CRY_MAX_WAIT_PASSES 60
+
+// Cries are mixed by m4a in real time, so waiting on one is a floor the frame-pass
+// accelerator cannot lift - it is what keeps send-out and capture sequences from
+// reaching their nominal speed. Above 1x the cry is cut short once the wait has
+// run long enough. At 1x this is exactly IsCryPlayingOrClearCrySongs.
+bool32 IsBattleCryPlaying(void)
+{
+    if (!IsCryPlayingOrClearCrySongs())
+    {
+        sBattleCryWaitPasses = 0;
+        return FALSE;
+    }
+
+    if (GetBattleSpeedSetting() == OPTIONS_BATTLE_SPEED_1X)
+        return TRUE;
+
+    // Counted per pass rather than per call, so a doubles send-out waiting on two
+    // battlers does not clip the cry twice as fast as a singles one.
+    if (sBattleCryWaitPass != sBattlePassCount)
+    {
+        sBattleCryWaitPass = sBattlePassCount;
+        sBattleCryWaitPasses++;
+    }
+
+    if (sBattleCryWaitPasses < BATTLE_CRY_MAX_WAIT_PASSES)
+        return TRUE;
+
+    StopCryAndClearCrySongs();
+    sBattleCryWaitPasses = 0;
+    return FALSE;
+}
+
+// How many extra passes to run this frame beyond its own. Everything time-based
+// in a battle - script waits, animation counters, text printing, HP drain - is
+// counted in callback invocations, so running the frame body more than once per
+// frame advances all of it proportionally faster. remainder carries the leftover
+// half-step between frames and belongs to the caller, so each accelerated phase
+// (the battle itself, the pre-battle transition) keeps its own.
+u32 GetBattleSpeedCatchUpPasses(u8 *remainder)
+{
+    // An excluded battle reports 1x, which is two half-steps and so no extra pass.
+    u32 halfSteps = *remainder + sBattleSpeedHalfSteps[GetBattleSpeedSetting()];
+    *remainder = halfSteps % 2;
+    return (halfSteps / 2) - 1; // the frame's own pass has already run
+}
+
+// buildOam is FALSE on the catch-up passes of a frame: their OAM is overwritten
+// before anything is displayed, and the sort is too expensive to repeat at high speeds.
+static void BattleMainCB2_RunFrame(bool32 buildOam)
+{
+    sBattlePassCount++;
     AnimateSprites();
-    BuildOamBuffer();
+    if (buildOam)
+        BuildOamBuffer();
     RunTextPrinters();
     UpdatePaletteFade();
     RunTasks();
+}
 
+void BattleMainCB2(void)
+{
+    u32 passes = GetBattleSpeedCatchUpPasses(&sBattleSpeedHalfStepRemainder);
+
+    BattleMainCB2_RunFrame(passes == 0);
+
+    for (; passes != 0; passes--)
+    {
+        u16 newKeys, newKeysRaw, newAndRepeatedKeys, heldKeys, heldKeysRaw;
+
+        // A pass can hand control off (battle ended, evolution, recorded-battle
+        // quit); stop advancing the battle once it no longer owns the callbacks.
+        if (gMain.callback1 != BattleMainCB1 || gMain.callback2 != BattleMainCB2)
+        {
+            BuildOamBuffer(); // the pass that would have built this frame's OAM never runs
+            break;
+        }
+
+        // Keys are read once per frame, so catch-up passes must see none of them
+        // or a single press would register two or three times.
+        newKeys = gMain.newKeys;
+        newKeysRaw = gMain.newKeysRaw;
+        newAndRepeatedKeys = gMain.newAndRepeatedKeys;
+        heldKeys = gMain.heldKeys;
+        heldKeysRaw = gMain.heldKeysRaw;
+        gMain.newKeys = gMain.newKeysRaw = gMain.newAndRepeatedKeys = 0;
+        gMain.heldKeys = gMain.heldKeysRaw = 0;
+
+        BattleMainCB1();
+        BattleMainCB2_RunFrame(passes == 1);
+
+        gMain.newKeys = newKeys;
+        gMain.newKeysRaw = newKeysRaw;
+        gMain.newAndRepeatedKeys = newAndRepeatedKeys;
+        gMain.heldKeys = heldKeys;
+        gMain.heldKeysRaw = heldKeysRaw;
+    }
+
+    // Runs once per frame on real key state, outside the catch-up loop.
     if (JOY_HELD(B_BUTTON) && gBattleTypeFlags & BATTLE_TYPE_RECORDED && RecordedBattle_CanStopPlayback())
     {
         // Player pressed B during recorded battle playback, end battle

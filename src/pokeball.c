@@ -789,7 +789,7 @@ static void Task_PlayCryWhenReleasedFromBall(u8 taskId)
         gTasks[taskId].tCryTaskState++;
         // fall through
     case 31:
-        if (!IsCryPlayingOrClearCrySongs())
+        if (!IsBattleCryPlaying())
         {
             StopCryAndClearCrySongs();
             gTasks[taskId].tCryTaskFrames = 3;

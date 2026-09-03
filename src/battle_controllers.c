@@ -3163,7 +3163,7 @@ void BtlController_Intro_DelayAndEnd(enum BattlerId battler)
 
 void BtlController_HandleSwitchInSoundAndEnd(enum BattlerId battler)
 {
-    if (!gBattleSpritesDataPtr->healthBoxesData[battler].specialAnimActive && !IsCryPlayingOrClearCrySongs())
+    if (!gBattleSpritesDataPtr->healthBoxesData[battler].specialAnimActive && !IsBattleCryPlaying())
     {
         if (gSprites[gBattlerSpriteIds[battler]].callback == SpriteCallbackDummy
          || gSprites[gBattlerSpriteIds[battler]].callback == SpriteCallbackDummy_2

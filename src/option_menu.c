@@ -32,6 +32,7 @@ static void DrawOptionsPg3(u8 taskId);
 #define tButtonMode       data[1]
 #define tWindowFrameType  data[2]
 #define tAIBattles        data[3]  // bit0 = trainer AI, bit1 = wild AI
+#define tBattleSpeed      data[4]  // OPTIONS_BATTLE_SPEED_*; multi-valued, so it can't live in tPackedFlags
 #define tTextSpeed        data[5]
 
 // Packed flags for all boolean options (data[6], bits 0-15)
@@ -83,6 +84,7 @@ enum
 {
     MENUITEM_ROUTE_TRACKER,
     MENUITEM_EXPSHARE,
+    MENUITEM_BATTLE_SPEED,
     MENUITEM_CANCEL_PG3,
     MENUITEM_COUNT_PG3,
 };
@@ -110,6 +112,7 @@ enum
 //Pg3
 #define YPOS_ROUTE_TRACKER        (MENUITEM_ROUTE_TRACKER * 16)
 #define YPOS_EXPSHARE             (MENUITEM_EXPSHARE * 16)
+#define YPOS_BATTLE_SPEED         (MENUITEM_BATTLE_SPEED * 16)
 
 #define PAGE_COUNT 3
 
@@ -143,6 +146,8 @@ static u8   RouteTracker_ProcessInput(u8 selection);
 static void RouteTracker_DrawChoices(u8 selection, bool8 isActive);
 static u8   ExpShareOption_ProcessInput(u8 selection);
 static void ExpShareOption_DrawChoices(u8 selection, bool8 isActive);
+static u8   BattleSpeed_ProcessInput(u8 selection);
+static void BattleSpeed_DrawChoices(u8 selection, bool8 isActive);
 static u8 Sound_ProcessInput(u8 selection);
 static void Sound_DrawChoices(u8 selection, bool8 isActive);
 static u8 FrameType_ProcessInput(u8 selection);
@@ -212,6 +217,12 @@ static const u8 gText_RouteTrackerOn[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 // field messages for the Exp. Share key item, not option-row value labels).
 static const u8 gText_ExpShareOptionOff[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_ExpShareOptionOn[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
+static const u8 gText_BattleSpeed1x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}1x");
+static const u8 gText_BattleSpeed1_5x[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}1.5x");
+static const u8 gText_BattleSpeed2x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}2x");
+static const u8 gText_BattleSpeed3x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}3x");
+static const u8 gText_BattleSpeed4x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}4x");
+static const u8 gText_BattleSpeed5x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}5x");
 
 static const u8 sText_ChevronLeft[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
@@ -246,6 +257,7 @@ static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
 {
     [MENUITEM_ROUTE_TRACKER] = COMPOUND_STRING("ROUTE TRACKER"),
     [MENUITEM_EXPSHARE]      = COMPOUND_STRING("EXP SHARE"),
+    [MENUITEM_BATTLE_SPEED]  = COMPOUND_STRING("BATTLE SPEED"),
     [MENUITEM_CANCEL_PG3]    = COMPOUND_STRING("CANCEL"),
 };
 
@@ -317,6 +329,9 @@ static void ReadAllCurrentSettings(u8 taskId)
     gTasks[taskId].tTextSpeed = gSaveBlock2Ptr->optionsTextSpeed;
     gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
     gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
+    // The save field holds 3 bits but only 6 are valid values; keep the draw in range.
+    gTasks[taskId].tBattleSpeed = (gSaveBlock2Ptr->optionsBattleSpeed < OPTIONS_BATTLE_SPEED_COUNT)
+                                ? gSaveBlock2Ptr->optionsBattleSpeed : OPTIONS_BATTLE_SPEED_1X;
     gTasks[taskId].tAIBattles = (AiBattles_GetSetting(AI_BATTLES_SETTING_TRAINER) ? 1 : 0) | (AiBattles_GetSetting(AI_BATTLES_SETTING_WILD) ? 2 : 0);
     gTasks[taskId].tPackedFlags = 0;
     if (gSaveBlock2Ptr->optionsBattleSceneOff)     SET_FLAG(BATTLE_SCENE, 1); else SET_FLAG(BATTLE_SCENE, 0);
@@ -364,6 +379,7 @@ static void DrawOptionsPg3(u8 taskId)
 
     RouteTracker_DrawChoices(GET_FLAG(ROUTE_TRACKER), sel == MENUITEM_ROUTE_TRACKER);
     ExpShareOption_DrawChoices(GET_FLAG(EXP_SHARE), sel == MENUITEM_EXPSHARE);
+    BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed, sel == MENUITEM_BATTLE_SPEED);
     HighlightOptionMenuItem(sel);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -794,6 +810,13 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
             if (previousOption != GET_FLAG(EXP_SHARE))
                 ExpShareOption_DrawChoices(GET_FLAG(EXP_SHARE), TRUE);
             break;
+        case MENUITEM_BATTLE_SPEED:
+            previousOption = gTasks[taskId].tBattleSpeed;
+            gTasks[taskId].tBattleSpeed = BattleSpeed_ProcessInput(previousOption);
+
+            if (previousOption != gTasks[taskId].tBattleSpeed)
+                BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed, TRUE);
+            break;
         default:
             return;
         }
@@ -833,6 +856,7 @@ static void CommitPendingOptionSettings(u8 taskId)
     gSaveBlock2Ptr->optionsRouteTracker = GET_FLAG(ROUTE_TRACKER);
     // Same field the Exp. Share key item toggles (IsGen6ExpShareEnabled), so both controls stay in sync.
     gSaveBlock2Ptr->optionsExpShare = GET_FLAG(EXP_SHARE);
+    gSaveBlock2Ptr->optionsBattleSpeed = gTasks[taskId].tBattleSpeed;
 }
 
 static void Task_OptionMenuSave(u8 taskId)
@@ -1209,6 +1233,44 @@ static void ExpShareOption_DrawChoices(u8 selection, bool8 isActive)
     static const u8 *const sTexts[2] = {gText_ExpShareOptionOff, gText_ExpShareOptionOn};
 
     DrawOptionMenuValue(sTexts[selection], YPOS_EXPSHARE, isActive);
+}
+
+static u8 BattleSpeed_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_RIGHT))
+    {
+        if (selection < OPTIONS_BATTLE_SPEED_COUNT - 1)
+            selection++;
+        else
+            selection = 0;
+
+        sArrowPressed = TRUE;
+    }
+    if (JOY_NEW(DPAD_LEFT))
+    {
+        if (selection != 0)
+            selection--;
+        else
+            selection = OPTIONS_BATTLE_SPEED_COUNT - 1;
+
+        sArrowPressed = TRUE;
+    }
+    return selection;
+}
+
+static void BattleSpeed_DrawChoices(u8 selection, bool8 isActive)
+{
+    static const u8 *const sTexts[OPTIONS_BATTLE_SPEED_COUNT] =
+    {
+        [OPTIONS_BATTLE_SPEED_1X]   = gText_BattleSpeed1x,
+        [OPTIONS_BATTLE_SPEED_1_5X] = gText_BattleSpeed1_5x,
+        [OPTIONS_BATTLE_SPEED_2X]   = gText_BattleSpeed2x,
+        [OPTIONS_BATTLE_SPEED_3X]   = gText_BattleSpeed3x,
+        [OPTIONS_BATTLE_SPEED_4X]   = gText_BattleSpeed4x,
+        [OPTIONS_BATTLE_SPEED_5X]   = gText_BattleSpeed5x,
+    };
+
+    DrawOptionMenuValue(sTexts[selection], YPOS_BATTLE_SPEED, isActive);
 }
 
 static void DrawHeaderText(void)

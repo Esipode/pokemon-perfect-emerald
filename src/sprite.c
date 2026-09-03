@@ -8,7 +8,9 @@
 #include "battle_anim.h"
 #include "test/test.h"
 
-#define MAX_SPRITE_COPY_REQUESTS 64
+// Bounded by the sSpriteCopyRequests array. Battle speeds above 1x run several
+// logic passes per VBlank flush, so the queue holds more than one frame's worth.
+#define MAX_SPRITE_COPY_REQUESTS MAX_SPRITES
 
 #define sAnchorX data[6]
 #define sAnchorY data[7]

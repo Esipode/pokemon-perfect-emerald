@@ -66,6 +66,9 @@ enum FirstTurnEventsStates
 
 void CB2_InitBattle(void);
 void BattleMainCB2(void);
+bool32 IsBattleCryPlaying(void);
+u32 GetBattleSpeedSetting(void);
+u32 GetBattleSpeedCatchUpPasses(u8 *remainder);
 void CB2_QuitRecordedBattle(void);
 void VBlankCB_Battle(void);
 void SpriteCB_VsLetterDummy(struct Sprite *sprite);

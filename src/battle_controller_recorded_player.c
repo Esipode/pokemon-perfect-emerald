@@ -172,7 +172,7 @@ static void Intro_WaitForShinyAnimAndHealthbox(enum BattlerId battler)
             }
         }
 
-        if (IsCryPlayingOrClearCrySongs())
+        if (IsBattleCryPlaying())
             healthboxAnimDone = FALSE;
 
         if (healthboxAnimDone)
@@ -219,7 +219,7 @@ static void Intro_TryShinyAnimShowHealthbox(enum BattlerId battler)
     if (gBattleSpritesDataPtr->healthBoxesData[battler].healthboxSlideInStarted
         && !gBattleSpritesDataPtr->healthBoxesData[battler].waitForCry
         && !gBattleSpritesDataPtr->healthBoxesData[BATTLE_PARTNER(battler)].waitForCry
-        && !IsCryPlayingOrClearCrySongs())
+        && !IsBattleCryPlaying())
     {
         if (!gBattleSpritesDataPtr->healthBoxesData[battler].bgmRestored)
         {

@@ -118,6 +118,7 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsBattleSceneOff = FALSE;
     gSaveBlock2Ptr->regionMapZoom = FALSE;
     gSaveBlock2Ptr->optionsExpShare = TRUE;
+    gSaveBlock2Ptr->optionsBattleSpeed = OPTIONS_BATTLE_SPEED_1X;
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     // Offline trade codes (trade_code.h): explicit alongside the memset
     // above, even though ClearSav2() (called just before this, in

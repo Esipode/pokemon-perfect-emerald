@@ -141,7 +141,7 @@ static void Intro_WaitForHealthbox(enum BattlerId battler)
         }
     }
 
-    if (IsCryPlayingOrClearCrySongs())
+    if (IsBattleCryPlaying())
         finished = FALSE;
 
     if (finished)

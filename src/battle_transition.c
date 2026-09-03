@@ -98,6 +98,7 @@ static bool8 Transition_WaitForMain(struct Task *);
 
 static void LaunchBattleTransitionTask(u8);
 static void Task_BattleTransition(u8);
+static void CB2_BattleTransitionOnField(void);
 static void Task_Intro(u8);
 static void Task_Blur(u8);
 static void Task_Swirl(u8);
@@ -294,6 +295,8 @@ static u8 sTestingTransitionState;
 static struct RectangularSpiralLine sRectangularSpiralLines[4];
 
 EWRAM_DATA static struct TransitionData *sTransitionData = NULL;
+// Battle speed: leftover half-step carried into the next frame of the transition.
+EWRAM_DATA static u8 sTransitionSpeedHalfStepRemainder = 0;
 
 static const u32 sBigPokeball_Tileset[] = INCGFX_U32("graphics/battle_transitions/big_pokeball.png", ".4bpp");
 static const u32 sPokeballTrail_Tileset[] = INCGFX_U32("graphics/battle_transitions/pokeball_trail.png", ".4bpp");
@@ -1002,9 +1005,52 @@ static void UNUSED TestBattleTransition(u8 transitionId)
     SetMainCallback2(CB2_TestBattleTransition);
 }
 
+// The transition runs as tasks under the overworld's frame body, so BATTLE SPEED
+// accelerates it the same way it accelerates a battle: extra passes per frame,
+// which the display simply skips. Scanline buffers and OAM are rewritten by each
+// pass and only the last one before VBlank is shown, which is what frame-skipping
+// means here.
+static void CB2_BattleTransitionOnField(void)
+{
+    u32 passes;
+
+    CB2_OverworldBasic();
+
+    for (passes = GetBattleSpeedCatchUpPasses(&sTransitionSpeedHalfStepRemainder); passes != 0; passes--)
+    {
+        u16 newKeys, newKeysRaw, newAndRepeatedKeys, heldKeys, heldKeysRaw;
+
+        // The task that owns the transition hands off to CB2_InitBattle the moment
+        // it reports done, after tearing the overworld down; stop advancing here.
+        if (gMain.callback2 != CB2_BattleTransitionOnField)
+            break;
+
+        // Keys are read once per frame, so catch-up passes must see none of them.
+        newKeys = gMain.newKeys;
+        newKeysRaw = gMain.newKeysRaw;
+        newAndRepeatedKeys = gMain.newAndRepeatedKeys;
+        heldKeys = gMain.heldKeys;
+        heldKeysRaw = gMain.heldKeysRaw;
+        gMain.newKeys = gMain.newKeysRaw = gMain.newAndRepeatedKeys = 0;
+        gMain.heldKeys = gMain.heldKeysRaw = 0;
+
+        CB2_OverworldBasic();
+
+        gMain.newKeys = newKeys;
+        gMain.newKeysRaw = newKeysRaw;
+        gMain.newAndRepeatedKeys = newAndRepeatedKeys;
+        gMain.heldKeys = heldKeys;
+        gMain.heldKeysRaw = heldKeysRaw;
+    }
+}
+
 void BattleTransition_StartOnField(u8 transitionId)
 {
-    gMain.callback2 = CB2_OverworldBasic;
+    // Replaces the plain CB2_OverworldBasic vanilla installs here, and is itself
+    // replaced when the transition finishes and the battle is entered - so no other
+    // CB2_OverworldBasic user pays for the speed check.
+    sTransitionSpeedHalfStepRemainder = 0;
+    gMain.callback2 = CB2_BattleTransitionOnField;
     LaunchBattleTransitionTask(transitionId);
 }
 
