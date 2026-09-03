@@ -656,6 +656,12 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage);
 // weather, poison and recoil carry no move type for an adaptation to match against.
 s32 ApplyEncounterTypeAdaptation(enum BattlerId battler, enum Type moveType, s32 damage);
 
+// Scales healing battler drains OUT OF sourceBattler by the encounter's authored damage reduction,
+// floored at 1 for the same reason. Declared beside the two above and implemented alongside them in
+// src/battle_encounter.c: DamageReduction: cuts what reaches the boss but nothing cuts what the boss
+// deals, and a drain move turns that undiminished damage straight into healing.
+s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBattler, s32 heal);
+
 // Cleared at the beginning of the battle. Fields need to be cleared when needed manually otherwise.
 struct BattleStruct
 {

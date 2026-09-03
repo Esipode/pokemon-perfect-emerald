@@ -968,6 +968,56 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
     return damage;
 }
 
+// Scales healing the boss drains OUT OF another battler by the encounter's AUTHORED damage
+// reduction. DamageReduction: cuts what reaches the boss, but nothing cuts what the boss deals - and
+// a drain move turns that undiminished damage straight into healing. At DamageReduction: 90 the
+// exchange runs ten to one against the player: Leech Seed alone takes 1/8 of their max HP every turn
+// and hands all of it to a boss they can only chip one or two percent off, so the fight quietly
+// stops being winnable and never looks like a bug. This puts the boss's healing on the same footing
+// as its guard - it keeps the same fraction of what it drains that it lets through of what it takes.
+//
+// Reads the AUTHORED property rather than the live per-battler value on purpose. The live number
+// moves with a phase, a stance or a form, and the catch-window guard pins it to
+// ENC_MAX_DAMAGE_REDUCTION - balance would swing with all of that, and the catch window would zero
+// out drain healing outright. The property is the fight's fixed balance constant, so this is too.
+//
+// Self-healing is deliberately untouched (sourceBattler == battler): Ingrain, Aqua Ring, Synthesis
+// and Recover are a fraction of the boss's OWN max HP, already balanced against how long the fight
+// runs, and are not the asymmetry. Nor is a Liquid Ooze punish, which is damage rather than healing
+// and is already scaled once by ApplyEncounterDamageReduction on the way in - so the call sites
+// apply this only on the branch that actually heals.
+s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBattler, s32 heal)
+{
+    const struct Encounter *encounter;
+    u8 boss;
+    u32 percent;
+
+    if (heal <= 0 || battler == sourceBattler || battler >= MAX_BATTLERS_COUNT || !IsEncounterActive())
+        return heal;
+
+    // Boss-scoped because DamageReduction: is. The boss is the only battler a Properties: block
+    // configures, so it is the only one with an authored number to read; a reduction a script hands
+    // some other battler has no property behind it and leaves its drains alone.
+    if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss) || battler != boss)
+        return heal;
+
+    encounter = GetEncounter(gBattleStruct->encounter.id);
+    if (encounter == NULL)
+        return heal;
+
+    percent = encounter->properties.damageReduction;
+    if (percent > ENC_MAX_DAMAGE_REDUCTION)
+        percent = ENC_MAX_DAMAGE_REDUCTION;
+    if (percent != 0)
+    {
+        heal = heal * (100 - percent) / 100;
+        if (heal < 1)
+            heal = 1;
+    }
+
+    return heal;
+}
+
 // ANALYSIS. Scales damage aimed at battler by the adaptation it holds for this move's type, if any.
 // The board is a short unordered array, so a linear scan is cheaper than any index would be.
 s32 ApplyEncounterTypeAdaptation(enum BattlerId battler, enum Type moveType, s32 damage)

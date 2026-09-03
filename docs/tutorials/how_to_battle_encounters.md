@@ -446,6 +446,37 @@ Three things deliberately **ignore** it:
 The maximum is 99 (`ENC_MAX_DAMAGE_REDUCTION`). A battler nothing at all can damage isn't a fight —
 if a specific move must not work, that's what the immunities are for.
 
+### `DamageReduction:` — and what the boss *drains*
+
+`DamageReduction:` cuts what reaches the boss. Nothing cuts what the boss **deals** — and a drain
+move turns that undiminished damage straight into healing, which is how a reduction that reads as
+"the fight lasts longer" quietly becomes "the fight cannot be won":
+
+> At `DamageReduction: 90` the exchange runs ten to one against the player. Leech Seed alone takes
+> 1/8 of their max HP every turn and hands **all** of it to a boss they can only chip one or two
+> percent off. Nothing on screen says anything is wrong.
+
+So healing the boss drains **out of another battler** is scaled by the encounter's `DamageReduction:`
+automatically — it keeps the same fraction of what it drains that it lets through of what it takes.
+This is not a property and there is nothing to opt into; it falls out of the number already authored.
+
+| Scaled | Not scaled |
+| --- | --- |
+| Leech Seed's per-turn drain | **The damage** — the player still loses the full 1/8 a turn; only the boss's share of it shrinks |
+| Absorb, Giga Drain, Drain Punch, Draining Kiss, Horn Leech, Leech Life, Dream Eater, … | Self-healing: Synthesis, Recover, Ingrain, Aqua Ring, Leftovers — a fraction of the boss's *own* max HP, already balanced against the fight's length |
+| Strength Sap | A Liquid Ooze punish — that's damage, not healing, and `ApplyEncounterDamageReduction` has already scaled it once |
+| The AI's estimate of what a drain is worth, so it doesn't spend turns on a heal it will barely keep | Any battler that isn't the boss |
+
+It reads the **authored property**, not the live per-battler value, and that distinction is the whole
+point of the feature. The live number moves with a phase, a stance or a form, and the catch-window
+guard pins it to `ENC_MAX_DAMAGE_REDUCTION` — balance would swing with all of that, and the catch
+window would zero out drain healing outright. The property is the fight's fixed balance constant, so
+this is too. A boss whose `Properties:` set no reduction is unaffected.
+
+`ApplyEncounterDrainReduction` (`battle_encounter.c`) is the implementation, alongside its two
+siblings.
+
+
 There is no on-screen indicator for any of this — a reduced hit just shows a smaller number. If a
 script raises, lowers, or gates the reduction as a *mechanic* (a regenerating barrier, a phase that
 hardens the boss, a stance that punishes a move type), the player has to be told through dialogue,
@@ -713,6 +744,12 @@ yet, so the manual count is currently the reliable path.)
   flat percentage applied after the type multiplier, so a quadruple weakness still hits several times
   harder than a neutral move even at 90% reduction — it was that much larger before reduction ever
   touched it. Set both on any boss with a real 4x matchup in its typing.
+- **A boss with a drain move heals through its own guard, and the engine now scales that.** Healing
+  the boss takes out of another battler (Leech Seed, the Absorb family, Strength Sap) is cut by the
+  encounter's authored `DamageReduction:`, because nothing reduces what the boss *deals* and a drain
+  would otherwise convert a full-strength hit into full-strength healing against a player whose own
+  hits are cut by 90%. The drain's **damage** is untouched — only the boss's share of it. Self-heals
+  are untouched too. See [`DamageReduction:` and what the boss drains](#damagereduction--and-what-the-boss-drains).
 - **`DamageReduction:` doesn't stop Toxic from eventually overwhelming a boss.** The counter ramp is
   a multiplier on top of reduction, not something reduction caps — a long enough fight always reaches
   the turn where 90% off a maxed-out counter is still lethal. `FlatToxicDamage: True` is what actually

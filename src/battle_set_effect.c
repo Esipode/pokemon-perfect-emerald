@@ -128,7 +128,10 @@ static void HandleSetEffectAbsorb(struct BattleCalcValues *cv, struct SetEffect 
         }
         else if (!IsBattlerAtMaxHp(cv->battlerAtk) || GetConfig(B_ABSORB_MESSAGE) < GEN_5)
         {
-            SetHealAmount(cv->battlerAtk, healAmount);
+            // Absorb and Dream Eater, so an encounter boss keeps only the share of a drain its own
+            // guard would let through. The Liquid Ooze branch above is damage, not healing, and is
+            // left alone.
+            SetHealAmount(cv->battlerAtk, ApplyEncounterDrainReduction(cv->battlerAtk, cv->battlerDef, healAmount));
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_ABSORB;
             BattleScriptPush(se->script);
             gBattlescriptCurrInstr = BattleScript_EffectAbsorb;

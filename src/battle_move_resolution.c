@@ -3414,7 +3414,9 @@ static enum MoveEndResult MoveEndAbsorb(struct BattleCalcValues *cv)
             }
             else if (!IsBattlerAtMaxHp(cv->battlerAtk) || GetConfig(B_ABSORB_MESSAGE) < GEN_5)
             {
-                SetHealAmount(cv->battlerAtk, healAmount);
+                // An encounter boss keeps only the share of a drain its own guard would let through.
+                // The Liquid Ooze branch above is damage, not healing, and is left alone.
+                SetHealAmount(cv->battlerAtk, ApplyEncounterDrainReduction(cv->battlerAtk, cv->battlerDef, healAmount));
                 gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_ABSORB;
                 gEffectBattler = cv->battlerAtk;
                 BattleScriptCall(BattleScript_EffectAbsorb);

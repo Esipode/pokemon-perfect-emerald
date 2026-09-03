@@ -519,7 +519,10 @@ static bool32 HandleEndTurnLeechSeed(enum BattlerId battler)
         else
         {
             SetPassiveDamageAmount(drainedBattler, drainAmount);
-            SetHealAmount(receiverBattler, healAmount);
+            // receiverBattler is the seeder taking the HP, drainedBattler the seeded battler losing
+            // it - so an encounter boss keeps only the share of a drain its own guard would let
+            // through. The Liquid Ooze branch above is damage, not healing, and is left alone.
+            SetHealAmount(receiverBattler, ApplyEncounterDrainReduction(receiverBattler, drainedBattler, healAmount));
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_LEECH_SEED_DRAIN;
             BattleScriptCall(BattleScript_LeechSeedTurnDrainRecovery);
         }

@@ -3972,6 +3972,10 @@ bool32 ShouldAbsorb(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum M
     u32 currHP = gBattleMons[battlerAtk].hp;
     u32 healAmount = (AI_GetDamage(battlerAtk, battlerDef, gAiThinkingStruct->movesetIndex, AI_ATTACKING, gAiLogicData) * absorbPercentage / 100);
     healAmount = GetDrainedBigRootHp(battlerAtk, battlerDef, healAmount);
+    // The AI already scores through the encounter's damage reduction; a drain it will only keep a
+    // tenth of has to read that way too, or a heavily-reduced boss spends its turns on a heal worth
+    // almost nothing.
+    healAmount = ApplyEncounterDrainReduction(battlerAtk, battlerDef, healAmount);
     enum Move predictedMove = GetPredictedMove(battlerAtk, battlerDef, gAiLogicData);
     bool32 aiIsFaster = AI_IsFaster(battlerAtk, battlerDef, move, predictedMove, CONSIDER_PRIORITY);
 

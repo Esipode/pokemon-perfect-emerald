@@ -70,7 +70,7 @@
 #define FLAG_HIDE_MESPRIT    0x31
 #define FLAG_HIDE_REGIGIGAS  0x32
 #define FLAG_HIDE_ROTOM      0x33
-#define FLAG_UNUSED_0x034    0x34 // Unused Flag
+#define FLAG_HIDE_SHAYMIN    0x34
 #define FLAG_UNUSED_0x035    0x35 // Unused Flag
 #define FLAG_UNUSED_0x036    0x36 // Unused Flag
 #define FLAG_UNUSED_0x037    0x37 // Unused Flag

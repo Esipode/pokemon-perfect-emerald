@@ -116,7 +116,6 @@ extern const u8 EncScript_Moltres_Intro[];
 extern const u8 EncScript_Moltres_Rebirth[];
 extern const u8 EncScript_Moltres_Rebirth[];
 extern const u8 EncScript_Moltres_Weakened[];
-extern const u8 EncScript_Moltres_Weakened[];
 extern const u8 EncScript_Moltres_FireHit[];
 extern const u8 EncScript_Moltres_TookDamage[];
 extern const u8 EncScript_Moltres_BossFire[];
@@ -156,10 +155,7 @@ extern const u8 EncScript_Mew_TurnClose[];
 // Raikou ("The Hunting Thunder")
 extern const u8 EncScript_Raikou_Intro[];
 extern const u8 EncScript_Raikou_Hunt[];
-extern const u8 EncScript_Raikou_Hunt[];
 extern const u8 EncScript_Raikou_Incarnate[];
-extern const u8 EncScript_Raikou_Incarnate[];
-extern const u8 EncScript_Raikou_Weakened[];
 extern const u8 EncScript_Raikou_Weakened[];
 extern const u8 EncScript_Raikou_PlayerGround[];
 extern const u8 EncScript_Raikou_PlayerAttack[];
@@ -174,10 +170,7 @@ extern const u8 EncScript_Raikou_TurnClose[];
 // Entei ("The Walking Volcano")
 extern const u8 EncScript_Entei_Intro[];
 extern const u8 EncScript_Entei_Cycle[];
-extern const u8 EncScript_Entei_Cycle[];
 extern const u8 EncScript_Entei_Cataclysm[];
-extern const u8 EncScript_Entei_Cataclysm[];
-extern const u8 EncScript_Entei_Weakened[];
 extern const u8 EncScript_Entei_Weakened[];
 extern const u8 EncScript_Entei_PlayerWater[];
 extern const u8 EncScript_Entei_PlayerAttack[];
@@ -193,10 +186,7 @@ extern const u8 EncScript_Entei_TurnClose[];
 // Suicune ("The Purifier")
 extern const u8 EncScript_Suicune_Intro[];
 extern const u8 EncScript_Suicune_Cleansing[];
-extern const u8 EncScript_Suicune_Cleansing[];
 extern const u8 EncScript_Suicune_SacredBeast[];
-extern const u8 EncScript_Suicune_SacredBeast[];
-extern const u8 EncScript_Suicune_Weakened[];
 extern const u8 EncScript_Suicune_Weakened[];
 extern const u8 EncScript_Suicune_TurnOpen[];
 extern const u8 EncScript_Suicune_Rite[];
@@ -272,8 +262,6 @@ extern const u8 EncScript_Deoxys_HitOtherSpecial[];
 // Jirachi ("The Wish Pokemon")
 extern const u8 EncScript_Jirachi_Intro[];
 extern const u8 EncScript_Jirachi_TagsBlaze[];
-extern const u8 EncScript_Jirachi_TagsBlaze[];
-extern const u8 EncScript_Jirachi_WishGranted[];
 extern const u8 EncScript_Jirachi_WishGranted[];
 extern const u8 EncScript_Jirachi_TurnOpen[];
 extern const u8 EncScript_Jirachi_Miracle[];
@@ -285,10 +273,7 @@ extern const u8 EncScript_Jirachi_TurnClose[];
 // Rayquaza ("The Sky Guardian")
 extern const u8 EncScript_Rayquaza_Intro[];
 extern const u8 EncScript_Rayquaza_DeltaAscension[];
-extern const u8 EncScript_Rayquaza_DeltaAscension[];
 extern const u8 EncScript_Rayquaza_AtmosphereBreaks[];
-extern const u8 EncScript_Rayquaza_AtmosphereBreaks[];
-extern const u8 EncScript_Rayquaza_Weakened[];
 extern const u8 EncScript_Rayquaza_Weakened[];
 extern const u8 EncScript_Rayquaza_TurnOpen[];
 extern const u8 EncScript_Rayquaza_SkyfallLand[];
@@ -304,10 +289,7 @@ extern const u8 EncScript_Rayquaza_TurnClose[];
 // Kyogre ("The Endless Ocean")
 extern const u8 EncScript_Kyogre_Intro[];
 extern const u8 EncScript_Kyogre_PrimalReversion[];
-extern const u8 EncScript_Kyogre_PrimalReversion[];
 extern const u8 EncScript_Kyogre_GreatDeluge[];
-extern const u8 EncScript_Kyogre_GreatDeluge[];
-extern const u8 EncScript_Kyogre_Weakened[];
 extern const u8 EncScript_Kyogre_Weakened[];
 extern const u8 EncScript_Kyogre_WillNotBeStilled[];
 extern const u8 EncScript_Kyogre_TurnOpen[];
@@ -341,7 +323,6 @@ extern const u8 EncScript_Regice_DeepFreeze[];
 extern const u8 EncScript_Regice_DeepFreeze[];
 extern const u8 EncScript_Regice_FrozenTomb[];
 extern const u8 EncScript_Regice_FrozenTomb[];
-extern const u8 EncScript_Regice_Weakened[];
 extern const u8 EncScript_Regice_Weakened[];
 extern const u8 EncScript_Regice_TurnOpen[];
 extern const u8 EncScript_Regice_Refreeze[];
@@ -406,15 +387,10 @@ extern const u8 EncScript_Arceus_TurnClose[];
 // Azelf ("The Being of Willpower")
 extern const u8 EncScript_Azelf_Intro[];
 extern const u8 EncScript_Azelf_Steeling[];
-extern const u8 EncScript_Azelf_Steeling[];
-extern const u8 EncScript_Azelf_Resolute[];
 extern const u8 EncScript_Azelf_Resolute[];
 extern const u8 EncScript_Azelf_SecondWind[];
-extern const u8 EncScript_Azelf_SecondWind[];
-extern const u8 EncScript_Azelf_LastStand[];
 extern const u8 EncScript_Azelf_LastStand[];
 extern const u8 EncScript_Azelf_WillBroken[];
-extern const u8 EncScript_Azelf_Weakened[];
 extern const u8 EncScript_Azelf_Weakened[];
 extern const u8 EncScript_Azelf_TurnOpen[];
 extern const u8 EncScript_Azelf_Endure[];
@@ -427,10 +403,7 @@ extern const u8 EncScript_Azelf_TurnClose[];
 // Uxie ("The Being of Knowledge")
 extern const u8 EncScript_Uxie_Intro[];
 extern const u8 EncScript_Uxie_Understanding[];
-extern const u8 EncScript_Uxie_Understanding[];
 extern const u8 EncScript_Uxie_Omniscience[];
-extern const u8 EncScript_Uxie_Omniscience[];
-extern const u8 EncScript_Uxie_Weakened[];
 extern const u8 EncScript_Uxie_Weakened[];
 extern const u8 EncScript_Uxie_TurnOpen[];
 extern const u8 EncScript_Uxie_JudgePhys[];
@@ -444,14 +417,10 @@ extern const u8 EncScript_Uxie_TurnClose[];
 // Mesprit ("The Being of Emotion")
 extern const u8 EncScript_Mesprit_Intro[];
 extern const u8 EncScript_Mesprit_Unstable[];
-extern const u8 EncScript_Mesprit_Unstable[];
 extern const u8 EncScript_Mesprit_Empathy[];
-extern const u8 EncScript_Mesprit_Empathy[];
-extern const u8 EncScript_Mesprit_Weakened[];
 extern const u8 EncScript_Mesprit_Weakened[];
 extern const u8 EncScript_Mesprit_TurnOpen[];
 extern const u8 EncScript_Mesprit_ProvokeAnger[];
-extern const u8 EncScript_Mesprit_ProvokeJoy[];
 extern const u8 EncScript_Mesprit_ProvokeJoy[];
 extern const u8 EncScript_Mesprit_ProvokeSadness[];
 extern const u8 EncScript_Mesprit_ProvokeStatus[];
@@ -495,6 +464,23 @@ extern const u8 EncScript_TestChangeHpAllFoes[];
 extern const u8 EncScript_TestChangeStat[];
 extern const u8 EncScript_TestChangeStatAllFoes[];
 extern const u8 EncScript_TestMegaEvolve[];
+
+// Shaymin ("The Gratitude Pokemon")
+extern const u8 EncScript_Shaymin_Intro[];
+extern const u8 EncScript_Shaymin_Gratitude[];
+extern const u8 EncScript_Shaymin_SeedFlarePhase[];
+extern const u8 EncScript_Shaymin_Weakened[];
+extern const u8 EncScript_Shaymin_TurnOpen[];
+extern const u8 EncScript_Shaymin_MarkStatus[];
+extern const u8 EncScript_Shaymin_TendGrassPlayer[];
+extern const u8 EncScript_Shaymin_TendGrassBoss[];
+extern const u8 EncScript_Shaymin_HarmBurnRot[];
+extern const u8 EncScript_Shaymin_HarmHazards[];
+extern const u8 EncScript_Shaymin_HarmStatusStanding[];
+extern const u8 EncScript_Shaymin_TendCured[];
+extern const u8 EncScript_Shaymin_TendRecovery[];
+extern const u8 EncScript_Shaymin_SeedFlare[];
+extern const u8 EncScript_Shaymin_TurnClose[];
 
 // Engine-owned shim: all encounter scripts end with `return`; checkpoints dispatched
 // from a non-script engine callback (e.g. BATTLE_START) call the encounter script from

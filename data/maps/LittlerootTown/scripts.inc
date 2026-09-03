@@ -1066,6 +1066,9 @@ LittlerootTown_EventScript_EncounterTESTRegigigas::
 LittlerootTown_EventScript_EncounterTESTRotom::
 	goto LegendaryEncounter_EventScript_Rotom
 
+LittlerootTown_EventScript_EncounterTESTShaymin::
+	goto LegendaryEncounter_EventScript_Shaymin
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD
