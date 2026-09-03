@@ -1827,36 +1827,51 @@ static void BattleMainCB2_RunFrame(bool32 buildOam)
     RunTasks();
 }
 
+// TRUE while the battle still owns both callbacks. A pass can hand them off - the
+// player opening the bag or party menu, the battle ending, an evolution, a
+// recorded-battle quit - and the new owner tears the battle screen down as it goes:
+// CloseMainBattleScreen frees the very window buffers RunTextPrinters writes into.
+// So no part of a pass may run once this goes FALSE.
+static bool32 BattleOwnsCallbacks(void)
+{
+    return gMain.callback1 == BattleMainCB1 && gMain.callback2 == BattleMainCB2;
+}
+
 void BattleMainCB2(void)
 {
     u32 passes = GetBattleSpeedCatchUpPasses(&sBattleSpeedHalfStepRemainder);
+    bool32 oamBuilt = (passes == 0);
 
-    BattleMainCB2_RunFrame(passes == 0);
+    BattleMainCB2_RunFrame(oamBuilt);
 
-    for (; passes != 0; passes--)
+    if (passes != 0)
     {
-        u16 newKeys, newKeysRaw, newAndRepeatedKeys, heldKeys, heldKeysRaw;
-
-        // A pass can hand control off (battle ended, evolution, recorded-battle
-        // quit); stop advancing the battle once it no longer owns the callbacks.
-        if (gMain.callback1 != BattleMainCB1 || gMain.callback2 != BattleMainCB2)
-        {
-            BuildOamBuffer(); // the pass that would have built this frame's OAM never runs
-            break;
-        }
-
         // Keys are read once per frame, so catch-up passes must see none of them
         // or a single press would register two or three times.
-        newKeys = gMain.newKeys;
-        newKeysRaw = gMain.newKeysRaw;
-        newAndRepeatedKeys = gMain.newAndRepeatedKeys;
-        heldKeys = gMain.heldKeys;
-        heldKeysRaw = gMain.heldKeysRaw;
+        u16 newKeys = gMain.newKeys;
+        u16 newKeysRaw = gMain.newKeysRaw;
+        u16 newAndRepeatedKeys = gMain.newAndRepeatedKeys;
+        u16 heldKeys = gMain.heldKeys;
+        u16 heldKeysRaw = gMain.heldKeysRaw;
+
         gMain.newKeys = gMain.newKeysRaw = gMain.newAndRepeatedKeys = 0;
         gMain.heldKeys = gMain.heldKeysRaw = 0;
 
-        BattleMainCB1();
-        BattleMainCB2_RunFrame(passes == 1);
+        for (; passes != 0; passes--)
+        {
+            if (!BattleOwnsCallbacks())
+                break;
+
+            BattleMainCB1();
+
+            // BattleMainCB1 is what hands off, so the frame body it feeds must not
+            // run until this is rechecked.
+            if (!BattleOwnsCallbacks())
+                break;
+
+            BattleMainCB2_RunFrame(passes == 1);
+            oamBuilt = (passes == 1);
+        }
 
         gMain.newKeys = newKeys;
         gMain.newKeysRaw = newKeysRaw;
@@ -1864,6 +1879,11 @@ void BattleMainCB2(void)
         gMain.heldKeys = heldKeys;
         gMain.heldKeysRaw = heldKeysRaw;
     }
+
+    // Catch-up passes skip the OAM sort and the last one does it for the frame; if the
+    // frame stopped early, that pass never ran. Keeps it at exactly one build a frame.
+    if (!oamBuilt)
+        BuildOamBuffer();
 
     // Runs once per frame on real key state, outside the catch-up loop.
     if (JOY_HELD(B_BUTTON) && gBattleTypeFlags & BATTLE_TYPE_RECORDED && RecordedBattle_CanStopPlayback())

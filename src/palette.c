@@ -640,6 +640,15 @@ static u32 UpdateHardwarePaletteFade(void)
     if (!gPaletteFade.active)
         return PALETTE_FADE_STATUS_DONE;
 
+    // The fade has reached its target and is waiting on VBlank: UpdateBlendRegisters
+    // is what consumes hardwareFadeFinishing and clears active. Advancing again before
+    // that would step the one-bit flag back to 0 (it is incremented, not assigned) and
+    // leave the fade active forever. Mirrors the IsSoftwarePaletteFadeFinishing guard
+    // in UpdateNormalPaletteFade. Only reachable when UpdatePaletteFade runs more than
+    // once per VBlank, which battle speeds above 1x do.
+    if (gPaletteFade.hardwareFadeFinishing)
+        return gPaletteFade.active ? PALETTE_FADE_STATUS_ACTIVE : PALETTE_FADE_STATUS_DONE;
+
     if (gPaletteFade.delayCounter < gPaletteFadeDelay)
     {
         gPaletteFade.delayCounter++;
