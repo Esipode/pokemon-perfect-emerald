@@ -1072,6 +1072,9 @@ LittlerootTown_EventScript_EncounterTESTShaymin::
 LittlerootTown_EventScript_EncounterTESTHeatran::
 	goto LegendaryEncounter_EventScript_Heatran
 
+LittlerootTown_EventScript_EncounterTESTManaphy::
+	goto LegendaryEncounter_EventScript_Manaphy
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

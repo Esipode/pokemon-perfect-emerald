@@ -31,7 +31,7 @@ One hidden number runs the whole fight, and **both ends of it hurt you.**
                        you        + the field  every
                                   scoured      turn
 
- guard 88 ------------------------- 92 -------------------> 50 for three turns
+ guard 88 ------------------------- 92 -------------------> 76 for three turns
 ```
 
 Let it climb and the ground starts killing you, pockets open under your feet, and the sun comes up —

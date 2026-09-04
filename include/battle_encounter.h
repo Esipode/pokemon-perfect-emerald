@@ -492,6 +492,23 @@ extern const u8 EncScript_Heatran_MagmaBurst[];
 extern const u8 EncScript_Heatran_MagmaBurstBlocked[];
 extern const u8 EncScript_Heatran_TurnClose[];
 
+// Manaphy ("The Prince of The Sea")
+extern const u8 EncScript_Manaphy_Intro[];
+extern const u8 EncScript_Manaphy_HeartOfTheOcean[];
+extern const u8 EncScript_Manaphy_HeartOfTheOcean[];
+extern const u8 EncScript_Manaphy_OceansHeart[];
+extern const u8 EncScript_Manaphy_OceansHeart[];
+extern const u8 EncScript_Manaphy_Weakened[];
+extern const u8 EncScript_Manaphy_Weakened[];
+extern const u8 EncScript_Manaphy_TurnOpen[];
+extern const u8 EncScript_Manaphy_Collapse[];
+extern const u8 EncScript_Manaphy_Sever[];
+extern const u8 EncScript_Manaphy_TideBreak[];
+extern const u8 EncScript_Manaphy_TideReturn[];
+extern const u8 EncScript_Manaphy_HeartSwap[];
+extern const u8 EncScript_Manaphy_OceanShare[];
+extern const u8 EncScript_Manaphy_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

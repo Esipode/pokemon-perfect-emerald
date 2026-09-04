@@ -1808,6 +1808,42 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCHEATRANSUBSIDED]         = COMPOUND_STRING("The pressure under the dome lets go, and nothing comes up after it."),
     [STRINGID_ENCHEATRANSPENT]            = COMPOUND_STRING("Heatran stands in the ruin of its own mountain with nothing left to draw on."),
     [STRINGID_ENCHEATRANWEAKENED]         = COMPOUND_STRING("Heatran's plating has gone dull, and the light behind it is out.\pNow - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+
+    // Manaphy, "The Prince of the Sea". The fight never names the Bond meter - every line describes
+    // the bond itself, and the loudest lines in the encounter are the Heart Swap pair, which are
+    // deliberately the most misleading.
+    [STRINGID_ENCMANAPHYINTRO1]           = COMPOUND_STRING("The water here is warm, and it is moving on its own.\pManaphy rises through it without a sound and looks straight past you, at your Pokémon.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMANAPHYINTRO2]           = COMPOUND_STRING("It has already decided to love it."),
+    [STRINGID_ENCMANAPHYBAND1]            = COMPOUND_STRING("Manaphy drifts a little closer to your Pokémon."),
+    [STRINGID_ENCMANAPHYBAND2]            = COMPOUND_STRING("Manaphy will not take its eyes off your Pokémon."),
+    [STRINGID_ENCMANAPHYBAND3]            = COMPOUND_STRING("Manaphy moves when your Pokémon moves.\pThe water between them has gone still."),
+    [STRINGID_ENCMANAPHYBAND4]            = COMPOUND_STRING("Manaphy and your Pokémon are breathing in time.\pIt is getting hard to tell where one of them ends."),
+    [STRINGID_ENCMANAPHYBAND5]            = COMPOUND_STRING("MANAPHY IS AS ONE WITH YOUR POKÉMON.\pNothing you throw at it seems to reach it any more.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMANAPHYBANDBROKEN]       = COMPOUND_STRING("Manaphy is thrashing at the water where your Pokémon was!\pIt has stopped defending itself."),
+    [STRINGID_ENCMANAPHYBANDNETWORK]      = COMPOUND_STRING("Manaphy stops holding on to your Pokémon and holds on to the sea instead."),
+    [STRINGID_ENCMANAPHYBANDSHATTERED]    = COMPOUND_STRING("Every thread goes slack at once, and Manaphy comes apart."),
+    [STRINGID_ENCMANAPHYSTANDINGBOND]     = COMPOUND_STRING("Manaphy has not looked away from your Pokémon once."),
+    [STRINGID_ENCMANAPHYSTANDINGBROKEN]   = COMPOUND_STRING("Manaphy is still searching the water for something that left."),
+    [STRINGID_ENCMANAPHYSTANDINGNETWORK]  = COMPOUND_STRING("The water is carrying everything both ways now."),
+    [STRINGID_ENCMANAPHYSEVER]            = COMPOUND_STRING("Manaphy reaches for a Pokémon that is not there any more.\pTHE BOND BREAKS.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMANAPHYECHOSOFT]         = COMPOUND_STRING("The broken bond washes over your Pokémon."),
+    [STRINGID_ENCMANAPHYECHOHARD]         = COMPOUND_STRING("The broken bond crashes over your Pokémon!"),
+    [STRINGID_ENCMANAPHYREBOND]           = COMPOUND_STRING("Manaphy finds your Pokémon in the water, and settles."),
+    [STRINGID_ENCMANAPHYSWAPGIVE]         = COMPOUND_STRING("Manaphy shared its strength with your Pokémon!"),
+    [STRINGID_ENCMANAPHYSWAPTAKE]         = COMPOUND_STRING("Manaphy took on its burden!"),
+    [STRINGID_ENCMANAPHYPHASE1]           = COMPOUND_STRING("Manaphy sinks to the floor of the water, and the whole sea leans in after it.\pHEART OF THE OCEAN.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMANAPHYTIDALBOND]        = COMPOUND_STRING("TIDAL BOND.\pThe rain will not stop for as long as Manaphy wants it.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMANAPHYDRAWS]            = COMPOUND_STRING("Manaphy draws the rain into itself."),
+    [STRINGID_ENCMANAPHYTIDEBROKEN]       = COMPOUND_STRING("The rain thins, and Manaphy falters."),
+    [STRINGID_ENCMANAPHYTIDERETURN]       = COMPOUND_STRING("Manaphy calls the rain back down."),
+    [STRINGID_ENCMANAPHYOCEANSHEART]      = COMPOUND_STRING("OCEAN'S HEART.\pManaphy opens every bond it has ever made, all at once.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMANAPHYSHARE]            = COMPOUND_STRING("The water carries the blow back to your Pokémon!"),
+    [STRINGID_ENCMANAPHYCOLLAPSE1]        = COMPOUND_STRING("Every bond Manaphy made comes apart at once."),
+    [STRINGID_ENCMANAPHYCOLLAPSE2]        = COMPOUND_STRING("There is nothing holding it up any more."),
+    [STRINGID_ENCMANAPHYWEAKENED]         = COMPOUND_STRING("Manaphy's light has gone out of the water, and it is barely moving.\pNow - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCMANAPHYCATCHCLOSE]       = COMPOUND_STRING("It has not let go of you, even now."),
+    [STRINGID_ENCMANAPHYCATCHWATCHING]    = COMPOUND_STRING("It is watching you, and deciding."),
+    [STRINGID_ENCMANAPHYCATCHDISTANT]     = COMPOUND_STRING("It has been sent away too many times to come willingly."),
 };
 
 const u16 gOneHitKOStringIds[] =

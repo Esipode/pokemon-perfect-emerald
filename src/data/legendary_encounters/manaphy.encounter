@@ -1,0 +1,245 @@
+Encounter: Manaphy
+
+# Manaphy, "The Prince of the Sea". Its Pokedex entry does the design work: it bonds with any kind of
+# Pokemon. So it bonds with the player's, immediately, unasked, and it will not stop. One number runs
+# the whole fight:
+#   BOND 0-5. It climbs BY ITSELF, one step at the end of every turn the player's Pokemon stays in.
+#   Nothing they do makes it climb faster and nothing slows it down. The only way it falls is if they
+#   send their Pokemon away.
+#     0 severed | 1 acquainted | 2 attached | 3 devoted | 4 entwined | 5 AS ONE
+#     guard 70  |      84      |     88     |     90    |     92     |    94
+#                                     Heart Swap unlocked      Tidal Bond heals it
+# THE FIGHT CANNOT BE WON WHILE IT IS BONDED. At Bond 5 Manaphy takes 6% of what it is dealt and, from
+# Phase 1 on, heals more than that back every turn. There is no move, matchup or status that gets
+# around the arithmetic. The fight has exactly one answer and it is the cruel one: SWITCH OUT. BREAK
+# ITS HEART. HIT IT WHILE IT IS FALLING APART. Severing drops the guard to 70 for three turns and
+# wipes every stat stage it has accumulated. That is the window; everything else is the price.
+# THE PARTY IS THE NETWORK. Severing is never free. The Pokemon sent in INHERITS the broken bond - up
+# to 15% of its health and two stat drops before it acts - and the count of bonds Manaphy has formed
+# is filed away doing nothing at all until Phase 2, where it turns the player's own damage back on
+# them. So the loop is bond -> sever -> echo -> bond, each lap buying damage and costing a Pokemon's
+# worth of health, and the fight is asking how many laps the bench can afford.
+# THE SEDUCTION IS HEART SWAP. From Bond 3 Manaphy periodically heals the player 25%, cures their
+# status and hands them +1 Atk / +1 Sp. Atk while taking 8% off itself. Both halves are real and there
+# is no catch printed anywhere. The catch is that the gift is a BOND EVENT: that turn the meter climbs
+# by two instead of one. Accepting help is the fastest route to a Manaphy nothing can hurt - and it is
+# genuinely good for the player right up until it isn't. A player who never works the fight out ends
+# up at full health, at Bond 5, unable to move the health bar, being healed by the thing they are
+# trying to beat. That is the intended failure state.
+# ANTI-ABUSE IS MANAPHY'S OWN HYDRATION, not an immunity. Status works completely for the first half
+# of the fight; from 50% - when Manaphy raises its own permanent rain - Hydration scrubs it off every
+# turn, and the player has to break the weather to make status stick again. One ability, one
+# immunity, zero lines of code, hanging off the same lever the fight already has.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Manaphy_Weakened sets a real one off the final Bond
+    Balls: Blocked
+    DamageReduction: 84         # the Bond 1 band; EncScript_Manaphy_ApplyBond owns it from here on
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # pure Water has no 4x weakness, but it stops a Freeze-Dry-style
+                                # special case spiking past what the guard ladder is balanced around
+    FlatToxicDamage: True
+    Survive: True               # load-bearing here: the player's damage arrives in concentrated
+                                # bursts at guard 60-70, and one oversized one would take the catch
+                                # window away entirely
+    AiFlags: AI_FLAG_SMART_TRAINER
+    # All four are on Manaphy's own learnset or TM list. SURF is STAB and gets much better once
+    # Manaphy raises its own rain. ICE BEAM answers the Grass type the player reaches for first -
+    # Manaphy is pure Water, so without it both of its weaknesses are free. ENERGY BALL covers the
+    # opposing Waters and Grounds that would otherwise wall it. AQUA RING is passive self-sustain and
+    # something for AI_FLAG_SMART_TRAINER to spend a safe turn on; deliberately NOT Rest, which with
+    # Hydration in Manaphy's own rain would be a full heal every single turn.
+    # NO STAT MOVE, on purpose: EncScript_Manaphy_ApplyBond writes Manaphy's stances absolutely every
+    # turn and would wipe a Tail Glow the turn after it landed. The Bond ladder is the fight's only
+    # stat authority.
+    # No Ability: override - Hydration is Manaphy's own and is the whole anti-abuse answer.
+    Moves: MOVE_SURF, MOVE_ICE_BEAM, MOVE_ENERGY_BALL, MOVE_AQUA_RING
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fourteen here in order fixes
+# Phase..Pulse to 0..13.
+# 0 Phase (0 Prince of the Sea / 1 Heart of the Ocean / 2 Ocean's Heart / 3 Weakened),
+# 1 Bond (0-5; 0 only ever exists inside a Heartbreak), 2 LastBand (the last ANNOUNCED band index -
+# the re-fire guard for the callout; 255 forces the first one), 3 Bonds (bonds formed this battle,
+# the network count), 4 Heartbreak (turns of the Heartbroken state left), 5 Echo (the depth of the
+# bond that just broke), 6 TurnGuard (the once-per-turn scaffold), 7 SwapClock (Heart Swap countdown),
+# 8 TideClock (turns until Manaphy re-raises its rain), 9 TideBroken (1 while the rain is down),
+# 10 BossHpMark (the encsnapshothp mark the Phase 2 sharing tick measures against), 11 ShareGuard
+# (the per-turn re-entry guard for that tick), 12 Collapsed (1 once the network has been shattered),
+# 13 Pulse (paces the standing line).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Manaphy_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Bond) >= 0
+    Var(LastBand) >= 0
+    Var(Bonds) >= 0
+    Var(Heartbreak) >= 0
+    Var(Echo) >= 0
+    Var(TurnGuard) >= 0
+    Var(SwapClock) >= 0
+    Var(TideClock) >= 0
+    Var(TideBroken) >= 0
+    Var(BossHpMark) >= 0
+    Var(ShareGuard) >= 0
+    Var(Collapsed) >= 0
+    Var(Pulse) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. Each is also gated on the Phase value its
+# own script overwrites, so one huge hit crossing two thresholds steps through them in order.
+# Registered ahead of every accounting trigger below, so a threshold-crossing tick resolves as a
+# transition first - and so a Heart Swap or a sharing tick can never run on a boss that has already
+# dropped into the catch window.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Manaphy_HeartOfTheOcean
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Manaphy_HeartOfTheOcean
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Manaphy_OceansHeart
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Manaphy_OceansHeart
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Manaphy_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Manaphy_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately, so no
+# branch out of it can leave it re-armed; it marks Manaphy's HP for the Phase 2 sharing tick, ticks
+# the Heart Swap and tide clocks, and prints the standing line. TurnClose resolves the turn: the tide
+# heal, then the Bond meter itself.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Manaphy_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# SEVERING, and the collapse that replaces it once. Both gate on TurnGuard == 1: at battle start
+# OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when every var is still 0, so the
+# opening switch-in must not be mistaken for a sever. A faint takes the same path, since a replacement
+# is a switch-in - that is the spec's "defeat the bonded Pokemon" route, and it costs the same echo.
+# An Event.* condition stays true for the whole dispatch, so each script writes the var that disables
+# it: Heartbreak for the sever, Collapsed for the collapse. The collapse sits one priority AHEAD, so
+# it wins the switch-in and its own Heartbreak write disables the ordinary sever behind it.
+Trigger: OnSwitchIn
+Priority: 19
+Script: EncScript_Manaphy_Collapse
+Conditions:
+    Var(Phase) == 2
+    Var(Collapsed) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_Manaphy_Sever
+Conditions:
+    Var(Phase) <= 2
+    Var(Heartbreak) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# BREAKING TIDAL BOND. Changing the weather stops the tide heal, stops Hydration, stops the Bond
+# doubling and takes a real stage off Manaphy's Sp. Def - and three turns later Manaphy raises the
+# rain again. So the answer is repeatable but never permanent: the player buys three good turns with
+# one turn of setup, over and over, for as long as they can afford the tempo.
+# Both triggers self-disable through TideBroken, which each one writes. Both are also gated on
+# Collapsed == 0: a shattered network has no rain to call back, and TideReturn would otherwise undo
+# the collapse the player just spent a Pokemon opening.
+# Weather reads gBattleWeather as a bitfield, so this is also true under primal rain. Manaphy cannot
+# raise that and nothing here does, so it only fires against a player's own Primordial Sea - in which
+# case breaking the tide is the right outcome anyway.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Manaphy_TideBreak
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Collapsed) == 0
+    Var(TideBroken) == 0
+    Weather != B_WEATHER_RAIN_NORMAL
+
+Trigger: OnTurnEnd
+Priority: 31
+Script: EncScript_Manaphy_TideReturn
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Collapsed) == 0
+    Var(TideBroken) == 1
+    Var(TideClock) == 1
+
+# HEART SWAP. TurnOpen arms and ticks SwapClock; this fires at 1 and re-arms it, so the condition is
+# false the instant the script finishes and no re-entry guard is needed. Gated on the player's Pokemon
+# being alive because enchangehp and curestatus on a single-slot target assert against a fainted
+# battler, and at OnTurnEnd it may already be down.
+Trigger: OnTurnEnd
+Priority: 40
+Script: EncScript_Manaphy_HeartSwap
+Conditions:
+    Var(Phase) <= 2
+    Var(Bond) >= 3
+    Var(SwapClock) == 1
+    Battler(PlayerLeft).HP >= 1
+
+# OCEAN'S HEART's damage sharing: everything dealt to Manaphy comes back, scaled by how many of the
+# player's Pokemon it has bonded with. Guarded by ShareGuard (cleared at TurnOpen) and by both
+# battlers being alive, so neither the snapshot nor the enchangehp meets a fainted single-slot target.
+Trigger: OnTurnEnd
+Priority: 50
+Script: EncScript_Manaphy_OceanShare
+Conditions:
+    Var(Phase) == 2
+    Var(Collapsed) == 0
+    Var(ShareGuard) == 0
+    Battler(Boss).HP >= 1
+    Battler(PlayerLeft).HP >= 1
+
+# Runs last so it sees the finished turn. Every level trigger above self-disables through a var its
+# own script writes - TurnGuard, Heartbreak, Collapsed, TideBroken, SwapClock, ShareGuard - which is
+# what keeps the 8-script checkpoint cap out of reach, and is why the Tidal Bond heal lives inside
+# TurnClose rather than in a trigger of its own: its conditions do not change when it runs, so it
+# would re-select until the dispatcher asserted.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Manaphy_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
