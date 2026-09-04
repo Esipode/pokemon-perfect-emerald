@@ -127,14 +127,14 @@ EncScript_Mew_Mischief_Whim_Rain:
 EncScript_Mew_Mischief_Recovery:
 	printstring STRINGID_ENCMEWRECOVERS
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, 10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 10, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	return
 
 EncScript_Mew_Mischief_Tag:
 	printstring STRINGID_ENCMEWTAG
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	encchangestat ENC_TARGET_PLAYER_LEFT, STAT_SPEED, -1
 	return
@@ -142,7 +142,7 @@ EncScript_Mew_Mischief_Tag:
 EncScript_Mew_Mischief_Generosity:
 	printstring STRINGID_ENCMEWCLEARSFIELD
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_PLAYER_LEFT, 15, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, 15, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_SIMPLE_HEAL
 	removeweather
 	return
@@ -182,7 +182,7 @@ EncScript_Mew_TurnClose::
 	encsetvar 11, 0   @ TurnGuard
 	encjumpifvar CMP_NOT_EQUAL, 0, 2, EncScript_Mew_TurnClose_Done
 	encjumpifvar CMP_NOT_EQUAL, 8, 5, EncScript_Mew_TurnClose_Done
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 EncScript_Mew_TurnClose_Done:
 	return
@@ -254,7 +254,7 @@ EncScript_Mew_SwitchIn::
 	encsetvar 7, 1   @ SeenSwitch
 	printstring STRINGID_ENCMEWFLITSBACK
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 EncScript_Mew_SwitchIn_Variety:
 	encsetvar 3, 4   @ LastCat = switch
@@ -321,7 +321,7 @@ EncScript_Mew_WaitResolve_Delighted:
 	encsetvar 8, 4   @ delighted
 	printstring STRINGID_ENCMEWDELIGHTED
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_PLAYER_LEFT, 30, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, 30, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_SIMPLE_HEAL
 	encsetvar 1, 6   @ Wonder maxed; nothing lowers it in Genesis
 	call EncScript_Mew_ApplyGuard

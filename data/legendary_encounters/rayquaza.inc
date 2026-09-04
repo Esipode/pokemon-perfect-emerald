@@ -270,13 +270,13 @@ EncScript_Rayquaza_SkyfallLand::
 	waitmessage B_WAIT_TIME_LONG
 	encjumpifvar CMP_EQUAL, 0, 1, EncScript_Rayquaza_SkyfallLand_Delta
 	encjumpifvar CMP_EQUAL, 0, 2, EncScript_Rayquaza_SkyfallLand_Late
-	enchangehp ENC_TARGET_ALL_FOES, -30, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -30, ENC_AMOUNT_PERCENT
 	goto EncScript_Rayquaza_SkyfallLand_Down
 EncScript_Rayquaza_SkyfallLand_Delta:
-	enchangehp ENC_TARGET_ALL_FOES, -40, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -40, ENC_AMOUNT_PERCENT
 	goto EncScript_Rayquaza_SkyfallLand_Down
 EncScript_Rayquaza_SkyfallLand_Late:
-	enchangehp ENC_TARGET_ALL_FOES, -33, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -33, ENC_AMOUNT_PERCENT
 EncScript_Rayquaza_SkyfallLand_Down:
 	call EncScript_Rayquaza_Descend
 	return

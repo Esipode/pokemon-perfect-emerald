@@ -149,7 +149,7 @@ EncScript_Deoxys_GainStress_Done:
 
 // Stress scales the stance PAYLOADS, never the guard - the guard has to stay a pure function of
 // forme plus barrier or the LastGuard latch starts announcing moves the line doesn't describe.
-// Six bands of literals rather than a loop of small enchangehp calls, which would play six
+// Six bands of literals rather than a loop of small encchangehp calls, which would play six
 // health-bar animations for one hit. Stress runs 0-10, so each band is two points wide except the
 // top one, which is the ceiling Instability fires at:
 //   0-1 / 2-3 / 4-5 / 6-7 / 8-9 / 10
@@ -160,22 +160,22 @@ EncScript_Deoxys_AssaultStrike:
 	encjumpifvar CMP_GREATER_THAN, 2, 5, EncScript_Deoxys_AssaultStrike_S3
 	encjumpifvar CMP_GREATER_THAN, 2, 3, EncScript_Deoxys_AssaultStrike_S2
 	encjumpifvar CMP_GREATER_THAN, 2, 1, EncScript_Deoxys_AssaultStrike_S1
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_AssaultStrike_S1:
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_AssaultStrike_S2:
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_AssaultStrike_S3:
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_AssaultStrike_S4:
-	enchangehp ENC_TARGET_ALL_FOES, -14, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -14, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_AssaultStrike_S5:
-	enchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
 	return
 
 EncScript_Deoxys_BlitzChip:
@@ -184,22 +184,22 @@ EncScript_Deoxys_BlitzChip:
 	encjumpifvar CMP_GREATER_THAN, 2, 5, EncScript_Deoxys_BlitzChip_S3
 	encjumpifvar CMP_GREATER_THAN, 2, 3, EncScript_Deoxys_BlitzChip_S2
 	encjumpifvar CMP_GREATER_THAN, 2, 1, EncScript_Deoxys_BlitzChip_S1
-	enchangehp ENC_TARGET_ALL_FOES, -2, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -2, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_BlitzChip_S1:
-	enchangehp ENC_TARGET_ALL_FOES, -3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -3, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_BlitzChip_S2:
-	enchangehp ENC_TARGET_ALL_FOES, -4, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -4, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_BlitzChip_S3:
-	enchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_BlitzChip_S4:
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	return
 EncScript_Deoxys_BlitzChip_S5:
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	return
 
 
@@ -278,7 +278,7 @@ EncScript_Deoxys_Form_Gain:
 	call EncScript_Deoxys_GainStress
 	encjumpifvar CMP_EQUAL, 1, 3, EncScript_Deoxys_Form_EntrySpeed
 	encjumpifvar CMP_EQUAL, 1, 2, EncScript_Deoxys_Form_EntryDefense
-	enchangehp ENC_TARGET_BOSS, 5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 5, ENC_AMOUNT_PERCENT
 	goto EncScript_Deoxys_Form_Cooldown
 	@ Permanent - a 0 timer never ticks - and stripped again by the next form change.
 EncScript_Deoxys_Form_EntrySpeed:
@@ -615,14 +615,14 @@ EncScript_Deoxys_HybridOne::
 	encsetvar 6, 0   @ Barrier
 	encsetvar 8, 0   @ Assault
 	encformchange ENC_TARGET_BOSS, SPECIES_DEOXYS_ATTACK, EncScript_Deoxys_HybridOne_Velocity, B_ANIM_ULTRA_BURST
-	enchangehp ENC_TARGET_BOSS, 5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 5, ENC_AMOUNT_PERCENT
 EncScript_Deoxys_HybridOne_Velocity:
 	call EncScript_Deoxys_Bulk
 	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_TAILWIND, 0
 	playanimation BS_OPPONENT1, B_ANIM_TAILWIND
 	encchangestatvalue ENC_TARGET_BOSS, STAT_SPEED, 80, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	call EncScript_Deoxys_GainStress
 	call EncScript_Deoxys_ResetCooldown
 	call EncScript_Deoxys_ApplyGuard
@@ -640,14 +640,14 @@ EncScript_Deoxys_HybridTwo::
 	encsetvar 8, 0   @ Assault
 	encclearsidestatus ENC_TARGET_BOSS, ENC_SIDE_TAILWIND
 	encformchange ENC_TARGET_BOSS, SPECIES_DEOXYS_DEFENSE, EncScript_Deoxys_HybridTwo_Armor, B_ANIM_ULTRA_BURST
-	enchangehp ENC_TARGET_BOSS, 5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 5, ENC_AMOUNT_PERCENT
 EncScript_Deoxys_HybridTwo_Armor:
 	call EncScript_Deoxys_Bulk
 	encchangestatvalue ENC_TARGET_BOSS, STAT_ATK, 70, ENC_AMOUNT_PERCENT
 	encchangestatvalue ENC_TARGET_BOSS, STAT_SPATK, 70, ENC_AMOUNT_PERCENT
 	encsetvar 6, 2   @ Barrier
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	call EncScript_Deoxys_GainStress
 	call EncScript_Deoxys_ResetCooldown
 	call EncScript_Deoxys_ApplyGuard

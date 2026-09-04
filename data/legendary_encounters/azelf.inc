@@ -179,7 +179,7 @@ EncScript_Azelf_Lash:
 	printstring STRINGID_ENCAZELFLASH
 	waitmessage B_WAIT_TIME_SHORT
 	playmoveanimation MOVE_EXTRASENSORY
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 EncScript_Azelf_Lash_Done:
 	return
 
@@ -331,7 +331,7 @@ EncScript_Azelf_SecondWind::
 	printstring STRINGID_ENCAZELFREFUSES
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_ULTRA_BURST
-	enchangehp ENC_TARGET_BOSS, 45, ENC_AMOUNT_TO_PERCENT
+	encchangehp ENC_TARGET_BOSS, 45, ENC_AMOUNT_TO_PERCENT
 	printstring STRINGID_ENCAZELFFLOODSBACK
 	waitmessage B_WAIT_TIME_LONG
 	encsetvar 1, 5    @ Resolve: UNBREAKABLE WILL comes online

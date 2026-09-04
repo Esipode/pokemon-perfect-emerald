@@ -218,7 +218,7 @@ EncScript_Lugia_LoseStrain:
 EncScript_Lugia_LoseStrain_Done:
 	return
 
-// The end-of-turn field chip, called from TurnClose. Scripted enchangehp rather than a move, so
+// The end-of-turn field chip, called from TurnClose. Scripted encchangehp rather than a move, so
 // Protect and screens do not stop it. ENC_TARGET_ALL_FOES rather than a single slot: doubles-safe
 // for free, and it skips a fainted member silently. A Water-type foe is spared outright, which is
 // the one clean answer to the Maelstrom that does not cost the player their storm progress.
@@ -228,23 +228,23 @@ EncScript_Lugia_Maelstrom:
 	encjumpifvar CMP_EQUAL, 1, 3, EncScript_Lugia_Maelstrom_Chip5
 	jumpiftype BS_PLAYER1, TYPE_FLYING, EncScript_Lugia_Maelstrom_Flying
 	encjumpifvar CMP_EQUAL, 1, 4, EncScript_Lugia_Maelstrom_Chip7
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	goto EncScript_Lugia_Maelstrom_Show
 	@ Gravity is the only real grounding field state and it would ground Lugia too, opening it to
 	@ Ground moves. A Flying-type foe torn out of the air by the wind is the same fiction, one
 	@ jumpiftype deep, and it costs the encounter nothing.
 EncScript_Lugia_Maelstrom_Flying:
 	encjumpifvar CMP_EQUAL, 1, 4, EncScript_Lugia_Maelstrom_Chip11
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	goto EncScript_Lugia_Maelstrom_ShowFlying
 EncScript_Lugia_Maelstrom_Chip11:
-	enchangehp ENC_TARGET_ALL_FOES, -7, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -7, ENC_AMOUNT_PERCENT
 	goto EncScript_Lugia_Maelstrom_ShowFlying
 EncScript_Lugia_Maelstrom_Chip7:
-	enchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
 	goto EncScript_Lugia_Maelstrom_Show
 EncScript_Lugia_Maelstrom_Chip5:
-	enchangehp ENC_TARGET_ALL_FOES, -3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -3, ENC_AMOUNT_PERCENT
 EncScript_Lugia_Maelstrom_Show:
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	printstring STRINGID_ENCLUGIACHIP
@@ -281,7 +281,7 @@ EncScript_Lugia_Collapse:
 	encsetvar 3, 0   @ Eye
 	encsetvar 4, 0   @ Hold
 	encsetvar 5, 2   @ Break: two full turns of collapsed guard
-	enchangehp ENC_TARGET_BOSS, -7, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -7, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_MON_HIT
 	call EncScript_Lugia_ApplyStorm
 	call EncScript_Lugia_ApplyGuard
@@ -376,7 +376,7 @@ EncScript_Lugia_Strike::
 	printstring STRINGID_ENCLUGIASTRIKE
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_SURF
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	call EncScript_Lugia_RaiseStorm
 	call EncScript_Lugia_GainStrain
 	return
@@ -411,7 +411,7 @@ EncScript_Lugia_Vent::
 // The Maelstrom's answer to pivot stalling.
 EncScript_Lugia_Undertow::
 	encsetvar 11, 1   @ Swell
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	printstring STRINGID_ENCLUGIAUNDERTOW
 	waitmessage B_WAIT_TIME_SHORT
@@ -433,7 +433,7 @@ EncScript_Lugia_TurnClose_Phase:
 	encjumpifvar CMP_EQUAL, 3, 0, EncScript_Lugia_TurnClose_Hold
 	@ The Eye: no chip, no Strain gain, a small mend and a 94 guard. It is a heal-and-reposition
 	@ window for both sides, deliberately too hard to be farmed as a damage window.
-	enchangehp ENC_TARGET_BOSS, 1, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 1, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	printstring STRINGID_ENCLUGIAEYEMENDS
 	waitmessage B_WAIT_TIME_SHORT

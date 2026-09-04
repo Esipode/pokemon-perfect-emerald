@@ -161,7 +161,7 @@ EncScript_Regirock_Shed:
 	printstring STRINGID_ENCREGIROCKBREAKAWAY
 	waitmessage B_WAIT_TIME_SHORT
 	playmoveanimation MOVE_ROCK_THROW
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 EncScript_Regirock_Shed_Done:
 	return
 
@@ -345,7 +345,7 @@ EncScript_Regirock_RebuildResolve_Whole:
 	printstring STRINGID_ENCREGIROCKREBUILDDONE
 	waitmessage B_WAIT_TIME_LONG
 	call EncScript_Regirock_FortUp
-	enchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 EncScript_Regirock_RebuildResolve_Apply:
 	call EncScript_Regirock_ApplyFort
@@ -368,13 +368,13 @@ EncScript_Regirock_RockfallResolve::
 	playmoveanimation MOVE_ROCK_SLIDE
 	encjumpifvar CMP_EQUAL, 1, 5, EncScript_Regirock_RockfallResolve_Huge
 	encjumpifvar CMP_GREATER_THAN, 1, 2, EncScript_Regirock_RockfallResolve_Big
-	enchangehp ENC_TARGET_ALL_FOES, -4, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -4, ENC_AMOUNT_PERCENT
 	goto EncScript_Regirock_RockfallResolve_Spend
 EncScript_Regirock_RockfallResolve_Big:
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	goto EncScript_Regirock_RockfallResolve_Spend
 EncScript_Regirock_RockfallResolve_Huge:
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 EncScript_Regirock_RockfallResolve_Spend:
 	call EncScript_Regirock_FortDown
 	encchangestatvalue ENC_TARGET_BOSS, STAT_DEF, -3, ENC_AMOUNT_PERCENT
@@ -431,8 +431,8 @@ EncScript_Regirock_CollapseTick::
 	playmoveanimation MOVE_ROCK_WRECKER
 	encclearscreens ENC_TARGET_ALL_FOES, EncScript_Regirock_CollapseTick_Hit
 EncScript_Regirock_CollapseTick_Hit:
-	enchangehp ENC_TARGET_ALL_FOES, -30, ENC_AMOUNT_PERCENT
-	enchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_TO_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -30, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_TO_PERCENT
 	encsetvar 1, 0    @ Fort
 	encsetvar 3, 0    @ Build: nothing rebuilds after the mountain falls
 	encsetvar 7, 0    @ Fall

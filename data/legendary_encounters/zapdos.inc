@@ -200,7 +200,7 @@ EncScript_Zapdos_Burnout::
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_EXPLOSION
 	waitanimation
-	enchangehp ENC_TARGET_BOSS, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -10, ENC_AMOUNT_PERCENT
 	return
 
 // Resolves a pending strike, then lays the next one while Charge >= 3 and not overloaded. Doing
@@ -210,7 +210,7 @@ EncScript_Zapdos_Storm::
 	encjumpifvar CMP_EQUAL, 5, 1, EncScript_Zapdos_Storm_Grounded
 	printstring STRINGID_ENCZAPDOSLIGHTNINGSTRIKE
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
 	playmoveanimation MOVE_THUNDER
 	waitanimation
 	goto EncScript_Zapdos_Storm_ClearMark
@@ -328,7 +328,7 @@ EncScript_Zapdos_SwitchIn_Toll:
 	encjumpifvar CMP_LESS_THAN, 1, 3, EncScript_Zapdos_SwitchIn_Done
 	printstring STRINGID_ENCZAPDOSCHARGEDAIR
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_SELF, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_SELF, -8, ENC_AMOUNT_PERCENT
 	playmoveanimation MOVE_THUNDER_SHOCK
 	waitanimation
 EncScript_Zapdos_SwitchIn_Done:
@@ -340,7 +340,7 @@ EncScript_Zapdos_OverloadTick::
 	encsetvar 12, 1   @ TickGuard
 	printstring STRINGID_ENCZAPDOSSTRIKE
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	playmoveanimation MOVE_THUNDER
 	waitanimation
 	encjumpifvar CMP_GREATER_THAN, 0, 0, EncScript_Zapdos_OverloadTick_Done   @ Last Stand: no step-down

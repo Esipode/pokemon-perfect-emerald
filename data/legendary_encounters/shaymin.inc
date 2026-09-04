@@ -397,7 +397,7 @@ EncScript_Shaymin_Gratitude::
 	encsetvar 12, 2     @ Verdict: indifferent - no bias, but a line and a bump rather than silence
 	printstring STRINGID_ENCSHAYMININDIFFERENT
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_BOSS, 1, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 1, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	goto EncScript_Shaymin_Gratitude_Apply
 // The blessing is mutual and mostly the player's. Read straight, gratitude making the peaceful path
@@ -408,8 +408,8 @@ EncScript_Shaymin_Gratitude_Bloom:
 	printstring STRINGID_ENCSHAYMINGRATITUDE
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_RAINBOW
-	enchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
-	enchangehp ENC_TARGET_ALL_FOES, 10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, 10, ENC_AMOUNT_PERCENT
 	curestatus BS_PLAYER1
 	updatestatusicon BS_PLAYER1
 	playanimation BS_PLAYER1, B_ANIM_INGRAIN_HEAL
@@ -423,7 +423,7 @@ EncScript_Shaymin_Gratitude_Distress:
 	printstring STRINGID_ENCSHAYMINDISTRESS
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
-	enchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
 	encsetvar 1, 2      @ Garden
 	call EncScript_Shaymin_ApplyGarden
 // The burning field is raised AFTER the band lands: a Shaymin already at Barren would otherwise have
@@ -459,11 +459,11 @@ EncScript_Shaymin_SeedFlare::
 	playmoveanimation MOVE_SEED_FLARE
 	encjumpifvar CMP_GREATER_THAN, 1, 6, EncScript_Shaymin_SeedFlare_Bloom
 	encjumpifvar CMP_LESS_THAN, 1, 4, EncScript_Shaymin_SeedFlare_Blight
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	return
 EncScript_Shaymin_SeedFlare_Bloom:
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
-	enchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
 	encsetterrain ENC_TERRAIN_GRASSY
 	printstring STRINGID_ENCSHAYMINFLAREBLOOM
 	waitmessage B_WAIT_TIME_LONG
@@ -472,7 +472,7 @@ EncScript_Shaymin_SeedFlare_Bloom:
 // 28% every third turn, stacked on a Sky Forme that already moves first. That is the fight the player
 // chose, and it is the real pressure of the Blight endgame.
 EncScript_Shaymin_SeedFlare_Blight:
-	enchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
 	encclearscreens ENC_TARGET_ALL_FOES, EncScript_Shaymin_SeedFlare_Blight_Body
 	printstring STRINGID_ENCSHAYMINFLAREBLIGHTSTRIP
 	waitmessage B_WAIT_TIME_SHORT
@@ -511,15 +511,15 @@ EncScript_Shaymin_Weakened_Body:
 	encsetdamagereduction ENC_TARGET_BOSS, 99
 	encjumpifvar CMP_GREATER_THAN, 1, 6, EncScript_Shaymin_Weakened_Bloom
 	encjumpifvar CMP_LESS_THAN, 1, 4, EncScript_Shaymin_Weakened_Blight
-	encsetcatchrate 120
+	encsetcatchrate 30
 	printstring STRINGID_ENCSHAYMINWEAKENEDNEUTRAL
 	goto EncScript_Shaymin_Weakened_Open
 EncScript_Shaymin_Weakened_Bloom:
-	encsetcatchrate 180
+	encsetcatchrate 30
 	printstring STRINGID_ENCSHAYMINWEAKENEDBLOOM
 	goto EncScript_Shaymin_Weakened_Open
 EncScript_Shaymin_Weakened_Blight:
-	encsetcatchrate 70
+	encsetcatchrate 30
 	printstring STRINGID_ENCSHAYMINWEAKENEDBLIGHT
 EncScript_Shaymin_Weakened_Open:
 	encsetballs ENC_BALLS_ALLOWED

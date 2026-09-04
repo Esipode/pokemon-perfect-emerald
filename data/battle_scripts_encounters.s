@@ -84,7 +84,7 @@ EncScript_LegendaryBarrier_PhaseTransition::
 	trainerslideout BS_OPPONENT1
 	encchangestat ENC_TARGET_BOSS, STAT_DEF, 3
 	encchangestat ENC_TARGET_BOSS, STAT_SPDEF, 3
-	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT   @ percent, not raw HP: the boss's level (and so its max HP) comes from the Level: property
+	encchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT   @ percent, not raw HP: the boss's level (and so its max HP) comes from the Level: property
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL   @ stand-in glow - no general-purpose "shield" anim exists outside move-specific ones
 	printstring STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS
 	waitmessage B_WAIT_TIME_LONG
@@ -122,15 +122,15 @@ EncScript_TrainerMega_Reveal_Done:
 // isolation through the real interpreter, the same way Stage 14's variables scripts do.
 
 EncScript_TestChangeHpDamage::
-	enchangehp ENC_TARGET_BOSS, -30
+	encchangehp ENC_TARGET_BOSS, -30
 	return
 
 EncScript_TestChangeHpHeal::
-	enchangehp ENC_TARGET_BOSS, 20
+	encchangehp ENC_TARGET_BOSS, 20
 	return
 
 EncScript_TestChangeHpAllFoes::
-	enchangehp ENC_TARGET_ALL_FOES, -15
+	encchangehp ENC_TARGET_ALL_FOES, -15
 	return
 
 EncScript_TestChangeStat::
@@ -164,7 +164,7 @@ EncScript_StormHerald_Surge::
 	printstring STRINGID_ENCSTORMHERALDSURGE
 	waitmessage B_WAIT_TIME_LONG
 	trainerslideout BS_OPPONENT1
-	enchangehp ENC_TARGET_BOSS, 60
+	encchangehp ENC_TARGET_BOSS, 60
 	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	return
@@ -213,3 +213,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/heatran.inc"
 	.include "data/legendary_encounters/manaphy.inc"
 	.include "data/legendary_encounters/darkrai.inc"
+	.include "data/legendary_encounters/cresselia.inc"

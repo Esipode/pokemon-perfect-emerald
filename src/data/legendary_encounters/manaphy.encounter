@@ -209,7 +209,7 @@ Conditions:
 
 # HEART SWAP. TurnOpen arms and ticks SwapClock; this fires at 1 and re-arms it, so the condition is
 # false the instant the script finishes and no re-entry guard is needed. Gated on the player's Pokemon
-# being alive because enchangehp and curestatus on a single-slot target assert against a fainted
+# being alive because encchangehp and curestatus on a single-slot target assert against a fainted
 # battler, and at OnTurnEnd it may already be down.
 Trigger: OnTurnEnd
 Priority: 40
@@ -222,7 +222,7 @@ Conditions:
 
 # OCEAN'S HEART's damage sharing: everything dealt to Manaphy comes back, scaled by how many of the
 # player's Pokemon it has bonded with. Guarded by ShareGuard (cleared at TurnOpen) and by both
-# battlers being alive, so neither the snapshot nor the enchangehp meets a fainted single-slot target.
+# battlers being alive, so neither the snapshot nor the encchangehp meets a fainted single-slot target.
 Trigger: OnTurnEnd
 Priority: 50
 Script: EncScript_Manaphy_OceanShare

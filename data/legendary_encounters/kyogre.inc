@@ -116,13 +116,13 @@ EncScript_Kyogre_Drown:
 	playmoveanimation MOVE_SURF
 	encjumpifvar CMP_EQUAL, 0, 5, EncScript_Kyogre_Drown_Five
 	encjumpifvar CMP_EQUAL, 0, 4, EncScript_Kyogre_Drown_Four
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	return
 EncScript_Kyogre_Drown_Four:
-	enchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
 	return
 EncScript_Kyogre_Drown_Five:
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 EncScript_Kyogre_Drown_Done:
 	return
 
@@ -146,7 +146,7 @@ EncScript_Kyogre_Undertow_Pull:
 	playmoveanimation MOVE_WHIRLPOOL
 EncScript_Kyogre_Undertow_Drag:
 	encchangestatvalue ENC_TARGET_ALL_FOES, STAT_SPDEF, -12, ENC_AMOUNT_PERCENT
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 EncScript_Kyogre_Undertow_Done:
 	return
 
@@ -338,7 +338,7 @@ EncScript_Kyogre_DelugeResolve_Hits:
 	printstring STRINGID_ENCKYOGREDELUGEHITS
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_ORIGIN_PULSE
-	enchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
 	encsetvar 0, 5    @ Tide: the sea takes the field
 	return
 

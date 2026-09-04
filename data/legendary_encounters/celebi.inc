@@ -120,7 +120,7 @@ EncScript_Celebi_DoParadox:
 	enccopyvar 10, 9
 	encsnapshothp ENC_TARGET_PLAYER_LEFT, 10, ENC_SNAP_RECOVERY, EncScript_Celebi_DoParadox_Stats
 	encjumpifvar CMP_LESS_THAN, 10, 5, EncScript_Celebi_DoParadox_Stats
-	enchangehp ENC_TARGET_BOSS, 10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 10, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
 	printstring STRINGID_ENCCELEBIPARADOXHEAL
 	waitmessage B_WAIT_TIME_LONG
@@ -140,7 +140,7 @@ EncScript_Celebi_DoParadox_Copy:
 EncScript_Celebi_DoParadox_Blow:
 	printstring STRINGID_ENCCELEBIPARADOXBLOW
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	return
 
@@ -272,7 +272,7 @@ EncScript_Celebi_PredHeld::
 	encsetvar 5, 4   @ Pred consumed
 	printstring STRINGID_ENCCELEBIPREDHELD
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	encjumpifvar CMP_LESS_THAN, 2, 2, EncScript_Celebi_PredHeld_Done
 	encjumpifvar CMP_EQUAL, 2, 4, EncScript_Celebi_PredHeld_Done   @ the spent sentinel isn't a countdown
@@ -360,12 +360,12 @@ EncScript_Celebi_TimeCollapse::
 	printstring STRINGID_ENCCELEBICOLLAPSEFULL
 	waitmessage B_WAIT_TIME_LONG
 	encrewindhp ENC_TARGET_BOSS, 1
-	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
 	normalisebuffs
 	curestatus BS_OPPONENT1
 	updatestatusicon BS_OPPONENT1
-	enchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	return
 EncScript_Celebi_TimeCollapse_Partial:

@@ -12570,7 +12570,7 @@ void BS_TryDoMoveEffectsBeforeMoves(void)
 // battle_encounter.h) instead of a raw battler bank, so one call reaches every battler a target
 // resolves to in both singles and doubles - see ResolveEncounterTarget (battle_encounter.h).
 
-// CHANGE_HP begin/step pair (enchangehp, asm/macros/battle_script.inc). Begin resolves the target
+// CHANGE_HP begin/step pair (encchangehp, asm/macros/battle_script.inc). Begin resolves the target
 // once into runtime->changeHpRemaining; step consumes one battler per call, falling through into
 // the existing PASSIVE_HP_UPDATE healthbarupdate/datahpupdate opcodes for it so the health bar
 // still animates - CHANGE_HP reuses that presentation rather than mutating HP silently. Split in
@@ -12678,7 +12678,7 @@ void BS_EncounterChangeHpStep(void)
 
 // encrewindhp: the Begin half of the CHANGE_HP pair, sourcing the amount from an author variable
 // and reading it as a destination percentage rather than a delta. Everything after this - the Step
-// loop, the health bar, the faint check - is the enchangehp machinery verbatim.
+// loop, the health bar, the faint check - is the encchangehp machinery verbatim.
 void BS_EncounterChangeHpBeginVar(void)
 {
     NATIVE_ARGS(u8 target, u8 var);

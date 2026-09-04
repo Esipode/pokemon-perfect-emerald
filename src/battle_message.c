@@ -1879,6 +1879,37 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCDARKRAISHATTER]          = COMPOUND_STRING("THE NIGHTMARE COMES APART.\pDarkrai is caught standing in a room with the lights on.{PAUSE_UNTIL_PRESS}"),
     [STRINGID_ENCDARKRAIWINDOWCLOSES]     = COMPOUND_STRING("The dark closes over you again."),
     [STRINGID_ENCDARKRAIWEAKENED]         = COMPOUND_STRING("The dark thins, and what is left of Darkrai is a small thing that has been holding all of this up on its own.\pNow - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+
+    // Cresselia, "The Lunar Guardian". Every kindness in this fight - a quiet turn, a status move, a
+    // real heal, a protected construct, a cured status - deepens the dream and makes Cresselia harder
+    // to touch. Nothing ever says so; the fight only ever describes the moonlight.
+    [STRINGID_ENCCRESSELIAINTRO1]         = COMPOUND_STRING("Cresselia does not wake so much as the moonlight around it thickens, and you become sleepy that has no business feeling sleepy.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIAINTRO2]         = COMPOUND_STRING("It looks at you the way something looks at a guest it has already decided to keep."),
+    [STRINGID_ENCCRESSELIADREAM0]         = COMPOUND_STRING("The air clears. The dream stops asking anything of you."),
+    [STRINGID_ENCCRESSELIADREAM1]         = COMPOUND_STRING("Moonlight gathers over the field, and everything feels a little more forgiving."),
+    [STRINGID_ENCCRESSELIADREAM2]         = COMPOUND_STRING("LUCID.\pThe battlefield goes soft underfoot, and nothing here means you harm.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIADREAM3]         = COMPOUND_STRING("The dream settles deeper. It is getting harder to remember why you came."),
+    [STRINGID_ENCCRESSELIADREAM4]         = COMPOUND_STRING("REVERIE.\pThe moonlight is healing you now, too - and you are starting to understand why.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIADREAM5]         = COMPOUND_STRING("PERFECT DREAM.\pThere is nothing here any more that wants to let you go.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIASTANDINGSHALLOW] = COMPOUND_STRING("The moonlight is still thin here."),
+    [STRINGID_ENCCRESSELIASTANDINGDEEP]   = COMPOUND_STRING("The dream is not finished with you yet."),
+    [STRINGID_ENCCRESSELIAOFFER]          = COMPOUND_STRING("Cresselia offers you something gentle, and asks nothing in return but that you take it.\pACCEPT THE DREAM?"),
+    [STRINGID_ENCCRESSELIARESIST]         = COMPOUND_STRING("You hold on to what is real."),
+    [STRINGID_ENCCRESSELIABOONREST]       = COMPOUND_STRING("Something in the dream folds itself around your Pokémon, and it rests."),
+    [STRINGID_ENCCRESSELIABOONCOURAGE]    = COMPOUND_STRING("The dream lends your Pokémon its own quiet certainty."),
+    [STRINGID_ENCCRESSELIABOONSHELTER]    = COMPOUND_STRING("A soft light gathers in front of your Pokémon and does not fade."),
+    [STRINGID_ENCCRESSELIACONSTRUCT]      = COMPOUND_STRING("A second Cresselia peels away from the moonlight, and stands between you and the first.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIAREAD]           = COMPOUND_STRING("The dream has already learned to expect that."),
+    [STRINGID_ENCCRESSELIAREPRISAL]       = COMPOUND_STRING("The construct will not be struck twice for nothing."),
+    [STRINGID_ENCCRESSELIACLEANSE]        = COMPOUND_STRING("The dream will not let anything stay wrong with Cresselia for long."),
+    [STRINGID_ENCCRESSELIALURCHWARM]      = COMPOUND_STRING("The moonlight grows warm, unexpectedly, and lingers."),
+    [STRINGID_ENCCRESSELIALURCHDISTORT]   = COMPOUND_STRING("The dream distorts, and for a moment nothing here is being protected."),
+    [STRINGID_ENCCRESSELIALURCHRESTORE]   = COMPOUND_STRING("Cresselia gathers the dream back around itself."),
+    [STRINGID_ENCCRESSELIAPHASE1]         = COMPOUND_STRING("Cresselia's dream begins to fracture.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIAPHASE2]         = COMPOUND_STRING("Cresselia's eyes begin to glow. It desperately clings to its dream.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIAWAKES]          = COMPOUND_STRING("Your Pokémon awakens from the dream!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCCRESSELIAWINDOWCLOSES]   = COMPOUND_STRING("The dream closes back over it."),
+    [STRINGID_ENCCRESSELIAWEAKENED]       = COMPOUND_STRING("The moonlight is thin, and what is left of Cresselia is barely holding the dream up at all.\pNow - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

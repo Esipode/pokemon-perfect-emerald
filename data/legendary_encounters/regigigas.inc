@@ -256,7 +256,7 @@ EncScript_Regigigas_DormantRoll_Done:
 
 // The scripted strike. There is no extra-action command, so the titan acting BEFORE the player is
 // how "it acts twice" is delivered - the same felt experience, and it reads better on a colossus.
-// Scripted enchangehp rather than a move, so Protect does not stop it. TurnOpen has already
+// Scripted encchangehp rather than a move, so Protect does not stop it. TurnOpen has already
 // returned if the window is collapsed, so a collapsed titan is genuinely harmless.
 EncScript_Regigigas_StrikeRoll:
 	encjumpifvar CMP_LESS_THAN, 1, 4, EncScript_Regigigas_StrikeRoll_Done
@@ -266,7 +266,7 @@ EncScript_Regigigas_StrikeRoll_Hit:
 	printstring STRINGID_ENCREGIGIGASSECONDSTRIKE
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_STOMP
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 EncScript_Regigigas_StrikeRoll_Done:
 	return
 
@@ -350,7 +350,7 @@ EncScript_Regigigas_Rewind:
 	printstring STRINGID_ENCREGIGIGASKNITS
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
-	enchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
 EncScript_Regigigas_Rewind_Done:
 	return
 
@@ -409,7 +409,7 @@ EncScript_Regigigas_CrushBoosts::
 	encchangestat ENC_TARGET_ALL_FOES, STAT_SPEED, 6
 	return
 
-// CONTINENTAL FORCE. Scripted enchangehp rather than a move, so Protect does not stop it - stated in
+// CONTINENTAL FORCE. Scripted encchangehp rather than a move, so Protect does not stop it - stated in
 // the cheat-sheet rather than hidden. The recharge IS the exhaustion: stock engine, stock "must
 // recharge!" line, and a genuine free turn for the player. Force is re-armed up front so the
 // trigger cannot re-select inside the checkpoint.
@@ -419,7 +419,7 @@ EncScript_Regigigas_ContinentalForce::
 	printstring STRINGID_ENCREGIGIGASFORCEFIRE
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_GIGA_IMPACT
-	enchangehp ENC_TARGET_ALL_FOES, -35, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -35, ENC_AMOUNT_PERCENT
 	printstring STRINGID_ENCREGIGIGASFORCEREELING
 	waitmessage B_WAIT_TIME_SHORT
 	encsetrecharge ENC_TARGET_BOSS, 2    @ at OnTurnEnd this costs it NEXT turn's action

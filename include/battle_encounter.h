@@ -495,10 +495,7 @@ extern const u8 EncScript_Heatran_TurnClose[];
 // Manaphy ("The Prince of The Sea")
 extern const u8 EncScript_Manaphy_Intro[];
 extern const u8 EncScript_Manaphy_HeartOfTheOcean[];
-extern const u8 EncScript_Manaphy_HeartOfTheOcean[];
 extern const u8 EncScript_Manaphy_OceansHeart[];
-extern const u8 EncScript_Manaphy_OceansHeart[];
-extern const u8 EncScript_Manaphy_Weakened[];
 extern const u8 EncScript_Manaphy_Weakened[];
 extern const u8 EncScript_Manaphy_TurnOpen[];
 extern const u8 EncScript_Manaphy_Collapse[];
@@ -512,10 +509,7 @@ extern const u8 EncScript_Manaphy_TurnClose[];
 // Darkrai ("The Pitch-Black Nightmare")
 extern const u8 EncScript_Darkrai_Intro[];
 extern const u8 EncScript_Darkrai_Deepens[];
-extern const u8 EncScript_Darkrai_Deepens[];
 extern const u8 EncScript_Darkrai_Absolute[];
-extern const u8 EncScript_Darkrai_Absolute[];
-extern const u8 EncScript_Darkrai_Weakened[];
 extern const u8 EncScript_Darkrai_Weakened[];
 extern const u8 EncScript_Darkrai_TurnOpen[];
 extern const u8 EncScript_Darkrai_WakeUpPrompt[];
@@ -528,6 +522,23 @@ extern const u8 EncScript_Darkrai_TheyFell[];
 extern const u8 EncScript_Darkrai_Waking[];
 extern const u8 EncScript_Darkrai_Copy[];
 extern const u8 EncScript_Darkrai_TurnClose[];
+
+// Cresselia ("The Lunar Guardian")
+extern const u8 EncScript_Cresselia_Intro[];
+extern const u8 EncScript_Cresselia_LucidNightmare[];
+extern const u8 EncScript_Cresselia_EternalDream[];
+extern const u8 EncScript_Cresselia_Weakened[];
+extern const u8 EncScript_Cresselia_TurnOpen[];
+extern const u8 EncScript_Cresselia_Prompt[];
+extern const u8 EncScript_Cresselia_Construct[];
+extern const u8 EncScript_Cresselia_PeaceStatusMove[];
+extern const u8 EncScript_Cresselia_ReadBug[];
+extern const u8 EncScript_Cresselia_ReadGhost[];
+extern const u8 EncScript_Cresselia_ReadDark[];
+extern const u8 EncScript_Cresselia_Wake[];
+extern const u8 EncScript_Cresselia_Cleanse[];
+extern const u8 EncScript_Cresselia_Reprisal[];
+extern const u8 EncScript_Cresselia_TurnClose[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];

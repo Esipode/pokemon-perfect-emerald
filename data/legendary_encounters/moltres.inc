@@ -150,7 +150,7 @@ EncScript_Moltres_TookDamage::
 EncScript_Moltres_TookDamage_Aura:
 	printstring STRINGID_ENCMOLTRESAURABURNS
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_EVENT_TARGET, -7, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_EVENT_TARGET, -7, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 EncScript_Moltres_TookDamage_Feed:
 	call EncScript_Moltres_GainIntensity
@@ -163,7 +163,7 @@ EncScript_Moltres_FireHit::
 	encsetvar 5, 1   @ HitGuard
 	printstring STRINGID_ENCMOLTRESDRINKSITIN
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	call EncScript_Moltres_GainIntensity
 	return
@@ -187,20 +187,20 @@ EncScript_Moltres_TurnClose::
 	waitmessage B_WAIT_TIME_SHORT
 	encjumpifvar CMP_EQUAL, 1, 3, EncScript_Moltres_TurnClose_Burn3
 	encjumpifvar CMP_EQUAL, 1, 4, EncScript_Moltres_TurnClose_Burn4
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT   @ Intensity 5
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT   @ Intensity 5
 	goto EncScript_Moltres_TurnClose_BurnAnim
 EncScript_Moltres_TurnClose_Burn3:
-	enchangehp ENC_TARGET_ALL_FOES, -4, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -4, ENC_AMOUNT_PERCENT
 	goto EncScript_Moltres_TurnClose_BurnAnim
 EncScript_Moltres_TurnClose_Burn4:
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 EncScript_Moltres_TurnClose_BurnAnim:
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 EncScript_Moltres_TurnClose_Immolate:
 	encjumpifvar CMP_LESS_THAN, 1, 4, EncScript_Moltres_TurnClose_Decay
 	printstring STRINGID_ENCMOLTRESCONSUMESITSELF
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -5, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
 EncScript_Moltres_TurnClose_Decay:
 	encjumpifvar CMP_NOT_EQUAL, 2, 0, EncScript_Moltres_TurnClose_Chant   @ Fed this turn
@@ -233,7 +233,7 @@ EncScript_Moltres_Rebirth::
 	waitanimation
 	printstring STRINGID_ENCMOLTRESREBIRTH
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_BOSS, 55, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 55, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	encsetvar 1, 2   @ Intensity 2, and it floors here now
 	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 12    @ push to the cap, then...

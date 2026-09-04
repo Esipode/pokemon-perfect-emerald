@@ -307,21 +307,21 @@ EncScript_HoOh_Rite_Purification:
 EncScript_HoOh_Rite_Purification_Done:
 	return
 
-// Rite 2 and Rite 1. Scripted enchangehp rather than moves, so Protect and screens do not stop
+// Rite 2 and Rite 1. Scripted encchangehp rather than moves, so Protect and screens do not stop
 // them. No self-recoil on the Phoenix: scripted damage bypasses the Survive clamp, so a recoil tick
 // could faint Ho-Oh outright and skip the catch window.
 EncScript_HoOh_Rite_Judgment:
 	printstring STRINGID_ENCHOOHRITEJUDGMENT
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_EXTRASENSORY
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	return
 
 EncScript_HoOh_Rite_Phoenix:
 	printstring STRINGID_ENCHOOHRITEPHOENIX
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_SKY_ATTACK
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	return
 
 // OnTurnEnd, priority 90 - runs after every phase transition and every verdict at the same
@@ -333,7 +333,7 @@ EncScript_HoOh_TurnClose::
 	encjumpifvar CMP_EQUAL, 0, 3, EncScript_HoOh_TurnClose_Done   @ weakened: inert
 	encjumpifvar CMP_EQUAL, 0, 2, EncScript_HoOh_TurnClose_Rite
 	encjumpifvar CMP_EQUAL, 6, 0, EncScript_HoOh_TurnClose_Mend
-	enchangehp ENC_TARGET_ALL_FOES, -7, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -7, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	printstring STRINGID_ENCHOOHBLESSPRICE
 	waitmessage B_WAIT_TIME_SHORT
@@ -348,7 +348,7 @@ EncScript_HoOh_TurnClose_Mend:
 	encjumpifvar CMP_LESS_THAN, 1, 2, EncScript_HoOh_TurnClose_Purify
 	encsnapshothp ENC_TARGET_BOSS, 13, ENC_SNAP_DAMAGE, EncScript_HoOh_TurnClose_Purify
 	encjumpifvar CMP_LESS_THAN, 13, 6, EncScript_HoOh_TurnClose_Purify
-	enchangehp ENC_TARGET_BOSS, 4, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 4, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	printstring STRINGID_ENCHOOHMEND
 	waitmessage B_WAIT_TIME_SHORT

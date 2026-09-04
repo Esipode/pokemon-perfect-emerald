@@ -192,7 +192,7 @@ EncScript_Darkrai_Lie_Collapse:
 	encsnapshothp ENC_TARGET_BOSS, 13, ENC_SNAP_SET
 	encjumpifvar CMP_LESS_THAN, 13, 40, EncScript_Darkrai_Lie_Collapse_Abort
 	call EncScript_Darkrai_Whisper
-	enchangehp ENC_TARGET_BOSS, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -10, ENC_AMOUNT_PERCENT
 	printstring STRINGID_ENCDARKRAICOLLAPSE
 	waitmessage B_WAIT_TIME_LONG
 	return

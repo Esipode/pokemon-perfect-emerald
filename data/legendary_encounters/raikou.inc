@@ -221,7 +221,7 @@ EncScript_Raikou_TurnOpen_StormRoll:
 EncScript_Raikou_TurnOpen_StormBolt:
 	printstring STRINGID_ENCRAIKOUBOLT
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
 	playmoveanimation MOVE_THUNDER
 	waitanimation
 	goto EncScript_Raikou_TurnOpen_Done
@@ -265,7 +265,7 @@ EncScript_Raikou_TurnClose_Mark:
 	encsubvar 2, 1
 	printstring STRINGID_ENCRAIKOUPRESSES
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	playmoveanimation MOVE_THUNDER_SHOCK
 	waitanimation
 EncScript_Raikou_TurnClose_Cool:
@@ -276,7 +276,7 @@ EncScript_Raikou_TurnClose_Arc:
 	encjumpifvar CMP_GREATER_THAN, 6, 0, EncScript_Raikou_TurnClose_Soft   @ mid-discharge: it is not arcing
 	printstring STRINGID_ENCRAIKOUARCS
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	playmoveanimation MOVE_THUNDER
 	waitanimation
 	encjumpifvar CMP_GREATER_THAN, 5, 3, EncScript_Raikou_TurnClose_Soft   @ already pending; the HP floor is holding it back
@@ -361,7 +361,7 @@ EncScript_Raikou_SwitchIn::
 	waitmessage B_WAIT_TIME_LONG
 	call EncScript_Raikou_GainVelocity
 	encjumpifvar CMP_EQUAL, 0, 0, EncScript_Raikou_SwitchIn_Relay
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	playmoveanimation MOVE_EXTREME_SPEED
 	waitanimation
 EncScript_Raikou_SwitchIn_Relay:
@@ -425,7 +425,7 @@ EncScript_Raikou_Discharge::
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_EXPLOSION
 	waitanimation
-	enchangehp ENC_TARGET_BOSS, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -12, ENC_AMOUNT_PERCENT
 	printstring STRINGID_ENCRAIKOUOPENING
 	waitmessage B_WAIT_TIME_LONG
 	return

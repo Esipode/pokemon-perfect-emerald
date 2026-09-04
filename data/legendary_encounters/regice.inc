@@ -222,7 +222,7 @@ EncScript_Regice_AbsoluteZero::
 	playanimation BS_OPPONENT1, B_ANIM_TRICK_ROOM
 	statusanimation BS_PLAYER1, STATUS1_FREEZE
 	encsetrecharge ENC_TARGET_ALL_FOES, 1
-	enchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	call EncScript_Regice_ChillDown
 	call EncScript_Regice_ChillDown

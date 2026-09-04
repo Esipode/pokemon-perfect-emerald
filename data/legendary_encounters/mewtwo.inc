@@ -108,7 +108,7 @@ EncScript_Mewtwo_GainStance:
 	// fight.
 	printstring STRINGID_ENCMEWTWOFORCE
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_ALL_FOES, -15, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -15, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	// Bank the stack before applying it, so the live stat and Power never disagree at the cap -
 	// RestorePower re-applies exactly what Power says after a form change wipes the stat.
@@ -120,7 +120,7 @@ EncScript_Mewtwo_GainStance_Focus:
 	// Mind Crush (Mega Y): a smaller chunk, plus stat drops. Control rather than escalation.
 	printstring STRINGID_ENCMEWTWOFOCUS
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	encchangestat ENC_TARGET_PLAYER_LEFT, STAT_SPATK, -1
 	encchangestat ENC_TARGET_PLAYER_LEFT, STAT_SPEED, -1
@@ -290,7 +290,7 @@ EncScript_Mewtwo_OverloadStart::
 	call EncScript_Mewtwo_RestorePower
 EncScript_Mewtwo_OverloadStart_Collapse:
 	call EncScript_Mewtwo_ApplyGuard
-	enchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_MON_HIT
 	return
 

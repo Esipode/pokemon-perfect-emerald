@@ -394,13 +394,13 @@ EncScript_Mesprit_Surge_Overjoyed:
 	printstring STRINGID_ENCMESPRITTHRIVES
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
-	enchangehp ENC_TARGET_BOSS, 16, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 16, ENC_AMOUNT_PERCENT
 	return
 EncScript_Mesprit_Surge_Rage:
 	printstring STRINGID_ENCMESPRITLASHES
 	waitmessage B_WAIT_TIME_SHORT
 	playmoveanimation MOVE_EXTRASENSORY
-	enchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
 	return
 // PANIC's one-shot cannot be a Protect - gProtectStructs is cleared after end-of-turn effects, so
 // encsetprotect only means anything at OnTurnStart, which is where the recurring half runs.
@@ -414,8 +414,8 @@ EncScript_Mesprit_Surge_Despair:
 	printstring STRINGID_ENCMESPRITDRAINS
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_LEECH_SEED_DRAIN
-	enchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
-	enchangehp ENC_TARGET_BOSS, 16, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 16, ENC_AMOUNT_PERCENT
 	goto EncScript_Mesprit_SorrowClears
 
 // The standing cost of an extreme, run at every turn open for as long as it holds. Each one is
@@ -429,13 +429,13 @@ EncScript_Mesprit_Recurring_Overjoyed:
 	printstring STRINGID_ENCMESPRITTHRIVES
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
-	enchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
 	return
 EncScript_Mesprit_Recurring_Rage:
 	printstring STRINGID_ENCMESPRITLASHES
 	waitmessage B_WAIT_TIME_SHORT
 	playmoveanimation MOVE_EXTRASENSORY
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	return
 // The coin flip is the whole of PANIC's cost: on top of a 96 guard, half the player's turns simply
 // do not happen. encsetprotect at OnTurnStart covers the whole turn and expires on its own.
@@ -454,8 +454,8 @@ EncScript_Mesprit_Recurring_Despair:
 	printstring STRINGID_ENCMESPRITDRAINS
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_LEECH_SEED_DRAIN
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
-	enchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 8, ENC_AMOUNT_PERCENT
 
 // Anti-cheese, half two: DESPAIR washes status off BOTH sides every turn it holds. It is the spec's
 // own SADNESS behaviour, it is a real cost to the player, and it is why no status can hold Mesprit

@@ -125,16 +125,16 @@ EncScript_Entei_EruptCore:
 	encjumpifvar CMP_EQUAL, 3, 3, EncScript_Entei_EruptCore_S3
 	encjumpifvar CMP_EQUAL, 3, 2, EncScript_Entei_EruptCore_S2
 	encjumpifvar CMP_EQUAL, 3, 1, EncScript_Entei_EruptCore_S1
-	enchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
 	goto EncScript_Entei_EruptCore_After
 EncScript_Entei_EruptCore_S1:
-	enchangehp ENC_TARGET_ALL_FOES, -25, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -25, ENC_AMOUNT_PERCENT
 	goto EncScript_Entei_EruptCore_After
 EncScript_Entei_EruptCore_S2:
-	enchangehp ENC_TARGET_ALL_FOES, -30, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -30, ENC_AMOUNT_PERCENT
 	goto EncScript_Entei_EruptCore_After
 EncScript_Entei_EruptCore_S3:
-	enchangehp ENC_TARGET_ALL_FOES, -35, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -35, ENC_AMOUNT_PERCENT
 EncScript_Entei_EruptCore_After:
 	normalisebuffs
 	encsetvar 3, 3
@@ -202,12 +202,12 @@ EncScript_Entei_TurnOpen_Done:
 EncScript_Entei_Erupt::
 	flushtextbox
 	call EncScript_Entei_EruptCore
-	enchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
 	printstring STRINGID_ENCENTEIRECOIL
 	waitmessage B_WAIT_TIME_SHORT
 	return
 
-// Below 15% the blast costs Entei nothing: enchangehp bypasses the damage-reduction path, so the
+// Below 15% the blast costs Entei nothing: encchangehp bypasses the damage-reduction path, so the
 // recoil would otherwise faint it before the catch window ever opens.
 EncScript_Entei_EruptSafe::
 	flushtextbox
@@ -229,7 +229,7 @@ EncScript_Entei_Vent_Cool:
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_LAVA_PLUME
 	waitanimation
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	normalisebuffs
 	printstring STRINGID_ENCENTEISCOURED
 	waitmessage B_WAIT_TIME_LONG
@@ -278,13 +278,13 @@ EncScript_Entei_SwitchIn::
 	waitanimation
 	encjumpifvar CMP_EQUAL, 3, 3, EncScript_Entei_SwitchIn_S3
 	encjumpifvar CMP_EQUAL, 3, 2, EncScript_Entei_SwitchIn_S2
-	enchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
 	return
 EncScript_Entei_SwitchIn_S2:
-	enchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
 	return
 EncScript_Entei_SwitchIn_S3:
-	enchangehp ENC_TARGET_ALL_FOES, -14, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -14, ENC_AMOUNT_PERCENT
 	return
 
 // OnTurnEnd, priority 90 - runs after any phase transition at the same checkpoint. Owns every
@@ -312,7 +312,7 @@ EncScript_Entei_TurnClose_Heat:
 	encjumpifvar CMP_NOT_EQUAL, 3, 3, EncScript_Entei_TurnClose_Climb
 	printstring STRINGID_ENCENTEIDRINKSHEAT
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	call EncScript_Entei_GainPressure
 EncScript_Entei_TurnClose_Climb:

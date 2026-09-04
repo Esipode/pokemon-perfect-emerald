@@ -91,19 +91,19 @@ EncScript_Articuno_BarrierShatter_Shockwave:
 	encjumpifvar CMP_EQUAL, 3, 1, EncScript_Articuno_BarrierShatter_Shock1
 	encjumpifvar CMP_EQUAL, 3, 2, EncScript_Articuno_BarrierShatter_Shock2
 	encjumpifvar CMP_EQUAL, 3, 3, EncScript_Articuno_BarrierShatter_Shock3
-	enchangehp ENC_TARGET_ALL_FOES, -15, ENC_AMOUNT_PERCENT   @ Frost 4
+	encchangehp ENC_TARGET_ALL_FOES, -15, ENC_AMOUNT_PERCENT   @ Frost 4
 	return
 EncScript_Articuno_BarrierShatter_Shock0:
-	enchangehp ENC_TARGET_ALL_FOES, -3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -3, ENC_AMOUNT_PERCENT
 	return
 EncScript_Articuno_BarrierShatter_Shock1:
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	return
 EncScript_Articuno_BarrierShatter_Shock2:
-	enchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
 	return
 EncScript_Articuno_BarrierShatter_Shock3:
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	return
 
 // Fires whenever Articuno itself uses an Ice move (Event.MoveType == TYPE_ICE). While Frost is
@@ -250,7 +250,7 @@ EncScript_Articuno_FrozenGround::
 	encjumpifvar CMP_LESS_THAN, 3, 3, EncScript_Articuno_FrozenGround_CheckChill
 	printstring STRINGID_ENCARTICUNOFROZENGROUND
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_SELF, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_SELF, -12, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_HAIL_CONTINUES
 EncScript_Articuno_FrozenGround_CheckChill:
 	encjumpifvar CMP_NOT_EQUAL, 4, 1, EncScript_Articuno_FrozenGround_Done
@@ -277,13 +277,13 @@ EncScript_Articuno_PlummetResolve::
 	encjumpifvar CMP_EQUAL, 6, 1, EncScript_Articuno_PlummetResolve_Answered
 	printstring STRINGID_ENCARTICUNOFIELDFREEZES
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_HAIL_CONTINUES
 	return
 EncScript_Articuno_PlummetResolve_Answered:
 	printstring STRINGID_ENCARTICUNOFLAMESHOLD
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -5, ENC_AMOUNT_PERCENT
 	return
 
 // Clears the per-event guards at end of turn so IceMove/FireResponse/FrozenGround can fire again

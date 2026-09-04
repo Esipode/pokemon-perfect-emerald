@@ -159,7 +159,7 @@ Conditions:
 
 # The fuse is stepped down in TurnClose and resolved here, one checkpoint later, so the countdown
 # cannot chase itself through every state in a single dispatch. The HP split is load-bearing:
-# enchangehp bypasses the damage-reduction path, so the 8% recoil could faint Entei before the catch
+# encchangehp bypasses the damage-reduction path, so the 8% recoil could faint Entei before the catch
 # window opens. Below 15% the eruption still fires, it just costs Entei nothing - a lit fuse can
 # never be un-lit, so blocking the event outright would stall it forever.
 Trigger: OnTurnStart

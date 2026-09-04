@@ -324,14 +324,14 @@ EncScript_Rotom_OverloadTick_Line:
 	waitmessage B_WAIT_TIME_SHORT
 	return
 
-// The Fan strike. Scripted enchangehp rather than a move, so it lands before the player's action and
+// The Fan strike. Scripted encchangehp rather than a move, so it lands before the player's action and
 // Protect does not stop it - stated in the cheat-sheet rather than hidden.
 EncScript_Rotom_FanStrike:
 	encjumpifvar CMP_NOT_EQUAL, 2, 4, EncScript_Rotom_FanStrike_Done
 	printstring STRINGID_ENCROTOMFANSTRIKE
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_STRONG_WINDS
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 EncScript_Rotom_FanStrike_Done:
 	return
 
@@ -374,7 +374,7 @@ EncScript_Rotom_WashRegen:
 	printstring STRINGID_ENCROTOMWASHREGEN
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
-	enchangehp ENC_TARGET_BOSS, 6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 6, ENC_AMOUNT_PERCENT
 EncScript_Rotom_WashRegen_Done:
 	return
 

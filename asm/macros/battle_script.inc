@@ -1175,7 +1175,7 @@
 	@ encounter's own, not something for another encounter rule to rescale.
 	@ A battler taken to 0 HP faints in place, mirroring status/weather chip damage
 	@ (BattleScript_DoTurnDmg); checkteamslost ends the battle if that empties a side.
-	.macro enchangehp target:req, amount:req, mode=ENC_AMOUNT_FIXED
+	.macro encchangehp target:req, amount:req, mode=ENC_AMOUNT_FIXED
 	callnative BS_EncounterChangeHpBegin
 	.byte \target
 	.2byte \amount
@@ -1210,8 +1210,8 @@
 	.endm
 
 	@ Moves \target's HP TO the percentage held in author variable \var, healing or damaging as
-	@ needed, with the same animated health bar enchangehp uses. The counterpart to encsnapshothp:
-	@ record a percentage into a var, then snap the battler back to it later. Like enchangehp this
+	@ needed, with the same animated health bar encchangehp uses. The counterpart to encsnapshothp:
+	@ record a percentage into a var, then snap the battler back to it later. Like encchangehp this
 	@ bypasses the target's damage reduction, and a battler taken to 0 HP faints in place.
 	.macro encrewindhp target:req, var:req
 	callnative BS_EncounterChangeHpBeginVar

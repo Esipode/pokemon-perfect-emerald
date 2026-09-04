@@ -38,6 +38,7 @@ enum EncounterId
     ENCOUNTER_HEATRAN,
     ENCOUNTER_MANAPHY,
     ENCOUNTER_DARKRAI,
+    ENCOUNTER_CRESSELIA,
     ENCOUNTER_COUNT,
 };
 
@@ -264,7 +265,7 @@ enum EncounterBallPolicy
 // ENC_IMMUNE_* above.
 #define ENC_MAX_DAMAGE_REDUCTION 99
 
-// How an amount argument is read by the commands that take one (enchangehp, encchangestatvalue).
+// How an amount argument is read by the commands that take one (encchangehp, encchangestatvalue).
 // PERCENT is relative to the battler's max HP / current stat value, which is what a scripted
 // encounter usually wants: the level the boss ends up at isn't known when the script is written
 // (level caps, New Game Plus offsets), so a fixed HP number can't be balanced against it.

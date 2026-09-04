@@ -202,7 +202,7 @@ EncScript_Manaphy_ClampBond_High:
 
 // THE ECHO - the party as the network. Applied to the Pokemon that has just arrived, so severing a
 // deep bond is paid for by the bench before it has taken a single action. Bounded at 15% on purpose:
-// enchangehp faints a battler it takes to 0, and one-shotting the Pokemon sent in to save the player
+// encchangehp faints a battler it takes to 0, and one-shotting the Pokemon sent in to save the player
 // would read as a bug rather than a cost.
 // The lesson is legible from the first lap - a shallow bond is nearly free, a Bond-5 bond costs a
 // sixth of a Pokemon's health - which means the right time to sever is EARLY, and severing early
@@ -213,14 +213,14 @@ EncScript_Manaphy_Echo:
 	printstring STRINGID_ENCMANAPHYECHOSOFT
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_PLAYER_LEFT, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -8, ENC_AMOUNT_PERCENT
 	encchangestat ENC_TARGET_PLAYER_LEFT, STAT_SPDEF, -1
 	return
 EncScript_Manaphy_Echo_Hard:
 	printstring STRINGID_ENCMANAPHYECHOHARD
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_PLAYER_LEFT, -15, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -15, ENC_AMOUNT_PERCENT
 	encchangestat ENC_TARGET_PLAYER_LEFT, STAT_SPDEF, -1
 	encchangestat ENC_TARGET_PLAYER_LEFT, STAT_SPEED, -1
 EncScript_Manaphy_Echo_Done:
@@ -238,7 +238,7 @@ EncScript_Manaphy_TidalDraw:
 	encjumpifvar CMP_LESS_THAN, 1, 4, EncScript_Manaphy_TidalDraw_Done    @ Bond < 4
 	printstring STRINGID_ENCMANAPHYDRAWS
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 EncScript_Manaphy_TidalDraw_Done:
 	return
@@ -404,7 +404,7 @@ EncScript_Manaphy_HeartSwap::
 	printstring STRINGID_ENCMANAPHYSWAPGIVE
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_SIMPLE_HEAL
-	enchangehp ENC_TARGET_PLAYER_LEFT, 25, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, 25, ENC_AMOUNT_PERCENT
 	curestatus BS_PLAYER1
 	updatestatusicon BS_PLAYER1
 	encchangestat ENC_TARGET_PLAYER_LEFT, STAT_ATK, 1
@@ -412,7 +412,7 @@ EncScript_Manaphy_HeartSwap::
 	printstring STRINGID_ENCMANAPHYSWAPTAKE
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_LEECH_SEED_DRAIN
-	enchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
 	encaddvar 1, 1      @ Bond: the extra step
 	call EncScript_Manaphy_ClampBond
 	encjumpifvar CMP_GREATER_THAN, 1, 3, EncScript_Manaphy_HeartSwap_Fast
@@ -439,24 +439,24 @@ EncScript_Manaphy_OceanShare::
 	encjumpifvar CMP_GREATER_THAN, 3, 2, EncScript_Manaphy_OceanShare_Deep
 	encjumpifvar CMP_GREATER_THAN, 10, 14, EncScript_Manaphy_OceanShare_Wide
 	encjumpifvar CMP_GREATER_THAN, 10, 7, EncScript_Manaphy_OceanShare_Mid
-	enchangehp ENC_TARGET_PLAYER_LEFT, -3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -3, ENC_AMOUNT_PERCENT
 	return
 EncScript_Manaphy_OceanShare_Mid:
-	enchangehp ENC_TARGET_PLAYER_LEFT, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -6, ENC_AMOUNT_PERCENT
 	return
 EncScript_Manaphy_OceanShare_Wide:
-	enchangehp ENC_TARGET_PLAYER_LEFT, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -10, ENC_AMOUNT_PERCENT
 	return
 EncScript_Manaphy_OceanShare_Deep:
 	encjumpifvar CMP_GREATER_THAN, 10, 14, EncScript_Manaphy_OceanShare_DeepWide
 	encjumpifvar CMP_GREATER_THAN, 10, 7, EncScript_Manaphy_OceanShare_DeepMid
-	enchangehp ENC_TARGET_PLAYER_LEFT, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -5, ENC_AMOUNT_PERCENT
 	return
 EncScript_Manaphy_OceanShare_DeepMid:
-	enchangehp ENC_TARGET_PLAYER_LEFT, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -10, ENC_AMOUNT_PERCENT
 	return
 EncScript_Manaphy_OceanShare_DeepWide:
-	enchangehp ENC_TARGET_PLAYER_LEFT, -16, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_PLAYER_LEFT, -16, ENC_AMOUNT_PERCENT
 EncScript_Manaphy_OceanShare_Done:
 	return
 
@@ -541,17 +541,15 @@ EncScript_Manaphy_Weakened::
 	waitmessage B_WAIT_TIME_LONG
 	encjumpifvar CMP_GREATER_THAN, 1, 3, EncScript_Manaphy_Weakened_Close
 	encjumpifvar CMP_GREATER_THAN, 1, 1, EncScript_Manaphy_Weakened_Watching
-	encsetcatchrate 90
+	encsetcatchrate 30
 	printstring STRINGID_ENCMANAPHYCATCHDISTANT
 	waitmessage B_WAIT_TIME_LONG
 	goto EncScript_Manaphy_Weakened_Clear
 EncScript_Manaphy_Weakened_Watching:
-	encsetcatchrate 140
 	printstring STRINGID_ENCMANAPHYCATCHWATCHING
 	waitmessage B_WAIT_TIME_LONG
 	goto EncScript_Manaphy_Weakened_Clear
 EncScript_Manaphy_Weakened_Close:
-	encsetcatchrate 200
 	printstring STRINGID_ENCMANAPHYCATCHCLOSE
 	waitmessage B_WAIT_TIME_LONG
 EncScript_Manaphy_Weakened_Clear:

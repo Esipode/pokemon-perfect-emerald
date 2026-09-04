@@ -290,7 +290,7 @@ EncScript_Arceus_LawUpkeep_Line:
 EncScript_Arceus_LawUpkeep_Done:
 	return
 EncScript_Arceus_LawUpkeep_Meadow:
-	enchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
 	playanimation BS_PLAYER1, B_ANIM_LEECH_SEED_DRAIN
 	goto EncScript_Arceus_LawUpkeep_Line
 EncScript_Arceus_LawUpkeep_Fist:
@@ -456,7 +456,7 @@ EncScript_Arceus_DecreeStep_Live:
 	encjumpifvar CMP_EQUAL, 6, 0, EncScript_Arceus_DecreeDeclare
 	call EncScript_Arceus_DecreeLine
 	encjumpifvar CMP_NOT_EQUAL, 6, 5, EncScript_Arceus_DecreeStep_Tick
-	enchangehp ENC_TARGET_ALL_BATTLERS, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_BATTLERS, -6, ENC_AMOUNT_PERCENT
 EncScript_Arceus_DecreeStep_Tick:
 	encjumpifvar CMP_LESS_THAN, 7, 2, EncScript_Arceus_DecreeStep_Done
 	encsubvar 7, 1
@@ -712,7 +712,7 @@ EncScript_Arceus_JudgmentFalls_Land:
 	printstring STRINGID_ENCARCEUSJUDGMENT
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_ALL_FOES, -35, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -35, ENC_AMOUNT_PERCENT
 	call EncScript_Arceus_Echo
 	return
 
@@ -852,7 +852,7 @@ EncScript_Arceus_JudgmentCreation::
 	printstring STRINGID_ENCARCEUSJUDGMENTCREATION
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_ULTRA_BURST
-	enchangehp ENC_TARGET_ALL_FOES, -55, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -55, ENC_AMOUNT_PERCENT
 	normalisebuffs
 	removeweather
 	encclearscreens ENC_TARGET_ALL_BATTLERS, EncScript_Arceus_JudgmentCreation_Reset
@@ -867,7 +867,7 @@ EncScript_Arceus_JudgmentCreation_Shattered:
 	playanimation BS_OPPONENT1, B_ANIM_ILLUSION_OFF
 	printstring STRINGID_ENCARCEUSREELS
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -8, ENC_AMOUNT_PERCENT
 	encsetrecharge ENC_TARGET_BOSS, 2
 	encsetdamagereduction ENC_TARGET_BOSS, 84
 	call EncScript_Arceus_AuthDrain5

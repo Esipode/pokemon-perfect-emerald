@@ -164,7 +164,7 @@ EncScript_Jirachi_TurnOpen_Star:
 	printstring STRINGID_ENCJIRACHISTARFALLS
 	waitmessage B_WAIT_TIME_SHORT
 	playmoveanimation MOVE_SWIFT
-	enchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -10, ENC_AMOUNT_PERCENT
 	goto EncScript_Jirachi_TurnOpen_Done
 EncScript_Jirachi_TurnOpen_Burning:
 	printstring STRINGID_ENCJIRACHIMIRACLEBURNS
@@ -318,13 +318,13 @@ EncScript_Jirachi_Wish_Wonder:
 	printstring STRINGID_ENCJIRACHIWONDERPLAY
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_SIMPLE_HEAL
-	enchangehp ENC_TARGET_ALL_FOES, 25, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, 25, ENC_AMOUNT_PERCENT
 	goto EncScript_Jirachi_Wonder_Ask
 EncScript_Jirachi_Wonder_Strength:
 	printstring STRINGID_ENCJIRACHIWONDERSTRENGTH
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
-	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
 	goto EncScript_Jirachi_Wonder_Ask
 EncScript_Jirachi_Wonder_Star:
 	printstring STRINGID_ENCJIRACHIWONDERSTAR
@@ -332,7 +332,7 @@ EncScript_Jirachi_Wonder_Star:
 	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_TAILWIND, 4
 	playanimation BS_OPPONENT1, B_ANIM_TAILWIND
 	playmoveanimation MOVE_SWIFT
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 	goto EncScript_Jirachi_Wonder_Ask
 	@ Cuts both ways - it wipes the player's setup AND Jirachi's own boosts - which is why this
 	@ outcome needs no drawback of its own.
@@ -351,7 +351,7 @@ EncScript_Jirachi_Wish_WonderShared:
 	printstring STRINGID_ENCJIRACHISHAREDWONDER
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_SIMPLE_HEAL
-	enchangehp ENC_TARGET_ALL_FOES, 25, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, 25, ENC_AMOUNT_PERCENT
 	goto EncScript_Jirachi_Wish_Share
 	@ Refused: the meter empties, so the next wish is a full three turns away.
 EncScript_Jirachi_Wish_Spend:
@@ -387,7 +387,7 @@ EncScript_Jirachi_Miracle::
 	printstring STRINGID_ENCJIRACHIMIRACLELIFE
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_WISH_HEAL
-	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
 	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_REFLECT, 0
 	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_LIGHT_SCREEN, 0
 	encsetsidestatus ENC_TARGET_BOSS, ENC_SIDE_SAFEGUARD, 0

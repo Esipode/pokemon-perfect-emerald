@@ -140,7 +140,7 @@
 #     printstring STRINGID_ENCSHOWCASEBARRIER
 #     waitmessage B_WAIT_TIME_LONG
 #     trainerslideout BS_OPPONENT1
-#     enchangehp ENC_TARGET_BOSS, 25, ENC_AMOUNT_PERCENT   @ positive heals; negative damages
+#     encchangehp ENC_TARGET_BOSS, 25, ENC_AMOUNT_PERCENT   @ positive heals; negative damages
 #     encchangestat ENC_TARGET_BOSS, STAT_SPATK, 2         @ stat STAGE, undone by Haze/switching
 #     encchangestatvalue ENC_TARGET_BOSS, STAT_SPEED, 20, ENC_AMOUNT_PERCENT   @ raw stat, permanent
 #     encsetdamagereduction ENC_TARGET_BOSS, 70
@@ -166,7 +166,7 @@
 #
 # EncScript_Showcase_FaintReaction::
 #     encsetvar 2, 1                         @ PlayerFainted = true
-#     enchangehp ENC_TARGET_ALL_ALLIES, 10
+#     encchangehp ENC_TARGET_ALL_ALLIES, 10
 #     return
 #
 # EncScript_Showcase_SwitchIn::

@@ -1078,6 +1078,9 @@ LittlerootTown_EventScript_EncounterTESTManaphy::
 LittlerootTown_EventScript_EncounterTESTDarkrai::
 	goto LegendaryEncounter_EventScript_Darkrai
 
+LittlerootTown_EventScript_EncounterTESTCresselia::
+	goto LegendaryEncounter_EventScript_Cresselia
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

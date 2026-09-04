@@ -130,7 +130,7 @@ EncScript_LegendaryBarrier_PhaseTransition::
 	trainerslideout BS_OPPONENT1
 	encchangestat ENC_TARGET_BOSS, STAT_DEF, 3
 	encchangestat ENC_TARGET_BOSS, STAT_SPDEF, 3
-	enchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 20, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	printstring STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS
 	waitmessage B_WAIT_TIME_LONG
@@ -154,7 +154,7 @@ Everything except the `enc*` commands is a normal battle-script opcode
 interrupt, `printstring`/`waitmessage` for dialogue, `playanimation` for the visual (see the
 [command reference](#command-reference) for the `enc*` set).
 
-Note `enchangehp ..., 20, ENC_AMOUNT_PERCENT` rather than a raw HP number: with `Level: LevelCap`
+Note `encchangehp ..., 20, ENC_AMOUNT_PERCENT` rather than a raw HP number: with `Level: LevelCap`
 this boss's max HP depends on the player's save, so a fixed figure can't be balanced against it.
 The second script is the mirror image of the `Properties:` block — the same three settings the
 battle started with, turned back off at the point the fight is meant to become winnable.
@@ -441,7 +441,7 @@ Three things deliberately **ignore** it:
   `Immunities: FixedDamage` exists.
 - **Perish Song and Destiny Bond.** These are lethal effects, not damage; reducing them to
   survivable would be incoherent. `Immunities: SharedKo` is how you refuse them.
-- **`enchangehp` in an encounter script.** The number in the script is the encounter's own; another
+- **`encchangehp` in an encounter script.** The number in the script is the encounter's own; another
   encounter rule rescaling it would make phase scripts impossible to reason about.
 
 The maximum is 99 (`ENC_MAX_DAMAGE_REDUCTION`). A battler nothing at all can damage isn't a fight —
@@ -569,7 +569,7 @@ The commands below exist specifically for encounter scripts:
 | `encsubvar <var>, <value>` | Subtracts from author variable `<var>` | wraps `subbyte` |
 | `encjumpifvar <cmp>, <var>, <value>, <label>` | Branches on author variable `<var>` | wraps `jumpifbyte` |
 | `enccopyvar <dst>, <src>` | Copies author variable `<src>` into `<dst>` — for consuming a counter in a loop without losing it | wraps `copybyte` |
-| `enchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar. A battler taken to 0 HP faints in place (and ends the battle if that empties a side), like status/weather chip damage | encounter-specific (`callnative`) |
+| `encchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar. A battler taken to 0 HP faints in place (and ends the battle if that empties a side), like status/weather chip damage | encounter-specific (`callnative`) |
 | `encchangestat <target>, <stat>, <stages>` | Adds `<stages>` to `<stat>` for every battler `<target>` resolves to — silent, no message/animation | encounter-specific (`callnative`) |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Moves the **raw battle stat** (not the stage) of `<stat>` — silent, and not undone by Haze or switching out | encounter-specific (`callnative`) |
 | `encsetdamagereduction <target>, <percent>` | Sets how much less damage `<target>` takes, `0`–`99`. Replaces the current value | encounter-specific (`callnative`) |
@@ -589,7 +589,7 @@ The commands below exist specifically for encounter scripts:
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT` / `ENC_BALLS_BLOCKED` / `ENC_BALLS_ALLOWED` | encounter-specific (`callnative`) |
 | `encsetcatchrate <rate>` | Replaces the catch rate for this battle; `ENC_CATCH_RATE_NONE` restores the species' own | encounter-specific (`callnative`) |
 | `encsnapshothp <target>, <var>[, <mode>[, <failLabel>]]` | Records `<target>`'s current HP as a **percentage of its max HP** (0-100) into author variable `<var>`. `<target>` must resolve to exactly one battler. `<mode>` is `ENC_SNAP_SET` (default, overwrite), `ENC_SNAP_LOWEST` (write only if lower than what `<var>` holds), `ENC_SNAP_RECOVERY` (write `max(0, currentPct - <var>)` — recovery since the mark) or `ENC_SNAP_DAMAGE` (write `max(0, <var> - currentPct)` — damage taken since the mark). Jumps `<failLabel>` when nothing was written, so one command is both the test and the record | encounter-specific (`callnative`) |
-| `encrewindhp <target>, <var>` | Moves `<target>`'s HP **to** the percentage held in `<var>`, healing or damaging as needed, with the same animated health bar `enchangehp` uses. The counterpart to `encsnapshothp` | encounter-specific (`callnative`) |
+| `encrewindhp <target>, <var>` | Moves `<target>`'s HP **to** the percentage held in `<var>`, healing or damaging as needed, with the same animated health bar `encchangehp` uses. The counterpart to `encsnapshothp` | encounter-specific (`callnative`) |
 | `encstoreprediction <target>, <var>` | Writes the AI's predicted move **category** for `<target>` into `<var>`: `0` no prediction this turn, `1` physical, `2` special, `3` status. The real `AI_FLAG_PREDICT_MOVE` answer, so it only means anything at `OnTurnStart` and only when the encounter's `AiFlags:` include that flag | encounter-specific (`callnative`) |
 | `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Writes the result of comparing `<targetA>`'s live `<stat>` against `<targetB>`'s into `<var>`: `0` A is lower, `1` equal, `2` A is higher. Both targets must resolve to exactly one battler. `STAT_SPEED` reads the full turn-order speed (Tailwind, Choice Scarf, paralysis, stages); the other stats read the stat-with-stages value. The var-to-var comparison conditions cannot express | encounter-specific (`callnative`) |
 | `encadapt <target>, <percent>, <slots>, <countVar>, <resultVar>` | **ANALYSIS.** Files the type of the move that just landed as a **type-keyed** damage resistance on `<target>`, at `<percent>` (capped at `ENC_MAX_ADAPT_PERCENT`), in a FIFO `<slots>` deep (capped at `ENC_MAX_ADAPTATIONS`). Re-filing a type already held raises its percent instead of taking a second slot; a full board pushes the **oldest** out; a `<slots>` narrower than the board drops the overflow first. `<countVar>` takes the resulting board size — the authoritative one, so a script mirroring it can't drift — and `<resultVar>` an `ENC_ADAPT_RESULT_*` outcome (`HARDENED` / `FILED` / `EVICTED`) so one command drives all three lines of dialogue. The new type is buffered into `{B_BUFF1}` and any evicted type into `{B_BUFF2}`. `OnMoveEnd` only, since it reads the event's move; a move that missed, was blocked or had no effect is ignored outright and leaves both vars untouched. `DamageReduction:` is flat and type-blind — this is the only per-type resistance in the engine | encounter-specific (`callnative`) |
@@ -607,13 +607,13 @@ The commands below exist specifically for encounter scripts:
 
 ### Fixed vs. percentage amounts
 
-`enchangehp` and `encchangestatvalue` take an optional trailing `<mode>`:
+`encchangehp` and `encchangestatvalue` take an optional trailing `<mode>`:
 
 | Mode | Reads `<amount>` as |
 | --- | --- |
 | `ENC_AMOUNT_FIXED` (the default when omitted) | Raw HP / raw stat points |
 | `ENC_AMOUNT_PERCENT` | A percentage of that battler's own max HP / current value for that stat |
-| `ENC_AMOUNT_TO_PERCENT` | A **destination**: the percentage of max HP to move the battler to. `enchangehp`'s modes are deltas; this one is an absolute target, and is what `encrewindhp` uses |
+| `ENC_AMOUNT_TO_PERCENT` | A **destination**: the percentage of max HP to move the battler to. `encchangehp`'s modes are deltas; this one is an absolute target, and is what `encrewindhp` uses |
 
 Prefer `ENC_AMOUNT_PERCENT` in anything using `Level: LevelCap` or facing New Game Plus offsets: the
 boss's max HP and stats aren't known when the script is written, so a fixed number can't be balanced
@@ -638,7 +638,7 @@ always means "no reduction", whatever the `Properties:` block or an earlier phas
 `setbyte`/`addbyte`/`subbyte`/`jumpifbyte`/`copybyte` opcodes every other battle script uses, just pre-addressed
 into the encounter's variable array so you write a var index instead of a raw address.
 
-`<target>` on `enchangehp`/`encchangestat`/`encmegaevolve`/`encformchange`/`encsetmove`/`enctransform`/`encuntransform` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
+`<target>` on `encchangehp`/`encchangestat`/`encmegaevolve`/`encformchange`/`encsetmove`/`enctransform`/`encuntransform` is an `EncounterTarget`: `ENC_TARGET_BOSS`,
 `ENC_TARGET_SELF`, `ENC_TARGET_EVENT_TARGET`, `ENC_TARGET_PLAYER_LEFT`/`_RIGHT`,
 `ENC_TARGET_OPPONENT_LEFT`/`_RIGHT`, `ENC_TARGET_ALL_FOES`, `ENC_TARGET_ALL_ALLIES`,
 `ENC_TARGET_ALL_BATTLERS`. The group targets (`ALL_FOES`/`ALL_ALLIES`/`ALL_BATTLERS`) are what make a
@@ -959,7 +959,7 @@ constants are compiler errors.
 | `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Two targets that each resolve to exactly one battler; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); a variable/index the `0`/`1`/`2` result is written into. |
 | `encadapt <target>, <percent>, <slots>, <countVar>, <resultVar>` | Target below; a reduction percent (`0`–`ENC_MAX_ADAPT_PERCENT`); a FIFO depth (`1`–`ENC_MAX_ADAPTATIONS`); a variable/index the resulting board size is written into; a variable/index the `ENC_ADAPT_RESULT_*` outcome is written into. `OnMoveEnd` only. |
 | `encpurgeadapt <target>, <which>, <countVar>` | Target below; `ENC_ADAPT_OLDEST`, `ENC_ADAPT_NEWEST` or `ENC_ADAPT_ALL`; a variable/index the remaining board size is written into. |
-| `enchangehp <target>, <amount>[, <mode>]` | Target below; signed 16-bit amount (positive heals, negative damages); optional `ENC_AMOUNT_FIXED` (default) or `ENC_AMOUNT_PERCENT`. |
+| `encchangehp <target>, <amount>[, <mode>]` | Target below; signed 16-bit amount (positive heals, negative damages); optional `ENC_AMOUNT_FIXED` (default) or `ENC_AMOUNT_PERCENT`. |
 | `encchangestat <target>, <stat>, <stages>` | Target below; `STAT_*` id; signed stage change. |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Target below; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); signed 16-bit amount; optional mode as above. |
 | `encsetdamagereduction <target>, <percent>` | Target below; `0` through `ENC_MAX_DAMAGE_REDUCTION` (99). |

@@ -116,13 +116,13 @@ EncScript_Groudon_Scorch:
 	playmoveanimation MOVE_LAVA_PLUME
 	encjumpifvar CMP_EQUAL, 0, 5, EncScript_Groudon_Scorch_Five
 	encjumpifvar CMP_EQUAL, 0, 4, EncScript_Groudon_Scorch_Four
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	return
 EncScript_Groudon_Scorch_Four:
-	enchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -9, ENC_AMOUNT_PERCENT
 	return
 EncScript_Groudon_Scorch_Five:
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 EncScript_Groudon_Scorch_Done:
 	return
 
@@ -277,14 +277,14 @@ EncScript_Groudon_QuakeResolve::
 	printstring STRINGID_ENCGROUDONTREMOR
 	waitmessage B_WAIT_TIME_SHORT
 	playmoveanimation MOVE_MAGNITUDE
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	encsetvar 3, 4    @ Fuse
 	return
 EncScript_Groudon_QuakeResolve_Quake:
 	printstring STRINGID_ENCGROUDONQUAKE
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_EARTHQUAKE
-	enchangehp ENC_TARGET_ALL_FOES, -14, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -14, ENC_AMOUNT_PERCENT
 	encchangestat ENC_TARGET_ALL_FOES, STAT_SPEED, -1
 	encjumpifvar CMP_EQUAL, 0, 2, EncScript_Groudon_QuakeResolve_ArmLong
 	encsetvar 3, 3    @ Fuse
@@ -299,7 +299,7 @@ EncScript_Groudon_QuakeResolve_Major:
 	printstring STRINGID_ENCGROUDONMAJORQUAKE
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_EARTHQUAKE
-	enchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -20, ENC_AMOUNT_PERCENT
 	encchangestat ENC_TARGET_ALL_FOES, STAT_SPEED, -1
 	encsetvar 3, 3    @ Fuse
 	goto EncScript_Groudon_QuakeResolve_Strip
@@ -307,7 +307,7 @@ EncScript_Groudon_QuakeResolve_Break:
 	printstring STRINGID_ENCGROUDONBREAK
 	waitmessage B_WAIT_TIME_LONG
 	playmoveanimation MOVE_FISSURE
-	enchangehp ENC_TARGET_ALL_FOES, -28, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -28, ENC_AMOUNT_PERCENT
 	encchangestat ENC_TARGET_ALL_FOES, STAT_SPEED, -1
 	encsetvar 3, 2    @ Fuse
 EncScript_Groudon_QuakeResolve_Strip:
@@ -319,7 +319,7 @@ EncScript_Groudon_QuakeResolve_Done:
 
 // Phase 2's clock: the continent Groudon spent the fight building caves in on a fixed cadence,
 // taking Groudon down with the player's party. Re-arms to 3, so one collapse every two turns.
-// The snapshot branch is not optional. enchangehp writes passiveHpUpdate directly rather than going
+// The snapshot branch is not optional. encchangehp writes passiveHpUpdate directly rather than going
 // through the damage path where the Survive: clamp lives, so an unguarded tick could take Groudon
 // to 0, faint it, and end the fight as an ordinary win with no catch window ever opening. Guarding
 // it turns that hole into the phase's finisher: the last collapse breaks Groudon deterministically
@@ -335,9 +335,9 @@ EncScript_Groudon_CollapseTick::
 	encrewindhp ENC_TARGET_BOSS, 9
 	goto EncScript_Groudon_CollapseTick_Party
 EncScript_Groudon_CollapseTick_Grind:
-	enchangehp ENC_TARGET_BOSS, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, -5, ENC_AMOUNT_PERCENT
 EncScript_Groudon_CollapseTick_Party:
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	encsetvar 5, 3    @ Collapse
 	return
 

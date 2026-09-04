@@ -174,7 +174,7 @@ Conditions:
     Var(TurnGuard) == 0
 
 # Instability climbs in TurnClose and resolves here, one checkpoint later, so the counter can't chase
-# itself through every state in a single dispatch. The HP floor is load-bearing: enchangehp bypasses
+# itself through every state in a single dispatch. The HP floor is load-bearing: encchangehp bypasses
 # the damage-reduction path, so an unguarded 12% self-hit near death would faint Raikou before the
 # catch window ever opens.
 Trigger: OnTurnStart

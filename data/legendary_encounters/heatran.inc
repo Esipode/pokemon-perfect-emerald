@@ -292,7 +292,7 @@ EncScript_Heatran_FieldChip:
 	printstring STRINGID_ENCHEATRANFIELDBURN
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -6, ENC_AMOUNT_PERCENT
 	return
 EncScript_Heatran_FieldChip_Flow:
 	jumpifability BS_PLAYER1, ABILITY_LEVITATE, EncScript_Heatran_FieldChip_Done
@@ -300,7 +300,7 @@ EncScript_Heatran_FieldChip_Flow:
 	printstring STRINGID_ENCHEATRANGROUNDED
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -5, ENC_AMOUNT_PERCENT
 EncScript_Heatran_FieldChip_Done:
 	return
 
@@ -321,7 +321,7 @@ EncScript_Heatran_CoreDrink:
 	encjumpifvar CMP_LESS_THAN, 1, 3, EncScript_Heatran_CoreDrink_Done   @ nothing to drink below Molten
 	printstring STRINGID_ENCHEATRANDRINKS
 	waitmessage B_WAIT_TIME_SHORT
-	enchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 EncScript_Heatran_CoreDrink_Done:
 	return
@@ -491,10 +491,10 @@ EncScript_Heatran_Vent::
 	playanimation BS_OPPONENT1, B_ANIM_ULTRA_BURST
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
 	encjumpifvar CMP_EQUAL, 0, 1, EncScript_Heatran_Vent_Core
-	enchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -8, ENC_AMOUNT_PERCENT
 	goto EncScript_Heatran_Vent_Window
 EncScript_Heatran_Vent_Core:
-	enchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -12, ENC_AMOUNT_PERCENT
 // Vent is set BEFORE the dial is driven down, so the ApplyStance and ApplyGuard the announcer calls
 // both read the window that has just opened. The lost action is what makes it feel like a window
 // rather than a number the player cannot see.
@@ -508,7 +508,7 @@ EncScript_Heatran_Vent_Window:
 	call EncScript_Heatran_ApplyGuard
 	return
 
-// Phase 2's failure state. Enormous and survivable - enchangehp faints a battler it takes to 0,
+// Phase 2's failure state. Enormous and survivable - encchangehp faints a battler it takes to 0,
 // exactly like weather chip, so a player who reaches this on a nearly-dead team loses. That weight is
 // the point, and the catch window is still reachable either way: both resolutions end spent.
 EncScript_Heatran_Supernova:
@@ -516,7 +516,7 @@ EncScript_Heatran_Supernova:
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_ULTRA_BURST
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_ALL_FOES, -50, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -50, ENC_AMOUNT_PERCENT
 	call EncScript_Heatran_SpentTail
 // Raised AFTER the tail, which drives the dial to 0 and takes the flow down with it. What the
 // eruption left behind is not the dial's to take back - the field changed.
@@ -549,7 +549,7 @@ EncScript_Heatran_MagmaBurst::
 	printstring STRINGID_ENCHEATRANPOCKETBURST
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_MON_HIT
-	enchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_ALL_FOES, -16, ENC_AMOUNT_PERCENT
 	return
 EncScript_Heatran_MagmaBurst_Cooled:
 	printstring STRINGID_ENCHEATRANPOCKETCOOLED

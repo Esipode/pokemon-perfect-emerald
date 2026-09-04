@@ -283,13 +283,13 @@ EncScript_Suicune_Regen_P1:
 	encjumpifvar CMP_GREATER_THAN, 1, 0, EncScript_Suicune_Regen_Small
 	return
 EncScript_Suicune_Regen_P2:
-	enchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 2, ENC_AMOUNT_PERCENT
 	goto EncScript_Suicune_Regen_Show
 EncScript_Suicune_Regen_Big:
-	enchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 3, ENC_AMOUNT_PERCENT
 	goto EncScript_Suicune_Regen_Show
 EncScript_Suicune_Regen_Small:
-	enchangehp ENC_TARGET_BOSS, 1, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 1, ENC_AMOUNT_PERCENT
 EncScript_Suicune_Regen_Show:
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	printstring STRINGID_ENCSUICUNEMENDS
@@ -389,7 +389,7 @@ EncScript_Suicune_SacredResolve::
 	encjumpifvar CMP_EQUAL, 12, 1, EncScript_Suicune_SacredResolve_Break
 	printstring STRINGID_ENCSUICUNESACREDWATER
 	waitmessage B_WAIT_TIME_LONG
-	enchangehp ENC_TARGET_BOSS, 10, ENC_AMOUNT_PERCENT
+	encchangehp ENC_TARGET_BOSS, 10, ENC_AMOUNT_PERCENT
 	playanimation BS_OPPONENT1, B_ANIM_SIMPLE_HEAL
 	return
 EncScript_Suicune_SacredResolve_Break:
