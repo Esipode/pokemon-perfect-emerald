@@ -6118,6 +6118,9 @@ static void TurnValuesCleanUp(bool32 endTurn)
         else
         {
             memset(&gProtectStructs[i], 0, sizeof(struct ProtectStruct));
+            // ENC_OP_PROTECTED's latch clears with the full protect reset, which runs after the
+            // ENC_ON_TURN_END dispatch - the earlier var0 == TRUE pass is too soon for it.
+            gBattleStruct->encounter.protectedThisTurn &= ~(1u << i);
 
             if (gBattleStruct->battlerState[i].isFirstTurn)
                 gBattleStruct->battlerState[i].isFirstTurn--;

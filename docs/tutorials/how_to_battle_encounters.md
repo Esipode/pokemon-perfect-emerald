@@ -242,6 +242,7 @@ together unless grouped (below). Comparisons are `==`, `!=`, `<`, `<=`, `>`, `>=
 | `Battler(<ref>).Status` | `status1` bitfield | compare against a `STATUS1_*` constant |
 | `Battler(<ref>).Type` | Primary type | compare against a `TYPE_*` constant |
 | `Battler(<ref>).Stat(<STAT>)` | Stat *stage* (not the stat value) | `<STAT>` is a `STAT_*` constant, e.g. `Stat(STAT_DEF)` |
+| `Battler(<ref>).Protected` | `1` if the battler protected at any point this turn, else `0` | a whole-turn latch, not the live flag — see the [gotcha](#known-gotchas) |
 | `Var(<name>)` | An author-defined variable | first reference declares it; scoped to the encounter |
 | `Event.Battler` | The battler the event is *about* | compare against a `B_POSITION_*` id (below); see checkpoint table for validity |
 | `Event.Target` | The other battler involved | " |
@@ -581,6 +582,7 @@ The commands below exist specifically for encounter scripts:
 | `encsetembargo <target>, <turns>` | Shorts out the held item of every battler `<target>` resolves to for `<turns>` turns, by setting the same volatile Embargo itself sets — so every existing item check behaves unchanged, and the engine's own end-turn handler ticks the timer and prints the expiry line. `<turns>` of `0` clears it. The boss is always skipped, the same way `encsettrapped` skips it. Silent | encounter-specific (`callnative`) |
 | `encdisablemove <target>, <turns>, <failLabel>` | Disables the move `<target>` (must resolve to exactly one battler) used last, for `<turns>` turns, writing the same volatiles Disable does — so the engine already ticks the timer, already drops the lock if the move leaves the moveset, and already prints its own "no longer disabled" line. The move's name is buffered into `{B_BUFF1}`. Jumps `<failLabel>` when there is nothing to take — no move used yet (turn 1), the move gone from the moveset or out of PP, something already disabled, or the target absent — all ordinary battle states, so they branch rather than assert. `Cmd_disablelastusedattack` can't serve here: it reads `gBattlerTarget`, which is stale outside a move, and derives its duration from `B_DISABLE_TURNS`. Silent | encounter-specific (`callnative`) |
 | `encclearscreens <target>, <failLabel>` | Strips every screen, Safeguard, Mist, Tailwind and Lucky Chant (and their timers) from each side `<target>` resolves to, and jumps `<failLabel>` if there were none — so one command is both the test and the clear. Silent; supply your own dialogue. `trydefog` can't do this outside a move: it only ever clears the side opposite `gBattlerAttacker`, which is stale at `OnTurnStart`/`OnTurnEnd` | encounter-specific (`callnative`) |
+| `encclearhazards <target>, <failLabel>` | Strips every entry hazard (Spikes, Toxic Spikes, Stealth Rock, Sticky Web, Steelsurge) from each side `<target>` resolves to, and jumps `<failLabel>` if there were none — so one command is both the test and the clear, exactly like `encclearscreens`. Unlike Defog's path it takes the side bare in one call and prints nothing, so the caller supplies one line for the whole scouring rather than one per hazard type. Nothing else could remove hazards from a checkpoint script | encounter-specific (`callnative`) |
 | `encsetsidestatus <target>, <status>, <turns>` | Raises one side-wide status (an `ENC_SIDE_*` selector) on every side `<target>` resolves to; `<turns>` of `0` (the default) is permanent. The single-status counterpart to `encclearscreens`, and the only way to raise a Pledge status (Rainbow, Sea of Fire, Swamp) outside a Pledge combo. Silent | encounter-specific (`callnative`) |
 | `encclearsidestatus <target>, <status>` | Drops one side-wide status, timer included, from every side `<target>` resolves to. The precise inverse of the above - the only way to remove a Pledge status, and how you strip one screen without the rest. Silent, and a no-op if it was not up | encounter-specific (`callnative`) |
 | `encrevive <target>, <percent>` | Revives the first fainted **bench** party member on every side `<target>` resolves to, at `<percent>` of its max HP, and clears its status. A battler awaiting replacement is skipped rather than pulled back mid-faint. Silent, and a no-op when a side has nobody to revive, so it is safe to call unconditionally | encounter-specific (`callnative`) |
@@ -770,6 +772,14 @@ yet, so the manual count is currently the reliable path.)
   Pair it with `Survive: True` if the copied moveset could include a self-KO move (Explosion, Final
   Gambit). `encuntransform` puts it back and resets stat stages to neutral; it's a no-op on an
   untransformed battler, so call it unconditionally in a revert script.
+- **`Battler(<ref>).Protected` is a whole-turn latch, not the live flag.** `TurnValuesCleanUp`
+  clears `gProtectStructs[].protected` *before* end-of-turn effects run, so by the time `OnTurnEnd`
+  dispatches the live flag is already gone — reading it there would always be false. The operand
+  instead reads a bitmask set by `Cmd_setprotectlike` (every Protect-like move) and by
+  `encsetprotect`, and cleared with the engine's own full protect reset, after the `OnTurnEnd`
+  dispatch. So it answers "did this battler protect at any point this turn", which is the same
+  statement as "is protected" — Protect is a whole-turn shield. It is what a delayed effect
+  resolving at `OnTurnEnd` (a fused trap, a charged blast) has to test against.
 - **A blank event-context cell is invalid, not zero.** Reading `Event.Move` at a checkpoint that
   doesn't populate it (see the [checkpoint table](#checkpoint-reference)) asserts rather than
   quietly returning 0 — that would otherwise be indistinguishable from a real "no move" case.
@@ -913,6 +923,7 @@ A leaf is exactly `<operand> <comparison> <value>`. The only comparisons are `==
 | `Battler(<ref>).Status` | Same six refs | `STATUS1_*` constant or bitfield expression |
 | `Battler(<ref>).Type` | Same six refs | `TYPE_*` constant |
 | `Battler(<ref>).Stat(<stat>)` | Same six refs; `<stat>` is `STAT_ATK`, `STAT_DEF`, `STAT_SPEED`, `STAT_SPATK`, `STAT_SPDEF`, `STAT_ACC`, or `STAT_EVASION` | Stat-stage integer |
+| `Battler(<ref>).Protected` | Same six refs | `0` or `1` |
 | `Var(<name>)` | `<name>` is any C identifier | Encounter-local integer; first use declares it (maximum 16 per encounter). |
 | `Event.Battler` | No argument | Battler id |
 | `Event.Target` | No argument | Battler id |
@@ -959,6 +970,7 @@ constants are compiler errors.
 | `encsetprotect <target>` | Target below. |
 | `encsettrapped <target>, <trapped>` | Target below; `TRUE` or `FALSE`. |
 | `encclearscreens <target>, <failLabel>` | Target below, plus a script label taken when the side had nothing to clear. |
+| `encclearhazards <target>, <failLabel>` | Target below, plus a script label taken when no side had a hazard on it. |
 | `encsetembargo <target>, <turns>` | Target below; a turn count, `0` to clear. |
 | `encdisablemove <target>, <turns>, <failLabel>` | A target that resolves to exactly one battler; a turn count; a script label taken when there was no move to disable. |
 | `encsetsidestatus <target>, <status>, <turns>` | Target below; an `ENC_SIDE_*` selector (`ENC_SIDE_REFLECT`, `ENC_SIDE_LIGHT_SCREEN`, `ENC_SIDE_AURORA_VEIL`, `ENC_SIDE_SAFEGUARD`, `ENC_SIDE_MIST`, `ENC_SIDE_TAILWIND`, `ENC_SIDE_LUCKY_CHANT`, `ENC_SIDE_RAINBOW`, `ENC_SIDE_SEA_OF_FIRE`, `ENC_SIDE_SWAMP`); a turn count, `0` (the default) for permanent. |

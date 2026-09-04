@@ -1416,6 +1416,17 @@
 	.4byte \failInstr
 	.endm
 
+	@ Strips every entry hazard (Spikes, Toxic Spikes, Stealth Rock, Sticky Web, Steelsurge) from
+	@ each side \target resolves to, and jumps \failInstr when there was nothing on any of them - so
+	@ one command is both the test and the clear, the same as encclearscreens. Silent: it takes the
+	@ side bare in one pass rather than printing Defog's per-hazard lines, so the caller supplies one
+	@ line for the whole scouring. Nothing else could remove hazards from a checkpoint script.
+	.macro encclearhazards target:req, failInstr:req
+	callnative BS_EncClearHazards
+	.byte \target
+	.4byte \failInstr
+	.endm
+
 	@ Raises one side-wide status (an ENC_SIDE_* selector) on every side \target resolves to, for
 	@ \turns turns; 0 (the default) is permanent, the same convention encsetweather uses. The
 	@ single-status counterpart to encclearscreens, which is all-or-nothing and deliberately skips

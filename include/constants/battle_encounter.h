@@ -35,6 +35,7 @@ enum EncounterId
     ENCOUNTER_REGIGIGAS,
     ENCOUNTER_ROTOM,
     ENCOUNTER_SHAYMIN,
+    ENCOUNTER_HEATRAN,
     ENCOUNTER_COUNT,
 };
 
@@ -315,6 +316,9 @@ enum EncounterOperand
     ENC_OP_STATUS,          // arg = battler ref
     ENC_OP_STAT_STAGE,      // arg packs battler + enum Stat, see ENC_PACK_STAT_ARG
     ENC_OP_TYPE,            // arg = battler ref
+    // arg = battler ref. Reads a whole-turn latch, not gProtectStructs: the engine clears protect
+    // before end-of-turn effects, so the live flag is already gone by the time OnTurnEnd dispatches.
+    ENC_OP_PROTECTED,
     ENC_OP_WEATHER,         // no arg
     ENC_OP_TERRAIN,         // no arg
     ENC_OP_TURN,            // no arg

@@ -210,3 +210,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/regigigas.inc"
 	.include "data/legendary_encounters/rotom.inc"
 	.include "data/legendary_encounters/shaymin.inc"
+	.include "data/legendary_encounters/heatran.inc"

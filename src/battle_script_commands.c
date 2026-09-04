@@ -5089,6 +5089,11 @@ static void Cmd_setprotectlike(void)
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_PROTECTED_ITSELF;
     }
 
+    // The single choke point every Protect-like move passes through, so ENC_OP_PROTECTED's latch is
+    // set here rather than in each move's script. Endure takes the branch above and sets no protect.
+    if (gProtectStructs[gBattlerAttacker].protected != PROTECT_NONE)
+        gBattleStruct->encounter.protectedThisTurn |= 1u << gBattlerAttacker;
+
     gBattleMons[gBattlerAttacker].volatiles.consecutiveMoveUses++;
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -13492,7 +13497,12 @@ void BS_EncSetProtect(void)
     for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
     {
         if (mask & (1u << battler))
+        {
             gProtectStructs[battler].protected = PROTECT_NORMAL;
+            // Latched too, so a scripted protect reads back through ENC_OP_PROTECTED exactly like a
+            // move-granted one.
+            gBattleStruct->encounter.protectedThisTurn |= 1u << battler;
+        }
     }
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -13639,6 +13649,45 @@ void BS_EncClearScreens(void)
         gSideTimers[side].mistTimer = 0;
         gSideTimers[side].tailwindTimer = 0;
         gSideTimers[side].luckyChantTimer = 0;
+        cleared = TRUE;
+    }
+
+    gBattlescriptCurrInstr = cleared ? cmd->nextInstr : cmd->failInstr;
+}
+
+// CLEAR_HAZARDS (encclearhazards). Strips every entry hazard from each side <target> resolves to,
+// and jumps failInstr when there were none - so one command is both the test and the clear, the same
+// shape as encclearscreens above. Unlike Defog's path this takes the whole side bare in one call and
+// prints nothing: enc* commands are silent and supply their own dialogue, and a script scouring the
+// field wants one line for the scouring, not one per hazard type.
+void BS_EncClearHazards(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+    bool32 cleared = FALSE;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        enum BattleSide side;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; scour that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (!AreAnyHazardsOnSide(side))
+            continue;
+
+        for (u32 hazardType = HAZARDS_NONE + 1; hazardType < HAZARDS_MAX_COUNT; hazardType++)
+        {
+            if (IsHazardOnSideAndClear(side, hazardType))
+                gBattleStruct->numHazards[side]--;
+        }
         cleared = TRUE;
     }
 

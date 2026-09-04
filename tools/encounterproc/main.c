@@ -627,6 +627,11 @@ static bool parse_operand(struct Parser *p, struct EncounterDef *enc, const char
             *operand_const = "ENC_OP_TYPE";
             snprintf(arg_expr, ARG_EXPR_N, "%s", ref_const);
         }
+        else if (is_literal_token(&field, "Protected"))
+        {
+            *operand_const = "ENC_OP_PROTECTED";
+            snprintf(arg_expr, ARG_EXPR_N, "%s", ref_const);
+        }
         else if (is_literal_token(&field, "Stat"))
         {
             skip_whitespace(&p_);
@@ -647,7 +652,7 @@ static bool parse_operand(struct Parser *p, struct EncounterDef *enc, const char
         }
         else
         {
-            return set_parse_error(p, field.location, "unknown operand field (expected HP, HpPercent, MaxHp, Species, Ability, Status, Stat, or Type)");
+            return set_parse_error(p, field.location, "unknown operand field (expected HP, HpPercent, MaxHp, Species, Ability, Status, Stat, Type, or Protected)");
         }
 
         *p = p_;

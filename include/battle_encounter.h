@@ -457,14 +457,6 @@ extern const u8 EncScript_Rotom_RogueProgram[];
 extern const u8 EncScript_Rotom_Takeover[];
 extern const u8 EncScript_Rotom_Weakened[];
 
-// Stage 15 command tests (test/battle/encounter/commands.c).
-extern const u8 EncScript_TestChangeHpDamage[];
-extern const u8 EncScript_TestChangeHpHeal[];
-extern const u8 EncScript_TestChangeHpAllFoes[];
-extern const u8 EncScript_TestChangeStat[];
-extern const u8 EncScript_TestChangeStatAllFoes[];
-extern const u8 EncScript_TestMegaEvolve[];
-
 // Shaymin ("The Gratitude Pokemon")
 extern const u8 EncScript_Shaymin_Intro[];
 extern const u8 EncScript_Shaymin_Gratitude[];
@@ -481,6 +473,32 @@ extern const u8 EncScript_Shaymin_TendCured[];
 extern const u8 EncScript_Shaymin_TendRecovery[];
 extern const u8 EncScript_Shaymin_SeedFlare[];
 extern const u8 EncScript_Shaymin_TurnClose[];
+
+// Heatran ("The Lava Dome")
+extern const u8 EncScript_Heatran_Intro[];
+extern const u8 EncScript_Heatran_MagmaCore[];
+extern const u8 EncScript_Heatran_Eruption[];
+extern const u8 EncScript_Heatran_Weakened[];
+extern const u8 EncScript_Heatran_TurnOpen[];
+extern const u8 EncScript_Heatran_CoolWater[];
+extern const u8 EncScript_Heatran_CoolIce[];
+extern const u8 EncScript_Heatran_Stoked[];
+extern const u8 EncScript_Heatran_PocketDefused[];
+extern const u8 EncScript_Heatran_WeatherCool[];
+extern const u8 EncScript_Heatran_Vent[];
+extern const u8 EncScript_Heatran_VentRecover[];
+extern const u8 EncScript_Heatran_Subsided[];
+extern const u8 EncScript_Heatran_MagmaBurst[];
+extern const u8 EncScript_Heatran_MagmaBurstBlocked[];
+extern const u8 EncScript_Heatran_TurnClose[];
+
+// Stage 15 command tests (test/battle/encounter/commands.c).
+extern const u8 EncScript_TestChangeHpDamage[];
+extern const u8 EncScript_TestChangeHpHeal[];
+extern const u8 EncScript_TestChangeHpAllFoes[];
+extern const u8 EncScript_TestChangeStat[];
+extern const u8 EncScript_TestChangeStatAllFoes[];
+extern const u8 EncScript_TestMegaEvolve[];
 
 // Engine-owned shim: all encounter scripts end with `return`; checkpoints dispatched
 // from a non-script engine callback (e.g. BATTLE_START) call the encounter script from

@@ -629,6 +629,11 @@ struct EncounterRuntime
     u8 capTypeEffectiveness[MAX_BATTLERS_COUNT]; // bool8: clamp incoming type effectiveness to 2x
     u8 flatToxicDamage[MAX_BATTLERS_COUNT];     // bool8: disable Toxic's per-turn counter ramp
     u8 survive[MAX_BATTLERS_COUNT];             // bool8: HP can't be taken below 1 through the damage formula or a passive tick
+    // Bitmask of battlers that were protected at any point this turn, for ENC_OP_PROTECTED. Latched
+    // rather than read live because TurnValuesCleanUp wipes gProtectStructs[].protected before
+    // end-of-turn effects, so a delayed effect resolving at ENC_ON_TURN_END would always read FALSE.
+    // Cleared alongside the engine's own full protect reset, after the OnTurnEnd dispatch.
+    u8 protectedThisTurn;
     u8 ballPolicy;                              // enum EncounterBallPolicy
     u8 catchRate;                               // ENC_CATCH_RATE_NONE, or a catch rate to use instead of the species'
     // Catch-window damage guard (UpdateEncounterCatchGuard, battle_encounter.c). While Poke Balls
