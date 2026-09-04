@@ -540,6 +540,19 @@ extern const u8 EncScript_Cresselia_Cleanse[];
 extern const u8 EncScript_Cresselia_Reprisal[];
 extern const u8 EncScript_Cresselia_TurnClose[];
 
+// Giratina ("The Renegade Pokemon")
+extern const u8 EncScript_Giratina_Intro[];
+extern const u8 EncScript_Giratina_TurnOpen[];
+extern const u8 EncScript_Giratina_AnchorPrompt[];
+extern const u8 EncScript_Giratina_Gate[];
+extern const u8 EncScript_Giratina_TheBreak[];
+extern const u8 EncScript_Giratina_TheyFled[];
+extern const u8 EncScript_Giratina_TheyFell[];
+extern const u8 EncScript_Giratina_TurnClose[];
+extern const u8 EncScript_Giratina_DistortionWorld[];
+extern const u8 EncScript_Giratina_RealityBreak[];
+extern const u8 EncScript_Giratina_Return[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

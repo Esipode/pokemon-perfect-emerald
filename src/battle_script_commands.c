@@ -13921,6 +13921,93 @@ void BS_EncSetTerrain(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// Maps an ENC_FIELD_* selector onto its STATUS_FIELD_* bit and the gFieldTimers member that ticks
+// it down. Returns FALSE for a selector outside the enum so the caller can assert on it.
+static bool32 GetEncounterFieldStatus(u32 which, u32 *statusOut, u16 **timerOut)
+{
+    switch (which)
+    {
+    case ENC_FIELD_TRICK_ROOM:  *statusOut = STATUS_FIELD_TRICK_ROOM;  *timerOut = &gFieldTimers.trickRoomTimer;  break;
+    case ENC_FIELD_GRAVITY:     *statusOut = STATUS_FIELD_GRAVITY;     *timerOut = &gFieldTimers.gravityTimer;    break;
+    case ENC_FIELD_WONDER_ROOM: *statusOut = STATUS_FIELD_WONDER_ROOM; *timerOut = &gFieldTimers.wonderRoomTimer; break;
+    case ENC_FIELD_MAGIC_ROOM:  *statusOut = STATUS_FIELD_MAGIC_ROOM;  *timerOut = &gFieldTimers.magicRoomTimer;  break;
+    case ENC_FIELD_FAIRY_LOCK:  *statusOut = STATUS_FIELD_FAIRY_LOCK;  *timerOut = &gFieldTimers.fairyLockTimer;  break;
+    case ENC_FIELD_MUD_SPORT:   *statusOut = STATUS_FIELD_MUDSPORT;    *timerOut = &gFieldTimers.mudSportTimer;   break;
+    case ENC_FIELD_WATER_SPORT: *statusOut = STATUS_FIELD_WATERSPORT;  *timerOut = &gFieldTimers.waterSportTimer; break;
+    default:                                                                                                     return FALSE;
+    }
+    return TRUE;
+}
+
+// FIELD_STATUS (encsetfieldstatus / encclearfieldstatus). Field statuses are otherwise unreachable
+// from a checkpoint script: encsetterrain exists precisely because the stock setterrain opcode reads
+// its type off gCurrentMove, and every other field status has the same problem with no equivalent.
+// encsetfieldstatus ENC_FIELD_GRAVITY matches Cmd_setgravity exactly (flag plus timer, nothing
+// else), so Gravity raised this way behaves the same as the move. <turns> of 0 is permanent, the
+// same convention encsetweather/encsetterrain/encsetsidestatus already use - every ticker in
+// battle_end_turn.c guards on timer > 0 before decrementing. No battler loop and no sidesSeen
+// tracking here: unlike a side status, a field status has exactly one instance.
+void BS_EncSetFieldStatus(void)
+{
+    NATIVE_ARGS(u8 status, u8 turns, bool8 set);
+    u32 statusFlag;
+    u16 *timer;
+
+    assertf(GetEncounterFieldStatus(cmd->status, &statusFlag, &timer),
+            "encounter %d: unknown field status %d", gBattleStruct->encounter.id, cmd->status)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    if (cmd->set)
+    {
+        gFieldStatuses |= statusFlag;
+        *timer = cmd->turns;
+    }
+    else
+    {
+        gFieldStatuses &= ~statusFlag;
+        *timer = 0;
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// HEAL_BLOCK (encsethealblock). Sets the same volatile Heal Block itself sets on every battler
+// <target> resolves to, so every existing heal-path check reads it unchanged; HandleEndTurnHealBlock
+// (battle_end_turn.c) already ticks the timer and prints the engine's own expiry line, so a
+// non-zero <turns> needs nothing on the way out - 0 clears it outright. The boss is skipped, the
+// same reason encsettrapped/encsetembargo skip it.
+// healBlockTimer is a bitfield sized by B_EMBARGO_TIMER's sibling, B_HEAL_BLOCK_TIMER; a larger
+// value truncates silently, so this asserts rather than writing past the field.
+void BS_EncSetHealBlock(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u8 boss;
+
+    assertf(cmd->turns <= B_HEAL_BLOCK_TIMER,
+            "encounter %d: HEAL_BLOCK turns %d exceeds B_HEAL_BLOCK_TIMER", gBattleStruct->encounter.id, cmd->turns)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            if (!(mask & (1u << battler)) || battler == boss)
+                continue;
+
+            gBattleMons[battler].volatiles.healBlock = (cmd->turns != 0);
+            gBattleMons[battler].volatiles.healBlockTimer = cmd->turns;
+        }
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // encjumpifchance: takes the jump with cmd->percent probability, otherwise falls through. A
 // general-purpose random branch for encounter scripts - the engine's other random-branch opcodes
 // are all tied to a specific move.

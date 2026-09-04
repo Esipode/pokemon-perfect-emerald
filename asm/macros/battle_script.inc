@@ -1512,6 +1512,40 @@
 	.byte \turns
 	.endm
 
+	@ Shorts out healing for every battler \target resolves to for \turns turns, by setting the same
+	@ volatile Heal Block itself sets - so every existing heal-path check behaves unchanged, and the
+	@ engine's own end-turn handler ticks the timer and prints the expiry line. \turns of 0 clears it
+	@ outright. healBlockTimer is a bitfield sized by B_HEAL_BLOCK_TIMER (5) - a larger value
+	@ truncates silently, so this asserts rather than writing past the field. The boss is skipped even
+	@ when \target includes it, the same way encsetembargo skips it. Silent; supply your own dialogue.
+	.macro encsethealblock target:req, turns:req
+	callnative BS_EncSetHealBlock
+	.byte \target
+	.byte \turns
+	.endm
+
+	@ Raises one field-wide status (an ENC_FIELD_* selector) for \turns turns; 0 (the default) means
+	@ permanent. Field statuses are otherwise unreachable from a checkpoint script: the stock opcodes
+	@ for Trick Room/Gravity/Wonder Room/Magic Room/Fairy Lock/Mud Sport/Water Sport all read their
+	@ effect off gCurrentMove, which a checkpoint script does not have. encsetfieldstatus
+	@ ENC_FIELD_GRAVITY matches Cmd_setgravity exactly (flag plus timer, nothing else). Terrain is
+	@ deliberately absent - encsetterrain owns it. Silent; pair with playanimation/playmoveanimation.
+	.macro encsetfieldstatus status:req, turns=0
+	callnative BS_EncSetFieldStatus
+	.byte \status
+	.byte \turns
+	.byte TRUE
+	.endm
+
+	@ Drops one field-wide status (an ENC_FIELD_* selector), timer included. The precise inverse of
+	@ encsetfieldstatus. Silent, and a no-op if it wasn't up.
+	.macro encclearfieldstatus status:req
+	callnative BS_EncSetFieldStatus
+	.byte \status
+	.byte 0
+	.byte FALSE
+	.endm
+
 	@ Disables the move \target (must resolve to exactly one battler) used last, for \turns turns,
 	@ writing the same volatiles Disable does - so the engine already ticks the timer, already drops
 	@ the lock if the move leaves the moveset, and already prints its own "no longer disabled" line.

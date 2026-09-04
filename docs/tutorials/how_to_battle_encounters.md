@@ -596,6 +596,9 @@ The commands below exist specifically for encounter scripts:
 | `encpurgeadapt <target>, <which>, <countVar>` | The inverse of `encadapt`: drops `ENC_ADAPT_OLDEST`, `ENC_ADAPT_NEWEST` or `ENC_ADAPT_ALL` from `<target>`'s board and writes the remaining count into `<countVar>`. The array is compacted on every removal, so slot 0 is always the oldest. The dropped type is buffered into `{B_BUFF1}`. Silent, and a no-op on an empty board, so it is safe to call unconditionally — test `<countVar>` afterwards to know whether anything fell | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
 | `encsetterrain <terrain>[, <turns>]` | Sets the field terrain to an `ENC_TERRAIN_*` selector. `<turns>` defaults to `0`, meaning permanent. The mirror of `encsetweather` one field over, and needed for the same reason: the stock `setterrain` opcode reads its terrain type off `gCurrentMove`, and a checkpoint script has no current move. Does nothing if that terrain is already up, or in a sky battle. Silent; clear it again with the existing `removeterrain` | encounter-specific (`callnative`) |
+| `encsetfieldstatus <status>[, <turns>]` | Raises one field-wide status (an `ENC_FIELD_*` selector: `ENC_FIELD_TRICK_ROOM`, `ENC_FIELD_GRAVITY`, `ENC_FIELD_WONDER_ROOM`, `ENC_FIELD_MAGIC_ROOM`, `ENC_FIELD_FAIRY_LOCK`, `ENC_FIELD_MUD_SPORT`, `ENC_FIELD_WATER_SPORT`). `<turns>` defaults to `0`, meaning permanent. Field statuses are otherwise unreachable from a checkpoint script - the stock opcode for each one reads its effect off `gCurrentMove`, which a checkpoint script doesn't have. Terrain is deliberately excluded - `encsetterrain` owns it and runs `TryChangeBattleTerrain`, which does bookkeeping a raw flag write would skip. `encsetfieldstatus ENC_FIELD_GRAVITY` matches `Cmd_setgravity` exactly (flag plus timer, nothing else). Silent | encounter-specific (`callnative`) |
+| `encclearfieldstatus <status>` | Drops one field-wide status, timer included. The precise inverse of `encsetfieldstatus`. Silent, and a no-op if it wasn't up | encounter-specific (`callnative`) |
+| `encsethealblock <target>, <turns>` | Sets the same volatile Heal Block itself sets on every battler `<target>` resolves to, for `<turns>` turns; `0` clears it. `HandleEndTurnHealBlock` already ticks the timer and prints the engine's own expiry line. `healBlockTimer` is a bitfield sized by `B_HEAL_BLOCK_TIMER` - like `encsetembargo`'s `B_EMBARGO_TIMER` ceiling, a `<turns>` above it asserts rather than truncating silently. The boss is always skipped, the same way `encsettrapped`/`encsetembargo` skip it. Silent | encounter-specific (`callnative`) |
 | `encmegaevolve <target>, <failLabel>` | Forces `<target>` (must resolve to exactly one battler) to Mega Evolve outside the normal gimmick-selection flow, with the stock Mega Evolution presentation | encounter-specific (`callnative`) |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | Changes `<target>` (must resolve to exactly one battler) into `<species>` outright, outside any form-change table, then plays `<anim>`. The general form of `encmegaevolve`: repeatable, reversible, and not limited to a form the battler holds a stone for. Keeps HP and the moveset; stats, types and ability come from the new species. Prints nothing — supply your own dialogue | encounter-specific (`callnative`) |
 | `encsetmove <target>, <slot>, <move>` | Writes `<move>` into slot `<slot>` (`0`–`3`) of `<target>`'s **battle** mon with that move's full PP. The party Pokémon is never touched, so a boss caught afterwards keeps the moveset it was built with. `Moves:` is a battle-start property, so this is the only way a boss gains a move partway through a fight — the signature move a form unlocks when it transforms. Prints nothing | encounter-specific (`callnative`) |
@@ -822,6 +825,12 @@ yet, so the manual count is currently the reliable path.)
   sets — `Var(Handled) == 0`, script sets `Handled` to 1 — and clear that variable at `OnTurnEnd`
   (or wherever the next occurrence should be allowed). `OnEnter` does **not** help here: its edge
   check compares against an HP snapshot, which an event condition doesn't move.
+- **`encsethealblock`'s `<turns>` has an undocumented ceiling, like `encsetembargo`'s.**
+  `healBlockTimer` is a bitfield sized by `B_HEAL_BLOCK_TIMER` (5) — a value above it truncates
+  silently rather than sticking, so the command asserts instead. A mechanic that needs Heal Block to
+  outlast that ceiling has to re-arm it periodically (e.g. every turn from `OnTurnEnd`) rather than
+  set one long duration; the tick always runs before the re-arm, so the timer never actually reaches
+  zero and the engine's own expiry line never fires.
 - **A script that must run unconditionally once per turn needs a two-trigger scaffold.** The
   re-evaluation loop can't express "run every turn regardless of state" — a trigger with no
   self-disabling condition fires until the script cap trips. Use a guard var: an `OnTurnStart`
@@ -979,6 +988,9 @@ constants are compiler errors.
 | `encsetballs <policy>` | `ENC_BALLS_DEFAULT`, `ENC_BALLS_BLOCKED`, or `ENC_BALLS_ALLOWED`. |
 | `encsetcatchrate <rate>` | `ENC_CATCH_RATE_NONE`, or `1` through `255`. |
 | `encsetterrain <terrain>[, <turns>]` | `ENC_TERRAIN_ELECTRIC`, `ENC_TERRAIN_GRASSY`, `ENC_TERRAIN_MISTY` or `ENC_TERRAIN_PSYCHIC`; a turn count, `0` (the default) for permanent. |
+| `encsetfieldstatus <status>[, <turns>]` | An `ENC_FIELD_*` selector (`ENC_FIELD_TRICK_ROOM`, `ENC_FIELD_GRAVITY`, `ENC_FIELD_WONDER_ROOM`, `ENC_FIELD_MAGIC_ROOM`, `ENC_FIELD_FAIRY_LOCK`, `ENC_FIELD_MUD_SPORT`, `ENC_FIELD_WATER_SPORT`); a turn count, `0` (the default) for permanent. |
+| `encclearfieldstatus <status>` | The same `ENC_FIELD_*` selectors. |
+| `encsethealblock <target>, <turns>` | Target below; a turn count, `0` to clear (asserts above `B_HEAL_BLOCK_TIMER`). |
 | `encmegaevolve <target>, <failLabel>` | A target that resolves to exactly one battler, plus a script label. |
 | `encformchange <target>, <species>, <failLabel>[, <anim>]` | A target that resolves to exactly one battler, a `SPECIES_*` constant, a script label, and an optional `B_ANIM_*` id (defaults to `B_ANIM_MEGA_EVOLUTION`). |
 | `encsetmove <target>, <slot>, <move>` | A target that resolves to exactly one battler, a move slot `0`–`3`, and a `MOVE_*` constant. |

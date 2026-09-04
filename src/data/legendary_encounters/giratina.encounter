@@ -1,0 +1,197 @@
+Encounter: Giratina
+
+# Giratina, "The Renegade Pokemon". Nine of the ten Gen 4 encounters run a 0-5 meter that is the
+# boss's damage-reduction guard. Giratina's is not: Distortion buys RULES, not tankiness. The guard
+# moves exactly twice (Phase 1: 91, Phase 2: 93) and once more during an ANCHOR window (55, three
+# turns) - every other difficulty spike in this fight is a rule inversion, and every inversion is
+# announced by name.
+#   DISTORTION 0-5 - how many rules are inverted right now, and how fast they rotate. One clock (the
+#   rotation) clears every active rule, advances a fixed five-slot wheel (SPEED -> GRAVITY ->
+#   DEFENCES -> HEALING -> POSSESSIONS -> wraps), refills 0/1/1/2/2/3 slots by the new Distortion
+#   level, and sheds any status standing on Giratina.
+#   STABILITY 0-3 - the player's counter-meter. +1 for a turn survived, -1 every rotation, 0 on a
+#   switch or a faint. At 3 the player is offered ANCHOR REALITY: every inversion cancelled,
+#   Distortion -2 (floored by phase), Giratina loses its next action, guard 55 for three turns.
+# SPEED/GRAVITY/DEFENCES/POSSESSIONS are field-wide Trick Room / Gravity / Wonder Room / Magic Room -
+# Giratina lives under them too, and Gravity grounds Origin Forme's own Levitate for a free Ground
+# window. HEALING is Heal Block on the player's side, re-armed every turn it is active so it never
+# lapses on its own.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY. A status lands and works completely, then is shed at the
+# next rotation (at most 4 turns) - bounded, and a player who times a status move right after a
+# rotation gets full value from it. Switching costs everything: Stability to 0, and from Phase 1,
+# Distortion +1 - a price, not a lock, since Giratina is never given encsettrapped.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Giratina_Return sets a real one
+    Balls: Blocked
+    DamageReduction: 89         # Phase 0. Only the three phase transitions and the ANCHOR window
+                                # ever move this - never the Distortion level
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # a NIGHTMARE COPY does not apply here, but Origin Forme's own
+                                # Ground weakness under GRAVITY COLLAPSED still deserves the cap
+    FlatToxicDamage: True
+    Survive: True               # load-bearing: REALITY BREAK chips 10% of the player's max HP, but
+                                # the threshold scripts are what open the catch window, and a
+                                # 25%-threshold overkill would otherwise skip Phase 2 entirely
+    Ability: ABILITY_TELEPATHY  # Giratina-Altered's own, stated so the swap to Levitate at the
+                                # Origin Forme change (and Gravity suppressing it) is unambiguous
+    Moves: MOVE_SHADOW_CLAW, MOVE_DRAGON_CLAW, MOVE_TOXIC, MOVE_HEX
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fifteen here in order fixes
+# Phase..EventGuard to 0..14. Var 15 is left free.
+# 0 Phase (0 Reality Intact / 1 The Distortion World / 2 Reality Break / 3 The Return),
+# 1 Distortion (0-5), 2 LastDist (the last ANNOUNCED level - the callout's re-fire latch),
+# 3 Stability (0-3), 4 RotClock (turns until the next rotation), 5 TurnGuard (the once-per-turn
+# scaffold), 6 Inv1 (inversion in slot 1: 0 empty, 1-5 = which), 7 Inv2, 8 Inv3, 9 AskCd (turns until
+# ANCHOR is re-offered after a NO), 10 Window (ANCHOR damage-window countdown, 0 = closed),
+# 11 GateCd (Distortion Gate cooldown), 12 BreakClock (turns until the next REALITY BREAK, Phase 2),
+# 13 Wheel (the rotation wheel cursor, 1-5), 14 EventGuard (shared per-turn guard for OnSwitchIn and
+# OnFaint - a faint is followed by a switch-in, and charging Distortion twice for one forced
+# replacement would be wrong).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Giratina_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Distortion) >= 0
+    Var(LastDist) >= 0
+    Var(Stability) >= 0
+    Var(RotClock) >= 0
+    Var(TurnGuard) >= 0
+    Var(Inv1) >= 0
+    Var(Inv2) >= 0
+    Var(Inv3) >= 0
+    Var(AskCd) >= 0
+    Var(Window) >= 0
+    Var(GateCd) >= 0
+    Var(BreakClock) >= 0
+    Var(Wheel) >= 0
+    Var(EventGuard) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Giratina_DistortionWorld
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Giratina_DistortionWorld
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Giratina_RealityBreak
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Giratina_RealityBreak
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Giratina_Return
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Giratina_Return
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. Leads every OnTurnStart pass and ticks RotClock/Window/GateCd/AskCd/
+# BreakClock; TurnGuard is set immediately so no branch out of it can leave it re-armed.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Giratina_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# ANCHOR REALITY. Window == 0 keeps Giratina from opening a Gate inside the player's own reward
+# window, and from re-offering the prompt while one is still open.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Giratina_AnchorPrompt
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Stability) == 3
+    Var(AskCd) == 0
+    Var(Window) == 0
+    Var(TurnGuard) == 1
+
+# THE DISTORTION GATE. OnTurnStart only: gProtectStructs is cleared after end-of-turn effects, so a
+# protect set anywhere else evaporates before it can matter.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Giratina_Gate
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Distortion) >= 4
+    Var(GateCd) == 0
+    Var(Window) == 0
+    Var(TurnGuard) == 1
+
+# REALITY BREAK. Phase 2 only.
+Trigger: OnTurnStart
+Priority: 25
+Script: EncScript_Giratina_TheBreak
+Conditions:
+    Var(Phase) == 2
+    Var(BreakClock) == 0
+    Var(TurnGuard) == 1
+
+# TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when
+# every var is still 0 - without the gate the opening switch-in would charge Distortion on turn 0.
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_Giratina_TheyFled
+Conditions:
+    Var(EventGuard) == 0
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# A faint costs Distortion even in Phase 0, unlike a switch - losing a Pokemon outright is a harsher
+# beat than choosing to pull one back.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Giratina_TheyFell
+Conditions:
+    Var(EventGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Runs last so it sees the finished turn: Stability's climb, the rotation (and its telegraph), the
+# HEALING re-arm, and the REALITY BREAK telegraph. Every trigger above self-disables through a var
+# its own script writes, which is what keeps the 8-script checkpoint cap out of reach.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Giratina_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

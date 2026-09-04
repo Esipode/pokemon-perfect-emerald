@@ -39,6 +39,7 @@ enum EncounterId
     ENCOUNTER_MANAPHY,
     ENCOUNTER_DARKRAI,
     ENCOUNTER_CRESSELIA,
+    ENCOUNTER_GIRATINA,
     ENCOUNTER_COUNT,
 };
 
@@ -220,6 +221,21 @@ enum EncounterTerrain
     ENC_TERRAIN_MISTY,
     ENC_TERRAIN_PSYCHIC,
     ENC_TERRAIN_COUNT,
+};
+
+// Field-wide statuses an encounter script can raise. Terrain is deliberately absent: encsetterrain
+// owns it and runs TryChangeBattleTerrain, which does the terrainAbilityDone and paradox-stat
+// resets a raw flag write would skip. Ion Deluge is absent because it has no timer to hold it.
+enum EncounterFieldStatus
+{
+    ENC_FIELD_TRICK_ROOM,
+    ENC_FIELD_GRAVITY,
+    ENC_FIELD_WONDER_ROOM,
+    ENC_FIELD_MAGIC_ROOM,
+    ENC_FIELD_FAIRY_LOCK,
+    ENC_FIELD_MUD_SPORT,
+    ENC_FIELD_WATER_SPORT,
+    ENC_FIELD_COUNT,
 };
 
 // --- Encounter properties (battle-start configuration) ------------------------------------------

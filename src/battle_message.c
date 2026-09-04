@@ -1910,6 +1910,48 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCCRESSELIAWAKES]          = COMPOUND_STRING("Your Pokémon awakens from the dream!{PAUSE_UNTIL_PRESS}"),
     [STRINGID_ENCCRESSELIAWINDOWCLOSES]   = COMPOUND_STRING("The dream closes back over it."),
     [STRINGID_ENCCRESSELIAWEAKENED]       = COMPOUND_STRING("The moonlight is thin, and what is left of Cresselia is barely holding the dream up at all.\pNow - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+
+    // Giratina, "The Renegade Pokemon". The Distortion level does not touch the damage guard - it
+    // controls how many of the battle's rules are currently inverted, and how fast they rotate.
+    // Every inversion is a real field status the engine already animates; every rotation re-announces
+    // whatever is live, so a player is never more than one rotation away from being told outright
+    // what reality is doing.
+    [STRINGID_ENCGIRATINAINTRO1]          = COMPOUND_STRING("Giratina is not standing on the field. The field is standing on Giratina.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGIRATINAINTRO2]          = COMPOUND_STRING("It watches you without moving, and waits to see whether you notice."),
+    [STRINGID_ENCGIRATINADIST0]           = COMPOUND_STRING("The field is holding its shape."),
+    [STRINGID_ENCGIRATINADIST1]           = COMPOUND_STRING("REALITY BENDS. Something about the ground is no longer agreeing with itself."),
+    [STRINGID_ENCGIRATINADIST2]           = COMPOUND_STRING("UNSTABLE REALITY. The rules here have stopped staying where you put them."),
+    [STRINGID_ENCGIRATINADIST3]           = COMPOUND_STRING("THE DISTORTION WORLD. You are not fighting in your world any more."),
+    [STRINGID_ENCGIRATINADIST4]           = COMPOUND_STRING("REALITY COLLAPSE. Two of this world's laws are wrong at once now."),
+    [STRINGID_ENCGIRATINADIST5]           = COMPOUND_STRING("DISTORTION WORLD MASTERY.\pGiratina has stopped bending the rules and started writing them.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGIRATINAROTATE]          = COMPOUND_STRING("THE WORLD TURNS OVER."),
+    [STRINGID_ENCGIRATINAROTATESOON]      = COMPOUND_STRING("Something in the air is about to give."),
+    [STRINGID_ENCGIRATINASHED]            = COMPOUND_STRING("The affliction slides off a Giratina that is no longer quite the one you gave it to."),
+    [STRINGID_ENCGIRATINAINVSPEED]        = COMPOUND_STRING("DISTORTION: SPEED INVERTED.\pThe slower Pokémon will move first."),
+    [STRINGID_ENCGIRATINAINVGRAVITY]      = COMPOUND_STRING("DISTORTION: GRAVITY COLLAPSED.\pEverything on the field is being dragged down."),
+    [STRINGID_ENCGIRATINAINVDEFENCE]      = COMPOUND_STRING("DISTORTION: DEFENCES INVERTED.\pWhat was armoured is bare, and what was bare is armoured."),
+    [STRINGID_ENCGIRATINAINVITEMS]        = COMPOUND_STRING("DISTORTION: POSSESSIONS INVERTED.\pNothing carried into this place still works here."),
+    [STRINGID_ENCGIRATINAINVHEALING]      = COMPOUND_STRING("DISTORTION: HEALING INVERTED.\pNothing you mend will stay mended."),
+    [STRINGID_ENCGIRATINASTABREADY]       = COMPOUND_STRING("{B_PLAYER_MON1_NAME} is standing on something solid."),
+    [STRINGID_ENCGIRATINASTABGONE]        = COMPOUND_STRING("{B_PLAYER_MON1_NAME} let go of the ground it was standing on."),
+    [STRINGID_ENCGIRATINAANCHORASK]       = COMPOUND_STRING("You can feel where the real world is from here.\pANCHOR REALITY?"),
+    [STRINGID_ENCGIRATINAANCHORNO]        = COMPOUND_STRING("You decide to let the world stay as it is."),
+    [STRINGID_ENCGIRATINAANCHORYES]       = COMPOUND_STRING("REALITY ANCHORED.\pFor a moment the field is just a field, and Giratina is just standing in it.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGIRATINAANCHORCLOSE]     = COMPOUND_STRING("The distortion closes back over the field."),
+    [STRINGID_ENCGIRATINAGATE]            = COMPOUND_STRING("A tear opens in the air beside Giratina."),
+    [STRINGID_ENCGIRATINAPHASE1]          = COMPOUND_STRING("Giratina steps out of its own shadow, and what comes out is longer, and has more of it.\pORIGIN FORME.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGIRATINAPHASE1GROUND]    = COMPOUND_STRING("Whatever holds Giratina up now, it is not the ground."),
+    [STRINGID_ENCGIRATINAFLED]            = COMPOUND_STRING("Giratina watches something leave, and the distortion widens behind it."),
+    [STRINGID_ENCGIRATINAFELL]            = COMPOUND_STRING("Something goes down, and the world leans further over."),
+    [STRINGID_ENCGIRATINAPHASE2]          = COMPOUND_STRING("REALITY BREAK.\pGiratina stops holding the world together on purpose.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGIRATINABREAKSOON]       = COMPOUND_STRING("The field will not hold much longer."),
+    [STRINGID_ENCGIRATINABREAK]           = COMPOUND_STRING("THE WORLD COMES APART.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGIRATINARETURN1]         = COMPOUND_STRING("The Distortion World is folding itself back up."),
+    [STRINGID_ENCGIRATINARETURN2]         = COMPOUND_STRING("Giratina is pulled back down into the shape it started in."),
+    [STRINGID_ENCGIRATINAWEAKENED]        = COMPOUND_STRING("Giratina has nothing left holding the world open, and it can barely hold itself.\pNow - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGIRATINACATCHHELD]       = COMPOUND_STRING("You are the only thing in this place still standing where you put yourself."),
+    [STRINGID_ENCGIRATINACATCHSLIPPED]    = COMPOUND_STRING("It has been thrown around as much as you have."),
+    [STRINGID_ENCGIRATINACATCHLOST]       = COMPOUND_STRING("Neither of you is quite sure where the ground went."),
 };
 
 const u16 gOneHitKOStringIds[] =
