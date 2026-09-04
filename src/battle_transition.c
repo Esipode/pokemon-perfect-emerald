@@ -1018,29 +1018,25 @@ static void CB2_BattleTransitionOnField(void)
 
     for (passes = GetBattleSpeedCatchUpPasses(&sTransitionSpeedHalfStepRemainder); passes != 0; passes--)
     {
-        u16 newKeys, newKeysRaw, newAndRepeatedKeys, heldKeys, heldKeysRaw;
+        u16 newKeys, newKeysRaw, newAndRepeatedKeys;
 
         // The task that owns the transition hands off to CB2_InitBattle the moment
         // it reports done, after tearing the overworld down; stop advancing here.
         if (gMain.callback2 != CB2_BattleTransitionOnField)
             break;
 
-        // Keys are read once per frame, so catch-up passes must see none of them.
+        // Edge-triggered keys only - held keys are level state and must stay true for
+        // every pass of the frame. See the same suppression in BattleMainCB2.
         newKeys = gMain.newKeys;
         newKeysRaw = gMain.newKeysRaw;
         newAndRepeatedKeys = gMain.newAndRepeatedKeys;
-        heldKeys = gMain.heldKeys;
-        heldKeysRaw = gMain.heldKeysRaw;
         gMain.newKeys = gMain.newKeysRaw = gMain.newAndRepeatedKeys = 0;
-        gMain.heldKeys = gMain.heldKeysRaw = 0;
 
         CB2_OverworldBasic();
 
         gMain.newKeys = newKeys;
         gMain.newKeysRaw = newKeysRaw;
         gMain.newAndRepeatedKeys = newAndRepeatedKeys;
-        gMain.heldKeys = heldKeys;
-        gMain.heldKeysRaw = heldKeysRaw;
     }
 }
 

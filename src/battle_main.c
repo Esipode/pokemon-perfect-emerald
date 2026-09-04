@@ -1846,16 +1846,17 @@ void BattleMainCB2(void)
 
     if (passes != 0)
     {
-        // Keys are read once per frame, so catch-up passes must see none of them
-        // or a single press would register two or three times.
+        // Keys are read once per frame, so catch-up passes must not see the
+        // edge-triggered ones again or a single press would register two or three
+        // times. Held keys are the exception: they are level state, not an edge, and
+        // must stay true for every pass of the frame. Zeroing them made JOY_HELD read
+        // as an instant release, which the last-used-ball R hold tests on every pass
+        // (HandleInputChooseAction) - it threw the ball the moment R went down.
         u16 newKeys = gMain.newKeys;
         u16 newKeysRaw = gMain.newKeysRaw;
         u16 newAndRepeatedKeys = gMain.newAndRepeatedKeys;
-        u16 heldKeys = gMain.heldKeys;
-        u16 heldKeysRaw = gMain.heldKeysRaw;
 
         gMain.newKeys = gMain.newKeysRaw = gMain.newAndRepeatedKeys = 0;
-        gMain.heldKeys = gMain.heldKeysRaw = 0;
 
         for (; passes != 0; passes--)
         {
@@ -1876,8 +1877,6 @@ void BattleMainCB2(void)
         gMain.newKeys = newKeys;
         gMain.newKeysRaw = newKeysRaw;
         gMain.newAndRepeatedKeys = newAndRepeatedKeys;
-        gMain.heldKeys = heldKeys;
-        gMain.heldKeysRaw = heldKeysRaw;
     }
 
     // Catch-up passes skip the OAM sort and the last one does it for the frame; if the
