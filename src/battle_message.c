@@ -1844,6 +1844,41 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCMANAPHYCATCHCLOSE]       = COMPOUND_STRING("It has not let go of you, even now."),
     [STRINGID_ENCMANAPHYCATCHWATCHING]    = COMPOUND_STRING("It is watching you, and deciding."),
     [STRINGID_ENCMANAPHYCATCHDISTANT]     = COMPOUND_STRING("It has been sent away too many times to come willingly."),
+
+    // Darkrai, "The Pitch-Black Pokemon". Half of these lines are lies, and none of them say so.
+    // Every hallucination is introduced by STRINGID_ENCDARKRAIWHISPER and nothing else in the
+    // encounter prints it, so the ripple is the one fixed tell the player can learn to read.
+    [STRINGID_ENCDARKRAIINTRO1]           = COMPOUND_STRING("Darkrai does not appear so much as the light stops reaching where it is.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCDARKRAIINTRO2]           = COMPOUND_STRING("Everything after this happened while you were asleep."),
+    [STRINGID_ENCDARKRAINM0]              = COMPOUND_STRING("The air clears. The field is just a field again."),
+    [STRINGID_ENCDARKRAINM1]              = COMPOUND_STRING("Something feels wrong."),
+    [STRINGID_ENCDARKRAINM2]              = COMPOUND_STRING("The colours on the field have gone slightly wrong."),
+    [STRINGID_ENCDARKRAINM3]              = COMPOUND_STRING("You are no longer certain the battle in front of you is the battle you are in."),
+    [STRINGID_ENCDARKRAINM4]              = COMPOUND_STRING("Shapes move at the edge of the field that have no business being there."),
+    [STRINGID_ENCDARKRAINM5]              = COMPOUND_STRING("THE DARK IS COMPLETE.\pThere is no field here any more - only the dream.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCDARKRAIPRESSES]          = COMPOUND_STRING("The dark presses in a little closer."),
+    [STRINGID_ENCDARKRAIWHISPER]          = COMPOUND_STRING("The dark ripples."),
+    [STRINGID_ENCDARKRAICOLLAPSE]         = COMPOUND_STRING("Darkrai's strength is failing!"),
+    [STRINGID_ENCDARKRAIREWIND]           = COMPOUND_STRING("Nothing was ever wrong with it."),
+    [STRINGID_ENCDARKRAIFALSESTATUS]      = COMPOUND_STRING("{B_PLAYER_MON1_NAME} was badly poisoned!"),
+    [STRINGID_ENCDARKRAIFALSEBOOST]       = COMPOUND_STRING("{B_PLAYER_MON1_NAME}'s Sp. Atk rose!"),
+    [STRINGID_ENCDARKRAIFALSEVANISH]      = COMPOUND_STRING("Darkrai sank into its own shadow."),
+    [STRINGID_ENCDARKRAICOPY]             = COMPOUND_STRING("A nightmare wearing {B_PLAYER_MON1_NAME}'s face rises out of the dark.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCDARKRAICOPYENDS]         = COMPOUND_STRING("The borrowed face slides off, and Darkrai is behind it."),
+    [STRINGID_ENCDARKRAIWAKEGAIN]         = COMPOUND_STRING("{B_PLAYER_MON1_NAME}'s eyes clear for a moment."),
+    [STRINGID_ENCDARKRAIWAKESPEND]        = COMPOUND_STRING("{B_PLAYER_MON1_NAME} shakes the dream off, and some of the dark goes with it."),
+    [STRINGID_ENCDARKRAIREAD]             = COMPOUND_STRING("Darkrai has already watched you do that."),
+    [STRINGID_ENCDARKRAIFEEDS]            = COMPOUND_STRING("Darkrai takes the affliction the way it takes everything else.\pThe dark thickens."),
+    [STRINGID_ENCDARKRAINOSLEEP]          = COMPOUND_STRING("Darkrai does not sleep.\pIt is what sleeps in you."),
+    [STRINGID_ENCDARKRAITHEYFELL]         = COMPOUND_STRING("Something goes out of the field, and the dark moves into the space it left."),
+    [STRINGID_ENCDARKRAIPHASE1]           = COMPOUND_STRING("Darkrai's dream stops being something you are watching.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCDARKRAIPHASE2]           = COMPOUND_STRING("ABSOLUTE NIGHTMARE.\pDarkrai stops hiding what it is and stands up out of the dark wearing all of it.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCDARKRAIHEAVY]            = COMPOUND_STRING("It is heavier now.\pWhatever else this thing has become, it is slower."),
+    [STRINGID_ENCDARKRAIWAKEUP]           = COMPOUND_STRING("You are almost sure none of this is happening.\pWAKE UP?"),
+    [STRINGID_ENCDARKRAINOTYET]           = COMPOUND_STRING("You decide to see where the dream goes."),
+    [STRINGID_ENCDARKRAISHATTER]          = COMPOUND_STRING("THE NIGHTMARE COMES APART.\pDarkrai is caught standing in a room with the lights on.{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCDARKRAIWINDOWCLOSES]     = COMPOUND_STRING("The dark closes over you again."),
+    [STRINGID_ENCDARKRAIWEAKENED]         = COMPOUND_STRING("The dark thins, and what is left of Darkrai is a small thing that has been holding all of this up on its own.\pNow - now is the moment to catch it!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

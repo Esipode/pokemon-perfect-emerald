@@ -1,0 +1,296 @@
+Encounter: Darkrai
+
+# Darkrai, "The Pitch-Black Pokemon". The fight is two numbers pulling against each other, and a
+# stream of battle text that is not always true.
+#   NIGHTMARE 0-5. Everything Darkrai does raises it, and it rises on its own with the clock.
+#   WAKEFULNESS 0-3. Only the player raises it, and it is the only thing that pushes Nightmare back.
+#     0 unease | 1 stirring | 2 distortion | 3 hallucination | 4 terror | 5 NIGHTMARE REALM
+#     guard 82 |     86     |      89      |       92        |    94    |         96
+#                                lies start (Ph 0)   copies unlock    pinned; only WAKE UP moves it
+# THE TUG-OF-WAR IS THE FIGHT. Darkrai's guard is a direct read of the Nightmare level, so "can I
+# hurt this thing" and "am I winning the meter war" are the same question. A player who never
+# engages with Wakefulness pins the dial at 5, sits behind a 96% guard and loses to a fight they
+# cannot dent; a player who works the meter holds it near 1-2 and fights something beatable.
+# THE LIES are the signature. Darkrai prints false battle events - HP that did not fall, a status
+# never applied, a boost that never happened - built out of printstring with no command behind it.
+# Every one of them opens with the same two beats: the Nightmare status animation over Darkrai and
+# "The dark ripples." A real event arrives the way the engine has always delivered it. Learning the
+# ripple is the reward, and the FALSE COLLAPSE is the only lie with teeth - it really does drop the
+# bar a quarter, and it really does rewind next turn.
+# ANTI-ABUSE IS A PRICE, NOT AN IMMUNITY. Every status the player lands costs a Nightmare level and
+# then works completely, permanently. Sleep is the exception, because sleep would take turns away
+# from the boss: it lands, costs Darkrai the rest of that turn, and is scrubbed at end of turn for
+# the same Nightmare level.
+# THE ENDGAME is a question. At 30% Darkrai Mega Evolves, the Nightmare pins at 5, and Wakefulness
+# stops spending itself down - it charges to 3 and offers WAKE UP instead. Saying yes shatters the
+# dream: guard 96 -> 45 for three turns, -2 Sp. Atk, a lost action, and the player's own sleep
+# cured. It is repeatable, which turns Phase 2 into a race between the closing window and a
+# 165-Sp.-Atk Mega body the player finally outruns.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Darkrai_Weakened sets a real one
+    Balls: Blocked
+    DamageReduction: 82         # Nightmare 0; EncScript_Darkrai_ApplyNightmare owns it from here on
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # pure Dark has no 4x weakness of its own, but a NIGHTMARE COPY is
+                                # whatever the player's Pokemon is, 4x matchups and all - without
+                                # the cap, copying a Bug/Steel would be a free damage window
+    FlatToxicDamage: True
+    Survive: True               # load-bearing twice over: the FALSE COLLAPSE drops the bar 25% of
+                                # max HP, and a copied moveset can contain Explosion or Final Gambit
+    AiFlags: AI_FLAG_SMART_TRAINER
+    # Sleep is the win condition and Darkrai has four ways to cash it. Bad Dreams (its own ability,
+    # deliberately not overridden) chips a sleeping Pokemon every turn for free, HEX doubles into a
+    # status, DREAM EATER drains it, and HYPNOSIS / DARK VOID put it there. Hex is the never-dead
+    # slot - 65 BP clean, 130 BP on a statused target - so a Lum Berry or an Insomnia lead does not
+    # leave the player fighting a boss with half a moveset.
+    # DARK PULSE, HYPNOSIS, NASTY PLOT, DARK VOID and DREAM EATER are all on Darkrai's level-up
+    # learnset; HEX is on its teachable list.
+    # Slot 3 is the phase slot: Nasty Plot -> Dark Void (Ph 1) -> Dream Eater (Ph 2). Dark Void is
+    # cut at the Mega because B_DARK_VOID_FAIL is GEN_LATEST and the engine's check is a literal
+    # `species != SPECIES_DARKRAI`, so it would fail outright on SPECIES_DARKRAI_MEGA.
+    # Drain is safe to hand out: the engine scales what the boss keeps from Dream Eater by the
+    # authored DamageReduction:, so at 82 it recovers a fifth of what it drains.
+    Moves: MOVE_DARK_PULSE, MOVE_HYPNOSIS, MOVE_HEX, MOVE_NASTY_PLOT
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..BossStatus to 0..15. Sixteen of sixteen - there is no headroom left, so a later revision has
+# to reuse a var rather than declare one. HpMark (13) is the natural donor; it is only live for one
+# turn at a time.
+# 0 Phase (0 Pitch-Black / 1 The Nightmare Deepens / 2 Absolute Nightmare / 3 Weakened),
+# 1 Nightmare (0-5), 2 LastNm (the last ANNOUNCED level - the callout's re-fire latch), 3 Wake (0-3),
+# 4 Clock (turns until the next passive Nightmare tick), 5 TurnGuard (the once-per-turn scaffold),
+# 6 MoveGuard (the one-Wakefulness-gain-per-turn latch, shared by both sources), 7 LastCat (the
+# player's last move category, 1-3), 8 FaintGuard (per-turn re-entry guard for OnFaint), 9 Copy
+# (7-4 a copy is up, 3-1 cooling down, 0 free), 10 PlayerStatus (latch: a status stands on the
+# player), 11 Shatter (post-WAKE-UP window countdown), 12 AskCd (turns until WAKE UP is re-offered
+# after a NO), 13 HpMark (FALSE COLLAPSE snapshot; 255 = nothing pending), 14 CatGuard (per-turn
+# re-entry guard for the three category reads), 15 BossStatus (latch: a status stands on Darkrai).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Darkrai_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Nightmare) >= 0
+    Var(LastNm) >= 0
+    Var(Wake) >= 0
+    Var(Clock) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(LastCat) >= 0
+    Var(FaintGuard) >= 0
+    Var(Copy) >= 0
+    Var(PlayerStatus) >= 0
+    Var(Shatter) >= 0
+    Var(AskCd) >= 0
+    Var(HpMark) >= 0
+    Var(CatGuard) >= 0
+    Var(BossStatus) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. Each is also gated on the Phase value its
+# own script overwrites, so one huge hit crossing two thresholds steps through them in order.
+# HpMark == 255 IS LOAD-BEARING, not defensive clutter: while a FALSE COLLAPSE is pending the health
+# bar is showing 25% of max HP that Darkrai has not actually lost, and a threshold crossed on that
+# number would advance a real phase - or open the catch window - off a lie. The gate holds every
+# transition until EncScript_Darkrai_TurnOpen rewinds the bar, and because OnEnter re-evaluates the
+# whole condition set (not just HP), the false dip cannot consume the edge either.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Darkrai_Deepens
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+    Var(HpMark) == 255
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Darkrai_Deepens
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+    Var(HpMark) == 255
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Darkrai_Absolute
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+    Var(HpMark) == 255
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Darkrai_Absolute
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+    Var(HpMark) == 255
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Darkrai_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+    Var(HpMark) == 255
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Darkrai_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+    Var(HpMark) == 255
+
+# The once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately so no
+# branch out of it can leave it re-armed; it rewinds a pending FALSE COLLAPSE and ticks the Copy,
+# AskCd and Nightmare clocks. TurnClose resolves all three.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Darkrai_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# WAKE UP. Offered at OnTurnStart so the shattered turn is one Darkrai actually loses - encsetrecharge
+# with 1 here costs it the action in the turn already in progress. Wakefulness is NOT spent on a NO;
+# the prompt simply goes quiet for three turns, so declining is a timing decision rather than a
+# punishment. Sits behind TurnOpen so AskCd has already ticked this turn.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Darkrai_WakeUpPrompt
+Conditions:
+    Var(Phase) == 2
+    Var(Wake) == 3
+    Var(AskCd) == 0
+    Var(Shatter) == 0
+    Var(TurnGuard) == 1
+
+# WAKEFULNESS, source one: a Fighting, Bug or Fairy move landing on Darkrai - while Darkrai is still
+# Dark-typed. That last clause is the counter-play to the NIGHTMARE COPIES and it falls out of the
+# engine for free: a transformed Darkrai is whatever the player's Pokemon is, so their best
+# Wakefulness source shuts off on its own for as long as it is wearing their face, and switching
+# becomes the only lever left. Nothing states this.
+# An Event.* condition stays true for the whole dispatch, so this gates on MoveGuard, which its own
+# script sets and TurnClose clears.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Darkrai_Wakefulness
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Battler(Boss).Type == TYPE_DARK
+
+    Any:
+        Event.MoveType == TYPE_FIGHTING
+        Event.MoveType == TYPE_BUG
+        Event.MoveType == TYPE_FAIRY
+
+# "It has seen this before." Conditions can only compare a variable against a literal, so "the same
+# category twice" is three triggers, one per category, each pinning its own literal. All three share
+# CatGuard, which they set on entry and TurnClose clears.
+# The read cannot see the move, only its category - alternating two different physical moves still
+# reads as a repeat. That is the intended shape: variety of APPROACH is the resource, not variety of
+# button.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Darkrai_ReadPhysical
+Conditions:
+    Var(CatGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Darkrai_ReadSpecial
+Conditions:
+    Var(CatGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Darkrai_ReadStatus
+Conditions:
+    Var(CatGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+
+# WAKEFULNESS, source two: fresh eyes. Gated on TurnGuard == 1 because at battle start OnSwitchIn
+# fires for the player's lead BEFORE OnBattleStart, when every var is still 0 - the opening switch-in
+# must not pay out. Shares MoveGuard with the move source, which is what caps Wakefulness at one gain
+# a turn whatever the source. Switching also ends a NIGHTMARE COPY early: the mechanic and its
+# counter are the same action.
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_Darkrai_FreshEyes
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# A Pokemon going down feeds the dark. Its own guard rather than MoveGuard's, so a faint always
+# charges its Nightmare level even on a turn the player already banked a Wakefulness gain.
+Trigger: OnFaint
+Priority: 20
+Script: EncScript_Darkrai_TheyFell
+Conditions:
+    Var(FaintGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# The Wakefulness spend, and the only thing outside WAKE UP that moves the Nightmare back down.
+# Phase <= 1 only: in Absolute Nightmare the dial is pinned and Wakefulness charges to 3 and waits
+# for the prompt instead. Self-disabling - the script zeroes Wake.
+Trigger: OnTurnEnd
+Priority: 40
+Script: EncScript_Darkrai_Waking
+Conditions:
+    Var(Phase) <= 1
+    Var(Wake) >= 3
+
+# NIGHTMARE COPIES. Darkrai itself becomes the player's Pokemon - species, stats, stat stages, types,
+# ability and moveset - for three turns, then cannot do it again for three more. Its own trigger
+# rather than a branch inside TurnClose because enctransform asserts against a fainted source, and at
+# OnTurnEnd the player's Pokemon may already be down; a condition is the only place that can be
+# tested without reaching the assert.
+# Copy is both the countdown and the cooldown (see the variable map above), so setting it to 7 is
+# this trigger's self-disabling write.
+Trigger: OnTurnEnd
+Priority: 45
+Script: EncScript_Darkrai_Copy
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Nightmare) >= 4
+    Var(Copy) == 0
+    Var(Shatter) == 0
+    Var(HpMark) == 255
+    Var(TurnGuard) == 1
+    Battler(Boss).HP >= 1
+    Battler(PlayerLeft).HP >= 1
+
+# Runs last so it sees the finished turn: the sleep rule, both status latches, the Nightmare clock,
+# the Shatter window, the lie roll and the recurring line. Every level trigger above self-disables
+# through a var its own script writes - TurnGuard, MoveGuard, CatGuard, FaintGuard, Wake, Copy, AskCd
+# - which is what keeps the 8-script checkpoint cap out of reach.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Darkrai_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

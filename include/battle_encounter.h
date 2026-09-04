@@ -509,6 +509,26 @@ extern const u8 EncScript_Manaphy_HeartSwap[];
 extern const u8 EncScript_Manaphy_OceanShare[];
 extern const u8 EncScript_Manaphy_TurnClose[];
 
+// Darkrai ("The Pitch-Black Nightmare")
+extern const u8 EncScript_Darkrai_Intro[];
+extern const u8 EncScript_Darkrai_Deepens[];
+extern const u8 EncScript_Darkrai_Deepens[];
+extern const u8 EncScript_Darkrai_Absolute[];
+extern const u8 EncScript_Darkrai_Absolute[];
+extern const u8 EncScript_Darkrai_Weakened[];
+extern const u8 EncScript_Darkrai_Weakened[];
+extern const u8 EncScript_Darkrai_TurnOpen[];
+extern const u8 EncScript_Darkrai_WakeUpPrompt[];
+extern const u8 EncScript_Darkrai_Wakefulness[];
+extern const u8 EncScript_Darkrai_ReadPhysical[];
+extern const u8 EncScript_Darkrai_ReadSpecial[];
+extern const u8 EncScript_Darkrai_ReadStatus[];
+extern const u8 EncScript_Darkrai_FreshEyes[];
+extern const u8 EncScript_Darkrai_TheyFell[];
+extern const u8 EncScript_Darkrai_Waking[];
+extern const u8 EncScript_Darkrai_Copy[];
+extern const u8 EncScript_Darkrai_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
