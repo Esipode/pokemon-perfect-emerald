@@ -912,7 +912,35 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
     if (wasRandomizeMon)
         FlagClear(FLAG_RANDOMIZE_MON);
 
-    gSpecialVar_Result = ScriptGiveMonParameterized(B_SIDE_PLAYER, PARTY_SIZE, (enum Species)choice->species, choice->level, (enum Item)choice->item, BALL_POKE, choice->nature, choice->abilityNum, choice->gender, evs, ivs, moves, choice->isShinyExpansion ? SHINY_MODE_ALWAYS : SHINY_MODE_NEVER, choice->ggMaxFactor, (enum Type)choice->teraType, 0);
+    struct PokemonTemplate monTemplate = {0};
+    monTemplate.species  = choice->species;
+    monTemplate.level    = choice->level;
+    monTemplate.heldItem = choice->item;
+    monTemplate.ball     = BALL_POKE;
+    monTemplate.doNotUseDefaultBall = TRUE;
+    monTemplate.nature   = choice->nature;
+    monTemplate.gender   = choice->gender;
+    monTemplate.abilityNum = choice->abilityNum;
+    monTemplate.doNotUseDefaultAbility = TRUE;
+    monTemplate.isShiny  = choice->isShinyExpansion;
+    monTemplate.doNotUseDefaultShinyness = TRUE;
+    monTemplate.gmaxFactor = choice->ggMaxFactor;
+    // teraType 0 in the choice table means "unset" -- leave the personality-derived default
+    if (choice->teraType != TYPE_NONE && choice->teraType != TYPE_MYSTERY && choice->teraType < NUMBER_OF_MON_TYPES)
+    {
+        monTemplate.teraType = choice->teraType;
+        monTemplate.doNotUseDefaultTeraType = TRUE;
+    }
+    monTemplate.origin = GIFTMON_ORIGIN;
+    for (u8 i = 0; i < NUM_STATS; i++)
+    {
+        monTemplate.evs[i] = evs[i];
+        monTemplate.ivs[i] = ivs[i];
+    }
+    for (u8 i = 0; i < MAX_MON_MOVES; i++)
+        monTemplate.moves[i] = moves[i];
+
+    gSpecialVar_Result = ScriptGiveMonParameterized(B_SIDE_PLAYER, PARTY_SIZE, &monTemplate);
 
     // No Freebies tracks the starter by
     // personality (survives evolution, unlike species) -- read back from the

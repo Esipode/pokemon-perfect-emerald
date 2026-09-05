@@ -72,3 +72,6 @@ __decomps/
 __BUILD_INSTRUCTIONS.txt
 CLAUDE.md
 .claude/*
+.repowise/*
+.repowise-workspace.yaml
+.mcp.json

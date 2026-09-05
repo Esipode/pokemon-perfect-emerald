@@ -1,7 +1,9 @@
 #ifndef GUARD_POKEDEX_H
 #define GUARD_POKEDEX_H
 
-extern u8 gUnusedPokedexU8;
+#include "bg.h"
+#include "window.h"
+
 extern void (*gPokedexVBlankCB)(void);
 
 void ResetPokedex(void);
@@ -11,7 +13,6 @@ u16 GetHoennPokedexCount(u8 caseID);
 u16 GetKantoPokedexCount(u8 caseID);
 u16 GetDexModePokedexCount(u8 dexMode, u8 caseID);
 u8 DisplayCaughtMonDexPage(enum Species species, bool32 isShiny, u32 personality);
-u32 Pokedex_CreateCaughtMonSprite(enum Species species, s32 x, s32 y);
 s8 GetSetPokedexFlag(enum NationalDexOrder nationalDexNo, u8 caseID);
 u32 SpeciesToDexFlagSlot(enum Species species);
 s8 GetSetPokedexFlagBySpecies(enum Species species, u8 caseID);
@@ -41,5 +42,6 @@ void PrintMonMeasurements(enum Species species, u32 owned);
 u8* ConvertMonHeightToString(u32 height);
 u8* ConvertMonWeightToString(u32 weight);
 const u8 *GetPokedexCategoryName(u16 dexNum);
+bool32 ShouldSkipPokedexListEntry(enum NationalDexOrder dexNum);
 
 #endif // GUARD_POKEDEX_H

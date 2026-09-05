@@ -8,5 +8,6 @@ void DoTimeBasedEvents(void);
 void FormChangeTimeUpdate();
 void UpdateDailySeed(void);
 void StartWallClock(void);
+void DoDailyEvents(u32 daysSince); //Should only be called outside of clock.c for debug purposes
 
 #endif // GUARD_CLOCK_H

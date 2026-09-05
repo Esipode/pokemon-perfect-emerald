@@ -21,7 +21,7 @@ u32 RotationMode_PickReplacement(enum BattlerId battler)
     u32 partnerPartyId = ownPartyId;
 
     if (IsDoubleBattle())
-        partnerPartyId = gBattlerPartyIndexes[BATTLE_PARTNER(battler)];
+        partnerPartyId = gBattlerPartyIndexes[GetPartnerBattler(battler)];
 
     for (u32 i = 0; i < PARTY_SIZE; i++)
     {
@@ -78,7 +78,7 @@ bool32 RotationMode_ShouldRotate(enum BattlerId battler)
 
     if (!gBattleStruct->rotationModeResolvedThisTurn)
     {
-        enum BattlerId partner = BATTLE_PARTNER(battler);
+        enum BattlerId partner = GetPartnerBattler(battler);
         u8 candidates[2];
         u32 candidateCount = 0;
 

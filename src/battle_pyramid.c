@@ -52,7 +52,7 @@ struct PyramidWildMon
     enum Species species;
     u16 lvl;
     u8 abilityNum;
-    u16 moves[MAX_MON_MOVES];
+    enum Move moves[MAX_MON_MOVES];
 };
 
 struct PyramidFloorTemplate
@@ -1029,20 +1029,19 @@ static void HidePyramidItem(void)
     struct ObjectEventTemplate *events = gSaveBlock1Ptr->objectEventTemplates;
     int i = 0;
 
-    for (;;)
+    do
     {
         if (events[i].localId == gSpecialVar_LastTalked)
         {
             // Rather than using event flags to hide the item object event,
             // it moves them far off the map bounds.
-            events[i].x = SHRT_MAX;
-            events[i].y = SHRT_MAX;
+            events[i].x = INT16_MAX;
+            events[i].y = INT16_MAX;
             break;
         }
         i++;
-        if (events[i].localId == LOCALID_NONE)
-            break;
     }
+    while (events[i].localId != LOCALID_NONE);
 }
 
 static void SetPyramidFacilityTrainers(void)
@@ -1252,16 +1251,16 @@ static u8 GetPostBattleDirectionHintTextIndex(int *hintType, u8 minDistanceForEx
     int x, y;
     u8 textIndex = 0;
     u16 *map = gBackupMapLayout.map;
-    map += gBackupMapLayout.width * 7 + MAP_OFFSET;
+    map += gBackupMapLayout.width * MAP_OFFSET + MAP_OFFSET;
 
-    for (y = 0; y < 32; map += 47, y++)
+    for (y = 0; y < 32; y++)
     {
         for (x = 0; x < 32; x++)
         {
             if ((map[x] & MAPGRID_METATILE_ID_MASK) == METATILE_BattlePyramid_Exit)
             {
-                x += MAP_OFFSET - gObjectEvents[gSelectedObjectEvent].initialCoords.x;
-                y += MAP_OFFSET - gObjectEvents[gSelectedObjectEvent].initialCoords.y;
+                x -= gObjectEvents[gSelectedObjectEvent].initialCoords.x - MAP_OFFSET;
+                y -= gObjectEvents[gSelectedObjectEvent].initialCoords.y - MAP_OFFSET;
                 if (x >= minDistanceForExitHint
                  || x <= -minDistanceForExitHint
                  || y >= minDistanceForExitHint
@@ -1305,7 +1304,10 @@ static u8 GetPostBattleDirectionHintTextIndex(int *hintType, u8 minDistanceForEx
                     }
                     else
                     {
-                        textIndex = (~(x + y) >= 0) ? 0 : 2;
+                        if (x + y >= 0)
+                            textIndex = 2;
+                        else
+                            textIndex = 0;
                     }
                     *hintType = HINT_EXIT_DIRECTION;
                 }
@@ -1316,6 +1318,7 @@ static u8 GetPostBattleDirectionHintTextIndex(int *hintType, u8 minDistanceForEx
                 return textIndex;
             }
         }
+        map += MAP_OFFSET_W + 32; // HINT: x == 32.
     }
 
     return textIndex;
@@ -1660,7 +1663,7 @@ u8 CurrentBattlePyramidLocation(void)
         return PYRAMID_LOCATION_NONE;
 }
 
-bool8 InBattlePyramid_(void)
+bool8 InBattlePyramid(void)
 {
     return gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR
         || gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_TOP;
@@ -1686,16 +1689,6 @@ void SoftResetInBattlePyramid(void)
 void CopyPyramidTrainerSpeechBefore(u16 trainerId)
 {
     FrontierSpeechToString(gFacilityTrainers[trainerId].speechBefore);
-}
-
-void CopyPyramidTrainerWinSpeech(u16 trainerId)
-{
-    FrontierSpeechToString(gFacilityTrainers[trainerId].speechWin);
-}
-
-void CopyPyramidTrainerLoseSpeech(u16 trainerId)
-{
-    FrontierSpeechToString(gFacilityTrainers[trainerId].speechLose);
 }
 
 u8 GetTrainerEncounterMusicIdInBattlePyramid(u16 trainerId)
@@ -1762,17 +1755,15 @@ void GenerateBattlePyramidFloorLayout(u16 *backupMapData, bool8 setPlayerPositio
     for (i = 0; i < NUM_PYRAMID_FLOOR_SQUARES; i++)
     {
         u16 *map;
-        int yOffset, xOffset;
         const struct MapLayout *mapLayout = gMapLayouts[floorLayoutOffsets[i] + LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR];
         const u16 *layoutMap = mapLayout->map;
 
         gBackupMapLayout.map = backupMapData;
         gBackupMapLayout.width = mapLayout->width * PYRAMID_FLOOR_SQUARES_WIDE + MAP_OFFSET_W;
         gBackupMapLayout.height = mapLayout->height * PYRAMID_FLOOR_SQUARES_HIGH + MAP_OFFSET_H;
-        map = backupMapData;
-        yOffset = ((i / PYRAMID_FLOOR_SQUARES_WIDE * mapLayout->height) + MAP_OFFSET) * gBackupMapLayout.width;
-        xOffset = (i % PYRAMID_FLOOR_SQUARES_WIDE * mapLayout->width) + MAP_OFFSET;
-        map += yOffset + xOffset;
+        map = gBackupMapLayout.map;
+        map += gBackupMapLayout.width * (MAP_OFFSET + (i / PYRAMID_FLOOR_SQUARES_WIDE * mapLayout->height))
+            +  MAP_OFFSET + (i % PYRAMID_FLOOR_SQUARES_WIDE * mapLayout->width);
         for (y = 0; y < mapLayout->height; y++)
         {
             for (x = 0; x < mapLayout->width; x++)
@@ -2214,6 +2205,11 @@ u16 GetBattlePyramidPickupItemId(void)
         return sPickupItemsLvl50[round][i];
 }
 
+const u8 *GetBattlePyramidTrainerScript(void)
+{
+    return BattlePyramid_TrainerBattle;
+}
+
 #else // FREE_BATTLE_FRONTIER
 // Stage 4: CurrentBattlePyramidLocation() returning PYRAMID_LOCATION_NONE (0) unconditionally
 // is the *correct* new behaviour for its huge list of external callers (battle_setup.c,
@@ -2228,7 +2224,7 @@ void MarkApproachingPyramidTrainersAsBattled(void) {}
 void GenerateBattlePyramidWildMon(enum Species forceSpecies) {}
 u8 GetPyramidRunMultiplier(void) { return 1; }
 u8 CurrentBattlePyramidLocation(void) { return PYRAMID_LOCATION_NONE; }
-bool8 InBattlePyramid_(void) { return FALSE; }
+bool8 InBattlePyramid(void) { return FALSE; }
 void PausePyramidChallenge(void) {}
 void SoftResetInBattlePyramid(void) {}
 void CopyPyramidTrainerSpeechBefore(u16 trainerId) {}
@@ -2240,4 +2236,5 @@ void LoadBattlePyramidObjectEventTemplates(void) {}
 void LoadBattlePyramidFloorObjectEventScripts(void) {}
 u8 GetNumBattlePyramidObjectEvents(void) { return 0; }
 u16 GetBattlePyramidPickupItemId(void) { return ITEM_NONE; }
+const u8 *GetBattlePyramidTrainerScript(void) { return NULL; }
 #endif // FREE_BATTLE_FRONTIER

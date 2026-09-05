@@ -39,8 +39,8 @@ bool32 Draft_IsActive(void)
     return Draft_IsEnabled() && FlagGet(FLAG_SYS_POKEDEX_GET);
 }
 
-// Upper bound on scratch entries while a pool is being built: LAND_WILD_COUNT
-// (12) + WATER_WILD_COUNT (5) with headroom for the fact that different
+// Upper bound on scratch entries while a pool is being built: NUM_LAND_MONS_ENCOUNTER_SLOTS
+// (12) + NUM_WATER_MONS_ENCOUNTER_SLOTS (5) with headroom for the fact that different
 // times of day can point at different tables. Overflow beyond this is
 // clamped rather than overrun - see AddSpeciesToScratch.
 #define DRAFT_SCRATCH_CAPACITY 24
@@ -182,8 +182,8 @@ static u32 BuildRawPool(struct DraftChoice *scratch)
     {
         const struct WildEncounterTypes *types = &gWildMonHeaders[headerId].encounterTypes[t];
 
-        AccumulateWildInfo(types->landMonsInfo, LAND_WILD_COUNT, scratch, &count, visited, &visitedCount);
-        AccumulateWildInfo(types->waterMonsInfo, WATER_WILD_COUNT, scratch, &count, visited, &visitedCount);
+        AccumulateWildInfo(types->landMonsInfo, NUM_LAND_MONS_ENCOUNTER_SLOTS, scratch, &count, visited, &visitedCount);
+        AccumulateWildInfo(types->waterMonsInfo, NUM_WATER_MONS_ENCOUNTER_SLOTS, scratch, &count, visited, &visitedCount);
     }
 
     return count;

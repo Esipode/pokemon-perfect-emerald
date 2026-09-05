@@ -2703,7 +2703,7 @@ void Achievement_CheckLocalExpert(void)
     {
         const struct WildEncounterTypes *types = &gWildMonHeaders[headerId].encounterTypes[t];
         const struct WildPokemonInfo *infoTables[4];
-        u8 areaCounts[4] = { LAND_WILD_COUNT, WATER_WILD_COUNT, ROCK_WILD_COUNT, FISH_WILD_COUNT };
+        u8 areaCounts[4] = { NUM_LAND_MONS_ENCOUNTER_SLOTS, NUM_WATER_MONS_ENCOUNTER_SLOTS, NUM_ROCK_SMASH_MONS_ENCOUNTER_SLOTS, NUM_FISHING_MONS_ENCOUNTER_SLOTS };
 
         infoTables[0] = types->landMonsInfo;
         infoTables[1] = types->waterMonsInfo;

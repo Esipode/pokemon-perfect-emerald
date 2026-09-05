@@ -19,6 +19,7 @@
 #include "constants/berry.h"
 #include "constants/maps.h"
 #include "constants/region_map_sections.h" // MAPSEC_COUNT, for NUM_NUZLOCKE_ZONE_FLAG_BYTES
+#include "constants/mass_outbreak.h"
 #include "constants/pokemon.h"
 #include "constants/easy_chat.h"
 #include "constants/trainer_hill.h"

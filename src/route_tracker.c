@@ -27,11 +27,11 @@ struct AreaSlots
 
 static const struct AreaSlots sAreaSlots[] =
 {
-    { WILD_AREA_LAND,    LAND_WILD_COUNT   },
-    { WILD_AREA_WATER,   WATER_WILD_COUNT  },
-    { WILD_AREA_ROCKS,   ROCK_WILD_COUNT   },
-    { WILD_AREA_FISHING, FISH_WILD_COUNT   },
-    { WILD_AREA_HIDDEN,  HIDDEN_WILD_COUNT },
+    { WILD_AREA_LAND,    NUM_LAND_MONS_ENCOUNTER_SLOTS   },
+    { WILD_AREA_WATER,   NUM_WATER_MONS_ENCOUNTER_SLOTS  },
+    { WILD_AREA_ROCKS,   NUM_ROCK_SMASH_MONS_ENCOUNTER_SLOTS   },
+    { WILD_AREA_FISHING, NUM_FISHING_MONS_ENCOUNTER_SLOTS   },
+    { WILD_AREA_HIDDEN,  NUM_HIDDEN_MONS_ENCOUNTER_SLOTS },
 };
 
 static const struct WildPokemonInfo *GetAreaMonsInfo(u32 headerId, enum TimeOfDay timeOfDay, enum WildPokemonArea area)
@@ -95,7 +95,7 @@ static bool32 SpeciesSeenEarlier(u32 headerId, enum Species species, u8 uptoTod,
 // cached and rebuilt just once per header change instead of on every start menu open. Rebuilding is
 // the expensive part: it calls GetRandomizedSpecies (an O(NUM_SPECIES) search) for every (tod, area,
 // slot) combination, and SpeciesSeenEarlier re-walks all earlier combinations on top of that.
-#define MAX_TRACKED_SPECIES ((LAND_WILD_COUNT + WATER_WILD_COUNT + ROCK_WILD_COUNT + FISH_WILD_COUNT + HIDDEN_WILD_COUNT) * TIMES_OF_DAY_COUNT)
+#define MAX_TRACKED_SPECIES ((NUM_LAND_MONS_ENCOUNTER_SLOTS + NUM_WATER_MONS_ENCOUNTER_SLOTS + NUM_ROCK_SMASH_MONS_ENCOUNTER_SLOTS + NUM_FISHING_MONS_ENCOUNTER_SLOTS + NUM_HIDDEN_MONS_ENCOUNTER_SLOTS) * TIMES_OF_DAY_COUNT)
 
 EWRAM_DATA static struct
 {
