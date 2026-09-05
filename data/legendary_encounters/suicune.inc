@@ -170,7 +170,7 @@ EncScript_Suicune_LoseFlow_Done:
 EncScript_Suicune_Impure:
 	encsetvar 12, 1
 	jumpifhalfword CMP_NOT_EQUAL, gBattleWeather, B_WEATHER_NONE, EncScript_Suicune_Impure_Done
-	jumpifhalfword CMP_COMMON_BITS, gFieldStatuses, STATUS_FIELD_TERRAIN_ANY, EncScript_Suicune_Impure_Done
+	jumpifterrain CMP_NOT_EQUAL, B_TERRAIN_NONE, EncScript_Suicune_Impure_Done
 	jumpifsideaffecting BS_PLAYER1, SIDE_STATUS_BARRIER_ANY, EncScript_Suicune_Impure_Done
 	jumpifsideaffecting BS_OPPONENT1, SIDE_STATUS_BARRIER_ANY, EncScript_Suicune_Impure_Done
 	trytidyup FALSE, EncScript_Suicune_Impure_Done   @ hazards on either side, or any Substitute
@@ -196,7 +196,7 @@ EncScript_Suicune_Purify:
 	playmoveanimation MOVE_DEFOG
 	waitanimation
 EncScript_Suicune_Purify_Terrain:
-	jumpifhalfword CMP_NO_COMMON_BITS, gFieldStatuses, STATUS_FIELD_TERRAIN_ANY, EncScript_Suicune_Purify_Screens
+	jumpifterrain CMP_EQUAL, B_TERRAIN_NONE, EncScript_Suicune_Purify_Screens
 	removeterrain
 	encaddvar 6, 1
 	printstring STRINGID_ENCSUICUNEWASHESTERRAIN

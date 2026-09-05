@@ -210,9 +210,8 @@ enum EncounterSideStatus
     ENC_SIDE_COUNT,
 };
 
-// Field terrains encsetterrain can raise. A small enum rather than a raw STATUS_FIELD_*_TERRAIN
-// bit for the same reason EncounterSideStatus exists: the terrain bits run to 1 << 9 and a script
-// argument is a byte - and an enum lets the command assert on a name it doesn't know. The stock
+// Field terrains encsetterrain can raise. A separate enum from B_TERRAIN_* for the same reason
+// EncounterSideStatus exists: it lets the command assert on a selector it doesn't know. The stock
 // setterrain opcode reads its terrain off gCurrentMove, which a checkpoint script does not have.
 enum EncounterTerrain
 {

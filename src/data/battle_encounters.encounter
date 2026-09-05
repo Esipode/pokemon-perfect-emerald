@@ -104,7 +104,7 @@
 #     Var(Phase) == 1
 #     Any:
 #         Weather == B_WEATHER_RAIN_NORMAL
-#         Terrain == STATUS_FIELD_ELECTRIC_TERRAIN
+#         Terrain == B_TERRAIN_ELECTRIC
 #         Event.OldValue > 50
 #         Event.NewValue <= 50
 #

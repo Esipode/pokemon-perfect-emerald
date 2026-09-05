@@ -197,7 +197,11 @@ s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapsh
     case ENC_OP_TYPE:
         if (!ResolveEncounterBattlerRef(arg, &battler))
             return 0;
-        return GetBattlerType(battler, 0, FALSE);
+        {
+            enum Type types[3];
+            GetBattlerTypes(battler, FALSE, types);
+            return types[0];
+        }
 
     // The whole-turn latch, not gProtectStructs - see struct EncounterRuntime. Protect is a
     // whole-turn shield, so "protected at any point this turn" and "is protected" say the same thing.
@@ -210,7 +214,7 @@ s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapsh
         return gBattleWeather;
 
     case ENC_OP_TERRAIN:
-        return gFieldStatuses & STATUS_FIELD_TERRAIN_ANY;
+        return gFieldTimers.terrain;
 
     case ENC_OP_TURN:
         return gBattleTurnCounter;

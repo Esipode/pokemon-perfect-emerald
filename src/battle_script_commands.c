@@ -13555,7 +13555,6 @@ void BS_EncSetEmbargo(void)
             if (!(mask & (1u << battler)) || battler == boss)
                 continue;
 
-            gBattleMons[battler].volatiles.embargo = (cmd->turns != 0);
             gBattleMons[battler].volatiles.embargoTimer = cmd->turns;
         }
     }
@@ -13882,14 +13881,13 @@ void BS_EncSetWeather(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
-// Maps an ENC_TERRAIN_* selector onto its field bit. The enum exists because those bits run past
-// what a byte-sized script argument holds.
-static const u16 sEncounterTerrainFlags[ENC_TERRAIN_COUNT] =
+// Maps an ENC_TERRAIN_* selector onto the engine's B_TERRAIN_* value.
+static const enum BattleTerrain sEncounterTerrains[ENC_TERRAIN_COUNT] =
 {
-    [ENC_TERRAIN_ELECTRIC] = STATUS_FIELD_ELECTRIC_TERRAIN,
-    [ENC_TERRAIN_GRASSY]   = STATUS_FIELD_GRASSY_TERRAIN,
-    [ENC_TERRAIN_MISTY]    = STATUS_FIELD_MISTY_TERRAIN,
-    [ENC_TERRAIN_PSYCHIC]  = STATUS_FIELD_PSYCHIC_TERRAIN,
+    [ENC_TERRAIN_ELECTRIC] = B_TERRAIN_ELECTRIC,
+    [ENC_TERRAIN_GRASSY]   = B_TERRAIN_GRASSY,
+    [ENC_TERRAIN_MISTY]    = B_TERRAIN_MISTY,
+    [ENC_TERRAIN_PSYCHIC]  = B_TERRAIN_PSYCHIC,
 };
 
 // TERRAIN (encsetterrain). The mirror of BS_EncSetWeather one field over: the stock setterrain
@@ -13911,7 +13909,7 @@ void BS_EncSetTerrain(void)
     // The boss stands in as the setter, as in BS_EncSetWeather; it only matters for the Terrain
     // Extender duration bonus, which the script's own duration replaces below either way.
     if (ResolveEncounterBattlerRef(ENC_BOSS, &boss)
-     && TryChangeBattleTerrain(boss, sEncounterTerrainFlags[cmd->terrain]))
+     && TryChangeBattleTerrain(boss, sEncounterTerrains[cmd->terrain]))
     {
         // TryChangeBattleTerrain picks a move-length duration; an encounter states its own, with
         // 0 meaning permanent - the same convention encsetweather uses.
@@ -13923,7 +13921,7 @@ void BS_EncSetTerrain(void)
 
 // Maps an ENC_FIELD_* selector onto its STATUS_FIELD_* bit and the gFieldTimers member that ticks
 // it down. Returns FALSE for a selector outside the enum so the caller can assert on it.
-static bool32 GetEncounterFieldStatus(u32 which, u32 *statusOut, u16 **timerOut)
+static bool32 GetEncounterFieldStatus(u32 which, u32 *statusOut, u8 **timerOut)
 {
     switch (which)
     {
@@ -13951,7 +13949,7 @@ void BS_EncSetFieldStatus(void)
 {
     NATIVE_ARGS(u8 status, u8 turns, bool8 set);
     u32 statusFlag;
-    u16 *timer;
+    u8 *timer;
 
     assertf(GetEncounterFieldStatus(cmd->status, &statusFlag, &timer),
             "encounter %d: unknown field status %d", gBattleStruct->encounter.id, cmd->status)
@@ -14001,7 +13999,6 @@ void BS_EncSetHealBlock(void)
             if (!(mask & (1u << battler)) || battler == boss)
                 continue;
 
-            gBattleMons[battler].volatiles.healBlock = (cmd->turns != 0);
             gBattleMons[battler].volatiles.healBlockTimer = cmd->turns;
         }
     }
