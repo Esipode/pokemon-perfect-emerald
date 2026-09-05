@@ -2157,6 +2157,14 @@ static void Controller_HandleTrainerSlideBack(enum BattlerId battler)
             FreeTrainerFrontPicPalette(gSprites[gBattleStruct->trainerSlideSpriteIds[battler]].oam.affineParam);
         FreeSpriteOamMatrix(&gSprites[gBattleStruct->trainerSlideSpriteIds[battler]]);
         DestroySprite(&gSprites[gBattleStruct->trainerSlideSpriteIds[battler]]);
+        // The opponent's trainer front pic was decompressed over the mon gfx buffer this position
+        // shares. Reload the mon's sprite gfx so a later frame-image copy doesn't paint the trainer
+        // pic onto the mon with the mon's palette.
+        if (!IsOnPlayerSide(battler) && IsBattlerSpritePresent(battler))
+        {
+            bool8 loadMonSprite = !gBattleSpritesDataPtr->battlerData[battler].behindSubstitute;
+            LoadBattleMonGfxAndAnimate(battler, loadMonSprite, gBattlerSpriteIds[battler]);
+        }
         BtlController_Complete(battler);
     }
 }

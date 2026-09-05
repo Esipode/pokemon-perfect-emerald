@@ -4877,6 +4877,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         gBattleStruct->eventState.faintedAction = 0;
         gBattleStruct->eventState.endTurn = 0;
         gBattleStruct->eventState.encounterTurnEnd = 0;
+        gBattleStruct->eventState.encounterTurnStart = 0;
 
         memset(gQueuedStatBoosts, 0, sizeof(gQueuedStatBoosts));
 
@@ -4962,6 +4963,7 @@ bool32 EndTurnEvents(void) // Called from Battle Script
 
     gBattleStruct->eventState.faintedAction = 0;
     gBattleStruct->eventState.encounterTurnEnd = FALSE; // re-arm for next turn
+    gBattleStruct->eventState.encounterTurnStart = FALSE; // re-arm for next turn
 
     TurnValuesCleanUp(FALSE);
     gHitMarker &= ~HITMARKER_PLAYER_FAINTED;
@@ -6363,21 +6365,6 @@ static void CheckChangingTurnOrderEffects(void)
         }
     }
 
-    // ENC_ON_TURN_START: turn order is now fixed (SetActionsAndBattlersTurnOrder already ran),
-    // before the first action of the turn dispatches. A script that changes Speed or forces a
-    // switch here does NOT re-sort turn order - it's already fixed; re-sorting mid-turn is out
-    // of scope. Not called from within a script - see FIRST_TURN_EVENTS_ENCOUNTER (BeforeFirstTurn)
-    // for the same BattleScriptExecute+Call shim pattern.
-    {
-        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_START);
-        if (script != NULL)
-        {
-            BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
-            BattleScriptCall(script);
-            return;
-        }
-    }
-
     // Prevents trainer slides triggering a turn late if another slide took priority on the previous turn
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
     {
@@ -6410,6 +6397,25 @@ static void RunTurnActionsFunctions(void)
 {
     if (gBattleOutcome != 0)
         gCurrentActionFuncId = B_ACTION_FINISHED;
+
+    // ENC_ON_TURN_START: deferred to here (rather than CheckChangingTurnOrderEffects) so a player's
+    // bag-item action, sorted to the front of the turn order, resolves before any turn-start
+    // encounter script runs. Leading B_ACTION_USE_ITEM actions fall through untouched; the checkpoint
+    // fires once, before the first action that is not an item use. Re-dispatches via BattleScriptCall
+    // until no trigger is eligible, same as the other checkpoint shims.
+    if (IsEncounterActive()
+        && !gBattleStruct->eventState.encounterTurnStart
+        && gCurrentActionFuncId != B_ACTION_USE_ITEM)
+    {
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_START);
+        if (script != NULL)
+        {
+            BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
+            BattleScriptCall(script);
+            return;
+        }
+        gBattleStruct->eventState.encounterTurnStart = TRUE;
+    }
 
     // Mega Evolve / Focus Punch-like moves after switching, items, running, but before using a move.
     if (gCurrentActionFuncId == B_ACTION_USE_MOVE && !gBattleStruct->effectsBeforeUsingMoveDone)

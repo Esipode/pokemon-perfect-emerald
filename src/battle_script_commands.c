@@ -13167,14 +13167,31 @@ void BS_EncounterFormChange(void)
     if (GetBattlerPartyState(battler)->changedSpecies == SPECIES_NONE)
         GetBattlerPartyState(battler)->changedSpecies = gBattleMons[battler].species;
 
+    enum Ability abilityBefore = gBattleMons[battler].ability;
+
     SetMonData(mon, MON_DATA_SPECIES, &species);
     gBattleMons[battler].species = species;
     RecalcBattlerStats(battler, mon, FALSE);
+
+    // Both forms share an ability: the appended switchinabilities presentation would replay the
+    // ability pop-up for an ability that never changed, so tell it to skip itself.
+    gBattleStruct->encounter.formChangeAbilityUnchanged = (gBattleMons[battler].ability == abilityBefore);
 
     // The presentation opcodes the macro appends address BS_SCRIPTING, and the dialogue a caller
     // prints around them may name the attacker; neither is meaningful at an arbitrary checkpoint.
     gBattlerAttacker = gBattleScripting.battler = battler;
     gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// Appended by the encformchange macro just before its switchinabilities opcode. Jumps past that
+// opcode when BS_EncounterFormChange flagged the new form as sharing the old form's ability, so a
+// cosmetic-only form change does not replay the ability pop-up. Clears the flag either way.
+void BS_JumpIfFormChangeAbilityUnchanged(void)
+{
+    NATIVE_ARGS(const u8 *unchangedInstr);
+    bool32 unchanged = gBattleStruct->encounter.formChangeAbilityUnchanged;
+    gBattleStruct->encounter.formChangeAbilityUnchanged = FALSE;
+    gBattlescriptCurrInstr = unchanged ? cmd->unchangedInstr : cmd->nextInstr;
 }
 
 // SET MOVE (encsetmove). Writes move into one of target's battle-mon move slots, with that move's

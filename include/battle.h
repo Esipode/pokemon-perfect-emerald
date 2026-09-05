@@ -581,6 +581,7 @@ struct EventStates
     u32 moveEndBlock:8;
     enum StatChangeResolution resolution:8;
     u32 encounterTurnEnd:1;   // TRUE once the ENC_ON_TURN_END checkpoint has been dispatched this turn
+    u32 encounterTurnStart:1; // TRUE once the ENC_ON_TURN_START checkpoint has been dispatched this turn
 };
 
 // What just happened, for the checkpoint currently dispatching. Not every checkpoint sets every
@@ -646,6 +647,10 @@ struct EncounterRuntime
     // marks an empty slot, so a zeroed struct starts every battler with an empty board for free.
     u8 adaptType[MAX_BATTLERS_COUNT][ENC_MAX_ADAPTATIONS];     // enum Type
     u8 adaptPercent[MAX_BATTLERS_COUNT][ENC_MAX_ADAPTATIONS];  // 0..ENC_MAX_ADAPT_PERCENT
+    // Set by BS_EncounterFormChange, read and cleared by BS_JumpIfFormChangeAbilityUnchanged: TRUE
+    // when the form just entered has the same ability as the form left, so the appended
+    // switchinabilities presentation (and its ability pop-up) is skipped.
+    u8 formChangeAbilityUnchanged;                             // bool8
 };
 
 // Scales damage aimed at battler by its encounter damage reduction, floored at 1 so a reduced hit

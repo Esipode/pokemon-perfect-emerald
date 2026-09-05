@@ -1600,7 +1600,10 @@
 	playanimation BS_SCRIPTING, \anim
 	waitanimation
 	handleformchange BS_SCRIPTING, 1
+	callnative BS_JumpIfFormChangeAbilityUnchanged
+	.4byte 1f
 	switchinabilities BS_SCRIPTING
+1:
 	.endm
 
 	@ Writes \move into slot \slot (0-3) of \target's BATTLE mon, with that move's full PP. \target

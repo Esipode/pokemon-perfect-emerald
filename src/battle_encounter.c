@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle_encounter.h"
 #include "caps.h"
+#include "difficulty.h"
 #include "pokemon.h"
 #include "constants/battle_ai.h"
 #include "data/battle_encounters.h"
@@ -841,10 +842,36 @@ void ApplyEncounterBattlerProperties(void)
     SetEncounterSurvive(boss, properties->survive);
 }
 
+// Easy softens a scripted boss's damage reduction by 5 points, hard hardens it. Hard's raise is
+// capped at 90 so it never single-handedly pushes a low authored value into "nearly unhittable"
+// territory; once the value is already at or above 90 the raise shrinks to 1 so the fight keeps
+// getting harder without ever reaching the true 100% floor at ENC_MAX_DAMAGE_REDUCTION (99).
+static u32 AdjustDamageReductionForDifficulty(u32 percent)
+{
+    switch (GetCurrentDifficultyLevel())
+    {
+    case DIFFICULTY_EASY:
+        percent = (percent >= 5) ? percent - 5 : 0;
+        break;
+    case DIFFICULTY_HARD:
+        if (percent >= 90)
+            percent += 1;
+        else
+            percent = min(percent + 2, 90);
+        break;
+    default:
+        break;
+    }
+
+    return min(percent, ENC_MAX_DAMAGE_REDUCTION);
+}
+
 void SetEncounterDamageReduction(enum BattlerId battler, u32 percent)
 {
     struct EncounterRuntime *runtime = &gBattleStruct->encounter;
     u8 boss = 0;
+
+    percent = AdjustDamageReductionForDifficulty(percent);
 
     assertf(percent <= ENC_MAX_DAMAGE_REDUCTION,
             "encounter %d: damage reduction %d above the maximum of %d percent",
