@@ -436,6 +436,20 @@ LegendaryEncounter_EventScript_Giratina::
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 
+LegendaryEncounter_EventScript_Dialga::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_DIALGA, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_DIALGA
+	setwildbattle SPECIES_DIALGA, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
 @ Shared post-battle tail. Only a caught legendary is removed from the overworld; fainting or
 @ fleeing leaves it in place so the fight can be retried. Each host map's ON_TRANSITION runs
 @ `updatelegendaryvisibility`, which brings the object back if the player later releases the mon.

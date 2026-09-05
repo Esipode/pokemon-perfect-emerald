@@ -738,6 +738,17 @@ yet, so the manual count is currently the reliable path.)
   re-enter always produces the same opponent. It runs before the battle's Pokémon are built, which
   is also why nothing in a script can change a level — by then the level is baked into stats that
   have already been derived from it.
+- **An encounter's opponent side never uses the automatic gimmick flow.** `CanActivateGimmick`
+  (`battle_gimmick.c`) refuses every gimmick for a non-player battler while an encounter is active,
+  so a boss can't Dynamax, Terastallize, Mega Evolve or fire a Z-Move off its own AI. Without that,
+  a **wild** boss reads as opted in: the sentinels the AI checks for "this mon isn't meant to use a
+  gimmick" (`BLOCK_AI_DYNAMAX`, `TYPE_MYSTERY` — see `ShouldTrainerBattlerUseGimmick`) are only
+  written when a party is built from *trainer* data, so a wild legendary carries a real Dynamax
+  level and a real Tera type. A Dynamax also doubles its HP mid-fight, which walks straight through
+  an encounter's HP-threshold phases. Writing the sentinels onto the party mon instead isn't an
+  option — the boss is a wild Pokémon the player can catch, and `MON_DATA_TERA_TYPE` persists on the
+  caught mon. Scripted gimmicks are unaffected: `encmegaevolve` and `encformchange` never consult
+  this, which is how a boss transforms on cue.
 - **The AI sees the damage reduction.** It shares the damage-calculation path, so a boss the player
   can barely dent reads as one when the AI picks a move. That's intentional; don't be surprised when
   a heavily-reduced boss stops being predictable about which attack it leads with.

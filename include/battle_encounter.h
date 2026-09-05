@@ -553,6 +553,19 @@ extern const u8 EncScript_Giratina_DistortionWorld[];
 extern const u8 EncScript_Giratina_RealityBreak[];
 extern const u8 EncScript_Giratina_Return[];
 
+// Dialga ("The Temporal Pokémon")
+extern const u8 EncScript_Dialga_Intro[];
+extern const u8 EncScript_Dialga_Acceleration[];
+extern const u8 EncScript_Dialga_OriginForme[];
+extern const u8 EncScript_Dialga_Convergence[];
+extern const u8 EncScript_Dialga_TurnOpen[];
+extern const u8 EncScript_Dialga_TheyStruck[];
+extern const u8 EncScript_Dialga_TheyFled[];
+extern const u8 EncScript_Dialga_TheyFell[];
+extern const u8 EncScript_Dialga_TurnClose[];
+extern const u8 EncScript_Dialga_Echo[];
+extern const u8 EncScript_Dialga_EchoBlocked[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

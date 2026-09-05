@@ -1084,6 +1084,9 @@ LittlerootTown_EventScript_EncounterTESTCresselia::
 LittlerootTown_EventScript_EncounterTESTGiratina::
 	goto LegendaryEncounter_EventScript_Giratina
 
+LittlerootTown_EventScript_EncounterTESTDialga::
+	goto LegendaryEncounter_EventScript_Dialga
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

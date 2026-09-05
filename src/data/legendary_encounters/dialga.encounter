@@ -1,0 +1,190 @@
+Encounter: Dialga
+
+# Dialga, "The Temporal Pokemon". Gen 4 house style: one 0-5 meter that is also the boss's
+# damage-reduction guard. What makes Dialga's meter different is that it is PUBLISHED - the fight
+# states its price and its deadline out loud before the interval begins, and prints a countdown line
+# every single turn one is live.
+#   TEMPORAL CHARGE 0-5 - the guard (82/85/88/90/92/94), the quota (14/12/10/9/8/7 percent of
+#   Dialga's max HP) and the clock (4/4/3/3/2/2 turns) all read off it. Higher Charge means a tankier
+#   Dialga AND fewer turns, but a smaller quota, because a quota calibrated for an 82 guard is
+#   arithmetically impossible behind a 94 one.
+#   THE LOOP - at turn start, when no interval is open, Dialga MARKS its HP percentage, sheds any
+#   status it is carrying, and states the quota and the clock. Every later turn prints the countdown.
+#   At turn end the clock ticks; when it reaches 0 the damage since the mark is measured. Quota met:
+#   THE TIMELINE HOLDS - Charge -1 and Dialga loses its next action. Quota missed: THE INTERVAL
+#   COLLAPSES - HP snaps back to the mark, both sides are Hazed, Charge +1.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY. Dialga has no status immunities at all. It sheds its own
+# status every time it marks a moment, because returning to a marked moment is the mechanic the whole
+# fight already runs on. A status lands, works completely, and lasts up to a full interval - a player
+# who statuses Dialga immediately after a mark gets nearly all of it. Evasion abuse is closed by Aura
+# Sphere, which cannot miss.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Dialga_Convergence sets a real one
+    Balls: Blocked
+    DamageReduction: 82         # Charge 0. Every later value is written by the Charge callout
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Steel/Dragon has no 4x hole, but Origin Forme's window still wants it
+    FlatToxicDamage: True
+    Survive: True               # load-bearing: the deadline must never resolve against a dead Dialga,
+                                # and the 10% Convergence threshold is what opens the catch window.
+                                # Cleared in EncScript_Dialga_Convergence
+    Ability: ABILITY_TELEPATHY   # Dialga's own, and the closest ability in the list to the fight's
+                                # theme: the longer you take, the less you have left
+    Moves: MOVE_DRACO_METEOR, MOVE_FLASH_CANNON, MOVE_EARTH_POWER, MOVE_AURA_SPHERE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fifteen here in order fixes
+# Phase..EchoPending to 0..14. Var 15 is left free.
+# 0 Phase (0 The Flow of Time / 1 Temporal Acceleration / 2 Origin Forme / 3 The Convergence),
+# 1 Charge (0-5), 2 LastCharge (the last ANNOUNCED level - the callout's re-fire latch), 3 Clock
+# (turns left in the live interval; 0 means no interval is open), 4 Mark (Dialga's HP percentage at
+# the moment it marked), 5 Dealt (scratch - Mark is copied in, then ENC_SNAP_DAMAGE overwrites it
+# with the damage since), 6 TurnGuard (the once-per-turn scaffold), 7 Hit (the player committed a
+# damaging move against Dialga this turn; also trigger 9's re-entry guard), 8 Flight (ledger:
+# voluntary switch-outs), 9 Patience (ledger: turns that ended with no damaging move committed),
+# 10 EventGuard (shared per-turn guard for OnSwitchIn and OnFaint, so a forced replacement is not
+# also charged as a switch), 11 Fracture (0 none, 1 RECOIL, 2 LOCK, 3 CLOSING), 12 Aged (how many
+# times AGE has fired - drives the escalating callout), 13 TurnMark (per-turn HP snapshot, RECOIL
+# only), 14 EchoPending (set by a collapse in Phase 1+, consumed by the two ECHO triggers).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Dialga_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Charge) >= 0
+    Var(LastCharge) >= 0
+    Var(Clock) >= 0
+    Var(Mark) >= 0
+    Var(Dealt) >= 0
+    Var(TurnGuard) >= 0
+    Var(Hit) >= 0
+    Var(Flight) >= 0
+    Var(Patience) >= 0
+    Var(EventGuard) >= 0
+    Var(Fracture) >= 0
+    Var(Aged) >= 0
+    Var(TurnMark) >= 0
+    Var(EchoPending) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. All three sit below EncScript_Dialga_TurnClose
+# (90), so at an OnTurnEnd where the player's damage crossed a threshold the phase runs FIRST and
+# TurnClose then sees the new Phase instead of resolving a deadline against a Dialga that has moved on.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Dialga_Acceleration
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Dialga_Acceleration
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Dialga_OriginForme
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Dialga_OriginForme
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Dialga_Convergence
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Dialga_Convergence
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. Opens the interval (or prints the countdown), clears Hit and EventGuard,
+# and in Origin Forme runs the chosen future's turn-start half.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Dialga_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# "The player committed to attacking Dialga this turn." Gated on Hit, which its own script sets -
+# Once would mean once per battle, and OnEnter does not help because an Event.* condition cannot
+# change inside a dispatch. Event.OldValue/NewValue are unreliable after a miss, so this means
+# COMMITTED, not CONNECTED; that is the correct reading for the Patience ledger, and the quota is
+# measured off Dialga's real HP anyway.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Dialga_TheyStruck
+Conditions:
+    Var(Hit) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+
+# TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when
+# every var is still 0 - without the gate the opening switch-in would charge the Flight ledger on
+# turn 0. The ledger is silent by design; the Fracture banner at Origin Forme is where it speaks.
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_Dialga_TheyFled
+Conditions:
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Dialga_TheyFell
+Conditions:
+    Var(EventGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Runs last so it sees the finished turn: the Patience ledger, the clock tick, and the resolution.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Dialga_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# THE ECHO, split in two on Battler(PlayerLeft).Protected. Protected is a condition operand, not
+# something a script can read, so a collapse sets EchoPending and these two resolve it at the same
+# OnTurnEnd - the re-evaluation loop re-checks every trigger after TurnClose finishes, and the
+# whole-turn Protect latch is not cleared until after the OnTurnEnd dispatch. Both arms clear
+# EchoPending, so neither can re-select.
+Trigger: OnTurnEnd
+Priority: 91
+Script: EncScript_Dialga_Echo
+Conditions:
+    Var(EchoPending) == 1
+    Battler(PlayerLeft).Protected == 0
+
+Trigger: OnTurnEnd
+Priority: 92
+Script: EncScript_Dialga_EchoBlocked
+Conditions:
+    Var(EchoPending) == 1
+    Battler(PlayerLeft).Protected == 1

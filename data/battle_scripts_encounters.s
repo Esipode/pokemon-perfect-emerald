@@ -215,3 +215,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/darkrai.inc"
 	.include "data/legendary_encounters/cresselia.inc"
 	.include "data/legendary_encounters/giratina.inc"
+	.include "data/legendary_encounters/dialga.inc"
