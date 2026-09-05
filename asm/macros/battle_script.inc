@@ -1167,7 +1167,7 @@
 @ callnative-first - none of these are real opcodes.
 
 	@ Changes HP for every battler \target resolves to by \amount (positive = heal, negative =
-	@ damage), reusing the same PASSIVE_HP_UPDATE healthbarupdate/datahpupdate opcodes Leftovers
+	@ damage), reusing the same passive healthbarupdate/datahpupdate opcodes Leftovers
 	@ and status damage use, once per targeted battler so the health bar still animates for each.
 	@ \mode is ENC_AMOUNT_FIXED (raw HP, the default) or ENC_AMOUNT_PERCENT (percent of that
 	@ battler's own max HP - the portable choice when the boss's level isn't fixed).
@@ -1183,8 +1183,8 @@
 1:
 	callnative BS_EncounterChangeHpStep
 	.4byte 2f
-	healthbarupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
-	datahpupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	healthbarupdate BS_SCRIPTING
+	datahpupdate BS_SCRIPTING, ASSURANCE_IGNORE
 	tryfaintmon BS_SCRIPTING
 	checkteamslost 2f
 	goto 1b
@@ -1220,8 +1220,8 @@
 1:
 	callnative BS_EncounterChangeHpStep
 	.4byte 2f
-	healthbarupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
-	datahpupdate BS_SCRIPTING, PASSIVE_HP_UPDATE
+	healthbarupdate BS_SCRIPTING
+	datahpupdate BS_SCRIPTING, ASSURANCE_IGNORE
 	tryfaintmon BS_SCRIPTING
 	checkteamslost 2f
 	goto 1b
