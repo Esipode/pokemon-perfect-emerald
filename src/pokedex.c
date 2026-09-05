@@ -2113,17 +2113,18 @@ bool32 ShouldSkipPokedexListEntry(enum NationalDexOrder dexNum)
     if (P_SKIP_POKEDEX_GAPS == DONT_SKIP_GAPS)
         return FALSE;
 
-    if (GetSetPokedexFlag(dexNum, FLAG_GET_SEEN))
+    if (GetDexEntrySeenState(NationalPokedexNumToSpecies(dexNum)))
         return FALSE;
 
     enum NationalDexOrder dexNumBefore = max(dexNum - 1, NATIONAL_DEX_NONE + 1);
     enum NationalDexOrder dexNumAfter = min(dexNum + 1, NATIONAL_DEX_COUNT);
+    bool32 seenBefore = GetDexEntrySeenState(NationalPokedexNumToSpecies(dexNumBefore));
     if (P_SKIP_POKEDEX_GAPS == SKIP_GAPS_EXCEPT_ONE)
-        return !GetSetPokedexFlag(dexNumBefore, FLAG_GET_SEEN);
+        return !seenBefore;
 
     if (P_SKIP_POKEDEX_GAPS == SKIP_GAPS_EXCEPT_BEFORE_AFTER)
-        return !GetSetPokedexFlag(dexNumBefore, FLAG_GET_SEEN)
-            && !GetSetPokedexFlag(dexNumAfter, FLAG_GET_SEEN);
+        return !seenBefore
+            && !GetDexEntrySeenState(NationalPokedexNumToSpecies(dexNumAfter));
 
     return TRUE;
 }
@@ -2149,6 +2150,8 @@ void CreatePokedexList(u8 dexMode, u8 order)
                 continue;
             if (GetDexEntrySeenState(species))
                 r10 = 1;
+            if (ShouldSkipPokedexListEntry(temp_dexNum))
+                continue;
             if (r10)
             {
                 sPokedexView->pokedexList[r5].dexNum = temp_dexNum;
@@ -5087,11 +5090,17 @@ static int DoPokedexSearch(u8 dexMode, u8 order, u8 abcGroup, enum BodyColor bod
     u16 resultsCount;
     enum Type types[2];
 
+    // Unseen entries left in the list by CreatePokedexList are the gap entries
+    // allowed by P_SKIP_POKEDEX_GAPS. Keep them so a mode-only search looks like
+    // the main list, but drop them once a filter reads species data they'd leak.
+    bool32 keepGaps = (abcGroup == 0xFF && bodyColor == 0xFF && type1 == TYPE_NONE && type2 == TYPE_NONE);
+
     CreatePokedexList(dexMode, order);
 
+    u16 listCount = sPokedexView->pokemonListCount;
     for (i = 0, resultsCount = 0; i < NATIONAL_DEX_COUNT; i++)
     {
-        if (sPokedexView->pokedexList[i].seen)
+        if (sPokedexView->pokedexList[i].seen || (keepGaps && i < listCount))
         {
             sPokedexView->pokedexList[resultsCount] = sPokedexView->pokedexList[i];
             resultsCount++;
