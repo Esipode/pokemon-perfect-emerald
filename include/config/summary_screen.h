@@ -42,7 +42,7 @@ Info taken from https://bulbapedia.bulbagarden.net/wiki/Stats_judge.
 #define P_ENABLE_ALL_TM_MOVES            FALSE   // If TRUE, it enables the Pokémon to learn all TMs its compatible with, regardless of it being in the bag.
 
 // Relearner toggles - Redundant if P_ENABLE_MOVE_RELEARNERS is TRUE, but still added here in case you don't want all relearners unlocked at the same time.
-#define P_FLAG_EGG_MOVES                 FALSE   // If TRUE, enables the egg move relearner.
+#define P_FLAG_EGG_MOVES                 TRUE   // If TRUE, enables the egg move relearner.
 #define P_FLAG_TUTOR_MOVES               FALSE   // If TRUE, enables the tutor move relearner.
 
 // Move Relearner summary screen

@@ -47,6 +47,17 @@ enum {
 #define GFXTAG_UI       5525
 #define PALTAG_UI       5526
 
+// Category-cycling arrows, drawn in the bottom right of the prompt window that
+// names the current category.
+enum {
+    CATEGORY_ARROW_RIGHT,
+    CATEGORY_ARROW_LEFT,
+};
+
+#define CATEGORY_ARROW_LEFT_X   186
+#define CATEGORY_ARROW_RIGHT_X  200
+#define CATEGORY_ARROW_Y        143
+
 #define BATTLE_INFO 0
 #define CONTEST_INFO 1
 #define RETURN_FROM_MOVE_SELECT 2
@@ -80,6 +91,7 @@ static EWRAM_DATA struct
     u8 moveListMenuTask;
     u8 moveListScrollArrowTask;
     u8 categoryIconSpriteId;
+    u8 categoryArrowSpriteIds[2];
 } *sMoveRelearnerStruct = {0};
 
 static EWRAM_DATA struct {
@@ -113,7 +125,7 @@ static const struct OamData sHeartSpriteOamData =
     .affineParam = 0,
 };
 
-static const struct OamData sUnusedOam1 =
+static const struct OamData sCategoryArrowOam =
 {
     .y = 0,
     .affineMode = ST_OAM_AFFINE_OFF,
@@ -215,6 +227,35 @@ static const struct SpriteTemplate sConstestMoveHeartSprite =
     .anims = sHeartSpriteAnimationCommands,
 };
 
+static const union AnimCmd sCategoryArrow_RightFrame[] =
+{
+    ANIMCMD_FRAME(0, 5, FALSE, FALSE),
+    ANIMCMD_END
+};
+
+static const union AnimCmd sCategoryArrow_LeftFrame[] =
+{
+    ANIMCMD_FRAME(2, 5, FALSE, FALSE),
+    ANIMCMD_END
+};
+
+static const union AnimCmd *const sCategoryArrowAnimationCommands[] =
+{
+    [CATEGORY_ARROW_RIGHT] = sCategoryArrow_RightFrame,
+    [CATEGORY_ARROW_LEFT] = sCategoryArrow_LeftFrame,
+};
+
+// Reuses the left/right arrows in the UI spritesheet, which the battle/contest
+// info switch used to own, as the on-screen hint for cycling relearner
+// categories with the D-pad.
+static const struct SpriteTemplate sCategoryArrowSprite =
+{
+    .tileTag = GFXTAG_UI,
+    .paletteTag = PALTAG_UI,
+    .oam = &sCategoryArrowOam,
+    .anims = sCategoryArrowAnimationCommands,
+};
+
 static const struct BgTemplate sMoveRelearnerMenuBackgroundTemplates[] =
 {
     {
@@ -268,6 +309,8 @@ static void Task_MoveRelearner_LearnMove(u8 taskId);
 static void Task_MoveRelearner_Quit(u8 taskId);
 static void SortMovesAlphabetically(u16 *moves, u16 *resolvedMoves, u32 numMoves);
 static void QuickSortMoves(u16 *moves, u16 *resolvedMoves, s32 left, s32 right);
+static bool32 CanCycleRelearnerCategories(void);
+static void SetCategoryArrowsInvisibility(bool32 invisible);
 
 static const struct RelearnType sRelearnTypes[MOVE_RELEARNER_COUNT] =
 {
@@ -616,13 +659,14 @@ static void Task_MoveRelearner_LearnMove(u8 taskId)
     gTasks[taskId].tState = LearnMove(&sMoveLearnUI, taskId);
 }
 
-static bool32 UpdateMoveRelearnerState(void)
+// delta is +1 to move to the next category, -1 for the previous one.
+static bool32 UpdateMoveRelearnerState(s32 delta)
 {
     u32 state;
     struct BoxPokemon *boxmon = GetSelectedBoxMonFromPcOrParty();
-    for (u32 i = 1; i < MOVE_RELEARNER_COUNT; i++)
+    for (s32 i = 1; i < MOVE_RELEARNER_COUNT; i++)
     {
-        state = (gMoveRelearnerState + i) % MOVE_RELEARNER_COUNT;
+        state = (gMoveRelearnerState + i * delta + i * MOVE_RELEARNER_COUNT) % MOVE_RELEARNER_COUNT;
         if (CanBoxMonRelearnMoves(boxmon, state))
         {
             gMoveRelearnerState = state;
@@ -641,12 +685,20 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
     switch (itemId)
     {
     case LIST_NOTHING_CHOSEN:
+    {
         // Cycle the relearner category (#10223). Contests are disabled in this
         // fork, so the battle/contest info switch upstream puts in the else
-        // branch here is gone with them.
-        if (JOY_NEW(SELECT_BUTTON) && gRelearnMode != RELEARN_MODE_SCRIPT)
+        // branch here is gone with them - D-pad left/right now cycles the
+        // category, which is what the on-screen arrows point at.
+        s32 categoryDelta = 0;
+        if (JOY_NEW(SELECT_BUTTON) || JOY_NEW(DPAD_RIGHT))
+            categoryDelta = 1;
+        else if (JOY_NEW(DPAD_LEFT))
+            categoryDelta = -1;
+
+        if (categoryDelta != 0 && gRelearnMode != RELEARN_MODE_SCRIPT)
         {
-            if (UpdateMoveRelearnerState())
+            if (UpdateMoveRelearnerState(categoryDelta))
             {
                 PlaySE(SE_SUCCESS);
                 sMoveRelearnerScrollState.listOffset = 0;
@@ -659,6 +711,7 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
             }
         }
         break;
+    }
     case LIST_CANCEL:
         PlaySE(SE_SELECT);
         RemoveScrollArrows();
@@ -758,10 +811,52 @@ static void CreateUISprites(void)
 
     for (i = 0; i < 16; i++)
         gSprites[sMoveRelearnerStruct->heartSpriteIds[i]].invisible = TRUE;
+
+    sMoveRelearnerStruct->categoryArrowSpriteIds[CATEGORY_ARROW_LEFT] = CreateSprite(&sCategoryArrowSprite, CATEGORY_ARROW_LEFT_X, CATEGORY_ARROW_Y, 0);
+    sMoveRelearnerStruct->categoryArrowSpriteIds[CATEGORY_ARROW_RIGHT] = CreateSprite(&sCategoryArrowSprite, CATEGORY_ARROW_RIGHT_X, CATEGORY_ARROW_Y, 0);
+    for (u32 arrow = 0; arrow < ARRAY_COUNT(sMoveRelearnerStruct->categoryArrowSpriteIds); arrow++)
+    {
+        u8 spriteId = sMoveRelearnerStruct->categoryArrowSpriteIds[arrow];
+        if (spriteId < MAX_SPRITES)
+            StartSpriteAnim(&gSprites[spriteId], arrow);
+    }
+    SetCategoryArrowsInvisibility(TRUE);
+}
+
+// The category arrows are only meaningful while the player is browsing the
+// list, and only when there is another category to switch to.
+static bool32 CanCycleRelearnerCategories(void)
+{
+    struct BoxPokemon *boxmon;
+    u32 numCategories = 0;
+
+    if (gRelearnMode == RELEARN_MODE_SCRIPT || !GameHasDifferentRelearners())
+        return FALSE;
+
+    boxmon = GetSelectedBoxMonFromPcOrParty();
+    for (u32 state = 0; state < MOVE_RELEARNER_COUNT; state++)
+    {
+        if (CanBoxMonRelearnMoves(boxmon, state))
+            numCategories++;
+    }
+
+    return numCategories > 1;
+}
+
+static void SetCategoryArrowsInvisibility(bool32 invisible)
+{
+    for (u32 i = 0; i < ARRAY_COUNT(sMoveRelearnerStruct->categoryArrowSpriteIds); i++)
+    {
+        u8 spriteId = sMoveRelearnerStruct->categoryArrowSpriteIds[i];
+        if (spriteId < MAX_SPRITES)
+            gSprites[spriteId].invisible = invisible;
+    }
 }
 
 static void AddScrollArrows(void)
 {
+    SetCategoryArrowsInvisibility(!CanCycleRelearnerCategories());
+
     if (sMoveRelearnerStruct->moveListScrollArrowTask == TASK_NONE)
     {
         gTempScrollArrowTemplate = sMoveListScrollArrowsTemplate;
@@ -772,6 +867,8 @@ static void AddScrollArrows(void)
 
 static void RemoveScrollArrows(void)
 {
+    SetCategoryArrowsInvisibility(TRUE);
+
     if (sMoveRelearnerStruct->moveListScrollArrowTask != TASK_NONE)
     {
         RemoveScrollIndicatorArrowPair(sMoveRelearnerStruct->moveListScrollArrowTask);
