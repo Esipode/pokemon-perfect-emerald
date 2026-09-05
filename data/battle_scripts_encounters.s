@@ -14,9 +14,9 @@
 
 // Engine-owned shim: called via BattleScriptExecute from a non-script callback, with the
 // encounter script itself invoked via BattleScriptCall. All encounter scripts end with
-// `return`, which unwinds here; this is the only encounter script allowed to end2.
+// `return`, which unwinds here; this is the only encounter script allowed to `end`.
 BattleScript_EncounterCheckpointEnd2::
-	end2
+	end
 
 EncScript_TestBattleStart::
 	printstring STRINGID_EMPTYSTRING3

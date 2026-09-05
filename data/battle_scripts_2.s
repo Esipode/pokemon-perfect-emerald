@@ -317,7 +317,7 @@ BattleScript_EncounterCannotCatch::
 	finishaction
 
 @ Rotation Mode: free end-of-turn switch into gBattleStruct->monToSwitchIntoId.
-@ Entered via BattleScriptCall, so BS_SCRIPTING throughout and return (not end2).
+@ Entered via BattleScriptCall, so BS_SCRIPTING throughout and return (not end).
 BattleScript_RotationModeSwitch::
 	undodynamax BS_SCRIPTING
 	waitstate

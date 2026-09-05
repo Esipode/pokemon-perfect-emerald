@@ -4839,7 +4839,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         break;
     case FIRST_TURN_EVENTS_ENCOUNTER:
     {
-        // Encounter scripts always end with `return`; the shim supplies the `end2`
+        // Encounter scripts always end with `return`; the shim supplies the `end`
         // needed to unwind back to this non-script callback, which re-enters this case
         // and re-dispatches until the checkpoint has no more eligible triggers.
         const u8 *script = TryRunEncounterCheckpoint(ENC_ON_BATTLE_START);

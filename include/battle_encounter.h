@@ -563,7 +563,7 @@ extern const u8 EncScript_TestMegaEvolve[];
 
 // Engine-owned shim: all encounter scripts end with `return`; checkpoints dispatched
 // from a non-script engine callback (e.g. BATTLE_START) call the encounter script from
-// this shim so the callback stack still unwinds via `end2`.
+// this shim so the callback stack still unwinds via `end`.
 extern const u8 BattleScript_EncounterCheckpointEnd2[];
 
 const struct Encounter *GetEncounter(enum EncounterId id);
