@@ -24,29 +24,6 @@ enum PlayerSpeed
     PLAYER_SPEED_FASTEST,
 };
 
-enum {
-    BIKE_TRANS_FACE_DIRECTION,
-    BIKE_TRANS_TURNING,
-    BIKE_TRANS_MOVE,
-    BIKE_TRANS_DOWNHILL,
-    BIKE_TRANS_UPHILL
-};
-
-enum {
-    BIKE_STATE_NORMAL,
-    BIKE_STATE_TURNING,
-    BIKE_STATE_SLOPE
-};
-
-// mach bike transitions enum
-enum MachTransition
-{
-    MACH_TRANS_FACE_DIRECTION,
-    MACH_TRANS_TURN_DIRECTION,
-    MACH_TRANS_KEEP_MOVING,
-    MACH_TRANS_START_MOVING
-};
-
 // Acro bike states
 enum AcroState
 {
@@ -87,7 +64,7 @@ extern bool8 gUnusedBikeCameraAheadPanback;
 void MovePlayerOnBike(enum Direction direction, u16 newKeys, u16 heldKeys);
 void Bike_TryAcroBikeHistoryUpdate(u16 newKeys, u16 heldKeys);
 bool8 IsBikingDisallowedByPlayer(void);
-bool8 IsPlayerNotUsingAcroBikeOnBumpySlope(void);
+bool8 IsPlayerNotUsingBikeOnBumpySlope(void);
 void GetOnOffBike(u8 transitionFlags);
 void BikeClearState(int newDirHistory, int newAbStartHistory);
 void Bike_UpdateBikeCounterSpeed(u8 counter);

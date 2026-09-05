@@ -75,6 +75,9 @@
 	- When enabled in the options menu, the pause menu now shows a list of pokedex completion, items found, and trainers battled on the current route
 
 ## Minor features
+- Sort Pokémon in storage
+	- When in the storage screen, pressing the `A` button on the box name will bring up a list of options, one of which is the new "Sort" option
+	- Pokémon can be sorted by Pokédex #, Name, Types, or Level
 - Breeding Improvements
 	- Level 1 eggs
 	- Poké Ball inheriting
@@ -88,9 +91,6 @@
 - Add second item register slot (one for button push, and one for button hold)
 
 ## Quality of life improvements
-- Sort Pokémon in storage
-	- When in the storage screen, pressing the `A` button on the box name will bring up a list of options, one of which is the new "Sort" option
-	- Pokémon can be sorted by Pokédex #, Name, Types, or Level
 - TM/HM changes
 	- Do not need to teach HM moves to party, only need badge/story requirement to use them in overworld
 	- Fly is accessed from the map in the Pokenav upon getting the 6th gym badge
@@ -98,6 +98,7 @@
 - Quick Pokéball selection in wild battles
 	- Hold `R` to change selection with the D-Pad.
 	- Press `R` to use last selected Poké Ball.
+- Combined `Acro` and `Mach` Bikes together
 - When the bag is full, items you pick up go straight to your PC
 - Sort items in your bag by pressing `START` and selecting a sort type
 - New location transition animation, shows in-game time in bottom right corner 
@@ -106,7 +107,7 @@
 - From the Pokémon Summary screen:
 	- View IV/EV values for each Pokémon (Press `A` when viewing "SKILLS" screen to switch between view modes)
 	- Change Nickname (Press `A` when viewing "INFO" screen)
-	- Re-learn moves (Press `START` when viewing "MOVES" screen)
+	- Re-learn moves (Press `START` when viewing "MOVES" screen, use `LEFT` and `RIGHT` buttons to switch between move categories)
 	- Stat changes caused by nature highlighted
 - When repel runs out, prompt appears to enable another one (listing any tiers of repel currently in bag)
 - Disable poison damage over time when walking in the overworld

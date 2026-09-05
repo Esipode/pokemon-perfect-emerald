@@ -906,7 +906,7 @@ u32 DetermineFollowerNPCState(struct ObjectEvent *follower, u32 state, enum Dire
     newPlayerMB = MapGridGetMetatileBehaviorAt(playerDestX, playerDestY);
 
     if (IsPlayerForcedOntoSameTile(newPlayerMB, playerMoveDirection)
-     && !(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_MACH_BIKE && playerMoveDirection == DIR_NORTH && newPlayerMB == MB_MUDDY_SLOPE && GetPlayerSpeed() >= PLAYER_SPEED_FAST))
+     && !(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_BIKE && playerMoveDirection == DIR_NORTH && newPlayerMB == MB_MUDDY_SLOPE && GetPlayerSpeed() >= PLAYER_SPEED_FAST))
     {
         SetFollowerNPCData(FNPC_DATA_FORCED_MOVEMENT, FNPC_FORCED_STAY);
         SetFollowerNPCData(FNPC_DATA_DELAYED_STATE, 0);
@@ -1365,10 +1365,7 @@ void FollowerNPC_HandleSprite(void)
 {
     if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_BIKE) && CheckFollowerNPCFlag(FOLLOWER_NPC_FLAG_CAN_BIKE))
     {
-        if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_MACH_BIKE)
-            SetFollowerNPCSprite(FOLLOWER_NPC_SPRITE_INDEX_MACH_BIKE);
-        else if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ACRO_BIKE)
-            SetFollowerNPCSprite(FOLLOWER_NPC_SPRITE_INDEX_ACRO_BIKE);
+        SetFollowerNPCSprite(FOLLOWER_NPC_SPRITE_INDEX_ACRO_BIKE);
     }
     else if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ON_FOOT)
     {
@@ -1492,11 +1489,7 @@ void FollowerNPC_HandleBike(void)
     if (GetFollowerNPCData(FNPC_DATA_CURRENT_SPRITE) == FOLLOWER_NPC_SPRITE_INDEX_SURF)
         return;
 
-    if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_MACH_BIKE && FollowerNPCCanBike() && GetFollowerNPCData(FNPC_DATA_COME_OUT_DOOR) != FNPC_DOOR_NEEDS_TO_EXIT) //Coming out door
-    {
-        SetFollowerNPCSprite(FOLLOWER_NPC_SPRITE_INDEX_MACH_BIKE);
-    }
-    else if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ACRO_BIKE && FollowerNPCCanBike() && GetFollowerNPCData(FNPC_DATA_COME_OUT_DOOR) != FNPC_DOOR_NEEDS_TO_EXIT) //Coming out door
+    if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_BIKE && FollowerNPCCanBike() && GetFollowerNPCData(FNPC_DATA_COME_OUT_DOOR) != FNPC_DOOR_NEEDS_TO_EXIT) //Coming out door
     {
         SetFollowerNPCSprite(FOLLOWER_NPC_SPRITE_INDEX_ACRO_BIKE);
     }

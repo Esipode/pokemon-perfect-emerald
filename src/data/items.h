@@ -14204,9 +14204,9 @@ const struct ItemInfo gItemsInfo[] =
         .name = ITEM_NAME("Bike"),
         .price = 0,
         .description = COMPOUND_STRING(
-            "A folding bicycle\n"
-            "that is faster than\n"
-            "the Running Shoes."),
+            "A fast folding bike\n"
+            "that is capable of\n"
+            "jumps and wheelies."),
         .importance = 1,
         .pocket = POCKET_KEY_ITEMS,
         .type = ITEM_USE_FIELD,
@@ -14216,38 +14216,40 @@ const struct ItemInfo gItemsInfo[] =
         .iconPalette = gItemIconPalette_Bicycle,
     },
 
+    // Retired in favour of ITEM_BICYCLE, kept so saves holding one still work.
     [ITEM_MACH_BIKE] =
     {
-        .name = ITEM_NAME("Mach Bike"),
+        .name = ITEM_NAME("Bike"),
         .price = 0,
         .description = COMPOUND_STRING(
-            "A folding bicycle\n"
-            "that doubles your\n"
-            "speed or better."),
+            "A fast folding bike\n"
+            "that is capable of\n"
+            "jumps and wheelies."),
         .importance = 1,
         .pocket = POCKET_KEY_ITEMS,
         .type = ITEM_USE_FIELD,
         .fieldUseFunc = ItemUseOutOfBattle_Bike,
-        .secondaryId = MACH_BIKE,
-        .iconPic = gItemIcon_MachBike,
-        .iconPalette = gItemIconPalette_MachBike,
+        .secondaryId = STANDARD_BIKE,
+        .iconPic = gItemIcon_Bicycle,
+        .iconPalette = gItemIconPalette_Bicycle,
     },
 
+    // Retired in favour of ITEM_BICYCLE, kept so saves holding one still work.
     [ITEM_ACRO_BIKE] =
     {
-        .name = ITEM_NAME("Acro Bike"),
+        .name = ITEM_NAME("Bike"),
         .price = 0,
         .description = COMPOUND_STRING(
-            "A folding bicycle\n"
-            "capable of jumps\n"
-            "and wheelies."),
+            "A fast folding bike\n"
+            "that is capable of\n"
+            "jumps and wheelies."),
         .importance = 1,
         .pocket = POCKET_KEY_ITEMS,
         .type = ITEM_USE_FIELD,
         .fieldUseFunc = ItemUseOutOfBattle_Bike,
-        .secondaryId = ACRO_BIKE,
-        .iconPic = gItemIcon_AcroBike,
-        .iconPalette = gItemIconPalette_AcroBike,
+        .secondaryId = STANDARD_BIKE,
+        .iconPic = gItemIcon_Bicycle,
+        .iconPalette = gItemIconPalette_Bicycle,
     },
 
     [ITEM_OLD_ROD] =

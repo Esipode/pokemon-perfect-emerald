@@ -526,28 +526,6 @@ void CompactPCItems(void)
     BagPocket_CompactItems(&dummyPocket);
 }
 
-void SwapRegisteredBike(void)
-{
-    switch (gSaveBlock1Ptr->registeredItem)
-    {
-    case ITEM_MACH_BIKE:
-        gSaveBlock1Ptr->registeredItem = ITEM_ACRO_BIKE;
-        break;
-    case ITEM_ACRO_BIKE:
-        gSaveBlock1Ptr->registeredItem = ITEM_MACH_BIKE;
-        break;
-    }
-    switch (gSaveBlock1Ptr->registeredLongItem)
-    {
-    case ITEM_MACH_BIKE:
-        gSaveBlock1Ptr->registeredLongItem = ITEM_ACRO_BIKE;
-        break;
-    case ITEM_ACRO_BIKE:
-        gSaveBlock1Ptr->registeredLongItem = ITEM_MACH_BIKE;
-        break;
-    }
-}
-
 void CompactItemsInBagPocket(enum Pocket pocketId)
 {
     BagPocket_CompactItems(&gBagPockets[pocketId]);

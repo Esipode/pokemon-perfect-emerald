@@ -113,8 +113,7 @@ static void CheckAcroBikeCollision(s16, s16, u8, enum Collision *);
 static void DoPlayerAvatarTransition(void);
 static void PlayerAvatarTransition_Dummy(struct ObjectEvent *);
 static void PlayerAvatarTransition_Normal(struct ObjectEvent *);
-static void PlayerAvatarTransition_MachBike(struct ObjectEvent *);
-static void PlayerAvatarTransition_AcroBike(struct ObjectEvent *);
+static void PlayerAvatarTransition_Bike(struct ObjectEvent *);
 static void PlayerAvatarTransition_Surfing(struct ObjectEvent *);
 static void PlayerAvatarTransition_Underwater(struct ObjectEvent *);
 static void PlayerAvatarTransition_ReturnToField(struct ObjectEvent *);
@@ -241,8 +240,9 @@ static const enum Collision sAcroBikeTrickCollisionTypes[NUM_ACRO_BIKE_COLLISION
 static void (*const sPlayerAvatarTransitionFuncs[])(struct ObjectEvent *) =
 {
     [PLAYER_AVATAR_STATE_NORMAL]     = PlayerAvatarTransition_Normal,
-    [PLAYER_AVATAR_STATE_MACH_BIKE]  = PlayerAvatarTransition_MachBike,
-    [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PlayerAvatarTransition_AcroBike,
+    // Both bike bits are set together, so only the acro entry does the work.
+    [PLAYER_AVATAR_STATE_MACH_BIKE]  = PlayerAvatarTransition_Dummy,
+    [PLAYER_AVATAR_STATE_ACRO_BIKE]  = PlayerAvatarTransition_Bike,
     [PLAYER_AVATAR_STATE_SURFING]    = PlayerAvatarTransition_Surfing,
     [PLAYER_AVATAR_STATE_UNDERWATER] = PlayerAvatarTransition_Underwater,
     [PLAYER_AVATAR_STATE_FIELD_MOVE] = PlayerAvatarTransition_ReturnToField,
@@ -305,16 +305,19 @@ static const struct PACKED
     [MALE] =
     {
         {PLAYER_AVATAR_GFX_MALE_NORMAL,     PLAYER_AVATAR_FLAG_ON_FOOT},
-        {PLAYER_AVATAR_GFX_MALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_MACH_BIKE},
-        {PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_ACRO_BIKE},
+        // The acro entry must come first: GetPlayerAvatarGraphicsIdByCurrentState
+        // returns the first row matching the flags, and both bike gfx ids map to
+        // PLAYER_AVATAR_FLAG_BIKE. Only the acro sheet has the wheelie frames.
+        {PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+        {PLAYER_AVATAR_GFX_MALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
         {PLAYER_AVATAR_GFX_MALE_SURFING,    PLAYER_AVATAR_FLAG_SURFING},
         {PLAYER_AVATAR_GFX_MALE_UNDERWATER, PLAYER_AVATAR_FLAG_UNDERWATER},
     },
     [FEMALE] =
     {
         {PLAYER_AVATAR_GFX_FEMALE_NORMAL,         PLAYER_AVATAR_FLAG_ON_FOOT},
-        {PLAYER_AVATAR_GFX_FEMALE_MACH_BIKE,      PLAYER_AVATAR_FLAG_MACH_BIKE},
-        {PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,      PLAYER_AVATAR_FLAG_ACRO_BIKE},
+        {PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,      PLAYER_AVATAR_FLAG_BIKE},
+        {PLAYER_AVATAR_GFX_FEMALE_MACH_BIKE,      PLAYER_AVATAR_FLAG_BIKE},
         {PLAYER_AVATAR_GFX_FEMALE_SURFING,        PLAYER_AVATAR_FLAG_SURFING},
         {PLAYER_AVATAR_GFX_FEMALE_UNDERWATER,     PLAYER_AVATAR_FLAG_UNDERWATER},
     }
@@ -1149,25 +1152,11 @@ static void PlayerAvatarTransition_Normal(struct ObjectEvent *objEvent)
     SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ON_FOOT);
 }
 
-static void PlayerAvatarTransition_MachBike(struct ObjectEvent *objEvent)
-{
-    ObjectEventSetGraphicsId(objEvent, GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_MACH_BIKE));
-    ObjectEventTurn(objEvent, objEvent->movementDirection);
-    if (IS_FRLG)
-        SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_BIKE);
-    else
-        SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_MACH_BIKE);
-    BikeClearState(0, 0);
-}
-
-static void PlayerAvatarTransition_AcroBike(struct ObjectEvent *objEvent)
+static void PlayerAvatarTransition_Bike(struct ObjectEvent *objEvent)
 {
     ObjectEventSetGraphicsId(objEvent, GetPlayerAvatarGraphicsIdByStateId(PLAYER_AVATAR_STATE_ACRO_BIKE));
     ObjectEventTurn(objEvent, objEvent->movementDirection);
-    if (IS_FRLG)
-        SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_BIKE);
-    else
-        SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_ACRO_BIKE);
+    SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_BIKE);
     BikeClearState(0, 0);
     Bike_HandleBumpySlopeJump();
 }
@@ -1376,7 +1365,7 @@ void PlayerFreeze(void)
 {
     if (gPlayerAvatar.tileTransitionState == T_TILE_CENTER || gPlayerAvatar.tileTransitionState == T_NOT_MOVING)
     {
-        if (IsPlayerNotUsingAcroBikeOnBumpySlope())
+        if (IsPlayerNotUsingBikeOnBumpySlope())
             PlayerForceSetHeldMovement(GetFaceDirectionMovementAction(gObjectEvents[gPlayerAvatar.objectEventId].facingDirection));
     }
 }

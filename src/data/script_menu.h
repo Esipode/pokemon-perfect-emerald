@@ -60,12 +60,6 @@ static const struct MenuAction MultichoiceList_RegisterMenu[] =
     {gText_Cancel2},
 };
 
-static const struct MenuAction MultichoiceList_Bike[] =
-{
-    {COMPOUND_STRING("MACH")},
-    {COMPOUND_STRING("ACRO")},
-};
-
 static const struct MenuAction MultichoiceList_StatusInfo[] =
 {
     {COMPOUND_STRING("PSN")},
@@ -222,16 +216,11 @@ static const struct MenuAction MultichoiceList_VendingMachine[] =
     {gText_Exit},
 };
 
-static const struct MenuAction MultichoiceList_MachBikeInfo[] =
+static const struct MenuAction MultichoiceList_BikeInfo[] =
 {
     {COMPOUND_STRING("HOW TO RIDE")},
     {COMPOUND_STRING("HOW TO TURN")},
     {COMPOUND_STRING("SANDY SLOPES")},
-    {gText_Exit},
-};
-
-static const struct MenuAction MultichoiceList_AcroBikeInfo[] =
-{
     {COMPOUND_STRING("WHEELIES")},
     {COMPOUND_STRING("BUNNY-HOPS")},
     {COMPOUND_STRING("JUMP")},
@@ -1178,7 +1167,7 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_UNUSED_9]                   = MULTICHOICE(MultichoiceList_Exit),
     [MULTI_UNUSED_10]                  = MULTICHOICE(MultichoiceList_Exit),
     [MULTI_FRONTIER_PASS_INFO]         = MULTICHOICE(MultichoiceList_FrontierPassInfo),
-    [MULTI_BIKE]                       = MULTICHOICE(MultichoiceList_Bike),
+    [MULTI_BIKE_INFO]                  = MULTICHOICE(MultichoiceList_BikeInfo),
     [MULTI_STATUS_INFO]                = MULTICHOICE(MultichoiceList_StatusInfo),
     [MULTI_BRINEY_OFF_DEWFORD]         = MULTICHOICE(MultichoiceList_BrineyOffDewford),
     [MULTI_UNUSED_15]                  = MULTICHOICE(MultichoiceList_Exit),
@@ -1209,8 +1198,6 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_UNUSED_40]                  = MULTICHOICE(MultichoiceList_Exit),
     [MULTI_UNUSED_41]                  = MULTICHOICE(MultichoiceList_Exit),
     [MULTI_VENDING_MACHINE]            = MULTICHOICE(MultichoiceList_VendingMachine),
-    [MULTI_MACH_BIKE_INFO]             = MULTICHOICE(MultichoiceList_MachBikeInfo),
-    [MULTI_ACRO_BIKE_INFO]             = MULTICHOICE(MultichoiceList_AcroBikeInfo),
     [MULTI_SATISFACTION]               = MULTICHOICE(MultichoiceList_Satisfaction),
     [MULTI_STERN_DEEPSEA]              = MULTICHOICE(MultichoiceList_SternDeepSea),
     [MULTI_UNUSED_ASH_VENDOR]          = MULTICHOICE(MultichoiceList_UnusedAshVendor),
