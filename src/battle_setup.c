@@ -2308,6 +2308,16 @@ void SetMultiTrainerBattle(struct ScriptContext *ctx)
     TRAINER_BATTLE_PARAM.opponentB = ScriptReadHalfword(ctx);
     TRAINER_BATTLE_PARAM.defeatTextB = (u8*)ScriptReadWord(ctx);
     gPartnerTrainerId = TRAINER_PARTNER(ScriptReadHalfword(ctx));
+
+    // The multi_do macro asks AreMultiPartiesFullTeams() before the battle type is
+    // built, and that check reads BATTLE_TYPE_TRAINER. Seed it from the opponents set
+    // above so the script-time answer matches the in-battle one instead of depending on
+    // the previous battle's leftover flags; BattleSetup_StartMultiBattle assigns
+    // gBattleTypeFlags outright right afterwards.
+    if (TRAINER_BATTLE_PARAM.opponentA == TRAINER_NONE)
+        gBattleTypeFlags &= ~BATTLE_TYPE_TRAINER;
+    else
+        gBattleTypeFlags |= BATTLE_TYPE_TRAINER;
 };
 
 static void CreateNPCTrainerParty(struct Pokemon *party, u16 trainerNum)

@@ -10015,15 +10015,24 @@ bool32 AreMultiPartiesFullTeams(void)
     enum DifficultyLevel difficulty = GetCurrentDifficultyLevel();
 
     if (B_MULTI_HALF_TEAMS)
-		return FALSE;
+    {
+        gSpecialVar_Result = FALSE;
+        return FALSE;
+    }
 
-	if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
-		return TRUE;
-		
+    // No opponent trainer to read multiTeamSize from (multi battle against wild mons).
+    if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
+    {
+        gSpecialVar_Result = TRUE;
+        return TRUE;
+    }
+
     if (TRAINER_BATTLE_PARAM.opponentA == TRAINER_LINK_OPPONENT
      || gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI
      || (gTrainers[difficulty][TRAINER_BATTLE_PARAM.opponentA].multiTeamSize == MULTI_TEAM_SIZE_HALF)
-     || (gTrainers[difficulty][TRAINER_BATTLE_PARAM.opponentB].multiTeamSize == MULTI_TEAM_SIZE_HALF))
+     // opponentB is 0xFFFF in 2 vs 1 multi battles, which would index past gTrainers.
+     || (TRAINER_BATTLE_PARAM.opponentB < TRAINERS_COUNT
+      && gTrainers[difficulty][TRAINER_BATTLE_PARAM.opponentB].multiTeamSize == MULTI_TEAM_SIZE_HALF))
     {
         gSpecialVar_Result = FALSE;
         return FALSE;
