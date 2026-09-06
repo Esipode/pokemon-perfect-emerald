@@ -57,7 +57,7 @@ ProfBirch_EventScript_ShowRatingMessage::
 	waitbuttonpress
 	return
 
-ProfBirch_EventScript_RatePokedex::
+ProfBirch_EventScript_RatePokedex_OLD::
 	setvar VAR_0x8004, 0
 	specialvar VAR_RESULT, ScriptGetPokedexInfo
 	copyvar VAR_0x8008, VAR_0x8005
@@ -68,6 +68,17 @@ ProfBirch_EventScript_RatePokedex::
 	msgbox gBirchDexRatingText_SoYouveSeenAndCaught, MSGBOX_DEFAULT
 	call ProfBirch_EventScript_ShowRatingMessage
 	goto_if_eq VAR_0x800A, 0, Common_EventScript_NopReturn  @ National dex not enabled
+	setvar VAR_0x8004, 1
+	specialvar VAR_RESULT, ScriptGetPokedexInfo
+	copyvar VAR_0x8008, VAR_0x8005
+	copyvar VAR_0x8009, VAR_0x8006
+	buffernumberstring STR_VAR_1, VAR_0x8008  @ Num National seen
+	buffernumberstring STR_VAR_2, VAR_0x8009  @ Num National caught
+	msgbox gBirchDexRatingText_OnANationwideBasis, MSGBOX_DEFAULT
+	return
+
+
+ProfBirch_EventScript_RatePokedex::
 	setvar VAR_0x8004, 1
 	specialvar VAR_RESULT, ScriptGetPokedexInfo
 	copyvar VAR_0x8008, VAR_0x8005

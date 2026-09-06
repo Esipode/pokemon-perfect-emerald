@@ -518,10 +518,214 @@ u8 PickWildMonNature(enum Species species)
     return GetSynchronizedNature(WILDMON_ORIGIN, species);
 }
 
+static enum Species GetWildEncounterVariant(enum Species species)
+{
+    switch (species)
+    {
+    case SPECIES_PICHU:
+        // 5% Spiky-Eared, 95% regular Pichu.
+        if (Random() % 100 < 5)
+            return SPECIES_PICHU_SPIKY_EARED;
+        break;
+
+    case SPECIES_UNOWN:
+    {
+        // 28 equally likely forms:
+        // A-Z, !, ?
+        static const enum Species sUnownVariants[] =
+        {
+            SPECIES_UNOWN,
+            SPECIES_UNOWN_B,
+            SPECIES_UNOWN_C,
+            SPECIES_UNOWN_D,
+            SPECIES_UNOWN_E,
+            SPECIES_UNOWN_F,
+            SPECIES_UNOWN_G,
+            SPECIES_UNOWN_H,
+            SPECIES_UNOWN_I,
+            SPECIES_UNOWN_J,
+            SPECIES_UNOWN_K,
+            SPECIES_UNOWN_L,
+            SPECIES_UNOWN_M,
+            SPECIES_UNOWN_N,
+            SPECIES_UNOWN_O,
+            SPECIES_UNOWN_P,
+            SPECIES_UNOWN_Q,
+            SPECIES_UNOWN_R,
+            SPECIES_UNOWN_S,
+            SPECIES_UNOWN_T,
+            SPECIES_UNOWN_U,
+            SPECIES_UNOWN_V,
+            SPECIES_UNOWN_W,
+            SPECIES_UNOWN_X,
+            SPECIES_UNOWN_Y,
+            SPECIES_UNOWN_Z,
+            SPECIES_UNOWN_EXCLAMATION,
+            SPECIES_UNOWN_QUESTION,
+        };
+
+        return sUnownVariants[Random() % ARRAY_COUNT(sUnownVariants)];
+    }
+
+    case SPECIES_BURMY:
+    {
+        // 1/3 each:
+        // Plant = original Burmy
+        // Sandy
+        // Trash
+        static const enum Species sBurmyVariants[] =
+        {
+            SPECIES_BURMY,
+            SPECIES_BURMY_SANDY,
+            SPECIES_BURMY_TRASH,
+        };
+
+        return sBurmyVariants[Random() % ARRAY_COUNT(sBurmyVariants)];
+    }
+
+    case SPECIES_DEERLING:
+    {
+        // One Deerling form is available per day.
+        // The same form is therefore encountered all day.
+        //
+        // RtcGetMinuteCount() is converted into a day number by
+        // dividing by the number of minutes in a day.
+        u32 day = gSaveBlock1Ptr->dailySeed / (24 * 60);
+
+        static const enum Species sDeerlingVariants[] =
+        {
+            SPECIES_DEERLING,
+            SPECIES_DEERLING_SUMMER,
+            SPECIES_DEERLING_AUTUMN,
+            SPECIES_DEERLING_WINTER,
+        };
+
+        return sDeerlingVariants[day % ARRAY_COUNT(sDeerlingVariants)];
+    }
+
+    case SPECIES_FLABEBE:
+    {
+        // 19% each:
+        // Red, Blue, Orange, Yellow, White
+        //
+        // Remaining 5%:
+        // Eternal Floette
+        u8 roll = Random() % 100;
+
+        if (roll < 19)
+            return SPECIES_FLABEBE_RED;
+        else if (roll < 38)
+            return SPECIES_FLABEBE_BLUE;
+        else if (roll < 57)
+            return SPECIES_FLABEBE_ORANGE;
+        else if (roll < 76)
+            return SPECIES_FLABEBE_YELLOW;
+        else if (roll < 95)
+            return SPECIES_FLABEBE_WHITE;
+        else
+            return SPECIES_FLOETTE_ETERNAL;
+    }
+
+    case SPECIES_FURFROU:
+    {
+        // 1/10 each:
+        // Original Furfrou + 9 trims.
+        static const enum Species sFurfrouVariants[] =
+        {
+            SPECIES_FURFROU,
+            SPECIES_FURFROU_HEART,
+            SPECIES_FURFROU_DIAMOND,
+            SPECIES_FURFROU_STAR,
+            SPECIES_FURFROU_PHARAOH,
+            SPECIES_FURFROU_KABUKI,
+            SPECIES_FURFROU_LA_REINE,
+            SPECIES_FURFROU_MATRON,
+            SPECIES_FURFROU_DANDY,
+            SPECIES_FURFROU_DEBUTANTE,
+        };
+
+        return sFurfrouVariants[Random() % ARRAY_COUNT(sFurfrouVariants)];
+    }
+
+    case SPECIES_CRAMORANT:
+    {
+        // 1/3 each.
+        static const enum Species sCramorantVariants[] =
+        {
+            SPECIES_CRAMORANT,
+            SPECIES_CRAMORANT_GULPING,
+            SPECIES_CRAMORANT_GORGING,
+        };
+
+        return sCramorantVariants[Random() % ARRAY_COUNT(sCramorantVariants)];
+    }
+
+    case SPECIES_SINISTEA:
+    {
+        // 1/3 each.
+        static const enum Species sSinisteaVariants[] =
+        {
+            SPECIES_SINISTEA,
+            SPECIES_SINISTEA_ANTIQUE,
+            SPECIES_SINISTEA_PHONY,
+        };
+
+        return sSinisteaVariants[Random() % ARRAY_COUNT(sSinisteaVariants)];
+    }
+
+    case SPECIES_SQUAWKABILLY:
+    {
+        // 1/4 each.
+        static const enum Species sSquawkabillyVariants[] =
+        {
+            SPECIES_SQUAWKABILLY,
+            SPECIES_SQUAWKABILLY_BLUE,
+            SPECIES_SQUAWKABILLY_YELLOW,
+            SPECIES_SQUAWKABILLY_WHITE,
+        };
+
+        return sSquawkabillyVariants[Random() % ARRAY_COUNT(sSquawkabillyVariants)];
+    }
+
+    case SPECIES_TATSUGIRI:
+    {
+        // 1/3 each.
+        static const enum Species sTatsugiriVariants[] =
+        {
+            SPECIES_TATSUGIRI,
+            SPECIES_TATSUGIRI_DROOPY,
+            SPECIES_TATSUGIRI_STRETCHY,
+        };
+
+        return sTatsugiriVariants[Random() % ARRAY_COUNT(sTatsugiriVariants)];
+    }
+
+    case SPECIES_POLTCHAGEIST:
+    {
+        // 1/3 each.
+        static const enum Species sPoltchageistVariants[] =
+        {
+            SPECIES_POLTCHAGEIST,
+            SPECIES_POLTCHAGEIST_ARTISAN,
+            SPECIES_POLTCHAGEIST_COUNTERFEIT,
+        };
+
+        return sPoltchageistVariants[Random() % ARRAY_COUNT(sPoltchageistVariants)];
+    }
+
+    default:
+        break;
+    }
+
+    return species;
+}
+
 void CreateWildMon(enum Species species, u16 level)
 {
     /* Apply New Game+ level offset */
     level = min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+
+    species = GetWildEncounterVariant(species);
 
     ZeroEnemyPartyMons();
     u32 personality = GetMonPersonality(species, GetSynchronizedGender(WILDMON_ORIGIN, species), PickWildMonNature(species), RANDOM_UNOWN_LETTER);

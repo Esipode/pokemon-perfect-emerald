@@ -2883,7 +2883,7 @@
               {
                 "min_level": 12,
                 "max_level": 12,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_HERACROSS"
               },
               {
                 "min_level": 13,
@@ -2903,7 +2903,7 @@
               {
                 "min_level": 12,
                 "max_level": 12,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_HERACROSS"
               },
               {
                 "min_level": 13,
@@ -2923,7 +2923,7 @@
               {
                 "min_level": 12,
                 "max_level": 12,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_HERACROSS"
               },
               {
                 "min_level": 13,
@@ -3037,7 +3037,7 @@
               {
                 "min_level": 12,
                 "max_level": 12,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_SCYTHER"
               },
               {
                 "min_level": 13,
@@ -3057,7 +3057,7 @@
               {
                 "min_level": 12,
                 "max_level": 12,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_SCYTHER"
               },
               {
                 "min_level": 13,
@@ -3077,7 +3077,7 @@
               {
                 "min_level": 12,
                 "max_level": 12,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_SCYTHER"
               },
               {
                 "min_level": 13,
@@ -3932,7 +3932,7 @@
               {
                 "min_level": 15,
                 "max_level": 17,
-                "species": "SPECIES_DODUO"
+                "species": "SPECIES_CARNIVINE"
               },
               {
                 "min_level": 17,
@@ -3952,7 +3952,7 @@
               {
                 "min_level": 15,
                 "max_level": 17,
-                "species": "SPECIES_DODUO"
+                "species": "SPECIES_CARNIVINE"
               },
               {
                 "min_level": 17,
@@ -3972,7 +3972,7 @@
               {
                 "min_level": 15,
                 "max_level": 17,
-                "species": "SPECIES_DODUO"
+                "species": "SPECIES_CARNIVINE"
               }
             ]
           }
@@ -5348,7 +5348,7 @@
               {
                 "min_level": 9,
                 "max_level": 9,
-                "species": "SPECIES_TAUROS_PALDEA_AQUA"
+                "species": "SPECIES_STANTLER"
               },
               {
                 "min_level": 9,
@@ -5368,7 +5368,7 @@
               {
                 "min_level": 9,
                 "max_level": 9,
-                "species": "SPECIES_TAUROS_PALDEA_AQUA"
+                "species": "SPECIES_STANTLER"
               },
               {
                 "min_level": 9,
@@ -5388,7 +5388,7 @@
               {
                 "min_level": 9,
                 "max_level": 9,
-                "species": "SPECIES_TAUROS_PALDEA_AQUA"
+                "species": "SPECIES_STANTLER"
               },
               {
                 "min_level": 9,
@@ -5486,7 +5486,7 @@
               {
                 "min_level": 13,
                 "max_level": 13,
-                "species": "SPECIES_HIPPOPOTAS"
+                "species": "SPECIES_SMEARGLE"
               },
               {
                 "min_level": 14,
@@ -5506,7 +5506,7 @@
               {
                 "min_level": 13,
                 "max_level": 13,
-                "species": "SPECIES_HIPPOPOTAS"
+                "species": "SPECIES_SMEARGLE"
               },
               {
                 "min_level": 14,
@@ -5526,7 +5526,7 @@
               {
                 "min_level": 13,
                 "max_level": 13,
-                "species": "SPECIES_HIPPOPOTAS"
+                "species": "SPECIES_SMEARGLE"
               },
               {
                 "min_level": 14,
@@ -5640,7 +5640,7 @@
               {
                 "min_level": 13,
                 "max_level": 13,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_TAUROS"
               },
               {
                 "min_level": 14,
@@ -5660,7 +5660,7 @@
               {
                 "min_level": 13,
                 "max_level": 13,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_TAUROS"
               },
               {
                 "min_level": 14,
@@ -5680,7 +5680,7 @@
               {
                 "min_level": 13,
                 "max_level": 13,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_TAUROS"
               },
               {
                 "min_level": 14,
@@ -6261,7 +6261,7 @@
               {
                 "min_level": 28,
                 "max_level": 30,
-                "species": "SPECIES_MANECTRIC"
+                "species": "SPECIES_RIOLU"
               },
               {
                 "min_level": 28,
@@ -6281,7 +6281,7 @@
               {
                 "min_level": 28,
                 "max_level": 30,
-                "species": "SPECIES_MANECTRIC"
+                "species": "SPECIES_RIOLU"
               },
               {
                 "min_level": 28,
@@ -6301,7 +6301,7 @@
               {
                 "min_level": 28,
                 "max_level": 30,
-                "species": "SPECIES_MANECTRIC"
+                "species": "SPECIES_RIOLU"
               },
               {
                 "min_level": 28,
@@ -6420,7 +6420,7 @@
               {
                 "min_level": 28,
                 "max_level": 30,
-                "species": "SPECIES_MANECTRIC"
+                "species": "SPECIES_PONYTA_GALAR"
               },
               {
                 "min_level": 26,
@@ -6440,7 +6440,7 @@
               {
                 "min_level": 28,
                 "max_level": 30,
-                "species": "SPECIES_MANECTRIC"
+                "species": "SPECIES_PONYTA_GALAR"
               },
               {
                 "min_level": 26,
@@ -6460,7 +6460,7 @@
               {
                 "min_level": 28,
                 "max_level": 30,
-                "species": "SPECIES_MANECTRIC"
+                "species": "SPECIES_PONYTA_GALAR"
               }
             ]
           },
@@ -7153,7 +7153,7 @@
               {
                 "min_level": 6,
                 "max_level": 6,
-                "species": "SPECIES_SHROOMISH"
+                "species": "SPECIES_SUNKERN"
               },
               {
                 "min_level": 5,
@@ -7173,7 +7173,7 @@
               {
                 "min_level": 6,
                 "max_level": 6,
-                "species": "SPECIES_SHROOMISH"
+                "species": "SPECIES_SUNKERN"
               },
               {
                 "min_level": 5,
@@ -7193,7 +7193,7 @@
               {
                 "min_level": 6,
                 "max_level": 6,
-                "species": "SPECIES_SHROOMISH"
+                "species": "SPECIES_SUNKERN"
               }
             ]
           }
@@ -14312,7 +14312,7 @@
               {
                 "min_level": 32,
                 "max_level": 32,
-                "species": "SPECIES_KECLEON"
+                "species": "SPECIES_TAUROS_PALDEA_AQUA"
               },
               {
                 "min_level": 30,
@@ -14332,7 +14332,7 @@
               {
                 "min_level": 32,
                 "max_level": 32,
-                "species": "SPECIES_KECLEON"
+                "species": "SPECIES_TAUROS_PALDEA_AQUA"
               },
               {
                 "min_level": 30,
@@ -14352,7 +14352,7 @@
               {
                 "min_level": 32,
                 "max_level": 32,
-                "species": "SPECIES_KECLEON"
+                "species": "SPECIES_TAUROS_PALDEA_AQUA"
               }
             ]
           },
@@ -14774,7 +14774,7 @@
               {
                 "min_level": 33,
                 "max_level": 33,
-                "species": "SPECIES_WINGULL"
+                "species": "SPECIES_MILTANK"
               },
               {
                 "min_level": 31,
@@ -14794,7 +14794,7 @@
               {
                 "min_level": 33,
                 "max_level": 33,
-                "species": "SPECIES_WINGULL"
+                "species": "SPECIES_MILTANK"
               },
               {
                 "min_level": 31,
@@ -14814,7 +14814,7 @@
               {
                 "min_level": 33,
                 "max_level": 33,
-                "species": "SPECIES_WINGULL"
+                "species": "SPECIES_MILTANK"
               }
             ]
           },
@@ -15736,7 +15736,7 @@
               {
                 "min_level": 32,
                 "max_level": 32,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_MEOWSTIC_F"
               },
               {
                 "min_level": 32,
@@ -15756,7 +15756,7 @@
               {
                 "min_level": 32,
                 "max_level": 32,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_MEOWSTIC_M"
               },
               {
                 "min_level": 32,
@@ -15776,7 +15776,7 @@
               {
                 "min_level": 32,
                 "max_level": 32,
-                "species": "SPECIES_ODDISH"
+                "species": "SPECIES_MEOWSTIC_M"
               },
               {
                 "min_level": 32,
@@ -25969,7 +25969,7 @@
               {
                 "min_level": 42,
                 "max_level": 42,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_TURTONATOR"
               },
               {
                 "min_level": 40,
@@ -25989,7 +25989,7 @@
               {
                 "min_level": 42,
                 "max_level": 42,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_TURTONATOR"
               },
               {
                 "min_level": 40,
@@ -26009,7 +26009,7 @@
               {
                 "min_level": 42,
                 "max_level": 42,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_TURTONATOR"
               },
               {
                 "min_level": 40,
@@ -26043,7 +26043,7 @@
               {
                 "min_level": 40,
                 "max_level": 40,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_AERODACTYL"
               },
               {
                 "min_level": 40,
@@ -26063,7 +26063,7 @@
               {
                 "min_level": 40,
                 "max_level": 40,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_AERODACTYL"
               },
               {
                 "min_level": 40,
@@ -26083,7 +26083,7 @@
               {
                 "min_level": 40,
                 "max_level": 40,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_AERODACTYL"
               }
             ]
           }
@@ -26245,7 +26245,7 @@
               {
                 "min_level": 42,
                 "max_level": 42,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_TURTONATOR"
               },
               {
                 "min_level": 40,
@@ -26265,7 +26265,7 @@
               {
                 "min_level": 42,
                 "max_level": 42,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_TURTONATOR"
               },
               {
                 "min_level": 40,
@@ -26285,7 +26285,7 @@
               {
                 "min_level": 42,
                 "max_level": 42,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_TURTONATOR"
               },
               {
                 "min_level": 40,
@@ -26319,7 +26319,7 @@
               {
                 "min_level": 40,
                 "max_level": 40,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_AERODACTYL"
               },
               {
                 "min_level": 40,
@@ -26339,7 +26339,7 @@
               {
                 "min_level": 40,
                 "max_level": 40,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_AERODACTYL"
               },
               {
                 "min_level": 40,
@@ -26359,7 +26359,7 @@
               {
                 "min_level": 40,
                 "max_level": 40,
-                "species": "SPECIES_TYPE_NULL"
+                "species": "SPECIES_AERODACTYL"
               }
             ]
           }

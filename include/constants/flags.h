@@ -1214,7 +1214,7 @@
 #define FLAG_ITEM_ROUTE_134_TM63                                    0x487
 #define FLAG_ITEM_ROUTE_114_ENERGY_POWDER                           0x488
 #define FLAG_ITEM_ROUTE_115_PP_UP                                   0x489
-#define FLAG_ITEM_ARTISAN_CAVE_B1F_TM78                             0x48A
+#define FLAG_ITEM_METEOR_FALLS_B1F_TM78                             0x48A
 #define FLAG_ITEM_ARTISAN_CAVE_1F_TM97                              0x48B
 #define FLAG_ITEM_MAGMA_HIDEOUT_2F_2R_MAX_ELIXIR                    0x48C
 #define FLAG_ITEM_MAGMA_HIDEOUT_2F_2R_TM77                          0x48D
