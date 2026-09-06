@@ -795,7 +795,13 @@ struct SaveBlock2
     /*0x90*/ u8 monoGenSetting; // Mono Gen challenge: the one generation the player may obtain.
     /*0x91*/ u8 monoTypeSetting; // Mono Type challenge: the one type the player may obtain. TYPE_NONE (0) means off, so old saves read as OFF.
     /*0x92*/ u8 playerColors[PLAYER_COLOR_REGION_COUNT]; // see player_customization.h; 0 means vanilla, so old saves render unchanged
-    /*0x96*/ u8 keepStorageOnRestart; // this playthrough carried its PC over from the previous one; gates the OT-ID lock in pokemon_storage_system.c
+    /*0x96*/ u8 keepStorageOnRestart:1; // this playthrough carried its PC over from the previous one; gates the OT-ID lock in pokemon_storage_system.c
+             // Share this byte's previously-zero upper bits rather than inserting a new field,
+             // which would shift every SaveBlock2 offset after it. 0 means "unset" so old saves
+             // read as each side's original default; the stored value is the OPTIONS_HP_DISPLAY_* mode + 1.
+             u8 optionsHpDisplayPlayer:3;   // 0 = unset (BAR + HP)
+             u8 optionsHpDisplayOpponent:3; // 0 = unset (BAR, or BAR + % when B_HP_PERCENTAGE_DISPLAY)
+             //u8 padding3:1;
     /*0x97*/ u8 newGamePlus; // New Game+ counter (0-255)
     /*0x98*/ struct Time localTimeOffset;
     /*0xA0*/ struct Time lastBerryTreeUpdate;

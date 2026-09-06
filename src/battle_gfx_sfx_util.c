@@ -56,6 +56,23 @@ static const struct CompressedSpriteSheet sSpriteSheet_SinglesOpponentLargeHealt
     gHealthboxSinglesOpponentLargeGfx, 0x1000, TAG_HEALTHBOX_OPPONENT1_TILE
 };
 
+// Bar-less box art, used when the HP display mode hides the bar in singles (the bar frame
+// and end-cap are baked into the box image, so a plain-well variant is loaded instead).
+static const struct CompressedSpriteSheet sSpriteSheet_SinglesPlayerHealthboxNoBar =
+{
+    gHealthboxSinglesPlayerNoBarGfx, 0x1000, TAG_HEALTHBOX_PLAYER1_TILE
+};
+
+static const struct CompressedSpriteSheet sSpriteSheet_SinglesOpponentHealthboxNoBar =
+{
+    gHealthboxSinglesOpponentNoBarGfx, 0x1000, TAG_HEALTHBOX_OPPONENT1_TILE
+};
+
+static const struct CompressedSpriteSheet sSpriteSheet_SinglesOpponentLargeHealthboxNoBar =
+{
+    gHealthboxSinglesOpponentLargeNoBarGfx, 0x1000, TAG_HEALTHBOX_OPPONENT1_TILE
+};
+
 static const struct CompressedSpriteSheet sSpriteSheets_DoublesPlayerHealthbox[2] =
 {
     {gHealthboxDoublesPlayerGfx, 0x800, TAG_HEALTHBOX_PLAYER1_TILE},
@@ -727,15 +744,19 @@ bool8 BattleLoadAllHealthBoxesGfx(u8 state)
             {
                 if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
                     LoadCompressedSpriteSheet(&sSpriteSheet_SafariHealthbox);
+                else if (HpDisplay_SinglesHidesBar(GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)))
+                    LoadCompressedSpriteSheet(&sSpriteSheet_SinglesPlayerHealthboxNoBar);
                 else
                     LoadCompressedSpriteSheet(&sSpriteSheet_SinglesPlayerHealthbox);
             }
             else if (state == 3)
             {
-                if (B_HP_PERCENTAGE_DISPLAY)
-                    LoadCompressedSpriteSheet(&sSpriteSheet_SinglesOpponentLargeHealthbox);
+                bool32 noBar = HpDisplay_SinglesHidesBar(GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT));
+
+                if (HpDisplay_UsesLargeOpponentBox())
+                    LoadCompressedSpriteSheet(noBar ? &sSpriteSheet_SinglesOpponentLargeHealthboxNoBar : &sSpriteSheet_SinglesOpponentLargeHealthbox);
                 else
-                    LoadCompressedSpriteSheet(&sSpriteSheet_SinglesOpponentHealthbox);
+                    LoadCompressedSpriteSheet(noBar ? &sSpriteSheet_SinglesOpponentHealthboxNoBar : &sSpriteSheet_SinglesOpponentHealthbox);
             }
             else if (state == 4)
             {
@@ -760,7 +781,10 @@ bool8 BattleLoadAllHealthBoxesGfx(u8 state)
                     LoadCompressedSpriteSheet(&sSpriteSheets_DoublesPlayerHealthbox[0]);
                     break;
                 case BATTLE_COORDS_SINGLES:
-                    LoadCompressedSpriteSheet(&sSpriteSheet_SinglesPlayerHealthbox);
+                    if (HpDisplay_SinglesHidesBar(GetBattlerAtPosition(B_POSITION_PLAYER_LEFT)))
+                        LoadCompressedSpriteSheet(&sSpriteSheet_SinglesPlayerHealthboxNoBar);
+                    else
+                        LoadCompressedSpriteSheet(&sSpriteSheet_SinglesPlayerHealthbox);
                     break;
                 }
             }

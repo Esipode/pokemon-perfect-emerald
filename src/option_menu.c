@@ -34,6 +34,8 @@ static void DrawOptionsPg3(u8 taskId);
 #define tAIBattles        data[3]  // bit0 = trainer AI, bit1 = wild AI
 #define tBattleSpeed      data[4]  // OPTIONS_BATTLE_SPEED_*; multi-valued, so it can't live in tPackedFlags
 #define tTextSpeed        data[5]
+#define tHpDisplayPlayer  data[7]  // OPTIONS_HP_DISPLAY_*; multi-valued, so it can't live in tPackedFlags
+#define tHpDisplayFoe     data[8]  // OPTIONS_HP_DISPLAY_* for the opponent's side
 
 // Packed flags for all boolean options (data[6], bits 0-15)
 #define BATTLE_SCENE_SHIFT     0
@@ -85,6 +87,8 @@ enum
     MENUITEM_ROUTE_TRACKER,
     MENUITEM_EXPSHARE,
     MENUITEM_BATTLE_SPEED,
+    MENUITEM_HP_DISPLAY_PLAYER,
+    MENUITEM_HP_DISPLAY_FOE,
     MENUITEM_CANCEL_PG3,
     MENUITEM_COUNT_PG3,
 };
@@ -113,6 +117,8 @@ enum
 #define YPOS_ROUTE_TRACKER        (MENUITEM_ROUTE_TRACKER * 16)
 #define YPOS_EXPSHARE             (MENUITEM_EXPSHARE * 16)
 #define YPOS_BATTLE_SPEED         (MENUITEM_BATTLE_SPEED * 16)
+#define YPOS_HP_DISPLAY_PLAYER    (MENUITEM_HP_DISPLAY_PLAYER * 16)
+#define YPOS_HP_DISPLAY_FOE       (MENUITEM_HP_DISPLAY_FOE * 16)
 
 #define PAGE_COUNT 3
 
@@ -148,6 +154,8 @@ static u8   ExpShareOption_ProcessInput(u8 selection);
 static void ExpShareOption_DrawChoices(u8 selection, bool8 isActive);
 static u8   BattleSpeed_ProcessInput(u8 selection);
 static void BattleSpeed_DrawChoices(u8 selection, bool8 isActive);
+static u8   HpDisplay_ProcessInput(u8 selection);
+static void HpDisplay_DrawChoices(u8 selection, u8 y, bool8 isActive);
 static u8 Sound_ProcessInput(u8 selection);
 static void Sound_DrawChoices(u8 selection, bool8 isActive);
 static u8 FrameType_ProcessInput(u8 selection);
@@ -223,6 +231,12 @@ static const u8 gText_BattleSpeed2x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_BattleSpeed3x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}3x");
 static const u8 gText_BattleSpeed4x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}4x");
 static const u8 gText_BattleSpeed5x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}5x");
+static const u8 gText_HpDisplayBarNumbers[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}BAR + HP");
+static const u8 gText_HpDisplayBarPercent[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}BAR + %");
+static const u8 gText_HpDisplayBarOnly[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}BAR");
+static const u8 gText_HpDisplayNumbers[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HP ONLY");
+static const u8 gText_HpDisplayPercent[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}% ONLY");
+static const u8 gText_HpDisplayNone[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HIDDEN");
 
 static const u8 sText_ChevronLeft[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
@@ -258,6 +272,8 @@ static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
     [MENUITEM_ROUTE_TRACKER] = COMPOUND_STRING("ROUTE TRACKER"),
     [MENUITEM_EXPSHARE]      = COMPOUND_STRING("EXP SHARE"),
     [MENUITEM_BATTLE_SPEED]  = COMPOUND_STRING("BATTLE SPEED"),
+    [MENUITEM_HP_DISPLAY_PLAYER] = COMPOUND_STRING("YOUR HP"),
+    [MENUITEM_HP_DISPLAY_FOE] = COMPOUND_STRING("FOE HP"),
     [MENUITEM_CANCEL_PG3]    = COMPOUND_STRING("CANCEL"),
 };
 
@@ -323,6 +339,20 @@ static void VBlankCB(void)
     TransferPlttBuffer();
 }
 
+// The save fields hold the OPTIONS_HP_DISPLAY_* mode + 1; 0 is "unset" on a pre-change
+// save and resolves to that side's own default (players keep BAR + HP; the opponent
+// default follows B_HP_PERCENTAGE_DISPLAY, matching SetDefaultOptions()).
+static u8 HpDisplayModeFromSave(u8 stored, bool8 isFoe)
+{
+    if (stored == 0 || stored - 1 >= OPTIONS_HP_DISPLAY_COUNT)
+    {
+        if (isFoe)
+            return B_HP_PERCENTAGE_DISPLAY ? OPTIONS_HP_DISPLAY_BAR_PERCENT : OPTIONS_HP_DISPLAY_BAR_ONLY;
+        return OPTIONS_HP_DISPLAY_BAR_NUMBERS;
+    }
+    return stored - 1;
+}
+
 static void ReadAllCurrentSettings(u8 taskId)
 {
     gTasks[taskId].tMenuSelection = 0;
@@ -332,6 +362,8 @@ static void ReadAllCurrentSettings(u8 taskId)
     // The save field holds 3 bits but only 6 are valid values; keep the draw in range.
     gTasks[taskId].tBattleSpeed = (gSaveBlock2Ptr->optionsBattleSpeed < OPTIONS_BATTLE_SPEED_COUNT)
                                 ? gSaveBlock2Ptr->optionsBattleSpeed : OPTIONS_BATTLE_SPEED_1X;
+    gTasks[taskId].tHpDisplayPlayer = HpDisplayModeFromSave(gSaveBlock2Ptr->optionsHpDisplayPlayer, FALSE);
+    gTasks[taskId].tHpDisplayFoe = HpDisplayModeFromSave(gSaveBlock2Ptr->optionsHpDisplayOpponent, TRUE);
     gTasks[taskId].tAIBattles = (AiBattles_GetSetting(AI_BATTLES_SETTING_TRAINER) ? 1 : 0) | (AiBattles_GetSetting(AI_BATTLES_SETTING_WILD) ? 2 : 0);
     gTasks[taskId].tPackedFlags = 0;
     if (gSaveBlock2Ptr->optionsBattleSceneOff)     SET_FLAG(BATTLE_SCENE, 1); else SET_FLAG(BATTLE_SCENE, 0);
@@ -380,6 +412,8 @@ static void DrawOptionsPg3(u8 taskId)
     RouteTracker_DrawChoices(GET_FLAG(ROUTE_TRACKER), sel == MENUITEM_ROUTE_TRACKER);
     ExpShareOption_DrawChoices(GET_FLAG(EXP_SHARE), sel == MENUITEM_EXPSHARE);
     BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed, sel == MENUITEM_BATTLE_SPEED);
+    HpDisplay_DrawChoices(gTasks[taskId].tHpDisplayPlayer, YPOS_HP_DISPLAY_PLAYER, sel == MENUITEM_HP_DISPLAY_PLAYER);
+    HpDisplay_DrawChoices(gTasks[taskId].tHpDisplayFoe, YPOS_HP_DISPLAY_FOE, sel == MENUITEM_HP_DISPLAY_FOE);
     HighlightOptionMenuItem(sel);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
 }
@@ -539,7 +573,7 @@ static void Task_ChangePage(u8 taskId)
         gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
         break;
     case 2:
-        // Pg3 has fewer rows than Pg1/Pg2, so a selection carried over from
+        // Pg3 still has fewer rows than Pg1/Pg2, so a selection carried over from
         // one of those (e.g. a row past CANCEL_PG3's index) needs clamping.
         if (gTasks[taskId].tMenuSelection >= MENUITEM_COUNT_PG3)
             gTasks[taskId].tMenuSelection = MENUITEM_CANCEL_PG3;
@@ -817,6 +851,20 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
             if (previousOption != gTasks[taskId].tBattleSpeed)
                 BattleSpeed_DrawChoices(gTasks[taskId].tBattleSpeed, TRUE);
             break;
+        case MENUITEM_HP_DISPLAY_PLAYER:
+            previousOption = gTasks[taskId].tHpDisplayPlayer;
+            gTasks[taskId].tHpDisplayPlayer = HpDisplay_ProcessInput(previousOption);
+
+            if (previousOption != gTasks[taskId].tHpDisplayPlayer)
+                HpDisplay_DrawChoices(gTasks[taskId].tHpDisplayPlayer, YPOS_HP_DISPLAY_PLAYER, TRUE);
+            break;
+        case MENUITEM_HP_DISPLAY_FOE:
+            previousOption = gTasks[taskId].tHpDisplayFoe;
+            gTasks[taskId].tHpDisplayFoe = HpDisplay_ProcessInput(previousOption);
+
+            if (previousOption != gTasks[taskId].tHpDisplayFoe)
+                HpDisplay_DrawChoices(gTasks[taskId].tHpDisplayFoe, YPOS_HP_DISPLAY_FOE, TRUE);
+            break;
         default:
             return;
         }
@@ -857,6 +905,9 @@ static void CommitPendingOptionSettings(u8 taskId)
     // Same field the Exp. Share key item toggles (IsGen6ExpShareEnabled), so both controls stay in sync.
     gSaveBlock2Ptr->optionsExpShare = GET_FLAG(EXP_SHARE);
     gSaveBlock2Ptr->optionsBattleSpeed = gTasks[taskId].tBattleSpeed;
+    // Stored as mode + 1; 0 stays reserved for "unset" on pre-change saves (see HpDisplayModeFromSave).
+    gSaveBlock2Ptr->optionsHpDisplayPlayer = gTasks[taskId].tHpDisplayPlayer + 1;
+    gSaveBlock2Ptr->optionsHpDisplayOpponent = gTasks[taskId].tHpDisplayFoe + 1;
 }
 
 static void Task_OptionMenuSave(u8 taskId)
@@ -1271,6 +1322,45 @@ static void BattleSpeed_DrawChoices(u8 selection, bool8 isActive)
     };
 
     DrawOptionMenuValue(sTexts[selection], YPOS_BATTLE_SPEED, isActive);
+}
+
+static u8 HpDisplay_ProcessInput(u8 selection)
+{
+    if (JOY_NEW(DPAD_RIGHT))
+    {
+        if (selection < OPTIONS_HP_DISPLAY_COUNT - 1)
+            selection++;
+        else
+            selection = 0;
+
+        sArrowPressed = TRUE;
+    }
+    if (JOY_NEW(DPAD_LEFT))
+    {
+        if (selection != 0)
+            selection--;
+        else
+            selection = OPTIONS_HP_DISPLAY_COUNT - 1;
+
+        sArrowPressed = TRUE;
+    }
+    return selection;
+}
+
+// Takes the row's Y so one pair serves both the YOUR HP and FOE HP rows.
+static void HpDisplay_DrawChoices(u8 selection, u8 y, bool8 isActive)
+{
+    static const u8 *const sTexts[OPTIONS_HP_DISPLAY_COUNT] =
+    {
+        [OPTIONS_HP_DISPLAY_BAR_NUMBERS] = gText_HpDisplayBarNumbers,
+        [OPTIONS_HP_DISPLAY_BAR_PERCENT] = gText_HpDisplayBarPercent,
+        [OPTIONS_HP_DISPLAY_BAR_ONLY]    = gText_HpDisplayBarOnly,
+        [OPTIONS_HP_DISPLAY_NUMBERS]     = gText_HpDisplayNumbers,
+        [OPTIONS_HP_DISPLAY_PERCENT]     = gText_HpDisplayPercent,
+        [OPTIONS_HP_DISPLAY_NONE]        = gText_HpDisplayNone,
+    };
+
+    DrawOptionMenuValue(sTexts[selection], y, isActive);
 }
 
 static void DrawHeaderText(void)

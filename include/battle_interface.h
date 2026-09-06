@@ -118,6 +118,12 @@ void DummyBattleInterfaceFunc(u8 healthboxSpriteId, bool8 isDoubleBattleBattlerO
 void UpdateOamPriorityInAllHealthboxes(u8 priority, bool32 hideHpBoxes);
 void InitBattlerHealthboxCoords(enum BattlerId battler);
 void GetBattlerHealthboxCoords(enum BattlerId battler, s16 *x, s16 *y);
+u32 GetHpDisplayMode(enum BattlerId battler);
+bool32 HpDisplay_ShowsBar(enum BattlerId battler);
+bool32 HpDisplay_ShowsValue(enum BattlerId battler);
+bool32 HpDisplay_ValueIsPercent(enum BattlerId battler);
+bool32 HpDisplay_UsesLargeOpponentBox(void);
+bool32 HpDisplay_SinglesHidesBar(enum BattlerId battler);
 void UpdateHpTextInHealthbox(u32 healthboxSpriteId, u32 maxOrCurrent, s16 currHp, s16 maxHp);
 void SwapHpBarsWithHpText(void);
 u8 CreatePartyStatusSummarySprites(enum BattlerId battler, struct HpAndStatus *partyInfo, bool8 skipPlayer, bool8 isBattleStart);

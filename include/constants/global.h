@@ -210,6 +210,14 @@ enum Gender
 #define OPTIONS_BATTLE_SPEED_5X 5
 #define OPTIONS_BATTLE_SPEED_COUNT 6
 
+#define OPTIONS_HP_DISPLAY_BAR_NUMBERS 0 // HP bar + HP numbers
+#define OPTIONS_HP_DISPLAY_BAR_PERCENT 1 // HP bar + percentage
+#define OPTIONS_HP_DISPLAY_BAR_ONLY 2    // HP bar only
+#define OPTIONS_HP_DISPLAY_NUMBERS 3     // HP numbers only, no bar
+#define OPTIONS_HP_DISPLAY_PERCENT 4     // percentage only, no bar
+#define OPTIONS_HP_DISPLAY_NONE 5        // nothing
+#define OPTIONS_HP_DISPLAY_COUNT 6
+
 enum __attribute__((packed)) Direction
 {
     DIR_NONE,

@@ -642,7 +642,7 @@ u8 CreateBattlerHealthboxSprites(enum BattlerId battler)
             healthboxLeftSpriteId = CreateSprite(&sHealthboxOpponentSpriteTemplates[0], DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
             healthboxRightSpriteId = CreateSpriteAtEnd(&sHealthboxOpponentSpriteTemplates[0], DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
 
-            if (B_HP_PERCENTAGE_DISPLAY)
+            if (HpDisplay_UsesLargeOpponentBox())
             {
                 gSprites[healthboxLeftSpriteId].oam.shape = ST_OAM_SQUARE;
                 gSprites[healthboxRightSpriteId].oam.shape = ST_OAM_SQUARE;
@@ -850,7 +850,8 @@ static const s16 sBattlerHealthboxCoords[BATTLE_COORDS_COUNT][MAX_BATTLERS_COUNT
     [BATTLE_COORDS_SINGLES] =
     {
         [B_POSITION_PLAYER_LEFT]   = { 158, 88 },
-        [B_POSITION_OPPONENT_LEFT] = { 44,  (B_HP_PERCENTAGE_DISPLAY ? 22 : 30)},
+        // Small-box Y; GetBattlerHealthboxCoords() raises it for the large box (a runtime value can't live in this table).
+        [B_POSITION_OPPONENT_LEFT] = { 44,  30 },
     },
     [BATTLE_COORDS_DOUBLES] =
     {
@@ -868,6 +869,10 @@ void GetBattlerHealthboxCoords(enum BattlerId battler, s16 *x, s16 *y)
 
     *x = sBattlerHealthboxCoords[index][position][0];
     *y = sBattlerHealthboxCoords[index][position][1];
+
+    // The large opponent-singles box sits 8px higher than the small one.
+    if (index == BATTLE_COORDS_SINGLES && position == B_POSITION_OPPONENT_LEFT && HpDisplay_UsesLargeOpponentBox())
+        *y -= 8;
 }
 
 void InitBattlerHealthboxCoords(enum BattlerId battler)
@@ -990,6 +995,14 @@ static void PrintHPPercentageOnHealthbox(u32 spriteId, s16 currHp, s16 maxHp, u3
     gSprites[spriteId2].data[1] = savedValue2;
 }
 
+// Erases the HP value row across both healthbox sprites, using the same rectangle
+// SwapHpBarsWithHpText() uses to clear doubles HP text (main sprite right half +
+// affineParam sprite left half). yOffset matches the value's yOffset (8 doubles, 16 singles).
+static void ClearHpValueOnHealthbox(u32 spriteId, s8 yOffset)
+{
+    FillSpriteRectColor(spriteId, 32, yOffset + 8, 32, 8, HEALTHBOX_BG_INDEX);
+    FillSpriteRectColor(gSprites[spriteId].oam.affineParam, 0, yOffset + 8, 32, 8, HEALTHBOX_BG_INDEX);
+}
 
 // Note: this is only possible to trigger via debug, it was an unused GF function.
 UNUSED static void UpdateOpponentHpTextDoubles(u32 healthboxSpriteId, u32 barSpriteId, s16 value, u8 maxOrCurrent)
@@ -1064,29 +1077,153 @@ UNUSED static void UpdateOpponentHpTextSingles(u32 healthboxSpriteId, s16 value,
     }
 }
 
-static bool32 ShouldShowHealthbar(enum BattlerId battler)
+// Resolves the per-side HP display option to an OPTIONS_HP_DISPLAY_* mode.
+// Option changes only happen in the field, so the mode is fixed for a battle;
+// callers may read it once per healthbox operation.
+u32 GetHpDisplayMode(enum BattlerId battler)
 {
-    enum BattleCoordTypes coords = GetBattlerCoordsIndex(battler);
-    bool32 showHpText = gBattleSpritesDataPtr->battlerData[battler].hpNumbersNoBars;
-    bool32 isPlayer = IsOnPlayerSide(battler);
+    // Safari and the old-man tutorial use their own healthbox layout and text; force the vanilla mode.
+    if (gBattleTypeFlags & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_FIRST_BATTLE))
+        return IsOnPlayerSide(battler) ? OPTIONS_HP_DISPLAY_BAR_NUMBERS : OPTIONS_HP_DISPLAY_BAR_ONLY;
 
-    if (coords == BATTLE_COORDS_SINGLES)
+    bool32 isPlayer = IsOnPlayerSide(battler);
+    // Stored as the mode + 1; 0 is "unset" on a pre-change save and reads back as the side's default.
+    u32 stored = isPlayer ? gSaveBlock2Ptr->optionsHpDisplayPlayer : gSaveBlock2Ptr->optionsHpDisplayOpponent;
+
+    if (stored == 0 || stored - 1 >= OPTIONS_HP_DISPLAY_COUNT)
     {
         if (isPlayer)
-            return TRUE;
-        else
-            return B_HP_PERCENTAGE_DISPLAY || !showHpText;
+            return OPTIONS_HP_DISPLAY_BAR_NUMBERS;
+        return B_HP_PERCENTAGE_DISPLAY ? OPTIONS_HP_DISPLAY_BAR_PERCENT : OPTIONS_HP_DISPLAY_BAR_ONLY;
     }
-    else
+    return stored - 1;
+}
+
+static bool32 ModeShowsBar(u32 mode)
+{
+    switch (mode)
     {
-        return !showHpText;
+    case OPTIONS_HP_DISPLAY_BAR_NUMBERS:
+    case OPTIONS_HP_DISPLAY_BAR_PERCENT:
+    case OPTIONS_HP_DISPLAY_BAR_ONLY:
+        return TRUE;
+    default:
+        return FALSE;
     }
+}
+
+static bool32 ModeShowsValue(u32 mode)
+{
+    switch (mode)
+    {
+    case OPTIONS_HP_DISPLAY_BAR_NUMBERS:
+    case OPTIONS_HP_DISPLAY_BAR_PERCENT:
+    case OPTIONS_HP_DISPLAY_NUMBERS:
+    case OPTIONS_HP_DISPLAY_PERCENT:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
+static bool32 ModeValueIsPercent(u32 mode)
+{
+    return mode == OPTIONS_HP_DISPLAY_BAR_PERCENT || mode == OPTIONS_HP_DISPLAY_PERCENT;
+}
+
+// The mode actually rendered right now. The in-battle START toggle (doubles only)
+// temporarily swaps the configured presentation for its complement without saving it:
+// a mode that shows a bar drops to its value alone; a value-only or hidden mode shows the bar.
+static u32 GetLiveHpDisplayMode(enum BattlerId battler)
+{
+    u32 mode = GetHpDisplayMode(battler);
+
+    if (!gBattleSpritesDataPtr->battlerData[battler].hpNumbersNoBars)
+        return mode;
+
+    switch (mode)
+    {
+    case OPTIONS_HP_DISPLAY_BAR_NUMBERS: return OPTIONS_HP_DISPLAY_NUMBERS;
+    case OPTIONS_HP_DISPLAY_BAR_PERCENT: return OPTIONS_HP_DISPLAY_PERCENT;
+    case OPTIONS_HP_DISPLAY_BAR_ONLY:    return OPTIONS_HP_DISPLAY_NUMBERS;
+    default:                             return OPTIONS_HP_DISPLAY_BAR_ONLY;
+    }
+}
+
+bool32 HpDisplay_ShowsBar(enum BattlerId battler)
+{
+    return ModeShowsBar(GetLiveHpDisplayMode(battler));
+}
+
+bool32 HpDisplay_ShowsValue(enum BattlerId battler)
+{
+    return ModeShowsValue(GetLiveHpDisplayMode(battler));
+}
+
+bool32 HpDisplay_ValueIsPercent(enum BattlerId battler)
+{
+    return ModeValueIsPercent(GetLiveHpDisplayMode(battler));
+}
+
+// The taller opponent-singles healthbox is used when the opponent side shows a value in
+// singles. It is chosen once at healthbox creation, so this reads the configured mode,
+// never the live one (the START toggle must not re-lay-out a box mid-battle).
+bool32 HpDisplay_UsesLargeOpponentBox(void)
+{
+    enum BattlerId opponent = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
+
+    return GetBattlerCoordsIndex(opponent) == BATTLE_COORDS_SINGLES
+        && ModeShowsValue(GetHpDisplayMode(opponent));
+}
+
+// Whether a singles healthbox should load the bar-less box art. Read from the configured
+// mode, never the live one: box art is picked once at healthbox creation and the START
+// toggle (doubles only) must not re-lay-out a box.
+bool32 HpDisplay_SinglesHidesBar(enum BattlerId battler)
+{
+    return GetBattlerCoordsIndex(battler) == BATTLE_COORDS_SINGLES
+        && !ModeShowsBar(GetHpDisplayMode(battler));
+}
+
+// Whether a doubles healthbox draws an HP value right now. Doubles boxes have no value row,
+// so a value shows only when the live mode has a value and no bar competing for the row.
+// The live mode already folds in the START toggle.
+static bool32 ShouldPrintHpValue(enum BattlerId battler)
+{
+    return HpDisplay_ShowsValue(battler) && !HpDisplay_ShowsBar(battler);
+}
+
+// Clears the HP bar graphics for a box whose mode hides the bar.
+// The player bar sprite is 8 tiles; the opponent bar sprite is 9 (tile 8 is the caught-ball
+// / nuzlocke icon slot), so the whole sheet must be zeroed or that icon is left on screen.
+// In doubles the bar-hide path historically also stamps a closed-frame tile into the box art;
+// the singles boxes need no such stamp - zeroing the bar sprite removes the whole bar, and
+// writing anything into the box only leaves an artefact.
+static void HideHpBarInHealthbox(u32 healthboxSpriteId)
+{
+    enum BattlerId battler = gSprites[healthboxSpriteId].hMain_Battler;
+    u32 barSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
+    u32 boxTileNum = gSprites[healthboxSpriteId].oam.tileNum;
+    bool32 isPlayer = IsOnPlayerSide(battler);
+
+    FillHealthboxObject((void *)OBJ_VRAM0 + gSprites[barSpriteId].oam.tileNum * TILE_SIZE_4BPP, 0, isPlayer ? 8 : 9);
+
+    if (GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES)
+    {
+        CpuCopy32(GetHealthboxElementGfxPtr(isPlayer ? HEALTHBOX_GFX_PLAYER_FRAME_END : HEALTHBOX_GFX_OPPONENT_FRAME_END),
+                  (void *)(OBJ_VRAM0 + (isPlayer ? 0x680 : 0x660)) + boxTileNum * TILE_SIZE_4BPP, 0x20);
+    }
+}
+
+// The live mode already folds in the START toggle, so this reduces to: does the mode show a bar?
+static bool32 ShouldShowHealthbar(enum BattlerId battler)
+{
+    return HpDisplay_ShowsBar(battler);
 }
 
 void UpdateHpTextInHealthbox(u32 healthboxSpriteId, u32 maxOrCurrent, s16 currHp, s16 maxHp)
 {
     enum BattlerId battler = gSprites[healthboxSpriteId].hMain_Battler;
-    u32 barSpriteId = gSprites[healthboxSpriteId].data[5];
     switch (GetBattlerCoordsIndex(battler))
     {
     default:
@@ -1096,28 +1233,24 @@ void UpdateHpTextInHealthbox(u32 healthboxSpriteId, u32 maxOrCurrent, s16 currHp
     }
     case BATTLE_COORDS_SINGLES:
     {
-        if (IsOnPlayerSide(battler)) // Player
-        {
-            PrintHpOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, 0, 16);
-        }
-        else // Opponent
-        {
-            if (B_HP_PERCENTAGE_DISPLAY)
-            {
-                PrintHPPercentageOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, -8, 16);
-            }
-            else if (gBattleSpritesDataPtr->battlerData[battler].hpNumbersNoBars)
-            {
-                // Clears the end of the healthbar gfx.
-                CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_OPPONENT_FRAME_END),
-                          (void *)OBJ_VRAM0 + (gSprites[healthboxSpriteId].oam.tileNum + 51) * TILE_SIZE_4BPP,
-                          TILE_SIZE_4BPP);
+        s8 xOffset = IsOnPlayerSide(battler) ? 0 : -8;
 
-                // Erases HP bar leftover.
-                FillHealthboxObject((void *)(OBJ_VRAM0) + (gSprites[barSpriteId].oam.tileNum * TILE_SIZE_4BPP), 0, 2);
-                PrintHpOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, -8, 8); // debug only
-            }
+        if (HpDisplay_ShowsValue(battler))
+        {
+            if (HpDisplay_ValueIsPercent(battler))
+                PrintHPPercentageOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, xOffset, 16);
+            else
+                PrintHpOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, xOffset, 16);
         }
+        else if (IsOnPlayerSide(battler))
+        {
+            // The player's singles box always has a value row; clear it when no value is shown.
+            // The opponent's small box has no row, so nothing to clear there.
+            ClearHpValueOnHealthbox(healthboxSpriteId, 16);
+        }
+
+        if (!HpDisplay_ShowsBar(battler))
+            HideHpBarInHealthbox(healthboxSpriteId);
         break;
     }
     }
@@ -1125,40 +1258,26 @@ void UpdateHpTextInHealthbox(u32 healthboxSpriteId, u32 maxOrCurrent, s16 currHp
 
 static void UpdateHpTextInHealthboxInDoubles(u32 healthboxSpriteId, u32 maxOrCurrent, s16 currHp, s16 maxHp)
 {
-    u32 barSpriteId = gSprites[healthboxSpriteId].data[5];
     enum BattlerId battler = gSprites[healthboxSpriteId].hMain_Battler;
 
-    if (IsOnPlayerSide(battler))
+    // Doubles boxes have no value row, so a shown value always replaces the bar.
+    if (!ShouldPrintHpValue(battler))
     {
-        if (gBattleSpritesDataPtr->battlerData[battler].hpNumbersNoBars) // don't print text if only bars are visible
-        {
-            PrintHpOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, 0, 8);
-            // Clears the end of the healthbar gfx.
-            CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_PLAYER_FRAME_END),
-                          (void *)(OBJ_VRAM0 + 0x680) + (gSprites[healthboxSpriteId].oam.tileNum * TILE_SIZE_4BPP),
-                           0x20);
-            // Erases HP bar leftover.
-            FillHealthboxObject((void *)(OBJ_VRAM0) + (gSprites[barSpriteId].oam.tileNum * TILE_SIZE_4BPP), 0, 2);
-        }
+        // Value-less bar-hiding modes (HIDDEN) still need the bar area cleared.
+        if (!HpDisplay_ShowsBar(battler))
+            HideHpBarInHealthbox(healthboxSpriteId);
+        return;
     }
-    else // Opponent
-    {
-        if (gBattleSpritesDataPtr->battlerData[battler].hpNumbersNoBars) // don't print text if only bars are visible
-        {
-            if (B_HP_PERCENTAGE_DISPLAY)
-                PrintHPPercentageOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, -8, 8);
-            else 
-                PrintHpOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, -8, 8); // debug only
 
-            // Clears the end of the healthbar gfx.
-            CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_OPPONENT_FRAME_END),
-                        (void *)(OBJ_VRAM0 + 0x660) + (gSprites[healthboxSpriteId].oam.tileNum * TILE_SIZE_4BPP),
-                        0x20);
-            // Erases HP bar leftover.
-            FillHealthboxObject((void *)(OBJ_VRAM0) + (gSprites[barSpriteId].oam.tileNum * TILE_SIZE_4BPP), 0, 2);
+    s8 xOffset = IsOnPlayerSide(battler) ? 0 : -8;
 
-        }
-    }
+    if (HpDisplay_ValueIsPercent(battler))
+        PrintHPPercentageOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, xOffset, 8);
+    else
+        PrintHpOnHealthbox(healthboxSpriteId, currHp, maxHp, HEALTHBOX_BG_INDEX, xOffset, 8);
+
+    // The value occupies the bar's row here, so erase the bar and close its frame.
+    HideHpBarInHealthbox(healthboxSpriteId);
 }
 
 // Prints mon's nature, catch and flee rate. Probably used to test pokeblock-related features.
@@ -1227,70 +1346,45 @@ UNUSED static void PrintSafariMonInfo(u8 healthboxSpriteId, struct Pokemon *mon)
     }
 }
 
+// START toggles a temporary, unsaved swap between the configured HP display and its
+// complement (see GetLiveHpDisplayMode). It only acts in doubles: singles boxes have a
+// dedicated value row, so the configured mode already shows both bar and value and there
+// is nothing to swap. Either side is eligible whenever its box exists.
 void SwapHpBarsWithHpText(void)
 {
-    u32 healthBarSpriteId;
-
     for (enum BattlerId i = 0; i < gBattlersCount; i++)
     {
         struct Pokemon *mon = GetBattlerMon(i);
-        if (gSprites[gHealthboxSpriteIds[i]].callback == SpriteCallbackDummy
-         && (B_HP_PERCENTAGE_DISPLAY || IsOnPlayerSide(i)))
+        u32 healthboxSpriteId = gHealthboxSpriteIds[i];
+
+        if (gSprites[healthboxSpriteId].callback != SpriteCallbackDummy)
+            continue;
+        if (GetBattlerCoordsIndex(i) != BATTLE_COORDS_DOUBLES || (gBattleTypeFlags & BATTLE_TYPE_SAFARI))
+            continue;
+
+        s32 currHp = GetMonData(mon, MON_DATA_HP);
+        s32 maxHp = GetMonData(mon, MON_DATA_MAX_HP);
+        bool32 isPlayer = IsOnPlayerSide(i);
+
+        gBattleSpritesDataPtr->battlerData[i].hpNumbersNoBars ^= 1;
+
+        if (!ShouldShowHealthbar(i)) // now showing the value in the bar's row
         {
-            s32 currHp = GetMonData(mon, MON_DATA_HP);
-            s32 maxHp = GetMonData(mon, MON_DATA_MAX_HP);
-            bool8 noBars;
-
-            gBattleSpritesDataPtr->battlerData[i].hpNumbersNoBars ^= 1;
-            noBars = gBattleSpritesDataPtr->battlerData[i].hpNumbersNoBars;
-            if (IsOnPlayerSide(i))
-            {
-                if (GetBattlerCoordsIndex(i) == BATTLE_COORDS_SINGLES)
-                    continue;
-                if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
-                    continue;
-
-                if (noBars == TRUE) // bars to text
-                {
-                    healthBarSpriteId = gSprites[gHealthboxSpriteIds[i]].hMain_HealthBarSpriteId;
-
-                    CpuFill32(0, (void *)(OBJ_VRAM0 + gSprites[healthBarSpriteId].oam.tileNum * TILE_SIZE_4BPP), 0x100);
-                    UpdateHpTextInHealthboxInDoubles(gHealthboxSpriteIds[i], HP_BOTH, currHp, maxHp);
-                }
-                else // text to bars
-                {
-                    FillSpriteRectColor(gHealthboxSpriteIds[i], 32, 16, 32, 8, HEALTHBOX_BG_INDEX);
-                    FillSpriteRectColor(gSprites[gHealthboxSpriteIds[i]].oam.affineParam, 0, 16, 32, 8, HEALTHBOX_BG_INDEX);
-                    UpdateStatusIconInHealthbox(gHealthboxSpriteIds[i]);
-                    UpdateHealthboxAttribute(gHealthboxSpriteIds[i], mon, HEALTHBOX_HEALTH_BAR);
-                    CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_PLAYER_FRAME_END_BAR), (void *)(OBJ_VRAM0 + 0x680 + gSprites[gHealthboxSpriteIds[i]].oam.tileNum * TILE_SIZE_4BPP), 32);
-                }
-            }
-            else
-            {
-                if (GetBattlerCoordsIndex(i) == BATTLE_COORDS_SINGLES)
-                    continue;
-                if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
-                    continue;
-
-                if (noBars == TRUE) // bars to text
-                {
-                    healthBarSpriteId = gSprites[gHealthboxSpriteIds[i]].hMain_HealthBarSpriteId;
-
-                    CpuFill32(0, (void *)(OBJ_VRAM0 + gSprites[healthBarSpriteId].oam.tileNum * 32), 0x100);
-                    UpdateHpTextInHealthboxInDoubles(gHealthboxSpriteIds[i], HP_BOTH, currHp, maxHp);
-                }
-                else // text to bars
-                {
-                    FillSpriteRectColor(gHealthboxSpriteIds[i], 32, 16, 32, 8, HEALTHBOX_BG_INDEX);
-                    FillSpriteRectColor(gSprites[gHealthboxSpriteIds[i]].oam.affineParam, 0, 16, 32, 8, HEALTHBOX_BG_INDEX);
-                    UpdateStatusIconInHealthbox(gHealthboxSpriteIds[i]);
-                    UpdateHealthboxAttribute(gHealthboxSpriteIds[i], mon, HEALTHBOX_HEALTH_BAR);
-                    CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_OPPONENT_FRAME_END_BAR), (void *)(OBJ_VRAM0 + 0x660 + gSprites[gHealthboxSpriteIds[i]].oam.tileNum * TILE_SIZE_4BPP), 32);
-                }
-            }
-            gSprites[gHealthboxSpriteIds[i]].hMain_Data7 ^= 1;
+            u32 barSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
+            CpuFill32(0, (void *)(OBJ_VRAM0 + gSprites[barSpriteId].oam.tileNum * TILE_SIZE_4BPP), 0x100);
+            UpdateHpTextInHealthboxInDoubles(healthboxSpriteId, HP_BOTH, currHp, maxHp);
         }
+        else // now showing the bar
+        {
+            FillSpriteRectColor(healthboxSpriteId, 32, 16, 32, 8, HEALTHBOX_BG_INDEX);
+            FillSpriteRectColor(gSprites[healthboxSpriteId].oam.affineParam, 0, 16, 32, 8, HEALTHBOX_BG_INDEX);
+            UpdateStatusIconInHealthbox(healthboxSpriteId);
+            UpdateHealthboxAttribute(healthboxSpriteId, mon, HEALTHBOX_HEALTH_BAR);
+            CpuCopy32(GetHealthboxElementGfxPtr(isPlayer ? HEALTHBOX_GFX_PLAYER_FRAME_END_BAR : HEALTHBOX_GFX_OPPONENT_FRAME_END_BAR),
+                      (void *)(OBJ_VRAM0 + (isPlayer ? 0x680 : 0x660) + gSprites[healthboxSpriteId].oam.tileNum * TILE_SIZE_4BPP), 32);
+        }
+
+        gSprites[healthboxSpriteId].hMain_Data7 ^= 1;
     }
 }
 
@@ -1943,7 +2037,7 @@ static void UpdateStatusIconInHealthbox(u8 healthboxSpriteId)
     }
     else
     {
-        if (B_HP_PERCENTAGE_DISPLAY && GetBattlerCoordsIndex(battler) == BATTLE_COORDS_SINGLES)
+        if (HpDisplay_UsesLargeOpponentBox() && GetBattlerCoordsIndex(battler) == BATTLE_COORDS_SINGLES)
             tileNumAdder = 0x19;
         else
             tileNumAdder = 0x11;
@@ -1999,15 +2093,15 @@ static void UpdateStatusIconInHealthbox(u8 healthboxSpriteId)
     FillPalette(sStatusIconColors[statusPalId], OBJ_PLTT_OFFSET + pltAdder, PLTT_SIZEOF(1));
     CpuCopy16(&gPlttBufferUnfaded[OBJ_PLTT_OFFSET + pltAdder], (u16 *)OBJ_PLTT + pltAdder, PLTT_SIZEOF(1));
     CpuCopy32(statusGfxPtr, (void *)(OBJ_VRAM0 + (gSprites[healthboxSpriteId].oam.tileNum + tileNumAdder) * TILE_SIZE_4BPP), 96);
-    if ((!B_HP_PERCENTAGE_DISPLAY && !IsOnPlayerSide(battler)) || GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES)
+    if ((!HpDisplay_UsesLargeOpponentBox() && !IsOnPlayerSide(battler)) || GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES)
     {
-        if (!gBattleSpritesDataPtr->battlerData[battler].hpNumbersNoBars)
+        if (ShouldShowHealthbar(battler))
         {
             CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_0), (void *)(OBJ_VRAM0 + gSprites[healthBarSpriteId].oam.tileNum * TILE_SIZE_4BPP), 32);
             CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_65), (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 1) * TILE_SIZE_4BPP), 32);
         }
     }
-    TryAddPokeballIconToHealthbox(healthboxSpriteId, (B_HP_PERCENTAGE_DISPLAY && GetBattlerCoordsIndex(battler) == BATTLE_COORDS_SINGLES));
+    TryAddPokeballIconToHealthbox(healthboxSpriteId, (HpDisplay_UsesLargeOpponentBox() && GetBattlerCoordsIndex(battler) == BATTLE_COORDS_SINGLES));
 }
 
 static u8 GetStatusIconForBattlerId(u8 statusElementId, enum BattlerId battler)
