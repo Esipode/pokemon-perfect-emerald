@@ -2036,6 +2036,8 @@ static bool8 IsFirstTrainerIdReadyForRematch(const struct RematchTrainer *table,
 #if FREE_MATCH_CALL == FALSE
     if (gSaveBlock1Ptr->trainerRematches[tableId] == 0)
         return FALSE;
+#else
+    return FALSE; // CUSTOM - rematch functionality disabled
 #endif //FREE_MATCH_CALL
 
     return TRUE;
@@ -2052,6 +2054,8 @@ static bool8 IsTrainerReadyForRematch_(const struct RematchTrainer *table, u16 t
 #if FREE_MATCH_CALL == FALSE
     if (gSaveBlock1Ptr->trainerRematches[tableId] == 0)
         return FALSE;
+#else
+    return FALSE; // CUSTOM - rematch functionality disabled
 #endif //FREE_MATCH_CALL
 
     return TRUE;
@@ -2160,6 +2164,8 @@ static bool8 WasSecondRematchWon(const struct RematchTrainer *table, u16 firstBa
         if (gSaveBlock1Ptr->trainerRematches[tableId] == 0)
             return FALSE;
     }
+#else
+    return FALSE; // CUSTOM - rematch functionality disabled
 #endif
     return TRUE;
 }
