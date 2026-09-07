@@ -1497,6 +1497,16 @@
 	.byte \elevation
 	.endm
 
+	@ Set the metatile and elevation at (x, y) on the current map.
+	.macro setmetatilewithelevation x:req, y:req, metatileId:req, impassable:req, elevation:req
+	.byte SCR_OP_SETMETATILEWITHELEVATION
+	.2byte \x
+	.2byte \y
+	.2byte \metatileId
+	.2byte \impassable
+	.2byte \elevation
+	.endm
+
 	@ Queues a weather change to the default weather for the map.
 	.macro resetweather
 	.byte SCR_OP_RESETWEATHER

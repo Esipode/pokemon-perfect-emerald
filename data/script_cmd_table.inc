@@ -184,7 +184,8 @@ gScriptCmdTable::
 	script_cmd_table_entry SCR_OP_SETRESPAWN                    ScrCmd_setrespawn,                  requests_effects=1  @ 0x9f
 	script_cmd_table_entry SCR_OP_CHECKPLAYERGENDER             ScrCmd_checkplayergender,           requests_effects=1  @ 0xa0
 	script_cmd_table_entry SCR_OP_PLAYMONCRY                    ScrCmd_playmoncry,                  requests_effects=1  @ 0xa1
-	script_cmd_table_entry SCR_OP_SETMETATILE                   ScrCmd_setmetatile,                 requests_effects=1  @ 0xa2
+	script_cmd_table_entry SCR_OP_SETMETATILE                   ScrCmd_setmetatile,                 requests_effects=1  @ 0xa1
+	script_cmd_table_entry SCR_OP_SETMETATILEWITHELEVATION      ScrCmd_setmetatilewithelevation,    requests_effects=1  @ 0xa2
 	script_cmd_table_entry SCR_OP_RESETWEATHER                  ScrCmd_resetweather,                requests_effects=1  @ 0xa3
 	script_cmd_table_entry SCR_OP_SETWEATHER                    ScrCmd_setweather,                  requests_effects=1  @ 0xa4
 	script_cmd_table_entry SCR_OP_DOWEATHER                     ScrCmd_doweather,                   requests_effects=1  @ 0xa5

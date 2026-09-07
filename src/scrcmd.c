@@ -2727,6 +2727,29 @@ bool8 ScrCmd_setmetatile(struct ScriptContext *ctx)
     return FALSE;
 }
 
+bool8 ScrCmd_setmetatilewithelevation(struct ScriptContext *ctx)
+{
+    u16 x = ScriptReadHalfword(ctx);
+    u16 y = ScriptReadHalfword(ctx);
+    u16 metatileId = ScriptReadHalfword(ctx);
+    bool16 isImpassable = ScriptReadHalfword(ctx);
+    u16 elevation = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    x += MAP_OFFSET;
+    y += MAP_OFFSET;
+
+    if (!isImpassable)
+        MapGridSetMetatileIdAt(x, y, metatileId);
+    else
+        MapGridSetMetatileIdAt(x, y, metatileId | MAPGRID_IMPASSABLE);
+
+    MapGridSetElevationAt(x, y, elevation);
+
+    return FALSE;
+}
+
 void NativeFunc_SetMetatileInRange(struct ScriptContext *ctx)
 {
     u8 xmin = ScriptReadByte(ctx);

@@ -1,15 +1,72 @@
 MtChimney_MapScripts::
 	map_script MAP_SCRIPT_ON_RESUME, MtChimney_OnResume
 	map_script MAP_SCRIPT_ON_TRANSITION, MtChimney_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, MtChimney_OnLoad
 	.byte 0
+
+MtChimney_OnLoad:
+	// Check if legendary is available
+    setvar VAR_0x8004, SPECIES_MOLTRES
+    setvar VAR_0x8005, LAYOUT_MT_CHIMNEY
+    setvar VAR_0x8006, 3 @ Wednesday
+    setvar VAR_0x8007, 1
+    special TrySetLegendaryTile
+	goto_if_eq VAR_RESULT, TRUE, MtChimeny_ShowMoltresArena
+	end
 
 MtChimney_OnTransition:
 	setvar VAR_JAGGED_PASS_ASH_WEATHER, 1
+	updatelegendaryvisibility SPECIES_MOLTRES, FLAG_HIDE_MOLTRES
 	end
+
+MtChimeny_Moltres_Encounter::
+	goto LegendaryEncounter_EventScript_Moltres
 
 MtChimney_OnResume:
 	setstepcallback STEP_CB_ASH
 	end
+
+MtChimeny_ShowMoltresArena:
+	setmetatilewithelevation 19, 16, 0x32A, TRUE, 0
+	setmetatilewithelevation 20, 16, 0x32B, TRUE, 0
+	setmetatilewithelevation 21, 16, 0x32B, TRUE, 0
+	setmetatilewithelevation 22, 16, 0x32B, TRUE, 0
+	setmetatilewithelevation 23, 16, 0x32B, TRUE, 0
+	setmetatilewithelevation 24, 16, 0x32B, TRUE, 0
+	setmetatilewithelevation 25, 16, 0x32C, TRUE, 0
+
+	setmetatilewithelevation 19, 17, 0x332, TRUE, 0
+	setmetatilewithelevation 20, 17, 0x21C, TRUE, 0
+	setmetatilewithelevation 21, 17, 0x324, TRUE, 0
+	setmetatilewithelevation 22, 17, 0x33B, TRUE, 0
+	setmetatilewithelevation 23, 17, 0x325, TRUE, 0
+	setmetatilewithelevation 24, 17, 0x2BD, TRUE, 0
+	setmetatilewithelevation 25, 17, 0x334, TRUE, 0
+
+	setmetatilewithelevation 19, 18, 0x332, TRUE, 0
+	setmetatilewithelevation 20, 18, 0x2BD, TRUE, 0
+	setmetatilewithelevation 21, 18, 0x334, TRUE, 0
+	setmetatilewithelevation 22, 18, 0x271, FALSE, 3
+	setmetatilewithelevation 23, 18, 0x332, TRUE, 0
+	setmetatilewithelevation 24, 18, 0x21C, TRUE, 0
+	setmetatilewithelevation 25, 18, 0x334, TRUE, 0
+
+	setmetatilewithelevation 19, 19, 0x332, TRUE, 0
+	setmetatilewithelevation 20, 19, 0x21C, TRUE, 0
+	setmetatilewithelevation 21, 19, 0x334, TRUE, 0
+	setmetatilewithelevation 22, 19, 0x271, FALSE, 3
+	setmetatilewithelevation 23, 19, 0x332, TRUE, 0
+	setmetatilewithelevation 24, 19, 0x2BD, TRUE, 0
+	setmetatilewithelevation 25, 19, 0x334, TRUE, 0
+
+	setmetatilewithelevation 19, 20, 0x33A, TRUE, 0
+	setmetatilewithelevation 20, 20, 0x33B, TRUE, 0
+	setmetatilewithelevation 21, 20, 0x33C, TRUE, 0
+	setmetatilewithelevation 22, 20, 0x271, FALSE, 3
+	setmetatilewithelevation 23, 20, 0x33A, TRUE, 0
+	setmetatilewithelevation 24, 20, 0x33B, TRUE, 0
+	setmetatilewithelevation 25, 20, 0x33C, TRUE, 0
+	return
 
 MtChimney_EventScript_Archie::
 	lock
