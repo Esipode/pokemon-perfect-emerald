@@ -124,14 +124,7 @@ FarawayIsland_Interior_EventScript_Mew::
 	call_if_eq VAR_FACING, DIR_WEST, FarawayIsland_Interior_EventScript_FoundMewWest
 	call_if_eq VAR_FACING, DIR_EAST, FarawayIsland_Interior_EventScript_FoundMewEast
 	special DestroyMewEmergingGrassSprite
-	delay 40
-	waitmoncry
-	seteventmon SPECIES_MEW, 30
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, FarawayIsland_Interior_EventScript_CaughtMew
+	goto LegendaryEncounter_EventScript_Mew
 	release
 	end
 
