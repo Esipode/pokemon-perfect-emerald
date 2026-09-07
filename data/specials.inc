@@ -598,3 +598,5 @@ gSpecials::
 	def_special EmporiumBufferChallengerIntro
 	def_special GetBoostsUnlockNoticePending
 	def_special ClearBoostsUnlockNotice
+	def_special TrySetLegendaryTile
+	def_special IsLastUsedWarp

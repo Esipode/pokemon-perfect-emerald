@@ -1754,3 +1754,4 @@ EventScript_PalletTown_PlayersHouse_2F_TurnOnPC::
 	.include "data/scripts/legendary_encounters.inc"
 	.include "data/maps/EverGrandeCity_Champion_ChallengeRoom1/scripts.inc"
 	.include "data/maps/EverGrandeCity_Champion_ChallengeRoom2/scripts.inc"
+	.include "data/maps/ShoalCave_LowTideIceRoom_Articuno/scripts.inc"

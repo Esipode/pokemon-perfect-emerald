@@ -1627,6 +1627,20 @@ mapsec_u8_t GetLastUsedWarpMapSectionId(void)
     return Overworld_GetMapHeaderByGroupAndId(gLastUsedWarp.mapGroup, gLastUsedWarp.mapNum)->regionMapSectionId;
 }
 
+u8 GetLastUsedWarpId(void)
+{
+    return gLastUsedWarp.warpId;
+}
+
+void IsLastUsedWarp(void)
+{
+    u8 mapGroup = gSpecialVar_0x8004;
+    u8 mapNum = gSpecialVar_0x8005;
+    u8 warpId = gSpecialVar_0x8006;
+    
+    gSpecialVar_Result = (gLastUsedWarp.mapGroup == mapGroup && gLastUsedWarp.mapNum == mapNum && gLastUsedWarp.warpId == warpId);
+}
+
 bool8 IsMapTypeOutdoors(enum MapType mapType)
 {
     if (mapType == MAP_TYPE_ROUTE

@@ -991,9 +991,6 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
 
-LittlerootTown_EventScript_EncounterTESTArticuno::
-	goto LegendaryEncounter_EventScript_Articuno
-
 LittlerootTown_EventScript_EncounterTESTZapdos::
 	goto LegendaryEncounter_EventScript_Zapdos
 

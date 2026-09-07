@@ -152,6 +152,8 @@ enum MapType GetMapTypeByWarpData(struct WarpData *warp);
 enum MapType GetCurrentMapType(void);
 enum MapType GetLastUsedWarpMapType(void);
 mapsec_u8_t GetLastUsedWarpMapSectionId(void);
+u8 GetLastUsedWarpId(void);
+void IsLastUsedWarp(void);
 bool8 IsMapTypeOutdoors(enum MapType mapType);
 bool8 Overworld_MapTypeAllowsTeleportAndFly(enum MapType mapType);
 bool8 IsMapTypeIndoors(enum MapType mapType);

@@ -1,3 +1,3 @@
 ShoalCave_LowTideIceRoom_MapScripts::
-	.byte 0
+    .byte 0
 
