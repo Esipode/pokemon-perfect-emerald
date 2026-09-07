@@ -419,7 +419,7 @@
       "movement_range_y": 0,
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
-      "script": "MtChimeny_Moltres_Encounter",
+      "script": "MtChimney_Moltres_Encounter",
       "flag": "FLAG_HIDE_MOLTRES"
     }
   ],

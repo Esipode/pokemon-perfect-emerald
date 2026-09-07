@@ -11,7 +11,8 @@ MtChimney_OnLoad:
     setvar VAR_0x8006, 3 @ Wednesday
     setvar VAR_0x8007, 1
     special TrySetLegendaryTile
-	goto_if_eq VAR_RESULT, TRUE, MtChimeny_ShowMoltresArena
+	goto_if_eq VAR_RESULT, TRUE, MtChimney_ShowMoltresArena
+	goto_if_ne VAR_RESULT, TRUE, MtChimney_HideMoltresArena
 	end
 
 MtChimney_OnTransition:
@@ -19,14 +20,19 @@ MtChimney_OnTransition:
 	updatelegendaryvisibility SPECIES_MOLTRES, FLAG_HIDE_MOLTRES
 	end
 
-MtChimeny_Moltres_Encounter::
+MtChimney_Moltres_Encounter::
 	goto LegendaryEncounter_EventScript_Moltres
+
+
+MtChimney_HideMoltresArena::
+	setflag FLAG_HIDE_MOLTRES
+	return
 
 MtChimney_OnResume:
 	setstepcallback STEP_CB_ASH
 	end
 
-MtChimeny_ShowMoltresArena:
+MtChimney_ShowMoltresArena:
 	setmetatilewithelevation 19, 16, 0x32A, TRUE, 0
 	setmetatilewithelevation 20, 16, 0x32B, TRUE, 0
 	setmetatilewithelevation 21, 16, 0x32B, TRUE, 0
