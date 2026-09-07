@@ -600,3 +600,4 @@ gSpecials::
 	def_special ClearBoostsUnlockNotice
 	def_special TrySetLegendaryTile
 	def_special IsLastUsedWarp
+	def_special Route110ShowZapdos

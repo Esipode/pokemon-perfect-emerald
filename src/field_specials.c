@@ -5853,6 +5853,41 @@ u16 StickerManGetBragFlags(void)
     return result;
 }
 
+void Route110ShowZapdos(void)
+{
+    // If the weather is thunderstorms and the player has beat the Elite 4 and has not caught Zapdos
+    if (
+        gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_ROUTE110)
+        && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_ROUTE110)
+        && GetCurrentWeather() == WEATHER_RAIN_THUNDERSTORM
+        && FlagGet(FLAG_SYS_GAME_CLEAR)
+        && !CheckPlayerOwnsSpecies(SPECIES_ZAPDOS)
+    )
+    {
+        gSpecialVar_Result = TRUE;
+    }
+    else {
+        gSpecialVar_Result = FALSE;
+    }
+}
+
+void Route110_SetZapdosIslandElevation(void)
+{
+    // Update elevation of tiles
+    for (s32 y = 23; y <= 26; y++)
+    {
+        for (s32 x = 12; x <= 16; x++)
+        {
+            MapGridSetElevationAt(
+                x + MAP_OFFSET,
+                y + MAP_OFFSET,
+                3
+            );
+        }
+    }
+    DrawWholeMapView();
+}
+
 bool8 CheckAddCoins(void)
 {
     if (gSpecialVar_Result + gSpecialVar_0x8006 > 9999)

@@ -35,6 +35,7 @@ u32 GetNumPalsInPrimary(struct MapLayout const *mapLayout);
 u32 MapGridGetMetatileIdAt(s32 x, s32 y);
 u32 MapGridGetMetatileBehaviorAt(s32 x, s32 y);
 void MapGridSetMetatileIdAt(s32 x, s32 y, u16 metatile);
+void MapGridSetElevationAt(s32 x, s32 y, u16 elevation);
 void MapGridSetMetatileEntryAt(s32 x, s32 y, u16 metatile);
 void GetCameraCoords(u16 *x, u16 *y);
 u8 MapGridGetCollisionAt(s32 x, s32 y);

@@ -453,6 +453,20 @@ void MapGridSetMetatileIdAt(s32 x, s32 y, u16 metatile)
     }
 }
 
+void MapGridSetElevationAt(s32 x, s32 y, u16 elevation)
+{
+    if (AreCoordsWithinMapGridBounds(x, y))
+    {
+        s32 index = x + y * gBackupMapLayout.width;
+
+        // Preserve metatile ID and collision, replace elevation.
+        gBackupMapLayout.map[index] &= ~MAPGRID_ELEVATION_MASK;
+        gBackupMapLayout.map[index] |=
+            (elevation << MAPGRID_ELEVATION_SHIFT) & MAPGRID_ELEVATION_MASK;
+    }
+}
+
+
 void MapGridSetMetatileEntryAt(s32 x, s32 y, u16 metatile)
 {
     if (AreCoordsWithinMapGridBounds(x, y))

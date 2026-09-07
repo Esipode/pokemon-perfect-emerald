@@ -43,5 +43,6 @@ bool8 CutMoveRuinValleyCheck(void);
 void CutMoveOpenDottedHoleDoor(void);
 void PushChampionChallengeMenuEntries(void);
 void SelectChampionChallengeTrainerObjEvent(void);
+void Route110ShowZapdos(void);
 
 #endif // GUARD_FIELD_SPECIALS_H
