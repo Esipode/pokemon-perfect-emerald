@@ -40,13 +40,7 @@ NavelRock_Bottom_EventScript_Lugia::
 	waitse
 	playmoncry SPECIES_LUGIA, CRY_MODE_ENCOUNTER
 	waitmoncry
-	delay 20
-	seteventmon SPECIES_LUGIA, 70
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, NavelRock_Bottom_EventScript_CaughtLugia
+	goto LegendaryEncounter_EventScript_Lugia
 	release
 	end
 
