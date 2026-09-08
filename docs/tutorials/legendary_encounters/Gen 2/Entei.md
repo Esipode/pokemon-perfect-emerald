@@ -1,5 +1,7 @@
 ## Entei — The Walking Volcano
 
+### Location: Fiery Path - Friday
+
 Entei fights behind a heavy damage reduction, the standard one-hit-KO/fixed-damage immunities, a 2x
 cap on incoming type effectiveness, and flat Toxic damage. It can't be caught until its final,
 weakened phase. What makes this fight different: **Entei's guard is a locked door, not a slider —
