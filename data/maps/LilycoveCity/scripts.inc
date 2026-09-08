@@ -17,7 +17,7 @@ LilycoveCity_OnLoad:
 	// Check if legendary is available
     setvar VAR_0x8004, SPECIES_RAIKOU
     setvar VAR_0x8005, LAYOUT_LILYCOVE_CITY
-    setvar VAR_0x8006, 4 @ Thursday
+    setvar VAR_0x8006, 3 @ Thursday
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, LilycoveCity_HideRaikou

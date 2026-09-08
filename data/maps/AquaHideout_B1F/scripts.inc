@@ -8,7 +8,7 @@ AquaHideout_B1F_OnLoad:
 	// Check if legendary is available
     setvar VAR_0x8004, SPECIES_MEWTWO
     setvar VAR_0x8005, LAYOUT_AQUA_HIDEOUT_B1F
-    setvar VAR_0x8006, 2 @ Tuesday
+    setvar VAR_0x8006, 1 @ Tuesday
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, AquaHideout_B1F_ShowMewtwoArena

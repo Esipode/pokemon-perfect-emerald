@@ -1,5 +1,7 @@
 ## Suicune — The Purifier
 
+### Location: Route 103 - Saturday
+
 Suicune fights behind a heavy damage reduction, the standard one-hit-KO/fixed-damage immunities, a
 2x cap on incoming type effectiveness, and flat Toxic damage. It can't be caught until its final,
 weakened phase. What makes this fight different: **everything you put on the battlefield is fuel for

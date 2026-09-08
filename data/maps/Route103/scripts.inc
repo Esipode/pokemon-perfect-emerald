@@ -4,13 +4,71 @@ Route103_MapScripts::
 	.byte 0
 
 Route103_OnTransition:
+	updatelegendaryvisibility SPECIES_SUICUNE, FLAG_HIDE_SUICUNE
 	call Common_EventScript_SetupRivalGfxId
 	call ProfBirch_EventScript_UpdateLocation
 	end
 
 Route103_OnLoad:
 	call_if_set FLAG_SYS_GAME_CLEAR, Route103_EventScript_OpenAlteringCave
+	// Check if legendary is available
+    setvar VAR_0x8004, SPECIES_SUICUNE
+    setvar VAR_0x8005, LAYOUT_ROUTE103
+    setvar VAR_0x8006, 5 @ Saturday
+    setvar VAR_0x8007, 1
+    special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, TRUE, Route103_ShowSuicuneArena
+	goto_if_ne VAR_RESULT, TRUE, Route103_HideSuicuneArena
 	end
+
+Route103_Suicune_Encounter::
+	goto LegendaryEncounter_EventScript_Suicune
+
+Route103_HideSuicuneArena::
+	setflag FLAG_HIDE_SUICUNE
+	return
+
+Route103_ShowSuicuneArena:
+	setmetatilewithelevation 25, 8, 0x1AD, FALSE, 0
+	setmetatilewithelevation 26, 8, 0x1AE, FALSE, 0
+	setmetatilewithelevation 27, 8, 0x1AE, FALSE, 0
+	setmetatilewithelevation 28, 8, 0x1AE, FALSE, 0
+	setmetatilewithelevation 29, 8, 0x1AE, FALSE, 0
+	setmetatilewithelevation 30, 8, 0x1AE, FALSE, 0
+	setmetatilewithelevation 31, 8, 0x1AF, FALSE, 0
+	
+	setmetatilewithelevation 25, 9, 0x1B5, FALSE, 0
+	setmetatilewithelevation 26, 9, 0x19E, FALSE, 3
+	setmetatilewithelevation 27, 9, 0x19E, FALSE, 3
+	setmetatilewithelevation 28, 9, 0x19E, FALSE, 3
+	setmetatilewithelevation 29, 9, 0x19E, FALSE, 3
+	setmetatilewithelevation 30, 9, 0x19E, FALSE, 3
+	setmetatilewithelevation 31, 9, 0x1B7, FALSE, 0
+	
+	setmetatilewithelevation 25, 10, 0x1B5, FALSE, 0
+	setmetatilewithelevation 26, 10, 0x19E, FALSE, 3
+	setmetatilewithelevation 27, 10, 0x19E, FALSE, 3
+	setmetatilewithelevation 28, 10, 0x19E, FALSE, 3
+	setmetatilewithelevation 29, 10, 0x19E, FALSE, 3
+	setmetatilewithelevation 30, 10, 0x19E, FALSE, 3
+	setmetatilewithelevation 31, 10, 0x1B7, FALSE, 0
+	
+	setmetatilewithelevation 25, 11, 0x1B5, FALSE, 0
+	setmetatilewithelevation 26, 11, 0x19E, FALSE, 3
+	setmetatilewithelevation 27, 11, 0x19E, FALSE, 3
+	setmetatilewithelevation 28, 11, 0x19E, FALSE, 3
+	setmetatilewithelevation 29, 11, 0x19E, FALSE, 3
+	setmetatilewithelevation 30, 11, 0x19E, FALSE, 3
+	setmetatilewithelevation 31, 11, 0x1B7, FALSE, 0
+	
+	setmetatilewithelevation 25, 12, 0x1BD, FALSE, 0
+	setmetatilewithelevation 26, 12, 0x1BE, FALSE, 0
+	setmetatilewithelevation 27, 12, 0x1BE, FALSE, 0
+	setmetatilewithelevation 28, 12, 0x1BE, FALSE, 0
+	setmetatilewithelevation 29, 12, 0x1BE, FALSE, 0
+	setmetatilewithelevation 30, 12, 0x1BE, FALSE, 0
+	setmetatilewithelevation 31, 12, 0x1BF, FALSE, 0
+	return
 
 Route103_EventScript_OpenAlteringCave::
 	setmetatile 45, 5, METATILE_General_CaveEntrance_Top, TRUE

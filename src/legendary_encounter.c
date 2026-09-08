@@ -29,7 +29,7 @@ void CheckValidLegendaryEncounter(void)
     u16 species = gSpecialVar_0x8004;
     u16 alternateLayout = gSpecialVar_0x8005;
     u8 requiredWeekday = gSpecialVar_0x8006;
-    u32 seedValue;
+    enum Weekday currentWeekday = GetDayOfWeek();
 
     /*
      * Start by assuming the normal map layout should remain active.
@@ -59,23 +59,9 @@ void CheckValidLegendaryEncounter(void)
         return;
 
     /*
-     * Create a deterministic value that is different for every legendary
-     * while remaining identical for the same legendary on the same day.
-     *
-     * The multiplication constant is simply a mixing constant; there is
-     * no dependence on the normal battle RNG state.
+     * Only activate the alternate layout on the required weekday.
      */
-    seedValue = gSaveBlock1Ptr->dailySeed;
-    seedValue ^= (u32)species * 0x45D9F3B;
-    seedValue ^= (u32)gSpecialVar_0x8007 * 0x119DE1F3;
-
-    /*
-     * Select one of seven possible results.
-     *
-     * Because the result is derived entirely from the date and the
-     * legendary-specific inputs, it remains stable for the entire day.
-     */
-    if ((seedValue % 7) != requiredWeekday)
+    if (currentWeekday != requiredWeekday)
         return;
 
     gSpecialVar_Result = TRUE;

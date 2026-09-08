@@ -8,7 +8,7 @@ MtChimney_OnLoad:
 	// Check if legendary is available
     setvar VAR_0x8004, SPECIES_MOLTRES
     setvar VAR_0x8005, LAYOUT_MT_CHIMNEY
-    setvar VAR_0x8006, 3 @ Wednesday
+    setvar VAR_0x8006, 2 @ Wednesday
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, MtChimney_ShowMoltresArena
@@ -22,7 +22,6 @@ MtChimney_OnTransition:
 
 MtChimney_Moltres_Encounter::
 	goto LegendaryEncounter_EventScript_Moltres
-
 
 MtChimney_HideMoltresArena::
 	setflag FLAG_HIDE_MOLTRES
