@@ -1,6 +1,6 @@
 #ifndef GUARD_LEGENDARY_ENCOUNTER_H
 #define GUARD_LEGENDARY_ENCOUNTER_H
 
-void TrySetLegendaryTile(void);
+void CheckValidLegendaryEncounter(void);
 
 #endif // GUARD_LEGENDARY_ENCOUNTER_H

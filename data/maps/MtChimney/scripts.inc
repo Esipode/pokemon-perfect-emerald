@@ -10,7 +10,7 @@ MtChimney_OnLoad:
     setvar VAR_0x8005, LAYOUT_MT_CHIMNEY
     setvar VAR_0x8006, 3 @ Wednesday
     setvar VAR_0x8007, 1
-    special TrySetLegendaryTile
+    special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, MtChimney_ShowMoltresArena
 	goto_if_ne VAR_RESULT, TRUE, MtChimney_HideMoltresArena
 	end

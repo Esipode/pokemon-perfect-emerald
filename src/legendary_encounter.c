@@ -24,7 +24,7 @@
  * so changing the layout here causes the alternate layout to actually
  * be rendered for this map visit.
  */
-void TrySetLegendaryTile(void)
+void CheckValidLegendaryEncounter(void)
 {
     u16 species = gSpecialVar_0x8004;
     u16 alternateLayout = gSpecialVar_0x8005;

@@ -7,13 +7,28 @@ LilycoveCity_OnTransition:
 	setflag FLAG_VISITED_LILYCOVE_CITY
 	setvar VAR_CONTEST_HALL_STATE, 0
 	setflag FLAG_HIDE_LILYCOVE_CONTEST_HALL_REPORTER
+	updatelegendaryvisibility SPECIES_RAIKOU, FLAG_HIDE_RAIKOU
 	call_if_set FLAG_SYS_WEATHER_CTRL, Common_EventScript_SetAbnormalWeather
 	call Common_EventScript_SetupRivalGfxId
 	end
 
 LilycoveCity_OnLoad:
 	call_if_unset FLAG_TEAM_AQUA_ESCAPED_IN_SUBMARINE, LilycoveCity_EventScript_SetWailmerMetatiles
+	// Check if legendary is available
+    setvar VAR_0x8004, SPECIES_RAIKOU
+    setvar VAR_0x8005, LAYOUT_LILYCOVE_CITY
+    setvar VAR_0x8006, 4 @ Thursday
+    setvar VAR_0x8007, 1
+    special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, LilycoveCity_HideRaikou
 	end
+
+LilycoveCity_HideRaikou:
+	setflag FLAG_HIDE_RAIKOU
+	return
+
+LilycoveCity_Raikou_Encounter::
+	goto LegendaryEncounter_EventScript_Raikou
 
 LilycoveCity_EventScript_SetWailmerMetatiles::
 	setmetatile 76, 12, METATILE_Lilycove_Wailmer0, TRUE

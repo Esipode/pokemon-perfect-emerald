@@ -8,7 +8,7 @@ ShoalCave_LowTideLowerRoom_OnLoad:
     setvar VAR_0x8005, LAYOUT_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_LAYOUT_ARTICUNO
     setvar VAR_0x8006, 1 @ Monday
     setvar VAR_0x8007, 1
-    special TrySetLegendaryTile
+    special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, ShoalCave_LowTideLowerRoom_HiddenLadder
 	// Keep warp open if returning from legendary map
     setvar VAR_0x8004, MAP_GROUP(MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_ARTICUNO)

@@ -1,5 +1,7 @@
 ## Moltres — The Everlasting Flame
 
+### Location: Mt. Chimney - Wednesday
+
 Moltres fights behind a heavy damage reduction, the standard one-hit-KO/fixed-damage immunities, a
 2x cap on incoming type effectiveness (its Fire/Flying typing is quad-weak to Rock, but a Rock move
 can't exceed a double-weakness hit), and flat Toxic damage. It can't be caught until its final,

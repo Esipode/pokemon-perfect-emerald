@@ -10,7 +10,7 @@ AquaHideout_B1F_OnLoad:
     setvar VAR_0x8005, LAYOUT_AQUA_HIDEOUT_B1F
     setvar VAR_0x8006, 2 @ Tuesday
     setvar VAR_0x8007, 1
-    special TrySetLegendaryTile
+    special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, AquaHideout_B1F_ShowMewtwoArena
 	goto_if_ne VAR_RESULT, TRUE, AquaHideout_B1F_HideMewtwoArena
 	end

@@ -1,5 +1,7 @@
 ## Raikou — The Hunting Thunder
 
+### Location: Lilycove City - Thursday
+
 Raikou fights behind a heavy damage reduction, the standard one-hit-KO/fixed-damage immunities, a 2x
 cap on incoming type effectiveness, and flat Toxic damage. It can't be caught until its final,
 weakened phase. What makes this fight different: **Raikou's guard is tied to its tempo, and its
