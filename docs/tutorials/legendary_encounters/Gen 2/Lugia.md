@@ -1,5 +1,7 @@
 ## Lugia — The Storm Beneath the Sea
 
+### Location: Navel Rock
+
 Lugia fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage.
