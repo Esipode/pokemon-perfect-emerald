@@ -599,6 +599,21 @@ extern const u8 EncScript_Cobalion_TurnClose[];
 extern const u8 EncScript_Cobalion_TheRead[];
 extern const u8 EncScript_Cobalion_SeeThrough[];
 
+// Terrakion ("The Unstoppable Force")
+extern const u8 EncScript_Terrakion_Intro[];
+extern const u8 EncScript_Terrakion_Rampage[];
+extern const u8 EncScript_Terrakion_Unstoppable[];
+extern const u8 EncScript_Terrakion_Spent[];
+extern const u8 EncScript_Terrakion_TurnOpen[];
+extern const u8 EncScript_Terrakion_StruckHard[];
+extern const u8 EncScript_Terrakion_Force[];
+extern const u8 EncScript_Terrakion_TheyFell[];
+extern const u8 EncScript_Terrakion_TheyEntered[];
+extern const u8 EncScript_Terrakion_BreakerThrough[];
+extern const u8 EncScript_Terrakion_TurnClose[];
+extern const u8 EncScript_Terrakion_Collapse[];
+extern const u8 EncScript_Terrakion_SeeThrough[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

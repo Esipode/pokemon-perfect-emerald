@@ -1427,6 +1427,18 @@
 	.4byte \failInstr
 	.endm
 
+	@ Resets every stat stage back to neutral on every battler \target resolves to - the targeted
+	@ form of Haze. TryResetBattlerStatChanges reports whether it actually reset anything, so
+	@ \failInstr is taken when no battler in the set had a stage to strip: one command is both the
+	@ test and the clear, the same as encclearscreens. Silent - the caller supplies its own dialogue.
+	@ normalisebuffs is the only other way to reach this and it hits every battler on the field,
+	@ including the boss's own setup.
+	.macro encresetstats target:req, failInstr:req
+	callnative BS_EncResetStats
+	.byte \target
+	.4byte \failInstr
+	.endm
+
 	@ Raises one side-wide status (an ENC_SIDE_* selector) on every side \target resolves to, for
 	@ \turns turns; 0 (the default) is permanent, the same convention encsetweather uses. The
 	@ single-status counterpart to encclearscreens, which is all-or-nothing and deliberately skips

@@ -13524,6 +13524,26 @@ void BS_EncSetProtect(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// RESET_STATS (encresetstats). The targeted form of Haze: normalisebuffs resets every battler on
+// the field, which a boss that wants to strip only the player's setup cannot use. Reuses
+// TryResetBattlerStatChanges, so the stockpile counters come off with the stages exactly as they do
+// for Haze itself, and its return value is what makes failInstr meaningful - one command is both the
+// test and the clear, the same shape as encclearscreens.
+void BS_EncResetStats(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    bool32 reset = FALSE;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            reset |= TryResetBattlerStatChanges(battler);
+    }
+
+    gBattlescriptCurrInstr = reset ? cmd->nextInstr : cmd->failInstr;
+}
+
 // TRAPPED (encsettrapped). Sets the same escape-prevention volatile Mean Look sets
 // (BS_TrySetEscapePrevention), so every existing rule around it applies unchanged: the Gen 6+
 // Ghost-type exemption in CanBattlerEscape, the trapper-faints cleanup in battle_main.c, Baton Pass

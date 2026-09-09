@@ -240,3 +240,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/dialga.inc"
 	.include "data/legendary_encounters/palkia.inc"
 	.include "data/legendary_encounters/cobalion.inc"
+	.include "data/legendary_encounters/terrakion.inc"
