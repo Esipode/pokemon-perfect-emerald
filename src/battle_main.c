@@ -119,6 +119,7 @@ static void DoBattleIntro(void);
 static void TryDoEventsBeforeFirstTurn(void);
 static void HandleTurnActionSelectionState(void);
 static void RunTurnActionsFunctions(void);
+static bool32 IsEncounterTurnStartActionBoundary(void);
 static void SetActionsAndBattlersTurnOrder(void);
 static void UpdateBattlerPartyOrdersOnSwitch(enum BattlerId battler);
 static bool8 AllAtActionConfirmed(void);
@@ -4878,6 +4879,7 @@ static void TryDoEventsBeforeFirstTurn(void)
         gBattleStruct->eventState.endTurn = 0;
         gBattleStruct->eventState.encounterTurnEnd = 0;
         gBattleStruct->eventState.encounterTurnStart = 0;
+        gBattleStruct->eventState.encounterTurnStartRunning = 0;
 
         memset(gQueuedStatBoosts, 0, sizeof(gQueuedStatBoosts));
 
@@ -4964,6 +4966,7 @@ bool32 EndTurnEvents(void) // Called from Battle Script
     gBattleStruct->eventState.faintedAction = 0;
     gBattleStruct->eventState.encounterTurnEnd = FALSE; // re-arm for next turn
     gBattleStruct->eventState.encounterTurnStart = FALSE; // re-arm for next turn
+    gBattleStruct->eventState.encounterTurnStartRunning = FALSE;
 
     TurnValuesCleanUp(FALSE);
     gHitMarker &= ~HITMARKER_PLAYER_FAINTED;
@@ -6393,28 +6396,65 @@ static void CheckChangingTurnOrderEffects(void)
     gBattleResources->battleScriptsStack->size = 0;
 }
 
+// TRUE only where gCurrentActionFuncId still holds the turn-order action that has not started yet.
+// Once an action begins, the id is B_ACTION_EXEC_SCRIPT / B_ACTION_TRY_FINISH / B_ACTION_FINISHED
+// instead, and a checkpoint dispatched there would cut into a script already in flight.
+// Bag-item, ball and switch actions are all sorted to the front of the turn order
+// (SetActionsAndBattlersTurnOrder) and resolve before any turn-start encounter script, so the
+// boundary in front of one of those does not qualify.
+static bool32 IsEncounterTurnStartActionBoundary(void)
+{
+    if (gCurrentTurnActionNumber >= gBattlersCount)
+        return FALSE;
+    if (gCurrentActionFuncId != gActionsByTurnOrder[gCurrentTurnActionNumber])
+        return FALSE;
+    return gCurrentActionFuncId != B_ACTION_USE_ITEM
+        && gCurrentActionFuncId != B_ACTION_THROW_BALL
+        && gCurrentActionFuncId != B_ACTION_SWITCH;
+}
+
 static void RunTurnActionsFunctions(void)
 {
     if (gBattleOutcome != 0)
         gCurrentActionFuncId = B_ACTION_FINISHED;
 
-    // ENC_ON_TURN_START: deferred to here (rather than CheckChangingTurnOrderEffects) so a player's
-    // bag-item action, sorted to the front of the turn order, resolves before any turn-start
-    // encounter script runs. Leading B_ACTION_USE_ITEM actions fall through untouched; the checkpoint
-    // fires once, before the first action that is not an item use. Re-dispatches via BattleScriptCall
-    // until no trigger is eligible, same as the other checkpoint shims.
+    // ENC_ON_TURN_START: deferred to here (rather than CheckChangingTurnOrderEffects) so the
+    // player's item, ball and switch actions resolve before any turn-start encounter script runs.
+    // The checkpoint fires once per turn, at the action boundary in front of the first action that
+    // is none of those, and re-dispatches via BattleScriptCall until no trigger is eligible.
+    // BattleScriptExecute and the `end` that unwinds it both overwrite gCurrentActionFuncId, so the
+    // pending action is restored from the turn order on every pass; without that the action the
+    // checkpoint runs in front of is consumed as a B_ACTION_TRY_FINISH and never taken.
     if (IsEncounterActive()
+        && gBattleOutcome == 0
         && !gBattleStruct->eventState.encounterTurnStart
-        && gCurrentActionFuncId != B_ACTION_USE_ITEM)
+        && (gBattleStruct->eventState.encounterTurnStartRunning || IsEncounterTurnStartActionBoundary()))
     {
+        gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
+
         const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_START);
         if (script != NULL)
         {
+            gBattleStruct->eventState.encounterTurnStartRunning = TRUE;
             BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
             BattleScriptCall(script);
             return;
         }
         gBattleStruct->eventState.encounterTurnStart = TRUE;
+    }
+
+    // A turn-start trigger script (encchangehp) can leave a battler at 0 HP with no move in flight
+    // to resolve it - run the same faint pass an action's B_ACTION_TRY_FINISH would, then restore
+    // the pending action again, since that pass dispatches battle scripts of its own.
+    if (gBattleStruct->eventState.encounterTurnStartRunning
+        && gBattleOutcome == 0
+        && gCurrentTurnActionNumber < gBattlersCount)
+    {
+        if (HandleFaintedMonActions())
+            return;
+        gBattleStruct->eventState.faintedAction = 0;
+        gBattleStruct->eventState.encounterTurnStartRunning = FALSE;
+        gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
     }
 
     // Mega Evolve / Focus Punch-like moves after switching, items, running, but before using a move.

@@ -582,6 +582,7 @@ struct EventStates
     enum StatChangeResolution resolution:8;
     u32 encounterTurnEnd:1;   // TRUE once the ENC_ON_TURN_END checkpoint has been dispatched this turn
     u32 encounterTurnStart:1; // TRUE once the ENC_ON_TURN_START checkpoint has been dispatched this turn
+    u32 encounterTurnStartRunning:1; // TRUE while the ENC_ON_TURN_START dispatch owns gCurrentActionFuncId
 };
 
 // What just happened, for the checkpoint currently dispatching. Not every checkpoint sets every

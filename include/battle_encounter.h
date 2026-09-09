@@ -569,10 +569,7 @@ extern const u8 EncScript_Dialga_EchoBlocked[];
 // Palkia ("The Spatial Pokémon")
 extern const u8 EncScript_Palkia_Intro[];
 extern const u8 EncScript_Palkia_SpatialCollapse[];
-extern const u8 EncScript_Palkia_SpatialCollapse[];
 extern const u8 EncScript_Palkia_OriginForme[];
-extern const u8 EncScript_Palkia_OriginForme[];
-extern const u8 EncScript_Palkia_Collapse[];
 extern const u8 EncScript_Palkia_Collapse[];
 extern const u8 EncScript_Palkia_TurnOpen[];
 extern const u8 EncScript_Palkia_AnchorPrompt[];
@@ -582,6 +579,25 @@ extern const u8 EncScript_Palkia_StruckSpecial[];
 extern const u8 EncScript_Palkia_TheyFled[];
 extern const u8 EncScript_Palkia_TheyFell[];
 extern const u8 EncScript_Palkia_TurnClose[];
+
+// Cobalion ("The Iron Will")
+extern const u8 EncScript_Cobalion_Intro[];
+extern const u8 EncScript_Cobalion_Leader[];
+extern const u8 EncScript_Cobalion_Leader[];
+extern const u8 EncScript_Cobalion_IronResolve[];
+extern const u8 EncScript_Cobalion_IronResolve[];
+extern const u8 EncScript_Cobalion_LastStand[];
+extern const u8 EncScript_Cobalion_LastStand[];
+extern const u8 EncScript_Cobalion_TurnOpen[];
+extern const u8 EncScript_Cobalion_ResolveDeclare[];
+extern const u8 EncScript_Cobalion_StruckPhysical[];
+extern const u8 EncScript_Cobalion_StruckSpecial[];
+extern const u8 EncScript_Cobalion_TheyManeuvered[];
+extern const u8 EncScript_Cobalion_TheyRepositioned[];
+extern const u8 EncScript_Cobalion_TheyFell[];
+extern const u8 EncScript_Cobalion_TurnClose[];
+extern const u8 EncScript_Cobalion_TheRead[];
+extern const u8 EncScript_Cobalion_SeeThrough[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];

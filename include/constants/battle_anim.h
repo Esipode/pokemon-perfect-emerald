@@ -594,6 +594,12 @@ enum AnimBattler
 #define B_ANIM_MAGIC_ROOM               47
 #define B_ANIM_TAILWIND                 48
 #define B_ANIM_FOG_CONTINUES            49
+// TERA_CHARGE blends the whole screen to white and only TERA_ACTIVATE blends it back. Encounter
+// scripts: never play TERA_CHARGE alone via `playanimation` - it leaves the background and the
+// move-selection box white for the rest of the battle. Pair it with TERA_ACTIVATE in the same
+// script (see EncScript_Arceus_Creation, data/legendary_encounters/arceus.inc), or use a different
+// animation entirely (B_ANIM_STATS_CHANGE / B_ANIM_WONDER_ROOM cover most "something changed on the
+// boss" beats with no blend state to leak).
 #define B_ANIM_TERA_CHARGE              50
 #define B_ANIM_TERA_ACTIVATE            51
 #define B_ANIM_SIMPLE_HEAL              52

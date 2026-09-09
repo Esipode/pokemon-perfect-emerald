@@ -1057,6 +1057,9 @@ LittlerootTown_EventScript_EncounterTESTDialga::
 LittlerootTown_EventScript_EncounterTESTPalkia::
 	goto LegendaryEncounter_EventScript_Palkia
 
+LittlerootTown_EventScript_EncounterTESTCobalion::
+	goto LegendaryEncounter_EventScript_Cobalion
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD
