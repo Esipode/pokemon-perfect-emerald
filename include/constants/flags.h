@@ -77,7 +77,7 @@
 #define FLAG_HIDE_CRESSELIA  0x38
 #define FLAG_HIDE_GIRATINA   0x39
 #define FLAG_HIDE_DIALGA     0x3A
-#define FLAG_UNUSED_0x03B    0x3B // Unused Flag
+#define FLAG_HIDE_PALKIA     0x3B
 #define FLAG_UNUSED_0x03C    0x3C // Unused Flag
 #define FLAG_UNUSED_0x03D    0x3D // Unused Flag
 #define FLAG_UNUSED_0x03E    0x3E // Unused Flag

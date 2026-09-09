@@ -991,33 +991,6 @@ LittlerootTown_Text_BirchSomethingToShowYouAtLab:
 	.string "I have something to show you.\n"
 	.string "Let's go to my LAB.$"
 
-LittlerootTown_EventScript_EncounterTESTMoltres::
-	goto LegendaryEncounter_EventScript_Moltres
-
-LittlerootTown_EventScript_EncounterTESTMewtwo::
-	goto LegendaryEncounter_EventScript_Mewtwo
-
-LittlerootTown_EventScript_EncounterTESTMew::
-	goto LegendaryEncounter_EventScript_Mew
-
-LittlerootTown_EventScript_EncounterTESTRaikou::
-	goto LegendaryEncounter_EventScript_Raikou
-
-LittlerootTown_EventScript_EncounterTESTEntei::
-	goto LegendaryEncounter_EventScript_Entei
-
-LittlerootTown_EventScript_EncounterTESTSuicune::
-	goto LegendaryEncounter_EventScript_Suicune
-
-LittlerootTown_EventScript_EncounterTESTCelebi::
-	goto LegendaryEncounter_EventScript_Celebi
-
-LittlerootTown_EventScript_EncounterTESTLugia::
-	goto LegendaryEncounter_EventScript_Lugia
-
-LittlerootTown_EventScript_EncounterTESTHoOh::
-	goto LegendaryEncounter_EventScript_HoOh
-
 LittlerootTown_EventScript_EncounterTESTDeoxys::
 	goto LegendaryEncounter_EventScript_Deoxys
 
@@ -1080,6 +1053,9 @@ LittlerootTown_EventScript_EncounterTESTGiratina::
 
 LittlerootTown_EventScript_EncounterTESTDialga::
 	goto LegendaryEncounter_EventScript_Dialga
+
+LittlerootTown_EventScript_EncounterTESTPalkia::
+	goto LegendaryEncounter_EventScript_Palkia
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

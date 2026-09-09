@@ -566,6 +566,23 @@ extern const u8 EncScript_Dialga_TurnClose[];
 extern const u8 EncScript_Dialga_Echo[];
 extern const u8 EncScript_Dialga_EchoBlocked[];
 
+// Palkia ("The Spatial Pokémon")
+extern const u8 EncScript_Palkia_Intro[];
+extern const u8 EncScript_Palkia_SpatialCollapse[];
+extern const u8 EncScript_Palkia_SpatialCollapse[];
+extern const u8 EncScript_Palkia_OriginForme[];
+extern const u8 EncScript_Palkia_OriginForme[];
+extern const u8 EncScript_Palkia_Collapse[];
+extern const u8 EncScript_Palkia_Collapse[];
+extern const u8 EncScript_Palkia_TurnOpen[];
+extern const u8 EncScript_Palkia_AnchorPrompt[];
+extern const u8 EncScript_Palkia_OpenWormhole[];
+extern const u8 EncScript_Palkia_StruckPhysical[];
+extern const u8 EncScript_Palkia_StruckSpecial[];
+extern const u8 EncScript_Palkia_TheyFled[];
+extern const u8 EncScript_Palkia_TheyFell[];
+extern const u8 EncScript_Palkia_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

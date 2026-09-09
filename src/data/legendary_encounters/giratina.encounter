@@ -33,8 +33,7 @@ Properties:
     Survive: True               # load-bearing: REALITY BREAK chips 10% of the player's max HP, but
                                 # the threshold scripts are what open the catch window, and a
                                 # 25%-threshold overkill would otherwise skip Phase 2 entirely
-    Ability: ABILITY_TELEPATHY  # Giratina-Altered's own, stated so the swap to Levitate at the
-                                # Origin Forme change (and Gravity suppressing it) is unambiguous
+    Ability: ABILITY_TELEPATHY
     Moves: MOVE_SHADOW_CLAW, MOVE_DRAGON_CLAW, MOVE_TOXIC, MOVE_HEX
     AiFlags: AI_FLAG_SMART_TRAINER
 

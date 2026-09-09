@@ -18,6 +18,28 @@
 BattleScript_EncounterCheckpointEnd2::
 	end
 
+// The presentation half of encswitchout: BattleScript_RoarSuccessSwitch (data/battle_scripts_1.s)
+// without the attack animation and without the `goto BattleScript_MoveEnd` - an encounter script
+// unwinds with `return`, and there is no move in flight to end.
+// switchinevents is re-entrant by design: Cmd_switchinevents loops DoSwitchInEvents() and returns
+// without advancing the instruction pointer whenever a stage pushed a script, so the nested
+// OnSwitchIn checkpoint dispatches and the loop resumes at this same opcode - the path Roar
+// already takes through it.
+BattleScript_EncounterForcedSwitch::
+	returntoball BS_TARGET, FALSE
+	waitstate
+	switchoutabilities BS_TARGET
+	getswitchedmondata BS_TARGET
+	switchindataupdate BS_TARGET
+	trytoclearprimalweather
+	flushtextbox
+	switchinanim BS_TARGET, FALSE, FALSE
+	waitstate
+	printstring STRINGID_PKMNWASDRAGGEDOUT
+	switchineffects BS_TARGET
+	switchinevents
+	return
+
 EncScript_TestBattleStart::
 	printstring STRINGID_EMPTYSTRING3
 	waitmessage B_WAIT_TIME_LONG
@@ -216,3 +238,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/cresselia.inc"
 	.include "data/legendary_encounters/giratina.inc"
 	.include "data/legendary_encounters/dialga.inc"
+	.include "data/legendary_encounters/palkia.inc"

@@ -29,8 +29,7 @@ Properties:
     Survive: True               # load-bearing: the deadline must never resolve against a dead Dialga,
                                 # and the 10% Convergence threshold is what opens the catch window.
                                 # Cleared in EncScript_Dialga_Convergence
-    Ability: ABILITY_TELEPATHY   # Dialga's own, and the closest ability in the list to the fight's
-                                # theme: the longer you take, the less you have left
+    Ability: ABILITY_TELEPATHY
     Moves: MOVE_DRACO_METEOR, MOVE_FLASH_CANNON, MOVE_EARTH_POWER, MOVE_AURA_SPHERE
     AiFlags: AI_FLAG_SMART_TRAINER
 

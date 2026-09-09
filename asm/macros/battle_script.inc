@@ -1560,6 +1560,25 @@
 	.4byte \failInstr
 	.endm
 
+	@ Forces \target (exactly one battler, never the boss) to switch out for a random healthy bench
+	@ member, with the stock drag-out presentation. Cmd_forcerandomswitch can't be borrowed: it
+	@ derives its victim from gBattlerTarget, which is stale outside a move, and its success path
+	@ ends in `goto BattleScript_MoveEnd`, which an encounter script must never reach.
+	@ Jumps \failInstr when there is nobody to send in - the ordinary case of a player down to their
+	@ last Pokemon - so it branches rather than asserts. The native sets gBattlerTarget so the
+	@ presentation script's BS_TARGET resolves.
+	@ The `call` after the callnative is what makes the fail path work without a second label: on
+	@ failure the native writes \failInstr and the call is never reached; on success it writes
+	@ nextInstr, which points at the call.
+	@ Only safe at OnTurnEnd, after every action has resolved - switchineffects writes
+	@ B_ACTION_CANCEL_PARTNER for the replacement, so the mon sent in does not act this turn.
+	.macro encswitchout target:req, failInstr:req
+	callnative BS_EncounterSwitchOut
+	.byte \target
+	.4byte \failInstr
+	call BattleScript_EncounterForcedSwitch
+	.endm
+
 	@ Forces \target (must resolve to exactly one battler) to Mega Evolve outside the normal
 	@ gimmick-selection flow, then plays the same presentation BattleScript_MegaEvolution
 	@ (data/battle_scripts_1.s) uses. Jumps to \failInstr if the target can't mega evolve right now

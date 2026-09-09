@@ -450,6 +450,20 @@ LegendaryEncounter_EventScript_Dialga::
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 
+LegendaryEncounter_EventScript_Palkia::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_PALKIA, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_PALKIA
+	setwildbattle SPECIES_PALKIA, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
 @ Shared post-battle tail. Only a caught legendary is removed from the overworld; fainting or
 @ fleeing leaves it in place so the fight can be retried. Each host map's ON_TRANSITION runs
 @ `updatelegendaryvisibility`, which brings the object back if the player later releases the mon.

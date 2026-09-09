@@ -13628,6 +13628,82 @@ void BS_EncDisableMove(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// SWITCH_OUT (encswitchout). Drags <target> out for a random healthy bench member, the way Roar
+// does, but addressed by encounter target rather than gBattlerTarget - which is stale outside a
+// move. Cmd_forcerandomswitch can't be borrowed for the same reason, and because its success path
+// ends in `goto BattleScript_MoveEnd`, which an encounter script must never reach.
+// The boss is skipped outright, the way encsettrapped/encsetembargo/encsethealblock skip it: a
+// one-mon wild boss has nothing to switch to and the presentation would be nonsense.
+// Jumps failInstr when there is nobody to send in - an ordinary battle state, so it branches
+// rather than asserts. The link/multi/Battle Tower party splits Cmd_forcerandomswitch handles are
+// not reachable from an encounter script (single-player only) and are deliberately not reproduced.
+void BS_EncounterSwitchOut(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u8 validMons[PARTY_SIZE];
+    u32 validMonsCount = 0;
+    u32 battler1PartyId, battler2PartyId;
+    u8 boss;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: SWITCH_OUT target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: SWITCH_OUT target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss) && battler == boss)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    party = GetBattlerParty(battler);
+    battler2PartyId = gBattlerPartyIndexes[battler];
+    battler1PartyId = IsDoubleBattle() ? gBattlerPartyIndexes[GetPartnerBattler(battler)] : battler2PartyId;
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&party[i], MON_DATA_SPECIES) != SPECIES_NONE
+         && !GetMonData(&party[i], MON_DATA_IS_EGG)
+         && GetMonData(&party[i], MON_DATA_HP) != 0
+         && i != battler1PartyId
+         && i != battler2PartyId)
+            validMons[validMonsCount++] = i;
+    }
+
+    if (validMonsCount == 0)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    for (enum BattlerId i = B_BATTLER_0; i < gBattlersCount; i++)
+        gBattleMons[i].volatiles.tryEjectPack = FALSE; // Disable Eject Pack activations
+    gBattleStruct->battlerPartyIndexes[battler] = gBattlerPartyIndexes[battler];
+    gProtectStructs[battler].forcedSwitch = TRUE;
+    gBattleStruct->monToSwitchIntoId[battler] = validMons[RandomUniform(RNG_FORCE_RANDOM_SWITCH, 0, validMonsCount - 1)];
+    SwitchPartyOrder(battler);
+
+    // BattleScript_EncounterForcedSwitch addresses its victim through BS_TARGET.
+    gBattlerTarget = battler;
+    gBattleScripting.battler = battler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // CLEAR_SCREENS (encclearscreens). Wipes the side-wide barriers a player puts up - the three
 // screens, Safeguard, Mist, Tailwind and Lucky Chant - plus their timers, on every side <target>
 // resolves to. Jumps failInstr when nothing was there, which is what lets one command be both the
