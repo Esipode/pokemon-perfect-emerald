@@ -56,7 +56,13 @@ LegendaryEncounter_EventScript_Mewtwo::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_MEWTWONITE_X
+	giveitem ITEM_MEWTWONITE_Y
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Mew::
 	lock
@@ -210,7 +216,12 @@ LegendaryEncounter_EventScript_Kyogre::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_BLUE_ORB
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Groudon::
 	lock
@@ -224,7 +235,12 @@ LegendaryEncounter_EventScript_Groudon::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_RED_ORB
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Regice::
 	lock
@@ -280,7 +296,28 @@ LegendaryEncounter_EventScript_Arceus::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_FLAME_PLATE
+	giveitem ITEM_SPLASH_PLATE
+	giveitem ITEM_ZAP_PLATE
+	giveitem ITEM_MEADOW_PLATE
+	giveitem ITEM_ICICLE_PLATE
+	giveitem ITEM_FIST_PLATE
+	giveitem ITEM_TOXIC_PLATE
+	giveitem ITEM_EARTH_PLATE
+	giveitem ITEM_SKY_PLATE
+	giveitem ITEM_MIND_PLATE
+	giveitem ITEM_INSECT_PLATE
+	giveitem ITEM_STONE_PLATE
+	giveitem ITEM_SPOOKY_PLATE
+	giveitem ITEM_DRACO_PLATE
+	giveitem ITEM_DREAD_PLATE
+	giveitem ITEM_IRON_PLATE
+	giveitem ITEM_PIXIE_PLATE
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Azelf::
 	lock
@@ -350,7 +387,12 @@ LegendaryEncounter_EventScript_Rotom::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_ROTOM_CATALOG
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Shaymin::
 	lock
@@ -364,7 +406,12 @@ LegendaryEncounter_EventScript_Shaymin::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_GRACIDEA
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Heatran::
 	lock
@@ -378,7 +425,12 @@ LegendaryEncounter_EventScript_Heatran::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_HEATRANITE
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Manaphy::
 	lock
@@ -406,7 +458,12 @@ LegendaryEncounter_EventScript_Darkrai::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_DARKRANITE
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Cresselia::
 	lock
@@ -434,7 +491,13 @@ LegendaryEncounter_EventScript_Giratina::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_GRISEOUS_ORB
+	giveitem ITEM_GRISEOUS_CORE
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Dialga::
 	lock
@@ -448,7 +511,12 @@ LegendaryEncounter_EventScript_Dialga::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_ADAMANT_CRYSTAL
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Palkia::
 	lock
@@ -462,7 +530,12 @@ LegendaryEncounter_EventScript_Palkia::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_LUSTROUS_GLOBE
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Cobalion::
 	lock
