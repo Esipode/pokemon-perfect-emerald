@@ -632,22 +632,42 @@ extern const u8 EncScript_Virizion_Statused[];
 extern const u8 EncScript_Virizion_Dance[];
 extern const u8 EncScript_Virizion_SacredSword[];
 
-// Genesect ("")
-extern const u8  EncScript_Genesect_Intro[];
-extern const u8  EncScript_Genesect_CombatProtocol[];
-extern const u8  EncScript_Genesect_Weaponized[];
-extern const u8  EncScript_Genesect_Down[];
-extern const u8  EncScript_Genesect_TurnOpen[];
-extern const u8  EncScript_Genesect_Vent[];
-extern const u8  EncScript_Genesect_TargetLock[];
-extern const u8  EncScript_Genesect_AnalyzeFire[];
-extern const u8  EncScript_Genesect_AnalyzePhysical[];
-extern const u8  EncScript_Genesect_AnalyzeSpecial[];
-extern const u8  EncScript_Genesect_TheyFell[];
-extern const u8  EncScript_Genesect_TurnClose[];
-extern const u8  EncScript_Genesect_TechnoBlast[];
-extern const u8  EncScript_Genesect_OverclockStart[];
-extern const u8  EncScript_Genesect_OverclockFire[];
+// Genesect ("The Weapon Platform")
+extern const u8 EncScript_Genesect_Intro[];
+extern const u8 EncScript_Genesect_CombatProtocol[];
+extern const u8 EncScript_Genesect_Weaponized[];
+extern const u8 EncScript_Genesect_Down[];
+extern const u8 EncScript_Genesect_TurnOpen[];
+extern const u8 EncScript_Genesect_Vent[];
+extern const u8 EncScript_Genesect_TargetLock[];
+extern const u8 EncScript_Genesect_AnalyzeFire[];
+extern const u8 EncScript_Genesect_AnalyzePhysical[];
+extern const u8 EncScript_Genesect_AnalyzeSpecial[];
+extern const u8 EncScript_Genesect_TheyFell[];
+extern const u8 EncScript_Genesect_TurnClose[];
+extern const u8 EncScript_Genesect_TechnoBlast[];
+extern const u8 EncScript_Genesect_OverclockStart[];
+extern const u8 EncScript_Genesect_OverclockFire[];
+
+// Keldeo ("The Colt Pokémon")
+extern const u8 EncScript_Keldeo_Intro[];
+extern const u8 EncScript_Keldeo_Teachings[];
+extern const u8 EncScript_Keldeo_Teachings[];
+extern const u8 EncScript_Keldeo_TrueResolve[];
+extern const u8 EncScript_Keldeo_TrueResolve[];
+extern const u8 EncScript_Keldeo_Spent[];
+extern const u8 EncScript_Keldeo_Spent[];
+extern const u8 EncScript_Keldeo_TurnOpen[];
+extern const u8 EncScript_Keldeo_Shed[];
+extern const u8 EncScript_Keldeo_Challenge[];
+extern const u8 EncScript_Keldeo_RaiseBlade[];
+extern const u8 EncScript_Keldeo_Tempered[];
+extern const u8 EncScript_Keldeo_DuelWon[];
+extern const u8 EncScript_Keldeo_TheyEntered[];
+extern const u8 EncScript_Keldeo_TurnClose[];
+extern const u8 EncScript_Keldeo_Riposte[];
+extern const u8 EncScript_Keldeo_DuelSurvived[];
+extern const u8 EncScript_Keldeo_SwordResolve[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
