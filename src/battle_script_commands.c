@@ -13524,6 +13524,24 @@ void BS_EncSetProtect(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// SET CRIT (encsetcrit). Writes the same volatiles.focusEnergy bit Focus Energy itself sets, so
+// CalcCritChanceStage and the AI's crit reads behave identically, and clears it again on FALSE - the
+// reversibility is the point, since an encounter meter that grants a crit boost has to be able to
+// take it back when the meter falls. Unlike Cmd_setfocusenergy this always writes focusEnergy and
+// never dragonCheer: that branch only exists for pre-Gen-3 crit configs and the Dragon Cheer move.
+void BS_EncSetCrit(void)
+{
+    NATIVE_ARGS(u8 target, bool8 state);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            gBattleMons[battler].volatiles.focusEnergy = cmd->state;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // RESET_STATS (encresetstats). The targeted form of Haze: normalisebuffs resets every battler on
 // the field, which a boss that wants to strip only the player's setup cannot use. Reuses
 // TryResetBattlerStatChanges, so the stockpile counters come off with the stages exactly as they do

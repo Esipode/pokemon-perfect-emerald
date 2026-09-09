@@ -1364,6 +1364,17 @@
 	.byte \target
 	.endm
 
+	@ Sets (TRUE) or clears (FALSE) the Focus Energy volatile on every battler \target resolves to -
+	@ a critical-hit ratio a script can raise and lower again as a meter moves. Cmd_setfocusenergy
+	@ cannot serve here: it reads gCurrentMove to tell Focus Energy from Dragon Cheer and writes
+	@ gBattleStruct->moveResultFlags[gBattlerTarget], both stale outside a move, and it has no way to
+	@ clear the bit. Silent - the caller supplies its own dialogue.
+	.macro encsetcrit target:req, state:req
+	callnative BS_EncSetCrit
+	.byte \target
+	.byte \state
+	.endm
+
 	@ Sets the same escape-prevention volatile Mean Look sets on every battler \target resolves to,
 	@ with the boss as the trapper - so switching and fleeing are both refused until a script clears
 	@ it again, or the boss faints and the engine's own cleanup releases everything it held.

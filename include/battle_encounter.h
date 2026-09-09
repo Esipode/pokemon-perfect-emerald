@@ -614,6 +614,24 @@ extern const u8 EncScript_Terrakion_TurnClose[];
 extern const u8 EncScript_Terrakion_Collapse[];
 extern const u8 EncScript_Terrakion_SeeThrough[];
 
+// Virizion ("The Graceful Blade")
+extern const u8 EncScript_Virizion_Intro[];
+extern const u8 EncScript_Virizion_Untouchable[];
+extern const u8 EncScript_Virizion_SacredBlade[];
+extern const u8 EncScript_Virizion_Spent[];
+extern const u8 EncScript_Virizion_TurnOpen[];
+extern const u8 EncScript_Virizion_Shed[];
+extern const u8 EncScript_Virizion_Footing[];
+extern const u8 EncScript_Virizion_Dodge[];
+extern const u8 EncScript_Virizion_BreakType[];
+extern const u8 EncScript_Virizion_TheyFell[];
+extern const u8 EncScript_Virizion_TheyEntered[];
+extern const u8 EncScript_Virizion_TurnClose[];
+extern const u8 EncScript_Virizion_Slowed[];
+extern const u8 EncScript_Virizion_Statused[];
+extern const u8 EncScript_Virizion_Dance[];
+extern const u8 EncScript_Virizion_SacredSword[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
