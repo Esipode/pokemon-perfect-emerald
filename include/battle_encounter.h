@@ -632,6 +632,23 @@ extern const u8 EncScript_Virizion_Statused[];
 extern const u8 EncScript_Virizion_Dance[];
 extern const u8 EncScript_Virizion_SacredSword[];
 
+// Genesect ("")
+extern const u8  EncScript_Genesect_Intro[];
+extern const u8  EncScript_Genesect_CombatProtocol[];
+extern const u8  EncScript_Genesect_Weaponized[];
+extern const u8  EncScript_Genesect_Down[];
+extern const u8  EncScript_Genesect_TurnOpen[];
+extern const u8  EncScript_Genesect_Vent[];
+extern const u8  EncScript_Genesect_TargetLock[];
+extern const u8  EncScript_Genesect_AnalyzeFire[];
+extern const u8  EncScript_Genesect_AnalyzePhysical[];
+extern const u8  EncScript_Genesect_AnalyzeSpecial[];
+extern const u8  EncScript_Genesect_TheyFell[];
+extern const u8  EncScript_Genesect_TurnClose[];
+extern const u8  EncScript_Genesect_TechnoBlast[];
+extern const u8  EncScript_Genesect_OverclockStart[];
+extern const u8  EncScript_Genesect_OverclockFire[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

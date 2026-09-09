@@ -1066,6 +1066,9 @@ LittlerootTown_EventScript_EncounterTESTTerrakion::
 LittlerootTown_EventScript_EncounterTESTVirizion::
 	goto LegendaryEncounter_EventScript_Virizion
 
+LittlerootTown_EventScript_EncounterTESTGenesect::
+	goto LegendaryEncounter_EventScript_Genesect
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

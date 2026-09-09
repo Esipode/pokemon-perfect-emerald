@@ -579,6 +579,28 @@ LegendaryEncounter_EventScript_Virizion::
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 
+LegendaryEncounter_EventScript_Genesect::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_GENESECT, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_GENESECT
+	setwildbattle SPECIES_GENESECT, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_DOUSE_DRIVE
+	giveitem ITEM_SHOCK_DRIVE
+	giveitem ITEM_BURN_DRIVE
+	giveitem ITEM_CHILL_DRIVE
+	releaseall
+	end
+
 @ Shared post-battle tail. Only a caught legendary is removed from the overworld; fainting or
 @ fleeing leaves it in place so the fight can be retried. Each host map's ON_TRANSITION runs
 @ `updatelegendaryvisibility`, which brings the object back if the player later releases the mon.
