@@ -3637,9 +3637,10 @@ static u32 Achievement_CountLegendaryFamilies(bool8 mythicalOnly, bool8 caughtOn
 }
 
 // Targets for the two Diamond entries (14 Mythical Menagerie, 15 Legend of
-// Legends). The species table is fixed at build time, so each total is walked
-// once and memoized; every later call is a plain load.
-static u32 Achievement_CountObtainableLegendaryFamilies(void)
+// Legends): the full count of designated families in the species data, not an
+// obtainability-filtered set. The species table is fixed at build time, so each
+// total is walked once and memoized; every later call is a plain load.
+static u32 Achievement_CountDesignatedLegendaryFamilies(void)
 {
     static u32 sCached = 0;
 
@@ -3649,7 +3650,7 @@ static u32 Achievement_CountObtainableLegendaryFamilies(void)
     return sCached;
 }
 
-static u32 Achievement_CountObtainableMythicalFamilies(void)
+static u32 Achievement_CountDesignatedMythicalFamilies(void)
 {
     static u32 sCached = 0;
 
@@ -3726,9 +3727,9 @@ static void Achievement_EvaluateLegendaryMilestones(u32 familiesCaught, u32 myth
     if (familiesCaught >= 50)
         Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_LIVING_LEGEND);
 
-    if (mythicalCaught >= Achievement_CountObtainableMythicalFamilies())
+    if (mythicalCaught >= Achievement_CountDesignatedMythicalFamilies())
         Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_MYTHICAL_MENAGERIE);
-    if (familiesCaught >= Achievement_CountObtainableLegendaryFamilies())
+    if (familiesCaught >= Achievement_CountDesignatedLegendaryFamilies())
         Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_LEGEND_OF_LEGENDS);
 }
 
@@ -4242,14 +4243,14 @@ static void Achievement_CheckMasteryMilestones(void)
     if (Achievement_HasCompletedEveryTier())
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_WELL_ROUNDED);
 
-    // Thresholds rescaled for the catalog's 20,000-point total
+    // Thresholds rescaled for the catalog's 30,000-point total
     // -- see each achievement's own comment on the rescale in
     // src/data/achievements.h.
-    if (gAchievementProfile.totalPointsEarned >= 10000)
+    if (gAchievementProfile.totalPointsEarned >= 15000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_HOARDER);
-    if (gAchievementProfile.totalPointsEarned >= 18000)
+    if (gAchievementProfile.totalPointsEarned >= 25000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_POINT_LEGEND);
-    if (gAchievementProfile.pointsFromGoldOrBetter >= 7000)
+    if (gAchievementProfile.pointsFromGoldOrBetter >= 10000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_NO_EASY_PATH);
 
     if (Achievement_AllDiamondCompleted(ACHIEVEMENT_MASTERY_DIAMOND_STANDARD))
@@ -4262,10 +4263,10 @@ static void Achievement_CheckMasteryMilestones(void)
 // their own call site instead of Achievement_CheckMasteryMilestones.
 static void Achievement_CheckBoostMilestones(void)
 {
-    // Scaled down from 2000 to 1000 -- the boost economy this measures
-    // against shrank from 42,500 to 20,000 total (src/data/achievement_boosts.h's
-    // own comment on the rescale).
-    if (gAchievementProfile.pointsInvested >= 1000)
+    // 5,000 -- ~17% of the boost economy this measures against (30,000 total
+    // to max every boost; src/data/achievement_boosts.h's own comment on the
+    // rescale).
+    if (gAchievementProfile.pointsInvested >= 5000)
         Achievement_TryComplete(ACHIEVEMENT_PROFILE_BOOST_INVESTOR);
 
     if (AchievementBoost_TotalPurchasedLevels() >= 40)

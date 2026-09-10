@@ -2171,52 +2171,47 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // Achievement_CheckMasteryMilestones (src/achievements.c);
     // Achievement_HasGoldOrBetterInEveryCategory, which existed solely for
     // this achievement, is removed along with it.
-    // Scaled up from 5,000 to 10,000 (50% of the catalog's 20,000-point
-    // total) -- see Achievement_CheckMasteryMilestones (src/achievements.c)'s
-    // own comment on the rescale.
+    // 15,000 -- 50% of the catalog's 30,000-point total -- see
+    // Achievement_CheckMasteryMilestones (src/achievements.c)'s own comment
+    // on the rescale.
     [ACHIEVEMENT_PROFILE_POINT_HOARDER] = {
         .name        = ACHIEVEMENT_NAME("Point Hoarder"),
-        .description = COMPOUND_STRING("Earn 10,000 total achievement points."),
+        .description = COMPOUND_STRING("Earn 15,000 total achievement points."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
         .points      = 170,
         .hidden      = FALSE,
     },
-    // Scaled up from 10,000 to 18,000 (90% of the 20,000-point total, so it
-    // still means "you've all but finished the catalog," the same relative
-    // bar the old 10,000/8,630-max threshold used to clear on its own before
-    // the rescale made it literally unreachable -- see
-    // src/data/achievements.h's top-of-file comment on the point-total
-    // rescale).
+    // 25,000 -- ~83% of the 30,000-point total, so it still means "you've all
+    // but finished the catalog" -- see src/data/achievements.h's top-of-file
+    // comment on the point-total rescale.
     [ACHIEVEMENT_PROFILE_POINT_LEGEND] = {
         .name        = ACHIEVEMENT_NAME("Point Legend"),
-        .description = COMPOUND_STRING("Earn 18,000 total achievement points."),
+        .description = COMPOUND_STRING("Earn 25,000 total achievement points."),
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
         .points      = 360,
         .hidden      = FALSE,
     },
-    // Scaled up from 3,000 to 7,000 -- the Gold-or-better pool is 14,580
-    // (11,780 Gold + 2,800 Diamond), and 7,000 keeps this at roughly the same
-    // ~49% share of that pool the old 3,000/6,090 threshold held.
+    // 10,000 -- the Gold-or-better pool is 18,880 (13,340 Gold + 5,540
+    // Diamond) after the Emporium/Legendary additions, so this holds a ~53%
+    // share of that pool.
     [ACHIEVEMENT_PROFILE_NO_EASY_PATH] = {
         .name        = ACHIEVEMENT_NAME("No Easy Path"),
-        .description = COMPOUND_STRING("Earn 7,000 points from Gold-or-better achievements."),
+        .description = COMPOUND_STRING("Earn 10,000 points from Gold-or-better achievements."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
         .points      = 150,
         .hidden      = FALSE,
     },
-    // Scaled down from 2,000 to 1,000 -- the boost economy this measures
-    // against shrank from 42,500 to 20,000 total (src/data/achievement_boosts.h's
-    // own comment on the rescale), and 1,000 keeps this at roughly the same
-    // ~5% share of that total the old 2,000/42,500 threshold held.
+    // 5,000 -- ~17% of the 30,000 points it costs to max every boost
+    // (src/data/achievement_boosts.h's own comment on the rescale).
     [ACHIEVEMENT_PROFILE_BOOST_INVESTOR] = {
         .name        = ACHIEVEMENT_NAME("Boost Investor"),
-        .description = COMPOUND_STRING("Invest 1,000 points into boosts."),
+        .description = COMPOUND_STRING("Invest 5,000 points into boosts."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_PERSISTENT_PROFILE,
         .category    = ACHIEVEMENT_CATEGORY_PROFILE,
@@ -2698,7 +2693,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // one legendary).
     [ACHIEVEMENT_LEGENDARY_MYTH_CONFIRMED] = {
         .name        = ACHIEVEMENT_NAME("Myth Confirmed"),
-        .description = COMPOUND_STRING("Catch a Pokemon from 1 Legendary family."),
+        .description = COMPOUND_STRING("Catch a Pokémon from a Legendary family."),
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
@@ -2707,7 +2702,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_LEGENDARY_RARE_COMPANY] = {
         .name        = ACHIEVEMENT_NAME("Rare Company"),
-        .description = COMPOUND_STRING("Catch Pokemon from 5 Legendary families."),
+        .description = COMPOUND_STRING("Catch Pokémon from 5 Legendary families."),
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
@@ -2716,7 +2711,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_LEGENDARY_LEGEND_SEEKER] = {
         .name        = ACHIEVEMENT_NAME("Legend Seeker"),
-        .description = COMPOUND_STRING("Catch Pokemon from 15 Legendary families."),
+        .description = COMPOUND_STRING("Catch Pokémon from 15 Legendary families."),
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
@@ -2725,7 +2720,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_LEGENDARY_HALL_OF_LEGENDS] = {
         .name        = ACHIEVEMENT_NAME("Hall of Legends"),
-        .description = COMPOUND_STRING("Catch Pokemon from 30 Legendary families."),
+        .description = COMPOUND_STRING("Catch Pokémon from 30 Legendary families."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
@@ -2734,7 +2729,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_LEGENDARY_LIVING_LEGEND] = {
         .name        = ACHIEVEMENT_NAME("Living Legend"),
-        .description = COMPOUND_STRING("Catch Pokemon from 50 Legendary families."),
+        .description = COMPOUND_STRING("Catch Pokémon from 50 Legendary families."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
@@ -2743,7 +2738,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_LEGENDARY_MYTHICAL_MENAGERIE] = {
         .name        = ACHIEVEMENT_NAME("Mythical Menagerie"),
-        .description = COMPOUND_STRING("Catch a Pokemon from every obtainable Mythical family."),
+        .description = COMPOUND_STRING("Catch a Pokémon from every Mythical family."),
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
@@ -2752,7 +2747,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_LEGENDARY_LEGEND_OF_LEGENDS] = {
         .name        = ACHIEVEMENT_NAME("Legend of Legends"),
-        .description = COMPOUND_STRING("Catch a Pokemon from every obtainable Legendary family."),
+        .description = COMPOUND_STRING("Catch a Pokémon from every Legendary family."),
         .tier        = ACHIEVEMENT_TIER_DIAMOND,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
