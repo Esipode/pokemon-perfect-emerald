@@ -3,6 +3,7 @@
 #include "data.h"
 #include "main.h"
 #include "battle.h"
+#include "battle_emporium.h"
 #include "battle_frontier.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -1652,6 +1653,10 @@ static void CB2_EndTrainerBattle(void)
     }
 
     gIsDebugBattle = FALSE;
+    // The TRAINER_EMPORIUM redirect is only needed while the opponent party is
+    // built at battle start. Disarm it here so a white-out can never leave every
+    // trainer in the game pointed at the runtime Emporium struct.
+    gEmporiumBattleActive = FALSE;
     if (FollowerNPCIsBattlePartner())
     {
         RestorePartyAfterFollowerNPCBattle();

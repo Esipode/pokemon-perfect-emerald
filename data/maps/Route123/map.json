@@ -527,6 +527,13 @@
       "elevation": 0,
       "dest_map": "MAP_ROUTE123_BERRY_MASTERS_HOUSE",
       "dest_warp_id": "0"
+    },
+    {
+      "x": 32,
+      "y": 6,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE123_MEGA_EMPORIUM_LOBBY",
+      "dest_warp_id": "0"
     }
   ],
   "coord_events": [

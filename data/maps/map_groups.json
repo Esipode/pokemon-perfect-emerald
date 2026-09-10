@@ -229,7 +229,9 @@
     "MauvilleCity_House2",
     "MauvilleCity_PokemonCenter_1F",
     "MauvilleCity_PokemonCenter_2F",
-    "MauvilleCity_Mart"
+    "MauvilleCity_Mart",
+    "MauvilleCity_ZMoveEmporiumLobby",
+    "MauvilleCity_ZMoveEmporiumBattleRoom"
   ],
   "gMapGroup_IndoorRustboro": [
     "RustboroCity_DevonCorp_1F",
@@ -285,7 +287,9 @@
     "LilycoveCity_DepartmentStore_4F",
     "LilycoveCity_DepartmentStore_5F",
     "LilycoveCity_DepartmentStoreRooftop",
-    "LilycoveCity_DepartmentStoreElevator"
+    "LilycoveCity_DepartmentStoreElevator",
+    "LilycoveCity_TeraEmporiumLobby",
+    "LilycoveCity_TeraEmporiumBattleRoom"
   ],
   "gMapGroup_IndoorMossdeep": [
     "MossdeepCity_Gym",
@@ -629,7 +633,9 @@
     "Route113_GlassWorkshop"
   ],
   "gMapGroup_IndoorRoute123": [
-    "Route123_BerryMastersHouse"
+    "Route123_BerryMastersHouse",
+    "Route123_MegaEmporiumLobby",
+    "Route123_MegaEmporiumBattleRoom"
   ],
   "gMapGroup_IndoorRoute119": [
     "Route119_WeatherInstitute_1F",

@@ -3995,6 +3995,72 @@
       "layout_version": "emerald"
     },
     {
+      "id": "LAYOUT_MAUVILLE_CITY_ZMOVE_EMPORIUM_LOBBY",
+      "name": "MauvilleCity_ZMoveEmporiumLobby_Layout",
+      "width": 13,
+      "height": 10,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_BattleTent",
+      "border_filepath": "data/layouts/MauvilleCity_ZMoveEmporiumLobby/border.bin",
+      "blockdata_filepath": "data/layouts/MauvilleCity_ZMoveEmporiumLobby/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_MAUVILLE_CITY_ZMOVE_EMPORIUM_BATTLE_ROOM",
+      "name": "MauvilleCity_ZMoveEmporiumBattleRoom_Layout",
+      "width": 13,
+      "height": 9,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_BattleTent",
+      "border_filepath": "data/layouts/MauvilleCity_ZMoveEmporiumBattleRoom/border.bin",
+      "blockdata_filepath": "data/layouts/MauvilleCity_ZMoveEmporiumBattleRoom/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_ROUTE123_MEGA_EMPORIUM_LOBBY",
+      "name": "Route123_MegaEmporiumLobby_Layout",
+      "width": 13,
+      "height": 10,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_BattleTent",
+      "border_filepath": "data/layouts/Route123_MegaEmporiumLobby/border.bin",
+      "blockdata_filepath": "data/layouts/Route123_MegaEmporiumLobby/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_ROUTE123_MEGA_EMPORIUM_BATTLE_ROOM",
+      "name": "Route123_MegaEmporiumBattleRoom_Layout",
+      "width": 13,
+      "height": 9,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_BattleTent",
+      "border_filepath": "data/layouts/Route123_MegaEmporiumBattleRoom/border.bin",
+      "blockdata_filepath": "data/layouts/Route123_MegaEmporiumBattleRoom/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_LILYCOVE_CITY_TERA_EMPORIUM_LOBBY",
+      "name": "LilycoveCity_TeraEmporiumLobby_Layout",
+      "width": 13,
+      "height": 10,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_BattleTent",
+      "border_filepath": "data/layouts/LilycoveCity_TeraEmporiumLobby/border.bin",
+      "blockdata_filepath": "data/layouts/LilycoveCity_TeraEmporiumLobby/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_LILYCOVE_CITY_TERA_EMPORIUM_BATTLE_ROOM",
+      "name": "LilycoveCity_TeraEmporiumBattleRoom_Layout",
+      "width": 13,
+      "height": 9,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_BattleTent",
+      "border_filepath": "data/layouts/LilycoveCity_TeraEmporiumBattleRoom/border.bin",
+      "blockdata_filepath": "data/layouts/LilycoveCity_TeraEmporiumBattleRoom/map.bin",
+      "layout_version": "emerald"
+    },
+    {
       "id": "LAYOUT_MIRAGE_TOWER_4F",
       "name": "MirageTower_4F_Layout",
       "width": 13,
