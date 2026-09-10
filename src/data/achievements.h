@@ -46,6 +46,12 @@
 // Featherweight, Underdog Run, Balanced Roster, Ace Rotation). Tour of
 // Duty's 60 points went +20 to each of the 3 remaining Gold/Diamond RECRUITS
 // entries (Revolving Door, Full Turnover, Recruitment Drive).
+//
+// Emporium Rewards & Legendary Collection: categories Y (8 entries, 2,490
+// points) and Z (7 entries, 2,510 points) add 5,000 points, raising the
+// catalog total from 25,000 to 30,000. This matches the new maxed-boost
+// total in src/data/achievement_boosts.h (also raised to 30,000 -- see that
+// file's note). No existing entry's points changed.
 #define ACHIEVEMENT_NAME(str) COMPOUND_STRING_SIZE_LIMIT(str, ACHIEVEMENT_NAME_LENGTH)
 
 static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
@@ -2613,6 +2619,146 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // in the catalog, so it was permanently unattainable.
     // Achievement_CountHiddenCompleted, which existed solely for it, is
     // removed along with it.
+
+    // Y. Emporium Rewards
+    [ACHIEVEMENT_EMPORIUM_FIRST_PRIZE] = {
+        .name        = ACHIEVEMENT_NAME("First Prize"),
+        .description = COMPOUND_STRING("Win any reward from a Battle Emporium."),
+        .tier        = ACHIEVEMENT_TIER_BRONZE,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 60,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_EMPORIUM_GRAND_TOUR] = {
+        .name        = ACHIEVEMENT_NAME("Grand Tour"),
+        .description = COMPOUND_STRING("Win a reward at all three Battle Emporiums."),
+        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 140,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_EMPORIUM_CRYSTAL_COLLECTOR] = {
+        .name        = ACHIEVEMENT_NAME("Crystal Collector"),
+        .description = COMPOUND_STRING("Collect 10 different Z-Crystals from the Emporium."),
+        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 130,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_EMPORIUM_FULL_SPECTRUM] = {
+        .name        = ACHIEVEMENT_NAME("Full Spectrum"),
+        .description = COMPOUND_STRING("Collect all 29 Z-Crystals from the Emporium."),
+        .tier        = ACHIEVEMENT_TIER_GOLD,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 300,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_EMPORIUM_STONE_TRADER] = {
+        .name        = ACHIEVEMENT_NAME("Stone Trader"),
+        .description = COMPOUND_STRING("Collect 20 different Mega Stones from the Emporium."),
+        .tier        = ACHIEVEMENT_TIER_GOLD,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 260,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_EMPORIUM_MEGA_MAGNATE] = {
+        .name        = ACHIEVEMENT_NAME("Mega Magnate"),
+        .description = COMPOUND_STRING("Collect all 82 Mega Stones from the Emporium."),
+        .tier        = ACHIEVEMENT_TIER_DIAMOND,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 600,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_EMPORIUM_EVERY_TYPE_COVERED] = {
+        .name        = ACHIEVEMENT_NAME("Every Type Covered"),
+        .description = COMPOUND_STRING("Collect all 18 Tera Shards from the Emporium."),
+        .tier        = ACHIEVEMENT_TIER_GOLD,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 300,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_EMPORIUM_EMPTIED] = {
+        .name        = ACHIEVEMENT_NAME("Emporium Emptied"),
+        .description = COMPOUND_STRING("Collect all 129 Battle Emporium rewards."),
+        .tier        = ACHIEVEMENT_TIER_DIAMOND,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 700,
+        .hidden      = FALSE,
+    },
+
+    // Z. Legendary Collection. Counted per evolution family (one member =
+    // one legendary).
+    [ACHIEVEMENT_LEGENDARY_MYTH_CONFIRMED] = {
+        .name        = ACHIEVEMENT_NAME("Myth Confirmed"),
+        .description = COMPOUND_STRING("Catch a Pokemon from 1 Legendary family."),
+        .tier        = ACHIEVEMENT_TIER_BRONZE,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 60,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_LEGENDARY_RARE_COMPANY] = {
+        .name        = ACHIEVEMENT_NAME("Rare Company"),
+        .description = COMPOUND_STRING("Catch Pokemon from 5 Legendary families."),
+        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 130,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_LEGENDARY_LEGEND_SEEKER] = {
+        .name        = ACHIEVEMENT_NAME("Legend Seeker"),
+        .description = COMPOUND_STRING("Catch Pokemon from 15 Legendary families."),
+        .tier        = ACHIEVEMENT_TIER_SILVER,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 180,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_LEGENDARY_HALL_OF_LEGENDS] = {
+        .name        = ACHIEVEMENT_NAME("Hall of Legends"),
+        .description = COMPOUND_STRING("Catch Pokemon from 30 Legendary families."),
+        .tier        = ACHIEVEMENT_TIER_GOLD,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 280,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_LEGENDARY_LIVING_LEGEND] = {
+        .name        = ACHIEVEMENT_NAME("Living Legend"),
+        .description = COMPOUND_STRING("Catch Pokemon from 50 Legendary families."),
+        .tier        = ACHIEVEMENT_TIER_GOLD,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 420,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_LEGENDARY_MYTHICAL_MENAGERIE] = {
+        .name        = ACHIEVEMENT_NAME("Mythical Menagerie"),
+        .description = COMPOUND_STRING("Catch a Pokemon from every obtainable Mythical family."),
+        .tier        = ACHIEVEMENT_TIER_DIAMOND,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 560,
+        .hidden      = FALSE,
+    },
+    [ACHIEVEMENT_LEGENDARY_LEGEND_OF_LEGENDS] = {
+        .name        = ACHIEVEMENT_NAME("Legend of Legends"),
+        .description = COMPOUND_STRING("Catch a Pokemon from every obtainable Legendary family."),
+        .tier        = ACHIEVEMENT_TIER_DIAMOND,
+        .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
+        .category    = ACHIEVEMENT_CATEGORY_COLLECTION,
+        .points      = 880,
+        .hidden      = FALSE,
+    },
 };
 
 STATIC_ASSERT(ACHIEVEMENTS_COUNT <= MAX_ACHIEVEMENTS, AchievementCountFitsProfile);

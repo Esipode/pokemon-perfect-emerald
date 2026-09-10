@@ -646,6 +646,35 @@ enum AchievementId
     ACHIEVEMENT_CROSSMODE_KITCHEN_SINK,
     ACHIEVEMENT_CROSSMODE_THE_FULL_STACK,
 
+    // Y. Emporium Rewards (8). Per-save reward collection, tracked in
+    // AchievementRunDataExt.emporiumRewardsWon[] (SaveBlock2).
+    // Achievement_OnEmporiumRewardWon (src/achievements.c), called from
+    // EmporiumBufferRewardItem (src/battle_emporium.c), win branch only.
+    // All ACHIEVEMENT_CATEGORY_COLLECTION.
+    ACHIEVEMENT_EMPORIUM_FIRST_PRIZE,
+    ACHIEVEMENT_EMPORIUM_GRAND_TOUR,
+    ACHIEVEMENT_EMPORIUM_CRYSTAL_COLLECTOR,
+    ACHIEVEMENT_EMPORIUM_FULL_SPECTRUM,
+    ACHIEVEMENT_EMPORIUM_STONE_TRADER,
+    ACHIEVEMENT_EMPORIUM_MEGA_MAGNATE,
+    ACHIEVEMENT_EMPORIUM_EVERY_TYPE_COVERED,
+    ACHIEVEMENT_EMPORIUM_EMPTIED,
+
+    // Z. Legendary Collection (7). Counted per evolution family via
+    // Achievement_GetEvolutionRoot/_GetFamilyMembers + caught Pokedex flags.
+    // Achievement_CheckLegendaryMilestones (src/achievements.c), called from
+    // the FLAG_SET_CAUGHT branch of HandleSetPokedexFlag (src/pokemon.c)
+    // alongside Achievement_CheckFamilyMilestone; running count in
+    // AchievementRunDataExt.legendaryFamiliesCaught (SaveBlock2).
+    // All ACHIEVEMENT_CATEGORY_COLLECTION.
+    ACHIEVEMENT_LEGENDARY_MYTH_CONFIRMED,
+    ACHIEVEMENT_LEGENDARY_RARE_COMPANY,
+    ACHIEVEMENT_LEGENDARY_LEGEND_SEEKER,
+    ACHIEVEMENT_LEGENDARY_HALL_OF_LEGENDS,
+    ACHIEVEMENT_LEGENDARY_LIVING_LEGEND,
+    ACHIEVEMENT_LEGENDARY_MYTHICAL_MENAGERIE,
+    ACHIEVEMENT_LEGENDARY_LEGEND_OF_LEGENDS,
+
     ACHIEVEMENTS_COUNT,
 };
 
