@@ -8,13 +8,14 @@
 // The first real boost. Costs rise steeply so the player can't acquire
 // every useful boost immediately.
 //
-// Every cost curve below is scaled so the total cost to max every boost in
-// the catalog equals the catalog's total achievement points (20,000, see
-// src/data/achievements.h's own note on that total) -- each curve is the
-// original placeholder shape ({200, 400, 700, 1100, 1600}) scaled by
-// ~0.4706x (20,000 / 42,500, the placeholder curves' own total) and rounded
-// to a clean number, not re-derived from scratch.
-static const u16 sBoostExpGainCosts[]   = {100, 200, 350, 500, 750};
+// Every cost curve below is tuned so the total cost to max every boost in
+// the catalog equals the catalog's total achievement points (30,000, see
+// src/data/achievements.h's own note on that total). The maxed-boost total
+// breaks down as: 7 five-level curves (EXP Gain + the six that share
+// sBoostSharedCosts) at 2,200 each, 2 four-level boosts at 1,350, 10
+// three-level boosts at 770, and 6 binary boosts at 700 --
+// 15,400 + 2,700 + 7,700 + 4,200 = 30,000.
+static const u16 sBoostExpGainCosts[]   = {120, 250, 400, 580, 850};
 // effects[0] (level 0) is never read -- AchievementBoost_ApplyExp short-
 // circuits on level == 0 before indexing this array. effects[level] is the
 // percent bonus applied at that level, matching the example curve
@@ -24,7 +25,7 @@ static const u16 sBoostExpGainEffects[] = {0, 10, 20, 30, 40, 50};
 // The rest of the example boost list. Same cost curve as EXP Gain above --
 // every boost below shares one curve rather than six independently-tuned
 // ones. See the cost-curve comment above.
-static const u16 sBoostSharedCosts[] = {100, 200, 350, 500, 750};
+static const u16 sBoostSharedCosts[] = {120, 250, 400, 580, 850};
 
 // AchievementBoost_ExtraShinyRerolls returns this directly: an extra shiny
 // reroll per level, stacking with the Shiny Charm/Lure/chain-fishing/DexNav
@@ -59,11 +60,11 @@ static const u16 sBoostLegendaryEncounterEffects[] = {0, 1, 2, 3, 4, 5};
 // only ever indexes costs[level] for level < maxLevel, so a 3-level boost
 // simply reads the leading three entries.
 //
-// One shared price for all three binary boosts, for the same reason: each is a
+// One shared price for all six binary boosts, for the same reason: each is a
 // single one-time purchase, so there's nothing to shape a curve around yet.
-// Scaled down from 1500 to 600, the same ~0.4706x scale as sBoostSharedCosts
-// above (the binary boosts' own slice of the 20,000 target).
-static const u16 sBoostSharedBinaryCosts[] = {600};
+// 700 apiece is the binary boosts' slice of the 30,000 maxed-boost target
+// (see the cost-curve comment above).
+static const u16 sBoostSharedBinaryCosts[] = {700};
 
 // IsCriticalHit (src/battle_util.c) rolls this as a flat percent chance to
 // upgrade a non-critical hit, on top of whatever the normal crit-stage roll
