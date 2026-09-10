@@ -148,6 +148,11 @@ static const u8 sText_AllyPkmnPrefix3[] = _("Ally");
 static const u8 sText_AttackerUsedX[] = _("{B_ATK_NAME_WITH_PREFIX} used {B_BUFF3}!");
 static const u8 sText_AttackerUsedX2[] = _("{B_ATK_NAME_WITH_PREFIX} goes for {B_BUFF3}!");
 static const u8 sText_AttackerUsedX3[] = _("{B_ATK_NAME_WITH_PREFIX} unleashes {B_BUFF3}!");
+static const u8 sText_AttackerUsedX4[] = _("{B_ATK_NAME_WITH_PREFIX} lets loose {B_BUFF3}!");
+static const u8 sText_AttackerUsedX5[] = _("{B_ATK_NAME_WITH_PREFIX} attacks with {B_BUFF3}!");
+static const u8 sText_AttackerUsedX6[] = _("{B_ATK_NAME_WITH_PREFIX} fires off {B_BUFF3}!");
+static const u8 sText_AttackerUsedX7[] = _("{B_ATK_NAME_WITH_PREFIX} breaks out {B_BUFF3}!");
+static const u8 sText_AttackerUsedX8[] = _("{B_ATK_NAME_WITH_PREFIX} whips out {B_BUFF3}!");
 static const u8 sText_ExclamationMark[] = _("!");
 static const u8 sText_ExclamationMark2[] = _("!");
 static const u8 sText_ExclamationMark3[] = _("!");
@@ -216,6 +221,11 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_BATTLERFAINTED]                       = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} fainted!\p"),
     [STRINGID_BATTLERFAINTED_2]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} went down!\p"),
     [STRINGID_BATTLERFAINTED_3]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} is unable to battle!\p"),
+    [STRINGID_BATTLERFAINTED_4]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} collapsed!\p"),
+    [STRINGID_BATTLERFAINTED_5]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} was knocked out!\p"),
+    [STRINGID_BATTLERFAINTED_6]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} couldn't go on!\p"),
+    [STRINGID_BATTLERFAINTED_7]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} hit the ground!\p"),
+    [STRINGID_BATTLERFAINTED_8]                     = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} dropped!\p"),
     [STRINGID_PLAYERGOTMONEY]                       = COMPOUND_STRING("You got ¥{B_BUFF1} for winning!\p"),
     [STRINGID_PLAYERWHITEOUT]                       = COMPOUND_STRING("You have no more Pokémon that can fight!\p"),
     [STRINGID_PLAYERWHITEOUT2_WILD]                 = COMPOUND_STRING("You panicked and dropped ¥{B_BUFF1}…"),
@@ -290,6 +300,11 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_PKMNAVOIDEDATTACK]                    = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} avoided the attack!"),
     [STRINGID_PKMNAVOIDEDATTACK_2]                  = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} dodged the attack!"),
     [STRINGID_PKMNAVOIDEDATTACK_3]                  = COMPOUND_STRING("The attack missed {B_DEF_NAME_WITH_PREFIX2}!"),
+    [STRINGID_PKMNAVOIDEDATTACK_4]                  = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} slipped away from the attack!"),
+    [STRINGID_PKMNAVOIDEDATTACK_5]                  = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} evaded the attack!"),
+    [STRINGID_PKMNAVOIDEDATTACK_6]                  = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} sidestepped the attack!"),
+    [STRINGID_PKMNAVOIDEDATTACK_7]                  = COMPOUND_STRING("The attack couldn't touch {B_DEF_NAME_WITH_PREFIX2}!"),
+    [STRINGID_PKMNAVOIDEDATTACK_8]                  = COMPOUND_STRING("{B_DEF_NAME_WITH_PREFIX} got out of the way!"),
     [STRINGID_BATTLERAVOIDEDATTACK]                 = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX} avoided the attack!"),
     [STRINGID_PKMNSAPPEDBYLEECHSEED]                = COMPOUND_STRING("{B_SCR_NAME_WITH_PREFIX}'s health is sapped by Leech Seed!"),
     [STRINGID_PKMNFASTASLEEP]                       = COMPOUND_STRING("{B_ATK_NAME_WITH_PREFIX} is fast asleep."),
@@ -394,15 +409,30 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_CRITICALHIT]                          = COMPOUND_STRING("A critical hit!"),
     [STRINGID_CRITICALHIT_2]                        = COMPOUND_STRING("Critical hit!"),
     [STRINGID_CRITICALHIT_3]                        = COMPOUND_STRING("A critical hit connects!"),
+    [STRINGID_CRITICALHIT_4]                        = COMPOUND_STRING("A crushing critical hit!"),
+    [STRINGID_CRITICALHIT_5]                        = COMPOUND_STRING("Dead on target! A critical hit!"),
+    [STRINGID_CRITICALHIT_6]                        = COMPOUND_STRING("A critical strike lands!"),
+    [STRINGID_CRITICALHIT_7]                        = COMPOUND_STRING("A telling critical hit!"),
+    [STRINGID_CRITICALHIT_8]                        = COMPOUND_STRING("A perfectly placed hit!"),
     [STRINGID_ONEHITKO]                             = COMPOUND_STRING("It's a one-hit KO!"),
     [STRINGID_123POOF]                              = COMPOUND_STRING("One…{PAUSE 10}two…{PAUSE 10}and…{PAUSE 10}{PAUSE 20}{PLAY_SE SE_BALL_BOUNCE_1}ta-da!\p"),
     [STRINGID_ANDELLIPSIS]                          = COMPOUND_STRING("And…\p"),
     [STRINGID_NOTVERYEFFECTIVE]                     = COMPOUND_STRING("It's not very effective…"),
     [STRINGID_NOTVERYEFFECTIVE_2]                   = COMPOUND_STRING("It didn't do much…"),
     [STRINGID_NOTVERYEFFECTIVE_3]                   = COMPOUND_STRING("That barely worked…"),
+    [STRINGID_NOTVERYEFFECTIVE_4]                   = COMPOUND_STRING("It's not doing much…"),
+    [STRINGID_NOTVERYEFFECTIVE_5]                   = COMPOUND_STRING("That had little effect…"),
+    [STRINGID_NOTVERYEFFECTIVE_6]                   = COMPOUND_STRING("It hardly did anything…"),
+    [STRINGID_NOTVERYEFFECTIVE_7]                   = COMPOUND_STRING("It's a weak hit…"),
+    [STRINGID_NOTVERYEFFECTIVE_8]                   = COMPOUND_STRING("That didn't land well…"),
     [STRINGID_SUPEREFFECTIVE]                       = COMPOUND_STRING("It's super effective!"),
     [STRINGID_SUPEREFFECTIVE_2]                     = COMPOUND_STRING("A devastating hit!"),
     [STRINGID_SUPEREFFECTIVE_3]                     = COMPOUND_STRING("That did tremendous damage!"),
+    [STRINGID_SUPEREFFECTIVE_4]                     = COMPOUND_STRING("A tremendously effective hit!"),
+    [STRINGID_SUPEREFFECTIVE_5]                     = COMPOUND_STRING("It's extremely effective!"),
+    [STRINGID_SUPEREFFECTIVE_6]                     = COMPOUND_STRING("That hit a weak spot!"),
+    [STRINGID_SUPEREFFECTIVE_7]                     = COMPOUND_STRING("It's brutally effective!"),
+    [STRINGID_SUPEREFFECTIVE_8]                     = COMPOUND_STRING("That struck hard!"),
     [STRINGID_GOTAWAYSAFELY]                        = sText_GotAwaySafely,
     [STRINGID_WILDPKMNFLED]                         = COMPOUND_STRING("{PLAY_SE SE_FLEE}The wild {B_BUFF1} fled!"),
     [STRINGID_NORUNNINGFROMTRAINERS]                = COMPOUND_STRING("No! There's no running from a Trainer battle!\p"),
@@ -411,9 +441,19 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_BUTNOTHINGHAPPENED]                   = COMPOUND_STRING("But nothing happened!"),
     [STRINGID_BUTNOTHINGHAPPENED_2]                 = COMPOUND_STRING("Nothing happened!"),
     [STRINGID_BUTNOTHINGHAPPENED_3]                 = COMPOUND_STRING("But nothing came of it!"),
+    [STRINGID_BUTNOTHINGHAPPENED_4]                 = COMPOUND_STRING("But there was no effect!"),
+    [STRINGID_BUTNOTHINGHAPPENED_5]                 = COMPOUND_STRING("But nothing changed!"),
+    [STRINGID_BUTNOTHINGHAPPENED_6]                 = COMPOUND_STRING("But it did nothing!"),
+    [STRINGID_BUTNOTHINGHAPPENED_7]                 = COMPOUND_STRING("But not a thing happened!"),
+    [STRINGID_BUTNOTHINGHAPPENED_8]                 = COMPOUND_STRING("But there was no result!"),
     [STRINGID_BUTITFAILED]                          = COMPOUND_STRING("But it failed!"),
     [STRINGID_BUTITFAILED_2]                        = COMPOUND_STRING("It failed!"),
     [STRINGID_BUTITFAILED_3]                        = COMPOUND_STRING("But it didn't work!"),
+    [STRINGID_BUTITFAILED_4]                        = COMPOUND_STRING("But it had no effect!"),
+    [STRINGID_BUTITFAILED_5]                        = COMPOUND_STRING("But it didn't succeed!"),
+    [STRINGID_BUTITFAILED_6]                        = COMPOUND_STRING("But it fell flat!"),
+    [STRINGID_BUTITFAILED_7]                        = COMPOUND_STRING("But it came to nothing!"),
+    [STRINGID_BUTITFAILED_8]                        = COMPOUND_STRING("But it was no use!"),
     [STRINGID_ITHURTCONFUSION]                      = COMPOUND_STRING("It hurt itself in its confusion!"),
     [STRINGID_STARTEDTORAIN]                        = COMPOUND_STRING("It started to rain!"),
     [STRINGID_DOWNPOURSTARTED]                      = COMPOUND_STRING("A downpour started!"), // corresponds to DownpourText in pokegold and pokecrystal and is used by Rain Dance in GSC
@@ -2463,16 +2503,40 @@ static const struct BattleWindowText *const sBattleTextOnWindowsInfo[] =
 
 static const u8 sRecordedBattleTextSpeeds[] = {8, 4, 1, 0};
 
-static const u8 *const sUsedMoveStringVariants[] = {sText_AttackerUsedX, sText_AttackerUsedX2, sText_AttackerUsedX3};
+static const u8 *const sUsedMoveStringVariants[] = {
+    sText_AttackerUsedX, sText_AttackerUsedX2, sText_AttackerUsedX3, sText_AttackerUsedX4,
+    sText_AttackerUsedX5, sText_AttackerUsedX6, sText_AttackerUsedX7, sText_AttackerUsedX8,
+};
 
 // Common, non-move-specific battle messages that are reworded at random for variety.
-static const u16 sCriticalHitStringVariants[] = {STRINGID_CRITICALHIT, STRINGID_CRITICALHIT_2, STRINGID_CRITICALHIT_3};
-static const u16 sSuperEffectiveStringVariants[] = {STRINGID_SUPEREFFECTIVE, STRINGID_SUPEREFFECTIVE_2, STRINGID_SUPEREFFECTIVE_3};
-static const u16 sNotVeryEffectiveStringVariants[] = {STRINGID_NOTVERYEFFECTIVE, STRINGID_NOTVERYEFFECTIVE_2, STRINGID_NOTVERYEFFECTIVE_3};
-static const u16 sFaintedStringVariants[] = {STRINGID_BATTLERFAINTED, STRINGID_BATTLERFAINTED_2, STRINGID_BATTLERFAINTED_3};
-static const u16 sAvoidedAttackStringVariants[] = {STRINGID_PKMNAVOIDEDATTACK, STRINGID_PKMNAVOIDEDATTACK_2, STRINGID_PKMNAVOIDEDATTACK_3};
-static const u16 sMoveFailedStringVariants[] = {STRINGID_BUTITFAILED, STRINGID_BUTITFAILED_2, STRINGID_BUTITFAILED_3};
-static const u16 sNothingHappenedStringVariants[] = {STRINGID_BUTNOTHINGHAPPENED, STRINGID_BUTNOTHINGHAPPENED_2, STRINGID_BUTNOTHINGHAPPENED_3};
+static const u16 sCriticalHitStringVariants[] = {
+    STRINGID_CRITICALHIT, STRINGID_CRITICALHIT_2, STRINGID_CRITICALHIT_3, STRINGID_CRITICALHIT_4,
+    STRINGID_CRITICALHIT_5, STRINGID_CRITICALHIT_6, STRINGID_CRITICALHIT_7, STRINGID_CRITICALHIT_8,
+};
+static const u16 sSuperEffectiveStringVariants[] = {
+    STRINGID_SUPEREFFECTIVE, STRINGID_SUPEREFFECTIVE_2, STRINGID_SUPEREFFECTIVE_3, STRINGID_SUPEREFFECTIVE_4,
+    STRINGID_SUPEREFFECTIVE_5, STRINGID_SUPEREFFECTIVE_6, STRINGID_SUPEREFFECTIVE_7, STRINGID_SUPEREFFECTIVE_8,
+};
+static const u16 sNotVeryEffectiveStringVariants[] = {
+    STRINGID_NOTVERYEFFECTIVE, STRINGID_NOTVERYEFFECTIVE_2, STRINGID_NOTVERYEFFECTIVE_3, STRINGID_NOTVERYEFFECTIVE_4,
+    STRINGID_NOTVERYEFFECTIVE_5, STRINGID_NOTVERYEFFECTIVE_6, STRINGID_NOTVERYEFFECTIVE_7, STRINGID_NOTVERYEFFECTIVE_8,
+};
+static const u16 sFaintedStringVariants[] = {
+    STRINGID_BATTLERFAINTED, STRINGID_BATTLERFAINTED_2, STRINGID_BATTLERFAINTED_3, STRINGID_BATTLERFAINTED_4,
+    STRINGID_BATTLERFAINTED_5, STRINGID_BATTLERFAINTED_6, STRINGID_BATTLERFAINTED_7, STRINGID_BATTLERFAINTED_8,
+};
+static const u16 sAvoidedAttackStringVariants[] = {
+    STRINGID_PKMNAVOIDEDATTACK, STRINGID_PKMNAVOIDEDATTACK_2, STRINGID_PKMNAVOIDEDATTACK_3, STRINGID_PKMNAVOIDEDATTACK_4,
+    STRINGID_PKMNAVOIDEDATTACK_5, STRINGID_PKMNAVOIDEDATTACK_6, STRINGID_PKMNAVOIDEDATTACK_7, STRINGID_PKMNAVOIDEDATTACK_8,
+};
+static const u16 sMoveFailedStringVariants[] = {
+    STRINGID_BUTITFAILED, STRINGID_BUTITFAILED_2, STRINGID_BUTITFAILED_3, STRINGID_BUTITFAILED_4,
+    STRINGID_BUTITFAILED_5, STRINGID_BUTITFAILED_6, STRINGID_BUTITFAILED_7, STRINGID_BUTITFAILED_8,
+};
+static const u16 sNothingHappenedStringVariants[] = {
+    STRINGID_BUTNOTHINGHAPPENED, STRINGID_BUTNOTHINGHAPPENED_2, STRINGID_BUTNOTHINGHAPPENED_3, STRINGID_BUTNOTHINGHAPPENED_4,
+    STRINGID_BUTNOTHINGHAPPENED_5, STRINGID_BUTNOTHINGHAPPENED_6, STRINGID_BUTNOTHINGHAPPENED_7, STRINGID_BUTNOTHINGHAPPENED_8,
+};
 
 // Picks a random reworded variant for stringID if it has any, otherwise returns it unchanged.
 static enum StringID GetVariedStringId(enum StringID stringID)
