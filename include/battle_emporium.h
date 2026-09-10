@@ -52,4 +52,9 @@ const struct Trainer *GetEmporiumTrainer(void);
 u16 BuildEmporiumTrainer(u32 emporium);
 void ClearEmporiumBattle(void);
 
+// Level every Emporium challenger mon is generated at: the progression level cap
+// plus a per-building offset. Read by CreateNPCTrainerPartyFromTrainer while
+// gEmporiumBattleActive is set.
+u32 GetEmporiumBattleLevel(void);
+
 #endif // GUARD_BATTLE_EMPORIUM_H

@@ -8,7 +8,9 @@
 #include "string_util.h"
 #include "trainer_pools.h"
 #include "battle_emporium.h"
+#include "caps.h"
 #include "event_data.h"
+#include "constants/flags.h"
 #include "constants/item.h"
 #include "constants/abilities.h"
 #include "constants/trainers.h"
@@ -355,6 +357,66 @@ TEST("Battle Emporium ace slot falls back to a default ace when no reward matche
     CreateNPCTrainerPartyFromTrainer(testParty, GetTrainerStructFromId(TRAINER_EMPORIUM));
     EXPECT(GetMonData(&testParty[EMPORIUM_PARTY_SIZE_MEGA - 1], MON_DATA_SPECIES) != SPECIES_NONE);
 
+    ClearEmporiumBattle();
+    Free(testParty);
+}
+
+TEST("Battle Emporium challenger team is generated at the progression level cap")
+{
+    u32 emporium, partySize;
+    PARAMETRIZE { emporium = EMPORIUM_ZMOVE; partySize = EMPORIUM_PARTY_SIZE_ZMOVE; }
+    PARAMETRIZE { emporium = EMPORIUM_MEGA;  partySize = EMPORIUM_PARTY_SIZE_MEGA; }
+    PARAMETRIZE { emporium = EMPORIUM_TERA;  partySize = EMPORIUM_PARTY_SIZE_TERA; }
+
+    struct Pokemon *testParty = Alloc(6 * sizeof(struct Pokemon));
+    BuildEmporiumTrainer(emporium);
+    VarSet(VAR_EMPORIUM_ID, emporium);
+    VarSet(VAR_EMPORIUM_REWARD, GetEmporiumRewardStart(emporium));
+
+    CreateNPCTrainerPartyFromTrainer(testParty, GetTrainerStructFromId(TRAINER_EMPORIUM));
+    for (u32 i = 0; i < partySize; i++)
+        EXPECT(GetMonData(&testParty[i], MON_DATA_LEVEL) == GetEmporiumBattleLevel());
+
+    ClearEmporiumBattle();
+    Free(testParty);
+}
+
+TEST("Battle Emporium ace survives New Game+ and the randomizer flags")
+{
+    u32 emporium, aceSlot;
+    PARAMETRIZE { emporium = EMPORIUM_ZMOVE; aceSlot = EMPORIUM_PARTY_SIZE_ZMOVE - 1; }
+    PARAMETRIZE { emporium = EMPORIUM_MEGA;  aceSlot = EMPORIUM_PARTY_SIZE_MEGA - 1; }
+    PARAMETRIZE { emporium = EMPORIUM_TERA;  aceSlot = EMPORIUM_PARTY_SIZE_TERA - 1; }
+
+    u32 savedNewGamePlus = gSaveBlock2Ptr->newGamePlus;
+    struct Pokemon *testParty = Alloc(6 * sizeof(struct Pokemon));
+
+    gSaveBlock2Ptr->newGamePlus = 1;
+    FlagSet(FLAG_RANDOMIZE_MON);
+    FlagSet(FLAG_RANDOMIZE_TYPE);
+    FlagSet(FLAG_RANDOMIZE_MOVES);
+
+    BuildEmporiumTrainer(emporium);
+    VarSet(VAR_EMPORIUM_ID, emporium);
+    VarSet(VAR_EMPORIUM_REWARD, GetEmporiumRewardStart(emporium));
+
+    CreateNPCTrainerPartyFromTrainer(testParty, GetTrainerStructFromId(TRAINER_EMPORIUM));
+    if (emporium == EMPORIUM_TERA)
+        EXPECT(GetMonData(&testParty[aceSlot], MON_DATA_TERA_TYPE) == GetEmporiumAceKey());
+    else
+        EXPECT(GetMonData(&testParty[aceSlot], MON_DATA_HELD_ITEM) == GetEmporiumAceKey());
+    // The generated opponent keeps the authored level cap, not the New Game+ offset.
+    EXPECT(GetMonData(&testParty[aceSlot], MON_DATA_LEVEL) == GetEmporiumBattleLevel());
+
+    // The suppression is scoped to party creation - the flags come back after.
+    EXPECT(FlagGet(FLAG_RANDOMIZE_MON));
+    EXPECT(FlagGet(FLAG_RANDOMIZE_TYPE));
+    EXPECT(FlagGet(FLAG_RANDOMIZE_MOVES));
+
+    FlagClear(FLAG_RANDOMIZE_MON);
+    FlagClear(FLAG_RANDOMIZE_TYPE);
+    FlagClear(FLAG_RANDOMIZE_MOVES);
+    gSaveBlock2Ptr->newGamePlus = savedNewGamePlus;
     ClearEmporiumBattle();
     Free(testParty);
 }

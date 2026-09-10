@@ -5,10 +5,12 @@
 #include "random.h"
 #include "string_util.h"
 #include "trainer_pools.h"
+#include "caps.h"
 #include "constants/battle_ai.h"
 #include "constants/event_objects.h"
 #include "constants/flags.h"
 #include "constants/moves.h"
+#include "constants/pokemon.h"
 #include "constants/species.h"
 #include "constants/trainers.h"
 #include "constants/vars.h"
@@ -116,6 +118,32 @@ static const struct EmporiumPoolInfo sEmporiumPools[EMPORIUM_COUNT] =
 const struct Trainer *GetEmporiumTrainer(void)
 {
     return &sEmporiumTrainer;
+}
+
+// Emporium challenger teams always fight at the story/badge progression level
+// cap, so they keep pace with the player regardless of difficulty or New Game+.
+// The per-building offset is a balance hook (e.g. make the Tera building the
+// hardest) and is applied in CreateNPCTrainerPartyFromTrainer.
+u32 GetEmporiumBattleLevel(void)
+{
+    static const s8 sEmporiumLevelOffset[EMPORIUM_COUNT] =
+    {
+        [EMPORIUM_ZMOVE] = 0,
+        [EMPORIUM_MEGA]  = 0,
+        [EMPORIUM_TERA]  = 0,
+    };
+    u32 emporium = GetEmporiumRewardEmporium(VarGet(VAR_EMPORIUM_REWARD));
+    s32 level = (s32)GetProgressionLevelCap();
+
+    if (emporium < EMPORIUM_COUNT)
+        level += sEmporiumLevelOffset[emporium];
+
+    if (level < 1)
+        level = 1;
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    return level;
 }
 
 // Rolls a challenger identity, fills sEmporiumTrainer from it and the emporium's

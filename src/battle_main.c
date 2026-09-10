@@ -2763,7 +2763,10 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     u16 partySpecies[PARTY_SIZE];
     bool8 isReplaced[PARTY_SIZE] = {0};
     struct NewGamePlusFill fill = {0};
-    bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0;
+    // Emporium challengers are authored end to end - their ace has to keep the
+    // reward's mechanic - so the New Game+ replacement/item passes are skipped
+    // for them (see the level override below and the randomizer suppression).
+    bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive;
     u8 replaceCount = 0;
     u8 monsCount;
     u8 maxPartySize;
@@ -2783,6 +2786,18 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     monsCount = min(trainer->partySize, maxPartySize);
     if (monsCount == 0)
         return;
+
+    // Keep the randomizer off the generated Emporium opponent: a swapped species,
+    // move or Tera type would break the "ace uses the chosen reward" contract.
+    // Move randomization runs later, at battle intro - suppressed there too for
+    // the opponent side in ApplyMoveRandomizationToBattleMon.
+    bool32 restoreRandomizeMon = FALSE, restoreRandomizeType = FALSE, restoreRandomizeMoves = FALSE;
+    if (gEmporiumBattleActive)
+    {
+        if (FlagGet(FLAG_RANDOMIZE_MON))   { FlagClear(FLAG_RANDOMIZE_MON);   restoreRandomizeMon = TRUE; }
+        if (FlagGet(FLAG_RANDOMIZE_TYPE))  { FlagClear(FLAG_RANDOMIZE_TYPE);  restoreRandomizeType = TRUE; }
+        if (FlagGet(FLAG_RANDOMIZE_MOVES)) { FlagClear(FLAG_RANDOMIZE_MOVES); restoreRandomizeMoves = TRUE; }
+    }
 
     DoTrainerPartyPool(trainer, monIndices, monsCount, gBattleTypeFlags);
 
@@ -2859,10 +2874,17 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
             otId.value = HIHALF(personalityValue) ^ LOHALF(personalityValue);
         }
 
-        levelAdjustment = GetDifficultyLevelAdjustment(partyData[monIndex].lvl, gSaveBlock1Ptr->difficulty);
-        level = min((u32)partyData[monIndex].lvl + levelAdjustment + GetNewGamePlusLevelOffset(), MAX_LEVEL);
-        if (level < 1)
-            level = 1;
+        if (gEmporiumBattleActive)
+        {
+            level = GetEmporiumBattleLevel();
+        }
+        else
+        {
+            levelAdjustment = GetDifficultyLevelAdjustment(partyData[monIndex].lvl, gSaveBlock1Ptr->difficulty);
+            level = min((u32)partyData[monIndex].lvl + levelAdjustment + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+            if (level < 1)
+                level = 1;
+        }
 
         CreateMon(&party[i], species, level, personalityValue, otId);
 
@@ -2986,6 +3008,13 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
 
     if (isNGPlus)
         AddNewGamePlusExtraMons(party, trainer, &fill, monsCount, maxPartySize);
+
+    if (restoreRandomizeMon)
+        FlagSet(FLAG_RANDOMIZE_MON);
+    if (restoreRandomizeType)
+        FlagSet(FLAG_RANDOMIZE_TYPE);
+    if (restoreRandomizeMoves)
+        FlagSet(FLAG_RANDOMIZE_MOVES);
 }
 
 void VBlankCB_Battle(void)

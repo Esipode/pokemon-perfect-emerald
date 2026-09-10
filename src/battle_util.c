@@ -4,6 +4,7 @@
 #include "battle_anim.h"
 #include "battle_anim_scripts.h"
 #include "battle_arena.h"
+#include "battle_emporium.h"
 #include "battle_environment.h"
 #include "battle_pyramid.h"
 #include "battle_util.h"
@@ -9600,6 +9601,12 @@ void ApplyMoveRandomizationToBattleMon(enum BattlerId battler)
 {
     u16 originalMoves[MAX_MON_MOVES];
     u16 resolvedMoves[MAX_MON_MOVES];
+
+    // The generated Emporium challenger keeps its authored moveset so the ace's
+    // reward-matching move survives (party creation clears the flag; this is the
+    // battle-intro / switch-in path). The player's team still randomizes.
+    if (gEmporiumBattleActive && GetBattlerSide(battler) != B_SIDE_PLAYER)
+        return;
 
     for (u32 i = 0; i < MAX_MON_MOVES; i++)
         originalMoves[i] = gBattleMons[battler].moves[i];

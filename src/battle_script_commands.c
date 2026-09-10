@@ -3902,6 +3902,11 @@ static u32 GetTrainerMoneyToGive(u16 trainerId)
     u32 moneyReward;
     u8 trainerMoney = 0;
 
+    // Emporium battles charge a fixed entry fee up front (handled by the field
+    // script) and pay no prize, so the repeatable fight is not a money faucet.
+    if (gEmporiumBattleActive)
+        return 0;
+
     if (trainerId == TRAINER_SECRET_BASE)
     {
         moneyReward = 20 * gBattleResources->secretBase->party.levels[0] * gBattleStruct->moneyMultiplier;
