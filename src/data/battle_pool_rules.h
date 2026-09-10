@@ -77,4 +77,16 @@ const struct PoolRules gPoolRulesetsList[] = {
         .tagMaxMembers[POOL_TAG_SUPPORT] = 1,
         .tagRequired[POOL_TAG_SUPPORT] = TRUE,
     },
+    //  Battle Emporium: one filler lead, exactly one ace (the mon carrying the
+    //  reward mechanic - guaranteed so the payout contract always holds), and no
+    //  duplicate species / Mega Stone / Z-Crystal in the generated party.
+    [POOL_RULESET_EMPORIUM] = {
+        .speciesClause = TRUE,
+        .excludeForms = B_POOL_RULE_EXCLUDE_FORMS,
+        .megaStoneClause = TRUE,
+        .zCrystalClause = TRUE,
+        .tagMaxMembers[POOL_TAG_LEAD] = 1,
+        .tagMaxMembers[POOL_TAG_ACE] = 1,
+        .tagRequired[POOL_TAG_ACE] = TRUE,
+    },
 };

@@ -52,12 +52,12 @@
 #else
 
 #define FLAG_MAGOST_BERRY_MONEY_BOOST 0x20 // Used Magost Berry: next trainer battle's money reward is +25%
-#define FLAG_UNUSED_0x021    0x21 // Unused Flag
-#define FLAG_UNUSED_0x022    0x22 // Unused Flag
-#define FLAG_UNUSED_0x023    0x23 // Unused Flag
-#define FLAG_UNUSED_0x024    0x24 // Unused Flag
-#define FLAG_UNUSED_0x025    0x25 // Unused Flag
-#define FLAG_UNUSED_0x026    0x26 // Unused Flag
+#define FLAG_EMPORIUM_ZMOVE_INTRO_DONE      0x21 // Battle Emporium: instructor's one-time mechanic explanation already shown
+#define FLAG_EMPORIUM_MEGA_INTRO_DONE       0x22
+#define FLAG_EMPORIUM_TERA_INTRO_DONE       0x23
+#define FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN 0x24 // Battle Emporium: set hides the battle-room challenger until a reward is chosen
+#define FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN  0x25
+#define FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN  0x26
 #define FLAG_UNUSED_0x027    0x27 // Unused Flag
 #define FLAG_UNUSED_0x028    0x28 // Unused Flag
 #define FLAG_UNUSED_0x029    0x29 // Unused Flag

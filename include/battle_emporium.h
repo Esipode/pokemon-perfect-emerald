@@ -1,0 +1,41 @@
+#ifndef GUARD_BATTLE_EMPORIUM_H
+#define GUARD_BATTLE_EMPORIUM_H
+
+#include "constants/battle_emporium.h"
+#include "constants/items.h"    // enum Item
+#include "constants/pokemon.h"  // enum Type
+
+// One catalogue row per reward item. Table lives in src/data/battle_emporium.h,
+// reached only through the accessors below.
+struct EmporiumReward
+{
+    enum Item item;      // the reward handed to the player on victory
+    u8 emporium;         // enum EmporiumId this reward belongs to
+    u16 aceKey;          // Tera: enum Type the ace Terastallizes to. Z/Mega: unused (see GetEmporiumAceKey)
+    u16 requiredFlag;    // badge flag gating the reward, or EMPORIUM_FLAG_NONE
+};
+
+// One rolled challenger identity. Table (sEmporiumIdentities) lives in
+// src/data/battle_emporium.h; BuildEmporiumTrainer() (Stage 3) copies a row
+// into the runtime struct Trainer and returns objectGfxId for VAR_OBJ_GFX_ID_0.
+struct EmporiumIdentity
+{
+    u16 trainerClass;
+    u16 trainerPic;      // enum TrainerPicID
+    const u8 *name;
+    u16 objectGfxId;     // OBJ_EVENT_GFX_* for the back-room challenger
+    u8 encounterMusic;   // TRAINER_ENCOUNTER_MUSIC_*
+    u8 gender;           // TRAINER_GENDER_*
+};
+
+u32 GetEmporiumRewardCount(u32 emporium);
+u32 GetEmporiumRewardStart(u32 emporium);
+enum Item GetEmporiumRewardItem(u32 rewardIndex);
+u32 GetEmporiumRewardEmporium(u32 rewardIndex);
+u16 GetEmporiumRewardRequiredFlag(u32 rewardIndex);
+
+// Reads VAR_EMPORIUM_REWARD and returns the value POOL_PICK_EMPORIUM matches the
+// ace slot on: the reward item for Z-Move/Mega, the ace's Tera type for Tera.
+u16 GetEmporiumAceKey(void);
+
+#endif // GUARD_BATTLE_EMPORIUM_H
