@@ -1028,6 +1028,16 @@ void Achievement_CheckMonoStarterMilestones(void);
 // Them.
 void Achievement_RecordMonoModeObtain(void);
 
+// ---- Emporium Rewards (category Y) -------------------------------------
+
+// EmporiumBufferRewardItem (src/battle_emporium.c), win branch only, one
+// call site. rewardIndex is the global reward row index (VAR_EMPORIUM_REWARD,
+// 0..EMPORIUM_REWARD_COUNT-1). Sets that row's bit in
+// AchievementRunDataExt.emporiumRewardsWon[] (SaveBlock2), then evaluates the
+// eight category Y entries by counting set bits within each Emporium's
+// GetEmporiumRewardStart()/GetEmporiumRewardCount() range.
+void Achievement_OnEmporiumRewardWon(u32 rewardIndex);
+
 // Debug-only. src/debug.c is the only caller.
 // These bypass all the validation the real functions above add
 // (achievement completion rules, boost costs/maxLevel, reset fee) by design,

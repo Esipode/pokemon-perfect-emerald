@@ -697,6 +697,15 @@ struct AchievementRunDataExt
     u8 rotationTrainerWinsThisCycle;  // On a Rotation
     u8 monoTypeObtainedThisCycle;     // Perfect Fit
     u8 monoGenObtainedThisCycle;      // Gotta Catch Some of Them
+
+    // Emporium Rewards (category Y) -- per-save collection of the 129 Battle
+    // Emporium reward rows, one bit per reward row index (see
+    // EMPORIUM_REWARD_COUNT, src/data/battle_emporium.h). Set by
+    // Achievement_OnEmporiumRewardWon on the win branch only. Same
+    // SaveBlock1-has-no-slack detour as every field above; spans the whole
+    // save (never reset per NG+ cycle), matching ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH's
+    // fall-back onto per-save state. 17 bytes covers 136 bits; bits 129..135 unused.
+    u8 emporiumRewardsWon[17];
 };
 
 // Offline, code-based trading (see trade_code.h) -- a decoded but not-yet-

@@ -1,3 +1,5 @@
+#include "trainer_pools.h"
+
 // Battle Emporium reward catalogue: one row per offered item, grouped by
 // building so each emporium's rows are one contiguous range. Included from
 // src/battle_emporium.c only; reach it through include/battle_emporium.h.

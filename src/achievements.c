@@ -27,12 +27,16 @@
 #include "constants/difficulty.h" // DIFFICULTY_HARD, for Trial by Fire
 #include "item.h"                 // gBagPockets/POCKETS_COUNT, for Pack Rat/Resourceful
 #include "wild_encounter.h"       // gWildMonHeaders/GetCurrentMapWildMonHeaderId, for Local Expert
+#include "battle_emporium.h"      // GetEmporiumRewardStart/_Count, for Achievement_OnEmporiumRewardWon
+#include "constants/battle_emporium.h" // EMPORIUM_ZMOVE/_MEGA/_TERA/_COUNT
 #include "constants/flags.h"
 #include "constants/item.h"     // REPEL_LURE_MASK, for AchievementBoost_ApplySprayStepCount
+#include "constants/event_objects.h"
 #include "constants/game_stat.h" // GAME_STAT_*, for threshold checks
 #include "constants/pokedex.h"   // NATIONAL_DEX_COUNT, FLAG_GET_SEEN/FLAG_GET_CAUGHT
 #include "constants/pokemon.h"    // MON_DATA_*, for evaluation-time party queries
 #include "constants/trainers.h"   // TRAINER_CLASS_*, for Achievement_IsMajorBattle
+#include "data/battle_emporium.h"
 #include "data/achievements.h"
 #include "data/achievement_boosts.h"
 
@@ -3576,6 +3580,70 @@ void Achievement_CheckFamilyMilestone(enum Species species)
     }
 
     Achievement_TryComplete(ACHIEVEMENT_COLLECT_FAMILY_REUNION);
+}
+
+// EmporiumBufferRewardItem (src/battle_emporium.c), win branch only.
+// rewardIndex is the global reward row index (VAR_EMPORIUM_REWARD). Records
+// the row's bit in AchievementRunDataExt.emporiumRewardsWon[] (SaveBlock2),
+// then re-evaluates the eight category Y entries from the bitfield -- all
+// idempotent through Achievement_TryComplete, so a repeat win of an
+// already-owned reward re-checks harmlessly and completes nothing new.
+void Achievement_OnEmporiumRewardWon(u32 rewardIndex)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+    u32 emporium, i;
+    u32 totalOwned = 0;
+    u8 emporiumsWithAny = 0;
+
+    if (rewardIndex >= EMPORIUM_REWARD_COUNT)
+        return;
+
+    runDataExt->emporiumRewardsWon[rewardIndex / 8] |= 1 << (rewardIndex % 8);
+
+    for (emporium = EMPORIUM_ZMOVE; emporium < EMPORIUM_COUNT; emporium++)
+    {
+        u32 start = GetEmporiumRewardStart(emporium);
+        u32 count = GetEmporiumRewardCount(emporium);
+        u32 owned = 0;
+
+        for (i = 0; i < count; i++)
+        {
+            u32 bit = start + i;
+
+            if (runDataExt->emporiumRewardsWon[bit / 8] & (1 << (bit % 8)))
+                owned++;
+        }
+
+        totalOwned += owned;
+        if (owned > 0)
+            emporiumsWithAny++;
+
+        switch (emporium)
+        {
+        case EMPORIUM_ZMOVE:
+            if (owned >= 10)
+                Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_CRYSTAL_COLLECTOR);
+            if (owned >= count)
+                Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_FULL_SPECTRUM);
+            break;
+        case EMPORIUM_MEGA:
+            if (owned >= 20)
+                Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_STONE_TRADER);
+            if (owned >= count)
+                Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_MEGA_MAGNATE);
+            break;
+        case EMPORIUM_TERA:
+            if (owned >= count)
+                Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_EVERY_TYPE_COVERED);
+            break;
+        }
+    }
+
+    Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_FIRST_PRIZE);
+    if (emporiumsWithAny >= EMPORIUM_COUNT - EMPORIUM_ZMOVE)
+        Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_GRAND_TOUR);
+    if (totalOwned >= EMPORIUM_REWARD_COUNT)
+        Achievement_TryComplete(ACHIEVEMENT_EMPORIUM_EMPTIED);
 }
 
 // Achievement_CheckPerfectIvMilestone (formerly called from

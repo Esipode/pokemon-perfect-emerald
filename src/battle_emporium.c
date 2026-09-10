@@ -1,4 +1,5 @@
 #include "global.h"
+#include "achievements.h"
 #include "battle_emporium.h"
 #include "battle_main.h"
 #include "data.h"
@@ -388,10 +389,12 @@ void EmporiumArmNoWhiteout(void)
 // ClearEmporiumBattle wipes VAR_EMPORIUM_REWARD.
 void EmporiumBufferRewardItem(void)
 {
-    enum Item item = GetEmporiumRewardItem(VarGet(VAR_EMPORIUM_REWARD));
+    u32 rewardIndex = VarGet(VAR_EMPORIUM_REWARD);
+    enum Item item = GetEmporiumRewardItem(rewardIndex);
 
     gSpecialVar_0x8004 = item;
     CopyItemName(item, gStringVar1);
+    Achievement_OnEmporiumRewardWon(rewardIndex);
 }
 
 // Copies the challenger's rolled intro line into gStringVar1 for the battle-room
