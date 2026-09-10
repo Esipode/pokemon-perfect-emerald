@@ -402,6 +402,24 @@ static void RandomTagPrune(const struct Trainer *trainer, u8 *poolIndexArray, co
             poolIndexArray[i] = POOL_SLOT_DISABLED;
 }
 
+//  Battle Emporium tier balance: the ACE slot is authored to carry the reward's
+//  mechanic (often a legendary for signature Z-Crystals), so it is left alone.
+//  Every other pool member is dropped if it exceeds the building's base-stat-total
+//  cap or is a legendary / mythical / paradox / Ultra Beast.
+static void EmporiumPrune(const struct Trainer *trainer, u8 *poolIndexArray, const struct PoolRules *rules)
+{
+    for (u32 i = 0; i < trainer->poolSize; i++)
+    {
+        u32 poolIndex = poolIndexArray[i];
+        if (poolIndex == POOL_SLOT_DISABLED)
+            continue;
+        if (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE))
+            continue;
+        if (!EmporiumMonAllowedAsFiller(&trainer->party[poolIndex]))
+            poolIndexArray[i] = POOL_SLOT_DISABLED;
+    }
+}
+
 static void PrunePool(const struct Trainer *trainer, u8 *poolIndexArray, const struct PoolRules *rules)
 {
     //  Use defined pruning functions go here
@@ -414,6 +432,9 @@ static void PrunePool(const struct Trainer *trainer, u8 *poolIndexArray, const s
         break;
     case POOL_PRUNE_RANDOM_TAG:
         RandomTagPrune(trainer, poolIndexArray, rules);
+        break;
+    case POOL_PRUNE_EMPORIUM:
+        EmporiumPrune(trainer, poolIndexArray, rules);
         break;
     default:
         break;

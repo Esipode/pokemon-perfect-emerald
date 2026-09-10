@@ -604,3 +604,4 @@ gSpecials::
 	def_special EmporiumRollChallenger
 	def_special EmporiumShowChallenger
 	def_special EmporiumBufferRewardItem
+	def_special EmporiumBufferChallengerIntro

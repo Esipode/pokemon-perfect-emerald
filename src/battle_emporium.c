@@ -25,6 +25,8 @@
 
 #include "data/battle_emporium.h"
 
+extern u32 GetTotalBaseStat(enum Species species);
+
 struct EmporiumRewardRange
 {
     u16 start;
@@ -108,6 +110,55 @@ bool32 EmporiumMonMatchesReward(const struct TrainerMon *mon)
 // the redirect. See ClearEmporiumBattle for the teardown contract.
 EWRAM_DATA static struct Trainer sEmporiumTrainer = {0};
 EWRAM_DATA bool8 gEmporiumBattleActive = FALSE;
+EWRAM_DATA static u8 sEmporiumIntroLine = 0;
+
+// Challenger intro lines, rolled per attempt (Stage 9). Labels live in
+// data/scripts/battle_emporium.inc; EmporiumBufferChallengerIntro copies the
+// chosen one into gStringVar1 for Emporium_Text_ChallengerIntroTemplate.
+extern const u8 Emporium_Text_ChallengerIntro1[];
+extern const u8 Emporium_Text_ChallengerIntro2[];
+extern const u8 Emporium_Text_ChallengerIntro3[];
+extern const u8 Emporium_Text_ChallengerIntro4[];
+extern const u8 Emporium_Text_ChallengerIntro5[];
+extern const u8 Emporium_Text_ChallengerIntro6[];
+
+static const u8 *const sEmporiumIntroLines[] =
+{
+    Emporium_Text_ChallengerIntro1,
+    Emporium_Text_ChallengerIntro2,
+    Emporium_Text_ChallengerIntro3,
+    Emporium_Text_ChallengerIntro4,
+    Emporium_Text_ChallengerIntro5,
+    Emporium_Text_ChallengerIntro6,
+};
+
+// Tier balance cap (Stage 9): Emporium filler mons may not exceed this base stat
+// total. Aces are exempt. Read by EmporiumMonAllowedAsFiller via POOL_PRUNE_EMPORIUM.
+u32 GetEmporiumFillerBstCap(void)
+{
+    switch (VarGet(VAR_EMPORIUM_ID))
+    {
+    case EMPORIUM_ZMOVE: return 400;
+    case EMPORIUM_MEGA:  return 500;
+    case EMPORIUM_TERA:  return 600;
+    default:             return 600;
+    }
+}
+
+// FALSE if mon is too strong for its building's tier or is a legendary /
+// mythical / paradox / Ultra Beast. Mega stones use the base species' stat total,
+// not the Mega form's, because the pool stores the base species.
+bool32 EmporiumMonAllowedAsFiller(const struct TrainerMon *mon)
+{
+    const struct SpeciesInfo *info = &gSpeciesInfo[mon->species];
+
+    if (info->isRestrictedLegendary || info->isSubLegendary || info->isMythical
+     || info->isUltraBeast || info->isParadox)
+        return FALSE;
+    if (GetTotalBaseStat(mon->species) > GetEmporiumFillerBstCap())
+        return FALSE;
+    return TRUE;
+}
 
 struct EmporiumPoolInfo
 {
@@ -166,6 +217,7 @@ u16 BuildEmporiumTrainer(u32 emporium)
         emporium = EMPORIUM_ZMOVE;
 
     identity = &sEmporiumIdentities[Random() % EMPORIUM_IDENTITY_COUNT];
+    sEmporiumIntroLine = Random() % ARRAY_COUNT(sEmporiumIntroLines);
     pool = &sEmporiumPools[emporium];
 
     memset(&sEmporiumTrainer, 0, sizeof(sEmporiumTrainer));
@@ -181,7 +233,7 @@ u16 BuildEmporiumTrainer(u32 emporium)
     sEmporiumTrainer.poolSize = pool->poolSize;
     sEmporiumTrainer.poolRuleIndex = POOL_RULESET_EMPORIUM;
     sEmporiumTrainer.poolPickIndex = POOL_PICK_EMPORIUM;
-    sEmporiumTrainer.poolPruneIndex = POOL_PRUNE_NONE;
+    sEmporiumTrainer.poolPruneIndex = POOL_PRUNE_EMPORIUM;
     sEmporiumTrainer.overrideTrainer = TRAINER_NONE;
 
     gEmporiumBattleActive = TRUE;
@@ -226,6 +278,16 @@ void EmporiumBufferRewardItem(void)
 
     gSpecialVar_0x8004 = item;
     CopyItemName(item, gStringVar1);
+}
+
+// Copies the challenger's rolled intro line into gStringVar1 for the battle-room
+// trainerbattle intro template. Called just before the fight; the index is rolled
+// in BuildEmporiumTrainer alongside the identity.
+void EmporiumBufferChallengerIntro(void)
+{
+    if (sEmporiumIntroLine >= ARRAY_COUNT(sEmporiumIntroLines))
+        sEmporiumIntroLine = 0;
+    StringCopy(gStringVar1, sEmporiumIntroLines[sEmporiumIntroLine]);
 }
 
 // ---- Stage 7: instructor reward menu, ace preview, opponent roll ----

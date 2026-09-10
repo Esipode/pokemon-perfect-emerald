@@ -15,7 +15,8 @@ LilycoveCity_TeraEmporiumBattleRoom_OnTransition:
 @ win / loss tails.
 LilycoveCity_TeraEmporiumBattleRoom_EventScript_Challenger::
 	callnative EmporiumArmNoWhiteout
-	trainerbattle LOCALID_NONE, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntro, Emporium_Text_ChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_ChallengerVictory, NULL, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE
+	special EmporiumBufferChallengerIntro
+	trainerbattle LOCALID_NONE, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_TeraChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_TeraChallengerVictory, NULL, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE
 	setflag FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN
 	removeobject LOCALID_TERA_EMPORIUM_CHALLENGER
 	specialvar VAR_RESULT, GetBattleOutcome

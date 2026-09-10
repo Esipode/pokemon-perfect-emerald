@@ -33,20 +33,14 @@ static const struct EmporiumReward gEmporiumRewards[] =
     { ITEM_PIKANIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_EEVIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_SNORLIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
-    { ITEM_MEWNIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_DECIDIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_INCINIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_PRIMARIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_LYCANIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_MIMIKIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_KOMMONIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
-    { ITEM_TAPUNIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
-    { ITEM_SOLGANIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
-    { ITEM_LUNALIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
-    { ITEM_MARSHADIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_ALORAICHIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
     { ITEM_PIKASHUNIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
-    { ITEM_ULTRANECROZIUM_Z, EMPORIUM_ZMOVE, TYPE_NONE, FLAG_BADGE03_GET },
 
     // --- Mega Emporium: every non-legendary Mega Stone, ace holds it (Badge 5) ---
     { ITEM_VENUSAURITE, EMPORIUM_MEGA, TYPE_NONE, FLAG_BADGE05_GET }, // SPECIES_VENUSAUR
@@ -174,29 +168,26 @@ static const struct EmporiumReward gEmporiumRewards[] =
 
 static const struct TrainerMon sEmporiumZPool[] =
 {
-    // Fillers
-    { .species = SPECIES_MIGHTYENA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
-    { .species = SPECIES_LINOONE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
-    { .species = SPECIES_SWELLOW, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
-    { .species = SPECIES_BRELOOM, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
-    { .species = SPECIES_VIGOROTH, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
-    { .species = SPECIES_MARSHTOMP, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_GROVYLE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_COMBUSKEN, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
+    // Fillers - Badge 3 tier, base stat total <= 400 (POOL_PRUNE_EMPORIUM enforces
+    // the cap and the no-legendary rule; keep new entries under it so a lead is
+    // always available).
+    { .species = SPECIES_LOMBRE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
+    { .species = SPECIES_NUZLEAF, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
+    { .species = SPECIES_SABLEYE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
+    { .species = SPECIES_MAWILE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
+    { .species = SPECIES_ROSELIA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
     { .species = SPECIES_KIRLIA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_NUZLEAF, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_LOMBRE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_SABLEYE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_MAWILE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_CARVANHA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_NUMEL, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_ELECTRIKE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_ROSELIA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_VIBRAVA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_CACNEA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_ZANGOOSE, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_SEVIPER, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    { .species = SPECIES_LAIRON, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
+    { .species = SPECIES_SHROOMISH, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
+    { .species = SPECIES_GULPIN, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
+    { .species = SPECIES_SPINDA, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
+    { .species = SPECIES_DELCATTY, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
+    { .species = SPECIES_DUSKULL, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
+    { .species = SPECIES_SNORUNT, .lvl = 30, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     // Aces
     { .species = SPECIES_SNORLAX, .lvl = 35, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .heldItem = ITEM_NORMALIUM_Z, .tags = MON_POOL_TAG_ACE },
     { .species = SPECIES_KANGASKHAN, .lvl = 35, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .heldItem = ITEM_NORMALIUM_Z, .tags = MON_POOL_TAG_ACE },
@@ -445,7 +436,7 @@ static const struct TrainerMon sEmporiumTeraPool[] =
     { .species = SPECIES_SALAMENCE, .lvl = 65, .iv = TRAINER_PARTY_IVS(31, 31, 31, 31, 31, 31), .gender = TRAINER_MON_RANDOM_GENDER, .heldItem = ITEM_LIFE_ORB, .teraType = TYPE_WATER, .tags = MON_POOL_TAG_ACE },
 };
 
-#define EMPORIUM_ZMOVE_POOL_SIZE  75
+#define EMPORIUM_ZMOVE_POOL_SIZE  70
 #define EMPORIUM_MEGA_POOL_SIZE   104
 #define EMPORIUM_TERA_POOL_SIZE   76
 

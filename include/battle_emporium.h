@@ -71,4 +71,15 @@ void EmporiumArmNoWhiteout(void);
 void EmporiumBufferRewardItem(void);
 void EmporiumBattleRoomOnTransition(void);
 
+// Stage 9 tier balance: POOL_PRUNE_EMPORIUM (src/trainer_pools.c) drops every
+// non-ACE pool member EmporiumMonAllowedAsFiller rejects - one whose base stat
+// total tops the building cap (400 / 500 / 600 for Z-Move / Mega / Tera) or that
+// is flagged legendary / mythical / paradox / Ultra Beast.
+u32 GetEmporiumFillerBstCap(void);
+bool32 EmporiumMonAllowedAsFiller(const struct TrainerMon *mon);
+
+// Stage 9: copies the rolled challenger intro line into gStringVar1 for the
+// battle-room trainerbattle intro template (roll happens in BuildEmporiumTrainer).
+void EmporiumBufferChallengerIntro(void);
+
 #endif // GUARD_BATTLE_EMPORIUM_H

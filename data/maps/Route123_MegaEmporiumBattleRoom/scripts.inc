@@ -15,7 +15,8 @@ Route123_MegaEmporiumBattleRoom_OnTransition:
 @ win / loss tails.
 Route123_MegaEmporiumBattleRoom_EventScript_Challenger::
 	callnative EmporiumArmNoWhiteout
-	trainerbattle LOCALID_NONE, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntro, Emporium_Text_ChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_ChallengerVictory, NULL, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE
+	special EmporiumBufferChallengerIntro
+	trainerbattle LOCALID_NONE, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_MegaChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_MegaChallengerVictory, NULL, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE
 	setflag FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN
 	removeobject LOCALID_MEGA_EMPORIUM_CHALLENGER
 	specialvar VAR_RESULT, GetBattleOutcome

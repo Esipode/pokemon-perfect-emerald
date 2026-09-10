@@ -32,6 +32,10 @@ enum PoolPruneOptions {
     POOL_PRUNE_NONE,
     POOL_PRUNE_TEST,
     POOL_PRUNE_RANDOM_TAG,
+    //  Battle Emporium: drops every non-ACE pool member over the building's tier
+    //  base-stat-total cap or flagged legendary / mythical / paradox / Ultra Beast
+    //  (EmporiumMonAllowedAsFiller, src/battle_emporium.c).
+    POOL_PRUNE_EMPORIUM,
 };
 
 enum PoolTags {

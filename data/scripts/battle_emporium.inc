@@ -126,19 +126,60 @@ Emporium_Text_FeePaid:
 	.string "Thanks! The challenger is warming\n"
 	.string "up for you now.$"
 
-@ Shown by the battle engine as the challenger's lines (intro / their loss /
-@ their win). Shared across all three Emporiums; Stage 9 adds per-identity flavour.
-Emporium_Text_ChallengerIntro:
+@ Challenger battle lines shown by the battle engine. The intro is rolled per
+@ attempt: BuildEmporiumTrainer picks the index and EmporiumBufferChallengerIntro
+@ copies the line into gStringVar1, which the template below prints. Defeat and
+@ victory lines are per building (the room script passes its own).
+Emporium_Text_ChallengerIntroTemplate:
+	.string "{STR_VAR_1}$"
+
+Emporium_Text_ChallengerIntro1::
 	.string "So you're my challenge today?\n"
 	.string "Let's see what you've got!$"
 
-Emporium_Text_ChallengerDefeat:
-	.string "Beaten fair and square.\n"
-	.string "The prize is yours.$"
+Emporium_Text_ChallengerIntro2::
+	.string "I've been after a real battle.\n"
+	.string "You'll do just fine.$"
 
-Emporium_Text_ChallengerVictory:
-	.string "Not this time!\n"
-	.string "Come back when you're ready.$"
+Emporium_Text_ChallengerIntro3::
+	.string "You want that prize?\n"
+	.string "Then get past me first.$"
+
+Emporium_Text_ChallengerIntro4::
+	.string "Show or not, I don't do easy\n"
+	.string "battles. Brace yourself.$"
+
+Emporium_Text_ChallengerIntro5::
+	.string "My team has waited all day.\n"
+	.string "Let's not disappoint them.$"
+
+Emporium_Text_ChallengerIntro6::
+	.string "Step up. Show me the battle\n"
+	.string "you came here for.$"
+
+Emporium_Text_ZMoveChallengerDefeat:
+	.string "That Z-Power was yours in the\n"
+	.string "end. The crystal is yours.$"
+
+Emporium_Text_ZMoveChallengerVictory:
+	.string "The crystal stays here today.\n"
+	.string "Come back and try again.$"
+
+Emporium_Text_MegaChallengerDefeat:
+	.string "Your bond beat my Mega\n"
+	.string "Evolution. Take the stone.$"
+
+Emporium_Text_MegaChallengerVictory:
+	.string "Not enough to top a Mega\n"
+	.string "today. Come back stronger.$"
+
+Emporium_Text_TeraChallengerDefeat:
+	.string "You read the Tera type well.\n"
+	.string "The shard is yours.$"
+
+Emporium_Text_TeraChallengerVictory:
+	.string "The Tera gamble paid off for\n"
+	.string "me today. Try again.$"
 
 Emporium_Text_RewardWon:
 	.string "A deal's a deal. Here's the\n"
