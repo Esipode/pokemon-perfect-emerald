@@ -1,14 +1,21 @@
 #include "global.h"
 #include "battle_emporium.h"
+#include "battle_main.h"
 #include "data.h"
 #include "event_data.h"
+#include "item.h"
+#include "list_menu.h"
+#include "malloc.h"
+#include "pokemon.h"
 #include "random.h"
+#include "script_menu.h"
 #include "string_util.h"
 #include "trainer_pools.h"
 #include "caps.h"
 #include "constants/battle_ai.h"
 #include "constants/event_objects.h"
 #include "constants/flags.h"
+#include "constants/items.h"
 #include "constants/moves.h"
 #include "constants/pokemon.h"
 #include "constants/species.h"
@@ -190,4 +197,150 @@ void ClearEmporiumBattle(void)
     VarSet(VAR_EMPORIUM_ID, EMPORIUM_NONE);
     VarSet(VAR_EMPORIUM_REWARD, 0);
     FlagClear(TRAINER_FLAGS_START + TRAINER_EMPORIUM);
+}
+
+// ---- Stage 7: instructor reward menu, ace preview, opponent roll ----
+//
+// The instructor script passes the building's enum EmporiumId in VAR_0x8004. It
+// stays set for the whole menu interaction; VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD
+// are only written once the player commits to a challenge.
+
+// First ACE-tagged pool member whose key matches the reward, or SPECIES_NONE.
+// Mirrors the eligibility test in EmporiumAcePickFunction (src/trainer_pools.c).
+static enum Species GetEmporiumPreviewAce(const struct EmporiumReward *reward)
+{
+    const struct TrainerMon *pool;
+    u32 poolSize, i;
+
+    if (reward->emporium >= EMPORIUM_COUNT)
+        return SPECIES_NONE;
+
+    pool = sEmporiumPools[reward->emporium].party;
+    poolSize = sEmporiumPools[reward->emporium].poolSize;
+    for (i = 0; i < poolSize; i++)
+    {
+        if (!(pool[i].tags & MON_POOL_TAG_ACE))
+            continue;
+        if (reward->emporium == EMPORIUM_TERA)
+        {
+            if (pool[i].teraType == reward->aceKey)
+                return pool[i].species;
+        }
+        else if (pool[i].heldItem == reward->item)
+        {
+            return pool[i].species;
+        }
+    }
+    return SPECIES_NONE;
+}
+
+// Pushes every reward for the building in VAR_0x8004 onto the dynamic multichoice
+// stack (consumed by dynmultistack). A row is skipped when its unlock flag is
+// unset or the player already holds that item (owned rewards are hidden, per plan
+// section 5.3). The option id is the item constant, so DYN_MULTICHOICE_CB_SHOW_ITEM
+// draws its icon and EmporiumMenu_CommitReward can map the pick back to a row.
+// VAR_RESULT is set to the number of rows pushed (0 when none are available).
+void EmporiumMenu_BuildList(void)
+{
+    u32 emporium = VarGet(VAR_0x8004);
+    u32 start = GetEmporiumRewardStart(emporium);
+    u32 count = GetEmporiumRewardCount(emporium);
+    u32 i, pushed = 0;
+
+    for (i = 0; i < count; i++)
+    {
+        const struct EmporiumReward *reward = &gEmporiumRewards[start + i];
+        struct ListMenuItem item;
+        u8 *name;
+
+        if (reward->requiredFlag != EMPORIUM_FLAG_NONE && !FlagGet(reward->requiredFlag))
+            continue;
+        if (CheckBagHasItem(reward->item, 1))
+            continue;
+
+        name = Alloc(32);
+        CopyItemName(reward->item, name);
+        item.name = name;
+        item.id = reward->item;
+        MultichoiceDynamic_PushElement(item);
+        pushed++;
+    }
+
+    gSpecialVar_Result = pushed;
+}
+
+// Maps the item id the menu returned (still in VAR_RESULT) back to its catalogue
+// row and stores that index in VAR_EMPORIUM_REWARD. VAR_RESULT becomes TRUE on a
+// hit, FALSE otherwise (menu only lists valid rows, so FALSE means re-open it).
+void EmporiumMenu_CommitReward(void)
+{
+    u32 emporium = VarGet(VAR_0x8004);
+    u32 start = GetEmporiumRewardStart(emporium);
+    u32 count = GetEmporiumRewardCount(emporium);
+    enum Item picked = gSpecialVar_Result;
+    u32 i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (gEmporiumRewards[start + i].item == picked)
+        {
+            VarSet(VAR_EMPORIUM_REWARD, start + i);
+            gSpecialVar_Result = TRUE;
+            return;
+        }
+    }
+    gSpecialVar_Result = FALSE;
+}
+
+// Fills gStringVar1 with the chosen reward's name and gStringVar2 with a preview
+// of the challenger's ace: the Tera type for the Tera building, otherwise the
+// species that brings the selected stone / crystal. Used by the confirm prompt.
+void EmporiumMenu_BufferConfirm(void)
+{
+    u32 rewardIndex = VarGet(VAR_EMPORIUM_REWARD);
+    const struct EmporiumReward *reward;
+    enum Species ace;
+
+    if (rewardIndex >= EMPORIUM_REWARD_COUNT)
+        return;
+
+    reward = &gEmporiumRewards[rewardIndex];
+    CopyItemName(reward->item, gStringVar1);
+
+    if (reward->emporium == EMPORIUM_TERA)
+    {
+        StringCopy(gStringVar2, gTypesInfo[reward->aceKey].name);
+        return;
+    }
+
+    ace = GetEmporiumPreviewAce(reward);
+    if (ace != SPECIES_NONE)
+        StringCopy(gStringVar2, GetSpeciesName(ace));
+    else
+        StringCopy(gStringVar2, COMPOUND_STRING("its ace"));
+}
+
+// Rolls the challenger for the pending challenge (VAR_EMPORIUM_ID) and writes the
+// identity's overworld graphics id to VAR_OBJ_GFX_ID_0 for the back-room object.
+// BuildEmporiumTrainer arms the gEmporiumBattleActive redirect.
+void EmporiumRollChallenger(void)
+{
+    VarSet(VAR_OBJ_GFX_ID_0, BuildEmporiumTrainer(VarGet(VAR_EMPORIUM_ID)));
+}
+
+// Reveals the battle-room challenger for the building the challenge is in.
+void EmporiumShowChallenger(void)
+{
+    switch (VarGet(VAR_EMPORIUM_ID))
+    {
+    case EMPORIUM_ZMOVE:
+        FlagClear(FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN);
+        break;
+    case EMPORIUM_MEGA:
+        FlagClear(FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN);
+        break;
+    case EMPORIUM_TERA:
+        FlagClear(FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN);
+        break;
+    }
 }

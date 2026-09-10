@@ -57,4 +57,12 @@ void ClearEmporiumBattle(void);
 // gEmporiumBattleActive is set.
 u32 GetEmporiumBattleLevel(void);
 
+// Script specials for the instructor reward menu (see data/scripts/battle_emporium.inc).
+// EmporiumMenu_BuildList / _CommitReward read the building id from VAR_0x8004.
+void EmporiumMenu_BuildList(void);
+void EmporiumMenu_CommitReward(void);
+void EmporiumMenu_BufferConfirm(void);
+void EmporiumRollChallenger(void);
+void EmporiumShowChallenger(void);
+
 #endif // GUARD_BATTLE_EMPORIUM_H

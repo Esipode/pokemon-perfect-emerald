@@ -598,3 +598,8 @@ gSpecials::
 	def_special CheckAddCoins
 	def_special PushChampionChallengeMenuEntries
 	def_special SelectChampionChallengeTrainerObjEvent
+	def_special EmporiumMenu_BuildList
+	def_special EmporiumMenu_CommitReward
+	def_special EmporiumMenu_BufferConfirm
+	def_special EmporiumRollChallenger
+	def_special EmporiumShowChallenger
