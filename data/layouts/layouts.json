@@ -26,7 +26,7 @@
     {
       "id": "LAYOUT_MAUVILLE_CITY",
       "name": "MauvilleCity_Layout",
-      "width": 40,
+      "width": 48,
       "height": 20,
       "primary_tileset": "gTileset_General",
       "secondary_tileset": "gTileset_Mauville",
@@ -422,10 +422,10 @@
     {
       "id": "LAYOUT_ROUTE123",
       "name": "Route123_Layout",
-      "width": 140,
+      "width": 148,
       "height": 20,
       "primary_tileset": "gTileset_General",
-      "secondary_tileset": "gTileset_Lilycove",
+      "secondary_tileset": "gTileset_Mauville",
       "border_filepath": "data/layouts/Route123/border.bin",
       "blockdata_filepath": "data/layouts/Route123/map.bin",
       "layout_version": "emerald"

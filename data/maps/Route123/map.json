@@ -15,7 +15,7 @@
   "connections": [
     {
       "map": "MAP_ROUTE122",
-      "offset": 100,
+      "offset": 108,
       "direction": "up"
     },
     {
@@ -40,19 +40,6 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 12,
-      "y": 3,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "BERRY_TREE_ROUTE_123_POMEG_4",
-      "script": "BerryTreeScript",
-      "flag": "0"
-    },
-    {
-      "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
       "x": 14,
       "y": 3,
       "elevation": 3,
@@ -66,20 +53,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 15,
-      "y": 3,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "BERRY_TREE_ROUTE_123_GREPA_2",
-      "script": "BerryTreeScript",
-      "flag": "0"
-    },
-    {
-      "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 81,
+      "x": 89,
       "y": 1,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
@@ -92,7 +66,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 82,
+      "x": 90,
       "y": 1,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
@@ -105,7 +79,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 83,
+      "x": 91,
       "y": 1,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
@@ -118,7 +92,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_WOMAN_5",
-      "x": 70,
+      "x": 78,
       "y": 12,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_ROTATE_CLOCKWISE",
@@ -131,7 +105,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_MAN_3",
-      "x": 58,
+      "x": 66,
       "y": 7,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_DOWN_AND_LEFT",
@@ -157,19 +131,6 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 15,
-      "y": 5,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "BERRY_TREE_ROUTE_123_GREPA_4",
-      "script": "BerryTreeScript",
-      "flag": "0"
-    },
-    {
-      "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
       "x": 17,
       "y": 5,
       "elevation": 3,
@@ -178,19 +139,6 @@
       "movement_range_y": 0,
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "BERRY_TREE_ROUTE_123_QUALOT_2",
-      "script": "BerryTreeScript",
-      "flag": "0"
-    },
-    {
-      "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 18,
-      "y": 5,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "BERRY_TREE_ROUTE_123_QUALOT_3",
       "script": "BerryTreeScript",
       "flag": "0"
     },
@@ -209,19 +157,6 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 18,
-      "y": 3,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "BERRY_TREE_ROUTE_123_QUALOT_1",
-      "script": "BerryTreeScript",
-      "flag": "0"
-    },
-    {
-      "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
       "x": 11,
       "y": 5,
       "elevation": 3,
@@ -234,21 +169,8 @@
       "flag": "0"
     },
     {
-      "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 12,
-      "y": 5,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "BERRY_TREE_ROUTE_123_POMEG_2",
-      "script": "BerryTreeScript",
-      "flag": "0"
-    },
-    {
       "graphics_id": "OBJ_EVENT_GFX_CUTTABLE_TREE",
-      "x": 101,
+      "x": 109,
       "y": 13,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -261,7 +183,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_CUTTABLE_TREE",
-      "x": 129,
+      "x": 137,
       "y": 14,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -274,7 +196,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_CUTTABLE_TREE",
-      "x": 92,
+      "x": 100,
       "y": 9,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -287,7 +209,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
-      "x": 31,
+      "x": 39,
       "y": 8,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -300,7 +222,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_GIRL_3",
-      "x": 108,
+      "x": 116,
       "y": 13,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_UP_AND_LEFT",
@@ -313,7 +235,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 109,
+      "x": 117,
       "y": 13,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
@@ -326,7 +248,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 110,
+      "x": 118,
       "y": 13,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
@@ -339,7 +261,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BERRY_TREE",
-      "x": 111,
+      "x": 119,
       "y": 13,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_BERRY_TREE_GROWTH",
@@ -365,7 +287,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_TWIN",
-      "x": 38,
+      "x": 46,
       "y": 13,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
@@ -378,7 +300,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_TWIN",
-      "x": 37,
+      "x": 45,
       "y": 13,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
@@ -391,7 +313,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_PSYCHIC_M",
-      "x": 138,
+      "x": 146,
       "y": 12,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_LEFT",
@@ -404,7 +326,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_LASS",
-      "x": 49,
+      "x": 57,
       "y": 16,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
@@ -417,7 +339,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_HEX_MANIAC",
-      "x": 87,
+      "x": 95,
       "y": 12,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
@@ -443,7 +365,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
-      "x": 75,
+      "x": 83,
       "y": 9,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -456,7 +378,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_NINJA_BOY",
-      "x": 138,
+      "x": 146,
       "y": 14,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_TREE_DISGUISE",
@@ -469,7 +391,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_WOMAN_2",
-      "x": 138,
+      "x": 146,
       "y": 16,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_UP",
@@ -482,7 +404,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_MANIAC",
-      "x": 87,
+      "x": 95,
       "y": 17,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_UP",
@@ -495,7 +417,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_MAN_5",
-      "x": 66,
+      "x": 74,
       "y": 16,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_DOWN",
@@ -508,7 +430,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_MAN_5",
-      "x": 66,
+      "x": 74,
       "y": 19,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_UP",
@@ -521,7 +443,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_EXPERT_M",
-      "x": 49,
+      "x": 57,
       "y": 19,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_FACE_UP",
@@ -534,7 +456,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
-      "x": 43,
+      "x": 51,
       "y": 15,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -573,7 +495,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
-      "x": 57,
+      "x": 65,
       "y": 16,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -586,7 +508,7 @@
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
-      "x": 45,
+      "x": 53,
       "y": 1,
       "elevation": 3,
       "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
@@ -610,154 +532,154 @@
   "coord_events": [
     {
       "type": "weather",
-      "x": 90,
+      "x": 98,
       "y": 16,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 92,
+      "x": 100,
       "y": 9,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 93,
+      "x": 101,
       "y": 12,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 92,
+      "x": 100,
       "y": 13,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 91,
+      "x": 99,
       "y": 14,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 19,
+      "x": 27,
       "y": 13,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 19,
+      "x": 27,
       "y": 12,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 34,
+      "x": 42,
       "y": 13,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 19,
+      "x": 27,
       "y": 14,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 19,
+      "x": 27,
       "y": 15,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 19,
+      "x": 27,
       "y": 16,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 108,
+      "x": 116,
       "y": 14,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 109,
+      "x": 117,
       "y": 15,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 110,
+      "x": 118,
       "y": 16,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 111,
+      "x": 119,
       "y": 17,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 112,
+      "x": 120,
       "y": 18,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 9,
+      "x": 17,
       "y": 12,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 9,
+      "x": 17,
       "y": 13,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 9,
+      "x": 17,
       "y": 14,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 9,
+      "x": 17,
       "y": 15,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 9,
+      "x": 17,
       "y": 16,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
     },
     {
       "type": "weather",
-      "x": 94,
+      "x": 102,
       "y": 10,
       "elevation": 3,
       "weather": "WEATHER_DYNAMIC"
@@ -766,7 +688,7 @@
   "bg_events": [
     {
       "type": "sign",
-      "x": 117,
+      "x": 125,
       "y": 10,
       "elevation": 0,
       "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
@@ -774,7 +696,7 @@
     },
     {
       "type": "sign",
-      "x": 10,
+      "x": 18,
       "y": 12,
       "elevation": 3,
       "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
@@ -782,7 +704,7 @@
     },
     {
       "type": "hidden_item",
-      "x": 75,
+      "x": 83,
       "y": 1,
       "elevation": 3,
       "item": "ITEM_SUPER_REPEL",
@@ -806,7 +728,7 @@
     },
     {
       "type": "hidden_item",
-      "x": 91,
+      "x": 99,
       "y": 15,
       "elevation": 3,
       "item": "ITEM_HYPER_POTION",
@@ -814,7 +736,7 @@
     },
     {
       "type": "hidden_item",
-      "x": 139,
+      "x": 147,
       "y": 15,
       "elevation": 3,
       "item": "ITEM_PP_UP",
@@ -822,7 +744,7 @@
     },
     {
       "type": "hidden_item",
-      "x": 138,
+      "x": 146,
       "y": 18,
       "elevation": 3,
       "item": "ITEM_RARE_CANDY",
