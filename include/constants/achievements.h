@@ -665,7 +665,10 @@ enum AchievementId
     // Achievement_CheckLegendaryMilestones (src/achievements.c), called from
     // the FLAG_SET_CAUGHT branch of HandleSetPokedexFlag (src/pokemon.c)
     // alongside Achievement_CheckFamilyMilestone; running count in
-    // AchievementRunDataExt.legendaryFamiliesCaught (SaveBlock2).
+    // AchievementRunDataExt.legendaryFamiliesCaught (SaveBlock2). One-shot
+    // Achievement_BackfillLegendaryFamilies (same hook + LoadCurrentMapData,
+    // src/overworld.c) recomputes that count for a pre-feature save, guarded
+    // by AchievementRunDataExt.legendaryCountBackfilled.
     // All ACHIEVEMENT_CATEGORY_COLLECTION.
     ACHIEVEMENT_LEGENDARY_MYTH_CONFIRMED,
     ACHIEVEMENT_LEGENDARY_RARE_COMPANY,

@@ -699,6 +699,7 @@ static void LoadCurrentMapData(void)
     Achievement_CheckExplorationMilestones();
     // Achievement_CheckNuzlockeExplorationMilestones call
     // removed along with the function -- see src/achievements.c.
+    Achievement_BackfillLegendaryFamilies();
 }
 
 static void LoadSaveblockMapHeader(void)

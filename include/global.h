@@ -706,6 +706,18 @@ struct AchievementRunDataExt
     // save (never reset per NG+ cycle), matching ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH's
     // fall-back onto per-save state. 17 bytes covers 136 bits; bits 129..135 unused.
     u8 emporiumRewardsWon[17];
+
+    // Legendary Collection (category Z) -- per-save count of distinct
+    // evolution families (Achievement_GetEvolutionRoot) with at least one
+    // caught member that Achievement_IsCountedLegendary accepts (restricted
+    // legendary / sub-legendary / mythical; Ultra Beasts and Paradox
+    // excluded). Maintained incrementally by Achievement_CheckLegendaryMilestones
+    // on each new catch. Same SaveBlock1-has-no-slack detour as every field
+    // above; spans the whole save, never reset per NG+ cycle.
+    // legendaryCountBackfilled is a one-shot guard: a save made before this
+    // feature has the count recomputed once from its existing caught flags.
+    u8 legendaryFamiliesCaught;
+    bool8 legendaryCountBackfilled;
 };
 
 // Offline, code-based trading (see trade_code.h) -- a decoded but not-yet-

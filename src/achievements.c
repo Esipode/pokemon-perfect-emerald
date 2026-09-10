@@ -3600,7 +3600,10 @@ static bool8 Achievement_LegendaryFamilyAlreadyCaught(enum Species root)
 // is needed. Obtainability in the current game is deliberately ignored --
 // the legendary encounter set is being revamped on another branch; this is
 // the count of designated legendary/mythical families in the species data.
-static u32 Achievement_CountLegendaryFamilies(bool8 mythicalOnly)
+// With caughtOnly, restricts the count to families that already have a caught
+// member (Achievement_LegendaryFamilyAlreadyCaught) -- the running total for
+// the category Z entries and the one-shot backfill.
+static u32 Achievement_CountLegendaryFamilies(bool8 mythicalOnly, bool8 caughtOnly)
 {
     enum Species species;
     u32 count = 0;
@@ -3624,6 +3627,9 @@ static u32 Achievement_CountLegendaryFamilies(bool8 mythicalOnly)
             continue;
         }
 
+        if (caughtOnly && !Achievement_LegendaryFamilyAlreadyCaught(species))
+            continue;
+
         count++;
     }
 
@@ -3638,7 +3644,7 @@ static u32 Achievement_CountObtainableLegendaryFamilies(void)
     static u32 sCached = 0;
 
     if (sCached == 0)
-        sCached = Achievement_CountLegendaryFamilies(FALSE);
+        sCached = Achievement_CountLegendaryFamilies(FALSE, FALSE);
 
     return sCached;
 }
@@ -3648,7 +3654,7 @@ static u32 Achievement_CountObtainableMythicalFamilies(void)
     static u32 sCached = 0;
 
     if (sCached == 0)
-        sCached = Achievement_CountLegendaryFamilies(TRUE);
+        sCached = Achievement_CountLegendaryFamilies(TRUE, FALSE);
 
     return sCached;
 }
@@ -3676,6 +3682,108 @@ void Achievement_CheckFamilyMilestone(enum Species species)
     }
 
     Achievement_TryComplete(ACHIEVEMENT_COLLECT_FAMILY_REUNION);
+}
+
+// TRUE if `justCaught` is the first caught member of its evolution family --
+// i.e. no other family member (a member with a different National Dex number,
+// so alternate forms of the just-caught species don't count as "other") has
+// its caught flag set. Used to keep legendaryFamiliesCaught counting each
+// family exactly once as members are caught.
+static bool8 Achievement_LegendaryFamilyNewlyCaught(enum Species justCaught)
+{
+    enum Species members[ACHIEVEMENT_MAX_FAMILY_MEMBERS];
+    enum Species root = Achievement_GetEvolutionRoot(justCaught);
+    u8 count = Achievement_GetFamilyMembers(root, members);
+    enum NationalDexOrder selfDex = SpeciesToNationalPokedexNum(justCaught);
+    u8 i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (SpeciesToNationalPokedexNum(members[i]) == selfDex)
+            continue;
+        if (GetSetPokedexFlagBySpecies(members[i], FLAG_GET_CAUGHT))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Evaluates the seven category Z entries. familiesCaught is the running
+// distinct-legendary-family count (legendaryFamiliesCaught); mythicalCaught
+// is the same restricted to mythical families. The two Diamond entries test
+// against the fixed species-data totals. All idempotent through
+// Achievement_TryComplete.
+static void Achievement_EvaluateLegendaryMilestones(u32 familiesCaught, u32 mythicalCaught)
+{
+    if (familiesCaught >= 1)
+        Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_MYTH_CONFIRMED);
+    if (familiesCaught >= 5)
+        Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_RARE_COMPANY);
+    if (familiesCaught >= 15)
+        Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_LEGEND_SEEKER);
+    if (familiesCaught >= 30)
+        Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_HALL_OF_LEGENDS);
+    if (familiesCaught >= 50)
+        Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_LIVING_LEGEND);
+
+    if (mythicalCaught >= Achievement_CountObtainableMythicalFamilies())
+        Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_MYTHICAL_MENAGERIE);
+    if (familiesCaught >= Achievement_CountObtainableLegendaryFamilies())
+        Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_LEGEND_OF_LEGENDS);
+}
+
+// One-shot recompute for saves made before this feature: walks the species
+// data and sets legendaryFamiliesCaught from the caught Pokedex flags that
+// already exist, guarded by legendaryCountBackfilled so it runs exactly once.
+// Called from Achievement_CheckLegendaryMilestones and from LoadCurrentMapData
+// (src/overworld.c), so a save that never catches another legendary still
+// gets backfilled on the next map load.
+void Achievement_BackfillLegendaryFamilies(void)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+    u32 caught;
+
+    if (runDataExt->legendaryCountBackfilled)
+        return;
+
+    caught = Achievement_CountLegendaryFamilies(FALSE, TRUE);
+    runDataExt->legendaryFamiliesCaught = (caught > 0xFF) ? 0xFF : caught;
+    runDataExt->legendaryCountBackfilled = TRUE;
+
+    Achievement_EvaluateLegendaryMilestones(runDataExt->legendaryFamiliesCaught,
+                                            Achievement_CountLegendaryFamilies(TRUE, TRUE));
+}
+
+// HandleSetPokedexFlagBySpecies (src/pokemon.c)'s FLAG_SET_CAUGHT branch,
+// alongside Achievement_CheckFamilyMilestone -- species is the species just
+// newly caught (its caught flag is already set at this point). Runs the
+// one-shot backfill first; otherwise, on a newly caught counted legendary
+// whose family had no caught member before, bumps legendaryFamiliesCaught
+// and re-evaluates the category Z entries.
+void Achievement_CheckLegendaryMilestones(enum Species species)
+{
+    struct AchievementRunDataExt *runDataExt = &gSaveBlock2Ptr->achievementRunDataExt;
+
+    species = SanitizeSpeciesId(species);
+
+    if (!runDataExt->legendaryCountBackfilled)
+    {
+        // The backfill counts from the caught flags, which already include
+        // this catch, so it fully accounts for it.
+        Achievement_BackfillLegendaryFamilies();
+        return;
+    }
+
+    if (!Achievement_IsCountedLegendary(species))
+        return;
+    if (!Achievement_LegendaryFamilyNewlyCaught(species))
+        return;
+
+    if (runDataExt->legendaryFamiliesCaught < 0xFF)
+        runDataExt->legendaryFamiliesCaught++;
+
+    Achievement_EvaluateLegendaryMilestones(runDataExt->legendaryFamiliesCaught,
+                                            Achievement_CountLegendaryFamilies(TRUE, TRUE));
 }
 
 // EmporiumBufferRewardItem (src/battle_emporium.c), win branch only.

@@ -6242,7 +6242,11 @@ void HandleSetPokedexFlagBySpecies(enum Species species, u8 caseId, u32 personal
         // Family Reunion, checked only on a new
         // catch (not a new sighting) -- one more line at this same funnel.
         if (caseId == FLAG_SET_CAUGHT)
+        {
             Achievement_CheckFamilyMilestone(baseSpecies);
+            // Legendary Collection (category Z).
+            Achievement_CheckLegendaryMilestones(baseSpecies);
+        }
         // Category B.
         Achievement_CheckPokedexMilestones(caseId == FLAG_SET_CAUGHT);
     }

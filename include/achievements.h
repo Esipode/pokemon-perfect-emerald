@@ -955,6 +955,22 @@ void Achievement_RecordPartyWipe(void);
 // directions) and completes if every stage is also caught.
 void Achievement_CheckFamilyMilestone(enum Species species);
 
+// HandleSetPokedexFlagBySpecies (src/pokemon.c)'s FLAG_SET_CAUGHT branch,
+// alongside Achievement_CheckFamilyMilestone -- Legendary Collection
+// (category Z). On a newly caught counted legendary (restricted legendary /
+// sub-legendary / mythical; Ultra Beasts and Paradox excluded) whose
+// evolution family had no caught member before, increments the per-save
+// distinct-family count (AchievementRunDataExt.legendaryFamiliesCaught) and
+// re-evaluates the seven category Z entries.
+void Achievement_CheckLegendaryMilestones(enum Species species);
+
+// LoadCurrentMapData (src/overworld.c), alongside
+// Achievement_CheckExplorationMilestones. One-shot recompute of
+// legendaryFamiliesCaught from the existing caught Pokedex flags for a save
+// made before category Z existed; guarded by
+// AchievementRunDataExt.legendaryCountBackfilled so it runs exactly once.
+void Achievement_BackfillLegendaryFamilies(void);
+
 // Achievement_CheckPerfectIvMilestone (formerly called from
 // GiveCapturedMonToPlayer in src/pokemon.c and Task_EggHatch in
 // src/egg_hatch.c) removed along with its sole achievement,
