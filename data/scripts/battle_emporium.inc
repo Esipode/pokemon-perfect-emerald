@@ -29,6 +29,14 @@ Emporium_EventScript_ConfirmTera:
 
 Emporium_EventScript_ConfirmResult:
 	goto_if_eq VAR_RESULT, NO, Emporium_EventScript_OpenMenu
+	checkmoney EMPORIUM_ENTRY_FEE
+	goto_if_eq VAR_RESULT, FALSE, Emporium_EventScript_CantAffordFee
+	showmoneybox 0, 0
+	removemoney EMPORIUM_ENTRY_FEE
+	updatemoneybox
+	playse SE_SHOP
+	msgbox Emporium_Text_FeePaid, MSGBOX_DEFAULT
+	hidemoneybox
 	copyvar VAR_EMPORIUM_ID, VAR_0x8004
 	special EmporiumRollChallenger
 	special EmporiumShowChallenger
@@ -36,6 +44,31 @@ Emporium_EventScript_ConfirmResult:
 	closemessage
 	release
 	end
+
+Emporium_EventScript_CantAffordFee::
+	msgbox Emporium_Text_CantAffordFee, MSGBOX_DEFAULT
+	goto Emporium_EventScript_OpenMenu
+
+@ ---- Stage 8: challenger battle outcome ----
+@ Reached inline from each battle room's challenger script (continueScript
+@ trainerbattle). On a win the outcome check runs; on a loss it runs only when
+@ EmporiumArmNoWhiteout armed B_FLAG_NO_WHITEOUT (i.e. outside Nuzlocke), where
+@ the per-room script warps the player back to its lobby.
+
+Emporium_EventScript_ChallengerDefeated::
+	special EmporiumBufferRewardItem
+	msgbox Emporium_Text_RewardWon, MSGBOX_DEFAULT
+	giveitem VAR_0x8004
+	callnative ClearEmporiumBattle
+	releaseall
+	end
+
+Emporium_EventScript_ChallengerLostCommon::
+	special HealPlayerParty
+	callnative ClearEmporiumBattle
+	msgbox Emporium_Text_ChallengerLost, MSGBOX_DEFAULT
+	closemessage
+	return
 
 Emporium_EventScript_Goodbye::
 	closemessage
@@ -58,6 +91,7 @@ Emporium_Text_ConfirmZMove:
 	.string "The challenger will send out {STR_VAR_2},\n"
 	.string "clutching the {STR_VAR_1}.\p"
 	.string "Win, and the crystal is yours.\n"
+	.string "The entry fee is ¥2,500.\p"
 	.string "Ready to battle?$"
 
 Emporium_Text_ConfirmMega:
@@ -65,12 +99,14 @@ Emporium_Text_ConfirmMega:
 	.string "with the {STR_VAR_1}.\p"
 	.string "That ace is {STR_VAR_2}.\p"
 	.string "Win, and the stone is yours.\n"
+	.string "The entry fee is ¥2,500.\p"
 	.string "Ready to battle?$"
 
 Emporium_Text_ConfirmTera:
 	.string "The challenger's ace will Terastallize\n"
 	.string "to the {STR_VAR_2} type.\p"
 	.string "Win, and the {STR_VAR_1} is yours.\n"
+	.string "The entry fee is ¥2,500.\p"
 	.string "Ready to battle?$"
 
 Emporium_Text_HeadThrough:
@@ -81,3 +117,35 @@ Emporium_Text_NoRewardsAvailable:
 	.string "You already hold every prize this\n"
 	.string "Emporium has to offer.\p"
 	.string "Come back if you part with one.$"
+
+Emporium_Text_CantAffordFee:
+	.string "The entry fee is ¥2,500, and it\n"
+	.string "looks like you're a little short.$"
+
+Emporium_Text_FeePaid:
+	.string "Thanks! The challenger is warming\n"
+	.string "up for you now.$"
+
+@ Shown by the battle engine as the challenger's lines (intro / their loss /
+@ their win). Shared across all three Emporiums; Stage 9 adds per-identity flavour.
+Emporium_Text_ChallengerIntro:
+	.string "So you're my challenge today?\n"
+	.string "Let's see what you've got!$"
+
+Emporium_Text_ChallengerDefeat:
+	.string "Beaten fair and square.\n"
+	.string "The prize is yours.$"
+
+Emporium_Text_ChallengerVictory:
+	.string "Not this time!\n"
+	.string "Come back when you're ready.$"
+
+Emporium_Text_RewardWon:
+	.string "A deal's a deal. Here's the\n"
+	.string "{STR_VAR_1} you earned!$"
+
+Emporium_Text_ChallengerLost:
+	.string "You and your team have been\n"
+	.string "patched up.\p"
+	.string "Talk to me when you'd like to\n"
+	.string "try again.$"

@@ -58,7 +58,7 @@
 #define FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN 0x24 // Battle Emporium: set hides the battle-room challenger until a reward is chosen
 #define FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN  0x25
 #define FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN  0x26
-#define FLAG_UNUSED_0x027    0x27 // Unused Flag
+#define FLAG_EMPORIUM_NO_WHITEOUT  0x27 // Battle Emporium: armed around a challenger battle (outside Nuzlocke) so a loss returns to the lobby instead of a white-out. Assigned to B_FLAG_NO_WHITEOUT.
 #define FLAG_UNUSED_0x028    0x28 // Unused Flag
 #define FLAG_UNUSED_0x029    0x29 // Unused Flag
 #define FLAG_UNUSED_0x02A    0x2A // Unused Flag

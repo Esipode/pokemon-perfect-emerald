@@ -603,3 +603,4 @@ gSpecials::
 	def_special EmporiumMenu_BufferConfirm
 	def_special EmporiumRollChallenger
 	def_special EmporiumShowChallenger
+	def_special EmporiumBufferRewardItem

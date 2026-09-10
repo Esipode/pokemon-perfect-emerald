@@ -12,6 +12,7 @@
 #include "string_util.h"
 #include "trainer_pools.h"
 #include "caps.h"
+#include "config/battle.h"
 #include "constants/battle_ai.h"
 #include "constants/event_objects.h"
 #include "constants/flags.h"
@@ -197,6 +198,34 @@ void ClearEmporiumBattle(void)
     VarSet(VAR_EMPORIUM_ID, EMPORIUM_NONE);
     VarSet(VAR_EMPORIUM_REWARD, 0);
     FlagClear(TRAINER_FLAGS_START + TRAINER_EMPORIUM);
+#if B_FLAG_NO_WHITEOUT != 0
+    FlagClear(B_FLAG_NO_WHITEOUT);
+#endif
+}
+
+// Facility-style loss handling. Armed by the battle-room script just before the
+// challenger fight so a loss returns to the lobby with the party intact instead
+// of a white-out. Skipped in Nuzlocke mode: there an Emporium loss should carry
+// the same white-out consequence as any other trainer battle. Cleared again by
+// ClearEmporiumBattle (post-battle, on menu cancel, and from each lobby's
+// ON_TRANSITION).
+void EmporiumArmNoWhiteout(void)
+{
+#if B_FLAG_NO_WHITEOUT != 0
+    if (!gSaveBlock1Ptr->nuzlockeModeEnabled)
+        FlagSet(B_FLAG_NO_WHITEOUT);
+#endif
+}
+
+// Victory payout helper: puts the pending reward's item id in VAR_0x8004 (for
+// the giveitem macro) and its name in gStringVar1. Must run before
+// ClearEmporiumBattle wipes VAR_EMPORIUM_REWARD.
+void EmporiumBufferRewardItem(void)
+{
+    enum Item item = GetEmporiumRewardItem(VarGet(VAR_EMPORIUM_REWARD));
+
+    gSpecialVar_0x8004 = item;
+    CopyItemName(item, gStringVar1);
 }
 
 // ---- Stage 7: instructor reward menu, ace preview, opponent roll ----
@@ -326,6 +355,24 @@ void EmporiumMenu_BufferConfirm(void)
 void EmporiumRollChallenger(void)
 {
     VarSet(VAR_OBJ_GFX_ID_0, BuildEmporiumTrainer(VarGet(VAR_EMPORIUM_ID)));
+}
+
+// Battle-room ON_TRANSITION guard. gEmporiumBattleActive lives in EWRAM and is
+// gone after any reload, but VAR_EMPORIUM_* and the shown challenger object are
+// saved state. If the redirect is not armed there is no live challenge: re-hide
+// the challengers and drop the stale vars, so a save made inside a battle room
+// can never talk a challenger into fighting the empty TRAINER_EMPORIUM stub.
+// Entering from the lobby keeps gEmporiumBattleActive set (EmporiumRollChallenger
+// armed it), so this is a no-op on the legitimate path.
+void EmporiumBattleRoomOnTransition(void)
+{
+    if (!gEmporiumBattleActive)
+    {
+        FlagSet(FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN);
+        FlagSet(FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN);
+        FlagSet(FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN);
+        ClearEmporiumBattle();
+    }
 }
 
 // Reveals the battle-room challenger for the building the challenge is in.

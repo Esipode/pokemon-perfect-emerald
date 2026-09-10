@@ -65,4 +65,10 @@ void EmporiumMenu_BufferConfirm(void);
 void EmporiumRollChallenger(void);
 void EmporiumShowChallenger(void);
 
+// Stage 8: the challenger battle and the reward payout (data/scripts/battle_emporium.inc,
+// per-battle-room scripts.inc). EmporiumArmNoWhiteout is a callnative; the rest are specials.
+void EmporiumArmNoWhiteout(void);
+void EmporiumBufferRewardItem(void);
+void EmporiumBattleRoomOnTransition(void);
+
 #endif // GUARD_BATTLE_EMPORIUM_H
