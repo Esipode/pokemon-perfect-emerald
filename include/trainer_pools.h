@@ -23,6 +23,9 @@ enum PoolRulesets {
 enum PoolPickFunctions {
     POOL_PICK_DEFAULT,
     POOL_PICK_LOWEST,
+    //  Default lead/other, but the ace slot is restricted to pool members whose
+    //  key matches the player's chosen Battle Emporium reward (src/trainer_pools.c).
+    POOL_PICK_EMPORIUM,
 };
 
 enum PoolPruneOptions {

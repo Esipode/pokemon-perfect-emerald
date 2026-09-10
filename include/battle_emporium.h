@@ -38,6 +38,12 @@ u16 GetEmporiumRewardRequiredFlag(u32 rewardIndex);
 // ace slot on: the reward item for Z-Move/Mega, the ace's Tera type for Tera.
 u16 GetEmporiumAceKey(void);
 
+// TRUE if mon is the ace the current VAR_EMPORIUM_REWARD selection calls for:
+// holds the chosen Z-Crystal / Mega Stone, or Teras to the chosen shard's type.
+// POOL_PICK_EMPORIUM (src/trainer_pools.c) uses this to lock the ace slot.
+struct TrainerMon;
+bool32 EmporiumMonMatchesReward(const struct TrainerMon *mon);
+
 // Runtime challenger. sEmporiumTrainer is swapped in for TRAINER_EMPORIUM while
 // gEmporiumBattleActive is set (redirect in GetTrainerStructFromId, data.h).
 struct Trainer;

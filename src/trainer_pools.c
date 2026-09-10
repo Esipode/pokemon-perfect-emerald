@@ -1,4 +1,5 @@
 #include "global.h"
+#include "battle_emporium.h"
 #include "data.h"
 #include "item.h"
 #include "malloc.h"
@@ -98,6 +99,53 @@ static u32 DefaultAcePickFunction(const struct Trainer *trainer, u8 *poolIndexAr
         {
             monIndex = poolIndexArray[firstAceIndex];
             poolIndexArray[firstAceIndex] = POOL_SLOT_DISABLED;
+        }
+    }
+    return monIndex;
+}
+
+//  Battle Emporium ace slot: same slot eligibility as DefaultAcePickFunction, but
+//  restricted to the aces whose key matches the player's chosen reward
+//  (EmporiumMonMatchesReward), picked uniformly among matches. With no match -
+//  stale var state, or a battle entered outside the flow - falls back to default
+//  ace behaviour so the slot is never left empty.
+static u32 EmporiumAcePickFunction(const struct Trainer *trainer, u8 *poolIndexArray, u32 partyIndex, u32 monsCount, u32 battleTypeFlags, struct PoolRules *rules)
+{
+    u32 monIndex = POOL_SLOT_DISABLED;
+
+    if (!((partyIndex == monsCount - 1) || (partyIndex == monsCount - 2 && battleTypeFlags & BATTLE_TYPE_DOUBLE)))
+        return POOL_SLOT_DISABLED;
+    if (!(rules->tagMaxMembers[POOL_TAG_ACE] == POOL_MEMBER_COUNT_UNLIMITED || rules->tagMaxMembers[POOL_TAG_ACE] >= 1))
+        return POOL_SLOT_DISABLED;
+
+    u32 matchCount = 0;
+    for (u32 currIndex = 0; currIndex < trainer->poolSize; currIndex++)
+    {
+        u32 poolIndex = poolIndexArray[currIndex];
+        if (poolIndex != POOL_SLOT_DISABLED
+         && (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE))
+         && EmporiumMonMatchesReward(&trainer->party[poolIndex]))
+            matchCount++;
+    }
+
+    if (matchCount == 0)
+        return DefaultAcePickFunction(trainer, poolIndexArray, partyIndex, monsCount, battleTypeFlags, rules);
+
+    u32 pick = Random() % matchCount;
+    for (u32 currIndex = 0; currIndex < trainer->poolSize; currIndex++)
+    {
+        u32 poolIndex = poolIndexArray[currIndex];
+        if (poolIndex != POOL_SLOT_DISABLED
+         && (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE))
+         && EmporiumMonMatchesReward(&trainer->party[poolIndex]))
+        {
+            if (pick == 0)
+            {
+                monIndex = poolIndex;
+                poolIndexArray[currIndex] = POOL_SLOT_DISABLED;
+                break;
+            }
+            pick--;
         }
     }
     return monIndex;
@@ -323,6 +371,11 @@ static struct PickFunctions GetPickFunctions(const struct Trainer *trainer)
         pickFunctions.LeadFunction = &PickLowest;
         pickFunctions.AceFunction = &PickLowest;
         pickFunctions.OtherFunction = &PickLowest;
+        break;
+    case POOL_PICK_EMPORIUM:
+        pickFunctions.LeadFunction = &DefaultLeadPickFunction;
+        pickFunctions.AceFunction = &EmporiumAcePickFunction;
+        pickFunctions.OtherFunction = &DefaultOtherPickFunction;
         break;
     default:
         pickFunctions.LeadFunction = &DefaultLeadPickFunction;

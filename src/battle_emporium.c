@@ -77,6 +77,20 @@ u16 GetEmporiumAceKey(void)
     return reward->item;
 }
 
+bool32 EmporiumMonMatchesReward(const struct TrainerMon *mon)
+{
+    u32 rewardIndex = VarGet(VAR_EMPORIUM_REWARD);
+    const struct EmporiumReward *reward;
+
+    if (rewardIndex >= EMPORIUM_REWARD_COUNT)
+        return FALSE;
+
+    reward = &gEmporiumRewards[rewardIndex];
+    if (reward->emporium == EMPORIUM_TERA)
+        return mon->teraType == reward->aceKey;
+    return mon->heldItem == reward->item;
+}
+
 // The Emporium opponent is not a gTrainers entry. It is this one struct, filled
 // in when the player accepts a challenge and swapped in for TRAINER_EMPORIUM by
 // the gEmporiumBattleActive redirect in GetTrainerStructFromId (include/data.h).
@@ -130,7 +144,7 @@ u16 BuildEmporiumTrainer(u32 emporium)
     sEmporiumTrainer.partySize = pool->partySize;
     sEmporiumTrainer.poolSize = pool->poolSize;
     sEmporiumTrainer.poolRuleIndex = POOL_RULESET_EMPORIUM;
-    sEmporiumTrainer.poolPickIndex = POOL_PICK_DEFAULT; // POOL_PICK_EMPORIUM once Stage 4 adds it
+    sEmporiumTrainer.poolPickIndex = POOL_PICK_EMPORIUM;
     sEmporiumTrainer.poolPruneIndex = POOL_PRUNE_NONE;
     sEmporiumTrainer.overrideTrainer = TRAINER_NONE;
 

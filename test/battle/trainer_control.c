@@ -7,6 +7,8 @@
 #include "random.h"
 #include "string_util.h"
 #include "trainer_pools.h"
+#include "battle_emporium.h"
+#include "event_data.h"
 #include "constants/item.h"
 #include "constants/abilities.h"
 #include "constants/trainers.h"
@@ -314,5 +316,45 @@ TEST("CreateNPCTrainerPartyForTrainer generates default moves if no moves are sp
     struct Pokemon *testParty = Alloc(6 * sizeof(struct Pokemon));
     CreateNPCTrainerPartyFromTrainer(testParty, trainer);
     EXPECT(GetMonData(&testParty[0], MON_DATA_MOVE1) != MOVE_NONE);
+    Free(testParty);
+}
+
+TEST("Battle Emporium ace slot always matches the chosen reward")
+{
+    u32 emporium, aceSlot;
+    // First reward of each building: NORMALIUM_Z, VENUSAURITE, BUG_TERA_SHARD.
+    PARAMETRIZE { emporium = EMPORIUM_ZMOVE; aceSlot = EMPORIUM_PARTY_SIZE_ZMOVE - 1; }
+    PARAMETRIZE { emporium = EMPORIUM_MEGA;  aceSlot = EMPORIUM_PARTY_SIZE_MEGA - 1; }
+    PARAMETRIZE { emporium = EMPORIUM_TERA;  aceSlot = EMPORIUM_PARTY_SIZE_TERA - 1; }
+
+    struct Pokemon *testParty = Alloc(6 * sizeof(struct Pokemon));
+    BuildEmporiumTrainer(emporium);
+    VarSet(VAR_EMPORIUM_ID, emporium);
+    VarSet(VAR_EMPORIUM_REWARD, GetEmporiumRewardStart(emporium));
+
+    for (u32 run = 0; run < 8; run++)
+    {
+        CreateNPCTrainerPartyFromTrainer(testParty, GetTrainerStructFromId(TRAINER_EMPORIUM));
+        if (emporium == EMPORIUM_TERA)
+            EXPECT(GetMonData(&testParty[aceSlot], MON_DATA_TERA_TYPE) == GetEmporiumAceKey());
+        else
+            EXPECT(GetMonData(&testParty[aceSlot], MON_DATA_HELD_ITEM) == GetEmporiumAceKey());
+    }
+
+    ClearEmporiumBattle();
+    Free(testParty);
+}
+
+TEST("Battle Emporium ace slot falls back to a default ace when no reward matches")
+{
+    struct Pokemon *testParty = Alloc(6 * sizeof(struct Pokemon));
+    BuildEmporiumTrainer(EMPORIUM_MEGA);
+    VarSet(VAR_EMPORIUM_ID, EMPORIUM_MEGA);
+    VarSet(VAR_EMPORIUM_REWARD, 0xFFFF); // out of range: forces the fallback path
+
+    CreateNPCTrainerPartyFromTrainer(testParty, GetTrainerStructFromId(TRAINER_EMPORIUM));
+    EXPECT(GetMonData(&testParty[EMPORIUM_PARTY_SIZE_MEGA - 1], MON_DATA_SPECIES) != SPECIES_NONE);
+
+    ClearEmporiumBattle();
     Free(testParty);
 }
