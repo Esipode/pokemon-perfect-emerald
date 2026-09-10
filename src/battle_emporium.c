@@ -2,7 +2,10 @@
 #include "battle_emporium.h"
 #include "data.h"
 #include "event_data.h"
+#include "random.h"
+#include "string_util.h"
 #include "trainer_pools.h"
+#include "constants/battle_ai.h"
 #include "constants/event_objects.h"
 #include "constants/flags.h"
 #include "constants/moves.h"
@@ -72,4 +75,77 @@ u16 GetEmporiumAceKey(void)
     if (reward->emporium == EMPORIUM_TERA)
         return reward->aceKey;
     return reward->item;
+}
+
+// The Emporium opponent is not a gTrainers entry. It is this one struct, filled
+// in when the player accepts a challenge and swapped in for TRAINER_EMPORIUM by
+// the gEmporiumBattleActive redirect in GetTrainerStructFromId (include/data.h).
+// The flag lives in EWRAM and never in the save block, so a reload always clears
+// the redirect. See ClearEmporiumBattle for the teardown contract.
+EWRAM_DATA static struct Trainer sEmporiumTrainer = {0};
+EWRAM_DATA bool8 gEmporiumBattleActive = FALSE;
+
+struct EmporiumPoolInfo
+{
+    const struct TrainerMon *party;
+    u8 poolSize;
+    u8 partySize;
+};
+
+static const struct EmporiumPoolInfo sEmporiumPools[EMPORIUM_COUNT] =
+{
+    [EMPORIUM_ZMOVE] = { sEmporiumZPool,    EMPORIUM_ZMOVE_POOL_SIZE, EMPORIUM_PARTY_SIZE_ZMOVE },
+    [EMPORIUM_MEGA]  = { sEmporiumMegaPool, EMPORIUM_MEGA_POOL_SIZE,  EMPORIUM_PARTY_SIZE_MEGA  },
+    [EMPORIUM_TERA]  = { sEmporiumTeraPool, EMPORIUM_TERA_POOL_SIZE,  EMPORIUM_PARTY_SIZE_TERA  },
+};
+
+const struct Trainer *GetEmporiumTrainer(void)
+{
+    return &sEmporiumTrainer;
+}
+
+// Rolls a challenger identity, fills sEmporiumTrainer from it and the emporium's
+// mon pool, and arms the redirect. Returns the identity's overworld graphics id
+// so the caller can write VAR_OBJ_GFX_ID_0 for the back-room challenger object.
+u16 BuildEmporiumTrainer(u32 emporium)
+{
+    const struct EmporiumIdentity *identity;
+    const struct EmporiumPoolInfo *pool;
+
+    if (emporium >= EMPORIUM_COUNT || emporium == EMPORIUM_NONE)
+        emporium = EMPORIUM_ZMOVE;
+
+    identity = &sEmporiumIdentities[Random() % EMPORIUM_IDENTITY_COUNT];
+    pool = &sEmporiumPools[emporium];
+
+    memset(&sEmporiumTrainer, 0, sizeof(sEmporiumTrainer));
+    StringCopy(sEmporiumTrainer.trainerName, identity->name);
+    sEmporiumTrainer.trainerClass = identity->trainerClass;
+    sEmporiumTrainer.trainerPic = identity->trainerPic;
+    sEmporiumTrainer.encounterMusic = identity->encounterMusic;
+    sEmporiumTrainer.gender = identity->gender;
+    sEmporiumTrainer.battleType = TRAINER_BATTLE_TYPE_SINGLES;
+    sEmporiumTrainer.aiFlags = AI_FLAG_SMART_TRAINER;
+    sEmporiumTrainer.party = pool->party;
+    sEmporiumTrainer.partySize = pool->partySize;
+    sEmporiumTrainer.poolSize = pool->poolSize;
+    sEmporiumTrainer.poolRuleIndex = POOL_RULESET_EMPORIUM;
+    sEmporiumTrainer.poolPickIndex = POOL_PICK_DEFAULT; // POOL_PICK_EMPORIUM once Stage 4 adds it
+    sEmporiumTrainer.poolPruneIndex = POOL_PRUNE_NONE;
+    sEmporiumTrainer.overrideTrainer = TRAINER_NONE;
+
+    gEmporiumBattleActive = TRUE;
+    return identity->objectGfxId;
+}
+
+// Disarms the redirect and drops the pending-challenge state. Called after the
+// battle (win or loss), on menu cancel, and defensively from each emporium map's
+// ON_TRANSITION, so a crash or white-out can never leave every trainer in the
+// game pointed at sEmporiumTrainer.
+void ClearEmporiumBattle(void)
+{
+    gEmporiumBattleActive = FALSE;
+    VarSet(VAR_EMPORIUM_ID, EMPORIUM_NONE);
+    VarSet(VAR_EMPORIUM_REWARD, 0);
+    FlagClear(TRAINER_FLAGS_START + TRAINER_EMPORIUM);
 }

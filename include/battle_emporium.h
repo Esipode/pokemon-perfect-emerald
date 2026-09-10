@@ -38,4 +38,12 @@ u16 GetEmporiumRewardRequiredFlag(u32 rewardIndex);
 // ace slot on: the reward item for Z-Move/Mega, the ace's Tera type for Tera.
 u16 GetEmporiumAceKey(void);
 
+// Runtime challenger. sEmporiumTrainer is swapped in for TRAINER_EMPORIUM while
+// gEmporiumBattleActive is set (redirect in GetTrainerStructFromId, data.h).
+struct Trainer;
+extern bool8 gEmporiumBattleActive;
+const struct Trainer *GetEmporiumTrainer(void);
+u16 BuildEmporiumTrainer(u32 emporium);
+void ClearEmporiumBattle(void);
+
 #endif // GUARD_BATTLE_EMPORIUM_H

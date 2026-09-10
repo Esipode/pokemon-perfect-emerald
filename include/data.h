@@ -7,6 +7,7 @@
 #include "constants/pokeball.h"
 #include "difficulty.h"
 #include "debug.h"
+#include "battle_emporium.h"
 #include "player_customization.h" // PlayerCustomization_GetTrainerPaletteOverride -- no cycle, player_customization.h only pulls in constants/player_customization.h
 
 #define MAX_TRAINER_ITEMS 4
@@ -280,6 +281,7 @@ static inline u16 GetPartnerIdFromTrainerId(u16 trainerId)
 static inline const struct Trainer *GetTrainerStructFromId(u16 trainerId)
 {
     if (gIsDebugBattle) return GetDebugAiTrainer();
+    if (gEmporiumBattleActive) return GetEmporiumTrainer();
     enum DifficultyLevel difficulty;
 
     if (IsPartnerTrainerId(trainerId))
