@@ -3557,6 +3557,41 @@ static bool8 Achievement_FamilyQualifiesForReunion(const enum Species *members, 
     return FALSE;
 }
 
+// TRUE for species the Legendary Collection counts: restricted legendary,
+// sub-legendary, or mythical. Ultra Beasts and Paradox species carry their
+// own SpeciesInfo flags and are deliberately excluded, even in the rare case
+// a species also sets one of the counted flags.
+static bool8 Achievement_IsCountedLegendary(enum Species species)
+{
+    species = SanitizeSpeciesId(species);
+
+    if (gSpeciesInfo[species].isUltraBeast || gSpeciesInfo[species].isParadox)
+        return FALSE;
+
+    return gSpeciesInfo[species].isRestrictedLegendary
+        || gSpeciesInfo[species].isSubLegendary
+        || gSpeciesInfo[species].isMythical;
+}
+
+// TRUE if any member of the evolution family rooted at `root` already has its
+// caught Pokedex flag set. The legendary-family count records a family once,
+// so a catch whose family is already caught must not increment it again.
+// Reuses Achievement_GetFamilyMembers for branching/regional-variant families.
+static bool8 Achievement_LegendaryFamilyAlreadyCaught(enum Species root)
+{
+    enum Species members[ACHIEVEMENT_MAX_FAMILY_MEMBERS];
+    u8 count = Achievement_GetFamilyMembers(root, members);
+    u8 i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (GetSetPokedexFlagBySpecies(members[i], FLAG_GET_CAUGHT))
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
 // HandleSetPokedexFlag (src/pokemon.c)'s FLAG_SET_CAUGHT branch, alongside
 // Achievement_CheckPokedexMilestones -- species is the species that was just
 // newly caught. "Register" is read as "caught" (the more demanding of the
