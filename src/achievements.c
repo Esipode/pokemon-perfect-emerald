@@ -3592,6 +3592,67 @@ static bool8 Achievement_LegendaryFamilyAlreadyCaught(enum Species root)
     return FALSE;
 }
 
+// Total distinct evolution families whose root is a counted legendary
+// (Achievement_IsCountedLegendary), or -- with mythicalOnly -- a mythical.
+// One family = one entry: iteration is restricted to base-form roots
+// (species == GET_BASE_SPECIES_ID and no pre-evolution), so alternate forms
+// and evolved members never add a second count and no de-duplication buffer
+// is needed. Obtainability in the current game is deliberately ignored --
+// the legendary encounter set is being revamped on another branch; this is
+// the count of designated legendary/mythical families in the species data.
+static u32 Achievement_CountLegendaryFamilies(bool8 mythicalOnly)
+{
+    enum Species species;
+    u32 count = 0;
+
+    for (species = SPECIES_BULBASAUR; species < NUM_SPECIES; species++)
+    {
+        if (species != GET_BASE_SPECIES_ID(species))
+            continue;
+        if (Achievement_GetEvolutionRoot(species) != species)
+            continue;
+
+        if (mythicalOnly)
+        {
+            if (gSpeciesInfo[species].isUltraBeast || gSpeciesInfo[species].isParadox)
+                continue;
+            if (!gSpeciesInfo[species].isMythical)
+                continue;
+        }
+        else if (!Achievement_IsCountedLegendary(species))
+        {
+            continue;
+        }
+
+        count++;
+    }
+
+    return count;
+}
+
+// Targets for the two Diamond entries (14 Mythical Menagerie, 15 Legend of
+// Legends). The species table is fixed at build time, so each total is walked
+// once and memoized; every later call is a plain load.
+static u32 Achievement_CountObtainableLegendaryFamilies(void)
+{
+    static u32 sCached = 0;
+
+    if (sCached == 0)
+        sCached = Achievement_CountLegendaryFamilies(FALSE);
+
+    return sCached;
+}
+
+static u32 Achievement_CountObtainableMythicalFamilies(void)
+{
+    static u32 sCached = 0;
+
+    if (sCached == 0)
+        sCached = Achievement_CountLegendaryFamilies(TRUE);
+
+    return sCached;
+}
+
 // HandleSetPokedexFlag (src/pokemon.c)'s FLAG_SET_CAUGHT branch, alongside
 // Achievement_CheckPokedexMilestones -- species is the species that was just
 // newly caught. "Register" is read as "caught" (the more demanding of the
