@@ -86,6 +86,11 @@ u32 GetProgressionLevelCap(void)
                 return baseCap;
             }
         }
+
+        // Every progression milestone cleared: opponents (and the player's own
+        // capped team) top out at 75, plus the New Game Plus offset the flag
+        // list already applies to each milestone.
+        return min(75 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
     }
     else if (B_LEVEL_CAP_TYPE == LEVEL_CAP_VARIABLE)
     {
@@ -97,9 +102,10 @@ u32 GetProgressionLevelCap(void)
 
 u32 GetCurrentLevelCap(void)
 {
-    // Check if level cap is disabled
+    // Level cap disabled in the New Game settings: the player's team may climb to
+    // 100 (plus the New Game Plus offset), not all the way to MAX_LEVEL.
     if (FlagGet(FLAG_LEVEL_CAP_OFF))
-        return MAX_LEVEL;
+        return min(100 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
     return GetProgressionLevelCap();
 }

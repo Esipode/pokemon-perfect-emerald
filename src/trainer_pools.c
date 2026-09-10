@@ -402,19 +402,28 @@ static void RandomTagPrune(const struct Trainer *trainer, u8 *poolIndexArray, co
             poolIndexArray[i] = POOL_SLOT_DISABLED;
 }
 
-//  Battle Emporium tier balance: the ACE slot is authored to carry the reward's
-//  mechanic (often a legendary for signature Z-Crystals), so it is left alone.
-//  Every other pool member is dropped if it exceeds the building's base-stat-total
-//  cap or is a legendary / mythical / paradox / Ultra Beast.
+//  Battle Emporium tier balance. The ACE slot carries the reward's mechanic, so
+//  it skips the base-stat-total / legendary filler check - but it is still dropped
+//  if its species could never legally exist at the challenger's battle level (an
+//  ace that evolves above the current level cap), so a low-cap challenge can't
+//  field, say, a level-24 Charizard. Every non-ace member is dropped if it tops
+//  the building's base-stat-total cap or is a legendary / mythical / paradox /
+//  Ultra Beast.
 static void EmporiumPrune(const struct Trainer *trainer, u8 *poolIndexArray, const struct PoolRules *rules)
 {
+    u32 battleLevel = GetEmporiumBattleLevel();
+
     for (u32 i = 0; i < trainer->poolSize; i++)
     {
         u32 poolIndex = poolIndexArray[i];
         if (poolIndex == POOL_SLOT_DISABLED)
             continue;
         if (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE))
+        {
+            if (EmporiumSpeciesMinLevel(trainer->party[poolIndex].species) > battleLevel)
+                poolIndexArray[i] = POOL_SLOT_DISABLED;
             continue;
+        }
         if (!EmporiumMonAllowedAsFiller(&trainer->party[poolIndex]))
             poolIndexArray[i] = POOL_SLOT_DISABLED;
     }

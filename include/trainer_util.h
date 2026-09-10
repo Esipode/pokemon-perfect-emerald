@@ -16,6 +16,7 @@ struct TrainerGenerator
 rng_value_t GeneratePartySeed(const struct Trainer *trainer);
 void GenerateMonFromTrainerMon(struct Pokemon *mon, const struct TrainerMon *trainerMon, struct TrainerGenerator *trainer);
 u32 GeneratePersonalityForGender(u32 gender, u32 species);
+u32 PickRandomMonGender(u32 species);
 void MakeTrainerGenerator(struct TrainerGenerator *trainerGen, const struct Trainer *trainer);
 void MakePartnerGenerator(struct TrainerGenerator *trainerGen, const struct Trainer *partner);
 

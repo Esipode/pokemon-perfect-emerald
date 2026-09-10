@@ -44,6 +44,12 @@ u16 GetEmporiumAceKey(void);
 struct TrainerMon;
 bool32 EmporiumMonMatchesReward(const struct TrainerMon *mon);
 
+// Lowest level `species` can plausibly be reached at (highest EVO_LEVEL*
+// threshold on its pre-evolution chain; non-level methods report 1). Used to
+// keep the ace pool and the reward menu from offering a fully-evolved ace the
+// current level cap could never legally produce.
+u32 EmporiumSpeciesMinLevel(enum Species species);
+
 // Runtime challenger. sEmporiumTrainer is swapped in for TRAINER_EMPORIUM while
 // gEmporiumBattleActive is set (redirect in GetTrainerStructFromId, data.h).
 struct Trainer;
@@ -56,6 +62,7 @@ void ClearEmporiumBattle(void);
 // plus a per-building offset. Read by CreateNPCTrainerPartyFromTrainer while
 // gEmporiumBattleActive is set.
 u32 GetEmporiumBattleLevel(void);
+u32 GetEmporiumBattleLevelForEmporium(u32 emporium);
 
 // Script specials for the instructor reward menu (see data/scripts/battle_emporium.inc).
 // EmporiumMenu_BuildList / _CommitReward read the building id from VAR_0x8004.
@@ -65,11 +72,21 @@ void EmporiumMenu_BufferConfirm(void);
 void EmporiumRollChallenger(void);
 void EmporiumShowChallenger(void);
 
+// Lobby ON_TRANSITION teardown (callnative). Disarms the redirect, but keeps the
+// pending reward selection when the player is walking back in from a finished
+// battle (VAR_EMPORIUM_RESULT set) so the lobby payout script can read it.
+void EmporiumLobbyOnTransition(void);
+
 // Stage 8: the challenger battle and the reward payout (data/scripts/battle_emporium.inc,
 // per-battle-room scripts.inc). EmporiumArmNoWhiteout is a callnative; the rest are specials.
 void EmporiumArmNoWhiteout(void);
 void EmporiumBufferRewardItem(void);
 void EmporiumBattleRoomOnTransition(void);
+
+// Battle-room ON_FRAME entry trace (callnative). Logs the rolled challenger state
+// and asserts the object event the walk-in movements are about to address.
+void EmporiumTraceArena(void);
+void EmporiumTraceStep(void);
 
 // Stage 9 tier balance: POOL_PRUNE_EMPORIUM (src/trainer_pools.c) drops every
 // non-ACE pool member EmporiumMonAllowedAsFiller rejects - one whose base stat

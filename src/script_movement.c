@@ -1,5 +1,7 @@
 #include "global.h"
 #include "script_movement.h"
+#include "battle_emporium.h"
+#include "fieldmap.h"
 #include "event_object_movement.h"
 #include "event_scripts.h"
 #include "task.h"
@@ -214,6 +216,9 @@ static void ScriptMovement_MoveObjects(u8 taskId)
     u8 i;
     u8 objEventId;
 
+    if (gEmporiumBattleActive)
+        DebugPrintf("emporium frame: finished=%x", (u16)gTasks[taskId].data[0]);
+
     for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
     {
         LoadObjectEventIdFromMovementScript(taskId, i, &objEventId);
@@ -231,6 +236,17 @@ static void ScriptMovement_TakeStep(u8 taskId, u8 moveScrId, u8 objEventId, cons
     u8 nextMoveActionId;
     struct ObjectEvent *obj = &gObjectEvents[objEventId];
 
+    // Temporary reset-hunt trace: one line per object per frame for the duration of
+    // an Emporium challenge, so the last line before a reset names the movement
+    // slot, object and pending action. See EMPORIUM_TRACE in src/battle_emporium.c.
+    if (gEmporiumBattleActive)
+        DebugPrintf("emporium move: slot=%d obj=%d localId=%d script=%x next=%d action=%d held=%d fin=%d single=%d x=%d y=%d",
+                    moveScrId, objEventId, obj->localId, (u32)movementScript,
+                    movementScript != NULL ? *movementScript : 0xFF,
+                    obj->movementActionId, obj->heldMovementActive, obj->heldMovementFinished,
+                    obj->singleMovementActive,
+                    obj->currentCoords.x - MAP_OFFSET, obj->currentCoords.y - MAP_OFFSET);
+
     if (ObjectEventIsHeldMovementActive(obj) && !ObjectEventClearHeldMovementIfFinished(obj))
     {
         // If, while undergoing scripted movement,
@@ -246,6 +262,8 @@ static void ScriptMovement_TakeStep(u8 taskId, u8 moveScrId, u8 objEventId, cons
             ClearObjectEventMovement(obj, &gSprites[obj->spriteId]);
             ScriptMovement_StartObjectMovementScript(obj->localId, obj->mapNum, obj->mapGroup, EnterPokeballMovement);
         }
+        if (gEmporiumBattleActive)
+            DebugPrintf("emporium move done: slot=%d still moving", moveScrId);
         return;
     }
 
@@ -254,6 +272,8 @@ static void ScriptMovement_TakeStep(u8 taskId, u8 moveScrId, u8 objEventId, cons
     {
         SetMovementScriptFinished(taskId, moveScrId);
         FreezeObjectEvent(&gObjectEvents[objEventId]);
+        if (gEmporiumBattleActive)
+            DebugPrintf("emporium move done: slot=%d step_end", moveScrId);
     }
     else
     {
@@ -262,6 +282,8 @@ static void ScriptMovement_TakeStep(u8 taskId, u8 moveScrId, u8 objEventId, cons
             movementScript++;
             SetMovementScript(moveScrId, movementScript);
         }
+        if (gEmporiumBattleActive)
+            DebugPrintf("emporium move done: slot=%d set action=%d", moveScrId, nextMoveActionId);
     }
 }
 

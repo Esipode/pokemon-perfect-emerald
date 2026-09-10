@@ -1,9 +1,18 @@
-@ Battle Emporium — shared instructor flow: reward menu, ace preview, opponent
-@ roll. Per-building lobby scripts set VAR_0x8004 to the enum EmporiumId, show the
-@ one-time intro, then jump to Emporium_EventScript_OpenMenu. VAR_0x8004 stays set
-@ for the whole interaction; VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD are written only
-@ once the player commits, and the redirect (gEmporiumBattleActive) is armed by
-@ EmporiumRollChallenger. The battle itself and the reward payout are Stage 8.
+@ Battle Emporium — shared instructor flow: reward menu, opponent roll, hand-off,
+@ battle outcome and lobby reward payout. Per-building lobby scripts set VAR_0x8004
+@ to the enum EmporiumId, show the one-time intro, then jump to
+@ Emporium_EventScript_OpenMenu. VAR_0x8004 stays set for the whole interaction;
+@ VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD are written only once the player commits,
+@ and the redirect (gEmporiumBattleActive) is armed by EmporiumRollChallenger.
+@
+@ All three lobbies share the same geometry: instructor object is local id 1 at
+@ (6,4), approached from the south; the north door to the battle room is warp 2 at
+@ (6,1). All three battle rooms: challenger object is local id 1 at (11,2); the
+@ exit door back to the lobby is warp 0 at (2,8). The movement templates below
+@ assume that layout, and assume the (6,1) lobby tile has a door metatile
+@ behaviour so the warp-exit step drops the returning player on (6,2).
+
+.set LOCALID_EMPORIUM_INSTRUCTOR, 1
 
 Emporium_EventScript_OpenMenu::
 	special EmporiumMenu_BuildList
@@ -15,19 +24,7 @@ Emporium_EventScript_OpenMenu::
 	special EmporiumMenu_CommitReward
 	goto_if_eq VAR_RESULT, FALSE, Emporium_EventScript_OpenMenu
 	special EmporiumMenu_BufferConfirm
-	goto_if_eq VAR_0x8004, EMPORIUM_MEGA, Emporium_EventScript_ConfirmMega
-	goto_if_eq VAR_0x8004, EMPORIUM_TERA, Emporium_EventScript_ConfirmTera
-	msgbox Emporium_Text_ConfirmZMove, MSGBOX_YESNO
-	goto Emporium_EventScript_ConfirmResult
-
-Emporium_EventScript_ConfirmMega:
-	msgbox Emporium_Text_ConfirmMega, MSGBOX_YESNO
-	goto Emporium_EventScript_ConfirmResult
-
-Emporium_EventScript_ConfirmTera:
-	msgbox Emporium_Text_ConfirmTera, MSGBOX_YESNO
-
-Emporium_EventScript_ConfirmResult:
+	msgbox Emporium_Text_Confirm, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, Emporium_EventScript_OpenMenu
 	checkmoney EMPORIUM_ENTRY_FEE
 	goto_if_eq VAR_RESULT, FALSE, Emporium_EventScript_CantAffordFee
@@ -37,37 +34,229 @@ Emporium_EventScript_ConfirmResult:
 	playse SE_SHOP
 	msgbox Emporium_Text_FeePaid, MSGBOX_DEFAULT
 	hidemoneybox
+	closemessage
 	copyvar VAR_EMPORIUM_ID, VAR_0x8004
 	special EmporiumRollChallenger
 	special EmporiumShowChallenger
-	msgbox Emporium_Text_HeadThrough, MSGBOX_DEFAULT
-	closemessage
-	release
+	applymovement LOCALID_EMPORIUM_INSTRUCTOR, Emporium_Movement_InstructorStepAside
+	waitmovement 0
+	setobjectxyperm LOCALID_EMPORIUM_INSTRUCTOR, 8, 9
+	setobjectmovementtype LOCALID_EMPORIUM_INSTRUCTOR, MOVEMENT_TYPE_FACE_LEFT
+	goto Emporium_EventScript_WalkPlayerToChallengerRoom
+
+@ Shared tail: walk the player through the north door and warp to the pending
+@ challenge's battle room. Entered from Emporium_EventScript_OpenMenu (first
+@ attempt) and Emporium_EventScript_LobbyRecovery (retry after a loss). The
+@ instructor is already stepped aside on both paths.
+Emporium_EventScript_WalkPlayerToChallengerRoom:
+	applymovement OBJ_EVENT_ID_PLAYER, Emporium_Movement_PlayerToBattleRoom
+	waitmovement 0
+	switch VAR_EMPORIUM_ID
+	case EMPORIUM_ZMOVE, Emporium_EventScript_WarpZMoveRoom
+	case EMPORIUM_MEGA, Emporium_EventScript_WarpMegaRoom
+	case EMPORIUM_TERA, Emporium_EventScript_WarpTeraRoom
+	end
+
+Emporium_EventScript_WarpZMoveRoom:
+	warp MAP_MAUVILLE_CITY_ZMOVE_EMPORIUM_BATTLE_ROOM, 0
+	waitstate
+	end
+
+Emporium_EventScript_WarpMegaRoom:
+	warp MAP_ROUTE123_MEGA_EMPORIUM_BATTLE_ROOM, 0
+	waitstate
+	end
+
+Emporium_EventScript_WarpTeraRoom:
+	warp MAP_LILYCOVE_CITY_TERA_EMPORIUM_BATTLE_ROOM, 0
+	waitstate
 	end
 
 Emporium_EventScript_CantAffordFee::
 	msgbox Emporium_Text_CantAffordFee, MSGBOX_DEFAULT
 	goto Emporium_EventScript_OpenMenu
 
-@ ---- Stage 8: challenger battle outcome ----
-@ Reached inline from each battle room's challenger script (continueScript
-@ trainerbattle). On a win the outcome check runs; on a loss it runs only when
-@ EmporiumArmNoWhiteout armed B_FLAG_NO_WHITEOUT (i.e. outside Nuzlocke), where
-@ the per-room script warps the player back to its lobby.
+@ ---- Challenger battle outcome ----
+@ Called inline from each battle room's EnterArena script once the continueScript
+@ trainerbattle returns. Records the result in VAR_EMPORIUM_RESULT so the lobby
+@ ON_FRAME script can run the payout or the recovery scene, then the per-room
+@ script walks the player out and warps back to the lobby. On a loss the party is
+@ healed here (the facility-style no-white-out path); on a win it is healed in the
+@ lobby by Emporium_EventScript_LobbyReward. Both heals go through HealPlayerParty,
+@ so Nuzlocke fainted-mon removal still applies. VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD
+@ are kept alive across the warp on both outcomes: the lobby pays out and clears them
+@ on a win, and on a loss keeps them so Emporium_EventScript_LobbyRecovery can re-run
+@ the same challenge if the player retries, clearing them (ClearEmporiumBattle) only
+@ once the retry is declined. The redirect itself is disarmed by the lobby
+@ ON_TRANSITION (EmporiumLobbyOnTransition) on either path.
 
-Emporium_EventScript_ChallengerDefeated::
+Emporium_EventScript_RecordChallengerOutcome::
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_eq VAR_RESULT, B_OUTCOME_WON, Emporium_EventScript_RecordChallengerWon
+	special HealPlayerParty
+	setvar VAR_EMPORIUM_RESULT, EMPORIUM_RESULT_LOST
+	return
+
+Emporium_EventScript_RecordChallengerWon::
+	setvar VAR_EMPORIUM_RESULT, EMPORIUM_RESULT_WON
+	return
+
+@ Runs from every lobby's ON_FRAME table (unconditionally on ClearTempFieldEventData,
+@ but the vars aren't temp). VAR_EMPORIUM_RESULT is only non-zero right after a
+@ finished battle; the scene clears it so it runs once.
+
+Emporium_EventScript_LobbyReward::
+	lockall
+	applymovement OBJ_EVENT_ID_PLAYER, Emporium_Movement_PlayerReturnToInstructor
+	waitmovement 0
+	applymovement LOCALID_EMPORIUM_INSTRUCTOR, Emporium_Movement_InstructorReturn
+	waitmovement 0
+	setobjectxyperm LOCALID_EMPORIUM_INSTRUCTOR, 8, 9
+	setobjectmovementtype LOCALID_EMPORIUM_INSTRUCTOR, MOVEMENT_TYPE_FACE_DOWN
+	special HealPlayerParty
 	special EmporiumBufferRewardItem
 	msgbox Emporium_Text_RewardWon, MSGBOX_DEFAULT
 	giveitem VAR_0x8004
+	msgbox Emporium_Text_VisitAgain, MSGBOX_DEFAULT
 	callnative ClearEmporiumBattle
+	setvar VAR_EMPORIUM_RESULT, EMPORIUM_RESULT_NONE
+	closemessage
 	releaseall
 	end
 
-Emporium_EventScript_ChallengerLostCommon::
-	special HealPlayerParty
-	callnative ClearEmporiumBattle
+@ Post-loss scene. The party was already healed in Emporium_EventScript_Record
+@ ChallengerOutcome; here the player walks back to the instructor and is offered a
+@ retry of the same challenge (VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD are still set).
+@ On a retry the fee is charged again and the shared walk-in tail re-enters the same
+@ battle room; the instructor is still stepped aside (LobbyRestoreInstructorAside
+@ re-applied it on this return trip), matching Emporium_EventScript_OpenMenu's state
+@ at that point. Declining (or being unable to pay) walks the instructor back and
+@ gives the usual goodbye, clearing the pending selection.
+Emporium_EventScript_LobbyRecovery::
+	lockall
+	applymovement OBJ_EVENT_ID_PLAYER, Emporium_Movement_PlayerReturnToInstructor
+	waitmovement 0
 	msgbox Emporium_Text_ChallengerLost, MSGBOX_DEFAULT
+	msgbox Emporium_Text_RetryPrompt, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, YES, Emporium_EventScript_RetryChallenge
+	goto Emporium_EventScript_RecoveryGoodbye
+
+Emporium_EventScript_RetryChallenge:
+	setvar VAR_EMPORIUM_RESULT, EMPORIUM_RESULT_NONE
+	checkmoney EMPORIUM_ENTRY_FEE
+	goto_if_eq VAR_RESULT, FALSE, Emporium_EventScript_RetryCantAffordFee
+	showmoneybox 0, 0
+	removemoney EMPORIUM_ENTRY_FEE
+	updatemoneybox
+	playse SE_SHOP
+	msgbox Emporium_Text_FeePaid, MSGBOX_DEFAULT
+	hidemoneybox
 	closemessage
+	special EmporiumRollChallenger
+	special EmporiumShowChallenger
+	goto Emporium_EventScript_WalkPlayerToChallengerRoom
+
+Emporium_EventScript_RetryCantAffordFee:
+	msgbox Emporium_Text_CantAffordFee, MSGBOX_DEFAULT
+	goto Emporium_EventScript_RecoveryGoodbye
+
+Emporium_EventScript_RecoveryGoodbye:
+	applymovement LOCALID_EMPORIUM_INSTRUCTOR, Emporium_Movement_InstructorReturn
+	waitmovement 0
+	setobjectxyperm LOCALID_EMPORIUM_INSTRUCTOR, 8, 9
+	setobjectmovementtype LOCALID_EMPORIUM_INSTRUCTOR, MOVEMENT_TYPE_FACE_DOWN
+	msgbox Emporium_Text_VisitAgain, MSGBOX_DEFAULT
+	callnative ClearEmporiumBattle
+	setvar VAR_EMPORIUM_RESULT, EMPORIUM_RESULT_NONE
+	closemessage
+	releaseall
+	end
+
+@ Movement templates (see the geometry note at the top of this file).
+
+Emporium_Movement_InstructorStepAside:
+	walk_up
+	walk_right
+	face_left
+	step_end
+
+Emporium_Movement_PlayerToBattleRoom:
+	walk_up
+	walk_up
+	walk_up
+	walk_up
+	walk_up
+	walk_up
+	walk_up
+	step_end
+
+Emporium_Movement_ChallengerEnterArena:
+	walk_down
+	walk_down
+	walk_down
+	walk_left
+	walk_left
+	walk_left
+	step_end
+
+Emporium_Movement_PlayerEnterArena:
+	walk_up
+	walk_up
+	walk_up
+	walk_right
+	walk_right
+	walk_right
+	step_end
+
+@ Reverse of Emporium_Movement_ChallengerEnterArena: the challenger walks back to
+@ their spawn tile before the room script removes the object, so the player sees
+@ them leave instead of the sprite vanishing in place.
+Emporium_Movement_ChallengerExitArena:
+	walk_right
+	walk_right
+	walk_right
+	walk_up
+	walk_up
+	walk_up
+	step_end
+
+Emporium_Movement_PlayerExitArena:
+	walk_left
+	walk_left
+	walk_left
+	walk_down
+	walk_down
+	walk_down
+	step_end
+
+Emporium_Movement_PlayerReturnToInstructor:
+	walk_down
+	walk_down
+	walk_down
+	walk_down
+	walk_down
+	walk_down
+	face_up
+	step_end
+
+Emporium_Movement_InstructorReturn:
+	walk_left
+	walk_down
+	step_end
+
+@ Called from every lobby's ON_TRANSITION. Object event templates are reloaded from
+@ the map header on each map load, so the stepped-aside position written by
+@ Emporium_EventScript_OpenMenu is gone by the time the player walks back in from
+@ the battle room. Re-apply it before the objects spawn (VAR_EMPORIUM_RESULT is
+@ non-zero only on that return trip) so the instructor is still standing right of
+@ the door for Emporium_Movement_InstructorReturn to walk back from.
+
+Emporium_EventScript_LobbyRestoreInstructorAside::
+	goto_if_eq VAR_EMPORIUM_RESULT, EMPORIUM_RESULT_NONE, Emporium_EventScript_LobbyRestoreInstructorDone
+	setobjectxyperm LOCALID_EMPORIUM_INSTRUCTOR, 8, 9
+	setobjectmovementtype LOCALID_EMPORIUM_INSTRUCTOR, MOVEMENT_TYPE_FACE_LEFT
+
+Emporium_EventScript_LobbyRestoreInstructorDone:
 	return
 
 Emporium_EventScript_Goodbye::
@@ -85,33 +274,17 @@ Emporium_EventScript_NoRewardsAvailable::
 Emporium_Text_WhichPrize:
 	.string "Which prize has caught your eye?$"
 
-Emporium_Text_ConfirmZMove:
-	.string "That Z-Crystal is calling for a\n"
-	.string "partner in battle.\p"
-	.string "The challenger will send out {STR_VAR_2},\n"
-	.string "clutching the {STR_VAR_1}.\p"
-	.string "Win, and the crystal is yours.\n"
-	.string "The entry fee is ¥2,500.\p"
+Emporium_Text_Confirm:
+	.string "The {STR_VAR_1}, then.\p"
+	.string "Beat the challenger waiting in back\n"
+	.string "and it's yours to keep.\p"
+	.string "The entry fee is ¥2,500.\n"
 	.string "Ready to battle?$"
 
-Emporium_Text_ConfirmMega:
-	.string "The challenger's ace will Mega Evolve\n"
-	.string "with the {STR_VAR_1}.\p"
-	.string "That ace is {STR_VAR_2}.\p"
-	.string "Win, and the stone is yours.\n"
-	.string "The entry fee is ¥2,500.\p"
-	.string "Ready to battle?$"
-
-Emporium_Text_ConfirmTera:
-	.string "The challenger's ace will Terastallize\n"
-	.string "to the {STR_VAR_2} type.\p"
-	.string "Win, and the {STR_VAR_1} is yours.\n"
-	.string "The entry fee is ¥2,500.\p"
-	.string "Ready to battle?$"
-
-Emporium_Text_HeadThrough:
-	.string "Then head through to the battle room.\n"
-	.string "Your challenger is waiting.$"
+Emporium_Text_VisitAgain:
+	.string "A pleasure doing business.\p"
+	.string "Come back whenever you want\n"
+	.string "another shot at the prizes.$"
 
 Emporium_Text_NoRewardsAvailable:
 	.string "You already hold every prize this\n"
@@ -187,6 +360,10 @@ Emporium_Text_RewardWon:
 
 Emporium_Text_ChallengerLost:
 	.string "You and your team have been\n"
-	.string "patched up.\p"
-	.string "Talk to me when you'd like to\n"
-	.string "try again.$"
+	.string "patched up.$"
+
+Emporium_Text_RetryPrompt:
+	.string "Care to take on the challenger\n"
+	.string "again?\p"
+	.string "The entry fee is another ¥2,500.\n"
+	.string "Want to try again?$"

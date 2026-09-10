@@ -281,7 +281,7 @@ static inline u16 GetPartnerIdFromTrainerId(u16 trainerId)
 static inline const struct Trainer *GetTrainerStructFromId(u16 trainerId)
 {
     if (gIsDebugBattle) return GetDebugAiTrainer();
-    if (gEmporiumBattleActive) return GetEmporiumTrainer();
+    if (gEmporiumBattleActive && trainerId == TRAINER_EMPORIUM) return GetEmporiumTrainer();
     enum DifficultyLevel difficulty;
 
     if (IsPartnerTrainerId(trainerId))

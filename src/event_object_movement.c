@@ -1,4 +1,5 @@
 #include "global.h"
+#include "battle_emporium.h"
 #include "malloc.h"
 #include "battle_anim.h"
 #include "battle_pyramid.h"
@@ -101,6 +102,22 @@ struct SpecialEmote
 #define sDirection    data[3]
 
 
+// Temporary reset-hunt guard (see EMPORIUM_TRACE in src/battle_emporium.c).
+// sTypeFuncId indexes a gMovementTypeFuncs_* table that is usually 2-4 entries
+// long, and nothing bounds-checks it. Past the end the call target is whatever
+// data follows the table: a wild branch, which resets the console.
+static bool32 MovementTypeFuncIdIsValid(struct ObjectEvent *objectEvent, struct Sprite *sprite, u32 tableSize)
+{
+    if ((u32)sprite->sTypeFuncId < tableSize)
+        return TRUE;
+
+    errorf("sTypeFuncId %d >= %d: localId %d gfx %d type %d action %d",
+           sprite->sTypeFuncId, tableSize, objectEvent->localId, objectEvent->graphicsId,
+           objectEvent->movementType, objectEvent->movementActionId);
+    sprite->sTypeFuncId = 0;
+    return FALSE;
+}
+
 #define movement_type_def(setup, table) \
 static u8 setup##_callback(struct ObjectEvent *, struct Sprite *);\
 void setup(struct Sprite *sprite)\
@@ -109,6 +126,8 @@ void setup(struct Sprite *sprite)\
 }\
 static u8 setup##_callback(struct ObjectEvent *objectEvent, struct Sprite *sprite)\
 {\
+    if (!MovementTypeFuncIdIsValid(objectEvent, sprite, ARRAY_COUNT(table)))\
+        return 0;\
     return table[sprite->sTypeFuncId](objectEvent, sprite);\
 }
 
@@ -3224,7 +3243,9 @@ const struct ObjectEventGraphicsInfo *GetObjectEventGraphicsInfo(u16 graphicsId)
     if (graphicsId & OBJ_EVENT_MON)
         return SpeciesToGraphicsInfo(graphicsId & OBJ_EVENT_MON_SPECIES_MASK, graphicsId & OBJ_EVENT_MON_SHINY, graphicsId & OBJ_EVENT_MON_FEMALE);
 
-    if (graphicsId >= NUM_OBJ_EVENT_GFX)
+    // Entries gated behind a build option (e.g. the IS_FRLG object events) stay NULL
+    // in the table, so an in-range id is not proof of a usable graphics info.
+    if (graphicsId >= NUM_OBJ_EVENT_GFX || gObjectEventGraphicsInfoPointers[graphicsId] == NULL)
         graphicsId = OBJ_EVENT_GFX_NINJA_BOY;
 
     return gObjectEventGraphicsInfoPointers[graphicsId];
@@ -5718,12 +5739,64 @@ bool8 MovementType_FollowPlayer_Active(struct ObjectEvent *objectEvent, struct S
         sprite->sTypeFuncId = 2; // movement action sets state to 0
         return TRUE;
     }
+    if (PlayerGetCopyableMovement() >= ARRAY_COUNT(gFollowPlayerMovementFuncs))
+    {
+        errorf("playerCopyableMovement %d >= %d: follower localId %d gfx %d action %d",
+               PlayerGetCopyableMovement(), (u32)ARRAY_COUNT(gFollowPlayerMovementFuncs),
+               objectEvent->localId, objectEvent->graphicsId, objectEvent->movementActionId);
+        return FALSE;
+    }
     return gFollowPlayerMovementFuncs[PlayerGetCopyableMovement()](objectEvent, sprite, GetPlayerMovementDirection(), NULL);
+}
+
+// Temporary reset-hunt guard (see EMPORIUM_TRACE in src/battle_emporium.c).
+// gMovementActionFuncs is indexed by movementActionId and sActionFuncId, neither
+// of which the movement engine bounds-checks. MOVEMENT_ACTION_NONE (0xFF) and
+// MOVEMENT_ACTION_STEP_END (0xFE) are both past the end of the table, and every
+// row holds at most 4 entries, so a stale index calls whatever data follows the
+// table - a wild branch that resets the console. Report it and idle the object.
+#define MOVEMENT_ACTION_MAX_STEPS 4
+
+static bool32 MovementActionFuncIsValid(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    uintptr_t func;
+
+    if (objectEvent->movementActionId >= ARRAY_COUNT(gMovementActionFuncs))
+    {
+        errorf("movementActionId %d out of range: localId %d gfx %d type %d held %d single %d",
+               objectEvent->movementActionId, objectEvent->localId, objectEvent->graphicsId,
+               objectEvent->movementType, objectEvent->heldMovementActive, objectEvent->singleMovementActive);
+        return FALSE;
+    }
+    if (sprite->sActionFuncId < 0 || sprite->sActionFuncId >= MOVEMENT_ACTION_MAX_STEPS)
+    {
+        errorf("sActionFuncId %d out of range: action %d localId %d gfx %d type %d",
+               sprite->sActionFuncId, objectEvent->movementActionId, objectEvent->localId,
+               objectEvent->graphicsId, objectEvent->movementType);
+        return FALSE;
+    }
+    func = (uintptr_t)gMovementActionFuncs[objectEvent->movementActionId][sprite->sActionFuncId];
+    if (!(func & 1) || func < ROM_START || func >= ROM_START + 0x2000000)
+    {
+        errorf("movement func %x invalid: action %d step %d localId %d gfx %d type %d",
+               func, objectEvent->movementActionId, sprite->sActionFuncId,
+               objectEvent->localId, objectEvent->graphicsId, objectEvent->movementType);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 bool8 MovementType_FollowPlayer_Moving(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
     // Copied from ObjectEventExecSingleMovementAction
+    if (!MovementActionFuncIsValid(objectEvent, sprite))
+    {
+        objectEvent->movementActionId = MOVEMENT_ACTION_NONE;
+        sprite->sActionFuncId = 0;
+        objectEvent->singleMovementActive = FALSE;
+        sprite->sTypeFuncId = 1;
+        return FALSE;
+    }
     if (gMovementActionFuncs[objectEvent->movementActionId][sprite->sActionFuncId](objectEvent, sprite))
     {
         objectEvent->movementActionId = MOVEMENT_ACTION_NONE;
@@ -6908,6 +6981,16 @@ static enum Direction GetCopyDirection(u8 copyInitDir, enum Direction playerInit
 static void ObjectEventExecHeldMovementAction(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
     objectEvent->movementActionId = TryUpdateMovementActionOnStairs(objectEvent, objectEvent->movementActionId);
+    if (gEmporiumBattleActive)
+        DebugPrintf("emporium held: localId=%d action=%d step=%d x=%d y=%d elev=%d",
+                    objectEvent->localId, objectEvent->movementActionId, sprite->sActionFuncId,
+                    objectEvent->currentCoords.x - MAP_OFFSET, objectEvent->currentCoords.y - MAP_OFFSET,
+                    objectEvent->currentElevation);
+    if (!MovementActionFuncIsValid(objectEvent, sprite))
+    {
+        objectEvent->heldMovementFinished = TRUE;
+        return;
+    }
     if (gMovementActionFuncs[objectEvent->movementActionId][sprite->sActionFuncId](objectEvent, sprite))
         objectEvent->heldMovementFinished = TRUE;
 }
@@ -6915,6 +6998,17 @@ static void ObjectEventExecHeldMovementAction(struct ObjectEvent *objectEvent, s
 static bool8 ObjectEventExecSingleMovementAction(struct ObjectEvent *objectEvent, struct Sprite *sprite)
 {
     objectEvent->movementActionId = TryUpdateMovementActionOnStairs(objectEvent, objectEvent->movementActionId);
+    if (gEmporiumBattleActive)
+        DebugPrintf("emporium single: localId=%d action=%d step=%d x=%d y=%d type=%d",
+                    objectEvent->localId, objectEvent->movementActionId, sprite->sActionFuncId,
+                    objectEvent->currentCoords.x - MAP_OFFSET, objectEvent->currentCoords.y - MAP_OFFSET,
+                    objectEvent->movementType);
+    if (!MovementActionFuncIsValid(objectEvent, sprite))
+    {
+        objectEvent->movementActionId = MOVEMENT_ACTION_NONE;
+        sprite->sActionFuncId = 0;
+        return TRUE;
+    }
     if (gMovementActionFuncs[objectEvent->movementActionId][sprite->sActionFuncId](objectEvent, sprite))
     {
         objectEvent->movementActionId = MOVEMENT_ACTION_NONE;

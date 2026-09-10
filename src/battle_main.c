@@ -2191,6 +2191,11 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
     bool32 noMoveSet = TRUE;
     u32 j;
     u16 assignedMoves[MAX_MON_MOVES];
+    // Emporium challengers are authored end to end and their ace's moveset
+    // carries the chosen reward's mechanic, so the New Game+ move upgrade pass
+    // is skipped for them - matching the isNGPlus guard in
+    // CreateNPCTrainerPartyFromTrainer.
+    bool32 applyNewGamePlusMoves = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive;
 
     for (j = 0; j < MAX_MON_MOVES; ++j)
     {
@@ -2202,14 +2207,14 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
     if (noMoveSet)
     {
         // TODO: Figure out a default strategy when moves are not set, to generate a good moveset
-        if (gSaveBlock2Ptr->newGamePlus > 0)
+        if (applyNewGamePlusMoves)
             AssignNewGamePlusGeneratedMoves(mon);
         else
             GiveMonInitialMoveset(mon);
         return;
     }
 
-    if (gSaveBlock2Ptr->newGamePlus > 0)
+    if (applyNewGamePlusMoves)
         AssignNewGamePlusTrainerPokemonMoves(mon, assignedMoves);
 
     SetMonMovesWithPP(mon, assignedMoves);
@@ -2801,6 +2806,22 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
 
     DoTrainerPartyPool(trainer, monIndices, monsCount, gBattleTypeFlags);
 
+    if (gEmporiumBattleActive)
+    {
+        DebugPrintf("emporium party: count=%d poolSize=%d level=%d", monsCount, trainer->poolSize, GetEmporiumBattleLevel());
+        for (i = 0; i < monsCount; i++)
+        {
+            if (monIndices[i] >= trainer->poolSize)
+            {
+                errorf("emporium pool index %d >= poolSize %d", monIndices[i], trainer->poolSize);
+                continue;
+            }
+            DebugPrintf("emporium party: slot=%d index=%d species=%d item=%d tags=%x",
+                        i, monIndices[i], partyData[monIndices[i]].species,
+                        partyData[monIndices[i]].heldItem, partyData[monIndices[i]].tags);
+        }
+    }
+
     if (isNGPlus)
     {
         u8 weakestFirst[PARTY_SIZE];
@@ -2866,7 +2887,7 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         else if (partyData[monIndex].gender == TRAINER_MON_FEMALE)
             personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(MON_FEMALE, species);
         else if (partyData[monIndex].gender == TRAINER_MON_RANDOM_GENDER)
-            personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(Random() & 1 ? MON_MALE : MON_FEMALE, species);
+            personalityValue = (personalityValue & 0xFFFFFF00) | GeneratePersonalityForGender(PickRandomMonGender(species), species);
         ModifyPersonalityForNature(&personalityValue, partyData[monIndex].nature);
         if (partyData[monIndex].isShiny)
         {
@@ -2955,7 +2976,15 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         SetMonData(&party[i], MON_DATA_FRIENDSHIP, &(partyData[monIndex].friendship));
 
         // Ball handling
-        if (partyData[monIndex].ball < POKEBALL_COUNT)
+        if (gEmporiumBattleActive && partyData[monIndex].ball == BALL_STRANGE)
+        {
+            // Emporium pool entries are hand-written C and leave .ball at 0
+            // (BALL_STRANGE, which the player cannot obtain). Give the challenger
+            // a plain Poke Ball instead of showing the Strange Ball.
+            ball = BALL_POKE;
+            SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
+        }
+        else if (partyData[monIndex].ball < POKEBALL_COUNT)
         {
             ball = partyData[monIndex].ball;
             SetMonData(&party[i], MON_DATA_POKEBALL, &ball);

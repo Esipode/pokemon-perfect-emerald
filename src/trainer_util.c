@@ -41,6 +41,24 @@ static void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct Trai
     }
 }
 
+// The random-gender roll must not ask for a gender the species cannot have:
+// GeneratePersonalityForGender asserts on an impossible pair, which is a crash
+// screen in a debug build. Gender-locked and genderless species have exactly one
+// legal answer, so return it instead of flipping a coin.
+u32 PickRandomMonGender(u32 species)
+{
+    u32 genderRatio = gSpeciesInfo[species].genderRatio;
+
+    switch (genderRatio)
+    {
+    case MON_MALE:
+    case MON_FEMALE:
+    case MON_GENDERLESS:
+        return genderRatio;
+    }
+    return (Random() & 1) ? MON_MALE : MON_FEMALE;
+}
+
 u32 GeneratePersonalityForGender(u32 gender, u32 species)
 {
     const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];

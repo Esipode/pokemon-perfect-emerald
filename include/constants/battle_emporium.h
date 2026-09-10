@@ -17,6 +17,16 @@ enum EmporiumId
     EMPORIUM_COUNT,
 };
 
+// VAR_EMPORIUM_RESULT: how the last back-room battle ended. Set by the battle
+// room as the player leaves, read by the lobby ON_FRAME script to run the reward
+// payout or the recovery scene, then cleared back to EMPORIUM_RESULT_NONE.
+enum EmporiumResult
+{
+    EMPORIUM_RESULT_NONE,
+    EMPORIUM_RESULT_WON,
+    EMPORIUM_RESULT_LOST,
+};
+
 #define EMPORIUM_PARTY_SIZE_ZMOVE   4
 #define EMPORIUM_PARTY_SIZE_MEGA    5
 #define EMPORIUM_PARTY_SIZE_TERA    6
