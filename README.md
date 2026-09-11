@@ -2,12 +2,14 @@
 - All Pokémon from Gen 1 to Gen 9 obtainable
 - Evolution-Methods/Moves/Abilities/Types from Gen 1 to Gen 9 added
 - Physical/Special/Status move categories added
-- Gen 6+ XP (All Pokémon in party receive XP)
+- Gen 6+ XP - All Pokémon in party receive XP (Can be toggled off in settings)
 - New starter selection screen featuring all Gen 1 to Gen 9 starter Pokémon
 - Day/Night cycle system with time-based wild Pokémon encounters
-- Mega Evolution, Z Moves, and Terastalization features (unlock at various points as you progress)
+- Mega Evolution, Z Moves, and Terastalization features
+	- Unlocked as you progress through the story
+	- Items are earned through a new activity called "Battle Emporiums"
 - Achievements & Boosts
-	- Player can earn achievements by completing certain tasks (Total: 215 Achievements)
+	- Player can earn achievements by completing certain tasks (Total: 250 Achievements)
 	- Achievements persist across all playthroughs (Even if you start a new game)
 	- Once the first playthrough is completed (Elite 4 defeated), the player can spend points earned from achievements on "boosts". These are bonuses/tweaks than can be used on any subsequent playthroughs.
 - Difficulty Settings (Easy/Normal/Hard)
@@ -87,6 +89,9 @@
 	- Available from pause menu after receiving Pokédex
 	- Allows target-farming specific Pokémon on a route for specific moves/abilities
 	- Increases shiny encounter chance as chain increases (Max chain = 250)
+- In-Battle HP Display Customization
+	- The player can independently set how your team and your opponent's team HP is displayed in battle
+	- Options include: `Bar + Number` (Default), `Bar + %`, `Only Bar`, `Only %`, `only Number`, or `Hidden`
 - Add critical capture chance when throwing Pokéball
 - Add second item register slot (one for button push, and one for button hold)
 
@@ -98,6 +103,7 @@
 - Quick Pokéball selection in wild battles
 	- Hold `R` to change selection with the D-Pad.
 	- Press `R` to use last selected Poké Ball.
+- Added `Battle Speed` setting, the player can make battles progress up to 5x faster
 - Combined `Acro` and `Mach` Bikes together
 - When the bag is full, items you pick up go straight to your PC
 - Sort items in your bag by pressing `START` and selecting a sort type
