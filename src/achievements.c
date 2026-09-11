@@ -3573,61 +3573,50 @@ static bool8 Achievement_IsCountedLegendary(enum Species species)
         || gSpeciesInfo[species].isMythical;
 }
 
-// TRUE if any member of the evolution family rooted at `root` already has its
-// caught Pokedex flag set. The legendary-family count records a family once,
-// so a catch whose family is already caught must not increment it again.
-// Reuses Achievement_GetFamilyMembers for branching/regional-variant families.
-static bool8 Achievement_LegendaryFamilyAlreadyCaught(enum Species root)
-{
-    enum Species members[ACHIEVEMENT_MAX_FAMILY_MEMBERS];
-    u8 count = Achievement_GetFamilyMembers(root, members);
-    u8 i;
+// The legendary families themselves, built at build time by tools/misc/
+// make_legendary_family_table.py from the same species data
+// Achievement_IsCountedLegendary reads: every family whose base form is a
+// designated legendary, each family's members followed by a SPECIES_NONE
+// terminator. Walking these ~90 entries replaces a walk of all NUM_SPECIES
+// that called GetSpeciesPreEvolution (a full-table scan of its own) per
+// species -- long enough to freeze the overworld on a map load, and it
+// tripped SanitizeSpeciesId's assert on every config-disabled species.
+#include "data/pokemon/legendary_families.h"
 
-    for (i = 0; i < count; i++)
-    {
-        if (GetSetPokedexFlagBySpecies(members[i], FLAG_GET_CAUGHT))
-            return TRUE;
-    }
-
-    return FALSE;
-}
-
-// Total distinct evolution families whose root is a counted legendary
-// (Achievement_IsCountedLegendary), or -- with mythicalOnly -- a mythical.
-// One family = one entry: iteration is restricted to base-form roots
-// (species == GET_BASE_SPECIES_ID and no pre-evolution), so alternate forms
-// and evolved members never add a second count and no de-duplication buffer
-// is needed. Obtainability in the current game is deliberately ignored --
-// the legendary encounter set is being revamped on another branch; this is
-// the count of designated legendary/mythical families in the species data.
-// With caughtOnly, restricts the count to families that already have a caught
-// member (Achievement_LegendaryFamilyAlreadyCaught) -- the running total for
-// the category Z entries and the one-shot backfill.
+// Total legendary families in sLegendaryFamilies, or -- with mythicalOnly --
+// only the mythical ones. With caughtOnly, only families that already have a
+// caught member; a family is recorded once however many members are caught.
+// A family whose species are all disabled by config counts as nothing.
 static u32 Achievement_CountLegendaryFamilies(bool8 mythicalOnly, bool8 caughtOnly)
 {
-    enum Species species;
     u32 count = 0;
+    u32 i = 0;
 
-    for (species = SPECIES_BULBASAUR; species < NUM_SPECIES; species++)
+    while (i < ARRAY_COUNT(sLegendaryFamilies))
     {
-        if (species != GET_BASE_SPECIES_ID(species))
-            continue;
-        if (Achievement_GetEvolutionRoot(species) != species)
-            continue;
+        // The first enabled member classifies the family -- normally its base
+        // form, which is what carries the family's mythical/legendary flags.
+        enum Species classifier = SPECIES_NONE;
+        bool8 anyCaught = FALSE;
 
-        if (mythicalOnly)
+        for (; i < ARRAY_COUNT(sLegendaryFamilies) && sLegendaryFamilies[i] != SPECIES_NONE; i++)
         {
-            if (gSpeciesInfo[species].isUltraBeast || gSpeciesInfo[species].isParadox)
-                continue;
-            if (!gSpeciesInfo[species].isMythical)
-                continue;
-        }
-        else if (!Achievement_IsCountedLegendary(species))
-        {
-            continue;
-        }
+            enum Species member = sLegendaryFamilies[i];
 
-        if (caughtOnly && !Achievement_LegendaryFamilyAlreadyCaught(species))
+            if (!IsSpeciesEnabled(member))
+                continue;
+            if (classifier == SPECIES_NONE)
+                classifier = member;
+            if (!anyCaught && GetSetPokedexFlagBySpecies(member, FLAG_GET_CAUGHT))
+                anyCaught = TRUE;
+        }
+        i++; // step over the family's terminator
+
+        if (classifier == SPECIES_NONE)
+            continue;
+        if (mythicalOnly && !gSpeciesInfo[classifier].isMythical)
+            continue;
+        if (caughtOnly && !anyCaught)
             continue;
 
         count++;
@@ -3637,9 +3626,9 @@ static u32 Achievement_CountLegendaryFamilies(bool8 mythicalOnly, bool8 caughtOn
 }
 
 // Targets for the two Diamond entries (14 Mythical Menagerie, 15 Legend of
-// Legends): the full count of designated families in the species data, not an
-// obtainability-filtered set. The species table is fixed at build time, so each
-// total is walked once and memoized; every later call is a plain load.
+// Legends): the full count of designated families, not an obtainability-
+// filtered set. sLegendaryFamilies is fixed at build time, so each total is
+// walked once and memoized; every later call is a plain load.
 static u32 Achievement_CountDesignatedLegendaryFamilies(void)
 {
     static u32 sCached = 0;
@@ -3685,25 +3674,48 @@ void Achievement_CheckFamilyMilestone(enum Species species)
     Achievement_TryComplete(ACHIEVEMENT_COLLECT_FAMILY_REUNION);
 }
 
-// TRUE if `justCaught` is the first caught member of its evolution family --
-// i.e. no other family member (a member with a different National Dex number,
-// so alternate forms of the just-caught species don't count as "other") has
-// its caught flag set. Used to keep legendaryFamiliesCaught counting each
-// family exactly once as members are caught.
+// TRUE if `justCaught` is the first caught member of its legendary family --
+// i.e. no other member of its run in sLegendaryFamilies (a member with a
+// different National Dex number, so alternate forms of the just-caught
+// species don't count as "other") has its caught flag set. Keeps
+// legendaryFamiliesCaught counting each family exactly once as members are
+// caught. A species with no family in the table is its own family, so it
+// reads as newly caught.
 static bool8 Achievement_LegendaryFamilyNewlyCaught(enum Species justCaught)
 {
-    enum Species members[ACHIEVEMENT_MAX_FAMILY_MEMBERS];
-    enum Species root = Achievement_GetEvolutionRoot(justCaught);
-    u8 count = Achievement_GetFamilyMembers(root, members);
     enum NationalDexOrder selfDex = SpeciesToNationalPokedexNum(justCaught);
-    u8 i;
+    u32 start = 0;
+    u32 i, j;
 
-    for (i = 0; i < count; i++)
+    for (i = 0; i < ARRAY_COUNT(sLegendaryFamilies); i++)
     {
-        if (SpeciesToNationalPokedexNum(members[i]) == selfDex)
+        bool8 isOwnFamily = FALSE;
+
+        if (sLegendaryFamilies[i] != SPECIES_NONE)
             continue;
-        if (GetSetPokedexFlagBySpecies(members[i], FLAG_GET_CAUGHT))
-            return FALSE;
+
+        // sLegendaryFamilies[start .. i) is one family.
+        for (j = start; j < i && !isOwnFamily; j++)
+        {
+            if (IsSpeciesEnabled(sLegendaryFamilies[j])
+             && SpeciesToNationalPokedexNum(sLegendaryFamilies[j]) == selfDex)
+                isOwnFamily = TRUE;
+        }
+
+        if (isOwnFamily)
+        {
+            for (j = start; j < i; j++)
+            {
+                if (!IsSpeciesEnabled(sLegendaryFamilies[j])
+                 || SpeciesToNationalPokedexNum(sLegendaryFamilies[j]) == selfDex)
+                    continue;
+                if (GetSetPokedexFlagBySpecies(sLegendaryFamilies[j], FLAG_GET_CAUGHT))
+                    return FALSE;
+            }
+            return TRUE;
+        }
+
+        start = i + 1;
     }
 
     return TRUE;
@@ -3733,9 +3745,9 @@ static void Achievement_EvaluateLegendaryMilestones(u32 familiesCaught, u32 myth
         Achievement_TryComplete(ACHIEVEMENT_LEGENDARY_LEGEND_OF_LEGENDS);
 }
 
-// One-shot recompute for saves made before this feature: walks the species
-// data and sets legendaryFamiliesCaught from the caught Pokedex flags that
-// already exist, guarded by legendaryCountBackfilled so it runs exactly once.
+// One-shot recompute for saves made before this feature: walks
+// sLegendaryFamilies and sets legendaryFamiliesCaught from the caught Pokedex
+// flags that already exist, guarded by legendaryCountBackfilled so it runs exactly once.
 // Called from Achievement_CheckLegendaryMilestones and from LoadCurrentMapData
 // (src/overworld.c), so a save that never catches another legendary still
 // gets backfilled on the next map load.

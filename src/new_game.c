@@ -191,7 +191,7 @@ void ResetMenuAndMonGlobals(void)
 // Codes.md Stage 11 -- struct BoxPokemon's own legacyCarryOverLocked bit, include/
 // pokemon.h) so IsBoxMonWithdrawLocked (src/pokemon_storage_system.c) keeps it out of
 // reach until the player beats the league again. Must run before InitPlayerTrainerId() --
-// the boxed party needs to keep its old OT ID for the discardRandomizedMons comparisons
+// the boxed party needs to keep its old OT ID for the discardRunLocalMons comparisons
 // below, which still key off it. Only called when keepStorage is set.
 static void CarryStorageIntoNewGame(void)
 {
@@ -206,7 +206,10 @@ static void CarryStorageIntoNewGame(void)
     // CreateMon -- under that flag this run is just a randomized species tied to this
     // run's OT id, so it gets discarded below instead of carried into the next one. Must
     // be read here, before ClearSav1() wipes the flag later in NewGameInitData().
-    bool32 discardRandomizedMons = FlagGet(FLAG_RANDOMIZE_MON);
+    // FLAG_DEBUG hands the player the Debug Menu, which can conjure any Pokémon with any
+    // stats at all, so anything obtained during a debug run is discarded on restart for
+    // the same reason a randomized species is -- it is an artifact of this run only.
+    bool32 discardRunLocalMons = FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_DEBUG);
 
     // Pass 1 -- move the party into the first free storage slots. Copied verbatim; Pass 2
     // below (which runs over the whole of storage, so it naturally covers these too) is
@@ -217,7 +220,7 @@ static void CarryStorageIntoNewGame(void)
         enum Item heldItem;
         bool32 placed = FALSE;
 
-        if (discardRandomizedMons)
+        if (discardRunLocalMons)
         {
             u32 otId = GetMonData(mon, MON_DATA_OT_ID);
             if (otId == outgoingOtId || IsIngameTradeOtId(otId))
@@ -261,7 +264,7 @@ static void CarryStorageIntoNewGame(void)
 
     // Pass 2 -- lock every mon that survives into the new run's storage (Trading Codes.md
     // Stage 11), or (Part 3e) discard any already-boxed Pokémon this run caught or traded
-    // for while FLAG_RANDOMIZE_MON was on. Running this after pass 1 means a mon that was
+    // for while FLAG_RANDOMIZE_MON or FLAG_DEBUG was on. Running this after pass 1 means a mon that was
     // sitting in the party at restart time gets locked too, with no special-casing.
     // Pokémon from an even earlier run were already locked (this bit, once set, is never
     // cleared short of FLAG_SYS_GAME_CLEAR -- see IsBoxMonWithdrawLocked, src/pokemon_
@@ -288,7 +291,7 @@ static void CarryStorageIntoNewGame(void)
                 continue;
 
             otId = GetBoxMonData(boxMon, MON_DATA_OT_ID);
-            if (discardRandomizedMons && (otId == outgoingOtId || IsIngameTradeOtId(otId)))
+            if (discardRunLocalMons && (otId == outgoingOtId || IsIngameTradeOtId(otId)))
             {
                 ZeroBoxMonData(boxMon);
                 continue;
