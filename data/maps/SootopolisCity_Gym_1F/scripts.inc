@@ -107,13 +107,6 @@ SootopolisCity_Gym_1F_EventScript_JuanDefeated::
 	call Common_EventScript_SetGymTrainers
 	call SootopolisCity_Gym_1F_EventScript_GiveWaterPulse
 	closemessage
-	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox SootopolisCity_Gym_1F_Text_RegisteredJuan, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_JUAN_MATCH_CALL
 	release
 	end
 
@@ -254,10 +247,6 @@ SootopolisCity_Gym_1F_Text_ExplainWaterPulse:
 	.string "In use, it will occasionally confuse\n"
 	.string "the target with ultrasonic waves.\p"
 	.string "… … … … … …$"
-
-SootopolisCity_Gym_1F_Text_RegisteredJuan:
-	.string "Registered GYM LEADER JUAN\n"
-	.string "in the POKéNAV.$"
 
 SootopolisCity_Gym_1F_Text_JuanPostBattle:
 	.string "The TRAINERS who have gathered all\n"

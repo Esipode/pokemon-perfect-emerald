@@ -94,15 +94,9 @@ Route104_EventScript_MayEncounter::
 	goto_if_set FLAG_DEFEATED_RIVAL_ROUTE_104, Route104_EventScript_MayDefeated
 	goto_if_set FLAG_REGISTER_RIVAL_POKENAV, Route104_EventScript_MayAskToBattle
 	setflag FLAG_REGISTER_RIVAL_POKENAV
-	msgbox Route104_Text_MayWeShouldRegister, MSGBOX_DEFAULT
+	msgbox Route104_Text_MayTradeNumbers, MSGBOX_DEFAULT
 	closemessage
 	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox Route104_Text_RegisteredMay, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_RIVAL_MATCH_CALL
 	applymovement LOCALID_PLAYER, Route104_Movement_PlayerFaceRival
 	applymovement LOCALID_ROUTE104_RIVAL, Route104_Movement_RivalWalkSlowLeft
 	msgbox Route104_Text_MayHowsYourPokedex, MSGBOX_DEFAULT
@@ -180,15 +174,9 @@ Route104_EventScript_BrendanEncounter::
 	goto_if_set FLAG_DEFEATED_RIVAL_ROUTE_104, Route104_EventScript_BrendanDefeated
 	goto_if_set FLAG_REGISTER_RIVAL_POKENAV, Route104_EventScript_BrendanAskToBattle
 	setflag FLAG_REGISTER_RIVAL_POKENAV
-	msgbox Route104_Text_BrendanWeShouldRegister, MSGBOX_DEFAULT
+	msgbox Route104_Text_BrendanTradeNumbers, MSGBOX_DEFAULT
 	closemessage
 	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox Route104_Text_RegisteredBrendan, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_RIVAL_MATCH_CALL
 	applymovement LOCALID_PLAYER, Route104_Movement_PlayerFaceRival
 	applymovement LOCALID_ROUTE104_RIVAL, Route104_Movement_RivalWalkSlowLeft
 	msgbox Route104_Text_BrendanHowsYourPokedex, MSGBOX_DEFAULT
@@ -366,12 +354,9 @@ Route104_EventScript_SailToDewfordDadCalls::
 	applymovement LOCALID_ROUTE104_BOAT, Route104_Movement_SailToDewfordBeforeDadCalls
 	applymovement LOCALID_PLAYER, Route104_Movement_SailToDewfordBeforeDadCalls
 	waitmovement 0
-	pokenavcall Route104_Text_DadPokenavCall
+	pokenavcall Route104_Text_DadPhoneCall
 	waitmessage
 	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox Route104_Text_RegisteredDadInPokenav, MSGBOX_DEFAULT
-	waitfanfare
 	closemessage
 	delay 30
 	setflag FLAG_ENABLE_NORMAN_MATCH_CALL
@@ -993,16 +978,12 @@ Route104_Text_TrainerTipsDoubleBattles:
 	.string "left of the list and the top one.\l"
 	.string "Watch how POKéMON are lined up.$"
 
-Route104_Text_MayWeShouldRegister:
+Route104_Text_MayTradeNumbers:
 	.string "MAY: Oh, hi, {PLAYER}{KUN}!\p"
-	.string "DEVON upgraded your POKéNAV with\n"
-	.string "the MATCH CALL system, huh?\p"
-	.string "We should register each other so we\n"
-	.string "can get in contact anytime.$"
-
-Route104_Text_RegisteredMay:
-	.string "{PLAYER} registered MAY\n"
-	.string "in the POKéNAV.$"
+	.string "You're carrying a phone now, huh?\n"
+	.string "So am I.\p"
+	.string "We should trade numbers so we can\n"
+	.string "get in contact anytime.$"
 
 Route104_Text_MayHowsYourPokedex:
 	.string "MAY: Oh, by the way, {PLAYER}{KUN},\n"
@@ -1039,16 +1020,12 @@ Route104_Text_MayPostBattle:
 	.string "It's important to become friends with\n"
 	.string "POKéMON, too.$"
 
-Route104_Text_BrendanWeShouldRegister:
+Route104_Text_BrendanTradeNumbers:
 	.string "BRENDAN: Oh, hey, {PLAYER}!\p"
-	.string "Cool, you had DEVON install the MATCH\n"
-	.string "CALL system on your POKéNAV!\p"
-	.string "Let's register each other in our\n"
-	.string "POKéNAVS so we can keep in touch.$"
-
-Route104_Text_RegisteredBrendan:
-	.string "{PLAYER} registered BRENDAN\n"
-	.string "in the POKéNAV.$"
+	.string "Cool, you're carrying a phone now!\n"
+	.string "So am I.\p"
+	.string "Let's trade numbers so we can keep\n"
+	.string "in touch.$"
 
 Route104_Text_BrendanHowsYourPokedex:
 	.string "BRENDAN: {PLAYER}, how's your POKéDEX?\n"

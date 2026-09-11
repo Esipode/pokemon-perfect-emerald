@@ -106,13 +106,6 @@ MauvilleCity_Gym_EventScript_WattsonDefeated::
 	playse SE_UNLOCK
 	call MauvilleCity_Gym_EventScript_GiveShockWave
 	closemessage
-	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox MauvilleCity_Gym_Text_RegisteredWattson, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_WATTSON_MATCH_CALL
 	release
 	end
 
@@ -379,10 +372,6 @@ MauvilleCity_Gym_Text_ExplainShockWave:
 	.string "It's a trustworthy move that never\n"
 	.string "misses! You can count on it!\p"
 	.string "… … … … … …$"
-
-MauvilleCity_Gym_Text_RegisteredWattson:
-	.string "Registered GYM LEADER WATTSON\n"
-	.string "in the POKéNAV.$"
 
 MauvilleCity_Gym_Text_WattsonPostBattle:
 	.string "I swell with optimism, seeing a promising\n"

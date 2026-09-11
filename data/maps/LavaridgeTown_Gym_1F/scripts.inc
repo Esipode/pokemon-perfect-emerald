@@ -72,13 +72,6 @@ LavaridgeTown_Gym_1F_EventScript_FlanneryDefeated::
 	setvar VAR_LAVARIDGE_TOWN_STATE, 1
 	call LavaridgeTown_Gym_1F_EventScript_GiveOverheat
 	closemessage
-	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox LavaridgeTown_Gym_1F_Text_RegisteredFlannery, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_FLANNERY_MATCH_CALL
 	release
 	end
 
@@ -357,10 +350,6 @@ LavaridgeTown_Gym_1F_Text_ExplainOverheat:
 	.string "But it also sharply cuts the SP. ATK\n"
 	.string "of the POKéMON using it. It might not\l"
 	.string "be suitable for longer battles.$"
-
-LavaridgeTown_Gym_1F_Text_RegisteredFlannery:
-	.string "Registered GYM LEADER FLANNERY\n"
-	.string "in the POKéNAV.$"
 
 LavaridgeTown_Gym_1F_Text_FlanneryPostBattle:
 	.string "Your power reminds me of someone…\p"

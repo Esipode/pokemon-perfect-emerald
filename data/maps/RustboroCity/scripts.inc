@@ -817,15 +817,9 @@ RustboroCity_EventScript_MayEncounter::
 	goto_if_set FLAG_DEFEATED_RIVAL_RUSTBORO, RustboroCity_EventScript_MayBrineyHint
 	goto_if_set FLAG_MET_RIVAL_RUSTBORO, RustboroCity_EventScript_MayAskToBattle
 	setflag FLAG_MET_RIVAL_RUSTBORO
-	msgbox RustboroCity_Text_MayHiLetsRegister, MSGBOX_DEFAULT
+	msgbox RustboroCity_Text_MayHiTradeNumbers, MSGBOX_DEFAULT
 	closemessage
 	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox RustboroCity_Text_RegisteredMay, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_RIVAL_MATCH_CALL
 	setvar VAR_RUSTBORO_CITY_STATE, 8
 	setvar VAR_ROUTE104_STATE, 2
 	setvar VAR_0x8008, 0
@@ -885,15 +879,9 @@ RustboroCity_EventScript_BrendanEncounter::
 	goto_if_set FLAG_DEFEATED_RIVAL_RUSTBORO, RustboroCity_EventScript_BrendanBrineyHint
 	goto_if_set FLAG_MET_RIVAL_RUSTBORO, RustboroCity_EventScript_BrendanAskToBattle
 	setflag FLAG_MET_RIVAL_RUSTBORO
-	msgbox RustboroCity_Text_BrendanHiLetsRegister, MSGBOX_DEFAULT
+	msgbox RustboroCity_Text_BrendanHiTradeNumbers, MSGBOX_DEFAULT
 	closemessage
 	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox RustboroCity_Text_RegisteredBrendan, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_RIVAL_MATCH_CALL
 	setvar VAR_RUSTBORO_CITY_STATE, 8
 	setvar VAR_ROUTE104_STATE, 2
 	msgbox RustboroCity_Text_BrendanPassedBrineyWantToBattle, MSGBOX_YESNO
@@ -1115,17 +1103,12 @@ RustboroCity_Text_PleaseComeWithMe:
 	.string "Excuse me, please!\n"
 	.string "Please come with me!$"
 
-RustboroCity_Text_MayHiLetsRegister:
+RustboroCity_Text_MayHiTradeNumbers:
 	.string "MAY: Oh, hi, {PLAYER}{KUN}!\p"
-	.string "You had a MATCH CALL feature put\n"
-	.string "on your POKéNAV!\p"
-	.string "Let's register each other so we can\n"
+	.string "You're carrying a phone now!\p"
+	.string "Let's trade numbers so we can\n"
 	.string "contact one another anytime!\p"
 	.string "… … … … … …$"
-
-RustboroCity_Text_RegisteredMay:
-	.string "Registered MAY\n"
-	.string "in the POKéNAV.$"
 
 RustboroCity_Text_MayPassedBrineyWantToBattle:
 	.string "MAY: Oh, by the way, I passed\n"
@@ -1162,17 +1145,12 @@ RustboroCity_Text_MayMrBrineyHint:
 	.string "might not know this, but MR. BRINEY\l"
 	.string "was once a revered seafarer.$"
 
-RustboroCity_Text_BrendanHiLetsRegister:
+RustboroCity_Text_BrendanHiTradeNumbers:
 	.string "BRENDAN: Oh, hey, {PLAYER}!\p"
-	.string "You had a MATCH CALL feature put\n"
-	.string "on your POKéNAV! Cool!\p"
-	.string "Let's register each other so we can\n"
-	.string "get in touch anytime!\p"
+	.string "You're carrying a phone now! Cool!\p"
+	.string "Let's trade numbers so we can get\n"
+	.string "in touch anytime!\p"
 	.string "… … … … … …$"
-
-RustboroCity_Text_RegisteredBrendan:
-	.string "Registered BRENDAN\n"
-	.string "in the POKéNAV.$"
 
 RustboroCity_Text_BrendanPassedBrineyWantToBattle:
 	.string "BRENDAN: By the way, {PLAYER}, I walked\n"

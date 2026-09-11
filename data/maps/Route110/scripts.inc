@@ -576,15 +576,7 @@ Route110_EventScript_BirchScene::
 	applymovement LOCALID_ROUTE110_BIRCH, Common_Movement_WalkInPlaceFasterDown
 	waitmovement 0
 	delay 30
-	msgbox Route110_Text_HeardYouInstallMatchCall, MSGBOX_DEFAULT
-	closemessage
-	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox Route110_Text_RegisteredBirchInPokenav, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_PROF_BIRCH_MATCH_CALL
+	msgbox Route110_Text_CallMeToRatePokedex, MSGBOX_DEFAULT
 	msgbox Route110_Text_KeepAnEyeOutForRival, MSGBOX_DEFAULT
 	closemessage
 	call_if_eq VAR_0x8008, 1, Route110_EventScript_BirchExit1
@@ -918,21 +910,16 @@ Route110_Text_ImagineSeeingYouHere:
 	.string "Imagine seeing you here!\p"
 	.string "And where might my {RIVAL} be?$"
 
-Route110_Text_HeardYouInstallMatchCall:
+Route110_Text_CallMeToRatePokedex:
 	.string "Oh, I see!\n"
 	.string "You two are running separately.\l"
 	.string "Well, that's fine.\p"
-	.string "Oh, yes, I heard that your POKéNAV\n"
-	.string "had the MATCH CALL system installed.\p"
-	.string "Well, then, I should register you in\n"
-	.string "my POKéNAV as well.\p"
+	.string "Oh, yes, I heard that you're carrying\n"
+	.string "a phone now.\p"
+	.string "Let me give you my number, then.\p"
 	.string "That way, even when we're apart,\n"
 	.string "I can rate your POKéDEX anytime.\p"
 	.string "… … … … … …$"
-
-Route110_Text_RegisteredBirchInPokenav:
-	.string "Registered PROF. BIRCH\n"
-	.string "in the POKéNAV.$"
 
 Route110_Text_KeepAnEyeOutForRival:
 	.string "PROF. BIRCH: {PLAYER}{KUN}…\p"

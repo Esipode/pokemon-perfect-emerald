@@ -2306,35 +2306,6 @@ MatchCall_Text_Wallace::
 	.string "But what is a rare stone exactly?\n"
 	.string "All I can think of is a METEORITE…$"
 
-MatchCall_Text_MayRayquazaCall:
-	.string "… … … … … …\n"
-	.string "… … … … … Beep!\p"
-	.string "MAY: Hi, {PLAYER}{KUN}!\p"
-	.string "I was just in PACIFIDLOG a little\n"
-	.string "while ago.\p"
-	.string "I saw a giant green POKéMON\n"
-	.string "flying high in the sky.\p"
-	.string "I…\n"
-	.string "I've never seen anything like it.\p"
-	.string "I wonder what it was.\n"
-	.string "Is this maybe a major discovery?\p"
-	.string "… … … … … …\n"
-	.string "… … … … … Click!$"
-
-MatchCall_Text_BrendanRayquazaCall:
-	.string "… … … … … …\n"
-	.string "… … … … … Beep!\p"
-	.string "BRENDAN: Hey, {PLAYER}!\n"
-	.string "I was in PACIFIDLOG just now.\p"
-	.string "I saw this huge green POKéMON\n"
-	.string "flying across the sky.\p"
-	.string "I've never seen anything that\n"
-	.string "amazing before.\p"
-	.string "I wish you could've seen it,\n"
-	.string "{PLAYER}.\p"
-	.string "… … … … … …\n"
-	.string "… … … … … Click!$"
-
 MatchCall_Text_May1::
 	.string "MAY: Hi, {PLAYER}{KUN}!\p"
 	.string "MR. BRINEY retired as a SAILOR,\n"

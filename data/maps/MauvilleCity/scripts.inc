@@ -444,17 +444,13 @@ MauvilleCity_EventScript_ReceivedThunderbolt::
 	release
 	end
 
-MauvilleCity_EventScript_RegisterWallyCall::
+MauvilleCity_EventScript_WallyCall::
 	lockall
-	pokenavcall MauvilleCity_Text_WallyPokenavCall
+	pokenavcall MauvilleCity_Text_WallyPhoneCall
 	waitmessage
 	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox MauvilleCity_Text_RegisteredWally, MSGBOX_DEFAULT
-	waitfanfare
 	closemessage
 	delay 30
-	setflag FLAG_ENABLE_WALLY_MATCH_CALL
 	clearflag FLAG_ENABLE_FIRST_WALLY_POKENAV_CALL
 	releaseall
 	end
@@ -545,20 +541,16 @@ MauvilleCity_Text_UncleVisitUsSometime:
 	.string "I'm sure WALLY would enjoy it.$"
 
 
-MauvilleCity_Text_WallyPokenavCall:
+MauvilleCity_Text_WallyPhoneCall:
 	.string "… … … … … …\n"
 	.string "… … … … … Beep!\p"
 	.string "WALLY: Oh, hello, {PLAYER}!\p"
 	.string "I just wanted to tell you that\n"
-	.string "my uncle bought me a POKéNAV!\p"
+	.string "my uncle bought me a phone!\p"
 	.string "Now I can get in touch with you\n"
 	.string "anytime, {PLAYER}!\p"
 	.string "… … … … … …\n"
 	.string "… … … … … Click!$"
-
-MauvilleCity_Text_RegisteredWally:
-	.string "Registered WALLY\n"
-	.string "in the POKéNAV.$"
 
 MauvilleCity_Text_ScottYouDidntHoldBack:
 	.string "SCOTT: Hehe…\n"

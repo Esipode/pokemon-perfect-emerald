@@ -64,15 +64,7 @@ SlateportCity_EventScript_ScottScene::
 	msgbox SlateportCity_Text_MaybeThisTrainer, MSGBOX_DEFAULT
 	applymovement LOCALID_SLATEPORT_SCOTT, Common_Movement_WalkInPlaceFasterRight
 	waitmovement 0
-	msgbox SlateportCity_Text_LetsRegisterEachOther, MSGBOX_DEFAULT
-	closemessage
-	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox SlateportCity_Text_RegisteredScott, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_SCOTT_MATCH_CALL
+	msgbox SlateportCity_Text_LetsTradeNumbers, MSGBOX_DEFAULT
 	msgbox SlateportCity_Text_KeepEyeOnTrainersBeSeeingYou, MSGBOX_DEFAULT
 	closemessage
 	applymovement LOCALID_SLATEPORT_SCOTT, SlateportCity_Movement_ScottExit
@@ -1318,16 +1310,11 @@ SlateportCity_Text_MaybeThisTrainer:
 	.string "SCOTT: Hmm…\n"
 	.string "Maybe, just maybe, this TRAINER…$"
 
-SlateportCity_Text_LetsRegisterEachOther:
+SlateportCity_Text_LetsTradeNumbers:
 	.string "SCOTT: All right! I think you're going\n"
 	.string "to become a good friend.\p"
-	.string "So, let's register each other in our\n"
-	.string "POKéNAVS.\p"
+	.string "So, let's trade phone numbers.\p"
 	.string "… … … … … …$"
-
-SlateportCity_Text_RegisteredScott:
-	.string "Registered this SCOTT person\n"
-	.string "in the POKéNAV.$"
 
 SlateportCity_Text_KeepEyeOnTrainersBeSeeingYou:
 	.string "SCOTT: What I'd like to do is tag along\n"

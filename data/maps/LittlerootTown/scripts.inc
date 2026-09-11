@@ -899,6 +899,7 @@ LittlerootTown_EventScript_GiveRunningShoes::
 	waitfanfare
 	setflag FLAG_RECEIVED_RUNNING_SHOES
 	msgbox LittlerootTown_Text_ExplainRunningShoes, MSGBOX_DEFAULT
+	msgbox LittlerootTown_Text_TakeThisPhoneToo, MSGBOX_DEFAULT
 	msgbox LittlerootTown_Text_ComeHomeIfAnythingHappens, MSGBOX_DEFAULT
 	closemessage
 	delay 30
@@ -941,6 +942,14 @@ LittlerootTown_Text_ExplainRunningShoes:
 	.string "RUNNING SHOES to run extra-fast!\p"
 	.string "“Slip on these RUNNING SHOES and race\n"
 	.string "in the great outdoors!”$"
+
+LittlerootTown_Text_TakeThisPhoneToo:
+	.string "MOM: Oh, and take this, too.\p"
+	.string "It's a phone. Your father and\n"
+	.string "I each have one now.\p"
+	.string "Anyone who gives you their number\n"
+	.string "can call you wherever you are.\p"
+	.string "Keep it with you, honey!$"
 
 LittlerootTown_Text_ComeHomeIfAnythingHappens:
 	.string "… … … … … … … …\n"

@@ -93,13 +93,6 @@ MossdeepCity_Gym_EventScript_TateAndLizaDefeated::
 	setvar VAR_MOSSDEEP_SPACE_CENTER_STATE, 1
 	call MossdeepCity_Gym_EventScript_GiveCalmMind
 	closemessage
-	delay 30
-	playfanfare MUS_REGISTER_MATCH_CALL
-	msgbox MossdeepCity_Gym_Text_RegisteredTateAndLiza, MSGBOX_DEFAULT
-	waitfanfare
-	closemessage
-	delay 30
-	setflag FLAG_ENABLE_TATE_AND_LIZA_MATCH_CALL
 	release
 	end
 
@@ -612,10 +605,6 @@ MossdeepCity_Gym_Text_ExplainCalmMind:
 	.string "TATE: It's a move that's perfect…\n"
 	.string "LIZA: For PSYCHIC POKéMON!\p"
 	.string "… … … … … …$"
-
-MossdeepCity_Gym_Text_RegisteredTateAndLiza:
-	.string "Registered GYM LEADERS TATE & LIZA\n"
-	.string "in the POKéNAV.$"
 
 MossdeepCity_Gym_Text_TateAndLizaPostBattle:
 	.string "TATE: Looks like the bond between you\n"
