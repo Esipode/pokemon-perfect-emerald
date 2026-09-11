@@ -1,3 +1,24 @@
+@ Called from both players' bedroom maps' ON_TRANSITION scripts, after the
+@ gender check that establishes this map is the player's own room. VAR_TEMP_1
+@ drives the ON_FRAME_TABLE entry that shows the message, which is how the
+@ player is told about boosts when they wake up after the Hall of Fame credits.
+PlayersHouse_2F_EventScript_QueueBoostsUnlockNotice::
+	specialvar VAR_TEMP_1, GetBoostsUnlockNoticePending
+	return
+
+@ The notice is cleared before the message is shown, so a reset mid-message
+@ can't queue it a second time.
+PlayersHouse_2F_EventScript_BoostsUnlockedNotice::
+	lockall
+	setvar VAR_TEMP_1, 0
+	special ClearBoostsUnlockNotice
+	playfanfare MUS_OBTAIN_SYMBOL
+	msgbox PlayersHouse_2F_Text_AchievementBoostsUnlocked, MSGBOX_DEFAULT
+	waitfanfare
+	closemessage
+	releaseall
+	end
+
 PlayersHouse_2F_EventScript_BlockStairsUntilClockIsSet::
 	setvar VAR_LITTLEROOT_INTRO_STATE, 5
 	return

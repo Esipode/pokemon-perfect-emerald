@@ -605,3 +605,5 @@ gSpecials::
 	def_special EmporiumShowChallenger
 	def_special EmporiumBufferRewardItem
 	def_special EmporiumBufferChallengerIntro
+	def_special GetBoostsUnlockNoticePending
+	def_special ClearBoostsUnlockNotice

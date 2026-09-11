@@ -519,7 +519,15 @@ bool8 Achievement_TryComplete(u16 achievementId)
 // change, not a hot path.
 void Achievement_OnFirstPlaythroughComplete(void)
 {
-    gAchievementProfile.boostsUnlocked = TRUE;
+    // Only the very first unlock on this profile queues the announcement
+    // message -- this function also runs on a fresh save's first clear and on
+    // every NG+ cycle's clear, where boosts are already unlocked and the
+    // player has already been told about them.
+    if (!gAchievementProfile.boostsUnlocked)
+    {
+        gAchievementProfile.boostsUnlocked = TRUE;
+        gAchievementProfile.boostsUnlockNoticePending = TRUE;
+    }
 
     // This function runs on every Hall of Fame clear,
     // including every NG+ cycle's clear (see the call site's comment in
@@ -736,6 +744,20 @@ u32 Achievement_GetAvailablePoints(void)
 bool8 Achievement_BoostsUnlocked(void)
 {
     return gAchievementProfile.boostsUnlocked;
+}
+
+// Script specials for the post-credits bedroom message
+// (data/scripts/players_house.inc).
+u16 GetBoostsUnlockNoticePending(void)
+{
+    return gAchievementProfile.boostsUnlockNoticePending;
+}
+
+void ClearBoostsUnlockNotice(void)
+{
+    gAchievementProfile.boostsUnlockNoticePending = FALSE;
+    sAchievementProfileDirty = TRUE;
+    Achievement_FlushProfile();
 }
 
 bool8 Achievement_BoostsEnabled(void)

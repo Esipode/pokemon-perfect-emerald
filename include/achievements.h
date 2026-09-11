@@ -181,7 +181,13 @@ struct AchievementProfile
     u16 shopPurchasesLifetime;    // First Purchase / Regular Customer
     u32 moneySpentLifetime;       // Big Spender / Whale
 
-    u8  reserved[8];              // forward compatibility (was 11)
+    // Set once, the first time boosts are ever unlocked on this profile, and
+    // cleared when the bedroom message announcing them is shown (see
+    // GetBoostsUnlockNoticePending/ClearBoostsUnlockNotice below). Same
+    // "front of reserved[]" precedent as every field above.
+    bool8 boostsUnlockNoticePending;
+
+    u8  reserved[7];              // forward compatibility (was 11, then 8)
 };
 
 extern struct AchievementProfile gAchievementProfile;
@@ -224,6 +230,15 @@ u32   Achievement_GetTotalPoints(void);
 u32   Achievement_GetAvailablePoints(void);
 
 bool8 Achievement_BoostsUnlocked(void);
+
+// Script specials for the post-Hall of Fame bedroom message that announces
+// the boost unlock. GetBoostsUnlockNoticePending returns TRUE only between
+// the very first boost unlock on this profile
+// (Achievement_OnFirstPlaythroughComplete) and the message being shown, so
+// the message appears once per profile rather than once per playthrough.
+// ClearBoostsUnlockNotice clears it and flushes immediately.
+u16   GetBoostsUnlockNoticePending(void);
+void  ClearBoostsUnlockNotice(void);
 bool8 Achievement_BoostsEnabled(void);
 void  Achievement_SetBoostsEnabled(bool8 enabled);
 

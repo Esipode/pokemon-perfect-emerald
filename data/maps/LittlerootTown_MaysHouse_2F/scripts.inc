@@ -1,13 +1,23 @@
 LittlerootTown_MaysHouse_2F_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, LittlerootTown_MaysHouse_2F_OnTransition
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, LittlerootTown_MaysHouse_2F_OnWarp
+	map_script MAP_SCRIPT_ON_FRAME_TABLE, LittlerootTown_MaysHouse_2F_OnFrame
 	.byte 0
 
 LittlerootTown_MaysHouse_2F_OnTransition:
 	call_if_lt VAR_LITTLEROOT_RIVAL_STATE, 2, LittlerootTown_MaysHouse_2F_EventScript_CheckSetReadyToMeetMay
 	call_if_ge VAR_LITTLEROOT_RIVAL_STATE, 3, LittlerootTown_MaysHouse_2F_EventScript_CheckShouldUpdateMayPos
 	call_if_eq VAR_LITTLEROOT_INTRO_STATE, 4, PlayersHouse_2F_EventScript_BlockStairsUntilClockIsSet
+	call LittlerootTown_MaysHouse_2F_EventScript_CheckBoostsUnlockNotice
 	end
+
+@ This map is only the player's own bedroom for a female player; for the
+@ other gender it's the rival's bedroom, so the post-credits boost
+@ unlock message must not fire here.
+LittlerootTown_MaysHouse_2F_EventScript_CheckBoostsUnlockNotice::
+	checkplayergender
+	goto_if_eq VAR_RESULT, FEMALE, PlayersHouse_2F_EventScript_QueueBoostsUnlockNotice
+	return
 
 LittlerootTown_MaysHouse_2F_EventScript_CheckShouldUpdateMayPos::
 	goto_if_set FLAG_MET_RIVAL_LILYCOVE, LittlerootTown_MaysHouse_2F_EventScript_TryUpdateMayPos
@@ -35,6 +45,10 @@ LittlerootTown_MaysHouse_2F_EventScript_SetReadyToMeetMay::
 	return
 
 LittlerootTown_MaysHouse_2F_OnWarp:
+	.2byte 0
+
+LittlerootTown_MaysHouse_2F_OnFrame:
+	map_script_2 VAR_TEMP_1, 1, PlayersHouse_2F_EventScript_BoostsUnlockedNotice
 	.2byte 0
 
 LittlerootTown_MaysHouse_2F_EventScript_RivalsPokeBall::

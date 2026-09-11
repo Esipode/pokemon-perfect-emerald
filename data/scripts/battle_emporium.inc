@@ -6,11 +6,11 @@
 @ and the redirect (gEmporiumBattleActive) is armed by EmporiumRollChallenger.
 @
 @ All three lobbies share the same geometry: instructor object is local id 1 at
-@ (6,4), approached from the south; the north door to the battle room is warp 2 at
-@ (6,1). All three battle rooms: challenger object is local id 1 at (11,2); the
+@ (7,10), approached from the south; the north door to the battle room is warp 2 at
+@ (7,4). All three battle rooms: challenger object is local id 1 at (11,2); the
 @ exit door back to the lobby is warp 0 at (2,8). The movement templates below
-@ assume that layout, and assume the (6,1) lobby tile has a door metatile
-@ behaviour so the warp-exit step drops the returning player on (6,2).
+@ assume that layout, and assume the (7,4) lobby tile has a door metatile
+@ behaviour so the warp-exit step drops the returning player on (7,5).
 
 .set LOCALID_EMPORIUM_INSTRUCTOR, 1
 
@@ -51,6 +51,12 @@ Emporium_EventScript_OpenMenu::
 Emporium_EventScript_WalkPlayerToChallengerRoom:
 	applymovement OBJ_EVENT_ID_PLAYER, Emporium_Movement_PlayerToBattleRoom
 	waitmovement 0
+	opendoor 7, 4
+	waitdooranim
+	applymovement OBJ_EVENT_ID_PLAYER, Emporium_Movement_PlayerEnterDoor
+	waitmovement 0
+	closedoor 7, 4
+	waitdooranim
 	switch VAR_EMPORIUM_ID
 	case EMPORIUM_ZMOVE, Emporium_EventScript_WarpZMoveRoom
 	case EMPORIUM_MEGA, Emporium_EventScript_WarpMegaRoom
@@ -180,6 +186,8 @@ Emporium_Movement_InstructorStepAside:
 	face_left
 	step_end
 
+@ Stops on (7,5), the tile below the door, so the door animation can play before
+@ Emporium_Movement_PlayerEnterDoor steps through it.
 Emporium_Movement_PlayerToBattleRoom:
 	walk_up
 	walk_up
@@ -187,7 +195,11 @@ Emporium_Movement_PlayerToBattleRoom:
 	walk_up
 	walk_up
 	walk_up
+	step_end
+
+Emporium_Movement_PlayerEnterDoor:
 	walk_up
+	set_invisible
 	step_end
 
 Emporium_Movement_ChallengerEnterArena:
