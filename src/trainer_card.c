@@ -27,6 +27,7 @@
 #include "trainer_pokemon_sprites.h"
 #include "contest_util.h"
 #include "decompress.h"
+#include "achievements.h"
 #include "constants/songs.h"
 #include "constants/game_stat.h"
 #include "constants/battle_frontier.h"
@@ -113,6 +114,7 @@ static bool8 LoadCardGfx(void);
 static void CB2_InitTrainerCard(void);
 static u32 GetCappedGameStat(u8 statId, u32 maxValue);
 static bool8 HasAllFrontierSymbols(void);
+static u8 GetAchievementTrainerStars(void);
 static u8 GetRubyTrainerStars(struct TrainerCard *);
 static u16 GetCaughtMonsCount(void);
 static void SetPlayerCardData(struct TrainerCard *, u8);
@@ -656,20 +658,26 @@ static bool8 HasAllFrontierSymbols(void)
     return TRUE;
 }
 
+static u8 GetAchievementTrainerStars(void)
+{
+    u32 completed = Achievement_GetCompletedCount();
+
+    if (completed >= ACHIEVEMENTS_COUNT - 1)
+        return 5;
+    if (completed >= TRAINER_CARD_STARS_GOLD)
+        return 4;
+    if (completed >= TRAINER_CARD_STARS_SILVER)
+        return 3;
+    if (completed >= TRAINER_CARD_STARS_COPPER)
+        return 2;
+    if (completed >= TRAINER_CARD_STARS_BRONZE)
+        return 1;
+    return 0;
+}
+
 u32 CountPlayerTrainerStars(void)
 {
-    u8 stars = 0;
-
-    if (GetGameStat(GAME_STAT_ENTERED_HOF))
-        stars++;
-    if (HasAllRegionalMons())
-        stars++;
-    if (CountPlayerMuseumPaintings() >= CONTEST_CATEGORIES_COUNT)
-        stars++;
-    if (HasAllFrontierSymbols())
-        stars++;
-
-    return stars;
+    return GetAchievementTrainerStars();
 }
 
 static u8 GetRubyTrainerStars(struct TrainerCard *trainerCard)
@@ -756,6 +764,9 @@ static void SetPlayerCardData(struct TrainerCard *trainerCard, u8 cardType)
         trainerCard->stars = 0;
         break;
     }
+
+    if (cardType == CARD_TYPE_EMERALD)
+        trainerCard->stars = GetAchievementTrainerStars();
 }
 
 static void TrainerCard_GenerateCardForPlayer(struct TrainerCard *trainerCard)
@@ -769,8 +780,6 @@ static void TrainerCard_GenerateCardForPlayer(struct TrainerCard *trainerCard)
 #else
     trainerCard->frontierBP = 0;
 #endif //FREE_BATTLE_FRONTIER
-    if (trainerCard->hasAllFrontierSymbols)
-        trainerCard->stars++;
 }
 
 void TrainerCard_GenerateCardForLinkPlayer(struct TrainerCard *trainerCard)
@@ -784,8 +793,6 @@ void TrainerCard_GenerateCardForLinkPlayer(struct TrainerCard *trainerCard)
 #else
     *((u16 *)&trainerCard->linkPoints.frontier) = 0;
 #endif //FREE_BATTLE_FRONTIER
-    if (trainerCard->linkHasAllFrontierSymbols)
-        trainerCard->stars++;
 }
 
 void CopyTrainerCardData(struct TrainerCard *dst, struct TrainerCard *src, u8 gameVersion)
