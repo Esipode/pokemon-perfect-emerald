@@ -1456,10 +1456,6 @@ struct SaveBlock1
     u8 draftModeEnabled; // Draft challenge mode - see include/draft_mode.h. Was unused_9C2[0]; 0 reads as OFF on old saves.
     u8 recruitsModeEnabled; // Recruits challenge mode - see include/recruits_mode.h. Was unused_9C3[0]; 0 reads as OFF on old saves.
     u32 dailySeed;
-#if FREE_MATCH_CALL == FALSE
-    u16 trainerRematchStepCounter;
-    u8 trainerRematches[MAX_REMATCH_ENTRIES];
-#endif //FREE_MATCH_CALL
     //u8 padding3[2];
     struct ObjectEvent objectEvents[OBJECT_EVENTS_COUNT];
     struct ObjectEventTemplate objectEventTemplates[OBJECT_EVENT_TEMPLATES_COUNT];
