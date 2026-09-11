@@ -175,6 +175,8 @@ static const u16 sHoennTrainerCardSilver_Pal[]   = INCGFX_U16("graphics/trainer_
 static const u16 sKantoTrainerCardSilver_Pal[]   = INCGFX_U16("graphics/trainer_card/frlg/silver.pal", ".gbapal");
 static const u16 sHoennTrainerCardGold_Pal[]     = INCGFX_U16("graphics/trainer_card/gold.pal", ".gbapal");
 static const u16 sKantoTrainerCardGold_Pal[]     = INCGFX_U16("graphics/trainer_card/frlg/gold.pal", ".gbapal");
+static const u16 sHoennTrainerCardDiamond_Pal[]  = INCGFX_U16("graphics/trainer_card/diamond.pal", ".gbapal");
+static const u16 sKantoTrainerCardDiamond_Pal[]  = INCGFX_U16("graphics/trainer_card/frlg/diamond.pal", ".gbapal");
 static const u16 sHoennTrainerCardFemaleBg_Pal[] = INCGFX_U16("graphics/trainer_card/female_bg.pal", ".gbapal");
 static const u16 sKantoTrainerCardFemaleBg_Pal[] = INCGFX_U16("graphics/trainer_card/frlg/female_bg.pal", ".gbapal");
 static const u16 sHoennTrainerCardBadges_Pal[]   = INCGFX_U16("graphics/trainer_card/badges.png", ".gbapal");
@@ -261,20 +263,22 @@ static const struct WindowTemplate sTrainerCardWindowTemplates[] =
 
 static const u16 *const sHoennTrainerCardPals[] =
 {
-    gHoennTrainerCardGreen_Pal,  // Default (0 stars)
-    sHoennTrainerCardBronze_Pal, // 1 star
-    sHoennTrainerCardCopper_Pal, // 2 stars
-    sHoennTrainerCardSilver_Pal, // 3 stars
-    sHoennTrainerCardGold_Pal,   // 4 stars
+    gHoennTrainerCardGreen_Pal,   // Default (0 stars)
+    sHoennTrainerCardBronze_Pal,  // 1 star
+    sHoennTrainerCardCopper_Pal,  // 2 stars
+    sHoennTrainerCardSilver_Pal,  // 3 stars
+    sHoennTrainerCardGold_Pal,    // 4 stars
+    sHoennTrainerCardDiamond_Pal, // 5 stars
 };
 
 static const u16 *const sKantoTrainerCardPals[] =
 {
-    gKantoTrainerCardBlue_Pal,   // Default (0 stars)
-    sKantoTrainerCardGreen_Pal,  // 1 star
-    sKantoTrainerCardBronze_Pal, // 2 stars
-    sKantoTrainerCardSilver_Pal, // 3 stars
-    sKantoTrainerCardGold_Pal,   // 4 stars
+    gKantoTrainerCardBlue_Pal,    // Default (0 stars)
+    sKantoTrainerCardGreen_Pal,   // 1 star
+    sKantoTrainerCardBronze_Pal,  // 2 stars
+    sKantoTrainerCardSilver_Pal,  // 3 stars
+    sKantoTrainerCardGold_Pal,    // 4 stars
+    sKantoTrainerCardDiamond_Pal, // 5 stars
 };
 
 static const u8 sTrainerCardTextColors[] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY};

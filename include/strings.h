@@ -636,6 +636,7 @@ extern const u8 gText_BronzeCard[];
 extern const u8 gText_CopperCard[];
 extern const u8 gText_SilverCard[];
 extern const u8 gText_GoldCard[];
+extern const u8 gText_DiamondCard[];
 
 extern const u8 gText_CanIHelpWithAnythingElse[];
 extern const u8 gText_AnythingElseICanHelp[];

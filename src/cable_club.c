@@ -47,7 +47,8 @@ static const u8 *const sTrainerCardColorNames[] = {
     gText_BronzeCard,
     gText_CopperCard,
     gText_SilverCard,
-    gText_GoldCard
+    gText_GoldCard,
+    gText_DiamondCard
 };
 
 static void Task_LinkupStart(u8 taskId);

@@ -881,6 +881,7 @@ const u8 gText_BronzeCard[] = _("BRONZE");
 const u8 gText_CopperCard[] = _("COPPER");
 const u8 gText_SilverCard[] = _("SILVER");
 const u8 gText_GoldCard[] = _("GOLD");
+const u8 gText_DiamondCard[] = _("DIAMOND");
 const u8 gText_Day[] = _("DAY");
 const u8 gText_Colon3[] = _(":");
 const u8 gText_Confirm2[] = _("CONFIRM");
