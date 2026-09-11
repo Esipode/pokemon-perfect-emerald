@@ -229,6 +229,12 @@ const struct Achievement *Achievement_GetInfo(u16 achievementId);
 u32   Achievement_GetTotalPoints(void);
 u32   Achievement_GetAvailablePoints(void);
 
+// Number of achievements completed / defined, all-tier or filtered to one
+// tier. Loops gAchievements[] each call -- cheap (250 entries), not cached.
+u32   Achievement_GetCompletedCount(void);
+u32   Achievement_GetCompletedCountInTier(enum AchievementTier tier);
+u32   Achievement_GetTotalCountInTier(enum AchievementTier tier);
+
 bool8 Achievement_BoostsUnlocked(void);
 
 // Script specials for the post-Hall of Fame bedroom message that announces

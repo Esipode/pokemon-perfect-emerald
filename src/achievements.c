@@ -741,6 +741,42 @@ u32 Achievement_GetAvailablePoints(void)
     return gAchievementProfile.totalPointsEarned - gAchievementProfile.pointsInvested;
 }
 
+u32 Achievement_GetCompletedCount(void)
+{
+    u32 id, count = 0;
+
+    for (id = ACHIEVEMENT_NONE + 1; id < ACHIEVEMENTS_COUNT; id++)
+    {
+        if (Achievement_IsCompleted(id))
+            count++;
+    }
+    return count;
+}
+
+u32 Achievement_GetCompletedCountInTier(enum AchievementTier tier)
+{
+    u32 id, count = 0;
+
+    for (id = ACHIEVEMENT_NONE + 1; id < ACHIEVEMENTS_COUNT; id++)
+    {
+        if (Achievement_GetInfo(id)->tier == tier && Achievement_IsCompleted(id))
+            count++;
+    }
+    return count;
+}
+
+u32 Achievement_GetTotalCountInTier(enum AchievementTier tier)
+{
+    u32 id, count = 0;
+
+    for (id = ACHIEVEMENT_NONE + 1; id < ACHIEVEMENTS_COUNT; id++)
+    {
+        if (Achievement_GetInfo(id)->tier == tier)
+            count++;
+    }
+    return count;
+}
+
 bool8 Achievement_BoostsUnlocked(void)
 {
     return gAchievementProfile.boostsUnlocked;
