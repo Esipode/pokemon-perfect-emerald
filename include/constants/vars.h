@@ -263,7 +263,7 @@
 #define VAR_DAILY_BP                                     0x40F1
 #define VAR_WALLY_CALL_STEP_COUNTER                      0x40F2
 #define VAR_SCOTT_FORTREE_CALL_STEP_COUNTER              0x40F3
-#define VAR_ROXANNE_CALL_STEP_COUNTER                    0x40F4
+#define VAR_UNUSED_0x40F4                                0x40F4 // Unused Var
 #define VAR_SCOTT_BF_CALL_STEP_COUNTER                   0x40F5
 #define VAR_RIVAL_RAYQUAZA_CALL_STEP_COUNTER             0x40F6
 #define VAR_EMPORIUM_ID                                  0x40F7 // Battle Emporium: enum EmporiumId of the active building, 0 when no challenge pending

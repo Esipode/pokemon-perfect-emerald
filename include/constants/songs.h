@@ -113,8 +113,8 @@
 #define SE_ORB                      107 // SE_TAMA
 #define SE_DEX_SCROLL               108 // SE_Z_SCROLL
 #define SE_DEX_PAGE                 109 // SE_Z_PAGE
-#define SE_POKENAV_ON               110 // SE_PN_ON
-#define SE_POKENAV_OFF              111 // SE_PN_OFF
+#define SE_POKENAV_ON               110 // SE_PN_ON. Used by the DexNav.
+#define SE_POKENAV_OFF              111 // SE_PN_OFF. Used by the DexNav.
 #define SE_DEX_SEARCH               112 // SE_Z_SEARCH
 #define SE_EGG_HATCH                113 // SE_TAMAGO
 #define SE_BALL_TRAY_ENTER          114 // SE_TB_START
@@ -269,8 +269,8 @@
 #define SE_RG_POKE_JUMP_SUCCESS     261 // SE_RG_EXCELLENT
 #define SE_RG_POKE_JUMP_FAILURE     262 // SE_RG_NAWAMISS
 // New Emerald SFX
-#define SE_POKENAV_CALL             263 // SE_TOREEYE
-#define SE_POKENAV_HANG_UP          264 // SE_TOREOFF
+#define SE_POKENAV_CALL             263 // SE_TOREEYE. Used by the phone call window.
+#define SE_POKENAV_HANG_UP          264 // SE_TOREOFF. Used by the phone call window.
 #define SE_ARENA_TIMEUP1            265 // SE_HANTEI1
 #define SE_ARENA_TIMEUP2            266 // SE_HANTEI2
 #define SE_PIKE_CURTAIN_CLOSE       267 // SE_CURTAIN
@@ -390,7 +390,7 @@
 #define MUS_B_FRONTIER              457 // MUS_B_FRONTIER
 #define MUS_B_ARENA                 458 // MUS_B_ARENA
 #define MUS_OBTAIN_B_POINTS         459 // MUS_ME_POINTGET
-#define MUS_REGISTER_MATCH_CALL     460 // MUS_ME_TORE_EYE
+#define MUS_REGISTER_MATCH_CALL     460 // MUS_ME_TORE_EYE. Unused; kept so later song ids do not shift.
 #define MUS_B_PYRAMID               461 // MUS_PYRAMID
 #define MUS_B_PYRAMID_TOP           462 // MUS_PYRAMID_TOP
 #define MUS_B_PALACE                463 // MUS_B_PALACE

@@ -154,7 +154,7 @@
 #define FLAG_DEFEATED_RIVAL_ROUTE_104        0x7D
 #define FLAG_DEFEATED_WALLY_VICTORY_ROAD     0x7E
 #define FLAG_MET_PRETTY_PETAL_SHOP_OWNER     0x7F
-#define FLAG_ENABLE_ROXANNE_FIRST_CALL       0x80 // Set after defeating Brawly. This will activate a call with Roxanne in order to register her.
+#define FLAG_UNUSED_0x080                    0x80 // Unused Flag
 #define FLAG_KYOGRE_ESCAPED_SEAFLOOR_CAVERN  0x81
 #define FLAG_DEFEATED_RIVAL_ROUTE103         0x82
 #define FLAG_RECEIVED_DOLL_LANETTE           0x83
@@ -240,9 +240,9 @@
 #define FLAG_DEFEATED_RIVAL_RUSTBORO         0xD3
 #define FLAG_RECEIVED_RED_OR_BLUE_ORB        0xD4
 #define FLAG_RECEIVED_PREMIER_BALL_RUSTBORO  0xD5
-#define FLAG_ENABLE_WALLY_MATCH_CALL         0xD6
-#define FLAG_ENABLE_SCOTT_MATCH_CALL         0xD7
-#define FLAG_ENABLE_MOM_MATCH_CALL           0xD8
+#define FLAG_UNUSED_0x0D6                    0xD6 // Unused Flag
+#define FLAG_UNUSED_0x0D7                    0xD7 // Unused Flag
+#define FLAG_UNUSED_0x0D8                    0xD8 // Unused Flag
 #define FLAG_MET_DIVING_TREASURE_HUNTER      0xD9
 #define FLAG_MET_WAILMER_TRAINER             0xDA
 #define FLAG_EVIL_LEADER_PLEASE_STOP         0xDB
@@ -283,7 +283,7 @@
 #define FLAG_RECEIVED_WATMEL_BERRY           0xFA
 #define FLAG_RECEIVED_DURIN_BERRY            0xFB
 #define FLAG_RECEIVED_BELUE_BERRY            0xFC
-#define FLAG_ENABLE_RIVAL_MATCH_CALL         0xFD
+#define FLAG_UNUSED_0x0FD                    0xFD // Unused Flag
 #define FLAG_RECEIVED_CHARCOAL               0xFE
 #define FLAG_LATIOS_OR_LATIAS_ROAMING        0xFF
 #define FLAG_RECEIVED_REPEAT_BALL            0x100
@@ -311,7 +311,7 @@
 #define FLAG_RECEIVED_SOOTHE_BELL            0x116
 #define FLAG_RECEIVED_WHITE_HERB             0x117
 #define FLAG_RECEIVED_SOFT_SAND              0x118
-#define FLAG_ENABLE_PROF_BIRCH_MATCH_CALL    0x119
+#define FLAG_UNUSED_0x119                    0x119 // Unused Flag
 #define FLAG_RECEIVED_CLEANSE_TAG            0x11A
 #define FLAG_RECEIVED_FOCUS_BAND             0x11B
 #define FLAG_DECLINED_WALLY_BATTLE_MAUVILLE  0x11C
@@ -333,10 +333,10 @@
 #define FLAG_MET_FANCLUB_YOUNGER_BROTHER     0x12C
 #define FLAG_RIVAL_LEFT_FOR_ROUTE103         0x12D
 #define FLAG_OMIT_DIVE_FROM_STEVEN_LETTER    0x12E
-#define FLAG_HAS_MATCH_CALL                  0x12F
-#define FLAG_ADDED_MATCH_CALL_TO_POKENAV     0x130
-#define FLAG_REGISTERED_STEVEN_POKENAV       0x131
-#define FLAG_ENABLE_NORMAN_MATCH_CALL        0x132
+#define FLAG_UNUSED_0x12F                    0x12F // Unused Flag
+#define FLAG_UNUSED_0x130                    0x130 // Unused Flag
+#define FLAG_UNUSED_0x131                    0x131 // Unused Flag
+#define FLAG_RECEIVED_DAD_PHONE_CALL         0x132
 #define FLAG_STEVEN_GUIDES_TO_CAVE_OF_ORIGIN 0x133 // Set after you follow Steven to the entrance of the Cave of Origin.
 #define FLAG_MET_ARCHIE_SOOTOPOLIS           0x134
 #define FLAG_MET_MAXIE_SOOTOPOLIS            0x135
@@ -378,7 +378,7 @@
 #define FLAG_ENTERED_CONTEST                 0x155
 #define FLAG_MET_SLATEPORT_FANCLUB_CHAIRMAN  0x156
 #define FLAG_MET_BATTLE_FRONTIER_GAMBLER     0x157
-#define FLAG_ENABLE_MR_STONE_POKENAV         0x158
+#define FLAG_UNUSED_0x158                    0x158 // Unused Flag
 #define FLAG_NURSE_MENTIONS_GOLD_CARD        0x159
 #define FLAG_MET_FRONTIER_BEAUTY_MOVE_TUTOR  0x15A
 #define FLAG_MET_FRONTIER_SWIMMER_MOVE_TUTOR 0x15B
@@ -504,13 +504,13 @@
 #define FLAG_MET_SCOTT_ON_SS_TIDAL           0x1D0
 #define FLAG_SCOTT_GIVES_BATTLE_POINTS       0x1D1
 #define FLAG_COLLECTED_ALL_GOLD_SYMBOLS      0x1D2
-#define FLAG_ENABLE_ROXANNE_MATCH_CALL       0x1D3
-#define FLAG_ENABLE_BRAWLY_MATCH_CALL        0x1D4
-#define FLAG_ENABLE_WATTSON_MATCH_CALL       0x1D5
-#define FLAG_ENABLE_FLANNERY_MATCH_CALL      0x1D6
-#define FLAG_ENABLE_WINONA_MATCH_CALL        0x1D7
-#define FLAG_ENABLE_TATE_AND_LIZA_MATCH_CALL 0x1D8
-#define FLAG_ENABLE_JUAN_MATCH_CALL          0x1D9
+#define FLAG_UNUSED_0x1D3                    0x1D3 // Unused Flag
+#define FLAG_UNUSED_0x1D4                    0x1D4 // Unused Flag
+#define FLAG_UNUSED_0x1D5                    0x1D5 // Unused Flag
+#define FLAG_UNUSED_0x1D6                    0x1D6 // Unused Flag
+#define FLAG_UNUSED_0x1D7                    0x1D7 // Unused Flag
+#define FLAG_UNUSED_0x1D8                    0x1D8 // Unused Flag
+#define FLAG_UNUSED_0x1D9                    0x1D9 // Unused Flag
 
 #define FLAG_UNUSED_0x1DA                    0x1DA // Unused Flag
 
