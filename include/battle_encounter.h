@@ -683,6 +683,27 @@ extern const u8 EncScript_Kyurem_TheyEntered[];
 extern const u8 EncScript_Kyurem_TurnClose[];
 extern const u8 EncScript_Kyurem_Shatter[];
 
+// Landorus ("The Abundance Pokémon")
+extern const u8 EncScript_Landorus_Intro[];
+extern const u8 EncScript_Landorus_Therian[];
+extern const u8 EncScript_Landorus_Therian[];
+extern const u8 EncScript_Landorus_Wrath[];
+extern const u8 EncScript_Landorus_Wrath[];
+extern const u8 EncScript_Landorus_Spent[];
+extern const u8 EncScript_Landorus_Spent[];
+extern const u8 EncScript_Landorus_TurnOpen[];
+extern const u8 EncScript_Landorus_Smother[];
+extern const u8 EncScript_Landorus_PillarStands[];
+extern const u8 EncScript_Landorus_ShiftCharge[];
+extern const u8 EncScript_Landorus_Desolation[];
+extern const u8 EncScript_Landorus_GroundStirs[];
+extern const u8 EncScript_Landorus_TheyFell[];
+extern const u8 EncScript_Landorus_TheyEntered[];
+extern const u8 EncScript_Landorus_TurnClose[];
+extern const u8 EncScript_Landorus_ShiftResolve[];
+extern const u8 EncScript_Landorus_Rumble[];
+extern const u8 EncScript_Landorus_EarthSettles[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

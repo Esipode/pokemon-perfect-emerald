@@ -641,3 +641,22 @@ LegendaryEncounter_EventScript_FinishBattle::
 LegendaryEncounter_EventScript_RemoveCaughtLegendary::
 	removeobject VAR_LAST_TALKED
 	return
+
+LegendaryEncounter_EventScript_Landorus::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_LANDORUS, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_LANDORUS
+	setwildbattle SPECIES_LANDORUS, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_REVEAL_GLASS
+	releaseall
+	end

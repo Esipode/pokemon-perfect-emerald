@@ -609,6 +609,11 @@ enum AnimBattler
 #define B_ANIM_MON_SCARED               56
 #define B_ANIM_GHOST_GET_OUT            57
 #define B_ANIM_SILPH_SCOPED             58
+// ROCK_THROW is the Safari Zone player's rock toss, not a generic rock effect: its script hands the
+// ANIM ATTACKER's sprite to SpriteCB_TrainerThrowObject, which starts sprite anim 1 - a frame set
+// only a trainer BACK PIC has. Played in an ordinary battle it drives a Pokemon sprite into an anim
+// that never ends, and the battle hangs there. Encounter scripts: never play it. B_ANIM_STATS_CHANGE
+// / B_ANIM_MON_HIT cover the "something rose / something broke" beats with no sprite state to leak.
 #define B_ANIM_ROCK_THROW               59
 #define B_ANIM_SAFARI_REACTION          60
 #define B_ANIM_FORM_CHANGE_INSTANT      61

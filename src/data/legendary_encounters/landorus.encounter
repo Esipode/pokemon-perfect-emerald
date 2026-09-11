@@ -1,0 +1,265 @@
+Encounter: Landorus
+
+# Landorus, "The Abundance Pokemon". One rule, stated in both directions:
+#   LANDORUS DOES NOT DEFEND ITSELF - THE LAND DEFENDS IT. Break the land and you break Landorus.
+# STABILITY, 0-5, is the whole fight on one axis, and the tiers carry the Fertility names:
+#   0 Barren / 1 Stirring (+1 Def) / 2 Grass (Grassy Terrain) / 3 Flourishing (EARTH PILLARS go
+#   live) / 4 Abundant (6%/turn heal, TECTONIC SHIFT becomes available) / 5 Continental
+#   (CONTINENTAL RUMBLE chips your side every turn).
+#   +1 a Ground-type move resolved on the field - EITHER SIDE'S. +1 one of your Pokemon fainted.
+#   +1 every turn on its own from Phase 1. -1 DESOLATION: a Fire or Ice move landed on Landorus.
+# EARTH PILLARS are a finite stack (0-3) of blocked turns, NOT a percentage. A standing pillar hands
+#   Landorus a real Protect for one turn and then crumbles; a pillar also falls to a Fire/Ice hit and
+#   to any turn that takes >= 25% of Landorus's max HP. This is Landorus's real mitigation, which is
+#   why its guard baseline (88/90/92) is the LOWEST of the five Gen 5 bosses - every sibling owns its
+#   guard from the phase, the meter or a duel state, and none of them has a consumable shield stack.
+# THE METER IS THE TRAP. Ground coverage feeds the land; Fire and Ice hold it down even though
+#   neither is super effective against Ground/Flying. The player who brings Earthquake makes the
+#   fight longer, and that inversion is the encounter.
+# PHASE 2 LOCKS THE METER at 5 and refuses Desolation (with a line, so the lock is legible). Six
+#   quakes later THE EARTH SETTLES: Stability to 0, every pillar falls, -2 Def / -2 Sp. Def, Landorus
+#   loses its next action and its guard falls to 74 - the largest window in the fight.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY (guideline 8). Permanent GRAVITY from Phase 1 removes the
+#   Flying/Levitate/Air Balloon wall a Ground boss otherwise invites, and shuts off Fly, Bounce and
+#   evasion with it. TECTONIC SHIFT resets your stat stages, strips your screens and scours hazards
+#   off BOTH sides, so setup and hazard stacks have to be rebuilt. Weather is cleared every turn from
+#   Phase 1. Status is not blocked at all and works completely - its displacement is that the rumble
+#   and the Abundance heal are scripted at checkpoints and fire whether or not Landorus can act.
+#   Toxic is flat.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Landorus_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # Barren Country. Deliberately the lowest baseline of the five Gen 5
+                                # bosses - the pillars are the mitigation. Every later value is
+                                # written absolutely by EncScript_Landorus_ApplyGround
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # load-bearing here, not boilerplate: Ground/Flying is 4x weak to
+                                # Ice, and Ice is also the Desolation counter the fight WANTS the
+                                # player to bring
+    FlatToxicDamage: True
+    Survive: True               # 1 HP is what opens the catch window, and the reeling guard of 74
+                                # during THE EARTH SETTLES could otherwise be skipped straight past
+                                # by one oversized hit. Cleared in _Spent
+    Ability: ABILITY_SHEER_FORCE    # its own Incarnate ability. Earth Power, Rock Slide, Psychic and
+                                    # Sludge Wave all carry secondary effects, so it boosts the whole
+                                    # moveset and removes the drops - the damage is real and the
+                                    # player is never chip-debuffed by accident. The Therian form
+                                    # change hands it Intimidate from the new species
+    Moves: MOVE_EARTH_POWER, MOVE_ROCK_SLIDE, MOVE_PSYCHIC, MOVE_SLUDGE_WAVE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..Gained to 0..15. No var-to-var comparison appears anywhere in this design; every test is
+# against a literal, and ENC_SNAP_DAMAGE is the engine's own answer to "subtract one value from
+# another".
+# 0 Phase (0 Barren Country / 1 Therian Power / 2 Wrath of the Land / 3 Settled), 1 Stability (0-5),
+# 2 LastStab (the last ANNOUNCED Stability - the callout's re-fire latch), 3 Tier (tier perks
+# currently applied, 0-5, moved in both directions), 4 TurnGuard (the once-per-turn scaffold),
+# 5 Pillars (0-3), 6 PillarCd (turns until a pillar may stand again), 7 Spent (a pillar is standing
+# this turn), 8 BossMark (Landorus HP% at turn open), 9 Scratch (the copy ENC_SNAP_DAMAGE consumes,
+# so BossMark survives being measured; reused by _ShiftResolve once _TurnClose has read it),
+# 10 Shift (0 none / 1 Tectonic Shift charging / 2 reeling), 11 Deso (a Fire/Ice move landed on
+# Landorus this turn), 12 EventGuard (per-turn guard shared by OnFaint and OnSwitchIn), 13 Quakes
+# (shifts landed + rumbles fired - drives escalation and THE EARTH SETTLES), 14 Settled, 15 Gained
+# (a field-event +1 has already been taken this turn).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Landorus_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Stability) >= 0
+    Var(LastStab) >= 0
+    Var(Tier) >= 0
+    Var(TurnGuard) >= 0
+    Var(Pillars) >= 0
+    Var(PillarCd) >= 0
+    Var(Spent) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Shift) >= 0
+    Var(Deso) >= 0
+    Var(EventGuard) >= 0
+    Var(Quakes) >= 0
+    Var(Settled) >= 0
+    Var(Gained) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. All three sit below _TurnClose (80), so at
+# an OnTurnEnd where the player's damage crossed a threshold the transition runs first and every
+# later script that turn sees the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Landorus_Therian
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Landorus_Therian
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Landorus_Wrath
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Landorus_Wrath
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Landorus_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Landorus_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnGuard is its only gate and the script sets it immediately, so no
+# branch out of it can leave it re-armed. It ticks the pillar cooldown (the decrement half of the
+# split countdown), climbs the meter on its own from Phase 1, pays the Abundance heal, takes the mark
+# the turn's damage is measured against, moves the tier perks in both directions, and runs the
+# recurring cue.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Landorus_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The sky is smothered every turn from Phase 1 - the spec's "weather is suppressed", made visible.
+# Self-disabling: it clears the weather its own condition reads.
+Trigger: OnTurnStart
+Priority: 12
+Script: EncScript_Landorus_Smother
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Weather != B_WEATHER_NONE
+
+# AN EARTH PILLAR STANDS. encsetprotect only has an effect at OnTurnStart, which is exactly where
+# this sits: set there it covers the whole turn and expires on its own. Self-disabling: the script
+# sets Spent. PillarCd (set to 2 here, decremented in _TurnOpen) guarantees at least one clear turn
+# between two pillar turns.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_Landorus_PillarStands
+Conditions:
+    Var(Phase) <= 2
+    Var(Pillars) >= 1
+    Var(Spent) == 0
+    Var(PillarCd) == 0
+
+# THE TECTONIC SHIFT telegraph, raised at turn start so the player can spend THIS turn on the answer
+# and resolved at OnTurnEnd the same turn. Self-disabling: the script sets Shift. Spent == 0 is
+# load-bearing - Landorus never hides behind a pillar and charges a shift on the same turn.
+Trigger: OnTurnStart
+Priority: 16
+Script: EncScript_Landorus_ShiftCharge
+Conditions:
+    Var(Phase) <= 2
+    Var(Stability) >= 4
+    Var(Shift) == 0
+    Var(Spent) == 0
+
+# DESOLATION - the player's whole counterplay. At OnMoveEnd Event.Battler is the battler that GOT
+# HIT. Self-disables through Deso, which its script sets; Once would mean once per BATTLE. One
+# Desolation per turn, so a multi-hit Fire move is not four levels of meter.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Landorus_Desolation
+Conditions:
+    Var(Phase) <= 2
+    Var(Deso) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_FIRE
+        Event.MoveType == TYPE_ICE
+
+# THE GROUND STIRS. Any Ground-type move resolving on the field - the player's included. Gained caps
+# this at one per turn so a multi-hit or spread Ground move cannot vault the meter.
+Trigger: OnMoveEnd
+Priority: 32
+Script: EncScript_Landorus_GroundStirs
+Conditions:
+    Var(Phase) <= 2
+    Var(Gained) == 0
+    Var(TurnGuard) == 1
+    Event.MoveType == TYPE_GROUND
+
+# One of the player's Pokemon fell - the land takes it. EventGuard stops the replacement switch-in
+# being processed a second time.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Landorus_TheyFell
+Conditions:
+    Var(Phase) <= 2
+    Var(EventGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when
+# every var is 0. Sets EventGuard and nothing else - a mid-turn switch (U-turn, Eject Button) exists
+# here only so a faint later in the same turn is not double-counted.
+Trigger: OnSwitchIn
+Priority: 31
+Script: EncScript_Landorus_TheyEntered
+Conditions:
+    Var(Phase) <= 2
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE LEDGER. Runs before _ShiftResolve (82), so the shift's own damage is never counted as the
+# player's damage for the pillar-cracking test. Self-disables by clearing TurnGuard.
+# CONTINENTAL RUMBLE rides on the tail of this script rather than owning a trigger of its own: its
+# conditions (the meter at 5, not yet Settled) are ones it cannot change, so as a trigger it would
+# re-select until the per-checkpoint script cap tripped, and there is no spare author variable left
+# for a per-turn latch. Folded in here it inherits TurnGuard as its latch for free.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Landorus_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# TECTONIC SHIFT lands - the charge was not collapsed by a Fire or Ice move. Self-disabling: the
+# script clears Shift.
+Trigger: OnTurnEnd
+Priority: 82
+Script: EncScript_Landorus_ShiftResolve
+Conditions:
+    Var(Phase) <= 2
+    Var(Shift) == 1
+
+# THE EARTH SETTLES. Six quakes into Wrath of the Land, the land Landorus has been spending runs out.
+Trigger: OnTurnEnd
+Priority: 86
+Flags: Once
+Script: EncScript_Landorus_EarthSettles
+Conditions:
+    Var(Phase) == 2
+    Var(Settled) == 0
+    Var(Quakes) >= 6
