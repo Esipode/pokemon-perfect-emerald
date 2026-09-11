@@ -1350,7 +1350,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_EXPLORE_NO_LOOSE_ENDS] = {
         .name        = ACHIEVEMENT_NAME("No Loose Ends"),
-        .description = COMPOUND_STRING("Obtain the Pokédex, the PokeNav and the Running Shoes."),
+        .description = COMPOUND_STRING("Obtain the Pokédex, the Map and the Running Shoes."),
         .tier        = ACHIEVEMENT_TIER_BRONZE,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ADVENTURE,

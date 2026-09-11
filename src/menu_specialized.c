@@ -1121,10 +1121,10 @@ bool8 ConditionMenu_UpdateMonExit(struct ConditionGraph *graph, s16 *x)
     return (graphUpdating || monUpdating);
 }
 
-static const u32 sConditionPokeball_Gfx[] = INCGFX_U32("graphics/pokenav/condition/pokeball.png", ".4bpp");
-static const u32 sConditionPokeballPlaceholder_Gfx[] = INCGFX_U32("graphics/pokenav/condition/pokeball_placeholder.png", ".4bpp");
-static const u16 sConditionSparkle_Gfx[] = INCGFX_U16("graphics/pokenav/condition/sparkle.png", ".gbapal");
-static const u32 sConditionSparkle_Pal[] = INCGFX_U32("graphics/pokenav/condition/sparkle.png", ".4bpp");
+static const u32 sConditionPokeball_Gfx[] = INCGFX_U32("graphics/condition/pokeball.png", ".4bpp");
+static const u32 sConditionPokeballPlaceholder_Gfx[] = INCGFX_U32("graphics/condition/pokeball_placeholder.png", ".4bpp");
+static const u16 sConditionSparkle_Gfx[] = INCGFX_U16("graphics/condition/sparkle.png", ".gbapal");
+static const u32 sConditionSparkle_Pal[] = INCGFX_U32("graphics/condition/sparkle.png", ".4bpp");
 
 static const struct OamData sOam_ConditionMonPic =
 {
@@ -1205,14 +1205,14 @@ void LoadConditionSelectionIcons(struct SpriteSheet *sheets, struct SpriteTempla
     {
         {sConditionPokeball_Gfx, 0x100, TAG_CONDITION_BALL},
         {sConditionPokeballPlaceholder_Gfx, 0x20, TAG_CONDITION_BALL_PLACEHOLDER},
-        {gPokenavConditionCancel_Gfx, 0x100, TAG_CONDITION_CANCEL},
+        {gConditionCancel_Gfx, 0x100, TAG_CONDITION_CANCEL},
         {},
     };
 
     struct SpritePalette dataPals[] =
     {
-        {gPokenavConditionCancel_Pal, TAG_CONDITION_BALL},
-        {gPokenavConditionCancel_Pal + 16, TAG_CONDITION_CANCEL},
+        {gConditionCancel_Pal, TAG_CONDITION_BALL},
+        {gConditionCancel_Pal + 16, TAG_CONDITION_CANCEL},
         {},
     };
 

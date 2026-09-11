@@ -9,7 +9,6 @@
 #include "mirage_tower.h"
 #include "overworld.h"
 #include "palette.h"
-#include "pokenav.h"
 #include "script.h"
 #include "trainer_hill.h"
 #include "tv.h"

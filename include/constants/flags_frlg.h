@@ -1550,7 +1550,7 @@
 #define FLAG_RECEIVED_TM_BRICK_BREAK         0
 #define FLAG_RECEIVED_HM_SURF                0
 #define FLAG_RECEIVED_HM_DIVE                0
-#define FLAG_REGISTER_RIVAL_POKENAV          0
+#define FLAG_RIVAL_TRADED_NUMBERS            0
 #define FLAG_DEFEATED_RIVAL_ROUTE_104        0
 #define FLAG_DEFEATED_WALLY_VICTORY_ROAD     0
 #define FLAG_MET_PRETTY_PETAL_SHOP_OWNER     0
@@ -1561,7 +1561,7 @@
 #define FLAG_RECEIVED_POTION_OLDALE          0
 #define FLAG_RECEIVED_AMULET_COIN            0
 #define FLAG_THANKED_FOR_PLAYING_WITH_WALLY  0
-#define FLAG_ENABLE_FIRST_WALLY_POKENAV_CALL 0 // Set after defeating Wally outside Mauville Gym. Will activate a call later to register Wally.
+#define FLAG_ENABLE_FIRST_WALLY_PHONE_CALL 0 // Set after defeating Wally outside Mauville Gym. Will activate a call from Wally later.
 #define FLAG_RECEIVED_HM_CUT                 0
 #define FLAG_SCOTT_CALL_FORTREE_GYM          0 // Triggers call from Scott after defeating Winona
 #define FLAG_DEFEATED_EVIL_TEAM_MT_CHIMNEY   0
@@ -1613,7 +1613,7 @@
 #define FLAG_DECORATION_12                   0
 #define FLAG_DECORATION_13                   0
 #define FLAG_DECORATION_14                   0
-#define FLAG_RECEIVED_POKENAV                0
+#define FLAG_RECEIVED_MAP                    0
 #define FLAG_DELIVERED_STEVEN_LETTER         0
 #define FLAG_DEFEATED_WALLY_MAUVILLE         0
 #define FLAG_DEFEATED_GRUNT_SPACE_CENTER_1F  0
@@ -1762,7 +1762,7 @@
 // Flags for whether a rematchable trainer has been registered in the player's Match Call.
 // Most are used implicitly by adding their REMATCH_* id to TRAINER_REGISTERED_FLAGS_START.
 // Some Match Call entries (like those for gym leaders, Wally, and all non-trainer NPCs like Prof. Birch)
-// have their own separate flag that needs to be set to be enabled; see src/pokenav_match_call_data.c
+// have their own separate flag that needs to be set to be enabled.
 #define TRAINER_REGISTERED_FLAGS_START       0
 #define FLAG_REGISTERED_ROSE                 0
 #define FLAG_REGISTERED_ANDRES               0
@@ -2492,7 +2492,7 @@
 // See constants/opponents.h. The values there + FLAG_TRAINER_FLAG_START are the flag IDs
 
 // System Flags
-#define FLAG_SYS_POKENAV_GET                         0
+#define FLAG_SYS_MAP_GET                         0
 #define FLAG_UNUSED_0x863                            0
 #define FLAG_SYS_CHAT_USED                           0
 #define FLAG_UNLOCKED_TRENDY_SAYINGS                 0

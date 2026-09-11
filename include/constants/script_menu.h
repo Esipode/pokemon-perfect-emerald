@@ -94,7 +94,6 @@ enum
     MULTI_FRONTIER_ITEM_CHOOSE,
     MULTI_LINK_CONTEST_INFO,
     MULTI_LINK_CONTEST_MODE,
-    MULTI_FORCED_START_MENU,
     MULTI_FRONTIER_GAMBLER_BET,
     MULTI_TENT,
     MULTI_UNUSED_SSTIDAL_1,             // These 4 were replaced by CreateLilycoveSSTidalMultichoice

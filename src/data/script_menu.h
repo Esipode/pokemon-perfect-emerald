@@ -587,18 +587,6 @@ static const struct MenuAction MultichoiceList_LinkContestMode[] =
     {gText_Exit},
 };
 
-static const struct MenuAction MultichoiceList_ForcedStartMenu[] =
-{
-    {gText_MenuOptionPokedex},
-    {gText_MenuOptionPokemon},
-    {gText_MenuOptionBag},
-    {gText_MenuOptionPokenav},
-    {COMPOUND_STRING("")}, // blank because it's filled by the player's name
-    {gText_MenuOptionSave},
-    {gText_MenuOptionOption},
-    {gText_MenuOptionExit},
-};
-
 static const struct MenuAction MultichoiceList_FrontierGamblerBet[] =
 {
     {COMPOUND_STRING("  5BP")},
@@ -734,7 +722,7 @@ static const struct MenuAction MultichoiceList_BattlePyramidRules[] =
 
 static const struct MenuAction MultichoiceList_BattlePikeRules[] =
 {
-    {COMPOUND_STRING("POKéNAV AND BAG")},
+    {COMPOUND_STRING("BAG")},
     {COMPOUND_STRING("HELD ITEMS")},
     {COMPOUND_STRING("POKéMON ORDER")},
     {gText_Exit},
@@ -1241,7 +1229,6 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_FRONTIER_ITEM_CHOOSE]       = MULTICHOICE(MultichoiceList_FrontierItemChoose),
     [MULTI_LINK_CONTEST_INFO]          = MULTICHOICE(MultichoiceList_LinkContestInfo),
     [MULTI_LINK_CONTEST_MODE]          = MULTICHOICE(MultichoiceList_LinkContestMode),
-    [MULTI_FORCED_START_MENU]          = MULTICHOICE(MultichoiceList_ForcedStartMenu),
     [MULTI_FRONTIER_GAMBLER_BET]       = MULTICHOICE(MultichoiceList_FrontierGamblerBet),
     [MULTI_TENT]                       = MULTICHOICE(MultichoiceList_Tent),
     [MULTI_UNUSED_SSTIDAL_1]           = MULTICHOICE(MultichoiceList_UnusedSSTidal1),

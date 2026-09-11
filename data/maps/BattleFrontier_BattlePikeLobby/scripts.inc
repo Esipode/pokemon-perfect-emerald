@@ -239,15 +239,15 @@ BattleFrontier_BattlePikeLobby_EventScript_ReadRulesBoard::
 	waitmessage
 	multichoice 16, 4, MULTI_BATTLE_PIKE_RULES, FALSE
 	switch VAR_RESULT
-	case 0, BattleFrontier_BattlePikeLobby_EventScript_RulesPokenavBag
+	case 0, BattleFrontier_BattlePikeLobby_EventScript_RulesBag
 	case 1, BattleFrontier_BattlePikeLobby_EventScript_RulesHeldItems
 	case 2, BattleFrontier_BattlePikeLobby_EventScript_RulesMonOrder
 	case 3, BattleFrontier_BattlePikeLobby_EventScript_ExitRules
 	case MULTI_B_PRESSED, BattleFrontier_BattlePikeLobby_EventScript_ExitRules
 	end
 
-BattleFrontier_BattlePikeLobby_EventScript_RulesPokenavBag::
-	msgbox BattleFrontier_BattlePikeLobby_Text_ExplainPokenavBagRules, MSGBOX_DEFAULT
+BattleFrontier_BattlePikeLobby_EventScript_RulesBag::
+	msgbox BattleFrontier_BattlePikeLobby_Text_ExplainBagRules, MSGBOX_DEFAULT
 	goto BattleFrontier_BattlePikeLobby_EventScript_ReadRulesBoard
 	end
 
@@ -419,9 +419,9 @@ BattleFrontier_BattlePikeLobby_Text_RulesAreListed:
 BattleFrontier_BattlePikeLobby_Text_ReadWhichHeading:
 	.string "Which heading do you want to read?$"
 
-BattleFrontier_BattlePikeLobby_Text_ExplainPokenavBagRules:
-	.string "The BAG and POKéNAV may not be used\n"
-	.string "during a Battle Choice challenge.$"
+BattleFrontier_BattlePikeLobby_Text_ExplainBagRules:
+	.string "The BAG may not be used during\n"
+	.string "a Battle Choice challenge.$"
 
 BattleFrontier_BattlePikeLobby_Text_ExplainHeldItemRules:
 	.string "During a Battle Choice challenge,\n"

@@ -2698,7 +2698,7 @@ void Achievement_CheckExplorationMilestones(void)
     if (allTownsVisited && !FlagGet(FLAG_IS_CHAMPION))
         Achievement_TryComplete(ACHIEVEMENT_EXPLORE_COMPLETIONIST_TOURIST);
 
-    if (FlagGet(FLAG_SYS_POKEDEX_GET) && FlagGet(FLAG_SYS_POKENAV_GET) && FlagGet(FLAG_SYS_B_DASH))
+    if (FlagGet(FLAG_SYS_POKEDEX_GET) && FlagGet(FLAG_SYS_MAP_GET) && FlagGet(FLAG_SYS_B_DASH))
         Achievement_TryComplete(ACHIEVEMENT_EXPLORE_NO_LOOSE_ENDS);
 
     // Same call site -- map transitions are

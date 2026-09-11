@@ -6,8 +6,8 @@
 #include "decompress.h"
 #include "graphics.h"
 #include "palette.h"
-#include "pokenav.h"
 #include "menu_specialized.h"
+#include "pokemon_storage_system.h"
 #include "scanline_effect.h"
 #include "text.h"
 #include "bg.h"
@@ -73,7 +73,6 @@ struct UsePokeblockSession
     u8 natureText[34];
 };
 
-// This struct is identical to PokenavMonListItem, the struct used for managing lists of Pokémon in the PokéNav
 // Given that this screen is essentially duplicated in the poknav, this struct was probably the same one with
 // a more general name/purpose
 // TODO: Once the PokéNav conditions screens are documented, resolve the above
@@ -162,8 +161,8 @@ static const u8 sText_NothingChanged[] = _("Nothing changed!");
 static const u8 sText_WontEatAnymore[] = _("It won't eat anymore…");
 static const u8 sText_NatureSlash[] = _("NATURE/");
 
-extern const u16 gConditionGraphData_Pal[];
-extern const u16 gConditionText_Pal[];
+static const u16 sConditionGraphData_Pal[] = INCGFX_U16("graphics/condition/graph_data.pal", ".gbapal");
+static const u16 sConditionText_Pal[] = INCGFX_U16("graphics/condition/text.pal", ".gbapal");
 
 // The below 3 are saved for returning to the screen after feeding a pokeblock to a mon
 // so that the rest of the data can be freed
@@ -1362,8 +1361,8 @@ static bool8 LoadUsePokeblockMenuGfx(void)
         break;
     case 11:
         LoadBgTilemap(2, sMenu->tilemapBuffer, 1280, 0);
-        LoadPalette(gConditionGraphData_Pal, BG_PLTT_ID(3), PLTT_SIZE_4BPP);
-        LoadPalette(gConditionText_Pal, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
+        LoadPalette(sConditionGraphData_Pal, BG_PLTT_ID(3), PLTT_SIZE_4BPP);
+        LoadPalette(sConditionText_Pal, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
         ConditionGraph_InitWindow(2);
         break;
     default:

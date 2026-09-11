@@ -32,17 +32,17 @@ RustboroCity_DevonCorp_2F_EventScript_DevelopedBalls::
 	release
 	end
 
-RustboroCity_DevonCorp_2F_EventScript_PokenavScientist::
+RustboroCity_DevonCorp_2F_EventScript_MapScientist::
 	lock
 	faceplayer
 	call_if_eq VAR_FOSSIL_RESURRECTION_STATE, 1, RustboroCity_DevonCorp_2F_EventScript_SetFossilReady
-	goto_if_set FLAG_RECEIVED_POKENAV, RustboroCity_DevonCorp_2F_EventScript_HasPokenav
-	msgbox RustboroCity_DevonCorp_2F_Text_IMadePokenav, MSGBOX_DEFAULT
+	goto_if_set FLAG_RECEIVED_MAP, RustboroCity_DevonCorp_2F_EventScript_HasMap
+	msgbox RustboroCity_DevonCorp_2F_Text_IMadeMap, MSGBOX_DEFAULT
 	release
 	end
 
-RustboroCity_DevonCorp_2F_EventScript_HasPokenav::
-	msgbox RustboroCity_DevonCorp_2F_Text_WowThatsAPokenav, MSGBOX_DEFAULT
+RustboroCity_DevonCorp_2F_EventScript_HasMap::
+	msgbox RustboroCity_DevonCorp_2F_Text_WowThatsOurMap, MSGBOX_DEFAULT
 	release
 	end
 
@@ -254,12 +254,12 @@ RustboroCity_DevonCorp_2F_EventScript_CancelFossilSelect::
 	release
 	end
 
-RustboroCity_DevonCorp_2F_EventScript_MatchCallScientist::
+RustboroCity_DevonCorp_2F_EventScript_PhoneScientist::
 	lock
 	faceplayer
 	call_if_eq VAR_FOSSIL_RESURRECTION_STATE, 1, RustboroCity_DevonCorp_2F_EventScript_SetFossilReady
 	goto_if_ge VAR_RUSTBORO_CITY_STATE, 6, RustboroCity_DevonCorp_2F_EventScript_WorkOnNext
-	msgbox RustboroCity_DevonCorp_2F_Text_DevelopNewPokenavFeature, MSGBOX_DEFAULT
+	msgbox RustboroCity_DevonCorp_2F_Text_DevelopNewPhoneFeature, MSGBOX_DEFAULT
 	release
 	end
 
@@ -289,21 +289,22 @@ RustboroCity_DevonCorp_2F_Text_WeFinallyMadeNewBalls:
 	.string "the DEVON CORPORATION.\p"
 	.string "Please give them a try!$"
 
-RustboroCity_DevonCorp_2F_Text_IMadePokenav:
-	.string "I made the POKéNAV!\p"
+RustboroCity_DevonCorp_2F_Text_IMadeMap:
+	.string "I surveyed every last route for our\n"
+	.string "MAP of HOENN!\p"
 	.string "As an engineer, I feel blessed to have\n"
 	.string "made something so great!$"
 
-RustboroCity_DevonCorp_2F_Text_WowThatsAPokenav:
+RustboroCity_DevonCorp_2F_Text_WowThatsOurMap:
 	.string "Oh, wow!\n"
-	.string "That's a POKéNAV!\p"
+	.string "That's our MAP of HOENN!\p"
 	.string "It came about as a result of our\n"
-	.string "PRESIDENT's desire to learn about\l"
-	.string "the feelings of POKéMON.\p"
-	.string "Would you like me to describe its\n"
-	.string "features in detail?\p"
+	.string "PRESIDENT's desire to see TRAINERS\l"
+	.string "travel farther than ever before.\p"
+	.string "Would you like me to describe every\n"
+	.string "route on it in detail?\p"
 	.string "No, no. I think you'll find out just by\n"
-	.string "trying the POKéNAV out.$"
+	.string "walking them yourself.$"
 
 RustboroCity_DevonCorp_2F_Text_DeviceToVisualizePokemonDreams:
 	.string "I'm trying to develop a device that\n"
@@ -367,9 +368,9 @@ RustboroCity_DevonCorp_2F_Text_TooManyPokemon:
 	.string "Uh-oh, you've got too many POKéMON.\n"
 	.string "You have no room for this one.$"
 
-RustboroCity_DevonCorp_2F_Text_DevelopNewPokenavFeature:
+RustboroCity_DevonCorp_2F_Text_DevelopNewPhoneFeature:
 	.string "I'm trying to develop a new feature\n"
-	.string "for the POKéNAV…\p"
+	.string "for TRAINERS' phones…\p"
 	.string "But it's not going well.$"
 
 RustboroCity_DevonCorp_2F_Text_WhatToWorkOnNext:

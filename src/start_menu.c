@@ -32,7 +32,6 @@
 #include "palette.h"
 #include "party_menu.h"
 #include "pokedex.h"
-#include "pokenav.h"
 #include "recruits_mode.h"
 #include "region_map.h"
 #include "route_tracker.h"
@@ -412,7 +411,7 @@ static void BuildNormalStartMenu(void)
 
     AddStartMenuAction(MENU_ACTION_BAG);
 
-    if (FlagGet(FLAG_SYS_POKENAV_GET) == TRUE)
+    if (FlagGet(FLAG_SYS_MAP_GET) == TRUE)
         AddStartMenuAction(MENU_ACTION_MAP);
 
     AddStartMenuAction(MENU_ACTION_PLAYER);
@@ -456,7 +455,7 @@ static void BuildLinkModeStartMenu(void)
     AddStartMenuAction(MENU_ACTION_POKEMON);
     AddStartMenuAction(MENU_ACTION_BAG);
 
-    if (FlagGet(FLAG_SYS_POKENAV_GET) == TRUE)
+    if (FlagGet(FLAG_SYS_MAP_GET) == TRUE)
     {
         AddStartMenuAction(MENU_ACTION_MAP);
     }
@@ -471,7 +470,7 @@ static void BuildUnionRoomStartMenu(void)
     AddStartMenuAction(MENU_ACTION_POKEMON);
     AddStartMenuAction(MENU_ACTION_BAG);
 
-    if (FlagGet(FLAG_SYS_POKENAV_GET) == TRUE)
+    if (FlagGet(FLAG_SYS_MAP_GET) == TRUE)
     {
         AddStartMenuAction(MENU_ACTION_MAP);
     }

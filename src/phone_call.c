@@ -27,10 +27,10 @@ static void InitPhoneCallTextPrinter(int, const u8 *);
 static bool32 RunPhoneCallTextPrinter(int);
 static void Task_SpinPhoneIcon(u8);
 
-static const u16 sPhoneCallWindow_Pal[] = INCGFX_U16("graphics/pokenav/match_call/window.png", ".gbapal");
-static const u8 sPhoneCallWindow_Gfx[] = INCGFX_U8("graphics/pokenav/match_call/window.png", ".4bpp");
-static const u16 sPhoneIcon_Pal[] = INCGFX_U16("graphics/pokenav/match_call/nav_icon.png", ".gbapal");
-static const u32 sPhoneIcon_Gfx[] = INCGFX_U32("graphics/pokenav/match_call/nav_icon.png", ".4bpp.smol");
+static const u16 sPhoneCallWindow_Pal[] = INCGFX_U16("graphics/phone_call/window.png", ".gbapal");
+static const u8 sPhoneCallWindow_Gfx[] = INCGFX_U8("graphics/phone_call/window.png", ".4bpp");
+static const u16 sPhoneIcon_Pal[] = INCGFX_U16("graphics/phone_call/phone_icon.png", ".gbapal");
+static const u32 sPhoneIcon_Gfx[] = INCGFX_U32("graphics/phone_call/phone_icon.png", ".4bpp.smol");
 
 static const u8 sText_PhoneCallEllipsis[] = _("………………\p");
 

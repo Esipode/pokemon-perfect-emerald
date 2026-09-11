@@ -31,7 +31,7 @@ Route104_EventScript_HideWhiteHerbFlorist::
 Route104_EventScript_TrySetRivalPos::
 	goto_if_ge VAR_BOARD_BRINEY_BOAT_STATE, 1, Route104_EventScript_DontSetRivalPos
 	goto_if_set FLAG_MET_RIVAL_RUSTBORO, Route104_EventScript_DontSetRivalPos
-	goto_if_unset FLAG_REGISTER_RIVAL_POKENAV, Route104_EventScript_DontSetRivalPos
+	goto_if_unset FLAG_RIVAL_TRADED_NUMBERS, Route104_EventScript_DontSetRivalPos
 	setobjectxyperm LOCALID_ROUTE104_RIVAL, 17, 52
 	return
 
@@ -92,8 +92,8 @@ Route104_EventScript_RivalEncounter::
 
 Route104_EventScript_MayEncounter::
 	goto_if_set FLAG_DEFEATED_RIVAL_ROUTE_104, Route104_EventScript_MayDefeated
-	goto_if_set FLAG_REGISTER_RIVAL_POKENAV, Route104_EventScript_MayAskToBattle
-	setflag FLAG_REGISTER_RIVAL_POKENAV
+	goto_if_set FLAG_RIVAL_TRADED_NUMBERS, Route104_EventScript_MayAskToBattle
+	setflag FLAG_RIVAL_TRADED_NUMBERS
 	msgbox Route104_Text_MayTradeNumbers, MSGBOX_DEFAULT
 	closemessage
 	delay 30
@@ -172,8 +172,8 @@ Route104_EventScript_BattleMayMudkip::
 
 Route104_EventScript_BrendanEncounter::
 	goto_if_set FLAG_DEFEATED_RIVAL_ROUTE_104, Route104_EventScript_BrendanDefeated
-	goto_if_set FLAG_REGISTER_RIVAL_POKENAV, Route104_EventScript_BrendanAskToBattle
-	setflag FLAG_REGISTER_RIVAL_POKENAV
+	goto_if_set FLAG_RIVAL_TRADED_NUMBERS, Route104_EventScript_BrendanAskToBattle
+	setflag FLAG_RIVAL_TRADED_NUMBERS
 	msgbox Route104_Text_BrendanTradeNumbers, MSGBOX_DEFAULT
 	closemessage
 	delay 30

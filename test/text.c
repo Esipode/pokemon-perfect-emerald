@@ -419,55 +419,10 @@ TEST("Species names fit on Naming Screen")
     EXPECT_LE(GetStringWidth(fontId, gSpeciesInfo[species].speciesName, 0), widthPx);
 }
 
-TEST("Species names fit on PokeNav Condition Screen")
+TEST("Species names fit on Condition Screen")
 {
     enum Species i;
     const u32 fontId = FONT_NARROWER, widthPx = 57;
-    enum Species species = SPECIES_NONE;
-    for (i = SPECIES_NONE + 1; i < NUM_SPECIES; i++)
-    {
-        if (IsSpeciesEnabled(i))
-        {
-            PARAMETRIZE_LABEL("%S", gSpeciesInfo[i].speciesName) { species = i; }
-        }
-    }
-    EXPECT_LE(GetStringWidth(fontId, gSpeciesInfo[species].speciesName, 0), widthPx);
-}
-
-TEST("Species names fit on PokeNav Condition Search Screen")
-{
-    enum Species i;
-    const u32 fontId = FONT_NARROWER, widthPx = 60;
-    enum Species species = SPECIES_NONE;
-    for (i = SPECIES_NONE + 1; i < NUM_SPECIES; i++)
-    {
-        if (IsSpeciesEnabled(i))
-        {
-            PARAMETRIZE_LABEL("%S", gSpeciesInfo[i].speciesName) { species = i; }
-        }
-    }
-    EXPECT_LE(GetStringWidth(fontId, gSpeciesInfo[species].speciesName, 0), widthPx);
-}
-
-TEST("Species names fit on PokeNav Ribbon Screen")
-{
-    enum Species i;
-    const u32 fontId = FONT_NARROWER, widthPx = 60;
-    enum Species species = SPECIES_NONE;
-    for (i = SPECIES_NONE + 1; i < NUM_SPECIES; i++)
-    {
-        if (IsSpeciesEnabled(i))
-        {
-            PARAMETRIZE_LABEL("%S", gSpeciesInfo[i].speciesName) { species = i; }
-        }
-    }
-    EXPECT_LE(GetStringWidth(fontId, gSpeciesInfo[species].speciesName, 0), widthPx);
-}
-
-TEST("Species names fit on PokeNav Ribbon List Screen")
-{
-    enum Species i;
-    const u32 fontId = FONT_NARROWER, widthPx = 60;
     enum Species species = SPECIES_NONE;
     for (i = SPECIES_NONE + 1; i < NUM_SPECIES; i++)
     {
