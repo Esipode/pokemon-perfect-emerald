@@ -43,6 +43,7 @@ static EWRAM_DATA struct {
     u32 unused;
     struct RegionMap regionMap;
     u16 state;
+    bool8 choseFlyDestination;
 } *sFieldRegionMapHandler = NULL;
 
 static void MCB2_InitRegionMapRegisters(void);
@@ -101,6 +102,7 @@ void FieldInitRegionMap(MainCallback callback)
     sFieldRegionMapHandler = Alloc(sizeof(*sFieldRegionMapHandler));
     sFieldRegionMapHandler->state = 0;
     sFieldRegionMapHandler->callback = callback;
+    sFieldRegionMapHandler->choseFlyDestination = FALSE;
     SetMainCallback2(MCB2_InitRegionMapRegisters);
 }
 
@@ -193,7 +195,10 @@ static void FieldUpdateRegionMap(void)
                     PlaySE(SE_SELECT);
                     SetFlyDestination(&sFieldRegionMapHandler->regionMap);
                     gSkipShowMonAnim = TRUE;
-                    ReturnToFieldFromFlyMapSelect();
+                    // Fly starts from the shared exit states so the map's
+                    // resources are released and the screen is faded out first.
+                    sFieldRegionMapHandler->choseFlyDestination = TRUE;
+                    sFieldRegionMapHandler->state++;
                 }
         }
         break;
@@ -205,7 +210,10 @@ static void FieldUpdateRegionMap(void)
         if (!gPaletteFade.active)
         {
             FreeRegionMapIconResources();
-            SetMainCallback2(sFieldRegionMapHandler->callback);
+            if (sFieldRegionMapHandler->choseFlyDestination)
+                ReturnToFieldFromFlyMapSelect();
+            else
+                SetMainCallback2(sFieldRegionMapHandler->callback);
             TRY_FREE_AND_SET_NULL(sFieldRegionMapHandler);
             FreeAllWindowBuffers();
         }
