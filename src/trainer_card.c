@@ -1496,7 +1496,9 @@ static void DrawStarsAndBadgesOnCard(void)
     u16 tileNum = 192;
     u8 palNum = 3;
 
-    FillBgTilemapBufferRect(3, 143, 15, yOffsets[sData->isHoenn], sData->trainerCard.stars, 1, 4);
+    u8 numStars = min(sData->trainerCard.stars, TRAINER_CARD_MAX_STARS);
+
+    FillBgTilemapBufferRect(3, 143, 3, yOffsets[sData->isHoenn], numStars, 1, 4);
     if (!sData->isLink)
     {
         x = 4;
