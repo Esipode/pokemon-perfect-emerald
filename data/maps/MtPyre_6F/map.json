@@ -72,14 +72,5 @@
     }
   ],
   "coord_events": [],
-  "bg_events": [
-    {
-      "type": "hidden_item",
-      "x": 6,
-      "y": 8,
-      "elevation": 3,
-      "item": "ITEM_GARDEVOIRITE",
-      "flag": "FLAG_ITEM_GARDEVOIRITE"
-    }
-  ]
+  "bg_events": []
 }

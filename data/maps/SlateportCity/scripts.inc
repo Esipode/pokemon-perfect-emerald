@@ -548,53 +548,21 @@ SlateportCity_PokemartDecor:
 	.2byte DECOR_C_HIGH_NOTE_MAT
 	pokemartlistend
 
-SlateportCity_EventScript_TMandMegaStoneClerk::
+SlateportCity_EventScript_Pokemart_Lures::
 	lock
 	faceplayer
 	message gText_HowMayIServeYou
 	waitmessage
-	goto_if_set FLAG_BADGE05_GET, SlateportCity_EventScript_TMandMegaStoneClerkExpanded
-	pokemart SlateportCity_Pokemart_TMandMegaStones
-	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
-	release
-	end
-
-SlateportCity_EventScript_TMandMegaStoneClerkExpanded::
-	pokemart SlateportCity_Pokemart_TMandMegaStonesExpanded
+	pokemart SlateportCity_Pokemart_Lures
 	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
 	release
 	end
 
 	.align 2
-SlateportCity_Pokemart_TMandMegaStones:
-	.2byte ITEM_TM_HIDDEN_POWER
-	.2byte ITEM_TM_SECRET_POWER
-	pokemartlistend
-
-	.align 2
-SlateportCity_Pokemart_TMandMegaStonesExpanded:
-	.2byte ITEM_TM_HIDDEN_POWER
-	.2byte ITEM_TM_SECRET_POWER
-	.2byte ITEM_CLEFABLITE
-    .2byte ITEM_VICTREEBELITE
-    .2byte ITEM_STARMINITE
-    .2byte ITEM_DRAGONINITE
-    .2byte ITEM_MEGANIUMITE
-    .2byte ITEM_FERALIGITE
-    .2byte ITEM_SKARMORITE
-    .2byte ITEM_FROSLASSITE
-    .2byte ITEM_EMBOARITE
-    .2byte ITEM_EXCADRITE
-    .2byte ITEM_SCOLIPITE
-    .2byte ITEM_SCRAFTINITE
-    .2byte ITEM_EELEKTROSSITE
-    .2byte ITEM_CHANDELURITE
-    .2byte ITEM_CHESNAUGHTITE
-    .2byte ITEM_DELPHOXITE
-    .2byte ITEM_GRENINJITE
-    .2byte ITEM_PYROARITE
-    .2byte ITEM_FLOETTITE
-    .2byte ITEM_MALAMARITE
+SlateportCity_Pokemart_Lures:
+	.2byte ITEM_LURE
+	.2byte ITEM_SUPER_LURE
+	.2byte ITEM_MAX_LURE
 	pokemartlistend
 
 @ Scene with Capt Sterns interview and Team Aqua announcing plans to steal Submarine
@@ -762,12 +730,6 @@ SlateportCity_EventScript_Man3::
 SlateportCity_EventScript_TeraShardClerk::
 	lock
 	faceplayer
-	goto_if_set FLAG_BADGE07_GET, SlateportCity_EventScript_ViewTeraShop
-	msgbox SlateportCity_Text_ExplainPreGym7, MSGBOX_DEFAULT
-	release
-	end
-
-SlateportCity_EventScript_ViewTeraShop::
 	msgbox SlateportCity_Text_TeraShopIntroText, MSGBOX_DEFAULT
 	pokemart SlateportCity_TeraShop
 	msgbox gText_PleaseComeAgain
@@ -775,24 +737,12 @@ SlateportCity_EventScript_ViewTeraShop::
 
 	.align 2
 SlateportCity_TeraShop::
-    .2byte ITEM_BUG_TERA_SHARD
-    .2byte ITEM_DARK_TERA_SHARD
-    .2byte ITEM_DRAGON_TERA_SHARD
-    .2byte ITEM_ELECTRIC_TERA_SHARD
-    .2byte ITEM_FAIRY_TERA_SHARD
-    .2byte ITEM_FIGHTING_TERA_SHARD
-    .2byte ITEM_FIRE_TERA_SHARD
-    .2byte ITEM_FLYING_TERA_SHARD
-    .2byte ITEM_GHOST_TERA_SHARD
-    .2byte ITEM_GRASS_TERA_SHARD
-    .2byte ITEM_GROUND_TERA_SHARD
-    .2byte ITEM_ICE_TERA_SHARD
-    .2byte ITEM_NORMAL_TERA_SHARD
-    .2byte ITEM_POISON_TERA_SHARD
-    .2byte ITEM_PSYCHIC_TERA_SHARD
-    .2byte ITEM_ROCK_TERA_SHARD
-    .2byte ITEM_STEEL_TERA_SHARD
-    .2byte ITEM_WATER_TERA_SHARD
+    .2byte ITEM_HEALTH_FEATHER
+    .2byte ITEM_MUSCLE_FEATHER
+    .2byte ITEM_RESIST_FEATHER
+    .2byte ITEM_GENIUS_FEATHER
+    .2byte ITEM_CLEVER_FEATHER
+    .2byte ITEM_SWIFT_FEATHER
 	.2byte ITEM_NONE
 	release
 	end
@@ -1322,18 +1272,10 @@ SlateportCity_Text_NameRatersHouseSign:
 	.string "NAME RATER'S HOUSE\n"
 	.string "“POKéMON nicknames rated.”$"
 
-SlateportCity_Text_ExplainPreGym7:
-	.string "Are you a POKEéMON TRAINER?\p"
-	.string "Then I have a few things\n"
-	.string "you might like!\p"
-	.string "Oh, but you seem to be missing\n"
-	.string "the MOSSDEEP CITY gym badge.\p"
-	.string "Once you have that, come back\n"
-	.string "and see me!$"
-
 SlateportCity_Text_TeraShopIntroText:
-	.string "Can I interest you in some\n"
-	.string "TERA SHARDS?$"
+	.string "Are you a POKéMON TRAINER?\p"
+	.string "Care to look at my feathers?\n"
+	.string "They'll raise your POKéMON's EVs!$"
 
 SlateportCity_Text_ExchangeWhatWithIt:
 	.string "What would you like to exchange\n"

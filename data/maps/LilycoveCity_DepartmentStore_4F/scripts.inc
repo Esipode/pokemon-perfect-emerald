@@ -47,6 +47,8 @@ LilycoveCity_DepartmentStore_4F_Pokemart_DefenseTMs:
 	.2byte ITEM_TM_SAFEGUARD
 	.2byte ITEM_TM_REFLECT
 	.2byte ITEM_TM_LIGHT_SCREEN
+	.2byte ITEM_TM_HIDDEN_POWER
+	.2byte ITEM_TM_SECRET_POWER
 	pokemartlistend
 
 LilycoveCity_DepartmentStore_4F_Text_AttackOrDefenseTM:

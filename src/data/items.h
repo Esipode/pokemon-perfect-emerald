@@ -1421,7 +1421,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_HEALTH_FEATHER] =
     {
         .name = ITEM_NAME("Health Feather"),
-        .price = (I_PRICE >= GEN_7) ? 300 : 3000,
+        .price = 3000,
         .description = COMPOUND_STRING(
             "Raises the base HP\n"
             "of one Pokémon."),
@@ -1438,7 +1438,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_MUSCLE_FEATHER] =
     {
         .name = ITEM_NAME("Muscle Feather"),
-        .price = (I_PRICE >= GEN_7) ? 300 : 3000,
+        .price = 3000,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Attack stat of one\n"
@@ -1456,7 +1456,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_RESIST_FEATHER] =
     {
         .name = ITEM_NAME("Resist Feather"),
-        .price = (I_PRICE >= GEN_7) ? 300 : 3000,
+        .price = 3000,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Defense stat of\n"
@@ -1474,7 +1474,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_GENIUS_FEATHER] =
     {
         .name = ITEM_NAME("Genius Feather"),
-        .price = (I_PRICE >= GEN_7) ? 300 : 3000,
+        .price = 3000,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Sp. Atk stat of one\n"
@@ -1492,7 +1492,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_CLEVER_FEATHER] =
     {
         .name = ITEM_NAME("Clever Feather"),
-        .price = (I_PRICE >= GEN_7) ? 300 : 3000,
+        .price = 3000,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Sp. Def stat of one\n"
@@ -1510,7 +1510,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_SWIFT_FEATHER] =
     {
         .name = ITEM_NAME("Swift Feather"),
-        .price = (I_PRICE >= GEN_7) ? 300 : 3000,
+        .price = 3000,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Speed stat of one\n"
@@ -2247,7 +2247,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_LURE] =
     {
         .name = ITEM_NAME("Lure"),
-        .price = 400,
+        .price = 200,
         .holdEffectParam = 100,
         .description = COMPOUND_STRING(
             "Makes Pokémon more\n"
@@ -2266,7 +2266,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_SUPER_LURE] =
     {
         .name = ITEM_NAME("Super Lure"),
-        .price = 700,
+        .price = 400,
         .holdEffectParam = 200,
         .description = COMPOUND_STRING(
             "Makes Pokémon more\n"
@@ -2285,7 +2285,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_MAX_LURE] =
     {
         .name = ITEM_NAME("Max Lure"),
-        .price = 900,
+        .price = 600,
         .holdEffectParam = 250,
         .description = COMPOUND_STRING(
             "Makes Pokémon more\n"
@@ -7303,7 +7303,7 @@ const struct ItemInfo gItemsInfo[] =
 
 // Gems
 #if I_PRICE >= GEN_9
-    #define GEM_PRICE 15000
+    #define GEM_PRICE 4000
 #elif I_PRICE >= GEN_7
     #define GEM_PRICE 4000
 #else
@@ -9322,7 +9322,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("Choice Band"),
     #if I_PRICE >= GEN_9
-        .price = 100000,
+        .price = 10000,
     #elif I_PRICE >= GEN_7
         .price = 4000,
     #else
@@ -9347,7 +9347,7 @@ const struct ItemInfo gItemsInfo[] =
         .name = ITEM_NAME("Choice Specs"),
         .pluralName = ITEM_PLURAL_NAME("Choice Specs"),
     #if I_PRICE >= GEN_9
-        .price = 100000,
+        .price = 10000,
     #elif I_PRICE >= GEN_7
         .price = 4000,
     #else
@@ -9372,7 +9372,7 @@ const struct ItemInfo gItemsInfo[] =
         .name = ITEM_NAME("Choice Scarf"),
         .pluralName = ITEM_PLURAL_NAME("Choice Scarves"),
     #if I_PRICE >= GEN_9
-        .price = 100000,
+        .price = 10000,
     #elif I_PRICE >= GEN_7
         .price = 4000,
     #else
@@ -9398,7 +9398,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("Flame Orb"),
     #if I_PRICE >= GEN_9
-        .price = 15000,
+        .price = 10000,
     #elif I_PRICE >= GEN_7
         .price = 4000,
     #else
@@ -9422,7 +9422,7 @@ const struct ItemInfo gItemsInfo[] =
     {
         .name = ITEM_NAME("Toxic Orb"),
     #if I_PRICE >= GEN_9
-        .price = 15000,
+        .price = 10000,
     #elif I_PRICE >= GEN_7
         .price = 4000,
     #else

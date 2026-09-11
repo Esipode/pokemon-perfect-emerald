@@ -136,15 +136,6 @@
     }
   ],
   "coord_events": [],
-  "bg_events": [
-    {
-      "type": "hidden_item",
-      "x": 4,
-      "y": 21,
-      "elevation": 3,
-      "item": "ITEM_MEDICHAMITE",
-      "flag": "FLAG_ITEM_MEDICHAMITE"
-    }
-  ],
+  "bg_events": [],
   "region": "REGION_HOENN"
 }

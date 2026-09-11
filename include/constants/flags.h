@@ -1224,77 +1224,77 @@
 #define FLAG_ITEM_SAFARI_ZONE_NORTH_EAST_NUGGET                     0x491
 #define FLAG_ITEM_SAFARI_ZONE_SOUTH_EAST_TM96                       0x492
 
-#define FLAG_ITEM_VENUSAURITE                                       0x493
-#define FLAG_ITEM_CHARIZARDITE_X                                    0x494
-#define FLAG_ITEM_CHARIZARDITE_Y                                    0x495
-#define FLAG_ITEM_BLASTOISINITE                                     0x496
-#define FLAG_ITEM_BEEDRILLITE                                       0x497
-#define FLAG_ITEM_PIDGEOTITE                                        0x498
-#define FLAG_ITEM_ALAKAZITE                                         0x499
-#define FLAG_ITEM_SLOWBRONITE                                       0x49A
-#define FLAG_ITEM_GENGARITE                                         0x49B
-#define FLAG_ITEM_KANGASKHANITE                                     0x49C
-#define FLAG_ITEM_PINSIRITE                                         0x49D
-#define FLAG_ITEM_GYARADOSITE                                       0x49E
-#define FLAG_ITEM_AERODACTYLITE                                     0x49F
-#define FLAG_ITEM_AMPHAROSITE                                       0x4A0
-#define FLAG_ITEM_STEELIXITE                                        0x4A1
-#define FLAG_ITEM_SCIZORITE                                         0x4A2
-#define FLAG_ITEM_HERACRONITE                                       0x4A3
-#define FLAG_ITEM_HOUNDOOMINITE                                     0x4A4
-#define FLAG_ITEM_TYRANITARITE                                      0x4A5
-#define FLAG_ITEM_SCEPTILITE                                        0x4A6
-#define FLAG_ITEM_BLAZIKENITE                                       0x4A7
-#define FLAG_ITEM_SWAMPERTITE                                       0x4A8
-#define FLAG_ITEM_GARDEVOIRITE                                      0x4A9
-#define FLAG_ITEM_SABLENITE                                         0x4AA
-#define FLAG_ITEM_MAWILITE                                          0x4AB
-#define FLAG_ITEM_AGGRONITE                                         0x4AC
-#define FLAG_ITEM_MEDICHAMITE                                       0x4AD
-#define FLAG_ITEM_MANECTITE                                         0x4AE
-#define FLAG_ITEM_SHARPEDONITE                                      0x4AF
-#define FLAG_ITEM_CAMERUPTITE                                       0x4B0
-#define FLAG_ITEM_ALTARIANITE                                       0x4B1
-#define FLAG_ITEM_BANETTITE                                         0x4B2
-#define FLAG_ITEM_ABSOLITE                                          0x4B3
-#define FLAG_ITEM_GLALITITE                                         0x4B4
-#define FLAG_ITEM_SALAMENCITE                                       0x4B5
-#define FLAG_ITEM_METAGROSSITE                                      0x4B6
-#define FLAG_ITEM_LOPUNNITE                                         0x4B7
-#define FLAG_ITEM_GARCHOMPITE                                       0x4B8
-#define FLAG_ITEM_LUCARIONITE                                       0x4B9
-#define FLAG_ITEM_ABOMASITE                                         0x4BA
-#define FLAG_ITEM_GALLADITE                                         0x4BB
-#define FLAG_ITEM_AUDINITE                                          0x4BC
-#define FLAG_ITEM_NORMALIUM_Z                                       0x4BD
-#define FLAG_ITEM_FIRIUM_Z                                          0x4BE
-#define FLAG_ITEM_WATERIUM_Z                                        0x4BF
-#define FLAG_ITEM_ELECTRIUM_Z                                       0x4C0
-#define FLAG_ITEM_GRASSIUM_Z                                        0x4C1
-#define FLAG_ITEM_ICIUM_Z                                           0x4C2
-#define FLAG_ITEM_FIGHTINIUM_Z                                      0x4C3
-#define FLAG_ITEM_POISONIUM_Z                                       0x4C4
-#define FLAG_ITEM_GROUNDIUM_Z                                       0x4C5
-#define FLAG_ITEM_FLYINIUM_Z                                        0x4C6
-#define FLAG_ITEM_PSYCHIUM_Z                                        0x4C7
-#define FLAG_ITEM_BUGINIUM_Z                                        0x4C8
-#define FLAG_ITEM_ROCKIUM_Z                                         0x4C9
-#define FLAG_ITEM_GHOSTIUM_Z                                        0x4CA
-#define FLAG_ITEM_DRAGONIUM_Z                                       0x4CB
-#define FLAG_ITEM_DARKINIUM_Z                                       0x4CC
-#define FLAG_ITEM_STEELIUM_Z                                        0x4CD
-#define FLAG_ITEM_FAIRIUM_Z                                         0x4CE
-#define FLAG_ITEM_PIKANIUM_Z                                        0x4CF
-#define FLAG_ITEM_EEVIUM_Z                                          0x4D0
-#define FLAG_ITEM_SNORLIUM_Z                                        0x4D1
-#define FLAG_ITEM_DECIDIUM_Z                                        0x4D2
-#define FLAG_ITEM_INCINIUM_Z                                        0x4D3
-#define FLAG_ITEM_PRIMARIUM_Z                                       0x4D4
-#define FLAG_ITEM_LYCANIUM_Z                                        0x4D5
-#define FLAG_ITEM_MIMIKIUM_Z                                        0x4D6
-#define FLAG_ITEM_KOMMONIUM_Z                                       0x4D7
-#define FLAG_ITEM_ALORAICHIUM_Z                                     0x4D8
-#define FLAG_ITEM_PIKASHUNIUM_Z                                     0x4D9
+#define FLAG_UNUSED_0x493                                           0x493 // Unused Flag
+#define FLAG_UNUSED_0x494                                           0x494 // Unused Flag
+#define FLAG_UNUSED_0x495                                           0x495 // Unused Flag
+#define FLAG_UNUSED_0x496                                           0x496 // Unused Flag
+#define FLAG_UNUSED_0x497                                           0x497 // Unused Flag
+#define FLAG_UNUSED_0x498                                           0x498 // Unused Flag
+#define FLAG_UNUSED_0x499                                           0x499 // Unused Flag
+#define FLAG_UNUSED_0x49A                                           0x49A // Unused Flag
+#define FLAG_UNUSED_0x49B                                           0x49B // Unused Flag
+#define FLAG_UNUSED_0x49C                                           0x49C // Unused Flag
+#define FLAG_UNUSED_0x49D                                           0x49D // Unused Flag
+#define FLAG_UNUSED_0x49E                                           0x49E // Unused Flag
+#define FLAG_UNUSED_0x49F                                           0x49F // Unused Flag
+#define FLAG_UNUSED_0x4A0                                           0x4A0 // Unused Flag
+#define FLAG_UNUSED_0x4A1                                           0x4A1 // Unused Flag
+#define FLAG_UNUSED_0x4A2                                           0x4A2 // Unused Flag
+#define FLAG_UNUSED_0x4A3                                           0x4A3 // Unused Flag
+#define FLAG_UNUSED_0x4A4                                           0x4A4 // Unused Flag
+#define FLAG_UNUSED_0x4A5                                           0x4A5 // Unused Flag
+#define FLAG_UNUSED_0x4A6                                           0x4A6 // Unused Flag
+#define FLAG_UNUSED_0x4A7                                           0x4A7 // Unused Flag
+#define FLAG_UNUSED_0x4A8                                           0x4A8 // Unused Flag
+#define FLAG_UNUSED_0x4A9                                           0x4A9 // Unused Flag
+#define FLAG_UNUSED_0x4AA                                           0x4AA // Unused Flag
+#define FLAG_UNUSED_0x4AB                                           0x4AB // Unused Flag
+#define FLAG_UNUSED_0x4AC                                           0x4AC // Unused Flag
+#define FLAG_UNUSED_0x4AD                                           0x4AD // Unused Flag
+#define FLAG_UNUSED_0x4AE                                           0x4AE // Unused Flag
+#define FLAG_UNUSED_0x4AF                                           0x4AF // Unused Flag
+#define FLAG_UNUSED_0x4B0                                           0x4B0 // Unused Flag
+#define FLAG_UNUSED_0x4B1                                           0x4B1 // Unused Flag
+#define FLAG_UNUSED_0x4B2                                           0x4B2 // Unused Flag
+#define FLAG_UNUSED_0x4B3                                           0x4B3 // Unused Flag
+#define FLAG_UNUSED_0x4B4                                           0x4B4 // Unused Flag
+#define FLAG_UNUSED_0x4B5                                           0x4B5 // Unused Flag
+#define FLAG_UNUSED_0x4B6                                           0x4B6 // Unused Flag
+#define FLAG_UNUSED_0x4B7                                           0x4B7 // Unused Flag
+#define FLAG_UNUSED_0x4B8                                           0x4B8 // Unused Flag
+#define FLAG_UNUSED_0x4B9                                           0x4B9 // Unused Flag
+#define FLAG_UNUSED_0x4BA                                           0x4BA // Unused Flag
+#define FLAG_UNUSED_0x4BB                                           0x4BB // Unused Flag
+#define FLAG_UNUSED_0x4BC                                           0x4BC // Unused Flag
+#define FLAG_UNUSED_0x4BD                                           0x4BD // Unused Flag
+#define FLAG_UNUSED_0x4BE                                           0x4BE // Unused Flag
+#define FLAG_UNUSED_0x4BF                                           0x4BF // Unused Flag
+#define FLAG_UNUSED_0x4C0                                           0x4C0 // Unused Flag
+#define FLAG_UNUSED_0x4C1                                           0x4C1 // Unused Flag
+#define FLAG_UNUSED_0x4C2                                           0x4C2 // Unused Flag
+#define FLAG_UNUSED_0x4C3                                           0x4C3 // Unused Flag
+#define FLAG_UNUSED_0x4C4                                           0x4C4 // Unused Flag
+#define FLAG_UNUSED_0x4C5                                           0x4C5 // Unused Flag
+#define FLAG_UNUSED_0x4C6                                           0x4C6 // Unused Flag
+#define FLAG_UNUSED_0x4C7                                           0x4C7 // Unused Flag
+#define FLAG_UNUSED_0x4C8                                           0x4C8 // Unused Flag
+#define FLAG_UNUSED_0x4C9                                           0x4C9 // Unused Flag
+#define FLAG_UNUSED_0x4CA                                           0x4CA // Unused Flag
+#define FLAG_UNUSED_0x4CB                                           0x4CB // Unused Flag
+#define FLAG_UNUSED_0x4CC                                           0x4CC // Unused Flag
+#define FLAG_UNUSED_0x4CD                                           0x4CD // Unused Flag
+#define FLAG_UNUSED_0x4CE                                           0x4CE // Unused Flag
+#define FLAG_UNUSED_0x4CF                                           0x4CF // Unused Flag
+#define FLAG_UNUSED_0x4D0                                           0x4D0 // Unused Flag
+#define FLAG_UNUSED_0x4D1                                           0x4D1 // Unused Flag
+#define FLAG_UNUSED_0x4D2                                           0x4D2 // Unused Flag
+#define FLAG_UNUSED_0x4D3                                           0x4D3 // Unused Flag
+#define FLAG_UNUSED_0x4D4                                           0x4D4 // Unused Flag
+#define FLAG_UNUSED_0x4D5                                           0x4D5 // Unused Flag
+#define FLAG_UNUSED_0x4D6                                           0x4D6 // Unused Flag
+#define FLAG_UNUSED_0x4D7                                           0x4D7 // Unused Flag
+#define FLAG_UNUSED_0x4D8                                           0x4D8 // Unused Flag
+#define FLAG_UNUSED_0x4D9                                           0x4D9 // Unused Flag
 #define FLAG_TERA_ORB_CHARGED                                       0x4DA
 #define FLAG_TERA_ORB_NO_COST                                       0x4DB
 #define FLAG_UNUSED_0x4DC                                           0x4DC // Unused Flag
