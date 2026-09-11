@@ -244,3 +244,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/virizion.inc"
 	.include "data/legendary_encounters/genesect.inc"
 	.include "data/legendary_encounters/keldeo.inc"
+	.include "data/legendary_encounters/kyurem.inc"

@@ -1241,6 +1241,19 @@
 	.byte \var
 	.endm
 
+	@ Writes how well the player knows \species into author variable \var:
+	@   0 never met   1 seen in the Pokedex   2 caught in the Pokedex
+	@ Conditions read battle state only, so this is the only route from "what has the player done
+	@ outside this battle" into an encounter script - a counterpart legendary, a fusion partner, a
+	@ rival form. Two Pokedex bit tests, so it is cheap enough for any checkpoint; alternate forms
+	@ share a dex slot and so count as the same species. The caught reading survives the Pokemon
+	@ being released or traded away.
+	.macro encowned species:req, var:req
+	callnative BS_EncOwned
+	.2byte \species
+	.byte \var
+	.endm
+
 	@ Files the type of the move that just landed as a type-keyed damage resistance on \target, at
 	@ \percent (capped at ENC_MAX_ADAPT_PERCENT), in a FIFO \slots deep (capped at
 	@ ENC_MAX_ADAPTATIONS). Re-filing a type already held raises it to \percent instead of taking a

@@ -12822,6 +12822,31 @@ void BS_EncStorePrediction(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// OWNED (encowned). The player's history with a species, as a number a script can branch on:
+// 2 has caught one, 1 has only seen one, 0 has never met one. Conditions can only read battle state,
+// so this is the only route from "what has the player done outside this battle" into an encounter
+// script.
+//
+// Both readings come from the Pokedex, which is two bit tests against a fixed dex slot.
+// CheckPlayerOwnsSpecies would answer "owns one RIGHT NOW" instead, but it walks the party and all
+// 28 PC boxes decrypting every slot - far too much work for a mid-battle checkpoint, and it
+// asserts on any stored mon whose species this build does not have. The caught flag also survives
+// releasing or trading the Pokemon away, which is the right reading for "has the player met this
+// one": the memory is what an encounter reacts to, not the current party.
+void BS_EncOwned(void)
+{
+    NATIVE_ARGS(u16 species, u8 var);
+
+    if (GetSetPokedexFlagBySpecies(cmd->species, FLAG_GET_CAUGHT))
+        gEncounterVars[cmd->var] = 2;
+    else if (GetSetPokedexFlagBySpecies(cmd->species, FLAG_GET_SEEN))
+        gEncounterVars[cmd->var] = 1;
+    else
+        gEncounterVars[cmd->var] = 0;
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // ANALYSIS (encadapt). Files the type of the move that just landed as a type-keyed damage
 // resistance on every battler <target> resolves to. Capacity comes from the call site rather than
 // from stored state, so a phase that widens the board is one changed literal in the script.

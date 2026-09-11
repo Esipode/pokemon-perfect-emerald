@@ -259,7 +259,7 @@ extern const u8 EncScript_Deoxys_HitDark[];
 extern const u8 EncScript_Deoxys_HitOtherPhysical[];
 extern const u8 EncScript_Deoxys_HitOtherSpecial[];
 
-// Jirachi ("The Wish Pokemon")
+// Jirachi ("The Wish Pokémon")
 extern const u8 EncScript_Jirachi_Intro[];
 extern const u8 EncScript_Jirachi_TagsBlaze[];
 extern const u8 EncScript_Jirachi_WishGranted[];
@@ -444,7 +444,7 @@ extern const u8 EncScript_Regigigas_Recover[];
 extern const u8 EncScript_Regigigas_CrushBoosts[];
 extern const u8 EncScript_Regigigas_TurnClose[];
 
-// Rotom ("The Possessive Pokemon")
+// Rotom ("The Possessive Pokémon")
 extern const u8 EncScript_Rotom_Intro[];
 extern const u8 EncScript_Rotom_TurnOpen[];
 extern const u8 EncScript_Rotom_TurnClose[];
@@ -457,7 +457,7 @@ extern const u8 EncScript_Rotom_RogueProgram[];
 extern const u8 EncScript_Rotom_Takeover[];
 extern const u8 EncScript_Rotom_Weakened[];
 
-// Shaymin ("The Gratitude Pokemon")
+// Shaymin ("The Gratitude Pokémon")
 extern const u8 EncScript_Shaymin_Intro[];
 extern const u8 EncScript_Shaymin_Gratitude[];
 extern const u8 EncScript_Shaymin_SeedFlarePhase[];
@@ -540,7 +540,7 @@ extern const u8 EncScript_Cresselia_Cleanse[];
 extern const u8 EncScript_Cresselia_Reprisal[];
 extern const u8 EncScript_Cresselia_TurnClose[];
 
-// Giratina ("The Renegade Pokemon")
+// Giratina ("The Renegade Pokémon")
 extern const u8 EncScript_Giratina_Intro[];
 extern const u8 EncScript_Giratina_TurnOpen[];
 extern const u8 EncScript_Giratina_AnchorPrompt[];
@@ -652,8 +652,6 @@ extern const u8 EncScript_Genesect_OverclockFire[];
 // Keldeo ("The Colt Pokémon")
 extern const u8 EncScript_Keldeo_Intro[];
 extern const u8 EncScript_Keldeo_Teachings[];
-extern const u8 EncScript_Keldeo_Teachings[];
-extern const u8 EncScript_Keldeo_TrueResolve[];
 extern const u8 EncScript_Keldeo_TrueResolve[];
 extern const u8 EncScript_Keldeo_Spent[];
 extern const u8 EncScript_Keldeo_Spent[];
@@ -668,6 +666,22 @@ extern const u8 EncScript_Keldeo_TurnClose[];
 extern const u8 EncScript_Keldeo_Riposte[];
 extern const u8 EncScript_Keldeo_DuelSurvived[];
 extern const u8 EncScript_Keldeo_SwordResolve[];
+
+// Kyurem ("The Boundary Pokémon")
+extern const u8 EncScript_Kyurem_Intro[];
+extern const u8 EncScript_Kyurem_EmptyDragon[];
+extern const u8 EncScript_Kyurem_BrokenDragon[];
+extern const u8 EncScript_Kyurem_TheLock[];
+extern const u8 EncScript_Kyurem_Shatter[];
+extern const u8 EncScript_Kyurem_TurnOpen[];
+extern const u8 EncScript_Kyurem_Freeze[];
+extern const u8 EncScript_Kyurem_BeginCharge[];
+extern const u8 EncScript_Kyurem_Resonate[];
+extern const u8 EncScript_Kyurem_Heat[];
+extern const u8 EncScript_Kyurem_Consume[];
+extern const u8 EncScript_Kyurem_TheyEntered[];
+extern const u8 EncScript_Kyurem_TurnClose[];
+extern const u8 EncScript_Kyurem_Shatter[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
@@ -699,7 +713,7 @@ enum EncounterId TakePendingBattleEncounter(void);
 
 // --- Encounter properties (struct EncounterProperties) -------------------------------------------
 
-// Rebuilds every opponent Pokemon at the encounter's Level: property. Called from
+// Rebuilds every opponent Pokémon at the encounter's Level: property. Called from
 // CB2_InitBattleInternal (battle_main.c) after the opponent parties exist but before any
 // gBattleMons are built from them - a level change has to happen while the party is still the only
 // copy of the data, since stats, HP and the battler's own struct are all derived from it here.
@@ -728,7 +742,7 @@ void ApplyEncounterAbilityOverride(void);
 // The off-list half of the Ability: property: writes the ability straight onto a battler once
 // gBattleMons exist. Called for every battler as it is built (DoBattleIntro) and as it switches in
 // (SwitchInClearSetData), and applies only to the mon ApplyEncounterAbilityOverride targeted, so a
-// trainer encounter's other Pokemon keep their own abilities. No-op when the party's ability slot
+// trainer encounter's other Pokémon keep their own abilities. No-op when the party's ability slot
 // already carries the property, which is the common case.
 //
 // Both call sites sit before switch-in abilities activate, so an Intimidate or a Drought granted

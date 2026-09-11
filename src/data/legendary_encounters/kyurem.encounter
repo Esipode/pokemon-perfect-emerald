@@ -1,0 +1,275 @@
+Encounter: Kyurem
+
+# Kyurem, "The Boundary Pokemon". One rule, stated in both directions:
+#   KYUREM EATS WHAT HAPPENS. Every event feeds it, and the emptier the battlefield gets, the harder
+#   Kyurem is to hurt. Heat and pressure are the only things that put energy back.
+# THE METER OWNS THE GUARD, and the meter is the half the player controls. EncScript_Kyurem_
+#   ApplyStance is the only writer of the damage reduction outside _Spent, and it reads Phase, Meter,
+#   Charge and Fusion:
+#     ENTROPY  0-2 THIN    3-4 DRAWN   5-7 DEEP   8-10 ABSOLUTE
+#     Phase 0    86          89          92          94
+#     Phase 1    88          90          93          95
+#     Phase 2    90          92          94          96
+#     Phase 3    a flat 97 - the lock is not meant to be out-damaged
+#     charging an Absolute Zero +2, fused +2, STAGGERED -15 (the reeling turn, the biggest window)
+#   Every shipped sibling owns its guard from the phase (Terrakion, Cobalion), the meter (Virizion)
+#   or a transient state (Keldeo's duel). Kyurem's is owned by the meter AND the phase together, so
+#   the player is not fighting for damage windows - they are fighting to keep the battlefield
+#   POPULATED. Healing, losing a Pokemon and letting Kyurem strip the field all make it tougher.
+# ENTROPY, 0-10. Rises +1 every turn on its own, +1 when your side recovered HP, +1 when the Energy
+#   Drain found something to take, +2 on any faint, +2 on a landed Absolute Zero / Glaciate. Falls
+#   -1 when you took >= 6% of Kyurem's max HP off it this turn, -2 for a Fire- or Fighting-type move
+#   landing on it, -2 for breaking an Absolute Zero charge, -3 for collapsing a resonance.
+# AT ENTROPY >= 5 Kyurem imposes a FROZEN LAW, one of four in rotation, for 3 turns: switching,
+#   your last move, the field, or your stat stages. At >= 8 from Phase 1 the VOID Heal Blocks your
+#   side every turn.
+# PHASE 3 FLIPS THE METER. It resets and reads as ENERGY 0-6, which the PLAYER fills: +2 per
+#   Fire/Fighting hit, +1 per turn they take >= 5% off Kyurem, +1 per turn they get weather or
+#   terrain to stick. At 6 the ice SHATTERS, Kyurem drops to 6% HP and the ball is allowed.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY (guideline 8). Phase 0 lets a status stick and work
+#   completely; from Phase 1 every landed Glaciate sheds it, so status stays strong but has to be
+#   re-applied around the freeze cycle. ABILITY_PRESSURE doubles what a staller spends, and the
+#   natural +1 creep makes a passive turn actively bad. FROZEN STATS wipes stat stages every turn it
+#   holds and a landed freeze wipes them outright, so setup and evasion do nothing against the
+#   fight's biggest numbers - which are all percentages of max HP. Toxic is flat.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Kyurem_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 86         # THIN band, Phase 0 - the softest Kyurem ever is. Every later value
+                                # is written absolutely by EncScript_Kyurem_ApplyStance, which
+                                # _Intro calls on turn 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True               # load-bearing: Phase 3 is a lock the player has to THAW, not
+                                # out-damage, and the deadlock fallback fires at 1 HP. Cleared in
+                                # _Spent
+    Ability: ABILITY_PRESSURE   # its own. Doubles PP drain, which is the right punish for the stall
+                                # lines this fight otherwise invites. The fused forms bring
+                                # Turboblaze / Teravolt with them through the form change
+    Moves: MOVE_ICE_BEAM, MOVE_DRAGON_PULSE, MOVE_SHADOW_BALL, MOVE_IMPRISON
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..PlayerMark to 0..15. No var-to-var comparison appears anywhere in this design; every test is
+# against a literal, and ENC_SNAP_DAMAGE / ENC_SNAP_RECOVERY are the engine's own answer to
+# "subtract one value from another".
+# 0 Phase (0 Boundary / 1 Empty Dragon / 2 Broken Dragon / 3 Absolute Zero / 4 Spent), 1 Meter
+# (ENTROPY 0-10 in Phases 0-2, ENERGY 0-6 in Phase 3), 2 LastBand (the last ANNOUNCED band - the
+# callout's re-fire latch), 3 TurnGuard (the once-per-turn scaffold), 4 BossMark (Kyurem's HP% at
+# turn open; reused as the player's mark once it has been measured), 5 Scratch (the copy
+# ENC_SNAP_DAMAGE consumes, so BossMark survives being measured; afterwards it holds how much of
+# Kyurem's max HP the player took this turn), 6 Charge (0 none / 1-3 turns left on an Absolute Zero
+# charge / 9 staggered), 7 Law (0 none / 1 switching / 2 moves / 3 field / 4 stats), 8 LawTurns,
+# 9 LawNext (the rotation cursor, 1-4), 10 EventGuard (per-turn guard shared by OnFaint and
+# OnSwitchIn), 11 Fed (a Fire/Fighting hit has been counted this turn - also the charge and fusion
+# interrupt flag), 12 Fusion (0 none / 1-2 absorbing a dragon the player has met / 3-4 absorbing one
+# they never met / 5 fused White / 6 fused Black), 13 FusionTurns, 14 Ultimate (freezes landed -
+# drives escalating damage and dialogue), 15 PlayerMark (the player's HP% at turn open).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Kyurem_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Meter) >= 0
+    Var(LastBand) >= 0
+    Var(TurnGuard) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Charge) >= 0
+    Var(Law) >= 0
+    Var(LawTurns) >= 0
+    Var(LawNext) >= 0
+    Var(EventGuard) >= 0
+    Var(Fed) >= 0
+    Var(Fusion) >= 0
+    Var(FusionTurns) >= 0
+    Var(Ultimate) >= 0
+    Var(PlayerMark) >= 0
+
+# The four phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. All four sit below _TurnClose (80), so at
+# an OnTurnEnd where the player's damage crossed a threshold the transition runs first and every
+# later script sees the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Kyurem_EmptyDragon
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Kyurem_EmptyDragon
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Kyurem_BrokenDragon
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Kyurem_BrokenDragon
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Kyurem_TheLock
+Conditions:
+    Battler(Boss).HpPercent <= 12
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Kyurem_TheLock
+Conditions:
+    Battler(Boss).HpPercent <= 12
+    Var(Phase) == 2
+
+# The deadlock fallback. Survive: True holds Kyurem at 1 HP, and the lock is meant to end by the
+# SHATTER - this exists only so a player who grinds it down anyway cannot stall the fight forever.
+# _Shatter is registered three times and is Once, so the first selection disables the rest.
+Trigger: OnMoveEnd
+Priority: 8
+Flags: Once
+Script: EncScript_Kyurem_Shatter
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 3
+
+Trigger: OnTurnEnd
+Priority: 8
+Flags: Once
+Script: EncScript_Kyurem_Shatter
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 3
+
+# The once-per-turn scaffold. TurnGuard is its only gate and the script sets it immediately, so no
+# branch out of it can leave it re-armed. It ticks every countdown (the decrement half of the split),
+# takes the two marks the turn is measured against, re-applies the live law, re-arms the VOID's heal
+# block, runs the recurring cue and clears the per-turn state.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Kyurem_TurnOpen
+Conditions:
+    Var(Phase) <= 3
+    Var(TurnGuard) == 0
+
+# A FROZEN LAW. Imposed from Entropy 5, one of four in rotation so a repeat fight does not open the
+# same way. Self-disabling: the script sets Law.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_Kyurem_Freeze
+Conditions:
+    Var(Phase) <= 2
+    Var(Meter) >= 5
+    Var(Law) == 0
+
+# The ABSOLUTE ZERO telegraph. Announced before the player picks a move, so the turn can be spent on
+# the answer. Self-disabling: the script sets Charge. Fusion <= 4 is "not fused" - a fused Kyurem is
+# already spending itself. Charge == 0 also keeps it quiet through a staggered turn (Charge 9).
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Kyurem_BeginCharge
+Conditions:
+    Var(Charge) == 0
+    Var(Fusion) <= 4
+    Any:
+        All:
+            Var(Phase) <= 2
+            Var(Meter) >= 5
+        Var(Phase) == 3
+
+# DRAGON RESONANCE (Phase 2 only). Kyurem reaches for Reshiram or Zekrom; which one, and how much it
+# gets, is gated on the player's history with them through encowned. Self-disabling: the script sets
+# Fusion. FusionTurns == 0 is the cooldown after a previous attempt.
+# Deliberately NOT gated on Charge: _BeginCharge sits one priority above this at the same checkpoint,
+# so a live charge would block the resonance on almost every turn of a phase that is only thirteen
+# points of HP wide, and the fusion would never be seen. The two run side by side instead, which
+# costs nothing to read - heat and a heavy turn break BOTH of them, so the player's answer is the
+# same either way.
+Trigger: OnTurnStart
+Priority: 16
+Script: EncScript_Kyurem_Resonate
+Conditions:
+    Var(Phase) == 2
+    Var(Fusion) == 0
+    Var(FusionTurns) == 0
+
+# HEAT. A Fire- or Fighting-type move landed on Kyurem - the fight's main lever, and the only thing
+# that fills ENERGY quickly in the Phase 3 lock. At OnMoveEnd Event.Battler is the battler that GOT
+# HIT. Fire and Fighting are the THEMATIC answer, not the type-chart answer: Ice/Dragon is weak to
+# Fighting but only neutral to Fire, and the fight rewards heat anyway. Self-disables through Fed,
+# which its script sets; Once would mean once per BATTLE.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Kyurem_Heat
+Conditions:
+    Var(Fed) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 3
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_FIRE
+        Event.MoveType == TYPE_FIGHTING
+
+# A Pokemon fainted - either side's. The spec's "Pokemon faint" is not about whose: Kyurem eats what
+# happens. EventGuard stops the replacement switch-in being processed a second time.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Kyurem_Consume
+Conditions:
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+
+# TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when
+# every var is 0. Sets EventGuard and nothing else - a mid-turn switch (U-turn, Eject Button) only
+# exists here so a faint later in the same turn is not double-counted.
+Trigger: OnSwitchIn
+Priority: 31
+Script: EncScript_Kyurem_TheyEntered
+Conditions:
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE LEDGER, and the only place the turn's subsystems resolve. Kyurem has more end-of-turn
+# subsystems than any sibling - the ledger, the drain, the charge, the fusion, the law timer, the
+# announcement - and six separate OnTurnEnd triggers plus a phase transition would sit one script
+# away from the documented 8-per-checkpoint cap, so they are folded into one script with internal
+# branching. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Kyurem_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# THE SHATTER. ENERGY reached 6 in the Phase 3 lock: the player broke the ice rather than out-damaged
+# it. Runs after _TurnClose (80), which is what filled the meter.
+Trigger: OnTurnEnd
+Priority: 88
+Flags: Once
+Script: EncScript_Kyurem_Shatter
+Conditions:
+    Var(Phase) == 3
+    Var(Meter) >= 6

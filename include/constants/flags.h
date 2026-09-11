@@ -83,7 +83,7 @@
 #define FLAG_HIDE_VIRIZION   0x3E
 #define FLAG_HIDE_GENESECT   0x3F
 #define FLAG_HIDE_KELDEO     0x40
-#define FLAG_UNUSED_0x041    0x41 // Unused Flag
+#define FLAG_HIDE_KYUREM     0x41
 #define FLAG_UNUSED_0x042    0x42 // Unused Flag
 #define FLAG_UNUSED_0x043    0x43 // Unused Flag
 #define FLAG_UNUSED_0x044    0x44 // Unused Flag
