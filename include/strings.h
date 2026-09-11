@@ -1363,8 +1363,6 @@ extern const u8 gText_Round2Results[];
 extern const u8 gText_ContestantsMonWon[];
 
 // Trainer Card
-extern const u8 gText_LinkCableBattles[];
-extern const u8 gText_LinkBattles[];
 extern const u8 gText_WaitingTrainerFinishReading[];
 extern const u8 gText_TrainerCardName[];
 extern const u8 gText_TrainerCardIDNo[];
@@ -1375,18 +1373,15 @@ extern const u8 gText_TrainerCardPokedex[];
 extern const u8 gText_TrainerCardTime[];
 extern const u8 gText_Colon2[];
 extern const u8 gText_Var1sTrainerCard[];
-extern const u8 gText_HallOfFameDebut[];
-extern const u8 gText_WinsLosses[];
-extern const u8 gText_PokemonTrades[];
-extern const u8 gText_BerryCrush[];
 extern const u8 gText_UnionTradesAndBattles[];
-extern const u8 gText_NumPokeblocks[];
-extern const u8 gText_PokeblocksWithFriends[];
-extern const u8 gText_WonContestsWFriends[];
-extern const u8 gText_WinsStraight[];
-extern const u8 gText_NumBP[];
-extern const u8 gText_BattleTower[];
-extern const u8 gText_BattlePtsWon[];
+extern const u8 gText_AchievementsEarned[];
+extern const u8 gText_AchievementPoints[];
+extern const u8 gText_TrainerBattles[];
+extern const u8 gText_ShiniesFound[];
+extern const u8 gText_BestWinStreak[];
+extern const u8 gText_RunsCleared[];
+extern const u8 gText_AchievementFraction[];
+extern const u8 gText_RunsClearedValue[];
 
 // Frontier Pass
 extern const u8 gText_SymbolsEarned[];

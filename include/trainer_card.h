@@ -44,7 +44,7 @@ struct TrainerCard
     /*0x60*/ bool16 hasAllFrontierSymbols;
     /*0x62*/ u16 frontierBP;
     /*0x64*/ u16 achievementsCompleted;
-    /*0x66*/ u16 achievementsDiamond;
+    /*0x66*/ u16 trainerBattlesLifetime;
     /*0x68*/ u16 achievementShinies;
     /*0x6A*/ u16 achievementBestStreak;
     /*0x6C*/ u16 achievementNuzlockes;
