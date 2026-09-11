@@ -5,7 +5,7 @@
 #include "dma3.h"
 #include "international_string_util.h"
 #include "main.h"
-#include "match_call.h"
+#include "phone_call.h"
 #include "menu.h"
 #include "overworld.h"
 #include "palette.h"
@@ -1080,15 +1080,15 @@ static void UpdateWindowsToShowCheckPage(struct Pokenav_MatchCallGfx *gfx)
 static void LoadCallWindowAndFade(struct Pokenav_MatchCallGfx *gfx)
 {
     gfx->msgBoxWindowId = AddWindow(&sCallMsgBoxWindowTemplate);
-    LoadMatchCallWindowGfx(gfx->msgBoxWindowId, 1, 4);
+    LoadPhoneCallWindowGfx(gfx->msgBoxWindowId, 1, 4);
     FadeToBlackExceptPrimary();
 }
 
 static void DrawMsgBoxForMatchCallMsg(struct Pokenav_MatchCallGfx *gfx)
 {
     struct Sprite *sprite;
-    LoadMatchCallWindowGfx(gfx->msgBoxWindowId, 1, 4);
-    DrawMatchCallTextBoxBorder(gfx->msgBoxWindowId, 1, 4);
+    LoadPhoneCallWindowGfx(gfx->msgBoxWindowId, 1, 4);
+    DrawPhoneCallTextBoxBorder(gfx->msgBoxWindowId, 1, 4);
     FillWindowPixelBuffer(gfx->msgBoxWindowId, PIXEL_FILL(1));
     PutWindowTilemap(gfx->msgBoxWindowId);
     CopyWindowToVram(gfx->msgBoxWindowId, COPYWIN_FULL);

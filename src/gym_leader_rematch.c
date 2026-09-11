@@ -129,3 +129,26 @@ static s32 GetRematchIndex(u32 trainerIdx)
     return 5;
 }
 #endif //FREE_MATCH_CALL
+
+void SetTrainerRematchStepCounter(u32 value)
+{
+#if FREE_MATCH_CALL == FALSE
+    gSaveBlock1Ptr->trainerRematchStepCounter = value;
+#endif
+}
+
+u32 GetActiveTrainerRematches(u32 matchCallId)
+{
+#if FREE_MATCH_CALL == FALSE
+    return gSaveBlock1Ptr->trainerRematches[matchCallId];
+#else
+    return 0;
+#endif
+}
+
+void SetActiveTrainerRematches(u32 matchCallId, u32 value)
+{
+#if FREE_MATCH_CALL == FALSE
+    gSaveBlock1Ptr->trainerRematches[matchCallId] = value;
+#endif
+}

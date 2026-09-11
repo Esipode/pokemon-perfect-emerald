@@ -5,13 +5,13 @@
 #include "gym_leader_rematch.h"
 #include "international_string_util.h"
 #include "main.h"
-#include "match_call.h"
 #include "overworld.h"
 #include "pokemon.h"
 #include "pokenav.h"
 #include "sound.h"
 #include "string_util.h"
 #include "strings.h"
+#include "constants/characters.h"
 #include "constants/songs.h"
 
 struct Pokenav_MatchCallMenu
@@ -361,10 +361,11 @@ const u8 *GetMatchCallMessageText(int index, bool8 *newRematchRequest)
     if (!Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType))
         return gText_CallCantBeMadeHere;
 
-    if (!state->matchCallEntries[index].isSpecialTrainer)
-        *newRematchRequest = SelectMatchCallMessage(GetTrainerIdxByRematchIdx(state->matchCallEntries[index].headerId), gStringVar4);
-    else
+    // Ordinary trainers no longer have call text; only special trainers do.
+    if (state->matchCallEntries[index].isSpecialTrainer)
         MatchCall_GetMessage(state->matchCallEntries[index].headerId, gStringVar4);
+    else
+        gStringVar4[0] = EOS;
 
     return gStringVar4;
 }

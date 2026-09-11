@@ -30,7 +30,6 @@
 #include "load_save.h"
 #include "mail.h"
 #include "main.h"
-#include "match_call.h"
 #include "menu.h"
 #include "metatile_behavior.h"
 #include "mystery_gift.h"
@@ -3750,17 +3749,6 @@ u32 GetMartEmployeeObjectEventId(void)
         }
     }
     return 1;
-}
-
-bool32 IsTrainerRegistered(void)
-{
-    int index = GetRematchIdxByTrainerIdx(gSpecialVar_0x8004);
-    if (index >= 0)
-    {
-        if (FlagGet(TRAINER_REGISTERED_FLAGS_START + index) == TRUE)
-            return TRUE;
-    }
-    return FALSE;
 }
 
 // Always returns FALSE

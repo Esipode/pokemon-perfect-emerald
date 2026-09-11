@@ -31,7 +31,7 @@
 #include "m4a.h"
 #include "main.h"
 #include "main_menu.h"
-#include "match_call.h"
+#include "gym_leader_rematch.h"
 #include "malloc.h"
 #include "map_name_popup.h"
 #include "mass_outbreak.h"

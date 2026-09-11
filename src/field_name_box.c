@@ -12,7 +12,7 @@
 #include "script.h"
 #include "field_name_box.h"
 #include "event_data.h"
-#include "match_call.h"
+#include "phone_call.h"
 #include "malloc.h"
 #include "constants/speaker_names.h"
 #include "data/speaker_names.h"
@@ -59,7 +59,7 @@ void PrepareNamebox(u32 tileNum)
         RedrawDialogueFrame();
     }
 
-    bool32 matchCall = IsMatchCallTaskActive();
+    bool32 phoneCall = IsPhoneCallTaskActive();
 
     struct WindowTemplate template =
     {
@@ -68,7 +68,7 @@ void PrepareNamebox(u32 tileNum)
         .tilemapTop = 13,
         .width = winWidth,
         .height = OW_NAME_BOX_DEFAULT_HEIGHT,
-        .paletteNum = matchCall ? 14 : DLG_WINDOW_PALETTE_NUM,
+        .paletteNum = phoneCall ? 14 : DLG_WINDOW_PALETTE_NUM,
         .baseBlock = tileNum,
     };
 
@@ -77,7 +77,7 @@ void PrepareNamebox(u32 tileNum)
 
     u8 colors[3] = {TEXT_COLOR_TRANSPARENT, OW_NAME_BOX_FOREGROUND_COLOR, OW_NAME_BOX_SHADOW_COLOR};
     int strX = GetStringCenterAlignXOffset(fontId, strbuf, (winWidth * 8));
-    if (matchCall)
+    if (phoneCall)
     {
         colors[1] = 1;
         colors[2] = 0;
@@ -123,7 +123,7 @@ u32 GetNameboxWidth(void)
 
 static const u32 *GetNameboxGraphics(void)
 {
-    if (IsMatchCallTaskActive())
+    if (IsPhoneCallTaskActive())
         return sNameBoxPokenavGfx;
     else
         return sNameBoxDefaultGfx;

@@ -465,7 +465,6 @@ gSpecials::
 	def_special SaveForBattleTowerLink, waitstate=1
 	def_special Unused_SetWeatherSunny
 	def_special SetUnlockedPokedexFlags
-	def_special IsTrainerRegistered
 	def_special ShouldDoBrailleRegicePuzzle
 	def_special EnableNationalPokedex
 	def_special ScriptMenu_CreateLilycoveSSTidalMultichoice, waitstate=1

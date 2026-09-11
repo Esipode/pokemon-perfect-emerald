@@ -4,10 +4,13 @@
 #include "event_data.h"
 #include "string_util.h"
 #include "battle.h"
+#include "birch_pc.h"
 #include "gym_leader_rematch.h"
-#include "match_call.h"
+#include "malloc.h"
+#include "pokedex.h"
 #include "pokenav.h"
 #include "strings.h"
+#include "constants/characters.h"
 #include "constants/region_map_sections.h"
 #include "constants/trainers.h"
 
@@ -973,9 +976,49 @@ static void MatchCall_GetMessage_Rival(match_call_t matchCall, u8 *dest)
     MatchCall_BufferCallMessageText(matchCall.rival->textData, dest);
 }
 
+extern const u8 gBirchDexRatingText_AreYouCurious[];
+extern const u8 gBirchDexRatingText_SoYouveSeenAndCaught[];
+extern const u8 gBirchDexRatingText_OnANationwideBasis[];
+
+static void BufferPokedexRating(u8 *destStr)
+{
+    int numSeen, numCaught;
+    u8 *str;
+
+    u8 *buffer = Alloc(sizeof(gStringVar4));
+    if (!buffer)
+    {
+        destStr[0] = EOS;
+        return;
+    }
+
+    numSeen = GetRegionalPokedexCount(FLAG_GET_SEEN);
+    numCaught = GetRegionalPokedexCount(FLAG_GET_CAUGHT);
+    ConvertIntToDecimalStringN(gStringVar1, numSeen, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ConvertIntToDecimalStringN(gStringVar2, numCaught, STR_CONV_MODE_LEFT_ALIGN, 3);
+    str = StringCopy(buffer, gBirchDexRatingText_AreYouCurious);
+    *(str++) = CHAR_PROMPT_CLEAR;
+    str = StringCopy(str, gBirchDexRatingText_SoYouveSeenAndCaught);
+    *(str++) = CHAR_PROMPT_CLEAR;
+    StringCopy(str, GetPokedexRatingText(numCaught));
+    str = StringExpandPlaceholders(destStr, buffer);
+
+    if (IsNationalPokedexEnabled())
+    {
+        *(str++) = CHAR_PROMPT_CLEAR;
+        numSeen = GetNationalPokedexCount(FLAG_GET_SEEN);
+        numCaught = GetNationalPokedexCount(FLAG_GET_CAUGHT);
+        ConvertIntToDecimalStringN(gStringVar1, numSeen, STR_CONV_MODE_LEFT_ALIGN, 4);
+        ConvertIntToDecimalStringN(gStringVar2, numCaught, STR_CONV_MODE_LEFT_ALIGN, 4);
+        StringExpandPlaceholders(str, gBirchDexRatingText_OnANationwideBasis);
+    }
+
+    Free(buffer);
+}
+
 static void MatchCall_GetMessage_Birch(match_call_t matchCall, u8 *dest)
 {
-    BufferPokedexRatingForMatchCall(dest);
+    BufferPokedexRating(dest);
 }
 
 static void MatchCall_BufferCallMessageText(const match_call_text_data_t *textData, u8 *dest)
