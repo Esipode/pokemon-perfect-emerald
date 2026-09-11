@@ -62,9 +62,8 @@
 	STD_OBTAIN_ITEM = 0
 	STD_FIND_ITEM = 1
 	STD_OBTAIN_DECORATION = 7
-	STD_REGISTER_MATCH_CALL = 8
-	STD_PUT_ITEM_AWAY = 11
-	STD_RECEIVED_ITEM = 12
+	STD_PUT_ITEM_AWAY = 10
+	STD_RECEIVED_ITEM = 11
 
 	@ Calls the script in gStdScripts at index function.
 	.macro callstd function:req
@@ -2132,8 +2131,8 @@
 	MSGBOX_DEFAULT = 4
 	MSGBOX_YESNO = 5
 	MSGBOX_AUTOCLOSE = 6
-	MSGBOX_GETPOINTS = 9
-	MSGBOX_POKENAV = 10
+	MSGBOX_GETPOINTS = 8
+	MSGBOX_POKENAV = 9
 
 	YES = 1
 	NO  = 0
@@ -2173,14 +2172,6 @@
 	.macro givedecoration decoration:req
 	setorcopyvar VAR_0x8000, \decoration
 	callstd STD_OBTAIN_DECORATION
-	.endm
-
-	@ Registers the specified trainer in Match Call and plays a fanfare with a notification message.
-	.macro register_matchcall trainer:req
-	setvar VAR_0x8004, \trainer
-	special SetMatchCallRegisteredFlag
-	setorcopyvar VAR_0x8000, \trainer
-	callstd STD_REGISTER_MATCH_CALL
 	.endm
 
 	@ Does a sparkle field effect (e.g. when the Trick Master is hiding) at the given coordinates.

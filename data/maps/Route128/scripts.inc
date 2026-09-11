@@ -175,18 +175,10 @@ Route128_Movement_MaxieApproachPlayer:
 	step_end
 
 Route128_EventScript_Isaiah::
-	trainerbattle_single TRAINER_ISAIAH_1, Route128_Text_IsaiahIntro, Route128_Text_IsaiahDefeat, Route128_EventScript_RegisterIsaiah
+	trainerbattle_single TRAINER_ISAIAH_1, Route128_Text_IsaiahIntro, Route128_Text_IsaiahDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route128_EventScript_RematchIsaiah
 	msgbox Route128_Text_IsaiahPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route128_EventScript_RegisterIsaiah::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route128_Text_IsaiahRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_ISAIAH_1
 	release
 	end
 
@@ -196,18 +188,10 @@ Route128_EventScript_RematchIsaiah::
 	end
 
 Route128_EventScript_Katelyn::
-	trainerbattle_single TRAINER_KATELYN_1, Route128_Text_KatelynIntro, Route128_Text_KatelynDefeat, Route128_EventScript_RegisterKatelyn
+	trainerbattle_single TRAINER_KATELYN_1, Route128_Text_KatelynIntro, Route128_Text_KatelynDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route128_EventScript_RematchKatelyn
 	msgbox Route128_Text_KatelynPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route128_EventScript_RegisterKatelyn::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route128_Text_KatelynRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_KATELYN_1
 	release
 	end
 

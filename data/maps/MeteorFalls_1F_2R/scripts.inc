@@ -2,18 +2,10 @@ MeteorFalls_1F_2R_MapScripts::
 	.byte 0
 
 MeteorFalls_1F_2R_EventScript_Nicolas::
-	trainerbattle_single TRAINER_NICOLAS_1, MeteorFalls_1F_2R_Text_NicolasIntro, MeteorFalls_1F_2R_Text_NicolasDefeat, MeteorFalls_1F_2R_EventScript_RegisterNicolas
+	trainerbattle_single TRAINER_NICOLAS_1, MeteorFalls_1F_2R_Text_NicolasIntro, MeteorFalls_1F_2R_Text_NicolasDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, MeteorFalls_1F_2R_EventScript_RematchNicolas
 	msgbox MeteorFalls_1F_2R_Text_NicolasPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-MeteorFalls_1F_2R_EventScript_RegisterNicolas::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox MeteorFalls_1F_2R_Text_NicolasRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_NICOLAS_1
 	release
 	end
 
@@ -23,16 +15,10 @@ MeteorFalls_1F_2R_EventScript_RematchNicolas::
 	end
 
 MeteorFalls_1F_2R_EventScript_John::
-	trainerbattle_double TRAINER_JOHN_AND_JAY_1, MeteorFalls_1F_2R_Text_JohnIntro, MeteorFalls_1F_2R_Text_JohnDefeat, MeteorFalls_1F_2R_Text_JohnNotEnoughMons, MeteorFalls_1F_2R_EventScript_RegisterJohn
+	trainerbattle_double TRAINER_JOHN_AND_JAY_1, MeteorFalls_1F_2R_Text_JohnIntro, MeteorFalls_1F_2R_Text_JohnDefeat, MeteorFalls_1F_2R_Text_JohnNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, MeteorFalls_1F_2R_EventScript_RematchJohn
 	msgbox MeteorFalls_1F_2R_Text_JohnPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-MeteorFalls_1F_2R_EventScript_RegisterJohn::
-	msgbox MeteorFalls_1F_2R_Text_JohnRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_JOHN_AND_JAY_1
 	release
 	end
 
@@ -42,16 +28,10 @@ MeteorFalls_1F_2R_EventScript_RematchJohn::
 	end
 
 MeteorFalls_1F_2R_EventScript_Jay::
-	trainerbattle_double TRAINER_JOHN_AND_JAY_1, MeteorFalls_1F_2R_Text_JayIntro, MeteorFalls_1F_2R_Text_JayDefeat, MeteorFalls_1F_2R_Text_JayNotEnoughMons, MeteorFalls_1F_2R_EventScript_RegisterJay
+	trainerbattle_double TRAINER_JOHN_AND_JAY_1, MeteorFalls_1F_2R_Text_JayIntro, MeteorFalls_1F_2R_Text_JayDefeat, MeteorFalls_1F_2R_Text_JayNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, MeteorFalls_1F_2R_EventScript_RematchJay
 	msgbox MeteorFalls_1F_2R_Text_JayPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-MeteorFalls_1F_2R_EventScript_RegisterJay::
-	msgbox MeteorFalls_1F_2R_Text_JohnRegister, MSGBOX_DEFAULT  @ John speaks for both during register
-	register_matchcall TRAINER_JOHN_AND_JAY_1
 	release
 	end
 
@@ -74,10 +54,6 @@ MeteorFalls_1F_2R_Text_NicolasPostBattle:
 	.string "The road ahead remains long and harsh.\p"
 	.string "When will my POKéMON and I become\n"
 	.string "the best?$"
-
-MeteorFalls_1F_2R_Text_NicolasRegister:
-	.string "I want to know more about your power.\n"
-	.string "Let me register you in my POKéNAV.$"
 
 MeteorFalls_1F_2R_Text_NicolasRematchIntro:
 	.string "Since we met, we have trained hard\n"
@@ -114,10 +90,6 @@ MeteorFalls_1F_2R_Text_JohnNotEnoughMons:
 	.string "JOHN: Well, well, what a young TRAINER!\p"
 	.string "Will you battle with us? If so, you'll\n"
 	.string "have to return with more POKéMON.$"
-
-MeteorFalls_1F_2R_Text_JohnRegister:
-	.string "JOHN: Young TRAINER, if the chance\n"
-	.string "arises, will you battle with us again?$"
 
 MeteorFalls_1F_2R_Text_JayIntro:
 	.string "JAY: We've been married for\n"

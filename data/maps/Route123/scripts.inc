@@ -58,18 +58,10 @@ Route123_EventScript_Violet::
 	end
 
 Route123_EventScript_Cameron::
-	trainerbattle_single TRAINER_CAMERON_1, Route123_Text_CameronIntro, Route123_Text_CameronDefeat, Route123_EventScript_RegisterCameron
+	trainerbattle_single TRAINER_CAMERON_1, Route123_Text_CameronIntro, Route123_Text_CameronDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route123_EventScript_RematchCameron
 	msgbox Route123_Text_CameronPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route123_EventScript_RegisterCameron::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route123_Text_CameronRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_CAMERON_1
 	release
 	end
 
@@ -79,18 +71,10 @@ Route123_EventScript_RematchCameron::
 	end
 
 Route123_EventScript_Jacki::
-	trainerbattle_single TRAINER_JACKI_1, Route123_Text_JackiIntro, Route123_Text_JackiDefeat, Route123_EventScript_RegisterJacki
+	trainerbattle_single TRAINER_JACKI_1, Route123_Text_JackiIntro, Route123_Text_JackiDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route123_EventScript_RematchJacki
 	msgbox Route123_Text_JackiPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route123_EventScript_RegisterJacki::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route123_Text_JackiRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_JACKI_1
 	release
 	end
 
@@ -150,18 +134,10 @@ Route123_EventScript_Davis::
 	end
 
 Route123_EventScript_Fernando::
-	trainerbattle_single TRAINER_FERNANDO_1, Route123_Text_FernandoIntro, Route123_Text_FernandoDefeat, Route123_EventScript_RegisterFernando
+	trainerbattle_single TRAINER_FERNANDO_1, Route123_Text_FernandoIntro, Route123_Text_FernandoDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route123_EventScript_RematchFernando
 	msgbox Route123_Text_FernandoPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route123_EventScript_RegisterFernando::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route123_Text_FernandoRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_FERNANDO_1
 	release
 	end
 

@@ -237,38 +237,10 @@ Route116_EventScript_Jose::
 	end
 
 Route116_EventScript_Jerry::
-	trainerbattle_single TRAINER_JERRY_1, Route116_Text_JerryIntro, Route116_Text_JerryDefeat, Route116_EventScript_TryRegisterJerryAfterBattle
+	trainerbattle_single TRAINER_JERRY_1, Route116_Text_JerryIntro, Route116_Text_JerryDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route116_EventScript_RematchJerry
-	setvar VAR_0x8004, TRAINER_JERRY_1
-	specialvar VAR_RESULT, IsTrainerRegistered
-	goto_if_eq VAR_RESULT, FALSE, Route116_EventScript_TryRegisterJerry
 	msgbox Route116_Text_JerryPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route116_EventScript_TryRegisterJerryAfterBattle::
-	goto_if_set FLAG_HAS_MATCH_CALL, Route116_EventScript_RegisterJerryAfterBattle
-	release
-	end
-
-Route116_EventScript_RegisterJerryAfterBattle::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route116_Text_JerryRegister2, MSGBOX_DEFAULT
-	register_matchcall TRAINER_JERRY_1
-	release
-	end
-
-Route116_EventScript_TryRegisterJerry::
-	goto_if_set FLAG_HAS_MATCH_CALL, Route116_EventScript_RegisterJerry
-	msgbox Route116_Text_JerryPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route116_EventScript_RegisterJerry::
-	msgbox Route116_Text_JerryRegister1, MSGBOX_DEFAULT
-	register_matchcall TRAINER_JERRY_1
 	release
 	end
 
@@ -288,38 +260,10 @@ Route116_EventScript_Janice::
 	end
 
 Route116_EventScript_Karen::
-	trainerbattle_single TRAINER_KAREN_1, Route116_Text_KarenIntro, Route116_Text_KarenDefeat, Route116_EventScript_TryRegisterKarenAfterBattle
+	trainerbattle_single TRAINER_KAREN_1, Route116_Text_KarenIntro, Route116_Text_KarenDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route116_EventScript_RematchKaren
-	setvar VAR_0x8004, TRAINER_KAREN_1
-	specialvar VAR_RESULT, IsTrainerRegistered
-	goto_if_eq VAR_RESULT, FALSE, Route116_EventScript_TryRegisterKaren
 	msgbox Route116_Text_KarenPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route116_EventScript_TryRegisterKarenAfterBattle::
-	goto_if_set FLAG_HAS_MATCH_CALL, Route116_EventScript_RegisterKarenAfterBattle
-	release
-	end
-
-Route116_EventScript_RegisterKarenAfterBattle::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route116_Text_KarenRegister2, MSGBOX_DEFAULT
-	register_matchcall TRAINER_KAREN_1
-	release
-	end
-
-Route116_EventScript_TryRegisterKaren::
-	goto_if_set FLAG_HAS_MATCH_CALL, Route116_EventScript_RegisterKaren
-	msgbox Route116_Text_KarenPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route116_EventScript_RegisterKaren::
-	msgbox Route116_Text_KarenRegister1, MSGBOX_DEFAULT
-	register_matchcall TRAINER_KAREN_1
 	release
 	end
 

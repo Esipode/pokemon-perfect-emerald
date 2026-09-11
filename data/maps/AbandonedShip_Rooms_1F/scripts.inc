@@ -11,18 +11,10 @@ AbandonedShip_Rooms_1F_EventScript_Demetrius::
 	end
 
 AbandonedShip_Rooms_1F_EventScript_Thalia::
-	trainerbattle_single TRAINER_THALIA_1, AbandonedShip_Rooms_1F_Text_ThaliaIntro, AbandonedShip_Rooms_1F_Text_ThaliaDefeat, AbandonedShip_Rooms_1F_EventScript_RegisterThalia
+	trainerbattle_single TRAINER_THALIA_1, AbandonedShip_Rooms_1F_Text_ThaliaIntro, AbandonedShip_Rooms_1F_Text_ThaliaDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, AbandonedShip_Rooms_1F_EventScript_ThaliaRematch
 	msgbox AbandonedShip_Rooms_1F_Text_ThaliaPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-AbandonedShip_Rooms_1F_EventScript_RegisterThalia::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox AbandonedShip_Rooms_1F_Text_ThaliaRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_THALIA_1
 	release
 	end
 
@@ -48,10 +40,6 @@ AbandonedShip_Rooms_1F_Text_ThaliaPostBattle:
 	.string "The man next door…\p"
 	.string "He says he's just sightseeing,\n"
 	.string "but I don't know about that.$"
-
-AbandonedShip_Rooms_1F_Text_ThaliaRegister:
-	.string "You're such a tough TRAINER!\n"
-	.string "Let me register you as a memento!$"
 
 AbandonedShip_Rooms_1F_Text_ThaliaRematchIntro:
 	.string "What on earth would compel you to\n"

@@ -7,18 +7,10 @@ Route107_EventScript_Darrin::
 	end
 
 Route107_EventScript_Tony::
-	trainerbattle_single TRAINER_TONY_1, Route107_Text_TonyIntro, Route107_Text_TonyDefeated, Route107_EventScript_TonyRegisterMatchCallAfterBattle
+	trainerbattle_single TRAINER_TONY_1, Route107_Text_TonyIntro, Route107_Text_TonyDefeated
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route107_EventScript_TonyRematch
 	msgbox Route107_Text_TonyPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route107_EventScript_TonyRegisterMatchCallAfterBattle::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route107_Text_TonyRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_TONY_1
 	release
 	end
 

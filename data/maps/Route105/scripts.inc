@@ -56,18 +56,10 @@ Route105_EventScript_Josue::
 	end
 
 Route105_EventScript_Andres::
-	trainerbattle_single TRAINER_ANDRES_1, Route105_Text_AndresIntro, Route105_Text_AndresDefeated, Route105_EventScript_AndresRegisterMatchCallAfterBattle
+	trainerbattle_single TRAINER_ANDRES_1, Route105_Text_AndresIntro, Route105_Text_AndresDefeated
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route105_EventScript_AndresRematch
 	msgbox Route105_Text_AndresPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route105_EventScript_AndresRegisterMatchCallAfterBattle::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route105_Text_AndresRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_ANDRES_1
 	release
 	end
 

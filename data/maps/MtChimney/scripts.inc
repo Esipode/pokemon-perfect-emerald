@@ -129,7 +129,6 @@ MtChimney_EventScript_BagIsFull::
 	end
 .endif @ OW_SHOW_ITEM_DESCRIPTIONS
 
-
 MtChimney_EventScript_RemoveMoney::
 	removemoney 200
 	updatemoneybox
@@ -480,18 +479,10 @@ MtChimney_EventScript_RouteSign::
 	end
 
 MtChimney_EventScript_Shelby::
-	trainerbattle_single TRAINER_SHELBY_1, MtChimney_Text_ShelbyIntro, MtChimney_Text_ShelbyDefeat, MtChimney_EventScript_DefeatedShelby
+	trainerbattle_single TRAINER_SHELBY_1, MtChimney_Text_ShelbyIntro, MtChimney_Text_ShelbyDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, MtChimney_EventScript_RematchShelby
 	msgbox MtChimney_Text_ShelbyPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-MtChimney_EventScript_DefeatedShelby::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox MtChimney_Text_ShelbyRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_SHELBY_1
 	release
 	end
 
@@ -521,18 +512,10 @@ MtChimney_EventScript_Grunt1::
 	end
 
 MtChimney_EventScript_Sawyer::
-	trainerbattle_single TRAINER_SAWYER_1, MtChimney_Text_SawyerIntro, MtChimney_Text_SawyerDefeat, MtChimney_EventScript_SawyerDefeated
+	trainerbattle_single TRAINER_SAWYER_1, MtChimney_Text_SawyerIntro, MtChimney_Text_SawyerDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, MtChimney_EventScript_SawyerRematch
 	msgbox MtChimney_Text_SawyerPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-MtChimney_EventScript_SawyerDefeated::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox MtChimney_Text_SawyerRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_SAWYER_1
 	release
 	end
 
@@ -766,12 +749,6 @@ MtChimney_Text_ShelbyPostBattle:
 	.string "Well, well, I've lost. I can't call\n"
 	.string "myself an EXPERT now, can I?$"
 
-MtChimney_Text_ShelbyRegister:
-	.string "Thank you, child. It was fun, as if\n"
-	.string "I were battling my own grandchild.\p"
-	.string "Please, come see me again for\n"
-	.string "a rematch.$"
-
 MtChimney_Text_ShelbyRematchIntro:
 	.string "If you can mesh your heart with those\n"
 	.string "of your POKéMON, why, you should be\l"
@@ -835,10 +812,6 @@ MtChimney_Text_SawyerDefeat:
 MtChimney_Text_SawyerPostBattle:
 	.string "I think I need a dip in LAVARIDGE\n"
 	.string "HOT SPRING with the locals!$"
-
-MtChimney_Text_SawyerRegister:
-	.string "I like little fireballs like you.\n"
-	.string "Let me register you in my POKéNAV.$"
 
 MtChimney_Text_SawyerRematchIntro:
 	.string "I'm happily surrounded by hot people\n"

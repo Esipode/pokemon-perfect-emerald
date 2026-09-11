@@ -123,7 +123,6 @@ gStdScripts::
 	.4byte Std_MsgboxYesNo             @ MSGBOX_YESNO
 	.4byte Std_MsgboxAutoclose         @ MSGBOX_AUTOCLOSE
 	.4byte Std_ObtainDecoration        @ STD_OBTAIN_DECORATION
-	.4byte Std_RegisteredInMatchCall   @ STD_REGISTER_MATCH_CALL
 	.4byte Std_MsgboxGetPoints         @ MSGBOX_GETPOINTS
 	.4byte Std_MsgboxPokenav           @ MSGBOX_POKENAV
 	.4byte Std_PutItemAway             @ STD_PUT_ITEM_AWAY
@@ -1460,10 +1459,6 @@ gText_MomExplainHPGetPotions::
 	.string "POTIONS at the POKéMON MART.\p"
 	.string "Make me proud, honey!\p"
 	.string "Take care!$"
-
-gText_RegisteredTrainerinPokeNav::
-	.string "Registered {STR_VAR_1} {STR_VAR_2}\n"
-	.string "in the POKéNAV.$"
 
 gText_ComeBackWithSecretPower::
 	.string "Do you know the TM SECRET POWER?\p"

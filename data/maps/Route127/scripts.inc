@@ -56,18 +56,10 @@ Route127_EventScript_Athena::
 	end
 
 Route127_EventScript_Koji::
-	trainerbattle_single TRAINER_KOJI_1, Route127_Text_KojiIntro, Route127_Text_KojiDefeat, Route127_EventScript_RegisterKoji
+	trainerbattle_single TRAINER_KOJI_1, Route127_Text_KojiIntro, Route127_Text_KojiDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route127_EventScript_RematchKoji
 	msgbox Route127_Text_KojiPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route127_EventScript_RegisterKoji::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route127_Text_KojiRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_KOJI_1
 	release
 	end
 

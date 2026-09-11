@@ -21,18 +21,10 @@ Route124_EventScript_Roland::
 	end
 
 Route124_EventScript_Jenny::
-	trainerbattle_single TRAINER_JENNY_1, Route124_Text_JennyIntro, Route124_Text_JennyDefeat, Route124_EventScript_RegisterJenny
+	trainerbattle_single TRAINER_JENNY_1, Route124_Text_JennyIntro, Route124_Text_JennyDefeat
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route124_EventScript_RematchJenny
 	msgbox Route124_Text_JennyPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route124_EventScript_RegisterJenny::
-	special PlayerFaceTrainerAfterBattle
-	waitmovement 0
-	msgbox Route124_Text_JennyRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_JENNY_1
 	release
 	end
 
@@ -52,16 +44,10 @@ Route124_EventScript_Chad::
 	end
 
 Route124_EventScript_Lila::
-	trainerbattle_double TRAINER_LILA_AND_ROY_1, Route124_Text_LilaIntro, Route124_Text_LilaDefeat, Route124_Text_LilaNotEnoughMons, Route124_EventScript_RegisterLila
+	trainerbattle_double TRAINER_LILA_AND_ROY_1, Route124_Text_LilaIntro, Route124_Text_LilaDefeat, Route124_Text_LilaNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route124_EventScript_RematchLila
 	msgbox Route124_Text_LilaPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route124_EventScript_RegisterLila::
-	msgbox Route124_Text_LilaRoyRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_LILA_AND_ROY_1
 	release
 	end
 
@@ -71,16 +57,10 @@ Route124_EventScript_RematchLila::
 	end
 
 Route124_EventScript_Roy::
-	trainerbattle_double TRAINER_LILA_AND_ROY_1, Route124_Text_RoyIntro, Route124_Text_RoyDefeat, Route124_Text_RoyNotEnoughMons, Route124_EventScript_RegisterRoy
+	trainerbattle_double TRAINER_LILA_AND_ROY_1, Route124_Text_RoyIntro, Route124_Text_RoyDefeat, Route124_Text_RoyNotEnoughMons
 	specialvar VAR_RESULT, ShouldTryRematchBattle
 	goto_if_eq VAR_RESULT, TRUE, Route124_EventScript_RematchRoy
 	msgbox Route124_Text_RoyPostBattle, MSGBOX_DEFAULT
-	release
-	end
-
-Route124_EventScript_RegisterRoy::
-	msgbox Route124_Text_LilaRoyRegister, MSGBOX_DEFAULT
-	register_matchcall TRAINER_LILA_AND_ROY_1
 	release
 	end
 
