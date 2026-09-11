@@ -13,15 +13,8 @@ MtPyre_3F_EventScript_Kayla::
 
 MtPyre_3F_EventScript_Gabrielle::
 	trainerbattle_single TRAINER_GABRIELLE_1, MtPyre_3F_Text_GabrielleIntro, MtPyre_3F_Text_GabrielleDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, MtPyre_3F_EventScript_RematchGabrielle
 	msgbox MtPyre_3F_Text_GabriellePostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-MtPyre_3F_EventScript_RematchGabrielle::
-	trainerbattle_rematch TRAINER_GABRIELLE_1, MtPyre_3F_Text_GabrielleRematchIntro, MtPyre_3F_Text_GabrielleRematchDefeat
-	msgbox MtPyre_3F_Text_GabriellePostRematch, MSGBOX_AUTOCLOSE
 	end
 
 MtPyre_3F_Text_WilliamIntro:
@@ -66,21 +59,4 @@ MtPyre_3F_Text_GabriellePostBattle:
 	.string "in the future…\p"
 	.string "They are all to be equally cherished.\n"
 	.string "Please remember that.$"
-
-MtPyre_3F_Text_GabrielleRematchIntro:
-	.string "Oh, it's you…\p"
-	.string "Have you come to show me your grown\n"
-	.string "POKéMON?$"
-
-MtPyre_3F_Text_GabrielleRematchDefeat:
-	.string "How amazing!\n"
-	.string "You are a special person.$"
-
-MtPyre_3F_Text_GabriellePostRematch:
-	.string "POKéMON no longer of this world.\n"
-	.string "POKéMON that are with you now.\p"
-	.string "And the POKéMON that you will meet\n"
-	.string "in the future…\p"
-	.string "They are all to be equally cherished.\n"
-	.string "I see that you've remembered that.$"
 

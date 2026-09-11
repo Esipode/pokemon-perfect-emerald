@@ -238,15 +238,8 @@ Route116_EventScript_Jose::
 
 Route116_EventScript_Jerry::
 	trainerbattle_single TRAINER_JERRY_1, Route116_Text_JerryIntro, Route116_Text_JerryDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route116_EventScript_RematchJerry
 	msgbox Route116_Text_JerryPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route116_EventScript_RematchJerry::
-	trainerbattle_rematch TRAINER_JERRY_1, Route116_Text_JerryRematchIntro, Route116_Text_JerryRematchDefeat
-	msgbox Route116_Text_JerryPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route116_EventScript_Clark::
@@ -261,15 +254,8 @@ Route116_EventScript_Janice::
 
 Route116_EventScript_Karen::
 	trainerbattle_single TRAINER_KAREN_1, Route116_Text_KarenIntro, Route116_Text_KarenDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route116_EventScript_RematchKaren
 	msgbox Route116_Text_KarenPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route116_EventScript_RematchKaren::
-	trainerbattle_rematch TRAINER_KAREN_1, Route116_Text_KarenRematchIntro, Route116_Text_KarenRematchDefeat
-	msgbox Route116_Text_KarenPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route116_EventScript_Sarah::

@@ -56,8 +56,6 @@ MossdeepCity_Gym_EventScript_SetSwitch4Metatiles::
 MossdeepCity_Gym_EventScript_TateAndLiza::
 	specialvar VAR_PREV_LEVEL_CAP, GetCurrentLevelCapSpecial
 	trainerbattle_double TRAINER_TATE_AND_LIZA_1, MossdeepCity_Gym_Text_TateAndLizaIntro, MossdeepCity_Gym_Text_TateAndLizaDefeat, MossdeepCity_Gym_Text_TateAndLizaNeedTwoMons, MossdeepCity_Gym_EventScript_TateAndLizaDefeated, NO_MUSIC
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, MossdeepCity_Gym_EventScript_TateAndLizaRematch
 	goto_if_unset FLAG_RECEIVED_TM_CALM_MIND, MossdeepCity_Gym_EventScript_GiveCalmMind2
 	msgbox MossdeepCity_Gym_Text_TateAndLizaPostBattle, MSGBOX_DEFAULT
 	release
@@ -114,11 +112,6 @@ MossdeepCity_Gym_EventScript_GiveCalmMind::
 	msgbox MossdeepCity_Gym_Text_ExplainCalmMind, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_CALM_MIND
 	return
-
-MossdeepCity_Gym_EventScript_TateAndLizaRematch::
-	trainerbattle_rematch_double TRAINER_TATE_AND_LIZA_1, MossdeepCity_Gym_Text_TateAndLizaPreRematch, MossdeepCity_Gym_Text_TateAndLizaRematchDefeat, MossdeepCity_Gym_Text_TateAndLizaRematchNeedTwoMons
-	msgbox MossdeepCity_Gym_Text_TateAndLizaPostRematch, MSGBOX_AUTOCLOSE
-	end
 
 @ All the below switch scripts are leftover from RS and are functionally unused
 MossdeepCity_Gym_EventScript_Switch1::
@@ -629,37 +622,3 @@ MossdeepCity_Gym_Text_GymStatueCertified:
 	.string "MOSSDEEP CITY POKéMON GYM\p"
 	.string "LIZA AND TATE'S CERTIFIED TRAINERS:\n"
 	.string "{PLAYER}$"
-
-MossdeepCity_Gym_Text_TateAndLizaPreRematch:
-	.string "TATE: POKéMON…\n"
-	.string "LIZA: POKéMON…\p"
-	.string "TATE: By changing the party's mix…\n"
-	.string "LIZA: The battle style changes.\p"
-	.string "TATE: But me…\n"
-	.string "LIZA: But me…\p"
-	.string "TATE: I'll always be with LIZA!\n"
-	.string "LIZA: I'll always be with TATE!\p"
-	.string "TATE: Our combination…\n"
-	.string "LIZA: We'll show you again and again!$"
-
-MossdeepCity_Gym_Text_TateAndLizaRematchDefeat:
-	.string "TATE: You and your POKéMON…\n"
-	.string "LIZA: It's as if you were siblings!$"
-
-MossdeepCity_Gym_Text_TateAndLizaPostRematch:
-	.string "TATE: You can knock us down,\n"
-	.string "but we'll never stay down!\p"
-	.string "LIZA: Because the two of us,\n"
-	.string "we always support each other!$"
-
-MossdeepCity_Gym_Text_TateAndLizaRematchNeedTwoMons:
-	.string "TATE: You're back again…\n"
-	.string "LIZA: You're back again…\p"
-	.string "TATE: To give us a rematch.\n"
-	.string "LIZA: To give us a rematch.\p"
-	.string "TATE: But…\n"
-	.string "LIZA: For our match…\p"
-	.string "TATE: You brought just one POKéMON!\n"
-	.string "LIZA: You brought just one POKéMON!\p"
-	.string "TATE: We need you to bring at least…\n"
-	.string "LIZA: Two POKéMON when you come back.$"

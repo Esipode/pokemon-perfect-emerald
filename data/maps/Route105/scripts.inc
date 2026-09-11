@@ -57,15 +57,8 @@ Route105_EventScript_Josue::
 
 Route105_EventScript_Andres::
 	trainerbattle_single TRAINER_ANDRES_1, Route105_Text_AndresIntro, Route105_Text_AndresDefeated
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route105_EventScript_AndresRematch
 	msgbox Route105_Text_AndresPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route105_EventScript_AndresRematch::
-	trainerbattle_rematch TRAINER_ANDRES_1, Route105_Text_AndresRematchIntro, Route105_Text_AndresRematchDefeated
-	msgbox Route105_Text_AndresRematchPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route104_Text_DadPhoneCall:

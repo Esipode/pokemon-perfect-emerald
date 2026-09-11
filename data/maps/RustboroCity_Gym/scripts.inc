@@ -4,8 +4,6 @@ RustboroCity_Gym_MapScripts::
 RustboroCity_Gym_EventScript_Roxanne::
 	specialvar VAR_PREV_LEVEL_CAP, GetCurrentLevelCapSpecial
 	trainerbattle_single TRAINER_ROXANNE_1, RustboroCity_Gym_Text_RoxanneIntro, RustboroCity_Gym_Text_RoxanneDefeat, RustboroCity_Gym_EventScript_RoxanneDefeated, NO_MUSIC
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, RustboroCity_Gym_EventScript_RoxanneRematch
 	goto_if_unset FLAG_RECEIVED_TM_ROCK_TOMB, RustboroCity_Gym_EventScript_GiveRockTomb
 	msgbox RustboroCity_Gym_Text_RoxannePostBattle, MSGBOX_DEFAULT
 	release
@@ -33,11 +31,6 @@ RustboroCity_Gym_EventScript_GiveRockTomb::
 	setflag FLAG_RECEIVED_TM_ROCK_TOMB
 	msgbox RustboroCity_Gym_Text_ExplainRockTomb, MSGBOX_DEFAULT
 	release
-	end
-
-RustboroCity_Gym_EventScript_RoxanneRematch::
-	trainerbattle_rematch_double TRAINER_ROXANNE_1, RustboroCity_Gym_Text_RoxannePreRematch, RustboroCity_Gym_Text_RoxanneRematchDefeat, RustboroCity_Gym_Text_RoxanneRematchNeedTwoMons
-	msgbox RustboroCity_Gym_Text_RoxannePostRematch, MSGBOX_AUTOCLOSE
 	end
 
 RustboroCity_Gym_EventScript_Josh::
@@ -217,33 +210,3 @@ RustboroCity_Gym_Text_GymStatueCertified:
 	.string "RUSTBORO CITY POKéMON GYM\p"
 	.string "ROXANNE'S CERTIFIED TRAINERS:\n"
 	.string "{PLAYER}$"
-
-RustboroCity_Gym_Text_RoxannePreRematch:
-	.string "ROXANNE: I'm so glad to see you again.\n"
-	.string "I'm ROXANNE, the GYM LEADER here.\p"
-	.string "I'm sure we've both experienced many\n"
-	.string "battles since we last met.\p"
-	.string "I would like to see how much better\n"
-	.string "we've become. Let us battle!$"
-
-RustboroCity_Gym_Text_RoxanneRematchDefeat:
-	.string "Grr…\n"
-	.string "Again, I have lost…$"
-
-RustboroCity_Gym_Text_RoxannePostRematch:
-	.string "ROXANNE: I still have much to learn\n"
-	.string "when it comes to battling POKéMON.\p"
-	.string "That awareness makes me love battling\n"
-	.string "all that much more!$"
-
-RustboroCity_Gym_Text_RoxanneRematchNeedTwoMons:
-	.string "ROXANNE: I'm so glad to see you again.\n"
-	.string "I'm ROXANNE, the GYM LEADER here.\p"
-	.string "I'm sure we've both experienced many\n"
-	.string "battles since we last met.\p"
-	.string "I would like to see how much better\n"
-	.string "we've become…\p"
-	.string "Oh, no…\n"
-	.string "You only have one POKéMON with you?\p"
-	.string "Please return with at least one more\n"
-	.string "POKéMON.$"

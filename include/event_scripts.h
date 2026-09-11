@@ -34,8 +34,6 @@ extern const u8 EventScript_StartTrainerApproach[];
 extern const u8 EventScript_DoNoIntroTrainerBattle[];
 extern const u8 EventScript_TryDoDoubleTrainerBattle[];
 extern const u8 EventScript_TryDoNormalTrainerBattle[];
-extern const u8 EventScript_TryDoDoubleRematchBattle[];
-extern const u8 EventScript_TryDoRematchBattle[];
 extern const u8 EventScript_ObjectApproachPlayer[];
 extern const u8 EventScript_ShowTrainerIntroMsg[];
 extern const u8 EventScript_NotEnoughMonsForDoubleBattle[];
@@ -53,7 +51,6 @@ extern const u8 EventSnippet_PrepareSecondTrainerApproach[];
 extern const u8 EventSnippet_ShowTrainerIntroMsg[];
 extern const u8 EventSnippet_GotoPostBattleScript[];
 extern const u8 EventSnippet_DoTrainerBattle[];
-extern const u8 EventSnippet_DoRematchTrainerBattle[];
 extern const u8 EventSnippet_EndTrainerBattle[];
 extern const u8 EventSnippet_NotEnoughMonsForDoubleBattle[];
 
@@ -671,10 +668,8 @@ extern const u8 EventScript_TradeCenter_Chair1[];
 extern const u8 EventScript_TradeCenter_Chair0[];
 extern const u8 EventScript_ConfirmLeaveCableClubRoom[];
 extern const u8 EventScript_TerminateLink[];
-extern const u8 VSSeeker_Text_BatteryNotChargedNeedXSteps[];
 extern const u8 VSSeeker_Text_NoTrainersWithinRange[];
 extern const u8 VSSeeker_Text_TrainersNotReady[];
-extern const u8 EventScript_VsSeekerChargingDone[];
 
 extern const u8 Common_Movement_FollowerSafeStart[];
 extern const u8 Common_Movement_FollowerSafeEnd[];

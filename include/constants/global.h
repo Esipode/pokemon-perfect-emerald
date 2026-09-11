@@ -103,7 +103,7 @@ enum Language
 #define DECOR_MAX_PLAYERS_HOUSE 1 // ORIGINALLY 12
 #define APPRENTICE_COUNT 4
 #define APPRENTICE_MAX_QUESTIONS 9
-#define MAX_REMATCH_ENTRIES 78 // only REMATCH_TABLE_ENTRIES (78) are used // ORGINALLY 100
+#define MAX_REMATCH_ENTRIES 78 // Size of the removed SaveBlock1 rematch array; kept until FREE_MATCH_CALL is retired
 #define NUM_CONTEST_WINNERS 8 // ORIGINALLY 13
 #define UNION_ROOM_KB_ROW_COUNT 10
 #define SAVED_TRENDS_COUNT 5

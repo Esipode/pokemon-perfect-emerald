@@ -45,7 +45,7 @@ MauvilleCity_ZMoveEmporiumBattleRoom_EventScript_Challenger::
 	callnative EmporiumTraceStep
 	callnative EmporiumArmNoWhiteout
 	special EmporiumBufferChallengerIntro
-	trainerbattle LOCALID_ZMOVE_EMPORIUM_CHALLENGER, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_ZMoveChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_ZMoveChallengerVictory, NULL, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE
+	trainerbattle LOCALID_ZMOVE_EMPORIUM_CHALLENGER, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_ZMoveChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_ZMoveChallengerVictory, NULL, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE
 	applymovement LOCALID_ZMOVE_EMPORIUM_CHALLENGER, Emporium_Movement_ChallengerExitArena
 	waitmovement 0
 	setflag FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN

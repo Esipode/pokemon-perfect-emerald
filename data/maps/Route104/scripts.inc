@@ -839,41 +839,20 @@ Route104_EventScript_Billy::
 
 Route104_EventScript_Haley::
 	trainerbattle_single TRAINER_HALEY_1, Route104_Text_HaleyIntro, Route104_Text_HaleyDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route104_EventScript_RematchHaley
 	msgbox Route104_Text_HaleyPostBattle, MSGBOX_DEFAULT
 	release
 	end
 
-Route104_EventScript_RematchHaley::
-	trainerbattle_rematch TRAINER_HALEY_1, Route104_Text_HaleyRematchIntro, Route104_Text_HaleyRematchDefeat
-	msgbox Route104_Text_HaleyPostRematch, MSGBOX_AUTOCLOSE
-	end
-
 Route104_EventScript_Winston::
 	trainerbattle_single TRAINER_WINSTON_1, Route104_Text_WinstonIntro, Route104_Text_WinstonDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route104_EventScript_RematchWinston
 	msgbox Route104_Text_WinstonPostBattle, MSGBOX_DEFAULT
 	release
 	end
 
-Route104_EventScript_RematchWinston::
-	trainerbattle_rematch TRAINER_WINSTON_1, Route104_Text_WinstonRematchIntro, Route104_Text_WinstonRematchDefeat
-	msgbox Route104_Text_WinstonPostRematch, MSGBOX_AUTOCLOSE
-	end
-
 Route104_EventScript_Cindy::
 	trainerbattle_single TRAINER_CINDY_1, Route104_Text_CindyIntro, Route104_Text_CindyDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route104_EventScript_RematchCindy
 	msgbox Route104_Text_CindyPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route104_EventScript_RematchCindy::
-	trainerbattle_rematch TRAINER_CINDY_1, Route104_Text_CindyRematchIntro, Route104_Text_CindyRematchDefeat
-	msgbox Route104_Text_CindyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route104_EventScript_Gina::

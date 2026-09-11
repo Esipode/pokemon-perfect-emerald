@@ -56,9 +56,6 @@ gSpecials::
 	def_special GetTrainerFlag
 	def_special DoTrainerApproach, waitstate=1
 	def_special PlayTrainerEncounterMusic
-	def_special ShouldTryRematchBattle
-	def_special IsTrainerReadyForRematch
-	def_special BattleSetup_StartRematchBattle, waitstate=1
 	def_special ShowPokemonStorageSystemPC, waitstate=1
 	def_special HasEnoughMonsForDoubleBattle
 	def_special TurnOffTVScreen
@@ -496,8 +493,6 @@ gSpecials::
 	def_special GetSprayId
 	def_special GetLastUsedSprayType
 	def_special TrySkyBattle
-	def_special VsSeekerResetObjectMovementAfterChargeComplete
-	def_special VsSeekerFreezeObjectsAfterChargeComplete
 	def_special PlayerHasMulch
 	def_special Bag_ChooseMulch
 	def_special ObjectEventInteractionApplyMulch

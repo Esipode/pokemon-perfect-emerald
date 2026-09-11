@@ -796,7 +796,7 @@ enum BoostType
 //   BOOST_WILD_IV_REROLL         CreateWildMon,                src/wild_encounter.c
 //   BOOST_SHOP_DISCOUNT          every price computed for a mart purchase, src/shop.c
 //   BOOST_SURVIVE_1HP            GetAdjustedDamage,            src/battle_util.c
-//   BOOST_POST_BATTLE_HEAL       CB2_EndTrainerBattle/CB2_EndRematchBattle
+//   BOOST_POST_BATTLE_HEAL       CB2_EndTrainerBattle
 //                                 (win branches only),          src/battle_setup.c
 enum BoostId
 {

@@ -3,28 +3,14 @@ AbandonedShip_Rooms2_1F_MapScripts::
 
 AbandonedShip_Rooms2_1F_EventScript_Dan::
 	trainerbattle_double TRAINER_KIRA_AND_DAN_1, AbandonedShip_Rooms2_1F_Text_DanIntro, AbandonedShip_Rooms2_1F_Text_DanDefeat, AbandonedShip_Rooms2_1F_Text_DanNotEnoughMons
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, AbandonedShip_Rooms2_1F_EventScript_DanRematch
 	msgbox AbandonedShip_Rooms2_1F_Text_DanPostBattle, MSGBOX_DEFAULT
 	release
 	end
 
-AbandonedShip_Rooms2_1F_EventScript_DanRematch::
-	trainerbattle_rematch_double TRAINER_KIRA_AND_DAN_1, AbandonedShip_Rooms2_1F_Text_DanRematchIntro, AbandonedShip_Rooms2_1F_Text_DanRematchDefeat, AbandonedShip_Rooms2_1F_Text_DanRematchNotEnoughMons
-	msgbox AbandonedShip_Rooms2_1F_Text_DanPostRematch, MSGBOX_AUTOCLOSE
-	end
-
 AbandonedShip_Rooms2_1F_EventScript_Kira::
 	trainerbattle_double TRAINER_KIRA_AND_DAN_1, AbandonedShip_Rooms2_1F_Text_KiraIntro, AbandonedShip_Rooms2_1F_Text_KiraDefeat, AbandonedShip_Rooms2_1F_Text_KiraNotEnoughMons
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, AbandonedShip_Rooms2_1F_EventScript_KiraRematch
 	msgbox AbandonedShip_Rooms2_1F_Text_KiraPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-AbandonedShip_Rooms2_1F_EventScript_KiraRematch::
-	trainerbattle_rematch_double TRAINER_KIRA_AND_DAN_1, AbandonedShip_Rooms2_1F_Text_KiraRematchIntro, AbandonedShip_Rooms2_1F_Text_KiraRematchDefeat, AbandonedShip_Rooms2_1F_Text_KiraRematchNotEnoughMons
-	msgbox AbandonedShip_Rooms2_1F_Text_KiraPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 AbandonedShip_Rooms2_1F_EventScript_Jani::
@@ -67,44 +53,6 @@ AbandonedShip_Rooms2_1F_Text_KiraPostBattle:
 	.string "when we find the treasures!$"
 
 AbandonedShip_Rooms2_1F_Text_KiraNotEnoughMons:
-	.string "KIRA: Oh, you don't have two POKéMON?\n"
-	.string "We'll have to battle some other time!$"
-
-AbandonedShip_Rooms2_1F_Text_DanRematchIntro:
-	.string "DAN: We've been searching for\n"
-	.string "treasures all this time.\p"
-	.string "Our POKéMON have grown stronger, too.\n"
-	.string "Let us show you, okay?$"
-
-AbandonedShip_Rooms2_1F_Text_DanRematchDefeat:
-	.string "DAN: You're strong, as usual!$"
-
-AbandonedShip_Rooms2_1F_Text_DanPostRematch:
-	.string "DAN: We can't find any treasures,\n"
-	.string "we lose at POKéMON…\p"
-	.string "I want to go home… But if I say that,\n"
-	.string "she gets all angry with me…$"
-
-AbandonedShip_Rooms2_1F_Text_DanRematchNotEnoughMons:
-	.string "DAN: You don't even have two POKéMON.\n"
-	.string "You can't expect to beat us like that.$"
-
-AbandonedShip_Rooms2_1F_Text_KiraRematchIntro:
-	.string "KIRA: Oh? We meet again!\p"
-	.string "Just like us, you still haven't given up\n"
-	.string "searching for treasures, have you?\p"
-	.string "Want to make it so the loser has\n"
-	.string "to give up searching?$"
-
-AbandonedShip_Rooms2_1F_Text_KiraRematchDefeat:
-	.string "KIRA: Oh, we lost again…$"
-
-AbandonedShip_Rooms2_1F_Text_KiraPostRematch:
-	.string "KIRA: We're not leaving until we raise\n"
-	.string "our POKéMON some more and we find\l"
-	.string "the treasures here!$"
-
-AbandonedShip_Rooms2_1F_Text_KiraRematchNotEnoughMons:
 	.string "KIRA: Oh, you don't have two POKéMON?\n"
 	.string "We'll have to battle some other time!$"
 

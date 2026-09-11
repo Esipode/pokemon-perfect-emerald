@@ -33,15 +33,8 @@ Route115_EventScript_MeteorFallsSign::
 
 Route115_EventScript_Timothy::
 	trainerbattle_single TRAINER_TIMOTHY_1, Route115_Text_TimothyIntro, Route115_Text_TimothyDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route115_EventScript_RematchTimothy
 	msgbox Route115_Text_TimothyPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route115_EventScript_RematchTimothy::
-	trainerbattle_rematch TRAINER_TIMOTHY_1, Route115_Text_TimothyRematchIntro, Route115_Text_TimothyRematchDefeat
-	msgbox Route115_Text_TimothyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route115_EventScript_Koichi::
@@ -51,28 +44,14 @@ Route115_EventScript_Koichi::
 
 Route115_EventScript_Nob::
 	trainerbattle_single TRAINER_NOB_1, Route115_Text_NobIntro, Route115_Text_NobDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route115_EventScript_RematchNob
 	msgbox Route115_Text_NobPostBattle, MSGBOX_DEFAULT
 	release
 	end
 
-Route115_EventScript_RematchNob::
-	trainerbattle_rematch TRAINER_NOB_1, Route115_Text_NobRematchIntro, Route115_Text_NobRematchDefeat
-	msgbox Route115_Text_NobPostRematch, MSGBOX_AUTOCLOSE
-	end
-
 Route115_EventScript_Cyndy::
 	trainerbattle_single TRAINER_CYNDY_1, Route115_Text_CyndyIntro, Route115_Text_CyndyDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route115_EventScript_RematchCyndy
 	msgbox Route115_Text_CyndyPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route115_EventScript_RematchCyndy::
-	trainerbattle_rematch TRAINER_CYNDY_1, Route115_Text_CyndyRematchIntro, Route115_Text_CyndyRematchDefeat
-	msgbox Route115_Text_CyndyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route115_EventScript_Hector::

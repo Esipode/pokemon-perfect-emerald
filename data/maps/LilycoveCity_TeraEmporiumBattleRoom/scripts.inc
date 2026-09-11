@@ -45,7 +45,7 @@ LilycoveCity_TeraEmporiumBattleRoom_EventScript_Challenger::
 	callnative EmporiumTraceStep
 	callnative EmporiumArmNoWhiteout
 	special EmporiumBufferChallengerIntro
-	trainerbattle LOCALID_TERA_EMPORIUM_CHALLENGER, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_TeraChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_TeraChallengerVictory, NULL, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE
+	trainerbattle LOCALID_TERA_EMPORIUM_CHALLENGER, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_TeraChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_TeraChallengerVictory, NULL, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE
 	applymovement LOCALID_TERA_EMPORIUM_CHALLENGER, Emporium_Movement_ChallengerExitArena
 	waitmovement 0
 	setflag FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN

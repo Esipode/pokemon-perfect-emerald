@@ -46,8 +46,6 @@ LavaridgeTown_Gym_1F_EventScript_EndCheckBuryTrainers::
 LavaridgeTown_Gym_1F_EventScript_Flannery::
 	specialvar VAR_PREV_LEVEL_CAP, GetCurrentLevelCapSpecial
 	trainerbattle_single TRAINER_FLANNERY_1, LavaridgeTown_Gym_1F_Text_FlanneryIntro, LavaridgeTown_Gym_1F_Text_FlanneryDefeat, LavaridgeTown_Gym_1F_EventScript_FlanneryDefeated, NO_MUSIC
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, LavaridgeTown_Gym_1F_EventScript_FlanneryRematch
 	goto_if_unset FLAG_RECEIVED_TM_OVERHEAT, LavaridgeTown_Gym_1F_EventScript_GiveOverheat2
 	msgbox LavaridgeTown_Gym_1F_Text_FlanneryPostBattle, MSGBOX_DEFAULT
 	release
@@ -93,11 +91,6 @@ LavaridgeTown_Gym_1F_EventScript_GiveOverheat::
 	msgbox LavaridgeTown_Gym_1F_Text_ExplainOverheat, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_OVERHEAT
 	return
-
-LavaridgeTown_Gym_1F_EventScript_FlanneryRematch::
-	trainerbattle_rematch_double TRAINER_FLANNERY_1, LavaridgeTown_Gym_1F_Text_FlanneryPreRematch, LavaridgeTown_Gym_1F_Text_FlanneryRematchDefeat, LavaridgeTown_Gym_1F_Text_FlanneryRematchNeedTwoMons
-	msgbox LavaridgeTown_Gym_1F_Text_FlanneryPostRematch, MSGBOX_AUTOCLOSE
-	end
 
 LavaridgeTown_Gym_1F_EventScript_Cole::
 	trainerbattle_lavaridge LOCALID_COLE, TRAINER_COLE, LavaridgeTown_Gym_1F_Text_ColeIntro, LavaridgeTown_Gym_1F_Text_ColeDefeat, LavaridgeTown_Gym_EventScript_CheckTrainerScript
@@ -363,37 +356,3 @@ LavaridgeTown_Gym_1F_Text_GymStatueCertified:
 	.string "LAVARIDGE TOWN POKéMON GYM\p"
 	.string "FLANNERY'S CERTIFIED TRAINERS:\n"
 	.string "{PLAYER}$"
-
-LavaridgeTown_Gym_1F_Text_FlanneryPreRematch:
-	.string "FLANNERY: Losing a battle isn't going\n"
-	.string "to deflate me.\p"
-	.string "I love POKéMON.\n"
-	.string "I love to battle.\l"
-	.string "And… I love this GYM!\p"
-	.string "Let's exchange superhot moves\n"
-	.string "in another battle!$"
-
-LavaridgeTown_Gym_1F_Text_FlanneryRematchDefeat:
-	.string "Whew!\n"
-	.string "On the verge of eruption!$"
-
-LavaridgeTown_Gym_1F_Text_FlanneryPostRematch:
-	.string "FLANNERY: I lost the match,\n"
-	.string "but I'm completely satisfied.\p"
-	.string "It's not often I get to enjoy a battle\n"
-	.string "this heated.\p"
-	.string "Let's have another one like this\n"
-	.string "again sometime!$"
-
-LavaridgeTown_Gym_1F_Text_FlanneryRematchNeedTwoMons:
-	.string "FLANNERY: Losing a battle isn't going\n"
-	.string "to deflate me.\p"
-	.string "I love POKéMON.\n"
-	.string "I love to battle.\l"
-	.string "And… I love this GYM!\p"
-	.string "Let's exchange superhot moves\n"
-	.string "in another battle!\p"
-	.string "Oh, wait. Do you only have one POKéMON\n"
-	.string "that can battle?\p"
-	.string "I hate to say this, but when you come\n"
-	.string "see me, bring at least two POKéMON.$"

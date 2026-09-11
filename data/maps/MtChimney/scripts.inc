@@ -480,15 +480,8 @@ MtChimney_EventScript_RouteSign::
 
 MtChimney_EventScript_Shelby::
 	trainerbattle_single TRAINER_SHELBY_1, MtChimney_Text_ShelbyIntro, MtChimney_Text_ShelbyDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, MtChimney_EventScript_RematchShelby
 	msgbox MtChimney_Text_ShelbyPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-MtChimney_EventScript_RematchShelby::
-	trainerbattle_rematch TRAINER_SHELBY_1, MtChimney_Text_ShelbyRematchIntro, MtChimney_Text_ShelbyRematchDefeat
-	msgbox MtChimney_Text_ShelbyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 MtChimney_EventScript_Melissa::
@@ -513,15 +506,8 @@ MtChimney_EventScript_Grunt1::
 
 MtChimney_EventScript_Sawyer::
 	trainerbattle_single TRAINER_SAWYER_1, MtChimney_Text_SawyerIntro, MtChimney_Text_SawyerDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, MtChimney_EventScript_SawyerRematch
 	msgbox MtChimney_Text_SawyerPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-MtChimney_EventScript_SawyerRematch::
-	trainerbattle_rematch TRAINER_SAWYER_1, MtChimney_Text_SawyerRematchIntro, MtChimney_Text_SawyerRematchDefeat
-	msgbox MtChimney_Text_SawyerPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 MtChimney_Text_MeteoriteWillActivateVolcano:
@@ -749,19 +735,6 @@ MtChimney_Text_ShelbyPostBattle:
 	.string "Well, well, I've lost. I can't call\n"
 	.string "myself an EXPERT now, can I?$"
 
-MtChimney_Text_ShelbyRematchIntro:
-	.string "If you can mesh your heart with those\n"
-	.string "of your POKéMON, why, you should be\l"
-	.string "able to achieve great things.$"
-
-MtChimney_Text_ShelbyRematchDefeat:
-	.string "Oh, my goodness.\n"
-	.string "Now, aren't you something!$"
-
-MtChimney_Text_ShelbyPostRematch:
-	.string "Perhaps your heart has become one\n"
-	.string "with the hearts of your POKéMON.$"
-
 MtChimney_Text_MelissaIntro:
 	.string "I've got the fire in me, baby.\n"
 	.string "I can't stand it! I have to battle!$"
@@ -812,15 +785,3 @@ MtChimney_Text_SawyerDefeat:
 MtChimney_Text_SawyerPostBattle:
 	.string "I think I need a dip in LAVARIDGE\n"
 	.string "HOT SPRING with the locals!$"
-
-MtChimney_Text_SawyerRematchIntro:
-	.string "I'm happily surrounded by hot people\n"
-	.string "around these parts. I won't lose!$"
-
-MtChimney_Text_SawyerRematchDefeat:
-	.string "Gosh, you're still the same\n"
-	.string "firebrand as before!$"
-
-MtChimney_Text_SawyerPostRematch:
-	.string "Actually, it really is hot here.\n"
-	.string "I'm overdressed for these parts.$"

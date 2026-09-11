@@ -58,28 +58,14 @@ Route113_EventScript_Dillon::
 
 Route113_EventScript_Madeline::
 	trainerbattle_single TRAINER_MADELINE_1, Route113_Text_MadelineIntro, Route113_Text_MadelineDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route113_EventScript_RematchMadeline
 	msgbox Route113_Text_MadelinePostBattle, MSGBOX_DEFAULT
 	release
 	end
 
-Route113_EventScript_RematchMadeline::
-	trainerbattle_rematch TRAINER_MADELINE_1, Route113_Text_MadelineRematchIntro, Route113_Text_MadelineRematchDefeat
-	msgbox Route113_Text_MadelinePostRematch, MSGBOX_AUTOCLOSE
-	end
-
 Route113_EventScript_Lao::
 	trainerbattle_single TRAINER_LAO_1, Route113_Text_LaoIntro, Route113_Text_LaoDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route113_EventScript_RematchLao
 	msgbox Route113_Text_LaoPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route113_EventScript_RematchLao::
-	trainerbattle_rematch TRAINER_LAO_1, Route113_Text_LaoRematchIntro, Route113_Text_LaoRematchDefeat
-	msgbox Route113_Text_LaoPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route113_EventScript_Lung::

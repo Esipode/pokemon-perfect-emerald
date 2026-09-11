@@ -3,21 +3,11 @@
 
 #include "battle_transition.h"
 #include "data.h"
-#include "gym_leader_rematch.h"
 #include "script.h"
 #include "trainer_see.h"
 
-#define REMATCHES_COUNT 5
-
 #define TRAINERBATTLE_OPCODE_OFFSET 1  // 1 byte trainerbattle opcode
 #define FACILITYBATTLE_OPCODE_OFFSET 5 // 1 byte callnative opcode, 4 bytes func ptr
-
-struct RematchTrainer
-{
-    u16 trainerIds[REMATCHES_COUNT];
-    u16 mapGroup;
-    u16 mapNum;
-};
 
 /*
 the layout of the first byte can be confusing here
@@ -28,7 +18,6 @@ typedef union PACKED TrainerBattleParameter
     struct PACKED _TrainerBattleParameter
     {
         u8 isDoubleBattle:1;
-        u8 isRematch:1;
         u8 playMusicA:1;
         u8 playMusicB:1;
         u8 continueScript:1;
@@ -52,16 +41,13 @@ typedef union PACKED TrainerBattleParameter
     u8 data[sizeof(struct _TrainerBattleParameter)];
 } TrainerBattleParameter;
 
-extern const struct RematchTrainer gRematchTable[REMATCH_TABLE_ENTRIES];
-
 extern TrainerBattleParameter gTrainerBattleParameter;
 extern u16 gPartnerTrainerId;
 
 #define TRAINER_BATTLE_PARAM gTrainerBattleParameter.params
 
-#define DebugPrintTrainerParams(battleParameter) DebugPrintfLevel(MGBA_LOG_DEBUG, "\nisDouble: %d\nisRematch: %d\nplayMusicA: %d\nplayMusicB: %d\ncotinueScript: %d\nfacePlayer: %d\nearlyRival: %d\npadding: %d\nlocalIdA: %d\ntrainerA: %d\nintroA: %x\ndefeatA: %x\neventA: %x\nlocalIdB: %d\ntrainerB: %d\nintroB: %x\ndefeatB: %x\neventB: %x\nvictory: %x\nnotBattle:%x\n", \
+#define DebugPrintTrainerParams(battleParameter) DebugPrintfLevel(MGBA_LOG_DEBUG, "\nisDouble: %d\nplayMusicA: %d\nplayMusicB: %d\ncotinueScript: %d\nfacePlayer: %d\nearlyRival: %d\npadding: %d\nlocalIdA: %d\ntrainerA: %d\nintroA: %x\ndefeatA: %x\neventA: %x\nlocalIdB: %d\ntrainerB: %d\nintroB: %x\ndefeatB: %x\neventB: %x\nvictory: %x\nnotBattle:%x\n", \
         battleParameter->params.isDoubleBattle, \
-        battleParameter->params.isRematch, \
         battleParameter->params.playMusicA, \
         battleParameter->params.playMusicB, \
         battleParameter->params.continueScript, \
@@ -105,14 +91,12 @@ void ConfigureApproachingTrainerBattle(struct ApproachingTrainer *approachingTra
 void ConfigureApproachingFacilityTrainerBattle(struct ApproachingTrainer *ApproachingTrainer);
 bool32 GetTrainerFlagFromScriptPointer(const u8 *data);
 u16 GetTrainerFlagFromScript(const u8 *script);
-bool32 GetRematchFromScriptPointer(const u8 *data);
 void SetTrainerFacingDirection(void);
 bool8 GetTrainerFlag(void);
 bool8 HasTrainerBeenFought(u16 trainerId);
 void SetTrainerFlag(u16 trainerId);
 void ClearTrainerFlag(u16 trainerId);
 void BattleSetup_StartTrainerBattle(void);
-void BattleSetup_StartRematchBattle(void);
 void ShowTrainerIntroSpeech(void);
 const u8 *BattleSetup_GetScriptAddrAfterBattle(void);
 const u8 *BattleSetup_GetTrainerPostBattleScript(void);
@@ -121,26 +105,13 @@ void PlayTrainerEncounterMusic(void);
 const u8 *GetTrainerALoseText(void);
 const u8 *GetTrainerBLoseText(void);
 const u8 *GetTrainerWonSpeech(void);
-void UpdateRematchIfDefeated(s32 rematchTableId);
-void ClearCurrentTrainerWantRematchVsSeeker(void);
-void IncrementRematchStepCounter(void);
-void TryUpdateRandomTrainerRematches(u16 mapGroup, u16 mapNum);
-u16 GetLastBeatenRematchTrainerId(u16 trainerId);
-bool8 ShouldTryRematchBattle(void);
-bool8 ShouldTryRematchBattleForTrainerId(u16 trainerId);
-bool8 IsTrainerReadyForRematch(void);
 void ShouldTryGetTrainerScript(void);
-u16 CountMaxPossibleRematch(u16 trainerId);
-u16 CountBattledRematchTeams(u16 trainerId);
 void TrainerBattleLoadArgs(const u8 *data);
 void TrainerBattleLoadArgsSecondTrainer(const u8 *data);
 void InitTrainerBattleParameter(void);
 
 void DoStandardWildBattle_Debug(void);
 void BattleSetup_StartTrainerBattle_Debug(void);
-s32 TrainerIdToRematchTableId(const struct RematchTrainer *table, u16 trainerId);
-s32 FirstBattleTrainerIdToRematchTableId(const struct RematchTrainer *table, u16 trainerId);
-u16 GetRematchTrainerIdFromTable(const struct RematchTrainer *table, u16 firstBattleTrainerId);
 u8 GetRivalBattleFlags(void);
 
 void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer);

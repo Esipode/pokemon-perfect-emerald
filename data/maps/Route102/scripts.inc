@@ -19,15 +19,8 @@ Route102_EventScript_Boy::
 
 Route102_EventScript_Calvin::
 	trainerbattle_single TRAINER_CALVIN_1, Route102_Text_CalvinIntro, Route102_Text_CalvinDefeated
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route102_EventScript_CalvinRematch
 	msgbox Route102_Text_CalvinPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route102_EventScript_CalvinRematch::
-	trainerbattle_rematch TRAINER_CALVIN_1, Route102_Text_CalvinRematchIntro, Route102_Text_CalvinRematchDefeated
-	msgbox Route102_Text_CalvinRematchPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route102_EventScript_Rick::

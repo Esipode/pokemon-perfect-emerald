@@ -67,15 +67,8 @@ Route112_EventScript_Brice::
 
 Route112_EventScript_Trent::
 	trainerbattle_single TRAINER_TRENT_1, Route112_Text_TrentIntro, Route112_Text_TrentDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route112_EventScript_RematchTrent
 	msgbox Route112_Text_TrentPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route112_EventScript_RematchTrent::
-	trainerbattle_rematch TRAINER_TRENT_1, Route112_Text_TrentRematchIntro, Route112_Text_TrentRematchDefeat
-	msgbox Route112_Text_TrentRematchPostBattle, MSGBOX_AUTOCLOSE
 	end
 
 Route112_EventScript_Larry::

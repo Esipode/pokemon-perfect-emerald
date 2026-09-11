@@ -15,7 +15,6 @@
 #include "strings.h"
 #include "recorded_battle.h"
 #include "easy_chat.h"
-#include "gym_leader_rematch.h"
 #include "battle_transition.h"
 #include "trainer_see.h"
 #include "new_game.h"

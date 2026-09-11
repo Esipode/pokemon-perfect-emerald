@@ -12,15 +12,8 @@ AbandonedShip_Rooms_1F_EventScript_Demetrius::
 
 AbandonedShip_Rooms_1F_EventScript_Thalia::
 	trainerbattle_single TRAINER_THALIA_1, AbandonedShip_Rooms_1F_Text_ThaliaIntro, AbandonedShip_Rooms_1F_Text_ThaliaDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, AbandonedShip_Rooms_1F_EventScript_ThaliaRematch
 	msgbox AbandonedShip_Rooms_1F_Text_ThaliaPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-AbandonedShip_Rooms_1F_EventScript_ThaliaRematch::
-	trainerbattle_rematch TRAINER_THALIA_1, AbandonedShip_Rooms_1F_Text_ThaliaRematchIntro, AbandonedShip_Rooms_1F_Text_ThaliaRematchDefeat
-	msgbox AbandonedShip_Rooms_1F_Text_ThaliaPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 AbandonedShip_Rooms_1F_Text_TakingALookAround:
@@ -40,17 +33,6 @@ AbandonedShip_Rooms_1F_Text_ThaliaPostBattle:
 	.string "The man next door…\p"
 	.string "He says he's just sightseeing,\n"
 	.string "but I don't know about that.$"
-
-AbandonedShip_Rooms_1F_Text_ThaliaRematchIntro:
-	.string "What on earth would compel you to\n"
-	.string "come back? You must really be curious!$"
-
-AbandonedShip_Rooms_1F_Text_ThaliaRematchDefeat:
-	.string "Aren't you too strong?$"
-
-AbandonedShip_Rooms_1F_Text_ThaliaPostRematch:
-	.string "I'm sure that man's up to something!\n"
-	.string "He just acts so suspiciously!$"
 
 AbandonedShip_Rooms_1F_Text_DemetriusIntro:
 	.string "Waaah!\n"

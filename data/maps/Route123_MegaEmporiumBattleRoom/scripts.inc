@@ -45,7 +45,7 @@ Route123_MegaEmporiumBattleRoom_EventScript_Challenger::
 	callnative EmporiumTraceStep
 	callnative EmporiumArmNoWhiteout
 	special EmporiumBufferChallengerIntro
-	trainerbattle LOCALID_MEGA_EMPORIUM_CHALLENGER, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_MegaChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_MegaChallengerVictory, NULL, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE
+	trainerbattle LOCALID_MEGA_EMPORIUM_CHALLENGER, TRAINER_EMPORIUM, Emporium_Text_ChallengerIntroTemplate, Emporium_Text_MegaChallengerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, Emporium_Text_MegaChallengerVictory, NULL, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE
 	applymovement LOCALID_MEGA_EMPORIUM_CHALLENGER, Emporium_Movement_ChallengerExitArena
 	waitmovement 0
 	setflag FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN

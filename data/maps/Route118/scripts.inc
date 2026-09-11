@@ -178,15 +178,8 @@ Route118_Movement_StevenExit2:
 
 Route118_EventScript_Rose::
 	trainerbattle_single TRAINER_ROSE_1, Route118_Text_RoseIntro, Route118_Text_RoseDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route118_EventScript_RematchRose
 	msgbox Route118_Text_RosePostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route118_EventScript_RematchRose::
-	trainerbattle_rematch TRAINER_ROSE_1, Route118_Text_RoseRematchIntro, Route118_Text_RoseRematchDefeat
-	msgbox Route118_Text_RosePostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route118_EventScript_Barny::
@@ -201,15 +194,8 @@ Route118_EventScript_Wade::
 
 Route118_EventScript_Dalton::
 	trainerbattle_single TRAINER_DALTON_1, Route118_Text_DaltonIntro, Route118_Text_DaltonDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route118_EventScript_RematchDalton
 	msgbox Route118_Text_DaltonPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route118_EventScript_RematchDalton::
-	trainerbattle_rematch TRAINER_DALTON_1, Route118_Text_DaltonRematchIntro, Route118_Text_DaltonRematchDefeat
-	msgbox Route118_Text_DaltonPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route118_EventScript_Perry::

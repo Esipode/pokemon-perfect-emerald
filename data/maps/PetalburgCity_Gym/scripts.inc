@@ -38,7 +38,7 @@ PetalburgCity_Gym_EventScript_UnlockAllDoors::
 PetalburgCity_Gym_OnTransition:
 	call_if_eq VAR_PETALBURG_GYM_STATE, 1, PetalburgCity_Gym_EventScript_MoveWallyToEntrance
 	call_if_lt VAR_PETALBURG_GYM_STATE, 6, PetalburgCity_Gym_EventScript_MoveNormanToEntrance
-	call_if_set FLAG_SYS_GAME_CLEAR, PetalburgCity_Gym_EventScript_CheckNormanForRematch
+	call_if_set FLAG_SYS_GAME_CLEAR, PetalburgCity_Gym_EventScript_CheckNormanPosition
 	end
 
 PetalburgCity_Gym_EventScript_MoveWallyToEntrance::
@@ -49,10 +49,7 @@ PetalburgCity_Gym_EventScript_MoveNormanToEntrance::
 	setobjectxyperm LOCALID_PETALBURG_GYM_NORMAN, 4, 107
 	return
 
-PetalburgCity_Gym_EventScript_CheckNormanForRematch::
-	setorcopyvar VAR_TRAINER_BATTLE_OPPONENT_A, TRAINER_NORMAN_1
-	specialvar VAR_RESULT, IsTrainerReadyForRematch
-	goto_if_eq VAR_RESULT, TRUE, PetalburgCity_Gym_EventScript_DontMoveNormanToFront
+PetalburgCity_Gym_EventScript_CheckNormanPosition::
 	goto_if_eq VAR_PETALBURG_GYM_STATE, 8, PetalburgCity_Gym_EventScript_DontMoveNormanToFront
 	setobjectxyperm LOCALID_PETALBURG_GYM_NORMAN, 4, 107
 	return
@@ -100,7 +97,6 @@ PetalburgCity_Gym_Movement_WallyExitGym:
 	step_end
 
 PetalburgCity_Gym_EventScript_Norman::
-	vsseeker_rematchid TRAINER_NORMAN_1
 	lock
 	faceplayer
 	switch VAR_PETALBURG_GYM_STATE
@@ -110,7 +106,7 @@ PetalburgCity_Gym_EventScript_Norman::
 	case 5, PetalburgCity_Gym_EventScript_NormanThreeBadges
 	case 6, PetalburgCity_Gym_EventScript_NormanBattle
 	case 7, PetalburgCity_Gym_EventScript_NormanPostBattle
-	case 8, PetalburgCity_Gym_EventScript_NormanRematch
+	case 8, PetalburgCity_Gym_EventScript_NormanPostBattle
 	msgbox PetalburgCity_Gym_Text_DadYoureHereWithYourPokemon, MSGBOX_DEFAULT
 	closemessage
 	switch VAR_FACING
@@ -338,11 +334,6 @@ PetalburgCity_Gym_EventScript_NormanPostBattle::
 PetalburgCity_Gym_EventScript_GiveFacade2::
 	call PetalburgCity_Gym_EventScript_GiveFacade
 	release
-	end
-
-PetalburgCity_Gym_EventScript_NormanRematch::
-	trainerbattle_rematch_double TRAINER_NORMAN_1, PetalburgCity_Gym_Text_NormanPreRematch, PetalburgCity_Gym_Text_NormanRematchDefeat, PetalburgCity_Gym_Text_NormanRematchNeedTwoMons
-	msgbox PetalburgCity_Gym_Text_NormanPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 PetalburgCity_Gym_EventScript_ShouldGiveEnigmaBerry::
@@ -1562,41 +1553,4 @@ PetalburgCity_Gym_Text_GymStatueCertified:
 	.string "PETALBURG CITY POKéMON GYM\p"
 	.string "NORMAN'S CERTIFIED TRAINERS:\n"
 	.string "{PLAYER}$"
-
-PetalburgCity_Gym_Text_NormanPreRematch:
-	.string "DAD: {PLAYER}…\n"
-	.string "I had a feeling that you would come.\p"
-	.string "I would never refuse to accept\n"
-	.string "a challenge from you.\p"
-	.string "You do understand, don't you?\p"
-	.string "Inside a GYM, it doesn't matter that\n"
-	.string "we are a parent and child.\p"
-	.string "…No, because we are parent and child,\n"
-	.string "we owe it to each other to do the best\l"
-	.string "we can. Isn't that right, {PLAYER}?$"
-
-PetalburgCity_Gym_Text_NormanRematchDefeat:
-	.string "Uh… Haha…\n"
-	.string "Maybe that was going too hard…$"
-
-PetalburgCity_Gym_Text_NormanPostRematch:
-	.string "DAD: {PLAYER}…\n"
-	.string "What is your dream?\p"
-	.string "My dream…\n"
-	.string "Hahaha…\l"
-	.string "It has already come true, actually.$"
-
-PetalburgCity_Gym_Text_NormanRematchNeedTwoMons:
-	.string "DAD: {PLAYER}…\n"
-	.string "I had a feeling that you would come.\p"
-	.string "I would never refuse to accept\n"
-	.string "a challenge from you.\p"
-	.string "You do understand, don't you?\p"
-	.string "Inside a GYM, it doesn't matter that\n"
-	.string "we are a parent and child.\p"
-	.string "Hm? Wait a second, {PLAYER}.\p"
-	.string "Do you only have one POKéMON that is\n"
-	.string "capable of battle?\p"
-	.string "Sorry, but you'll have to come back\n"
-	.string "with at least two POKéMON.$"
 

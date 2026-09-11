@@ -1642,13 +1642,6 @@ Common_EventScript_LegendaryFlewAway::
 	release
 	end
 
-EventScript_VsSeekerChargingDone::
-	special VsSeekerFreezeObjectsAfterChargeComplete
-	waitstate
-	special VsSeekerResetObjectMovementAfterChargeComplete
-	releaseall
-	end
-
 @ FRLG scripts
 
 EventScript_SetExitingCyclingRoad::

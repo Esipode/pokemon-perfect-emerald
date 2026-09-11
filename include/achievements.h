@@ -544,7 +544,7 @@ u32 AchievementBoost_ApplyShopPrice(u32 price);
 // and rolls it alongside that function's own existing Random() % 100.
 u32 AchievementBoost_GetSurviveChancePercent(void);
 
-// CB2_EndTrainerBattle/CB2_EndRematchBattle (src/battle_setup.c), win
+// CB2_EndTrainerBattle (src/battle_setup.c), win
 // branches only -- restores BOOST_POST_BATTLE_HEAL's percent of max HP to
 // every living, non-egg party Pokemon. A no-op below level 1 or for a mon
 // already fainted/full/an egg.

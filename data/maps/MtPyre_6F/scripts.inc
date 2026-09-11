@@ -3,15 +3,8 @@ MtPyre_6F_MapScripts::
 
 MtPyre_6F_EventScript_Valerie::
 	trainerbattle_single TRAINER_VALERIE_1, MtPyre_6F_Text_ValerieIntro, MtPyre_6F_Text_ValerieDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, MtPyre_6F_EventScript_RematchValerie
 	msgbox MtPyre_6F_Text_ValeriePostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-MtPyre_6F_EventScript_RematchValerie::
-	trainerbattle_rematch TRAINER_VALERIE_1, MtPyre_6F_Text_ValerieRematchIntro, MtPyre_6F_Text_ValerieRematchDefeat
-	msgbox MtPyre_6F_Text_ValeriePostRematch, MSGBOX_AUTOCLOSE
 	end
 
 MtPyre_6F_EventScript_Cedric::
@@ -29,17 +22,6 @@ MtPyre_6F_Text_ValerieDefeat:
 MtPyre_6F_Text_ValeriePostBattle:
 	.string "Perhaps the power is from the spirits\n"
 	.string "of POKéMON in fitful sleep here…$"
-
-MtPyre_6F_Text_ValerieRematchIntro:
-	.string "Behind you…\n"
-	.string "What is it…$"
-
-MtPyre_6F_Text_ValerieRematchDefeat:
-	.string "Something faded away…$"
-
-MtPyre_6F_Text_ValeriePostRematch:
-	.string "The POKéMON at rest here…\n"
-	.string "Sometimes, they play…$"
 
 MtPyre_6F_Text_CedricIntro:
 	.string "Have you lost your bearings?\n"

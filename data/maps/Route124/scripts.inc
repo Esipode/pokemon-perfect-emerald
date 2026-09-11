@@ -22,15 +22,8 @@ Route124_EventScript_Roland::
 
 Route124_EventScript_Jenny::
 	trainerbattle_single TRAINER_JENNY_1, Route124_Text_JennyIntro, Route124_Text_JennyDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route124_EventScript_RematchJenny
 	msgbox Route124_Text_JennyPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route124_EventScript_RematchJenny::
-	trainerbattle_rematch TRAINER_JENNY_1, Route124_Text_JennyRematchIntro, Route124_Text_JennyRematchDefeat
-	msgbox Route124_Text_JennyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route124_EventScript_Grace::
@@ -45,28 +38,14 @@ Route124_EventScript_Chad::
 
 Route124_EventScript_Lila::
 	trainerbattle_double TRAINER_LILA_AND_ROY_1, Route124_Text_LilaIntro, Route124_Text_LilaDefeat, Route124_Text_LilaNotEnoughMons
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route124_EventScript_RematchLila
 	msgbox Route124_Text_LilaPostBattle, MSGBOX_DEFAULT
 	release
 	end
 
-Route124_EventScript_RematchLila::
-	trainerbattle_rematch_double TRAINER_LILA_AND_ROY_1, Route124_Text_LilaRematchIntro, Route124_Text_LilaRematchDefeat, Route124_Text_LilaRematchNotEnoughMons
-	msgbox Route124_Text_LilaPostRematch, MSGBOX_AUTOCLOSE
-	end
-
 Route124_EventScript_Roy::
 	trainerbattle_double TRAINER_LILA_AND_ROY_1, Route124_Text_RoyIntro, Route124_Text_RoyDefeat, Route124_Text_RoyNotEnoughMons
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route124_EventScript_RematchRoy
 	msgbox Route124_Text_RoyPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route124_EventScript_RematchRoy::
-	trainerbattle_rematch_double TRAINER_LILA_AND_ROY_1, Route124_Text_RoyRematchIntro, Route124_Text_RoyRematchDefeat, Route124_Text_RoyRematchNotEnoughMons
-	msgbox Route124_Text_RoyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route124_EventScript_Declan::

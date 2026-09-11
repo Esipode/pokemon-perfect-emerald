@@ -11,19 +11,6 @@ Route102_Text_CalvinPostBattle:
 	.string "Listen, you. If you're strong,\n"
 	.string "you should have told me before!$"
 
-Route102_Text_CalvinRematchIntro:
-	.string "Ever since I lost to you, I desperately\n"
-	.string "trained my POKéMON.\l"
-	.string "You can't say no to my challenge!$"
-
-Route102_Text_CalvinRematchDefeated:
-	.string "Arrgh, I lost…\n"
-	.string "Is my training method not right?$"
-
-Route102_Text_CalvinRematchPostBattle:
-	.string "If you're going to get stronger,\n"
-	.string "I'll get stronger, too.$"
-
 Route102_Text_AllenIntro:
 	.string "Did you just become a TRAINER?\n"
 	.string "We're both beginners!$"
@@ -105,43 +92,6 @@ Route103_Text_LivNotEnoughPokemon:
 	.string "you have to have two POKéMON!\l"
 	.string "It's not fair if you don't!$"
 
-Route103_Text_AmyRematchIntro:
-	.string "AMY: I'm AMY.\n"
-	.string "And this is my little sister LIV.\l"
-	.string "We battle together!$"
-
-Route103_Text_AmyRematchDefeated:
-	.string "AMY: Aww, boo!\n"
-	.string "We couldn't win again…$"
-
-Route103_Text_AmyRematchPostBattle:
-	.string "AMY: You have to think about all\n"
-	.string "kinds of things when you're battling\l"
-	.string "against two TRAINERS.$"
-
-Route103_Text_AmyRematchNotEnoughPokemon:
-	.string "AMY: Uh-oh, you have only one\n"
-	.string "POKéMON with you.\l"
-	.string "You can't battle us like that.$"
-
-Route103_Text_LivRematchIntro:
-	.string "LIV: We battle together as one\n"
-	.string "team.$"
-
-Route103_Text_LivRematchDefeated:
-	.string "LIV: Awww, we lost again…\n"
-	.string "Big sister…$"
-
-Route103_Text_LivRematchPostBattle:
-	.string "LIV: We work perfectly together,\n"
-	.string "me and my big sister…\p"
-	.string "But why did we lose again?$"
-
-Route103_Text_LivRematchNotEnoughPokemon:
-	.string "LIV: If you want to battle us, you\n"
-	.string "have to have two POKéMON!\l"
-	.string "It's not fair if you don't!$"
-
 Route103_Text_AndrewIntro:
 	.string "Gah! My fishing line's all snarled up!\n"
 	.string "I'm getting frustrated and mean!\l"
@@ -166,18 +116,6 @@ Route103_Text_MiguelDefeated:
 Route103_Text_MiguelPostBattle:
 	.string "My delightful POKéMON looks darling\n"
 	.string "even when it's fainted!$"
-
-Route103_Text_MiguelRematchIntro:
-	.string "Hi, you! My delightfully adorable\n"
-	.string "POKéMON has become more darling!$"
-
-Route103_Text_MiguelRematchDefeated:
-	.string "Oh!\n"
-	.string "My darling POKéMON!$"
-
-Route103_Text_MiguelRematchPostBattle:
-	.string "The more I spend time with it,\n"
-	.string "the more adorable my POKéMON becomes.$"
 
 Route103_Text_PeteIntro:
 	.string "This sort of distance…\n"
@@ -303,18 +241,6 @@ Route104_Text_HaleyPostBattle:
 	.string "you will regret it, however things\l"
 	.string "turn out.$"
 
-Route104_Text_HaleyRematchIntro:
-	.string "Come on, battle with me!$"
-
-Route104_Text_HaleyRematchDefeat:
-	.string "Ohh…\n"
-	.string "I thought I could win…$"
-
-Route104_Text_HaleyPostRematch:
-	.string "I made the decision to battle, so\n"
-	.string "I can accept this loss with grace.\p"
-	.string "I am still upset about losing!$"
-
 Route104_Text_WinstonIntro:
 	.string "Oh, sure, I'll accept your challenge.\n"
 	.string "I have a lot of money.$"
@@ -326,19 +252,6 @@ Route104_Text_WinstonPostBattle:
 	.string "There are some things money can't buy.\n"
 	.string "That's POKéMON…$"
 
-Route104_Text_WinstonRematchIntro:
-	.string "After I lost to you, I learned a bunch\n"
-	.string "of things about POKéMON.$"
-
-Route104_Text_WinstonRematchDefeat:
-	.string "I lost again?\n"
-	.string "Why couldn't I win?$"
-
-Route104_Text_WinstonPostRematch:
-	.string "I'm fabulously wealthy, but I can't\n"
-	.string "seem to win at POKéMON…\p"
-	.string "It's so deep, the world of POKéMON…$"
-
 Route104_Text_CindyIntro:
 	.string "We must have been fated to meet.\n"
 	.string "May I ask you for a battle?$"
@@ -347,18 +260,6 @@ Route104_Text_CindyDefeat:
 	.string "Oh, my!$"
 
 Route104_Text_CindyPostBattle:
-	.string "“Hello” is the beginning of “good-bye.”\n"
-	.string "I hope we meet again.$"
-
-Route104_Text_CindyRematchIntro:
-	.string "Hello, we meet again.\n"
-	.string "May I ask you for a battle?$"
-
-Route104_Text_CindyRematchDefeat:
-	.string "Oh, my…\n"
-	.string "I did the best that I could…$"
-
-Route104_Text_CindyPostRematch:
 	.string "“Hello” is the beginning of “good-bye.”\n"
 	.string "I hope we meet again.$"
 
@@ -451,20 +352,6 @@ Route105_Text_AndresPostBattle:
 	.string "discovered in the world's seas.\p"
 	.string "I mean to find them all!$"
 
-Route105_Text_AndresRematchIntro:
-	.string "I've told you that I'm weak…\n"
-	.string "Are you sure you want to do this?$"
-
-Route105_Text_AndresRematchDefeated:
-	.string "Yes…\n"
-	.string "I didn't think I could win.$"
-
-Route105_Text_AndresRematchPostBattle:
-	.string "I may be weak at battling, but my\n"
-	.string "drive to explore can't be bested.\p"
-	.string "I will travel the seas all around\n"
-	.string "the world!$"
-
 Route105_Text_JosueIntro:
 	.string "I'm exhausted from swimming.\n"
 	.string "I'm just not used to it.\p"
@@ -488,17 +375,6 @@ Route106_Text_ElliotDefeated:
 Route106_Text_ElliotPostBattle:
 	.string "Fishing is the greatest whether it's\n"
 	.string "in the sea or a stream.\l"
-	.string "You agree with me, right?$"
-
-Route106_Text_ElliotRematchIntro:
-	.string "I caught a bunch of POKéMON fishing.\n"
-	.string "I'll show you an impressive battle!$"
-
-Route106_Text_ElliotRematchDefeated:
-	.string "I lost again spectacularly!$"
-
-Route106_Text_ElliotRematchPostBattle:
-	.string "Win or lose, POKéMON are the greatest!\n"
 	.string "You agree with me, right?$"
 
 Route106_Text_NedIntro:
@@ -564,20 +440,6 @@ Route107_Text_TonyPostBattle:
 	.string "dreams…\p"
 	.string "It's a song!\n"
 	.string "Anyways, I'm swimming some more.$"
-
-Route107_Text_TonyRematchIntro:
-	.string "Swimming in the big, wide sea,\n"
-	.string "my POKéMON has grown stronger!$"
-
-Route107_Text_TonyRematchDefeated:
-	.string "What a shock!\p"
-	.string "My POKéMON has gotten stronger, but\n"
-	.string "I stayed weak as a TRAINER!$"
-
-Route107_Text_TonyRematchPostBattle:
-	.string "What you learn in battle makes you\n"
-	.string "a stronger TRAINER.\l"
-	.string "The waves taught me that.$"
 
 Route107_Text_DeniseIntro:
 	.string "Do you know a little town called\n"
@@ -708,17 +570,6 @@ Route108_Text_CoryPostBattle:
 	.string "Shouting is good for me!\n"
 	.string "It uplifts me!$"
 
-Route108_Text_CoryRematchIntro:
-	.string "Win or lose, I love battling at sea!$"
-
-Route108_Text_CoryRematchDefeated:
-	.string "Waaah! I lost again!\n"
-	.string "Waaah! Waaah!$"
-
-Route108_Text_CoryRematchPostBattle:
-	.string "If you're faced with a challenge,\n"
-	.string "try shouting at the sea!$"
-
 Route108_Text_CarolinaIntro:
 	.string "I take huge pride in my POKéMON.\n"
 	.string "We'll show you one speedy battle!$"
@@ -788,18 +639,6 @@ Route109_Text_RickyPostBattle:
 	.string "I'm getting famished… My inner tube\n"
 	.string "looks like a giant doughnut…$"
 
-Route109_Text_RickyRematchIntro:
-	.string "I'm hungry, but I've got enough pep in\n"
-	.string "me for a battle!$"
-
-Route109_Text_RickyRematchDefeated:
-	.string "I lost…\n"
-	.string "It's because I'm hungry…$"
-
-Route109_Text_RickyRematchPostBattle:
-	.string "When you eat on a beach, everything\n"
-	.string "seems to taste a little better.$"
-
 Route109_Text_LolaIntro:
 	.string "Doesn't a beach umbrella look like\n"
 	.string "a giant flower?$"
@@ -810,17 +649,6 @@ Route109_Text_LolaDefeated:
 Route109_Text_LolaPostBattle:
 	.string "If you look at the beach from the sky,\n"
 	.string "it looks like a big flower garden!$"
-
-Route109_Text_LolaRematchIntro:
-	.string "I'm not losing to you again!\n"
-	.string "That's why I have my inner tube!$"
-
-Route109_Text_LolaRematchDefeated:
-	.string "Mommy!$"
-
-Route109_Text_LolaRematchPostBattle:
-	.string "If I have an inner tube, me and my\n"
-	.string "POKéMON's cuteness goes way up!$"
 
 Route109_Text_AustinaIntro:
 	.string "I can't swim without my inner tube,\n"
@@ -961,17 +789,6 @@ Route110_Text_BenjaminPostBattle:
 	.string "There's no need to panic or stress.\n"
 	.string "Take it easy. There's plenty of time.$"
 
-Route110_Text_BenjaminRematchIntro:
-	.string "Aren't you going a little too fast?\n"
-	.string "Take it easy and let's battle.$"
-
-Route110_Text_BenjaminRematchDefeated:
-	.string "I didn't panic, but I still lost…$"
-
-Route110_Text_BenjaminRematchPostBattle:
-	.string "There's no need to panic or stress.\n"
-	.string "Take it easy. There's plenty of time.$"
-
 Route110_Text_AbigailIntro:
 	.string "The triathlon is hard in the extreme.\p"
 	.string "You have to complete the three events\n"
@@ -983,18 +800,6 @@ Route110_Text_AbigailDefeated:
 Route110_Text_AbigailPostBattle:
 	.string "I'm exhausted, so I need a break.\n"
 	.string "It's important to get proper rest.$"
-
-Route110_Text_AbigailRematchIntro:
-	.string "Isn't it neat to hold a battle while\n"
-	.string "cycling?$"
-
-Route110_Text_AbigailRematchDefeated:
-	.string "Wow…\n"
-	.string "How could you be so strong?$"
-
-Route110_Text_AbigailRematchPostBattle:
-	.string "Were you going after a record?\p"
-	.string "I'm sorry if I held you up!$"
 
 Route110_Text_JasmineIntro:
 	.string "I've been riding without stopping.\n"
@@ -1043,19 +848,6 @@ Route110_Text_EdwinPostBattle:
 	.string "When I see a POKéMON that I don't know,\n"
 	.string "my passion as a collector is ignited!$"
 
-Route110_Text_EdwinRematchIntro:
-	.string "Hi, have you caught any new POKéMON?\p"
-	.string "Could I see your POKéMON?\n"
-	.string "Just one look, please?$"
-
-Route110_Text_EdwinRematchDefeated:
-	.string "Your POKéMON…\n"
-	.string "I envy you.$"
-
-Route110_Text_EdwinRematchPostBattle:
-	.string "Oh, I long to make all rare POKéMON\n"
-	.string "mine!$"
-
 Route110_Text_DaleIntro:
 	.string "Hey!\n"
 	.string "Don't sneak up behind me like that!$"
@@ -1078,18 +870,6 @@ Route110_Text_IsabelDefeated:
 Route110_Text_IsabelPostBattle:
 	.string "Rather than battling, perhaps I should\n"
 	.string "show off my POKéMON at the FAN CLUB.$"
-
-Route110_Text_IsabelRematchIntro:
-	.string "Ahahahaha! I would be happy to show\n"
-	.string "off my POKéMON as often as you like!$"
-
-Route110_Text_IsabelRematchDefeated:
-	.string "Oh, dear, this won't do.$"
-
-Route110_Text_IsabelRematchPostBattle:
-	.string "I don't think that I could ever stop\n"
-	.string "from showing off my POKéMON.\p"
-	.string "But I like to battle, too!$"
 
 Route110_Text_TimmyIntro:
 	.string "I found some cool POKéMON in the grass\n"
@@ -1205,24 +985,6 @@ Route111_Text_DustyPostBattle:
 	.string "No, wait, was that forty years?\n"
 	.string "Which was it now?$"
 
-Route111_Text_DustyRematchIntro:
-	.string "For thirty years I have searched for\n"
-	.string "ancient ruins!\p"
-	.string "No, wait, was that forty years?\n"
-	.string "Anyway, am I to be challenged?$"
-
-Route111_Text_DustyRematchDefeat:
-	.string "I've found no ruins, nor have I found\n"
-	.string "any strong POKéMON…$"
-
-Route111_Text_DustyPostRematch:
-	.string "For thirty years I have searched for\n"
-	.string "ancient ruins!\p"
-	.string "No, wait, was that forty years\n"
-	.string "I've searched?\p"
-	.string "Hmm… It could even be fifty…\n"
-	.string "How long have I been at this?$"
-
 Route111_Text_TravisIntro:
 	.string "I'm full of pep!\n"
 	.string "And my POKéMON is peppy, too!$"
@@ -1272,18 +1034,6 @@ Route111_Text_WiltonPostBattle:
 	.string "What's important is to never give up\n"
 	.string "even if you lose.$"
 
-Route111_Text_WiltonRematchIntro:
-	.string "We're training here to elevate our\n"
-	.string "game to the next level.\l"
-	.string "Stay and train with us!$"
-
-Route111_Text_WiltonRematchDefeat:
-	.string "Ooh, you're decent!$"
-
-Route111_Text_WiltonPostRematch:
-	.string "Since you're that strong, you should\n"
-	.string "aim for the POKéMON LEAGUE.$"
-
 Route111_Text_BrookeIntro:
 	.string "Oh, your POKéMON look like serious\n"
 	.string "actors.\l"
@@ -1297,21 +1047,6 @@ Route111_Text_BrookePostBattle:
 	.string "I thought I was raising my POKéMON\n"
 	.string "diligently, but, oh no, there is still\l"
 	.string "much to be done.$"
-
-Route111_Text_BrookeRematchIntro:
-	.string "You can make POKéMON stronger or\n"
-	.string "weaker depending on the moves you\l"
-	.string "teach them.\p"
-	.string "What kinds of moves do your POKéMON\n"
-	.string "know?$"
-
-Route111_Text_BrookeRematchDefeat:
-	.string "You've taught them good moves!$"
-
-Route111_Text_BrookePostRematch:
-	.string "Maybe I should have stopped my\n"
-	.string "POKéMON from evolving until they\l"
-	.string "learned better moves…$"
 
 Route111_Text_CeliaIntro:
 	.string "I shouldn't have come to a place like\n"
@@ -1429,19 +1164,6 @@ Route112_Text_TrentPostBattle:
 	.string "That, my friend, will get your body\n"
 	.string "into serious shape.$"
 
-Route112_Text_TrentRematchIntro:
-	.string "I've been keeping fit by hiking.\n"
-	.string "Power, I have in spades!$"
-
-Route112_Text_TrentRematchDefeat:
-	.string "I got trumped in power?$"
-
-Route112_Text_TrentRematchPostBattle:
-	.string "I hear there are some seriously tough\n"
-	.string "TRAINERS on top of MT. CHIMNEY.\p"
-	.string "I intend to get up there and give them\n"
-	.string "a challenge!$"
-
 Route112_Text_LarryIntro:
 	.string "I'm strong.\n"
 	.string "I won't cry if I lose.$"
@@ -1531,17 +1253,6 @@ Route113_Text_MadelinePostBattle:
 	.string "You're very good at this.\n"
 	.string "I must say I'm impressed!$"
 
-Route113_Text_MadelineRematchIntro:
-	.string "Oh, hello, hasn't it been a while?\n"
-	.string "May I invite you to battle?$"
-
-Route113_Text_MadelineRematchDefeat:
-	.string "Oh, how super!$"
-
-Route113_Text_MadelinePostRematch:
-	.string "You've remained very good at this.\n"
-	.string "I must say I'm impressed!$"
-
 Route113_Text_LaoIntro:
 	.string "From out of the ashes I leap! Hiyah!\n"
 	.string "I challenge thee!$"
@@ -1551,18 +1262,6 @@ Route113_Text_LaoDefeat:
 
 Route113_Text_LaoPostBattle:
 	.string "I must refine the art of concealment.\n"
-	.string "I bid thee farewell.$"
-
-Route113_Text_LaoRematchIntro:
-	.string "From out of the ashes I leap! Hiyah!\n"
-	.string "I challenge thee!$"
-
-Route113_Text_LaoRematchDefeat:
-	.string "With honor I admit defeat!$"
-
-Route113_Text_LaoPostRematch:
-	.string "My flawless concealment was let down\n"
-	.string "by my immature battle skills…\p"
 	.string "I bid thee farewell.$"
 
 Route113_Text_LungIntro:
@@ -1723,19 +1422,6 @@ Route114_Text_StevePostBattle:
 	.string "Ufufufufu…\n"
 	.string "I wish I had a POKéMON like that…$"
 
-Route114_Text_SteveRematchIntro:
-	.string "Ufufufufufu…\n"
-	.string "Come on, battle my POKéMON…$"
-
-Route114_Text_SteveRematchDefeat:
-	.string "I feel so lucky getting to see your\n"
-	.string "POKéMON…$"
-
-Route114_Text_StevePostRematch:
-	.string "Ufufufufufu…\p"
-	.string "When I see POKéMON battling, I get all\n"
-	.string "shivery and shaky…$"
-
 Route114_Text_BernieIntro:
 	.string "If you're lighting a campfire,\n"
 	.string "make sure you have water handy.$"
@@ -1744,20 +1430,6 @@ Route114_Text_BernieDefeat:
 	.string "Thanks for dousing my fire!$"
 
 Route114_Text_BerniePostBattle:
-	.string "You really do have to be careful with\n"
-	.string "any sort of fire in a forest.\p"
-	.string "Don't ever underestimate the power\n"
-	.string "of fire.$"
-
-Route114_Text_BernieRematchIntro:
-	.string "Have you learned to keep water handy\n"
-	.string "for campfires?$"
-
-Route114_Text_BernieRematchDefeat:
-	.string "I got hosed down before I could\n"
-	.string "flare up, I guess.$"
-
-Route114_Text_BerniePostRematch:
 	.string "You really do have to be careful with\n"
 	.string "any sort of fire in a forest.\p"
 	.string "Don't ever underestimate the power\n"
@@ -1875,19 +1547,6 @@ Route115_Text_TimothyPostBattle:
 	.string "It all depends on effort!\l"
 	.string "That is what I believe…$"
 
-Route115_Text_TimothyRematchIntro:
-	.string "Hm… As always, your agility speaks\n"
-	.string "for itself.\l"
-	.string "Come, keep me company!$"
-
-Route115_Text_TimothyRematchDefeat:
-	.string "As strong as ever!$"
-
-Route115_Text_TimothyPostRematch:
-	.string "All it takes is effort!\p"
-	.string "I lost because I haven't put in enough\n"
-	.string "effort!$"
-
 Route115_Text_KoichiIntro:
 	.string "You!\p"
 	.string "My MACHOP!\p"
@@ -1914,19 +1573,6 @@ Route115_Text_NobPostBattle:
 	.string "It looks like they'll get a lot better\n"
 	.string "than me. I'm excited about that.$"
 
-Route115_Text_NobRematchIntro:
-	.string "After you beat me, we trained hard to\n"
-	.string "improve our skills.\l"
-	.string "Come on, give us a rematch!$"
-
-Route115_Text_NobRematchDefeat:
-	.string "Ugwaaah!\n"
-	.string "We lost again!$"
-
-Route115_Text_NobPostRematch:
-	.string "My POKéMON will grow stronger!\n"
-	.string "I'll redouble my training!$"
-
 Route115_Text_CyndyIntro:
 	.string "This beach is my secret training spot!\n"
 	.string "Don't come butting in!$"
@@ -1938,17 +1584,6 @@ Route115_Text_CyndyPostBattle:
 	.string "The sand acts as a cushion to reduce\n"
 	.string "impact and prevent injury.\l"
 	.string "This is the perfect place to train.$"
-
-Route115_Text_CyndyRematchIntro:
-	.string "Okay, let's get this battle on!$"
-
-Route115_Text_CyndyRematchDefeat:
-	.string "I can battle but my POKéMON…$"
-
-Route115_Text_CyndyPostRematch:
-	.string "Even when I lose, I still get some\n"
-	.string "enjoyment out of it.\l"
-	.string "It must be that I love POKéMON.$"
 
 Route115_Text_HectorIntro:
 	.string "I have a rare POKéMON!\n"
@@ -2083,20 +1718,6 @@ Route116_Text_JerryPostBattle:
 	.string "the TRAINER'S SCHOOL.\l"
 	.string "If I don't, ROXANNE will be steamed.$"
 
-Route116_Text_JerryRematchIntro:
-	.string "I've been studying seriously at the\n"
-	.string "TRAINER'S SCHOOL.\l"
-	.string "I won't lose like I did last time.$"
-
-Route116_Text_JerryRematchDefeat:
-	.string "Hunh?\n"
-	.string "I studied diligently.$"
-
-Route116_Text_JerryPostRematch:
-	.string "I'll have to redo some courses at\n"
-	.string "the TRAINER'S SCHOOL.\l"
-	.string "If I don't, ROXANNE will be steamed.$"
-
 Route116_Text_KarenIntro:
 	.string "I study at school, and I study on\n"
 	.string "the way home, too!$"
@@ -2107,18 +1728,6 @@ Route116_Text_KarenDefeat:
 Route116_Text_KarenPostBattle:
 	.string "Awww, I'll never become an elegant\n"
 	.string "TRAINER like ROXANNE this way!$"
-
-Route116_Text_KarenRematchIntro:
-	.string "I studied a whole lot since I saw you.\n"
-	.string "You must see my achievements!$"
-
-Route116_Text_KarenRematchDefeat:
-	.string "I'm in shock.\n"
-	.string "I lost again?$"
-
-Route116_Text_KarenPostRematch:
-	.string "You've beaten ROXANNE?\n"
-	.string "I can't beat you, then. Not yet.$"
 
 Route116_Text_SarahIntro:
 	.string "Just so you know, I've never once been\n"
@@ -2183,18 +1792,6 @@ Route117_Text_IsaacPostBattle:
 	.string "character is another way of enjoying\l"
 	.string "POKéMON.$"
 
-Route117_Text_IsaacRematchIntro:
-	.string "The POKéMON I've been raising are\n"
-	.string "looking good, just like before.$"
-
-Route117_Text_IsaacRematchDefeat:
-	.string "You know how to raise them properly.\n"
-	.string "You might have DAY CARE skills…$"
-
-Route117_Text_IsaacPostRematch:
-	.string "Your POKéMON are growing good!\n"
-	.string "You should enter them in CONTESTS.$"
-
 Route117_Text_LydiaIntro:
 	.string "Please, allow me to evaluate if you\n"
 	.string "have raised your POKéMON properly.$"
@@ -2205,17 +1802,6 @@ Route117_Text_LydiaDefeat:
 Route117_Text_LydiaPostBattle:
 	.string "Try raising POKéMON with more\n"
 	.string "attention to their character traits.$"
-
-Route117_Text_LydiaRematchIntro:
-	.string "Allow me to reevaluate if you have\n"
-	.string "raised your POKéMON properly.$"
-
-Route117_Text_LydiaRematchDefeat:
-	.string "They are growing admirably.$"
-
-Route117_Text_LydiaPostRematch:
-	.string "POKéMON seem to like different kinds\n"
-	.string "of {POKEBLOCK}S, depending on their nature.$"
 
 Route117_Text_DylanIntro:
 	.string "I'm in the middle of a triathlon, but,\n"
@@ -2228,19 +1814,6 @@ Route117_Text_DylanPostBattle:
 	.string "I may have blown it…\p"
 	.string "I might have dropped to last during\n"
 	.string "that battle…$"
-
-Route117_Text_DylanRematchIntro:
-	.string "I'm smack in the middle of a triathlon,\n"
-	.string "but I'm comfortably ahead.\l"
-	.string "Let's make this a quick battle!$"
-
-Route117_Text_DylanRematchDefeat:
-	.string "I ran out of energy again!$"
-
-Route117_Text_DylanPostRematch:
-	.string "I was tops in swimming and cycling,\n"
-	.string "but I'm not quite that confident with\l"
-	.string "POKéMON yet.$"
 
 Route117_Text_MariaIntro:
 	.string "I do my triathlon training with POKéMON,\n"
@@ -2255,19 +1828,6 @@ Route117_Text_MariaPostBattle:
 	.string "keep it up regularly.\p"
 	.string "Okay! I'll resume my training!\n"
 	.string "Tomorrow!$"
-
-Route117_Text_MariaRematchIntro:
-	.string "Are you keeping up with your training?\n"
-	.string "I sure am!\l"
-	.string "Let me show you the evidence!$"
-
-Route117_Text_MariaRematchDefeat:
-	.string "I need to get more practices in,\n"
-	.string "I guess.$"
-
-Route117_Text_MariaPostRematch:
-	.string "I'll resume training tomorrow.\n"
-	.string "Let's battle again sometime!$"
 
 Route117_Text_DerekIntro:
 	.string "Once a BUG CATCHER!\n"
@@ -2320,39 +1880,6 @@ Route117_Text_MegNotEnoughMons:
 	.string "We can't battle with you, then.\p"
 	.string "We want to have a 2-on-2 battle.$"
 
-Route117_Text_AnnaRematchIntro:
-	.string "ANNA: I can't keep losing in front of\n"
-	.string "my junior partner, right?$"
-
-Route117_Text_AnnaRematchDefeat:
-	.string "ANNA: I couldn't get into the groove.$"
-
-Route117_Text_AnnaPostRematch:
-	.string "ANNA: Your POKéMON have some good\n"
-	.string "combinations.\p"
-	.string "I'd say you're second only to us!$"
-
-Route117_Text_AnnaRematchNotEnoughMons:
-	.string "ANNA: If you want to battle us,\n"
-	.string "bring two POKéMON with you.$"
-
-Route117_Text_MegRematchIntro:
-	.string "MEG: I'm going to tag up with my\n"
-	.string "senior partner and win this time!$"
-
-Route117_Text_MegRematchDefeat:
-	.string "MEG: Too strong!$"
-
-Route117_Text_MegPostRematch:
-	.string "MEG: I battled together with my\n"
-	.string "senior partner, but we lost…\p"
-	.string "That's so discouraging…$"
-
-Route117_Text_MegRematchNotEnoughMons:
-	.string "MEG: Do you only have one POKéMON?\n"
-	.string "We can't battle with you, then.\p"
-	.string "We want to have a 2-on-2 battle.$"
-
 Route117_Text_MelinaIntro:
 	.string "Isn't it nice? To battle while looking\n"
 	.string "at pretty flowers?$"
@@ -2400,18 +1927,6 @@ Route118_Text_RosePostBattle:
 	.string "I love whatever smells nice.\p"
 	.string "Stinky things…\n"
 	.string "I'll pass.$"
-
-Route118_Text_RoseRematchIntro:
-	.string "Were you drawn here by the sweet\n"
-	.string "aroma?$"
-
-Route118_Text_RoseRematchDefeat:
-	.string "The power of aroma…\n"
-	.string "It didn't seem to do much.$"
-
-Route118_Text_RosePostRematch:
-	.string "If you use a sweet aroma properly,\n"
-	.string "POKéMON will be attracted by it.$"
 
 Route118_Text_PerryIntro:
 	.string "BIRD POKéMON that FLY elegantly in\n"
@@ -2472,17 +1987,6 @@ Route118_Text_DaltonPostBattle:
 	.string "have to be noisy…\p"
 	.string "It can be strummed to squeeze out\n"
 	.string "this heart-stirring melody…$"
-
-Route118_Text_DaltonRematchIntro:
-	.string "A melody from my POKéMON and me…\n"
-	.string "Let us deliver it to your soul.$"
-
-Route118_Text_DaltonRematchDefeat:
-	.string "La-lalala…$"
-
-Route118_Text_DaltonPostRematch:
-	.string "When I play, my emotions should reach\n"
-	.string "you through my electric guitar…$"
 
 Route118_Text_DeandreIntro:
 	.string "Go, go, go!\n"
@@ -2581,18 +2085,6 @@ Route119_Text_JacksonPostBattle:
 	.string "awaken the wild spirit within!\p"
 	.string "That's our vision.$"
 
-Route119_Text_JacksonRematchIntro:
-	.string "I'm going to regain my wild spirit by\n"
-	.string "being together with POKéMON.$"
-
-Route119_Text_JacksonRematchDefeat:
-	.string "You've remained strong!$"
-
-Route119_Text_JacksonPostRematch:
-	.string "Believe in your POKéMON.\n"
-	.string "Believe in yourself.\p"
-	.string "The road will reveal itself to you.$"
-
 Route119_Text_CatherineIntro:
 	.string "Oh? Look at you.\p"
 	.string "For someone on an adventure,\n"
@@ -2607,18 +2099,6 @@ Route119_Text_CatherinePostBattle:
 	.string "everything you need.\p"
 	.string "You're on top of things mentally and\n"
 	.string "physically, too.$"
-
-Route119_Text_CatherineRematchIntro:
-	.string "How's your journey with POKéMON\n"
-	.string "going?$"
-
-Route119_Text_CatherineRematchDefeat:
-	.string "I'm still missing something…$"
-
-Route119_Text_CatherinePostRematch:
-	.string "In the same way that you, as a TRAINER,\n"
-	.string "rely on your POKéMON, your POKéMON\l"
-	.string "rely on you.$"
 
 Route119_Text_HughIntro:
 	.string "The vast sky holds untold promise!\p"
@@ -2759,17 +2239,6 @@ Route120_Text_RobertPostBattle:
 	.string "A POKéMON that grows steadily is one\n"
 	.string "you can count on.$"
 
-Route120_Text_RobertRematchIntro:
-	.string "A POKéMON that grows steadily is one\n"
-	.string "you can count on.$"
-
-Route120_Text_RobertRematchDefeat:
-	.string "Your POKéMON are seriously strong.$"
-
-Route120_Text_RobertPostRematch:
-	.string "My POKéMON are growing stronger.\n"
-	.string "I have to grow stronger, too.$"
-
 Route120_Text_LorenzoIntro:
 	.string "I'll check your POKéMON and see if\n"
 	.string "they're fit for the outdoors.$"
@@ -2807,21 +2276,6 @@ Route120_Text_JeffreyPostBattle:
 	.string "… … … … … …\n"
 	.string "… … … … … …\l"
 	.string "I'll try harder…$"
-
-Route120_Text_JeffreyRematchIntro:
-	.string "… … … … … …\n"
-	.string "… … … … … …\l"
-	.string "Want to battle again?$"
-
-Route120_Text_JeffreyRematchDefeat:
-	.string "… … … … … …\n"
-	.string "I lost again…$"
-
-Route120_Text_JeffreyPostRematch:
-	.string "… … … … … …\n"
-	.string "… … … … … …\l"
-	.string "I'll try harder…\l"
-	.string "For my precious BUG POKéMON…$"
 
 Route120_Text_JenniferIntro:
 	.string "POKéMON have many special abilities.\n"
@@ -2948,20 +2402,6 @@ Route121_Text_WalterPostBattle:
 	.string "I would like to circle the globe once\n"
 	.string "again with my POKéMON.$"
 
-Route121_Text_WalterRematchIntro:
-	.string "With my POKéMON, I have traveled\n"
-	.string "to the world's four corners.\p"
-	.string "You might say I have some confidence\n"
-	.string "in my abilities.$"
-
-Route121_Text_WalterRematchDefeat:
-	.string "Ah, well played.$"
-
-Route121_Text_WalterPostRematch:
-	.string "Your POKéMON and you…\p"
-	.string "Your prowess together will be\n"
-	.string "considered strong, even overseas.$"
-
 Route121_Text_TammyIntro:
 	.string "There are powers beyond our\n"
 	.string "understanding in the world…$"
@@ -3019,18 +2459,6 @@ Route121_Text_JessicaPostBattle:
 	.string "Maybe I'll go catch more POKéMON at\n"
 	.string "the SAFARI.$"
 
-Route121_Text_JessicaRematchIntro:
-	.string "My precious POKéMON grew!\n"
-	.string "Have a good look!$"
-
-Route121_Text_JessicaRematchDefeat:
-	.string "Oh, how dare you!\n"
-	.string "You still won't take it easy!$"
-
-Route121_Text_JessicaPostRematch:
-	.string "Maybe I'll go catch more POKéMON at\n"
-	.string "the SAFARI.$"
-
 Route121_Text_CristinIntro:
 	.string "I have this routine.\n"
 	.string "Defeat five TRAINERS a day.\l"
@@ -3043,20 +2471,6 @@ Route121_Text_CristinDefeat:
 Route121_Text_CristinPostBattle:
 	.string "I didn't expect to lose this easily…\n"
 	.string "I'll win next time!$"
-
-Route121_Text_CristinRematchIntro:
-	.string "I have this new routine.\n"
-	.string "Defeat ten TRAINERS a day.\l"
-	.string "Guess what? You're number ten!$"
-
-Route121_Text_CristinRematchDefeat:
-	.string "Wait! That's nasty!\n"
-	.string "I demand a rematch!$"
-
-Route121_Text_CristinPostRematch:
-	.string "An opponent I just can't beat…\n"
-	.string "Snivel…\l"
-	.string "I can't believe this is happening…$"
 
 Route121_Text_CaleIntro:
 	.string "Can't you see that I have all this\n"
@@ -3157,17 +2571,6 @@ Route123_Text_CameronPostBattle:
 	.string "Being a psychic is about willpower.\n"
 	.string "I thought I wouldn't lose to you…$"
 
-Route123_Text_CameronRematchIntro:
-	.string "I've convinced myself that I won't\n"
-	.string "lose anymore. That makes me strong!$"
-
-Route123_Text_CameronRematchDefeat:
-	.string "I feel sad…$"
-
-Route123_Text_CameronPostRematch:
-	.string "I should train at MT. PYRE…\n"
-	.string "I'll never beat you this way…$"
-
 Route123_Text_JackiIntro:
 	.string "Don't be too happy if your POKéMON\n"
 	.string "develop psychic powers.\p"
@@ -3180,17 +2583,6 @@ Route123_Text_JackiDefeat:
 Route123_Text_JackiPostBattle:
 	.string "We all have psychic powers.\n"
 	.string "We've just forgotten how to use them.$"
-
-Route123_Text_JackiRematchIntro:
-	.string "Have you awoken the psychic powers\n"
-	.string "within you?$"
-
-Route123_Text_JackiRematchDefeat:
-	.string "Astounding!$"
-
-Route123_Text_JackiPostRematch:
-	.string "Your power with POKéMON…\n"
-	.string "That could be a psychic power, too.$"
 
 Route123_Text_MiuIntro:
 	.string "MIU: Hello, TRAINER. I hope your\n"
@@ -3247,19 +2639,6 @@ Route123_Text_FernandoDefeat:
 Route123_Text_FernandoPostBattle:
 	.string "You're rock steady.\n"
 	.string "I'd like to write a tune about you.$"
-
-Route123_Text_FernandoRematchIntro:
-	.string "Today's the day I'm going to do it!\n"
-	.string "I'll turn out your lights before\l"
-	.string "I finish singing my song!$"
-
-Route123_Text_FernandoRematchDefeat:
-	.string "Hey, hold it!\n"
-	.string "I haven't even hit the chorus!$"
-
-Route123_Text_FernandoPostRematch:
-	.string "I thought you'd be so enthralled\n"
-	.string "by my tune, you'd lose.$"
 
 Route123_Text_DavisIntro:
 	.string "This is my awesome BUG POKéMON!\n"
@@ -3389,18 +2768,6 @@ Route124_Text_JennyPostBattle:
 	.string "I guess POKéMON have personalities\n"
 	.string "of their own.$"
 
-Route124_Text_JennyRematchIntro:
-	.string "If you just float in the sea like this,\n"
-	.string "TRAINERS challenge you!$"
-
-Route124_Text_JennyRematchDefeat:
-	.string "That's strange…\n"
-	.string "I lost again…$"
-
-Route124_Text_JennyPostRematch:
-	.string "This has nothing to do with anything,\n"
-	.string "but maybe I'll visit the TRICK HOUSE.$"
-
 Route124_Text_GraceIntro:
 	.string "I'm growing bored of swimming…\n"
 	.string "How about a battle?$"
@@ -3463,45 +2830,6 @@ Route124_Text_RoyPostBattle:
 	.string "boyfriend.$"
 
 Route124_Text_RoyNotEnoughMons:
-	.string "ROY: Did you want to battle us?\n"
-	.string "Bring two POKéMON, then.$"
-
-Route124_Text_LilaRematchIntro:
-	.string "LILA: Sigh…\p"
-	.string "Here I am in the sea, but who's with me?\n"
-	.string "My little brother!\p"
-	.string "Oh, hi, it's been a while. Let's battle\n"
-	.string "so I won't have to dwell on things!$"
-
-Route124_Text_LilaRematchDefeat:
-	.string "LILA: ROY!\n"
-	.string "It's your fault we lost again!\p"
-	.string "We're having a training session later!$"
-
-Route124_Text_LilaPostRematch:
-	.string "LILA: Sigh…\p"
-	.string "If I had a nice boyfriend, we'd beat\n"
-	.string "anyone with lovely combinations…$"
-
-Route124_Text_LilaRematchNotEnoughMons:
-	.string "LILA: You're planning to battle us?\n"
-	.string "Not unless you have two POKéMON.$"
-
-Route124_Text_RoyRematchIntro:
-	.string "ROY: If we lose, I'll catch heck.\n"
-	.string "I'm going to go totally all out!$"
-
-Route124_Text_RoyRematchDefeat:
-	.string "ROY: Uh-oh…\n"
-	.string "My big sister will chew me out again.$"
-
-Route124_Text_RoyPostRematch:
-	.string "ROY: My big sister is really scary\n"
-	.string "when she gets angry.\p"
-	.string "She's going to make me train really\n"
-	.string "hard with POKéMON later…$"
-
-Route124_Text_RoyRematchNotEnoughMons:
 	.string "ROY: Did you want to battle us?\n"
 	.string "Bring two POKéMON, then.$"
 
@@ -3588,22 +2916,6 @@ Route125_Text_ErnestPostBattle:
 	.string "SHOAL CAVE.\p"
 	.string "By the way, it's about six hours from\n"
 	.string "high tide to low tide. Did you know?$"
-
-Route125_Text_ErnestRematchIntro:
-	.string "It's high time I get my payback\n"
-	.string "from you! Come on, we're battling!$"
-
-Route125_Text_ErnestRematchDefeat:
-	.string "I couldn't win!\n"
-	.string "I flat out couldn't win!$"
-
-Route125_Text_ErnestRematchPostBattle:
-	.string "The SHOAL CAVE…\p"
-	.string "There are places you can and can't\n"
-	.string "get to depending on the rise and fall\l"
-	.string "of the tide.\p"
-	.string "By the way, it's about six hours from\n"
-	.string "high tide to low tide. Don't forget!$"
 
 Route125_Text_KimIntro:
 	.string "KIM: A funny old man lives in the\n"
@@ -3723,19 +3035,6 @@ Route126_Text_PabloDefeat:
 Route126_Text_PabloPostBattle:
 	.string "Losing to you stimulated my senses!\n"
 	.string "I'll train myself and POKéMON harder!$"
-
-Route126_Text_PabloRematchIntro:
-	.string "Check out this beautiful body!\n"
-	.string "I'm more shapely than a SWIMMER!$"
-
-Route126_Text_PabloRematchDefeat:
-	.string "Whoops! Really too strong!\n"
-	.string "Not bad! Not bad at all!$"
-
-Route126_Text_PabloPostRematch:
-	.string "I'm going to train even harder!\n"
-	.string "You're a great motivator!\l"
-	.string "You have to come back again!$"
 
 Route126_Text_LeonardoIntro:
 	.string "I couldn't even swim last year,\n"
@@ -3860,18 +3159,6 @@ Route127_Text_KojiPostBattle:
 	.string "Going barefoot feels great.\n"
 	.string "But your RUNNING SHOES are cool, too.$"
 
-Route127_Text_KojiRematchIntro:
-	.string "I still run in my bare feet daily.\n"
-	.string "My soles are tough!$"
-
-Route127_Text_KojiRematchDefeat:
-	.string "Yowch!\n"
-	.string "Pebbles dug into my arches!$"
-
-Route127_Text_KojiPostRematch:
-	.string "Want to go barefoot for a while?\n"
-	.string "So I can try your RUNNING SHOES?$"
-
 Route127_Text_AthenaIntro:
 	.string "We should have a slow and methodical\n"
 	.string "match.$"
@@ -3896,17 +3183,6 @@ Route128_Text_IsaiahPostBattle:
 	.string "My whole life has been about losing,\n"
 	.string "but I will never give up!$"
 
-Route128_Text_IsaiahRematchIntro:
-	.string "I'm still feeling good. I'll keep on\n"
-	.string "swimming to EVER GRANDE CITY.$"
-
-Route128_Text_IsaiahRematchDefeat:
-	.string "I've yet to taste my first victory…$"
-
-Route128_Text_IsaiahPostRematch:
-	.string "I'll eventually reach EVER GRANDE CITY\n"
-	.string "where I can eventually win…$"
-
 Route128_Text_KatelynIntro:
 	.string "You have to swim, cycle, and then run\n"
 	.string "a marathon in a triathlon.\p"
@@ -3919,19 +3195,6 @@ Route128_Text_KatelynDefeat:
 Route128_Text_KatelynPostBattle:
 	.string "I have to ride a BIKE next, but…\n"
 	.string "I'm about to throw in the towel…$"
-
-Route128_Text_KatelynRematchIntro:
-	.string "A triathlon is long. But I guess the\n"
-	.string "road to become the POKéMON CHAMPION\l"
-	.string "is also a long and grueling one.$"
-
-Route128_Text_KatelynRematchDefeat:
-	.string "A POKéMON battle really is harsh\n"
-	.string "and unforgiving…$"
-
-Route128_Text_KatelynPostRematch:
-	.string "You should give serious thought to\n"
-	.string "challenges on VICTORY ROAD.$"
 
 Route128_Text_AlexaIntro:
 	.string "We've been working so hard to mount\n"
@@ -4508,11 +3771,6 @@ Route134_Text_HudsonPostBattle:
 	.string "Our boat drifted out to sea.\p"
 	.string "My buddy's a timid fellow, so I'm\n"
 	.string "worried about him.$"
-
-VSSeeker_Text_BatteryNotChargedNeedXSteps::
-	.string "The battery isn't charged enough.\p"
-	.string "No. of steps required to fully\n"
-	.string "charge the battery: {STR_VAR_1}{PAUSE_UNTIL_PRESS}$"
 
 VSSeeker_Text_NoTrainersWithinRange::
 	.string "There are no Trainers within range\n"

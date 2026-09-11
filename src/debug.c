@@ -31,7 +31,6 @@
 #include "m4a.h"
 #include "main.h"
 #include "main_menu.h"
-#include "gym_leader_rematch.h"
 #include "malloc.h"
 #include "map_name_popup.h"
 #include "mass_outbreak.h"
@@ -85,7 +84,6 @@
 #include "rtc.h"
 #include "fake_rtc.h"
 #include "save.h"
-#include "vs_seeker.h"
 #include "load_save.h"
 #include "battle_partner.h"
 
@@ -328,10 +326,7 @@ static void DebugAction_Party_SetParty(u8 taskId);
 static void DebugAction_Party_BattleSingle(u8 taskId);
 
 static void DebugAction_Trainers_SwitchDoublesFlag(u8 taskId);
-static void DebugAction_Trainers_SetRematch(u8 taskId);
-static void DebugAction_Trainers_SetRematchReadiness(u8 taskId);
 static void DebugAction_Trainers_TryBattle(u8 taskId);
-static void DebugAction_Trainers_RechargeVsSeeker(u8 taskId);
 
 static void DebugAction_Outbreak_ClearActive(u8 taskId);
 
@@ -748,10 +743,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Trainers[] =
     { COMPOUND_STRING("Trainer 2: {STR_VAR_1}"), DebugAction_Selection_Init, &sTrainer2Selection},
     { COMPOUND_STRING("Partner: {STR_VAR_1}"), DebugAction_Selection_Init, &sPartnerSelection},
     { COMPOUND_STRING("Double Battle: {STR_VAR_1}"), DebugAction_ToggleFlag, DebugAction_Trainers_SwitchDoublesFlag },
-    { COMPOUND_STRING("Matches {STR_VAR_1}/{STR_VAR_2}"), DebugAction_ToggleFlag, DebugAction_Trainers_SetRematch },
-    { COMPOUND_STRING("Rematch Ready {STR_VAR_1}"), DebugAction_ToggleFlag, DebugAction_Trainers_SetRematchReadiness },
     { COMPOUND_STRING("Try Battle"), DebugAction_Trainers_TryBattle },
-    { COMPOUND_STRING("Recharge VS Seeker"), DebugAction_Trainers_RechargeVsSeeker },
     { NULL }
 };
 
@@ -1425,8 +1417,6 @@ static u32 Debug_GenerateListTrainerMenu(const struct DebugMenuOption *items)
     u32 trainer2Id = sDebugMenuListData->data[2];
     u32 partnerId = sDebugMenuListData->data[4];
 
-    s32 rematchTableId = sDebugMenuListData->data[1];
-    bool32 isRealFight = sDebugMenuListData->data[3];
     bool32 noDraw;
     u32 offset = 0;
     u8 totalItems = 0;
@@ -1455,41 +1445,6 @@ static u32 Debug_GenerateListTrainerMenu(const struct DebugMenuOption *items)
                 StringCopy(gStringVar1, COMPOUND_STRING("{COLOR GREEN} TRUE"));
             else
                 StringCopy(gStringVar1, COMPOUND_STRING("{COLOR RED} FALSE"));
-            break;
-        case 5:
-            if (!isRealFight)
-            {
-                noDraw = TRUE;
-                break;
-            }
-            if (rematchTableId == -1)
-            {
-                if (HasTrainerBeenFought(trainer1Id))
-                    StringCopy(gStringVar1, COMPOUND_STRING("1"));
-                else
-                    StringCopy(gStringVar1, COMPOUND_STRING("0"));
-                StringCopy(gStringVar2, COMPOUND_STRING("1"));
-            }
-            else
-            {
-                ConvertIntToDecimalStringN(gStringVar1, CountBattledRematchTeams(rematchTableId), STR_CONV_MODE_LEADING_ZEROS, 1);
-                ConvertIntToDecimalStringN(gStringVar2, CountMaxPossibleRematch(rematchTableId), STR_CONV_MODE_LEADING_ZEROS, 1);
-            }
-            break;
-        case 6:
-            if (FREE_MATCH_CALL || I_VS_SEEKER_CHARGING || !isRealFight || rematchTableId == -1)
-            {
-                noDraw = TRUE;
-                break;
-            }
-            if (GetActiveTrainerRematches(rematchTableId))
-                StringCopy(gStringVar1, COMPOUND_STRING("{COLOR GREEN} TRUE"));
-            else
-                StringCopy(gStringVar1, COMPOUND_STRING("{COLOR RED} FALSE"));
-            break;
-        case 8:
-            if (FREE_MATCH_CALL || I_VS_SEEKER_CHARGING == 0)
-                noDraw = TRUE;
             break;
         }
 
@@ -2938,11 +2893,6 @@ static void ParseObjectEventScript(const u8 *script)
     {
         TrainerBattleLoadArgs(script + 1);
     }
-    else if (Script_MatchesCallNative(script, NativeVsSeekerRematchId, TRUE))
-    {
-        ctx->scriptPtr = script + 5;
-        sDebugMenuListData->data[0] = ScriptPeekHalfword(ctx);
-    }
     else if (Script_MatchesSpecial(script, SavePlayerParty) && Script_MatchesCallNative(script + 3, SetMultiTrainerBattle, FALSE))
     {
         ctx->scriptPtr = script + 8;
@@ -3016,7 +2966,6 @@ static u32 DebugSelectionStep_GetObjectEventCount(u8 taskId)
 
 static void DebugSelection_SetTrainerFromMap_OnCancel(u8 taskId)
 {
-    sDebugMenuListData->data[1] = FirstBattleTrainerIdToRematchTableId(gRematchTable, sDebugMenuListData->data[0]);
     sDebugMenuListData->data[3] = TRUE;
     DebugSelectionStep_ReturnToTrainersMenu(taskId);
 }
@@ -3142,60 +3091,11 @@ static void DebugAction_Trainers_SwitchDoublesFlag(u8 taskId)
         sDebugMenuListData->data[5] = TRUE;
 }
 
-static void DebugAction_Trainers_SetRematch(u8 taskId)
-{
-    s32 rematchId = sDebugMenuListData->data[1];
-
-    if (rematchId == -1)
-    {
-        FlagToggle(TRAINER_FLAGS_START + sDebugMenuListData->data[0]);
-        return;
-    }
-
-    for (u32 i = 0; i < REMATCHES_COUNT; i++)
-    {
-        if (gRematchTable[rematchId].trainerIds[i] == 0)
-            break;
-
-        if (!HasTrainerBeenFought(gRematchTable[rematchId].trainerIds[i]))
-        {
-            FlagToggle(TRAINER_FLAGS_START + gRematchTable[rematchId].trainerIds[i]);
-            return;
-        }
-    }
-
-    for (u32 i = 0; i < REMATCHES_COUNT; i++)
-    {
-        if (gRematchTable[rematchId].trainerIds[i] == 0)
-            break;
-
-        FlagToggle(TRAINER_FLAGS_START + gRematchTable[rematchId].trainerIds[i]);
-    }
-}
-
-static void DebugAction_Trainers_SetRematchReadiness(u8 taskId)
-{
-    if (sDebugMenuListData->data[1] == -1)
-        return;
-    if (GetActiveTrainerRematches(sDebugMenuListData->data[1]))
-        SetActiveTrainerRematches(sDebugMenuListData->data[1], FALSE);
-    else
-        SetActiveTrainerRematches(sDebugMenuListData->data[1], TRUE);
-}
-
 static void DebugAction_Trainers_TryBattle(u8 taskId)
 {
     s32 trainer1Id = sDebugMenuListData->data[0];
     s32 trainer2Id = sDebugMenuListData->data[2];
     s32 partnerId = sDebugMenuListData->data[4];
-    s32 rematchId = sDebugMenuListData->data[1];
-    if (sDebugMenuListData->data[1] != -1)
-    {
-        s32 lastMatch = CountBattledRematchTeams(rematchId);
-        if (lastMatch == REMATCHES_COUNT || gRematchTable[rematchId].trainerIds[lastMatch] == 0)
-            lastMatch -= 1;
-        trainer1Id = gRematchTable[rematchId].trainerIds[lastMatch];
-    }
     gBattleTypeFlags = BATTLE_TYPE_TRAINER;
     TRAINER_BATTLE_PARAM.opponentA = trainer1Id;
     TRAINER_BATTLE_PARAM.opponentB = 0xFFFF;
@@ -3224,14 +3124,6 @@ static void DebugAction_Trainers_TryBattle(u8 taskId)
     gBattleEnvironment = BattleSetup_GetEnvironmentId();
     CalculateEnemyPartyCount();
     BattleSetup_StartTrainerBattle_Debug();
-    Debug_DestroyMenu_Full(taskId);
-}
-
-static void DebugAction_Trainers_RechargeVsSeeker(u8 taskId)
-{
-    SetTrainerRematchStepCounter(VSSEEKER_RECHARGE_STEPS);
-    MapResetTrainerRematches(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum);
-    ScriptContext_SetupScript(EventScript_VsSeekerChargingDone);
     Debug_DestroyMenu_Full(taskId);
 }
 

@@ -446,15 +446,8 @@ Route111_EventScript_Becky::
 
 Route111_EventScript_Dusty::
 	trainerbattle_single TRAINER_DUSTY_1, Route111_Text_DustyIntro, Route111_Text_DustyDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route111_EventScript_RematchDusty
 	msgbox Route111_Text_DustyPostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route111_EventScript_RematchDusty::
-	trainerbattle_rematch TRAINER_DUSTY_1, Route111_Text_DustyRematchIntro, Route111_Text_DustyRematchDefeat
-	msgbox Route111_Text_DustyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route111_EventScript_Travis::
@@ -474,28 +467,14 @@ Route111_EventScript_Daisuke::
 
 Route111_EventScript_Wilton::
 	trainerbattle_single TRAINER_WILTON_1, Route111_Text_WiltonIntro, Route111_Text_WiltonDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route111_EventScript_RematchWilton
 	msgbox Route111_Text_WiltonPostBattle, MSGBOX_DEFAULT
 	release
 	end
 
-Route111_EventScript_RematchWilton::
-	trainerbattle_rematch TRAINER_WILTON_1, Route111_Text_WiltonRematchIntro, Route111_Text_WiltonRematchDefeat
-	msgbox Route111_Text_WiltonPostRematch, MSGBOX_AUTOCLOSE
-	end
-
 Route111_EventScript_Brooke::
 	trainerbattle_single TRAINER_BROOKE_1, Route111_Text_BrookeIntro, Route111_Text_BrookeDefeat
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, Route111_EventScript_RematchBrooke
 	msgbox Route111_Text_BrookePostBattle, MSGBOX_DEFAULT
 	release
-	end
-
-Route111_EventScript_RematchBrooke::
-	trainerbattle_rematch TRAINER_BROOKE_1, Route111_Text_BrookeRematchIntro, Route111_Text_BrookeRematchDefeat
-	msgbox Route111_Text_BrookePostRematch, MSGBOX_AUTOCLOSE
 	end
 
 Route111_EventScript_Hayden::

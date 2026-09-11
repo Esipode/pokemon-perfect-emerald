@@ -135,8 +135,6 @@ DewfordTown_Gym_EventScript_StopCountingTrainers::
 DewfordTown_Gym_EventScript_Brawly::
 	specialvar VAR_PREV_LEVEL_CAP, GetCurrentLevelCapSpecial
 	trainerbattle_single TRAINER_BRAWLY_1, DewfordTown_Gym_Text_BrawlyIntro, DewfordTown_Gym_Text_BrawlyDefeat, DewfordTown_Gym_EventScript_BrawlyDefeated, NO_MUSIC
-	specialvar VAR_RESULT, ShouldTryRematchBattle
-	goto_if_eq VAR_RESULT, TRUE, DewfordTown_Gym_EventScript_BrawlyRematch
 	goto_if_unset FLAG_RECEIVED_TM_BULK_UP, DewfordTown_Gym_EventScript_GiveBulkUp2
 	msgbox DewfordTown_Gym_Text_BrawlyPostBattle, MSGBOX_DEFAULT
 	release
@@ -179,11 +177,6 @@ DewfordTown_Gym_EventScript_GiveBulkUp2:
 	msgbox DewfordTown_Gym_Text_ExplainBulkUp, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_TM_BULK_UP
 	release
-	end
-
-DewfordTown_Gym_EventScript_BrawlyRematch::
-	trainerbattle_rematch_double TRAINER_BRAWLY_1, DewfordTown_Gym_Text_BrawlyPreRematch, DewfordTown_Gym_Text_BrawlyRematchDefeat, DewfordTown_Gym_Text_BrawlyRematchNeedTwoMons
-	msgbox DewfordTown_Gym_Text_BrawlyPostRematch, MSGBOX_AUTOCLOSE
 	end
 
 DewfordTown_Gym_EventScript_Takao::
@@ -429,30 +422,3 @@ DewfordTown_Gym_Text_GymStatueCertified:
 	.string "DEWFORD TOWN POKéMON GYM\p"
 	.string "BRAWLY'S CERTIFIED TRAINERS:\n"
 	.string "{PLAYER}$"
-
-DewfordTown_Gym_Text_BrawlyPreRematch:
-	.string "BRAWLY: A wave may draw back, but it\n"
-	.string "always returns to the shore.\p"
-	.string "A giant wave of a talent like you…\n"
-	.string "I knew you would return!\p"
-	.string "Show me how much higher\n"
-	.string "you've gone!$"
-
-DewfordTown_Gym_Text_BrawlyRematchDefeat:
-	.string "Wow!\n"
-	.string "Swamped again!$"
-
-DewfordTown_Gym_Text_BrawlyPostRematch:
-	.string "BRAWLY: Battling is vast and it's deep.\n"
-	.string "You can't see the bottom.\l"
-	.string "It's just like the sea of HOENN!$"
-
-DewfordTown_Gym_Text_BrawlyRematchNeedTwoMons:
-	.string "BRAWLY: A wave may draw back, but it\n"
-	.string "always returns to the shore.\p"
-	.string "A giant wave of a talent like you…\n"
-	.string "I knew you would return!\p"
-	.string "Oh? You only have one POKéMON\n"
-	.string "that can battle.\p"
-	.string "I'm sorry, but I'd like you to come back\n"
-	.string "with at least two POKéMON.$"
