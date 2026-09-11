@@ -56,7 +56,7 @@ struct TrainerCardData
     bool8 hasHofResult;
     bool8 hasLinkResults;
     bool8 hasBattleTowerWins;
-    bool8 unused_E;
+    bool8 hasAchievementStats;
     bool8 unused_F;
     bool8 hasTrades;
     u8 badgeCount[NUM_BADGES];
@@ -766,7 +766,23 @@ static void SetPlayerCardData(struct TrainerCard *trainerCard, u8 cardType)
     }
 
     if (cardType == CARD_TYPE_EMERALD)
+    {
+        u32 bestStreak;
+
         trainerCard->stars = GetAchievementTrainerStars();
+        trainerCard->achievementsCompleted = min(0xFFFF, Achievement_GetCompletedCount());
+        trainerCard->achievementsDiamond = min(0xFFFF, Achievement_GetCompletedCountInTier(ACHIEVEMENT_TIER_DIAMOND));
+        trainerCard->achievementShinies = min(0xFFFF, gAchievementProfile.shiniesObtained);
+        trainerCard->achievementNuzlockes = min(0xFFFF, gAchievementProfile.nuzlockesCompleted);
+        trainerCard->achievementRandomized = min(0xFFFF, gAchievementProfile.randomizedRunsCompleted);
+        trainerCard->achievementNgPlusCycles = min(0xFFFF, gAchievementProfile.ngPlusCyclesCompleted);
+        trainerCard->achievementPoints = Achievement_GetTotalPoints();
+
+        bestStreak = gAchievementProfile.bestTrainerWinStreakEver;
+        if (gSaveBlock2Ptr->achievementRunDataExt.bestTrainerWinStreakThisRun > bestStreak)
+            bestStreak = gSaveBlock2Ptr->achievementRunDataExt.bestTrainerWinStreakThisRun;
+        trainerCard->achievementBestStreak = min(0xFFFF, bestStreak);
+    }
 }
 
 static void TrainerCard_GenerateCardForPlayer(struct TrainerCard *trainerCard)
@@ -813,6 +829,14 @@ void CopyTrainerCardData(struct TrainerCard *dst, struct TrainerCard *src, u8 ga
         dst->linkPoints.frontier = 0;
         dst->hasAllFrontierSymbols = src->linkHasAllFrontierSymbols;
         dst->frontierBP = *((u16 *)&src->linkPoints.frontier);
+        dst->achievementsCompleted = src->achievementsCompleted;
+        dst->achievementsDiamond = src->achievementsDiamond;
+        dst->achievementShinies = src->achievementShinies;
+        dst->achievementBestStreak = src->achievementBestStreak;
+        dst->achievementNuzlockes = src->achievementNuzlockes;
+        dst->achievementRandomized = src->achievementRandomized;
+        dst->achievementNgPlusCycles = src->achievementNgPlusCycles;
+        dst->achievementPoints = src->achievementPoints;
         break;
     }
 }
@@ -826,7 +850,7 @@ static void SetDataFromTrainerCard(void)
     sData->hasHofResult = FALSE;
     sData->hasLinkResults = FALSE;
     sData->hasBattleTowerWins = FALSE;
-    sData->unused_E = FALSE;
+    sData->hasAchievementStats = (sData->cardType == CARD_TYPE_EMERALD);
     sData->unused_F = FALSE;
     sData->hasTrades = FALSE;
     memset(sData->badgeCount, 0, sizeof(sData->badgeCount));

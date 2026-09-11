@@ -43,6 +43,15 @@ struct TrainerCard
              // which they use for a Wonder Card flag id instead (see CreateTrainerCardInBuffer)
     /*0x60*/ bool16 hasAllFrontierSymbols;
     /*0x62*/ u16 frontierBP;
+    /*0x64*/ u16 achievementsCompleted;
+    /*0x66*/ u16 achievementsDiamond;
+    /*0x68*/ u16 achievementShinies;
+    /*0x6A*/ u16 achievementBestStreak;
+    /*0x6C*/ u16 achievementNuzlockes;
+    /*0x6E*/ u16 achievementRandomized;
+    /*0x70*/ u16 achievementNgPlusCycles;
+    /*0x72*/ u16 padding;
+    /*0x74*/ u32 achievementPoints;
 };
 
 extern struct TrainerCard gTrainerCards[4];
