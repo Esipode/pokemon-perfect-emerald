@@ -761,10 +761,7 @@ extern const u8 EncScript_Tornadus_Cyclone[];
 // Reshiram ("The Vast White Pokémon")
 extern const u8 EncScript_Reshiram_Intro[];
 extern const u8 EncScript_Reshiram_TruthRevealed[];
-extern const u8 EncScript_Reshiram_TruthRevealed[];
 extern const u8 EncScript_Reshiram_WhiteLight[];
-extern const u8 EncScript_Reshiram_WhiteLight[];
-extern const u8 EncScript_Reshiram_Spent[];
 extern const u8 EncScript_Reshiram_Spent[];
 extern const u8 EncScript_Reshiram_TurnOpen[];
 extern const u8 EncScript_Reshiram_Reveal[];
@@ -775,6 +772,22 @@ extern const u8 EncScript_Reshiram_AttentionShifts[];
 extern const u8 EncScript_Reshiram_TurnClose[];
 extern const u8 EncScript_Reshiram_Spent[];
 
+//Zekrom ("The Deep Black Pokémon")
+extern const u8 EncScript_Zekrom_Intro[];
+extern const u8 EncScript_Zekrom_AbsoluteConviction[];
+extern const u8 EncScript_Zekrom_Awakening[];
+extern const u8 EncScript_Zekrom_Spent[];
+extern const u8 EncScript_Zekrom_TurnOpen[];
+extern const u8 EncScript_Zekrom_ChoosePath[];
+extern const u8 EncScript_Zekrom_HoldsGround[];
+extern const u8 EncScript_Zekrom_BeginCharge[];
+extern const u8 EncScript_Zekrom_WatchesRetreat[];
+extern const u8 EncScript_Zekrom_Attacked[];
+extern const u8 EncScript_Zekrom_ShakenOutlast[];
+extern const u8 EncScript_Zekrom_ShakenDisrupt[];
+extern const u8 EncScript_Zekrom_Defiance[];
+extern const u8 EncScript_Zekrom_TurnClose[];
+extern const u8 EncScript_Zekrom_Spent[];
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];

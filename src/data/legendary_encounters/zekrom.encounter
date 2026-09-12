@@ -1,0 +1,277 @@
+Encounter: Zekrom
+
+# Zekrom, "The Deep Black Pokemon". One rule:
+#   ZEKROM ANSWERS COMMITMENT WITH COMMITMENT. Reshiram asks what is true; Zekrom asks what you
+#   believe. It picks an IDEAL, declares it out loud, and commits to it. CONVICTION, 0-5, owns the
+#   damage reduction, the strength of the scripted Bolt Strike, and whether the Bolt Strike cycle
+#   opens at all.
+# THE LOOP IS A TUG OF WAR with exactly one step of travel per turn:
+#   contradict the declared Ideal -> Conviction falls by 1; otherwise stand your ground (no switch
+#   and you attacked, or you are holding stat boosts, or you kept swinging below 33% HP) -> it
+#   rises by 1; neither -> it does not move.
+#   Phase 0 IDEALS - a random Ideal, declared and committed for 4 turns, then re-picked. The Bolt
+#     Strike cycle opens from Conviction 3.
+#   Phase 1 ABSOLUTE CONVICTION (<= 50%) - the Ideal locks to the MIRROR of how the player has been
+#     fighting and can never change again. Conviction is forced to 4. One counter now works for the
+#     rest of the fight, and grinding the meter below 3 shuts the Bolt Strike cycle off entirely.
+#   Phase 2 IDEAL AWAKENING (<= 15%) - Conviction pinned at 5, Electric Terrain raised, one
+#     unbreakable BOLT STRIKE: IDEAL.
+#   Phase 3 SPENT - the catch window.
+# THE FOUR COUNTERS each read real battle state, and each declaration line hints at its own:
+#   Power - end the turn at 50% HP or better, or behind a Protect. Endurance - take at least 8% of
+#   its max HP off in one turn. Speed - be at or above its Speed at turn end. Resolve - have a
+#   status or a negative stat stage on it at turn end.
+# ANTI-ABUSE IS DELIBERATELY DIFFERENT FROM RESHIRAM'S (guideline 8): status is not merely allowed,
+#   under Resolve it is the COUNTER, and works completely through Phases 0 and 1. What Zekrom shuts
+#   down instead is running away - Resolve traps outright, and every Ideal makes a switch forfeit
+#   the turn's meter movement. Evasion is only softly answered (one scour at Phase 2), on purpose.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Zekrom_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 86         # the DOUBT band in Phase 0. Every later value is written absolutely
+                                # by EncScript_Zekrom_ApplyStance, which _Intro calls on turn 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Electric/Dragon has no natural 4x, but a Tera or an -ate ability on
+                                # the player's side can still build one, and a single 4x hit would
+                                # spike well past what the reduction was balanced around
+    FlatToxicDamage: True
+    Survive: True               # Phase 2 must run its final bolt to completion for Phase 3 to
+                                # exist, and the catch window is the only way this fight is meant to
+                                # end. Cleared in _Spent
+    Ability: ABILITY_TERAVOLT   # its own, and the mirror of Reshiram's Turboblaze: the target's
+                                # ability is ignored, so Volt Absorb, Lightning Rod, Motor Drive,
+                                # Levitate and Wonder Guard stop being answers
+    Moves: MOVE_DRAGON_CLAW, MOVE_FUSION_BOLT, MOVE_CRUNCH, MOVE_ZEN_HEADBUTT
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Every move is on Zekrom's own learnset and physical or neutral-to-physical, matching its 150
+# Attack. MOVE_ZEN_HEADBUTT is the slot Phase 1 replaces with MOVE_OUTRAGE via encsetmove - a move
+# that locks Zekrom into repeating itself is ABSOLUTE CONVICTION in mechanical form, and the
+# confusion afterwards is a real, readable cost the player can wait out.
+# MOVE_BOLT_STRIKE never enters the moveset: every Bolt Strike in the fight is a telegraphed
+# scripted payload, and an AI able to fire the same-named move at will would make the telegraph
+# meaningless. Same call Reshiram made with Blue Flare.
+# AI_FLAG_SMART_TRAINER only (guideline 11): nothing here reads an AI prediction, so there is no
+# reason to take AI_FLAG_PREDICT_MOVE and make the fight sharper than the family default.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..Defiant to 0..15.
+# 0 Phase (0 Ideals / 1 Absolute Conviction / 2 Ideal Awakening / 3 Spent), 1 Conv (CONVICTION,
+# 0-5), 2 LastBand (the last ANNOUNCED band - the callout's re-fire latch; 9 = nothing said yet),
+# 3 TurnGuard (the once-per-turn scaffold), 4 BossMark (Zekrom's HP% at turn open), 5 Scratch (the
+# copy ENC_SNAP_DAMAGE consumes, so BossMark survives being measured; also holds the enccomparestat
+# result and the encowned answer), 6 Ideal (1 Power / 2 Endurance / 3 Speed / 4 Resolve), 7 Style
+# (the last decisive thing the player did: 1 pressure / 2 outlasting / 3 speed / 4 defiance - read
+# by the Phase 1 lock), 8 Charge (0 none / 1-3 turns left on a Bolt Strike / 9 the final bolt has
+# resolved), 9 Commit (turns left on the declared path; 0 = open to re-pick, 9 = permanent),
+# 10 Shaken (the Ideal was contradicted this turn), 11 Switched, 12 Acted (the player used a
+# damaging move this turn), 13 Boosted (the player is holding a positive stat stage), 14 CueTick
+# (alternates the recurring cue), 15 Defiant (the player attacked this turn at 33% HP or less).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Zekrom_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Conv) >= 0
+    Var(LastBand) >= 0
+    Var(TurnGuard) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Ideal) >= 0
+    Var(Style) >= 0
+    Var(Charge) >= 0
+    Var(Commit) >= 0
+    Var(Shaken) >= 0
+    Var(Switched) >= 0
+    Var(Acted) >= 0
+    Var(Boosted) >= 0
+    Var(CueTick) >= 0
+    Var(Defiant) >= 0
+
+# The phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. All of them sit BELOW _TurnClose (80), so
+# at an OnTurnEnd where the player's damage crossed a threshold the ledger sees the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Zekrom_AbsoluteConviction
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Zekrom_AbsoluteConviction
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Zekrom_Awakening
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Zekrom_Awakening
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+# The deadlock fallback. Survive: True pins Zekrom at 1 HP, so a player who grinds Phase 2 down
+# before BOLT STRIKE: IDEAL lands still reaches the catch window.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Zekrom_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Zekrom_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnGuard is the only gate and the script sets it immediately, so no
+# branch out of it can leave the trigger re-armed.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Zekrom_TurnOpen
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 0
+
+# The declaration. _TurnOpen ticks Commit to 0 on the turn a path expires, so the re-pick happens on
+# the same turn and no turn is ever spent on an undeclared stance. Phase 1 and 2 both write
+# Commit = 9, so the random roll below is reachable in Phase 0 only. Self-disabling through Commit.
+Trigger: OnTurnStart
+Priority: 12
+Script: EncScript_Zekrom_ChoosePath
+Conditions:
+    Var(Phase) <= 2
+    Var(Commit) == 0
+
+# Standing behind stat boosts is a form of commitment, so it feeds the meter at the ledger. Silent -
+# a message every turn the player holds a boost would drown the fight. Self-disabling through
+# Boosted, which _TurnClose clears.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_Zekrom_HoldsGround
+Conditions:
+    Var(Phase) <= 2
+    Var(Boosted) == 0
+    Any:
+        Battler(PlayerLeft).Stat(STAT_ATK) >= DEFAULT_STAT_STAGE + 1
+        Battler(PlayerLeft).Stat(STAT_DEF) >= DEFAULT_STAT_STAGE + 1
+        Battler(PlayerLeft).Stat(STAT_SPATK) >= DEFAULT_STAT_STAGE + 1
+        Battler(PlayerLeft).Stat(STAT_SPDEF) >= DEFAULT_STAT_STAGE + 1
+        Battler(PlayerLeft).Stat(STAT_SPEED) >= DEFAULT_STAT_STAGE + 1
+
+# THE BOLT STRIKE TELEGRAPH, announced before the player picks a move so the turn can be spent on
+# the answer. Conv >= 3 is the reward the whole fight is built around: grind the meter below 3 and
+# the cycle never opens. Phase 2 runs its own single charge instead. Self-disabling through Charge.
+Trigger: OnTurnStart
+Priority: 16
+Script: EncScript_Zekrom_BeginCharge
+Conditions:
+    Var(Phase) <= 1
+    Var(Conv) >= 3
+    Var(Charge) == 0
+
+# Somebody walked out. Switching forfeits the turn's meter movement it would otherwise have earned,
+# and does NOT buy time against a gathering bolt. TurnGuard == 1 is load-bearing: OnSwitchIn fires
+# for the player's lead BEFORE OnBattleStart, when every variable is still 0.
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_Zekrom_WatchesRetreat
+Conditions:
+    Var(Phase) <= 2
+    Var(Switched) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# The player stood and swung. At OnMoveEnd, Event.Target is the battler that USED the move. It fires
+# for a move that missed, deliberately: committing to an attack is the behaviour being measured, not
+# connecting with it. Self-disabling through Acted, which _TurnClose clears.
+Trigger: OnMoveEnd
+Priority: 40
+Script: EncScript_Zekrom_Attacked
+Conditions:
+    Var(Phase) <= 2
+    Var(Acted) == 0
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+
+# The two condition-driven shake detectors. The other two counters (Endurance's pressure test,
+# Speed's enccomparestat) need a command rather than a condition, so they are computed inside
+# _TurnClose instead. All three of these carry TurnGuard == 1 as well as their own flag: _TurnClose
+# clears Shaken/Defiant at this same checkpoint, and the re-evaluation pass would otherwise re-select
+# them for a duplicate line.
+Trigger: OnTurnEnd
+Priority: 70
+Script: EncScript_Zekrom_ShakenOutlast
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 1
+    Var(Ideal) == 1
+    Var(Shaken) == 0
+    Any:
+        Battler(PlayerLeft).HpPercent >= 50
+        Battler(PlayerLeft).Protected == 1
+
+Trigger: OnTurnEnd
+Priority: 71
+Script: EncScript_Zekrom_ShakenDisrupt
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 1
+    Var(Ideal) == 4
+    Var(Shaken) == 0
+    Any:
+        Battler(Boss).Status != 0
+        Battler(Boss).Stat(STAT_ATK) <= DEFAULT_STAT_STAGE - 1
+        Battler(Boss).Stat(STAT_SPEED) <= DEFAULT_STAT_STAGE - 1
+        Battler(Boss).Stat(STAT_SPATK) <= DEFAULT_STAT_STAGE - 1
+
+# Defiance: the one feeder that is also a STYLE read. A player who keeps swinging at 30% HP is
+# telling Zekrom exactly what they believe.
+Trigger: OnTurnEnd
+Priority: 72
+Script: EncScript_Zekrom_Defiance
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 1
+    Var(Acted) == 1
+    Var(Defiant) == 0
+    Battler(PlayerLeft).HpPercent <= 33
+
+# THE LEDGER, and the only place the turn's subsystems resolve. One script with internal branching
+# rather than eight triggers, to stay clear of the 8-scripts-per-checkpoint cap. Self-disables by
+# clearing TurnGuard, which also closes the three triggers above.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Zekrom_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# BOLT STRIKE: IDEAL has resolved. Runs after the ledger that fired it.
+Trigger: OnTurnEnd
+Priority: 88
+Flags: Once
+Script: EncScript_Zekrom_Spent
+Conditions:
+    Var(Phase) == 2
+    Var(Charge) == 9

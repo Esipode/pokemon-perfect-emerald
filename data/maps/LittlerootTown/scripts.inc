@@ -42,6 +42,7 @@ LittlerootTown_OnTransition:
 	call_if_eq VAR_LITTLEROOT_TOWN_STATE, 3, LittlerootTown_EventScript_SetMomStandingInFrontOfDoorPos
 	call_if_eq VAR_OLDALE_RIVAL_STATE, 1, LittlerootTown_EventScript_MoveRivalFromOldale
 	call_if_eq VAR_LITTLEROOT_RIVAL_STATE, 3, LittlerootTown_EventScript_SetRivalLeftForRoute103
+	updatelegendaryvisibility SPECIES_ZEKROM, FLAG_HIDE_ZEKROM
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1089,6 +1090,9 @@ LittlerootTown_EventScript_EncounterTESTTornadus::
 
 LittlerootTown_EventScript_EncounterTESTReshiram::
 	goto LegendaryEncounter_EventScript_Reshiram
+
+LittlerootTown_EventScript_EncounterTESTZekrom::
+	goto LegendaryEncounter_EventScript_Zekrom
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

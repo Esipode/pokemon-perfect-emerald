@@ -76,7 +76,12 @@ LegendaryEncounter_EventScript_Mew::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_MEWNIUM_Z
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Raikou::
 	lock
@@ -712,6 +717,20 @@ LegendaryEncounter_EventScript_Reshiram::
 	waitmoncry
 	setbattleencounter ENCOUNTER_RESHIRAM
 	setwildbattle SPECIES_RESHIRAM, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Zekrom::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_ZEKROM, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_ZEKROM
+	setwildbattle SPECIES_ZEKROM, 50   @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE

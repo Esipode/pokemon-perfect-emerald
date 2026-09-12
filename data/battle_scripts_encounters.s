@@ -250,3 +250,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/meloetta.inc"
 	.include "data/legendary_encounters/tornadus.inc"
 	.include "data/legendary_encounters/reshiram.inc"
+	.include "data/legendary_encounters/zekrom.inc"
