@@ -660,3 +660,17 @@ LegendaryEncounter_EventScript_Landorus::
 	giveitem ITEM_REVEAL_GLASS
 	releaseall
 	end
+
+LegendaryEncounter_EventScript_Thundurus::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_THUNDURUS, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_THUNDURUS
+	setwildbattle SPECIES_THUNDURUS, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle

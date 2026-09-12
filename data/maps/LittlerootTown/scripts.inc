@@ -1078,6 +1078,9 @@ LittlerootTown_EventScript_EncounterTESTKyurem::
 LittlerootTown_EventScript_EncounterTESTLandorus::
 	goto LegendaryEncounter_EventScript_Landorus
 
+LittlerootTown_EventScript_EncounterTESTThundurus::
+	goto LegendaryEncounter_EventScript_Thundurus
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

@@ -704,6 +704,28 @@ extern const u8 EncScript_Landorus_ShiftResolve[];
 extern const u8 EncScript_Landorus_Rumble[];
 extern const u8 EncScript_Landorus_EarthSettles[];
 
+// Thundurus ("")
+extern const u8 EncScript_Thundurus_Intro[];
+extern const u8 EncScript_Thundurus_Thunderstorm[];
+extern const u8 EncScript_Thundurus_Thunderstorm[];
+extern const u8 EncScript_Thundurus_Wrath[];
+extern const u8 EncScript_Thundurus_Wrath[];
+extern const u8 EncScript_Thundurus_Grounded[];
+extern const u8 EncScript_Thundurus_Grounded[];
+extern const u8 EncScript_Thundurus_TurnOpen[];
+extern const u8 EncScript_Thundurus_DriveRod[];
+extern const u8 EncScript_Thundurus_ShakesOff[];
+extern const u8 EncScript_Thundurus_Conduct[];
+extern const u8 EncScript_Thundurus_Earth[];
+extern const u8 EncScript_Thundurus_TheyFell[];
+extern const u8 EncScript_Thundurus_TheyEntered[];
+extern const u8 EncScript_Thundurus_TurnClose[];
+extern const u8 EncScript_Thundurus_StrikeEarthed[];
+extern const u8 EncScript_Thundurus_StrikeResolve[];
+extern const u8 EncScript_Thundurus_Overload[];
+extern const u8 EncScript_Thundurus_StormResumes [];
+
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
