@@ -28,7 +28,7 @@
 struct DraftChoice
 {
     u16 species;
-    u8 level;
+    u16 level;
 };
 
 // TRUE when the player has Draft mode turned on for this save, independent

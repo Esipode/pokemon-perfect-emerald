@@ -8,7 +8,7 @@ struct MassOutbreak
 {
     enum Species species;
     enum Move moves[MAX_MON_MOVES];
-    u8 level;
+    u16 level;
     u8 probability;
     u8 duration;
     u16 location;

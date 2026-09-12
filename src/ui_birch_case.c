@@ -786,7 +786,7 @@ static void ChangePositionUpdateSpriteAnims(u16 oldPosition, u8 taskId) // turn 
 // up a randomized starter moveset that ended up with no way to deal damage.
 // Prefers a move already learnable by `level`; falls back to the first
 // damaging move the species ever learns, then MOVE_TACKLE if it has none.
-static u16 GetLearnsetDamageMove(u16 species, u8 level)
+static u16 GetLearnsetDamageMove(u16 species, u16 level)
 {
     const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset((enum Species)species);
     u16 fallback = MOVE_NONE;

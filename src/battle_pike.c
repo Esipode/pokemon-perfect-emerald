@@ -37,7 +37,7 @@ struct PikeRoomNPC
 struct PikeWildMon
 {
     enum Species species;
-    u8 levelDelta;
+    u16 levelDelta;
     enum Move moves[MAX_MON_MOVES];
 };
 

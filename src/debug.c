@@ -4017,7 +4017,7 @@ static bool32 DebugSelection_GiveComplexPokemon_OnComplete(u8 taskId)
     u16 *monData = (u16 *)GetWordTaskArg(taskId, STEPS_DATA_PTR_ARG);
     struct Pokemon mon;
     enum Species species = monData[0];
-    u8 level = monData[1];
+    u16 level = monData[1];
     u32 personality = GetMonPersonality(species, monData[2], monData[5] , RANDOM_UNOWN_LETTER);
 
     // Debug menu species selection must not be re-randomized by FLAG_RANDOMIZE_MON.

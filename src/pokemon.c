@@ -7538,7 +7538,7 @@ static enum Item ResolveHeldItem(u32 heldItemTemplate)
 void CreateMonFromTemplate(struct Pokemon *mon, const struct PokemonTemplate *monTemplate)
 {
     enum Species species = ResolveSpecies(monTemplate->species);
-    u8 level = ResolveLevel(monTemplate->level);
+    u16 level = ResolveLevel(monTemplate->level);
     u32 personality = ResolvePersonality(species, monTemplate->gender, monTemplate->nature, monTemplate->origin);
     CreateMon(mon, species, level, personality, OTID_STRUCT_PLAYER_ID);
 

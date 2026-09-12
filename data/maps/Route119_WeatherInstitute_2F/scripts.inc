@@ -80,7 +80,8 @@ Route119_WeatherInstitute_2F_EventScript_ShellyDefeated::
 	end
 
 Route119_WeatherInstitute_2F_EventScript_ReceiveCastform::
-	msgbox Route119_WeatherInstitute_2F_Text_ThanksPleaseTakePokemon, MSGBOX_DEFAULT
+	msgbox Route119_WeatherInstitute_2F_Text_ThanksPleaseTakePokemon, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, Route119_WeatherInstitute_2F_EventScript_DeclineCastform
 	setvar VAR_TEMP_TRANSFERRED_SPECIES, SPECIES_CASTFORM_NORMAL
 	givemon SPECIES_CASTFORM_NORMAL, 25, ITEM_MYSTIC_WATER
 	goto_if_eq VAR_RESULT, MON_GIVEN_TO_PARTY, Route119_WeatherInstitute_2F_EventScript_ReceiveCastformParty
@@ -121,6 +122,11 @@ Route119_WeatherInstitute_2F_EventScript_ReceivedCastformFanfare::
 Route119_WeatherInstitute_2F_EventScript_ExplainCastform::
 	msgbox Route119_WeatherInstitute_2F_Text_PokemonChangesWithWeather, MSGBOX_DEFAULT
 	setflag FLAG_RECEIVED_CASTFORM
+	release
+	end
+
+Route119_WeatherInstitute_2F_EventScript_DeclineCastform::
+	msgbox Route119_WeatherInstitute_2F_Text_DeclineCastform, MSGBOX_DEFAULT
 	release
 	end
 
@@ -290,6 +296,10 @@ Route119_WeatherInstitute_2F_Text_NoRoomForPokemon:
 
 Route119_WeatherInstitute_2F_Text_PlayerReceivedCastform:
 	.string "{PLAYER} received CASTFORM!$"
+
+Route119_WeatherInstitute_2F_Text_DeclineCastform:
+	.string "I see… Well, the offer stands if you\n"
+	.string "change your mind.$"
 
 Route119_WeatherInstitute_2F_Text_PokemonChangesWithWeather:
 	.string "That POKéMON changes shape according\n"

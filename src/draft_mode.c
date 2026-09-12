@@ -50,7 +50,7 @@ bool32 Draft_IsActive(void)
 // call has already accumulated so the common case is one pass, not four.
 #define DRAFT_MAX_VISITED_INFOS (TIMES_OF_DAY_COUNT * 2)
 
-static void AddSpeciesToScratch(struct DraftChoice *scratch, u32 *count, u16 species, u8 level)
+static void AddSpeciesToScratch(struct DraftChoice *scratch, u32 *count, u16 species, u16 level)
 {
     u32 i;
 
