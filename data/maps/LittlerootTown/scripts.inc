@@ -1084,6 +1084,9 @@ LittlerootTown_EventScript_EncounterTESTThundurus::
 LittlerootTown_EventScript_EncounterTESTMeloetta::
 	goto LegendaryEncounter_EventScript_Meloetta
 
+LittlerootTown_EventScript_EncounterTESTTornadus::
+	goto LegendaryEncounter_EventScript_Tornadus
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD

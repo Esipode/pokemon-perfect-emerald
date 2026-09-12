@@ -1,0 +1,292 @@
+Encounter: Tornadus
+
+# Tornadus, "The Cyclone Pokemon". One rule, stated in both directions:
+#   THE WIND DECIDES WHO IS STANDING IN FRONT OF IT. Tornadus does not care which of your Pokemon it
+#   is fighting, because it picks. Every band of Wind takes more of that choice away from you, and
+#   the fight is about buying back turns in which the choice is yours.
+# WIND, 0-5, is the whole fight on one axis, and the bands carry names:
+#   0 Calm / 1 Rising / 2 Gale (gusts sweep the field, displacement begins) / 3 Tempestuous (the EYE
+#   can form) / 4 Roaring (gusts hurt more, displacement every turn) / 5 CYCLONE (it fires at the end
+#   of the turn, then Wind falls back to 2 in Phase 0 and 3 from Phase 1).
+#   +1 every turn, always (+2 from Phase 1 - the storm feeds itself). +1 a Flying-type move resolved
+#   on the field - EITHER SIDE'S. +1 the player took < 5% of Tornadus's max HP off this turn (it rode
+#   the attacks out). +1 a forced switch landed this turn. +1 one of your Pokemon fainted.
+#   -2 a Rock move landed on Tornadus. -1 an Electric move landed on Tornadus. -1 any weather stood
+#   on the field at turn open. -2/-3 the CYCLONE spent itself.
+# THREE KEYS, ONE PER WEAKNESS. Incarnate Tornadus is pure Flying, so the player has exactly three
+#   weaknesses and this fight gives each of them a different job. ROCK is Wind -2. ICE staggers it -
+#   encsetrecharge, it loses its next action, no Wind change. ELECTRIC is disruption: it destroys the
+#   Eye, interrupts a gathering Hurricane, takes Wind -1, and an interrupt opens the open-sky window.
+# AND ONE LEVER THAT IS NOT A TYPE: any weather on the field. While a weather stands, Wind ticks down
+#   1 a turn, the Eye cannot form, a standing Eye is torn open, and a gathering Hurricane finds the
+#   sky already taken and disperses. The player sets it; the Cyclone is the only thing that clears
+#   it. That tug-of-war over the sky is the fight's second axis.
+# THE EYE OF THE STORM is a calm centre, not a shield: +2 Evasion, +1 Accuracy, the guard up 3, and
+#   while it stands Tornadus IGNORES every Wind fall - the Rock key and the weather tick both do
+#   nothing. Electric tears it open; so does weather.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY (guideline 8). Sleep and freeze work COMPLETELY, all
+#   fight, and are worth bringing - but a sleeping Tornadus still gusts, still displaces and still
+#   cyclones, because all of that runs at checkpoints and not off its move. Sleep buys you its
+#   attacks, not its fight. Setup sweeping and Protect stalling are answered by the drag-out, hazards
+#   and screens by the gust, and stat-drop chipping by Defiant.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Tornadus_Grounded sets a real one
+    Balls: Blocked
+    DamageReduction: 87         # Still Air. Every later value is written absolutely by
+                                # EncScript_Tornadus_ApplyWinds
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # pure Flying has no 4x weakness, so this is boilerplate per
+                                # guideline 6 rather than load-bearing
+    FlatToxicDamage: True
+    Survive: True               # the catch window is at 1 HP and the open sky's guard of 70 could
+                                # otherwise be blown straight past. Cleared in _Grounded
+    Ability: ABILITY_DEFIANT    # its real Hidden Ability, and the fight's anti-abuse lever: Snarl,
+                                # Icy Wind, Charm and Parting Shot all hand it +2 Attack into a
+                                # Hammer Arm. Prankster belongs to Thundurus. The Phase 2 form change
+                                # replaces it with the Therian species' Regenerator, which is inert
+                                # on a boss that never switches
+    Moves: MOVE_AIR_SLASH, MOVE_HURRICANE, MOVE_EXTRASENSORY, MOVE_HAMMER_ARM
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..Windows to 0..15. Every test is against a literal; ENC_SNAP_DAMAGE is the engine's own
+# answer to "subtract one value from another".
+# 0 Phase (0 Still Air / 1 Storm Front / 2 Tempest / 3 Grounded), 1 Wind (0-5), 2 LastBand (the last
+# ANNOUNCED Wind - the callout's re-fire latch), 3 TurnGuard (the once-per-turn scaffold), 4 Keyed (a
+# type key has already been counted this turn), 5 Eye (0 none / 1-2 turns of Eye remaining - an Eye
+# stands while non-zero), 6 BossMark (Tornadus's HP% at turn open), 7 Scratch (the copy
+# ENC_SNAP_DAMAGE consumes, so BossMark survives being measured), 8 Flew (a Flying-type move counted
+# this turn), 9 Gather (Hurricane: 0 none / 1-3 turns left / 4 resolving this end of turn),
+# 10 Window (turns left in the open-sky window), 11 EyeCd (turns until a new Eye may form),
+# 12 EventGuard (per-turn guard shared by OnFaint and OnSwitchIn), 13 Cyclones (cyclones fired -
+# drives escalating dialogue), 14 Displaced (0 none / 1 a forced switch landed this turn / 2 one was
+# attempted and failed), 15 Windows (open-sky windows earned).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Tornadus_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Wind) >= 0
+    Var(LastBand) >= 0
+    Var(TurnGuard) >= 0
+    Var(Keyed) >= 0
+    Var(Eye) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Flew) >= 0
+    Var(Gather) >= 0
+    Var(Window) >= 0
+    Var(EyeCd) >= 0
+    Var(EventGuard) >= 0
+    Var(Cyclones) >= 0
+    Var(Displaced) >= 0
+    Var(Windows) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. All three sit below everything else at
+# their checkpoints, so on a turn where the player's damage crosses a threshold the transition runs
+# first and every later script that turn sees the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Tornadus_StormFront
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Tornadus_StormFront
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Tornadus_Tempest
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Tornadus_Tempest
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Tornadus_Grounded
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Tornadus_Grounded
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+# The once-per-turn scaffold, in two mutually exclusive copies. There is no in-script weather test -
+# jumpifweatheraffected reads gBattlerAttacker, which is stale at a turn checkpoint - so the branch
+# is made at SELECTION instead, off the Weather condition operand, and the two entry points share
+# their whole body through _Head/_Tail. That costs a trigger slot and no author variable.
+# TurnGuard is the only gate and _Head sets it immediately, so no branch out can leave it re-armed.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Tornadus_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+    Weather == B_WEATHER_NONE
+
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Tornadus_TurnOpenWx
+Conditions:
+    Var(TurnGuard) == 0
+    Weather != B_WEATHER_NONE
+
+# THE EYE OF THE STORM forms in the calm middle of a tempest, and only in a clear sky - a weather the
+# player set denies it outright. Self-disabling: the script sets Eye, which its own condition reads
+# as 0.
+Trigger: OnTurnStart
+Priority: 12
+Script: EncScript_Tornadus_FormEye
+Conditions:
+    Var(Phase) <= 2
+    Var(Eye) == 0
+    Var(EyeCd) == 0
+    Var(Wind) >= 3
+    Var(Window) == 0
+    Weather == B_WEATHER_NONE
+
+# TORNADUS BEGINS TO GATHER A HURRICANE, from Storm Front on and only at the top of the meter. Two
+# answers: an Electric move (interrupt - it staggers and the sky opens) or any weather (it finds the
+# sky taken and disperses). Self-disabling: the script sets Gather.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_Tornadus_Gather
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Gather) == 0
+    Var(Wind) >= 4
+    Var(Window) == 0
+
+# THE WIND FEEDS ON WIND. Any Flying-type move resolving on the field - the player's included, which
+# is the trap in a fight whose boss is weak to nothing that flies. Flew caps it at one per turn so a
+# multi-hit Flying move cannot vault the meter, and it is what stops this event trigger re-selecting
+# until the per-checkpoint script cap trips. The +1 itself is paid at _TurnClose.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Tornadus_Flew
+Conditions:
+    Var(Phase) <= 2
+    Var(Flew) == 0
+    Var(TurnGuard) == 1
+    Event.MoveType == TYPE_FLYING
+
+# THE THREE KEYS. At OnMoveEnd Event.Battler is the battler that GOT HIT, so these fire only on a
+# move that landed on Tornadus. In singles the player takes one move a turn, so one latch (Keyed)
+# serves all three and self-disables every one of them.
+Trigger: OnMoveEnd
+Priority: 32
+Script: EncScript_Tornadus_KeyRock
+Conditions:
+    Var(Phase) <= 2
+    Var(Keyed) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ROCK
+
+Trigger: OnMoveEnd
+Priority: 33
+Script: EncScript_Tornadus_KeyIce
+Conditions:
+    Var(Phase) <= 2
+    Var(Keyed) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ICE
+
+Trigger: OnMoveEnd
+Priority: 34
+Script: EncScript_Tornadus_KeyElectric
+Conditions:
+    Var(Phase) <= 2
+    Var(Keyed) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ELECTRIC
+
+# One of the player's Pokemon fell - it moved you, so it moved itself. EventGuard stops the
+# replacement's switch-in being processed a second time.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Tornadus_TheyFell
+Conditions:
+    Var(Phase) <= 2
+    Var(EventGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Somebody walked in. Exists mostly as the guard, and to say that walking in on your own terms does
+# not reset anything. TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE
+# OnBattleStart, when every variable is still 0.
+Trigger: OnSwitchIn
+Priority: 31
+Script: EncScript_Tornadus_TheyEntered
+Conditions:
+    Var(Phase) <= 2
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE HURRICANE LANDS. Runs BEFORE _TurnClose so its own damage is never counted as the player's
+# damage for the "it rode the attacks out" test. Self-disabling: the script clears Gather.
+Trigger: OnTurnEnd
+Priority: 79
+Script: EncScript_Tornadus_Hurricane
+Conditions:
+    Var(Phase) <= 2
+    Var(Gather) == 4
+
+# THE LEDGER, and the only place per-turn state is cleared. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Tornadus_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# DISPLACEMENT. Runs after the ledger, so the switch it forces is paid on the NEXT turn's climb - the
+# player sees the wind rise because it moved them, one beat later, which reads correctly. Displaced
+# carries two non-zero values so a failed drag (the player down to their last Pokemon) latches the
+# trigger off without paying the +1 a successful one does.
+Trigger: OnTurnEnd
+Priority: 82
+Script: EncScript_Tornadus_Displace
+Conditions:
+    Var(Phase) <= 2
+    Var(Displaced) == 0
+    Var(Window) == 0
+    Var(Wind) >= 2
+
+# THE CYCLONE. Runs last, so a Wind that reached 5 anywhere in the turn spends itself the same turn.
+# Self-disabling: the script drops Wind to 2 or 3.
+Trigger: OnTurnEnd
+Priority: 84
+Script: EncScript_Tornadus_Cyclone
+Conditions:
+    Var(Phase) <= 2
+    Var(Wind) >= 5
+    Var(Window) == 0

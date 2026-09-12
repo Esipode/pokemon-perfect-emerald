@@ -738,6 +738,26 @@ extern const u8 EncScript_Meloetta_BreakRequest[];
 extern const u8 EncScript_Meloetta_TurnClose[];
 extern const u8 EncScript_Meloetta_Resolve[];
 
+// Tornadus ("The Cyclone Pokemon")
+extern const u8 EncScript_Tornadus_Intro[];
+extern const u8 EncScript_Tornadus_StormFront[];
+extern const u8 EncScript_Tornadus_Tempest[];
+extern const u8 EncScript_Tornadus_Grounded[];
+extern const u8 EncScript_Tornadus_TurnOpen[];
+extern const u8 EncScript_Tornadus_TurnOpenWx[];
+extern const u8 EncScript_Tornadus_FormEye[];
+extern const u8 EncScript_Tornadus_Gather[];
+extern const u8 EncScript_Tornadus_Flew[];
+extern const u8 EncScript_Tornadus_KeyRock[];
+extern const u8 EncScript_Tornadus_KeyIce[];
+extern const u8 EncScript_Tornadus_KeyElectric[];
+extern const u8 EncScript_Tornadus_TheyFell[];
+extern const u8 EncScript_Tornadus_TheyEntered[];
+extern const u8 EncScript_Tornadus_Hurricane[];
+extern const u8 EncScript_Tornadus_TurnClose[];
+extern const u8 EncScript_Tornadus_Displace[];
+extern const u8 EncScript_Tornadus_Cyclone[];
+
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
