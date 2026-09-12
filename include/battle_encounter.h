@@ -704,7 +704,7 @@ extern const u8 EncScript_Landorus_ShiftResolve[];
 extern const u8 EncScript_Landorus_Rumble[];
 extern const u8 EncScript_Landorus_EarthSettles[];
 
-// Thundurus ("")
+// Thundurus ("The Bolt Strike Pokémon")
 extern const u8 EncScript_Thundurus_Intro[];
 extern const u8 EncScript_Thundurus_Thunderstorm[];
 extern const u8 EncScript_Thundurus_Thunderstorm[];
@@ -725,7 +725,7 @@ extern const u8 EncScript_Thundurus_StrikeResolve[];
 extern const u8 EncScript_Thundurus_Overload[];
 extern const u8 EncScript_Thundurus_StormResumes [];
 
-// Meloetta ("The Melody Pokemon")
+// Meloetta ("The Melody Pokémon")
 extern const u8 EncScript_Meloetta_Intro[];
 extern const u8 EncScript_Meloetta_GrandPerformance[];
 extern const u8 EncScript_Meloetta_FinalNote[];
@@ -738,7 +738,7 @@ extern const u8 EncScript_Meloetta_BreakRequest[];
 extern const u8 EncScript_Meloetta_TurnClose[];
 extern const u8 EncScript_Meloetta_Resolve[];
 
-// Tornadus ("The Cyclone Pokemon")
+// Tornadus ("The Cyclone Pokémon")
 extern const u8 EncScript_Tornadus_Intro[];
 extern const u8 EncScript_Tornadus_StormFront[];
 extern const u8 EncScript_Tornadus_Tempest[];
@@ -757,6 +757,23 @@ extern const u8 EncScript_Tornadus_Hurricane[];
 extern const u8 EncScript_Tornadus_TurnClose[];
 extern const u8 EncScript_Tornadus_Displace[];
 extern const u8 EncScript_Tornadus_Cyclone[];
+
+// Reshiram ("The Vast White Pokémon")
+extern const u8 EncScript_Reshiram_Intro[];
+extern const u8 EncScript_Reshiram_TruthRevealed[];
+extern const u8 EncScript_Reshiram_TruthRevealed[];
+extern const u8 EncScript_Reshiram_WhiteLight[];
+extern const u8 EncScript_Reshiram_WhiteLight[];
+extern const u8 EncScript_Reshiram_Spent[];
+extern const u8 EncScript_Reshiram_Spent[];
+extern const u8 EncScript_Reshiram_TurnOpen[];
+extern const u8 EncScript_Reshiram_Reveal[];
+extern const u8 EncScript_Reshiram_Expose[];
+extern const u8 EncScript_Reshiram_Mark[];
+extern const u8 EncScript_Reshiram_BeginCharge[];
+extern const u8 EncScript_Reshiram_AttentionShifts[];
+extern const u8 EncScript_Reshiram_TurnClose[];
+extern const u8 EncScript_Reshiram_Spent[];
 
 
 // Stage 15 command tests (test/battle/encounter/commands.c).

@@ -88,7 +88,7 @@
 #define FLAG_HIDE_THUNDURUS  0x43
 #define FLAG_HIDE_MELOETTA   0x44
 #define FLAG_HIDE_TORNADUS   0x45
-#define FLAG_UNUSED_0x046    0x46 // Unused Flag
+#define FLAG_HIDE_RESHIRAM   0x46
 #define FLAG_UNUSED_0x047    0x47 // Unused Flag
 #define FLAG_UNUSED_0x048    0x48 // Unused Flag
 #define FLAG_UNUSED_0x049    0x49 // Unused Flag

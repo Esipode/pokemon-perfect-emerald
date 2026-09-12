@@ -1087,6 +1087,9 @@ LittlerootTown_EventScript_EncounterTESTMeloetta::
 LittlerootTown_EventScript_EncounterTESTTornadus::
 	goto LegendaryEncounter_EventScript_Tornadus
 
+LittlerootTown_EventScript_EncounterTESTReshiram::
+	goto LegendaryEncounter_EventScript_Reshiram
+
 LittlerootTown_EventScript_EncounterTest2::
 	lock
 	setbattleencounter ENCOUNTER_STORM_HERALD
