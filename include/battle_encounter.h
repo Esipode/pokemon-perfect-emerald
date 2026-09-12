@@ -725,6 +725,19 @@ extern const u8 EncScript_Thundurus_StrikeResolve[];
 extern const u8 EncScript_Thundurus_Overload[];
 extern const u8 EncScript_Thundurus_StormResumes [];
 
+// Meloetta ("The Melody Pokemon")
+extern const u8 EncScript_Meloetta_Intro[];
+extern const u8 EncScript_Meloetta_GrandPerformance[];
+extern const u8 EncScript_Meloetta_FinalNote[];
+extern const u8 EncScript_Meloetta_Spent[];
+extern const u8 EncScript_Meloetta_TurnOpen[];
+extern const u8 EncScript_Meloetta_BeginCrescendo[];
+extern const u8 EncScript_Meloetta_Silence[];
+extern const u8 EncScript_Meloetta_TheyEntered[];
+extern const u8 EncScript_Meloetta_BreakRequest[];
+extern const u8 EncScript_Meloetta_TurnClose[];
+extern const u8 EncScript_Meloetta_Resolve[];
+
 
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
