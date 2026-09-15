@@ -72,7 +72,5 @@ __pycache__
 __decomps/
 __BUILD_INSTRUCTIONS.txt
 CLAUDE.md
+AGENTS.md
 .claude/*
-.repowise/*
-.repowise-workspace.yaml
-.mcp.json
