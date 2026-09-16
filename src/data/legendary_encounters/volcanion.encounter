@@ -1,0 +1,192 @@
+Encounter: Volcanion
+
+# Volcanion, "The Steam Pokemon". One rule:
+#   VOLCANION VENTS ITS OWN PRESSURE, AND IT CAN ONLY VENT INTO CLEAR AIR. STEAM PRESSURE climbs
+#   every turn (faster when Volcanion attacks with Fire/Water or drinks a Water move) and Volcanion
+#   bleeds it off with a vent the moment nothing stops it - but a vent raises a STEAM FIELD, and
+#   Volcanion cannot vent while its own field still stands. The four turns a field is up are four
+#   turns with no relief valve; push Pressure to 10 in that window and Volcanion overloads.
+# PRESSURE RELEASE blows the field away, costs Volcanion its next action (encsetrecharge), and drops
+#   its guard from 92% to 60% for three turns - the only real damage window in the fight.
+# PHASES (Var(Phase), zero-based): 0 PRESSURE (start), 1 SUPERHEATED (<=50% HP, a second field can
+#   stack, WATER INJECTION begins), 2 MELTDOWN (<=20% HP, Volcanion cannot vent at all - Pressure 10
+#   always ends in ERUPTION), 3 SPENT (set only by ERUPTION - the catch window).
+# ANTI-ABUSE IS NARROW (guideline 8): _Reassert refuses to let outside weather delete the fog, the
+#   vent's own scripted hit closes the Fire-type hole in Sea of Fire, and Survive: True plus the
+#   Phase == 3 gate on the ball window mean the player cannot chip past the finale.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 90
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    Ability: ABILITY_WATER_ABSORB
+    Moves: MOVE_FLAMETHROWER, MOVE_SCALD, MOVE_EARTH_POWER, MOVE_FLAME_CHARGE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# MOVE_STEAM_ERUPTION is deliberately absent from Moves: - Meltdown grants it via encsetmove, the
+# signature payload a phase transition unlocks (guideline 5). Ability: ABILITY_WATER_ABSORB is
+# Volcanion's real ability and the deterrent that makes a Water-move Pressure spike a real decision:
+# it spikes Pressure by 2 but heals Volcanion a quarter of its health.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all twelve here in order fixes
+# Phase..Releases to 0..11. Indices 12-15 are unused.
+# 0 Phase (0 PRESSURE / 1 SUPERHEATED / 2 MELTDOWN / 3 SPENT), 1 Pressure (STEAM PRESSURE, 0-10),
+# 2 Band (last ANNOUNCED band: 0 LOW / 1 HIGH / 2 CRITICAL), 3 Fields (live STEAM FIELDs, 0-2),
+# 4 FieldTimer (turns until the standing field collapses), 5 SpentTimer (turns left in the
+# post-release weakness window), 6 HpMark (boss HP% at turn start, then damage-taken-this-turn),
+# 7 TurnGuard (once-per-turn scaffold: 0 start / 1 accumulate / 2 close), 8 BossMoveLatch (closes
+# the "boss used a Fire/Water move" event trigger), 9 WaterHitLatch (closes the "a Water move hit
+# the boss" event trigger), 10 InjectTimer (WATER INJECTION delayed spike countdown),
+# 11 Releases (PRESSURE RELEASEs so far).
+Trigger: OnBattleStart
+Priority: 5
+Flags: Once
+Script: EncScript_Volcanion_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Pressure) >= 0
+    Var(Band) >= 0
+    Var(Fields) >= 0
+    Var(FieldTimer) >= 0
+    Var(SpentTimer) >= 0
+    Var(HpMark) >= 0
+    Var(TurnGuard) >= 0
+    Var(BossMoveLatch) >= 0
+    Var(WaterHitLatch) >= 0
+    Var(InjectTimer) >= 0
+    Var(Releases) >= 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Volcanion_Superheated
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Volcanion_Meltdown
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Volcanion_BossHeat
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+    Var(BossMoveLatch) == 0
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Volcanion_BossHeat
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_WATER
+    Var(BossMoveLatch) == 0
+
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_Volcanion_Drink
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_WATER
+    Var(WaterHitLatch) == 0
+
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Volcanion_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_Volcanion_Accumulate
+Conditions:
+    Var(TurnGuard) == 1
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Volcanion_BandHigh
+Conditions:
+    Var(Pressure) >= 4
+    Var(Pressure) <= 7
+    Var(Band) != 1
+
+Trigger: OnTurnEnd
+Priority: 21
+Script: EncScript_Volcanion_BandCritical
+Conditions:
+    Var(Pressure) >= 8
+    Var(Band) != 2
+
+Trigger: OnTurnEnd
+Priority: 22
+Script: EncScript_Volcanion_BandLow
+Conditions:
+    Var(Pressure) <= 3
+    Var(Band) != 0
+
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Volcanion_Release
+Conditions:
+    Var(Pressure) >= 10
+    Var(Phase) <= 1
+
+Trigger: OnTurnEnd
+Priority: 31
+Script: EncScript_Volcanion_Eruption
+Conditions:
+    Var(Pressure) >= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 40
+Script: EncScript_Volcanion_Vent
+Conditions:
+    Var(Pressure) >= 3
+    Var(Phase) == 0
+    Var(Fields) == 0
+    Var(TurnGuard) == 2
+
+Trigger: OnTurnEnd
+Priority: 41
+Script: EncScript_Volcanion_Vent
+Conditions:
+    Var(Pressure) >= 3
+    Var(Phase) == 1
+    Var(Fields) <= 1
+    Var(TurnGuard) == 2
+
+Trigger: OnTurnEnd
+Priority: 45
+Script: EncScript_Volcanion_Inject
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(InjectTimer) == 0
+    Var(Pressure) <= 6
+    Var(TurnGuard) == 2
+
+Trigger: OnTurnEnd
+Priority: 60
+Script: EncScript_Volcanion_Reassert
+Conditions:
+    Var(Fields) >= 1
+    Not:
+        Weather == B_WEATHER_FOG
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Volcanion_TurnClose
+Conditions:
+    Var(TurnGuard) == 2

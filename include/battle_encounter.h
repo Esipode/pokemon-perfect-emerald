@@ -816,6 +816,24 @@ extern const u8 EncScript_Hoopa_Spent[];
 extern const u8 EncScript_Hoopa_TickReset[];
 extern const u8 EncScript_Hoopa_Shatter[];
 
+// Volcanion ("The Steam Pokémon")
+extern const u8 EncScript_Volcanion_Intro[];
+extern const u8 EncScript_Volcanion_TurnOpen[];
+extern const u8 EncScript_Volcanion_Accumulate[];
+extern const u8 EncScript_Volcanion_BossHeat[];
+extern const u8 EncScript_Volcanion_Drink[];
+extern const u8 EncScript_Volcanion_BandLow[];
+extern const u8 EncScript_Volcanion_BandHigh[];
+extern const u8 EncScript_Volcanion_BandCritical[];
+extern const u8 EncScript_Volcanion_Vent[];
+extern const u8 EncScript_Volcanion_Reassert[];
+extern const u8 EncScript_Volcanion_Inject[];
+extern const u8 EncScript_Volcanion_Release[];
+extern const u8 EncScript_Volcanion_Superheated[];
+extern const u8 EncScript_Volcanion_Meltdown[];
+extern const u8 EncScript_Volcanion_Eruption[];
+extern const u8 EncScript_Volcanion_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
