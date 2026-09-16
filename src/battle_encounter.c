@@ -1006,6 +1006,8 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
     return damage;
 }
 
+static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal);
+
 // Scales healing the boss drains OUT OF another battler by the encounter's AUTHORED damage
 // reduction. DamageReduction: cuts what reaches the boss, but nothing cuts what the boss deals - and
 // a drain move turns that undiminished damage straight into healing. At DamageReduction: 90 the
@@ -1026,16 +1028,35 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
 // apply this only on the branch that actually heals.
 s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBattler, s32 heal)
 {
+    if (battler == sourceBattler)
+        return heal;
+
+    return ScaleEncounterBossHeal(battler, heal);
+}
+
+// Scales Grassy Terrain's end-turn heal on the boss by the same authored reduction. The terrain heal
+// is a fraction of the boss's own max HP, but unlike Recover or Leftovers it lands every turn for free
+// and the player can't answer it except by clearing the terrain: at DamageReduction: 88 an unscaled
+// 1/16 a turn out-heals most of what a player can deal through the guard.
+s32 ApplyEncounterTerrainHealReduction(enum BattlerId battler, s32 heal)
+{
+    return ScaleEncounterBossHeal(battler, heal);
+}
+
+// Shared body of the two above: heal * (100 - authored DamageReduction:) / 100 for the boss, floored
+// at 1; unchanged for every other battler, with no encounter active, or for a non-positive amount.
+static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal)
+{
     const struct Encounter *encounter;
     u8 boss;
     u32 percent;
 
-    if (heal <= 0 || battler == sourceBattler || battler >= MAX_BATTLERS_COUNT || !IsEncounterActive())
+    if (heal <= 0 || battler >= MAX_BATTLERS_COUNT || !IsEncounterActive())
         return heal;
 
     // Boss-scoped because DamageReduction: is. The boss is the only battler a Properties: block
     // configures, so it is the only one with an authored number to read; a reduction a script hands
-    // some other battler has no property behind it and leaves its drains alone.
+    // some other battler has no property behind it and leaves its healing alone.
     if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss) || battler != boss)
         return heal;
 

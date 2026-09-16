@@ -467,6 +467,7 @@ This is not a property and there is nothing to opt into; it falls out of the num
 | Absorb, Giga Drain, Drain Punch, Draining Kiss, Horn Leech, Leech Life, Dream Eater, … | Self-healing: Synthesis, Recover, Ingrain, Aqua Ring, Leftovers — a fraction of the boss's *own* max HP, already balanced against the fight's length |
 | Strength Sap | A Liquid Ooze punish — that's damage, not healing, and `ApplyEncounterDamageReduction` has already scaled it once |
 | The AI's estimate of what a drain is worth, so it doesn't spend turns on a heal it will barely keep | Any battler that isn't the boss |
+| Grassy Terrain's end-turn heal on the boss — free every turn, so an unscaled 1/16 out-heals what gets through the guard | |
 
 It reads the **authored property**, not the live per-battler value, and that distinction is the whole
 point of the feature. The live number moves with a phase, a stance or a form, and the catch-window
@@ -474,8 +475,8 @@ guard pins it to `ENC_MAX_DAMAGE_REDUCTION` — balance would swing with all of 
 window would zero out drain healing outright. The property is the fight's fixed balance constant, so
 this is too. A boss whose `Properties:` set no reduction is unaffected.
 
-`ApplyEncounterDrainReduction` (`battle_encounter.c`) is the implementation, alongside its two
-siblings.
+`ApplyEncounterDrainReduction` and `ApplyEncounterTerrainHealReduction` (`battle_encounter.c`) are
+the implementation, alongside `ApplyEncounterDamageReduction` and `ApplyEncounterTypeAdaptation`.
 
 
 There is no on-screen indicator for any of this — a reduced hit just shows a smaller number. If a

@@ -834,6 +834,23 @@ extern const u8 EncScript_Volcanion_Meltdown[];
 extern const u8 EncScript_Volcanion_Eruption[];
 extern const u8 EncScript_Volcanion_TurnClose[];
 
+// Zygarde ("The Order Pokémon")
+extern const u8 EncScript_Zygarde_Awaken[];
+extern const u8 EncScript_Zygarde_TurnOpen[];
+extern const u8 EncScript_Zygarde_PatternBoost[];
+extern const u8 EncScript_Zygarde_PatternSetup[];
+extern const u8 EncScript_Zygarde_PatternSwitch[];
+extern const u8 EncScript_Zygarde_BalanceTipPlayerHp[];
+extern const u8 EncScript_Zygarde_BalanceTipPlayerStat[];
+extern const u8 EncScript_Zygarde_BalanceTipBossHp[];
+extern const u8 EncScript_Zygarde_BalanceTipBossStat[];
+extern const u8 EncScript_Zygarde_BalanceHold[];
+extern const u8 EncScript_Zygarde_CoreEnforcer[];
+extern const u8 EncScript_Zygarde_TurnClose[];
+extern const u8 EncScript_Zygarde_CompleteForme[];
+extern const u8 EncScript_Zygarde_LandsWrath[];
+extern const u8 EncScript_Zygarde_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

@@ -673,6 +673,10 @@ s32 ApplyEncounterTypeAdaptation(enum BattlerId battler, enum Type moveType, s32
 // deals, and a drain move turns that undiminished damage straight into healing.
 s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBattler, s32 heal);
 
+// Scales Grassy Terrain's end-turn heal on the boss by the same authored reduction, floored at 1.
+// Unchanged for any other battler or with no encounter active.
+s32 ApplyEncounterTerrainHealReduction(enum BattlerId battler, s32 heal);
+
 // Cleared at the beginning of the battle. Fields need to be cleared when needed manually otherwise.
 struct BattleStruct
 {

@@ -408,7 +408,7 @@ static bool32 HandleEndTurnFirstEventBlock(enum BattlerId battler)
          && !IsSemiInvulnerable(battler, CHECK_ALL)
          && IsBattlerGrounded(battler, GetBattlerAbility(battler), GetBattlerHoldEffect(battler)))
         {
-            SetHealAmount(battler, GetNonDynamaxMaxHP(battler) / 16);
+            SetHealAmount(battler, ApplyEncounterTerrainHealReduction(battler, GetNonDynamaxMaxHP(battler) / 16));
             BattleScriptCall(BattleScript_GrassyTerrainHeals);
             effect = TRUE;
         }

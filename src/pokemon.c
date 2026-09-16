@@ -4397,7 +4397,11 @@ bool8 HealStatusConditions(struct Pokemon *mon, u32 healMask, enum BattlerId bat
 {
     u32 status = GetMonData(mon, MON_DATA_STATUS, 0);
 
-    PREPARE_MON_NICK_BUFFER(gBattleTextBuff1, battler, gBattlerPartyIndexes[battler]);
+    // battler is MAX_BATTLERS_COUNT for a mon with no active battler (e.g. a benched party member
+    // healed outside battle, or via encrevive mid-battle) - gBattlerPartyIndexes[battler] is then
+    // one past the array's end. Only prepare the battle-text buffer when there's a real battler.
+    if (battler != MAX_BATTLERS_COUNT)
+        PREPARE_MON_NICK_BUFFER(gBattleTextBuff1, battler, gBattlerPartyIndexes[battler]);
 
     if (status & healMask)
     {
