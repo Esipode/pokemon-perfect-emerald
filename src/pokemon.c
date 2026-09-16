@@ -1069,11 +1069,23 @@ static bool32 IsSpeciesValidForRandomization(enum Species species)
         && !speciesInfo->cannotBeTraded;
 }
 
+// Set by a caller that knows the wild encounter's map header id or the trainer's id just before
+// a CreateMon/GetRandomizedSpecies call, so the same species rolls differently per area/trainer
+// instead of always mapping to the same replacement. Consumed (and reset to 0) on next use so it
+// never leaks into an unrelated CreateMon call that didn't set it.
+static u32 sRandomizationSeedContext = 0;
+
+void SetRandomizationSeedContext(u32 contextId)
+{
+    sRandomizationSeedContext = contextId;
+}
+
 // Single point where FLAG_RANDOMIZE_MON swaps a species. Every mon goes through
 // CreateMon, so callers must not randomize beforehand or the species is rerolled twice.
 enum Species GetRandomizedSpecies(enum Species species)
 {
     u32 otId;
+    u32 context;
     rng_value_t rngState;
     enum Species randomSpecies;
     u32 attempts;
@@ -1081,8 +1093,11 @@ enum Species GetRandomizedSpecies(enum Species species)
     if (species == SPECIES_NONE || !FlagGet(FLAG_RANDOMIZE_MON))
         return species;
 
+    context = sRandomizationSeedContext;
+    sRandomizationSeedContext = 0;
+
     otId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
-    rngState = LocalRandomSeed(otId + species + GetNewGamePlusLevelOffset());
+    rngState = LocalRandomSeed(otId + species + context + GetNewGamePlusLevelOffset());
 
     for (attempts = 0; attempts < NUM_SPECIES; attempts++)
     {

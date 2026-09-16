@@ -2774,6 +2774,9 @@ static u8 AddNewGamePlusExtraMons(struct Pokemon *party, const struct Trainer *t
 
 void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer)
 {
+    // Identifies the trainer for FLAG_RANDOMIZE_MON's per-mon seed context. Hashed from the
+    // trainer's authored data (not the pointer) so it's stable and unique per trainer.
+    u32 trainerRandomizationId = Crc32B((const u8 *)trainer, sizeof(struct Trainer));
     const struct TrainerMon *partyData = trainer->party;
     u32 monIndices[PARTY_SIZE];
     u16 partySpecies[PARTY_SIZE];
@@ -2918,6 +2921,7 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
                 level = 1;
         }
 
+        SetRandomizationSeedContext(trainerRandomizationId);
         CreateMon(&party[i], species, level, personalityValue, otId);
 
         // A replaced Pokemon has nothing to do with the authored held item, so

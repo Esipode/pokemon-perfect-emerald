@@ -522,10 +522,6 @@ void NewGameInitData(void)
         SetMoney(&gSaveBlock1Ptr->money, 5000);
         DeactivateAllRoamers();
         SetCoins(0);
-        if (autoScrollTextBackup)
-            FlagSet(FLAG_AUTO_SCROLL_TEXT);
-        else
-            FlagClear(FLAG_AUTO_SCROLL_TEXT);
     }
     ClearSav3();
     ClearAllMail();
@@ -568,6 +564,16 @@ void NewGameInitData(void)
     // zeroed it.
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     InitEventData();
+    // Must run after InitEventData() above -- it memsets the whole flags
+    // array again, undoing the ClearSav1() restore further up if this ran
+    // there instead (New Game+ backs up/restores this same flag separately).
+    if (!isNewGamePlus)
+    {
+        if (autoScrollTextBackup)
+            FlagSet(FLAG_AUTO_SCROLL_TEXT);
+        else
+            FlagClear(FLAG_AUTO_SCROLL_TEXT);
+    }
     // Must run after ClearSav1() above wiped dexCaught/dexSeen.
     // Re-registers every carried-over box mon so the dex
     // progress the player kept storage for is visible from turn one.

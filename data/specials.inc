@@ -601,3 +601,4 @@ gSpecials::
 	def_special CheckValidLegendaryEncounter
 	def_special IsLastUsedWarp
 	def_special Route110ShowZapdos
+	def_special GetProgressionLevelCapSpecial

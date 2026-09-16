@@ -28,7 +28,9 @@
 struct DraftChoice
 {
     u16 species;
-    u16 level;
+    u16 minLevel;
+    u16 maxLevel;
+    u16 level; // Resolved by Draft_BuildPool: a random level within [minLevel, min(maxLevel, level cap)]
 };
 
 // TRUE when the player has Draft mode turned on for this save, independent
@@ -55,9 +57,13 @@ bool32 Draft_IsActive(void);
 bool32 Draft_IsAreaDraftable(void);
 
 // Builds the current map's draft pool (land + water encounters, unioned
-// across all four times of day, deduped by species and keeping the highest
-// maxLevel seen) into `out`, which must have room for DRAFT_MAX_CHOICES
-// entries. Returns the number of entries written, 0..DRAFT_MAX_CHOICES.
+// across all four times of day, deduped by species and keeping the widest
+// [minLevel, maxLevel] seen) into `out`, which must have room for
+// DRAFT_MAX_CHOICES entries. Returns the number of entries written,
+// 0..DRAFT_MAX_CHOICES. Each entry's `level` is a level cap-clamped random
+// roll within its range - not the route's raw maxLevel - so a species with a
+// high-level rare slot (rock smash, fishing, hidden) on the same map doesn't
+// hand out that level just because AddSpeciesToScratch merged it in.
 //
 // Filtered by MonoType_IsSpeciesAllowed / MonoGen_IsSpeciesAllowed when
 // those modes are enabled, so a species this run isn't allowed to own never

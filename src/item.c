@@ -564,7 +564,12 @@ void MoveItemSlotInPC(struct ItemSlot *itemSlots, u32 from, u32 to)
 
 void ClearBag(void)
 {
-    CpuFastFill(0, &gSaveBlock1Ptr->bag, sizeof(struct Bag));
+    // CpuFastFill (BIOS CpuFastSet) only fills whole 32-byte blocks; a size
+    // that isn't a multiple of 32 gets rounded up, overwriting whatever
+    // follows gSaveBlock1Ptr->bag in SaveBlock1 (nuzlockeModeEnabled, among
+    // others) with zero. sizeof(struct Bag) isn't guaranteed to be a
+    // multiple of 32, so use the plain byte-exact fill instead.
+    CpuFill32(0, &gSaveBlock1Ptr->bag, sizeof(struct Bag));
 }
 
 static inline u16 NONNULL BagPocket_CountTotalItemQuantity(struct BagPocket *pocket, enum Item itemId)

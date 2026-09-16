@@ -63,6 +63,7 @@ static enum Species GetEncounterSpecies(u32 headerId, enum TimeOfDay timeOfDay, 
         return SPECIES_NONE;
 
     // Same randomization point CreateMon uses, so the tracked species matches what's actually encountered.
+    SetRandomizationSeedContext(headerId);
     return GetRandomizedSpecies(info->wildPokemon[slot].species);
 }
 

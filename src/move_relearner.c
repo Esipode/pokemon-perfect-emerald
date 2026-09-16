@@ -1306,6 +1306,8 @@ static bool32 IsLevelUpMoveRelearnerActive(void)
 
 static bool32 IsEggMoveRelearnerActive(void)
 {
+    if (!FlagGet(FLAG_BADGE03_GET))
+        return FALSE;
     return (P_FLAG_EGG_MOVES || P_ENABLE_MOVE_RELEARNERS);
 }
 
@@ -1316,5 +1318,7 @@ static bool32 IsTMMoveRelearnerActive(void)
 
 static bool32 IsTutorMoveRelearnerActive(void)
 {
+    if (!FlagGet(FLAG_BADGE06_GET))
+        return FALSE;
     return (P_FLAG_TUTOR_MOVES || P_ENABLE_MOVE_RELEARNERS);
 }

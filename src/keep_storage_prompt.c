@@ -6,6 +6,7 @@
 #include "main_menu.h"
 #include "menu.h"
 #include "new_game_settings_menu.h"
+#include "option_menu.h"
 #include "palette.h"
 #include "pokemon.h"
 #include "pokemon_storage_system.h"
@@ -147,13 +148,16 @@ void CB2_InitKeepStoragePrompt(void)
     {
     default:
     case 0:
-        // Nothing to keep -- skip straight to the settings menu, same destination
-        // as the HAS_NO_SAVED_GAME shortcut in ui_main_menu.c.
+        // Nothing to keep -- skip straight to the options menu (so the player can
+        // set their playthrough defaults before achievement-relevant options lock
+        // in), then the settings menu, same destination as the HAS_NO_SAVED_GAME
+        // shortcut in ui_main_menu.c.
         if (gSaveFileStatus != SAVE_STATUS_OK
          || (CountAllStorageMons() == 0 && CalculatePlayerPartyCount() == 0))
         {
             gKeepStorageOnNewGame = FALSE;
-            SetMainCallback2(CB2_InitNewGameSettingsMenu);
+            gMain.savedCallback = CB2_InitNewGameSettingsMenu;
+            SetMainCallback2(CB2_InitOptionMenu);
             return;
         }
         SetVBlankCallback(NULL);
@@ -305,7 +309,9 @@ static void Task_KeepStoragePromptConfirm(u8 taskId)
     {
         DestroyTask(taskId);
         FreeAllWindowBuffers();
-        SetMainCallback2(CB2_InitNewGameSettingsMenu);
+        // Options menu first, then the settings menu -- see the case-0 shortcut above.
+        gMain.savedCallback = CB2_InitNewGameSettingsMenu;
+        SetMainCallback2(CB2_InitOptionMenu);
     }
 }
 
