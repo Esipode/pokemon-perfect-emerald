@@ -572,7 +572,7 @@ The commands below exist specifically for encounter scripts:
 | `encsubvar <var>, <value>` | Subtracts from author variable `<var>` | wraps `subbyte` |
 | `encjumpifvar <cmp>, <var>, <value>, <label>` | Branches on author variable `<var>` | wraps `jumpifbyte` |
 | `enccopyvar <dst>, <src>` | Copies author variable `<src>` into `<dst>` — for consuming a counter in a loop without losing it | wraps `copybyte` |
-| `encchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar. A battler taken to 0 HP faints in place (and ends the battle if that empties a side), like status/weather chip damage | encounter-specific (`callnative`) |
+| `encchangehp <target>, <amount>[, <mode>]` | Heals (positive) or damages (negative) every battler `<target>` resolves to, with the normal animated health bar. A battler taken to 0 HP faints in place (and ends the battle if that empties a side), like status/weather chip damage. Unlike other mutating commands, a battler already fainted when this runs is dropped silently rather than asserting, for `<target>` single-slot or group alike | encounter-specific (`callnative`) |
 | `encchangestat <target>, <stat>, <stages>` | Adds `<stages>` to `<stat>` for every battler `<target>` resolves to — silent, no message/animation | encounter-specific (`callnative`) |
 | `encchangestatvalue <target>, <stat>, <amount>[, <mode>]` | Moves the **raw battle stat** (not the stage) of `<stat>` — silent, and not undone by Haze or switching out | encounter-specific (`callnative`) |
 | `encsetdamagereduction <target>, <percent>` | Sets how much less damage `<target>` takes, `0`–`99`. Replaces the current value | encounter-specific (`callnative`) |
@@ -598,6 +598,7 @@ The commands below exist specifically for encounter scripts:
 | `encowned <species>, <var>` | Writes how well the player knows `<species>` into `<var>`: `2` caught in the Pokédex, `1` only seen, `0` never met. Conditions read battle state only, so this is the only route from "what has the player done outside this battle" into an encounter script — a counterpart legendary, a fusion partner, a rival form. Two Pokédex bit tests, so it is cheap enough for any checkpoint; alternate forms share a dex slot and so count as the same species. Deliberately *not* `CheckPlayerOwnsSpecies`, which walks the party and every PC box decrypting each slot | encounter-specific (`callnative`) |
 | `encstoreprediction <target>, <var>` | Writes the AI's predicted move **category** for `<target>` into `<var>`: `0` no prediction this turn, `1` physical, `2` special, `3` status. The real `AI_FLAG_PREDICT_MOVE` answer, so it only means anything at `OnTurnStart` and only when the encounter's `AiFlags:` include that flag | encounter-specific (`callnative`) |
 | `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Writes the result of comparing `<targetA>`'s live `<stat>` against `<targetB>`'s into `<var>`: `0` A is lower, `1` equal, `2` A is higher. Both targets must resolve to exactly one battler. `STAT_SPEED` reads the full turn-order speed (Tailwind, Choice Scarf, paralysis, stages); the other stats read the stat-with-stages value. The var-to-var comparison conditions cannot express | encounter-specific (`callnative`) |
+| `encreadstat <target>, <stat>, <var>` | `enccomparestat`'s single-target sibling: writes `<target>`'s live stat **stage** (raw domain, `0`-`12`, `6` = neutral - the same domain `Battler(<ref>).Stat(<STAT>)` conditions already read) into `<var>`, instead of comparing it against another battler's. `<target>` must resolve to exactly one battler; same restricted stat list as `enccomparestat` (`STAT_ATK`/`DEF`/`SPATK`/`SPDEF`/`SPEED` - no battle stat behind `STAT_ACC`/`STAT_EVASION`). For a mechanic that steals or copies a boss's own live stage rather than a guessed fixed amount | encounter-specific (`callnative`) |
 | `encadapt <target>, <percent>, <slots>, <countVar>, <resultVar>` | **ANALYSIS.** Files the type of the move that just landed as a **type-keyed** damage resistance on `<target>`, at `<percent>` (capped at `ENC_MAX_ADAPT_PERCENT`), in a FIFO `<slots>` deep (capped at `ENC_MAX_ADAPTATIONS`). Re-filing a type already held raises its percent instead of taking a second slot; a full board pushes the **oldest** out; a `<slots>` narrower than the board drops the overflow first. `<countVar>` takes the resulting board size — the authoritative one, so a script mirroring it can't drift — and `<resultVar>` an `ENC_ADAPT_RESULT_*` outcome (`HARDENED` / `FILED` / `EVICTED`) so one command drives all three lines of dialogue. The new type is buffered into `{B_BUFF1}` and any evicted type into `{B_BUFF2}`. `OnMoveEnd` only, since it reads the event's move; a move that missed, was blocked or had no effect is ignored outright and leaves both vars untouched. `DamageReduction:` is flat and type-blind — this is the only per-type resistance in the engine | encounter-specific (`callnative`) |
 | `encpurgeadapt <target>, <which>, <countVar>` | The inverse of `encadapt`: drops `ENC_ADAPT_OLDEST`, `ENC_ADAPT_NEWEST` or `ENC_ADAPT_ALL` from `<target>`'s board and writes the remaining count into `<countVar>`. The array is compacted on every removal, so slot 0 is always the oldest. The dropped type is buffered into `{B_BUFF1}`. Silent, and a no-op on an empty board, so it is safe to call unconditionally — test `<countVar>` afterwards to know whether anything fell | encounter-specific (`callnative`) |
 | `encsetweather <weather>[, <turns>]` | Sets the battle weather to a `BATTLE_WEATHER_*` value. `<turns>` defaults to `0`, meaning permanent. Silent; clear it again with the existing `removeweather` | encounter-specific (`callnative`) |
@@ -657,8 +658,12 @@ battlers in a double battle and just the one in a single battle, automatically.
 
 A command that mutates a battler asserts if a **single-slot** target (`BOSS`, `SELF`,
 `EVENT_TARGET`, `PLAYER_LEFT`, …) resolves to a fainted or absent battler — naming a gone battler
-outright is an authoring mistake. A **group** target (`ALL_FOES`/`ALL_ALLIES`/`ALL_BATTLERS`) instead
-skips any fainted/absent member silently: at `OnMoveEnd`/`OnFaint` the event battler is often already
+outright is an authoring mistake. `encchangehp` is the one exception: a battler can legitimately
+faint between an earlier command in the same script and this one (a mark tick, a drain), which is a
+runtime race rather than an authoring mistake, so it silently drops any target — single-slot or
+group — already fainted by the time it runs, the same way a group target already does. A **group**
+target (`ALL_FOES`/`ALL_ALLIES`/`ALL_BATTLERS`) on every other mutating command instead skips any
+fainted/absent member silently: at `OnMoveEnd`/`OnFaint` the event battler is often already
 down, and "everyone still standing" is the sensible reading of the set.
 
 ---
@@ -817,6 +822,15 @@ yet, so the manual count is currently the reliable path.)
   is enough on its own; `flushtextbox` is the no-dialogue version, and it's how vanilla's own
   turn-start scripts (`BattleScript_QuickClawActivation`) open. `encformchange` already does this
   for you. Every other checkpoint runs after the turn's first message, so this is `OnTurnStart` only.
+- **`encchangehp` drops an already-fainted target quietly instead of asserting.** Every other
+  mutating command treats a single-slot target naming a dead battler as an authoring mistake and
+  asserts. `encchangehp` doesn't: a battler can legitimately faint between an earlier command in the
+  same script and this one (a mark tick, a drain queued right before a finisher), which is a runtime
+  race, not a typo. `BS_EncounterChangeHpBegin` drops any already-dead battler from the target set
+  up front, single-slot or group alike, and `BS_EncounterChangeHpStep` does the same for a battler
+  that faints mid-command (one group member's animated HP change triggering something that takes out
+  another). No other `enc*` command gets this treatment - a single-slot target elsewhere still means
+  what it says.
 - **A percentage is the only portable way to remember a battler's HP.** An author variable is a
   `u8`, and the boss's max HP isn't known when the script is written (`Level: LevelCap`, New Game
   Plus offsets), so `encsnapshothp`/`encrewindhp` work in percent throughout. The percentage is
@@ -984,6 +998,7 @@ constants are compiler errors.
 | `encjumpifvar <comparison>, <var>, <value>, <label>` | Normal battle-script byte comparison, variable/index, byte value, and script label. |
 | `enccopyvar <dst>, <src>` | Two variables/indexes. |
 | `enccomparestat <targetA>, <targetB>, <stat>, <var>` | Two targets that each resolve to exactly one battler; `STAT_ATK`, `STAT_DEF`, `STAT_SPATK`, `STAT_SPDEF` or `STAT_SPEED` (no battle stat exists behind `STAT_ACC`/`STAT_EVASION`); a variable/index the `0`/`1`/`2` result is written into. |
+| `encreadstat <target>, <stat>, <var>` | A target that resolves to exactly one battler; the same restricted stat list as `enccomparestat`; a variable/index the live stat stage (`0`-`12`, `6` = neutral) is written into. |
 | `encadapt <target>, <percent>, <slots>, <countVar>, <resultVar>` | Target below; a reduction percent (`0`–`ENC_MAX_ADAPT_PERCENT`); a FIFO depth (`1`–`ENC_MAX_ADAPTATIONS`); a variable/index the resulting board size is written into; a variable/index the `ENC_ADAPT_RESULT_*` outcome is written into. `OnMoveEnd` only. |
 | `encpurgeadapt <target>, <which>, <countVar>` | Target below; `ENC_ADAPT_OLDEST`, `ENC_ADAPT_NEWEST` or `ENC_ADAPT_ALL`; a variable/index the remaining board size is written into. |
 | `encchangehp <target>, <amount>[, <mode>]` | Target below; signed 16-bit amount (positive heals, negative damages); optional `ENC_AMOUNT_FIXED` (default) or `ENC_AMOUNT_PERCENT`. |

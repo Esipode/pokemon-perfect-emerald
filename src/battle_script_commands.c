@@ -12589,16 +12589,15 @@ void BS_EncounterChangeHpBegin(void)
 
     runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
 
-    // A group target's membership can include a battler the triggering event just fainted (before
-    // its replacement is in); drop those up front so the per-battler assert in Step only fires for
-    // a single-slot target that names a dead battler outright.
-    if (IsEncounterGroupTarget(cmd->target))
+    // A named battler - single-slot or group - can already be fainted by the time this command
+    // runs: an earlier command in the same script (a mark tick, a drain) can take it out first, and
+    // a group target's membership can include a battler the triggering event just fainted before
+    // its replacement is in. Either way that's a normal runtime race, not an authoring mistake, so
+    // it's dropped here quietly rather than asserting in Step.
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
     {
-        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
-        {
-            if (!IsBattlerAlive(battler))
-                runtime->changeHpRemaining &= ~(1u << battler);
-        }
+        if (!IsBattlerAlive(battler))
+            runtime->changeHpRemaining &= ~(1u << battler);
     }
 
     runtime->changeHpAmount = cmd->amount;
@@ -12652,11 +12651,11 @@ void BS_EncounterChangeHpStep(void)
             continue;
         runtime->changeHpRemaining &= ~(1u << battler);
 
-        assertf(IsBattlerAlive(battler),
-                "encounter %d: CHANGE_HP targets fainted/absent battler %d", runtime->id, battler)
-        {
-            continue; // skip this battler, the loop below picks up the rest
-        }
+        // Begin already dropped anyone dead at that point; a battler can still faint between Begin
+        // and its own Step (an earlier battler's animated HP change in this same group command can
+        // trigger something that takes it out) - same runtime race, so skip quietly here too.
+        if (!IsBattlerAlive(battler))
+            continue;
         found = TRUE;
         break;
     }
@@ -12692,13 +12691,12 @@ void BS_EncounterChangeHpBeginVar(void)
 
     runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
 
-    if (IsEncounterGroupTarget(cmd->target))
+    // Same runtime race as BS_EncounterChangeHpBegin - drop anyone already fainted, single-slot or
+    // group alike, rather than asserting.
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
     {
-        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
-        {
-            if (!IsBattlerAlive(battler))
-                runtime->changeHpRemaining &= ~(1u << battler);
-        }
+        if (!IsBattlerAlive(battler))
+            runtime->changeHpRemaining &= ~(1u << battler);
     }
 
     runtime->changeHpAmount = gEncounterVars[cmd->var];
@@ -13069,6 +13067,30 @@ void BS_EncCompareStat(void)
     else
         gEncounterVars[cmd->var] = 2;
 
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// READ_STAT (encreadstat). enccomparestat's single-target sibling: writes the target's live stat
+// stage - raw domain, 0-12, 6 = neutral, the same domain Battler(<ref>).Stat(<STAT>) conditions
+// already read - into an author variable instead of comparing it against another battler's.
+void BS_EncReadStat(void)
+{
+    NATIVE_ARGS(u8 target, u8 stat, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: READ_STAT target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = DEFAULT_STAT_STAGE;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    gEncounterVars[cmd->var] = gBattleMons[battler].statStages[cmd->stat];
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 

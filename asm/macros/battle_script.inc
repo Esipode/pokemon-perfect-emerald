@@ -1300,6 +1300,18 @@
 	.byte \var
 	.endm
 
+	@ Writes \target's live \stat STAGE (raw domain, 0-12, 6 = neutral - the same domain
+	@ Battler(<ref>).Stat(<STAT>) conditions read) into author variable \var. \target must resolve
+	@ to exactly one live battler. enccomparestat's single-target sibling: same restricted stat list
+	@ (STAT_ATK/DEF/SPATK/SPDEF/SPEED - no battle stat behind STAT_ACC/STAT_EVASION), same callnative
+	@ plumbing, a read instead of a comparison.
+	.macro encreadstat target:req, stat:req, var:req
+	callnative BS_EncReadStat
+	.byte \target
+	.byte \stat
+	.byte \var
+	.endm
+
 	@ Adds \stages (signed) to \stat for every battler \target resolves to, clamped to the normal
 	@ stat stage range. Silent - no message, no animation (outline Sec31); pair with playanimation
 	@ or a literal trybattlerstatchange call if presentation is wanted.

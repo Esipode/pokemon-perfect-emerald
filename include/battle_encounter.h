@@ -867,6 +867,18 @@ extern const u8 EncScript_Xerneas_LifeEternal[];
 extern const u8 EncScript_Xerneas_NaturesGift[];
 extern const u8 EncScript_Xerneas_Spent[];
 
+// Yveltal ("The Destruction Pokémon")
+extern const u8 EncScript_Yveltal_Intro[];
+extern const u8 EncScript_Yveltal_TurnOpen[];
+extern const u8 EncScript_Yveltal_TurnClose[];
+extern const u8 EncScript_Yveltal_DarkFlyingHit[];
+extern const u8 EncScript_Yveltal_MarkBattler[];
+extern const u8 EncScript_Yveltal_DestructionPulse[];
+extern const u8 EncScript_Yveltal_WingsOfDestruction[];
+extern const u8 EncScript_Yveltal_DestructionIncarnate[];
+extern const u8 EncScript_Yveltal_BeginOblivionWing[];
+extern const u8 EncScript_Yveltal_InterruptCheck[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

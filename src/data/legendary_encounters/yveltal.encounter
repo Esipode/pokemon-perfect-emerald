@@ -1,0 +1,191 @@
+Encounter: Yveltal
+
+# Yveltal, "The Destruction Pokemon". One rule:
+#   EVERY POINT OF DAMAGE DEALT OR DENIED FEEDS DESTRUCTION (0-10). The higher it climbs, the harder
+#   Yveltal is to dent and the harder it hits, until it maxes out, detonates, and burns itself back
+#   to zero - the player's one real opening.
+# Phase 0 PREDATION (100-51%) - Destruction climbs on a Dark/Flying hit landing and on a periodic
+#   Life Drain (encreadstat steals the target's exact live Attack/Sp. Atk stage rather than a guessed
+#   amount). Destruction Mark lands on whoever hits Yveltal and escalates toward a devastating DOOMED
+#   payoff. Destruction Pulse punishes screens/hazards on sight - clearing them AND feeding the
+#   meter, the lesson Phase 1 makes literal.
+# Phase 1 WINGS OF DESTRUCTION (<=50%, >20%) - Oblivion (Heal Block) is re-armed on the player's side
+#   every turn for the rest of the fight. Destruction now also climbs on any turn the player's own
+#   Pokemon lost HP - damage begets power begets damage. Oblivion Wing telegraphs over three turns
+#   and, landing, heals Yveltal and re-marks the target.
+# Phase 2 DESTRUCTION INCARNATE (<=20%) - Destruction is forced to 10 for the rest of the fight (the
+#   guard band this locks in is the fight's hardest). The Destruction of All charges over three
+#   turns; enough cumulative damage to Yveltal during the charge interrupts it early. Either way it
+#   resolves into detonation: Destruction to 0, the guard collapses to a token amount, and the catch
+#   window opens.
+# ANTI-ABUSE IS NARROW (guideline 8): Destruction Pulse specifically punishes screen/hazard stacking
+#   (the answer to stalling out DamageReduction: 80); the Phase 1+ passive gain specifically punishes
+#   chip-damage/stalling instead of engaging Oblivion Wing.
+# KNOWN GAP: singles-only, matching every prior legendary. Destruction Mark and Oblivion Wing always
+#   target the player's one battler slot rather than tracking a specific Pokemon, which is also why
+#   the mark needs no separate switch-in re-announcement - it is already always "whoever is there."
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 90
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_DARK_AURA
+    Moves: MOVE_DARK_PULSE, MOVE_FOUL_PLAY, MOVE_HURRICANE, MOVE_SUCKER_PUNCH
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Yveltal's own Dark/Flying learnset, boosted by its own Dark Aura. Oblivion Wing is never a real
+# move slot - its payload is entirely scripted (guideline 5).
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all ten here in order fixes Phase..
+# PhaseMark to 0..9.
+# 0 Phase (0 Predation / 1 Wings of Destruction / 2 Destruction Incarnate / 3 Aftermath),
+# 1 Destruction (0-10 meter), 2 MarkTurns (0 = nobody marked; counts up each turn the mark holder is
+# still marked; reaching DOOMED_THRESHOLD fires the bonus attack and resets), 3 WingChargeTurns
+# (0 = not charging; counts down while Oblivion Wing is telegraphed), 4 Charge (dual duty: Phase 0
+# counts down to the next Life Drain tick, cycling 3->0; Phase 2 counts down to The Destruction of
+# All resolving, 3->0 - the two phases never overlap so the slot is safe to share), 5 TurnGuard (the
+# once-per-turn scaffold, set at OnTurnStart, cleared at OnTurnEnd), 6 LastReductionTier (the last
+# ANNOUNCED guard tier, so the callout only re-prints on a real change), 7 Scratch (encreadstat's
+# target inside Life Drain; also the consumable copy any ENC_SNAP_DAMAGE check reads, so the
+# persistent mark it's copied from is never consumed), 8 HandledMoveEvent (per-move-event guard
+# shared by the two mutually-exclusive OnMoveEnd triggers below, cleared every turn at OnTurnStart),
+# 9 PhaseMark (dual duty: Phase 1 holds the player's HP% at turn-open, refreshed every turn, for the
+# passive Destruction gain; Phase 2 holds Yveltal's own HP% at the moment Destruction Incarnate
+# began, held for the whole charge, for the interrupt check).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Yveltal_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Destruction) >= 0
+    Var(MarkTurns) >= 0
+    Var(WingChargeTurns) >= 0
+    Var(Charge) >= 0
+    Var(TurnGuard) >= 0
+    Var(LastReductionTier) >= 0
+    Var(Scratch) >= 0
+    Var(HandledMoveEvent) >= 0
+    Var(PhaseMark) >= 0
+
+# The once-per-turn scaffold: opens the turn, clears the move-event guard, refreshes whichever
+# per-phase HP mark is live, re-arms Oblivion from Phase 1 on, and ticks both charge telegraphs
+# (decrement half of the known-gotcha split; TurnClose resolves).
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Yveltal_TurnOpen
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 0
+
+# Closes the turn: the passive Destruction-on-HP-loss check (Phase 1), the Life Drain beat (Phase 0),
+# the mark tick/DOOMED payoff, and resolving whichever charge just ran out (Oblivion Wing or The
+# Destruction of All). One script with internal branching, well clear of the 8-scripts-per-checkpoint
+# cap.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Yveltal_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# Yveltal landing a Dark or Flying hit feeds Destruction directly. Event.Battler/Event.Target don't
+# change across a checkpoint's re-evaluation passes, so this self-disables through HandledMoveEvent
+# rather than through Once/OnEnter (an event-reacting trigger's mandatory shape).
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Yveltal_DarkFlyingHit
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(HandledMoveEvent) == 0
+    Any:
+        Event.MoveType == TYPE_DARK
+        Event.MoveType == TYPE_FLYING
+
+# Destruction Mark lands on whoever just hit Yveltal, once nobody currently holds it. Self-disabling
+# through MarkTurns, which the script sets to 1 as its first line.
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_Yveltal_MarkBattler
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(MarkTurns) == 0
+
+# Destruction Pulse: screens/hazards on the player's side are cleared and, if anything was actually
+# found, folded into Destruction. Once, OnEnter per threshold so it fires exactly once crossing down
+# through each band.
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Yveltal_DestructionPulse
+Conditions:
+    Battler(Boss).HpPercent <= 80
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Yveltal_DestructionPulse
+Conditions:
+    Battler(Boss).HpPercent <= 65
+    Var(Phase) == 0
+
+# Phase 1 transition at 50% HP - registered at both checkpoints since the crossing blow can be a move
+# or an end-of-turn tick; both Once, marked at selection, so whichever fires first disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Yveltal_WingsOfDestruction
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Yveltal_WingsOfDestruction
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+# Phase 2 transition at 20% HP - same both-checkpoints shape as Phase 1's.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Yveltal_DestructionIncarnate
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Yveltal_DestructionIncarnate
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# Oblivion Wing's telegraph begins once Phase 1 is live and nothing is already charging.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Yveltal_BeginOblivionWing
+Conditions:
+    Var(Phase) == 1
+    Var(WingChargeTurns) == 0
+
+# The interrupt: if the player deals enough cumulative damage to Yveltal while The Destruction of All
+# charges, cut it short. Shares HandledMoveEvent with DarkFlyingHit - they react to opposite-direction
+# hits on the same OnMoveEnd event, so the two can never both be eligible at once in a singles battle.
+Trigger: OnMoveEnd
+Priority: 4
+Script: EncScript_Yveltal_InterruptCheck
+Conditions:
+    Var(Phase) == 2
+    Var(Charge) > 1
+    Var(HandledMoveEvent) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
