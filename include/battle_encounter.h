@@ -879,6 +879,17 @@ extern const u8 EncScript_Yveltal_DestructionIncarnate[];
 extern const u8 EncScript_Yveltal_BeginOblivionWing[];
 extern const u8 EncScript_Yveltal_InterruptCheck[];
 
+// Necrozma ("The Prism Pokemon")
+extern const u8 EncScript_Necrozma_Intro[];
+extern const u8 EncScript_Necrozma_TurnOpen[];
+extern const u8 EncScript_Necrozma_TurnClose[];
+extern const u8 EncScript_Necrozma_FusionTransition[];
+extern const u8 EncScript_Necrozma_ArmorBreak1[];
+extern const u8 EncScript_Necrozma_ArmorBreak2[];
+extern const u8 EncScript_Necrozma_ArmorBreak3[];
+extern const u8 EncScript_Necrozma_UltraTransform[];
+extern const u8 EncScript_Necrozma_CatchWindow[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

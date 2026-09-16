@@ -96,7 +96,7 @@
 #define FLAG_HIDE_ZYGARDE    0x4B
 #define FLAG_HIDE_XERNEAS    0x4C
 #define FLAG_HIDE_YVELTAL    0x4D
-#define FLAG_UNUSED_0x04E    0x4E // Unused Flag
+#define FLAG_HIDE_NECROZMA   0x4E
 #define FLAG_UNUSED_0x04F    0x4F // Unused Flag
 
 // Scripts

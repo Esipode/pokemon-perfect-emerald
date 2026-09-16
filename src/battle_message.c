@@ -2647,6 +2647,20 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCYVELTALINTERRUPTED]        = COMPOUND_STRING("Your assault breaks\nits concentration!"),
     [STRINGID_ENCYVELTALFADE]               = COMPOUND_STRING("The destruction\nfades from it."),
     [STRINGID_ENCYVELTALWEAKENED]           = COMPOUND_STRING("Now is the moment -\nthrow the Ball!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCNECROZMAFRAGMENTSPAWN]     = COMPOUND_STRING("A shard of light breaks\nfree! Hit it before it fades!"),
+    [STRINGID_ENCNECROZMAFRAGMENTCLAIMED]   = COMPOUND_STRING("You claimed the light\nshard! Necrozma reels!"),
+    [STRINGID_ENCNECROZMAFRAGMENTABSORBED]  = COMPOUND_STRING("Necrozma devours the\ndrifting shard of light!"),
+    [STRINGID_ENCNECROZMAFEEDING]           = COMPOUND_STRING("Necrozma's light grows\nbrighter by the moment!"),
+    [STRINGID_ENCNECROZMASATED]             = COMPOUND_STRING("Sated, Necrozma's eyes\ngleam with lethal focus!"),
+    [STRINGID_ENCNECROZMAOVERCHARGED]       = COMPOUND_STRING("Overcharged with light,\nNecrozma's power surges!"),
+    [STRINGID_ENCNECROZMAFUSION]            = COMPOUND_STRING("Necrozma's prism form\nbegins to fuse and shift!"),
+    [STRINGID_ENCNECROZMADUSKMANE]          = COMPOUND_STRING("Necrozma fuses with\nsteel! Dusk Mane awakens!"),
+    [STRINGID_ENCNECROZMADAWNWINGS]         = COMPOUND_STRING("Necrozma fuses with\nshadow! Dawn Wings stirs!"),
+    [STRINGID_ENCNECROZMAARMORBREAK]        = COMPOUND_STRING("A plate of solar armor\nshatters off Necrozma!"),
+    [STRINGID_ENCNECROZMAECLIPSE]           = COMPOUND_STRING("The eclipse deepens,\nswallowing the light!"),
+    [STRINGID_ENCNECROZMAULTRA]             = COMPOUND_STRING("Necrozma unleashes its\nfull power - ULTRA NECROZMA!"),
+    [STRINGID_ENCNECROZMAGEYSER]            = COMPOUND_STRING("Light spikes within it -\nbrace for Photon Geyser!"),
+    [STRINGID_ENCNECROZMACATCH]             = COMPOUND_STRING("Necrozma's light is\nfading - now is the moment!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

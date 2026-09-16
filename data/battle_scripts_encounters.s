@@ -257,3 +257,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/zygarde.inc"
 	.include "data/legendary_encounters/xerneas.inc"
 	.include "data/legendary_encounters/yveltal.inc"
+	.include "data/legendary_encounters/necrozma.inc"
