@@ -789,6 +789,16 @@ extern const u8 EncScript_Zekrom_Defiance[];
 extern const u8 EncScript_Zekrom_TurnClose[];
 extern const u8 EncScript_Zekrom_Spent[];
 
+// Diancie ("The Jewel Pokémon")
+extern const u8 EncScript_Diancie_Awakens[];
+extern const u8 EncScript_Diancie_Turn[];
+extern const u8 EncScript_Diancie_Resolve[];
+extern const u8 EncScript_Diancie_Radiance[];
+extern const u8 EncScript_Diancie_Drink[];
+extern const u8 EncScript_Diancie_JewelOfLife[];
+extern const u8 EncScript_Diancie_Mega[];
+extern const u8 EncScript_Diancie_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

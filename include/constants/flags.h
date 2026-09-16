@@ -90,7 +90,7 @@
 #define FLAG_HIDE_TORNADUS   0x45
 #define FLAG_HIDE_RESHIRAM   0x46
 #define FLAG_HIDE_ZEKROM     0x47
-#define FLAG_UNUSED_0x048    0x48 // Unused Flag
+#define FLAG_HIDE_DIANCIE    0x48
 #define FLAG_UNUSED_0x049    0x49 // Unused Flag
 #define FLAG_UNUSED_0x04A    0x4A // Unused Flag
 #define FLAG_UNUSED_0x04B    0x4B // Unused Flag
