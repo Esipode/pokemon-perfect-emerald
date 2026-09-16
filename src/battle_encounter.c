@@ -1006,15 +1006,17 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
     return damage;
 }
 
-static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal);
+static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal, s32 extraDivisor);
 
 // Scales healing the boss drains OUT OF another battler by the encounter's AUTHORED damage
-// reduction. DamageReduction: cuts what reaches the boss, but nothing cuts what the boss deals - and
-// a drain move turns that undiminished damage straight into healing. At DamageReduction: 90 the
-// exchange runs ten to one against the player: Leech Seed alone takes 1/8 of their max HP every turn
-// and hands all of it to a boss they can only chip one or two percent off, so the fight quietly
-// stops being winnable and never looks like a bug. This puts the boss's healing on the same footing
-// as its guard - it keeps the same fraction of what it drains that it lets through of what it takes.
+// reduction, then quarters it again. DamageReduction: cuts what reaches the boss, but nothing cuts
+// what the boss deals - and a drain move turns that undiminished damage straight into healing. At
+// DamageReduction: 90 the exchange runs ten to one against the player before the extra quartering:
+// Leech Seed alone takes 1/8 of their max HP every turn and hands all of it to a boss they can only
+// chip one or two percent off, so the fight quietly stops being winnable and never looks like a bug.
+// A drain move sitting directly in a legendary's own authored moveset (Horn Leech, Giga Drain, …)
+// made that worse still - the extra /4 keeps a boss's own drain from being a bigger sustain lever
+// than the fight's guard was ever balanced for.
 //
 // Reads the AUTHORED property rather than the live per-battler value on purpose. The live number
 // moves with a phase, a stance or a form, and the catch-window guard pins it to
@@ -1031,21 +1033,25 @@ s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBa
     if (battler == sourceBattler)
         return heal;
 
-    return ScaleEncounterBossHeal(battler, heal);
+    return ScaleEncounterBossHeal(battler, heal, 4);
 }
 
-// Scales Grassy Terrain's end-turn heal on the boss by the same authored reduction. The terrain heal
-// is a fraction of the boss's own max HP, but unlike Recover or Leftovers it lands every turn for free
-// and the player can't answer it except by clearing the terrain: at DamageReduction: 88 an unscaled
-// 1/16 a turn out-heals most of what a player can deal through the guard.
+// Scales Grassy Terrain's end-turn heal on the boss by the same authored reduction, then halves it
+// again. The terrain heal is a fraction of the boss's own max HP, but unlike Recover or Leftovers it
+// lands every turn for free and the player can't answer it except by clearing the terrain - the extra
+// halving is on top of the reduction scaling because even the scaled amount can out-heal what a
+// player deals through a heavily-guarded boss over the course of a long fight.
 s32 ApplyEncounterTerrainHealReduction(enum BattlerId battler, s32 heal)
 {
-    return ScaleEncounterBossHeal(battler, heal);
+    return ScaleEncounterBossHeal(battler, heal, 2);
 }
 
-// Shared body of the two above: heal * (100 - authored DamageReduction:) / 100 for the boss, floored
-// at 1; unchanged for every other battler, with no encounter active, or for a non-positive amount.
-static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal)
+// Shared body of the two above: heal * (100 - authored DamageReduction:) / 100, divided again by
+// extraDivisor (2 for terrain, 4 for drain - drain sits in the boss's own authored moveset rather
+// than something the player chose to feed it, so it gets cut harder), for the boss, floored at 1;
+// unchanged for every other battler, with no encounter active, for a non-positive amount, or for a
+// boss whose Properties: set no reduction at all.
+static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal, s32 extraDivisor)
 {
     const struct Encounter *encounter;
     u8 boss;
@@ -1070,6 +1076,7 @@ static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal)
     if (percent != 0)
     {
         heal = heal * (100 - percent) / 100;
+        heal = heal / extraDivisor;
         if (heal < 1)
             heal = 1;
     }

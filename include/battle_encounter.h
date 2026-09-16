@@ -851,6 +851,22 @@ extern const u8 EncScript_Zygarde_CompleteForme[];
 extern const u8 EncScript_Zygarde_LandsWrath[];
 extern const u8 EncScript_Zygarde_Spent[];
 
+// Xerneas ("The Life Pokémon")
+extern const u8 EncScript_Xerneas_Intro[];
+extern const u8 EncScript_Xerneas_TurnOpen[];
+extern const u8 EncScript_Xerneas_Bless[];
+extern const u8 EncScript_Xerneas_BeginGeomancy[];
+extern const u8 EncScript_Xerneas_Gardener[];
+extern const u8 EncScript_Xerneas_LifeSurge[];
+extern const u8 EncScript_Xerneas_BlessingReturns[];
+extern const u8 EncScript_Xerneas_BlessingLeaves[];
+extern const u8 EncScript_Xerneas_EternalHold[];
+extern const u8 EncScript_Xerneas_TurnClose[];
+extern const u8 EncScript_Xerneas_ForestAwakens[];
+extern const u8 EncScript_Xerneas_LifeEternal[];
+extern const u8 EncScript_Xerneas_NaturesGift[];
+extern const u8 EncScript_Xerneas_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

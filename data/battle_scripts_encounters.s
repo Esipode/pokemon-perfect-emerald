@@ -255,3 +255,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/hoopa.inc"
 	.include "data/legendary_encounters/volcanion.inc"
 	.include "data/legendary_encounters/zygarde.inc"
+	.include "data/legendary_encounters/xerneas.inc"

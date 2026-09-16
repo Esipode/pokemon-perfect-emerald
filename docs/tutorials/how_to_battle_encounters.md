@@ -458,8 +458,10 @@ move turns that undiminished damage straight into healing, which is how a reduct
 > percent off. Nothing on screen says anything is wrong.
 
 So healing the boss drains **out of another battler** is scaled by the encounter's `DamageReduction:`
-automatically — it keeps the same fraction of what it drains that it lets through of what it takes.
-This is not a property and there is nothing to opt into; it falls out of the number already authored.
+automatically — it keeps the same fraction of what it drains that it lets through of what it takes,
+quartered again on top of that (a boss's own drain move sits directly in its authored moveset, unlike
+Grassy Terrain's end-turn heal below, which is only halved again). This is not a property and there is
+nothing to opt into; it falls out of the number already authored.
 
 | Scaled | Not scaled |
 | --- | --- |

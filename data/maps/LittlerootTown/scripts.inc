@@ -42,7 +42,7 @@ LittlerootTown_OnTransition:
 	call_if_eq VAR_LITTLEROOT_TOWN_STATE, 3, LittlerootTown_EventScript_SetMomStandingInFrontOfDoorPos
 	call_if_eq VAR_OLDALE_RIVAL_STATE, 1, LittlerootTown_EventScript_MoveRivalFromOldale
 	call_if_eq VAR_LITTLEROOT_RIVAL_STATE, 3, LittlerootTown_EventScript_SetRivalLeftForRoute103
-	updatelegendaryvisibility SPECIES_ZYGARDE, FLAG_HIDE_ZYGARDE
+	updatelegendaryvisibility SPECIES_XERNEAS, FLAG_HIDE_XERNEAS
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1105,6 +1105,9 @@ LittlerootTown_EventScript_EncounterTESTVolcanion::
 
 LittlerootTown_EventScript_EncounterTESTZygarde::
 	goto LegendaryEncounter_EventScript_Zygarde
+
+LittlerootTown_EventScript_EncounterTESTXerneas::
+	goto LegendaryEncounter_EventScript_Xerneas
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock
