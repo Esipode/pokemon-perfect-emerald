@@ -799,6 +799,23 @@ extern const u8 EncScript_Diancie_JewelOfLife[];
 extern const u8 EncScript_Diancie_Mega[];
 extern const u8 EncScript_Diancie_Spent[];
 
+// Hoopa ("The Mischief Pokémon")
+extern const u8 EncScript_Hoopa_Intro[];
+extern const u8 EncScript_Hoopa_Pulse[];
+extern const u8 EncScript_Hoopa_RingTelegraph[];
+extern const u8 EncScript_Hoopa_RingResolve[];
+extern const u8 EncScript_Hoopa_ChainTick[];
+extern const u8 EncScript_Hoopa_Unbound[];
+extern const u8 EncScript_Hoopa_HyperCollapse[];
+extern const u8 EncScript_Hoopa_Pierce[];
+extern const u8 EncScript_Hoopa_FeedOnFaint[];
+extern const u8 EncScript_Hoopa_SixRings[];
+extern const u8 EncScript_Hoopa_FuryFire[];
+extern const u8 EncScript_Hoopa_EnergyRegen[];
+extern const u8 EncScript_Hoopa_Spent[];
+extern const u8 EncScript_Hoopa_TickReset[];
+extern const u8 EncScript_Hoopa_Shatter[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

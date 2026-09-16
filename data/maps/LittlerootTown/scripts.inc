@@ -42,7 +42,7 @@ LittlerootTown_OnTransition:
 	call_if_eq VAR_LITTLEROOT_TOWN_STATE, 3, LittlerootTown_EventScript_SetMomStandingInFrontOfDoorPos
 	call_if_eq VAR_OLDALE_RIVAL_STATE, 1, LittlerootTown_EventScript_MoveRivalFromOldale
 	call_if_eq VAR_LITTLEROOT_RIVAL_STATE, 3, LittlerootTown_EventScript_SetRivalLeftForRoute103
-	updatelegendaryvisibility SPECIES_DIANCIE, FLAG_HIDE_DIANCIE
+	updatelegendaryvisibility SPECIES_HOOPA, FLAG_HIDE_HOOPA
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1096,6 +1096,9 @@ LittlerootTown_EventScript_EncounterTESTZekrom::
 
 LittlerootTown_EventScript_EncounterTESTDiancie::
 	goto LegendaryEncounter_EventScript_Diancie
+
+LittlerootTown_EventScript_EncounterTESTHoopa::
+	goto LegendaryEncounter_EventScript_Hoopa
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

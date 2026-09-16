@@ -1,0 +1,209 @@
+Encounter: Hoopa
+
+# Hoopa, "The Mischief Pokemon". One rule: PORTAL ENERGY (0-6) owns the guard, flat
+#   60 + 5 x Energy (60-90%). Rings always telegraph one turn ahead before they resolve.
+# THE COUNTER: a Protected battler at the moment a ring resolves shatters it instead - Hoopa loses
+#   2 Energy and takes 6% of its own max HP. Protect is the read, not a wall: Hyperspace Hole and
+#   Hyperspace Fury pierce it outright, and the engine's own consecutive-Protect decay stops the
+#   counter from being spammed every turn.
+#   Phase 0 CONFINED (100-50%) - Energy opens at 3. Hands -> Thieves -> Teeth cycle in a fixed,
+#     learnable order, one ring at a time.
+#   Phase 1 UNBOUND (50-15%) - Hoopa Unbound, Energy jumps to 6. Three locked Hyperspace turns
+#     (Heal Block up, Energy frozen) collapse to Energy 0 - the phase's real damage window. Ring of
+#     Chains joins the cycle afterward.
+#   Phase 2 THE SIX RINGS (<=15%) - normal rings stop; Survive: True. Six telegraphed portals fire
+#     one per turn for escalating chip, switching and healing open the whole time.
+#   Phase 3 SPENT - the catch window.
+# ANTI-ABUSE IS NARROW (guideline 8): Ohko/FixedDamage/HpSwap/SharedKo immunity, capped type
+#   effectiveness and flat Toxic damage are the standard set. The trap (Chains) and recharge (Hands)
+#   deny passive stalling without permanently locking switching or healing.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 85          # UNREAD outside turn 0 - EncScript_Hoopa_ApplyGuard, which _Intro
+                                  # calls, writes every later value absolutely from Energy
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_MAGICIAN
+    Moves: MOVE_SHADOW_BALL, MOVE_PSYCHIC, MOVE_HYPERSPACE_HOLE, MOVE_TRICK_ROOM
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# MOVE_HYPERSPACE_HOLE is the Confined/Unbound-opening anti-Protect slot; _Unbound swaps it for
+# MOVE_HYPERSPACE_FURY via encsetmove once Hoopa transforms. MOVE_TRICK_ROOM is a thematic
+# disruption pick - swap to MOVE_NASTY_PLOT if it reads as noise rather than useful disruption.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all sixteen here fixes them to
+# 0..15 for both this file and hoopa.inc.
+# 0 Phase (0 Confined / 1 Unbound / 2 Six Rings / 3 Spent), 1 Energy (0-6, sole guard input),
+# 2 RingState (0 idle / 1 telegraphed / 2 armed / 3 cooling), 3 RingType (1 Hands / 2 Thieves /
+# 3 Teeth / 4 Chains), 4 RingCycle (deterministic ring order index), 5 LastBand (last ANNOUNCED
+# guard band, 3 = uninitialized), 6 Tick (once-per-turn pulse guard), 7 HyperTimer (Hyperspace
+# countdown), 8 ChainTimer (Ring of Chains countdown), 9 ChainGuard (separates the chip tick from
+# the decrement tick), 10 TheftCount (0 none held / 1 theft package awaiting return),
+# 11 FuryPortal (next Six Rings portal, 1-6, 7 = complete), 12 FuryArmed (portal telegraph latch),
+# 13 PierceLatch (Protect-pierce callout latch), 14 FeedGuard (OnFaint re-entry latch),
+# 15 Taken (Ring of Thieves scratch: did any clear command find something).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Hoopa_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Energy) >= 0
+    Var(RingState) >= 0
+    Var(RingType) >= 0
+    Var(RingCycle) >= 0
+    Var(LastBand) >= 0
+    Var(Tick) >= 0
+    Var(HyperTimer) >= 0
+    Var(ChainTimer) >= 0
+    Var(ChainGuard) >= 0
+    Var(TheftCount) >= 0
+    Var(FuryPortal) >= 0
+    Var(FuryArmed) >= 0
+    Var(PierceLatch) >= 0
+    Var(FeedGuard) >= 0
+    Var(Taken) >= 0
+
+# Phase 1 - Hoopa Unbound. Registered at both checkpoints since the crossing blow can be a move or
+# an end-of-turn tick; both are Once, marked at selection, so whichever fires first wins.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Hoopa_Unbound
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Hoopa_Unbound
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+# Phase 2 - The Six Rings.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Hoopa_SixRings
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Hoopa_SixRings
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+# Six Rings ends after the sixth portal fires.
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Hoopa_Spent
+Conditions:
+    Var(Phase) == 2
+    Var(FuryPortal) == 7
+
+# Hyperspace Hole/Fury landing through a Protect. Self-disabling through PierceLatch, cleared by
+# _TickReset.
+Trigger: OnMoveEnd
+Priority: 40
+Script: EncScript_Hoopa_Pierce
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.Move == MOVE_HYPERSPACE_HOLE
+        Event.Move == MOVE_HYPERSPACE_FURY
+    Battler(PlayerLeft).Protected == 1
+    Var(PierceLatch) == 0
+
+# A player Pokemon faints - feeds Hoopa 1 Energy. Self-disabling through FeedGuard, cleared by
+# _TickReset.
+Trigger: OnFaint
+Priority: 20
+Script: EncScript_Hoopa_FeedOnFaint
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(FeedGuard) == 0
+    Var(Phase) <= 1
+
+# The once-per-turn scaffold: ring-state advance, Hyperspace countdown, Chains chip.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Hoopa_Pulse
+Conditions:
+    Var(Tick) == 0
+
+# Six Rings portal fire, once armed.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Hoopa_FuryFire
+Conditions:
+    Var(Phase) == 2
+    Var(FuryArmed) == 1
+
+# A ring resolves while the player is Protected: it shatters instead. Lower priority number than
+# the plain resolve below, and it sets RingState to cooling itself, so the plain resolve's
+# condition is already false by the time the checkpoint re-evaluates.
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_Hoopa_Shatter
+Conditions:
+    Var(RingState) == 2
+    Battler(PlayerLeft).Protected == 1
+
+# A ring resolves normally.
+Trigger: OnTurnEnd
+Priority: 11
+Script: EncScript_Hoopa_RingResolve
+Conditions:
+    Var(RingState) == 2
+
+# Hyperspace collapses back to Energy 0 - the intended big damage window.
+Trigger: OnTurnEnd
+Priority: 15
+Flags: Once
+Script: EncScript_Hoopa_HyperCollapse
+Conditions:
+    Var(HyperTimer) == 1
+
+# Idle regeneration, Phases 0-1 only, frozen while Hyperspace is locked.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Hoopa_EnergyRegen
+Conditions:
+    Var(RingState) == 0
+    Var(Energy) <= 5
+    Var(Phase) <= 1
+    Var(HyperTimer) == 0
+
+# Telegraph the next ring.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Hoopa_RingTelegraph
+Conditions:
+    Var(RingState) == 0
+    Var(Energy) != 0
+    Var(Phase) <= 1
+
+# Ring of Chains: decrements once per turn it chipped, closes at 0.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Hoopa_ChainTick
+Conditions:
+    Var(ChainGuard) == 1
+
+# Clears the once-per-turn latches. Runs last so every other checkpoint script already saw them.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Hoopa_TickReset
+Conditions:
+    Var(Tick) == 1

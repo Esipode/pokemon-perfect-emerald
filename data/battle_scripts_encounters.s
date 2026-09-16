@@ -252,3 +252,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/reshiram.inc"
 	.include "data/legendary_encounters/zekrom.inc"
 	.include "data/legendary_encounters/diancie.inc"
+	.include "data/legendary_encounters/hoopa.inc"
