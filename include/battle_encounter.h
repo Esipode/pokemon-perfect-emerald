@@ -1213,6 +1213,24 @@ extern const u8 EncScript_Eternatus_Eternamax[];
 extern const u8 EncScript_Eternatus_DarkestDay[];
 extern const u8 EncScript_Eternatus_Spent[];
 
+// Wo-Chien ("The Ruinous Tablet Pokémon")
+extern const u8 EncScript_WoChien_Intro[];
+extern const u8 EncScript_WoChien_TurnOpen[];
+extern const u8 EncScript_WoChien_VineAttach[];
+extern const u8 EncScript_WoChien_RuinMarkSet[];
+extern const u8 EncScript_WoChien_ChannelStart[];
+extern const u8 EncScript_WoChien_DecayFromGrass[];
+extern const u8 EncScript_WoChien_DecayFromDrain[];
+extern const u8 EncScript_WoChien_DecayFromPlayerHp[];
+extern const u8 EncScript_WoChien_RuinMarkExtraDamage[];
+extern const u8 EncScript_WoChien_VineBreak[];
+extern const u8 EncScript_WoChien_ChannelInterrupt[];
+extern const u8 EncScript_WoChien_FaintMarked[];
+extern const u8 EncScript_WoChien_FaintAny[];
+extern const u8 EncScript_WoChien_Phase2Transition[];
+extern const u8 EncScript_WoChien_Phase3Transition[];
+extern const u8 EncScript_WoChien_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

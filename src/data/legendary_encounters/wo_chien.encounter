@@ -1,0 +1,243 @@
+Encounter: Wo_Chien
+
+# Wo-Chien, "The Ruinous Tablet Pokemon". One rule:
+#   DECAY (0-6) never falls. It climbs from turns passing, Wo-Chien's Grass moves landing, its own
+#   drain landing, the player losing HP, the player healing, and any faint - and it drives a 4-stage
+#   field (Normal/Withered/Rotting/Dead) that steadily turns the fight against stalling. Slowing the
+#   fight down is what loses it.
+# FIELDSTAGE is Decay's shadow, recomputed after every Decay write: 0 Normal (Decay 0-1), 1 Withered
+#   (2-3), 2 Rotting (4-5), 3 Dead (6). Rotting+ arms a field-wide Heal Block that re-arms itself
+#   every turn (the 5-turn timer ceiling - see the engine gotcha).
+# PHASE tracks the fight's HP band instead: 0 Spreading Rot (100-50%), 1 Rotting Forest (50-15%,
+#   Wo-Chien self-heals and can channel Life Drain), 2 Ruinous Leaves (<=15%, the catch window).
+# VINES attach periodically once Decay >= 2, draining the player and healing Wo-Chien every turn
+#   until broken by a real haymaker (>=20% of Wo-Chien's max HP taken in one turn), which releases a
+#   poison spore cloud. RUIN MARK settles on the active player mon once the field withers: it blocks
+#   that mon's healing outright and adds scripted damage to every one of Wo-Chien's landed hits, and
+#   a marked faint spikes Decay hard - kill the mark's exposure fast, don't let it faint.
+# DecayGuard AND SnapVar ARE BOTH SHARED, MULTI-PURPOSE LATCHES (a deviation from a one-var-one-job
+#   split, kept to stay inside 16 variables): DecayGuard is "one meaningful OnMoveEnd/OnFaint event
+#   already resolved this turn" - it gates every Decay-from-event source and the Ruin Mark damage
+#   proc, all sharing one turn-scoped ticket. SnapVar is the encsnapshothp
+#   scratch for BOTH the vine-break and the Life Drain interrupt threshold; if both are live on the
+#   same turn, whichever check runs first (by Priority) consumes it and the other reads a starved
+#   value - an accepted rare-case gap since only one player action lands per turn in singles.
+# THE PLAYER HP-LOSS/HEAL SOURCES USE encsnapshothp, NOT Event.OldValue/Event.NewValue: conditions
+#   only ever compare an operand against a literal, never against another operand, so
+#   "Event.NewValue < Event.OldValue" is not legal syntax (it compiles to a bare, undeclared "Event"
+#   in the generated C). PlayerMark/PlayerScratch are Wo-Chien's own baseline/scratch pair - the same
+#   idiom Reshiram uses for BossMark/Scratch - so the single combined trigger below can tell a hit
+#   from a heal in script instead of in Conditions.
+# BossHitHandled IS THE VINE-BREAK/CHANNEL-INTERRUPT LATCH. Both triggers key on
+#   Event.Battler == OpponentLeft, which stays true for the whole OnMoveEnd re-evaluation loop; a
+#   miss that only touched the shared DecayGuard (not part of either trigger's own Conditions) left
+#   the trigger re-selecting until the 8-scripts-per-checkpoint cap tripped ("runaway trigger chain").
+#   BossHitHandled is checked in both triggers' own Conditions and set on every path - break/interrupt
+#   or miss alike - so the checkpoint always closes.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 88
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    Moves: MOVE_GIGA_DRAIN, MOVE_RUINATION, MOVE_FOUL_PLAY, MOVE_POWER_WHIP
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order.
+# 0 Decay (0-6), 1 FieldStage (0-3, Normal/Withered/Rotting/Dead), 2 TurnGuard (once-per-turn
+# scaffold), 3 DecayGuard (shared per-turn "one event already resolved" latch - see header), 4
+# VineActive, 5 RuinMarked, 6 Phase (0-2, Spreading Rot/Rotting Forest/Ruinous Leaves), 7
+# ChannelActive (Life Drain channel this turn), 8 SnapVar (shared encsnapshothp scratch - see
+# header), 9 LeavesActive (Phase 2 entered), 10 LeavesTicks (Ruinous Leaves turn counter), 11
+# PlayerMark (player's HP% baseline for the turn), 12 PlayerScratch (the consumable copy
+# ENC_SNAP_DAMAGE/RECOVERY writes into, so PlayerMark survives being measured twice in one script),
+# 13 BossHitHandled (per-turn latch shared by the vine-break and channel-interrupt checks).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_WoChien_Intro
+Conditions:
+    Var(Decay) >= 0
+    Var(FieldStage) >= 0
+    Var(TurnGuard) >= 0
+    Var(DecayGuard) >= 0
+    Var(VineActive) >= 0
+    Var(RuinMarked) >= 0
+    Var(Phase) >= 0
+    Var(ChannelActive) >= 0
+    Var(SnapVar) >= 0
+    Var(LeavesActive) >= 0
+    Var(LeavesTicks) >= 0
+    Var(PlayerMark) >= 0
+    Var(PlayerScratch) >= 0
+    Var(BossHitHandled) >= 0
+
+# The once-per-turn scaffold, open. Sets TurnGuard immediately (no branch out can leave it re-armed),
+# ticks Decay for the turn passing, snapshots Wo-Chien's HP% as this turn's damage baseline.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_WoChien_TurnOpen
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 0
+
+# Vines attach once the field has withered. Self-disabling through VineActive, which the script sets.
+# Stops at Phase 2 (Ruinous Leaves) - Phase3Transition tears vines down for the catch window.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_WoChien_VineAttach
+Conditions:
+    Var(Phase) <= 1
+    Var(VineActive) == 0
+    Var(Decay) >= 2
+
+# Ruin Mark settles on whoever is standing there once the field has withered. Self-disabling through
+# RuinMarked - it stays laid on the current target until that mon faints (handled at OnFaint). Stops
+# at Phase 2, same as vines.
+Trigger: OnTurnStart
+Priority: 21
+Script: EncScript_WoChien_RuinMarkSet
+Conditions:
+    Var(Phase) <= 1
+    Var(RuinMarked) == 0
+    Var(FieldStage) >= 1
+
+# Life Drain channel telegraph. Once per Phase 2 (Once, OnEnter on the Phase edge), so it opens
+# exactly once and the interrupt/resolve pair below decide the rest.
+Trigger: OnTurnStart
+Priority: 25
+Flags: Once, OnEnter
+Script: EncScript_WoChien_ChannelStart
+Conditions:
+    Var(Phase) == 1
+
+# Decay from Wo-Chien's Grass move landing on the player. Shares DecayGuard with every other event
+# source below, so at most one Decay-from-event tick lands per turn.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_WoChien_DecayFromGrass
+Conditions:
+    Var(DecayGuard) == 0
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_GRASS
+
+# Decay from Wo-Chien's own drain landing (Giga Drain overlaps with the Grass trigger above; the
+# shared guard means only one of them can actually fire on a given hit).
+Trigger: OnMoveEnd
+Priority: 31
+Script: EncScript_WoChien_DecayFromDrain
+Conditions:
+    Var(DecayGuard) == 0
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Move == MOVE_GIGA_DRAIN
+
+# Decay from the player's HP changing - loss or heal, from any source that resolves at OnMoveEnd.
+# The script tells the two apart itself via encsnapshothp against PlayerMark/PlayerScratch, since
+# Conditions can't compare Event.NewValue against Event.OldValue (no operand-vs-operand comparison).
+Trigger: OnMoveEnd
+Priority: 32
+Script: EncScript_WoChien_DecayFromPlayerHp
+Conditions:
+    Var(DecayGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Ruin Mark's extra damage on every one of Wo-Chien's landed hits against the marked player.
+# Self-disabling through the shared DecayGuard (also lets this hit's Decay-from-HP-loss trigger
+# above stand down, since one meaningful event already resolved this turn).
+Trigger: OnMoveEnd
+Priority: 34
+Script: EncScript_WoChien_RuinMarkExtraDamage
+Conditions:
+    Var(DecayGuard) == 0
+    Var(RuinMarked) == 1
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Vine break: a real haymaker on Wo-Chien. Self-disabling through VineActive on a break, or through
+# BossHitHandled on a miss - both are in this trigger's own Conditions, so either path closes it.
+Trigger: OnMoveEnd
+Priority: 35
+Script: EncScript_WoChien_VineBreak
+Conditions:
+    Var(VineActive) == 1
+    Var(BossHitHandled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+
+# Life Drain channel interrupt: the same 20% haymaker breaks the channel too. Same guard shape as the
+# vine break, sharing BossHitHandled - the two can't both meaningfully resolve off one hit anyway
+# (see the SnapVar note above).
+Trigger: OnMoveEnd
+Priority: 36
+Script: EncScript_WoChien_ChannelInterrupt
+Conditions:
+    Var(ChannelActive) == 1
+    Var(BossHitHandled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+
+# Faint while Ruin Marked: the big Decay spike. Registered ahead of the catch-all faint trigger and
+# closes both its own latch (clearing RuinMarked) and the shared one (DecayGuard), so the catch-all
+# below stands down for this same faint.
+Trigger: OnFaint
+Priority: 40
+Script: EncScript_WoChien_FaintMarked
+Conditions:
+    Var(DecayGuard) == 0
+    Var(RuinMarked) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Any other faint: the smaller Decay tick. Self-disabling through the shared DecayGuard.
+Trigger: OnFaint
+Priority: 41
+Script: EncScript_WoChien_FaintAny
+Conditions:
+    Var(DecayGuard) == 0
+
+# 50% HP - Rotting Forest. Registered at both checkpoints since the crossing blow can be a move or an
+# end-of-turn tick; both are Once, so whichever fires first disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_WoChien_Phase2Transition
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_WoChien_Phase2Transition
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+# 15% HP - Ruinous Leaves, the catch window.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_WoChien_Phase3Transition
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_WoChien_Phase3Transition
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+# The ledger: heal-block re-arm, self-heal, channel resolve, Ruinous Leaves chip, all folded into one
+# once-per-turn script so none of them needs its own guard variable. Self-disables by clearing
+# TurnGuard and DecayGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_WoChien_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
