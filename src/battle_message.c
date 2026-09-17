@@ -2955,6 +2955,19 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCWOCHIENLEAVESFALL]                = COMPOUND_STRING("Wo-Chien is fading -\nnow is the moment!"),
     [STRINGID_ENCWOCHIENLEAVESTICK]                = COMPOUND_STRING("Ruinous leaves fall,\nchipping away at you!"),
     [STRINGID_ENCWOCHIENWEAKENED]                  = COMPOUND_STRING("Wo-Chien slumps,\nspent and vulnerable."),
+    [STRINGID_ENCCHIENPAOTEARS]                    = COMPOUND_STRING("Chien-Pao tears across\nthe battlefield!"),
+    [STRINGID_ENCCHIENPAODASHVANISH]                = COMPOUND_STRING("Chien-Pao vanishes into\nthe snow!\pSWORD DASH!"),
+    [STRINGID_ENCCHIENPAODASHBROKEN]                = COMPOUND_STRING("Chien-Pao's momentum\nis broken!"),
+    [STRINGID_ENCCHIENPAOOPENING]                   = COMPOUND_STRING("Chien-Pao finds an\nopening!"),
+    [STRINGID_ENCCHIENPAOWHITEOUT]                  = COMPOUND_STRING("The battlefield vanishes\nbeneath a blizzard!\pWHITEOUT!"),
+    [STRINGID_ENCCHIENPAOBLADECHARGE]               = COMPOUND_STRING("The broken swords glow\nwith ancient power!"),
+    [STRINGID_ENCCHIENPAOBLADEINTERRUPT]            = COMPOUND_STRING("The glow scatters -\ninterrupted!"),
+    [STRINGID_ENCCHIENPAOBLADERELEASE]              = COMPOUND_STRING("Ruinous Blade tears\nthrough every ward!"),
+    [STRINGID_ENCCHIENPAOAVALANCHE]                 = COMPOUND_STRING("Momentum peaks!\pChien-Pao chains its\nattacks!"),
+    [STRINGID_ENCCHIENPAOFINALOPENING]              = COMPOUND_STRING("Chien-Pao staggers -\nnow is the moment!"),
+    [STRINGID_ENCCHIENPAOMOMENTUMBRISK]             = COMPOUND_STRING("The snow trail thickens\nunderfoot!"),
+    [STRINGID_ENCCHIENPAOMOMENTUMBLIZZARD]          = COMPOUND_STRING("The field is a\nfull blizzard!"),
+    [STRINGID_ENCCHIENPAOSWITCHPRESSURE]            = COMPOUND_STRING("Chien-Pao surges toward\nthe new arrival!"),
 };
 
 const u16 gOneHitKOStringIds[] =

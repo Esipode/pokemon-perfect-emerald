@@ -1231,6 +1231,22 @@ extern const u8 EncScript_WoChien_Phase2Transition[];
 extern const u8 EncScript_WoChien_Phase3Transition[];
 extern const u8 EncScript_WoChien_TurnClose[];
 
+// Chien-Pao ("The Ruinous Sword Pokémon")
+extern const u8 EncScript_ChienPao_Init[];
+extern const u8 EncScript_ChienPao_TurnSetup[];
+extern const u8 EncScript_ChienPao_DashDeclare[];
+extern const u8 EncScript_ChienPao_DashBreak[];
+extern const u8 EncScript_ChienPao_BladeDeclare[];
+extern const u8 EncScript_ChienPao_BladeResolve[];
+extern const u8 EncScript_ChienPao_SwitchHandler[];
+extern const u8 EncScript_ChienPao_MoveHandler[];
+extern const u8 EncScript_ChienPao_EnterWhiteout[];
+extern const u8 EncScript_ChienPao_EnterAvalanche[];
+extern const u8 EncScript_ChienPao_FinalOpening[];
+extern const u8 EncScript_ChienPao_MomentumBrisk[];
+extern const u8 EncScript_ChienPao_MomentumBlizzard[];
+extern const u8 EncScript_ChienPao_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

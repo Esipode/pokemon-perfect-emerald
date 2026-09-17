@@ -334,7 +334,7 @@
 #define FLAG_RIVAL_LEFT_FOR_ROUTE103         0x12D
 #define FLAG_OMIT_DIVE_FROM_STEVEN_LETTER    0x12E
 #define FLAG_HIDE_WO_CHIEN                   0x12F
-#define FLAG_UNUSED_0x130                    0x130 // Unused Flag
+#define FLAG_HIDE_CHIEN_PAO                  0x130
 #define FLAG_UNUSED_0x131                    0x131 // Unused Flag
 #define FLAG_RECEIVED_DAD_PHONE_CALL         0x132
 #define FLAG_STEVEN_GUIDES_TO_CAVE_OF_ORIGIN 0x133 // Set after you follow Steven to the entrance of the Cave of Origin.

@@ -54,6 +54,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_ZACIAN, FLAG_HIDE_ZACIAN
 	updatelegendaryvisibility SPECIES_ETERNATUS, FLAG_HIDE_ETERNATUS
 	updatelegendaryvisibility SPECIES_WO_CHIEN, FLAG_HIDE_WO_CHIEN
+	updatelegendaryvisibility SPECIES_CHIEN_PAO, FLAG_HIDE_CHIEN_PAO
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1173,6 +1174,9 @@ LittlerootTown_EventScript_EncounterTESTEternatus::
 
 LittlerootTown_EventScript_EncounterTESTWoChien::
 	goto LegendaryEncounter_EventScript_WoChien
+
+LittlerootTown_EventScript_EncounterTESTChienPao::
+	goto LegendaryEncounter_EventScript_ChienPao
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock
