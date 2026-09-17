@@ -260,3 +260,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/necrozma.inc"
 	.include "data/legendary_encounters/zeraora.inc"
 	.include "data/legendary_encounters/tapukoko.inc"
+	.include "data/legendary_encounters/magearna.inc"

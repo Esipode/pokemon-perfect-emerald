@@ -1,0 +1,192 @@
+Encounter: Magearna
+
+# Magearna, "The Artificial Pokemon". One rule:
+#   Only one system (two from Awakening on) is ever active. The active system's passive keeps
+#   firing and stacking Integrity on itself; at 3 it overloads and shuts off until the next Gear
+#   Shift. Soul-Heart Charge climbs off Energy uptime and is flavour commentary only - HP is what
+#   actually gates phase.
+# THE METER: which system is live (Defense/Offense/Repair/Energy), announced on every Gear Shift.
+#   Lean into a system to overload it fast (denies Magearna that system until the next rotation),
+#   or play around it - Defense overload is the one good window to alpha-strike; feeding
+#   Offense/Energy on purpose is rarely worth it.
+# PHASES (HP-gated): Soul-Heart (100-60%) rotates one system every 4 turns. Awakening (<=60%)
+#   runs a second system opposite the first (offset +2, so Defense pairs with Repair, Offense
+#   with Energy) and both rotate together. Emergency Protocol (<=40%) Mega Evolves Magearna and
+#   sacrifices a system every 3 turns in fixed order for a one-time surge; Balls stay blocked.
+#   Overdrive (<=10%) reverts the Mega form - it's spent, not empowered - forces Charge to 100,
+#   opens the catch window immediately, and every landed hit collapses one more system - at four,
+#   Fleur Cannon fires as the finisher.
+# ANTI-ABUSE (guideline 8): the shared four immunities plus CapTypeEffectiveness/FlatToxicDamage
+#   answer the two abuses any long multi-phase fight invites - a maxed Toxic tick and a stacked 4x
+#   weakness.
+# ARCHITECTURE: everything OnTurnStart/OnTurnEnd routes through one ledger each (TurnOpen /
+#   TurnClose), gated by TurnGuard, following the project's own once-per-turn scaffold - a
+#   standalone trigger with no self-disabling latch re-selects until the runaway-script guard
+#   trips, so per-system bookkeeping lives inside these two scripts rather than as its own trigger.
+Properties:
+    Level: LevelCap
+    CatchRate: 3
+    Balls: Blocked
+    DamageReduction: 85
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_FLASH_CANNON, MOVE_THUNDERBOLT, MOVE_ICE_BEAM, MOVE_FLEUR_CANNON
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle script hard-codes. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all fourteen here in order
+# fixes Phase..TurnGuard to 0..13.
+# 0 Phase (0 Soul-Heart / 1 Awakening / 2 Emergency / 3 Overdrive), 1 ActiveSystem (0 Defense /
+# 1 Offense / 2 Repair / 3 Energy), 2 ActiveSystem2 (same domain, 255 = not live yet),
+# 3 IntegrityA (0-3, 9 = shut off until next rotation), 4 IntegrityB (same, secondary slot),
+# 5 Charge (0-100, flavour only), 6 GearTimer (turns to next Gear Shift / Sacrifice, repurposed
+# per phase, frozen once Overdrive begins), 7 PulseTimer (0-2 counting down, 255 = idle),
+# 8 ProgressCount (systems sacrificed in Emergency, reused as hits landed in Overdrive - phases
+# never overlap), 9 MoveHandled (once-per-hit latch for OnMoveEnd triggers), 10 LastSystemBand
+# (last ANNOUNCED primary system, 255 = nothing yet), 11 LastSystem2Band (same, secondary),
+# 12 LastChargeBand (last announced Charge milestone, 255 = nothing yet), 13 TurnGuard (the
+# once-per-turn scaffold gating TurnOpen/TurnClose).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Magearna_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(ActiveSystem) >= 0
+    Var(ActiveSystem2) >= 0
+    Var(IntegrityA) >= 0
+    Var(IntegrityB) >= 0
+    Var(Charge) >= 0
+    Var(GearTimer) >= 0
+    Var(PulseTimer) >= 0
+    Var(ProgressCount) >= 0
+    Var(MoveHandled) >= 0
+    Var(LastSystemBand) >= 0
+    Var(LastSystem2Band) >= 0
+    Var(LastChargeBand) >= 0
+    Var(TurnGuard) >= 0
+
+# Top of every turn: telegraph, gear/sacrifice countdown, Pulse countdown, passives, online
+# callouts. Self-disabling through TurnGuard, which the script sets immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Magearna_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Defense/Offense Integrity: raised by a landed hit or an attack while that system is primary and
+# not already shut off from a prior overload this window. Self-disabling through MoveHandled.
+Trigger: OnMoveEnd
+Priority: 40
+Script: EncScript_Magearna_IntegrityHitPrimary
+Conditions:
+    Var(MoveHandled) == 0
+    Var(Phase) <= 2
+    Var(IntegrityA) <= 2
+    Any:
+        All:
+            Var(ActiveSystem) == 0
+            Event.Battler == B_POSITION_OPPONENT_LEFT
+        All:
+            Var(ActiveSystem) == 1
+            Event.Target == B_POSITION_OPPONENT_LEFT
+
+# Same pair, secondary slot (Awakening onward).
+Trigger: OnMoveEnd
+Priority: 41
+Script: EncScript_Magearna_IntegrityHitSecondary
+Conditions:
+    Var(MoveHandled) == 0
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(IntegrityB) <= 2
+    Any:
+        All:
+            Var(ActiveSystem2) == 0
+            Event.Battler == B_POSITION_OPPONENT_LEFT
+        All:
+            Var(ActiveSystem2) == 1
+            Event.Target == B_POSITION_OPPONENT_LEFT
+
+# Heart Pulse begins the moment Energy is one hit from overloading. Self-disabling: PulseTimer
+# leaves 255 the instant this runs.
+Trigger: OnMoveEnd
+Priority: 45
+Script: EncScript_Magearna_PulseBegin
+Conditions:
+    Var(PulseTimer) == 255
+    Var(IntegrityA) == 2
+    Var(ActiveSystem) == 3
+    Var(Phase) <= 2
+
+# Phase transitions. Registered at both OnMoveEnd and OnTurnEnd - the crossing blow can be a move
+# or an end-of-turn tick - and both copies are Once, marked fired at selection, so whichever runs
+# first disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Magearna_Phase2Awaken
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Magearna_Phase2Awaken
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Magearna_Phase3aEmergency
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Magearna_Phase3aEmergency
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Magearna_Phase3bOverdrive
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Magearna_Phase3bOverdrive
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Overdrive: every landed hit collapses one more system. At 4, Fleur Cannon fires the finisher.
+# Self-disabling through MoveHandled.
+Trigger: OnMoveEnd
+Priority: 42
+Script: EncScript_Magearna_OverdriveHit
+Conditions:
+    Var(MoveHandled) == 0
+    Var(Phase) == 3
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+
+# The ledger: Integrity passive gain, overload, Charge callout, Gear Shift/Sacrifice resolution,
+# Heart Pulse resolve/interrupt. One script with internal branching rather than a dozen triggers,
+# to stay clear of the 8-scripts-per-checkpoint cap and the runaway-trigger guard alike.
+# Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Magearna_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

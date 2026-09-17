@@ -930,6 +930,19 @@ extern const u8 EncScript_TapuKoko_ThunderDodged[];
 extern const u8 EncScript_TapuKoko_TurnClose[];
 extern const u8 EncScript_TapuKoko_Exhausted[];
 
+// Magearna ("The Artificial Pokemon")
+extern const u8 EncScript_Magearna_Intro[];
+extern const u8 EncScript_Magearna_TurnOpen[];
+extern const u8 EncScript_Magearna_IntegrityHitPrimary[];
+extern const u8 EncScript_Magearna_IntegrityHitSecondary[];
+extern const u8 EncScript_Magearna_PulseBegin[];
+extern const u8 EncScript_Magearna_TurnClose[];
+extern const u8 EncScript_Magearna_Phase2Awaken[];
+extern const u8 EncScript_Magearna_Phase3aEmergency[];
+extern const u8 EncScript_Magearna_Phase3bOverdrive[];
+extern const u8 EncScript_Magearna_OverdriveHit[];
+extern const u8 EncScript_Magearna_FleurCannonFinish[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
