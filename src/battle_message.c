@@ -2723,6 +2723,20 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCTAPULELEREALITYSHIFT]      = COMPOUND_STRING("The Dream shifts-\nreality bends!"),
     [STRINGID_ENCTAPULELEDREAMBEGINS]       = COMPOUND_STRING("Guardian's Dream\nbegins!\pReality is not\nyours to trust."),
     [STRINGID_ENCTAPULELEVULNERABLE]        = COMPOUND_STRING("Now is the moment-\nthe dream is breaking!\pTapu Lele is\nvulnerable!"),
+    [STRINGID_ENCTAPUBULUINTRO1]            = COMPOUND_STRING("A mass of vines and roots\nrises from the ground!"),
+    [STRINGID_ENCTAPUBULUINTRO2]            = COMPOUND_STRING("Tapu Bulu calls upon\nthe land itself!"),
+    [STRINGID_ENCTAPUBULUROOTSATTACH]       = COMPOUND_STRING("Roots coil around\nyour Pokémon's feet!"),
+    [STRINGID_ENCTAPUBULUROOTSDESTROYED]    = COMPOUND_STRING("Flames sear the roots-\nits Wrath rises!"),
+    [STRINGID_ENCTAPUBULUOVERGROWTHSCORCHED] = COMPOUND_STRING("The overgrowth burns away!\nWrath rises further!"),
+    [STRINGID_ENCTAPUBULUOVERGROWTHGROWS]   = COMPOUND_STRING("Overgrowth thickens-\nits guard hardens!"),
+    [STRINGID_ENCTAPUBULURECKLESS]          = COMPOUND_STRING("Wrath consumes it-\nits assault turns reckless!"),
+    [STRINGID_ENCTAPUBULURECLAMATION]       = COMPOUND_STRING("The forest reclaims itself-\nroots surge back!"),
+    [STRINGID_ENCTAPUBULUPHASE2]            = COMPOUND_STRING("The Ancient Forest\nawakens around it!"),
+    [STRINGID_ENCTAPUBULUPHASE3]            = COMPOUND_STRING("Primal Overgrowth consumes\nthe battlefield!"),
+    [STRINGID_ENCTAPUBULUNATURESWRATH]      = COMPOUND_STRING("Tapu Bulu summons the fury\nof the ancient forest!"),
+    [STRINGID_ENCTAPUBULUFORESTSILENT]      = COMPOUND_STRING("The forest falls silent...\nnow is the moment!"),
+    [STRINGID_ENCTAPUBULUGUARDLINE]         = COMPOUND_STRING("The overgrowth still\nshields it."),
+    [STRINGID_ENCTAPUBULUCAMOUFLAGE]        = COMPOUND_STRING("Tapu Bulu melts into\nthe foliage!"),
 };
 
 const u16 gOneHitKOStringIds[] =

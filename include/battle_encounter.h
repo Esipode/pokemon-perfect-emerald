@@ -961,6 +961,20 @@ extern const u8 EncScript_TapuLele_ReverieBegins[];
 extern const u8 EncScript_TapuLele_DreamBegins[];
 extern const u8 EncScript_TapuLele_Spent[];
 
+// Tapu Bulu ("The Land Spirit Pokemon")
+extern const u8 EncScript_TapuBulu_Intro[];
+extern const u8 EncScript_TapuBulu_TurnStartGuard[];
+extern const u8 EncScript_TapuBulu_TurnEndTick[];
+extern const u8 EncScript_TapuBulu_RootsAttach[];
+extern const u8 EncScript_TapuBulu_OvergrowthGrows[];
+extern const u8 EncScript_TapuBulu_RootsDestroyed[];
+extern const u8 EncScript_TapuBulu_OvergrowthScorched[];
+extern const u8 EncScript_TapuBulu_RecklessGuardian[];
+extern const u8 EncScript_TapuBulu_ForestReclamation[];
+extern const u8 EncScript_TapuBulu_Phase2Transition[];
+extern const u8 EncScript_TapuBulu_Phase3Transition[];
+extern const u8 EncScript_TapuBulu_ForestFallsSilent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

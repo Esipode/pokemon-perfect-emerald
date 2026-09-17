@@ -262,3 +262,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/tapukoko.inc"
 	.include "data/legendary_encounters/magearna.inc"
 	.include "data/legendary_encounters/tapu_lele.inc"
+	.include "data/legendary_encounters/tapu_bulu.inc"
