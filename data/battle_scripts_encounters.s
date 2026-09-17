@@ -274,3 +274,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/spectrier.inc"
 	.include "data/legendary_encounters/glastrier.inc"
 	.include "data/legendary_encounters/zamazenta.inc"
+	.include "data/legendary_encounters/zacian.inc"

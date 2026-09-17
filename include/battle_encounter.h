@@ -1186,6 +1186,23 @@ extern const u8 EncScript_Zamazenta_CrownedShield[];
 extern const u8 EncScript_Zamazenta_LastStand[];
 extern const u8 EncScript_Zamazenta_BehemothBash[];
 
+// Zacian ("The Warrior Pokémon")
+extern const u8 EncScript_Zacian_Intro[];
+extern const u8 EncScript_Zacian_Stance_Swift[];
+extern const u8 EncScript_Zacian_Stance_Power[];
+extern const u8 EncScript_Zacian_Stance_Precision[];
+extern const u8 EncScript_Zacian_Stance_Execution[];
+extern const u8 EncScript_Zacian_HitResolver[];
+extern const u8 EncScript_Zacian_SwordArtResolver[];
+extern const u8 EncScript_Zacian_Phase1_CrownedSword[];
+extern const u8 EncScript_Zacian_Phase2_MasterSwordsman[];
+extern const u8 EncScript_Zacian_BehemothBlade[];
+extern const u8 EncScript_Zacian_TurnOpen[];
+extern const u8 EncScript_Zacian_ProtectHandledReset[];
+extern const u8 EncScript_Zacian_ProtectInterrupt[];
+extern const u8 EncScript_Zacian_TurnClose[];
+extern const u8 EncScript_Zacian_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

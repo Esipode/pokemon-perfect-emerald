@@ -1,0 +1,182 @@
+Encounter: Zacian
+
+# Zacian, "The Warrior Pokemon". One rule:
+#   Every clean hit teaches Zacian something. TECHNIQUE (0-100) climbs on every landed strike and
+#   rewards it with sharper Stances, Sword Marks, and eventually Sword Arts. Breaking its rhythm -
+#   a Protect - cuts Technique and the current combo back down.
+# Phase 0 (100-50%): Stance cycling (SWIFT/POWER/PRECISION/EXECUTION, driven by the Technique band),
+#   Sword Marks/Chain/Perfect Strike, and AI_FLAG_PREDICT_MOVE Anticipation are all live from turn 1.
+# Phase 1 - CROWNED SWORD (50-15%): Technique also climbs passively every turn. Sword Arts (Rising
+#   Slash / Cross Slash / Meteor Slash / Royal Cut) come online on a 2-turn cooldown.
+# Phase 2 - MASTER SWORDSMAN (15-0%): Technique snapped to 100 (locks EXECUTION), Sword Arts fire
+#   every hit, Protect punishes harder, and Behemoth Blade fires once Technique holds at 90+.
+# Phase 3 - SPENT: the catch window, <= 10% HP.
+# ANTI-ABUSE (guideline 8): repeated Protect is the obvious trivializer here - it clears Marks and
+#   Chain for free. Countered two ways: the Protect-interrupt script costs Technique (which matters
+#   because Technique bands drive increasingly dangerous Stances, so stalling accelerates the fight's
+#   own ceiling) and AI_FLAG_PREDICT_MOVE makes two predicted-status turns in a row visibly read and
+#   punished. Switching to dodge Marks resets the tracked mon's marks for free by design, but does
+#   nothing about Technique, Stance, or the Sword Art rotation, which are boss-side state.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_PLAY_ROUGH, MOVE_IRON_HEAD, MOVE_CRUNCH, MOVE_CLOSE_COMBAT
+    AiFlags: AI_FLAG_SMART_TRAINER | AI_FLAG_PREDICT_MOVE
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all thirteen here in order fixes
+# Phase..MoveGuard to 0..12.
+# 0 Phase (0 P0 / 1 Crowned Sword / 2 Master Swordsman / 3 Spent), 1 Technique (0-100),
+# 2 TechBand (0-3, also the current Stance id; starts at 9 - nothing announced yet), 3 MarkCount
+# (0-3), 4 Chain (0-3+), 5 PerfectReady (0/1), 6 Predicted (this turn's AI_FLAG_PREDICT_MOVE read,
+# 0 none / 1 physical / 2 special / 3 status), 7 DefensiveStreak (consecutive predicted-status
+# turns), 8 ArtIndex (0-3, the Sword Art rotation), 9 ArtCooldown (turns left, ticked at TurnOpen),
+# 10 ProtectHandled (per-Protect self-disabling latch, round-tripped every turn), 11 TurnGuard (the
+# once-per-turn scaffold), 12 MoveGuard (self-disabling latch for the OnMoveEnd hit resolver).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Zacian_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Technique) >= 0
+    Var(TechBand) >= 0
+    Var(MarkCount) >= 0
+    Var(Chain) >= 0
+    Var(PerfectReady) >= 0
+    Var(Predicted) >= 0
+    Var(DefensiveStreak) >= 0
+    Var(ArtIndex) >= 0
+    Var(ArtCooldown) >= 0
+    Var(ProtectHandled) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+
+# The four Stances. Self-disabling through TechBand itself: each script writes its own band, so the
+# `TechBand != n` half of the condition goes false the instant it runs. OnEnter is an extra edge
+# guard on top, not the only thing preventing re-selection.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: OnEnter
+Script: EncScript_Zacian_Stance_Swift
+Conditions:
+    Var(Technique) >= 0
+    Var(Technique) < 25
+    Var(TechBand) != 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: OnEnter
+Script: EncScript_Zacian_Stance_Power
+Conditions:
+    Var(Technique) >= 25
+    Var(Technique) < 50
+    Var(TechBand) != 1
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: OnEnter
+Script: EncScript_Zacian_Stance_Precision
+Conditions:
+    Var(Technique) >= 50
+    Var(Technique) < 75
+    Var(TechBand) != 2
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: OnEnter
+Script: EncScript_Zacian_Stance_Execution
+Conditions:
+    Var(Technique) >= 75
+    Var(TechBand) != 3
+
+# THE HIT RESOLVER. Zacian's own move landing on the player is what teaches it something - Marks,
+# Chain, Technique. Event.Target is who attacked (see checkpoint reference), so Event.Target ==
+# OpponentLeft is "the boss used the move" and Event.Battler == PlayerLeft is "the player took it".
+# An Event.* condition stays true for the whole OnMoveEnd dispatch, so this needs its own latch
+# (MoveGuard) or the re-evaluation loop re-selects it until the per-checkpoint script cap trips -
+# MoveGuard is reset once, at TurnOpen.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Zacian_HitResolver
+Conditions:
+    Var(MoveGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+
+# SWORD ARTS, Phase 1+. Self-disabling through ArtCooldown, which the script sets to a nonzero value
+# on every path.
+Trigger: OnMoveEnd
+Priority: 15
+Script: EncScript_Zacian_SwordArtResolver
+Conditions:
+    Var(Phase) >= 1
+    Var(ArtCooldown) == 0
+    Event.Target == B_POSITION_OPPONENT_LEFT
+
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_Zacian_Phase1_CrownedSword
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_Zacian_Phase2_MasterSwordsman
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 8
+Flags: Once, OnEnter
+Script: EncScript_Zacian_BehemothBlade
+Conditions:
+    Var(Phase) == 2
+    Var(Technique) >= 90
+
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_Zacian_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+# Top of every turn: the once-per-turn scaffold. TurnGuard's only gate is == 0, set immediately, so
+# no branch out can leave it re-armed. Also owns the ArtCooldown tick and AI_FLAG_PREDICT_MOVE read -
+# encstoreprediction only means anything here.
+Trigger: OnTurnStart
+Priority: 3
+Script: EncScript_Zacian_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Split-checkpoint clear for ProtectHandled, mirroring the TurnGuard pattern one variable over.
+Trigger: OnTurnStart
+Priority: 4
+Script: EncScript_Zacian_ProtectHandledReset
+Conditions:
+    Var(ProtectHandled) == 1
+
+# Breaking rhythm. Self-disabling through ProtectHandled, cleared next OnTurnStart above.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Zacian_ProtectInterrupt
+Conditions:
+    Battler(PlayerLeft).Protected == 1
+    Var(ProtectHandled) == 0
+
+# The passive Technique ledger, Phase 1+. Self-disabling through TurnGuard, which it clears itself.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Zacian_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
