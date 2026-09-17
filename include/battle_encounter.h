@@ -975,6 +975,21 @@ extern const u8 EncScript_TapuBulu_Phase2Transition[];
 extern const u8 EncScript_TapuBulu_Phase3Transition[];
 extern const u8 EncScript_TapuBulu_ForestFallsSilent[];
 
+// Tapu Fini ("The Land Spirit Pokemon")
+extern const u8 EncScript_TapuFini_Init[];
+extern const u8 EncScript_TapuFini_TurnStart[];
+extern const u8 EncScript_TapuFini_ClearTurnGuard[];
+extern const u8 EncScript_TapuFini_WaterHit[];
+extern const u8 EncScript_TapuFini_ClearMistGuard[];
+extern const u8 EncScript_TapuFini_Purification[];
+extern const u8 EncScript_TapuFini_MistTrial[];
+extern const u8 EncScript_TapuFini_ClearTrial[];
+extern const u8 EncScript_TapuFini_Phase2[];
+extern const u8 EncScript_TapuFini_Phase3[];
+extern const u8 EncScript_TapuFini_SacredTick[];
+extern const u8 EncScript_TapuFini_MistRecedes[];
+extern const u8 EncScript_TapuFini_CatchWindow[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

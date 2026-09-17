@@ -2737,6 +2737,16 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCTAPUBULUFORESTSILENT]      = COMPOUND_STRING("The forest falls silent...\nnow is the moment!"),
     [STRINGID_ENCTAPUBULUGUARDLINE]         = COMPOUND_STRING("The overgrowth still\nshields it."),
     [STRINGID_ENCTAPUBULUCAMOUFLAGE]        = COMPOUND_STRING("Tapu Bulu melts into\nthe foliage!"),
+    [STRINGID_ENCFINIMISTTHICKENS]          = COMPOUND_STRING("The mist thickens\naround Fini!"),
+    [STRINGID_ENCFINIPURIFIES]              = COMPOUND_STRING("Fini calls upon\npure waters!"),
+    [STRINGID_ENCFINIMISTTRIAL]             = COMPOUND_STRING("The mist parts... Will\nyou step into it?"),
+    [STRINGID_ENCFINITRIALENTER]            = COMPOUND_STRING("You press into the\nmist!"),
+    [STRINGID_ENCFINITRIALRESIST]           = COMPOUND_STRING("You hold your ground.\nThe mist thickens."),
+    [STRINGID_ENCFINITRIALCLOSES]           = COMPOUND_STRING("The mist closes\nagain."),
+    [STRINGID_ENCFINISACREDMIST]            = COMPOUND_STRING("Fini slips fully into\nSacred Mist!"),
+    [STRINGID_ENCFINISURGE]                 = COMPOUND_STRING("Guardian's Surge\ngathers!"),
+    [STRINGID_ENCFINIRECEDES]               = COMPOUND_STRING("The mist recedes.\nFini stands exposed!"),
+    [STRINGID_ENCFINICATCHWINDOW]           = COMPOUND_STRING("Now is the\nmoment!"),
 };
 
 const u16 gOneHitKOStringIds[] =
