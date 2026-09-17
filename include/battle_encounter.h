@@ -1026,6 +1026,28 @@ extern const u8 EncScript_GalarianZapdos_Pursuit[];
 extern const u8 EncScript_GalarianZapdos_Phase2[];
 extern const u8 EncScript_GalarianZapdos_Phase3[];
 
+// Galarian Moltres ("The Dread")
+extern const u8 EncScript_GalarianMoltres_Intro[];
+extern const u8 EncScript_GalarianMoltres_DarkHit[];
+extern const u8 EncScript_GalarianMoltres_ChipHit[];
+extern const u8 EncScript_GalarianMoltres_ClearMoveGuard[];
+extern const u8 EncScript_GalarianMoltres_CourageCheck[];
+extern const u8 EncScript_GalarianMoltres_ClearBossHitGuard[];
+extern const u8 EncScript_GalarianMoltres_FaintCheck[];
+extern const u8 EncScript_GalarianMoltres_ClearFaintGuard[];
+extern const u8 EncScript_GalarianMoltres_SwitchResist[];
+extern const u8 EncScript_GalarianMoltres_SwitchVulnerable[];
+extern const u8 EncScript_GalarianMoltres_ClearSwitchGuard[];
+extern const u8 EncScript_GalarianMoltres_ClearLifeDrainGuard[];
+extern const u8 EncScript_GalarianMoltres_ClearNightmareGuard[];
+extern const u8 EncScript_GalarianMoltres_StatusCheck[];
+extern const u8 EncScript_GalarianMoltres_BreakDread[];
+extern const u8 EncScript_GalarianMoltres_Phase2Enter[];
+extern const u8 EncScript_GalarianMoltres_Phase3Enter[];
+extern const u8 EncScript_GalarianMoltres_BallsUnlock[];
+extern const u8 EncScript_GalarianMoltres_LifeDrain[];
+extern const u8 EncScript_GalarianMoltres_NightmareTick[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

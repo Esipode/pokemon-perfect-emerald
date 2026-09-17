@@ -1,0 +1,225 @@
+Encounter: Galarian_Moltres
+
+# Galarian Moltres, "The Dread". One rule:
+#   DREAD (0-5, a single meter shared across whichever player mon is active) rises as the player
+#   takes fear-inducing setbacks and falls as they fight back with Courage. High Dread makes Moltres
+#   hit harder, drain more, and - once forced to max in the final phase - cages the fight behind
+#   DARK AURA, which only breaking Dread back to 0 strips away.
+# FEAR FEEDS IT: switching in, losing a mon, eating a Dark hit, or getting statused all raise Dread.
+#   COURAGE ANSWERS IT: landing one of Moltres's Rock/Electric/Fairy weaknesses, or switching in a
+#   mon that resists Dark (Fighting/Fairy/Steel/Dark), lowers it.
+# Phase 0 NORMAL (100%-51%): Dread builds/decays freely, effects scale 1-5.
+# Phase 1 NIGHTMARE (50%-16%): switching in also risks a Nightmare mark (heal-block, accuracy drop,
+#   or periodic drain) alongside the usual Dread check.
+# Phase 2 TERROR (<=15%): Dread is forced to 5 and DARK AURA locks on. The player must farm Courage
+#   to bring it back to 0, which shatters the aura and drops Moltres's Defense. Balls unlock
+#   separately at <=10%, per guideline 10.
+# ANTI-ABUSE IS NARROW (guideline 8): the standard Ohko/FixedDamage/HpSwap/SharedKo immunity set plus
+#   CapTypeEffectiveness/FlatToxicDamage keeps status/OHKO/Toxic stalling off the table; MoveGuard,
+#   FaintGuard, SwitchGuard and BossHitGuard each cap their own Dread/Courage swing to once per
+#   turn/event so nothing (multi-hit moves, switch-spam) can move the meter faster than one step at a
+#   time.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 86
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_BERSERK
+    Moves: MOVE_HURRICANE, MOVE_SNARL, MOVE_NASTY_PLOT, MOVE_AIR_SLASH
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order.
+# 0 Dread (0-5 shared meter), 1 Phase (0 Normal / 1 Nightmare / 2 Terror), 2 MoveGuard (once-per-turn
+# gate for player-hit Dread checks), 3 FaintGuard (once-per-faint gate), 4 SwitchGuard (once-per-switch
+# gate), 5 BossHitGuard (once-per-turn gate for Courage-from-weakness checks), 6 NightmareTimer (turns
+# left on the active mon's Nightmare mark, 0 = unmarked), 7 NightmareEffect (0 heal-block / 1 accuracy
+# / 2 periodic drain), 8 LastAnnounced (last Dread value that triggered a DARK AURA onset/fade line),
+# 9 LifeDrainGuard, 10 NightmareGuard (once-per-turn gates for the two OnTurnEnd levels below - a
+# level's own condition doesn't clear itself, so without a guard the re-evaluation loop reselects it
+# every pass at the same checkpoint until the 8-script cap trips).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_GalarianMoltres_Intro
+Conditions:
+    Var(Dread) >= 0
+    Var(Phase) >= 0
+    Var(MoveGuard) >= 0
+    Var(FaintGuard) >= 0
+    Var(SwitchGuard) >= 0
+    Var(BossHitGuard) >= 0
+    Var(NightmareTimer) >= 0
+    Var(NightmareEffect) >= 0
+    Var(LastAnnounced) >= 0
+    Var(LifeDrainGuard) >= 0
+    Var(NightmareGuard) >= 0
+
+# A Dark hit raises Dread. Split from the generic chip-hit trigger below because a script body can
+# only branch on author variables, never on Event.* fields - the branch has to live in Conditions.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_GalarianMoltres_DarkHit
+Conditions:
+    Var(MoveGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_DARK
+
+# Any other damaging hit also raises Dread, just with a different line. MoveCategory != STATUS is the
+# "connected, not a status move" test - Event.OldValue/NewValue are unreliable after a miss (see the
+# reshiram/dialga precedent), so this reads as "was attacked with intent to hurt", not "definitely
+# connected".
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_GalarianMoltres_ChipHit
+Conditions:
+    Var(MoveGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.MoveType != TYPE_DARK
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+
+Trigger: OnTurnEnd
+Priority: 1
+Script: EncScript_GalarianMoltres_ClearMoveGuard
+Conditions:
+    Var(MoveGuard) == 1
+
+# Courage: landing one of Moltres's weaknesses on it. Event.Battler is who GOT HIT, so this is "a
+# Rock/Electric/Fairy move connected against the boss".
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_GalarianMoltres_CourageCheck
+Conditions:
+    Var(BossHitGuard) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_ROCK
+        Event.MoveType == TYPE_ELECTRIC
+        Event.MoveType == TYPE_FAIRY
+
+Trigger: OnTurnEnd
+Priority: 2
+Script: EncScript_GalarianMoltres_ClearBossHitGuard
+Conditions:
+    Var(BossHitGuard) == 1
+
+Trigger: OnFaint
+Priority: 10
+Script: EncScript_GalarianMoltres_FaintCheck
+Conditions:
+    Var(FaintGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+Trigger: OnSwitchIn
+Priority: 1
+Script: EncScript_GalarianMoltres_ClearFaintGuard
+Conditions:
+    Var(FaintGuard) == 1
+
+# A resistant mon (Fighting/Fairy/Steel/Dark) steels its nerve instead of feeding Dread. Turn >= 1
+# skips the opening send-out, which the engine raises as a switch-in like any other but isn't the
+# player "switching" in the fear sense.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_GalarianMoltres_SwitchResist
+Conditions:
+    Var(SwitchGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Turn >= 1
+    Any:
+        Battler(PlayerLeft).Type == TYPE_FIGHTING
+        Battler(PlayerLeft).Type == TYPE_FAIRY
+        Battler(PlayerLeft).Type == TYPE_STEEL
+        Battler(PlayerLeft).Type == TYPE_DARK
+
+Trigger: OnSwitchIn
+Priority: 11
+Script: EncScript_GalarianMoltres_SwitchVulnerable
+Conditions:
+    Var(SwitchGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Turn >= 1
+    Battler(PlayerLeft).Type != TYPE_FIGHTING
+    Battler(PlayerLeft).Type != TYPE_FAIRY
+    Battler(PlayerLeft).Type != TYPE_STEEL
+    Battler(PlayerLeft).Type != TYPE_DARK
+
+Trigger: OnTurnStart
+Priority: 1
+Script: EncScript_GalarianMoltres_ClearSwitchGuard
+Conditions:
+    Var(SwitchGuard) == 1
+
+Trigger: OnTurnStart
+Priority: 2
+Script: EncScript_GalarianMoltres_ClearLifeDrainGuard
+Conditions:
+    Var(LifeDrainGuard) == 1
+
+Trigger: OnTurnStart
+Priority: 3
+Script: EncScript_GalarianMoltres_ClearNightmareGuard
+Conditions:
+    Var(NightmareGuard) == 1
+
+# Status curdles with the fear. OnEnter alone (no guard var) re-arms on each freshly-applied status
+# without double-counting a status that's just still sitting there.
+Trigger: OnTurnEnd
+Priority: 7
+Flags: OnEnter
+Script: EncScript_GalarianMoltres_StatusCheck
+Conditions:
+    Battler(PlayerLeft).Status != STATUS1_NONE
+
+# Phase transitions, lowest priority so they resolve before the drain/nightmare levels below read the
+# new Phase this same checkpoint.
+Trigger: OnTurnEnd
+Priority: 3
+Flags: Once, OnEnter
+Script: EncScript_GalarianMoltres_BreakDread
+Conditions:
+    Var(Phase) == 2
+    Var(Dread) == 0
+
+Trigger: OnTurnEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_GalarianMoltres_Phase2Enter
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_GalarianMoltres_Phase3Enter
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_GalarianMoltres_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+# A level - fires every qualifying turn, not once. Punishes sustained high Dread and gives Moltres a
+# real reason to want it kept up. Guarded: the condition alone doesn't clear after running, so without
+# LifeDrainGuard the re-evaluation loop would reselect this every pass at this checkpoint.
+Trigger: OnTurnEnd
+Priority: 8
+Script: EncScript_GalarianMoltres_LifeDrain
+Conditions:
+    Var(Dread) >= 2
+    Var(LifeDrainGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 9
+Script: EncScript_GalarianMoltres_NightmareTick
+Conditions:
+    Var(NightmareTimer) > 0
+    Var(NightmareGuard) == 0

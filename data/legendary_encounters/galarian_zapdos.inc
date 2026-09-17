@@ -45,19 +45,19 @@ EncGZapdos_ApplyComboBonus:
 EncGZapdos_ApplyComboBonus_6:
 	playanimation BS_OPPONENT1, B_ANIM_MON_HIT
 	encchangehp ENC_TARGET_PLAYER_LEFT, -6, ENC_AMOUNT_PERCENT
-	printstring STRINGID_ENCGZAPDOSCOMBOCONTINUES
+	printstring STRINGID_ENCGALARIANZAPDOSCOMBOCONTINUES
 	waitmessage B_WAIT_TIME_SHORT
 	return
 EncGZapdos_ApplyComboBonus_10:
 	playanimation BS_OPPONENT1, B_ANIM_MON_HIT
 	encchangehp ENC_TARGET_PLAYER_LEFT, -10, ENC_AMOUNT_PERCENT
-	printstring STRINGID_ENCGZAPDOSCOMBOCONTINUES
+	printstring STRINGID_ENCGALARIANZAPDOSCOMBOCONTINUES
 	waitmessage B_WAIT_TIME_SHORT
 	return
 EncGZapdos_ApplyComboBonus_14:
 	playanimation BS_OPPONENT1, B_ANIM_MON_HIT
 	encchangehp ENC_TARGET_PLAYER_LEFT, -14, ENC_AMOUNT_PERCENT
-	printstring STRINGID_ENCGZAPDOSCOMBOCONTINUES
+	printstring STRINGID_ENCGALARIANZAPDOSCOMBOCONTINUES
 	waitmessage B_WAIT_TIME_SHORT
 	return
 EncGZapdos_ApplyComboBonus_Done:
@@ -106,7 +106,7 @@ EncScript_GalarianZapdos_TurnEndClearGuard::
 // Phase 3 also chips Zapdos's own HP for "exertion" (it can beat itself).
 EncScript_GalarianZapdos_RelentlessAssault::
 	encsetvar 14, 1    @ AssaultGuard
-	printstring STRINGID_ENCGZAPDOSRELENTLESSASSAULT
+	printstring STRINGID_ENCGALARIANZAPDOSRELENTLESSASSAULT
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_MON_HIT
 	encjumpifvar CMP_EQUAL, 1, 3, EncScript_GalarianZapdos_RelentlessAssault_Phase3
@@ -140,7 +140,7 @@ EncScript_GalarianZapdos_MomentumGainOnHit_Measured:
 	encaddvar 0, 1     @ Momentum +1
 	encjumpifvar CMP_LESS_THAN, 9, 12, EncScript_GalarianZapdos_MomentumGainOnHit_Clamp
 	encaddvar 0, 1     @ vicious blow, +1 more
-	printstring STRINGID_ENCGZAPDOSVICIOUSBLOW
+	printstring STRINGID_ENCGALARIANZAPDOSVICIOUSBLOW
 	waitmessage B_WAIT_TIME_SHORT
 EncScript_GalarianZapdos_MomentumGainOnHit_Clamp:
 	call EncGZapdos_ClampMomentum
@@ -159,7 +159,7 @@ EncScript_GalarianZapdos_PlayerHitsBoss_NoDamage:
 EncScript_GalarianZapdos_PlayerHitsBoss_Measured:
 	encjumpifvar CMP_LESS_THAN, 11, 18, EncScript_GalarianZapdos_PlayerHitsBoss_Done
 	encjumpifvar CMP_LESS_THAN, 0, 3, EncScript_GalarianZapdos_PlayerHitsBoss_Done
-	printstring STRINGID_ENCGZAPDOSSTAGGERED
+	printstring STRINGID_ENCGALARIANZAPDOSSTAGGERED
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_STATS_CHANGE
 	encsubvar 0, 2
@@ -172,7 +172,7 @@ EncScript_GalarianZapdos_PlayerHitsBoss_Done:
 // trigger's Conditions - Event.MoveType can't be read here).
 EncScript_GalarianZapdos_SELoss::
 	encsetvar 15, 1    @ SEGuard
-	printstring STRINGID_ENCGZAPDOSWEAKNESSHIT
+	printstring STRINGID_ENCGALARIANZAPDOSWEAKNESSHIT
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_STATS_CHANGE
 	encsubvar 0, 1
@@ -181,7 +181,7 @@ EncScript_GalarianZapdos_SELoss::
 
 EncScript_GalarianZapdos_ProtectedLoss::
 	encsetvar 6, 1     @ BossAttackGuard
-	printstring STRINGID_ENCGZAPDOSOVEREXTENDS
+	printstring STRINGID_ENCGALARIANZAPDOSOVEREXTENDS
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_MON_SCARED
 	encsubvar 0, 1
@@ -190,7 +190,7 @@ EncScript_GalarianZapdos_ProtectedLoss::
 
 EncScript_GalarianZapdos_StatusLoss::
 	encsetvar 7, 1     @ StatusGuard
-	printstring STRINGID_ENCGZAPDOSTHROWNOFF
+	printstring STRINGID_ENCGALARIANZAPDOSTHROWNOFF
 	waitmessage B_WAIT_TIME_SHORT
 	playanimation BS_OPPONENT1, B_ANIM_STATS_CHANGE
 	encsubvar 0, 1
@@ -201,7 +201,7 @@ EncScript_GalarianZapdos_StatusLoss::
 // Pursuit.
 EncScript_GalarianZapdos_KOGain::
 	encsetvar 13, 1    @ PursuitGuard
-	printstring STRINGID_ENCGZAPDOSMOMENTUMSURGE
+	printstring STRINGID_ENCGALARIANZAPDOSMOMENTUMSURGE
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_STATS_CHANGE
 	encaddvar 0, 2
@@ -213,7 +213,7 @@ EncScript_GalarianZapdos_KOGain::
 EncScript_GalarianZapdos_Pursuit::
 	encsetvar 13, 1    @ PursuitGuard
 	jumpiftype BS_PLAYER1, TYPE_GROUND, EncScript_GalarianZapdos_Pursuit_Countered
-	printstring STRINGID_ENCGZAPDOSGIVESCHASE
+	printstring STRINGID_ENCGALARIANZAPDOSGIVESCHASE
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_MON_HIT
 	encjumpifvar CMP_EQUAL, 1, 1, EncScript_GalarianZapdos_Pursuit_P1
@@ -223,7 +223,7 @@ EncScript_GalarianZapdos_Pursuit_P1:
 	encchangehp ENC_TARGET_PLAYER_LEFT, -12, ENC_AMOUNT_PERCENT
 	return
 EncScript_GalarianZapdos_Pursuit_Countered:
-	printstring STRINGID_ENCGZAPDOSPURSUITCOUNTERED
+	printstring STRINGID_ENCGALARIANZAPDOSPURSUITCOUNTERED
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_PLAYER1, B_ANIM_STATS_CHANGE
 	encsubvar 0, 1
@@ -236,7 +236,7 @@ EncScript_GalarianZapdos_Pursuit_Countered:
 // Phase). Momentum thresholds are unchanged from Phase 1.
 EncScript_GalarianZapdos_Phase2::
 	encsetvar 1, 2     @ Phase
-	printstring STRINGID_ENCGZAPDOSFRENZY
+	printstring STRINGID_ENCGALARIANZAPDOSFRENZY
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_STATS_CHANGE
 	encsetdamagereduction ENC_TARGET_BOSS, 94
@@ -247,7 +247,7 @@ EncScript_GalarianZapdos_Phase2::
 // like a scripted last-stand boss.
 EncScript_GalarianZapdos_Phase3::
 	encsetvar 1, 3     @ Phase
-	printstring STRINGID_ENCGZAPDOSREFUSESTOSTOP
+	printstring STRINGID_ENCGALARIANZAPDOSREFUSESTOSTOP
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_MON_SCARED
 	encsetdamagereduction ENC_TARGET_BOSS, 99

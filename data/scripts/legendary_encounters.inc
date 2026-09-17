@@ -945,3 +945,17 @@ LegendaryEncounter_EventScript_GalarianZapdos::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_GalarianMoltres::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_MOLTRES_GALAR, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_GALARIAN_MOLTRES
+	setwildbattle SPECIES_MOLTRES_GALAR, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
