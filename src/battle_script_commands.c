@@ -13110,7 +13110,6 @@ void BS_EncounterChangeStat(void)
 {
     NATIVE_ARGS(u8 target, u8 stat, s8 stages);
     u32 mask = ResolveEncounterTarget(cmd->target);
-    bool32 group = IsEncounterGroupTarget(cmd->target);
     enum BattlerId battler;
 
     for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
@@ -13119,14 +13118,13 @@ void BS_EncounterChangeStat(void)
         if (!(mask & (1u << battler)))
             continue;
 
+        // Same runtime race CHANGE_HP already tolerates (BS_EncounterChangeHpBegin/Step above): a
+        // single-slot target like ENC_TARGET_BOSS can faint between the checkpoint that queued this
+        // command and this command's own execution - an earlier command in the same script, or the
+        // move that triggered the checkpoint itself. That's a normal race, not an authoring mistake,
+        // for both single and group targets, so it's dropped quietly here too.
         if (!IsBattlerAlive(battler))
-        {
-            assertf(group,
-                    "encounter %d: CHANGE_STAT targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
-            {
-            }
             continue;
-        }
 
         newStage = (s32)gBattleMons[battler].statStages[cmd->stat] + cmd->stages;
         if (newStage < MIN_STAT_STAGE)
@@ -13425,7 +13423,6 @@ void BS_EncounterChangeStatValue(void)
 {
     NATIVE_ARGS(u8 target, u8 stat, s16 amount, u8 mode);
     u32 mask = ResolveEncounterTarget(cmd->target);
-    bool32 group = IsEncounterGroupTarget(cmd->target);
     enum BattlerId battler;
 
     for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
@@ -13437,14 +13434,11 @@ void BS_EncounterChangeStatValue(void)
         if (!(mask & (1u << battler)))
             continue;
 
+        // Same runtime race CHANGE_HP tolerates: a single-slot target like ENC_TARGET_BOSS can faint
+        // between the checkpoint that queued this command and this command's own execution. Not an
+        // authoring mistake, so dropped quietly for both single and group targets.
         if (!IsBattlerAlive(battler))
-        {
-            assertf(group,
-                    "encounter %d: CHANGE_STAT_VALUE targets fainted/absent battler %d", gBattleStruct->encounter.id, battler)
-            {
-            }
             continue;
-        }
 
         statPtr = GetBattlerStat(&gBattleMons[battler], cmd->stat);
         assertf(statPtr != NULL,

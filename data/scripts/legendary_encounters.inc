@@ -973,3 +973,17 @@ LegendaryEncounter_EventScript_Regidrago::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Regieleki::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_REGIELEKI, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_REGIELEKI
+	setwildbattle SPECIES_REGIELEKI, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle

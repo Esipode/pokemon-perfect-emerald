@@ -2813,6 +2813,17 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCREGIDRAGOTIER100]                 = COMPOUND_STRING("Energy Max! Regidrago\nburns at full power!"),
     [STRINGID_ENCREGIDRAGOETERNABEAM]              = COMPOUND_STRING("Regidrago unleashes\nEternabeam!"),
     [STRINGID_ENCREGIDRAGOBALLSUNLOCK]             = COMPOUND_STRING("Now is the moment\nto catch Regidrago!"),
+    [STRINGID_ENCREGIELEKICHARGERISING]            = COMPOUND_STRING("Sparks arc across the field -\nRegieleki's CHARGE is climbing!"),
+    [STRINGID_ENCREGIELEKIOVERCHARGE]              = COMPOUND_STRING("Regieleki OVERCHARGES,\ncrackling with restrained power!"),
+    [STRINGID_ENCREGIELEKISTABILIZES]              = COMPOUND_STRING("The surge fades -\nRegieleki's CHARGE stabilizes."),
+    [STRINGID_ENCREGIELEKIFLASHSTEP]               = COMPOUND_STRING("Regieleki FLASH STEPS,\nvanishing in a blink of light!"),
+    [STRINGID_ENCREGIELEKISURGING]                 = COMPOUND_STRING("THE POWER GRID IS SURGING!\nSomething has to give this turn!"),
+    [STRINGID_ENCREGIELEKISURGEGROUNDED]           = COMPOUND_STRING("The surge grounds out\nharmlessly."),
+    [STRINGID_ENCREGIELEKISURGEHITS]               = COMPOUND_STRING("A massive electric surge\nfloods the battlefield!"),
+    [STRINGID_ENCREGIELEKICRITICALOVERLOAD]        = COMPOUND_STRING("CRITICAL OVERLOAD!\nThe grid strains past its limit!"),
+    [STRINGID_ENCREGIELEKIELECTRODRIFT]            = COMPOUND_STRING("Every spark floods into\nRegieleki - ELECTRO DRIFT!"),
+    [STRINGID_ENCREGIELEKICOLLAPSE]                = COMPOUND_STRING("The power grid collapses.\nRegieleki is exhausted!\pNow's the moment to strike!"),
+    [STRINGID_ENCREGIELEKIBALLSUNLOCK]             = COMPOUND_STRING("Now's the moment -\nthrow your Poké Ball!"),
 };
 
 const u16 gOneHitKOStringIds[] =

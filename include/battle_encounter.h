@@ -1059,6 +1059,28 @@ extern const u8 EncScript_Regidrago_DragonMoveBonusPlayer[];
 extern const u8 EncScript_Regidrago_EnergyFromFaint[];
 extern const u8 EncScript_Regidrago_TurnClose[];
 
+// Regieleki ("The Electrified Pokémon")
+extern const u8 EncScript_Regieleki_Intro[];
+extern const u8 EncScript_Regieleki_TerrainCharge[];
+extern const u8 EncScript_Regieleki_TurnTally[];
+extern const u8 EncScript_Regieleki_BossAttacked[];
+extern const u8 EncScript_Regieleki_ElectricHit[];
+extern const u8 EncScript_Regieleki_PlayerSwitched[];
+extern const u8 EncScript_Regieleki_PlayerHitBoss_Physical[];
+extern const u8 EncScript_Regieleki_PlayerHitBoss_Special[];
+extern const u8 EncScript_Regieleki_PlayerHitBoss_Ground[];
+extern const u8 EncScript_Regieleki_PlayerHitBoss_OtherType[];
+extern const u8 EncScript_Regieleki_GridExpansionEnter[];
+extern const u8 EncScript_Regieleki_SurgeResolve[];
+extern const u8 EncScript_Regieleki_TierUp1[];
+extern const u8 EncScript_Regieleki_TierUp2[];
+extern const u8 EncScript_Regieleki_TierDown[];
+extern const u8 EncScript_Regieleki_FlashStep[];
+extern const u8 EncScript_Regieleki_CriticalOverloadEnter[];
+extern const u8 EncScript_Regieleki_ElectroDrift[];
+extern const u8 EncScript_Regieleki_BallsUnlock[];
+extern const u8 EncScript_Regieleki_ClearGuards[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
