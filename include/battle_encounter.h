@@ -1048,6 +1048,17 @@ extern const u8 EncScript_GalarianMoltres_BallsUnlock[];
 extern const u8 EncScript_GalarianMoltres_LifeDrain[];
 extern const u8 EncScript_GalarianMoltres_NightmareTick[];
 
+// Regidrago ("The Dragon Orb Pokemon")
+extern const u8 EncScript_Regidrago_Intro[];
+extern const u8 EncScript_Regidrago_AncientDragon[];
+extern const u8 EncScript_Regidrago_Overload[];
+extern const u8 EncScript_Regidrago_Eternabeam[];
+extern const u8 EncScript_Regidrago_TurnOpen[];
+extern const u8 EncScript_Regidrago_DragonMoveBonusBoss[];
+extern const u8 EncScript_Regidrago_DragonMoveBonusPlayer[];
+extern const u8 EncScript_Regidrago_EnergyFromFaint[];
+extern const u8 EncScript_Regidrago_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

@@ -45,6 +45,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_ARTICUNO_GALAR, FLAG_HIDE_GALARIAN_ARTICUNO
 	updatelegendaryvisibility SPECIES_ZAPDOS_GALAR, FLAG_HIDE_GALARIAN_ZAPDOS
 	updatelegendaryvisibility SPECIES_MOLTRES_GALAR, FLAG_HIDE_GALARIAN_MOLTRES
+	updatelegendaryvisibility SPECIES_REGIDRAGO, FLAG_HIDE_REGIDRAGO
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1137,6 +1138,9 @@ LittlerootTown_EventScript_EncounterTESTGalarianZapdos::
 
 LittlerootTown_EventScript_EncounterTESTGalarianMoltres::
 	goto LegendaryEncounter_EventScript_GalarianMoltres
+
+LittlerootTown_EventScript_EncounterTESTRegidrago::
+	goto LegendaryEncounter_EventScript_Regidrago
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

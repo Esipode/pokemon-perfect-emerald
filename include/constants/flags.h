@@ -211,7 +211,7 @@
 #define FLAG_HIDE_GALARIAN_ARTICUNO          0xB6
 #define FLAG_HIDE_GALARIAN_ZAPDOS            0xB7
 #define FLAG_HIDE_GALARIAN_MOLTRES           0xB8
-#define FLAG_UNUSED_0xB9                     0xB9
+#define FLAG_HIDE_REGIDRAGO                  0xB9
 #define FLAG_UNUSED_0xBA                     0xBA
 #define FLAG_UNUSED_0xBB                     0xBB
 #define FLAG_RECEIVED_MAP                    0xBC

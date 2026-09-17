@@ -2797,6 +2797,22 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCGALARIANMOLTRESBREAKAURA]         = COMPOUND_STRING("Moltres's dark aura\nshatters!"),
     [STRINGID_ENCGALARIANMOLTRESAURAENTER]         = COMPOUND_STRING("DARK AURA descends\nupon the battle!"),
     [STRINGID_ENCGALARIANMOLTRESAURAFADE]          = COMPOUND_STRING("The DARK AURA\nloosens its grip."),
+    [STRINGID_ENCREGIDRAGOINTRO]                   = COMPOUND_STRING("Ancient dragon energy\nstirs within Regidrago!"),
+    [STRINGID_ENCREGIDRAGOPHASE2]                  = COMPOUND_STRING("Dragon Energy surges -\nthe ancient hunger wakes!"),
+    [STRINGID_ENCREGIDRAGOPHASE3]                  = COMPOUND_STRING("Regidrago overloads\nwith raw Dragon Energy!"),
+    [STRINGID_ENCREGIDRAGOORBSPAWN]                = COMPOUND_STRING("A Dragon Orb forms\nnear Regidrago!"),
+    [STRINGID_ENCREGIDRAGOORBCONSUMED]             = COMPOUND_STRING("Regidrago devours\nthe Dragon Orb!"),
+    [STRINGID_ENCREGIDRAGOMAWOPEN]                 = COMPOUND_STRING("Regidrago's jaws\nglow with banked power!"),
+    [STRINGID_ENCREGIDRAGOMAWHIT]                  = COMPOUND_STRING("The Dragon Maw\nunleashes stored energy!"),
+    [STRINGID_ENCREGIDRAGOMAWINTERRUPT]            = COMPOUND_STRING("The attack breaks\nthe Dragon Maw's charge!"),
+    [STRINGID_ENCREGIDRAGOHUNGER]                  = COMPOUND_STRING("Hunger traps you here -\nRegidrago won't let go!"),
+    [STRINGID_ENCREGIDRAGOTHEFTSTART]              = COMPOUND_STRING("Regidrago siphons\nyour Energy every turn!"),
+    [STRINGID_ENCREGIDRAGOTIER25]                  = COMPOUND_STRING("Dragon Energy glows -\nRegidrago's core stirs."),
+    [STRINGID_ENCREGIDRAGOTIER50]                  = COMPOUND_STRING("Energy Surge! Regidrago's\npower sharpens."),
+    [STRINGID_ENCREGIDRAGOTIER75]                  = COMPOUND_STRING("Overflow! Regidrago's\nstrikes turn savage!"),
+    [STRINGID_ENCREGIDRAGOTIER100]                 = COMPOUND_STRING("Energy Max! Regidrago\nburns at full power!"),
+    [STRINGID_ENCREGIDRAGOETERNABEAM]              = COMPOUND_STRING("Regidrago unleashes\nEternabeam!"),
+    [STRINGID_ENCREGIDRAGOBALLSUNLOCK]             = COMPOUND_STRING("Now is the moment\nto catch Regidrago!"),
 };
 
 const u16 gOneHitKOStringIds[] =
