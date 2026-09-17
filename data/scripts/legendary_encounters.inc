@@ -917,3 +917,17 @@ LegendaryEncounter_EventScript_TapuFini::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_GalarianArticuno::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_ARTICUNO_GALAR, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_GALARIAN_ARTICUNO
+	setwildbattle SPECIES_ARTICUNO_GALAR, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle

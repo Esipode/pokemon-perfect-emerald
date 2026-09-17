@@ -264,3 +264,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/tapu_lele.inc"
 	.include "data/legendary_encounters/tapu_bulu.inc"
 	.include "data/legendary_encounters/tapufini.inc"
+	.include "data/legendary_encounters/galarian_articuno.inc"

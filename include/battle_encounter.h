@@ -990,6 +990,25 @@ extern const u8 EncScript_TapuFini_SacredTick[];
 extern const u8 EncScript_TapuFini_MistRecedes[];
 extern const u8 EncScript_TapuFini_CatchWindow[];
 
+// Galarian Articuno ("The Cruel Pokemon")
+extern const u8 EncScript_GalarianArticuno_Intro[];
+extern const u8 EncScript_GalarianArticuno_TurnOpen[];
+extern const u8 EncScript_GalarianArticuno_TurnClose[];
+extern const u8 EncScript_GalarianArticuno_CategoryPhysical[];
+extern const u8 EncScript_GalarianArticuno_CategorySpecial[];
+extern const u8 EncScript_GalarianArticuno_CategoryStatus[];
+extern const u8 EncScript_GalarianArticuno_SuperEffective[];
+extern const u8 EncScript_GalarianArticuno_SwitchFocus[];
+extern const u8 EncScript_GalarianArticuno_PsychicLock[];
+extern const u8 EncScript_GalarianArticuno_PredictMiss[];
+extern const u8 EncScript_GalarianArticuno_MindGamesTick[];
+extern const u8 EncScript_GalarianArticuno_MindGamesOffer[];
+extern const u8 EncScript_GalarianArticuno_Phase1Enter[];
+extern const u8 EncScript_GalarianArticuno_Phase2Enter[];
+extern const u8 EncScript_GalarianArticuno_Phase3Enter[];
+extern const u8 EncScript_GalarianArticuno_MindBreakTick[];
+extern const u8 EncScript_GalarianArticuno_MindBreakFire[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
