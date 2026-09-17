@@ -50,7 +50,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_ENAMORUS, FLAG_HIDE_ENAMORUS
 	updatelegendaryvisibility SPECIES_ZARUDE, FLAG_HIDE_ZARUDE
 	updatelegendaryvisibility SPECIES_SPECTRIER, FLAG_HIDE_SPECTRIER
-	updatelegendaryvisibility SPECIES_GLASTRIER, FLAG_HIDE_GLASTRIER
+	updatelegendaryvisibility SPECIES_ZAMAZENTA, FLAG_HIDE_ZAMAZENTA
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1159,8 +1159,8 @@ LittlerootTown_EventScript_EncounterTESTZarude::
 LittlerootTown_EventScript_EncounterTESTSpectrier::
 	goto LegendaryEncounter_EventScript_Spectrier
 
-LittlerootTown_EventScript_EncounterTESTGlastrier::
-	goto LegendaryEncounter_EventScript_Glastrier
+LittlerootTown_EventScript_EncounterTESTZamazenta::
+	goto LegendaryEncounter_EventScript_Zamazenta
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

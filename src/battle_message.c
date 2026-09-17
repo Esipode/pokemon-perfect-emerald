@@ -2889,6 +2889,20 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCGLASTRIERLANCEHITS]               = COMPOUND_STRING("The Glacial Lance connects\nwith devastating force!"),
     [STRINGID_ENCGLASTRIERCATCHWINDOW]             = COMPOUND_STRING("Ancient ice cracks--now is the\pmoment to throw a Poke Ball!{PAUSE_UNTIL_PRESS}"),
     [STRINGID_ENCGLASTRIERREMINDER]                = COMPOUND_STRING("The frost tightens its grip."),
+    [STRINGID_ENCZAMAZENTASHIELDLAYERFORMS]        = COMPOUND_STRING("A Shield Layer forms around\nZamazenta!"),
+    [STRINGID_ENCZAMAZENTASHIELDCRACKS]            = COMPOUND_STRING("The Shield cracks under the\nblow!"),
+    [STRINGID_ENCZAMAZENTAGUARDCOUNTERBRACES]      = COMPOUND_STRING("Zamazenta braces itself--a\ncounter is coming!"),
+    [STRINGID_ENCZAMAZENTAGUARDCOUNTERRELEASE]     = COMPOUND_STRING("GUARD COUNTER! The stored\nforce slams back!"),
+    [STRINGID_ENCZAMAZENTASHIELDBASHREBUILDS]      = COMPOUND_STRING("Iron Head rebuilds a fallen\nlayer!"),
+    [STRINGID_ENCZAMAZENTALEFTSHIELDDESTROYED]     = COMPOUND_STRING("The left flank of the\nFortress shatters!"),
+    [STRINGID_ENCZAMAZENTACENTERSHIELDDESTROYED]   = COMPOUND_STRING("The Fortress's core\nbuckles!"),
+    [STRINGID_ENCZAMAZENTARIGHTSHIELDDESTROYED]    = COMPOUND_STRING("The right flank of the\nFortress falls!"),
+    [STRINGID_ENCZAMAZENTAFORTRESSCOLLAPSES]       = COMPOUND_STRING("THE FORTRESS COLLAPSES!\nZamazenta is exposed!"),
+    [STRINGID_ENCZAMAZENTACROWNEDSHIELDENTER]      = COMPOUND_STRING("Zamazenta rises as the\nCrowned Shield!"),
+    [STRINGID_ENCZAMAZENTALASTSTANDENTER]          = COMPOUND_STRING("This is Zamazenta's Last\nStand!"),
+    [STRINGID_ENCZAMAZENTABEHEMOTHBASHGATHERS]     = COMPOUND_STRING("Zamazenta gathers every ounce\pof stored force!"),
+    [STRINGID_ENCZAMAZENTABEHEMOTHBASHUNLEASHED]   = COMPOUND_STRING("BEHEMOTH BASH! The full\nweight comes down!"),
+    [STRINGID_ENCZAMAZENTANOWISTHEMOMENT]          = COMPOUND_STRING("Its shield is spent--now is\pthe moment to throw a Poke\nBall!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

@@ -1166,6 +1166,26 @@ extern const u8 EncScript_Glastrier_CatchWindowOpen[];
 extern const u8 EncScript_Glastrier_ReminderLine[];
 extern const u8 EncScript_Glastrier_ReminderFlipClear[];
 
+// Zamazenta ("The Warrior Pokemon")
+extern const u8 EncScript_Zamazenta_Init[];
+extern const u8 EncScript_Zamazenta_UpkeepClear[];
+extern const u8 EncScript_Zamazenta_Upkeep[];
+extern const u8 EncScript_Zamazenta_ShieldLayerGrow1[];
+extern const u8 EncScript_Zamazenta_ShieldLayerGrow2[];
+extern const u8 EncScript_Zamazenta_ShieldLayerGrow3[];
+extern const u8 EncScript_Zamazenta_ShieldBashRebuild[];
+extern const u8 EncScript_Zamazenta_GuardCounterRelease[];
+extern const u8 EncScript_Zamazenta_TrackLeftHit[];
+extern const u8 EncScript_Zamazenta_TrackCenterHit[];
+extern const u8 EncScript_Zamazenta_TrackRightHit[];
+extern const u8 EncScript_Zamazenta_ShieldDestroyedLeft[];
+extern const u8 EncScript_Zamazenta_ShieldDestroyedCenter[];
+extern const u8 EncScript_Zamazenta_ShieldDestroyedRight[];
+extern const u8 EncScript_Zamazenta_FortressCollapses[];
+extern const u8 EncScript_Zamazenta_CrownedShield[];
+extern const u8 EncScript_Zamazenta_LastStand[];
+extern const u8 EncScript_Zamazenta_BehemothBash[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

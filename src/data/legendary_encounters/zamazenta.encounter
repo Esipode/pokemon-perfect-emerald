@@ -1,0 +1,243 @@
+Encounter: Zamazenta
+
+# Zamazenta, "The Warrior Pokemon". One rule:
+#   Every hit taken, and every turn survived, feeds RESOLVE. RESOLVE builds SHIELD LAYERS
+#   (passive damage reduction), and a big single-turn chunk of damage both cracks the newest
+#   layer AND charges GUARD COUNTER - the boss's next landed hit pays back a slice of what it
+#   just absorbed. The player trades "chip away slowly and safely" against "hit hard and eat a
+#   bigger counter."
+# PHASE 0 (100-50% HP): Shield Layers build off Resolve thresholds (30/60/90). Iron Head landing
+#   also rebuilds a layer (cap 3). A single turn's damage >=12% of Zamazenta's max HP cracks the
+#   newest layer and banks Guard Counter charge; >=20 charge arms it.
+# PHASE 1 "CROWNED SHIELD" (<=50% HP): Resolve maxed, Fortress Cleanse resets Zamazenta's own
+#   stat stages and status every turn. Break-the-Fortress: 3 landed hits each of the
+#   physical/special/status categories clear LEFT/CENTER/RIGHT; all three down collapses the
+#   Fortress and leaves it hardened-but-cracked rather than reverting to Phase 0's mechanics.
+# PHASE 2 "LAST STAND" (<=20% HP): Resolve maxed, Survive:True, one +2/+2 Def/SpDef bump. Balls
+#   still blocked.
+# CATCH WINDOW (<=10% HP): Behemoth Bash fires once, scaled off banked Guard charge, then every
+#   meter resets, Survive clears and Balls unlock - "now is the moment."
+# ANTI-ABUSE (guideline 8): Fortress Cleanse (Phase >=1) neutralizes status/stat-drop stalling
+#   every turn, distinct from a one-shot reset. Guard Counter punishes alpha-striking into a
+#   fresh Shield Layer. Balls stay blocked until <=10% HP, backstopped by the engine's automatic
+#   catch-window damage guard.
+#
+# DEVIATIONS FROM PLAN: MOVE_BODY_PRESS and the MOVE_ROAR_OF_TIME placeholder are not in this
+#   ROM's Zamazenta learnset (level-up or teachable) - MOVE_IRON_HEAD (real, level 33) stands in
+#   for the Shield Bash trigger move, and MOVE_METAL_BURST/MOVE_CRUNCH (both real, level 1/55)
+#   fill the moveset instead. Guard Counter's "GuardStored/Resolve summed" payout collapsed to a
+#   GuardStored-only tier, since Resolve is already pinned at 100 by the time Last Stand can be
+#   entered and there is no var-plus-var opcode to sum two live values.
+
+Properties:
+    Level: LevelCap
+    CatchRate: 0                 # none; EncScript_Zamazenta_BehemothBash sets a real one
+    Balls: Blocked
+    DamageReduction: 88          # UNREAD outside battle start - EncScript_Zamazenta_RecomputeReduction
+                                  # is the single writer from EncScript_Zamazenta_Init onward
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_DAUNTLESS_SHIELD
+    Moves: MOVE_CLOSE_COMBAT, MOVE_IRON_HEAD, MOVE_METAL_BURST, MOVE_CRUNCH
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all fourteen here fixes
+# Phase..BashGuard to indices 0..13.
+# 0 Phase (0 Phase0 / 1 Crowned Shield / 2 Last Stand / 3 Spent), 1 Resolve (0-100),
+# 2 ShieldLayers (0-3), 3 TurnGuard (once-per-turn scaffold), 4 TurnMark (Zamazenta's HP% at turn
+# open; ENC_SNAP_DAMAGE reuses it as this turn's damage% at Upkeep), 5 LeftHits (physical hits
+# landed on Zamazenta this phase, 0-3), 6 CenterHits (special, 0-3), 7 RightHits (status, 0-3),
+# 8 FortressBroken (Fortress-collapsed flag), 9 GuardStored (Guard Counter charge, 0-30),
+# 10 GuardArmed (0/1), 11 LastBand (reserved for the recurring-callout latch), 12 HitGuard
+# (per-turn self-disable for the category-tracking triggers), 13 BashGuard (per-turn self-disable
+# for Shield Bash Rebuild).
+Trigger: OnBattleStart
+Priority: 0
+Flags: Once
+Script: EncScript_Zamazenta_Init
+Conditions:
+    Var(Phase) >= 0
+    Var(Resolve) >= 0
+    Var(ShieldLayers) >= 0
+    Var(TurnGuard) >= 0
+    Var(TurnMark) >= 0
+    Var(LeftHits) >= 0
+    Var(CenterHits) >= 0
+    Var(RightHits) >= 0
+    Var(FortressBroken) >= 0
+    Var(GuardStored) >= 0
+    Var(GuardArmed) >= 0
+    Var(LastBand) >= 0
+    Var(HitGuard) >= 0
+    Var(BashGuard) >= 0
+
+# Once-per-turn scaffold (authoring.md): OnTurnStart clears TurnGuard and re-marks TurnMark for
+# the new turn; OnTurnEnd's Upkeep runs when TurnGuard is 0 and sets it back to 1.
+Trigger: OnTurnStart
+Priority: 5
+Conditions:
+    Var(TurnGuard) == 1
+Script: EncScript_Zamazenta_UpkeepClear
+
+Trigger: OnTurnEnd
+Priority: 5
+Conditions:
+    Var(TurnGuard) == 0
+Script: EncScript_Zamazenta_Upkeep
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_ShieldLayerGrow1
+Conditions:
+    Var(Resolve) >= 30
+    Var(ShieldLayers) == 0
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 11
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_ShieldLayerGrow2
+Conditions:
+    Var(Resolve) >= 60
+    Var(ShieldLayers) == 1
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 12
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_ShieldLayerGrow3
+Conditions:
+    Var(Resolve) >= 90
+    Var(ShieldLayers) == 2
+    Var(Phase) == 0
+
+# Guard Counter's release resolves before Shield Bash's rebuild so the counter payback reads as
+# the headline beat of the hit that also rebuilds a layer.
+Trigger: OnMoveEnd
+Priority: 3
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(GuardArmed) == 1
+Script: EncScript_Zamazenta_GuardCounterRelease
+
+Trigger: OnMoveEnd
+Priority: 4
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Move == MOVE_IRON_HEAD
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(BashGuard) == 0
+Script: EncScript_Zamazenta_ShieldBashRebuild
+
+Trigger: OnMoveEnd
+Priority: 6
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(Phase) == 1
+    Var(HitGuard) == 0
+Script: EncScript_Zamazenta_TrackLeftHit
+
+Trigger: OnMoveEnd
+Priority: 6
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(Phase) == 1
+    Var(HitGuard) == 0
+Script: EncScript_Zamazenta_TrackCenterHit
+
+Trigger: OnMoveEnd
+Priority: 6
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(Phase) == 1
+    Var(HitGuard) == 0
+Script: EncScript_Zamazenta_TrackRightHit
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_ShieldDestroyedLeft
+Conditions:
+    Var(LeftHits) >= 3
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_ShieldDestroyedCenter
+Conditions:
+    Var(CenterHits) >= 3
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_ShieldDestroyedRight
+Conditions:
+    Var(RightHits) >= 3
+
+Trigger: OnMoveEnd
+Priority: 8
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_FortressCollapses
+Conditions:
+    Var(LeftHits) >= 3
+    Var(CenterHits) >= 3
+    Var(RightHits) >= 3
+
+# Phase transitions are registered at both OnMoveEnd and OnTurnEnd (the Reshiram idiom) since a
+# passive tick - Toxic, weather - can cross an HP threshold with no move ending.
+Trigger: OnMoveEnd
+Priority: 15
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_CrownedShield
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 15
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_CrownedShield
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 16
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_LastStand
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 16
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_LastStand
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 17
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_BehemothBash
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 17
+Flags: Once, OnEnter
+Script: EncScript_Zamazenta_BehemothBash
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
