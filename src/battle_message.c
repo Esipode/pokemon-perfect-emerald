@@ -2921,6 +2921,20 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCZACIANMARKSBROKEN]                = COMPOUND_STRING("Zacian's rhythm breaks! Its\nmarks are wiped away!"),
     [STRINGID_ENCZACIANFADE]                       = COMPOUND_STRING("Zacian's blade dims..."),
     [STRINGID_ENCZACIANWEAKENED]                   = COMPOUND_STRING("Zacian bares its throat!"),
+    [STRINGID_ENCETERNATUSNODEFORMS]               = COMPOUND_STRING("An energy Node\nforms nearby!"),
+    [STRINGID_ENCETERNATUSNODEDESTROYED]           = COMPOUND_STRING("The Node shatters\nharmlessly!"),
+    [STRINGID_ENCETERNATUSNODEABSORBED]            = COMPOUND_STRING("ETERNATUS ABSORBS\nTHE NODE!"),
+    [STRINGID_ENCETERNATUSTIER1]                   = COMPOUND_STRING("Energy distortion\nripples outward."),
+    [STRINGID_ENCETERNATUSTIER2]                   = COMPOUND_STRING("The energy grows\nunstable!"),
+    [STRINGID_ENCETERNATUSTIER3]                   = COMPOUND_STRING("DYNAMAX SURGE!\nReality bends."),
+    [STRINGID_ENCETERNATUSTIER4]                   = COMPOUND_STRING("ENERGY CRITICAL!\nIt can't be held!"),
+    [STRINGID_ENCETERNATUSCANNONCHARGE]            = COMPOUND_STRING("Eternatus aims a\nDynamax Cannon!"),
+    [STRINGID_ENCETERNATUSCANNONINTERRUPTED]       = COMPOUND_STRING("The charge breaks\napart!"),
+    [STRINGID_ENCETERNATUSCANNONFIRES]             = COMPOUND_STRING("THE CANNON FIRES!"),
+    [STRINGID_ENCETERNATUSCOREOPENS]               = COMPOUND_STRING("Its core is\nexposed!"),
+    [STRINGID_ENCETERNATUSCORESTRUCK]              = COMPOUND_STRING("A direct hit rocks\nthe core!"),
+    [STRINGID_ENCETERNATUSDARKESTDAY]              = COMPOUND_STRING("THE DARKEST DAY\nBEGINS.\pDYNAMAX RESONANCE\nanswers!"),
+    [STRINGID_ENCETERNATUSWEAKENED]                = COMPOUND_STRING("Eternatus falters,\nits power spent."),
 };
 
 const u16 gOneHitKOStringIds[] =

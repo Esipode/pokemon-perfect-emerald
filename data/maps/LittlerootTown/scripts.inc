@@ -52,6 +52,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_SPECTRIER, FLAG_HIDE_SPECTRIER
 	updatelegendaryvisibility SPECIES_ZAMAZENTA, FLAG_HIDE_ZAMAZENTA
 	updatelegendaryvisibility SPECIES_ZACIAN, FLAG_HIDE_ZACIAN
+	updatelegendaryvisibility SPECIES_ETERNATUS, FLAG_HIDE_ETERNATUS
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1165,6 +1166,9 @@ LittlerootTown_EventScript_EncounterTESTZamazenta::
 
 LittlerootTown_EventScript_EncounterTESTZacian::
 	goto LegendaryEncounter_EventScript_Zacian
+
+LittlerootTown_EventScript_EncounterTESTEternatus::
+	goto LegendaryEncounter_EventScript_Eternatus
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

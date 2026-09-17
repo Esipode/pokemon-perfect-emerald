@@ -1203,6 +1203,16 @@ extern const u8 EncScript_Zacian_ProtectInterrupt[];
 extern const u8 EncScript_Zacian_TurnClose[];
 extern const u8 EncScript_Zacian_Spent[];
 
+// Eternatus ("The Gigantic Pokémon")
+extern const u8 EncScript_Eternatus_Intro[];
+extern const u8 EncScript_Eternatus_TurnOpen[];
+extern const u8 EncScript_Eternatus_BossHit[];
+extern const u8 EncScript_Eternatus_BossAttacked[];
+extern const u8 EncScript_Eternatus_TurnClose[];
+extern const u8 EncScript_Eternatus_Eternamax[];
+extern const u8 EncScript_Eternatus_DarkestDay[];
+extern const u8 EncScript_Eternatus_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

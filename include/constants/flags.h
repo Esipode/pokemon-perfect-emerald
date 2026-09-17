@@ -311,7 +311,7 @@
 #define FLAG_RECEIVED_SOOTHE_BELL            0x116
 #define FLAG_RECEIVED_WHITE_HERB             0x117
 #define FLAG_RECEIVED_SOFT_SAND              0x118
-#define FLAG_UNUSED_0x119                    0x119 // Unused Flag
+#define FLAG_HIDE_ETERNATUS                  0x119
 #define FLAG_RECEIVED_CLEANSE_TAG            0x11A
 #define FLAG_RECEIVED_FOCUS_BAND             0x11B
 #define FLAG_DECLINED_WALLY_BATTLE_MAUVILLE  0x11C
