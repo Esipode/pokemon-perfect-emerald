@@ -890,6 +890,27 @@ extern const u8 EncScript_Necrozma_ArmorBreak3[];
 extern const u8 EncScript_Necrozma_UltraTransform[];
 extern const u8 EncScript_Necrozma_CatchWindow[];
 
+// Zeraora ("The Thunderclap Pokémon")
+extern const u8 EncScript_Zeraora_Init[];
+extern const u8 EncScript_Zeraora_Upkeep[];
+extern const u8 EncScript_Zeraora_ClearTurnGuard[];
+extern const u8 EncScript_Zeraora_BossHit[];
+extern const u8 EncScript_Zeraora_PlayerHit[];
+extern const u8 EncScript_Zeraora_PlasmaFistsCharge[];
+extern const u8 EncScript_Zeraora_BossMiss[];
+extern const u8 EncScript_Zeraora_Paralyzed[];
+extern const u8 EncScript_Zeraora_KO[];
+extern const u8 EncScript_Zeraora_PlayerSwitch[];
+extern const u8 EncScript_Zeraora_ForcedOut[];
+extern const u8 EncScript_Zeraora_TerrainGain[];
+extern const u8 EncScript_Zeraora_Overdrive[];
+extern const u8 EncScript_Zeraora_MaxVelocity[];
+extern const u8 EncScript_Zeraora_PlasmaOverloadArm[];
+extern const u8 EncScript_Zeraora_PlasmaOverloadRelease[];
+extern const u8 EncScript_Zeraora_ThunderclapArm[];
+extern const u8 EncScript_Zeraora_ThunderclapRevert[];
+extern const u8 EncScript_Zeraora_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

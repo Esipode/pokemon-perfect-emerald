@@ -97,7 +97,7 @@
 #define FLAG_HIDE_XERNEAS    0x4C
 #define FLAG_HIDE_YVELTAL    0x4D
 #define FLAG_HIDE_NECROZMA   0x4E
-#define FLAG_UNUSED_0x04F    0x4F // Unused Flag
+#define FLAG_HIDE_ZERAORA    0x4F
 
 // Scripts
 #define FLAG_HIDE_SKY_PILLAR_TOP_RAYQUAZA_STILL  0x50

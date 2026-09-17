@@ -2661,6 +2661,15 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCNECROZMAULTRA]             = COMPOUND_STRING("Necrozma unleashes its\nfull power - ULTRA NECROZMA!"),
     [STRINGID_ENCNECROZMAGEYSER]            = COMPOUND_STRING("Light spikes within it -\nbrace for Photon Geyser!"),
     [STRINGID_ENCNECROZMACATCH]             = COMPOUND_STRING("Necrozma's light is\nfading - now is the moment!{PAUSE_UNTIL_PRESS}"),
+
+    [STRINGID_ENCZERAORAOVERDRIVE]          = COMPOUND_STRING("Zeraora's fur crackles with\nstatic - it shifts gears!"),
+    [STRINGID_ENCZERAORAMAXVELOCITY]        = COMPOUND_STRING("Static roars off Zeraora -\nit's about to outrun sight!"),
+    [STRINGID_ENCZERAORANETWORKCOMPLETE]    = COMPOUND_STRING("The scattered arcs snap\ntogether - the Network locks in!"),
+    [STRINGID_ENCZERAORATHUNDERCLAP]        = COMPOUND_STRING("Zeraora vanishes in a flash -\nit's already gone!"),
+    [STRINGID_ENCZERAORAPLASMAARM]          = COMPOUND_STRING("Electricity floods outward,\npooling at Zeraora's fists!"),
+    [STRINGID_ENCZERAORAPLASMARELEASE]      = COMPOUND_STRING("The charge discharges at\nonce - Zeraora looks spent!"),
+    [STRINGID_ENCZERAORASPEEDCHAIN]         = COMPOUND_STRING("Each strike feeds the last -\nZeraora is picking up speed!"),
+    [STRINGID_ENCZERAORACATCH]              = COMPOUND_STRING("Zeraora's speed gives out -\nnow is the moment!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

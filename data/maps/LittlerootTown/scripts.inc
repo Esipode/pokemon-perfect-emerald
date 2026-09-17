@@ -42,7 +42,7 @@ LittlerootTown_OnTransition:
 	call_if_eq VAR_LITTLEROOT_TOWN_STATE, 3, LittlerootTown_EventScript_SetMomStandingInFrontOfDoorPos
 	call_if_eq VAR_OLDALE_RIVAL_STATE, 1, LittlerootTown_EventScript_MoveRivalFromOldale
 	call_if_eq VAR_LITTLEROOT_RIVAL_STATE, 3, LittlerootTown_EventScript_SetRivalLeftForRoute103
-	updatelegendaryvisibility SPECIES_NECROZMA, FLAG_HIDE_NECROZMA
+	updatelegendaryvisibility SPECIES_ZERAORA, FLAG_HIDE_ZERAORA
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1114,6 +1114,9 @@ LittlerootTown_EventScript_EncounterTESTYveltal::
 
 LittlerootTown_EventScript_EncounterTESTNecrozma::
 	goto LegendaryEncounter_EventScript_Necrozma
+
+LittlerootTown_EventScript_EncounterTESTZeraora::
+	goto LegendaryEncounter_EventScript_Zeraora
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

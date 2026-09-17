@@ -833,3 +833,17 @@ LegendaryEncounter_EventScript_Necrozma::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Zeraora::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_ZERAORA, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_ZERAORA
+	setwildbattle SPECIES_ZERAORA, 50, ITEM_ZERAORITE   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle
