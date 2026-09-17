@@ -48,6 +48,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_REGIDRAGO, FLAG_HIDE_REGIDRAGO
 	updatelegendaryvisibility SPECIES_REGIELEKI, FLAG_HIDE_REGIELEKI
 	updatelegendaryvisibility SPECIES_ENAMORUS, FLAG_HIDE_ENAMORUS
+	updatelegendaryvisibility SPECIES_ZARUDE, FLAG_HIDE_ZARUDE
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1149,6 +1150,9 @@ LittlerootTown_EventScript_EncounterTESTRegieleki::
 
 LittlerootTown_EventScript_EncounterTESTEnamorus::
 	goto LegendaryEncounter_EventScript_Enamorus
+
+LittlerootTown_EventScript_EncounterTESTZarude::
+	goto LegendaryEncounter_EventScript_Zarude
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

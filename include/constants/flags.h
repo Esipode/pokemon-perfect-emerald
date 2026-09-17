@@ -240,7 +240,7 @@
 #define FLAG_DEFEATED_RIVAL_RUSTBORO         0xD3
 #define FLAG_RECEIVED_RED_OR_BLUE_ORB        0xD4
 #define FLAG_RECEIVED_PREMIER_BALL_RUSTBORO  0xD5
-#define FLAG_UNUSED_0x0D6                    0xD6 // Unused Flag
+#define FLAG_HIDE_ZARUDE                     0xD6
 #define FLAG_UNUSED_0x0D7                    0xD7 // Unused Flag
 #define FLAG_UNUSED_0x0D8                    0xD8 // Unused Flag
 #define FLAG_MET_DIVING_TREASURE_HUNTER      0xD9

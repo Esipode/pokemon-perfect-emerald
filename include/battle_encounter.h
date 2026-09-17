@@ -1101,6 +1101,24 @@ extern const u8 EncScript_Enamorus_HeartstormPulse[];
 extern const u8 EncScript_Enamorus_HeartstormPulseClear[];
 extern const u8 EncScript_Enamorus_SpringsEmbrace[];
 
+// Zarude ("The Rogue Monkey Pokémon")
+extern const u8 EncScript_Zarude_Init[];
+extern const u8 EncScript_Zarude_TurnOpen[];
+extern const u8 EncScript_Zarude_TerritoryFromGrass[];
+extern const u8 EncScript_Zarude_TerritoryFromDamage[];
+extern const u8 EncScript_Zarude_TerritoryFromThreat[];
+extern const u8 EncScript_Zarude_OvergrownTier[];
+extern const u8 EncScript_Zarude_JungleTier[];
+extern const u8 EncScript_Zarude_AmbushAnticipated[];
+extern const u8 EncScript_Zarude_AmbushStrikes[];
+extern const u8 EncScript_Zarude_VineBindApply[];
+extern const u8 EncScript_Zarude_Phase2_DeepJungle[];
+extern const u8 EncScript_Zarude_Phase3_Guardian[];
+extern const u8 EncScript_Zarude_BallsUnlock[];
+extern const u8 EncScript_Zarude_JungleRage[];
+extern const u8 EncScript_Zarude_TurnClose[];
+extern const u8 EncScript_Zarude_BattleEndFlavor[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
