@@ -2670,6 +2670,24 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCZERAORAPLASMARELEASE]      = COMPOUND_STRING("The charge discharges at\nonce - Zeraora looks spent!"),
     [STRINGID_ENCZERAORASPEEDCHAIN]         = COMPOUND_STRING("Each strike feeds the last -\nZeraora is picking up speed!"),
     [STRINGID_ENCZERAORACATCH]              = COMPOUND_STRING("Zeraora's speed gives out -\nnow is the moment!{PAUSE_UNTIL_PRESS}"),
+
+    [STRINGID_ENCTAPUKOKOINTRO]             = COMPOUND_STRING("Electric Terrain crackles -\nthe Guardian tests you!"),
+    [STRINGID_ENCTAPUKOKOGUARDIANSTATE]     = COMPOUND_STRING("Koko's temper flares -\nThunder Call unlocks!"),
+    [STRINGID_ENCTAPUKOKOISLANDGUARDIAN]    = COMPOUND_STRING("The Guardian Storm begins!\nTerrain locks in place!"),
+    [STRINGID_ENCTAPUKOKOVOLTAGERISING]     = COMPOUND_STRING("Koko's Voltage is rising!"),
+    [STRINGID_ENCTAPUKOKOVOLTAGEFALLING]    = COMPOUND_STRING("Koko's Voltage is falling."),
+    [STRINGID_ENCTAPUKOKOCHALLENGEOPEN]     = COMPOUND_STRING("Koko issues a Challenge!"),
+    [STRINGID_ENCTAPUKOKOCHALLENGEFALLS]    = COMPOUND_STRING("The challenger has fallen!"),
+    [STRINGID_ENCTAPUKOKOCHALLENGEENDURES]  = COMPOUND_STRING("The challenger endured!\nKoko's grip loosens."),
+    [STRINGID_ENCTAPUKOKOCHALLENGEPUNISH]   = COMPOUND_STRING("The Guardian will not be\navoided!"),
+    [STRINGID_ENCTAPUKOKOTHUNDERWARN]       = COMPOUND_STRING("STRIKE IN 2 TURNS!"),
+    [STRINGID_ENCTAPUKOKOTHUNDERSTRIKE]     = COMPOUND_STRING("Thunder Call strikes home!"),
+    [STRINGID_ENCTAPUKOKOTHUNDERDODGED]     = COMPOUND_STRING("The switch throws off\nThunder Call's aim!"),
+    [STRINGID_ENCTAPUKOKOCHARGEMARK]        = COMPOUND_STRING("Marked with an Electric\nCharge!"),
+    [STRINGID_ENCTAPUKOKOCHARGECLEAR]       = COMPOUND_STRING("The charge grounds out."),
+    [STRINGID_ENCTAPUKOKOCHARGESTRIKE]      = COMPOUND_STRING("The Electric Charge strikes!"),
+    [STRINGID_ENCTAPUKOKOGIGAVOLTBEGINS]    = COMPOUND_STRING("Koko gathers the storm's\nfull force!"),
+    [STRINGID_ENCTAPUKOKOEXHAUSTED]         = COMPOUND_STRING("Tapu Koko's storm gives out -\nnow is the moment!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

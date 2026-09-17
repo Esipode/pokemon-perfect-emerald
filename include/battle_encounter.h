@@ -911,6 +911,25 @@ extern const u8 EncScript_Zeraora_ThunderclapArm[];
 extern const u8 EncScript_Zeraora_ThunderclapRevert[];
 extern const u8 EncScript_Zeraora_Spent[];
 
+// Tapu Koko ("The Land Spirit Pokémon")
+extern const u8 EncScript_TapuKoko_Intro[];
+extern const u8 EncScript_TapuKoko_GuardianState[];
+extern const u8 EncScript_TapuKoko_IslandGuardian[];
+extern const u8 EncScript_TapuKoko_GigavoltBegins[];
+extern const u8 EncScript_TapuKoko_TurnOpen[];
+extern const u8 EncScript_TapuKoko_TerrainGain[];
+extern const u8 EncScript_TapuKoko_ThunderArm[];
+extern const u8 EncScript_TapuKoko_OpenChallenge[];
+extern const u8 EncScript_TapuKoko_MarkCharge[];
+extern const u8 EncScript_TapuKoko_ClearCharge[];
+extern const u8 EncScript_TapuKoko_ElectricApproval[];
+extern const u8 EncScript_TapuKoko_ChallengePunish[];
+extern const u8 EncScript_TapuKoko_ChallengeFalls[];
+extern const u8 EncScript_TapuKoko_ChargeFollows[];
+extern const u8 EncScript_TapuKoko_ThunderDodged[];
+extern const u8 EncScript_TapuKoko_TurnClose[];
+extern const u8 EncScript_TapuKoko_Exhausted[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

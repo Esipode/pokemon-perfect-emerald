@@ -14016,6 +14016,151 @@ void BS_EncRevive(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// PARTY_BEST (encpartybest). Scans every non-fainted, non-active, non-egg bench member of <side>'s
+// party (<side> is a single-slot EncounterTarget - ENC_TARGET_PLAYER_LEFT/_RIGHT resolves to that
+// trainer's whole party) and writes the party slot index of whichever has the highest stored <stat>
+// into <var>. Reuses encrevive's "walk the party, skip fainted/egg/active" loop and enccomparestat/
+// encreadstat's restricted stat list (STAT_ATK/DEF/SPATK/SPDEF/SPEED - no battle stat behind
+// STAT_ACC/STAT_EVASION, and HP isn't a fair "best" axis since a wounded mon shouldn't outrank a
+// fresh one). Reads the party Pokemon's own stored stat, not a live battle value with stages -
+// nothing on the bench is on the field, so there is no stage to read. Writes ENC_NO_SLOT (0xFF) if
+// the bench is empty.
+void BS_EncounterPartyBest(void)
+{
+    NATIVE_ARGS(u8 side, u8 stat, u8 var);
+    u32 mask = ResolveEncounterTarget((enum EncounterTarget)cmd->side);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u32 side;
+    u32 statField;
+    u32 bestValue = 0;
+    u32 bestSlot = ENC_NO_SLOT;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: PARTY_BEST side %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->side)
+    {
+        gEncounterVars[cmd->var] = ENC_NO_SLOT;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    switch (cmd->stat)
+    {
+    case STAT_ATK:   statField = MON_DATA_ATK;   break;
+    case STAT_DEF:   statField = MON_DATA_DEF;   break;
+    case STAT_SPATK: statField = MON_DATA_SPATK; break;
+    case STAT_SPDEF: statField = MON_DATA_SPDEF; break;
+    case STAT_SPEED: statField = MON_DATA_SPEED; break;
+    default:
+        assertf(FALSE, "encounter %d: PARTY_BEST unsupported stat %d", gBattleStruct->encounter.id, cmd->stat)
+        {
+            gEncounterVars[cmd->var] = ENC_NO_SLOT;
+            gBattlescriptCurrInstr = cmd->nextInstr;
+            return;
+        }
+        gEncounterVars[cmd->var] = ENC_NO_SLOT;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    side = GetBattlerSide(battler);
+    party = GetBattlerParty(battler);
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        u32 value;
+        bool32 isBattler = FALSE;
+
+        if (GetMonData(&party[i], MON_DATA_SPECIES) == SPECIES_NONE
+         || GetMonData(&party[i], MON_DATA_IS_EGG)
+         || GetMonData(&party[i], MON_DATA_HP) == 0)
+            continue;
+
+        for (enum BattlerId other = B_BATTLER_0; other < gBattlersCount; other++)
+        {
+            if (GetBattlerSide(other) == side && gBattlerPartyIndexes[other] == i)
+                isBattler = TRUE;
+        }
+        if (isBattler)
+            continue;
+
+        value = GetMonData(&party[i], statField);
+        if (bestSlot == ENC_NO_SLOT || value > bestValue)
+        {
+            bestValue = value;
+            bestSlot = i;
+        }
+    }
+
+    gEncounterVars[cmd->var] = bestSlot;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// FORCE_SWITCH (encforceswitch). encswitchout's named-slot sibling: drags <target> (must resolve to
+// exactly one battler, never the boss) out for the bench member at party slot <partySlotVar> - an
+// author variable holding a slot index, typically one encpartybest just wrote - by name rather than
+// at random, with the same stock switch-in presentation (BattleScript_EncounterForcedSwitch). Jumps
+// <failLabel> when that slot is fainted, already active, empty, an egg, or out of range - all
+// ordinary states for a stored slot to have drifted into, so it branches rather than asserts.
+void BS_EncounterForceSwitch(void)
+{
+    NATIVE_ARGS(u8 target, u8 partySlotVar, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget((enum EncounterTarget)cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u32 partySlot = gEncounterVars[cmd->partySlotVar];
+    u8 boss;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: FORCE_SWITCH target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss) && battler == boss)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    if (partySlot >= PARTY_SIZE)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    party = GetBattlerParty(battler);
+
+    if (GetMonData(&party[partySlot], MON_DATA_SPECIES) == SPECIES_NONE
+     || GetMonData(&party[partySlot], MON_DATA_IS_EGG)
+     || GetMonData(&party[partySlot], MON_DATA_HP) == 0
+     || partySlot == gBattlerPartyIndexes[battler]
+     || (IsDoubleBattle() && partySlot == gBattlerPartyIndexes[GetPartnerBattler(battler)]))
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    for (enum BattlerId i = B_BATTLER_0; i < gBattlersCount; i++)
+        gBattleMons[i].volatiles.tryEjectPack = FALSE; // Disable Eject Pack activations
+    gBattleStruct->battlerPartyIndexes[battler] = gBattlerPartyIndexes[battler];
+    gProtectStructs[battler].forcedSwitch = TRUE;
+    gBattleStruct->monToSwitchIntoId[battler] = partySlot;
+    SwitchPartyOrder(battler);
+
+    // BattleScript_EncounterForcedSwitch addresses its victim through BS_TARGET.
+    gBattlerTarget = battler;
+    gBattleScripting.battler = battler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
 // describe the ball the player is about to throw, and there is only ever one catch target.
 void BS_EncounterSetBallPolicy(void)

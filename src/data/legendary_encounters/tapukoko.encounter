@@ -1,0 +1,262 @@
+Encounter: Tapu_Koko
+
+# Tapu Koko, "The Land Spirit Pokemon". One rule:
+#   VOLTAGE (0-5) is Koko's aggression meter. It climbs when Koko presses the fight (attacks,
+#   outspeeds the player, Electric Terrain up) and falls when the player denies it (outspeeding
+#   Koko, surviving its Challenges). Higher Voltage means a harder-hitting, faster Koko and a more
+#   dangerous storm.
+# WATCH VOLTAGE. A rising Koko is winning the speed war - answer with speed/defense play, not just
+#   raw damage. In Phase 2, an Electric Charge on the active mon means the next lightning strike is
+#   theirs; clearing it (a Ground move, or riding the timer out) is the survival lever.
+#   Phase 0 LIGHTNING GUARDIAN (100%-50%) - Voltage climbs on aggression, Terrain and Speed
+#     Challenges call the fastest bench mon in.
+#   Phase 1 GUARDIAN STATE (50%-20%) - Thunder Call unlocks (a telegraphed 2-turn strike a switch
+#     avoids), Guardian's Challenge punishes status-move stalling on the active mon instead.
+#   Phase 2 ISLAND GUARDIAN (20%-10%) - Voltage locked at 5, permanent Terrain, a fresh Electric
+#     Charge every turn without one already active.
+#   Gigavolt Guardian fires at 10%, exhausts Koko, opens the catch window.
+# ANTI-ABUSE IS NARROW (guideline 8): Ground-type moves clearing the charge is a real answer, not a
+#   wall. Switching out of a warned Thunder Call is the intended counter (no repositioning in
+#   singles) and is not blocked; what's blocked is a Speed/Guardian's Challenge resolving against
+#   whoever was named regardless of a free switch. Status-move stalling during a Challenge is
+#   punished (Voltage + 5% chip), not banned outright, since a hard block has no engine support.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                    # EncScript_TapuKoko_Exhausted sets a real one
+    Balls: Blocked
+    DamageReduction: 92              # baseline; never scripted past 80-96 outside the catch window
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True       # a 4x weakness would otherwise spike past what the reduction was
+                                      # balanced for
+    FlatToxicDamage: True
+    Ability: ABILITY_ELECTRIC_SURGE  # sets Electric Terrain on entry for free - no scripted
+                                      # encsetterrain needed at battle start
+    Moves: MOVE_WILD_CHARGE, MOVE_BRAVE_BIRD, MOVE_DAZZLING_GLEAM, MOVE_AGILITY
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# No Survive: - Gigavolt Guardian's own script walks Koko down to the exhausted state on a scripted
+# HP write, not a hit the player lands, so there is no last-stand blind spot to cover.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..SwitchGuard to 0..15 (the 16-variable ceiling, exactly).
+# 0 Phase (0 Lightning Guardian / 1 Guardian State / 2 Island Guardian / 3 Exhausted), 1 Voltage
+# (0-5), 2 TurnGuard (once-per-turn scaffold), 3 LastBand (last ANNOUNCED Voltage value, the
+# callout's re-fire latch), 4 Charged (0/1 - does the active player mon carry an Electric Charge),
+# 5 ChargeTimer (turns until a carried charge triggers its strike; ticked OnTurnStart, resolved
+# OnTurnEnd, the Reshiram Judgment idiom - resolves at 1, not 0), 6 SpeedCmp (scratch:
+# enccomparestat result, Boss vs PlayerLeft Speed, each turn), 7 ChallengeTimer (turns left on an
+# active Challenge - Speed Challenge in Phase 0, Guardian's Challenge in Phase 1; the phases are
+# exclusive so the var is shared; same tick/resolve idiom as ChargeTimer), 8 ChallengeGuard
+# (cooldown before the next Challenge can open), 9 ThunderTimer (Phase 1 Thunder Call countdown: 0
+# inactive, 2->1->strike, same idiom), 10 GigaCharge (0 none / 1 charging Gigavolt Guardian / 9
+# resolved), 11 Exhausted (latches once Gigavolt Guardian has fired, so its one-time dialogue can't
+# re-print), 12 ChallengeSlot (scratch: the party slot encpartybest finds, consumed immediately by
+# encforceswitch), 13 MoveGuard (per-turn latch so ElectricApproval/ChallengePunish - gated on a
+# meter they themselves move, not a dedicated flag - can't re-select within the same OnMoveEnd
+# dispatch; cleared at TurnOpen), 14 ThunderGuard (cooldown before the next Thunder Call can arm,
+# Phase 1 only), 15 SwitchGuard (per-turn latch so ChargeFollows - gated on Charged, which it never
+# touches - can't re-select every pass of the OnSwitchIn checkpoint; cleared at TurnOpen).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_TapuKoko_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Voltage) >= 0
+    Var(TurnGuard) >= 0
+    Var(LastBand) >= 0
+    Var(Charged) >= 0
+    Var(ChargeTimer) >= 0
+    Var(SpeedCmp) >= 0
+    Var(ChallengeTimer) >= 0
+    Var(ChallengeGuard) >= 0
+    Var(ThunderTimer) >= 0
+    Var(GigaCharge) >= 0
+    Var(Exhausted) >= 0
+    Var(ChallengeSlot) >= 0
+    Var(MoveGuard) >= 0
+    Var(ThunderGuard) >= 0
+    Var(SwitchGuard) >= 0
+
+# The two phase transitions plus the Gigavolt Guardian trigger, each registered at both OnMoveEnd
+# and OnTurnEnd because the crossing blow can be a move or an end-of-turn tick. All three sit BELOW
+# _TurnClose (80), so at an OnTurnEnd where the player's damage crossed a threshold the transition
+# runs first and the ledger sees the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_TapuKoko_GuardianState
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_TapuKoko_GuardianState
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_TapuKoko_IslandGuardian
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_TapuKoko_IslandGuardian
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# Sets GigaCharge to 1; TurnOpen (below) flips it to 9 on the *next* turn boundary, so a full turn
+# always separates the telegraph from Exhausted firing, whichever checkpoint caught the crossing.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_TapuKoko_GigavoltBegins
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_TapuKoko_GigavoltBegins
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnGuard is the only gate and the script sets it immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_TapuKoko_TurnOpen
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 0
+
+# Electric Terrain's own upkeep feeds Voltage. A level condition, not an Event one, so OnEnter's
+# edge tracking works cleanly here: TurnGuard flips 0->1 once per turn open, and the whole block's
+# edge (not just Terrain) is what OnEnter watches, so this fires exactly once per turn the Terrain
+# is up.
+Trigger: OnTurnStart
+Priority: 12
+Flags: OnEnter
+Script: EncScript_TapuKoko_TerrainGain
+Conditions:
+    Terrain == B_TERRAIN_ELECTRIC
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+
+# Thunder Call arms on a cooldown. Self-disabling through ThunderTimer, which the script sets to 2.
+Trigger: OnTurnStart
+Priority: 13
+Script: EncScript_TapuKoko_ThunderArm
+Conditions:
+    Var(Phase) == 1
+    Var(ThunderTimer) == 0
+    Var(ThunderGuard) == 0
+
+# Opens a Speed Challenge (Phase 0) or Guardian's Challenge (Phase 1) - one script, branches on
+# Phase. Self-disabling through ChallengeTimer, which the script sets to 3.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_TapuKoko_OpenChallenge
+Conditions:
+    Var(Phase) <= 1
+    Var(ChallengeGuard) == 0
+    Var(ChallengeTimer) == 0
+
+# Koko attacked - lay an Electric Charge. Phase 0/1 only; Phase 2 lays one automatically every turn
+# instead (EncScript_TapuKoko_TurnClose_Storm). Self-disabling through Charged, which the script
+# sets.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_TapuKoko_MarkCharge
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(Charged) == 0
+    Var(Voltage) >= 3
+    Var(Phase) <= 1
+
+# The player used a Ground move while charged - the charge grounds out. Self-disabling through
+# Charged, which the script clears.
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_TapuKoko_ClearCharge
+Conditions:
+    Event.MoveType == TYPE_GROUND
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(Charged) == 1
+
+# The player used an Electric move - Koko approves. MoveGuard (not Voltage itself) is the gate:
+# the re-evaluation loop would otherwise re-select this trigger and stack +1 several times within
+# one OnMoveEnd dispatch, since Voltage <= 4 can stay true for a pass or two after each +1.
+Trigger: OnMoveEnd
+Priority: 22
+Script: EncScript_TapuKoko_ElectricApproval
+Conditions:
+    Event.MoveType == TYPE_ELECTRIC
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(Voltage) <= 4
+    Var(MoveGuard) == 0
+
+# Guardian's Challenge status-move punish. Same MoveGuard gate, same reason.
+Trigger: OnMoveEnd
+Priority: 23
+Script: EncScript_TapuKoko_ChallengePunish
+Conditions:
+    Var(ChallengeTimer) >= 1
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(MoveGuard) == 0
+
+# The Challenge target went down.
+Trigger: OnFaint
+Priority: 25
+Script: EncScript_TapuKoko_ChallengeFalls
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(ChallengeTimer) >= 1
+
+# The charge follows a new arrival. SwitchGuard (not Charged, which the script never touches) is
+# the gate - Event.Battler stays true for every re-evaluation pass of this one switch-in, so
+# without a dedicated latch this reselects until the checkpoint's script cap trips.
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_TapuKoko_ChargeFollows
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(Charged) == 1
+    Var(SwitchGuard) == 0
+
+# Switching out of a warned Thunder Call is the intended counter (no repositioning in singles) -
+# the new arrival was never the one the warning named, so the strike is thrown off outright.
+Trigger: OnSwitchIn
+Priority: 31
+Script: EncScript_TapuKoko_ThunderDodged
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(ThunderTimer) >= 1
+
+# THE LEDGER. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_TapuKoko_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# Gigavolt Guardian has resolved.
+Trigger: OnTurnEnd
+Priority: 85
+Flags: Once
+Script: EncScript_TapuKoko_Exhausted
+Conditions:
+    Var(Phase) == 2
+    Var(GigaCharge) == 9

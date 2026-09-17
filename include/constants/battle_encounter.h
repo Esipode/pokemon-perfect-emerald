@@ -62,6 +62,7 @@ enum EncounterId
     ENCOUNTER_YVELTAL,
     ENCOUNTER_NECROZMA,
     ENCOUNTER_ZERAORA,
+    ENCOUNTER_TAPU_KOKO,
     ENCOUNTER_COUNT,
 };
 
@@ -211,6 +212,9 @@ enum EncounterTarget
     ENC_TARGET_ALL_BATTLERS,
     ENC_TARGET_COUNT,
 };
+
+// encpartybest writes this into its result var when a side's bench has nobody eligible.
+#define ENC_NO_SLOT 0xFF
 
 // Side-wide statuses encsetsidestatus / encclearsidestatus can raise or drop. A small enum rather
 // than a raw SIDE_STATUS_* bitmask because SIDE_STATUS_RAINBOW is 1 << 8 and a script argument is a

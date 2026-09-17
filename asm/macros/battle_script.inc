@@ -1627,6 +1627,32 @@
 	call BattleScript_EncounterForcedSwitch
 	.endm
 
+	@ Scans every non-fainted, non-active, non-egg bench member of \side's party (a single-slot
+	@ EncounterTarget - ENC_TARGET_PLAYER_LEFT/_RIGHT resolves to that trainer's whole party) and
+	@ writes the party slot index (0-5) of whichever has the highest stored \stat into \var.
+	@ Reads the party Pokemon's own stored stat, not a live battle value with stages - nothing on
+	@ the bench is on the field. Same restricted stat list as enccomparestat/encreadstat
+	@ (STAT_ATK/DEF/SPATK/SPDEF/SPEED). Writes ENC_NO_SLOT (0xFF) if the bench is empty.
+	.macro encpartybest side:req, stat:req, var:req
+	callnative BS_EncounterPartyBest
+	.byte \side
+	.byte \stat
+	.byte \var
+	.endm
+
+	@ Forces \target (exactly one battler, never the boss) to switch out for the bench member at
+	@ party slot \partySlotVar - an author variable holding a slot index, typically one
+	@ encpartybest just wrote - by name rather than at random, with the same stock drag-out
+	@ presentation encswitchout uses. Jumps \failInstr when that slot is fainted, already active,
+	@ empty, an egg, or out of range.
+	.macro encforceswitch target:req, partySlotVar:req, failInstr:req
+	callnative BS_EncounterForceSwitch
+	.byte \target
+	.byte \partySlotVar
+	.4byte \failInstr
+	call BattleScript_EncounterForcedSwitch
+	.endm
+
 	@ Forces \target (must resolve to exactly one battler) to Mega Evolve outside the normal
 	@ gimmick-selection flow, then plays the same presentation BattleScript_MegaEvolution
 	@ (data/battle_scripts_1.s) uses. Jumps to \failInstr if the target can't mega evolve right now
