@@ -2763,6 +2763,19 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCGALARIANARTICUNOPHASE1]            = COMPOUND_STRING("ITS EYES FLARE WITH\nPSYCHIC ENERGY!"),
     [STRINGID_ENCGALARIANARTICUNOPHASE2]            = COMPOUND_STRING("YOUR OWN MIND BEGINS\nTO UNRAVEL!"),
     [STRINGID_ENCGALARIANARTICUNOCATCHWINDOW]       = COMPOUND_STRING("ITS FOCUS SHATTERS -\nNOW IS THE MOMENT!"),
+
+    [STRINGID_ENCGZAPDOSVICIOUSBLOW]        = COMPOUND_STRING("Zapdos capitalizes on\nthe opening!"),
+    [STRINGID_ENCGZAPDOSMOMENTUMSURGE]      = COMPOUND_STRING("Zapdos surges with\nmomentum!"),
+    [STRINGID_ENCGZAPDOSSTAGGERED]          = COMPOUND_STRING("Zapdos has been\nstaggered!"),
+    [STRINGID_ENCGZAPDOSOVEREXTENDS]        = COMPOUND_STRING("Zapdos overextends\nits attack!"),
+    [STRINGID_ENCGZAPDOSTHROWNOFF]          = COMPOUND_STRING("The status throws\nZapdos off rhythm!"),
+    [STRINGID_ENCGZAPDOSCOMBOCONTINUES]     = COMPOUND_STRING("Zapdos keeps up the\nassault!"),
+    [STRINGID_ENCGZAPDOSGIVESCHASE]         = COMPOUND_STRING("Zapdos gives chase!"),
+    [STRINGID_ENCGZAPDOSPURSUITCOUNTERED]   = COMPOUND_STRING("The ground grounds\nthe pursuit!"),
+    [STRINGID_ENCGZAPDOSRELENTLESSASSAULT]  = COMPOUND_STRING("RELENTLESS ASSAULT!"),
+    [STRINGID_ENCGZAPDOSFRENZY]             = COMPOUND_STRING("Galarian Zapdos throws\nitself into a frenzy!"),
+    [STRINGID_ENCGZAPDOSREFUSESTOSTOP]      = COMPOUND_STRING("Zapdos refuses to\nstop! Now's the moment!"),
+    [STRINGID_ENCGZAPDOSWEAKNESSHIT]        = COMPOUND_STRING("The hit rattles\nZapdos's focus!"),
 };
 
 const u16 gOneHitKOStringIds[] =

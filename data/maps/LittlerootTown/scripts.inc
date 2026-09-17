@@ -43,6 +43,7 @@ LittlerootTown_OnTransition:
 	call_if_eq VAR_OLDALE_RIVAL_STATE, 1, LittlerootTown_EventScript_MoveRivalFromOldale
 	call_if_eq VAR_LITTLEROOT_RIVAL_STATE, 3, LittlerootTown_EventScript_SetRivalLeftForRoute103
 	updatelegendaryvisibility SPECIES_ARTICUNO_GALAR, FLAG_HIDE_GALARIAN_ARTICUNO
+	updatelegendaryvisibility SPECIES_ZAPDOS_GALAR, FLAG_HIDE_GALARIAN_ZAPDOS
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1129,6 +1130,9 @@ LittlerootTown_EventScript_EncounterTESTTapuBulu::
 
 LittlerootTown_EventScript_EncounterTESTGalarianArticuno::
 	goto LegendaryEncounter_EventScript_GalarianArticuno
+
+LittlerootTown_EventScript_EncounterTESTGalarianZapdos::
+	goto LegendaryEncounter_EventScript_GalarianZapdos
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock

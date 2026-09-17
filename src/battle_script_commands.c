@@ -12730,10 +12730,17 @@ void BS_EncSnapshotHp(void)
     for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
         ;
 
-    assertf(IsBattlerAlive(battler),
-            "encounter %d: SNAPSHOT_HP target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    // Same runtime race BS_EncounterChangeHpBegin/Step already tolerate: a battler can legitimately
+    // faint between an earlier command in the same script (a mark tick, a scripted hit) and this
+    // one. The command's own contract already promises a failLabel for "nothing was written" - a
+    // dead target is exactly that case, not an authoring mistake, so it takes the same fail-soft
+    // path as every other mode below rather than asserting.
+    if (!IsBattlerAlive(battler))
     {
-        gBattlescriptCurrInstr = cmd->nextInstr;
+        if (cmd->failInstr != NULL)
+            gBattlescriptCurrInstr = cmd->failInstr;
+        else
+            gBattlescriptCurrInstr = cmd->nextInstr;
         return;
     }
 

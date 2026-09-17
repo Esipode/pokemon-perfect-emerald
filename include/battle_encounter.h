@@ -1009,6 +1009,23 @@ extern const u8 EncScript_GalarianArticuno_Phase3Enter[];
 extern const u8 EncScript_GalarianArticuno_MindBreakTick[];
 extern const u8 EncScript_GalarianArticuno_MindBreakFire[];
 
+// Galarian Zapdos ("The Relentless Pursuer")
+extern const u8 EncScript_GalarianZapdos_Init[];
+extern const u8 EncScript_GalarianZapdos_TurnStartReset[];
+extern const u8 EncScript_GalarianZapdos_TurnEndClearGuard[];
+extern const u8 EncScript_GalarianZapdos_RelentlessAssault[];
+extern const u8 EncScript_GalarianZapdos_ComboLockedClear[];
+extern const u8 EncScript_GalarianZapdos_StatusGuardClear[];
+extern const u8 EncScript_GalarianZapdos_MomentumGainOnHit[];
+extern const u8 EncScript_GalarianZapdos_PlayerHitsBoss[];
+extern const u8 EncScript_GalarianZapdos_SELoss[];
+extern const u8 EncScript_GalarianZapdos_ProtectedLoss[];
+extern const u8 EncScript_GalarianZapdos_StatusLoss[];
+extern const u8 EncScript_GalarianZapdos_KOGain[];
+extern const u8 EncScript_GalarianZapdos_Pursuit[];
+extern const u8 EncScript_GalarianZapdos_Phase2[];
+extern const u8 EncScript_GalarianZapdos_Phase3[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

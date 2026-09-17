@@ -209,7 +209,7 @@
 #define FLAG_EMPORIUM_NO_WHITEOUT            0xB4
 #define FLAG_HIDE_TAPU_FINI                  0xB5
 #define FLAG_HIDE_GALARIAN_ARTICUNO          0xB6
-#define FLAG_UNUSED_0xB7                     0xB7
+#define FLAG_HIDE_GALARIAN_ZAPDOS            0xB7
 #define FLAG_UNUSED_0xB8                     0xB8
 #define FLAG_UNUSED_0xB9                     0xB9
 #define FLAG_UNUSED_0xBA                     0xBA
