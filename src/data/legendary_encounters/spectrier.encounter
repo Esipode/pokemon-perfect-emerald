@@ -1,0 +1,229 @@
+Encounter: Spectrier
+
+# Spectrier, "The Swift Horse Pokemon". One rule:
+#   DREAD (0-6) is a hidden meter driven by player behaviour (faints, repeated switching,
+#   defensive/status play, and Spectrier's own Ghost hits landing) that hardens Spectrier's
+#   evasiveness, unlocks Shadow Trail and Shadow Charge, and eventually forces the Nightmare
+#   finale. Dread also creeps up ambiently every few turns - the tension never fully stalls out.
+# Phase 1 SWIFT HORSE (100%-50%) - Dread/Trail/Fear Mark/Shadow Charge all live.
+# Phase 2 SOUL STEED (50%-25%, trigger 50%) - faster, Grudge scales Charge damage, Charge tightens.
+# Phase 3 NIGHTMARE RIDER (<=25% or Dread==6) - one buildup turn, one unavoidable Astral Barrage,
+#   then Spectrier is vulnerable; Balls unlock at <=10% HP.
+# SHADOW TRAIL/CHARGE are meter/telegraph substitutes for the idea's positioning/location-guess
+# mechanics (no such systems exist in this engine) - see the plan doc, section 0.3.
+# ANTI-ABUSE IS NARROW (guideline 8): DreadGuard caps event-sourced Dread gain to +1/turn so a
+# faint+switch+status turn can't spike Dread; Fear Mark's trap blocks tank-and-switch cheese, with
+# its own counterplay (real damage on Spectrier clears it); Balls stay Blocked until Phase 3 and
+# <=10% HP so evasion stacking can't stall a catchable boss.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 88
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_ASTRAL_BARRAGE, MOVE_NASTY_PLOT, MOVE_SHADOW_BALL, MOVE_DISABLE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, fixing Phase..Scratch to 0..15.
+# 0 Phase (1-3), 1 Dread (0-6, the core meter), 2 Trail (Shadow Trail stacks, 0-3), 3 Fear
+# (0/1, Fear Mark active on the player's mon), 4 FearSnap (Spectrier's HP% snapshot when Fear Mark
+# was laid - cleared by real damage since), 5 ChargeStage (0 idle / 1 telegraph turn in progress),
+# 6 Grudge (0-3, Phase 2+: raises the next Charge's damage tier), 7 NMStage (Nightmare state:
+# 0 idle / 1 buildup done / 2 barrage resolved), 8 ChargeTimer (turns until next Shadow Charge
+# telegraph), 9 TrickleTimer (turns until the next ambient Dread tick), 10 DreadGuard (caps
+# event-sourced Dread gain to once per turn), 11 TurnGuard (once-per-turn heartbeat/ledger
+# scaffold), 12 SwitchCount (player switch-ins this window; 2nd+ feeds Dread), 13 DisableArm
+# (turns until the Dread-4 move-lock can re-arm), 14 LastTier (last ANNOUNCED Dread band - the
+# callout's re-fire latch, guideline 14), 15 Scratch (free scratch register for snapshot math).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Spectrier_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Dread) >= 0
+    Var(Trail) >= 0
+    Var(Fear) >= 0
+    Var(FearSnap) >= 0
+    Var(ChargeStage) >= 0
+    Var(Grudge) >= 0
+    Var(NMStage) >= 0
+    Var(ChargeTimer) >= 0
+    Var(TrickleTimer) >= 0
+    Var(DreadGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(SwitchCount) >= 0
+    Var(DisableArm) >= 0
+    Var(LastTier) >= 0
+    Var(Scratch) >= 0
+
+# Phase transitions, registered at both checkpoints since the crossing blow can be a move or an
+# end-of-turn tick. Both copies are Once (marked at selection), so whichever fires first disables
+# the other. Both sit at the lowest priorities in their checkpoint so later triggers in the same
+# pass see the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Spectrier_Phase2
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Spectrier_Phase2
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Spectrier_Phase3
+Conditions:
+    Var(Phase) == 2
+    Any:
+        Battler(Boss).HpPercent <= 25
+        Var(Dread) == 6
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Spectrier_Phase3
+Conditions:
+    Var(Phase) == 2
+    Any:
+        Battler(Boss).HpPercent <= 25
+        Var(Dread) == 6
+
+# The once-per-turn heartbeat. TurnGuard is the only gate and the script sets it immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Spectrier_Heartbeat
+Conditions:
+    Var(Phase) <= 3
+    Var(TurnGuard) == 0
+
+# A faint is information Spectrier reads. DreadGuard caps this to once per turn across every
+# Dread source.
+Trigger: OnFaint
+Priority: 10
+Script: EncScript_Spectrier_FaintDread
+Conditions:
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(DreadGuard) == 0
+
+# A repeated switch is information too. TurnGuard == 1 skips the player's opening lead, which
+# switches in before OnBattleStart runs. DreadGuard is the self-disabling latch: none of Phase,
+# TurnGuard or Event.Battler change on any path through the script, so without it this trigger
+# reselected itself every re-evaluation pass on every single switch-in.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Spectrier_SwitchDread
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(DreadGuard) == 0
+
+# Defensive/status play feeds Dread.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Spectrier_StatusDread
+Conditions:
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(DreadGuard) == 0
+
+# Spectrier's own Ghost hits landing feed Dread - it grows more sure of itself.
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Spectrier_GhostHitDread
+Conditions:
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_GHOST
+    Var(DreadGuard) == 0
+
+# A themed Dark hit purges one Shadow Trail stack and raises Grudge instead. DreadGuard doubles as
+# the once-per-turn latch here (guideline: an event-reacting trigger must close a latch its own
+# script writes on every path) - Trail>=1 alone stays true across a Dark hit that only drops it by
+# one, which re-selected this trigger every re-evaluation pass until Trail hit 0.
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_Spectrier_TrailPurge
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_DARK
+    Var(Trail) >= 1
+    Var(DreadGuard) == 0
+
+# Shadow Charge resolution, split into two literal-pinned triggers (no var-to-var move-type test
+# exists) - the Dark answer runs first; the catch-all behind it only fires if ChargeStage is still
+# set, i.e. the grounding trigger didn't already consume it.
+Trigger: OnMoveEnd
+Priority: 13
+Script: EncScript_Spectrier_ChargeGrounded
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_DARK
+    Var(ChargeStage) == 1
+
+Trigger: OnMoveEnd
+Priority: 14
+Script: EncScript_Spectrier_ChargeFull
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(ChargeStage) == 1
+
+# Fear Mark lifts once real damage has landed on Spectrier since it was laid. DreadGuard is the
+# once-per-turn latch: the below-threshold no-op path changes no other variable the condition
+# reads, which re-selected this trigger every pass until the checkpoint's script cap tripped.
+Trigger: OnMoveEnd
+Priority: 15
+Script: EncScript_Spectrier_FearRemove
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(Fear) == 1
+    Var(DreadGuard) == 0
+
+# Ball unlock, the catch window (guideline 10). Registered at both checkpoints for the same reason
+# as the phase transitions.
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Spectrier_BallUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+
+Trigger: OnTurnEnd
+Priority: 70
+Flags: Once, OnEnter
+Script: EncScript_Spectrier_BallUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+
+# The ledger: ambient Dread trickle, Shadow Trail growth, Fear Mark application, DisableArm
+# countdown, SwitchCount decay. Self-disables by clearing TurnGuard/DreadGuard.
+Trigger: OnTurnEnd
+Priority: 50
+Script: EncScript_Spectrier_Ledger
+Conditions:
+    Var(TurnGuard) == 1
+
+# The Nightmare buildup turn resolves into the unavoidable Astral Barrage.
+Trigger: OnTurnEnd
+Priority: 60
+Script: EncScript_Spectrier_Barrage
+Conditions:
+    Var(NMStage) == 1

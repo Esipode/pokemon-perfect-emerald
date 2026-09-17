@@ -1015,3 +1015,17 @@ LegendaryEncounter_EventScript_Zarude::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Spectrier::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_SPECTRIER, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_SPECTRIER
+	setwildbattle SPECIES_SPECTRIER, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle

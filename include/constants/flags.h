@@ -241,7 +241,7 @@
 #define FLAG_RECEIVED_RED_OR_BLUE_ORB        0xD4
 #define FLAG_RECEIVED_PREMIER_BALL_RUSTBORO  0xD5
 #define FLAG_HIDE_ZARUDE                     0xD6
-#define FLAG_UNUSED_0x0D7                    0xD7 // Unused Flag
+#define FLAG_HIDE_SPECTRIER                  0xD7
 #define FLAG_UNUSED_0x0D8                    0xD8 // Unused Flag
 #define FLAG_MET_DIVING_TREASURE_HUNTER      0xD9
 #define FLAG_MET_WAILMER_TRAINER             0xDA

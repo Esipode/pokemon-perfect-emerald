@@ -2858,6 +2858,21 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCZARUDEFEEDINTERRUPTED]            = COMPOUND_STRING("The jungle's feeding\nis cut short!"),
     [STRINGID_ENCZARUDEJUNGLERAGE]                 = COMPOUND_STRING("JUNGLE RAGE!\nZarude unleashes everything!"),
     [STRINGID_ENCZARUDEFALLSSILENT]                = COMPOUND_STRING("The jungle falls\nsilent."),
+    [STRINGID_ENCSPECTRIERINTRO]                   = COMPOUND_STRING("A trembling shadow rears--\nSpectrier reads your fear!"),
+    [STRINGID_ENCSPECTRIERDREADTIER1]              = COMPOUND_STRING("Spectrier's eyes gleam.\nIt grows harder to pin down."),
+    [STRINGID_ENCSPECTRIERDREADTIER2]              = COMPOUND_STRING("Dread thickens the air.\nSpectrier fades at the edges!"),
+    [STRINGID_ENCSPECTRIERDREADTIER3]              = COMPOUND_STRING("A ghostly trail unwinds--\nstriking it back builds Grudge!"),
+    [STRINGID_ENCSPECTRIERDREADTIER4]              = COMPOUND_STRING("Dread locks your hand--\na move slips from memory!"),
+    [STRINGID_ENCSPECTRIERDREADTIER5]              = COMPOUND_STRING("Spectrier all but vanishes\ninto swirling nightmare mist!"),
+    [STRINGID_ENCSPECTRIERFEARAPPLIED]             = COMPOUND_STRING("A chill grips your Pokémon!\nIt can't flee this fear!"),
+    [STRINGID_ENCSPECTRIERFEARREMOVED]             = COMPOUND_STRING("Your Pokémon shakes off\nthe grip of Fear Mark!"),
+    [STRINGID_ENCSPECTRIERCHARGETELEGRAPH]         = COMPOUND_STRING("Spectrier gathers shadow--\nanswer with a Dark move!"),
+    [STRINGID_ENCSPECTRIERCHARGEGROUNDED]          = COMPOUND_STRING("The charge is grounded!\nSpectrier's focus slips."),
+    [STRINGID_ENCSPECTRIERCHARGEFULLHIT]           = COMPOUND_STRING("Shadow Charge slams home!\nDread grows deeper still."),
+    [STRINGID_ENCSPECTRIERPHASE2]                  = COMPOUND_STRING("Spectrier sheds its form--\nfaster, hungrier, colder!"),
+    [STRINGID_ENCSPECTRIERPHASE3]                  = COMPOUND_STRING("Nightmares have no edges--\nthere is nowhere to hide!"),
+    [STRINGID_ENCSPECTRIERBARRAGE]                 = COMPOUND_STRING("Astral Barrage tears through\neverything at once!"),
+    [STRINGID_ENCSPECTRIERBALLUNLOCK]              = COMPOUND_STRING("Spectrier falters badly--\nnow is the moment to strike!{PAUSE_UNTIL_PRESS}"),
 };
 
 const u16 gOneHitKOStringIds[] =

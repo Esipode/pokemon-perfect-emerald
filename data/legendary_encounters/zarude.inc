@@ -191,23 +191,23 @@ EncScript_Zarude_JungleRage_R3:
 	encjumpifvar CMP_EQUAL, 3, 1, EncScript_Zarude_JungleRage_Deal30
 	encjumpifvar CMP_EQUAL, 3, 2, EncScript_Zarude_JungleRage_Deal28
 	goto EncScript_Zarude_JungleRage_Deal26
+EncScript_Zarude_JungleRage_Deal30:
+	encchangehp ENC_TARGET_PLAYER_LEFT, -30, ENC_AMOUNT_PERCENT
+	return
+EncScript_Zarude_JungleRage_Deal28:
+	encchangehp ENC_TARGET_PLAYER_LEFT, -28, ENC_AMOUNT_PERCENT
+	return
+EncScript_Zarude_JungleRage_Deal26:
+	encchangehp ENC_TARGET_PLAYER_LEFT, -26, ENC_AMOUNT_PERCENT
+	return
+EncScript_Zarude_JungleRage_Deal24:
+	encchangehp ENC_TARGET_PLAYER_LEFT, -24, ENC_AMOUNT_PERCENT
+	return
+EncScript_Zarude_JungleRage_Deal22:
+	encchangehp ENC_TARGET_PLAYER_LEFT, -22, ENC_AMOUNT_PERCENT
+	return
 EncScript_Zarude_JungleRage_Deal20:
 	encchangehp ENC_TARGET_PLAYER_LEFT, -20, ENC_AMOUNT_PERCENT
-	return
-EncScript_Zarude_JungleRage_Deal18:
-	encchangehp ENC_TARGET_PLAYER_LEFT, -18, ENC_AMOUNT_PERCENT
-	return
-EncScript_Zarude_JungleRage_Deal16:
-	encchangehp ENC_TARGET_PLAYER_LEFT, -16, ENC_AMOUNT_PERCENT
-	return
-EncScript_Zarude_JungleRage_Deal14:
-	encchangehp ENC_TARGET_PLAYER_LEFT, -14, ENC_AMOUNT_PERCENT
-	return
-EncScript_Zarude_JungleRage_Deal12:
-	encchangehp ENC_TARGET_PLAYER_LEFT, -12, ENC_AMOUNT_PERCENT
-	return
-EncScript_Zarude_JungleRage_Deal10:
-	encchangehp ENC_TARGET_PLAYER_LEFT, -10, ENC_AMOUNT_PERCENT
 	return
 
 // THE LEDGER. Vines, the barrier, Jungle Feed and the reminder cue - resolved once per turn,

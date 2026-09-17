@@ -1119,6 +1119,23 @@ extern const u8 EncScript_Zarude_JungleRage[];
 extern const u8 EncScript_Zarude_TurnClose[];
 extern const u8 EncScript_Zarude_BattleEndFlavor[];
 
+// Spectrier ("The Swift Horse Pokémon")
+extern const u8 EncScript_Spectrier_Intro[];
+extern const u8 EncScript_Spectrier_Heartbeat[];
+extern const u8 EncScript_Spectrier_FaintDread[];
+extern const u8 EncScript_Spectrier_SwitchDread[];
+extern const u8 EncScript_Spectrier_StatusDread[];
+extern const u8 EncScript_Spectrier_GhostHitDread[];
+extern const u8 EncScript_Spectrier_TrailPurge[];
+extern const u8 EncScript_Spectrier_ChargeGrounded[];
+extern const u8 EncScript_Spectrier_ChargeFull[];
+extern const u8 EncScript_Spectrier_FearRemove[];
+extern const u8 EncScript_Spectrier_Ledger[];
+extern const u8 EncScript_Spectrier_Phase2[];
+extern const u8 EncScript_Spectrier_Phase3[];
+extern const u8 EncScript_Spectrier_Barrage[];
+extern const u8 EncScript_Spectrier_BallUnlock[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
