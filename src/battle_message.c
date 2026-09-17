@@ -2873,6 +2873,22 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCSPECTRIERPHASE3]                  = COMPOUND_STRING("Nightmares have no edges--\nthere is nowhere to hide!"),
     [STRINGID_ENCSPECTRIERBARRAGE]                 = COMPOUND_STRING("Astral Barrage tears through\neverything at once!"),
     [STRINGID_ENCSPECTRIERBALLUNLOCK]              = COMPOUND_STRING("Spectrier falters badly--\nnow is the moment to strike!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGLASTRIERARMORBAND1]              = COMPOUND_STRING("Frost creeps up Glastrier's\nlegs, plating its hide."),
+    [STRINGID_ENCGLASTRIERARMORBAND2]              = COMPOUND_STRING("The ice thickens across its\nback!"),
+    [STRINGID_ENCGLASTRIERARMORBAND3]              = COMPOUND_STRING("Glastrier is sheathed in\nsolid ice!"),
+    [STRINGID_ENCGLASTRIERFREEZESTAGE1]            = COMPOUND_STRING("The chill saps your Pokemon's\nfooting."),
+    [STRINGID_ENCGLASTRIERFREEZESTAGE2]            = COMPOUND_STRING("Ice locks your Pokemon in\nplace--it can't flee!"),
+    [STRINGID_ENCGLASTRIERFREEZESTAGE3]            = COMPOUND_STRING("Your Pokemon is frozen solid!"),
+    [STRINGID_ENCGLASTRIERUNSTOPPABLE]             = COMPOUND_STRING("Glastrier becomes an\nunstoppable glacier!"),
+    [STRINGID_ENCGLASTRIERTHAWED]                  = COMPOUND_STRING("The flame cracks the ancient\nice!"),
+    [STRINGID_ENCGLASTRIERPERMAFROST]              = COMPOUND_STRING("Glastrier plunges into\nPermafrost!"),
+    [STRINGID_ENCGLASTRIERFROZENKING]              = COMPOUND_STRING("The Frozen King awakens!"),
+    [STRINGID_ENCGLASTRIERAVALANCHESLAM]           = COMPOUND_STRING("The avalanche crashes down\nwith crushing force!"),
+    [STRINGID_ENCGLASTRIERLANCETELEGRAPH]          = COMPOUND_STRING("Glastrier freezes a path\pacross the field, and charges!"),
+    [STRINGID_ENCGLASTRIERLANCEINTERRUPTED]        = COMPOUND_STRING("Your assault shatters the icy\npath before it lands!"),
+    [STRINGID_ENCGLASTRIERLANCEHITS]               = COMPOUND_STRING("The Glacial Lance connects\nwith devastating force!"),
+    [STRINGID_ENCGLASTRIERCATCHWINDOW]             = COMPOUND_STRING("Ancient ice cracks--now is the\pmoment to throw a Poke Ball!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCGLASTRIERREMINDER]                = COMPOUND_STRING("The frost tightens its grip."),
 };
 
 const u16 gOneHitKOStringIds[] =

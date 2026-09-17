@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_encounter.h"
 #include "battle_set_effect.h"
 #include "battle_util.h"
 #include "battle_script_commands.h"
@@ -85,6 +86,10 @@ static void HandleSetEffectFlinch(struct BattleCalcValues *cv, struct SetEffect 
         }
     }
     else if (gBattleMons[se->effectBattler].volatiles.flinched)
+    {
+        gBattlescriptCurrInstr = se->script;
+    }
+    else if (DoesEncounterGrantImmunity(se->effectBattler, ENC_IMMUNE_FLINCH))
     {
         gBattlescriptCurrInstr = se->script;
     }

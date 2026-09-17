@@ -75,6 +75,7 @@ enum EncounterId
     ENCOUNTER_ENAMORUS,
     ENCOUNTER_ZARUDE,
     ENCOUNTER_SPECTRIER,
+    ENCOUNTER_GLASTRIER,
     ENCOUNTER_COUNT,
 };
 
@@ -248,6 +249,36 @@ enum EncounterSideStatus
     ENC_SIDE_COUNT,
 };
 
+// Entry hazards encsethazard / encclearhazards deal with. A dedicated enum, the same reason
+// EncounterSideStatus exists: it lets encsethazard assert on a selector it doesn't know, and keeps
+// a script argument a byte. Layers only mean anything for Spikes/Toxic Spikes - every other hazard
+// is single-layer.
+enum EncounterHazard
+{
+    ENC_HAZARD_SPIKES,
+    ENC_HAZARD_TOXIC_SPIKES,
+    ENC_HAZARD_STEALTH_ROCK,
+    ENC_HAZARD_STICKY_WEB,
+    ENC_HAZARD_STEELSURGE,
+    ENC_HAZARD_COUNT,
+};
+
+// Major statuses encsetstatus can raise or clear. A dedicated enum rather than a raw STATUS1_*
+// bitmask: Sleep packs a turn counter into its low bits instead of acting as a single flag, so raw
+// STATUS1_SLEEP isn't a value this command could take directly. ENC_STATUS_NONE (0) clears
+// whatever major status is active, the same convention encsetimmunity's 0 uses.
+enum EncounterStatus
+{
+    ENC_STATUS_NONE,
+    ENC_STATUS_SLEEP,
+    ENC_STATUS_POISON,
+    ENC_STATUS_BURN,
+    ENC_STATUS_FREEZE,
+    ENC_STATUS_PARALYSIS,
+    ENC_STATUS_TOXIC,
+    ENC_STATUS_COUNT,
+};
+
 // Field terrains encsetterrain can raise. A separate enum from B_TERRAIN_* for the same reason
 // EncounterSideStatus exists: it lets the command assert on a selector it doesn't know. The stock
 // setterrain opcode reads its terrain off gCurrentMove, which a checkpoint script does not have.
@@ -310,7 +341,10 @@ enum EncounterBallPolicy
                                           // Endeavor, Final Gambit, Counter/Mirror Coat/Metal Burst, Bide
 #define ENC_IMMUNE_HP_SWAP      (1 << 2)  // Pain Split
 #define ENC_IMMUNE_SHARED_KO    (1 << 3)  // Destiny Bond, Perish Song
-#define ENC_IMMUNE_ALL          (ENC_IMMUNE_OHKO | ENC_IMMUNE_FIXED_DAMAGE | ENC_IMMUNE_HP_SWAP | ENC_IMMUNE_SHARED_KO)
+#define ENC_IMMUNE_FLINCH       (1 << 4)  // any move/ability flinch effect
+#define ENC_IMMUNE_MAJOR_STATUS (1 << 5)  // any move/ability-inflicted STATUS1_* (encsetstatus bypasses this)
+#define ENC_IMMUNE_ALL          (ENC_IMMUNE_OHKO | ENC_IMMUNE_FIXED_DAMAGE | ENC_IMMUNE_HP_SWAP | ENC_IMMUNE_SHARED_KO \
+                                | ENC_IMMUNE_FLINCH | ENC_IMMUNE_MAJOR_STATUS)
 
 // Damage reduction is a percentage: 70 means the battler takes 70% less damage from every source
 // that runs through the damage formula or a passive HP tick. Capped below 100 deliberately - a

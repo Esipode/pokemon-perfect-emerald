@@ -5445,7 +5445,11 @@ bool32 CanSetNonVolatileStatus(enum BattlerId battlerAtk, enum BattlerId battler
         return FALSE;
 
     // Checks that apply to all non volatile statuses
-    if (abilityDef == ABILITY_COMATOSE
+    if (DoesEncounterGrantImmunity(battlerDef, ENC_IMMUNE_MAJOR_STATUS))
+    {
+        battleScript = BattleScript_ButItFailed;
+    }
+    else if (abilityDef == ABILITY_COMATOSE
      || abilityDef == ABILITY_PURIFYING_SALT)
     {
         abilityAffected = TRUE;

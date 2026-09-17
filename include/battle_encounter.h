@@ -1136,6 +1136,36 @@ extern const u8 EncScript_Spectrier_Phase3[];
 extern const u8 EncScript_Spectrier_Barrage[];
 extern const u8 EncScript_Spectrier_BallUnlock[];
 
+// Glastrier ("The Wild Horse Pokémon")
+extern const u8 EncScript_Glastrier_Init[];
+extern const u8 EncScript_Glastrier_FrostGainFromMove[];
+extern const u8 EncScript_Glastrier_FrostGainClear[];
+extern const u8 EncScript_Glastrier_FrostTick[];
+extern const u8 EncScript_Glastrier_FrostTickGuardClear[];
+extern const u8 EncScript_Glastrier_ArmorBand2[];
+extern const u8 EncScript_Glastrier_ArmorBand4[];
+extern const u8 EncScript_Glastrier_ArmorBand6[];
+extern const u8 EncScript_Glastrier_FreezeStage1[];
+extern const u8 EncScript_Glastrier_FreezeStage2[];
+extern const u8 EncScript_Glastrier_FreezeStage3[];
+extern const u8 EncScript_Glastrier_UnstoppableGrant[];
+extern const u8 EncScript_Glastrier_UnstoppableBreak[];
+extern const u8 EncScript_Glastrier_PhaseTransitionPermafrost[];
+extern const u8 EncScript_Glastrier_PhaseTransitionFrozenKing[];
+extern const u8 EncScript_Glastrier_AvalancheChargeUp[];
+extern const u8 EncScript_Glastrier_AvalancheChargeUpGuardClear[];
+extern const u8 EncScript_Glastrier_AvalancheChargeDown[];
+extern const u8 EncScript_Glastrier_AvalancheChargeDownGuardClear[];
+extern const u8 EncScript_Glastrier_AvalancheRelease[];
+extern const u8 EncScript_Glastrier_AvalancheReleaseGuardClear[];
+extern const u8 EncScript_Glastrier_LanceTelegraphStart[];
+extern const u8 EncScript_Glastrier_LanceBreakHit[];
+extern const u8 EncScript_Glastrier_LanceBreakHitGuardClear[];
+extern const u8 EncScript_Glastrier_LanceResolve[];
+extern const u8 EncScript_Glastrier_CatchWindowOpen[];
+extern const u8 EncScript_Glastrier_ReminderLine[];
+extern const u8 EncScript_Glastrier_ReminderFlipClear[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

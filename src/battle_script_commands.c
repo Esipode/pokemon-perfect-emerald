@@ -13878,6 +13878,152 @@ void BS_EncClearHazards(void)
     gBattlescriptCurrInstr = cleared ? cmd->nextInstr : cmd->failInstr;
 }
 
+// Maps an ENC_HAZARD_* selector onto the internal Hazards id and its layer ceiling. Returns FALSE
+// for a selector outside the enum so the caller can assert on it.
+static bool32 GetEncounterHazard(u32 which, enum Hazards *hazardOut, u32 *maxLayersOut)
+{
+    switch (which)
+    {
+    case ENC_HAZARD_SPIKES:       *hazardOut = HAZARDS_SPIKES;       *maxLayersOut = 3; break;
+    case ENC_HAZARD_TOXIC_SPIKES: *hazardOut = HAZARDS_TOXIC_SPIKES; *maxLayersOut = 2; break;
+    case ENC_HAZARD_STEALTH_ROCK: *hazardOut = HAZARDS_STEALTH_ROCK; *maxLayersOut = 1; break;
+    case ENC_HAZARD_STICKY_WEB:   *hazardOut = HAZARDS_STICKY_WEB;   *maxLayersOut = 1; break;
+    case ENC_HAZARD_STEELSURGE:   *hazardOut = HAZARDS_STEELSURGE;   *maxLayersOut = 1; break;
+    default:                                                                            return FALSE;
+    }
+    return TRUE;
+}
+
+// SET_HAZARD (encsethazard). Sets one ENC_HAZARD_* selector on every side <target> resolves to -
+// the inverse of encclearhazards, and the only way to raise a hazard from a checkpoint script (the
+// stock SetStartingHazardStatus path is move-triggered and prints its own message). <layers> only
+// means anything for Spikes/Toxic Spikes; every other hazard is single-layer and any nonzero value
+// just sets it. Jumps <failInstr> when every targeted side already sits at that hazard's max stack,
+// so one command is both the test and the act - the inverse direction of encclearhazards. Silent;
+// supply your own dialogue.
+void BS_EncSetHazard(void)
+{
+    NATIVE_ARGS(u8 target, u8 hazard, u8 layers, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+    bool32 changed = FALSE;
+    enum Hazards hazardType;
+    u32 maxLayers;
+
+    assertf(GetEncounterHazard(cmd->hazard, &hazardType, &maxLayers),
+            "encounter %d: unknown hazard %d", gBattleStruct->encounter.id, cmd->hazard)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        enum BattleSide side;
+        u32 layers = (cmd->layers == 0) ? 1 : cmd->layers;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; set that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (layers > maxLayers)
+            layers = maxLayers;
+
+        if (hazardType == HAZARDS_SPIKES)
+        {
+            if (gSideTimers[side].spikesAmount >= maxLayers)
+                continue;
+            if (!IsHazardOnSide(side, HAZARDS_SPIKES))
+                PushHazardTypeToQueue(side, HAZARDS_SPIKES);
+            gSideTimers[side].spikesAmount = layers;
+        }
+        else if (hazardType == HAZARDS_TOXIC_SPIKES)
+        {
+            if (gSideTimers[side].toxicSpikesAmount >= maxLayers)
+                continue;
+            if (!IsHazardOnSide(side, HAZARDS_TOXIC_SPIKES))
+                PushHazardTypeToQueue(side, HAZARDS_TOXIC_SPIKES);
+            gSideTimers[side].toxicSpikesAmount = layers;
+        }
+        else
+        {
+            if (IsHazardOnSide(side, hazardType))
+                continue;
+            PushHazardTypeToQueue(side, hazardType);
+            if (hazardType == HAZARDS_STICKY_WEB)
+            {
+                gSideTimers[side].stickyWebBattlerId = 0xFF;
+                gSideTimers[side].stickyWebBattlerSide = (side == B_SIDE_PLAYER) ? B_SIDE_OPPONENT : B_SIDE_PLAYER;
+            }
+        }
+        changed = TRUE;
+    }
+
+    gBattlescriptCurrInstr = changed ? cmd->nextInstr : cmd->failInstr;
+}
+
+// SET_STATUS (encsetstatus). Writes one ENC_STATUS_* major status directly onto every battler
+// <target> resolves to, bypassing move-based application (type immunity, ability blocks) the same
+// way encsettrapped/encsetembargo bypass move-based application for their volatiles. ENC_STATUS_NONE
+// (0) clears whatever major status is active. <turns> only means anything for Sleep - the number of
+// turns asleep; every other status ticks/thaws through the engine's own end-turn handling from here
+// on (thaw chance, poison/burn tick). A fainted/absent battler in the set is skipped, the same as
+// every other group-target mutating command. Silent; supply your own dialogue.
+void BS_EncSetStatus(void)
+{
+    NATIVE_ARGS(u8 target, u8 status, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    assertf(cmd->status < ENC_STATUS_COUNT,
+            "encounter %d: unknown status %d", gBattleStruct->encounter.id, cmd->status)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (!(mask & (1u << battler)) || !IsBattlerAlive(battler))
+            continue;
+
+        gBattleMons[battler].status1 = 0;
+        switch (cmd->status)
+        {
+        case ENC_STATUS_NONE:
+            break;
+        case ENC_STATUS_SLEEP:
+            gBattleMons[battler].status1 = STATUS1_SLEEP_TURN(cmd->turns == 0 ? 1 : cmd->turns);
+            break;
+        case ENC_STATUS_POISON:
+            gBattleMons[battler].status1 = STATUS1_POISON;
+            break;
+        case ENC_STATUS_BURN:
+            gBattleMons[battler].status1 = STATUS1_BURN;
+            break;
+        case ENC_STATUS_FREEZE:
+            GetBattlerPartyState(battler)->freezeTurns = 2;
+            gBattleMons[battler].status1 = STATUS1_FREEZE;
+            break;
+        case ENC_STATUS_PARALYSIS:
+            gBattleMons[battler].status1 = STATUS1_PARALYSIS;
+            break;
+        case ENC_STATUS_TOXIC:
+            gBattleMons[battler].status1 = STATUS1_TOXIC_POISON;
+            break;
+        }
+
+        BtlController_EmitSetMonData(battler, B_COMM_TO_CONTROLLER, REQUEST_STATUS_BATTLE, 0, sizeof(gBattleMons[battler].status1), &gBattleMons[battler].status1);
+        MarkBattlerForControllerExec(battler);
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // Maps an ENC_SIDE_* selector onto the status bit and the gSideTimers field that ticks it down.
 // Returns FALSE for a selector outside the enum so the caller can assert on it.
 static bool32 GetEncounterSideStatus(u32 side, u32 which, u32 *statusOut, u16 **timerOut)

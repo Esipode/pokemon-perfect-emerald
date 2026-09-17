@@ -1463,6 +1463,30 @@
 	.4byte \failInstr
 	.endm
 
+	@ Sets one ENC_HAZARD_* selector on each side \target resolves to; \layers only means anything
+	@ for Spikes/Toxic Spikes. Jumps \failInstr when every targeted side already sits at that
+	@ hazard's max stack - one command is both the test and the act, the inverse direction of
+	@ encclearhazards. Silent - the caller supplies its own dialogue.
+	.macro encsethazard target:req, hazard:req, layers=0, failInstr:req
+	callnative BS_EncSetHazard
+	.byte \target
+	.byte \hazard
+	.byte \layers
+	.4byte \failInstr
+	.endm
+
+	@ Writes one ENC_STATUS_* major status directly onto every battler \target resolves to,
+	@ bypassing move-based application (type immunity, ability blocks) the same way
+	@ encsettrapped/encsetembargo bypass it for their volatiles. ENC_STATUS_NONE (0) clears whatever
+	@ major status is active. \turns only means anything for Sleep; every other status ticks/thaws
+	@ through the engine's own end-turn handling from here. Silent.
+	.macro encsetstatus target:req, status:req, turns=0
+	callnative BS_EncSetStatus
+	.byte \target
+	.byte \status
+	.byte \turns
+	.endm
+
 	@ Resets every stat stage back to neutral on every battler \target resolves to - the targeted
 	@ form of Haze. TryResetBattlerStatChanges reports whether it actually reset anything, so
 	@ \failInstr is taken when no battler in the set had a stage to strip: one command is both the

@@ -272,3 +272,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/enamorus.inc"
 	.include "data/legendary_encounters/zarude.inc"
 	.include "data/legendary_encounters/spectrier.inc"
+	.include "data/legendary_encounters/glastrier.inc"

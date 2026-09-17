@@ -1,0 +1,307 @@
+Encounter: Glastrier
+
+# Glastrier, "The Wild Horse Pokemon". One rule:
+#   FROST (0-6) ONLY CLIMBS. Every source of danger - armor, freeze, Unstoppable, the final
+#   charge - is a function of how high Frost currently sits. Attacking fast raises Frost (Ice
+#   moves, damage dealt to the boss, even Water moves), so the player has to balance offense
+#   against periodically cooling it off. The only counter-play is a Fire-type hit, which knocks
+#   Frost back and strips Unstoppable.
+# Phase 0 WILD HORSE (100-50% HP) - Frost climbs, armor forms at Frost 2/4/6 (DamageReduction
+#   88/92/96), freeze stage 1 (Speed drop) starts at Frost >= 4, Avalanche builds and releases.
+# Phase 1 PERMAFROST (<=50% HP) - Frost forced to 6, full armor, Unstoppable granted (flinch and
+#   major-status immune), Speed crashes -30%. FreezeStage escalates to trapped, then to a real
+#   freeze once Phase 2 is also reached.
+# Phase 2 FROZEN KING (<=20% HP) - Glacial Lance telegraph-and-release loop: each turn opens a
+#   one-turn telegraph, the player has that turn to land 2 hits to interrupt it or eat a 30% hit;
+#   either way a point of Frost melts. Catch window opens at <=10% HP.
+# ANTI-ABUSE (guideline 8): Immunities: Ohko, FixedDamage, HpSwap, SharedKo blocks the standard
+#   cheese; CapTypeEffectiveness/FlatToxicDamage stop a stacked weakness or Toxic stall. Unstoppable
+#   adds ENC_IMMUNE_FLINCH/ENC_IMMUNE_MAJOR_STATUS for its own window only, so a status/flinch lock
+#   can't freeze the boss's turn economy during its hardest phase - the one immunity unique to this
+#   fight.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 88        # Frost 0-1. 88/92/96 written absolutely by the ArmorBand scripts as
+                                # Frost climbs through 2/4/6 - never below 80, never above 96.
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_CHILLING_NEIGH
+    Moves: MOVE_AVALANCHE, MOVE_ICICLE_CRASH, MOVE_STOMPING_TANTRUM, MOVE_IRON_HEAD
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..LanceBreakHitHandled to 0..15.
+# 0 Phase (0 Wild Horse / 1 Permafrost / 2 Frozen King), 1 Frost (0-6, the core meter),
+# 2 ArmorLayers (0-3, derived from Frost band), 3 FreezeStage (0-3, progressive freeze on the
+# player), 4 Charge (shared: Avalanche buildup in Phase 0, Lance telegraph hit-count in Phase 2 -
+# phases never overlap), 5 Unstoppable (0/1), 6 FrostGainHandled (once-per-move-end guard for the
+# Frost-gain trigger), 7 FrostTurnFlip (toggles every real turn so passive Frost gain is every
+# other turn), 8 ReminderFlip (toggles every real turn Frost >= 2, gates the recurring legibility
+# line), 9 LanceTelegraph (0/1, marks the one telegraph turn before Glacial Lance resolves),
+# 10 LastDRBand (last-announced armor band, re-fires the "ice thickens" line only when it changes),
+# 11 FrostTickGuard (OnTurnStart/OnTurnEnd once-per-turn scaffold for the passive Frost tick - see
+# the authoring gotcha on splitting a countdown across two checkpoints), 12-15 are the same
+# OnMoveEnd-guard/OnTurnEnd-clear scaffold FrostGainHandled uses, one each for AvalancheChargeUp,
+# AvalancheChargeDown, AvalancheRelease and LanceBreakHit: every one of those four reacts to
+# Event.* or a level condition that survives its own script's write, so without a guard the
+# re-evaluation loop reselects them repeatedly within a single dispatch until the 8-script cap
+# trips ("runaway trigger chain" - the crash this file originally shipped with).
+# 12 AvalancheChargeUpHandled, 13 AvalancheChargeDownHandled, 14 AvalancheReleaseHandled,
+# 15 LanceBreakHitHandled.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Glastrier_Init
+Conditions:
+    Var(Phase) >= 0
+    Var(Frost) >= 0
+    Var(ArmorLayers) >= 0
+    Var(FreezeStage) >= 0
+    Var(Charge) >= 0
+    Var(Unstoppable) >= 0
+    Var(FrostGainHandled) >= 0
+    Var(FrostTurnFlip) >= 0
+    Var(ReminderFlip) >= 0
+    Var(LanceTelegraph) >= 0
+    Var(LastDRBand) >= 0
+    Var(FrostTickGuard) >= 0
+    Var(AvalancheChargeUpHandled) >= 0
+    Var(AvalancheChargeDownHandled) >= 0
+    Var(AvalancheReleaseHandled) >= 0
+    Var(LanceBreakHitHandled) >= 0
+
+# FROST GAIN, from a hit. Any of: the boss used an Ice move, the boss took damage from a move, or
+# the player used a Water move. Self-disabling through FrostGainHandled, cleared at OnTurnEnd
+# (the two-checkpoint countdown gotcha) so it can't re-select every re-evaluation pass this
+# checkpoint.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Glastrier_FrostGainFromMove
+Conditions:
+    Var(FrostGainHandled) == 0
+    Any:
+        All:
+            Event.Target == B_POSITION_OPPONENT_LEFT
+            Event.MoveType == TYPE_ICE
+        All:
+            Event.Battler == B_POSITION_OPPONENT_LEFT
+            Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+        All:
+            Event.Target == B_POSITION_PLAYER_LEFT
+            Event.MoveType == TYPE_WATER
+
+Trigger: OnTurnEnd
+Priority: 5
+Script: EncScript_Glastrier_FrostGainClear
+Conditions:
+    Var(FrostGainHandled) == 1
+
+# FROST GAIN, from turns passing. FrostTurnFlip toggles every real turn so this only adds Frost on
+# every other turn - a second, slower Frost source independent of the player's actions. Runs from
+# OnTurnStart under its own once-per-turn guard (FrostTickGuard, cleared at OnTurnEnd - two
+# checkpoints, not one) so the flip can only ever move once per real turn, not once per
+# re-evaluation pass.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_Glastrier_FrostTick
+Conditions:
+    Var(FrostTickGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 6
+Script: EncScript_Glastrier_FrostTickGuardClear
+Conditions:
+    Var(FrostTickGuard) == 1
+
+# ARMOR BANDS. Each is Once, so DamageReduction only ever hardens as Frost climbs - it doesn't
+# soften again if Frost is later knocked back by an Unstoppable-break. Intentional, not a bug.
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once
+Script: EncScript_Glastrier_ArmorBand2
+Conditions:
+    Var(Frost) >= 2
+
+Trigger: OnTurnEnd
+Priority: 11
+Flags: Once
+Script: EncScript_Glastrier_ArmorBand4
+Conditions:
+    Var(Frost) >= 4
+
+Trigger: OnTurnEnd
+Priority: 12
+Flags: Once
+Script: EncScript_Glastrier_ArmorBand6
+Conditions:
+    Var(Frost) >= 6
+
+# PROGRESSIVE FREEZE. Each stage requires the boss to have just acted, so the player always gets a
+# beat of warning before the next escalation lands. Order can't skip a stage: each condition names
+# the exact FreezeStage it follows.
+Trigger: OnMoveEnd
+Priority: 12
+Flags: Once
+Script: EncScript_Glastrier_FreezeStage1
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(Frost) >= 4
+    Var(FreezeStage) == 0
+
+Trigger: OnMoveEnd
+Priority: 13
+Flags: Once
+Script: EncScript_Glastrier_FreezeStage2
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(Frost) >= 6
+    Var(FreezeStage) == 1
+
+Trigger: OnMoveEnd
+Priority: 14
+Flags: Once
+Script: EncScript_Glastrier_FreezeStage3
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(Phase) == 2
+    Var(FreezeStage) == 2
+
+# UNSTOPPABLE. Granted the moment Frost first reaches 6 (whichever phase that happens in), broken
+# only by a Fire-type hit landing on the boss.
+Trigger: OnTurnEnd
+Priority: 13
+Flags: Once, OnEnter
+Script: EncScript_Glastrier_UnstoppableGrant
+Conditions:
+    Var(Frost) == 6
+
+Trigger: OnMoveEnd
+Priority: 15
+Script: EncScript_Glastrier_UnstoppableBreak
+Conditions:
+    Var(Unstoppable) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_FIRE
+
+# PHASE TRANSITIONS.
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Glastrier_PhaseTransitionPermafrost
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 25
+Flags: Once, OnEnter
+Script: EncScript_Glastrier_PhaseTransitionFrozenKing
+Conditions:
+    Battler(Boss).HpPercent <= 20
+
+# AVALANCHE. Builds every turn while Phase == 1 (Permafrost - shares the Charge slot with Glacial
+# Lance in Phase 2, since the phases never overlap), chips down on player damage, releases a
+# scaling hit when the boss uses Avalanche. All three react to state their own script doesn't
+# fully close out (Charge can stay in-range after a +-1), so each carries its own
+# guard/clear pair across two checkpoints, the same shape as FrostGainHandled.
+Trigger: OnTurnEnd
+Priority: 15
+Script: EncScript_Glastrier_AvalancheChargeUp
+Conditions:
+    Var(Phase) == 1
+    Var(Charge) < 5
+    Var(AvalancheChargeUpHandled) == 0
+
+Trigger: OnTurnStart
+Priority: 6
+Script: EncScript_Glastrier_AvalancheChargeUpGuardClear
+Conditions:
+    Var(AvalancheChargeUpHandled) == 1
+
+Trigger: OnMoveEnd
+Priority: 22
+Script: EncScript_Glastrier_AvalancheChargeDown
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(Charge) > 0
+    Var(Phase) == 1
+    Var(AvalancheChargeDownHandled) == 0
+
+Trigger: OnTurnEnd
+Priority: 16
+Script: EncScript_Glastrier_AvalancheChargeDownGuardClear
+Conditions:
+    Var(AvalancheChargeDownHandled) == 1
+
+Trigger: OnMoveEnd
+Priority: 23
+Script: EncScript_Glastrier_AvalancheRelease
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Move == MOVE_AVALANCHE
+    Var(AvalancheReleaseHandled) == 0
+
+Trigger: OnTurnEnd
+Priority: 17
+Script: EncScript_Glastrier_AvalancheReleaseGuardClear
+Conditions:
+    Var(AvalancheReleaseHandled) == 1
+
+# GLACIAL LANCE (Phase 2, the catch window prelude). One telegraph turn, then resolution.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Glastrier_LanceTelegraphStart
+Conditions:
+    Var(Phase) == 2
+    Var(LanceTelegraph) == 0
+
+Trigger: OnMoveEnd
+Priority: 27
+Script: EncScript_Glastrier_LanceBreakHit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(LanceTelegraph) == 1
+    Var(Charge) < 2
+    Var(LanceBreakHitHandled) == 0
+
+Trigger: OnTurnEnd
+Priority: 18
+Script: EncScript_Glastrier_LanceBreakHitGuardClear
+Conditions:
+    Var(LanceBreakHitHandled) == 1
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Glastrier_LanceResolve
+Conditions:
+    Var(LanceTelegraph) == 1
+
+# CATCH WINDOW.
+Trigger: OnTurnEnd
+Priority: 25
+Flags: Once, OnEnter
+Script: EncScript_Glastrier_CatchWindowOpen
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+# RECURRING LEGIBILITY CUE (guideline 14) while Frost is doing anything to the fight. The clear
+# sits at OnTurnStart, not OnTurnEnd, for the same two-checkpoint reason as FrostTick above -
+# pairing set/clear on the same checkpoint chases itself through both states in one dispatch and
+# was the direct cause of the runaway-trigger-chain crash this encounter originally shipped with.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Glastrier_ReminderLine
+Conditions:
+    Var(Frost) >= 2
+    Var(ReminderFlip) == 0
+
+Trigger: OnTurnStart
+Priority: 7
+Script: EncScript_Glastrier_ReminderFlipClear
+Conditions:
+    Var(ReminderFlip) == 1
