@@ -943,6 +943,24 @@ extern const u8 EncScript_Magearna_Phase3bOverdrive[];
 extern const u8 EncScript_Magearna_OverdriveHit[];
 extern const u8 EncScript_Magearna_FleurCannonFinish[];
 
+// Tapu Lele ("The Land Spirit Pokemon")
+extern const u8 EncScript_TapuLele_Intro[];
+extern const u8 EncScript_TapuLele_PsychicUse[];
+extern const u8 EncScript_TapuLele_MirroredResonance[];
+extern const u8 EncScript_TapuLele_TurnsPass[];
+extern const u8 EncScript_TapuLele_ClearGuards[];
+extern const u8 EncScript_TapuLele_TerrainLatch[];
+extern const u8 EncScript_TapuLele_TrapLatch[];
+extern const u8 EncScript_TapuLele_WonderRoomLatch[];
+extern const u8 EncScript_TapuLele_TrickRoomLatch[];
+extern const u8 EncScript_TapuLele_MirageTell[];
+extern const u8 EncScript_TapuLele_ShiftTick[];
+extern const u8 EncScript_TapuLele_ClearShiftGuard[];
+extern const u8 EncScript_TapuLele_ShiftResolve[];
+extern const u8 EncScript_TapuLele_ReverieBegins[];
+extern const u8 EncScript_TapuLele_DreamBegins[];
+extern const u8 EncScript_TapuLele_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

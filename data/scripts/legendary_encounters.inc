@@ -875,3 +875,17 @@ LegendaryEncounter_EventScript_Magearna::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_TapuLele::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_TAPU_LELE, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_TAPU_LELE
+	setwildbattle SPECIES_TAPU_LELE, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle

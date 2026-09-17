@@ -2714,6 +2714,15 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCMAGEARNACOLLAPSE]          = COMPOUND_STRING("A system collapses!"),
     [STRINGID_ENCMAGEARNAFLEURCANNON]       = COMPOUND_STRING("Magearna unleashes\nFleur Cannon!"),
     [STRINGID_ENCMAGEARNAWEAKENED]          = COMPOUND_STRING("Magearna's systems\ngive out."),
+    [STRINGID_ENCTAPULELEPSYCHICTERRAINACTIVATES] = COMPOUND_STRING("Psychic Terrain\nactivates!\pReality feels\nthinner here."),
+    [STRINGID_ENCTAPULELETRAPPED]           = COMPOUND_STRING("The dream will not\nlet you leave."),
+    [STRINGID_ENCTAPULELEWONDERROOM]        = COMPOUND_STRING("Reality bends-\ndefenses swap!"),
+    [STRINGID_ENCTAPULELEREALITYDISTORTED]  = COMPOUND_STRING("Reality Distorted!\nTurn order reverses!"),
+    [STRINGID_ENCTAPULELEMIRAGETELL]        = COMPOUND_STRING("Tapu Lele's Defense\nseemed to rise!"),
+    [STRINGID_ENCTAPULELERESONANCE]         = COMPOUND_STRING("Tapu Lele mirrors\nthe {B_BUFF1} technique!"),
+    [STRINGID_ENCTAPULELEREALITYSHIFT]      = COMPOUND_STRING("The Dream shifts-\nreality bends!"),
+    [STRINGID_ENCTAPULELEDREAMBEGINS]       = COMPOUND_STRING("Guardian's Dream\nbegins!\pReality is not\nyours to trust."),
+    [STRINGID_ENCTAPULELEVULNERABLE]        = COMPOUND_STRING("Now is the moment-\nthe dream is breaking!\pTapu Lele is\nvulnerable!"),
 };
 
 const u16 gOneHitKOStringIds[] =
