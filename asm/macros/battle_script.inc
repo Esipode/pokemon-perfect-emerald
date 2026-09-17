@@ -1509,6 +1509,30 @@
 	.byte \percent
 	.endm
 
+	@ encchangehp's counterpart for \target's own BENCH: mirrors \amount onto a random eligible
+	@ (non-fainted, non-egg, non-active) bench member of \target's side. \target is single-slot only
+	@ and names a battler purely to resolve a side - a bench member has no battler of its own.
+	@ \mode reads like encchangehp's: ENC_AMOUNT_FIXED (default) is a raw HP amount, ENC_AMOUNT_PERCENT
+	@ scales off the CHOSEN bench mon's own max HP. Not the animated battler health bar - nothing on
+	@ the bench is on the field. Jumps \failInstr when nobody is eligible, so this is both the test
+	@ and the transfer.
+	.macro encbenchhp target:req, amount:req, mode=ENC_AMOUNT_FIXED, failInstr=0
+	callnative BS_EncBenchHp
+	.byte \target
+	.2byte \amount
+	.byte \mode
+	.4byte \failInstr
+	.endm
+
+	@ Writes \target's own party mon's stored friendship (0-255) into \var. \target must resolve to
+	@ exactly one battler. The only route from the player's real relationship with their Pokemon into
+	@ an encounter condition/branch.
+	.macro encreadfriendship target:req, var:req
+	callnative BS_EncReadFriendship
+	.byte \target
+	.byte \var
+	.endm
+
 	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or
 	@ ENC_BALLS_ALLOWED. ALLOWED only lifts this encounter's own block - it never makes a battle
 	@ catchable that wouldn't be otherwise (trainer battle, Ghost without a Silph Scope, ...).

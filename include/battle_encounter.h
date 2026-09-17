@@ -1081,6 +1081,26 @@ extern const u8 EncScript_Regieleki_ElectroDrift[];
 extern const u8 EncScript_Regieleki_BallsUnlock[];
 extern const u8 EncScript_Regieleki_ClearGuards[];
 
+// Enamorus ("The Love-Hate Pokémon")
+extern const u8 EncScript_Enamorus_Intro[];
+extern const u8 EncScript_Enamorus_Charm_Left[];
+extern const u8 EncScript_Enamorus_Charm_Right[];
+extern const u8 EncScript_Enamorus_Heartbreak_Left[];
+extern const u8 EncScript_Enamorus_Heartbreak_Right[];
+extern const u8 EncScript_Enamorus_HeartbreakFades_Left[];
+extern const u8 EncScript_Enamorus_HeartbreakFades_Right[];
+extern const u8 EncScript_Enamorus_LoversBond_Left[];
+extern const u8 EncScript_Enamorus_LoversBond_Right[];
+extern const u8 EncScript_Enamorus_Jealousy_Left[];
+extern const u8 EncScript_Enamorus_Jealousy_Right[];
+extern const u8 EncScript_Enamorus_TurnOpen[];
+extern const u8 EncScript_Enamorus_TurnClose[];
+extern const u8 EncScript_Enamorus_Phase2_Therian[];
+extern const u8 EncScript_Enamorus_Phase3_Heartstorm[];
+extern const u8 EncScript_Enamorus_HeartstormPulse[];
+extern const u8 EncScript_Enamorus_HeartstormPulseClear[];
+extern const u8 EncScript_Enamorus_SpringsEmbrace[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

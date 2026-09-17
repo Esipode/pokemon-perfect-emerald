@@ -2824,6 +2824,20 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCREGIELEKIELECTRODRIFT]            = COMPOUND_STRING("Every spark floods into\nRegieleki - ELECTRO DRIFT!"),
     [STRINGID_ENCREGIELEKICOLLAPSE]                = COMPOUND_STRING("The power grid collapses.\nRegieleki is exhausted!\pNow's the moment to strike!"),
     [STRINGID_ENCREGIELEKIBALLSUNLOCK]             = COMPOUND_STRING("Now's the moment -\nthrow your Poké Ball!"),
+    [STRINGID_ENCENAMORUSAWAKENS]                  = COMPOUND_STRING("A soft, magnetic pull\nsettles over the field."),
+    [STRINGID_ENCENAMORUSCHARMSETTLES]             = COMPOUND_STRING("Your Pokémon's gaze\nlingers on Enamorus."),
+    [STRINGID_ENCENAMORUSHESITATES]                = COMPOUND_STRING("Lovestruck, it hesitates -\nthe move falters!"),
+    [STRINGID_ENCENAMORUSJEALOUSY]                 = COMPOUND_STRING("Enamorus glares with\njealousy at the newcomer!"),
+    [STRINGID_ENCENAMORUSHEARTBREAK]               = COMPOUND_STRING("The charm shatters into\nHEARTBREAK!"),
+    [STRINGID_ENCENAMORUSHEARTBREAKFADES]          = COMPOUND_STRING("The heartbreak fades\nat last."),
+    [STRINGID_ENCENAMORUSGUARDSOFTENS]             = COMPOUND_STRING("Enamorus's guard falters,\nshaken by heartbreak."),
+    [STRINGID_ENCENAMORUSGUARDHOLDS]               = COMPOUND_STRING("Enamorus steadies itself,\nits guard restored."),
+    [STRINGID_ENCENAMORUSTHERIANSHIFT]             = COMPOUND_STRING("Wrath overtakes love -\nEnamorus shifts form!"),
+    [STRINGID_ENCENAMORUSBONDFORMS]                = COMPOUND_STRING("A LOVERS' BOND forms,\nbinding your whole team!"),
+    [STRINGID_ENCENAMORUSBONDMIRROR]                = COMPOUND_STRING("The bond aches -\npain echoes through your team!"),
+    [STRINGID_ENCENAMORUSHEARTSTORM]               = COMPOUND_STRING("Emotions spiral out of\ncontrol - a HEARTSTORM begins!"),
+    [STRINGID_ENCENAMORUSSPRINGSEMBRACE]           = COMPOUND_STRING("Enamorus gathers every\nfeeling into one embrace!"),
+    [STRINGID_ENCENAMORUSCATCHWINDOW]              = COMPOUND_STRING("Spent and open-hearted -\nnow's the moment to catch it!"),
 };
 
 const u16 gOneHitKOStringIds[] =

@@ -213,7 +213,7 @@
 #define FLAG_HIDE_GALARIAN_MOLTRES           0xB8
 #define FLAG_HIDE_REGIDRAGO                  0xB9
 #define FLAG_HIDE_REGIELEKI                  0xBA
-#define FLAG_UNUSED_0xBB                     0xBB
+#define FLAG_HIDE_ENAMORUS                   0xBB
 #define FLAG_RECEIVED_MAP                    0xBC
 #define FLAG_DELIVERED_STEVEN_LETTER         0xBD
 #define FLAG_DEFEATED_WALLY_MAUVILLE         0xBE

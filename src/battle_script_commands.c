@@ -14017,6 +14017,123 @@ void BS_EncRevive(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// BENCH_HP (encbenchhp). encchangehp's counterpart for a battler's own BENCH rather than the
+// battler itself - mirrors a slice of a hit onto a random bench member of <target>'s side, for a
+// mechanic whose damage bleeds onto the team (Enamorus's Lovers' Bond). <target> is single-slot
+// only; it names a battler purely to resolve a SIDE, since a bench member has no battler of its
+// own. Modeled on encrevive's walk-the-party loop: skip fainted, egg and currently-active slots,
+// then pick uniformly among what is left. <amount>/<mode> read exactly like encchangehp's
+// (ENC_AMOUNT_FIXED default, ENC_AMOUNT_PERCENT scales off the CHOSEN bench mon's own max HP - not
+// the triggering battler's - since a bench mon's max HP is the only portable amount to scale
+// against). Not the animated battler health bar: nothing on the bench is on the field to animate.
+// Jumps <failInstr> when there is nobody eligible, so one command is both the test and the transfer.
+void BS_EncBenchHp(void)
+{
+    NATIVE_ARGS(u8 target, s16 amount, u8 mode, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u32 side;
+    u32 eligible[PARTY_SIZE];
+    u32 eligibleCount = 0;
+    u32 slot;
+    s32 hp, maxHp, delta;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: BENCH_HP target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    side = GetBattlerSide(battler);
+    party = GetBattlerParty(battler);
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        bool32 isBattler = FALSE;
+
+        if (GetMonData(&party[i], MON_DATA_SPECIES) == SPECIES_NONE
+         || GetMonData(&party[i], MON_DATA_IS_EGG)
+         || GetMonData(&party[i], MON_DATA_HP) == 0)
+            continue;
+
+        for (enum BattlerId other = B_BATTLER_0; other < gBattlersCount; other++)
+        {
+            if (GetBattlerSide(other) == side && gBattlerPartyIndexes[other] == i)
+                isBattler = TRUE;
+        }
+        if (isBattler)
+            continue;
+
+        eligible[eligibleCount++] = i;
+    }
+
+    if (eligibleCount == 0)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    slot = eligible[RandomUniform(RNG_ENCOUNTER_SCRIPT, 0, eligibleCount - 1)];
+    maxHp = GetMonData(&party[slot], MON_DATA_MAX_HP);
+    hp = GetMonData(&party[slot], MON_DATA_HP);
+    delta = cmd->amount;
+
+    if (cmd->mode == ENC_AMOUNT_PERCENT && delta != 0)
+    {
+        s32 scaled = (s32)(((s64)maxHp * (delta < 0 ? -delta : delta)) / 100);
+        if (scaled < 1)
+            scaled = 1;
+        delta = (delta < 0) ? -scaled : scaled;
+    }
+
+    hp += delta;
+    if (hp < 0)
+        hp = 0;
+    else if (hp > maxHp)
+        hp = maxHp;
+    SetMonData(&party[slot], MON_DATA_HP, &hp);
+
+    if (hp == 0)
+    {
+        u32 status = 0;
+        SetMonData(&party[slot], MON_DATA_STATUS, &status);
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// READ_FRIENDSHIP (encreadfriendship). Writes <target>'s own party mon's stored friendship
+// (0-255, MON_DATA_FRIENDSHIP) into <var>, the only route from the player's real relationship with
+// their Pokemon into an encounter condition/branch. <target> must resolve to exactly one battler.
+void BS_EncReadFriendship(void)
+{
+    NATIVE_ARGS(u8 target, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: READ_FRIENDSHIP target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = 0;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    party = GetBattlerParty(battler);
+    gEncounterVars[cmd->var] = GetMonData(&party[gBattlerPartyIndexes[battler]], MON_DATA_FRIENDSHIP);
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // PARTY_BEST (encpartybest). Scans every non-fainted, non-active, non-egg bench member of <side>'s
 // party (<side> is a single-slot EncounterTarget - ENC_TARGET_PLAYER_LEFT/_RIGHT resolves to that
 // trainer's whole party) and writes the party slot index of whichever has the highest stored <stat>

@@ -1,0 +1,234 @@
+Encounter: Enamorus
+
+# Enamorus, "The Love-Hate Pokemon". One rule:
+#   Every active battler carries an Affection state (Neutral -> Fond -> Enamored -> Obsessed, and
+#   Heartbreak once broken), which Enamorus's own moves push forward and which the player can
+#   weaponize by attacking through it. AffectLeft/AffectRight (one per active slot) own this.
+# Phase 0 INCARNATE (100%-50% HP): Charm, Jealousy and Heartbreak are established.
+#   CHARM - a landed Enamorus hit advances the target's Affection one step (capped at Enamored
+#   before Phase 1). Enamored+ grants +1 DEF/+1 SPDEF (Obsessed a second +1, 2 max total) and a
+#   ~30% chance to hesitate (encdisablemove) on its own next move.
+#   HEARTBREAK - attacking Enamorus while Enamored+ shatters the charm: immune to recharm for its
+#   3-turn timer, chips Enamorus for 8% max HP, and softens Enamorus's guard 88 -> 73 while it lasts.
+#   JEALOUSY - switching an Enamored+ mon out hands the incoming mon an instant Fond state.
+# Phase 1 WRATH OF LOVE / THERIAN (50%-20% HP): encformchange to Therian, Obsessed becomes
+#   reachable, MOVE_PLAY_ROUGH replaces Superpower, and Lovers' Bond turns on - every landed
+#   Enamorus hit also mirrors 6% onto a random bench member (encbenchhp) of whoever it hit.
+# Phase 2 HEARTSTORM (20%-0% HP): every turn nudges one active slot's Affection or breaks it into
+#   Heartbreak by chance, independent of whether Enamorus's own move connected.
+# Phase 3 SPENT (<=10% HP): Spring's Embrace - Fairy damage scaled by how many slots are
+#   Enamored+/Obsessed (10% base, +6/+12 weighted per slot, 30% cap), clears every emotional state,
+#   and opens the catch window.
+# ANTI-ABUSE (guideline 8) is narrow to this fight: Heartbreak is the only route to extra player
+# damage/reduction-softening, and it requires having already been charmed - Enamorus chooses who it
+# charms, not the player, so the softening can't be farmed for free. The reduction-soften is capped
+# at -15 and shared across both slots (one LastAnnouncedReduction value), not stackable.
+Properties:
+    Level: LevelCap
+    CatchRate: 12
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_MOONBLAST, MOVE_AIR_SLASH, MOVE_DRAINING_KISS, MOVE_SUPERPOWER
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all twelve here in order fixes
+# Phase..SwitchGuard to 0..11.
+# 0 Phase (0 Incarnate / 1 Therian / 2 Heartstorm / 3 Spent), 1 AffectLeft / 2 AffectRight
+# (0 Neutral / 1 Fond / 2 Enamored / 3 Obsessed / 4 Heartbreak), 3 HeartbreakTimerLeft /
+# 4 HeartbreakTimerRight (turns left before Heartbreak fades), 5 BondActive (0/1, set entering
+# Phase 1), 6 LastAnnouncedReduction (the reduction-change dedup/re-fire latch, guideline 14),
+# 7 TurnGuard (the once-per-turn OnTurnStart/OnTurnEnd scaffold), 8 HeartstormTurnGuard (Phase 2's
+# own once-per-turn scaffold), 9 CharmGuard / 10 BondGuard / 11 SwitchGuard (per-event self-disable
+# latches for the Event.*-reactive triggers below, cleared alongside TurnGuard).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Enamorus_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(AffectLeft) >= 0
+    Var(AffectRight) >= 0
+    Var(HeartbreakTimerLeft) >= 0
+    Var(HeartbreakTimerRight) >= 0
+    Var(BondActive) >= 0
+    Var(LastAnnouncedReduction) >= 0
+    Var(TurnGuard) >= 0
+    Var(HeartstormTurnGuard) >= 0
+    Var(CharmGuard) >= 0
+    Var(BondGuard) >= 0
+    Var(SwitchGuard) >= 0
+
+# Phase transitions. Each registered at both OnMoveEnd and OnTurnEnd since the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, marked at selection, so
+# whichever fires first disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Enamorus_Phase2_Therian
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Enamorus_Phase2_Therian
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Enamorus_Phase3_Heartstorm
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Enamorus_Phase3_Heartstorm
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Enamorus_SpringsEmbrace
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Enamorus_SpringsEmbrace
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# CHARM. Event-reactive (no Once/OnEnter), so it self-disables through CharmGuard, cleared at
+# TurnClose - at most one Charm advance per turn.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Enamorus_Charm_Left
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(CharmGuard) == 0
+
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Enamorus_Charm_Right
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_RIGHT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(CharmGuard) == 0
+
+# HEARTBREAK. Self-disables through AffectLeft/Right itself - the script flips the very state the
+# condition reads, so the condition goes false the instant it runs.
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Enamorus_Heartbreak_Left
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(AffectLeft) >= 2
+    Var(AffectLeft) <= 3
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Enamorus_Heartbreak_Right
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_RIGHT
+    Var(AffectRight) >= 2
+    Var(AffectRight) <= 3
+
+# LOVERS' BOND. Phase 1+ only. Self-disables through BondGuard, cleared at TurnClose.
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_Enamorus_LoversBond_Left
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(BondActive) == 1
+    Var(BondGuard) == 0
+
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_Enamorus_LoversBond_Right
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_RIGHT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(BondActive) == 1
+    Var(BondGuard) == 0
+
+# JEALOUSY. Self-disables through SwitchGuard, cleared at TurnClose.
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_Enamorus_Jealousy_Left
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(SwitchGuard) == 0
+
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_Enamorus_Jealousy_Right
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_RIGHT
+    Var(SwitchGuard) == 0
+
+# The once-per-turn scaffold: ticks both Heartbreak timers down. TurnGuard is the only gate and the
+# script sets it immediately, so no branch out of it can leave the trigger re-armed.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Enamorus_TurnOpen
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 0
+
+# HEARTSTORM's own once-per-turn scaffold, Phase 2 only.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Enamorus_HeartstormPulse
+Conditions:
+    Var(Phase) == 2
+    Var(HeartstormTurnGuard) == 0
+
+# Heartbreak timers resolve at a different checkpoint than they tick (TurnOpen), so a timer never
+# chases itself to zero within one dispatch. Self-disables through AffectLeft/Right, same as the
+# Heartbreak trigger above.
+Trigger: OnTurnEnd
+Priority: 15
+Script: EncScript_Enamorus_HeartbreakFades_Left
+Conditions:
+    Var(AffectLeft) == 4
+    Var(HeartbreakTimerLeft) == 0
+
+Trigger: OnTurnEnd
+Priority: 15
+Script: EncScript_Enamorus_HeartbreakFades_Right
+Conditions:
+    Var(AffectRight) == 4
+    Var(HeartbreakTimerRight) == 0
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Enamorus_HeartstormPulseClear
+Conditions:
+    Var(HeartstormTurnGuard) == 1
+
+# The turn-close ledger: clears every per-event guard so next turn's Charm/Bond/Jealousy can fire
+# again. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Enamorus_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
