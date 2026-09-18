@@ -1806,10 +1806,11 @@ void Achievement_CheckBattleMilestones(void)
     {
         // ACHIEVEMENT_BATTLE_NO_DAMAGE, same full-team
         // requirement as CLEAN_SWEEP above. ACHIEVEMENT_BATTLE_UNTOUCHABLE
-        // below is unaffected -- it never got this requirement.
+        // requires only a 3+ Pokemon opponent team, so it stays earnable
+        // against major battles that don't field a full 6.
         if (gPartiesCount[B_TRAINER_OPPONENT_A] == PARTY_SIZE)
             Achievement_TryComplete(ACHIEVEMENT_BATTLE_NO_DAMAGE);
-        if (isMajorBattle)
+        if (isMajorBattle && gPartiesCount[B_TRAINER_OPPONENT_A] >= 3)
             Achievement_TryComplete(ACHIEVEMENT_BATTLE_UNTOUCHABLE);
     }
 
@@ -3196,8 +3197,12 @@ void Achievement_CheckChallengeMilestones(void)
 
         // No Freebies bookkeeping: did the starter (tracked by personality,
         // so it survives evolution) act in this major battle? Sticky once
-        // set, same "Broken" idiom used elsewhere.
-        if (runData->starterPersonality != 0 && !runData->starterActedInMajorBattle)
+        // set, same "Broken" idiom used elsewhere. Gated on playerCount >= 2
+        // -- before the player can catch anything of their own (i.e. before
+        // the May encounter), the starter is the only mon available and
+        // forced to act, which would make this achievement unwinnable.
+        if (runData->starterPersonality != 0 && !runData->starterActedInMajorBattle
+         && playerCount >= 2)
         {
             for (i = 0; i < playerCount; i++)
             {
