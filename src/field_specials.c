@@ -47,6 +47,7 @@
 #include "rtc.h"
 #include "script.h"
 #include "script_menu.h"
+#include "script_pokemon_util.h"
 #include "sound.h"
 #include "starter_choose.h"
 #include "string_util.h"
@@ -1498,6 +1499,36 @@ u8 TryUpdateRusturfTunnelState(void)
 void SetShoalItemFlag(u16 unused)
 {
     FlagSet(FLAG_SYS_SHOAL_ITEM);
+}
+
+// Species that appears on Route 101 only during the current time of day.
+// Evening has no exclusive species, so it keeps Zigzagoon.
+static enum Species GetBirchRescueSpecies(void)
+{
+    static const enum Species sBirchRescueSpecies[TIMES_OF_DAY_COUNT] =
+    {
+        [TIME_MORNING] = SPECIES_BIDOOF,
+        [TIME_DAY]     = SPECIES_LILLIPUP,
+        [TIME_EVENING] = SPECIES_ZIGZAGOON,
+        [TIME_NIGHT]   = SPECIES_POOCHYENA,
+    };
+
+    return sBirchRescueSpecies[GetTimeOfDay()];
+}
+
+// Picks the rescue species and points the Route 101 chase object at its overworld sprite.
+void SetBirchRescueMonGfx(void)
+{
+    VarSet(VAR_OBJ_GFX_ID_0, OBJ_EVENT_MON | GetBirchRescueSpecies());
+}
+
+// Starts the rescue battle against the species chosen by SetBirchRescueMonGfx.
+void SetBirchRescueWildBattle(void)
+{
+    enum Species species = VarGet(VAR_OBJ_GFX_ID_0) & OBJ_EVENT_MON_SPECIES_MASK;
+
+    CreateScriptedWildMon(species, 2, ITEM_NONE);
+    gSpecialVar_0x8004 = species;
 }
 
 void LoadWallyZigzagoon(void)

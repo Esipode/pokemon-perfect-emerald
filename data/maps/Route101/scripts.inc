@@ -1,7 +1,12 @@
 Route101_MapScripts::
+	map_script MAP_SCRIPT_ON_LOAD, Route101_OnLoad
 	map_script MAP_SCRIPT_ON_TRANSITION, Route101_OnTransition
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, Route101_OnFrame
 	.byte 0
+
+Route101_OnLoad:
+	callnative SetBirchRescueMonGfx
+	end
 
 Route101_OnTransition:
 	call ProfBirch_EventScript_UpdateLocation
@@ -255,9 +260,9 @@ Route101_EventScript_StartBirchsBag::
 	goto Route101_EventScript_BirchsBag
 
 Route101_EventScript_BirchsBag::
-	setwildbattle SPECIES_ZIGZAGOON 2
+	callnative SetBirchRescueWildBattle
 	waitse
-	playmoncry SPECIES_ZIGZAGOON, CRY_MODE_ENCOUNTER
+	playmoncry VAR_0x8004, CRY_MODE_ENCOUNTER
 	delay 40
 	waitmoncry
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
