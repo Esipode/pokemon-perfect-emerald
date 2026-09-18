@@ -1322,6 +1322,17 @@
 	.byte \var
 	.endm
 
+	@ Writes 1 into author variable \var if \target (must resolve to exactly one live battler) has
+	@ \gimmick (a GIMMICK_* constant) as its active gimmick, else 0. GetActiveGimmick/IsGimmickSelected
+	@ are read-only and callable from any checkpoint with no side effects - the only route from "what
+	@ gimmick is the player using" into a checkpoint script.
+	.macro encreadgimmick target:req, gimmick:req, var:req
+	callnative BS_EncReadGimmick
+	.byte \target
+	.byte \gimmick
+	.byte \var
+	.endm
+
 	@ Adds \stages (signed) to \stat for every battler \target resolves to, clamped to the normal
 	@ stat stage range. Silent - no message, no animation (outline Sec31); pair with playanimation
 	@ or a literal trybattlerstatchange call if presentation is wanted.

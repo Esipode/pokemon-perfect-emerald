@@ -286,3 +286,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/koraidon.inc"
 	.include "data/legendary_encounters/miraidon.inc"
 	.include "data/legendary_encounters/ogerpon.inc"
+	.include "data/legendary_encounters/terapagos.inc"

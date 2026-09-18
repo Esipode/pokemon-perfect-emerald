@@ -3089,6 +3089,14 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCOGERPONFLAMESOUT]                   = COMPOUND_STRING("Flames Out of\nControl!"),
     [STRINGID_ENCOGERPONCORNERSTONEHOLDS]            = COMPOUND_STRING("The Cornerstone\nholds firm!"),
     [STRINGID_ENCOGERPONPILLARSSHATTER]              = COMPOUND_STRING("The pillars shatter\nin a shockwave!"),
+    [STRINGID_ENCTERAPAGOSRESONANCEBREAK]            = COMPOUND_STRING("Terapagos's shell flares!\pIt lashes out with stored\nenergy!"),
+    [STRINGID_ENCTERAPAGOSENTERSTERASTAL]            = COMPOUND_STRING("Terapagos's shell cracks\nwide open!\pIts Terastal form\nemerges!"),
+    [STRINGID_ENCTERAPAGOSCRYSTALWINDOW]             = COMPOUND_STRING("A crystal breaks the\nsurface!\pStrike it down before it\nsinks!"),
+    [STRINGID_ENCTERAPAGOSCRYSTALBROKEN]             = COMPOUND_STRING("The crystal shatters!\pTerapagos's stored\nenergy thins!"),
+    [STRINGID_ENCTERAPAGOSENTERSSTELLAR]             = COMPOUND_STRING("Terapagos gathers every\nremaining type!\pIts Stellar form\nawakens!"),
+    [STRINGID_ENCTERAPAGOSTERAPUNISH]                = COMPOUND_STRING("Terapagos siphons your\nTerastal energy!\pIts Stellar Crown\nburns brighter!"),
+    [STRINGID_ENCTERAPAGOSCATCHWINDOW]               = COMPOUND_STRING("Terapagos's crown dims -\nnow is the moment!"),
+    [STRINGID_ENCTERAPAGOSCASCADEBREAKS]             = COMPOUND_STRING("Stellar Cascade overloads!\pTerapagos's focus\nscatters!"),
 };
 
 const u16 gOneHitKOStringIds[] =

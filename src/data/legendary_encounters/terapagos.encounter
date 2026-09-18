@@ -1,0 +1,238 @@
+Encounter: Terapagos
+
+# Terapagos, "The Terastal Pokemon". One rule:
+#   Terapagos hardens against whichever type keeps hitting it. Vary attack types, and punish its
+#   periodic exposed windows with a strong hit before the stored energy becomes a last-stand attack.
+# STELLAR ENERGY (0-18ish, var 1) is the meter: Crystal Resonance (Dormant, encadapt HARDENED
+#   results) feeds it; the Type Crystal and Stellar Crown exposed windows strip it; a Terastallize
+#   during the Cataclysm siphon feeds it back. Tera Starstorm's finale narrates the meter but does
+#   not rescale damage - no engine command can rescale a move's own output (known gap).
+# THREE PHASES BY BOSS HP%: Dormant (100-67, SPECIES_TERAPAGOS_NORMAL), Terastal (66-34,
+#   SPECIES_TERAPAGOS_TERASTAL), Stellar Cataclysm (33-0, SPECIES_TERAPAGOS_STELLAR, the catch
+#   window at <=10%).
+# ANTI-ABUSE IS NARROW (guideline 8): encadapt hardens a spammed attack type, and Terastallizing
+#   during the Cataclysm siphon window costs Stellar Energy instead of being free value. Nothing
+#   else about the fight is blocked.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 94
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_TERA_STARSTORM, MOVE_EARTH_POWER, MOVE_DAZZLING_GLEAM, MOVE_ANCIENT_POWER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all fourteen here in order
+# fixes Phase..Handled2 to 0..13.
+# 0 Phase (0 Dormant / 1 Terastal / 2 Cataclysm), 1 StellarEnergy (0-18ish, the meter),
+# 2 ActiveTypeSlot (0-5, rotates every turn in Phases 1-2; also the Cascade-chain's matched type),
+# 3 WindowUp (1 while a Type Crystal / Stellar Crown exposed window is open), 4 WindowTurns
+# (countdown, ticked OnTurnStart, resolved OnTurnEnd), 5 AdaptCount (mirrors encadapt's board
+# size), 6 AdaptResult (encadapt's ENC_ADAPT_RESULT_* outcome), 7 CascadeCount (consecutive
+# matched-type hits this Cataclysm window), 8 WindowMark (boss HP% snapshot when a window opened,
+# for the damage-since-open threshold test), 9 TurnGuard (once-per-turn scaffold), 10 SiphonUp (1
+# while the Cataclysm Tera-punish window is armed), 11 Handled (per-turn "already reacted to a hit
+# the boss took" latch, shared by the Dormant/Terastal/Cataclysm-crown reactions since only one
+# phase is ever active), 12 Scratch (copy target for ENC_SNAP_DAMAGE so WindowMark survives being
+# measured), 13 Handled2 (the Stellar Cascade's own per-turn latch, separate from Handled so both
+# can fire on the same Phase-2 hit).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Terapagos_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(StellarEnergy) >= 0
+    Var(ActiveTypeSlot) >= 0
+    Var(WindowUp) >= 0
+    Var(WindowTurns) >= 0
+    Var(AdaptCount) >= 0
+    Var(AdaptResult) >= 0
+    Var(CascadeCount) >= 0
+    Var(WindowMark) >= 0
+    Var(TurnGuard) >= 0
+    Var(SiphonUp) >= 0
+    Var(Handled) >= 0
+    Var(Scratch) >= 0
+    Var(Handled2) >= 0
+
+# CRYSTAL RESONANCE. Dormant only - encadapt files the type that just hit the boss, and a HARDENED
+# result (the type was already held) feeds Stellar Energy and fires Resonance Break. Handled is the
+# self-disable latch: Event.Battler stays true for the rest of this checkpoint's re-evaluation
+# passes, so without it the trigger would re-select itself until the script cap trips.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Terapagos_DormantHit
+Conditions:
+    Var(Phase) == 0
+    Var(Handled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+
+# Registered at both OnMoveEnd and OnTurnEnd - the crossing can be a player's hit or passive chip
+# (Toxic, weather) ticking at end of turn. Both copies are Once, marked at selection, so whichever
+# fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Terapagos_EnterTerastal
+Conditions:
+    Battler(Boss).HpPercent <= 75
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Terapagos_EnterTerastal
+Conditions:
+    Battler(Boss).HpPercent <= 75
+    Var(Phase) == 0
+
+# TYPE CRYSTAL. Terastal only - breaking a window strips Stellar Energy; ignoring it lets Terapagos
+# keep what it has. Same Handled latch, reused from Dormant since the phases never overlap.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Terapagos_TerastalHit
+Conditions:
+    Var(Phase) == 1
+    Var(Handled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+
+# Registered at both checkpoints for the same reason as _EnterTerastal above.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Terapagos_EnterCataclysm
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Terapagos_EnterCataclysm
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+# STELLAR CASCADE + TERASTAL PUNISH + STELLAR CROWN, combined into one script so the three Phase 2
+# hit-reactions share a single trigger/latch instead of three racing OnMoveEnd triggers.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Terapagos_CataclysmHit
+Conditions:
+    Var(Phase) == 2
+    Var(Handled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+
+# STELLAR CASCADE. Six near-identical triggers, one per Active Type value - Conditions can test
+# Event.MoveType against a literal but no command reads it into a variable, so the type match has
+# to live here rather than in the script. Only one can ever be eligible at a time (ActiveTypeSlot
+# has one value), and Handled2 is its own latch so this can still fire alongside the siphon/crown
+# script above on the same hit.
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Terapagos_CascadeHit
+Conditions:
+    Var(Phase) == 2
+    Var(Handled2) == 0
+    Var(ActiveTypeSlot) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Terapagos_CascadeHit
+Conditions:
+    Var(Phase) == 2
+    Var(Handled2) == 0
+    Var(ActiveTypeSlot) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_WATER
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Terapagos_CascadeHit
+Conditions:
+    Var(Phase) == 2
+    Var(Handled2) == 0
+    Var(ActiveTypeSlot) == 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ELECTRIC
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Terapagos_CascadeHit
+Conditions:
+    Var(Phase) == 2
+    Var(Handled2) == 0
+    Var(ActiveTypeSlot) == 3
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_GRASS
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Terapagos_CascadeHit
+Conditions:
+    Var(Phase) == 2
+    Var(Handled2) == 0
+    Var(ActiveTypeSlot) == 4
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_ICE
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Terapagos_CascadeHit
+Conditions:
+    Var(Phase) == 2
+    Var(Handled2) == 0
+    Var(ActiveTypeSlot) == 5
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_GROUND
+
+# Registered at both OnMoveEnd and OnTurnEnd - the crossing can be a player's hit or FlatToxicDamage
+# chip ticking at end of turn, and both copies are Once (marked at selection), so whichever fires
+# first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Terapagos_CatchWindow
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Terapagos_CatchWindow
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# THE ONCE-PER-TURN SCAFFOLD. Also where the Active Type rotates and the exposed-window roll
+# happens (Phases 1-2 only) - folding both into the single per-turn script satisfies their own
+# self-disable requirement for free, since this trigger only ever fires once a turn.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Terapagos_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Window expiry. Ticked (WindowTurns-1) at OnTurnStart inside _TurnOpen, resolved here at
+# OnTurnEnd - splitting the countdown across two checkpoints so it can't chase itself to zero in
+# one dispatch.
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_Terapagos_WindowExpire
+Conditions:
+    Var(WindowUp) == 1
+    Var(WindowTurns) <= 0
+
+# Clears TurnGuard and Handled together - always last.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Terapagos_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

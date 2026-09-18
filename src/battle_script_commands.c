@@ -13120,6 +13120,30 @@ void BS_EncReadStat(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// READ_GIMMICK (encreadgimmick). Writes 1 into var if target's active gimmick matches, else 0.
+// GetActiveGimmick/IsGimmickSelected are read-only with no side effects, so this is a safe wrap -
+// the only route from "what gimmick is the player using" into a checkpoint script.
+void BS_EncReadGimmick(void)
+{
+    NATIVE_ARGS(u8 target, u8 gimmick, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: READ_GIMMICK target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = 0;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    gEncounterVars[cmd->var] = (GetActiveGimmick(battler) == cmd->gimmick);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // CHANGE_STAT (encchangestat). Unlike CHANGE_HP this mutates statStages directly rather than going
 // through the animated trybattlerstatchange opcode - a pure mechanic with no presentation
 // (outline Sec31), safe to apply to an entire target set in one call since it never touches the

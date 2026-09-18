@@ -1225,3 +1225,17 @@ LegendaryEncounter_EventScript_Ogerpon::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Terapagos::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_TERAPAGOS, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_TERAPAGOS
+	setwildbattle SPECIES_TERAPAGOS, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle

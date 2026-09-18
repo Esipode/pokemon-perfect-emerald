@@ -1372,6 +1372,19 @@ extern const u8 EncScript_Ogerpon_ResolvePhase1[];
 extern const u8 EncScript_Ogerpon_ReactivePick[];
 extern const u8 EncScript_Ogerpon_Unyielding[];
 
+// Terapagos ("The Terastal Pokémon")
+extern const u8 EncScript_Terapagos_Intro[];
+extern const u8 EncScript_Terapagos_DormantHit[];
+extern const u8 EncScript_Terapagos_EnterTerastal[];
+extern const u8 EncScript_Terapagos_TerastalHit[];
+extern const u8 EncScript_Terapagos_EnterCataclysm[];
+extern const u8 EncScript_Terapagos_CataclysmHit[];
+extern const u8 EncScript_Terapagos_CascadeHit[];
+extern const u8 EncScript_Terapagos_CatchWindow[];
+extern const u8 EncScript_Terapagos_TurnOpen[];
+extern const u8 EncScript_Terapagos_WindowExpire[];
+extern const u8 EncScript_Terapagos_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

@@ -63,6 +63,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_KORAIDON, FLAG_HIDE_KORAIDON
 	updatelegendaryvisibility SPECIES_MIRAIDON, FLAG_HIDE_MIRAIDON
 	updatelegendaryvisibility SPECIES_OGERPON, FLAG_HIDE_OGERPON
+	updatelegendaryvisibility SPECIES_TERAPAGOS, FLAG_HIDE_TERAPAGOS
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1209,6 +1210,9 @@ LittlerootTown_EventScript_EncounterTESTMiraidon::
 
 LittlerootTown_EventScript_EncounterTESTOgerpon::
 	goto LegendaryEncounter_EventScript_Ogerpon
+
+LittlerootTown_EventScript_EncounterTESTTerapagos::
+	goto LegendaryEncounter_EventScript_Terapagos
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock
