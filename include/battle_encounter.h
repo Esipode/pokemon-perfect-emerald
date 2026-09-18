@@ -1272,6 +1272,21 @@ extern const u8 EncScript_ChiYu_FinalPhaseEnter[];
 extern const u8 EncScript_ChiYu_RuinousResolve[];
 extern const u8 EncScript_ChiYu_BallsUnlock[];
 
+// Okidogi ("The Retaliatory Brawler Pokémon")
+extern const u8 EncScript_Okidogi_Intro[];
+extern const u8 EncScript_Okidogi_TurnOpen[];
+extern const u8 EncScript_Okidogi_TurnClose[];
+extern const u8 EncScript_Okidogi_RageOnHit[];
+extern const u8 EncScript_Okidogi_RageOnAttack[];
+extern const u8 EncScript_Okidogi_Resentment[];
+extern const u8 EncScript_Okidogi_ComboInterrupt[];
+extern const u8 EncScript_Okidogi_Unchained[];
+extern const u8 EncScript_Okidogi_Berserker[];
+extern const u8 EncScript_Okidogi_ToxicFeed[];
+extern const u8 EncScript_Okidogi_BallsUnlock[];
+extern const u8 EncScript_Okidogi_RageTierLow[];
+extern const u8 EncScript_Okidogi_RageTierHigh[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

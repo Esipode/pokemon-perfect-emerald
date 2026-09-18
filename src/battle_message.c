@@ -2997,6 +2997,15 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCCHIYUFINALPHASE]                    = COMPOUND_STRING("Chi-Yu commits fully -\nthe Ruinous Pyre gathers!"),
     [STRINGID_ENCCHIYUNOWCATCH]                      = COMPOUND_STRING("Chi-Yu staggers -\nnow is the moment!"),
     [STRINGID_ENCCHIYURUINOUSPYRE]                   = COMPOUND_STRING("The RUINOUS PYRE\nconsumes everything!"),
+    [STRINGID_ENCOKIDOGIRESENTMENT]                  = COMPOUND_STRING("Okidogi bristles at the\ninsult - its RAGE spikes!"),
+    [STRINGID_ENCOKIDOGICOMBOINTERRUPT]              = COMPOUND_STRING("The Brutal Combo breaks -\nOkidogi staggers!"),
+    [STRINGID_ENCOKIDOGIUNCHAINED]                   = COMPOUND_STRING("Okidogi throws off its\nrestraint - UNCHAINED!"),
+    [STRINGID_ENCOKIDOGIBERSERKER]                   = COMPOUND_STRING("Okidogi loses itself to\nfury - BERSERKER!"),
+    [STRINGID_ENCOKIDOGIBERSERKFAIL]                 = COMPOUND_STRING("The wild swing misses -\nits RAGE burns off!"),
+    [STRINGID_ENCOKIDOGICOLLISIONCOURSE]             = COMPOUND_STRING("All its RAGE collides at\nonce - COLLISION COURSE!"),
+    [STRINGID_ENCOKIDOGIBALLSUNLOCKED]               = COMPOUND_STRING("Okidogi staggers badly -\nnow is the moment!"),
+    [STRINGID_ENCOKIDOGIRAGERISING]                  = COMPOUND_STRING("Okidogi's RAGE is rising."),
+    [STRINGID_ENCOKIDOGIRAGEBOILING]                 = COMPOUND_STRING("Okidogi's RAGE is boiling\nover!"),
 };
 
 const u16 gOneHitKOStringIds[] =
