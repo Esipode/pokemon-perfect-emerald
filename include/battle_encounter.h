@@ -1257,6 +1257,21 @@ extern const u8 EncScript_TingLu_Ledger[];
 extern const u8 EncScript_TingLu_CatchWindow[];
 extern const u8 EncScript_TingLu_FinalAttack[];
 
+// Chi-Yu ("The Ruinous Bead Pokémon")
+extern const u8 EncScript_ChiYu_Intro[];
+extern const u8 EncScript_ChiYu_TurnOpen[];
+extern const u8 EncScript_ChiYu_GreedyStart[];
+extern const u8 EncScript_ChiYu_GreedyAdvance[];
+extern const u8 EncScript_ChiYu_FirestormArm[];
+extern const u8 EncScript_ChiYu_FirestormResolve[];
+extern const u8 EncScript_ChiYu_FlameGainMove[];
+extern const u8 EncScript_ChiYu_FlameGainFaint[];
+extern const u8 EncScript_ChiYu_Ledger[];
+extern const u8 EncScript_ChiYu_PhaseWildfire[];
+extern const u8 EncScript_ChiYu_FinalPhaseEnter[];
+extern const u8 EncScript_ChiYu_RuinousResolve[];
+extern const u8 EncScript_ChiYu_BallsUnlock[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

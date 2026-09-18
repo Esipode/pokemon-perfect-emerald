@@ -1,0 +1,192 @@
+Encounter: Chi_Yu
+
+# Chi-Yu, "The Ruinous Bead Pokemon". One rule:
+#   Everything Chi-Yu does feeds FLAME (0-6). Field intensity (Warm/Scorched/Inferno) is a direct
+#   read of Flame's tier, not a separate counter.
+# WHAT THE PLAYER WORKS OUT: hitting Chi-Yu hard and often keeps Flame low. Playing passively,
+#   letting a burn sit, or letting a Greedy Flame windup complete lets Flame climb toward the two
+#   big scripted payoffs - Firestorm mid-fight, then Ruinous Pyre once Consuming Ruin begins.
+# PHASES:
+#   Phase 0 (100%-50% HP) - Flame accrual from the boss's own Fire moves and from a faint it
+#     causes. Bead-break on a big single-turn hit. Greedy Flame windups on a cooldown. Ignite
+#     Chain rewards letting a burn sit three turns straight.
+#   Phase 1 - WILDFIRE (<=50% HP) - Beads auto-spawn every turn, Flame ticks up passively on top
+#     of Phase 0 sources, and Flame maxing at 6 arms a one-turn Firestorm telegraph.
+#   Phase 2 - CONSUMING RUIN (<=15% HP) - Balls unlock at <=10% HP. Ruinous Pyre telegraphs one
+#     turn ahead, devours every remaining Bead, and deals damage scaled by what was banked, then
+#     resets Flame to calm.
+# ANTI-ABUSE (guideline 8): bead-break and the Greedy interrupt both key off real single-turn
+#   damage dealt to the boss (BossDmgSnap), so passive stalling can't force either payoff without
+#   putting in the work. Heal Block re-arms every turn Flame is Scorched+ (>=4), closing the
+#   player's own stalling-heal loop - distinct from every other Gen 9 legendary's guard.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_ChiYu_BallsUnlock sets a real one
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True                # the fight must reach the Balls-unlock window to end as a catch;
+                                  # cleared once Balls unlock so the automatic catch guard takes over
+    Moves: MOVE_HEAT_WAVE, MOVE_DARK_PULSE, MOVE_WILL_O_WISP, MOVE_NASTY_PLOT
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all fifteen here in order fixes
+# Flame..CueTick to 0..14.
+# 0 Flame (0-6, the core meter; field tier is Flame read at thresholds 2/4/6), 1 BeadCount (0-3),
+# 2 BossDmgSnap (boss HP% snapshotted OnTurnStart, read as ENC_SNAP_DAMAGE at OnTurnEnd - feeds
+# both the bead-break and Greedy-interrupt checks), 3 GreedyState (0 idle / 1 windup turn 1 /
+# 2 windup turn 2), 4 GreedyCooldown (turns until next windup eligible), 5 IgniteChain (consecutive
+# turns the player's active mon has stayed burned), 6 Phase (0 / 1 Wildfire / 2 Consuming Ruin),
+# 7 FlameGainGuard (once-per-turn guard, the combined OnMoveEnd Flame-gain trigger),
+# 8 FaintGuard (once-per-turn guard, the OnFaint Flame-gain trigger), 9 TurnGuard (the
+# unconditional-once-per-turn scaffold), 10 FirestormWindup (0/1, one-turn Firestorm telegraph),
+# 11 RuinousScratch (Flame + old BeadCount banded into Ruinous Pyre's damage tier),
+# 12 LastFlameBand (the last ANNOUNCED Flame band - the callout's re-fire latch), 13 RuinousArmed
+# (0/1, one-turn Ruinous Pyre telegraph), 14 CueTick (alternates the recurring Scorched+ cue).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_ChiYu_Intro
+Conditions:
+    Var(Flame) >= 0
+    Var(BeadCount) >= 0
+    Var(BossDmgSnap) >= 0
+    Var(GreedyState) >= 0
+    Var(GreedyCooldown) >= 0
+    Var(IgniteChain) >= 0
+    Var(Phase) >= 0
+    Var(FlameGainGuard) >= 0
+    Var(FaintGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(FirestormWindup) >= 0
+    Var(RuinousScratch) >= 0
+    Var(LastFlameBand) >= 0
+    Var(RuinousArmed) >= 0
+    Var(CueTick) >= 0
+
+# The once-per-turn scaffold. TurnGuard is the only gate and the script sets it immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_ChiYu_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Greedy Flame windup opens. Phase 0-1 only, and only when the cooldown has elapsed.
+# Self-disabling: the script moves GreedyState off 0.
+Trigger: OnTurnStart
+Priority: 11
+Script: EncScript_ChiYu_GreedyStart
+Conditions:
+    Var(GreedyState) == 0
+    Var(GreedyCooldown) == 0
+    Var(Phase) < 2
+
+# Greedy Flame windup advances to its second (final) turn. Self-disabling: moves GreedyState off 1.
+Trigger: OnTurnStart
+Priority: 12
+Script: EncScript_ChiYu_GreedyAdvance
+Conditions:
+    Var(GreedyState) == 1
+
+# Firestorm resolves the turn after Flame maxed out. Self-disabling: clears FirestormWindup itself.
+Trigger: OnTurnStart
+Priority: 13
+Script: EncScript_ChiYu_FirestormResolve
+Conditions:
+    Var(FirestormWindup) == 1
+
+# Ruinous Pyre resolves the turn after Consuming Ruin was entered. Self-disabling: clears
+# RuinousArmed itself.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_ChiYu_RuinousResolve
+Conditions:
+    Var(RuinousArmed) == 1
+
+# Combined Flame-gain trigger: the boss's own Fire move landing. Once per turn - FlameGainGuard is
+# closed as this script's first line, on every path, and cleared at the ledger.
+Trigger: OnMoveEnd
+Priority: 4
+Script: EncScript_ChiYu_FlameGainMove
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+    Var(FlameGainGuard) == 0
+
+# Flame gain from a faint the boss caused. Once per turn, same reasoning as above.
+Trigger: OnFaint
+Priority: 1
+Script: EncScript_ChiYu_FlameGainFaint
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(FaintGuard) == 0
+
+# Phase transitions and the Firestorm arm all sit BELOW the ledger (Priority 80), so within one
+# checkpoint pass they resolve first and the ledger sees the updated state the same turn.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_ChiYu_PhaseWildfire
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_ChiYu_PhaseWildfire
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_ChiYu_FinalPhaseEnter
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) < 2
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_ChiYu_FinalPhaseEnter
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) < 2
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_ChiYu_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_ChiYu_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+# Firestorm arms whenever Flame climbs back to its cap - OnEnter (not Once) so it can re-fire
+# every time the meter maxes out again, but never during Consuming Ruin.
+Trigger: OnTurnEnd
+Priority: 8
+Flags: OnEnter
+Script: EncScript_ChiYu_FirestormArm
+Conditions:
+    Var(Flame) == 6
+    Var(Phase) < 2
+
+# THE LEDGER. Measures the turn's damage against the boss once, then resolves bead-break, the
+# Greedy windup, and Ignite Chain from that single reading. Runs last so every transition above has
+# already landed. Self-disables by clearing every once-per-turn guard on every path.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_ChiYu_Ledger
+Conditions:
+    Var(TurnGuard) == 1

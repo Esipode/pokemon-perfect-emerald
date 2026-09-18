@@ -279,3 +279,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/wo_chien.inc"
 	.include "data/legendary_encounters/chien_pao.inc"
 	.include "data/legendary_encounters/ting_lu.inc"
+	.include "data/legendary_encounters/chiyu.inc"

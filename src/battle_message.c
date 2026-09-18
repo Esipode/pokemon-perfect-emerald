@@ -2979,6 +2979,24 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCTINGLUCOLLAPSE]                     = COMPOUND_STRING("The earth begins to\ncollapse!"),
     [STRINGID_ENCTINGLUCATCHWINDOW]                  = COMPOUND_STRING("Ting-Lu staggers -\nnow is the moment!"),
     [STRINGID_ENCTINGLUEXHAUSTION]                   = COMPOUND_STRING("The weight it carried\nfinally gives way!"),
+
+    [STRINGID_ENCCHIYUOPENING]                       = COMPOUND_STRING("A living coal of hatred\nsurfaces from the deep!"),
+    [STRINGID_ENCCHIYUFLAMEWARM]                     = COMPOUND_STRING("The air around Chi-Yu\ngrows warm."),
+    [STRINGID_ENCCHIYUFLAMESCORCHED]                 = COMPOUND_STRING("The heat turns scorching -\nhealing chokes in it!"),
+    [STRINGID_ENCCHIYUFLAMEINFERNO]                  = COMPOUND_STRING("Chi-Yu's flame roars into\nan inferno!"),
+    [STRINGID_ENCCHIYUFLAMECALMS]                    = COMPOUND_STRING("The flame dies back down\nto embers."),
+    [STRINGID_ENCCHIYUHEATPRESSES]                   = COMPOUND_STRING("The heat presses on."),
+    [STRINGID_ENCCHIYUBEADBREAKS]                    = COMPOUND_STRING("A Burning Bead shatters -\nflame washes back!"),
+    [STRINGID_ENCCHIYUGREEDYWINDUP]                  = COMPOUND_STRING("Chi-Yu draws the flame\ninward, gathering!"),
+    [STRINGID_ENCCHIYUGREEDYINTERRUPTED]             = COMPOUND_STRING("The gathering flame\nscatters, spent!"),
+    [STRINGID_ENCCHIYUGREEDYPAYOFF]                  = COMPOUND_STRING("Chi-Yu unleashes the\ngathered flame!"),
+    [STRINGID_ENCCHIYUFLAMESSPREAD]                  = COMPOUND_STRING("THE FLAMES SPREAD\nWILDLY!"),
+    [STRINGID_ENCCHIYUWILDFIRE]                      = COMPOUND_STRING("WILDFIRE!\nThe whole field is burning!"),
+    [STRINGID_ENCCHIYUFIRESTORMTELEGRAPH]            = COMPOUND_STRING("The flame is about to\nburst into a FIRESTORM!"),
+    [STRINGID_ENCCHIYUFIRESTORMFIRES]                = COMPOUND_STRING("FIRESTORM erupts across\nthe field!"),
+    [STRINGID_ENCCHIYUFINALPHASE]                    = COMPOUND_STRING("Chi-Yu commits fully -\nthe Ruinous Pyre gathers!"),
+    [STRINGID_ENCCHIYUNOWCATCH]                      = COMPOUND_STRING("Chi-Yu staggers -\nnow is the moment!"),
+    [STRINGID_ENCCHIYURUINOUSPYRE]                   = COMPOUND_STRING("The RUINOUS PYRE\nconsumes everything!"),
 };
 
 const u16 gOneHitKOStringIds[] =

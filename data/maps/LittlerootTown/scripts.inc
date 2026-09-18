@@ -56,6 +56,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_WO_CHIEN, FLAG_HIDE_WO_CHIEN
 	updatelegendaryvisibility SPECIES_CHIEN_PAO, FLAG_HIDE_CHIEN_PAO
 	updatelegendaryvisibility SPECIES_TING_LU, FLAG_HIDE_TING_LU
+	updatelegendaryvisibility SPECIES_CHI_YU, FLAG_HIDE_CHI_YU
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1181,6 +1182,9 @@ LittlerootTown_EventScript_EncounterTESTChienPao::
 
 LittlerootTown_EventScript_EncounterTESTTingLu::
 	goto LegendaryEncounter_EventScript_TingLu
+
+LittlerootTown_EventScript_EncounterTESTChiYu::
+	goto LegendaryEncounter_EventScript_ChiYu
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock
