@@ -1318,6 +1318,26 @@ extern const u8 EncScript_Fezandipiti_JealousBeautyTransition[];
 extern const u8 EncScript_Fezandipiti_BallsUnlock[];
 extern const u8 EncScript_Fezandipiti_TurnClose[];
 
+// Koraidon ("The Winged King Pokémon")
+extern const u8 EncScript_Koraidon_Intro[];
+extern const u8 EncScript_Koraidon_TurnGuardSet[];
+extern const u8 EncScript_Koraidon_TurnGuardClear[];
+extern const u8 EncScript_Koraidon_MomentumGain[];
+extern const u8 EncScript_Koraidon_MomentumLoss[];
+extern const u8 EncScript_Koraidon_StatusBreak[];
+extern const u8 EncScript_Koraidon_SunLost[];
+extern const u8 EncScript_Koraidon_InstinctRead[];
+extern const u8 EncScript_Koraidon_InstinctPursue[];
+extern const u8 EncScript_Koraidon_RoarStart[];
+extern const u8 EncScript_Koraidon_RoarInterrupt[];
+extern const u8 EncScript_Koraidon_RoarResolve[];
+extern const u8 EncScript_Koraidon_CollisionStart[];
+extern const u8 EncScript_Koraidon_CollisionInterrupt[];
+extern const u8 EncScript_Koraidon_CollisionResolve[];
+extern const u8 EncScript_Koraidon_Phase1[];
+extern const u8 EncScript_Koraidon_Phase2[];
+extern const u8 EncScript_Koraidon_Spent[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

@@ -1241,6 +1241,16 @@
 	.byte \var
 	.endm
 
+	@ Writes the current move's BASE type into author variable \var - the same value an
+	@ Event.MoveType condition reads. Conditions and encjumpifvar can only compare a variable
+	@ against a literal, never another variable, so this is what lets a script persist "the type
+	@ of the move that just landed" and compare it against what a later turn's move types out to.
+	@ OnMoveEnd only, since it reads the event's move; reading it elsewhere writes TYPE_NONE.
+	.macro encstoretype var:req
+	callnative BS_EncStoreType
+	.byte \var
+	.endm
+
 	@ Writes how well the player knows \species into author variable \var:
 	@   0 never met   1 seen in the Pokedex   2 caught in the Pokedex
 	@ Conditions read battle state only, so this is the only route from "what has the player done

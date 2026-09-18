@@ -3042,6 +3042,20 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCFEZANDIPITIGLAMOURCOLLAPSE]         = COMPOUND_STRING("GLAMOUR COLLAPSES! Its\nguard is wide open!"),
     [STRINGID_ENCFEZANDIPITIREDUCTIONCHANGE]         = COMPOUND_STRING("Fezandipiti's guard\nshifts!"),
     [STRINGID_ENCFEZANDIPITIBALLSUNLOCK]             = COMPOUND_STRING("Fezandipiti reels -\nnow is the moment!"),
+
+    [STRINGID_ENCKORAIDONINTRO]                      = COMPOUND_STRING("The air ignites - Koraidon's\nPrimal Sun blazes to life!"),
+    [STRINGID_ENCKORAIDONROARSTART]                  = COMPOUND_STRING("Koraidon rears back, gathering\na PRIMAL ROAR!{PAUSE_UNTIL_PRESS}"),
+    [STRINGID_ENCKORAIDONROARINTERRUPT]              = COMPOUND_STRING("The ROAR breaks apart -\nKoraidon's rhythm is shattered!"),
+    [STRINGID_ENCKORAIDONROARRESOLVE]                = COMPOUND_STRING("PRIMAL ROAR erupts! Its Sun\nburns hotter than before!"),
+    [STRINGID_ENCKORAIDONCOLLISIONSTART]             = COMPOUND_STRING("Koraidon's muscles coil -\nit's building toward COLLISION!"),
+    [STRINGID_ENCKORAIDONCOLLISIONINTERRUPT]         = COMPOUND_STRING("The charge scatters - Koraidon\nstumbles out of rhythm!"),
+    [STRINGID_ENCKORAIDONCOLLISIONHIT]               = COMPOUND_STRING("COLLISION connects with\nearth-shaking force!"),
+    [STRINGID_ENCKORAIDONCOLLISIONCOURSE]            = COMPOUND_STRING("Every ounce of Momentum surges -\nCOLLISION COURSE!"),
+    [STRINGID_ENCKORAIDONINSTINCT]                   = COMPOUND_STRING("Koraidon reads the rhythm and\nanswers in kind!"),
+    [STRINGID_ENCKORAIDONSUNLOST]                    = COMPOUND_STRING("Clouds swallow the light -\nKoraidon's rhythm slips!"),
+    [STRINGID_ENCKORAIDONPHASE1]                     = COMPOUND_STRING("Koraidon's eyes flare - it enters\nits APEX PREDATOR stance!"),
+    [STRINGID_ENCKORAIDONPHASE2]                     = COMPOUND_STRING("Instinct override - Koraidon\nsurges into PRIMAL INSTINCT!"),
+    [STRINGID_ENCKORAIDONWEAKENED]                   = COMPOUND_STRING("Koraidon finally slows - now's\nthe moment to throw a Ball!"),
 };
 
 const u16 gOneHitKOStringIds[] =

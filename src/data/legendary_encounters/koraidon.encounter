@@ -1,0 +1,208 @@
+Encounter: Koraidon
+
+# Koraidon, "The Winged King Pokemon". One rule:
+#   MOMENTUM (0-6) is Koraidon's rhythm. It climbs when its own move lands and when Primal Roar
+#   resolves; it drops on a miss/block, on taking a status, and on losing its Sun. High Momentum
+#   unlocks bigger scripted payloads - Primal Roar at 4, Collision at 6.
+# WHAT THE PLAYER WORKS OUT: deny Momentum (Protect, status, switching, varying moves) to starve
+#   Collision; interrupt Primal Roar and Collision by landing a hit on Koraidon while it channels
+#   or charges - either interrupt costs it a real Momentum chunk (guideline 8), so spamming the
+#   charge without protecting Momentum first is self-defeating.
+# PHASES: 0 THE RADIANT PREDATOR (100-50%) - Momentum, Sun, Instinct reads and Primal Roar all
+#   live. 1 APEX PREDATOR (<=50%) - Collision unlocks at Momentum 6, stat surge on entry.
+#   2 PRIMAL INSTINCT (<=20%) - Speed/Attack surge, falling accuracy, Collision reflavoured
+#   Collision Course. Balls unlock at <=10% (the catch window, guideline 10).
+# INSTINCT reads the player: a repeated move TYPE telegraphs RHYTHM (Koraidon answers in kind,
+#   Speed up); any other physical attack telegraphs BRACE (Defense up); switching in telegraphs
+#   PURSUE. Move type is tracked with encstoretype - an engine addition, added this fight because
+#   no existing command could copy Event.MoveType into a variable and conditions can only compare
+#   a variable against a literal, never another variable (see koraidon.inc header for the
+#   type-match dispatch this makes possible).
+# SUN TIERS are script-tracked flavour on top of the one real weather flag the engine has
+#   (BATTLE_WEATHER_SUN): tier 1 from the intro, tiers 2-3 only reachable through Primal Roar
+#   resolving, and Collision's damage scales with the tier - point at the cause whenever the tier
+#   changes (guideline 14), which is what LastAnnouncedTier is for.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_FLARE_BLITZ, MOVE_OUTRAGE, MOVE_CLOSE_COMBAT, MOVE_DRAGON_CLAW
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming every one here in order fixes
+# Phase..Scratch to 0..13. Reused verbatim as the .inc header comment.
+# 0 Phase (0/1/2), 1 Momentum (0-6), 2 SunTier (0 none/1 Primal/2 Intense/3 Ancient),
+# 3 LastPlayerMoveType, 4 RepeatTypeCount (capped display at 2), 5 InstinctTelegraph
+# (0 none/1 brace/2 pursue/3 rhythm), 6 RoarState, 7 CollisionState, 8 MomentumGuard
+# (OnMoveEnd latch, Koraidon's own move outcome), 9 InstinctGuard (OnMoveEnd latch, the player's
+# move read), 10 SwitchGuard (OnSwitchIn latch), 11 TurnGuard (once-per-turn scaffold),
+# 12 LastAnnouncedTier (guideline 14), 13 Scratch (this turn's move type, consumed by the
+# type-match dispatch before InstinctRead overwrites it again next turn).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Koraidon_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Momentum) >= 0
+    Var(SunTier) >= 0
+    Var(LastPlayerMoveType) >= 0
+    Var(RepeatTypeCount) >= 0
+    Var(InstinctTelegraph) >= 0
+    Var(RoarState) >= 0
+    Var(CollisionState) >= 0
+    Var(MomentumGuard) >= 0
+    Var(InstinctGuard) >= 0
+    Var(SwitchGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(LastAnnouncedTier) >= 0
+    Var(Scratch) >= 0
+
+# The once-per-turn scaffold (authoring.md). Priority 0 so it always runs before Collision/Roar
+# checks at the same checkpoint.
+Trigger: OnTurnStart
+Priority: 0
+Script: EncScript_Koraidon_TurnGuardSet
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Koraidon_TurnGuardClear
+Conditions:
+    Var(TurnGuard) == 1
+
+# MOMENTUM from Koraidon's own move. Split into Gain/Loss because a script can't read Event.Cause
+# into a variable - only a Conditions test can see it - so the branch has to happen at trigger
+# level, not inside one shared script. Both close MomentumGuard immediately.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Koraidon_MomentumGain
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(MomentumGuard) == 0
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Koraidon_MomentumLoss
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(MomentumGuard) == 0
+    Event.Cause == ENC_CAUSE_NONE
+
+# A status landing costs Momentum. OnEnter only - it fires again if Koraidon is cured and then
+# re-afflicted, not on every checkpoint the status happens to still be up.
+Trigger: OnMoveEnd
+Priority: 12
+Flags: OnEnter
+Script: EncScript_Koraidon_StatusBreak
+Conditions:
+    Battler(Boss).Status != STATUS1_NONE
+
+# Losing the Sun costs Momentum and resets SunTier. OnEnter: fires once on the edge, not every
+# turn the weather happens to already be gone.
+Trigger: OnTurnEnd
+Priority: 15
+Flags: OnEnter
+Script: EncScript_Koraidon_SunLost
+Conditions:
+    Var(SunTier) > 0
+    Weather != B_WEATHER_SUN_NORMAL
+
+# INSTINCT READ. Self-disabling through InstinctGuard, which the script sets on every path.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Koraidon_InstinctRead
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(InstinctGuard) == 0
+    Any:
+        Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+        Var(RepeatTypeCount) >= 2
+
+# PURSUE. Somebody walked in - Koraidon reads the newcomer. Self-disabling through SwitchGuard,
+# cleared at TurnGuardClear like every other per-turn latch.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Koraidon_InstinctPursue
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(SwitchGuard) == 0
+
+# PRIMAL ROAR. Self-disabling through RoarState, which the script sets immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Koraidon_RoarStart
+Conditions:
+    Var(Momentum) >= 4
+    Var(RoarState) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Script: EncScript_Koraidon_RoarInterrupt
+Conditions:
+    Var(RoarState) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Koraidon_RoarResolve
+Conditions:
+    Var(RoarState) == 1
+
+# COLLISION. Requires Momentum maxed and Phase 1+. Priority 5 on both Start and Interrupt so
+# Interrupt beats Resolve (Priority 10) within the same OnTurnEnd dispatch.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_Koraidon_CollisionStart
+Conditions:
+    Var(Phase) >= 1
+    Var(Momentum) == 6
+    Var(CollisionState) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Script: EncScript_Koraidon_CollisionInterrupt
+Conditions:
+    Var(CollisionState) == 1
+    Any:
+        Battler(PlayerLeft).Protected == 1
+        Var(Momentum) < 6
+
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_Koraidon_CollisionResolve
+Conditions:
+    Var(CollisionState) == 1
+
+# Phase transitions. Once/OnEnter - the crossing, not the level.
+Trigger: OnMoveEnd
+Priority: 30
+Flags: Once, OnEnter
+Script: EncScript_Koraidon_Phase1
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 31
+Flags: Once, OnEnter
+Script: EncScript_Koraidon_Phase2
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 32
+Flags: Once, OnEnter
+Script: EncScript_Koraidon_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2

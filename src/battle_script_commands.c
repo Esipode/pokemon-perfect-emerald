@@ -12833,6 +12833,25 @@ void BS_EncStorePrediction(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// STORE TYPE (encstoretype). Copies the current move's base type - the same value an
+// Event.MoveType condition reads - into an author variable. Conditions and encjumpifvar only ever
+// compare a variable against a literal, never another variable, so this is what lets a script
+// remember "the type of the move that just landed" for a later turn to test against. Reuses
+// GetEncounterEventField, which already asserts and returns FALSE outside OnMoveEnd, so a
+// misplaced call safely writes TYPE_NONE instead of reading stale data.
+void BS_EncStoreType(void)
+{
+    NATIVE_ARGS(u8 var);
+    s32 move;
+
+    if (GetEncounterEventField(ENC_EVENT_MOVE, &move))
+        gEncounterVars[cmd->var] = GetMoveType(move);
+    else
+        gEncounterVars[cmd->var] = TYPE_NONE;
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // OWNED (encowned). The player's history with a species, as a number a script can branch on:
 // 2 has caught one, 1 has only seen one, 0 has never met one. Conditions can only read battle state,
 // so this is the only route from "what has the player done outside this battle" into an encounter
