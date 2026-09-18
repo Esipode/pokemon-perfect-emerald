@@ -867,7 +867,9 @@ void HandleAction_ThrowBall(void)
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
     gLastUsedItem = gBallToDisplay;
-    if (!GetItemImportance(gLastUsedItem))
+    // Encounter not catchable yet: Cmd_handleballthrow redirects to BattleScript_EncounterCannotCatch,
+    // so don't consume the ball for a throw that can't do anything.
+    if (!GetItemImportance(gLastUsedItem) && !IsEncounterBlockingBalls())
         RemoveBagItem(gLastUsedItem, 1);
     gBattlescriptCurrInstr = BattleScript_BallThrow;
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;

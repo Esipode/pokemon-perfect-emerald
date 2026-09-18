@@ -281,3 +281,4 @@ EncScript_StormHerald_Desperation::
 	.include "data/legendary_encounters/ting_lu.inc"
 	.include "data/legendary_encounters/chiyu.inc"
 	.include "data/legendary_encounters/okidogi.inc"
+	.include "data/legendary_encounters/munkidori.inc"

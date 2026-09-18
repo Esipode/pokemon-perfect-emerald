@@ -1287,6 +1287,21 @@ extern const u8 EncScript_Okidogi_BallsUnlock[];
 extern const u8 EncScript_Okidogi_RageTierLow[];
 extern const u8 EncScript_Okidogi_RageTierHigh[];
 
+// Munkidori ("The Manipulative Trickster Pokémon")
+extern const u8 EncScript_Munkidori_Intro[];
+extern const u8 EncScript_Munkidori_TurnOpen[];
+extern const u8 EncScript_Munkidori_PredictionHit[];
+extern const u8 EncScript_Munkidori_ToxicThoughtApply[];
+extern const u8 EncScript_Munkidori_HijackPunish[];
+extern const u8 EncScript_Munkidori_Phase2Entry[];
+extern const u8 EncScript_Munkidori_FinalPhaseEntry[];
+extern const u8 EncScript_Munkidori_OverconfidentEnter[];
+extern const u8 EncScript_Munkidori_OverconfidentExit[];
+extern const u8 EncScript_Munkidori_BluffFellFor[];
+extern const u8 EncScript_Munkidori_BluffReadPast[];
+extern const u8 EncScript_Munkidori_TurnClose[];
+extern const u8 EncScript_Munkidori_Finale[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

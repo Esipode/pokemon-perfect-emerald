@@ -1,0 +1,255 @@
+Encounter: Munkidori
+
+# Munkidori, "The Manipulative Trickster Pokemon". One rule: every event where Munkidori read the
+# player correctly pays it off with +1 INFLUENCE; every countered trick crashes it -1. At max
+# Influence (6) it goes OVERCONFIDENT and its guard drops for a punish window. The finale gathers
+# whatever Influence remains into one scaled burst, then zeroes out and opens the catch window.
+#   Phase 0 (100%-50%) - baseline kit live: move-category prediction (Mind Games), Toxic Thought,
+#     bluffed tells (False Target).
+#   Phase 1 "PSYCHIC CONTROL" (50%-20%) - Command Hijack category warnings added; hitting Influence
+#     6 here makes it OVERCONFIDENT (guard drops), reversed once Influence falls back below 6.
+#   Phase 2 "MIND BREAK" (<=20%) - Influence only drops on a clean counter, never passively; Toxic
+#     Thought's stat swing doubles. Hitting Influence 6 a second time fires the Nasty Plot burst,
+#     then guard-drops for the catch window.
+# ANTI-ABUSE IS NARROW (guideline 8): spamming Protect to dodge everything feeds Influence through
+# the bluffed tell; spamming one move category to dodge Command Hijack feeds it through the
+# category-locked reflect chip; stalling Toxic Thought is capped by FlatToxicDamage and its own
+# 4-turn hard expiry.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_PSYCHIC, MOVE_TOXIC, MOVE_DARK_PULSE, MOVE_KNOCK_OFF
+    AiFlags: AI_FLAG_SMART_TRAINER | AI_FLAG_PREDICT_MOVE
+
+# Always-true block: pins the variable numbering the battle scripts hard-code, in first-appearance
+# order.
+# 0 Phase (0 opening / 1 Psychic Control / 2 Mind Break / 3 Spent), 1 Influence (the meter, 0-6),
+# 2 PredictedCat (this turn's encstoreprediction result: 0 none / 1 phys / 2 spec / 3 status),
+# 3 PredictHandled (once-per-turn guard for the prediction hit/miss triggers), 4 TTTimer (Toxic
+# Thought's countdown, 0 inactive / 4-1 counting down), 5 TTStatApplied (guards the turn-1 stat
+# debuff from double-applying or reversing twice), 6 Bluff (0 real tell / 1 fake tell, rolled each
+# turn), 7 BluffHandled (once-per-turn guard for the tell resolution), 8 HijackCat (the category
+# Munkidori calls out, 0 none / 1 phys / 2 spec / 3 status), 9 HijackHandled (once-per-turn guard
+# for the reflect-punish), 10 TurnGuard (the once-per-turn scaffold), 11 Overconfident (0/1, whether
+# its guard is currently down), 12 FinalePlayed (guards the Nasty Plot burst to fire once).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Munkidori_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Influence) >= 0
+    Var(PredictedCat) >= 0
+    Var(PredictHandled) >= 0
+    Var(TTTimer) >= 0
+    Var(TTStatApplied) >= 0
+    Var(Bluff) >= 0
+    Var(BluffHandled) >= 0
+    Var(HijackCat) >= 0
+    Var(HijackHandled) >= 0
+    Var(TurnGuard) >= 0
+    Var(Overconfident) >= 0
+    Var(FinalePlayed) >= 0
+
+# The once-per-turn scaffold. Rolls the prediction, the bluffed tell, and (Phase >= 1) the Command
+# Hijack warning, all gated behind the single TurnGuard latch this trigger sets.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Munkidori_TurnOpen
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 0
+
+# Mind Games: the player fed the read. Self-disabling through PredictHandled, cleared each TurnOpen.
+Trigger: OnMoveEnd
+Priority: 5
+Script: EncScript_Munkidori_PredictionHit
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Var(PredictedCat) == 1
+    Var(PredictHandled) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Script: EncScript_Munkidori_PredictionHit
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+    Var(PredictedCat) == 2
+    Var(PredictHandled) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Script: EncScript_Munkidori_PredictionHit
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(PredictedCat) == 3
+    Var(PredictHandled) == 0
+
+# Toxic Thought lands. Self-disabling: TTTimer stays nonzero for the whole 4-turn run.
+Trigger: OnMoveEnd
+Priority: 6
+Script: EncScript_Munkidori_ToxicThoughtApply
+Conditions:
+    Battler(PlayerLeft).Status == ENC_STATUS_TOXIC
+    Var(TTTimer) == 0
+
+# Command Hijack punish: the player used the flagged category anyway. Self-disabling through
+# HijackHandled, cleared each TurnOpen. Phase 1+ only.
+Trigger: OnMoveEnd
+Priority: 7
+Script: EncScript_Munkidori_HijackPunish
+Conditions:
+    Var(Phase) >= 1
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Var(HijackCat) == 1
+    Var(HijackHandled) == 0
+
+Trigger: OnMoveEnd
+Priority: 7
+Script: EncScript_Munkidori_HijackPunish
+Conditions:
+    Var(Phase) >= 1
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+    Var(HijackCat) == 2
+    Var(HijackHandled) == 0
+
+Trigger: OnMoveEnd
+Priority: 7
+Script: EncScript_Munkidori_HijackPunish
+Conditions:
+    Var(Phase) >= 1
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(HijackCat) == 3
+    Var(HijackHandled) == 0
+
+# Phase transitions. Registered at both OnMoveEnd and OnTurnEnd since the crossing blow can be a
+# move or an end-of-turn tick; both copies are Once, marked fired at selection, so whichever fires
+# first disables the other.
+Trigger: OnMoveEnd
+Priority: 3
+Flags: Once, OnEnter
+Script: EncScript_Munkidori_Phase2Entry
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 3
+Flags: Once, OnEnter
+Script: EncScript_Munkidori_Phase2Entry
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_Munkidori_FinalPhaseEntry
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_Munkidori_FinalPhaseEntry
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# Overconfidence. Not Once - it has to be able to re-trigger across multiple Influence peaks within
+# Phase 1, so each direction is a plain OnEnter edge guarded by the Overconfident latch itself.
+Trigger: OnMoveEnd
+Priority: 8
+Flags: OnEnter
+Script: EncScript_Munkidori_OverconfidentEnter
+Conditions:
+    Var(Phase) == 1
+    Var(Influence) == 6
+    Var(Overconfident) == 0
+
+Trigger: OnTurnEnd
+Priority: 8
+Flags: OnEnter
+Script: EncScript_Munkidori_OverconfidentEnter
+Conditions:
+    Var(Phase) == 1
+    Var(Influence) == 6
+    Var(Overconfident) == 0
+
+Trigger: OnMoveEnd
+Priority: 9
+Flags: OnEnter
+Script: EncScript_Munkidori_OverconfidentExit
+Conditions:
+    Var(Phase) == 1
+    Var(Influence) < 6
+    Var(Overconfident) == 1
+
+Trigger: OnTurnEnd
+Priority: 9
+Flags: OnEnter
+Script: EncScript_Munkidori_OverconfidentExit
+Conditions:
+    Var(Phase) == 1
+    Var(Influence) < 6
+    Var(Overconfident) == 1
+
+# Bluff resolution. Battler(...).Protected is a condition-only operand - it can't be read from
+# inside a script - so these stay their own triggers rather than folding into the ledger below.
+# Self-disabling through BluffHandled, which each script sets as its first line.
+Trigger: OnTurnEnd
+Priority: 60
+Script: EncScript_Munkidori_BluffFellFor
+Conditions:
+    Var(BluffHandled) == 0
+    Var(Bluff) == 1
+    Battler(PlayerLeft).Protected == 1
+
+Trigger: OnTurnEnd
+Priority: 61
+Script: EncScript_Munkidori_BluffReadPast
+Conditions:
+    Var(BluffHandled) == 0
+    Var(Bluff) == 0
+    Battler(PlayerLeft).Protected == 0
+
+# The ledger: clears TurnGuard first (closing its own latch immediately, so it can't re-select
+# within this checkpoint's re-evaluation passes), then resolves the prediction-miss crash and the
+# Toxic Thought countdown - both pure-var checks safe to fold in here rather than as more triggers.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Munkidori_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# The Nasty Plot burst. Once, OnEnter: fires the first time Influence hits 6 while Mind Break is
+# live, which is the "second max" the design wants without tracking a separate counter for it.
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Munkidori_Finale
+Conditions:
+    Var(Phase) == 2
+    Var(Influence) == 6
+    Var(FinalePlayed) == 0
+
+Trigger: OnTurnEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Munkidori_Finale
+Conditions:
+    Var(Phase) == 2
+    Var(Influence) == 6
+    Var(FinalePlayed) == 0
