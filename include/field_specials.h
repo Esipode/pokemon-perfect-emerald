@@ -38,9 +38,11 @@ void PreparePartyForSkyBattle(void);
 void GetObjectPosition(u16*, u16*, u32, u32);
 bool32 CheckObjectAtXY(u32, u32);
 bool32 CheckPartyHasSpecies(enum Species);
+bool32 CheckPlayerOwnsSpecies(enum Species);
 bool8 CutMoveRuinValleyCheck(void);
 void CutMoveOpenDottedHoleDoor(void);
 void PushChampionChallengeMenuEntries(void);
 void SelectChampionChallengeTrainerObjEvent(void);
+void Route110ShowZapdos(void);
 
 #endif // GUARD_FIELD_SPECIALS_H

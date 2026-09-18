@@ -1,5 +1,6 @@
 #include "global.h"
 #include "achievements.h"
+#include "achievement_popup.h"
 #include "debug.h"
 #include "malloc.h"
 #include "battle.h"
@@ -2457,7 +2458,7 @@ void ShowScrollableMultichoice(void)
         break;
     case SCROLL_MULTI_SS_TIDAL_DESTINATION:
         task->tMaxItemsOnScreen = MAX_SCROLL_MULTI_ON_SCREEN;
-        task->tNumItems = 7;
+        task->tNumItems = 6;
         task->tLeft = 19;
         task->tTop = 1;
         task->tWidth = 10;
@@ -2661,7 +2662,6 @@ static const u8 *const sScrollableMultichoiceOptions[][MAX_SCROLL_MULTI_LENGTH] 
     [SCROLL_MULTI_SS_TIDAL_DESTINATION] =
     {
         gText_SlateportCity,
-        gText_BattleFrontier,
         gText_SouthernIsland,
         gText_NavelRock,
         gText_BirthIsland,
@@ -4519,15 +4519,69 @@ bool32 CheckPartyHasSpecies(enum Species givenSpecies)
     return FALSE;
 }
 
+// Whether the player currently owns this species, counting the PC boxes as well as the party.
+// Legendary encounters gate on this instead of on a "defeated" flag, so releasing the Pokémon
+// makes its encounter available again. Alternate forms count as the same species.
+bool32 CheckPlayerOwnsSpecies(enum Species givenSpecies)
+{
+    u32 partyIndex, box, slot;
+    enum Species baseSpecies = GET_BASE_SPECIES_ID(givenSpecies);
+
+    for (partyIndex = 0; partyIndex < CalculatePlayerPartyCount(); partyIndex++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][partyIndex];
+
+        if (!GetMonData(mon, MON_DATA_IS_EGG)
+         && GET_BASE_SPECIES_ID(GetMonData(mon, MON_DATA_SPECIES)) == baseSpecies)
+            return TRUE;
+    }
+
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++)
+    {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++)
+        {
+            if (GetBoxMonDataAt(box, slot, MON_DATA_SANITY_HAS_SPECIES)
+             && !GetBoxMonDataAt(box, slot, MON_DATA_SANITY_IS_EGG)
+             && GET_BASE_SPECIES_ID(GetBoxMonDataAt(box, slot, MON_DATA_SPECIES)) == baseSpecies)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 void UseBlankMessageToCancelPokemonPic(void)
 {
     DeactivateSingleTextPrinter(0, WINDOW_TEXT_PRINTER);
     ScriptMenu_HidePokemonPic();
 }
 
-void GetCurrentLevelCapSpecial(void)
+// Returns rather than writing gSpecialVar_Result: every caller is a
+// `specialvar` (src/scrcmd.c's ScrCmd_specialvar stores the special's return
+// value, not VAR_RESULT), so a void special would store a junk register.
+u16 GetCurrentLevelCapSpecial(void)
 {
-    gSpecialVar_Result = GetCurrentLevelCap();
+    return GetCurrentLevelCap();
+}
+
+// Common_EventScript_CheckLevelCapIncrease uses this instead of
+// GetCurrentLevelCapSpecial -- GetCurrentLevelCap() folds in
+// FLAG_LEVEL_CAP_OFF (a flat 100 + NGP offset ceiling once the player has
+// disabled their own cap), which isn't the story milestone the notification
+// is announcing. GetProgressionLevelCap() ignores that flag and always
+// reflects the badge/story ladder itself.
+u16 GetProgressionLevelCapSpecial(void)
+{
+    return GetProgressionLevelCap();
+}
+
+// Same queue/box/dismiss behavior as an achievement award (src/achievement_
+// popup.c) -- queued rather than shown inline because
+// Common_EventScript_CheckLevelCapIncrease calls this mid-script, right after
+// the badge/story checkpoint that raised the cap.
+void EnqueueLevelCapIncreasePopup(void)
+{
+    LevelCapPopup_Enqueue(gSpecialVar_Result);
 }
 
 static void UIAskConfirmation(void)
@@ -5820,6 +5874,41 @@ u16 StickerManGetBragFlags(void)
     if (gSpecialVar_0x8006 != 0)
         result |= 1 << 2;
     return result;
+}
+
+void Route110ShowZapdos(void)
+{
+    // If the weather is thunderstorms and the player has beat the Elite 4 and has not caught Zapdos
+    if (
+        gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_ROUTE110)
+        && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_ROUTE110)
+        && GetCurrentWeather() == WEATHER_RAIN_THUNDERSTORM
+        && FlagGet(FLAG_SYS_GAME_CLEAR)
+        && !CheckPlayerOwnsSpecies(SPECIES_ZAPDOS)
+    )
+    {
+        gSpecialVar_Result = TRUE;
+    }
+    else {
+        gSpecialVar_Result = FALSE;
+    }
+}
+
+void Route110_SetZapdosIslandElevation(void)
+{
+    // Update elevation of tiles
+    for (s32 y = 23; y <= 26; y++)
+    {
+        for (s32 x = 12; x <= 16; x++)
+        {
+            MapGridSetElevationAt(
+                x + MAP_OFFSET,
+                y + MAP_OFFSET,
+                3
+            );
+        }
+    }
+    DrawWholeMapView();
 }
 
 bool8 CheckAddCoins(void)

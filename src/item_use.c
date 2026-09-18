@@ -3,6 +3,7 @@
 #include "item_use.h"
 #include "battle.h"
 #include "battle_anim.h"
+#include "battle_encounter.h"
 #include "battle_main.h"
 #include "battle_stat_change.h"
 #include "battle_util.h"
@@ -1186,6 +1187,7 @@ static const u8 sText_CantThrowPokeBall_MonoGen[] = _("Only Gen {STR_VAR_1} Pok�
 static const u8 sText_CantThrowPokeBall_TwoMons[] = _("Cannot throw a ball!\nThere are two Pokémon out there!\p");
 static const u8 sText_CantThrowPokeBall_SemiInvulnerable[] = _("Cannot throw a ball!\nThere's no Pokémon in sight!\p");
 static const u8 sText_CantThrowPokeBall_Disabled[] = _("POKé BALLS cannot be used\nright now!\p");
+static const u8 sText_CantThrowPokeBall_Encounter[] = _("It's far too strong to be caught\nright now!\p");
 
 static void ItemUseInBattle_ShowPartyMenu(u8 taskId)
 {
@@ -1284,6 +1286,12 @@ bool32 CannotUseItemsInBattle(enum Item itemId, struct Pokemon *mon)
             cannotUse = TRUE;
         break;
     case EFFECT_ITEM_THROW_BALL:
+        if (IsEncounterBlockingBalls())
+        {
+            failStr = sText_CantThrowPokeBall_Encounter;
+            cannotUse = TRUE;
+            break;
+        }
         switch (GetBallThrowableState())
         {
         case BALL_THROW_UNABLE_NUZLOCKE:

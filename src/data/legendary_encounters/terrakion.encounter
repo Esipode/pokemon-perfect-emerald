@@ -1,0 +1,257 @@
+Encounter: Terrakion
+
+# Terrakion, "The Unstoppable Force". One rule, stated in both directions:
+#   TERRAKION'S STRENGTH FEEDS ON CONTACT. THE ONLY THING THAT SLOWS IT IS A TURN WHERE IT HITS
+#   NOTHING.
+#   IMPACT 0-5 (0-7 from Phase 1) - the meter, and the whole fight. It rises almost on its own
+#   (Terrakion attacks every turn and its whole moveset is Rock and Fighting), so IMPACT is not
+#   something that happens TO the player - it is a number they have to spend turns holding down by
+#   denying Terrakion a landed hit. Protect, a miss, a sleep turn, a resisted switch - all the same
+#   currency. IMPACT never touches the guard; the phase owns that number and announces every move
+#   of it. IMPACT buys Terrakion REACH:
+#     2+  SHOCKWAVES - on a turn Terrakion connected, the blow's force rolls across the whole board
+#     4+  BREAKER - Protect stops working (the force goes through it), and on a cooldown Terrakion
+#         strips the player's stat stages and breaks their screens
+#     5   Phase 0's ceiling - peak force, no collapse
+#     7   Rampage's ceiling - COLLAPSE
+# Phase 1 (50%) RAMPAGE: raw Attack +20% / Speed +10%, the guard DROPS 90 -> 86 (Terrakion has
+#   stopped defending itself, and the fight says so), the moveset hardens, and the ceiling rises to
+#   7. At 7 Terrakion overreaches: EARTH-SPLITTING CHARGE, then it staggers - IMPACT resets to 0,
+#   both defenses fall two stages, it loses its next action, and the guard drops another 20 for two
+#   turns. The largest damage window in the fight, opened by doing the exact thing Phase 0 taught
+#   the player not to.
+# Phase 2 (20%) UNSTOPPABLE: the guard climbs to 93, Mist blocks Attack drops, IMPACT rises +2 a
+#   turn, Shockwaves fire on every landed hit, and Reversal fills slot 3. Survive: True carries the
+#   fight to 1 HP, where the last charge lands and the ball is finally allowed.
+# ANTI-ABUSE IS THE FIGHT, NOT AN IMMUNITY (guideline 8). Terrakion has NO status immunity at all:
+#   sleep, paralysis and freeze land and work completely. A Terrakion that cannot act lands nothing,
+#   so a status turn is a turn spent on IMPACT control - which is exactly the counterplay. Sacred
+#   Sword (fixed slot) ignores defensive stat changes; the evasion strip and encresetstats answer
+#   Double Team; Mist (Phase 2 only, Defog-able) answers Attack-lowering loops.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Terrakion_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # Phase 0. Every later value is written absolutely by
+                                # EncScript_Terrakion_ApplyGuard
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Rock/Fighting is 4x weak to STEEL - exactly the spike the cap
+                                # exists to flatten, and a common coverage type
+    FlatToxicDamage: True
+    Survive: True               # load-bearing: 1 HP is what ends UNSTOPPABLE and opens the catch
+                                # window, and one oversized hit through an 86 guard in Rampage could
+                                # otherwise skip the whole last phase. Cleared in _Spent
+    Ability: ABILITY_JUSTIFIED  # its own, and a real trap: a Dark move raises its Attack, which is
+                                # the fight's thesis stated as an ability
+    Moves: MOVE_SACRED_SWORD, MOVE_ROCK_SLIDE, MOVE_SMACK_DOWN, MOVE_SWORDS_DANCE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..Punched to 0..15.
+# 0 Phase (0 The Unstoppable Force / 1 Rampage / 2 Unstoppable / 3 Spent),
+# 1 Impact (0-5, or 0-7 from Phase 1), 2 LastImpact (the last ANNOUNCED level - the callout's
+# re-fire latch), 3 TurnGuard (the once-per-turn scaffold), 4 Rose (Impact rose this turn - both the
+# +1-per-turn cap and half the Shockwave gate), 5 Landed (Terrakion's side took HP off the player
+# this turn - the decay gate and the other half of the Shockwave gate), 6 Hit (per-turn re-entry
+# guard for _StruckHard), 7 EventGuard (per-turn guard shared by _TheyEntered and _TheyFell, so a
+# forced replacement is not double-counted), 8 PlayerMark (player HP% at turn open; ENC_SNAP_DAMAGE
+# turns it into "lost this turn"), 9 BossMark (Terrakion HP% at turn open; likewise), 10 Scratch
+# (the copy ENC_SNAP_DAMAGE consumes, so a mark survives being measured against), 11 Wave (Shockwave
+# wheel cursor, 1-3), 12 BreakCd (turns until Breaker's strip/screen-break half may fire again),
+# 13 Stagger (turns left of the post-Collapse guard drop), 14 Seen (per-turn guard for the evasion
+# strip), 15 Punched (per-turn guard for Breaker's punch-through).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Terrakion_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Impact) >= 0
+    Var(LastImpact) >= 0
+    Var(TurnGuard) >= 0
+    Var(Rose) >= 0
+    Var(Landed) >= 0
+    Var(Hit) >= 0
+    Var(EventGuard) >= 0
+    Var(PlayerMark) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Wave) >= 0
+    Var(BreakCd) >= 0
+    Var(Stagger) >= 0
+    Var(Seen) >= 0
+    Var(Punched) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# SELECTION, so whichever fires first permanently disables the other. All three sit below _TurnClose
+# (90), so at an OnTurnEnd where the player's damage crossed a threshold the transition runs first
+# and everything after it sees the new Phase. Same shape as Dialga and Palkia.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Terrakion_Rampage
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Terrakion_Rampage
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Terrakion_Unstoppable
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Terrakion_Unstoppable
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Terrakion_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Terrakion_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. Ticks Stagger and BreakCd, snapshots the two HP marks the turn is
+# measured against, runs the recurring Breaker line, and clears the per-turn state. TurnGuard is set
+# immediately so no branch out of the script can leave it re-armed.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Terrakion_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# THE LEDGER.
+# _StruckHard: a move landed on Terrakion for >= 12% of its max HP. At OnMoveEnd Event.Battler is
+# the battler that GOT HIT and Event.Target the one that USED the move, so this pair reads "a move
+# the player used hit Terrakion". Self-disables through Hit, which its own script sets.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Terrakion_StruckHard
+Conditions:
+    Var(Hit) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+
+# _Force: Terrakion's Rock or Fighting move resolved against the player. Event.Target is the mover
+# (Terrakion), Event.Battler the one hit (the player). One script for both types - the only
+# difference is the Event.MoveType literal. Gated on Rose rather than Hit: a Rock hit and a heavy
+# hit in the same turn must resolve to ONE Impact level, and Gain's Rose cap is what enforces that,
+# so _StruckHard and _Force must not share a guard. Event.MoveType is the move's BASE type, and a
+# move that whiffed still fires this - the decay in _TurnClose (HP-measured) is what makes a miss
+# matter, since _Force does NOT touch Landed.
+Trigger: OnMoveEnd
+Priority: 31
+Script: EncScript_Terrakion_Force
+Conditions:
+    Var(Rose) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_ROCK
+
+Trigger: OnMoveEnd
+Priority: 31
+Script: EncScript_Terrakion_Force
+Conditions:
+    Var(Rose) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_FIGHTING
+
+# A knockout is the spec's biggest single source: +2, ignoring the +1-per-turn cap. EventGuard is
+# what stops the replacement switch-in that follows being processed a second time.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Terrakion_TheyFell
+Conditions:
+    Var(EventGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when
+# every var is 0. Only mid-turn switches (U-turn, Eject Button) reach this; a start-of-turn
+# voluntary switch resolves before _TurnOpen sets TurnGuard. Sets EventGuard and nothing else.
+Trigger: OnSwitchIn
+Priority: 31
+Script: EncScript_Terrakion_TheyEntered
+Conditions:
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# BREAKER's punch-through, at Impact 4+. Its own trigger because Battler(PlayerLeft).Protected is a
+# condition operand, not a script test. Runs before _TurnClose (90) on purpose: its 12% chip is
+# scripted damage to the player, so _TurnClose's "did Terrakion's side take any HP off you"
+# measurement sees it and correctly refuses the decay - that is the mechanism by which Protect stops
+# earning a free Impact level at 4+. Self-disables through Punched.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Terrakion_BreakerThrough
+Conditions:
+    Var(Punched) == 0
+    Var(Impact) >= 4
+    Var(Phase) <= 2
+    Var(TurnGuard) == 1
+    Battler(PlayerLeft).Protected == 1
+
+# Runs after the punch-through, so its damage measurement sees everything Terrakion's side did. The
+# stall/decay ledger, the heavy-damage clause, Breaker's strip half, the Shockwave, the callout, and
+# the guard restored absolutely. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Terrakion_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# COLLAPSE. Runs AFTER _TurnClose (90), because _TurnClose is what pushes Impact to 7. Splitting the
+# two across priorities at the same checkpoint is safe: rule 3 re-evaluates every trigger after each
+# script, so _Collapse is selected on the following pass. Self-disables by setting Impact to 0.
+Trigger: OnTurnEnd
+Priority: 91
+Script: EncScript_Terrakion_Collapse
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Impact) >= 7
+
+# The evasion answer. Gated on Seen, cleared in _TurnOpen, so it strips two stages a turn rather
+# than re-selecting inside one checkpoint's re-evaluation loop. Terrakion's whole moveset is
+# physical and none of it never-misses, so without this an evasion stack walls the fight outright.
+Trigger: OnTurnEnd
+Priority: 92
+Script: EncScript_Terrakion_SeeThrough
+Conditions:
+    Var(Seen) == 0
+    Var(Phase) <= 2
+    Battler(PlayerLeft).Stat(STAT_EVASION) > DEFAULT_STAT_STAGE

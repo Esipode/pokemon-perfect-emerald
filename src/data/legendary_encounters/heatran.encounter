@@ -1,0 +1,272 @@
+Encounter: Heatran
+
+# Heatran, "The Lava Dome". The volcano is the other combatant, so the fight is not built
+# around Heatran's HP bar - it is built around a dial the player has to hold inside a band, with
+# Heatran sitting on top of it. One number runs the whole battle:
+#   VOLCANIC PRESSURE 0-5, starting at 0. Everything Heatran does raises it, everything the player
+#   does to put it out lowers it, and reaching 5 vents the mountain.
+#     0 dormant | 1 warm | 2 heated | 3 MOLTEN | 4 erupting | 5 VENT
+#     -         | Fire   | the      | lava     | a Magma    | CORE VENT (Ph 0/1)
+#               | up     | field    | flow +   | Pocket     | SUPERNOVA (Ph 2)
+#               |        | burns    | sun +    | every turn |
+#               |        | you      | scoured  |            |
+#     guard 88 ------------------- 92 ---------------------> 50 for three turns
+# NEITHER END OF THE DIAL IS SAFE. Let it climb and the field starts killing you, pockets open under
+# your feet, and the sun comes up - which halves your Water moves, the coolant AND your best damage
+# type. Hold it at 0 and nothing happens to you at all, but you spent every turn cooling instead of
+# attacking, and the vent you refused to let happen is the only real damage window in the fight.
+# THE LEVER.
+#   UP    a Fire move from Heatran (+1, once a turn), turns passing (+1 per 2 turns in Phase 0,
+#         +1/turn in Phase 1, +2/turn in Phase 2), a hit worth >= 15% of its max HP (+1), and an
+#         extra +1 EVERY turn a status stands on Heatran.
+#   DOWN  a player ICE move (-1), a player WATER move (-2), rain/hail/snow standing (-1 a turn).
+# WATER IS THE TRAP. Heatran is Fire/Steel, so Water is 2x on it and the fastest coolant at -2 - and
+# taking two stages off in one action is exactly what THERMAL SHOCK punishes: the rock contracts and
+# the guard jumps to 96 for three turns. Ice only ever moves the dial one stage, so it never shocks.
+# The player always has a safe way to cool; it is just half as fast.
+# THE MEGA IS THE FUSION MADE LITERAL. At 50% Heatran Mega Evolves, and from there a dial at Molten
+# or above heals it 3% a turn - so the phase 0 incentive inverts. Until then a hot dial was purely the
+# player's friend, the way they bought a vent window; from here a dial left parked hot pays Heatran
+# rent every turn. Venting resets the dial to 0, so it closes the tap as well as opening the window,
+# and the loop the fight already taught stays the answer.
+# ANTI-ABUSE IS THE PLUGGED VENT, not an immunity: status lands on Heatran and works completely, it
+# just drives the volcano toward the thing that hurts the PLAYER. A vent nobody chose to open still
+# costs them a fifth of their side. Toxic is the sharpest version of that and is left playable.
+# No Ability: override - Flash Fire is Heatran's own, it shuts the door on fighting fire with fire,
+# and it cannot interfere with the dial: it absorbs the PLAYER's Fire moves, and the +1 source is
+# Heatran's own.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # at rest; EncScript_Heatran_ApplyGuard owns this from here on
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # load-bearing: Fire/Steel takes 4x from Ground, and an Earthquake
+                                # would otherwise cut clean through an 88% reduction
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    # Every one of these is on Heatran's own learnset or teachable list, and each is load-bearing.
+    # MAGMA STORM is its signature, Fire STAB, and the trap that turns a lit Magma Pocket into a real
+    # threat - which is why encsettrapped appears nowhere in this fight. LAVA PLUME is the second
+    # Fire move, so the dial climbs off Heatran's own attacks. EARTH POWER answers the Rock/Steel/
+    # Fire/Electric mons brought to resist it, and is thematically the attack from underneath.
+    # STEALTH ROCK punishes the switching the pockets force, and is what the lava flow scours.
+    Moves: MOVE_MAGMA_STORM, MOVE_LAVA_PLUME, MOVE_EARTH_POWER, MOVE_STEALTH_ROCK
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fifteen here in order fixes
+# Phase..Pulse to 0..14.
+# 0 Phase (0 Dormant / 1 Magma Core / 2 Eruption / 3 Weakened), 1 Pressure (0-5, the dial),
+# 2 LastPres (the last ANNOUNCED stage - the re-fire guard for the callout), 3 Vent (the vent-window
+# countdown; 0 = not in one), 4 Pocket (the fuse, 3 -> 2 -> 1 -> burst; 0 = no pocket),
+# 5 PocketClock (turns until the next pocket is laid), 6 Shock (Thermal Shock timer),
+# 7 HpMark (the encsnapshothp mark the heavy-hit tick measures against), 8 Spent (Phase 2 resolved,
+# by subsiding or by erupting), 9 TurnGuard (the once-per-turn scaffold), 10 PlayerMove /
+# 11 BossMove / 12 WeatherGuard (the per-turn re-entry guards), 13 Tick (the Phase 0 half-rate
+# passive climb), 14 Pulse (paces the standing line).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Heatran_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Pressure) >= 0
+    Var(LastPres) >= 0
+    Var(Vent) >= 0
+    Var(Pocket) >= 0
+    Var(PocketClock) >= 0
+    Var(Shock) >= 0
+    Var(HpMark) >= 0
+    Var(Spent) >= 0
+    Var(TurnGuard) >= 0
+    Var(PlayerMove) >= 0
+    Var(BossMove) >= 0
+    Var(WeatherGuard) >= 0
+    Var(Tick) >= 0
+    Var(Pulse) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. Each is also gated on the Phase value its
+# own script overwrites, so one huge hit crossing two thresholds steps through them in order.
+# Registered ahead of every accounting trigger below so a threshold-crossing tick resolves as a
+# transition first.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Heatran_MagmaCore
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Heatran_MagmaCore
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Heatran_Eruption
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Heatran_Eruption
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Heatran_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Heatran_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately, so
+# no branch out of it can leave it re-armed; it marks Heatran's HP for the heavy-hit tick, ticks the
+# vent window, the shock timer and the pocket fuse, and prints the recurring warnings. TurnClose
+# resolves the turn: the field chip, then every source that raises the dial.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Heatran_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# THE COOLING LEVERS. At OnMoveEnd, Event.Battler is who GOT hit and Event.Target is who hit them, so
+# Event.Target == B_POSITION_PLAYER_LEFT reads "the player used this move".
+# Each gates on a var it sets: an Event.* condition stays true for the whole dispatch and no script
+# can move it, so an event-reacting trigger that does not disable itself re-selects until the
+# per-checkpoint script cap trips. Once is wrong - it means once per BATTLE, and these are the
+# fight's central mechanic. In singles the player uses one move a turn, so the two cooling triggers
+# share PlayerMove and are mutually exclusive anyway.
+# Event.MoveType is the move's BASE type, so a Normalize/Electrify/Tera re-type does not count; the
+# cheat-sheet says "Water-type moves" rather than "moves that hit as Water".
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Heatran_CoolWater
+Conditions:
+    Var(PlayerMove) == 0
+    Var(Phase) <= 2
+    Var(Spent) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_WATER
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Heatran_CoolIce
+Conditions:
+    Var(PlayerMove) == 0
+    Var(Phase) <= 2
+    Var(Spent) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveType == TYPE_ICE
+
+# Heatran stoking the mountain with its own fire. Flash Fire absorbs the PLAYER's Fire moves, which
+# this cannot see - Event.Target pins the mover as Heatran.
+Trigger: OnMoveEnd
+Priority: 22
+Script: EncScript_Heatran_Stoked
+Conditions:
+    Var(BossMove) == 0
+    Var(Phase) <= 2
+    Var(Spent) == 0
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+
+# The first of the Magma Pocket's three outs. Self-disabling: the script clears Pocket.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Heatran_PocketDefused
+Conditions:
+    Var(Pocket) >= 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Registered before Vent below, so rain genuinely prevents a vent on the turn the dial would
+# otherwise max. That is the strongest thing weather control buys in this fight, and it is intended.
+# WeatherGuard exists for the same reason the move guards do, one step removed: Weather == RAIN is
+# still true after the script has run, so without it one turn of rain would drain the whole dial.
+Trigger: OnTurnEnd
+Priority: 25
+Script: EncScript_Heatran_WeatherCool
+Conditions:
+    Var(WeatherGuard) == 0
+    Var(Phase) <= 2
+    Var(Spent) == 0
+    Var(Pressure) >= 1
+    Any:
+        Weather == B_WEATHER_RAIN_NORMAL
+        Weather == B_WEATHER_HAIL
+        Weather == B_WEATHER_SNOW
+
+# Vent and VentRecover cannot see each other: the first needs Vent == 0 and sets it to 4, the second
+# needs Vent == 1. Vent and Subsided are mutually exclusive by condition (Pressure >= 5 vs == 0), and
+# the Vent script itself branches on Phase to become the Supernova at Phase 2.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Heatran_Vent
+Conditions:
+    Var(Phase) <= 2
+    Var(Spent) == 0
+    Var(Vent) == 0
+    Var(Pressure) >= 5
+
+Trigger: OnTurnEnd
+Priority: 31
+Script: EncScript_Heatran_VentRecover
+Conditions:
+    Var(Phase) <= 2
+    Var(Vent) == 1
+
+Trigger: OnTurnEnd
+Priority: 35
+Script: EncScript_Heatran_Subsided
+Conditions:
+    Var(Phase) == 2
+    Var(Spent) == 0
+    Var(Pressure) == 0
+
+# The pocket fuse is ticked at OnTurnStart and resolved here, two distinct checkpoints, so a tick can
+# never eat a step off a fuse armed the same turn. The trigger splits in two on the new
+# Battler(PlayerLeft).Protected operand - Protect is the spec's second out, and the engine had no way
+# to read it before. Both arms clear the pocket, so neither can re-select.
+Trigger: OnTurnEnd
+Priority: 40
+Script: EncScript_Heatran_MagmaBurst
+Conditions:
+    Var(Phase) <= 2
+    Var(Pocket) == 1
+    Battler(PlayerLeft).Protected == 0
+
+Trigger: OnTurnEnd
+Priority: 41
+Script: EncScript_Heatran_MagmaBurstBlocked
+Conditions:
+    Var(Phase) <= 2
+    Var(Pocket) == 1
+    Battler(PlayerLeft).Protected == 1
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Heatran_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

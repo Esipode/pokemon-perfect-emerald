@@ -1,0 +1,207 @@
+Encounter: Uxie
+
+# Uxie, "The Being of Knowledge". A duel of prediction. Every turn the fight asks one question: did
+# Uxie call the player's move before they made it? The read is the engine's real AI_FLAG_PREDICT_MOVE
+# answer, announced out loud, and the verdict at OnMoveEnd grades what the player actually did
+# against it. A foreseen move raises KNOWLEDGE and lets Uxie file the type it was hit with as a
+# resistance; a defied read costs it a rung and its newest adaptation. Knowledge is the only thing
+# that lets Uxie hold a board at all - at 0 it files nothing, at 5 it holds four types at 70%. The
+# rule the player is meant to find, without ever being told it, is that Uxie expects their BEST
+# option, so winning means not using it.
+# Every fifth turn the announcement becomes THE TEST: a yes/no vow about the category Uxie predicts,
+# graded word against deed. Lying costs Uxie two rungs and an adaptation and costs the player their
+# next action - a wager, not a free lever.
+# Knowledge buys OFFENSE and SPEED, never bulk: Uxie's 130/130 defenses are already a wall, so more
+# would be invisible. DamageReduction: stays flat at 90 all fight so the BOARD is the variable the
+# player can read.
+# No Ability: override. Levitate is Uxie's own and it takes Ground off the table while keeping the
+# species authentic.
+# Survive: from battle start. The collapse window runs at guard 55 between 25% and 10%, where an
+# overkill would eat the catch window outright; the Immunities: set covers the classes that bypass
+# the damage clamp entirely.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 90         # flat all fight - the board is the variable
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_UNFAIR_TRAINER   # SMART_TRAINER | PREDICTION; encstoreprediction needs PREDICT_MOVE
+    Moves: MOVE_FUTURE_SIGHT, MOVE_PSYCHIC, MOVE_DAZZLING_GLEAM, MOVE_SHADOW_BALL
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..Rising to 0..15.
+# 0 Phase (0 Study / 1 Complete Understanding / 2 Omniscience / 3 Weakened), 1 Knowledge (0-5, the
+# meter), 2 Read (0 none / 1-3 the read / 11-13 vowed YES on that category / 21-23 vowed NO),
+# 3 Tier (rung last APPLIED - ApplyKnowledge's idempotence latch and the cue's re-fire latch),
+# 4 Load (adaptations held, 0-4 - written ONLY by encadapt/encpurgeadapt so it can never drift from
+# the real board), 5 Result (encadapt's ENC_ADAPT_RESULT_* outcome), 6-8 SeenPhys/SeenSpec/SeenStat
+# (the lifetime reserve-card latches), 9 Streak (consecutive defied reads in Omniscience),
+# 10 Collapse (collapse-window countdown), 11 TestClock (turns until the next Test), 12 TurnGuard
+# (the once-per-turn scaffold), 13 MoveGuard (the verdict's per-turn re-entry guard; doubles as "the
+# player acted this turn"), 14 FaintGuard, 15 Rising (scratch: which way the rung ladder just
+# moved, so a rung climbed to and a rung fallen back to never play the same animation).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Uxie_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Knowledge) >= 0
+    Var(Read) >= 0
+    Var(Tier) >= 0
+    Var(Load) >= 0
+    Var(Result) >= 0
+    Var(SeenPhys) >= 0
+    Var(SeenSpec) >= 0
+    Var(SeenStat) >= 0
+    Var(Streak) >= 0
+    Var(Collapse) >= 0
+    Var(TestClock) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(FaintGuard) >= 0
+    Var(Rising) >= 0
+
+# The phase ladder. Each transition is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. Each is also gated on the Phase value its
+# own script overwrites, so one huge hit crossing two thresholds steps through them in order rather
+# than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Uxie_Understanding
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Uxie_Understanding
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Uxie_Omniscience
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Uxie_Omniscience
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+# The catch window. Survive: has been on since battle start, so the fight is guaranteed to reach this
+# point however the damage race went.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Uxie_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Uxie_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately, so no
+# branch out of it can leave it re-armed; it owns the read, the Test clock and the collapse
+# heartbeat. TurnClose is self-disabling (gate TurnGuard == 1, which it clears) and owns the
+# "the player never acted" streak reset.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Uxie_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# THE VERDICT, split three ways because Event.MoveCategory is readable in a CONDITION but not from
+# inside a script. At OnMoveEnd, Event.Target is the battler that USED the move - the player - which
+# is what these gate on rather than Event.Battler, so a self-targeting status move (Calm Mind,
+# Swords Dance) still reaches JudgeStat.
+# An Event.* condition stays true for the whole dispatch and a script cannot move it, so each gates
+# on MoveGuard, which its script sets immediately. Once would be wrong - it means once per BATTLE,
+# and judging is what this fight does over and over. The guard also makes the verdict exactly once
+# per turn however many strikes a multi-hit move landed.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Uxie_JudgePhys
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Uxie_JudgeSpec
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Uxie_JudgeStat
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+
+# One of the player's Pokemon has gone down. Uxie learns from that too - the loss is data.
+# Guarded for the same reason the verdict triggers are: OnFaint's event context is immovable.
+Trigger: OnFaint
+Priority: 25
+Script: EncScript_Uxie_Enlightened
+Conditions:
+    Var(FaintGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# The collapse window's expiry. Ticked at OnTurnStart and resolved here, one checkpoint away, so a
+# tick can never eat a step off a fresh arm. Sits ahead of the sleep refusal and the turn close: the
+# window has to re-form before Knowledge is read again and before the turn's guards are cleared.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Uxie_Reform
+Conditions:
+    Var(Phase) <= 2
+    Var(Collapse) == 1
+
+# The anti-cheese, deliberately narrow. Sleep is the one status that would stop the read happening
+# at all, so it is the one Uxie throws off - and the attempt teaches it something. Burn, paralysis,
+# poison and freeze all stick; it is Uxie's MIND that cannot be dulled, not its body.
+# Self-disabling without a guard var of its own - the script cures the status its condition reads.
+# Status is the raw status1 word and sleep is its low three bits (the turn counter), so 1..7 is the
+# range that means asleep and nothing else - STATUS1_SLEEP is the MASK, not a value to compare to.
+Trigger: OnTurnEnd
+Priority: 35
+Script: EncScript_Uxie_RefusesSleep
+Conditions:
+    Var(Phase) <= 2
+    Battler(Boss).Status >= 1
+    Battler(Boss).Status <= 7
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Uxie_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

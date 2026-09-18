@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_controllers.h"
+#include "battle_encounter.h"
 #include "battle_interface.h"
 #include "battle_gimmick.h"
 #include "battle_z_move.h"
@@ -36,6 +37,18 @@ void AssignUsableGimmicks(void)
 // Returns whether a battler is able to use a gimmick. Checks consumption and gimmick specific functions.
 bool32 CanActivateGimmick(enum BattlerId battler, enum Gimmick gimmick)
 {
+    // A scripted encounter's opponent side never uses the automatic gimmick flow. The sentinels the
+    // AI reads for "this mon is not meant to Dynamax/Terastallize" (BLOCK_AI_DYNAMAX, TYPE_MYSTERY -
+    // see ShouldTrainerBattlerUseGimmick) are written only when a party is built from trainer data,
+    // so a WILD boss carries a real Dynamax level and a real Tera type and reads as opted in. That
+    // would let a legendary Dynamax on its own - doubling its HP mid-fight and stepping on the
+    // encounter's own phase presentation - purely because nothing had said no. Writing the sentinels
+    // onto the party mon instead is not an option: the boss is a wild Pokemon the player can catch,
+    // and MON_DATA_TERA_TYPE persists on the caught mon.
+    // Scripted gimmicks are unaffected: encmegaevolve/encformchange never consult this.
+    if (IsEncounterActive() && !IsOnPlayerSide(battler))
+        return FALSE;
+
     return gGimmicksInfo[gimmick].CanActivate != NULL && gGimmicksInfo[gimmick].CanActivate(battler);
 }
 

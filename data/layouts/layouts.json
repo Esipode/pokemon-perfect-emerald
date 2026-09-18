@@ -9121,6 +9121,17 @@
       "border_height": 2,
       "border_width": 2,
       "layout_version": "frlg"
+    },
+    {
+      "id": "LAYOUT_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_LAYOUT_ARTICUNO",
+      "name": "ShoalCave_LowTideIceRoom_Layout_Articuno",
+      "width": 20,
+      "height": 30,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/ShoalCave_LowTideIceRoom_Layout_Articuno/border.bin",
+      "blockdata_filepath": "data/layouts/ShoalCave_LowTideIceRoom_Layout_Articuno/map.bin",
+      "layout_version": "emerald"
     }
   ]
 }

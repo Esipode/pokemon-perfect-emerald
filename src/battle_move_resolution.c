@@ -3,6 +3,7 @@
 #include "battle.h"
 #include "battle_ai_util.h"
 #include "battle_arena.h"
+#include "battle_encounter.h"
 #include "battle_environment.h"
 #include "battle_hold_effects.h"
 #include "battle_ai_record.h"
@@ -2993,8 +2994,33 @@ static enum CancelerResult CancelerHealthBarUpdate(struct BattleCalcValues *cv)
     return CANCELER_RESULT_RUN_SCRIPT_AND_INCREMENT; // Update health bar
 }
 
+// Records a move-damage HP change into the encounter event context. The move-damage HP commit
+// lives here rather than in Cmd_datahpupdate, so the ENC_ON_MOVE_END / ENC_ON_TURN_END data that
+// MoveEndEncounter reads is captured at this commit point.
+static void RecordEncounterHpChange(enum BattlerId battler, u16 hpBefore)
+{
+    if (!IsEncounterActive())
+        return;
+
+    // Party state is committed for an absent battler by ENC_ON_FAINT time; an encounter
+    // script must not revive it. Recovery is to ignore the HP change.
+    assertf(!(gBattleStruct->encounter.checkpoint == ENC_ON_FAINT
+           && (gAbsentBattlerFlags & (1u << battler))
+           && gBattleMons[battler].hp > hpBefore),
+            "encounter script raised HP on absent battler %d at ENC_ON_FAINT", battler)
+    {
+        gBattleMons[battler].hp = hpBefore;
+    }
+
+    gBattleStruct->encounter.event.oldValue = hpBefore;
+    gBattleStruct->encounter.event.newValue = gBattleMons[battler].hp;
+    gBattleStruct->encounter.event.battler = battler;
+}
+
 static bool32 TryMoveDamageUpdate(struct BattleCalcValues *cv)
 {
+    u16 hpBeforeUpdate = gBattleMons[cv->battlerDef].hp;
+
     if (DoesSubstituteBlockMove(cv->battlerAtk, cv->battlerDef, cv->move) && gBattleMons[cv->battlerDef].volatiles.substituteHP)
     {
         if (gBattleMons[cv->battlerDef].volatiles.substituteHP >= gBattleStruct->moveDamage[cv->battlerDef])
@@ -3013,8 +3039,10 @@ static bool32 TryMoveDamageUpdate(struct BattleCalcValues *cv)
         {
             gBattleScripting.battler = cv->battlerDef;
             BattleScriptCall(BattleScript_SubstituteFade);
+            RecordEncounterHpChange(cv->battlerDef, hpBeforeUpdate);
             return TRUE;
         }
+        RecordEncounterHpChange(cv->battlerDef, hpBeforeUpdate);
         return FALSE;
     }
     else if (DoesDisguiseBlockMove(cv->battlerDef, cv->move) || DoesIceFaceBlockMove(cv->battlerDef, cv->move))
@@ -3093,6 +3121,7 @@ static bool32 TryMoveDamageUpdate(struct BattleCalcValues *cv)
 
     GetBattlerPartyState(cv->battlerDef)->timesGotHit++;
     gSpecialStatuses[cv->battlerDef].damagedByAttack = TRUE;
+    RecordEncounterHpChange(cv->battlerDef, hpBeforeUpdate);
     return FALSE;
 }
 
@@ -3385,7 +3414,9 @@ static enum MoveEndResult MoveEndAbsorb(struct BattleCalcValues *cv)
             }
             else if (!IsBattlerAtMaxHp(cv->battlerAtk) || GetConfig(B_ABSORB_MESSAGE) < GEN_5)
             {
-                SetHealAmount(cv->battlerAtk, healAmount);
+                // An encounter boss keeps only the share of a drain its own guard would let through.
+                // The Liquid Ooze branch above is damage, not healing, and is left alone.
+                SetHealAmount(cv->battlerAtk, ApplyEncounterDrainReduction(cv->battlerAtk, cv->battlerDef, healAmount));
                 gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_ABSORB;
                 gEffectBattler = cv->battlerAtk;
                 BattleScriptCall(BattleScript_EffectAbsorb);
@@ -3754,6 +3785,9 @@ static enum MoveEndResult MoveEndFaintBlock(struct BattleCalcValues *cv)
              && IsBattlerTurnDamaged(cv->battlerDef, EXCLUDING_SUBSTITUTES)
              && IsBattlerAlive(cv->battlerAtk)
              && GetActiveGimmick(cv->battlerAtk) != GIMMICK_DYNAMAX
+             // Checked on the attacker, not the target: SHARED_KO protects the battler Destiny Bond
+             // would drag down, which is whoever landed the KO.
+             && !DoesEncounterGrantImmunity(cv->battlerAtk, ENC_IMMUNE_SHARED_KO)
              && !IsBattlerAlly(cv->battlerAtk, cv->battlerDef))
             {
                 gBattleStruct->passiveHpUpdate[cv->battlerAtk] = gBattleMons[cv->battlerAtk].hp;
@@ -5248,6 +5282,42 @@ static enum MoveEndResult MoveEndClearBits(struct BattleCalcValues *cv)
     return MOVEEND_RESULT_CONTINUE;
 }
 
+// ENC_ON_MOVE_END: fires once per move (not per strike/target of a spread move), after
+// MOVEEND_NEXT_TARGET has already advanced past per-strike handling. battler is the subject that
+// got hit - what an author means by "when the boss is hit" - target is the one who hit it.
+static enum MoveEndResult MoveEndEncounter(struct BattleCalcValues *cv)
+{
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+
+    // Damage is recorded into oldValue/newValue at the HP commit point (TryMoveDamageUpdate above,
+    // or Cmd_datahpupdate for passive HP); carry those through unchanged when re-stamping the rest
+    // of the event.
+    s16 oldValue = runtime->event.oldValue;
+    s16 newValue = runtime->event.newValue;
+
+    // A different user/move than the event currently describes means this is a fresh move, not a
+    // re-evaluation pass of the current one - give it its own script budget so consecutive moves in
+    // one turn don't share (and exhaust) a single checkpoint's allowance. event.target/event.move
+    // are written only by SetEncounterEvent, never by the damage commit, so this stays accurate.
+    if (runtime->checkpoint != ENC_ON_MOVE_END
+     || runtime->event.target != cv->battlerAtk || runtime->event.move != cv->move)
+        runtime->scriptsThisCheckpoint = 0;
+
+    // Populate the event before dispatching so the first condition pass sees this move rather than
+    // a cleared context or the previous move's.
+    SetEncounterEvent(cv->battlerDef, cv->battlerAtk, cv->move, ENC_CAUSE_MOVE_DAMAGE, oldValue, newValue);
+
+    const u8 *script = TryRunEncounterCheckpoint(ENC_ON_MOVE_END);
+    if (script != NULL)
+    {
+        BattleScriptCall(script);
+        return MOVEEND_RESULT_RUN_SCRIPT;   // do NOT advance moveendState - Stage 07 re-evaluation
+    }
+
+    gBattleScripting.moveendState++;
+    return MOVEEND_RESULT_CONTINUE;
+}
+
 static enum MoveEndResult MoveEndDancer(struct BattleCalcValues *cv)
 {
     enum MoveEndResult result = MOVEEND_RESULT_CONTINUE;
@@ -5340,6 +5410,7 @@ static enum MoveEndResult (*const sMoveEndHandlers[])(struct BattleCalcValues *c
     [MOVEEND_SPRAY_LEPPA_BLUNDER] = MoveEndSprayLeppaBlunder,
     [MOVEEND_ITEM_ON_STAT_CHANGE] = MoveEndItemOnStatChange,
     [MOVEEND_SEND_OUT_REPLACEMENTS] = MoveEndSendOutReplacements,
+    [MOVEEND_ENCOUNTER] = MoveEndEncounter,
     [MOVEEND_CLEAR_BITS] = MoveEndClearBits,
     [MOVEEND_DANCER] = MoveEndDancer,
     [MOVEEND_PURSUIT_NEXT_ACTION] = MoveEndPursuitNextAction,

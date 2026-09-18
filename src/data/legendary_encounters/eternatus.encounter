@@ -1,0 +1,144 @@
+Encounter: Eternatus
+
+# Eternatus, "The Gigantic Pokemon". One rule:
+#   ENERGY (0-100) never stops climbing. Every mechanic either feeds it or bleeds it, and its band
+#   decides how violent the fight is. Passing turns alone raises it, so stalling is never safe.
+# WHAT THE PLAYER WORKS OUT: hit Eternatus while a Node is live to deny it Energy, hit it during a
+#   Cannon charge to interrupt the shot, and land hits during a Core window (Phase 2 only) to cut
+#   Energy directly instead of just chipping HP.
+# PHASES: 0 THE ALIEN CORE (100-60% HP) - the Node cycle alone. 1 ETERNAMAX (60-30%) - formchange,
+#   stat push, adds the Cannon telegraph/interrupt. 2 THE DARKEST DAY (30-0%) - Energy forced to
+#   100, Dynamax Resonance buffs the player, Node/Cannon cycles both run, Core windows open
+#   periodically as the counterplay. The catch window opens inside Phase 2 at <=10% HP.
+# NODE/CANNON/CORE are abstract state+timer var pairs, never simultaneously attackable objects
+#   (guideline 8's narrow anti-abuse posture): Node and Cannon run independently once both exist,
+#   Core only ever opens in Phase 2. A player hit resolves against whichever is active, Core first
+#   (most valuable), then Cannon, then Node.
+# DAMAGE REDUCTION is a flat 90 baseline, dropped to 60 only inside a Core window and restored the
+#   instant it closes (EncScript_Eternatus_ApplyGuard is the single writer). ENERGY only ever gates
+#   the crit boost and the Node/Cannon spawn odds, never the reduction itself.
+Properties:
+    Level: LevelCap
+    CatchRate: 3                 # none; EncScript_Eternatus_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 96
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True    # Fairy/Ice/Dragon/Ground into a Poison/Dragon boss risk a stack
+    FlatToxicDamage: True
+    Survive: True                 # Phase 2's Darkest Day must run to the catch window; cleared in _Spent
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_DYNAMAX_CANNON, MOVE_CROSS_POISON, MOVE_DRAGON_PULSE, MOVE_FLAMETHROWER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all twelve here in order fixes
+# Energy..HandledAtk to 0..11.
+# 0 Energy (0-100, forced to 100 entering Phase 2), 1 Phase (0 Alien Core / 1 Eternamax / 2 Darkest
+# Day / 3 Spent), 2 NodeState (0 none / 1 live), 3 NodeTimer, 4 CannonState (0 none / 1 charging),
+# 5 CannonTimer, 6 CoreState (0 closed / 1 open, Phase 2 only), 7 CoreTimer, 8 LastTier (the last
+# ANNOUNCED Energy band - the callout's re-fire latch: 0 none / 1 Distortion / 2 Unstable / 3 Surge),
+# 9 TurnGuard (the once-per-turn scaffold), 10 HandledHit (per-move-end guard: the player's move hit
+# the boss), 11 HandledAtk (per-move-end guard: the boss's move resolved).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Eternatus_Intro
+Conditions:
+    Var(Energy) >= 0
+    Var(Phase) >= 0
+    Var(NodeState) >= 0
+    Var(NodeTimer) >= 0
+    Var(CannonState) >= 0
+    Var(CannonTimer) >= 0
+    Var(CoreState) >= 0
+    Var(CoreTimer) >= 0
+    Var(LastTier) >= 0
+    Var(TurnGuard) >= 0
+    Var(HandledHit) >= 0
+    Var(HandledAtk) >= 0
+
+# The once-per-turn scaffold. TurnGuard is the only gate and the script sets it immediately, so no
+# branch out of it can leave the trigger re-armed. Ticks the Node/Cannon/Core countdowns here;
+# _TurnClose resolves them at the opposite checkpoint (the split-countdown rule).
+Trigger: OnTurnStart
+Priority: 10
+Conditions:
+    Var(TurnGuard) == 0
+Script: EncScript_Eternatus_TurnOpen
+
+# Player's move landed on the boss. Self-disabling through HandledHit, set as the first line so
+# every branch (Core/Cannon/Node/plain hit) closes the latch.
+Trigger: OnMoveEnd
+Priority: 10
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(HandledHit) == 0
+Script: EncScript_Eternatus_BossHit
+
+# The boss's own move resolved - passive Energy feed. Self-disabling through HandledAtk.
+Trigger: OnMoveEnd
+Priority: 20
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(HandledAtk) == 0
+Script: EncScript_Eternatus_BossAttacked
+
+# Phase transitions. Each registered at both checkpoints because the blow that crosses a threshold
+# can be a move or an end-of-turn tick; both copies are Once, marked at SELECTION, so whichever
+# fires first disables the other. All three sit below _TurnClose (80).
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Eternatus_Eternamax
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Eternatus_Eternamax
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Eternatus_DarkestDay
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Eternatus_DarkestDay
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+# The catch window. Survive: True pins Eternatus at 1 HP, so this always becomes reachable.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Eternatus_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Eternatus_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# THE LEDGER, and the only place Node/Cannon/Core resolve. One script with internal branching
+# rather than several triggers, to stay clear of the 8-scripts-per-checkpoint cap. Self-disables by
+# clearing TurnGuard (and the two per-move guards, so a fresh turn opens clean).
+Trigger: OnTurnEnd
+Priority: 80
+Conditions:
+    Var(TurnGuard) == 1
+Script: EncScript_Eternatus_TurnClose

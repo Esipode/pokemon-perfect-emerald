@@ -51,53 +51,53 @@
 #else
 
 #define FLAG_MAGOST_BERRY_MONEY_BOOST 0x20 // Used Magost Berry: next trainer battle's money reward is +25%
-#define FLAG_EMPORIUM_ZMOVE_INTRO_DONE      0x21 // Battle Emporium: instructor's one-time mechanic explanation already shown
-#define FLAG_EMPORIUM_MEGA_INTRO_DONE       0x22
-#define FLAG_EMPORIUM_TERA_INTRO_DONE       0x23
-#define FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN 0x24 // Battle Emporium: set hides the battle-room challenger until a reward is chosen
-#define FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN  0x25
-#define FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN  0x26
-#define FLAG_EMPORIUM_NO_WHITEOUT  0x27 // Battle Emporium: armed around a challenger battle (outside Nuzlocke) so a loss returns to the lobby instead of a white-out. Assigned to B_FLAG_NO_WHITEOUT.
-#define FLAG_UNUSED_0x028    0x28 // Unused Flag
-#define FLAG_UNUSED_0x029    0x29 // Unused Flag
-#define FLAG_UNUSED_0x02A    0x2A // Unused Flag
-#define FLAG_UNUSED_0x02B    0x2B // Unused Flag
-#define FLAG_UNUSED_0x02C    0x2C // Unused Flag
-#define FLAG_UNUSED_0x02D    0x2D // Unused Flag
-#define FLAG_UNUSED_0x02E    0x2E // Unused Flag
-#define FLAG_UNUSED_0x02F    0x2F // Unused Flag
-#define FLAG_UNUSED_0x030    0x30 // Unused Flag
-#define FLAG_UNUSED_0x031    0x31 // Unused Flag
-#define FLAG_UNUSED_0x032    0x32 // Unused Flag
-#define FLAG_UNUSED_0x033    0x33 // Unused Flag
-#define FLAG_UNUSED_0x034    0x34 // Unused Flag
-#define FLAG_UNUSED_0x035    0x35 // Unused Flag
-#define FLAG_UNUSED_0x036    0x36 // Unused Flag
-#define FLAG_UNUSED_0x037    0x37 // Unused Flag
-#define FLAG_UNUSED_0x038    0x38 // Unused Flag
-#define FLAG_UNUSED_0x039    0x39 // Unused Flag
-#define FLAG_UNUSED_0x03A    0x3A // Unused Flag
-#define FLAG_UNUSED_0x03B    0x3B // Unused Flag
-#define FLAG_UNUSED_0x03C    0x3C // Unused Flag
-#define FLAG_UNUSED_0x03D    0x3D // Unused Flag
-#define FLAG_UNUSED_0x03E    0x3E // Unused Flag
-#define FLAG_UNUSED_0x03F    0x3F // Unused Flag
-#define FLAG_UNUSED_0x040    0x40 // Unused Flag
-#define FLAG_UNUSED_0x041    0x41 // Unused Flag
-#define FLAG_UNUSED_0x042    0x42 // Unused Flag
-#define FLAG_UNUSED_0x043    0x43 // Unused Flag
-#define FLAG_UNUSED_0x044    0x44 // Unused Flag
-#define FLAG_UNUSED_0x045    0x45 // Unused Flag
-#define FLAG_UNUSED_0x046    0x46 // Unused Flag
-#define FLAG_UNUSED_0x047    0x47 // Unused Flag
-#define FLAG_UNUSED_0x048    0x48 // Unused Flag
-#define FLAG_UNUSED_0x049    0x49 // Unused Flag
-#define FLAG_UNUSED_0x04A    0x4A // Unused Flag
-#define FLAG_UNUSED_0x04B    0x4B // Unused Flag
-#define FLAG_UNUSED_0x04C    0x4C // Unused Flag
-#define FLAG_UNUSED_0x04D    0x4D // Unused Flag
-#define FLAG_UNUSED_0x04E    0x4E // Unused Flag
-#define FLAG_UNUSED_0x04F    0x4F // Unused Flag
+#define FLAG_HIDE_ARTICUNO   0x21
+#define FLAG_HIDE_ZAPDOS     0x22
+#define FLAG_HIDE_MOLTRES    0x23
+#define FLAG_HIDE_MEWTWO     0x24
+#define FLAG_HIDE_BIRTH_ISLAND_METEORITE 0x25
+#define FLAG_HIDE_RAIKOU     0x26
+#define FLAG_HIDE_ENTEI      0x27
+#define FLAG_HIDE_SUICUNE    0x28
+#define FLAG_HIDE_CELEBI     0x29
+#define FLAG_HIDE_JIRACHI    0x2A
+#define FLAG_HIDE_RAYQUAZA   0x2B
+#define FLAG_HIDE_KYOGRE     0x2C
+#define FLAG_HIDE_GROUDON    0x2D
+#define FLAG_HIDE_ARCEUS     0x2E
+#define FLAG_HIDE_AZELF      0x2F
+#define FLAG_HIDE_UXIE       0x30
+#define FLAG_HIDE_MESPRIT    0x31
+#define FLAG_HIDE_REGIGIGAS  0x32
+#define FLAG_HIDE_ROTOM      0x33
+#define FLAG_HIDE_SHAYMIN    0x34
+#define FLAG_HIDE_HEATRAN    0x35
+#define FLAG_HIDE_MANAPHY    0x36
+#define FLAG_HIDE_DARKRAI    0x37
+#define FLAG_HIDE_CRESSELIA  0x38
+#define FLAG_HIDE_GIRATINA   0x39
+#define FLAG_HIDE_DIALGA     0x3A
+#define FLAG_HIDE_PALKIA     0x3B
+#define FLAG_HIDE_COBALION   0x3C
+#define FLAG_HIDE_TERRAKION  0x3D
+#define FLAG_HIDE_VIRIZION   0x3E
+#define FLAG_HIDE_GENESECT   0x3F
+#define FLAG_HIDE_KELDEO     0x40
+#define FLAG_HIDE_KYUREM     0x41
+#define FLAG_HIDE_LANDORUS   0x42
+#define FLAG_HIDE_THUNDURUS  0x43
+#define FLAG_HIDE_MELOETTA   0x44
+#define FLAG_HIDE_TORNADUS   0x45
+#define FLAG_HIDE_RESHIRAM   0x46
+#define FLAG_HIDE_ZEKROM     0x47
+#define FLAG_HIDE_DIANCIE    0x48
+#define FLAG_HIDE_HOOPA      0x49
+#define FLAG_HIDE_VOLCANION  0x4A
+#define FLAG_HIDE_ZYGARDE    0x4B
+#define FLAG_HIDE_XERNEAS    0x4C
+#define FLAG_HIDE_YVELTAL    0x4D
+#define FLAG_HIDE_NECROZMA   0x4E
+#define FLAG_HIDE_ZERAORA    0x4F
 
 // Scripts
 #define FLAG_HIDE_SKY_PILLAR_TOP_RAYQUAZA_STILL  0x50
@@ -105,8 +105,8 @@
 #define FLAG_RESCUED_BIRCH                       0x52
 #define FLAG_LEGENDARIES_IN_SOOTOPOLIS           0x53
 
-#define FLAG_UNUSED_0x054                    0x54  // Unused Flag
-#define FLAG_UNUSED_0x055                    0x55  // Unused Flag
+#define FLAG_HIDE_TAPU_KOKO                  0x54
+#define FLAG_HIDE_MAGEARNA                   0x55
 
 #define FLAG_HIDE_CONTEST_POKE_BALL          0x56  // Always set after new game, object it hides is added directly
 #define FLAG_MET_RIVAL_MOM                   0x57
@@ -127,7 +127,7 @@
 #define FLAG_MOSSDEEP_GYM_SWITCH_3           0x66 //
 #define FLAG_MOSSDEEP_GYM_SWITCH_4           0x67 //
 
-#define FLAG_UNUSED_0x068                    0x68  // Unused Flag
+#define FLAG_HIDE_TAPU_LELE                  0x68
 
 #define FLAG_OCEANIC_MUSEUM_MET_REPORTER     0x69
 #define FLAG_RECEIVED_HM_STRENGTH            0x6A
@@ -154,7 +154,7 @@
 #define FLAG_DEFEATED_RIVAL_ROUTE_104        0x7D
 #define FLAG_DEFEATED_WALLY_VICTORY_ROAD     0x7E
 #define FLAG_MET_PRETTY_PETAL_SHOP_OWNER     0x7F
-#define FLAG_UNUSED_0x080                    0x80 // Unused Flag
+#define FLAG_HIDE_TAPU_BULU                  0x80
 #define FLAG_KYOGRE_ESCAPED_SEAFLOOR_CAVERN  0x81
 #define FLAG_DEFEATED_RIVAL_ROUTE103         0x82
 #define FLAG_RECEIVED_DOLL_LANETTE           0x83
@@ -200,20 +200,20 @@
 #define FLAG_RECEIVED_TM_CALM_MIND           0xAB
 #define FLAG_RECEIVED_TM_WATER_PULSE         0xAC
 #define FLAG_HIDE_SECRET_BASE_TRAINER        0xAD
-#define FLAG_DECORATION_1                    0xAE
-#define FLAG_DECORATION_2                    0xAF
-#define FLAG_DECORATION_3                    0xB0
-#define FLAG_DECORATION_4                    0xB1
-#define FLAG_DECORATION_5                    0xB2
-#define FLAG_DECORATION_6                    0xB3
-#define FLAG_DECORATION_7                    0xB4
-#define FLAG_DECORATION_8                    0xB5
-#define FLAG_DECORATION_9                    0xB6
-#define FLAG_DECORATION_10                   0xB7
-#define FLAG_DECORATION_11                   0xB8
-#define FLAG_DECORATION_12                   0xB9
-#define FLAG_DECORATION_13                   0xBA
-#define FLAG_DECORATION_14                   0xBB
+#define FLAG_EMPORIUM_ZMOVE_INTRO_DONE       0xAE
+#define FLAG_EMPORIUM_MEGA_INTRO_DONE        0xAF
+#define FLAG_EMPORIUM_TERA_INTRO_DONE        0xB0
+#define FLAG_EMPORIUM_ZMOVE_CHALLENGER_HIDDEN 0xB1
+#define FLAG_EMPORIUM_MEGA_CHALLENGER_HIDDEN 0xB2
+#define FLAG_EMPORIUM_TERA_CHALLENGER_HIDDEN 0xB3
+#define FLAG_EMPORIUM_NO_WHITEOUT            0xB4
+#define FLAG_HIDE_TAPU_FINI                  0xB5
+#define FLAG_HIDE_GALARIAN_ARTICUNO          0xB6
+#define FLAG_HIDE_GALARIAN_ZAPDOS            0xB7
+#define FLAG_HIDE_GALARIAN_MOLTRES           0xB8
+#define FLAG_HIDE_REGIDRAGO                  0xB9
+#define FLAG_HIDE_REGIELEKI                  0xBA
+#define FLAG_HIDE_ENAMORUS                   0xBB
 #define FLAG_RECEIVED_MAP                    0xBC
 #define FLAG_DELIVERED_STEVEN_LETTER         0xBD
 #define FLAG_DEFEATED_WALLY_MAUVILLE         0xBE
@@ -240,9 +240,9 @@
 #define FLAG_DEFEATED_RIVAL_RUSTBORO         0xD3
 #define FLAG_RECEIVED_RED_OR_BLUE_ORB        0xD4
 #define FLAG_RECEIVED_PREMIER_BALL_RUSTBORO  0xD5
-#define FLAG_UNUSED_0x0D6                    0xD6 // Unused Flag
-#define FLAG_UNUSED_0x0D7                    0xD7 // Unused Flag
-#define FLAG_UNUSED_0x0D8                    0xD8 // Unused Flag
+#define FLAG_HIDE_ZARUDE                     0xD6
+#define FLAG_HIDE_SPECTRIER                  0xD7
+#define FLAG_HIDE_GLASTRIER                  0xD8
 #define FLAG_MET_DIVING_TREASURE_HUNTER      0xD9
 #define FLAG_MET_WAILMER_TRAINER             0xDA
 #define FLAG_EVIL_LEADER_PLEASE_STOP         0xDB
@@ -262,7 +262,7 @@
 #define FLAG_RECEIVED_TM_ROAR                0xE7
 #define FLAG_RECEIVED_TM_GIGA_DRAIN          0xE8
 
-#define FLAG_UNUSED_0x0E9                    0xE9 // Unused Flag
+#define FLAG_HIDE_ZAMAZENTA                  0xE9
 
 #define FLAG_RECEIVED_TM_REST                0xEA
 #define FLAG_RECEIVED_TM_ATTRACT             0xEB
@@ -283,7 +283,7 @@
 #define FLAG_RECEIVED_WATMEL_BERRY           0xFA
 #define FLAG_RECEIVED_DURIN_BERRY            0xFB
 #define FLAG_RECEIVED_BELUE_BERRY            0xFC
-#define FLAG_UNUSED_0x0FD                    0xFD // Unused Flag
+#define FLAG_HIDE_ZACIAN                     0xFD
 #define FLAG_RECEIVED_CHARCOAL               0xFE
 #define FLAG_LATIOS_OR_LATIAS_ROAMING        0xFF
 #define FLAG_RECEIVED_REPEAT_BALL            0x100
@@ -311,7 +311,7 @@
 #define FLAG_RECEIVED_SOOTHE_BELL            0x116
 #define FLAG_RECEIVED_WHITE_HERB             0x117
 #define FLAG_RECEIVED_SOFT_SAND              0x118
-#define FLAG_UNUSED_0x119                    0x119 // Unused Flag
+#define FLAG_HIDE_ETERNATUS                  0x119
 #define FLAG_RECEIVED_CLEANSE_TAG            0x11A
 #define FLAG_RECEIVED_FOCUS_BAND             0x11B
 #define FLAG_DECLINED_WALLY_BATTLE_MAUVILLE  0x11C
@@ -333,9 +333,9 @@
 #define FLAG_MET_FANCLUB_YOUNGER_BROTHER     0x12C
 #define FLAG_RIVAL_LEFT_FOR_ROUTE103         0x12D
 #define FLAG_OMIT_DIVE_FROM_STEVEN_LETTER    0x12E
-#define FLAG_UNUSED_0x12F                    0x12F // Unused Flag
-#define FLAG_UNUSED_0x130                    0x130 // Unused Flag
-#define FLAG_UNUSED_0x131                    0x131 // Unused Flag
+#define FLAG_HIDE_WO_CHIEN                   0x12F
+#define FLAG_HIDE_CHIEN_PAO                  0x130
+#define FLAG_HIDE_TING_LU                    0x131
 #define FLAG_RECEIVED_DAD_PHONE_CALL         0x132
 #define FLAG_STEVEN_GUIDES_TO_CAVE_OF_ORIGIN 0x133 // Set after you follow Steven to the entrance of the Cave of Origin.
 #define FLAG_MET_ARCHIE_SOOTOPOLIS           0x134
@@ -369,7 +369,7 @@
 #define FLAG_MIRAGE_TOWER_VISIBLE            0x14E
 #define FLAG_CHOSE_ROOT_FOSSIL               0x14F
 #define FLAG_CHOSE_CLAW_FOSSIL               0x150
-#define FLAG_UNUSED_0x151                    0x151
+#define FLAG_HIDE_CHI_YU                     0x151
 
 #define FLAG_CHOSEN_MULTI_BATTLE_NPC_PARTNER 0x152
 
@@ -378,17 +378,17 @@
 #define FLAG_ENTERED_CONTEST                 0x155
 #define FLAG_MET_SLATEPORT_FANCLUB_CHAIRMAN  0x156
 #define FLAG_MET_BATTLE_FRONTIER_GAMBLER     0x157
-#define FLAG_UNUSED_0x158                    0x158 // Unused Flag
+#define FLAG_HIDE_OKIDOGI                    0x158
 #define FLAG_NURSE_MENTIONS_GOLD_CARD        0x159
 #define FLAG_MET_FRONTIER_BEAUTY_MOVE_TUTOR  0x15A
 #define FLAG_MET_FRONTIER_SWIMMER_MOVE_TUTOR 0x15B
 
-#define FLAG_UNUSED_0x15C                    0x15C // Unused Flag
-#define FLAG_UNUSED_0x15D                    0x15D // Unused Flag
-#define FLAG_UNUSED_0x15E                    0x15E // Unused Flag
-#define FLAG_UNUSED_0x15F                    0x15F // Unused Flag
-#define FLAG_UNUSED_0x160                    0x160 // Unused Flag
-#define FLAG_UNUSED_0x161                    0x161 // Unused Flag
+#define FLAG_HIDE_MUNKIDORI                  0x15C
+#define FLAG_HIDE_FEZANDIPITI                0x15D
+#define FLAG_HIDE_KORAIDON                   0x15E
+#define FLAG_HIDE_MIRAIDON                   0x15F
+#define FLAG_HIDE_OGERPON                    0x160
+#define FLAG_HIDE_TERAPAGOS                  0x161
 #define FLAG_UNUSED_0x162                    0x162 // Unused Flag
 #define FLAG_UNUSED_0x163                    0x163 // Unused Flag
 #define FLAG_UNUSED_0x164                    0x164 // Unused Flag
@@ -1701,7 +1701,6 @@
 #define FLAG_HIDE_ROUTE_22_RIVAL                           0
 #define FLAG_HIDE_PEWTER_MUSEUM_GUIDE                      0
 #define FLAG_HIDE_TOWER_RIVAL                              0
-#define FLAG_HIDE_MOLTRES                                  0
 #define FLAG_HIDE_SILPH_ROCKETS                            0
 #define FLAG_HIDE_ROUTE_12_SNORLAX                         0
 #define FLAG_HIDE_VIRIDIAN_GIOVANNI                        0
@@ -1712,7 +1711,6 @@
 #define FLAG_HIDE_OAK_IN_CHAMP_ROOM                        0
 #define FLAG_HIDE_GAME_CORNER_ROCKET                       0
 #define FLAG_HIDE_CERULEAN_CAVE_GUARD                      0
-#define FLAG_HIDE_ZAPDOS                                   0
 #define FLAG_HIDE_TOWER_ROCKET_1                           0
 #define FLAG_HIDE_CELADON_ROCKETS                          0
 #define FLAG_HIDE_DOJO_HITMONLEE_BALL                      0
@@ -1748,8 +1746,6 @@
 #define FLAG_HIDE_THREE_ISLAND_ANTIBIKERS                  0
 #define FLAG_0x07F                                         0
 #define FLAG_HIDE_ROUTE_16_SNORLAX                         0
-#define FLAG_HIDE_MEWTWO                                   0
-#define FLAG_HIDE_ARTICUNO                                 0
 #define FLAG_HIDE_TOWER_ROCKET_2                           0
 #define FLAG_HIDE_TOWER_ROCKET_3                           0
 #define FLAG_HIDE_POWER_PLANT_ELECTRODE_1                  0
@@ -1772,7 +1768,6 @@
 #define FLAG_HIDE_SELPHYS_BUTLER                           0
 #define FLAG_HIDE_FOUR_ISLAND_RIVAL                        0
 #define FLAG_HIDE_SIX_ISLAND_POKECENTER_RIVAL              0
-#define FLAG_HIDE_BIRTH_ISLAND_METEORITE                   0
 #define FLAG_HIDE_POSTGAME_GOSSIPERS                       0
 #define FLAG_HIDE_FAME_CHECKER_ERIKA_JOURNALS              0
 #define FLAG_HIDE_FAME_CHECKER_KOGA_JOURNAL                0

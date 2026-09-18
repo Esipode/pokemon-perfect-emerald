@@ -1,11 +1,49 @@
 AquaHideout_B1F_MapScripts::
 	map_script MAP_SCRIPT_ON_RESUME, AquaHideout_B1F_OnResume
 	map_script MAP_SCRIPT_ON_TRANSITION, AquaHideout_B1F_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, AquaHideout_B1F_OnLoad
 	.byte 0
+
+AquaHideout_B1F_OnLoad:
+	// Check if legendary is available
+    setvar VAR_0x8004, SPECIES_MEWTWO
+    setvar VAR_0x8005, LAYOUT_AQUA_HIDEOUT_B1F
+    setvar VAR_0x8006, 1 @ Tuesday
+    setvar VAR_0x8007, 1
+    special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, TRUE, AquaHideout_B1F_ShowMewtwoArena
+	goto_if_ne VAR_RESULT, TRUE, AquaHideout_B1F_HideMewtwoArena
+	end
 
 AquaHideout_B1F_OnResume:
 	call_if_set FLAG_SYS_CTRL_OBJ_DELETE, AquaHideout_B1F_EventScript_TryRemoveElectrode
 	end
+
+AquaHideout_B1F_Mewtwo_Encounter::
+	goto LegendaryEncounter_EventScript_Mewtwo
+
+AquaHideout_B1F_HideMewtwoArena::
+	setflag FLAG_HIDE_MEWTWO
+	return
+
+
+AquaHideout_B1F_ShowMewtwoArena:
+	setmetatilewithelevation 18, 8, 0x3E6, FALSE, 3
+	setmetatilewithelevation 19, 8, 0x3E6, FALSE, 3
+	setmetatilewithelevation 20, 8, 0x3E6, FALSE, 3
+	setmetatilewithelevation 21, 8, 0x3E6, FALSE, 3
+	setmetatilewithelevation 22, 8, 0x3E6, FALSE, 3
+
+	setmetatilewithelevation 18, 9, 0x3E5, FALSE, 3
+	setmetatilewithelevation 19, 9, 0x3E5, FALSE, 3
+	setmetatilewithelevation 20, 9, 0x3E5, FALSE, 3
+	setmetatilewithelevation 21, 9, 0x3E5, FALSE, 3
+
+	setmetatilewithelevation 18, 10, 0x3E5, FALSE, 3
+	setmetatilewithelevation 19, 10, 0x3E5, FALSE, 3
+	setmetatilewithelevation 20, 10, 0x3E5, FALSE, 3
+	setmetatilewithelevation 21, 10, 0x3E5, FALSE, 3
+	return
 
 AquaHideout_B1F_EventScript_TryRemoveElectrode::
 	specialvar VAR_RESULT, GetBattleOutcome
@@ -14,6 +52,7 @@ AquaHideout_B1F_EventScript_TryRemoveElectrode::
 	return
 
 AquaHideout_B1F_OnTransition:
+	updatelegendaryvisibility SPECIES_MEWTWO, FLAG_HIDE_MEWTWO
 	call_if_unset FLAG_DEFEATED_ELECTRODE_1_AQUA_HIDEOUT, AquaHideout_B1F_EventScript_ShowElectrode1
 	call_if_unset FLAG_DEFEATED_ELECTRODE_2_AQUA_HIDEOUT, AquaHideout_B1F_EventScript_ShowElectrode2
 	end

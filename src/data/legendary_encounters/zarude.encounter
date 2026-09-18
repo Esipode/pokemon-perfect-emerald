@@ -1,0 +1,222 @@
+Encounter: Zarude
+
+# Zarude, "The Rogue Monkey Pokemon". One rule:
+#   TERRITORY (0-6) rises as Zarude fights and only falls when the player anticipates its ambush.
+#   Territory sets the jungle's growth tier, which scales Zarude's power, healing and the vine
+#   threat. Fighting recklessly grows the jungle against the player; landing a big hit, baiting
+#   the ambush with Protect, and breaking (not ignoring) the barrier charges keep it down.
+# Troop-of-spirits (spawn/defeat separate battlers) is not expressible - no spawn-battler command
+#   exists. Substituted with JUNGLE BARRIER: 3 shield charges on Zarude. A turn where the player's
+#   damage clears 5% breaks a charge (denies the rally); a turn where none breaks lets the troop
+#   rally (Rage +1, Atk +1).
+# Phase 0 TERRITORIAL FIGHT (100-50% HP): Territory climbs, tiers unlock (Overgrown at 2, Jungle
+#   at 4), vines bind once Territory >= 2, Jungle Ambush appears once Territory >= 4.
+# Phase 1 JUNGLE SOVEREIGN (50-20% HP): chest-beat forces Territory to 5 (Deep Jungle), Jungle
+#   Barrier (3 charges) goes up, Rage accumulates from unbroken charges.
+# Phase 2 GUARDIAN OF THE JUNGLE (<=20% HP): Territory forced to 6 (Ancient Jungle), Jungle Fury
+#   raises Attack, Zarude periodically tries to heal (Jungle Feed) unless interrupted by damage
+#   that turn. Balls unlock at <=10% HP. Jungle Rage finisher fires once at <=8% HP.
+Properties:
+    Level: LevelCap
+    CatchRate: 10
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_LEAF_GUARD
+    Moves: MOVE_POWER_WHIP, MOVE_DARKEST_LARIAT, MOVE_DRAIN_PUNCH, MOVE_JUNGLE_HEALING
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code.
+# 0 Territory (0-6), 1 Phase (0 Territorial / 1 Sovereign / 2 Guardian), 2 VineTimer (0-3),
+# 3 BarrierCharges (0-3), 4 Rage (0-3), 5 AmbushState (0 idle / 1 resolves this turn),
+# 6 Mark (boss HP% snapshot taken every turn open), 7 TurnGuard (once-per-turn scaffold),
+# 8 ReminderCounter (0-4, recurring-line cadence), 9 MoveGuard (once-per-turn gate for the
+# territory-raising OnMoveEnd triggers), 10 Scratch (consumable copy of Mark for damage-since-mark
+# checks), 11 FeedTimer (0-2, Jungle Feed cadence).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Zarude_Init
+Conditions:
+    Var(Territory) >= 0
+    Var(Phase) >= 0
+    Var(VineTimer) >= 0
+    Var(BarrierCharges) >= 0
+    Var(Rage) >= 0
+    Var(AmbushState) >= 0
+    Var(Mark) >= 0
+    Var(TurnGuard) >= 0
+    Var(ReminderCounter) >= 0
+    Var(MoveGuard) >= 0
+    Var(Scratch) >= 0
+    Var(FeedTimer) >= 0
+
+# The once-per-turn scaffold. TurnGuard is the only gate and the script sets it immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Zarude_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Territory rises from a Grass move of the boss's landing on the player. MoveGuard caps this to
+# once per turn across every territory-raising trigger and is cleared at the next TurnOpen.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Zarude_TerritoryFromGrass
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Territory) < 6
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_GRASS
+
+# Territory rises from any other move damage the boss lands on the player.
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Zarude_TerritoryFromDamage
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Territory) < 6
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Not:
+        Event.MoveType == TYPE_GRASS
+
+# Territory rises when the player threatens Zarude - a real hit measured against the turn-open
+# mark.
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_Zarude_TerritoryFromThreat
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Territory) < 6
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+
+# Jungle Growth tier crossings during the Territorial Fight. Once + OnEnter: each fires exactly
+# once, on the crossing.
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Zarude_OvergrownTier
+Conditions:
+    Var(Territory) >= 2
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 21
+Flags: Once, OnEnter
+Script: EncScript_Zarude_JungleTier
+Conditions:
+    Var(Territory) >= 4
+    Var(Phase) == 0
+
+# Ambush resolution. Self-disabling: both scripts clear AmbushState on every path.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Zarude_AmbushAnticipated
+Conditions:
+    Var(AmbushState) == 1
+    Battler(PlayerLeft).Protected == 1
+
+Trigger: OnMoveEnd
+Priority: 31
+Script: EncScript_Zarude_AmbushStrikes
+Conditions:
+    Var(AmbushState) == 1
+    Battler(PlayerLeft).Protected == 0
+
+# Vine bind. Self-disabling: the script sets VineTimer to 3, which closes this condition until the
+# ledger runs it back down to 0.
+Trigger: OnMoveEnd
+Priority: 40
+Script: EncScript_Zarude_VineBindApply
+Conditions:
+    Var(Territory) >= 2
+    Var(VineTimer) == 0
+
+# Phase transitions. Registered at both OnMoveEnd and OnTurnEnd since the crossing blow can be a
+# move or a passive tick (vine chip). Once, marked at selection, so whichever fires first
+# permanently disables the other copy.
+Trigger: OnMoveEnd
+Priority: 50
+Flags: Once, OnEnter
+Script: EncScript_Zarude_Phase2_DeepJungle
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 50
+Flags: Once, OnEnter
+Script: EncScript_Zarude_Phase2_DeepJungle
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 51
+Flags: Once, OnEnter
+Script: EncScript_Zarude_Phase3_Guardian
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 51
+Flags: Once, OnEnter
+Script: EncScript_Zarude_Phase3_Guardian
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 52
+Flags: Once, OnEnter
+Script: EncScript_Zarude_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 52
+Flags: Once, OnEnter
+Script: EncScript_Zarude_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Jungle Rage finisher, once, at <= 8% HP in the Guardian phase. Registered at both checkpoints for
+# the same reason as the phase transitions.
+Trigger: OnMoveEnd
+Priority: 53
+Flags: Once
+Script: EncScript_Zarude_JungleRage
+Conditions:
+    Battler(Boss).HpPercent <= 8
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 53
+Flags: Once
+Script: EncScript_Zarude_JungleRage
+Conditions:
+    Battler(Boss).HpPercent <= 8
+    Var(Phase) == 2
+
+# THE LEDGER. Everything that resolves once per turn - vines, barrier, Jungle Feed, the reminder
+# cue - in one script rather than several triggers, to stay clear of the per-checkpoint script cap.
+# Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Zarude_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# Presentation-only wrap-up.
+Trigger: OnBattleEnd
+Priority: 10
+Script: EncScript_Zarude_BattleEndFlavor

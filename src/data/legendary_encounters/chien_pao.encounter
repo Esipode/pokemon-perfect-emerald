@@ -1,0 +1,174 @@
+Encounter: Chien_Pao
+
+# Chien-Pao, "The Ruinous Sword Pokemon". One rule:
+#   MOMENTUM (0-6) drives everything. It climbs on aggression - attacking, moving first, chaining
+#   hits, finding an opening, the player switching under the Hunt - and drops on good defensive
+#   play: breaking a Sword Dash, interrupting a Ruinous Blade. High Momentum = a faster, harder-
+#   hitting Chien-Pao; low Momentum = a calmer fight.
+# WHAT THE PLAYER WORKS OUT: read the Momentum band (flavor-lined at 3 and 5) to know when a Sword
+#   Dash or Ruinous Blade is about to pay off, and time a Protect or a big hit to break it first.
+# PHASES: Hunt (100-50% HP) -> Whiteout (50-15% HP) -> Avalanche (<=15% HP, catch window at <=10%).
+#   "Snow Trail" field escalation is expressed through the Momentum bands themselves rather than a
+#   separate variable. "Hunting Mark" is always the active player mon (a singles fight has only one
+#   legal target), so its tension is "switching while Hunted costs Momentum" rather than a
+#   doubles-style choice of who to protect.
+# ANTI-ABUSE IS NARROW (guideline 8): Sword Dash and Ruinous Blade both cost Chien-Pao Momentum when
+#   broken, so camping at max Momentum is risky for the boss, not just flavor. Avalanche's chain
+#   resets to 0 on any miss, so the player always has an out even at the highest chip band.
+Properties:
+    Level: LevelCap
+    CatchRate: 20
+    Balls: Blocked
+    DamageReduction: 88
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_SWORD_OF_RUIN   # its own; lowers the player's Defense passively, reinforcing
+                                     # the "broken swords" theme without extra scripting
+    Moves: MOVE_ICICLE_CRASH, MOVE_SUCKER_PUNCH, MOVE_SACRED_SWORD, MOVE_CRUNCH
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order.
+# 0 Momentum (0-6, the core meter), 1 Phase (0 Hunt / 1 Whiteout / 2 Avalanche), 2 ChainCount
+# (consecutive landed hits; a miss resets it to 0), 3 DashState (0 idle / 1 Sword Dash telegraphed
+# this turn), 4 BladeCharge (0 idle / 1 Ruinous Blade charging), 5 HPMark (player HP% snapshot,
+# taken each OnTurnStart), 6 BladeHPMark (boss HP% snapshot, taken when Blade is declared),
+# 7 SpeedCompare (transient result of the turn's speed check), 8 MoveHandled (guard: the OnMoveEnd
+# handler already ran this pass), 9 SwitchHandled (guard: the OnSwitchIn handler already ran this
+# pass), 10 BattleStarted (guard: distinguishes the opening send-out from a real switch),
+# 11 TurnGuard (once-per-turn scaffold for TurnSetup - not in the original plan; added because an
+# unconditional OnTurnStart trigger with no self-disabling latch re-selects until the runaway-script
+# guard trips, per the authoring reference's mandatory scaffold).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_ChienPao_Init
+Conditions:
+    Var(Momentum) >= 0
+    Var(Phase) >= 0
+    Var(ChainCount) >= 0
+    Var(DashState) >= 0
+    Var(BladeCharge) >= 0
+    Var(HPMark) >= 0
+    Var(BladeHPMark) >= 0
+    Var(SpeedCompare) >= 0
+    Var(MoveHandled) >= 0
+    Var(SwitchHandled) >= 0
+    Var(BattleStarted) >= 0
+    Var(TurnGuard) >= 0
+
+# The once-per-turn scaffold. TurnGuard is the only gate and the script closes it immediately, so no
+# branch out of it can leave the trigger re-armed for this turn's re-evaluation passes.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_ChienPao_TurnSetup
+Conditions:
+    Var(TurnGuard) == 0
+
+# SWORD DASH telegraph. Naturally self-disabling: the script sets DashState to 1, closing its own
+# condition for the rest of this turn.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_ChienPao_DashDeclare
+Conditions:
+    Var(Phase) == 0
+    Var(Momentum) >= 4
+    Var(DashState) == 0
+
+# RUINOUS BLADE telegraph. Naturally self-disabling through BladeCharge, the same idiom as above.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_ChienPao_BladeDeclare
+Conditions:
+    Var(Phase) == 1
+    Var(Momentum) >= 5
+    Var(BladeCharge) == 0
+
+# Phase transitions. All three sit below MoveHandler's priority (20) so a phase can flip mid-
+# exchange and MoveHandler's own Phase-gated branches (the Whiteout spike, the Avalanche chip) see
+# the fresh Phase within the same OnMoveEnd pass. Only the boss's own HP is being tested, so no
+# Event.Battler filter is needed.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_ChienPao_EnterWhiteout
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_ChienPao_EnterAvalanche
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_ChienPao_FinalOpening
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# THE MOVE HANDLER. Event.Battler == PlayerLeft scopes this to "the player got hit" specifically -
+# without it, an OnMoveEnd firing off the player's OWN attack (Event.Battler == OpponentLeft, the
+# boss got hit) would consume the once-per-turn MoveHandled guard before Chien-Pao's own move ever
+# resolves, silently dropping the real hit/miss check for the rest of the turn.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_ChienPao_MoveHandler
+Conditions:
+    Var(MoveHandled) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Player switch pressure. BattleStarted guards against the player's opening send-out, which fires
+# an OnSwitchIn before OnBattleStart's own Init has run.
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_ChienPao_SwitchHandler
+Conditions:
+    Var(SwitchHandled) == 0
+    Var(BattleStarted) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Sword Dash punished: a miss or a Protect leaves DashState set into OnTurnEnd.
+Trigger: OnTurnEnd
+Priority: 15
+Script: EncScript_ChienPao_DashBreak
+Conditions:
+    Var(Phase) == 0
+    Var(DashState) == 1
+
+# Ruinous Blade resolves: released if uninterrupted, broken if the player landed a hit on the boss
+# since it was declared.
+Trigger: OnTurnEnd
+Priority: 15
+Script: EncScript_ChienPao_BladeResolve
+Conditions:
+    Var(Phase) == 1
+    Var(BladeCharge) == 1
+
+Trigger: OnTurnEnd
+Priority: 25
+Flags: Once, OnEnter
+Script: EncScript_ChienPao_MomentumBrisk
+Conditions:
+    Var(Momentum) >= 3
+
+Trigger: OnTurnEnd
+Priority: 25
+Flags: Once, OnEnter
+Script: EncScript_ChienPao_MomentumBlizzard
+Conditions:
+    Var(Momentum) >= 5
+
+# Closes the once-per-turn scaffold TurnSetup opened. Runs last at OnTurnEnd so every other
+# OnTurnEnd script this turn has already read/written TurnGuard's dependents.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_ChienPao_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

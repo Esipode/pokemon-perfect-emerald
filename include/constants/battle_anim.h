@@ -594,6 +594,12 @@ enum AnimBattler
 #define B_ANIM_MAGIC_ROOM               47
 #define B_ANIM_TAILWIND                 48
 #define B_ANIM_FOG_CONTINUES            49
+// TERA_CHARGE blends the whole screen to white and only TERA_ACTIVATE blends it back. Encounter
+// scripts: never play TERA_CHARGE alone via `playanimation` - it leaves the background and the
+// move-selection box white for the rest of the battle. Pair it with TERA_ACTIVATE in the same
+// script (see EncScript_Arceus_Creation, data/legendary_encounters/arceus.inc), or use a different
+// animation entirely (B_ANIM_STATS_CHANGE / B_ANIM_WONDER_ROOM cover most "something changed on the
+// boss" beats with no blend state to leak).
 #define B_ANIM_TERA_CHARGE              50
 #define B_ANIM_TERA_ACTIVATE            51
 #define B_ANIM_SIMPLE_HEAL              52
@@ -603,13 +609,19 @@ enum AnimBattler
 #define B_ANIM_MON_SCARED               56
 #define B_ANIM_GHOST_GET_OUT            57
 #define B_ANIM_SILPH_SCOPED             58
+// ROCK_THROW is the Safari Zone player's rock toss, not a generic rock effect: its script hands the
+// ANIM ATTACKER's sprite to SpriteCB_TrainerThrowObject, which starts sprite anim 1 - a frame set
+// only a trainer BACK PIC has. Played in an ordinary battle it drives a Pokemon sprite into an anim
+// that never ends, and the battle hangs there. Encounter scripts: never play it. B_ANIM_STATS_CHANGE
+// / B_ANIM_MON_HIT cover the "something rose / something broke" beats with no sprite state to leak.
 #define B_ANIM_ROCK_THROW               59
 #define B_ANIM_SAFARI_REACTION          60
 #define B_ANIM_FORM_CHANGE_INSTANT      61
 #define B_ANIM_FORM_CHANGE_DISGUISE     62
 #define B_ANIM_HELD_ITEM_BERRY          63
 #define B_ANIM_PROTECTED_ITSELF         64
-#define NUM_B_ANIMS_GENERAL             65
+#define B_ANIM_ENCOUNTER_TRANSFORM      65 // scripted transform/revert; renders the battle mon, not the party mon
+#define NUM_B_ANIMS_GENERAL             66
 
 // special animations table (sBattleAnims_Special)
 #define B_ANIM_LVL_UP                   0
@@ -700,6 +712,9 @@ enum SpeciesGfxChange
     SPECIES_GFX_CHANGE_FORM_CHANGE_INSTANT,
     SPECIES_GFX_CHANGE_ILLUSION_OFF,
     SPECIES_GFX_CHANGE_GHOST_UNVEIL,
+    // Renders whatever species gBattleMons[] currently holds, without reading or writing the party
+    // Pokemon. For a scripted transform whose party mon must stay the boss's real species.
+    SPECIES_GFX_CHANGE_BATTLE_MON,
 };
 
 // Flags given to various functions to indicate which palettes to consider.

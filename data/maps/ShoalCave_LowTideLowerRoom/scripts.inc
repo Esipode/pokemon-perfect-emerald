@@ -3,8 +3,25 @@ ShoalCave_LowTideLowerRoom_MapScripts::
 	.byte 0
 
 ShoalCave_LowTideLowerRoom_OnLoad:
+	// Check if legendary is available
+    setvar VAR_0x8004, SPECIES_ARTICUNO
+    setvar VAR_0x8005, LAYOUT_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_LAYOUT_ARTICUNO
+    setvar VAR_0x8006, 0 @ Monday
+    setvar VAR_0x8007, 1
+    special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, TRUE, ShoalCave_LowTideLowerRoom_HiddenLadder
+	// Keep warp open if returning from legendary map
+    setvar VAR_0x8004, MAP_GROUP(MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_ARTICUNO)
+    setvar VAR_0x8005, MAP_NUM(MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_ARTICUNO)
+    setvar VAR_0x8006, 0 // Warp ID
+	special IsLastUsedWarp
+	goto_if_eq VAR_RESULT, TRUE, ShoalCave_LowTideLowerRoom_HiddenLadder
 	call ShoalCave_LowTideLowerRoom_EventScript_SetShoalItemMetatiles
 	end
+
+ShoalCave_LowTideLowerRoom_HiddenLadder:
+	setmetatile 14, 2, 0x205, FALSE
+	return
 
 ShoalCave_LowTideLowerRoom_EventScript_SetShoalItemMetatiles::
 	goto_if_set FLAG_RECEIVED_SHOAL_SALT_4, ShoalCave_LowTideLowerRoom_EventScript_SetShoalItemMetatilesEnd

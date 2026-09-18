@@ -7,6 +7,7 @@
 #include "field_camera.h"
 #include "field_control_avatar.h"
 #include "field_effect.h"
+#include "field_specials.h"
 #include "field_effect_helpers.h"
 #include "field_player_avatar.h"
 #include "field_screen_effect.h"
@@ -2939,12 +2940,21 @@ static void TeleportWarpInFieldEffect_SpinGround(struct Task *task)
 bool8 FldEff_FieldMoveShowMon(void)
 {
     u8 taskId;
+    u8 monSpriteId = InitFieldMoveMonSprite(gFieldEffectArguments[0], gFieldEffectArguments[1], gFieldEffectArguments[2]);
+
+    // Sprite pool was full; bail instead of animating the shared dummy sprite (shows as a garbage/error sprite)
+    if (monSpriteId == MAX_SPRITES)
+    {
+        FieldEffectActiveListRemove(FLDEFF_FIELD_MOVE_SHOW_MON);
+        return FALSE;
+    }
+
     if (IsMapTypeOutdoors(GetCurrentMapType()) == TRUE)
         taskId = CreateTask(Task_FieldMoveShowMonOutdoors, 0xff);
     else
         taskId = CreateTask(Task_FieldMoveShowMonIndoors, 0xff);
 
-    gTasks[taskId].tMonSpriteId = InitFieldMoveMonSprite(gFieldEffectArguments[0], gFieldEffectArguments[1], gFieldEffectArguments[2]);
+    gTasks[taskId].tMonSpriteId = monSpriteId;
     return FALSE;
 }
 
@@ -2953,8 +2963,14 @@ bool8 FldEff_FieldMoveShowMon(void)
 bool8 FldEff_FieldMoveShowMonInit(void)
 {
     struct Pokemon *pokemon;
+    u8 monId = (u8)gFieldEffectArguments[0];
     bool32 noDucking = gFieldEffectArguments[0] & SHOW_MON_CRY_NO_DUCKING;
-    pokemon = &gParties[B_TRAINER_PLAYER][(u8)gFieldEffectArguments[0]];
+
+    // Sprite animation should never depict a fainted mon
+    if (GetMonData(&gParties[B_TRAINER_PLAYER][monId], MON_DATA_HP) == 0)
+        monId = GetFirstNonFaintedPartyIndex();
+
+    pokemon = &gParties[B_TRAINER_PLAYER][monId];
     gFieldEffectArguments[0] = GetMonData(pokemon, MON_DATA_SPECIES);
     gFieldEffectArguments[1] = GetMonData(pokemon, MON_DATA_IS_SHINY);
     gFieldEffectArguments[2] = GetMonData(pokemon, MON_DATA_PERSONALITY);

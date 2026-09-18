@@ -729,6 +729,7 @@ void CreateWildMon(enum Species species, u16 level)
 
     ZeroEnemyPartyMons();
     u32 personality = GetMonPersonality(species, GetSynchronizedGender(WILDMON_ORIGIN, species), PickWildMonNature(species), RANDOM_UNOWN_LETTER);
+    SetRandomizationSeedContext(GetCurrentMapWildMonHeaderId());
     CreateMonWithIVs(&gParties[B_TRAINER_OPPONENT_A][0], species, level, personality, OTID_STRUCT_PLAYER_ID, USE_RANDOM_IVS);
     AchievementBoost_ApplyWildIvReroll(&gParties[B_TRAINER_OPPONENT_A][0]);
     GiveMonInitialMoveset(&gParties[B_TRAINER_OPPONENT_A][0]);

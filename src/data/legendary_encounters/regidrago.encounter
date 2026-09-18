@@ -1,0 +1,165 @@
+Encounter: Regidrago
+
+# Regidrago, "The Dragon Orb Pokemon". One rule:
+#   DRAGON ENERGY, 0-100, is everything. It rises from real damage exchanged (either direction),
+#   Dragon-type moves, passive drift and player faints; Regidrago wants it at 100. The player's
+#   choice each turn is whether to starve it or feed it.
+# PHASES: 0 Awakened (100-50% HP) - Orbs spawn and must be destroyed before Regidrago consumes
+#   them; go too long without trading damage and Hunger traps+buffs it. Dragon Maw telegraphs a
+#   big banked hit, interruptible by hitting hard while it's up.
+#   1 Ancient Dragon (50-20% HP) - Energy also rises on its own every turn; Energy Theft chips the
+#   player's active every turn until an Orb is destroyed.
+#   2 Dragon Overload (<=20% HP) - Energy is forced to 100 and then drains every turn instead of
+#   rising; when it hits 0 (or the boss drops to 10% HP) Eternabeam fires, scaled by the Energy
+#   banked at entry, and opens the catch window.
+# FEEDING IT is read off HP percent deltas measured once a turn (encsnapshothp/ENC_SNAP_DAMAGE),
+#   the same portable trick every LevelCap boss needs since max HP is unknown at authoring time -
+#   this also stands in for "Orb destroyed" and "Maw interrupted" (a big hit against the boss this
+#   turn), so nothing here needs a live effectiveness read the engine doesn't expose.
+# ANTI-ABUSE IS NARROW (guideline 8): Hunger's `encsettrapped` stops benching a weak mon to dodge
+#   the pressure of starving the meter; Balls stay blocked until the Eternabeam catch window.
+Properties:
+    Level: LevelCap
+    CatchRate: 10               # none until EncScript_Regidrago_Eternabeam sets a real one
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_DRACO_METEOR, MOVE_IRON_HEAD, MOVE_ANCIENT_POWER, MOVE_CRUNCH
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the .inc hard-codes as bare integers.
+# 0 Energy (0-100), 1 Phase (0 Awakened/1 AncientDragon/2 Overload), 2 OrbState (0 none/1 active),
+# 3 OrbTimer (turns left to destroy the active Orb), 4 MawState (0 idle/1 telegraphed),
+# 5 MawTimer (turns left before Maw resolves), 6 HungerStreak (turns since damage last moved),
+# 7 TurnGuard (once-per-turn scaffold), 8 BossMark (boss HP% at turn open, then this turn's damage
+# taken), 9 PlayerMark (player HP% at turn open, then this turn's damage taken - i.e. what the boss
+# dealt), 10 DragonUsed (latch: a Dragon move landed this turn, cleared at turn open),
+# 11 LastTier (last announced Energy tier, the recurring-callout latch), 12 TheftActive (Phase 1+,
+# cleared when an Orb is destroyed), 13 Overloaded (Phase 2 entered), 14 BankedEnergy (Energy
+# snapshotted at Phase 2 entry, drains toward 0, scales Eternabeam and gates its trigger),
+# 15 FaintHandled (self-disabling latch for the OnFaint trigger, cleared at turn open).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Regidrago_Intro
+Conditions:
+    Var(Energy) >= 0
+    Var(Phase) >= 0
+    Var(OrbState) >= 0
+    Var(OrbTimer) >= 0
+    Var(MawState) >= 0
+    Var(MawTimer) >= 0
+    Var(HungerStreak) >= 0
+    Var(TurnGuard) >= 0
+    Var(BossMark) >= 0
+    Var(PlayerMark) >= 0
+    Var(DragonUsed) >= 0
+    Var(LastTier) >= 0
+    Var(TheftActive) >= 0
+    Var(Overloaded) >= 0
+    Var(BankedEnergy) >= 0
+    Var(FaintHandled) >= 0
+
+# Phase transitions. Registered at both checkpoints since the crossing blow can be a move or an
+# end-of-turn tick; both copies are Once (marked at selection), so whichever fires first disables
+# the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Regidrago_AncientDragon
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Regidrago_AncientDragon
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Regidrago_Overload
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Regidrago_Overload
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# Eternabeam: Energy drained to 0, or the boss chipped to 10% first. Registered at both checkpoints
+# like the phase transitions; Once is enough since BankedEnergy only counts down once Overloaded.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regidrago_Eternabeam
+Conditions:
+    Var(Overloaded) == 1
+    Any:
+        Var(Energy) == 0
+        Battler(Boss).HpPercent <= 10
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regidrago_Eternabeam
+Conditions:
+    Var(Overloaded) == 1
+    Any:
+        Var(Energy) == 0
+        Battler(Boss).HpPercent <= 10
+
+# Once-per-turn scaffold: snapshots HP marks, clears the Dragon latch, ticks Orb/Maw timers, rolls
+# new telegraphs. TurnGuard is the only gate and the script sets it immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Regidrago_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Dragon-move bonus. Only the first Dragon move each turn counts (DragonUsed is a shared latch),
+# and Regidrago's own is checked first so it wins if both sides used one the same turn.
+# Self-disabling through DragonUsed, which _TurnOpen clears every turn.
+Trigger: OnMoveEnd
+Priority: 13
+Script: EncScript_Regidrago_DragonMoveBonusBoss
+Conditions:
+    Event.MoveType == TYPE_DRAGON
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(DragonUsed) == 0
+
+Trigger: OnMoveEnd
+Priority: 14
+Script: EncScript_Regidrago_DragonMoveBonusPlayer
+Conditions:
+    Event.MoveType == TYPE_DRAGON
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(DragonUsed) == 0
+
+# The ledger: energy gain/drain, Orb spawn/consume/destroy, Maw telegraph/resolve/interrupt,
+# Hunger, Theft, tier callouts. One script with internal branching to stay clear of the
+# 8-scripts-per-checkpoint cap. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Regidrago_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# Self-disabling through FaintHandled, which _TurnOpen clears every turn - otherwise the
+# checkpoint's re-evaluation loop reselects this every pass since Event.Battler stays put.
+Trigger: OnFaint
+Priority: 20
+Script: EncScript_Regidrago_EnergyFromFaint
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(FaintHandled) == 0

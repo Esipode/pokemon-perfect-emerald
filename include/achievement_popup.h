@@ -12,6 +12,11 @@
 // directly by the debug menu's "Test Achievement Popup" action.
 void ShowAchievementPopup(u16 achievementId);
 
+// Same box as ShowAchievementPopup, showing a level cap increase instead of
+// an achievement -- no tier icon, fixed text. Shows immediately and ungated;
+// real level cap increases go through LevelCapPopup_Enqueue below.
+void ShowLevelCapPopup(u32 newLevelCap);
+
 // The real entry point for actual awards.
 // src/achievements.c's QueueAchievementNotification calls this rather than
 // ShowAchievementPopup directly -- it pushes onto a small ring buffer that
@@ -20,6 +25,12 @@ void ShowAchievementPopup(u16 achievementId);
 // mid-cutscene, or mid-transition), so simultaneous awards each get a full,
 // un-truncated display instead of clobbering one another.
 void AchievementPopup_Enqueue(u16 achievementId);
+
+// Same box/queue/dismiss behavior as AchievementPopup_Enqueue, for the "level
+// cap increased" notification (src/field_specials.c) instead of an
+// achievement -- shares the queue, so a level cap popup landing alongside an
+// achievement award still displays one at a time rather than clobbering.
+void LevelCapPopup_Enqueue(u32 newLevelCap);
 
 // Polled once per frame from CB2_Overworld (src/overworld.c) -- attempts to
 // show the next queued achievement popup, if any, and if the field is

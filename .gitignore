@@ -49,6 +49,8 @@ src/data/map_group_count.h
 include/constants/heal_locations.h
 include/constants/script_commands.h
 tools/trainerproc/trainerproc
+tools/encounterproc/encounterproc
+src/data/battle_encounters.h
 src/data/battle_partners.h
 src/data/pokemon/teachable_learnsets.h
 src/data/pokemon/national_dex_num_to_species.h

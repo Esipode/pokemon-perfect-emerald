@@ -586,24 +586,25 @@ static void TryPurchaseOrToggleBoost(u8 taskId, u16 boostId)
     TryPurchaseBoost(taskId, boostId);
 }
 
-// L/R dpad: dials the highlighted leveled boost's active level up or down
-// (AchievementBoost_TryChangeActiveLevel) without touching what's been
-// purchased. A no-op on the reset row and on binary boosts, which use [A]
-// instead (see TryPurchaseOrToggleBoost above). The active level now shows
-// in the list row itself (see BoostMenu_ItemPrintCallback), and whether the
-// cost column is visible at all depends on it too, so this needs a
-// RedrawListMenu on top of PrintBoostStatus's own description refresh --
-// RedrawListMenu rather than a full DestroyCurrentBoostList/EnterBoostMenuLevel
-// rebuild (what a purchase or toggle does) since L/R can repeat rapidly and
-// nothing about the list's scroll arrows or item set actually changed.
+// L/R dpad: dials the highlighted leveled boost's active level up or down,
+// or flips a binary boost's ON/OFF (AchievementBoost_TryChangeActiveLevel
+// handles both the same way -- for a binary, owned is always 1, so delta
+// -1/+1 just clamps active between 0 and 1) without touching what's been
+// purchased. Still a no-op on the reset row. [A] can also flip a binary
+// (see TryPurchaseOrToggleBoost above) -- both inputs reach the same
+// toggle. The active level now shows in the list row itself (see
+// BoostMenu_ItemPrintCallback), and whether the cost column is visible at
+// all depends on it too, so this needs a RedrawListMenu on top of
+// PrintBoostStatus's own description refresh -- RedrawListMenu rather than
+// a full DestroyCurrentBoostList/EnterBoostMenuLevel rebuild (what a
+// purchase does) since L/R can repeat rapidly and nothing about the list's
+// scroll arrows or item set actually changed.
 static void TryChangeHighlightedBoostActiveLevel(u8 taskId)
 {
     u16 boostId = sBoostMenuListItems[sBoostMenu.scrollOffset + sBoostMenu.selectedRow].id;
     s8 delta;
 
     if (boostId == BOOST_MENU_ITEM_RESET)
-        return;
-    if (AchievementBoost_GetInfo(boostId)->type == BOOST_TYPE_BINARY)
         return;
 
     if (JOY_NEW(DPAD_LEFT))
@@ -754,7 +755,7 @@ static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y)
         StringCopy(gStringVar4, active != 0 ? sText_BoostOn : sText_BoostOff);
         DrawBoostMenuLevelValue(windowId, y, gStringVar4, colors, selected);
     }
-    else if (owned >= info->maxLevel)
+    else if (owned >= info->maxLevel && active == owned)
     {
         DrawBoostMenuLevelValue(windowId, y, sText_BoostMax, colors, selected);
     }

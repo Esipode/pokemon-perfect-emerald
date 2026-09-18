@@ -1,0 +1,209 @@
+Encounter: Galarian_Articuno
+
+# Galarian Articuno, "The Cruel Pokemon". One rule:
+#   ARTICUNO READS PATTERNS, NOT INPUTS. Everything it does keys off move CATEGORY
+#   (Physical/Special/Status) - the only granularity encstoreprediction/AI_FLAG_PREDICT_MOVE
+#   exposes. Varying category is how the player stays unread.
+# FOCUS, 0-3, is fed by repeating a category, hitting Articuno super-effectively, using a status
+#   move, or switching. At Focus 3 it fires PSYCHIC LOCK - one random disruption (seal move / trap /
+#   disable item / debuff a stat) and Focus resets.
+# PREDICT fires every turn: Articuno guesses the player's next category and, if right, fires a
+#   counter-blast (16% Phase 0, 24% Phase 1-2); if wrong, it loses a point of Focus.
+# MIND GAMES offers RESIST (Focus+1, player gets a crit buff) or YIELD (Articuno ATK+1, Focus-1) on
+#   a 4-turn cooldown.
+# Phase 0 (100-50%) THE MIND'S EYE - Focus/Predict/Mind Games live, Predict counter 16%.
+# Phase 1 (50-20%) PERFECT PREDICTION - counter bumped to 24%.
+# Phase 2 (20-10%) MIND BREAK - a forced Psychic Lock-style disruption every 3 turns, on top of
+#   everything above.
+# Phase 3 (<=10%) the catch window.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    Moves: MOVE_FREEZING_GLARE, MOVE_HURRICANE, MOVE_PSYCHIC, MOVE_ROOST
+    AiFlags: AI_FLAG_SMART_TRAINER | AI_FLAG_PREDICT_MOVE
+
+# Always-true block: pins the variable numbering the battle scripts hard-code.
+# 0 Phase (0/1/2/3), 1 Focus (0-3), 2 Predicted (0 none/1 phys/2 spec/3 status),
+# 3 PredictionResolved (this-turn latch), 4 LastCategory (previous turn's player category),
+# 5 MindGamesCooldown, 6 MindBreakCooldown (Phase 2 only), 7 MoveGuard (shared by the three
+# category triggers - only one can ever be true per move-end event, so one latch is enough),
+# 8 SEGuard, 9 SwitchGuard, 10 TurnGuard (the once-per-turn scaffold).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_GalarianArticuno_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Focus) >= 0
+    Var(Predicted) >= 0
+    Var(PredictionResolved) >= 0
+    Var(LastCategory) >= 0
+    Var(MindGamesCooldown) >= 0
+    Var(MindBreakCooldown) >= 0
+    Var(MoveGuard) >= 0
+    Var(SEGuard) >= 0
+    Var(SwitchGuard) >= 0
+    Var(TurnGuard) >= 0
+
+# The once-per-turn scaffold. TurnGuard is the only gate and the script sets it immediately.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_GalarianArticuno_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 3
+Script: EncScript_GalarianArticuno_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# --- Focus/Predict, one trigger per move category. Repeat-check, category store, and the Predict
+# hit/resolve all live inside the script since MoveCategory can only be read from a Condition, but
+# everything past that point is Var-driven and fully scriptable. MoveGuard stops the same dispatch
+# from re-selecting once its script has run (Event.MoveCategory never changes within one dispatch). ---
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_GalarianArticuno_CategoryPhysical
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Var(MoveGuard) == 0
+
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_GalarianArticuno_CategorySpecial
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+    Var(MoveGuard) == 0
+
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_GalarianArticuno_CategoryStatus
+Conditions:
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Var(MoveGuard) == 0
+
+# --- Focus: super-effective hit on the boss ---
+Trigger: OnMoveEnd
+Priority: 9
+Script: EncScript_GalarianArticuno_SuperEffective
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(SEGuard) == 0
+    Any:
+        Event.MoveType == TYPE_DARK
+        Event.MoveType == TYPE_GHOST
+        Event.MoveType == TYPE_ICE
+        Event.MoveType == TYPE_ROCK
+        Event.MoveType == TYPE_ELECTRIC
+
+# --- Focus: player switches in ---
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_GalarianArticuno_SwitchFocus
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(TurnGuard) == 1
+    Var(SwitchGuard) == 0
+
+# --- Psychic Lock, preempts the Focus trackers above when Focus just capped ---
+Trigger: OnMoveEnd
+Priority: 5
+Script: EncScript_GalarianArticuno_PsychicLock
+Conditions:
+    Var(Focus) == 3
+
+# --- Predict: miss (the player varied and fooled it) ---
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_GalarianArticuno_PredictMiss
+Conditions:
+    Var(Predicted) != 0
+    Var(PredictionResolved) == 0
+
+# --- Mind Games: two-checkpoint countdown ---
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_GalarianArticuno_MindGamesTick
+Conditions:
+    Var(MindGamesCooldown) > 0
+
+Trigger: OnTurnStart
+Priority: 8
+Script: EncScript_GalarianArticuno_MindGamesOffer
+Conditions:
+    Var(Phase) <= 2
+    Var(MindGamesCooldown) == 0
+
+# --- Phase transitions ---
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_GalarianArticuno_Phase1Enter
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_GalarianArticuno_Phase1Enter
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_GalarianArticuno_Phase2Enter
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_GalarianArticuno_Phase2Enter
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 8
+Flags: Once, OnEnter
+Script: EncScript_GalarianArticuno_Phase3Enter
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 8
+Flags: Once, OnEnter
+Script: EncScript_GalarianArticuno_Phase3Enter
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# --- Mind Break, Phase 2 only: two-checkpoint countdown, same pattern as Mind Games ---
+Trigger: OnTurnEnd
+Priority: 21
+Script: EncScript_GalarianArticuno_MindBreakTick
+Conditions:
+    Var(Phase) == 2
+    Var(MindBreakCooldown) > 0
+
+Trigger: OnTurnStart
+Priority: 9
+Script: EncScript_GalarianArticuno_MindBreakFire
+Conditions:
+    Var(Phase) == 2
+    Var(MindBreakCooldown) == 0

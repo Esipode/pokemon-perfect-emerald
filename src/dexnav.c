@@ -1497,6 +1497,7 @@ static u16 GetEncounterLevelFromMapData(enum Species species, enum EncounterType
 
         for (i = 0; i < NUM_LAND_MONS_ENCOUNTER_SLOTS; i++)
         {
+            SetRandomizationSeedContext(headerId);
             if (GetRandomizedSpecies(landMonsInfo->wildPokemon[i].species) == species)
             {
                 sDexNavSearchDataPtr->baseSpecies = landMonsInfo->wildPokemon[i].species;
@@ -1514,6 +1515,7 @@ static u16 GetEncounterLevelFromMapData(enum Species species, enum EncounterType
 
         for (i = 0; i < NUM_WATER_MONS_ENCOUNTER_SLOTS; i++)
         {
+            SetRandomizationSeedContext(headerId);
             if (GetRandomizedSpecies(waterMonsInfo->wildPokemon[i].species) == species)
             {
                 sDexNavSearchDataPtr->baseSpecies = waterMonsInfo->wildPokemon[i].species;
@@ -1531,6 +1533,7 @@ static u16 GetEncounterLevelFromMapData(enum Species species, enum EncounterType
 
         for (i = 0; i < NUM_HIDDEN_MONS_ENCOUNTER_SLOTS; i++)
         {
+            SetRandomizationSeedContext(headerId);
             if (GetRandomizedSpecies(hiddenMonsInfo->wildPokemon[i].species) == species)
             {
                 sDexNavSearchDataPtr->baseSpecies = hiddenMonsInfo->wildPokemon[i].species;
@@ -1712,6 +1715,7 @@ static bool8 CapturedAllLandMons(u32 headerId)
     {
         for (i = 0; i < NUM_LAND_MONS_ENCOUNTER_SLOTS; ++i)
         {
+            SetRandomizationSeedContext(headerId);
             species = GetRandomizedSpecies(landMonsInfo->wildPokemon[i].species);
             if (species != SPECIES_NONE)
             {
@@ -1745,6 +1749,7 @@ static bool8 CapturedAllWaterMons(u32 headerId)
     {
         for (i = 0; i < NUM_WATER_MONS_ENCOUNTER_SLOTS; ++i)
         {
+            SetRandomizationSeedContext(headerId);
             species = GetRandomizedSpecies(waterMonsInfo->wildPokemon[i].species);
             if (species != SPECIES_NONE)
             {
@@ -1776,6 +1781,7 @@ static bool8 CapturedAllHiddenMons(u32 headerId)
     {
         for (i = 0; i < NUM_HIDDEN_MONS_ENCOUNTER_SLOTS; ++i)
         {
+            SetRandomizationSeedContext(headerId);
             species = GetRandomizedSpecies(hiddenMonsInfo->wildPokemon[i].species);
             if (species != SPECIES_NONE)
             {
@@ -1934,6 +1940,7 @@ static void DexNavLoadEncounterData(void)
     {
         for (i = 0; i < NUM_LAND_MONS_ENCOUNTER_SLOTS; i++)
         {
+            SetRandomizationSeedContext(headerId);
             species = GetRandomizedSpecies(landMonsInfo->wildPokemon[i].species);
             if (species != SPECIES_NONE && !SpeciesInArray(species, 0))
                 sDexNavUiDataPtr->landSpecies[grassIndex++] = species;
@@ -1945,6 +1952,7 @@ static void DexNavLoadEncounterData(void)
     {
         for (i = 0; i < NUM_WATER_MONS_ENCOUNTER_SLOTS; i++)
         {
+            SetRandomizationSeedContext(headerId);
             species = GetRandomizedSpecies(waterMonsInfo->wildPokemon[i].species);
             if (species != SPECIES_NONE && !SpeciesInArray(species, 1))
                 sDexNavUiDataPtr->waterSpecies[waterIndex++] = species;
@@ -1956,6 +1964,7 @@ static void DexNavLoadEncounterData(void)
     {
         for (i = 0; i < NUM_HIDDEN_MONS_ENCOUNTER_SLOTS; i++)
         {
+            SetRandomizationSeedContext(headerId);
             species = GetRandomizedSpecies(hiddenMonsInfo->wildPokemon[i].species);
             if (species != SPECIES_NONE && !SpeciesInArray(species, 2))
                 sDexNavUiDataPtr->hiddenSpecies[hiddenIndex++] = species;
@@ -2572,6 +2581,7 @@ bool32 TryFindHiddenPokemon(void)
         if (baseSpecies == SPECIES_NONE)
             return FALSE;
 
+        SetRandomizationSeedContext(headerId);
         species = GetRandomizedSpecies(baseSpecies);
 
         sDexNavSearchDataPtr = AllocZeroed(sizeof(struct DexNavSearch));

@@ -14,12 +14,8 @@ CeruleanCave_B1F_EventScript_TryRemoveMewtwo::
 	return
 
 CeruleanCave_B1F_OnTransition::
-	call_if_unset FLAG_FOUGHT_MEWTWO, CeruleanCave_B1F_EventScript_ShowMewtwo
+	updatelegendaryvisibility SPECIES_MEWTWO, FLAG_HIDE_MEWTWO
 	end
-
-CeruleanCave_B1F_EventScript_ShowMewtwo::
-	clearflag FLAG_HIDE_MEWTWO
-	return
 
 CeruleanCave_B1F_EventScript_Mewtwo::
 	lock
@@ -37,22 +33,14 @@ CeruleanCave_B1F_EventScript_Mewtwo::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, CeruleanCave_B1F_EventScript_DefeatedMewtwo
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, CeruleanCave_B1F_EventScript_RanFromMewtwo
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, CeruleanCave_B1F_EventScript_RanFromMewtwo
-	setflag FLAG_FOUGHT_MEWTWO
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, CeruleanCave_B1F_EventScript_CaughtMewtwo
 	release
 	end
 
-CeruleanCave_B1F_EventScript_DefeatedMewtwo::
+@ Only catching Mewtwo removes it for good; any other outcome leaves it here to be rechallenged.
+CeruleanCave_B1F_EventScript_CaughtMewtwo::
 	setflag FLAG_FOUGHT_MEWTWO
-	goto EventScript_RemoveStaticMon
-	end
-
-CeruleanCave_B1F_EventScript_RanFromMewtwo::
-	setvar VAR_0x8004, SPECIES_MEWTWO
-	goto EventScript_MonFlewAway
-	end
+	return
 
 CeruleanCave_B1F_Text_Mew::
 	.string "Mew!$"

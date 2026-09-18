@@ -947,13 +947,24 @@ void HandleSpeciesGfxDataChange(enum BattlerId battlerAtk, enum BattlerId battle
             else
                 targetSpecies = GetMonData(monDef, MON_DATA_SPECIES);
         }
+        else if (changeType == SPECIES_GFX_CHANGE_BATTLE_MON)
+        {
+            targetSpecies = gBattleMons[battlerAtk].species;
+        }
         else
         {
             targetSpecies = GetMonData(monAtk, MON_DATA_SPECIES);
         }
-        gBattleSpritesDataPtr->battlerData[battlerAtk].transformSpecies = targetSpecies;
 
-        if (changeType == SPECIES_GFX_CHANGE_TRANSFORM)
+        // A battle mon back in its own species is no longer wearing another's gfx, so the override
+        // has to be cleared - otherwise every later sprite reload keeps rebuilding the copy.
+        if (changeType == SPECIES_GFX_CHANGE_BATTLE_MON && !gBattleMons[battlerAtk].volatiles.transformed)
+            gBattleSpritesDataPtr->battlerData[battlerAtk].transformSpecies = SPECIES_NONE;
+        else
+            gBattleSpritesDataPtr->battlerData[battlerAtk].transformSpecies = targetSpecies;
+
+        if (changeType == SPECIES_GFX_CHANGE_TRANSFORM
+         || (changeType == SPECIES_GFX_CHANGE_BATTLE_MON && gBattleMons[battlerAtk].volatiles.transformed))
         {
             personalityValue = gTransformedPersonalities[battlerAtk];
             isShiny = gTransformedShininess[battlerAtk];
@@ -981,7 +992,8 @@ void HandleSpeciesGfxDataChange(enum BattlerId battlerAtk, enum BattlerId battle
         UpdateNickInHealthbox(gHealthboxSpriteIds[battlerAtk], &gParties[B_TRAINER_OPPONENT_A][gBattlerPartyIndexes[battlerAtk]]);
         TryAddPokeballIconToHealthbox(gHealthboxSpriteIds[battlerAtk], TRUE);
     }
-    else if (changeType == SPECIES_GFX_CHANGE_TRANSFORM)
+    else if (changeType == SPECIES_GFX_CHANGE_TRANSFORM
+          || (changeType == SPECIES_GFX_CHANGE_BATTLE_MON && gBattleMons[battlerAtk].volatiles.transformed))
     {
         BlendPalette(paletteOffset, 16, 6, RGB_WHITE);
         CpuCopy32(&gPlttBufferFaded[paletteOffset], &gPlttBufferUnfaded[paletteOffset], PLTT_SIZEOF(16));

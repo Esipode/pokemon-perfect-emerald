@@ -1,0 +1,241 @@
+Encounter: Regirock
+
+# Regirock, "The Ancient Fortress". Groudon is a ratchet you pry back down and Regice eats your
+# turns; Regirock is a WALL you have to pick the right tool for - and the wrong tool makes it
+# thicker. FORTIFICATION runs 0-5 and each layer is a visible defensive property rather than a
+# bigger number: 1 harder to damage, 2 Lucky Chant (no crits), 3 Reflect (physical halved), 4 Mist
+# (no stat drops), 5 it braces on a telegraph. It RISES off any physical move that is not one of
+# its weaknesses, off its own Rock moves and Curse, and off every turn the player fails to hurt it.
+# It FALLS for exactly one reason: a damaging Water/Grass/Ground/Fighting/Steel move - and that
+# lever is damage-independent, so a 4-power Bubble strips a layer as well as a Hydro Pump. That is
+# the safety valve that stops the ladder becoming a lockout.
+# Regirock also rebuilds on a cadence, spending its action: hurt it for 3% of its max HP that turn
+# and the reconstruction shatters for -1; let it finish and it gains a layer and heals 3%. At 50%
+# it starts throwing the fortress instead of hiding behind it, and Rockfall is REFUSED at
+# Fortification 0 - keeping the wall stripped is offence as well as defence. At 25% the mountain
+# sheds a layer every turn on its own and a fixed clock runs down to MOUNTAIN'S COLLAPSE, which
+# drops it to 8% however the damage race went.
+# Ability override rather than the species default: Regirock's slot-1 ability is Clear Body, which
+# would refuse every stat drop for the whole battle and make Fortification 4 a no-op. Sturdy is its
+# own hidden ability and is nearly inert here (OHKO is already refused by Immunities:, and the
+# survive-at-1 clause is subsumed by encsetsurvive), which is the point - it is the ABSENCE of Clear
+# Body, expressed with a legal ability.
+# No Survive: - the Collapse script sets it, so the AI reads Regirock as killable for three quarters
+# of the fight and the finisher is still guaranteed to run.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # the Fortification 0 rung of the ladder
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Ability: ABILITY_STURDY
+    Moves: MOVE_STONE_EDGE, MOVE_EARTHQUAKE, MOVE_HAMMER_ARM, MOVE_CURSE
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all thirteen here in order fixes
+# Phase..TurnGuard to 0..12.
+# 0 Phase (0 The Fortress Rises / 1 Mountain's Wrath / 2 Collapse / 3 Weakened), 1 Fort
+# (Fortification 0-5, the spine everything else derives from), 2 LastFort (tier last ANNOUNCED - the
+# re-fire latch), 3 Build (rebuild countdown), 4 Building (1 while a rebuild is in progress),
+# 5 BuildMark (boss HP% mark for the rebuild interrupt test), 6 HpMark (boss HP% mark at turn open,
+# for the quiet-turn test), 7 Fall (Rockfall countdown), 8 Collapse (Phase 2 finisher clock),
+# 9 Braced (1 if Regirock braced last turn - drives the alternating cadence AND suppresses the
+# quiet-turn growth), 10 Shift (per-turn one-change guard shared by the three move-event triggers,
+# in BOTH directions), 11 Shaken (per-turn guard for the sleep anti-cheese), 12 TurnGuard.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Regirock_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Fort) >= 0
+    Var(LastFort) >= 0
+    Var(Build) >= 0
+    Var(Building) >= 0
+    Var(BuildMark) >= 0
+    Var(HpMark) >= 0
+    Var(Fall) >= 0
+    Var(Collapse) >= 0
+    Var(Braced) >= 0
+    Var(Shift) >= 0
+    Var(Shaken) >= 0
+    Var(TurnGuard) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# the threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# selection, so whichever fires first permanently disables the other. Each is also gated on the
+# Phase value its own script overwrites, so a single huge hit that crosses two thresholds steps
+# through them in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Regirock_MountainsWrath
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Regirock_MountainsWrath
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Regirock_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Regirock_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+# The catch window. Phase 2 means the collapse clock is already running, so this can never pre-empt
+# it - and the collapse's own finisher (EncScript_Regirock_CollapseTick) is what guarantees the
+# fight reaches this point at all, by moving Regirock to 8% outright.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regirock_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regirock_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Anti-cheese. Sleep specifically, because unlike Regice - whose clock runs on checkpoints and does
+# not care whether it can act - every threatening thing Regirock does is an ACTION: Rockfall, Curse,
+# Rebuild, its whole offence. A permanently slept Regirock is a statue the player dismantles at
+# leisure. It is a PUNISHMENT rather than an immunity, so it reads differently from Kyogre's flat
+# refusal and Groudon's paralysis cure: the sleep is thrown off and the wall thickens for the
+# trouble. Paralysis and burn are left alone - Regirock is slow by design and wants to be slower,
+# and the burn chip is one of the few things that beats the quiet-turn clock.
+# STATUS1_SLEEP is a 3-bit turn counter, so the range test is the correct form. Runs ahead of
+# TurnOpen so the cure lands before the ladder is re-derived from the value it just raised.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_Regirock_WillNotSleep
+Conditions:
+    Var(Shaken) == 0
+    Var(Phase) <= 2
+    Battler(Boss).Status >= 1
+    Battler(Boss).Status <= 7
+
+# Once-per-turn scaffold. TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets immediately, so no branch out of it can leave it re-armed) and owns every countdown
+# plus the re-derivation of the whole Fortification ladder; TurnClose is self-disabling (gate
+# TurnGuard == 1, which it clears) and owns nothing but the per-turn guard resets.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Regirock_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The three Fortification shift triggers, sharing one Var(Shift) charge so exactly ONE move-driven
+# change lands per turn in either direction. An Event.* condition stays true for the whole dispatch
+# and cannot be moved by the script, so an event-reacting trigger has to gate on a var it sets;
+# Once would be wrong - it means once per BATTLE, and shifting the wall is the thing the player does
+# over and over.
+# At OnMoveEnd, Event.Battler is the battler that GOT HIT and Event.Target is the one that USED the
+# move - hence the asymmetry between the first two and the third. Event.MoveType is the move's BASE
+# type, so a Normal move turned Water by an ability neither breaks nor builds, consistent with how
+# Lugia, Ho-Oh and Groudon already read move types.
+
+# The break, given the lowest priority number of the three so it wins any same-checkpoint tie. The
+# five types Rock is weak to, and deliberately damage-INDEPENDENT: however thick the wall gets, the
+# tool to take it apart never degrades.
+Trigger: OnMoveEnd
+Priority: 15
+Script: EncScript_Regirock_Break
+Conditions:
+    Var(Shift) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+    Any:
+        Event.MoveType == TYPE_WATER
+        Event.MoveType == TYPE_GRASS
+        Event.MoveType == TYPE_GROUND
+        Event.MoveType == TYPE_FIGHTING
+        Event.MoveType == TYPE_STEEL
+
+# The fight's thesis: a physical hit that is NOT one of the breaker types packs the mountain
+# tighter. A player who leads with their biggest neutral physical attack is helping.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Regirock_Build
+Conditions:
+    Var(Shift) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Not:
+        Any:
+            Event.MoveType == TYPE_WATER
+            Event.MoveType == TYPE_GRASS
+            Event.MoveType == TYPE_GROUND
+            Event.MoveType == TYPE_FIGHTING
+            Event.MoveType == TYPE_STEEL
+
+# Regirock's own Rock moves and Curse feed the wall, so the player can watch it thicken off
+# Regirock's attacks and work the rule out from the other side. Earthquake and Hammer Arm do not -
+# two of four moves building is enough signal without making the rule unreadable.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Regirock_BossBuild
+Conditions:
+    Var(Shift) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_ROCK
+        Event.Move == MOVE_CURSE
+
+# The three OnTurnEnd resolutions. Each re-arms the counter it consumed to a value >= 2, so its own
+# condition is false the instant it finishes and no self-disabling guard var is needed. Every
+# countdown they re-arm is ticked at TurnOpen instead, one checkpoint away, so a tick can never eat
+# a step off a fresh re-arm.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Regirock_RebuildResolve
+Conditions:
+    Var(Building) == 1
+
+Trigger: OnTurnEnd
+Priority: 25
+Script: EncScript_Regirock_RockfallResolve
+Conditions:
+    Var(Fall) == 1
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Regirock_CollapseTick
+Conditions:
+    Var(Phase) == 2
+    Var(Collapse) == 1
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Regirock_TurnClose
+Conditions:
+
+    Var(TurnGuard) == 1

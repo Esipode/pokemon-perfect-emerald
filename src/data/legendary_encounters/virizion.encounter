@@ -1,0 +1,285 @@
+Encounter: Virizion
+
+# Virizion, "The Graceful Blade". One rule, stated in both directions:
+#   MOMENTUM IS VIRIZION'S ARMOUR. IT ONLY FLOWS WHILE ITS RHYTHM HOLDS - BREAK THE RHYTHM AND THE
+#   ARMOUR GOES WITH IT.
+#   MOMENTUM 0-5 (0-7 from Phase 1) IS the damage-reduction guard: EncScript_Virizion_ApplyFlow is
+#   its only writer and Momentum is its only input, written absolutely - 78 at 0, 97 at 7, three
+#   points a step. Unlike both siblings the phase does not own the guard; the meter does, so the
+#   Momentum callout carries the whole of guideline 14.
+#     +1  Virizion's side took health off you this turn
+#     +1  ...and nothing took health off Virizion (a flawless pass)
+#     +1  Virizion knocked one of your Pokemon out
+#     +1  every turn, unconditionally, once SACRED BLADE begins
+#     ->0 a turn Virizion's side took no health off you (Protect, a miss, a sleep turn, a resist)
+#     ->0 a super-effective type landed on it
+#     ->0 it is carrying a status at turn close
+#     ->0 its Speed stage is below neutral at turn close
+#   MOMENTUM buys Virizion evasion, not skin:
+#     3+  BLADE DANCE - on a turn the meter rose, its blow carries into a second scripted slash;
+#         plus +2 evasion, +1 Speed and a raised critical-hit ratio (encsetcrit)
+#     5+  UNTOUCHABLE (Phase 1+) - a telegraphed scripted dodge on a 2-turn cooldown, plus +1 Speed
+#     5   Phase 0's ceiling
+#     7   Untouchable's ceiling, and in SACRED BLADE the point the charge fires
+#   A break drops the meter to 0 and nothing more - that alone is 15-19 guard points and evasion,
+#   crit and Speed stripped in one beat. The fight is about the turns AFTER you take the armour off.
+# Phase 1 (50%) UNTOUCHABLE: raw Speed +10% written into the stats, the ceiling rises to 7, the
+#   scripted dodges go live, Blade Dance hits harder, slot 3 becomes Close Combat, and Virizion now
+#   SHEDS what slows it - a status is cleared at turn open and a lowered Speed stage climbs back one
+#   a turn. Status and Speed control stop being locks and become a per-turn cost.
+# Phase 2 (15%) SACRED BLADE: Momentum rises +1 EVERY turn regardless of whether Virizion landed
+#   anything, so only a real disruptor stops the climb. At 7 it fires SACRED SWORD for 32% of your
+#   side and falls back to 3. Break the charge instead and it is left EXHAUSTED: meter 0, -1
+#   Def/Sp. Def, and it loses its next action. Survive: True carries the fight to 1 HP.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY (guideline 8). In Phase 0 a status or a Speed drop holds
+#   the meter at 0 for as long as the player maintains it - a genuinely strong opening counterplay,
+#   and meant to be. From 50% Virizion sheds both, so they keep working but cost a move every turn.
+#   Sacred Sword (fixed slot) ignores defensive boosts and evasion; Toxic is flat and, being a
+#   status, holds the meter down in Phase 0.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Virizion_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # Momentum 0. Every later value is written absolutely by
+                                # EncScript_Virizion_ApplyFlow, which _Intro calls on turn 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Grass/Fighting is 4x weak to FLYING - exactly the spike the cap
+                                # exists to flatten, and Flying coverage is everywhere
+    FlatToxicDamage: True
+    Survive: True               # load-bearing: 1 HP is what ends SACRED BLADE and opens the catch
+                                # window, and an oversized hit into a Momentum-0 guard of 78 could
+                                # otherwise skip the whole last phase. Cleared in _Spent
+    Ability: ABILITY_JUSTIFIED  # its own. A Dark move raises its Attack, so the obvious neutral
+                                # coverage answer feeds it
+    Moves: MOVE_SACRED_SWORD, MOVE_LEAF_BLADE, MOVE_QUICK_ATTACK, MOVE_MAGICAL_LEAF
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..StepGuard to 0..15. No var-to-var comparison appears anywhere in this design; every test is
+# against a literal, the two ceilings (5 and 7) are reached by branching on Phase first, and
+# ENC_SNAP_DAMAGE is the engine's own answer to "subtract one value from another".
+# 0 Phase (0 The Graceful Blade / 1 Untouchable / 2 Sacred Blade / 3 Spent),
+# 1 Momentum (0-5, or 0-7 from Phase 1), 2 LastMom (the last ANNOUNCED Momentum - the callout's
+# re-fire latch), 3 Tier (which Momentum perks are applied: 0 none / 1 the 3+ set / 2 the 5+ set),
+# 4 TurnGuard (the once-per-turn scaffold), 5 Landed (Virizion's side took HP off the player this
+# turn), 6 Broke (a break already fired this turn - the de-duplicator), 7 Rose (the meter rose this
+# turn - Blade Dance's gate), 8 Danced (Blade Dance already fired this turn), 9 PlayerMark (player
+# HP% at turn open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 10 BossMark (Virizion HP% at
+# turn open; likewise), 11 Scratch (the copy ENC_SNAP_DAMAGE consumes, so a mark survives being
+# measured against), 12 DodgeCd (turns until the scripted dodge may fire again), 13 EventGuard
+# (per-turn guard shared by OnSwitchIn and OnFaint, so a forced replacement is not double-counted),
+# 14 Ultimate (how many Sacred Swords have fired - drives the escalating line),
+# 15 StepGuard (per-turn guard for _Footing's one-stage Speed recovery, so it does not re-select
+# inside one checkpoint's re-evaluation loop while Speed is still below neutral).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Virizion_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Momentum) >= 0
+    Var(LastMom) >= 0
+    Var(Tier) >= 0
+    Var(TurnGuard) >= 0
+    Var(Landed) >= 0
+    Var(Broke) >= 0
+    Var(Rose) >= 0
+    Var(Danced) >= 0
+    Var(PlayerMark) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(DodgeCd) >= 0
+    Var(EventGuard) >= 0
+    Var(Ultimate) >= 0
+    Var(StepGuard) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# SELECTION, so whichever fires first permanently disables the other. All three sit below _TurnClose
+# (80), so at an OnTurnEnd where the player's damage crossed a threshold the transition runs first
+# and everything after it sees the new Phase. Same shape as Dialga, Palkia and both siblings.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Virizion_Untouchable
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Virizion_Untouchable
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Virizion_SacredBlade
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Virizion_SacredBlade
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Virizion_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Virizion_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. Ticks the dodge cooldown, snapshots the two HP marks the turn is
+# measured against, runs the recurring flow line, and clears the per-turn state. TurnGuard is set
+# immediately so no branch out of the script can leave it re-armed.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Virizion_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The anti-abuse pair, Phase 1+ only. Priority above _TurnOpen (10) so they see the per-turn state
+# it just reset. In Phase 0 neither exists: a status and a Speed drop stick and hold the meter at 0.
+Trigger: OnTurnStart
+Priority: 12
+Script: EncScript_Virizion_Shed
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Battler(Boss).Status >= 1
+
+Trigger: OnTurnStart
+Priority: 13
+Script: EncScript_Virizion_Footing
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(StepGuard) == 0
+    Battler(Boss).Stat(STAT_SPEED) < DEFAULT_STAT_STAGE
+
+# The telegraphed dodge. Announced before the player's move resolves, so the turn can be spent on
+# setup, a heal or a switch instead. Set at OnTurnStart it covers the whole turn and expires on its
+# own; the 2-turn cooldown is DodgeCd, decremented in _TurnOpen.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Virizion_Dodge
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Momentum) >= 5
+    Var(DodgeCd) == 0
+
+# THE BREAK-BY-TYPE trigger. A Flying / Fire / Ice / Poison / Psychic / Fairy move landed on
+# Virizion - exactly Grass/Fighting's weaknesses, so "a super-effective type landed on it" is
+# expressible without an effectiveness operand. At OnMoveEnd Event.Battler is the battler that GOT
+# HIT. Self-disables through Broke, which _Break sets; nesting depth 2, well inside the limit of 4.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Virizion_BreakType
+Conditions:
+    Var(Broke) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Var(Momentum) >= 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_FLYING
+        Event.MoveType == TYPE_FIRE
+        Event.MoveType == TYPE_ICE
+        Event.MoveType == TYPE_POISON
+        Event.MoveType == TYPE_PSYCHIC
+        Event.MoveType == TYPE_FAIRY
+
+# A player Pokemon went down. EventGuard stops the replacement switch-in being processed a second
+# time; the +1 is applied by _TheyFell.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Virizion_TheyFell
+Conditions:
+    Var(EventGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when
+# every var is 0. Sets EventGuard and nothing else - a mid-turn switch (U-turn, Eject Button) only
+# exists here so a faint later in the same turn is not double-counted.
+Trigger: OnSwitchIn
+Priority: 31
+Script: EncScript_Virizion_TheyEntered
+Conditions:
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE LEDGER. Runs last of the OnTurnEnd measuring scripts that read HP, so it sees a finished turn:
+# the master rule (Virizion's side took no health off you -> break), the flawless-pass bonus, the
+# Sacred Blade auto-climb, the guard restored absolutely, and the callout. Self-disables by clearing
+# TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Virizion_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# _Slowed (82) and _Statused (83) run AFTER _TurnClose (80) deliberately: _TurnClose raises the
+# meter, then these two take it away in the same checkpoint, so a player holding Virizion slowed
+# sees the meter tick up and immediately collapse. The Broke == 0 gate is what self-disables them -
+# _Break sets Broke, and it also covers "a break already fired this turn" (the master rule, or a
+# super-effective hit at OnMoveEnd), so at most one of the three break paths spends a turn.
+Trigger: OnTurnEnd
+Priority: 82
+Script: EncScript_Virizion_Slowed
+Conditions:
+    Var(Phase) <= 2
+    Var(Broke) == 0
+    Var(Momentum) >= 1
+    Battler(Boss).Stat(STAT_SPEED) < DEFAULT_STAT_STAGE
+
+Trigger: OnTurnEnd
+Priority: 83
+Script: EncScript_Virizion_Statused
+Conditions:
+    Var(Phase) <= 2
+    Var(Broke) == 0
+    Var(Momentum) >= 1
+    Battler(Boss).Status >= 1
+
+# BLADE DANCE's second slash. Runs after both disruptor triggers, so a meter that rose and was then
+# broken does not also get to dance. Gated on Rose, so it only follows a turn the meter moved.
+Trigger: OnTurnEnd
+Priority: 85
+Script: EncScript_Virizion_Dance
+Conditions:
+    Var(Phase) <= 2
+    Var(Momentum) >= 3
+    Var(Rose) == 1
+    Var(Danced) == 0
+
+# SACRED SWORD. Runs AFTER _TurnClose (80), which is what pushes Momentum to 7 in SACRED BLADE; it
+# is selected on the re-evaluation pass that follows (determinism rule 3), exactly like Terrakion's
+# Collapse. Self-disables by resetting Momentum to 3.
+Trigger: OnTurnEnd
+Priority: 91
+Script: EncScript_Virizion_SacredSword
+Conditions:
+    Var(Phase) == 2
+    Var(Momentum) >= 7

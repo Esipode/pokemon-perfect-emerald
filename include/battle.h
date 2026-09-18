@@ -5,6 +5,7 @@
 #include "constants/battle_end_turn.h"
 #include "constants/battle_switch_in.h"
 #include "constants/battle_stat_change.h"
+#include "constants/battle_encounter.h"
 #include "constants/abilities.h"
 #include "constants/battle.h"
 #include "constants/battle_move_resolution.h"
@@ -579,7 +580,102 @@ struct EventStates
     u32 battlerSwitchIn:8; // SwitchInFirstEventBlock, SwitchInSecondEventBlock
     u32 moveEndBlock:8;
     enum StatChangeResolution resolution:8;
+    u32 encounterTurnEnd:1;   // TRUE once the ENC_ON_TURN_END checkpoint has been dispatched this turn
+    u32 encounterTurnStart:1; // TRUE once the ENC_ON_TURN_START checkpoint has been dispatched this turn
+    u32 encounterTurnStartRunning:1; // TRUE while the ENC_ON_TURN_START dispatch owns gCurrentActionFuncId
 };
+
+// What just happened, for the checkpoint currently dispatching. Not every checkpoint sets every
+// field - see sCheckpointEventFields in battle_encounter.c and read fields through
+// GetEncounterEventField, which asserts on a field the current checkpoint didn't populate rather
+// than returning a stale value from an earlier checkpoint.
+struct EncounterEvent
+{
+    u8  battler;        // subject of the event
+    u8  target;         // secondary battler, where meaningful
+    u16 move;            // enum Move
+    u8  cause;           // enum EncounterEventCause
+    s16 oldValue;        // e.g. HP before the change - cannot be recovered from live state
+    s16 newValue;        // e.g. HP after
+};
+
+// Per-battle encounter state. Embedded (not pointed to) so BattleStruct's own
+// zero-clear at battle start covers it for free. Author-defined vars live outside this struct, in
+// gEncounterVars (src/battle_encounter.c) - see sENCOUNTER_VAR (constants/battle_encounter.h) for
+// why: they need a link-time constant address for battle scripts to encode, which a member of this
+// struct (reached only through the gBattleStruct heap pointer) can't offer.
+struct EncounterRuntime
+{
+    enum EncounterId id;                        // ENCOUNTER_NONE when inactive
+    u32 firedTriggers;                          // bitmap, one bit per trigger (Stage 04)
+    u8  scriptsThisCheckpoint;                  // runaway guard (Stage 07)
+    u8  checkpoint;                             // enum EncounterCheckpoint currently dispatching
+    // Cleared on checkpoint *entry* only (TryRunEncounterCheckpoint, when checkpoint changes), not
+    // on each dispatch. The Stage 07 re-evaluation loop calls TryRunEncounterCheckpoint repeatedly
+    // for the same checkpoint; the event must keep describing the original event that opened the
+    // checkpoint so a later pass's trigger can still see what an earlier pass was reacting to.
+    struct EncounterEvent event;
+    u16 prevHp[MAX_BATTLERS_COUNT];             // threshold edge detection (Stage 10)
+    // CHANGE_HP's per-battler loop cursor (Stage 15). Lives here rather than as a callnative local
+    // because the loop spans multiple battle-script instructions (goto) that each can yield across
+    // frames waiting on the health-bar controller handshake - a plain C local can't survive that.
+    u32 changeHpRemaining;                      // bitmask of battlers the current CHANGE_HP hasn't done yet
+    s16 changeHpAmount;                         // its amount arg; positive = heal, negative = damage
+    u8  changeHpMode;                           // enum EncounterAmountMode; PERCENT reads amount as % of max HP,
+                                                // TO_PERCENT as the destination % to move HP to
+    // Per-battler combat modifiers. Seeded from the encounter's properties at ENC_ON_BATTLE_START
+    // (boss only) and changed afterwards by encsetdamagereduction / encsetimmunity /
+    // encsetcaptypeeffectiveness / encsetflattoxicdamage.
+    u8 damageReduction[MAX_BATTLERS_COUNT];     // percent 0..ENC_MAX_DAMAGE_REDUCTION
+    u8 immunities[MAX_BATTLERS_COUNT];          // ENC_IMMUNE_* bits
+    u8 capTypeEffectiveness[MAX_BATTLERS_COUNT]; // bool8: clamp incoming type effectiveness to 2x
+    u8 flatToxicDamage[MAX_BATTLERS_COUNT];     // bool8: disable Toxic's per-turn counter ramp
+    u8 survive[MAX_BATTLERS_COUNT];             // bool8: HP can't be taken below 1 through the damage formula or a passive tick
+    // Bitmask of battlers that were protected at any point this turn, for ENC_OP_PROTECTED. Latched
+    // rather than read live because TurnValuesCleanUp wipes gProtectStructs[].protected before
+    // end-of-turn effects, so a delayed effect resolving at ENC_ON_TURN_END would always read FALSE.
+    // Cleared alongside the engine's own full protect reset, after the OnTurnEnd dispatch.
+    u8 protectedThisTurn;
+    u8 ballPolicy;                              // enum EncounterBallPolicy
+    u8 catchRate;                               // ENC_CATCH_RATE_NONE, or a catch rate to use instead of the species'
+    // Catch-window damage guard (UpdateEncounterCatchGuard, battle_encounter.c). While Poke Balls
+    // are allowed the boss takes maximum reduced damage so a stray hit can't kill the catch target;
+    // any HP the boss recovers lifts it until it's back in the window without having healed.
+    u8 catchGuard;                              // bool8: guard currently forcing the boss's reduction
+    u8 catchGuardDr;                            // the encounter's own boss reduction, restored when it lifts
+    // ANALYSIS (encadapt / encpurgeadapt). Per-battler FIFO of type-keyed damage resistances: slot 0
+    // is the oldest, and adding past the capacity a script asks for shifts the array down. TYPE_NONE
+    // marks an empty slot, so a zeroed struct starts every battler with an empty board for free.
+    u8 adaptType[MAX_BATTLERS_COUNT][ENC_MAX_ADAPTATIONS];     // enum Type
+    u8 adaptPercent[MAX_BATTLERS_COUNT][ENC_MAX_ADAPTATIONS];  // 0..ENC_MAX_ADAPT_PERCENT
+    // Set by BS_EncounterFormChange, read and cleared by BS_JumpIfFormChangeAbilityUnchanged: TRUE
+    // when the form just entered has the same ability as the form left, so the appended
+    // switchinabilities presentation (and its ability pop-up) is skipped.
+    u8 formChangeAbilityUnchanged;                             // bool8
+};
+
+// Scales damage aimed at battler by its encounter damage reduction, floored at 1 so a reduced hit
+// is never silently turned into a no-op. Returns damage unchanged with no encounter active, with no
+// reduction set, or for a heal (a non-positive amount). Implemented in src/battle_encounter.c;
+// declared here because SetPassiveDamageAmount below is the choke point every passive HP tick goes
+// through, and battle_encounter.h can't be included from this header.
+s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage);
+
+// Scales damage aimed at battler by whatever type-keyed adaptation it holds for moveType, floored
+// at 1 for the same reason. Separate from ApplyEncounterDamageReduction rather than a wider
+// signature on it: that function is also the choke point every passive HP tick goes through, and
+// weather, poison and recoil carry no move type for an adaptation to match against.
+s32 ApplyEncounterTypeAdaptation(enum BattlerId battler, enum Type moveType, s32 damage);
+
+// Scales healing battler drains OUT OF sourceBattler by the encounter's authored damage reduction,
+// floored at 1 for the same reason. Declared beside the two above and implemented alongside them in
+// src/battle_encounter.c: DamageReduction: cuts what reaches the boss but nothing cuts what the boss
+// deals, and a drain move turns that undiminished damage straight into healing.
+s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBattler, s32 heal);
+
+// Scales Grassy Terrain's end-turn heal on the boss by the same authored reduction, floored at 1.
+// Unchanged for any other battler or with no encounter active.
+s32 ApplyEncounterTerrainHealReduction(enum BattlerId battler, s32 heal);
 
 // Cleared at the beginning of the battle. Fields need to be cleared when needed manually otherwise.
 struct BattleStruct
@@ -587,6 +683,7 @@ struct BattleStruct
     struct BattlerState battlerState[MAX_BATTLERS_COUNT];
     struct PartyState partyState[MAX_BATTLE_TRAINERS][PARTY_SIZE];
     struct EventStates eventState;
+    struct EncounterRuntime encounter;
     struct FutureSight futureSight[MAX_BATTLERS_COUNT];
     struct Wish wish[MAX_BATTLERS_COUNT];
     u16 moveTarget[MAX_BATTLERS_COUNT];
@@ -1201,6 +1298,7 @@ static inline void SetPassiveDamageAmount(enum BattlerId battler, s32 value)
 {
     if (value == 0)
         value = 1;
+    value = ApplyEncounterDamageReduction(battler, value);
     gBattleStruct->passiveHpUpdate[battler] = value;
 }
 

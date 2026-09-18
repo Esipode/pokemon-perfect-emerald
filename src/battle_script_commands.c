@@ -8,6 +8,7 @@
 #include "battle_anim_scripts.h"
 #include "battle_ai_record.h"
 #include "battle_ai_util.h"
+#include "battle_encounter.h"
 #include "battle_scripts.h"
 #include "battle_switch_in.h"
 #include "battle_environment.h"
@@ -1006,9 +1007,12 @@ static void Cmd_datahpupdate(void)
 {
     CMD_ARGS(u8 battler, u8 assuranceDouble);
     enum BattlerId battler = GetBattlerForBattleScript(cmd->battler);
+    u16 hpBefore;
 
     if (gBattleControllerExecFlags)
         return;
+
+    hpBefore = gBattleMons[battler].hp;
 
     if (gBattleStruct->passiveHpUpdate[battler] < 0)
     {
@@ -1041,6 +1045,26 @@ static void Cmd_datahpupdate(void)
         0,
         sizeof(gBattleMons[battler].hp), &gBattleMons[battler].hp);
     MarkBattlerForControllerExec(battler);
+
+    // Record the HP change for encounter checkpoints; no dispatch here - a health-bar animation
+    // may still be in flight (see the gBattleControllerExecFlags guard above). ENC_ON_MOVE_END /
+    // ENC_ON_TURN_END pick this up once it's safe to run a script.
+    if (IsEncounterActive())
+    {
+        // Party state is committed for an absent battler by ENC_ON_FAINT time; an encounter
+        // script must not revive it. Recovery is to ignore the HP change.
+        assertf(!(gBattleStruct->encounter.checkpoint == ENC_ON_FAINT
+               && (gAbsentBattlerFlags & (1u << battler))
+               && gBattleMons[battler].hp > hpBefore),
+                "encounter script raised HP on absent battler %d at ENC_ON_FAINT", battler)
+        {
+            gBattleMons[battler].hp = hpBefore;
+        }
+
+        gBattleStruct->encounter.event.oldValue = hpBefore;
+        gBattleStruct->encounter.event.newValue = gBattleMons[battler].hp;
+        gBattleStruct->encounter.event.battler = battler;
+    }
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -2914,6 +2938,12 @@ static void Cmd_endselectionscript(void)
 
 static void PlayAnimation(enum BattlerId battler, u8 animId, const u16 *argPtr, const u8 *nextInstr)
 {
+    // The playanimation macros default argPtr to NULL for the animations that ignore the argument,
+    // so it can't be dereferenced blind - address 0 is the BIOS, which reads back as whatever it
+    // last prefetched. AnimTask_GetBattlersFromArg splits this value into gBattleAnimAttacker and
+    // gBattleAnimTarget, so garbage here becomes an out-of-range battler id downstream.
+    u16 arg = (argPtr != NULL) ? *argPtr : 0;
+
     if (B_TERRAIN_BG_CHANGE == FALSE && animId == B_ANIM_RESTORE_BG)
     {
         // workaround for .if not working
@@ -2926,6 +2956,7 @@ static void PlayAnimation(enum BattlerId battler, u8 animId, const u16 *argPtr, 
      || animId == B_ANIM_MEGA_EVOLUTION
      || animId == B_ANIM_ILLUSION_OFF
      || animId == B_ANIM_FORM_CHANGE
+     || animId == B_ANIM_ENCOUNTER_TRANSFORM
      || animId == B_ANIM_SUBSTITUTE_FADE
      || animId == B_ANIM_PRIMAL_REVERSION
      || animId == B_ANIM_POWER_CONSTRUCT
@@ -2934,7 +2965,7 @@ static void PlayAnimation(enum BattlerId battler, u8 animId, const u16 *argPtr, 
      || animId == B_ANIM_TERA_ACTIVATE
      || animId == B_ANIM_FORM_CHANGE_INSTANT)
     {
-        BtlController_EmitBattleAnimation(battler, B_COMM_TO_CONTROLLER, animId, *argPtr);
+        BtlController_EmitBattleAnimation(battler, B_COMM_TO_CONTROLLER, animId, arg);
         MarkBattlerForControllerExec(battler);
         gBattlescriptCurrInstr = nextInstr;
     }
@@ -2950,7 +2981,7 @@ static void PlayAnimation(enum BattlerId battler, u8 animId, const u16 *argPtr, 
           || animId == B_ANIM_SNOW_CONTINUES
           || animId == B_ANIM_FOG_CONTINUES)
     {
-        BtlController_EmitBattleAnimation(battler, B_COMM_TO_CONTROLLER, animId, *argPtr);
+        BtlController_EmitBattleAnimation(battler, B_COMM_TO_CONTROLLER, animId, arg);
         MarkBattlerForControllerExec(battler);
         gBattlescriptCurrInstr = nextInstr;
     }
@@ -2960,7 +2991,7 @@ static void PlayAnimation(enum BattlerId battler, u8 animId, const u16 *argPtr, 
     }
     else
     {
-        BtlController_EmitBattleAnimation(battler, B_COMM_TO_CONTROLLER, animId, *argPtr);
+        BtlController_EmitBattleAnimation(battler, B_COMM_TO_CONTROLLER, animId, arg);
         MarkBattlerForControllerExec(battler);
         gBattlescriptCurrInstr = nextInstr;
     }
@@ -5064,6 +5095,11 @@ static void Cmd_setprotectlike(void)
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_PROTECTED_ITSELF;
     }
 
+    // The single choke point every Protect-like move passes through, so ENC_OP_PROTECTED's latch is
+    // set here rather than in each move's script. Endure takes the branch above and sets no protect.
+    if (gProtectStructs[gBattlerAttacker].protected != PROTECT_NONE)
+        gBattleStruct->encounter.protectedThisTurn |= 1u << gBattlerAttacker;
+
     gBattleMons[gBattlerAttacker].volatiles.consecutiveMoveUses++;
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
@@ -5855,6 +5891,62 @@ static void Cmd_setfocusenergy(void)
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
 
+// Copies species, stats, stat stages, types, ability and moveset from target onto attacker,
+// leaving attacker's HP, level, item and status alone. The success body of the Transform move,
+// shared with the encounter TRANSFORM command (BS_EncounterTransform). Re-copying an already
+// transformed battler keeps its first-captured original species so a later revert has a target.
+static void ApplyTransformInto(enum BattlerId attacker, enum BattlerId target)
+{
+    s32 i;
+    u8 *battleMonAttacker, *battleMonTarget;
+    u8 timesGotHit;
+    bool32 wasTransformed = gBattleMons[attacker].volatiles.transformed;
+
+    gChosenMove = MOVE_UNAVAILABLE;
+    gBattleMons[attacker].volatiles.transformed = TRUE;
+    gBattleMons[attacker].volatiles.disabledMove = MOVE_NONE;
+    gBattleMons[attacker].volatiles.disableTimer = 0;
+    if (!wasTransformed)
+        gBattleMons[attacker].volatiles.transformedMonSpecies = gBattleMons[attacker].species;
+    gBattleMons[attacker].volatiles.transformedMonPID = gBattleMons[target].personality;
+
+    if (B_TRANSFORM_SHINY >= GEN_4)
+        gBattleMons[attacker].volatiles.isTransformedMonShiny = gBattleMons[target].isShiny;
+    else
+        gBattleMons[attacker].volatiles.isTransformedMonShiny = gBattleMons[attacker].isShiny;
+    gBattleMons[attacker].volatiles.mimickedMoves = 0;
+    gBattleMons[attacker].volatiles.usedMoves = 0;
+
+    timesGotHit = GetBattlerPartyState(target)->timesGotHit;
+    GetBattlerPartyState(attacker)->timesGotHit = timesGotHit;
+
+    PREPARE_SPECIES_BUFFER(gBattleTextBuff1, gBattleMons[target].species)
+
+    battleMonAttacker = (u8 *)(&gBattleMons[attacker]);
+    battleMonTarget = (u8 *)(&gBattleMons[target]);
+
+    for (i = 0; i < offsetof(struct BattlePokemon, pp); i++)
+        battleMonAttacker[i] = battleMonTarget[i];
+
+    gBattleMons[attacker].volatiles.overwrittenAbility = GetBattlerAbility(target);
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        u32 pp = GetMovePP(gBattleMons[attacker].moves[i]);
+        if (pp < 5)
+            gBattleMons[attacker].pp[i] = pp;
+        else
+            gBattleMons[attacker].pp[i] = 5;
+    }
+
+    // update AI knowledge
+    RecordAllMoves(attacker);
+    RecordAbilityBattle(attacker, gBattleMons[attacker].ability);
+    SortBattlersByRawSpeed(gBattlersByRawSpeed);
+
+    BtlController_EmitResetActionMoveSelection(attacker, B_COMM_TO_CONTROLLER, RESET_MOVE_SELECTION);
+    MarkBattlerForControllerExec(attacker);
+}
+
 static void Cmd_transformdataexecution(void)
 {
     CMD_ARGS();
@@ -5870,52 +5962,7 @@ static void Cmd_transformdataexecution(void)
     }
     else
     {
-        s32 i;
-        u8 *battleMonAttacker, *battleMonTarget;
-        u8 timesGotHit;
-
-        gChosenMove = MOVE_UNAVAILABLE;
-        gBattleMons[gBattlerAttacker].volatiles.transformed = TRUE;
-        gBattleMons[gBattlerAttacker].volatiles.disabledMove = MOVE_NONE;
-        gBattleMons[gBattlerAttacker].volatiles.disableTimer = 0;
-        gBattleMons[gBattlerAttacker].volatiles.transformedMonSpecies = gBattleMons[gBattlerAttacker].species;
-        gBattleMons[gBattlerAttacker].volatiles.transformedMonPID = gBattleMons[gBattlerTarget].personality;
-
-        if (B_TRANSFORM_SHINY >= GEN_4)
-            gBattleMons[gBattlerAttacker].volatiles.isTransformedMonShiny = gBattleMons[gBattlerTarget].isShiny;
-        else
-            gBattleMons[gBattlerAttacker].volatiles.isTransformedMonShiny = gBattleMons[gBattlerAttacker].isShiny;
-        gBattleMons[gBattlerAttacker].volatiles.mimickedMoves = 0;
-        gBattleMons[gBattlerAttacker].volatiles.usedMoves = 0;
-
-        timesGotHit = GetBattlerPartyState(gBattlerTarget)->timesGotHit;
-        GetBattlerPartyState(gBattlerAttacker)->timesGotHit = timesGotHit;
-
-        PREPARE_SPECIES_BUFFER(gBattleTextBuff1, gBattleMons[gBattlerTarget].species)
-
-        battleMonAttacker = (u8 *)(&gBattleMons[gBattlerAttacker]);
-        battleMonTarget = (u8 *)(&gBattleMons[gBattlerTarget]);
-
-        for (i = 0; i < offsetof(struct BattlePokemon, pp); i++)
-            battleMonAttacker[i] = battleMonTarget[i];
-
-        gBattleMons[gBattlerAttacker].volatiles.overwrittenAbility = GetBattlerAbility(gBattlerTarget);
-        for (i = 0; i < MAX_MON_MOVES; i++)
-        {
-            u32 pp = GetMovePP(gBattleMons[gBattlerAttacker].moves[i]);
-            if (pp < 5)
-                gBattleMons[gBattlerAttacker].pp[i] = pp;
-            else
-                gBattleMons[gBattlerAttacker].pp[i] = 5;
-        }
-
-        // update AI knowledge
-        RecordAllMoves(gBattlerAttacker);
-        RecordAbilityBattle(gBattlerAttacker, gBattleMons[gBattlerAttacker].ability);
-        SortBattlersByRawSpeed(gBattlersByRawSpeed);
-
-        BtlController_EmitResetActionMoveSelection(gBattlerAttacker, B_COMM_TO_CONTROLLER, RESET_MOVE_SELECTION);
-        MarkBattlerForControllerExec(gBattlerAttacker);
+        ApplyTransformInto(gBattlerAttacker, gBattlerTarget);
         gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_TRANSFORMED;
     }
 }
@@ -6106,7 +6153,8 @@ static void Cmd_painsplitdmgcalc(void)
 {
     CMD_ARGS(const u8 *failInstr);
 
-    if (!(DoesSubstituteBlockMove(gBattlerAttacker, gBattlerTarget, gCurrentMove)))
+    if (!(DoesSubstituteBlockMove(gBattlerAttacker, gBattlerTarget, gCurrentMove))
+     && !DoesEncounterGrantImmunity(gBattlerTarget, ENC_IMMUNE_HP_SWAP))
     {
         s32 hpDiff = (gBattleMons[gBattlerAttacker].hp + GetNonDynamaxHP(gBattlerTarget)) / 2;
 
@@ -7977,6 +8025,8 @@ static u32 ComputeCaptureOdds(u32 wildMonBattler, u32 playerBattler)
 
     if (gBattleTypeFlags & BATTLE_TYPE_SAFARI)
         catchRate = gBattleStruct->safariCatchFactor * 1275 / 100;
+    else if (GetEncounterCatchRate() != ENC_CATCH_RATE_NONE)
+        catchRate = GetEncounterCatchRate(); // encounter CatchRate: property / encsetcatchrate
     else
         catchRate = gSpeciesInfo[battleMon->species].catchRate;
 
@@ -8211,6 +8261,12 @@ static void Cmd_handleballthrow(void)
         BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_3_SHAKES_SUCCESS);
         MarkBattlerForControllerExec(gBattlerAttacker);
         gBattlescriptCurrInstr = BattleScript_WallyBallThrow;
+    }
+    else if (IsEncounterBlockingBalls())
+    {
+        BtlController_EmitBallThrowAnim(gBattlerAttacker, B_COMM_TO_CONTROLLER, BALL_TRAINER_BLOCK);
+        MarkBattlerForControllerExec(gBattlerAttacker);
+        gBattlescriptCurrInstr = BattleScript_EncounterCannotCatch;
     }
     else if (MonoType_IsEnabled() && !MonoType_IsSpeciesAllowed(gBattleMons[gBattlerTarget].species))
     {
@@ -8729,6 +8785,7 @@ static u16 *GetBattlerStat(struct BattlePokemon *battler, enum Stat stat)
     case STAT_DEF:   return &battler->defense;
     case STAT_SPATK: return &battler->spAttack;
     case STAT_SPDEF: return &battler->spDefense;
+    case STAT_SPEED: return &battler->speed;
     default:         return NULL;
     }
 }
@@ -12514,3 +12571,2093 @@ void BS_TryDoMoveEffectsBeforeMoves(void)
 
     gBattlescriptCurrInstr = cmd->nextInstr;
 }
+
+// Stage 15: encounter command vocabulary. Each takes an EncounterTarget (constants/
+// battle_encounter.h) instead of a raw battler bank, so one call reaches every battler a target
+// resolves to in both singles and doubles - see ResolveEncounterTarget (battle_encounter.h).
+
+// CHANGE_HP begin/step pair (encchangehp, asm/macros/battle_script.inc). Begin resolves the target
+// once into runtime->changeHpRemaining; step consumes one battler per call, falling through into
+// the existing passive healthbarupdate/datahpupdate opcodes for it so the health bar
+// still animates - CHANGE_HP reuses that presentation rather than mutating HP silently. Split in
+// two because a target set needs one healthbarupdate/datahpupdate pair per battler, and those can
+// each span multiple frames waiting on the controller; a single native call can't do that.
+void BS_EncounterChangeHpBegin(void)
+{
+    NATIVE_ARGS(u8 target, s16 amount, u8 mode);
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+
+    runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
+
+    // A named battler - single-slot or group - can already be fainted by the time this command
+    // runs: an earlier command in the same script (a mark tick, a drain) can take it out first, and
+    // a group target's membership can include a battler the triggering event just fainted before
+    // its replacement is in. Either way that's a normal runtime race, not an authoring mistake, so
+    // it's dropped here quietly rather than asserting in Step.
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (!IsBattlerAlive(battler))
+            runtime->changeHpRemaining &= ~(1u << battler);
+    }
+
+    runtime->changeHpAmount = cmd->amount;
+    runtime->changeHpMode = cmd->mode;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// The HP one battler gains (positive) or loses (negative) for the current CHANGE_HP. ENC_AMOUNT_
+// PERCENT is resolved per battler rather than once in Begin, since in a group target each battler
+// has its own max HP. A non-zero percent never rounds down to nothing - a "heal 5%" that silently
+// did nothing on a small Pokemon would read as a broken script.
+static s32 EncounterChangeHpAmountFor(enum BattlerId battler)
+{
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    s32 amount = runtime->changeHpAmount;
+    s32 scaled;
+
+    // TO_PERCENT is an absolute destination, not a delta: work out the HP that percentage of max
+    // stands for and return the difference from where the battler is now, so the same heal/damage
+    // path below carries it. A non-zero target percentage never resolves to 0 HP - that would faint
+    // a battler a script asked to restore.
+    if (runtime->changeHpMode == ENC_AMOUNT_TO_PERCENT)
+    {
+        s32 target = (s32)(((s64)gBattleMons[battler].maxHP * amount) / 100);
+        if (target < 1 && amount > 0)
+            target = 1;
+        else if (target > (s32)gBattleMons[battler].maxHP)
+            target = gBattleMons[battler].maxHP;   // a var holding >100 means "nothing recorded yet"
+        return target - (s32)gBattleMons[battler].hp;
+    }
+
+    if (runtime->changeHpMode != ENC_AMOUNT_PERCENT || amount == 0)
+        return amount;
+
+    scaled = (s32)(((s64)gBattleMons[battler].maxHP * (amount < 0 ? -amount : amount)) / 100);
+    if (scaled < 1)
+        scaled = 1;
+    return (amount < 0) ? -scaled : scaled;
+}
+
+void BS_EncounterChangeHpStep(void)
+{
+    NATIVE_ARGS(const u8 *doneInstr);
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+    enum BattlerId battler = B_BATTLER_0;
+    bool32 found = FALSE;
+
+    for (; battler < gBattlersCount; battler++)
+    {
+        if (!(runtime->changeHpRemaining & (1u << battler)))
+            continue;
+        runtime->changeHpRemaining &= ~(1u << battler);
+
+        // Begin already dropped anyone dead at that point; a battler can still faint between Begin
+        // and its own Step (an earlier battler's animated HP change in this same group command can
+        // trigger something that takes it out) - same runtime race, so skip quietly here too.
+        if (!IsBattlerAlive(battler))
+            continue;
+        found = TRUE;
+        break;
+    }
+
+    if (!found)
+    {
+        gBattlescriptCurrInstr = cmd->doneInstr;
+        return;
+    }
+
+    gBattleScripting.battler = battler;
+    s32 amount = EncounterChangeHpAmountFor(battler);
+    if (amount > 0)
+        SetHealAmount(battler, amount);
+    else if (amount < 0)
+    {
+        // Direct write, not SetPassiveDamageAmount: scripted damage is the encounter's own
+        // authored number, so its target's damage reduction must not silently rescale it.
+        gBattleStruct->passiveHpUpdate[battler] = -amount;
+    }
+    else
+        gBattleStruct->passiveHpUpdate[battler] = 0; // amount 0 is a deliberate no-op, not a min-1 hit
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// encrewindhp: the Begin half of the CHANGE_HP pair, sourcing the amount from an author variable
+// and reading it as a destination percentage rather than a delta. Everything after this - the Step
+// loop, the health bar, the faint check - is the encchangehp machinery verbatim.
+void BS_EncounterChangeHpBeginVar(void)
+{
+    NATIVE_ARGS(u8 target, u8 var);
+    struct EncounterRuntime *runtime = &gBattleStruct->encounter;
+
+    runtime->changeHpRemaining = ResolveEncounterTarget(cmd->target);
+
+    // Same runtime race as BS_EncounterChangeHpBegin - drop anyone already fainted, single-slot or
+    // group alike, rather than asserting.
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (!IsBattlerAlive(battler))
+            runtime->changeHpRemaining &= ~(1u << battler);
+    }
+
+    runtime->changeHpAmount = gEncounterVars[cmd->var];
+    runtime->changeHpMode = ENC_AMOUNT_TO_PERCENT;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// SNAPSHOT_HP (encsnapshothp). Stores a battler's HP as a percentage of max, which is the only
+// portable way to remember "where it was" in an encounter whose Level: is a moving target - and it
+// fits the u8 an author variable is. Single-slot targets only: there is no reading of a whole
+// target set collapsed into one byte.
+//
+// The three modes exist because encounter conditions and encjumpifvar only ever compare a variable
+// against a *literal*. LOWEST performs the var-to-var "keep the smaller" a script can't express,
+// and RECOVERY performs the var-to-var subtraction, each leaving a result a literal test can read.
+void BS_EncSnapshotHp(void)
+{
+    NATIVE_ARGS(u8 target, u8 var, u8 mode, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    u32 percent;
+    bool32 wrote = FALSE;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: SNAPSHOT_HP target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    // Same runtime race BS_EncounterChangeHpBegin/Step already tolerate: a battler can legitimately
+    // faint between an earlier command in the same script (a mark tick, a scripted hit) and this
+    // one. The command's own contract already promises a failLabel for "nothing was written" - a
+    // dead target is exactly that case, not an authoring mistake, so it takes the same fail-soft
+    // path as every other mode below rather than asserting.
+    if (!IsBattlerAlive(battler))
+    {
+        if (cmd->failInstr != NULL)
+            gBattlescriptCurrInstr = cmd->failInstr;
+        else
+            gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    // Floored at 1 for a living battler: 0 is the "it's gone" reading everywhere else, and a boss
+    // clinging on at a fraction of a percent has not been recorded as dead.
+    percent = ((u32)gBattleMons[battler].hp * 100) / gBattleMons[battler].maxHP;
+    if (percent < 1)
+        percent = 1;
+
+    switch (cmd->mode)
+    {
+    case ENC_SNAP_LOWEST:
+        if (percent < gEncounterVars[cmd->var])
+        {
+            gEncounterVars[cmd->var] = percent;
+            wrote = TRUE;
+        }
+        break;
+    case ENC_SNAP_RECOVERY:
+        if (percent > gEncounterVars[cmd->var])
+        {
+            gEncounterVars[cmd->var] = percent - gEncounterVars[cmd->var];
+            wrote = TRUE;
+        }
+        else
+        {
+            gEncounterVars[cmd->var] = 0;
+        }
+        break;
+    // The mirror of RECOVERY: "how much has this battler lost since the mark", for a boss whose
+    // max HP isn't known at authoring time. failInstr fires when nothing was lost.
+    case ENC_SNAP_DAMAGE:
+        if (percent < gEncounterVars[cmd->var])
+        {
+            gEncounterVars[cmd->var] = gEncounterVars[cmd->var] - percent;
+            wrote = TRUE;
+        }
+        else
+        {
+            gEncounterVars[cmd->var] = 0;
+        }
+        break;
+    case ENC_SNAP_SET:
+    default:
+        gEncounterVars[cmd->var] = percent;
+        wrote = TRUE;
+        break;
+    }
+
+    // failInstr is optional (0 from the macro's default) - a script that doesn't care whether the
+    // value moved just falls through.
+    if (!wrote && cmd->failInstr != NULL)
+        gBattlescriptCurrInstr = cmd->failInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// STORE_PREDICTION (encstoreprediction). Surfaces the AI's own AI_FLAG_PREDICT_MOVE answer to the
+// script layer, as a damage category. gAiLogicData is a heap pointer, so a battle script can't
+// address into it directly - hence a command rather than a jumpifhalfword.
+//
+// predictedMove is written by SetupAIPredictionData during action selection and gAiLogicData is
+// memset at the top of every SetAiLogicDataForTurn, so MOVE_NONE unambiguously means "no prediction
+// this turn" rather than a stale one. Only meaningful at ENC_ON_TURN_START, which dispatches after
+// the AI has decided.
+void BS_EncStorePrediction(void)
+{
+    NATIVE_ARGS(u8 target, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    enum Move predicted;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: STORE_PREDICTION target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = 0;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    predicted = gAiLogicData->predictedMove[battler];
+    if (predicted == MOVE_NONE || predicted == MOVE_UNAVAILABLE)
+        gEncounterVars[cmd->var] = 0;
+    else
+        gEncounterVars[cmd->var] = GetMoveCategory(predicted) + 1;   // 1 physical / 2 special / 3 status
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// STORE TYPE (encstoretype). Copies the current move's base type - the same value an
+// Event.MoveType condition reads - into an author variable. Conditions and encjumpifvar only ever
+// compare a variable against a literal, never another variable, so this is what lets a script
+// remember "the type of the move that just landed" for a later turn to test against. Reuses
+// GetEncounterEventField, which already asserts and returns FALSE outside OnMoveEnd, so a
+// misplaced call safely writes TYPE_NONE instead of reading stale data.
+void BS_EncStoreType(void)
+{
+    NATIVE_ARGS(u8 var);
+    s32 move;
+
+    if (GetEncounterEventField(ENC_EVENT_MOVE, &move))
+        gEncounterVars[cmd->var] = GetMoveType(move);
+    else
+        gEncounterVars[cmd->var] = TYPE_NONE;
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// OWNED (encowned). The player's history with a species, as a number a script can branch on:
+// 2 has caught one, 1 has only seen one, 0 has never met one. Conditions can only read battle state,
+// so this is the only route from "what has the player done outside this battle" into an encounter
+// script.
+//
+// Both readings come from the Pokedex, which is two bit tests against a fixed dex slot.
+// CheckPlayerOwnsSpecies would answer "owns one RIGHT NOW" instead, but it walks the party and all
+// 28 PC boxes decrypting every slot - far too much work for a mid-battle checkpoint, and it
+// asserts on any stored mon whose species this build does not have. The caught flag also survives
+// releasing or trading the Pokemon away, which is the right reading for "has the player met this
+// one": the memory is what an encounter reacts to, not the current party.
+void BS_EncOwned(void)
+{
+    NATIVE_ARGS(u16 species, u8 var);
+
+    if (GetSetPokedexFlagBySpecies(cmd->species, FLAG_GET_CAUGHT))
+        gEncounterVars[cmd->var] = 2;
+    else if (GetSetPokedexFlagBySpecies(cmd->species, FLAG_GET_SEEN))
+        gEncounterVars[cmd->var] = 1;
+    else
+        gEncounterVars[cmd->var] = 0;
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// ANALYSIS (encadapt). Files the type of the move that just landed as a type-keyed damage
+// resistance on every battler <target> resolves to. Capacity comes from the call site rather than
+// from stored state, so a phase that widens the board is one changed literal in the script.
+//
+// Three outcomes, reported in <resultVar> (enum EncounterAdaptResult) so one command drives all
+// three lines of dialogue; <countVar> takes the resulting number of adaptations, which is the
+// authoritative board size and so can never drift from what a script mirrors it into.
+// The new type is buffered into B_BUFF1 and any evicted type into B_BUFF2, so a callout can name
+// both without a type-buffering opcode having to exist.
+//
+// OnMoveEnd only - it reads the event's move. A move that missed, was blocked or did nothing
+// teaches the boss nothing, and the checkpoint fires for those too (the event's oldValue/newValue
+// are only written at the HP-commit point, so they are stale after a whiff and can't be tested).
+// Screening on the move result here rather than in a condition keeps every future user correct.
+void BS_EncAdapt(void)
+{
+    NATIVE_ARGS(u8 target, u8 percent, u8 slots, u8 countVar, u8 resultVar);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 slots = cmd->slots;
+    u32 percent = cmd->percent;
+    enum Type moveType;
+    enum BattlerId battler;
+    u32 count = 0, result = ENC_ADAPT_RESULT_FILED;
+
+    if (slots > ENC_MAX_ADAPTATIONS)
+        slots = ENC_MAX_ADAPTATIONS;
+    if (percent > ENC_MAX_ADAPT_PERCENT)
+        percent = ENC_MAX_ADAPT_PERCENT;
+
+    moveType = GetBattleMoveType(gBattleStruct->encounter.event.move);
+
+    // Nothing landed, or nothing that carries a type - leave the board and both vars alone so the
+    // caller's branch on <resultVar> can't act on a whiff.
+    if (mask == 0 || slots == 0 || moveType == TYPE_NONE
+     || (gBattleStruct->moveResultFlags[gBattleStruct->encounter.event.battler] & MOVE_RESULT_NO_EFFECT))
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u8 *types = gBattleStruct->encounter.adaptType[battler];
+        u8 *percents = gBattleStruct->encounter.adaptPercent[battler];
+        u32 i, filled;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // Slots beyond the capacity this phase allows are dropped first, so a board narrowed by a
+        // later call can never leave an unreachable adaptation still resisting damage.
+        for (i = slots; i < ENC_MAX_ADAPTATIONS; i++)
+        {
+            types[i] = TYPE_NONE;
+            percents[i] = 0;
+        }
+        for (filled = 0; filled < slots && types[filled] != TYPE_NONE; filled++)
+            ;
+
+        for (i = 0; i < filled; i++)
+        {
+            if (types[i] != moveType)
+                continue;
+
+            // Already held: hardening. The percent only ever climbs, so a phase that files weaker
+            // than the board already holds can't soften an adaptation the player has fed.
+            if (percents[i] < percent)
+                percents[i] = percent;
+            result = ENC_ADAPT_RESULT_HARDENED;
+            break;
+        }
+
+        if (i == filled)
+        {
+            if (filled < slots)
+            {
+                result = ENC_ADAPT_RESULT_FILED;
+            }
+            else
+            {
+                // Full board: the oldest is pushed out to make room, and named so the player can
+                // see the board has a size and that they are the one deciding what falls off it.
+                PREPARE_TYPE_BUFFER(gBattleTextBuff2, types[0]);
+                for (i = 1; i < slots; i++)
+                {
+                    types[i - 1] = types[i];
+                    percents[i - 1] = percents[i];
+                }
+                filled = slots - 1;
+                result = ENC_ADAPT_RESULT_EVICTED;
+            }
+            types[filled] = moveType;
+            percents[filled] = percent;
+            filled++;
+        }
+
+        count = filled;
+    }
+
+    PREPARE_TYPE_BUFFER(gBattleTextBuff1, moveType);
+    gEncounterVars[cmd->countVar] = count;
+    gEncounterVars[cmd->resultVar] = result;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// The inverse of encadapt (encpurgeadapt): drops the oldest adaptation, the newest, or the whole
+// board from every battler <target> resolves to, and writes the remaining count into <countVar>.
+// The array is compacted on every removal so slot 0 stays the oldest and no emptiness test is
+// needed anywhere else. The dropped type is buffered into B_BUFF1; a silent no-op on an empty
+// board, so it is safe to call unconditionally.
+void BS_EncPurgeAdapt(void)
+{
+    NATIVE_ARGS(u8 target, u8 which, u8 countVar);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    u32 count = 0;
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u8 *types = gBattleStruct->encounter.adaptType[battler];
+        u8 *percents = gBattleStruct->encounter.adaptPercent[battler];
+        u32 i, filled;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        for (filled = 0; filled < ENC_MAX_ADAPTATIONS && types[filled] != TYPE_NONE; filled++)
+            ;
+
+        if (filled == 0)
+            continue;
+
+        if (cmd->which == ENC_ADAPT_ALL)
+        {
+            PREPARE_TYPE_BUFFER(gBattleTextBuff1, types[filled - 1]);
+            for (i = 0; i < ENC_MAX_ADAPTATIONS; i++)
+            {
+                types[i] = TYPE_NONE;
+                percents[i] = 0;
+            }
+            filled = 0;
+        }
+        else if (cmd->which == ENC_ADAPT_NEWEST)
+        {
+            PREPARE_TYPE_BUFFER(gBattleTextBuff1, types[filled - 1]);
+            filled--;
+            types[filled] = TYPE_NONE;
+            percents[filled] = 0;
+        }
+        else
+        {
+            PREPARE_TYPE_BUFFER(gBattleTextBuff1, types[0]);
+            for (i = 1; i < filled; i++)
+            {
+                types[i - 1] = types[i];
+                percents[i - 1] = percents[i];
+            }
+            filled--;
+            types[filled] = TYPE_NONE;
+            percents[filled] = 0;
+        }
+
+        count = filled;
+    }
+
+    gEncounterVars[cmd->countVar] = count;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// COMPARE_STAT (enccomparestat). Writes 0 (A lower) / 1 (equal) / 2 (A higher) into an author
+// variable. Conditions and encjumpifvar only ever compare a var against a literal, so any rule that
+// weighs one live battler's stat against another's has to be expressed as a command that leaves the
+// answer somewhere a literal test can read - the same reason ENC_SNAP_RECOVERY/ENC_SNAP_DAMAGE exist.
+//
+// STAT_SPEED goes through GetBattlerTotalSpeedStat so Tailwind, Choice Scarf, Chlorophyll and
+// paralysis all count - the same number the turn-order code compares. The other stats use the plain
+// stat-with-stages value.
+void BS_EncCompareStat(void)
+{
+    NATIVE_ARGS(u8 targetA, u8 targetB, u8 stat, u8 var);
+    u32 maskA = ResolveEncounterTarget(cmd->targetA);
+    u32 maskB = ResolveEncounterTarget(cmd->targetB);
+    enum BattlerId battlerA, battlerB;
+    u32 valueA, valueB;
+
+    assertf(maskA != 0 && (maskA & (maskA - 1)) == 0 && maskB != 0 && (maskB & (maskB - 1)) == 0,
+            "encounter %d: COMPARE_STAT targets %d/%d do not each resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->targetA, cmd->targetB)
+    {
+        gEncounterVars[cmd->var] = 1;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battlerA = B_BATTLER_0; !(maskA & (1u << battlerA)); battlerA++)
+        ;
+    for (battlerB = B_BATTLER_0; !(maskB & (1u << battlerB)); battlerB++)
+        ;
+
+    if (cmd->stat == STAT_SPEED)
+    {
+        valueA = GetBattlerTotalSpeedStat(battlerA, GetBattlerAbility(battlerA), GetBattlerHoldEffect(battlerA));
+        valueB = GetBattlerTotalSpeedStat(battlerB, GetBattlerAbility(battlerB), GetBattlerHoldEffect(battlerB));
+    }
+    else
+    {
+        valueA = GetStatValueWithStages(battlerA, (enum Stat)cmd->stat);
+        valueB = GetStatValueWithStages(battlerB, (enum Stat)cmd->stat);
+    }
+
+    if (valueA < valueB)
+        gEncounterVars[cmd->var] = 0;
+    else if (valueA == valueB)
+        gEncounterVars[cmd->var] = 1;
+    else
+        gEncounterVars[cmd->var] = 2;
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// READ_STAT (encreadstat). enccomparestat's single-target sibling: writes the target's live stat
+// stage - raw domain, 0-12, 6 = neutral, the same domain Battler(<ref>).Stat(<STAT>) conditions
+// already read - into an author variable instead of comparing it against another battler's.
+void BS_EncReadStat(void)
+{
+    NATIVE_ARGS(u8 target, u8 stat, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: READ_STAT target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = DEFAULT_STAT_STAGE;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    gEncounterVars[cmd->var] = gBattleMons[battler].statStages[cmd->stat];
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// READ_GIMMICK (encreadgimmick). Writes 1 into var if target's active gimmick matches, else 0.
+// GetActiveGimmick/IsGimmickSelected are read-only with no side effects, so this is a safe wrap -
+// the only route from "what gimmick is the player using" into a checkpoint script.
+void BS_EncReadGimmick(void)
+{
+    NATIVE_ARGS(u8 target, u8 gimmick, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: READ_GIMMICK target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = 0;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    gEncounterVars[cmd->var] = (GetActiveGimmick(battler) == cmd->gimmick);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// CHANGE_STAT (encchangestat). Unlike CHANGE_HP this mutates statStages directly rather than going
+// through the animated trybattlerstatchange opcode - a pure mechanic with no presentation
+// (outline Sec31), safe to apply to an entire target set in one call since it never touches the
+// controller. An author who wants the stock "Defense rose!" message/animation for a single battler
+// can still call trybattlerstatchange directly instead of this wrapper.
+void BS_EncounterChangeStat(void)
+{
+    NATIVE_ARGS(u8 target, u8 stat, s8 stages);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        s32 newStage;
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // Same runtime race CHANGE_HP already tolerates (BS_EncounterChangeHpBegin/Step above): a
+        // single-slot target like ENC_TARGET_BOSS can faint between the checkpoint that queued this
+        // command and this command's own execution - an earlier command in the same script, or the
+        // move that triggered the checkpoint itself. That's a normal race, not an authoring mistake,
+        // for both single and group targets, so it's dropped quietly here too.
+        if (!IsBattlerAlive(battler))
+            continue;
+
+        newStage = (s32)gBattleMons[battler].statStages[cmd->stat] + cmd->stages;
+        if (newStage < MIN_STAT_STAGE)
+            newStage = MIN_STAT_STAGE;
+        else if (newStage > MAX_STAT_STAGE)
+            newStage = MAX_STAT_STAGE;
+        gBattleMons[battler].statStages[cmd->stat] = newStage;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// MEGA_EVOLVE's forced entry point (encmegaevolve). BattleScript_MegaEvolution already exists but
+// is reached only through ActivateMegaEvolution's Mega Ring / "already used this battle" gating,
+// which an encounter-forced evolution must bypass. This performs the same mechanic half
+// (ActivateMegaEvolution, src/battle_util.c) directly and lets the following battle-script
+// instructions (asm/macros/battle_script.inc) reuse the same presentation opcodes
+// BattleScript_MegaEvolution does - the whole point of finding a gap in an existing feature
+// instead of duplicating it. Single-target only: mega-evolving more than one Pokemon in one action
+// isn't a coherent single action, so a target resolving to zero or more than one battler fails.
+void BS_EncounterMegaEvolve(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    enum Ability ability;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: MEGA_EVOLVE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: MEGA_EVOLVE target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    assertf(!IsBattlerMegaEvolved(battler) && GetActiveGimmick(battler) == GIMMICK_NONE,
+            "encounter %d: MEGA_EVOLVE target %d can't mega evolve right now", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    // STRINGID_MEGAEVOEVOLVED (battle_message.c) reads {B_ATK_NAME_WITH_PREFIX} - true by
+    // construction when Mega Evolution is chosen as a move-selection gimmick (the attacker IS the
+    // evolving battler), which doesn't hold here since this can run from any checkpoint. Set it
+    // explicitly so the reused presentation names the right Pokemon.
+    gBattlerAttacker = battler;
+    gBattleScripting.battler = battler;
+    ability = GetBattlerAbility(battler);
+    gLastUsedItem = gBattleMons[battler].item;
+    SetActiveGimmick(battler, GIMMICK_MEGA);
+    SetGimmickAsActivated(battler, GIMMICK_MEGA);
+    TryBattleFormChange(battler, FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM, ability);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// FORM_CHANGE (encformchange). The general form of MEGA_EVOLVE above: the destination species is
+// named outright instead of being looked up from a held Mega Stone, so a boss can change shape more
+// than once, change into a form it has no stone for, and change back. The mechanic half is
+// TryBattleFormChange's (battle_util.c) without its CanBattlerFormChange gate - a scripted encounter
+// beat is not asking permission from the form-change table.
+void BS_EncounterFormChange(void)
+{
+    NATIVE_ARGS(u8 target, u16 species, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum Species species = cmd->species;
+    enum BattlerId battler;
+    struct Pokemon *mon;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: FORM_CHANGE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: FORM_CHANGE target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    mon = GetBattlerMon(battler);
+
+    // Seeds the same field TryBattleFormChange does, so the species' own FORM_CHANGE_END_BATTLE /
+    // FORM_CHANGE_FAINT entries still restore the party mon however the battle ends.
+    if (GetBattlerPartyState(battler)->changedSpecies == SPECIES_NONE)
+        GetBattlerPartyState(battler)->changedSpecies = gBattleMons[battler].species;
+
+    enum Ability abilityBefore = gBattleMons[battler].ability;
+
+    SetMonData(mon, MON_DATA_SPECIES, &species);
+    gBattleMons[battler].species = species;
+    RecalcBattlerStats(battler, mon, FALSE);
+
+    // Both forms share an ability: the appended switchinabilities presentation would replay the
+    // ability pop-up for an ability that never changed, so tell it to skip itself.
+    gBattleStruct->encounter.formChangeAbilityUnchanged = (gBattleMons[battler].ability == abilityBefore);
+
+    // The presentation opcodes the macro appends address BS_SCRIPTING, and the dialogue a caller
+    // prints around them may name the attacker; neither is meaningful at an arbitrary checkpoint.
+    gBattlerAttacker = gBattleScripting.battler = battler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// Appended by the encformchange macro just before its switchinabilities opcode. Jumps past that
+// opcode when BS_EncounterFormChange flagged the new form as sharing the old form's ability, so a
+// cosmetic-only form change does not replay the ability pop-up. Clears the flag either way.
+void BS_JumpIfFormChangeAbilityUnchanged(void)
+{
+    NATIVE_ARGS(const u8 *unchangedInstr);
+    bool32 unchanged = gBattleStruct->encounter.formChangeAbilityUnchanged;
+    gBattleStruct->encounter.formChangeAbilityUnchanged = FALSE;
+    gBattlescriptCurrInstr = unchanged ? cmd->unchangedInstr : cmd->nextInstr;
+}
+
+// SET MOVE (encsetmove). Writes move into one of target's battle-mon move slots, with that move's
+// full PP. `Moves:` is a battle-start property, so this is the only way a boss can gain a move at a
+// phase transition - the signature move a form unlocks when it transforms. Like Mimic and Transform
+// it writes gBattleMons and never the party Pokemon, so a boss caught afterwards keeps the moveset
+// it was built with.
+void BS_EncSetMove(void)
+{
+    NATIVE_ARGS(u8 target, u8 slot, u16 move);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: SET_MOVE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    assertf(cmd->slot < MAX_MON_MOVES,
+            "encounter %d: SET_MOVE slot %d is out of range", gBattleStruct->encounter.id, cmd->slot)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: SET_MOVE target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    gBattleMons[battler].moves[cmd->slot] = cmd->move;
+    gBattleMons[battler].pp[cmd->slot] = CalculatePPWithBonus(cmd->move, gBattleMons[battler].ppBonuses, cmd->slot);
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// TRANSFORM (enctransform). Makes target become source - species, stats, stat stages, types,
+// ability and moveset - through the Transform move's own copy (ApplyTransformInto) with none of its
+// move-context fail checks, so a scripted beat re-copies freely. HP, level, item and status are
+// untouched and the party mon is never written, so the boss caught afterwards is still its own
+// species. Jumps failInstr on the legitimate in-battle states that block a copy (source semi-
+// invulnerable, already transformed, or hiding behind Illusion). Prints nothing; the caller does.
+void BS_EncounterTransform(void)
+{
+    NATIVE_ARGS(u8 target, u8 source, const u8 *failInstr);
+    u32 targetMask = ResolveEncounterTarget(cmd->target);
+    u32 sourceMask = ResolveEncounterTarget(cmd->source);
+    enum BattlerId targetBattler, sourceBattler;
+
+    assertf(targetMask != 0 && (targetMask & (targetMask - 1)) == 0,
+            "encounter %d: TRANSFORM target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    assertf(sourceMask != 0 && (sourceMask & (sourceMask - 1)) == 0,
+            "encounter %d: TRANSFORM source %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->source)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (targetBattler = B_BATTLER_0; !(targetMask & (1u << targetBattler)); targetBattler++)
+        ;
+    for (sourceBattler = B_BATTLER_0; !(sourceMask & (1u << sourceBattler)); sourceBattler++)
+        ;
+
+    assertf(IsBattlerAlive(targetBattler) && IsBattlerAlive(sourceBattler),
+            "encounter %d: TRANSFORM target or source is fainted/absent", gBattleStruct->encounter.id)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    if (IsSemiInvulnerable(sourceBattler, EXCLUDE_COMMANDER)
+        || gBattleMons[sourceBattler].volatiles.transformed
+        || gBattleStruct->illusion[sourceBattler].state == ILLUSION_ON)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    ApplyTransformInto(targetBattler, sourceBattler);
+
+    // The move path gets these from the move animation's payload; the appended general animation
+    // carries none, so the copied mon's PID/shininess have to be published here or the new sprite
+    // is drawn with the boss's own.
+    gTransformedPersonalities[targetBattler] = gBattleMons[targetBattler].volatiles.transformedMonPID;
+    gTransformedShininess[targetBattler] = gBattleMons[targetBattler].volatiles.isTransformedMonShiny;
+
+    // The appended presentation opcodes and the caller's dialogue both address BS_SCRIPTING.
+    gBattlerAttacker = gBattleScripting.battler = targetBattler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// UNTRANSFORM (encuntransform). Reverts a battler transformed by enctransform (or the Transform
+// move) to its own party species, rebuilding stats, types, ability and moveset from the party mon
+// (which transform never touched). Silent no-op when the battler isn't transformed, so a script may
+// call it unconditionally. Stat stages are reset to neutral - they were the copied mon's stages,
+// and carrying them onto the reverted mon would be incoherent.
+void BS_EncounterUntransform(void)
+{
+    NATIVE_ARGS(u8 target);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *mon;
+    s32 i;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: UNTRANSFORM target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    // Set even on the no-op path: the macro's trailing handleformchange/playanimation opcodes
+    // address BS_SCRIPTING regardless of whether a revert happened.
+    gBattlerAttacker = gBattleScripting.battler = battler;
+
+    if (!gBattleMons[battler].volatiles.transformed)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    mon = GetBattlerMon(battler);
+
+    gBattleMons[battler].species = GetMonData(mon, MON_DATA_SPECIES);
+    gBattleMons[battler].ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        gBattleMons[battler].moves[i] = GetMonData(mon, MON_DATA_MOVE1 + i);
+        gBattleMons[battler].pp[i] = GetMonData(mon, MON_DATA_PP1 + i);
+    }
+
+    RecalcBattlerStats(battler, mon, FALSE);
+
+    for (i = 0; i < NUM_BATTLE_STATS; i++)
+        gBattleMons[battler].statStages[i] = DEFAULT_STAT_STAGE;
+
+    gBattleMons[battler].volatiles.transformed = FALSE;
+    gBattleMons[battler].volatiles.transformedMonSpecies = SPECIES_NONE;
+    gBattleMons[battler].volatiles.transformedMonPID = 0;
+    gBattleMons[battler].volatiles.isTransformedMonShiny = FALSE;
+    gBattleMons[battler].volatiles.overwrittenAbility = ABILITY_NONE;
+    gBattleMons[battler].volatiles.mimickedMoves = 0;
+    gBattleMons[battler].volatiles.usedMoves = 0;
+
+    RecordAllMoves(battler);
+    BtlController_EmitResetActionMoveSelection(battler, B_COMM_TO_CONTROLLER, RESET_MOVE_SELECTION);
+    MarkBattlerForControllerExec(battler);
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// CHANGE_STAT_VALUE (encchangestatvalue). Sibling of CHANGE_STAT above, one level lower: stages are
+// the standard, visible, Haze-clearable currency, while this moves the raw battle stat a boss was
+// built with. That matters for an encounter whose level isn't known when the script is written -
+// ENC_AMOUNT_PERCENT scales whatever the boss ended up with. Silent, like CHANGE_STAT.
+void BS_EncounterChangeStatValue(void)
+{
+    NATIVE_ARGS(u8 target, u8 stat, s16 amount, u8 mode);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+
+    for (battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u16 *statPtr;
+        s32 delta;
+        s32 newValue;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // Same runtime race CHANGE_HP tolerates: a single-slot target like ENC_TARGET_BOSS can faint
+        // between the checkpoint that queued this command and this command's own execution. Not an
+        // authoring mistake, so dropped quietly for both single and group targets.
+        if (!IsBattlerAlive(battler))
+            continue;
+
+        statPtr = GetBattlerStat(&gBattleMons[battler], cmd->stat);
+        assertf(statPtr != NULL,
+                "encounter %d: CHANGE_STAT_VALUE stat %d has no battle stat", gBattleStruct->encounter.id, cmd->stat)
+        {
+            continue;
+        }
+
+        delta = cmd->amount;
+        if (cmd->mode == ENC_AMOUNT_PERCENT)
+            delta = (s32)(((s64)(*statPtr) * delta) / 100); // s64: a u16 stat times a large percent overflows s32
+
+        // Clamped to 1..0xFFFF: a stat of 0 divides by zero in the damage formula, and struct
+        // BattlePokemon's stat fields are u16.
+        newValue = (s32)(*statPtr) + delta;
+        if (newValue < 1)
+            newValue = 1;
+        else if (newValue > 0xFFFF)
+            newValue = 0xFFFF;
+        *statPtr = newValue;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// DAMAGE_REDUCTION (encsetdamagereduction) and IMMUNITY (encsetimmunity). Both replace the target's
+// current value rather than accumulating, so a script can raise a boss's guard for one phase and
+// drop it again in the next without tracking what it added.
+void BS_EncounterSetDamageReduction(void)
+{
+    NATIVE_ARGS(u8 target, u8 percent);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterDamageReduction(battler, cmd->percent);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_EncounterSetImmunity(void)
+{
+    NATIVE_ARGS(u8 target, u8 immunities);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterImmunities(battler, cmd->immunities);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// CAP_TYPE_EFFECTIVENESS (encsetcaptypeeffectiveness). Clamps incoming type effectiveness to 2x
+// rather than blocking anything outright - a double weakness stays dangerous, just not a 4x spike.
+void BS_EncounterSetCapTypeEffectiveness(void)
+{
+    NATIVE_ARGS(u8 target, bool8 cap);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterCapTypeEffectiveness(battler, cmd->cap);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// FLAT_TOXIC_DAMAGE (encsetflattoxicdamage). Stops Toxic's counter from scaling its damage up each
+// turn - an encounter can run for far more turns than the ~16 the ramp is balanced around elsewhere.
+void BS_EncounterSetFlatToxicDamage(void)
+{
+    NATIVE_ARGS(u8 target, bool8 flat);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterFlatToxicDamage(battler, cmd->flat);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// SURVIVE (encsetsurvive). Guards the target's HP against dropping below 1 through the damage formula
+// or a passive tick - for scripted last stands, form changes at death's door and guaranteed catch
+// windows. Does not cover fixed-damage / Perish Song / Destiny Bond; those are shut out by Immunities:.
+void BS_EncounterSetSurvive(void)
+{
+    NATIVE_ARGS(u8 target, bool8 survive);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            SetEncounterSurvive(battler, cmd->survive);
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// RECHARGE (encsetrecharge). Reuses the Hyper Beam recharge timer to make a battler lose an action:
+// CancelerRecharge cancels the move and prints the stock "must recharge!" line, and the action
+// selection path auto-picks B_ACTION_USE_MOVE so the turn is never left waiting on an input.
+// TurnValuesCleanUp decrements the timer at the very end of the turn, after the OnTurnEnd
+// checkpoint - so 1 set at OnTurnStart costs this turn's action, 2 set later costs next turn's.
+void BS_EncSetRecharge(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            gBattleMons[battler].volatiles.rechargeTimer = cmd->turns;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// PROTECT (encsetprotect). Sets the same gProtectStructs flag Protect itself sets, so every
+// existing interaction - Feint, never-miss moves, contact punishment, the "protected itself!"
+// message - resolves identically for a scripted evade turn. gProtectStructs is wiped after
+// end-of-turn effects, so this only has an effect when set at OnTurnStart.
+void BS_EncSetProtect(void)
+{
+    NATIVE_ARGS(u8 target);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+        {
+            gProtectStructs[battler].protected = PROTECT_NORMAL;
+            // Latched too, so a scripted protect reads back through ENC_OP_PROTECTED exactly like a
+            // move-granted one.
+            gBattleStruct->encounter.protectedThisTurn |= 1u << battler;
+        }
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// SET CRIT (encsetcrit). Writes the same volatiles.focusEnergy bit Focus Energy itself sets, so
+// CalcCritChanceStage and the AI's crit reads behave identically, and clears it again on FALSE - the
+// reversibility is the point, since an encounter meter that grants a crit boost has to be able to
+// take it back when the meter falls. Unlike Cmd_setfocusenergy this always writes focusEnergy and
+// never dragonCheer: that branch only exists for pre-Gen-3 crit configs and the Dragon Cheer move.
+void BS_EncSetCrit(void)
+{
+    NATIVE_ARGS(u8 target, bool8 state);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            gBattleMons[battler].volatiles.focusEnergy = cmd->state;
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// RESET_STATS (encresetstats). The targeted form of Haze: normalisebuffs resets every battler on
+// the field, which a boss that wants to strip only the player's setup cannot use. Reuses
+// TryResetBattlerStatChanges, so the stockpile counters come off with the stages exactly as they do
+// for Haze itself, and its return value is what makes failInstr meaningful - one command is both the
+// test and the clear, the same shape as encclearscreens.
+void BS_EncResetStats(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    bool32 reset = FALSE;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (mask & (1u << battler))
+            reset |= TryResetBattlerStatChanges(battler);
+    }
+
+    gBattlescriptCurrInstr = reset ? cmd->nextInstr : cmd->failInstr;
+}
+
+// TRAPPED (encsettrapped). Sets the same escape-prevention volatile Mean Look sets
+// (BS_TrySetEscapePrevention), so every existing rule around it applies unchanged: the Gen 6+
+// Ghost-type exemption in CanBattlerEscape, the trapper-faints cleanup in battle_main.c, Baton Pass
+// inheritance, and the AI's own switch scoring. The boss stands in as the trapper because that
+// cleanup keys off it - if the boss goes down, everything it trapped is released without the script
+// doing anything. Unlike encsetprotect this is not wiped at end of turn: it persists until a script
+// clears it again.
+void BS_EncSetTrapped(void)
+{
+    NATIVE_ARGS(u8 target, bool8 trapped);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u8 boss;
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            // A boss that traps itself is incoherent, and would make its own faint the thing that
+            // releases it.
+            if (!(mask & (1u << battler)) || battler == boss)
+                continue;
+
+            gBattleMons[battler].volatiles.escapePrevention = cmd->trapped;
+            if (cmd->trapped)
+                gBattleMons[battler].volatiles.battlerPreventingEscape = boss;
+        }
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// EMBARGO (encsetembargo). Shorts out a battler's held item by setting the same volatile Embargo
+// itself sets, so every existing item check reads it unchanged. HandleEndTurnEmbargo
+// (battle_end_turn.c) already ticks the timer and prints the stock expiry line, so a non-zero
+// <turns> needs nothing on the way out; 0 clears it outright. The boss is skipped for the same
+// reason encsettrapped skips it - a boss shorting out its own item is incoherent.
+void BS_EncSetEmbargo(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u8 boss;
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            if (!(mask & (1u << battler)) || battler == boss)
+                continue;
+
+            gBattleMons[battler].volatiles.embargoTimer = cmd->turns;
+        }
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// DISABLE_MOVE (encdisablemove). Cmd_disablelastusedattack with the target named by the script
+// instead of taken from gBattlerTarget, and the duration stated instead of derived from
+// B_DISABLE_TURNS. Writes the same volatiles Disable does, so HandleEndTurnDisable already ticks
+// the timer, already drops the lock if the move leaves the moveset, and already prints
+// BattleScript_DisabledNoMore on expiry. The move name is buffered into {B_BUFF1} so one string can
+// name what was taken.
+//
+// Every refusal branches to failInstr rather than asserting: nothing used yet (turn 1), the move
+// gone from the moveset, no PP left, something already disabled, or a target that isn't there are
+// all ordinary battle states, not authoring mistakes.
+void BS_EncDisableMove(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    u32 i;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: DISABLE_MOVE target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (gBattleMons[battler].moves[i] == gLastMoves[battler])
+            break;
+    }
+
+    if (!IsBattlerAlive(battler)
+     || gLastMoves[battler] == MOVE_NONE
+     || i == MAX_MON_MOVES
+     || gBattleMons[battler].pp[i] == 0
+     || gBattleMons[battler].volatiles.disabledMove != MOVE_NONE)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    PREPARE_MOVE_BUFFER(gBattleTextBuff1, gBattleMons[battler].moves[i])
+
+    gBattleMons[battler].volatiles.disabledMove = gBattleMons[battler].moves[i];
+    gBattleMons[battler].volatiles.disableTimer = cmd->turns;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// SWITCH_OUT (encswitchout). Drags <target> out for a random healthy bench member, the way Roar
+// does, but addressed by encounter target rather than gBattlerTarget - which is stale outside a
+// move. Cmd_forcerandomswitch can't be borrowed for the same reason, and because its success path
+// ends in `goto BattleScript_MoveEnd`, which an encounter script must never reach.
+// The boss is skipped outright, the way encsettrapped/encsetembargo/encsethealblock skip it: a
+// one-mon wild boss has nothing to switch to and the presentation would be nonsense.
+// Jumps failInstr when there is nobody to send in - an ordinary battle state, so it branches
+// rather than asserts. The link/multi/Battle Tower party splits Cmd_forcerandomswitch handles are
+// not reachable from an encounter script (single-player only) and are deliberately not reproduced.
+void BS_EncounterSwitchOut(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u8 validMons[PARTY_SIZE];
+    u32 validMonsCount = 0;
+    u32 battler1PartyId, battler2PartyId;
+    u8 boss;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: SWITCH_OUT target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    assertf(IsBattlerAlive(battler),
+            "encounter %d: SWITCH_OUT target %d is fainted/absent", gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss) && battler == boss)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    party = GetBattlerParty(battler);
+    battler2PartyId = gBattlerPartyIndexes[battler];
+    battler1PartyId = IsDoubleBattle() ? gBattlerPartyIndexes[GetPartnerBattler(battler)] : battler2PartyId;
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&party[i], MON_DATA_SPECIES) != SPECIES_NONE
+         && !GetMonData(&party[i], MON_DATA_IS_EGG)
+         && GetMonData(&party[i], MON_DATA_HP) != 0
+         && i != battler1PartyId
+         && i != battler2PartyId)
+            validMons[validMonsCount++] = i;
+    }
+
+    if (validMonsCount == 0)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    for (enum BattlerId i = B_BATTLER_0; i < gBattlersCount; i++)
+        gBattleMons[i].volatiles.tryEjectPack = FALSE; // Disable Eject Pack activations
+    gBattleStruct->battlerPartyIndexes[battler] = gBattlerPartyIndexes[battler];
+    gProtectStructs[battler].forcedSwitch = TRUE;
+    gBattleStruct->monToSwitchIntoId[battler] = validMons[RandomUniform(RNG_FORCE_RANDOM_SWITCH, 0, validMonsCount - 1)];
+    SwitchPartyOrder(battler);
+
+    // BattleScript_EncounterForcedSwitch addresses its victim through BS_TARGET.
+    gBattlerTarget = battler;
+    gBattleScripting.battler = battler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// CLEAR_SCREENS (encclearscreens). Wipes the side-wide barriers a player puts up - the three
+// screens, Safeguard, Mist, Tailwind and Lucky Chant - plus their timers, on every side <target>
+// resolves to. Jumps failInstr when nothing was there, which is what lets one command be both the
+// test and the clear. Rainbow is deliberately left out of the mask: it is a Pledge combo the field
+// produces, not a barrier the player raised. Nothing else in the engine does this generically -
+// trydefog only ever clears the side opposite gBattlerAttacker, which is stale outside a move.
+void BS_EncClearScreens(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+    bool32 cleared = FALSE;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u32 side;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; clear that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (!(gSideStatuses[side] & SIDE_STATUS_BARRIER_ANY))
+            continue;
+
+        gSideStatuses[side] &= ~SIDE_STATUS_BARRIER_ANY;
+        gSideTimers[side].reflectTimer = 0;
+        gSideTimers[side].lightscreenTimer = 0;
+        gSideTimers[side].auroraVeilTimer = 0;
+        gSideTimers[side].safeguardTimer = 0;
+        gSideTimers[side].mistTimer = 0;
+        gSideTimers[side].tailwindTimer = 0;
+        gSideTimers[side].luckyChantTimer = 0;
+        cleared = TRUE;
+    }
+
+    gBattlescriptCurrInstr = cleared ? cmd->nextInstr : cmd->failInstr;
+}
+
+// CLEAR_HAZARDS (encclearhazards). Strips every entry hazard from each side <target> resolves to,
+// and jumps failInstr when there were none - so one command is both the test and the clear, the same
+// shape as encclearscreens above. Unlike Defog's path this takes the whole side bare in one call and
+// prints nothing: enc* commands are silent and supply their own dialogue, and a script scouring the
+// field wants one line for the scouring, not one per hazard type.
+void BS_EncClearHazards(void)
+{
+    NATIVE_ARGS(u8 target, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+    bool32 cleared = FALSE;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        enum BattleSide side;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; scour that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (!AreAnyHazardsOnSide(side))
+            continue;
+
+        for (u32 hazardType = HAZARDS_NONE + 1; hazardType < HAZARDS_MAX_COUNT; hazardType++)
+        {
+            if (IsHazardOnSideAndClear(side, hazardType))
+                gBattleStruct->numHazards[side]--;
+        }
+        cleared = TRUE;
+    }
+
+    gBattlescriptCurrInstr = cleared ? cmd->nextInstr : cmd->failInstr;
+}
+
+// Maps an ENC_HAZARD_* selector onto the internal Hazards id and its layer ceiling. Returns FALSE
+// for a selector outside the enum so the caller can assert on it.
+static bool32 GetEncounterHazard(u32 which, enum Hazards *hazardOut, u32 *maxLayersOut)
+{
+    switch (which)
+    {
+    case ENC_HAZARD_SPIKES:       *hazardOut = HAZARDS_SPIKES;       *maxLayersOut = 3; break;
+    case ENC_HAZARD_TOXIC_SPIKES: *hazardOut = HAZARDS_TOXIC_SPIKES; *maxLayersOut = 2; break;
+    case ENC_HAZARD_STEALTH_ROCK: *hazardOut = HAZARDS_STEALTH_ROCK; *maxLayersOut = 1; break;
+    case ENC_HAZARD_STICKY_WEB:   *hazardOut = HAZARDS_STICKY_WEB;   *maxLayersOut = 1; break;
+    case ENC_HAZARD_STEELSURGE:   *hazardOut = HAZARDS_STEELSURGE;   *maxLayersOut = 1; break;
+    default:                                                                            return FALSE;
+    }
+    return TRUE;
+}
+
+// SET_HAZARD (encsethazard). Sets one ENC_HAZARD_* selector on every side <target> resolves to -
+// the inverse of encclearhazards, and the only way to raise a hazard from a checkpoint script (the
+// stock SetStartingHazardStatus path is move-triggered and prints its own message). <layers> only
+// means anything for Spikes/Toxic Spikes; every other hazard is single-layer and any nonzero value
+// just sets it. Jumps <failInstr> when every targeted side already sits at that hazard's max stack,
+// so one command is both the test and the act - the inverse direction of encclearhazards. Silent;
+// supply your own dialogue.
+void BS_EncSetHazard(void)
+{
+    NATIVE_ARGS(u8 target, u8 hazard, u8 layers, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+    bool32 changed = FALSE;
+    enum Hazards hazardType;
+    u32 maxLayers;
+
+    assertf(GetEncounterHazard(cmd->hazard, &hazardType, &maxLayers),
+            "encounter %d: unknown hazard %d", gBattleStruct->encounter.id, cmd->hazard)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        enum BattleSide side;
+        u32 layers = (cmd->layers == 0) ? 1 : cmd->layers;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; set that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (layers > maxLayers)
+            layers = maxLayers;
+
+        if (hazardType == HAZARDS_SPIKES)
+        {
+            if (gSideTimers[side].spikesAmount >= maxLayers)
+                continue;
+            if (!IsHazardOnSide(side, HAZARDS_SPIKES))
+                PushHazardTypeToQueue(side, HAZARDS_SPIKES);
+            gSideTimers[side].spikesAmount = layers;
+        }
+        else if (hazardType == HAZARDS_TOXIC_SPIKES)
+        {
+            if (gSideTimers[side].toxicSpikesAmount >= maxLayers)
+                continue;
+            if (!IsHazardOnSide(side, HAZARDS_TOXIC_SPIKES))
+                PushHazardTypeToQueue(side, HAZARDS_TOXIC_SPIKES);
+            gSideTimers[side].toxicSpikesAmount = layers;
+        }
+        else
+        {
+            if (IsHazardOnSide(side, hazardType))
+                continue;
+            PushHazardTypeToQueue(side, hazardType);
+            if (hazardType == HAZARDS_STICKY_WEB)
+            {
+                gSideTimers[side].stickyWebBattlerId = 0xFF;
+                gSideTimers[side].stickyWebBattlerSide = (side == B_SIDE_PLAYER) ? B_SIDE_OPPONENT : B_SIDE_PLAYER;
+            }
+        }
+        changed = TRUE;
+    }
+
+    gBattlescriptCurrInstr = changed ? cmd->nextInstr : cmd->failInstr;
+}
+
+// SET_STATUS (encsetstatus). Writes one ENC_STATUS_* major status directly onto every battler
+// <target> resolves to, bypassing move-based application (type immunity, ability blocks) the same
+// way encsettrapped/encsetembargo bypass move-based application for their volatiles. ENC_STATUS_NONE
+// (0) clears whatever major status is active. <turns> only means anything for Sleep - the number of
+// turns asleep; every other status ticks/thaws through the engine's own end-turn handling from here
+// on (thaw chance, poison/burn tick). A fainted/absent battler in the set is skipped, the same as
+// every other group-target mutating command. Silent; supply your own dialogue.
+void BS_EncSetStatus(void)
+{
+    NATIVE_ARGS(u8 target, u8 status, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+
+    assertf(cmd->status < ENC_STATUS_COUNT,
+            "encounter %d: unknown status %d", gBattleStruct->encounter.id, cmd->status)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        if (!(mask & (1u << battler)) || !IsBattlerAlive(battler))
+            continue;
+
+        gBattleMons[battler].status1 = 0;
+        switch (cmd->status)
+        {
+        case ENC_STATUS_NONE:
+            break;
+        case ENC_STATUS_SLEEP:
+            gBattleMons[battler].status1 = STATUS1_SLEEP_TURN(cmd->turns == 0 ? 1 : cmd->turns);
+            break;
+        case ENC_STATUS_POISON:
+            gBattleMons[battler].status1 = STATUS1_POISON;
+            break;
+        case ENC_STATUS_BURN:
+            gBattleMons[battler].status1 = STATUS1_BURN;
+            break;
+        case ENC_STATUS_FREEZE:
+            GetBattlerPartyState(battler)->freezeTurns = 2;
+            gBattleMons[battler].status1 = STATUS1_FREEZE;
+            break;
+        case ENC_STATUS_PARALYSIS:
+            gBattleMons[battler].status1 = STATUS1_PARALYSIS;
+            break;
+        case ENC_STATUS_TOXIC:
+            gBattleMons[battler].status1 = STATUS1_TOXIC_POISON;
+            break;
+        }
+
+        BtlController_EmitSetMonData(battler, B_COMM_TO_CONTROLLER, REQUEST_STATUS_BATTLE, 0, sizeof(gBattleMons[battler].status1), &gBattleMons[battler].status1);
+        MarkBattlerForControllerExec(battler);
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// Maps an ENC_SIDE_* selector onto the status bit and the gSideTimers field that ticks it down.
+// Returns FALSE for a selector outside the enum so the caller can assert on it.
+static bool32 GetEncounterSideStatus(u32 side, u32 which, u32 *statusOut, u16 **timerOut)
+{
+    switch (which)
+    {
+    case ENC_SIDE_REFLECT:      *statusOut = SIDE_STATUS_REFLECT;     *timerOut = &gSideTimers[side].reflectTimer;     break;
+    case ENC_SIDE_LIGHT_SCREEN: *statusOut = SIDE_STATUS_LIGHTSCREEN; *timerOut = &gSideTimers[side].lightscreenTimer; break;
+    case ENC_SIDE_AURORA_VEIL:  *statusOut = SIDE_STATUS_AURORA_VEIL; *timerOut = &gSideTimers[side].auroraVeilTimer;  break;
+    case ENC_SIDE_SAFEGUARD:    *statusOut = SIDE_STATUS_SAFEGUARD;   *timerOut = &gSideTimers[side].safeguardTimer;   break;
+    case ENC_SIDE_MIST:         *statusOut = SIDE_STATUS_MIST;        *timerOut = &gSideTimers[side].mistTimer;        break;
+    case ENC_SIDE_TAILWIND:     *statusOut = SIDE_STATUS_TAILWIND;    *timerOut = &gSideTimers[side].tailwindTimer;    break;
+    case ENC_SIDE_LUCKY_CHANT:  *statusOut = SIDE_STATUS_LUCKY_CHANT; *timerOut = &gSideTimers[side].luckyChantTimer;  break;
+    case ENC_SIDE_RAINBOW:      *statusOut = SIDE_STATUS_RAINBOW;     *timerOut = &gSideTimers[side].rainbowTimer;     break;
+    case ENC_SIDE_SEA_OF_FIRE:  *statusOut = SIDE_STATUS_SEA_OF_FIRE; *timerOut = &gSideTimers[side].seaOfFireTimer;   break;
+    case ENC_SIDE_SWAMP:        *statusOut = SIDE_STATUS_SWAMP;       *timerOut = &gSideTimers[side].swampTimer;       break;
+    default:                                                                                                          return FALSE;
+    }
+    return TRUE;
+}
+
+// SIDE_STATUS (encsetsidestatus / encclearsidestatus). Raises or drops one side-wide status on
+// every side <target> resolves to. The inverse of encclearscreens, which is all-or-nothing and
+// deliberately excludes the Pledge statuses - this one names a single status, so a script can hand
+// out a Safeguard without touching the screens next to it, or raise a Rainbow no Pledge combo made.
+// A <turns> of 0 is permanent: battle_end_turn.c only ticks a timer that is already above 0.
+void BS_EncSetSideStatus(void)
+{
+    NATIVE_ARGS(u8 target, u8 status, u8 turns, bool8 set);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+
+    assertf(cmd->status < ENC_SIDE_COUNT,
+            "encounter %d: unknown side status %d", gBattleStruct->encounter.id, cmd->status)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        u32 side, status;
+        u16 *timer;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        // A doubles target resolves to two battlers on one side; write that side once.
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        if (!GetEncounterSideStatus(side, cmd->status, &status, &timer))
+            continue;
+
+        if (cmd->set)
+        {
+            gSideStatuses[side] |= status;
+            *timer = cmd->turns;
+        }
+        else
+        {
+            gSideStatuses[side] &= ~status;
+            *timer = 0;
+        }
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// REVIVE (encrevive). Brings the first fainted party member back on every side <target> resolves
+// to, at <percent> of its max HP. Silent and a no-op when a side has nobody to revive, so it is
+// safe to call unconditionally; the script supplies its own dialogue.
+//
+// PokemonUseItemEffects with ITEM_MAX_REVIVE is the exact path a Max Revive from the bag runs, so
+// the HP restore and its validity checks are the game's own rather than a second copy of them. It
+// leaves status alone (Max Revive carries no ITEM3 bits), so the clear is explicit here.
+//
+// A party slot that is currently a battler is skipped: a fainted active battler still has its
+// gAbsentBattlerFlags bookkeeping and replacement pending, and reviving it behind the engine's back
+// would desync the two. Only bench Pokemon come back, which is also what "restores a fallen one"
+// means in a script.
+void BS_EncRevive(void)
+{
+    NATIVE_ARGS(u8 target, u8 percent);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u32 sidesSeen = 0;
+
+    for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+    {
+        struct Pokemon *party;
+        u32 side;
+
+        if (!(mask & (1u << battler)))
+            continue;
+
+        side = GetBattlerSide(battler);
+        if (sidesSeen & (1u << side))
+            continue;
+        sidesSeen |= 1u << side;
+
+        party = GetBattlerParty(battler);
+
+        for (u32 i = 0; i < PARTY_SIZE; i++)
+        {
+            u32 hp, maxHp, status = 0;
+            bool32 isBattler = FALSE;
+
+            if (GetMonData(&party[i], MON_DATA_SPECIES) == SPECIES_NONE
+             || GetMonData(&party[i], MON_DATA_IS_EGG)
+             || GetMonData(&party[i], MON_DATA_HP) != 0)
+                continue;
+
+            for (enum BattlerId other = B_BATTLER_0; other < gBattlersCount; other++)
+            {
+                if (GetBattlerSide(other) == side && gBattlerPartyIndexes[other] == i)
+                    isBattler = TRUE;
+            }
+            if (isBattler)
+                continue;
+
+            PokemonUseItemEffects(&party[i], ITEM_MAX_REVIVE, i, 0, TRUE);
+            SetMonData(&party[i], MON_DATA_STATUS, &status);
+
+            maxHp = GetMonData(&party[i], MON_DATA_MAX_HP);
+            hp = maxHp * cmd->percent / 100;
+            if (hp == 0)
+                hp = 1;
+            else if (hp > maxHp)
+                hp = maxHp;
+            SetMonData(&party[i], MON_DATA_HP, &hp);
+            break;
+        }
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// BENCH_HP (encbenchhp). encchangehp's counterpart for a battler's own BENCH rather than the
+// battler itself - mirrors a slice of a hit onto a random bench member of <target>'s side, for a
+// mechanic whose damage bleeds onto the team (Enamorus's Lovers' Bond). <target> is single-slot
+// only; it names a battler purely to resolve a SIDE, since a bench member has no battler of its
+// own. Modeled on encrevive's walk-the-party loop: skip fainted, egg and currently-active slots,
+// then pick uniformly among what is left. <amount>/<mode> read exactly like encchangehp's
+// (ENC_AMOUNT_FIXED default, ENC_AMOUNT_PERCENT scales off the CHOSEN bench mon's own max HP - not
+// the triggering battler's - since a bench mon's max HP is the only portable amount to scale
+// against). Not the animated battler health bar: nothing on the bench is on the field to animate.
+// Jumps <failInstr> when there is nobody eligible, so one command is both the test and the transfer.
+void BS_EncBenchHp(void)
+{
+    NATIVE_ARGS(u8 target, s16 amount, u8 mode, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u32 side;
+    u32 eligible[PARTY_SIZE];
+    u32 eligibleCount = 0;
+    u32 slot;
+    s32 hp, maxHp, delta;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: BENCH_HP target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    side = GetBattlerSide(battler);
+    party = GetBattlerParty(battler);
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        bool32 isBattler = FALSE;
+
+        if (GetMonData(&party[i], MON_DATA_SPECIES) == SPECIES_NONE
+         || GetMonData(&party[i], MON_DATA_IS_EGG)
+         || GetMonData(&party[i], MON_DATA_HP) == 0)
+            continue;
+
+        for (enum BattlerId other = B_BATTLER_0; other < gBattlersCount; other++)
+        {
+            if (GetBattlerSide(other) == side && gBattlerPartyIndexes[other] == i)
+                isBattler = TRUE;
+        }
+        if (isBattler)
+            continue;
+
+        eligible[eligibleCount++] = i;
+    }
+
+    if (eligibleCount == 0)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    slot = eligible[RandomUniform(RNG_ENCOUNTER_SCRIPT, 0, eligibleCount - 1)];
+    maxHp = GetMonData(&party[slot], MON_DATA_MAX_HP);
+    hp = GetMonData(&party[slot], MON_DATA_HP);
+    delta = cmd->amount;
+
+    if (cmd->mode == ENC_AMOUNT_PERCENT && delta != 0)
+    {
+        s32 scaled = (s32)(((s64)maxHp * (delta < 0 ? -delta : delta)) / 100);
+        if (scaled < 1)
+            scaled = 1;
+        delta = (delta < 0) ? -scaled : scaled;
+    }
+
+    hp += delta;
+    if (hp < 0)
+        hp = 0;
+    else if (hp > maxHp)
+        hp = maxHp;
+    SetMonData(&party[slot], MON_DATA_HP, &hp);
+
+    if (hp == 0)
+    {
+        u32 status = 0;
+        SetMonData(&party[slot], MON_DATA_STATUS, &status);
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// READ_FRIENDSHIP (encreadfriendship). Writes <target>'s own party mon's stored friendship
+// (0-255, MON_DATA_FRIENDSHIP) into <var>, the only route from the player's real relationship with
+// their Pokemon into an encounter condition/branch. <target> must resolve to exactly one battler.
+void BS_EncReadFriendship(void)
+{
+    NATIVE_ARGS(u8 target, u8 var);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: READ_FRIENDSHIP target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gEncounterVars[cmd->var] = 0;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    party = GetBattlerParty(battler);
+    gEncounterVars[cmd->var] = GetMonData(&party[gBattlerPartyIndexes[battler]], MON_DATA_FRIENDSHIP);
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// PARTY_BEST (encpartybest). Scans every non-fainted, non-active, non-egg bench member of <side>'s
+// party (<side> is a single-slot EncounterTarget - ENC_TARGET_PLAYER_LEFT/_RIGHT resolves to that
+// trainer's whole party) and writes the party slot index of whichever has the highest stored <stat>
+// into <var>. Reuses encrevive's "walk the party, skip fainted/egg/active" loop and enccomparestat/
+// encreadstat's restricted stat list (STAT_ATK/DEF/SPATK/SPDEF/SPEED - no battle stat behind
+// STAT_ACC/STAT_EVASION, and HP isn't a fair "best" axis since a wounded mon shouldn't outrank a
+// fresh one). Reads the party Pokemon's own stored stat, not a live battle value with stages -
+// nothing on the bench is on the field, so there is no stage to read. Writes ENC_NO_SLOT (0xFF) if
+// the bench is empty.
+void BS_EncounterPartyBest(void)
+{
+    NATIVE_ARGS(u8 side, u8 stat, u8 var);
+    u32 mask = ResolveEncounterTarget((enum EncounterTarget)cmd->side);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u32 side;
+    u32 statField;
+    u32 bestValue = 0;
+    u32 bestSlot = ENC_NO_SLOT;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: PARTY_BEST side %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->side)
+    {
+        gEncounterVars[cmd->var] = ENC_NO_SLOT;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    switch (cmd->stat)
+    {
+    case STAT_ATK:   statField = MON_DATA_ATK;   break;
+    case STAT_DEF:   statField = MON_DATA_DEF;   break;
+    case STAT_SPATK: statField = MON_DATA_SPATK; break;
+    case STAT_SPDEF: statField = MON_DATA_SPDEF; break;
+    case STAT_SPEED: statField = MON_DATA_SPEED; break;
+    default:
+        assertf(FALSE, "encounter %d: PARTY_BEST unsupported stat %d", gBattleStruct->encounter.id, cmd->stat)
+        {
+            gEncounterVars[cmd->var] = ENC_NO_SLOT;
+            gBattlescriptCurrInstr = cmd->nextInstr;
+            return;
+        }
+        gEncounterVars[cmd->var] = ENC_NO_SLOT;
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    side = GetBattlerSide(battler);
+    party = GetBattlerParty(battler);
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        u32 value;
+        bool32 isBattler = FALSE;
+
+        if (GetMonData(&party[i], MON_DATA_SPECIES) == SPECIES_NONE
+         || GetMonData(&party[i], MON_DATA_IS_EGG)
+         || GetMonData(&party[i], MON_DATA_HP) == 0)
+            continue;
+
+        for (enum BattlerId other = B_BATTLER_0; other < gBattlersCount; other++)
+        {
+            if (GetBattlerSide(other) == side && gBattlerPartyIndexes[other] == i)
+                isBattler = TRUE;
+        }
+        if (isBattler)
+            continue;
+
+        value = GetMonData(&party[i], statField);
+        if (bestSlot == ENC_NO_SLOT || value > bestValue)
+        {
+            bestValue = value;
+            bestSlot = i;
+        }
+    }
+
+    gEncounterVars[cmd->var] = bestSlot;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// FORCE_SWITCH (encforceswitch). encswitchout's named-slot sibling: drags <target> (must resolve to
+// exactly one battler, never the boss) out for the bench member at party slot <partySlotVar> - an
+// author variable holding a slot index, typically one encpartybest just wrote - by name rather than
+// at random, with the same stock switch-in presentation (BattleScript_EncounterForcedSwitch). Jumps
+// <failLabel> when that slot is fainted, already active, empty, an egg, or out of range - all
+// ordinary states for a stored slot to have drifted into, so it branches rather than asserts.
+void BS_EncounterForceSwitch(void)
+{
+    NATIVE_ARGS(u8 target, u8 partySlotVar, const u8 *failInstr);
+    u32 mask = ResolveEncounterTarget((enum EncounterTarget)cmd->target);
+    enum BattlerId battler;
+    struct Pokemon *party;
+    u32 partySlot = gEncounterVars[cmd->partySlotVar];
+    u8 boss;
+
+    assertf(mask != 0 && (mask & (mask - 1)) == 0,
+            "encounter %d: FORCE_SWITCH target %d does not resolve to exactly one battler",
+            gBattleStruct->encounter.id, cmd->target)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+    for (battler = B_BATTLER_0; !(mask & (1u << battler)); battler++)
+        ;
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss) && battler == boss)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    if (partySlot >= PARTY_SIZE)
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    party = GetBattlerParty(battler);
+
+    if (GetMonData(&party[partySlot], MON_DATA_SPECIES) == SPECIES_NONE
+     || GetMonData(&party[partySlot], MON_DATA_IS_EGG)
+     || GetMonData(&party[partySlot], MON_DATA_HP) == 0
+     || partySlot == gBattlerPartyIndexes[battler]
+     || (IsDoubleBattle() && partySlot == gBattlerPartyIndexes[GetPartnerBattler(battler)]))
+    {
+        gBattlescriptCurrInstr = cmd->failInstr;
+        return;
+    }
+
+    for (enum BattlerId i = B_BATTLER_0; i < gBattlersCount; i++)
+        gBattleMons[i].volatiles.tryEjectPack = FALSE; // Disable Eject Pack activations
+    gBattleStruct->battlerPartyIndexes[battler] = gBattlerPartyIndexes[battler];
+    gProtectStructs[battler].forcedSwitch = TRUE;
+    gBattleStruct->monToSwitchIntoId[battler] = partySlot;
+    SwitchPartyOrder(battler);
+
+    // BattleScript_EncounterForcedSwitch addresses its victim through BS_TARGET.
+    gBattlerTarget = battler;
+    gBattleScripting.battler = battler;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// BALLS (encsetballs) and CATCH_RATE (encsetcatchrate). Battle-wide rather than per-battler: both
+// describe the ball the player is about to throw, and there is only ever one catch target.
+void BS_EncounterSetBallPolicy(void)
+{
+    NATIVE_ARGS(u8 policy);
+
+    assertf(cmd->policy <= ENC_BALLS_ALLOWED,
+            "encounter %d: unknown ball policy %d", gBattleStruct->encounter.id, cmd->policy)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+    gBattleStruct->encounter.ballPolicy = cmd->policy;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_EncounterSetCatchRate(void)
+{
+    NATIVE_ARGS(u8 catchRate);
+
+    gBattleStruct->encounter.catchRate = cmd->catchRate;
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+void BS_EncSetWeather(void)
+{
+    NATIVE_ARGS(u8 weather, u8 turns);
+    u8 boss;
+
+    assertf(cmd->weather < BATTLE_WEATHER_COUNT,
+            "encounter %d: unknown weather %d", gBattleStruct->encounter.id, cmd->weather)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    // The boss stands in as the setter; the argument only matters for the weather-rock duration
+    // bonus, which the script's own duration replaces below either way.
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss)
+     && TryChangeBattleWeather(boss, cmd->weather, ABILITY_NONE))
+    {
+        // TryChangeBattleWeather picks a move-length duration; an encounter states its own, with
+        // 0 meaning permanent - the same convention primal weather uses (battle_util.c).
+        gBattleStruct->weatherDuration = cmd->turns;
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// Maps an ENC_TERRAIN_* selector onto the engine's B_TERRAIN_* value.
+static const enum BattleTerrain sEncounterTerrains[ENC_TERRAIN_COUNT] =
+{
+    [ENC_TERRAIN_ELECTRIC] = B_TERRAIN_ELECTRIC,
+    [ENC_TERRAIN_GRASSY]   = B_TERRAIN_GRASSY,
+    [ENC_TERRAIN_MISTY]    = B_TERRAIN_MISTY,
+    [ENC_TERRAIN_PSYCHIC]  = B_TERRAIN_PSYCHIC,
+};
+
+// TERRAIN (encsetterrain). The mirror of BS_EncSetWeather one field over: the stock setterrain
+// opcode reads its terrain off gCurrentMove, which a checkpoint script does not have.
+// TryChangeBattleTerrain handles the sky-battle refusal, swapping out whatever terrain was up, and
+// the terrainAbilityDone / paradox-stat resets. Silent; clear it again with removeterrain.
+void BS_EncSetTerrain(void)
+{
+    NATIVE_ARGS(u8 terrain, u8 turns);
+    u8 boss;
+
+    assertf(cmd->terrain < ENC_TERRAIN_COUNT,
+            "encounter %d: unknown terrain %d", gBattleStruct->encounter.id, cmd->terrain)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    // The boss stands in as the setter, as in BS_EncSetWeather; it only matters for the Terrain
+    // Extender duration bonus, which the script's own duration replaces below either way.
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss)
+     && TryChangeBattleTerrain(boss, sEncounterTerrains[cmd->terrain]))
+    {
+        // TryChangeBattleTerrain picks a move-length duration; an encounter states its own, with
+        // 0 meaning permanent - the same convention encsetweather uses.
+        gFieldTimers.terrainTimer = cmd->turns;
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// Maps an ENC_FIELD_* selector onto its STATUS_FIELD_* bit and the gFieldTimers member that ticks
+// it down. Returns FALSE for a selector outside the enum so the caller can assert on it.
+static bool32 GetEncounterFieldStatus(u32 which, u32 *statusOut, u8 **timerOut)
+{
+    switch (which)
+    {
+    case ENC_FIELD_TRICK_ROOM:  *statusOut = STATUS_FIELD_TRICK_ROOM;  *timerOut = &gFieldTimers.trickRoomTimer;  break;
+    case ENC_FIELD_GRAVITY:     *statusOut = STATUS_FIELD_GRAVITY;     *timerOut = &gFieldTimers.gravityTimer;    break;
+    case ENC_FIELD_WONDER_ROOM: *statusOut = STATUS_FIELD_WONDER_ROOM; *timerOut = &gFieldTimers.wonderRoomTimer; break;
+    case ENC_FIELD_MAGIC_ROOM:  *statusOut = STATUS_FIELD_MAGIC_ROOM;  *timerOut = &gFieldTimers.magicRoomTimer;  break;
+    case ENC_FIELD_FAIRY_LOCK:  *statusOut = STATUS_FIELD_FAIRY_LOCK;  *timerOut = &gFieldTimers.fairyLockTimer;  break;
+    case ENC_FIELD_MUD_SPORT:   *statusOut = STATUS_FIELD_MUDSPORT;    *timerOut = &gFieldTimers.mudSportTimer;   break;
+    case ENC_FIELD_WATER_SPORT: *statusOut = STATUS_FIELD_WATERSPORT;  *timerOut = &gFieldTimers.waterSportTimer; break;
+    default:                                                                                                     return FALSE;
+    }
+    return TRUE;
+}
+
+// FIELD_STATUS (encsetfieldstatus / encclearfieldstatus). Field statuses are otherwise unreachable
+// from a checkpoint script: encsetterrain exists precisely because the stock setterrain opcode reads
+// its type off gCurrentMove, and every other field status has the same problem with no equivalent.
+// encsetfieldstatus ENC_FIELD_GRAVITY matches Cmd_setgravity exactly (flag plus timer, nothing
+// else), so Gravity raised this way behaves the same as the move. <turns> of 0 is permanent, the
+// same convention encsetweather/encsetterrain/encsetsidestatus already use - every ticker in
+// battle_end_turn.c guards on timer > 0 before decrementing. No battler loop and no sidesSeen
+// tracking here: unlike a side status, a field status has exactly one instance.
+void BS_EncSetFieldStatus(void)
+{
+    NATIVE_ARGS(u8 status, u8 turns, bool8 set);
+    u32 statusFlag;
+    u8 *timer;
+
+    assertf(GetEncounterFieldStatus(cmd->status, &statusFlag, &timer),
+            "encounter %d: unknown field status %d", gBattleStruct->encounter.id, cmd->status)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    if (cmd->set)
+    {
+        gFieldStatuses |= statusFlag;
+        *timer = cmd->turns;
+    }
+    else
+    {
+        gFieldStatuses &= ~statusFlag;
+        *timer = 0;
+    }
+
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// HEAL_BLOCK (encsethealblock). Sets the same volatile Heal Block itself sets on every battler
+// <target> resolves to, so every existing heal-path check reads it unchanged; HandleEndTurnHealBlock
+// (battle_end_turn.c) already ticks the timer and prints the engine's own expiry line, so a
+// non-zero <turns> needs nothing on the way out - 0 clears it outright. The boss is skipped, the
+// same reason encsettrapped/encsetembargo skip it.
+// healBlockTimer is a bitfield sized by B_EMBARGO_TIMER's sibling, B_HEAL_BLOCK_TIMER; a larger
+// value truncates silently, so this asserts rather than writing past the field.
+void BS_EncSetHealBlock(void)
+{
+    NATIVE_ARGS(u8 target, u8 turns);
+    u32 mask = ResolveEncounterTarget(cmd->target);
+    u8 boss;
+
+    assertf(cmd->turns <= B_HEAL_BLOCK_TIMER,
+            "encounter %d: HEAL_BLOCK turns %d exceeds B_HEAL_BLOCK_TIMER", gBattleStruct->encounter.id, cmd->turns)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    if (ResolveEncounterBattlerRef(ENC_BOSS, &boss))
+    {
+        for (enum BattlerId battler = B_BATTLER_0; battler < gBattlersCount; battler++)
+        {
+            if (!(mask & (1u << battler)) || battler == boss)
+                continue;
+
+            gBattleMons[battler].volatiles.healBlockTimer = cmd->turns;
+        }
+    }
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
+// encjumpifchance: takes the jump with cmd->percent probability, otherwise falls through. A
+// general-purpose random branch for encounter scripts - the engine's other random-branch opcodes
+// are all tied to a specific move.
+void BS_EncJumpIfChance(void)
+{
+    NATIVE_ARGS(u8 percent, const u8 *jumpInstr);
+
+    assertf(cmd->percent <= 100,
+            "encounter %d: encjumpifchance percent %d out of range", gBattleStruct->encounter.id, cmd->percent)
+    {
+        gBattlescriptCurrInstr = cmd->nextInstr;
+        return;
+    }
+
+    if (RandomPercentage(RNG_ENCOUNTER_SCRIPT, cmd->percent))
+        gBattlescriptCurrInstr = cmd->jumpInstr;
+    else
+        gBattlescriptCurrInstr = cmd->nextInstr;
+}
+

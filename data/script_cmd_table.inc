@@ -184,7 +184,8 @@ gScriptCmdTable::
 	script_cmd_table_entry SCR_OP_SETRESPAWN                    ScrCmd_setrespawn,                  requests_effects=1  @ 0x9f
 	script_cmd_table_entry SCR_OP_CHECKPLAYERGENDER             ScrCmd_checkplayergender,           requests_effects=1  @ 0xa0
 	script_cmd_table_entry SCR_OP_PLAYMONCRY                    ScrCmd_playmoncry,                  requests_effects=1  @ 0xa1
-	script_cmd_table_entry SCR_OP_SETMETATILE                   ScrCmd_setmetatile,                 requests_effects=1  @ 0xa2
+	script_cmd_table_entry SCR_OP_SETMETATILE                   ScrCmd_setmetatile,                 requests_effects=1  @ 0xa1
+	script_cmd_table_entry SCR_OP_SETMETATILEWITHELEVATION      ScrCmd_setmetatilewithelevation,    requests_effects=1  @ 0xa2
 	script_cmd_table_entry SCR_OP_RESETWEATHER                  ScrCmd_resetweather,                requests_effects=1  @ 0xa3
 	script_cmd_table_entry SCR_OP_SETWEATHER                    ScrCmd_setweather,                  requests_effects=1  @ 0xa4
 	script_cmd_table_entry SCR_OP_DOWEATHER                     ScrCmd_doweather,                   requests_effects=1  @ 0xa5
@@ -254,6 +255,7 @@ gScriptCmdTable::
 	script_cmd_table_entry SCR_OP_HIDEFOLLOWER                  ScrCmd_hidefollower,                requests_effects=1  @ 0xe5
 	script_cmd_table_entry SCR_OP_GETBRAILLESTRINGWIDTH         ScrCmd_getbraillestringwidth,       requests_effects=1  @ 0xe6
 	script_cmd_table_entry SCR_OP_POKEMARTBADGEBASED            ScrCmd_pokemartbadgebased,          requests_effects=1  @ 0xe7
+	script_cmd_table_entry SCR_OP_SETBATTLEENCOUNTER            ScrCmd_setbattleencounter,          requests_effects=1  @ 0xe8
 
 	.if ALLOCATE_SCRIPT_CMD_TABLE
 gScriptCmdTableEnd::

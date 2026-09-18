@@ -1,0 +1,284 @@
+Encounter: Thundurus
+
+# Thundurus, "The Bolt Strike Pokemon". One rule, stated in both directions:
+#   CHARGE IS A BOMB, AND THE PLAYER DECIDES WHEN IT GOES OFF. Every point of Charge makes Thundurus
+#   deadlier - and Charge 6 is OVERLOAD, the only real damage window the fight ever opens.
+# CHARGE, 0-6, is the whole fight on one axis, and the bands carry names:
+#   0 Still / 1 Humming / 2 Crackling (rods go live) / 3 Arcing (strikes hurt more, and lightning
+#   starts falling on its own from Phase 1) / 4 Blinding / 5 OVERCHARGED (crit boost, +15% Sp. Atk,
+#   guard +2) / 6 OVERLOAD (it discharges, Charge -> 0, and its guard collapses to 70).
+#   +1 an Electric-type move resolved on the field - EITHER SIDE'S. +1 a rod stood through the whole
+#   turn. +1 the player took >= 5% of Thundurus's max HP off this turn. +1 every turn on its own from
+#   Phase 1. +2 a strike landed. +2 one of your Pokemon fainted. -1 a Rock or Ice move landed on
+#   Thundurus. -2 you broke a strike or earthed one on a Protect.
+# THE METER IS THE TRAP, INVERTED. Every shipped Gen 5 sibling asks the player to hold a number DOWN
+#   (Kyurem's ENTROPY, Landorus's STABILITY, Virizion's MOMENTUM). Here the player is rewarded for
+#   filling it, because 90% reduction plus Survive: True means a suppressed Thundurus is simply an
+#   endless grind. The fight has to be MADE to explode, and reaching Overload means letting strikes
+#   through on purpose.
+# THE LIGHTNING ROD is a mark on the PLAYER'S active Pokemon, not a shield on the boss - the decoy
+#   reading is Landorus's EARTH PILLARS. A rod feeds Charge +1 a turn and starts a three-turn
+#   countdown. Three answers, all telegraphed: Protect it (the bolt earths, Charge -2), switch it out
+#   (the rod loses its ground, countdown cancelled), or take >= 20% of Thundurus's max HP off in one
+#   turn (the discharge is disrupted, Charge -2, and it loses its next action). Do nothing and the
+#   strike lands for 15-35% by Charge band, drops a Speed stage, and feeds Charge +2.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY (guideline 8). Sleep and freeze work COMPLETELY in Phase 0
+#   and are worth bringing; from Phase 1 the storm shakes them off at the top of every turn, so they
+#   have to be re-applied. Prankster hands its status moves real +1 priority against a setup turn.
+#   Toxic is flat. Electric coverage feeds Charge, and from Phase 2 the Therian forme's Volt Absorb
+#   heals off it outright.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Thundurus_Grounded sets a real one
+    Balls: Blocked
+    DamageReduction: 87         # Static Air. Every later value is written absolutely by
+                                # EncScript_Thundurus_ApplyStorm
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Electric/Flying is 2x to Ice and 2x to Rock, never 4x, so this is
+                                # boilerplate here rather than load-bearing - kept per guideline 6
+    FlatToxicDamage: True
+    Survive: True               # the catch window is at 1 HP and the reeling guard of 70 during an
+                                # Overload could otherwise be blown straight past. Cleared in
+                                # _Grounded
+    Ability: ABILITY_PRANKSTER  # its own Incarnate ability, and the substitution for "Thundurus
+                                # gains priority": a priority Thunder Wave lands before the setup
+                                # turn. The Therian form change hands it Volt Absorb from the new
+                                # species, which makes the player's own Electric coverage actively
+                                # bad in Phase 2 on top of it feeding Charge
+    Moves: MOVE_THUNDERBOLT, MOVE_THUNDER_WAVE, MOVE_SLUDGE_WAVE, MOVE_FOCUS_BLAST
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..Silent to 0..15. No var-to-var comparison appears anywhere in this design; every test is
+# against a literal, and ENC_SNAP_DAMAGE is the engine's own answer to "subtract one value from
+# another".
+# 0 Phase (0 Static Air / 1 Thunderstorm / 2 Wrath of the Storm / 3 Grounded), 1 Charge (0-6),
+# 2 LastBand (the last ANNOUNCED Charge - the callout's re-fire latch), 3 TurnGuard (the once-per-turn
+# scaffold), 4 Earthed (a Rock/Ice move has already been counted this turn), 5 Strike (0 no rod /
+# 1-3 turns left on the countdown / 4 resolving this end of turn - a rod stands whenever it is
+# non-zero), 6 BossMark (Thundurus's HP% at turn open), 7 Scratch (the copy ENC_SNAP_DAMAGE consumes,
+# so BossMark survives being measured), 8 Gained (the damage-taken +1 has been taken this turn),
+# 9 Fed (an Electric move has been counted this turn), 10 Overcharged (the Charge 5 perks are
+# applied), 11 Discharge (turns left in the post-Overload window), 12 RodCd (turns until a new rod may
+# be driven), 13 EventGuard (per-turn guard shared by OnFaint and OnSwitchIn), 14 Strikes (strikes
+# landed - drives escalating dialogue), 15 Silent (the Phase 2 STORM GOES SILENT beat has fired).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Thundurus_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Charge) >= 0
+    Var(LastBand) >= 0
+    Var(TurnGuard) >= 0
+    Var(Earthed) >= 0
+    Var(Strike) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Gained) >= 0
+    Var(Fed) >= 0
+    Var(Overcharged) >= 0
+    Var(Discharge) >= 0
+    Var(RodCd) >= 0
+    Var(EventGuard) >= 0
+    Var(Strikes) >= 0
+    Var(Silent) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses a
+# threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at SELECTION,
+# so whichever fires first permanently disables the other. All three sit below _TurnClose (80), so at
+# an OnTurnEnd where the player's damage crossed a threshold the transition runs first and every
+# later script that turn sees the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Thundurus_Thunderstorm
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Thundurus_Thunderstorm
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Thundurus_Wrath
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Thundurus_Wrath
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Thundurus_Grounded
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Thundurus_Grounded
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnGuard is its only gate and the script sets it immediately, so no
+# branch out of it can leave it re-armed. It ticks the rod cooldown and the Overload window (the
+# decrement half of the split countdown), climbs the meter on its own from Phase 1, takes the mark
+# the turn's damage is measured against, moves the OVERCHARGED perks in both directions, reprints the
+# live countdown and runs the recurring cue.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Thundurus_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# A LIGHTNING ROD is driven into the player's active Pokemon and the three-turn countdown starts in
+# the same beat - one var carries both, so a rod stands exactly while Strike is non-zero.
+# Self-disabling: the script sets Strike, which its own condition reads as 0.
+Trigger: OnTurnStart
+Priority: 12
+Script: EncScript_Thundurus_DriveRod
+Conditions:
+    Var(Phase) <= 2
+    Var(Strike) == 0
+    Var(RodCd) == 0
+    Var(Charge) >= 2
+    Var(Discharge) == 0
+
+# THE STORM SHAKES IT OFF. Guideline 8 in its variety form: sleep and freeze work completely in Phase
+# 0 and are worth bringing, but from the thunderstorm on they are cleared at the top of every turn,
+# so they have to be re-applied. STATUS1_SLEEP is a 3-bit turn counter, so the range test is the
+# correct form; STATUS1_FREEZE is a single bit with no counter, so == is exact there. Status1 is
+# exclusive, so this never touches Toxic or paralysis. Self-disabling: it clears the status its own
+# condition reads.
+Trigger: OnTurnStart
+Priority: 16
+Script: EncScript_Thundurus_ShakesOff
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Any:
+        All:
+            Battler(Boss).Status >= 1
+            Battler(Boss).Status <= 7
+        Battler(Boss).Status == STATUS1_FREEZE
+
+# THE AIR CONDUCTS. Any Electric-type move resolving on the field - the player's included, which is
+# the fight's central trap. Fed caps it at one per turn so a multi-hit Electric move cannot vault the
+# meter, and it is what stops this event trigger re-selecting until the script cap trips.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Thundurus_Conduct
+Conditions:
+    Var(Phase) <= 2
+    Var(Fed) == 0
+    Var(TurnGuard) == 1
+    Event.MoveType == TYPE_ELECTRIC
+
+# THE CHARGE EARTHS. A Rock- or Ice-type move landing on Thundurus - its two real weaknesses - takes
+# Charge down 1. At OnMoveEnd Event.Battler is the battler that GOT HIT. Earthed self-disables it,
+# the same way Fed does for _Conduct.
+Trigger: OnMoveEnd
+Priority: 32
+Script: EncScript_Thundurus_Earth
+Conditions:
+    Var(Phase) <= 2
+    Var(Earthed) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_ROCK
+        Event.MoveType == TYPE_ICE
+
+# One of the player's Pokemon fell - the storm feeds on it. EventGuard stops the replacement
+# switch-in being processed a second time.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Thundurus_TheyFell
+Conditions:
+    Var(Phase) <= 2
+    Var(EventGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE ROD LOSES ITS GROUND - the switching answer. TurnGuard == 1 is load-bearing: OnSwitchIn fires
+# for the player's lead BEFORE OnBattleStart, when every var is still 0.
+Trigger: OnSwitchIn
+Priority: 31
+Script: EncScript_Thundurus_TheyEntered
+Conditions:
+    Var(Phase) <= 2
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE LEDGER. Runs before the strike resolves (81/82), so the strike's own damage is never counted as
+# the player's damage for the charge-break test, and the countdown it decrements is read one script
+# later. Self-disables by clearing TurnGuard.
+# The independent storm strike rides on the tail of this script rather than owning a trigger of its
+# own: its conditions (no rod, Charge 3+, no Overload window) are ones it cannot change, so as a
+# trigger it would re-select until the per-checkpoint script cap tripped, and there is no spare
+# author variable left for a per-turn latch. Folded in here it inherits TurnGuard as its latch for
+# free.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Thundurus_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# THE BOLT EARTHS ITSELF. Protected is a condition operand, not something a script can branch on, so
+# the Protect answer is its own trigger one priority ahead of the strike: it clears Strike, and the
+# priority-82 script then finds nothing to do.
+Trigger: OnTurnEnd
+Priority: 81
+Script: EncScript_Thundurus_StrikeEarthed
+Conditions:
+    Var(Phase) <= 2
+    Var(Strike) == 4
+    Battler(PlayerLeft).Protected == 1
+
+# The countdown ran out and nothing answered it. Self-disabling: the script clears Strike.
+Trigger: OnTurnEnd
+Priority: 82
+Script: EncScript_Thundurus_StrikeResolve
+Conditions:
+    Var(Phase) <= 2
+    Var(Strike) == 4
+
+# OVERLOAD. Runs after the strike (82), so a strike landing at Charge 4 (+2) rolls straight into the
+# Overload the same turn - the payoff the whole loop is built around. Self-disabling: the script
+# zeroes Charge and opens the Discharge window.
+Trigger: OnTurnEnd
+Priority: 84
+Script: EncScript_Thundurus_Overload
+Conditions:
+    Var(Phase) <= 2
+    Var(Charge) >= 6
+    Var(Discharge) == 0
+
+# THE STORM RESUMES. The Phase 2 silence expired and Thundurus is still standing. Self-disabling: the
+# script puts Charge back to 5, which its own condition reads as <= 4.
+Trigger: OnTurnEnd
+Priority: 88
+Script: EncScript_Thundurus_StormResumes
+Conditions:
+    Var(Phase) == 2
+    Var(Silent) == 1
+    Var(Discharge) == 0
+    Var(Charge) <= 4

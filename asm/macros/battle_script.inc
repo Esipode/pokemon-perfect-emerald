@@ -253,6 +253,34 @@
 	.byte \value
 	.endm
 
+@ encounter script variables (constants/battle_encounter.h) - thin wrappers over the opcodes
+@ above, addressed into gEncounterVars so authors write a var index instead of a raw address.
+@ NOTE: this uses `gEncounterVars + \var` directly rather than the sENCOUNTER_VAR() cpp macro -
+@ .include (unlike #include) is never seen by the C preprocessor, so a #define referenced inside
+@ a macro body here would reach the assembler unexpanded. sENCOUNTER_VAR is still fine for a
+@ script to use directly, since a top-level .s file's own text *is* cpp-preprocessed.
+	.macro encsetvar var:req, value:req
+	setbyte gEncounterVars + \var, \value
+	.endm
+
+	.macro encaddvar var:req, value:req
+	addbyte gEncounterVars + \var, \value
+	.endm
+
+	.macro encsubvar var:req, value:req
+	subbyte gEncounterVars + \var, \value
+	.endm
+
+	.macro encjumpifvar comparison:req, var:req, value:req, jumpInstr:req
+	jumpifbyte \comparison, gEncounterVars + \var, \value, \jumpInstr
+	.endm
+
+	@ Copies var \src into var \dst. For a script that needs to consume a counter without losing it -
+	@ copy it to a scratch var and decrement that.
+	.macro enccopyvar dst:req, src:req
+	copybyte gEncounterVars + \dst, gEncounterVars + \src
+	.endm
+
 	.macro copyarray dest:req, src:req, size:req
 	.byte B_SCR_OP_COPYARRAY
 	.4byte \dest
@@ -1133,6 +1161,666 @@
 	.macro callnative func:req
 	.byte B_SCR_OP_CALLNATIVE
 	.4byte \func
+	.endm
+
+@ Encounter command vocabulary (constants/battle_encounter.h's enum EncounterTarget).
+@ callnative-first - none of these are real opcodes.
+
+	@ Changes HP for every battler \target resolves to by \amount (positive = heal, negative =
+	@ damage), reusing the same passive healthbarupdate/datahpupdate opcodes Leftovers
+	@ and status damage use, once per targeted battler so the health bar still animates for each.
+	@ \mode is ENC_AMOUNT_FIXED (raw HP, the default) or ENC_AMOUNT_PERCENT (percent of that
+	@ battler's own max HP - the portable choice when the boss's level isn't fixed).
+	@ Scripted damage ignores the target's encounter damage reduction: the number here is the
+	@ encounter's own, not something for another encounter rule to rescale.
+	@ A battler taken to 0 HP faints in place, mirroring status/weather chip damage
+	@ (BattleScript_DoTurnDmg); checkteamslost ends the battle if that empties a side.
+	.macro encchangehp target:req, amount:req, mode=ENC_AMOUNT_FIXED
+	callnative BS_EncounterChangeHpBegin
+	.byte \target
+	.2byte \amount
+	.byte \mode
+1:
+	callnative BS_EncounterChangeHpStep
+	.4byte 2f
+	healthbarupdate BS_SCRIPTING
+	datahpupdate BS_SCRIPTING, ASSURANCE_IGNORE
+	tryfaintmon BS_SCRIPTING
+	checkteamslost 2f
+	goto 1b
+2:
+	.endm
+
+	@ Records \target's current HP as a percentage of its max HP (0-100) into author variable \var.
+	@ \target must resolve to exactly one battler - a percentage is one byte, so there is no sensible
+	@ reading of "snapshot a whole set into it". A living battler never records 0.
+	@ \mode selects what gets written:
+	@   ENC_SNAP_SET      (default) the current percentage, overwriting whatever \var held
+	@   ENC_SNAP_LOWEST   the current percentage, but only if it is LOWER than what \var holds
+	@   ENC_SNAP_RECOVERY max(0, currentPct - \var) - how far \target has recovered since the mark
+	@ \failInstr (optional) is jumped to when nothing was written: for LOWEST, the value was not
+	@ lower; for RECOVERY, there was no recovery; for SET, never. So one command is both the test
+	@ and the record, the same way encclearscreens is both the test and the clear.
+	.macro encsnapshothp target:req, var:req, mode=ENC_SNAP_SET, failInstr=0
+	callnative BS_EncSnapshotHp
+	.byte \target
+	.byte \var
+	.byte \mode
+	.4byte \failInstr
+	.endm
+
+	@ Moves \target's HP TO the percentage held in author variable \var, healing or damaging as
+	@ needed, with the same animated health bar encchangehp uses. The counterpart to encsnapshothp:
+	@ record a percentage into a var, then snap the battler back to it later. Like encchangehp this
+	@ bypasses the target's damage reduction, and a battler taken to 0 HP faints in place.
+	.macro encrewindhp target:req, var:req
+	callnative BS_EncounterChangeHpBeginVar
+	.byte \target
+	.byte \var
+1:
+	callnative BS_EncounterChangeHpStep
+	.4byte 2f
+	healthbarupdate BS_SCRIPTING
+	datahpupdate BS_SCRIPTING, ASSURANCE_IGNORE
+	tryfaintmon BS_SCRIPTING
+	checkteamslost 2f
+	goto 1b
+2:
+	.endm
+
+	@ Writes the AI's predicted move CATEGORY for \target into author variable \var:
+	@   0 no prediction this turn   1 physical   2 special   3 status
+	@ \target must resolve to exactly one battler. This is the real AI_FLAG_PREDICT_MOVE prediction
+	@ (gAiLogicData->predictedMove), computed during action selection - so it is only meaningful at
+	@ OnTurnStart, and only in an encounter whose AiFlags: include AI_FLAG_PREDICT_MOVE.
+	@ The category rather than the move id: a move id doesn't fit in a byte, and three outcomes are
+	@ what a player can actually plan around.
+	.macro encstoreprediction target:req, var:req
+	callnative BS_EncStorePrediction
+	.byte \target
+	.byte \var
+	.endm
+
+	@ Writes the current move's BASE type into author variable \var - the same value an
+	@ Event.MoveType condition reads. Conditions and encjumpifvar can only compare a variable
+	@ against a literal, never another variable, so this is what lets a script persist "the type
+	@ of the move that just landed" and compare it against what a later turn's move types out to.
+	@ OnMoveEnd only, since it reads the event's move; reading it elsewhere writes TYPE_NONE.
+	.macro encstoretype var:req
+	callnative BS_EncStoreType
+	.byte \var
+	.endm
+
+	@ Writes how well the player knows \species into author variable \var:
+	@   0 never met   1 seen in the Pokedex   2 caught in the Pokedex
+	@ Conditions read battle state only, so this is the only route from "what has the player done
+	@ outside this battle" into an encounter script - a counterpart legendary, a fusion partner, a
+	@ rival form. Two Pokedex bit tests, so it is cheap enough for any checkpoint; alternate forms
+	@ share a dex slot and so count as the same species. The caught reading survives the Pokemon
+	@ being released or traded away.
+	.macro encowned species:req, var:req
+	callnative BS_EncOwned
+	.2byte \species
+	.byte \var
+	.endm
+
+	@ Files the type of the move that just landed as a type-keyed damage resistance on \target, at
+	@ \percent (capped at ENC_MAX_ADAPT_PERCENT), in a FIFO \slots deep (capped at
+	@ ENC_MAX_ADAPTATIONS). Re-filing a type already held raises it to \percent instead of taking a
+	@ second slot, and a \slots narrower than the board drops the overflow first.
+	@ \countVar takes the resulting adaptation count - the authoritative board size, so a script that
+	@ mirrors it can never drift. \resultVar takes an ENC_ADAPT_RESULT_* outcome:
+	@   ENC_ADAPT_RESULT_HARDENED   the type was already held; its percent was raised
+	@   ENC_ADAPT_RESULT_FILED      filed into a free slot
+	@   ENC_ADAPT_RESULT_EVICTED    filed, and the OLDEST adaptation was pushed out
+	@ The new type is buffered into B_BUFF1 and any evicted type into B_BUFF2.
+	@ OnMoveEnd only - it reads the event's move. A move that missed, was blocked or had no effect is
+	@ ignored outright and leaves both vars untouched, so a branch on \resultVar can't act on a whiff.
+	.macro encadapt target:req, percent:req, slots:req, countVar:req, resultVar:req
+	callnative BS_EncAdapt
+	.byte \target
+	.byte \percent
+	.byte \slots
+	.byte \countVar
+	.byte \resultVar
+	.endm
+
+	@ Drops one type adaptation from \target - ENC_ADAPT_OLDEST, ENC_ADAPT_NEWEST or ENC_ADAPT_ALL -
+	@ and writes the remaining count into \countVar. The dropped type is buffered into B_BUFF1
+	@ (ENC_ADAPT_ALL buffers the newest of what it wiped). Silent, and a no-op on an empty board, so
+	@ it is safe to call unconditionally - test \countVar afterwards to know whether anything fell.
+	.macro encpurgeadapt target:req, which:req, countVar:req
+	callnative BS_EncPurgeAdapt
+	.byte \target
+	.byte \which
+	.byte \countVar
+	.endm
+
+	@ Writes the result of comparing \targetA's live \stat against \targetB's into author variable
+	@ \var: 0 = A is lower, 1 = equal, 2 = A is higher. Both targets must resolve to exactly one
+	@ live battler. Conditions and encjumpifvar only compare a var against a literal, so a rule that
+	@ weighs one battler's stat against another's needs a command that parks the answer in a var.
+	@ STAT_SPEED reads the full turn-order speed (Tailwind, Choice Scarf, paralysis, stages); the
+	@ other stats read the plain stat-with-stages value. STAT_ACC/STAT_EVASION have no battle stat.
+	.macro enccomparestat targetA:req, targetB:req, stat:req, var:req
+	callnative BS_EncCompareStat
+	.byte \targetA
+	.byte \targetB
+	.byte \stat
+	.byte \var
+	.endm
+
+	@ Writes \target's live \stat STAGE (raw domain, 0-12, 6 = neutral - the same domain
+	@ Battler(<ref>).Stat(<STAT>) conditions read) into author variable \var. \target must resolve
+	@ to exactly one live battler. enccomparestat's single-target sibling: same restricted stat list
+	@ (STAT_ATK/DEF/SPATK/SPDEF/SPEED - no battle stat behind STAT_ACC/STAT_EVASION), same callnative
+	@ plumbing, a read instead of a comparison.
+	.macro encreadstat target:req, stat:req, var:req
+	callnative BS_EncReadStat
+	.byte \target
+	.byte \stat
+	.byte \var
+	.endm
+
+	@ Writes 1 into author variable \var if \target (must resolve to exactly one live battler) has
+	@ \gimmick (a GIMMICK_* constant) as its active gimmick, else 0. GetActiveGimmick/IsGimmickSelected
+	@ are read-only and callable from any checkpoint with no side effects - the only route from "what
+	@ gimmick is the player using" into a checkpoint script.
+	.macro encreadgimmick target:req, gimmick:req, var:req
+	callnative BS_EncReadGimmick
+	.byte \target
+	.byte \gimmick
+	.byte \var
+	.endm
+
+	@ Adds \stages (signed) to \stat for every battler \target resolves to, clamped to the normal
+	@ stat stage range. Silent - no message, no animation (outline Sec31); pair with playanimation
+	@ or a literal trybattlerstatchange call if presentation is wanted.
+	.macro encchangestat target:req, stat:req, stages:req
+	callnative BS_EncounterChangeStat
+	.byte \target
+	.byte \stat
+	.byte \stages
+	.endm
+
+	@ Moves the raw battle stat (not the stage) of \stat by \amount for every battler \target
+	@ resolves to. \mode is ENC_AMOUNT_FIXED (raw points, the default) or ENC_AMOUNT_PERCENT
+	@ (percent of the battler's current value for that stat). \stat must be STAT_ATK, STAT_DEF,
+	@ STAT_SPATK, STAT_SPDEF or STAT_SPEED - there is no battle stat behind STAT_ACC/STAT_EVASION.
+	@ Silent, like encchangestat; unlike a stage change, Haze and switching out don't undo it.
+	.macro encchangestatvalue target:req, stat:req, amount:req, mode=ENC_AMOUNT_FIXED
+	callnative BS_EncounterChangeStatValue
+	.byte \target
+	.byte \stat
+	.2byte \amount
+	.byte \mode
+	.endm
+
+	@ Sets how much damage every battler \target resolves to takes, as a percentage reduction:
+	@ 70 means it takes 70% less from every source that goes through the damage formula or a
+	@ passive HP tick. Replaces the current value; 0 clears it. Max ENC_MAX_DAMAGE_REDUCTION.
+	.macro encsetdamagereduction target:req, percent:req
+	callnative BS_EncounterSetDamageReduction
+	.byte \target
+	.byte \percent
+	.endm
+
+	@ Replaces the ENC_IMMUNE_* mask on every battler \target resolves to (0 clears it). See
+	@ constants/battle_encounter.h for what each bit covers; ENC_IMMUNE_ALL sets every one.
+	.macro encsetimmunity target:req, immunities:req
+	callnative BS_EncounterSetImmunity
+	.byte \target
+	.byte \immunities
+	.endm
+
+	@ Clamps every battler \target resolves to at 2x incoming type effectiveness (TRUE) or removes
+	@ the clamp (FALSE). Unlike encsetimmunity, this never blocks a move - a double weakness still
+	@ lands, it just can't stack into a quadruple one.
+	.macro encsetcaptypeeffectiveness target:req, cap:req
+	callnative BS_EncounterSetCapTypeEffectiveness
+	.byte \target
+	.byte \cap
+	.endm
+
+	@ TRUE stops Toxic's counter from scaling every battler \target resolves to up each turn - it
+	@ takes the same flat 1/16 max HP regular Poison would, every turn, instead of that growing
+	@ turn over turn. FALSE restores the normal ramp.
+	.macro encsetflattoxicdamage target:req, flat:req
+	callnative BS_EncounterSetFlatToxicDamage
+	.byte \target
+	.byte \flat
+	.endm
+
+	@ TRUE guards every battler \target resolves to against dropping below 1 HP from anything that
+	@ goes through the damage formula or a passive HP tick (weather, Toxic, recoil, confusion). It
+	@ does NOT cover fixed-damage moves, Perish Song or Destiny Bond - pair with encsetimmunity.
+	@ FALSE removes the guard. For scripted last-stand / rebirth beats and guaranteed catch windows.
+	.macro encsetsurvive target:req, survive:req
+	callnative BS_EncounterSetSurvive
+	.byte \target
+	.byte \survive
+	.endm
+
+	@ Gives every battler \target resolves to the same protection Protect itself grants, so Feint,
+	@ never-miss moves and contact punishment all behave exactly as they do against a real Protect.
+	@ For a telegraphed evade/brace turn. Only useful at OnTurnStart: gProtectStructs is cleared
+	@ after end-of-turn effects, so a protect set there covers the whole turn and expires on its own.
+	.macro encsetprotect target:req
+	callnative BS_EncSetProtect
+	.byte \target
+	.endm
+
+	@ Sets (TRUE) or clears (FALSE) the Focus Energy volatile on every battler \target resolves to -
+	@ a critical-hit ratio a script can raise and lower again as a meter moves. Cmd_setfocusenergy
+	@ cannot serve here: it reads gCurrentMove to tell Focus Energy from Dragon Cheer and writes
+	@ gBattleStruct->moveResultFlags[gBattlerTarget], both stale outside a move, and it has no way to
+	@ clear the bit. Silent - the caller supplies its own dialogue.
+	.macro encsetcrit target:req, state:req
+	callnative BS_EncSetCrit
+	.byte \target
+	.byte \state
+	.endm
+
+	@ Sets the same escape-prevention volatile Mean Look sets on every battler \target resolves to,
+	@ with the boss as the trapper - so switching and fleeing are both refused until a script clears
+	@ it again, or the boss faints and the engine's own cleanup releases everything it held.
+	@ Ghost-types are exempt (B_GHOSTS_ESCAPE >= GEN_6), the same way they are exempt from Mean Look.
+	@ Unlike encsetprotect this is NOT wiped at end of turn: it persists until cleared, which is the
+	@ point. The boss is skipped even when \target includes it.
+	.macro encsettrapped target:req, trapped:req
+	callnative BS_EncSetTrapped
+	.byte \target
+	.byte \trapped
+	.endm
+
+	@ Puts every battler \target resolves to on the engine's Hyper Beam recharge timer, so it loses
+	@ an action and prints the stock "must recharge!" line when its move tries to resolve. The
+	@ decrement lives at the very end of the turn, AFTER the OnTurnEnd checkpoint, so \turns means
+	@ different things depending on where it is set: 1 at OnTurnStart costs the battler THIS turn's
+	@ action, while 2 at OnTurnEnd/OnMoveEnd costs it NEXT turn's. For an overexerted boss, a
+	@ staggered beat, or any telegraphed free turn.
+	.macro encsetrecharge target:req, turns=1
+	callnative BS_EncSetRecharge
+	.byte \target
+	.byte \turns
+	.endm
+
+	@ Asks the player a yes/no question mid-battle. Prints \stringId, opens the standard YES/NO
+	@ window, and jumps \yesInstr on YES; falls through on NO (and on B, which the box treats as NO).
+	@ The leading printstring is what makes this safe at OnTurnStart - it resets gBattle_BG0_X/Y,
+	@ scrolling the still-open action menu back out of the way before the window is drawn.
+	@ A decided battle skips the prompt entirely and takes the NO path, so scripted damage earlier in
+	@ the same script can't leave the player answering a question about a fight that is already over -
+	@ the same gBattleOutcome guard vanilla puts in front of its own yes/no box.
+	@ Single-player only: a link battle would desync on the input. Encounters are single-player.
+	.macro encaskyesno stringId:req, yesInstr:req
+	jumpifbyte CMP_NOT_EQUAL, gBattleOutcome, 0, 8f
+	printstring \stringId
+	setbyte gBattleCommunication, 0
+	yesnobox
+	jumpifbyte CMP_EQUAL, gBattleCommunication + 1, 0, \yesInstr
+8:
+	.endm
+
+	@ Strips every screen, Safeguard, Mist, Tailwind and Lucky Chant from the side \target resolves
+	@ to, along with the matching gSideTimers entries. Jumps \failInstr when that side had none, so
+	@ one command serves as both the test and the clear. Silent - the caller supplies its own
+	@ dialogue. Nothing else removes these generically: trydefog only ever clears the side opposite
+	@ gBattlerAttacker, which is stale outside a move's own resolution.
+	.macro encclearscreens target:req, failInstr:req
+	callnative BS_EncClearScreens
+	.byte \target
+	.4byte \failInstr
+	.endm
+
+	@ Strips every entry hazard (Spikes, Toxic Spikes, Stealth Rock, Sticky Web, Steelsurge) from
+	@ each side \target resolves to, and jumps \failInstr when there was nothing on any of them - so
+	@ one command is both the test and the clear, the same as encclearscreens. Silent: it takes the
+	@ side bare in one pass rather than printing Defog's per-hazard lines, so the caller supplies one
+	@ line for the whole scouring. Nothing else could remove hazards from a checkpoint script.
+	.macro encclearhazards target:req, failInstr:req
+	callnative BS_EncClearHazards
+	.byte \target
+	.4byte \failInstr
+	.endm
+
+	@ Sets one ENC_HAZARD_* selector on each side \target resolves to; \layers only means anything
+	@ for Spikes/Toxic Spikes. Jumps \failInstr when every targeted side already sits at that
+	@ hazard's max stack - one command is both the test and the act, the inverse direction of
+	@ encclearhazards. Silent - the caller supplies its own dialogue.
+	.macro encsethazard target:req, hazard:req, layers=0, failInstr:req
+	callnative BS_EncSetHazard
+	.byte \target
+	.byte \hazard
+	.byte \layers
+	.4byte \failInstr
+	.endm
+
+	@ Writes one ENC_STATUS_* major status directly onto every battler \target resolves to,
+	@ bypassing move-based application (type immunity, ability blocks) the same way
+	@ encsettrapped/encsetembargo bypass it for their volatiles. ENC_STATUS_NONE (0) clears whatever
+	@ major status is active. \turns only means anything for Sleep; every other status ticks/thaws
+	@ through the engine's own end-turn handling from here. Silent.
+	.macro encsetstatus target:req, status:req, turns=0
+	callnative BS_EncSetStatus
+	.byte \target
+	.byte \status
+	.byte \turns
+	.endm
+
+	@ Resets every stat stage back to neutral on every battler \target resolves to - the targeted
+	@ form of Haze. TryResetBattlerStatChanges reports whether it actually reset anything, so
+	@ \failInstr is taken when no battler in the set had a stage to strip: one command is both the
+	@ test and the clear, the same as encclearscreens. Silent - the caller supplies its own dialogue.
+	@ normalisebuffs is the only other way to reach this and it hits every battler on the field,
+	@ including the boss's own setup.
+	.macro encresetstats target:req, failInstr:req
+	callnative BS_EncResetStats
+	.byte \target
+	.4byte \failInstr
+	.endm
+
+	@ Raises one side-wide status (an ENC_SIDE_* selector) on every side \target resolves to, for
+	@ \turns turns; 0 (the default) is permanent, the same convention encsetweather uses. The
+	@ single-status counterpart to encclearscreens, which is all-or-nothing and deliberately skips
+	@ the Pledge statuses - this one can hand out a lone Safeguard, a Tailwind phase, a Lucky Chant
+	@ "no crits" stance, or raise a Rainbow / Sea of Fire / Swamp no Pledge combo produced. Silent.
+	.macro encsetsidestatus target:req, status:req, turns=0
+	callnative BS_EncSetSideStatus
+	.byte \target
+	.byte \status
+	.byte \turns
+	.byte TRUE
+	.endm
+
+	@ Drops one side-wide status from every side \target resolves to, timer included. The precise
+	@ inverse of encsetsidestatus, and the only way to remove a Pledge status (encclearscreens does
+	@ not touch them) or to strip one screen without the rest. Silent, and a no-op if it wasn't up.
+	.macro encclearsidestatus target:req, status:req
+	callnative BS_EncSetSideStatus
+	.byte \target
+	.byte \status
+	.byte 0
+	.byte FALSE
+	.endm
+
+	@ Revives the first fainted party member on every side \target resolves to, at \percent of its
+	@ max HP. Bench Pokemon only - a fainted battler still has replacement bookkeeping pending, so
+	@ it is skipped rather than pulled back mid-faint. Silent, and a no-op when a side has nobody to
+	@ revive, so it is safe to call unconditionally; supply your own dialogue.
+	.macro encrevive target:req, percent:req
+	callnative BS_EncRevive
+	.byte \target
+	.byte \percent
+	.endm
+
+	@ encchangehp's counterpart for \target's own BENCH: mirrors \amount onto a random eligible
+	@ (non-fainted, non-egg, non-active) bench member of \target's side. \target is single-slot only
+	@ and names a battler purely to resolve a side - a bench member has no battler of its own.
+	@ \mode reads like encchangehp's: ENC_AMOUNT_FIXED (default) is a raw HP amount, ENC_AMOUNT_PERCENT
+	@ scales off the CHOSEN bench mon's own max HP. Not the animated battler health bar - nothing on
+	@ the bench is on the field. Jumps \failInstr when nobody is eligible, so this is both the test
+	@ and the transfer.
+	.macro encbenchhp target:req, amount:req, mode=ENC_AMOUNT_FIXED, failInstr=0
+	callnative BS_EncBenchHp
+	.byte \target
+	.2byte \amount
+	.byte \mode
+	.4byte \failInstr
+	.endm
+
+	@ Writes \target's own party mon's stored friendship (0-255) into \var. \target must resolve to
+	@ exactly one battler. The only route from the player's real relationship with their Pokemon into
+	@ an encounter condition/branch.
+	.macro encreadfriendship target:req, var:req
+	callnative BS_EncReadFriendship
+	.byte \target
+	.byte \var
+	.endm
+
+	@ Whether the player may throw a Poke Ball: ENC_BALLS_DEFAULT, ENC_BALLS_BLOCKED or
+	@ ENC_BALLS_ALLOWED. ALLOWED only lifts this encounter's own block - it never makes a battle
+	@ catchable that wouldn't be otherwise (trainer battle, Ghost without a Silph Scope, ...).
+	.macro encsetballs policy:req
+	callnative BS_EncounterSetBallPolicy
+	.byte \policy
+	.endm
+
+	@ Replaces the catch rate used for this battle's wild Pokemon; ENC_CATCH_RATE_NONE restores
+	@ the species' own. Higher is easier to catch, on the same 0-255 scale as species data.
+	.macro encsetcatchrate catchRate:req
+	callnative BS_EncounterSetCatchRate
+	.byte \catchRate
+	.endm
+
+	@ Sets the battle weather to \weather (an enum BattleWeather value, e.g. BATTLE_WEATHER_SNOW).
+	@ setfieldweather can't do this from an encounter script - it reads the weather type off the
+	@ current move, and a checkpoint script has no current move. \turns is how many turns it lasts;
+	@ 0 (the default) means permanent, the same convention primal weather uses. Silent, like the
+	@ other enc* commands; pair with playanimation for presentation. Does nothing if that weather is
+	@ already up or primal weather is in force - losing a weather race is a legitimate outcome.
+	@ Use the existing removeweather to clear it again.
+	.macro encsetweather weather:req, turns=0
+	callnative BS_EncSetWeather
+	.byte \weather
+	.byte \turns
+	.endm
+
+	@ Sets the field terrain to \terrain (an ENC_TERRAIN_* selector) for \turns turns; 0 (the
+	@ default) means permanent. The mirror of encsetweather one field over, and needed for the same
+	@ reason: the stock setterrain opcode reads its terrain type off the current move, and a
+	@ checkpoint script has no current move. Does nothing if that terrain is already up or the battle
+	@ is a sky battle. Silent - pair with playmoveanimation for presentation, and use the existing
+	@ removeterrain to clear it.
+	.macro encsetterrain terrain:req, turns=0
+	callnative BS_EncSetTerrain
+	.byte \terrain
+	.byte \turns
+	.endm
+
+	@ Shorts out the held item of every battler \target resolves to for \turns turns, by setting the
+	@ same volatile Embargo itself sets - so every existing item check behaves unchanged, and the
+	@ engine's own end-turn handler ticks the timer and prints the expiry line. \turns of 0 clears it
+	@ outright. The boss is skipped even when \target includes it, the same way encsettrapped skips
+	@ it. Silent; supply your own dialogue.
+	.macro encsetembargo target:req, turns:req
+	callnative BS_EncSetEmbargo
+	.byte \target
+	.byte \turns
+	.endm
+
+	@ Shorts out healing for every battler \target resolves to for \turns turns, by setting the same
+	@ volatile Heal Block itself sets - so every existing heal-path check behaves unchanged, and the
+	@ engine's own end-turn handler ticks the timer and prints the expiry line. \turns of 0 clears it
+	@ outright. healBlockTimer is a bitfield sized by B_HEAL_BLOCK_TIMER (5) - a larger value
+	@ truncates silently, so this asserts rather than writing past the field. The boss is skipped even
+	@ when \target includes it, the same way encsetembargo skips it. Silent; supply your own dialogue.
+	.macro encsethealblock target:req, turns:req
+	callnative BS_EncSetHealBlock
+	.byte \target
+	.byte \turns
+	.endm
+
+	@ Raises one field-wide status (an ENC_FIELD_* selector) for \turns turns; 0 (the default) means
+	@ permanent. Field statuses are otherwise unreachable from a checkpoint script: the stock opcodes
+	@ for Trick Room/Gravity/Wonder Room/Magic Room/Fairy Lock/Mud Sport/Water Sport all read their
+	@ effect off gCurrentMove, which a checkpoint script does not have. encsetfieldstatus
+	@ ENC_FIELD_GRAVITY matches Cmd_setgravity exactly (flag plus timer, nothing else). Terrain is
+	@ deliberately absent - encsetterrain owns it. Silent; pair with playanimation/playmoveanimation.
+	.macro encsetfieldstatus status:req, turns=0
+	callnative BS_EncSetFieldStatus
+	.byte \status
+	.byte \turns
+	.byte TRUE
+	.endm
+
+	@ Drops one field-wide status (an ENC_FIELD_* selector), timer included. The precise inverse of
+	@ encsetfieldstatus. Silent, and a no-op if it wasn't up.
+	.macro encclearfieldstatus status:req
+	callnative BS_EncSetFieldStatus
+	.byte \status
+	.byte 0
+	.byte FALSE
+	.endm
+
+	@ Disables the move \target (must resolve to exactly one battler) used last, for \turns turns,
+	@ writing the same volatiles Disable does - so the engine already ticks the timer, already drops
+	@ the lock if the move leaves the moveset, and already prints its own "no longer disabled" line.
+	@ The move's name is buffered into {B_BUFF1} for the caller's string.
+	@ Jumps \failInstr when there is nothing to take: no move used yet (turn 1), the move is gone
+	@ from the moveset or out of PP, something is already disabled, or the target is not there. All of
+	@ those are ordinary battle states, so they branch rather than assert. Silent otherwise.
+	.macro encdisablemove target:req, turns:req, failInstr:req
+	callnative BS_EncDisableMove
+	.byte \target
+	.byte \turns
+	.4byte \failInstr
+	.endm
+
+	@ Forces \target (exactly one battler, never the boss) to switch out for a random healthy bench
+	@ member, with the stock drag-out presentation. Cmd_forcerandomswitch can't be borrowed: it
+	@ derives its victim from gBattlerTarget, which is stale outside a move, and its success path
+	@ ends in `goto BattleScript_MoveEnd`, which an encounter script must never reach.
+	@ Jumps \failInstr when there is nobody to send in - the ordinary case of a player down to their
+	@ last Pokemon - so it branches rather than asserts. The native sets gBattlerTarget so the
+	@ presentation script's BS_TARGET resolves.
+	@ The `call` after the callnative is what makes the fail path work without a second label: on
+	@ failure the native writes \failInstr and the call is never reached; on success it writes
+	@ nextInstr, which points at the call.
+	@ Only safe at OnTurnEnd, after every action has resolved - switchineffects writes
+	@ B_ACTION_CANCEL_PARTNER for the replacement, so the mon sent in does not act this turn.
+	.macro encswitchout target:req, failInstr:req
+	callnative BS_EncounterSwitchOut
+	.byte \target
+	.4byte \failInstr
+	call BattleScript_EncounterForcedSwitch
+	.endm
+
+	@ Scans every non-fainted, non-active, non-egg bench member of \side's party (a single-slot
+	@ EncounterTarget - ENC_TARGET_PLAYER_LEFT/_RIGHT resolves to that trainer's whole party) and
+	@ writes the party slot index (0-5) of whichever has the highest stored \stat into \var.
+	@ Reads the party Pokemon's own stored stat, not a live battle value with stages - nothing on
+	@ the bench is on the field. Same restricted stat list as enccomparestat/encreadstat
+	@ (STAT_ATK/DEF/SPATK/SPDEF/SPEED). Writes ENC_NO_SLOT (0xFF) if the bench is empty.
+	.macro encpartybest side:req, stat:req, var:req
+	callnative BS_EncounterPartyBest
+	.byte \side
+	.byte \stat
+	.byte \var
+	.endm
+
+	@ Forces \target (exactly one battler, never the boss) to switch out for the bench member at
+	@ party slot \partySlotVar - an author variable holding a slot index, typically one
+	@ encpartybest just wrote - by name rather than at random, with the same stock drag-out
+	@ presentation encswitchout uses. Jumps \failInstr when that slot is fainted, already active,
+	@ empty, an egg, or out of range.
+	.macro encforceswitch target:req, partySlotVar:req, failInstr:req
+	callnative BS_EncounterForceSwitch
+	.byte \target
+	.byte \partySlotVar
+	.4byte \failInstr
+	call BattleScript_EncounterForcedSwitch
+	.endm
+
+	@ Forces \target (must resolve to exactly one battler) to Mega Evolve outside the normal
+	@ gimmick-selection flow, then plays the same presentation BattleScript_MegaEvolution
+	@ (data/battle_scripts_1.s) uses. Jumps to \failInstr if the target can't mega evolve right now
+	@ (wrong shape, fainted, already mega evolved, or another gimmick active).
+	.macro encmegaevolve target:req, failInstr:req
+	callnative BS_EncounterMegaEvolve
+	.byte \target
+	.4byte \failInstr
+	handleformchange BS_SCRIPTING, 0
+	playanimation BS_SCRIPTING, B_ANIM_MEGA_EVOLUTION
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
+	printstring STRINGID_MEGAEVOEVOLVED
+	waitmessage B_WAIT_TIME_LONG
+	switchinabilities BS_SCRIPTING
+	.endm
+
+	@ Changes \target (must resolve to exactly one battler) into \species outright, outside any
+	@ form-change table, then plays \anim with the same presentation opcodes
+	@ BattleScript_MegaEvolution uses. The general form of encmegaevolve: the destination is named
+	@ here instead of coming from a held Mega Stone, so a boss can change shape repeatedly, into a
+	@ form it has no stone for, and back again. Stats, types and ability come from the new species;
+	@ HP and the moveset are kept. Prints nothing - the caller supplies its own dialogue, since no
+	@ one string fits both an arrival and a revert. Jumps to \failInstr if the target does not
+	@ resolve to exactly one live battler.
+	@ Leads with flushtextbox because this animates before the caller's dialogue: the action/move
+	@ selection menu is shown by scrolling BG0 (gBattle_BG0_Y, battle_controller_player.c) and only
+	@ a printstring scrolls it back (BtlController_HandlePrintString). A script dispatched at
+	@ OnTurnStart runs while that scroll is still in place, so animating first would render over the
+	@ open menu. BattleScript_QuickClawActivation opens the same way for the same reason.
+	.macro encformchange target:req, species:req, failInstr:req, anim=B_ANIM_MEGA_EVOLUTION
+	callnative BS_EncounterFormChange
+	.byte \target
+	.2byte \species
+	.4byte \failInstr
+	flushtextbox
+	handleformchange BS_SCRIPTING, 0
+	playanimation BS_SCRIPTING, \anim
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
+	callnative BS_JumpIfFormChangeAbilityUnchanged
+	.4byte 1f
+	switchinabilities BS_SCRIPTING
+1:
+	.endm
+
+	@ Writes \move into slot \slot (0-3) of \target's BATTLE mon, with that move's full PP. \target
+	@ must resolve to exactly one live battler. The party Pokemon is never touched, so a boss caught
+	@ afterwards keeps the moveset it was built with.
+	@ Moves: is a battle-start property, so this is the only way a boss gains a move partway through
+	@ a fight - the signature move a form unlocks when it transforms. Silent; the caller supplies its
+	@ own dialogue.
+	.macro encsetmove target:req, slot:req, move:req
+	callnative BS_EncSetMove
+	.byte \target
+	.byte \slot
+	.2byte \move
+	.endm
+
+	@ Turns \target (must resolve to exactly one live battler) into \source (likewise) outright:
+	@ species, stats, stat stages, types, ability and moveset are copied, exactly as the Transform
+	@ move does. \target keeps its own HP, level, held item and status, and its party Pokemon is
+	@ never written - so a boss transformed this way is still its own species if caught. Re-copying
+	@ preserves the first original species so encuntransform can revert. Jumps \failInstr if \source
+	@ is semi-invulnerable, is itself transformed, or is behind Illusion. Prints nothing - the caller
+	@ supplies dialogue. Leads with flushtextbox for the same OnTurnStart BG0 reason as encformchange.
+	@ Uses B_ANIM_ENCOUNTER_TRANSFORM, not the encformchange animation pair - that one repaints from
+	@ the party Pokemon and so requires writing it.
+	.macro enctransform target:req, source:req, failInstr:req
+	callnative BS_EncounterTransform
+	.byte \target
+	.byte \source
+	.4byte \failInstr
+	flushtextbox
+	playanimation BS_SCRIPTING, B_ANIM_ENCOUNTER_TRANSFORM
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
+	.endm
+
+	@ Reverts \target (must resolve to exactly one battler) from an enctransform/Transform copy back
+	@ to its own party species, rebuilding stats, types, ability and moves from the party Pokemon.
+	@ Silent no-op if \target isn't transformed, so it can be called unconditionally. Stat stages are
+	@ reset to neutral. Prints nothing - the caller supplies dialogue. Shares enctransform's animation,
+	@ which repaints from the battle mon and so needs no party write.
+	.macro encuntransform target:req
+	callnative BS_EncounterUntransform
+	.byte \target
+	flushtextbox
+	playanimation BS_SCRIPTING, B_ANIM_ENCOUNTER_TRANSFORM
+	waitanimation
+	handleformchange BS_SCRIPTING, 1
+	.endm
+
+	@ Branches to \jumpInstr with \percent probability (0-100), otherwise falls through. The roll is
+	@ tagged RNG_ENCOUNTER_SCRIPT, so it is seedable/observable like every other tagged battle roll.
+	.macro encjumpifchance percent:req, jumpInstr:req
+	callnative BS_EncJumpIfChance
+	.byte \percent
+	.4byte \jumpInstr
 	.endm
 
 	.macro savetarget

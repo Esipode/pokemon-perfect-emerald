@@ -1,0 +1,259 @@
+Encounter: Cresselia
+
+# Cresselia, "The Lunar Guardian". You have wandered into someone else's dream, and the dream would
+# rather you stayed. One number runs the whole fight:
+#   DREAM 0-5, starting at 1 (Moonlit). Everything peaceful raises it - a quiet turn, a status move,
+#   a real heal, a protected construct, a cured status. Sustained aggression is the only thing that
+#   pushes it back down, and it is a direct read of Cresselia's guard.
+#     0 WAKING | 1 MOONLIT | 2 LUCID | 3 DEEP DREAM | 4 REVERIE | 5 PERFECT DREAM
+#     guard 78 |   84      |   88    |     90       |    92     |      95
+# THE INVERSION IS THE POINT. A defensive, attrition game - exactly what a damage-reduced wall
+# invites - pins the dial at 5 and gets tucked in behind a 95% guard with free healing. Committing to
+# violence holds the dial at 0-1 and fights something beatable. Nothing ever says so; the fight only
+# ever describes the moonlight thickening.
+# LUCID DREAMING (Dream 2+, Phase <= 1) offers a bargain every so often: accept a boon and feed the
+# dream, or refuse and starve it. Courage (+2 Atk/+2 SpAtk) is the joke the fight is telling - the
+# gift that best equips you to break the dream is the gift that feeds it.
+# DREAM CONSTRUCTS (Dream 3+) are a real Protect on Cresselia via encsetprotect, so Feint, never-miss
+# moves and contact punishment all behave exactly as they would against a real Protect. A scripted
+# reprisal punishes a player who swings into one anyway.
+# STATUS IMMUNITY IS EARNED, NOT INNATE: Misty Terrain + Safeguard only stand from Lucid (Dream 2) on,
+# so a shallow-dream Cresselia can be slept or poisoned same as anything else - and doing so is
+# self-correcting, because losing turns to sleep is quiet, and quiet feeds the dream that ends it.
+# LUCID NIGHTMARE (<=50%) adds a Phase 1 instability roll every third turn - warmth, distortion, or
+# restoration - and swaps in Future Sight. ETERNAL DREAM (<=25%) pins the meter at 5 (guard 93, not
+# 95) and can only be broken by a Bug, Ghost or Dark move landing (or, worse, a very heavy hit) -
+# opening a temporary window where the guard drops to 40 and the passive heal stops.
+# THE DREAM READS YOU: leaning on the same one of Cresselia's three weakness types (Bug/Ghost/Dark)
+# two turns running raises the Dream a step on its own, on top of whatever the ledger does that turn -
+# so a repeat that also clears the aggression threshold nets out to a wash instead of a guaranteed
+# drop. Answers the exploit where a single super-effective move spammed every turn pins the guard at
+# its floor for the whole fight and never lets any of the rest of the encounter matter; varying the
+# angle of attack (or mixing in neutral coverage) is the counter, same as Darkrai's category read.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Cresselia_Weakened sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # Dream 1 (Moonlit); EncScript_Cresselia_ApplyDream owns it from here
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    # Ability is deliberately not overridden: Cresselia keeps Levitate, which is both correct flavour
+    # and why Misty Terrain (grounded-only) never shields Cresselia itself - the Safeguard does that,
+    # and Misty only ever protects the player.
+    # All four moves are Cresselia's own: Psychic and Aurora Beam and Future Sight are level-up,
+    # Ice Beam and Calm Mind are teachable. Slot 3 swaps to Future Sight at Phase 1, slot 2 to
+    # Moonlight at Phase 2.
+    Moves: MOVE_PSYCHIC, MOVE_ICE_BEAM, MOVE_CALM_MIND, MOVE_AURORA_BEAM
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fifteen here in order fixes
+# Phase..WeakGuard to 0..14.
+# 0 Phase (0 Lunar Guardian / 1 Lucid Nightmare / 2 Eternal Dream / 3 Weakened), 1 Dream (0-5, starts
+# 1), 2 LastDream (last ANNOUNCED band; 255 = force), 3 TurnGuard (the once-per-turn scaffold),
+# 4 Peace (a peace source fired this turn; also the re-entry guard for most of them), 5 HpMark (boss
+# HP% at turn open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 6 PlayerHpMark (ENC_SNAP_RECOVERY
+# turns it into "healed this turn"), 7 Construct (3 up this turn, 2-1 cooling down, 0 free), 8 AskCd
+# (turns until the bargain is offered again), 9 Wake (Eternal Dream broken; window countdown), 10
+# Pulse (paces the standing line), 11 Fluct (the Phase 1 lurch counter), 12 ReprisalGuard (Reprisal's
+# own re-entry guard - Construct == 3 and Protected == 1 both latch for the whole checkpoint, so it
+# cannot share Peace without the reprisal going missing on a turn Peace was already earned elsewhere),
+# 13 LastWeakType (0 none / 1 Bug / 2 Ghost / 3 Dark - the last weakness type read), 14 WeakGuard (the
+# read's own per-turn re-entry guard).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Cresselia_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Dream) >= 0
+    Var(LastDream) >= 0
+    Var(TurnGuard) >= 0
+    Var(Peace) >= 0
+    Var(HpMark) >= 0
+    Var(PlayerHpMark) >= 0
+    Var(Construct) >= 0
+    Var(AskCd) >= 0
+    Var(Wake) >= 0
+    Var(Pulse) >= 0
+    Var(Fluct) >= 0
+    Var(ReprisalGuard) >= 0
+    Var(LastWeakType) >= 0
+    Var(WeakGuard) >= 0
+
+# The two phase transitions below 50%/25% are each registered at both checkpoints because the blow
+# that crosses a threshold can be a move or an end-of-turn tick; both copies are Once, marked at
+# SELECTION, so whichever fires first permanently disables the other. Each is also gated on the Phase
+# value its own script overwrites, so one huge hit crossing two thresholds steps through them in
+# order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Cresselia_LucidNightmare
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Cresselia_LucidNightmare
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Cresselia_EternalDream
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Cresselia_EternalDream
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Cresselia_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Cresselia_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately so no
+# branch out of it can leave it re-armed; it clears Peace and takes the turn-open HP marks.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Cresselia_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# LUCID DREAMING. Sits behind TurnOpen so AskCd has already ticked this turn. Retires at Phase 2 -
+# the Eternal Dream does not bargain.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Cresselia_Prompt
+Conditions:
+    Var(Phase) <= 1
+    Var(Dream) >= 2
+    Var(AskCd) == 0
+    Var(TurnGuard) == 1
+
+# DREAM CONSTRUCTS. encsetprotect only has an effect at OnTurnStart, so this is the one checkpoint it
+# can run at; it covers the whole turn and expires on its own.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Cresselia_Construct
+Conditions:
+    Var(Phase) <= 2
+    Var(Dream) >= 3
+    Var(Construct) == 0
+    Var(TurnGuard) == 1
+
+# One of the ledger's peace sources. Event.MoveCategory stays true for the whole OnMoveEnd dispatch,
+# so this gates on Peace, which its own script sets.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Cresselia_PeaceStatusMove
+Conditions:
+    Var(Peace) == 0
+    Var(Phase) <= 1
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+
+# THE DREAM READS YOU. Three entry points, one per weakness type, because a condition can only
+# compare a variable against a literal. Each sets WeakGuard on entry - Event.MoveType stays true for
+# the whole dispatch, and only one of the three can ever match a single move, so they share one guard
+# without stepping on each other. LastWeakType is cleared when it fires, so the read costs a step
+# every SECOND turn of leaning on one weakness type, not every turn - the same shape Darkrai's
+# category read uses. Phase <= 2: Eternal Dream already has Dream pinned, so this is a no-op there.
+Trigger: OnMoveEnd
+Priority: 26
+Script: EncScript_Cresselia_ReadBug
+Conditions:
+    Var(WeakGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_BUG
+
+Trigger: OnMoveEnd
+Priority: 26
+Script: EncScript_Cresselia_ReadGhost
+Conditions:
+    Var(WeakGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_GHOST
+
+Trigger: OnMoveEnd
+Priority: 26
+Script: EncScript_Cresselia_ReadDark
+Conditions:
+    Var(WeakGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_DARK
+
+# THE WAKE BREAK. A Bug, Ghost or Dark move landing on Cresselia while the Eternal Dream holds -
+# exactly the types Cresselia exists to keep away. Event.* stays true for the whole dispatch, but Wake
+# is set to 3 immediately, so this cannot re-select.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Cresselia_Wake
+Conditions:
+    Var(Phase) == 2
+    Var(Wake) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Any:
+        Event.MoveType == TYPE_BUG
+        Event.MoveType == TYPE_GHOST
+        Event.MoveType == TYPE_DARK
+
+# The dream refuses to let a status stand on Cresselia from Lucid (Dream 2) on - earned by the meter,
+# not innate. Self-disabling for free: curestatus clears the condition it is gated on.
+Trigger: OnTurnEnd
+Priority: 40
+Script: EncScript_Cresselia_Cleanse
+Conditions:
+    Var(Phase) <= 2
+    Var(Dream) >= 2
+    Var(Wake) == 0
+    Battler(Boss).Status != 0
+
+# The construct's reprisal, and the other peace source. Construct == 3 and Protected == 1 both latch
+# for the whole checkpoint, so this needs its OWN guard - it cannot share Peace, which a status move
+# earlier in the same turn may already have set, or the reprisal would go missing on exactly the
+# turns a player did something peaceful AND swung into a protected construct.
+Trigger: OnTurnEnd
+Priority: 45
+Script: EncScript_Cresselia_Reprisal
+Conditions:
+    Var(Phase) <= 2
+    Var(ReprisalGuard) == 0
+    Var(Construct) == 3
+    Battler(Boss).Protected == 1
+
+# Runs last so it sees the finished turn. Every level trigger above self-disables through a var its
+# own script writes - TurnGuard, Peace, AskCd, Construct, Wake, WeakGuard, and (for Cleanse) the
+# status it just cured - which is what keeps the 8-script checkpoint cap out of reach.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Cresselia_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

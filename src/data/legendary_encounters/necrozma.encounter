@@ -1,0 +1,205 @@
+Encounter: Necrozma
+
+# Necrozma, "The Prism Pokemon". One rule:
+#   LIGHT (Var(Light), 0-100) is Necrozma's resource. It climbs when the player heals, lands a big
+#   hit, or lets a Light Fragment go unclaimed. High Light bands empower Necrozma (crit at Sated,
+#   a one-time Atk/SpAtk buff entering Overcharged); Light also gates both HP-triggered
+#   transformations and is Ultra Necrozma's own decaying meter in Phase 2.
+# WHAT THE PLAYER WORKS OUT: keep hits small, don't over-heal, and race Necrozma for every Light
+#   Fragment (a 2-turn timed window, not a field object - land any hit on the boss while one is up
+#   to claim a small HP bite off it; let it expire and Necrozma absorbs it instead, raising Light).
+# THREE PHASES:
+#   Phase 0 STARVED (100-51% HP) - the Light race, Sated/Overcharged bands, Fragments cycle.
+#   Phase 1 THE FUSION (<=50% HP) - a 50/50 coin flip locks in Dusk Mane (three armor layers that
+#     break as HP falls, weakening reduction each time) or Dawn Wings (an eclipse depth that climbs
+#     on its own timer and strengthens its Psychic/Ghost attack, never a scripted loss state).
+#   Phase 2 ULTRA (<=20% HP, folds in "The Light Devours All") - encformchange into Ultra Necrozma,
+#     Light resets to 100 and decays 5/turn, Photon Geyser enters the moveset telegraphed by
+#     encstoreprediction. Catch window opens at <=10% HP.
+# ANTI-ABUSE (guideline 8): Immunities: Ohko, FixedDamage, HpSwap, SharedKo (standard).
+#   CapTypeEffectiveness + a 90 baseline guard the long multi-phase fight from a stray 4x nuke.
+#   FlatToxicDamage stops a Toxic-and-stall strategy from trivializing a fight this long - the
+#   unique risk here versus other legendaries is length, not one exotic move. Survive keeps the
+#   Fusion/Ultra spectacle from being skipped by an oversized hit. Balls stay blocked until <=10%.
+Properties:
+    Level: LevelCap
+    CatchRate: 10
+    Balls: Blocked
+    DamageReduction: 90
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    AiFlags: AI_FLAG_SMART_TRAINER | AI_FLAG_PREDICT_MOVE
+    Moves: MOVE_PRISMATIC_LASER, MOVE_PSYSHOCK, MOVE_STEALTH_ROCK, MOVE_IRON_DEFENSE
+
+# Sunsteel Strike / Moongeist Beam (Fusion) and Photon Geyser (Ultra) are added post-transform via
+# encsetmove, into the Stealth Rock and Iron Defense slots respectively - the base moveset carries
+# no signature move, since neither form exists until its transform runs.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming them all here in order fixes
+# Phase..PMark to 0..11. This map is reused as the .inc header comment.
+# 0 Phase (0 Starved / 1 Fusion / 2 Ultra / 3 Catch-window), 1 Light (0-100 resource, also the Ultra
+# Light Overload meter), 2 LastBand (last ANNOUNCED Light band - 0 Hungry/1 Feeding/2 Sated/3
+# Overcharged - the callout's re-fire latch and the one-time-per-band-entry gate), 3 FragmentTimer
+# (turns left on the active Light Fragment, 0 = none), 4 Mark (boss HP% snapshot at turn open, for
+# ENC_SNAP_DAMAGE hit-size detection), 5 FormRoll (0 undetermined / 1 Dusk Mane / 2 Dawn Wings),
+# 6 Armor (Dusk Mane only, 3-0 Solar Armor layers), 7 EclipseDepth (Dawn Wings only, 0-3), 8
+# TurnGuard (the once-per-turn scaffold), 9 EclipseTimer (Dawn Wings only, countdown to the next
+# depth increase), 10 Scratch (the copy ENC_SNAP_DAMAGE/RECOVERY consumes, so Mark/PMark survive
+# being measured), 11 PMark (the player's HP% snapshot at turn open, for heal detection).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Necrozma_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Light) >= 0
+    Var(LastBand) >= 0
+    Var(FragmentTimer) >= 0
+    Var(Mark) >= 0
+    Var(FormRoll) >= 0
+    Var(Armor) >= 0
+    Var(EclipseDepth) >= 0
+    Var(TurnGuard) >= 0
+    Var(EclipseTimer) >= 0
+    Var(Scratch) >= 0
+    Var(PMark) >= 0
+
+# The once-per-turn scaffold, opening half. TurnGuard is the only gate and the script sets it
+# immediately, so no branch out of it can leave the trigger re-armed. Handles the turn-open
+# snapshots, the Light Fragment spawn/tick, the Dawn Wings eclipse timer tick, and the Photon
+# Geyser telegraph - one script, so a checkpoint with several unrelated once-per-turn beats stays
+# under the 8-scripts-per-checkpoint cap.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Necrozma_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The ledger: resolves everything the turn's snapshots and timers set up, then clears TurnGuard.
+# Sits at a high priority so both phase-transition copies below (5, 6, 7) run first when a
+# threshold and the ledger are eligible at the same OnTurnEnd, and the ledger reads the new Phase.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Necrozma_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# Phase 0 -> 1: The Fusion. Registered at both checkpoints since the blow that crosses 50% can be
+# a move or an end-of-turn tick; both copies are Once, marked at SELECTION, so whichever fires
+# first disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_FusionTransition
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_FusionTransition
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+# Phase 1 -> 2: Ultra Necrozma (folds in "The Light Devours All").
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_UltraTransform
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_UltraTransform
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+# The catch window. Survive: True pins Necrozma at 1 HP, so a player who grinds it down between
+# hits still reaches this.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_CatchWindow
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_CatchWindow
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Dusk Mane's three Solar Armor layers. Phase/FormRoll/Armor gate each to exactly one HP band, so
+# Once, OnEnter is a safety net rather than the only thing stopping a re-fire. Dual-registered:
+# a status tick can cross a threshold with no move resolving.
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_ArmorBreak1
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+    Var(FormRoll) == 1
+    Var(Armor) == 3
+
+Trigger: OnTurnEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_ArmorBreak1
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+    Var(FormRoll) == 1
+    Var(Armor) == 3
+
+Trigger: OnMoveEnd
+Priority: 21
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_ArmorBreak2
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+    Var(FormRoll) == 1
+    Var(Armor) == 2
+
+Trigger: OnTurnEnd
+Priority: 21
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_ArmorBreak2
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+    Var(FormRoll) == 1
+    Var(Armor) == 2
+
+Trigger: OnMoveEnd
+Priority: 22
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_ArmorBreak3
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+    Var(FormRoll) == 1
+    Var(Armor) == 1
+
+Trigger: OnTurnEnd
+Priority: 22
+Flags: Once, OnEnter
+Script: EncScript_Necrozma_ArmorBreak3
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+    Var(FormRoll) == 1
+    Var(Armor) == 1

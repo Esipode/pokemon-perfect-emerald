@@ -19,7 +19,7 @@ SeafoamIslands_B4F_EventScript_TryRemoveArticuno::
 	return
 
 SeafoamIslands_B4F_OnTransition::
-	call_if_unset FLAG_FOUGHT_ARTICUNO, SeafoamIslands_B4F_EventScript_ShowArticuno
+	updatelegendaryvisibility SPECIES_ARTICUNO, FLAG_HIDE_ARTICUNO
 	call_if_unset FLAG_STOPPED_SEAFOAM_B4F_CURRENT, SeafoamIslands_B4F_EventScript_CheckStoppedCurrent
 	call_if_set FLAG_STOPPED_SEAFOAM_B4F_CURRENT, SeafoamIslands_B4F_EventScript_SetNoCurrentLayout
 	end
@@ -37,10 +37,6 @@ SeafoamIslands_B4F_EventScript_StoppedCurrent::
 
 SeafoamIslands_B4F_EventScript_SetNoCurrentLayout::
 	setmaplayoutindex LAYOUT_SEAFOAM_ISLANDS_B4F_CURRENT_STOPPED
-	return
-
-SeafoamIslands_B4F_EventScript_ShowArticuno::
-	clearflag FLAG_HIDE_ARTICUNO
 	return
 
 SeafoamIslands_B4F_OnLoad::
@@ -167,22 +163,14 @@ SeafoamIslands_B4F_EventScript_Articuno::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, SeafoamIslands_B4F_EventScript_DefeatedArticuno
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, SeafoamIslands_B4F_EventScript_RanFromArticuno
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, SeafoamIslands_B4F_EventScript_RanFromArticuno
-	setflag FLAG_FOUGHT_ARTICUNO
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, SeafoamIslands_B4F_EventScript_CaughtArticuno
 	release
 	end
 
-SeafoamIslands_B4F_EventScript_DefeatedArticuno::
+@ Only catching Articuno removes it for good; any other outcome leaves it here to be rechallenged.
+SeafoamIslands_B4F_EventScript_CaughtArticuno::
 	setflag FLAG_FOUGHT_ARTICUNO
-	goto EventScript_RemoveStaticMon
-	end
-
-SeafoamIslands_B4F_EventScript_RanFromArticuno::
-	setvar VAR_0x8004, SPECIES_ARTICUNO
-	goto EventScript_MonFlewAway
-	end
+	return
 
 SeafoamIslands_B4F_EventScript_BoulderHintSign::
 	msgbox SeafoamIslands_B4F_Text_BouldersMightChangeWaterFlow, MSGBOX_SIGN

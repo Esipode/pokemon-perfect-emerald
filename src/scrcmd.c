@@ -1,6 +1,7 @@
 #include "global.h"
 #include "frontier_util.h"
 #include "badge_mart.h"
+#include "battle_encounter.h"
 #include "battle_setup.h"
 #include "battle_util.h"
 #include "berry.h"
@@ -2726,6 +2727,29 @@ bool8 ScrCmd_setmetatile(struct ScriptContext *ctx)
     return FALSE;
 }
 
+bool8 ScrCmd_setmetatilewithelevation(struct ScriptContext *ctx)
+{
+    u16 x = ScriptReadHalfword(ctx);
+    u16 y = ScriptReadHalfword(ctx);
+    u16 metatileId = ScriptReadHalfword(ctx);
+    bool16 isImpassable = ScriptReadHalfword(ctx);
+    u16 elevation = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    x += MAP_OFFSET;
+    y += MAP_OFFSET;
+
+    if (!isImpassable)
+        MapGridSetMetatileIdAt(x, y, metatileId);
+    else
+        MapGridSetMetatileIdAt(x, y, metatileId | MAPGRID_IMPASSABLE);
+
+    MapGridSetElevationAt(x, y, elevation);
+
+    return FALSE;
+}
+
 void NativeFunc_SetMetatileInRange(struct ScriptContext *ctx)
 {
     u8 xmin = ScriptReadByte(ctx);
@@ -3151,6 +3175,37 @@ bool8 Scrcmd_checkspecies(struct ScriptContext *ctx)
     return FALSE;
 }
 
+bool8 Scrcmd_checkspeciesowned(struct ScriptContext *ctx)
+{
+    enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    gSpecialVar_Result = CheckPlayerOwnsSpecies(givenSpecies);
+
+    return FALSE;
+}
+
+// Keeps a legendary's overworld object in sync with whether the player owns one: caught
+// legendaries stay gone, fainted ones can be challenged again, and releasing one brings its
+// encounter back. Also reports ownership in VAR_RESULT for any follow-up branching.
+bool8 Scrcmd_updatelegendaryvisibility(struct ScriptContext *ctx)
+{
+    enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));
+    u16 hideFlag = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    gSpecialVar_Result = CheckPlayerOwnsSpecies(givenSpecies);
+
+    if (gSpecialVar_Result == TRUE)
+        FlagSet(hideFlag);
+    else
+        FlagClear(hideFlag);
+
+    return FALSE;
+}
+
 bool8 Scrcmd_checkspecies_choose(struct ScriptContext *ctx)
 {
     enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));
@@ -3406,5 +3461,19 @@ bool8 ScrCmd_normalmsg(struct ScriptContext *ctx)
     Script_RequestEffects(SCREFF_V1);
 
     gMsgIsSignPost = FALSE;
+    return FALSE;
+}
+
+bool8 ScrCmd_setbattleencounter(struct ScriptContext *ctx)
+{
+    enum EncounterId id = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1);
+
+    assertf(id < ENCOUNTER_COUNT, "setbattleencounter called with invalid id %d", id)
+    {
+        return FALSE;
+    }
+    SetPendingBattleEncounter(id);
     return FALSE;
 }

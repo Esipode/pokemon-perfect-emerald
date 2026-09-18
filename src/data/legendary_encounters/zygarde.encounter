@@ -1,0 +1,217 @@
+Encounter: Zygarde
+
+# Zygarde, "The Order Pokemon". One rule:
+#   ZYGARDE CORRECTS WHOEVER IS AHEAD - INCLUDING ITSELF. BALANCE runs 0-10 (5 neutral); positive
+#   favours the player, negative favours Zygarde. Every turn it audits the field and moves Balance
+#   one step toward whoever is winning, then a rotating correction lands ON THE LEADER - even when
+#   the leader is Zygarde itself (Dragon Dance is the fight's thesis: it tips Balance against
+#   itself). Balance drives the damage reduction band: player ahead -> guard rises; Zygarde ahead ->
+#   guard falls.
+#   Phase 0 ORDER (100-50%) - corrections at 2 steps off neutral, Cells on a coin flip.
+#   Phase 1 COMPLETE FORME (50-20%) - encformchange to SPECIES_ZYGARDE_COMPLETE, corrections at 1
+#     step, Cells every resolve, CORE ENFORCER charges 3 turns and fires on the leader.
+#   Phase 2 THOUSAND-YEAR BALANCE (20-10%) - LAND'S WRATH wipes the field and Zygarde's own power;
+#     the meter stops mattering, reduction pinned to 60.
+#   Phase 3 SPENT (<=10%) - the catch window.
+# ZYGARDE CELLS are a one-turn destroy window: announced, then damage dealt the following turn is
+#   measured against a 3%-of-max-HP threshold. Clear it and the Cell shatters; miss it and Zygarde
+#   absorbs it, raising the enforcement band by one (capped at 5).
+# CORE PUNISHMENT tracks the single dominant repeated pattern (boost / heal / switch / setup, not
+#   four independent counters) and shuts off whichever one the player leans on for 3 turns running.
+# ANTI-ABUSE IS NARROW (guideline 8): stat-stacking is answered by Core Punishment and the STAT
+#   correction, healing/stalling by heal block and FlatToxicDamage, switching by trapping, hazards
+#   and screens by Core Punishment's setup arm and the FIELD correction, evasion by a 1-stage
+#   Balance trigger.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Zygarde_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # the BALANCED band. Every later value is written absolutely by
+                                # EncScript_Zygarde_ApplyBand, which _Awaken calls on turn 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Dragon/Ground takes a real 4x from Ice
+    FlatToxicDamage: True
+    Survive: True               # Phase 2's Land's Wrath must run for Phase 3 to exist. Cleared in
+                                # _Spent
+    Ability: ABILITY_AURA_BREAK # species-accurate and inert in this matchup - deliberately a no-op
+    Moves: MOVE_THOUSAND_ARROWS, MOVE_DRAGON_DANCE, MOVE_EXTREME_SPEED, MOVE_GLARE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# MOVE_DRAGON_DANCE is load-bearing: Zygarde tipping Balance against itself is the fight's thesis
+# demonstrated without a line of dialogue. MOVE_GLARE is the slot Phase 1 overwrites with
+# MOVE_CORE_ENFORCER via encsetmove. MOVE_LANDS_WRATH never enters the moveset - it is a scripted
+# Phase 2 payload, not a move the AI can fire at will.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order.
+# 0 Phase (0 ORDER / 1 COMPLETE FORME / 2 THOUSAND-YEAR BALANCE / 3 SPENT), 1 Balance (0-10, 5
+# neutral), 2 Cells (0-5), 3 CellState (0 none live / 1 live, resolves next turn), 4 CellMark (boss
+# HP% at Cell spawn), 5 TurnGuard, 6 Pattern (0 none / 1 boost / 2 heal / 3 switch / 4 setup),
+# 7 Repeat (consecutive repeats of Pattern), 8 EventLatch, 9 Cycle (0 STAT / 1 LIFE / 2 FIELD),
+# 10 AnnouncedBand (last band announced), 11 HealMark (player HP% at turn open), 12 Scratch (band
+# arithmetic / FIELD correction bookkeeping), 13 BalDone, 14 WrathUsed, 15 CoreCharge.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Zygarde_Awaken
+Conditions:
+    Var(Phase) >= 0
+    Var(Balance) >= 0
+    Var(Cells) >= 0
+    Var(CellState) >= 0
+    Var(CellMark) >= 0
+    Var(TurnGuard) >= 0
+    Var(Pattern) >= 0
+    Var(Repeat) >= 0
+    Var(EventLatch) >= 0
+    Var(Cycle) >= 0
+    Var(AnnouncedBand) >= 0
+    Var(HealMark) >= 0
+    Var(Scratch) >= 0
+    Var(BalDone) >= 0
+    Var(WrathUsed) >= 0
+    Var(CoreCharge) >= 0
+
+# The once-per-turn scaffold. TurnGuard is the only gate; _TurnOpen sets it immediately.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Zygarde_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# CORE PUNISHMENT pattern discriminators. Boost and setup are a two-trigger split: no command
+# writes a stat stage into a var, so "did that status move raise a stat" has to be asked here.
+# Trigger priority 10 (boost) beats 20 (setup, the catch-all) at the same checkpoint.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Zygarde_PatternBoost
+Conditions:
+    Var(EventLatch) == 0
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Any:
+        Battler(PlayerLeft).Stat(STAT_ATK) >= 1
+        Battler(PlayerLeft).Stat(STAT_SPATK) >= 1
+        Battler(PlayerLeft).Stat(STAT_SPEED) >= 1
+        Battler(PlayerLeft).Stat(STAT_DEF) >= 1
+        Battler(PlayerLeft).Stat(STAT_SPDEF) >= 1
+        Battler(PlayerLeft).Stat(STAT_EVASION) >= 1
+
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Zygarde_PatternSetup
+Conditions:
+    Var(EventLatch) == 0
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+    Event.Target == B_POSITION_PLAYER_LEFT
+
+# Turn >= 2 so the player's own lead switching in at battle start doesn't read as switch-spam.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Zygarde_PatternSwitch
+Conditions:
+    Var(EventLatch) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Turn >= 2
+
+# Phase transitions sit below the per-turn machinery so a transition always wins the checkpoint
+# it lands on.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Zygarde_CompleteForme
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 4
+Flags: Once, OnEnter
+Script: EncScript_Zygarde_LandsWrath
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# THE BALANCE AUDIT. Five flat triggers rather than one nested condition tree - a single trigger
+# would need All: > Any: > All: > leaf, depth 4 with no margin. BalDone gates and is set by exactly
+# one of these per turn; the Var(Balance) <= 9 / >= 1 guards clamp the meter declaratively, since
+# encaddvar/encsubvar are addbyte/subbyte and do not clamp on their own.
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_Zygarde_BalanceTipPlayerHp
+Conditions:
+    Var(TurnGuard) == 1
+    Var(BalDone) == 0
+    Var(Balance) <= 9
+    Battler(PlayerLeft).HpPercent >= 70
+    Battler(Boss).HpPercent <= 50
+
+Trigger: OnTurnEnd
+Priority: 11
+Script: EncScript_Zygarde_BalanceTipPlayerStat
+Conditions:
+    Var(TurnGuard) == 1
+    Var(BalDone) == 0
+    Var(Balance) <= 9
+    Any:
+        Battler(PlayerLeft).Stat(STAT_ATK) >= 2
+        Battler(PlayerLeft).Stat(STAT_SPATK) >= 2
+        Battler(PlayerLeft).Stat(STAT_SPEED) >= 2
+        Battler(PlayerLeft).Stat(STAT_EVASION) >= 1
+
+Trigger: OnTurnEnd
+Priority: 12
+Script: EncScript_Zygarde_BalanceTipBossHp
+Conditions:
+    Var(TurnGuard) == 1
+    Var(BalDone) == 0
+    Var(Balance) >= 1
+    Battler(Boss).HpPercent >= 70
+    Battler(PlayerLeft).HpPercent <= 50
+
+Trigger: OnTurnEnd
+Priority: 13
+Script: EncScript_Zygarde_BalanceTipBossStat
+Conditions:
+    Var(TurnGuard) == 1
+    Var(BalDone) == 0
+    Var(Balance) >= 1
+    Var(Cells) >= 2
+    Any:
+        Battler(Boss).Stat(STAT_ATK) >= 2
+        Battler(Boss).Stat(STAT_DEF) >= 2
+        Battler(Boss).Stat(STAT_SPEED) >= 2
+
+Trigger: OnTurnEnd
+Priority: 14
+Script: EncScript_Zygarde_BalanceHold
+Conditions:
+    Var(TurnGuard) == 1
+    Var(BalDone) == 0
+
+# CORE ENFORCER, Phase 1 only. Runs after the audit has set BalDone, before the ledger closes.
+Trigger: OnTurnEnd
+Priority: 18
+Script: EncScript_Zygarde_CoreEnforcer
+Conditions:
+    Var(TurnGuard) == 1
+    Var(BalDone) == 1
+    Var(Phase) == 1
+    Var(CoreCharge) >= 3
+
+# THE LEDGER. Applies the band, runs Core Punishment if earned, and closes the turn.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Zygarde_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+    Var(BalDone) == 1
+
+# 10% - the catch window. Runs before the audit/ledger triggers at this checkpoint.
+Trigger: OnTurnEnd
+Priority: 3
+Flags: Once, OnEnter
+Script: EncScript_Zygarde_Spent
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2

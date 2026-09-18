@@ -4,6 +4,7 @@
 #include "battle_hold_effects.h"
 #include "battle_setup.h"
 #include "battle_util.h"
+#include "battle_encounter.h"
 #include "battle_controllers.h"
 #include "battle_ai_record.h"
 #include "battle_stat_change.h"
@@ -407,7 +408,7 @@ static bool32 HandleEndTurnFirstEventBlock(enum BattlerId battler)
          && !IsSemiInvulnerable(battler, CHECK_ALL)
          && IsBattlerGrounded(battler, GetBattlerAbility(battler), GetBattlerHoldEffect(battler)))
         {
-            SetHealAmount(battler, GetNonDynamaxMaxHP(battler) / 16);
+            SetHealAmount(battler, ApplyEncounterTerrainHealReduction(battler, GetNonDynamaxMaxHP(battler) / 16));
             BattleScriptCall(BattleScript_GrassyTerrainHeals);
             effect = TRUE;
         }
@@ -518,7 +519,10 @@ static bool32 HandleEndTurnLeechSeed(enum BattlerId battler)
         else
         {
             SetPassiveDamageAmount(drainedBattler, drainAmount);
-            SetHealAmount(receiverBattler, healAmount);
+            // receiverBattler is the seeder taking the HP, drainedBattler the seeded battler losing
+            // it - so an encounter boss keeps only the share of a drain its own guard would let
+            // through. The Liquid Ooze branch above is damage, not healing, and is left alone.
+            SetHealAmount(receiverBattler, ApplyEncounterDrainReduction(receiverBattler, drainedBattler, healAmount));
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_LEECH_SEED_DRAIN;
             BattleScriptCall(BattleScript_LeechSeedTurnDrainRecovery);
         }
@@ -561,7 +565,11 @@ static bool32 HandleEndTurnPoison(enum BattlerId battler)
             SetPassiveDamageAmount(battler, GetNonDynamaxMaxHP(battler) / 16);
             if ((gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) != STATUS1_TOXIC_TURN(15)) // not 16 turns
                 gBattleMons[battler].status1 += STATUS1_TOXIC_TURN(1);
-            gBattleStruct->passiveHpUpdate[battler] *= (gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) >> 8;
+            // An encounter can run for far more turns than the ~16 this ramp is balanced around
+            // elsewhere, so a flat-toxic-damage battler skips the multiply and just takes the same
+            // 1/16 max HP every turn - the counter itself still advances in case the flag is lifted.
+            if (!DoesEncounterFlattenToxicDamage(battler))
+                gBattleStruct->passiveHpUpdate[battler] *= (gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) >> 8;
             BattleScriptCall(BattleScript_PoisonTurnDmg);
             effect = TRUE;
         }
@@ -1053,6 +1061,16 @@ static bool32 HandleEndTurnPerishSong(enum BattlerId battler)
 
     gBattleStruct->eventState.endTurnBattler++;
 
+    // Perish Song lands on every battler at once, so refusing it at cast time would spare the user
+    // as well - an encounter's SHARED_KO immunity instead drops the count already on the battler.
+    if (gBattleMons[battler].volatiles.perishSong
+     && DoesEncounterGrantImmunity(battler, ENC_IMMUNE_SHARED_KO))
+    {
+        gBattleMons[battler].volatiles.perishSong = FALSE;
+        gBattleMons[battler].volatiles.perishSongTimer = 0;
+        return FALSE;
+    }
+
     if (gBattleMons[battler].volatiles.perishSong
      && IsBattlerPresent(battler))
     {
@@ -1060,7 +1078,9 @@ static bool32 HandleEndTurnPerishSong(enum BattlerId battler)
         if (gBattleMons[battler].volatiles.perishSongTimer == 0)
         {
             gBattleMons[battler].volatiles.perishSong = FALSE;
-            SetPassiveDamageAmount(battler, gBattleMons[battler].hp);
+            // Direct write, not SetPassiveDamageAmount: Perish Song is a lethal effect rather than
+            // a damage source, so an encounter's damage reduction must not leave the battler alive.
+            gBattleStruct->passiveHpUpdate[battler] = gBattleMons[battler].hp;
             BattleScriptCall(BattleScript_PerishSongTakesLife);
         }
         else

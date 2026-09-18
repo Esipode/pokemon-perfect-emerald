@@ -14,11 +14,11 @@ MarineCave_End_EventScript_TryRemoveKyogre::
 	return
 
 MarineCave_End_OnTransition:
-	call_if_unset FLAG_DEFEATED_KYOGRE, MarineCave_End_EventScript_ShowKyogre
+	updatelegendaryvisibility SPECIES_KYOGRE, FLAG_HIDE_MARINE_CAVE_KYOGRE
+	call_if_eq VAR_RESULT, FALSE, MarineCave_End_EventScript_EnableKyogreTrigger
 	end
 
-MarineCave_End_EventScript_ShowKyogre::
-	clearflag FLAG_HIDE_MARINE_CAVE_KYOGRE
+MarineCave_End_EventScript_EnableKyogreTrigger::
 	setvar VAR_TEMP_1, 1
 	return
 
@@ -39,24 +39,16 @@ MarineCave_End_EventScript_Kyogre::
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	setvar VAR_TEMP_1, 0
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, MarineCave_End_EventScript_DefeatedKyogre
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, MarineCave_End_EventScript_RanFromKyogre
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, MarineCave_End_EventScript_RanFromKyogre
-	setvar VAR_SHOULD_END_ABNORMAL_WEATHER, 1
-	setflag FLAG_DEFEATED_KYOGRE
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, MarineCave_End_EventScript_CaughtKyogre
 	releaseall
 	end
 
-MarineCave_End_EventScript_DefeatedKyogre::
+@ Only catching Kyogre removes it for good and calms the abnormal weather; any other outcome
+@ leaves the cave open so the player can come back and rechallenge it.
+MarineCave_End_EventScript_CaughtKyogre::
 	setvar VAR_SHOULD_END_ABNORMAL_WEATHER, 1
 	setflag FLAG_DEFEATED_KYOGRE
-	goto Common_EventScript_RemoveStaticPokemon
-	end
-
-MarineCave_End_EventScript_RanFromKyogre::
-	setvar VAR_0x8004, SPECIES_KYOGRE
-	goto Common_EventScript_LegendaryFlewAway
-	end
+	return
 
 MarineCave_End_Movement_KyogreApproach:
 	init_affine_anim

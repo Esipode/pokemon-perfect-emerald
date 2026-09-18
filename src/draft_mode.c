@@ -50,7 +50,7 @@ bool32 Draft_IsActive(void)
 // call has already accumulated so the common case is one pass, not four.
 #define DRAFT_MAX_VISITED_INFOS (TIMES_OF_DAY_COUNT * 2)
 
-static void AddSpeciesToScratch(struct DraftChoice *scratch, u32 *count, u16 species, u16 level)
+static void AddSpeciesToScratch(struct DraftChoice *scratch, u32 *count, u16 species, u16 minLevel, u16 maxLevel)
 {
     u32 i;
 
@@ -58,8 +58,10 @@ static void AddSpeciesToScratch(struct DraftChoice *scratch, u32 *count, u16 spe
     {
         if (scratch[i].species == species)
         {
-            if (level > scratch[i].level)
-                scratch[i].level = level;
+            if (minLevel < scratch[i].minLevel)
+                scratch[i].minLevel = minLevel;
+            if (maxLevel > scratch[i].maxLevel)
+                scratch[i].maxLevel = maxLevel;
             return;
         }
     }
@@ -67,7 +69,8 @@ static void AddSpeciesToScratch(struct DraftChoice *scratch, u32 *count, u16 spe
     if (*count < DRAFT_SCRATCH_CAPACITY)
     {
         scratch[*count].species = species;
-        scratch[*count].level = level;
+        scratch[*count].minLevel = minLevel;
+        scratch[*count].maxLevel = maxLevel;
         (*count)++;
     }
     // else: pool is already at the scratch ceiling. Doesn't happen with real
@@ -104,7 +107,7 @@ static void AccumulateWildInfo(const struct WildPokemonInfo *info, u32 wildCount
         return;
 
     for (i = 0; i < wildCount; i++)
-        AddSpeciesToScratch(scratch, count, info->wildPokemon[i].species, info->wildPokemon[i].maxLevel);
+        AddSpeciesToScratch(scratch, count, info->wildPokemon[i].species, info->wildPokemon[i].minLevel, info->wildPokemon[i].maxLevel);
 }
 
 static void SortIndicesAscending(u8 *indices, u32 n)
@@ -214,11 +217,52 @@ static u32 FilterPoolForMono(struct DraftChoice *pool, u32 count)
     return kept;
 }
 
+// Compacts `pool` in place down to species whose minLevel doesn't exceed the
+// player's current level cap, returning the new count. Keeps the case UI
+// from offering a pick the player couldn't legally raise past the cap
+// anyway; a species is still offered if only part of its range is above the
+// cap (ResolveLevelsForCap below clamps the roll to the legal part).
+static u32 FilterPoolForLevelCap(struct DraftChoice *pool, u32 count)
+{
+    u32 i, kept;
+    u32 levelCap = GetCurrentLevelCap();
+
+    for (i = 0, kept = 0; i < count; i++)
+    {
+        if (pool[i].minLevel <= levelCap)
+            pool[kept++] = pool[i];
+    }
+
+    return kept;
+}
+
+// Resolves each entry's final offered `level`: a random roll within
+// [minLevel, min(maxLevel, level cap)]. Runs after FilterPoolForLevelCap, so
+// minLevel <= levelCap is already guaranteed for every entry here.
+static void ResolveLevelsForCap(struct DraftChoice *pool, u32 count)
+{
+    u32 i;
+    u32 levelCap = GetCurrentLevelCap();
+
+    for (i = 0; i < count; i++)
+    {
+        u32 loLevel = pool[i].minLevel;
+        u32 hiLevel = pool[i].maxLevel < levelCap ? pool[i].maxLevel : levelCap;
+
+        if (hiLevel < loLevel)
+            hiLevel = loLevel;
+
+        pool[i].level = loLevel + (Random() % (hiLevel - loLevel + 1));
+    }
+}
+
 u32 Draft_BuildPool(struct DraftChoice *out)
 {
     struct DraftChoice scratch[DRAFT_SCRATCH_CAPACITY];
     u32 t;
     u32 count = FilterPoolForMono(scratch, BuildRawPool(scratch));
+
+    count = FilterPoolForLevelCap(scratch, count);
 
     if (count == 0)
         return 0;
@@ -227,10 +271,13 @@ u32 Draft_BuildPool(struct DraftChoice *out)
     {
         for (t = 0; t < count; t++)
             out[t] = scratch[t];
+        ResolveLevelsForCap(out, count);
         return count;
     }
 
-    return SelectDraftSubset(scratch, count, out);
+    count = SelectDraftSubset(scratch, count, out);
+    ResolveLevelsForCap(out, count);
+    return count;
 }
 
 bool32 Draft_IsAreaDraftable(void)

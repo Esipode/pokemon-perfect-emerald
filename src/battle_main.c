@@ -7,6 +7,7 @@
 #include "battle_ai_record.h"
 #include "battle_arena.h"
 #include "battle_controllers.h"
+#include "battle_encounter.h"
 #include "battle_end_turn.h"
 #include "battle_hold_effects.h"
 #include "battle_interface.h"
@@ -118,6 +119,7 @@ static void DoBattleIntro(void);
 static void TryDoEventsBeforeFirstTurn(void);
 static void HandleTurnActionSelectionState(void);
 static void RunTurnActionsFunctions(void);
+static bool32 IsEncounterTurnStartActionBoundary(void);
 static void SetActionsAndBattlersTurnOrder(void);
 static void UpdateBattlerPartyOrdersOnSwitch(enum BattlerId battler);
 static bool8 AllAtActionConfirmed(void);
@@ -601,6 +603,15 @@ static void CB2_InitBattleInternal(void)
         SetMainCallback2(CB2_HandleStartMultiBattle);
     else
         SetMainCallback2(CB2_HandleStartBattle);
+
+    // Opponent parties exist now (built in battle_setup.c) and no gBattleMons have been built from
+    // them yet - the only window where an encounter's Level:/Moves:/Ability: properties can restate
+    // what the opponents are (battle_encounter.c). Moves need their own property because the level
+    // rebuild recalculates stats only - without it the boss keeps the learnset moves it was created
+    // with, at whatever level the overworld script's setwildbattle happened to name.
+    ApplyEncounterLevelOverride();
+    ApplyEncounterMoveOverride();
+    ApplyEncounterAbilityOverride();
 
     gMain.inBattle = TRUE;
     gSaveBlock2Ptr->disableRecordBattle = FALSE;
@@ -2763,6 +2774,9 @@ static u8 AddNewGamePlusExtraMons(struct Pokemon *party, const struct Trainer *t
 
 void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer)
 {
+    // Identifies the trainer for FLAG_RANDOMIZE_MON's per-mon seed context. Hashed from the
+    // trainer's authored data (not the pointer) so it's stable and unique per trainer.
+    u32 trainerRandomizationId = Crc32B((const u8 *)trainer, sizeof(struct Trainer));
     const struct TrainerMon *partyData = trainer->party;
     u32 monIndices[PARTY_SIZE];
     u16 partySpecies[PARTY_SIZE];
@@ -2907,6 +2921,7 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
                 level = 1;
         }
 
+        SetRandomizationSeedContext(trainerRandomizationId);
         CreateMon(&party[i], species, level, personalityValue, otId);
 
         // A replaced Pokemon has nothing to do with the authored held item, so
@@ -4306,6 +4321,9 @@ void SwitchInClearSetData(enum BattlerId battler, struct Volatiles *volatilesCop
     }
     #endif // TESTING
 
+    // Before Ai_UpdateSwitchInData, so the AI records the ability the boss will actually fight with.
+    ApplyEncounterBattlerAbilityOverride(battler);
+
     Ai_UpdateSwitchInData(battler);
 }
 
@@ -4423,6 +4441,10 @@ static void DoBattleIntro(void)
                         gBattleMons[battler].ability = TestRunner_Battle_GetForcedAbility(trainer, partyIndex);
                 }
                 #endif
+
+                // After the volatiles memset above, which would otherwise clear the
+                // overwrittenAbility that carries an off-list encounter ability.
+                ApplyEncounterBattlerAbilityOverride(battler);
 
                 // Resolve type and moves through the shared resolver. This is
                 // where randomization is applied to the battlers present at the
@@ -4820,6 +4842,21 @@ static void TryDoEventsBeforeFirstTurn(void)
             BattleScriptExecute(BattleScript_TrainerPartnerSlideMsgEnd);
         gBattleStruct->eventState.beforeFirstTurn++;
         break;
+    case FIRST_TURN_EVENTS_ENCOUNTER:
+    {
+        // Encounter scripts always end with `return`; the shim supplies the `end`
+        // needed to unwind back to this non-script callback, which re-enters this case
+        // and re-dispatches until the checkpoint has no more eligible triggers.
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_BATTLE_START);
+        if (script != NULL)
+        {
+            BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
+            BattleScriptCall(script);
+            break;
+        }
+        gBattleStruct->eventState.beforeFirstTurn++;
+        break;
+    }
     case FIRST_TURN_EVENTS_END:
         for (enum BattlerId battler = 0; battler < MAX_BATTLERS_COUNT; battler++)
         {
@@ -4844,6 +4881,9 @@ static void TryDoEventsBeforeFirstTurn(void)
         gBattleScripting.moveendState = 0;
         gBattleStruct->eventState.faintedAction = 0;
         gBattleStruct->eventState.endTurn = 0;
+        gBattleStruct->eventState.encounterTurnEnd = 0;
+        gBattleStruct->eventState.encounterTurnStart = 0;
+        gBattleStruct->eventState.encounterTurnStartRunning = 0;
 
         memset(gQueuedStatBoosts, 0, sizeof(gQueuedStatBoosts));
 
@@ -4899,7 +4939,38 @@ bool32 EndTurnEvents(void) // Called from Battle Script
     if (DoEndTurnEffects())
         return TRUE;
 
+    // ENC_ON_TURN_END: after end-turn effects (weather, status, Leftovers) have resolved,
+    // before the turn counter increments. Already inside a script, so BattleScriptCall
+    // (not Execute) pushes the cursor for `return` to resume right here, re-dispatching
+    // until the checkpoint has no more eligible triggers.
+    if (!gBattleStruct->eventState.encounterTurnEnd)
+    {
+        // Weather/status damage is recorded into oldValue/newValue at the HP commit point
+        // (Cmd_datahpupdate); read them before re-stamping the event so they carry through. The
+        // event is set before dispatching so pass 1's conditions see this turn's end-turn context.
+        s16 oldValue = gBattleStruct->encounter.event.oldValue;
+        s16 newValue = gBattleStruct->encounter.event.newValue;
+        SetEncounterEvent(gBattlerAttacker, 0, MOVE_NONE, ENC_CAUSE_END_TURN, oldValue, newValue);
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_END);
+        if (script != NULL)
+        {
+            BattleScriptCall(script);
+            return TRUE;
+        }
+        gBattleStruct->eventState.encounterTurnEnd = TRUE;
+        gBattleStruct->eventState.faintedAction = 0; // re-arm the faint pass for scripted chip damage below
+    }
+
+    // A turn-end trigger script (encchangehp) can leave a battler at 0 HP after the end-turn
+    // faint pass already ran - resolve it here with the same exp/replacement handling
+    // ENDTURN_FAINTED_MON_ACTIONS uses, before the turn advances.
+    if (IsEncounterActive() && HandleFaintedMonActions())
+        return TRUE;
+
     gBattleStruct->eventState.faintedAction = 0;
+    gBattleStruct->eventState.encounterTurnEnd = FALSE; // re-arm for next turn
+    gBattleStruct->eventState.encounterTurnStart = FALSE; // re-arm for next turn
+    gBattleStruct->eventState.encounterTurnStartRunning = FALSE;
 
     TurnValuesCleanUp(FALSE);
     gHitMarker &= ~HITMARKER_PLAYER_FAINTED;
@@ -6056,6 +6127,9 @@ static void TurnValuesCleanUp(bool32 endTurn)
         else
         {
             memset(&gProtectStructs[i], 0, sizeof(struct ProtectStruct));
+            // ENC_OP_PROTECTED's latch clears with the full protect reset, which runs after the
+            // ENC_ON_TURN_END dispatch - the earlier var0 == TRUE pass is too soon for it.
+            gBattleStruct->encounter.protectedThisTurn &= ~(1u << i);
 
             if (gBattleStruct->battlerState[i].isFirstTurn)
                 gBattleStruct->battlerState[i].isFirstTurn--;
@@ -6326,10 +6400,66 @@ static void CheckChangingTurnOrderEffects(void)
     gBattleResources->battleScriptsStack->size = 0;
 }
 
+// TRUE only where gCurrentActionFuncId still holds the turn-order action that has not started yet.
+// Once an action begins, the id is B_ACTION_EXEC_SCRIPT / B_ACTION_TRY_FINISH / B_ACTION_FINISHED
+// instead, and a checkpoint dispatched there would cut into a script already in flight.
+// Bag-item, ball and switch actions are all sorted to the front of the turn order
+// (SetActionsAndBattlersTurnOrder) and resolve before any turn-start encounter script, so the
+// boundary in front of one of those does not qualify.
+static bool32 IsEncounterTurnStartActionBoundary(void)
+{
+    if (gCurrentTurnActionNumber >= gBattlersCount)
+        return FALSE;
+    if (gCurrentActionFuncId != gActionsByTurnOrder[gCurrentTurnActionNumber])
+        return FALSE;
+    return gCurrentActionFuncId != B_ACTION_USE_ITEM
+        && gCurrentActionFuncId != B_ACTION_THROW_BALL
+        && gCurrentActionFuncId != B_ACTION_SWITCH;
+}
+
 static void RunTurnActionsFunctions(void)
 {
     if (gBattleOutcome != 0)
         gCurrentActionFuncId = B_ACTION_FINISHED;
+
+    // ENC_ON_TURN_START: deferred to here (rather than CheckChangingTurnOrderEffects) so the
+    // player's item, ball and switch actions resolve before any turn-start encounter script runs.
+    // The checkpoint fires once per turn, at the action boundary in front of the first action that
+    // is none of those, and re-dispatches via BattleScriptCall until no trigger is eligible.
+    // BattleScriptExecute and the `end` that unwinds it both overwrite gCurrentActionFuncId, so the
+    // pending action is restored from the turn order on every pass; without that the action the
+    // checkpoint runs in front of is consumed as a B_ACTION_TRY_FINISH and never taken.
+    if (IsEncounterActive()
+        && gBattleOutcome == 0
+        && !gBattleStruct->eventState.encounterTurnStart
+        && (gBattleStruct->eventState.encounterTurnStartRunning || IsEncounterTurnStartActionBoundary()))
+    {
+        gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
+
+        const u8 *script = TryRunEncounterCheckpoint(ENC_ON_TURN_START);
+        if (script != NULL)
+        {
+            gBattleStruct->eventState.encounterTurnStartRunning = TRUE;
+            BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
+            BattleScriptCall(script);
+            return;
+        }
+        gBattleStruct->eventState.encounterTurnStart = TRUE;
+    }
+
+    // A turn-start trigger script (encchangehp) can leave a battler at 0 HP with no move in flight
+    // to resolve it - run the same faint pass an action's B_ACTION_TRY_FINISH would, then restore
+    // the pending action again, since that pass dispatches battle scripts of its own.
+    if (gBattleStruct->eventState.encounterTurnStartRunning
+        && gBattleOutcome == 0
+        && gCurrentTurnActionNumber < gBattlersCount)
+    {
+        if (HandleFaintedMonActions())
+            return;
+        gBattleStruct->eventState.faintedAction = 0;
+        gBattleStruct->eventState.encounterTurnStartRunning = FALSE;
+        gCurrentActionFuncId = gActionsByTurnOrder[gCurrentTurnActionNumber];
+    }
 
     // Mega Evolve / Focus Punch-like moves after switching, items, running, but before using a move.
     if (gCurrentActionFuncId == B_ACTION_USE_MOVE && !gBattleStruct->effectsBeforeUsingMoveDone)
@@ -6646,6 +6776,7 @@ static void FreeResetData_ReturnToOvOrDoEvolutions(void)
     if (!gPaletteFade.active)
     {
         memset(&gBattleMons, 0, sizeof(struct BattlePokemon) * MAX_BATTLERS_COUNT);
+        TakePendingBattleEncounter(); // covers a battle aborted before it consumed the pending encounter id
         gIsFishingEncounter = FALSE;
         gIsSurfingEncounter = FALSE;
         if (gDexNavSpecies && (gBattleOutcome == B_OUTCOME_WON || gBattleOutcome == B_OUTCOME_CAUGHT || gBattleOutcome == B_OUTCOME_RAN))

@@ -1,0 +1,209 @@
+Encounter: Okidogi
+
+# Okidogi, "The Retaliatory Brawler". One rule:
+#   RAGE, 0-6, rises when Okidogi is hurt or disrespected and falls when it lands its own hit. The
+#   more it fights the way a player wants it to, the softer it hits; the winning line is provoking
+#   RAGE 6 (BERSERKER) on purpose, then punishing the collapsed defenses that come with it.
+# HARDER HITS come from RAGE feeding Okidogi's own Attack stage: +1 at RAGE 1-2, +2 (the cap) at
+#   RAGE 3+. Written absolutely from a single subroutine every time RAGE moves, so no path can
+#   double-stack or leave a stale stage behind after a Haze or a switch.
+# PHASES: Normal (100-50%) - RAGE churns on hits taken/dealt, RESENTMENT punishes debuffing its
+#   Attack, poison feeds it. Unchained (<=50%) - Speed +1, BRUTAL COMBO (a 3-step sequence,
+#   interruptible by dropping its Def/SpDef or landing status). Berserker (<=15%) - RAGE forced to
+#   6, Def/SpDef -1, Speed +1 again; a failed attack drains RAGE hard (the bait), and RAGE refilling
+#   to 6 fires COLLISION COURSE, a one-shot finisher that resets the cycle. Balls unlock separately
+#   at <=10%.
+# "ADDITIONAL ACTIONS" SUBSTITUTION (Stage 2, confirmed): no extra-turn primitive exists. Brutal
+#   Combo's finishing blow and Collision Course - a Speed stage plus flat bonus damage tacked onto
+#   Okidogi's one real hit - stand in for it.
+# DETECTING A FAILED ATTACK: Event.Cause is always ENC_CAUSE_MOVE_DAMAGE at OnMoveEnd and
+#   Event.OldValue/NewValue are stale after a miss (see the tutorial's known gotchas), so neither
+#   can tell a landed hit from a whiff. Instead PriorMark snapshots the player's HP% every turn at
+#   OnTurnStart, and the one script that reacts to "Okidogi's move resolved" reads the damage dealt
+#   since that mark with encsnapshothp's ENC_SNAP_DAMAGE mode - zero means the attack failed.
+# MOVESET DEVIATION: the plan named Close Combat and Throat Chop, neither of which is in Okidogi's
+#   real learnset in this build. Substituted with Superpower and Brutal Swing - both real Okidogi
+#   level-up moves, both keep the physical brawler/dark-retaliation flavor (guideline 5).
+# ANTI-ABUSE IS NARROW (guideline 8): only multi-hit moves are capped to +1 RAGE per turn regardless
+#   of hit count (HitGuard) - farming a multi-hit move to force BERSERKER on demand every turn would
+#   trivialize the fight's one real puzzle.
+Properties:
+    Level: LevelCap
+    CatchRate: 25
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_POISON_JAB, MOVE_SUPERPOWER, MOVE_CRUNCH, MOVE_BRUTAL_SWING
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all eleven here in order fixes
+# Rage..DamageScratch to 0..10.
+# 0 Rage (0-6), 1 Phase (0 Normal / 1 Unchained / 2 Berserker), 2 HitGuard (boss took a damaging
+# hit this turn), 3 AtkGuard (boss's own move resolved this turn), 4 ComboStep (0-3, Brutal Combo
+# progress, Unchained only), 5 BerserkFailGuard (boss's move failed this turn, Berserker only),
+# 6 TurnGuard (the once-per-turn scaffold), 7 ToxicGuard (player-poisoned Rage tick already paid
+# this turn), 8 ResentmentArmed (next boss hit carries the Resentment/Combo-step-1 bonus),
+# 9 PriorMark (player's HP% snapshot at turn open, consumed by ENC_SNAP_DAMAGE), 10 DamageScratch
+# (damage% Okidogi's own move dealt this turn, computed fresh each time it's read).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Okidogi_Intro
+Conditions:
+    Var(Rage) >= 0
+    Var(Phase) >= 0
+    Var(HitGuard) >= 0
+    Var(AtkGuard) >= 0
+    Var(ComboStep) >= 0
+    Var(BerserkFailGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(ToxicGuard) >= 0
+    Var(ResentmentArmed) >= 0
+    Var(PriorMark) >= 0
+    Var(DamageScratch) >= 0
+
+# The once-per-turn scaffold. Also takes the turn-open HP snapshot every legendary needs to tell a
+# failed attack from a landed one later in the turn.
+Trigger: OnTurnStart
+Priority: 0
+Script: EncScript_Okidogi_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 0
+Script: EncScript_Okidogi_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# RAGE ON HIT. Multi-hit moves only grant +1 per turn (HitGuard), not per strike - see the header
+# note on anti-abuse.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Okidogi_RageOnHit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(HitGuard) == 0
+    Var(Rage) < 6
+
+# RAGE ON ATTACK. The single point that reacts to "Okidogi's own move resolved" - hit or miss, the
+# checkpoint fires either way (known gotcha). Handles the Rage-1 cooldown, the Combo Interrupt-proof
+# Brutal Combo progression, the Resentment/Combo-step-1 bonus payout, and (Berserker only) the
+# failed-attack bait and Collision Course finisher, all off one damage-since-mark read so nothing
+# reads the stale Cause/OldValue fields the tutorial warns against.
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Okidogi_RageOnAttack
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(AtkGuard) == 0
+
+# RESENTMENT. Okidogi's own Attack stage getting knocked down reads as disrespect - it snaps back
+# harder. OnEnter alone so it can re-fire every time the stage dips again after recovering.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: OnEnter
+Script: EncScript_Okidogi_Resentment
+Conditions:
+    Battler(Boss).Stat(STAT_ATK) < 6
+
+# COMBO INTERRUPT, defensive route: knock down Def or SpDef mid-combo and the sequence breaks.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: OnEnter
+Script: EncScript_Okidogi_ComboInterrupt
+Conditions:
+    Var(Phase) == 1
+    Var(ComboStep) >= 1
+    Var(ComboStep) <= 2
+    Any:
+        Battler(Boss).Stat(STAT_DEF) < 6
+        Battler(Boss).Stat(STAT_SPDEF) < 6
+
+# COMBO INTERRUPT, status route: landing any status mid-combo breaks it the same way.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: OnEnter
+Script: EncScript_Okidogi_ComboInterrupt
+Conditions:
+    Var(Phase) == 1
+    Var(ComboStep) >= 1
+    Var(ComboStep) <= 2
+    Battler(Boss).Status != 0
+
+# UNCHAINED. Registered at both OnMoveEnd and OnTurnEnd - the hit that crosses 50% is usually a
+# move, not an end-of-turn tick, and the ledger elsewhere in this file relies on Phase being current
+# the moment it crosses (reference/wiring.md's phase-transition convention).
+Trigger: OnMoveEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Okidogi_Unchained
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_Okidogi_Unchained
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+# BERSERKER.
+Trigger: OnMoveEnd
+Priority: 21
+Flags: Once, OnEnter
+Script: EncScript_Okidogi_Berserker
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 21
+Flags: Once, OnEnter
+Script: EncScript_Okidogi_Berserker
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+# TOXIC FEED. Condition failing (Rage already 6) means the trigger doesn't fire at all this pass -
+# no guard-not-set gap, same reasoning as every other level trigger in this file.
+Trigger: OnTurnEnd
+Priority: 15
+Script: EncScript_Okidogi_ToxicFeed
+Conditions:
+    Var(ToxicGuard) == 0
+    Var(Rage) < 6
+    Any:
+        Battler(PlayerLeft).Status == STATUS1_POISON
+        Battler(PlayerLeft).Status >= STATUS1_TOXIC_POISON
+
+# BALLS UNLOCK.
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_Okidogi_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+# RAGE-TIER CALLOUTS. No Once - each is an edge on its own threshold, so it re-fires every time
+# Rage crosses back over that line, in either direction (guideline 14).
+Trigger: OnMoveEnd
+Priority: 30
+Flags: OnEnter
+Script: EncScript_Okidogi_RageTierLow
+Conditions:
+    Var(Rage) >= 1
+    Var(Rage) <= 4
+
+Trigger: OnMoveEnd
+Priority: 31
+Flags: OnEnter
+Script: EncScript_Okidogi_RageTierHigh
+Conditions:
+    Var(Rage) >= 5

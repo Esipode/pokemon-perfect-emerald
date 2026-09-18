@@ -1,0 +1,280 @@
+Encounter: Genesect
+
+# Genesect, "The Weapon Platform". One rule, stated in both directions:
+#   GENESECT ANSWERS WHATEVER YOU LAST DID. The attack that lands is FILED and stops working, and
+#   the DRIVE it equips counters the way you fight. Only driving the machine past its own limits
+#   clears the file - and it will not re-equip until you change what you are doing.
+# THE FILE (ANALYSIS). encadapt files the TYPE of every damaging move that lands, as a type-keyed
+#   resistance: 50% in Phase 0, 60% from Phase 1, 70% from Phase 2, and a re-hit HARDENS the held
+#   type one step further (to 65 / 75 / 90). The board is FIFO and narrow - 2 slots, 3 in the last
+#   phase - so committing to one attack walls that attack and a two-type rotation walls both. With
+#   the flat 86 guard underneath, a filed type lands for 4-7% of what it would while an unfiled type
+#   keeps the full 14%. That gap IS the fight.
+# THE MACHINE (DRIVE / STRAIN / CHARGE). The same hit that is filed also equips the Drive that
+#   counters it, measured off the move: a FIRE move -> DOUSE (rain, +Sp. Def - the answer to its own
+#   4x weakness), a PHYSICAL move -> CHILL (+Def, and the player loses a step of Speed), a SPECIAL
+#   move -> SHOCK (Electric Terrain, +Speed), and a turn where NOTHING landed on it -> BURN (sun,
+#   +Atk/+Sp. Atk and 6% flame chip - the anti-stall arm). Each Drive is a real form change, a
+#   rewritten move slot 3, a field effect and a stat bump. Fire is tested FIRST, so a Fire special
+#   move equips Douse rather than Shock.
+#   A NEW Drive costs +1 SYSTEM STRAIN, and Strain decays -1 on any turn it did not re-equip. At 3
+#   the machine SYSTEM OVERLOADS: the file is wiped, the Drive ejected, the guard collapses to 60
+#   for two turns, Charge is lost and it loses its next action. So the board is cleared by three
+#   CONSECUTIVE turns of attacking the way Genesect is not configured for - paid for in tempo, with
+#   the cannon charging the whole time.
+# THE WEAPON CHARGE, 0-5. +1 on any turn Genesect's side took health off the player, +1 again when
+#   that cost them 25% or more of their max HP (+2 from Phase 1), and a knockout always satisfies
+#   the heavy clause. The cannon is a clock the player winds themselves by standing still.
+#   At 5 in Phase 0/1 it fires TECHNO BLAST for 16/20% of the player's max HP (30% into a locked
+#   target) and then OVERHEATS: Charge 0, the newest adaptation vented, next action lost. Firing is
+#   itself a window.
+# 50% COMBAT PROTOCOL: board percent 50 -> 60, Drive stat bumps double, a status is VENTED at turn
+#   open instead of carried, TARGET LOCK goes live (the player's active Pokemon is trapped for three
+#   turns and Techno Blast hits it half again as hard; broken early by any Drive change or an
+#   overload), and heavy hits charge the cannon twice as fast.
+# 20% WEAPONIZED ADAPTATION: board 2 -> 3 slots at 70%. DUAL DRIVE - a re-equip no longer discards
+#   the previous Drive, so its field effect stays up and its stat bump is re-applied. Charge 5 no
+#   longer fires; it starts the OVERCLOCK, a three-turn destabilisation warned every turn. Complete
+#   it and TECHNO BLAST: OVERCLOCK deals 38% plus the equipped Drive's battlefield effect. INTERRUPT
+#   it - 18% of Genesect's max HP inside the window, or a third System Strain - and the weapon
+#   catastrophically overheats: file wiped, Drive ejected, guard 50 for three turns, two actions
+#   lost. The two interrupt routes are the two verbs the fight spent the whole battle teaching.
+# 1 HP SYSTEMS DOWN: Survive: True carries the fight to 1 HP, where the guard, the immunities and
+#   Survive all come off, the file is wiped and the ball is allowed.
+# ANTI-ABUSE IS DISPLACEMENT, NOT IMMUNITY (guideline 8). Poison is refused by Steel outright. Sleep
+#   is answered by the SHOCK Drive's Electric Terrain - and Shock is exactly what equips against the
+#   special attackers who carry Spore and Hypnosis. In Phase 0 any status sticks and is a real play;
+#   from Phase 1 _Vent takes it off at turn open, so status control costs a move every turn instead
+#   of once. Stalling behind Protect, Substitute or recovery equips BURN, which raises both attack
+#   stats and chips. Spamming one move hardens that type by name. Genesect has no drain and no heal.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Genesect_Down sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # flat, and it stays here all fight except inside a cooling window -
+                                # the type board is the variable, the way Registeel does it
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Bug/Steel is 4x weak to FIRE - the spike the cap exists to flatten,
+                                # and the one type with its own dedicated Drive answer
+    FlatToxicDamage: True       # inert here (Steel refuses poison) but set for the house default
+    Survive: True               # load-bearing: 1 HP is what ends the fight and opens the catch
+                                # window. Cleared in _Down
+    Ability: ABILITY_DOWNLOAD   # its own, and the spec's "weakest defensive point" read: it raises
+                                # Atk or Sp. Atk on entry from whichever player defence is lower
+    Moves: MOVE_TECHNO_BLAST, MOVE_X_SCISSOR, MOVE_METAL_SOUND, MOVE_BUG_BUZZ
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..PrevDrive to 0..15. No var-to-var comparison appears anywhere in this design; every test is
+# against a literal, the per-phase board numbers are reached by branching on Phase first, and
+# ENC_SNAP_DAMAGE is the engine's own answer to "subtract one value from another".
+# 0 Phase (0 Drive System / 1 Combat Protocol / 2 Weaponized Adaptation / 3 Systems Down),
+# 1 Drive (0 none / 1 Burn / 2 Chill / 3 Douse / 4 Shock), 2 Charge (Weapon Charge, 0-5),
+# 3 Strain (System Strain, 0-3), 4 Load (adaptations held - written ONLY by encadapt/encpurgeadapt,
+# so it can never drift from the real board), 5 Result (encadapt's ENC_ADAPT_RESULT_*, or 255 for
+# "it did not file"), 6 TurnGuard (the once-per-turn scaffold), 7 MoveGuard (the analysis arms'
+# per-turn re-entry guard: 0 armed / 1 a hit was filed / 2 a Drive was changed - which is also what
+# Strain's decay tests), 8 PlayerMark (player HP% at turn open; ENC_SNAP_DAMAGE turns it into "lost
+# this turn"), 9 BossMark (Genesect HP% at turn open; likewise, and the Overclock interrupt test),
+# 10 Scratch (the copy ENC_SNAP_DAMAGE consumes, so a mark survives being measured),
+# 11 Lock (TARGET LOCK, one variable for both halves of its cycle: 0 idle, 1-3 turns of trap
+# remaining, 4-5 turns of cooldown remaining), 12 FaintGuard (per-faint re-entry guard - an Event.*
+# condition cannot be moved by the script that reads it), 13 Overclock (destabilisation countdown;
+# 0 = idle), 14 Cooling (turns of collapsed guard remaining after an overload), 15 PrevDrive (the
+# Drive displaced by the last re-equip - Dual Drive's second half).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Genesect_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Drive) >= 0
+    Var(Charge) >= 0
+    Var(Strain) >= 0
+    Var(Load) >= 0
+    Var(Result) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(PlayerMark) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Lock) >= 0
+    Var(FaintGuard) >= 0
+    Var(Overclock) >= 0
+    Var(Cooling) >= 0
+    Var(PrevDrive) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# SELECTION, so whichever fires first permanently disables the other. All three sit below _TurnClose
+# (80), so at an OnTurnEnd where the player's damage crossed a threshold the transition runs first
+# and every later script sees the new Phase. Each is also gated on the Phase value its own script
+# overwrites, so one huge hit crossing two thresholds steps through them in order.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Genesect_CombatProtocol
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Genesect_CombatProtocol
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Genesect_Weaponized
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Genesect_Weaponized
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Genesect_Down
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Genesect_Down
+Conditions:
+    Battler(Boss).HpPercent <= 1
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. TurnGuard is its only gate and the script sets it immediately, so no
+# branch out of it can leave it re-armed. It owns every countdown in the fight - the cooling window,
+# the Target Lock cycle and the Overclock tick are all CALLED from here rather than given triggers of
+# their own, because a countdown whose trigger condition stays true after the decrement re-selects
+# itself through every remaining value in one dispatch.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Genesect_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# SYSTEM PURGE, Phase 1+. Self-disabling: the script cures the status its own condition reads.
+Trigger: OnTurnStart
+Priority: 12
+Script: EncScript_Genesect_Vent
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Battler(Boss).Status >= 1
+
+# TARGET LOCK, Phase 1+. Announced before the player picks a move, so the turn can be spent on the
+# answer. Self-disabling: the script writes Lock. Charge >= 3 ties it to the cannon the player is
+# already watching, so it never arrives out of nowhere.
+Trigger: OnTurnStart
+Priority: 16
+Script: EncScript_Genesect_TargetLock
+Conditions:
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+    Var(Lock) == 0
+    Var(Charge) >= 3
+
+# ANALYSIS, in three arms. At OnMoveEnd Event.Battler is the battler that GOT HIT. FIRE is tested
+# first (30) so a Fire special move equips DOUSE rather than SHOCK - the 4x weakness gets its own
+# answer, which is the whole point of a machine that analyses. All three self-disable through
+# MoveGuard, which _TurnClose clears: an Event.* condition stays true for the whole dispatch and a
+# script cannot move it, so an event-reacting trigger has to gate on a variable it sets. Once would
+# be wrong - it means once per BATTLE, and filing is the thing this fight does over and over. Only
+# MoveGuard 0 is eligible, so the first arm to fire is also the only one: one filing and at most one
+# re-equip per turn, however many strikes a multi-hit move landed.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Genesect_AnalyzeFire
+Conditions:
+    Var(MoveGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+
+Trigger: OnMoveEnd
+Priority: 31
+Script: EncScript_Genesect_AnalyzePhysical
+Conditions:
+    Var(MoveGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+
+Trigger: OnMoveEnd
+Priority: 32
+Script: EncScript_Genesect_AnalyzeSpecial
+Conditions:
+    Var(MoveGuard) == 0
+    Var(TurnGuard) == 1
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+
+# A player Pokemon went down. The turn ledger cannot see this on its own: by OnTurnEnd the
+# replacement has already been sent in at full HP, so the turn that cost the player a Pokemon would
+# otherwise read as a turn that cost them nothing. FaintGuard stops the re-evaluation loop
+# re-selecting it, the same way MoveGuard does for the analysis arms.
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Genesect_TheyFell
+Conditions:
+    Var(FaintGuard) == 0
+    Var(Phase) <= 2
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE LEDGER. Runs last of the measuring scripts, so it sees a finished turn: the Weapon Charge, the
+# anti-stall BURN arm, the Strain decay and the Overclock's damage interrupt. Self-disables by
+# clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Genesect_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# The cannon. Both run AFTER _TurnClose (80), which is what raises Charge to 5, so they are selected
+# on the re-evaluation pass that follows (determinism rule 3) - the same shape as Virizion's Sacred
+# Sword. _TechnoBlast self-disables by resetting Charge; _OverclockStart by writing Overclock.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Genesect_TechnoBlast
+Conditions:
+    Var(Phase) <= 1
+    Var(Charge) >= 5
+
+Trigger: OnTurnEnd
+Priority: 91
+Script: EncScript_Genesect_OverclockStart
+Conditions:
+    Var(Phase) == 2
+    Var(Charge) >= 5
+    Var(Overclock) == 0
+
+# The Overclock resolves one checkpoint away from the tick that brought it here (_TurnOpen calls
+# _OverclockTick), which is the mandated two-checkpoint split for a countdown. Self-disables by
+# zeroing Overclock.
+Trigger: OnTurnEnd
+Priority: 92
+Script: EncScript_Genesect_OverclockFire
+Conditions:
+    Var(Phase) <= 2
+    Var(Overclock) == 1

@@ -1,0 +1,249 @@
+Encounter: Xerneas
+
+# Xerneas, "The Life Pokemon". One rule:
+#   LIFE ENERGY, 0-10, is both Xerneas's armour and its fuel. Everything alive on the field raises
+#   it. Xerneas never gains anything for free - every scripted thing it does is PAID FOR out of the
+#   meter. The player wins by making it spend faster than the battlefield feeds it.
+# This is the inverse of a barrier boss: the meter is not attacked directly, it is starved.
+#   Phase 0 THE GIVING TREE (100-60%) - blooms to 2, LIFE BLESSING active, meter climbs on its own.
+#   Phase 1 THE FOREST AWAKENS (60-30%) - permanent Grassy Terrain, blooms to 3, GEOMANCY cycles.
+#   Phase 2 LIFE ETERNAL (30% - empty meter) - the meter becomes a countdown, Xerneas cannot fall
+#     below 25%, and nothing on the field can be KO'd. Pure denial: hit it into the floor, starve it.
+#   Phase 3 NATURE'S GIFT -> SPENT - it gives its remaining life to the player's team, then the
+#     catch window.
+# FEEDING IT: the passive +1/turn, a Fairy or Grass move resolving (either side), a LIFE BLOOM
+#   shattering (regrown at a worse price), and a player Pokemon ending the turn at or below 15% HP.
+# ANTI-ABUSE IS NARROW (guideline 8). OHKO/fixed damage/Pain Split/Destiny Bond & co are blocked by
+#   Immunities:. The Safeguard bloom is this fight's only status answer, and it is removable with
+#   five named moves. GEOMANCY scours stages once per eruption, telegraphed and interruptible - not
+#   a per-turn scour. Every scripted payload is a direct HP write, so Substitute is a real option.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                 # none; EncScript_Xerneas_Spent sets a real one
+    Balls: Blocked
+    DamageReduction: 84          # WITHERING, the Life 2 opening band. Every later value is written
+                                  # absolutely by EncScript_Xerneas_ApplyGuard, which _Intro calls
+                                  # on turn 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True                # Phase 2 must reach its own end for Phase 3 to exist. Cleared in
+                                  # _Spent
+    Ability: ABILITY_FAIRY_AURA  # its own, and a deliberate double edge: it boosts the player's
+                                  # Fairy moves too, which are the moves that feed the meter
+    Moves: MOVE_MOONBLAST, MOVE_HORN_LEECH, MOVE_MEGAHORN, MOVE_CLOSE_COMBAT
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# All four moves are real Xerneas level-up moves. Moonblast is the STAB. Horn Leech is the drain and
+# is automatically scaled by DamageReduction:. Megahorn and Close Combat answer the Psychic/Grass and
+# Steel switch-ins a mono-Fairy boss otherwise struggles with. MOVE_GEOMANCY never enters the
+# moveset - the Geomancy sequence is a scripted, telegraphed, interruptible payload, and an AI free
+# to fire the same-named move at will would make the telegraph meaningless.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Phase..BlessCool to 0..15.
+# 0 Phase (0 Giving Tree / 1 Forest Awakens / 2 Life Eternal / 3 Spent), 1 Life (LIFE ENERGY, 0-10),
+# 2 LastBand (the last ANNOUNCED band; 9 = nothing said yet), 3 TurnGuard (once-per-turn scaffold),
+# 4 BossMark (Xerneas HP% at turn open), 5 Scratch (the copy ENC_SNAP_DAMAGE consumes, then reused
+# as the in-script HP probe), 6 Blooms (LIFE BLOOM count, 0-4), 7 Gain (life earned this turn,
+# applied at the ledger), 8 Active (0 Neutral / 1 Active Mode taken), 9 BlessTick (0 nobody blessed /
+# 1-3 turns of LIFE BLESSING left), 10 Charge (GEOMANCY: 0 none / 1-3 turns left), 11 LifeGuard (a
+# Fairy/Grass move already counted this turn), 12 GardenGuard (a bloom already shattered this turn),
+# 13 CueTick (alternates the recurring line), 14 Held (the 25% floor already held this turn),
+# 15 BlessCool (turns until Xerneas will bless again).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Xerneas_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Life) >= 0
+    Var(LastBand) >= 0
+    Var(TurnGuard) >= 0
+    Var(BossMark) >= 0
+    Var(Scratch) >= 0
+    Var(Blooms) >= 0
+    Var(Gain) >= 0
+    Var(Active) >= 0
+    Var(BlessTick) >= 0
+    Var(Charge) >= 0
+    Var(LifeGuard) >= 0
+    Var(GardenGuard) >= 0
+    Var(CueTick) >= 0
+    Var(Held) >= 0
+    Var(BlessCool) >= 0
+
+# THE FOREST AWAKENS. Registered at both checkpoints because the blow that crosses 60% can be a move
+# or an end-of-turn tick; both are Once, marked at selection, so whichever fires first permanently
+# disables the other. Sits below _EternalHold (12) and _TurnClose (80), so the transition runs first
+# and everything downstream sees the new phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Xerneas_ForestAwakens
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Xerneas_ForestAwakens
+Conditions:
+    Battler(Boss).HpPercent <= 60
+    Var(Phase) == 0
+
+# LIFE ETERNAL.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Xerneas_LifeEternal
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Xerneas_LifeEternal
+Conditions:
+    Battler(Boss).HpPercent <= 30
+    Var(Phase) == 1
+
+# NATURE'S GIFT. The meter emptying in Phase 2 is the intended way out of the lock.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Xerneas_NaturesGift
+Conditions:
+    Var(Phase) == 2
+    Var(Life) == 0
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Xerneas_NaturesGift
+Conditions:
+    Var(Phase) == 2
+    Var(Life) == 0
+
+# The deadlock fallback. Survive: True pins Xerneas at 1 HP, so an unexpected push past the floor
+# still reaches the catch window.
+Trigger: OnMoveEnd
+Priority: 8
+Flags: Once
+Script: EncScript_Xerneas_Spent
+Conditions:
+    Var(Phase) == 2
+    Battler(Boss).HpPercent <= 1
+
+Trigger: OnTurnEnd
+Priority: 8
+Flags: Once
+Script: EncScript_Xerneas_Spent
+Conditions:
+    Var(Phase) == 2
+    Battler(Boss).HpPercent <= 1
+
+# THE PHASE 2 FLOOR HOLD. At most once a turn (Held), and sits above the phase transitions/NaturesGift
+# so a hold never wastes life the same blow already ended the lock with.
+Trigger: OnMoveEnd
+Priority: 12
+Script: EncScript_Xerneas_EternalHold
+Conditions:
+    Var(Phase) == 2
+    Var(Life) >= 1
+    Battler(Boss).HpPercent < 25
+    Var(Held) == 0
+
+Trigger: OnTurnEnd
+Priority: 12
+Script: EncScript_Xerneas_EternalHold
+Conditions:
+    Var(Phase) == 2
+    Var(Life) >= 1
+    Battler(Boss).HpPercent < 25
+    Var(Held) == 0
+
+# The once-per-turn scaffold.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Xerneas_TurnOpen
+Conditions:
+    Var(Phase) <= 2
+    Var(TurnGuard) == 0
+
+# LIFE BLESSING. Self-disabling through BlessTick, which the script sets to 3 the moment it fires -
+# the condition itself goes false, so this cannot re-select later in the same checkpoint's passes.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_Xerneas_Bless
+Conditions:
+    Var(Phase) <= 1
+    Var(BlessTick) == 0
+    Var(BlessCool) == 0
+    Var(Life) >= 2
+    Battler(PlayerLeft).HpPercent <= 35
+
+# GEOMANCY. Self-disabling through Charge.
+Trigger: OnTurnStart
+Priority: 16
+Script: EncScript_Xerneas_BeginGeomancy
+Conditions:
+    Var(Phase) == 1
+    Var(Charge) == 0
+    Var(Life) >= 6
+
+# THE GARDENER. A bloom is shattered by a real move. Self-disabling through GardenGuard, which
+# _TurnOpen clears each turn.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Xerneas_Gardener
+Conditions:
+    Var(Phase) <= 2
+    Var(Blooms) >= 1
+    Var(GardenGuard) == 0
+    Any:
+        Event.Move == MOVE_DEFOG
+        Event.Move == MOVE_BRICK_BREAK
+        Event.Move == MOVE_PSYCHIC_FANGS
+        Event.Move == MOVE_RAGING_BULL
+        Event.Move == MOVE_HAZE
+
+# LIFE SURGE. A Fairy or Grass move resolved, either side. Self-disabling through LifeGuard, which
+# _TurnOpen clears each turn.
+Trigger: OnMoveEnd
+Priority: 22
+Script: EncScript_Xerneas_LifeSurge
+Conditions:
+    Var(Phase) <= 2
+    Var(LifeGuard) == 0
+    Any:
+        Event.MoveType == TYPE_FAIRY
+        Event.MoveType == TYPE_GRASS
+
+# The blessed Pokemon fainted - its life returns to Xerneas.
+Trigger: OnFaint
+Priority: 24
+Script: EncScript_Xerneas_BlessingReturns
+Conditions:
+    Var(BlessTick) >= 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# The blessed Pokemon switched out - the blessing is left behind. TurnGuard == 1 is load-bearing:
+# OnSwitchIn fires for the player's lead before OnBattleStart, when every variable is still 0.
+Trigger: OnSwitchIn
+Priority: 26
+Script: EncScript_Xerneas_BlessingLeaves
+Conditions:
+    Var(BlessTick) >= 1
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# THE LEDGER, and the only place the turn's subsystems resolve. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Xerneas_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

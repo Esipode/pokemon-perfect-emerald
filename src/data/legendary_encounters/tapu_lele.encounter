@@ -1,0 +1,222 @@
+Encounter: Tapu_Lele
+
+# Tapu Lele, "The Land Spirit Pokemon". One rule:
+#   DISTORTION (0-5) layers real field rules onto the fight as it climbs - Psychic Terrain, trapping,
+#   Wonder Room, Trick Room - each layer telegraphed once, the moment it activates, never silently.
+# Distortion rises from the boss's own Psychic moves and from turn thresholds (5/10/15), and is
+#   pinned to 5 the instant Phase 1 opens. Mirrored Resonance files every player hit that lands as an
+#   encadapt type resistance - Tapu Lele reads what beats it and stops being beaten by it. Mirage
+#   Tell (Distortion >= 2) prints a fake stat line while a different stat actually moves.
+# Phase 0 PSYCHIC GUARDIAN (100-50% HP): Distortion climbs, layers latch in as thresholds cross.
+# Phase 1 PSYCHIC REVERIE (<=50% HP): Distortion forced to 5, every layer live; Reality Shift
+#   (weather / stat tilt / side-status swap) cycles every 3 turns.
+# Phase 2 GUARDIAN'S DREAM (<=10% HP): a 3-turn window, Reality Shift forced every turn, then the
+#   Guardian Psychic finisher and full collapse - the catch window.
+# ANTI-ABUSE (guideline 8): the immunities below block the standard one-shot/status-stall lines.
+#   encsettrapped once Distortion >= 3 stops switch-stalling out of the stacked field rules, and
+#   Trick Room/Wonder Room are silent field statuses with no player-side item/move to dispel them in
+#   this ROM base - the flipped rules have to be played through, not cancelled.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 90
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_PSYCHIC_SURGE
+    Moves: MOVE_PSYSHOCK, MOVE_MOONBLAST, MOVE_CALM_MIND, MOVE_DAZZLING_GLEAM
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block, pins the variable numbering the .inc hard-codes. In first-appearance order:
+# 0 Distortion (0-5, the meter), 1 Phase (0 Guardian / 1 Reverie / 2 Dream / 3 Spent),
+# 2 MoveGuard (per-turn latch shared by PsychicUse and MirroredResonance - only one of the two can
+#   hold at once per move-end event, since one reads Event.Target and the other Event.Battler),
+# 3 ShiftTimer (Reality Shift countdown - ticks at OnTurnStart, resolves at OnTurnEnd),
+# 4 ShiftGuard (per-turn latch on the Reality Shift resolve script),
+# 5 DreamTurns (Phase 2's 3-turn window, ticked inside the Reality Shift resolve script),
+# 6 MirageGuard (per-turn latch on Mirage Tell - encjumpifchance alone doesn't self-disable),
+# 7 ShiftTick (per-turn latch on the ShiftTimer decrement - same reason as MirageGuard),
+# 8 AdaptCount, 9 AdaptResult (encadapt's mandatory output vars - unread; encadapt buffers the new
+#   type's name into {B_BUFF1} itself, which is all the dialogue needs)
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_TapuLele_Intro
+Conditions:
+    Var(Distortion) >= 0
+    Var(Phase) >= 0
+    Var(MoveGuard) >= 0
+    Var(ShiftTimer) >= 0
+    Var(ShiftGuard) >= 0
+    Var(DreamTurns) >= 0
+    Var(MirageGuard) >= 0
+    Var(ShiftTick) >= 0
+    Var(AdaptCount) >= 0
+    Var(AdaptResult) >= 0
+
+# Phase transitions, registered at both checkpoints since the crossing blow can be a move or an
+# end-of-turn tick (e.g. a Toxic'd Tapu Lele fading past a threshold with no move that turn). Both
+# copies are Once, marked at selection, so whichever fires first disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_ReverieBegins
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_ReverieBegins
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_DreamBegins
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_DreamBegins
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 1
+
+# Distortion source 1: the boss's own Psychic moves. Event.Target is the battler that USED the move.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_TapuLele_PsychicUse
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_PSYCHIC
+    Var(MoveGuard) == 0
+    Var(Distortion) < 5
+
+# Mirrored Resonance. Event.Battler is the battler that GOT HIT - a move landing on the boss.
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_TapuLele_MirroredResonance
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Var(MoveGuard) == 0
+
+# Distortion source 2: turns passing on their own.
+Trigger: OnTurnEnd
+Priority: 15
+Flags: Once
+Script: EncScript_TapuLele_TurnsPass
+Conditions:
+    Turn == 5
+    Var(Distortion) < 5
+
+Trigger: OnTurnEnd
+Priority: 15
+Flags: Once
+Script: EncScript_TapuLele_TurnsPass
+Conditions:
+    Turn == 10
+    Var(Distortion) < 5
+
+Trigger: OnTurnEnd
+Priority: 15
+Flags: Once
+Script: EncScript_TapuLele_TurnsPass
+Conditions:
+    Turn == 15
+    Var(Distortion) < 5
+
+# The Distortion-gated field layers. Once, OnEnter: each latches exactly once, the first OnTurnStart
+# after its threshold is crossed (rule 7 - the edge is measured against the last checkpoint's state,
+# so a script mutating Distortion mid-move/mid-OnTurnEnd is picked up cleanly one beat later).
+Trigger: OnTurnStart
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_TerrainLatch
+Conditions:
+    Var(Distortion) >= 1
+
+Trigger: OnTurnStart
+Priority: 21
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_TrapLatch
+Conditions:
+    Var(Distortion) >= 3
+
+Trigger: OnTurnStart
+Priority: 22
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_WonderRoomLatch
+Conditions:
+    Var(Distortion) >= 4
+
+Trigger: OnTurnStart
+Priority: 23
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_TrickRoomLatch
+Conditions:
+    Var(Distortion) >= 5
+
+# Mirage Tell. encjumpifchance alone doesn't self-disable (a stable-true Var condition would
+# re-select every pass of this checkpoint), so MirageGuard latches the moment the roll happens,
+# hit or miss, and ClearGuards below frees it again at OnTurnEnd.
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_TapuLele_MirageTell
+Conditions:
+    Var(Distortion) >= 2
+    Var(MirageGuard) == 0
+
+# Reality Shift countdown tick. Same self-disable reasoning as Mirage Tell, via ShiftTick.
+Trigger: OnTurnStart
+Priority: 31
+Script: EncScript_TapuLele_ShiftTick
+Conditions:
+    Var(Phase) >= 1
+    Var(ShiftTimer) > 0
+    Var(ShiftTick) == 0
+
+Trigger: OnTurnStart
+Priority: 40
+Script: EncScript_TapuLele_ClearShiftGuard
+Conditions:
+    Var(ShiftGuard) == 1
+
+# One shared clear for every per-turn latch opened above, at the opposite checkpoint from where
+# each was set - the two-checkpoint countdown/guard scaffold this file uses throughout.
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_TapuLele_ClearGuards
+Conditions:
+    Any:
+        Var(MoveGuard) == 1
+        Var(MirageGuard) == 1
+        Var(ShiftTick) == 1
+
+# Reality Shift resolve. Folds the Phase 2 Dream-turn countdown into the same routine: while
+# Phase == 2 it forces ShiftTimer back to 0 instead of 3, so the shift fires every turn instead of
+# every three.
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_TapuLele_ShiftResolve
+Conditions:
+    Var(Phase) >= 1
+    Var(ShiftTimer) == 0
+    Var(ShiftGuard) == 0
+
+# The finisher. Runs after ShiftResolve's DreamTurns decrement at the same checkpoint (priority 20
+# vs 90), so it sees DreamTurns == 0 the moment the third Dream turn's shift has resolved.
+Trigger: OnTurnEnd
+Priority: 90
+Flags: Once, OnEnter
+Script: EncScript_TapuLele_Spent
+Conditions:
+    Var(Phase) == 2
+    Var(DreamTurns) == 0

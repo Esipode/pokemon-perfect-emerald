@@ -1,0 +1,186 @@
+Encounter: Galarian_Zapdos
+
+# Galarian Zapdos, "The Relentless Pursuer". One rule:
+#   MOMENTUM (0-5) rises when Zapdos lands hits and falls when the player answers well. High
+#   Momentum makes every following hit from Zapdos hit harder (a scaled chip-damage combo bonus);
+#   Momentum 5 detonates into RELENTLESS ASSAULT, a genuine bonus hit fired at OnTurnEnd.
+# Don't let Zapdos's landed hits go unanswered - a big single hit on Zapdos (Stagger, >=18% in one
+#   shot at Momentum>=3) knocks Momentum down 2 and locks out the combo bonus until it rebuilds.
+#   Switching invites Pursuit; switching in a Ground-type shrugs it off for a Momentum tick instead.
+# Phase 1 Opening (100-50%): the system as above. Phase 2 Breakneck Speed (<=50%): guard hardens to
+#   92 and Pursuit intensifies; Momentum thresholds are unchanged. Phase 3 Last Stand (<=15%): guard
+#   drops to 80, balls unlock, and Relentless Assault also chips Zapdos's own HP for "exertion".
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_THUNDEROUS_KICK, MOVE_CLOSE_COMBAT, MOVE_BRAVE_BIRD, MOVE_DRILL_PECK
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Galarian Zapdos is pure Fighting-type, so its own weaknesses are Flying/Psychic/Fairy - the
+# SE-loss trigger below reads that off Event.MoveType.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all sixteen here in order fixes
+# Momentum..SEGuard to 0..15.
+# 0 Momentum (0-5, the core meter), 1 Phase (1-3), 2 EncounterStarted (guards Pursuit against firing
+# on the opening send-out), 3 TurnGuard (once-per-turn scaffold), 4 HitGuardGain (guards "Zapdos's
+# hit landed" for this dispatch), 5 PlayerHitGuard (guards "player's hit landed on Zapdos" - the
+# Stagger check), 6 BossAttackGuard (guards the "Zapdos's attack was Protected" loss trigger),
+# 7 StatusGuard (guards the "Zapdos was statused" loss trigger; persists until cured, not reset
+# per turn), 8 DmgMark (player HP% snapshot at turn start), 9 DmgPct (damage dealt to player this
+# hit), 10 BossDmgMark (Zapdos HP% snapshot at turn start), 11 BossDmgPct (damage dealt to Zapdos
+# this hit), 12 ComboLocked (Stagger flag; blocks the combo bonus until Momentum rebuilds),
+# 13 PursuitGuard (guards Pursuit firing once per switch-in dispatch - ALSO reused to guard KOGain
+# firing once per faint dispatch, since a KO's forced replacement switch-in shouldn't also draw
+# Pursuit; the same shared-guard idiom other encounters use for a faint+switch-in pair),
+# 14 AssaultGuard (guards Relentless Assault firing once per OnTurnEnd dispatch), 15 SEGuard
+# (guards the Flying/Psychic/Fairy super-effective-taken Momentum drop - split into its own trigger
+# because Event.MoveType can only be tested in Conditions, never inside a script body).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_GalarianZapdos_Init
+Conditions:
+    Var(Momentum) >= 0
+    Var(Phase) >= 0
+    Var(EncounterStarted) >= 0
+    Var(TurnGuard) >= 0
+    Var(HitGuardGain) >= 0
+    Var(PlayerHitGuard) >= 0
+    Var(BossAttackGuard) >= 0
+    Var(StatusGuard) >= 0
+    Var(DmgMark) >= 0
+    Var(DmgPct) >= 0
+    Var(BossDmgMark) >= 0
+    Var(BossDmgPct) >= 0
+    Var(ComboLocked) >= 0
+    Var(PursuitGuard) >= 0
+    Var(AssaultGuard) >= 0
+    Var(SEGuard) >= 0
+
+# The once-per-turn scaffold: resets every per-dispatch guard and snapshots both HP marks.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_GalarianZapdos_TurnStartReset
+Conditions:
+    Var(TurnGuard) == 0
+
+# Self-disabling by clearing TurnGuard. Runs last among the OnTurnEnd scripts.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_GalarianZapdos_TurnEndClearGuard
+Conditions:
+    Var(TurnGuard) == 1
+
+# RELENTLESS ASSAULT. Momentum 5 detonates into a genuine bonus hit at the one checkpoint that can
+# safely inject one without stealing the player's action.
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_GalarianZapdos_RelentlessAssault
+Conditions:
+    Var(Momentum) == 5
+    Var(AssaultGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_GalarianZapdos_ComboLockedClear
+Conditions:
+    Var(ComboLocked) == 1
+    Var(Momentum) >= 2
+
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_GalarianZapdos_StatusGuardClear
+Conditions:
+    Battler(Boss).Status == 0
+    Var(StatusGuard) == 1
+
+# Zapdos's hit landed on the player: base Momentum gain, bonus on a vicious blow, combo chip damage.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_GalarianZapdos_MomentumGainOnHit
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(HitGuardGain) == 0
+
+# The player's hit landed on Zapdos: the Stagger check (>=18% in one shot at Momentum>=3).
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_GalarianZapdos_PlayerHitsBoss
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(PlayerHitGuard) == 0
+
+# The same hit, tested for Zapdos's own type weakness. A separate trigger because Event.MoveType
+# only exists in Conditions, so it can't be branched on inside PlayerHitsBoss's own script.
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_GalarianZapdos_SELoss
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Var(SEGuard) == 0
+    Any:
+        Event.MoveType == TYPE_FLYING
+        Event.MoveType == TYPE_PSYCHIC
+        Event.MoveType == TYPE_FAIRY
+
+# Zapdos's own attack was Protected against.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_GalarianZapdos_ProtectedLoss
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Battler(PlayerLeft).Protected == 1
+    Var(BossAttackGuard) == 0
+
+# Zapdos was statused.
+Trigger: OnMoveEnd
+Priority: 40
+Script: EncScript_GalarianZapdos_StatusLoss
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Battler(Boss).Status != 0
+    Var(StatusGuard) == 0
+
+Trigger: OnMoveEnd
+Priority: 90
+Flags: Once, OnEnter
+Script: EncScript_GalarianZapdos_Phase2
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 91
+Flags: Once, OnEnter
+Script: EncScript_GalarianZapdos_Phase3
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 2
+
+# The player's mon fainted to Zapdos's own damage. Reuses PursuitGuard: the forced replacement
+# switch-in that follows shouldn't also draw Pursuit.
+Trigger: OnFaint
+Priority: 10
+Script: EncScript_GalarianZapdos_KOGain
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(PursuitGuard) == 0
+
+# A switch-in that isn't the opening send-out draws Pursuit, unless it's a Ground-type.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_GalarianZapdos_Pursuit
+Conditions:
+    Var(EncounterStarted) == 1
+    Var(PursuitGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT

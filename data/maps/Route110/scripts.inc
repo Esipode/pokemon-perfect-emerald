@@ -6,6 +6,10 @@ Route110_MapScripts::
 
 Route110_OnResume:
 	special UpdateCyclingRoadState
+	updatelegendaryvisibility SPECIES_ZAPDOS, FLAG_HIDE_ZAPDOS
+	special Route110ShowZapdos
+	goto_if_eq VAR_RESULT, TRUE, Route110_ShowZapdos
+	goto_if_ne VAR_RESULT, TRUE, Route110_HideZapdos
 	end
 
 Route110_OnTransition:
@@ -13,6 +17,52 @@ Route110_OnTransition:
 	call Common_EventScript_SetupRivalOnBikeGfxId
 	call_if_eq VAR_CYCLING_CHALLENGE_STATE, 1, Route110_EventScript_SaveCyclingMusic
 	end
+
+Route110_Zapdos_Encounter::
+	goto LegendaryEncounter_EventScript_Zapdos
+
+Route110_HideZapdos:
+	setflag FLAG_HIDE_ZAPDOS
+	return
+
+Route110_ShowZapdos:
+	setmetatile 11, 23, 0x11B, FALSE
+	setmetatile 12, 23, 0x11C, FALSE
+	setmetatile 13, 23, 0x11C, FALSE
+	setmetatile 14, 23, 0x11C, FALSE
+	setmetatile 15, 23, 0x11C, FALSE
+	setmetatile 16, 23, 0x11C, FALSE
+	setmetatile 17, 23, 0x11D, FALSE
+	setmetatile 11, 24, 0x123, FALSE
+	setmetatile 12, 24, 0x124, FALSE
+	setmetatile 13, 24, 0x124, FALSE
+	setmetatile 14, 24, 0x124, FALSE
+	setmetatile 15, 24, 0x124, FALSE
+	setmetatile 16, 24, 0x124, FALSE
+	setmetatile 17, 24, 0x125, FALSE
+	setmetatile 11, 25, 0x123, FALSE
+	setmetatile 12, 25, 0x124, FALSE
+	setmetatile 13, 25, 0x124, FALSE
+	setmetatile 14, 25, 0x124, FALSE
+	setmetatile 15, 25, 0x124, FALSE
+	setmetatile 16, 25, 0x124, FALSE
+	setmetatile 17, 25, 0x125, FALSE
+	setmetatile 11, 26, 0x123, FALSE
+	setmetatile 12, 26, 0x124, FALSE
+	setmetatile 13, 26, 0x124, FALSE
+	setmetatile 14, 26, 0x124, FALSE
+	setmetatile 15, 26, 0x124, FALSE
+	setmetatile 16, 26, 0x124, FALSE
+	setmetatile 17, 26, 0x125, FALSE
+	setmetatile 11, 27, 0x12B, FALSE
+	setmetatile 12, 27, 0x12C, FALSE
+	setmetatile 13, 27, 0x12C, FALSE
+	setmetatile 14, 27, 0x12C, FALSE
+	setmetatile 15, 27, 0x12C, FALSE
+	setmetatile 16, 27, 0x12C, FALSE
+	setmetatile 17, 27, 0x12D, FALSE
+	callnative Route110_SetZapdosIslandElevation
+	return
 
 Route110_EventScript_SaveCyclingMusic::
 	savebgm MUS_CYCLING

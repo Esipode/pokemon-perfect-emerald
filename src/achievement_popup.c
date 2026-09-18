@@ -200,11 +200,23 @@ EWRAM_DATA static bool8 sAchievementPopupNeedsScroll = FALSE;
 // ACHIEVEMENT_POPUP_DESC_RESTART_DELAY.
 EWRAM_DATA static u16 sAchievementPopupDescRestartTimer = 0;
 
-// The achievement currently on display, so Task_WaitAchievementPopupDismiss
-// can re-invoke PrintAchievementPopupText on its own (the loop-back-to-top
-// restart above) without ShowAchievementPopUpWindow needing to hand it the
-// id again every frame.
+// What kind of content is currently on display -- an achievement (value is
+// the achievement id) or a level cap increase (value is the new cap). Lets
+// this file's window/queue/dismiss machinery stay shared between the two
+// instead of forking a whole second copy of it for the level cap notification
+// (src/field_specials.c's EnqueueLevelCapIncreasePopup).
+enum PopupKind
+{
+    POPUP_KIND_ACHIEVEMENT,
+    POPUP_KIND_LEVEL_CAP,
+};
+
+// The achievement id or level cap value currently on display, so
+// Task_WaitAchievementPopupDismiss can re-invoke PrintAchievementPopupText on
+// its own (the loop-back-to-top restart above) without ShowPopUpWindow
+// needing to hand it the value again every frame.
 EWRAM_DATA static u16 sAchievementPopupCurrentId = 0;
+EWRAM_DATA static u8 sAchievementPopupCurrentKind = POPUP_KIND_ACHIEVEMENT;
 
 // Latches TRUE once the popup has cleared its one-time "just appeared"
 // grace period (first scroll pass, if any, plus
@@ -235,23 +247,43 @@ EWRAM_DATA static u8 sAchievementPopupIconSpriteId = 0;
 // rather than comparing them against a sentinel value.
 EWRAM_DATA static bool8 sAchievementPopupActive = FALSE;
 
-// Ring buffer: sAchievementPopupQueueHead is the next id to dequeue,
+// Guards against showing a popup on the exact frame some other field lock
+// (e.g. the save dialog) just released: RunTasks() inside OverworldBasic()
+// can unlock field controls and tear down a menu's windows earlier in the
+// same CB2_Overworld tick that AchievementPopup_UpdateQueue then runs in --
+// IsAchievementPopupSafeToShow reads the post-unlock state and passes, so
+// the popup's own window gets drawn over graphics the other window is still
+// mid-teardown on. Requiring the field to have been safe on the *previous*
+// frame too closes that race.
+EWRAM_DATA static bool8 sAchievementPopupWasSafeLastFrame = FALSE;
+
+// Ring buffer: sAchievementPopupQueueHead is the next entry to dequeue,
 // sAchievementPopupQueueCount is how many are pending (mod-indexing off of
-// head + count rather than tracking a separate tail).
-EWRAM_DATA static u16 sAchievementPopupQueue[ACHIEVEMENT_POPUP_QUEUE_SIZE] = {0};
+// head + count rather than tracking a separate tail). Each entry carries its
+// own kind so achievement awards and level cap increases can share one queue
+// and still display one at a time in arrival order.
+struct PopupQueueEntry
+{
+    u8 kind; // enum PopupKind
+    u16 value; // achievement id, or new level cap
+};
+EWRAM_DATA static struct PopupQueueEntry sAchievementPopupQueue[ACHIEVEMENT_POPUP_QUEUE_SIZE] = {0};
 EWRAM_DATA static u8 sAchievementPopupQueueHead = 0;
 EWRAM_DATA static u8 sAchievementPopupQueueCount = 0;
 
 static void Task_WaitAchievementPopupDismiss(u8 taskId);
 static bool8 IsAchievementPopupSafeToShow(void);
-static void ShowAchievementPopUpWindow(u16 achievementId);
-static void PrintAchievementPopupText(u16 achievementId);
+static void ShowPopupCommon(enum PopupKind kind, u16 value);
+static void EnqueuePopup(enum PopupKind kind, u16 value);
+static void ShowAchievementPopUpWindow(enum PopupKind kind, u16 value);
+static void PrintAchievementPopupText(enum PopupKind kind, u16 value);
 static void HideAchievementPopUpWindow(void);
 static u8 AddAchievementTierIconSprite(enum AchievementTier tier);
 static void DestroyAchievementTierIconSprite(u8 spriteId);
 static bool8 StringHasScrollPrompt(const u8 *str);
 
 static const u8 sText_AchievementPopupFormat[] = _("{STR_VAR_2} (+{STR_VAR_1})\n{STR_VAR_3}");
+static const u8 sText_LevelCapPopupFormat[] = _("The level cap has increased!\nLv {STR_VAR_1}");
 
 // Tier icons are 16x16 (graphics/achievements/icons/*.png) -- a plain 2x2
 // tile block, unlike this fork's 24x24 (3x3 tile) item icons, so there's no
@@ -327,7 +359,23 @@ static const struct SpriteTemplate sAchievementTierIconSpriteTemplate =
 
 void ShowAchievementPopup(u16 achievementId)
 {
-    PlayFanfare(MUS_OBTAIN_SYMBOL);
+    ShowPopupCommon(POPUP_KIND_ACHIEVEMENT, achievementId);
+}
+
+// Same box, queue, and dismiss behavior as an achievement award -- see
+// ShowPopupCommon. Called directly only by the debug menu's ungated test
+// action; real level cap increases go through LevelCapPopup_Enqueue.
+void ShowLevelCapPopup(u32 newLevelCap)
+{
+    ShowPopupCommon(POPUP_KIND_LEVEL_CAP, newLevelCap);
+}
+
+static void ShowPopupCommon(enum PopupKind kind, u16 value)
+{
+    if (kind == POPUP_KIND_LEVEL_CAP)
+        PlaySE(SE_EXP_MAX);
+    else
+        PlayFanfare(MUS_OBTAIN_SYMBOL);
 
     if (sAchievementPopupActive)
     {
@@ -340,7 +388,7 @@ void ShowAchievementPopup(u16 achievementId)
 
     // Reads sAchievementPopupActive itself to decide whether to create the
     // window/frame or just refresh the content of one that's already up.
-    ShowAchievementPopUpWindow(achievementId);
+    ShowAchievementPopUpWindow(kind, value);
     sAchievementPopupActive = TRUE;
 }
 
@@ -349,13 +397,31 @@ void ShowAchievementPopup(u16 achievementId)
 // directly, so back-to-back awards each get a full, un-truncated display.
 void AchievementPopup_Enqueue(u16 achievementId)
 {
+    EnqueuePopup(POPUP_KIND_ACHIEVEMENT, achievementId);
+}
+
+// Same queue as achievement awards -- src/field_specials.c's
+// EnqueueLevelCapIncreasePopup calls this instead of ShowLevelCapPopup
+// directly, so a level cap increase that lands mid-script (badge/story
+// scripts call Common_EventScript_CheckLevelCapIncrease right after the
+// checkpoint that raises the cap, still inside their own script context)
+// waits for the field to actually be free instead of trying to draw over
+// whatever message box or cutscene is still running.
+void LevelCapPopup_Enqueue(u32 newLevelCap)
+{
+    EnqueuePopup(POPUP_KIND_LEVEL_CAP, newLevelCap);
+}
+
+static void EnqueuePopup(enum PopupKind kind, u16 value)
+{
     u8 tail;
 
     if (sAchievementPopupQueueCount >= ACHIEVEMENT_POPUP_QUEUE_SIZE)
         return;
 
     tail = (sAchievementPopupQueueHead + sAchievementPopupQueueCount) % ACHIEVEMENT_POPUP_QUEUE_SIZE;
-    sAchievementPopupQueue[tail] = achievementId;
+    sAchievementPopupQueue[tail].kind = kind;
+    sAchievementPopupQueue[tail].value = value;
     sAchievementPopupQueueCount++;
 
     // Draining itself happens from AchievementPopup_UpdateQueue, polled every
@@ -422,7 +488,7 @@ static void Task_WaitAchievementPopupDismiss(u8 taskId)
      && !IsTextPrinterActiveOnWindow(sAchievementPopupWindowId)
      && ++sAchievementPopupDescRestartTimer >= ACHIEVEMENT_POPUP_DESC_RESTART_DELAY)
     {
-        PrintAchievementPopupText(sAchievementPopupCurrentId);
+        PrintAchievementPopupText(sAchievementPopupCurrentKind, sAchievementPopupCurrentId);
     }
 
     // Once latched, the popup is dismissible for the rest of its lifetime --
@@ -482,22 +548,25 @@ static void Task_WaitAchievementPopupDismiss(u8 taskId)
 // act."
 void AchievementPopup_UpdateQueue(void)
 {
-    u16 achievementId;
+    struct PopupQueueEntry entry;
+    bool8 safeNow = IsAchievementPopupSafeToShow();
+    bool8 safeLastFrame = sAchievementPopupWasSafeLastFrame;
+    sAchievementPopupWasSafeLastFrame = safeNow;
 
     if (sAchievementPopupQueueCount == 0)
         return;
 
     // Waits for the current popup (if any) to finish on its own rather than
-    // cutting it short, and for the field to be in a state where it's safe
-    // to bring one up at all.
-    if (sAchievementPopupActive || !IsAchievementPopupSafeToShow())
+    // cutting it short, and for the field to have been safe for two frames
+    // running (see sAchievementPopupWasSafeLastFrame) before bringing one up.
+    if (sAchievementPopupActive || !safeNow || !safeLastFrame)
         return;
 
-    achievementId = sAchievementPopupQueue[sAchievementPopupQueueHead];
+    entry = sAchievementPopupQueue[sAchievementPopupQueueHead];
     sAchievementPopupQueueHead = (sAchievementPopupQueueHead + 1) % ACHIEVEMENT_POPUP_QUEUE_SIZE;
     sAchievementPopupQueueCount--;
 
-    ShowAchievementPopup(achievementId);
+    ShowPopupCommon(entry.kind, entry.value);
 }
 
 // Suppressed during battles/cutscenes/transitions: the popup draws straight
@@ -517,10 +586,8 @@ static bool8 IsAchievementPopupSafeToShow(void)
          && !FuncIsActiveTask(Task_MapNamePopUpWindow));
 }
 
-static void ShowAchievementPopUpWindow(u16 achievementId)
+static void ShowAchievementPopUpWindow(enum PopupKind kind, u16 value)
 {
-    const struct Achievement *info = Achievement_GetInfo(achievementId);
-
     if (!sAchievementPopupActive)
     {
         struct WindowTemplate template;
@@ -558,21 +625,32 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
         DestroyAchievementTierIconSprite(sAchievementPopupIconSpriteId);
     }
 
-    sAchievementPopupIconSpriteId = AddAchievementTierIconSprite(info->tier);
-    if (sAchievementPopupIconSpriteId != MAX_SPRITES)
+    // Level cap increases have no tier to iconify -- leave the icon slot
+    // empty rather than forcing an unrelated icon onto it.
+    if (kind == POPUP_KIND_ACHIEVEMENT)
     {
-        gSprites[sAchievementPopupIconSpriteId].x2 = ACHIEVEMENT_POPUP_ICON_X;
-        gSprites[sAchievementPopupIconSpriteId].y2 = ACHIEVEMENT_POPUP_ICON_Y;
-        gSprites[sAchievementPopupIconSpriteId].oam.priority = 0;
+        const struct Achievement *info = Achievement_GetInfo(value);
+        sAchievementPopupIconSpriteId = AddAchievementTierIconSprite(info->tier);
+        if (sAchievementPopupIconSpriteId != MAX_SPRITES)
+        {
+            gSprites[sAchievementPopupIconSpriteId].x2 = ACHIEVEMENT_POPUP_ICON_X;
+            gSprites[sAchievementPopupIconSpriteId].y2 = ACHIEVEMENT_POPUP_ICON_Y;
+            gSprites[sAchievementPopupIconSpriteId].oam.priority = 0;
+        }
+    }
+    else
+    {
+        sAchievementPopupIconSpriteId = MAX_SPRITES;
     }
 
     // New content (whether this is a fresh popup or a back-to-back award
     // swapping the content of one that's already up) always needs to earn
     // dismissibility again from scratch -- see sAchievementPopupDismissible's
     // own comment.
-    sAchievementPopupCurrentId = achievementId;
+    sAchievementPopupCurrentKind = kind;
+    sAchievementPopupCurrentId = value;
     sAchievementPopupDismissible = FALSE;
-    PrintAchievementPopupText(achievementId);
+    PrintAchievementPopupText(kind, value);
 }
 
 // Builds and prints the popup's name/points/description text -- split out of
@@ -582,10 +660,8 @@ static void ShowAchievementPopUpWindow(u16 achievementId)
 // Doesn't touch the icon sprite (unaffected by a text reprint) or
 // sAchievementPopupDismissible (a loop restart must NOT re-arm that latch --
 // see its own comment).
-static void PrintAchievementPopupText(u16 achievementId)
+static void PrintAchievementPopupText(enum PopupKind kind, u16 value)
 {
-    const struct Achievement *info = Achievement_GetInfo(achievementId);
-
     FillWindowPixelBuffer(sAchievementPopupWindowId, PIXEL_FILL(1));
     // Cancels whatever scroll printer was previously running against this
     // window -- without this, a back-to-back award landing (or a loop
@@ -596,21 +672,37 @@ static void PrintAchievementPopupText(u16 achievementId)
     // shown, when there's no printer registered yet.
     DeactivateSingleTextPrinter(sAchievementPopupWindowId, WINDOW_TEXT_PRINTER);
 
-    ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
-    StringCopy(gStringVar2, info->name);
-    StringCopy(gStringVar3, info->description);
-    StripLineBreaks(gStringVar3);
-    // SHOW_SCROLL_PROMPT, not HIDE_SCROLL_PROMPT -- see
-    // sAchievementPopupNeedsScroll's own comment above. StringHasScrollPrompt
-    // below tells a description that fit the single line apart from one
-    // that needed to scroll, same as src/achievements_menu.c's own
-    // StringHasScrollPrompt/needsScroll pairing.
-    BreakStringAutomatic(gStringVar3, ACHIEVEMENT_POPUP_DESC_MAX_WIDTH, 1, FONT_SMALL, SHOW_SCROLL_PROMPT);
-    sAchievementPopupNeedsScroll = StringHasScrollPrompt(gStringVar3);
+    if (kind == POPUP_KIND_ACHIEVEMENT)
+    {
+        const struct Achievement *info = Achievement_GetInfo(value);
+        ConvertIntToDecimalStringN(gStringVar1, info->points, STR_CONV_MODE_LEFT_ALIGN, 5);
+        StringCopy(gStringVar2, info->name);
+        StringCopy(gStringVar3, info->description);
+        StripLineBreaks(gStringVar3);
+        // SHOW_SCROLL_PROMPT, not HIDE_SCROLL_PROMPT -- see
+        // sAchievementPopupNeedsScroll's own comment above. StringHasScrollPrompt
+        // below tells a description that fit the single line apart from one
+        // that needed to scroll, same as src/achievements_menu.c's own
+        // StringHasScrollPrompt/needsScroll pairing.
+        BreakStringAutomatic(gStringVar3, ACHIEVEMENT_POPUP_DESC_MAX_WIDTH, 1, FONT_SMALL, SHOW_SCROLL_PROMPT);
+        sAchievementPopupNeedsScroll = StringHasScrollPrompt(gStringVar3);
 
-    // sAchievementPopupTextBuffer, not gStringVar4 -- see that buffer's own
-    // comment.
-    StringExpandPlaceholders(sAchievementPopupTextBuffer, sText_AchievementPopupFormat);
+        // sAchievementPopupTextBuffer, not gStringVar4 -- see that buffer's own
+        // comment.
+        StringExpandPlaceholders(sAchievementPopupTextBuffer, sText_AchievementPopupFormat);
+    }
+    else
+    {
+        // Short and fixed -- never needs the achievement description's
+        // auto-scroll/loop handling. n=4, not 3: MAX_LEVEL is 1000, and New
+        // Game Plus stacks ngpRuns * 75 onto the cap (src/caps.c), so this
+        // can be 4 digits long -- a 3-digit width silently turned any
+        // overflowing hundreds digit into a literal "?" (ConvertIntToDecimalStringN
+        // emits CHAR_QUESTION_MARK for a digit that doesn't fit).
+        ConvertIntToDecimalStringN(gStringVar1, value, STR_CONV_MODE_LEFT_ALIGN, 4);
+        sAchievementPopupNeedsScroll = FALSE;
+        StringExpandPlaceholders(sAchievementPopupTextBuffer, sText_LevelCapPopupFormat);
+    }
 
     // Only descriptions that actually need it pay for the letter-by-letter
     // typing delay -- one that already fit the single line still prints

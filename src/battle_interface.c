@@ -3147,10 +3147,13 @@ void TryAddLastUsedBallItemSprites(void)
 {
     if (B_LAST_USED_BALL == FALSE)
         return;
-    if (gLastThrownBall == 0
-      || (gLastThrownBall != 0 && !CheckBagHasItem(gLastThrownBall, 1)))
+    // Only fall back to the first ball when the current selection is unavailable. The R-button
+    // cycle updates gBallToDisplay without throwing (so gLastThrownBall stays 0), and this sprite
+    // is torn down and re-added every turn during an encounter - keying the reset off gBallToDisplay
+    // lets a browsed selection persist across turns instead of snapping back to a Poke Ball.
+    if (!CheckBagHasItem(gBallToDisplay, 1))
     {
-        // we're out of the last used ball, so just set it to the first ball in the bag
+        // we're out of the selected ball, so just set it to the first ball in the bag
         u16 firstBall;
 
         // we have to compact the bag first bc it is typically only compacted when you open it

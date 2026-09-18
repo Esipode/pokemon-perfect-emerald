@@ -981,8 +981,18 @@ static void BirchCase_QueueDraftMon(void)
     enum PokeBall ball = BALL_POKE;
     u8 abilityNum = choice->abilityNum;
     u8 i;
+    bool8 wasRandomizeMon = FlagGet(FLAG_RANDOMIZE_MON);
+
+    // choice->species already went through PickRandomSpecies when the case's
+    // choices were built. Clear the flag before CreateMon, same as
+    // BirchCase_GiveMon, so GetRandomizedSpecies doesn't reroll it a second time.
+    if (wasRandomizeMon)
+        FlagClear(FLAG_RANDOMIZE_MON);
 
     CreateMon(&mon, choice->species, choice->level, personality, OTID_STRUCT_PLAYER_ID);
+
+    if (wasRandomizeMon)
+        FlagSet(FLAG_RANDOMIZE_MON);
 
     for (i = 0; i < NUM_STATS; i++)
         SetMonData(&mon, MON_DATA_HP_IV + i, &choice->ivs[i]);

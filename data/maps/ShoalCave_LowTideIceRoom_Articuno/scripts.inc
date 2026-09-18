@@ -1,0 +1,9 @@
+ShoalCave_LowTideIceRoom_Articuno_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, ShoalCave_LowTideIceRoom_Articuno_OnTransition
+	.byte 0
+
+ShoalCave_LowTideIceRoom_Articuno_OnTransition:
+	updatelegendaryvisibility SPECIES_ARTICUNO, FLAG_HIDE_ARTICUNO
+
+ShoalCave_LowTideIceRoom_Articuno_Encounter::
+	goto LegendaryEncounter_EventScript_Articuno

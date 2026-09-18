@@ -1,0 +1,244 @@
+Encounter: Regigigas
+
+# Regigigas, "The Colossal Titan". The only fight in the set that gets harder the longer you take
+# to end it, and the only one where the player holds the difficulty dial. Everything hangs off
+# Var(Awakening), 0-5, which never falls:
+#   0 DORMANT   1 STIRRING  2 RISING  3 AWAKENED  4 POWER RESTORED  5 FULL AWAKENING
+#   Speed -6      -4          -2        0           +1                +3
+#   Atk   -3      -2          -1        0           +2                +4
+#   Guard 92      92          89        86          84                82
+# A dormant Regigigas is nearly impossible to hurt and barely acts; an awake one is killable and
+# lethal. Three things push the meter up and nothing pushes it down: a turn clock (every 4th turn,
+# 3rd from 50%), burst damage (>=12% of its HP taken since the last rung), and the 50%/25%
+# thresholds. The player's only lever is the CLOCK: a turn in which they land no damaging move
+# rewinds it by 2 - and Regigigas heals 3% in the stillness. Stalling buys time and gives ground.
+# THE COLOSSUS REMEMBERS. Three grudges, each armed silently by something the player does while it
+# is still dormant (Awakening <= 2) and cashed loudly at Awakening 3: setting up to +2 arms a
+# standing boost-strip, switching arms encsettrapped, statusing it arms a permanent Safeguard. So
+# waking it fast arms FEWER grudges. Fast is strong-and-ignorant, slow is weak-and-informed, and
+# there is no free pace.
+# From 25% EXHAUSTION accrues every turn it acts at full power and ends in COLLAPSE - stats on the
+# floor, guard 92->55 for three turns, opened by a free turn. That is the window to close in.
+# No Ability: override, deliberately - Slow Start is Regigigas's own, it reinforces rung 0 for five
+# turns for free, and the ladder is meant to be fightable: Growl and Intimidate work, and the next
+# rung's absolute write heals whatever they did. No status immunity either - status works on a
+# dormant titan, and every use of it arms the grudge that spends the tool permanently.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 92         # rung 0; EncScript_Regigigas_ApplyRung owns this from here on
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True               # the collapse windows run at guard 55; an overkill there would eat
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_POUND, MOVE_PAYBACK, MOVE_BODY_PRESS, MOVE_PROTECT
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fourteen here in order fixes
+# Phase..MoveGuard to 0..13.
+# 0 Phase (0 Slumber / 1 The Titan Moves / 2 Full Awakening / 3 Weakened), 1 Awakening (0-5, the
+# meter; monotone), 2 Rung (rung last APPLIED, stored as rung+1 so 0 means "nothing applied yet" -
+# ApplyRung's idempotence latch and the ladder's re-fire latch), 3 Clock (countdown to the next free
+# rung), 4 Mark (boss HP% at the last rung; the burst detector's reference point), 5 Burst (scratch:
+# Mark copied in, damage-since-mark out), 6 GrudgeSetup / 7 GrudgeSwitch / 8 GrudgeStatus (0 unarmed
+# / 1 armed / 2 cashed), 9 Force (Continental Force countdown; 0 = not armed yet), 10 Exhaustion
+# (0-5, Phase 2's meter), 11 Collapse (collapse-window countdown), 12 TurnGuard (the once-per-turn
+# scaffold; also gates the switch grudge off the opening send-out), 13 MoveGuard (the strike
+# trigger's per-turn re-entry guard; doubles as "the player landed a damaging move this turn").
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Regigigas_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Awakening) >= 0
+    Var(Rung) >= 0
+    Var(Clock) >= 0
+    Var(Mark) >= 0
+    Var(Burst) >= 0
+    Var(GrudgeSetup) >= 0
+    Var(GrudgeSwitch) >= 0
+    Var(GrudgeStatus) >= 0
+    Var(Force) >= 0
+    Var(Exhaustion) >= 0
+    Var(Collapse) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# SELECTION, so whichever fires first permanently disables the other. Each is also gated on the
+# Phase value its own script overwrites, so one huge hit crossing two thresholds steps through them
+# in order rather than skipping one. Registered ahead of every resolution below so a
+# threshold-crossing tick is always resolved as a transition first.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Regigigas_TitanMoves
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Regigigas_TitanMoves
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Regigigas_FullAwakening
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Regigigas_FullAwakening
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regigigas_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regigigas_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold. TurnOpen's only gate is TurnGuard == 0, which it sets immediately, so no
+# branch out of it can leave it re-armed; it owns every countdown. TurnClose measures the turn's
+# damage and owns the guard resets. Every clock ticks at TurnOpen and resolves at OnTurnEnd, one
+# checkpoint away, so a tick can never eat a step off a fresh re-arm.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Regigigas_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The player landed a damaging move this turn. At OnMoveEnd, Event.Battler is who GOT hit and
+# Event.Target is who hit them, so Event.Target == PlayerLeft is "the player was the attacker".
+# MoveGuard is what TurnClose reads to decide whether the rewind lever fired, and it is also the
+# trigger's own self-disabling gate: an Event.* condition stays true for the whole dispatch and a
+# script cannot move it, so an event-reacting trigger has to gate on a var it sets or the
+# re-evaluation loop re-selects it until the per-checkpoint script cap trips. Once would be wrong -
+# it means once per BATTLE, and being hit is what this fight does over and over.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Regigigas_PlayerStruck
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory != DAMAGE_CATEGORY_STATUS
+
+# The three grudge arms, all silent and all gated on Awakening <= 2. Announcing an arm as it happens
+# would tell the player which of their habits is being recorded before they have committed to any of
+# them; the reveal at Awakening 3 is the whole point. Each sets the latch that turns its own
+# condition false, so none of them needs Once (which would mean once per battle) or a guard var.
+# TurnGuard == 1 on the switch arm is what keeps the player's opening send-out from arming it for
+# free: ENC_ON_SWITCH_IN also runs before the first OnTurnStart, where TurnGuard is set.
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_Regigigas_ArmSwitch
+Conditions:
+    Var(GrudgeSwitch) == 0
+    Var(Awakening) <= 2
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Regigigas_ArmSetup
+Conditions:
+    Var(GrudgeSetup) == 0
+    Var(Awakening) <= 2
+    Any:
+        Battler(PlayerLeft).Stat(STAT_ATK) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_SPATK) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_SPEED) >= DEFAULT_STAT_STAGE + 2
+
+Trigger: OnTurnEnd
+Priority: 21
+Script: EncScript_Regigigas_ArmStatus
+Conditions:
+    Var(GrudgeStatus) == 0
+    Var(Awakening) <= 2
+    Battler(Boss).Status != 0
+
+# The clock resolving into a free rung. Fires at 1 rather than being ticked to 0 and resolved in the
+# same pass; EncScript_Regigigas_Awaken re-arms the clock to 4 or 5, so the condition is false the
+# instant it finishes and no guard var is needed. Awakening <= 4 retires it once the meter is
+# capped - there is no rung left to hand out.
+Trigger: OnTurnEnd
+Priority: 25
+Script: EncScript_Regigigas_AwakenTick
+Conditions:
+    Var(Phase) <= 1
+    Var(Awakening) <= 4
+    Var(Clock) == 1
+
+# CONTINENTAL FORCE. The warning fires at the top of the turn (TurnOpen, Force == 2) and the blast
+# at the end of the same turn, so the player gets exactly one action with the knowledge. The script
+# re-arms Force to 6 up front, which takes it out of this condition immediately.
+Trigger: OnTurnEnd
+Priority: 30
+Script: EncScript_Regigigas_ContinentalForce
+Conditions:
+    Var(Phase) <= 2
+    Var(Collapse) == 0
+    Var(Awakening) == 5
+    Var(Force) == 2
+
+# The exhaustion cycle. Collapse and Recover cannot see each other: Collapse requires Collapse == 0
+# and sets it to 4, and Recover requires Collapse == 1, so neither can fire on the other's turn.
+Trigger: OnTurnEnd
+Priority: 35
+Script: EncScript_Regigigas_Collapse
+Conditions:
+    Var(Phase) == 2
+    Var(Collapse) == 0
+    Var(Exhaustion) >= 5
+
+Trigger: OnTurnEnd
+Priority: 36
+Script: EncScript_Regigigas_Recover
+Conditions:
+    Var(Phase) == 2
+    Var(Collapse) == 1
+
+# The standing anti-setup rule, live once the setup grudge has been cashed. It self-disables inside
+# the checkpoint because the strip makes its own condition false, and re-arms by itself the next
+# time the player sets up. Def and Sp. Def are deliberately not watched - a player who wants to
+# turtle is playing the fight's other half.
+Trigger: OnTurnEnd
+Priority: 40
+Script: EncScript_Regigigas_CrushBoosts
+Conditions:
+    Var(GrudgeSetup) == 2
+    Var(Phase) <= 2
+    Any:
+        Battler(PlayerLeft).Stat(STAT_ATK) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_SPATK) >= DEFAULT_STAT_STAGE + 2
+        Battler(PlayerLeft).Stat(STAT_SPEED) >= DEFAULT_STAT_STAGE + 2
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Regigigas_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

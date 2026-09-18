@@ -4,18 +4,8 @@ NavelRock_Base_Frlg_MapScripts::
 	.byte 0
 
 NavelRock_Base_Frlg_OnTransition::
-	call_if_set FLAG_FOUGHT_LUGIA, NavelRock_Base_Frlg_EventScript_HideLugia
-	call_if_unset FLAG_FOUGHT_LUGIA, NavelRock_Base_Frlg_EventScript_TryShowLugia
+	updatelegendaryvisibility SPECIES_LUGIA, FLAG_HIDE_LUGIA
 	end
-
-NavelRock_Base_Frlg_EventScript_HideLugia::
-	setflag FLAG_HIDE_LUGIA
-	return
-
-NavelRock_Base_Frlg_EventScript_TryShowLugia::
-	goto_if_set FLAG_LUGIA_FLEW_AWAY, Common_EventScript_NopReturn
-	clearflag FLAG_HIDE_LUGIA
-	return
 
 NavelRock_Base_Frlg_OnResume::
 	call_if_set FLAG_SYS_CTRL_OBJ_DELETE, NavelRock_Base_Frlg_EventScript_TryRemoveLugia
@@ -56,20 +46,11 @@ NavelRock_Base_Frlg_EventScript_Lugia::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, NavelRock_Base_Frlg_EventScript_DefeatedLugia
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, NavelRock_Base_Frlg_EventScript_RanFromLugia
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, NavelRock_Base_Frlg_EventScript_RanFromLugia
-	setflag FLAG_FOUGHT_LUGIA
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, NavelRock_Base_Frlg_EventScript_CaughtLugia
 	release
 	end
 
-NavelRock_Base_Frlg_EventScript_DefeatedLugia::
-	setflag FLAG_LUGIA_FLEW_AWAY
-	setvar VAR_0x8004, SPECIES_LUGIA
-	goto EventScript_MonFlewAway
-	end
-
-NavelRock_Base_Frlg_EventScript_RanFromLugia::
-	setvar VAR_0x8004, SPECIES_LUGIA
-	goto EventScript_MonFlewAway
-	end
+@ Only catching Lugia removes it for good; any other outcome leaves it here to be rechallenged.
+NavelRock_Base_Frlg_EventScript_CaughtLugia::
+	setflag FLAG_FOUGHT_LUGIA
+	return

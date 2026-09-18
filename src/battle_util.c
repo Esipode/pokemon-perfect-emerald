@@ -5,6 +5,7 @@
 #include "battle_anim_scripts.h"
 #include "battle_arena.h"
 #include "battle_emporium.h"
+#include "battle_encounter.h"
 #include "battle_environment.h"
 #include "battle_pyramid.h"
 #include "battle_util.h"
@@ -866,7 +867,9 @@ void HandleAction_ThrowBall(void)
     gBattle_BG0_X = 0;
     gBattle_BG0_Y = 0;
     gLastUsedItem = gBallToDisplay;
-    if (!GetItemImportance(gLastUsedItem))
+    // Encounter not catchable yet: Cmd_handleballthrow redirects to BattleScript_EncounterCannotCatch,
+    // so don't consume the ball for a throw that can't do anything.
+    if (!GetItemImportance(gLastUsedItem) && !IsEncounterBlockingBalls())
         RemoveBagItem(gLastUsedItem, 1);
     gBattlescriptCurrInstr = BattleScript_BallThrow;
     gCurrentActionFuncId = B_ACTION_EXEC_SCRIPT;
@@ -1912,11 +1915,24 @@ bool32 HandleFaintedMonActions(void)
             gBattleStruct->eventState.faintedAction = FAINTED_ACTIONS_MAX_CASE;
             break;
         case FAINTED_ACTIONS_HANDLE_NEXT_BATTLER:
+        {
+            // ENC_ON_FAINT: EXP and absent flags are settled, not during the faint animation.
+            // Called from a non-script callback, like ENC_ON_BATTLE_START - see battle_main.c's
+            // FIRST_TURN_EVENTS_ENCOUNTER for the same BattleScriptExecute+Call shim pattern.
+            SetEncounterEvent(gBattlerFainted, 0, MOVE_NONE, ENC_CAUSE_NONE, 0, 0);
+            const u8 *script = TryRunEncounterCheckpoint(ENC_ON_FAINT);
+            if (script != NULL)
+            {
+                BattleScriptExecute(BattleScript_EncounterCheckpointEnd2);
+                BattleScriptCall(script);
+                return TRUE;
+            }
             if (++gBattleStruct->eventState.faintedActionBattler == gBattlersCount)
                 gBattleStruct->eventState.faintedAction = FAINTED_ACTIONS_MAX_CASE;
             else
                 gBattleStruct->eventState.faintedAction = FAINTED_ACTIONS_HANDLE_FAINTED_MON;
             break;
+        }
         case FAINTED_ACTIONS_MAX_CASE:
             break;
         }
@@ -5125,7 +5141,7 @@ enum Stat GetHighestStatId(enum BattlerId battler)
     return highestId;
 }
 
-static u32 GetStatValueWithStages(enum BattlerId battler, enum Stat stat)
+u32 GetStatValueWithStages(enum BattlerId battler, enum Stat stat)
 {
     u32 statValue;
 
@@ -5431,7 +5447,11 @@ bool32 CanSetNonVolatileStatus(enum BattlerId battlerAtk, enum BattlerId battler
         return FALSE;
 
     // Checks that apply to all non volatile statuses
-    if (abilityDef == ABILITY_COMATOSE
+    if (DoesEncounterGrantImmunity(battlerDef, ENC_IMMUNE_MAJOR_STATUS))
+    {
+        battleScript = BattleScript_ButItFailed;
+    }
+    else if (abilityDef == ABILITY_COMATOSE
      || abilityDef == ABILITY_PURIFYING_SALT)
     {
         abilityAffected = TRUE;
@@ -7832,6 +7852,14 @@ s32 DoFixedDamageMoveCalc(struct DamageContext *ctx)
     if (dmg == INT32_MAX)
         return dmg;
 
+    if (GetMoveEffect(ctx->move) != EFFECT_OHKO
+     && DoesEncounterGrantImmunity(ctx->battlerDef, ENC_IMMUNE_FIXED_DAMAGE))
+    {
+        if (!ctx->aiCalc)
+            gBattleStruct->moveResultFlags[ctx->battlerDef] |= MOVE_RESULT_DOESNT_AFFECT_FOE;
+        return 0;
+    }
+
     gBattleStruct->moveResultFlags[ctx->battlerDef] &= ~(MOVE_RESULT_NOT_VERY_EFFECTIVE | MOVE_RESULT_MOSTLY_INEFFECTIVE | MOVE_RESULT_SUPER_EFFECTIVE | MOVE_RESULT_EXTREMELY_EFFECTIVE);
     gSpecialStatuses[ctx->battlerDef].criticalHit = FALSE;
 
@@ -8194,6 +8222,15 @@ s32 CalculateMoveDamage(struct DamageContext *ctx)
     else
         damage = DoMoveDamageCalc(ctx);
 
+    // Before GetAdjustedDamage, so Endure/Sturdy/Focus Sash all judge "would this KO?" against the
+    // damage the target actually takes. The AI shares this path deliberately: a boss it can't dent
+    // should read as one when it picks a move.
+    // The type-keyed adaptation runs first so the flat guard's floor-at-1 stays the last word.
+    // ctx->moveType is the runtime type - what the move actually hit as, after Normalize, the -ate
+    // abilities and Tera - which is the same basis encadapt files a type on.
+    damage = ApplyEncounterTypeAdaptation(ctx->battlerDef, ctx->moveType, damage);
+    damage = ApplyEncounterDamageReduction(ctx->battlerDef, damage);
+
     return GetAdjustedDamage(ctx, damage);
 }
 
@@ -8410,6 +8447,13 @@ uq4_12_t CalcTypeEffectivenessMultiplier(struct DamageContext *ctx)
             ctx->moveType = primaryType;
         }
     }
+
+    // A double weakness (4x) can spike well past what an encounter's flat damageReduction was
+    // balanced around, since reduction is a percentage on top of whatever the matchup already
+    // multiplied by. Clamped here, upstream of every consumer (damage calc, AI scoring, the
+    // super-effective message flags), so all three agree on what the boss actually took.
+    if (modifier > UQ_4_12(2.0) && DoesEncounterCapTypeEffectiveness(ctx->battlerDef))
+        modifier = UQ_4_12(2.0);
 
     if (ctx->updateFlags)
     {
@@ -9590,6 +9634,11 @@ void CopyMonAbilityAndTypesToBattleMon(enum BattlerId battler, struct Pokemon *m
     gBattleMons[battler].types[0] = type1;
     gBattleMons[battler].types[1] = type2;
     gBattleMons[battler].types[2] = TYPE_MYSTERY;
+
+    // GetMonAbility above re-derives the ability from the party mon, which does not carry an
+    // encounter Ability: the species does not own. Without this a form change or any other
+    // RecalcBattlerStats hands the boss its species ability back mid-battle.
+    ApplyEncounterBattlerAbilityOverride(battler);
 }
 
 // Applies move randomization to a battler that was just loaded from party
@@ -10640,6 +10689,13 @@ bool32 DoesOHKOMoveMissTarget(struct BattleCalcValues *cv)
 
     // Dynamaxed Pokemon cannot be hit by OHKO moves.
     if (GetActiveGimmick(cv->battlerDef) == GIMMICK_DYNAMAX)
+    {
+        gBattleStruct->moveResultFlags[cv->battlerDef] |= MOVE_RESULT_ONE_HIT_KO_NO_AFFECT;
+        return TRUE;
+    }
+
+    // Same treatment for an encounter's OHKO immunity: "it doesn't affect", not a miss.
+    if (DoesEncounterGrantImmunity(cv->battlerDef, ENC_IMMUNE_OHKO))
     {
         gBattleStruct->moveResultFlags[cv->battlerDef] |= MOVE_RESULT_ONE_HIT_KO_NO_AFFECT;
         return TRUE;

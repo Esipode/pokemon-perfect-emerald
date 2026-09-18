@@ -4,20 +4,13 @@ NavelRock_Summit_Frlg_MapScripts::
 	.byte 0
 
 NavelRock_Summit_OnTransition::
-	call_if_set FLAG_FOUGHT_HO_OH, NavelRock_Summit_EventScript_HideHoOh
-	call_if_unset FLAG_FOUGHT_HO_OH, NavelRock_Summit_EventScript_TryShowHoOh
+	setvar VAR_TEMP_1, 1
+	updatelegendaryvisibility SPECIES_HO_OH, FLAG_HIDE_HO_OH
+	call_if_eq VAR_RESULT, FALSE, NavelRock_Summit_EventScript_EnableHoOhTrigger
 	end
 
-NavelRock_Summit_EventScript_HideHoOh::
-	setvar VAR_TEMP_1, 1
-	setflag FLAG_HIDE_HO_OH
-	return
-
-NavelRock_Summit_EventScript_TryShowHoOh::
-	setvar VAR_TEMP_1, 1
-	goto_if_set FLAG_HO_OH_FLEW_AWAY, Common_EventScript_NopReturn
+NavelRock_Summit_EventScript_EnableHoOhTrigger::
 	setvar VAR_TEMP_1, 0
-	clearflag FLAG_HIDE_HO_OH
 	return
 
 NavelRock_Summit_OnResume::
@@ -61,23 +54,14 @@ NavelRock_Summit_EventScript_HoOh::
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	setvar VAR_LAST_TALKED, LOCALID_NAVEL_ROCK_HO_OH
 	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_eq VAR_RESULT, B_OUTCOME_WON, NavelRock_Summit_EventScript_DefeatedHoOh
-	goto_if_eq VAR_RESULT, B_OUTCOME_RAN, NavelRock_Summit_EventScript_RanFromHoOh
-	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, NavelRock_Summit_EventScript_RanFromHoOh
-	setflag FLAG_FOUGHT_HO_OH
+	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, NavelRock_Summit_EventScript_CaughtHoOh
 	releaseall
 	end
 
-NavelRock_Summit_EventScript_DefeatedHoOh::
-	setflag FLAG_HO_OH_FLEW_AWAY
-	setvar VAR_0x8004, SPECIES_HO_OH
-	goto EventScript_MonFlewAway
-	end
-
-NavelRock_Summit_EventScript_RanFromHoOh::
-	setvar VAR_0x8004, SPECIES_HO_OH
-	goto EventScript_MonFlewAway
-	end
+@ Only catching Ho-Oh removes it for good; any other outcome leaves it here to be rechallenged.
+NavelRock_Summit_EventScript_CaughtHoOh::
+	setflag FLAG_FOUGHT_HO_OH
+	return
 
 Movement_CameraPanUp:
 	walk_up

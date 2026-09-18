@@ -1,0 +1,169 @@
+Encounter: Tapu_Fini
+
+# Tapu Fini, "The Land Spirit Pokemon". One rule:
+#   MIST, 0-5, governs how well the player can perceive and hit Fini. Water hits on Fini and turns
+#   passing raise it; the meter drives evasion/accuracy swings, terrain strength, and a periodic
+#   Purification reset that costs more Mist than it gives back in tempo.
+# Phase 1 WATER'S EDGE GUARDIAN (100-50%) - Mist accrues slowly (every 3 turns, or once per turn on
+#   a Water hit), Purification cycles every 6 turns (heal + cleanse + terrain re-affirm, costs +1
+#   Mist). Mist 1-4 are flavour-only here; the first mechanical stack waits for Phase 2.
+# Phase 2 GUARDIAN MIST (50-20%) - Mist ticks every 2 turns. Deep Mist applies one evasion/accuracy
+#   stack (not stacked further per Mist level). Mist Trial cycles every 5 turns: ENTER drops guard
+#   to 70% reduction for one turn (real risk/reward), RESIST banks +1 Mist and keeps visibility.
+# Phase 3 SACRED WATERS (<=20%, the catch window) - Mist forced to 5, one more evasion stack, self-
+#   heal every other turn for 3 turns, then the mist recedes: every stat stage is stripped from both
+#   sides and Guardian's Surge lands a 30% max-HP hit before Fini stands exposed. Separately, HP
+#   crossing <=10% (any phase) opens the catch window: balls allowed, catch rate boosted, reduction
+#   dropped to 50.
+# ANTI-ABUSE (guideline 8): spamming Water moves to snowball Mist for free evasion is capped by
+#   MistGuard - Water-hit Mist gain is once per turn regardless of multi-hit moves. Purification is
+#   the only reliable cleanse/heal route and it costs Mist, so stalling for free heals isn't free.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 90
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_MOONBLAST, MOVE_MUDDY_WATER, MOVE_CALM_MIND, MOVE_NATURES_MADNESS
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, fixing Mist..LastReduction to 0..10.
+# 0 Mist (0-5 core meter), 1 Phase (1/2/3/4), 2 TurnGuard (once-per-OnTurnStart scaffold),
+# 3 MistGuard (once-per-turn Water-hit mist gain scaffold), 4 MistTimer (countdown to passive Mist
+# gain), 5 PurifyTimer (countdown to next Purification), 6 TrialTimer (countdown to next Mist
+# Trial, Phase 2 only), 7 TrialActive (1 while ENTER's guard-drop window is live), 8 SacredTimer
+# (Phase 3 countdown before mist recedes), 9 LastMist (last Mist value a callout line printed for),
+# 10 LastReduction (last damage-reduction value announced).
+Trigger: OnBattleStart
+Priority: 0
+Flags: Once
+Script: EncScript_TapuFini_Init
+Conditions:
+    Var(Mist) >= 0
+    Var(Phase) >= 0
+    Var(TurnGuard) >= 0
+    Var(MistGuard) >= 0
+    Var(MistTimer) >= 0
+    Var(PurifyTimer) >= 0
+    Var(TrialTimer) >= 0
+    Var(TrialActive) >= 0
+    Var(SacredTimer) >= 0
+    Var(LastMist) >= 0
+    Var(LastReduction) >= 0
+
+# Once-per-turn scaffold: ticks timers and passive Mist gain.
+Trigger: OnTurnStart
+Priority: 5
+Script: EncScript_TapuFini_TurnStart
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Script: EncScript_TapuFini_ClearTurnGuard
+Conditions:
+    Var(TurnGuard) == 1
+
+# Water hit on Fini raises Mist, guarded to once per turn.
+Trigger: OnMoveEnd
+Priority: 5
+Script: EncScript_TapuFini_WaterHit
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_WATER
+    Var(MistGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 6
+Script: EncScript_TapuFini_ClearMistGuard
+Conditions:
+    Var(MistGuard) == 1
+
+# Purification cycle, Phases 1-3 only.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_TapuFini_Purification
+Conditions:
+    Var(PurifyTimer) <= 0
+    Var(Phase) < 4
+
+# Mist Trial, Phase 2 only.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_TapuFini_MistTrial
+Conditions:
+    Var(TrialTimer) <= 0
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_TapuFini_ClearTrial
+Conditions:
+    Var(TrialActive) == 1
+
+# Phase transitions.
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuFini_Phase2
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuFini_Phase2
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuFini_Phase3
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuFini_Phase3
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 2
+
+# Sacred Waters ticking and its resolution.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_TapuFini_SacredTick
+Conditions:
+    Var(SacredTimer) > 0
+    Var(Phase) == 3
+
+Trigger: OnTurnStart
+Priority: 20
+Flags: Once, OnEnter
+Script: EncScript_TapuFini_MistRecedes
+Conditions:
+    Var(SacredTimer) <= 0
+    Var(Phase) == 3
+
+# Catch window - fires once, any phase.
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuFini_CatchWindow
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuFini_CatchWindow
+Conditions:
+    Battler(Boss).HpPercent <= 10

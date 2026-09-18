@@ -394,6 +394,7 @@ void StartWildBattleWithOWE(struct ScriptContext *ctx)
 
     ZeroEnemyPartyMons();
     personality = GetMonPersonality(speciesId, gender, NATURE_RANDOM, RANDOM_UNOWN_LETTER);
+    SetRandomizationSeedContext(headerId);
     CreateMonWithIVs(&gParties[B_TRAINER_OPPONENT_A][0], speciesId, level, personality, OTID_STRUCT_PLAYER_ID, USE_RANDOM_IVS);
     GiveMonInitialMoveset(&gParties[B_TRAINER_OPPONENT_A][0]);
     SetMonData(&gParties[B_TRAINER_OPPONENT_A][0], MON_DATA_IS_SHINY, &shiny);
@@ -1569,6 +1570,8 @@ static enum Direction CheckOWEPathToPlayerFromCollision(struct ObjectEvent *owe,
 }
 
 #define tObjectId data[0]
+#define tMapGroup data[1]
+#define tMapNum   data[2]
 void OWEApproachForBattle(struct ScriptContext *ctx)
 {
     u32 localId = VarGet(ScriptReadHalfword(ctx));
@@ -1576,26 +1579,50 @@ void OWEApproachForBattle(struct ScriptContext *ctx)
     struct ObjectEvent *owe = &gObjectEvents[objectEventId];
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
-    
+
     if (!WE_OWE_APPROACH_FOR_BATTLE || !IsOverworldWildEncounter(owe, OWE_ANY))
     {
         FreezeObjectEvent(owe);
         return;
     }
-    
+
     u32 taskId = CreateTask(Task_OWEApproachForBattle, 2);
     if (FindTaskIdByFunc(Task_OWEApproachForBattle) == TASK_NONE)
     {
         FreezeObjectEvent(owe);
         return;
     }
-    
+
     ScriptContext_Stop();
     gTasks[taskId].tObjectId = objectEventId;
+    gTasks[taskId].tMapGroup = gSaveBlock1Ptr->location.mapGroup;
+    gTasks[taskId].tMapNum = gSaveBlock1Ptr->location.mapNum;
+}
+
+// Guards against a map change (warp, fly, whiteout, etc.) interrupting the approach.
+// Without this, the task never reaches its ScriptContext_Enable/DestroyTask exit and
+// the global script context stays stopped forever, hanging every later warp/script.
+static bool32 OWEApproachForBattleWasInterrupted(u8 taskId)
+{
+    if (gTasks[taskId].tMapGroup != gSaveBlock1Ptr->location.mapGroup
+     || gTasks[taskId].tMapNum != gSaveBlock1Ptr->location.mapNum)
+        return TRUE;
+
+    if (gTasks[taskId].tObjectId >= OBJECT_EVENTS_COUNT || !gObjectEvents[gTasks[taskId].tObjectId].active)
+        return TRUE;
+
+    return FALSE;
 }
 
 static void Task_OWEApproachForBattle(u8 taskId)
 {
+    if (OWEApproachForBattleWasInterrupted(taskId))
+    {
+        ScriptContext_Enable();
+        DestroyTask(taskId);
+        return;
+    }
+
     struct ObjectEvent *OWE = &gObjectEvents[gTasks[taskId].tObjectId];
 
     // Let the mon continue to take steps until right next to the player.
@@ -1667,9 +1694,11 @@ static void Task_OWEApproachForBattle(u8 taskId)
         }
         ObjectEventSetHeldMovement(OWE, movementActionId);
     }
-    
+
 }
 #undef tObjectId
+#undef tMapGroup
+#undef tMapNum
 
 bool32 TryPlayAmbientCryOWE(void)
 {

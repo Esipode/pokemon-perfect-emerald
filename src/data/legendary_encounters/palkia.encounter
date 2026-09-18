@@ -1,0 +1,211 @@
+Encounter: Palkia
+
+# Palkia, "The Spatial Pokemon". The engine has no positional model - a singles battle is two
+# battler slots and a target id - so this fight does not simulate space. It asks a question that
+# only makes sense if space is real, on the one axis the engine already has that reads as reach:
+# MOVE CATEGORY. A physical move is a body crossing a gap; a special move is something sent across
+# one. Palkia decides how far away it is standing, says so out loud, and the player's answer each
+# turn is which kind of attack can cross that distance.
+#   SPATIAL DISTORTION 0-5 - the meter, and Palkia's damage-reduction guard: 80/84/88/90/92/95.
+#   It rises only on Palkia's own clock (a SPACE SHIFT) and falls only to the player's play
+#   (reading a wormhole, driving the anchor).
+#   ZONE 1-3 - a fixed wheel, so a player paying attention can plan two shifts ahead:
+#     COMPRESSED (guard -6, Fairy Lock + trapped) - PHYSICAL reaches
+#     SEPARATED  (guard +2, trapping released)    - SPECIAL reaches
+#     WARPED     (guard +0, Palkia at +2 evasion) - NEITHER; the right answer is not to attack
+#   A committed damaging move that does not match the zone falls into the rift and comes back out
+#   behind the player's Pokemon: percentage chip, and an ANCHOR rung.
+#   ANCHOR 0-3 - the player's counter-meter, and the only thing they own. Built by answering the
+#   zone correctly (or by not attacking in WARPED); at 3 the player is anchored, Palkia's
+#   displacement is refused outright, and the anchor can be spent to collapse the Phase 2 rend.
+# ANTI-ABUSE IS SHEDDING, NOT IMMUNITY (guideline 8). From Phase 1 Palkia sheds its own status at
+# every shift, so a status lands and works completely for up to three turns - and a player who
+# times one right after a shift gets full value from it. Aura Sphere is the anti-evasion slot.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; EncScript_Palkia_Collapse sets a real one
+    Balls: Blocked
+    DamageReduction: 84         # Distortion 0; EncScript_Palkia_Intro's _SetGuard applies the
+                                # COMPRESSED modifier on turn 0
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Water/Dragon is 4x weak to Fairy - exactly the spike the cap
+                                # exists to flatten
+    FlatToxicDamage: True
+    Survive: True               # load-bearing: the 25% and 10% thresholds are what open Origin
+                                # Forme and the catch window, and one oversized hit through a 90%
+                                # guard could otherwise skip a phase. Cleared in _Collapse
+    Ability: ABILITY_TELEPATHY
+    Moves: MOVE_HYDRO_PUMP, MOVE_AQUA_TAIL, MOVE_DRAGON_CLAW, MOVE_AURA_SPHERE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all fifteen here in order fixes
+# Phase..EventGuard to 0..14. Var 15 is left free.
+# 0 Phase (0 The First Step / 1 Spatial Collapse / 2 Origin Forme / 3 The Collapse),
+# 1 Distortion (0-5), 2 LastDist (the last ANNOUNCED level - the callout's re-fire latch),
+# 3 Zone (1 COMPRESSED, 2 SEPARATED, 3 WARPED; doubles as the wheel cursor), 4 ZoneClock (turns
+# until the next SPACE SHIFT), 5 Anchor (0-3), 6 LastAnchor (the same latch, other meter),
+# 7 TurnGuard (the once-per-turn scaffold), 8 Hit (the player committed a damaging move at Palkia
+# this turn - also the OnMoveEnd verdict triggers' re-entry guard), 9 Worm (0 none, 1 telegraphed,
+# 2 open this turn), 10 WormCd, 11 Rend (0 not charging, 1-3 charge steps, 4 fires),
+# 12 AskCd (cooldown after the anchor prompt is declined), 13 Displaced (how many times
+# displacement has landed - drives the escalating line), 14 EventGuard (shared per-turn guard for
+# OnSwitchIn and OnFaint - a faint is followed by a switch-in, and charging the Anchor twice for
+# one forced replacement would be wrong).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Palkia_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Distortion) >= 0
+    Var(LastDist) >= 0
+    Var(Zone) >= 0
+    Var(ZoneClock) >= 0
+    Var(Anchor) >= 0
+    Var(LastAnchor) >= 0
+    Var(TurnGuard) >= 0
+    Var(Hit) >= 0
+    Var(Worm) >= 0
+    Var(WormCd) >= 0
+    Var(Rend) >= 0
+    Var(AskCd) >= 0
+    Var(Displaced) >= 0
+    Var(EventGuard) >= 0
+
+# The three phase transitions. Each is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, which is marked at
+# SELECTION, so whichever fires first permanently disables the other. All three sit below
+# _TurnClose (90), so at an OnTurnEnd where the player's damage crossed a threshold the transition
+# runs first and _TurnClose then sees the new Phase.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Palkia_SpatialCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Palkia_SpatialCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Palkia_OriginForme
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Palkia_OriginForme
+Conditions:
+    Battler(Boss).HpPercent <= 25
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Palkia_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Palkia_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The once-per-turn scaffold. Leads every OnTurnStart pass and ticks the clocks that have to be
+# readable during the turn (WormCd, AskCd); ZoneClock and Rend are ticked at _TurnClose instead, so
+# a shift always lands at the end of a turn and the player sees the new zone before choosing a move
+# in it. TurnGuard is set immediately so no branch out of it can leave it re-armed.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Palkia_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Spending the ANCHOR to collapse the SPATIAL REND charge. Phase 2 only, and only while a charge is
+# actually standing.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Palkia_AnchorPrompt
+Conditions:
+    Var(Phase) == 2
+    Var(Rend) >= 1
+    Var(Anchor) == 3
+    Var(AskCd) == 0
+    Var(TurnGuard) == 1
+
+# The wormhole opens the turn after it is telegraphed. OnTurnStart only: gProtectStructs is cleared
+# after end-of-turn effects, so a protect set anywhere else evaporates before it can matter.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Palkia_OpenWormhole
+Conditions:
+    Var(Worm) == 1
+    Var(TurnGuard) == 1
+
+# THE CORE MECHANIC. Split only because no command reads a move's category into a variable - the
+# split IS the branch. Status moves are absent from both on purpose: they are never "wrong", and in
+# WARPED they are the right answer. Both self-disable through Hit, which their own scripts set;
+# Once would mean once per battle, and OnEnter cannot help because an Event.* condition does not
+# change inside a dispatch. Event.Battler is the battler that GOT HIT and Event.Target the one that
+# USED the move, so the pair reads as "the player's Pokemon hit Palkia" - a confusion self-hit on
+# Palkia is not a read the player made and does not count.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Palkia_StruckPhysical
+Conditions:
+    Var(Hit) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Palkia_StruckSpecial
+Conditions:
+    Var(Hit) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Target == B_POSITION_PLAYER_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+
+# TurnGuard == 1 is load-bearing: OnSwitchIn fires for the player's lead BEFORE OnBattleStart, when
+# every var is still 0 - without the gate the opening switch-in would zero an Anchor that does not
+# exist yet and consume EventGuard on turn 0.
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_Palkia_TheyFled
+Conditions:
+    Var(EventGuard) == 0
+    Var(TurnGuard) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+Trigger: OnFaint
+Priority: 30
+Script: EncScript_Palkia_TheyFell
+Conditions:
+    Var(EventGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Runs last so it sees the finished turn: the wormhole's resolution, the WARPED reward, the zone
+# clock, the rend charge, the next wormhole telegraph, and the per-turn state clear.
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Palkia_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

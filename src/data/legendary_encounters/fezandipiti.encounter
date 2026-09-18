@@ -1,0 +1,230 @@
+Encounter: Fezandipiti
+
+# Fezandipiti, "The Retainer Pokemon". One rule:
+#   GLAMOUR (0-6) is its ego meter. Every showy thing it does or gets away with feeds it; every
+#   time the player refuses to play along, FRUSTRATION climbs instead and eventually punishes them.
+# Attacking Fezandipiti keeps it honest (denies Glamour). Letting its own hit whiff, or picking
+#   Ignore on BEAUTIFUL DISTRACTION, feeds it. PERFUME stacks on whichever mon is in from
+#   Fezandipiti's own hits landing - switch out or dodge one of its hits to clear it before TOXIC
+#   CHARM locks in a per-turn tax at Perfume 3.
+# Phases: Debut (100-51%) runs Glamour/Perfume/Spotlight/Beautiful Distraction. Perfect Beauty
+#   (<=50%) adds Glamour auto-rise, doubled Perfume gain, and POISONOUS KISS (a per-turn mark that
+#   breaks if the player lands a hit worth >=8% of Fezandipiti's own max HP). Jealous Beauty (<=20%)
+#   speeds it up and turns three Ignores in a row into a GLAMOUR COLLAPSE (guard drops) instead of a
+#   lash-out. Balls unlock at <=10% HP, independent of phase.
+# Anti-abuse is narrow (guideline 8): Immunities block OHKO/fixed-damage/HP-swap/shared-KO cheese.
+#   CapTypeEffectiveness answers Poison/Flying's 4x Rock weakness. Nothing blocks evasion outright -
+#   a dodged hit still feeds Glamour, so stalling accelerates the Vanity window instead of avoiding
+#   it. Switching is never blocked (Perfume clearing depends on it staying legal).
+Properties:
+    Level: LevelCap
+    CatchRate: 0                 # EncScript_Fezandipiti_BallsUnlock sets a real one
+    Balls: Blocked
+    DamageReduction: 94           # baseline; dips only during a Frustration lash-out or Glamour
+                                   # collapse, never below 80 (EncScript_Fezandipiti_AnnounceReduction
+                                   # is the single writer)
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True    # Poison/Flying is 4x weak to Rock
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_AIR_SLASH, MOVE_SLUDGE_BOMB, MOVE_ROOST, MOVE_PROTECT
+    # MOVE_PROTECT replaces the plan's Baneful Bunker: Fezandipiti cannot learn it in this ROM
+    # (confirmed against sFezandipitiLevelUpLearnset / sFezandipitiTeachableLearnset). Protect keeps
+    # the "guard" beat Baneful Bunker was chosen for; Toxic Chain already covers the poison-on-hit
+    # flavor across its other moves.
+    # Ability left as its own (Toxic Chain) - thematically the whole Toxic Perfume mechanic already.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all fourteen here in order fixes
+# Phase..ReductionDipTimer to 0..13.
+# 0 Phase (0 Debut / 1 Perfect Beauty / 2 Jealous Beauty), 1 Glamour (0-6, the ego meter),
+# 2 Perfume (0-3, stacks on the active player mon from Fezandipiti's own hits landing),
+# 3 Frustration (0-3, Beautiful Distraction's "Ignore" counter), 4 SpotlightTurns (countdown while
+# Spotlight's buff is live, 0 = inactive), 5 EnchantTimer (turns left on the current Poisonous Kiss
+# mark, 0 = none), 6 LastReductionAnnounced (guideline-14 callout latch, tracks 90 vs 80),
+# 7 TurnGuard (the once-per-turn OnTurnStart/OnTurnEnd scaffold), 8 PlayerHpMark (encsnapshothp mark,
+# also doubles as the damage-since-mark scratch when read back with ENC_SNAP_DAMAGE),
+# 9 BossHpMark (same pattern, boss side, for Poisonous Kiss's break check), 10 PeriodicGuard (shared
+# once-per-turn self-disable for the three OnTurnStart rolls - only one of Spotlight/Beautiful
+# Distraction/Poisonous Kiss can attempt per turn, by priority order), 11 HitGuard (OnMoveEnd
+# self-disable for the Fezandipiti-hits-player handler), 12 BreakGuard (OnMoveEnd self-disable for
+# the Poisonous Kiss break handler), 13 ReductionDipTimer (turns left on an 80 damage-reduction dip).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Fezandipiti_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Glamour) >= 0
+    Var(Perfume) >= 0
+    Var(Frustration) >= 0
+    Var(SpotlightTurns) >= 0
+    Var(EnchantTimer) >= 0
+    Var(LastReductionAnnounced) >= 0
+    Var(TurnGuard) >= 0
+    Var(PlayerHpMark) >= 0
+    Var(BossHpMark) >= 0
+    Var(PeriodicGuard) >= 0
+    Var(HitGuard) >= 0
+    Var(BreakGuard) >= 0
+    Var(ReductionDipTimer) >= 0
+
+# Phase transitions and the balls-unlock threshold, registered at both OnMoveEnd and OnTurnEnd since
+# the hit that crosses a threshold can be a move or an end-of-turn tax tick. Low priority so they
+# resolve before anything else at the checkpoint, matching the worked-example convention.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Fezandipiti_PerfectBeautyTransition
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Fezandipiti_PerfectBeautyTransition
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Fezandipiti_JealousBeautyTransition
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Fezandipiti_JealousBeautyTransition
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Fezandipiti_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Fezandipiti_BallsUnlock
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+# Fezandipiti's own hit landing on (or whiffing past) the player. Event.Battler is the battler that
+# got hit, so this is keyed on the player's slot. Self-disables through HitGuard, cleared each turn
+# by TurnOpen, since Event.Battler stays true for the whole OnMoveEnd dispatch.
+Trigger: OnMoveEnd
+Priority: 10
+Script: EncScript_Fezandipiti_BossHitResolved
+Conditions:
+    Var(HitGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# The player's hit landing on Fezandipiti, checked against Poisonous Kiss's break threshold.
+# Self-disables through BreakGuard, cleared each turn by TurnOpen.
+Trigger: OnMoveEnd
+Priority: 11
+Script: EncScript_Fezandipiti_EnchantBreak
+Conditions:
+    Var(BreakGuard) == 0
+    Var(EnchantTimer) > 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+
+# Vanity can hit its Glamour==6 cap from three different checkpoints (a dodge, a Focus pick, or the
+# ledger's auto-rise), so it is registered at all three. OnEnter with no Once - it resets its own
+# Glamour to 3, so the edge can cross again later in the fight.
+Trigger: OnMoveEnd
+Priority: 12
+Flags: OnEnter
+Script: EncScript_Fezandipiti_Vanity
+Conditions:
+    Var(Glamour) == 6
+    Var(Phase) <= 2
+
+# The once-per-turn scaffold. TurnGuard is the only unconditional gate; the script sets it
+# immediately so it cannot re-select within the same checkpoint's re-evaluation passes.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Fezandipiti_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# SPOTLIGHT, BEAUTIFUL DISTRACTION and POISONOUS KISS activation share PeriodicGuard: at most one
+# of the three can attempt per turn, decided by priority order, so the player never eats two
+# surprises in the same turn. Each closes the shared latch as its first line, before any roll, so a
+# miss still disables the other two for the rest of this turn's OnTurnStart dispatch.
+Trigger: OnTurnStart
+Priority: 14
+Script: EncScript_Fezandipiti_SpotlightRoll
+Conditions:
+    Var(PeriodicGuard) == 0
+    Var(SpotlightTurns) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Fezandipiti_BeautifulDistraction
+Conditions:
+    Var(PeriodicGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnStart
+Priority: 16
+Script: EncScript_Fezandipiti_PoisonousKissActivate
+Conditions:
+    Var(PeriodicGuard) == 0
+    Var(EnchantTimer) == 0
+    Var(Phase) >= 1
+
+# Jealous Beauty turns three Ignores in a row into a real punish window instead of just a lash-out.
+# Re-evaluated right after Beautiful Distraction in the same dispatch. OnEnter, no Once - it clears
+# Frustration itself, so the edge can cross again.
+Trigger: OnTurnStart
+Priority: 18
+Flags: OnEnter
+Script: EncScript_Fezandipiti_GlamourCollapse
+Conditions:
+    Var(Phase) == 2
+    Var(Frustration) == 3
+
+Trigger: OnTurnStart
+Priority: 19
+Flags: OnEnter
+Script: EncScript_Fezandipiti_Vanity
+Conditions:
+    Var(Glamour) == 6
+    Var(Phase) <= 2
+
+# Perfume clears on switch-out. Self-disables through its own target state (Perfume != 0) rather
+# than a dedicated guard var - resetting an already-zero Perfume would be a no-op anyway.
+Trigger: OnSwitchIn
+Priority: 20
+Script: EncScript_Fezandipiti_PerfumeReset
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(Perfume) != 0
+
+Trigger: OnTurnEnd
+Priority: 79
+Flags: OnEnter
+Script: EncScript_Fezandipiti_Vanity
+Conditions:
+    Var(Glamour) == 6
+    Var(Phase) <= 2
+
+# THE LEDGER: Spotlight countdown/expiry, Toxic Charm tax, Glamour auto-rise, Poisonous Kiss tax and
+# the damage-reduction dip countdown, all in one script to stay clear of the 8-scripts-per-checkpoint
+# cap. Self-disables by clearing TurnGuard as its last action.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_Fezandipiti_TurnClose
+Conditions:
+    Var(TurnGuard) == 1

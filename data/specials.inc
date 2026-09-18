@@ -598,3 +598,7 @@ gSpecials::
 	def_special EmporiumBufferChallengerIntro
 	def_special GetBoostsUnlockNoticePending
 	def_special ClearBoostsUnlockNotice
+	def_special CheckValidLegendaryEncounter
+	def_special IsLastUsedWarp
+	def_special Route110ShowZapdos
+	def_special GetProgressionLevelCapSpecial

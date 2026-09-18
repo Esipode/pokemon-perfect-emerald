@@ -1,0 +1,228 @@
+Encounter: Deoxys
+
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the collapse script sets a real one
+    Balls: Blocked
+    DamageReduction: 93         # Normal Forme, the opening state
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True               # released in the collapse script so the catch window is a real one
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_ZEN_HEADBUTT, MOVE_POISON_JAB, MOVE_DARK_PULSE, MOVE_THUNDER_PUNCH
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all 16 here in order fixes Phase..Prev
+# to 0..15.
+# 0 Phase (0 The Organism / 1 Rapid Mutation / 2 Perfect Adaptation / 3 Cellular Collapse),
+# 1 Form (0 Normal / 1 Attack / 2 Defense / 3 Speed), 2 Stress (Mutation Stress, 0-10),
+# 3 Cooldown (turns until the next reconstruction), 4 Rebuild (0 idle / 3 queued / 1 reconstructing /
+# 2 spent), 5 Lockout (Cellular Instability countdown, 3 -> 0), 6 Barrier (Defense Forme barrier,
+# 0-3), 7 LastType (last attack bucket: 0 none / 1 Bug / 2 Ghost / 3 Dark / 4 other-physical /
+# 5 other-special), 8 Assault (Attack Forme meter, 0-3), 9 LastGuard (damage reduction last
+# ANNOUNCED - the re-fire latch), 10 TurnGuard, 11 MoveGuard (per-turn OnMoveEnd re-entry guard
+# shared by the five type buckets), 12 HpMark (boss HP percentage at the reconstruction open;
+# ENC_SNAP_DAMAGE turns it into "lost this turn"), 13 Scratch (enccomparestat output and the
+# incoming bucket number, consumed immediately), 14 LastStress (stress TIER last announced),
+# 15 Prev (ApplyGuard's before-value scratch).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Deoxys_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Form) >= 0
+    Var(Stress) >= 0
+    Var(Cooldown) >= 0
+    Var(Rebuild) >= 0
+    Var(Lockout) >= 0
+    Var(Barrier) >= 0
+    Var(LastType) >= 0
+    Var(Assault) >= 0
+    Var(LastGuard) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(HpMark) >= 0
+    Var(Scratch) >= 0
+    Var(LastStress) >= 0
+    Var(Prev) >= 0
+
+# The phase transitions, each registered at both checkpoints because the threshold-crossing blow can
+# be a move or an end-of-turn tick. Both copies are Once and both gate on the Var(Phase) value their
+# shared script overwrites, so whichever fires first permanently disables the other. A single huge
+# hit that crosses two thresholds runs both banners in one dispatch, which is correct - the
+# re-evaluation pass is what makes chained transitions work.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Deoxys_RapidMutation
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Deoxys_RapidMutation
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Deoxys_PerfectAdaptation
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Deoxys_PerfectAdaptation
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Deoxys_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Deoxys_Collapse
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The two Hybrid Mutation beats. OnTurnEnd only, and no OnEnter: these are climax beats rather than
+# threshold-instant reactions, so firing at the next turn close is right. Priority 7 puts them after
+# the Collapse pair, so a hit that drops Deoxys past 10% resolves into the catch window rather than
+# spending a hybrid on the way through.
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Deoxys_HybridOne
+Conditions:
+    Battler(Boss).HpPercent <= 28
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Deoxys_HybridTwo
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 2
+
+# Once-per-turn scaffold: TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets), TurnClose is self-disabling (gate TurnGuard == 1, which it clears). Between them
+# they own every countdown, the Speed Forme blitz, the Attack Forme meter and the recurring cues.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Deoxys_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# The OnTurnStart order is 10 -> 15 -> 20 -> 25, and it is load-bearing but is not the guard: every
+# one of the four writes a variable its own condition then rejects. TurnOpen clears the per-turn
+# guards first; Instability outranks the rebuild pair so a Stress-5 collapse pre-empts a
+# reconstruction due the same turn (it sets Rebuild = 0, so RebuildResolve's gate is already false
+# when the re-evaluation comes round); RebuildResolve outranks RebuildBegin so a resolve never
+# queues a fresh cycle in the same dispatch.
+# Rebuild != 2 is what makes this land at the NEXT turn open rather than in the dispatch that
+# earned the tenth point. A reconstruction that pushes Stress to 10 leaves Rebuild on the spent
+# sentinel 2, which blocks this trigger's re-evaluation pass; TurnClose clears it to 0, so the
+# collapse arrives one turn later and the forme the player just paid for is actually fought.
+Trigger: OnTurnStart
+Priority: 15
+Script: EncScript_Deoxys_Instability
+Conditions:
+    Var(Stress) >= 10
+    Var(Lockout) == 0
+    Var(Rebuild) != 2
+    Var(Phase) <= 2
+
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Deoxys_RebuildResolve
+Conditions:
+    Var(Rebuild) == 1
+
+Trigger: OnTurnStart
+Priority: 25
+Script: EncScript_Deoxys_RebuildBegin
+Conditions:
+    Var(Cooldown) == 0
+    Var(Rebuild) == 0
+    Var(Lockout) == 0
+    Var(Phase) <= 2
+
+# The adaptive barrier's five buckets. Bug/Ghost/Dark get their own because they are Deoxys'
+# weaknesses and so what the player actually reaches for; the physical/special split on the
+# remainder keeps neutral coverage moves meaningfully different. Event-reacting, so they self-disable
+# through Var(MoveGuard) - an Event.* condition stays true for the whole dispatch and Once would
+# mean once per BATTLE. All five share the guard safely: they sit at one checkpoint, do identical
+# bookkeeping, and exactly one is meant to fire per turn.
+# The catch-all is last in priority order because its gate is a strict subset of the others'.
+Trigger: OnMoveEnd
+Priority: 30
+Script: EncScript_Deoxys_HitBug
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT     # a move HIT the boss
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Event.MoveType == TYPE_BUG
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 31
+Script: EncScript_Deoxys_HitGhost
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Event.MoveType == TYPE_GHOST
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 32
+Script: EncScript_Deoxys_HitDark
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Event.MoveType == TYPE_DARK
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 33
+Script: EncScript_Deoxys_HitOtherPhysical
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnMoveEnd
+Priority: 34
+Script: EncScript_Deoxys_HitOtherSpecial
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Deoxys_TurnClose
+Conditions:
+
+    Var(TurnGuard) == 1

@@ -850,6 +850,7 @@ void ZeroEnemyPartyMons(void);
 u32 GetMonPersonality(enum Species species, u8 gender, u8 nature, u8 unownLetter);
 bool32 ComputePlayerShinyOdds(u32 personality, u32 value);
 enum Species GetRandomizedSpecies(enum Species species);
+void SetRandomizationSeedContext(u32 contextId);
 void CreateMon(struct Pokemon *mon, enum Species species, u16 level, u32 personality, struct OriginalTrainerId);
 void CreateRandomMon(struct Pokemon *mon, enum Species species, u16 level);
 void CreateRandomMonWithIVs(struct Pokemon *mon, enum Species species, u16 level, u8 fixedIv);

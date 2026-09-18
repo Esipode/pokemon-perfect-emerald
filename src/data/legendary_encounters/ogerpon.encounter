@@ -1,0 +1,193 @@
+Encounter: Ogerpon
+
+# Ogerpon, "The Masked Guardian". One rule:
+#   MASK ENERGY builds from how the player pressures Ogerpon. At 3, while Teal-masked, Ogerpon
+#   reactively dons the mask that answers the player's dominant tactic; once masked, the same
+#   meter refills from further pressure and unleashes a signature payload. Land enough damage in
+#   the short window right after a mask goes up and it CRACKS back to Teal before the payload
+#   builds.
+# PHASE 0 (100-50% HP) - masks come and go: player-driven Energy, a reactive pick, a break window.
+# PHASE 1, GUARDIAN'S RESOLVE (<=50%) - forced cycle Wellspring->Hearthflame->Cornerstone->Teal,
+#   dwell time shrinking every lap; a successful Break skips the rest of the current cycle step.
+# PHASE 2, UNYIELDING (<=10%) - the current mask's payload fires once more, Ogerpon settles back
+#   to Teal, a themed Masked Strike scaled by which masks saw play closes the phase, then Balls
+#   unlock.
+# ACTIVEMASK mirrors the real form-change species (encformchange drives the actual mask sprite/type
+#   swap, so Battler(Boss).Species is genuinely Wellspring/Hearthflame/Cornerstone on screen) but is
+#   tracked in its own var too: no battle-script opcode can branch on a battler's species other than
+#   jumpifspecies, which reads gBattlerAttacker - the wrong battler here, since the hit that opens a
+#   trigger is the player's, not Ogerpon's. ActiveMask is the only way script logic below can ask
+#   "which mask is this."
+# PHYSICALPRESSURE (0-6, neutral 3) is the reactive-pick input: +1 per Physical hit landed on
+#   Ogerpon, -1 per Special hit. Move TYPE (Fire vs. other) isn't readable from inside a battle
+#   script - only Event.MoveType, an OnMoveEnd trigger condition, can see it, and it can't itself
+#   branch - so the reactive pick reads Physical-vs-Special pressure instead of Fire-vs-Physical.
+#   Physical-heavy answers with Cornerstone; otherwise Ogerpon dons whichever of Wellspring/
+#   Hearthflame it hasn't shown yet. Likewise "what a mask feeds on" (Water moves for Wellspring,
+#   Fire moves/damage for Hearthflame per the original idea) is simplified to "any hit landed while
+#   masked" for the same reason.
+# CORNERSTONE'S PILLARS is a 2-charge shield: each hit landed on Ogerpon while masked Cornerstone
+#   spends one charge and lifts DamageReduction to 94; the charge that empties it fires a shockwave
+#   back at the player and drops the reduction to its 90 baseline. EncScript_Ogerpon_ApplyReduction
+#   is the one writer for that value (guideline: a band falling must not leave a stale band up).
+Properties:
+    Level: LevelCap
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Ability: ABILITY_DEFIANT     # Teal's own; encformchange hands Wellspring/Hearthflame/
+                                 # Cornerstone their own real abilities (Water Absorb/Mold Breaker/
+                                 # Sturdy) automatically - Sturdy backs Cornerstone's shield theme
+    Moves: MOVE_IVY_CUDGEL, MOVE_HORN_LEECH, MOVE_POWER_WHIP, MOVE_SUPERPOWER
+        # MOVE_POWER_WHIP substitutes for the planned MOVE_TRAILBLAZE: Trailblaze isn't in
+        # Ogerpon's learnset (level-up or teachable) in this codebase. Power Whip is a real level-54
+        # move and keeps the Grass coverage slot.
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all sixteen here fixes
+# MaskEnergy..ActiveMask to 0..15.
+# 0 MaskEnergy (0-3, switch/payload meter), 1 Pillars (0-2, Cornerstone shield charges),
+# 2 PhysicalPressure (0-6, neutral 3 - the reactive-pick input, see header), 3 UsedWellspring,
+# 4 UsedHearthflame, 5 UsedCornerstone (0/1 each, first-activation flags), 6 UsedCount (0-3,
+# how many distinct masks have fired their payload - Masked Strike's damage scalar),
+# 7 BreakSnapshot (HP% mark taken when a mask goes up), 8 Scratch (the copy ENC_SNAP_DAMAGE
+# consumes, so BreakSnapshot survives being measured), 9 BreakWindow (turns left in the crack
+# window), 10 Phase (0 masks-come-and-go / 1 Guardian's Resolve / 2 Unyielding), 11 CycleTimer
+# (Phase 1 forced-cycle countdown), 12 CycleSpeed (Phase 1 dwell time per mask, shrinks each lap,
+# floor 1), 13 MoveHandled (per-dispatch re-entry guard for the OnMoveEnd triggers), 14 TurnGuard
+# (the once-per-turn scaffold), 15 ActiveMask (0 Teal / 1 Wellspring / 2 Hearthflame /
+# 3 Cornerstone - see header).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Ogerpon_Intro
+Conditions:
+    Var(MaskEnergy) >= 0
+    Var(Pillars) >= 0
+    Var(PhysicalPressure) >= 0
+    Var(UsedWellspring) >= 0
+    Var(UsedHearthflame) >= 0
+    Var(UsedCornerstone) >= 0
+    Var(UsedCount) >= 0
+    Var(BreakSnapshot) >= 0
+    Var(Scratch) >= 0
+    Var(BreakWindow) >= 0
+    Var(Phase) >= 0
+    Var(CycleTimer) >= 0
+    Var(CycleSpeed) >= 0
+    Var(MoveHandled) >= 0
+    Var(TurnGuard) >= 0
+    Var(ActiveMask) >= 0
+
+# The two phase transitions. Each is registered at both checkpoints because the blow that crosses
+# a threshold can be a move or an end-of-turn tick; both copies are Once, marked at SELECTION, so
+# whichever fires first permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Ogerpon_GuardiansResolve
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Ogerpon_GuardiansResolve
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Ogerpon_Unyielding
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Ogerpon_Unyielding
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 1
+
+# The forced cycle. Self-disabling: it resets CycleTimer to CycleSpeed (always > 0) before it
+# returns, so the condition is false again the instant the script finishes.
+Trigger: OnTurnEnd
+Priority: 7
+Script: EncScript_Ogerpon_CycleAdvance
+Conditions:
+    Var(Phase) == 1
+    Var(CycleTimer) == 0
+
+# The once-per-turn scaffold. TurnOpen ticks BreakWindow/CycleTimer down; TurnClose resolves the
+# natural Mask Energy charge and clears the guard. Split across two checkpoints so a countdown
+# doesn't chase itself through every state in one dispatch.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Ogerpon_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Ogerpon_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# The reactive pick. Self-disabling through ActiveMask, which the script always leaves non-zero.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Ogerpon_ReactivePick
+Conditions:
+    Var(Phase) == 0
+    Var(ActiveMask) == 0
+    Var(MaskEnergy) >= 3
+
+# The per-hit dispatch, Phase 0. Split by Event.MoveCategory because no battle-script opcode can
+# read the category of the move that just landed on the boss from inside a script body - only the
+# trigger condition can see it. Physical and Special are mutually exclusive for a single hit, so
+# both safely share the MoveHandled guard; a Status hit gets its own copy so break/payload/pillar
+# checks still run on a turn where nothing damaging connected.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Ogerpon_ResolvePhysical
+Conditions:
+    Var(Phase) == 0
+    Var(MoveHandled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_PHYSICAL
+
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Ogerpon_ResolveSpecial
+Conditions:
+    Var(Phase) == 0
+    Var(MoveHandled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_SPECIAL
+
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Ogerpon_ResolveStatus
+Conditions:
+    Var(Phase) == 0
+    Var(MoveHandled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveCategory == DAMAGE_CATEGORY_STATUS
+
+# The per-hit dispatch, Phase 1 - break check and the Cornerstone shield only; the forced cycle
+# owns mask switching, so there's nothing to tally.
+Trigger: OnMoveEnd
+Priority: 25
+Script: EncScript_Ogerpon_ResolvePhase1
+Conditions:
+    Var(Phase) == 1
+    Var(MoveHandled) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT

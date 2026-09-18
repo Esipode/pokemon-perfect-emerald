@@ -1,0 +1,259 @@
+Encounter: Zeraora
+
+# Zeraora, "The Thunderclap Pokemon". One rule:
+#   MOMENTUM (0-10) is speed/aggression. It rises when Zeraora acts fast and lands hits; it drains
+#   when the player out-tempos it. High Momentum unlocks faster, more dangerous options.
+# WHAT THE PLAYER MUST WORK OUT: deny Momentum by outspeeding, blocking hits, landing the first
+#   blow, and disrupting the Lightning Network (a NETWORK meter, 0-5, that fills on Zeraora's
+#   successful hits and drops on the player's) before it completes - starving Zeraora of speed
+#   keeps Thunderclap and Plasma Overload off the table.
+# PHASES: 1 Opening (100-70% HP), Momentum ebbs and flows on play. 2 Overdrive (<=70%), Momentum
+#   trickles up every turn, Speed buffed. 3 Maximum Velocity (<=40%), Momentum maxed, Mega
+#   Evolution, Plasma Overload bursts (a mid-fight discharge, not the catch trigger) can fire
+#   whenever Momentum re-maxes. 4 Spent (<=10%), the catch window - de-Megas and drops its guard.
+# THUNDERCLAP is a forced very-high-priority strike: all four move slots are overwritten with
+#   MOVE_QUICK_ATTACK for one turn (restored at OnTurnEnd), guaranteeing whatever the AI picks
+#   resolves before a normal-priority player move. Costs Momentum.
+# ANTI-ABUSE IS NARROW (guideline 8): Momentum is entirely player-driven with no passive floor in
+#   Phase 1, so a defensive/stall player starves every mechanic here - Overdrive's trickle is what
+#   stops a pure stall-out from trivializing Phase 2 onward.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 97
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Moves: MOVE_PLASMA_FISTS, MOVE_WILD_CHARGE, MOVE_CLOSE_COMBAT, MOVE_THUNDER_PUNCH
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Boss must hold ITEM_ZERAORITE (set on the wild party slot at overworld setup) so encmegaevolve
+# can resolve FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM.
+
+# Always-true block: pins the variable numbering the battle scripts hard-code.
+# 0 Momentum (0-10), 1 Phase (1-4: Opening/Overdrive/Maximum Velocity/Spent), 2 Network (0-5
+# Lightning Network), 3 Chain (Speed Chain streak), 4 MvtTimer - RETIRED (Maximum Velocity is a
+# persistent phase now, not a timed window; the index stays reserved to avoid renumbering every
+# var below it), 5 SpeedCmp (enccomparestat Boss vs PlayerLeft, per turn), 6 TerrainGuard
+# (once-per-turn Electric Terrain gain gate), 7 PlasmaArmed
+# (Plasma Overload armed-this-turn latch), 8 ThunderGuard (Thunderclap roll this turn: 0 idle,
+# 1 rolled-missed, 2 rolled-fired - value 2 is what the revert script restores moves against),
+# 9 HandledBossHit (once-per-turn gate, Zeraora landed a hit), 10 HandledPlayerHit (once-per-turn
+# gate, player landed a hit; also the charge-interrupt flag), 11 TurnGuard (upkeep scaffold),
+# 12 InitDone (set at OnBattleStart; guards the opening OnSwitchIn from counting), 13 PlasmaHandled
+# (once-per-turn gate for the Plasma Fists connect bonus), 14 EventGuard (shared once-per-turn
+# latch for KO/PlayerSwitch/ForcedOut - OnFaint and OnSwitchIn never overlap, so one var covers
+# all three).
+Trigger: OnBattleStart
+Priority: 0
+Flags: Once
+Script: EncScript_Zeraora_Init
+Conditions:
+    Var(Momentum) >= 0
+    Var(Phase) >= 0
+    Var(Network) >= 0
+    Var(Chain) >= 0
+    Var(MvtTimer) >= 0
+    Var(SpeedCmp) >= 0
+    Var(TerrainGuard) >= 0
+    Var(PlasmaArmed) >= 0
+    Var(ThunderGuard) >= 0
+    Var(HandledBossHit) >= 0
+    Var(HandledPlayerHit) >= 0
+    Var(TurnGuard) >= 0
+    Var(InitDone) >= 0
+    Var(PlasmaHandled) >= 0
+    Var(EventGuard) >= 0
+
+# Once-per-turn scaffold: sets TurnGuard, snapshots the speed comparison, clears per-turn latches,
+# runs Overdrive/Max Velocity passive Momentum gain, counts MvtTimer down.
+Trigger: OnTurnStart
+Priority: 1
+Conditions:
+    Var(TurnGuard) == 0
+Script: EncScript_Zeraora_Upkeep
+
+Trigger: OnTurnEnd
+Priority: 1
+Conditions:
+    Var(TurnGuard) == 1
+Script: EncScript_Zeraora_ClearTurnGuard
+
+# Zeraora hits the player: Momentum+1, Chain escalates, Network+1 (completes at 5).
+Trigger: OnMoveEnd
+Priority: 5
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(HandledBossHit) == 0
+Script: EncScript_Zeraora_BossHit
+
+# Player hits Zeraora: Network-1, Momentum-1 if the player moved first this turn, Chain resets.
+Trigger: OnMoveEnd
+Priority: 5
+Conditions:
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Var(HandledPlayerHit) == 0
+Script: EncScript_Zeraora_PlayerHit
+
+# Zeraora's move whiffs or fails outright: Momentum-1, Chain resets. Shares HandledBossHit with
+# the hit case above - the two conditions are mutually exclusive on Event.Cause, and either one
+# closes the same latch so the trigger cannot re-select within the same checkpoint dispatch.
+Trigger: OnMoveEnd
+Priority: 6
+Conditions:
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(HandledBossHit) == 0
+    Not:
+        Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+Script: EncScript_Zeraora_BossMiss
+
+# Zeraora newly paralyzed: Momentum-2, Chain resets.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: OnEnter
+Conditions:
+    Battler(Boss).Status == STATUS1_PARALYSIS
+Script: EncScript_Zeraora_Paralyzed
+
+# Player's mon fainted by Zeraora: Momentum+3, Network+1. Guarded by EventGuard - the event
+# doesn't change across re-evaluation passes at this checkpoint, so without a latch this re-fires
+# until the 8-scripts-per-checkpoint cap trips.
+Trigger: OnFaint
+Priority: 3
+Conditions:
+    Var(EventGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+Script: EncScript_Zeraora_KO
+
+# Player switches in: Momentum+1. EventGuard is shared with ForcedOut below and with KO above -
+# the checkpoints never overlap, so one latch is safe across all three (cleared each turn by
+# EncScript_Zeraora_Upkeep).
+Trigger: OnSwitchIn
+Priority: 4
+Conditions:
+    Var(InitDone) == 1
+    Var(EventGuard) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+Script: EncScript_Zeraora_PlayerSwitch
+
+# Zeraora forced out: Momentum-2.
+Trigger: OnSwitchIn
+Priority: 4
+Conditions:
+    Var(InitDone) == 1
+    Var(EventGuard) == 0
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+Script: EncScript_Zeraora_ForcedOut
+
+# Plasma Fists connects: Momentum + (1 if the player already hit this turn, else 3), on top of
+# the general hit trigger above. Own latch (PlasmaHandled) since the two conditions overlap on
+# the same event and each needs to survive the other running first in the same dispatch.
+Trigger: OnMoveEnd
+Priority: 5
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+    Event.Move == MOVE_PLASMA_FISTS
+    Var(PlasmaHandled) == 0
+Script: EncScript_Zeraora_PlasmaFistsCharge
+
+# Electric Terrain up: Momentum+1, once per turn.
+Trigger: OnTurnEnd
+Priority: 2
+Conditions:
+    Var(TerrainGuard) == 0
+    Terrain == B_TERRAIN_ELECTRIC
+Script: EncScript_Zeraora_TerrainGain
+
+# Enter Overdrive at 70% HP.
+Trigger: OnMoveEnd
+Priority: 0
+Flags: Once, OnEnter
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 1
+Script: EncScript_Zeraora_Overdrive
+
+Trigger: OnTurnEnd
+Priority: 0
+Flags: Once, OnEnter
+Conditions:
+    Battler(Boss).HpPercent <= 70
+    Var(Phase) == 1
+Script: EncScript_Zeraora_Overdrive
+
+# Enter Maximum Velocity at 40% HP.
+Trigger: OnMoveEnd
+Priority: 0
+Flags: Once, OnEnter
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 2
+Script: EncScript_Zeraora_MaxVelocity
+
+Trigger: OnTurnEnd
+Priority: 0
+Flags: Once, OnEnter
+Conditions:
+    Battler(Boss).HpPercent <= 40
+    Var(Phase) == 2
+Script: EncScript_Zeraora_MaxVelocity
+
+# The catch window, at 10% HP: de-Megas and opens balls. Once+OnEnter, registered at both
+# checkpoints like every other phase transition here.
+Trigger: OnMoveEnd
+Priority: 0
+Flags: Once, OnEnter
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+Script: EncScript_Zeraora_Spent
+
+Trigger: OnTurnEnd
+Priority: 0
+Flags: Once, OnEnter
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 3
+Script: EncScript_Zeraora_Spent
+
+# Arm Plasma Overload once Momentum maxes in Phase 3. A mid-fight burst now, not the catch trigger.
+Trigger: OnTurnStart
+Priority: 2
+Conditions:
+    Var(Phase) == 3
+    Var(Momentum) >= 10
+    Var(PlasmaArmed) == 0
+Script: EncScript_Zeraora_PlasmaOverloadArm
+
+# Release Plasma Overload: a hit lands on the boss while armed. Just the discharge now - the catch
+# window moved to the flat 10% HP threshold above.
+Trigger: OnMoveEnd
+Priority: 3
+Conditions:
+    Var(PlasmaArmed) == 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.Cause == ENC_CAUSE_MOVE_DAMAGE
+Script: EncScript_Zeraora_PlasmaOverloadRelease
+
+# Roll Thunderclap when Momentum is high enough. ThunderGuard closes on either outcome of the roll
+# (1 = rolled, missed; 2 = rolled, fired) so the trigger can't re-select this turn either way.
+Trigger: OnTurnStart
+Priority: 3
+Conditions:
+    Var(Momentum) >= 6
+    Var(ThunderGuard) == 0
+Script: EncScript_Zeraora_ThunderclapArm
+
+# Restore the real moveset at end of turn - only when it was actually overwritten (ThunderGuard
+# == 2), so a missed roll never re-issues full PP into an unchanged moveset.
+Trigger: OnTurnEnd
+Priority: 3
+Conditions:
+    Not:
+        Var(ThunderGuard) == 0
+Script: EncScript_Zeraora_ThunderclapRevert

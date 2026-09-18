@@ -1,0 +1,163 @@
+Encounter: Tapu_Bulu
+
+# Tapu Bulu, "The Land Spirit Pokemon". One rule:
+#   GROWTH (0-6) rises as Bulu fights and terrain persists; at thresholds it unlocks Roots
+#   (trap+slow), Overgrowth (hardened guard), and finally Primal Overgrowth (max guard, then a
+#   self-consuming countdown to the catch window). WRATH (0-5) rises only when the player burns
+#   vegetation with a Fire move - it strips Roots/destroys Overgrowth but pushes Bulu into a
+#   reckless, harder-hitting, thinner-guarded state.
+# LEAVE VEGETATION ALONE: safer fight, tankier Bulu. BURN IT: faster, riskier, more damage both
+#   ways. Fire is the only lever that touches Roots/Overgrowth, and every use costs Wrath.
+# Grassy Terrain stays up the whole fight (real mechanics, heals Bulu each turn while Overgrowth
+#   holds); the four-stage escalation is told through Growth-gated dialogue, not a terrain swap.
+# ANTI-ABUSE (guideline 8): no free strip exists - Fire always costs Wrath. Balls stay Blocked
+#   until the forest falls silent; Growth/Phase are HP- and turn-gated together so no stalling
+#   trick opens the window early.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 90
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    Moves: MOVE_HORN_LEECH, MOVE_WOOD_HAMMER, MOVE_ZEN_HEADBUTT, MOVE_SUPERPOWER
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc
+# assigns each Var() an index in first-appearance order, so naming all eight here in order fixes
+# Growth..LastReduction to 0..7.
+# 0 Growth (0-6, the fight's main meter), 1 Wrath (0-5, rises only on Fire hitting Roots/
+# Overgrowth), 2 Phase (0 Nature Guardian / 1 Ancient Guardian / 2 The Forest Awakens),
+# 3 RootsActive (0/1), 4 OvergrowthActive (0/1), 5 Handled (per-turn latch for the Fire-reacts
+# triggers, cleared at OnTurnEnd), 6 TurnGuard (the once-per-turn scaffold), 7 LastReduction
+# (the last ANNOUNCED damage-reduction band, guideline 14's re-fire latch).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_TapuBulu_Intro
+Conditions:
+    Var(Growth) >= 0
+    Var(Wrath) >= 0
+    Var(Phase) >= 0
+    Var(RootsActive) >= 0
+    Var(OvergrowthActive) >= 0
+    Var(Handled) >= 0
+    Var(TurnGuard) >= 0
+    Var(LastReduction) >= 0
+
+# The once-per-turn scaffold (SPEC gotcha: a script that must run unconditionally once per turn
+# needs a two-trigger guard-var pair). Sets TurnGuard immediately so it cannot re-select.
+Trigger: OnTurnStart
+Priority: 0
+Script: EncScript_TapuBulu_TurnStartGuard
+Conditions:
+    Var(TurnGuard) == 0
+
+# The main per-turn tick: Growth+, Overgrowth's heal, Phase 3 decay. Self-disables by clearing
+# TurnGuard (and Handled, so the Fire-reacts triggers re-arm for next turn).
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_TapuBulu_TurnEndTick
+Conditions:
+    Var(TurnGuard) == 1
+
+# Phase transitions. Registered at both move-scoped and turn-scoped checkpoints because the blow
+# that crosses a threshold can be either. Both copies are Once, marked at selection, so whichever
+# fires first disables the other.
+Trigger: OnMoveEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_Phase2Transition
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 10
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_Phase2Transition
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 11
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_Phase3Transition
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 11
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_Phase3Transition
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# Roots attach the first time Growth reaches 2.
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_RootsAttach
+Conditions:
+    Var(Growth) >= 2
+    Var(RootsActive) == 0
+
+# Overgrowth grows the first time Growth reaches 3.
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_OvergrowthGrows
+Conditions:
+    Var(Growth) >= 3
+    Var(OvergrowthActive) == 0
+
+# Fire strips Roots. Self-disabling through Handled (SPEC gotcha: an Event.*-reacting trigger must
+# close a latch its own script writes; Once means once per battle, not per occurrence).
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_TapuBulu_RootsDestroyed
+Conditions:
+    Event.MoveType == TYPE_FIRE
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(RootsActive) == 1
+    Var(Handled) == 0
+
+# Fire scorches Overgrowth. Same self-disabling pattern.
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_TapuBulu_OvergrowthScorched
+Conditions:
+    Event.MoveType == TYPE_FIRE
+    Event.Target == B_POSITION_OPPONENT_LEFT
+    Var(OvergrowthActive) == 1
+    Var(Handled) == 0
+
+# Wrath 3: Reckless Guardian. Atk+2, guard drops permanently.
+Trigger: OnTurnEnd
+Priority: 30
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_RecklessGuardian
+Conditions:
+    Var(Wrath) >= 3
+
+# Wrath 5: Forest Reclamation. Roots force-reattach even after being destroyed once.
+Trigger: OnTurnEnd
+Priority: 31
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_ForestReclamation
+Conditions:
+    Var(Wrath) >= 5
+
+# Growth decays to 0 in Phase 3: the forest falls silent, the catch window opens.
+Trigger: OnTurnEnd
+Priority: 90
+Flags: Once, OnEnter
+Script: EncScript_TapuBulu_ForestFallsSilent
+Conditions:
+    Var(Phase) == 2
+    Var(Growth) == 0

@@ -1,0 +1,214 @@
+Encounter: Regice
+
+# Regice, "The Frozen Clock". Articuno's Frost feeds a barrier you shatter and Celebi's Echo rewinds
+# your damage; Regice's Chill eats your TURNS. It rises on a clock nothing in the battle can stop -
+# sleep it, disable it, none of this is an action - and only temperature brings it down. Chill 1-2
+# slows both sides honestly. At 3 the field starts eating one side's action at random AND Regice
+# stops feeling the cold, which is the telegraph. At 5, ABSOLUTE ZERO takes the player's action and
+# leaves Regice's. Regice also hardens as it freezes, 88 to 95, so a stalled fight is a lost one.
+# Four thaws: Fire (-2), Fighting (-1), harsh sunlight at turn close (-1), and a heavy blow of 12%
+# in one turn (-1). Regice answers the sky by putting its hail back, so sun buys exactly one thaw
+# per cast. Phase 2 seals the player in at Chill 3 - and switching was the free way to shake the
+# Speed stages off.
+# No status immunity, on purpose: sleeping Regice is a legal play, and the fight's answer is not an
+# immunity but the fact that the clock does not care.
+# No Survive: either; it is set by the Frozen Tomb script instead, so the AI reads Regice as killable
+# for four fifths of the fight and the catch window is still guaranteed to open.
+Properties:
+    Level: LevelCap
+    CatchRate: 0                # none; the weakened script sets a real one
+    Balls: Blocked
+    DamageReduction: 88         # the Chill 0 rung of the ladder
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    AiFlags: AI_FLAG_SMART_TRAINER
+    Moves: MOVE_ICY_WIND, MOVE_ICE_BEAM, MOVE_THUNDERBOLT, MOVE_ANCIENT_POWER
+    Ability: ABILITY_CLEAR_BODY   # nothing the PLAYER does can slow Regice; only its own Chill can
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order, so naming all twelve here in order fixes Phase..Sky
+# to 0..11.
+# 0 Phase (0 The Frozen Clock / 1 Deep Freeze / 2 Frozen Tomb / 3 Weakened), 1 Chill (0-5),
+# 2 LastChill (Chill tier last ANNOUNCED - the re-fire latch; 0 none / 1 tier 1-2 / 2 tier 3-4),
+# 3 Rise (cadence countdown to the next Chill), 4 Tomb (0 open / 1 sealed), 5 Shed (the "cold no
+# longer troubles Regice" line has been said), 6 TurnGuard, 7 MoveGuard (per-turn re-entry guard
+# shared by the two OnMoveEnd thaw triggers), 8 Rolled (per-turn guard for the lost-action roll),
+# 9 Slowed (Speed stages the cold currently holds on the CURRENT player battler - zeroed on a
+# switch, so a thaw can never hand back Speed the cold never took), 10 HpMark (boss HP% at turn
+# open; ENC_SNAP_DAMAGE turns it into "lost this turn"), 11 Sky (per-turn guard for the re-freeze).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Regice_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Chill) >= 0
+    Var(LastChill) >= 0
+    Var(Rise) >= 0
+    Var(Tomb) >= 0
+    Var(Shed) >= 0
+    Var(TurnGuard) >= 0
+    Var(MoveGuard) >= 0
+    Var(Rolled) >= 0
+    Var(Slowed) >= 0
+    Var(HpMark) >= 0
+    Var(Sky) >= 0
+
+# The three phase transitions, each registered at both checkpoints because the blow that crosses the
+# threshold can be a move or an end-of-turn tick. Each is gated on the Phase value its own script
+# overwrites, so the copy that does not win is left with a false condition, and a single huge hit
+# that crosses two thresholds steps through them in order rather than skipping one.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Regice_DeepFreeze
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once
+Script: EncScript_Regice_DeepFreeze
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Regice_FrozenTomb
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once
+Script: EncScript_Regice_FrozenTomb
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regice_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once
+Script: EncScript_Regice_Weakened
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# Once-per-turn scaffold. TurnOpen is unconditional-once-per-turn (its only gate is TurnGuard == 0,
+# which it sets) and owns every per-turn guard reset plus the HP mark TurnClose measures against;
+# TurnClose is self-disabling (gate TurnGuard == 1, which it clears) and owns the clock.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_Regice_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# Regice puts its own sky back, which is what makes harsh sunlight worth exactly one thaw per cast:
+# the sun pays out at TurnClose, and this tears it down at the next TurnOpen for free.
+# Var(Sky) rather than pure self-disabling on the weather: encsetweather does nothing while primal
+# weather is in force, so a player carrying Primordial Sea or Delta Stream would otherwise leave the
+# condition true forever and trip the runaway-trigger assert.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Regice_Refreeze
+Conditions:
+    Var(Phase) <= 2
+    Var(Sky) == 0
+    Weather != B_WEATHER_HAIL
+
+# ABSOLUTE ZERO. Self-disabling: the script walks Chill back down to 2. Phase 0 can never reach it,
+# because the clock caps Chill at 4 until Deep Freeze lifts the cap.
+Trigger: OnTurnStart
+Priority: 30
+Script: EncScript_Regice_AbsoluteZero
+Conditions:
+    Var(Chill) == 5
+    Var(Phase) >= 1
+    Var(Phase) <= 2
+
+# The random lost action, at Chill 3-4. Self-disabling on Var(Rolled), which TurnOpen clears - the
+# Chill range alone would re-select every pass until the per-checkpoint script cap tripped.
+Trigger: OnTurnStart
+Priority: 40
+Script: EncScript_Regice_FrozenAction
+Conditions:
+    Var(Chill) >= 3
+    Var(Chill) <= 4
+    Var(Phase) <= 2
+    Var(Rolled) == 0
+
+# The two move-driven thaws. They share Var(MoveGuard) so exactly one lands per turn: an Event.*
+# condition stays true for the whole dispatch and cannot be moved by the script, so an
+# event-reacting trigger has to gate on a var it sets. Once would be wrong - it means once per
+# BATTLE, and thawing is the thing the player does over and over.
+# At OnMoveEnd, Event.Battler is the battler that GOT HIT, so this reads "a Fire move landed on
+# Regice". Event.MoveType is the move's BASE type, consistent with how Lugia, Ho-Oh and Groudon
+# already read move types.
+Trigger: OnMoveEnd
+Priority: 20
+Script: EncScript_Regice_ThawFire
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Var(Chill) >= 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIRE
+
+Trigger: OnMoveEnd
+Priority: 21
+Script: EncScript_Regice_ThawStrike
+Conditions:
+    Var(MoveGuard) == 0
+    Var(Phase) <= 2
+    Var(Chill) >= 1
+    Event.Battler == B_POSITION_OPPONENT_LEFT
+    Event.MoveType == TYPE_FIGHTING
+
+# Stat stages are per-battler and reset on a switch, so the cold's grip goes with the mon that left.
+# Zeroing the count here is what keeps a later thaw from handing the incoming mon Speed the cold
+# never took off it. Self-disabling, and dormant at battle start where Slowed is already 0.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Regice_ColdLetsGo
+Conditions:
+    Event.Battler == B_POSITION_PLAYER_LEFT
+    Var(Slowed) >= 1
+
+Trigger: OnTurnEnd
+Priority: 90
+Script: EncScript_Regice_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# The Tomb seals and releases on the same threshold from both directions, each setting the var the
+# other reads. They sit AFTER TurnClose (priority 90) because TurnClose is what moves Chill, and at
+# OnTurnEnd rather than OnTurnStart because escape prevention is read during action SELECTION, which
+# happens before the OnTurnStart checkpoint - settling it here is what makes the very next selection
+# feel it.
+Trigger: OnTurnEnd
+Priority: 95
+Script: EncScript_Regice_TombSeal
+Conditions:
+    Var(Phase) == 2
+    Var(Chill) >= 3
+    Var(Tomb) == 0
+
+Trigger: OnTurnEnd
+Priority: 96
+Script: EncScript_Regice_TombRelease
+Conditions:
+    Var(Tomb) == 1
+    Var(Chill) <= 2
