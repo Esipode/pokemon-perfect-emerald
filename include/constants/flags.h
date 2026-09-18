@@ -386,7 +386,7 @@
 #define FLAG_HIDE_MUNKIDORI                  0x15C
 #define FLAG_HIDE_FEZANDIPITI                0x15D
 #define FLAG_HIDE_KORAIDON                   0x15E
-#define FLAG_UNUSED_0x15F                    0x15F // Unused Flag
+#define FLAG_HIDE_MIRAIDON                   0x15F
 #define FLAG_UNUSED_0x160                    0x160 // Unused Flag
 #define FLAG_UNUSED_0x161                    0x161 // Unused Flag
 #define FLAG_UNUSED_0x162                    0x162 // Unused Flag

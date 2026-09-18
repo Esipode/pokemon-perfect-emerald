@@ -1338,6 +1338,27 @@ extern const u8 EncScript_Koraidon_Phase1[];
 extern const u8 EncScript_Koraidon_Phase2[];
 extern const u8 EncScript_Koraidon_Spent[];
 
+// Miraidon ("The Iron Serpent Pokémon")
+extern const u8 EncScript_Miraidon_Init[];
+extern const u8 EncScript_Miraidon_TurnOpen[];
+extern const u8 EncScript_Miraidon_CalculatingOn[];
+extern const u8 EncScript_Miraidon_CalculatingOff[];
+extern const u8 EncScript_Miraidon_AnalyzeResisted[];
+extern const u8 EncScript_Miraidon_AnalyzePhysical[];
+extern const u8 EncScript_Miraidon_AnalyzeSpecial[];
+extern const u8 EncScript_Miraidon_NodeDestroy[];
+extern const u8 EncScript_Miraidon_MoveGuardClear[];
+extern const u8 EncScript_Miraidon_PredictHit[];
+extern const u8 EncScript_Miraidon_PredictMiss[];
+extern const u8 EncScript_Miraidon_TurnClose[];
+extern const u8 EncScript_Miraidon_OverclockStart[];
+extern const u8 EncScript_Miraidon_OverclockShutdown[];
+extern const u8 EncScript_Miraidon_Phase2[];
+extern const u8 EncScript_Miraidon_Phase3[];
+extern const u8 EncScript_Miraidon_SystemFailureStart[];
+extern const u8 EncScript_Miraidon_ParadoxDrive[];
+extern const u8 EncScript_Miraidon_CatchWindow[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

@@ -61,6 +61,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_MUNKIDORI, FLAG_HIDE_MUNKIDORI
 	updatelegendaryvisibility SPECIES_FEZANDIPITI, FLAG_HIDE_FEZANDIPITI
 	updatelegendaryvisibility SPECIES_KORAIDON, FLAG_HIDE_KORAIDON
+	updatelegendaryvisibility SPECIES_MIRAIDON, FLAG_HIDE_MIRAIDON
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1201,6 +1202,9 @@ LittlerootTown_EventScript_EncounterTESTFezandipiti::
 
 LittlerootTown_EventScript_EncounterTESTKoraidon::
 	goto LegendaryEncounter_EventScript_Koraidon
+
+LittlerootTown_EventScript_EncounterTESTMiraidon::
+	goto LegendaryEncounter_EventScript_Miraidon
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock
