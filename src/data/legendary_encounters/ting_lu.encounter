@@ -1,0 +1,139 @@
+Encounter: Ting_Lu
+
+# Ting-Lu, "The Ruinous Vessel". One rule:
+#   Every hit it takes banks RUIN ENERGY (cumulative damage since its last mark, MARK/SCRATCH via
+#   ENC_SNAP_DAMAGE - the engine's own way to subtract one value from another). Every 25 banked
+#   crosses a tier: WEIGHT climbs (0-6, monotonic, never falls) and GROUND follows it (0-3). Heavier
+#   means harder to out-damage (Def/SpDef climb, Speed craters) but easier to out-turn (its own
+#   Speed keeps falling too).
+# PHASES: 0 RUINOUS GROUND (100-50%) - Weight/Ground escalate off chip; Sinkholes telegraph on the
+#   player, one action-window to switch out before they resolve; an Earthquake Charge cycles every
+#   3 turns.
+#   1 ANCIENT MOUNTAIN (50%, one-shot) - Weight jumps to max, Ground to 3 (Ancient Earth); IMMOVABLE
+#   hardens Def/SpDef and the reduction, and drops its own Speed further - "its reduced Speed
+#   provides the player's main opening" (Stage 2 substitute for a literal flinch immunity, which the
+#   engine has no hook for).
+#   2 MOUNTAIN'S COLLAPSE (20%) - Sinkholes tighten; at <=10% HP the catch window opens and, in the
+#   same breath, every stored Ruin Energy point empties into one final Earthquake before Weight/
+#   Ground reset to flavor-only zero.
+# GROUND==3 (Ancient Earth) is also the Flying/Levitate substitute from Stage 2: a small raw chip on
+#   every foe every turn, because it is the ground itself failing, not a Ground-type move a Flying
+#   body would dodge.
+# ANTI-ABUSE IS NARROW (guideline 8): Balls blocked until <=10% HP; Sinkhole's block is a one-action
+#   telegraph, not a permanent trap, so it can't stack into a true switch-lock with Weight's own
+#   pressure. Earthquake is hard-capped at the 30% ceiling regardless of how high Weight+Ruin climb,
+#   so stalling to inflate it can never produce an unbounded hit.
+Properties:
+    Level: LevelCap
+    CatchRate: 15
+    Balls: Blocked
+    DamageReduction: 92
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True
+    FlatToxicDamage: True
+    Survive: True
+    Moves: MOVE_HEAVY_SLAM, MOVE_STOMPING_TANTRUM, MOVE_EARTHQUAKE, MOVE_BODY_PRESS
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code. encounterproc assigns
+# each Var() an index in first-appearance order. ENC_SNAP_DAMAGE is the engine's own subtract-one-
+# value-from-another primitive; Mark/Scratch is how a resettable "energy since I last spent it"
+# meter is built from it without any var-plus-var arithmetic (the engine has none).
+# 0 Phase (0 Ruinous Ground / 1 Ancient Mountain / 2 Mountain's Collapse), 1 Weight (0-6, monotonic),
+# 2 Ground (0-3, follows Weight), 3 Charge (0-3, Earthquake cycle), 4 SinkWarn (0/1, Sinkhole
+# telegraphed this window), 5 TurnGuard (once-per-turn scaffold), 6 Mark (Ruin Energy's baseline
+# HP%, reset whenever it's spent), 7 Scratch (the copy ENC_SNAP_DAMAGE consumes to read live Ruin
+# Energy without destroying Mark).
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_TingLu_Init
+Conditions:
+    Var(Phase) >= 0
+    Var(Weight) >= 0
+    Var(Ground) >= 0
+    Var(Charge) >= 0
+    Var(SinkWarn) >= 0
+    Var(TurnGuard) >= 0
+    Var(Mark) >= 0
+    Var(Scratch) >= 0
+
+# Phase 0 -> 1. Registered at both checkpoints since the crossing blow can be a move or an
+# end-of-turn tick (Sinkhole/passive chip); Once is marked at selection, so whichever fires first
+# permanently disables the other.
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_TingLu_AncientMountain
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_TingLu_AncientMountain
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+# Phase 1 -> 2.
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_TingLu_MountainCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_TingLu_MountainCollapse
+Conditions:
+    Battler(Boss).HpPercent <= 20
+    Var(Phase) == 1
+
+# The once-per-turn scaffold's open half. Handles the Earthquake charge tick and the Sinkhole
+# telegraph roll internally - both stay safe under one guard rather than needing their own.
+Trigger: OnTurnStart
+Priority: 10
+Script: EncScript_TingLu_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+# A player who switches away on the telegraphed turn escapes the Sinkhole outright.
+Trigger: OnSwitchIn
+Priority: 30
+Script: EncScript_TingLu_SinkholeClearOnSwitch
+Conditions:
+    Var(SinkWarn) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# The ledger: Sinkhole resolve, the passive Ancient-Earth chip, Earthquake release, and Ruin Energy
+# banking into Weight, in that order. One script with internal branching to stay well clear of the
+# 8-scripts-per-checkpoint cap. Self-disables by clearing TurnGuard.
+Trigger: OnTurnEnd
+Priority: 80
+Script: EncScript_TingLu_Ledger
+Conditions:
+    Var(TurnGuard) == 1
+
+# The catch window.
+Trigger: OnTurnEnd
+Priority: 85
+Flags: Once, OnEnter
+Script: EncScript_TingLu_CatchWindow
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2
+
+# The final Earthquake - releases every stored Ruin Energy point in one blow, then the exhaustion
+# teardown. Runs after the catch window opens.
+Trigger: OnTurnEnd
+Priority: 88
+Flags: Once, OnEnter
+Script: EncScript_TingLu_FinalAttack
+Conditions:
+    Battler(Boss).HpPercent <= 10
+    Var(Phase) == 2

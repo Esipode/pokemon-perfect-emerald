@@ -2968,6 +2968,17 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCCHIENPAOMOMENTUMBRISK]             = COMPOUND_STRING("The snow trail thickens\nunderfoot!"),
     [STRINGID_ENCCHIENPAOMOMENTUMBLIZZARD]          = COMPOUND_STRING("The field is a\nfull blizzard!"),
     [STRINGID_ENCCHIENPAOSWITCHPRESSURE]            = COMPOUND_STRING("Chien-Pao surges toward\nthe new arrival!"),
+
+    [STRINGID_ENCTINGLUINTRO]                       = COMPOUND_STRING("Ting-Lu settles its full\nweight onto the ground!"),
+    [STRINGID_ENCTINGLUGATHERSWEIGHT]                = COMPOUND_STRING("The ground groans under\nTing-Lu's weight!"),
+    [STRINGID_ENCTINGLUGROUNDSPLITS]                 = COMPOUND_STRING("The ground splits beneath\n{B_PLAYER_MON1_NAME}!"),
+    [STRINGID_ENCTINGLUGROUNDCOLLAPSES]              = COMPOUND_STRING("The Sinkhole gives way!"),
+    [STRINGID_ENCTINGLUCHARGES]                      = COMPOUND_STRING("Ting-Lu gathers itself\nto strike the earth!"),
+    [STRINGID_ENCTINGLUUNLEASHESQUAKE]               = COMPOUND_STRING("Ting-Lu slams down -\nan Earthquake erupts!"),
+    [STRINGID_ENCTINGLUIMMOVABLE]                    = COMPOUND_STRING("Ting-Lu roots itself into\nthe Ancient Mountain!"),
+    [STRINGID_ENCTINGLUCOLLAPSE]                     = COMPOUND_STRING("The earth begins to\ncollapse!"),
+    [STRINGID_ENCTINGLUCATCHWINDOW]                  = COMPOUND_STRING("Ting-Lu staggers -\nnow is the moment!"),
+    [STRINGID_ENCTINGLUEXHAUSTION]                   = COMPOUND_STRING("The weight it carried\nfinally gives way!"),
 };
 
 const u16 gOneHitKOStringIds[] =

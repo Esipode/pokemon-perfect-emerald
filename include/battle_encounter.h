@@ -1247,6 +1247,16 @@ extern const u8 EncScript_ChienPao_MomentumBrisk[];
 extern const u8 EncScript_ChienPao_MomentumBlizzard[];
 extern const u8 EncScript_ChienPao_TurnClose[];
 
+// Ting-Lu ("The Ruinous Vessel Pokémon")
+extern const u8 EncScript_TingLu_Init[];
+extern const u8 EncScript_TingLu_AncientMountain[];
+extern const u8 EncScript_TingLu_MountainCollapse[];
+extern const u8 EncScript_TingLu_TurnOpen[];
+extern const u8 EncScript_TingLu_SinkholeClearOnSwitch[];
+extern const u8 EncScript_TingLu_Ledger[];
+extern const u8 EncScript_TingLu_CatchWindow[];
+extern const u8 EncScript_TingLu_FinalAttack[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
