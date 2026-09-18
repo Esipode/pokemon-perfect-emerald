@@ -425,7 +425,13 @@ static void Task_SettingsMenuProcessInput(u8 taskId)
     switch (itemId)
     {
     case LIST_NOTHING_CHOSEN:
-        if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+        if (JOY_NEW(START_BUTTON))
+        {
+            PlaySE(SE_SELECT);
+            BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+            gTasks[taskId].func = Task_SettingsMenuConfirm;
+        }
+        else if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
         {
             u8 settingId = sSettingsScroll.scrollOffset + sSettingsScroll.selectedRow;
 

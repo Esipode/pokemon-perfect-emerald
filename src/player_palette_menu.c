@@ -299,6 +299,14 @@ static void Task_PaletteMenuFadeIn(u8 taskId)
         gTasks[taskId].func = Task_PaletteMenuProcessInput;
 }
 
+static void ConfirmAndExit(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    memcpy(gSaveBlock2Ptr->playerColors, sPaletteMenu.choices, sizeof(sPaletteMenu.choices));
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+    gTasks[taskId].func = Task_PaletteMenuFadeOut;
+}
+
 static void Task_PaletteMenuProcessInput(u8 taskId)
 {
     s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
@@ -308,7 +316,11 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
     switch (itemId)
     {
     case LIST_NOTHING_CHOSEN:
-        if (selectedRow < PLAYER_COLOR_REGION_COUNT)
+        if (JOY_NEW(START_BUTTON))
+        {
+            ConfirmAndExit(taskId);
+        }
+        else if (selectedRow < PLAYER_COLOR_REGION_COUNT)
         {
             enum PlayerColorRegion region = (enum PlayerColorRegion)selectedRow;
 
@@ -342,10 +354,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         RefreshPreviewPalette();
         break;
     case ROW_CONFIRM:
-        PlaySE(SE_SELECT);
-        memcpy(gSaveBlock2Ptr->playerColors, sPaletteMenu.choices, sizeof(sPaletteMenu.choices));
-        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
-        gTasks[taskId].func = Task_PaletteMenuFadeOut;
+        ConfirmAndExit(taskId);
         break;
     default:
         // A on one of the four colour rows -- nothing to do, those are

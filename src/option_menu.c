@@ -8,6 +8,7 @@
 #include "international_string_util.h"
 #include "main.h"
 #include "menu.h"
+#include "new_game_settings_menu.h"
 #include "palette.h"
 #include "player_palette_menu.h"
 #include "scanline_effect.h"
@@ -184,7 +185,15 @@ EWRAM_DATA static u8 sCurrPage = 0;
 // the real caller and needs no help.
 EWRAM_DATA static MainCallback sSavedCallback = NULL;
 
+// The new-game sequence is the only flow that hands this menu CB2_InitNewGameSettingsMenu
+// as its return callback (see keep_storage_prompt.c).
+static bool32 IsNewGameSequence(void)
+{
+    return gMain.savedCallback == CB2_InitNewGameSettingsMenu;
+}
+
 static const u8 gText_Option[]             = _("OPTION");
+static const u8 gText_Confirm[]            = _("CONFIRM");
 static const u8 gText_PageNav[]            = _("PAGE");
 static const u8 gText_SmallDot[]           = _("·");
 static const u8 gText_LargeDot[]           = _("{EMOJI_CIRCLE}");
@@ -597,7 +606,7 @@ static void Task_OptionMenuProcessInput(u8 taskId)
         if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL)
             gTasks[taskId].func = Task_OptionMenuSave;
     }
-    else if (JOY_NEW(B_BUTTON))
+    else if (JOY_NEW(B_BUTTON) || (JOY_NEW(START_BUTTON) && IsNewGameSequence()))
     {
         gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -699,7 +708,7 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
         else if (gTasks[taskId].tMenuSelection == MENUITEM_PLAYER_COLORS)
             gTasks[taskId].func = Task_OptionMenuOpenPlayerColors;
     }
-    else if (JOY_NEW(B_BUTTON))
+    else if (JOY_NEW(B_BUTTON) || (JOY_NEW(START_BUTTON) && IsNewGameSequence()))
     {
         gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -804,7 +813,7 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
         if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG3)
             gTasks[taskId].func = Task_OptionMenuSave;
     }
-    else if (JOY_NEW(B_BUTTON))
+    else if (JOY_NEW(B_BUTTON) || (JOY_NEW(START_BUTTON) && IsNewGameSequence()))
     {
         gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -1453,6 +1462,11 @@ static u8 GetPrevVisiblePg2Item(u8 sel)
     return sel;
 }
 
+static const u8 *GetCancelOrItemName(const u8 *name, bool32 isCancelRow)
+{
+    return (isCancelRow && IsNewGameSequence()) ? gText_Confirm : name;
+}
+
 static void DrawOptionMenuTexts(void)
 {
     u8 i, row;
@@ -1463,7 +1477,7 @@ static void DrawOptionMenuTexts(void)
     default:
     case 0:
         for (i = 0; i < MENUITEM_COUNT; i++)
-            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames[i], 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
+            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, GetCancelOrItemName(sOptionMenuItemsNames[i], i == MENUITEM_CANCEL), 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
         break;
     case 1:
         row = 0;
@@ -1471,13 +1485,13 @@ static void DrawOptionMenuTexts(void)
         {
             if (IsPg2ItemHidden(i))
                 continue;
-            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames_Pg2[i], 8, (row * 16) + 1, TEXT_SKIP_DRAW, NULL);
+            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, GetCancelOrItemName(sOptionMenuItemsNames_Pg2[i], i == MENUITEM_CANCEL_PG2), 8, (row * 16) + 1, TEXT_SKIP_DRAW, NULL);
             row++;
         }
         break;
     case 2:
         for (i = 0; i < MENUITEM_COUNT_PG3; i++)
-            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, sOptionMenuItemsNames_Pg3[i], 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
+            AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, GetCancelOrItemName(sOptionMenuItemsNames_Pg3[i], i == MENUITEM_CANCEL_PG3), 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
         break;
     }
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);

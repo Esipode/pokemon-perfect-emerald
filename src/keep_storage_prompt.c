@@ -53,7 +53,9 @@ enum
 
 static void Task_KeepStoragePromptFadeIn(u8 taskId);
 static void Task_KeepStoragePromptWaitPage(u8 taskId);
+static void Task_KeepStoragePromptWaitTextThenYesNo(u8 taskId);
 static void Task_KeepStoragePromptProcessYesNo(u8 taskId);
+static void Task_KeepStoragePromptProcessDeleteYesNo(u8 taskId);
 static void Task_KeepStoragePromptConfirm(u8 taskId);
 static void Task_KeepStoragePromptCancel(u8 taskId);
 
@@ -74,7 +76,12 @@ static const u8 *const sKeepStoragePromptPages[] =
         "adventure?"),
 };
 
+static const u8 sText_KeepStoragePromptConfirmDelete[] = _(
+    "This will permanently delete\n"
+    "your POKéMON. Are you sure?");
+
 #define tPageNum data[0]
+#define tConfirmDelete data[1] // TRUE while asking "are you sure?" after NO
 
 static const struct WindowTemplate sKeepStoragePromptWinTemplates[] =
 {
@@ -226,10 +233,24 @@ void CB2_InitKeepStoragePrompt(void)
     }
 }
 
-static void KeepStoragePrompt_PrintPage(u8 taskId)
+static void KeepStoragePrompt_PrintText(const u8 *text)
 {
     FillWindowPixelBuffer(WIN_TEXT, PIXEL_FILL(1));
-    AddTextPrinterParameterized(WIN_TEXT, FONT_NORMAL, sKeepStoragePromptPages[gTasks[taskId].tPageNum], 0, 1, GetPlayerTextSpeedDelay(), NULL);
+    AddTextPrinterParameterized(WIN_TEXT, FONT_NORMAL, text, 0, 1, GetPlayerTextSpeedDelay(), NULL);
+}
+
+static void KeepStoragePrompt_PrintPage(u8 taskId)
+{
+    KeepStoragePrompt_PrintText(sKeepStoragePromptPages[gTasks[taskId].tPageNum]);
+}
+
+// Prints text, then shows the Yes/No box once it finishes. confirmDelete picks which
+// question the Yes/No box answers.
+static void KeepStoragePrompt_PrintThenYesNo(u8 taskId, const u8 *text, bool32 confirmDelete)
+{
+    KeepStoragePrompt_PrintText(text);
+    gTasks[taskId].tConfirmDelete = confirmDelete;
+    gTasks[taskId].func = Task_KeepStoragePromptWaitTextThenYesNo;
 }
 
 static void Task_KeepStoragePromptFadeIn(u8 taskId)
@@ -279,6 +300,25 @@ static void Task_KeepStoragePromptWaitPage(u8 taskId)
     }
 }
 
+static void Task_KeepStoragePromptWaitTextThenYesNo(u8 taskId)
+{
+    RunTextPrinters();
+    if (IsTextPrinterActiveOnWindow(WIN_TEXT))
+        return;
+
+    CreateYesNoMenuParameterized(YESNO_X, YESNO_Y, STD_FRAME_BASE_TILE, YESNO_BASE_BLOCK, STD_WINDOW_PALETTE_NUM, DLG_WINDOW_PALETTE_NUM);
+    if (gTasks[taskId].tConfirmDelete)
+    {
+        // Default to NO -- YES here is the destructive answer.
+        Menu_MoveCursorNoWrapAround(1);
+        gTasks[taskId].func = Task_KeepStoragePromptProcessDeleteYesNo;
+    }
+    else
+    {
+        gTasks[taskId].func = Task_KeepStoragePromptProcessYesNo;
+    }
+}
+
 static void Task_KeepStoragePromptProcessYesNo(u8 taskId)
 {
     switch (Menu_ProcessInputNoWrapClearOnChoose())
@@ -289,16 +329,34 @@ static void Task_KeepStoragePromptProcessYesNo(u8 taskId)
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_KeepStoragePromptConfirm;
         break;
-    case 1: // NO
-        gKeepStorageOnNewGame = FALSE;
+    case 1: // NO -- ask again, since declining permanently deletes the storage
         PlaySE(SE_SELECT);
-        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
-        gTasks[taskId].func = Task_KeepStoragePromptConfirm;
+        KeepStoragePrompt_PrintThenYesNo(taskId, sText_KeepStoragePromptConfirmDelete, TRUE);
         break;
     case MENU_B_PRESSED:
         PlaySE(SE_SELECT);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_KeepStoragePromptCancel;
+        break;
+    }
+}
+
+static void Task_KeepStoragePromptProcessDeleteYesNo(u8 taskId)
+{
+    switch (Menu_ProcessInputNoWrapClearOnChoose())
+    {
+    case 0: // YES -- delete
+        gKeepStorageOnNewGame = FALSE;
+        PlaySE(SE_SELECT);
+        BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_KeepStoragePromptConfirm;
+        break;
+    case 1: // NO
+    case MENU_B_PRESSED:
+        // Back to the keep question (the last page).
+        PlaySE(SE_SELECT);
+        gTasks[taskId].tPageNum = ARRAY_COUNT(sKeepStoragePromptPages) - 1;
+        KeepStoragePrompt_PrintThenYesNo(taskId, sKeepStoragePromptPages[gTasks[taskId].tPageNum], FALSE);
         break;
     }
 }
