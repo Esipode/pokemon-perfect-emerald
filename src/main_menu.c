@@ -185,6 +185,7 @@
 
 static EWRAM_DATA bool8 sStartedPokeBallTask = 0;
 static EWRAM_DATA u16 sCurrItemAndOptionMenuCheck = 0;
+static EWRAM_DATA enum Species sBirchSpeechMonSpecies = SPECIES_NONE;
 
 static u8 sBirchSpeechMainTaskId;
 
@@ -1496,7 +1497,7 @@ static void Task_NewGameBirchSpeechSub_InitPokeBall(u8 taskId)
     gSprites[spriteId].invisible = FALSE;
     gSprites[spriteId].data[0] = 0;
 
-    CreatePokeballSpriteToReleaseMon(spriteId, gSprites[spriteId].oam.paletteNum, 112, 58, 0, 0, 32, PALETTES_BG, SPECIES_LOTAD);
+    CreatePokeballSpriteToReleaseMon(spriteId, gSprites[spriteId].oam.paletteNum, 112, 58, 0, 0, 32, PALETTES_BG, sBirchSpeechMonSpecies);
     gTasks[taskId].func = Task_NewGameBirchSpeechSub_WaitForLotad;
     gTasks[sBirchSpeechMainTaskId].tTimer = 0;
 }
@@ -2096,9 +2097,52 @@ static void SpriteCB_MovePlayerDownWhileShrinking(struct Sprite *sprite)
     sprite->data[0] = y;
 }
 
+#define BIRCH_SPEECH_MON_MAX_BST        399
+#define BIRCH_SPEECH_MON_MAX_ATTEMPTS   256
+
+static bool32 IsValidBirchSpeechSpecies(enum Species species)
+{
+    const struct SpeciesInfo *info;
+
+    if (species == SPECIES_NONE || species >= NUM_SPECIES)
+        return FALSE;
+
+    info = &gSpeciesInfo[species];
+    if (info->natDexNum == NATIONAL_DEX_NONE
+     || info->isRestrictedLegendary
+     || info->isSubLegendary
+     || info->isMythical
+     || info->isUltraBeast
+     || info->isParadox
+     || info->isMegaEvolution
+     || info->isPrimalReversion
+     || info->isUltraBurst
+     || info->isGigantamax
+     || info->isTeraForm
+     || info->isTotem)
+        return FALSE;
+
+    return GetSpeciesBaseStatTotal(species) <= BIRCH_SPEECH_MON_MAX_BST;
+}
+
+// Picks a random base-form species from the National Dex that passes IsValidBirchSpeechSpecies.
+static enum Species GetRandomBirchSpeechSpecies(void)
+{
+    for (u32 i = 0; i < BIRCH_SPEECH_MON_MAX_ATTEMPTS; i++)
+    {
+        enum Species species = NationalPokedexNumToSpecies(1 + Random() % NATIONAL_DEX_COUNT);
+
+        if (IsValidBirchSpeechSpecies(species))
+            return species;
+    }
+
+    return SPECIES_LOTAD;
+}
+
 static u8 NewGameBirchSpeech_CreateLotadSprite(u8 x, u8 y)
 {
-    return CreateMonPicSprite_Affine(SPECIES_LOTAD, FALSE, 0, MON_PIC_AFFINE_FRONT, x, y, 14, TAG_NONE);
+    sBirchSpeechMonSpecies = GetRandomBirchSpeechSpecies();
+    return CreateMonPicSprite_Affine(sBirchSpeechMonSpecies, FALSE, 0, MON_PIC_AFFINE_FRONT, x, y, 14, TAG_NONE);
 }
 
 static void AddBirchSpeechObjects(u8 taskId)
