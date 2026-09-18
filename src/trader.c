@@ -38,22 +38,6 @@ static const u8 sDefaultTraderDecorations[NUM_TRADER_ITEMS] =
     DECOR_PRETTY_FLOWERS,
 };
 
-void TraderSetup(void)
-{
-    u8 i;
-    struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;
-
-    trader->id = MAUVILLE_MAN_TRADER;
-    trader->alreadyTraded = FALSE;
-
-    for (i = 0; i < NUM_TRADER_ITEMS; i++)
-    {
-        StringCopy(trader->playerNames[i], sDefaultTraderNames[i]);
-        trader->decorations[i] = sDefaultTraderDecorations[i];
-        trader->language[i] = GAME_LANGUAGE;
-    }
-}
-
 void Trader_ResetFlag(void)
 {
     struct MauvilleOldManTrader *trader = &OLD_MAN_PTR->trader;

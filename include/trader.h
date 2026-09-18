@@ -7,7 +7,6 @@
 
 void DecorationItemsMenuAction_Trade(u8 taskId);
 void ExitTraderMenu(u8 taskId);
-void TraderSetup(void);
 void Trader_ResetFlag(void);
 
 #endif //GUARD_TRADER_H
