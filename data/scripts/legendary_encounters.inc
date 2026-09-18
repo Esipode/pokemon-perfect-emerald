@@ -1169,3 +1169,17 @@ LegendaryEncounter_EventScript_Munkidori::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_Fezandipiti::
+	lock
+	faceplayer
+	waitse
+	playmoncry SPECIES_FEZANDIPITI, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	setbattleencounter ENCOUNTER_FEZANDIPITI
+	setwildbattle SPECIES_FEZANDIPITI, 50   @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
+	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
+	goto LegendaryEncounter_EventScript_FinishBattle

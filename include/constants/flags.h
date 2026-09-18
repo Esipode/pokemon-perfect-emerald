@@ -384,7 +384,7 @@
 #define FLAG_MET_FRONTIER_SWIMMER_MOVE_TUTOR 0x15B
 
 #define FLAG_HIDE_MUNKIDORI                  0x15C
-#define FLAG_UNUSED_0x15D                    0x15D // Unused Flag
+#define FLAG_HIDE_FEZANDIPITI                0x15D
 #define FLAG_UNUSED_0x15E                    0x15E // Unused Flag
 #define FLAG_UNUSED_0x15F                    0x15F // Unused Flag
 #define FLAG_UNUSED_0x160                    0x160 // Unused Flag

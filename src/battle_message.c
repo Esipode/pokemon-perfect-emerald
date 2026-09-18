@@ -3026,6 +3026,22 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCMUNKIDORIFINALEWINDUP]              = COMPOUND_STRING("All its reading gathers\ninto one crushing blow!"),
     [STRINGID_ENCMUNKIDORINOWCATCH]                  = COMPOUND_STRING("Munkidori reels -\nnow is the moment!"),
     [STRINGID_ENCMUNKIDORIINFLUENCERISING]           = COMPOUND_STRING("Munkidori reads you like\nan open book."),
+
+    [STRINGID_ENCFEZANDIPITIINTRO]                   = COMPOUND_STRING("Fezandipiti strikes a\npose, eyes on you."),
+    [STRINGID_ENCFEZANDIPITISPOTLIGHTON]             = COMPOUND_STRING("SPOTLIGHT! It preens,\nbasking in attention!"),
+    [STRINGID_ENCFEZANDIPITISPOTLIGHTOFF]            = COMPOUND_STRING("The spotlight fades from\nFezandipiti."),
+    [STRINGID_ENCFEZANDIPITIVANITY]                  = COMPOUND_STRING("VANITY! Its guard slips\nas it admires itself!"),
+    [STRINGID_ENCFEZANDIPITITOXICCHARMTICK]          = COMPOUND_STRING("TOXIC CHARM! The perfume\nturns venomous!"),
+    [STRINGID_ENCFEZANDIPITIDISTRACTIONPROMPT]       = COMPOUND_STRING("Fezandipiti preens for\nyour attention! Focus?"),
+    [STRINGID_ENCFEZANDIPITIDISTRACTIONFOCUS]        = COMPOUND_STRING("You play along -\nits GLAMOUR swells!"),
+    [STRINGID_ENCFEZANDIPITIFRUSTRATIONLASHOUT]      = COMPOUND_STRING("Ignored too long, it\nlashes out!"),
+    [STRINGID_ENCFEZANDIPITIPERFECTBEAUTY]           = COMPOUND_STRING("PERFECT BEAUTY! Its ego\nfeeds itself now!"),
+    [STRINGID_ENCFEZANDIPITIKISSMARK]                = COMPOUND_STRING("POISONOUS KISS marks\nyour Pokemon!"),
+    [STRINGID_ENCFEZANDIPITIKISSBREAK]               = COMPOUND_STRING("The hit shatters the\nKISS mark!"),
+    [STRINGID_ENCFEZANDIPITIJEALOUSBEAUTY]           = COMPOUND_STRING("JEALOUS BEAUTY! It\nspeeds up, sharpened!"),
+    [STRINGID_ENCFEZANDIPITIGLAMOURCOLLAPSE]         = COMPOUND_STRING("GLAMOUR COLLAPSES! Its\nguard is wide open!"),
+    [STRINGID_ENCFEZANDIPITIREDUCTIONCHANGE]         = COMPOUND_STRING("Fezandipiti's guard\nshifts!"),
+    [STRINGID_ENCFEZANDIPITIBALLSUNLOCK]             = COMPOUND_STRING("Fezandipiti reels -\nnow is the moment!"),
 };
 
 const u16 gOneHitKOStringIds[] =

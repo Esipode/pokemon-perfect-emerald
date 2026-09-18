@@ -1302,6 +1302,22 @@ extern const u8 EncScript_Munkidori_BluffReadPast[];
 extern const u8 EncScript_Munkidori_TurnClose[];
 extern const u8 EncScript_Munkidori_Finale[];
 
+// Fezandipiti ("The Retainer Pokémon")
+extern const u8 EncScript_Fezandipiti_Intro[];
+extern const u8 EncScript_Fezandipiti_TurnOpen[];
+extern const u8 EncScript_Fezandipiti_SpotlightRoll[];
+extern const u8 EncScript_Fezandipiti_Vanity[];
+extern const u8 EncScript_Fezandipiti_BossHitResolved[];
+extern const u8 EncScript_Fezandipiti_EnchantBreak[];
+extern const u8 EncScript_Fezandipiti_BeautifulDistraction[];
+extern const u8 EncScript_Fezandipiti_PoisonousKissActivate[];
+extern const u8 EncScript_Fezandipiti_GlamourCollapse[];
+extern const u8 EncScript_Fezandipiti_PerfumeReset[];
+extern const u8 EncScript_Fezandipiti_PerfectBeautyTransition[];
+extern const u8 EncScript_Fezandipiti_JealousBeautyTransition[];
+extern const u8 EncScript_Fezandipiti_BallsUnlock[];
+extern const u8 EncScript_Fezandipiti_TurnClose[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

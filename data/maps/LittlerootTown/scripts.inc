@@ -59,6 +59,7 @@ LittlerootTown_OnTransition:
 	updatelegendaryvisibility SPECIES_CHI_YU, FLAG_HIDE_CHI_YU
 	updatelegendaryvisibility SPECIES_OKIDOGI, FLAG_HIDE_OKIDOGI
 	updatelegendaryvisibility SPECIES_MUNKIDORI, FLAG_HIDE_MUNKIDORI
+	updatelegendaryvisibility SPECIES_FEZANDIPITI, FLAG_HIDE_FEZANDIPITI
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
@@ -1193,6 +1194,9 @@ LittlerootTown_EventScript_EncounterTESTOkidogi::
 
 LittlerootTown_EventScript_EncounterTESTMunkidori::
 	goto LegendaryEncounter_EventScript_Munkidori
+
+LittlerootTown_EventScript_EncounterTESTFezandipiti::
+	goto LegendaryEncounter_EventScript_Fezandipiti
 
 LittlerootTown_EventScript_EncounterTest2::
 	lock
