@@ -1359,6 +1359,19 @@ extern const u8 EncScript_Miraidon_SystemFailureStart[];
 extern const u8 EncScript_Miraidon_ParadoxDrive[];
 extern const u8 EncScript_Miraidon_CatchWindow[];
 
+// Ogerpon ("The Masked Guardian Pokémon")
+extern const u8 EncScript_Ogerpon_Intro[];
+extern const u8 EncScript_Ogerpon_TurnOpen[];
+extern const u8 EncScript_Ogerpon_TurnClose[];
+extern const u8 EncScript_Ogerpon_GuardiansResolve[];
+extern const u8 EncScript_Ogerpon_CycleAdvance[];
+extern const u8 EncScript_Ogerpon_ResolvePhysical[];
+extern const u8 EncScript_Ogerpon_ResolveSpecial[];
+extern const u8 EncScript_Ogerpon_ResolveStatus[];
+extern const u8 EncScript_Ogerpon_ResolvePhase1[];
+extern const u8 EncScript_Ogerpon_ReactivePick[];
+extern const u8 EncScript_Ogerpon_Unyielding[];
+
 // Stage 15 command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

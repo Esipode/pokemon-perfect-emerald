@@ -3075,6 +3075,20 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCMIRAIDONRECOMPILING]                = COMPOUND_STRING("Recompiling..."),
     [STRINGID_ENCMIRAIDONPARADOXDRIVE]               = COMPOUND_STRING("PARADOX DRIVE!"),
     [STRINGID_ENCMIRAIDONCATCHWINDOW]                = COMPOUND_STRING("Now is the\nmoment!"),
+    [STRINGID_ENCOGERPONENERGYGATHERS]               = COMPOUND_STRING("Ogerpon studies your\nevery move."),
+    [STRINGID_ENCOGERPONDONSWELLSPRING]              = COMPOUND_STRING("Ogerpon dons the\nWellspring Mask!"),
+    [STRINGID_ENCOGERPONDONSHEARTHFLAME]             = COMPOUND_STRING("Ogerpon dons the\nHearthflame Mask!"),
+    [STRINGID_ENCOGERPONDONSCORNERSTONE]             = COMPOUND_STRING("Ogerpon dons the\nCornerstone Mask!"),
+    [STRINGID_ENCOGERPONMASKCRACKS]                  = COMPOUND_STRING("The mask cracks!\nOgerpon reverts to Teal!"),
+    [STRINGID_ENCOGERPONGUARDIANSRESOLVE]            = COMPOUND_STRING("Ogerpon enters its\nGuardian's Resolve!"),
+    [STRINGID_ENCOGERPONCYCLESHIFTS]                 = COMPOUND_STRING("The Guardian's stance\nshifts once more."),
+    [STRINGID_ENCOGERPONUNYIELDING]                  = COMPOUND_STRING("Ogerpon will not\nyield now!"),
+    [STRINGID_ENCOGERPONNOWISTHEMOMENT]              = COMPOUND_STRING("Its guard is down -\nnow is the moment!"),
+    [STRINGID_ENCOGERPONMASKEDSTRIKE]                = COMPOUND_STRING("MASKED STRIKE!"),
+    [STRINGID_ENCOGERPONWELLSPRINGSURGE]             = COMPOUND_STRING("Wellspring Surge\nwashes over Ogerpon!"),
+    [STRINGID_ENCOGERPONFLAMESOUT]                   = COMPOUND_STRING("Flames Out of\nControl!"),
+    [STRINGID_ENCOGERPONCORNERSTONEHOLDS]            = COMPOUND_STRING("The Cornerstone\nholds firm!"),
+    [STRINGID_ENCOGERPONPILLARSSHATTER]              = COMPOUND_STRING("The pillars shatter\nin a shockwave!"),
 };
 
 const u16 gOneHitKOStringIds[] =
