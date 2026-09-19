@@ -776,82 +776,10 @@ UNUSED static const struct BoxPokemon sBoxPokemonConstantsFit =
     },
 };
 
-STATIC_ASSERT(MAX_LEVEL <= 1000, PokemonSubstruct0_experience_PotentiallyTooSmall); // Level can be stored in u16.
+STATIC_ASSERT(MAX_LEVEL <= 1000, PokemonSubstruct0_experience_PotentiallyTooSmall);
 
-// ORIGINAL CALCULATION, KEEPING IN CASE I DECIDE TO REVERT
-
-// u32 GetExperienceAtLevel(u8 growthRate, u16 level)
-// {
-//     if (level == 0)
-//         return 0;
-
-//     if (level == 1)
-//         return 1;
-
-//     u64 n = level;
-//     u64 exp = 0;
-
-//     switch (growthRate)
-//     {
-//     case GROWTH_MEDIUM_FAST:
-//         exp = EXP_MEDIUM_FAST(n);
-//         break;
-//     case GROWTH_ERRATIC:
-//         if (n <= 50)
-//             exp = (100 - n) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR);
-//         else if (n <= 68)
-//             exp = (150 - n) * CUBE(n) / (100 * CUSTOM_XP_SCALING_FACTOR);
-//         else if (n <= 100)
-//             exp = ((1911 - 10 * n) / 3) * CUBE(n) / (500 * CUSTOM_XP_SCALING_FACTOR);
-//         else
-//         {
-//             u64 xp99  = ((1911 - 10 * 99) / 3) * CUBE(99) / (500 * CUSTOM_XP_SCALING_FACTOR);
-//             u64 xp100 = ((1911 - 10 * 100) / 3) * CUBE(100) / (500 * CUSTOM_XP_SCALING_FACTOR);
-
-//             u64 slope = (xp100 - xp99);
-//             u64 extra = (n - 100);
-//             exp = xp100 + (slope * extra);
-//         }
-//         exp += BASE_XP_OFFSET;
-//         break;
-//     case GROWTH_FLUCTUATING:
-//         if (n <= 15)
-//             exp = (((n + 1) / 3 + 24) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
-//         else if (n <= 36)
-//             exp = ((n + 14) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
-//         else
-//             exp = (((n / 2) + 32) * CUBE(n) / (50 * CUSTOM_XP_SCALING_FACTOR));
-//         exp += BASE_XP_OFFSET;
-//         break;
-//     case GROWTH_MEDIUM_SLOW:
-//         exp = (6 * CUBE(n)) / (5 * CUSTOM_XP_SCALING_FACTOR) - (15 * SQUARE(n)) / CUSTOM_XP_SCALING_FACTOR + (100 * n) / CUSTOM_XP_SCALING_FACTOR - (140 / CUSTOM_XP_SCALING_FACTOR);
-//         exp += BASE_XP_OFFSET;
-//         break;
-//     case GROWTH_FAST:
-//         exp = EXP_FAST(n);
-//         break;
-//     case GROWTH_SLOW:
-//         exp = EXP_SLOW(n);
-//         break;
-//     default:
-//         exp = 0;
-//         break;
-//     }
-
-//     if (exp > UINT32_MAX)
-//         exp = UINT32_MAX;
-
-//     return (u32)exp;
-// }
-
-// NEW FORMULA CALCULATION
-//
-// Growth-rate curves below are fixed-point (parts-per-thousand, i.e. 1000 = 1.0x)
-// instead of floating point. The GBA's CPU has no FPU, so every double operation
-// is emulated in software and is dramatically slower than integer math; since this
-// function runs in a hot path (level lookups can call it dozens of times, see
-// GetLevelFromExperience below), floating point here was causing noticeable freezes.
-
+// Growth-rate curves are fixed-point (parts-per-thousand, 1000 = 1.0x). The GBA has no FPU, so
+// floating point is emulated in software and froze the hot level-lookup path (see GetLevelFromExperience).
 static u32 Oscillate1000(u32 n, u32 period)
 {
     u32 pos = n % period;
@@ -873,58 +801,38 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
 
     u64 n = level;
 
-    // Base curve (shared foundation for all growth rates)
     u64 base = (CUBE(n) / CUSTOM_XP_SCALING_FACTOR) + BASE_XP_OFFSET;
 
-    s64 t1000 = (s64)n; // normalized level [0..1], scaled by 1000 (n is already 0..MAX_LEVEL<=1000)
+    s64 t1000 = (s64)n; // Normalized level, scaled by 1000.
     s64 multiplier1000 = 1000;
-    s64 offset = 0; // per-level adjustment applied after the multiplier (see GROWTH_ERRATIC)
+    s64 offset = 0; // Applied after the multiplier (GROWTH_ERRATIC).
 
     switch (growthRate)
     {
-        // ---------------------------------------------------------
-        // MEDIUM FAST (baseline)
-        // ---------------------------------------------------------
         case GROWTH_MEDIUM_FAST:
             multiplier1000 = 1000;
             break;
 
-        // ---------------------------------------------------------
-        // FAST (slightly easier early, converges to its own final
-        // total of 0.8x baseline - matches vanilla Fast's overall
-        // exp requirement relative to Medium Fast)
-        // ---------------------------------------------------------
+        // Converges to a final total of 0.8x baseline, matching vanilla Fast.
         case GROWTH_FAST:
             multiplier1000 = 650 + (150 * t1000) / 1000;
             break;
 
-        // ---------------------------------------------------------
-        // SLOW (hard early, eases toward its own final total of
-        // 1.25x baseline - matches vanilla Slow)
-        // ---------------------------------------------------------
+        // Eases toward a final total of 1.25x baseline, matching vanilla Slow.
         case GROWTH_SLOW:
             multiplier1000 = 1400 - (150 * t1000) / 1000;
             break;
 
-        // ---------------------------------------------------------
-        // MEDIUM SLOW (curved easing toward a final total of 1.06x
-        // baseline - matches vanilla Medium Slow)
-        // ---------------------------------------------------------
+        // Eases toward a final total of 1.06x baseline, matching vanilla Medium Slow.
         case GROWTH_MEDIUM_SLOW:
-            // 1.26 - 0.40*t + 0.20*t^2, kept over a single common denominator (1e6) to limit rounding loss.
+            // 1.26 - 0.40*t + 0.20*t^2 over a common denominator (1e6) to limit rounding loss.
             multiplier1000 = (1260000000 - 400000 * t1000 + 200 * t1000 * t1000) / 1000000;
             break;
 
-        // ---------------------------------------------------------
-        // FLUCTUATING (decaying oscillation around a final total of
-        // 1.64x baseline - matches vanilla Fluctuating, the slowest
-        // growth rate to max out)
-        // ---------------------------------------------------------
+        // Decaying oscillation around a final total of 1.64x baseline, matching vanilla Fluctuating.
         case GROWTH_FLUCTUATING:
         {
-            // Wave amplitude halved (divisor 2 -> 4) to keep the per-level swing
-            // from stacking with Fluctuating's already-higher 1.64x total and
-            // producing outsized exp requirements at unlucky points in the cycle.
+            // Amplitude is halved so the swing does not stack with the 1.64x total.
             s64 wave1000 = ((s64)Oscillate1000(n, 120) - 500) / 4;
             s64 decayBase = 1000 - t1000;
             s64 decay1000 = (decayBase * decayBase) / 1000;
@@ -933,20 +841,12 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
             break;
         }
 
-        // ---------------------------------------------------------
-        // ERRATIC (bounded chaos around a final total of 0.6x
-        // baseline - matches vanilla Erratic, the fastest growth
-        // rate to max out)
-        // ---------------------------------------------------------
+        // Bounded chaos around a final total of 0.6x baseline, matching vanilla Erratic.
         case GROWTH_ERRATIC:
         {
-            // The noise is applied as an offset scaled to this level's own exp gap
-            // (at most a quarter of it) rather than as a swing on the multiplier, so
-            // the curve keeps its level-to-level chaos while staying strictly
-            // increasing. A level that costs less exp than the one below it strands
-            // any mon whose exp is clamped to it - level caps and the daycare both
-            // clamp to GetExperienceAtLevel(growthRate, cap), which would otherwise
-            // land below the previous level's threshold and make that mon unlevelable.
+            // Noise is an offset of at most a quarter of this level's exp gap, keeping the curve
+            // strictly increasing. A level cheaper than the one below it would strand mons whose
+            // exp is clamped to it (level caps, daycare).
             u32 seed = n * 1103515245u + 12345u;
             s64 noise1000 = (s64)((seed >> 16) & 1023) * 1000 / 512 - 1000;
             s64 levelGap = (s64)((CUBE(n) - CUBE(n - 1)) / CUSTOM_XP_SCALING_FACTOR);
@@ -961,7 +861,6 @@ u32 GetExperienceAtLevel(u8 growthRate, u16 level)
             break;
     }
 
-    // Apply multiplier safely
     u64 exp = (base * multiplier1000) / 1000 + offset;
 
     if (exp > UINT32_MAX)
@@ -1050,11 +949,8 @@ void CreateRandomMonWithIVs(struct Pokemon *mon, enum Species species, u16 level
     GiveMonInitialMoveset(mon);
 }
 
-// Battle-only/transformation forms (mega, primal, ultra burst, gigantamax, tera, totem, etc.)
-// have no standalone existence outside of a form change triggered mid-battle, so a mon can't
-// legitimately start a battle already in one of these forms. GetRandomizedSpecies must not
-// pick them, or reverting the form on faint/battle end has no valid target species to fall
-// back to and asserts (see TryBattleFormChange in battle_util.c).
+// Battle-only forms (mega, primal, gigantamax, tera, totem, etc.) must not be picked: reverting
+// the form on faint/battle end would have no valid target species and assert (see TryBattleFormChange).
 static bool32 IsSpeciesValidForRandomization(enum Species species)
 {
     const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];
@@ -1080,10 +976,8 @@ static bool32 IsSpeciesLegendaryOrMythical(enum Species species)
         || speciesInfo->isParadox;
 }
 
-// Set by a caller that knows the wild encounter's map header id or the trainer's id just before
-// a CreateMon/GetRandomizedSpecies call, so the same species rolls differently per area/trainer
-// instead of always mapping to the same replacement. Consumed (and reset to 0) on next use so it
-// never leaks into an unrelated CreateMon call that didn't set it.
+// Set before a CreateMon/GetRandomizedSpecies call so the same species rolls differently per
+// area/trainer. Consumed (reset to 0) on next use so it never leaks into an unrelated call.
 static u32 sRandomizationSeedContext = 0;
 
 void SetRandomizationSeedContext(u32 contextId)
@@ -1091,8 +985,7 @@ void SetRandomizationSeedContext(u32 contextId)
     sRandomizationSeedContext = contextId;
 }
 
-// Single point where FLAG_RANDOMIZE_MON swaps a species. Every mon goes through
-// CreateMon, so callers must not randomize beforehand or the species is rerolled twice.
+// Every mon goes through CreateMon, so callers must not randomize beforehand or the species is rerolled twice.
 enum Species GetRandomizedSpecies(enum Species species)
 {
     u32 otId;
@@ -1105,7 +998,6 @@ enum Species GetRandomizedSpecies(enum Species species)
     if (species == SPECIES_NONE || !FlagGet(FLAG_RANDOMIZE_MON))
         return species;
 
-    // Non-legendaries never roll a legendary/mythical replacement.
     allowLegendary = IsSpeciesLegendaryOrMythical(species);
 
     context = sRandomizationSeedContext;
@@ -1653,32 +1545,24 @@ static u16 CalculateBoxMonChecksumReencrypt(struct BoxPokemon *boxMon)
     return checksum;
 }
 
-// Level scaling soft-cap for stats above level 100
-// Creates diminishing returns to prevent absurd stat growth at high levels
+// Soft-caps stat level scaling above level 100 to give diminishing returns.
 static s32 GetScaledStatLevel(s32 level)
 {
-    // Vanilla-style scaling up to level 100.
     if (level <= 100)
         return level * 1000;
 
-    // Amount above level 100.
     s32 over = level - 100;
 
-    // BASE: Starting scaled value at level 100.
-    // Normally should remain 100000 unless you redesign the entire stat progression system.
+    // BASE: Scaled value at level 100. Keep at 100000 unless the stat progression is redesigned.
     const s32 BASE = 100000;
 
-    // MAX_BONUS: Maximum additional scaling obtainable AFTER level 100.
-    // Final theoretical cap: BASE + MAX_BONUS
-    // Example: 100000 + 800000 = 900000 (Level 1000 behaves approximately like level 900)
+    // MAX_BONUS: Maximum extra scaling past level 100. Cap is BASE + MAX_BONUS (level 1000 ~ level 900).
     const s32 MAX_BONUS = 800000;
 
-    // CURVE: Controls how quickly diminishing returns kick in.
-    // Smaller values = faster growth, Larger values = slower growth
+    // CURVE: Smaller values grow faster, larger values slower.
     const s32 CURVE = 250;
 
-    // Diminishing returns formula: bonus = (MAX_BONUS * over) / (over + CURVE)
-    // The bonus can NEVER exceed MAX_BONUS.
+    // bonus = (MAX_BONUS * over) / (over + CURVE), never exceeding MAX_BONUS.
     s32 bonus = (MAX_BONUS * over) / (over + CURVE);
 
     return BASE + bonus;
@@ -1780,10 +1664,8 @@ void BoxMonToMon(const struct BoxPokemon *src, struct Pokemon *dest)
     SetMonData(dest, MON_DATA_HP, &value);
 }
 
-// Largest possible GetExperienceAtLevel multiplier (parts-per-thousand, padded)
-// for each growth rate. Used by GetLevelFromExperience below to derive a safe
-// (never-too-high) starting level for its search, instead of always starting
-// the scan at level 1.
+// Largest GetExperienceAtLevel multiplier (parts-per-thousand, padded) per growth rate.
+// Gives GetLevelFromExperience a never-too-high starting level.
 static u32 GetGrowthRateMaxMultiplier1000(u8 growthRate)
 {
     switch (growthRate)
@@ -1793,13 +1675,13 @@ static u32 GetGrowthRateMaxMultiplier1000(u8 growthRate)
     case GROWTH_MEDIUM_SLOW: return 1260;
     case GROWTH_FLUCTUATING: return 1800;
     case GROWTH_ERRATIC:     return 650;
-    default:                 return 1000; // MEDIUM_FAST
+    default:                 return 1000;
     }
 }
 
 static u32 IntegerCubeRoot(u64 value)
 {
-    u32 lo = 0, hi = MAX_LEVEL + 100; // headroom above MAX_LEVEL
+    u32 lo = 0, hi = MAX_LEVEL + 100;
 
     while (lo < hi)
     {
@@ -1812,16 +1694,14 @@ static u32 IntegerCubeRoot(u64 value)
     return lo;
 }
 
-// Derives a cheap lower-bound estimate of the level (never above the true one) via
-// an inverted cube root and scans forward from there — this avoids the freezes
-// caused by scanning from level 1 up to MAX_LEVEL (1000) every time a mon's level
-// is looked up from its exp.
+// Starts from an inverted-cube-root lower bound instead of scanning from level 1, which froze
+// on every level lookup.
 static u16 GetLevelFromExperience(u8 growthRate, u32 exp)
 {
     u64 target = ((u64)exp * 10000) / GetGrowthRateMaxMultiplier1000(growthRate);
     s32 level = IntegerCubeRoot(target > 500 ? target - 500 : 0);
 
-    level = (level > 2) ? level - 2 : 1; // safety margin
+    level = (level > 2) ? level - 2 : 1;
 
     while (level <= MAX_LEVEL && GetExperienceAtLevel(growthRate, level) <= exp)
         level++;
@@ -1845,9 +1725,7 @@ u16 GetLevelFromBoxMonExp(struct BoxPokemon *boxMon)
     return GetLevelFromExperience(gSpeciesInfo[species].growthRate, exp);
 }
 
-// PP to store for a slot that is taking on `move`. A slot's stored PP always
-// tracks the RESOLVED move, because that's the move the player sees in the
-// summary screen and actually spends in battle.
+// Stored PP tracks the resolved (post-randomization) move, since that is what the player sees and spends.
 static u32 GetStoredMovePP(struct BoxPokemon *boxMon, enum Move move)
 {
     return GetMovePP(GetResolvedMove(GetBoxMonData(boxMon, MON_DATA_SPECIES), move));
@@ -3380,28 +3258,17 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
     SetMonData(mon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
     SetMonData(mon, MON_DATA_OT_ID, gSaveBlock2Ptr->playerTrainerId);
 
-    // Categories C/D. GAME_STAT_POKEMON_CAPTURES is already
-    // incremented by the time this runs (see data/battle_scripts_2.s).
+    // GAME_STAT_POKEMON_CAPTURES is already incremented by the time this runs (see data/battle_scripts_2.s).
     Achievement_CheckCaptureMilestones();
     if (GetMonData(mon, MON_DATA_IS_SHINY))
         Achievement_OnShinyObtained();
-    // Randomized Rookie. Same funnel, same
-    // already-incremented stat as the capture check just above.
     Achievement_CheckRandomizerCaptureMilestone();
-    // Unconditional, before the party/box branch below -- a catch
-    // that lands in a box still counts as "obtained" for Fresh Start if it's
-    // withdrawn into the party before the next Gym.
+    // Before the party/box branch: a boxed catch still counts as obtained if withdrawn before the next Gym.
     Achievement_RecordMonObtained(GetMonData(mon, MON_DATA_PERSONALITY));
-    // Perfect Fit/Gotta Catch Some of Them. Same funnel.
     Achievement_RecordMonoModeObtain();
-    // Rare Find. gDexNavSpecies is nonzero only
-    // while a battle a DexNav scan actually started is in progress, and is
-    // reset only at battle end (after this catch script already ran).
+    // gDexNavSpecies is only reset at battle end, after this catch script has run.
     if (gDexNavSpecies != SPECIES_NONE)
         Achievement_CheckDexNavCaptureMilestone();
-    // The Achievement_CheckPerfectIvMilestone(mon) call that
-    // used to be here (Perfect Specimen) was removed along with that
-    // achievement -- see src/achievements.c.
 
     maxSize = LimitedParty_GetMaxPartySize();
     for (i = 0; i < maxSize; i++)
@@ -3412,12 +3279,8 @@ u8 GiveCapturedMonToPlayer(struct Pokemon *mon)
 
     if (i >= maxSize)
     {
-        // A Draft run has nowhere else for a Pokémon to go - the PC is
-        // locked for the whole run (src/pokemon_storage_system.c). Queue it
-        // into the offer flow instead; the wild-catch caller of this
-        // function is dead in Draft mode (ball throws are blocked), so in
-        // practice this only fires via ScriptGiveEgg. Draft_MarkAreaSpent
-        // no-ops for this mon since it isn't the area's own draft pick.
+        // The PC is locked for a Draft run, so queue the mon into the offer flow. Wild catches are
+        // blocked in Draft mode, so this only fires via ScriptGiveEgg.
         if (Draft_IsEnabled())
         {
             Draft_QueuePendingMon(mon, FALSE);
@@ -3799,17 +3662,15 @@ u16 GetFinalEvolution(enum Species species)
 {
     const struct Evolution *evolutions = GetSpeciesEvolutions(species);
     if (evolutions == NULL || evolutions[0].method == EVOLUTIONS_END)
-        return species; // No evolutions
+        return species;
 
-    // Count evolutions
     int count = 0;
     while (evolutions[count].method != EVOLUTIONS_END)
         count++;
 
     if (count != 1)
-        return species; // Branched or none, don't change
+        return species; // Branched or none.
 
-    // Recurse
     return GetFinalEvolution(evolutions[0].targetSpecies);
 }
 
@@ -4020,7 +3881,6 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                     if (B_RARE_CANDY_CAP && B_EXP_CAP_TYPE == EXP_CAP_HARD)
                     {
                         u32 currentLevelCap = GetCurrentLevelCap();
-                        // Only cap at level cap threshold if below the cap
                         if (GetMonData(mon, MON_DATA_LEVEL) < currentLevelCap)
                         {
                             if (dataUnsigned > GetExperienceAtLevel(gSpeciesInfo[species].growthRate, currentLevelCap))
@@ -4170,12 +4030,6 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             break;
                         }
 
-                        // The Achievement_RecordReviveUsed()
-                        // call that used to be here (the out-of-battle
-                        // counterpart to BS_ItemRestoreHP's in-battle hook)
-                        // was removed along with ACHIEVEMENT_NUZLOCKE_NO_REVIVES
-                        // -- see src/achievements.c.
-
                         // Get amount of HP to restore
                         dataUnsigned = itemEffect[itemEffectParam++];
                         switch (dataUnsigned)
@@ -4263,7 +4117,6 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, enum Item item, u8 partyIndex, 
                             {
                                 GetEvolutionTargetSpecies(mon, EVO_MODE_ITEM_USE, item, NULL, &canStopEvo, DO_EVO);
                                 BeginEvolutionScene(mon, targetSpecies, canStopEvo, partyIndex);
-                                // Stone Age.
                                 if (item >= ITEM_FIRE_STONE && item <= ITEM_DAWN_STONE)
                                     Achievement_RecordStoneEvolution();
                                 return FALSE;
@@ -4413,9 +4266,8 @@ bool8 HealStatusConditions(struct Pokemon *mon, u32 healMask, enum BattlerId bat
 {
     u32 status = GetMonData(mon, MON_DATA_STATUS, 0);
 
-    // battler is MAX_BATTLERS_COUNT for a mon with no active battler (e.g. a benched party member
-    // healed outside battle, or via encrevive mid-battle) - gBattlerPartyIndexes[battler] is then
-    // one past the array's end. Only prepare the battle-text buffer when there's a real battler.
+    // battler is MAX_BATTLERS_COUNT for a mon with no active battler (benched party member, or
+    // encrevive mid-battle), which would index one past gBattlerPartyIndexes.
     if (battler != MAX_BATTLERS_COUNT)
         PREPARE_MON_NICK_BUFFER(gBattleTextBuff1, battler, gBattlerPartyIndexes[battler]);
 
@@ -4967,12 +4819,8 @@ enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode m
                 // This is different from vanilla where the loop continues.
                 // If you have overlapping evolutions, put the ones you want to happen first on top of the list.
                 targetSpecies = evolutions[i].targetSpecies;
-                // Friendship Blossoms. Gated on
-                // DO_EVO (the real commit) so a mere eligibility check (e.g.
-                // opening the party menu, which runs CHECK_EVO) never awards
-                // it. This fork has no literal EVO_FRIENDSHIP method --
-                // friendship evolutions are EVO_LEVEL plus an
-                // IF_MIN_FRIENDSHIP condition attached to .params.
+                // Gated on DO_EVO so eligibility checks (party menu CHECK_EVO) never award it.
+                // Friendship evolutions are EVO_LEVEL plus an IF_MIN_FRIENDSHIP param.
                 if (evoState == DO_EVO && evolutions[i].params != NULL)
                 {
                     u32 paramIdx;
@@ -5123,11 +4971,8 @@ enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode m
         return SPECIES_NONE;
     }
 
-    // Mono Gen blocks cross-generation evolutions (unlike Mono Type, which
-    // does not gate evolution at all). This single exit is the choke point
-    // for every evolution path - level-up, stones, trade, script triggers,
-    // and the party-menu EVO_MODE_ITEM_CHECK preview - so evolution stones
-    // correctly grey out rather than being usable and silently doing nothing.
+    // Mono Gen blocks cross-generation evolutions. Single choke point for every evolution path,
+    // including the EVO_MODE_ITEM_CHECK preview, so stones grey out instead of silently failing.
     if (targetSpecies != SPECIES_NONE && !MonoGen_IsSpeciesAllowed(targetSpecies))
         return SPECIES_NONE;
 
@@ -5166,10 +5011,7 @@ enum Species NationalPokedexNumToSpecies(enum NationalDexOrder nationalNum)
     if (!nationalNum)
         return SPECIES_NONE;
 
-    // sNationalDexNumToSpecies (data/pokemon/national_dex_num_to_species.h) is a
-    // generated const table, one entry per dex number -- the lowest-ID species
-    // with that natDexNum. GET_BASE_SPECIES_ID resolves it to its base form,
-    // same as the runtime scan this replaced.
+    // Generated table holding the lowest-ID species per natDexNum.
     return GET_BASE_SPECIES_ID(sNationalDexNumToSpecies[nationalNum]);
 }
 
@@ -5225,10 +5067,8 @@ enum NationalDexOrder SpeciesToNationalPokedexNum(enum Species species)
     return gSpeciesInfo[species].natDexNum;
 }
 
-// Reverse of the FOREACH_DEX_VARIANT_FLAG_SLOT list, indexed by species: 0
-// means "not a variant slot", else it's the slot's 1-based position in that
-// list. Sized NUM_SPECIES + 1 to match SanitizeSpeciesId's species <=
-// NUM_SPECIES allowance.
+// Reverse of FOREACH_DEX_VARIANT_FLAG_SLOT, indexed by species: 0 is not a variant slot, else the
+// slot's 1-based position. Sized NUM_SPECIES + 1 to match SanitizeSpeciesId.
 #define DEX_VARIANT_SLOT_OFFSET(name) [SPECIES_ ##name] = DEX_VARIANT_SLOT_ ##name + 1,
 static const u16 sSpeciesDexFlagSlotOffset[NUM_SPECIES + 1] =
 {
@@ -5236,16 +5076,13 @@ static const u16 sSpeciesDexFlagSlotOffset[NUM_SPECIES + 1] =
 };
 #undef DEX_VARIANT_SLOT_OFFSET
 
-// Storage key for a species' Pokédex seen/caught bit. Regional-form species
-// in FOREACH_DEX_VARIANT_FLAG_SLOT get their own slot above NATIONAL_DEX_COUNT;
-// everything else falls back to its National Dex number, same as before
-// those slots existed.
+// Regional-form species in FOREACH_DEX_VARIANT_FLAG_SLOT get their own slot above
+// NATIONAL_DEX_COUNT; everything else uses its National Dex number.
 u32 SpeciesToDexFlagSlot(enum Species species)
 {
     u32 offset;
 
-    // Totem/battle-only forms aren't tracked separately -- they're the same
-    // catch as their listed form, just a different presentation of it.
+    // Totem/battle-only forms share the slot of their listed form.
     switch (species)
     {
     case SPECIES_RATICATE_ALOLA_TOTEM:
@@ -5312,10 +5149,8 @@ enum NationalDexOrder HoennToNationalOrder(enum HoennDexOrder hoennNum)
     return sHoennToNationalOrder[hoennNum - 1];
 }
 
-// Membership test for the Pokédex mode selector (National plus one dex per
-// generation). Reuses the Mono Gen generation classifier, which already
-// resolves regional/battle-only forms to the generation that introduced the
-// form rather than the base species' dex slot.
+// Uses the Mono Gen classifier, which resolves regional/battle-only forms to the generation
+// that introduced the form rather than the base species' dex slot.
 bool32 IsSpeciesInDexMode(enum Species species, u8 dexMode)
 {
     if (dexMode == DEX_MODE_NATIONAL)
@@ -5323,7 +5158,6 @@ bool32 IsSpeciesInDexMode(enum Species species, u8 dexMode)
     return MonoGen_GetSpeciesGeneration(species) == dexMode;
 }
 
-// Denominator for a dex mode's X/Y seen/owned display.
 u32 GetDexModeEntryCount(u8 dexMode)
 {
     enum NationalDexOrder dexNum;
@@ -5631,11 +5465,8 @@ bool32 CanLearnTeachableMove(enum Species species, enum Move move)
     const u16 *teachableLearnset = GetSpeciesTeachableLearnset(species);
     if (species == SPECIES_EGG)
         return FALSE;
-    // This is an eligibility check against real game data (which TMs/tutor
-    // moves a species can actually learn), so it must compare the real move
-    // - not a randomized stand-in - against the real learnset. Callers that
-    // need the effective (post-randomization) move for display resolve it
-    // separately once eligibility has already been confirmed.
+    // Compare the real move, not a randomized stand-in, against the real learnset. Callers resolve
+    // the post-randomization move for display separately.
     for (u32 i = 0; teachableLearnset[i] != MOVE_UNAVAILABLE; i++)
     {
         if (teachableLearnset[i] == move)
@@ -6261,11 +6092,8 @@ enum TrainerPicID PlayerGenderToFrontTrainerPicId(enum Gender playerGender)
         return FacilityClassToPicIndex(IS_FRLG ? FACILITY_CLASS_RED : FACILITY_CLASS_BRENDAN);
 }
 
-// Species-keyed funnel: the flag write, personality capture and both
-// achievement hooks. baseSpecies normalises Unown/Spinda letters and family
-// lookups the same way the old nationalNum-based path did, via
-// NationalPokedexNumToSpecies -- the flag write itself keeps the passed-in
-// species so a caller with form-specific info doesn't lose it.
+// baseSpecies normalizes Unown/Spinda letters and family lookups; the flag write keeps the
+// passed-in species so form-specific info is not lost.
 void HandleSetPokedexFlagBySpecies(enum Species species, u8 caseId, u32 personality)
 {
     u8 getFlagCaseId = (caseId == FLAG_SET_SEEN) ? FLAG_GET_SEEN : FLAG_GET_CAUGHT;
@@ -6277,15 +6105,12 @@ void HandleSetPokedexFlagBySpecies(enum Species species, u8 caseId, u32 personal
             gSaveBlock2Ptr->pokedex.unownPersonality = personality;
         if (baseSpecies == SPECIES_SPINDA)
             gSaveBlock2Ptr->pokedex.spindaPersonality = personality;
-        // Family Reunion, checked only on a new
-        // catch (not a new sighting) -- one more line at this same funnel.
+        // Family and legendary milestones apply to catches only, not sightings.
         if (caseId == FLAG_SET_CAUGHT)
         {
             Achievement_CheckFamilyMilestone(baseSpecies);
-            // Legendary Collection (category Z).
             Achievement_CheckLegendaryMilestones(baseSpecies);
         }
-        // Category B.
         Achievement_CheckPokedexMilestones(caseId == FLAG_SET_CAUGHT);
     }
 }
@@ -7338,9 +7163,7 @@ u32 GiveScriptedMonToPlayer(struct Pokemon *mon, u8 slot)
         }
         if (i >= maxSize)
         {
-            // See the matching comment in GiveCapturedMonToPlayer above -
-            // every gift, fossil and revival funnels through here, and none
-            // of them may reach the PC in a Draft run.
+            // Gifts, fossils and revivals must not reach the PC in a Draft run.
             if (Draft_IsEnabled())
             {
                 Draft_QueuePendingMon(mon, FALSE);

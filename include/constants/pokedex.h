@@ -1080,33 +1080,23 @@ enum NationalDexOrder
     #define NATIONAL_DEX_COUNT  NATIONAL_DEX_DEOXYS
 #endif
 
-// Storage key for a Pokédex seen/caught bit. Slots 1..NATIONAL_DEX_COUNT are
-// the National Dex numbers; slots above that are regional-form slots, which
-// are NOT dex entries -- they never appear in a list and never count toward
-// any total. Append only: these indices are save data.
+// Slots 1..NATIONAL_DEX_COUNT are National Dex numbers; slots above are regional-form slots.
+// Those are not dex entries: never listed, never counted toward a total. Append only (save data).
 #define DEX_FLAG_SLOT_VARIANT_START (NATIONAL_DEX_COUNT + 1)
 
 #define DEX_VARIANT_FORM_IF(config, ...) CAT(DEX_VARIANT_FORM_IF_, config)(__VA_ARGS__)
 #define DEX_VARIANT_FORM_IF_0(...)
 #define DEX_VARIANT_FORM_IF_1(...) __VA_ARGS__
-// P_*_FORMS ultimately expand to TRUE/FALSE (include/gba/defines.h), which
-// this header's own asm/script preprocessing pass (data/event_scripts.s
-// includes this file directly) never pulls in -- see config/trade_code.h's
-// TRADE_CODES comment for the same gotcha. There, config lands on the
-// literal text "TRUE"/"FALSE" instead of "1"/"0", so CAT() must resolve to
-// these too. Treated as enabled/disabled respectively -- this enum's actual
-// values are never read by any script, only its syntax needs to stay valid.
+// data/event_scripts.s includes this header without include/gba/defines.h, so P_*_FORMS reach
+// CAT() as the literal text TRUE/FALSE rather than 1/0 (same gotcha as TRADE_CODES in
+// config/trade_code.h). Scripts never read this enum's values; only its syntax must stay valid.
 #define DEX_VARIANT_FORM_IF_TRUE(...) __VA_ARGS__
 #define DEX_VARIANT_FORM_IF_FALSE(...)
 
-// Regional-form species that get their own Pokédex flag slot instead of
-// sharing their base form's (Feature 2, Stage 5). Order fixes the slot
-// index -- append only, it's save data. This is the single list; both the
-// slot count below and sSpeciesDexFlagSlotOffset (src/pokemon.c) are
-// generated from it, so they can't drift apart.
-// Totem forms and Galarian Darmanitan's Zen Mode are deliberately absent --
-// they're battle-only/event variants of a form already in this list, and are
-// remapped onto that form's slot in SpeciesToDexFlagSlot instead.
+// Regional-form species with their own Pokédex flag slot. Order fixes the slot index; append
+// only (save data). The slot count and sSpeciesDexFlagSlotOffset (src/pokemon.c) derive from it.
+// Totem forms and Galarian Darmanitan's Zen Mode are absent: SpeciesToDexFlagSlot remaps them
+// onto the slot of the form they variant.
 #define FOREACH_DEX_VARIANT_FLAG_SLOT(F) \
     DEX_VARIANT_FORM_IF(P_ALOLAN_FORMS, \
         F(RATTATA_ALOLA) F(RATICATE_ALOLA) F(RAICHU_ALOLA) F(SANDSHREW_ALOLA) F(SANDSLASH_ALOLA) \
@@ -1369,11 +1359,8 @@ enum DexVariantFlagSlot
     F(JIRACHI) \
     F(DEOXYS)
 
-// Hoenn Pokédex order. Not a dex mode (the mode selector browses generation
-// ranges instead - see DEX_MODE_GEN_3); this authentic 211-entry order still
-// defines the completion set behind the Johto starter unlock, the Lilycove
-// diploma and a trainer card star, so it stays even though nothing displays
-// it as a list anymore.
+// Not a dex mode (see DEX_MODE_GEN_3). This 211-entry order still defines the completion set for
+// the Johto starter unlock, the Lilycove diploma and a trainer card star.
 enum HoennDexOrder
 {
     HOENN_DEX_NONE,
@@ -1616,9 +1603,8 @@ enum KantoDexOrder
 #define DEX_HGSS_Y_BOTTOM_PADDING      4
 #define DEX_HGSS_MEASUREMENT_X_PADDING 51
 
-// DEX_MODE_GEN_n must equal n so a mode value doubles as a generation number
-// (see IsSpeciesInDexMode). Saved as gSaveBlock2Ptr->pokedex.mode (a u8),
-// which is just a remembered UI preference -- see SanitizeDexMode.
+// DEX_MODE_GEN_n must equal n so a mode value doubles as a generation number (see IsSpeciesInDexMode).
+// Saved as gSaveBlock2Ptr->pokedex.mode, a remembered UI preference (see SanitizeDexMode).
 enum
 {
     DEX_MODE_NATIONAL,

@@ -510,20 +510,11 @@ static const struct MenuAction MultichoiceList_LinkServicesNoRecordBerry[] =
     {gText_Exit},
 };
 
-// TRADE_CODES == 1 versions of the Direct Corner's Game-Link-cable fallback
-// menu (no wireless adapter connected), with COLOSSEUM dropped - see
-// sCableClubOptions_TradeOnly[WithRecordMix]'s own comment for why these are
-// separate lists rather than trimming MultichoiceList_LinkServicesNoRecordBerry/
-// _NoBerry in place.
-//
-// Post-Stage-10 follow-up: OFFER CODE/CONFIRM CODE added - the attendant's
-// own way to re-display a code the player's already been shown once
-// (Step 1's offer, or Step 3's confirm reveal), without redoing any part
-// of the trade. See TradeCodeSession_ViewOfferCode/_ViewConfirmCode
-// (src/trade_code_session.c) - both are effectively inert (a plain "no
-// trade code to show right now" message) unless a trade is actually
-// COMMITTED, so these two entries are always present rather than
-// conditionally shown/hidden based on that state.
+// TRADE_CODES == 1 versions of the Game-Link-cable fallback menu, with COLOSSEUM dropped. See
+// sCableClubOptions_TradeOnly for why these are separate lists.
+// OFFER CODE/CONFIRM CODE re-display a code already shown (TradeCodeSession_ViewOfferCode/
+// _ViewConfirmCode, src/trade_code_session.c). Both are inert with a "no trade code" message unless
+// a trade is COMMITTED, so they are always present rather than conditionally shown.
 static const struct MenuAction MultichoiceList_CableClubTradeOnly[] =
 {
     {gText_TradeCenter},
@@ -1374,9 +1365,7 @@ static const u8 *const sLilycoveSSTidalDestinations[SSTIDAL_SELECTION_COUNT] =
     [SSTIDAL_SELECTION_EXIT]            = gText_Exit,
 };
 
-// Reached only under TRADE_CODES == 0 (see MULTI_CABLE_CLUB_TRADE_ONLY_WITH_
-// RECORD_MIX and sCableClubOptions_TradeOnlyWithRecordMix below for the
-// TRADE_CODES == 1 equivalent, which drops the battle option entirely).
+// Used only under TRADE_CODES == 0; see sCableClubOptions_TradeOnlyWithRecordMix for TRADE_CODES == 1.
 static const u8 *const sCableClubOptions_WithRecordMix[] =
 {
     CableClub_Text_TradeUsingLinkCable,
@@ -1406,8 +1395,7 @@ static const u8 *const sWirelessOptions_AllServices[] =
     CableClub_Text_CanMakeBerryPowder,
     CableClub_Text_CancelSelectedItem,
 };
-// Reached only under TRADE_CODES == 0 - see MULTI_CABLE_CLUB_TRADE_ONLY and
-// sCableClubOptions_TradeOnly below for the TRADE_CODES == 1 equivalent.
+// Used only under TRADE_CODES == 0; see sCableClubOptions_TradeOnly for TRADE_CODES == 1.
 static const u8 *const sCableClubOptions_NoRecordMix[] =
 {
     CableClub_Text_TradeUsingLinkCable,
@@ -1415,15 +1403,10 @@ static const u8 *const sCableClubOptions_NoRecordMix[] =
     CableClub_Text_CancelSelectedItem,
 };
 
-// TRADE_CODES == 1 equivalents of the two lists just above, with the
-// COLOSSEUM/battle option dropped entirely (not just relabelled) - link
-// battling doesn't work without a real second cart any more than link
-// trading did. Deliberately separate MULTICHOICE lists/ids
-// (MULTI_CABLE_CLUB_TRADE_ONLY[_WITH_RECORD_MIX], include/constants/
-// script_menu.h) rather than shrinking MULTI_CABLE_CLUB_NO_RECORD_MIX/
-// _WITH_RECORD_MIX in place, since the former shares its underlying item
-// list (MultichoiceList_LinkServicesNoRecordBerry) with
-// MULTI_WIRELESS_NO_RECORD_BERRY, which still needs its own battle option.
+// TRADE_CODES == 1 equivalents of the two lists above, with the battle option dropped (link
+// battling needs a real second cart). Separate MULTICHOICE ids (MULTI_CABLE_CLUB_TRADE_ONLY[_WITH_RECORD_MIX])
+// are needed because MultichoiceList_LinkServicesNoRecordBerry is shared with
+// MULTI_WIRELESS_NO_RECORD_BERRY, which keeps its battle option.
 static const u8 *const sCableClubOptions_TradeOnly[] =
 {
     CableClub_Text_TradeUsingTradeCodes,

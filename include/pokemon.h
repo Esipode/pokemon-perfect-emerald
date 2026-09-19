@@ -130,17 +130,13 @@ enum MonData {
 
 #define BLOCK_AI_DYNAMAX 15 // Used as dynamax level value by the AI to indicate this mon shouldn't dynamax
 
-// Saveblock Shrinking Stage 5: reordered (experience first) and stripped of
-// unused_02/unused_0A so the four fields below pack into exactly two u16
-// bitfield containers with zero slack -- see NUM_SUBSTRUCT_BYTES below.
-// !! THIS SUBSTRUCT IS AT EXACTLY 12 BYTES WITH NO ROOM LEFT !! Any future
-// per-mon field added here pushes NUM_SUBSTRUCT_BYTES back to 16, costing
-// 4 bytes * every stored Pokémon (3,360 bytes at 840 box slots). Put new
-// per-mon data in PokemonSubstruct2 (6 bytes spare once FREE_CONTESTS) or
-// PokemonSubstruct3 (~10 spare bits) instead.
+// !! THIS SUBSTRUCT IS AT EXACTLY 12 BYTES WITH NO ROOM LEFT !! The four bitfield members pack
+// into two u16 containers with zero slack. Any added field pushes NUM_SUBSTRUCT_BYTES back to 16,
+// costing 4 bytes per stored Pokémon (3,360 bytes at 840 box slots). Put new per-mon data in
+// PokemonSubstruct2 (6 bytes spare once FREE_CONTESTS) or PokemonSubstruct3 (~10 spare bits).
 struct PokemonSubstruct0
 {
-    u32 experience; // Experience (now full 32 bits to support levels beyond 255)
+    u32 experience; // Full 32 bits to support levels beyond 255.
     enum Species species:11; // 2047 species.
     enum Type teraType:5; // 30 types.
     enum Item heldItem:10; // 1023 items.
@@ -192,11 +188,8 @@ struct PokemonSubstruct2
 #endif //FREE_CONTESTS
 };
 
-// Saveblock Shrinking Stage 5: pokerus/metLocation were promoted from plain
-// u8 members to u32 bitfields so they pack into the same bitfield container
-// chain as everything else below -- as standalone bytes they'd force their
-// own 4-byte-aligned container (2 bytes + 2 padding) on top of the bitfield
-// portion, defeating the whole point of this substruct fitting in 12 bytes.
+// pokerus/metLocation are u32 bitfields so they share the bitfield container chain; as plain
+// u8 members they would force an extra 4-byte-aligned container and break the 12-byte fit.
 struct PokemonSubstruct3
 {
     u32 pokerus:8;
@@ -237,7 +230,6 @@ struct PokemonSubstruct3
     u32 earthRibbon:1;    // Given to teams that have beaten Mt. Battle's 100-battle challenge in Colosseum/XD.
     u32 worldRibbon:1;    // Distributed during Pokémon Festa '04 and '05 to tournament winners.
     u32 isShadow:1;
-    // unused_0B removed (Saveblock Shrinking Stage 5).
     u32 abilityNum:2;
 
     // The functionality of this bit changed in FRLG:
@@ -253,10 +245,7 @@ struct PokemonSubstruct3
 // They are assumed to be the same size, and will be padded to
 // the largest size by the union.
 // By default they are all 12 bytes.
-// Saveblock Shrinking Stage 5: this used to evaluate to 16 (Substruct0 and
-// Substruct3 both had slack), costing 4 bytes on every substruct union in
-// every stored Pokémon. Both are now packed to exactly 12; see the warning
-// comment on PokemonSubstruct0 above before adding fields to either.
+// Substruct0 and Substruct3 are packed to exactly 12; see the warning on PokemonSubstruct0.
 #define NUM_SUBSTRUCT_BYTES (max(sizeof(struct PokemonSubstruct0),     \
                              max(sizeof(struct PokemonSubstruct1),     \
                              max(sizeof(struct PokemonSubstruct2),     \
@@ -289,38 +278,18 @@ struct BoxPokemon
     u8 isBadEgg:1;
     u8 hasSpecies:1;
     u8 isEgg:1;
-    // blockBoxRS (Pokémon Box Ruby & Sapphire compat) and unused_13 removed
-    // (Saveblock Shrinking Stage 5) -- 2 free bits remained in this byte
-    // for a future per-mon flag; Trading Codes.md Stage 11 claims both
-    // below, 0 free bits remain.
+    // No free bits remain in this byte.
     u8 daysSinceFormChange:3; // 7 days.
-    // Trading Codes.md Stage 11 (dev decision): set only by TradeCodeReceive_
-    // DoSwap (src/trade_code_receive.c) when this exact mon's transmitted
-    // level exceeded GetCurrentLevelCap() at the moment it was received.
-    // Not re-evaluated afterward -- raising the cap later, or toggling
-    // FLAG_LEVEL_CAP_OFF, doesn't retroactively free it: a one-way "requires
-    // FLAG_SYS_GAME_CLEAR, not re-derived" lock, the same shape
-    // legacyCarryOverLocked below also uses. Read/written directly rather
-    // than through Get/SetBoxMonData -- pure internal bookkeeping with no
-    // script/UI surface, living in this same unencrypted header region as
-    // isBadEgg/hasSpecies/isEgg/daysSinceFormChange, so it never needs the
-    // checksum re-encrypt SetBoxMonData reserves for the substructs.
+    // Set only by TradeCodeReceive_DoSwap (src/trade_code_receive.c) when the received mon's level
+    // exceeded GetCurrentLevelCap(). Not re-evaluated afterward: raising the cap or toggling
+    // FLAG_LEVEL_CAP_OFF does not free it; it only clears via FLAG_SYS_GAME_CLEAR.
+    // Read/written directly rather than via Get/SetBoxMonData: internal bookkeeping in the
+    // unencrypted header region, so it needs no substruct re-encrypt.
     u8 tradeCodeAboveLevelCap:1;
-    // Trading Codes.md Stage 11: set only by CarryStorageIntoNewGame
-    // (src/new_game.c) on every box mon that survives a New-Game-Plus/
-    // Nuzlocke restart with storage kept -- an explicit "this mon predates
-    // the current playthrough" marker, checked by IsBoxMonWithdrawLocked
-    // (src/pokemon_storage_system.c) instead of the OT-ID-mismatch
-    // inference this replaced. That inference required exempting every
-    // legitimate same-run source of a foreign OT ID one at a time
-    // (IsIngameTradeOtId's whitelist, then a trade-code-specific carve-out)
-    // and needed CarryStorageIntoNewGame to actively re-stamp in-game-trade
-    // mons' real OT ID (via UpdateBoxMonOtId) just to keep them falling
-    // into the "old" bucket after a restart -- an explicit per-mon bit
-    // needs neither: nothing sets it during an ordinary run no matter
-    // where a foreign OT ID came from, so no exemption list to maintain,
-    // and no mon's real OT ID has to be rewritten to make the lock work.
-    // Same direct read/write reasoning as tradeCodeAboveLevelCap above.
+    // Set only by CarryStorageIntoNewGame (src/new_game.c) on box mons that survive a
+    // New-Game-Plus/Nuzlocke restart with storage kept. Marks the mon as predating the current
+    // playthrough; checked by IsBoxMonWithdrawLocked (src/pokemon_storage_system.c).
+    // Read/written directly, same as tradeCodeAboveLevelCap.
     u8 legacyCarryOverLocked:1;
     u8 otName[PLAYER_NAME_LENGTH];
     u8 markings:4;
@@ -328,8 +297,7 @@ struct BoxPokemon
     u16 checksum;
     u16 hpLost:14; // 16383 HP.
     u16 shinyModifier:1;
-    // unused_1E removed (Saveblock Shrinking Stage 5) -- 1 free bit remains
-    // in this u16 alongside hpLost/shinyModifier.
+    // 1 free bit remains in this u16.
 
     union
     {
@@ -357,23 +325,16 @@ STATIC_ASSERT(sizeof(struct BoxPokemon) == 80, BoxPokemonStage5Size);
 STATIC_ASSERT(NUM_SUBSTRUCT_BYTES == 12, NumSubstructBytesStage5Size);
 STATIC_ASSERT(sizeof(struct Pokemon) == 104, PokemonStage5Size);
 
-// Offline trade code payload packs these four fields into fixed bit
-// widths (species 11, level 10, name lengths as literal byte counts); a
-// change to any of them silently desyncs the codec between two carts
-// instead of failing loudly, so it's a build-time proof failure here too.
-STATIC_ASSERT(NUM_SPECIES <= 2048, TradeCodeSpecies11Bits); // fits in 11 bits
-STATIC_ASSERT(MAX_LEVEL <= 1023, TradeCodeLevel10Bits); // fits in 10 bits
+// The offline trade code payload packs these fields into fixed bit widths (species 11, level 10,
+// name lengths in bytes). A change would silently desync the codec between two carts.
+STATIC_ASSERT(NUM_SPECIES <= 2048, TradeCodeSpecies11Bits);
+STATIC_ASSERT(MAX_LEVEL <= 1023, TradeCodeLevel10Bits);
 STATIC_ASSERT(POKEMON_NAME_LENGTH == 12, TradeCodePokemonNameLength);
 STATIC_ASSERT(PLAYER_NAME_LENGTH == 7, TradeCodePlayerNameLength);
 
-// Stage 4: struct PendingTrade (global.h, a SaveBlock2 member) can't embed a
-// `struct BoxPokemon incoming;` by value - it's declared before this header
-// is #included from global.h, so the full type isn't visible there yet (see
-// the struct's own comment). It carries `incoming` as a raw u8[80] instead,
-// moved in/out via memcpy from trade_code.c. This pins that raw buffer to
-// stay exactly big enough for a real struct BoxPokemon, so the two can never
-// silently drift apart the way BoxPokemonStage5Size above already guards
-// against for sizeof(struct BoxPokemon) itself.
+// struct PendingTrade (global.h) cannot embed a struct BoxPokemon by value, since this header is
+// included after it. It carries `incoming` as a raw u8[80] copied via memcpy from trade_code.c;
+// this keeps that buffer the same size as struct BoxPokemon.
 STATIC_ASSERT(sizeof(((struct PendingTrade *)0)->incoming) == sizeof(struct BoxPokemon), PendingTradeIncomingSizeMatchesBoxPokemon);
 
 struct MonSpritesGfxManager
