@@ -64,6 +64,7 @@
 #include "window.h"
 #include "list_menu.h"
 #include "malloc.h"
+#include "overworld_overlay.h"
 #include "battle.h"
 #include "constants/comparison_operators.h"
 #include "constants/event_objects.h"
@@ -3528,6 +3529,170 @@ bool8 Scrcmd_checkpartyhelditem(struct ScriptContext *ctx)
             break;
         }
     }
+
+    return FALSE;
+}
+
+// Overlay commands. The colour operand is read raw: RGB15 values from 0x4000 up would be
+// mistaken for variable ids by VarGet. Handles are read through VarGet, so the operand is the
+// variable holding the handle. Every command is a no-op on a stale or invalid handle.
+
+// Creates an overlay and writes its handle to dest; OVERLAY_ID_INVALID if it cannot be created.
+bool8 Scrcmd_overlaycreate(struct ScriptContext *ctx)
+{
+    struct OverlayConfig config = {0};
+    u16 layer, scope, destVar;
+
+    config.color = ScriptReadHalfword(ctx);
+    config.opacity = VarGet(ScriptReadHalfword(ctx));
+    layer = VarGet(ScriptReadHalfword(ctx));
+    scope = VarGet(ScriptReadHalfword(ctx));
+    destVar = ScriptReadHalfword(ctx);
+    config.layer = layer;
+    config.scope = scope;
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    if (layer > OVERLAY_LAYER_SPRITE || scope > OVERLAY_SCOPE_GLOBAL)
+        *GetVarPointer(destVar) = OVERLAY_ID_INVALID;
+    else
+        *GetVarPointer(destVar) = Overlay_Create(&config);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlaysetcolor(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 color = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_SetColor(id, color);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlaysetalpha(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 opacity = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_SetOpacity(id, min(opacity, OVERLAY_OPACITY_MAX));
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlayfade(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 targetOpacity = VarGet(ScriptReadHalfword(ctx));
+    u16 durationFrames = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_FadeTo(id, min(targetOpacity, OVERLAY_OPACITY_MAX), durationFrames);
+
+    return FALSE;
+}
+
+// Fades to 0, then destroys the overlay and frees its slot.
+bool8 Scrcmd_overlayfadeout(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 durationFrames = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_FadeOutAndDisable(id, durationFrames);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlaypulse(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 minOpacity = VarGet(ScriptReadHalfword(ctx));
+    u16 maxOpacity = VarGet(ScriptReadHalfword(ctx));
+    u16 periodFrames = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_Pulse(id, min(minOpacity, OVERLAY_OPACITY_MAX), min(maxOpacity, OVERLAY_OPACITY_MAX), periodFrames);
+
+    return FALSE;
+}
+
+// Anchors to an object (a = local id, 0 = player, on the current map) or to map coordinates (a, b = x, y).
+bool8 Scrcmd_overlayanchor(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 kind = ScriptReadHalfword(ctx);
+    u16 a = VarGet(ScriptReadHalfword(ctx));
+    u16 b = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (!Overlay_IsValid(id))
+        return FALSE;
+
+    if (kind == OVERLAY_ANCHOR_OBJECT)
+        Overlay_SetAnchorToObject(id, a == 0 ? LOCALID_PLAYER : a, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup);
+    else if (kind == OVERLAY_ANCHOR_COORDS)
+        Overlay_SetAnchorToPosition(id, (s16)a, (s16)b);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlayclearanchor(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_ClearAnchor(id);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlayfalloff(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 innerRadius = VarGet(ScriptReadHalfword(ctx));
+    u16 outerRadius = VarGet(ScriptReadHalfword(ctx));
+    u16 minIntensity = VarGet(ScriptReadHalfword(ctx));
+    u16 maxIntensity = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_SetFalloff(id, min(innerRadius, 255), min(outerRadius, 255), minIntensity, maxIntensity);
+
+    return FALSE;
+}
+
+// Destroys the overlay and clears the handle variable, so a repeated destroy is harmless.
+bool8 Scrcmd_overlaydestroy(struct ScriptContext *ctx)
+{
+    u16 handleVar = ScriptReadHalfword(ctx);
+    OverlayId id = VarGet(handleVar);
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(handleVar);
+
+    if (Overlay_IsValid(id))
+        Overlay_Destroy(id);
+    if (handleVar >= VARS_START)
+        *GetVarPointer(handleVar) = OVERLAY_ID_INVALID;
 
     return FALSE;
 }

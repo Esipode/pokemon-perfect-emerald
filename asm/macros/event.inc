@@ -3044,3 +3044,98 @@
 	getbraillestringwidth \text
 	call EventScript_BrailleCursorWaitButton
 	.endm
+
+	@ Creates a screen overlay and stores its handle in the variable dest (0 if it cannot be created).
+	@ color is RGB15, e.g. RGB(31, 0, 0); opacity is 0-OVERLAY_OPACITY_MAX (16).
+	@ layer is OVERLAY_LAYER_*; scope is OVERLAY_SCOPE_MAP_LOCAL or OVERLAY_SCOPE_GLOBAL.
+	@ Overlays persist after the script ends: destroy them with overlaydestroy or overlayfadeout.
+	.macro overlaycreate color:req, opacity:req, layer:req, scope:req, dest:req
+	callnative Scrcmd_overlaycreate, requests_effects=1
+	.2byte \color
+	.2byte \opacity
+	.2byte \layer
+	.2byte \scope
+	.2byte \dest
+	.endm
+
+	@ The handleVar argument of the commands below is the variable holding an overlay handle.
+	@ Each command does nothing if the handle is stale or invalid.
+
+	@ Sets the overlay's colour (RGB15).
+	.macro overlaysetcolor handleVar:req, color:req
+	callnative Scrcmd_overlaysetcolor, requests_effects=1
+	.2byte \handleVar
+	.2byte \color
+	.endm
+
+	@ Sets the overlay's opacity (0-16) immediately, cancelling any running fade.
+	.macro overlaysetalpha handleVar:req, opacity:req
+	callnative Scrcmd_overlaysetalpha, requests_effects=1
+	.2byte \handleVar
+	.2byte \opacity
+	.endm
+
+	@ Fades the overlay linearly to targetOpacity (0-16) over durationFrames; 0 snaps.
+	.macro overlayfade handleVar:req, targetOpacity:req, durationFrames:req
+	callnative Scrcmd_overlayfade, requests_effects=1
+	.2byte \handleVar
+	.2byte \targetOpacity
+	.2byte \durationFrames
+	.endm
+
+	@ Fades the overlay to 0 over durationFrames, then destroys it.
+	.macro overlayfadeout handleVar:req, durationFrames:req
+	callnative Scrcmd_overlayfadeout, requests_effects=1
+	.2byte \handleVar
+	.2byte \durationFrames
+	.endm
+
+	@ Pulses the overlay between min and max opacity (0-16) with a triangle wave of periodFrames.
+	.macro overlaypulse handleVar:req, minOpacity:req, maxOpacity:req, periodFrames:req
+	callnative Scrcmd_overlaypulse, requests_effects=1
+	.2byte \handleVar
+	.2byte \minOpacity
+	.2byte \maxOpacity
+	.2byte \periodFrames
+	.endm
+
+	@ Anchors the overlay to an object on the current map; localId 0 is the player.
+	.macro overlayanchorobject handleVar:req, localId:req
+	callnative Scrcmd_overlayanchor, requests_effects=1
+	.2byte \handleVar
+	.2byte OVERLAY_ANCHOR_OBJECT
+	.2byte \localId
+	.2byte 0
+	.endm
+
+	@ Anchors the overlay to map coordinates.
+	.macro overlayanchorpos handleVar:req, x:req, y:req
+	callnative Scrcmd_overlayanchor, requests_effects=1
+	.2byte \handleVar
+	.2byte OVERLAY_ANCHOR_COORDS
+	.2byte \x
+	.2byte \y
+	.endm
+
+	@ Removes the overlay's anchor.
+	.macro overlayclearanchor handleVar:req
+	callnative Scrcmd_overlayclearanchor, requests_effects=1
+	.2byte \handleVar
+	.endm
+
+	@ Scales the overlay's opacity by the player's distance to its anchor. Radii are in tiles;
+	@ intensities are 0-16: max applies inside inner, min applies beyond outer.
+	.macro overlayfalloff handleVar:req, inner:req, outer:req, minIntensity:req, maxIntensity:req
+	callnative Scrcmd_overlayfalloff, requests_effects=1
+	.2byte \handleVar
+	.2byte \inner
+	.2byte \outer
+	.2byte \minIntensity
+	.2byte \maxIntensity
+	.endm
+
+	@ Destroys the overlay and clears the handle variable.
+	.macro overlaydestroy handleVar:req
+	callnative Scrcmd_overlaydestroy, requests_effects=1
+	.2byte \handleVar
+	.endm

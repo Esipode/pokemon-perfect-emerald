@@ -1,8 +1,9 @@
 #ifndef GUARD_OVERWORLD_OVERLAY_H
 #define GUARD_OVERWORLD_OVERLAY_H
 
+#include "constants/overworld_overlay.h"
+
 #define MAX_OVERLAYS            4
-#define OVERLAY_OPACITY_MAX     16
 #define OVERLAY_ID_INVALID      0
 #define MAX_SPRITE_OVERLAYS     2
 
@@ -12,20 +13,6 @@
 
 typedef u16 OverlayId;
 
-enum OverlayLayer
-{
-    OVERLAY_LAYER_WORLD,    // BG palettes only
-    OVERLAY_LAYER_OBJECTS,  // OBJ palettes only
-    OVERLAY_LAYER_ALL,      // both
-    OVERLAY_LAYER_SPRITE,   // spatial sprite backend
-};
-
-enum OverlayScope
-{
-    OVERLAY_SCOPE_MAP_LOCAL,
-    OVERLAY_SCOPE_GLOBAL,
-};
-
 // Draw order of an OVERLAY_LAYER_SPRITE overlay. Only OBJ priority and subpriority are available,
 // so a sprite overlay is never behind the terrain: BG1-3 are the world.
 enum OverlaySpritePosition
@@ -33,13 +20,6 @@ enum OverlaySpritePosition
     OVERLAY_SPRITE_BEHIND_OBJECTS,  // over the ground, behind NPCs and the player; under top-layer tiles
     OVERLAY_SPRITE_ABOVE_OBJECTS,   // in front of NPCs and the player, and of top-layer tiles
     OVERLAY_SPRITE_ABOVE_ALL,       // in front of every overworld sprite, including elevated ones
-};
-
-enum OverlayAnchor
-{
-    OVERLAY_ANCHOR_NONE,
-    OVERLAY_ANCHOR_COORDS,
-    OVERLAY_ANCHOR_OBJECT,
 };
 
 struct OverlayConfig

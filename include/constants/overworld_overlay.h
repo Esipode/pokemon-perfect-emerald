@@ -1,0 +1,27 @@
+#ifndef GUARD_CONSTANTS_OVERWORLD_OVERLAY_H
+#define GUARD_CONSTANTS_OVERWORLD_OVERLAY_H
+
+#define OVERLAY_OPACITY_MAX     16
+
+enum OverlayLayer
+{
+    OVERLAY_LAYER_WORLD,    // BG palettes only
+    OVERLAY_LAYER_OBJECTS,  // OBJ palettes only
+    OVERLAY_LAYER_ALL,      // both
+    OVERLAY_LAYER_SPRITE,   // spatial sprite backend
+};
+
+enum OverlayScope
+{
+    OVERLAY_SCOPE_MAP_LOCAL,
+    OVERLAY_SCOPE_GLOBAL,
+};
+
+enum OverlayAnchor
+{
+    OVERLAY_ANCHOR_NONE,
+    OVERLAY_ANCHOR_COORDS,
+    OVERLAY_ANCHOR_OBJECT,
+};
+
+#endif // GUARD_CONSTANTS_OVERWORLD_OVERLAY_H
