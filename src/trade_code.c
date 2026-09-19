@@ -7,16 +7,11 @@
 #include "constants/region_map_sections.h"
 #include "string_util.h"
 
-// Stage 1 of "Trading Codes.md": a pure bit stream + Base32/Crockford codec.
-// No UI, no save data, no game state - see trade_code.h for the public
-// surface and struct TradeCodeBits' contract.
-
 // Crockford Base32 alphabet, "0123456789ABCDEFGHJKMNPQRSTVWXYZ", stored as
-// game-charmap bytes so TradeCode_Encode's output can be handed straight to
-// the text engine (Stage 5) with no ASCII conversion step. I, L, O and U are
-// dropped: I/L fold to 1 and O folds to 0 on the way back in below (the
-// commonest misreadings self-correct), and U is skipped entirely so a code
-// can never spell a word.
+// game-charmap bytes so the output goes straight to the text engine. I, L, O
+// and U are dropped: I/L fold to 1 and O folds to 0 on the way back in (the
+// commonest misreadings self-correct), and U is skipped so a code can never
+// spell a word.
 static const u8 sTradeCodeAlphabet[32] =
 {
     CHAR_0, CHAR_1, CHAR_2, CHAR_3, CHAR_4, CHAR_5, CHAR_6, CHAR_7, CHAR_8, CHAR_9,
@@ -28,16 +23,12 @@ static const u8 sTradeCodeAlphabet[32] =
 #define TRADE_CODE_CHAR_SKIP    0xFE // hyphen / space: ignored, not part of the payload
 #define TRADE_CODE_CHAR_INVALID 0xFF // not a symbol, a fold, or a skip char
 
-// Reverse lookup, indexed by the raw game-charmap byte the entry screen (or
-// a hand-typed debug string) hands to TradeCode_Decode. Folds the common
-// misreadings - I/i/l -> 1, O/o -> 0 - and lowercase -> uppercase. CHAR_U /
-// CHAR_u are deliberately left TRADE_CODE_CHAR_INVALID: U isn't in the
-// alphabet and doesn't stand in for anything else.
+// Reverse lookup, indexed by the raw game-charmap byte handed to
+// TradeCode_Decode. Folds I/i/l -> 1, O/o -> 0 and lowercase -> uppercase.
+// CHAR_U/CHAR_u stay TRADE_CODE_CHAR_INVALID.
 //
-// The [0 ... 255] catch-all is deliberately then overridden per-symbol below
-// - exactly the pattern -Woverride-init exists to flag, but it's what makes
-// a 256-entry table buildable without hand-listing ~230 invalid entries.
-// Suppressed locally rather than dropping the warning project-wide.
+// The [0 ... 255] catch-all is overridden per-symbol, which -Woverride-init
+// flags; suppressed locally to avoid listing ~230 invalid entries.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverride-init"
 static const u8 sTradeCodeReverse[256] =
@@ -64,14 +55,10 @@ static const u8 sTradeCodeReverse[256] =
 };
 #pragma GCC diagnostic pop
 
-// Defensive cap on how many raw characters TradeCode_Decode will scan
-// looking for EOS. This is deliberately independent of TRADE_CODE_MAX_CHARS
-// (the entry screen's display/entry limit, Stage 5/6's concern) - its only
-// job is to stop a non-terminated buffer from being read past forever;
-// TRADE_CODE_TOO_LONG for a legitimately-too-long *code* is already caught
-// below by running out of `out->capacity` bits. Generous enough to cover
-// every bit length Stage 1's own tests exercise (up to 400 bits -> 80
-// symbols -> 95 characters with hyphens) plus headroom.
+// Cap on raw characters TradeCode_Decode scans for EOS, to stop a
+// non-terminated buffer being read forever. Independent of
+// TRADE_CODE_MAX_CHARS; a legitimately too-long code is caught by running out
+// of `out->capacity` bits.
 #define TRADE_CODE_DECODE_SCAN_LIMIT 512
 
 u8 TradeCode_AlphabetSymbol(u32 index)
@@ -219,19 +206,13 @@ enum TradeCodeStatus TradeCode_Decode(const u8 *str, struct TradeCodeBits *out)
     return TRADE_CODE_OK;
 }
 
-// ---------------------------------------------------------------------
-// Stage 2 of "Trading Codes.md": the BoxPokemon serialiser/deserialiser.
-// Still no UI, no save data - see trade_code.h for the payload's status
-// enum. MON_DATA_HP_IV.. and MON_DATA_HP_EV.. are contiguous in HP, ATK,
-// DEF, SPEED, SPATK, SPDEF order in enum MonData, so every 6-wide loop
-// below walks that order via `+ i`.
-// ---------------------------------------------------------------------
+// MON_DATA_HP_IV.. and MON_DATA_HP_EV.. are contiguous in HP, ATK, DEF, SPEED,
+// SPATK, SPDEF order in enum MonData, so every 6-wide loop below walks that
+// order via `+ i`.
 
-// Presence bitmap bits (see the payload spec's "Optional block" table).
-// Bit 5 (met data) was dropped per the plan doc's own dev note: met data
-// is a poor value-per-bit spend, and a fixed "obtained via trade" location
-// is applied unconditionally below instead of transmitting a real one. Bit
-// 7 stays reserved for a future format version. Both must decode as 0.
+// Presence bitmap bits. Bit 5 (met data) is not transmitted: a fixed "obtained
+// via trade" location is applied instead. Bit 7 is reserved for a future
+// format version. Both must decode as 0.
 #define TRADE_CODE_PRESENCE_NICKNAME    (1 << 0)
 #define TRADE_CODE_PRESENCE_EVS         (1 << 1)
 #define TRADE_CODE_PRESENCE_MOVES       (1 << 2)
@@ -276,10 +257,9 @@ static u8 TradeCode_FieldToGender(u32 field)
 }
 
 // Whether `actualMoves` matches the moveset GiveBoxMonInitialMoveset would
-// generate for `species` at `level` - the payload spec's definition of the
-// move presence bit's default. Built via a scratch BoxPokemon rather than
-// re-deriving the level-filtering/dedup logic by hand, so this can never
-// drift from what the deserialiser's own "moves absent" path applies.
+// generate for `species` at `level`, the default for the move presence bit.
+// Built via a scratch BoxPokemon so it cannot drift from the deserialiser's
+// "moves absent" path.
 static bool32 TradeCode_MovesMatchDefault(enum Species species, u32 level, const enum Move actualMoves[MAX_MON_MOVES])
 {
     struct BoxPokemon scratch;
@@ -296,11 +276,9 @@ static bool32 TradeCode_MovesMatchDefault(enum Species species, u32 level, const
     return TRUE;
 }
 
-// True if any of the first `len` bytes of `chars` is EOS. A real name
-// character can never legitimately be EOS (it's the terminator, not part
-// of any fork's charmap alphabet), so one appearing inside the declared
-// length means the code is corrupt - decoding it further would desync the
-// fixed-width nickname/otName arrays downstream.
+// True if any of the first `len` bytes of `chars` is EOS. EOS inside the
+// declared length means the code is corrupt and would desync the fixed-width
+// nickname/otName arrays.
 static bool32 TradeCode_NameHasEosByte(const u8 *chars, u32 len)
 {
     u32 i;
@@ -313,11 +291,9 @@ static bool32 TradeCode_NameHasEosByte(const u8 *chars, u32 len)
     return FALSE;
 }
 
-// Deterministic stand-in for the OT ID's high 16 bits, which the payload
-// never transmits (see "otId high half" in the plan doc). Not cryptographic
-// and doesn't need to be - its only job is to almost certainly differ from
-// the receiving player's own OT ID, which the caller double-checks and
-// perturbs on the rare exact collision.
+// Deterministic stand-in for the OT ID's high 16 bits, which the payload never
+// transmits. Not cryptographic; it only needs to almost certainly differ from
+// the receiver's own OT ID (the caller perturbs on an exact collision).
 static u32 TradeCode_SynthesizeOtIdHigh(const u8 *otName, u32 otNameLen, u16 otIdLow)
 {
     u32 hash = otIdLow;
@@ -331,10 +307,8 @@ static u32 TradeCode_SynthesizeOtIdHigh(const u8 *otName, u32 otNameLen, u16 otI
 
 void TradeCode_SerializeMon(const struct BoxPokemon *boxMon, struct TradeCodeBits *stream)
 {
-    // GetBoxMonData decrypts/re-encrypts its argument in place (restoring
-    // it before returning) - working on a local copy keeps the caller's
-    // struct untouched for the duration, matching how BoxMonToMon (Saveblock
-    // Shrinking-era code) already handles a const source.
+    // GetBoxMonData decrypts/re-encrypts its argument in place, so work on a
+    // local copy to leave the const source untouched.
     struct BoxPokemon mon = *boxMon;
     enum Species species = GetBoxMonData(&mon, MON_DATA_SPECIES);
     u32 level = GetLevelFromBoxMonExp(&mon);
@@ -368,10 +342,8 @@ void TradeCode_SerializeMon(const struct BoxPokemon *boxMon, struct TradeCodeBit
 
     for (i = 0; i < MAX_MON_MOVES; i++)
         moves[i] = GetBoxMonData(&mon, MON_DATA_MOVE1 + i);
-    // PP Ups are carried in the same 52-bit block as the moves themselves
-    // (see the payload spec), so a mon that knows only its default moveset
-    // but has spent PP Ups on it still needs the block written - otherwise
-    // those PP Ups would silently vanish across the trade.
+    // PP Ups share the 52-bit block with the moves, so a default moveset
+    // with PP Ups spent still needs the block written.
     hasMoves = (ppBonuses != 0) || !TradeCode_MovesMatchDefault(species, level, moves);
     if (hasMoves)
         presence |= TRADE_CODE_PRESENCE_MOVES;
@@ -402,14 +374,8 @@ void TradeCode_SerializeMon(const struct BoxPokemon *boxMon, struct TradeCodeBit
     TradeCode_WriteBits(stream, GetBoxMonData(&mon, MON_DATA_IS_EGG) ? 1 : 0, 1);
 
     // -- OT name (always present) --
-    // Deviation from the plan doc: it specs 7 bits/character ("straight
-    // from the game's charmap"), but this fork's charmap puts CHAR_0 at
-    // 0xA1 and runs past 0xEE for lowercase letters - every real name
-    // character is outside 7 bits' 0-127 range, so a literal 7-bit pack
-    // would silently truncate every letter and digit. Using the full raw
-    // byte (8 bits/character) here and for the nickname below instead;
-    // flagged in the Stage 2 status block since it changes the spec's
-    // published code-length table.
+    // 8 bits/character, not 7: the charmap puts CHAR_0 at 0xA1 and lowercase
+    // past 0xEE, so every real name character is outside 7 bits' 0-127 range.
     GetBoxMonData(&mon, MON_DATA_OT_NAME, otName);
     otNameLen = StringLength(otName);
     TradeCode_WriteBits(stream, otNameLen, 3);
@@ -540,10 +506,8 @@ enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, s
     if (hasPokerus)
         pokerus = TradeCode_ReadBits(stream, 8);
 
-    // A truncated stream latches TradeCode_ReadBits' error flag and hands
-    // back zeros for every field past the cut - checked once here, rather
-    // than after every single read, but before any of those zeros can leak
-    // into a validation decision below.
+    // A truncated stream latches the error flag and reads zeros past the cut.
+    // Checked once here, before those zeros can reach validation.
     if (stream->error)
         return TRADE_CODE_MON_TRUNCATED;
 
@@ -599,12 +563,10 @@ enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, s
             otId = (otIdHigh << 16) | otIdLow;
         }
 
-        // CreateBoxMon sets species/personality/otId, encrypts, then guesses
-        // shininess/nature/ability/tera/pokeball/met-data from them. Every
-        // guess it makes is overwritten below with the transmitted value -
-        // the shiny/nature overwrites must come after personality/otId are
-        // set (they're read back through the personality-XOR-modifier
-        // trick), so nothing here can move above this call.
+        // CreateBoxMon guesses shininess/nature/ability/tera/pokeball/met-data;
+        // each guess is overwritten below with the transmitted value. The
+        // shiny/nature overwrites read back through personality/otId, so they
+        // must stay after this call.
         CreateBoxMon(outBoxMon, species, level, personality, OTID_STRUCT_PRESET(otId));
 
         SetBoxMonData(outBoxMon, MON_DATA_IS_SHINY, &isShinyFlag);
@@ -621,8 +583,7 @@ enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, s
 
         if (hasNickname)
             SetBoxMonData(outBoxMon, MON_DATA_NICKNAME, nickname);
-        // else: CreateBoxMon already set the nickname to the species name -
-        // exactly the spec's default.
+        // else: CreateBoxMon already set the nickname to the species name.
 
         if (hasEVs)
         {
@@ -644,7 +605,7 @@ enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, s
         }
         else
         {
-            GiveBoxMonInitialMoveset(outBoxMon); // the spec's default: level-up moveset at `level`
+            GiveBoxMonInitialMoveset(outBoxMon); // default: level-up moveset at `level`
         }
 
         if (hasHeldItem)
@@ -658,39 +619,25 @@ enum TradeCodeMonStatus TradeCode_DeserializeMon(struct TradeCodeBits *stream, s
         if (hasPokerus)
             SetBoxMonData(outBoxMon, MON_DATA_POKERUS, &pokerus);
 
-        // Met data was dropped from the payload (see the presence bitmap
-        // comment above) - CreateBoxMon's met level/game defaults (this
-        // level, this game version) stand as-is; only the location is
-        // overridden, to the same sentinel the existing in-game-trade path
-        // already uses for "no real overworld location" (src/trade.c).
+        // Met level/game keep CreateBoxMon's defaults; the location uses the
+        // in-game-trade sentinel (src/trade.c).
         SetBoxMonData(outBoxMon, MON_DATA_MET_LOCATION, &metLocation);
     }
 
     return TRADE_CODE_MON_OK;
 }
 
-// ---------------------------------------------------------------------
-// Stage 3 of "Trading Codes.md": sealing, nonces, replay protection.
-// Still no UI, no save data - the replay ring's storage is Stage 4's
-// struct PendingTrade; TradeCode_IsOfferSealUsed/RecordOfferSeal below are
-// the shared check/insert primitives operating on a caller-owned array.
-// ---------------------------------------------------------------------
-
-// Salts passed to TradeCode_Hash, purely to keep an offer seal, "I'm the
-// canonically-first offer" confirm tag and "I'm second" confirm tag from
-// ever landing on the same value for coincidentally-identical input bytes.
-// Not secret in themselves - TRADE_CODE_SECRET is what does the keying.
+// Salts passed to TradeCode_Hash, keeping an offer seal and the first/second
+// confirm tags from colliding on identical input bytes. Not secret;
+// TRADE_CODE_SECRET does the keying.
 #define TRADE_CODE_HASH_SALT_OFFER          0x00
 #define TRADE_CODE_HASH_SALT_CONFIRM_FIRST  0x01
 #define TRADE_CODE_HASH_SALT_CONFIRM_SECOND 0x02
 
-// Two full offer codes (header + mon payload + seal) concatenated. Sized
-// with the same "generous headroom over the largest real payload" approach
-// as test/trade_code.c's MON_TEST_BUF_BYTES, doubled for two payloads plus
-// each one's header/seal. If a future format version ever needs more, the
-// excess is silently truncated (TradeCode_WriteBits' existing capacity
-// latching, see Stage 1) rather than overflowed - both carts truncate
-// identically, so the tag would just cover less of the input, not desync.
+// Two full offer codes (header + mon payload + seal) concatenated, with
+// headroom. Any excess is truncated by TradeCode_WriteBits' capacity latching
+// rather than overflowed; both carts truncate identically, so the tag stays in
+// sync.
 #define TRADE_CODE_CONFIRM_COMBINE_BYTES 128
 
 u32 TradeCode_Hash(const u8 *data, u32 len, u32 salt)
@@ -704,11 +651,8 @@ u32 TradeCode_Hash(const u8 *data, u32 len, u32 salt)
         hash *= 16777619u; // FNV-1a prime
     }
 
-    // murmur3 fmix32: two xor-shift + multiply rounds, then a final
-    // xor-shift - the "avalanche mix (xor-shift-multiply, twice)" from the
-    // plan doc. FNV-1a alone leaves a short input's high bits weakly mixed;
-    // this spreads a single flipped input bit across roughly half the
-    // output bits.
+    // murmur3 fmix32: FNV-1a alone leaves a short input's high bits weakly
+    // mixed; this spreads a flipped input bit across roughly half the output.
     hash ^= hash >> 16;
     hash *= 0x85EBCA6Bu;
     hash ^= hash >> 13;
@@ -725,9 +669,8 @@ u32 TradeCode_SealOffer(const u8 *payload, u32 nBits)
 }
 
 // Copies `nBits` bits from an external byte buffer into `dest`, MSB-first,
-// via TradeCode_WriteBits - keeps all bit-packing logic in Stage 1's own
-// functions rather than duplicating it here. Chunked at 24 bits so the
-// per-chunk value can never approach a u32 shift overflow.
+// via TradeCode_WriteBits. Chunked at 24 bits so the per-chunk value cannot
+// overflow a u32 shift.
 static void TradeCode_AppendBits(struct TradeCodeBits *dest, const u8 *src, u32 nBits)
 {
     u32 pos = 0;
@@ -768,9 +711,8 @@ u32 TradeCode_ConfirmTag(const u8 *offerSelf, u32 lenSelfBits, u32 otIdSelf, u16
     combined.capacity = sizeof(buf) * 8;
     combined.error = FALSE;
 
-    // Canonical order: lower otId (tie-broken by lower nonce) always goes
-    // first, regardless of which mon was passed in as "self" - this is what
-    // lets both carts agree on the same concatenated bytes.
+    // Canonical order (lower otId, tie-broken by lower nonce, first) lets both
+    // carts hash identical bytes regardless of which mon is "self".
     if (selfIsFirst)
     {
         TradeCode_AppendBits(&combined, offerSelf, lenSelfBits);
@@ -783,7 +725,7 @@ u32 TradeCode_ConfirmTag(const u8 *offerSelf, u32 lenSelfBits, u32 otIdSelf, u16
     }
 
     hash = TradeCode_Hash(buf, (combined.bitPos + 7) / 8, salt);
-    return hash & 0x0FFFFFFF; // 28 bits, per the payload spec's confirm code
+    return hash & 0x0FFFFFFF; // 28 bits, the confirm code's tag width
 }
 
 bool32 TradeCode_IsOfferSealUsed(const u32 ring[TRADE_CODE_REPLAY_RING], u32 seal)
@@ -807,21 +749,13 @@ void TradeCode_RecordOfferSeal(u32 ring[TRADE_CODE_REPLAY_RING], u32 seal)
     ring[0] = seal;
 }
 
-// ---------------------------------------------------------------------
-// Stage 9 of "Trading Codes.md": reset-resistance. See this function's own
-// declaration in trade_code.h for exactly what it checks and why.
-// ---------------------------------------------------------------------
-
 bool32 TradeCode_ValidatePendingBoxMon(const struct BoxPokemon *boxMon)
 {
     struct BoxPokemon copy;
     u32 species;
 
-    // GetBoxMonData(MON_DATA_SANITY_IS_BAD_EGG) lazily writes back into its
-    // argument's own isBadEgg field the first time it notices a checksum
-    // mismatch (see IsBadEgg, src/pokemon.c) - working on a local copy
-    // keeps `boxMon` itself a pure read as far as this function's own
-    // caller is concerned.
+    // MON_DATA_SANITY_IS_BAD_EGG lazily writes isBadEgg back into its argument
+    // on a checksum mismatch (see IsBadEgg, src/pokemon.c); use a copy.
     memcpy(&copy, boxMon, sizeof(copy));
 
     if (GetBoxMonData(&copy, MON_DATA_SANITY_IS_BAD_EGG))

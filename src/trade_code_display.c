@@ -22,15 +22,10 @@
 #include "constants/songs.h"
 #include "constants/species.h"
 
-// Stage 5 of "Trading Codes.md": a read-only, full-screen trade/confirm
-// code display. Modelled on src/ui_stat_editor.c's CB2_/Task_-driven
-// full-screen pattern - see that file's "Begin Generic UI Initialization
-// Code" section, which this one mirrors closely (same malloc'd-EWRAM-BG,
-// gMain.state gfx setup, VBlank/main callback split), minus the editing
-// machinery this screen has no use for. No entry, no decoding, no session
-// logic - see include/trade_code_display.h for the public contract.
+// Read-only, full-screen trade/confirm code display, modelled on
+// src/ui_stat_editor.c's CB2_/Task_-driven pattern. See
+// include/trade_code_display.h for the public contract.
 
-//==========DEFINES==========//
 struct TradeCodeDisplayResources
 {
     MainCallback savedCallback; // where SetMainCallback2 goes once the player presses A
@@ -51,18 +46,9 @@ enum WindowIds
     WINDOW_FOOTER,
 };
 
-// TRADE_CODE_DISPLAY_GROUPS_PER_ROW / _SYMBOLS_PER_ROW / _MAX_ROWS /
-// _ROW_CAPACITY / CODE_CELL_WIDTH / CODE_CELL_HEIGHT now live in
-// trade_code_display.h (public) rather than here, so Stage 6's entry
-// screen (src/trade_code_entry.c) can lay its typed-code field out on the
-// identical grid instead of re-deriving a second copy. See that header for
-// the reasoning.
-
-//==========EWRAM==========//
 static EWRAM_DATA struct TradeCodeDisplayResources *sTradeCodeDisplayDataPtr = NULL;
 static EWRAM_DATA u8 *sBg1TilemapBuffer = NULL;
 
-//==========STATIC=DEFINES==========//
 static void TradeCodeDisplay_RunSetup(void);
 static bool8 TradeCodeDisplay_DoGfxSetup(void);
 static bool8 TradeCodeDisplay_InitBgs(void);
@@ -78,7 +64,6 @@ static void Task_TradeCodeDisplayMain(u8 taskId);
 static void Task_TradeCodeDisplayWaitFadeAndBail(u8 taskId);
 static void TradeCodeDisplay_FreeResources(void);
 
-//==========CONST=DATA==========//
 static const struct BgTemplate sTradeCodeDisplayBgTemplates[] =
 {
     {
@@ -146,26 +131,12 @@ static const struct WindowTemplate sTradeCodeDisplayWindowTemplates[] =
     DUMMY_WIN_TEMPLATE
 };
 
-// Purpose-built background for this screen (used for both the offer-code
-// and confirm-code views - see TradeCodeDisplay_Init's isConfirmCode param,
-// which only changes the title text printed over this art, not the art
-// itself). graphics/trade_codes/view_tileset.{png,pal,bin} are a deduped
-// tile sheet + GBA screen tilemap + JASC-PAL palette generated from the
-// source mockup graphics/trade_codes/bg_view_trade_code.png, the same way
-// graphics/ui_menu/background_tileset.png/.bin (see src/ui_stat_editor.c)
-// and graphics/achievements/ui/*_tileset.png/.bin (see src/achievements_
-// menu.c) were - those were hand-deduped with an external tool (Tilemap
-// Studio; see docs/tutorials/how_to_map_preview_screen.md) since the repo's
-// own Makefile has no generic mockup->tileset+tilemap dedup rule. This one
-// was instead deduped with a throwaway script (exact-tile-match dedup, no
-// flip detection) since gbagfx/Tilemap Studio aren't something this
-// environment can run - verified via a pixel-for-pixel round-trip
-// reconstruction against the source PNG before being wired in here, but
-// still only screen-verified, not hardware-verified (same caveat as
-// everything else in this file per the plan doc's "Not yet verified"
-// checklist). 37 unique tiles, 9 colors - comfortably inside both the
-// 512-tile BG1 charblock and the 16-color/32-byte palette budget the
-// existing LoadPalette(..., 32) call below already assumes.
+// Background for both the offer-code and confirm-code views; isConfirmCode only
+// changes the title text. graphics/trade_codes/view_tileset.{png,pal,bin} were
+// generated from graphics/trade_codes/bg_view_trade_code.png with an
+// exact-tile-match dedup (no flip detection): 37 unique tiles, 9 colors, within
+// the 512-tile BG1 charblock and the 16-color palette the LoadPalette(..., 32)
+// call below assumes.
 static const u32 sTradeCodeDisplayBgTiles[] = INCBIN_U32("graphics/trade_codes/view_tileset.4bpp.smol");
 static const u32 sTradeCodeDisplayBgTilemap[] = INCBIN_U32("graphics/trade_codes/view_tileset.bin.smolTM");
 static const u16 sTradeCodeDisplayBgPalette[] = INCBIN_U16("graphics/trade_codes/view_tileset.gbapal");
@@ -180,7 +151,6 @@ static const u8 sText_TitleConfirm[] = _("YOUR CONFIRM CODE");
 static const u8 sText_Offering[]     = _("Offering:");
 static const u8 sText_Footer[]       = _("Send this to your partner.\nPress A when they have it.");
 
-//==========UI=SETUP==========// (mirrors ui_stat_editor.c)
 void TradeCodeDisplay_Init(const u8 *codeStr, u16 species, const u8 *nickname, bool8 isConfirmCode, MainCallback callback)
 {
     if ((sTradeCodeDisplayDataPtr = AllocZeroed(sizeof(struct TradeCodeDisplayResources))) == NULL)
@@ -196,16 +166,10 @@ void TradeCodeDisplay_Init(const u8 *codeStr, u16 species, const u8 *nickname, b
     sTradeCodeDisplayDataPtr->hasMon = (species != SPECIES_NONE);
     sTradeCodeDisplayDataPtr->isConfirmCode = isConfirmCode;
 
-    // StringCopyN copies exactly n bytes with no EOS check and no
-    // terminator of its own (see src/string_util.c) - safe only when the
-    // source is already known to be no longer than n. codeStr/nickname
-    // aren't guaranteed that (a caller could in principle hand in something
-    // shorter, and StringCopyN would then walk off the end of it into
-    // whatever memory follows), so plain StringCopy - which stops at EOS
-    // and terminates dest - is the correct call here. The buffers above are
-    // sized to the documented maximum (TRADE_CODE_MAX_CHARS / POKEMON_NAME_
-    // LENGTH) precisely so that contract, not a bounded copy, is what keeps
-    // this safe.
+    // Plain StringCopy, not StringCopyN: StringCopyN copies exactly n bytes with
+    // no EOS check, so a shorter source would be read past its end. The buffers
+    // are sized to the documented maximum (TRADE_CODE_MAX_CHARS /
+    // POKEMON_NAME_LENGTH), and that contract is what keeps the copy safe.
     StringCopy(sTradeCodeDisplayDataPtr->codeStr, codeStr);
     if (sTradeCodeDisplayDataPtr->hasMon)
     {
@@ -281,19 +245,10 @@ static bool8 TradeCodeDisplay_DoGfxSetup(void)
     case 4:
         if (sTradeCodeDisplayDataPtr->hasMon)
         {
-            // Mirrors mail.c's read-a-letter icon: LoadMonIconPalette then
-            // CreateMonIconNoPersonality, on a freshly-initialized screen
-            // (case 1 above already ran FreeAllSpritePalettes) - no need
-            // for ui_stat_editor.c's heavier FreeMonIconPalettes()+
-            // LoadMonIconPalettes() pair, which loads every species' icon
-            // palette up front for its cycle-through-party use case that
-            // this read-only, single-mon screen doesn't have.
-            // y=30, not the icon's native center of the WINDOW_MON row band
-            // (~40) - a standard 32x32 icon centered there extends a few
-            // pixels past WINDOW_MON's own bottom edge (tilemapTop=2,
-            // height=4 tiles -> y=16..48) and into WINDOW_CODE just below
-            // it (tilemapTop=6 -> y=48+), which is exactly the overlap this
-            // offset fixes.
+            // Single-mon screen: LoadMonIconPalette suffices (case 1 already ran
+            // FreeAllSpritePalettes), unlike ui_stat_editor.c's load-all pair.
+            // y=30, not the WINDOW_MON band's center (~40): a 32x32 icon there
+            // would overlap WINDOW_CODE (y=48+) below WINDOW_MON (y=16..48).
             LoadMonIconPalette(sTradeCodeDisplayDataPtr->species);
             sTradeCodeDisplayDataPtr->monIconSpriteId = CreateMonIconNoPersonality(sTradeCodeDisplayDataPtr->species, SpriteCallbackDummy, 24, 30, 0);
         }
@@ -429,9 +384,6 @@ static void Task_TradeCodeDisplayTurnOff(u8 taskId)
     }
 }
 
-//
-//       Trade Code Display specific code
-//
 static void TradeCodeDisplay_PrintHeader(void)
 {
     const u8 *title = sTradeCodeDisplayDataPtr->isConfirmCode ? sText_TitleConfirm : sText_TitleOffer;
@@ -454,14 +406,10 @@ static void TradeCodeDisplay_PrintMon(void)
     CopyWindowToVram(WINDOW_MON, 3);
 }
 
-// Walks the already-hyphenated codeStr (as produced by TradeCode_Encode,
-// see include/trade_code.h) and prints it one character at a time onto a
-// strict CODE_CELL_WIDTH x CODE_CELL_HEIGHT grid, wrapping to a new display
-// row every TRADE_CODE_DISPLAY_GROUPS_PER_ROW Base32 groups. A row-boundary
-// hyphen (the one between the last group of one row and the first group of
-// the next) is consumed to trigger the wrap but not printed - the row break
-// itself is the visual separator; hyphens that fall *inside* a display row
-// are printed normally.
+// Prints the hyphenated codeStr one character at a time onto a strict
+// CODE_CELL_WIDTH x CODE_CELL_HEIGHT grid, wrapping every
+// TRADE_CODE_DISPLAY_GROUPS_PER_ROW groups. The hyphen at a row boundary
+// triggers the wrap but is not printed; hyphens inside a row are.
 static void TradeCodeDisplay_PrintCode(void)
 {
     const u8 *src = sTradeCodeDisplayDataPtr->codeStr;

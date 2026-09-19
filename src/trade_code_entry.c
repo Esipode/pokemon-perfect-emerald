@@ -18,36 +18,19 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
-// Stage 6 of "Trading Codes.md": the purpose-built code entry screen. See
-// include/trade_code_entry.h for the public contract and the reasoning
-// behind its shape (why a validator hook instead of protocol logic living
-// here, why results come back through caller-owned out-params rather than
-// a new callback-with-arguments type). Modelled on src/trade_code_display.c
-// (Stage 5)'s CB2_/Task_-driven full-screen pattern, which is itself
-// modelled on src/ui_stat_editor.c - same malloc'd-EWRAM-BG, gMain.state
-// gfx setup, VBlank/main callback split. No sprites: the grid cursor and
-// the typed-code caret are both drawn as plain text/color changes rather
-// than sprite overlays, deliberately - it avoids pulling in any new
-// graphics assets or OAM/palette-tag bookkeeping for what is, functionally,
-// just "which cell is highlighted right now."
+// The purpose-built code entry screen. See include/trade_code_entry.h for the
+// public contract. Modelled on trade_code_display.c's CB2_/Task_-driven
+// full-screen pattern. No sprites: the grid cursor and typed-code caret are
+// drawn as text/color changes, avoiding new graphics assets and OAM/palette-tag
+// bookkeeping.
 
-//==========DEFINES==========//
-// Matches TRADE_CODE_MAX_CHARS' own derivation (include/config/trade_code.h)
-// minus hyphens/EOS, bumped from Stage 5's original 428/86 figure by Stage
-// 7 (src/trade_code_session.c): building a real offer code turned out to
-// need a byte-aligned pad between the mon payload and the seal (see
-// TradeCodeSession_BuildOffer's own comment for why - TradeCode_SealOffer
-// hashes whole bytes, so anything less than byte alignment leaves the
-// seal's own documented "trailing bits must be zero" precondition
-// unsatisfiable between an honest sender and a receiver holding the real
-// decoded bytes). The worst case's own header+mon total (396 bits) needs
-// up to 4 pad bits to reach the next byte boundary, making the true
-// worst-case payload 432 bits (400 + a 32-bit seal), not 428 -> 87 Base32
-// symbols (ceil(432/5)), not 86. The raw (unhyphenated) symbol buffer is
-// sized to this rather than TRADE_CODE_MAX_CHARS itself, which already
-// budgets for hyphens this buffer doesn't store (they're inserted only at
-// display time). Declared ahead of struct TradeCodeEntryResources below,
-// which sizes two of its own fields off these.
+// TRADE_CODE_MAX_CHARS' derivation (include/config/trade_code.h) minus
+// hyphens/EOS. The worst-case payload is 432 bits (a byte-aligned pad before
+// the seal is needed so TradeCode_SealOffer's "trailing bits must be zero"
+// precondition holds), i.e. 87 Base32 symbols. The unhyphenated symbol buffer
+// is sized to this rather than TRADE_CODE_MAX_CHARS, whose hyphens are only
+// inserted at display time. Declared ahead of struct TradeCodeEntryResources,
+// which sizes two fields off these.
 #define TRADE_CODE_ENTRY_MAX_SYMBOLS 87
 // ceil(TRADE_CODE_ENTRY_MAX_SYMBOLS * 5 / 8) - the decode scratch buffer
 // TradeCode_Decode writes into (see TradeCodeEntry_TrySubmit).
@@ -82,29 +65,22 @@ enum WindowIds
     WINDOW_HEADER,
     WINDOW_ENTRY,
     WINDOW_GRID,
-    // One shared single-line window, not two - see TRADE_CODE_ENTRY_
-    // VISIBLE_ROWS's comment for why there's no tile budget left for a
-    // separate footer hint and error banner. Shows the control hint by
-    // default; a failed submit swaps it to that failure's canned message
-    // until the player edits the field again (TradeCodeEntry_PrintMessage).
+    // One shared single-line window: no tile budget is left for a separate
+    // footer hint and error banner (see TRADE_CODE_ENTRY_VISIBLE_ROWS). Shows
+    // the control hint; a failed submit swaps in that failure's canned message
+    // until the player edits the field again.
     WINDOW_MESSAGE,
 };
 
-// All 32 Base32/Crockford symbols on one page, 8x4 - see trade_code_entry.h
-// and the plan doc's own Stage 6 bullet list for why this isn't a paged
-// naming_screen.c-style keyboard.
+// All 32 Base32/Crockford symbols on one page, 8x4, with no paging.
 #define TRADE_CODE_ENTRY_GRID_COLS 8
 #define TRADE_CODE_ENTRY_GRID_ROWS 4
 #define TRADE_CODE_ENTRY_CELL_WIDTH  16
-// 16, matching CODE_CELL_HEIGHT (trade_code_display.h) - *every* font in
-// this engine renders at a real height of 16px (two stacked 8px tiles),
-// regardless of what its .maxLetterHeight metric in src/text.c's font table
-// claims (FONT_SMALL_NARROW says 8; DecompressGlyph_SmallNarrow still
-// writes both gCurGlyph.gfxBufferTop *and* gfxBufferBottom for every glyph -
-// checked before trusting the metric). An earlier draft of this file set
-// this to 8 to save vertical space and it silently clipped the bottom half
-// of every grid glyph - the maxLetterHeight field is not glyph pixel
-// height, whatever else it's used for.
+// 16, matching CODE_CELL_HEIGHT (trade_code_display.h): every font renders at
+// a real height of 16px (two stacked 8px tiles), regardless of the
+// .maxLetterHeight metric in src/text.c (FONT_SMALL_NARROW says 8, but
+// DecompressGlyph_SmallNarrow writes both gfxBufferTop and gfxBufferBottom).
+// Setting this to 8 clips the bottom half of every grid glyph.
 #define TRADE_CODE_ENTRY_CELL_HEIGHT 16
 // The BACK/OK column sits one tile to the right of the symbol grid, wide
 // enough for "BACK" in FONT_SMALL_NARROW (5px/glyph, comfortably under the
@@ -115,64 +91,37 @@ enum WindowIds
 #define TRADE_CODE_ENTRY_BUTTON_COL_WIDTH (TRADE_CODE_ENTRY_BUTTON_COL_WIDTH_TILES * 8)
 #define TRADE_CODE_ENTRY_GRID_WIDTH_TILES (TRADE_CODE_ENTRY_GRID_COLS * (TRADE_CODE_ENTRY_CELL_WIDTH / 8) + TRADE_CODE_ENTRY_BUTTON_GAP_TILES + TRADE_CODE_ENTRY_BUTTON_COL_WIDTH_TILES)
 #define TRADE_CODE_ENTRY_GRID_HEIGHT_TILES (TRADE_CODE_ENTRY_GRID_ROWS * (TRADE_CODE_ENTRY_CELL_HEIGHT / 8))
-// Centers the grid+BACK/OK window within the same 28-tile content band
-// (columns 1-28) every other window on this screen uses, rather than
-// left-aligning it to column 1 like they do - the grid's own content is
-// narrower than the full band, so left-aligning it left a lopsided gap on
-// the right.
+// Centers the grid+BACK/OK window within the 28-tile content band (columns
+// 1-28) the other windows use; the grid is narrower than the band.
 #define TRADE_CODE_ENTRY_GRID_LEFT (1 + (28 - TRADE_CODE_ENTRY_GRID_WIDTH_TILES) / 2)
 
 #define TRADE_CODE_ENTRY_BUTTON_BACK 0
 #define TRADE_CODE_ENTRY_BUTTON_OK   1
 
-// The typed-code field mirrors Stage 5's grid (TRADE_CODE_DISPLAY_* /
-// CODE_CELL_* from trade_code_display.h - same cell size, same grouping),
-// and shows every row Stage 5's own display screen could ever need
-// (TRADE_CODE_DISPLAY_MAX_ROWS) rather than a scrolled-down subset - so a
-// player typing the worst-case ~86-symbol code never has an earlier group
-// scrolled out of view behind the caret. What pays for this: at 16px/line
-// (see TRADE_CODE_ENTRY_CELL_HEIGHT), a full 4-row field plus the full 8x4
-// keyboard plus a header already spend the entire 512-tile budget BG0's
-// windows have to themselves (charBaseIndex 0 - confirmed unshared with
-// the UI background art, which loads into BG1's own charBaseIndex 3
-// instead; see TradeCodeEntry_InitBgs/_LoadGraphics), leaving no separate
-// room for a footer hint AND an error banner - see WINDOW_MESSAGE, which
-// folds those two into one shared single-line window instead of trimming
-// this field back down. The scroll-window math in TradeCodeEntry_
-// PrintEntryField is still written generally (startRow can still be > 0)
-// rather than assuming this equality forever - harmless dead weight today,
-// a safety net if TRADE_CODE_ENTRY_MAX_SYMBOLS ever grows past what
-// TRADE_CODE_DISPLAY_MAX_ROWS rows hold.
+// The typed-code field mirrors trade_code_display.h's grid (same cell size and
+// grouping) and shows all TRADE_CODE_DISPLAY_MAX_ROWS rows, so a worst-case
+// ~86-symbol code never scrolls an earlier group out of view. At 16px/line, a
+// full 4-row field plus the 8x4 keyboard plus a header spend the whole
+// 512-tile budget of BG0's windows (charBaseIndex 0; the UI background art is
+// in BG1's charBaseIndex 3), leaving room for one message window (see
+// WINDOW_MESSAGE), not a separate footer and error banner. The scroll math in
+// TradeCodeEntry_PrintEntryField still handles startRow > 0 in case
+// TRADE_CODE_ENTRY_MAX_SYMBOLS outgrows those rows.
 #define TRADE_CODE_ENTRY_VISIBLE_ROWS TRADE_CODE_DISPLAY_MAX_ROWS
 // The live caret is a solid bar along a cell's bottom edge (see
 // TradeCodeEntry_DrawCaret), not a text glyph - this is its thickness.
 #define TRADE_CODE_ENTRY_CARET_BAR_HEIGHT 2
-// Nudges the typed-code field's rows down within WINDOW_ENTRY, purely
-// cosmetic (requested after the header got the same treatment - see
-// TradeCodeEntry_PrintHeader). WINDOW_ENTRY's own height has zero spare
-// (TRADE_CODE_ENTRY_VISIBLE_ROWS rows at 16px/row exactly fill it, no
-// margin - see that macro's comment), so this borrows the bottom-most
-// pixels of the last visible row's own cell instead of growing the window.
-// Confirmed on hardware: 6px was one step too far - it cut the bottom 2px
-// off the last visible row (the glyphs' own top-aligned blank space in
-// their cell absorbed the first 4px of overflow harmlessly, then real ink
-// started getting clipped). Back down to 4px, the value that overflow data
-// point implies is exactly the safe ceiling here (4px eaten by blank space,
-// 0px of real ink cut) - do not raise this again without also growing
-// WINDOW_ENTRY's height, which has no spare tile-row budget to give (see
-// this file's own status notes on the 512-tile charblock).
+// Nudges the typed-code field's rows down within WINDOW_ENTRY, cosmetic only.
+// WINDOW_ENTRY has zero spare height, so this borrows the bottom pixels of the
+// last visible row's cell. 4px is the safe ceiling: the glyphs' blank top space
+// absorbs it, while 6px clips 2px of real ink. Do not raise without growing
+// WINDOW_ENTRY, which has no spare tile-row budget (512-tile charblock).
 #define TRADE_CODE_ENTRY_FIELD_TOP_PADDING 4
-// Nudges the typed-code field 2px left, purely cosmetic. Unlike the top
-// padding above, this can't be a flat per-column offset: column 0 already
-// sits flush against WINDOW_ENTRY's own left edge (x=0), and every
-// AddTextPrinterParameterized4/FillWindowPixelRect x argument here is a u16
-// - passing a literal -2 for column 0 wouldn't clip harmlessly the way the
-// vertical overflow did, it'd wrap to a huge unsigned value and try to draw
-// far outside the window's buffer. TRADE_CODE_ENTRY_FIELD_X saturates at 0
-// instead: every column from 1 up shifts the full 2px (and only gets safer
-// against right-edge overflow by moving left, so no width/tile-budget
-// consequences there), while column 0 stays put since there's nowhere left
-// for it to go - a real, hard architectural floor, not an oversight.
+// Nudges the typed-code field 2px left, cosmetic only. Cannot be a flat
+// per-column offset: column 0 sits at x=0, and the x arguments to
+// AddTextPrinterParameterized4/FillWindowPixelRect are u16, so -2 would wrap
+// to a huge value and draw outside the window buffer. TRADE_CODE_ENTRY_FIELD_X
+// saturates at 0, so column 0 stays put.
 #define TRADE_CODE_ENTRY_FIELD_LEFT_SHIFT 2
 #define TRADE_CODE_ENTRY_FIELD_X(col) \
     (((col) * CODE_CELL_WIDTH > TRADE_CODE_ENTRY_FIELD_LEFT_SHIFT) \
@@ -186,11 +135,9 @@ enum TradeCodeEntryFontColor
     FONT_COLOR_CODE, // the typed-code field's own text - see its own declaration comment
 };
 
-//==========EWRAM==========//
 static EWRAM_DATA struct TradeCodeEntryResources *sTradeCodeEntryDataPtr = NULL;
 static EWRAM_DATA u8 *sBg1TilemapBuffer = NULL;
 
-//==========STATIC=DEFINES==========//
 static void TradeCodeEntry_RunSetup(void);
 static bool8 TradeCodeEntry_DoGfxSetup(void);
 static bool8 TradeCodeEntry_InitBgs(void);
@@ -215,14 +162,8 @@ static void Task_TradeCodeEntryMain(u8 taskId);
 static void Task_TradeCodeEntryWaitFadeAndBail(u8 taskId);
 static void TradeCodeEntry_FreeResources(void);
 
-//==========CONST=DATA==========//
-// Identical to trade_code_display.c's own BG setup - same generic
-// full-screen UI background shared by ui_stat_editor.c/achievements_menu.c/
-// trade_code_display.c. Kept as its own local copy rather than exported,
-// matching how each of those modules already keeps its own WindowTemplate/
-// BgTemplate tables despite the visual similarity - a WindowTemplate array
-// is inherently screen-specific (baseBlock allocation differs per screen)
-// even when the underlying tileset is shared.
+// Same BG setup as trade_code_display.c. Kept as a local copy since a
+// WindowTemplate array is screen-specific (baseBlock allocation differs).
 static const struct BgTemplate sTradeCodeEntryBgTemplates[] =
 {
     {
@@ -282,14 +223,10 @@ static const struct WindowTemplate sTradeCodeEntryWindowTemplates[] =
         .bg = 0,
         .tilemapLeft = 1,
         .tilemapTop = 18,
-        // 27, not 28 like the other full-width windows - header (56) +
-        // entry (232) + grid (168) + a 28-wide message window (56) would
-        // sum to exactly 512 tiles, and starting from baseBlock 1 that
-        // reaches tile index 512 - one past the last valid index (0-511)
-        // in a 512-tile 4bpp charblock. Trimmed by 1 tile of width (2
-        // tiles of budget, since height is 2) for real margin instead of
-        // landing exactly on the boundary; the longest message here is
-        // still comfortably under 27 tiles' worth of characters.
+        // 27, not 28: header (56) + entry (232) + grid (168) + a 28-wide
+        // message window (56) would sum to exactly 512 tiles, reaching tile
+        // index 512, one past the last valid index in a 512-tile 4bpp
+        // charblock.
         .width = 27,
         .height = 2,
         .paletteNum = 15,
@@ -298,29 +235,20 @@ static const struct WindowTemplate sTradeCodeEntryWindowTemplates[] =
     DUMMY_WIN_TEMPLATE
 };
 
-// Purpose-built background for this screen (used for both the offer-code
-// and confirm-code entry modes - see TradeCodeEntry_Init's expectedSymbols
-// param, which only changes field layout/behavior, not the art). See the
-// matching comment on sTradeCodeDisplayBgTiles (src/trade_code_display.c)
-// for how graphics/trade_codes/enter_tileset.{png,pal,bin} were produced
-// from the source mockup graphics/trade_codes/bg_enter_trade_code.png - the
-// same dedup process, round-trip-verified the same way. 23 unique tiles, 9
-// colors, well inside the BG1 charblock and the LoadPalette(..., 32) call
+// Background for both the offer-code and confirm-code entry modes. See
+// sTradeCodeDisplayBgTiles (src/trade_code_display.c) for how
+// graphics/trade_codes/enter_tileset.{png,pal,bin} were produced. 23 unique
+// tiles, 9 colors, within the BG1 charblock and the LoadPalette(..., 32) call
 // below.
 static const u32 sTradeCodeEntryBgTiles[] = INCBIN_U32("graphics/trade_codes/enter_tileset.4bpp.smol");
 static const u32 sTradeCodeEntryBgTilemap[] = INCBIN_U32("graphics/trade_codes/enter_tileset.bin.smolTM");
 static const u16 sTradeCodeEntryBgPalette[] = INCBIN_U16("graphics/trade_codes/enter_tileset.gbapal");
 
-// FONT_COLOR_HIGHLIGHT and FONT_COLOR_CODE both reuse the same palette bank
-// (paletteNum 15, loaded from the shared background_tileset palette) as
-// FONT_COLOR_NORMAL - only the foreground/shadow TEXT_COLOR_* indices
-// differ, so these are same-window recolors, not separate palette loads.
-// FONT_COLOR_CODE is requested black text for the typed-code field
-// specifically (WINDOW_ENTRY) - there's no TEXT_COLOR_BLACK in this
-// engine's palette (constants/characters.h only goes up to LIGHT_BLUE),
-// so TEXT_COLOR_DARK_GRAY is the closest available foreground, paired with
-// a light shadow (the reverse of every other window's white-on-dark
-// pairing) so the glyphs still read against whatever's behind them.
+// FONT_COLOR_HIGHLIGHT and FONT_COLOR_CODE reuse palette bank 15 (from the
+// shared background_tileset palette) like FONT_COLOR_NORMAL; only the
+// TEXT_COLOR_* indices differ. FONT_COLOR_CODE is for the typed-code field:
+// the engine has no TEXT_COLOR_BLACK (constants/characters.h stops at
+// LIGHT_BLUE), so TEXT_COLOR_DARK_GRAY is paired with a light shadow.
 static const u8 sTradeCodeEntryFontColors[][3] =
 {
     [FONT_COLOR_NORMAL]    = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE, TEXT_COLOR_DARK_GRAY},
@@ -334,15 +262,10 @@ static const u8 sText_Hint[]         = _("A: Select  B: Delete  START: Submit");
 static const u8 sText_Back[]         = _("BACK");
 static const u8 sText_Ok[]           = _("OK");
 
-// Canned messages for WINDOW_MESSAGE (see its own declaration comment) -
-// single line only, no \n. Cut down from the plan doc's own Stage 6 quoted
-// wording to fit: at this font's real 16px line height (see TRADE_CODE_
-// ENTRY_CELL_HEIGHT's comment) this window has room for exactly one line,
-// not the two or three a first draft assumed. WRONG_LENGTH covers both
-// TRADE_CODE_TOO_SHORT and TRADE_CODE_TOO_LONG (see TradeCodeEntry_
-// TrySubmit) - the player-facing advice is the same either way. BAD_CHAR is
-// unreachable through the on-screen keyboard alone (see trade_code_entry.h)
-// but still needs text for parity with TradeCode_Decode's own status enum.
+// Canned messages for WINDOW_MESSAGE. Single line only, no \n: at 16px line
+// height the window fits exactly one line. WRONG_LENGTH covers both
+// TRADE_CODE_TOO_SHORT and TRADE_CODE_TOO_LONG. BAD_CHAR is unreachable through
+// the on-screen keyboard but kept for parity with TradeCode_Decode.
 static const u8 sText_ErrorBadChar[]      = _("That code has an invalid character.");
 static const u8 sText_ErrorWrongLength[]  = _("Wrong length - check for typos.");
 static const u8 sText_ErrorInvalid[]      = _("This code isn't valid, or isn't yours.");
@@ -360,7 +283,6 @@ static const u8 *const sTradeCodeEntryErrorText[] =
     [TRADE_CODE_ENTRY_CANCELLED]     = NULL,
 };
 
-//==========UI=SETUP==========// (mirrors trade_code_display.c / ui_stat_editor.c)
 void TradeCodeEntry_Init(struct TradeCodeBits *outBits, u32 expectedSymbols,
                           TradeCodeEntryValidator validator, enum TradeCodeEntryStatus *outStatus,
                           MainCallback callback)
@@ -565,9 +487,6 @@ static void Task_TradeCodeEntryWaitFadeIn(u8 taskId)
         gTasks[taskId].func = Task_TradeCodeEntryMain;
 }
 
-//
-//       Trade Code Entry specific code
-//
 static void TradeCodeEntry_PrintHeader(void)
 {
     const u8 *title = sTradeCodeEntryDataPtr->isConfirmMode ? sText_TitleConfirm : sText_TitleOffer;
@@ -578,15 +497,10 @@ static void TradeCodeEntry_PrintHeader(void)
     CopyWindowToVram(WINDOW_HEADER, COPYWIN_FULL);
 }
 
-// Shows the control hint by default, or - when sTradeCodeEntryDataPtr->
-// errorStatus is set - that status's canned message instead (see
-// sTradeCodeEntryErrorText). Single line only; see WINDOW_MESSAGE's own
-// declaration comment for why this replaced two separate windows. Called
-// from Init (hint), TradeCodeEntry_TrySubmit's failure branch (sets
-// errorStatus first, then this), and TradeCodeEntry_AppendSymbol/
-// _DeleteSymbol (clear errorStatus back to OK first, so editing the field
-// after a failure silently reverts the message to the hint rather than
-// leaving a stale error up).
+// Shows the control hint by default, or, when
+// sTradeCodeEntryDataPtr->errorStatus is set, that status's canned message
+// from sTradeCodeEntryErrorText. Editing the field clears errorStatus first,
+// reverting to the hint.
 static void TradeCodeEntry_PrintMessage(void)
 {
     struct TradeCodeEntryResources *res = sTradeCodeEntryDataPtr;
@@ -649,29 +563,21 @@ static void TradeCodeEntry_DrawButtonCell(s8 buttonRow, bool8 highlighted)
     CopyWindowToVram(WINDOW_GRID, COPYWIN_GFX);
 }
 
-// Redraws the typed-code field: rawSymbols laid out on the same monospace
-// grid TradeCodeDisplay_PrintCode (trade_code_display.c) uses, grouped/
-// hyphenated every TRADE_CODE_GROUP_SIZE symbols unless isConfirmMode
-// (which prints one ungrouped run - see the payload spec's "Confirm code...
-// formatted as one group of 6"). Only shows the last TRADE_CODE_ENTRY_
-// VISIBLE_ROWS rows, scrolling forward as symbols are typed past that -
-// see TRADE_CODE_ENTRY_VISIBLE_ROWS's own comment for why. Also recomputes
-// where the live caret belongs (sTradeCodeEntryDataPtr->caretCol/Row) and
-// draws it.
+// Redraws the typed-code field: rawSymbols on the same monospace grid as
+// TradeCodeDisplay_PrintCode, hyphenated every TRADE_CODE_GROUP_SIZE symbols
+// unless isConfirmMode (one ungrouped run). Shows the last
+// TRADE_CODE_ENTRY_VISIBLE_ROWS rows, scrolling as symbols are typed past that.
+// Also recomputes the caret position (caretCol/Row) and draws it.
 static void TradeCodeEntry_PrintEntryField(void)
 {
     struct TradeCodeEntryResources *res = sTradeCodeEntryDataPtr;
     u32 symbolsPerRow = res->isConfirmMode ? TRADE_CODE_CONFIRM_CHARS : TRADE_CODE_DISPLAY_SYMBOLS_PER_ROW;
     u32 maxSymbols = (res->expectedSymbols != 0) ? res->expectedSymbols : TRADE_CODE_ENTRY_MAX_SYMBOLS;
     bool8 hasCaretCell = (res->symbolCount < maxSymbols);
-    // The scrolled-into-view window always reaches at least the caret's own
-    // row (index symbolCount, one past the last typed symbol), not just the
-    // rows containing real symbols - a symbolCount that lands exactly on a
-    // row boundary (e.g. 50 with 25 symbols/row) still needs a 3rd row
-    // shown for the caret even though only 2 rows have actual symbols in
-    // them. Harmless to always include this row even when the field is
-    // completely full and there's no real caret cell to draw there (see
-    // hasCaretCell below) - it just means the last visible row is blank.
+    // The visible window always reaches the caret's row (index symbolCount),
+    // not just rows with symbols: a symbolCount on a row boundary (e.g. 50 at
+    // 25 symbols/row) still needs a row for the caret. When the field is full
+    // (no caret cell, see hasCaretCell) that last row is simply blank.
     u32 rowCount = res->symbolCount / symbolsPerRow + 1;
     u32 startRow = (rowCount > TRADE_CODE_ENTRY_VISIBLE_ROWS) ? (rowCount - TRADE_CODE_ENTRY_VISIBLE_ROWS) : 0;
     u32 i;
@@ -730,13 +636,9 @@ static void TradeCodeEntry_PrintEntryField(void)
     TradeCodeEntry_DrawCaret();
 }
 
-// Drawn as a solid bar along the cell's bottom edge, not a text glyph -
-// CHAR_UNDERSCORE (constants/characters.h) turned out to only mean
-// "underscore" inside the separate CHAR_EXTRA_SYMBOL glyph table; under the
-// normal font table that this window actually prints with, that same byte
-// value is CHAR_I_GRAVE ("i" with a grave accent), which is what was
-// showing up instead. A plain pixel-filled rectangle sidesteps the whole
-// charmap/glyph-table question - there's no character to misinterpret.
+// Drawn as a solid bar along the cell's bottom edge, not a text glyph:
+// CHAR_UNDERSCORE only means underscore in the CHAR_EXTRA_SYMBOL glyph table;
+// under the normal font table the same byte is CHAR_I_GRAVE.
 static void TradeCodeEntry_DrawCaret(void)
 {
     struct TradeCodeEntryResources *res = sTradeCodeEntryDataPtr;
@@ -846,10 +748,7 @@ static void TradeCodeEntry_AppendSymbol(u8 symbolIndex)
     res->rawSymbols[res->symbolCount] = EOS;
     PlaySE(SE_SELECT);
     TradeCodeEntry_PrintEntryField();
-    // Editing the field silently clears any error banner WINDOW_MESSAGE was
-    // showing back to the control hint, rather than leaving a stale
-    // failure message up while the player retypes - see TradeCodeEntry_
-    // PrintMessage's own comment.
+    // Editing clears any error banner back to the control hint.
     if (res->errorStatus != TRADE_CODE_ENTRY_OK)
     {
         res->errorStatus = TRADE_CODE_ENTRY_OK;
@@ -875,13 +774,9 @@ static void TradeCodeEntry_DeleteSymbol(void)
     }
 }
 
-// Shared by the B button and the on-screen BACK cell - "delete", or "back
-// out of the screen entirely" if there's nothing left to delete. Nothing in
-// the plan doc's own Stage 6 bullet list asks for the latter explicitly,
-// but without it there'd be no way to leave this screen at all once
-// opened, which would make even the debug-menu round-trip test unable to
-// recover from a misentered code. TRADE_CODE_ENTRY_CANCELLED exists for
-// exactly this - see trade_code_entry.h.
+// Shared by the B button and the on-screen BACK cell: deletes, or backs out of
+// the screen (TRADE_CODE_ENTRY_CANCELLED) if the field is empty, so a
+// misentered code can always be abandoned.
 static void TradeCodeEntry_HandleBack(void)
 {
     if (sTradeCodeEntryDataPtr->symbolCount == 0)
@@ -1007,7 +902,6 @@ static void Task_TradeCodeEntryMain(u8 taskId)
     {
         TradeCodeEntry_TrySubmit();
     }
-    // SELECT is deliberately dead - see trade_code_entry.h / the plan
-    // doc's Stage 6 bullet list ("to avoid a stray page-swap reflex from
-    // the naming screen").
+    // SELECT is deliberately dead, avoiding a stray page-swap reflex from the
+    // naming screen.
 }

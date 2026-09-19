@@ -17,85 +17,47 @@
 #include "constants/pokedex.h"
 #include "constants/species.h"
 
-// Stage 8 of "Trading Codes.md": Step 4, the commit and swap. See
-// include/trade_code_receive.h for the scope/entry-point rationale, and
-// this stage's own status block in the plan doc for why this does NOT
-// reuse CB2_InitInGameTrade (src/trade.c) the way the doc's own Stage 8
-// bullet list originally sketched.
+// Step 4, the commit and swap. See include/trade_code_receive.h for the scope
+// and entry-point rationale, including why this does not reuse
+// CB2_InitInGameTrade.
 //
-// Short version: by the time this file ever runs, Step 3 (trade_code_
-// session.c) has already ZeroMonData/CompactPartySlots'd the offered mon
-// out of the party - possibly a real-world while ago, on a completely
-// separate play session. There is no "outgoing" mon left to show leaving,
-// which is the entire visual premise of CB2_InitInGameTrade's give-and-
-// receive animation - it isn't just cosmetic filler, TradeMons (src/
-// trade.c) SWAPs the player's chosen party slot with gParties[B_TRAINER_
-// OPPONENT_A][0] as part of resolving that animation, which would corrupt
-// an already-empty slot rather than genuinely materialise anything. Worse,
-// its scene-text buffering (BufferTradeSceneStrings, non-link branch)
-// reads the departing/arriving Pokemon's OT name and nickname from the
-// hardcoded sIngameTrades[] NPC-trade table via gSpecialVar_0x8005, not
-// from the actual partner mon's real data - our partner isn't in that
-// table at all, so reusing it as-is would print the wrong trainer and
-// Pokemon names on screen.
+// TradeMons (src/trade.c) swaps the chosen party slot with
+// gParties[B_TRAINER_OPPONENT_A][0] as part of that animation, which would
+// corrupt an already-empty slot, and BufferTradeSceneStrings reads OT
+// name/nickname from sIngameTrades[], which would print the wrong names.
 //
-// Trade evolution instead reuses evolution_scene.h's own general-purpose
-// BeginEvolutionScene - the exact same self-contained "your Pokemon is
-// evolving!" cutscene every other evolution trigger in this codebase
-// already uses (level-up, a Rare Candy, a stone) - which builds its own
-// fresh sprite from scratch and needs no pre-existing trade-animation
-// sprite/BG setup at all, unlike TradeEvolutionScene (which assumes a
-// sprite the dual trade animation already created). GetEvolutionTarget
-// Species is called with tradePartner = NULL, a value it already supports
-// explicitly (see DoesMonMeetAdditionalConditions, src/pokemon.c) - plain
-// and held-item trade evolutions (e.g. Machoke -> Machamp, King's Rock/
-// Metal Coat) resolve exactly as they would with a partner, since neither
-// depends on tradePartner; only a partner-*species*-specific evolution
-// (Karrablast/Shelmet-style, if this fork has any) can't fire without a
-// real partner mon, which no longer exists at Step 4 to offer as one. Not
-// spending a design point on a fabricated stand-in for that partner mon
-// is deliberate - see the plan doc's own precedent for this kind of
-// honestly-flagged, small lossy tradeoff (Stage 2's personality/exp
-// quantisation).
+// Trade evolution uses BeginEvolutionScene, which builds its own sprite and
+// needs no trade-animation setup. GetEvolutionTargetSpecies is called with
+// tradePartner = NULL, which DoesMonMeetAdditionalConditions supports
+// (src/pokemon.c): plain and held-item trade evolutions (Machoke, King's
+// Rock/Metal Coat) resolve as normal, but a partner-species-specific
+// evolution cannot fire, since no partner mon exists at Step 4.
 //
-// gSaveBlock2Ptr->pendingTrade.abandonedCount (struct PendingTrade, Stage
-// 4) is intentionally never written by this file. Stage 4 added it
-// anticipating Stage 11's own "abandoned-trade counter... soft social
-// deterrent" bullet, and an earlier draft of this file's own give-up path
-// (Stage 9, below) incremented it. Dropped after a design discussion: a
-// save file is trivially duplicable outside the game entirely, so nothing
-// here can actually stop a determined duper, and a player who trips the
-// give-up path is at least as likely to be the one who got ghosted as the
-// one doing the ghosting - tracking/surfacing it would punish the wrong
-// population to deter a threat it doesn't even catch. The field itself is
-// left in place (removing it would touch struct SaveBlock2's layout and
-// test/save.c's own size pin for no functional gain) but is now dead
-// weight - always zero, read by nothing.
+// gSaveBlock2Ptr->pendingTrade.abandonedCount is intentionally never written;
+// see trade_code_receive.h for why give-ups are not tracked. The field stays
+// in place to avoid changing struct SaveBlock2's layout and test/save.c's size
+// pin, and is always zero.
 
-// TradeCodeEntry_Init's own outBits target for the confirm-code field:
-// TRADE_CODE_CONFIRM_CHARS (6) symbols * 5 bits = 30 bits, rounded up to a
-// whole byte.
+// outBits target for the confirm-code field: TRADE_CODE_CONFIRM_CHARS (6)
+// symbols * 5 bits = 30 bits, rounded up to a whole byte.
 #define TRADE_CODE_RECEIVE_CONFIRM_SCRATCH_BYTES ((TRADE_CODE_CONFIRM_CHARS * 5 + 7) / 8)
 
 struct TradeCodeReceiveState
 {
-    MainCallback returnCallback; // Stage 9: see include/trade_code_receive.h
+    MainCallback returnCallback; // see include/trade_code_receive.h
     struct TradeCodeBits entryBits;
     u8 entryScratch[TRADE_CODE_RECEIVE_CONFIRM_SCRATCH_BYTES];
     enum TradeCodeEntryStatus entryStatus;
     enum TradeCodePromptResult promptResult;
     u8 partyIndex;    // valid only when !wentToPC
     bool8 wentToPC;
-    // Stage 11: distinguishes *why* wentToPC is set, so CB2_TradeCodeReceive_
-    // AfterTakeCareMsg can show the right one of two different "sent to a
-    // Box" messages - see TradeCodeReceive_DoSwap.
+    // Distinguishes why wentToPC is set, so CB2_TradeCodeReceive_AfterTakeCareMsg
+    // shows the right "sent to a Box" message (see TradeCodeReceive_DoSwap).
     bool8 overLevelCap;
 };
 
-//==========EWRAM==========//
 static EWRAM_DATA struct TradeCodeReceiveState *sTradeCodeReceivePtr = NULL;
 
-//==========STATIC=DEFINES==========//
 static void TradeCodeReceive_ShowEntry(void);
 static enum TradeCodeEntryStatus TradeCodeReceive_ValidateConfirmEntry(struct TradeCodeBits *decoded);
 static void TradeCodeReceive_DoSwap(void);
@@ -115,36 +77,24 @@ static void CB2_TradeCodeReceive_AfterBoxMsg(void);
 static void CB2_TradeCodeReceive_AfterEvolution(void);
 static void CB2_TradeCodeReceive_AfterSaveFailedAck(void);
 
-//==========CONST=DATA==========//
 static const u8 sText_NoTradeAwaiting[]  = _("There's no trade code waiting\nto be completed.");
-// Stage 9: shown when gSaveBlock2Ptr->pendingTrade.incoming fails
-// TradeCode_ValidatePendingBoxMon on resume (a corrupted save sector, or a
-// hand-tampered one) - see this file's own CB2_TradeCodeReceive_AfterCorruptAck.
+// Shown when pendingTrade.incoming fails TradeCode_ValidatePendingBoxMon on
+// resume (see CB2_TradeCodeReceive_AfterCorruptAck).
 static const u8 sText_TradeCodeCorrupt[] = _("Something went wrong with a\npending trade. It's been cancelled.");
-// Stage 9: the one way out of a COMMITTED trade, reached by pressing B on
-// an empty confirm-code field - see include/trade_code_receive.h's own
-// comment on TradeCodeReceive_Start for why this exists at all. Defaults
-// to NO (TradeCodeReceive_ShowGiveUpPrompt's own TradeCodePrompt_Init
-// call) - this is the irreversible half of an already-irreversible step,
-// and an accidental double-B-then-A must not be able to confirm it.
+// The one way out of a COMMITTED trade (B on an empty confirm-code field).
+// The prompt defaults to NO: this is irreversible, and an accidental
+// double-B-then-A must not confirm it.
 static const u8 sText_ConfirmGiveUp[] = _("Give up on this trade?\nYou will not get {STR_VAR_1}.");
-// Split into two short messages rather than one \p-paged one - mirrors
-// vanilla's own two-message split for this exact moment (src/trade.c's
-// STATE_SEND_MSG/STATE_TAKE_CARE_OF_MON, gText_XSentOverY/gText_TakeGood
-// CareOfX), and sidesteps Stage 7's own still-unverified-on-hardware \p
-// pagination fix (see that stage's status block's last entry) entirely by
-// reusing the exact "one full ACK screen per short message" shape that
-// stage's own diagnostic tooling settled on once \p caused it real
-// trouble.
+// Two short ACK messages rather than one \p-paged one, like vanilla's
+// gText_XSentOverY/gText_TakeGoodCareOfX split (src/trade.c), avoiding \p
+// pagination in the prompt screen.
 static const u8 sText_SentOver[]      = _("{STR_VAR_1} sent over\n{STR_VAR_2}!");
 static const u8 sText_TakeGoodCareOfIt[] = _("Take good care of\n{STR_VAR_2}!");
 static const u8 sText_SentToBox[]     = _("Your party is full, so\n{STR_VAR_2} was sent to a Box.");
-// Stage 11 (dev decision, Trading Codes.md): shown instead of sText_SentToBox
-// when the incoming mon is above the level cap, regardless of whether the
-// party had room - see TradeCodeReceive_DoSwap.
+// Shown instead of sText_SentToBox when the incoming mon is above the level
+// cap, whether or not the party had room (see TradeCodeReceive_DoSwap).
 static const u8 sText_SentToBoxLevelCap[] = _("{STR_VAR_2} is above your\nlevel cap, so it was boxed.");
 
-//==========UI=SETUP==========//
 void TradeCodeReceive_Start(MainCallback returnCallback)
 {
     struct TradeCodeReceiveState *s;
@@ -157,24 +107,18 @@ void TradeCodeReceive_Start(MainCallback returnCallback)
     sTradeCodeReceivePtr = s;
     s->returnCallback = returnCallback;
 
-    // Shouldn't be reachable through the real entry point once Stage 10
-    // gates it behind this same state check, but the debug menu can call
-    // this directly regardless of what gSaveBlock2Ptr->pendingTrade
-    // actually holds, so guard here too rather than trust the caller.
+    // The debug menu can call this directly regardless of what
+    // gSaveBlock2Ptr->pendingTrade holds, so guard here too.
     if (gSaveBlock2Ptr->pendingTrade.state != TRADE_CODE_STATE_COMMITTED)
     {
         TradeCodePrompt_Init(sText_NoTradeAwaiting, FALSE, FALSE, &s->promptResult, CB2_TradeCodeReceive_AfterNoTradeAck);
         return;
     }
 
-    // Stage 9: guard against a corrupted or hand-tampered pendingTrade
-    // before it's ever handed to the entry screen/preview/party-insert
-    // machinery below - see TradeCode_ValidatePendingBoxMon's own comment
-    // (include/trade_code.h) for exactly what this checks. Checked here,
-    // inside the one real entry point, rather than only at the Stage 9
-    // boot-hook call site (src/overworld.c) - the debug menu's own "Receive
-    // Trade Code (Step 4)..." action reaches this exact code path too, and
-    // deserves the same protection.
+    // Guard against a corrupted or hand-tampered pendingTrade before it reaches
+    // the entry screen/preview/party-insert code. Checked here, in the one real
+    // entry point, so the debug menu's path gets the same protection as the
+    // boot hook (src/overworld.c).
     {
         struct BoxPokemon incoming;
         memcpy(&incoming, gSaveBlock2Ptr->pendingTrade.incoming, sizeof(incoming));
@@ -193,11 +137,9 @@ static void CB2_TradeCodeReceive_AfterNoTradeAck(void)
     TradeCodeReceive_FinishToReturnCallback();
 }
 
-// Stage 9: pendingTrade.incoming failed TradeCode_ValidatePendingBoxMon.
-// Never materialised - cleared back to TRADE_CODE_STATE_NONE (keeping the
-// replay ring, same selective-clear as everywhere else in this feature)
-// and force-saved so the error doesn't keep reappearing on every future
-// boot once it's actually fixed.
+// pendingTrade.incoming failed TradeCode_ValidatePendingBoxMon. Never
+// materialised; cleared back to TRADE_CODE_STATE_NONE (keeping the replay ring)
+// and force-saved so the error does not recur on every boot.
 static void CB2_TradeCodeReceive_AfterCorruptAck(void)
 {
     TradeCodeReceive_ClearPendingTradeFields();
@@ -215,11 +157,9 @@ static void TradeCodeReceive_ShowEntry(void)
 }
 
 // The TradeCodeEntryValidator for the confirm-code entry screen. A confirm
-// code's payload is fixed and tiny (see the payload spec): codeKind (2
-// bits) + a 28-bit combined tag, no seal of its own - the tag itself
-// already is the anti-tamper/anti-forgery check (TradeCode_ConfirmTag,
-// Stage 3), computed and compared directly against what Step 3 already
-// derived and stored as pendingTrade.expectedConfirmTag.
+// code is codeKind (2 bits) + a 28-bit combined tag with no seal of its own:
+// the tag (TradeCode_ConfirmTag) is the anti-forgery check, compared against
+// pendingTrade.expectedConfirmTag stored at Step 3.
 static enum TradeCodeEntryStatus TradeCodeReceive_ValidateConfirmEntry(struct TradeCodeBits *decoded)
 {
     u32 codeKind, tag;
@@ -241,24 +181,14 @@ static void CB2_TradeCodeReceive_AfterConfirmEntry(void)
 
     if (s->entryStatus != TRADE_CODE_ENTRY_OK)
     {
-        // The only other status TradeCodeEntry_Init's own callback can
-        // report is TRADE_CODE_ENTRY_CANCELLED (B on an empty field) - a
-        // validator rejection (wrong/garbled tag) is handled entirely
-        // inside the entry screen itself, which shows its own canned
-        // message and loops the player back into the same field without
-        // ever reaching this callback (see trade_code_entry.h's own
-        // contract, and Stage 7's trade_code_session.c for the identical
-        // reasoning at its own offer-entry callback).
+        // The only other status this callback can see is
+        // TRADE_CODE_ENTRY_CANCELLED (B on an empty field); a validator
+        // rejection is handled inside the entry screen, which loops back into
+        // the field without reaching this callback.
         //
-        // Step 4 has no ordinary "cancel" - the offered mon already left
-        // in Step 3, and the doc's own "Lock-in" wording is explicit that
-        // no cancel affordance exists once COMMITTED. But Stage 9's own
-        // dev note raises a real, separate problem an unconditional
-        // "just reopen the field" doesn't solve: a partner who never sends
-        // back a valid confirm code would leave this player stuck
-        // re-entering this exact screen every single boot, forever, with
-        // no way out at all. Offer the one honest way out instead -
-        // forfeit the trade - rather than none.
+        // Step 4 has no ordinary cancel (the offered mon already left in
+        // Step 3), but a partner who never sends a valid confirm code would
+        // trap the player here on every boot, so offer forfeiting the trade.
         TradeCodeReceive_ShowGiveUpPrompt();
         return;
     }
@@ -266,8 +196,7 @@ static void CB2_TradeCodeReceive_AfterConfirmEntry(void)
     TradeCodeReceive_DoSwap();
 }
 
-// Stage 9: see include/trade_code_receive.h's own comment on
-// TradeCodeReceive_Start for why this exists.
+// See TradeCodeReceive_Start (include/trade_code_receive.h) for why this exists.
 static void TradeCodeReceive_ShowGiveUpPrompt(void)
 {
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
@@ -276,8 +205,7 @@ static void TradeCodeReceive_ShowGiveUpPrompt(void)
     memcpy(&boxMon, gSaveBlock2Ptr->pendingTrade.incoming, sizeof(boxMon));
     GetBoxMonData(&boxMon, MON_DATA_NICKNAME, gStringVar1);
     StripExtCtrlCodes(gStringVar1);
-    // TradeCodePrompt_Init doesn't expand placeholders itself - see this
-    // file's own TradeCodeReceive_DoSwap for the identical reasoning.
+    // TradeCodePrompt_Init doesn't expand placeholders; see TradeCodeReceive_DoSwap.
     StringExpandPlaceholders(gStringVar4, sText_ConfirmGiveUp);
     TradeCodePrompt_Init(gStringVar4, TRUE, TRUE, &s->promptResult, CB2_TradeCodeReceive_AfterGiveUpPrompt);
 }
@@ -292,35 +220,23 @@ static void CB2_TradeCodeReceive_AfterGiveUpPrompt(void)
         TradeCodeReceive_ShowEntry(); // "No" - keep waiting, back to the field
 }
 
-// The forfeit itself: permanently gives up the incoming mon. There is no
-// partial undo of Step 3's escrow - both sides already gave up their own
-// mon before either received anything, per the plan doc's own protocol
-// section - so this isn't a penalty being applied on top of anything; it's
-// just acknowledging a loss that already happened on the partner's side
-// and letting the player stop being blocked by it. No counter, no record
-// of this kept anywhere - a player giving up here is at least as likely to
-// be the one who got ghosted as the one doing the ghosting, and punishing
-// that population to (ineffectually) deter a save-duplicating scammer who
-// was never going to trip this path anyway isn't the goal. Keeps the
-// replay ring: the partner's offer seal stays burned regardless of which
-// side eventually walks away, the same anti-duplication guarantee a normal
-// completion gets - that part of the fair-exchange design still holds.
+// The forfeit itself: permanently gives up the incoming mon. Step 3's escrow
+// has no undo (both sides gave up their mon before either received anything),
+// so this acknowledges a loss that already happened rather than applying a
+// penalty. Nothing is recorded (see trade_code_receive.h). Keeps the replay
+// ring: the partner's offer seal stays burned, like a normal completion.
 static void TradeCodeReceive_DoGiveUp(void)
 {
     TradeCodeReceive_ClearPendingTradeFields();
     TradeCodeReceive_SaveThenFinish();
 }
 
-// The actual Step 4 swap: build the incoming BoxPokemon into a real
-// struct Pokemon, apply the received-mon friendship reset, insert it into
-// the party (or the PC if the party's full), update the Pokedex, and
-// clear pendingTrade back to NONE (short of the replay ring and Stage 11's
-// abandonedCount, which this doesn't touch). Evolution and the second
-// force-save are split into their own functions since evolution, if it
-// happens, needs to run to completion (BeginEvolutionScene's own screen
-// takeover) before the save - see this file's own header comment and the
-// plan doc's own "save after the mon is in the party and after evolution
-// resolves" ordering.
+// The actual Step 4 swap: build the incoming BoxPokemon into a struct Pokemon,
+// apply the received-mon friendship reset, insert it into the party (or the PC
+// if the party is full), update the Pokedex, and clear pendingTrade to NONE
+// (except the replay ring and abandonedCount). Evolution and the second
+// force-save are split out since evolution must finish (BeginEvolutionScene
+// takes over the screen) before the save.
 static void TradeCodeReceive_DoSwap(void)
 {
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
@@ -334,9 +250,8 @@ static void TradeCodeReceive_DoSwap(void)
     BoxMonToMon(&boxMon, &mon);
     CalculateMonStats(&mon);
 
-    // Mirrors src/trade.c's TradeMons friendship=70 rule exactly (see the
-    // plan doc's own citation, src/trade.c:3113-3116) - Eggs use
-    // Friendship to track egg cycles, so it's left alone on one.
+    // Mirrors src/trade.c's TradeMons friendship=70 rule (src/trade.c:3113-3116).
+    // Eggs use Friendship to track egg cycles, so it is left alone on one.
     isEgg = GetMonData(&mon, MON_DATA_IS_EGG);
     if (!isEgg)
     {
@@ -344,47 +259,30 @@ static void TradeCodeReceive_DoSwap(void)
         SetMonData(&mon, MON_DATA_FRIENDSHIP, &friendship);
     }
 
-    // Stage 11 (dev decision, Trading Codes.md's "Level cap" bullet): an
-    // egg's level isn't a real level yet (no cap concept applies before it
-    // hatches), so eggs are unconditionally exempt. Checked against
-    // MON_DATA_LEVEL post-CalculateMonStats, i.e. the same transmitted
-    // level TradeCode_DeserializeMon (Stage 2) already validated is
-    // 1..MAX_LEVEL - never the sender's live, possibly-since-changed level.
+    // Eggs are exempt from the level cap: an egg's level is not a real level
+    // until it hatches. Otherwise checked against MON_DATA_LEVEL after
+    // CalculateMonStats, i.e. the transmitted level TradeCode_DeserializeMon
+    // validated as 1..MAX_LEVEL, never the sender's live level.
     overLevelCap = !isEgg && B_EXP_CAP_TYPE != EXP_CAP_NONE
                  && GetMonData(&mon, MON_DATA_LEVEL) > GetCurrentLevelCap();
     s->overLevelCap = overLevelCap;
 
     if (overLevelCap)
     {
-        // Marks this exact mon for IsBoxMonWithdrawLocked (src/pokemon_
-        // storage_system.c) - see struct BoxPokemon's own comment
-        // (include/pokemon.h) for the full one-way-lock reasoning. Left
-        // with its partner-synthesised OT ID untouched - that lock check
-        // is its own explicit bit now, not an OT-ID inference, so the OT
-        // ID this mon carries has no bearing on whether it's locked. See
-        // this same "if" block's own history in the plan doc's Stage 11
-        // status for why this used to matter and no longer does: an
-        // earlier version of this function rewrote a *non*-over-cap mon's
-        // OT ID to the player's own here to dodge a since-removed false-
-        // positive in the legacy-carry-over lock. That inference is gone
-        // (see legacyCarryOverLocked, include/pokemon.h), so every
-        // trade-code receipt - over cap or not - now keeps its real,
-        // partner-synthesised OT ID, same as the payload spec's own
-        // "otId high half" section originally intended: IsTradedMon/
-        // IsOtherTrainer's (src/pokemon.c) traded-Pokemon EXP boost and
-        // obedience bypass apply normally.
+        // Marks this mon for IsBoxMonWithdrawLocked (src/pokemon_storage_system.c);
+        // see struct BoxPokemon (include/pokemon.h) for the one-way lock. The
+        // lock is its own explicit bit, not an OT-ID inference, so the
+        // partner-synthesised OT ID stays untouched on every receipt, over cap
+        // or not. IsTradedMon/IsOtherTrainer (src/pokemon.c) therefore apply the
+        // traded-Pokemon EXP boost and obedience bypass normally.
         mon.box.tradeCodeAboveLevelCap = TRUE;
     }
 
-    // Insert into the first empty party slot, else the PC - mirrors
-    // GiveCapturedMonToPlayer's own party-then-PC shape (src/pokemon.c),
-    // deliberately not calling that function directly since its
-    // Achievement_CheckCaptureMilestones/Achievement_OnShinyObtained/etc.
-    // calls are specifically about *catching*, not trading, and shouldn't
-    // fire here. An over-level-cap mon skips the party search entirely and
-    // always goes straight to the PC, even with open party slots - Stage
-    // 11's own "insert into storage" wording is unconditional, not just a
-    // fallback for a full party.
+    // Insert into the first empty party slot, else the PC, like
+    // GiveCapturedMonToPlayer (src/pokemon.c) but without calling it: its
+    // Achievement_CheckCaptureMilestones/Achievement_OnShinyObtained calls are
+    // about catching, not trading. An over-level-cap mon always goes straight
+    // to the PC, even with open party slots.
     if (overLevelCap)
     {
         CopyMonToPC(&mon);
@@ -412,27 +310,21 @@ static void TradeCodeReceive_DoSwap(void)
         }
     }
 
-    // GAME_STAT_POKEMON_TRADES: mirrors both src/trade.c increment sites
-    // (the old link-trade path), which are unreachable under TRADE_CODES
-    // (Stage 10) - without this, the trainer card's own Pokemon Trades
-    // count (src/trainer_card.c) would stay frozen at 0 for every
-    // TRADE_CODES player no matter how many real trades they complete.
+    // GAME_STAT_POKEMON_TRADES: mirrors both src/trade.c increment sites,
+    // which are unreachable under TRADE_CODES; without this the trainer card's
+    // trade count (src/trainer_card.c) would stay at 0.
     IncrementGameStat(GAME_STAT_POKEMON_TRADES);
 
-    // Pokedex registration - mirrors src/trade.c's own (static, so not
-    // reusable directly) UpdatePokedexForReceivedMon, but via Handle
-    // SetPokedexFlagFromMon for the "caught" half (a small existing
-    // wrapper around HandleSetPokedexFlag that does its own species/
-    // personality extraction) rather than duplicating that extraction here.
+    // Pokedex registration, mirroring src/trade.c's static
+    // UpdatePokedexForReceivedMon; HandleSetPokedexFlagFromMon does the
+    // "caught" half.
     if (!isEgg)
     {
         GetSetPokedexFlagBySpecies(GetMonData(&mon, MON_DATA_SPECIES), FLAG_SET_SEEN);
         HandleSetPokedexFlagFromMon(&mon, FLAG_SET_CAUGHT);
     }
 
-    // pendingTrade is done with, except the replay ring and Stage 11's own
-    // abandonedCount - see the plan doc's own Stage 8 bullet ("Clear
-    // pendingTrade to NONE, keeping the replay ring and abandonedCount").
+    // pendingTrade is done with, except the replay ring and abandonedCount.
     TradeCodeReceive_ClearPendingTradeFields();
 
     GetMonData(&mon, MON_DATA_OT_NAME, gStringVar1);
@@ -448,8 +340,7 @@ static void CB2_TradeCodeReceive_AfterSentOverMsg(void)
 {
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
 
-    // gStringVar1/gStringVar2 are still what TradeCodeReceive_DoSwap set -
-    // nothing in between has touched them.
+    // gStringVar1/gStringVar2 are still what TradeCodeReceive_DoSwap set.
     StringExpandPlaceholders(gStringVar4, sText_TakeGoodCareOfIt);
     TradeCodePrompt_Init(gStringVar4, FALSE, FALSE, &s->promptResult, CB2_TradeCodeReceive_AfterTakeCareMsg);
 }
@@ -472,17 +363,13 @@ static void CB2_TradeCodeReceive_AfterBoxMsg(void)
     TradeCodeReceive_CheckEvolution();
 }
 
-// A boxed mon (party was full) never gets an evolution check here, same as
-// how a normal wild catch that overflows straight to the PC doesn't either
-// - there's no in-box evolution UI in this codebase to reuse or duplicate.
+// A boxed mon (party was full) gets no evolution check, like a wild catch that
+// overflows to the PC; there is no in-box evolution UI to reuse.
 static void TradeCodeReceive_CheckEvolution(void)
 {
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
-    // NULL default, matching evolution_scene.c's own Task_BeginEvolutionScene
-    // ("struct Pokemon *mon = NULL;") for the identical shape - only ever
-    // dereferenced inside the same `evoTarget != SPECIES_NONE` branch that
-    // requires wentToPC to be FALSE (the only branch that assigns it), but
-    // an explicit default avoids relying on a compiler proving that itself.
+    // NULL default: only dereferenced in the `evoTarget != SPECIES_NONE` branch,
+    // which requires wentToPC to be FALSE (the only branch that assigns it).
     struct Pokemon *mon = NULL;
     enum Species evoTarget = SPECIES_NONE;
 
@@ -495,15 +382,12 @@ static void TradeCodeReceive_CheckEvolution(void)
 
     if (evoTarget != SPECIES_NONE)
     {
-        // tradePartner = NULL throughout - see this file's own header
-        // comment for why, and what that does and doesn't cost.
+        // tradePartner = NULL throughout; see the header comment.
         GetEvolutionTargetSpecies(mon, EVO_MODE_TRADE, ITEM_NONE, NULL, NULL, DO_EVO);
         gCB2_AfterEvolution = CB2_TradeCodeReceive_AfterEvolution;
-        // BeginEvolutionScene's own `mon` parameter is unused internally
-        // (Task_BeginEvolutionScene re-fetches &gParties[B_TRAINER_PLAYER]
-        // [partyId] itself once its own fade-to-black finishes) - passed
-        // for signature parity with EvolutionScene/TradeEvolutionScene,
-        // not because it does anything here.
+        // BeginEvolutionScene's `mon` parameter is unused internally
+        // (Task_BeginEvolutionScene re-fetches the party mon); passed for
+        // signature parity with EvolutionScene/TradeEvolutionScene.
         BeginEvolutionScene(mon, evoTarget, FALSE, s->partyIndex);
         return;
     }
@@ -517,15 +401,10 @@ static void CB2_TradeCodeReceive_AfterEvolution(void)
 }
 
 // Individual-field clear, not a whole-struct memset, so the replay ring (and
-// the now-unused abandonedCount field, left untouched rather than reclaimed
-// - see this file's own header comment) survive - see the plan doc's own
-// Stage 8 bullet ("Clear pendingTrade to NONE, keeping the replay ring and
-// abandonedCount"). Shared by every Step-4-ends-here path this file has:
-// a real completed swap (TradeCodeReceive_DoSwap), Stage 9's give-up
-// forfeit (TradeCodeReceive_DoGiveUp), and Stage 9's corrupted-pendingTrade
-// recovery (CB2_TradeCodeReceive_AfterCorruptAck) - all three want the
-// exact same fields cleared, they just differ in what (if anything) they
-// do around the clear.
+// the unused abandonedCount) survive. Shared by every Step-4-ends-here path:
+// a completed swap (TradeCodeReceive_DoSwap), the give-up forfeit
+// (TradeCodeReceive_DoGiveUp), and corrupted-pendingTrade recovery
+// (CB2_TradeCodeReceive_AfterCorruptAck).
 static void TradeCodeReceive_ClearPendingTradeFields(void)
 {
     memset(gSaveBlock2Ptr->pendingTrade.incoming, 0, sizeof(gSaveBlock2Ptr->pendingTrade.incoming));
@@ -535,18 +414,12 @@ static void TradeCodeReceive_ClearPendingTradeFields(void)
     gSaveBlock2Ptr->pendingTrade.state = TRADE_CODE_STATE_NONE;
 }
 
-// The force-save shared by every path through this file that ends by
-// handing control back out (see Stage 4's TrySavingData in trade_code_
-// session.c for the *first* force-save, at Step 3's commit - this is
-// always the second, and for Stage 9's give-up/corrupt-clear paths, the
-// only one). Deliberately after every RAM mutation the calling path makes
-// (the mon already in the party/PC and evolution resolved, for a real
-// swap; pendingTrade already cleared, for give-up or corrupt-clear) - a
-// power cut before this succeeds can't lose or duplicate anything, since
-// the *saved* file simply doesn't reflect whatever RAM-only change was in
-// progress yet, and Stage 9's own reset-resistant boot hook re-runs
-// whichever path was interrupted from scratch, cleanly, the next time the
-// game boots.
+// The force-save shared by every path that ends by handing control back out
+// (the second force-save after Step 3's TrySavingData in trade_code_session.c,
+// and the only one on the give-up/corrupt-clear paths). It runs after every RAM
+// mutation the path makes, so a power cut before it succeeds loses or
+// duplicates nothing: the saved file does not yet reflect the change, and the
+// boot hook re-runs the interrupted path from scratch.
 static void TradeCodeReceive_SaveThenFinish(void)
 {
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;
@@ -563,18 +436,14 @@ static void TradeCodeReceive_SaveThenFinish(void)
 
 static void CB2_TradeCodeReceive_AfterSaveFailedAck(void)
 {
-    // Safe to retry unconditionally, same reasoning as Stage 7's own
-    // CB2_TradeCodeSession_AfterSaveFailedAck: everything up to this point
-    // only touched gSaveBlock2Ptr/gParties in RAM - nothing reaches the
-    // physical save file until TrySavingData itself succeeds - and
-    // re-running the save just tries to persist that exact same state
-    // again, whichever path (swap/give-up/corrupt-clear) got here.
+    // Safe to retry unconditionally: everything so far only touched
+    // gSaveBlock2Ptr/gParties in RAM, and nothing reaches the save file until
+    // TrySavingData succeeds.
     TradeCodeReceive_SaveThenFinish();
 }
 
-// Frees this screen's own state and hands control to whatever
-// TradeCodeReceive_Start was told to return to - see include/trade_code_
-// receive.h's own comment on why that's not always CB2_ReturnToField.
+// Frees this screen's state and hands control to the returnCallback given to
+// TradeCodeReceive_Start (not always CB2_ReturnToField; see the header).
 static void TradeCodeReceive_FinishToReturnCallback(void)
 {
     struct TradeCodeReceiveState *s = sTradeCodeReceivePtr;

@@ -15,34 +15,21 @@
 #include "constants/songs.h"
 #include "menu_helpers.h"
 
-// A small, self-contained full-screen message/yes-no prompt for src/
+// A small, self-contained full-screen message/yes-no prompt for
 // trade_code_session.c. See include/trade_code_prompt.h for the public
-// contract and why this exists as its own screen instead of reusing the
-// overworld's own dialogue-box system.
+// contract and why this is its own screen.
 //
-// Deliberately built on the game's own *standard* message-box and yes/no-
-// box primitives (LoadMessageBoxAndBorderGfx/DrawDialogueFrame/CreateYesNo
-// Menu - the exact same ones an ordinary NPC conversation or a vanilla
-// "Would you like to save?" prompt uses), on this screen's own freshly
-// created window(s), rather than a bespoke full-screen background - the
-// same "just a regular message box and yes/no box" request the plan doc's
-// own status block records. No custom tile/tilemap/palette assets at all,
-// unlike Stage 5/6's own screens - just the game's built-in dialogue
-// assets, loaded onto a window this screen owns outright (via its own
-// InitWindows call), never onto the overworld's own window 0 the way the
-// version of this file that hung on hardware tried to.
+// Built on the game's standard message-box and yes/no-box primitives
+// (LoadMessageBoxAndBorderGfx/DrawDialogueFrame/CreateYesNoMenu) on windows
+// this screen owns via its own InitWindows call, never the overworld's window
+// 0. No custom tile/tilemap/palette assets.
 //
-// Still a full CB2_/Task_-driven takeover underneath (mirrors src/trade_
-// code_display.c / src/ui_stat_editor.c's own gMain.state gfx setup, VBlank/
-// main callback split) - that part of the shape is what actually fixed the
-// hang (a screen that owns 100% of its own state, with nothing borrowed
-// from whatever was on screen before), and is kept even though the visual
-// footprint is now much smaller.
+// Still a full CB2_/Task_-driven takeover (like trade_code_display.c): owning
+// all of its own state, with nothing borrowed from the previous screen, is what
+// avoids the hardware hang.
 
-//==========DEFINES==========//
-// Sized comfortably over the longest real message this screen shows
-// (trade_code_session.c's own sText_ConfirmCommit, ~130 characters
-// including its \n line breaks).
+// Sized over the longest real message (sText_ConfirmCommit in
+// trade_code_session.c, ~130 characters including \n breaks).
 #define TRADE_CODE_PROMPT_MESSAGE_MAX_CHARS 200
 
 enum TradeCodePromptPhase
@@ -62,20 +49,17 @@ struct TradeCodePromptResources
     u8 message[TRADE_CODE_PROMPT_MESSAGE_MAX_CHARS + 1];
 };
 
-// Window 0 - must stay index 0: AddTextPrinterForMessage, RunTextPrinters
-// AndIsPrinter0Active and DrawDialogueFrame's own conventional callers all
-// implicitly target window 0 (see their own definitions in src/menu.c).
-// The yes/no box isn't in this array at all - CreateYesNoMenu (src/menu.c)
-// creates and owns its own window via AddWindow internally.
+// Window 0 - must stay index 0: AddTextPrinterForMessage,
+// RunTextPrintersAndIsPrinter0Active and DrawDialogueFrame implicitly target
+// window 0 (src/menu.c). The yes/no box is not in this array; CreateYesNoMenu
+// creates and owns its own window.
 enum WindowIds
 {
     WINDOW_MESSAGE,
 };
 
-//==========EWRAM==========//
 static EWRAM_DATA struct TradeCodePromptResources *sTradeCodePromptDataPtr = NULL;
 
-//==========STATIC=DEFINES==========//
 static void TradeCodePrompt_RunSetup(void);
 static bool8 TradeCodePrompt_DoGfxSetup(void);
 static void TradeCodePrompt_FreeResources(void);
@@ -83,12 +67,9 @@ static void Task_TradeCodePromptWaitFadeIn(u8 taskId);
 static void Task_TradeCodePromptMain(u8 taskId);
 static void TradeCodePrompt_Finish(enum TradeCodePromptResult result);
 
-//==========CONST=DATA==========//
-// Matches the real field message box's own position exactly (src/menu.c's
-// sStandardTextBox_WindowTemplates) - the classic bottom-of-screen
-// dialogue box every player already recognises. baseBlock is this
-// screen's own (nothing else here uses tiles 1-107), not menu.c's 0x194 -
-// that value is specific to the overworld's own window layout.
+// Matches the field message box's position (sStandardTextBox_WindowTemplates,
+// src/menu.c). baseBlock is this screen's own (tiles 1-107 are free here), not
+// menu.c's overworld-specific 0x194.
 static const struct WindowTemplate sTradeCodePromptWindowTemplates[] =
 {
     [WINDOW_MESSAGE] =
@@ -104,21 +85,15 @@ static const struct WindowTemplate sTradeCodePromptWindowTemplates[] =
     DUMMY_WIN_TEMPLATE
 };
 
-// Matches the real field yes/no box's own position exactly (src/menu.c's
-// sYesNo_WindowTemplates, what DisplayYesNoMenuDefaultYes itself uses) -
-// upper-right, clear of the message box above. baseBlock is this screen's
-// own (right after WINDOW_MESSAGE's own 27*4=108 tiles), not menu.c's
-// 0x125 - same reasoning as WINDOW_MESSAGE's own baseBlock.
+// Matches the field yes/no box's position (sYesNo_WindowTemplates, src/menu.c),
+// upper-right, clear of the message box. baseBlock is this screen's own (after
+// WINDOW_MESSAGE's 27*4=108 tiles), not menu.c's 0x125.
 //
-// paletteNum is DLG (15), not STD (14), exactly as sYesNo_WindowTemplates
-// itself has it - and the two are NOT interchangeable here. A window
-// template's own paletteNum colours the window's *contents* (the interior
-// FillWindowPixelBuffer(PIXEL_FILL(1)) that DrawStdFrameWithCustomTileAnd
-// Palette does, plus the YES/NO text), while the frame tiles drawn around
-// it are coloured by the paletteNum passed to CreateYesNoMenu below. Only
-// bank 15 (gMessageBox_Pal) has white at colour index 1; bank 14 (the
-// user's own window-frame palette, graphics/text_window/N.png) has a near
-// black there, which is what made this box's interior render black.
+// paletteNum must be DLG (15), not STD (14). The template's paletteNum colours
+// the window's contents (interior fill and YES/NO text), while the frame tiles
+// use the paletteNum passed to CreateYesNoMenu. Only bank 15 has white at
+// colour index 1; bank 14 (the user's window-frame palette) has near black
+// there, which renders the interior black.
 static const struct WindowTemplate sTradeCodePromptYesNoTemplate =
 {
     .bg = 0,
@@ -130,20 +105,13 @@ static const struct WindowTemplate sTradeCodePromptYesNoTemplate =
     .baseBlock = 1 + (27 * 4),
 };
 
-// The blank tile VRAM is DMA-filled with in this screen's own gfx setup
-// (case 0 below, matching src/trade_code_display.c's own DmaClearLarge16
-// call) references BG palette bank 1 (tilemap entry 0x1000's own top
-// nibble). Without an explicit load here, that bank keeps whatever was
-// left over from the previous screen once the fade-in reaches full
-// brightness - not a problem while still fully faded to black, but a real
-// "garbled backdrop behind a clean message box" risk once faded in. Zeroed
-// out explicitly so the backdrop is genuinely black, not stale leftover
-// colour data - Stage 5/6's own screens never needed this because they
-// always loaded a full custom background palette that overwrote
-// everything relevant; this screen deliberately doesn't load one at all.
+// The blank tile VRAM is DMA-filled with (case 0 below) references BG palette
+// bank 1 (tilemap entry 0x1000's top nibble). Without an explicit load, that
+// bank keeps the previous screen's colours once the fade-in completes,
+// garbling the backdrop. Zeroed so the backdrop is black; this screen loads no
+// background palette of its own.
 static const u16 sBlankPalette[32] = {0};
 
-//==========UI=SETUP==========// (mirrors trade_code_display.c)
 void TradeCodePrompt_Init(const u8 *message, bool8 hasYesNo, bool8 yesNoDefaultNo, enum TradeCodePromptResult *outResult, MainCallback callback)
 {
     if ((sTradeCodePromptDataPtr = AllocZeroed(sizeof(struct TradeCodePromptResources))) == NULL)
@@ -158,15 +126,10 @@ void TradeCodePrompt_Init(const u8 *message, bool8 hasYesNo, bool8 yesNoDefaultN
     sTradeCodePromptDataPtr->hasYesNo = hasYesNo;
     sTradeCodePromptDataPtr->yesNoInitialCursorPos = yesNoDefaultNo ? 1 : 0;
 
-    // Plain StringCopy, not StringCopyN - see TradeCodeDisplay_Init's own
-    // comment on why (src/trade_code_display.c): StringCopyN has no EOS
-    // check of its own and would walk off the end of a shorter source.
-    // The buffer above is sized to comfortably exceed every real message
-    // this screen is ever handed (see TRADE_CODE_PROMPT_MESSAGE_MAX_CHARS),
-    // which is what actually keeps this safe. Callers are expected to have
-    // already run this through StringExpandPlaceholders themselves if it
-    // has {STR_VAR_n} tokens (see trade_code_session.c's own call sites) -
-    // this screen only copies and prints, it doesn't expand anything.
+    // Plain StringCopy, not StringCopyN (see TradeCodeDisplay_Init): the buffer
+    // is sized over every real message (TRADE_CODE_PROMPT_MESSAGE_MAX_CHARS).
+    // Callers expand {STR_VAR_n} tokens themselves; this screen only copies
+    // and prints.
     StringCopy(sTradeCodePromptDataPtr->message, message);
 
     SetMainCallback2(TradeCodePrompt_RunSetup);
@@ -232,21 +195,17 @@ static bool8 TradeCodePrompt_DoGfxSetup(void)
         InitBgsFromTemplates(0, sTradeCodePromptBgTemplates, NELEMS(sTradeCodePromptBgTemplates));
         SetGpuReg(REG_OFFSET_DISPCNT, 0);
         ShowBg(0);
-        // See sBlankPalette's own comment - this has to happen before the
-        // fade-in reaches visible brightness, and there's no harm doing it
-        // this early (LoadMessageBoxAndBorderGfx below overwrites banks
-        // 14/15 specifically, not 0-1).
+        // See sBlankPalette; must happen before the fade-in becomes visible.
+        // LoadMessageBoxAndBorderGfx below overwrites banks 14/15, not 0-1.
         LoadPalette(sBlankPalette, 0, sizeof(sBlankPalette));
         gMain.state++;
         break;
     case 3:
         InitWindows(sTradeCodePromptWindowTemplates);
         DeactivateAllTextPrinters();
-        // LoadMessageBoxGfx/LoadUserWindowBorderGfx (both called by this)
-        // resolve which BG to load into via window 0's own .bg attribute
-        // (GetWindowAttribute, src/text_window.c) - so this must run after
-        // InitWindows, not before, or it would resolve against whatever
-        // window 0 meant on the *previous* screen.
+        // LoadMessageBoxGfx/LoadUserWindowBorderGfx resolve their BG from
+        // window 0's .bg attribute (src/text_window.c), so this must run after
+        // InitWindows.
         LoadMessageBoxAndBorderGfx();
         DrawDialogueFrame(WINDOW_MESSAGE, TRUE);
         StringCopy(gStringVar4, sTradeCodePromptDataPtr->message);
@@ -304,9 +263,6 @@ static void TradeCodePrompt_Finish(enum TradeCodePromptResult result)
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
 }
 
-//
-//       Trade Code Prompt specific code
-//
 static void Task_TradeCodePromptMain(u8 taskId)
 {
     struct TradeCodePromptResources *res = sTradeCodePromptDataPtr;
@@ -337,13 +293,9 @@ static void Task_TradeCodePromptMain(u8 taskId)
         }
         break;
     case PROMPT_PHASE_YESNO:
-        // Menu_ProcessInputNoWrapClearOnChoose (src/menu.c) owns the D-pad/
-        // A/B handling and the cursor's own redraw entirely, and - true to
-        // its own "ClearOnChoose" name - already calls EraseYesNoWindow
-        // itself the moment a choice is made (confirmed by reading its
-        // body before relying on it - it's not just a naming convention).
-        // Calling EraseYesNoWindow again here would double-remove the same
-        // window ID.
+        // Menu_ProcessInputNoWrapClearOnChoose (src/menu.c) already calls
+        // EraseYesNoWindow once a choice is made; calling it again would
+        // double-remove the same window ID.
         input = Menu_ProcessInputNoWrapClearOnChoose();
         if (input != MENU_NOTHING_CHOSEN)
         {

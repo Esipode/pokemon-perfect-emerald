@@ -8,8 +8,8 @@
 #include "string_util.h"
 #include "random.h"
 
-// Stage 1 of "Trading Codes.md": the bit stream + Base32/Crockford codec.
-// Pure functions, no save data, no UI.
+// Bit stream and Base32/Crockford codec tests. Pure functions, no save data or
+// UI.
 
 #define TEST_BUF_BYTES 64 // 512 bits, well over the 400-bit stress case below
 #define TEST_STR_CHARS 150 // 80 symbols + 15 hyphens + EOS, plus headroom
@@ -39,10 +39,10 @@ TEST("TradeCode_Encode/Decode round-trip random bit patterns")
     u32 nBits;
     u32 i;
 
-    // A byte-aligned length (8), a header-sized length (30), the three
-    // spec'd payload sizes (221/277/387), and a stress length past the
-    // largest spec'd payload (400) - plus a couple of odd, non-multiple-of-5
-    // and non-multiple-of-8 lengths to catch off-by-one bit packing bugs.
+    // A byte-aligned length (8), a header-sized length (30), three typical
+    // payload sizes (221/277/387), a stress length past the largest (400), and
+    // odd non-multiple-of-5 and non-multiple-of-8 lengths to catch off-by-one
+    // bit packing bugs.
     PARAMETRIZE { nBits = 1; }
     PARAMETRIZE { nBits = 5; }
     PARAMETRIZE { nBits = 8; }
@@ -85,8 +85,8 @@ TEST("TradeCode_WriteBits/ReadBits round-trip a sequence of fields")
 {
     u8 buf[TEST_BUF_BYTES];
     struct TradeCodeBits stream;
-    // Mimics the header + a few core fields from the payload spec: assorted
-    // widths, none aligned to each other.
+    // Mimics a header + a few core fields: assorted widths, none aligned to
+    // each other.
     const u32 widths[] = { 4, 2, 16, 8, 11, 10, 5, 2, 1, 2 };
     u32 values[ARRAY_COUNT(widths)];
     u32 i;
@@ -244,15 +244,13 @@ TEST("TradeCode_Encode groups symbols with a hyphen every TRADE_CODE_GROUP_SIZE"
     }
 }
 
-// ---------------------------------------------------------------------
-// Stage 2 of "Trading Codes.md": the BoxPokemon serialiser/deserialiser.
-// ---------------------------------------------------------------------
+// BoxPokemon serialiser/deserialiser tests.
 
-#define MON_TEST_BUF_BYTES 64 // headroom over the largest Stage 2 payload (~374 bits -> 47 bytes)
+#define MON_TEST_BUF_BYTES 64 // headroom over the largest payload (~374 bits -> 47 bytes)
 
-// Serialises `orig` and immediately decodes it back into `decoded`, as if
-// it had round-tripped through a real offer code (minus the Base32 layer,
-// which Stage 1 already covers on its own).
+// Serialises `orig` and immediately decodes it back into `decoded`, as if it had
+// round-tripped through a real offer code (minus the Base32 layer, covered
+// above).
 static enum TradeCodeMonStatus RoundTripMon(const struct BoxPokemon *orig, struct BoxPokemon *decoded)
 {
     u8 buf[MON_TEST_BUF_BYTES];
@@ -273,9 +271,8 @@ static enum TradeCodeMonStatus RoundTripMon(const struct BoxPokemon *orig, struc
 }
 
 // Every field TradeCode_SerializeMon/DeserializeMon claim to preserve,
-// compared directly - deliberately excludes personality and experience,
-// the plan doc's two documented lossy fields. Reads exclusively through
-// Get(Box)MonData, matching the module's own contract.
+// compared directly. Excludes the two lossy fields, personality and experience.
+// Reads exclusively through Get(Box)MonData.
 static void ExpectMonsMatch(struct BoxPokemon *orig, struct BoxPokemon *decoded)
 {
     u8 origName[POKEMON_NAME_LENGTH + 1], decodedName[POKEMON_NAME_LENGTH + 1];
@@ -705,9 +702,7 @@ TEST("TradeCode_DeserializeMon rejects isEgg combined with a custom nickname")
     EXPECT_EQ(status, TRADE_CODE_MON_EGG_WITH_NICKNAME);
 }
 
-// ---------------------------------------------------------------------
-// Stage 3 of "Trading Codes.md": sealing, nonces, replay protection.
-// ---------------------------------------------------------------------
+// Sealing, nonces and replay protection tests.
 
 TEST("TradeCode_SealOffer changes when any single bit of the payload is flipped")
 {
@@ -730,8 +725,7 @@ TEST("TradeCode_SealOffer changes when any single bit of the payload is flipped"
 
     originalSeal = TradeCode_SealOffer(original, nBits);
 
-    // Every single bit of the payload, one at a time - not just a sample -
-    // per the plan doc's own acceptance test.
+    // Every single bit of the payload, one at a time, not just a sample.
     for (bit = 0; bit < nBits; bit++)
     {
         u8 flipped[MON_TEST_BUF_BYTES];
@@ -754,10 +748,9 @@ TEST("TradeCode_SealOffer differs for the same mon behind a different nonce")
     struct TradeCodeBits streamA, streamB;
     u32 sealA, sealB;
 
-    // A stand-in 16-bit nonce prefix ahead of the mon payload - Stage 7
-    // assembles the real header, but sealing itself only cares about "every
-    // preceding bit", so prefixing here exercises the same property without
-    // needing the header layer.
+    // A stand-in 16-bit nonce prefix ahead of the mon payload: sealing only
+    // cares about "every preceding bit", so this exercises that without the
+    // header layer.
     CreateBoxMon(&mon, SPECIES_PIDGEY, 37, 0x1234, OTID_STRUCT_PRESET(0xCAFEBABE));
 
     memset(bufA, 0, sizeof(bufA));
@@ -856,12 +849,9 @@ TEST("TradeCode_IsOfferSealUsed/RecordOfferSeal: the ring rejects a repeat and e
         EXPECT(TradeCode_IsOfferSealUsed(ring, 0xA0000000 + i));
 }
 
-// Stage 9 of "Trading Codes.md": reset-resistance. Unlike Stage 4/8's own
-// UI/save-flow-orchestration logic (which the plan doc's own status blocks
-// for those stages note has no headless-testable unit beyond what Stages
-// 1-3 already cover), TradeCode_ValidatePendingBoxMon is a small pure
-// function over an already-materialised BoxPokemon - exactly the shape
-// every other Stage 1-3 primitive in this file already gets tests for.
+// TradeCode_ValidatePendingBoxMon is a small pure function over an
+// already-materialised BoxPokemon, so it gets headless tests like the other
+// primitives above.
 
 TEST("TradeCode_ValidatePendingBoxMon accepts a normal mon and rejects a bad checksum")
 {
@@ -870,11 +860,9 @@ TEST("TradeCode_ValidatePendingBoxMon accepts a normal mon and rejects a bad che
     CreateBoxMon(&mon, SPECIES_PIDGEY, 30, 0x13572468, OTID_STRUCT_PRESET(0x87654321));
     EXPECT(TradeCode_ValidatePendingBoxMon(&mon));
 
-    // Corrupt the checksum directly - the same kind of on-disk bit rot or
-    // hand-editing this function exists to catch. Poking the struct like
-    // this is exactly what TradeCode_SerializeMon itself is never allowed
-    // to do (it only reads through GetBoxMonData), but simulating real
-    // save-file corruption in a test has no other way to do it.
+    // Corrupt the checksum directly, simulating on-disk bit rot or
+    // hand-editing. Poking the struct is otherwise never allowed (see
+    // TradeCode_SerializeMon), but a test has no other way to do this.
     mon.checksum ^= 0xFFFF;
     EXPECT(!TradeCode_ValidatePendingBoxMon(&mon));
 }
