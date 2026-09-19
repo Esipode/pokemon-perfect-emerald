@@ -2,10 +2,9 @@
 #include "test/battle.h"
 #include "battle_encounter.h"
 
-// Conditions aren't implemented until Stage 11, so these triggers are all unconditional
-// (.conditions = NULL); ENC_TRIGGER_ONCE stands in for a real condition turning itself off,
-// which is what lets a lower-priority trigger become the winner on a later pass instead of
-// the same top-priority trigger being re-selected forever.
+// These triggers are all unconditional (.conditions = NULL); ENC_TRIGGER_ONCE stands in for a real
+// condition turning itself off, which is what lets a lower-priority trigger become the winner on a
+// later pass instead of the same top-priority trigger being re-selected forever.
 
 static const struct EncounterTrigger sTriggers_ChainAtBattleStart[] =
 {
@@ -91,7 +90,7 @@ SINGLE_BATTLE_TEST("ENC_TRIGGER_ONCE triggers fired within one checkpoint stay f
     }
 }
 
-// Test 4 from the spec -- "Runaway bounded": five always-eligible non-ONCE triggers at one
+// Test 4 -- "Runaway bounded": five always-eligible non-ONCE triggers at one
 // checkpoint. TryRunEncounterCheckpoint's assertf trips on the 5th call (TEST_RESULT_INVALID);
 // the suite has no mechanism to mark a test as expecting INVALID (only fatal_assertf/CRASH has
 // one, via Test_ExpectCrash), so this can't live in the suite as a normal TEST() without turning

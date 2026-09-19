@@ -4,17 +4,12 @@
 #include "battle.h"
 #include "battle_encounter.h"
 
-// The outline's edge-detection cases (51% -> 49% fires, 49% -> 48% doesn't, a boss starting
-// below the threshold doesn't fire at ENC_ON_BATTLE_START) needed an HP-percent condition to
-// evaluate, and struct EncounterCondition didn't exist until Stage 11. They're below now that
-// EvaluateConditions() has replaced the hardcoded wasTrue = FALSE stub in TryRunEncounterCheckpoint.
+// Edge-detection cases: 51% -> 49% fires, 49% -> 48% doesn't, and a boss starting below the
+// threshold doesn't fire at ENC_ON_BATTLE_START.
 //
-// That real wasTrue also changes what a *condition-less* ON_ENTER trigger does: EvaluateConditions
-// (NULL, ...) is TRUE regardless of useSnapshot, so nowTrue and wasTrue are always equal for one -
-// there's no FALSE state to transition out of, so it never edges. Two Stage 10 tests below were
-// exercising ON_ENTER with a NULL condition purely as a convenient way to get an eligible trigger;
-// they're updated to use ENC_TRIGGER_ONCE alone or a real condition, whichever the test is actually
-// about, and a third documents the "never fires" behavior directly.
+// A *condition-less* ON_ENTER trigger never edges: EvaluateConditions(NULL, ...) is TRUE regardless
+// of useSnapshot, so nowTrue and wasTrue are always equal - there's no FALSE state to transition
+// out of.
 
 static const u8 sScriptA[] = {0};
 

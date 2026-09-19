@@ -30,7 +30,7 @@ static void EndEncounterTest(struct BattleStruct *battleStruct)
     Free(battleStruct);
 }
 
-// --- Test 1: the outline Sec14 tree, verbatim -----------------------------------------------
+// --- Test 1: a nested All/Any/Not tree -----------------------------------------------
 //
 // ALL
 // |-- battler == boss

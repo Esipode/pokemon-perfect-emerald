@@ -9,15 +9,12 @@
 // firedTriggers is a u32 bitmap; one bit per trigger.
 STATIC_ASSERT(MAX_ENCOUNTER_TRIGGERS == 32, EncounterFiredTriggersBitmapMismatch);
 // A review tripwire, not a hardware limit: EncounterRuntime is embedded in BattleStruct and
-// zero-cleared with it every battle, so growth here is silent and worth being made to notice. The
-// 64 this started at was set when the struct held little more than an id and a trigger bitmap; the
-// type-keyed adaptation board (adaptType/adaptPercent, 32 bytes) is what took it past that. 92 of
-// 128 used - raise this again deliberately, not to get a build through.
+// zero-cleared with it every battle, so growth is silent. 92 of 128 used - raise this
+// deliberately, not to get a build through.
 STATIC_ASSERT(sizeof(struct EncounterRuntime) <= 128, EncounterRuntimeTooLarge);
 
-// Which struct EncounterEvent fields a checkpoint's dispatcher actually populates. Grows as each
-// checkpoint's call site is built out; a 0 row means the checkpoint has no event data at all
-// (e.g. ENC_ON_BATTLE_START - nothing has happened yet).
+// Which struct EncounterEvent fields a checkpoint's dispatcher populates. A 0 row means the
+// checkpoint has no event data at all (e.g. ENC_ON_BATTLE_START - nothing has happened yet).
 static const u8 sCheckpointEventFields[ENC_CHECKPOINT_COUNT] =
 {
     [ENC_ON_BATTLE_START] = 0,
@@ -30,7 +27,7 @@ static const u8 sCheckpointEventFields[ENC_CHECKPOINT_COUNT] =
     [ENC_ON_BATTLE_END]   = 0,
 };
 
-// Resolves a battler reference to a concrete battler id. Shared with Stage 15's command targeting.
+// Resolves a battler reference to a concrete battler id. Shared with command targeting.
 bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut)
 {
     struct EncounterRuntime *runtime = &gBattleStruct->encounter;
@@ -70,7 +67,7 @@ bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut)
     return TRUE;
 }
 
-// Resolves an EncounterTarget to a battler bitmask (Stage 15). See include/battle_encounter.h.
+// Resolves an EncounterTarget to a battler bitmask. See include/battle_encounter.h.
 u32 ResolveEncounterTarget(enum EncounterTarget target)
 {
     u8 battler;
@@ -111,9 +108,8 @@ u32 ResolveEncounterTarget(enum EncounterTarget target)
 
     case ENC_TARGET_ALL_FOES:
     case ENC_TARGET_ALL_ALLIES:
-        // Both are relative to the boss's side - there's no actor battler to be relative to
-        // instead (Step 3: no actor field), so ENC_BOSS itself must resolve for either to mean
-        // anything.
+        // Relative to the boss's side - there's no actor battler to be relative to instead, so
+        // ENC_BOSS itself must resolve for either to mean anything.
         if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss))
             return 0;
         bossSide = GetBattlerSide(boss);
@@ -317,8 +313,8 @@ static u32 SkipNode(const struct EncounterCondition *node, u32 depth)
 }
 
 // Returns the number of array entries node spans; writes node's result to *out. depth counts group
-// nesting (ALL/ANY/NOT), bounded against the stack budget in Free Space.md Sec0.1 - a leaf never
-// recurses, so it isn't itself subject to the bound.
+// nesting (ALL/ANY/NOT), bounded to protect the stack - a leaf never recurses, so it isn't itself
+// subject to the bound.
 static u32 EvalNode(const struct EncounterCondition *node, bool32 useSnapshot, u32 depth, bool32 *out)
 {
     switch (node->operand)
@@ -400,7 +396,7 @@ static u32 EvalNode(const struct EncounterCondition *node, bool32 useSnapshot, u
         return consumed;
     }
 
-    default: // leaf - Stage 11's comparison
+    default: // leaf comparison
     {
         s32 lhs = GetEncounterOperand(node->operand, node->arg, useSnapshot);
 
@@ -422,9 +418,8 @@ static u32 EvalNode(const struct EncounterCondition *node, bool32 useSnapshot, u
     }
 }
 
-// NULL -> always eligible. Otherwise ANDs every top-level node in conds - a leaf or a group tree
-// (Stage 12) - short-circuiting on the first failure. A conditions array with no group node is
-// exactly Stage 11's flat AND-list, evaluated identically.
+// NULL -> always eligible. Otherwise ANDs every top-level node in conds - a leaf or a group tree -
+// short-circuiting on the first failure. An array with no group node is a flat AND-list.
 bool32 EvaluateConditions(const struct EncounterCondition *conds, bool32 useSnapshot)
 {
     const struct EncounterCondition *node = conds;
@@ -486,9 +481,8 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
         return NULL;
 
     // Entering a new checkpoint resets the runaway guard. Event-carrying checkpoints have their
-    // context set by the call site immediately before the first dispatch (so pass 1's conditions
-    // can read it), so it must NOT be cleared here for those - only for checkpoints that carry no
-    // event, where a stale field left by a prior checkpoint could otherwise leak into a read.
+    // context set by the call site before the first dispatch, so only clear it for checkpoints that
+    // carry no event, where a stale field could otherwise leak into a read.
     if (checkpoint != runtime->checkpoint)
     {
         runtime->checkpoint = checkpoint;
@@ -573,10 +567,8 @@ const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint)
     }
 
     // Runaway guard: a trigger that never disables itself would be re-selected forever and hang the
-    // game, so turn that into a loud assert instead. Checked here rather than on dispatch entry so
-    // it only fires when a trigger is actually eligible - a checkpoint that legitimately runs the
-    // full budget would otherwise trip on the trailing discovery pass, which found nothing and was
-    // about to return NULL on its own.
+    // game. Checked here rather than on dispatch entry so a checkpoint that legitimately runs the
+    // full budget doesn't trip on the trailing pass that finds nothing.
     assertf(runtime->scriptsThisCheckpoint < MAX_ENCOUNTER_SCRIPTS_PER_CHECKPOINT,
             "encounter %d: %d scripts ran at checkpoint %d - runaway trigger chain?",
             runtime->id, runtime->scriptsThisCheckpoint, checkpoint)
@@ -650,16 +642,13 @@ bool32 GetEncounterEventField(u32 field, s32 *out)
 }
 
 // Author-defined script variables. Fixed EWRAM array outside gBattleStruct so sENCOUNTER_VAR
-// (constants/battle_encounter.h) is a link-time constant address a battle script can encode - see
-// the struct EncounterRuntime comment (battle.h). 16 bytes, unconditional.
+// (constants/battle_encounter.h) is a link-time constant address a battle script can encode.
 EWRAM_DATA u8 gEncounterVars[MAX_ENCOUNTER_VARS] = {0};
 
 void ResetEncounterVars(void)
 {
     memset(gEncounterVars, 0, sizeof(gEncounterVars));
 }
-
-// --- Encounter properties ------------------------------------------------------------------------
 
 // The properties of the encounter this battle is running, or NULL when there isn't one. Every
 // property hook goes through this, so an inactive/invalid encounter costs one comparison and
@@ -1010,24 +999,18 @@ static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal, s32 extraDiv
 
 // Scales healing the boss drains OUT OF another battler by the encounter's AUTHORED damage
 // reduction, then quarters it again. DamageReduction: cuts what reaches the boss, but nothing cuts
-// what the boss deals - and a drain move turns that undiminished damage straight into healing. At
-// DamageReduction: 90 the exchange runs ten to one against the player before the extra quartering:
-// Leech Seed alone takes 1/8 of their max HP every turn and hands all of it to a boss they can only
-// chip one or two percent off, so the fight quietly stops being winnable and never looks like a bug.
-// A drain move sitting directly in a legendary's own authored moveset (Horn Leech, Giga Drain, …)
-// made that worse still - the extra /4 keeps a boss's own drain from being a bigger sustain lever
-// than the fight's guard was ever balanced for.
+// what the boss deals, and a drain move turns that damage straight into healing (at
+// DamageReduction: 90, Leech Seed alone makes the fight unwinnable). The extra /4 keeps a boss's own
+// authored drain moves (Horn Leech, Giga Drain, ...) from out-sustaining the fight's balance.
 //
-// Reads the AUTHORED property rather than the live per-battler value on purpose. The live number
-// moves with a phase, a stance or a form, and the catch-window guard pins it to
-// ENC_MAX_DAMAGE_REDUCTION - balance would swing with all of that, and the catch window would zero
-// out drain healing outright. The property is the fight's fixed balance constant, so this is too.
+// Reads the AUTHORED property rather than the live per-battler value: the live number moves with
+// phase, stance or form, and the catch-window guard pins it to ENC_MAX_DAMAGE_REDUCTION, which
+// would zero out drain healing. The property is the fight's fixed balance constant.
 //
-// Self-healing is deliberately untouched (sourceBattler == battler): Ingrain, Aqua Ring, Synthesis
-// and Recover are a fraction of the boss's OWN max HP, already balanced against how long the fight
-// runs, and are not the asymmetry. Nor is a Liquid Ooze punish, which is damage rather than healing
-// and is already scaled once by ApplyEncounterDamageReduction on the way in - so the call sites
-// apply this only on the branch that actually heals.
+// Self-healing is untouched (sourceBattler == battler): Ingrain, Aqua Ring, Synthesis and Recover
+// are a fraction of the boss's own max HP, already balanced against fight length. A Liquid Ooze
+// punish is damage, already scaled by ApplyEncounterDamageReduction, so call sites apply this only
+// on the branch that heals.
 s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBattler, s32 heal)
 {
     if (battler == sourceBattler)
@@ -1037,20 +1020,16 @@ s32 ApplyEncounterDrainReduction(enum BattlerId battler, enum BattlerId sourceBa
 }
 
 // Scales Grassy Terrain's end-turn heal on the boss by the same authored reduction, then halves it
-// again. The terrain heal is a fraction of the boss's own max HP, but unlike Recover or Leftovers it
-// lands every turn for free and the player can't answer it except by clearing the terrain - the extra
-// halving is on top of the reduction scaling because even the scaled amount can out-heal what a
-// player deals through a heavily-guarded boss over the course of a long fight.
+// again. The heal lands every turn for free and can only be answered by clearing the terrain, so
+// even the scaled amount can out-heal a player's damage through a heavily-guarded boss.
 s32 ApplyEncounterTerrainHealReduction(enum BattlerId battler, s32 heal)
 {
     return ScaleEncounterBossHeal(battler, heal, 2);
 }
 
 // Shared body of the two above: heal * (100 - authored DamageReduction:) / 100, divided again by
-// extraDivisor (2 for terrain, 4 for drain - drain sits in the boss's own authored moveset rather
-// than something the player chose to feed it, so it gets cut harder), for the boss, floored at 1;
-// unchanged for every other battler, with no encounter active, for a non-positive amount, or for a
-// boss whose Properties: set no reduction at all.
+// extraDivisor, for the boss, floored at 1. Unchanged for every other battler, with no encounter
+// active, for a non-positive amount, or for a boss whose Properties: set no reduction.
 static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal, s32 extraDivisor)
 {
     const struct Encounter *encounter;
@@ -1060,9 +1039,8 @@ static s32 ScaleEncounterBossHeal(enum BattlerId battler, s32 heal, s32 extraDiv
     if (heal <= 0 || battler >= MAX_BATTLERS_COUNT || !IsEncounterActive())
         return heal;
 
-    // Boss-scoped because DamageReduction: is. The boss is the only battler a Properties: block
-    // configures, so it is the only one with an authored number to read; a reduction a script hands
-    // some other battler has no property behind it and leaves its healing alone.
+    // Boss-scoped because DamageReduction: is; a reduction a script hands another battler has no
+    // authored property behind it and leaves its healing alone.
     if (!ResolveEncounterBattlerRef(ENC_BOSS, &boss) || battler != boss)
         return heal;
 

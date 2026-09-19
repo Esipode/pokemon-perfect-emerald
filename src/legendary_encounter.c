@@ -31,14 +31,8 @@ void CheckValidLegendaryEncounter(void)
     u8 requiredWeekday = gSpecialVar_0x8006;
     enum Weekday currentWeekday = GetDayOfWeek();
 
-    /*
-     * Start by assuming the normal map layout should remain active.
-     */
     gSpecialVar_Result = FALSE;
 
-    /*
-     * Safety check.
-     */
     if (species == SPECIES_NONE)
         return;
 
@@ -58,9 +52,6 @@ void CheckValidLegendaryEncounter(void)
     if (CheckPlayerOwnsSpecies(species))
         return;
 
-    /*
-     * Only activate the alternate layout on the required weekday.
-     */
     if (currentWeekday != requiredWeekday)
         return;
 

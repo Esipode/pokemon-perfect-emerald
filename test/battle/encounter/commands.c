@@ -3,11 +3,10 @@
 #include "battle_encounter.h"
 #include "constants/pokemon.h"
 
-// Stage 15: the encounter command vocabulary (asm/macros/battle_script.inc), run through the real
-// interpreter the same way Stage 14's variables.c does. CHANGE_HP is verified with HP_BAR since it
-// has real presentation; CHANGE_STAT is silent (outline Sec31) so it's verified the way Stage 14
-// verified script variables - a lower-priority trigger at the same checkpoint reads the result back
-// through a condition, closing the loop between a command and the condition system it feeds.
+// The encounter command vocabulary (asm/macros/battle_script.inc), run through the real
+// interpreter the same way variables.c does. CHANGE_HP is verified with HP_BAR since it has real
+// presentation; CHANGE_STAT is silent, so a lower-priority trigger at the same checkpoint reads the
+// result back through a condition, closing the loop between a command and the condition system.
 
 // --- CHANGE_HP: single target, damage and heal ------------------------------------------------
 
@@ -82,8 +81,8 @@ DOUBLE_BATTLE_TEST("CHANGE_HP with ALL_FOES damages every battler on the boss's 
 
 // --- CHANGE_STAT: single target and ALL_FOES in doubles -----------------------------------------
 //
-// Silent by design (outline Sec31) - verified the Stage 14 way, via a lower-priority trigger at
-// the same checkpoint whose condition reads the changed stat stage back.
+// Silent by design - verified via a lower-priority trigger at the same checkpoint whose condition
+// reads the changed stat stage back.
 
 static const struct EncounterCondition sConditions_DefRoseOnBoss[] =
 {

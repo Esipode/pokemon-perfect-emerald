@@ -6,9 +6,9 @@ enum EncounterId
 {
     ENCOUNTER_NONE,
     ENCOUNTER_TEST,
-    ENCOUNTER_LEGENDARY_BARRIER,   // Stage 15 example, outline Sec33
-    ENCOUNTER_TRAINER_MEGA,        // Stage 15 example, outline Sec34
-    ENCOUNTER_STORM_HERALD,        // Stage 16 example: three chained phase transitions
+    ENCOUNTER_LEGENDARY_BARRIER,   // Example encounter
+    ENCOUNTER_TRAINER_MEGA,        // Example encounter
+    ENCOUNTER_STORM_HERALD,        // Example encounter: three chained phase transitions
     ENCOUNTER_ARTICUNO,
     ENCOUNTER_ZAPDOS,
     ENCOUNTER_MOLTRES,
@@ -191,7 +191,7 @@ enum EncounterEventCause
 #define ENC_EVENT_OLD_VALUE (1 << 5)
 #define ENC_EVENT_NEW_VALUE (1 << 6)
 
-// Battler references, shared with Stage 15's command targeting so authors learn one vocabulary.
+// Battler references, shared with command targeting so authors learn one vocabulary.
 // Resolved through ResolveEncounterBattlerRef (battle_encounter.h); the _RIGHT refs are invalid in
 // a singles battle and resolution fails safely rather than reading an inactive battler's stale
 // gBattleMons entry.
@@ -206,7 +206,7 @@ enum EncounterBattlerRef
     ENC_BATTLER_REF_COUNT,
 };
 
-// Battler-set targets for commands (Stage 15). Resolved through ResolveEncounterTarget
+// Battler-set targets for commands. Resolved through ResolveEncounterTarget
 // (battle_encounter.h) to a bitmask rather than a single battler id - the only representation that
 // treats ALL_FOES/ALL_ALLIES/ALL_BATTLERS and a single slot uniformly, so a command's "for each
 // targeted battler" logic is identical in singles and doubles. Every single-slot entry resolves
@@ -220,11 +220,9 @@ enum EncounterBattlerRef
 // must still assert if the mask it gets back contains a fainted/absent battler; that check belongs
 // to the command, not to resolution.
 //
-// No `actor` field exists alongside this (outline Sec30). Presentation commands (trainerslidein,
-// printstring, playse, ...) already act on the trainer or the screen and take no battler; mechanic
-// commands take an EncounterTarget. That split is already structural in the existing opcode set, so
-// adding an actor field would be speculative generality against a distinction the engine already
-// encodes.
+// No `actor` field exists alongside this. Presentation commands (trainerslidein, printstring,
+// playse, ...) act on the trainer or the screen and take no battler; mechanic commands take an
+// EncounterTarget.
 enum EncounterTarget
 {
     ENC_TARGET_BOSS,
@@ -396,11 +394,11 @@ enum EncounterSnapshotMode
 #define ENC_UNPACK_STAT_ID(arg)             ((arg) >> 3)
 
 // What GetEncounterOperand reads. Live battle state sources straight from gBattleMons/field state;
-// event context sources from the current checkpoint's struct EncounterEvent (Stage 08) via
+// event context sources from the current checkpoint's struct EncounterEvent via
 // GetEncounterEventField, so its validity mask applies automatically - reading an event operand at
 // a checkpoint that doesn't populate it asserts.
 //
-// The three group operands (Stage 12) are placed first so `operand < ENC_OP_FIRST_LEAF` is a cheap
+// The three group operands are placed first so `operand < ENC_OP_FIRST_LEAF` is a cheap
 // "is this a group node, not a comparison" test. A group node reuses struct EncounterCondition's
 // arg field as a child count instead of an operand argument; see EvalNode in battle_encounter.c.
 enum EncounterOperand
@@ -427,9 +425,9 @@ enum EncounterOperand
     ENC_OP_TERRAIN,         // no arg
     ENC_OP_TURN,            // no arg
     ENC_OP_BATTLER_COUNT,   // no arg - for doubles-aware conditions
-    ENC_OP_VAR,             // arg = index into gEncounterVars (Stage 14)
+    ENC_OP_VAR,             // arg = index into gEncounterVars
 
-    // --- event context (Stage 08) ---
+    // --- event context ---
     ENC_OP_EVENT_BATTLER,
     ENC_OP_EVENT_TARGET,
     ENC_OP_EVENT_MOVE,

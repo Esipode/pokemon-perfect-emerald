@@ -2,7 +2,7 @@
 #include "test/battle.h"
 #include "battle_encounter.h"
 
-// Stage 14: the sENCOUNTER_VAR addressing convention - encsetvar/encaddvar/encjumpifvar (asm/
+// The sENCOUNTER_VAR addressing convention - encsetvar/encaddvar/encjumpifvar (asm/
 // macros/battle_script.inc) write and branch on gEncounterVars (src/battle_encounter.c) through
 // real battle scripts (data/battle_scripts_encounters.s), and ENC_OP_VAR conditions read the same
 // array. These run real turns so the scripts actually execute through the interpreter, not just

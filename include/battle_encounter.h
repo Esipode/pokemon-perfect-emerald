@@ -5,7 +5,7 @@
 #include "constants/battle_encounter.h"
 
 // 6 bytes, ROM-resident. A trigger's conditions pointer addresses an array terminated by an
-// ENC_OP_COUNT operand, avoiding a separate count. ENC_OP_ALL/ENC_OP_ANY/ENC_OP_NOT (Stage 12)
+// ENC_OP_COUNT operand, avoiding a separate count. ENC_OP_ALL/ENC_OP_ANY/ENC_OP_NOT
 // reuse this same struct as group nodes rather than a separate tagged union - see EvalNode in
 // battle_encounter.c for how the tree is laid out prefix-encoded in one flat array.
 struct EncounterCondition
@@ -22,7 +22,7 @@ struct EncounterTrigger
     enum EncounterCheckpoint checkpoint;
     u8 priority;                        // lower runs first; 0 = highest
     u8 flags;                           // ENC_TRIGGER_*
-    const struct EncounterCondition *conditions;   // NULL = always eligible (Stage 11)
+    const struct EncounterCondition *conditions;   // NULL = always eligible
     const u8 *script;                   // battle script label
 };
 
@@ -57,8 +57,8 @@ extern const u8 EncScript_TestBattleStart[];
 extern const u8 EncScript_TestTurnEnd[];
 extern const u8 EncScript_TestGeneric[];
 
-// Test scripts for the sENCOUNTER_VAR addressing convention (Stage 14). See test/battle/encounter/
-// variables.c for what each one is used to prove.
+// Test scripts for the sENCOUNTER_VAR addressing convention. See test/battle/encounter/variables.c
+// for what each one is used to prove.
 extern const u8 EncScript_TestSetVar[];       // encsetvar var 0 to 1
 extern const u8 EncScript_TestAddVar[];       // encaddvar var 0 by 1
 extern const u8 EncScript_TestSeedVarHigh[];  // encsetvar var 0 to 5
@@ -66,14 +66,13 @@ extern const u8 EncScript_TestSeedVarLow[];   // encsetvar var 0 to 2
 extern const u8 EncScript_TestBranch[];       // encjumpifvar on var 0 > 4; records which way into var 1
 extern const u8 EncScript_TestCallSub[];      // call/return through a shared sub-script
 
-// Stage 15 example encounters (outline Sec33/Sec34), built through the authoring path only.
+// Example encounters, built through the authoring path only.
 extern const u8 EncScript_LegendaryBarrier_PhaseTransition[];
 extern const u8 EncScript_LegendaryBarrier_Weakened[];
 extern const u8 EncScript_TrainerMega_Reveal[];
 
-// Stage 16 example encounter: three triggers chained across three checkpoints (OnBattleStart,
-// OnMoveEnd, OnTurnEnd), each phase gated on the last via the same Phase var - outline Sec1's
-// "multiple custom mechanics chained together" case, built through the authoring path only.
+// Example encounter: three triggers chained across three checkpoints (OnBattleStart, OnMoveEnd,
+// OnTurnEnd), each phase gated on the last via the same Phase var.
 extern const u8 EncScript_StormHerald_Intro[];
 extern const u8 EncScript_StormHerald_Surge[];
 extern const u8 EncScript_StormHerald_Desperation[];
@@ -1385,7 +1384,7 @@ extern const u8 EncScript_Terapagos_TurnOpen[];
 extern const u8 EncScript_Terapagos_WindowExpire[];
 extern const u8 EncScript_Terapagos_TurnClose[];
 
-// Stage 15 command tests (test/battle/encounter/commands.c).
+// Command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];
 extern const u8 EncScript_TestChangeHpAllFoes[];
@@ -1402,7 +1401,7 @@ const struct Encounter *GetEncounter(enum EncounterId id);
 
 // Author-defined variables, addressed by battle scripts via sENCOUNTER_VAR (constants/
 // battle_encounter.h) and by conditions via ENC_OP_VAR. Fixed EWRAM array outside gBattleStruct -
-// see the struct EncounterRuntime comment (battle.h) for why.
+// see the struct EncounterRuntime comment (battle.h).
 extern u8 gEncounterVars[MAX_ENCOUNTER_VARS];
 
 // Zeroes gEncounterVars. Called once per battle (AllocateBattleResources, battle_util2.c) so a
@@ -1413,29 +1412,23 @@ void ResetEncounterVars(void);
 void SetPendingBattleEncounter(enum EncounterId id);
 enum EncounterId TakePendingBattleEncounter(void);
 
-// --- Encounter properties (struct EncounterProperties) -------------------------------------------
-
 // Rebuilds every opponent Pokémon at the encounter's Level: property. Called from
 // CB2_InitBattleInternal (battle_main.c) after the opponent parties exist but before any
-// gBattleMons are built from them - a level change has to happen while the party is still the only
-// copy of the data, since stats, HP and the battler's own struct are all derived from it here.
+// gBattleMons are built from them - stats, HP and the battler struct are all derived from the party.
 // No-op when the encounter has no Level: property.
 void ApplyEncounterLevelOverride(void);
 
 // Replaces the boss's moves with the encounter's Moves: property. Called from CB2_InitBattleInternal
 // (battle_main.c) right after ApplyEncounterLevelOverride, in the same pre-build window - the level
-// override rebuilds stats but not moves, so at a high level cap the boss would otherwise roll
-// whatever its learnset hands it.
+// override rebuilds stats but not moves.
 //
-// The boss and nobody else, unlike the level override: a move list is inherently per-mon, so
-// applying one list to every opponent would be meaningless. A MOVE_NONE slot is left alone, so a
+// The boss and nobody else, unlike the level override. A MOVE_NONE slot is left alone, so a
 // list shorter than MAX_MON_MOVES overrides only the slots it names.
 void ApplyEncounterMoveOverride(void);
 
 // Gives the boss the encounter's Ability: property. Called from CB2_InitBattleInternal
 // (battle_main.c) alongside the level and move overrides, in the same pre-build window: when the
-// ability is one of the species' own slots this only has to move MON_DATA_ABILITY_NUM, and the
-// battler, the AI and the party UI all derive the rest for free.
+// ability is one of the species' own slots this only moves MON_DATA_ABILITY_NUM.
 //
 // An ability the species doesn't have can't be stored on a party mon at all, so it is left to
 // ApplyEncounterBattlerAbilityOverride instead. The boss and nobody else, like Moves:.
@@ -1451,10 +1444,10 @@ void ApplyEncounterAbilityOverride(void);
 // this way still fires on entry.
 void ApplyEncounterBattlerAbilityOverride(enum BattlerId battler);
 
-// The encounter's AiFlags: property, or 0 when it has none. A wild battle gets no AI scoring at all
-// by default (GetWildAiFlags is gated behind WE_SMART_WILD_AI_FLAG), so this is what gives a wild
-// boss a real AI - see BattleAI_SetupFlags/IsSmartBattle (battle_ai_main.c) and
-// OpponentHandleChooseMove (battle_controller_opponent.c), the three places that consult it.
+// The encounter's AiFlags: property, or 0 when it has none. A wild battle gets no AI scoring by
+// default (GetWildAiFlags is gated behind WE_SMART_WILD_AI_FLAG), so this gives a wild boss a real
+// AI. Consulted by BattleAI_SetupFlags/IsSmartBattle (battle_ai_main.c) and
+// OpponentHandleChooseMove (battle_controller_opponent.c).
 u64 GetEncounterAiFlags(void);
 
 // Seeds the per-battler modifiers (damage reduction, immunities) from the encounter's properties.
@@ -1493,9 +1486,8 @@ bool32 DoesEncounterCapTypeEffectiveness(enum BattlerId battler);
 
 // Setter behind encsetflattoxicdamage; replaces the battler's current value outright. TRUE stops
 // Toxic's counter (HandleEndTurnPoison, battle_end_turn.c) from scaling its damage up each turn -
-// the battler still takes the same 1/16 max HP every turn regular Poison would, instead of that
-// amount growing every turn up to a full max-HP hit by turn 16. An encounter can run for far more
-// turns than a normal battle, so the ramp that's balanced for a ~16-turn fight elsewhere isn't here.
+// the battler still takes the same 1/16 max HP every turn regular Poison would, instead of ramping
+// to a full max-HP hit by turn 16. Encounters run far longer than a normal battle.
 void SetEncounterFlatToxicDamage(enum BattlerId battler, bool32 flat);
 
 // TRUE if battler's Toxic damage should stay flat instead of ramping (see
@@ -1538,12 +1530,9 @@ void TestSetEncounter(const struct Encounter *encounter);
 // A returned script reaches the interpreter via BattleScriptCall, which shares gBattleResources->
 // battleScriptsStack (8 entries, include/battle.h) with the rest of the engine; `call`/`return`
 // inside an encounter script (Cmd_call/Cmd_return - meaningfully usable now that scripts can
-// address their own state, Stage 14) spend from the same budget. Static reading of the checkpoint
-// call sites (battle_main.c, battle_move_resolution.c, battle_util.c, battle_switch_in.c) suggests
-// the engine's own script chains have already unwound by the time a checkpoint dispatches, leaving
-// ample headroom - but this hasn't been confirmed by measuring the stack's actual size in a running
-// build. BattleScriptPush already asserts loudly on overflow either way (src/battle_util.c), so a
-// wrong assumption here fails safe.
+// address their own state) spend from the same budget. The engine's own script chains appear to
+// have unwound by the time a checkpoint dispatches (unmeasured in a running build); BattleScriptPush
+// asserts on overflow either way (src/battle_util.c), so a wrong assumption fails safe.
 const u8 *TryRunEncounterCheckpoint(enum EncounterCheckpoint checkpoint);
 
 // Populates the current checkpoint's event context. Call sites only need to pass the fields their
@@ -1562,7 +1551,7 @@ void SetEncounterEvent(u8 battler, u8 target, u16 move, enum EncounterEventCause
 bool32 GetEncounterEventField(u32 field, s32 *out);
 
 // Resolves a battler reference (enum EncounterBattlerRef) to a concrete battler id. Shared with
-// Stage 15's command targeting so both use one vocabulary. Returns FALSE for a _RIGHT ref in a
+// command targeting so both use one vocabulary. Returns FALSE for a _RIGHT ref in a
 // singles battle (recovery: *battlerOut left untouched) rather than resolving to an inactive
 // battler's stale gBattleMons entry - never read that.
 bool32 ResolveEncounterBattlerRef(u32 ref, u8 *battlerOut);
@@ -1580,13 +1569,13 @@ u32 ResolveEncounterTarget(enum EncounterTarget target);
 bool32 IsEncounterGroupTarget(enum EncounterTarget target);
 
 // Reads one operand of live battle state or event context, for comparison against a condition's
-// value. useSnapshot (Stage 10) redirects ENC_OP_HP / ENC_OP_HP_PERCENT to runtime->prevHp instead
+// value. useSnapshot redirects ENC_OP_HP / ENC_OP_HP_PERCENT to runtime->prevHp instead
 // of live HP; every other operand ignores it.
 s32 GetEncounterOperand(enum EncounterOperand operand, u32 arg, bool32 useSnapshot);
 
 // Walks conds - an array terminated by an ENC_OP_COUNT operand - ANDing every top-level node,
 // short-circuiting on the first failure. A node is either a leaf comparison or an ENC_OP_ALL /
-// ENC_OP_ANY / ENC_OP_NOT group (Stage 12) that consumes its child nodes; nesting is bounded by
+// ENC_OP_ANY / ENC_OP_NOT group that consumes its child nodes; nesting is bounded by
 // MAX_ENCOUNTER_COND_DEPTH, past which the offending subtree asserts and evaluates FALSE. NULL is
 // vacuously TRUE: a trigger with no conditions is always eligible.
 bool32 EvaluateConditions(const struct EncounterCondition *conds, bool32 useSnapshot);

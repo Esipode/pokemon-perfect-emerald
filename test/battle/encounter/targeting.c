@@ -5,7 +5,7 @@
 #include "battle_encounter.h"
 #include "constants/moves.h"
 
-// Stage 15: ResolveEncounterTarget (src/battle_encounter.c) resolves an EncounterTarget to a
+// ResolveEncounterTarget (src/battle_encounter.c) resolves an EncounterTarget to a
 // battler bitmask. Unit-tested directly, the same way conditions.c unit-tests EvaluateConditions,
 // since the resolver has no dependency on the trigger/script machinery.
 
@@ -86,7 +86,7 @@ TEST("Every target resolves correctly in doubles")
 
     // Boss (B_BATTLER_1) is on the opponent side: foes are both player battlers, allies are both
     // opponent battlers - this is the "for each targeted battler" loop working identically to
-    // singles, just over a wider mask (outline Sec29).
+    // singles, just over a wider mask.
     EXPECT_EQ(ResolveEncounterTarget(ENC_TARGET_ALL_FOES), (1u << B_BATTLER_0) | (1u << B_BATTLER_2));
     EXPECT_EQ(ResolveEncounterTarget(ENC_TARGET_ALL_ALLIES), (1u << B_BATTLER_1) | (1u << B_BATTLER_3));
     EXPECT_EQ(ResolveEncounterTarget(ENC_TARGET_ALL_BATTLERS),
@@ -95,15 +95,14 @@ TEST("Every target resolves correctly in doubles")
     EndTargetingTest(battleStruct);
 }
 
-// --- Test 4 (the critical case, outline Sec29): a _RIGHT target in singles -----------------
+// --- Test 4 (the critical case): a _RIGHT target in singles -----------------
 //
 // ENC_TARGET_PLAYER_RIGHT/OPPONENT_RIGHT delegate to ResolveEncounterBattlerRef, which asserts
 // when the ref has no battler in the current format. assertf's TESTING handler
 // (Test_ExitWithResult(TEST_RESULT_INVALID, ...)) exits the test process outright rather than
 // running the recovery block and returning - see test/battle/encounter/conditions.c's identical
 // disabled test for the same reason. There is no automated way to observe "asserted, then returned
-// an empty mask" from inside the test harness; this is confirmed by manual/debug-build inspection
-// instead (Stage 15's verification "manual gate").
+// an empty mask" from inside the test harness; confirm by manual/debug-build inspection.
 #if 0
 TEST("A _RIGHT target in singles asserts and resolves to an empty mask (manual only, see comment above)")
 {
