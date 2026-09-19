@@ -19,6 +19,7 @@
 #include "pokedex_common.h"
 #include "pokedex_cry_screen.h"
 #include "pokedex_plus_hgss.h"
+#include "randomization.h"
 #include "rtc.h"
 #include "scanline_effect.h"
 #include "sound.h"
@@ -5068,7 +5069,7 @@ static int DoPokedexSearch(u8 dexMode, u8 order, u8 abcGroup, enum BodyColor bod
     enum Species species;
     u16 i;
     u16 resultsCount;
-    enum Type types[2];
+    u8 types[2];
 
     // Unseen entries left in the list by CreatePokedexList are the gap entries
     // allowed by P_SKIP_POKEDEX_GAPS. Keep them so a mode-only search looks like
@@ -5139,8 +5140,7 @@ static int DoPokedexSearch(u8 dexMode, u8 order, u8 abcGroup, enum BodyColor bod
                 {
                     species = NationalPokedexNumToSpeciesForm(sPokedexView->pokedexList[i].dexNum);
 
-                    types[0] = GetSpeciesType(species, 0);
-                    types[1] = GetSpeciesType(species, 1);
+                    GetResolvedTypePair(species, &types[0], &types[1]);
                     if (types[0] == type1 || types[1] == type1)
                     {
                         sPokedexView->pokedexList[resultsCount] = sPokedexView->pokedexList[i];
@@ -5157,8 +5157,7 @@ static int DoPokedexSearch(u8 dexMode, u8 order, u8 abcGroup, enum BodyColor bod
                 {
                     species = NationalPokedexNumToSpeciesForm(sPokedexView->pokedexList[i].dexNum);
 
-                    types[0] = GetSpeciesType(species, 0);
-                    types[1] = GetSpeciesType(species, 1);
+                    GetResolvedTypePair(species, &types[0], &types[1]);
                     if ((types[0] == type1 && types[1] == type2) || (types[0] == type2 && types[1] == type1))
                     {
                         sPokedexView->pokedexList[resultsCount] = sPokedexView->pokedexList[i];
