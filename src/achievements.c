@@ -11,6 +11,7 @@
 #include "overworld.h"
 #include "pokedex.h"
 #include "pokemon.h"
+#include "randomization.h"
 #include "battle.h"
 #include "battle_setup.h"
 #include "data.h"
@@ -1705,8 +1706,11 @@ static bool8 Achievement_PartyAllHaveType(struct Pokemon *party, u8 count, u32 t
     for (i = 0; i < count; i++)
     {
         enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
+        u8 type1, type2;
 
-        if (gSpeciesInfo[species].types[0] != type && gSpeciesInfo[species].types[1] != type)
+        // Resolved pair, so Randomize Types doesn't break the check.
+        GetResolvedTypePair(species, &type1, &type2);
+        if (type1 != type && type2 != type)
             return FALSE;
     }
 

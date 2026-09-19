@@ -2144,7 +2144,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_MONO_TYPE_PERFECT_FIT] = {
         .name        = ACHIEVEMENT_NAME("Perfect Fit"),
-        .description = COMPOUND_STRING("Obtain 15 Pokémon of your chosen type in one run."),
+        .description = COMPOUND_STRING("Obtain 15 Pokémon of your chosen type in a Mono Type run."),
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_MONO_TYPE,
@@ -2200,7 +2200,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_MONO_GEN_GOTTA_CATCH_SOME_OF_THEM] = {
         .name        = ACHIEVEMENT_NAME("Catch a Few of Them"),
-        .description = COMPOUND_STRING("Obtain 15 Pokémon from your chosen generation in one run."),
+        .description = COMPOUND_STRING("Obtain 15 Pokémon from your chosen generation in a Mono Gen run."),
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_MONO_GEN,
