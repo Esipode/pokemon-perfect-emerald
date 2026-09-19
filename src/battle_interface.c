@@ -283,6 +283,11 @@ static const struct OamData sOamData_Healthbar =
     .affineParam = 0,
 };
 
+// Opponent healthbar sprite tiles past the 8 bar tiles: two independent 8x8 icon slots.
+#define HEALTHBAR_TILE_CAUGHT_ICON        8
+#define HEALTHBAR_TILE_CATCH_STATUS_ICON  9
+#define OPPONENT_HEALTHBAR_TILE_COUNT     10
+
 static const struct SpriteTemplate sHealthbarSpriteTemplates[MAX_BATTLERS_COUNT] =
 {
     {
@@ -334,9 +339,10 @@ static const struct Subsprite sHealthBar_Subsprites_Player[] =
     }
 };
 
-/*       v-- Origin
-[]  [0  +  ][1     ]   8x8 + 64x8
-2^ ^--- Note 8px space
+/*         v-- Origin
+[8][9][0  +  ][1     ]   8x8 + 8x8 + 64x8
+ ^  ^--- can/cannot-catch slot
+ ^--- caught-ball slot
 */
 static const struct Subsprite sHealthBar_Subsprites_Opponent[] =
 {
@@ -361,7 +367,15 @@ static const struct Subsprite sHealthBar_Subsprites_Opponent[] =
         .y = 0,
         .shape = SPRITE_SHAPE(8x8),
         .size = SPRITE_SIZE(8x8),
-        .tileOffset = 8,
+        .tileOffset = HEALTHBAR_TILE_CAUGHT_ICON,
+        .priority = 1
+    },
+    {
+        .x = -25,
+        .y = 1,
+        .shape = SPRITE_SHAPE(8x8),
+        .size = SPRITE_SIZE(8x8),
+        .tileOffset = HEALTHBAR_TILE_CATCH_STATUS_ICON,
         .priority = 1
     }
 };
@@ -1194,8 +1208,9 @@ static bool32 ShouldPrintHpValue(enum BattlerId battler)
 }
 
 // Clears the HP bar graphics for a box whose mode hides the bar.
-// The player bar sprite is 8 tiles; the opponent bar sprite is 9 (tile 8 is the caught-ball
-// / nuzlocke icon slot), so the whole sheet must be zeroed or that icon is left on screen.
+// The player bar sprite is 8 tiles; the opponent bar sprite is 10 (tiles 8 and 9 are the
+// caught-ball and can/cannot-catch icon slots), so the whole sheet must be zeroed or those
+// icons are left on screen.
 // In doubles the bar-hide path historically also stamps a closed-frame tile into the box art;
 // the singles boxes need no such stamp - zeroing the bar sprite removes the whole bar, and
 // writing anything into the box only leaves an artefact.
@@ -1206,7 +1221,7 @@ static void HideHpBarInHealthbox(u32 healthboxSpriteId)
     u32 boxTileNum = gSprites[healthboxSpriteId].oam.tileNum;
     bool32 isPlayer = IsOnPlayerSide(battler);
 
-    FillHealthboxObject((void *)OBJ_VRAM0 + gSprites[barSpriteId].oam.tileNum * TILE_SIZE_4BPP, 0, isPlayer ? 8 : 9);
+    FillHealthboxObject((void *)OBJ_VRAM0 + gSprites[barSpriteId].oam.tileNum * TILE_SIZE_4BPP, 0, isPlayer ? 8 : OPPONENT_HEALTHBAR_TILE_COUNT);
 
     if (GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES)
     {
@@ -1938,6 +1953,17 @@ void UpdateNickInHealthbox(u8 healthboxSpriteId, struct Pokemon *mon)
     gSprites[healthboxSpriteId2].data[1] = savedValue2;
 }
 
+// Copies gfx into one 8x8 icon slot of the opponent healthbar sprite; NULL blanks the slot.
+static void SetHealthbarIconTile(u8 healthBarSpriteId, u32 tileOffset, const u8 *gfx)
+{
+    void *dest = (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + tileOffset) * TILE_SIZE_4BPP);
+
+    if (gfx != NULL)
+        CpuCopy32(gfx, dest, TILE_SIZE_4BPP);
+    else
+        CpuFill32(0, dest, TILE_SIZE_4BPP);
+}
+
 void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
 {
     enum BattlerId battler;
@@ -1979,35 +2005,27 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
     bool8 monoOn = !Draft_IsActive() && pokedexReceived && MonoType_IsEnabled();
     bool8 genOn = !Draft_IsActive() && pokedexReceived && MonoGen_IsEnabled();
-    if (nuzlockeOn || monoOn || genOn)
+    const u8 *caughtGfx = NULL;
+    const u8 *catchStatusGfx = NULL;
+
+    if (noStatus)
     {
-        bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
-                       && (!genOn || MonoGen_IsSpeciesAllowed(species))
-                       && (!nuzlockeOn || !GET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId()));
+        if (GetSetPokedexFlagBySpecies(species, FLAG_GET_CAUGHT))
+            caughtGfx = GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT);
 
-        if (!canCatch)
-            gfxId = HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH;
-        else if (nuzlockeOn && GetSetPokedexFlagBySpecies(species, FLAG_GET_CAUGHT))
-            gfxId = HEALTHBOX_GFX_STATUS_BALL_CAUGHT;
-        else
-            gfxId = HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH;
+        if (nuzlockeOn || monoOn || genOn)
+        {
+            bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
+                           && (!genOn || MonoGen_IsSpeciesAllowed(species))
+                           && (!nuzlockeOn || !GET_NUZLOCKE_ZONE_FLAG(GetCurrentRegionMapSectionId()));
 
-        if (noStatus)
-            CpuCopy32(GetHealthboxElementGfxPtr(gfxId), (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
-        else
-            CpuFill32(0, (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+            gfxId = canCatch ? HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH : HEALTHBOX_GFX_NUZLOCKE_CANNOT_CATCH;
+            catchStatusGfx = GetHealthboxElementGfxPtr(gfxId);
+        }
     }
-    // Regular mode - show pokeball if caught
-    else
-    {
-        if (!GetSetPokedexFlagBySpecies(species, FLAG_GET_CAUGHT))
-            return;
 
-        if (noStatus)
-            CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT), (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
-        else
-            CpuFill32(0, (void *)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
-    }
+    SetHealthbarIconTile(healthBarSpriteId, HEALTHBAR_TILE_CAUGHT_ICON, caughtGfx);
+    SetHealthbarIconTile(healthBarSpriteId, HEALTHBAR_TILE_CATCH_STATUS_ICON, catchStatusGfx);
 }
 
 static void UpdateStatusIconInHealthbox(u8 healthboxSpriteId)
