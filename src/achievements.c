@@ -1747,10 +1747,12 @@ static u32 Achievement_PartyTypeComposition(struct Pokemon *party, u8 count)
     for (i = 0; i < count; i++)
     {
         enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
+        u8 type1, type2;
 
-        mask |= 1u << gSpeciesInfo[species].types[0];
-        if (gSpeciesInfo[species].types[1] != TYPE_NONE)
-            mask |= 1u << gSpeciesInfo[species].types[1];
+        GetResolvedTypePair(species, &type1, &type2);
+        mask |= 1u << type1;
+        if (type2 != TYPE_NONE)
+            mask |= 1u << type2;
     }
 
     return mask;
@@ -1797,12 +1799,17 @@ static bool8 Achievement_AllPrimaryTypesDistinct(struct Pokemon *party, u8 count
     for (i = 0; i < count; i++)
     {
         enum Species speciesI = GetMonData(&party[i], MON_DATA_SPECIES);
+        u8 primaryI, secondaryI;
+
+        GetResolvedTypePair(speciesI, &primaryI, &secondaryI);
 
         for (j = i + 1; j < count; j++)
         {
             enum Species speciesJ = GetMonData(&party[j], MON_DATA_SPECIES);
+            u8 primaryJ, secondaryJ;
 
-            if (gSpeciesInfo[speciesI].types[0] == gSpeciesInfo[speciesJ].types[0])
+            GetResolvedTypePair(speciesJ, &primaryJ, &secondaryJ);
+            if (primaryI == primaryJ)
                 return FALSE;
         }
     }
