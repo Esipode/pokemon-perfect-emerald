@@ -224,6 +224,7 @@ EverGrandeCity_Champion_ChallengeRoom2_Text_Battle_9_Defeat::
 // END TRAINER SPECIFIC BATTLE SCRIPTS ------------------------------------------
 
 EverGrandeCity_Champion_ChallengeRoom2_EventScript_BattleAfterMath::
+	special HealPlayerParty
 	applymovement OBJ_EVENT_ID_PLAYER, EverGrandeCity_Champion_ChallengeRoom2_EventScript_Player_MoveToDoor
 	waitmovement 0
 	warp MAP_EVER_GRANDE_CITY_CHAMPION_CHALLENGE_ROOM1, 4, 4
