@@ -32,7 +32,6 @@
 #include "pokemon_summary_screen.h"
 #include "pokemon_storage_system.h"
 #include "pokemon_storage_sort.h"
-#include "recruits_mode.h"
 #include "script.h"
 #include "sound.h"
 #include "string_util.h"
@@ -118,7 +117,6 @@ enum {
     MSG_LOCKED_UNTIL_CHAMPION,
     MSG_LOCKED_LEVEL_CAP,
     MSG_LOCKED_DRAFT,
-    MSG_LOCKED_RECRUITS,
     MSG_PARTY_SLOT_LOCKED,
     MSG_PICK_A_SORT,
     MSG_CONFIRM_SORT,
@@ -383,7 +381,7 @@ enum {
     WIN_MESSAGE,
     WIN_ITEM_DESC,
     // Only the locked-mon messages (MSG_LOCKED_UNTIL_CHAMPION, MSG_LOCKED_LEVEL_CAP,
-    // MSG_LOCKED_DRAFT, MSG_LOCKED_RECRUITS) need 3 lines -- every other message printed through
+    // MSG_LOCKED_DRAFT) need 3 lines -- every other message printed through
     // PrintMessage is one short line, so WIN_MESSAGE stays sized for that
     // common case instead of being stretched (and overlapping neighboring windows'
     // VRAM tiles -- see WIN_MESSAGE_LOCKED's .baseBlock below) for all of them.
@@ -907,9 +905,6 @@ static const u8 gText_JustOnePkmn[] = _("There is just one POKéMON with you.");
 static const u8 gText_PartyFull[] = _("Your party is full!");
 // Draft Mode.md §3c: nothing ever enters or leaves the PC in a Draft run.
 static const u8 gText_CantUseStorageInDraft[] = _("You can't do that during\na Draft run!");
-// Recruits Mode.md Stage 8: same blanket PC lock as Draft, own message - see
-// IsBoxMonWithdrawLocked/GetLockedMonMsgId below for the per-mon side of it.
-static const u8 gText_CantUseStorageInRecruits[] = _("You can't do that during\na Recruits run!");
 static const u8 gText_Box[] = _("BOX");
 
 struct {
@@ -1161,9 +1156,6 @@ static const struct StorageMessage sMessages[] =
     // Draft mode is on -- the lock reason is the whole run, not the league,
     // so it gets its own string. Same WIN_MESSAGE_LOCKED window, same reason.
     [MSG_LOCKED_DRAFT]         = {COMPOUND_STRING("This POKéMON can't\nleave the BOX during\na Draft run!"), MSG_VAR_NONE},
-    // Recruits Mode.md Stage 8: shown instead of MSG_LOCKED_UNTIL_CHAMPION
-    // whenever Recruits mode is on -- same shape as MSG_LOCKED_DRAFT above.
-    [MSG_LOCKED_RECRUITS]      = {COMPOUND_STRING("This POKéMON can't\nleave the BOX during\na Recruits run!"), MSG_VAR_NONE},
     [MSG_PARTY_SLOT_LOCKED]    = {COMPOUND_STRING("You can't use that slot yet!"), MSG_VAR_NONE},
     // Storage sort. WIN_MESSAGE is one line, so these stay short -- the
     // 25-char MSG_LAST_POKE above is the proven fit.
@@ -1686,20 +1678,6 @@ static void Task_PCMainMenu(u8 taskId)
                 // IsBoxMonWithdrawLocked below for its own defence in depth.
                 FillWindowPixelBuffer(0, PIXEL_FILL(1));
                 AddTextPrinterParameterized2(0, FONT_NORMAL, gText_CantUseStorageInDraft, 0, NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
-                task->tState = STATE_ERROR_MSG;
-            }
-            else if (Recruits_IsEnabled()
-             && (task->tInput == OPTION_WITHDRAW || task->tInput == OPTION_DEPOSIT || task->tInput == OPTION_MOVE_MONS))
-            {
-                // Recruits Mode.md Stage 8: same blanket lock as Draft above,
-                // kept as its own branch/message rather than folded into the
-                // Draft condition -- each mode's gate stays independently
-                // readable (see src/trade_code_session.c for the same
-                // pattern). Blocking every withdrawal is also what satisfies
-                // "no storage from previous playthroughs can enter the
-                // party" -- nothing can leave the box at all.
-                FillWindowPixelBuffer(0, PIXEL_FILL(1));
-                AddTextPrinterParameterized2(0, FONT_NORMAL, gText_CantUseStorageInRecruits, 0, NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
                 task->tState = STATE_ERROR_MSG;
             }
             else if (task->tInput == OPTION_WITHDRAW && CountPartyMons() >= LimitedParty_GetMaxPartySize())
@@ -3776,10 +3754,9 @@ static void Task_HandleWallpapers(u8 taskId)
 // outside the box arrays: the held mon/item would be placed back into a slot the
 // sort has already filled, and a MultiMove selection's origin slots would all be
 // invalidated.
-// Draft and Recruits runs are deliberately not blocked here. Those modes stop
-// Pokémon leaving the PC (IsBoxMonWithdrawLocked, and the option gate in
-// Task_PokeStorageMain); reordering inside the PC removes nothing and grants
-// nothing.
+// Draft runs are deliberately not blocked here. Draft stops Pokémon leaving
+// the PC (IsBoxMonWithdrawLocked, and the option gate in Task_PokeStorageMain);
+// reordering inside the PC removes nothing and grants nothing.
 static bool32 CanSortStorage(void)
 {
     if (IsMonBeingMoved())
@@ -4739,7 +4716,7 @@ static void PrintMessage(u8 id)
     u8 *txtPtr;
     // Every other message is one short line and fits WIN_MESSAGE; only these
     // need the taller, separately-blocked WIN_MESSAGE_LOCKED (see its template).
-    u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION || id == MSG_LOCKED_LEVEL_CAP || id == MSG_LOCKED_DRAFT || id == MSG_LOCKED_RECRUITS) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
+    u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION || id == MSG_LOCKED_LEVEL_CAP || id == MSG_LOCKED_DRAFT) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
 
     DynamicPlaceholderTextUtil_Reset();
     switch (sMessages[id].format)
@@ -7340,12 +7317,11 @@ static bool8 IsRemovingLastPartyMon(void)
 // shift/item-swap, all surfaced through PrintMessage(GetLockedMonMsgId())
 // (see MSTATE_ERROR_LOCKED_MON below):
 //
-// 0. Draft Mode.md §3c / Recruits Mode.md Stage 8: Draft and Recruits both
-//    lock the PC for the whole run, not any particular box mon -- checked
-//    before the FLAG_SYS_GAME_CLEAR early-out below on purpose, since that
-//    flag has nothing to do with either mode's lock. Surfaced with their own
-//    MSG_LOCKED_DRAFT / MSG_LOCKED_RECRUITS rather than MSG_LOCKED_UNTIL_
-//    CHAMPION -- see GetLockedMonMsgId.
+// 0. Draft Mode.md §3c: Draft locks the PC for the whole run, not any
+//    particular box mon -- checked before the FLAG_SYS_GAME_CLEAR early-out
+//    below on purpose, since that flag has nothing to do with the mode's
+//    lock. Surfaced with its own MSG_LOCKED_DRAFT rather than
+//    MSG_LOCKED_UNTIL_CHAMPION -- see GetLockedMonMsgId.
 //
 // The remaining three boil down to "not withdrawable until you've beaten the
 // league (again) in this playthrough":
@@ -7383,8 +7359,6 @@ static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
         return FALSE;
     if (Draft_IsEnabled())
         return TRUE;
-    if (Recruits_IsEnabled())
-        return TRUE;
     if (FlagGet(FLAG_SYS_GAME_CLEAR))
         return FALSE;
 
@@ -7410,16 +7384,14 @@ static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
     return FALSE;
 }
 
-// Draft and Recruits' locks (above) are blanket, run-wide locks rather than a
-// per-mon reason, so each gets its own message instead of reusing
-// sBoxMonLockMsgId's per-mon result -- MSG_LOCKED_UNTIL_CHAMPION's "beat the
-// league" phrasing would be misleading in either run.
+// Draft's lock (above) is a blanket, run-wide lock rather than a per-mon
+// reason, so it gets its own message instead of reusing sBoxMonLockMsgId's
+// per-mon result -- MSG_LOCKED_UNTIL_CHAMPION's "beat the league" phrasing
+// would be misleading in a Draft run.
 static u8 GetLockedMonMsgId(void)
 {
     if (Draft_IsEnabled())
         return MSG_LOCKED_DRAFT;
-    if (Recruits_IsEnabled())
-        return MSG_LOCKED_RECRUITS;
     return sBoxMonLockMsgId;
 }
 
