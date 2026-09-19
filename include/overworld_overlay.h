@@ -74,6 +74,7 @@ struct Overlay
     u8 maxIntensity;
     u8 priority;
     u8 exemptPlayer:1;
+    u8 falloffEnabled:1;
     u8 exemptLocalId;       // 0 = none; resolved against exemptMapNum/exemptMapGroup
     u8 exemptMapNum;
     u8 exemptMapGroup;
@@ -134,6 +135,14 @@ void Overlay_StopAnimation(OverlayId id);
 void Overlay_SetAnchorToPosition(OverlayId id, s16 x, s16 y);
 void Overlay_SetAnchorToObject(OverlayId id, u8 localId, u8 mapNum, u8 mapGroup);
 void Overlay_ClearAnchor(OverlayId id);
+
+// Distance falloff scales the opacity by the player's distance to the anchor. Radii are in tiles;
+// distance is max(dx, dy) + min(dx, dy) / 2. Intensities are 0-OVERLAY_OPACITY_MAX: maxIntensity
+// applies at or inside innerRadius, minIntensity at or beyond outerRadius, linear in between.
+// It has no effect while the overlay has no anchor. The palette backend scales its global
+// intensity; it does not draw a spatial gradient.
+void Overlay_SetFalloff(OverlayId id, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity);
+void Overlay_ClearFalloff(OverlayId id);
 
 // Palette filtering. Constraints of the palette backend:
 // - Filtering granularity is one palette slot, not one entity. Two NPCs that share an

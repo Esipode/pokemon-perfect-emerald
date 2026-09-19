@@ -11,6 +11,10 @@ STATIC_ASSERT(sizeof(struct Overlay) <= 40, OverlaySizeBudget);
 
 static EWRAM_DATA struct Overlay sOverlays[MAX_OVERLAYS] = {0};
 static EWRAM_DATA u32 sEffectiveExempt[MAX_OVERLAYS] = {0}; // exemptPalettes plus resolved player/object slots
+static EWRAM_DATA u8 sDistanceFactor[MAX_OVERLAYS] = {0};
+static EWRAM_DATA struct Coords16 sLastPlayerCoords = {0};
+static EWRAM_DATA u8 sFalloffFrames = 0;
+static EWRAM_DATA bool8 sDistanceForce = FALSE;  // recompute every distance factor on the next update
 static EWRAM_DATA bool8 sOverlayDirty = FALSE;   // gPlttBufferFaded must be recomposed
 static EWRAM_DATA bool8 sOverlayApplied = FALSE; // gPlttBufferFaded currently holds overlay tint
 
@@ -220,40 +224,100 @@ static u32 ResolveExemptPalettes(const struct Overlay *overlay)
 }
 
 // Refreshes the anchor from the tracked object. An unresolved object keeps the last known position.
-static void UpdateAnchor(struct Overlay *overlay)
+// Returns TRUE when the anchor moved.
+static bool32 UpdateAnchor(struct Overlay *overlay)
 {
     u32 objectEventId;
+    s16 x, y;
 
     if (overlay->anchorKind != OVERLAY_ANCHOR_OBJECT)
-        return;
+        return FALSE;
 
     objectEventId = GetObjectEventIdByLocalIdAndMap(overlay->anchorLocalId, overlay->anchorMapNum, overlay->anchorMapGroup);
     if (objectEventId == OBJECT_EVENTS_COUNT)
-        return;
+        return FALSE;
 
-    overlay->anchorX = gObjectEvents[objectEventId].currentCoords.x;
-    overlay->anchorY = gObjectEvents[objectEventId].currentCoords.y;
+    x = gObjectEvents[objectEventId].currentCoords.x;
+    y = gObjectEvents[objectEventId].currentCoords.y;
+    if (overlay->anchorX == x && overlay->anchorY == y)
+        return FALSE;
+
+    overlay->anchorX = x;
+    overlay->anchorY = y;
+    return TRUE;
+}
+
+// Octagonal distance in tiles, no square root.
+static u32 GetAnchorDistance(const struct Overlay *overlay, const struct Coords16 *playerCoords)
+{
+    s32 dx = playerCoords->x - overlay->anchorX;
+    s32 dy = playerCoords->y - overlay->anchorY;
+
+    if (dx < 0)
+        dx = -dx;
+    if (dy < 0)
+        dy = -dy;
+
+    return max(dx, dy) + min(dx, dy) / 2;
+}
+
+static u32 CalcDistanceFactor(const struct Overlay *overlay, const struct Coords16 *playerCoords)
+{
+    u32 distance = GetAnchorDistance(overlay, playerCoords);
+
+    if (distance <= overlay->innerRadius)
+        return overlay->maxIntensity;
+    if (distance >= overlay->outerRadius)
+        return overlay->minIntensity;
+
+    return overlay->minIntensity
+        + ((s32)overlay->maxIntensity - overlay->minIntensity) * (s32)(overlay->outerRadius - distance)
+        / (s32)(overlay->outerRadius - overlay->innerRadius);
 }
 
 void Overlay_Update(void)
 {
+    struct Coords16 playerCoords = {0};
+    bool32 playerRead = FALSE;
+    bool32 refreshDistance = FALSE;
     u32 i;
 
     for (i = 0; i < MAX_OVERLAYS; i++)
     {
         struct Overlay *overlay = &sOverlays[i];
         u32 pulseFactor, distanceFactor, resolved, exempt;
+        bool32 anchorMoved;
 
         if (!overlay->active)
             continue;
 
-        // The falloff step runs after the anchor and before the fold.
         if (!UpdateFade(overlay))
             continue;
 
         pulseFactor = UpdatePulse(overlay);
-        UpdateAnchor(overlay);
+        anchorMoved = UpdateAnchor(overlay);
+
         distanceFactor = OVERLAY_OPACITY_MAX;
+        if (overlay->falloffEnabled && overlay->anchorKind != OVERLAY_ANCHOR_NONE)
+        {
+            // The player is read once per frame; distance is recomputed on a player step,
+            // an anchor move, a falloff or anchor change, or every 8th frame.
+            if (!playerRead)
+            {
+                struct Coords16 lastCoords = sLastPlayerCoords;
+
+                playerCoords = gObjectEvents[gPlayerAvatar.objectEventId].currentCoords;
+                sLastPlayerCoords = playerCoords;
+                sFalloffFrames = (sFalloffFrames + 1) & 7;
+                refreshDistance = sDistanceForce || sFalloffFrames == 0
+                    || lastCoords.x != playerCoords.x || lastCoords.y != playerCoords.y;
+                playerRead = TRUE;
+            }
+
+            if (refreshDistance || anchorMoved)
+                sDistanceFactor[i] = CalcDistanceFactor(overlay, &playerCoords);
+            distanceFactor = sDistanceFactor[i];
+        }
 
         resolved = ResolveOpacity(overlay->currentOpacity, pulseFactor, distanceFactor);
         if (overlay->resolvedOpacity != resolved)
@@ -271,6 +335,7 @@ void Overlay_Update(void)
         }
     }
 
+    sDistanceForce = FALSE;
     ApplyOverlaysToPalettes();
 }
 
@@ -469,6 +534,7 @@ void Overlay_SetAnchorToPosition(OverlayId id, s16 x, s16 y)
     overlay->anchorKind = OVERLAY_ANCHOR_COORDS;
     overlay->anchorX = x + MAP_OFFSET;
     overlay->anchorY = y + MAP_OFFSET;
+    sDistanceForce = TRUE;
 }
 
 void Overlay_SetAnchorToObject(OverlayId id, u8 localId, u8 mapNum, u8 mapGroup)
@@ -483,6 +549,7 @@ void Overlay_SetAnchorToObject(OverlayId id, u8 localId, u8 mapNum, u8 mapGroup)
     overlay->anchorMapNum = mapNum;
     overlay->anchorMapGroup = mapGroup;
     UpdateAnchor(overlay);
+    sDistanceForce = TRUE;
 }
 
 void Overlay_ClearAnchor(OverlayId id)
@@ -498,6 +565,35 @@ void Overlay_ClearAnchor(OverlayId id)
     overlay->anchorLocalId = 0;
     overlay->anchorMapNum = 0;
     overlay->anchorMapGroup = 0;
+}
+
+void Overlay_SetFalloff(OverlayId id, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->innerRadius = innerRadius;
+    overlay->outerRadius = outerRadius;
+    overlay->minIntensity = min(minIntensity, OVERLAY_OPACITY_MAX);
+    overlay->maxIntensity = min(maxIntensity, OVERLAY_OPACITY_MAX);
+    overlay->falloffEnabled = TRUE;
+    sDistanceForce = TRUE;
+}
+
+void Overlay_ClearFalloff(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->innerRadius = 0;
+    overlay->outerRadius = 0;
+    overlay->minIntensity = 0;
+    overlay->maxIntensity = 0;
+    overlay->falloffEnabled = FALSE;
 }
 
 void Overlay_ExemptPalette(OverlayId id, u8 paletteIndex)
