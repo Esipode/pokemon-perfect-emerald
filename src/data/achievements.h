@@ -1,57 +1,13 @@
-// One entry per enum AchievementId (constants/achievements.h), keyed by
-// designated initializer. Included from src/achievements.c only; nothing
-// else should reference gAchievements directly -- go through the public API
-// in include/achievements.h instead.
+// One entry per enum AchievementId (constants/achievements.h), keyed by designated
+// initializer. Included from src/achievements.c only; go through the public API in
+// include/achievements.h instead of referencing gAchievements directly.
 //
-// Matches the src/data/items.h:632 / src/data/moves_info.h:46 convention:
-// designated initializers keyed by ID, .name wrapped in a *_NAME() macro that
-// enforces the length cap at compile time, .description left as a plain
+// .name is wrapped in ACHIEVEMENT_NAME() to enforce the length cap at compile time,
+// following src/data/items.h and src/data/moves_info.h. .description is a plain
 // COMPOUND_STRING (no cap).
 //
-// Every .points value below is scaled by a single factor (~2.317x) from the
-// raw per-tier values the catalog originally shipped with, so the catalog's
-// total (25,000) lands on the same figure as maxing every boost in
-// src/data/achievement_boosts.h -- see that file's own note on the scaling.
-// Scaling preserves every entry's relative difficulty ranking (the tier
-// system -- Bronze < Silver < Gold < Diamond -- already tracked actual
-// difficulty reasonably well); a handful of entries that were made
-// meaningfully harder without revisiting their tier (the "full 6-Pokemon
-// team" rewrites) were re-tiered first, so the scale applies to already-
-// corrected relative values, not the stale ones. Values are rounded to the
-// nearest 5 for readability, with a handful adjusted by a further +/-5 to
-// close the last few points of rounding error against the 25,000 target
-// exactly.
-//
-// Points rebalance: Capped Out, Hard Way, Perfectly Capped, Hardly Any Help,
-// Hardcore Survivor, No Nostalgia, Complete Reinvention, Boss Gauntlet,
-// Unassisted Cycle, Full Circle, Comeback Count, Selective Mastery, Never
-// Understaffed, Three-Pokemon Challenge, and Brutal Rules (15 entries, 1,960
-// points combined) were removed from the catalog and their points folded
-// back into the remaining entries, keeping the 25,000 total unchanged. The
-// redistribution favored rounding entries to a base-10 value: +5 to every
-// remaining entry whose points ended in 5 (118 entries, 590 points), then
-// +10 to every remaining Gold and Diamond entry (92 + 20 = 112 entries,
-// 1,120 points), then +10 to the 25 highest-value remaining Silver entries
-// (250 points) to use up the rest. Each removed entry's former slot in the
-// catalog below carries a one-line pointer back to this note; see
-// include/constants/achievements.h's per-category comments for where each
-// one sat in the enum, and src/achievements.c for the check-logic/helper
-// removals that went with them.
-//
-// Second rebalance: Full House (category TEAM, 120 points) and Tour of Duty
-// (category RECRUITS, 60 points) were removed, keeping the 25,000 total
-// unchanged. Full House's 120 points went +10 to each of the 12 remaining
-// Gold-tier TEAM entries (Benchwarmer, Deep Bench, Full Rotation, Type
-// Roulette, Dream Team, Everyone Gets a Turn, Rebuild, Radical Rebuild,
-// Featherweight, Underdog Run, Balanced Roster, Ace Rotation). Tour of
-// Duty's 60 points went +20 to each of the 3 remaining Gold/Diamond RECRUITS
-// entries (Revolving Door, Full Turnover, Recruitment Drive).
-//
-// Emporium Rewards & Legendary Collection: categories Y (8 entries, 2,490
-// points) and Z (7 entries, 2,510 points) add 5,000 points, raising the
-// catalog total from 25,000 to 30,000. This matches the new maxed-boost
-// total in src/data/achievement_boosts.h (also raised to 30,000 -- see that
-// file's note). No existing entry's points changed.
+// Points total 30,000, matching the total cost to max every boost
+// (src/data/achievement_boosts.h). Point-threshold entries are sized against it.
 #define ACHIEVEMENT_NAME(str) COMPOUND_STRING_SIZE_LIMIT(str, ACHIEVEMENT_NAME_LENGTH)
 
 static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
@@ -245,9 +201,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
 
     // C. Captures
-    // The old percentage-based Pokedex-caught ladder (10/25/50/100%) and
-    // the old raw-count ladder (1/25/100/250/500) are collapsed into this
-    // single hard-number ladder, one entry per tier.
     [ACHIEVEMENT_CATCH_100] = {
         .name        = ACHIEVEMENT_NAME("Serial Catcher"),
         .description = COMPOUND_STRING("Catch 100 Pokémon."),
@@ -496,22 +449,9 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
 
     // J. Multi-Run / Persistent Profile
-    // ACHIEVEMENT_PLAYTHROUGHS_2 ("Second Wind", complete
-    // the game from a fresh save 2 times) and ACHIEVEMENT_PLAYTHROUGHS_5
-    // ("Serial Champion", 5 times) removed -- see
-    // Achievement_OnFirstPlaythroughComplete (src/achievements.c).
-    // playthroughsCompleted itself is untouched: no achievement reads it
-    // anymore after this and the Frequent Flyer/Veteran Trainer/Resident
-    // Champion removals below (category Q), but it's still shown on the
-    // debug profile dump (src/debug.c) independent of any achievement, so
-    // the counter stays live.
-    // Replaces the old seven-entry NG+ repeat-count ladder
-    // (ACHIEVEMENT_NG_PLUS_STARTED/_CYCLE_3/_CYCLE_5/_COMPLETED_3 here, plus
-    // _ONE_MORE_TIME/_BEYOND_THE_BEGINNING/_ESCALATION in category O) with a
-    // single "beat one NG+ cycle" achievement -- checked, unconditionally,
-    // in Achievement_OnNewGamePlusCycleCompleted. Gold/50 to match
-    // ACHIEVEMENT_NUZLOCKE_1 below: both represent "fully beat the game
-    // again, under one specific added condition."
+    // Checked unconditionally in Achievement_OnNewGamePlusCycleCompleted. Gold/50 to
+    // match ACHIEVEMENT_NUZLOCKE_1 below: both are "fully beat the game again, under
+    // one specific added condition."
     [ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE] = {
         .name        = ACHIEVEMENT_NAME("One More Time"),
         .description = COMPOUND_STRING("Complete a New Game+ cycle."),
@@ -521,8 +461,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NUZLOCKE_3 ("complete 3 Nuzlocke runs")
-    // removed -- this is already the "do it once" version of that ladder.
     [ACHIEVEMENT_NUZLOCKE_1] = {
         .name        = ACHIEVEMENT_NAME("Survivor"),
         .description = COMPOUND_STRING("Complete a Nuzlocke run."),
@@ -532,9 +470,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
-    // playthroughs) and _VETERAN (5), category O, removed -- this is already
-    // the "do it once" version of that ladder.
     [ACHIEVEMENT_RANDOMIZED_1] = {
         .name        = ACHIEVEMENT_NAME("Into the Unknown"),
         .description = COMPOUND_STRING("Complete a randomized run."),
@@ -544,8 +479,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 80,
         .hidden      = FALSE,
     },
-    // Raised from 2,000 to 6,000 -- see Achievement_CheckPointMilestones
-    // (src/achievements.c)'s own comment; 2,000 was too easy for Gold.
+    // Threshold sized against Achievement_CheckPointMilestones (src/achievements.c).
     [ACHIEVEMENT_POINTS_6000] = {
         .name        = ACHIEVEMENT_NAME("Point Collector"),
         .description = COMPOUND_STRING("Earn 6,000 total achievement points."),
@@ -556,15 +490,11 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // Category K: Battle Mastery. See constants/achievements.h for the ID
-    // list and src/achievements.c for struct AchievementBattleData and
+    // Category K: Battle Mastery. See constants/achievements.h for the ID list and
+    // src/achievements.c for struct AchievementBattleData and
     // Achievement_CheckBattleMilestones. Every entry below is
-    // ACHIEVEMENT_SCOPE_CURRENT_RUN: the underlying data is a per-battle
-    // EWRAM struct that resets every single battle, an even tighter cadence
-    // than "current run" names, but there's no narrower scope value and
-    // CURRENT_RUN is the closest fit -- these are also its first real
-    // consumers (the scope has existed since early on with nothing using it
-    // until now).
+    // ACHIEVEMENT_SCOPE_CURRENT_RUN: the data is a per-battle EWRAM struct that resets
+    // every battle, and CURRENT_RUN is the closest scope value.
 
     [ACHIEVEMENT_BATTLE_CRITICAL_SUCCESS] = {
         .name        = ACHIEVEMENT_NAME("Critical Success"),
@@ -584,17 +514,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 30,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_BATTLE_TYPE_MASTER ("win a trainer battle
-    // without landing a super-effective hit") removed here -- most trainer
-    // teams aren't built to counter the player, so this happens by chance
-    // rather than deliberate effort. See include/constants/achievements.h's
-    // category K comment.
-    // Now requires the opponent to field a full 6-Pokemon
-    // team (see Achievement_CheckBattleMilestones in src/achievements.c) --
-    // was trivially easy against the many trainers who only carry one or two.
-    // Scaled up from Silver/25 to Gold/45 -- the full-6-Pokemon-
-    // opponent requirement made this meaningfully harder than its old Silver
-    // points reflected.
+    // Requires the opponent to field a full 6-Pokemon team (see Achievement_CheckBattleMilestones in src/achievements.c).
     [ACHIEVEMENT_BATTLE_CLEAN_SWEEP] = {
         .name        = ACHIEVEMENT_NAME("Clean Sweep"),
         .description = COMPOUND_STRING("Defeat a trainer's full team of 6 Pokémon with a single Pokémon."),
@@ -604,13 +524,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 120,
         .hidden      = FALSE,
     },
-    // Same full-6-Pokemon-opponent requirement as
-    // ACHIEVEMENT_BATTLE_CLEAN_SWEEP above -- even major trainers can carry
-    // fewer than 6 early on.
-    // Scaled up from 50 to 60 -- same full-6-Pokemon-opponent bump as Clean Sweep
-    // above, plus this one's already-harder "major trainer" requirement.
-    // Points further raised 140 -> 165 -- see Strategic Victory's comment
-    // (further below) on the Weather/Coverage Enjoyer point reallocation.
+    // Same full-6-Pokemon-opponent requirement as ACHIEVEMENT_BATTLE_CLEAN_SWEEP above;
+    // even major trainers can carry fewer than 6 early on.
     [ACHIEVEMENT_BATTLE_PERFECT_SWEEP] = {
         .name        = ACHIEVEMENT_NAME("Perfect Sweep"),
         .description = COMPOUND_STRING("Defeat a major trainer's full team of 6 Pokémon with a single Pokémon."),
@@ -621,8 +536,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
     // Same full-6-Pokemon-opponent requirement.
-    // Scaled up from Silver/25 to Gold/45 -- same full-6-Pokemon-opponent
-    // bump as Clean Sweep above.
     [ACHIEVEMENT_BATTLE_NO_DAMAGE] = {
         .name        = ACHIEVEMENT_NAME("No Damage"),
         .description = COMPOUND_STRING("Win a battle against a trainer's full team of 6 Pokémon without any of your Pokémon taking damage."),
@@ -659,11 +572,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Both scaled down a tier -- weather sticking around to the end of a
-    // battle is mostly luck (turn count/weather-move availability), not
-    // something a player reliably engineers. Points freed by this and
-    // Coverage Enjoyer's tier-down are reallocated to some of Battle's
-    // hardest Gold achievements -- see their comments below.
+    // Weather lasting to the end of a battle is mostly luck (turn count/weather-move
+    // availability), not something a player reliably engineers.
     [ACHIEVEMENT_BATTLE_WEATHER_REPORT] = {
         .name        = ACHIEVEMENT_NAME("Weather Report"),
         .description = COMPOUND_STRING("Win a battle with the weather still active."),
@@ -730,10 +640,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 120,
         .hidden      = FALSE,
     },
-    // Points raised 125 -> 145, one of five Battle Gold achievements
-    // absorbing the points freed by Weather Report/Master and Coverage
-    // Enjoyer's tier-downs above -- these five were picked as some of
-    // Battle's genuinely hardest Gold-tier requirements.
     [ACHIEVEMENT_BATTLE_STRATEGIC_VICTORY] = {
         .name        = ACHIEVEMENT_NAME("Strategic Victory"),
         .description = COMPOUND_STRING("Beat a major boss's full team of 6 Pokémon without any of your Pokémon fainting."),
@@ -752,8 +658,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // Points raised 140 -> 165 -- see Strategic Victory's comment above on
-    // the Weather/Coverage Enjoyer point reallocation.
     [ACHIEVEMENT_BATTLE_CHAMPION_TACTICIAN] = {
         .name        = ACHIEVEMENT_NAME("Champion Tactician"),
         .description = COMPOUND_STRING("Beat the Champion without using more than 3 Pokémon."),
@@ -781,8 +685,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Points raised 140 -> 160 -- see Strategic Victory's comment above on
-    // the Weather/Coverage Enjoyer point reallocation.
     [ACHIEVEMENT_BATTLE_AGAINST_THE_ODDS] = {
         .name        = ACHIEVEMENT_NAME("Against the Odds"),
         .description = COMPOUND_STRING("Beat a major boss with a team at least 5 levels below theirs."),
@@ -810,10 +712,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Scaled down a tier -- any team with a bit of type variety clears this
-    // in its very first major battle, too easy for Gold. Points freed by
-    // this and Weather Report/Master's tier-downs are reallocated to some
-    // of Battle's hardest Gold achievements -- see their comments below.
+    // Any team with a bit of type variety clears this in its first major battle.
     [ACHIEVEMENT_BATTLE_COVERAGE_ENJOYER] = {
         .name        = ACHIEVEMENT_NAME("Coverage Enjoyer"),
         .description = COMPOUND_STRING("Beat a major opponent using four or more move types."),
@@ -850,12 +749,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // Now requires a full 6-Pokemon party (see
-    // Achievement_CheckBattleMilestones in src/achievements.c) -- was
-    // trivial to earn by accident with only one or two Pokemon along.
-    // Scaled up from Silver/25 to Gold/45 -- the full-6-Pokemon-party
-    // requirement made this meaningfully harder than its old Silver points
-    // reflected.
+    // Requires a full 6-Pokemon party (see Achievement_CheckBattleMilestones in src/achievements.c).
     [ACHIEVEMENT_BATTLE_COMEBACK_KID] = {
         .name        = ACHIEVEMENT_NAME("Comeback Kid"),
         .description = COMPOUND_STRING("Win a battle with a full team of 6 Pokémon, with only one still conscious at the end."),
@@ -865,13 +759,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 120,
         .hidden      = FALSE,
     },
-    // Same full-6-Pokemon-party requirement as
-    // ACHIEVEMENT_BATTLE_COMEBACK_KID above.
-    // Scaled up from 40 to 55 -- same full-6-Pokemon-party bump as Comeback Kid
-    // above, plus this one's tighter 10%-HP threshold.
-    // Points further raised 125 -> 145 -- see Strategic Victory's comment
-    // (src/data/achievements.h, category K) on the Weather/Coverage
-    // Enjoyer point reallocation.
+    // Same full-6-Pokemon-party requirement as ACHIEVEMENT_BATTLE_COMEBACK_KID above.
     [ACHIEVEMENT_BATTLE_LAST_ONE_STANDING] = {
         .name        = ACHIEVEMENT_NAME("Last One Standing"),
         .description = COMPOUND_STRING("Win a battle with a full team of 6 Pokémon, with your last one at 10% HP or less."),
@@ -882,15 +770,11 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // Category L. All ACHIEVEMENT_SCOPE_CURRENT_RUN -- struct
-    // AchievementRunData resets every new game and every New Game+ cycle,
-    // and every condition below is meaningless once carried across a reset.
-    // Now requires a full 6-Pokemon party (see
-    // Achievement_CheckTeamMilestones in src/achievements.c) -- was trivial
-    // to keep 1-2 Pokemon mono-type by accident.
-    // Scaled up from Bronze/15 to Silver/25 -- the full-6-Pokemon-
-    // party requirement made assembling a whole mono-type team this early
-    // meaningfully harder than its old Bronze points reflected.
+    // Category L. All ACHIEVEMENT_SCOPE_CURRENT_RUN -- struct AchievementRunData resets
+    // every new game and every New Game+ cycle, and every condition below is
+    // meaningless once carried across a reset.
+    // Requires a full 6-Pokemon party (see Achievement_CheckTeamMilestones in
+    // src/achievements.c).
     [ACHIEVEMENT_TEAM_MONO_TYPE_TRIAL] = {
         .name        = ACHIEVEMENT_NAME("Mono-Type Trial"),
         .description = COMPOUND_STRING("Win a Gym battle with a full team of 6 Pokémon, all sharing a type."),
@@ -927,12 +811,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 240,
         .hidden      = FALSE,
     },
-    // Now requires a full 6-Pokemon party (see
-    // Achievement_CheckTeamMilestones in src/achievements.c) -- was trivial
-    // for no two party members to share a type with barely any party to
-    // begin with.
-    // Scaled up from Bronze/15 to Silver/25 -- same full-6-Pokemon-party
-    // bump as Mono-Type Trial above.
+    // Requires a full 6-Pokemon party (see Achievement_CheckTeamMilestones in
+    // src/achievements.c); with fewer, no two members sharing a type is trivial.
     [ACHIEVEMENT_TEAM_NO_DUPLICATES] = {
         .name        = ACHIEVEMENT_NAME("No Duplicates"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, no two sharing a type."),
@@ -1025,13 +905,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_TEAM_FULL_HOUSE ("Full House") removed -- see this file's
-    // top-of-file points rebalance note.
-    // ACHIEVEMENT_TEAM_VARIETY_IS_POWER ("win a major battle
-    // without two of the same species") removed here -- most players never
-    // deliberately catch duplicate species for their party, so this is true
-    // of nearly every team without any effort. See
-    // include/constants/achievements.h's category L comment.
     [ACHIEVEMENT_TEAM_LINK_IN_THE_CHAIN] = {
         .name        = ACHIEVEMENT_NAME("Link in the Chain"),
         .description = COMPOUND_STRING("Have three members of one evolution family in your party at once."),
@@ -1080,15 +953,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 160,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_TEAM_CAPPED_OUT ("Capped Out") removed -- see this file's
-    // top-of-file points rebalance note.
-    // Now requires a full 6-Pokemon party (see
-    // Achievement_CheckTeamMilestones in src/achievements.c) -- a small
-    // party trivially has a low combined base stat total.
-    // Scaled up from Silver/30 to Gold/45 -- the full-6-Pokemon-party
-    // requirement made this a genuine deliberate-underdog build, not just a
-    // side effect of a small party, harder than its old Silver points
-    // reflected.
+    // Requires a full 6-Pokemon party (see Achievement_CheckTeamMilestones in
+    // src/achievements.c); a small party trivially has a low combined base stat total.
     [ACHIEVEMENT_TEAM_FEATHERWEIGHT] = {
         .name        = ACHIEVEMENT_NAME("Featherweight"),
         .description = COMPOUND_STRING("Clear a Gym with a full team of 6 Pokémon whose combined base stat total is under 1800."),
@@ -1316,11 +1182,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 120,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_ECONOMY_RESOURCEFUL ("win a major battle
-    // carrying fewer than five consumables") removed here -- most players
-    // don't stock up on more than a few consumables to begin with, so this
-    // holds without any deliberate effort. See
-    // include/constants/achievements.h's category M comment.
     [ACHIEVEMENT_ECONOMY_TREASURE_PAYS] = {
         .name        = ACHIEVEMENT_NAME("Treasure Pays"),
         .description = COMPOUND_STRING("Earn ¥20,000 total from selling items."),
@@ -1393,10 +1254,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 30,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_COLLECT_TRADE_SECRETS ("obtain a Pokemon
-    // by trade") removed here -- even a single in-game NPC trade satisfies
-    // this, so most playthroughs pick it up without any deliberate effort.
-    // See include/constants/achievements.h's category M comment.
     [ACHIEVEMENT_COLLECT_RARE_FIND] = {
         .name        = ACHIEVEMENT_NAME("Rare Find"),
         .description = COMPOUND_STRING("Catch a Pokémon found by a DexNav scan."),
@@ -1442,14 +1299,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 80,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_CHALLENGE_HARD_WAY ("Hard Way") and
-    // ACHIEVEMENT_CHALLENGE_BRUTAL_RULES ("Brutal Rules") removed -- see this
-    // file's top-of-file points rebalance note.
-    //
-    // Same modifier list as
-    // ACHIEVEMENT_CHALLENGE_SELF_IMPOSED above, all seven plus boosts off --
-    // spelled out here as a self-contained description rather than
-    // referencing another achievement by name.
     [ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE] = {
         .name        = ACHIEVEMENT_NAME("Nightmare Mode"),
         .description = COMPOUND_STRING("Complete a HARD-difficulty Nuzlocke run with all three Randomizer flags on and the boost system disabled."),
@@ -1468,13 +1317,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // Now requires a full 6-Pokemon party (see
-    // Achievement_CheckChallengeMilestones in src/achievements.c) -- with
-    // only one or two Pokemon along there's barely any HP pool to dip
-    // into, making this trivial to earn by accident.
-    // Scaled up from Silver/25 to Gold/40 -- the full-6-Pokemon-party
-    // requirement made this meaningfully harder than its old Silver points
-    // reflected.
+    // Requires a full 6-Pokemon party (see Achievement_CheckChallengeMilestones in
+    // src/achievements.c); a small party has barely any HP pool to dip into.
     [ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS] = {
         .name        = ACHIEVEMENT_NAME("No Healing Items"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, without using a single healing item."),
@@ -1484,12 +1328,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 110,
         .hidden      = FALSE,
     },
-    // Same full-6-Pokemon-party requirement as
-    // ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS above -- also barely any held
-    // items to check with a small party.
-    // Scaled up from 45 to 55, same reasoning as No Healing Items above --
-    // this one was already Gold, but under-priced relative to its
-    // now-stricter cousin.
+    // Same full-6-Pokemon-party requirement as ACHIEVEMENT_CHALLENGE_NO_HEALING_ITEMS
+    // above.
     [ACHIEVEMENT_CHALLENGE_ITEMLESS_BATTLE] = {
         .name        = ACHIEVEMENT_NAME("Itemless Battle"),
         .description = COMPOUND_STRING("Win a major battle with a full team of 6 Pokémon, using no Bag items and no held items."),
@@ -1535,21 +1375,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 140,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_CHALLENGE_LEVEL_DISCIPLINE ("beat a Gym
-    // Leader with no party member above the level cap") removed here -- a
-    // player just playing through normally, without deliberately grinding,
-    // rarely ends up over the level cap anyway. See
-    // include/constants/achievements.h's category N comment.
-    //
-    // ACHIEVEMENT_CHALLENGE_CAPSTONE ("complete the story
-    // without exceeding the level cap") removed here too -- it was the exact
-    // same condition as ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED, minus that
-    // achievement's extra HARD/randomizer requirement, so completing
-    // Perfectly Capped always completed Capstone as a freebie.
-    // ACHIEVEMENT_CHALLENGE_PERFECTLY_CAPPED itself is now removed too --
-    // see this file's top-of-file points rebalance note.
-    // runData->levelCapEverExceeded (src/achievements.c) is now unread but
-    // left in place.
     [ACHIEVEMENT_CHALLENGE_MINIMALIST] = {
         .name        = ACHIEVEMENT_NAME("Minimalist"),
         .description = COMPOUND_STRING("Win a major battle with only three Pokémon in your party."),
@@ -1559,8 +1384,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_CHALLENGE_THREE_POKEMON ("Three-Pokémon Challenge")
-    // removed -- see this file's top-of-file points rebalance note.
     [ACHIEVEMENT_CHALLENGE_SOLO_JOURNEY] = {
         .name        = ACHIEVEMENT_NAME("Solo Journey"),
         .description = COMPOUND_STRING("Complete the story never carrying more than one Pokémon."),
@@ -1579,8 +1402,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP ("Hardly Any Help") removed --
-    // see this file's top-of-file points rebalance note.
     [ACHIEVEMENT_NUZLOCKE_FIRST_GYM] = {
         .name        = ACHIEVEMENT_NAME("First Nuzlocke"),
         .description = COMPOUND_STRING("Clear a Gym under Nuzlocke rules."),
@@ -1590,8 +1411,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NUZLOCKE_HARDCORE_SURVIVOR ("Hardcore Survivor") removed --
-    // see this file's top-of-file points rebalance note.
     [ACHIEVEMENT_NUZLOCKE_PERFECT] = {
         .name        = ACHIEVEMENT_NAME("Perfect Nuzlocke"),
         .description = COMPOUND_STRING("Complete a Nuzlocke without losing a single Pokémon."),
@@ -1610,18 +1429,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 60,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NUZLOCKE_SPECIES_CLAUSE ("no two catches
-    // from the same family") and ACHIEVEMENT_NUZLOCKE_NO_REVIVES ("never
-    // used a Revive") removed here -- a genuine Nuzlocke already only keeps
-    // one catch per route and treats a fainted Pokemon as permanently boxed,
-    // so both conditions tend to hold on their own. See
-    // include/constants/achievements.h's category N (Nuzlocke) comment.
-    //
-    // ACHIEVEMENT_NUZLOCKE_NO_ACE_ALLOWED ("clear a Nuzlocke
-    // Gym without your highest-level Pokemon acting") also removed here --
-    // duplicate of ACHIEVEMENT_TEAM_UNDERSTUDY (same check, unconditional on
-    // Nuzlocke mode), which already fires for Nuzlocke runs too. See
-    // Achievement_CheckNuzlockeMilestones (src/achievements.c).
     [ACHIEVEMENT_NUZLOCKE_SCRAPPY] = {
         .name        = ACHIEVEMENT_NAME("Scrappy"),
         .description = COMPOUND_STRING("Win a Nuzlocke Gym battle with your lowest-level Pokémon landing the final blow."),
@@ -1640,34 +1447,12 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER ("complete a
-    // Nuzlocke having taken the encounter on every route you entered")
-    // removed -- one missed/fled encounter anywhere in the whole run
-    // permanently breaks it (a sticky flag, per its own bookkeeping comment),
-    // which plays as punishing rather than as a genuine challenge. Its
-    // helper, Achievement_CheckNuzlockeExplorationMilestones, and its
-    // LoadCurrentMapData (src/overworld.c) call site are removed along with
-    // it; runData->nuzlockePendingRoute/nuzlockeRouteSkipped are now unread
-    // but left in place (see the struct's own comment).
-    //
-    // ACHIEVEMENT_NUZLOCKE_UNASSISTED_SURVIVOR ("complete a
-    // Nuzlocke with the boost system disabled") removed here -- too similar
-    // to ACHIEVEMENT_CHALLENGE_HARDLY_ANY_HELP (!boostsEnabled is a strict
-    // subset of that achievement's condition, checked at the same GameClear
-    // call site), which already fires for Nuzlocke runs too since it isn't
-    // gated on nuzlockeModeEnabled. See Achievement_CheckNuzlockeCompletionMilestones
-    // (src/achievements.c).
 
     // ---- Randomizer & New Game+ (category O) --------------------------
-    // "A randomized playthrough" was ambiguous given there
-    // are three independent randomizer settings (species/FLAG_RANDOMIZE_MON,
-    // type/FLAG_RANDOMIZE_TYPE, move/FLAG_RANDOMIZE_MOVES). This is a
-    // three-tier ladder and each tier now spells out its own criteria
-    // explicitly rather than reusing that phrase: Chaos Begins and Random by
-    // Nature only need ANY one of the three settings on (Achievement_AnyRandomizerFlagSet,
-    // src/achievements.c), while Truly Random -- the tier that already
-    // required it in code -- needs ALL three at once. Descriptions below are
-    // worded to match each achievement's actual condition exactly.
+    // Chaos Begins and Random by Nature need ANY one of the three randomizer settings
+    // (species/FLAG_RANDOMIZE_MON, type/FLAG_RANDOMIZE_TYPE, move/FLAG_RANDOMIZE_MOVES)
+    // on (Achievement_AnyRandomizerFlagSet); Truly Random needs ALL three. Descriptions
+    // match each achievement's actual condition exactly.
     [ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS] = {
         .name        = ACHIEVEMENT_NAME("Chaos Begins"),
         .description = COMPOUND_STRING("Begin a playthrough with at least one randomizer setting enabled."),
@@ -1713,15 +1498,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 120,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_RANDOMIZER_NEVER_SEEN_IT_COMING ("beat a
-    // randomized major battle with no super-effective move available")
-    // removed here -- with move/type randomization scrambling coverage,
-    // having zero super-effective options against some boss just happens by
-    // chance over a run's worth of major battles. See
-    // include/constants/achievements.h's category O comment.
-    // ACHIEVEMENT_RANDOMIZER_SEED_EXPLORER (2 randomized
-    // playthroughs) and _VETERAN (5) removed here -- ACHIEVEMENT_RANDOMIZED_1
-    // (category J) is already the "do it once" version of this ladder.
     [ACHIEVEMENT_RANDOMIZER_PURE_CHAOS] = {
         .name        = ACHIEVEMENT_NAME("Pure Chaos"),
         .description = COMPOUND_STRING("Complete a playthrough with the species Randomizer, Limited Party, and Mono Type all on."),
@@ -1749,11 +1525,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 240,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NG_PLUS_ONE_MORE_TIME (complete cycle 2)
-    // and _BEYOND_THE_BEGINNING (reach cycle 10) removed here -- collapsed,
-    // along with category J's old NG_PLUS_STARTED/_CYCLE_3/_CYCLE_5/
-    // _COMPLETED_3, into the single ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE
-    // (category J), which reused this entry's "One More Time" name.
     [ACHIEVEMENT_NG_PLUS_FRESH_FACES] = {
         .name        = ACHIEVEMENT_NAME("Fresh Faces"),
         .description = COMPOUND_STRING("Defeat 50 Trainers within a single New Game+ cycle."),
@@ -1772,9 +1543,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // Same modifier list as
-    // ACHIEVEMENT_CHALLENGE_SELF_IMPOSED (src/data/achievements.h,
-    // category N), checked at NG+ cycle completion instead of first clear.
+    // Same modifier list as ACHIEVEMENT_CHALLENGE_SELF_IMPOSED, checked at NG+ cycle
+    // completion instead of first clear.
     [ACHIEVEMENT_NG_PLUS_CYCLE_SPECIALIST] = {
         .name        = ACHIEVEMENT_NAME("Cycle Specialist"),
         .description = COMPOUND_STRING("Complete a New Game+ cycle with 3+ challenge settings on: Nuzlocke Mode, Draft Mode, Mono Type, Mono Gen, Limited Party, Rotation Mode, HARD, or any Randomizer flag."),
@@ -1784,18 +1554,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 140,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NG_PLUS_ESCALATION (3 consecutive NG+
-    // cycles) removed here -- part of the same collapse-to-one-completion
-    // consolidation as the rest of the NG+ ladder (see category J's
-    // ACHIEVEMENT_NG_PLUS_CYCLE_COMPLETE).
-    // ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA ("No Nostalgia"),
-    // ACHIEVEMENT_NG_PLUS_COMPLETE_REINVENTION ("Complete Reinvention"), and
-    // ACHIEVEMENT_NG_PLUS_BOSS_GAUNTLET ("Boss Gauntlet") removed -- see this
-    // file's top-of-file points rebalance note. Their sole helpers
-    // (Achievement_RecordGymSpeciesUsed/Achievement_MajorBossClassBit) and
-    // per-cycle bookkeeping fields (reinventionBroken,
-    // majorBossClassesDefeatedThisCycle, previousCyclePartySpecies/Set) are
-    // removed/left unread with them -- see src/achievements.c.
     [ACHIEVEMENT_NG_PLUS_CYCLE_NUZLOCKE] = {
         .name        = ACHIEVEMENT_NAME("Cycle Nuzlocke"),
         .description = COMPOUND_STRING("Complete an NG+ cycle with Nuzlocke enabled."),
@@ -1805,10 +1563,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 150,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NG_PLUS_ENDLESS_SURVIVOR ("complete NG+
-    // cycle 5 or higher with Nuzlocke and the randomizer enabled") removed
-    // -- stacks a deep NG+ grind on top of a randomized Nuzlocke's own
-    // permadeath pressure, closer to punishing than to a genuine challenge.
     [ACHIEVEMENT_RANDOMIZER_SPECIES_CHAOS] = {
         .name        = ACHIEVEMENT_NAME("Species Chaos"),
         .description = COMPOUND_STRING("Complete a playthrough with randomized species only."),
@@ -1845,23 +1599,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 40,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_NG_PLUS_UNASSISTED_CYCLE ("Unassisted Cycle") removed --
-    // see this file's top-of-file points rebalance note.
-    //
-    // ACHIEVEMENT_NG_PLUS_TEN_CYCLES_DEEP ("complete ten
-    // New Game+ cycles") and ACHIEVEMENT_NG_PLUS_CYCLE_COLLECTOR ("complete
-    // NG+ cycles under three different challenge configurations") both
-    // removed -- ten full replays (or three deliberately-varied ones) is a
-    // grind for its own sake on top of everything category J/O already ask
-    // for, not a genuine additional challenge. gAchievementProfile.ngPlusConfigsSeen[]/
-    // ngPlusConfigsSeenCount (Cycle Collector's sole reader) are now unread
-    // but left in place (see the struct's own comment).
-    //
-    // ACHIEVEMENT_VARIETY_FULL_CIRCLE ("Full Circle") removed too -- see
-    // this file's top-of-file points rebalance note.
-    // gAchievementProfile.completedConventionalRun is now unread but left in
-    // place; nuzlockesCompleted/randomizedRunsCompleted are still read
-    // elsewhere (ACHIEVEMENT_NUZLOCKE_1/ACHIEVEMENT_RANDOMIZED_1).
 
     // Streaks, Records & Collection Remainder.
     [ACHIEVEMENT_RECORD_HOT_STREAK] = {
@@ -1945,13 +1682,9 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // The logic was fixed, not just the description -- the old
-    // check (a bitmask over party SLOTS, ANDed down) trivially always
-    // fired, since party slot 0 is never empty while you're able to
-    // battle at all. Achievement_CheckBattleRecordsMilestones now tracks
-    // actual Pokemon (by personality) instead -- see
-    // legendCandidatePersonalities/legendCandidateCount in
-    // include/global.h's struct AchievementRunDataExt.
+    // Tracks actual Pokemon by personality (legendCandidatePersonalities/
+    // legendCandidateCount in include/global.h's struct AchievementRunDataExt), not
+    // party slots: slot 0 is never empty while the player can battle at all.
     [ACHIEVEMENT_RECORD_LEGEND_OF_THE_RUN] = {
         .name        = ACHIEVEMENT_NAME("Legend of the Run"),
         .description = COMPOUND_STRING("Keep the same Pokémon in your party for every major battle of a completed playthrough."),
@@ -1961,11 +1694,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 170,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_RECORD_COMEBACK_COUNT ("Comeback Count") removed -- see
-    // this file's top-of-file points rebalance note. Its sole helper,
-    // Achievement_RecordPlayerFaint, is removed with it; sBattleData.wasDownToLastMon/
-    // AchievementRunDataExt.comebackWinsThisRun (src/achievements.c,
-    // include/global.h) are now unread but left in place.
     [ACHIEVEMENT_RECORD_GROWING_STRONG] = {
         .name        = ACHIEVEMENT_NAME("Growing Strong"),
         .description = COMPOUND_STRING("Raise a Pokémon ten levels above the level you obtained it at."),
@@ -1984,13 +1712,11 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 40,
         .hidden      = FALSE,
     },
-    // Walks the whole family
-    // tree from the base form outward (Achievement_GetFamilyMembers),
-    // including every branch, so a branching family like Eevee's needs
-    // every one of its evolutions caught, not just one. Only families with a
-    // branching evolution or a regional-variant chain qualify at all
-    // (Achievement_FamilyQualifiesForReunion) -- a single-stage Pokemon with
-    // neither can't trivially complete this the instant it's caught.
+    // Walks the whole family tree from the base form outward
+    // (Achievement_GetFamilyMembers), including every branch, so a branching family
+    // like Eevee's needs every evolution caught. Only families with a branching
+    // evolution or a regional-variant chain qualify (Achievement_FamilyQualifiesForReunion);
+    // a single-stage Pokemon would otherwise complete this the instant it's caught.
     [ACHIEVEMENT_COLLECT_FAMILY_REUNION] = {
         .name        = ACHIEVEMENT_NAME("Family Reunion"),
         .description = COMPOUND_STRING("Catch every stage of an evolutionary line that has a split (e.g. Eevee) or a regional-variant chain (e.g. Meowth/Alolan Meowth)."),
@@ -2000,10 +1726,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 120,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_COLLECT_PERFECT_SPECIMEN ("obtain a
-    // Pokemon with all six IVs at 31") removed here -- a lucky roll on any
-    // catch or hatch, not something a player can deliberately work towards.
-    // See include/constants/achievements.h's category P comment.
     [ACHIEVEMENT_COLLECT_ODDBALL] = {
         .name        = ACHIEVEMENT_NAME("Oddball"),
         .description = COMPOUND_STRING("Clear a Gym with a Pokémon below 200 base stat total in the party."),
@@ -2076,11 +1798,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 150,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_COLLECT_BOX_FILLER ("store 100 Pokemon at
-    // once") and ACHIEVEMENT_COLLECT_STORAGE_BARON ("store 300 at once")
-    // removed here -- a full playthrough's worth of catching fills PC boxes
-    // up on its own, no deliberate collecting required. See
-    // include/constants/achievements.h's category P comment.
     [ACHIEVEMENT_RECORD_DEVOTED] = {
         .name        = ACHIEVEMENT_NAME("Devoted"),
         .description = COMPOUND_STRING("Raise a Pokémon to maximum friendship."),
@@ -2127,36 +1844,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // Profile Meta, Mastery & Prestige. All
-    // ACHIEVEMENT_CATEGORY_PROFILE -- see constants/achievements.h's category
-    // Q comment for why there's no separate Mastery category.
-    //
-    // Removed here -- Bronze/Silver/Gold/Diamond Master and
-    // Category Conqueror (complete every achievement of a tier / entirely in
-    // one category), Master of the Game (90% of all non-hidden
-    // achievements), Nothing Left to Prove (100% of all non-hidden
-    // achievements), Endgame Explorer (every New Game+ achievement),
-    // Challenge Conqueror/Unbroken Will/Chaos Master (80% of the
-    // Challenge/Nuzlocke/Randomizer category), Replay Architect (every
-    // Gold-or-better in Team/Challenge/Nuzlocke/Randomizer), and Frequent
-    // Flyer/Veteran Trainer/Resident Champion (10/25/50 playthroughs). See
-    // Achievement_CheckMasteryMilestones (src/achievements.c) for the
-    // code-side removal -- several helpers that existed solely for these
-    // entries (Achievement_AnyCategoryFullyCompletedAtTier,
-    // Achievement_CountInCategory, Achievement_CheckCategoryPercentMilestone,
-    // Achievement_CountNonHiddenExcluding,
-    // Achievement_GoldOrBetterFullyCompletedAcrossCategories) are removed
-    // along with them.
-    //
-    // ACHIEVEMENT_PROFILE_ACHIEVEMENT_HUNTER ("Earn a Bronze
-    // achievement in every category") removed here too -- it was unattainable
-    // (Challenge, NG+, Nuzlocke and Profile have no Bronze-tier entry between
-    // them), and
-    // rather than force a tier onto categories that were never designed to
-    // have an "easy" entry, the achievement itself goes. Its sole helpers,
-    // Achievement_HasBronzeInEveryCategory and
-    // Achievement_CountCompletedInCategory (src/achievements.c), are removed
-    // along with it.
+    // Profile Meta, Mastery & Prestige. All ACHIEVEMENT_CATEGORY_PROFILE; see
+    // constants/achievements.h's category Q comment.
     [ACHIEVEMENT_PROFILE_WELL_ROUNDED] = {
         .name        = ACHIEVEMENT_NAME("Well Rounded"),
         .description = COMPOUND_STRING("Earn at least one achievement of every tier."),
@@ -2166,14 +1855,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 130,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_PROFILE_MASTER_OF_ALL ("earn a
-    // Gold-or-better achievement in every category") removed -- see
-    // Achievement_CheckMasteryMilestones (src/achievements.c);
-    // Achievement_HasGoldOrBetterInEveryCategory, which existed solely for
-    // this achievement, is removed along with it.
-    // 15,000 -- 50% of the catalog's 30,000-point total -- see
-    // Achievement_CheckMasteryMilestones (src/achievements.c)'s own comment
-    // on the rescale.
+    // 15,000 -- 50% of the catalog's 30,000-point total.
     [ACHIEVEMENT_PROFILE_POINT_HOARDER] = {
         .name        = ACHIEVEMENT_NAME("Point Hoarder"),
         .description = COMPOUND_STRING("Earn 15,000 total achievement points."),
@@ -2183,9 +1865,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 170,
         .hidden      = FALSE,
     },
-    // 25,000 -- ~83% of the 30,000-point total, so it still means "you've all
-    // but finished the catalog" -- see src/data/achievements.h's top-of-file
-    // comment on the point-total rescale.
+    // 25,000 -- ~83% of the 30,000-point total, so it still means "you've all but
+    // finished the catalog".
     [ACHIEVEMENT_PROFILE_POINT_LEGEND] = {
         .name        = ACHIEVEMENT_NAME("Point Legend"),
         .description = COMPOUND_STRING("Earn 25,000 total achievement points."),
@@ -2195,9 +1876,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 360,
         .hidden      = FALSE,
     },
-    // 10,000 -- the Gold-or-better pool is 18,880 (13,340 Gold + 5,540
-    // Diamond) after the Emporium/Legendary additions, so this holds a ~53%
-    // share of that pool.
+    // 10,000 -- the Gold-or-better pool is 18,880 (13,340 Gold + 5,540 Diamond), so
+    // this holds a ~53% share of that pool.
     [ACHIEVEMENT_PROFILE_NO_EASY_PATH] = {
         .name        = ACHIEVEMENT_NAME("No Easy Path"),
         .description = COMPOUND_STRING("Earn 10,000 points from Gold-or-better achievements."),
@@ -2207,8 +1887,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 150,
         .hidden      = FALSE,
     },
-    // 5,000 -- ~17% of the 30,000 points it costs to max every boost
-    // (src/data/achievement_boosts.h's own comment on the rescale).
+    // 5,000 -- ~17% of the 30,000 points it costs to max every boost.
     [ACHIEVEMENT_PROFILE_BOOST_INVESTOR] = {
         .name        = ACHIEVEMENT_NAME("Boost Investor"),
         .description = COMPOUND_STRING("Invest 5,000 points into boosts."),
@@ -2236,16 +1915,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 120,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_PROFILE_SELECTIVE_MASTERY ("Selective Mastery") removed --
-    // see this file's top-of-file points rebalance note.
-    // ACHIEVEMENT_PROFILE_META_PROG_MASTER ("complete 200
-    // achievements with every boost at max level") removed -- see
-    // Achievement_CheckMetaProgMaster (src/achievements.c), which existed
-    // solely for this achievement (called from both
-    // Achievement_CheckMasteryMilestones and Achievement_CheckBoostMilestones)
-    // and is removed along with it. Achievement_CountTotalCompleted and
-    // AchievementBoost_AllMaxed, which existed solely to back it, are removed
-    // too.
     [ACHIEVEMENT_MASTERY_DIAMOND_STANDARD] = {
         .name        = ACHIEVEMENT_NAME("Diamond Standard"),
         .description = COMPOUND_STRING("Complete every Diamond-tier achievement in the catalog."),
@@ -2266,8 +1935,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 30,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_RECRUITS_TOUR_OF_DUTY ("Tour of Duty") removed -- see this
-    // file's top-of-file points rebalance note.
     [ACHIEVEMENT_RECRUITS_HONORABLE_DISCHARGE] = {
         .name        = ACHIEVEMENT_NAME("Honorable Discharge"),
         .description = COMPOUND_STRING("Have a recruit Pokémon retire."),
@@ -2295,11 +1962,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 180,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_RECRUITS_NEVER_UNDERSTAFFED ("Never Understaffed") removed
-    // -- see this file's top-of-file points rebalance note. Its sole helper,
-    // Achievement_RecordRecruitRunFailed, is removed with it;
-    // AchievementRunDataExt.recruitsRunFailedThisCycle (include/global.h) is
-    // now unread but left in place.
     [ACHIEVEMENT_RECRUITS_ENDLESS_RECRUITMENT_DRIVE] = {
         .name        = ACHIEVEMENT_NAME("Recruitment Drive"),
         .description = COMPOUND_STRING("Complete a Recruits-mode run on HARD difficulty."),
@@ -2460,9 +2122,8 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .hidden      = FALSE,
     },
 
-    // V. Mono Type Mode. Gated on MonoType_IsEnabled() -- see the enum's own
-    // comment for how this differs from category L's composition-based
-    // mono-type entries.
+    // V. Mono Type Mode. Gated on MonoType_IsEnabled(), unlike category L's
+    // composition-based mono-type entries.
     [ACHIEVEMENT_MONO_TYPE_COMMITTED_TO_THE_BIT] = {
         .name        = ACHIEVEMENT_NAME("Committed to the Bit"),
         .description = COMPOUND_STRING("Choose a starter with Mono Type mode enabled."),
@@ -2593,27 +2254,6 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
         .points      = 610,
         .hidden      = FALSE,
     },
-    // ACHIEVEMENT_VARIETY_NEW_TEAM_NEW_ME ("complete two
-    // playthroughs sharing no party species") removed -- see
-    // Achievement_OnFirstPlaythroughComplete (src/achievements.c); the
-    // disjoint-species comparison that backed it is removed. Its underlying
-    // party-species snapshot (AchievementRunDataExt.previousCyclePartySpecies)
-    // used to also back ACHIEVEMENT_NG_PLUS_NO_NOSTALGIA, since removed too
-    // (points rebalance note, top of this file) -- the field is now unread
-    // but left in place.
-    //
-    // ACHIEVEMENT_VARIETY_REPLAY_MASTER ("complete five playthroughs under
-    // five different rule configurations") removed -- see the same function.
-    // Its dedicated tracking (Achievement_ChallengeConfigSignature,
-    // playthroughConfigsSeen[]/_Count) had no other achievement reading it,
-    // so the helper function is removed entirely and the persisted profile
-    // fields are left in place, marked unused (see include/achievements.h).
-    //
-    // ACHIEVEMENT_HIDDEN_EASTER_EGG_HUNTER ("complete five hidden
-    // achievements") removed -- it was the only hidden achievement anywhere
-    // in the catalog, so it was permanently unattainable.
-    // Achievement_CountHiddenCompleted, which existed solely for it, is
-    // removed along with it.
 
     // Y. Emporium Rewards
     [ACHIEVEMENT_EMPORIUM_FIRST_PRIZE] = {

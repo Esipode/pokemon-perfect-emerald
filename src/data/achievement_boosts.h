@@ -1,124 +1,89 @@
 // One entry per enum BoostId (constants/achievements.h), keyed by designated
-// initializer -- mirrors src/data/achievements.h's convention. Included from
-// src/achievements.c only; nothing else should reference
-// gAchievementBoosts directly -- go through the public API in
-// include/achievements.h instead.
+// initializer. Included from src/achievements.c only; go through the public API in
+// include/achievements.h instead of referencing gAchievementBoosts directly.
 #define BOOST_NAME(str) COMPOUND_STRING_SIZE_LIMIT(str, BOOST_NAME_LENGTH)
 
-// The first real boost. Costs rise steeply so the player can't acquire
-// every useful boost immediately.
-//
-// Every cost curve below is tuned so the total cost to max every boost in
-// the catalog equals the catalog's total achievement points (30,000, see
-// src/data/achievements.h's own note on that total). The maxed-boost total
-// breaks down as: 7 five-level curves (EXP Gain + the six that share
-// sBoostSharedCosts) at 2,200 each, 2 four-level boosts at 1,350, 10
-// three-level boosts at 770, and 6 binary boosts at 700 --
-// 15,400 + 2,700 + 7,700 + 4,200 = 30,000.
+// Cost curves are tuned so the total cost to max every boost equals the catalog's
+// total achievement points (30,000, see src/data/achievements.h): 7 five-level
+// curves (EXP Gain + the six that share sBoostSharedCosts) at 2,200 each, 2
+// four-level boosts at 1,350, 10 three-level boosts at 770, and 6 binary boosts
+// at 700 -- 15,400 + 2,700 + 7,700 + 4,200 = 30,000.
 static const u16 sBoostExpGainCosts[]   = {120, 250, 400, 580, 850};
-// effects[0] (level 0) is never read -- AchievementBoost_ApplyExp short-
-// circuits on level == 0 before indexing this array. effects[level] is the
-// percent bonus applied at that level, matching the example curve
-// (Level 1: +10% ... Level 5: +50%).
+// effects[0] is never read: AchievementBoost_ApplyExp short-circuits on level == 0.
+// effects[level] is the percent bonus at that level.
 static const u16 sBoostExpGainEffects[] = {0, 10, 20, 30, 40, 50};
 
-// The rest of the example boost list. Same cost curve as EXP Gain above --
-// every boost below shares one curve rather than six independently-tuned
-// ones. See the cost-curve comment above.
+// Shared by every other leveled boost. CanPurchase only indexes costs[level] for
+// level < maxLevel, so a 3- or 4-level boost reads the leading entries.
 static const u16 sBoostSharedCosts[] = {120, 250, 400, 580, 850};
 
-// AchievementBoost_ExtraShinyRerolls returns this directly: an extra shiny
-// reroll per level, stacking with the Shiny Charm/Lure/chain-fishing/DexNav
-// rerolls ComputePlayerShinyOdds (src/pokemon.c) already accumulates.
+// Extra shiny rerolls per level, stacking with the rerolls ComputePlayerShinyOdds
+// (src/pokemon.c) already accumulates.
 static const u16 sBoostShinyChanceEffects[] = {0, 1, 2, 3, 4, 5};
 
-// Percent bonus applied to ComputeCaptureOdds' 0-255 result -- same shape as
-// EXP Gain's percent bonus.
+// Percent bonus applied to ComputeCaptureOdds' 0-255 result.
 static const u16 sBoostCatchRateEffects[] = {0, 10, 20, 30, 40, 50};
 
-// Percent bonus applied to the battle money reward -- same shape as EXP
-// Gain's percent bonus.
+// Percent bonus applied to the battle money reward.
 static const u16 sBoostMoneyGainEffects[] = {0, 10, 20, 30, 40, 50};
 
-// Flat addition to GetEggCyclesToSubtract's result (normally 1, or 2 with
-// Magma Armor/Flame Body/Steam Engine) -- the same "add to the subtraction"
-// shape those abilities already use, not a percent.
+// Flat addition to GetEggCyclesToSubtract's result (normally 1, or 2 with Magma
+// Armor/Flame Body/Steam Engine), not a percent.
 static const u16 sBoostEggHatchSpeedEffects[] = {0, 1, 2, 3, 4, 5};
 
-// Percent bonus applied to CalculateFriendshipBonuses' positive result --
-// same shape as EXP Gain's percent bonus.
+// Percent bonus applied to CalculateFriendshipBonuses' positive result.
 static const u16 sBoostFriendshipGainEffects[] = {0, 10, 20, 30, 40, 50};
 
-// AchievementBoost_ShouldRoamerSeekPlayer rolls this directly as a percent:
-// a flat 1% chance per level, per roamer move, that RoamerMove (src/roamer.c)
-// draws the roamer straight onto the player's current route instead of its
-// normal random relocation.
+// Rolled directly as a percent by AchievementBoost_ShouldRoamerSeekPlayer: a flat 1%
+// chance per level, per roamer move, that RoamerMove (src/roamer.c) draws the roamer
+// onto the player's current route instead of its normal random relocation.
 static const u16 sBoostLegendaryEncounterEffects[] = {0, 1, 2, 3, 4, 5};
 
-// The six leveled boosts below reuse sBoostSharedCosts above rather than
-// declaring 3- and 4-entry curves of their own -- AchievementBoost_CanPurchase
-// only ever indexes costs[level] for level < maxLevel, so a 3-level boost
-// simply reads the leading three entries.
-//
-// One shared price for all six binary boosts, for the same reason: each is a
-// single one-time purchase, so there's nothing to shape a curve around yet.
-// 700 apiece is the binary boosts' slice of the 30,000 maxed-boost target
-// (see the cost-curve comment above).
+// One shared price for all six binary boosts: each is a single one-time purchase.
+// 700 apiece is their slice of the 30,000 maxed-boost target.
 static const u16 sBoostSharedBinaryCosts[] = {700};
 
-// IsCriticalHit (src/battle_util.c) rolls this as a flat percent chance to
-// upgrade a non-critical hit, on top of whatever the normal crit-stage roll
-// already decided. Never overrides a hard block (Battle Armor, Lucky Chant).
+// Flat percent chance to upgrade a non-critical hit in IsCriticalHit
+// (src/battle_util.c). Never overrides a hard block (Battle Armor, Lucky Chant).
 static const u16 sBoostCritChanceEffects[] = {0, 3, 6, 9};
 
-// Flat berries added to GetBerryCountByBerryTreeId's result (src/berry.c) --
-// applied at read time, never written into the saved berryYield field.
+// Flat berries added to GetBerryCountByBerryTreeId's result (src/berry.c), applied
+// at read time and never written into the saved berryYield field.
 static const u16 sBoostBerryYieldEffects[] = {0, 1, 2, 3};
 
 // Percent faster, applied to a berry stage's duration in minutes as
-// minutes * 100 / (100 + percent) -- so level 4 (+100%) halves the wait
+// minutes * 100 / (100 + percent), so level 4 (+100%) halves the wait
 // rather than reaching zero.
 static const u16 sBoostBerryGrowthEffects[] = {0, 25, 50, 75, 100};
 
-// CancelerPPDeduction (src/battle_move_resolution.c) rolls this as a flat
-// percent chance to skip a move's PP cost entirely for that use.
+// Flat percent chance to skip a move's PP cost in CancelerPPDeduction
+// (src/battle_move_resolution.c).
 static const u16 sBoostPpSaverEffects[] = {0, 5, 10, 15};
 
-// Rolled once per turn per battler at ENDTURN_STATUS_RECOVERY
-// (src/battle_end_turn.c) as a flat percent chance to shake off a
-// non-volatile status, the same way Shed Skin does.
+// Flat percent chance per turn per battler at ENDTURN_STATUS_RECOVERY
+// (src/battle_end_turn.c) to shake off a non-volatile status, like Shed Skin.
 static const u16 sBoostStatusRecoveryEffects[] = {0, 5, 10, 15};
 
 // Percent added to a Repel/Lure's step count as steps * (100 + percent) / 100,
 // at every VAR_REPEL_STEP_COUNT write site.
 static const u16 sBoostSprayDurationEffects[] = {0, 25, 50, 75, 100};
 
-// Second wave of boosts. The three start-of-game key items are one-time
-// binary purchases like BOOST_STARTER_KIT above, so they reuse
-// sBoostSharedBinaryCosts. The five leveled boosts below are all maxLevel 3,
-// so they reuse sBoostSharedCosts' leading three entries, same as
-// BOOST_CRIT_CHANCE/BOOST_PP_SAVER/BOOST_STATUS_RECOVERY above.
-
-// AchievementBoost_ShouldConsumeItem rolls this as a flat percent chance,
-// per use, that a POCKET_ITEMS consumable isn't removed from the bag.
+// Flat percent chance, per use, that a POCKET_ITEMS consumable isn't removed from
+// the bag (AchievementBoost_ShouldConsumeItem).
 static const u16 sBoostConsumableSaveEffects[] = {0, 10, 20, 30};
 
-// AchievementBoost_ApplyEggIvReroll/_ApplyWildIvReroll (src/achievements.c)
-// read this directly as an extra IV-spread reroll count -- the mon's IVs are
-// rolled once normally, then rerolled this many more times, keeping
-// whichever spread has the highest stat total.
+// Extra IV-spread reroll count for AchievementBoost_ApplyEggIvReroll/_ApplyWildIvReroll
+// (src/achievements.c): the IVs are rolled once, then rerolled this many more times,
+// keeping the spread with the highest stat total.
 static const u16 sBoostIvRerollEffects[] = {0, 1, 2, 3};
 
-// AchievementBoost_ApplyShopPrice: percent knocked off every mart price.
+// Percent knocked off every mart price.
 static const u16 sBoostShopDiscountEffects[] = {0, 10, 20, 30};
 
-// AchievementBoost_GetSurviveChancePercent: flat percent chance a lethal hit
-// on the player's side leaves 1 HP instead, same shape as the three existing
-// Get*Percent battle boosts.
+// Flat percent chance a lethal hit on the player's side leaves 1 HP instead.
 static const u16 sBoostSurvive1HpEffects[] = {0, 5, 10, 15};
 
-// AchievementBoost_ApplyPostBattleHeal: percent of each party mon's max HP
-// restored after winning a trainer battle.
+// Percent of each party mon's max HP restored after winning a trainer battle.
 static const u16 sBoostPostBattleHealEffects[] = {0, 5, 10, 15};
 
 static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =

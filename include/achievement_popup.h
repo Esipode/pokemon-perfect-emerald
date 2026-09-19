@@ -1,44 +1,26 @@
 #ifndef GUARD_ACHIEVEMENT_POPUP_H
 #define GUARD_ACHIEVEMENT_POPUP_H
 
-// Reuses src/overworld.c's ScriptShowItemDescription/ShowItemIconSprite/
-// ScriptHideItemDescription box almost verbatim -- same window position/
-// size, same custom frame tile/palette, same icon-left/text-right layout, no
-// slide animation. Only the content differs (tier icon + achievement name/
-// points/description instead of an item icon + its description), and
-// show/hide is driven by a task timer instead of paired script commands.
-//
-// Shows immediately and ungated -- used internally by the queue below, and
-// directly by the debug menu's "Test Achievement Popup" action.
+// Shows the popup immediately, ungated. Used by the queue below and by the
+// debug menu's "Test Achievement Popup" action.
 void ShowAchievementPopup(u16 achievementId);
 
-// Same box as ShowAchievementPopup, showing a level cap increase instead of
-// an achievement -- no tier icon, fixed text. Shows immediately and ungated;
-// real level cap increases go through LevelCapPopup_Enqueue below.
+// Same box as ShowAchievementPopup, showing a level cap increase. Shows
+// immediately and ungated; real increases go through LevelCapPopup_Enqueue.
 void ShowLevelCapPopup(u32 newLevelCap);
 
-// The real entry point for actual awards.
-// src/achievements.c's QueueAchievementNotification calls this rather than
-// ShowAchievementPopup directly -- it pushes onto a small ring buffer that
-// AchievementPopup_UpdateQueue drains one at a time, only once the previous
-// popup has finished and the field is in a safe state (not mid-battle,
-// mid-cutscene, or mid-transition), so simultaneous awards each get a full,
-// un-truncated display instead of clobbering one another.
+// Entry point for real awards. Pushes onto a ring buffer that
+// AchievementPopup_UpdateQueue drains one at a time, once the previous popup
+// has finished and the field is in a safe state.
 void AchievementPopup_Enqueue(u16 achievementId);
 
-// Same box/queue/dismiss behavior as AchievementPopup_Enqueue, for the "level
-// cap increased" notification (src/field_specials.c) instead of an
-// achievement -- shares the queue, so a level cap popup landing alongside an
-// achievement award still displays one at a time rather than clobbering.
+// Same as AchievementPopup_Enqueue for the level cap increase notification.
+// Shares the queue, so popups still display one at a time.
 void LevelCapPopup_Enqueue(u32 newLevelCap);
 
-// Polled once per frame from CB2_Overworld (src/overworld.c) -- attempts to
-// show the next queued achievement popup, if any, and if the field is
-// currently in a safe state to show one. A no-op when the queue is empty.
-// Deliberately a plain per-frame poll rather than a task: see the comment on
-// this function's definition (src/achievement_popup.c) for why a
-// self-perpetuating task doesn't survive the ResetTasks() calls scattered
-// through battle/menu transitions.
+// Polled once per frame from CB2_Overworld. Shows the next queued popup if the
+// field is in a safe state. A plain poll rather than a task because
+// ResetTasks() during battle/menu transitions would destroy the task.
 void AchievementPopup_UpdateQueue(void);
 
 #endif // GUARD_ACHIEVEMENT_POPUP_H
