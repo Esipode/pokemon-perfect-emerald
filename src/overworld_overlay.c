@@ -5,6 +5,7 @@
 #include "field_weather.h"
 #include "palette.h"
 #include "sprite.h"
+#include "constants/rgb.h"
 
 STATIC_ASSERT(MAX_OVERLAYS <= 8, OverlayIndexFitsHandle);
 STATIC_ASSERT(sizeof(struct Overlay) <= 40, OverlaySizeBudget);
@@ -18,6 +19,257 @@ static EWRAM_DATA bool8 sDistanceForce = FALSE;  // recompute every distance fac
 static EWRAM_DATA bool8 sOverlayDirty = FALSE;   // gPlttBufferFaded must be recomposed
 static EWRAM_DATA bool8 sOverlayApplied = FALSE; // gPlttBufferFaded currently holds overlay tint
 
+#define OVERLAY_GLOW_TILE_TAG       0x8020
+#define OVERLAY_GLOW_PAL_TAG_BASE   0x8020 // + overlay index; bit 15 makes the palette weather-immune
+#define GLOW_RETRY_FRAMES           30
+#define GLOW_OPACITY_FORCE          0xFF
+
+struct GlowState
+{
+    u16 appliedColor;
+    u8 spriteId;
+    u8 paletteSlot;
+    u8 appliedOpacity;  // GLOW_OPACITY_FORCE rewrites the palette
+    u8 retryDelay;      // frames until a failed re-creation is retried
+};
+
+static EWRAM_DATA struct GlowState sGlow[MAX_OVERLAYS] = {0};
+
+static const u32 sGlowGfx[] = INCGFX_U32("graphics/overworld_overlay/glow.png", ".4bpp");
+
+static const struct SpriteSheet sGlowSpriteSheet = {
+    .data = sGlowGfx,
+    .size = sizeof(sGlowGfx),
+    .tag = OVERLAY_GLOW_TILE_TAG,
+};
+
+// The 32x32 glow is drawn at 2x in a 64x64 double-size area, which keeps the sheet at 16 tiles.
+static const struct OamData sGlowOam = {
+    .affineMode = ST_OAM_AFFINE_DOUBLE,
+    .objMode = ST_OAM_OBJ_BLEND,
+    .shape = SPRITE_SHAPE(32x32),
+    .size = SPRITE_SIZE(32x32),
+    .priority = 2,
+};
+
+static const union AffineAnimCmd sGlowAffineAnim[] = {
+    AFFINEANIMCMD_FRAME(0x200, 0x200, 0, 0),
+    AFFINEANIMCMD_END,
+};
+
+static const union AffineAnimCmd *const sGlowAffineAnims[] = {
+    sGlowAffineAnim,
+};
+
+static void SpriteCB_OverlayGlow(struct Sprite *sprite);
+
+static const struct SpriteTemplate sGlowSpriteTemplate = {
+    .tileTag = OVERLAY_GLOW_TILE_TAG,
+    .paletteTag = TAG_NONE,
+    .oam = &sGlowOam,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = sGlowAffineAnims,
+    .callback = SpriteCB_OverlayGlow,
+};
+
+// Indexed by enum OverlaySpritePosition.
+static const u8 sGlowOamPriority[] = {2, 1, 1};
+static const u8 sGlowSubpriority[] = {0xFF, 0xFF, 0};
+
+static bool32 GlowSpriteExists(u32 index)
+{
+    struct Sprite *sprite = &gSprites[sGlow[index].spriteId];
+
+    return sprite->inUse && sprite->callback == SpriteCB_OverlayGlow && sprite->data[0] == index;
+}
+
+static bool32 OwnsGlowPalette(u32 index)
+{
+    return GetSpritePaletteTagByPaletteNum(sGlow[index].paletteSlot) == OVERLAY_GLOW_PAL_TAG_BASE + index;
+}
+
+static void FreeGlowSheetIfUnused(void)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_OVERLAYS; i++)
+    {
+        if (GlowSpriteExists(i))
+            return;
+    }
+
+    FreeSpriteTilesByTag(OVERLAY_GLOW_TILE_TAG);
+}
+
+static void FreeGlow(u32 index)
+{
+    if (GlowSpriteExists(index))
+        DestroySprite(&gSprites[sGlow[index].spriteId]);
+
+    FreeSpritePaletteByTag(OVERLAY_GLOW_PAL_TAG_BASE + index);
+    FreeGlowSheetIfUnused();
+    memset(&sGlow[index], 0, sizeof(sGlow[index]));
+}
+
+static u16 ScaleColor(u16 color, u32 level)
+{
+    u32 r = (color & 0x1F) * level / 15;
+    u32 g = ((color >> 5) & 0x1F) * level / 15;
+    u32 b = ((color >> 10) & 0x1F) * level / 15;
+
+    return RGB(r, g, b);
+}
+
+// Palette entry n is the glow colour at n/15 intensity, faded toward black by the opacity.
+// Written to the unfaded buffer as well, so screen fades and weather rebuilds keep it.
+static void WriteGlowPalette(u32 index, const struct Overlay *overlay)
+{
+    u16 palette[16];
+    u32 offset = OBJ_PLTT_ID(sGlow[index].paletteSlot);
+    u32 level;
+
+    palette[0] = 0;
+    for (level = 1; level < 16; level++)
+        palette[level] = ScaleColor(overlay->color, level);
+
+    BlendPalettesFine(1, palette, &gPlttBufferUnfaded[offset], OVERLAY_OPACITY_MAX - overlay->resolvedOpacity, 0);
+    if (!gPaletteFade.active)
+        CpuCopy16(&gPlttBufferUnfaded[offset], &gPlttBufferFaded[offset], PLTT_SIZE_4BPP);
+
+    sGlow[index].appliedColor = overlay->color;
+    sGlow[index].appliedOpacity = overlay->resolvedOpacity;
+}
+
+static bool32 CreateGlow(u32 index, const struct Overlay *overlay)
+{
+    struct SpritePalette spritePalette;
+    u16 palette[16] = {0};
+    u32 slot, spriteId;
+    struct Sprite *sprite;
+
+    if (GetSpriteTileStartByTag(OVERLAY_GLOW_TILE_TAG) == TAG_NONE)
+        LoadSpriteSheet(&sGlowSpriteSheet);
+    if (GetSpriteTileStartByTag(OVERLAY_GLOW_TILE_TAG) == TAG_NONE)
+        return FALSE;
+
+    spritePalette.data = palette;
+    spritePalette.tag = OVERLAY_GLOW_PAL_TAG_BASE + index;
+    slot = LoadSpritePalette(&spritePalette);
+    if (slot == 0xFF)
+    {
+        FreeGlowSheetIfUnused();
+        return FALSE;
+    }
+
+    spriteId = CreateSprite(&sGlowSpriteTemplate, 0, 0, sGlowSubpriority[overlay->spritePosition]);
+    if (spriteId == MAX_SPRITES)
+    {
+        FreeSpritePaletteByTag(spritePalette.tag);
+        FreeGlowSheetIfUnused();
+        return FALSE;
+    }
+
+    sprite = &gSprites[spriteId];
+    sprite->oam.paletteNum = slot;
+    sprite->coordOffsetEnabled = TRUE;
+    sprite->invisible = TRUE; // shown by the callback once it has a position
+    sprite->data[0] = index;
+
+    sGlow[index].spriteId = spriteId;
+    sGlow[index].paletteSlot = slot;
+    sGlow[index].appliedOpacity = GLOW_OPACITY_FORCE;
+    sGlow[index].retryDelay = 0;
+    return TRUE;
+}
+
+// Sprite-space centre of the glow. Object and player anchors use the target's sprite, which
+// already includes step progress; a tile anchor is converted from map coordinates.
+static bool32 GetGlowCenter(const struct Overlay *overlay, s16 *x, s16 *y)
+{
+    u32 objectEventId = OBJECT_EVENTS_COUNT;
+
+    if (overlay->anchorKind == OVERLAY_ANCHOR_NONE)
+        objectEventId = gPlayerAvatar.objectEventId;
+    else if (overlay->anchorKind == OVERLAY_ANCHOR_OBJECT)
+        objectEventId = GetObjectEventIdByLocalIdAndMap(overlay->anchorLocalId, overlay->anchorMapNum, overlay->anchorMapGroup);
+
+    if (objectEventId < OBJECT_EVENTS_COUNT && gObjectEvents[objectEventId].active
+     && gObjectEvents[objectEventId].spriteId < MAX_SPRITES)
+    {
+        struct Sprite *target = &gSprites[gObjectEvents[objectEventId].spriteId];
+
+        // Object sprites are placed with their bottom edge on the tile's bottom edge.
+        *x = target->x + target->x2;
+        *y = target->y + target->y2 - target->centerToCornerVecY - 8;
+        return TRUE;
+    }
+
+    if (overlay->anchorKind == OVERLAY_ANCHOR_NONE)
+        return FALSE;
+
+    SetSpritePosToMapCoords(overlay->anchorX, overlay->anchorY, x, y);
+    *x += 8;
+    *y += 8;
+    return TRUE;
+}
+
+static void SpriteCB_OverlayGlow(struct Sprite *sprite)
+{
+    const struct Overlay *overlay = &sOverlays[sprite->data[0]];
+    s16 x, y;
+
+    if (!overlay->active || !overlay->enabled || overlay->resolvedOpacity == 0 || !GetGlowCenter(overlay, &x, &y))
+    {
+        sprite->invisible = TRUE;
+        return;
+    }
+
+    sprite->x = x;
+    sprite->y = y;
+    sprite->oam.priority = sGlowOamPriority[overlay->spritePosition];
+    sprite->subpriority = sGlowSubpriority[overlay->spritePosition];
+    sprite->invisible = FALSE;
+}
+
+// Palette slots that hold glow sprites; palette overlays must not tint them.
+static u32 GetGlowPaletteMask(void)
+{
+    u32 mask = 0;
+    u32 i;
+
+    for (i = 0; i < MAX_OVERLAYS; i++)
+    {
+        if (sOverlays[i].active && sOverlays[i].layer == OVERLAY_LAYER_SPRITE && OwnsGlowPalette(i))
+            mask |= 1u << (16 + sGlow[i].paletteSlot);
+    }
+
+    return mask;
+}
+
+// Re-creates a glow whose sprite or palette was reset (battle, map load), then keeps its palette current.
+static void UpdateGlow(u32 index, const struct Overlay *overlay)
+{
+    if (!GlowSpriteExists(index) || !OwnsGlowPalette(index))
+    {
+        if (sGlow[index].retryDelay != 0)
+        {
+            sGlow[index].retryDelay--;
+            return;
+        }
+
+        FreeGlow(index);
+        if (!CreateGlow(index, overlay))
+        {
+            sGlow[index].retryDelay = GLOW_RETRY_FRAMES;
+            return;
+        }
+    }
+
+    if (sGlow[index].appliedColor != overlay->color || sGlow[index].appliedOpacity != overlay->resolvedOpacity)
+        WriteGlowPalette(index, overlay);
+}
+
 static u8 NextGeneration(u8 generation)
 {
     // Generation 0 is never issued, so it is skipped on wrap.
@@ -28,6 +280,9 @@ static u8 NextGeneration(u8 generation)
 static void ReleaseSlot(struct Overlay *overlay)
 {
     u8 generation = overlay->generation;
+
+    if (overlay->layer == OVERLAY_LAYER_SPRITE)
+        FreeGlow(overlay - sOverlays);
 
     memset(overlay, 0, sizeof(*overlay));
     overlay->generation = NextGeneration(generation);
@@ -96,7 +351,7 @@ static u32 GetRenderOrder(struct Overlay *order[MAX_OVERLAYS])
     {
         struct Overlay *overlay = &sOverlays[i];
 
-        if (!overlay->active || !overlay->enabled || overlay->resolvedOpacity == 0)
+        if (!overlay->active || !overlay->enabled || overlay->resolvedOpacity == 0 || overlay->layer == OVERLAY_LAYER_SPRITE)
             continue;
 
         for (j = count; j > 0 && order[j - 1]->priority > overlay->priority; j--)
@@ -111,7 +366,7 @@ static u32 GetRenderOrder(struct Overlay *order[MAX_OVERLAYS])
 static void ApplyOverlaysToPalettes(void)
 {
     struct Overlay *order[MAX_OVERLAYS];
-    u32 count, i;
+    u32 count, glowMask, i;
 
     // The palette fade and the weather fade-in own gPlttBufferFaded and overwrite it.
     if (gPaletteFade.active || !IsWeatherNotFadingIn())
@@ -124,6 +379,7 @@ static void ApplyOverlaysToPalettes(void)
         return;
 
     count = GetRenderOrder(order);
+    glowMask = GetGlowPaletteMask();
     if (count != 0 || sOverlayApplied)
     {
         // Rebuilds from gPlttBufferUnfaded, which overlays never modify.
@@ -133,7 +389,7 @@ static void ApplyOverlaysToPalettes(void)
 
     for (i = 0; i < count; i++)
     {
-        u32 mask = LayerPaletteMask(order[i]->layer) & ~sEffectiveExempt[order[i] - sOverlays];
+        u32 mask = LayerPaletteMask(order[i]->layer) & ~sEffectiveExempt[order[i] - sOverlays] & ~glowMask;
 
         BlendPalettesFine(mask, gPlttBufferFaded, gPlttBufferFaded, order[i]->resolvedOpacity, order[i]->color);
     }
@@ -326,6 +582,9 @@ void Overlay_Update(void)
             sOverlayDirty = TRUE;
         }
 
+        if (overlay->layer == OVERLAY_LAYER_SPRITE)
+            UpdateGlow(i, overlay);
+
         // Sprite palette slots are reallocated on map load, so they are re-read every frame.
         exempt = ResolveExemptPalettes(overlay);
         if (sEffectiveExempt[i] != exempt)
@@ -346,7 +605,19 @@ void Overlay_Invalidate(void)
 
 OverlayId Overlay_Create(const struct OverlayConfig *config)
 {
-    u32 i;
+    u32 i, spriteOverlays = 0;
+
+    if (config->layer == OVERLAY_LAYER_SPRITE)
+    {
+        for (i = 0; i < MAX_OVERLAYS; i++)
+        {
+            if (sOverlays[i].active && sOverlays[i].layer == OVERLAY_LAYER_SPRITE)
+                spriteOverlays++;
+        }
+
+        if (spriteOverlays >= MAX_SPRITE_OVERLAYS)
+            return OVERLAY_ID_INVALID;
+    }
 
     for (i = 0; i < MAX_OVERLAYS; i++)
     {
@@ -366,10 +637,18 @@ OverlayId Overlay_Create(const struct OverlayConfig *config)
         overlay->layer = config->layer;
         overlay->scope = config->scope;
         overlay->priority = config->priority;
+        overlay->spritePosition = min(config->spritePosition, OVERLAY_SPRITE_ABOVE_ALL);
         overlay->baseOpacity = opacity;
         overlay->currentOpacity = opacity;
         overlay->resolvedOpacity = opacity;
         sOverlayDirty = TRUE;
+
+        if (config->layer == OVERLAY_LAYER_SPRITE && !CreateGlow(i, overlay))
+        {
+            ReleaseSlot(overlay);
+            return OVERLAY_ID_INVALID;
+        }
+
         return (overlay->generation << 3) | i;
     }
 
@@ -652,6 +931,20 @@ void Overlay_SetRenderLayer(OverlayId id, u8 layer)
     if (overlay == NULL || overlay->layer == layer)
         return;
 
+    // The sprite layer owns resources that are only set up at creation.
+    if ((layer == OVERLAY_LAYER_SPRITE) != (overlay->layer == OVERLAY_LAYER_SPRITE))
+        return;
+
     overlay->layer = layer;
     sOverlayDirty = TRUE;
+}
+
+void Overlay_SetSpritePosition(OverlayId id, u8 position)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->spritePosition = min(position, OVERLAY_SPRITE_ABOVE_ALL);
 }

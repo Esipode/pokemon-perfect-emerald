@@ -4,6 +4,7 @@
 #define MAX_OVERLAYS            4
 #define OVERLAY_OPACITY_MAX     16
 #define OVERLAY_ID_INVALID      0
+#define MAX_SPRITE_OVERLAYS     2
 
 // id = (generation << 3) | index. Generation starts at 1, so id 0 is never issued.
 #define OVERLAY_INDEX(id)       ((id) & 7)
@@ -25,6 +26,15 @@ enum OverlayScope
     OVERLAY_SCOPE_GLOBAL,
 };
 
+// Draw order of an OVERLAY_LAYER_SPRITE overlay. Only OBJ priority and subpriority are available,
+// so a sprite overlay is never behind the terrain: BG1-3 are the world.
+enum OverlaySpritePosition
+{
+    OVERLAY_SPRITE_BEHIND_OBJECTS,  // over the ground, behind NPCs and the player; under top-layer tiles
+    OVERLAY_SPRITE_ABOVE_OBJECTS,   // in front of NPCs and the player, and of top-layer tiles
+    OVERLAY_SPRITE_ABOVE_ALL,       // in front of every overworld sprite, including elevated ones
+};
+
 enum OverlayAnchor
 {
     OVERLAY_ANCHOR_NONE,
@@ -39,6 +49,7 @@ struct OverlayConfig
     u8 layer;       // enum OverlayLayer
     u8 scope;       // enum OverlayScope
     u8 priority;    // composition order, lower applies first
+    u8 spritePosition; // enum OverlaySpritePosition, sprite layer only
 };
 
 struct Overlay
@@ -75,6 +86,7 @@ struct Overlay
     u8 priority;
     u8 exemptPlayer:1;
     u8 falloffEnabled:1;
+    u8 spritePosition:2;    // enum OverlaySpritePosition
     u8 exemptLocalId;       // 0 = none; resolved against exemptMapNum/exemptMapGroup
     u8 exemptMapNum;
     u8 exemptMapGroup;
@@ -164,7 +176,23 @@ void Overlay_ExemptPlayer(OverlayId id, bool32 exempt);
 // Tracks one object per overlay, looked up by local id on the current map when this is called;
 // a later call replaces it. Passing exempt = FALSE clears it only if localId matches.
 void Overlay_ExemptObject(OverlayId id, u8 localId, bool32 exempt);
+// Not valid for OVERLAY_LAYER_SPRITE: the layer is fixed at creation, and a call that would
+// switch to or from it is ignored.
 void Overlay_SetRenderLayer(OverlayId id, u8 layer);
+
+// Sprite backend (OVERLAY_LAYER_SPRITE). A radial glow sprite, alpha-blended over the world.
+// - At most MAX_SPRITE_OVERLAYS exist at once; Overlay_Create fails when the limit, a free OBJ
+//   palette slot, or a sprite is unavailable.
+// - Each glow owns one OBJ palette slot. Opacity is emulated by fading that palette toward black;
+//   BLDALPHA is shared with shadows and light sprites and is never written.
+// - The glow is centred on the anchor tile, or on the player when there is no anchor. An object
+//   anchor follows the object's sprite, so it moves smoothly while the object walks.
+// - The blend coefficients are global, so terrain under the glow is darkened by the shadow
+//   intensity even at low opacity. Opacity 0 hides the sprite.
+// - The sprite and palette are re-created after a battle or map load that resets them.
+// - Palette-backend filtering (exemptions, layer masks) does not apply, and palette overlays
+//   never tint the glow's palette.
+void Overlay_SetSpritePosition(OverlayId id, u8 position);
 // New overlays start enabled. Returns OVERLAY_ID_INVALID when the pool is full.
 OverlayId Overlay_Create(const struct OverlayConfig *config);
 void Overlay_Destroy(OverlayId id);
