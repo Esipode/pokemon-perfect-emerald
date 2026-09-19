@@ -7,6 +7,7 @@
 #include "field_control_avatar.h"
 #include "field_effect.h"
 #include "field_effect_helpers.h"
+#include "field_move.h"
 #include "field_screen_effect.h"
 #include "field_player_avatar.h"
 #include "fieldmap.h"
@@ -1050,7 +1051,7 @@ static bool8 ShouldJumpLedge(s16 x, s16 y, enum Direction direction)
 
 static bool8 TryPushBoulder(s16 x, s16 y, enum Direction direction)
 {
-    if (FlagGet(FLAG_SYS_USE_STRENGTH))
+    if (FlagGet(FLAG_SYS_USE_STRENGTH) || IsFieldMoveUnlocked(FIELD_MOVE_STRENGTH))
     {
         u8 objectEventId = GetObjectEventIdByXY(x, y);
 
@@ -1062,6 +1063,7 @@ static bool8 TryPushBoulder(s16 x, s16 y, enum Direction direction)
             if (GetCollisionAtCoords(&gObjectEvents[objectEventId], x, y, direction) == COLLISION_NONE
              && MetatileBehavior_IsNonAnimDoor(MapGridGetMetatileBehaviorAt(x, y)) == FALSE)
             {
+                FlagSet(FLAG_SYS_USE_STRENGTH);
                 StartStrengthAnim(objectEventId, direction);
                 return TRUE;
             }

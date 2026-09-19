@@ -98,8 +98,9 @@
 ## Quality of life improvements
 - TM/HM changes
 	- Do not need to teach HM moves to party, only need badge/story requirement to use them in overworld
-	- Fly is accessed from the map in the Pokenav upon getting the 6th gym badge
+	- Fly is accessed from the map upon getting the 6th gym badge
 	- Flash happens automatically in dark areas upon receiving HM Flash and getting 2nd gym badge
+	- No need to confirm using an HM or waiting for animations to start
 - Quick Pokéball selection in wild battles
 	- Hold `R` to change selection with the D-Pad.
 	- Press `R` to use last selected Poké Ball.

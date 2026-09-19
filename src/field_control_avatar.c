@@ -59,6 +59,7 @@ static const u8 *GetInteractedObjectEventScript(struct MapPosition *, u8, enum D
 static const u8 *GetInteractedBackgroundEventScript(struct MapPosition *, u8, enum Direction);
 static const u8 *GetInteractedMetatileScript(struct MapPosition *, u8, enum Direction);
 static const u8 *GetInteractedWaterScript(struct MapPosition *, u8, enum Direction);
+static bool32 TrySetUpWalkIntoFieldMoveScript(struct MapPosition *, u8, enum Direction);
 static bool32 TrySetupDiveDownScript(void);
 static bool32 TrySetupDiveEmergeScript(void);
 static bool8 CheckStandardWildEncounter(u16);
@@ -242,6 +243,9 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     metatileBehavior = MapGridGetMetatileBehaviorAt(position.x, position.y);
 
     if (input->heldDirection && (input->dpadDirection == playerDirection) && (TrySetUpWalkIntoSignpostScript(&position, metatileBehavior, playerDirection) == TRUE))
+        return TRUE;
+
+    if (input->heldDirection && (input->dpadDirection == playerDirection) && TrySetUpWalkIntoFieldMoveScript(&position, metatileBehavior, playerDirection) == TRUE)
         return TRUE;
 
     if (input->pressedAButton && TryStartInteractionScript(&position, metatileBehavior, playerDirection) == TRUE)
@@ -652,6 +656,39 @@ static const u8 *GetInteractedWaterScript(struct MapPosition *unused1, u8 metati
             return EventScript_CannotUseWaterfall;
     }
     return NULL;
+}
+
+// Walking into a cut tree, smashable rock, water or waterfall uses the matching field move.
+static bool32 TrySetUpWalkIntoFieldMoveScript(struct MapPosition *position, u8 metatileBehavior, enum Direction direction)
+{
+    const u8 *script = NULL;
+    u8 objectEventId = GetObjectEventIdByPosition(position->x, position->y, position->elevation);
+
+    if (objectEventId != OBJECT_EVENTS_COUNT && gObjectEvents[objectEventId].localId != LOCALID_PLAYER)
+    {
+        const u8 *objectScript = GetObjectEventScriptPointerByObjectEventId(objectEventId);
+
+        if ((objectScript == EventScript_CutTree && IsFieldMoveUnlocked(FIELD_MOVE_CUT))
+         || (objectScript == EventScript_RockSmash && IsFieldMoveUnlocked(FIELD_MOVE_ROCK_SMASH)))
+        {
+            gSelectedObjectEvent = objectEventId;
+            gSpecialVar_LastTalked = gObjectEvents[objectEventId].localId;
+            script = objectScript;
+        }
+    }
+    else
+    {
+        const u8 *waterScript = GetInteractedWaterScript(position, metatileBehavior, direction);
+
+        if (waterScript == EventScript_UseSurf || waterScript == EventScript_UseWaterfall)
+            script = waterScript;
+    }
+
+    if (script == NULL)
+        return FALSE;
+
+    ScriptContext_SetupScript(script);
+    return TRUE;
 }
 
 static bool32 TrySetupDiveDownScript(void)
