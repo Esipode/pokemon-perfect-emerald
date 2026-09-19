@@ -13,7 +13,7 @@ Encounter: Okidogi
 #   6, Def/SpDef -1, Speed +1 again; a failed attack drains RAGE hard (the bait), and RAGE refilling
 #   to 6 fires COLLISION COURSE, a one-shot finisher that resets the cycle. Balls unlock separately
 #   at <=10%.
-# "ADDITIONAL ACTIONS" SUBSTITUTION (Stage 2, confirmed): no extra-turn primitive exists. Brutal
+# "ADDITIONAL ACTIONS" SUBSTITUTION: no extra-turn primitive exists. Brutal
 #   Combo's finishing blow and Collision Course - a Speed stage plus flat bonus damage tacked onto
 #   Okidogi's one real hit - stand in for it.
 # DETECTING A FAILED ATTACK: Event.Cause is always ENC_CAUSE_MOVE_DAMAGE at OnMoveEnd and
@@ -21,10 +21,10 @@ Encounter: Okidogi
 #   can tell a landed hit from a whiff. Instead PriorMark snapshots the player's HP% every turn at
 #   OnTurnStart, and the one script that reacts to "Okidogi's move resolved" reads the damage dealt
 #   since that mark with encsnapshothp's ENC_SNAP_DAMAGE mode - zero means the attack failed.
-# MOVESET DEVIATION: the plan named Close Combat and Throat Chop, neither of which is in Okidogi's
-#   real learnset in this build. Substituted with Superpower and Brutal Swing - both real Okidogi
-#   level-up moves, both keep the physical brawler/dark-retaliation flavor (guideline 5).
-# ANTI-ABUSE IS NARROW (guideline 8): only multi-hit moves are capped to +1 RAGE per turn regardless
+# MOVESET: Close Combat and Throat Chop are not in Okidogi's real learnset in this build, so
+#   Superpower and Brutal Swing (both real level-up moves) keep the physical brawler/dark-retaliation
+#   flavor.
+# ANTI-ABUSE IS NARROW: only multi-hit moves are capped to +1 RAGE per turn regardless
 #   of hit count (HitGuard) - farming a multi-hit move to force BERSERKER on demand every turn would
 #   trivialize the fight's one real puzzle.
 Properties:

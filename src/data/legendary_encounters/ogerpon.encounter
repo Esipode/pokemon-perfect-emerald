@@ -41,7 +41,7 @@ Properties:
                                  # Cornerstone their own real abilities (Water Absorb/Mold Breaker/
                                  # Sturdy) automatically - Sturdy backs Cornerstone's shield theme
     Moves: MOVE_IVY_CUDGEL, MOVE_HORN_LEECH, MOVE_POWER_WHIP, MOVE_SUPERPOWER
-        # MOVE_POWER_WHIP substitutes for the planned MOVE_TRAILBLAZE: Trailblaze isn't in
+        # MOVE_POWER_WHIP substitutes for MOVE_TRAILBLAZE: Trailblaze isn't in
         # Ogerpon's learnset (level-up or teachable) in this codebase. Power Whip is a real level-54
         # move and keeps the Grass coverage slot.
     AiFlags: AI_FLAG_SMART_TRAINER

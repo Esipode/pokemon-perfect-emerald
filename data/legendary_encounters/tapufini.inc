@@ -8,15 +8,12 @@
 // (Phase 3 countdown before mist recedes), 9 LastMist (last Mist value a callout printed for),
 // 10 LastReduction (last damage-reduction value announced).
 //
-// Deviations from the written plan: TapuFini_ApplyMistLevel/TapuFini_PrintMistLine collapse into
-// inline code at the two call sites (Mist 1-4 stay narrative-only in Phase 1, per the plan's own
-// known-gaps note, so a separate absolute-set subroutine had nothing to do). Phase 2/3's stat
+// No ApplyMistLevel/PrintMistLine subroutines: Mist 1-4 stay narrative-only in Phase 1, so the
+// two call sites use inline code. Phase 2/3's stat
 // changes target ENC_TARGET_BOSS explicitly rather than ENC_TARGET_SELF, which would resolve
 // through Event.Battler and give the wrong battler at these dual OnMoveEnd/OnTurnEnd triggers.
-// EncScript_TapuFini_MistRecedes drops the plan's trainerslidein/slideout (guideline 13: no
-// trainer). One extra string (STRINGID_ENCFINITRIALCLOSES) covers the Mist Trial's close line the
-// plan's dialogue described but didn't allocate an id for. LastMist's reprint-on-change trigger
-// was dropped - conditions/encjumpifvar only compare a variable against a literal, never another
+// EncScript_TapuFini_MistRecedes has no trainerslidein/slideout (no trainer). STRINGID_ENCFINITRIALCLOSES
+// covers the Mist Trial's close line. There is no LastMist reprint-on-change trigger - conditions/encjumpifvar only compare a variable against a literal, never another
 // variable, so `Var(Mist) != Var(LastMist)` doesn't compile. The mist-thickens line is printed
 // directly at every site that raises Mist instead (TurnStart's passive tick, WaterHit); LastMist
 // stays declared (its index is baked into every later var's bare-integer offset) but unread.

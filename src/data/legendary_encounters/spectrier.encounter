@@ -10,8 +10,8 @@ Encounter: Spectrier
 # Phase 3 NIGHTMARE RIDER (<=25% or Dread==6) - one buildup turn, one unavoidable Astral Barrage,
 #   then Spectrier is vulnerable; Balls unlock at <=10% HP.
 # SHADOW TRAIL/CHARGE are meter/telegraph substitutes for the idea's positioning/location-guess
-# mechanics (no such systems exist in this engine) - see the plan doc, section 0.3.
-# ANTI-ABUSE IS NARROW (guideline 8): DreadGuard caps event-sourced Dread gain to +1/turn so a
+# mechanics (no such systems exist in this engine).
+# ANTI-ABUSE IS NARROW: DreadGuard caps event-sourced Dread gain to +1/turn so a
 # faint+switch+status turn can't spike Dread; Fear Mark's trap blocks tank-and-switch cheese, with
 # its own counterplay (real damage on Spectrier clears it); Balls stay Blocked until Phase 3 and
 # <=10% HP so evasion stacking can't stall a catchable boss.

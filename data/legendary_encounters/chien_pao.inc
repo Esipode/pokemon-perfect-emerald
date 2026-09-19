@@ -241,7 +241,7 @@ EncScript_ChienPao_FinalOpening::
 	playanimation BS_OPPONENT1, B_ANIM_MON_SCARED
 	return
 
-// --- Momentum band flavor (guideline 14, first-crossing only - see the plan's known gaps) ---
+// --- Momentum band flavor (first-crossing only) ---
 
 EncScript_ChienPao_MomentumBrisk::
 	printstring STRINGID_ENCCHIENPAOMOMENTUMBRISK

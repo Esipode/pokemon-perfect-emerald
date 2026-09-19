@@ -22,7 +22,7 @@ Encounter: Zamazenta
 #   fresh Shield Layer. Balls stay blocked until <=10% HP, backstopped by the engine's automatic
 #   catch-window damage guard.
 #
-# DEVIATIONS FROM PLAN: MOVE_BODY_PRESS and the MOVE_ROAR_OF_TIME placeholder are not in this
+# MOVESET: MOVE_BODY_PRESS and the MOVE_ROAR_OF_TIME placeholder are not in this
 #   ROM's Zamazenta learnset (level-up or teachable) - MOVE_IRON_HEAD (real, level 33) stands in
 #   for the Shield Bash trigger move, and MOVE_METAL_BURST/MOVE_CRUNCH (both real, level 1/55)
 #   fill the moveset instead. Guard Counter's "GuardStored/Resolve summed" payout collapsed to a

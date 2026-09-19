@@ -37,9 +37,8 @@ Properties:
 # 7 SpeedCompare (transient result of the turn's speed check), 8 MoveHandled (guard: the OnMoveEnd
 # handler already ran this pass), 9 SwitchHandled (guard: the OnSwitchIn handler already ran this
 # pass), 10 BattleStarted (guard: distinguishes the opening send-out from a real switch),
-# 11 TurnGuard (once-per-turn scaffold for TurnSetup - not in the original plan; added because an
-# unconditional OnTurnStart trigger with no self-disabling latch re-selects until the runaway-script
-# guard trips, per the authoring reference's mandatory scaffold).
+# 11 TurnGuard (once-per-turn scaffold for TurnSetup: an unconditional OnTurnStart trigger with no
+# self-disabling latch re-selects until the runaway-script guard trips).
 Trigger: OnBattleStart
 Priority: 10
 Flags: Once

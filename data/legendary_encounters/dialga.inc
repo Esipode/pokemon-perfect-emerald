@@ -347,7 +347,7 @@ EncScript_Dialga_FractureOpen_Closing:
 //   glass-cannon answer stops being free.
 // LOCK: the exit is closed and the aging that switching used to answer now compounds every turn.
 // CLOSING: stalling stops working. Healing does not land, and a turn that ends with no damaging move
-//   committed is charged for outright. This is the plan's "no-reward deadline" expressed without a
+//   committed is charged for outright. This is a "no-reward deadline" expressed without a
 //   second clock: in Origin Forme the deadline machinery is stopped, so re-opening it for one future
 //   would read as a bug rather than as a punishment. The Hit flag the Patience ledger already tracks
 //   says exactly the same thing in one line.

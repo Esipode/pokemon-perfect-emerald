@@ -21,7 +21,7 @@ EncScript_Fezandipiti_TurnOpen::
 	encsnapshothp ENC_TARGET_BOSS, 9
 	return
 
-@ SPOTLIGHT - pure self-buff (Stage 2 substitute for forced-targeting "stealing the show").
+@ SPOTLIGHT - pure self-buff, substituting for forced-targeting "stealing the show".
 EncScript_Fezandipiti_SpotlightRoll::
 	encsetvar 10, 1         @ PeriodicGuard - closed before the roll, so a miss still blocks the other two
 	encjumpifchance 35, EncScript_Fezandipiti_SpotlightRoll_Hit

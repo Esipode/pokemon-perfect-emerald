@@ -11,15 +11,15 @@ Encounter: Ting_Lu
 #   3 turns.
 #   1 ANCIENT MOUNTAIN (50%, one-shot) - Weight jumps to max, Ground to 3 (Ancient Earth); IMMOVABLE
 #   hardens Def/SpDef and the reduction, and drops its own Speed further - "its reduced Speed
-#   provides the player's main opening" (Stage 2 substitute for a literal flinch immunity, which the
+#   provides the player's main opening" (substitutes for a literal flinch immunity, which the
 #   engine has no hook for).
 #   2 MOUNTAIN'S COLLAPSE (20%) - Sinkholes tighten; at <=10% HP the catch window opens and, in the
 #   same breath, every stored Ruin Energy point empties into one final Earthquake before Weight/
 #   Ground reset to flavor-only zero.
-# GROUND==3 (Ancient Earth) is also the Flying/Levitate substitute from Stage 2: a small raw chip on
+# GROUND==3 (Ancient Earth) is also the Flying/Levitate substitute: a small raw chip on
 #   every foe every turn, because it is the ground itself failing, not a Ground-type move a Flying
 #   body would dodge.
-# ANTI-ABUSE IS NARROW (guideline 8): Balls blocked until <=10% HP; Sinkhole's block is a one-action
+# ANTI-ABUSE IS NARROW: Balls blocked until <=10% HP; Sinkhole's block is a one-action
 #   telegraph, not a permanent trap, so it can't stack into a true switch-lock with Weight's own
 #   pressure. Earthquake is hard-capped at the 30% ceiling regardless of how high Weight+Ruin climb,
 #   so stalling to inflate it can never produce an unbounded hit.

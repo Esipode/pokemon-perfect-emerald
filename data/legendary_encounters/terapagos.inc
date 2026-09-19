@@ -13,7 +13,7 @@
 // Stellar Cascade reaction - separate from Handled because both can legitimately fire on the same
 // hit in Phase 2).
 //
-// STELLAR ENERGY IS A THEMATIC PROXY, not a literal per-type tally (Stage 2 substitution). It
+// STELLAR ENERGY IS A THEMATIC PROXY, not a literal per-type tally It
 // starts at 10, Crystal Resonance HARDENED results feed it (+1, capped), the exposed windows
 // strip it (-2 Crystal, -4 Crown, clamped at 0 since encsubvar wraps on an unsigned byte), and a
 // Cataclysm Tera-punish feeds it back (+2). Tera Starstorm's in-fight damage is not rescaled by
@@ -25,8 +25,7 @@
 // into a variable for a script to branch on. No engine command buffers an arbitrary TYPE_* name
 // into dialogue outside encadapt's own call (which buffers {B_BUFF1} itself, immediately after
 // being called) - so window/rotation dialogue stays generic rather than naming the live type,
-// and only Resonance Break (printed right after its own encadapt call) uses {B_BUFF1}. Documented
-// deviation from the plan's {TYPE}-placeholder strings.
+// and only Resonance Break (printed right after its own encadapt call) uses {B_BUFF1}. No {TYPE} placeholder is used in the strings.
 //
 // EVERY OnMoveEnd HIT-REACTION IS SELF-DISABLING through Handled/Handled2, cleared at OnTurnEnd
 // alongside TurnGuard. THE OnTurnStart ROLL IS FOLDED INTO _TurnOpen, which only ever runs once a

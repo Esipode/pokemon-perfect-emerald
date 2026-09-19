@@ -10,7 +10,7 @@ Encounter: Miraidon
 # THREE PHASES: Analysis Network (100-50%) -> Future Engine (50-20%, Nodes regen, Overclock can
 #   fire once Analysis caps) -> Paradox Collapse (<20%, System Failure punishes repeat
 #   misprediction, Paradox Drive fires once at 15% and resets every meter, Balls unlock at 10%).
-# PLAN DEVIATIONS (all forced by primitives that don't exist, not by choice):
+# ENGINE LIMITS (forced by primitives that don't exist, not by choice):
 #   - No var-to-var or var-to-Event comparison opcode exists, so "predicted category matches this
 #     turn's" is expressed as paired literal conditions (Event.MoveCategory==X AND Var(..)==X), and
 #     "repeated move TYPE" (needs an 18-way type enumeration to fake a var-vs-var compare) is

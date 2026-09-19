@@ -139,7 +139,7 @@ EncScript_Zacian_HitResolver_Perfect:
 
 // SWORD ARTS. ArtCooldown is set on every path first, closing the latch before the branch even
 // resolves. Meteor Slash deals its own payload immediately rather than telegraphing a separate
-// follow-up turn - a plan simplification within the existing enc* primitives, not a deferred hit.
+// follow-up turn - not a deferred hit.
 EncScript_Zacian_SwordArtResolver::
 	encsetvar 9, 2     @ ArtCooldown
 	encjumpifvar CMP_EQUAL, 8, 0, EncScript_Zacian_SwordArt_Rising

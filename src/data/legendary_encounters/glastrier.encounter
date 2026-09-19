@@ -49,7 +49,7 @@ Properties:
 # AvalancheChargeDown, AvalancheRelease and LanceBreakHit: every one of those four reacts to
 # Event.* or a level condition that survives its own script's write, so without a guard the
 # re-evaluation loop reselects them repeatedly within a single dispatch until the 8-script cap
-# trips ("runaway trigger chain" - the crash this file originally shipped with).
+# trips ("runaway trigger chain" crash).
 # 12 AvalancheChargeUpHandled, 13 AvalancheChargeDownHandled, 14 AvalancheReleaseHandled,
 # 15 LanceBreakHitHandled.
 Trigger: OnBattleStart
@@ -289,10 +289,10 @@ Script: EncScript_Glastrier_CatchWindowOpen
 Conditions:
     Battler(Boss).HpPercent <= 10
 
-# RECURRING LEGIBILITY CUE (guideline 14) while Frost is doing anything to the fight. The clear
+# RECURRING LEGIBILITY CUE while Frost is doing anything to the fight. The clear
 # sits at OnTurnStart, not OnTurnEnd, for the same two-checkpoint reason as FrostTick above -
-# pairing set/clear on the same checkpoint chases itself through both states in one dispatch and
-# was the direct cause of the runaway-trigger-chain crash this encounter originally shipped with.
+# pairing set/clear on the same checkpoint chases itself through both states in one dispatch (runaway
+# trigger chain).
 Trigger: OnTurnEnd
 Priority: 30
 Script: EncScript_Glastrier_ReminderLine

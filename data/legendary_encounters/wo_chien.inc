@@ -219,7 +219,7 @@ EncScript_WoChien_RuinMarkExtraDamage::
 // VineActive on a break, and BossHitHandled on every path (break or miss) - BossHitHandled is what
 // is actually in this trigger's own Conditions, so a miss can't leave it re-selecting. The spore
 // burst costs the breaker a flat HP tax rather than a status opcode with a stale-battler risk outside
-// a move context (Stage 4 substitution for the plan's scripted poison).
+// a move context.
 EncScript_WoChien_VineBreak::
 	encsnapshothp ENC_TARGET_BOSS, 8, ENC_SNAP_DAMAGE, EncScript_WoChien_VineBreak_Miss
 	encjumpifvar CMP_LESS_THAN, 8, 20, EncScript_WoChien_VineBreak_Miss

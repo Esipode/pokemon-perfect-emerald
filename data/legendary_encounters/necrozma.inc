@@ -39,7 +39,7 @@
 // compares it against its own literal and stays quiet if that's what was last said. Crit is written
 // absolutely on every call, ahead of the announce check, so it never drifts from what Light says it
 // should be. The Overcharged arm's Atk/SpAtk buff only fires on the edge into that band (LastBand
-// still != 3), so it's the one-time buff the plan calls for without a separate latch.
+// still != 3), so it's a one-time buff without a separate latch.
 EncScript_Necrozma_Band:
 	encjumpifvar CMP_LESS_THAN, 1, 70, EncScript_Necrozma_Band_NoCrit
 	encsetcrit ENC_TARGET_BOSS, TRUE

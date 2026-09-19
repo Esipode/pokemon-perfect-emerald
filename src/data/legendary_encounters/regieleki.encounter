@@ -16,12 +16,12 @@ Encounter: Regieleki
 #   There is no safe way to wait this fight out, and the Power Surge window punishes standing
 #   still specifically: doing nothing is the worst outcome (a full-strength surge), not a neutral
 #   one.
-# PLAN DEVIATIONS from docs Regieleki plan (Gen 8):
+# ENGINE LIMITS:
 #   - Event.MoveCategory/Event.MoveType can only be read from a Condition, never inside a script
-#     (confirmed against galarian_articuno.inc/uxie.inc). The plan's single PlayerHitBoss script
-#     is split into per-category (Physical/Special) and per-type (Ground/other) trigger pairs,
-#     each baking its own literal into the shared PlayerCat/PlayerType vars. This adds one guard
-#     var (TypeGuard) beyond the plan's 12.
+#     (confirmed against galarian_articuno.inc/uxie.inc). PlayerHitBoss is therefore
+#     split into per-category (Physical/Special) and per-type (Ground/other) trigger pairs,
+#     each baking its own literal into the shared PlayerCat/PlayerType vars. This needs one guard
+#     var (TypeGuard).
 #   - Terrain likewise can't be read inside a script; the "+1 CHARGE on Electric Terrain" tick is
 #     its own OnTurnStart trigger (TerrainCharge) gated on the same TurnStartGuard, running at a
 #     lower priority than TurnTally so both fire in the same first pass before the guard closes.
@@ -29,10 +29,10 @@ Encounter: Regieleki
 #     single absolute-write subroutine keyed only on the current Tier (guideline: "one writer per
 #     number"), rather than incremental per-transition deltas - so TierDown always lands on the
 #     correct total regardless of which tier it fell from.
-#   - BallsUnlock (HP <= 10%) has no Phase gate in the plan's trigger table and can in principle
+#   - BallsUnlock (HP <= 10%) has no Phase gate and can in principle
 #     fire in the same OnMoveEnd dispatch as Electro Drift's telegraph (an overkill hit crossing
 #     both 15% and 10% at once), before Electro Drift's own COLLAPSE line would announce the catch
-#     window. It carries its own short line for that case - one string beyond the plan's ten.
+#     window. It carries its own short line for that case.
 Properties:
     Level: LevelCap
     CatchRate: 3

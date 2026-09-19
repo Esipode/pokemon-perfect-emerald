@@ -261,8 +261,7 @@ EncScript_TapuKoko_ElectricApproval::
 	call TapuKoko_AnnounceVoltage
 	return
 
-// Guardian's Challenge status-move punish: a soft punish rather than a hard block (guideline 8's
-// Stage 2 substitution) - status still lands, it just costs Voltage and 5% chip.
+// Guardian's Challenge status-move punish: a soft punish rather than a hard block - status still lands, it just costs Voltage and 5% chip.
 EncScript_TapuKoko_ChallengePunish::
 	encsetvar 13, 1    @ MoveGuard
 	call TapuKoko_VoltageUp
@@ -292,7 +291,7 @@ EncScript_TapuKoko_ChargeFollows::
 	return
 
 // A switch during a Thunder Call telegraph throws its aim off outright - the singles-only
-// "reposition" substitution (guideline 8's Stage 2 note).
+// "reposition" substitution.
 EncScript_TapuKoko_ThunderDodged::
 	encsetvar 9, 0     @ ThunderTimer
 	printstring STRINGID_ENCTAPUKOKOTHUNDERDODGED

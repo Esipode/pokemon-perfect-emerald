@@ -27,8 +27,7 @@
 // --- Shared subroutines (call/return) ---
 
 // THE SINGLE WRITER of Spectrier's evasion. Base stage by Dread tier (0/1/2/2/2/3/3 for Dread
-// 0-6), plus Trail's stacks on top once Dread >= 3 (guideline 9's balance dial - flagged as an
-// open review item in the plan, section 9). Phase 3 returns immediately: the Nightmare buildup
+// 0-6), plus Trail's stacks on top once Dread >= 3 (a balance dial). Phase 3 returns immediately: the Nightmare buildup
 // sets its own evasion directly.
 EncScript_Spectrier_ApplyDreadTier::
 	encjumpifvar CMP_GREATER_THAN, 0, 2, EncScript_Spectrier_ApplyDreadTier_Skip

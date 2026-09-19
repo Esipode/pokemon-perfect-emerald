@@ -138,8 +138,7 @@ EncScript_TapuBulu_TurnEndTick_Clear:
 	encsetvar 6, 0    @ TurnGuard
 	return
 
-// Growth 2 - Roots coil around the player's feet: trap plus a one-time -1 Speed stage (guideline
-// 7's Stage 2 substitution). Stat stage written absolutely so it survives a Haze/switch landing
+// Growth 2 - Roots coil around the player's feet: trap plus a one-time -1 Speed stage. Stat stage written absolutely so it survives a Haze/switch landing
 // in between.
 EncScript_TapuBulu_RootsAttach::
 	printstring STRINGID_ENCTAPUBULUROOTSATTACH

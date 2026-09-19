@@ -28,7 +28,7 @@ Properties:
     FlatToxicDamage: True
     AiFlags: AI_FLAG_SMART_TRAINER
     Moves: MOVE_AIR_SLASH, MOVE_SLUDGE_BOMB, MOVE_ROOST, MOVE_PROTECT
-    # MOVE_PROTECT replaces the plan's Baneful Bunker: Fezandipiti cannot learn it in this ROM
+    # MOVE_PROTECT stands in for Baneful Bunker: Fezandipiti cannot learn it in this ROM
     # (confirmed against sFezandipitiLevelUpLearnset / sFezandipitiTeachableLearnset). Protect keeps
     # the "guard" beat Baneful Bunker was chosen for; Toxic Chain already covers the poison-on-hit
     # flavor across its other moves.
