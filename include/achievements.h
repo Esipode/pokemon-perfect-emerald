@@ -65,6 +65,7 @@ struct AchievementBoost
     u8 maxLevel;               // 1 for binary
     const u16 *costs;          // costs[level] -- cost to go from level to level+1
     const u16 *effects;        // effects[level]; units are per-boost, not rendered generically
+    const u8 *effectFormat;    // Appended to the description for the active level; {STR_VAR_2} = effects[level]. NULL for binary
 };
 
 struct AchievementProfile

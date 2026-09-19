@@ -158,7 +158,7 @@ static void TryChangeHighlightedBoostActiveLevel(u8 taskId);
 static void BoostMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list);
 static void BoostMenu_ItemPrintCallback(u8 windowId, u32 boostId, u8 y);
 static void BuildBoostMenuListItems(void);
-static void PrintBoostDescription(const u8 *description);
+static void PrintBoostDescription(s32 boostId);
 static s32 PrintBoostLineText(const u8 *text, s32 x, u8 y);
 static s32 BlitBoostLinePointsIcon(s32 x, u8 y);
 static void PrintBoostStatus(s32 boostId);
@@ -187,6 +187,7 @@ static const u8 sText_BoostOn[]         = _("ON");
 static const u8 sText_BoostOff[]        = _("OFF");
 static const u8 sText_BoostMax[]        = _("MAX");
 static const u8 sText_BoostLevelSep[]   = _("/");
+static const u8 sText_BoostEffectSpace[] = _(" ");
 
 // Only shown for the (debug-only) case of the menu being reachable before
 // Achievement_BoostsUnlocked() -- see this file's own header comment. Every
@@ -810,10 +811,23 @@ static void BuildBoostMenuListItems(void)
 // src/achievement_popup.c uses) is what stops a long description from
 // drawing past the window's right edge and bleeding into the tile memory of
 // the line below it.
-static void PrintBoostDescription(const u8 *description)
+// For a leveled boost, the active level's effect (value + unit) is appended
+// to the description; nothing is appended at active level 0.
+static void PrintBoostDescription(s32 boostId)
 {
-    StringCopy(gStringVar1, description);
+    const struct AchievementBoost *info = AchievementBoost_GetInfo(boostId);
+    u8 active = AchievementBoost_GetActiveLevel(boostId);
+
+    StringCopy(gStringVar1, info->description);
     StripLineBreaks(gStringVar1);
+
+    if (info->effectFormat != NULL && info->effects != NULL && active != 0)
+    {
+        ConvertIntToDecimalStringN(gStringVar2, info->effects[active], STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringExpandPlaceholders(gStringVar3, info->effectFormat);
+        StringAppend(gStringVar1, sText_BoostEffectSpace);
+        StringAppend(gStringVar1, gStringVar3);
+    }
     BreakStringAutomatic(gStringVar1, BOOST_MENU_DESC_MAX_WIDTH, 2, FONT_NORMAL, HIDE_SCROLL_PROMPT);
     AddTextPrinterParameterized3(WIN_DESCRIPTION, FONT_NORMAL, 8, BOOST_MENU_LINE1_Y, sBoostMenuTextColors, TEXT_SKIP_DRAW, gStringVar1);
 }
@@ -889,7 +903,7 @@ static void PrintBoostStatus(s32 boostId)
     }
     else if (boostId >= BOOST_NONE + 1 && boostId < BOOSTS_COUNT)
     {
-        PrintBoostDescription(AchievementBoost_GetInfo(boostId)->description);
+        PrintBoostDescription(boostId);
     }
 
     CopyWindowToVram(WIN_DESCRIPTION, COPYWIN_GFX);

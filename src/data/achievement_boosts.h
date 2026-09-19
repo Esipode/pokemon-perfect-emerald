@@ -138,6 +138,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 5,
         .costs       = sBoostExpGainCosts,
         .effects     = sBoostExpGainEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2}%)"),
     },
     [BOOST_SHINY_CHANCE] = {
         .name        = BOOST_NAME("Shiny Chance"),
@@ -146,6 +147,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 5,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostShinyChanceEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2} rerolls)"),
     },
     [BOOST_CATCH_RATE] = {
         .name        = BOOST_NAME("Catch Rate"),
@@ -154,6 +156,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 5,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostCatchRateEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2}%)"),
     },
     [BOOST_MONEY_GAIN] = {
         .name        = BOOST_NAME("Money Gain"),
@@ -162,6 +165,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 5,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostMoneyGainEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2}%)"),
     },
     [BOOST_EGG_HATCH_SPEED] = {
         .name        = BOOST_NAME("Egg Hatch Speed"),
@@ -170,6 +174,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 5,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostEggHatchSpeedEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2} cycles)"),
     },
     [BOOST_FRIENDSHIP_GAIN] = {
         .name        = BOOST_NAME("Friendship Gain"),
@@ -178,6 +183,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 5,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostFriendshipGainEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2}%)"),
     },
     [BOOST_LEGENDARY_ENCOUNTER] = {
         .name        = BOOST_NAME("Legendary Encounter"),
@@ -186,6 +192,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 5,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostLegendaryEncounterEffects,
+        .effectFormat = COMPOUND_STRING("({STR_VAR_2}% per move)"),
     },
     [BOOST_CRIT_CHANCE] = {
         .name        = BOOST_NAME("Critical Hit"),
@@ -194,6 +201,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostCritChanceEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2}%)"),
     },
     [BOOST_BERRY_YIELD] = {
         .name        = BOOST_NAME("Berry Yield"),
@@ -202,6 +210,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostBerryYieldEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2} berries)"),
     },
     [BOOST_BERRY_GROWTH] = {
         .name        = BOOST_NAME("Berry Growth"),
@@ -210,6 +219,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 4,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostBerryGrowthEffects,
+        .effectFormat = COMPOUND_STRING("({STR_VAR_2}% faster)"),
     },
     [BOOST_PP_SAVER] = {
         .name        = BOOST_NAME("PP Saver"),
@@ -218,6 +228,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostPpSaverEffects,
+        .effectFormat = COMPOUND_STRING("({STR_VAR_2}% chance)"),
     },
     [BOOST_STATUS_RECOVERY] = {
         .name        = BOOST_NAME("Status Recovery"),
@@ -226,6 +237,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostStatusRecoveryEffects,
+        .effectFormat = COMPOUND_STRING("({STR_VAR_2}% per turn)"),
     },
     [BOOST_SPRAY_DURATION] = {
         .name        = BOOST_NAME("Spray Duration"),
@@ -234,6 +246,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 4,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostSprayDurationEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2}% steps)"),
     },
     [BOOST_NUZLOCKE_SECOND_CHANCE] = {
         .name        = BOOST_NAME("Second Chance"),
@@ -290,6 +303,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostConsumableSaveEffects,
+        .effectFormat = COMPOUND_STRING("({STR_VAR_2}% chance)"),
     },
     [BOOST_EGG_IV_REROLL] = {
         .name        = BOOST_NAME("Egg IV Reroll"),
@@ -298,6 +312,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostIvRerollEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2} rerolls)"),
     },
     [BOOST_WILD_IV_REROLL] = {
         .name        = BOOST_NAME("Wild IV Reroll"),
@@ -306,6 +321,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostIvRerollEffects,
+        .effectFormat = COMPOUND_STRING("(+{STR_VAR_2} rerolls)"),
     },
     [BOOST_SHOP_DISCOUNT] = {
         .name        = BOOST_NAME("Shop Discount"),
@@ -314,6 +330,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostShopDiscountEffects,
+        .effectFormat = COMPOUND_STRING("(-{STR_VAR_2}% price)"),
     },
     [BOOST_SURVIVE_1HP] = {
         .name        = BOOST_NAME("Second Wind"),
@@ -322,6 +339,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostSurvive1HpEffects,
+        .effectFormat = COMPOUND_STRING("({STR_VAR_2}% chance)"),
     },
     [BOOST_POST_BATTLE_HEAL] = {
         .name        = BOOST_NAME("Battle Recovery"),
@@ -330,6 +348,7 @@ static const struct AchievementBoost gAchievementBoosts[BOOSTS_COUNT] =
         .maxLevel    = 3,
         .costs       = sBoostSharedCosts,
         .effects     = sBoostPostBattleHealEffects,
+        .effectFormat = COMPOUND_STRING("({STR_VAR_2}% HP)"),
     },
 };
 
