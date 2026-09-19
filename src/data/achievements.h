@@ -1323,7 +1323,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     // include/constants/achievements.h's category M comment.
     [ACHIEVEMENT_ECONOMY_TREASURE_PAYS] = {
         .name        = ACHIEVEMENT_NAME("Treasure Pays"),
-        .description = COMPOUND_STRING("Earn ¥50,000 total from selling items."),
+        .description = COMPOUND_STRING("Earn ¥20,000 total from selling items."),
         .tier        = ACHIEVEMENT_TIER_SILVER,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_ECONOMY,

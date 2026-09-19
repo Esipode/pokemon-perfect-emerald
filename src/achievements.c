@@ -2919,7 +2919,7 @@ void Achievement_RecordItemSaleProceeds(u32 amount)
     Achievement_AddToGameStat(GAME_STAT_ITEM_SALES_MONEY, amount);
     total = GetGameStat(GAME_STAT_ITEM_SALES_MONEY);
 
-    if (total >= 50000)
+    if (total >= 20000)
         Achievement_TryComplete(ACHIEVEMENT_ECONOMY_TREASURE_PAYS);
 }
 
