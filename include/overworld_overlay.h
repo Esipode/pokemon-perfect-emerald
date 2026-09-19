@@ -85,6 +85,11 @@ struct Overlay
 // Script ends                      survives        survives
 //
 // Ownership stays with the caller: scripts must destroy their overlays explicitly.
+//
+// Opacity composition. Fade owns currentOpacity; pulse and falloff scale it:
+//   resolvedOpacity = (currentOpacity * pulseFactor * distanceFactor + 128) / 256
+// pulseFactor and distanceFactor are OVERLAY_OPACITY_MAX when their feature is inactive.
+// The result is clamped to 0-OVERLAY_OPACITY_MAX.
 
 // Invalidates every outstanding handle and clears the pool.
 void Overlay_ResetAll(void);
@@ -106,6 +111,11 @@ u8 Overlay_GetOpacity(OverlayId id);
 void Overlay_FadeTo(OverlayId id, u8 targetOpacity, u16 durationFrames);
 // Fades to 0, then destroys the overlay. Overlay_SetOpacity or Overlay_FadeTo cancels the destroy.
 void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames);
+// Triangle-wave pulse between minOpacity and maxOpacity, starting at the minimum.
+// Multiplies the fade output; it does not replace it. Periods under 2 frames clear the pulse.
+void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames);
+// Clears the pulse only; any running fade continues.
+void Overlay_StopAnimation(OverlayId id);
 void Overlay_SetRenderLayer(OverlayId id, u8 layer);
 // New overlays start enabled. Returns OVERLAY_ID_INVALID when the pool is full.
 OverlayId Overlay_Create(const struct OverlayConfig *config);

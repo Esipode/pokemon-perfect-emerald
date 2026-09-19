@@ -165,6 +165,30 @@ static bool32 UpdateFade(struct Overlay *overlay)
     return TRUE;
 }
 
+// Triangle wave from pulseMin to pulseMax and back over pulsePeriod frames; returns
+// OVERLAY_OPACITY_MAX when no pulse is set. Phase 0 is the minimum.
+static u32 UpdatePulse(struct Overlay *overlay)
+{
+    u32 period = overlay->pulsePeriod;
+    u32 phase = overlay->pulsePhase;
+    u32 half, tri;
+
+    if (period == 0)
+        return OVERLAY_OPACITY_MAX;
+
+    half = period / 2;
+    tri = (phase < half ? phase * OVERLAY_OPACITY_MAX : (period - phase) * OVERLAY_OPACITY_MAX) / half;
+    tri = min(tri, OVERLAY_OPACITY_MAX); // odd periods overshoot on the turning frame
+
+    overlay->pulsePhase = (phase + 1 >= period) ? 0 : phase + 1;
+    return overlay->pulseMin + ((overlay->pulseMax - overlay->pulseMin) * tri) / OVERLAY_OPACITY_MAX;
+}
+
+static u32 ResolveOpacity(u32 currentOpacity, u32 pulseFactor, u32 distanceFactor)
+{
+    return min((currentOpacity * pulseFactor * distanceFactor + 128) / 256, OVERLAY_OPACITY_MAX);
+}
+
 void Overlay_Update(void)
 {
     u32 i;
@@ -172,17 +196,22 @@ void Overlay_Update(void)
     for (i = 0; i < MAX_OVERLAYS; i++)
     {
         struct Overlay *overlay = &sOverlays[i];
+        u32 pulseFactor, distanceFactor, resolved;
 
         if (!overlay->active)
             continue;
 
-        // Pulse, anchor and falloff steps run here, in that order, before the fold.
+        // Anchor and falloff steps run here, in that order, before the fold.
         if (!UpdateFade(overlay))
             continue;
 
-        if (overlay->resolvedOpacity != overlay->currentOpacity)
+        pulseFactor = UpdatePulse(overlay);
+        distanceFactor = OVERLAY_OPACITY_MAX;
+
+        resolved = ResolveOpacity(overlay->currentOpacity, pulseFactor, distanceFactor);
+        if (overlay->resolvedOpacity != resolved)
         {
-            overlay->resolvedOpacity = overlay->currentOpacity;
+            overlay->resolvedOpacity = resolved;
             sOverlayDirty = TRUE;
         }
     }
@@ -316,6 +345,42 @@ void Overlay_FadeTo(OverlayId id, u8 targetOpacity, u16 durationFrames)
 
     overlay->destroyOnFadeOut = FALSE;
     StartFade(overlay, targetOpacity, durationFrames);
+}
+
+void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    // A period under 2 frames has no half-cycle, so it clears the pulse.
+    if (periodFrames < 2)
+    {
+        Overlay_StopAnimation(id);
+        return;
+    }
+
+    minOpacity = min(minOpacity, OVERLAY_OPACITY_MAX);
+    maxOpacity = min(maxOpacity, OVERLAY_OPACITY_MAX);
+    overlay->pulseMin = min(minOpacity, maxOpacity);
+    overlay->pulseMax = max(minOpacity, maxOpacity);
+    overlay->pulsePeriod = periodFrames;
+    overlay->pulsePhase = 0;
+}
+
+// Clears the pulse only; the fade and currentOpacity are untouched.
+void Overlay_StopAnimation(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->pulseMin = 0;
+    overlay->pulseMax = 0;
+    overlay->pulsePeriod = 0;
+    overlay->pulsePhase = 0;
 }
 
 void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames)
