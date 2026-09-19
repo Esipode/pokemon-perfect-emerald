@@ -1986,10 +1986,25 @@ bool8 Achievement_IsGymBattle(void)
     return GetTrainerClassFromId(TRAINER_BATTLE_PARAM.opponentA) == TRAINER_CLASS_LEADER;
 }
 
-// Returns a shared type if every one of the count members has it as one of
-// their (up to two) types, else NUMBER_OF_MON_TYPES. Starts at TYPE_NONE + 1
-// so two single-type members don't spuriously "share" TYPE_NONE via their
-// unused second type slot.
+static bool8 Achievement_PartyAllHaveType(struct Pokemon *party, u8 count, u32 type)
+{
+    u8 i;
+
+    for (i = 0; i < count; i++)
+    {
+        enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
+
+        if (gSpeciesInfo[species].types[0] != type && gSpeciesInfo[species].types[1] != type)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Returns the lowest-numbered type shared by every one of the count members
+// (either of their up to two types), else NUMBER_OF_MON_TYPES. Starts at
+// TYPE_NONE + 1 so two single-type members don't spuriously "share" TYPE_NONE
+// via their unused second type slot.
 static u8 Achievement_ComputePartyMonoType(struct Pokemon *party, u8 count)
 {
     u32 type;
@@ -1999,21 +2014,7 @@ static u8 Achievement_ComputePartyMonoType(struct Pokemon *party, u8 count)
 
     for (type = TYPE_NONE + 1; type < NUMBER_OF_MON_TYPES; type++)
     {
-        u8 i;
-        bool8 allHaveType = TRUE;
-
-        for (i = 0; i < count; i++)
-        {
-            enum Species species = GetMonData(&party[i], MON_DATA_SPECIES);
-
-            if (gSpeciesInfo[species].types[0] != type && gSpeciesInfo[species].types[1] != type)
-            {
-                allHaveType = FALSE;
-                break;
-            }
-        }
-
-        if (allHaveType)
+        if (Achievement_PartyAllHaveType(party, count, type))
             return (u8)type;
     }
 
@@ -2392,17 +2393,24 @@ void Achievement_CheckTeamMilestones(void)
 
     if (isTrainerBattle && !runData->monoTypeBroken)
     {
-        if (runData->monoTypeType == NUMBER_OF_MON_TYPES)
+        // Mono Type mode fixes the committed type up front. Otherwise the
+        // first battle's lowest shared type is locked in. Either way, later
+        // parties only need to still contain the locked type: a dual-type
+        // evolution (e.g. Torchic -> Combusken) can make a lower-numbered
+        // type the party's "computed" mono type without breaking the run.
+        if (runData->monoTypeType == TYPE_NONE)
         {
-            if (monoType != NUMBER_OF_MON_TYPES)
+            if (MonoType_IsEnabled())
+                runData->monoTypeType = MonoType_GetType();
+            else if (monoType != NUMBER_OF_MON_TYPES)
                 runData->monoTypeType = monoType;
             else
                 runData->monoTypeBroken = TRUE;
         }
-        else if (monoType != runData->monoTypeType)
-        {
+
+        if (runData->monoTypeType != TYPE_NONE
+         && !Achievement_PartyAllHaveType(party, playerCount, runData->monoTypeType))
             runData->monoTypeBroken = TRUE;
-        }
     }
 
     if (isGymBattle)
@@ -2613,7 +2621,7 @@ void Achievement_CheckTeamCompletionMilestones(void)
     struct Pokemon *party = gParties[B_TRAINER_PLAYER];
     u8 playerCount = gPartiesCount[B_TRAINER_PLAYER];
 
-    if (runData->monoTypeType != NUMBER_OF_MON_TYPES && !runData->monoTypeBroken)
+    if (runData->monoTypeType != TYPE_NONE && !runData->monoTypeBroken)
     {
         Achievement_TryComplete(ACHIEVEMENT_TEAM_MONO_TYPE_CHAMPION);
         if (gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD)

@@ -1364,7 +1364,7 @@ struct AchievementRunData
 {
     u16 majorBattleSpecies[32];      // distinct species that have acted in a major battle this run
     u8  majorBattleSpeciesCount;
-    u8  monoTypeType;                // NUMBER_OF_MON_TYPES == not yet locked in / discipline broken
+    u8  monoTypeType;                // TYPE_NONE (zeroed save data) == not yet locked in
     bool8 monoTypeBroken;
     u8  monoTypeGymsCleared;         // Gym clears where the active party happened to be mono-type
     u8  prevMajorBattleSlots;        // bitmask over party slots, for Benchwarmer
