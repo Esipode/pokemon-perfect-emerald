@@ -133,6 +133,38 @@ static void ApplyOverlaysToPalettes(void)
     sOverlayApplied = (count != 0);
 }
 
+static void ClearFade(struct Overlay *overlay)
+{
+    overlay->fadeDuration = 0;
+    overlay->fadeElapsed = 0;
+    overlay->destroyOnFadeOut = FALSE;
+}
+
+// Returns FALSE when the fade destroyed the overlay.
+static bool32 UpdateFade(struct Overlay *overlay)
+{
+    if (overlay->fadeDuration == 0)
+        return TRUE;
+
+    overlay->fadeElapsed++;
+    if (overlay->fadeElapsed < overlay->fadeDuration)
+    {
+        overlay->currentOpacity = overlay->fadeStart
+            + ((s32)overlay->fadeTarget - overlay->fadeStart) * overlay->fadeElapsed / overlay->fadeDuration;
+        return TRUE;
+    }
+
+    overlay->currentOpacity = overlay->fadeTarget;
+    if (overlay->destroyOnFadeOut)
+    {
+        ReleaseSlot(overlay);
+        return FALSE;
+    }
+
+    ClearFade(overlay);
+    return TRUE;
+}
+
 void Overlay_Update(void)
 {
     u32 i;
@@ -144,7 +176,10 @@ void Overlay_Update(void)
         if (!overlay->active)
             continue;
 
-        // Fade, pulse, anchor and falloff steps run here, in that order, before the fold.
+        // Pulse, anchor and falloff steps run here, in that order, before the fold.
+        if (!UpdateFade(overlay))
+            continue;
+
         if (overlay->resolvedOpacity != overlay->currentOpacity)
         {
             overlay->resolvedOpacity = overlay->currentOpacity;
@@ -248,8 +283,53 @@ void Overlay_SetOpacity(OverlayId id, u8 opacity)
         return;
 
     opacity = min(opacity, OVERLAY_OPACITY_MAX);
+    ClearFade(overlay);
     overlay->baseOpacity = opacity;
     overlay->currentOpacity = opacity;
+}
+
+static void StartFade(struct Overlay *overlay, u8 targetOpacity, u16 durationFrames)
+{
+    targetOpacity = min(targetOpacity, OVERLAY_OPACITY_MAX);
+    overlay->baseOpacity = targetOpacity;
+
+    if (durationFrames == 0 || overlay->currentOpacity == targetOpacity)
+    {
+        overlay->currentOpacity = targetOpacity;
+        overlay->fadeDuration = 0;
+        overlay->fadeElapsed = 0;
+        return;
+    }
+
+    overlay->fadeStart = overlay->currentOpacity;
+    overlay->fadeTarget = targetOpacity;
+    overlay->fadeDuration = durationFrames;
+    overlay->fadeElapsed = 0;
+}
+
+void Overlay_FadeTo(OverlayId id, u8 targetOpacity, u16 durationFrames)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->destroyOnFadeOut = FALSE;
+    StartFade(overlay, targetOpacity, durationFrames);
+}
+
+void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    StartFade(overlay, 0, durationFrames);
+    if (overlay->fadeDuration == 0)
+        ReleaseSlot(overlay);
+    else
+        overlay->destroyOnFadeOut = TRUE;
 }
 
 u8 Overlay_GetOpacity(OverlayId id)

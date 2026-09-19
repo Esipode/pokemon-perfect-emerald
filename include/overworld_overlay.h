@@ -102,6 +102,10 @@ void Overlay_SetColor(OverlayId id, u16 color);
 // Direct request, 0-OVERLAY_OPACITY_MAX.
 void Overlay_SetOpacity(OverlayId id, u8 opacity);
 u8 Overlay_GetOpacity(OverlayId id);
+// Linear fade over durationFrames; 0 snaps. Replaces any running fade.
+void Overlay_FadeTo(OverlayId id, u8 targetOpacity, u16 durationFrames);
+// Fades to 0, then destroys the overlay. Overlay_SetOpacity or Overlay_FadeTo cancels the destroy.
+void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames);
 void Overlay_SetRenderLayer(OverlayId id, u8 layer);
 // New overlays start enabled. Returns OVERLAY_ID_INVALID when the pool is full.
 OverlayId Overlay_Create(const struct OverlayConfig *config);
