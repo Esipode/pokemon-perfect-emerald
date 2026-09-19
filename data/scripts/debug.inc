@@ -842,14 +842,10 @@ Debug_EventScript_FakeRTCNotEnabled::
 Debug_EventScript_FakeRTCNotEnabled_Text_0:
 	.string "You currently do not have Fake RTC\nenabled. Please enable it in include/\lconfig/overworld.h$"
 
-@ Stage 4/5 test harness for the Draft case UI (src/ui_birch_case.c) and the
-@ offer flow it feeds (data/scripts/draft.inc). Mirrors
-@ Route101_EventScript_OpenStarterCaseNoGenSelect's own fadescreen/delay/
-@ callnative/waitstate shape so Draft_StartCaseUI runs under a real,
-@ Debug_DestroyMenu_Full_Script-provided script context instead of guessing
-@ at one - see the comment on DebugAction_Util_ForceDraft. From there it
-@ falls straight into the same resolution tail Draft_EventScript_RouteDraft
-@ uses, so this exercises the whole flow without walking to a fresh route.
+@ Test harness for the Draft case UI and offer flow. Mirrors the fadescreen/delay/
+@ callnative/waitstate shape of Route101_EventScript_OpenStarterCaseNoGenSelect so
+@ Draft_StartCaseUI runs under a real script context, then falls into the same
+@ resolution tail as Draft_EventScript_RouteDraft.
 Debug_EventScript_ForceDraft::
 	lockall
 	fadescreen FADE_TO_BLACK

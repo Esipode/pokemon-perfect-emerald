@@ -82,9 +82,8 @@ Route117_PokemonDayCare_EventScript_DaycareWoman::
 	end
 
 Route117_PokemonDayCare_EventScript_GiveMonToRaise::
-	@ Recruits Mode.md Stage 8: the daycare would otherwise be the only
-	@ off-party reserve left once the PC is locked, letting a mon sit out
-	@ the retirement economy. Refused before any mon is even offered.
+	@ The daycare would otherwise be the only off-party reserve left once the PC
+	@ is locked, letting a mon sit out the retirement economy.
 	specialvar VAR_RESULT, Recruits_IsEnabled
 	goto_if_eq VAR_RESULT, TRUE, Route117_PokemonDayCare_EventScript_CantRaiseRecruits
 	specialvar VAR_RESULT, CountPartyNonEggMons

@@ -139,7 +139,6 @@ EverGrandeCity_PokemonCenter_1F_EventScript_ClearChallengeState::
 	clearflag FLAG_IS_CHALLENGING_CHAMPION
 	end
 
-@ CUSTOM
 @ Allows player to pass by guard to Champion's Challenge Room once Elite 4 has been beaten
 EverGrandeCity_PokemonLeague_1F_EventScript_ChampionRoomGuard::
 	lock
