@@ -23,6 +23,9 @@ enum Weekday
     WEEKDAY_COUNT,
 };
 
+// Sentinel for "no weekday requirement" in spawn gates that take a weekday.
+#define WEEKDAY_ANY 0xFF
+
 enum Month
 {
     MONTH_JAN = 1,

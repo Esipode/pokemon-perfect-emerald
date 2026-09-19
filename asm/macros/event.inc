@@ -2592,6 +2592,25 @@
 	.2byte \hideFlag
 	.endm
 
+	@ Stores the map's resolved overworld weather (WEATHER_*) in the variable dest. Dynamic and
+	@ cycling map weathers are already resolved, so this is the weather the visit will show.
+	.macro getmapweather dest:req
+	callnative Scrcmd_getmapweather, requests_effects=1
+	.2byte \dest
+	.endm
+
+	@ Stores the current weekday (WEEKDAY_SUN..WEEKDAY_SAT) in the variable dest.
+	.macro getdayofweek dest:req
+	callnative Scrcmd_getdayofweek, requests_effects=1
+	.2byte \dest
+	.endm
+
+	@ Sets VAR_RESULT to TRUE if any non-egg party Pokemon is holding itemId.
+	.macro checkpartyhelditem itemId:req
+	callnative Scrcmd_checkpartyhelditem, requests_effects=1
+	.2byte \itemId
+	.endm
+
 	@ Gets the facing direction of a given event object and stores it in the variable dest.
 	.macro getobjectfacingdirection localId:req, dest:req
 	callnative Scrcmd_getobjectfacingdirection, requests_effects=1

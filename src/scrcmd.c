@@ -3477,3 +3477,57 @@ bool8 ScrCmd_setbattleencounter(struct ScriptContext *ctx)
     SetPendingBattleEncounter(id);
     return FALSE;
 }
+
+// Writes the map's resolved overworld weather to dest. Reads the saved weather, which
+// SetSavedWeatherFromCurrMapHeader() has already resolved from WEATHER_DYNAMIC or a weather
+// cycle, so ON_TRANSITION and ON_LOAD scripts see the weather this visit will actually show.
+bool8 Scrcmd_getmapweather(struct ScriptContext *ctx)
+{
+    u16 varId = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(varId);
+
+    *GetVarPointer(varId) = GetSavedWeather();
+
+    return FALSE;
+}
+
+// Writes the current weekday (WEEKDAY_SUN..WEEKDAY_SAT) to dest.
+bool8 Scrcmd_getdayofweek(struct ScriptContext *ctx)
+{
+    u16 varId = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(varId);
+
+    *GetVarPointer(varId) = GetDayOfWeek();
+
+    return FALSE;
+}
+
+// Sets VAR_RESULT to TRUE if any non-egg party Pokemon is holding itemId.
+bool8 Scrcmd_checkpartyhelditem(struct ScriptContext *ctx)
+{
+    enum Item itemId = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    gSpecialVar_Result = FALSE;
+
+    for (u32 partyIndex = 0; partyIndex < CalculatePlayerPartyCount(); partyIndex++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][partyIndex];
+
+        if (GetMonData(mon, MON_DATA_IS_EGG))
+            continue;
+
+        if (GetMonData(mon, MON_DATA_HELD_ITEM) == itemId)
+        {
+            gSpecialVar_Result = TRUE;
+            break;
+        }
+    }
+
+    return FALSE;
+}

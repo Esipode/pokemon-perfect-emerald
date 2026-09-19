@@ -7,12 +7,13 @@
 #include "rtc.h"
 
 #include "constants/flags.h"
+#include "constants/siirtc.h"
 #include "constants/species.h"
 
 /*
  * VAR_0x8004 = Legendary species
  * VAR_0x8005 = Alternate layout ID
- * VAR_0x8006 = Required weekday, 0 = Sunday ... 6 = Saturday
+ * VAR_0x8006 = Required weekday (WEEKDAY_SUN..WEEKDAY_SAT), or WEEKDAY_ANY for no requirement
  * VAR_0x8007 = Daily-seed salt
  *
  * Result:
@@ -52,7 +53,7 @@ void CheckValidLegendaryEncounter(void)
     if (CheckPlayerOwnsSpecies(species))
         return;
 
-    if (currentWeekday != requiredWeekday)
+    if (requiredWeekday != WEEKDAY_ANY && currentWeekday != requiredWeekday)
         return;
 
     gSpecialVar_Result = TRUE;
