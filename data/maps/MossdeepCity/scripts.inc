@@ -1,5 +1,6 @@
 MossdeepCity_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, MossdeepCity_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, MossdeepCity_OnLoad
 	.byte 0
 
 MossdeepCity_OnTransition:
@@ -8,7 +9,42 @@ MossdeepCity_OnTransition:
 	clearflag FLAG_MOSSDEEP_GYM_SWITCH_3
 	clearflag FLAG_MOSSDEEP_GYM_SWITCH_4
 	call_if_set FLAG_SYS_WEATHER_CTRL, Common_EventScript_SetAbnormalWeather
+	updatelegendaryvisibility SPECIES_JIRACHI, FLAG_HIDE_JIRACHI
 	end
+
+MossdeepCity_OnLoad:
+	@ The rock stays gone once Jirachi has been caught
+	getcaughtmon SPECIES_JIRACHI
+	call_if_eq VAR_RESULT, TRUE, MossdeepCity_EventScript_RemoveWhiteRock
+	@ Jirachi spawn gate: post-game, not already owned, night only, 5% daily-seed roll
+	setvar VAR_0x8004, SPECIES_JIRACHI
+	setvar VAR_0x8005, LAYOUT_MOSSDEEP_CITY
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, MossdeepCity_HideJirachiArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_NIGHT, MossdeepCity_HideJirachiArena
+	checkdailyseedchance 10, SPECIES_JIRACHI
+	goto_if_eq VAR_RESULT, FALSE, MossdeepCity_HideJirachiArena
+	goto MossdeepCity_ShowJirachiArena
+
+MossdeepCity_Jirachi_Encounter::
+	goto LegendaryEncounter_EventScript_Jirachi
+
+MossdeepCity_HideJirachiArena:
+	setflag FLAG_HIDE_JIRACHI
+	end
+
+MossdeepCity_ShowJirachiArena:
+	@ Hide the woman beside the rock for this visit only - temp flags clear on map load
+	setflag FLAG_TEMP_7
+	call MossdeepCity_EventScript_RemoveWhiteRock
+	end
+
+MossdeepCity_EventScript_RemoveWhiteRock::
+	setmetatilewithelevation 57, 21, 0x001, FALSE, 7
+	return
 
 MossdeepCity_EventScript_PokefanF::
 	lock
@@ -49,11 +85,24 @@ MossdeepCity_EventScript_Girl::
 	end
 
 MossdeepCity_EventScript_Woman::
+	getcaughtmon SPECIES_JIRACHI
+	goto_if_eq VAR_RESULT, TRUE, MossdeepCity_EventScript_WomanRockGone
 	msgbox MossdeepCity_Text_SpecialSpaceCenterRock, MSGBOX_NPC
 	end
 
+MossdeepCity_EventScript_WomanRockGone::
+	msgbox MossdeepCity_Text_WhatHappenedToTheRock, MSGBOX_NPC
+	end
+
 MossdeepCity_EventScript_WhiteRock::
+	@ The rock tile is gone while Jirachi is out and permanently once it has been caught
+	goto_if_unset FLAG_HIDE_JIRACHI, MossdeepCity_EventScript_WhiteRockHidden
+	getcaughtmon SPECIES_JIRACHI
+	goto_if_eq VAR_RESULT, TRUE, MossdeepCity_EventScript_WhiteRockHidden
 	msgbox MossdeepCity_Text_ItsAWhiteRock, MSGBOX_SIGN
+	end
+
+MossdeepCity_EventScript_WhiteRockHidden:
 	end
 
 MossdeepCity_EventScript_GymSign::
@@ -386,6 +435,12 @@ MossdeepCity_Text_SpecialSpaceCenterRock:
 	.string "Do you wish upon a star?\p"
 	.string "I use a wish tag to make it happen.\n"
 	.string "That's what I do.$"
+
+MossdeepCity_Text_WhatHappenedToTheRock:
+	.string "Huh? The rock that was right here...\n"
+	.string "It's gone!\p"
+	.string "The SPACE CENTER people will be\n"
+	.string "so upset. What happened to it?$"
 
 MossdeepCity_Text_ItsAWhiteRock:
 	.string "It's a white rock.$"

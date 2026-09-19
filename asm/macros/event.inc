@@ -2611,6 +2611,14 @@
 	.2byte \itemId
 	.endm
 
+	@ Sets VAR_RESULT to TRUE with percent% chance. Rolled from the daily seed, so the result is
+	@ stable for the whole day; use a different salt per caller for independent rolls.
+	.macro checkdailyseedchance percent:req, salt:req
+	callnative Scrcmd_checkdailyseedchance, requests_effects=1
+	.2byte \percent
+	.2byte \salt
+	.endm
+
 	@ Gets the facing direction of a given event object and stores it in the variable dest.
 	.macro getobjectfacingdirection localId:req, dest:req
 	callnative Scrcmd_getobjectfacingdirection, requests_effects=1

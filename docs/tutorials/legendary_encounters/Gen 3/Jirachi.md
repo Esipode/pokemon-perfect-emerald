@@ -1,5 +1,7 @@
 ## Jirachi — The Wish Pokémon
 
+### Location: Mossdeep City - night only, 10% chance
+
 Jirachi fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be killed** until it has spent its last wish.

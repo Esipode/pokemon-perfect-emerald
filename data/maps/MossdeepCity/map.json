@@ -3,7 +3,6 @@
   "name": "MossdeepCity",
   "layout": "LAYOUT_MOSSDEEP_CITY",
   "music": "MUS_RUSTBORO",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_MOSSDEEP_CITY",
   "requires_flash": false,
   "weather": "WEATHER_DYNAMIC",
@@ -133,7 +132,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "MossdeepCity_EventScript_Woman",
-      "flag": "0"
+      "flag": "FLAG_TEMP_7"
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_BOY_2",
@@ -283,6 +282,19 @@
       "trainer_sight_or_berry_tree_id": "LIGHT_TYPE_POKE_MART_SIGN",
       "script": "NULL",
       "flag": "0"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(JIRACHI)",
+      "x": 57,
+      "y": 21,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "MossdeepCity_Jirachi_Encounter",
+      "flag": "FLAG_HIDE_JIRACHI"
     }
   ],
   "warp_events": [
@@ -514,5 +526,6 @@
       "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
       "script": "MossdeepCity_EventScript_WhiteRock"
     }
-  ]
+  ],
+  "region": "REGION_HOENN"
 }
