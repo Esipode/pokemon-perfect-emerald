@@ -74,16 +74,11 @@ static const u8 sText_PlayerRegroupHome[] = _("{PLAYER} scurried back home, to r
 
 static const u8 sText_NuzlockeRunFailed[] = _("The NUZLOCKE run has ended in defeat!\nAll of {PLAYER}'s POKéMON have fainted…\p");
 static const u8 sText_NuzlockeBeginNewRun[] = _("Begin a new NUZLOCKE run?");
-// Recruits variants of the two texts above - this screen is shared between
-// both modes, see PrintNuzlockeFailedMessage's callers in Task_NuzlockeRunFailed.
+// Recruits variants of the two texts above; the run-failed screen is shared.
 static const u8 sText_RecruitsRunFailed[] = _("Your last recruit's service has ended!\nAll of {PLAYER}'s POKéMON have fainted…\p");
 static const u8 sText_RecruitsBeginNewRun[] = _("Begin a new RECRUITS run?");
-// Split into two single-line pages rather than one two-line page: the box
-// below sits at a fixed screen position that only leaves room for a single
-// line above it once this text is the last thing on screen (see
-// sText_NuzlockeBeginNewRun, the only other question this screen shows
-// directly before its Yes/No box) -- a two-line page here would run its
-// second line straight into the box.
+// Two single-line pages: the Yes/No box sits at a fixed position that leaves room for
+// only one line above it.
 static const u8 sText_NuzlockeKeepStorageInfo[] = _("You have POKéMON stored in your PC.\p");
 static const u8 sText_NuzlockeKeepStorageQuestion[] = _("Keep them for your new adventure?");
 
@@ -1474,13 +1469,9 @@ enum {
     NUZLOCKE_FAILED_PROCESS_KEEP_STORAGE_YESNO,
 };
 
-// baseBlock 331 starts right after the 30x11 = 330 tile range
-// sWindowTemplate_WhiteoutText reserves starting at baseBlock 1 -- reusing
-// sYesNo_WindowTemplates (menu.c) here would collide with that range (its
-// baseBlock 0x125 falls inside it) and corrupt whichever window draws second.
-// width 6 (rather than gText_YesNo's usual 5) leaves room to center "YES"/"NO"
-// inside the box instead of hugging its left edge.
-// tilemapLeft centers the box in the 30-tile-wide screen: (30 - 6) / 2 = 12.
+// baseBlock 331 follows the 30x11 = 330 tiles sWindowTemplate_WhiteoutText reserves from
+// baseBlock 1; sYesNo_WindowTemplates (menu.c) would overlap that range (0x125).
+// Width 6 leaves room to center "YES"/"NO"; tilemapLeft centers it: (30 - 6) / 2 = 12.
 static const struct WindowTemplate sNuzlockeFailedYesNoWindowTemplate =
 {
     .bg = 0,
@@ -1494,9 +1485,7 @@ static const struct WindowTemplate sNuzlockeFailedYesNoWindowTemplate =
 
 #define tYesNoWindowId data[4]
 
-// Same job as PrintWhiteOutRecoveryMessage above, except the text is
-// horizontally centered in the window instead of left-aligned at a fixed x --
-// kept separate so the original whiteout cutscene's layout is untouched.
+// Like PrintWhiteOutRecoveryMessage, but horizontally centered.
 static bool32 PrintNuzlockeFailedMessage(u8 taskId, const u8 *text, u32 y)
 {
     u32 windowId = gTasks[taskId].tWindowId;
@@ -1527,20 +1516,12 @@ static bool32 PrintNuzlockeFailedMessage(u8 taskId, const u8 *text, u32 y)
     return FALSE;
 }
 
-// InitMenuInUpperLeftCornerNormal / Menu_ProcessInputNoWrap draw the cursor
-// arrow (and erase its previous position) using the standard menu font's
-// default light background color, which is meant to blend into the tan
-// message-box frame those functions normally run inside. On this screen's
-// solid black backdrop that same fill shows up as a stray light rectangle
-// around the arrow. Repaint it here with this screen's own white-on-black
-// colors so nothing but the arrow itself is visible.
+// The menu cursor code fills with the default light background, which shows as a stray
+// rectangle on this screen's black backdrop. Repaint the arrow in this screen's colors.
 static void DrawNuzlockeFailedYesNoCursor(u8 windowId)
 {
-    // GetMenuCursorDimensionByFont's height (15px) is only what menu.c uses
-    // to space cursor rows -- the glyph itself actually renders into a taller
-    // cell, so clearing just two of those 15px bands left a 1px sliver of the
-    // engine's redraw uncleared at the bottom of the window. Clear the full
-    // height of the arrow's column instead so no such sliver can remain.
+    // The glyph renders into a taller cell than the 15px row height, so clear the full
+    // column height to avoid a 1px leftover at the bottom.
     u8 width = GetMenuCursorDimensionByFont(FONT_NORMAL, 0);
     u8 cursorPos = Menu_GetCursorPos();
 
@@ -1549,20 +1530,12 @@ static void DrawNuzlockeFailedYesNoCursor(u8 windowId)
     CopyWindowToVram(windowId, COPYWIN_GFX);
 }
 
-// Opens this screen's black-backdrop Yes/No box (rather than CreateYesNoMenu,
-// which hardcodes the tan message-box frame and default black-on-white
-// colors -- that would look like a mismatched popup instead of part of this
-// same full-screen black text). Shared by both questions this screen can
-// ask -- restart the run, and (if there's anything worth it) keep PC
-// storage -- so initialCursorPos picks the non-destructive default for
-// whichever question is being asked.
+// Black-backdrop Yes/No box; CreateYesNoMenu hardcodes the tan message-box frame.
+// initialCursorPos picks the non-destructive default for each question.
 static void OpenNuzlockeFailedYesNo(u8 taskId, u8 initialCursorPos)
 {
     u8 yesNoWindowId = AddWindow(&sNuzlockeFailedYesNoWindowTemplate);
-    // InitMenuInUpperLeftCornerNormal below draws the cursor arrow at the
-    // window's left edge (its own x=0..7), same as CreateYesNoMenu -- so
-    // centering starts after that 8px reserved for the arrow, not from
-    // the window's true left edge.
+    // The cursor arrow occupies x=0..7, so centering starts after those 8px.
     s32 x = 8 + GetStringCenterAlignXOffset(FONT_NORMAL, gText_YesNo, (sNuzlockeFailedYesNoWindowTemplate.width * 8) - 8);
 
     gTasks[taskId].tYesNoWindowId = yesNoWindowId;
@@ -1570,55 +1543,31 @@ static void OpenNuzlockeFailedYesNo(u8 taskId, u8 initialCursorPos)
     AddTextPrinterParameterized4(yesNoWindowId, FONT_NORMAL, x, 1, 0, 0, sWhiteoutTextColors, TEXT_SKIP_DRAW, gText_YesNo);
     PutWindowTilemap(yesNoWindowId);
     CopyWindowToVram(yesNoWindowId, COPYWIN_FULL);
-    // Since we skipped CreateYesNoMenu, use InitMenuInUpperLeftCornerNormal
-    // directly to wire up cursor movement, and Menu_ProcessInputNoWrap
-    // (not the ClearOnChoose variant, which assumes CreateYesNoMenu's
-    // internal window and would try to erase the wrong graphics).
+    // Menu_ProcessInputNoWrap, not the ClearOnChoose variant, which assumes CreateYesNoMenu's window.
     InitMenuInUpperLeftCornerNormal(yesNoWindowId, 2, initialCursorPos);
     DrawNuzlockeFailedYesNoCursor(yesNoWindowId);
 }
 
-// Common final step once keep-storage carryover has been settled, whether
-// by an explicit answer or because there was nothing worth asking about.
 static void FinishNuzlockeRestart(u8 taskId)
 {
     RemoveWindow(gTasks[taskId].tYesNoWindowId);
     RemoveWindow(gTasks[taskId].tWindowId);
-    // Both CB2_NewGame and CB2_InitTitleScreen assume they're being
-    // entered onto a blank slate (that's how every other caller of
-    // either uses them -- e.g. New Game+ in start_menu.c calls this
-    // same function before CB2_NewGame). We got here from a field
-    // callback with a fully loaded overworld map still behind us
-    // (windows, BG tilemap buffers, etc.), so skipping this leaves
-    // that map's buffers dangling; the next screen allocates its own
-    // over top of them, and whichever save gets continued afterwards
-    // ends up reading/rendering through corrupted leftovers (this is
-    // what caused the corrupted party/overworld graphics on "No").
+    // CB2_NewGame and CB2_InitTitleScreen assume a blank slate. The loaded overworld's
+    // windows and BG tilemap buffers must be freed, or the next screen allocates over
+    // them and later rendering reads corrupted leftovers.
     CleanupOverworldWindowsAndTilemaps();
     DestroyTask(taskId);
-    // CB2_NewGame -> NewGameInitData unconditionally re-applies
-    // gPendingNewGameSettings (nuzlocke mode, difficulty, randomizer
-    // toggles, ...) on top of whatever's about to be wiped -- normally safe
-    // because CB2_InitNewGameSettingsMenu is the only thing that ever sets
-    // it, right before handing off to CB2_NewGame itself. We're skipping
-    // that screen for a fast restart, so gPendingNewGameSettings could still
-    // be sitting at its power-on default (or a stale earlier choice) if this
-    // save was continued rather than freshly created this session. Snapshot
-    // this run's actual settings into it first so restarting doesn't
-    // silently reset them.
+    // NewGameInitData re-applies gPendingNewGameSettings, which is normally set by
+    // CB2_InitNewGameSettingsMenu. This fast restart skips that screen, so snapshot the
+    // current run's settings first.
     CaptureCurrentSaveIntoPendingNewGameSettings();
     SetMainCallback2(CB2_NewGame);
 }
 
-// Shared run-failed screen for both modes that can empty the party: Nuzlocke
-// (via CB2_WhiteOut, whenever the whiteout that got us here also emptied the
-// party) and Recruits (via Recruits_StartRunFailedScreen, whenever a
-// retirement does). Either way the emptied state is already persisted to
-// flash by this point -- RemoveFaintedMonsFromParty for Nuzlocke,
-// TrySavingData in Recruits_StartRunFailedScreen for Recruits -- and
-// achievements/boosts live outside the save slots and are untouched either
-// way, so this screen is purely about what the player does *next*, not about
-// what happens to the save.
+// Run-failed screen shared by Nuzlocke (via CB2_WhiteOut) and Recruits (via
+// Recruits_StartRunFailedScreen). The emptied party is already saved by this point
+// (RemoveFaintedMonsFromParty / TrySavingData), and achievements/boosts live outside the
+// save slots.
 static void Task_NuzlockeRunFailed(u8 taskId)
 {
     u32 windowId;
@@ -1635,8 +1584,6 @@ static void Task_NuzlockeRunFailed(u8 taskId)
         gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_FAILURE_MSG;
         break;
     case NUZLOCKE_FAILED_PRINT_FAILURE_MSG:
-        // Recruits shares this screen with Nuzlocke (see Run_IsFailed,
-        // src/overworld.c) - pick the matching pair of strings by mode.
         if (PrintNuzlockeFailedMessage(taskId, Recruits_IsEnabled() ? sText_RecruitsRunFailed : sText_NuzlockeRunFailed, 8))
             gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_QUESTION;
         break;
@@ -1645,7 +1592,7 @@ static void Task_NuzlockeRunFailed(u8 taskId)
             gTasks[taskId].tState = NUZLOCKE_FAILED_OPEN_YESNO;
         break;
     case NUZLOCKE_FAILED_OPEN_YESNO:
-        // Default the cursor to NO -- there's no undo once a new run starts.
+        // Default to NO: a new run can't be undone.
         OpenNuzlockeFailedYesNo(taskId, 1);
         gTasks[taskId].tState = NUZLOCKE_FAILED_PROCESS_YESNO;
         break;
@@ -1656,42 +1603,23 @@ static void Task_NuzlockeRunFailed(u8 taskId)
             DrawNuzlockeFailedYesNoCursor(gTasks[taskId].tYesNoWindowId);
             break;
         case 0: // YES -- start a new run, same as any other Nuzlocke-wipe entry point
-            // ClearWindowTilemap before RemoveWindow: RemoveWindow only frees
-            // the window's own buffer, it doesn't erase what was already
-            // copied to the BG tilemap. Every other RemoveWindow call in this
-            // function skips that step because a full screen teardown or
-            // transition follows immediately either way -- but the
-            // keep-storage branch below can stay on this same screen for a
-            // few frames while the next question prints, and this box's
-            // tiles would otherwise sit there stale (visible underneath the
-            // new text) until the new Yes/No box happens to overwrite them.
+            // The keep-storage branch stays on this screen, so the box's tilemap must be
+            // cleared; RemoveWindow doesn't erase tiles already copied to the BG.
             ClearWindowTilemap(gTasks[taskId].tYesNoWindowId);
             RemoveWindow(gTasks[taskId].tYesNoWindowId);
             if (CountAllStorageMons() == 0 && CalculatePlayerPartyCount() == 0)
             {
-                // Nothing worth asking about -- same "nothing to keep"
-                // shortcut CB2_InitKeepStoragePrompt takes on the title
-                // screen's NEW GAME path, so just restart plainly.
+                // Same "nothing to keep" shortcut as CB2_InitKeepStoragePrompt.
                 gKeepStorageOnNewGame = FALSE;
                 FinishNuzlockeRestart(taskId);
             }
             else
             {
-                // Ask fresh every time, rather than reusing
-                // gSaveBlock2Ptr->keepStorageOnRestart: that field only
-                // records whether *this* run's storage was itself carried
-                // over from its predecessor, which is unconditionally
-                // FALSE on a player's very first-ever run (there was
-                // nothing to carry in yet) -- reading it here would
-                // silently discard real PC storage the first time anyone
-                // fails and restarts immediately. (As of Trading Codes.md
-                // Stage 11, this field is otherwise write-only -- it used to
-                // also gate the withdraw lock in pokemon_storage_system.c,
-                // but that check now reads an explicit per-mon bit,
-                // struct BoxPokemon's own legacyCarryOverLocked, instead.
-                // Left in place regardless; a save-wide "has this file ever
-                // carried storage over" record is reasonable bookkeeping to
-                // keep even with no current reader.)
+                // Ask every time instead of reading gSaveBlock2Ptr->keepStorageOnRestart:
+                // it only records whether this run's storage was carried over, so it is
+                // FALSE on a first-ever run and would discard real PC storage.
+                // It has no current reader; the withdraw lock uses BoxPokemon's
+                // legacyCarryOverLocked.
                 gTasks[taskId].tState = NUZLOCKE_FAILED_PRINT_KEEP_STORAGE_INFO;
             }
             break;
@@ -1701,14 +1629,8 @@ static void Task_NuzlockeRunFailed(u8 taskId)
             RemoveWindow(gTasks[taskId].tWindowId);
             CleanupOverworldWindowsAndTilemaps();
             DestroyTask(taskId);
-            // Nothing extra to do here: the emptied-party state was already
-            // persisted to flash before this screen was ever reached
-            // (RemoveFaintedMonsFromParty for Nuzlocke, TrySavingData in
-            // Recruits_StartRunFailedScreen for Recruits), so gSaveFileStatus
-            // stays a genuine SAVE_STATUS_OK -- keep-storage carryover keeps
-            // working, on this boot or any later one. The title screen
-            // (main_menu.c) is what keeps CONTINUE hidden, by checking
-            // Run_IsFailed() against that same saved state directly.
+            // gSaveFileStatus stays SAVE_STATUS_OK so keep-storage carryover keeps working.
+            // The title screen (main_menu.c) hides CONTINUE via Run_IsFailed().
             SetMainCallback2(CB2_InitTitleScreen);
             break;
         }
@@ -1722,9 +1644,7 @@ static void Task_NuzlockeRunFailed(u8 taskId)
             gTasks[taskId].tState = NUZLOCKE_FAILED_OPEN_KEEP_STORAGE_YESNO;
         break;
     case NUZLOCKE_FAILED_OPEN_KEEP_STORAGE_YESNO:
-        // Default the cursor to YES here -- unlike restarting the run
-        // itself, keeping stored POKéMON is the non-destructive answer
-        // (same default the title-screen keep-storage prompt uses).
+        // Default to YES: keeping storage is non-destructive.
         OpenNuzlockeFailedYesNo(taskId, 0);
         gTasks[taskId].tState = NUZLOCKE_FAILED_PROCESS_KEEP_STORAGE_YESNO;
         break;

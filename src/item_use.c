@@ -950,10 +950,8 @@ static void UseTMHM(u8 taskId)
 
 static void RemoveUsedItem(void)
 {
-    // BOOST_CONSUMABLE_SAVE. This is the shared field/battle item-use
-    // remover (Repel, in-battle bag items, ...) -- AchievementBoost_ShouldConsumeItem
-    // pocket-gates itself to POCKET_ITEMS, so Poke Balls thrown through the
-    // same call site are untouched.
+    // BOOST_CONSUMABLE_SAVE. Shared field/battle remover; ShouldConsumeItem gates itself to
+    // POCKET_ITEMS, so Poke Balls are untouched.
     if (AchievementBoost_ShouldConsumeItem(gSpecialVar_ItemId))
         RemoveBagItem(gSpecialVar_ItemId, 1);
     CopyItemName(gSpecialVar_ItemId, gStringVar2);

@@ -2174,7 +2174,7 @@ void UpdateFrontierManiac(u16 daysSince)
 void ShowFrontierManiacMessage(void)
 {
 #if FREE_BATTLE_FRONTIER == TRUE
-    // Stage 4: the Frontier Maniac NPC lives in the Battle Frontier lounge, now unreachable.
+    // The Frontier Maniac NPC lives in the unreachable Battle Frontier lounge.
     return;
 #else
     static const u8 *const sFrontierManiacMessages[][FRONTIER_MANIAC_MESSAGE_COUNT] =
@@ -2327,7 +2327,7 @@ void ShowFrontierManiacMessage(void)
 void BufferBattleTowerElevatorFloors(void)
 {
 #if FREE_BATTLE_FRONTIER == TRUE
-    // Stage 4: the Battle Tower elevator is unreachable now.
+    // The Battle Tower elevator is unreachable.
     gSpecialVar_0x8005 = 4;
     gSpecialVar_0x8006 = 12;
 #else
@@ -4587,29 +4587,21 @@ void UseBlankMessageToCancelPokemonPic(void)
     ScriptMenu_HidePokemonPic();
 }
 
-// Returns rather than writing gSpecialVar_Result: every caller is a
-// `specialvar` (src/scrcmd.c's ScrCmd_specialvar stores the special's return
-// value, not VAR_RESULT), so a void special would store a junk register.
+// Returns rather than writing gSpecialVar_Result: every caller is a `specialvar`,
+// which stores the return value, so a void special would store a junk register.
 u16 GetCurrentLevelCapSpecial(void)
 {
     return GetCurrentLevelCap();
 }
 
-// Common_EventScript_CheckLevelCapIncrease uses this instead of
-// GetCurrentLevelCapSpecial -- GetCurrentLevelCap() folds in
-// FLAG_LEVEL_CAP_OFF (a flat 100 + NGP offset ceiling once the player has
-// disabled their own cap), which isn't the story milestone the notification
-// is announcing. GetProgressionLevelCap() ignores that flag and always
-// reflects the badge/story ladder itself.
+// Used instead of GetCurrentLevelCapSpecial: GetCurrentLevelCap() folds in FLAG_LEVEL_CAP_OFF
+// (flat 100 + NGP offset), while GetProgressionLevelCap() always reflects the badge/story ladder.
 u16 GetProgressionLevelCapSpecial(void)
 {
     return GetProgressionLevelCap();
 }
 
-// Same queue/box/dismiss behavior as an achievement award (src/achievement_
-// popup.c) -- queued rather than shown inline because
-// Common_EventScript_CheckLevelCapIncrease calls this mid-script, right after
-// the badge/story checkpoint that raised the cap.
+// Queued like an achievement popup (src/achievement_popup.c) because it is called mid-script.
 void EnqueueLevelCapIncreasePopup(void)
 {
     LevelCapPopup_Enqueue(gSpecialVar_Result);

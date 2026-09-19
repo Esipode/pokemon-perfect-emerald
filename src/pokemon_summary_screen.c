@@ -1581,7 +1581,6 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         else
             sum->isEgg = GetMonData(mon, MON_DATA_IS_EGG);
 
-        // Extract types early so they're available for display
         sum->teraType = GetMonData(mon, MON_DATA_TERA_TYPE);
 
         // Check if original species has a dual type
@@ -1589,9 +1588,7 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         u8 originalType2 = gSpeciesInfo[sum->species].types[1];
         sum->isOriginalDualType = (originalType2 != TYPE_NONE && originalType2 != originalType1);
 
-        // Resolve through the shared resolver regardless of box vs. party —
-        // it's a pure function of species, so this always matches what the
-        // mon will actually have once withdrawn and sent into battle.
+        // Resolved as a pure function of species, so box and party mons both match battle.
         GetResolvedTypePair(sum->species, &sum->type1, &sum->type2);
 
         break;
@@ -1602,23 +1599,16 @@ static bool8 ExtractMonDataToSummaryStruct(struct Pokemon *mon)
         for (i = 0; i < MAX_MON_MOVES; i++)
             sum->originalMoves[i] = GetMonData(mon, MON_DATA_MOVE1+i);
 
-        // Resolve through the same shared path battle setup uses (ResolveMonMoves),
-        // so what's shown here always matches what actually plays out in battle -
-        // same species, same original moves in, same slot-for-slot mapping.
-        // Party data always holds the true original moveset now (randomization is
-        // never persisted back to it), so this is safe to call every time the
-        // summary screen is opened without compounding randomization.
+        // Same resolver as battle setup (ResolveMonMoves). Party data always holds the true
+        // moveset, so resolving on every open doesn't compound randomization.
         ResolveMonMoves(sum->species, sum->originalMoves, resolvedMoves);
         for (i = 0; i < MAX_MON_MOVES; i++)
             sum->moves[i] = resolvedMoves[i];
 
         sum->ppBonuses = GetMonData(mon, MON_DATA_PP_BONUSES);
 
-        // The mon's real remaining PP - not the resolved move's full PP, which
-        // made every mon look like it had a fresh PP bar. Capped to the
-        // resolved move's pool for saves whose stored PP was sized against the
-        // original move. sum->pp is written back on a move swap, so it has to
-        // stay the live value.
+        // Real remaining PP, capped to the resolved move's pool for saves whose stored PP
+        // was sized against the original move. sum->pp is written back on a move swap.
         for (i = 0; i < MAX_MON_MOVES; i++)
         {
             u8 maxPP = CalculatePPWithBonus(sum->moves[i], sum->ppBonuses, i);
@@ -2481,11 +2471,8 @@ static u16 GetDisplayedNewMove(void)
     if (newMove == MOVE_NONE)
         return MOVE_NONE;
 
-    // sMonSummaryScreen->newMove is always the true original move id - the
-    // learning flow (party_menu.c / battle_script_commands.c) deliberately
-    // keeps it unresolved so the move that actually gets learned/stored is
-    // the real one. Resolve it here for display so it matches the "wants to
-    // learn X" message text shown when this screen was opened.
+    // newMove is the true move id (the learning flow keeps it unresolved so the real move
+    // is stored). Resolve it for display to match the "wants to learn X" message.
     return GetResolvedMove(sMonSummaryScreen->summary.species, newMove);
 }
 
@@ -2684,11 +2671,9 @@ static void SwapMonMoves(struct Pokemon *mon, u8 moveIndex1, u8 moveIndex2)
     SetMonData(mon, MON_DATA_PP1 + moveIndex2, &move1pp);
     SetMonData(mon, MON_DATA_PP_BONUSES, &ppBonuses);
 
-    // Swap the displayed moves
     summary->moves[moveIndex1] = move2;
     summary->moves[moveIndex2] = move1;
 
-    // Swap the original moves
     summary->originalMoves[moveIndex1] = originalMove2;
     summary->originalMoves[moveIndex2] = originalMove1;
 
@@ -2726,11 +2711,9 @@ static void SwapBoxMonMoves(struct BoxPokemon *mon, u8 moveIndex1, u8 moveIndex2
     SetBoxMonData(mon, MON_DATA_PP1 + moveIndex2, &move1pp);
     SetBoxMonData(mon, MON_DATA_PP_BONUSES, &ppBonuses);
 
-    // Swap the displayed moves
     summary->moves[moveIndex1] = move2;
     summary->moves[moveIndex2] = move1;
 
-    // Swap the original moves
     summary->originalMoves[moveIndex1] = originalMove2;
     summary->originalMoves[moveIndex2] = originalMove1;
 
@@ -4628,9 +4611,7 @@ static void SetMoveTypeIcons(void)
         {
             type = GetMoveType(summary->moves[i]);
             type = SummaryScreen_GetDynamicMoveType(mon, summary->moves[i], type);
-            // Apply type randomization if enabled (after dynamic type, before display).
-            // Resolved regardless of box vs. party so this matches what the move
-            // will actually show as once the mon is withdrawn and battles with it.
+            // Type randomization applies after dynamic type, for box and party alike.
             type = GetResolvedMoveType(summary->moves[i], type);
             SetTypeSpritePosAndPal(type, 85, 32 + (i * 16), i + SPRITE_ARR_ID_TYPE);
         }
@@ -4663,8 +4644,7 @@ static void SetNewMoveTypeIcon(void)
     enum Type type = GetMoveType(move);
     type = SummaryScreen_GetDynamicMoveType(mon, move, type);
 
-    // Apply type randomization if enabled (after dynamic type to override it).
-    // Resolved regardless of box vs. party, same as SetMoveTypeIcons above.
+    // Type randomization overrides dynamic type; see SetMoveTypeIcons.
     type = GetResolvedMoveType(move, type);
 
     if (move == MOVE_NONE)

@@ -1008,12 +1008,9 @@ static void LoadPartyMenuBoxes(enum PartyMenuLayout layout)
         sPartyMenuBoxes[1].infoRects = &sPartyBoxInfoRects[PARTY_BOX_LEFT_COLUMN];
 }
 
-// Limited Party: label empty slots at or above the current cap as LOCKED, so
-// the rule is visible without needing new "locked slot" graphics. Reuses the
-// per-layout description text region (e.g. where "NO USE" is printed for a
-// held item) since it's already positioned correctly for both the equal and
-// wide box layouts. A no-op when the mode is off, since GetMaxPartySize()
-// then returns PARTY_SIZE and no valid party slot is ever >= that.
+// Limited Party: label empty slots at or above the current cap as LOCKED, reusing the
+// description text region (where "NO USE" prints). No-op when the mode is off, since
+// GetMaxPartySize() then returns PARTY_SIZE.
 static void TryDisplayPartySlotLockedText(u8 slot)
 {
     struct Pokemon *party;
@@ -1965,8 +1962,6 @@ static void UpdatePartySelectionSingleLayout(s8 *slotPtr, s8 movementDir)
             {
                 if (*slotPtr+1 < gPartiesCount[partyTrainer])
                     (*slotPtr)++;
-                // else
-                //     *slotPtr = sPartyMenuInternal->lastSelectedSlot;
             }
             break;
         case MENU_DIR_LEFT:
@@ -1974,8 +1969,6 @@ static void UpdatePartySelectionSingleLayout(s8 *slotPtr, s8 movementDir)
             {
                 if (*slotPtr-1 >= 0 && *slotPtr%2 == 1)
                     (*slotPtr)--;
-                // sPartyMenuInternal->lastSelectedSlot = *slotPtr;
-                // *slotPtr = 0;
             }
             break;
         }
@@ -2684,11 +2677,9 @@ static void DisplayPartyPokemonGender(u8 gender, enum Species species, u8 *nickn
     }
 }
 
-// Recruits mode: how many more won battles this mon can fight before it
-// retires, drawn as a standalone "-N" label left of the gender icon, in red
-// so it stands out in that cramped spot (see DisplayPartyPokemonRecruitBattlesLeft).
-// dimensions[24-27] is tuned to fit "-10"; a max-length nickname or a
-// 3-digit level can still crowd it - see sPartyBoxInfoRects (src/data/party_menu.h).
+// Recruits mode: won battles left before retirement, drawn as a red "-N" label left of the
+// gender icon. dimensions[24-27] is tuned to fit "-10"; a max-length nickname or 3-digit
+// level can still crowd it (see sPartyBoxInfoRects, src/data/party_menu.h).
 static void DisplayPartyPokemonRecruitBattlesLeftCheck(struct Pokemon *mon, struct PartyMenuBox *menuBox, u8 c)
 {
     if (GetMonData(mon, MON_DATA_SPECIES) == SPECIES_NONE || GetMonData(mon, MON_DATA_IS_EGG))
@@ -2708,18 +2699,14 @@ static void DisplayPartyPokemonRecruitBattlesLeft(u32 battlesLeft, struct PartyM
     StringCopy(gStringVar1, gText_Dash);
     StringAppend(gStringVar1, gStringVar2);
 
-    // STR_CONV_MODE_LEFT_ALIGN drops the string down to a single digit once
-    // battlesLeft is under 10 ("-9" vs "-10") instead of padding it, which
-    // reads as the label drifting left. Checked by digit count rather than
-    // a literal cap value, since RECRUITS_MAX_BATTLES could change.
+    // STR_CONV_MODE_LEFT_ALIGN doesn't pad below 10 ("-9" vs "-10"), so the label would
+    // drift left. Checked by digit count since RECRUITS_MAX_BATTLES could change.
     align[0] = menuBox->infoRects->dimensions[24];
     if (StringLength(gStringVar2) == 1)
         align[0] += 5;
     align[1] = menuBox->infoRects->dimensions[25];
 
-    // Red (sFontColorTable's dedicated "Recruits battles left" entry) so the
-    // count stands out against its neighbors in the cramped space next to
-    // the gender icon, rather than relocating it (see src/data/party_menu.h).
+    // Red (dedicated sFontColorTable entry) so it stands out in the cramped space.
     DisplayPartyPokemonBarDetail(menuBox->windowId, gStringVar1, 7, align, FONT_SMALL);
 }
 
@@ -5592,9 +5579,8 @@ static void ShowMoveSelectWindow(u8 slot)
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
-        // Resolved per slot, so the displayed name matches the summary
-        // screen/battle while this menu's slot index i - what the PP-restore
-        // selection below acts on - stays aligned with the mon's real slots.
+        // Resolved per slot so the name matches the summary screen/battle, while slot
+        // index i (used by the PP-restore selection) stays aligned with the mon's real slots.
         move = GetResolvedMove(species, GetMonData(&gParties[B_TRAINER_PLAYER][slot], MON_DATA_MOVE1 + i));
         u8 fontId = GetFontIdToFit(GetMoveName(move), FONT_NORMAL, 0, 72);
         AddTextPrinterParameterized(windowId, fontId, GetMoveName(move), 8, (i * 16) + 1, TEXT_SKIP_DRAW, NULL);
@@ -5855,19 +5841,12 @@ static void Task_LearnedMove(u8 taskId)
     if (gPartyMenu.learnMoveState == 0)
     {
         AdjustFriendship(mon, FRIENDSHIP_EVENT_LEARN_TMHM);
-        // Move Tutor. learnMoveState == 0 here means
-        // this teach came from the TM/HM item-use path specifically (the
-        // move relearner and move tutor NPCs set it to a nonzero marker
-        // before reaching this same task -- see TryTutorSelectedMon), so
-        // gSpecialVar_ItemId is guaranteed to be the TM/HM item that was
-        // just used, not a stale value left over from an unrelated flow.
-        // GetItemTMHMIndex separates TM from HM, matching the roster's
-        // "teach 25 TMs" wording -- checked here rather than via
-        // !GetItemImportance(item) below, since I_REUSABLE_TMS (this fork's
-        // default) marks every TM important too, so that flag alone can't
-        // tell TMs and HMs apart. GetItemTMHMIndex returns 0 for a
-        // non-TM/HM item (its default case), so the lower bound guards
-        // against that too, not just the HM range above NUM_TECHNICAL_MACHINES.
+        // learnMoveState == 0 means the teach came from the TM/HM item-use path (the move
+        // relearner and tutor NPCs set a nonzero marker, see TryTutorSelectedMon), so
+        // gSpecialVar_ItemId is the TM/HM just used, not a stale value.
+        // GetItemTMHMIndex tells TM from HM; !GetItemImportance(item) can't, since
+        // I_REUSABLE_TMS marks every TM important. It returns 0 for non-TM/HM items, so the
+        // lower bound guards that as well as the HM range above NUM_TECHNICAL_MACHINES.
         if (GetItemTMHMIndex(item) > 0 && GetItemTMHMIndex(item) <= NUM_TECHNICAL_MACHINES)
             Achievement_RecordTMTaught();
         if (!GetItemImportance(item))
@@ -6170,7 +6149,6 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
             StringExpandPlaceholders(gStringVar4, gText_PkmnGainedExp);
             DisplayPartyMenuMessage(gStringVar4, FALSE);
             ScheduleBgCopyTilemapToVram(2);
-            // Stay in the party menu to use more candy from the bag, same as the level-up path
             if (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD && CheckBagHasItem(gSpecialVar_ItemId, 1))
                 gTasks[taskId].func = Task_ReturnToChooseMonAfterText;
             else
@@ -6537,10 +6515,6 @@ void ItemUseCB_EvolutionStone(u8 taskId, TaskFunc task)
         FreePartyPointers();
     }
 }
-
-// FUSE_MON/UNFUSE_MON/SECOND_FUSE_MON moved to include/party_menu.h
-// (Trading Codes.md Stage 11) so IsFusionMon's return value is nameable
-// from outside this file.
 
 #define tState          data[0]
 #define tTargetSpecies  data[1]
@@ -6990,10 +6964,6 @@ void ItemUseCB_Fusion(u8 taskId, TaskFunc taskFunc)
     task->func = taskFunc;
     return;
 }
-
-// FUSE_MON/UNFUSE_MON/SECOND_FUSE_MON no longer #undef'd here - they now
-// live in include/party_menu.h (Trading Codes.md Stage 11), not as a
-// file-local #define, so there's nothing left for this file to undo.
 
 #undef fusionType
 #undef firstFusion

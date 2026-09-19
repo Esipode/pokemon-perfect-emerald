@@ -703,19 +703,11 @@ static void Task_MainMenuCheckSaveFile(u8 taskId)
         }
         if (tMenuType != HAS_NO_SAVED_GAME && Run_IsFailed())
         {
-            // A valid save (gSaveFileStatus == SAVE_STATUS_OK, otherwise
-            // tMenuType would already be HAS_NO_SAVED_GAME) whose Nuzlocke or
-            // Recruits run nonetheless ended in defeat -- RemoveFaintedMonsFromParty
-            // (overworld.c) persists that emptied-party state to flash
-            // rather than erasing it, specifically so this save's PC storage
-            // stays available to the keep-storage prompt (see the
-            // HAS_NO_SAVED_GAME case in ui_main_menu.c's Task_OpenMainMenu)
-            // indefinitely, not just within the same power-on session. But
-            // CONTINUE must not be offered into it: there is no way to play
-            // on with zero usable POKéMON. Force the no-saved-game menu, same
-            // as a fresh cart -- this naturally reverts to normal once the
-            // player saves over this slot with an actual party, since
-            // IsPartyEmpty() will then read FALSE.
+            // A valid save whose Nuzlocke/Recruits run ended in defeat. The emptied party is
+            // kept on flash so its PC storage stays available to the keep-storage prompt
+            // (see ui_main_menu.c's Task_OpenMainMenu), but CONTINUE can't be offered with
+            // no usable POKéMON. Force the no-saved-game menu; it reverts once the slot is
+            // saved over with a real party.
             tMenuType = HAS_NO_SAVED_GAME;
         }
         if (sCurrItemAndOptionMenuCheck & OPTION_MENU_FLAG)   // are we returning from the options menu?
@@ -1706,8 +1698,7 @@ static void Task_NewGameBirchSpeech_SlideInNewGenderSprite(u8 taskId)
 }
 
 // Hands off to the player-colors screen once the fade started in
-// Task_NewGameBirchSpeech_ChooseGender completes. Mirrors
-// Task_NewGameBirchSpeech_StartNamingScreen's shape;
+// Task_NewGameBirchSpeech_ChooseGender completes.
 static void Task_NewGameBirchSpeech_StartPlayerColors(u8 taskId)
 {
     if (!gPaletteFade.active)
@@ -2006,9 +1997,7 @@ static void CB2_NewGameBirchSpeech_ReturnFromNamingScreen(void)
     CopyWindowToVram(0, COPYWIN_FULL);
 }
 
-// Clone of CB2_NewGameBirchSpeech_ReturnFromNamingScreen -- same full
-// GPU/BG/window/sprite rebuild of the Birch scene, and it re-picks the
-// gender sprite the same way, but the task it creates resumes at
+// Clone of CB2_NewGameBirchSpeech_ReturnFromNamingScreen that resumes at
 // Task_NewGameBirchSpeech_WhatsYourName instead of the name-confirmation text.
 static void CB2_NewGameBirchSpeech_ReturnFromPlayerColors(void)
 {
@@ -2546,8 +2535,8 @@ static void Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox(u8 taskId)
     }
 }
 
-// Same shape as Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox,
-// but resumes the "What's your name?" text instead of the name-confirmation text.
+// Like Task_NewGameBirchSpeech_ReturnFromNamingScreenShowTextbox, but resumes the
+// "What's your name?" text.
 static void Task_NewGameBirchSpeech_ReturnFromPlayerColorsShowTextbox(u8 taskId)
 {
     if (gTasks[taskId].tTimer-- <= 0)

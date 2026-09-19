@@ -1263,12 +1263,9 @@ static const struct SearchOptionText sDexSearchTypeOptions[] =
     {},
 };
 
-// Modes for generations with no enabled species (P_GEN_N_POKEMON off) are
-// omitted from the mode picker rather than shown as an empty list. Built once
-// per dex session by BuildVisibleDexModeList() below sSearchOptions -- generation
-// availability is compile-time config, not a runtime toggle. Replaces the old
-// dense sPokedexModes[] identity table (cursor position == mode value), since
-// hiding modes means position and mode value can now differ.
+// Modes for generations with no enabled species (P_GEN_N_POKEMON off) are omitted from the
+// mode picker. Built once per dex session by BuildVisibleDexModeList(); cursor position and
+// mode value can differ.
 static struct SearchOptionText sVisibleDexModeOptions[DEX_MODE_COUNT + 1];
 static u8 sVisibleDexModes[DEX_MODE_COUNT];
 static u8 sVisibleDexModeCount;
@@ -1308,12 +1305,10 @@ static const enum Type sDexSearchTypeIds[NUMBER_OF_MON_TYPES] =
 
 // Number pairs are the task data for tracking the cursor pos and scroll offset of each option list
 // See task data defines above Task_LoadSearchMenu
-// Must stay const -- this file's .data isn't linked into the ROM image (see
-// ld_script_modern.ld), so a non-const initialized global here is silently
-// discarded and any code referencing it fails to link. SEARCH_MODE's texts
-// points at sVisibleDexModeOptions (a stable address, populated at runtime
-// by BuildVisibleDexModeList); its option *count* is genuinely dynamic, so
-// that one field is read through GetSearchOptionCount() instead of here.
+// Must stay const: this file's .data isn't linked into the ROM image (see
+// ld_script_modern.ld), so a non-const initialized global is discarded and fails to link.
+// SEARCH_MODE's texts point at sVisibleDexModeOptions; its count is read through
+// GetSearchOptionCount().
 static const struct SearchOption sSearchOptions[] =
 {
     [SEARCH_NAME]       = {sDexSearchNameOptions,  6,  7, ARRAY_COUNT(sDexSearchNameOptions) - 1},
@@ -1324,9 +1319,7 @@ static const struct SearchOption sSearchOptions[] =
     [SEARCH_MODE]       = {sVisibleDexModeOptions, 2,  3, DEX_MODE_COUNT}, // numOptions unused, see above
 };
 
-// SEARCH_MODE's option count changes at runtime (BuildVisibleDexModeList
-// hides modes for disabled generations); every other menu's count is fixed
-// at compile time and read straight from sSearchOptions.
+// SEARCH_MODE's count changes at runtime (BuildVisibleDexModeList); the rest are fixed.
 static u16 GetSearchOptionCount(u8 menuItem)
 {
     if (menuItem == SEARCH_MODE)
@@ -1351,9 +1344,8 @@ static void BuildVisibleDexModeList(void)
     sVisibleDexModeOptions[sVisibleDexModeCount].title = NULL;
 }
 
-// Cursor position of a dex mode within the (possibly compacted) visible list.
-// Falls back to National's position (always 0, always visible) if the mode
-// isn't currently visible, e.g. a saved mode whose generation got disabled.
+// Cursor position of a dex mode within the visible list. Falls back to National (position 0)
+// if the mode isn't visible, e.g. its generation was disabled.
 static u8 FindVisibleDexModeCursorPos(u8 dexMode)
 {
     u8 i;
@@ -4568,19 +4560,15 @@ s8 GetSetPokedexFlag(enum NationalDexOrder nationalDexNo, u8 caseID)
     return retVal;
 }
 
-// Species-keyed wrapper around GetSetPokedexFlag -- the entry point for
-// callers that have a species rather than a raw dex number. Regional-form
-// species route to their own slot via SpeciesToDexFlagSlot; everything else
-// is equivalent to SpeciesToNationalPokedexNum.
+// Species-keyed wrapper around GetSetPokedexFlag. Regional-form species use their own slot
+// via SpeciesToDexFlagSlot; the rest match SpeciesToNationalPokedexNum.
 s8 GetSetPokedexFlagBySpecies(enum Species species, u8 caseID)
 {
     return GetSetPokedexFlag(SpeciesToDexFlagSlot(species), caseID);
 }
 
-// Per-row completion across a species' regional-form variants, for the
-// three-state caught indicator. DEX_CAUGHT_NONE == 0, so existing
-// `if (owned)` / `owned ? x : y` call sites keep working unchanged -- only
-// sites that want to distinguish partial from full need to check the enum.
+// Per-row completion across a species' regional-form variants (three-state caught
+// indicator). DEX_CAUGHT_NONE == 0, so plain `if (owned)` checks still work.
 enum DexCaughtState GetDexEntryCaughtState(enum Species baseSpecies)
 {
     const u16 *formTable = GetSpeciesFormTable(baseSpecies);
@@ -4609,10 +4597,8 @@ enum DexCaughtState GetDexEntryCaughtState(enum Species baseSpecies)
     return DEX_CAUGHT_PARTIAL;
 }
 
-// Species to represent a dex entry with -- the base species if it's been
-// seen, else whichever regional-form variant has been (so catching a variant
-// before its base still has a sprite/species to show at that dex number).
-// Returns SPECIES_NONE if nothing under this entry has been seen at all.
+// Species to represent a dex entry: the base species if seen, else a seen regional-form
+// variant. Returns SPECIES_NONE if nothing under this entry has been seen.
 enum Species GetDexEntryDisplaySpecies(enum Species baseSpecies)
 {
     const u16 *formTable = GetSpeciesFormTable(baseSpecies);
@@ -4635,17 +4621,14 @@ enum Species GetDexEntryDisplaySpecies(enum Species baseSpecies)
     return SPECIES_NONE;
 }
 
-// Whether a dex entry counts as seen -- true if the base species or any of
-// its regional-form variants has been seen. A variant-only catch implies a
-// sighting, so this can't just check the base species' own seen flag.
+// Seen if the base species or any regional-form variant is seen; a variant-only catch
+// implies a sighting.
 bool32 GetDexEntrySeenState(enum Species baseSpecies)
 {
     return GetDexEntryDisplaySpecies(baseSpecies) != SPECIES_NONE;
 }
 
-// Clamps a stored/selected dex mode to a valid value. gSaveBlock2Ptr->pokedex.mode
-// is just a remembered UI preference, so an old save or an out-of-range byte
-// falls back to National rather than reading garbage.
+// Clamps a stored dex mode (a remembered UI preference) to a valid value, falling back to National.
 u8 SanitizeDexMode(u8 dexMode)
 {
     if (dexMode >= DEX_MODE_COUNT)
@@ -4675,11 +4658,8 @@ u16 GetNationalPokedexCount(u8 caseID)
     return count;
 }
 
-// Seen/owned count for one of the generational dex modes. Kept
-// alongside GetNationalPokedexCount/GetHoennPokedexCount/GetKantoPokedexCount
-// rather than folded into them -- those still back the authentic Hoenn/Kanto
-// completion sets (Johto starter gate, diploma, trainer card star), which are
-// not the same thing as the Gen-3/Gen-1 dex mode views.
+// Seen/owned count for a generational dex mode. Separate from the Hoenn/Kanto counters,
+// which back the authentic completion sets (Johto starter gate, diploma, trainer card star).
 u16 GetDexModePokedexCount(u8 dexMode, u8 caseID)
 {
     u16 count = 0;
@@ -5848,8 +5828,7 @@ void PrintSelectedSearchParameters(u8 taskId)
 
     if (IsNationalPokedexEnabled())
     {
-        // Indexes the compacted visible-mode list, not sDexModeOptions directly --
-        // cursor+scroll position is relative to whichever modes are shown.
+        // Indexes the visible-mode list, not sDexModeOptions.
         searchParamId = gTasks[taskId].tCursorPos_Mode + gTasks[taskId].tScrollOffset_Mode;
         PrintSearchText(sVisibleDexModeOptions[searchParamId].title, 0x2D, 0x51);
     }
@@ -5940,9 +5919,7 @@ void SetDefaultSearchModeAndOrder(u8 taskId)
 {
     u16 selected;
 
-    // Mode value and cursor position can differ now that empty-generation
-    // modes are hidden, so look up where the saved mode landed in the
-    // visible list rather than assuming they're the same number.
+    // Hidden modes make mode value and cursor position differ; look up the saved mode's slot.
     gTasks[taskId].tCursorPos_Mode = FindVisibleDexModeCursorPos(SanitizeDexMode(sPokedexView->dexModeBackup));
 
     switch (sPokedexView->dexOrderBackup)
@@ -6081,9 +6058,7 @@ enum Species NationalPokedexNumToSpeciesForm(enum NationalDexOrder nationalNum)
     if (POKEDEX_PLUS_HGSS && sPokedexView && sPokedexView->formSpecies)
         return sPokedexView->formSpecies;
 
-    // Fall back to a seen regional-form variant when the base species itself
-    // hasn't been seen yet, so a variant-only catch still has a species to
-    // render (sprite, footprint, area/stats/cry screens, etc.) at this entry.
+    // Fall back to a seen regional-form variant so a variant-only catch still renders.
     baseSpecies = NationalPokedexNumToSpecies(nationalNum);
     displaySpecies = GetDexEntryDisplaySpecies(baseSpecies);
     return displaySpecies != SPECIES_NONE ? displaySpecies : baseSpecies;

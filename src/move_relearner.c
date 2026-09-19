@@ -66,9 +66,8 @@ struct RelearnType
 {
     bool32 (*isActive)(void);
     bool32 (*hasMoveToRelearn)(struct BoxPokemon*);
-    // originalMoves receives the true move ids (for eligibility/storage);
-    // resolvedMoves receives their randomization-resolved counterparts, in
-    // the same order, for display.
+    // originalMoves: true move ids (eligibility/storage). resolvedMoves: randomized
+    // counterparts in the same order (display).
     u32 (*getMoves)(struct BoxPokemon *, u16 *originalMoves, u16 *resolvedMoves);
     const u8 *moveText;
 };
@@ -77,12 +76,8 @@ static EWRAM_DATA struct
 {
     u8 heartSpriteIds[16];
     u16 movesToLearn[MAX_RELEARNER_MOVES];
-    // Resolved (post-randomization) counterpart of movesToLearn[i], kept in
-    // lockstep with it. movesToLearn stays the true original move - needed
-    // for eligibility checks and for what actually gets stored when taught -
-    // while resolvedMovesToLearn is what the player is shown/told they're
-    // learning. Both are computed together once per list build so display
-    // and storage can never drift apart from each other.
+    // Randomized counterpart of movesToLearn[i], built together with it. movesToLearn is
+    // the true move (eligibility, storage); this is what the player sees.
     u16 resolvedMovesToLearn[MAX_RELEARNER_MOVES];
     struct ListMenuItem menuItems[MAX_RELEARNER_MOVES + 1];
     u8 mainTask;
@@ -245,9 +240,7 @@ static const union AnimCmd *const sCategoryArrowAnimationCommands[] =
     [CATEGORY_ARROW_LEFT] = sCategoryArrow_LeftFrame,
 };
 
-// Reuses the left/right arrows in the UI spritesheet, which the battle/contest
-// info switch used to own, as the on-screen hint for cycling relearner
-// categories with the D-pad.
+// Reuses the UI spritesheet's left/right arrows as the D-pad category-cycling hint.
 static const struct SpriteTemplate sCategoryArrowSprite =
 {
     .tileTag = GFXTAG_UI,
@@ -686,10 +679,8 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
     {
     case LIST_NOTHING_CHOSEN:
     {
-        // Cycle the relearner category (#10223). Contests are disabled in this
-        // fork, so the battle/contest info switch upstream puts in the else
-        // branch here is gone with them - D-pad left/right now cycles the
-        // category, which is what the on-screen arrows point at.
+        // Contests are disabled, so D-pad left/right cycles the relearner category
+        // (#10223) instead of upstream's battle/contest info switch.
         s32 categoryDelta = 0;
         if (JOY_NEW(SELECT_BUTTON) || JOY_NEW(DPAD_RIGHT))
             categoryDelta = 1;
@@ -725,8 +716,7 @@ static void Task_MoveRelearner_HandleInput(u8 taskId)
     default:
         PlaySE(SE_SELECT);
         RemoveScrollArrows();
-        // itemId is the true original move (menuItems.id); show the resolved
-        // (displayed) name in the confirmation text so it matches the list.
+        // itemId is the true move; show the resolved name to match the list.
         StringCopy(gStringVar2, GetMoveName(GetCurrentSelectedMoveResolved()));
         gTasks[taskId].func = Task_MoveRelearner_LearnMove;
         gTasks[taskId].tMove = GetCurrentSelectedMove();
@@ -749,10 +739,8 @@ static s32 GetCurrentSelectedMove(void)
     return sMoveRelearnerStruct->menuItems[sMoveRelearnerScrollState.listRow + sMoveRelearnerScrollState.listOffset].id;
 }
 
-// Resolved counterpart of GetCurrentSelectedMove(), for display purposes
-// (hearts, category icon, confirmation text). GetCurrentSelectedMove() keeps
-// returning the true original move - what's needed for eligibility checks
-// and for what's actually taught/stored.
+// Resolved counterpart of GetCurrentSelectedMove() for display (hearts, category icon,
+// confirmation text); GetCurrentSelectedMove() returns the true move.
 static s32 GetCurrentSelectedMoveResolved(void)
 {
     s32 idx = sMoveRelearnerScrollState.listRow + sMoveRelearnerScrollState.listOffset;
@@ -763,10 +751,8 @@ static s32 GetCurrentSelectedMoveResolved(void)
     return sMoveRelearnerStruct->resolvedMovesToLearn[idx];
 }
 
-// Maps a list entry's id (the true original move) back to the resolved move
-// shown in the list, so the description panel describes the move the player is
-// actually reading the name of. The list's Cancel entry has no resolved
-// counterpart and passes straight through.
+// Maps a list entry's id (true move) to the resolved move shown in the list. The Cancel
+// entry has no resolved counterpart and passes through.
 s32 MoveRelearnerGetResolvedListMove(s32 originalMove)
 {
     // numMenuChoices counts the trailing Cancel entry, which has no matching
@@ -887,10 +873,7 @@ static void CreateLearnableMovesList(void)
     if (P_SORT_MOVES)
         SortMovesAlphabetically(sMoveRelearnerStruct->movesToLearn, sMoveRelearnerStruct->resolvedMovesToLearn, sMoveRelearnerStruct->numMenuChoices);
 
-    // menuItems.id stays the true original move (used for eligibility checks
-    // and for what actually gets taught/stored); the name shown is the
-    // resolved counterpart computed alongside it above, so what the player
-    // reads is always in lockstep with what selecting it will do.
+    // menuItems.id stays the true move; the shown name is its resolved counterpart.
     for (i = 0; i < sMoveRelearnerStruct->numMenuChoices; i++)
     {
         sMoveRelearnerStruct->menuItems[i].name = GetMoveName(sMoveRelearnerStruct->resolvedMovesToLearn[i]);
@@ -966,8 +949,7 @@ void MoveRelearnerShowHideCategoryIcon(s32 moveId)
     }
 }
 
-// Sorts moves/resolvedMoves in lockstep, ordering by the resolved (displayed)
-// move name - what the player actually sees needs to be what's alphabetized.
+// Sorts moves/resolvedMoves in lockstep by the displayed (resolved) move name.
 static void QuickSortMoves(u16 *moves, u16 *resolvedMoves, s32 left, s32 right)
 {
     if (left >= right)
@@ -1019,11 +1001,9 @@ static bool32 IsTmAvailable(enum Item item)
 
 static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves)
 {
-    // The mon's actual current species - always the resolution key, so this
-    // stays consistent with every other place a move gets resolved for this
-    // mon (chooseboxmon.c's LearnMove included). `species` below still walks
-    // pre-evolutions to pull older learnsets, but that's only for looking up
-    // which moves are eligible, never for seeding the resolved move.
+    // The mon's current species is always the resolution key (consistent with
+    // chooseboxmon.c's LearnMove). `species` below walks pre-evolutions only to find
+    // eligible moves.
     enum Species actualSpecies = GetBoxMonData(mon, MON_DATA_SPECIES);
     enum Species species = actualSpecies;
     u32 level = (P_ENABLE_ALL_LEVEL_UP_MOVES ? MAX_LEVEL : GetLevelFromBoxMonExp(mon));
@@ -1042,11 +1022,8 @@ static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves, u16 *res
 
             u16 effectiveMove = GetResolvedMove(actualSpecies, learnset[i].move);
 
-            // Two different original moves can resolve to the same randomized
-            // move - dedupe on the resolved value so the list shown to the
-            // player never has the same move listed twice. moves[] keeps the
-            // true original (needed for eligibility/storage when taught);
-            // resolvedMoves[] keeps its resolved counterpart for display.
+            // Two original moves can resolve to the same randomized move; dedupe on the
+            // resolved value so the list never shows a move twice.
             bool32 alreadyInList = FALSE;
             for (u32 j = 0; j < numMoves; j++)
             {
@@ -1069,10 +1046,8 @@ static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves, u16 *res
 
 static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolvedMoves)
 {
-    // Always resolve against the mon's actual current species (see the
-    // matching comment in GetRelearnerLevelUpMoves) - `species` below is only
-    // walked down to the base form to look up the family's egg-move table,
-    // which is legitimately keyed by the base species.
+    // Resolve against the current species (see GetRelearnerLevelUpMoves); `species` below
+    // is walked to the base form only for the egg-move table.
     enum Species actualSpecies = GetBoxMonData(mon, MON_DATA_SPECIES);
     enum Species species = actualSpecies;
     u32 numMoves = 0;
@@ -1090,8 +1065,7 @@ static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolve
         {
             u16 effectiveMove = GetResolvedMove(actualSpecies, eggMoves[i]);
 
-            // Two different original moves can resolve to the same randomized
-            // move - dedupe on the resolved value so it's never listed twice.
+            // Dedupe on the resolved value; see GetRelearnerLevelUpMoves.
             bool32 alreadyInList = FALSE;
             for (u32 j = 0; j < numMoves; j++)
             {
@@ -1133,8 +1107,7 @@ static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolved
         {
             u16 effectiveMove = GetResolvedMove(species, move);
 
-            // Two different original moves can resolve to the same randomized
-            // move - dedupe on the resolved value so it's never listed twice.
+            // Dedupe on the resolved value; see GetRelearnerLevelUpMoves.
             bool32 alreadyInList = FALSE;
             for (u32 j = 0; j < numMoves; j++)
             {
@@ -1169,8 +1142,7 @@ static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves, u16 *resol
         {
             u16 effectiveMove = GetResolvedMove(species, move);
 
-            // Two different original moves can resolve to the same randomized
-            // move - dedupe on the resolved value so it's never listed twice.
+            // Dedupe on the resolved value; see GetRelearnerLevelUpMoves.
             bool32 alreadyInList = FALSE;
             for (u32 j = 0; j < numMoves; j++)
             {

@@ -30,33 +30,17 @@ int GameClear(void)
     {
         gHasHallOfFameRecords = FALSE;
         FlagSet(FLAG_SYS_GAME_CLEAR);
-        // This branch only runs the first time
-        // FLAG_SYS_GAME_CLEAR is set for this save, which is what makes it
-        // the trigger for the one-time first-playthrough unlock.
+        // FLAG_SYS_GAME_CLEAR isn't preserved across New Game+ (see NewGameInitData), so this
+        // branch re-runs on every NG+ cycle's clear; the completion checks below are
+        // evaluated fresh each cycle, and cycles are counted separately.
         Achievement_OnFirstPlaythroughComplete();
-        // Category L's "complete the story" entries, gated on this
-        // same re-runs-every-NG+-cycle branch (see the comment below) so a
-        // different mono-type/rebuild/etc. run in NG+ is checked fresh.
         Achievement_CheckTeamCompletionMilestones();
-        // Investor, same re-runs-every-NG+-cycle
-        // gating as the team-completion check above.
         Achievement_CheckEconomyCompletionMilestones();
-        // Challenge Runs & Nuzlocke completion
-        // entries, same gating. The Nuzlocke half gates itself internally on
-        // gSaveBlock1Ptr->nuzlockeModeEnabled.
+        // The Nuzlocke check gates itself on nuzlockeModeEnabled.
         Achievement_CheckChallengeCompletionMilestones();
         Achievement_CheckNuzlockeCompletionMilestones();
-        // Legend of the Run, same gating.
         Achievement_CheckRecordsCompletionMilestones();
-        // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen
-        // completion entries, plus Cross-Mode stacking. Same gating.
         Achievement_CheckNewModeCompletionMilestones();
-        // FLAG_SYS_GAME_CLEAR isn't preserved across New Game+
-        // (see NewGameInitData, src/new_game.c), so this branch already
-        // re-runs on every NG+ cycle's clear, not just the save's very first
-        // playthrough -- that's exactly what lets this count cycle
-        // completions specifically, alongside the plain playthrough count
-        // Achievement_OnFirstPlaythroughComplete already tracks above.
         if (gSaveBlock2Ptr->newGamePlus > 0)
             Achievement_OnNewGamePlusCycleCompleted();
     }

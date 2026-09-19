@@ -368,11 +368,9 @@ bool32 AddBagItem(enum Item itemId, u16 count)
 
     added = BagPocket_AddItem(&gBagPockets[GetItemPocket(itemId)], itemId, count);
 
-    // Category G.
     if (added)
     {
         Achievement_CheckItemMilestones(itemId);
-        // Pack Rat [distinct Bag items].
         Achievement_CheckPackRatMilestone();
     }
     else
@@ -564,11 +562,9 @@ void MoveItemSlotInPC(struct ItemSlot *itemSlots, u32 from, u32 to)
 
 void ClearBag(void)
 {
-    // CpuFastFill (BIOS CpuFastSet) only fills whole 32-byte blocks; a size
-    // that isn't a multiple of 32 gets rounded up, overwriting whatever
-    // follows gSaveBlock1Ptr->bag in SaveBlock1 (nuzlockeModeEnabled, among
-    // others) with zero. sizeof(struct Bag) isn't guaranteed to be a
-    // multiple of 32, so use the plain byte-exact fill instead.
+    // CpuFastFill (BIOS CpuFastSet) fills whole 32-byte blocks, so a size that isn't a
+    // multiple of 32 rounds up and zeroes what follows bag in SaveBlock1 (nuzlockeModeEnabled,
+    // among others). sizeof(struct Bag) isn't guaranteed to be one, so use the byte-exact fill.
     CpuFill32(0, &gSaveBlock1Ptr->bag, sizeof(struct Bag));
 }
 
@@ -794,10 +790,9 @@ bool32 RemovePyramidBagItem(enum Item itemId, u16 count)
     }
 }
 #else // FREE_BATTLE_FRONTIER
-// Stage 4: the only callers of these four (below, in this file) are gated on
-// CurrentBattlePyramidLocation()/FLAG_STORING_ITEMS_IN_PYRAMID_BAG, both permanently
-// false/unreachable now. AddPyramidBagItem/RemovePyramidBagItem are also called from
-// battle_pyramid_bag.c, itself stubbed.
+// The only callers of these four (below) are gated on CurrentBattlePyramidLocation()/
+// FLAG_STORING_ITEMS_IN_PYRAMID_BAG, both unreachable. AddPyramidBagItem/RemovePyramidBagItem
+// are also called from the stubbed battle_pyramid_bag.c.
 bool32 AddPyramidBagItem(enum Item itemId, u16 count) { return FALSE; }
 bool32 RemovePyramidBagItem(enum Item itemId, u16 count) { return FALSE; }
 #endif // FREE_BATTLE_FRONTIER

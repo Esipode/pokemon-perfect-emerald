@@ -200,11 +200,9 @@ void RoamerMoveToOtherLocationSet(u32 roamerIndex)
     sRoamerLocation[roamerIndex][MAP_NUM] = mapNum;
 }
 
-// Stages 9-10: true only for a map that actually appears somewhere in
-// sRoamerLocations -- guards AchievementBoost_ShouldRoamerSeekPlayer's
-// teleport below from ever placing a roamer on a town/city/cave map, where
-// it could never be found (TryStartRoamerEncounter only ever fires from a
-// wild encounter roll, and non-route maps have no wild encounter table).
+// True only for a map listed in sRoamerLocations. Keeps AchievementBoost_ShouldRoamerSeekPlayer's
+// teleport off town/city/cave maps, where TryStartRoamerEncounter can never fire (no wild
+// encounter table).
 static bool8 IsMapInRoamerLocations(u8 mapNum)
 {
     u32 set, slot;
@@ -227,9 +225,8 @@ void RoamerMove(u32 roamerIndex)
     if (!ROAMER(roamerIndex)->active)
         return;
 
-    // Stages 9-10: each level of BOOST_LEGENDARY_ENCOUNTER adds a flat 1%
-    // chance, per move, that the roamer skips its normal random relocation
-    // and is instead drawn straight onto the player's current route.
+    // Each level of BOOST_LEGENDARY_ENCOUNTER adds a flat 1% chance per move that the roamer
+    // skips its random relocation and jumps to the player's current route.
     if (gSaveBlock1Ptr->location.mapGroup == ROAMER_MAP_GROUP
      && IsMapInRoamerLocations(gSaveBlock1Ptr->location.mapNum)
      && AchievementBoost_ShouldRoamerSeekPlayer())
@@ -433,19 +430,12 @@ const u16 gRoamableSpecies[] = {
 
 EWRAM_DATA u8 gRoamerNearbyIndexOverride = 0;
 
-// Stage 1 (saveblock shrinking): only one roamer is ever active (ROAMER_COUNT == 1).
-// There is no longer a persistent "used species" list to consult -- instead, every
-// time a replacement roamer is needed, this scans the player's current party and
-// storage boxes directly and picks a roamable species they don't currently have.
-// Scanning live ownership (rather than e.g. Pokédex-caught flags) means a species
-// that was released or otherwise lost becomes eligible to roam again.
+// Only one roamer is ever active (ROAMER_COUNT == 1). There is no "used species" list; a
+// replacement is picked by scanning the party and storage boxes for a roamable species the
+// player doesn't currently have, so released or lost species can roam again.
 //
-// If `species` is roamable, marks its slot in `owned`. Called once per owned
-// Pokemon rather than once per (species, Pokemon) pair -- see
-// MarkOwnedRoamableSpecies just below for why that distinction is what makes
-// this affordable. The inner walk is over gRoamableSpecies, a ROM array of
-// plain u16s, so it costs nothing next to the storage read that produced
-// `species` in the first place.
+// If `species` is roamable, marks its slot in `owned`. Called once per owned Pokemon; the
+// inner walk is over a ROM u16 array, cheap next to the storage read.
 static void MarkRoamableSpecies(bool8 *owned, u16 species)
 {
     u32 i;
@@ -463,19 +453,10 @@ static void MarkRoamableSpecies(bool8 *owned, u16 species)
     }
 }
 
-// Fills `owned` (one entry per gRoamableSpecies index) in a single pass over
-// the party and every storage box.
-//
-// This used to be shaped as a PlayerHasRoamableSpecies(species) predicate that
-// PickMissingRoamerSpecies called once per roamable species, which meant
-// re-walking the whole PC once for each of the 118 entries in
-// gRoamableSpecies. Storage is TOTAL_BOXES_COUNT * IN_BOX_COUNT slots and
-// every GetBoxMonDataAt decrypts that mon's substructs, so the old shape cost
-// on the order of 150,000 decrypting reads per call -- seconds of completely
-// frozen screen on the save-load path (TryActivateRoamer, via
-// CB2_ContinueSavedGame) and again after a roamer battle (NextRoamer). One
-// pass costs one storage walk regardless of how long gRoamableSpecies gets,
-// and the cost no longer scales with TOTAL_BOXES_COUNT * NUM_ROAMABLE_SPECIES.
+// Fills `owned` (one entry per gRoamableSpecies index) in a single pass over the party and
+// every storage box. Each GetBoxMonDataAt decrypts substructs, so walking the PC once per
+// roamable species (~150,000 reads) froze the screen for seconds on the save-load path
+// (TryActivateRoamer) and after a roamer battle (NextRoamer).
 static void MarkOwnedRoamableSpecies(bool8 *owned)
 {
     u32 i, j;
@@ -494,10 +475,8 @@ static void MarkOwnedRoamableSpecies(bool8 *owned)
     }
 }
 
-// Returns a uniformly random roamable species the player doesn't currently have
-// (a single forward scan from a random start point would bias the pick toward
-// whichever missing species happens to follow the longest run of owned ones), or
-// SPECIES_NONE if the player already has every one.
+// Returns a uniformly random roamable species the player doesn't have (a forward scan from a
+// random start would favor species following long owned runs), or SPECIES_NONE if they have all.
 static u16 PickMissingRoamerSpecies(void)
 {
     bool8 owned[NUM_ROAMABLE_SPECIES];
@@ -553,13 +532,10 @@ void NextRoamer(void)
     TryPickAndActivateRoamer();
 }
 
-// Guard against a save ending up with no active roamer despite the roaming
-// legendary storyline having started (e.g. the previous roamer was caught but no
-// replacement could be found at the time, and the player has since released or
-// traded away a species, freeing it back up). Meant to be called once whenever a
-// save is loaded (see CB2_ContinueSavedGame in src/overworld.c). A roamer slot
-// that has never been activated has species == SPECIES_NONE, which this uses to
-// avoid ever spawning a roamer before the story event first sets one up.
+// Guards against a save with the roaming legendary storyline started but no active roamer
+// (the last one was caught with no replacement available, then a species was freed up).
+// Called on save load (CB2_ContinueSavedGame). A never-activated slot has
+// species == SPECIES_NONE, which prevents spawning before the story event.
 void TryActivateRoamer(void)
 {
     if (ROAMER(0)->species == SPECIES_NONE)

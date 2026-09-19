@@ -210,15 +210,10 @@ static bool8 sReceivingFromLink;
 bool8 gDoAutosave = FALSE;
 bool8 gDoAutosaveAfterBattle = FALSE;
 
-// Gate for every blocking flash write CB2_Overworld can issue on an ordinary
-// game frame -- the autosave and the achievement-profile flush. Both end in
-// synchronous ProgramFlashSectorAndVerify calls, which mask interrupts and
-// hold Timer 3 for long enough to drop scheduled VBlank work (DMA3 requests,
-// palette fade steps, tileset transfers). Restricting them to a frame where
-// the field is genuinely idle -- controls unlocked, player in normal control,
-// no palette fade, no script running -- keeps them off every map transition,
-// warp fade and cutscene. Nothing is skipped by waiting: both callers keep
-// re-checking each frame and fire on the first idle one.
+// Gate for blocking flash writes (autosave, achievement-profile flush). Synchronous
+// ProgramFlashSectorAndVerify masks interrupts and holds Timer 3 long enough to drop
+// scheduled VBlank work (DMA3, palette fades, tileset transfers), so only write on
+// idle frames. Callers re-check each frame and fire on the first idle one.
 bool8 CanAutosaveNow(void)
 {
     return !ArePlayerFieldControlsLocked()
@@ -695,8 +690,6 @@ static void LoadCurrentMapData(void)
     gSaveBlock1Ptr->mapLayoutId = gMapHeader.mapLayoutId;
     gMapHeader.mapLayout = GetMapLayout(gMapHeader.mapLayoutId);
     Achievement_CheckExplorationMilestones();
-    // Achievement_CheckNuzlockeExplorationMilestones call
-    // removed along with the function -- see src/achievements.c.
     Achievement_BackfillLegendaryFamilies();
 }
 
@@ -908,7 +901,6 @@ void Task_ShowRoamerMessageDelayed(u8 taskId)
         if (!FuncIsActiveTask(Task_MapNamePopUpWindow) && IsFieldMessageBoxHidden() && !gPaletteFade.active && !ScriptContext_IsEnabled())
         {
             data[0] = 1;
-            // play cry
             s8 pan = (Random() % 88) + 212;
             u16 species = data[1];
             if (species != SPECIES_NONE)
@@ -977,16 +969,13 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
 
         if (roamerNearby)
         {
-            // Remember which roamer index was detected so TryStartRoamerEncounter
-            // can deterministically spawn it for the next wild encounter.
+            // TryStartRoamerEncounter spawns this roamer for the next wild encounter.
             gRoamerNearbyIndexOverride = roamerIndex;
 
-            // Create a delayed task that waits for map popup/transition to finish
-            // before showing the roamer message. Store species in task data[1].
             if (!FuncIsActiveTask(Task_ShowRoamerMessageDelayed))
             {
                 u8 t = CreateTask(Task_ShowRoamerMessageDelayed, 80);
-                gTasks[t].data[0] = 0; // initial state
+                gTasks[t].data[0] = 0;
                 gTasks[t].data[1] = roamerSpecies;
                 gTasks[t].data[2] = roamerIndex;
             }
@@ -1422,8 +1411,7 @@ static void TransitionMapMusic(void)
         newMusic = GetNightMusicFromTrack(newMusic);
         if (newMusic != currentMusic)
         {
-            // Commented out below to prevent cycling music from stopping when transitioning maps
-
+            // Disabled so cycling music keeps playing across map transitions.
             // if (TestPlayerAvatarFlags(PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE))
             //     FadeOutAndFadeInNewMapMusic(newMusic, 4, 4);
             // else
@@ -1993,28 +1981,12 @@ void CB2_Overworld(void)
         AutosaveGame();
     }
 
-    // Bug fix: drives the achievement popup queue from here
-    // rather than a self-perpetuating task -- see AchievementPopup_UpdateQueue's
-    // comment (src/achievement_popup.c) for why. This is a no-op whenever
-    // the queue is empty or the field isn't currently in a safe state to
-    // show a popup.
+    // Driven from here rather than a self-perpetuating task; see
+    // AchievementPopup_UpdateQueue (src/achievement_popup.c).
     AchievementPopup_UpdateQueue();
 
-    // Bug fix: Achievement_TryComplete only marks the profile dirty, it
-    // doesn't write it to flash -- src/achievements.c's own comment on
-    // Achievement_FlushProfile says this is meant to be the "safe point"
-    // flush call site, but it was never actually wired up here. Without it,
-    // an earned achievement lived only in EWRAM until some unrelated event
-    // (a manual save, autosave, or a handful of special achievement events
-    // that flush immediately) happened to trigger a flush, so an achievement
-    // earned right before a hard reset/power-off could be lost even though
-    // it's stored in its own sector, independent of the player's save file.
-    // Achievement_FlushProfile() is a no-op whenever nothing is dirty, so
-    // this costs nothing on the common frame. When it isn't dirty-free it
-    // writes two flash sectors synchronously, so it shares the autosave's
-    // idle-frame gate -- Achievement_CheckExplorationMilestones runs from
-    // LoadCurrentMapData on every map load, which would otherwise land the
-    // write squarely on the frames a map transition is still fading in.
+    // Flushes the dirty achievement profile (two synchronous flash sector writes), so it
+    // shares the autosave's idle-frame gate. No-op when nothing is dirty.
     if (CanAutosaveNow())
         Achievement_FlushProfile();
 }
@@ -2093,9 +2065,7 @@ void CB2_WhiteOut(void)
         ScriptContext_Init();
         UnlockPlayerFieldControls();
         if (Run_IsFailed())
-            // The emptied-party state is already persisted to flash by
-            // RemoveFaintedMonsFromParty above; this screen only decides
-            // where the player goes next.
+            // The emptied party is already saved by RemoveFaintedMonsFromParty.
             gFieldCallback = FieldCB_NuzlockeRunFailed;
         else if (IsWhiteoutCutscene())
             gFieldCallback = FieldCB_RushInjuredPokemonToCenter;
@@ -2165,13 +2135,9 @@ static void CB2_LoadMapOnReturnToFieldCableClub(void)
 
 void CB2_ReturnToField(void)
 {
-    // Note: this callback fires on every return to the field, not just after
-    // a battle (closing the bag, PC, shop, party menu, etc. all funnel
-    // through here too), so it must not itself arm gDoAutosave -- that would
-    // autosave on those plain menu returns. RemoveFaintedMonsFromParty()
-    // still needs to run unconditionally under Nuzlocke rules (a fainted mon
-    // may be sitting in the party from the battle that just ended), but it
-    // only arms the autosave when it actually removed something.
+    // Fires on every return to the field (bag, PC, shop, party menu), not just after a
+    // battle, so it must not arm gDoAutosave itself. RemoveFaintedMonsFromParty only
+    // arms it when it removes something.
     if (gSaveBlock1Ptr->nuzlockeModeEnabled)
     {
         RemoveFaintedMonsFromParty();
@@ -2239,11 +2205,8 @@ bool8 IsPartyEmpty(void)
     return TRUE; // No usable Pokémon left
 }
 
-// Generalizes the "empty party ends the run" rule Nuzlocke defines to every
-// mode that shares it. Recruits mons aren't stripped out on faint the way
-// RemoveFaintedMonsFromParty strips Nuzlocke's - a Recruits mon only ever
-// leaves via Recruits_DoRetirement - but an all-fainted party is still a
-// failed run under Recruits rules, same as Nuzlocke's.
+// Recruits mons aren't stripped on faint (they only leave via Recruits_DoRetirement),
+// but an all-fainted party still fails the run.
 bool32 Run_IsFailed(void)
 {
     return (gSaveBlock1Ptr->nuzlockeModeEnabled || Recruits_IsEnabled()) && IsPartyEmpty();
@@ -2259,10 +2222,7 @@ void RemoveFaintedMonsFromParty(void)
             if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE &&
                 GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HP) == 0)
             {
-                // This is the single function
-                // every Nuzlocke fainted-mon removal funnels through --
-                // count it once per Pokemon actually removed, for Perfect
-                // Nuzlocke/The Graveyard.
+                // Single funnel for Nuzlocke removals; counted once per mon removed.
                 Achievement_RecordNuzlockeMonLost();
                 removedAny = TRUE;
                 // Shift all Pokémon above this one down by one
@@ -2275,32 +2235,16 @@ void RemoveFaintedMonsFromParty(void)
         }
 
         if (IsPartyEmpty()){
-            // The same IsPartyEmpty() state the
-            // Nuzlocke wipe detection above already keys off -- mirror
-            // the run's streak high-water mark into the profile before
-            // this save below persists the run-scoped counters that fed
-            // it.
+            // Mirror the streak high-water mark into the profile before the save
+            // persists the run-scoped counters that fed it.
             Achievement_RecordPartyWipe();
-            // Persist the true, now-emptied state to flash instead of
-            // erasing it (this used to be ClearSaveData()). Erasing meant PC
-            // storage only survived long enough to offer as a keep-storage
-            // carryover within the same power-on session -- close the game
-            // before starting (and saving) a new one, and it was gone for
-            // good on the next boot. Writing the real state keeps that
-            // storage on flash indefinitely. CONTINUE is blocked separately,
-            // by checking Run_IsFailed() against whatever's actually on flash
-            // wherever the title screen decides whether to offer it (see
-            // main_menu.c) -- since that's now honestly reflected here, no
-            // separate "this save is dead" state needs to be tracked or kept
-            // in sync with it.
+            // Save the emptied state rather than erasing it, so PC storage stays on
+            // flash for keep-storage carryover. CONTINUE is blocked by checking
+            // Run_IsFailed() against the saved data (see main_menu.c).
             TrySavingData(SAVE_NORMAL);
         }
         else if (removedAny) {
-            // Only arm the autosave when a mon was actually removed here --
-            // this function is also called on every plain return to the
-            // field (CB2_ReturnToField) under Nuzlocke rules, and it must
-            // stay a no-op there when nothing fainted, or autosave would
-            // fire on simple menu closes and map transitions again.
+            // Must stay a no-op when nothing fainted: CB2_ReturnToField also calls this.
             gDoAutosave = TRUE;
         }
     }
@@ -2344,27 +2288,11 @@ void CB2_ContinueSavedGame(void)
 {
     u8 trainerHillMapId;
 
-    // Stage 9 of "Trading Codes.md": reset-resistance. A COMMITTED pending
-    // trade must be resolved - or explicitly given up on, see include/
-    // trade_code_receive.h - before the player ever regains control of the
-    // field. Checked and returned out of before any of this function's own
-    // map-loading work runs, so nothing below this block executes on this
-    // pass.
-    //
-    // TradeCodeReceive_Start (src/trade_code_receive.c) is a fully
-    // self-contained screen with no dependency on the overworld/field state
-    // at all (see that file's own header comment, and trade_code_session.c's
-    // for why this feature never routes through CB2_ReturnToField/
-    // gFieldCallback mid-flow) - safe to call this early, before
-    // LoadSaveblockMapHeader or anything else here has run. Passing this
-    // same function, CB2_ContinueSavedGame, as its returnCallback is what
-    // makes this reentrant rather than needing a second, parallel copy of
-    // the ordinary continue-game logic below: once the trade is resolved
-    // (materialised, or forfeited, or a corrupted pendingTrade is cleared -
-    // see TradeCodeReceive_Start's own guard), gSaveBlock2Ptr->pendingTrade.
-    // state is back at TRADE_CODE_STATE_NONE and force-saved, so the *next*
-    // call falls straight through to the ordinary path below and the player
-    // finally gets into the field for the first time this session.
+    // Reset-resistance: a COMMITTED pending trade must be resolved (or forfeited, see
+    // include/trade_code_receive.h) before the player regains field control. The
+    // receive screen is independent of field state, so it is safe to run before any
+    // map loading. It re-enters this function as its returnCallback; once the state is
+    // back at TRADE_CODE_STATE_NONE and saved, the next pass takes the normal path.
     if (gSaveBlock2Ptr->pendingTrade.state == TRADE_CODE_STATE_COMMITTED)
     {
         TradeCodeReceive_Start(CB2_ContinueSavedGame);
@@ -2377,8 +2305,7 @@ void CB2_ContinueSavedGame(void)
     if (gSaveFileStatus == SAVE_STATUS_ERROR)
         ResetWinStreaks();
 
-    // Guard against a save loading with the roaming legendary storyline started
-    // but no roamer currently active (see src/roamer.c for why this can happen).
+    // A save can load with the roaming legendary storyline started but no active roamer (see src/roamer.c).
     TryActivateRoamer();
 
     LoadSaveblockMapHeader();
@@ -2630,7 +2557,6 @@ static bool32 ReturnToFieldLocal(u8 *state)
         ResetMirageTowerAndSaveBlockPtrs();
         ResetScreenForMapLoad();
         ResumeMap(FALSE);
-        /* Roamer: update history, move roamers, and show nearby message if present */
         UpdateLocationHistoryForRoamer();
         MoveAllRoamers();
         {

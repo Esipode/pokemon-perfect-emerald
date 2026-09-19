@@ -1901,9 +1901,7 @@ void CheckSaveBlock2Size(struct ScriptContext *ctx)
 void CheckSaveBlock3Size(struct ScriptContext *ctx)
 {
     u32 currSb3Size = (sizeof(struct SaveBlock3));
-    // SaveBlock3 has its own dedicated sector as of the Stage 6 sector remap
-    // (see save.h) rather than being smeared across every sector's tail, so
-    // its budget is just a single sector's worth of data.
+    // SaveBlock3 has its own dedicated sector (see save.h), so its budget is one sector.
     u32 maxSb3Size = SECTOR_DATA_SIZE;
     ConvertIntToDecimalStringN(gStringVar1, currSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, maxSb3Size, STR_CONV_MODE_LEFT_ALIGN, 6);
@@ -2037,9 +2035,7 @@ static void DebugAction_Player_Id(u8 taskId)
     ScriptContext_Enable();
 }
 
-// Testing aid: reaches CB2_InitPlayerPaletteMenu directly, ahead of Stages
-// 5/6 wiring it in via the Options menu and the new-game gender choice.
-// Mirrors DebugAction_Achievements_OpenMenu's full-teardown-then-jump pattern.
+// Testing aid: reaches CB2_InitPlayerPaletteMenu directly.
 static void DebugAction_Player_OpenPaletteMenu(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
@@ -2050,28 +2046,16 @@ static void DebugAction_Player_OpenPaletteMenu(u8 taskId)
 // *******************************
 // Actions Trade Code
 
-// Stage 5 testing aid ("Trading Codes.md"): hardcoded Base32/Crockford
-// strings, not derived from a real TradeCode_Encode call, so the display
-// screen can be exercised independently of Stages 2/3/7 actually being
-// wired together yet. Sized to TRADE_CODE_MAX_CHARS' own worst-case
-// derivation (see include/config/trade_code.h): 87 symbols, 17 hyphens, 104
-// characters - specifically to exercise Stage 5's own acceptance line,
-// "verify a 78-character code renders without clipping on real hardware"
-// (now 104 chars, post Stage 2's 8-bits/character name-field fix and
-// Stage 7's byte-alignment pad before the seal - see include/config/
-// trade_code.h's own TRADE_CODE_MAX_CHARS comment).
+// Hardcoded Base32/Crockford strings for exercising the display screen. Sized to the
+// TRADE_CODE_MAX_CHARS worst case (see include/config/trade_code.h): 87 symbols, 17 hyphens,
+// 104 characters.
 static const u8 sDebugTradeCode_SampleOffer[] = _(
     "01234-56789-ABCDE-FGHJK-MNPQR-STVWX-YZ012-34567-89ABC-DEFGH-"
     "JKMNP-QRSTV-WXYZ0-12345-6789A-BCDEF-GHJKM-N0");
 
-// A confirm code is always exactly TRADE_CODE_CONFIRM_CHARS (6) characters,
-// one group, no hyphens - see the payload spec.
+// A confirm code is TRADE_CODE_CONFIRM_CHARS (6) characters, one group, no hyphens.
 static const u8 sDebugTradeCode_SampleConfirm[] = _("7Q2XKM");
 
-// Mirrors DebugAction_Player_OpenPaletteMenu's pattern, but TradeCodeDisplay_
-// Init takes its return callback directly (see include/trade_code_display.h)
-// rather than reading it back out of gMain.savedCallback, so there's no
-// separate gMain.savedCallback assignment needed here.
 static void DebugAction_TradeCode_ViewSampleOffer(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
@@ -2084,21 +2068,12 @@ static void DebugAction_TradeCode_ViewSampleConfirm(u8 taskId)
     TradeCodeDisplay_Init(sDebugTradeCode_SampleConfirm, SPECIES_NONE, NULL, TRUE, CB2_ReturnToField);
 }
 
-// Stage 6 testing aid: exercises the real on-screen keyboard
-// (src/trade_code_entry.c) end to end, then hands the decoded result
-// straight back to Stage 5's read-only display after re-encoding it - if
-// what comes back out matches what was typed in, that's this stage's own
-// acceptance line ("debug-menu entry that round-trips a Stage 5 code back
-// through Stage 1's decoder") satisfied without needing a dedicated
-// message box just for this test. No validator (NULL): this exercises the
-// codec only, independent of Stages 3/4/7's session/seal/replay logic,
-// which don't exist yet from this debug entry point's perspective.
+// Testing aid: runs the on-screen keyboard (src/trade_code_entry.c), then re-encodes the
+// result into the display screen; matching output round-trips the codec. No validator (NULL),
+// so session/seal/replay logic is not exercised.
 static struct TradeCodeBits sDebugTradeCodeEntryBits;
-// Sized to the same 432-bit worst-case payload TRADE_CODE_MAX_CHARS itself
-// is derived from (include/config/trade_code.h) - 55 bytes (>= 87 symbols
-// * 5 bits = 435 decoded bits, matching src/trade_code_entry.c's own
-// TRADE_CODE_ENTRY_SCRATCH_BYTES for the same reason - see that file's own
-// comment on TRADE_CODE_ENTRY_MAX_SYMBOLS for why this grew from 86/54).
+// 55 bytes covers 87 symbols * 5 bits = 435 decoded bits, matching
+// TRADE_CODE_ENTRY_SCRATCH_BYTES in src/trade_code_entry.c.
 static u8 sDebugTradeCodeEntryBuffer[55];
 static enum TradeCodeEntryStatus sDebugTradeCodeEntryStatus;
 
@@ -2108,8 +2083,7 @@ static void DebugAction_TradeCode_EnterOfferThenShow(void)
 
     if (sDebugTradeCodeEntryStatus != TRADE_CODE_ENTRY_OK)
     {
-        // Cancelled (B on an empty field) - nothing decoded, nothing to
-        // show.
+        // Cancelled (B on an empty field).
         SetMainCallback2(CB2_ReturnToField);
         return;
     }
@@ -2148,44 +2122,27 @@ static void DebugAction_TradeCode_EnterConfirm(u8 taskId)
     TradeCodeEntry_Init(&sDebugTradeCodeEntryBits, TRADE_CODE_CONFIRM_CHARS, NULL, &sDebugTradeCodeEntryStatus, DebugAction_TradeCode_EnterConfirmThenShow);
 }
 
-// Stage 7 testing aid: the real entry point (src/trade_code_session.c),
-// exercising Steps 1-3 end to end - party gate, mon selection, offer code,
-// partner-code entry + preview, and the irreversible commit + force-save +
-// confirm code reveal. TradeCodeSession_Start doesn't depend on what
-// gMain.callback2 currently is (every prompt and screen it chains through
-// is a self-contained takeover - see that file's own top-of-file comment),
-// so calling it directly right after Debug_DestroyMenu_Full is safe
-// regardless.
+// Testing aid: the real session entry point (src/trade_code_session.c), covering party gate,
+// mon selection, offer code, partner-code entry, and the irreversible commit + force-save.
+// It doesn't depend on gMain.callback2, so it is safe right after Debug_DestroyMenu_Full.
 static void DebugAction_TradeCode_StartSession(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
     TradeCodeSession_Start();
 }
 
-// Stage 8 testing aid (src/trade_code_receive.c): Step 4, entering the
-// confirm code and materialising a COMMITTED pendingTrade. This is a
-// mid-game entry point (unlike Stage 9's own boot-time reset-resistant
-// re-entry, src/overworld.c's CB2_ContinueSavedGame), so the field is
-// already loaded and running - CB2_ReturnToField is the right thing to
-// hand back to once this screen is done, same as every other debug menu
-// action here. TradeCodeReceive_Start guards its own "nothing pending"
-// case with an on-screen message rather than silently no-opping, so
-// calling it directly right after Debug_DestroyMenu_Full is safe
-// regardless of whether a trade is actually pending.
+// Testing aid (src/trade_code_receive.c): enters the confirm code and materialises a
+// COMMITTED pendingTrade. The field is already loaded, so it returns to CB2_ReturnToField
+// (unlike the boot-time re-entry in CB2_ContinueSavedGame). TradeCodeReceive_Start shows an
+// on-screen message when nothing is pending.
 static void DebugAction_TradeCode_ReceiveStep4(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
     TradeCodeReceive_Start(CB2_ReturnToField);
 }
 
-// Testing aid only: resets a COMMITTED (or any other) pending trade back to
-// TRADE_CODE_STATE_NONE, so Stage 7's own commit flow can be exercised
-// repeatedly from one save file without needing a fresh save each time.
-// Stage 9 (reset-resistant re-entry) doesn't exist yet, so nothing else in
-// the game currently reacts to a COMMITTED pendingTrade left over from a
-// prior test run - but clearing it here keeps testing honest rather than
-// relying on that gap. Zeroes the whole struct (not just .state), mirroring
-// Stage 4's own SetDefaultOptions() reset (src/new_game.c).
+// Testing aid: resets any pending trade to TRADE_CODE_STATE_NONE so the commit flow can be
+// repeated on one save. Zeroes the whole struct, like SetDefaultOptions() (src/new_game.c).
 static void DebugAction_TradeCode_ClearPendingTrade(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
@@ -2309,10 +2266,8 @@ static void DebugAction_Achievements_ToggleBoostsUnlocked(u8 taskId)
 
 #define tBoostId data[5]
 
-// Deliberately the same 4-line shape as Debug_Display_AchievementBoostLevel
-// below (label, value, blank, digit indicator) -- AddTextPrinterParameterized
-// doesn't clear the window first, so switching between two screens of
-// different shapes leaves the previous screen's leftover lines on-screen.
+// Same 4-line shape as Debug_Display_AchievementBoostLevel; AddTextPrinterParameterized
+// doesn't clear the window, so differing shapes leave leftover lines.
 static void Debug_Display_AchievementBoostId(u32 boostId, u32 digit, u8 windowId)
 {
     StringCopy(gStringVar2, gText_DigitIndicator[digit]);
@@ -2326,9 +2281,7 @@ static void Debug_Display_AchievementBoostLevel(u32 level, u32 digit, u8 windowI
 {
     ConvertIntToDecimalStringN(gStringVar1, level, STR_CONV_MODE_LEADING_ZEROS, 3);
     StringCopy(gStringVar2, gText_DigitIndicator[digit]);
-    // No maxLevel ceiling is enforced here (debug tools bypass it by
-    // design), so this just accepts any u8 value -- see
-    // AchievementBoost_DebugSetLevel.
+    // No maxLevel ceiling: debug tools bypass it (see AchievementBoost_DebugSetLevel).
     StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("New level:{CLEAR_TO 90}\n{STR_VAR_1}{CLEAR_TO 90}\n\n{STR_VAR_2}"));
     AddTextPrinterParameterized(windowId, DEBUG_MENU_FONT, gStringVar4, 0, 0, 0, NULL);
 }
@@ -2451,9 +2404,8 @@ static void Debug_Display_AchievementDumpPage(u8 windowId, u32 page)
         ConvertIntToDecimalStringN(gStringVar3, gAchievementProfile.shiniesObtained, STR_CONV_MODE_LEFT_ALIGN, 4);
         StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Nuzlockes: {STR_VAR_1}{CLEAR_TO 90}\nRandomized: {STR_VAR_2}{CLEAR_TO 90}\nShinies: {STR_VAR_3}{CLEAR_TO 90}"));
         break;
-    // The lifetime counters backing the achievements
-    // that used to reset every new game (GetGameStat() lives in SaveBlock1,
-    // which ClearSav1 zeroes). Two pages, since there are seven fields.
+    // Lifetime counters that survive new games (GetGameStat() lives in SaveBlock1, which
+    // ClearSav1 zeroes).
     case 4:
         ConvertIntToDecimalStringN(gStringVar1, gAchievementProfile.trainerBattlesLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
         ConvertIntToDecimalStringN(gStringVar2, gAchievementProfile.wildBattlesLifetime, STR_CONV_MODE_LEFT_ALIGN, 5);
@@ -2467,9 +2419,7 @@ static void Debug_Display_AchievementDumpPage(u8 windowId, u32 page)
         StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Hidden items: {STR_VAR_1}{CLEAR_TO 90}\nNPCs talked: {STR_VAR_2}{CLEAR_TO 90}\nShop visits: {STR_VAR_3}{CLEAR_TO 90}"));
         break;
     default:
-        // Padded to the same 3-line shape as the other pages (one trailing
-        // clear-only line) so nothing from a previous page bleeds through --
-        // AddTextPrinterParameterized never clears lines it doesn't draw to.
+        // Padded to 3 lines; AddTextPrinterParameterized doesn't clear undrawn lines.
         ConvertIntToDecimalStringN(gStringVar1, gAchievementProfile.moneySpentLifetime, STR_CONV_MODE_LEFT_ALIGN, 8);
         StringCopy(gStringVar2, gSaveBlock1Ptr->achievementsBlocked ? sDebugText_True : sDebugText_False);
         StringExpandPlaceholders(gStringVar4, COMPOUND_STRING("Money spent: {STR_VAR_1}{CLEAR_TO 90}\nRun blocked: {STR_VAR_2}{CLEAR_TO 90}\n{CLEAR_TO 90}"));
@@ -2508,8 +2458,7 @@ static void DebugAction_Achievements_DumpProfileInput(u8 taskId)
 #undef tDumpPage
 #undef ACHIEVEMENTS_DUMP_PAGE_COUNT
 
-// Testing aid: reaches CB2_InitAchievementsMenu directly. Mirrors
-// DebugAction_Util_WatchCredits's full-teardown-then-jump pattern.
+// Testing aid: reaches CB2_InitAchievementsMenu directly.
 static void DebugAction_Achievements_OpenMenu(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
@@ -2517,14 +2466,9 @@ static void DebugAction_Achievements_OpenMenu(u8 taskId)
     SetMainCallback2(CB2_InitAchievementsMenu);
 }
 
-// Testing aid: reaches the boost shop directly, bypassing TIER
-// SELECT's own unlock/enabled gate -- lets the shop be exercised
-// on a save that hasn't actually cleared the first-playthrough gate yet.
-// Mirrors DebugAction_Achievements_OpenMenu's full-teardown-then-jump
-// pattern. Real purchases work normally from here (AchievementBoost_
-// CanPurchase isn't gated on debug mode -- see its comment in
-// src/achievements.c) as long as boosts are unlocked and there are points
-// to spend; use "Toggle Boosts Unlocked"/"Set Points" first if needed.
+// Testing aid: reaches the boost shop directly, bypassing TIER SELECT's unlock/enabled gate.
+// Purchases still require boosts unlocked and points to spend (AchievementBoost_CanPurchase
+// isn't debug-gated); use "Toggle Boosts Unlocked"/"Set Points" first if needed.
 static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
@@ -2532,21 +2476,10 @@ static void DebugAction_Achievements_OpenBoostMenu(u8 taskId)
     SetMainCallback2(CB2_InitAchievementBoostMenu);
 }
 
-// Testing aid for src/achievement_popup.c: bypasses the queue/safety
-// gate and shows the popup immediately. Closes the debug menu like
-// DebugAction_Cancel, then shows the popup for a real (arbitrarily chosen)
-// achievement on the plain field -- ShowAchievementPopup only draws the UI,
-// it never touches completion state, so this is safe to fire regardless of
-// whether the achievement shown is actually completed.
-//
-// Used to call ScriptContext_Enable() here to keep the player from walking
-// off during the popup -- that's now handled by the popup itself
-// (LockPlayerFieldControls()/UnlockPlayerFieldControls() around its
-// lifetime, src/achievement_popup.c), so the old workaround was removed:
-// ScriptContext_Enable() sets the global script context to CONTEXT_RUNNING
-// with nothing to shut it back down again outside of an actual script, which
-// would have jammed IsAchievementPopupSafeToShow() (it requires
-// !ScriptContext_IsEnabled()) for the rest of the session after one use.
+// Testing aid for src/achievement_popup.c: bypasses the queue/safety gate and shows the popup
+// for an arbitrary achievement. ShowAchievementPopup only draws the UI, so completion state
+// is untouched. Don't call ScriptContext_Enable() here: outside a script nothing resets it,
+// which would jam IsAchievementPopupSafeToShow() (requires !ScriptContext_IsEnabled()).
 static void DebugAction_Achievements_TestPopup(u8 taskId)
 {
     Debug_DestroyMenu_Full(taskId);
@@ -2565,11 +2498,8 @@ static void DebugAction_Util_CheatStart(u8 taskId)
         Debug_DestroyMenu_Full_Script(taskId, Debug_CheatStart);
 }
 
-// Runs the exact callnative the live offer flow uses (data/scripts/draft.inc,
-// Stage 5), so this exercises the same code path rather than a debug-only
-// shortcut. Ignores Draft_IsEnabled()/Draft_IsAreaDraftable() - this is for
-// testing the case UI (Stage 4) without walking to a fresh route or turning
-// Draft mode on first.
+// Runs the same callnative as the live offer flow (data/scripts/draft.inc). Ignores
+// Draft_IsEnabled()/Draft_IsAreaDraftable(), so the case UI can be tested without a fresh route.
 static void DebugAction_Util_ForceDraft(u8 taskId)
 {
     struct DraftChoice pool[DRAFT_MAX_CHOICES];

@@ -4205,12 +4205,9 @@ static void Task_HandleFormsScreenInput(u8 taskId)
 
 #define FORM_SPECIES_END (0xffff)
 
-// Small per-form caught indicator under each form icon in Form Mode. Unlike
-// the list row's ball, this is a single form's own bit -- always binary
-// (caught or not), never partial -- so it skips GetDexEntryCaughtState's
-// family aggregation and reads the flag directly.
-// x/y offsets are tuned for the icon grid below; recheck on hardware if that
-// grid ever moves (icon rows sit only ~7px apart, so there's little slack).
+// Per-form caught indicator under each form icon in Form Mode. It is a single form's own
+// bit (never partial), so it skips GetDexEntryCaughtState's family aggregation.
+// Offsets are tuned for the icon grid below; icon rows sit only ~7px apart.
 #define FORM_BALL_X_OFFSET 12  // centers the 8px-wide ball under the 32px icon
 #define FORM_BALL_Y_OFFSET 20
 
@@ -4253,10 +4250,8 @@ static void PrintForms(u8 taskId, enum Species species)
             u8 iconX = 0, iconY = 0;
             sPokedexView->sFormScreenData.formIds[j++] = i;
             times += 1;
-            // data[4] holds the base icon; data[5..15] (11 slots, two rows of
-            // up to 6/5) hold form icons. A species with more forms than that
-            // (only Unown, with 27) stops getting icons here instead of
-            // overflowing task data.
+            // data[4] holds the base icon; data[5..15] hold form icons. Species with more
+            // forms (only Unown, 27) stop getting icons here to avoid overflowing task data.
             if (times > 11)
                 continue;
             LoadMonIconPalettePersonality(speciesForm, personality); //Loads pallete for current mon

@@ -23,7 +23,6 @@
 #include "event_data.h"
 #include "string_util.h"
 
-/* Forward declarations */
 static void ReadAllCurrentSettings(u8 taskId);
 static void DrawOptionsPg1(u8 taskId);
 static void DrawOptionsPg2(u8 taskId);
@@ -177,12 +176,9 @@ static void DrawOptionMenuValue(const u8 *text, u8 y, bool8 isActive);
 
 EWRAM_DATA static bool8 sArrowPressed = FALSE;
 EWRAM_DATA static u8 sCurrPage = 0;
-// Stashes the real caller (field/main-menu CB2) across the round trip
-// through CB2_InitPlayerPaletteMenu, whose own savedCallback is pointed at
-// CB2_InitOptionMenu so it lands back on this screen.
-// Restored into gMain.savedCallback the next time CB2_InitOptionMenu
-// runs; NULL the rest of the time, when gMain.savedCallback already holds
-// the real caller and needs no help.
+// Stashes the real caller across the round trip through CB2_InitPlayerPaletteMenu (whose
+// savedCallback points back here). Restored into gMain.savedCallback by CB2_InitOptionMenu;
+// NULL otherwise.
 EWRAM_DATA static MainCallback sSavedCallback = NULL;
 
 // The new-game sequence is the only flow that hands this menu CB2_InitNewGameSettingsMenu
@@ -230,8 +226,6 @@ static const u8 gText_AchievementBoostsOn[]  = _("{COLOR GREEN}{SHADOW LIGHT_GRE
 // Page 3 strings
 static const u8 gText_RouteTrackerOff[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_RouteTrackerOn[]     = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
-// Named distinctly from strings.h's gText_ExpShareOn/Off (those are full
-// field messages for the Exp. Share key item, not option-row value labels).
 static const u8 gText_ExpShareOptionOff[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}OFF");
 static const u8 gText_ExpShareOptionOn[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}ON");
 static const u8 gText_BattleSpeed1x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}1x");
@@ -435,9 +429,8 @@ void CB2_InitOptionMenu(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
-        // Landing back here from the player-colors screen -- restore the
-        // real caller that Task_OptionMenuOpenPlayerColors stashed before
-        // overwriting gMain.savedCallback with CB2_InitOptionMenu itself.
+        // Returning from the player-colors screen; restore the caller stashed by
+        // Task_OptionMenuOpenPlayerColors.
         if (sSavedCallback != NULL)
         {
             gMain.savedCallback = sSavedCallback;
@@ -886,11 +879,8 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
     }
 }
 
-// Shared by Task_OptionMenuSave and Task_OptionMenuOpenPlayerColors -- the
-// pending settings need committing before either leaving the menu for good
-// or hopping to the player-colors screen and back (so a change made just
-// before opening PLAYER COLOURS isn't lost if the player never returns to
-// CANCEL, e.g. quits from the palette screen's own exit some other way).
+// Commits pending settings before leaving the menu or hopping to the player-colors screen,
+// so a change made just before PLAYER COLOURS isn't lost if the player never returns.
 static void CommitPendingOptionSettings(u8 taskId)
 {
     gSaveBlock2Ptr->optionsTextSpeed = gTasks[taskId].tTextSpeed;
@@ -1249,9 +1239,7 @@ static u8 AchievementBoosts_ProcessInput(u8 selection)
     return selection;
 }
 
-// Row position depends on GetPg2DisplayRow rather than a fixed YPOS_* macro
-// -- AUTOSAVE (the row above this one) can be hidden (see IsAutosaveHidden()),
-// which would otherwise leave a gap between AUTO SCROLL and this row.
+// Uses GetPg2DisplayRow rather than a fixed YPOS_* because AUTOSAVE (above) can be hidden.
 static void AchievementBoosts_DrawChoices(u8 selection, bool8 isActive)
 {
     static const u8 *const sTexts[2] = {gText_AchievementBoostsOff, gText_AchievementBoostsOn};
@@ -1397,17 +1385,12 @@ static void DrawHeaderText(void)
 
 static bool8 IsAutosaveHidden(void)
 {
-    // Nuzlocke mode forcibly enables autosaving, so the option is redundant and hidden.
-    // Draft mode leaves it as a normal, player-controlled option instead - unlike
-    // Nuzlocke's permadeath, nothing about Draft requires autosaving to be forced on.
-    // Recruits follows Draft here: retirement is autosave-armed (Recruits_DoRetirement)
-    // but not mandatory, so it doesn't force this on either.
+    // Nuzlocke forces autosave on, so the option is hidden. Draft and Recruits leave it
+    // player-controlled (Recruits_DoRetirement arms an autosave but doesn't require one).
     return gSaveBlock1Ptr->nuzlockeModeEnabled;
 }
 
-// Hidden until the first-playthrough gate
-// unlocks boosts -- Achievement_BoostsUnlocked() is the same profile flag
-// Achievement_OnFirstPlaythroughComplete() sets.
+// Hidden until the first-playthrough gate unlocks boosts (Achievement_BoostsUnlocked).
 static bool8 IsAchievementBoostsHidden(void)
 {
     return !Achievement_BoostsUnlocked();
@@ -1426,12 +1409,8 @@ static bool8 IsPg2ItemHidden(u8 item)
     }
 }
 
-// Pg2 can now have more than one independently-hideable row above CANCEL
-// (AUTOSAVE, ACHIEVEMENT_BOOSTS), so a hidden row's slot has to be
-// compacted out of every row below it, not just the one right before
-// CANCEL. This counts how many *visible* rows come before `item`, which is
-// the row it actually gets drawn on -- DrawOptionMenuTexts's own `row`
-// counter below computes the same thing inline while it prints labels.
+// Pg2 has several hideable rows (AUTOSAVE, ACHIEVEMENT_BOOSTS); this counts the visible
+// rows before `item`, which is its drawn row.
 static u8 GetPg2DisplayRow(u8 item)
 {
     u8 row = 0, i;

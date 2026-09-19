@@ -1323,8 +1323,7 @@ void ContestLiveUpdates_SetLoserData(u8 flag, u8 loser)
     sCurTVShowSlot = FindFirstEmptyNormalTVShowSlot(gSaveBlock1Ptr->tvShows);
     if (sCurTVShowSlot != -1)
     {
-        // Contests were removed (RAM reclamation, stage 3c): this show can no longer
-        // actually air, but the fields still need valid defaults to compile against.
+        // Contests are removed so this show can't air, but the fields need valid defaults.
         show->contestLiveUpdates.losingSpecies = SPECIES_NONE;
         show->contestLiveUpdates.losingTrainerName[0] = EOS;
         StripExtCtrlCodes(show->contestLiveUpdates.losingTrainerName);

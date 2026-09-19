@@ -103,11 +103,7 @@ EWRAM_DATA static u8 sBattlePyramidFloorWindowId = 0;
 EWRAM_INIT static u8 sRouteTrackerWindowId = WINDOW_NONE;
 EWRAM_DATA static u8 sStartMenuCursorPos = 0;
 EWRAM_DATA static u8 sNumStartMenuActions = 0;
-// Sized to every possible action rather than a hand-counted magic number:
-// AppendToList (below) has no bounds check of its own, and a fully-progressed
-// save (Pokedex/Pokemon/DexNav/Map/clock set/New Game+ all unlocked) was
-// already one action away from overflowing the old hardcoded 9 before
-// MENU_ACTION_ACHIEVEMENTS made that concretely reachable.
+// Sized to every possible action; AppendToList has no bounds check.
 EWRAM_DATA static u8 sCurrentStartMenuActions[NUM_MENU_ACTIONS] = {0};
 EWRAM_DATA static s8 sInitStartMenuData[2] = {0};
 
@@ -378,8 +374,7 @@ static void AddStartMenuAction(u8 action)
     AppendToList(sCurrentStartMenuActions, &sNumStartMenuActions, action);
 }
 
-// Widest current label's pixel width, so AddStartMenuWindow (menu.c) can size
-// the window to actually fit every row instead of a hand-picked fixed width.
+// Widest current label's pixel width, for sizing the window in AddStartMenuWindow (menu.c).
 static u8 GetStartMenuTextWidth(void)
 {
     u8 i;
@@ -630,16 +625,6 @@ static bool32 PrintStartMenuActions(s8 *pIndex, u32 count)
 
     do
     {
-        // ORIGINAL LOGIC - For when start menu was vanilla size
-        // if (sStartMenuItems[sCurrentStartMenuActions[index]].func.u8_void == StartMenuPlayerNameCallback)
-        // {
-        //     PrintPlayerNameOnWindow(GetStartMenuWindowId(), sStartMenuItems[sCurrentStartMenuActions[index]].text, 8, (index << 4) + 9);
-        // }
-        // else
-        // {
-        //     StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[index]].text);
-        //     AddTextPrinterParameterized(GetStartMenuWindowId(), FONT_NORMAL, gStringVar4, 8, (index << 4) + 9, TEXT_SKIP_DRAW, NULL);
-        // }
         
 
         // NEW LOGIC - For smaller font size start menu
@@ -1190,10 +1175,8 @@ void SaveGame(void)
 
 static const u8 sText_Autosaving[] = _("Autosaving...");
 
-// Hard cap on the print loop below. RunTextPrinters is a no-op while
-// gDisableTextPrinters is set, and a printer that reaches a wait state never
-// goes inactive on its own -- an unbounded wait on either would hang the game
-// with no way out but a reset.
+// Hard cap on the print loop: RunTextPrinters is a no-op while gDisableTextPrinters is set,
+// and a printer in a wait state never goes inactive, so an unbounded wait would hang.
 #define AUTOSAVE_TEXT_MAX_PASSES 64
 
 void RunAutosaveSteps(void) {
@@ -1763,11 +1746,8 @@ static bool8 StartMenuAchievementsCallback(void)
     return TRUE;
 }
 
-// CB2_InitAchievementsMenu (unlike StatEditor_Init/DexNav's equivalents) takes
-// no return-callback parameter -- it follows this fork's own convention of
-// reading gMain.savedCallback instead (see src/achievements_menu.c, and
-// CB2_InitNewGameSettingsMenu's callers for the same pattern), so that has to
-// be set here before the CB2 swap.
+// CB2_InitAchievementsMenu takes no return-callback parameter; it reads
+// gMain.savedCallback, so set that before the CB2 swap.
 static void Task_OpenAchievementsFromStartMenu(u8 taskId)
 {
     if (!gPaletteFade.active)
