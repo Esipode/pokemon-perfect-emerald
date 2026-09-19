@@ -22,10 +22,9 @@ static bool32 IsTestDexVariantSpecies(u32 species)
     return FALSE;
 }
 
-// Save compatibility for Feature 2 (Stage 4/5) hinges on this: every species
-// that had a Pokedex flag bit before the regional-form slots existed must
-// still map to that same slot (its National Dex number), or an existing
-// save's caught/seen bits would silently point at the wrong species.
+// Save compatibility: every species that had a Pokedex flag bit before the
+// regional-form slots existed must still map to that slot (its National Dex
+// number), or existing caught/seen bits would point at the wrong species.
 TEST("Non-variant species keep their National Dex number as their flag slot")
 {
     for (u32 species = 1; species < NUM_SPECIES; species++)

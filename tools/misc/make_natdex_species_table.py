@@ -4,7 +4,7 @@ import re
 # Builds src/data/pokemon/national_dex_num_to_species.h: a compile-time reverse
 # of species -> natDexNum (src/data/pokemon/species_info/gen_*_families.h),
 # indexed by national dex number. Replaces a runtime-built EWRAM cache with a
-# const ROM table (Free Space Stage 2).
+# const ROM table.
 #
 # natDexNum is assigned either directly in a species' designated initializer
 # block, or via a macro whose body contains it (used for large cosmetic-variant

@@ -5,17 +5,10 @@
 // against a level-21 opponent, lost *all* of its HP to recoil, and the *opponent*
 // was healed to full HP instead of taking damage.
 //
-// Root cause (Bug C): CalculateMoveDamage's correctly-computed s32 result was
-// stored into `gBattleStruct->moveDamage`, an s16 field. At MAX_LEVEL magnitudes
-// the raw computed damage routinely exceeds 32,767 and wraps via two's-complement
-// into a negative number, which `MoveDamageDataHpUpdate`/`PassiveDataHpUpdate`
-// faithfully treat as "heal instead of damage" (a legitimate mechanic elsewhere,
-// disastrous here). Recoil then inherits and re-truncates the already-corrupted
-// value a second time.
-//
-// This test only exercises the reported symptom correctly once Stages 2-3 (the
-// upstream CalculateBaseDamage/fpmath overflow fixes) and this stage (widening
-// moveDamage/passiveHpUpdate to s32) have all landed.
+// Guards against gBattleStruct->moveDamage/passiveHpUpdate truncating a
+// CalculateMoveDamage result. At MAX_LEVEL the damage exceeds 32,767, wraps
+// negative in an s16, and MoveDamageDataHpUpdate/PassiveDataHpUpdate treat it as
+// a heal. Recoil then re-truncates the corrupted value.
 //
 //   levelFactor = 2 * 1000 / 5 + 2                       = 402
 //   base = 120 * 1000 * 402 / 20 / 50 + 2                = 48,242
@@ -23,18 +16,13 @@
 //   type effectiveness (Psychic defender, neutral to Fire) x1.0
 //   damage roll (85%-100%, integer division)             = 61,508 .. 72,363
 //
-// Both ends of that range are well above the old s16 ceiling (32,767) - this is
-// exactly the "computed damage well within the worked-example range" that used
-// to wrap. The opponent's max HP (100) is far below either end of the range, so
-// it faints outright regardless of the exact roll - the wrapped pre-fix value
-// could instead have come out negative and healed it to full.
+// The opponent's max HP (100) is far below that range, so it faints regardless
+// of the roll.
 //
 //   recoil (33% of the raw, un-clamped damage, floor division) = 20,297 .. 23,879
 //
-// The attacker's max HP (60,000) is set well above any possible recoil value so
-// a correct fix leaves it alive with a real, bounded HP loss - not fainted (the
-// reported bug's wrapped-positive outcome) and not still at full HP (the wrapped
-// -negative "heal" outcome a different matchup could have produced instead).
+// The attacker's max HP (60,000) exceeds any possible recoil, so a correct
+// result leaves it alive with bounded HP loss.
 SINGLE_BATTLE_TEST("Recoil overflow: level-1000 Flare Blitz damages the target and gives the user bounded recoil, not a wrapped heal/wipe")
 {
     u16 hp;

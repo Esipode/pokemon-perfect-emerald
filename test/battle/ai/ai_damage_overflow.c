@@ -1,18 +1,13 @@
 #include "global.h"
 #include "test/battle.h"
 
-// Regression test for struct SimulatedDamage (include/battle.h) is the AI's
-// own damage estimate - a storage path entirely separate from gBattleStruct's
-// moveDamage/passiveHpUpdate (Bug C). Before Stage 5 its four fields were u16, so
-// even though CalculateMoveDamage's return value is a correctly-computed s32 (once
-// Stages 2-3 fix the upstream overflow), AI_CalcDamage's writes into
-// gAiLogicData->simulatedDmg silently wrapped modulo 65,536 for MAX_LEVEL matchups -
-// corrupting AI move/switch decisions independently of the player-visible HP bug.
+// Guards against struct SimulatedDamage (include/battle.h), the AI's own damage
+// estimate, truncating CalculateMoveDamage's s32 result. u16 fields would wrap
+// gAiLogicData->simulatedDmg modulo 65,536 at MAX_LEVEL and corrupt AI move/switch
+// decisions.
 //
-// Same Charizard/Flare Blitz-vs-Wobbuffet matchup as
-// test/battle/move_effect/recoil_overflow.c (Stage 4's primary repro), with the AI
-// on the attacking side this time so its own simulated damage can be inspected
-// directly:
+// Same matchup as test/battle/move_effect/recoil_overflow.c, with the AI attacking
+// so its simulated damage can be inspected:
 //
 //   levelFactor = 2 * 1000 / 5 + 2                       = 402
 //   base = 120 * 1000 * 402 / 20 / 50 + 2                = 48,242
@@ -20,9 +15,7 @@
 //   AI roll types (no random factor applied, GetDamageByRollType):
 //     minimum (85%) = 61,508   median (93%) = 67,297   maximum (100%) = 72,363
 //
-// median and maximum both clear the old u16 ceiling (65,535); a pre-Stage-5 build
-// would report a wrapped, much smaller (or misleadingly still-plausible-looking)
-// value here instead.
+// Median and maximum both exceed the u16 ceiling (65,535).
 AI_SINGLE_BATTLE_TEST("AI's simulated damage for a level-1000 attacker is large and positive, not wrapped small by a u16 field")
 {
     GIVEN {
