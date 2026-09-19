@@ -126,7 +126,6 @@ static const u16 sMartInventory_Tier5[] = {
     ITEM_NONE
 };
 
-// Count the number of badges the player has obtained
 u8 CountPlayerBadges(void)
 {
     u8 badgeCount = 0;

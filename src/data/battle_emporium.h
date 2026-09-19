@@ -152,10 +152,9 @@ static const struct EmporiumReward gEmporiumRewards[] =
     { ITEM_WATER_TERA_SHARD, EMPORIUM_TERA, TYPE_WATER, FLAG_BADGE07_GET },
 };
 
-// Each building's rows are one contiguous block of gEmporiumRewards, so a range
-// is a start index plus a count. The STATIC_ASSERT below ties the ranges to the
-// table length: a row added or removed above without updating the counts fails
-// the build instead of walking the menu off the end of the array.
+// Each building's rows are one contiguous block of gEmporiumRewards (start index
+// plus count). The STATIC_ASSERT below fails the build if the counts drift from
+// the table length.
 #define EMPORIUM_ZMOVE_REWARD_START  0
 #define EMPORIUM_ZMOVE_REWARD_COUNT  29
 #define EMPORIUM_MEGA_REWARD_START   (EMPORIUM_ZMOVE_REWARD_START + EMPORIUM_ZMOVE_REWARD_COUNT)
@@ -171,8 +170,8 @@ STATIC_ASSERT(ARRAY_COUNT(gEmporiumRewards) == EMPORIUM_REWARD_COUNT, sEmporiumR
 // pre-evolution chain) across the aces whose held Z-Crystal / Mega Stone or
 // .teraType matches the row. Precomputed because EmporiumSpeciesMinLevel walks
 // the whole species table per call and the instructor menu tests every row.
-// Regenerate with scratchpad/gen_minlevel.py if the reward table, the ace pool,
-// or an ace species' evolution levels change. EmporiumRewardAceAvailable hides a
+// Recompute if the reward table, the ace pool, or an ace species' evolution
+// levels change. EmporiumRewardAceAvailable hides a
 // row until GetEmporiumBattleLevelForEmporium reaches this value; the battle-time
 // POOL_PRUNE_EMPORIUM still rechecks the actual rolled ace species.
 static const u8 sEmporiumRewardAceMinLevel[EMPORIUM_REWARD_COUNT] =
@@ -226,8 +225,7 @@ static const struct TrainerMon sEmporiumZPool[] =
     { .species = SPECIES_DELCATTY, .lvl = 30, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_DUSKULL, .lvl = 30, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_SNORUNT, .lvl = 30, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    // Fillers - Gens 1-2 and 4-9, same tier cap as the Hoenn block above, so a
-    // challenger's filler slots can come from any of the nine generations.
+    // Fillers - Gens 1-2 and 4-9, same tier cap as the Hoenn block above.
     // Gen 1
     { .species = SPECIES_PIDGEOTTO, .lvl = 30, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
     { .species = SPECIES_GRAVELER, .lvl = 30, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
@@ -464,8 +462,7 @@ static const struct TrainerMon sEmporiumMegaPool[] =
     { .species = SPECIES_CRADILY, .lvl = 45, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_LANTURN, .lvl = 45, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_DUSCLOPS, .lvl = 45, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    // Fillers - Gens 1-2 and 4-9, same tier cap as the Hoenn block above, so a
-    // challenger's filler slots can come from any of the nine generations.
+    // Fillers - Gens 1-2 and 4-9, same tier cap as the Hoenn block above.
     // Gen 1
     { .species = SPECIES_PERSIAN, .lvl = 45, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
     { .species = SPECIES_RAPIDASH, .lvl = 45, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
@@ -727,8 +724,7 @@ static const struct TrainerMon sEmporiumTeraPool[] =
     { .species = SPECIES_CAMERUPT, .lvl = 60, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_CLAYDOL, .lvl = 60, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
     { .species = SPECIES_KECLEON, .lvl = 60, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = 0 },
-    // Fillers - Gens 1-2 and 4-9, same tier cap as the Hoenn block above, so a
-    // challenger's filler slots can come from any of the nine generations.
+    // Fillers - Gens 1-2 and 4-9, same tier cap as the Hoenn block above.
     // Gen 1
     { .species = SPECIES_CROBAT, .lvl = 60, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },
     { .species = SPECIES_RHYPERIOR, .lvl = 60, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER, .tags = MON_POOL_TAG_LEAD },

@@ -2,30 +2,30 @@
 #define GUARD_BATTLE_EMPORIUM_H
 
 #include "constants/battle_emporium.h"
-#include "constants/items.h"    // enum Item
-#include "constants/pokemon.h"  // enum Type
+#include "constants/items.h"
+#include "constants/pokemon.h"
 
 // One catalogue row per reward item. Table lives in src/data/battle_emporium.h,
 // reached only through the accessors below.
 struct EmporiumReward
 {
-    enum Item item;      // the reward handed to the player on victory
-    u8 emporium;         // enum EmporiumId this reward belongs to
+    enum Item item;
+    u8 emporium;         // enum EmporiumId
     u16 aceKey;          // Tera: enum Type the ace Terastallizes to. Z/Mega: unused (see GetEmporiumAceKey)
     u16 requiredFlag;    // badge flag gating the reward, or EMPORIUM_FLAG_NONE
 };
 
 // One rolled challenger identity. Table (sEmporiumIdentities) lives in
-// src/data/battle_emporium.h; BuildEmporiumTrainer() (Stage 3) copies a row
+// src/data/battle_emporium.h; BuildEmporiumTrainer() copies a row
 // into the runtime struct Trainer and returns objectGfxId for VAR_OBJ_GFX_ID_0.
 struct EmporiumIdentity
 {
     u16 trainerClass;
-    u16 trainerPic;      // enum TrainerPicID
+    u16 trainerPic;
     const u8 *name;
-    u16 objectGfxId;     // OBJ_EVENT_GFX_* for the back-room challenger
-    u8 encounterMusic;   // TRAINER_ENCOUNTER_MUSIC_*
-    u8 gender;           // TRAINER_GENDER_*
+    u16 objectGfxId;     // Back-room challenger sprite.
+    u8 encounterMusic;
+    u8 gender;
 };
 
 u32 GetEmporiumRewardCount(u32 emporium);
@@ -77,7 +77,7 @@ void EmporiumShowChallenger(void);
 // battle (VAR_EMPORIUM_RESULT set) so the lobby payout script can read it.
 void EmporiumLobbyOnTransition(void);
 
-// Stage 8: the challenger battle and the reward payout (data/scripts/battle_emporium.inc,
+// Challenger battle and reward payout (data/scripts/battle_emporium.inc,
 // per-battle-room scripts.inc). EmporiumArmNoWhiteout is a callnative; the rest are specials.
 void EmporiumArmNoWhiteout(void);
 void EmporiumBufferRewardItem(void);
@@ -88,14 +88,14 @@ void EmporiumBattleRoomOnTransition(void);
 void EmporiumTraceArena(void);
 void EmporiumTraceStep(void);
 
-// Stage 9 tier balance: POOL_PRUNE_EMPORIUM (src/trainer_pools.c) drops every
+// Tier balance: POOL_PRUNE_EMPORIUM (src/trainer_pools.c) drops every
 // non-ACE pool member EmporiumMonAllowedAsFiller rejects - one whose base stat
 // total tops the building cap (400 / 500 / 600 for Z-Move / Mega / Tera) or that
 // is flagged legendary / mythical / paradox / Ultra Beast.
 u32 GetEmporiumFillerBstCap(void);
 bool32 EmporiumMonAllowedAsFiller(const struct TrainerMon *mon);
 
-// Stage 9: copies the rolled challenger intro line into gStringVar1 for the
+// Copies the rolled challenger intro line into gStringVar1 for the
 // battle-room trainerbattle intro template (roll happens in BuildEmporiumTrainer).
 void EmporiumBufferChallengerIntro(void);
 

@@ -27,7 +27,7 @@ void AiBattles_RestoreSettings(u32 backup);
 // --- Layer 2: per-battle session state. ---
 void AiBattles_BeginBattle(void); // Caches the answer for this battle. Call once, after gBattleTypeFlags is final.
 bool32 AiBattles_IsActive(void); // THE predicate: is the AI controlling the player's battlers right now?
-bool32 AiBattles_IsActiveTrainerBattle(void); // Trainer-battle subset of AiBattles_IsActive(). Equivalent to the old IsAiVsAiBattle().
+bool32 AiBattles_IsActiveTrainerBattle(void); // Trainer-battle subset of AiBattles_IsActive().
 
 // --- Layer 3: named behaviours. ---
 bool32 AiBattles_ShouldAutoAdvanceText(void); // Auto-scroll message boxes instead of waiting for A/B.

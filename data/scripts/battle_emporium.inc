@@ -84,17 +84,15 @@ Emporium_EventScript_CantAffordFee::
 
 @ ---- Challenger battle outcome ----
 @ Called inline from each battle room's EnterArena script once the continueScript
-@ trainerbattle returns. Records the result in VAR_EMPORIUM_RESULT so the lobby
-@ ON_FRAME script can run the payout or the recovery scene, then the per-room
-@ script walks the player out and warps back to the lobby. On a loss the party is
-@ healed here (the facility-style no-white-out path); on a win it is healed in the
-@ lobby by Emporium_EventScript_LobbyReward. Both heals go through HealPlayerParty,
-@ so Nuzlocke fainted-mon removal still applies. VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD
-@ are kept alive across the warp on both outcomes: the lobby pays out and clears them
-@ on a win, and on a loss keeps them so Emporium_EventScript_LobbyRecovery can re-run
-@ the same challenge if the player retries, clearing them (ClearEmporiumBattle) only
-@ once the retry is declined. The redirect itself is disarmed by the lobby
-@ ON_TRANSITION (EmporiumLobbyOnTransition) on either path.
+@ trainerbattle returns. Records the result in VAR_EMPORIUM_RESULT for the lobby
+@ ON_FRAME script, then the room script walks the player out and warps to the lobby.
+@ On a loss the party is healed here (facility-style no-white-out path); on a win it
+@ is healed by Emporium_EventScript_LobbyReward. Both heals go through
+@ HealPlayerParty, so Nuzlocke fainted-mon removal still applies.
+@ VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD survive the warp on both outcomes: a win
+@ pays out and clears them; a loss keeps them for Emporium_EventScript_LobbyRecovery
+@ until the retry is declined (ClearEmporiumBattle). The redirect is disarmed by
+@ EmporiumLobbyOnTransition on either path.
 
 Emporium_EventScript_RecordChallengerOutcome::
 	specialvar VAR_RESULT, GetBattleOutcome
@@ -131,13 +129,11 @@ Emporium_EventScript_LobbyReward::
 	end
 
 @ Post-loss scene. The party was already healed in Emporium_EventScript_Record
-@ ChallengerOutcome; here the player walks back to the instructor and is offered a
-@ retry of the same challenge (VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD are still set).
-@ On a retry the fee is charged again and the shared walk-in tail re-enters the same
-@ battle room; the instructor is still stepped aside (LobbyRestoreInstructorAside
-@ re-applied it on this return trip), matching Emporium_EventScript_OpenMenu's state
-@ at that point. Declining (or being unable to pay) walks the instructor back and
-@ gives the usual goodbye, clearing the pending selection.
+@ ChallengerOutcome. The player is offered a retry of the same challenge; a retry
+@ charges the fee again and re-enters the battle room through the shared walk-in
+@ tail, with the instructor still stepped aside (LobbyRestoreInstructorAside).
+@ Declining or being unable to pay walks the instructor back, says goodbye and
+@ clears the pending selection.
 Emporium_EventScript_LobbyRecovery::
 	lockall
 	applymovement OBJ_EVENT_ID_PLAYER, Emporium_Movement_PlayerReturnToInstructor
@@ -256,12 +252,11 @@ Emporium_Movement_InstructorReturn:
 	walk_down
 	step_end
 
-@ Called from every lobby's ON_TRANSITION. Object event templates are reloaded from
-@ the map header on each map load, so the stepped-aside position written by
-@ Emporium_EventScript_OpenMenu is gone by the time the player walks back in from
+@ Called from every lobby's ON_TRANSITION. Object event templates reload from the
+@ map header on each map load, so the stepped-aside position is lost on return from
 @ the battle room. Re-apply it before the objects spawn (VAR_EMPORIUM_RESULT is
-@ non-zero only on that return trip) so the instructor is still standing right of
-@ the door for Emporium_Movement_InstructorReturn to walk back from.
+@ non-zero only on that trip) so Emporium_Movement_InstructorReturn starts from
+@ the right tile.
 
 Emporium_EventScript_LobbyRestoreInstructorAside::
 	goto_if_eq VAR_EMPORIUM_RESULT, EMPORIUM_RESULT_NONE, Emporium_EventScript_LobbyRestoreInstructorDone

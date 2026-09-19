@@ -32,8 +32,7 @@
 
 extern u32 GetTotalBaseStat(enum Species species);
 
-// Lobby -> battle room entry trace. Logs to the mGBA console on debug builds and
-// compiles out on release. Set to 0 to silence without dropping the asserts.
+// Lobby -> battle room entry trace. Set to 0 to silence without dropping the asserts.
 #define EMPORIUM_TRACE_ENABLED  1
 #if EMPORIUM_TRACE_ENABLED
 #define EMPORIUM_TRACE(fmt, ...) DebugPrintf("emporium " fmt, ##__VA_ARGS__)
@@ -41,7 +40,7 @@ extern u32 GetTotalBaseStat(enum Species species);
 #define EMPORIUM_TRACE(fmt, ...)
 #endif
 
-// Every emporium battle room places its challenger as the map's only object event.
+// Every battle room places its challenger as the map's only object event.
 #define EMPORIUM_CHALLENGER_LOCAL_ID  1
 
 struct EmporiumRewardRange
@@ -123,10 +122,8 @@ bool32 EmporiumMonMatchesReward(const struct TrainerMon *mon)
     return MonMatchesRewardRow(mon, &gEmporiumRewards[rewardIndex]);
 }
 
-// Lowest level `species` can plausibly be reached at: walk its pre-evolution
-// chain and take the highest EVO_LEVEL* threshold along it. Non-level methods
-// (stone, trade, friendship - the last stored as EVO_LEVEL with param 0)
-// contribute nothing, so a stone evolution reports level 1.
+// Friendship evolutions are stored as EVO_LEVEL with param 0, so they contribute
+// nothing, like stone and trade evolutions.
 u32 EmporiumSpeciesMinLevel(enum Species species)
 {
     u32 minLevel = 1;
@@ -160,18 +157,13 @@ u32 EmporiumSpeciesMinLevel(enum Species species)
     return minLevel;
 }
 
-// The Emporium opponent is not a gTrainers entry. It is this one struct, filled
-// in when the player accepts a challenge and swapped in for TRAINER_EMPORIUM by
-// the gEmporiumBattleActive redirect in GetTrainerStructFromId (include/data.h).
 // The flag lives in EWRAM and never in the save block, so a reload always clears
 // the redirect. See ClearEmporiumBattle for the teardown contract.
 EWRAM_DATA static struct Trainer sEmporiumTrainer = {0};
 EWRAM_DATA bool8 gEmporiumBattleActive = FALSE;
 EWRAM_DATA static u8 sEmporiumIntroLine = 0;
 
-// Challenger intro lines, rolled per attempt (Stage 9). Labels live in
-// data/scripts/battle_emporium.inc; EmporiumBufferChallengerIntro copies the
-// chosen one into gStringVar1 for Emporium_Text_ChallengerIntroTemplate.
+// Challenger intro lines, rolled per attempt. Labels live in data/scripts/battle_emporium.inc.
 extern const u8 Emporium_Text_ChallengerIntro1[];
 extern const u8 Emporium_Text_ChallengerIntro2[];
 extern const u8 Emporium_Text_ChallengerIntro3[];
@@ -189,8 +181,7 @@ static const u8 *const sEmporiumIntroLines[] =
     Emporium_Text_ChallengerIntro6,
 };
 
-// Tier balance cap (Stage 9): Emporium filler mons may not exceed this base stat
-// total. Aces are exempt. Read by EmporiumMonAllowedAsFiller via POOL_PRUNE_EMPORIUM.
+// Filler base stat total cap per building. Aces are exempt.
 u32 GetEmporiumFillerBstCap(void)
 {
     switch (VarGet(VAR_EMPORIUM_ID))
@@ -202,9 +193,8 @@ u32 GetEmporiumFillerBstCap(void)
     }
 }
 
-// FALSE if mon is too strong for its building's tier or is a legendary /
-// mythical / paradox / Ultra Beast. Mega stones use the base species' stat total,
-// not the Mega form's, because the pool stores the base species.
+// Mega stones use the base species' stat total, not the Mega form's, because
+// the pool stores the base species.
 bool32 EmporiumMonAllowedAsFiller(const struct TrainerMon *mon)
 {
     const struct SpeciesInfo *info = &gSpeciesInfo[mon->species];
@@ -236,11 +226,9 @@ const struct Trainer *GetEmporiumTrainer(void)
     return &sEmporiumTrainer;
 }
 
-// Emporium challenger teams fight at the player's current level cap - the same
-// cap the player's own Pokemon obey (GetCurrentLevelCap, honouring
-// FLAG_LEVEL_CAP_OFF) - so a challenger can never out-level a legal player team.
-// The per-building offset is a balance hook (e.g. make the Tera building the
-// hardest) and is applied in CreateNPCTrainerPartyFromTrainer.
+// Challenger teams fight at the player's current level cap (GetCurrentLevelCap,
+// honouring FLAG_LEVEL_CAP_OFF), so a challenger never out-levels a legal player
+// team. The per-building offset is a balance hook.
 u32 GetEmporiumBattleLevelForEmporium(u32 emporium)
 {
     static const s8 sEmporiumLevelOffset[EMPORIUM_COUNT] =
@@ -267,10 +255,8 @@ u32 GetEmporiumBattleLevel(void)
     return GetEmporiumBattleLevelForEmporium(GetEmporiumRewardEmporium(VarGet(VAR_EMPORIUM_REWARD)));
 }
 
-// TRUE once the challenger's battle level reaches the lowest cap at which the
-// pool holds a legal ace for `reward` (sEmporiumRewardAceMinLevel, precomputed in
-// src/data/battle_emporium.h). Rewards below that are hidden from the instructor
-// menu until the level cap catches up.
+// TRUE once the battle level reaches sEmporiumRewardAceMinLevel for the reward.
+// Rewards below that stay hidden from the instructor menu until the level cap catches up.
 static bool32 EmporiumRewardAceAvailable(u32 rewardIndex)
 {
     u32 emporium;
@@ -285,9 +271,8 @@ static bool32 EmporiumRewardAceAvailable(u32 rewardIndex)
     return sEmporiumRewardAceMinLevel[rewardIndex] <= GetEmporiumBattleLevelForEmporium(emporium);
 }
 
-// Rolls a challenger identity, fills sEmporiumTrainer from it and the emporium's
-// mon pool, and arms the redirect. Returns the identity's overworld graphics id
-// so the caller can write VAR_OBJ_GFX_ID_0 for the back-room challenger object.
+// Rolls a challenger identity, fills sEmporiumTrainer from it and the building's
+// pool, and arms the redirect. Returns the identity's objectGfxId.
 u16 BuildEmporiumTrainer(u32 emporium)
 {
     const struct EmporiumIdentity *identity;
@@ -322,8 +307,7 @@ u16 BuildEmporiumTrainer(u32 emporium)
                    emporium, identity->objectGfxId, identity->trainerPic, identity->trainerClass,
                    identity->encounterMusic, identity->gender, sEmporiumIntroLine,
                    sEmporiumTrainer.partySize, sEmporiumTrainer.poolSize, GetEmporiumBattleLevel());
-    // Every field below is a narrow bitfield or a table index; a value that does
-    // not survive the store is silent corruption at battle setup, not here.
+    // Fields are narrow bitfields or table indices; catch truncation here rather than at battle setup.
     assertf(sEmporiumTrainer.partySize == pool->partySize, "partySize %d truncated to %d", pool->partySize, sEmporiumTrainer.partySize);
     assertf(sEmporiumTrainer.poolSize == pool->poolSize, "poolSize %d truncated to %d", pool->poolSize, sEmporiumTrainer.poolSize);
     assertf(sEmporiumTrainer.encounterMusic == identity->encounterMusic, "encounterMusic %d truncated to %d", identity->encounterMusic, sEmporiumTrainer.encounterMusic);
@@ -335,10 +319,9 @@ u16 BuildEmporiumTrainer(u32 emporium)
     return identity->objectGfxId;
 }
 
-// Disarms the redirect and drops the pending-challenge state. Called after the
-// battle (win or loss), on menu cancel, and defensively from each emporium map's
-// ON_TRANSITION, so a crash or white-out can never leave every trainer in the
-// game pointed at sEmporiumTrainer.
+// Disarms the redirect and drops the pending-challenge state. Also called
+// defensively from each emporium map's ON_TRANSITION, so a crash or white-out can
+// never leave every trainer pointed at sEmporiumTrainer.
 void ClearEmporiumBattle(void)
 {
     gEmporiumBattleActive = FALSE;
@@ -350,12 +333,8 @@ void ClearEmporiumBattle(void)
 #endif
 }
 
-// Lobby ON_TRANSITION teardown. Entering a lobby always means the back room holds
-// no live challenge, so disarm the redirect. When the player is walking back in
-// from a finished battle (VAR_EMPORIUM_RESULT set) the pending selection is kept
-// so the lobby ON_FRAME script can still pay out the reward (win) or re-run the
-// same challenge on a retry (loss); otherwise it is dropped, exactly as
-// ClearEmporiumBattle would.
+// Keeps the pending selection when VAR_EMPORIUM_RESULT is set (payout on win,
+// retry on loss); otherwise behaves like ClearEmporiumBattle.
 void EmporiumLobbyOnTransition(void)
 {
     gEmporiumBattleActive = FALSE;
@@ -370,12 +349,9 @@ void EmporiumLobbyOnTransition(void)
     }
 }
 
-// Facility-style loss handling. Armed by the battle-room script just before the
-// challenger fight so a loss returns to the lobby with the party intact instead
-// of a white-out. Skipped in Nuzlocke mode: there an Emporium loss should carry
-// the same white-out consequence as any other trainer battle. Cleared again by
-// ClearEmporiumBattle (post-battle, on menu cancel, and from each lobby's
-// ON_TRANSITION).
+// Facility-style loss handling: a loss returns to the lobby with the party intact
+// instead of a white-out. Skipped in Nuzlocke mode, where a loss keeps the
+// normal white-out consequence. Cleared by ClearEmporiumBattle.
 void EmporiumArmNoWhiteout(void)
 {
 #if B_FLAG_NO_WHITEOUT != 0
@@ -384,9 +360,8 @@ void EmporiumArmNoWhiteout(void)
 #endif
 }
 
-// Victory payout helper: puts the pending reward's item id in VAR_0x8004 (for
-// the giveitem macro) and its name in gStringVar1. Must run before
-// ClearEmporiumBattle wipes VAR_EMPORIUM_REWARD.
+// Puts the reward's item id in VAR_0x8004 (for giveitem) and its name in
+// gStringVar1. Must run before ClearEmporiumBattle wipes VAR_EMPORIUM_REWARD.
 void EmporiumBufferRewardItem(void)
 {
     u32 rewardIndex = VarGet(VAR_EMPORIUM_REWARD);
@@ -397,9 +372,6 @@ void EmporiumBufferRewardItem(void)
     Achievement_OnEmporiumRewardWon(rewardIndex);
 }
 
-// Copies the challenger's rolled intro line into gStringVar1 for the battle-room
-// trainerbattle intro template. Called just before the fight; the index is rolled
-// in BuildEmporiumTrainer alongside the identity.
 void EmporiumBufferChallengerIntro(void)
 {
     if (sEmporiumIntroLine >= ARRAY_COUNT(sEmporiumIntroLines))
@@ -410,9 +382,8 @@ void EmporiumBufferChallengerIntro(void)
                    sEmporiumTrainer.poolSize, GetEmporiumBattleLevel());
 }
 
-// Battle-room ON_FRAME trace (callnative), run just before the walk-in movements.
-// Confirms the rolled challenger actually spawned: applymovement on a local id
-// that is not on the map would otherwise fail silently one command later.
+// applymovement on a local id that is not on the map fails silently one command
+// later, so assert the challenger spawned.
 void EmporiumTraceArena(void)
 {
     u32 gfxId = VarGet(VAR_OBJ_GFX_ID_0);
@@ -425,9 +396,7 @@ void EmporiumTraceArena(void)
                    gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.x - MAP_OFFSET,
                    gObjectEvents[gPlayerAvatar.objectEventId].currentCoords.y - MAP_OFFSET);
 
-    // The walk-in scene drives two objects while a follower Pokemon may still be
-    // spawning, so dump every live object event: localId, graphics, movement type
-    // and movement state are what the movement engine indexes its tables with.
+    // A follower Pokemon may still be spawning during the walk-in, so dump every live object event.
     for (u32 i = 0; i < OBJECT_EVENTS_COUNT; i++)
     {
         const struct ObjectEvent *object = &gObjectEvents[i];
@@ -464,9 +433,8 @@ void EmporiumTraceArena(void)
     assertf(gfxId < NUM_OBJ_EVENT_GFX, "emporium challenger gfx %d out of range", gfxId);
 }
 
-// Battle-room walk-in breadcrumb (callnative). The step number comes from
-// VAR_0x8005; the script sets it before each call so the last logged step names
-// the command that was running when a reset hit.
+// The script sets VAR_0x8005 before each call, so the last logged step names the
+// command running when a reset hit.
 void EmporiumTraceStep(void)
 {
     const struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
@@ -491,11 +459,9 @@ void EmporiumTraceStep(void)
     }
 }
 
-// ---- Stage 7: instructor reward menu, ace preview, opponent roll ----
-//
-// The instructor script passes the building's enum EmporiumId in VAR_0x8004. It
-// stays set for the whole menu interaction; VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD
-// are only written once the player commits to a challenge.
+// The instructor script passes the building's enum EmporiumId in VAR_0x8004.
+// VAR_EMPORIUM_ID / VAR_EMPORIUM_REWARD are only written once the player commits
+// to a challenge.
 
 // Reward "already owned" test. An item that overflowed to the PC on pickup, or is
 // held by a party Pokemon, still counts as owned so it drops off the menu. Box
@@ -518,12 +484,11 @@ static bool32 PlayerOwnsRewardItem(enum Item item)
     return FALSE;
 }
 
-// Pushes every reward for the building in VAR_0x8004 onto the dynamic multichoice
-// stack (consumed by dynmultistack). A row is skipped when its unlock flag is
-// unset or the player already holds that item (owned rewards are hidden, per plan
-// section 5.3). The option id is the item constant, so DYN_MULTICHOICE_CB_SHOW_ITEM
-// draws its icon and EmporiumMenu_CommitReward can map the pick back to a row.
-// VAR_RESULT is set to the number of rows pushed (0 when none are available).
+// Pushes the building's rewards onto the dynamic multichoice stack (consumed by
+// dynmultistack), skipping locked and already-owned rows. The option id is the
+// item constant, so DYN_MULTICHOICE_CB_SHOW_ITEM draws its icon and
+// EmporiumMenu_CommitReward can map the pick back to a row.
+// VAR_RESULT is the number of rows pushed.
 void EmporiumMenu_BuildList(void)
 {
     u32 emporium = VarGet(VAR_0x8004);
@@ -556,9 +521,8 @@ void EmporiumMenu_BuildList(void)
     gSpecialVar_Result = pushed;
 }
 
-// Maps the item id the menu returned (still in VAR_RESULT) back to its catalogue
-// row and stores that index in VAR_EMPORIUM_REWARD. VAR_RESULT becomes TRUE on a
-// hit, FALSE otherwise (menu only lists valid rows, so FALSE means re-open it).
+// Maps the item id in VAR_RESULT back to its catalogue row and stores that index
+// in VAR_EMPORIUM_REWARD. VAR_RESULT becomes TRUE on a hit, FALSE otherwise.
 void EmporiumMenu_CommitReward(void)
 {
     u32 emporium = VarGet(VAR_0x8004);
@@ -579,9 +543,7 @@ void EmporiumMenu_CommitReward(void)
     gSpecialVar_Result = FALSE;
 }
 
-// Fills gStringVar1 with the chosen reward's name for the confirm prompt. The
-// challenger's ace is deliberately not previewed - it would spoil the surprise
-// and, for the Tera building, only restate the shard's type.
+// The challenger's ace is deliberately not previewed: it would spoil the surprise.
 void EmporiumMenu_BufferConfirm(void)
 {
     u32 rewardIndex = VarGet(VAR_EMPORIUM_REWARD);
@@ -592,21 +554,16 @@ void EmporiumMenu_BufferConfirm(void)
     CopyItemName(gEmporiumRewards[rewardIndex].item, gStringVar1);
 }
 
-// Rolls the challenger for the pending challenge (VAR_EMPORIUM_ID) and writes the
-// identity's overworld graphics id to VAR_OBJ_GFX_ID_0 for the back-room object.
-// BuildEmporiumTrainer arms the gEmporiumBattleActive redirect.
 void EmporiumRollChallenger(void)
 {
     VarSet(VAR_OBJ_GFX_ID_0, BuildEmporiumTrainer(VarGet(VAR_EMPORIUM_ID)));
 }
 
-// Battle-room ON_TRANSITION guard. gEmporiumBattleActive lives in EWRAM and is
-// gone after any reload, but VAR_EMPORIUM_* and the shown challenger object are
-// saved state. If the redirect is not armed there is no live challenge: re-hide
-// the challengers and drop the stale vars, so a save made inside a battle room
-// can never talk a challenger into fighting the empty TRAINER_EMPORIUM stub.
-// Entering from the lobby keeps gEmporiumBattleActive set (EmporiumRollChallenger
-// armed it), so this is a no-op on the legitimate path.
+// gEmporiumBattleActive is gone after any reload, but VAR_EMPORIUM_* and the shown
+// challenger object are saved state. If the redirect is not armed, re-hide the
+// challengers and drop the stale vars so a save made inside a battle room can
+// never start a fight against the empty TRAINER_EMPORIUM stub. No-op when
+// entering from the lobby.
 void EmporiumBattleRoomOnTransition(void)
 {
     EMPORIUM_TRACE("room transition: armed=%d id=%d reward=%d gfxVar=%d level=%d",
@@ -622,7 +579,6 @@ void EmporiumBattleRoomOnTransition(void)
     }
 }
 
-// Reveals the battle-room challenger for the building the challenge is in.
 void EmporiumShowChallenger(void)
 {
     switch (VarGet(VAR_EMPORIUM_ID))
