@@ -1,5 +1,7 @@
 ## Azelf — The Being of Willpower
 
+### Location: Scorched Slab - Mondays only, one of the lake trio per day (until all three are caught)
+
 Azelf fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. On top of that it **cannot be taken below 1 HP** for almost the whole fight — you are not

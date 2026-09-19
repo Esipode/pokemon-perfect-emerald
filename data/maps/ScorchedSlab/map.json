@@ -3,7 +3,6 @@
   "name": "ScorchedSlab",
   "layout": "LAYOUT_SCORCHED_SLAB",
   "music": "MUS_PETALBURG_WOODS",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_SCORCHED_SLAB",
   "requires_flash": false,
   "weather": "WEATHER_NONE",
@@ -16,17 +15,43 @@
   "connections": null,
   "object_events": [
     {
-      "graphics_id": "OBJ_EVENT_GFX_ITEM_BALL",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(UXIE)",
       "x": 7,
       "y": 5,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_LOOK_AROUND",
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
       "movement_range_x": 0,
       "movement_range_y": 0,
       "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "ITEM_TM_SUNNY_DAY",
-      "script": "Common_EventScript_FindItem",
-      "flag": "FLAG_ITEM_SCORCHED_SLAB_TM_SUNNY_DAY"
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ScorchedSlab_Uxie_Encounter",
+      "flag": "FLAG_HIDE_UXIE"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(MESPRIT)",
+      "x": 7,
+      "y": 5,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ScorchedSlab_Mesprit_Encounter",
+      "flag": "FLAG_HIDE_MESPRIT"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(AZELF)",
+      "x": 7,
+      "y": 5,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "ScorchedSlab_Azelf_Encounter",
+      "flag": "FLAG_HIDE_AZELF"
     }
   ],
   "warp_events": [
@@ -39,5 +64,6 @@
     }
   ],
   "coord_events": [],
-  "bg_events": []
+  "bg_events": [],
+  "region": "REGION_HOENN"
 }

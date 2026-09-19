@@ -35,7 +35,38 @@ Route120_OnLoad:
 	call_if_unset FLAG_REGI_DOORS_OPENED, Route120_EventScript_CloseAncientTomb
 	call_if_set FLAG_RECEIVED_DEVON_SCOPE, Route120_EventScript_SetBridgeClearMetatiles
 	call_if_unset FLAG_RECEIVED_DEVON_SCOPE, Route120_EventScript_SetBridgeKecleonMovement
+	call Route120_EventScript_TryHideScorchedSlabEntrance
 	end
+
+@ Scorched Slab entrance is only open on Mondays, and only once the player is Champion
+Route120_EventScript_TryHideScorchedSlabEntrance::
+	goto_if_unset FLAG_SYS_GAME_CLEAR, Route120_EventScript_HideScorchedSlabEntrance
+	getdayofweek VAR_0x8008
+	goto_if_ne VAR_0x8008, WEEKDAY_MON, Route120_EventScript_HideScorchedSlabEntrance
+	return
+
+Route120_EventScript_HideScorchedSlabEntrance::
+	setmetatilewithelevation 17, 20, 0x0A1, FALSE, 1
+	setmetatilewithelevation 18, 20, 0x0A1, FALSE, 1
+	setmetatilewithelevation 19, 20, 0x0A1, FALSE, 1
+	setmetatilewithelevation 20, 20, 0x0A1, FALSE, 1
+	setmetatilewithelevation 21, 20, 0x0A1, FALSE, 1
+	setmetatilewithelevation 17, 21, 0x0A1, FALSE, 1
+	setmetatilewithelevation 18, 21, 0x0A1, FALSE, 1
+	setmetatilewithelevation 19, 21, 0x0A1, FALSE, 1
+	setmetatilewithelevation 20, 21, 0x0A1, FALSE, 1
+	setmetatilewithelevation 21, 21, 0x0A1, FALSE, 1
+	setmetatilewithelevation 17, 22, 0x0A1, FALSE, 1
+	setmetatilewithelevation 18, 22, 0x0A1, FALSE, 1
+	setmetatilewithelevation 19, 22, 0x0A1, FALSE, 1
+	setmetatilewithelevation 20, 22, 0x0A1, FALSE, 1
+	setmetatilewithelevation 21, 22, 0x0A1, FALSE, 1
+	setmetatilewithelevation 17, 23, 0x0A1, FALSE, 1
+	setmetatilewithelevation 18, 23, 0x0A1, FALSE, 1
+	setmetatilewithelevation 19, 23, 0x0A1, FALSE, 1
+	setmetatilewithelevation 20, 23, 0x0A1, FALSE, 1
+	setmetatilewithelevation 21, 23, 0x0A1, FALSE, 1
+	return
 
 Route120_EventScript_CloseAncientTomb::
 	setmetatile 7, 54, METATILE_General_RockWall_RockBase, TRUE

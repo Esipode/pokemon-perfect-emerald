@@ -1,5 +1,7 @@
 ## Uxie — The Being of Knowledge
 
+### Location: Scorched Slab - Mondays only, one of the lake trio per day (until all three are caught)
+
 Uxie fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be taken below 1 HP** until it is weakened, so you are not going to end
