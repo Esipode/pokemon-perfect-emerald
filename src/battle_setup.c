@@ -578,8 +578,7 @@ static void DowngradeBadPoison(void)
 
 static void CB2_EndWildBattle(void)
 {
-    // Category F. GAME_STAT_WILD_BATTLES is incremented at battle
-    // start, so it's already current here regardless of outcome.
+    // GAME_STAT_WILD_BATTLES is incremented at battle start, so it's current here regardless of outcome.
     Achievement_CheckWildBattleMilestones();
 
     CpuFill16(0, (void *)(BG_PLTT), BG_PLTT_SIZE);
@@ -600,32 +599,18 @@ static void CB2_EndWildBattle(void)
     }
     else
     {
-        // Handles nuzlocke mode setting pokemon being caught in this zone.
-        //
-        // Draft Mode.md §3b: in a Draft run this same SET_NUZLOCKE_ZONE_FLAG
-        // bit means "this area's draft is spent", so this block must never
-        // run for a wild battle that merely ended (caught, KO'd, or fled) --
-        // only an actual draft pick (Draft_MarkAreaSpent, src/draft_mode.c)
-        // may spend an area. Gating on nuzlockeModeEnabled here is what does
-        // that: Draft and Nuzlocke are mutually exclusive by construction
-        // (src/new_game_settings_menu.c), so nuzlockeModeEnabled reads FALSE
-        // for the entire duration of a Draft run and this block can't fire.
-        // Do not widen this condition or drop it in favor of something that
-        // also matches Draft saves.
+        // In a Draft run SET_NUZLOCKE_ZONE_FLAG means "this area's draft is spent", so this block must
+        // never run for a wild battle that merely ended; only a draft pick (Draft_MarkAreaSpent) may
+        // spend an area. Gating on nuzlockeModeEnabled does that: Draft and Nuzlocke are mutually
+        // exclusive (src/new_game_settings_menu.c). Do not widen this condition to match Draft saves.
         if ((gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE)))
         {
             u16 zone = GetCurrentRegionMapSectionId();
 
-            // Note this branch runs for *any* wild battle that ended without a
-            // whiteout -- caught, KO'd, or fled -- so the flag has always meant
-            // "you've had your encounter here," not "you caught something here."
-            //
-            // BOOST_NUZLOCKE_SECOND_CHANCE reads exactly that
-            // distinction: an encounter the player didn't convert into a catch
-            // spends a one-time per-zone free pass instead of locking the
-            // zone, so you get one more shot at it. Catching still locks the
-            // zone immediately, and the pass is only ever granted once, so
-            // this is a single retry rather than two catches.
+            // This branch runs for any wild battle that ended without a whiteout (caught, KO'd or
+            // fled), so the flag means "you've had your encounter here".
+            // BOOST_NUZLOCKE_SECOND_CHANCE: a non-catch spends a one-time per-zone free pass instead of
+            // locking the zone. Catching still locks immediately, so this is a single retry.
             if (gBattleOutcome != B_OUTCOME_CAUGHT
              && AchievementBoost_HasNuzlockeSecondChance()
              && !GET_NUZLOCKE_ZONE_EXTRA_FLAG(zone))
@@ -929,8 +914,6 @@ enum BattleTransition GetSpecialBattleTransition(enum BattleTransitionGroup id)
 
     return sBattleTransitionTable_BattleFrontier[var % ARRAY_COUNT(sBattleTransitionTable_BattleFrontier)];
 #else
-    // Stage 4: only reachable here for B_TOWER/B_PALACE/B_ARENA/B_FACTORY/B_PIKE groups, whose
-    // only callers were battle_frontier.c -- now unreachable.
     return RANDOM_TRANSITION(sBattleTransitionTable_BattleFrontier);
 #endif //FREE_BATTLE_FRONTIER
 }
@@ -1494,8 +1477,7 @@ static void HandleBattleVariantEndParty(void)
 
 static void CB2_EndTrainerBattle(void)
 {
-    // Category E. GAME_STAT_TRAINER_BATTLES is incremented at
-    // battle start, so it's already current here regardless of outcome.
+    // GAME_STAT_TRAINER_BATTLES is incremented at battle start, so it's current here regardless of outcome.
     Achievement_CheckTrainerBattleMilestones();
 
     HandleBattleVariantEndParty();
@@ -1506,9 +1488,8 @@ static void CB2_EndTrainerBattle(void)
     }
 
     gIsDebugBattle = FALSE;
-    // The TRAINER_EMPORIUM redirect is only needed while the opponent party is
-    // built at battle start. Disarm it here so a white-out can never leave every
-    // trainer in the game pointed at the runtime Emporium struct.
+    // The TRAINER_EMPORIUM redirect is only needed while the opponent party is built. Disarm it so a
+    // white-out can't leave every trainer pointed at the runtime Emporium struct.
     gEmporiumBattleActive = FALSE;
     if (FollowerNPCIsBattlePartner())
     {
@@ -1558,9 +1539,8 @@ static void CB2_EndTrainerBattle(void)
     {
         SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         DowngradeBadPoison();
-        // BOOST_POST_BATTLE_HEAL. Only this win branch -- not the forfeit/
-        // defeat/early-rival-loss branches above, where the party either
-        // isn't rewarded or is about to be fully healed some other way.
+        // BOOST_POST_BATTLE_HEAL: win branch only; the forfeit/defeat/early-rival-loss branches above
+        // are unrewarded or fully healed elsewhere.
         AchievementBoost_ApplyPostBattleHeal();
         if (CurrentBattlePyramidLocation() == PYRAMID_LOCATION_NONE && !InTrainerHillChallenge())
         {
@@ -1765,11 +1745,9 @@ void SetMultiTrainerBattle(struct ScriptContext *ctx)
     TRAINER_BATTLE_PARAM.defeatTextB = (u8*)ScriptReadWord(ctx);
     gPartnerTrainerId = TRAINER_PARTNER(ScriptReadHalfword(ctx));
 
-    // The multi_do macro asks AreMultiPartiesFullTeams() before the battle type is
-    // built, and that check reads BATTLE_TYPE_TRAINER. Seed it from the opponents set
-    // above so the script-time answer matches the in-battle one instead of depending on
-    // the previous battle's leftover flags; BattleSetup_StartMultiBattle assigns
-    // gBattleTypeFlags outright right afterwards.
+    // The multi_do macro calls AreMultiPartiesFullTeams() before the battle type is built, and it reads
+    // BATTLE_TYPE_TRAINER. Seed it from the opponents above so the script-time answer matches the
+    // in-battle one; BattleSetup_StartMultiBattle assigns gBattleTypeFlags outright afterwards.
     if (TRAINER_BATTLE_PARAM.opponentA == TRAINER_NONE)
         gBattleTypeFlags &= ~BATTLE_TYPE_TRAINER;
     else

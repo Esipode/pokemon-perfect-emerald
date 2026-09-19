@@ -1916,9 +1916,8 @@ bool32 HandleFaintedMonActions(void)
             break;
         case FAINTED_ACTIONS_HANDLE_NEXT_BATTLER:
         {
-            // ENC_ON_FAINT: EXP and absent flags are settled, not during the faint animation.
-            // Called from a non-script callback, like ENC_ON_BATTLE_START - see battle_main.c's
-            // FIRST_TURN_EVENTS_ENCOUNTER for the same BattleScriptExecute+Call shim pattern.
+            // ENC_ON_FAINT: runs once EXP and absent flags are settled, not during the faint animation.
+            // Same BattleScriptExecute+Call shim as FIRST_TURN_EVENTS_ENCOUNTER in battle_main.c.
             SetEncounterEvent(gBattlerFainted, 0, MOVE_NONE, ENC_CAUSE_NONE, 0, 0);
             const u8 *script = TryRunEncounterCheckpoint(ENC_ON_FAINT);
             if (script != NULL)
@@ -8107,13 +8106,11 @@ static bool32 IsCriticalHit(struct DamageContext *ctx)
     else
         isCrit = RandomChance(RNG_CRITICAL_HIT, 1, GetCriticalHitOdds(critChance));
 
-    // BOOST_CRIT_CHANCE: a flat extra chance to upgrade a hit the
-    // roll above already declined. Deliberately after the CRITICAL_HIT_BLOCKED
-    // branch, so Battle Armor/Shell Armor still hard-block, and before the
-    // gPartyCriticalHits counter below, so a boosted crit still counts toward
-    // IF_CRITICAL_HITS_GE. Player side only, and never in a link or recorded
-    // battle -- boost levels differ between players, so an ungated roll would
-    // desync. The percent == 0 check keeps the baseline path from drawing RNG.
+    // BOOST_CRIT_CHANCE: flat extra chance to upgrade a hit the roll above declined.
+    // After the CRITICAL_HIT_BLOCKED branch so Battle Armor/Shell Armor still hard-block, and
+    // before the gPartyCriticalHits counter so a boosted crit still counts toward IF_CRITICAL_HITS_GE.
+    // Player side only, never link/recorded: boost levels differ between players and would desync.
+    // The percent == 0 check keeps the baseline path from drawing RNG.
     if (!isCrit && critChance != CRITICAL_HIT_BLOCKED && IsOnPlayerSide(ctx->battlerAtk)
      && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
     {
@@ -8128,8 +8125,6 @@ static bool32 IsCriticalHit(struct DamageContext *ctx)
      && !(gBattleTypeFlags & BATTLE_TYPE_MULTI && GetBattlerPosition(ctx->battlerAtk) == B_POSITION_PLAYER_LEFT))
         gPartyCriticalHits[gBattlerPartyIndexes[ctx->battlerAtk]]++;
 
-    // Same player-side/no-link-or-recorded gate as
-    // the BOOST_CRIT_CHANCE roll above.
     if (isCrit && IsOnPlayerSide(ctx->battlerAtk)
      && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
         Achievement_RecordCriticalHit();
@@ -8192,10 +8187,8 @@ s32 GetAdjustedDamage(struct DamageContext *ctx, s32 damage)
             gBattleStruct->moveResultFlags[ctx->battlerDef] |= MOVE_RESULT_FOE_ENDURED_AFFECTION;
         }
     }
-    // BOOST_SURVIVE_1HP: lowest priority of every "leaves 1 HP" cause above,
-    // and gated the same way as this fork's other battle boosts -- player
-    // side only, never in a link/recorded battle where boost levels could
-    // differ or desync a replay.
+    // BOOST_SURVIVE_1HP: lowest priority of the "leaves 1 HP" causes above.
+    // Player side only, never link/recorded, like the other battle boosts.
     else if (IsOnPlayerSide(ctx->battlerDef)
           && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED))
           && rand < AchievementBoost_GetSurviveChancePercent())
@@ -8222,12 +8215,11 @@ s32 CalculateMoveDamage(struct DamageContext *ctx)
     else
         damage = DoMoveDamageCalc(ctx);
 
-    // Before GetAdjustedDamage, so Endure/Sturdy/Focus Sash all judge "would this KO?" against the
-    // damage the target actually takes. The AI shares this path deliberately: a boss it can't dent
-    // should read as one when it picks a move.
-    // The type-keyed adaptation runs first so the flat guard's floor-at-1 stays the last word.
-    // ctx->moveType is the runtime type - what the move actually hit as, after Normalize, the -ate
-    // abilities and Tera - which is the same basis encadapt files a type on.
+    // Before GetAdjustedDamage, so Endure/Sturdy/Focus Sash judge "would this KO?" against the
+    // damage the target actually takes. The AI shares this path so a boss it can't dent reads as one.
+    // Type adaptation runs first so the flat guard's floor-at-1 stays the last word.
+    // ctx->moveType is the runtime type (after Normalize, -ate abilities and Tera), the same basis
+    // encadapt files a type on.
     damage = ApplyEncounterTypeAdaptation(ctx->battlerDef, ctx->moveType, damage);
     damage = ApplyEncounterDamageReduction(ctx->battlerDef, damage);
 
@@ -8448,10 +8440,9 @@ uq4_12_t CalcTypeEffectivenessMultiplier(struct DamageContext *ctx)
         }
     }
 
-    // A double weakness (4x) can spike well past what an encounter's flat damageReduction was
-    // balanced around, since reduction is a percentage on top of whatever the matchup already
-    // multiplied by. Clamped here, upstream of every consumer (damage calc, AI scoring, the
-    // super-effective message flags), so all three agree on what the boss actually took.
+    // A 4x weakness spikes past what an encounter's flat damageReduction was balanced around.
+    // Clamped upstream of every consumer (damage calc, AI scoring, super-effective message flags)
+    // so all three agree on what the boss took.
     if (modifier > UQ_4_12(2.0) && DoesEncounterCapTypeEffectiveness(ctx->battlerDef))
         modifier = UQ_4_12(2.0);
 
@@ -9626,34 +9617,29 @@ void CopyMonAbilityAndTypesToBattleMon(enum BattlerId battler, struct Pokemon *m
             gBattleMons[battler].ability = TestRunner_Battle_GetForcedAbility(array, partyIndex);
     }
     #endif
-    // Resolve through the shared resolver - this runs on form changes and stat
-    // recalcs mid-battle, and reading the raw species types here used to hand
-    // the mon its unrandomized types back partway through a battle.
+    // Runs on mid-battle form changes and stat recalcs, so types must go through the resolver
+    // to keep randomized types.
     u8 type1, type2;
     GetResolvedTypePair(gBattleMons[battler].species, &type1, &type2);
     gBattleMons[battler].types[0] = type1;
     gBattleMons[battler].types[1] = type2;
     gBattleMons[battler].types[2] = TYPE_MYSTERY;
 
-    // GetMonAbility above re-derives the ability from the party mon, which does not carry an
-    // encounter Ability: the species does not own. Without this a form change or any other
-    // RecalcBattlerStats hands the boss its species ability back mid-battle.
+    // GetMonAbility re-derives the ability from the party mon, which does not carry an encounter
+    // Ability the species does not own. Reapply it so form changes and RecalcBattlerStats keep it.
     ApplyEncounterBattlerAbilityOverride(battler);
 }
 
-// Applies move randomization to a battler that was just loaded from party
-// data. gBattleMons[battler].moves still holds the mon's true stored moveset
-// at that point (randomization is never persisted back to the party), so this
-// must run exactly once per load - at battle intro and on every switch-in -
-// and never on already-resolved data.
+// Applies move randomization to a battler just loaded from party data. gBattleMons[battler].moves
+// still holds the true stored moveset (randomization is never persisted to the party), so this must
+// run exactly once per load (battle intro and every switch-in), never on already-resolved data.
 void ApplyMoveRandomizationToBattleMon(enum BattlerId battler)
 {
     u16 originalMoves[MAX_MON_MOVES];
     u16 resolvedMoves[MAX_MON_MOVES];
 
-    // The generated Emporium challenger keeps its authored moveset so the ace's
-    // reward-matching move survives (party creation clears the flag; this is the
-    // battle-intro / switch-in path). The player's team still randomizes.
+    // The generated Emporium challenger keeps its authored moveset so the ace's reward-matching
+    // move survives. The player's team still randomizes.
     if (gEmporiumBattleActive && GetBattlerSide(battler) != B_SIDE_PLAYER)
         return;
 
@@ -9667,10 +9653,7 @@ void ApplyMoveRandomizationToBattleMon(enum BattlerId battler)
         if (resolvedMoves[i] == originalMoves[i])
             continue;
 
-        // Carry the mon's real remaining PP across the substitution rather than
-        // refilling it - refilling handed the player a full PP bar at the start
-        // of every battle. Only cap it, for slots whose stored PP was sized
-        // against a move with a larger PP pool.
+        // Keep the mon's remaining PP; only cap it for slots sized against a larger PP pool.
         u32 maxPP = CalculatePPWithBonus(resolvedMoves[i], gBattleMons[battler].ppBonuses, i);
 
         gBattleMons[battler].moves[i] = resolvedMoves[i];

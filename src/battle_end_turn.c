@@ -519,9 +519,9 @@ static bool32 HandleEndTurnLeechSeed(enum BattlerId battler)
         else
         {
             SetPassiveDamageAmount(drainedBattler, drainAmount);
-            // receiverBattler is the seeder taking the HP, drainedBattler the seeded battler losing
-            // it - so an encounter boss keeps only the share of a drain its own guard would let
-            // through. The Liquid Ooze branch above is damage, not healing, and is left alone.
+            // receiverBattler is the seeder taking the HP, drainedBattler the seeded battler losing it.
+            // An encounter boss keeps only the share of a drain its guard lets through.
+            // Liquid Ooze above is damage, not healing, and is left alone.
             SetHealAmount(receiverBattler, ApplyEncounterDrainReduction(receiverBattler, drainedBattler, healAmount));
             gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_LEECH_SEED_DRAIN;
             BattleScriptCall(BattleScript_LeechSeedTurnDrainRecovery);
@@ -565,9 +565,8 @@ static bool32 HandleEndTurnPoison(enum BattlerId battler)
             SetPassiveDamageAmount(battler, GetNonDynamaxMaxHP(battler) / 16);
             if ((gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) != STATUS1_TOXIC_TURN(15)) // not 16 turns
                 gBattleMons[battler].status1 += STATUS1_TOXIC_TURN(1);
-            // An encounter can run for far more turns than the ~16 this ramp is balanced around
-            // elsewhere, so a flat-toxic-damage battler skips the multiply and just takes the same
-            // 1/16 max HP every turn - the counter itself still advances in case the flag is lifted.
+            // Encounters run far past the ~16 turns this ramp is balanced around, so a flat-toxic
+            // battler skips the multiply and takes 1/16 max HP every turn. The counter still advances.
             if (!DoesEncounterFlattenToxicDamage(battler))
                 gBattleStruct->passiveHpUpdate[battler] *= (gBattleMons[battler].status1 & STATUS1_TOXIC_COUNTER) >> 8;
             BattleScriptCall(BattleScript_PoisonTurnDmg);
@@ -629,16 +628,12 @@ static bool32 HandleEndTurnFrostbite(enum BattlerId battler)
     return effect;
 }
 
-// BOOST_STATUS_RECOVERY: a flat per-turn chance for one of the
-// player's Pokemon to shake off a non-volatile status on its own. The cure
-// sequence below is Shed Skin's (AbilityBattleEffects, ABILITYEFFECT_ENDTURN,
-// src/battle_util.c) -- same message chooser, same status1/nightmare clear,
-// same controller sync -- minus the ability popup, since no ability is
-// responsible for this one.
+// BOOST_STATUS_RECOVERY: flat per-turn chance for a player's Pokemon to shake off a non-volatile
+// status. The cure sequence is Shed Skin's (ABILITYEFFECT_ENDTURN in src/battle_util.c) minus the
+// ability popup.
 //
-// Player side only, and never in a link or recorded battle: boost levels
-// differ between players, so an ungated roll would desync. The percent == 0
-// check keeps the baseline path from drawing RNG at all.
+// Player side only, never link/recorded: boost levels differ between players and would desync.
+// The percent == 0 check keeps the baseline path from drawing RNG.
 static bool32 HandleEndTurnAchievementStatusRecovery(enum BattlerId battler)
 {
     bool32 effect = FALSE;
@@ -1061,8 +1056,8 @@ static bool32 HandleEndTurnPerishSong(enum BattlerId battler)
 
     gBattleStruct->eventState.endTurnBattler++;
 
-    // Perish Song lands on every battler at once, so refusing it at cast time would spare the user
-    // as well - an encounter's SHARED_KO immunity instead drops the count already on the battler.
+    // Perish Song hits every battler at once, so refusing it at cast time would spare the user too.
+    // SHARED_KO immunity instead drops the count already on the battler.
     if (gBattleMons[battler].volatiles.perishSong
      && DoesEncounterGrantImmunity(battler, ENC_IMMUNE_SHARED_KO))
     {
@@ -1078,8 +1073,8 @@ static bool32 HandleEndTurnPerishSong(enum BattlerId battler)
         if (gBattleMons[battler].volatiles.perishSongTimer == 0)
         {
             gBattleMons[battler].volatiles.perishSong = FALSE;
-            // Direct write, not SetPassiveDamageAmount: Perish Song is a lethal effect rather than
-            // a damage source, so an encounter's damage reduction must not leave the battler alive.
+            // Direct write, not SetPassiveDamageAmount: Perish Song is lethal, so damage reduction
+            // must not leave the battler alive.
             gBattleStruct->passiveHpUpdate[battler] = gBattleMons[battler].hp;
             BattleScriptCall(BattleScript_PerishSongTakesLife);
         }
@@ -1625,9 +1620,8 @@ static bool32 HandleEndTurnDynamax(enum BattlerId battler)
     return effect;
 }
 
-// Rotation Mode: after each turn resolves, the player's active Pokémon is
-// swapped for a random eligible party member, free of charge. See
-// include/rotation_mode.h.
+// Rotation Mode: after each turn, the player's active Pokémon is swapped for a random eligible
+// party member, free of charge. See include/rotation_mode.h.
 static bool32 HandleEndTurnRotationMode(enum BattlerId battler)
 {
     gBattleStruct->eventState.endTurnBattler++;

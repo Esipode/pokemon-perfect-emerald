@@ -1334,7 +1334,7 @@
 	.endm
 
 	@ Adds \stages (signed) to \stat for every battler \target resolves to, clamped to the normal
-	@ stat stage range. Silent - no message, no animation (outline Sec31); pair with playanimation
+	@ stat stage range. Silent - no message, no animation; pair with playanimation
 	@ or a literal trybattlerstatchange call if presentation is wanted.
 	.macro encchangestat target:req, stat:req, stages:req
 	callnative BS_EncounterChangeStat

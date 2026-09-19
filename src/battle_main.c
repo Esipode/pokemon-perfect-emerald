@@ -604,11 +604,10 @@ static void CB2_InitBattleInternal(void)
     else
         SetMainCallback2(CB2_HandleStartBattle);
 
-    // Opponent parties exist now (built in battle_setup.c) and no gBattleMons have been built from
-    // them yet - the only window where an encounter's Level:/Moves:/Ability: properties can restate
-    // what the opponents are (battle_encounter.c). Moves need their own property because the level
-    // rebuild recalculates stats only - without it the boss keeps the learnset moves it was created
-    // with, at whatever level the overworld script's setwildbattle happened to name.
+    // Opponent parties are built (battle_setup.c) but no gBattleMons exist yet: the only window where
+    // an encounter's Level:/Moves:/Ability: properties can restate the opponents (battle_encounter.c).
+    // Moves need their own property because the level rebuild recalculates stats only, so the boss
+    // would keep the learnset moves for whatever level setwildbattle named.
     ApplyEncounterLevelOverride();
     ApplyEncounterMoveOverride();
     ApplyEncounterAbilityOverride();
@@ -1841,12 +1840,10 @@ void BattleMainCB2(void)
 
     if (passes != 0)
     {
-        // Keys are read once per frame, so catch-up passes must not see the
-        // edge-triggered ones again or a single press would register two or three
-        // times. Held keys are the exception: they are level state, not an edge, and
-        // must stay true for every pass of the frame. Zeroing them made JOY_HELD read
-        // as an instant release, which the last-used-ball R hold tests on every pass
-        // (HandleInputChooseAction) - it threw the ball the moment R went down.
+        // Keys are read once per frame, so catch-up passes must not see edge-triggered keys again or
+        // one press registers several times. Held keys are level state and must stay true for every
+        // pass: zeroing them reads as an instant release, which the last-used-ball R hold check in
+        // HandleInputChooseAction tests on every pass.
         u16 newKeys = gMain.newKeys;
         u16 newKeysRaw = gMain.newKeysRaw;
         u16 newAndRepeatedKeys = gMain.newAndRepeatedKeys;
@@ -2202,10 +2199,8 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
     bool32 noMoveSet = TRUE;
     u32 j;
     u16 assignedMoves[MAX_MON_MOVES];
-    // Emporium challengers are authored end to end and their ace's moveset
-    // carries the chosen reward's mechanic, so the New Game+ move upgrade pass
-    // is skipped for them - matching the isNGPlus guard in
-    // CreateNPCTrainerPartyFromTrainer.
+    // Emporium challengers are authored end to end (the ace's moveset carries the reward's mechanic),
+    // so the New Game+ move upgrade is skipped, matching isNGPlus in CreateNPCTrainerPartyFromTrainer.
     bool32 applyNewGamePlusMoves = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive;
 
     for (j = 0; j < MAX_MON_MOVES; ++j)
@@ -2782,9 +2777,8 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     u16 partySpecies[PARTY_SIZE];
     bool8 isReplaced[PARTY_SIZE] = {0};
     struct NewGamePlusFill fill = {0};
-    // Emporium challengers are authored end to end - their ace has to keep the
-    // reward's mechanic - so the New Game+ replacement/item passes are skipped
-    // for them (see the level override below and the randomizer suppression).
+    // Emporium challengers are authored end to end (the ace keeps the reward's mechanic), so the
+    // New Game+ replacement/item passes are skipped for them.
     bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive;
     u8 replaceCount = 0;
     u8 monsCount;
@@ -2937,11 +2931,8 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
             SetTrainerMonEVsByHighestBaseStats(&party[i], species);
         }
 
-        // Always store the trainer's true original moveset here. Move
-        // randomization (FLAG_RANDOMIZE_MOVES) is applied later, once,
-        // when the mon enters battle (see DoBattleIntro) via the shared
-        // resolver - resolving here too would double-randomize, since
-        // this data gets read back as "original" at that point.
+        // Store the true original moveset. FLAG_RANDOMIZE_MOVES is applied once at battle entry
+        // (see DoBattleIntro); resolving here too would double-randomize.
         if (isReplaced[i])
             AssignNewGamePlusGeneratedMoves(&party[i]);
         else
@@ -4442,17 +4433,13 @@ static void DoBattleIntro(void)
                 }
                 #endif
 
-                // After the volatiles memset above, which would otherwise clear the
-                // overwrittenAbility that carries an off-list encounter ability.
+                // After the volatiles memset above, which clears the overwrittenAbility carrying an
+                // off-list encounter ability.
                 ApplyEncounterBattlerAbilityOverride(battler);
 
-                // Resolve type and moves through the shared resolver. This is
-                // where randomization is applied to the battlers present at the
-                // battle intro; mid-battle switch-ins get the same treatment in
-                // Cmd_switchindataupdate. gBattleMons[battler].moves still
-                // holds the mon's true original moveset here (trainer-party
-                // building no longer pre-randomizes it), so this runs exactly
-                // once per battler without compounding randomization.
+                // Randomization is applied here for battlers present at the intro (switch-ins get it in
+                // Cmd_switchindataupdate). gBattleMons[battler].moves still holds the true original
+                // moveset, so this runs exactly once per battler.
                 {
                     u8 type1, type2;
                     GetResolvedTypePair(gBattleMons[battler].species, &type1, &type2);
@@ -5186,10 +5173,8 @@ static void HandleTurnActionSelectionState(void)
                 }
                 else
                 {
-                    // Note: when AI is controlling the player, action selection still goes through
-                    // BtlController_EmitChooseAction below so PlayerHandleChooseAction can route the
-                    // action/move choice through the same pipeline used for AI-controlled opponents,
-                    // which is what actually records the AI's chosen move.
+                    // When AI controls the player, action selection still goes through
+                    // BtlController_EmitChooseAction so PlayerHandleChooseAction records the AI's move.
                     if (gBattleMons[battler].volatiles.multipleTurns
                         || gBattleMons[battler].volatiles.rechargeTimer > 0)
                     {
@@ -5488,9 +5473,7 @@ static void HandleTurnActionSelectionState(void)
                             gBattleStruct->chosenMovePositions[battler] = gBattleResources->bufferB[battler][2] & ~RET_GIMMICK;
                             gChosenMoveByBattler[battler] = GetBattlerChosenMove(battler);
 
-                            // gBattleMons[battler].moves was already resolved once,
-                            // in full, at battle intro (see DoBattleIntro) - re-randomizing
-                            // here would double-randomize an already-resolved move.
+                            // Moves were resolved at battle intro (see DoBattleIntro); don't re-randomize.
                             u16 moveId = gBattleMons[battler].moves[gBattleStruct->chosenMovePositions[battler]];
                             gChosenMoveByBattler[battler] = moveId;
 
@@ -6497,26 +6480,18 @@ static void HandleEndTurn_BattleWon(void)
     if (!(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
     {
         Achievement_CheckBattleMilestones();
-        // Same gate, same evaluation point --
-        // reads AchievementBattleData while it still reflects this battle.
+        // Reads AchievementBattleData while it still reflects this battle.
         Achievement_CheckTeamMilestones();
-        // Save Your Change/Frugal Trainer/No
-        // Shopping/Resourceful. Same gate; internally checks whether this
-        // win was a Gym battle.
+        // Save Your Change/Frugal Trainer/No Shopping/Resourceful. Checks internally for a Gym battle.
         Achievement_CheckGymEconomyMilestones();
-        // Challenge Runs & Nuzlocke. Same gate;
-        // the Nuzlocke half additionally gates itself on
-        // gSaveBlock1Ptr->nuzlockeModeEnabled internally.
+        // Challenge Runs & Nuzlocke. The Nuzlocke half also gates on nuzlockeModeEnabled.
         Achievement_CheckChallengeMilestones();
         Achievement_CheckNuzlockeMilestones();
-        // Streaks, Records & Collection
-        // Remainder. Same gate, same evaluation point.
+        // Streaks, Records & Collection.
         Achievement_CheckBattleRecordsMilestones();
-        // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen. Same
-        // gate, same evaluation point.
+        // Recruits/Limited Party/Draft/Rotation/Mono Type/Mono Gen.
         Achievement_CheckNewModeBattleMilestones();
-        // Recruits mode. Same gate; internally checks whether this is a
-        // battle type Recruits credits at all.
+        // Recruits mode. Checks internally whether this battle type is credited.
         Recruits_TallyParticipants();
     }
 

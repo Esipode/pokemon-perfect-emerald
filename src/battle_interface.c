@@ -1179,9 +1179,8 @@ bool32 HpDisplay_ValueIsPercent(enum BattlerId battler)
     return ModeValueIsPercent(GetLiveHpDisplayMode(battler));
 }
 
-// The taller opponent-singles healthbox is used when the opponent side shows a value in
-// singles. It is chosen once at healthbox creation, so this reads the configured mode,
-// never the live one (the START toggle must not re-lay-out a box mid-battle).
+// The taller opponent-singles healthbox is used when the opponent side shows a value in singles.
+// Chosen once at healthbox creation, so this reads the configured mode, never the live one.
 bool32 HpDisplay_UsesLargeOpponentBox(void)
 {
     enum BattlerId opponent = GetBattlerAtPosition(B_POSITION_OPPONENT_LEFT);
@@ -1190,9 +1189,8 @@ bool32 HpDisplay_UsesLargeOpponentBox(void)
         && ModeShowsValue(GetHpDisplayMode(opponent));
 }
 
-// Whether a singles healthbox should load the bar-less box art. Read from the configured
-// mode, never the live one: box art is picked once at healthbox creation and the START
-// toggle (doubles only) must not re-lay-out a box.
+// Whether a singles healthbox should load the bar-less box art. Reads the configured mode, never
+// the live one, for the same reason as HpDisplay_UsesLargeOpponentBox.
 bool32 HpDisplay_SinglesHidesBar(enum BattlerId battler)
 {
     return GetBattlerCoordsIndex(battler) == BATTLE_COORDS_SINGLES
@@ -1211,9 +1209,8 @@ static bool32 ShouldPrintHpValue(enum BattlerId battler)
 // The player bar sprite is 8 tiles; the opponent bar sprite is 10 (tiles 8 and 9 are the
 // caught-ball and can/cannot-catch icon slots), so the whole sheet must be zeroed or those
 // icons are left on screen.
-// In doubles the bar-hide path historically also stamps a closed-frame tile into the box art;
-// the singles boxes need no such stamp - zeroing the bar sprite removes the whole bar, and
-// writing anything into the box only leaves an artefact.
+// Doubles also stamps a closed-frame tile into the box art; singles needs none, since zeroing the
+// bar sprite removes the whole bar and anything written into the box leaves an artefact.
 static void HideHpBarInHealthbox(u32 healthboxSpriteId)
 {
     enum BattlerId battler = gSprites[healthboxSpriteId].hMain_Battler;
@@ -1230,7 +1227,7 @@ static void HideHpBarInHealthbox(u32 healthboxSpriteId)
     }
 }
 
-// The live mode already folds in the START toggle, so this reduces to: does the mode show a bar?
+// The live mode already folds in the START toggle.
 static bool32 ShouldShowHealthbar(enum BattlerId battler)
 {
     return HpDisplay_ShowsBar(battler);
@@ -1985,22 +1982,13 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     species = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
-    // Nuzlocke Mode / Mono Type / Mono Gen indicator. Draft mode
-    // deliberately overrides rather than joins this - catching is blocked
-    // outright in every wild battle, everywhere (src/item_use.c,
-    // src/battle_script_commands.c), regardless of whether the species on
-    // screen happens to be Mono-legal, so a per-battle can/cannot catch icon
-    // would just be a constant, redundant "no" even with Mono Type/Gen also
-    // on. A Draft run always falls through to the regular caught-ball
-    // indicator below instead, same as a normal playthrough.
+    // Nuzlocke Mode / Mono Type / Mono Gen indicator. Draft mode overrides it: catching is blocked
+    // in every wild battle (src/item_use.c, src/battle_script_commands.c), so a can/cannot catch icon
+    // would be a constant "no". A Draft run falls through to the regular caught-ball indicator.
     //
-    // Mono Type/Gen are also gated on FLAG_SYS_POKEDEX_GET here, same as
-    // Nuzlocke's own FLAG_NUZLOCKE_CATCH_MODE check already is (both flags
-    // are set together, at LittlerootTown_ProfessorBirchsLab_EventScript_
-    // ReceivePokedex) - without it, the mandatory Zigzagoon-vs-Birch battle
-    // on Route 101 shows the icon before any challenge mode has actually
-    // engaged yet, since that battle happens well before the player's
-    // Pokédex (and hence Draft_IsActive()) does.
+    // Mono Type/Gen are gated on FLAG_SYS_POKEDEX_GET like Nuzlocke's FLAG_NUZLOCKE_CATCH_MODE (both
+    // set at LittlerootTown_ProfessorBirchsLab_EventScript_ReceivePokedex). Without it, the Route 101
+    // Zigzagoon-vs-Birch battle shows the icon before any challenge mode has engaged.
     bool8 pokedexReceived = FlagGet(FLAG_SYS_POKEDEX_GET);
     bool8 nuzlockeOn = gSaveBlock1Ptr->nuzlockeModeEnabled && FlagGet(FLAG_NUZLOCKE_CATCH_MODE);
     bool8 monoOn = !Draft_IsActive() && pokedexReceived && MonoType_IsEnabled();
@@ -3165,10 +3153,9 @@ void TryAddLastUsedBallItemSprites(void)
 {
     if (B_LAST_USED_BALL == FALSE)
         return;
-    // Only fall back to the first ball when the current selection is unavailable. The R-button
-    // cycle updates gBallToDisplay without throwing (so gLastThrownBall stays 0), and this sprite
-    // is torn down and re-added every turn during an encounter - keying the reset off gBallToDisplay
-    // lets a browsed selection persist across turns instead of snapping back to a Poke Ball.
+    // Only fall back to the first ball when the selection is unavailable. The R-button cycle updates
+    // gBallToDisplay without throwing (gLastThrownBall stays 0), and this sprite is re-added every
+    // turn, so keying off gBallToDisplay keeps a browsed selection across turns.
     if (!CheckBagHasItem(gBallToDisplay, 1))
     {
         // we're out of the selected ball, so just set it to the first ball in the bag

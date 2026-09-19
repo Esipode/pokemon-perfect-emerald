@@ -981,14 +981,12 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     // Encounter properties.
     [STRINGID_ENCCANTCATCHYET]                      = COMPOUND_STRING("It's far too strong to be caught\nright now!"),
 
-    // Stage 15 example encounters (outline Sec33/Sec34).
     [STRINGID_ENCLEGENDARYGATHERSSTRENGTH]          = COMPOUND_STRING("The legendary gathers its\nstrength!"),
     [STRINGID_ENCMYSTERIOUSBARRIERSURROUNDS]        = COMPOUND_STRING("A mysterious barrier surrounds\nit!"),
     [STRINGID_ENCLEGENDARYWEAKENED]                 = COMPOUND_STRING("The barrier shatters! It's weak\nenough to catch!"),
     [STRINGID_ENCTRAINERPUSHEDTHISFAR]              = COMPOUND_STRING("You've pushed me this far..."),
     [STRINGID_ENCTRAINERSHOWTRUEPOWER]              = COMPOUND_STRING("Then I'll show you its true\npower!"),
 
-    // Stage 16 example encounter (Storm_Herald).
     [STRINGID_ENCSTORMHERALDINTRO]                  = COMPOUND_STRING("The sky churns as it senses a\nchallenger!"),
     [STRINGID_ENCSTORMHERALDSURGE]                  = COMPOUND_STRING("It calls forth the storm's fury!"),
     [STRINGID_ENCSTORMHERALDDESPERATION]            = COMPOUND_STRING("Cornered, it lashes out with\neverything it has!"),
@@ -4849,9 +4847,8 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
     case STRINGID_RETURNMON: // sending poke to ball msg
         if ((GetBattlerPosition(battler) & BIT_FLANK) == B_FLANK_LEFT) // battler 0 and 1
         {
-            // A partner-controller battler that isn't a real Link or in-game partner is just
-            // the AI controlling the player's own second mon (see IsPlayerAiControlled) - treat
-            // it as the player for message purposes rather than a distinct partner trainer.
+            // A partner-controller battler that isn't a real Link or in-game partner is the AI
+            // controlling the player's own second mon (see IsPlayerAiControlled): treat as the player.
             if (BattlerIsPlayer(battler) || BattlerIsWally(battler)
              || (BattlerIsPartner(battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
@@ -4883,8 +4880,7 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
         }
         else // battler 2 and 3
         {
-            // See the battler 0/1 branch above: a partner-controller battler that isn't a
-            // real Link or in-game partner is just the AI controlling the player's own mon.
+            // Partner-controller handling as in the battler 0/1 branch above.
             if (BattlerIsPlayer(battler)
              || (BattlerIsPartner(battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
@@ -4925,9 +4921,8 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
     case STRINGID_SWITCHINMON: // switch-in msg
         if ((GetBattlerPosition(gBattleScripting.battler) & BIT_FLANK) == B_FLANK_LEFT) // battler 0 and 1
         {
-            // A partner-controller battler that isn't a real Link or in-game partner is just
-            // the AI controlling the player's own second mon (see IsPlayerAiControlled) - treat
-            // it as the player for message purposes rather than a distinct partner trainer.
+            // A partner-controller battler that isn't a real Link or in-game partner is the AI
+            // controlling the player's own second mon (see IsPlayerAiControlled): treat as the player.
             if (BattlerIsPlayer(gBattleScripting.battler)
              || (BattlerIsPartner(gBattleScripting.battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
@@ -4959,8 +4954,7 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
         }
         else // battler 2 and 3
         {
-            // See the battler 0/1 branch above: a partner-controller battler that isn't a
-            // real Link or in-game partner is just the AI controlling the player's own mon.
+            // Partner-controller handling as in the battler 0/1 branch above.
             if (BattlerIsPlayer(gBattleScripting.battler)
              || (BattlerIsPartner(gBattleScripting.battler) && !(gBattleTypeFlags & (BATTLE_TYPE_INGAME_PARTNER | BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))) // Player
             {
@@ -5085,8 +5079,7 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
         break;
     default: // load a string from the table
         stringID = GetVariedStringId(stringID);
-        // Also guard against string IDs that exist in enum StringID but have no
-        // gBattleStringsTable entry, otherwise the NULL would be expanded as text.
+        // Also guard against StringIDs with no gBattleStringsTable entry, which would expand NULL as text.
         if (stringID >= STRINGID_COUNT || gBattleStringsTable[stringID] == NULL)
         {
             gDisplayedStringBattle[0] = EOS;

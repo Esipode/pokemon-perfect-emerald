@@ -1013,10 +1013,8 @@ static enum CancelerResult CancelerPPDeduction(struct BattleCalcValues *cv)
     if (gBattleStruct->submoveAnnouncement == SUBMOVE_SUCCESS)
         movePosition = gChosenMovePos;
 
-    // Every early-out above this function means
-    // this call only ever reaches here for a move that's actually being
-    // used -- the same funnel BOOST_PP_SAVER hooks below.
-    // Player side only, never in a link or recorded battle.
+    // Early-outs above mean this only sees moves actually being used, the same funnel BOOST_PP_SAVER hooks.
+    // Player side only, never link/recorded.
     if (IsOnPlayerSide(cv->battlerAtk) && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
     {
         u8 partyIndex = gBattlerPartyIndexes[cv->battlerAtk];
@@ -1048,14 +1046,10 @@ static enum CancelerResult CancelerPPDeduction(struct BattleCalcValues *cv)
     if (cv->move != gLastResultingMoves[cv->battlerAtk] || gBattleStruct->unableToUseMove)
         gBattleMons[cv->battlerAtk].volatiles.metronomeItemCounter = 0;
 
-    // BOOST_PP_SAVER: a flat chance this use costs no PP at all,
-    // Pressure surcharge included. Only the deduction and its controller sync
-    // are skipped -- everything else this canceler does (metronome counter,
-    // gLastMoves, the submove announcement below) still runs, and the early
-    // returns above mean this never fires on a use that wasn't going to cost
-    // PP anyway (Struggle, multi-turn moves, Dancer, bounced, snatched, Bide).
-    // Player side only, never in a link or recorded battle -- see
-    // AchievementBoost_GetPpSavePercent (include/achievements.h).
+    // BOOST_PP_SAVER: flat chance this use costs no PP, Pressure surcharge included. Only the
+    // deduction and its controller sync are skipped; the rest of this canceler still runs. Early
+    // returns above mean it never fires on uses that cost no PP anyway (Struggle, multi-turn,
+    // Dancer, bounced, snatched, Bide). Player side only, never link/recorded.
     bool32 skipPPDeduction = FALSE;
 
     if (IsOnPlayerSide(cv->battlerAtk) && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED)))
@@ -2996,14 +2990,13 @@ static enum CancelerResult CancelerHealthBarUpdate(struct BattleCalcValues *cv)
 
 // Records a move-damage HP change into the encounter event context. The move-damage HP commit
 // lives here rather than in Cmd_datahpupdate, so the ENC_ON_MOVE_END / ENC_ON_TURN_END data that
-// MoveEndEncounter reads is captured at this commit point.
+// MoveEndEncounter reads is captured here.
 static void RecordEncounterHpChange(enum BattlerId battler, u16 hpBefore)
 {
     if (!IsEncounterActive())
         return;
 
-    // Party state is committed for an absent battler by ENC_ON_FAINT time; an encounter
-    // script must not revive it. Recovery is to ignore the HP change.
+    // Party state is already committed for an absent battler by ENC_ON_FAINT; scripts must not revive it.
     assertf(!(gBattleStruct->encounter.checkpoint == ENC_ON_FAINT
            && (gAbsentBattlerFlags & (1u << battler))
            && gBattleMons[battler].hp > hpBefore),
@@ -3414,8 +3407,8 @@ static enum MoveEndResult MoveEndAbsorb(struct BattleCalcValues *cv)
             }
             else if (!IsBattlerAtMaxHp(cv->battlerAtk) || GetConfig(B_ABSORB_MESSAGE) < GEN_5)
             {
-                // An encounter boss keeps only the share of a drain its own guard would let through.
-                // The Liquid Ooze branch above is damage, not healing, and is left alone.
+                // An encounter boss keeps only the share of a drain its guard lets through.
+                // Liquid Ooze above is damage, not healing, and is left alone.
                 SetHealAmount(cv->battlerAtk, ApplyEncounterDrainReduction(cv->battlerAtk, cv->battlerDef, healAmount));
                 gBattleCommunication[MULTISTRING_CHOOSER] = B_MSG_ABSORB;
                 gEffectBattler = cv->battlerAtk;
@@ -3785,8 +3778,7 @@ static enum MoveEndResult MoveEndFaintBlock(struct BattleCalcValues *cv)
              && IsBattlerTurnDamaged(cv->battlerDef, EXCLUDING_SUBSTITUTES)
              && IsBattlerAlive(cv->battlerAtk)
              && GetActiveGimmick(cv->battlerAtk) != GIMMICK_DYNAMAX
-             // Checked on the attacker, not the target: SHARED_KO protects the battler Destiny Bond
-             // would drag down, which is whoever landed the KO.
+             // Attacker, not target: SHARED_KO protects the battler Destiny Bond would drag down.
              && !DoesEncounterGrantImmunity(cv->battlerAtk, ENC_IMMUNE_SHARED_KO)
              && !IsBattlerAlly(cv->battlerAtk, cv->battlerDef))
             {
@@ -5289,29 +5281,26 @@ static enum MoveEndResult MoveEndEncounter(struct BattleCalcValues *cv)
 {
     struct EncounterRuntime *runtime = &gBattleStruct->encounter;
 
-    // Damage is recorded into oldValue/newValue at the HP commit point (TryMoveDamageUpdate above,
-    // or Cmd_datahpupdate for passive HP); carry those through unchanged when re-stamping the rest
-    // of the event.
+    // Damage is recorded into oldValue/newValue at the HP commit point (TryMoveDamageUpdate, or
+    // Cmd_datahpupdate for passive HP); carry them through when re-stamping the event.
     s16 oldValue = runtime->event.oldValue;
     s16 newValue = runtime->event.newValue;
 
-    // A different user/move than the event currently describes means this is a fresh move, not a
-    // re-evaluation pass of the current one - give it its own script budget so consecutive moves in
-    // one turn don't share (and exhaust) a single checkpoint's allowance. event.target/event.move
-    // are written only by SetEncounterEvent, never by the damage commit, so this stays accurate.
+    // A different user/move than the event describes is a fresh move, not a re-evaluation pass:
+    // reset the script budget so consecutive moves in one turn don't share one checkpoint's allowance.
+    // event.target/event.move are written only by SetEncounterEvent, so this stays accurate.
     if (runtime->checkpoint != ENC_ON_MOVE_END
      || runtime->event.target != cv->battlerAtk || runtime->event.move != cv->move)
         runtime->scriptsThisCheckpoint = 0;
 
-    // Populate the event before dispatching so the first condition pass sees this move rather than
-    // a cleared context or the previous move's.
+    // Populate before dispatch so the first condition pass sees this move, not a cleared or stale one.
     SetEncounterEvent(cv->battlerDef, cv->battlerAtk, cv->move, ENC_CAUSE_MOVE_DAMAGE, oldValue, newValue);
 
     const u8 *script = TryRunEncounterCheckpoint(ENC_ON_MOVE_END);
     if (script != NULL)
     {
         BattleScriptCall(script);
-        return MOVEEND_RESULT_RUN_SCRIPT;   // do NOT advance moveendState - Stage 07 re-evaluation
+        return MOVEEND_RESULT_RUN_SCRIPT;   // Do not advance moveendState: re-evaluate after the script.
     }
 
     gBattleScripting.moveendState++;

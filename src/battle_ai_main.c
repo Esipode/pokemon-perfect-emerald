@@ -258,8 +258,7 @@ bool32 IsSmartBattle(void)
 
     // AiBattles_IsActive() covers wild AI battles, which aren't BATTLE_TYPE_HAS_AI and
     // don't set the WE_SMART_WILD_AI_FLAG that IsWildMonSmart() checks. See ai_battles.h.
-    // An encounter's AiFlags: property does the same for a scripted wild boss - without this
-    // GetAiFlags returns 0 before it ever reaches the flags the encounter asked for.
+    // An encounter's AiFlags: property does the same for a scripted wild boss.
     return (gBattleTypeFlags & BATTLE_TYPE_HAS_AI) || IsWildMonSmart() || AiBattles_IsActive()
         || GetEncounterAiFlags() != 0;
 }
@@ -339,10 +338,8 @@ void BattleAI_SetupFlags(void)
 {
     if (IsAiVsAiBattle() || IsPlayerAiControlled())
     {
-        // gPartnerTrainerId is TRAINER_NONE outside of real partner battles, which made
-        // GetAiFlags return 0 (no scoring at all) for AI-controlled players in the common
-        // case of a normal trainer battle with no partner. Fall back to the opposing
-        // trainer(s)' own AI flags instead, same as the "prediction" flags computed below.
+        // gPartnerTrainerId is TRAINER_NONE outside partner battles, so fall back to the opposing
+        // trainer(s)' AI flags, as the "prediction" flags below do.
         if ((gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER) && gPartnerTrainerId != TRAINER_NONE)
             gAiThinkingStruct->aiFlags[B_BATTLER_0] = GetAiFlags(gPartnerTrainerId, B_BATTLER_0);
         else
@@ -401,8 +398,7 @@ void BattleAI_SetupFlags(void)
         gAiThinkingStruct->aiFlags[B_BATTLER_0] = aiFlags;
     }
 
-    // An encounter states its opponent-side AI outright, replacing whatever the battle type derived
-    // rather than accumulating onto it - the same "replace" semantics the other properties use.
+    // An encounter replaces the opponent-side AI derived from the battle type rather than adding to it.
     // Last, so it wins over every branch above.
     u64 encounterAiFlags = GetEncounterAiFlags();
     if (encounterAiFlags != 0)
@@ -412,12 +408,10 @@ void BattleAI_SetupFlags(void)
         gAiThinkingStruct->aiFlags[B_BATTLER_1] = encounterAiFlags;
         gAiThinkingStruct->aiFlags[B_BATTLER_3] = encounterAiFlags;
 
-        // AI_FLAG_PREDICT_MOVE predicts the player's move by scoring it with the *player's*
-        // simulated flags (SetupAIPredictionData). The branches above derive those from
-        // TRAINER_BATTLE_PARAM.opponentA/B, which is meaningless in a wild battle - so on a
-        // scripted wild boss the simulated player has no scoring flags and the prediction degrades
-        // to noise. Seed the player side from the encounter's flags too, exactly as the trainer
-        // path does one branch above. Controller-based, so this never makes the player AI-driven.
+        // AI_FLAG_PREDICT_MOVE scores the player's move with the player's simulated flags
+        // (SetupAIPredictionData). The branches above derive those from
+        // TRAINER_BATTLE_PARAM.opponentA/B, meaningless in a wild battle, so seed the player side
+        // from the encounter's flags too. Controller-based: never makes the player AI-driven.
         if (!IsPlayerAiControlled() && !(gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER))
         {
             gAiThinkingStruct->aiFlags[B_BATTLER_0] = encounterAiFlags;

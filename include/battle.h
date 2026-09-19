@@ -607,16 +607,16 @@ struct EncounterEvent
 struct EncounterRuntime
 {
     enum EncounterId id;                        // ENCOUNTER_NONE when inactive
-    u32 firedTriggers;                          // bitmap, one bit per trigger (Stage 04)
-    u8  scriptsThisCheckpoint;                  // runaway guard (Stage 07)
+    u32 firedTriggers;                          // bitmap, one bit per trigger
+    u8  scriptsThisCheckpoint;                  // runaway guard
     u8  checkpoint;                             // enum EncounterCheckpoint currently dispatching
     // Cleared on checkpoint *entry* only (TryRunEncounterCheckpoint, when checkpoint changes), not
-    // on each dispatch. The Stage 07 re-evaluation loop calls TryRunEncounterCheckpoint repeatedly
+    // on each dispatch. The re-evaluation loop calls TryRunEncounterCheckpoint repeatedly
     // for the same checkpoint; the event must keep describing the original event that opened the
     // checkpoint so a later pass's trigger can still see what an earlier pass was reacting to.
     struct EncounterEvent event;
-    u16 prevHp[MAX_BATTLERS_COUNT];             // threshold edge detection (Stage 10)
-    // CHANGE_HP's per-battler loop cursor (Stage 15). Lives here rather than as a callnative local
+    u16 prevHp[MAX_BATTLERS_COUNT];             // threshold edge detection
+    // CHANGE_HP's per-battler loop cursor. Lives here rather than as a callnative local
     // because the loop spans multiple battle-script instructions (goto) that each can yield across
     // frames waiting on the health-bar controller handshake - a plain C local can't survive that.
     u32 changeHpRemaining;                      // bitmask of battlers the current CHANGE_HP hasn't done yet

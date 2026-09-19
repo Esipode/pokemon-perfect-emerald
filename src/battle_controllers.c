@@ -57,17 +57,14 @@ static u32 ReturnAnimIdForBattler(bool32 isPlayerSide, u32 specificBattler);
 static void LaunchKOAnimation(enum BattlerId battlerId, u16 animId, bool32 isFront);
 static void AnimateMonAfterKnockout(enum BattlerId battler);
 
-// Kept as a thin alias so existing call sites don't need to change.
-// See include/ai_battles.h for the source of truth.
+// Alias for AiBattles_IsActiveTrainerBattle (include/ai_battles.h).
 bool32 IsAiVsAiBattle(void)
 {
     return AiBattles_IsActiveTrainerBattle();
 }
 
-// Returns TRUE when player battlers should be controlled by AI.
-// Covers both trainer autobattles and wild AI battles.
-// Kept as a thin alias so existing call sites don't need to change.
-// See include/ai_battles.h for the source of truth.
+// TRUE when player battlers are AI-controlled (trainer autobattles and wild AI battles).
+// Alias for the source of truth in include/ai_battles.h.
 bool32 IsPlayerAiControlled(void)
 {
     return AiBattles_IsActive();
@@ -2157,9 +2154,8 @@ static void Controller_HandleTrainerSlideBack(enum BattlerId battler)
             FreeTrainerFrontPicPalette(gSprites[gBattleStruct->trainerSlideSpriteIds[battler]].oam.affineParam);
         FreeSpriteOamMatrix(&gSprites[gBattleStruct->trainerSlideSpriteIds[battler]]);
         DestroySprite(&gSprites[gBattleStruct->trainerSlideSpriteIds[battler]]);
-        // The opponent's trainer front pic was decompressed over the mon gfx buffer this position
-        // shares. Reload the mon's sprite gfx so a later frame-image copy doesn't paint the trainer
-        // pic onto the mon with the mon's palette.
+        // The trainer front pic was decompressed over this position's shared mon gfx buffer.
+        // Reload the mon gfx so a later frame-image copy doesn't paint the trainer pic with the mon's palette.
         if (!IsOnPlayerSide(battler) && IsBattlerSpritePresent(battler))
         {
             bool8 loadMonSprite = !gBattleSpritesDataPtr->battlerData[battler].behindSubstitute;
