@@ -124,9 +124,7 @@ static const u8 *const sDifficultyTexts[] =
     [DIFFICULTY_HARD]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}HARD"),
 };
 
-// Indexed 1-9 (index 0 unused; "OFF" is sText_Off) - unlike the mono type
-// name, the generation label is a fixed literal, so no runtime composition
-// or scratch buffer is needed.
+// Indexed 1-9 (index 0 unused; "OFF" is sText_Off).
 static const u8 *const sMonoGenTexts[MONO_GEN_COUNT + 1] =
 {
     [1] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 1"),
@@ -140,9 +138,8 @@ static const u8 *const sMonoGenTexts[MONO_GEN_COUNT + 1] =
     [9] = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}GEN 9"),
 };
 
-// GAME MODE's description depends on its current value, not its setting id,
-// so it's picked at runtime by PrintSettingDescription rather than being a
-// fixed entry here - see sGameModeDescriptions below.
+// GAME MODE's description depends on its value, not its setting id, so
+// PrintSettingDescription picks it at runtime (see sGameModeDescriptions).
 static const u8 *const sSettingDescriptions[SETTING_COUNT] =
 {
     [SETTING_MONO_TYPE]         = COMPOUND_STRING(
@@ -169,16 +166,14 @@ static const u8 *const sSettingDescriptions[SETTING_COUNT] =
     [SETTING_LEVEL_CAP]         = COMPOUND_STRING(
                                        "{COLOR RED}{SHADOW LIGHT_RED}(OFF DISABLES ACHIEVEMENTS){COLOR GREEN}{SHADOW LIGHT_GREEN}\n"
                                        "Prevents over-levelling your Pokémon."),
-    // Body condensed to a single line (from the original two) to make room for
-    // the achievements-disabled line above it -- WIN_DESCRIPTION only fits 2
-    // lines of FONT_NORMAL text (see sSettingsMenuWinTemplates[WIN_DESCRIPTION]).
+    // Body is one line to fit under the achievements-disabled line: WIN_DESCRIPTION
+    // holds only 2 lines of FONT_NORMAL text (sSettingsMenuWinTemplates[WIN_DESCRIPTION]).
     [SETTING_DEBUG]             = COMPOUND_STRING(
                                        "{COLOR RED}{SHADOW LIGHT_RED}(ON DISABLES ACHIEVEMENTS){COLOR GREEN}{SHADOW LIGHT_GREEN}\n"
                                        "Debug Menu: {R_BUTTON}+{START_BUTTON}"),
 };
 
-// One description per GAME_MODE_* value, indexed by gPendingNewGameSettings.gameMode
-// rather than by setting id - see PrintSettingDescription.
+// One description per GAME_MODE_* value, indexed by gPendingNewGameSettings.gameMode.
 static const u8 *const sGameModeDescriptions[GAME_MODE_COUNT] =
 {
     [GAME_MODE_NORMAL]   = COMPOUND_STRING("{COLOR GREEN}{SHADOW LIGHT_GREEN}The standard Pokémon Emerald\nexperience, no extra rules."),
@@ -670,31 +665,21 @@ void ApplyPendingNewGameSettings(void)
     gPendingNewGameSettings.levelCapOff      ? FlagSet(FLAG_LEVEL_CAP_OFF)     : FlagClear(FLAG_LEVEL_CAP_OFF);
     gPendingNewGameSettings.allowStatEditor  ? FlagSet(FLAG_ALLOW_STAT_EDITOR) : FlagClear(FLAG_ALLOW_STAT_EDITOR);
     gPendingNewGameSettings.debugMode        ? FlagSet(FLAG_DEBUG)             : FlagClear(FLAG_DEBUG);
-    // Debug Mode, Stat Editor, and Level Cap Off all give the player tools
-    // that can trivially manufacture achievement-worthy state (arbitrary
-    // IV/EV values, uncapped levels, the Debug Menu itself), so all three
-    // permanently disqualify the run the same way -- see the matching
-    // [DISABLES ACHIEVEMENTS] callouts on their descriptions above.
+    // Debug Mode, Stat Editor and Level Cap Off can manufacture achievement-worthy
+    // state, so each permanently disqualifies the run (see [DISABLES ACHIEVEMENTS]
+    // in their descriptions above).
     if (gPendingNewGameSettings.debugMode
      || gPendingNewGameSettings.allowStatEditor
      || gPendingNewGameSettings.levelCapOff)
         gSaveBlock1Ptr->achievementsBlocked = TRUE;
 }
 
-// Mirror image of ApplyPendingNewGameSettings: reads the settings back out of
-// the *current* save instead of writing them into a new one. NewGameInitData
-// calls ApplyPendingNewGameSettings unconditionally for any non-New-Game-Plus
-// start, so gPendingNewGameSettings has to hold the right values by the time
-// CB2_NewGame runs -- normally guaranteed because this screen is the only
-// thing that ever sets it, right before handing off to CB2_NewGame itself.
-// The Nuzlocke-restart "YES" path (field_screen_effect.c) breaks that
-// guarantee: it calls CB2_NewGame directly, skipping this screen entirely.
-// gPendingNewGameSettings then still holds whatever was last chosen here
-// *this power-on session* -- stale, or still at its all-FALSE default, for a
-// save that was simply continued from a previous one -- so without this,
-// restarting would silently reset nuzlocke mode, difficulty, and every other
-// toggle back to their defaults instead of carrying the failed run's own
-// settings forward.
+// Mirror of ApplyPendingNewGameSettings: reads settings back out of the
+// current save. NewGameInitData applies gPendingNewGameSettings for any
+// non-New-Game-Plus start, normally set only by this screen. The Nuzlocke-restart
+// "YES" path (field_screen_effect.c) calls CB2_NewGame directly and skips it, so
+// the pending settings could be stale or default and the restart would reset
+// every toggle instead of carrying the failed run's settings forward.
 void CaptureCurrentSaveIntoPendingNewGameSettings(void)
 {
     gPendingNewGameSettings.difficulty = gSaveBlock1Ptr->difficulty;

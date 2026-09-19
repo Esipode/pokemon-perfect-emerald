@@ -1,11 +1,10 @@
 #ifndef GUARD_NEW_GAME_SETTINGS_MENU_H
 #define GUARD_NEW_GAME_SETTINGS_MENU_H
 
-// The four challenge modes are mutually exclusive, so the settings menu
-// exposes them as one cycling row rather than independent ON/OFF toggles.
-// Fanned back out to the three separate save bytes (nuzlockeModeEnabled,
-// draftModeEnabled, recruitsModeEnabled) by ApplyPendingNewGameSettings -
-// the save format itself is unchanged.
+// The four challenge modes are mutually exclusive, so the menu exposes them as one
+// cycling row. ApplyPendingNewGameSettings fans it out to the separate save
+// bytes (nuzlockeModeEnabled, draftModeEnabled, recruitsModeEnabled); the save
+// format is unchanged.
 enum GameMode
 {
     GAME_MODE_NORMAL,

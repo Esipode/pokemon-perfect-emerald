@@ -5,7 +5,6 @@
 #include "constants/pokedex.h"
 #include "constants/species.h"
 
-// Shared rules for the Mono Gen challenge. See include/mono_gen.h.
 
 bool32 MonoGen_IsEnabled(void)
 {
@@ -68,9 +67,7 @@ bool32 MonoGen_IsSpeciesAllowed(u16 species)
     if (gen == 0)
         return TRUE;
 
-    // Never block on something that isn't a real species; a caller passing
-    // SPECIES_NONE or an out-of-range ID should fall through to whatever it
-    // would have done with the mode off.
+    // Non-species IDs (SPECIES_NONE, out of range) fall through as allowed.
     if (species == SPECIES_NONE || species >= NUM_SPECIES || !IsSpeciesEnabled(species))
         return TRUE;
 

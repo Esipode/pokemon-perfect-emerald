@@ -11,13 +11,12 @@
 #include "constants/trainer_types.h"
 #include "constants/trainers.h"
 
-// Route Stat Tracker: per-map completion counts for the start menu box (see route_tracker.h).
-// Wild Pokémon counting mirrors CapturedAllLandMons/CapturedAllWaterMons/CapturedAllHiddenMons
-// in dexnav.c, generalized to all encounter methods and unioned across all times of day.
+// Route Stat Tracker: per-map completion counts for the start menu box.
+// Wild counting mirrors CapturedAllLandMons/WaterMons/HiddenMons in dexnav.c,
+// generalized to all encounter methods and unioned across times of day.
 //
-// Item/trainer totals are cheap to recompute (a single pass over the map's own event list), so
-// they're redone on every start menu open to stay accurate. The wild species list is not cheap
-// (see RebuildEncounterCache), so it's cached per wild mon header instead.
+// Item/trainer totals are cheap and recomputed on every menu open. The wild
+// species list is not (see RebuildEncounterCache), so it is cached per wild mon header.
 
 struct AreaSlots
 {
@@ -92,10 +91,10 @@ static bool32 SpeciesSeenEarlier(u32 headerId, enum Species species, u8 uptoTod,
     return FALSE;
 }
 
-// The deduped species list only depends on the wild mon header (map + randomization seed), so it's
-// cached and rebuilt just once per header change instead of on every start menu open. Rebuilding is
-// the expensive part: it calls GetRandomizedSpecies (an O(NUM_SPECIES) search) for every (tod, area,
-// slot) combination, and SpeciesSeenEarlier re-walks all earlier combinations on top of that.
+// The deduped species list depends only on the wild mon header (map + randomization
+// seed), so it is rebuilt once per header change. Rebuilding is expensive:
+// GetRandomizedSpecies is O(NUM_SPECIES) per (tod, area, slot), and
+// SpeciesSeenEarlier re-walks all earlier combinations.
 #define MAX_TRACKED_SPECIES ((NUM_LAND_MONS_ENCOUNTER_SLOTS + NUM_WATER_MONS_ENCOUNTER_SLOTS + NUM_ROCK_SMASH_MONS_ENCOUNTER_SLOTS + NUM_FISHING_MONS_ENCOUNTER_SLOTS + NUM_HIDDEN_MONS_ENCOUNTER_SLOTS) * TIMES_OF_DAY_COUNT)
 
 EWRAM_DATA static struct

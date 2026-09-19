@@ -17,7 +17,6 @@
 #include "constants/battle.h"
 #include "constants/flags.h"
 
-// Shared rules for the Recruits challenge. See include/recruits_mode.h.
 
 bool32 Recruits_IsEnabled(void)
 {
@@ -26,14 +25,8 @@ bool32 Recruits_IsEnabled(void)
 
 bool32 Recruits_IsActive(void)
 {
-    // Not FLAG_SYS_POKEMON_GET (set the moment the starter is chosen) -
-    // Recruits doesn't engage until the player is back in the lab with their
-    // Pokédex in hand, after the first rival battle. FLAG_SYS_POKEDEX_GET is
-    // set at LittlerootTown_ProfessorBirchsLab_EventScript_ReceivePokedex,
-    // the same script node that sets FLAG_NUZLOCKE_CATCH_MODE - so this
-    // genuinely mirrors when Nuzlocke's own catch restrictions start
-    // engaging, not just the "player has a Pokémon" convention the old flag
-    // suggested.
+    // Not FLAG_SYS_POKEMON_GET (set when the starter is chosen): Recruits waits
+    // for the Pokédex, the script node that also sets FLAG_NUZLOCKE_CATCH_MODE.
     return Recruits_IsEnabled() && FlagGet(FLAG_SYS_POKEDEX_GET);
 }
 
@@ -85,16 +78,9 @@ void Recruits_TallyParticipants(void)
     }
 }
 
-// ---------------------------------------------------------------------
-// Retirement. See data/scripts/recruits.inc and the declarations in
-// include/recruits_mode.h.
-// ---------------------------------------------------------------------
-
-// Field hook for ProcessPlayerFieldInput (src/field_control_avatar.c), run
-// every frame the player has field control. Rescans from scratch each call
-// rather than queueing anything, so it's immune to soft-resets and to
-// RemoveFaintedMonsFromParty compacting the party out from under a cached
-// slot - see the design note in recruits_mode's planning doc.
+// Field hook for ProcessPlayerFieldInput (src/field_control_avatar.c). Rescans
+// each call instead of queueing, so soft-resets and RemoveFaintedMonsFromParty
+// compacting the party cannot invalidate a cached slot.
 bool32 Recruits_TryStartFieldScript(void)
 {
     u32 i;
@@ -120,19 +106,15 @@ bool32 Recruits_TryStartFieldScript(void)
     return FALSE;
 }
 
-// Permanently removes the party mon at gSpecialVar_0x8004 and compacts the
-// party. No TryRevertPartyMonFormChange call here, unlike Draft's equivalent
-// - that dereferences gBattleStruct (src/battle_util.c), which is NULL in
-// the overworld. HandleEndTurn_FinishBattle already reverted every party
-// slot before the battle ended (src/battle_main.c).
+// Removes the party mon at gSpecialVar_0x8004 and compacts the party. Skips
+// TryRevertPartyMonFormChange (unlike Draft): it dereferences gBattleStruct,
+// which is NULL in the overworld, and HandleEndTurn_FinishBattle already reverted forms.
 void Recruits_DoRetirement(void)
 {
     u8 slot = gSpecialVar_0x8004;
 
     ZeroMonData(&gParties[B_TRAINER_PLAYER][slot]);
-    // CompactPartySlots rather than a manual shift loop - it's also the one
-    // that keeps gPartiesCount in sync, unlike RemoveFaintedMonsFromParty's
-    // hand-rolled version.
+    // CompactPartySlots keeps gPartiesCount in sync, unlike RemoveFaintedMonsFromParty.
     CompactPartySlots();
     CalculatePlayerPartyCount();
 
@@ -147,12 +129,10 @@ void Recruits_IsRunFailed(void)
     gSpecialVar_Result = IsPartyEmpty();
 }
 
-// Persists the emptied party (so the title screen's CONTINUE gate reads
-// honest state) and hands off to the run-failed prompt, the same one
-// Nuzlocke uses. Deliberately never goes through CB2_WhiteOut/DoWhiteOut -
-// that resets the Elite Four's FLAG_DEFEATED_ELITE_4_* progress
-// (data/event_scripts.s), which would erase E4 progress as a side effect of
-// winning the battle that emptied the party.
+// Persists the emptied party (so the title screen's CONTINUE gate reads true
+// state) and hands off to the run-failed prompt Nuzlocke uses. Never goes
+// through CB2_WhiteOut/DoWhiteOut: that resets FLAG_DEFEATED_ELITE_4_* progress
+// (data/event_scripts.s), erasing E4 progress on the winning battle.
 void Recruits_StartRunFailedScreen(void)
 {
     TrySavingData(SAVE_NORMAL);

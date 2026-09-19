@@ -4,7 +4,6 @@
 #include "pokemon.h"
 #include "random.h"
 
-// Shared rules for Rotation Mode. See include/rotation_mode.h.
 
 bool32 RotationMode_IsEnabled(void)
 {
@@ -68,9 +67,6 @@ bool32 RotationMode_IsBattleEligible(enum BattlerId battler)
     return TRUE;
 }
 
-// Doubles: pick exactly one of the two player battlers to rotate this turn,
-// at random between whichever are currently eligible, and cache the pick so
-// both battlers' end-turn handler calls agree on it.
 bool32 RotationMode_ShouldRotate(enum BattlerId battler)
 {
     if (!IsDoubleBattle())

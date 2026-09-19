@@ -3,16 +3,15 @@
 
 #include "global.h"
 
-// Mono Type challenge mode. The player commits to a single Pokémon type for
-// the whole playthrough and may only obtain Pokémon of that type (wild
-// catches, scripted gifts, eggs and in-game trades).
+// Mono Type challenge mode. The player commits to one type and may only obtain
+// Pokémon of that type (wild catches, gifts, eggs, in-game trades).
 //
-// The chosen type lives in gSaveBlock2Ptr->monoTypeSetting. TYPE_NONE means
-// the mode is off, which is also what old saves read back.
+// The chosen type lives in gSaveBlock2Ptr->monoTypeSetting; TYPE_NONE (also
+// what old saves read back) means off.
 //
-// Every gate in the game (bag ball throw, Cmd_handleballthrow, the healthbox
-// indicator, the givemon/giveegg hooks and the trade scripts) must go through
-// MonoType_IsSpeciesAllowed so the rules and the HUD cannot disagree.
+// Every gate (bag ball throw, Cmd_handleballthrow, healthbox indicator,
+// givemon/giveegg hooks, trade scripts) must use MonoType_IsSpeciesAllowed so
+// the rules and the HUD cannot disagree.
 
 // How many starters the Birch case shows in mono type mode.
 #define MONO_TYPE_STARTER_COUNT 3
@@ -31,10 +30,9 @@ u8 MonoType_GetType(void);
 // bad caller can never soft-lock the player out of a grant.
 bool32 MonoType_IsSpeciesAllowed(u16 species);
 
-// Fills out[0..MONO_TYPE_STARTER_COUNT-1] with the starter pool draw for this
-// save. Deterministic for a given trainer ID + New Game+ cycle, so backing out
-// of the Birch case with B and reopening it cannot reroll the trio. Unused
-// slots are left SPECIES_NONE.
+// Fills out[0..MONO_TYPE_STARTER_COUNT-1] with the starter pool draw.
+// Deterministic per trainer ID + New Game+ cycle, so reopening the Birch case
+// cannot reroll the trio. Unused slots are left SPECIES_NONE.
 void MonoType_PickStarterSpecies(u16 *out);
 
 // Steps the settings-menu value: TYPE_NONE ("OFF") -> NORMAL .. FAIRY -> OFF,
@@ -42,10 +40,9 @@ void MonoType_PickStarterSpecies(u16 *out);
 u8 MonoType_CycleType(u8 current, bool8 forward);
 
 // One-shot flag set by the givemon/giveegg grant hooks (ScrCmd_createmon,
-// ScriptGiveMon, ScriptGiveEgg) when a player-side grant is skipped for
-// being the wrong type. Read (and cleared) by the shared
-// Common_EventScript_NoMoreRoomForPokemon terminal script so it can show the
-// Mono Type refusal instead of the generic "no room" message.
+// ScriptGiveMon, ScriptGiveEgg) when a grant is skipped for wrong type. Read and
+// cleared by Common_EventScript_NoMoreRoomForPokemon to show the Mono Type
+// refusal instead of "no room".
 void MonoType_SetGiveBlocked(void);
 bool32 MonoType_ConsumeGiveBlockedFlag(void);
 

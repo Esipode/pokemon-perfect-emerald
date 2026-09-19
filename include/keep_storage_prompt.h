@@ -1,16 +1,15 @@
 #ifndef GUARD_KEEP_STORAGE_PROMPT_H
 #define GUARD_KEEP_STORAGE_PROMPT_H
 
-// Answer to the keep-storage prompt. EWRAM, not a field on struct NewGameSettings --
-// CB2_InitNewGameSettingsMenu re-initializes gPendingNewGameSettings on entry, which
-// runs right after this prompt and would clobber the answer. Consumed (and cleared)
-// by NewGameInitData. See also gSaveBlock2Ptr->keepStorageOnRestart, which records
-// whether the *current* run's storage was itself carried over from its predecessor --
-// it gates the OT-ID lock in pokemon_storage_system.c, but is deliberately NOT read
-// as a prediction of this answer on the Nuzlocke-restart path (field_screen_effect.c):
-// on a player's first-ever run it's unconditionally FALSE, so that would silently
-// drop real PC storage the first time someone fails and restarts. That path asks
-// fresh via this same prompt's message/Yes-No instead.
+// Answer to the keep-storage prompt. EWRAM, not a struct NewGameSettings field:
+// CB2_InitNewGameSettingsMenu re-initializes gPendingNewGameSettings right after
+// this prompt and would clobber it. Consumed (and cleared) by NewGameInitData.
+//
+// gSaveBlock2Ptr->keepStorageOnRestart records whether the current run's storage
+// was carried over; it gates the OT-ID lock in pokemon_storage_system.c. It is
+// deliberately NOT used to predict this answer on the Nuzlocke-restart path
+// (field_screen_effect.c): it is FALSE on a first-ever run, which would silently
+// drop real PC storage. That path asks via this prompt instead.
 extern bool8 gKeepStorageOnNewGame;
 
 void CB2_InitKeepStoragePrompt(void);

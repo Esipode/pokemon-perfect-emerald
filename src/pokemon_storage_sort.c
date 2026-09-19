@@ -5,7 +5,6 @@
 #include "pokemon_storage_system.h"
 #include "string_util.h"
 
-// Sort engine for the PC boxes. See include/pokemon_storage_sort.h.
 
 #define STORAGE_SLOT_COUNT (TOTAL_BOXES_COUNT * IN_BOX_COUNT)
 
@@ -49,14 +48,11 @@ static struct BoxPokemon *SlotPtr(u32 slot)
     return GetBoxedMonPtr(slot / IN_BOX_COUNT, slot % IN_BOX_COUNT);
 }
 
-// One walk over every slot, splitting them into occupied (front of order[])
-// and empty (back of order[]) and computing one key per occupied slot.
-//
-// The keys are precomputed rather than read inside the comparator because
-// GetBoxMonData decrypts the secure substructs for any field past
-// MON_DATA_ENCRYPT_SEPARATOR - which includes the nickname, whose last two
-// characters live in substruct0. Reading them per comparison would decrypt
-// thousands of times instead of once per mon.
+// One walk over every slot, splitting them into occupied (front of order[]) and
+// empty (back) and computing one key per occupied slot. Keys are precomputed
+// because GetBoxMonData decrypts the secure substructs for any field past
+// MON_DATA_ENCRYPT_SEPARATOR, including the nickname (last two characters live in
+// substruct0); per-comparison reads would decrypt thousands of times.
 static void BuildSortOrder(struct StorageSortWork *work)
 {
     u32 slot, species;
@@ -69,10 +65,9 @@ static void BuildSortOrder(struct StorageSortWork *work)
         struct BoxPokemon *boxMon = SlotPtr(slot);
         struct SortSlotKey *key = &work->keys[slot];
 
-        // The unencrypted sanity bit, not MON_DATA_SPECIES: species reads
-        // through the checksum path and reports a placeholder for a corrupted
-        // mon rather than what it holds, so testing occupancy that way risks
-        // the sort silently dropping one.
+        // The unencrypted sanity bit, not MON_DATA_SPECIES: species reads go through
+        // the checksum path and report a placeholder for a corrupted mon, so the
+        // sort could silently drop it.
         if (!GetBoxMonData(boxMon, MON_DATA_SANITY_HAS_SPECIES))
         {
             // Empty slots fill from the back in any order - all of them are
@@ -83,12 +78,9 @@ static void BuildSortOrder(struct StorageSortWork *work)
 
         work->order[head++] = slot;
 
-        // Read species before deciding the group, not after. Reading an
-        // encrypted field runs the engine's checksum test, which converts a mon
-        // whose checksum no longer matches into a bad egg (IsBadEgg,
-        // src/pokemon.c) and hands back SPECIES_EGG. Deciding first would sort
-        // a mon the rest of the PC already draws as a Bad Egg in among the
-        // normal Pokémon, under a meaningless species.
+        // Read species before deciding the group: reading an encrypted field runs
+        // the checksum test, which turns a mismatched mon into a bad egg (IsBadEgg,
+        // src/pokemon.c) that the rest of the PC already draws as one.
         species = GetBoxMonData(boxMon, MON_DATA_SPECIES);
 
         // Eggs and bad eggs keep the zeroed key/dexNum/species they were
@@ -123,11 +115,9 @@ static void BuildSortOrder(struct StorageSortWork *work)
             key->key = GetLevelFromBoxMonExp(boxMon);
             break;
         case STORAGE_SORT_NAME:
-            // Folded to upper case on the way in: the game charset puts a-z
-            // 0x1A above A-Z, so a raw StringCompare sorts "apple" after
-            // "Zebra". item_menu.c's alphabetical sort compares raw only
-            // because item names have a fixed house casing - player nicknames
-            // do not.
+            // Folded to upper case: the game charset puts a-z 0x1A above A-Z, so a
+            // raw StringCompare sorts "apple" after "Zebra". item_menu.c compares raw
+            // only because item names have fixed casing.
             GetBoxMonData(boxMon, MON_DATA_NICKNAME, nickname);
             StringCopyUppercase(work->names[slot], nickname);
             break;
@@ -148,10 +138,9 @@ static s32 CompareSlots(struct StorageSortWork *work, u32 slotA, u32 slotB)
     if (a->group != b->group)
         return a->group < b->group ? -1 : 1;
 
-    // Only normal Pokémon carry a key: an egg has no species, level or type
-    // worth comparing, and no cached nickname either - the name buffer is left
-    // zeroed for them, which is not an EOS-terminated string. Equal here, so
-    // the stable merge keeps them in their original flat order.
+    // Only normal Pokémon carry a key. Eggs have no meaningful species, level or
+    // type, and their zeroed name buffer is not EOS-terminated. They compare
+    // equal, so the stable merge keeps their original order.
     if (a->group != SORT_GROUP_NORMAL)
         return 0;
 
@@ -168,8 +157,7 @@ static s32 CompareSlots(struct StorageSortWork *work, u32 slotA, u32 slotB)
         return a->key < b->key ? -1 : 1;
     }
 
-    // Without a tie-break, TYPE and LEVEL leave huge runs ordered by wherever
-    // the mons happened to sit, which reads as random.
+    // Without a tie-break, TYPE and LEVEL leave large runs in arbitrary slot order.
     if (a->dexNum != b->dexNum)
         return a->dexNum < b->dexNum ? -1 : 1;
     if (a->species != b->species)
@@ -193,9 +181,8 @@ static void Merge(struct StorageSortWork *work, u32 iLeft, u32 iRight, u32 iEnd)
     }
 }
 
-// Bottom-up stable merge sort over the occupied prefix of order[], the same
-// shape as MergeSort in src/item_menu.c but sorting slot indices against the
-// precomputed keys instead of item slots.
+// Bottom-up stable merge sort over the occupied prefix of order[], shaped like
+// MergeSort in src/item_menu.c but sorting slot indices against precomputed keys.
 // Source: https://en.wikipedia.org/wiki/Merge_sort#Bottom-up_implementation
 static void SortOrder(struct StorageSortWork *work)
 {

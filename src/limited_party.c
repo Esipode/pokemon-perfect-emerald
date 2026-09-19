@@ -3,7 +3,6 @@
 #include "badge_mart.h"
 #include "pokemon.h"
 
-// Shared rules for the Limited Party challenge. See include/limited_party.h.
 
 bool32 LimitedParty_IsEnabled(void)
 {

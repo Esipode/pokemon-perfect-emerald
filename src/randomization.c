@@ -7,12 +7,10 @@
 #include "constants/moves.h"
 #include "constants/pokemon.h"
 
-// This module is the single place that decides WHETHER a mon's type or move
-// is randomized and HOW the pieces (dual types, per-slot movesets) combine.
-// The underlying RNG primitives (GetRandomType/GetRandomMove/GetRandomMoveType)
-// still live in ui_birch_case.c for now; callers should migrate to the
-// functions below instead of checking FLAG_RANDOMIZE_TYPE / FLAG_RANDOMIZE_MOVES
-// and calling those primitives directly.
+// Single place that decides WHETHER a mon's type or move is randomized and HOW
+// the pieces combine. The RNG primitives (GetRandomType/GetRandomMove/
+// GetRandomMoveType) still live in ui_birch_case.c; callers should use the
+// functions below instead of calling them directly.
 
 void GetResolvedTypePair(u16 species, u8 *outType1, u8 *outType2)
 {
@@ -58,11 +56,9 @@ void ResolveMonMoves(u16 species, const u16 *originalMoves, u16 *outMoves)
     u16 resolvedMoves[MAX_MON_MOVES];
     u32 moveIdx;
 
-    // Strictly slot-for-slot: slot i out is always the resolved counterpart of
-    // slot i in. Slots are never packed or dropped - the stored moveset, the
-    // summary screen, the party menu and battle all address moves by slot, so
-    // emptying one here makes them disagree about how many moves the mon knows
-    // and makes a full moveset look like it still has a free slot.
+    // Strictly slot-for-slot: the moveset, summary screen, party menu and battle
+    // all address moves by slot, so packing or dropping one would make them
+    // disagree about how many moves the mon knows.
     for (moveIdx = 0; moveIdx < MAX_MON_MOVES; moveIdx++)
         resolvedMoves[moveIdx] = GetResolvedMove(species, originalMoves[moveIdx]);
 

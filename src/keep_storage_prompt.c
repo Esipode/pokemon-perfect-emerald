@@ -31,17 +31,15 @@ enum
     WIN_TEXT,
 };
 
-// Same look every other in-game prompt uses: the fixed dialogue-box graphic (gMessageBox_Gfx,
-// loaded via LoadMessageBoxGfx) for the main message box, and the player's chosen menu-frame
-// skin (GetWindowFrameTilesPal(optionsWindowFrameType)) for both the header and the Yes/No box
-// -- the header is single-line, and the dialogue frame can't do that (see the comment on
-// WIN_HEADER's template below). DLG_WINDOW_PALETTE_NUM / STD_WINDOW_PALETTE_NUM come from menu.h.
+// Same look as other in-game prompts: gMessageBox_Gfx (LoadMessageBoxGfx) for the
+// main message box, and the player's menu-frame skin
+// (GetWindowFrameTilesPal(optionsWindowFrameType)) for the header and Yes/No box.
+// The header is single-line, which the dialogue frame can't do (see WIN_HEADER's
+// template). DLG_WINDOW_PALETTE_NUM / STD_WINDOW_PALETTE_NUM come from menu.h.
 //
-// Tile budget below is laid out low-to-high on purpose: the window pixel buffers (baseBlock)
-// start at 1, NOT 0. Tile index 0 is the "blank" tile every unwritten cell of the screen's
-// backdrop implicitly points at (see the DmaClearLarge16 fill in case 1). A window buffer
-// placed at baseBlock 0 overwrites that shared tile as its own text renders, which reads as
-// the whole screen's background flickering in sync with the letters being drawn.
+// Window pixel buffers (baseBlock) start at tile 1, NOT 0: tile 0 is the blank
+// tile every unwritten backdrop cell points at (see the DmaClearLarge16 fill in
+// case 1), and a buffer there makes the background flicker as text renders.
 #define WIN_HEADER_BASE_BLOCK 0x1               // header window pixel buffer, 27*2 = 0x36 tiles
 #define WIN_TEXT_BASE_BLOCK   0x6D              // text window pixel buffer, 27*4 = 0x6C tiles (plenty of headroom above WIN_HEADER_BASE_BLOCK's 0x36)
 #define YESNO_BASE_BLOCK      (WIN_TEXT_BASE_BLOCK + 0x6C) // 0xD9; yes/no pixel buffer, 5*4 = 0x14 tiles
@@ -61,8 +59,7 @@ static void Task_KeepStoragePromptCancel(u8 taskId);
 
 static const u8 sText_KeepStoragePromptTitle[] = _("{COLOR RED}{SHADOW LIGHT_RED}KEEP POKéMON?");
 
-// Printed one page at a time by the task below rather than as a single \p-separated
-// string -- see the comment in Task_KeepStoragePromptWaitPage for why.
+// Printed a page at a time by the task below; see Task_KeepStoragePromptWaitPage.
 static const u8 *const sKeepStoragePromptPages[] =
 {
     COMPOUND_STRING(
@@ -85,17 +82,12 @@ static const u8 sText_KeepStoragePromptConfirmDelete[] = _(
 
 static const struct WindowTemplate sKeepStoragePromptWinTemplates[] =
 {
-    // Single-line title, so its border uses the STD frame style (like the Yes/No box)
-    // rather than the DLG dialogue frame: WindowFunc_DrawDialogueFrame hardcodes a
-    // 5-row-tall body regardless of the window's own height, so it only looks right at
-    // height 4 -- WindowFunc_DrawStandardFrame sizes itself to whatever height it's
-    // given. .paletteNum stays on the DLG bank though, same as the Yes/No box's own
-    // template: DrawStdFrameWithCustomTileAndPalette's paletteNum argument (passed at
-    // the call site) only colors the *border* tiles. This .paletteNum field is the
-    // separate thing that colors the window's own text, and the STD skin bank is
-    // whatever border-decoration palette the player picked in Options -- it has no
-    // guaranteed white-paper/dark-text/red-warning layout the way gMessageBox_Pal does,
-    // which is what left the header dark-gray-on-dark-gray instead of red-on-white.
+    // Single-line title, so its border uses the STD frame: WindowFunc_DrawDialogueFrame
+    // hardcodes a 5-row body and only fits at height 4, while
+    // WindowFunc_DrawStandardFrame sizes to the window. .paletteNum stays on the DLG
+    // bank: it colors the window's text (the call site's paletteNum argument only
+    // colors the border tiles), and the player-chosen STD bank has no guaranteed
+    // white-paper/dark-text/red-warning layout, unlike gMessageBox_Pal.
     [WIN_HEADER] = {
         .bg = 0,
         .tilemapLeft = 2,
@@ -155,10 +147,9 @@ void CB2_InitKeepStoragePrompt(void)
     {
     default:
     case 0:
-        // Nothing to keep -- skip straight to the options menu (so the player can
-        // set their playthrough defaults before achievement-relevant options lock
-        // in), then the settings menu, same destination as the HAS_NO_SAVED_GAME
-        // shortcut in ui_main_menu.c.
+        // Nothing to keep: go to the options menu (so defaults are set before
+        // achievement-relevant options lock in), then the settings menu, as the
+        // HAS_NO_SAVED_GAME shortcut in ui_main_menu.c does.
         if (gSaveFileStatus != SAVE_STATUS_OK
          || (CountAllStorageMons() == 0 && CalculatePlayerPartyCount() == 0))
         {
@@ -198,9 +189,6 @@ void CB2_InitKeepStoragePrompt(void)
         gMain.state++;
         break;
     case 3:
-        // The header and the Yes/No box use the player's chosen menu-frame skin (the
-        // same graphic Options/GAME SETTINGS use); the main message box uses the fixed
-        // dialogue-box graphic every NPC/system message in the game uses.
         LoadBgTiles(0, GetWindowFrameTilesPal(gSaveBlock2Ptr->optionsWindowFrameType)->tiles, 0x120, STD_FRAME_BASE_TILE);
         LoadMessageBoxGfx(WIN_TEXT, DLG_BASE_TILE, BG_PLTT_ID(DLG_WINDOW_PALETTE_NUM));
         gMain.state++;
@@ -257,10 +245,8 @@ static void Task_KeepStoragePromptFadeIn(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
-        // gTextFlags is a shared global. autoScroll no longer matters for page
-        // advancement here (see Task_KeepStoragePromptWaitPage), but forceMidTextSpeed
-        // still overrides the per-character reveal rate if left set by whatever screen
-        // ran before this one, so it's worth clearing along with it.
+        // gTextFlags is shared; clear forceMidTextSpeed in case a prior screen
+        // left it set, which would override the per-character reveal rate.
         gTextFlags.canABSpeedUpPrint = TRUE;
         gTextFlags.autoScroll = FALSE;
         gTextFlags.forceMidTextSpeed = FALSE;
@@ -277,12 +263,9 @@ static void Task_KeepStoragePromptWaitPage(u8 taskId)
     if (IsTextPrinterActiveOnWindow(WIN_TEXT))
         return;
 
-    // Deliberately not using \p page breaks for this: \p's wait is skipped by
-    // gTextFlags.autoScroll OR the save-file flag FLAG_AUTO_SCROLL_TEXT (see
-    // TextPrinterWaitWithDownArrow in text.c), so a player with that accessibility
-    // option on -- or a leftover autoScroll left set by whatever screen ran before
-    // this one -- would still blow through every page on a timer. Gating the
-    // advance on our own JOY_NEW check here can't be shortcut by either of those.
+    // Not \p page breaks: their wait is skipped by gTextFlags.autoScroll or
+    // FLAG_AUTO_SCROLL_TEXT (see TextPrinterWaitWithDownArrow in text.c), so
+    // pages would advance on a timer. Gating on our own JOY_NEW can't be bypassed.
     if (JOY_NEW(A_BUTTON | B_BUTTON))
     {
         PlaySE(SE_SELECT);

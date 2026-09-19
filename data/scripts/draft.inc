@@ -1,9 +1,8 @@
 @ Draft mode's offer flow. One script tail serves both a route's own draft
-@ (Draft_EventScript_RouteDraft, triggered by src/field_control_avatar.c)
-@ and a gift/egg that got queued into the pending buffer instead of the PC
-@ (Draft_EventScript_ResolvePending, entered directly - see §6/src/pokemon.c).
-@ See src/draft_mode.c for the natives called here and include/draft_mode.h
-@ for the pending-buffer contract.
+@ (Draft_EventScript_RouteDraft, from src/field_control_avatar.c) and a gift/egg
+@ queued into the pending buffer instead of the PC (Draft_EventScript_ResolvePending,
+@ entered from src/pokemon.c). Natives: src/draft_mode.c; buffer contract:
+@ include/draft_mode.h.
 
 Draft_EventScript_RouteDraft::
 	lockall
@@ -16,12 +15,9 @@ Draft_EventScript_RouteDraft::
 	goto_if_eq VAR_0x8004, 1, Draft_EventScript_ConfirmDecline
 	goto Draft_EventScript_ResolvePending
 
-@ Draft_IsAreaDraftable() (the field hook's gate) only confirms this area has
-@ *some* wild encounters - it's deliberately unfiltered by Mono Type/Mono
-@ Gen, so an organically-empty pool still reaches here rather than the field
-@ hook silently never firing. Draft_Text_AreaIntro would be misleading in
-@ that case (there's nothing this run could legally draft), so this is its
-@ own terminal node rather than falling into the normal offer.
+@ Draft_IsAreaDraftable() only confirms the area has some wild encounters,
+@ unfiltered by Mono Type/Mono Gen. A pool the filters empty lands here, a
+@ terminal node, since Draft_Text_AreaIntro would offer nothing draftable.
 Draft_EventScript_NoEligiblePool::
 	msgbox Draft_Text_NoEligiblePool, MSGBOX_DEFAULT
 	callnative Draft_MarkAreaSpentNoOffer
@@ -48,14 +44,10 @@ Draft_EventScript_PartyFull::
 	msgbox Draft_Text_Replaced, MSGBOX_DEFAULT
 	goto Draft_EventScript_OfferNickname
 
-@ Reached either by declining the case outright (VAR_0x8004 == 1, no pending
-@ mon exists yet - Task_BirchCaseMain's B-button path) or by cancelling out
-@ of the replace screen above (VAR_0x8004 == PARTY_NOTHING_CHOSEN, a real
-@ pending mon is waiting for a slot). Draft_Text_ConfirmDecline stays
-@ area-level generic rather than naming a species, since it has to read
-@ correctly in both cases - and since both cases leave a different value in
-@ VAR_0x8004, "NO" can route back to wherever the player actually came from
-@ without a native needed to remember it.
+@ Reached by declining the case (VAR_0x8004 == 1, no pending mon yet) or by
+@ cancelling the replace screen (VAR_0x8004 == PARTY_NOTHING_CHOSEN, a pending
+@ mon waits). Draft_Text_ConfirmDecline stays generic to read correctly in both,
+@ and "NO" routes back using the differing VAR_0x8004 value.
 Draft_EventScript_ConfirmDecline::
 	msgbox Draft_Text_ConfirmDecline, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, YES, Draft_EventScript_ConfirmDecline_Accept
@@ -66,15 +58,11 @@ Draft_EventScript_ConfirmDecline_Accept::
 	callnative Draft_DiscardPending
 	goto Draft_EventScript_Finish
 
-@ Mirrors the starter case UI's own "Give your Pokémon a Nickname? A: Yes
-@ B: No" bottom-bar prompt (src/ui_birch_case.c's Task_BirchCaseRecievedMon) -
-@ a Draft pick should get the same choice, not a mandatory naming screen.
-@ Draft_Text_AskNickname stays species-generic rather than naming the mon
-@ (unlike gText_NicknameThisPokemon) because VAR_0x8004 already holds the
-@ right party slot coming from either path into here, but gStringVar1 does
-@ not: the join path (Draft_BufferPendingNickname) leaves the incoming mon's
-@ name there, while the replace path (Draft_BufferReplacementNames) leaves
-@ the *outgoing* mon's name there instead.
+@ Mirrors the starter case's "Give your Pokémon a Nickname?" prompt
+@ (Task_BirchCaseRecievedMon, src/ui_birch_case.c). Draft_Text_AskNickname is
+@ species-generic because gStringVar1 differs by path: the join path leaves the
+@ incoming mon's name, the replace path the outgoing mon's. VAR_0x8004 already
+@ holds the right slot either way.
 Draft_EventScript_OfferNickname::
 	msgbox Draft_Text_AskNickname, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, Draft_EventScript_Finish

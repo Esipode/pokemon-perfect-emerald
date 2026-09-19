@@ -9,7 +9,6 @@
 #include "constants/pokemon.h"
 #include "constants/species.h"
 
-// Shared rules for the Mono Type challenge. See include/mono_type.h.
 
 // The order the settings menu cycles through. TYPE_NONE is the "OFF" entry --
 // it is the only way to turn the mode off, so it stays in the cycle. The 18
@@ -64,7 +63,6 @@ static u16 GetStarterCandidateAtIndex(const u8 *evolvedBitmap, u32 filterLevel, 
 static bool32 WasSpeciesAlreadyPicked(const u16 *picks, u32 count, u16 species);
 
 // Set by the givemon/giveegg hooks, consumed by the shared "no room" script.
-// See MonoType_SetGiveBlocked/MonoType_ConsumeGiveBlockedFlag in the header.
 static bool8 sGiveBlockedFlag = FALSE;
 
 bool32 MonoType_IsEnabled(void)
@@ -85,9 +83,7 @@ bool32 MonoType_IsSpeciesAllowed(u16 species)
     if (monoType == TYPE_NONE)
         return TRUE;
 
-    // Never block on something that isn't a real species; a caller passing
-    // SPECIES_NONE or an out-of-range ID should fall through to whatever it
-    // would have done with the mode off.
+    // Non-species IDs (SPECIES_NONE, out of range) fall through as allowed.
     if (species == SPECIES_NONE || species >= NUM_SPECIES || !IsSpeciesEnabled(species))
         return TRUE;
 
