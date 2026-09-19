@@ -1069,6 +1069,17 @@ static bool32 IsSpeciesValidForRandomization(enum Species species)
         && !speciesInfo->cannotBeTraded;
 }
 
+static bool32 IsSpeciesLegendaryOrMythical(enum Species species)
+{
+    const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];
+
+    return speciesInfo->isRestrictedLegendary
+        || speciesInfo->isSubLegendary
+        || speciesInfo->isMythical
+        || speciesInfo->isUltraBeast
+        || speciesInfo->isParadox;
+}
+
 // Set by a caller that knows the wild encounter's map header id or the trainer's id just before
 // a CreateMon/GetRandomizedSpecies call, so the same species rolls differently per area/trainer
 // instead of always mapping to the same replacement. Consumed (and reset to 0) on next use so it
@@ -1089,9 +1100,13 @@ enum Species GetRandomizedSpecies(enum Species species)
     rng_value_t rngState;
     enum Species randomSpecies;
     u32 attempts;
+    bool32 allowLegendary;
 
     if (species == SPECIES_NONE || !FlagGet(FLAG_RANDOMIZE_MON))
         return species;
+
+    // Non-legendaries never roll a legendary/mythical replacement.
+    allowLegendary = IsSpeciesLegendaryOrMythical(species);
 
     context = sRandomizationSeedContext;
     sRandomizationSeedContext = 0;
@@ -1102,7 +1117,8 @@ enum Species GetRandomizedSpecies(enum Species species)
     for (attempts = 0; attempts < NUM_SPECIES; attempts++)
     {
         randomSpecies = (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
-        if (IsSpeciesValidForRandomization(randomSpecies))
+        if (IsSpeciesValidForRandomization(randomSpecies)
+         && (allowLegendary || !IsSpeciesLegendaryOrMythical(randomSpecies)))
             return randomSpecies;
     }
 
