@@ -2256,8 +2256,8 @@ static u32 LoadDynamicFollowerPalette(enum Species species, bool32 shiny, bool32
         paletteNum = IndexOfSpritePaletteTag(species); // Tag is always present
     }
 
-    if (gWeatherPtr->currWeather != WEATHER_FOG_HORIZONTAL) // don't want to weather blend in fog
-        UpdateSpritePaletteWithWeather(paletteNum, FALSE);
+    // Must run in fog too: it marks the palette for fog lightening on the first fade-in frame
+    UpdateSpritePaletteWithWeather(paletteNum, FALSE);
     return paletteNum;
 }
 
