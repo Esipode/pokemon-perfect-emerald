@@ -3,6 +3,7 @@
 #include "pokemon.h"
 #include "battle.h"
 #include "daycare.h"
+#include "draft_mode.h"
 #include "recruits_mode.h"
 #include "string_util.h"
 #include "caps.h"
@@ -1021,7 +1022,7 @@ static void _GiveEggFromDaycare(struct DayCare *daycare)
     u8 parentSlots[DAYCARE_MON_COUNT] = {0};
     bool8 isEgg;
 
-    if ((GetDaycareCompatibilityScore(daycare) == PARENTS_INCOMPATIBLE) || gSaveBlock1Ptr->nuzlockeModeEnabled)
+    if ((GetDaycareCompatibilityScore(daycare) == PARENTS_INCOMPATIBLE) || gSaveBlock1Ptr->nuzlockeModeEnabled || Draft_IsEnabled())
         return;
 
     species = DetermineEggSpeciesAndParentSlots(daycare, parentSlots);
