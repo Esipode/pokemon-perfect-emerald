@@ -75,8 +75,23 @@ struct Overlay
     u8 priority;
 };
 
+// Lifecycle contract. Overlays are never saved.
+//
+// Event                            Map-local       Global
+// Step between connected maps      destroyed       survives
+// Warp / hard map load / whiteout  destroyed       destroyed (Overlay_ResetAll)
+// Battle enter and return          survives        survives
+// Menu open/close                  survives        survives
+// Script ends                      survives        survives
+//
+// Ownership stays with the caller: scripts must destroy their overlays explicitly.
+
 // Invalidates every outstanding handle and clears the pool.
 void Overlay_ResetAll(void);
+// Destroys every OVERLAY_SCOPE_MAP_LOCAL overlay.
+void Overlay_DestroyMapLocal(void);
+// Per-frame update. Order: fade, pulse, anchor, falloff, final opacity.
+void Overlay_Update(void);
 // New overlays start enabled. Returns OVERLAY_ID_INVALID when the pool is full.
 OverlayId Overlay_Create(const struct OverlayConfig *config);
 void Overlay_Destroy(OverlayId id);

@@ -46,6 +46,33 @@ void Overlay_ResetAll(void)
     }
 }
 
+void Overlay_DestroyMapLocal(void)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_OVERLAYS; i++)
+    {
+        if (sOverlays[i].active && sOverlays[i].scope == OVERLAY_SCOPE_MAP_LOCAL)
+            ReleaseSlot(&sOverlays[i]);
+    }
+}
+
+void Overlay_Update(void)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_OVERLAYS; i++)
+    {
+        struct Overlay *overlay = &sOverlays[i];
+
+        if (!overlay->active)
+            continue;
+
+        // Fade, pulse, anchor and falloff steps run here, in that order, before the fold.
+        overlay->resolvedOpacity = overlay->currentOpacity;
+    }
+}
+
 OverlayId Overlay_Create(const struct OverlayConfig *config)
 {
     u32 i;

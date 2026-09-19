@@ -48,6 +48,7 @@
 #include "money.h"
 #include "new_game.h"
 #include "oras_dowse.h"
+#include "overworld_overlay.h"
 #include "palette.h"
 #include "play_time.h"
 #include "random.h"
@@ -983,6 +984,7 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
     }
     DoCurrentWeather();
     ResetFieldTasksArgs();
+    Overlay_DestroyMapLocal();
     RunOnResumeMapScript();
 
     if (OW_HIDE_REPEAT_MAP_POPUP)
@@ -1004,6 +1006,7 @@ static void LoadMapFromWarp(bool32 a1)
     bool8 isOutdoors;
     bool8 isIndoors;
 
+    Overlay_ResetAll();
     LoadCurrentMapData();
     if (!(sObjectEventLoadFlag & SKIP_OBJECT_EVENT_LOAD))
     {
@@ -1933,6 +1936,7 @@ static void OverworldBasic(void)
     UpdateCameraPanning();
     BuildOamBuffer();
     UpdatePaletteFade();
+    Overlay_Update();
     UpdateTilesetAnimations();
     DoScheduledBgTilemapCopiesToVram();
     // Every minute if no palette fade is active, update TOD blending as needed
