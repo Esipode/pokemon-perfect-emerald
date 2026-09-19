@@ -728,65 +728,44 @@ struct AchievementRunDataExt
 // this struct existed (or a freshly zeroed one) reads as "no pending trade"
 // with no migration needed.
 //
-// `incoming` is raw storage for a struct BoxPokemon (pinned to 80 bytes as
-// of Saveblock-Shrinking Stage 5; see the STATIC_ASSERT tying the two
-// together in pokemon.h), not a `struct BoxPokemon incoming;` member as
-// trade_code.h's own Stage 4 planning sketch has it -- pokemon.h isn't
-// #included until after struct SaveBlock2 below, so its full definition
-// (and therefore its size) isn't visible at this point in the header yet.
-// struct SecretBaseParty, a little further down, hits the same ordering
-// constraint for struct Pokemon and works around it the same way (raw
-// fields instead of an embedded struct). Moved in/out via memcpy from
-// src/trade_code.c, which does have pokemon.h visible.
-// myConfirmTag/myOfferBits/myOfferSpecies/myOfferBytes/myOfferNickname
-// (post-Stage-10 follow-up) are a player's own already-built Step 1 offer
-// and Step 3 confirm tag, kept verbatim so the Cable Club attendant's "view
-// offer code"/"view confirm code" options can redisplay either one exactly
-// as first shown, any number of times, without the original Pokemon still
-// existing in the party to re-derive them from (Step 3 already escrowed it
-// away). Populated once, at the same commit point expectedConfirmTag is
-// (src/trade_code_session.c's TradeCodeSession_DoCommit) -- everything
-// needed is already in that function's own EWRAM session state at that
-// point, right before it's freed. Left populated (not cleared) once the
-// trade actually completes or is given up, same as every other pendingTrade
-// field the doc's own "keeping the replay ring and abandonedCount" wording
-// already established isn't worth zeroing defensively -- harmless stale
-// bytes with `state` back at TRADE_CODE_STATE_NONE, since both view options
-// refuse to show anything unless `state == TRADE_CODE_STATE_COMMITTED`.
+// `incoming` is raw storage for a struct BoxPokemon (pinned to 80 bytes; see the
+// STATIC_ASSERT tying the two together in pokemon.h) rather than an embedded member,
+// because pokemon.h isn't #included until after struct SaveBlock2, so the struct's size
+// isn't visible here. struct SecretBaseParty, further down, works around the same
+// constraint for struct Pokemon. Moved in/out via memcpy from src/trade_code.c.
+// myConfirmTag/myOfferBits/myOfferSpecies/myOfferBytes/myOfferNickname are a player's own
+// already-built Step 1 offer and Step 3 confirm tag, kept verbatim so the Cable Club
+// attendant's "view offer code"/"view confirm code" options can redisplay them any number
+// of times without the original Pokemon (Step 3 already escrowed it away). Populated once,
+// at the same commit point as expectedConfirmTag (TradeCodeSession_DoCommit in
+// src/trade_code_session.c). Left populated once the trade completes or is given up, like
+// the replay ring and abandonedCount: harmless stale bytes with `state` back at
+// TRADE_CODE_STATE_NONE, since both view options refuse unless
+// `state == TRADE_CODE_STATE_COMMITTED`.
 struct PendingTrade
 {
     u8 incoming[80];                               // struct BoxPokemon, by value -- see above
-    u32 recentOfferSeals[TRADE_CODE_REPLAY_RING];  // Stage 3's replay ring
-    u32 expectedConfirmTag;                        // Stage 3's TradeCode_ConfirmTag, masked to 28 bits
+    u32 recentOfferSeals[TRADE_CODE_REPLAY_RING];  // replay ring
+    u32 expectedConfirmTag;                        // TradeCode_ConfirmTag, masked to 28 bits
     u32 myConfirmTag;                              // my own confirm tag, shown to my partner (see comment above)
     u16 nonce;
     u16 myOfferBits;                               // exact bit length within myOfferBytes below
     u16 myOfferSpecies;                            // offered mon's species, for the redisplay icon (SPECIES_NONE if never set)
     u8 state;                                      // enum TradeCodeState (trade_code.h)
     u8 partySlot;                                  // the vacated party slot, for Step 4
-    u8 abandonedCount;                             // Stage 11's soft fair-exchange deterrent
+    u8 abandonedCount;                             // soft fair-exchange deterrent
     u8 myOfferBytes[TRADE_CODE_OFFER_PAYLOAD_BYTES]; // my own built Step 1 offer payload, raw bits
     u8 myOfferNickname[POKEMON_NAME_LENGTH + 1];   // offered mon's nickname, for the redisplay icon
     u8 padding[2];
 }; // sizeof == 200: 80 + 32 + 4 + 4 + 2 + 2 + 2 + 1 + 1 + 1 + 56 + 13 + 2,
    // no compiler-inserted padding between members (every u32-then-narrower
-   // transition already lands on a natural boundary, same discipline as
-   // the original 124-byte layout) -- see this stage's status block for
-   // the full accounting.
+   // transition already lands on a natural boundary).
 
 // Size of the nuzlocke per-zone bitfields in struct SaveBlock2. Indexed by
 // GetCurrentRegionMapSectionId() -- the map's MAPSEC, i.e. the name shown on
-// the region map -- NOT by raw mapNum like these fields used to be (that
-// scheme, and the fields using it, have been removed). Keying off mapNum
-// meant every floor of a multi-floor location (e.g.
-// MAP_GRANITE_CAVE_1F/B1F/B2F/STEVENS_ROOM are four different mapNums in the
-// same map group) got its own "already caught here" bucket, so a Nuzlocke
-// run could catch one mon per floor of the same cave instead of one per
-// cave. MAPSEC is shared by every floor of a given named area, so keying off
-// it collapses them into a single bucket, matching what "one catch per area"
-// actually means. Sized off MAPSEC_COUNT (rather than a hardcoded number) so
-// it can't quietly fall out of sync the way the mapNum version did as new
-// maps were added.
+// the region map. MAPSEC is shared by every floor of a named area (raw mapNum is not,
+// e.g. MAP_GRANITE_CAVE_1F/B1F/B2F/STEVENS_ROOM), so keying off it gives one catch per
+// area. Sized off MAPSEC_COUNT so it stays in sync as maps are added.
 #define NUM_NUZLOCKE_ZONE_FLAG_BYTES ((MAPSEC_COUNT + 7) / 8)
 #define NUM_NUZLOCKE_ZONE_FLAGS      (NUM_NUZLOCKE_ZONE_FLAG_BYTES * 8)
 

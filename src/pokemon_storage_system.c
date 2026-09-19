@@ -181,8 +181,7 @@ enum {
     MENU_SIMPLE,
     MENU_SELECT,
     MENU_SORT,
-    // Sort keys. Kept contiguous and in enum StorageSortType order so the
-    // handler can convert a menu id to a sort type by subtraction.
+    // Sort keys. Contiguous and in enum StorageSortType order; the handler converts by subtraction.
     MENU_SORT_DEX,
     MENU_SORT_NAME,
     MENU_SORT_TYPE1,
@@ -381,10 +380,7 @@ enum {
     WIN_MESSAGE,
     WIN_ITEM_DESC,
     // Only the locked-mon messages (MSG_LOCKED_UNTIL_CHAMPION, MSG_LOCKED_LEVEL_CAP,
-    // MSG_LOCKED_DRAFT) need 3 lines -- every other message printed through
-    // PrintMessage is one short line, so WIN_MESSAGE stays sized for that
-    // common case instead of being stretched (and overlapping neighboring windows'
-    // VRAM tiles -- see WIN_MESSAGE_LOCKED's .baseBlock below) for all of them.
+    // MSG_LOCKED_DRAFT) need 3 lines; every other PrintMessage message is one line.
     WIN_MESSAGE_LOCKED,
 };
 
@@ -588,9 +584,8 @@ EWRAM_DATA static u8 sMovingMonOrigBoxPos = 0;
 EWRAM_DATA static bool8 sAutoActionOn = 0;
 EWRAM_DATA static bool8 sJustOpenedBag = 0;
 EWRAM_DATA static bool8 sRefreshDisplayMonGfx = FALSE;
-// Which per-mon reason (see IsBoxMonWithdrawLocked's own comment) most
-// recently locked a box mon, for GetLockedMonMsgId to report the right
-// message. Only meaningful right after IsBoxMonWithdrawLocked returns TRUE.
+// Which per-mon reason (see IsBoxMonWithdrawLocked) most recently locked a box mon.
+// Only meaningful right after IsBoxMonWithdrawLocked returns TRUE.
 EWRAM_DATA static u8 sBoxMonLockMsgId = 0;
 
 // Main tasks
@@ -903,7 +898,6 @@ void UpdateSpeciesSpritePSS(struct BoxPokemon *boxmon);
 
 static const u8 gText_JustOnePkmn[] = _("There is just one POKéMON with you.");
 static const u8 gText_PartyFull[] = _("Your party is full!");
-// Draft Mode.md §3c: nothing ever enters or leaves the PC in a Draft run.
 static const u8 gText_CantUseStorageInDraft[] = _("You can't do that during\na Draft run!");
 static const u8 gText_Box[] = _("BOX");
 
@@ -1028,23 +1022,18 @@ static const struct WindowTemplate sWindowTemplates[] =
         .paletteNum = 15,
         .baseBlock = 0x14,
     },
-    // Same footprint the since-reverted taller WIN_MESSAGE briefly used. Needs its
-    // own .baseBlock rather than reusing WIN_MESSAGE/WIN_ITEM_DESC's 0x14: unlike
-    // those two (which alternate and are never both on screen at once), this window
-    // and the options popup (sStorage->menuWindow, .baseBlock = 92 -- see InitMenu)
-    // ARE shown together (e.g. picking WITHDRAW on a locked mon leaves the popup up
-    // behind the error). At width 18 / height 6 (108 tiles), starting at 0x14 (20)
-    // would run through tile 128 and stomp the popup's own tiles at 92, which reads
-    // as the popup's text getting corrupted/duplicated by this window's. The popup
-    // never grows past ~140 tiles from base 92 (longest label "WITHDRAW" -> width 10,
-    // at most 7 rows -> height 14), so 0x100 (256) clears it with room to spare, and
-    // still lands well short of WIN_DISPLAY_INFO's own block at 0xC0 (192, 63 tiles).
+    // Needs its own .baseBlock instead of WIN_MESSAGE/WIN_ITEM_DESC's 0x14: those two
+    // alternate, but this window is shown together with the options popup
+    // (sStorage->menuWindow, .baseBlock = 92; see InitMenu). At 108 tiles from 0x14 it
+    // would overrun tile 128 and corrupt the popup's tiles. The popup never exceeds
+    // ~140 tiles from base 92, so 0x100 clears it and stays past WIN_DISPLAY_INFO's
+    // block at 0xC0 (63 tiles).
     [WIN_MESSAGE_LOCKED] = {
         .bg = 0,
         .tilemapLeft = 11,
         .tilemapTop = 13,
         .width = 18,
-        .height = 6, // 3 lines -- see the comment on MSG_LOCKED_UNTIL_CHAMPION below
+        .height = 6, // 3 lines
         .paletteNum = 15,
         .baseBlock = 0x100,
     },
@@ -1144,21 +1133,14 @@ static const struct StorageMessage sMessages[] =
     [MSG_ITEM_IS_HELD]         = {COMPOUND_STRING("{DYNAMIC 0} is now held."),   MSG_VAR_ITEM_NAME},
     [MSG_CHANGED_TO_ITEM]      = {COMPOUND_STRING("Changed to {DYNAMIC 0}."),    MSG_VAR_ITEM_NAME},
     [MSG_CANT_STORE_MAIL]      = {COMPOUND_STRING("MAIL can't be stored!"),      MSG_VAR_NONE},
-    // WIN_MESSAGE_LOCKED is only 18 tiles wide, same as WIN_MESSAGE -- so this is
-    // wrapped across 3 short lines instead of the 2 long ones it started as, which
-    // is too wide for the window and just runs off the edge.
+    // WIN_MESSAGE_LOCKED is 18 tiles wide, so the locked messages wrap across 3 short lines.
     [MSG_LOCKED_UNTIL_CHAMPION] = {COMPOUND_STRING("This POKéMON won't\ncome with you until\nyou defeat the LEAGUE!"), MSG_VAR_NONE},
-    // Shown instead of MSG_LOCKED_UNTIL_CHAMPION for reason 3 in
-    // IsBoxMonWithdrawLocked's own comment (below) -- a box mon currently
-    // above the level cap. Same WIN_MESSAGE_LOCKED window, same reason.
+    // Shown instead of MSG_LOCKED_UNTIL_CHAMPION for reason 3 in IsBoxMonWithdrawLocked.
     [MSG_LOCKED_LEVEL_CAP]     = {COMPOUND_STRING("This POKéMON is\nabove your level cap\nand can't be withdrawn!"), MSG_VAR_NONE},
-    // Draft Mode.md §3c: shown instead of MSG_LOCKED_UNTIL_CHAMPION whenever
-    // Draft mode is on -- the lock reason is the whole run, not the league,
-    // so it gets its own string. Same WIN_MESSAGE_LOCKED window, same reason.
+    // Shown instead of MSG_LOCKED_UNTIL_CHAMPION whenever Draft mode is on; the lock lasts the whole run.
     [MSG_LOCKED_DRAFT]         = {COMPOUND_STRING("This POKéMON can't\nleave the BOX during\na Draft run!"), MSG_VAR_NONE},
     [MSG_PARTY_SLOT_LOCKED]    = {COMPOUND_STRING("You can't use that slot yet!"), MSG_VAR_NONE},
-    // Storage sort. WIN_MESSAGE is one line, so these stay short -- the
-    // 25-char MSG_LAST_POKE above is the proven fit.
+    // Storage sort. WIN_MESSAGE is one line; the 25-char MSG_LAST_POKE is the proven fit.
     [MSG_PICK_A_SORT]          = {COMPOUND_STRING("Sort the BOXES how?"),       MSG_VAR_NONE},
     [MSG_CONFIRM_SORT]         = {COMPOUND_STRING("This sorts every BOX. OK?"), MSG_VAR_NONE},
     [MSG_SORTING]              = {COMPOUND_STRING("Sorting the BOXES…"),        MSG_VAR_NONE},
@@ -1166,9 +1148,8 @@ static const struct StorageMessage sMessages[] =
     [MSG_CANT_SORT_NOW]        = {COMPOUND_STRING("Put that down first!"),      MSG_VAR_NONE},
 };
 
-// Human-facing names for the {DYNAMIC 0} in MSG_SORT_COMPLETE, indexed by
-// enum StorageSortType. Kept short: "BOXES sorted by X!" has to stay inside
-// the one line WIN_MESSAGE gives it.
+// Names for the {DYNAMIC 0} in MSG_SORT_COMPLETE, indexed by enum StorageSortType.
+// Kept short so "BOXES sorted by X!" fits WIN_MESSAGE's one line.
 static const u8 *const sSortTypeNames[STORAGE_SORT_COUNT] =
 {
     [STORAGE_SORT_DEX]   = COMPOUND_STRING("DEX No."),
@@ -1477,7 +1458,7 @@ u8 CountMonsInBox(u8 boxId)
     return count;
 }
 
-// Eggs count -- callers use this to detect a completely empty storage.
+// Eggs count; callers use this to detect a completely empty storage.
 u32 CountAllStorageMons(void)
 {
     s32 i, j;
@@ -1673,9 +1654,8 @@ static void Task_PCMainMenu(u8 taskId)
             if (Draft_IsEnabled()
              && (task->tInput == OPTION_WITHDRAW || task->tInput == OPTION_DEPOSIT || task->tInput == OPTION_MOVE_MONS))
             {
-                // Draft Mode.md §3c: WITHDRAW/DEPOSIT/MOVE POKéMON are all
-                // refused outright. MOVE ITEMS stays available -- see
-                // IsBoxMonWithdrawLocked below for its own defence in depth.
+                // WITHDRAW/DEPOSIT/MOVE POKéMON are refused outright. MOVE ITEMS stays
+                // available; IsBoxMonWithdrawLocked also guards it.
                 FillWindowPixelBuffer(0, PIXEL_FILL(1));
                 AddTextPrinterParameterized2(0, FONT_NORMAL, gText_CantUseStorageInDraft, 0, NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
                 task->tState = STATE_ERROR_MSG;
@@ -3637,9 +3617,7 @@ static void Task_HandleBoxOptions(u8 taskId)
             SetPokeStorageTask(Task_JumpBox);
             break;
         case MENU_SORT:
-            // Refuse here rather than hiding the row: a row that explains itself
-            // is clearer than one that appears and disappears, and it keeps
-            // AddBoxOptionsMenu free of state.
+            // Refuse here rather than hiding the row, which keeps AddBoxOptionsMenu stateless.
             if (!CanSortStorage())
             {
                 PlaySE(SE_FAILURE);
@@ -3751,17 +3729,14 @@ static void Task_HandleWallpapers(u8 taskId)
 }
 
 // A sort repacks every box, so it must not run while a Pokémon or item is held
-// outside the box arrays: the held mon/item would be placed back into a slot the
-// sort has already filled, and a MultiMove selection's origin slots would all be
-// invalidated.
-// Draft runs are deliberately not blocked here. Draft stops Pokémon leaving
-// the PC (IsBoxMonWithdrawLocked, and the option gate in Task_PokeStorageMain);
-// reordering inside the PC removes nothing and grants nothing.
+// outside the box arrays: the held mon/item would land in an already-filled slot,
+// and a MultiMove selection's origin slots would be invalidated.
+// Draft runs are not blocked: sorting removes nothing from the PC.
 static bool32 CanSortStorage(void)
 {
     if (IsMonBeingMoved())
         return FALSE;
-    // The live "item in hand" test -- sMovingItemId is only a screen-change cache.
+    // The live "item in hand" test; sMovingItemId is only a screen-change cache.
     if (IsMovingItem())
         return FALSE;
     if (sStorage->inBoxMovingMode != MOVE_MODE_NORMAL)
@@ -3770,21 +3745,17 @@ static bool32 CanSortStorage(void)
     return TRUE;
 }
 
-// Every icon on screen was drawn from the pre-sort box contents, so throw them
-// all away and rebuild from live data. InitBoxMonSprites re-applies the
-// ShouldBoxmonSpriteBeTransparent blend, so withdraw-locked and excluded mons
-// come back greyed in their new slots.
+// Every icon was drawn from pre-sort box contents, so discard them and rebuild from
+// live data. InitBoxMonSprites re-applies the ShouldBoxmonSpriteBeTransparent blend.
 //
 // Not rebuilt here:
-//  - sStorage->boxSpecies/boxPersonalities/boxIsEgg. Only the box-scroll path
-//    reads them, and InitBoxMonIconScroll repopulates them for the incoming box
-//    every time, so they cannot be read stale.
-//  - Item icons. In MOVE ITEMS only the mon under the cursor gets one, and the
-//    cursor is on the box title for the whole sort flow.
+//  - sStorage->boxSpecies/boxPersonalities/boxIsEgg. Only the box-scroll path reads
+//    them, and InitBoxMonIconScroll repopulates them for each incoming box.
+//  - Item icons. In MOVE ITEMS only the mon under the cursor gets one, and the cursor
+//    is on the box title for the whole sort flow.
 //
-// currentBox and the cursor are left where they are: after an all-boxes repack
-// the mon that was under the cursor may be in another box entirely, so there is
-// nothing meaningful to follow.
+// currentBox and the cursor stay put; after a repack the mon under the cursor may be
+// in another box.
 static void RefreshBoxAfterSort(void)
 {
     u32 boxPosition;
@@ -4714,8 +4685,7 @@ static void InitPokeStorageBg0(void)
 static void PrintMessage(u8 id)
 {
     u8 *txtPtr;
-    // Every other message is one short line and fits WIN_MESSAGE; only these
-    // need the taller, separately-blocked WIN_MESSAGE_LOCKED (see its template).
+    // Only the locked-mon messages need the 3-line WIN_MESSAGE_LOCKED.
     u8 windowId = (id == MSG_LOCKED_UNTIL_CHAMPION || id == MSG_LOCKED_LEVEL_CAP || id == MSG_LOCKED_DRAFT) ? WIN_MESSAGE_LOCKED : WIN_MESSAGE;
 
     DynamicPlaceholderTextUtil_Reset();
@@ -4767,8 +4737,7 @@ static void ShowYesNoWindow(s8 cursorPos)
 
 static void ClearBottomWindow(void)
 {
-    // Clears both since PrintMessage can have left either one on screen -- clearing
-    // the one that's already blank is a harmless no-op.
+    // PrintMessage may have left either window on screen.
     ClearStdWindowAndFrameToTransparent(WIN_MESSAGE, FALSE);
     ClearStdWindowAndFrameToTransparent(WIN_MESSAGE_LOCKED, FALSE);
     ScheduleBgCopyTilemapToVram(0);
@@ -7314,45 +7283,32 @@ static bool8 IsRemovingLastPartyMon(void)
 }
 
 // Four independent reasons a box mon can be locked out of withdraw/move/
-// shift/item-swap, all surfaced through PrintMessage(GetLockedMonMsgId())
-// (see MSTATE_ERROR_LOCKED_MON below):
+// shift/item-swap, all surfaced through PrintMessage(GetLockedMonMsgId()):
 //
-// 0. Draft Mode.md §3c: Draft locks the PC for the whole run, not any
-//    particular box mon -- checked before the FLAG_SYS_GAME_CLEAR early-out
-//    below on purpose, since that flag has nothing to do with the mode's
-//    lock. Surfaced with its own MSG_LOCKED_DRAFT rather than
-//    MSG_LOCKED_UNTIL_CHAMPION -- see GetLockedMonMsgId.
+// 0. Draft locks the PC for the whole run, not any particular box mon. Checked
+//    before the FLAG_SYS_GAME_CLEAR early-out because that flag is unrelated to
+//    the lock. Reported with MSG_LOCKED_DRAFT; see GetLockedMonMsgId.
 //
-// The remaining three boil down to "not withdrawable until you've beaten the
-// league (again) in this playthrough":
+// The remaining three mean "not withdrawable until you've beaten the league
+// (again) in this playthrough":
 //
-// 1. tradeCodeAboveLevelCap: a trade-code Pokémon that arrived above the
-//    level cap (TradeCodeReceive_DoSwap, src/trade_code_receive.c). An
-//    explicit per-mon bit on struct BoxPokemon rather than inferred from OT
-//    ID -- see its own comment (include/pokemon.h) for the full reasoning
-//    on why that inference was replaced. Deliberately not re-evaluated
-//    against the current cap (unlike case 3 below): once flagged, a mon
-//    stays locked even if the cap later rises past its level.
+// 1. tradeCodeAboveLevelCap: a trade-code Pokémon that arrived above the level
+//    cap (TradeCodeReceive_DoSwap). An explicit per-mon bit on struct BoxPokemon
+//    rather than inferred from OT ID (see include/pokemon.h). Not re-evaluated
+//    against the current cap (unlike case 3): once flagged, it stays locked even
+//    if the cap later passes its level.
 //
-// 2. legacyCarryOverLocked: a Pokémon that predates the current New-Game-
-//    Plus/Nuzlocke-restart playthrough (CarryStorageIntoNewGame, src/
-//    new_game.c). gSaveBlock2Ptr->keepStorageOnRestart no longer needs to
-//    gate this check -- CarryStorageIntoNewGame only ever sets this bit
-//    when it itself runs, which is already conditioned on the equivalent
-//    "keep storage" choice at restart time, so a save that never carried
-//    storage over simply never has any box mon with this bit set.
+// 2. legacyCarryOverLocked: a Pokémon that predates the current New-Game-Plus /
+//    Nuzlocke-restart playthrough. CarryStorageIntoNewGame only sets this bit when
+//    keep-storage was chosen, so keepStorageOnRestart need not gate this check.
 //
-// 3. Any box mon currently above the level cap, regardless of how it got
-//    there (rare candy, in-game trade, hacked save, etc.) -- evaluated live
-//    against GetCurrentLevelCap() every call, so unlike case 1 this one
-//    clears itself as soon as the cap catches up to the mon's level. Reported
-//    with its own MSG_LOCKED_LEVEL_CAP rather than MSG_LOCKED_UNTIL_CHAMPION,
-//    since "defeat the league" would be misleading -- raising the cap (or
-//    beating the league, which also raises it) is enough on its own.
+// 3. Any box mon above the level cap, however it got there (rare candy, in-game
+//    trade, hacked save). Evaluated live against GetCurrentLevelCap(), so it clears
+//    once the cap catches up. Reported with MSG_LOCKED_LEVEL_CAP, since "defeat the
+//    league" would mislead; raising the cap is enough.
 //
-// Cases 1-3 stash which one fired in sBoxMonLockMsgId for GetLockedMonMsgId
-// to report, since by the time that's called the boxMon pointer itself is
-// no longer available (see MSTATE_ERROR_LOCKED_MON's state-machine delay).
+// Cases 1-3 stash which one fired in sBoxMonLockMsgId, since the boxMon pointer is
+// gone by the time GetLockedMonMsgId runs (see MSTATE_ERROR_LOCKED_MON's delay).
 static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
 {
     if (boxMon == NULL)
@@ -7384,10 +7340,8 @@ static bool32 IsBoxMonWithdrawLocked(struct BoxPokemon *boxMon)
     return FALSE;
 }
 
-// Draft's lock (above) is a blanket, run-wide lock rather than a per-mon
-// reason, so it gets its own message instead of reusing sBoxMonLockMsgId's
-// per-mon result -- MSG_LOCKED_UNTIL_CHAMPION's "beat the league" phrasing
-// would be misleading in a Draft run.
+// Draft's lock is run-wide rather than per-mon, so it bypasses sBoxMonLockMsgId;
+// MSG_LOCKED_UNTIL_CHAMPION's "beat the league" phrasing would mislead.
 static u8 GetLockedMonMsgId(void)
 {
     if (Draft_IsEnabled())

@@ -93,17 +93,9 @@ void CopyTrainerId(u8 *dst, u8 *src)
 
 static void InitPlayerTrainerId(void)
 {
-    // Deliberately not GetGeneratedTrainerIdLower() here: that returns a value
-    // cached once by SeedRngAndSetTrainerId(), which only runs when the player
-    // types their name on the naming screen -- i.e. once per boot, on a truly
-    // fresh save. This function is also called on the Nuzlocke-restart path,
-    // which reaches CB2_NewGame without ever visiting the naming screen (the
-    // save was just continued, or this is a repeat restart within the same
-    // boot), so that cache would still hold its EWRAM_DATA default of 0, or a
-    // stale value from an earlier restart -- producing the same all-zero (or
-    // repeated) lower half every time instead of a fresh ID. Drawing both
-    // halves from Random() keeps every InitPlayerTrainerId() call self
-    // contained and independent of naming-screen state.
+    // Not GetGeneratedTrainerIdLower(): its value is cached by SeedRngAndSetTrainerId(),
+    // which only runs on the naming screen. The Nuzlocke-restart path reaches CB2_NewGame
+    // without it, so the cache would be 0 or stale and repeat the same lower half.
     u32 trainerId = (Random() << 16) | (Random() & 0xFFFF);
     SetTrainerId(trainerId, gSaveBlock2Ptr->playerTrainerId);
 }
@@ -123,17 +115,9 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsHpDisplayPlayer = OPTIONS_HP_DISPLAY_BAR_NUMBERS + 1;
     gSaveBlock2Ptr->optionsHpDisplayOpponent = (B_HP_PERCENTAGE_DISPLAY ? OPTIONS_HP_DISPLAY_BAR_PERCENT : OPTIONS_HP_DISPLAY_BAR_ONLY) + 1;
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
-    // Offline trade codes (trade_code.h): explicit alongside the memset
-    // above, even though ClearSav2() (called just before this, in
-    // Sav2_ClearSetDefault()) already zeroes the whole SaveBlock2 -- kept
-    // for the same "belt and suspenders, cheap and correct" reasoning as
-    // the playerColors memset right above it, not because anything still
-    // depends on it. TRADE_CODE_STATE_NONE is 0, so this doubles as "no
-    // pending trade." NewGameInitData's own New Game+ path -- which does
-    // NOT run ClearSav2() first, and Sav2_ClearSetDefault (so this
-    // function) never runs for it -- gets its own separate clear of the
-    // same field; see Trading Codes.md's Stage 11 status block for why
-    // that one couldn't just live here.
+    // Redundant with ClearSav2() in Sav2_ClearSetDefault(); kept alongside the
+    // playerColors memset. TRADE_CODE_STATE_NONE is 0. The New Game+ path in
+    // NewGameInitData never reaches this function and clears the field itself.
     memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
 }
 
@@ -147,7 +131,7 @@ void ClearAllContestWinnerPics(void)
 {
     ClearContestWinnerPicsInContestHall();
 
-    // Museum paintings no longer have reserved slots (NUM_CONTEST_WINNERS == MUSEUM_CONTEST_WINNERS_START).
+    // Museum paintings have no reserved slots (NUM_CONTEST_WINNERS == MUSEUM_CONTEST_WINNERS_START).
 }
 
 static void ClearFrontierRecord(void)
@@ -186,33 +170,23 @@ void ResetMenuAndMonGlobals(void)
 }
 
 // Boxes the outgoing party (so ZeroPlayerPartyMons() doesn't delete it) and marks every
-// mon that survives into the new run's storage as legacy-carry-over-locked (Trading
-// Codes.md Stage 11 -- struct BoxPokemon's own legacyCarryOverLocked bit, include/
-// pokemon.h) so IsBoxMonWithdrawLocked (src/pokemon_storage_system.c) keeps it out of
-// reach until the player beats the league again. Must run before InitPlayerTrainerId() --
-// the boxed party needs to keep its old OT ID for the discardRunLocalMons comparisons
-// below, which still key off it. Only called when keepStorage is set.
+// surviving mon with BoxPokemon's legacyCarryOverLocked bit, so IsBoxMonWithdrawLocked
+// (src/pokemon_storage_system.c) keeps it out of reach until the player beats the league
+// again. Must run before InitPlayerTrainerId(): the discardRunLocalMons comparisons key
+// off the old OT ID. Only called when keepStorage is set.
 static void CarryStorageIntoNewGame(void)
 {
     u32 i, boxId, boxPosition;
     u32 outgoingOtId = READ_OTID_FROM_SAVE;
     u32 partyCount = CalculatePlayerPartyCount();
-    // FLAG_RANDOMIZE_MON bakes a randomized species
-    // straight into MON_DATA_SPECIES at CreateMon time (see GetRandomizedSpecies in
-    // pokemon.c) -- unlike the type/move randomizers, which randomization.c resolves live
-    // off the real species and never touch the saved data, so those are fine to carry
-    // over. A Pokémon caught -- or received as an in-game trade, which also runs through
-    // CreateMon -- under that flag this run is just a randomized species tied to this
-    // run's OT id, so it gets discarded below instead of carried into the next one. Must
-    // be read here, before ClearSav1() wipes the flag later in NewGameInitData().
-    // FLAG_DEBUG hands the player the Debug Menu, which can conjure any Pokémon with any
-    // stats at all, so anything obtained during a debug run is discarded on restart for
-    // the same reason a randomized species is -- it is an artifact of this run only.
+    // FLAG_RANDOMIZE_MON bakes a randomized species into MON_DATA_SPECIES at CreateMon time
+    // (see GetRandomizedSpecies), unlike the type/move randomizers, which resolve live and
+    // are safe to carry over. Mons caught or in-game-traded under that flag, or under
+    // FLAG_DEBUG (which can conjure any mon), are discarded below. Must be read before
+    // ClearSav1() wipes the flags.
     bool32 discardRunLocalMons = FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_DEBUG);
 
-    // Pass 1 -- move the party into the first free storage slots. Copied verbatim; Pass 2
-    // below (which runs over the whole of storage, so it naturally covers these too) is
-    // what actually sets the legacy-carry-over lock bit, not anything in this pass.
+    // Pass 1 -- move the party into the first free storage slots. Pass 2 sets the lock bit.
     for (i = 0; i < partyCount; i++)
     {
         struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
@@ -254,30 +228,15 @@ static void CarryStorageIntoNewGame(void)
                 }
             }
         }
-        // If storage is full (TOTAL_BOXES_COUNT * IN_BOX_COUNT slots), stop placing --
-        // the remaining party mons are simply lost, which is no worse than the
-        // previous wipe-everything behaviour.
+        // Storage is full; the remaining party mons are lost.
         if (!placed)
             break;
     }
 
-    // Pass 2 -- lock every mon that survives into the new run's storage (Trading Codes.md
-    // Stage 11), or (Part 3e) discard any already-boxed Pokémon this run caught or traded
-    // for while FLAG_RANDOMIZE_MON or FLAG_DEBUG was on. Running this after pass 1 means a mon that was
-    // sitting in the party at restart time gets locked too, with no special-casing.
-    // Pokémon from an even earlier run were already locked (this bit, once set, is never
-    // cleared short of FLAG_SYS_GAME_CLEAR -- see IsBoxMonWithdrawLocked, src/pokemon_
-    // storage_system.c) so re-setting it here is a harmless no-op for them.
-    //
-    // Pre-Stage-11 this pass instead re-stamped IsIngameTradeOtId() mons' OT ID (via
-    // UpdateBoxMonOtId, src/pokemon.c) to outgoingOtId, purely so they'd keep *looking*
-    // foreign to an OT-ID-mismatch-based lock check after this restart -- otherwise they'd
-    // ride that function's own hardcoded whitelist forever and stay withdrawable. An
-    // explicit lock bit needs no such trick: nothing about a mon's real OT ID matters to
-    // this pass anymore, so in-game-trade mons now keep their genuine OT ID forever, same
-    // as a real trade always would. UpdateBoxMonOtId itself is left in place (a legitimate
-    // general-purpose "rewrite this box mon's OT ID, correctly re-encrypting the substructs
-    // under the new key" utility, src/pokemon.c) even though this was its only caller.
+    // Pass 2 -- lock every surviving mon, or discard boxed mons this run caught or traded
+    // for under FLAG_RANDOMIZE_MON / FLAG_DEBUG. Running after pass 1 also locks the boxed
+    // party. Mons from earlier runs are already locked (the bit is never cleared short of
+    // FLAG_SYS_GAME_CLEAR; see IsBoxMonWithdrawLocked), so re-setting it is a no-op.
     for (boxId = 0; boxId < TOTAL_BOXES_COUNT; boxId++)
     {
         for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
@@ -296,10 +255,8 @@ static void CarryStorageIntoNewGame(void)
                 continue;
             }
             boxMon->legacyCarryOverLocked = TRUE;
-            // Recruits mode's battle counter is only meaningful within the run that
-            // tallied it -- strip it so a carried-over mon doesn't arrive already
-            // partway (or fully) toward retiring in a run that may not even have
-            // Recruits mode on.
+            // The Recruits battle counter is per-run; reset it so the mon doesn't arrive
+            // partway toward retiring.
             SetBoxMonData(boxMon, MON_DATA_RECRUIT_BATTLES, &recruitBattles);
         }
     }
@@ -355,13 +312,10 @@ void NewGameInitData(void)
     void *roamersBackup = NULL;
     void *locationHistoryBackup = NULL;
     void *roamerLocationBackup = NULL;
-    // Never TRUE for New Game+ -- that path already
-    // preserves the PC via its own backup/restore below.
+    // Never TRUE for New Game+, which preserves the PC via its own backup/restore.
     bool32 keepStorage = !isNewGamePlus && gKeepStorageOnNewGame && gSaveFileStatus == SAVE_STATUS_OK;
-    // Read before ClearSav1() wipes every SaveBlock1 flag below, and restored
-    // after it for a plain New Game (New Game+ already backs up/restores this
-    // same flag further down) -- otherwise starting a new game over an
-    // existing save would silently turn Auto-Scroll Text back off.
+    // Read before ClearSav1() wipes SaveBlock1 flags; restored after it for a plain
+    // New Game so Auto-Scroll Text stays on (New Game+ restores it separately).
     bool8 autoScrollTextBackup = FlagGet(FLAG_AUTO_SCROLL_TEXT);
 
 #if IS_FRLG
@@ -435,30 +389,15 @@ void NewGameInitData(void)
         ((u8 *)playerSettingsBackup)[0] = gSaveBlock1Ptr->nuzlockeModeEnabled;
         ((u8 *)playerSettingsBackup)[1] = gSaveBlock1Ptr->autosaveModeEnabled;
         ((u8 *)playerSettingsBackup)[2] = gSaveBlock1Ptr->difficulty;
-        // achievementsBlocked lives in
-        // SaveBlock1 and ClearSav1() below wipes it back to FALSE like
-        // everything else that isn't explicitly preserved here -- without
-        // this, a run that got permanently blocked by opening the debug menu
-        // would come back clean (unblocked) on its next NG+ cycle.
+        // ClearSav1() would reset achievementsBlocked, unblocking a run blocked via the debug menu.
         ((u8 *)playerSettingsBackup)[3] = gSaveBlock1Ptr->achievementsBlocked;
-        // monoTypeSetting/monoGenSetting/limitedPartySetting actually live in
-        // SaveBlock2, which ClearSav1() below never touches, so this isn't
-        // strictly needed for correctness -- kept here anyway so the
-        // challenge run's settings are backed up as one group.
+        // These live in SaveBlock2, which ClearSav1() doesn't touch; backed up as a group with the other challenge settings.
         ((u8 *)playerSettingsBackup)[4] = gSaveBlock2Ptr->monoTypeSetting;
         ((u8 *)playerSettingsBackup)[5] = gSaveBlock2Ptr->monoGenSetting;
         ((u8 *)playerSettingsBackup)[6] = gSaveBlock2Ptr->limitedPartySetting;
-        // draftModeEnabled lives in SaveBlock1 (see draft_mode.h) and is
-        // wiped by ClearSav1() below like nuzlockeModeEnabled above, so it
-        // needs the same explicit save/restore.
+        // SaveBlock1 fields wiped by ClearSav1(), like nuzlockeModeEnabled.
         ((u8 *)playerSettingsBackup)[7] = gSaveBlock1Ptr->draftModeEnabled;
-        // recruitsModeEnabled lives in SaveBlock1 (see recruits_mode.h) and
-        // is wiped by ClearSav1() below the same way; same reasoning as
-        // draftModeEnabled above.
         ((u8 *)playerSettingsBackup)[8] = gSaveBlock1Ptr->recruitsModeEnabled;
-        // rotationModeSetting lives in SaveBlock2 like monoTypeSetting/etc.
-        // above, so this isn't strictly needed for correctness either -- kept
-        // here anyway for the same grouping reason.
         ((u8 *)playerSettingsBackup)[9] = gSaveBlock2Ptr->rotationModeSetting;
 
         gIsNewGamePlus = FALSE; // consume flag
@@ -472,10 +411,8 @@ void NewGameInitData(void)
     if (!isNewGamePlus)
     {
         gSaveBlock2Ptr->encryptionKey = 0;
-        // Must run before ZeroPlayerPartyMons() wipes the party below, 
-        // and before InitPlayerTrainerId() a few lines later
-        // issues a new trainer ID -- the boxed party needs to keep its old OT ID,
-        // and the trade-mon re-stamp needs the outgoing one to stamp with.
+        // Must run before ZeroPlayerPartyMons() and InitPlayerTrainerId(); the boxed
+        // party needs its old OT ID.
         if (keepStorage)
             CarryStorageIntoNewGame();
         ZeroPlayerPartyMons();
@@ -483,26 +420,21 @@ void NewGameInitData(void)
         InitPlayerTrainerId();
         PlayTimeCounter_Reset();
         ClearPokedexFlags();
-        // Skip the wipe when carrying storage over.
-        // Box names, wallpapers, currentBox and fusions[] are deliberately
-        // left as-is.
+        // Skip the wipe when carrying storage over; box names, wallpapers,
+        // currentBox and fusions[] are left as-is.
         if (!keepStorage)
             ResetPokemonStorageSystem();
         gPartiesCount[B_TRAINER_PLAYER] = 0;
         NewGameInitPCItems();
-        // Exp Share defaults on for every fresh (non-NG+) playthrough, not just a
-        // truly blank .sav -- SetDefaultOptions() alone only covers the latter,
-        // since NewGameInitData() otherwise leaves SaveBlock2's options untouched
-        // across a New Game started over an existing save.
+        // Exp Share defaults on for every fresh playthrough; SetDefaultOptions() only
+        // covers a blank save, not a New Game over an existing one.
         gSaveBlock2Ptr->optionsExpShare = TRUE;
         // SetCurrentDifficultyLevel(DIFFICULTY_NORMAL); // OLD DIFFICULTY IMPLEMENTATION
         gSaveBlock2Ptr->newGamePlus = 0;
         ResetItemFlags();
         ResetDexNav();
-        // Gates the OT-ID lock in pokemon_storage_system.c, 
-        // and is what CB2_NewGame reads on the Nuzlocke restart path.
-        // Set unconditionally so a run started without keep-storage
-        // explicitly clears any earlier run's answer.
+        // Gates the OT-ID lock in pokemon_storage_system.c and is read by CB2_NewGame on the
+        // Nuzlocke restart path. Set unconditionally to clear any earlier run's answer.
         gSaveBlock2Ptr->keepStorageOnRestart = keepStorage;
     }
 
@@ -527,46 +459,17 @@ void NewGameInitData(void)
     ClearAllMail();
     gSaveBlock2Ptr->specialSaveWarpFlags = 0;
     gSaveBlock2Ptr->gcnLinkFlags = 0;
-    // Trading Codes.md Stage 11 ("New Game Plus / keep-storage" bullet):
-    // pendingTrade must be cleared on NG+ so a committed trade can't
-    // survive into a fresh file. SetDefaultOptions() (above in this file)
-    // already does this same memset, but only runs via Sav2_ClearSetDefault
-    // - reached from a truly fresh save (src/intro.c) or a corrupted-reload
-    // fallback (src/reload_save.c), both of which already ClearSav2() the
-    // whole SaveBlock2 anyway, making that particular memset redundant.
-    // This exact NG+ restart path (isNewGamePlus == TRUE) never calls
-    // either one - confirmed by reading this whole function before relying
-    // on the other one - so without this line, a trade COMMITTED right
-    // before restarting into New Game+ would carry its confirm-code-
-    // waiting state into the new file, and Stage 9's boot hook (src/
-    // overworld.c) would drop a fresh NG+ save straight into "enter your
-    // partner's confirm code" for a trade from the previous playthrough.
-    // Unconditional (not gated on isNewGamePlus) to match specialSaveWarp
-    // Flags/gcnLinkFlags immediately above - harmless on the non-NG+ path,
-    // where pendingTrade is already TRADE_CODE_STATE_NONE from ClearSav2().
+    // The New Game+ path never runs ClearSav2(), so SaveBlock2 state that must not carry
+    // over is cleared here. Unconditional; harmless on the non-NG+ path.
+    // A committed pendingTrade would otherwise make the boot hook in overworld.c prompt for
+    // the previous playthrough's confirm code.
     memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
-    // Draft Mode.md §2: nuzlockeZoneCaughtFlags (include/global.h) doubles as
-    // "this area's draft is spent" in a Draft run (src/draft_mode.c) and
-    // lives in SaveBlock2, which this NG+ path never runs ClearSav2() over -
-    // same reasoning as the pendingTrade memset immediately above. Without
-    // this, every area would still read as spent on a fresh NG+ cycle and a
-    // Draft run would have nothing left to offer. Nuzlocke has the same
-    // latent gap, but a Nuzlocke restart goes through CB2_NewGame instead,
-    // which does clear SaveBlock2. Unconditional to match pendingTrade -
-    // harmless on the non-NG+ path, where these bytes are already zero from
-    // ClearSav2().
+    // Doubles as "this area's draft is spent" in Draft runs (src/draft_mode.c).
     memset(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags, 0, sizeof(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags));
-    // playerColors (player_customization.h) has the same ClearSav2() gap as
-    // pendingTrade/nuzlockeZoneCaughtFlags above - without this, a New Game+
-    // file starts with the previous playthrough's hair/hat/outfit/accent
-    // colours still applied to the overworld and battle sprites. Unconditional
-    // to match those, harmless on the non-NG+ path where ClearSav2() already
-    // zeroed it.
+    // Player colors would otherwise persist into the new file.
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     InitEventData();
-    // Must run after InitEventData() above -- it memsets the whole flags
-    // array again, undoing the ClearSav1() restore further up if this ran
-    // there instead (New Game+ backs up/restores this same flag separately).
+    // Must run after InitEventData(), which memsets the whole flags array again.
     if (!isNewGamePlus)
     {
         if (autoScrollTextBackup)
@@ -574,9 +477,7 @@ void NewGameInitData(void)
         else
             FlagClear(FLAG_AUTO_SCROLL_TEXT);
     }
-    // Must run after ClearSav1() above wiped dexCaught/dexSeen.
-    // Re-registers every carried-over box mon so the dex
-    // progress the player kept storage for is visible from turn one.
+    // Must run after ClearSav1() wipes dexCaught/dexSeen.
     if (keepStorage)
         ReregisterCarriedOverDexEntries();
     if (!isNewGamePlus)
@@ -593,9 +494,8 @@ void NewGameInitData(void)
     gSaveBlock1Ptr->registeredItem = ITEM_NONE;
     gSaveBlock1Ptr->registeredLongItem = ITEM_NONE;
     ClearBag();
-    // BOOST_STARTER_KIT. Must come after ClearBag() above or the
-    // grant is wiped, and is guarded on !isNewGamePlus because the New Game+
-    // path restores the previous save's bag and money further down anyway.
+    // BOOST_STARTER_KIT. Must come after ClearBag(); skipped for New Game+, which restores
+    // the previous bag and money below.
     if (!isNewGamePlus && AchievementBoost_HasStarterKit())
     {
         AddBagItem(ITEM_POTION, 5);
@@ -604,8 +504,7 @@ void NewGameInitData(void)
         AddBagItem(ITEM_ESCAPE_ROPE, 1);
         AddMoney(&gSaveBlock1Ptr->money, 3000); // on top of the 5000 set above
     }
-    // BOOST_SHINY_CHARM_START/BOOST_ABILITY_CAPSULE_START/BOOST_ABILITY_PATCH_START,
-    // same !isNewGamePlus reasoning as BOOST_STARTER_KIT above.
+    // BOOST_SHINY_CHARM_START/BOOST_ABILITY_CAPSULE_START/BOOST_ABILITY_PATCH_START.
     if (!isNewGamePlus && AchievementBoost_HasShinyCharmStart())
         AddBagItem(ITEM_SHINY_CHARM, 1);
     if (!isNewGamePlus && AchievementBoost_HasAbilityCapsuleStart())
@@ -727,10 +626,7 @@ void NewGameInitData(void)
 
             /* Increase New Game+ counter in save (0-255) */
             gSaveBlock2Ptr->newGamePlus++;
-            // highestNgPlusCycle is a high-water mark in the
-            // achievement profile (outside SaveBlock2, so it survives even a
-            // corrupted/reset save) -- newGamePlus itself is already the live
-            // counter, this just remembers the furthest the player has gone.
+            // Records the high-water mark in the achievement profile, which survives a corrupted or reset save.
             Achievement_OnNewGamePlusStarted(gSaveBlock2Ptr->newGamePlus);
         }
 

@@ -4,103 +4,46 @@
 
 // If you would like to ensure save compatibility, update the values below with those for your hack. You can find these through the debug menu.
 // Please note that this simple check is not 100% foolproof, but should be able to catch most unintended shifts.
-// Stage 1: ROAMER_COUNT 120 -> 1 removes 119 * sizeof(struct Roamer) (119 * 28 = 3332)
-// bytes from SaveBlock1 (11764 -> 8432). Calculated, not yet confirmed by a real build.
-// Stage 2: FREE_CONTESTS/FREE_DECORATIONS/FREE_MAIL/FREE_POKEBLOCKS remove:
-//   SaveBlock1: contestWinners[8] (32B each = 256), 10 decoration*/playerRoomDecoration*
-//     arrays (102), mail[8] (34B each = 272), the embedded struct Mail in both
-//     DaycareMail slots (34B each = 68), pokeblocks[10] (7B each = 70).
-//     8432 - 256 - 102 - 272 - 68 - 70 = 7664.
-//   SaveBlock2: contestLinkResults[5][4] (5*4*2 = 40). 3008 - 40 = 2968.
-// Calculated, not yet confirmed by a real build -- unlike the Stage 1 roamer
-// removal, the decoration arrays (102 bytes) and each removed struct Mail
-// (34 bytes) are NOT multiples of 4, so they can shift compiler-inserted
-// padding around neighboring 4-byte-aligned fields (struct DayCare's
-// BoxPokemon, struct TVShow, ...). If these don't match sizeof() on a real
-// build, that padding shift -- not a miscount -- is almost certainly why.
-// Stage 3: TOTAL_BOXES_COUNT 14 -> 16 adds 2 * (30 * sizeof(struct BoxPokemon)
-//   + BOX_NAME_LENGTH + 1 + 1 wallpaper byte) = 2 * (2880 + 9 + 1) = 5780 bytes
-//   to PokemonStorage. 40944 + 5780 = 46724. SaveBlock1/2/3 are untouched by
-//   this stage. Calculated, not yet confirmed by a real build.
-// Stage 4: FREE_BATTLE_FRONTIER removes struct BattleFrontier (~2,172, per this
-//   doc's own pre-stage measurement), struct Apprentice apprentices[4] (272), and
-//   struct PlayersApprentice playerApprentice (44) -- ~2,488 bytes -- and adds back
-//   two fields relocated OUT of struct BattleFrontier so generic (non-frontier)
-//   code still has somewhere to read/write them: disableRecordBattle:1 + lvlMode:2
-//   (1 byte, packed into the same byte) and selectedPartyMons[MAX_FRONTIER_PARTY_SIZE]
-//   (a u16[4], 8 bytes, 2-byte aligned -- likely costs 1 padding byte after the
-//   1-byte bitfield). 2968 - 2488 + 1 + 1 + 8 = 490. This is the least confident of
-//   any T_SAVEBLOCK size in this file: it wasn't hand-derived field-by-field the way
-//   Stage 2/3's were, it leans on this doc's own pre-stage BattleFrontier estimate,
-//   and struct BattleFrontier's #if FREE_BATTLE_TOWER_E_READER branch changes its
-//   size depending on that separate flag. Confirm against a real build before
-//   trusting this number over the doc's.
-// Stage 5: sizeof(struct BoxPokemon) 96 -> 80 and sizeof(struct Pokemon) 120 -> 104
-//   (see the STATIC_ASSERTs and their comments in include/pokemon.h for why 104,
-//   not the planning doc's estimated 100). Two SaveBlock1 fields embed these:
-//   struct Pokemon playerParty[PARTY_SIZE] (6 * 16 = 96) and
-//   struct DayCare daycare.mons[DAYCARE_MON_COUNT].mon, a struct BoxPokemon
-//   (2 * 16 = 32). Neither array's own alignment changes (80 and 104 are both
-//   still multiples of 4), so this is a clean subtraction with no padding drift
-//   expected: 7664 - 96 - 32 = 7536. PokemonStorage embeds both types too: its
-//   TOTAL_BOXES_COUNT(16) * IN_BOX_COUNT(30) struct BoxPokemon boxes (16*30*16 =
-//   7680) and its MAX_FUSION_STORAGE(4) struct Pokemon fusions (4*16 = 64):
-//   46724 - 7680 - 64 = 38980. SaveBlock2/3 have no Pokemon/BoxPokemon fields and
-//   are untouched by this stage. Calculated, not yet confirmed by a real build.
-// Stage 6: pure flash-layout change (single-copy storage, journaled writes).
-//   No struct shrinks -- all four T_*_SIZE values are unchanged from Stage 5.
-// Stage 7: EWRAM-only change (achievements_menu.c statics moved to the heap).
-//   No save-block struct changes -- all four T_*_SIZE values are unchanged.
-// Stage 8: TOTAL_BOXES_COUNT 16 -> 28 adds 12 * (30 * sizeof(struct BoxPokemon)
-//   + BOX_NAME_LENGTH + 1 + 1 wallpaper byte) = 12 * (2400 + 9 + 1) = 28920 bytes
-//   to PokemonStorage. Unlike Stage 3's 14->16 jump, this was hand-verified against
-//   the struct's actual byte offsets (not just added on top of the Stage 5 total):
-//   currentBox(1) + 3 padding bytes (aligning `boxes` to 4, required because
-//   struct BoxPokemon's `secure` union contains u32s) + boxes(N*30*80) +
-//   boxNames(N*9) + boxWallpapers(N*1) + fusions(4*104). boxNames+boxWallpapers
-//   together cost 10 bytes/box, which only stays a multiple of 4 -- and so avoids
-//   shifting the offset fusions lands at -- when N is even; 16 and 28 both are,
-//   so no extra padding beyond the existing 3-byte header pad is expected either
-//   side of this stage. 38980 + 28920 = 67900. SaveBlock1/2/3 are untouched.
-//   Calculated, not yet confirmed by a real build.
+// The size changes below are hand-calculated, not measured; if a size mismatches, suspect
+// compiler padding shifts first. Later fork field additions account for any gap between
+// a step's result and the next step's starting value.
 //
-// Trading Codes Stage 4 (separate doc/stage numbering from the Saveblock
-// Shrinking stages above): appends struct PendingTrade to SaveBlock2 (see
-// include/global.h). The struct itself is a clean 124 bytes with no internal
-// compiler padding (80 + 32 + 4 + 2 + 1 + 1 + 1 + 3, every u32-then-narrower
-// transition already lands on a natural boundary -- see the struct's own
-// comment) and needs 4-byte alignment (it contains u32 members). The
-// pre-Stage-4 SaveBlock2 size (544, confirmed by a real build) is already a
-// multiple of 4, which is only possible if the struct's own alignment
-// requirement is 4 -- so whatever trailing pad the compiler was already
-// inserting after nuzlockeZoneExtraEncounterFlags to reach that multiple of
-// 4 is at most 3 bytes, meaning pendingTrade's own 4-byte-aligned starting
-// offset is forced to land at exactly 544 regardless of exactly how many of
-// those 3-or-fewer pad bytes existed. 544 + 124 = 668, itself already a
-// multiple of 4, so no further trailing pad is added. High confidence, but
-// still calculated rather than measured -- confirm against a real build.
+// SaveBlock1 (starts at 11764, ends at 7518):
+//   ROAMER_COUNT 120 -> 1: -119 * sizeof(struct Roamer) (28) = -3332 -> 8432.
+//   FREE_CONTESTS/DECORATIONS/MAIL/POKEBLOCKS: contestWinners[8] (256), decoration arrays
+//     (102), mail[8] (272), DaycareMail struct Mail x2 (68), pokeblocks[10] (70) -> 7664.
+//     The 102- and 34-byte removals are not multiples of 4, so they can shift padding
+//     around neighboring 4-byte-aligned fields (struct DayCare's BoxPokemon, struct TVShow).
+//   sizeof(struct Pokemon) 120 -> 104 and struct BoxPokemon 96 -> 80 (see include/pokemon.h):
+//     playerParty[6] (-96) and daycare BoxPokemon x2 (-32) -> 7536. Both sizes stay
+//     multiples of 4, so no padding drift is expected.
+//   Dex regional-form slots (POKEMON_SLOTS_NUMBER 1026 -> 1083): dexSeen and dexCaught
+//     grow 129 -> 136 bytes each. u8[] arrays need no padding: 7504 + 7 + 7 = 7518.
+//     Assumes the default species config (all regional-form families enabled, as in
+//     test.h); disabling a P_*_FORMS changes this number.
 //
-// Trading Codes Stage 10 follow-up ("view offer/confirm code" attendant
-// options): struct PendingTrade grows from 124 to 200 bytes -- adds
-// myConfirmTag (u32, 4), myOfferBits/myOfferSpecies (u16 each, 2+2),
-// myOfferBytes[TRADE_CODE_OFFER_PAYLOAD_BYTES=56], and myOfferNickname
-// [POKEMON_NAME_LENGTH+1=13], with padding trimmed from 3 to 2 bytes to
-// land back on a multiple of 4 (124 + 4+2+2+56+13 - 1 = 200) -- see the
-// struct's own comment for the member-by-member accounting and why this
-// stays free of compiler-inserted padding the same way the original 124
-// did. pendingTrade's own alignment requirement is unchanged (still 4,
-// still has u32 members), so it's still forced to land at exactly the same
-// 544 offset within SaveBlock2 as before, by the identical reasoning above.
-// 544 + 200 = 744, itself already a multiple of 4, so no further trailing
-// pad is added. Calculated, not yet confirmed by a real build.
+// SaveBlock2 (starts at 3008, ends at 744):
+//   FREE_CONTESTS: contestLinkResults[5][4] (40) -> 2968.
+//   FREE_BATTLE_FRONTIER: struct BattleFrontier (~2172), apprentices[4] (272) and
+//     playerApprentice (44) removed, ~2488 total. Adds back disableRecordBattle:1 +
+//     lvlMode:2 (1 byte, likely 1 pad byte after) and selectedPartyMons[4] (u16, 8 bytes):
+//     2968 - 2488 + 1 + 1 + 8 = 490. Least certain figure: it leans on an estimated
+//     BattleFrontier size, which also varies with FREE_BATTLE_TOWER_E_READER.
+//   struct PendingTrade appended to a measured 544-byte SaveBlock2. 544 is a multiple of 4,
+//     so trailing pad before it is at most 3 bytes and the 4-byte-aligned struct (it has u32
+//     members) must start at exactly 544. It is 200 bytes with no internal padding (see its
+//     comment in include/global.h): 544 + 200 = 744, already a multiple of 4.
 //
-// Pokedex Expansion Feature 2, Stage 5 (57 regional-form flag slots): grows
-// dexSeen/dexCaught from 129 to 136 bytes each (POKEMON_SLOTS_NUMBER 1026 ->
-// 1083, ROUND_BITS_TO_BYTES(1083) = 136). Both arrays are u8[], so the extra
-// 7 bytes each need no alignment padding: 7504 + 7 + 7 = 7518. Calculated
-// under the default species config (all regional-form families enabled, same
-// as test.h); toggling a P_*_FORMS off shifts this number, per the slot
-// table's own comment. Not yet confirmed by a real build.
+// PokemonStorage (starts at 40944, ends at 67900):
+//   TOTAL_BOXES_COUNT 14 -> 16: +2 * (30 * sizeof(BoxPokemon) + BOX_NAME_LENGTH + 1 + 1
+//     wallpaper byte) = 2 * (2880 + 9 + 1) = 5780 -> 46724.
+//   BoxPokemon 96 -> 80 and Pokemon 120 -> 104: boxes -7680 (16*30*16), fusions[4] -64
+//     -> 38980.
+//   TOTAL_BOXES_COUNT 16 -> 28: +12 * (2400 + 9 + 1) = 28920 -> 67900. Checked against the
+//     byte offsets: currentBox (1) + 3 pad (aligns `boxes` to 4, since BoxPokemon's `secure`
+//     union has u32s) + boxes (N*30*80) + boxNames (N*9) + boxWallpapers (N) + fusions
+//     (4*104). Names plus wallpapers cost 10 bytes per box, so fusions' offset stays
+//     4-aligned only when N is even; 16 and 28 both are.
 #define T_SAVEBLOCK1_SIZE 7518
 #define T_SAVEBLOCK2_SIZE 744
 #define T_SAVEBLOCK3_SIZE 1576
