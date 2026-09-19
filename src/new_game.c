@@ -466,8 +466,9 @@ void NewGameInitData(void)
     memset(&gSaveBlock2Ptr->pendingTrade, 0, sizeof(gSaveBlock2Ptr->pendingTrade));
     // Doubles as "this area's draft is spent" in Draft runs (src/draft_mode.c).
     memset(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags, 0, sizeof(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags));
-    // Player colors would otherwise persist into the new file.
-    memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+    // New Game+ keeps playerGender and skips the Birch speech, so its colors stay valid.
+    if (!isNewGamePlus)
+        memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     InitEventData();
     // Must run after InitEventData(), which memsets the whole flags array again.
     if (!isNewGamePlus)
