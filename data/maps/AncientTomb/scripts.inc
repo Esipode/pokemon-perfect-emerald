@@ -12,6 +12,7 @@ AncientTomb_EventScript_TryRemoveRegisteel::
 	specialvar VAR_RESULT, GetBattleOutcome
 	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, Common_EventScript_NopReturn
 	removeobject VAR_LAST_TALKED
+	setflag FLAG_DEFEATED_REGISTEEL
 	return
 
 AncientTomb_OnTransition:
@@ -51,23 +52,5 @@ AncientTomb_EventScript_CaveEntranceSide::
 	end
 
 AncientTomb_EventScript_Registeel::
-	lock
-	faceplayer
-	waitse
-	playmoncry SPECIES_REGISTEEL, CRY_MODE_ENCOUNTER
-	delay 40
-	waitmoncry
-	setwildbattle SPECIES_REGISTEEL, 50
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special StartRegiBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, AncientTomb_EventScript_CaughtRegisteel
-	release
-	end
-
-@ Only catching Registeel removes it for good; any other outcome leaves it here to be rechallenged.
-AncientTomb_EventScript_CaughtRegisteel::
-	setflag FLAG_DEFEATED_REGISTEEL
-	return
+	goto LegendaryEncounter_EventScript_Registeel
 

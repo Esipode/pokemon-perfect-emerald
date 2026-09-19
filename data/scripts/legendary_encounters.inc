@@ -257,7 +257,7 @@ LegendaryEncounter_EventScript_Regice::
 	setbattleencounter ENCOUNTER_REGICE
 	setwildbattle SPECIES_REGICE, 50        @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
+	special StartRegiBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 
@@ -271,7 +271,7 @@ LegendaryEncounter_EventScript_Regirock::
 	setbattleencounter ENCOUNTER_REGIROCK
 	setwildbattle SPECIES_REGIROCK, 50      @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
+	special StartRegiBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 
@@ -285,7 +285,7 @@ LegendaryEncounter_EventScript_Registeel::
 	setbattleencounter ENCOUNTER_REGISTEEL
 	setwildbattle SPECIES_REGISTEEL, 50     @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
+	special StartRegiBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 

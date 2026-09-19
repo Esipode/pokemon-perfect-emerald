@@ -11,6 +11,8 @@ TerraCave_End_EventScript_TryRemoveGroudon::
 	specialvar VAR_RESULT, GetBattleOutcome
 	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, Common_EventScript_NopReturn
 	removeobject LOCALID_TERRA_CAVE_GROUDON
+	setvar VAR_SHOULD_END_ABNORMAL_WEATHER, 1
+	setflag FLAG_DEFEATED_GROUDON
 	return
 
 TerraCave_End_OnTransition:
@@ -33,22 +35,8 @@ TerraCave_End_EventScript_Groudon::
 	delay 40
 	waitmoncry
 	setvar VAR_LAST_TALKED, LOCALID_TERRA_CAVE_GROUDON
-	setwildbattle SPECIES_GROUDON, 70 ITEM_RED_ORB
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	setvar VAR_TEMP_1, 0
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, TerraCave_End_EventScript_CaughtGroudon
-	releaseall
-	end
-
-@ Only catching Groudon removes it for good and calms the abnormal weather; any other outcome
-@ leaves the cave open so the player can come back and rechallenge it.
-TerraCave_End_EventScript_CaughtGroudon::
-	setvar VAR_SHOULD_END_ABNORMAL_WEATHER, 1
-	setflag FLAG_DEFEATED_GROUDON
-	return
+	goto LegendaryEncounter_EventScript_Groudon
 
 TerraCave_End_Movement_GroudonApproach:
 	init_affine_anim

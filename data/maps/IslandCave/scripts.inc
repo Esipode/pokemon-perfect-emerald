@@ -12,6 +12,7 @@ IslandCave_EventScript_TryRemoveRegice::
 	specialvar VAR_RESULT, GetBattleOutcome
 	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, Common_EventScript_NopReturn
 	removeobject VAR_LAST_TALKED
+	setflag FLAG_DEFEATED_REGICE
 	return
 
 IslandCave_OnLoad:
@@ -84,22 +85,4 @@ IslandCave_EventScript_ClearSteps::
 	return
 
 IslandCave_EventScript_Regice::
-	lock
-	faceplayer
-	waitse
-	playmoncry SPECIES_REGICE, CRY_MODE_ENCOUNTER
-	delay 40
-	waitmoncry
-	setwildbattle SPECIES_REGICE, 50
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special StartRegiBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, IslandCave_EventScript_CaughtRegice
-	release
-	end
-
-@ Only catching Regice removes it for good; any other outcome leaves it here to be rechallenged.
-IslandCave_EventScript_CaughtRegice::
-	setflag FLAG_DEFEATED_REGICE
-	return
+	goto LegendaryEncounter_EventScript_Regice

@@ -38,6 +38,7 @@ BirthIsland_Exterior_EventScript_TryRemoveDeoxys::
 	specialvar VAR_RESULT, GetBattleOutcome
 	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, Common_EventScript_NopReturn
 	removeobject LOCALID_BIRTH_ISLAND_DEOXYS
+	setflag FLAG_BATTLED_DEOXYS
 	return
 
 BirthIsland_Exterior_EventScript_Triangle::
@@ -82,19 +83,7 @@ BirthIsland_Exterior_EventScript_Deoxys::
 	delay 40
 	waitmoncry
 	setvar VAR_LAST_TALKED, LOCALID_BIRTH_ISLAND_DEOXYS
-	seteventmon SPECIES_DEOXYS_NORMAL, 30
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, BirthIsland_Exterior_EventScript_CaughtDeoxys
-	release
-	end
-
-@ Only catching Deoxys removes it for good; any other outcome leaves the puzzle to be solved again.
-BirthIsland_Exterior_EventScript_CaughtDeoxys::
-	setflag FLAG_BATTLED_DEOXYS
-	return
+	goto LegendaryEncounter_EventScript_Deoxys
 
 BirthIsland_Exterior_Movement_DeoxysApproach:
 	walk_slow_down

@@ -12,6 +12,7 @@ DesertRuins_EventScript_TryRemoveRegirock::
 	specialvar VAR_RESULT, GetBattleOutcome
 	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, Common_EventScript_NopReturn
 	removeobject VAR_LAST_TALKED
+	setflag FLAG_DEFEATED_REGIROCK
 	return
 
 DesertRuins_OnLoad:
@@ -51,23 +52,5 @@ DesertRuins_EventScript_CaveEntranceSide::
 	end
 
 DesertRuins_EventScript_Regirock::
-	lock
-	faceplayer
-	waitse
-	playmoncry SPECIES_REGIROCK, CRY_MODE_ENCOUNTER
-	delay 40
-	waitmoncry
-	setwildbattle SPECIES_REGIROCK, 50
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special StartRegiBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, DesertRuins_EventScript_CaughtRegirock
-	release
-	end
-
-@ Only catching Regirock removes it for good; any other outcome leaves it here to be rechallenged.
-DesertRuins_EventScript_CaughtRegirock::
-	setflag FLAG_DEFEATED_REGIROCK
-	return
+	goto LegendaryEncounter_EventScript_Regirock
 
