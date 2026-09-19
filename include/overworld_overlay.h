@@ -121,6 +121,20 @@ void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames)
 // Clears the pulse only; any running fade continues.
 void Overlay_StopAnimation(OverlayId id);
 
+// Anchors store gameplay identity, never a sprite pointer. Positions are held in object-event
+// coordinate space (map coordinates + MAP_OFFSET), the same space as the player's currentCoords.
+// x, y are map coordinates as used in scripts and Porymap; they are relative to the map loaded
+// when set, so a global coordinate anchor is stale after a connected-map step.
+// Object anchors are looked up by local id and map every frame:
+// - hidden, invisible and frozen objects resolve normally;
+// - an object that is not spawned, was removed, or is on another map keeps the last known
+//   position, and the overlay stays alive;
+// - a recreated object re-attaches by local id.
+// If the object cannot be resolved when the anchor is set, the previous position is kept.
+void Overlay_SetAnchorToPosition(OverlayId id, s16 x, s16 y);
+void Overlay_SetAnchorToObject(OverlayId id, u8 localId, u8 mapNum, u8 mapGroup);
+void Overlay_ClearAnchor(OverlayId id);
+
 // Palette filtering. Constraints of the palette backend:
 // - Filtering granularity is one palette slot, not one entity. Two NPCs that share an
 //   object-event palette cannot be filtered independently.

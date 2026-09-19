@@ -1,6 +1,7 @@
 #include "global.h"
 #include "overworld_overlay.h"
 #include "event_object_movement.h"
+#include "fieldmap.h"
 #include "field_weather.h"
 #include "palette.h"
 #include "sprite.h"
@@ -218,6 +219,22 @@ static u32 ResolveExemptPalettes(const struct Overlay *overlay)
     return mask;
 }
 
+// Refreshes the anchor from the tracked object. An unresolved object keeps the last known position.
+static void UpdateAnchor(struct Overlay *overlay)
+{
+    u32 objectEventId;
+
+    if (overlay->anchorKind != OVERLAY_ANCHOR_OBJECT)
+        return;
+
+    objectEventId = GetObjectEventIdByLocalIdAndMap(overlay->anchorLocalId, overlay->anchorMapNum, overlay->anchorMapGroup);
+    if (objectEventId == OBJECT_EVENTS_COUNT)
+        return;
+
+    overlay->anchorX = gObjectEvents[objectEventId].currentCoords.x;
+    overlay->anchorY = gObjectEvents[objectEventId].currentCoords.y;
+}
+
 void Overlay_Update(void)
 {
     u32 i;
@@ -230,11 +247,12 @@ void Overlay_Update(void)
         if (!overlay->active)
             continue;
 
-        // Anchor and falloff steps run here, in that order, before the fold.
+        // The falloff step runs after the anchor and before the fold.
         if (!UpdateFade(overlay))
             continue;
 
         pulseFactor = UpdatePulse(overlay);
+        UpdateAnchor(overlay);
         distanceFactor = OVERLAY_OPACITY_MAX;
 
         resolved = ResolveOpacity(overlay->currentOpacity, pulseFactor, distanceFactor);
@@ -439,6 +457,47 @@ u8 Overlay_GetOpacity(OverlayId id)
     struct Overlay *overlay = GetOverlay(id);
 
     return overlay != NULL ? overlay->currentOpacity : 0;
+}
+
+void Overlay_SetAnchorToPosition(OverlayId id, s16 x, s16 y)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->anchorKind = OVERLAY_ANCHOR_COORDS;
+    overlay->anchorX = x + MAP_OFFSET;
+    overlay->anchorY = y + MAP_OFFSET;
+}
+
+void Overlay_SetAnchorToObject(OverlayId id, u8 localId, u8 mapNum, u8 mapGroup)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->anchorKind = OVERLAY_ANCHOR_OBJECT;
+    overlay->anchorLocalId = localId;
+    overlay->anchorMapNum = mapNum;
+    overlay->anchorMapGroup = mapGroup;
+    UpdateAnchor(overlay);
+}
+
+void Overlay_ClearAnchor(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->anchorKind = OVERLAY_ANCHOR_NONE;
+    overlay->anchorX = 0;
+    overlay->anchorY = 0;
+    overlay->anchorLocalId = 0;
+    overlay->anchorMapNum = 0;
+    overlay->anchorMapGroup = 0;
 }
 
 void Overlay_ExemptPalette(OverlayId id, u8 paletteIndex)
