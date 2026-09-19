@@ -43,7 +43,7 @@ struct OverlayConfig
 
 struct Overlay
 {
-    u32 exemptPalettes;     // one bit per palette slot, set = not tinted
+    u32 exemptPalettes;     // one bit per palette slot, set = not tinted; bits 0-15 BG, 16-31 OBJ
     u16 color;
     u16 fadeDuration;       // frames
     u16 fadeElapsed;
@@ -73,6 +73,10 @@ struct Overlay
     u8 minIntensity;
     u8 maxIntensity;
     u8 priority;
+    u8 exemptPlayer:1;
+    u8 exemptLocalId;       // 0 = none; resolved against exemptMapNum/exemptMapGroup
+    u8 exemptMapNum;
+    u8 exemptMapGroup;
 };
 
 // Lifecycle contract. Overlays are never saved.
@@ -116,6 +120,27 @@ void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames);
 void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames);
 // Clears the pulse only; any running fade continues.
 void Overlay_StopAnimation(OverlayId id);
+
+// Palette filtering. Constraints of the palette backend:
+// - Filtering granularity is one palette slot, not one entity. Two NPCs that share an
+//   object-event palette cannot be filtered independently.
+// - Overlay_ExemptPlayer exempts the player's overworld palette, which in this fork is shared
+//   with the surf Wailmer, the bike, and the pail. Those vehicles are exempted with the player.
+// - "Entity rendered above the overlay" and "entity exempt from the overlay" are the same thing
+//   here. True per-pixel ordering against a global tint needs the sprite backend.
+// - The number of independently filterable entities is bounded by the distinct palette slots in
+//   use: 16 OBJ slots at the hardware ceiling, fewer in practice.
+// - A palette preserved from weather (PreservePaletteInWeather) is still tinted unless the
+//   overlay also exempts it.
+//
+// paletteIndex is a palette slot 0-31: 0-15 BG, 16-31 OBJ.
+void Overlay_ExemptPalette(OverlayId id, u8 paletteIndex);
+void Overlay_UnexemptPalette(OverlayId id, u8 paletteIndex);
+// The player and object exemptions follow the sprite's palette slot as it is reallocated.
+void Overlay_ExemptPlayer(OverlayId id, bool32 exempt);
+// Tracks one object per overlay, looked up by local id on the current map when this is called;
+// a later call replaces it. Passing exempt = FALSE clears it only if localId matches.
+void Overlay_ExemptObject(OverlayId id, u8 localId, bool32 exempt);
 void Overlay_SetRenderLayer(OverlayId id, u8 layer);
 // New overlays start enabled. Returns OVERLAY_ID_INVALID when the pool is full.
 OverlayId Overlay_Create(const struct OverlayConfig *config);

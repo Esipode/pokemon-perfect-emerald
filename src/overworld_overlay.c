@@ -1,12 +1,15 @@
 #include "global.h"
 #include "overworld_overlay.h"
+#include "event_object_movement.h"
 #include "field_weather.h"
 #include "palette.h"
+#include "sprite.h"
 
 STATIC_ASSERT(MAX_OVERLAYS <= 8, OverlayIndexFitsHandle);
-STATIC_ASSERT(sizeof(struct Overlay) <= 36, OverlaySizeBudget);
+STATIC_ASSERT(sizeof(struct Overlay) <= 40, OverlaySizeBudget);
 
 static EWRAM_DATA struct Overlay sOverlays[MAX_OVERLAYS] = {0};
+static EWRAM_DATA u32 sEffectiveExempt[MAX_OVERLAYS] = {0}; // exemptPalettes plus resolved player/object slots
 static EWRAM_DATA bool8 sOverlayDirty = FALSE;   // gPlttBufferFaded must be recomposed
 static EWRAM_DATA bool8 sOverlayApplied = FALSE; // gPlttBufferFaded currently holds overlay tint
 
@@ -125,7 +128,7 @@ static void ApplyOverlaysToPalettes(void)
 
     for (i = 0; i < count; i++)
     {
-        u32 mask = LayerPaletteMask(order[i]->layer) & ~order[i]->exemptPalettes;
+        u32 mask = LayerPaletteMask(order[i]->layer) & ~sEffectiveExempt[order[i] - sOverlays];
 
         BlendPalettesFine(mask, gPlttBufferFaded, gPlttBufferFaded, order[i]->resolvedOpacity, order[i]->color);
     }
@@ -189,6 +192,32 @@ static u32 ResolveOpacity(u32 currentOpacity, u32 pulseFactor, u32 distanceFacto
     return min((currentOpacity * pulseFactor * distanceFactor + 128) / 256, OVERLAY_OPACITY_MAX);
 }
 
+static u32 ObjectPaletteBit(u32 objectEventId)
+{
+    struct ObjectEvent *objectEvent;
+
+    if (objectEventId >= OBJECT_EVENTS_COUNT)
+        return 0;
+
+    objectEvent = &gObjectEvents[objectEventId];
+    if (!objectEvent->active || objectEvent->spriteId >= MAX_SPRITES)
+        return 0;
+
+    return 1u << (16 + gSprites[objectEvent->spriteId].oam.paletteNum);
+}
+
+static u32 ResolveExemptPalettes(const struct Overlay *overlay)
+{
+    u32 mask = overlay->exemptPalettes;
+
+    if (overlay->exemptPlayer)
+        mask |= ObjectPaletteBit(gPlayerAvatar.objectEventId);
+    if (overlay->exemptLocalId != 0)
+        mask |= ObjectPaletteBit(GetObjectEventIdByLocalIdAndMap(overlay->exemptLocalId, overlay->exemptMapNum, overlay->exemptMapGroup));
+
+    return mask;
+}
+
 void Overlay_Update(void)
 {
     u32 i;
@@ -196,7 +225,7 @@ void Overlay_Update(void)
     for (i = 0; i < MAX_OVERLAYS; i++)
     {
         struct Overlay *overlay = &sOverlays[i];
-        u32 pulseFactor, distanceFactor, resolved;
+        u32 pulseFactor, distanceFactor, resolved, exempt;
 
         if (!overlay->active)
             continue;
@@ -212,6 +241,14 @@ void Overlay_Update(void)
         if (overlay->resolvedOpacity != resolved)
         {
             overlay->resolvedOpacity = resolved;
+            sOverlayDirty = TRUE;
+        }
+
+        // Sprite palette slots are reallocated on map load, so they are re-read every frame.
+        exempt = ResolveExemptPalettes(overlay);
+        if (sEffectiveExempt[i] != exempt)
+        {
+            sEffectiveExempt[i] = exempt;
             sOverlayDirty = TRUE;
         }
     }
@@ -402,6 +439,55 @@ u8 Overlay_GetOpacity(OverlayId id)
     struct Overlay *overlay = GetOverlay(id);
 
     return overlay != NULL ? overlay->currentOpacity : 0;
+}
+
+void Overlay_ExemptPalette(OverlayId id, u8 paletteIndex)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || paletteIndex >= 32)
+        return;
+
+    overlay->exemptPalettes |= 1u << paletteIndex;
+}
+
+void Overlay_UnexemptPalette(OverlayId id, u8 paletteIndex)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || paletteIndex >= 32)
+        return;
+
+    overlay->exemptPalettes &= ~(1u << paletteIndex);
+}
+
+void Overlay_ExemptPlayer(OverlayId id, bool32 exempt)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->exemptPlayer = (exempt != FALSE);
+}
+
+void Overlay_ExemptObject(OverlayId id, u8 localId, bool32 exempt)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || localId == 0)
+        return;
+
+    if (exempt)
+    {
+        overlay->exemptLocalId = localId;
+        overlay->exemptMapNum = gSaveBlock1Ptr->location.mapNum;
+        overlay->exemptMapGroup = gSaveBlock1Ptr->location.mapGroup;
+    }
+    else if (overlay->exemptLocalId == localId)
+    {
+        overlay->exemptLocalId = 0;
+    }
 }
 
 void Overlay_SetRenderLayer(OverlayId id, u8 layer)
