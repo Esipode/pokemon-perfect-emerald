@@ -1936,7 +1936,6 @@ static void OverworldBasic(void)
     UpdateCameraPanning();
     BuildOamBuffer();
     UpdatePaletteFade();
-    Overlay_Update();
     UpdateTilesetAnimations();
     DoScheduledBgTilemapCopiesToVram();
     // Every minute if no palette fade is active, update TOD blending as needed
@@ -1956,6 +1955,7 @@ static void OverworldBasic(void)
             ApplyWeatherColorMapIfIdle(gWeatherPtr->colorMapIndex);
         }
     }
+    Overlay_Update();
     UpdateOverworldWildEncounter();
 }
 
@@ -2705,6 +2705,7 @@ static void ResetScreenForMapLoad(void)
     SetGpuReg(REG_OFFSET_DISPCNT, 0);
     ScanlineEffect_Stop();
 
+    Overlay_Invalidate();
     DmaClear16(3, PLTT + 2, PLTT_SIZE - 2);
     DmaClearLarge16(3, (void *)VRAM, VRAM_SIZE, 0x1000);
     ResetOamRange(0, 128);

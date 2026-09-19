@@ -1,10 +1,14 @@
 #include "global.h"
 #include "overworld_overlay.h"
+#include "field_weather.h"
+#include "palette.h"
 
 STATIC_ASSERT(MAX_OVERLAYS <= 8, OverlayIndexFitsHandle);
 STATIC_ASSERT(sizeof(struct Overlay) <= 36, OverlaySizeBudget);
 
 static EWRAM_DATA struct Overlay sOverlays[MAX_OVERLAYS] = {0};
+static EWRAM_DATA bool8 sOverlayDirty = FALSE;   // gPlttBufferFaded must be recomposed
+static EWRAM_DATA bool8 sOverlayApplied = FALSE; // gPlttBufferFaded currently holds overlay tint
 
 static u8 NextGeneration(u8 generation)
 {
@@ -19,6 +23,7 @@ static void ReleaseSlot(struct Overlay *overlay)
 
     memset(overlay, 0, sizeof(*overlay));
     overlay->generation = NextGeneration(generation);
+    sOverlayDirty = TRUE;
 }
 
 static struct Overlay *GetOverlay(OverlayId id)
@@ -57,6 +62,77 @@ void Overlay_DestroyMapLocal(void)
     }
 }
 
+static u32 LayerPaletteMask(u32 layer)
+{
+    // Excludes the UI palettes so text boxes are never tinted.
+    switch (layer)
+    {
+    case OVERLAY_LAYER_WORLD:
+        return PALETTES_MAP;
+    case OVERLAY_LAYER_OBJECTS:
+        return PALETTES_OBJECTS;
+    case OVERLAY_LAYER_ALL:
+        return PALETTES_MAP | PALETTES_OBJECTS;
+    default:
+        return 0;
+    }
+}
+
+// Collects tinting overlays sorted by ascending priority; equal priorities keep pool order.
+static u32 GetRenderOrder(struct Overlay *order[MAX_OVERLAYS])
+{
+    u32 count = 0;
+    u32 i, j;
+
+    for (i = 0; i < MAX_OVERLAYS; i++)
+    {
+        struct Overlay *overlay = &sOverlays[i];
+
+        if (!overlay->active || !overlay->enabled || overlay->resolvedOpacity == 0)
+            continue;
+
+        for (j = count; j > 0 && order[j - 1]->priority > overlay->priority; j--)
+            order[j] = order[j - 1];
+        order[j] = overlay;
+        count++;
+    }
+
+    return count;
+}
+
+static void ApplyOverlaysToPalettes(void)
+{
+    struct Overlay *order[MAX_OVERLAYS];
+    u32 count, i;
+
+    // The palette fade and the weather fade-in own gPlttBufferFaded and overwrite it.
+    if (gPaletteFade.active || !IsWeatherNotFadingIn())
+    {
+        sOverlayDirty = TRUE;
+        return;
+    }
+
+    if (!sOverlayDirty)
+        return;
+
+    count = GetRenderOrder(order);
+    if (count != 0 || sOverlayApplied)
+    {
+        // Rebuilds from gPlttBufferUnfaded, which overlays never modify.
+        ApplyWeatherColorMapToPals(0, 32);
+    }
+    sOverlayDirty = FALSE; // the rebuild invalidates through the weather hook
+
+    for (i = 0; i < count; i++)
+    {
+        u32 mask = LayerPaletteMask(order[i]->layer) & ~order[i]->exemptPalettes;
+
+        BlendPalettesFine(mask, gPlttBufferFaded, gPlttBufferFaded, order[i]->resolvedOpacity, order[i]->color);
+    }
+
+    sOverlayApplied = (count != 0);
+}
+
 void Overlay_Update(void)
 {
     u32 i;
@@ -69,8 +145,19 @@ void Overlay_Update(void)
             continue;
 
         // Fade, pulse, anchor and falloff steps run here, in that order, before the fold.
-        overlay->resolvedOpacity = overlay->currentOpacity;
+        if (overlay->resolvedOpacity != overlay->currentOpacity)
+        {
+            overlay->resolvedOpacity = overlay->currentOpacity;
+            sOverlayDirty = TRUE;
+        }
     }
+
+    ApplyOverlaysToPalettes();
+}
+
+void Overlay_Invalidate(void)
+{
+    sOverlayDirty = TRUE;
 }
 
 OverlayId Overlay_Create(const struct OverlayConfig *config)
@@ -98,6 +185,7 @@ OverlayId Overlay_Create(const struct OverlayConfig *config)
         overlay->baseOpacity = opacity;
         overlay->currentOpacity = opacity;
         overlay->resolvedOpacity = opacity;
+        sOverlayDirty = TRUE;
         return (overlay->generation << 3) | i;
     }
 
@@ -117,4 +205,67 @@ void Overlay_Destroy(OverlayId id)
 bool32 Overlay_IsValid(OverlayId id)
 {
     return GetOverlay(id) != NULL;
+}
+
+void Overlay_Enable(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || overlay->enabled)
+        return;
+
+    overlay->enabled = TRUE;
+    sOverlayDirty = TRUE;
+}
+
+void Overlay_Disable(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || !overlay->enabled)
+        return;
+
+    overlay->enabled = FALSE;
+    sOverlayDirty = TRUE;
+}
+
+void Overlay_SetColor(OverlayId id, u16 color)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || overlay->color == color)
+        return;
+
+    overlay->color = color;
+    sOverlayDirty = TRUE;
+}
+
+void Overlay_SetOpacity(OverlayId id, u8 opacity)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    opacity = min(opacity, OVERLAY_OPACITY_MAX);
+    overlay->baseOpacity = opacity;
+    overlay->currentOpacity = opacity;
+}
+
+u8 Overlay_GetOpacity(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    return overlay != NULL ? overlay->currentOpacity : 0;
+}
+
+void Overlay_SetRenderLayer(OverlayId id, u8 layer)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || overlay->layer == layer)
+        return;
+
+    overlay->layer = layer;
+    sOverlayDirty = TRUE;
 }

@@ -90,8 +90,19 @@ struct Overlay
 void Overlay_ResetAll(void);
 // Destroys every OVERLAY_SCOPE_MAP_LOCAL overlay.
 void Overlay_DestroyMapLocal(void);
-// Per-frame update. Order: fade, pulse, anchor, falloff, final opacity.
+// Per-frame update. Order: fade, pulse, anchor, falloff, final opacity, render.
 void Overlay_Update(void);
+// Marks the palette buffer as rewritten behind the overlays' back; they are re-applied
+// on the next update.
+void Overlay_Invalidate(void);
+
+void Overlay_Enable(OverlayId id);
+void Overlay_Disable(OverlayId id);
+void Overlay_SetColor(OverlayId id, u16 color);
+// Direct request, 0-OVERLAY_OPACITY_MAX.
+void Overlay_SetOpacity(OverlayId id, u8 opacity);
+u8 Overlay_GetOpacity(OverlayId id);
+void Overlay_SetRenderLayer(OverlayId id, u8 layer);
 // New overlays start enabled. Returns OVERLAY_ID_INVALID when the pool is full.
 OverlayId Overlay_Create(const struct OverlayConfig *config);
 void Overlay_Destroy(OverlayId id);
