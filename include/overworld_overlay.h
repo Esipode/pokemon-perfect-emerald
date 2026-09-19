@@ -72,7 +72,17 @@ struct Overlay
     u8 exemptMapGroup;
 };
 
-// Lifecycle contract. Overlays are never saved.
+// Saved in SaveBlock3. The magic byte rejects saves written before this struct existed.
+#define OVERLAY_SAVE_MAGIC      0xA5
+
+struct OverlaySave
+{
+    u8 magic;
+    struct Overlay overlays[MAX_OVERLAYS];
+};
+
+// Lifecycle contract. Overlays are saved with the game and restored only when the game resumes
+// on the saved map; a continue warp (Overlay_ResetAll) discards them.
 //
 // Event                            Map-local       Global
 // Step between connected maps      destroyed       survives
@@ -90,6 +100,10 @@ struct Overlay
 
 // Invalidates every outstanding handle and clears the pool.
 void Overlay_ResetAll(void);
+// Copies the pool into SaveBlock3. Called on every save.
+void Overlay_SaveToBlock(void);
+// Replaces the pool with the one in SaveBlock3. Called when the game resumes on the saved map.
+void Overlay_LoadFromBlock(void);
 // Destroys every OVERLAY_SCOPE_MAP_LOCAL overlay.
 void Overlay_DestroyMapLocal(void);
 // Per-frame update. Order: fade, pulse, anchor, falloff, final opacity, render.
@@ -97,6 +111,14 @@ void Overlay_Update(void);
 // Marks the palette buffer as rewritten behind the overlays' back; they are re-applied
 // on the next update.
 void Overlay_Invalidate(void);
+// Tints palettes that were just rebuilt in gPlttBufferFaded without overlays (weather colour
+// map, time of day). PALETTES_ALL also clears the pending recomposition. While a screen fade
+// owns the buffer this only marks it for recomposition.
+void Overlay_OnPalettesRebuilt(u32 palettes);
+// Tints palettes that a screen fade-in just wrote. y is the fade coefficient (16 = fully faded);
+// each overlay applies at resolvedOpacity * (16 - y) / 16, so the tint fades in with the screen.
+// Ignored outside the field's fade-in.
+void Overlay_ApplyFadeInStep(u32 palettes, u32 y);
 
 void Overlay_Enable(OverlayId id);
 void Overlay_Disable(OverlayId id);

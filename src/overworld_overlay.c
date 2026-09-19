@@ -314,6 +314,55 @@ void Overlay_ResetAll(void)
     }
 }
 
+// Written to SaveBlock3 so overlays resume with the map they were saved on. Generations are kept,
+// so script variables holding a handle stay valid.
+void Overlay_SaveToBlock(void)
+{
+    gSaveBlock3Ptr->overlaySave.magic = OVERLAY_SAVE_MAGIC;
+    memcpy(gSaveBlock3Ptr->overlaySave.overlays, sOverlays, sizeof(sOverlays));
+}
+
+static bool32 IsSavedOverlayValid(const struct Overlay *saved)
+{
+    return saved->active && saved->generation != 0
+        && saved->baseOpacity <= OVERLAY_OPACITY_MAX
+        && saved->currentOpacity <= OVERLAY_OPACITY_MAX
+        && saved->resolvedOpacity <= OVERLAY_OPACITY_MAX
+        && saved->pulseMax <= OVERLAY_OPACITY_MAX
+        && saved->minIntensity <= OVERLAY_OPACITY_MAX
+        && saved->maxIntensity <= OVERLAY_OPACITY_MAX
+        && saved->spritePosition <= OVERLAY_SPRITE_ABOVE_ALL;
+}
+
+// Sprite glows are re-created by Overlay_Update.
+void Overlay_LoadFromBlock(void)
+{
+    const struct OverlaySave *save = &gSaveBlock3Ptr->overlaySave;
+    u32 spriteOverlays = 0;
+    u32 i;
+
+    Overlay_ResetAll();
+    if (save->magic != OVERLAY_SAVE_MAGIC)
+        return;
+
+    for (i = 0; i < MAX_OVERLAYS; i++)
+    {
+        const struct Overlay *saved = &save->overlays[i];
+
+        sOverlays[i].generation = saved->generation;
+        if (!IsSavedOverlayValid(saved))
+            continue;
+
+        if (saved->layer == OVERLAY_LAYER_SPRITE && ++spriteOverlays > MAX_SPRITE_OVERLAYS)
+            continue;
+
+        sOverlays[i] = *saved;
+    }
+
+    sDistanceForce = TRUE;
+    sOverlayDirty = TRUE;
+}
+
 void Overlay_DestroyMapLocal(void)
 {
     u32 i;
@@ -363,13 +412,73 @@ static u32 GetRenderOrder(struct Overlay *order[MAX_OVERLAYS])
     return count;
 }
 
-static void ApplyOverlaysToPalettes(void)
+static bool32 HasRenderedOverlay(void)
 {
     struct Overlay *order[MAX_OVERLAYS];
-    u32 count, glowMask, i;
 
-    // The palette fade and the weather fade-in own gPlttBufferFaded and overwrite it.
-    if (gPaletteFade.active || !IsWeatherNotFadingIn())
+    return GetRenderOrder(order) != 0;
+}
+
+// Blends each tinting overlay into the given palettes of gPlttBufferFaded, scaled by
+// progress (0-OVERLAY_OPACITY_MAX). Returns the number of overlays considered.
+static u32 TintPalettes(u32 palettes, u32 progress)
+{
+    struct Overlay *order[MAX_OVERLAYS];
+    u32 count = GetRenderOrder(order);
+    u32 glowMask = GetGlowPaletteMask();
+    u32 i;
+
+    for (i = 0; i < count; i++)
+    {
+        u32 mask = LayerPaletteMask(order[i]->layer) & palettes & ~sEffectiveExempt[order[i] - sOverlays] & ~glowMask;
+        u32 opacity = (order[i]->resolvedOpacity * progress + OVERLAY_OPACITY_MAX / 2) / OVERLAY_OPACITY_MAX;
+
+        if (opacity != 0)
+            BlendPalettesFine(mask, gPlttBufferFaded, gPlttBufferFaded, opacity, order[i]->color);
+    }
+
+    return count;
+}
+
+// The palette fade and the weather fade-in own gPlttBufferFaded and overwrite it. A finished
+// fade-out leaves the buffer black until the next fade-in, so it must not be recomposed either.
+static bool32 IsPaletteBufferBusy(void)
+{
+    return gPaletteFade.active || !IsWeatherNotFadingIn() || IsWeatherFadingOut();
+}
+
+void Overlay_OnPalettesRebuilt(u32 palettes)
+{
+    u32 count;
+
+    if (IsPaletteBufferBusy())
+    {
+        sOverlayDirty = TRUE;
+        return;
+    }
+
+    count = TintPalettes(palettes, OVERLAY_OPACITY_MAX);
+    if (palettes == PALETTES_ALL)
+    {
+        sOverlayDirty = FALSE;
+        sOverlayApplied = (count != 0);
+    }
+}
+
+void Overlay_ApplyFadeInStep(u32 palettes, u32 y)
+{
+    if (IsWeatherNotFadingIn())
+        return;
+
+    TintPalettes(palettes, OVERLAY_OPACITY_MAX - min(y, OVERLAY_OPACITY_MAX));
+    sOverlayDirty = TRUE; // recomposed once the fade ends
+}
+
+static void ApplyOverlaysToPalettes(void)
+{
+    bool8 transferDisabled;
+
+    if (IsPaletteBufferBusy())
     {
         sOverlayDirty = TRUE;
         return;
@@ -378,23 +487,18 @@ static void ApplyOverlaysToPalettes(void)
     if (!sOverlayDirty)
         return;
 
-    count = GetRenderOrder(order);
-    glowMask = GetGlowPaletteMask();
-    if (count != 0 || sOverlayApplied)
+    if (!sOverlayApplied && !HasRenderedOverlay())
     {
-        // Rebuilds from gPlttBufferUnfaded, which overlays never modify.
-        ApplyWeatherColorMapToPals(0, 32);
-    }
-    sOverlayDirty = FALSE; // the rebuild invalidates through the weather hook
-
-    for (i = 0; i < count; i++)
-    {
-        u32 mask = LayerPaletteMask(order[i]->layer) & ~sEffectiveExempt[order[i] - sOverlays] & ~glowMask;
-
-        BlendPalettesFine(mask, gPlttBufferFaded, gPlttBufferFaded, order[i]->resolvedOpacity, order[i]->color);
+        sOverlayDirty = FALSE;
+        return;
     }
 
-    sOverlayApplied = (count != 0);
+    // Rebuilds from gPlttBufferUnfaded, which overlays never modify, and tints through
+    // Overlay_OnPalettesRebuilt. VBlank must not copy the buffer while it is untinted.
+    transferDisabled = gPaletteFade.bufferTransferDisabled;
+    gPaletteFade.bufferTransferDisabled = TRUE;
+    ApplyWeatherColorMapToPals(0, 32);
+    gPaletteFade.bufferTransferDisabled = transferDisabled;
 }
 
 static void ClearFade(struct Overlay *overlay)

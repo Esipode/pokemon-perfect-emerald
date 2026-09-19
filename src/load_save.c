@@ -7,6 +7,7 @@
 #include "load_save.h"
 #include "main.h"
 #include "overworld.h"
+#include "overworld_overlay.h"
 #include "pokemon.h"
 #include "pokemon_storage_system.h"
 #include "random.h"
@@ -247,6 +248,7 @@ void CopyPartyAndObjectsToSave(void)
 {
     SavePlayerParty();
     SaveObjectEvents();
+    Overlay_SaveToBlock();
 }
 
 void CopyPartyAndObjectsFromSave(void)

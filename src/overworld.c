@@ -2348,6 +2348,7 @@ void CB2_ContinueSavedGame(void)
     {
         TryPutTodaysRivalTrainerOnAir();
         gFieldCallback = FieldCB_FadeTryShowMapPopup;
+        Overlay_LoadFromBlock();
         SetMainCallback1(CB1_Overworld);
         CB2_ReturnToField();
     }

@@ -415,6 +415,7 @@ static bool8 FadeInScreen_RainShowShade(void)
     }
 
     ApplyColorMapWithBlend(0, 32, 3, 16 - gWeatherPtr->fadeScreenCounter, gWeatherPtr->fadeDestColor);
+    Overlay_ApplyFadeInStep(PALETTES_ALL, 16 - gWeatherPtr->fadeScreenCounter);
     return TRUE;
 }
 
@@ -431,6 +432,7 @@ static bool8 FadeInScreen_Drought(void)
     }
 
     ApplyDroughtColorMapWithBlend(-6, 16 - gWeatherPtr->fadeScreenCounter, gWeatherPtr->fadeDestColor);
+    Overlay_ApplyFadeInStep(PALETTES_ALL, 16 - gWeatherPtr->fadeScreenCounter);
     return TRUE;
 }
 
@@ -441,6 +443,7 @@ static bool8 FadeInScreen_FogHorizontal(void)
 
     gWeatherPtr->fadeScreenCounter++;
     ApplyFogBlend(16 - gWeatherPtr->fadeScreenCounter, gWeatherPtr->fadeDestColor);
+    Overlay_ApplyFadeInStep(PALETTES_ALL, 16 - gWeatherPtr->fadeScreenCounter);
     return TRUE;
 }
 
@@ -458,6 +461,7 @@ static void ApplyColorMap(u8 startPalIndex, u8 numPalettes, s8 colorMapIndex)
     u16 palOffset;
     const u8 *colorMap;
     u32 i;
+    u32 rebuilt = numPalettes >= 32 ? PALETTES_ALL : ((1u << numPalettes) - 1) << startPalIndex;
 
     if (colorMapIndex > 0)
     {
@@ -553,7 +557,7 @@ static void ApplyColorMap(u8 startPalIndex, u8 numPalettes, s8 colorMapIndex)
         }
     }
 
-    Overlay_Invalidate();
+    Overlay_OnPalettesRebuilt(rebuilt);
 }
 
 static void ApplyColorMapWithBlend(u8 startPalIndex, u8 numPalettes, s8 colorMapIndex, u8 blendCoeff, u32 blendColor)
@@ -855,9 +859,17 @@ bool8 IsWeatherNotFadingIn(void)
     return (gWeatherPtr->palProcessingState != WEATHER_PAL_STATE_SCREEN_FADING_IN);
 }
 
+// The fading-out state persists after the fade finishes, until the next fade-in.
+bool8 IsWeatherFadingOut(void)
+{
+    return (gWeatherPtr->palProcessingState == WEATHER_PAL_STATE_SCREEN_FADING_OUT);
+}
+
 void UpdateSpritePaletteWithWeather(u8 spritePaletteIndex, bool8 allowFog)
 {
     u16 paletteIndex = 16 + spritePaletteIndex;
+    u32 rebuilt = 1u << paletteIndex;
+    bool32 tinted = FALSE;
     u16 i;
 
     switch (gWeatherPtr->palProcessingState)
@@ -883,7 +895,10 @@ void UpdateSpritePaletteWithWeather(u8 spritePaletteIndex, bool8 allowFog)
         if (gWeatherPtr->currWeather != WEATHER_FOG_HORIZONTAL)
         {
             if (gWeatherPtr->colorMapIndex)
-                ApplyColorMap(paletteIndex, 1, gWeatherPtr->colorMapIndex);
+            {
+                ApplyColorMap(paletteIndex, 1, gWeatherPtr->colorMapIndex); // tints through its own hook
+                tinted = TRUE;
+            }
             else
                 UpdateSpritePaletteWithTime(spritePaletteIndex);
         }
@@ -909,7 +924,8 @@ void UpdateSpritePaletteWithWeather(u8 spritePaletteIndex, bool8 allowFog)
         break;
     }
 
-    Overlay_Invalidate();
+    if (!tinted)
+        Overlay_OnPalettesRebuilt(rebuilt);
 }
 
 void ApplyWeatherColorMapToPals(u8 startPalIndex, u8 numPalettes)

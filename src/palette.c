@@ -5,6 +5,7 @@
 #include "field_weather.h"
 #include "malloc.h"
 #include "menu.h"
+#include "overworld_overlay.h"
 #include "gpu_regs.h"
 #include "task.h"
 #include "constants/field_weather.h"
@@ -273,6 +274,8 @@ static u8 UpdateTimeOfDayPaletteFade(void)
 
     // Then, blend from faded->faded with native BlendPalettes
     BlendPalettesFine(gPaletteFadeSelectedPalettes, dst, dst, gPaletteFade.y, gPaletteFade.blendColor);
+    if (gPaletteFade.yDec)
+        Overlay_ApplyFadeInStep(gPaletteFadeSelectedPalettes, gPaletteFade.y);
 
     if ((gPaletteFade.yDec && gPaletteFade.y == 0) || (!gPaletteFade.yDec && gPaletteFade.y == gPaletteFade.targetY))
     {
@@ -342,6 +345,9 @@ static u32 UpdateNormalPaletteFade_Alternate(void)
         selectedPalettes >>= 1;
         paletteOffset += 16;
     }
+
+    if (gPaletteFade.yDec)
+        Overlay_ApplyFadeInStep(gPaletteFadeSelectedPalettes & (gPaletteFade.objPaletteToggle ? PALETTES_OBJECTS : PALETTES_BG), gPaletteFade.y);
 
     gPaletteFade.objPaletteToggle ^= 1;
 
@@ -413,7 +419,8 @@ static u32 UpdateNormalPaletteFade_Simultaneous(void)
         paletteOffset += 16;
     }
 
-    
+    if (gPaletteFade.yDec)
+        Overlay_ApplyFadeInStep(gPaletteFadeSelectedPalettes, gPaletteFade.y);
 
     if (gPaletteFade.y == gPaletteFade.targetY)
     {
