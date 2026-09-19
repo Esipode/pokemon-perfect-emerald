@@ -5,9 +5,7 @@
 #include "constants/event_objects.h"
 #include "constants/rgb.h"
 
-// How much a single shade step (-3..+3) nudges brightness/saturation.
-// Chosen so the full range (+/-3 steps) stays a moderate, always-legible
-// adjustment rather than crushing a colour to black/white.
+// Per-step brightness/saturation nudge; +/-3 steps must not crush a colour to black/white.
 #define SHADE_STEP_V 24
 #define SHADE_STEP_S 8
 
@@ -17,11 +15,8 @@ static EWRAM_DATA u16 sOwPaletteBuffer[16] = {0};
 static EWRAM_DATA u16 sTrainerPaletteBuffer[16] = {0};
 static EWRAM_DATA u16 sMainMenuMugshotPaletteBuffer[16] = {0};
 
-// The battle-transition mugshot BG is just a 6-colour gradient (no separate
-// hair/hat/outfit regions to map), so it's recoloured as one block.
 static const u8 sBattleTransitionBgIndices[] = {0, 1, 2, 3, 4, 5};
 
-// raw byte -> hue step (0-15) + signed shade offset (SHADE_MIN..SHADE_MAX).
 // 0x00 must decode to (hue = 0, shade = 0) so old saves stay vanilla.
 static void UnpackColorByte(u8 raw, u8 *hue, s8 *shade)
 {
@@ -85,8 +80,7 @@ bool32 PlayerCustomization_IsDefault(void)
     return TRUE;
 }
 
-// Integer RGB(8-bit)<->HSV(all 0-255) helpers. The repo has no HSV code
-// elsewhere, so these are new -- kept private to this file.
+// Integer RGB(8-bit)<->HSV(all 0-255) helpers.
 static void RgbToHsv(u8 r, u8 g, u8 b, u8 *h, u8 *s, u8 *v)
 {
     u8 max = r;
@@ -164,9 +158,7 @@ static void HsvToRgb(u8 h, u8 s, u8 v, u8 *r, u8 *g, u8 *b)
     }
 }
 
-// Rotates hue and nudges brightness/saturation for every palette index in
-// `indices`. Near-white/near-black entries have S close to 0, so hue
-// rotation leaves outlines and whites alone.
+// Near-white/near-black entries have S close to 0, so hue rotation leaves outlines and whites alone.
 static void ApplyRegionToPalette(u16 *pal, const u8 *indices, u8 count, u8 hue, s8 shade)
 {
     u32 i;
@@ -239,10 +231,8 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
     if (trainerPicId != expectedPicId || PlayerCustomization_IsDefault())
         return NULL;
 
-    // Read the base palette straight from gTrainerPicInfo rather than through
-    // GetTrainerFrontPicPalette/GetTrainerBackPicPalette (include/data.h) --
-    // Stage 4 routes those through this function, so calling them back here
-    // would recurse.
+    // Read gTrainerPicInfo directly; GetTrainerFrontPicPalette/GetTrainerBackPicPalette
+    // route through this function and would recurse.
     basePal = gTrainerPicInfo[expectedPicId].frontPic->paletteData;
     for (i = 0; i < 16; i++)
         sTrainerPaletteBuffer[i] = basePal[i];
@@ -291,9 +281,6 @@ void PlayerCustomization_GetBattleTransitionMugshotBgPalette(const u16 *basePal,
     if (PlayerCustomization_IsDefault())
         return;
 
-    // Not character art -- just a themed background gradient -- so there are
-    // no separate hair/hat/outfit regions to map. OUTFIT stands in as the
-    // player's overall "theme colour" for the whole gradient.
     GetRegionChoice(PLAYER_COLOR_REGION_OUTFIT, &hue, &shade);
     ApplyRegionToPalette(dest, sBattleTransitionBgIndices, ARRAY_COUNT(sBattleTransitionBgIndices), hue, shade);
 }

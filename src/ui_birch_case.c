@@ -90,11 +90,8 @@ enum TextIds
     DRAFT_CONFIRM_SELECTION,
 };
 
-// Whether the case is showing the starter picker or a Draft mode offer.
-// Draft picks are built directly into draft_mode.c's pending buffer instead
-// of being handed to the party, and skip every starter-only step (nickname
-// forcing, VAR_STARTER_MON, achievement tracking) - see
-// Task_BirchCaseConfirmSelection and BirchCase_QueueDraftMon.
+// Draft picks go to draft_mode.c's pending buffer and skip every starter-only
+// step (nickname forcing, VAR_STARTER_MON, achievement tracking).
 enum BirchCaseMode
 {
     BIRCH_CASE_STARTER,
@@ -202,11 +199,9 @@ static const struct MonChoiceData sStarterChoices[3][9] = {
 
 static struct MonChoiceData sCurrentChoices[3][9]; // Runtime copy
 
-// Which of the nine case slots to fill for a Draft pool of N species, so a
-// sparse pool sits centred in the case rather than piling into the top row
-// and leaving it lopsided. Sparse layouts work because every navigation
-// branch in Task_BirchCaseMain already skips SPECIES_NONE. Row 0 is unused -
-// Draft_IsAreaDraftable never offers an empty pool.
+// Which case slots to fill for a Draft pool of N species, keeping sparse pools
+// centred. Task_BirchCaseMain navigation already skips SPECIES_NONE. Row 0 is
+// unused: Draft_IsAreaDraftable never offers an empty pool.
 static const u8 sDraftSlotLayout[DRAFT_MAX_CHOICES + 1][DRAFT_MAX_CHOICES] =
 {
     [1] = { BALL_MIDDLE_SECOND },
@@ -412,10 +407,8 @@ u16 PickRandomSpecies(u8 setIndex, u8 slotIndex)
     return (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
 }
 
-// Reads a canonical starter straight out of sStarterChoices for Mono Gen.
-// sStarterChoices lays out three generations per set in consecutive slot
-// order (BALL_TOP_FIRST=0 .. BALL_BOTTOM_SECOND=8), so the mapping from
-// generation + starter slot to [set][slot] is pure arithmetic.
+// sStarterChoices lays out three generations per set in consecutive slot order
+// (BALL_TOP_FIRST=0 .. BALL_BOTTOM_SECOND=8), so [set][slot] is pure arithmetic.
 u16 GetCanonicalStarterSpecies(u8 gen, u8 slot)
 {
     u8 setIndex = (gen - 1) / 3;
@@ -505,10 +498,8 @@ u16 GetEffectiveMove(u16 move, u16 species)
 
 static void GenerateIVs(u8 ivs[6])
 {
-    // BOOST_PERFECT_STARTER_IVS is hooked here rather than at
-    // BirchCase_GiveMon, because this array feeds both the stats previewed in
-    // the case UI and the ivs[] eventually handed to ScriptGiveMonParameterized.
-    // Hooking only the grant would let the preview and the mon disagree.
+    // Hooked here rather than at BirchCase_GiveMon so the previewed stats and
+    // the granted ivs[] agree.
     bool8 perfect = AchievementBoost_HasPerfectStarterIvs();
 
     for (int i = 0; i < 6; i++)
@@ -549,10 +540,9 @@ void InitializeStarterChoices(void)
         // so only set 0 is ever shown; sets 1 and 2 are zeroed alongside it for safety.
         u16 monoSpecies[MONO_TYPE_STARTER_COUNT];
 
-        // Canonical starters only apply when Mono Gen is on by itself - with
-        // Mono Type also on, some gen+type combos (e.g. Gen 5 + Fairy) have
-        // zero canonical matches, so fall back to the type pool, which is
-        // gen-aware via IsStarterCandidate's MonoGen_IsSpeciesAllowed check.
+        // With Mono Type also on, some gen+type combos (e.g. Gen 5 + Fairy) have
+        // no canonical matches, so fall back to the gen-aware type pool
+        // (IsStarterCandidate's MonoGen_IsSpeciesAllowed check).
         if (MonoGen_IsEnabled() && !MonoType_IsEnabled())
             MonoGen_GetCanonicalStarters(monoSpecies);
         else
@@ -611,11 +601,9 @@ void InitializeStarterChoices(void)
     }
 }
 
-// Draft pins gSpecialVar_Result to 0 and fills sCurrentChoices[0][], exactly
-// like Mono Type / Mono Gen do above - sets 1 and 2 are left zeroed. Unlike
-// the starter path, FLAG_RANDOMIZE_MON is never consulted here: the pool
-// already *is* the current map's species list (draft_mode.c), and
-// randomizing it would decouple the case from the route it's offered on.
+// Like Mono Type / Mono Gen, pins gSpecialVar_Result to 0 and fills sCurrentChoices[0][].
+// FLAG_RANDOMIZE_MON is not consulted: the pool is the current map's species
+// list (draft_mode.c), and randomizing it would decouple the case from the route.
 static void InitializeDraftChoices(void)
 {
     struct DraftChoice pool[DRAFT_MAX_CHOICES];
@@ -766,8 +754,7 @@ static void ReloadNewPokemon(u8 taskId) // reload the pokeball after a 4 frame d
 {
     gSprites[sBirchCaseDataPtr->monSpriteId].invisible = TRUE;
     FreeResourcesAndDestroySprite(&gSprites[sBirchCaseDataPtr->monSpriteId], sBirchCaseDataPtr->monSpriteId);
-    // Task_DelayedSpriteLoad recreates it a few frames from now; until then
-    // there is no sprite left for BirchCaseFreeResources to tear down.
+    // Task_DelayedSpriteLoad recreates it; SPRITE_NONE keeps BirchCaseFreeResources from tearing down a freed sprite.
     sBirchCaseDataPtr->monSpriteId = SPRITE_NONE;
     sBirchCaseDataPtr->movingSelector = TRUE;
     gTasks[taskId].func = Task_DelayedSpriteLoad;
@@ -782,10 +769,8 @@ static void ChangePositionUpdateSpriteAnims(u16 oldPosition, u8 taskId) // turn 
     PrintTextToBottomBar(CHOOSE_MON);
 }
 
-// Picks a damaging move from the species' own level-up learnset, for topping
-// up a randomized starter moveset that ended up with no way to deal damage.
-// Prefers a move already learnable by `level`; falls back to the first
-// damaging move the species ever learns, then MOVE_TACKLE if it has none.
+// Prefers a damaging level-up move learnable by `level`; falls back to the
+// first damaging move the species ever learns, then MOVE_TACKLE.
 static u16 GetLearnsetDamageMove(u16 species, u16 level)
 {
     const struct LevelUpMove *learnset = GetSpeciesLevelUpLearnset((enum Species)species);
@@ -942,37 +927,26 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
 
     gSpecialVar_Result = ScriptGiveMonParameterized(B_SIDE_PLAYER, PARTY_SIZE, &monTemplate);
 
-    // No Freebies tracks the starter by
-    // personality (survives evolution, unlike species) -- read back from the
-    // party slot it was just placed into, since ScriptGiveMonParameterized's
-    // own return value is a slot/result code, not the generated personality.
+    // Personality survives evolution, unlike species. Read it back from the party
+    // slot because ScriptGiveMonParameterized returns a slot/result code.
     Achievement_RecordStarterPersonality(GetMonData(&gPlayerParty[0], MON_DATA_PERSONALITY));
-    // Committed to the Bit/Generation Loyalist.
     Achievement_CheckMonoStarterMilestones();
 
     if (wasRandomizeMonForMoves)
         FlagSet(FLAG_RANDOMIZE_MON);
 
-    // Mono Type's 3 picks aren't drawn from the canonical starter species, so
-    // GetStarterPokemon() can't map them to a starter index by species. Use
-    // the ball's position in the middle row instead (first/second/third ->
-    // 0/1/2), which lines up with GetStarterPokemon()'s own convention
-    // (0 = grass-type starter, 1 = fire, 2 = water) and is what every
-    // VAR_STARTER_MON-driven rival battle across the game expects. Mono Gen's
-    // canonical-only picks would resolve fine through GetStarterPokemon() too,
-    // but reusing the same handPosition path keeps both modes on one code path.
+    // Mono Type picks aren't canonical starter species, so GetStarterPokemon()
+    // can't map them. Use the middle-row ball position (0 = grass, 1 = fire,
+    // 2 = water), matching what VAR_STARTER_MON-driven rival battles expect.
     if (MonoType_IsEnabled() || MonoGen_IsEnabled())
         *GetVarPointer(VAR_STARTER_MON) = sBirchCaseDataPtr->handPosition - BALL_MIDDLE_FIRST;
     else
         *GetVarPointer(VAR_STARTER_MON) = wasRandomizeMon ? setIndex : GetStarterPokemon(choice->species);
 }
 
-// Draft's counterpart to BirchCase_GiveMon. The pick doesn't go to the party
-// (or the PC - nothing ever does in a Draft run) - it's built here and handed
-// to draft_mode.c's pending buffer, where it waits for the offer script
-// (data/scripts/draft.inc) to resolve it into an empty slot or the replace
-// screen. None of BirchCase_GiveMon's starter-only tail applies: no forced
-// nickname, no VAR_STARTER_MON, no Achievement_RecordStarterPersonality.
+// Draft's counterpart to BirchCase_GiveMon. The mon waits in draft_mode.c's
+// pending buffer until the offer script (data/scripts/draft.inc) places it in
+// an empty slot or the replace screen.
 static void BirchCase_QueueDraftMon(void)
 {
     struct MonChoiceData *choice = &sCurrentChoices[0][sBirchCaseDataPtr->handPosition];
@@ -983,9 +957,8 @@ static void BirchCase_QueueDraftMon(void)
     u8 i;
     bool8 wasRandomizeMon = FlagGet(FLAG_RANDOMIZE_MON);
 
-    // choice->species already went through PickRandomSpecies when the case's
-    // choices were built. Clear the flag before CreateMon, same as
-    // BirchCase_GiveMon, so GetRandomizedSpecies doesn't reroll it a second time.
+    // Species was already randomized when the choices were built; clear the flag
+    // so CreateMon doesn't reroll it.
     if (wasRandomizeMon)
         FlagClear(FLAG_RANDOMIZE_MON);
 
@@ -998,9 +971,8 @@ static void BirchCase_QueueDraftMon(void)
         SetMonData(&mon, MON_DATA_HP_IV + i, &choice->ivs[i]);
     CalculateMonStats(&mon);
 
-    // Same validated fallback ScriptGiveMonParameterized uses
-    // (src/script_pokemon_util.c) - GenerateAbility() doesn't know which
-    // ability slots a given species actually has.
+    // Same fallback as ScriptGiveMonParameterized: GenerateAbility() doesn't know
+    // which ability slots the species has.
     assertf(abilityNum < NUM_ABILITY_SLOTS && GetAbilityBySpecies(choice->species, abilityNum) != ABILITY_NONE,
             "invalid ability num %d for species %d", abilityNum, choice->species)
     {
@@ -1010,9 +982,7 @@ static void BirchCase_QueueDraftMon(void)
     }
     SetMonData(&mon, MON_DATA_ABILITY_NUM, &abilityNum);
 
-    // Level-up moveset for the mon's level. Draft picks never carry explicit
-    // moves the way sStarterChoices entries can, and FLAG_RANDOMIZE_MOVES (if
-    // set) is applied at display/battle time, not here - see GetEffectiveMove.
+    // FLAG_RANDOMIZE_MOVES is applied at display/battle time, not here (see GetEffectiveMove).
     GiveMonInitialMoveset(&mon);
 
     SetMonData(&mon, MON_DATA_POKEBALL, &ball);
@@ -1048,9 +1018,7 @@ static void Task_OpenDraftCase(u8 taskId)
     }
 }
 
-// callnative entry point for the Draft offer flow (data/scripts/draft.inc,
-// Draft_EventScript_RouteDraft) - mirrors StartNewPokeballCaseUI
-// (src/script.c) / Task_OpenBirchCase above.
+// callnative entry point from Draft_EventScript_RouteDraft (data/scripts/draft.inc).
 void Draft_StartCaseUI(void)
 {
     sBirchCaseMode = BIRCH_CASE_DRAFT;
@@ -1168,9 +1136,8 @@ static bool8 BirchCaseDoGfxSetup(void)
     return FALSE;
 }
 
-// Nulls the pointer as well as freeing it: the bail path and the normal
-// turn-off path can both reach BirchCaseFreeResources, and a second pass
-// over an already-freed pointer would double free and corrupt the heap.
+// Nulls the pointer: the bail path and the normal turn-off path can both reach
+// BirchCaseFreeResources, and a second pass would double free.
 #define try_free(ptr) ({               \
     void ** ptr__ = (void **)&(ptr);   \
     if (*ptr__ != NULL)                \
@@ -1182,10 +1149,8 @@ static bool8 BirchCaseDoGfxSetup(void)
 
 static void BirchCaseFreeResources(void)
 {
-    // Sprite teardown reads sBirchCaseDataPtr, so it has to run before the
-    // struct itself is freed. monSpriteId is SPRITE_NONE until the mon pic is
-    // actually created, so the bail path (which gets here with no sprite yet)
-    // no longer destroys sprite 0.
+    // Sprite teardown reads sBirchCaseDataPtr, so it runs before the struct is freed.
+    // monSpriteId is SPRITE_NONE until the mon pic exists (the bail path has none yet).
     if (sBirchCaseDataPtr != NULL && sBirchCaseDataPtr->monSpriteId != SPRITE_NONE)
         FreeResourcesAndDestroySprite(&gSprites[sBirchCaseDataPtr->monSpriteId], sBirchCaseDataPtr->monSpriteId);
     DestroyPokeballSprites();
@@ -1329,9 +1294,7 @@ static void PrintTextToBottomBar(u8 textId)
 
     FillWindowPixelBuffer(WINDOW_BOTTOM_BAR, PIXEL_FILL(TEXT_COLOR_TRANSPARENT));
 
-    // Draft mode never sees RECIEVED_MON (§4b: BirchCase_QueueDraftMon fades
-    // straight out instead of running the nickname flow), so only the choose
-    // and confirm prompts need Draft variants.
+    // Draft mode never shows RECIEVED_MON, so only the choose and confirm prompts need Draft variants.
     if (sBirchCaseMode == BIRCH_CASE_DRAFT)
     {
         if (textId == CHOOSE_MON)
@@ -1459,9 +1422,8 @@ static void Task_BirchCaseConfirmSelection(u8 taskId)
     if(JOY_NEW(A_BUTTON))
     {
         PlaySE(SE_SELECT);
-        // Draft picks never reach the nickname flow here - the offer script
-        // (data/scripts/draft.inc) nicknames after the pick resolves into a
-        // party slot, which may not happen until the replace screen runs.
+        // The offer script (data/scripts/draft.inc) nicknames after the pick
+        // resolves into a party slot, possibly after the replace screen.
         if (sBirchCaseMode == BIRCH_CASE_DRAFT)
         {
             BirchCase_QueueDraftMon();
@@ -1489,12 +1451,10 @@ static void Task_BirchCaseMain(u8 taskId)
 {
     u16 oldPosition = sBirchCaseDataPtr->handPosition;
 
-    // Mono Type and Mono Gen both skip the generation choice, so there's
-    // nowhere for B to back out to - exiting here would just reopen the same
-    // case (Route101_EventScript_OpenStarterCaseNoGenSelect loops on
-    // VAR_0x8004 == 1), so B is a no-op instead of a flickery round-trip.
-    // Draft mode has no such loop - declining a pick is a real choice, and
-    // the offer script turns VAR_0x8004 == 1 into the permanence warning.
+    // Mono Type and Mono Gen skip the generation choice, and exiting would just
+    // reopen the case (Route101_EventScript_OpenStarterCaseNoGenSelect loops on
+    // VAR_0x8004 == 1), so B is a no-op. Draft has no such loop; the offer
+    // script turns VAR_0x8004 == 1 into the permanence warning.
     if (JOY_NEW(B_BUTTON) && (sBirchCaseMode == BIRCH_CASE_DRAFT || (!MonoType_IsEnabled() && !MonoGen_IsEnabled())))
     {
         PlaySE(SE_SELECT);

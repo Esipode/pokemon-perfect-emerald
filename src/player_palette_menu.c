@@ -22,15 +22,6 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
-// Structure mirrors src/new_game_settings_menu.c
-// (gMain.state setup machine -> FadeIn -> ProcessInput -> FadeOut, ListMenu
-// for row/cursor handling) and reuses src/option_menu.c's bracket-value idiom
-// for the HUE/SHADE column, but printed as one literal "< 03 >" string rather
-// than separately flanking chevrons -- simpler, and there's no ROM-build
-// loop in this environment to tune pixel-perfect chevron centering against,
-// so this favours the lower-risk option. Geometry below is a first pass;
-// nudge it once it's actually on screen.
-
 enum
 {
     WIN_HEADER,
@@ -38,9 +29,8 @@ enum
     WIN_SWATCH,
 };
 
-// Rows 0..PLAYER_COLOR_REGION_COUNT-1 line up 1:1 with enum PlayerColorRegion
-// (HAIR, HAT, OUTFIT, ACCENT in that order) so a chosen/selected row index
-// can be used directly as a region index without a translation table.
+// Rows 0..PLAYER_COLOR_REGION_COUNT-1 line up 1:1 with enum PlayerColorRegion,
+// so a row index is used directly as a region index.
 enum
 {
     ROW_RESET = PLAYER_COLOR_REGION_COUNT,
@@ -72,10 +62,8 @@ static void RefreshPreviewPalette(void);
 static void DrawHeaderText(void);
 static void DrawBgWindowFrames(void);
 
-// Working copy of gSaveBlock2Ptr->playerColors -- only committed back on
-// CONFIRM, so RESET/B can freely discard it. axisIsShade[] remembers which
-// axis (HUE/SHADE) each of the four colour rows is currently showing,
-// per-row, so e.g. HAIR can sit on HUE while HAT sits on SHADE at once.
+// Working copy of gSaveBlock2Ptr->playerColors, committed only on CONFIRM.
+// axisIsShade[] tracks which axis (HUE/SHADE) each colour row shows, per row.
 static EWRAM_DATA struct
 {
     u8 choices[PLAYER_COLOR_REGION_COUNT];
@@ -121,12 +109,10 @@ static const struct WindowTemplate sPaletteMenuWinTemplates[] =
         .paletteNum = 1,
         .baseBlock = 0x36
     },
-    // Overlaps a column inside WIN_LIST's own rect (rows 0-3 only) so the
-    // swatches can use their own palette bank (2) instead of the text
-    // palette (1) -- see RedrawSwatches(). Its PutWindowTilemap() call runs
-    // after WIN_LIST's at init, so it owns that column's screen tiles for
-    // good; WIN_LIST is never re-PutWindowTilemap'd afterwards, only
-    // COPYWIN_GFX-refreshed, so the two never fight over it again.
+    // Overlaps a column inside WIN_LIST's rect (rows 0-3 only) so the swatches
+    // use palette bank 2 instead of the text palette (1). Its PutWindowTilemap()
+    // runs after WIN_LIST's at init and WIN_LIST is never re-put, so it keeps
+    // ownership of that column's tiles.
     [WIN_SWATCH] = {
         .bg = 0,
         .tilemapLeft = SWATCH_TILEMAP_LEFT,
@@ -341,7 +327,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             }
         }
         break;
-    case LIST_CANCEL: // B -- discard the working copy and exit
+    case LIST_CANCEL:
         PlaySE(SE_SELECT);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_PaletteMenuFadeOut;
@@ -357,8 +343,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         ConfirmAndExit(taskId);
         break;
     default:
-        // A on one of the four colour rows -- nothing to do, those are
-        // edited with Left/Right (value) and SELECT (axis), not A.
+        // Colour rows are edited with Left/Right (value) and SELECT (axis), not A.
         break;
     }
 }
@@ -381,12 +366,7 @@ static void PaletteMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct L
         PlaySE(SE_SELECT);
 }
 
-// hue: low nibble, 0-15. shade: high nibble, signed PLAYER_COLOR_SHADE_MIN..
-// PLAYER_COLOR_SHADE_MAX. Same packing as src/player_customization.c's
-// (private) UnpackColorByte/PackColorByte -- duplicated here rather than
-// exposed, since only the encoding (documented on gSaveBlock2Ptr->
-// playerColors in include/player_customization.h) needs to be shared, not
-// the helper functions.
+// Same packing as the private UnpackColorByte/PackColorByte in src/player_customization.c.
 static void UnpackChoice(enum PlayerColorRegion region, u8 *hue, s8 *shade)
 {
     u8 raw = sPaletteMenu.choices[region];
@@ -450,10 +430,8 @@ static void PaletteMenu_ItemPrintCallback(u8 windowId, u32 itemId, u8 y)
     AddTextPrinterParameterized(windowId, FONT_NORMAL, text, PALETTE_MENU_VALUE_X, y, TEXT_SKIP_DRAW, NULL);
 }
 
-// One solid-colour square per colour row (rows 0..PLAYER_COLOR_REGION_COUNT-1),
-// using that region's first palette index into the buffer RefreshPreviewPalette()
-// just loaded into WIN_SWATCH's own palette bank (BG_PLTT_ID(2)) -- so the
-// swatch always matches the live working colours, not the saved ones.
+// Swatches read from the palette bank RefreshPreviewPalette() loaded (BG_PLTT_ID(2)),
+// so they match the live working colours, not the saved ones.
 static void RedrawSwatches(void)
 {
     u32 region;
@@ -498,7 +476,6 @@ static void DrawHeaderText(void)
 static void DrawBgWindowFrames(void)
 {
     //                     bg, tile,              x, y, width, height, palNum
-    // Header frame
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  0,  1,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  0, 27,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  0,  1,  1,  7);
