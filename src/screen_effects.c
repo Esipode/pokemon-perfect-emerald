@@ -10,6 +10,9 @@
 #define LIFETIME_FADE_MAX       30 // frames
 #define SHAKE_DEFAULT_PERIOD    32
 #define SHAKE_SCALE             (256 * SCREENFX_INTENSITY_MAX)  // Q8.8 sine times intensity
+#define WAVE_DEFAULT_PERIOD     90
+#define WAVE_DEFAULT_WAVELENGTH 64
+#define WAVE_MIN_WAVELENGTH     8
 
 #define SCANLINE_COUNT          DISPLAY_HEIGHT
 #define SCANLINE_REGS           6   // BG1HOFS, BG1VOFS, BG2HOFS, BG2VOFS, BG3HOFS, BG3VOFS
@@ -162,7 +165,7 @@ static void ScanlineChannel_Reset(void)
 }
 
 // Adds a pixel offset to one scanline. Only meaningful between ScreenFx_Update and ScreenFx_Render.
-static void UNUSED ScanlineChannel_Line(u32 line, s16 dx, s16 dy)
+static void ScanlineChannel_Line(u32 line, s16 dx, s16 dy)
 {
     if (!sChannel.acquired || line >= SCANLINE_COUNT)
         return;
@@ -247,7 +250,7 @@ void ScreenFx_ResetAll(void)
 }
 
 // Rounds to the nearest pixel, symmetric around zero.
-static s32 ScaleShake(s32 sine, s32 amplitude)
+static s32 ScaleSine(s32 sine, s32 amplitude)
 {
     s32 scaled = sine * amplitude;
 
@@ -263,13 +266,38 @@ static void UpdateShake(struct ScreenFx *effect)
     s16 x = 0, y = 0;
 
     if (effect->params.shake.axes & SCREENFX_AXIS_X)
-        x = ScaleShake(gSineTable[index], amplitude);
+        x = ScaleSine(gSineTable[index], amplitude);
     if (effect->params.shake.axes & SCREENFX_AXIS_Y)
-        y = ScaleShake(gSineTable[index + 64], amplitude); // cosine
+        y = ScaleSine(gSineTable[index + 64], amplitude); // cosine
 
     SetCameraPanningCallback(NULL);
     SetCameraPanning(x, y);
     effect->params.shake.phase += 0x10000 / effect->params.shake.period;
+}
+
+// Adds this wave's per-line offsets to the scanline accumulator.
+static void UpdateWave(struct ScreenFx *effect)
+{
+    s32 amplitude = effect->resolvedIntensity * SCREENFX_WAVE_MAX_AMPLITUDE;
+    u16 linePhase = effect->params.wave.phase;
+    u32 line;
+
+    effect->params.wave.phase += 0x10000 / effect->params.wave.period;
+
+    if (amplitude == 0 || !sChannel.acquired)
+        return;
+
+    for (line = 0; line < SCANLINE_COUNT; line++)
+    {
+        u32 index = linePhase >> 8; // gSineTable holds one cycle per 256 entries
+        s16 dy = 0;
+
+        if (effect->params.wave.vertical)
+            dy = ScaleSine(gSineTable[(index + 64) & 0xFF], amplitude / 2);
+
+        ScanlineChannel_Line(line, ScaleSine(gSineTable[index], amplitude), dy);
+        linePhase += effect->params.wave.step;
+    }
 }
 
 static void ClearFade(struct ScreenFx *effect)
@@ -403,6 +431,8 @@ void ScreenFx_Update(void)
 
         if (effect->kind == SCREENFX_SHAKE)
             UpdateShake(effect);
+        else if (effect->kind == SCREENFX_WAVE)
+            UpdateWave(effect);
     }
 }
 
@@ -499,6 +529,18 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
                 effect->params.shake.axes = SCREENFX_AXIS_X | SCREENFX_AXIS_Y;
 
             SetCameraPanningCallback(NULL);
+        }
+        else if (config->kind == SCREENFX_WAVE)
+        {
+            u16 wavelength = config->param2 & ~SCREENFX_WAVE_VERTICAL;
+
+            if (wavelength == 0)
+                wavelength = WAVE_DEFAULT_WAVELENGTH;
+
+            effect->params.wave.period = config->param1 != 0 ? config->param1 : WAVE_DEFAULT_PERIOD;
+            effect->params.wave.step = 0x10000 / max(wavelength, WAVE_MIN_WAVELENGTH);
+            effect->params.wave.phase = 0;
+            effect->params.wave.vertical = (config->param2 & SCREENFX_WAVE_VERTICAL) != 0;
         }
 
         return (effect->generation << 3) | i;

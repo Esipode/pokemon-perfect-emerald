@@ -59,6 +59,13 @@ struct ScreenFx
             u16 axes;       // SCREENFX_AXIS_*
             u16 phase;      // 0x10000 = one cycle
         } shake;
+        struct
+        {
+            u16 period;     // frames per cycle
+            u16 step;       // phase advance per scanline, 0x10000 = one cycle
+            u16 phase;      // 0x10000 = one cycle
+            u16 vertical;   // non-zero adds the vertical component
+        } wave;
         u8 raw[8];
     } params;               // per-kind state
 };
@@ -89,6 +96,15 @@ struct ScreenFx
 // The channel is claimed only while gScanlineEffect.state is 0; during the flash and Battle Pyramid
 // effects it stays released and is claimed again once they end. It never touches gScanlineEffect.
 // With no line offsets the field renders exactly as without the channel.
+//
+// Wave (SCREENFX_WAVE): param1 = period in frames (0 = 90; ~60-90 reads as a presence shimmer, 180-300
+// as a breathing world), param2 = wavelength in scanlines (0 = 64, minimum 8), optionally OR'd with
+// SCREENFX_WAVE_VERTICAL. Each scanline is shifted horizontally by a sine of its line number, moving
+// with time. Amplitude is resolvedIntensity * SCREENFX_WAVE_MAX_AMPLITUDE / SCREENFX_INTENSITY_MAX
+// pixels, rounded per line, so low intensities only flicker the sine peaks. The vertical component
+// uses a quarter-cycle phase shift at half the amplitude. Waves sum with each other and with other
+// geometry effects; only the +/-8 px clamp limits the total. Effects started while the channel is
+// unavailable (flash, Battle Pyramid) have no visible result until it is free.
 
 // Invalidates every outstanding handle and clears the pool. Stops the scanline DMA at once.
 void ScreenFx_ResetAll(void);

@@ -8,6 +8,10 @@
 #define SCREENFX_AXIS_Y         (1 << 1)
 #define SCREENFX_SHAKE_MAX_AMPLITUDE    4   // pixels at SCREENFX_INTENSITY_MAX
 
+// Wave param2: wavelength in scanlines, OR'd with flags.
+#define SCREENFX_WAVE_VERTICAL          (1 << 15)
+#define SCREENFX_WAVE_MAX_AMPLITUDE     4   // pixels at SCREENFX_INTENSITY_MAX
+
 enum ScreenFxKind
 {
     SCREENFX_WAVE,
