@@ -107,6 +107,7 @@ static EWRAM_DATA struct PresetRecord sPresets[MAX_SCREENFX_PRESETS] = {0};
 static EWRAM_DATA struct ScanlineChannel sChannel = {0};
 static EWRAM_DATA struct Ripple sRipples[MAX_RIPPLES] = {0}; // owned by the one SCREENFX_RIPPLE effect
 static EWRAM_DATA bool8 sSuspended = FALSE;
+static EWRAM_DATA u8 sBattleFadeElapsed = 0; // frames since ScreenFx_BeginBattleFade; 0 = not fading
 // Summed per-line offsets of every geometry effect; clamped when the buffer is built.
 static EWRAM_DATA s16 sLineDx[SCANLINE_COUNT] = {0};
 static EWRAM_DATA s16 sLineDy[SCANLINE_COUNT] = {0};
@@ -590,6 +591,7 @@ static void ReleaseAllEffects(void)
 void ScreenFx_ResetAll(void)
 {
     sSuspended = FALSE;
+    sBattleFadeElapsed = 0;
     ReleaseAllEffects();
     ScanlineChannel_Reset();
 }
@@ -616,6 +618,22 @@ void ScreenFx_Suspend(void)
 void ScreenFx_Resume(void)
 {
     sSuspended = FALSE;
+    sBattleFadeElapsed = 0;
+}
+
+// Scales every effect toward 0 over SCREENFX_BATTLE_FADE_FRAMES, so the Suspend that follows is not visible.
+void ScreenFx_BeginBattleFade(void)
+{
+    if (!sSuspended)
+        sBattleFadeElapsed = 1;
+}
+
+static u32 ApplyBattleFade(u32 intensity)
+{
+    if (sBattleFadeElapsed == 0)
+        return intensity;
+
+    return intensity * (SCREENFX_BATTLE_FADE_FRAMES - sBattleFadeElapsed) / SCREENFX_BATTLE_FADE_FRAMES;
 }
 
 // Rounds to the nearest pixel, symmetric around zero.
@@ -915,6 +933,9 @@ void ScreenFx_Update(void)
     if (sSuspended)
         return;
 
+    if (sBattleFadeElapsed != 0 && sBattleFadeElapsed < SCREENFX_BATTLE_FADE_FRAMES)
+        sBattleFadeElapsed++;
+
     UpdatePresets();
 
     if (sChannel.acquired)
@@ -944,7 +965,7 @@ void ScreenFx_Update(void)
         }
 
         effect->resolvedIntensity = effect->enabled
-            ? min((effect->currentIntensity * distanceFactor + SCREENFX_INTENSITY_MAX / 2) / SCREENFX_INTENSITY_MAX, SCREENFX_INTENSITY_MAX)
+            ? ApplyBattleFade(min((effect->currentIntensity * distanceFactor + SCREENFX_INTENSITY_MAX / 2) / SCREENFX_INTENSITY_MAX, SCREENFX_INTENSITY_MAX))
             : 0;
 
         if (effect->kind == SCREENFX_SHAKE)
