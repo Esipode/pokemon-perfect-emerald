@@ -66,6 +66,14 @@ struct ScreenFx
 // Screen effects are transient: never saved, and cleared on every map load (ScreenFx_ResetAll).
 // Colour and tint belong to the overworld overlay module; this module owns geometry and light.
 // Intensity is 0-SCREENFX_INTENSITY_MAX.
+//
+// Intensity composition. Fade owns currentIntensity; falloff scales it:
+//   resolvedIntensity = clamp((currentIntensity * distanceFactor + 8) / 16, 0, 16)
+// distanceFactor is SCREENFX_INTENSITY_MAX when falloff is inactive. Effects render resolvedIntensity.
+//
+// A non-zero durationFrames is the lifetime: when it runs out the effect fades out over
+// min(durationFrames / 4, 30) frames and stops. ScreenFx_SetIntensity or ScreenFx_FadeTo during the
+// fade-out cancels the stop.
 
 // Shake (SCREENFX_SHAKE): param1 = period in frames (24-48 reads as a slow tremor; 0 = 32),
 // param2 = SCREENFX_AXIS_* flags (0 = both). Drives the camera pan from a sine table; amplitude is
@@ -88,5 +96,20 @@ bool32 ScreenFx_IsValid(ScreenFxId id);
 // Direct request, 0-SCREENFX_INTENSITY_MAX. Cancels any running fade.
 void ScreenFx_SetIntensity(ScreenFxId id, u8 intensity);
 u8 ScreenFx_GetIntensity(ScreenFxId id);
+// Linear fade over durationFrames; 0 snaps. Replaces any running fade.
+void ScreenFx_FadeTo(ScreenFxId id, u8 targetIntensity, u16 durationFrames);
+// Fades to 0, then stops the effect. ScreenFx_SetIntensity or ScreenFx_FadeTo cancels the stop.
+void ScreenFx_FadeOutAndStop(ScreenFxId id, u16 durationFrames);
+
+// Anchors and falloff follow the overlay module: anchors store gameplay identity, never a sprite
+// pointer; an object that cannot be resolved keeps its last known position and the effect stays alive;
+// distance is max(dx, dy) + min(dx, dy) / 2 in tiles. x, y are map coordinates as used in scripts.
+// Falloff has no effect while the effect has no anchor. maxIntensity applies at or inside
+// innerRadius, minIntensity at or beyond outerRadius, linear in between.
+void ScreenFx_SetAnchorToPosition(ScreenFxId id, s16 x, s16 y);
+void ScreenFx_SetAnchorToObject(ScreenFxId id, u8 localId, u8 mapNum, u8 mapGroup);
+void ScreenFx_ClearAnchor(ScreenFxId id);
+void ScreenFx_SetFalloff(ScreenFxId id, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity);
+void ScreenFx_ClearFalloff(ScreenFxId id);
 
 #endif // GUARD_SCREEN_EFFECTS_H

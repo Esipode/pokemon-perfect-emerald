@@ -98,6 +98,16 @@ struct OverlaySave
 // pulseFactor and distanceFactor are OVERLAY_OPACITY_MAX when their feature is inactive.
 // The result is clamped to 0-OVERLAY_OPACITY_MAX.
 
+// Anchor and falloff helpers shared with the screen effects module. Positions are in object-event
+// coordinate space.
+// Looks up the object by local id and map. On success stores its position in *x, *y and returns TRUE
+// if that differs from the previous value. An unresolved object leaves *x, *y untouched and returns FALSE.
+bool32 OverworldAnchor_Resolve(u8 localId, u8 mapNum, u8 mapGroup, s16 *x, s16 *y);
+// Octagonal distance in tiles: max(dx, dy) + min(dx, dy) / 2.
+u32 OverworldAnchor_Distance(s16 anchorX, s16 anchorY, const struct Coords16 *playerCoords);
+// Linear between maxIntensity at or inside innerRadius and minIntensity at or beyond outerRadius.
+u32 OverworldAnchor_DistanceFactor(u32 distance, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity);
+
 // Invalidates every outstanding handle and clears the pool.
 void Overlay_ResetAll(void);
 // Copies the pool into SaveBlock3. Called on every save.

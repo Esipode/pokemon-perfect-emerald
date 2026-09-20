@@ -583,35 +583,29 @@ static u32 ResolveExemptPalettes(const struct Overlay *overlay)
     return mask;
 }
 
-// Refreshes the anchor from the tracked object. An unresolved object keeps the last known position.
-// Returns TRUE when the anchor moved.
-static bool32 UpdateAnchor(struct Overlay *overlay)
+bool32 OverworldAnchor_Resolve(u8 localId, u8 mapNum, u8 mapGroup, s16 *x, s16 *y)
 {
-    u32 objectEventId;
-    s16 x, y;
+    u32 objectEventId = GetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup);
+    s16 objectX, objectY;
 
-    if (overlay->anchorKind != OVERLAY_ANCHOR_OBJECT)
-        return FALSE;
-
-    objectEventId = GetObjectEventIdByLocalIdAndMap(overlay->anchorLocalId, overlay->anchorMapNum, overlay->anchorMapGroup);
     if (objectEventId == OBJECT_EVENTS_COUNT)
         return FALSE;
 
-    x = gObjectEvents[objectEventId].currentCoords.x;
-    y = gObjectEvents[objectEventId].currentCoords.y;
-    if (overlay->anchorX == x && overlay->anchorY == y)
+    objectX = gObjectEvents[objectEventId].currentCoords.x;
+    objectY = gObjectEvents[objectEventId].currentCoords.y;
+    if (*x == objectX && *y == objectY)
         return FALSE;
 
-    overlay->anchorX = x;
-    overlay->anchorY = y;
+    *x = objectX;
+    *y = objectY;
     return TRUE;
 }
 
 // Octagonal distance in tiles, no square root.
-static u32 GetAnchorDistance(const struct Overlay *overlay, const struct Coords16 *playerCoords)
+u32 OverworldAnchor_Distance(s16 anchorX, s16 anchorY, const struct Coords16 *playerCoords)
 {
-    s32 dx = playerCoords->x - overlay->anchorX;
-    s32 dy = playerCoords->y - overlay->anchorY;
+    s32 dx = playerCoords->x - anchorX;
+    s32 dy = playerCoords->y - anchorY;
 
     if (dx < 0)
         dx = -dx;
@@ -621,18 +615,33 @@ static u32 GetAnchorDistance(const struct Overlay *overlay, const struct Coords1
     return max(dx, dy) + min(dx, dy) / 2;
 }
 
+u32 OverworldAnchor_DistanceFactor(u32 distance, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity)
+{
+    if (distance <= innerRadius)
+        return maxIntensity;
+    if (distance >= outerRadius)
+        return minIntensity;
+
+    return minIntensity + ((s32)maxIntensity - minIntensity) * (s32)(outerRadius - distance) / (s32)(outerRadius - innerRadius);
+}
+
+// Refreshes the anchor from the tracked object. An unresolved object keeps the last known position.
+// Returns TRUE when the anchor moved.
+static bool32 UpdateAnchor(struct Overlay *overlay)
+{
+    if (overlay->anchorKind != OVERLAY_ANCHOR_OBJECT)
+        return FALSE;
+
+    return OverworldAnchor_Resolve(overlay->anchorLocalId, overlay->anchorMapNum, overlay->anchorMapGroup,
+                                   &overlay->anchorX, &overlay->anchorY);
+}
+
 static u32 CalcDistanceFactor(const struct Overlay *overlay, const struct Coords16 *playerCoords)
 {
-    u32 distance = GetAnchorDistance(overlay, playerCoords);
+    u32 distance = OverworldAnchor_Distance(overlay->anchorX, overlay->anchorY, playerCoords);
 
-    if (distance <= overlay->innerRadius)
-        return overlay->maxIntensity;
-    if (distance >= overlay->outerRadius)
-        return overlay->minIntensity;
-
-    return overlay->minIntensity
-        + ((s32)overlay->maxIntensity - overlay->minIntensity) * (s32)(overlay->outerRadius - distance)
-        / (s32)(overlay->outerRadius - overlay->innerRadius);
+    return OverworldAnchor_DistanceFactor(distance, overlay->innerRadius, overlay->outerRadius,
+                                          overlay->minIntensity, overlay->maxIntensity);
 }
 
 void Overlay_Update(void)
