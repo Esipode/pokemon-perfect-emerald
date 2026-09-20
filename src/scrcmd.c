@@ -3870,6 +3870,18 @@ bool8 Scrcmd_screenfxfalloff(struct ScriptContext *ctx)
     return FALSE;
 }
 
+bool8 Scrcmd_screenfxpulse(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+    u16 activeFrames = VarGet(ScriptReadHalfword(ctx));
+    u16 idleFrames = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_SetPulseGate(id, activeFrames, idleFrames);
+    return FALSE;
+}
+
 bool8 Scrcmd_screenfxfade(struct ScriptContext *ctx)
 {
     ScreenFxId id = VarGet(ScriptReadHalfword(ctx));

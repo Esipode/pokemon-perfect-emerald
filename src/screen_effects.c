@@ -53,7 +53,7 @@
 
 STATIC_ASSERT(MAX_SCREEN_EFFECTS <= 8, ScreenFxIndexFitsHandle);
 STATIC_ASSERT(MAX_SCREENFX_PRESETS <= 8, ScreenFxPresetIndexFitsHandle);
-STATIC_ASSERT(sizeof(struct ScreenFx) <= 40, ScreenFxSizeBudget);
+STATIC_ASSERT(sizeof(struct ScreenFx) <= 44, ScreenFxSizeBudget);
 STATIC_ASSERT(SCANLINE_COUNT * SCANLINE_REGS == ARRAY_COUNT(gScanlineEffectRegBuffers[0]), ScanlineBufferFit);
 
 struct Ripple
@@ -923,7 +923,22 @@ static u32 CalcDistanceFactor(const struct ScreenFx *effect, const struct Coords
 
 static void UpdatePresets(void);
 
-// Order: presets, then per effect: fade, lifetime, anchor, falloff, final intensity, render.
+// Advances the gate cycle. Returns intensity at the start of the active window, decaying to 0, then 0 while idle.
+static u32 ApplyPulseGate(struct ScreenFx *effect, u32 intensity)
+{
+    u32 timer = effect->gateTimer;
+
+    effect->gateTimer++;
+    if (effect->gateTimer >= effect->gateActive + effect->gateIdle)
+        effect->gateTimer = 0;
+
+    if (timer >= effect->gateActive)
+        return 0;
+
+    return intensity * (effect->gateActive - timer) / effect->gateActive;
+}
+
+// Order: presets, then per effect: fade, lifetime, anchor, falloff, gate, final intensity, render.
 void ScreenFx_Update(void)
 {
     struct Coords16 playerCoords = {0};
@@ -967,6 +982,9 @@ void ScreenFx_Update(void)
         effect->resolvedIntensity = effect->enabled
             ? ApplyBattleFade(min((effect->currentIntensity * distanceFactor + SCREENFX_INTENSITY_MAX / 2) / SCREENFX_INTENSITY_MAX, SCREENFX_INTENSITY_MAX))
             : 0;
+
+        if (effect->gateActive != 0)
+            effect->resolvedIntensity = ApplyPulseGate(effect, effect->resolvedIntensity);
 
         if (effect->kind == SCREENFX_SHAKE)
             UpdateShake(effect);
@@ -1243,6 +1261,20 @@ void ScreenFx_ClearFalloff(ScreenFxId id)
     effect->minIntensity = 0;
     effect->maxIntensity = 0;
     effect->falloffEnabled = FALSE;
+}
+
+void ScreenFx_SetPulseGate(ScreenFxId id, u16 activeFrames, u16 idleFrames)
+{
+    struct ScreenFx *effect = GetScreenFx(id);
+
+    if (effect == NULL)
+        return;
+
+    effect->gateActive = activeFrames;
+    effect->gateIdle = idleFrames;
+    effect->gateTimer = activeFrames;   // first cycle begins idle
+    if (idleFrames == 0)
+        effect->gateTimer = 0;
 }
 
 void ScreenFx_SetTearDrift(ScreenFxId id, s16 drift)

@@ -52,6 +52,9 @@ struct ScreenFx
     u8 outerRadius;
     u8 minIntensity;
     u8 maxIntensity;
+    u16 gateActive;         // pulse gate: frames of effect per cycle, 0 = no gate
+    u16 gateIdle;           // frames of silence per cycle
+    u16 gateTimer;          // position in the cycle, 0 = start of the active window
     union
     {
         struct
@@ -105,6 +108,11 @@ struct ScreenFx
 // While a shake runs it re-asserts the camera pan every frame, overriding the camera-shake field
 // effects (earthquake, Mirage Tower); those resume when the shake stops. Stopping restores the
 // default pan-ahead camera.
+
+// Pulse gate (ScreenFx_SetPulseGate): any effect can run in periodic bursts. Each cycle is an active
+// window followed by an idle window. The effect starts at full resolvedIntensity when the window opens,
+// decays linearly to 0 across it, and stays at 0 for the idle window. The first cycle begins idle. A shake
+// glides back to rest during the idle window at its own smoothing rate.
 
 // Scanline channel (wave, ripple and tear effects). While any of those effects exists, an HBlank DMA0
 // stream rewrites BG1-3 scroll registers per scanline from gScanlineEffectRegBuffers, starting from the
@@ -221,6 +229,9 @@ void ScreenFx_SetAnchorToObject(ScreenFxId id, u8 localId, u8 mapNum, u8 mapGrou
 void ScreenFx_ClearAnchor(ScreenFxId id);
 void ScreenFx_SetFalloff(ScreenFxId id, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity);
 void ScreenFx_ClearFalloff(ScreenFxId id);
+
+// Runs the effect in bursts of activeFrames separated by idleFrames of silence. activeFrames 0 removes the gate.
+void ScreenFx_SetPulseGate(ScreenFxId id, u16 activeFrames, u16 idleFrames);
 
 // Vertical drift of a SCREENFX_TEAR band in sixteenths of a scanline per frame (negative = up).
 void ScreenFx_SetTearDrift(ScreenFxId id, s16 drift);

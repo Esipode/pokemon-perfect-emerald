@@ -3254,6 +3254,15 @@
 	.2byte \maxIntensity
 	.endm
 
+	@ Runs the effect in bursts: activeFrames at full intensity decaying to 0, then idleFrames of silence,
+	@ repeating. The first cycle begins idle. activeFrames 0 removes the gate.
+	.macro screenfxpulse handleVar:req, activeFrames:req, idleFrames:req
+	callnative Scrcmd_screenfxpulse, requests_effects=1
+	.2byte \handleVar
+	.2byte \activeFrames
+	.2byte \idleFrames
+	.endm
+
 	@ Fades the effect linearly to target (0-16) over frames; 0 snaps.
 	.macro screenfxfade handleVar:req, target:req, frames:req
 	callnative Scrcmd_screenfxfade, requests_effects=1

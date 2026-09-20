@@ -47,6 +47,7 @@ SootopolisCity_OnTransition:
 	call_if_eq VAR_SOOTOPOLIS_CITY_STATE, 4, SootopolisCity_EventScript_SetExitCaveOfOriginObjPos
 	call_if_eq VAR_SOOTOPOLIS_CITY_STATE, 5, SootopolisCity_EventScript_SetOutsideGymObjPos
 	call_if_eq VAR_SOOTOPOLIS_CITY_STATE, 6, SootopolisCity_EventScript_SetExpertBlockCaveEntrance
+	call SootopolisCity_EventScript_CheckSetDialgaQuakeGuardPos
 	end
 
 SootopolisCity_EventScript_HideMapNamePopup::
@@ -138,6 +139,26 @@ SootopolisCity_EventScript_SetWallaceLeft::
 
 SootopolisCity_EventScript_SetExpertBlockCaveEntrance::
 	setobjectxyperm LOCALID_SOOTOPOLIS_EXPERT, 31, 18
+	return
+
+@ Same gate as CaveOfOrigin_1F_OnLoad; keep the two in sync
+SootopolisCity_EventScript_CheckDialgaActive::
+	setvar VAR_0x8004, SPECIES_DIALGA
+	setvar VAR_0x8005, LAYOUT_CAVE_OF_ORIGIN_1F
+	setvar VAR_0x8006, WEEKDAY_TUE
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	return
+
+@ Steps the expert aside so the cave entrance is clear while Dialga is active
+SootopolisCity_EventScript_CheckSetDialgaQuakeGuardPos::
+	call SootopolisCity_EventScript_CheckDialgaActive
+	call_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_SetDialgaQuakeGuardPos
+	return
+
+SootopolisCity_EventScript_SetDialgaQuakeGuardPos::
+	setobjectxyperm LOCALID_SOOTOPOLIS_EXPERT, 30, 18
+	setobjectmovementtype LOCALID_SOOTOPOLIS_EXPERT, MOVEMENT_TYPE_FACE_RIGHT
 	return
 
 SootopolisCity_OnWarp:
@@ -661,6 +682,8 @@ SootopolisCity_Movement_UnusedPanBack:
 SootopolisCity_EventScript_CaveOfOriginExpert::
 	lock
 	faceplayer
+	call SootopolisCity_EventScript_CheckDialgaActive
+	goto_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_ExpertDialgaQuakes
 	goto_if_ge VAR_SOOTOPOLIS_CITY_STATE, 6, SootopolisCity_EventScript_ExpertPostLegendaries
 	goto_if_eq VAR_SOOTOPOLIS_CITY_STATE, 5, SootopolisCity_EventScript_ExpertLegendaries
 	goto_if_ge VAR_SOOTOPOLIS_CITY_STATE, 2, SootopolisCity_EventScript_ExpertLeadToCave
@@ -670,6 +693,14 @@ SootopolisCity_EventScript_CaveOfOriginExpert::
 
 SootopolisCity_EventScript_ExpertLeadToCave::
 	msgbox SootopolisCity_Text_LeadSuperiorTrainerToCave, MSGBOX_DEFAULT
+	release
+	end
+
+SootopolisCity_EventScript_ExpertDialgaQuakes::
+	msgbox SootopolisCity_Text_CaveOfOriginQuaking, MSGBOX_DEFAULT
+	closemessage
+	applymovement LOCALID_SOOTOPOLIS_EXPERT, Common_Movement_FaceOriginalDirection
+	waitmovement 0
 	release
 	end
 
@@ -1526,6 +1557,13 @@ SootopolisCity_Text_CaveOfOriginSleepsToo:
 	.string "This is the CAVE OF ORIGIN…\p"
 	.string "With the passing of the crisis,\n"
 	.string "the cave, too, shall sleep…$"
+
+SootopolisCity_Text_CaveOfOriginQuaking:
+	.string "This is the CAVE OF ORIGIN…\p"
+	.string "Something inside is causing violent\n"
+	.string "quakes. The whole cave shudders.\p"
+	.string "If you intend to go in, please be\n"
+	.string "careful.$"
 
 SootopolisCity_Text_SootopolisSkyBeautiful:
 	.string "SOOTOPOLIS sprang up as a town in\n"
