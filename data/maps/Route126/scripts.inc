@@ -9,7 +9,8 @@ Route126_OnTransition:
 	@ Connection steps keep screen effects but clear their handle vars; stop them so ON_LOAD does not stack copies
 	screenfxstopall
 	call Route126_EventScript_CheckArceusActive
-	call_if_eq VAR_RESULT, TRUE, Route126_EventScript_SetArceusWeather
+	call_if_eq VAR_RESULT, TRUE, Route126_EventScript_ArceusActive
+	call_if_eq VAR_RESULT, FALSE, Route126_EventScript_ArceusInactive
 	end
 
 @ Arceus spawn gate: post-game, not already owned, 2% daily-seed chance. Result in VAR_RESULT
@@ -24,8 +25,13 @@ Route126_EventScript_CheckArceusActive:
 Route126_EventScript_CheckArceusActiveDone:
 	return
 
-Route126_EventScript_SetArceusWeather:
+Route126_EventScript_ArceusActive:
 	setweather WEATHER_RAIN_THUNDERSTORM
+	setflag FLAG_HIDE_ROUTE_126_NPCS
+	return
+
+Route126_EventScript_ArceusInactive:
+	clearflag FLAG_HIDE_ROUTE_126_NPCS
 	return
 
 Route126_OnLoad:
