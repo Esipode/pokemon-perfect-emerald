@@ -15,6 +15,9 @@
 #define WAVE_DEFAULT_WAVELENGTH 64
 #define WAVE_MIN_WAVELENGTH     8
 
+#define TEAR_DEFAULT_HEIGHT     24
+#define TEAR_CENTER_AUTO        0x7FFF  // stored centre meaning "follow the anchor"; real values are below 160 * 16
+
 #define MAX_RIPPLES             3
 #define RIPPLE_HALF_WIDTH       32  // scanlines each side of the front; power of two keeps the scaling a shift
 #define RIPPLE_STEP             (0x10000 / RIPPLE_HALF_WIDTH) // phase per scanline: two cycles across the band
@@ -321,6 +324,18 @@ static void UpdateWave(struct ScreenFx *effect)
     }
 }
 
+// Screen line of the anchor tile's centre, or the middle of the screen without an anchor.
+static s16 GetAnchorScreenLine(const struct ScreenFx *effect)
+{
+    s16 x, y;
+
+    if (effect->anchorKind == SCREENFX_ANCHOR_NONE)
+        return DISPLAY_HEIGHT / 2;
+
+    SetSpritePosToMapCoords(effect->anchorX, effect->anchorY, &x, &y);
+    return y + 8 + gSpriteCoordOffsetY;
+}
+
 // Rounds to the nearest pixel, symmetric around zero.
 static s32 ScaleRipple(s32 sine, s32 amplitude, s32 envelope)
 {
@@ -380,6 +395,54 @@ static void UpdateRipple(const struct ScreenFx *effect)
                 ScanlineChannel_Line(below, dx, 0);
         }
     }
+}
+
+// Offsets a band of scanlines by an alternating +/- amplitude. The amplitude is re-rolled from a
+// fixed table at an interval that shortens as intensity rises.
+static void UpdateTear(struct ScreenFx *effect)
+{
+    static const u8 sTearAmplitudes[] = {5, 8, 3, 7, 4, 8, 6, 2}; // pixels at SCREENFX_INTENSITY_MAX
+    struct TearParams *tear = &effect->params.tear;
+    s32 amplitude, first, last, line;
+
+    if (tear->timer != 0)
+    {
+        tear->timer--;
+    }
+    else
+    {
+        tear->roll = (tear->roll + 3) & (ARRAY_COUNT(sTearAmplitudes) - 1); // 3 is coprime with the table size
+        tear->timer = 4 + SCREENFX_INTENSITY_MAX - effect->resolvedIntensity - 1;
+    }
+
+    if (tear->center == TEAR_CENTER_AUTO)
+    {
+        first = GetAnchorScreenLine(effect);
+    }
+    else
+    {
+        if (tear->drift != 0)
+        {
+            tear->center += tear->drift;
+            if (tear->center < 0)
+                tear->center += DISPLAY_HEIGHT * 16;
+            else if (tear->center >= DISPLAY_HEIGHT * 16)
+                tear->center -= DISPLAY_HEIGHT * 16;
+        }
+        first = tear->center >> 4;
+    }
+
+    amplitude = (sTearAmplitudes[tear->roll] * effect->resolvedIntensity + SCREENFX_INTENSITY_MAX / 2) / SCREENFX_INTENSITY_MAX;
+    if (amplitude == 0 || !sChannel.acquired)
+        return;
+
+    first -= tear->height / 2;
+    last = first + tear->height - 1;
+    first = max(first, 0);
+    last = min(last, DISPLAY_HEIGHT - 1);
+
+    for (line = first; line <= last; line++)
+        ScanlineChannel_Line(line, (line & 1) ? amplitude : -amplitude, 0);
 }
 
 static void ClearFade(struct ScreenFx *effect)
@@ -517,6 +580,8 @@ void ScreenFx_Update(void)
             UpdateWave(effect);
         else if (effect->kind == SCREENFX_RIPPLE)
             UpdateRipple(effect);
+        else if (effect->kind == SCREENFX_TEAR)
+            UpdateTear(effect);
     }
 }
 
@@ -626,6 +691,16 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
             effect->params.wave.step = 0x10000 / max(wavelength, WAVE_MIN_WAVELENGTH);
             effect->params.wave.phase = 0;
             effect->params.wave.vertical = (config->param2 & SCREENFX_WAVE_VERTICAL) != 0;
+        }
+        else if (config->kind == SCREENFX_TEAR)
+        {
+            effect->params.tear.height = config->param1 != 0 ? min(config->param1, DISPLAY_HEIGHT) : TEAR_DEFAULT_HEIGHT;
+            effect->params.tear.center = config->param2 == SCREENFX_TEAR_CENTER_AUTO
+                                       ? TEAR_CENTER_AUTO
+                                       : min(config->param2, DISPLAY_HEIGHT - 1) * 16;
+            effect->params.tear.drift = 0;
+            effect->params.tear.roll = 0;
+            effect->params.tear.timer = 0;
         }
 
         return (effect->generation << 3) | i;
@@ -764,16 +839,14 @@ void ScreenFx_ClearFalloff(ScreenFxId id)
     effect->falloffEnabled = FALSE;
 }
 
-// Screen line of the anchor tile's centre, or the middle of the screen without an anchor.
-static s16 GetAnchorScreenLine(const struct ScreenFx *effect)
+void ScreenFx_SetTearDrift(ScreenFxId id, s16 drift)
 {
-    s16 x, y;
+    struct ScreenFx *effect = GetScreenFx(id);
 
-    if (effect->anchorKind == SCREENFX_ANCHOR_NONE)
-        return DISPLAY_HEIGHT / 2;
+    if (effect == NULL || effect->kind != SCREENFX_TEAR)
+        return;
 
-    SetSpritePosToMapCoords(effect->anchorX, effect->anchorY, &x, &y);
-    return y + 8 + gSpriteCoordOffsetY;
+    effect->params.tear.drift = drift;
 }
 
 bool32 ScreenFx_TriggerRipple(ScreenFxId id, s16 screenCenterY, u8 amplitude, u16 speed, u16 durationFrames)

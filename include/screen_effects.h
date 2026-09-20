@@ -66,6 +66,14 @@ struct ScreenFx
             u16 phase;      // 0x10000 = one cycle
             u16 vertical;   // non-zero adds the vertical component
         } wave;
+        struct TearParams
+        {
+            s16 center;     // sixteenths of a screen line, or TEAR_CENTER_AUTO
+            s16 drift;      // sixteenths of a line per frame
+            u8 height;      // scanlines
+            u8 roll;        // amplitude table index
+            u8 timer;       // frames until the next re-roll
+        } tear;
         u8 raw[8];
     } params;               // per-kind state
 };
@@ -114,6 +122,14 @@ struct ScreenFx
 // circular wave; it reads as radial when paired with a vignette or glow overlay at the same centre.
 // A ripple ends when its duration runs out or its front has left the screen.
 
+// Tear (SCREENFX_TEAR): a band of scanlines pushed sideways by a hard alternating +/- displacement,
+// odd lines one way and even lines the other, so it reads as torn space. param1 = band height in
+// scanlines (0 = 24), param2 = band centre as a screen line (0-159; there is no default),
+// SCREENFX_TEAR_CENTER_AUTO follows the anchor's screen position each frame (the screen centre without
+// an anchor). The displacement is re-rolled from a small fixed table every 4 + (16 - resolvedIntensity)
+// frames, up to 8 px at SCREENFX_INTENSITY_MAX. Only the band is affected. ScreenFx_SetTearDrift moves a
+// fixed-centre band vertically, wrapping at the screen edges; it has no effect on an anchored band.
+
 // Invalidates every outstanding handle and clears the pool. Stops the scanline DMA at once.
 void ScreenFx_ResetAll(void);
 // Per-frame update. Runs before UpdateCameraPanning so camera-pan effects apply the same frame.
@@ -146,6 +162,9 @@ void ScreenFx_SetAnchorToObject(ScreenFxId id, u8 localId, u8 mapNum, u8 mapGrou
 void ScreenFx_ClearAnchor(ScreenFxId id);
 void ScreenFx_SetFalloff(ScreenFxId id, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity);
 void ScreenFx_ClearFalloff(ScreenFxId id);
+
+// Vertical drift of a SCREENFX_TEAR band in sixteenths of a scanline per frame (negative = up).
+void ScreenFx_SetTearDrift(ScreenFxId id, s16 drift);
 
 // Fires a ripple on a SCREENFX_RIPPLE effect. screenCenterY is a screen line, or
 // SCREENFX_RIPPLE_CENTER_AUTO for the anchor's screen position (the screen centre without an anchor);
