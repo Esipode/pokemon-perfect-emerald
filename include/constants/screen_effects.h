@@ -3,6 +3,11 @@
 
 #define SCREENFX_INTENSITY_MAX  16
 
+// Shake axis flags (param2).
+#define SCREENFX_AXIS_X         (1 << 0)
+#define SCREENFX_AXIS_Y         (1 << 1)
+#define SCREENFX_SHAKE_MAX_AMPLITUDE    4   // pixels at SCREENFX_INTENSITY_MAX
+
 enum ScreenFxKind
 {
     SCREENFX_WAVE,

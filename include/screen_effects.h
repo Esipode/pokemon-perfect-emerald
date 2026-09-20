@@ -53,6 +53,12 @@ struct ScreenFx
         {
             u16 param1, param2;
         } config;
+        struct              // param1 and param2 alias period and axes
+        {
+            u16 period;     // frames per cycle
+            u16 axes;       // SCREENFX_AXIS_*
+            u16 phase;      // 0x10000 = one cycle
+        } shake;
         u8 raw[8];
     } params;               // per-kind state
 };
@@ -60,6 +66,14 @@ struct ScreenFx
 // Screen effects are transient: never saved, and cleared on every map load (ScreenFx_ResetAll).
 // Colour and tint belong to the overworld overlay module; this module owns geometry and light.
 // Intensity is 0-SCREENFX_INTENSITY_MAX.
+
+// Shake (SCREENFX_SHAKE): param1 = period in frames (24-48 reads as a slow tremor; 0 = 32),
+// param2 = SCREENFX_AXIS_* flags (0 = both). Drives the camera pan from a sine table; amplitude is
+// resolvedIntensity * SCREENFX_SHAKE_MAX_AMPLITUDE / SCREENFX_INTENSITY_MAX pixels. With both axes the
+// pan orbits. Only one shake exists at a time: ScreenFx_Start fails while another is active.
+// While a shake runs it re-asserts the camera pan every frame, overriding the camera-shake field
+// effects (earthquake, Mirage Tower); those resume when the shake stops. Stopping restores the
+// default pan-ahead camera.
 
 // Invalidates every outstanding handle and clears the pool.
 void ScreenFx_ResetAll(void);
