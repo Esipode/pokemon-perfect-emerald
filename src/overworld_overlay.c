@@ -4,6 +4,7 @@
 #include "fieldmap.h"
 #include "field_weather.h"
 #include "palette.h"
+#include "screen_effects.h"
 #include "sprite.h"
 #include "constants/rgb.h"
 
@@ -425,7 +426,7 @@ static u32 TintPalettes(u32 palettes, u32 progress)
 {
     struct Overlay *order[MAX_OVERLAYS];
     u32 count = GetRenderOrder(order);
-    u32 glowMask = GetGlowPaletteMask();
+    u32 glowMask = GetGlowPaletteMask() | ScreenFx_GetVignettePaletteMask();
     u32 i;
 
     for (i = 0; i < count; i++)

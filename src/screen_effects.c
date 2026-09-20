@@ -4,9 +4,11 @@
 #include "field_camera.h"
 #include "fieldmap.h"
 #include "overworld_overlay.h"
+#include "palette.h"
 #include "scanline_effect.h"
 #include "sprite.h"
 #include "trig.h"
+#include "constants/rgb.h"
 
 #define LIFETIME_FADE_MAX       30 // frames
 #define SHAKE_DEFAULT_PERIOD    32
@@ -17,6 +19,16 @@
 
 #define TEAR_DEFAULT_HEIGHT     24
 #define TEAR_CENTER_AUTO        0x7FFF  // stored centre meaning "follow the anchor"; real values are below 160 * 16
+
+#define VIGNETTE_TILE_TAG_BASE  0x8030  // + VIGNETTE_ROLE_*
+#define VIGNETTE_PAL_TAG        0x8030  // bit 15 makes the palette weather-immune
+#define VIGNETTE_NEUTRAL        9       // grey (0-31) at which the blend leaves a mid-tone scene unchanged
+#define VIGNETTE_LEVELS         3       // opaque palette entries 1-3; 3 is the darkest
+#define VIGNETTE_MAX_SPRITES    14
+#define VIGNETTE_RETRY_FRAMES   30
+#define VIGNETTE_FORCE          0xFF    // applied intensity that forces a palette rewrite
+#define VIGNETTE_FLIP_H         1
+#define VIGNETTE_FLIP_V         2
 
 #define MAX_RIPPLES             3
 #define RIPPLE_HALF_WIDTH       32  // scanlines each side of the front; power of two keeps the scaling a shift
@@ -74,6 +86,283 @@ static EWRAM_DATA struct Ripple sRipples[MAX_RIPPLES] = {0}; // owned by the one
 static EWRAM_DATA s16 sLineDx[SCANLINE_COUNT] = {0};
 static EWRAM_DATA s16 sLineDy[SCANLINE_COUNT] = {0};
 
+// Vignette: 14 screen-fixed blend-mode sprites built from three sheets. The art holds the darkness
+// gradient (entry 1-3 = light to dark, dithered); the palette holds the intensity.
+
+enum VignetteRole
+{
+    VIGNETTE_ROLE_CORNER,   // 64x32, top-left of the screen
+    VIGNETTE_ROLE_EDGE,     // 64x32, top edge away from the corners
+    VIGNETTE_ROLE_SIDE,     // 32x64, left edge away from the corners
+    VIGNETTE_ROLE_COUNT,
+};
+
+struct VignetteSpriteSpec
+{
+    s16 x, y;               // top-left corner
+    u8 role;
+    u8 flip;                // VIGNETTE_FLIP_*
+};
+
+struct VignetteState
+{
+    u8 spriteIds[VIGNETTE_MAX_SPRITES];
+    u8 spriteCount;         // 0 = nothing created
+    u8 paletteSlot;
+    u8 appliedIntensity;
+    u8 retryDelay;          // frames until a failed re-creation is retried
+};
+
+static EWRAM_DATA struct VignetteState sVignette = {0}; // owned by the one SCREENFX_VIGNETTE effect
+
+static const u32 sVignetteCornerGfx[] = INCGFX_U32("graphics/screen_effects/vignette_corner.png", ".4bpp");
+static const u32 sVignetteEdgeGfx[] = INCGFX_U32("graphics/screen_effects/vignette_edge.png", ".4bpp");
+static const u32 sVignetteSideGfx[] = INCGFX_U32("graphics/screen_effects/vignette_side.png", ".4bpp");
+
+static const struct SpriteSheet sVignetteSheets[VIGNETTE_ROLE_COUNT] = {
+    [VIGNETTE_ROLE_CORNER] = { .data = sVignetteCornerGfx, .size = sizeof(sVignetteCornerGfx), .tag = VIGNETTE_TILE_TAG_BASE + VIGNETTE_ROLE_CORNER },
+    [VIGNETTE_ROLE_EDGE]   = { .data = sVignetteEdgeGfx,   .size = sizeof(sVignetteEdgeGfx),   .tag = VIGNETTE_TILE_TAG_BASE + VIGNETTE_ROLE_EDGE },
+    [VIGNETTE_ROLE_SIDE]   = { .data = sVignetteSideGfx,   .size = sizeof(sVignetteSideGfx),   .tag = VIGNETTE_TILE_TAG_BASE + VIGNETTE_ROLE_SIDE },
+};
+
+// OBJ priority 1 keeps the sprites under BG0, which is not a blend target.
+static const struct OamData sVignetteOam[VIGNETTE_ROLE_COUNT] = {
+    [VIGNETTE_ROLE_CORNER] = { .objMode = ST_OAM_OBJ_BLEND, .shape = SPRITE_SHAPE(64x32), .size = SPRITE_SIZE(64x32), .priority = 1 },
+    [VIGNETTE_ROLE_EDGE]   = { .objMode = ST_OAM_OBJ_BLEND, .shape = SPRITE_SHAPE(64x32), .size = SPRITE_SIZE(64x32), .priority = 1 },
+    [VIGNETTE_ROLE_SIDE]   = { .objMode = ST_OAM_OBJ_BLEND, .shape = SPRITE_SHAPE(32x64), .size = SPRITE_SIZE(32x64), .priority = 1 },
+};
+
+static void SpriteCB_Vignette(struct Sprite *sprite)
+{
+}
+
+#define VIGNETTE_TEMPLATE(role) {                       \
+    .tileTag = VIGNETTE_TILE_TAG_BASE + (role),         \
+    .paletteTag = TAG_NONE,                             \
+    .oam = &sVignetteOam[role],                         \
+    .anims = gDummySpriteAnimTable,                     \
+    .images = NULL,                                     \
+    .affineAnims = gDummySpriteAffineAnimTable,         \
+    .callback = SpriteCB_Vignette,                      \
+}
+
+static const struct SpriteTemplate sVignetteTemplates[VIGNETTE_ROLE_COUNT] = {
+    [VIGNETTE_ROLE_CORNER] = VIGNETTE_TEMPLATE(VIGNETTE_ROLE_CORNER),
+    [VIGNETTE_ROLE_EDGE]   = VIGNETTE_TEMPLATE(VIGNETTE_ROLE_EDGE),
+    [VIGNETTE_ROLE_SIDE]   = VIGNETTE_TEMPLATE(VIGNETTE_ROLE_SIDE),
+};
+
+// Pixels the sprites sit outside the screen, per SCREENFX_VIGNETTE_* preset. At most 16, beyond which
+// the side sprites no longer meet the top and bottom strips.
+static const u8 sVignetteOutset[] = {
+    [SCREENFX_VIGNETTE_WIDE] = 16,
+    [SCREENFX_VIGNETTE_MEDIUM] = 8,
+    [SCREENFX_VIGNETTE_TIGHT] = 0,
+};
+
+static bool32 VignetteSpriteExists(u32 index)
+{
+    struct Sprite *sprite = &gSprites[sVignette.spriteIds[index]];
+
+    return sprite->inUse && sprite->callback == SpriteCB_Vignette;
+}
+
+static bool32 OwnsVignettePalette(void)
+{
+    return GetSpritePaletteTagByPaletteNum(sVignette.paletteSlot) == VIGNETTE_PAL_TAG;
+}
+
+static bool32 IsVignetteIntact(void)
+{
+    u32 i;
+
+    if (sVignette.spriteCount == 0 || !OwnsVignettePalette())
+        return FALSE;
+
+    for (i = 0; i < sVignette.spriteCount; i++)
+    {
+        if (!VignetteSpriteExists(i))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void FreeVignette(void)
+{
+    u32 i;
+
+    for (i = 0; i < sVignette.spriteCount; i++)
+    {
+        if (VignetteSpriteExists(i))
+            DestroySprite(&gSprites[sVignette.spriteIds[i]]);
+    }
+
+    FreeSpritePaletteByTag(VIGNETTE_PAL_TAG);
+    for (i = 0; i < VIGNETTE_ROLE_COUNT; i++)
+        FreeSpriteTilesByTag(VIGNETTE_TILE_TAG_BASE + i);
+
+    memset(&sVignette, 0, sizeof(sVignette));
+}
+
+// The top and bottom strips are a corner sprite at each end and three edge sprites between, which
+// overlap by identical art; the side sprites overlap the strips the same way.
+static u32 BuildVignetteLayout(u32 preset, struct VignetteSpriteSpec *specs)
+{
+    s32 outset = sVignetteOutset[min(preset, SCREENFX_VIGNETTE_TIGHT)];
+    s32 left = -outset;
+    s32 right = DISPLAY_WIDTH + outset;
+    s32 top = -outset;
+    s32 bottom = DISPLAY_HEIGHT + outset;
+    s32 edgeFirst = 64 - outset;
+    s32 edgeLast = right - 128;
+    u32 count = 0;
+    u32 strip, i;
+
+    for (strip = 0; strip < 2; strip++)
+    {
+        s32 y = strip == 0 ? top : bottom - 32;
+        u8 flipV = strip == 0 ? 0 : VIGNETTE_FLIP_V;
+        s32 edgeX[] = {edgeFirst, (edgeFirst + edgeLast) / 2, edgeLast};
+
+        specs[count++] = (struct VignetteSpriteSpec){left, y, VIGNETTE_ROLE_CORNER, flipV};
+        specs[count++] = (struct VignetteSpriteSpec){right - 64, y, VIGNETTE_ROLE_CORNER, flipV | VIGNETTE_FLIP_H};
+        for (i = 0; i < ARRAY_COUNT(edgeX); i++)
+            specs[count++] = (struct VignetteSpriteSpec){edgeX[i], y, VIGNETTE_ROLE_EDGE, flipV};
+    }
+
+    for (i = 0; i < 2; i++)
+    {
+        s32 y = i == 0 ? top + 32 : bottom - 96;
+
+        specs[count++] = (struct VignetteSpriteSpec){left, y, VIGNETTE_ROLE_SIDE, 0};
+        specs[count++] = (struct VignetteSpriteSpec){right - 32, y, VIGNETTE_ROLE_SIDE, VIGNETTE_FLIP_H};
+    }
+
+    return count;
+}
+
+static bool32 CreateVignette(u32 preset)
+{
+    struct VignetteSpriteSpec specs[VIGNETTE_MAX_SPRITES];
+    struct SpritePalette spritePalette;
+    u16 palette[16] = {0};
+    u32 slot, count, i;
+
+    for (i = 0; i < VIGNETTE_ROLE_COUNT; i++)
+    {
+        if (GetSpriteTileStartByTag(VIGNETTE_TILE_TAG_BASE + i) == TAG_NONE)
+            LoadSpriteSheet(&sVignetteSheets[i]);
+        if (GetSpriteTileStartByTag(VIGNETTE_TILE_TAG_BASE + i) == TAG_NONE)
+        {
+            FreeVignette();
+            return FALSE;
+        }
+    }
+
+    spritePalette.data = palette;
+    spritePalette.tag = VIGNETTE_PAL_TAG;
+    slot = LoadSpritePalette(&spritePalette);
+    if (slot == 0xFF)
+    {
+        FreeVignette();
+        return FALSE;
+    }
+
+    sVignette.paletteSlot = slot;
+    sVignette.appliedIntensity = VIGNETTE_FORCE;
+
+    count = BuildVignetteLayout(preset, specs);
+    for (i = 0; i < count; i++)
+    {
+        const struct VignetteSpriteSpec *spec = &specs[i];
+        u32 width = spec->role == VIGNETTE_ROLE_SIDE ? 32 : 64;
+        u32 height = spec->role == VIGNETTE_ROLE_SIDE ? 64 : 32;
+        u32 spriteId = CreateSprite(&sVignetteTemplates[spec->role], spec->x + width / 2, spec->y + height / 2, 0);
+        struct Sprite *sprite;
+
+        if (spriteId == MAX_SPRITES)
+        {
+            FreeVignette();
+            return FALSE;
+        }
+
+        sprite = &gSprites[spriteId];
+        sprite->oam.paletteNum = slot;
+        sprite->coordOffsetEnabled = FALSE;
+        sprite->invisible = TRUE; // shown by UpdateVignette once the palette is written
+        sprite->hFlip = (spec->flip & VIGNETTE_FLIP_H) != 0;
+        sprite->vFlip = (spec->flip & VIGNETTE_FLIP_V) != 0;
+        SetSpriteOamFlipBits(sprite, 0, 0);
+
+        sVignette.spriteIds[i] = spriteId;
+        sVignette.spriteCount = i + 1;
+    }
+
+    sVignette.retryDelay = 0;
+    return TRUE;
+}
+
+// Entry n fades from neutral grey toward black as intensity rises, more so for darker entries.
+// Written to the unfaded buffer as well, so screen fades and weather rebuilds keep it.
+static void WriteVignettePalette(u32 intensity)
+{
+    u16 palette[16] = {0};
+    u32 offset = OBJ_PLTT_ID(sVignette.paletteSlot);
+    u32 level;
+
+    for (level = 1; level <= VIGNETTE_LEVELS; level++)
+    {
+        u32 grey = VIGNETTE_NEUTRAL * (VIGNETTE_LEVELS * SCREENFX_INTENSITY_MAX - level * intensity)
+                 / (VIGNETTE_LEVELS * SCREENFX_INTENSITY_MAX);
+
+        palette[level] = RGB(grey, grey, grey);
+    }
+
+    CpuCopy16(palette, &gPlttBufferUnfaded[offset], PLTT_SIZE_4BPP);
+    if (!gPaletteFade.active)
+        CpuCopy16(palette, &gPlttBufferFaded[offset], PLTT_SIZE_4BPP);
+
+    sVignette.appliedIntensity = intensity;
+}
+
+// Rebuilds a vignette whose sprites or palette were reset (battle, full-screen menu), then keeps the
+// palette and visibility current.
+static void UpdateVignette(const struct ScreenFx *effect)
+{
+    u32 i;
+
+    if (!IsVignetteIntact())
+    {
+        if (sVignette.retryDelay != 0)
+        {
+            sVignette.retryDelay--;
+            return;
+        }
+
+        FreeVignette();
+        if (!CreateVignette(effect->params.config.param1))
+        {
+            sVignette.retryDelay = VIGNETTE_RETRY_FRAMES;
+            return;
+        }
+    }
+
+    if (sVignette.appliedIntensity != effect->resolvedIntensity)
+        WriteVignettePalette(effect->resolvedIntensity);
+
+    for (i = 0; i < sVignette.spriteCount; i++)
+        gSprites[sVignette.spriteIds[i]].invisible = effect->resolvedIntensity == 0;
+}
+
+u32 ScreenFx_GetVignettePaletteMask(void)
+{
+    if (sVignette.spriteCount == 0 || !OwnsVignettePalette())
+        return 0;
+
+    return 1u << (16 + sVignette.paletteSlot);
+}
+
 static u8 NextGeneration(u8 generation)
 {
     // Generation 0 is never issued, so it is skipped on wrap.
@@ -90,6 +379,8 @@ static void ReleaseSlot(struct ScreenFx *effect)
         InstallCameraPanAheadCallback();
     else if (effect->kind == SCREENFX_RIPPLE)
         memset(sRipples, 0, sizeof(sRipples));
+    else if (effect->kind == SCREENFX_VIGNETTE)
+        FreeVignette();
 
     memset(effect, 0, sizeof(*effect));
     effect->generation = NextGeneration(generation);
@@ -582,6 +873,8 @@ void ScreenFx_Update(void)
             UpdateRipple(effect);
         else if (effect->kind == SCREENFX_TEAR)
             UpdateTear(effect);
+        else if (effect->kind == SCREENFX_VIGNETTE)
+            UpdateVignette(effect);
     }
 }
 
@@ -645,8 +938,9 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
     if (config->kind >= SCREENFX_KIND_COUNT)
         return SCREENFX_ID_INVALID;
 
-    // Shake and ripple each have one shared backing store.
-    if ((config->kind == SCREENFX_SHAKE || config->kind == SCREENFX_RIPPLE) && IsKindActive(config->kind))
+    // Shake, ripple and vignette each have one shared backing store.
+    if ((config->kind == SCREENFX_SHAKE || config->kind == SCREENFX_RIPPLE || config->kind == SCREENFX_VIGNETTE)
+     && IsKindActive(config->kind))
         return SCREENFX_ID_INVALID;
 
     for (i = 0; i < MAX_SCREEN_EFFECTS; i++)
@@ -657,6 +951,9 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
 
         if (effect->active)
             continue;
+
+        if (config->kind == SCREENFX_VIGNETTE && !CreateVignette(config->param1))
+            return SCREENFX_ID_INVALID;
 
         // A never-used slot still holds generation 0.
         memset(effect, 0, sizeof(*effect));

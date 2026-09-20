@@ -17,6 +17,11 @@
 
 #define SCREENFX_TEAR_CENTER_AUTO       0xFFFF  // tear param2: centre on the anchor
 
+// Vignette focus presets (param1). Wider focus leaves more of the screen clear.
+#define SCREENFX_VIGNETTE_WIDE          0
+#define SCREENFX_VIGNETTE_MEDIUM        1
+#define SCREENFX_VIGNETTE_TIGHT         2
+
 enum ScreenFxKind
 {
     SCREENFX_WAVE,

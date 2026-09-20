@@ -130,12 +130,24 @@ struct ScreenFx
 // frames, up to 8 px at SCREENFX_INTENSITY_MAX. Only the band is affected. ScreenFx_SetTearDrift moves a
 // fixed-centre band vertically, wrapping at the screen edges; it has no effect on an anchored band.
 
+// Vignette (SCREENFX_VIGNETTE): darkens the screen edges with 14 screen-fixed blend-mode sprites and one
+// OBJ palette slot (3 KB of OBJ VRAM). It relies on the field's fixed BLDALPHA, so the darkening is
+// approximate: it reads best over mid-tones and can slightly lift very dark scenes. Intensity scales the
+// palette from neutral toward black. param1 = SCREENFX_VIGNETTE_* focus preset (0 = wide), which moves
+// the sprites outward and so trims the darkest part of the gradient. The sprites use OBJ priority 1, so
+// text boxes and menus on BG0 stay undimmed. Only one vignette exists at a time. ScreenFx_Start returns
+// SCREENFX_ID_INVALID when no palette slot, tile space or sprites are free. A vignette whose sprites
+// were destroyed by a battle or a full-screen menu is rebuilt automatically. Palette overlays never
+// tint its palette.
+
 // Invalidates every outstanding handle and clears the pool. Stops the scanline DMA at once.
 void ScreenFx_ResetAll(void);
 // Per-frame update. Runs before UpdateCameraPanning so camera-pan effects apply the same frame.
 void ScreenFx_Update(void);
 // Builds the scanline buffer. Runs after UpdateCameraPanning.
 void ScreenFx_Render(void);
+// OBJ palette slot bit (1 << (16 + slot)) held by the vignette, 0 without one. Palette overlays exclude it.
+u32 ScreenFx_GetVignettePaletteMask(void);
 // Installs the scanline DMA. Runs in VBlankCB_Field after FieldUpdateBgTilemapScroll.
 void ScreenFx_VBlank(void);
 
