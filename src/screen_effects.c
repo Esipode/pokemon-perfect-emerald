@@ -37,12 +37,21 @@
 #define RIPPLE_DEFAULT_DURATION 60
 #define RIPPLE_SCALE            (256 * 256 * RIPPLE_HALF_WIDTH) // Q8.8 sine, Q8 amplitude, envelope in scanlines
 
+#define PRESET_MAX_EFFECTS      3
+#define PRESET_BURST_FLASH_HOLD 2   // frames the flash stays at full opacity
+#define PRESET_BURST_FLASH_FADE 20
+#define PRESET_BURST_SHAKE_FADE 40
+#define PRESET_BURST_SETTLE     60
+#define PRESET_BURST_RIPPLE_LIFETIME 64 // ripple lasts 60 frames from frame 2
+#define PRESET_TINT_MAX         OVERLAY_OPACITY_MAX
+
 #define SCANLINE_COUNT          DISPLAY_HEIGHT
 #define SCANLINE_REGS           6   // BG1HOFS, BG1VOFS, BG2HOFS, BG2VOFS, BG3HOFS, BG3VOFS
 #define SCANLINE_OFFSET_MAX     8   // pixels; larger offsets pull undrawn columns in at map edges
 #define SCANLINE_DMA_CONTROL    (((DMA_ENABLE | DMA_START_HBLANK | DMA_REPEAT | DMA_SRC_INC | DMA_DEST_INC | DMA_16BIT | DMA_DEST_RELOAD) << 16) | SCANLINE_REGS)
 
 STATIC_ASSERT(MAX_SCREEN_EFFECTS <= 8, ScreenFxIndexFitsHandle);
+STATIC_ASSERT(MAX_SCREENFX_PRESETS <= 8, ScreenFxPresetIndexFitsHandle);
 STATIC_ASSERT(sizeof(struct ScreenFx) <= 40, ScreenFxSizeBudget);
 STATIC_ASSERT(SCANLINE_COUNT * SCANLINE_REGS == ARRAY_COUNT(gScanlineEffectRegBuffers[0]), ScanlineBufferFit);
 
@@ -79,7 +88,21 @@ struct ScanlineChannel
     u8 readBuffer;
 };
 
+// One started preset. effects[] is indexed by member role; the overlay is the tint (the flash for a burst).
+struct PresetRecord
+{
+    ScreenFxId effects[PRESET_MAX_EFFECTS];
+    OverlayId overlay;
+    u16 frame;              // frames since start, stops counting once the burst timeline is done
+    u8 generation;          // bumped on release, invalidates stale handles
+    u8 active:1;
+    u8 preset;              // enum ScreenFxPreset
+    u8 stage;               // enum ScreenFxStage
+    u8 intensity;           // level at SCREENFX_STAGE_DRAMATIC
+};
+
 static EWRAM_DATA struct ScreenFx sScreenFx[MAX_SCREEN_EFFECTS] = {0};
+static EWRAM_DATA struct PresetRecord sPresets[MAX_SCREENFX_PRESETS] = {0};
 static EWRAM_DATA struct ScanlineChannel sChannel = {0};
 static EWRAM_DATA struct Ripple sRipples[MAX_RIPPLES] = {0}; // owned by the one SCREENFX_RIPPLE effect
 // Summed per-line offsets of every geometry effect; clamped when the buffer is built.
@@ -547,9 +570,13 @@ static void ScanlineChannel_Build(void)
     sChannel.ready = TRUE;
 }
 
+static void ReleaseAllPresets(void);
+
 static void ReleaseAllEffects(void)
 {
     u32 i;
+
+    ReleaseAllPresets();
 
     for (i = 0; i < MAX_SCREEN_EFFECTS; i++)
     {
@@ -828,12 +855,16 @@ static u32 CalcDistanceFactor(const struct ScreenFx *effect, const struct Coords
                                           effect->minIntensity, effect->maxIntensity);
 }
 
-// Order: fade, lifetime, anchor, falloff, final intensity, render.
+static void UpdatePresets(void);
+
+// Order: presets, then per effect: fade, lifetime, anchor, falloff, final intensity, render.
 void ScreenFx_Update(void)
 {
     struct Coords16 playerCoords = {0};
     bool32 playerRead = FALSE;
     u32 i;
+
+    UpdatePresets();
 
     if (sChannel.acquired)
         ScanlineChannel_ClearOffsets();
@@ -1174,4 +1205,286 @@ bool32 ScreenFx_TriggerRipple(ScreenFxId id, s16 screenCenterY, u8 amplitude, u1
     ripple->elapsed = 0;
     ripple->active = TRUE;
     return TRUE;
+}
+
+// Presets
+
+struct PresetSpec
+{
+    u16 tint;               // overlay colour
+    u8 effectCount;         // members in effects[]
+    u8 falloffInner;        // tiles; falloffOuter 0 = no proximity falloff
+    u8 falloffOuter;
+    u8 weights[PRESET_MAX_EFFECTS + 1]; // 0-16 share of the stage level per member; last is the tint. 0 = not stage driven
+};
+
+struct StageSpec
+{
+    u8 scale;               // 0-16 share of the preset intensity
+    u8 fadeFrames;
+};
+
+// Member roles by preset:
+//   PRESENCE: wave, shake       DIMENSIONAL: tear, wave
+//   DIVINE_FOCUS: vignette      BURST: wave, shake, ripple
+static const struct PresetSpec sPresetSpecs[SCREENFX_PRESET_COUNT] = {
+    [SCREENFX_PRESET_LEGENDARY_PRESENCE] = { RGB(22, 14, 31), 2, 2, 10, {16, 4, 0, 6} },
+    [SCREENFX_PRESET_DIMENSIONAL]        = { RGB(6, 0, 10),   2, 3, 12, {16, 8, 0, 8} },
+    [SCREENFX_PRESET_DIVINE_FOCUS]       = { RGB(31, 29, 20), 1, 3, 12, {16, 0, 0, 5} },
+    [SCREENFX_PRESET_LEGENDARY_BURST]    = { RGB(31, 31, 31), 3, 0, 0,  {16, 0, 0, 0} },
+};
+
+static const struct StageSpec sStageSpecs[SCREENFX_STAGE_COUNT] = {
+    [SCREENFX_STAGE_ORDINARY]    = {  6, 60 },
+    [SCREENFX_STAGE_PERCEPTIBLE] = { 10, 60 },
+    [SCREENFX_STAGE_DRAMATIC]    = { 16, 30 },
+    [SCREENFX_STAGE_SETTLE]      = {  4, 90 },
+};
+
+static struct PresetRecord *GetPreset(ScreenFxPresetId id)
+{
+    struct PresetRecord *record;
+
+    if (id == SCREENFX_PRESET_ID_INVALID || SCREENFX_INDEX(id) >= MAX_SCREENFX_PRESETS)
+        return NULL;
+
+    record = &sPresets[SCREENFX_INDEX(id)];
+    if (!record->active || record->generation != SCREENFX_GENERATION(id))
+        return NULL;
+
+    return record;
+}
+
+// Stops the members at once and clears the record.
+static void ReleasePreset(struct PresetRecord *record)
+{
+    u8 generation = record->generation;
+    u32 i;
+
+    for (i = 0; i < PRESET_MAX_EFFECTS; i++)
+        ScreenFx_Stop(record->effects[i]);
+    Overlay_Destroy(record->overlay);
+
+    memset(record, 0, sizeof(*record));
+    record->generation = NextGeneration(generation);
+}
+
+static void ReleaseAllPresets(void)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_SCREENFX_PRESETS; i++)
+    {
+        if (sPresets[i].active)
+            ReleasePreset(&sPresets[i]);
+    }
+}
+
+static u8 GetMemberLevel(const struct PresetRecord *record, u32 weight)
+{
+    return (record->intensity * sStageSpecs[record->stage].scale * weight + 128) / 256;
+}
+
+// Fades every stage-driven member to the current stage's level.
+static void ApplyStage(const struct PresetRecord *record)
+{
+    const struct PresetSpec *spec = &sPresetSpecs[record->preset];
+    u16 frames = sStageSpecs[record->stage].fadeFrames;
+    u32 i;
+
+    for (i = 0; i < spec->effectCount; i++)
+    {
+        if (spec->weights[i] != 0)
+            ScreenFx_FadeTo(record->effects[i], GetMemberLevel(record, spec->weights[i]), frames);
+    }
+
+    if (spec->weights[PRESET_MAX_EFFECTS] != 0)
+        Overlay_FadeTo(record->overlay, GetMemberLevel(record, spec->weights[PRESET_MAX_EFFECTS]), frames);
+}
+
+static ScreenFxId StartMember(u8 kind, u8 intensity, u16 param1, u16 param2, u16 durationFrames)
+{
+    struct ScreenFxConfig config = {0};
+
+    config.kind = kind;
+    config.intensity = intensity;
+    config.param1 = param1;
+    config.param2 = param2;
+    config.durationFrames = durationFrames;
+    return ScreenFx_Start(&config);
+}
+
+static bool32 CreatePresetMembers(struct PresetRecord *record)
+{
+    const struct PresetSpec *spec = &sPresetSpecs[record->preset];
+    struct OverlayConfig overlay = {0};
+    u32 i;
+
+    switch (record->preset)
+    {
+    case SCREENFX_PRESET_LEGENDARY_PRESENCE:
+        record->effects[0] = StartMember(SCREENFX_WAVE, 0, 75, 64, 0);
+        record->effects[1] = StartMember(SCREENFX_SHAKE, 0, 36, 0, 0);
+        break;
+    case SCREENFX_PRESET_DIMENSIONAL:
+        record->effects[0] = StartMember(SCREENFX_TEAR, 0, 0, SCREENFX_TEAR_CENTER_AUTO, 0);
+        record->effects[1] = StartMember(SCREENFX_WAVE, 0, 50, 40 | SCREENFX_WAVE_VERTICAL, 0);
+        break;
+    case SCREENFX_PRESET_DIVINE_FOCUS:
+        record->effects[0] = StartMember(SCREENFX_VIGNETTE, 0, SCREENFX_VIGNETTE_MEDIUM, 0, 0);
+        break;
+    case SCREENFX_PRESET_LEGENDARY_BURST:
+        // The shake stays silent and the ripple idle until the sequence reaches them.
+        record->effects[0] = StartMember(SCREENFX_WAVE, record->intensity, 75, 64, 0);
+        record->effects[1] = StartMember(SCREENFX_SHAKE, 0, 36, 0, 0);
+        record->effects[2] = StartMember(SCREENFX_RIPPLE, SCREENFX_INTENSITY_MAX, 0, 0, PRESET_BURST_RIPPLE_LIFETIME);
+        break;
+    }
+
+    for (i = 0; i < spec->effectCount; i++)
+    {
+        if (record->effects[i] == SCREENFX_ID_INVALID)
+            return FALSE;
+    }
+
+    overlay.color = spec->tint;
+    overlay.opacity = record->preset == SCREENFX_PRESET_LEGENDARY_BURST ? PRESET_TINT_MAX : 0;
+    overlay.layer = OVERLAY_LAYER_ALL;
+    overlay.scope = OVERLAY_SCOPE_GLOBAL;
+    record->overlay = Overlay_Create(&overlay);
+    if (record->overlay == OVERLAY_ID_INVALID)
+        return FALSE;
+
+    Overlay_SetTransient(record->overlay);
+    if (record->preset == SCREENFX_PRESET_DIVINE_FOCUS)
+        Overlay_Pulse(record->overlay, 6, PRESET_TINT_MAX, 120);
+
+    return TRUE;
+}
+
+static void AnchorPreset(const struct PresetRecord *record, u8 localId)
+{
+    const struct PresetSpec *spec = &sPresetSpecs[record->preset];
+    u8 mapNum = gSaveBlock1Ptr->location.mapNum;
+    u8 mapGroup = gSaveBlock1Ptr->location.mapGroup;
+    u32 i;
+
+    for (i = 0; i < spec->effectCount; i++)
+    {
+        ScreenFx_SetAnchorToObject(record->effects[i], localId, mapNum, mapGroup);
+        if (spec->falloffOuter != 0)
+            ScreenFx_SetFalloff(record->effects[i], spec->falloffInner, spec->falloffOuter, 0, SCREENFX_INTENSITY_MAX);
+    }
+
+    if (spec->falloffOuter != 0)
+    {
+        Overlay_SetAnchorToObject(record->overlay, localId, mapNum, mapGroup);
+        Overlay_SetFalloff(record->overlay, spec->falloffInner, spec->falloffOuter, 0, OVERLAY_OPACITY_MAX);
+    }
+}
+
+ScreenFxPresetId ScreenFx_StartPreset(u8 preset, u8 intensity, u8 anchorLocalId)
+{
+    u32 i;
+
+    if (preset >= SCREENFX_PRESET_COUNT)
+        return SCREENFX_PRESET_ID_INVALID;
+
+    for (i = 0; i < MAX_SCREENFX_PRESETS; i++)
+    {
+        struct PresetRecord *record = &sPresets[i];
+        u8 generation = record->generation;
+
+        if (record->active)
+            continue;
+
+        // A never-used slot still holds generation 0.
+        memset(record, 0, sizeof(*record));
+        record->generation = generation != 0 ? generation : 1;
+        record->active = TRUE;
+        record->preset = preset;
+        record->intensity = min(intensity, SCREENFX_INTENSITY_MAX);
+
+        if (!CreatePresetMembers(record))
+        {
+            ReleasePreset(record);
+            return SCREENFX_PRESET_ID_INVALID;
+        }
+
+        if (anchorLocalId != 0)
+            AnchorPreset(record, anchorLocalId);
+
+        // The burst wave already runs at full intensity and settles from frame 2.
+        record->stage = preset == SCREENFX_PRESET_LEGENDARY_BURST ? SCREENFX_STAGE_SETTLE : SCREENFX_STAGE_PERCEPTIBLE;
+        if (preset != SCREENFX_PRESET_LEGENDARY_BURST)
+            ApplyStage(record);
+
+        return (record->generation << 3) | i;
+    }
+
+    return SCREENFX_PRESET_ID_INVALID;
+}
+
+void ScreenFx_StopPreset(ScreenFxPresetId id, u16 fadeFrames)
+{
+    struct PresetRecord *record = GetPreset(id);
+    u8 generation;
+    u32 i;
+
+    if (record == NULL)
+        return;
+
+    for (i = 0; i < PRESET_MAX_EFFECTS; i++)
+        ScreenFx_FadeOutAndStop(record->effects[i], fadeFrames);
+    Overlay_FadeOutAndDisable(record->overlay, fadeFrames);
+
+    // The members finish their fade-outs on their own.
+    generation = record->generation;
+    memset(record, 0, sizeof(*record));
+    record->generation = NextGeneration(generation);
+}
+
+bool32 ScreenFx_IsPresetValid(ScreenFxPresetId id)
+{
+    return GetPreset(id) != NULL;
+}
+
+void ScreenFx_SetProgression(ScreenFxPresetId id, u8 stage)
+{
+    struct PresetRecord *record = GetPreset(id);
+
+    if (record == NULL || stage >= SCREENFX_STAGE_COUNT)
+        return;
+
+    record->stage = stage;
+    ApplyStage(record);
+}
+
+// Burst timeline: flash at frame 0, the rest from frame PRESET_BURST_FLASH_HOLD.
+static void UpdateBurst(struct PresetRecord *record)
+{
+    if (record->frame > PRESET_BURST_FLASH_HOLD)
+        return;
+
+    if (record->frame == PRESET_BURST_FLASH_HOLD)
+    {
+        Overlay_FadeOutAndDisable(record->overlay, PRESET_BURST_FLASH_FADE);
+        ScreenFx_TriggerRipple(record->effects[2], SCREENFX_RIPPLE_CENTER_AUTO, record->intensity, 0, 0);
+        ScreenFx_SetIntensity(record->effects[1], record->intensity);
+        ScreenFx_FadeOutAndStop(record->effects[1], PRESET_BURST_SHAKE_FADE);
+        ScreenFx_FadeTo(record->effects[0], GetMemberLevel(record, sPresetSpecs[record->preset].weights[0]), PRESET_BURST_SETTLE);
+    }
+
+    record->frame++;
+}
+
+static void UpdatePresets(void)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_SCREENFX_PRESETS; i++)
+    {
+        if (sPresets[i].active && sPresets[i].preset == SCREENFX_PRESET_LEGENDARY_BURST)
+            UpdateBurst(&sPresets[i]);
+    }
 }

@@ -10,7 +10,11 @@
 #define SCREENFX_INDEX(id)      ((id) & 7)
 #define SCREENFX_GENERATION(id) ((id) >> 3)
 
+#define MAX_SCREENFX_PRESETS        2
+#define SCREENFX_PRESET_ID_INVALID  0
+
 typedef u16 ScreenFxId;
+typedef u16 ScreenFxPresetId;   // same handle scheme as ScreenFxId
 
 struct ScreenFxConfig
 {
@@ -140,7 +144,32 @@ struct ScreenFx
 // were destroyed by a battle or a full-screen menu is rebuilt automatically. Palette overlays never
 // tint its palette.
 
-// Invalidates every outstanding handle and clears the pool. Stops the scanline DMA at once.
+// Presets (ScreenFx_StartPreset). A preset starts a fixed set of effects and overlays and owns their
+// handles, so one call starts the look and one call ends it.
+//   LEGENDARY_PRESENCE: wave, slow shake and a palette tint. Anchored, the members scale with the
+//                       player's distance to the object (full within 2 tiles, gone at 10).
+//   DIMENSIONAL:        tear, vertical wave and a dark tint. Anchored, the tear sits on the object and
+//                       the members scale with distance (full within 3 tiles, gone at 12).
+//   DIVINE_FOCUS:       medium vignette and a slowly pulsing warm tint. Anchored, scales with
+//                       distance (full within 3 tiles, gone at 12).
+//   LEGENDARY_BURST:    a one-shot sequence on the preset's own frame counter: white flash (2 frames
+//                       held, 20 fading), ripple and shake from frame 2 (shake decays over 40 frames),
+//                       and a wave that starts at the burst intensity and settles to the SETTLE level
+//                       over 60 frames. The ripple centres on the object; the burst is not
+//                       distance-scaled. Progression stages apply to the wave only.
+// Every member is created by ScreenFx_StartPreset, so a start that cannot get all of them (a full
+// pool, a shake or vignette already running, no palette slot, no overlay slot) creates nothing and
+// returns SCREENFX_PRESET_ID_INVALID. The pool holds MAX_SCREEN_EFFECTS effects; a preset takes 2
+// (3 for LEGENDARY_BURST) and 1 overlay, and at most MAX_SCREENFX_PRESETS exist.
+// Preset overlays are global and never saved, so they survive stepping between connected maps and
+// are dropped by a save/load, a warp or a whiteout along with the effects.
+//
+// Progression. intensity is the level at SCREENFX_STAGE_DRAMATIC; the other stages scale it:
+//   ORDINARY 6/16 over 60 frames, PERCEPTIBLE 10/16 over 60, DRAMATIC 16/16 over 30, SETTLE 4/16 over 90.
+// A preset starts at PERCEPTIBLE, fading in over 60 frames. Members are weighted individually
+// (the tint is kept lighter than the geometry), and falloff applies on top of the stage level.
+
+// Invalidates every outstanding handle and clears the pool and the presets. Stops the scanline DMA at once.
 void ScreenFx_ResetAll(void);
 // Per-frame update. Runs before UpdateCameraPanning so camera-pan effects apply the same frame.
 void ScreenFx_Update(void);
@@ -154,6 +183,7 @@ void ScreenFx_VBlank(void);
 // New effects start enabled. Returns SCREENFX_ID_INVALID when the pool is full or the kind is unknown.
 ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config);
 void ScreenFx_Stop(ScreenFxId id);
+// Also ends every preset, destroying its overlay at once.
 void ScreenFx_StopAll(void);
 bool32 ScreenFx_IsValid(ScreenFxId id);
 // Direct request, 0-SCREENFX_INTENSITY_MAX. Cancels any running fade.
@@ -177,6 +207,14 @@ void ScreenFx_ClearFalloff(ScreenFxId id);
 
 // Vertical drift of a SCREENFX_TEAR band in sixteenths of a scanline per frame (negative = up).
 void ScreenFx_SetTearDrift(ScreenFxId id, s16 drift);
+
+// intensity is 0-SCREENFX_INTENSITY_MAX. anchorLocalId is an object on the current map, 0 for none.
+ScreenFxPresetId ScreenFx_StartPreset(u8 preset, u8 intensity, u8 anchorLocalId);
+// Fades every member out over fadeFrames and releases the preset at once. 0 ends everything now.
+void ScreenFx_StopPreset(ScreenFxPresetId id, u16 fadeFrames);
+bool32 ScreenFx_IsPresetValid(ScreenFxPresetId id);
+// Fades the members to the stage's level over the stage's duration. Ignored for an invalid preset id.
+void ScreenFx_SetProgression(ScreenFxPresetId id, u8 stage);
 
 // Fires a ripple on a SCREENFX_RIPPLE effect. screenCenterY is a screen line, or
 // SCREENFX_RIPPLE_CENTER_AUTO for the anchor's screen position (the screen centre without an anchor);

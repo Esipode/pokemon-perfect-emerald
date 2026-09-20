@@ -32,6 +32,26 @@ enum ScreenFxKind
     SCREENFX_KIND_COUNT,
 };
 
+// ScreenFx_StartPreset presets.
+enum ScreenFxPreset
+{
+    SCREENFX_PRESET_LEGENDARY_PRESENCE, // wave + slow shake + anchored tint, proximity driven
+    SCREENFX_PRESET_DIMENSIONAL,        // tear + wave + dark tint
+    SCREENFX_PRESET_DIVINE_FOCUS,       // vignette + pulsing tint
+    SCREENFX_PRESET_LEGENDARY_BURST,    // white flash, ripple, shake, then a settling wave
+    SCREENFX_PRESET_COUNT,
+};
+
+// ScreenFx_SetProgression stages.
+enum ScreenFxStage
+{
+    SCREENFX_STAGE_ORDINARY,
+    SCREENFX_STAGE_PERCEPTIBLE,
+    SCREENFX_STAGE_DRAMATIC,
+    SCREENFX_STAGE_SETTLE,
+    SCREENFX_STAGE_COUNT,
+};
+
 enum ScreenFxAnchor
 {
     SCREENFX_ANCHOR_NONE,

@@ -316,11 +316,22 @@ void Overlay_ResetAll(void)
 }
 
 // Written to SaveBlock3 so overlays resume with the map they were saved on. Generations are kept,
-// so script variables holding a handle stay valid.
+// so script variables holding a handle stay valid. Transient overlays are saved as empty slots.
 void Overlay_SaveToBlock(void)
 {
+    u32 i;
+
     gSaveBlock3Ptr->overlaySave.magic = OVERLAY_SAVE_MAGIC;
     memcpy(gSaveBlock3Ptr->overlaySave.overlays, sOverlays, sizeof(sOverlays));
+
+    for (i = 0; i < MAX_OVERLAYS; i++)
+    {
+        if (sOverlays[i].active && sOverlays[i].transient)
+        {
+            memset(&gSaveBlock3Ptr->overlaySave.overlays[i], 0, sizeof(struct Overlay));
+            gSaveBlock3Ptr->overlaySave.overlays[i].generation = sOverlays[i].generation;
+        }
+    }
 }
 
 static bool32 IsSavedOverlayValid(const struct Overlay *saved)
@@ -1061,4 +1072,14 @@ void Overlay_SetSpritePosition(OverlayId id, u8 position)
         return;
 
     overlay->spritePosition = min(position, OVERLAY_SPRITE_ABOVE_ALL);
+}
+
+void Overlay_SetTransient(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->transient = TRUE;
 }

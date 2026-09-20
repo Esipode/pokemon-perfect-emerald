@@ -67,7 +67,8 @@ struct Overlay
     u8 exemptPlayer:1;
     u8 falloffEnabled:1;
     u8 spritePosition:2;    // enum OverlaySpritePosition
-    u8 exemptLocalId;       // 0 = none; resolved against exemptMapNum/exemptMapGroup
+    u8 transient:1;         // not written to the save
+    u8 exemptLocalId;      // 0 = none; resolved against exemptMapNum/exemptMapGroup
     u8 exemptMapNum;
     u8 exemptMapGroup;
 };
@@ -205,6 +206,9 @@ void Overlay_SetRenderLayer(OverlayId id, u8 layer);
 // - Palette-backend filtering (exemptions, layer masks) does not apply, and palette overlays
 //   never tint the glow's palette.
 void Overlay_SetSpritePosition(OverlayId id, u8 position);
+// A transient overlay is left out of the save: its owner is not saved either, so a restored copy
+// would have nothing to stop it. The slot's generation is still saved.
+void Overlay_SetTransient(OverlayId id);
 // New overlays start enabled. Returns OVERLAY_ID_INVALID when the pool is full.
 OverlayId Overlay_Create(const struct OverlayConfig *config);
 void Overlay_Destroy(OverlayId id);
