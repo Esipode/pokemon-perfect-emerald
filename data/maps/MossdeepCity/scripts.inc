@@ -16,7 +16,7 @@ MossdeepCity_OnLoad:
 	@ The rock stays gone once Jirachi has been caught
 	getcaughtmon SPECIES_JIRACHI
 	call_if_eq VAR_RESULT, TRUE, MossdeepCity_EventScript_RemoveWhiteRock
-	@ Jirachi spawn gate: post-game, not already owned, night only, 5% daily-seed roll
+	@ Jirachi spawn gate: post-game, not already owned, night only, 10% chance to spawn
 	setvar VAR_0x8004, SPECIES_JIRACHI
 	setvar VAR_0x8005, LAYOUT_MOSSDEEP_CITY
 	setvar VAR_0x8006, WEEKDAY_ANY
