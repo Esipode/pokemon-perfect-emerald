@@ -5,6 +5,7 @@
 #include "fieldmap.h"
 #include "overworld_overlay.h"
 #include "scanline_effect.h"
+#include "sprite.h"
 #include "trig.h"
 
 #define LIFETIME_FADE_MAX       30 // frames
@@ -14,6 +15,13 @@
 #define WAVE_DEFAULT_WAVELENGTH 64
 #define WAVE_MIN_WAVELENGTH     8
 
+#define MAX_RIPPLES             3
+#define RIPPLE_HALF_WIDTH       32  // scanlines each side of the front; power of two keeps the scaling a shift
+#define RIPPLE_STEP             (0x10000 / RIPPLE_HALF_WIDTH) // phase per scanline: two cycles across the band
+#define RIPPLE_DEFAULT_SPEED    32
+#define RIPPLE_DEFAULT_DURATION 60
+#define RIPPLE_SCALE            (256 * 256 * RIPPLE_HALF_WIDTH) // Q8.8 sine, Q8 amplitude, envelope in scanlines
+
 #define SCANLINE_COUNT          DISPLAY_HEIGHT
 #define SCANLINE_REGS           6   // BG1HOFS, BG1VOFS, BG2HOFS, BG2VOFS, BG3HOFS, BG3VOFS
 #define SCANLINE_OFFSET_MAX     8   // pixels; larger offsets pull undrawn columns in at map edges
@@ -22,6 +30,16 @@
 STATIC_ASSERT(MAX_SCREEN_EFFECTS <= 8, ScreenFxIndexFitsHandle);
 STATIC_ASSERT(sizeof(struct ScreenFx) <= 40, ScreenFxSizeBudget);
 STATIC_ASSERT(SCANLINE_COUNT * SCANLINE_REGS == ARRAY_COUNT(gScanlineEffectRegBuffers[0]), ScanlineBufferFit);
+
+struct Ripple
+{
+    s16 centerLine;         // screen line
+    u16 speed;              // sixteenths of a scanline per frame
+    u16 duration;           // frames
+    u16 elapsed;
+    u8 amplitude;           // 0-SCREENFX_INTENSITY_MAX
+    u8 active;
+};
 
 // What one gScanlineEffectRegBuffers half currently holds, so unchanged data is not rewritten.
 struct ScanlineBufferState
@@ -48,6 +66,7 @@ struct ScanlineChannel
 
 static EWRAM_DATA struct ScreenFx sScreenFx[MAX_SCREEN_EFFECTS] = {0};
 static EWRAM_DATA struct ScanlineChannel sChannel = {0};
+static EWRAM_DATA struct Ripple sRipples[MAX_RIPPLES] = {0}; // owned by the one SCREENFX_RIPPLE effect
 // Summed per-line offsets of every geometry effect; clamped when the buffer is built.
 static EWRAM_DATA s16 sLineDx[SCANLINE_COUNT] = {0};
 static EWRAM_DATA s16 sLineDy[SCANLINE_COUNT] = {0};
@@ -66,6 +85,8 @@ static void ReleaseSlot(struct ScreenFx *effect)
     // Also zeroes the pan.
     if (effect->kind == SCREENFX_SHAKE)
         InstallCameraPanAheadCallback();
+    else if (effect->kind == SCREENFX_RIPPLE)
+        memset(sRipples, 0, sizeof(sRipples));
 
     memset(effect, 0, sizeof(*effect));
     effect->generation = NextGeneration(generation);
@@ -85,13 +106,13 @@ static struct ScreenFx *GetScreenFx(ScreenFxId id)
     return effect;
 }
 
-static bool32 IsShakeActive(void)
+static bool32 IsKindActive(u32 kind)
 {
     u32 i;
 
     for (i = 0; i < MAX_SCREEN_EFFECTS; i++)
     {
-        if (sScreenFx[i].active && sScreenFx[i].kind == SCREENFX_SHAKE)
+        if (sScreenFx[i].active && sScreenFx[i].kind == kind)
             return TRUE;
     }
 
@@ -300,6 +321,67 @@ static void UpdateWave(struct ScreenFx *effect)
     }
 }
 
+// Rounds to the nearest pixel, symmetric around zero.
+static s32 ScaleRipple(s32 sine, s32 amplitude, s32 envelope)
+{
+    s32 scaled = sine * amplitude * envelope;
+
+    return (scaled + (scaled < 0 ? -RIPPLE_SCALE / 2 : RIPPLE_SCALE / 2)) / RIPPLE_SCALE;
+}
+
+// Adds the band of every live ripple to the scanline accumulator. For each distance d from the centre
+// line the offset applies to both line centre - d and centre + d.
+static void UpdateRipple(const struct ScreenFx *effect)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_RIPPLES; i++)
+    {
+        struct Ripple *ripple = &sRipples[i];
+        s32 radius, amplitude, d, last;
+        s32 farthest;
+
+        if (!ripple->active)
+            continue;
+
+        radius = (s32)ripple->speed * ripple->elapsed / 16;
+        farthest = max(abs(ripple->centerLine), abs(DISPLAY_HEIGHT - 1 - ripple->centerLine));
+        if (ripple->elapsed >= ripple->duration || radius - RIPPLE_HALF_WIDTH >= farthest)
+        {
+            ripple->active = FALSE;
+            continue;
+        }
+
+        amplitude = ripple->amplitude * effect->resolvedIntensity * SCREENFX_RIPPLE_MAX_AMPLITUDE
+                  * (ripple->duration - ripple->elapsed) / ripple->duration;
+        ripple->elapsed++;
+        if (amplitude == 0 || !sChannel.acquired)
+            continue;
+
+        d = radius - RIPPLE_HALF_WIDTH + 1;
+        if (d < 0)
+            d = 0;
+        last = radius + RIPPLE_HALF_WIDTH - 1;
+
+        for (; d <= last; d++)
+        {
+            s32 offset = d - radius;
+            s16 dx = ScaleRipple(gSineTable[((offset * RIPPLE_STEP) & 0xFFFF) >> 8],
+                                 amplitude, RIPPLE_HALF_WIDTH - abs(offset));
+            s32 above = ripple->centerLine - d;
+            s32 below = ripple->centerLine + d;
+
+            if (dx == 0)
+                continue;
+
+            if (above >= 0 && above < SCANLINE_COUNT)
+                ScanlineChannel_Line(above, dx, 0);
+            if (d != 0 && below >= 0 && below < SCANLINE_COUNT)
+                ScanlineChannel_Line(below, dx, 0);
+        }
+    }
+}
+
 static void ClearFade(struct ScreenFx *effect)
 {
     effect->fadeDuration = 0;
@@ -433,6 +515,8 @@ void ScreenFx_Update(void)
             UpdateShake(effect);
         else if (effect->kind == SCREENFX_WAVE)
             UpdateWave(effect);
+        else if (effect->kind == SCREENFX_RIPPLE)
+            UpdateRipple(effect);
     }
 }
 
@@ -496,7 +580,8 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
     if (config->kind >= SCREENFX_KIND_COUNT)
         return SCREENFX_ID_INVALID;
 
-    if (config->kind == SCREENFX_SHAKE && IsShakeActive())
+    // Shake and ripple each have one shared backing store.
+    if ((config->kind == SCREENFX_SHAKE || config->kind == SCREENFX_RIPPLE) && IsKindActive(config->kind))
         return SCREENFX_ID_INVALID;
 
     for (i = 0; i < MAX_SCREEN_EFFECTS; i++)
@@ -677,4 +762,46 @@ void ScreenFx_ClearFalloff(ScreenFxId id)
     effect->minIntensity = 0;
     effect->maxIntensity = 0;
     effect->falloffEnabled = FALSE;
+}
+
+// Screen line of the anchor tile's centre, or the middle of the screen without an anchor.
+static s16 GetAnchorScreenLine(const struct ScreenFx *effect)
+{
+    s16 x, y;
+
+    if (effect->anchorKind == SCREENFX_ANCHOR_NONE)
+        return DISPLAY_HEIGHT / 2;
+
+    SetSpritePosToMapCoords(effect->anchorX, effect->anchorY, &x, &y);
+    return y + 8 + gSpriteCoordOffsetY;
+}
+
+bool32 ScreenFx_TriggerRipple(ScreenFxId id, s16 screenCenterY, u8 amplitude, u16 speed, u16 durationFrames)
+{
+    struct ScreenFx *effect = GetScreenFx(id);
+    struct Ripple *ripple = &sRipples[0];
+    u32 i;
+
+    if (effect == NULL || effect->kind != SCREENFX_RIPPLE)
+        return FALSE;
+
+    // A free entry, else the one furthest along.
+    for (i = 0; i < MAX_RIPPLES; i++)
+    {
+        if (!sRipples[i].active)
+        {
+            ripple = &sRipples[i];
+            break;
+        }
+        if (sRipples[i].elapsed > ripple->elapsed)
+            ripple = &sRipples[i];
+    }
+
+    ripple->centerLine = screenCenterY == SCREENFX_RIPPLE_CENTER_AUTO ? GetAnchorScreenLine(effect) : screenCenterY;
+    ripple->amplitude = min(amplitude, SCREENFX_INTENSITY_MAX);
+    ripple->speed = speed != 0 ? speed : RIPPLE_DEFAULT_SPEED;
+    ripple->duration = durationFrames != 0 ? durationFrames : RIPPLE_DEFAULT_DURATION;
+    ripple->elapsed = 0;
+    ripple->active = TRUE;
+    return TRUE;
 }

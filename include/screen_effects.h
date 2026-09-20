@@ -106,6 +106,14 @@ struct ScreenFx
 // geometry effects; only the +/-8 px clamp limits the total. Effects started while the channel is
 // unavailable (flash, Battle Pyramid) have no visible result until it is free.
 
+// Ripple (SCREENFX_RIPPLE): an effect that holds up to 3 concurrent ripples fired with
+// ScreenFx_TriggerRipple; it does nothing until one is triggered and stays in the pool until stopped.
+// Only one ripple effect exists at a time: ScreenFx_Start fails while another is active. Its intensity
+// is a master gain applied on top of each ripple's amplitude. The hardware displaces whole scanlines,
+// so a ripple is a horizontally displaced band travelling vertically away from the centre line, not a
+// circular wave; it reads as radial when paired with a vignette or glow overlay at the same centre.
+// A ripple ends when its duration runs out or its front has left the screen.
+
 // Invalidates every outstanding handle and clears the pool. Stops the scanline DMA at once.
 void ScreenFx_ResetAll(void);
 // Per-frame update. Runs before UpdateCameraPanning so camera-pan effects apply the same frame.
@@ -138,5 +146,13 @@ void ScreenFx_SetAnchorToObject(ScreenFxId id, u8 localId, u8 mapNum, u8 mapGrou
 void ScreenFx_ClearAnchor(ScreenFxId id);
 void ScreenFx_SetFalloff(ScreenFxId id, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity);
 void ScreenFx_ClearFalloff(ScreenFxId id);
+
+// Fires a ripple on a SCREENFX_RIPPLE effect. screenCenterY is a screen line, or
+// SCREENFX_RIPPLE_CENTER_AUTO for the anchor's screen position (the screen centre without an anchor);
+// the centre is fixed when triggered. amplitude is 0-SCREENFX_INTENSITY_MAX. speed is the front's
+// travel in sixteenths of a scanline per frame (0 = 32). durationFrames is the ripple's lifetime; the
+// amplitude decays linearly over it (0 = 60). With all 3 ripples busy the oldest is replaced.
+// Returns FALSE when id is not a valid ripple effect.
+bool32 ScreenFx_TriggerRipple(ScreenFxId id, s16 screenCenterY, u8 amplitude, u16 speed, u16 durationFrames);
 
 #endif // GUARD_SCREEN_EFFECTS_H

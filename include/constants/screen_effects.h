@@ -12,6 +12,9 @@
 #define SCREENFX_WAVE_VERTICAL          (1 << 15)
 #define SCREENFX_WAVE_MAX_AMPLITUDE     4   // pixels at SCREENFX_INTENSITY_MAX
 
+#define SCREENFX_RIPPLE_MAX_AMPLITUDE   4   // pixels at amplitude and intensity SCREENFX_INTENSITY_MAX
+#define SCREENFX_RIPPLE_CENTER_AUTO     0x7FFF  // ScreenFx_TriggerRipple: centre on the anchor
+
 enum ScreenFxKind
 {
     SCREENFX_WAVE,
