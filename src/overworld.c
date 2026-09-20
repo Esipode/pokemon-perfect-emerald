@@ -60,6 +60,7 @@
 #include "save.h"
 #include "save_location.h"
 #include "script.h"
+#include "screen_effects.h"
 #include "script_pokemon_util.h"
 #include "sound.h"
 #include "sprite.h"
@@ -1007,6 +1008,7 @@ static void LoadMapFromWarp(bool32 a1)
     bool8 isIndoors;
 
     Overlay_ResetAll();
+    ScreenFx_ResetAll();
     LoadCurrentMapData();
     if (!(sObjectEventLoadFlag & SKIP_OBJECT_EVENT_LOAD))
     {
@@ -1933,6 +1935,7 @@ static void OverworldBasic(void)
     RunTasks();
     AnimateSprites();
     CameraUpdate();
+    ScreenFx_Update();
     UpdateCameraPanning();
     BuildOamBuffer();
     UpdatePaletteFade();
