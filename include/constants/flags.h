@@ -391,7 +391,7 @@
 #define FLAG_HIDE_TERAPAGOS                  0x161
 #define FLAG_HIDE_ROUTE_126_NPCS             0x162
 #define FLAG_HIDE_MT_PYRE_6F_NPCS            0x163
-#define FLAG_UNUSED_0x164                    0x164 // Unused Flag
+#define FLAG_HIDE_ROUTE_106_NPCS             0x164
 #define FLAG_UNUSED_0x165                    0x165 // Unused Flag
 #define FLAG_UNUSED_0x166                    0x166 // Unused Flag
 #define FLAG_UNUSED_0x167                    0x167 // Unused Flag
