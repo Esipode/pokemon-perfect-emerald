@@ -150,8 +150,13 @@ SootopolisCity_EventScript_CheckDialgaActive::
 	special CheckValidLegendaryEncounter
 	return
 
-@ Steps the expert aside so the cave entrance is clear while Dialga is active
+@ Steps the expert aside so the cave entrance is clear while Dialga is active, and for a player
+@ leaving the cave, so a day change while inside cannot trap them
 SootopolisCity_EventScript_CheckSetDialgaQuakeGuardPos::
+	setvar VAR_0x8004, MAP_GROUP(MAP_CAVE_OF_ORIGIN_ENTRANCE)
+	setvar VAR_0x8005, MAP_NUM(MAP_CAVE_OF_ORIGIN_ENTRANCE)
+	special IsLastUsedWarpMap
+	call_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_SetDialgaQuakeGuardPos
 	call SootopolisCity_EventScript_CheckDialgaActive
 	call_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_SetDialgaQuakeGuardPos
 	return

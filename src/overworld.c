@@ -1687,6 +1687,15 @@ void IsLastUsedWarp(void)
     gSpecialVar_Result = (gLastUsedWarp.mapGroup == mapGroup && gLastUsedWarp.mapNum == mapNum && gLastUsedWarp.warpId == warpId);
 }
 
+// Checks only the map the player warped in from, not which warp it was.
+void IsLastUsedWarpMap(void)
+{
+    u8 mapGroup = gSpecialVar_0x8004;
+    u8 mapNum = gSpecialVar_0x8005;
+
+    gSpecialVar_Result = (gLastUsedWarp.mapGroup == mapGroup && gLastUsedWarp.mapNum == mapNum);
+}
+
 bool8 IsMapTypeOutdoors(enum MapType mapType)
 {
     if (mapType == MAP_TYPE_ROUTE
