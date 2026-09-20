@@ -367,7 +367,7 @@ EncScript_Diancie_Mega::
 EncScript_Diancie_Mega_NoEncase:
 	printstring STRINGID_ENCDIANCIEMEGA
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_DIANCIE_MEGA, EncScript_Diancie_Mega_FormFail, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_DIANCIE_MEGA, EncScript_Diancie_Mega_FormFail, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Diancie_Mega_FormFail:
 	encsetvar 1, 6     @ Facets
 	call EncScript_Diancie_Guard

@@ -194,7 +194,7 @@ EncScript_Necrozma_FusionTransition::
 	encsetvar 6, 3     @ Armor - only meaningful if Dusk Mane is rolled
 	encjumpifchance 50, EncScript_Necrozma_FusionTransition_DawnWings
 EncScript_Necrozma_FusionTransition_DuskMane:
-	encformchange ENC_TARGET_BOSS, SPECIES_NECROZMA_DUSK_MANE, EncScript_Necrozma_FusionTransition_DuskManeDone, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_NECROZMA_DUSK_MANE, EncScript_Necrozma_FusionTransition_DuskManeDone, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Necrozma_FusionTransition_DuskManeDone:
 	encsetvar 5, 1     @ FormRoll
 	encsetmove ENC_TARGET_BOSS, 2, MOVE_SUNSTEEL_STRIKE
@@ -202,7 +202,7 @@ EncScript_Necrozma_FusionTransition_DuskManeDone:
 	waitmessage B_WAIT_TIME_LONG
 	return
 EncScript_Necrozma_FusionTransition_DawnWings:
-	encformchange ENC_TARGET_BOSS, SPECIES_NECROZMA_DAWN_WINGS, EncScript_Necrozma_FusionTransition_DawnWingsDone, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_NECROZMA_DAWN_WINGS, EncScript_Necrozma_FusionTransition_DawnWingsDone, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Necrozma_FusionTransition_DawnWingsDone:
 	encsetvar 5, 2     @ FormRoll
 	encsetvar 7, 0     @ EclipseDepth

@@ -87,7 +87,7 @@ EncScript_Terapagos_EnterTerastal::
 	encsetvar 0, 1
 	printstring STRINGID_ENCTERAPAGOSENTERSTERASTAL
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_TERAPAGOS_TERASTAL, EncScript_Terapagos_EnterTerastal_Done, B_ANIM_TERA_ACTIVATE
+	encformchange ENC_TARGET_BOSS, SPECIES_TERAPAGOS_TERASTAL, EncScript_Terapagos_EnterTerastal_Done, B_ANIM_TERA_ACTIVATE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Terapagos_EnterTerastal_Done:
 	return
 

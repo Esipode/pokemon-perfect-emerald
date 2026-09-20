@@ -433,7 +433,7 @@ EncScript_Giratina_DistortionWorld::
 	encsetvar 0, 1       @ Phase
 	printstring STRINGID_ENCGIRATINAPHASE1
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_GIRATINA_ORIGIN, EncScript_Giratina_DistortionWorld_Body, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_GIRATINA_ORIGIN, EncScript_Giratina_DistortionWorld_Body, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Giratina_DistortionWorld_Body:
 	encsetmove ENC_TARGET_BOSS, 0, MOVE_POLTERGEIST
 	encsetmove ENC_TARGET_BOSS, 1, MOVE_DRACO_METEOR

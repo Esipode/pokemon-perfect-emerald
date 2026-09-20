@@ -21,7 +21,7 @@ Route126_EventScript_CheckArceusActive:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, Route126_EventScript_CheckArceusActiveDone
-	checkdailyseedchance 100, SPECIES_ARCEUS
+	checkdailyseedchance 2, SPECIES_ARCEUS
 Route126_EventScript_CheckArceusActiveDone:
 	return
 
@@ -50,7 +50,6 @@ Route126_HideArceusArena:
 	end
 
 Route126_ShowArceusArena:
-	@ TODO(user): tune all intensities/opacities/radii below; starting points, not checked on hardware
 	@ White and black flashes: two pulses on different periods so they interleave; peak opacity scales with proximity
 	overlaycreate RGB(31, 31, 31), 16, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
 	overlaypulse VAR_TEMP_5, 0, 16, 48

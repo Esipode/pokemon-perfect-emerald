@@ -246,7 +246,7 @@ EncScript_Zamazenta_CrownedShield::
 	call EncScript_Zamazenta_RecomputeReduction
 	printstring STRINGID_ENCZAMAZENTACROWNEDSHIELDENTER
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_ZAMAZENTA_CROWNED, EncScript_Zamazenta_CrownedShield_Done, B_ANIM_FORM_CHANGE_INSTANT
+	encformchange ENC_TARGET_BOSS, SPECIES_ZAMAZENTA_CROWNED, EncScript_Zamazenta_CrownedShield_Done, B_ANIM_FORM_CHANGE_INSTANT, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Zamazenta_CrownedShield_Done:
 	return
 

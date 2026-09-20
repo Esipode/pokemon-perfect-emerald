@@ -277,7 +277,7 @@ EncScript_Hoopa_Unbound::
 	encsetvar 0, 1     @ Phase = Unbound
 	printstring STRINGID_ENCHOOPAUNBOUND
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_HOOPA_UNBOUND, EncScript_Hoopa_Unbound_Move, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_HOOPA_UNBOUND, EncScript_Hoopa_Unbound_Move, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Hoopa_Unbound_Move:
 	encsetmove ENC_TARGET_BOSS, 2, MOVE_HYPERSPACE_FURY
 	encsetvar 1, 6     @ Energy

@@ -261,7 +261,7 @@ EncScript_Zeraora_MaxVelocity::
 	encsetvar 1, 3     @ Phase
 	encsetvar 0, 10    @ Momentum
 	encsetsurvive ENC_TARGET_BOSS, TRUE
-	encmegaevolve ENC_TARGET_BOSS, EncScript_Zeraora_MaxVelocity_Done
+	encmegaevolve ENC_TARGET_BOSS, EncScript_Zeraora_MaxVelocity_Done, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Zeraora_MaxVelocity_Done:
 	return
 

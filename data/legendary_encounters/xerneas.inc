@@ -170,7 +170,7 @@ EncScript_Xerneas_GeomancyFires:
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_TOTEM_FLARE
 	encjumpifvar CMP_EQUAL, 8, 1, EncScript_Xerneas_GeomancyFires_Stats
-	encformchange ENC_TARGET_BOSS, SPECIES_XERNEAS_ACTIVE, EncScript_Xerneas_GeomancyFires_Stats, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_XERNEAS_ACTIVE, EncScript_Xerneas_GeomancyFires_Stats, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 	printstring STRINGID_ENCXERNEASACTIVEMODE
 	waitmessage B_WAIT_TIME_LONG
 	encsetvar 8, 1     @ Active

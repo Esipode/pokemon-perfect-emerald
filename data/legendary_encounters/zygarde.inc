@@ -451,7 +451,7 @@ EncScript_Zygarde_CompleteForme::
 	encsetvar 0, 1                                             @ Phase
 	printstring STRINGID_ENCZYGARDECOMPLETE
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_ZYGARDE_COMPLETE, EncScript_Zygarde_CompleteForme_Move, B_ANIM_POWER_CONSTRUCT
+	encformchange ENC_TARGET_BOSS, SPECIES_ZYGARDE_COMPLETE, EncScript_Zygarde_CompleteForme_Move, B_ANIM_POWER_CONSTRUCT, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Zygarde_CompleteForme_Move:
 	encsetmove ENC_TARGET_BOSS, 3, MOVE_CORE_ENFORCER
 	encchangestatvalue ENC_TARGET_BOSS, STAT_DEF, 15, ENC_AMOUNT_PERCENT

@@ -459,7 +459,7 @@ EncScript_Magearna_Phase3aEmergency::
 	printstring STRINGID_ENCMAGEARNAEMERGENCYBEGIN
 	waitmessage B_WAIT_TIME_LONG
 	playanimation BS_OPPONENT1, B_ANIM_MON_SCARED
-	encmegaevolve ENC_TARGET_BOSS, EncScript_Magearna_Phase3aEmergency_MegaFail
+	encmegaevolve ENC_TARGET_BOSS, EncScript_Magearna_Phase3aEmergency_MegaFail, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Magearna_Phase3aEmergency_MegaFail:
 	encsetvar 6, 3      @ GearTimer repurposed as the sacrifice countdown
 	encsetvar 8, 0      @ ProgressCount: sacrifices so far

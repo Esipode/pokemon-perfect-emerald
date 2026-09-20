@@ -194,6 +194,7 @@ static void SetKeyInterceptCallback(u16 (*func)(u32));
 static void SetFieldVBlankCallback(void);
 static void FieldClearVBlankHBlankCallbacks(void);
 static void TransitionMapMusic(void);
+static void TransitionLegendaryMapMusic(void);
 static u8 GetAdjustedInitialTransitionFlags(struct InitialPlayerAvatarState *playerStruct, u16 metatileBehavior, enum MapType mapType);
 static enum Direction GetAdjustedInitialDirection(struct InitialPlayerAvatarState *playerStruct, u8 transitionFlags, u16 metatileBehavior, enum MapType mapType);
 static u16 GetCenterScreenMetatileBehavior(void);
@@ -935,6 +936,7 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
     LoadObjEventTemplatesFromHeader();
     TrySetMapSaveWarpStatus();
     ClearTempFieldEventData();
+    Overworld_ClearLegendaryHideFlags();
     ResetDexNavSearch();
     ResetCyclingRoadChallengeData();
     RestartWildEncounterImmunitySteps();
@@ -945,6 +947,7 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
     Overworld_ClearSavedMusic();
     RunOnTransitionMapScript();
     InitMap();
+    TransitionLegendaryMapMusic();
     CopySecondaryTilesetToVramUsingHeap(gMapHeader.mapLayout);
     LoadSecondaryTilesetPalette(gMapHeader.mapLayout, TRUE); // skip copying to Faded, gamma shift will take care of it
 
@@ -1025,6 +1028,7 @@ static void LoadMapFromWarp(bool32 a1)
 
     TrySetMapSaveWarpStatus();
     ClearTempFieldEventData();
+    Overworld_ClearLegendaryHideFlags();
     ResetDexNavSearch();
     // reset hours override on every warp
     sHoursOverride = 0;
@@ -1288,6 +1292,43 @@ static u16 GetNightMusicFromTrack(u16 track)
     return track;
 }
 
+// Hide flags of the legendaries on the loaded map, registered by updatelegendaryvisibility.
+#define MAX_LEGENDARY_HIDE_FLAGS 4
+
+static u16 sLegendaryHideFlags[MAX_LEGENDARY_HIDE_FLAGS];
+static u8 sNumLegendaryHideFlags;
+
+void Overworld_ClearLegendaryHideFlags(void)
+{
+    sNumLegendaryHideFlags = 0;
+}
+
+void Overworld_AddLegendaryHideFlag(u16 flag)
+{
+    u32 i;
+
+    for (i = 0; i < sNumLegendaryHideFlags; i++)
+    {
+        if (sLegendaryHideFlags[i] == flag)
+            return;
+    }
+    if (sNumLegendaryHideFlags < MAX_LEGENDARY_HIDE_FLAGS)
+        sLegendaryHideFlags[sNumLegendaryHideFlags++] = flag;
+}
+
+// TRUE while a legendary encounter is present on the loaded map.
+static bool8 IsLegendaryMapMusicActive(void)
+{
+    u32 i;
+
+    for (i = 0; i < sNumLegendaryHideFlags; i++)
+    {
+        if (!FlagGet(sLegendaryHideFlags[i]))
+            return TRUE;
+    }
+    return FALSE;
+}
+
 u16 GetLocationMusic(struct WarpData *warp)
 {
     if (NoMusicInSootopolisWithLegendaries(warp) == TRUE)
@@ -1317,6 +1358,8 @@ u16 GetCurrLocationDefaultMusic(void)
         return MUS_DESERT;
 
     music = GetLocationMusic(&gSaveBlock1Ptr->location);
+    if (music != MUS_NONE && IsLegendaryMapMusicActive())
+        return MUS_VS_ELITE_FOUR;
     if (music != MUS_ROUTE118)
     {
         return music;
@@ -1364,7 +1407,7 @@ void Overworld_PlaySpecialMapMusic(void)
     if (gDisableMapMusicChangeOnMapLoad == MUSIC_DISABLE_KEEP)
         return;
 
-    if (music != MUS_ABNORMAL_WEATHER && music != MUS_NONE)
+    if (music != MUS_ABNORMAL_WEATHER && music != MUS_NONE && !IsLegendaryMapMusicActive())
     {
         if (gSaveBlock1Ptr->savedMusic)
             music = gSaveBlock1Ptr->savedMusic;
@@ -1390,6 +1433,16 @@ void Overworld_SetSavedMusic(u16 songNum)
 void Overworld_ClearSavedMusic(void)
 {
     gSaveBlock1Ptr->savedMusic = MUS_DUMMY;
+}
+
+// TransitionMapMusic runs before ON_TRANSITION registers the legendary hide flags, so a legendary
+// on the destination map is only visible to the music logic afterwards.
+static void TransitionLegendaryMapMusic(void)
+{
+    if (gDisableMapMusicChangeOnMapLoad != MUSIC_DISABLE_OFF || FlagGet(FLAG_DONT_TRANSITION_MUSIC) == TRUE)
+        return;
+    if (IsLegendaryMapMusicActive())
+        Overworld_ChangeMusicToDefault();
 }
 
 static void TransitionMapMusic(void)
@@ -1435,7 +1488,7 @@ void Overworld_ChangeMusicToDefault(void)
 void Overworld_ChangeMusicTo(u16 newMusic)
 {
     u16 currentMusic = GetCurrentMapMusic();
-    if (currentMusic != newMusic && currentMusic != MUS_ABNORMAL_WEATHER)
+    if (currentMusic != newMusic && currentMusic != MUS_ABNORMAL_WEATHER && !IsLegendaryMapMusicActive())
         FadeOutAndPlayNewMapMusic(newMusic, 8);
 }
 

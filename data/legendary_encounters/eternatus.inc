@@ -271,7 +271,7 @@ EncScript_Eternatus_TurnClose_Quiet:
 EncScript_Eternatus_Eternamax::
 	printstring STRINGID_ENCETERNATUSTIER3
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_ETERNATUS_ETERNAMAX, EncScript_Eternatus_Eternamax_Stats, B_ANIM_ULTRA_BURST
+	encformchange ENC_TARGET_BOSS, SPECIES_ETERNATUS_ETERNAMAX, EncScript_Eternatus_Eternamax_Stats, B_ANIM_ULTRA_BURST, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Eternatus_Eternamax_Stats:
 	encsetvar 1, 1     @ Phase
 	encchangestat ENC_TARGET_BOSS, STAT_SPATK, 12

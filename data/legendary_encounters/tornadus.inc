@@ -602,7 +602,7 @@ EncScript_Tornadus_Tempest::
 	encsetvar 0, 2     @ Phase
 	printstring STRINGID_ENCTORNADUSTEMPEST
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_TORNADUS_THERIAN, EncScript_Tornadus_Tempest_Move, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_TORNADUS_THERIAN, EncScript_Tornadus_Tempest_Move, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Tornadus_Tempest_Move:
 	encsetmove ENC_TARGET_BOSS, 0, MOVE_BLEAKWIND_STORM
 	restoremovepp BS_OPPONENT1

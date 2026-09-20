@@ -1726,17 +1726,28 @@
 	@ gimmick-selection flow, then plays the same presentation BattleScript_MegaEvolution
 	@ (data/battle_scripts_1.s) uses. Jumps to \failInstr if the target can't mega evolve right now
 	@ (wrong shape, fainted, already mega evolved, or another gimmick active).
-	.macro encmegaevolve target:req, failInstr:req
+	.macro encmegaevolve target:req, failInstr:req, bgm=0
 	callnative BS_EncounterMegaEvolve
 	.byte \target
 	.4byte \failInstr
 	handleformchange BS_SCRIPTING, 0
+	.if \bgm != 0
+	encplaybgm \bgm
+	.endif
 	playanimation BS_SCRIPTING, B_ANIM_MEGA_EVOLUTION
 	waitanimation
 	handleformchange BS_SCRIPTING, 1
 	printstring STRINGID_MEGAEVOEVOLVED
 	waitmessage B_WAIT_TIME_LONG
 	switchinabilities BS_SCRIPTING
+	.endm
+
+	@ Replaces the battle music with \song, restarting it from the top. Passed as bgm= to
+	@ encmegaevolve/encformchange, it starts as the transformation animation begins and is skipped
+	@ when the change fails.
+	.macro encplaybgm song:req
+	callnative BS_EncPlayBGM
+	.2byte \song
 	.endm
 
 	@ Changes \target (must resolve to exactly one battler) into \species outright, outside any
@@ -1752,13 +1763,16 @@
 	@ a printstring scrolls it back (BtlController_HandlePrintString). A script dispatched at
 	@ OnTurnStart runs while that scroll is still in place, so animating first would render over the
 	@ open menu. BattleScript_QuickClawActivation opens the same way for the same reason.
-	.macro encformchange target:req, species:req, failInstr:req, anim=B_ANIM_MEGA_EVOLUTION
+	.macro encformchange target:req, species:req, failInstr:req, anim=B_ANIM_MEGA_EVOLUTION, bgm=0
 	callnative BS_EncounterFormChange
 	.byte \target
 	.2byte \species
 	.4byte \failInstr
 	flushtextbox
 	handleformchange BS_SCRIPTING, 0
+	.if \bgm != 0
+	encplaybgm \bgm
+	.endif
 	playanimation BS_SCRIPTING, \anim
 	waitanimation
 	handleformchange BS_SCRIPTING, 1

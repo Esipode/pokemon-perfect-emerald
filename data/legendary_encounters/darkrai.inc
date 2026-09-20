@@ -516,7 +516,7 @@ EncScript_Darkrai_Absolute::
 	call EncScript_Darkrai_Revert            @ a copy cannot survive the form change
 	printstring STRINGID_ENCDARKRAIPHASE2
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_DARKRAI_MEGA, EncScript_Darkrai_Absolute_Body, B_ANIM_MEGA_EVOLUTION
+	encformchange ENC_TARGET_BOSS, SPECIES_DARKRAI_MEGA, EncScript_Darkrai_Absolute_Body, B_ANIM_MEGA_EVOLUTION, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Darkrai_Absolute_Body:
 	call EncScript_Darkrai_ApplyMoveset
 	printstring STRINGID_ENCDARKRAIHEAVY

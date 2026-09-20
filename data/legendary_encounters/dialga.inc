@@ -500,7 +500,7 @@ EncScript_Dialga_OriginForme::
 	encsetvar 0, 2      @ Phase
 	printstring STRINGID_ENCDIALGAORIGIN1
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_DIALGA_ORIGIN, EncScript_Dialga_OriginForme_Body, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_DIALGA_ORIGIN, EncScript_Dialga_OriginForme_Body, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Dialga_OriginForme_Body:
 	encsetmove ENC_TARGET_BOSS, 0, MOVE_ROAR_OF_TIME
 	printstring STRINGID_ENCDIALGAORIGIN2

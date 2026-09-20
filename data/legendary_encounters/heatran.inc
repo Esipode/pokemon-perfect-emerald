@@ -605,7 +605,7 @@ EncScript_Heatran_MagmaCore::
 	encsetvar 0, 1      @ Phase
 	printstring STRINGID_ENCHEATRANMAGMACORE
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_HEATRAN_MEGA, EncScript_Heatran_MagmaCore_Body, B_ANIM_MEGA_EVOLUTION
+	encformchange ENC_TARGET_BOSS, SPECIES_HEATRAN_MEGA, EncScript_Heatran_MagmaCore_Body, B_ANIM_MEGA_EVOLUTION, bgm=MUS_VS_KYOGRE_GROUDON
 	encchangestatvalue ENC_TARGET_BOSS, STAT_SPATK, -20, ENC_AMOUNT_PERCENT
 	printstring STRINGID_ENCHEATRANMEGA
 	waitmessage B_WAIT_TIME_LONG

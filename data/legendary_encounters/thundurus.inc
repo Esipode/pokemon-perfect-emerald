@@ -492,7 +492,7 @@ EncScript_Thundurus_Wrath::
 	waitmessage B_WAIT_TIME_LONG
 	printstring STRINGID_ENCTHUNDURUSWRATH2
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_THUNDURUS_THERIAN, EncScript_Thundurus_Wrath_Move, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_THUNDURUS_THERIAN, EncScript_Thundurus_Wrath_Move, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Thundurus_Wrath_Move:
 	encsetmove ENC_TARGET_BOSS, 0, MOVE_WILDBOLT_STORM
 	restoremovepp BS_OPPONENT1

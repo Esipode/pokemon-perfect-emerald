@@ -13237,6 +13237,16 @@ void BS_JumpIfFormChangeAbilityUnchanged(void)
     gBattlescriptCurrInstr = unchanged ? cmd->unchangedInstr : cmd->nextInstr;
 }
 
+// PLAY BGM (encplaybgm). Sent through the attacker's controller like BS_PlayTrainerDefeatedMusic;
+// the form-change opcodes point gBattlerAttacker at the boss first.
+void BS_EncPlayBGM(void)
+{
+    NATIVE_ARGS(u16 song);
+    BtlController_EmitPlayFanfareOrBGM(gBattlerAttacker, B_COMM_TO_CONTROLLER, cmd->song, TRUE);
+    MarkBattlerForControllerExec(gBattlerAttacker);
+    gBattlescriptCurrInstr = cmd->nextInstr;
+}
+
 // SET MOVE (encsetmove). Writes move into one of target's battle-mon move slots, with that move's
 // full PP. `Moves:` is a battle-start property, so this is the only way a boss can gain a move at a
 // phase transition - the signature move a form unlocks when it transforms. Like Mimic and Transform

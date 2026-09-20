@@ -1,6 +1,6 @@
 ## Arceus — The Original One
 
-### Location: Route 126 - post-game, 2% chance per day, only during a thunderstorm that Arceus brings
+### Location: Route 126 - 2% chance per day
 
 Arceus fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic

@@ -466,7 +466,7 @@ EncScript_Landorus_Therian::
 	waitmessage B_WAIT_TIME_LONG
 	printstring STRINGID_ENCLANDORUSTHERIAN2
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_LANDORUS_THERIAN, EncScript_Landorus_Therian_Move, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_LANDORUS_THERIAN, EncScript_Landorus_Therian_Move, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Landorus_Therian_Move:
 	encsetmove ENC_TARGET_BOSS, 2, MOVE_SANDSEAR_STORM
 	restoremovepp BS_OPPONENT1

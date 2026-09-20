@@ -6,6 +6,7 @@
 #include "constants/battle_encounter.h"
 #include "constants/battle_anim.h"
 #include "constants/pokemon.h"
+#include "constants/songs.h"
 	.include "asm/macros.inc"
 	.include "asm/macros/battle_script.inc"
 	.include "constants/constants.inc"

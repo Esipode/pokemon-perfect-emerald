@@ -165,7 +165,7 @@ EncScript_Keldeo_BecomeResolute:
 	waitmessage B_WAIT_TIME_LONG
 	printstring STRINGID_ENCKELDEORESOLUTE2
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_KELDEO_RESOLUTE, EncScript_Keldeo_BecomeResolute_Move, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_KELDEO_RESOLUTE, EncScript_Keldeo_BecomeResolute_Move, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Keldeo_BecomeResolute_Move:
 	encsetmove ENC_TARGET_BOSS, 3, MOVE_SECRET_SWORD
 	restoremovepp BS_OPPONENT1

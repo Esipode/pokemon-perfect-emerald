@@ -634,7 +634,7 @@ EncScript_Palkia_OriginForme::
 	encsetvar 0, 2      @ Phase
 	printstring STRINGID_ENCPALKIAORIGIN1
 	waitmessage B_WAIT_TIME_LONG
-	encformchange ENC_TARGET_BOSS, SPECIES_PALKIA_ORIGIN, EncScript_Palkia_OriginForme_Body, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_PALKIA_ORIGIN, EncScript_Palkia_OriginForme_Body, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 	printstring STRINGID_ENCPALKIAORIGIN2
 	waitmessage B_WAIT_TIME_LONG
 EncScript_Palkia_OriginForme_Body:

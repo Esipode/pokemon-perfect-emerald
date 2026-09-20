@@ -3194,7 +3194,8 @@ bool8 Scrcmd_checkspeciesowned(struct ScriptContext *ctx)
 
 // Keeps a legendary's overworld object in sync with whether the player owns one: caught
 // legendaries stay gone, fainted ones can be challenged again, and releasing one brings its
-// encounter back. Also reports ownership in VAR_RESULT for any follow-up branching.
+// encounter back. Also reports ownership in VAR_RESULT for any follow-up branching. The hide flag
+// is registered so the map plays legendary music while the object is visible.
 bool8 Scrcmd_updatelegendaryvisibility(struct ScriptContext *ctx)
 {
     enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));
@@ -3202,6 +3203,7 @@ bool8 Scrcmd_updatelegendaryvisibility(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
 
+    Overworld_AddLegendaryHideFlag(hideFlag);
     gSpecialVar_Result = CheckPlayerOwnsSpecies(givenSpecies);
 
     if (gSpecialVar_Result == TRUE)

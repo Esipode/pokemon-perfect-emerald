@@ -698,10 +698,10 @@ EncScript_Kyurem_TurnClose_FusionBreak:
 EncScript_Kyurem_TurnClose_FusionDone:
 	encjumpifvar CMP_EQUAL, 12, 2, EncScript_Kyurem_TurnClose_FusionBlack
 	encjumpifvar CMP_EQUAL, 12, 4, EncScript_Kyurem_TurnClose_FusionBlack
-	encformchange ENC_TARGET_BOSS, SPECIES_KYUREM_WHITE, EncScript_Kyurem_TurnClose_FusionPayoff, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_KYUREM_WHITE, EncScript_Kyurem_TurnClose_FusionPayoff, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 	goto EncScript_Kyurem_TurnClose_FusionPayoff
 EncScript_Kyurem_TurnClose_FusionBlack:
-	encformchange ENC_TARGET_BOSS, SPECIES_KYUREM_BLACK, EncScript_Kyurem_TurnClose_FusionPayoff, B_ANIM_FORM_CHANGE
+	encformchange ENC_TARGET_BOSS, SPECIES_KYUREM_BLACK, EncScript_Kyurem_TurnClose_FusionPayoff, B_ANIM_FORM_CHANGE, bgm=MUS_VS_KYOGRE_GROUDON
 EncScript_Kyurem_TurnClose_FusionPayoff:
 	encjumpifvar CMP_GREATER_THAN, 12, 2, EncScript_Kyurem_TurnClose_FusionHalf
 	encchangestatvalue ENC_TARGET_BOSS, STAT_SPATK, 20, ENC_AMOUNT_PERCENT
