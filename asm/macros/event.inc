@@ -3153,7 +3153,7 @@
 	@ survive into battle, so call screenfxstopall (or fade out) before starting a battle.
 	@ Starting commands store the handle in the variable dest (0 if it cannot be started).
 
-	@ Slow camera tremor. period in frames (24-48 reads as a tremor); axis is
+	@ Erratic earthquake-like camera shake. period is smoothing (16 or less = raw jitter, 24-48 = rumble); axis is
 	@ SCREENFX_AXIS_X, SCREENFX_AXIS_Y or both OR'd (0 = both). Only one shake at a time.
 	.macro screenfxshake dest:req, intensity:req, period:req, axis:req, duration:req
 	callnative Scrcmd_screenfxshake, requests_effects=1

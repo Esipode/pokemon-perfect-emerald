@@ -393,6 +393,7 @@
 #define B_MULTI_HALF_TEAMS              FALSE      // If TRUE, trainers will be capped at 3 Pokémon each when there are 2 trainers on one side in a battle. If FALSE, per-battle capping may still be set using `Multi Party: Half` in `trainers.party`
 #define B_TERA_ORB_ALWAYS_CHARGED       FALSE      // If TRUE, causes the Tera Orb to always be charged all the time in every case, overriding B_FLAG_TERA_ORB_CHARGED. Use that for modularity.
 #define B_ENCOUNTER_SCRIPTING           TRUE       // Enables scripted battle encounters. See docs.
+#define B_ENCOUNTER_DEBUG_NO_PROTECTION FALSE      // Debug. If TRUE, scripted encounters apply no damage reduction (including the catch-window guard) and never block Poké Balls.
 
 #define NUM_BEEPS_GEN_LATEST            4                    // Loops 4 times
 #define NUM_BEEPS_GEN_3                 -1                   // Loops infinitely

@@ -12,6 +12,7 @@
 
 #define LIFETIME_FADE_MAX       30 // frames
 #define SHAKE_DEFAULT_PERIOD    32
+#define SHAKE_MIN_PERIOD        16  // pulls fully to each new target
 #define SHAKE_SCALE             (256 * SCREENFX_INTENSITY_MAX)  // Q8.8 sine times intensity
 #define WAVE_DEFAULT_PERIOD     90
 #define WAVE_DEFAULT_WAVELENGTH 64
@@ -625,22 +626,43 @@ static s32 ScaleSine(s32 sine, s32 amplitude)
     return (scaled + (scaled < 0 ? -SHAKE_SCALE / 2 : SHAKE_SCALE / 2)) / SHAKE_SCALE;
 }
 
+// 16-bit LCG kept in shake.phase; deterministic and independent of the game RNG.
+static u32 NextShakeRandom(struct ScreenFx *effect)
+{
+    effect->params.shake.phase = effect->params.shake.phase * 25173 + 13849;
+    return effect->params.shake.phase >> 8;
+}
+
+// Pulls one axis toward a random target in [-amplitude, amplitude] (1/16 pixel units). A longer
+// period pulls more slowly, so the motion is smoother.
+static s8 StepShakeAxis(struct ScreenFx *effect, s32 position, s32 amplitude)
+{
+    s32 target = (s32)(NextShakeRandom(effect) * (amplitude * 2 + 1) / 256) - amplitude;
+    s32 divisor = max(effect->params.shake.period, SHAKE_MIN_PERIOD);
+
+    return position + (target - position) * SHAKE_MIN_PERIOD / divisor;
+}
+
 // The callback is cleared every frame: field effects that finish reinstall pan-ahead, which would
 // zero the pan in UpdateCameraPanning.
 static void UpdateShake(struct ScreenFx *effect)
 {
-    s32 amplitude = effect->resolvedIntensity * SCREENFX_SHAKE_MAX_AMPLITUDE;
-    u32 index = effect->params.shake.phase >> 8; // gSineTable holds one cycle per 256 entries
+    s32 amplitude = effect->resolvedIntensity * SCREENFX_SHAKE_MAX_AMPLITUDE; // 1/16 pixel
     s16 x = 0, y = 0;
 
     if (effect->params.shake.axes & SCREENFX_AXIS_X)
-        x = ScaleSine(gSineTable[index], amplitude);
+    {
+        effect->params.shake.posX = StepShakeAxis(effect, effect->params.shake.posX, amplitude);
+        x = (effect->params.shake.posX + (effect->params.shake.posX < 0 ? -8 : 8)) / 16;
+    }
     if (effect->params.shake.axes & SCREENFX_AXIS_Y)
-        y = ScaleSine(gSineTable[index + 64], amplitude); // cosine
+    {
+        effect->params.shake.posY = StepShakeAxis(effect, effect->params.shake.posY, amplitude);
+        y = (effect->params.shake.posY + (effect->params.shake.posY < 0 ? -8 : 8)) / 16;
+    }
 
     SetCameraPanningCallback(NULL);
     SetCameraPanning(x, y);
-    effect->params.shake.phase += 0x10000 / effect->params.shake.period;
 }
 
 // Adds this wave's per-line offsets to the scanline accumulator.

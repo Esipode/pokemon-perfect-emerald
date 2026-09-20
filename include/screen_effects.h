@@ -59,9 +59,11 @@ struct ScreenFx
         } config;
         struct              // param1 and param2 alias period and axes
         {
-            u16 period;     // frames per cycle
+            u16 period;     // pull rate toward each random target; higher = smoother
             u16 axes;       // SCREENFX_AXIS_*
-            u16 phase;      // 0x10000 = one cycle
+            u16 phase;      // random generator state
+            s8 posX;        // current offset, 1/16 pixel
+            s8 posY;
         } shake;
         struct
         {
@@ -94,10 +96,11 @@ struct ScreenFx
 // min(durationFrames / 4, 30) frames and stops. ScreenFx_SetIntensity or ScreenFx_FadeTo during the
 // fade-out cancels the stop.
 
-// Shake (SCREENFX_SHAKE): param1 = period in frames (24-48 reads as a slow tremor; 0 = 32),
-// param2 = SCREENFX_AXIS_* flags (0 = both). Drives the camera pan from a sine table; amplitude is
-// resolvedIntensity * SCREENFX_SHAKE_MAX_AMPLITUDE / SCREENFX_INTENSITY_MAX pixels. With both axes the
-// pan orbits. Only one shake exists at a time: ScreenFx_Start fails while another is active.
+// Shake (SCREENFX_SHAKE): param1 = smoothing period (16 or less = raw jitter, 24-48 = rumble; 0 = 32),
+// param2 = SCREENFX_AXIS_* flags (0 = both). Drives the camera pan toward a fresh random offset each
+// frame, independently per axis, like an earthquake; amplitude is
+// resolvedIntensity * SCREENFX_SHAKE_MAX_AMPLITUDE / SCREENFX_INTENSITY_MAX pixels.
+// Only one shake exists at a time: ScreenFx_Start fails while another is active.
 // While a shake runs it re-asserts the camera pan every frame, overriding the camera-shake field
 // effects (earthquake, Mirage Tower); those resume when the shake stops. Stopping restores the
 // default pan-ahead camera.

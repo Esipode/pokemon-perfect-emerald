@@ -977,6 +977,8 @@ s32 ApplyEncounterDamageReduction(enum BattlerId battler, s32 damage)
         return damage;
 
     percent = gBattleStruct->encounter.damageReduction[battler];
+    if (B_ENCOUNTER_DEBUG_NO_PROTECTION)
+        percent = 0;
     if (percent > ENC_MAX_DAMAGE_REDUCTION)
         percent = ENC_MAX_DAMAGE_REDUCTION;
     if (percent != 0)
@@ -1099,7 +1101,7 @@ bool32 DoesEncounterGrantImmunity(enum BattlerId battler, u32 immunity)
 
 bool32 IsEncounterBlockingBalls(void)
 {
-    if (!IsEncounterActive())
+    if (B_ENCOUNTER_DEBUG_NO_PROTECTION || !IsEncounterActive())
         return FALSE;
 
     return gBattleStruct->encounter.ballPolicy == ENC_BALLS_BLOCKED;
