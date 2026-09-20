@@ -13,7 +13,7 @@
 /*
  * VAR_0x8004 = Legendary species
  * VAR_0x8005 = Alternate layout ID
- * VAR_0x8006 = Required weekday (WEEKDAY_SUN..WEEKDAY_SAT), or WEEKDAY_ANY for no requirement
+ * VAR_0x8006 = Required real-world weekday (WEEKDAY_SUN..WEEKDAY_SAT), or WEEKDAY_ANY for no requirement
  * VAR_0x8007 = Daily-seed salt
  *
  * Result:
@@ -30,7 +30,7 @@ void CheckValidLegendaryEncounter(void)
     u16 species = gSpecialVar_0x8004;
     u16 alternateLayout = gSpecialVar_0x8005;
     u8 requiredWeekday = gSpecialVar_0x8006;
-    enum Weekday currentWeekday = GetDayOfWeek();
+    enum Weekday currentWeekday = GetRealDayOfWeek();
 
     gSpecialVar_Result = FALSE;
 

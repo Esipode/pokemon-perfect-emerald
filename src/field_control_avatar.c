@@ -491,7 +491,7 @@ static const u8 *GetInteractedBackgroundEventScript(struct MapPosition *position
     case 5:
     case 6:
     case BG_EVENT_HIDDEN_ITEM:
-        if (bgEvent->bgUnion.hiddenItem.underfoot == TRUE)
+        if (bgEvent->bgUnion.hiddenItem.underfoot == TRUE || FlagGet(FLAG_TEMP_HIDDEN_ITEMS_DISABLED))
             return NULL;
         gSpecialVar_0x8004 = bgEvent->bgUnion.hiddenItem.hiddenItemId + FLAG_HIDDEN_ITEMS_START;
         gSpecialVar_0x8005 = bgEvent->bgUnion.hiddenItem.item;

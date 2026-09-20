@@ -1,5 +1,7 @@
 ## Darkrai — The Pitch-Black Nightmare
 
+### Location: Abandoned Ship Hidden Rooms - Thursday nights only
+
 Darkrai fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be taken below 1 HP** until the very end, so the catch window is guaranteed

@@ -88,9 +88,9 @@
     #define DAY_HOUR_END       17
 
     #define EVENING_HOUR_BEGIN 17
-    #define EVENING_HOUR_END   21
+    #define EVENING_HOUR_END   22
 
-    #define NIGHT_HOUR_BEGIN   21
+    #define NIGHT_HOUR_BEGIN   22
     #define NIGHT_HOUR_END     5
 #endif
 

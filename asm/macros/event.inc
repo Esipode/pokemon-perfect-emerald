@@ -2585,11 +2585,13 @@
 
 	@ Sets hideFlag while the player owns speciesId and clears it otherwise, so a caught legendary's
 	@ overworld object stays gone and releasing the Pokémon brings its encounter back. Also sets
-	@ VAR_RESULT to whether the player owns one.
-	.macro updatelegendaryvisibility speciesId:req, hideFlag:req
+	@ VAR_RESULT to whether the player owns one. Unless keepDefaultMusic is 1, the visible object also
+	@ switches the map's overworld music to the legendary track.
+	.macro updatelegendaryvisibility speciesId:req, hideFlag:req, keepDefaultMusic=0
 	callnative Scrcmd_updatelegendaryvisibility, requests_effects=1
 	.2byte \speciesId
 	.2byte \hideFlag
+	.2byte \keepDefaultMusic
 	.endm
 
 	@ Stores the map's resolved overworld weather (WEATHER_*) in the variable dest. Dynamic and

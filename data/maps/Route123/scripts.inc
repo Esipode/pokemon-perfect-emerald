@@ -19,8 +19,8 @@ Route123_OnLoad:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, Route123_HideCresseliaArena
-	@ getmapweather VAR_0x8008
-	@ goto_if_ne VAR_0x8008, WEATHER_FOG_HORIZONTAL, Route123_HideCresseliaArena
+	getmapweather VAR_0x8008
+	goto_if_ne VAR_0x8008, WEATHER_FOG_HORIZONTAL, Route123_HideCresseliaArena
 	goto Route123_ShowCresseliaArena
 
 Route123_Cresselia_Encounter::

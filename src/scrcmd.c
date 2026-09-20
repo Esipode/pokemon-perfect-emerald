@@ -3200,10 +3200,12 @@ bool8 Scrcmd_updatelegendaryvisibility(struct ScriptContext *ctx)
 {
     enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));
     u16 hideFlag = ScriptReadHalfword(ctx);
+    u16 keepDefaultMusic = VarGet(ScriptReadHalfword(ctx));
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
 
-    Overworld_AddLegendaryHideFlag(hideFlag);
+    if (!keepDefaultMusic)
+        Overworld_AddLegendaryHideFlag(hideFlag);
     gSpecialVar_Result = CheckPlayerOwnsSpecies(givenSpecies);
 
     if (gSpecialVar_Result == TRUE)

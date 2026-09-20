@@ -7,7 +7,7 @@ PetalburgWoods_OnLoad:
 	// Check if legendary is available
     setvar VAR_0x8004, SPECIES_CELEBI
     setvar VAR_0x8005, LAYOUT_PETALBURG_WOODS
-    setvar VAR_0x8006, 6 @ Sunday
+    setvar VAR_0x8006, WEEKDAY_SUN
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, PetalburgWoods_ShowCelebiArena

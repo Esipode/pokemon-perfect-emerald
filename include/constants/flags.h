@@ -1656,6 +1656,8 @@
 #define FLAG_TEMP_REGICE_PUZZLE_FAILED          FLAG_TEMP_3
 #define FLAG_TEMP_HIDE_FOLLOWER                 FLAG_TEMP_E
 #define FLAG_TEMP_HIDE_MIRAGE_ISLAND_BERRY_TREE FLAG_TEMP_11
+#define FLAG_TEMP_DARKRAI_HUNT                  FLAG_TEMP_8 // Abandoned Ship hidden floor: Darkrai hunt active this visit
+#define FLAG_TEMP_HIDDEN_ITEMS_DISABLED         FLAG_TEMP_9 // Hidden item bg events do nothing while set
 
 // FRLG flags
 

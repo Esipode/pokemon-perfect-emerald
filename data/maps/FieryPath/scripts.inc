@@ -9,7 +9,7 @@ FieryPath_OnTransition:
 	// Check if legendary is available
     setvar VAR_0x8004, SPECIES_ENTEI
     setvar VAR_0x8005, LAYOUT_FIERY_PATH
-    setvar VAR_0x8006, 4 @ Friday
+    setvar VAR_0x8006, WEEKDAY_FRI
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_ne VAR_RESULT, TRUE, FieryPath_HideEntei

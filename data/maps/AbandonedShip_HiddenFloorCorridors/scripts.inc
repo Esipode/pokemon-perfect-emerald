@@ -8,6 +8,8 @@ AbandonedShip_HiddenFloorCorridors_OnResume:
 	end
 
 AbandonedShip_HiddenFloorCorridors_OnLoad:
+	call AbandonedShip_HiddenFloor_EventScript_CheckDarkraiHunt
+	goto_if_eq VAR_RESULT, TRUE, AbandonedShip_HiddenFloorCorridors_DarkraiHunt
 	call_if_unset FLAG_USED_ROOM_1_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_LockRoom1
 	call_if_unset FLAG_USED_ROOM_2_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_LockRoom2
 	call_if_unset FLAG_USED_ROOM_4_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_LockRoom4
@@ -16,6 +18,16 @@ AbandonedShip_HiddenFloorCorridors_OnLoad:
 	call_if_set FLAG_USED_ROOM_2_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom2
 	call_if_set FLAG_USED_ROOM_4_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom4
 	call_if_set FLAG_USED_ROOM_6_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom6
+	end
+
+@ Darkrai hunt: every door is open regardless of key progress; key flags are untouched
+AbandonedShip_HiddenFloorCorridors_DarkraiHunt:
+	setflag FLAG_TEMP_DARKRAI_HUNT
+	call AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom1
+	call AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom2
+	call AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom4
+	call AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom6
+	call AbandonedShip_HiddenFloor_EventScript_StartDarkraiAtmosphere
 	end
 
 AbandonedShip_HiddenFloorCorridors_EventScript_UnlockRoom1::
@@ -52,6 +64,7 @@ AbandonedShip_HiddenFloorCorridors_EventScript_LockRoom6::
 
 AbandonedShip_HiddenFloorCorridors_EventScript_Room1Door::
 	lockall
+	goto_if_set FLAG_TEMP_DARKRAI_HUNT, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	goto_if_set FLAG_USED_ROOM_1_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	checkitem ITEM_KEY_TO_ROOM_1
 	goto_if_eq VAR_RESULT, FALSE, AbandonedShip_HiddenFloorCorridors_EventScript_Rm1IsLocked
@@ -66,6 +79,7 @@ AbandonedShip_HiddenFloorCorridors_EventScript_Room1Door::
 
 AbandonedShip_HiddenFloorCorridors_EventScript_Room2Door::
 	lockall
+	goto_if_set FLAG_TEMP_DARKRAI_HUNT, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	goto_if_set FLAG_USED_ROOM_2_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	checkitem ITEM_KEY_TO_ROOM_2
 	goto_if_eq VAR_RESULT, FALSE, AbandonedShip_HiddenFloorCorridors_EventScript_Rm2IsLocked
@@ -80,6 +94,7 @@ AbandonedShip_HiddenFloorCorridors_EventScript_Room2Door::
 
 AbandonedShip_HiddenFloorCorridors_EventScript_Room4Door::
 	lockall
+	goto_if_set FLAG_TEMP_DARKRAI_HUNT, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	goto_if_set FLAG_USED_ROOM_4_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	checkitem ITEM_KEY_TO_ROOM_4
 	goto_if_eq VAR_RESULT, FALSE, AbandonedShip_HiddenFloorCorridors_EventScript_Rm4IsLocked
@@ -94,6 +109,7 @@ AbandonedShip_HiddenFloorCorridors_EventScript_Room4Door::
 
 AbandonedShip_HiddenFloorCorridors_EventScript_Room6Door::
 	lockall
+	goto_if_set FLAG_TEMP_DARKRAI_HUNT, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	goto_if_set FLAG_USED_ROOM_6_KEY, AbandonedShip_HiddenFloorCorridors_EventScript_TheDoorIsOpen
 	checkitem ITEM_KEY_TO_ROOM_6
 	goto_if_eq VAR_RESULT, FALSE, AbandonedShip_HiddenFloorCorridors_EventScript_Rm6IsLocked

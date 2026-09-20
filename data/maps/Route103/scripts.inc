@@ -14,7 +14,7 @@ Route103_OnLoad:
 	// Check if legendary is available
     setvar VAR_0x8004, SPECIES_SUICUNE
     setvar VAR_0x8005, LAYOUT_ROUTE103
-    setvar VAR_0x8006, 5 @ Saturday
+    setvar VAR_0x8006, WEEKDAY_SAT
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, Route103_ShowSuicuneArena

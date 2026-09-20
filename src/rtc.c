@@ -454,6 +454,16 @@ enum Weekday GetDayOfWeek(void)
     return dateTime.dayOfWeek;
 }
 
+// Weekday of the raw RTC date, ignoring the save's clock offset. 2000-01-01 was a Saturday.
+// RtcGetDayCount is 1-based (2000-01-01 = 1), so subtract 1 to get days since that Saturday.
+enum Weekday GetRealDayOfWeek(void)
+{
+    struct SiiRtcInfo rtc;
+    RtcGetInfo(&rtc);
+
+    return (WEEKDAY_SAT + RtcGetDayCount(&rtc) - 1) % WEEKDAY_COUNT;
+}
+
 enum TimeOfDay GenConfigTimeOfDay(enum TimeOfDay timeOfDay)
 {
     if (timeOfDay >= TIME_LAST)
