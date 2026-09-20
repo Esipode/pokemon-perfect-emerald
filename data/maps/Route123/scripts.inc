@@ -1,9 +1,58 @@
 Route123_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, Route123_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route123_OnLoad
+	map_script MAP_SCRIPT_ON_RESUME, Route123_OnResume
 	.byte 0
 
 Route123_OnTransition:
 	special SetRoute123Weather
+	updatelegendaryvisibility SPECIES_CRESSELIA, FLAG_HIDE_CRESSELIA
+	@ Connection steps keep screen effects but clear their handle vars; stop them so ON_LOAD does not stack copies
+	screenfxstopall
+	end
+
+Route123_OnLoad:
+	@ Cresselia spawn gate: post-game, not already owned, horizontal fog
+	setvar VAR_0x8004, SPECIES_CRESSELIA
+	setvar VAR_0x8005, LAYOUT_ROUTE123
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route123_HideCresseliaArena
+	@ getmapweather VAR_0x8008
+	@ goto_if_ne VAR_0x8008, WEATHER_FOG_HORIZONTAL, Route123_HideCresseliaArena
+	goto Route123_ShowCresseliaArena
+
+Route123_Cresselia_Encounter::
+	@ Ripple fires at full strength on interaction, then everything stops before the battle
+	screenfxripple VAR_TEMP_A, 16, 0, 60
+	delay 60
+	screenfxstopall
+	overlaydestroy VAR_TEMP_5
+	goto LegendaryEncounter_EventScript_Cresselia
+
+Route123_HideCresseliaArena:
+	setflag FLAG_HIDE_CRESSELIA
+	end
+
+@ Connection steps destroy map-local overlays after ON_LOAD, so the tint is created here.
+@ VAR_TEMP_5 is the guard: it survives battles and is cleared on every map load.
+Route123_OnResume:
+	goto_if_set FLAG_HIDE_CRESSELIA, Route123_OnResumeDone
+	goto_if_ne VAR_TEMP_5, 0, Route123_OnResumeDone
+	@ Pink-purple tint, breathing slowly; peak opacity scales with proximity
+	overlaycreate RGB(26, 12, 28), 16, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
+	overlaypulse VAR_TEMP_5, 6, 16, 180
+	overlayanchorobject VAR_TEMP_5, LOCALID_ROUTE123_CRESSELIA
+	overlayfalloff VAR_TEMP_5, 3, 14, 0, 10
+Route123_OnResumeDone:
+	end
+
+Route123_ShowCresseliaArena:
+	@ Slow dreamlike wave, stronger with proximity
+	screenfxwave VAR_TEMP_8, 16, 150, 0, 0, 1
+	screenfxanchorobject VAR_TEMP_8, LOCALID_ROUTE123_CRESSELIA
+	screenfxfalloff VAR_TEMP_8, 2, 14, 0, 8
 	end
 
 Route123_EventScript_GigaDrainGirl::
