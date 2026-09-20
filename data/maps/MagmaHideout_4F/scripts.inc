@@ -1,5 +1,58 @@
 MagmaHideout_4F_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, MagmaHideout_4F_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, MagmaHideout_4F_OnLoad
 	.byte 0
+
+MagmaHideout_4F_OnTransition:
+	updatelegendaryvisibility SPECIES_HEATRAN, FLAG_HIDE_HEATRAN, TRUE
+	end
+
+MagmaHideout_4F_OnLoad:
+	call LegendaryEncounter_EventScript_HeatranSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, MagmaHideout_4F_HideHeatranArena
+	@ Strongest quake tier: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 16
+	setvar VAR_0x8009, 100
+	setvar VAR_0x800A, 150
+	call LegendaryEncounter_EventScript_HeatranQuake
+	end
+
+MagmaHideout_4F_Heatran_Encounter::
+	goto LegendaryEncounter_EventScript_Heatran
+
+MagmaHideout_4F_HideHeatranArena:
+	setflag FLAG_HIDE_HEATRAN
+	end
+
+MagmaHideout_4F_EventScript_HeatranTrigger::
+	lockall
+	goto_if_set FLAG_HIDE_HEATRAN, MagmaHideout_4F_EventScript_HeatranTriggerDone
+	setvar VAR_TEMP_9, 1
+	applymovement LOCALID_PLAYER, Common_Movement_FaceUp
+	waitmovement 0
+	applymovement LOCALID_MAGMA_HIDEOUT_4F_HEATRAN, MagmaHideout_4F_Movement_HeatranApproach
+	waitmovement 0
+	applymovement LOCALID_MAGMA_HIDEOUT_4F_HEATRAN, Common_Movement_FacePlayer
+	waitmovement 0
+	setvar VAR_LAST_TALKED, LOCALID_MAGMA_HIDEOUT_4F_HEATRAN
+	goto LegendaryEncounter_EventScript_HeatranStart
+
+MagmaHideout_4F_EventScript_HeatranTriggerDone::
+	releaseall
+	end
+
+MagmaHideout_4F_Movement_HeatranApproach:
+	delay_16
+	delay_16
+	walk_slow_down
+	delay_16
+	delay_16
+	walk_slow_down
+	delay_16
+	delay_16
+	walk_slow_down
+	delay_16
+	step_end
 
 MagmaHideout_4F_EventScript_Maxie::
 	specialvar VAR_PREV_LEVEL_CAP, GetCurrentLevelCapSpecial

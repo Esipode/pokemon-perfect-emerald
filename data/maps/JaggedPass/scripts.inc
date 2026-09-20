@@ -28,6 +28,11 @@ JaggedPass_EventScript_SetWeatherAsh::
 	return
 
 JaggedPass_OnLoad:
+	@ Heatran quakes: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 4
+	setvar VAR_0x8009, 60
+	setvar VAR_0x800A, 1200
+	call LegendaryEncounter_EventScript_HeatranQuake
 	goto_if_le VAR_JAGGED_PASS_STATE, 1, JaggedPass_EventScript_ConcealHideoutEntrance
 	end
 

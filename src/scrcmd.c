@@ -3884,10 +3884,11 @@ bool8 Scrcmd_screenfxpulse(struct ScriptContext *ctx)
     ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
     u16 activeFrames = VarGet(ScriptReadHalfword(ctx));
     u16 idleFrames = VarGet(ScriptReadHalfword(ctx));
+    u16 sound = VarGet(ScriptReadHalfword(ctx));
 
     Script_RequestEffects(SCREFF_V1);
 
-    ScreenFx_SetPulseGate(id, activeFrames, idleFrames);
+    ScreenFx_SetPulseGate(id, activeFrames, idleFrames, sound);
     return FALSE;
 }
 

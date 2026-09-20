@@ -3260,12 +3260,14 @@
 	.endm
 
 	@ Runs the effect in bursts: activeFrames at full intensity decaying to 0, then idleFrames of silence,
-	@ repeating. The first cycle begins idle. activeFrames 0 removes the gate.
-	.macro screenfxpulse handleVar:req, activeFrames:req, idleFrames:req
+	@ repeating. The first cycle begins idle. activeFrames 0 removes the gate. sound is an SE_* played
+	@ as each active window opens (0 = silent).
+	.macro screenfxpulse handleVar:req, activeFrames:req, idleFrames:req, sound=0
 	callnative Scrcmd_screenfxpulse, requests_effects=1
 	.2byte \handleVar
 	.2byte \activeFrames
 	.2byte \idleFrames
+	.2byte \sound
 	.endm
 
 	@ Fades the effect linearly to target (0-16) over frames; 0 snaps.

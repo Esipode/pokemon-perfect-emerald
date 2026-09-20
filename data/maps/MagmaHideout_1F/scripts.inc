@@ -1,9 +1,18 @@
 MagmaHideout_1F_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, MagmaHideout_1F_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, MagmaHideout_1F_OnLoad
 	.byte 0
 
 MagmaHideout_1F_OnTransition:
 	setvar VAR_JAGGED_PASS_ASH_WEATHER, 0
+	end
+
+MagmaHideout_1F_OnLoad:
+	@ Heatran quakes: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 6
+	setvar VAR_0x8009, 70
+	setvar VAR_0x800A, 900
+	call LegendaryEncounter_EventScript_HeatranQuake
 	end
 
 MagmaHideout_1F_EventScript_Grunt1::

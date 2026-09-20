@@ -1,5 +1,14 @@
 MagmaHideout_3F_2R_MapScripts::
+	map_script MAP_SCRIPT_ON_LOAD, MagmaHideout_3F_2R_OnLoad
 	.byte 0
+
+MagmaHideout_3F_2R_OnLoad:
+	@ Heatran quakes: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 12
+	setvar VAR_0x8009, 90
+	setvar VAR_0x800A, 360
+	call LegendaryEncounter_EventScript_HeatranQuake
+	end
 
 MagmaHideout_3F_2R_EventScript_Grunt10::
 	trainerbattle_single TRAINER_GRUNT_MAGMA_HIDEOUT_10, MagmaHideout_3F_2R_Text_Grunt10Intro, MagmaHideout_3F_2R_Text_Grunt10Defeat

@@ -421,6 +421,7 @@ LegendaryEncounter_EventScript_Shaymin::
 LegendaryEncounter_EventScript_Heatran::
 	lock
 	faceplayer
+LegendaryEncounter_EventScript_HeatranStart::
 	waitse
 	playmoncry SPECIES_HEATRAN, CRY_MODE_ENCOUNTER
 	delay 40
@@ -1241,3 +1242,19 @@ LegendaryEncounter_EventScript_Terapagos::
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
+
+LegendaryEncounter_EventScript_HeatranSpawnGate::
+	setvar VAR_0x8004, SPECIES_HEATRAN
+	setvar VAR_0x8005, LAYOUT_MAGMA_HIDEOUT_4F
+	setvar VAR_0x8006, WEEKDAY_WED
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	return
+
+LegendaryEncounter_EventScript_HeatranQuake::
+	call LegendaryEncounter_EventScript_HeatranSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_HeatranQuakeDone
+	screenfxshake VAR_TEMP_8, VAR_0x8008, 32, SCREENFX_AXIS_X | SCREENFX_AXIS_Y, 0
+	screenfxpulse VAR_TEMP_8, VAR_0x8009, VAR_0x800A, SE_M_EARTHQUAKE
+LegendaryEncounter_EventScript_HeatranQuakeDone:
+	return

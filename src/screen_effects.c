@@ -6,6 +6,7 @@
 #include "overworld_overlay.h"
 #include "palette.h"
 #include "scanline_effect.h"
+#include "sound.h"
 #include "sprite.h"
 #include "trig.h"
 #include "constants/rgb.h"
@@ -105,6 +106,7 @@ struct PresetRecord
 static EWRAM_DATA struct ScreenFx sScreenFx[MAX_SCREEN_EFFECTS] = {0};
 static EWRAM_DATA struct PresetRecord sPresets[MAX_SCREENFX_PRESETS] = {0};
 static EWRAM_DATA struct ScanlineChannel sChannel = {0};
+static EWRAM_DATA u16 sGateSound[MAX_SCREEN_EFFECTS] = {0}; // SE played as each pulse window opens, 0 = none
 static EWRAM_DATA struct Ripple sRipples[MAX_RIPPLES] = {0}; // owned by the one SCREENFX_RIPPLE effect
 static EWRAM_DATA bool8 sSuspended = FALSE;
 static EWRAM_DATA bool8 sFrozen = FALSE; // between ScreenFx_BeginBattleFreeze and Suspend/Resume
@@ -921,6 +923,10 @@ static void UpdatePresets(void);
 static u32 ApplyPulseGate(struct ScreenFx *effect, u32 intensity)
 {
     u32 timer = effect->gateTimer;
+    u16 sound = sGateSound[effect - sScreenFx];
+
+    if (timer == 0 && sound != 0)
+        PlaySE(sound);
 
     effect->gateTimer++;
     if (effect->gateTimer >= effect->gateActive + effect->gateIdle)
@@ -1254,7 +1260,7 @@ void ScreenFx_ClearFalloff(ScreenFxId id)
     effect->falloffEnabled = FALSE;
 }
 
-void ScreenFx_SetPulseGate(ScreenFxId id, u16 activeFrames, u16 idleFrames)
+void ScreenFx_SetPulseGate(ScreenFxId id, u16 activeFrames, u16 idleFrames, u16 sound)
 {
     struct ScreenFx *effect = GetScreenFx(id);
 
@@ -1263,6 +1269,7 @@ void ScreenFx_SetPulseGate(ScreenFxId id, u16 activeFrames, u16 idleFrames)
 
     effect->gateActive = activeFrames;
     effect->gateIdle = idleFrames;
+    sGateSound[effect - sScreenFx] = sound;
     effect->gateTimer = activeFrames;   // first cycle begins idle
     if (idleFrames == 0)
         effect->gateTimer = 0;
