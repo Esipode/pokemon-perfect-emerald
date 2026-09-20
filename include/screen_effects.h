@@ -169,6 +169,17 @@ struct ScreenFx
 // A preset starts at PERCEPTIBLE, fading in over 60 frames. Members are weighted individually
 // (the tint is kept lighter than the geometry), and falloff applies on top of the stage level.
 
+// Battle transitions. BattleTransition_Start and BattleTransition_StartOnField call ScreenFx_Suspend, so no
+// effect runs during a transition or a battle: the scanline DMA stops, the camera pan returns to
+// pan-ahead and the vignette releases its sprites and palette slot. The pool, the presets and their
+// timers are kept but frozen, and ScreenFx_Start fails while suspended. ResumeMap calls ScreenFx_Resume on
+// the return to the field, and the effects continue; a warp, whiteout or load clears them instead.
+// Encounter scripts should call screenfxstopall (or fade out and wait) before setwildbattle or any battle
+// start for a deliberate transition, rather than relying on the suspend.
+// Menus and text boxes do not suspend: the effects are BG scroll and OBJ level and text is on BG0.
+void ScreenFx_Suspend(void);
+void ScreenFx_Resume(void);
+
 // Invalidates every outstanding handle and clears the pool and the presets. Stops the scanline DMA at once.
 void ScreenFx_ResetAll(void);
 // Per-frame update. Runs before UpdateCameraPanning so camera-pan effects apply the same frame.

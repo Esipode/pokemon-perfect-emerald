@@ -2803,6 +2803,7 @@ static void ResumeMap(bool32 a1)
     ResetCameraUpdateInfo();
     InstallCameraPanAheadCallback();
     FreeAllSpritePalettes();
+    ScreenFx_Resume();
 
     FieldEffectActiveListClear();
     StartWeather();

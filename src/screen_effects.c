@@ -105,6 +105,7 @@ static EWRAM_DATA struct ScreenFx sScreenFx[MAX_SCREEN_EFFECTS] = {0};
 static EWRAM_DATA struct PresetRecord sPresets[MAX_SCREENFX_PRESETS] = {0};
 static EWRAM_DATA struct ScanlineChannel sChannel = {0};
 static EWRAM_DATA struct Ripple sRipples[MAX_RIPPLES] = {0}; // owned by the one SCREENFX_RIPPLE effect
+static EWRAM_DATA bool8 sSuspended = FALSE;
 // Summed per-line offsets of every geometry effect; clamped when the buffer is built.
 static EWRAM_DATA s16 sLineDx[SCANLINE_COUNT] = {0};
 static EWRAM_DATA s16 sLineDy[SCANLINE_COUNT] = {0};
@@ -587,8 +588,33 @@ static void ReleaseAllEffects(void)
 
 void ScreenFx_ResetAll(void)
 {
+    sSuspended = FALSE;
     ReleaseAllEffects();
     ScanlineChannel_Reset();
+}
+
+// Hardware is released but the pool is kept. Update, Render and VBlank do nothing until Resume, so
+// effect timers and presets pause. DMA0 is stopped at once: the transition that follows owns it.
+void ScreenFx_Suspend(void)
+{
+    if (sSuspended)
+        return;
+
+    sSuspended = TRUE;
+    ScanlineChannel_Reset();
+
+    // Also zeroes the pan.
+    if (IsKindActive(SCREENFX_SHAKE))
+        InstallCameraPanAheadCallback();
+
+    // Frees the sprites, tiles and palette slot; the next update after Resume rebuilds them.
+    if (IsKindActive(SCREENFX_VIGNETTE))
+        FreeVignette();
+}
+
+void ScreenFx_Resume(void)
+{
+    sSuspended = FALSE;
 }
 
 // Rounds to the nearest pixel, symmetric around zero.
@@ -864,6 +890,9 @@ void ScreenFx_Update(void)
     bool32 playerRead = FALSE;
     u32 i;
 
+    if (sSuspended)
+        return;
+
     UpdatePresets();
 
     if (sChannel.acquired)
@@ -914,6 +943,9 @@ void ScreenFx_Render(void)
 {
     bool32 wanted = HasGeometryEffect();
 
+    if (sSuspended)
+        return;
+
     if (sChannel.acquired && (!wanted || gScanlineEffect.state != 0))
         ScanlineChannel_Release();
 
@@ -929,6 +961,9 @@ void ScreenFx_Render(void)
 // buffer; it lands after the last visible line.
 void ScreenFx_VBlank(void)
 {
+    if (sSuspended)
+        return;
+
     if (gScanlineEffect.state != 0)
     {
         // The stock effect has already reprogrammed DMA0.
@@ -966,7 +1001,7 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
 {
     u32 i;
 
-    if (config->kind >= SCREENFX_KIND_COUNT)
+    if (config->kind >= SCREENFX_KIND_COUNT || sSuspended)
         return SCREENFX_ID_INVALID;
 
     // Shake, ripple and vignette each have one shared backing store.

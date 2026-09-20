@@ -23,6 +23,7 @@
 #include "util.h"
 #include "battle_setup.h"
 #include "data.h"
+#include "screen_effects.h"
 #include "constants/field_effects.h"
 #include "constants/songs.h"
 #include "constants/trainers.h"
@@ -1076,6 +1077,7 @@ bool8 IsBattleTransitionDone(void)
 
 static void LaunchBattleTransitionTask(u8 transitionId)
 {
+    ScreenFx_Suspend();
     u8 taskId = CreateTask(Task_BattleTransition, 2);
     gTasks[taskId].tTransitionId = transitionId;
     sTransitionData = AllocZeroed(sizeof(*sTransitionData));
