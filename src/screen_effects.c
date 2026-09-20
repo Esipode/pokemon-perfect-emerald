@@ -4,16 +4,50 @@
 #include "field_camera.h"
 #include "fieldmap.h"
 #include "overworld_overlay.h"
+#include "scanline_effect.h"
 #include "trig.h"
 
 #define LIFETIME_FADE_MAX       30 // frames
 #define SHAKE_DEFAULT_PERIOD    32
 #define SHAKE_SCALE             (256 * SCREENFX_INTENSITY_MAX)  // Q8.8 sine times intensity
 
+#define SCANLINE_COUNT          DISPLAY_HEIGHT
+#define SCANLINE_REGS           6   // BG1HOFS, BG1VOFS, BG2HOFS, BG2VOFS, BG3HOFS, BG3VOFS
+#define SCANLINE_OFFSET_MAX     8   // pixels; larger offsets pull undrawn columns in at map edges
+#define SCANLINE_DMA_CONTROL    (((DMA_ENABLE | DMA_START_HBLANK | DMA_REPEAT | DMA_SRC_INC | DMA_DEST_INC | DMA_16BIT | DMA_DEST_RELOAD) << 16) | SCANLINE_REGS)
+
 STATIC_ASSERT(MAX_SCREEN_EFFECTS <= 8, ScreenFxIndexFitsHandle);
 STATIC_ASSERT(sizeof(struct ScreenFx) <= 40, ScreenFxSizeBudget);
+STATIC_ASSERT(SCANLINE_COUNT * SCANLINE_REGS == ARRAY_COUNT(gScanlineEffectRegBuffers[0]), ScanlineBufferFit);
+
+// What one gScanlineEffectRegBuffers half currently holds, so unchanged data is not rewritten.
+struct ScanlineBufferState
+{
+    s16 baseX;
+    s16 baseY;
+    u8 valid:1;
+    u8 hasHorizontal:1;     // holds non-zero horizontal line offsets
+    u8 hasVertical:1;
+};
+
+struct ScanlineChannel
+{
+    struct ScanlineBufferState buffers[2];
+    u8 acquired:1;          // owns gScanlineEffectRegBuffers
+    u8 dmaRunning:1;        // DMA0 was installed by this channel
+    u8 ready:1;             // write buffer built since the last VBlank
+    u8 readValid:1;         // read buffer holds a complete frame
+    u8 hasHorizontal:1;     // this frame's offsets
+    u8 hasVertical:1;
+    u8 writeBuffer;
+    u8 readBuffer;
+};
 
 static EWRAM_DATA struct ScreenFx sScreenFx[MAX_SCREEN_EFFECTS] = {0};
+static EWRAM_DATA struct ScanlineChannel sChannel = {0};
+// Summed per-line offsets of every geometry effect; clamped when the buffer is built.
+static EWRAM_DATA s16 sLineDx[SCANLINE_COUNT] = {0};
+static EWRAM_DATA s16 sLineDy[SCANLINE_COUNT] = {0};
 
 static u8 NextGeneration(u8 generation)
 {
@@ -61,7 +95,141 @@ static bool32 IsShakeActive(void)
     return FALSE;
 }
 
-void ScreenFx_ResetAll(void)
+static bool32 IsGeometryKind(u32 kind)
+{
+    return kind == SCREENFX_WAVE || kind == SCREENFX_RIPPLE || kind == SCREENFX_TEAR;
+}
+
+static bool32 HasGeometryEffect(void)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_SCREEN_EFFECTS; i++)
+    {
+        if (sScreenFx[i].active && IsGeometryKind(sScreenFx[i].kind))
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+// Scanline channel: one HBlank DMA0 stream of six BG scroll registers per line, built from the
+// camera offset plus the summed per-line offsets. Only claimed while gScanlineEffect is idle.
+
+static void ScanlineChannel_ClearOffsets(void)
+{
+    memset(sLineDx, 0, sizeof(sLineDx));
+    memset(sLineDy, 0, sizeof(sLineDy));
+    sChannel.hasHorizontal = FALSE;
+    sChannel.hasVertical = FALSE;
+}
+
+static bool32 ScanlineChannel_Acquire(void)
+{
+    if (sChannel.acquired)
+        return TRUE;
+
+    // The flash and Battle Pyramid effects own the buffers and DMA0 while their state is set.
+    if (gScanlineEffect.state != 0)
+        return FALSE;
+
+    // Keeps dmaRunning so a stop still pending from a recent release is honoured.
+    memset(sChannel.buffers, 0, sizeof(sChannel.buffers));
+    sChannel.ready = FALSE;
+    sChannel.readValid = FALSE;
+    sChannel.writeBuffer = 0;
+    sChannel.readBuffer = 0;
+    sChannel.acquired = TRUE;
+    ScanlineChannel_ClearOffsets();
+    return TRUE;
+}
+
+// The DMA is stopped at the next VBlank so the frame in progress is not cut short.
+static void ScanlineChannel_Release(void)
+{
+    sChannel.acquired = FALSE;
+    sChannel.readValid = FALSE;
+    sChannel.ready = FALSE;
+}
+
+// Stops DMA0 at once. Used where the screen is being rebuilt anyway.
+static void ScanlineChannel_Reset(void)
+{
+    if (sChannel.dmaRunning && gScanlineEffect.state == 0)
+        DmaStop(0);
+
+    memset(&sChannel, 0, sizeof(sChannel));
+}
+
+// Adds a pixel offset to one scanline. Only meaningful between ScreenFx_Update and ScreenFx_Render.
+static void UNUSED ScanlineChannel_Line(u32 line, s16 dx, s16 dy)
+{
+    if (!sChannel.acquired || line >= SCANLINE_COUNT)
+        return;
+
+    if (dx != 0)
+    {
+        sLineDx[line] += dx;
+        sChannel.hasHorizontal = TRUE;
+    }
+    if (dy != 0)
+    {
+        sLineDy[line] += dy;
+        sChannel.hasVertical = TRUE;
+    }
+}
+
+static s32 ClampLineOffset(s32 offset)
+{
+    return offset < -SCANLINE_OFFSET_MAX ? -SCANLINE_OFFSET_MAX
+         : offset > SCANLINE_OFFSET_MAX ? SCANLINE_OFFSET_MAX
+         : offset;
+}
+
+// A full rewrite happens only when the camera moved or vertical offsets are involved; horizontal-only
+// changes patch the three H fields per line.
+static void ScanlineChannel_Build(void)
+{
+    struct ScanlineBufferState *state = &sChannel.buffers[sChannel.writeBuffer];
+    u16 *buffer = gScanlineEffectRegBuffers[sChannel.writeBuffer];
+    bool32 vertical = sChannel.hasVertical || state->hasVertical;
+    bool32 horizontal = sChannel.hasHorizontal || state->hasHorizontal;
+    s16 baseX, baseY;
+    u32 line;
+
+    GetCameraOffsetWithPan(&baseX, &baseY);
+
+    if (!state->valid || baseX != state->baseX || baseY != state->baseY || vertical)
+    {
+        for (line = 0; line < SCANLINE_COUNT; line++)
+        {
+            u16 *regs = &buffer[line * SCANLINE_REGS];
+            u16 x = baseX + ClampLineOffset(sLineDx[line]);
+            u16 y = baseY + ClampLineOffset(sLineDy[line]);
+
+            regs[0] = regs[2] = regs[4] = x;
+            regs[1] = regs[3] = regs[5] = y;
+        }
+    }
+    else if (horizontal)
+    {
+        for (line = 0; line < SCANLINE_COUNT; line++)
+        {
+            u16 *regs = &buffer[line * SCANLINE_REGS];
+
+            regs[0] = regs[2] = regs[4] = baseX + ClampLineOffset(sLineDx[line]);
+        }
+    }
+
+    state->valid = TRUE;
+    state->baseX = baseX;
+    state->baseY = baseY;
+    state->hasHorizontal = sChannel.hasHorizontal;
+    state->hasVertical = sChannel.hasVertical;
+    sChannel.ready = TRUE;
+}
+
+static void ReleaseAllEffects(void)
 {
     u32 i;
 
@@ -70,6 +238,12 @@ void ScreenFx_ResetAll(void)
         if (sScreenFx[i].active)
             ReleaseSlot(&sScreenFx[i]);
     }
+}
+
+void ScreenFx_ResetAll(void)
+{
+    ReleaseAllEffects();
+    ScanlineChannel_Reset();
 }
 
 // Rounds to the nearest pixel, symmetric around zero.
@@ -197,6 +371,9 @@ void ScreenFx_Update(void)
     bool32 playerRead = FALSE;
     u32 i;
 
+    if (sChannel.acquired)
+        ScanlineChannel_ClearOffsets();
+
     for (i = 0; i < MAX_SCREEN_EFFECTS; i++)
     {
         struct ScreenFx *effect = &sScreenFx[i];
@@ -227,6 +404,59 @@ void ScreenFx_Update(void)
         if (effect->kind == SCREENFX_SHAKE)
             UpdateShake(effect);
     }
+}
+
+// Runs after UpdateCameraPanning so the buffer holds the camera offset VBlank will apply.
+void ScreenFx_Render(void)
+{
+    bool32 wanted = HasGeometryEffect();
+
+    if (sChannel.acquired && (!wanted || gScanlineEffect.state != 0))
+        ScanlineChannel_Release();
+
+    if (wanted && !sChannel.acquired)
+        ScanlineChannel_Acquire();
+
+    if (sChannel.acquired)
+        ScanlineChannel_Build();
+}
+
+// Runs after FieldUpdateBgTilemapScroll. Line 0 is drawn before the first HBlank transfer, so it keeps
+// the base offsets and the stream starts at line 1. The final transfer reads six halfwords past the
+// buffer; it lands after the last visible line.
+void ScreenFx_VBlank(void)
+{
+    if (gScanlineEffect.state != 0)
+    {
+        // The stock effect has already reprogrammed DMA0.
+        sChannel.dmaRunning = FALSE;
+        return;
+    }
+
+    if (!sChannel.acquired)
+    {
+        if (sChannel.dmaRunning)
+        {
+            DmaStop(0);
+            sChannel.dmaRunning = FALSE;
+        }
+        return;
+    }
+
+    if (sChannel.ready)
+    {
+        sChannel.readBuffer = sChannel.writeBuffer;
+        sChannel.writeBuffer ^= 1;
+        sChannel.ready = FALSE;
+        sChannel.readValid = TRUE;
+    }
+
+    if (!sChannel.readValid)
+        return;
+
+    DmaStop(0);
+    DmaSet(0, &gScanlineEffectRegBuffers[sChannel.readBuffer][SCANLINE_REGS], &REG_BG1HOFS, SCANLINE_DMA_CONTROL);
+    sChannel.dmaRunning = TRUE;
 }
 
 ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
@@ -289,7 +519,7 @@ void ScreenFx_Stop(ScreenFxId id)
 
 void ScreenFx_StopAll(void)
 {
-    ScreenFx_ResetAll();
+    ReleaseAllEffects();
 }
 
 bool32 ScreenFx_IsValid(ScreenFxId id)

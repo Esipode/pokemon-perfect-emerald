@@ -1937,6 +1937,7 @@ static void OverworldBasic(void)
     CameraUpdate();
     ScreenFx_Update();
     UpdateCameraPanning();
+    ScreenFx_Render();
     BuildOamBuffer();
     UpdatePaletteFade();
     UpdateTilesetAnimations();
@@ -2385,6 +2386,7 @@ static void VBlankCB_Field(void)
     ProcessSpriteCopyRequests();
     ScanlineEffect_InitHBlankDmaTransfer();
     FieldUpdateBgTilemapScroll();
+    ScreenFx_VBlank();
     TransferPlttBuffer();
     TransferTilesetAnimsBuffer();
 }

@@ -83,10 +83,21 @@ struct ScreenFx
 // effects (earthquake, Mirage Tower); those resume when the shake stops. Stopping restores the
 // default pan-ahead camera.
 
-// Invalidates every outstanding handle and clears the pool.
+// Scanline channel (wave, ripple and tear effects). While any of those effects exists, an HBlank DMA0
+// stream rewrites BG1-3 scroll registers per scanline from gScanlineEffectRegBuffers, starting from the
+// camera offset including pan, so it composes with shake. The summed per-line offset is clamped to +/-8 px.
+// The channel is claimed only while gScanlineEffect.state is 0; during the flash and Battle Pyramid
+// effects it stays released and is claimed again once they end. It never touches gScanlineEffect.
+// With no line offsets the field renders exactly as without the channel.
+
+// Invalidates every outstanding handle and clears the pool. Stops the scanline DMA at once.
 void ScreenFx_ResetAll(void);
 // Per-frame update. Runs before UpdateCameraPanning so camera-pan effects apply the same frame.
 void ScreenFx_Update(void);
+// Builds the scanline buffer. Runs after UpdateCameraPanning.
+void ScreenFx_Render(void);
+// Installs the scanline DMA. Runs in VBlankCB_Field after FieldUpdateBgTilemapScroll.
+void ScreenFx_VBlank(void);
 
 // New effects start enabled. Returns SCREENFX_ID_INVALID when the pool is full or the kind is unknown.
 ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config);
