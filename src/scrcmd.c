@@ -65,6 +65,7 @@
 #include "list_menu.h"
 #include "malloc.h"
 #include "overworld_overlay.h"
+#include "screen_effects.h"
 #include "battle.h"
 #include "constants/comparison_operators.h"
 #include "constants/event_objects.h"
@@ -3693,6 +3694,266 @@ bool8 Scrcmd_overlaydestroy(struct ScriptContext *ctx)
         Overlay_Destroy(id);
     if (handleVar >= VARS_START)
         *GetVarPointer(handleVar) = OVERLAY_ID_INVALID;
+
+    return FALSE;
+}
+
+// Screen effect commands. Handles are read through VarGet, so the operand is the variable holding the
+// handle. Effect handles and preset handles are separate id spaces: pass each only to its own commands.
+// Every command is a no-op on a stale or invalid handle.
+
+// Starts an effect and writes its handle to destVar; SCREENFX_ID_INVALID if it cannot be started.
+static void StartScreenFx(u16 destVar, u8 kind, u16 intensity, u16 param1, u16 param2, u16 duration)
+{
+    struct ScreenFxConfig config = {0};
+
+    config.kind = kind;
+    config.intensity = min(intensity, SCREENFX_INTENSITY_MAX);
+    config.param1 = param1;
+    config.param2 = param2;
+    config.durationFrames = duration;
+
+    *GetVarPointer(destVar) = ScreenFx_Start(&config);
+}
+
+bool8 Scrcmd_screenfxshake(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
+    u16 period = VarGet(ScriptReadHalfword(ctx));
+    u16 axis = VarGet(ScriptReadHalfword(ctx));
+    u16 duration = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    StartScreenFx(destVar, SCREENFX_SHAKE, intensity, period, axis, duration);
+    return FALSE;
+}
+
+// vertical adds the wave's vertical component.
+bool8 Scrcmd_screenfxwave(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
+    u16 period = VarGet(ScriptReadHalfword(ctx));
+    u16 wavelength = VarGet(ScriptReadHalfword(ctx));
+    u16 duration = VarGet(ScriptReadHalfword(ctx));
+    u16 vertical = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    wavelength &= ~SCREENFX_WAVE_VERTICAL;
+    if (vertical)
+        wavelength |= SCREENFX_WAVE_VERTICAL;
+
+    StartScreenFx(destVar, SCREENFX_WAVE, intensity, period, wavelength, duration);
+    return FALSE;
+}
+
+// Fires a ripple centred on the anchor (the screen centre without one). While destVar holds a live ripple
+// effect the ripple is added to it, otherwise a new effect is started. The effect's own intensity stays
+// at the maximum so the intensity operand is the ripple's amplitude.
+bool8 Scrcmd_screenfxripple(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 intensity = min(VarGet(ScriptReadHalfword(ctx)), SCREENFX_INTENSITY_MAX);
+    u16 speed = VarGet(ScriptReadHalfword(ctx));
+    u16 duration = VarGet(ScriptReadHalfword(ctx));
+    ScreenFxId id = VarGet(destVar);
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    if (ScreenFx_TriggerRipple(id, SCREENFX_RIPPLE_CENTER_AUTO, intensity, speed, duration))
+        return FALSE;
+
+    StartScreenFx(destVar, SCREENFX_RIPPLE, SCREENFX_INTENSITY_MAX, 0, 0, duration);
+    ScreenFx_TriggerRipple(VarGet(destVar), SCREENFX_RIPPLE_CENTER_AUTO, intensity, speed, duration);
+    return FALSE;
+}
+
+// bandCenter is a screen line (0-159) or SCREENFX_TEAR_CENTER_AUTO, which is read raw because
+// it would be mistaken for a variable id by VarGet.
+bool8 Scrcmd_screenfxtear(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
+    u16 bandHeight = VarGet(ScriptReadHalfword(ctx));
+    u16 bandCenter = ScriptReadHalfword(ctx);
+    u16 duration = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    if (bandCenter != SCREENFX_TEAR_CENTER_AUTO)
+        bandCenter = VarGet(bandCenter);
+
+    StartScreenFx(destVar, SCREENFX_TEAR, intensity, bandHeight, bandCenter, duration);
+    return FALSE;
+}
+
+bool8 Scrcmd_screenfxteardrift(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+    s16 drift = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_SetTearDrift(id, drift);
+    return FALSE;
+}
+
+bool8 Scrcmd_screenfxvignette(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
+    u16 radius = VarGet(ScriptReadHalfword(ctx));
+    u16 duration = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    StartScreenFx(destVar, SCREENFX_VIGNETTE, intensity, radius, 0, duration);
+    return FALSE;
+}
+
+// Anchors to an object (a = local id, 0 = player, on the current map) or to map coordinates (a, b = x, y).
+bool8 Scrcmd_screenfxanchor(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+    u16 kind = ScriptReadHalfword(ctx);
+    u16 a = VarGet(ScriptReadHalfword(ctx));
+    u16 b = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (kind == SCREENFX_ANCHOR_OBJECT)
+        ScreenFx_SetAnchorToObject(id, a == 0 ? LOCALID_PLAYER : a, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup);
+    else if (kind == SCREENFX_ANCHOR_COORDS)
+        ScreenFx_SetAnchorToPosition(id, (s16)a, (s16)b);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_screenfxclearanchor(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_ClearAnchor(id);
+    return FALSE;
+}
+
+bool8 Scrcmd_screenfxfalloff(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+    u16 innerRadius = VarGet(ScriptReadHalfword(ctx));
+    u16 outerRadius = VarGet(ScriptReadHalfword(ctx));
+    u16 minIntensity = VarGet(ScriptReadHalfword(ctx));
+    u16 maxIntensity = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_SetFalloff(id, min(innerRadius, 255), min(outerRadius, 255),
+                        min(minIntensity, SCREENFX_INTENSITY_MAX), min(maxIntensity, SCREENFX_INTENSITY_MAX));
+    return FALSE;
+}
+
+bool8 Scrcmd_screenfxfade(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+    u16 target = VarGet(ScriptReadHalfword(ctx));
+    u16 durationFrames = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_FadeTo(id, min(target, SCREENFX_INTENSITY_MAX), durationFrames);
+    return FALSE;
+}
+
+// Fades to 0, then stops the effect and frees its slot.
+bool8 Scrcmd_screenfxfadeout(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+    u16 durationFrames = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_FadeOutAndStop(id, durationFrames);
+    return FALSE;
+}
+
+// Stops the effect and clears the handle variable, so a repeated stop is harmless.
+bool8 Scrcmd_screenfxstop(struct ScriptContext *ctx)
+{
+    u16 handleVar = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(handleVar);
+
+    ScreenFx_Stop(VarGet(handleVar));
+    if (handleVar >= VARS_START)
+        *GetVarPointer(handleVar) = SCREENFX_ID_INVALID;
+
+    return FALSE;
+}
+
+// Stops every effect and preset. Handle variables keep their now-stale values.
+bool8 Scrcmd_screenfxstopall(struct ScriptContext *ctx)
+{
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_StopAll();
+    return FALSE;
+}
+
+// Starts a preset and writes its handle to destVar; SCREENFX_PRESET_ID_INVALID if it cannot be started.
+bool8 Scrcmd_screenfxpreset(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 preset = VarGet(ScriptReadHalfword(ctx));
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
+    u16 localId = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    if (preset >= SCREENFX_PRESET_COUNT || localId > 255)
+        *GetVarPointer(destVar) = SCREENFX_PRESET_ID_INVALID;
+    else
+        *GetVarPointer(destVar) = ScreenFx_StartPreset(preset, min(intensity, SCREENFX_INTENSITY_MAX), localId);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_screenfxpresetstage(struct ScriptContext *ctx)
+{
+    ScreenFxPresetId id = VarGet(ScriptReadHalfword(ctx));
+    u16 stage = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (stage < SCREENFX_STAGE_COUNT)
+        ScreenFx_SetProgression(id, stage);
+
+    return FALSE;
+}
+
+// Fades the preset's members out over fadeFrames, releases the preset and clears the handle variable.
+bool8 Scrcmd_screenfxpresetstop(struct ScriptContext *ctx)
+{
+    u16 handleVar = ScriptReadHalfword(ctx);
+    u16 fadeFrames = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(handleVar);
+
+    ScreenFx_StopPreset(VarGet(handleVar), fadeFrames);
+    if (handleVar >= VARS_START)
+        *GetVarPointer(handleVar) = SCREENFX_PRESET_ID_INVALID;
 
     return FALSE;
 }

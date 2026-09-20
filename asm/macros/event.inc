@@ -3139,3 +3139,158 @@
 	callnative Scrcmd_overlaydestroy, requests_effects=1
 	.2byte \handleVar
 	.endm
+
+	@ Screen effects (geometry and light). intensity is 0-SCREENFX_INTENSITY_MAX (16); duration is in
+	@ frames, 0 = until stopped. Effects are transient: they are cleared on map load and do not
+	@ survive into battle, so call screenfxstopall (or fade out) before starting a battle.
+	@ Starting commands store the handle in the variable dest (0 if it cannot be started).
+
+	@ Slow camera tremor. period in frames (24-48 reads as a tremor); axis is
+	@ SCREENFX_AXIS_X, SCREENFX_AXIS_Y or both OR'd (0 = both). Only one shake at a time.
+	.macro screenfxshake dest:req, intensity:req, period:req, axis:req, duration:req
+	callnative Scrcmd_screenfxshake, requests_effects=1
+	.2byte \dest
+	.2byte \intensity
+	.2byte \period
+	.2byte \axis
+	.2byte \duration
+	.endm
+
+	@ Sine distortion. period in frames (60-90 shimmer, 180-300 breathing); wavelength in scanlines;
+	@ vertical = 1 adds the vertical component.
+	.macro screenfxwave dest:req, intensity:req, period:req, wavelength:req, duration:req, vertical=0
+	callnative Scrcmd_screenfxwave, requests_effects=1
+	.2byte \dest
+	.2byte \intensity
+	.2byte \period
+	.2byte \wavelength
+	.2byte \duration
+	.2byte \vertical
+	.endm
+
+	@ Fires a ripple from the anchor (the screen centre without one); intensity is the ripple's amplitude.
+	@ speed is in sixteenths of a scanline per frame (0 = default). While dest holds a live ripple
+	@ effect, another ripple is added to it. Only one ripple effect at a time.
+	.macro screenfxripple dest:req, intensity:req, speed:req, duration:req
+	callnative Scrcmd_screenfxripple, requests_effects=1
+	.2byte \dest
+	.2byte \intensity
+	.2byte \speed
+	.2byte \duration
+	.endm
+
+	@ Torn-space band. bandHeight in scanlines (0 = default); bandCenter is a screen line (0-159) or
+	@ SCREENFX_TEAR_CENTER_AUTO to follow the anchor.
+	.macro screenfxtear dest:req, intensity:req, bandHeight:req, bandCenter:req, duration:req
+	callnative Scrcmd_screenfxtear, requests_effects=1
+	.2byte \dest
+	.2byte \intensity
+	.2byte \bandHeight
+	.2byte \bandCenter
+	.2byte \duration
+	.endm
+
+	@ Vertical drift of a fixed-centre tear band, in sixteenths of a scanline per frame (negative = up).
+	.macro screenfxteardrift handleVar:req, drift:req
+	callnative Scrcmd_screenfxteardrift, requests_effects=1
+	.2byte \handleVar
+	.2byte \drift
+	.endm
+
+	@ Darkened screen edges. radius is SCREENFX_VIGNETTE_WIDE, _MEDIUM or _TIGHT. Only one vignette at a time.
+	.macro screenfxvignette dest:req, intensity:req, radius:req, duration:req
+	callnative Scrcmd_screenfxvignette, requests_effects=1
+	.2byte \dest
+	.2byte \intensity
+	.2byte \radius
+	.2byte \duration
+	.endm
+
+	@ The handleVar argument of the commands below is the variable holding an effect handle.
+	@ Each command does nothing if the handle is stale or invalid.
+
+	@ Anchors the effect to an object on the current map; localId 0 is the player.
+	.macro screenfxanchorobject handleVar:req, localId:req
+	callnative Scrcmd_screenfxanchor, requests_effects=1
+	.2byte \handleVar
+	.2byte SCREENFX_ANCHOR_OBJECT
+	.2byte \localId
+	.2byte 0
+	.endm
+
+	@ Anchors the effect to map coordinates.
+	.macro screenfxanchorpos handleVar:req, x:req, y:req
+	callnative Scrcmd_screenfxanchor, requests_effects=1
+	.2byte \handleVar
+	.2byte SCREENFX_ANCHOR_COORDS
+	.2byte \x
+	.2byte \y
+	.endm
+
+	@ Removes the effect's anchor.
+	.macro screenfxclearanchor handleVar:req
+	callnative Scrcmd_screenfxclearanchor, requests_effects=1
+	.2byte \handleVar
+	.endm
+
+	@ Scales the effect's intensity by the player's distance to its anchor. Radii are in tiles;
+	@ intensities are 0-16: max applies inside inner, min applies beyond outer.
+	.macro screenfxfalloff handleVar:req, inner:req, outer:req, minIntensity:req, maxIntensity:req
+	callnative Scrcmd_screenfxfalloff, requests_effects=1
+	.2byte \handleVar
+	.2byte \inner
+	.2byte \outer
+	.2byte \minIntensity
+	.2byte \maxIntensity
+	.endm
+
+	@ Fades the effect linearly to target (0-16) over frames; 0 snaps.
+	.macro screenfxfade handleVar:req, target:req, frames:req
+	callnative Scrcmd_screenfxfade, requests_effects=1
+	.2byte \handleVar
+	.2byte \target
+	.2byte \frames
+	.endm
+
+	@ Fades the effect to 0 over frames, then stops it.
+	.macro screenfxfadeout handleVar:req, frames:req
+	callnative Scrcmd_screenfxfadeout, requests_effects=1
+	.2byte \handleVar
+	.2byte \frames
+	.endm
+
+	@ Stops the effect and clears the handle variable.
+	.macro screenfxstop handleVar:req
+	callnative Scrcmd_screenfxstop, requests_effects=1
+	.2byte \handleVar
+	.endm
+
+	@ Stops every effect and preset at once.
+	.macro screenfxstopall
+	callnative Scrcmd_screenfxstopall, requests_effects=1
+	.endm
+
+	@ Starts a preset (SCREENFX_PRESET_*) and stores its handle in dest (0 if it cannot be started).
+	@ localId is an object on the current map to anchor to, 0 for none. Preset handles are a separate
+	@ id space from effect handles: use them only with screenfxpresetstage and screenfxpresetstop.
+	.macro screenfxpreset dest:req, preset:req, intensity:req, localId:req
+	callnative Scrcmd_screenfxpreset, requests_effects=1
+	.2byte \dest
+	.2byte \preset
+	.2byte \intensity
+	.2byte \localId
+	.endm
+
+	@ Moves the preset to a progression stage (SCREENFX_STAGE_*).
+	.macro screenfxpresetstage handleVar:req, stage:req
+	callnative Scrcmd_screenfxpresetstage, requests_effects=1
+	.2byte \handleVar
+	.2byte \stage
+	.endm
+
+	@ Fades the preset's members out over frames, releases it and clears the handle variable.
+	.macro screenfxpresetstop handleVar:req, frames:req
+	callnative Scrcmd_screenfxpresetstop, requests_effects=1
+	.2byte \handleVar
+	.2byte \frames
+	.endm

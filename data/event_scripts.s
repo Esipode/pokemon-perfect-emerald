@@ -61,6 +61,7 @@
 #include "constants/rgb.h"
 #include "constants/rtc.h"
 #include "constants/roulette.h"
+#include "constants/screen_effects.h"
 #include "constants/script_menu.h"
 #include "constants/seagallop.h"
 #include "constants/secret_bases.h"
