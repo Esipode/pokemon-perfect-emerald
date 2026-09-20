@@ -3958,9 +3958,12 @@ bool8 Scrcmd_screenfxpresetstop(struct ScriptContext *ctx)
     ScreenFx_StopPreset(VarGet(handleVar), fadeFrames);
     if (handleVar >= VARS_START)
         *GetVarPointer(handleVar) = SCREENFX_PRESET_ID_INVALID;
+
+    return FALSE;
+}
+
 // Sets VAR_RESULT to TRUE with percent% chance. The roll is fixed for the day: it derives from
 // the daily seed, so each distinct salt gets its own stable result until the seed updates.
-
 bool8 Scrcmd_checkdailyseedchance(struct ScriptContext *ctx)
 {
     u32 percent = VarGet(ScriptReadHalfword(ctx));
