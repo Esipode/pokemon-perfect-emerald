@@ -1,6 +1,6 @@
 ## Dialga — The Temporal Pokémon
 
-### Location: Cave of Origin 1F - Tuesdays, post-game, not already owned
+### Location: Cave of Origin 1F - Tuesday
 
 Dialga fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic

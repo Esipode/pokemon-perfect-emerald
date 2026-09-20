@@ -11,7 +11,7 @@ MtPyre_6F_OnLoad:
 	@ Giratina spawn gate: post-game, not already owned, Friday, night
 	setvar VAR_0x8004, SPECIES_GIRATINA
 	setvar VAR_0x8005, LAYOUT_MT_PYRE_6F
-	setvar VAR_0x8006, WEEKDAY_SUN
+	setvar VAR_0x8006, WEEKDAY_FRI
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, MtPyre_6F_HideGiratinaArena

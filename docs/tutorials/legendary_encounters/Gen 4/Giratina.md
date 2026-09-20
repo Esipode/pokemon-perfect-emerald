@@ -1,6 +1,6 @@
 ## Giratina — The Renegade Pokémon
 
-### Location: Mt. Pyre 6F - Friday nights, post-game, not already owned
+### Location: Mt. Pyre 6F - Friday night
 
 Giratina fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
