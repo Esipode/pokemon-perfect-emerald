@@ -40,9 +40,6 @@ Route126_OnLoad:
 	goto Route126_ShowArceusArena
 
 Route126_Arceus_Encounter::
-	screenfxstopall
-	overlaydestroy VAR_TEMP_5
-	overlaydestroy VAR_TEMP_6
 	goto LegendaryEncounter_EventScript_Arceus
 
 Route126_HideArceusArena:

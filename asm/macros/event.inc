@@ -3150,9 +3150,14 @@
 	.2byte \handleVar
 	.endm
 
+	@ Destroys every map-local overlay at once. Handle variables keep their stale values.
+	.macro overlaydestroymaplocal
+	callnative Scrcmd_overlaydestroymaplocal, requests_effects=1
+	.endm
+
 	@ Screen effects (geometry and light). intensity is 0-SCREENFX_INTENSITY_MAX (16); duration is in
-	@ frames, 0 = until stopped. Effects are transient: they are cleared on map load and do not
-	@ survive into battle, so call screenfxstopall (or fade out) before starting a battle.
+	@ frames, 0 = until stopped. Effects are transient: they are cleared on map load. A battle
+	@ freezes them during the transition and resumes them afterwards; call screenfxstopall to end them.
 	@ Starting commands store the handle in the variable dest (0 if it cannot be started).
 
 	@ Erratic earthquake-like camera shake. period is smoothing (16 or less = raw jitter, 24-48 = rumble); axis is

@@ -107,7 +107,7 @@ static EWRAM_DATA struct PresetRecord sPresets[MAX_SCREENFX_PRESETS] = {0};
 static EWRAM_DATA struct ScanlineChannel sChannel = {0};
 static EWRAM_DATA struct Ripple sRipples[MAX_RIPPLES] = {0}; // owned by the one SCREENFX_RIPPLE effect
 static EWRAM_DATA bool8 sSuspended = FALSE;
-static EWRAM_DATA u8 sBattleFadeElapsed = 0; // frames since ScreenFx_BeginBattleFade; 0 = not fading
+static EWRAM_DATA bool8 sFrozen = FALSE; // between ScreenFx_BeginBattleFreeze and Suspend/Resume
 // Summed per-line offsets of every geometry effect; clamped when the buffer is built.
 static EWRAM_DATA s16 sLineDx[SCANLINE_COUNT] = {0};
 static EWRAM_DATA s16 sLineDy[SCANLINE_COUNT] = {0};
@@ -591,7 +591,7 @@ static void ReleaseAllEffects(void)
 void ScreenFx_ResetAll(void)
 {
     sSuspended = FALSE;
-    sBattleFadeElapsed = 0;
+    sFrozen = FALSE;
     ReleaseAllEffects();
     ScanlineChannel_Reset();
 }
@@ -604,6 +604,7 @@ void ScreenFx_Suspend(void)
         return;
 
     sSuspended = TRUE;
+    sFrozen = FALSE;
     ScanlineChannel_Reset();
 
     // Also zeroes the pan.
@@ -618,22 +619,15 @@ void ScreenFx_Suspend(void)
 void ScreenFx_Resume(void)
 {
     sSuspended = FALSE;
-    sBattleFadeElapsed = 0;
+    sFrozen = FALSE;
 }
 
-// Scales every effect toward 0 over SCREENFX_BATTLE_FADE_FRAMES, so the Suspend that follows is not visible.
-void ScreenFx_BeginBattleFade(void)
+// Holds every effect at its current state while the transition intro plays. Update stops advancing,
+// so the scanline buffer, camera pan and vignette sprites stay as drawn until Suspend.
+void ScreenFx_BeginBattleFreeze(void)
 {
     if (!sSuspended)
-        sBattleFadeElapsed = 1;
-}
-
-static u32 ApplyBattleFade(u32 intensity)
-{
-    if (sBattleFadeElapsed == 0)
-        return intensity;
-
-    return intensity * (SCREENFX_BATTLE_FADE_FRAMES - sBattleFadeElapsed) / SCREENFX_BATTLE_FADE_FRAMES;
+        sFrozen = TRUE;
 }
 
 // Rounds to the nearest pixel, symmetric around zero.
@@ -945,11 +939,8 @@ void ScreenFx_Update(void)
     bool32 playerRead = FALSE;
     u32 i;
 
-    if (sSuspended)
+    if (sSuspended || sFrozen)
         return;
-
-    if (sBattleFadeElapsed != 0 && sBattleFadeElapsed < SCREENFX_BATTLE_FADE_FRAMES)
-        sBattleFadeElapsed++;
 
     UpdatePresets();
 
@@ -980,7 +971,7 @@ void ScreenFx_Update(void)
         }
 
         effect->resolvedIntensity = effect->enabled
-            ? ApplyBattleFade(min((effect->currentIntensity * distanceFactor + SCREENFX_INTENSITY_MAX / 2) / SCREENFX_INTENSITY_MAX, SCREENFX_INTENSITY_MAX))
+            ? min((effect->currentIntensity * distanceFactor + SCREENFX_INTENSITY_MAX / 2) / SCREENFX_INTENSITY_MAX, SCREENFX_INTENSITY_MAX)
             : 0;
 
         if (effect->gateActive != 0)
@@ -1062,7 +1053,7 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
 {
     u32 i;
 
-    if (config->kind >= SCREENFX_KIND_COUNT || sSuspended)
+    if (config->kind >= SCREENFX_KIND_COUNT || sSuspended || sFrozen)
         return SCREENFX_ID_INVALID;
 
     // Shake, ripple and vignette each have one shared backing store.

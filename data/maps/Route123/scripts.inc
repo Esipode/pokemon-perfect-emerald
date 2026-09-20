@@ -24,11 +24,9 @@ Route123_OnLoad:
 	goto Route123_ShowCresseliaArena
 
 Route123_Cresselia_Encounter::
-	@ Ripple fires at full strength on interaction, then everything stops before the battle
+	@ Ripple fires at full strength on interaction, then the battle starts
 	screenfxripple VAR_TEMP_A, 16, 0, 60
 	delay 60
-	screenfxstopall
-	overlaydestroy VAR_TEMP_5
 	goto LegendaryEncounter_EventScript_Cresselia
 
 Route123_HideCresseliaArena:

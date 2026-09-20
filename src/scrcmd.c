@@ -3706,6 +3706,15 @@ bool8 Scrcmd_overlaydestroy(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// Destroys every map-local overlay. Handle variables keep their now-stale values.
+bool8 Scrcmd_overlaydestroymaplocal(struct ScriptContext *ctx)
+{
+    Script_RequestEffects(SCREFF_V1);
+
+    Overlay_DestroyMapLocal();
+    return FALSE;
+}
+
 // Screen effect commands. Handles are read through VarGet, so the operand is the variable holding the
 // handle. Effect handles and preset handles are separate id spaces: pass each only to its own commands.
 // Every command is a no-op on a stale or invalid handle.

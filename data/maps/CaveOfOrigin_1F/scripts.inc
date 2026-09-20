@@ -19,8 +19,6 @@ CaveOfOrigin_1F_OnLoad:
 	goto CaveOfOrigin_1F_ShowDialgaArena
 
 CaveOfOrigin_1F_Dialga_Encounter::
-	screenfxstopall
-	overlaydestroy VAR_TEMP_5
 	goto LegendaryEncounter_EventScript_Dialga
 
 CaveOfOrigin_1F_HideDialgaArena:

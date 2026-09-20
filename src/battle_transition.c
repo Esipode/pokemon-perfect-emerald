@@ -1077,7 +1077,7 @@ bool8 IsBattleTransitionDone(void)
 
 static void LaunchBattleTransitionTask(u8 transitionId)
 {
-    ScreenFx_BeginBattleFade();
+    ScreenFx_BeginBattleFreeze();
     u8 taskId = CreateTask(Task_BattleTransition, 2);
     gTasks[taskId].tTransitionId = transitionId;
     sTransitionData = AllocZeroed(sizeof(*sTransitionData));

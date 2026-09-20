@@ -40,8 +40,6 @@ AbandonedShip_HiddenFloor_EventScript_StartDarkraiAtmosphere::
 @ VAR_DARKRAI_HUNT_STAGE counts relocations done. Darkrai relocates on interaction until stage 5, then battles.
 AbandonedShip_HiddenFloorRooms_Darkrai_Encounter::
 	goto_if_lt VAR_DARKRAI_HUNT_STAGE, 5, AbandonedShip_HiddenFloorRooms_DarkraiRelocate
-	screenfxstopall
-	overlaydestroy VAR_TEMP_5
 	goto LegendaryEncounter_EventScript_Darkrai
 
 @ Despawns Darkrai; the next map load places it in the room for the new stage.

@@ -644,6 +644,8 @@ LegendaryEncounter_EventScript_FinishBattle::
 	end
 
 LegendaryEncounter_EventScript_RemoveCaughtLegendary::
+	screenfxstopall
+	overlaydestroymaplocal
 	removeobject VAR_LAST_TALKED
 	return
 

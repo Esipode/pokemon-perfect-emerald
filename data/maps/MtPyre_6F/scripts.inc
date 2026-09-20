@@ -20,7 +20,6 @@ MtPyre_6F_OnLoad:
 	goto MtPyre_6F_ShowGiratinaArena
 
 MtPyre_6F_Giratina_Encounter::
-	overlaydestroy VAR_TEMP_5
 	goto LegendaryEncounter_EventScript_Giratina
 
 MtPyre_6F_HideGiratinaArena:

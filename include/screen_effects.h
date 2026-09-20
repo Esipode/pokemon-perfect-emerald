@@ -11,7 +11,6 @@
 #define SCREENFX_GENERATION(id) ((id) >> 3)
 
 #define MAX_SCREENFX_PRESETS        2
-#define SCREENFX_BATTLE_FADE_FRAMES 40
 #define SCREENFX_PRESET_ID_INVALID  0
 
 typedef u16 ScreenFxId;
@@ -181,16 +180,15 @@ struct ScreenFx
 // A preset starts at PERCEPTIBLE, fading in over 60 frames. Members are weighted individually
 // (the tint is kept lighter than the geometry), and falloff applies on top of the stage level.
 
-// Battle transitions. BattleTransition_Start and BattleTransition_StartOnField call ScreenFx_BeginBattleFade, which
-// scales every effect to 0 over SCREENFX_BATTLE_FADE_FRAMES while the transition intro flash plays. When the
-// transition's main phase begins it calls ScreenFx_Suspend, so no effect runs during that phase or the battle: the
-// scanline DMA stops, the camera pan returns to pan-ahead and the vignette releases its sprites and palette slot.
-// The pool, the presets and their timers are kept but frozen, and ScreenFx_Start fails while suspended. ResumeMap
-// calls ScreenFx_Resume on the return to the field, and the effects continue; a warp, whiteout or load clears
-// them instead.
+// Battle transitions. BattleTransition_Start and BattleTransition_StartOnField call ScreenFx_BeginBattleFreeze, which
+// holds every effect exactly as drawn while the transition intro flash plays. When the transition's main phase
+// begins it calls ScreenFx_Suspend, so no effect runs during that phase or the battle: the scanline DMA stops, the
+// camera pan returns to pan-ahead and the vignette releases its sprites and palette slot. The pool, the presets and
+// their timers are kept but frozen, and ScreenFx_Start fails while frozen or suspended. ResumeMap calls
+// ScreenFx_Resume on the return to the field, and the effects continue; a warp, whiteout or load clears them instead.
 // Encounter scripts need no screenfxstopall before a battle start; stop effects only to end them for good.
 // Menus and text boxes do not suspend: the effects are BG scroll and OBJ level and text is on BG0.
-void ScreenFx_BeginBattleFade(void);
+void ScreenFx_BeginBattleFreeze(void);
 void ScreenFx_Suspend(void);
 void ScreenFx_Resume(void);
 
