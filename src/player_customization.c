@@ -69,6 +69,18 @@ void Player_SetColorShade(enum PlayerColorRegion region, s8 shade)
     gSaveBlock2Ptr->playerColors[region] = PackColorByte(curHue, shade);
 }
 
+u8 Player_GetSpriteStyle(void)
+{
+    return gSaveBlock2Ptr->playerSpriteStyle;
+}
+
+void Player_SetSpriteStyle(u8 style)
+{
+    if (style >= PLAYER_SPRITE_STYLE_COUNT)
+        style = PLAYER_SPRITE_STYLE_EMERALD;
+    gSaveBlock2Ptr->playerSpriteStyle = style;
+}
+
 bool32 PlayerCustomization_IsDefault(void)
 {
     u32 i;

@@ -14,4 +14,13 @@ enum PlayerColorRegion
     PLAYER_COLOR_REGION_COUNT,
 };
 
+// Which protagonist sprite set the save renders the player with. Stored in
+// gSaveBlock2Ptr->playerSpriteStyle, so EMERALD must stay 0.
+enum PlayerSpriteStyle
+{
+    PLAYER_SPRITE_STYLE_EMERALD,
+    PLAYER_SPRITE_STYLE_FRLG,
+    PLAYER_SPRITE_STYLE_COUNT,
+};
+
 #endif // GUARD_CONSTANTS_PLAYER_CUSTOMIZATION_H

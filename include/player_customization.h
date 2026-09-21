@@ -20,6 +20,11 @@ struct PlayerColorRegionInfo
     u8 numTrainerIndices;
 };
 
+// Accessors over gSaveBlock2Ptr->playerSpriteStyle. Set clamps out-of-range
+// values to PLAYER_SPRITE_STYLE_EMERALD.
+u8 Player_GetSpriteStyle(void);
+void Player_SetSpriteStyle(u8 style);
+
 // Accessors over gSaveBlock2Ptr->playerColors[region]. Each byte packs a
 // hue step (low nibble, 0-15) and a signed shade offset (high nibble,
 // PLAYER_COLOR_SHADE_MIN..PLAYER_COLOR_SHADE_MAX); 0x00 decodes to "no
