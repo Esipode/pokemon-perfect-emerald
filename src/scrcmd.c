@@ -84,6 +84,7 @@ static EWRAM_DATA u16 sMovingNpcMapNum = 0;
 static EWRAM_DATA u16 sFieldEffectScriptId = 0;
 
 static u8 sBrailleWindowId;
+static bool8 sIsBrailleWindowOpen;
 static bool8 sIsScriptedWildDouble;
 
 extern const SpecialFunc gSpecials[];
@@ -1759,7 +1760,8 @@ static bool8 WaitForAorBPress(void)
         return TRUE;
     if (JOY_NEW(B_BUTTON))
         return TRUE;
-    if (FlagGet(FLAG_AUTO_SCROLL_TEXT))
+    // Braille messages always wait for a button press
+    if (FlagGet(FLAG_AUTO_SCROLL_TEXT) && !sIsBrailleWindowOpen)
         return TRUE;
     return FALSE;
 }
@@ -2078,6 +2080,7 @@ bool8 ScrCmd_braillemessage(struct ScriptContext *ctx)
 
     winTemplate = CreateWindowTemplate(0, xWindow, yWindow + 1, width, height, 0xF, 0x1);
     sBrailleWindowId = AddWindow(&winTemplate);
+    sIsBrailleWindowOpen = TRUE;
     LoadUserWindowBorderGfx(sBrailleWindowId, 0x214, BG_PLTT_ID(14));
     DrawStdWindowFrame(sBrailleWindowId, FALSE);
     PutWindowTilemap(sBrailleWindowId);
@@ -3049,6 +3052,7 @@ static void CloseBrailleWindow(void)
 {
     ClearStdWindowAndFrame(sBrailleWindowId, TRUE);
     RemoveWindow(sBrailleWindowId);
+    sIsBrailleWindowOpen = FALSE;
 }
 
 bool8 ScrCmd_buffertrainerclassname(struct ScriptContext *ctx)

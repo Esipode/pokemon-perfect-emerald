@@ -2427,6 +2427,9 @@
 
 #endif
 
+// Shared by every overworld Escape Rope ball: picking one up hides all
+#define FLAG_ITEM_ESCAPE_ROPE_PICKED_UP         FLAG_ITEM_NEW_MAUVILLE_ESCAPE_ROPE
+
 #if TESTING
 #define TESTING_FLAGS_START                     0x5000
 #define TESTING_FLAG_SLEEP_CLAUSE               (TESTING_FLAGS_START + 0x0)

@@ -184,6 +184,14 @@ static void CountItems(struct RouteProgress *progress)
     }
 }
 
+// Trainers whose hide flag is set are not spawned (TrySpawnObjectEvents), so they can't be encountered.
+static bool32 IsTrainerTemplateActive(const struct ObjectEventTemplate *objectEvent)
+{
+    return objectEvent->trainerType != TRAINER_TYPE_NONE
+        && objectEvent->script != NULL
+        && !FlagGet(objectEvent->flagId);
+}
+
 // Backwards scan for trainer ID dedup (twins/double-battle pairs share one ID).
 static bool32 TrainerIdSeenEarlier(const struct ObjectEventTemplate *objectEvents, u32 uptoIndex, u16 trainerId)
 {
@@ -192,7 +200,7 @@ static bool32 TrainerIdSeenEarlier(const struct ObjectEventTemplate *objectEvent
 
     for (i = 0; i < uptoIndex; i++)
     {
-        if (objectEvents[i].trainerType == TRAINER_TYPE_NONE || objectEvents[i].script == NULL)
+        if (!IsTrainerTemplateActive(&objectEvents[i]))
             continue;
 
         otherId = GetTrainerFlagFromScript(objectEvents[i].script);
@@ -215,7 +223,7 @@ static void CountTrainers(struct RouteProgress *progress)
     for (i = 0; i < events->objectEventCount; i++)
     {
         const struct ObjectEventTemplate *objectEvent = &events->objectEvents[i];
-        if (objectEvent->trainerType == TRAINER_TYPE_NONE || objectEvent->script == NULL)
+        if (!IsTrainerTemplateActive(objectEvent))
             continue;
 
         trainerId = GetTrainerFlagFromScript(objectEvent->script);
