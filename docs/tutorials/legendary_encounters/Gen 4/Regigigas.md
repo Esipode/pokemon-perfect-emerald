@@ -1,5 +1,7 @@
 ## Regigigas — The Colossal Titan
 
+### Location: Sealed Chamber (Inner Room) - after catching Regirock, Regice, Registeel, Regidrago and Regieleki
+
 Regigigas fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be taken below 1 HP** for the whole fight, so the catch window at the end

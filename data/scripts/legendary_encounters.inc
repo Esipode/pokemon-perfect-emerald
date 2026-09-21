@@ -376,7 +376,7 @@ LegendaryEncounter_EventScript_Regigigas::
 	setbattleencounter ENCOUNTER_REGIGIGAS
 	setwildbattle SPECIES_REGIGIGAS, 50     @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
+	special StartRegiBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	goto LegendaryEncounter_EventScript_FinishBattle
 
