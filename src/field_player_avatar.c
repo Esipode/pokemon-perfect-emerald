@@ -17,6 +17,7 @@
 #include "oras_dowse.h"
 #include "overworld.h"
 #include "party_menu.h"
+#include "player_customization.h"
 #include "random.h"
 #include "rotating_gate.h"
 #include "rtc.h"
@@ -272,17 +273,32 @@ static const u8 sRivalAvatarGfxIds[][GENDER_COUNT] =
     [PLAYER_AVATAR_STATE_VSSEEKER]   = {OBJ_EVENT_GFX_RIVAL_BRENDAN_FIELD_MOVE, OBJ_EVENT_GFX_RIVAL_MAY_FIELD_MOVE},
 };
 
-static const u16 sPlayerAvatarGfxIds[][GENDER_COUNT] =
+static const u16 sPlayerAvatarGfxIds[PLAYER_SPRITE_STYLE_COUNT][PLAYER_AVATAR_STATE_VSSEEKER + 1][GENDER_COUNT] =
 {
-    [PLAYER_AVATAR_STATE_NORMAL]     = {PLAYER_AVATAR_GFX_MALE_NORMAL,     PLAYER_AVATAR_GFX_FEMALE_NORMAL},
-    [PLAYER_AVATAR_STATE_MACH_BIKE]  = {PLAYER_AVATAR_GFX_MALE_MACH_BIKE,  PLAYER_AVATAR_GFX_FEMALE_MACH_BIKE},
-    [PLAYER_AVATAR_STATE_ACRO_BIKE]  = {PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,  PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE},
-    [PLAYER_AVATAR_STATE_SURFING]    = {PLAYER_AVATAR_GFX_MALE_SURFING,    PLAYER_AVATAR_GFX_FEMALE_SURFING},
-    [PLAYER_AVATAR_STATE_UNDERWATER] = {PLAYER_AVATAR_GFX_MALE_UNDERWATER, PLAYER_AVATAR_GFX_FEMALE_UNDERWATER},
-    [PLAYER_AVATAR_STATE_FIELD_MOVE] = {PLAYER_AVATAR_GFX_MALE_FIELD_MOVE, PLAYER_AVATAR_GFX_FEMALE_FIELD_MOVE},
-    [PLAYER_AVATAR_STATE_FISHING]    = {PLAYER_AVATAR_GFX_MALE_FISHING,    PLAYER_AVATAR_GFX_FEMALE_FISHING},
-    [PLAYER_AVATAR_STATE_WATERING]   = {PLAYER_AVATAR_GFX_MALE_WATERING,   PLAYER_AVATAR_GFX_FEMALE_WATERING},
-    [PLAYER_AVATAR_STATE_VSSEEKER]   = {PLAYER_AVATAR_GFX_MALE_VSSEEKER,   PLAYER_AVATAR_GFX_FEMALE_VSSEEKER},
+    [PLAYER_SPRITE_STYLE_EMERALD] =
+    {
+        [PLAYER_AVATAR_STATE_NORMAL]     = {PLAYER_AVATAR_GFX_EMERALD_MALE_NORMAL, PLAYER_AVATAR_GFX_EMERALD_FEMALE_NORMAL},
+        [PLAYER_AVATAR_STATE_MACH_BIKE]  = {PLAYER_AVATAR_GFX_EMERALD_MALE_MACH_BIKE, PLAYER_AVATAR_GFX_EMERALD_FEMALE_MACH_BIKE},
+        [PLAYER_AVATAR_STATE_ACRO_BIKE]  = {PLAYER_AVATAR_GFX_EMERALD_MALE_ACRO_BIKE, PLAYER_AVATAR_GFX_EMERALD_FEMALE_ACRO_BIKE},
+        [PLAYER_AVATAR_STATE_SURFING]    = {PLAYER_AVATAR_GFX_EMERALD_MALE_SURFING, PLAYER_AVATAR_GFX_EMERALD_FEMALE_SURFING},
+        [PLAYER_AVATAR_STATE_UNDERWATER] = {PLAYER_AVATAR_GFX_EMERALD_MALE_UNDERWATER, PLAYER_AVATAR_GFX_EMERALD_FEMALE_UNDERWATER},
+        [PLAYER_AVATAR_STATE_FIELD_MOVE] = {PLAYER_AVATAR_GFX_EMERALD_MALE_FIELD_MOVE, PLAYER_AVATAR_GFX_EMERALD_FEMALE_FIELD_MOVE},
+        [PLAYER_AVATAR_STATE_FISHING]    = {PLAYER_AVATAR_GFX_EMERALD_MALE_FISHING, PLAYER_AVATAR_GFX_EMERALD_FEMALE_FISHING},
+        [PLAYER_AVATAR_STATE_WATERING]   = {PLAYER_AVATAR_GFX_EMERALD_MALE_WATERING, PLAYER_AVATAR_GFX_EMERALD_FEMALE_WATERING},
+        [PLAYER_AVATAR_STATE_VSSEEKER]   = {PLAYER_AVATAR_GFX_EMERALD_MALE_VSSEEKER, PLAYER_AVATAR_GFX_EMERALD_FEMALE_VSSEEKER},
+    },
+    [PLAYER_SPRITE_STYLE_FRLG] =
+    {
+        [PLAYER_AVATAR_STATE_NORMAL]     = {PLAYER_AVATAR_GFX_FRLG_MALE_NORMAL, PLAYER_AVATAR_GFX_FRLG_FEMALE_NORMAL},
+        [PLAYER_AVATAR_STATE_MACH_BIKE]  = {PLAYER_AVATAR_GFX_FRLG_MALE_MACH_BIKE, PLAYER_AVATAR_GFX_FRLG_FEMALE_MACH_BIKE},
+        [PLAYER_AVATAR_STATE_ACRO_BIKE]  = {PLAYER_AVATAR_GFX_FRLG_MALE_ACRO_BIKE, PLAYER_AVATAR_GFX_FRLG_FEMALE_ACRO_BIKE},
+        [PLAYER_AVATAR_STATE_SURFING]    = {PLAYER_AVATAR_GFX_FRLG_MALE_SURFING, PLAYER_AVATAR_GFX_FRLG_FEMALE_SURFING},
+        [PLAYER_AVATAR_STATE_UNDERWATER] = {PLAYER_AVATAR_GFX_FRLG_MALE_UNDERWATER, PLAYER_AVATAR_GFX_FRLG_FEMALE_UNDERWATER},
+        [PLAYER_AVATAR_STATE_FIELD_MOVE] = {PLAYER_AVATAR_GFX_FRLG_MALE_FIELD_MOVE, PLAYER_AVATAR_GFX_FRLG_FEMALE_FIELD_MOVE},
+        [PLAYER_AVATAR_STATE_FISHING]    = {PLAYER_AVATAR_GFX_FRLG_MALE_FISHING, PLAYER_AVATAR_GFX_FRLG_FEMALE_FISHING},
+        [PLAYER_AVATAR_STATE_WATERING]   = {PLAYER_AVATAR_GFX_FRLG_MALE_WATERING, PLAYER_AVATAR_GFX_FRLG_FEMALE_WATERING},
+        [PLAYER_AVATAR_STATE_VSSEEKER]   = {PLAYER_AVATAR_GFX_FRLG_MALE_VSSEEKER, PLAYER_AVATAR_GFX_FRLG_FEMALE_VSSEEKER},
+    },
 };
 
 static const u8 sFRLGAvatarGfxIds[GENDER_COUNT] =
@@ -301,27 +317,49 @@ static const struct PACKED
 {
     u16 graphicsId;
     u8 playerFlag;
-} sPlayerAvatarGfxToStateFlag[GENDER_COUNT][5] =
+} sPlayerAvatarGfxToStateFlag[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT][5] =
 {
-    [MALE] =
+    [PLAYER_SPRITE_STYLE_EMERALD] =
     {
-        {PLAYER_AVATAR_GFX_MALE_NORMAL,     PLAYER_AVATAR_FLAG_ON_FOOT},
-        // The acro entry must come first: GetPlayerAvatarGraphicsIdByCurrentState
-        // returns the first row matching the flags, and both bike gfx ids map to
-        // PLAYER_AVATAR_FLAG_BIKE. Only the acro sheet has the wheelie frames.
-        {PLAYER_AVATAR_GFX_MALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
-        {PLAYER_AVATAR_GFX_MALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
-        {PLAYER_AVATAR_GFX_MALE_SURFING,    PLAYER_AVATAR_FLAG_SURFING},
-        {PLAYER_AVATAR_GFX_MALE_UNDERWATER, PLAYER_AVATAR_FLAG_UNDERWATER},
+        [MALE] =
+        {
+            {PLAYER_AVATAR_GFX_EMERALD_MALE_NORMAL,     PLAYER_AVATAR_FLAG_ON_FOOT},
+            // The acro entry must come first: GetPlayerAvatarGraphicsIdByCurrentState
+            // returns the first row matching the flags, and both bike gfx ids map to
+            // PLAYER_AVATAR_FLAG_BIKE. Only the acro sheet has the wheelie frames.
+            {PLAYER_AVATAR_GFX_EMERALD_MALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_EMERALD_MALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_EMERALD_MALE_SURFING,    PLAYER_AVATAR_FLAG_SURFING},
+            {PLAYER_AVATAR_GFX_EMERALD_MALE_UNDERWATER, PLAYER_AVATAR_FLAG_UNDERWATER},
+        },
+        [FEMALE] =
+        {
+            {PLAYER_AVATAR_GFX_EMERALD_FEMALE_NORMAL,     PLAYER_AVATAR_FLAG_ON_FOOT},
+            {PLAYER_AVATAR_GFX_EMERALD_FEMALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_EMERALD_FEMALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_EMERALD_FEMALE_SURFING,    PLAYER_AVATAR_FLAG_SURFING},
+            {PLAYER_AVATAR_GFX_EMERALD_FEMALE_UNDERWATER, PLAYER_AVATAR_FLAG_UNDERWATER},
+        },
     },
-    [FEMALE] =
+    [PLAYER_SPRITE_STYLE_FRLG] =
     {
-        {PLAYER_AVATAR_GFX_FEMALE_NORMAL,         PLAYER_AVATAR_FLAG_ON_FOOT},
-        {PLAYER_AVATAR_GFX_FEMALE_ACRO_BIKE,      PLAYER_AVATAR_FLAG_BIKE},
-        {PLAYER_AVATAR_GFX_FEMALE_MACH_BIKE,      PLAYER_AVATAR_FLAG_BIKE},
-        {PLAYER_AVATAR_GFX_FEMALE_SURFING,        PLAYER_AVATAR_FLAG_SURFING},
-        {PLAYER_AVATAR_GFX_FEMALE_UNDERWATER,     PLAYER_AVATAR_FLAG_UNDERWATER},
-    }
+        [MALE] =
+        {
+            {PLAYER_AVATAR_GFX_FRLG_MALE_NORMAL,     PLAYER_AVATAR_FLAG_ON_FOOT},
+            {PLAYER_AVATAR_GFX_FRLG_MALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_FRLG_MALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_FRLG_MALE_SURFING,    PLAYER_AVATAR_FLAG_SURFING},
+            {PLAYER_AVATAR_GFX_FRLG_MALE_UNDERWATER, PLAYER_AVATAR_FLAG_UNDERWATER},
+        },
+        [FEMALE] =
+        {
+            {PLAYER_AVATAR_GFX_FRLG_FEMALE_NORMAL,     PLAYER_AVATAR_FLAG_ON_FOOT},
+            {PLAYER_AVATAR_GFX_FRLG_FEMALE_ACRO_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_FRLG_FEMALE_MACH_BIKE,  PLAYER_AVATAR_FLAG_BIKE},
+            {PLAYER_AVATAR_GFX_FRLG_FEMALE_SURFING,    PLAYER_AVATAR_FLAG_SURFING},
+            {PLAYER_AVATAR_GFX_FRLG_FEMALE_UNDERWATER, PLAYER_AVATAR_FLAG_UNDERWATER},
+        },
+    },
 };
 
 static bool8 (*const sArrowWarpMetatileBehaviorChecks2[])(u8) =  //Duplicate of sArrowWarpMetatileBehaviorChecks
@@ -1574,15 +1612,13 @@ void StopPlayerAvatar(void)
 
 u16 GetRivalAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender)
 {
-    if (IS_FRLG)
-        return GetPlayerAvatarGraphicsIdByStateIdAndGender(state, gender);
-    else
-        return sRivalAvatarGfxIds[state][gender];
+    // Rivals and link players stay on the Emerald sprites regardless of the local player's style.
+    return sRivalAvatarGfxIds[state][gender];
 }
 
 u16 GetPlayerAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender)
 {
-    return sPlayerAvatarGfxIds[state][gender];
+    return sPlayerAvatarGfxIds[Player_GetSpriteStyle()][state][gender];
 }
 
 u16 GetFRLGAvatarGraphicsIdByGender(enum Gender gender)
@@ -1680,10 +1716,10 @@ static u8 GetPlayerAvatarStateTransitionByGraphicsId(u16 graphicsId, u8 gender)
 {
     u8 i;
 
-    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarGfxToStateFlag[0]); i++)
+    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarGfxToStateFlag[0][0]); i++)
     {
-        if (sPlayerAvatarGfxToStateFlag[gender][i].graphicsId == graphicsId)
-            return sPlayerAvatarGfxToStateFlag[gender][i].playerFlag;
+        if (sPlayerAvatarGfxToStateFlag[Player_GetSpriteStyle()][gender][i].graphicsId == graphicsId)
+            return sPlayerAvatarGfxToStateFlag[Player_GetSpriteStyle()][gender][i].playerFlag;
     }
     return PLAYER_AVATAR_FLAG_ON_FOOT;
 }
@@ -1693,10 +1729,10 @@ u16 GetPlayerAvatarGraphicsIdByCurrentState(void)
     u8 i;
     u8 flags = gPlayerAvatar.flags;
 
-    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarGfxToStateFlag[0]); i++)
+    for (i = 0; i < ARRAY_COUNT(sPlayerAvatarGfxToStateFlag[0][0]); i++)
     {
-        if (sPlayerAvatarGfxToStateFlag[gPlayerAvatar.gender][i].playerFlag & flags)
-            return sPlayerAvatarGfxToStateFlag[gPlayerAvatar.gender][i].graphicsId;
+        if (sPlayerAvatarGfxToStateFlag[Player_GetSpriteStyle()][gPlayerAvatar.gender][i].playerFlag & flags)
+            return sPlayerAvatarGfxToStateFlag[Player_GetSpriteStyle()][gPlayerAvatar.gender][i].graphicsId;
     }
     return 0;
 }
