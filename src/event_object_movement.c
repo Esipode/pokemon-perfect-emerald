@@ -3347,6 +3347,9 @@ u8 LoadObjectEventPaletteCopy(u16 originalTag, u16 copyTag)
     return LoadSpritePalette(&palette);
 }
 
+// Loads the Emerald protagonist palette for field effect sprites (arrow, surf blob, fly bird,
+// rock climb blob, dowse machine). Their art is indexed against the Emerald layout regardless of
+// the player's sprite style. The avatar itself loads its palette through graphicsInfo->paletteTag.
 u8 LoadPlayerObjectEventPalette(enum Gender gender)
 {
     u16 paletteTag;
