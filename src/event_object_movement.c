@@ -603,6 +603,8 @@ static const struct SpritePalette sObjectEventSpritePalettes[] = {
     {gObjectEventPaletteEmotes,             OBJ_EVENT_PAL_TAG_EMOTES},
     {gObjectEventPaletteNeonLight,          OBJ_EVENT_PAL_TAG_NEON_LIGHT},
     {gObjectEventPal_EmoteIcons,            OBJ_EVENT_PAL_TAG_EMOTE_ICONS},
+    {gObjectEventPal_Brendan,               OBJ_EVENT_PAL_TAG_SURF_BLOB_BRENDAN},
+    {gObjectEventPal_May,                   OBJ_EVENT_PAL_TAG_SURF_BLOB_MAY},
 #ifdef BUGFIX
     {NULL,                                  OBJ_EVENT_PAL_TAG_NONE},
 #else
@@ -3347,9 +3349,9 @@ u8 LoadObjectEventPaletteCopy(u16 originalTag, u16 copyTag)
     return LoadSpritePalette(&palette);
 }
 
-// Loads the Emerald protagonist palette for field effect sprites (arrow, surf blob, fly bird,
-// rock climb blob, dowse machine). Their art is indexed against the Emerald layout regardless of
-// the player's sprite style. The avatar itself loads its palette through graphicsInfo->paletteTag.
+// Loads the Emerald protagonist palette for field effect sprites (arrow, fly bird, rock climb
+// blob, dowse machine). Their art is indexed against the Emerald layout regardless of the
+// player's sprite style. The avatar itself loads its palette through graphicsInfo->paletteTag.
 u8 LoadPlayerObjectEventPalette(enum Gender gender)
 {
     u16 paletteTag;
@@ -3364,6 +3366,13 @@ u8 LoadPlayerObjectEventPalette(enum Gender gender)
         break;
     }
     return LoadObjectEventPalette(paletteTag);
+}
+
+// The surf blob art is indexed against the Emerald layout; the tags used here are never
+// customization targets, so the blob keeps its vanilla colours under any player recolouring.
+u8 LoadSurfBlobObjectEventPalette(enum Gender gender)
+{
+    return LoadObjectEventPalette(gender == FEMALE ? OBJ_EVENT_PAL_TAG_SURF_BLOB_MAY : OBJ_EVENT_PAL_TAG_SURF_BLOB_BRENDAN);
 }
 
 static void UNUSED LoadObjectEventPaletteSet(u16 *paletteTags)

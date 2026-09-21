@@ -594,6 +594,10 @@ enum
 // Dedicated so trainer-see emote icons (!, ?, !!, X) never end up sharing a
 // slot with a player/NPC palette tag that player customization recolors.
 #define OBJ_EVENT_PAL_TAG_EMOTE_ICONS             0x1134
+// Surf blob palettes: uncustomized copies of the Emerald player palettes, so the blob
+// neither follows player recolouring nor depends on the player's sprite style.
+#define OBJ_EVENT_PAL_TAG_SURF_BLOB_BRENDAN       0x1135
+#define OBJ_EVENT_PAL_TAG_SURF_BLOB_MAY           0x1136
 
 #if OW_FOLLOWERS_POKEBALLS
 // Vanilla
