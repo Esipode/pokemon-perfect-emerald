@@ -469,8 +469,7 @@ const u32 gObjectEventPic_ApricornTree[] = INCGFX_U32("graphics/object_events/pi
 
 const u32 gFieldEffectObjectPic_ShinySparkle[] = INCGFX_U32("graphics/field_effects/pics/shiny_sparkle.png", ".4bpp", "-mwidth 2 -mheight 4");
 
-#if IS_FRLG
-
+// Red / Leaf player sprites are compiled unconditionally; they are selected at runtime by the player sprite style.
 const u16 gObjectEventPic_RedNormal[] = INCGFX_U16("graphics/object_events/pics/people/red/red_normal.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_RedBike[] = INCGFX_U16("graphics/object_events/pics/people/red/red_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_RedSurf[] = INCGFX_U16("graphics/object_events/pics/people/red/red_surf.png", ".4bpp", "-mwidth 4 -mheight 4");
@@ -488,6 +487,9 @@ const u16 gObjectEventPic_GreenVSSeekerBike[] = INCGFX_U16("graphics/object_even
 
 const u16 gObjectEventPal_PlayerFrlg[] = INCGFX_U16("graphics/object_events/palettes/player_frlg.pal", ".gbapal");
 const u16 gObjectEventPal_PlayerReflectionFrlg[] = INCGFX_U16("graphics/object_events/palettes/player_reflection_frlg.pal", ".gbapal");
+
+#if IS_FRLG
+
 const u16 gObjectEventPal_NpcBlue[] = INCGFX_U16("graphics/object_events/palettes/npc_blue.pal", ".gbapal");
 const u16 gObjectEventPal_NpcPink[] = INCGFX_U16("graphics/object_events/palettes/npc_pink.pal", ".gbapal");
 const u16 gObjectEventPal_NpcGreen[] = INCGFX_U16("graphics/object_events/palettes/npc_green.pal", ".gbapal");
