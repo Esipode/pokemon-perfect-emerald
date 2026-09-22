@@ -13,7 +13,6 @@
 
 static EWRAM_DATA u16 sOwPaletteBuffer[16] = {0};
 static EWRAM_DATA u16 sTrainerPaletteBuffer[16] = {0};
-static EWRAM_DATA u16 sMainMenuMugshotPaletteBuffer[16] = {0};
 
 static const u8 sBattleTransitionBgIndices[] = {0, 1, 2, 3, 4, 5};
 
@@ -256,29 +255,6 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
 u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region)
 {
     return sPlayerColorRegions[gender][region].owIndices[0];
-}
-
-const u16 *PlayerCustomization_GetMainMenuMugshotPaletteOverride(u8 gender, const u16 *basePal)
-{
-    u32 i;
-
-    if (PlayerCustomization_IsDefault())
-        return NULL;
-
-    for (i = 0; i < 16; i++)
-        sMainMenuMugshotPaletteBuffer[i] = basePal[i];
-
-    for (i = 0; i < PLAYER_COLOR_REGION_COUNT; i++)
-    {
-        const struct PlayerColorRegionInfo *info = &sMainMenuMugshotColorRegions[gender][i];
-        u8 hue;
-        s8 shade;
-
-        GetRegionChoice(i, &hue, &shade);
-        ApplyRegionToPalette(sMainMenuMugshotPaletteBuffer, info->owIndices, info->numOwIndices, hue, shade);
-    }
-
-    return sMainMenuMugshotPaletteBuffer;
 }
 
 void PlayerCustomization_GetBattleTransitionMugshotBgPalette(const u16 *basePal, u16 *dest)

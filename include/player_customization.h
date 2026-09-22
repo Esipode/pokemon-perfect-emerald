@@ -58,11 +58,6 @@ void PlayerCustomization_BuildPreviewPalette(u8 gender, const u8 *choices, u16 *
 // buffer PlayerCustomization_BuildPreviewPalette() filled.
 u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region);
 
-// Recolour for the main-menu mugshot, which uses its own 16-colour palette.
-// Same "NULL unless customised" contract as PlayerCustomization_GetOwPaletteOverride.
-// `basePal` is the caller's own ROM palette; pass gSaveBlock2Ptr->playerGender as `gender`.
-const u16 *PlayerCustomization_GetMainMenuMugshotPaletteOverride(u8 gender, const u16 *basePal);
-
 // The battle-transition mugshot background is a plain 6-colour gradient with no
 // per-region art, so the whole gradient uses the player's OUTFIT hue/shade as a
 // "theme colour". `dest` must hold at least 6 u16s.
