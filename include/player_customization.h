@@ -68,9 +68,25 @@ bool32 PlayerCustomization_IsDefault(void);
 // the save block. Used by the customization menu's live preview.
 void PlayerCustomization_BuildPreviewPalette(u8 style, u8 gender, const u16 *choices, u16 *dest);
 
+// Same as PlayerCustomization_BuildPreviewPalette, but against the trainer
+// front pic's base palette and trainerIndices, for Stage P8's trainer-pic
+// preview toggle.
+void PlayerCustomization_BuildTrainerPreviewPalette(u8 style, u8 gender, const u16 *choices, u16 *dest);
+
+// Expected TRAINER_PIC_* id for (style, gender). Shared by
+// PlayerCustomization_GetTrainerPaletteOverride and the menu's preview toggle.
+u32 PlayerCustomization_GetTrainerPicId(u8 style, u8 gender);
+
 // First owIndices entry for `slot`; lets the menu paint a swatch out of the
 // buffer PlayerCustomization_BuildPreviewPalette() filled.
 u8 PlayerCustomization_GetSlotSwatchIndex(u8 style, u8 gender, u8 slot);
+
+// Same as PlayerCustomization_GetSlotSwatchIndex, but the first
+// trainerIndices entry, for use against a PlayerCustomization_Build
+// TrainerPreviewPalette() buffer. Falls back to the OW index when the slot
+// has no trainer index (e.g. hair hidden under a cap) -- the buffer still
+// holds a valid, if not slot-representative, colour there.
+u8 PlayerCustomization_GetTrainerSlotSwatchIndex(u8 style, u8 gender, u8 slot);
 
 // The battle-transition mugshot background is a plain 6-colour gradient with
 // no per-index art mapping. `dest` must hold at least 6 u16s. Recoloured by

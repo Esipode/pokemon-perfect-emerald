@@ -197,18 +197,20 @@ const u16 *PlayerCustomization_GetOwPaletteOverride(u16 paletteTag)
     return sOwPaletteBuffer;
 }
 
+u32 PlayerCustomization_GetTrainerPicId(u8 style, u8 gender)
+{
+    if (style == PLAYER_SPRITE_STYLE_FRLG)
+        return (gender == MALE) ? TRAINER_PIC_RED : TRAINER_PIC_LEAF;
+    return (gender == MALE) ? TRAINER_PIC_BRENDAN : TRAINER_PIC_MAY;
+}
+
 const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
 {
     u8 style = Player_GetSpriteStyle();
     u8 gender = gSaveBlock2Ptr->playerGender;
-    u32 expectedPicId;
+    u32 expectedPicId = PlayerCustomization_GetTrainerPicId(style, gender);
     const u16 *basePal;
     u32 i;
-
-    if (style == PLAYER_SPRITE_STYLE_FRLG)
-        expectedPicId = (gender == MALE) ? TRAINER_PIC_RED : TRAINER_PIC_LEAF;
-    else
-        expectedPicId = (gender == MALE) ? TRAINER_PIC_BRENDAN : TRAINER_PIC_MAY;
 
     if (trainerPicId != expectedPicId || PlayerCustomization_IsDefault())
         return NULL;
@@ -226,6 +228,15 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
 u8 PlayerCustomization_GetSlotSwatchIndex(u8 style, u8 gender, u8 slot)
 {
     return sPlayerColorSlots[style][gender][slot].owIndices[0];
+}
+
+u8 PlayerCustomization_GetTrainerSlotSwatchIndex(u8 style, u8 gender, u8 slot)
+{
+    const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][slot];
+
+    if (info->numTrainerIndices == 0)
+        return info->owIndices[0];
+    return info->trainerIndices[0];
 }
 
 const struct PlayerColorSlotInfo *PlayerCustomization_GetSlotInfo(u8 style, u8 gender, u8 slot)
@@ -353,5 +364,30 @@ void PlayerCustomization_BuildPreviewPalette(u8 style, u8 gender, const u16 *cho
 
         for (j = 0; j < info->numOwIndices; j++)
             dest[info->owIndices[j]] = value & ~PLAYER_COLOR_SET;
+    }
+}
+
+// Same as PlayerCustomization_BuildPreviewPalette, but against the trainer front
+// pic's base palette and index list, for the Stage P8 trainer-pic preview toggle.
+void PlayerCustomization_BuildTrainerPreviewPalette(u8 style, u8 gender, const u16 *choices, u16 *dest)
+{
+    u32 picId = PlayerCustomization_GetTrainerPicId(style, gender);
+    const u16 *basePal = gTrainerPicInfo[picId].frontPic->paletteData;
+    u32 i;
+
+    for (i = 0; i < 16; i++)
+        dest[i] = basePal[i];
+
+    for (i = 0; i < PLAYER_COLOR_SLOT_COUNT; i++)
+    {
+        const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][i];
+        u16 value = choices[i];
+        u32 j;
+
+        if (info->name == NULL || value == 0)
+            continue;
+
+        for (j = 0; j < info->numTrainerIndices; j++)
+            dest[info->trainerIndices[j]] = value & ~PLAYER_COLOR_SET;
     }
 }

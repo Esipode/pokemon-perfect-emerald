@@ -16,6 +16,7 @@
 #include "task.h"
 #include "text.h"
 #include "text_window.h"
+#include "trainer_pokemon_sprites.h"
 #include "window.h"
 #include "constants/event_object_movement.h"
 #include "constants/rgb.h"
@@ -85,6 +86,21 @@ static const u8 sPreviewSpriteAnim[PREVIEW_SPRITE_COUNT] =
     [PREVIEW_FACING_EAST]  = ANIM_STD_GO_EAST,
 };
 
+// Stage P8: R toggles the 2x2 overworld block for the player's trainer front
+// pic, for slots that only exist there (e.g. hair hidden under a cap/hat in
+// every overworld sheet). Centred in the same right-hand pane the OW block
+// uses; the OW sprites are freed while this is shown (only one preview asset
+// is ever loaded at a time).
+enum
+{
+    PREVIEW_MODE_OW,
+    PREVIEW_MODE_TRAINER,
+};
+
+#define TRAINER_PREVIEW_X 204
+#define TRAINER_PREVIEW_Y 86
+#define TRAINER_PREVIEW_PAL_SLOT 6
+
 struct PaletteMenuRow
 {
     u8 kind;
@@ -102,6 +118,10 @@ static void DrawHeaderText(void);
 static void DrawBgWindowFrames(void);
 static u16 GetSelectedRowIndex(void);
 static void AdjustSlot(u8 slot, u8 axis, s8 dir);
+static void CreateOwPreviewSprites(void);
+static void DestroyOwPreviewSprites(void);
+static void CreateTrainerPreviewSprite(void);
+static void DestroyTrainerPreviewSprite(void);
 
 // SLOT rows cycle H -> S -> V. SELECT wraps mod 3, shared by every row --
 // there is one active axis for the whole menu, shown once in the header
@@ -122,6 +142,8 @@ static EWRAM_DATA struct
     u8 gender;
     u8 style;
     u8 previewSpriteIds[PREVIEW_SPRITE_COUNT];
+    u8 trainerPreviewSpriteId;
+    u8 previewMode;
     u8 listTaskId;
     u8 rowCount;
     u8 axis;
@@ -138,9 +160,9 @@ static EWRAM_DATA struct
     struct ListMenuItem items[PALETTE_MENU_MAX_ROWS];
 } sPaletteMenu = {0};
 
-static const u8 sText_Title[] = _("PLAYER COLOURS");
+static const u8 sText_Title[] = _("COLOURS");
 static const u8 sText_ControlHintPrefix[] = _("{SELECT_BUTTON}");
-static const u8 sText_ControlHintSuffix[] = _(" {A_BUTTON}OK {B_BUTTON}BACK");
+static const u8 sText_ControlHintSuffix[] = _(" {A_BUTTON}OK {B_BUTTON}BACK {R_BUTTON}PIC");
 static const u8 sText_ResetToDefault[] = _("RESET");
 static const u8 sText_Confirm[] = _("CONFIRM");
 static const u8 sText_AxisHue[] = _("HUE");
@@ -356,21 +378,8 @@ void CB2_InitPlayerPaletteMenu(void)
         template.fontId = FONT_NORMAL;
         template.cursorKind = CURSOR_BLACK_ARROW;
 
-        {
-            u16 graphicsId = GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu.gender);
-            u32 i;
-
-            // Same graphicsId for all four -- under OW_GFX_COMPRESS,
-            // CreateObjectGraphicsSpriteWithTag (event_object_movement.c)
-            // shares one tile sheet across sprites with the same tileTag
-            // instead of allocating four, so this is not a 4x VRAM cost.
-            for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
-            {
-                sPaletteMenu.previewSpriteIds[i] = CreateObjectGraphicsSprite(
-                    graphicsId, SpriteCallbackDummy, sPreviewSpriteX[i], sPreviewSpriteY[i], 0);
-                StartSpriteAnim(&gSprites[sPaletteMenu.previewSpriteIds[i]], sPreviewSpriteAnim[i]);
-            }
-        }
+        sPaletteMenu.previewMode = PREVIEW_MODE_OW;
+        CreateOwPreviewSprites();
 
         taskId = CreateTask(Task_PaletteMenuFadeIn, 0);
         gTasks[taskId].tListTaskId = ListMenuInit(&template, 0, 0);
@@ -467,7 +476,26 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             break;
         }
 
-        if (JOY_NEW(SELECT_BUTTON))
+        if (JOY_NEW(R_BUTTON))
+        {
+            // Only one preview asset is loaded at a time -- free the old
+            // one before creating the other (see CreateTrainerPreviewSprite).
+            PlaySE(SE_SELECT);
+            if (sPaletteMenu.previewMode == PREVIEW_MODE_OW)
+            {
+                DestroyOwPreviewSprites();
+                sPaletteMenu.previewMode = PREVIEW_MODE_TRAINER;
+                CreateTrainerPreviewSprite();
+            }
+            else
+            {
+                DestroyTrainerPreviewSprite();
+                sPaletteMenu.previewMode = PREVIEW_MODE_OW;
+                CreateOwPreviewSprites();
+            }
+            RefreshPreviewPalette();
+        }
+        else if (JOY_NEW(SELECT_BUTTON))
         {
             // Axis is global, so SELECT works from any row -- it's shown once
             // in the header, not per row.
@@ -564,11 +592,11 @@ static void Task_PaletteMenuFadeOut(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
-        u32 i;
-
         DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
-        for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
-            DestroySprite(&gSprites[sPaletteMenu.previewSpriteIds[i]]);
+        if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+            DestroyTrainerPreviewSprite();
+        else
+            DestroyOwPreviewSprites();
         DestroyTask(taskId);
         FreeAllWindowBuffers();
         SetMainCallback2(gMain.savedCallback);
@@ -615,7 +643,9 @@ static void RedrawSwatches(void)
 
         if (row->kind == ROW_KIND_SLOT)
         {
-            u8 index = PlayerCustomization_GetSlotSwatchIndex(sPaletteMenu.style, sPaletteMenu.gender, row->id);
+            u8 index = (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+                ? PlayerCustomization_GetTrainerSlotSwatchIndex(sPaletteMenu.style, sPaletteMenu.gender, row->id)
+                : PlayerCustomization_GetSlotSwatchIndex(sPaletteMenu.style, sPaletteMenu.gender, row->id);
             u8 y = i * 16 + SWATCH_Y_OFFSET;
 
             FillWindowPixelRect(WIN_SWATCH, PIXEL_FILL(index), SWATCH_X, y, SWATCH_SIZE, SWATCH_SIZE);
@@ -626,21 +656,74 @@ static void RedrawSwatches(void)
     CopyWindowToVram(WIN_SWATCH, COPYWIN_GFX);
 }
 
+// Same graphicsId for all four -- under OW_GFX_COMPRESS,
+// CreateObjectGraphicsSpriteWithTag (event_object_movement.c) shares one tile
+// sheet across sprites with the same tileTag instead of allocating four, so
+// this is not a 4x VRAM cost.
+static void CreateOwPreviewSprites(void)
+{
+    u16 graphicsId = GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu.gender);
+    u32 i;
+
+    for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
+    {
+        sPaletteMenu.previewSpriteIds[i] = CreateObjectGraphicsSprite(
+            graphicsId, SpriteCallbackDummy, sPreviewSpriteX[i], sPreviewSpriteY[i], 0);
+        StartSpriteAnim(&gSprites[sPaletteMenu.previewSpriteIds[i]], sPreviewSpriteAnim[i]);
+    }
+}
+
+static void DestroyOwPreviewSprites(void)
+{
+    u32 i;
+
+    for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
+        DestroySprite(&gSprites[sPaletteMenu.previewSpriteIds[i]]);
+}
+
+// CreateTrainerPicSprite loads the *committed* save's trainer palette as a
+// side effect (via GetTrainerFrontPicPalette -> PlayerCustomization_Get
+// TrainerPaletteOverride, which reads gSaveBlock2Ptr directly); RefreshPreview
+// Palette immediately overwrites that with the working `choices` copy, same
+// as the OW sprites.
+static void CreateTrainerPreviewSprite(void)
+{
+    u32 picId = PlayerCustomization_GetTrainerPicId(sPaletteMenu.style, sPaletteMenu.gender);
+
+    sPaletteMenu.trainerPreviewSpriteId = CreateTrainerPicSprite(
+        picId, TRUE, TRAINER_PREVIEW_X, TRAINER_PREVIEW_Y, TRAINER_PREVIEW_PAL_SLOT, TAG_NONE);
+}
+
+static void DestroyTrainerPreviewSprite(void)
+{
+    FreeAndDestroyTrainerPicSprite(sPaletteMenu.trainerPreviewSpriteId);
+}
+
 static void RefreshPreviewPalette(void)
 {
     u16 buf[16];
     u16 swatchBuf[16];
-    u8 paletteNum = gSprites[sPaletteMenu.previewSpriteIds[0]].oam.paletteNum;
+    u8 paletteNum;
 
-    PlayerCustomization_BuildPreviewPalette(sPaletteMenu.style, sPaletteMenu.gender, sPaletteMenu.choices, buf);
-    // All four sprites share one palette tag, so one LoadPalette recolours
-    // all four. AGB_ASSERT catches the tag setup breaking (e.g. from a
-    // future per-facing gfx change) instead of silently recolouring only
-    // one sprite.
-    AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[1]].oam.paletteNum == paletteNum);
-    AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[2]].oam.paletteNum == paletteNum);
-    AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[3]].oam.paletteNum == paletteNum);
-    LoadPalette(buf, OBJ_PLTT_ID(paletteNum), PLTT_SIZE_4BPP);
+    if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+    {
+        PlayerCustomization_BuildTrainerPreviewPalette(sPaletteMenu.style, sPaletteMenu.gender, sPaletteMenu.choices, buf);
+        paletteNum = gSprites[sPaletteMenu.trainerPreviewSpriteId].oam.paletteNum;
+        LoadPalette(buf, OBJ_PLTT_ID(paletteNum), PLTT_SIZE_4BPP);
+    }
+    else
+    {
+        PlayerCustomization_BuildPreviewPalette(sPaletteMenu.style, sPaletteMenu.gender, sPaletteMenu.choices, buf);
+        paletteNum = gSprites[sPaletteMenu.previewSpriteIds[0]].oam.paletteNum;
+        // All four sprites share one palette tag, so one LoadPalette recolours
+        // all four. AGB_ASSERT catches the tag setup breaking (e.g. from a
+        // future per-facing gfx change) instead of silently recolouring only
+        // one sprite.
+        AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[1]].oam.paletteNum == paletteNum);
+        AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[2]].oam.paletteNum == paletteNum);
+        AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[3]].oam.paletteNum == paletteNum);
+        LoadPalette(buf, OBJ_PLTT_ID(paletteNum), PLTT_SIZE_4BPP);
+    }
 
     // Separate copy for WIN_SWATCH's own BG palette bank: index 15 becomes
     // white chrome here without touching the preview sprite's black outline,
