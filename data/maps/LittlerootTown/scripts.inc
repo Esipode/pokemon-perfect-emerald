@@ -1,5 +1,6 @@
 LittlerootTown_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, LittlerootTown_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, LittlerootTown_OnLoad
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, LittlerootTown_OnFrame
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, LittlerootTown_OnWarp
 	.byte 0
@@ -42,6 +43,93 @@ LittlerootTown_OnTransition:
 	call_if_eq VAR_LITTLEROOT_TOWN_STATE, 3, LittlerootTown_EventScript_SetMomStandingInFrontOfDoorPos
 	call_if_eq VAR_OLDALE_RIVAL_STATE, 1, LittlerootTown_EventScript_MoveRivalFromOldale
 	call_if_eq VAR_LITTLEROOT_RIVAL_STATE, 3, LittlerootTown_EventScript_SetRivalLeftForRoute103
+	updatelegendaryvisibility SPECIES_SHAYMIN, FLAG_HIDE_SHAYMIN
+	end
+
+LittlerootTown_OnLoad:
+	@ Shaymin arena: metatiles appear post-game regardless of ownership; object spawns only if not owned
+	goto_if_unset FLAG_SYS_GAME_CLEAR, LittlerootTown_HideShayminArena
+
+	setmetatilewithelevation 8, 19, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 19, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 19, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 19, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 20, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 20, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 20, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 20, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 21, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 21, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 21, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 21, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 22, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 22, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 22, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 22, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 23, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 23, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 23, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 23, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 24, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 24, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 24, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 24, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 25, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 25, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 25, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 25, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 26, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 26, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 26, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 26, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 27, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 27, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 27, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 27, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 28, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 28, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 28, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 28, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 29, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 29, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 29, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 29, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 30, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 30, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 30, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 30, 0x001, FALSE, 3
+
+	setmetatilewithelevation 8, 31, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 31, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 31, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 31, 0x001, FALSE, 3
+	
+	setvar VAR_0x8004, SPECIES_SHAYMIN
+	setvar VAR_0x8005, LAYOUT_LITTLEROOT_TOWN
+	setvar VAR_0x8006, WEEKDAY_SAT
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, LittlerootTown_HideShayminArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_MORNING, LittlerootTown_HideShayminArena
+	end
+
+LittlerootTown_Shaymin_Encounter::
+	goto LegendaryEncounter_EventScript_Shaymin
+
+LittlerootTown_HideShayminArena:
+	setflag FLAG_HIDE_SHAYMIN
 	end
 
 LittlerootTown_EventScript_HideMapNamePopup::
