@@ -55,12 +55,21 @@ const struct PlayerColorGroupInfo *PlayerCustomization_GetGroupInfo(u8 style, u8
 const u16 *PlayerCustomization_GetOwPaletteOverride(u16 paletteTag);
 
 // Same shape as PlayerCustomization_GetOwPaletteOverride, but for the
-// trainer pic (front/back share one palette), gated on trainerPicId matching
-// the player's (style, gender) trainer pic.
+// trainer front pic, gated on trainerPicId matching the player's
+// (style, gender) trainer pic.
 const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId);
+
+// Back-pic counterpart. Emerald back pics share the front palette; FRLG back
+// pics use the OW palette layout, so they take owIndices instead.
+const u16 *PlayerCustomization_GetTrainerBackPaletteOverride(u32 trainerPicId);
 
 // TRUE if every slot is still at its vanilla (zeroed) value.
 bool32 PlayerCustomization_IsDefault(void);
+
+// Emerald style, every colour slot cleared. Run where a new game begins picking
+// the protagonist (Birch speech, quickstart), so an existing save's look does
+// not carry into it.
+void PlayerCustomization_ResetForNewGame(void);
 
 // Renders a candidate overworld palette for (style, gender) from `choices`
 // (a PLAYER_COLOR_SLOT_COUNT array, same raw encoding as

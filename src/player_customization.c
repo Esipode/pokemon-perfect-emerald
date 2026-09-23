@@ -49,6 +49,13 @@ bool32 PlayerCustomization_IsDefault(void)
     return TRUE;
 }
 
+void PlayerCustomization_ResetForNewGame(void)
+{
+    Player_SetSpriteStyle(PLAYER_SPRITE_STYLE_EMERALD);
+    memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+    memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
+}
+
 // Integer RGB(8-bit)<->HSV(all 0-255) helpers.
 static void RgbToHsv(u8 r, u8 g, u8 b, u8 *h, u8 *s, u8 *v)
 {
@@ -204,11 +211,12 @@ u32 PlayerCustomization_GetTrainerPicId(u8 style, u8 gender)
     return (gender == MALE) ? TRAINER_PIC_BRENDAN : TRAINER_PIC_MAY;
 }
 
-const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
+static const u16 *GetTrainerPaletteOverride(u32 trainerPicId, bool32 isBackPic)
 {
     u8 style = Player_GetSpriteStyle();
     u8 gender = gSaveBlock2Ptr->playerGender;
     u32 expectedPicId = PlayerCustomization_GetTrainerPicId(style, gender);
+    enum PlayerPaletteAsset asset = PLAYER_PALETTE_ASSET_TRAINER;
     const u16 *basePal;
     u32 i;
 
@@ -216,13 +224,35 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
         return NULL;
 
     // Read gTrainerPicInfo directly; GetTrainerFrontPicPalette/GetTrainerBackPicPalette
-    // route through this function and would recurse.
-    basePal = gTrainerPicInfo[expectedPicId].frontPic->paletteData;
+    // route through here and would recurse.
+    if (isBackPic)
+    {
+        basePal = gTrainerPicInfo[expectedPicId].backPic->paletteData;
+        // Red/Leaf back pics use the OW palette layout (player_frlg.pal), not
+        // their front pic's. Brendan/May back pics share the front palette.
+        if (style == PLAYER_SPRITE_STYLE_FRLG)
+            asset = PLAYER_PALETTE_ASSET_OW;
+    }
+    else
+    {
+        basePal = gTrainerPicInfo[expectedPicId].frontPic->paletteData;
+    }
+
     for (i = 0; i < 16; i++)
         sTrainerPaletteBuffer[i] = basePal[i];
 
-    ApplySlotsToPalette(sTrainerPaletteBuffer, style, gender, PLAYER_PALETTE_ASSET_TRAINER);
+    ApplySlotsToPalette(sTrainerPaletteBuffer, style, gender, asset);
     return sTrainerPaletteBuffer;
+}
+
+const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
+{
+    return GetTrainerPaletteOverride(trainerPicId, FALSE);
+}
+
+const u16 *PlayerCustomization_GetTrainerBackPaletteOverride(u32 trainerPicId)
+{
+    return GetTrainerPaletteOverride(trainerPicId, TRUE);
 }
 
 u8 PlayerCustomization_GetSlotSwatchIndex(u8 style, u8 gender, u8 slot)

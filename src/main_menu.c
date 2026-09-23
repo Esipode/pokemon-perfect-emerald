@@ -23,6 +23,7 @@
 #include "overworld.h"
 #include "palette.h"
 #include "party_menu.h"
+#include "player_customization.h"
 #include "player_palette_menu.h"
 #include "pokeball.h"
 #include "pokedex.h"
@@ -1339,6 +1340,8 @@ static void Task_NewGameBirchSpeech_Init(u8 taskId)
     FreeAllSpritePalettes();
     ResetAllPicSprites();
     sBirchSpeechMonSpecies = SPECIES_NONE;
+    // Before AddBirchSpeechObjects, which reads the style for the protagonist pics.
+    PlayerCustomization_ResetForNewGame();
     AddBirchSpeechObjects(taskId);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
     gTasks[taskId].tBG1HOFS = 0;
@@ -1391,6 +1394,8 @@ void CB2_NewGameBirchSpeech_FromNewMainMenu(void) // Combination of the Above fu
     FreeAllSpritePalettes();
     ResetAllPicSprites();
     sBirchSpeechMonSpecies = SPECIES_NONE;
+    // Before AddBirchSpeechObjects, which reads the style for the protagonist pics.
+    PlayerCustomization_ResetForNewGame();
     AddBirchSpeechObjects(taskId);
     PlayBGM(MUS_ROUTE122);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
@@ -2157,12 +2162,14 @@ static void AddBirchSpeechObjects(u8 taskId)
     gSprites[monSpriteId].oam.priority = 0;
     gSprites[monSpriteId].invisible = TRUE;
     gTasks[taskId].tMonSpriteId = monSpriteId;
-    brendanSpriteId = CreateTrainerSprite(FacilityClassToPicIndex(FACILITY_CLASS_BRENDAN), 120, 60, 0, NULL);
+    // Style-aware so the sequence shows the colours menu's choice; CreateTrainerSprite
+    // applies the colour override to the committed gender's pic.
+    brendanSpriteId = CreateTrainerSprite(PlayerCustomization_GetTrainerPicId(Player_GetSpriteStyle(), MALE), 120, 60, 0, NULL);
     gSprites[brendanSpriteId].callback = SpriteCB_Null;
     gSprites[brendanSpriteId].invisible = TRUE;
     gSprites[brendanSpriteId].oam.priority = 0;
     gTasks[taskId].tBrendanSpriteId = brendanSpriteId;
-    maySpriteId = CreateTrainerSprite(FacilityClassToPicIndex(FACILITY_CLASS_MAY), 120, 60, 0, NULL);
+    maySpriteId = CreateTrainerSprite(PlayerCustomization_GetTrainerPicId(Player_GetSpriteStyle(), FEMALE), 120, 60, 0, NULL);
     gSprites[maySpriteId].callback = SpriteCB_Null;
     gSprites[maySpriteId].invisible = TRUE;
     gSprites[maySpriteId].oam.priority = 0;

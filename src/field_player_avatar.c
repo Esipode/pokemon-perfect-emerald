@@ -1618,7 +1618,14 @@ u16 GetRivalAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender)
 
 u16 GetPlayerAvatarGraphicsIdByStateIdAndGender(u8 state, enum Gender gender)
 {
-    return sPlayerAvatarGfxIds[Player_GetSpriteStyle()][state][gender];
+    return GetPlayerAvatarGraphicsIdByStateGenderAndStyle(state, gender, Player_GetSpriteStyle());
+}
+
+// For callers previewing an uncommitted style choice (the colours menu,
+// Stage 11) that must not read the committed save's style.
+u16 GetPlayerAvatarGraphicsIdByStateGenderAndStyle(u8 state, enum Gender gender, u8 style)
+{
+    return sPlayerAvatarGfxIds[style][state][gender];
 }
 
 u16 GetFRLGAvatarGraphicsIdByGender(enum Gender gender)

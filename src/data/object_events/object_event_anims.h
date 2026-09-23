@@ -678,35 +678,37 @@ static const union AnimCmd sAnim_RunEast[] =
     ANIMCMD_JUMP(0),
 };
 
+// Step, stand, step, stand: sStepAnimTables' animPos {1, 3, 0, 2} expects the
+// stand poses at cmd indices 1 and 3.
 static const union AnimCmd sAnim_RunSouthFrlg[] = {
-    ANIMCMD_FRAME(9, 5),
-    ANIMCMD_FRAME(10, 3),
-    ANIMCMD_FRAME(9, 5),
-    ANIMCMD_FRAME(11, 3),
+    ANIMCMD_FRAME(10, 5),
+    ANIMCMD_FRAME(9, 3),
+    ANIMCMD_FRAME(11, 5),
+    ANIMCMD_FRAME(9, 3),
     ANIMCMD_JUMP(0),
 };
 
 static const union AnimCmd sAnim_RunNorthFrlg[] = {
-    ANIMCMD_FRAME(12, 5),
-    ANIMCMD_FRAME(13, 3),
-    ANIMCMD_FRAME(12, 5),
-    ANIMCMD_FRAME(14, 3),
+    ANIMCMD_FRAME(13, 5),
+    ANIMCMD_FRAME(12, 3),
+    ANIMCMD_FRAME(14, 5),
+    ANIMCMD_FRAME(12, 3),
     ANIMCMD_JUMP(0),
 };
 
 static const union AnimCmd sAnim_RunWestFrlg[] = {
-    ANIMCMD_FRAME(15, 5),
-    ANIMCMD_FRAME(16, 3),
-    ANIMCMD_FRAME(15, 5),
-    ANIMCMD_FRAME(17, 3),
+    ANIMCMD_FRAME(16, 5),
+    ANIMCMD_FRAME(15, 3),
+    ANIMCMD_FRAME(17, 5),
+    ANIMCMD_FRAME(15, 3),
     ANIMCMD_JUMP(0),
 };
 
 static const union AnimCmd sAnim_RunEastFrlg[] = {
-    ANIMCMD_FRAME(15, 5, .hFlip = TRUE),
-    ANIMCMD_FRAME(16, 3, .hFlip = TRUE),
-    ANIMCMD_FRAME(15, 5, .hFlip = TRUE),
-    ANIMCMD_FRAME(17, 3, .hFlip = TRUE),
+    ANIMCMD_FRAME(16, 5, .hFlip = TRUE),
+    ANIMCMD_FRAME(15, 3, .hFlip = TRUE),
+    ANIMCMD_FRAME(17, 5, .hFlip = TRUE),
+    ANIMCMD_FRAME(15, 3, .hFlip = TRUE),
     ANIMCMD_JUMP(0),
 };
 
@@ -1461,6 +1463,39 @@ static const union AnimCmd *const sAnimTable_BrendanMayNormal[] = {
     [ANIM_SPIN_EAST] = sAnim_SpinEast,
 };
 
+// Red/Green run frames (sPicTable_RedNormal/GreenNormal 9-17) are laid out
+// FRLG-style regardless of build, so the run anims can't follow IS_FRLG.
+static const union AnimCmd *const sAnimTable_RedGreenNormal[] = {
+    [ANIM_STD_FACE_SOUTH] = sAnim_FaceSouth,
+    [ANIM_STD_FACE_NORTH] = sAnim_FaceNorth,
+    [ANIM_STD_FACE_WEST] = sAnim_FaceWest,
+    [ANIM_STD_FACE_EAST] = sAnim_FaceEast,
+    [ANIM_STD_GO_SOUTH] = sAnim_GoSouth,
+    [ANIM_STD_GO_NORTH] = sAnim_GoNorth,
+    [ANIM_STD_GO_WEST] = sAnim_GoWest,
+    [ANIM_STD_GO_EAST] = sAnim_GoEast,
+    [ANIM_STD_GO_FAST_SOUTH] = sAnim_GoFastSouth,
+    [ANIM_STD_GO_FAST_NORTH] = sAnim_GoFastNorth,
+    [ANIM_STD_GO_FAST_WEST] = sAnim_GoFastWest,
+    [ANIM_STD_GO_FAST_EAST] = sAnim_GoFastEast,
+    [ANIM_STD_GO_FASTER_SOUTH] = sAnim_GoFasterSouth,
+    [ANIM_STD_GO_FASTER_NORTH] = sAnim_GoFasterNorth,
+    [ANIM_STD_GO_FASTER_WEST] = sAnim_GoFasterWest,
+    [ANIM_STD_GO_FASTER_EAST] = sAnim_GoFasterEast,
+    [ANIM_STD_GO_FASTEST_SOUTH] = sAnim_GoFastestSouth,
+    [ANIM_STD_GO_FASTEST_NORTH] = sAnim_GoFastestNorth,
+    [ANIM_STD_GO_FASTEST_WEST] = sAnim_GoFastestWest,
+    [ANIM_STD_GO_FASTEST_EAST] = sAnim_GoFastestEast,
+    [ANIM_RUN_SOUTH] = sAnim_RunSouthFrlg,
+    [ANIM_RUN_NORTH] = sAnim_RunNorthFrlg,
+    [ANIM_RUN_WEST] = sAnim_RunWestFrlg,
+    [ANIM_RUN_EAST] = sAnim_RunEastFrlg,
+    [ANIM_SPIN_SOUTH] = sAnim_SpinSouth,
+    [ANIM_SPIN_NORTH] = sAnim_SpinNorth,
+    [ANIM_SPIN_WEST] = sAnim_SpinWest,
+    [ANIM_SPIN_EAST] = sAnim_SpinEast,
+};
+
 static const union AnimCmd *const sAnimTable_AcroBike[] = {
     [ANIM_STD_FACE_SOUTH] = sAnim_FaceSouth,
     [ANIM_STD_FACE_NORTH] = sAnim_FaceNorth,
@@ -1619,6 +1654,10 @@ static const struct StepAnimTable sStepAnimTables[] = {
     },
     {
         .anims = sAnimTable_BrendanMayNormal,
+        .animPos = {1, 3, 0, 2},
+    },
+    {
+        .anims = sAnimTable_RedGreenNormal,
         .animPos = {1, 3, 0, 2},
     },
     {

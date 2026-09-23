@@ -7,6 +7,7 @@
 #include "main.h"
 #include "overworld.h"
 #include "palette.h"
+#include "player_customization.h"
 #include "config/quickstart.h"
 #include "quickstart.h"
 #include "random.h"
@@ -86,6 +87,7 @@ static void CB2_SkipToNewGame(void)
     if (!UpdatePaletteFade())
     {
         gSaveBlock2Ptr->playerGender = SetQuickstartPlayerGender();
+        PlayerCustomization_ResetForNewGame();
         const u8* textPtr = gSaveBlock2Ptr->playerGender == FEMALE ? sText_PlayerFemale : sText_PlayerMale;
         StringCopy_PlayerName(gSaveBlock2Ptr->playerName, textPtr);
 

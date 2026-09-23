@@ -7,6 +7,7 @@
 #include "international_string_util.h"
 #include "list_menu.h"
 #include "main.h"
+#include "menu_helpers.h"
 #include "palette.h"
 #include "player_customization.h"
 #include "scanline_effect.h"
@@ -29,11 +30,25 @@ enum
     WIN_SWATCH,
 };
 
+// Frame tile ids within the frame gfx LoadBgTiles loads at init (see
+// CB2_InitPlayerPaletteMenu case 3/4). Matches the tileNum+0..8 layout
+// DrawTextBorderOuter expects, so DrawStdFrameWithCustomTileAndPalette can
+// reuse this already-loaded frame gfx for the Stage 11 style-change prompt
+// instead of loading a second copy.
+#define TILE_TOP_CORNER_L 0x1A2
+#define TILE_TOP_EDGE     0x1A3
+#define TILE_TOP_CORNER_R 0x1A4
+#define TILE_LEFT_EDGE    0x1A5
+#define TILE_RIGHT_EDGE   0x1A7
+#define TILE_BOT_CORNER_L 0x1A8
+#define TILE_BOT_EDGE     0x1A9
+#define TILE_BOT_CORNER_R 0x1AA
+
 // A row's kind decides how Task_PaletteMenuProcessInput handles it and what
 // its `id` means: a slot id for ROW_KIND_SLOT, unused for the rest.
-// ROW_KIND_STYLE is reserved for Part A Stage 11, which adds the STYLE row
-// once Part B is done. Groups (bulk hue/shade macros) were removed -- they
-// read as a confusing second copy of a slot row with the same name.
+// ROW_KIND_STYLE (Part A Stage 11) sits directly above ROW_KIND_RESET.
+// Groups (bulk hue/shade macros) were removed -- they read as a confusing
+// second copy of a slot row with the same name.
 enum
 {
     ROW_KIND_SLOT,
@@ -42,9 +57,9 @@ enum
     ROW_KIND_CONFIRM,
 };
 
-// Worst case: every slot, RESET and CONFIRM. Not every (style, gender) uses
-// every slot, so the live row count is usually smaller.
-#define PALETTE_MENU_MAX_ROWS (PLAYER_COLOR_SLOT_COUNT + 2)
+// Worst case: every slot, STYLE, RESET and CONFIRM. Not every (style,
+// gender) uses every slot, so the live row count is usually smaller.
+#define PALETTE_MENU_MAX_ROWS (PLAYER_COLOR_SLOT_COUNT + 3)
 #define PALETTE_MENU_VISIBLE_ROWS 6
 
 #define tListTaskId data[0]
@@ -122,6 +137,12 @@ static void CreateOwPreviewSprites(void);
 static void DestroyOwPreviewSprites(void);
 static void CreateTrainerPreviewSprite(void);
 static void DestroyTrainerPreviewSprite(void);
+static void SetPreviewSpritesInvisible(bool8 invisible);
+static u8 CreatePaletteListMenu(void);
+static void StartStyleChangeConfirm(u8 taskId, u8 newStyle);
+static void Task_StyleChangeYes(u8 taskId);
+static void Task_StyleChangeNo(u8 taskId);
+static void ApplyStyleChange(u8 taskId);
 
 // SLOT rows cycle H -> S -> V. SELECT wraps mod 3, shared by every row --
 // there is one active axis for the whole menu, shown once in the header
@@ -141,6 +162,7 @@ static EWRAM_DATA struct
     u16 choices[PLAYER_COLOR_SLOT_COUNT];
     u8 gender;
     u8 style;
+    u8 pendingStyle; // valid only while the Stage 11 style-change prompt is up
     u8 previewSpriteIds[PREVIEW_SPRITE_COUNT];
     u8 trainerPreviewSpriteId;
     u8 previewMode;
@@ -156,6 +178,7 @@ static EWRAM_DATA struct
     // RGB15(5-bit)->HSV(8-bit)->RGB15 is lossy, so re-deriving every press
     // compounded quantization error and dragged colours toward black.
     u8 slotHsv[PLAYER_COLOR_SLOT_COUNT][3];
+    u8 styleRowText[16]; // "STYLE" + current value; rebuilt by BuildRowMap
     struct PaletteMenuRow rows[PALETTE_MENU_MAX_ROWS];
     struct ListMenuItem items[PALETTE_MENU_MAX_ROWS];
 } sPaletteMenu = {0};
@@ -169,6 +192,10 @@ static const u8 sText_AxisHue[] = _("HUE");
 static const u8 sText_AxisSat[] = _("SAT");
 static const u8 sText_AxisVal[] = _("VAL");
 static const u8 *const sSlotAxisNames[3] = {sText_AxisHue, sText_AxisSat, sText_AxisVal};
+static const u8 sText_StyleLabel[] = _("STYLE:  ");
+static const u8 sText_StyleEmerald[] = _("HOENN");
+static const u8 sText_StyleKanto[] = _("KANTO");
+static const u8 sText_ConfirmStyleChange[] = _("CHANGE STYLE? COLOURS RESET.");
 
 static const struct WindowTemplate sPaletteMenuWinTemplates[] =
 {
@@ -204,6 +231,24 @@ static const struct WindowTemplate sPaletteMenuWinTemplates[] =
         .baseBlock = 0x36 + PALETTE_MENU_LIST_WIDTH * (PALETTE_MENU_VISIBLE_ROWS * 2)
     },
     DUMMY_WIN_TEMPLATE
+};
+
+// Stage 11 style-change Yes/No prompt. AddWindow'd on demand by
+// CreateYesNoMenuWithCallbacks, clear of WIN_LIST (col 2-16, row 5-17) on
+// screen. baseBlock must also clear WIN_LIST/WIN_SWATCH's tile ranges
+// (0x36..0x186 and 0x186..0x1B6) since this window stays up alongside them
+// -- 0x1D0 is the next free block. Reuses the frame gfx and text palette
+// already loaded for the other windows, so no extra gfx/palette load is
+// needed.
+static const struct WindowTemplate sStyleConfirmYesNoWinTemplate =
+{
+    .bg = 0,
+    .tilemapLeft = 21,
+    .tilemapTop = 9,
+    .width = 5,
+    .height = 4,
+    .paletteNum = 1,
+    .baseBlock = 0x1D0,
 };
 
 static const struct BgTemplate sPaletteMenuBgTemplates[] =
@@ -247,9 +292,9 @@ static void VBlankCB(void)
 }
 
 // Builds sPaletteMenu.rows/items/rowCount for the active (style, gender):
-// slot rows, then RESET, then CONFIRM. Slots with no name for this
-// (style, gender) are skipped, so a protagonist with fewer colours shows
-// fewer rows instead of blank ones.
+// slot rows, then STYLE, then RESET, then CONFIRM. Slots with no name for
+// this (style, gender) are skipped, so a protagonist with fewer colours
+// shows fewer rows instead of blank ones.
 static void BuildRowMap(void)
 {
     u8 style = sPaletteMenu.style;
@@ -270,6 +315,13 @@ static void BuildRowMap(void)
         count++;
     }
 
+    StringCopy(sPaletteMenu.styleRowText, sText_StyleLabel);
+    StringAppend(sPaletteMenu.styleRowText, style == PLAYER_SPRITE_STYLE_FRLG ? sText_StyleKanto : sText_StyleEmerald);
+    sPaletteMenu.rows[count].kind = ROW_KIND_STYLE;
+    sPaletteMenu.items[count].name = sPaletteMenu.styleRowText;
+    sPaletteMenu.items[count].id = count;
+    count++;
+
     sPaletteMenu.rows[count].kind = ROW_KIND_RESET;
     sPaletteMenu.items[count].name = sText_ResetToDefault;
     sPaletteMenu.items[count].id = count;
@@ -281,6 +333,34 @@ static void BuildRowMap(void)
     count++;
 
     sPaletteMenu.rowCount = count;
+}
+
+// Shared by init (case 9) and ApplyStyleChange, which rebuilds the list
+// menu from scratch after a style change resizes the row map.
+static u8 CreatePaletteListMenu(void)
+{
+    struct ListMenuTemplate template = {0};
+
+    template.items = sPaletteMenu.items;
+    template.moveCursorFunc = PaletteMenu_MoveCursorCallback;
+    template.itemPrintFunc = NULL;
+    template.totalItems = sPaletteMenu.rowCount;
+    template.maxShowed = PALETTE_MENU_VISIBLE_ROWS;
+    template.windowId = WIN_LIST;
+    template.header_X = 0;
+    template.item_X = PALETTE_MENU_LABEL_X;
+    template.cursor_X = 0;
+    template.upText_Y = 1;
+    template.cursorPal = 2;
+    template.fillValue = 1;
+    template.cursorShadowPal = 3;
+    template.lettersSpacing = 0;
+    template.itemVerticalPadding = 0;
+    template.scrollMultiple = LIST_NO_MULTIPLE_SCROLL;
+    template.fontId = FONT_NORMAL;
+    template.cursorKind = CURSOR_BLACK_ARROW;
+
+    return ListMenuInit(&template, 0, 0);
 }
 
 void CB2_InitPlayerPaletteMenu(void)
@@ -356,39 +436,16 @@ void CB2_InitPlayerPaletteMenu(void)
         gMain.state++;
         break;
     case 9:
-    {
-        struct ListMenuTemplate template = {0};
-
-        template.items = sPaletteMenu.items;
-        template.moveCursorFunc = PaletteMenu_MoveCursorCallback;
-        template.itemPrintFunc = NULL;
-        template.totalItems = sPaletteMenu.rowCount;
-        template.maxShowed = PALETTE_MENU_VISIBLE_ROWS;
-        template.windowId = WIN_LIST;
-        template.header_X = 0;
-        template.item_X = PALETTE_MENU_LABEL_X;
-        template.cursor_X = 0;
-        template.upText_Y = 1;
-        template.cursorPal = 2;
-        template.fillValue = 1;
-        template.cursorShadowPal = 3;
-        template.lettersSpacing = 0;
-        template.itemVerticalPadding = 0;
-        template.scrollMultiple = LIST_NO_MULTIPLE_SCROLL;
-        template.fontId = FONT_NORMAL;
-        template.cursorKind = CURSOR_BLACK_ARROW;
-
         sPaletteMenu.previewMode = PREVIEW_MODE_OW;
         CreateOwPreviewSprites();
 
         taskId = CreateTask(Task_PaletteMenuFadeIn, 0);
-        gTasks[taskId].tListTaskId = ListMenuInit(&template, 0, 0);
+        gTasks[taskId].tListTaskId = CreatePaletteListMenu();
         sPaletteMenu.listTaskId = gTasks[taskId].tListTaskId;
         RefreshPreviewPalette();
         CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
         gMain.state++;
         break;
-    }
     case 10:
         BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
         SetVBlankCallback(VBlankCB);
@@ -406,6 +463,7 @@ static void Task_PaletteMenuFadeIn(u8 taskId)
 static void ConfirmAndExit(u8 taskId)
 {
     PlaySE(SE_SELECT);
+    Player_SetSpriteStyle(sPaletteMenu.style);
     memcpy(gSaveBlock2Ptr->playerColorSlots, sPaletteMenu.choices, sizeof(sPaletteMenu.choices));
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_PaletteMenuFadeOut;
@@ -459,6 +517,76 @@ static void AdjustSlot(u8 slot, u8 axis, s8 dir)
     sPaletteMenu.choices[slot] = PLAYER_COLOR_SET | PlayerCustomization_HsvToRgb(h, s, v);
 }
 
+// Style ids mean different garments on different protagonists (Stage P9),
+// so a style change clears every slot rather than reinterpreting them. Ask
+// first, since RESET-on-select would be surprising to hit by accident.
+static void StartStyleChangeConfirm(u8 taskId, u8 newStyle)
+{
+    static const struct YesNoFuncTable sStyleChangeYesNo = {Task_StyleChangeYes, Task_StyleChangeNo};
+
+    sPaletteMenu.pendingStyle = newStyle;
+    SetPreviewSpritesInvisible(TRUE);
+    FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
+    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, sText_ConfirmStyleChange, 8, 1, TEXT_SKIP_DRAW, NULL);
+    CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);
+    CreateYesNoMenuWithCallbacks(taskId, &sStyleConfirmYesNoWinTemplate, 0, 0, 0, TILE_TOP_CORNER_L, 7, &sStyleChangeYesNo);
+}
+
+static void Task_StyleChangeYes(u8 taskId)
+{
+    // ApplyStyleChange destroys and re-creates the preview sprite(s), which
+    // start visible, so no explicit unhide is needed on this path.
+    ApplyStyleChange(taskId);
+    DrawHeaderText();
+    gTasks[taskId].func = Task_PaletteMenuProcessInput;
+}
+
+static void Task_StyleChangeNo(u8 taskId)
+{
+    SetPreviewSpritesInvisible(FALSE);
+    DrawHeaderText();
+    gTasks[taskId].func = Task_PaletteMenuProcessInput;
+}
+
+// Changing style invalidates every slot choice (Stage P9), changes which
+// slots exist (rebuild the row map/list menu, Stage P5), and changes the
+// gfx id / trainer pic id the preview sprites were created with (re-create
+// them, Stage P7).
+static void ApplyStyleChange(u8 taskId)
+{
+    sPaletteMenu.style = sPaletteMenu.pendingStyle;
+    memset(sPaletteMenu.choices, 0, sizeof(sPaletteMenu.choices));
+    memset(sPaletteMenu.slotHsv, 0, sizeof(sPaletteMenu.slotHsv));
+    BuildRowMap();
+
+    DestroyListMenuTask(sPaletteMenu.listTaskId, NULL, NULL);
+    gTasks[taskId].tListTaskId = CreatePaletteListMenu();
+    sPaletteMenu.listTaskId = gTasks[taskId].tListTaskId;
+
+    if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+    {
+        DestroyTrainerPreviewSprite();
+        CreateTrainerPreviewSprite();
+    }
+    else
+    {
+        DestroyOwPreviewSprites();
+        CreateOwPreviewSprites();
+    }
+
+    RefreshPreviewPalette();
+    CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+    RedrawSwatches();
+    // CopyWindowToVram(..., COPYWIN_GFX) above only reloads tile *graphics*,
+    // not screen entries. CreatePaletteListMenu's ListMenuInit() re-puts
+    // WIN_LIST's tilemap (list_menu.c:363), which re-claims the two tile
+    // columns WIN_SWATCH overlaps -- but that write only lands in the CPU-side
+    // bg tilemap buffer. Nothing has pushed bg 0's tilemap to VRAM since
+    // CB2_InitPlayerPaletteMenu's case 7, so without this call the hardware
+    // screen entries never pick up WIN_SWATCH's last-write-wins ordering.
+    CopyBgTilemapBufferToVram(0);
+}
+
 static void Task_PaletteMenuProcessInput(u8 taskId)
 {
     s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
@@ -504,6 +632,14 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             DrawHeaderText();
             RedrawListMenu(gTasks[taskId].tListTaskId);
             CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+        }
+        else if (row->kind == ROW_KIND_STYLE && (JOY_NEW(DPAD_LEFT) || JOY_NEW(DPAD_RIGHT)))
+        {
+            s8 dir = JOY_NEW(DPAD_RIGHT) ? 1 : -1;
+            u8 newStyle = (sPaletteMenu.style + dir + PLAYER_SPRITE_STYLE_COUNT) % PLAYER_SPRITE_STYLE_COUNT;
+
+            PlaySE(SE_SELECT);
+            StartStyleChangeConfirm(taskId, newStyle);
         }
         else if (row->kind == ROW_KIND_SLOT && (JOY_HELD(DPAD_LEFT) ^ JOY_HELD(DPAD_RIGHT)))
         {
@@ -577,6 +713,11 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             RedrawListMenu(gTasks[taskId].tListTaskId);
             CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
             RefreshPreviewPalette();
+            break;
+        case ROW_KIND_STYLE:
+            // A cycles forward, same as DPAD_RIGHT.
+            PlaySE(SE_SELECT);
+            StartStyleChangeConfirm(taskId, (sPaletteMenu.style + 1) % PLAYER_SPRITE_STYLE_COUNT);
             break;
         case ROW_KIND_CONFIRM:
             ConfirmAndExit(taskId);
@@ -662,7 +803,10 @@ static void RedrawSwatches(void)
 // this is not a 4x VRAM cost.
 static void CreateOwPreviewSprites(void)
 {
-    u16 graphicsId = GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu.gender);
+    // Not GetPlayerAvatarGraphicsIdByStateIdAndGender -- that reads the
+    // committed save's style, so it would keep showing the old gfx while
+    // sPaletteMenu.style is only a pending, uncommitted choice.
+    u16 graphicsId = GetPlayerAvatarGraphicsIdByStateGenderAndStyle(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu.gender, sPaletteMenu.style);
     u32 i;
 
     for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
@@ -697,6 +841,24 @@ static void CreateTrainerPreviewSprite(void)
 static void DestroyTrainerPreviewSprite(void)
 {
     FreeAndDestroyTrainerPicSprite(sPaletteMenu.trainerPreviewSpriteId);
+}
+
+// Hides whichever preview asset is currently shown, so a style-change
+// confirm box (an OBJ-layer sprite otherwise renders above it) doesn't get
+// drawn over. Only touches the active previewMode's sprite(s).
+static void SetPreviewSpritesInvisible(bool8 invisible)
+{
+    if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+    {
+        gSprites[sPaletteMenu.trainerPreviewSpriteId].invisible = invisible;
+    }
+    else
+    {
+        u32 i;
+
+        for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
+            gSprites[sPaletteMenu.previewSpriteIds[i]].invisible = invisible;
+    }
 }
 
 static void RefreshPreviewPalette(void)
@@ -750,15 +912,6 @@ static void DrawHeaderText(void)
     AddTextPrinterParameterized(WIN_HEADER, FONT_NARROW, hint, hintX, 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);
 }
-
-#define TILE_TOP_CORNER_L 0x1A2
-#define TILE_TOP_EDGE     0x1A3
-#define TILE_TOP_CORNER_R 0x1A4
-#define TILE_LEFT_EDGE    0x1A5
-#define TILE_RIGHT_EDGE   0x1A7
-#define TILE_BOT_CORNER_L 0x1A8
-#define TILE_BOT_EDGE     0x1A9
-#define TILE_BOT_CORNER_R 0x1AA
 
 static void DrawBgWindowFrames(void)
 {
