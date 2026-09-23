@@ -68,6 +68,21 @@ void Player_SetColorShade(enum PlayerColorRegion region, s8 shade)
     gSaveBlock2Ptr->playerColors[region] = PackColorByte(curHue, shade);
 }
 
+u16 Player_GetColorSlot(u32 slot)
+{
+    return gSaveBlock2Ptr->playerColorSlots[slot];
+}
+
+void Player_SetColorSlot(u32 slot, u16 rgb)
+{
+    gSaveBlock2Ptr->playerColorSlots[slot] = PLAYER_COLOR_SET | rgb;
+}
+
+void Player_ClearColorSlot(u32 slot)
+{
+    gSaveBlock2Ptr->playerColorSlots[slot] = 0;
+}
+
 u8 Player_GetSpriteStyle(void)
 {
     return gSaveBlock2Ptr->playerSpriteStyle;

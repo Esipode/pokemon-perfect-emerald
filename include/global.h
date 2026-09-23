@@ -858,6 +858,10 @@ struct SaveBlock2
     // own comment above. A genuine new field, not filler reuse (see this
     // stage's status block for why).
     struct PendingTrade pendingTrade;
+    // Per-palette-index player colours; see player_customization.h. 0 means "use the ROM colour",
+    // so a zeroed save renders vanilla. Appended at the end so no earlier offset moves. The legacy
+    // playerColors[PLAYER_COLOR_REGION_COUNT] at 0x92 stays in place -- Stage P9 migrates it once.
+    u16 playerColorSlots[PLAYER_COLOR_SLOT_COUNT];
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;

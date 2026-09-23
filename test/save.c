@@ -33,6 +33,9 @@
 //     so trailing pad before it is at most 3 bytes and the 4-byte-aligned struct (it has u32
 //     members) must start at exactly 544. It is 200 bytes with no internal padding (see its
 //     comment in include/global.h): 544 + 200 = 744, already a multiple of 4.
+//   playerColorSlots[PLAYER_COLOR_SLOT_COUNT] (u16[15], 30 bytes) appended after pendingTrade:
+//     744 + 30 = 774, rounded up to 776 for 4-byte struct alignment. Hand-calculated -- confirm
+//     against the real build error if this mismatches.
 //
 // PokemonStorage (starts at 40944, ends at 67900):
 //   TOTAL_BOXES_COUNT 14 -> 16: +2 * (30 * sizeof(BoxPokemon) + BOX_NAME_LENGTH + 1 + 1
@@ -45,7 +48,7 @@
 //     (4*104). Names plus wallpapers cost 10 bytes per box, so fusions' offset stays
 //     4-aligned only when N is even; 16 and 28 both are.
 #define T_SAVEBLOCK1_SIZE 7518
-#define T_SAVEBLOCK2_SIZE 744
+#define T_SAVEBLOCK2_SIZE 776
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 67900
 

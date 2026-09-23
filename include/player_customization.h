@@ -29,10 +29,18 @@ void Player_SetSpriteStyle(u8 style);
 // hue step (low nibble, 0-15) and a signed shade offset (high nibble,
 // PLAYER_COLOR_SHADE_MIN..PLAYER_COLOR_SHADE_MAX); 0x00 decodes to "no
 // change" so old saves render byte-identical to vanilla.
+// Legacy per-region storage; still used by the render path until Stage P3
+// and by Stage P9's migration afterward.
 u8 Player_GetColorHue(enum PlayerColorRegion region);
 s8 Player_GetColorShade(enum PlayerColorRegion region);
 void Player_SetColorHue(enum PlayerColorRegion region, u8 hue);
 void Player_SetColorShade(enum PlayerColorRegion region, s8 shade);
+
+// Accessors over gSaveBlock2Ptr->playerColorSlots[slot]. Raw stored value
+// includes PLAYER_COLOR_SET; 0 means "use the ROM colour".
+u16 Player_GetColorSlot(u32 slot);
+void Player_SetColorSlot(u32 slot, u16 rgb);
+void Player_ClearColorSlot(u32 slot);
 
 // Returns NULL unless paletteTag belongs to the player's own gender and at
 // least one region is customised; otherwise returns a static EWRAM u16[16]
