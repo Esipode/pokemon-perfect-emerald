@@ -1251,6 +1251,22 @@ LegendaryEncounter_EventScript_HeatranSpawnGate::
 	special CheckValidLegendaryEncounter
 	return
 
+LegendaryEncounter_EventScript_CobalionSpawnGate::
+	setvar VAR_0x8004, SPECIES_COBALION
+	setvar VAR_0x8005, LAYOUT_GRANITE_CAVE_STEVENS_ROOM
+	setvar VAR_0x8006, WEEKDAY_FRI
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	return
+
+LegendaryEncounter_EventScript_CobalionQuake::
+	call LegendaryEncounter_EventScript_CobalionSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_CobalionQuakeDone
+	screenfxshake VAR_TEMP_8, VAR_0x8008, 32, SCREENFX_AXIS_X | SCREENFX_AXIS_Y, 0
+	screenfxpulse VAR_TEMP_8, VAR_0x8009, VAR_0x800A, SE_M_EARTHQUAKE
+LegendaryEncounter_EventScript_CobalionQuakeDone:
+	return
+
 LegendaryEncounter_EventScript_HeatranQuake::
 	call LegendaryEncounter_EventScript_HeatranSpawnGate
 	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_HeatranQuakeDone

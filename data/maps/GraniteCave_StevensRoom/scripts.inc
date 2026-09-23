@@ -1,5 +1,32 @@
 GraniteCave_StevensRoom_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, GraniteCave_StevensRoom_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, GraniteCave_StevensRoom_OnLoad
 	.byte 0
+
+GraniteCave_StevensRoom_OnTransition:
+	updatelegendaryvisibility SPECIES_COBALION, FLAG_HIDE_COBALION
+	end
+
+GraniteCave_StevensRoom_OnLoad:
+	@ Cobalion spawn gate: post-game, not already owned, Fridays
+	call LegendaryEncounter_EventScript_CobalionSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, GraniteCave_StevensRoom_HideCobalionArena
+	goto GraniteCave_StevensRoom_ShowCobalionArena
+
+GraniteCave_StevensRoom_Cobalion_Encounter::
+	goto LegendaryEncounter_EventScript_Cobalion
+
+GraniteCave_StevensRoom_HideCobalionArena:
+	setflag FLAG_HIDE_COBALION
+	end
+
+GraniteCave_StevensRoom_ShowCobalionArena:
+	@ Cobalion quakes: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 6
+	setvar VAR_0x8009, 70
+	setvar VAR_0x800A, 900
+	call LegendaryEncounter_EventScript_CobalionQuake
+	end
 
 GraniteCave_StevensRoom_EventScript_Steven::
 	lock
