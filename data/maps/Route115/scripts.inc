@@ -7,9 +7,27 @@ Route115_MapScripts::
 Route115_OnLoad:
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_115_WEST, AbnormalWeather_EventScript_PlaceTilesRoute115West
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_115_EAST, AbnormalWeather_EventScript_PlaceTilesRoute115East
+	call LegendaryEncounter_EventScript_TerrakionSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, Route115_HideTerrakionArena
+	goto Route115_ShowTerrakionArena
+
+Route115_Terrakion_Encounter::
+	goto LegendaryEncounter_EventScript_Terrakion
+
+Route115_HideTerrakionArena:
+	setflag FLAG_HIDE_TERRAKION
+	end
+
+Route115_ShowTerrakionArena:
+	@ Terrakion quakes: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 6
+	setvar VAR_0x8009, 70
+	setvar VAR_0x800A, 900
+	call LegendaryEncounter_EventScript_TerrakionQuake
 	end
 
 Route115_OnTransition:
+	updatelegendaryvisibility SPECIES_TERRAKION, FLAG_HIDE_TERRAKION
 	call_if_eq VAR_SHOULD_END_ABNORMAL_WEATHER, 1, AbnormalWeather_EventScript_HideMapNamePopup
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_115_WEST, AbnormalWeather_StartGroudonWeather
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_115_EAST, AbnormalWeather_StartGroudonWeather

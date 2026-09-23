@@ -1279,3 +1279,19 @@ LegendaryEncounter_EventScript_HeatranQuake::
 	screenfxpulse VAR_TEMP_8, VAR_0x8009, VAR_0x800A, SE_M_EARTHQUAKE
 LegendaryEncounter_EventScript_HeatranQuakeDone:
 	return
+
+LegendaryEncounter_EventScript_TerrakionSpawnGate::
+	setvar VAR_0x8004, SPECIES_TERRAKION
+	setvar VAR_0x8005, LAYOUT_ROUTE115
+	setvar VAR_0x8006, WEEKDAY_SAT
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	return
+
+LegendaryEncounter_EventScript_TerrakionQuake::
+	call LegendaryEncounter_EventScript_TerrakionSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_TerrakionQuakeDone
+	screenfxshake VAR_TEMP_8, VAR_0x8008, 32, SCREENFX_AXIS_X | SCREENFX_AXIS_Y, 0
+	screenfxpulse VAR_TEMP_8, VAR_0x8009, VAR_0x800A, SE_M_EARTHQUAKE
+LegendaryEncounter_EventScript_TerrakionQuakeDone:
+	return
