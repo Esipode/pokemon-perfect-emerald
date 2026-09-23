@@ -172,5 +172,14 @@
       "script": "LittlerootTown_BrendansHouse_1F_EventScript_MeetRival2"
     }
   ],
-  "bg_events": []
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 4,
+      "y": 4,
+      "elevation": 3,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "LittlerootTown_BrendansHouse_1F_Rotom_Encounter"
+    }
+  ]
 }

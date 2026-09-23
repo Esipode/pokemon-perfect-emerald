@@ -73,5 +73,14 @@
     }
   ],
   "coord_events": [],
-  "bg_events": []
+  "bg_events": [
+    {
+      "type": "sign",
+      "x": 6,
+      "y": 1,
+      "elevation": 3,
+      "player_facing_dir": "BG_EVENT_PLAYER_FACING_ANY",
+      "script": "FortreeCity_House4_Rotom_Encounter"
+    }
+  ]
 }

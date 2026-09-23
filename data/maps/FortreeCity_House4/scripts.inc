@@ -1,5 +1,40 @@
 FortreeCity_House4_MapScripts::
+	map_script MAP_SCRIPT_ON_LOAD, FortreeCity_House4_OnLoad
 	.byte 0
+
+FortreeCity_House4_OnLoad:
+	@ Rotom TV chain, stage 2 of 9: postgame, not owned, previous stage cleared
+	setvar VAR_0x8004, SPECIES_ROTOM
+	setvar VAR_0x8005, LAYOUT_FORTREE_CITY_HOUSE2
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, FortreeCity_House4_HideRotomTV
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 1, FortreeCity_House4_HideRotomTV
+	goto FortreeCity_House4_ShowRotomTV
+
+FortreeCity_House4_Rotom_Encounter::
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 1, FortreeCity_House4_EventScript_RotomTVNothing
+	lockall
+	msgbox FortreeCity_House4_Text_RotomInterference, MSGBOX_DEFAULT
+	addvar VAR_ROTOM_TV_PROGRESS, 1
+	special TurnOffTVScreen
+	releaseall
+	end
+
+FortreeCity_House4_EventScript_RotomTVNothing:
+	end
+
+FortreeCity_House4_HideRotomTV:
+	end
+
+FortreeCity_House4_ShowRotomTV:
+	special TurnOnTVScreen
+	end
+
+FortreeCity_House4_Text_RotomInterference:
+	.string "BZZT!\pThe interference on the TV\n"
+	.string "suddenly vanished...$"
 
 FortreeCity_House4_EventScript_Woman::
 	msgbox FortreeCity_House4_Text_BringsWorldCloserTogether, MSGBOX_NPC

@@ -1,5 +1,40 @@
 DewfordTown_Hall_MapScripts::
+	map_script MAP_SCRIPT_ON_LOAD, DewfordTown_Hall_OnLoad
 	.byte 0
+
+DewfordTown_Hall_OnLoad:
+	@ Rotom TV chain, stage 8 of 9: postgame, not owned, previous stage cleared
+	setvar VAR_0x8004, SPECIES_ROTOM
+	setvar VAR_0x8005, LAYOUT_DEWFORD_TOWN_HALL
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, DewfordTown_Hall_HideRotomTV
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 7, DewfordTown_Hall_HideRotomTV
+	goto DewfordTown_Hall_ShowRotomTV
+
+DewfordTown_Hall_Rotom_Encounter::
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 7, DewfordTown_Hall_EventScript_RotomTVNothing
+	lockall
+	msgbox DewfordTown_Hall_Text_RotomInterference, MSGBOX_DEFAULT
+	addvar VAR_ROTOM_TV_PROGRESS, 1
+	special TurnOffTVScreen
+	releaseall
+	end
+
+DewfordTown_Hall_EventScript_RotomTVNothing:
+	end
+
+DewfordTown_Hall_HideRotomTV:
+	end
+
+DewfordTown_Hall_ShowRotomTV:
+	special TurnOnTVScreen
+	end
+
+DewfordTown_Hall_Text_RotomInterference:
+	.string "BZZT!\pThe interference on the TV\n"
+	.string "suddenly vanished...$"
 
 DewfordTown_Hall_EventScript_Girl::
 	lock

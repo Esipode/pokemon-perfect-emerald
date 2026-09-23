@@ -7,6 +7,15 @@ LittlerootTown_BrendansHouse_1F_MapScripts::
 LittlerootTown_BrendansHouse_1F_OnLoad:
 	call_if_lt VAR_LITTLEROOT_INTRO_STATE, 6, LittlerootTown_BrendansHouse_1F_EventScript_SetMovingBoxes
 	call_if_set FLAG_RECEIVED_RUNNING_SHOES, LittlerootTown_BrendansHouse_1F_EventScript_CheckShowShoesManual
+	@ Rotom TV chain, final stage: postgame, not owned, all 9 TVs cleared
+	setvar VAR_0x8004, SPECIES_ROTOM
+	setvar VAR_0x8005, LAYOUT_LITTLEROOT_TOWN_BRENDANS_HOUSE_1F
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, LittlerootTown_BrendansHouse_1F_HideRotomTV
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 9, LittlerootTown_BrendansHouse_1F_HideRotomTV
+	goto LittlerootTown_BrendansHouse_1F_ShowRotomTV
 	end
 
 LittlerootTown_BrendansHouse_1F_EventScript_SetMovingBoxes::
@@ -27,6 +36,23 @@ LittlerootTown_BrendansHouse_1F_OnTransition:
 	call_if_eq VAR_LITTLEROOT_INTRO_STATE, 3, LittlerootTown_BrendansHouse_1F_EventScript_MoveMomToDoor
 	call_if_eq VAR_LITTLEROOT_INTRO_STATE, 5, LittlerootTown_BrendansHouse_1F_EventScript_MoveMomToStairs
 	call_if_eq VAR_LITTLEROOT_INTRO_STATE, 6, LittlerootTown_BrendansHouse_1F_EventScript_MoveMomToTV
+	updatelegendaryvisibility SPECIES_ROTOM, FLAG_HIDE_ROTOM
+	end
+
+LittlerootTown_BrendansHouse_1F_Rotom_Encounter::
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 9, LittlerootTown_BrendansHouse_1F_EventScript_RotomTVNothing
+	special TurnOffTVScreen
+	goto LegendaryEncounter_EventScript_Rotom
+
+LittlerootTown_BrendansHouse_1F_EventScript_RotomTVNothing:
+	end
+
+LittlerootTown_BrendansHouse_1F_HideRotomTV:
+	setflag FLAG_HIDE_ROTOM
+	end
+
+LittlerootTown_BrendansHouse_1F_ShowRotomTV:
+	special TurnOnTVScreen
 	end
 
 LittlerootTown_BrendansHouse_1F_EventScript_MoveMomToStairs::

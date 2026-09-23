@@ -1,11 +1,46 @@
 LilycoveCity_House3_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, LilycoveCity_House3_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, LilycoveCity_House3_OnLoad
 	.byte 0
 
 LilycoveCity_House3_OnTransition:
 	random 4
 	copyvar VAR_TEMP_1, VAR_RESULT
 	end
+
+LilycoveCity_House3_OnLoad:
+	@ Rotom TV chain, stage 5 of 9: postgame, not owned, previous stage cleared
+	setvar VAR_0x8004, SPECIES_ROTOM
+	setvar VAR_0x8005, LAYOUT_HOUSE2
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, LilycoveCity_House3_HideRotomTV
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 4, LilycoveCity_House3_HideRotomTV
+	goto LilycoveCity_House3_ShowRotomTV
+
+LilycoveCity_House3_Rotom_Encounter::
+	goto_if_ne VAR_ROTOM_TV_PROGRESS, 4, LilycoveCity_House3_EventScript_RotomTVNothing
+	lockall
+	msgbox LilycoveCity_House3_Text_RotomInterference, MSGBOX_DEFAULT
+	addvar VAR_ROTOM_TV_PROGRESS, 1
+	special TurnOffTVScreen
+	releaseall
+	end
+
+LilycoveCity_House3_EventScript_RotomTVNothing:
+	end
+
+LilycoveCity_House3_HideRotomTV:
+	end
+
+LilycoveCity_House3_ShowRotomTV:
+	special TurnOnTVScreen
+	end
+
+LilycoveCity_House3_Text_RotomInterference:
+	.string "BZZT!\pThe interference on the TV\n"
+	.string "suddenly vanished...$"
 
 LilycoveCity_House3_EventScript_PokefanF::
 	lock
