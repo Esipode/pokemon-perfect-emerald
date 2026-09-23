@@ -83,6 +83,17 @@ void PlayerCustomization_GetBattleTransitionMugshotBgPalette(u8 style, u8 gender
 bool32 PlayerCustomization_GetGroupHsvDelta(u8 style, u8 gender, enum PlayerColorRegion group,
                                              s16 *dh, s16 *ds, s16 *dv);
 
+// ROM (vanilla) RGB15 colour for `slot`'s first overworld index. Used by the
+// menu to seed a not-yet-set slot before the first edit, and to show its
+// swatch while unset.
+u16 PlayerCustomization_GetSlotRomColor(u8 style, u8 gender, u8 slot);
+
+// Applies the old region hue/shade maths (hue step 0..PLAYER_COLOR_HUE_COUNT-1,
+// shade PLAYER_COLOR_SHADE_MIN..MAX) to `slot`'s ROM colour and returns the
+// resulting RGB15. Used by group-row (macro) editing to recompute every slot
+// in a group from its ROM colour, not from its current stored value.
+u16 PlayerCustomization_ApplyHueShadeToRomColor(u8 style, u8 gender, u8 slot, u8 hue, s8 shade);
+
 // RGB15 <-> HSV(0-255) conversion, exported for the menu's editing model
 // (Stage P4/P6) so callers stop repeating the * 255 / 31 scaling.
 void PlayerCustomization_RgbToHsv(u16 color, u8 *h, u8 *s, u8 *v);

@@ -68,15 +68,30 @@ static void Task_PaletteMenuFadeIn(u8 taskId);
 static void Task_PaletteMenuProcessInput(u8 taskId);
 static void Task_PaletteMenuFadeOut(u8 taskId);
 static void PaletteMenu_MoveCursorCallback(s32 itemIndex, bool8 onInit, struct ListMenu *list);
+static void PaletteMenu_ItemPrintFunc(u8 windowId, u32 itemId, u8 y);
 static void BuildRowMap(void);
 static void RedrawSwatches(void);
 static void RefreshPreviewPalette(void);
 static void DrawHeaderText(void);
 static void DrawBgWindowFrames(void);
+static u16 GetSelectedRowIndex(void);
+static void AdjustSlot(u8 slot, u8 axis, s8 dir);
+static void AdjustGroup(u8 group, u8 axis, s8 dir);
+
+// SLOT rows cycle H -> S -> V; GROUP rows cycle HUE -> SHADE (AXIS_VAL unused
+// for groups). SELECT wraps mod 3 for a SLOT row and mod 2 for a GROUP row.
+enum
+{
+    AXIS_HUE,
+    AXIS_SAT_OR_SHADE,
+    AXIS_VAL,
+};
 
 // Working copy of gSaveBlock2Ptr->playerColorSlots, committed only on
 // CONFIRM. rows/items are rebuilt by BuildRowMap() whenever style or gender
 // changes (only on init for now; Stage 11 rebuilds them on a style change).
+// groupHue/groupShade are never saved -- a group is a macro that overwrites
+// its member slots' absolute colours, not a stored value of its own.
 static EWRAM_DATA struct
 {
     u16 choices[PLAYER_COLOR_SLOT_COUNT];
@@ -85,6 +100,9 @@ static EWRAM_DATA struct
     u8 previewSpriteId;
     u8 listTaskId;
     u8 rowCount;
+    u8 axis;
+    u8 groupHue[PLAYER_COLOR_REGION_COUNT];
+    s8 groupShade[PLAYER_COLOR_REGION_COUNT];
     struct PaletteMenuRow rows[PALETTE_MENU_MAX_ROWS];
     struct ListMenuItem items[PALETTE_MENU_MAX_ROWS];
 } sPaletteMenu = {0};
@@ -93,6 +111,13 @@ static const u8 sText_Title[] = _("PLAYER COLOURS");
 static const u8 sText_ControlHint[] = _("{SELECT_BUTTON}MODE {A_BUTTON}OK {B_BUTTON}BACK");
 static const u8 sText_ResetToDefault[] = _("RESET TO DEFAULT");
 static const u8 sText_Confirm[] = _("CONFIRM");
+static const u8 sText_Unset[] = _("---");
+static const u8 sText_AxisHue[] = _("HUE");
+static const u8 sText_AxisSat[] = _("SAT");
+static const u8 sText_AxisVal[] = _("VAL");
+static const u8 sText_AxisShade[] = _("SHD");
+static const u8 *const sSlotAxisNames[3] = {sText_AxisHue, sText_AxisSat, sText_AxisVal};
+static const u8 *const sGroupAxisNames[2] = {sText_AxisHue, sText_AxisShade};
 
 static const struct WindowTemplate sPaletteMenuWinTemplates[] =
 {
@@ -297,7 +322,7 @@ void CB2_InitPlayerPaletteMenu(void)
 
         template.items = sPaletteMenu.items;
         template.moveCursorFunc = PaletteMenu_MoveCursorCallback;
-        template.itemPrintFunc = NULL; // Stage P6 adds the value column
+        template.itemPrintFunc = PaletteMenu_ItemPrintFunc;
         template.totalItems = sPaletteMenu.rowCount;
         template.maxShowed = PALETTE_MENU_VISIBLE_ROWS;
         template.windowId = WIN_LIST;
@@ -349,6 +374,79 @@ static void ConfirmAndExit(u8 taskId)
     gTasks[taskId].func = Task_PaletteMenuFadeOut;
 }
 
+static u16 GetSelectedRowIndex(void)
+{
+    u16 scrollOffset, selectedRow;
+
+    ListMenuGetScrollAndRow(sPaletteMenu.listTaskId, &scrollOffset, &selectedRow);
+    return scrollOffset + selectedRow;
+}
+
+// Nudges one HSV axis of `slot`'s working colour. An unset slot (choices == 0)
+// is seeded from its ROM colour first, per Stage P6 item 3, so the first press
+// steps off the vanilla colour instead of off black.
+static void AdjustSlot(u8 slot, u8 axis, s8 dir)
+{
+    u16 stored = sPaletteMenu.choices[slot];
+    u16 rgb = (stored == 0) ? PlayerCustomization_GetSlotRomColor(sPaletteMenu.style, sPaletteMenu.gender, slot)
+                             : (stored & ~PLAYER_COLOR_SET);
+    u8 h, s, v;
+    s16 n;
+
+    PlayerCustomization_RgbToHsv(rgb, &h, &s, &v);
+    switch (axis % 3)
+    {
+    case AXIS_HUE:
+        h += dir * 8; // u8 wraps mod 256
+        break;
+    case AXIS_SAT_OR_SHADE:
+        n = (s16)s + dir * 16;
+        s = (u8)(n < 0 ? 0 : (n > 255 ? 255 : n));
+        break;
+    case AXIS_VAL:
+        n = (s16)v + dir * 8;
+        v = (u8)(n < 0 ? 0 : (n > 255 ? 255 : n));
+        break;
+    }
+    sPaletteMenu.choices[slot] = PLAYER_COLOR_SET | PlayerCustomization_HsvToRgb(h, s, v);
+}
+
+// Recomputes every slot in `group` from its own ROM colour using the old
+// region hue/shade maths, so a group edit is a macro over ROM colours, not
+// over whatever the member slots currently hold (Stage P6 item 5: group edits
+// intentionally overwrite per-slot edits inside that group).
+static void AdjustGroup(u8 group, u8 axis, s8 dir)
+{
+    const struct PlayerColorGroupInfo *info = PlayerCustomization_GetGroupInfo(sPaletteMenu.style, sPaletteMenu.gender, group);
+    u32 i;
+
+    if (axis % 2 == AXIS_HUE)
+    {
+        sPaletteMenu.groupHue[group] = (sPaletteMenu.groupHue[group] + dir) & (PLAYER_COLOR_HUE_COUNT - 1);
+    }
+    else
+    {
+        s8 shade = sPaletteMenu.groupShade[group] + dir;
+        if (shade < PLAYER_COLOR_SHADE_MIN)
+            shade = PLAYER_COLOR_SHADE_MIN;
+        else if (shade > PLAYER_COLOR_SHADE_MAX)
+            shade = PLAYER_COLOR_SHADE_MAX;
+        sPaletteMenu.groupShade[group] = shade;
+    }
+
+    for (i = 0; i < info->numSlots; i++)
+    {
+        u8 slot = info->slots[i];
+
+        if (sPaletteMenu.groupHue[group] == 0 && sPaletteMenu.groupShade[group] == 0)
+            sPaletteMenu.choices[slot] = 0; // back to ROM colour, same as an unset slot
+        else
+            sPaletteMenu.choices[slot] = PLAYER_COLOR_SET | PlayerCustomization_ApplyHueShadeToRomColor(
+                sPaletteMenu.style, sPaletteMenu.gender, slot,
+                sPaletteMenu.groupHue[group], sPaletteMenu.groupShade[group]);
+    }
+}
+
 static void Task_PaletteMenuProcessInput(u8 taskId)
 {
     s32 itemId = ListMenu_ProcessInput(gTasks[taskId].tListTaskId);
@@ -356,10 +454,44 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
     switch (itemId)
     {
     case LIST_NOTHING_CHOSEN:
+    {
+        u16 selected = GetSelectedRowIndex();
+        const struct PaletteMenuRow *row = &sPaletteMenu.rows[selected];
+
         if (JOY_NEW(START_BUTTON))
+        {
             ConfirmAndExit(taskId);
-        // Left/Right/SELECT editing on GROUP and SLOT rows lands in Stage P6.
+            break;
+        }
+
+        if (row->kind != ROW_KIND_SLOT && row->kind != ROW_KIND_GROUP)
+            break;
+
+        if (JOY_NEW(SELECT_BUTTON))
+        {
+            u8 axisCount = (row->kind == ROW_KIND_GROUP) ? 2 : 3;
+
+            PlaySE(SE_SELECT);
+            sPaletteMenu.axis = (sPaletteMenu.axis + 1) % axisCount;
+            RedrawListMenu(gTasks[taskId].tListTaskId);
+            CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+        }
+        else if (JOY_NEW(DPAD_LEFT) || JOY_NEW(DPAD_RIGHT))
+        {
+            s8 dir = JOY_NEW(DPAD_RIGHT) ? 1 : -1;
+
+            if (row->kind == ROW_KIND_SLOT)
+                AdjustSlot(row->id, sPaletteMenu.axis, dir);
+            else
+                AdjustGroup(row->id, sPaletteMenu.axis, dir);
+
+            PlaySE(SE_SELECT);
+            RedrawListMenu(gTasks[taskId].tListTaskId);
+            CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+            RefreshPreviewPalette();
+        }
         break;
+    }
     case LIST_CANCEL:
         PlaySE(SE_SELECT);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
@@ -368,9 +500,25 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
     default:
         switch (sPaletteMenu.rows[itemId].kind)
         {
+        case ROW_KIND_SLOT:
+        {
+            u8 slot = sPaletteMenu.rows[itemId].id;
+
+            PlaySE(SE_SELECT);
+            if (sPaletteMenu.choices[slot] != 0)
+                sPaletteMenu.choices[slot] = 0;
+            else
+                sPaletteMenu.choices[slot] = PLAYER_COLOR_SET | PlayerCustomization_GetSlotRomColor(sPaletteMenu.style, sPaletteMenu.gender, slot);
+            RedrawListMenu(gTasks[taskId].tListTaskId);
+            CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+            RefreshPreviewPalette();
+            break;
+        }
         case ROW_KIND_RESET:
             PlaySE(SE_SELECT);
             memset(sPaletteMenu.choices, 0, sizeof(sPaletteMenu.choices));
+            memset(sPaletteMenu.groupHue, 0, sizeof(sPaletteMenu.groupHue));
+            memset(sPaletteMenu.groupShade, 0, sizeof(sPaletteMenu.groupShade));
             RedrawListMenu(gTasks[taskId].tListTaskId);
             CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
             RefreshPreviewPalette();
@@ -435,6 +583,30 @@ static void RedrawSwatches(void)
 
     PutWindowTilemap(WIN_SWATCH);
     CopyWindowToVram(WIN_SWATCH, COPYWIN_GFX);
+}
+
+// Value column: SLOT rows show "---" while unset, else the active edit axis;
+// GROUP rows always show the active edit axis (HUE/SHD). RESET/CONFIRM print
+// nothing extra -- their name already says what A does.
+static void PaletteMenu_ItemPrintFunc(u8 windowId, u32 itemId, u8 y)
+{
+    static const u8 sValueColors[3] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE, TEXT_COLOR_DARK_GRAY};
+    const struct PaletteMenuRow *row = &sPaletteMenu.rows[itemId];
+
+    switch (row->kind)
+    {
+    case ROW_KIND_SLOT:
+        if (sPaletteMenu.choices[row->id] == 0)
+            AddTextPrinterParameterized3(windowId, FONT_NORMAL, PALETTE_MENU_VALUE_X, y, sValueColors, TEXT_SKIP_DRAW, sText_Unset);
+        else
+            AddTextPrinterParameterized3(windowId, FONT_NORMAL, PALETTE_MENU_VALUE_X, y, sValueColors, TEXT_SKIP_DRAW, sSlotAxisNames[sPaletteMenu.axis % 3]);
+        break;
+    case ROW_KIND_GROUP:
+        AddTextPrinterParameterized3(windowId, FONT_NORMAL, PALETTE_MENU_VALUE_X, y, sValueColors, TEXT_SKIP_DRAW, sGroupAxisNames[sPaletteMenu.axis % 2]);
+        break;
+    default:
+        break;
+    }
 }
 
 static void RefreshPreviewPalette(void)

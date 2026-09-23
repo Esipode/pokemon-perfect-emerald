@@ -266,6 +266,39 @@ bool32 PlayerCustomization_GetGroupHsvDelta(u8 style, u8 gender, enum PlayerColo
     return FALSE;
 }
 
+u16 PlayerCustomization_GetSlotRomColor(u8 style, u8 gender, u8 slot)
+{
+    const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][slot];
+    return GetOwBasePalette(style, gender)[info->owIndices[0]];
+}
+
+// Reimplements the pre-Stage-P1 ApplyRegionToPalette maths for a single ROM
+// colour: hue steps are circular (u8 wraps mod 256); shade nudges V/S with
+// the same step sizes the old per-frame region recolour used.
+u16 PlayerCustomization_ApplyHueShadeToRomColor(u8 style, u8 gender, u8 slot, u8 hue, s8 shade)
+{
+    u16 romColor = PlayerCustomization_GetSlotRomColor(style, gender, slot);
+    u8 h, s, v;
+    s16 ns, nv;
+
+    if (hue == 0 && shade == 0)
+        return romColor;
+
+    PlayerCustomization_RgbToHsv(romColor, &h, &s, &v);
+    h += hue * (256 / PLAYER_COLOR_HUE_COUNT);
+    nv = (s16)v + shade * 24;
+    ns = (s16)s + shade * 8;
+    if (nv < 0)
+        nv = 0;
+    else if (nv > 255)
+        nv = 255;
+    if (ns < 0)
+        ns = 0;
+    else if (ns > 255)
+        ns = 255;
+    return PlayerCustomization_HsvToRgb(h, (u8)ns, (u8)nv);
+}
+
 // Battle-transition mugshot background has no per-index art trace (flat 6-colour gradient), so it
 // gets a representative recolour: the OUTFIT group's HSV delta applied to the vanilla gradient.
 void PlayerCustomization_GetBattleTransitionMugshotBgPalette(u8 style, u8 gender, const u16 *basePal, u16 *dest)
