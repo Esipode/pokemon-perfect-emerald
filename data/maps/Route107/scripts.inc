@@ -1,5 +1,37 @@
 Route107_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, Route107_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route107_OnLoad
 	.byte 0
+
+Route107_OnTransition:
+	updatelegendaryvisibility SPECIES_THUNDURUS, FLAG_HIDE_THUNDURUS
+	end
+
+Route107_OnLoad:
+	@ Thundurus spawn gate: post-game, not already owned, thunderstorm weather
+	setvar VAR_0x8004, SPECIES_THUNDURUS
+	setvar VAR_0x8005, LAYOUT_ROUTE107
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route107_HideThundurusArena
+	getmapweather VAR_0x8008
+	goto_if_ne VAR_0x8008, WEATHER_RAIN_THUNDERSTORM, Route107_HideThundurusArena
+	goto Route107_ShowThundurusArena
+
+Route107_Thundurus_Encounter::
+	goto LegendaryEncounter_EventScript_Thundurus
+
+Route107_HideThundurusArena:
+	setflag FLAG_HIDE_THUNDURUS
+	end
+
+Route107_ShowThundurusArena:
+	@ Hides all route NPCs while Thundurus is present
+	setflag FLAG_TEMP_7
+	@ TODO(user): arena metatiles. One setmetatilewithelevation per tile:
+	@   setmetatilewithelevation <x>, <y>, <metatileId>, <impassable>, <elevation>
+	end
 
 Route107_EventScript_Darrin::
 	trainerbattle_single TRAINER_DARRIN, Route107_Text_DarrinIntro, Route107_Text_DarrinDefeated

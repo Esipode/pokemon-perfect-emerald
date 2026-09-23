@@ -1,5 +1,7 @@
 ## Thundurus — The Bolt Strike Pokémon
 
+### Location: Route 107 - Thunderstorms Only
+
 Thundurus fights behind the usual legendary package: a damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be taken below 1 HP** until the very end, so the catch window is guaranteed
