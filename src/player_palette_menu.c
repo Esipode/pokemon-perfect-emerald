@@ -50,6 +50,11 @@ enum
 
 #define PALETTE_MENU_LABEL_X 8
 
+// DPAD_LEFT/RIGHT hold-repeat on a SLOT row, at 60fps. Start delay is longer
+// than the repeat interval so a single tap never double-fires.
+#define PALETTE_MENU_DPAD_HOLD_START_DELAY 20
+#define PALETTE_MENU_DPAD_HOLD_REPEAT_DELAY 12
+
 // WIN_LIST spans tiles 2..15 (tilemapLeft 2, width 14); the frame's right
 // edge is at tile 16. Tiles 14-15 put the swatch column flush against that
 // edge, clear of the row label text.
@@ -59,8 +64,26 @@ enum
 #define SWATCH_X              4
 #define SWATCH_Y_OFFSET        4
 
-#define PREVIEW_SPRITE_X 208
-#define PREVIEW_SPRITE_Y  72
+// 2x2 block, right-hand pane. WIN_LIST ends at tilemap column 20 (x = 168),
+// so x >= 180 is clear of it.
+enum
+{
+    PREVIEW_FACING_SOUTH,
+    PREVIEW_FACING_NORTH,
+    PREVIEW_FACING_WEST,
+    PREVIEW_FACING_EAST,
+    PREVIEW_SPRITE_COUNT,
+};
+
+static const s16 sPreviewSpriteX[PREVIEW_SPRITE_COUNT] = {180, 208, 180, 208};
+static const s16 sPreviewSpriteY[PREVIEW_SPRITE_COUNT] = { 56,  56, 100, 100};
+static const u8 sPreviewSpriteAnim[PREVIEW_SPRITE_COUNT] =
+{
+    [PREVIEW_FACING_SOUTH] = ANIM_STD_GO_SOUTH,
+    [PREVIEW_FACING_NORTH] = ANIM_STD_GO_NORTH,
+    [PREVIEW_FACING_WEST]  = ANIM_STD_GO_WEST,
+    [PREVIEW_FACING_EAST]  = ANIM_STD_GO_EAST,
+};
 
 struct PaletteMenuRow
 {
@@ -98,10 +121,14 @@ static EWRAM_DATA struct
     u16 choices[PLAYER_COLOR_SLOT_COUNT];
     u8 gender;
     u8 style;
-    u8 previewSpriteId;
+    u8 previewSpriteIds[PREVIEW_SPRITE_COUNT];
     u8 listTaskId;
     u8 rowCount;
     u8 axis;
+    // Hold-repeat for DPAD_LEFT/RIGHT on a SLOT row. dpadHoldDir is 0 (none),
+    // 1 (left) or 2 (right); dpadHoldTimer counts down to the next repeat.
+    u8 dpadHoldDir;
+    u8 dpadHoldTimer;
     // Working HSV per slot, valid iff choices[slot] != 0. AdjustSlot edits
     // this instead of re-deriving H/S/V from the stored RGB15 each press --
     // RGB15(5-bit)->HSV(8-bit)->RGB15 is lossy, so re-deriving every press
@@ -329,10 +356,21 @@ void CB2_InitPlayerPaletteMenu(void)
         template.fontId = FONT_NORMAL;
         template.cursorKind = CURSOR_BLACK_ARROW;
 
-        sPaletteMenu.previewSpriteId = CreateObjectGraphicsSprite(
-            GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu.gender),
-            SpriteCallbackDummy, PREVIEW_SPRITE_X, PREVIEW_SPRITE_Y, 0);
-        StartSpriteAnim(&gSprites[sPaletteMenu.previewSpriteId], ANIM_STD_GO_SOUTH);
+        {
+            u16 graphicsId = GetPlayerAvatarGraphicsIdByStateIdAndGender(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu.gender);
+            u32 i;
+
+            // Same graphicsId for all four -- under OW_GFX_COMPRESS,
+            // CreateObjectGraphicsSpriteWithTag (event_object_movement.c)
+            // shares one tile sheet across sprites with the same tileTag
+            // instead of allocating four, so this is not a 4x VRAM cost.
+            for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
+            {
+                sPaletteMenu.previewSpriteIds[i] = CreateObjectGraphicsSprite(
+                    graphicsId, SpriteCallbackDummy, sPreviewSpriteX[i], sPreviewSpriteY[i], 0);
+                StartSpriteAnim(&gSprites[sPaletteMenu.previewSpriteIds[i]], sPreviewSpriteAnim[i]);
+            }
+        }
 
         taskId = CreateTask(Task_PaletteMenuFadeIn, 0);
         gTasks[taskId].tListTaskId = ListMenuInit(&template, 0, 0);
@@ -439,15 +477,40 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             RedrawListMenu(gTasks[taskId].tListTaskId);
             CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
         }
-        else if (row->kind == ROW_KIND_SLOT && (JOY_NEW(DPAD_LEFT) || JOY_NEW(DPAD_RIGHT)))
+        else if (row->kind == ROW_KIND_SLOT && (JOY_HELD(DPAD_LEFT) ^ JOY_HELD(DPAD_RIGHT)))
         {
-            s8 dir = JOY_NEW(DPAD_RIGHT) ? 1 : -1;
+            // Hold-repeat: a fresh press fires immediately and (re)arms the
+            // start delay; holding through it fires every REPEAT_DELAY
+            // frames after. Releasing, or holding the other direction,
+            // resets via the trailing else below.
+            u8 dirId = JOY_HELD(DPAD_RIGHT) ? 2 : 1;
+            bool8 fire = JOY_NEW(DPAD_LEFT) || JOY_NEW(DPAD_RIGHT);
 
-            AdjustSlot(row->id, sPaletteMenu.axis, dir);
-            PlaySE(SE_SELECT);
-            RedrawListMenu(gTasks[taskId].tListTaskId);
-            CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
-            RefreshPreviewPalette();
+            if (fire)
+            {
+                sPaletteMenu.dpadHoldTimer = PALETTE_MENU_DPAD_HOLD_START_DELAY;
+            }
+            else if (sPaletteMenu.dpadHoldDir == dirId && --sPaletteMenu.dpadHoldTimer == 0)
+            {
+                fire = TRUE;
+                sPaletteMenu.dpadHoldTimer = PALETTE_MENU_DPAD_HOLD_REPEAT_DELAY;
+            }
+            sPaletteMenu.dpadHoldDir = dirId;
+
+            if (fire)
+            {
+                s8 dir = dirId == 2 ? 1 : -1;
+
+                AdjustSlot(row->id, sPaletteMenu.axis, dir);
+                PlaySE(SE_SELECT);
+                RedrawListMenu(gTasks[taskId].tListTaskId);
+                CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
+                RefreshPreviewPalette();
+            }
+        }
+        else
+        {
+            sPaletteMenu.dpadHoldDir = 0;
         }
         break;
     }
@@ -501,8 +564,11 @@ static void Task_PaletteMenuFadeOut(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        u32 i;
+
         DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
-        DestroySprite(&gSprites[sPaletteMenu.previewSpriteId]);
+        for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
+            DestroySprite(&gSprites[sPaletteMenu.previewSpriteIds[i]]);
         DestroyTask(taskId);
         FreeAllWindowBuffers();
         SetMainCallback2(gMain.savedCallback);
@@ -564,9 +630,17 @@ static void RefreshPreviewPalette(void)
 {
     u16 buf[16];
     u16 swatchBuf[16];
+    u8 paletteNum = gSprites[sPaletteMenu.previewSpriteIds[0]].oam.paletteNum;
 
     PlayerCustomization_BuildPreviewPalette(sPaletteMenu.style, sPaletteMenu.gender, sPaletteMenu.choices, buf);
-    LoadPalette(buf, OBJ_PLTT_ID(gSprites[sPaletteMenu.previewSpriteId].oam.paletteNum), PLTT_SIZE_4BPP);
+    // All four sprites share one palette tag, so one LoadPalette recolours
+    // all four. AGB_ASSERT catches the tag setup breaking (e.g. from a
+    // future per-facing gfx change) instead of silently recolouring only
+    // one sprite.
+    AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[1]].oam.paletteNum == paletteNum);
+    AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[2]].oam.paletteNum == paletteNum);
+    AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[3]].oam.paletteNum == paletteNum);
+    LoadPalette(buf, OBJ_PLTT_ID(paletteNum), PLTT_SIZE_4BPP);
 
     // Separate copy for WIN_SWATCH's own BG palette bank: index 15 becomes
     // white chrome here without touching the preview sprite's black outline,
