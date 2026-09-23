@@ -20,6 +20,32 @@ struct PlayerColorRegionInfo
     u8 numTrainerIndices;
 };
 
+// Stage P2: per-(style, gender) slot table, one entry per storage slot in
+// gSaveBlock2Ptr->playerColorSlots[]. A slot is one logical colour -- it may
+// cover several palette indices that share a paint (e.g. a shading ramp),
+// per Appendix A of the plan doc. name == NULL means the slot is unused for
+// this (style, gender) and is hidden from the menu. Still unread until
+// Stage P3 wires up the new render path; struct PlayerColorRegionInfo above
+// and sPlayerColorRegions stay in place until then.
+struct PlayerColorSlotInfo
+{
+    const u8 *name;
+    const u8 *owIndices;
+    const u8 *trainerIndices;
+    u8 numOwIndices;
+    u8 numTrainerIndices;
+};
+
+// A group bundles slot ids under one of the PLAYER_COLOR_REGION_* names, so
+// the menu can still offer a "hue-rotate this whole group" action alongside
+// per-slot editing. Slot ids index into sPlayerColorSlots[style][gender][].
+struct PlayerColorGroupInfo
+{
+    const u8 *name;
+    const u8 *slots;
+    u8 numSlots;
+};
+
 // Accessors over gSaveBlock2Ptr->playerSpriteStyle. Set clamps out-of-range
 // values to PLAYER_SPRITE_STYLE_EMERALD.
 u8 Player_GetSpriteStyle(void);
