@@ -42,6 +42,12 @@ u16 Player_GetColorSlot(u32 slot);
 void Player_SetColorSlot(u32 slot, u16 rgb);
 void Player_ClearColorSlot(u32 slot);
 
+// Read-only lookup into the Stage P2 sPlayerColorSlots / sPlayerColorGroups
+// tables, for the menu to build its row map from. slot->name / group->name
+// is NULL when unused for this (style, gender).
+const struct PlayerColorSlotInfo *PlayerCustomization_GetSlotInfo(u8 style, u8 gender, u8 slot);
+const struct PlayerColorGroupInfo *PlayerCustomization_GetGroupInfo(u8 style, u8 gender, enum PlayerColorRegion group);
+
 // Returns NULL unless paletteTag belongs to the player's own (style, gender)
 // and at least one slot is customised; otherwise returns a static EWRAM
 // u16[16] buffer holding the recoloured overworld palette. Callers must copy

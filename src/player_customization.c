@@ -228,6 +228,16 @@ u8 PlayerCustomization_GetSlotSwatchIndex(u8 style, u8 gender, u8 slot)
     return sPlayerColorSlots[style][gender][slot].owIndices[0];
 }
 
+const struct PlayerColorSlotInfo *PlayerCustomization_GetSlotInfo(u8 style, u8 gender, u8 slot)
+{
+    return &sPlayerColorSlots[style][gender][slot];
+}
+
+const struct PlayerColorGroupInfo *PlayerCustomization_GetGroupInfo(u8 style, u8 gender, enum PlayerColorRegion group)
+{
+    return &sPlayerColorGroups[style][gender][group];
+}
+
 // FALSE if the group has no set slot. dh wraps; ds and dv are signed and clamp at the caller.
 bool32 PlayerCustomization_GetGroupHsvDelta(u8 style, u8 gender, enum PlayerColorRegion group,
                                              s16 *dh, s16 *ds, s16 *dv)
