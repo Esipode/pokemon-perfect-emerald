@@ -49,6 +49,15 @@ LittlerootTown_OnTransition:
 LittlerootTown_OnLoad:
 	@ Shaymin arena: metatiles appear post-game regardless of ownership; object spawns only if not owned
 	goto_if_unset FLAG_SYS_GAME_CLEAR, LittlerootTown_HideShayminArena
+	
+	setvar VAR_0x8004, SPECIES_SHAYMIN
+	setvar VAR_0x8005, LAYOUT_LITTLEROOT_TOWN
+	setvar VAR_0x8006, WEEKDAY_SAT
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, LittlerootTown_HideShayminArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_MORNING, LittlerootTown_HideShayminArena
 
 	setmetatilewithelevation 8, 19, 0x001, FALSE, 3
 	setmetatilewithelevation 9, 19, 0x001, FALSE, 3
@@ -114,15 +123,7 @@ LittlerootTown_OnLoad:
 	setmetatilewithelevation 9, 31, 0x001, FALSE, 3
 	setmetatilewithelevation 10, 31, 0x001, FALSE, 3
 	setmetatilewithelevation 11, 31, 0x001, FALSE, 3
-	
-	setvar VAR_0x8004, SPECIES_SHAYMIN
-	setvar VAR_0x8005, LAYOUT_LITTLEROOT_TOWN
-	setvar VAR_0x8006, WEEKDAY_SAT
-	setvar VAR_0x8007, 1
-	special CheckValidLegendaryEncounter
-	goto_if_eq VAR_RESULT, FALSE, LittlerootTown_HideShayminArena
-	gettimeofday
-	goto_if_ne VAR_0x8000, TIME_MORNING, LittlerootTown_HideShayminArena
+
 	end
 
 LittlerootTown_Shaymin_Encounter::

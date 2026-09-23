@@ -1,6 +1,7 @@
 Route119_MapScripts::
 	map_script MAP_SCRIPT_ON_RESUME, Route119_OnResume
 	map_script MAP_SCRIPT_ON_TRANSITION, Route119_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route119_OnLoad
 	.byte 0
 
 Route119_OnResume:
@@ -18,7 +19,146 @@ Route119_OnTransition:
 	call Common_EventScript_SetupRivalOnBikeGfxId
 	call_if_eq VAR_WEATHER_INSTITUTE_STATE, 1, Route119_EventScript_MoveInstituteWorkersDownstairs
 	special SetRoute119Weather
+	updatelegendaryvisibility SPECIES_KELDEO, FLAG_HIDE_KELDEO
+	call Route119_EventScript_SetKeldeoStage
 	end
+
+Route119_OnLoad:
+	@ Keldeo spawn gate: post-game, not already owned, Thursdays
+	setvar VAR_0x8004, SPECIES_KELDEO
+	setvar VAR_0x8005, LAYOUT_ROUTE119
+	setvar VAR_0x8006, WEEKDAY_THU
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route119_HideKeldeoArena
+	goto Route119_ShowKeldeoArena
+
+Route119_HideKeldeoArena:
+	setflag FLAG_HIDE_KELDEO
+	end
+
+Route119_ShowKeldeoArena:
+	@ TODO(user): arena metatiles. One setmetatilewithelevation per tile:
+	@   setmetatilewithelevation <x>, <y>, <metatileId>, <impassable>, <elevation>
+	end
+
+@ Keldeo chase: encounters 1-3 flee north; encounter 4 is the battle (stage 3).
+@ Places the single Keldeo object at the spot for VAR_KELDEO_CHASE_STAGE.
+Route119_EventScript_SetKeldeoStage::
+	goto_if_eq VAR_KELDEO_CHASE_STAGE, 1, Route119_EventScript_SetKeldeoStage1
+	goto_if_eq VAR_KELDEO_CHASE_STAGE, 2, Route119_EventScript_SetKeldeoStage2
+	goto_if_eq VAR_KELDEO_CHASE_STAGE, 3, Route119_EventScript_SetKeldeoStage3
+	return
+
+Route119_EventScript_SetKeldeoStage1::
+	setobjectxyperm LOCALID_ROUTE119_KELDEO, 27, 97
+	return
+
+Route119_EventScript_SetKeldeoStage2::
+	setobjectxyperm LOCALID_ROUTE119_KELDEO, 9, 45
+	return
+
+Route119_EventScript_SetKeldeoStage3::
+	setobjectxyperm LOCALID_ROUTE119_KELDEO, 5, 3
+	setobjectmovementtype LOCALID_ROUTE119_KELDEO, MOVEMENT_TYPE_FACE_DOWN_AND_LEFT
+	return
+
+Route119_Keldeo_Encounter::
+	goto_if_eq VAR_KELDEO_CHASE_STAGE, 3, Route119_EventScript_KeldeoBattle
+	lockall
+	faceplayer
+	waitse
+	playmoncry SPECIES_KELDEO, CRY_MODE_ENCOUNTER
+	delay 40
+	waitmoncry
+	getplayerxy VAR_0x8008, VAR_0x8009
+	goto_if_eq VAR_KELDEO_CHASE_STAGE, 1, Route119_EventScript_KeldeoFlee2
+	goto_if_eq VAR_KELDEO_CHASE_STAGE, 2, Route119_EventScript_KeldeoFlee3
+	goto_if_lt VAR_0x8009, 127, Route119_EventScript_KeldeoFlee1FromNorth
+	applymovement LOCALID_ROUTE119_KELDEO, Route119_Movement_KeldeoFleeNorth
+	waitmovement 0
+	goto Route119_EventScript_KeldeoNextStage
+
+Route119_EventScript_KeldeoFlee1FromNorth::
+	applymovement LOCALID_ROUTE119_KELDEO, Route119_Movement_KeldeoFleeRightThenNorth
+	waitmovement 0
+	goto Route119_EventScript_KeldeoNextStage
+
+Route119_EventScript_KeldeoFlee2::
+	goto_if_gt VAR_0x8008, 27, Route119_EventScript_KeldeoFlee2FromRight
+	applymovement LOCALID_ROUTE119_KELDEO, Route119_Movement_KeldeoFleeNorth
+	waitmovement 0
+	goto Route119_EventScript_KeldeoNextStage
+
+Route119_EventScript_KeldeoFlee2FromRight::
+	applymovement LOCALID_ROUTE119_KELDEO, Route119_Movement_KeldeoFleeRightThenNorth
+	waitmovement 0
+	goto Route119_EventScript_KeldeoNextStage
+
+Route119_EventScript_KeldeoFlee3::
+	goto_if_lt VAR_0x8009, 45, Route119_EventScript_KeldeoFlee3FromNorth
+	applymovement LOCALID_ROUTE119_KELDEO, Route119_Movement_KeldeoFleeNorth
+	waitmovement 0
+	goto Route119_EventScript_KeldeoNextStage
+
+Route119_EventScript_KeldeoFlee3FromNorth::
+	applymovement LOCALID_ROUTE119_KELDEO, Route119_Movement_KeldeoFleeLeftThenNorth
+	waitmovement 0
+	goto Route119_EventScript_KeldeoNextStage
+
+@ Removes the fled Keldeo and respawns it at the next stage's spot.
+Route119_EventScript_KeldeoNextStage::
+	removeobject LOCALID_ROUTE119_KELDEO
+	addvar VAR_KELDEO_CHASE_STAGE, 1
+	call Route119_EventScript_SetKeldeoStage
+	clearflag FLAG_HIDE_KELDEO
+	addobject LOCALID_ROUTE119_KELDEO
+	releaseall
+	end
+
+Route119_EventScript_KeldeoBattle::
+	goto LegendaryEncounter_EventScript_Keldeo
+
+Route119_Movement_KeldeoFleeNorth:
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	step_end
+
+Route119_Movement_KeldeoFleeRightThenNorth:
+	walk_faster_right
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	step_end
+
+Route119_Movement_KeldeoFleeLeftThenNorth:
+	walk_faster_left
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	walk_faster_up
+	step_end
 
 Route119_EventScript_MoveInstituteWorkersDownstairs::
 	setflag FLAG_HIDE_WEATHER_INSTITUTE_2F_WORKERS

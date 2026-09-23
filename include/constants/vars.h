@@ -269,7 +269,7 @@
 #define VAR_EMPORIUM_ID                                  0x40F7 // Battle Emporium: enum EmporiumId of the active building, 0 when no challenge pending
 #define VAR_EMPORIUM_REWARD                              0x40F8 // Battle Emporium: gEmporiumRewards[] index of the chosen reward
 #define VAR_EMPORIUM_RESULT                             0x40F9 // Battle Emporium: enum EmporiumResult of the last back-room battle, drives the lobby payout/recovery scene
-#define VAR_UNUSED_0x40FA                                0x40FA // Unused Var
+#define VAR_KELDEO_CHASE_STAGE                           0x40FA // Route 119 Keldeo chase: 0-2 = fled from encounter 1-3, 3 = final battle spot
 #define VAR_UNUSED_0x40FB                                0x40FB // Unused Var
 #define VAR_UNUSED_0x40FC                                0x40FC // Unused Var
 #define VAR_UNUSED_0x40FD                                0x40FD // Unused Var
