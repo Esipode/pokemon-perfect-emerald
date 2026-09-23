@@ -1,32 +1,10 @@
-// Palette index -> region mapping for the player customization screen.
-// Index 0 (transparency), skin tones and pure black (15) are deliberately excluded.
-//
-// May's overworld and trainer palettes are identical except indexes 10/11,
-// so one FEMALE mapping serves both. Brendan's differ: the overworld
-// palette packs skin into 1-3 with hair at 4, while the trainer palette
-// uses 1-4 as a four-step skin ramp -- his hair is hidden under the cap, so
-// MALE has no trainer-pic entry for HAIR.
-static const u8 sPlayerColorIndices_MaleOwHair[] = {4}; // hair brown
-static const u8 sPlayerColorIndices_MaleOwHat[] = {9, 10, 11, 14}; // cap red/shading
-static const u8 sPlayerColorIndices_MaleOwOutfit[] = {5, 6, 7, 8}; // jacket blues, incl. cap outline (5)
-static const u8 sPlayerColorIndices_MaleOwAccent[] = {12, 13}; // bag straps/trim
-
-static const u8 sPlayerColorIndices_MaleTrainerHat[] = {9, 10, 11, 14}; // cap red/shading
-static const u8 sPlayerColorIndices_MaleTrainerOutfit[] = {5, 6, 7, 8}; // jacket blues, incl. cap outline (5)
-static const u8 sPlayerColorIndices_MaleTrainerAccent[] = {12, 13}; // bag straps/trim
-
-static const u8 sPlayerColorIndices_FemaleHair[] = {7, 8}; // hair red
-static const u8 sPlayerColorIndices_FemaleHat[] = {10, 11}; // bandana
-static const u8 sPlayerColorIndices_FemaleOutfit[] = {5, 6, 9, 14}; // shirt/shorts
-static const u8 sPlayerColorIndices_FemaleAccent[] = {12, 13}; // bag straps/trim
-
 // --- Stage P2: slot and group tables -------------------------------------
 // Source: Appendix A of the plan doc. Confidence varies by row -- Brendan
-// and May are split from the shipped sPlayerColorRegions data above (which
-// was already verified in-game by Part A); Red and Leaf have no such prior
-// art and are this trace's own best read, so some slots are missing or
-// have no trainer-pic indices yet (numTrainerIndices == 0: not traced, not
-// "confirmed absent" the way Brendan's HAIR trainer slot is).
+// and May are split from the shipped per-region data Part A already
+// verified in-game; Red and Leaf have no such prior art and are this
+// trace's own best read, so some slots are missing or have no trainer-pic
+// indices yet (numTrainerIndices == 0: not traced, not "confirmed absent"
+// the way Brendan's HAIR trainer slot is).
 
 // Emerald male (Brendan). Slot ids: 0 Hair, 1 Bandana white, 2 Bandana
 // green, 3 Jacket, 4 Cap outline, 5 Bag.
@@ -155,66 +133,3 @@ static const struct PlayerColorGroupInfo
     },
 };
 
-static const struct PlayerColorRegionInfo sPlayerColorRegions[GENDER_COUNT][PLAYER_COLOR_REGION_COUNT] =
-{
-    [MALE] = {
-        [PLAYER_COLOR_REGION_HAIR] = {
-            .name = COMPOUND_STRING("HAIR"),
-            .owIndices = sPlayerColorIndices_MaleOwHair,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_MaleOwHair),
-            .trainerIndices = NULL,
-            .numTrainerIndices = 0, // hidden under the cap in the trainer pic
-        },
-        [PLAYER_COLOR_REGION_HAT] = {
-            .name = COMPOUND_STRING("HAT"),
-            .owIndices = sPlayerColorIndices_MaleOwHat,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_MaleOwHat),
-            .trainerIndices = sPlayerColorIndices_MaleTrainerHat,
-            .numTrainerIndices = ARRAY_COUNT(sPlayerColorIndices_MaleTrainerHat),
-        },
-        [PLAYER_COLOR_REGION_OUTFIT] = {
-            .name = COMPOUND_STRING("OUTFIT"),
-            .owIndices = sPlayerColorIndices_MaleOwOutfit,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_MaleOwOutfit),
-            .trainerIndices = sPlayerColorIndices_MaleTrainerOutfit,
-            .numTrainerIndices = ARRAY_COUNT(sPlayerColorIndices_MaleTrainerOutfit),
-        },
-        [PLAYER_COLOR_REGION_ACCENT] = {
-            .name = COMPOUND_STRING("ACCENT"),
-            .owIndices = sPlayerColorIndices_MaleOwAccent,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_MaleOwAccent),
-            .trainerIndices = sPlayerColorIndices_MaleTrainerAccent,
-            .numTrainerIndices = ARRAY_COUNT(sPlayerColorIndices_MaleTrainerAccent),
-        },
-    },
-    [FEMALE] = {
-        [PLAYER_COLOR_REGION_HAIR] = {
-            .name = COMPOUND_STRING("HAIR"),
-            .owIndices = sPlayerColorIndices_FemaleHair,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleHair),
-            .trainerIndices = sPlayerColorIndices_FemaleHair,
-            .numTrainerIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleHair),
-        },
-        [PLAYER_COLOR_REGION_HAT] = {
-            .name = COMPOUND_STRING("HAT"),
-            .owIndices = sPlayerColorIndices_FemaleHat,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleHat),
-            .trainerIndices = sPlayerColorIndices_FemaleHat,
-            .numTrainerIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleHat),
-        },
-        [PLAYER_COLOR_REGION_OUTFIT] = {
-            .name = COMPOUND_STRING("OUTFIT"),
-            .owIndices = sPlayerColorIndices_FemaleOutfit,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleOutfit),
-            .trainerIndices = sPlayerColorIndices_FemaleOutfit,
-            .numTrainerIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleOutfit),
-        },
-        [PLAYER_COLOR_REGION_ACCENT] = {
-            .name = COMPOUND_STRING("ACCENT"),
-            .owIndices = sPlayerColorIndices_FemaleAccent,
-            .numOwIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleAccent),
-            .trainerIndices = sPlayerColorIndices_FemaleAccent,
-            .numTrainerIndices = ARRAY_COUNT(sPlayerColorIndices_FemaleAccent),
-        },
-    },
-};

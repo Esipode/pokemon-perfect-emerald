@@ -430,27 +430,16 @@ static void PaletteMenu_ItemPrintCallback(u8 windowId, u32 itemId, u8 y)
     AddTextPrinterParameterized(windowId, FONT_NORMAL, text, PALETTE_MENU_VALUE_X, y, TEXT_SKIP_DRAW, NULL);
 }
 
-// Swatches read from the palette bank RefreshPreviewPalette() loaded (BG_PLTT_ID(2)),
-// so they match the live working colours, not the saved ones.
+// TODO(Stage P5/P6): this menu still edits the old 4-region hue/shade model,
+// which Stage P3 removed from player_customization.c. Stubbed to a no-op
+// swatch/preview until the slot-based menu rewrite lands.
 static void RedrawSwatches(void)
 {
-    u32 region;
-
-    for (region = 0; region < PLAYER_COLOR_REGION_COUNT; region++)
-    {
-        u8 index = PlayerCustomization_GetRegionSwatchIndex(sPaletteMenu.gender, region);
-        FillWindowPixelRect(WIN_SWATCH, PIXEL_FILL(index), SWATCH_X, region * 16 + SWATCH_Y_OFFSET, SWATCH_SIZE, SWATCH_SIZE);
-    }
     CopyWindowToVram(WIN_SWATCH, COPYWIN_GFX);
 }
 
 static void RefreshPreviewPalette(void)
 {
-    u16 buf[16];
-
-    PlayerCustomization_BuildPreviewPalette(sPaletteMenu.gender, sPaletteMenu.choices, buf);
-    LoadPalette(buf, OBJ_PLTT_ID(gSprites[sPaletteMenu.previewSpriteId].oam.paletteNum), PLTT_SIZE_4BPP);
-    LoadPalette(buf, BG_PLTT_ID(2), PLTT_SIZE_4BPP);
     RedrawSwatches();
 }
 
