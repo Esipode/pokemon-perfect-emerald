@@ -9,6 +9,7 @@ Route116_OnTransition:
 	call_if_eq VAR_SHOULD_END_ABNORMAL_WEATHER, 1, AbnormalWeather_EventScript_HideMapNamePopup
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_116_NORTH, AbnormalWeather_StartGroudonWeather
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_116_SOUTH, AbnormalWeather_StartGroudonWeather
+	updatelegendaryvisibility SPECIES_LANDORUS, FLAG_HIDE_LANDORUS
 	end
 
 Route116_EventScript_SetWandasBoyfriendPos::
@@ -18,6 +19,152 @@ Route116_EventScript_SetWandasBoyfriendPos::
 Route116_OnLoad:
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_116_NORTH, AbnormalWeather_EventScript_PlaceTilesRoute116North
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_116_SOUTH, AbnormalWeather_EventScript_PlaceTilesRoute116South
+	@ Landorus spawn gate: post-game, not already owned, Monday, daytime
+	setvar VAR_0x8004, SPECIES_LANDORUS
+	setvar VAR_0x8005, LAYOUT_ROUTE116
+	setvar VAR_0x8006, WEEKDAY_MON
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route116_HideLandorusArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_DAY, Route116_HideLandorusArena
+	goto Route116_ShowLandorusArena
+
+Route116_Landorus_Encounter::
+	goto LegendaryEncounter_EventScript_Landorus
+
+Route116_HideLandorusArena:
+	setflag FLAG_HIDE_LANDORUS
+	end
+
+Route116_ShowLandorusArena:
+	setflag FLAG_TEMP_10
+	setmetatilewithelevation 12, 5, 0x001, FALSE, 3
+
+	setmetatilewithelevation 9, 6, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 6, 0x001, FALSE, 3
+	setmetatilewithelevation 13, 6, 0x001, FALSE, 3
+	
+	setmetatilewithelevation 8, 7, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 7, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 7, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 7, 0x001, FALSE, 3
+	setmetatilewithelevation 12, 7, 0x001, FALSE, 3
+	setmetatilewithelevation 13, 7, 0x001, FALSE, 3
+	setmetatilewithelevation 14, 7, 0x001, FALSE, 3
+	setmetatilewithelevation 15, 7, 0x001, FALSE, 3
+
+	setmetatilewithelevation 6, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 7, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 8, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 9, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 10, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 11, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 12, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 13, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 14, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 15, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 16, 8, 0x001, FALSE, 3
+	setmetatilewithelevation 17, 8, 0x001, FALSE, 3
+
+	setmetatilewithelevation 6, 9, 0x068, TRUE, 0
+	setmetatilewithelevation 7, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 8, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 9, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 10, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 11, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 12, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 13, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 14, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 15, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 16, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 17, 9, 0x069, FALSE, 4
+	setmetatilewithelevation 18, 9, 0x06A, TRUE, 0
+
+	setmetatilewithelevation 5, 10, 0x070, FALSE, 3
+	setmetatilewithelevation 6, 10, 0x070, TRUE, 0
+	setmetatilewithelevation 7, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 8, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 9, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 10, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 11, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 12, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 13, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 14, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 15, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 16, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 17, 10, 0x071, FALSE, 4
+	setmetatilewithelevation 18, 10, 0x072, TRUE, 0
+
+	setmetatilewithelevation 6, 11, 0x070, TRUE, 0
+	setmetatilewithelevation 7, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 8, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 9, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 10, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 11, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 12, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 13, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 14, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 15, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 16, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 17, 11, 0x071, FALSE, 4
+	setmetatilewithelevation 18, 11, 0x072, TRUE, 0
+
+	setmetatilewithelevation 6, 12, 0x070, TRUE, 0
+	setmetatilewithelevation 7, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 8, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 9, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 10, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 11, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 12, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 13, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 14, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 15, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 16, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 17, 12, 0x071, FALSE, 4
+	setmetatilewithelevation 18, 12, 0x072, TRUE, 0
+
+	setmetatilewithelevation 6, 13, 0x070, TRUE, 0
+	setmetatilewithelevation 7, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 8, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 9, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 10, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 11, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 12, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 13, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 14, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 15, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 16, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 17, 13, 0x071, FALSE, 4
+	setmetatilewithelevation 18, 13, 0x072, TRUE, 0
+
+	setmetatilewithelevation 6, 14, 0x070, TRUE, 0
+	setmetatilewithelevation 7, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 8, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 9, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 10, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 11, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 12, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 13, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 14, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 15, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 16, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 17, 14, 0x071, FALSE, 4
+	setmetatilewithelevation 18, 14, 0x072, TRUE, 0
+
+	setmetatilewithelevation 6, 15, 0x078, TRUE, 0
+	setmetatilewithelevation 7, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 8, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 9, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 10, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 11, 15, 0x0AF, FALSE, 0
+	setmetatilewithelevation 12, 15, 0x0AF, FALSE, 0
+	setmetatilewithelevation 13, 15, 0x0AF, FALSE, 0
+	setmetatilewithelevation 14, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 15, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 16, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 17, 15, 0x79, TRUE, 0
+	setmetatilewithelevation 18, 15, 0x07A, TRUE, 0
 	end
 
 Route116_OnFrame:
@@ -111,7 +258,11 @@ Route116_Movement_DevonEmployeeExitEast:
 	walk_left
 	step_end
 
+Route116_EventScript_SignInactive::
+	end
+
 Route116_EventScript_RouteSignRustboro::
+	goto_if_set FLAG_TEMP_10, Route116_EventScript_SignInactive
 	msgbox Route116_Text_RouteSignRustboro, MSGBOX_SIGN
 	end
 
@@ -124,6 +275,7 @@ Route116_EventScript_TunnelersRestHouseSign::
 	end
 
 Route116_EventScript_TrainerTipsBToStopEvolution::
+	goto_if_set FLAG_TEMP_10, Route116_EventScript_SignInactive
 	msgbox Route116_Text_TrainerTipsBToStopEvolution, MSGBOX_SIGN
 	end
 
