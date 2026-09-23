@@ -2334,7 +2334,8 @@ static bool8 Mugshot_SetGfx(struct Task *task)
     LoadPalette(sOpponentMugshotsPals[mugshotColor], BG_PLTT_ID(15), PLTT_SIZE_4BPP);
     {
         u16 playerBgPal[6];
-        PlayerCustomization_GetBattleTransitionMugshotBgPalette(sPlayerMugshotsPals[gSaveBlock2Ptr->playerGender], playerBgPal);
+        PlayerCustomization_GetBattleTransitionMugshotBgPalette(Player_GetSpriteStyle(), gSaveBlock2Ptr->playerGender,
+                                                                 sPlayerMugshotsPals[gSaveBlock2Ptr->playerGender], playerBgPal);
         LoadPalette(playerBgPal, BG_PLTT_ID(15) + 10, PLTT_SIZEOF(6));
     }
 

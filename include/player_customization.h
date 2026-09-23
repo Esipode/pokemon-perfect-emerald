@@ -67,8 +67,15 @@ void PlayerCustomization_BuildPreviewPalette(u8 style, u8 gender, const u16 *cho
 u8 PlayerCustomization_GetSlotSwatchIndex(u8 style, u8 gender, u8 slot);
 
 // The battle-transition mugshot background is a plain 6-colour gradient with
-// no per-index art mapping. `dest` must hold at least 6 u16s.
-void PlayerCustomization_GetBattleTransitionMugshotBgPalette(const u16 *basePal, u16 *dest);
+// no per-index art mapping. `dest` must hold at least 6 u16s. Recoloured by
+// applying the OUTFIT group's HSV delta (see PlayerCustomization_GetGroupHsvDelta).
+void PlayerCustomization_GetBattleTransitionMugshotBgPalette(u8 style, u8 gender, const u16 *basePal, u16 *dest);
+
+// HSV delta between a group's first set slot and that slot's ROM colour.
+// FALSE if no slot in the group is set (dh/ds/dv left untouched). dh wraps
+// mod 256; ds and dv are signed and clamped to [0, 255] by the caller.
+bool32 PlayerCustomization_GetGroupHsvDelta(u8 style, u8 gender, enum PlayerColorRegion group,
+                                             s16 *dh, s16 *ds, s16 *dv);
 
 // RGB15 <-> HSV(0-255) conversion, exported for the menu's editing model
 // (Stage P4/P6) so callers stop repeating the * 255 / 31 scaling.

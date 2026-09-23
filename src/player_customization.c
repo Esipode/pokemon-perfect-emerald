@@ -228,13 +228,67 @@ u8 PlayerCustomization_GetSlotSwatchIndex(u8 style, u8 gender, u8 slot)
     return sPlayerColorSlots[style][gender][slot].owIndices[0];
 }
 
-// TODO(Stage P4): apply the OUTFIT group's HSV delta to this gradient instead of leaving it vanilla.
-void PlayerCustomization_GetBattleTransitionMugshotBgPalette(const u16 *basePal, u16 *dest)
+// FALSE if the group has no set slot. dh wraps; ds and dv are signed and clamp at the caller.
+bool32 PlayerCustomization_GetGroupHsvDelta(u8 style, u8 gender, enum PlayerColorRegion group,
+                                             s16 *dh, s16 *ds, s16 *dv)
 {
+    const struct PlayerColorGroupInfo *groupInfo = &sPlayerColorGroups[style][gender][group];
+    const u16 *basePal = GetOwBasePalette(style, gender);
     u32 i;
 
+    for (i = 0; i < groupInfo->numSlots; i++)
+    {
+        u8 slot = groupInfo->slots[i];
+        const struct PlayerColorSlotInfo *slotInfo = &sPlayerColorSlots[style][gender][slot];
+        u16 value = gSaveBlock2Ptr->playerColorSlots[slot];
+        u8 h1, s1, v1, h2, s2, v2;
+
+        if (slotInfo->name == NULL || value == 0)
+            continue;
+
+        PlayerCustomization_RgbToHsv(value & ~PLAYER_COLOR_SET, &h1, &s1, &v1);
+        PlayerCustomization_RgbToHsv(basePal[slotInfo->owIndices[0]], &h2, &s2, &v2);
+        *dh = (s16)h1 - (s16)h2;
+        *ds = (s16)s1 - (s16)s2;
+        *dv = (s16)v1 - (s16)v2;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// Battle-transition mugshot background has no per-index art trace (flat 6-colour gradient), so it
+// gets a representative recolour: the OUTFIT group's HSV delta applied to the vanilla gradient.
+void PlayerCustomization_GetBattleTransitionMugshotBgPalette(u8 style, u8 gender, const u16 *basePal, u16 *dest)
+{
+    s16 dh, ds, dv;
+    u32 i;
+
+    if (!PlayerCustomization_GetGroupHsvDelta(style, gender, PLAYER_COLOR_REGION_OUTFIT, &dh, &ds, &dv))
+    {
+        for (i = 0; i < 6; i++)
+            dest[i] = basePal[i];
+        return;
+    }
+
     for (i = 0; i < 6; i++)
-        dest[i] = basePal[i];
+    {
+        u8 h, s, v;
+        s16 ns, nv;
+
+        PlayerCustomization_RgbToHsv(basePal[i], &h, &s, &v);
+        h += (u8)dh;
+        ns = (s16)s + ds;
+        nv = (s16)v + dv;
+        if (ns < 0)
+            ns = 0;
+        else if (ns > 255)
+            ns = 255;
+        if (nv < 0)
+            nv = 0;
+        else if (nv > 255)
+            nv = 255;
+        dest[i] = PlayerCustomization_HsvToRgb(h, (u8)ns, (u8)nv);
+    }
 }
 
 void PlayerCustomization_BuildPreviewPalette(u8 style, u8 gender, const u16 *choices, u16 *dest)
