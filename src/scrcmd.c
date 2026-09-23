@@ -3542,6 +3542,34 @@ bool8 Scrcmd_checkpartyhelditem(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// Sets VAR_RESULT to TRUE if any non-egg party Pokemon has the given type.
+bool8 Scrcmd_checkpartytype(struct ScriptContext *ctx)
+{
+    enum Type type = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    gSpecialVar_Result = FALSE;
+
+    for (u32 partyIndex = 0; partyIndex < CalculatePlayerPartyCount(); partyIndex++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][partyIndex];
+        enum Species species;
+
+        if (GetMonData(mon, MON_DATA_IS_EGG))
+            continue;
+
+        species = GetMonData(mon, MON_DATA_SPECIES);
+        if (GetSpeciesType(species, 0) == type || GetSpeciesType(species, 1) == type)
+        {
+            gSpecialVar_Result = TRUE;
+            break;
+        }
+    }
+
+    return FALSE;
+}
+
 // Overlay commands. The colour operand is read raw: RGB15 values from 0x4000 up would be
 // mistaken for variable ids by VarGet. Handles are read through VarGet, so the operand is the
 // variable holding the handle. Every command is a no-op on a stale or invalid handle.

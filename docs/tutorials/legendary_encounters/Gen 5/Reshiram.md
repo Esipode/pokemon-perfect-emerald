@@ -1,4 +1,5 @@
 ## Reshiram — The Vast White Pokémon
+### Location: Cave of Origin B1F - Wednesday mornings, with a Fire-type in the party
 
 Reshiram fights behind the usual legendary package: a damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic

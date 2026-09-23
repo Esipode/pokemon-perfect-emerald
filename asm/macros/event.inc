@@ -2613,6 +2613,12 @@
 	.2byte \itemId
 	.endm
 
+	@ Sets VAR_RESULT to TRUE if any non-egg party Pokemon has the given TYPE_* as either type.
+	.macro checkpartytype type:req
+	callnative Scrcmd_checkpartytype, requests_effects=1
+	.2byte \type
+	.endm
+
 	@ Sets VAR_RESULT to TRUE with percent% chance. Rolled from the daily seed, so the result is
 	@ stable for the whole day; use a different salt per caller for independent rolls.
 	.macro checkdailyseedchance percent:req, salt:req

@@ -1,4 +1,5 @@
 ## Zekrom — The Deep Black Pokémon
+### Location: Cave of Origin B1F - Wednesday evenings, with an Electric-type in the party
 
 Zekrom fights behind the usual legendary package: a damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic

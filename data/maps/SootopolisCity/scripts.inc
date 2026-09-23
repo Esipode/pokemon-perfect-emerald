@@ -150,14 +150,54 @@ SootopolisCity_EventScript_CheckDialgaActive::
 	special CheckValidLegendaryEncounter
 	return
 
-@ Steps the expert aside so the cave entrance is clear while Dialga is active, and for a player
+@ Same gates as CaveOfOrigin_B1F_ReshiramLoad / _ZekromLoad; keep in sync
+SootopolisCity_EventScript_CheckReshiramActive::
+	setvar VAR_0x8004, SPECIES_RESHIRAM
+	setvar VAR_0x8005, LAYOUT_CAVE_OF_ORIGIN_B1F
+	setvar VAR_0x8006, WEEKDAY_WED
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, SootopolisCity_EventScript_LegendaryInactive
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_MORNING, SootopolisCity_EventScript_LegendaryInactive
+	checkpartytype TYPE_FIRE
+	return
+
+SootopolisCity_EventScript_CheckZekromActive::
+	setvar VAR_0x8004, SPECIES_ZEKROM
+	setvar VAR_0x8005, LAYOUT_CAVE_OF_ORIGIN_B1F
+	setvar VAR_0x8006, WEEKDAY_WED
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, SootopolisCity_EventScript_LegendaryInactive
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_EVENING, SootopolisCity_EventScript_LegendaryInactive
+	checkpartytype TYPE_ELECTRIC
+	return
+
+SootopolisCity_EventScript_LegendaryInactive::
+	setvar VAR_RESULT, FALSE
+	return
+
+@ VAR_RESULT is TRUE if any legendary inside the cave is active
+SootopolisCity_EventScript_CheckCaveLegendaryActive::
+	call SootopolisCity_EventScript_CheckDialgaActive
+	goto_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_CaveLegendaryActive
+	call SootopolisCity_EventScript_CheckReshiramActive
+	goto_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_CaveLegendaryActive
+	goto SootopolisCity_EventScript_CheckZekromActive
+
+SootopolisCity_EventScript_CaveLegendaryActive::
+	return
+
+@ Steps the expert aside so the cave entrance is clear while a cave legendary is active, and for a player
 @ leaving the cave, so a day change while inside cannot trap them
 SootopolisCity_EventScript_CheckSetDialgaQuakeGuardPos::
 	setvar VAR_0x8004, MAP_GROUP(MAP_CAVE_OF_ORIGIN_ENTRANCE)
 	setvar VAR_0x8005, MAP_NUM(MAP_CAVE_OF_ORIGIN_ENTRANCE)
 	special IsLastUsedWarpMap
 	call_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_SetDialgaQuakeGuardPos
-	call SootopolisCity_EventScript_CheckDialgaActive
+	call SootopolisCity_EventScript_CheckCaveLegendaryActive
 	call_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_SetDialgaQuakeGuardPos
 	return
 
@@ -687,7 +727,7 @@ SootopolisCity_Movement_UnusedPanBack:
 SootopolisCity_EventScript_CaveOfOriginExpert::
 	lock
 	faceplayer
-	call SootopolisCity_EventScript_CheckDialgaActive
+	call SootopolisCity_EventScript_CheckCaveLegendaryActive
 	goto_if_eq VAR_RESULT, TRUE, SootopolisCity_EventScript_ExpertDialgaQuakes
 	goto_if_ge VAR_SOOTOPOLIS_CITY_STATE, 6, SootopolisCity_EventScript_ExpertPostLegendaries
 	goto_if_eq VAR_SOOTOPOLIS_CITY_STATE, 5, SootopolisCity_EventScript_ExpertLegendaries

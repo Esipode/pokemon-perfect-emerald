@@ -1,5 +1,96 @@
 CaveOfOrigin_B1F_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, CaveOfOrigin_B1F_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, CaveOfOrigin_B1F_OnLoad
 	.byte 0
+
+CaveOfOrigin_B1F_OnTransition:
+	updatelegendaryvisibility SPECIES_RESHIRAM, FLAG_HIDE_RESHIRAM
+	updatelegendaryvisibility SPECIES_ZEKROM, FLAG_HIDE_ZEKROM
+	end
+
+CaveOfOrigin_B1F_OnLoad:
+	call_if_unset FLAG_WALLACE_GOES_TO_SKY_PILLAR, CaveOfOrigin_B1F_ShowWallace
+	call CaveOfOrigin_B1F_ReshiramLoad
+	call CaveOfOrigin_B1F_ZekromLoad
+	end
+
+@ Wallace is hidden only while a legendary is active; once he has left for the Sky Pillar he stays hidden
+CaveOfOrigin_B1F_ShowWallace:
+	clearflag FLAG_HIDE_CAVE_OF_ORIGIN_B1F_WALLACE
+	return
+
+CaveOfOrigin_B1F_ReshiramLoad:
+	setvar VAR_0x8004, SPECIES_RESHIRAM
+	setvar VAR_0x8005, LAYOUT_CAVE_OF_ORIGIN_B1F
+	setvar VAR_0x8006, WEEKDAY_WED
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, CaveOfOrigin_B1F_HideReshiramArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_MORNING, CaveOfOrigin_B1F_HideReshiramArena
+	checkpartytype TYPE_FIRE
+	goto_if_eq VAR_RESULT, FALSE, CaveOfOrigin_B1F_HideReshiramArena
+	goto CaveOfOrigin_B1F_ShowReshiramArena
+
+CaveOfOrigin_B1F_Reshiram_Encounter::
+	goto LegendaryEncounter_EventScript_Reshiram
+
+CaveOfOrigin_B1F_HideReshiramArena:
+	setflag FLAG_HIDE_RESHIRAM
+	return
+
+CaveOfOrigin_B1F_ShowReshiramArena:
+	setflag FLAG_HIDE_CAVE_OF_ORIGIN_B1F_WALLACE
+	setweather WEATHER_NONE
+	@ TODO(user): tune opacity, pulse range and period
+	overlaycreate RGB(31, 31, 31), 8, OVERLAY_LAYER_WORLD, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_0
+	overlaypulse VAR_TEMP_0, 2, 6, 120
+
+	setmetatilewithelevation 8, 5, 0x396, FALSE, 0
+	setmetatilewithelevation 9, 5, 0x396, FALSE, 0
+	setmetatilewithelevation 10, 5, 0x396, FALSE, 0
+
+	setmetatilewithelevation 9, 6, 0x31B, FALSE, 2
+
+	setmetatilewithelevation 9, 9, 0x31B, FALSE, 2
+
+	return
+
+CaveOfOrigin_B1F_ZekromLoad:
+	setvar VAR_0x8004, SPECIES_ZEKROM
+	setvar VAR_0x8005, LAYOUT_CAVE_OF_ORIGIN_B1F
+	setvar VAR_0x8006, WEEKDAY_WED
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, CaveOfOrigin_B1F_HideZekromArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_EVENING, CaveOfOrigin_B1F_HideZekromArena
+	checkpartytype TYPE_ELECTRIC
+	goto_if_eq VAR_RESULT, FALSE, CaveOfOrigin_B1F_HideZekromArena
+	goto CaveOfOrigin_B1F_ShowZekromArena
+
+CaveOfOrigin_B1F_Zekrom_Encounter::
+	goto LegendaryEncounter_EventScript_Zekrom
+
+CaveOfOrigin_B1F_HideZekromArena:
+	setflag FLAG_HIDE_ZEKROM
+	return
+
+CaveOfOrigin_B1F_ShowZekromArena:
+	setflag FLAG_HIDE_CAVE_OF_ORIGIN_B1F_WALLACE
+	setweather WEATHER_NONE
+	@ TODO(user): tune opacity, pulse range and period
+	overlaycreate RGB(0, 0, 0), 8, OVERLAY_LAYER_WORLD, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_0
+	overlaypulse VAR_TEMP_0, 2, 6, 120
+
+	setmetatilewithelevation 8, 5, 0x396, FALSE, 0
+	setmetatilewithelevation 9, 5, 0x396, FALSE, 0
+	setmetatilewithelevation 10, 5, 0x396, FALSE, 0
+
+	setmetatilewithelevation 9, 6, 0x31B, FALSE, 2
+
+	setmetatilewithelevation 9, 9, 0x31B, FALSE, 2
+	return
 
 CaveOfOrigin_B1F_EventScript_Wallace::
 	lock
