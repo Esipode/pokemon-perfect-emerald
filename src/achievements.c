@@ -3210,6 +3210,12 @@ static u32 Achievement_CountDesignatedMythicalFamilies(void)
     return sCached;
 }
 
+// Special: VAR_RESULT = legendary families with a caught member.
+void CountCaughtLegendaryFamilies(void)
+{
+    gSpecialVar_Result = Achievement_CountLegendaryFamilies(FALSE, TRUE);
+}
+
 // Called from HandleSetPokedexFlag's FLAG_SET_CAUGHT branch (src/pokemon.c)
 // with the newly caught species. "Register" means caught, not seen.
 void Achievement_CheckFamilyMilestone(enum Species species)

@@ -26,7 +26,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_3F_EventScript_MrStone",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "local_id": "LOCALID_DEVON_CORP_3F_EMPLOYEE",
@@ -53,7 +53,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_3F_EventScript_MrStone",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     }
   ],
   "warp_events": [

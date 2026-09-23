@@ -26,7 +26,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_1F_EventScript_Employee",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "local_id": "LOCALID_DEVON_CORP_STAIR_GUARD",
@@ -40,7 +40,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_1F_EventScript_StairGuard",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_WOMAN_3",
@@ -53,7 +53,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_1F_EventScript_Greeter",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     }
   ],
   "warp_events": [

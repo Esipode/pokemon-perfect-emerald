@@ -6,7 +6,13 @@ RustboroCity_DevonCorp_3F_MapScripts::
 
 RustboroCity_DevonCorp_3F_OnTransition:
 	call_if_eq VAR_DEVON_CORP_3F_STATE, 0, RustboroCity_DevonCorp_3F_EventScript_SetEmployeePos
+	call RustboroCity_EventScript_UpdateDevonGenesectState
+	call_if_eq VAR_RESULT, TRUE, RustboroCity_DevonCorp_3F_EventScript_HideEmployee
 	end
+
+RustboroCity_DevonCorp_3F_EventScript_HideEmployee::
+	setflag FLAG_HIDE_RUSTBORO_CITY_DEVON_CORP_3F_EMPLOYEE
+	return
 
 RustboroCity_DevonCorp_3F_EventScript_SetEmployeePos::
 	setobjectxyperm LOCALID_DEVON_CORP_3F_EMPLOYEE, 3, 2

@@ -4,6 +4,7 @@ RustboroCity_DevonCorp_1F_MapScripts::
 
 RustboroCity_DevonCorp_1F_OnTransition:
 	call_if_unset FLAG_RETURNED_DEVON_GOODS, RustboroCity_DevonCorp_1F_EventScript_BlockStairs
+	call RustboroCity_EventScript_UpdateDevonGenesectState
 	end
 
 RustboroCity_DevonCorp_1F_EventScript_BlockStairs::

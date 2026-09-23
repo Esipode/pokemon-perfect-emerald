@@ -5,7 +5,73 @@ RustboroCity_MapScripts::
 RustboroCity_OnTransition:
 	setflag FLAG_VISITED_RUSTBORO_CITY
 	call Common_EventScript_SetupRivalGfxId
+	call RustboroCity_EventScript_UpdateDevonGenesectState
 	end
+
+@ DEVON CORP Genesect encounter is active when: post-game, Genesect not owned, 10+ legendary
+@ families caught. While active the building's staff are hidden and the evacuated scientist
+@ stands outside. Called from every map involved. Returns TRUE/FALSE in VAR_RESULT.
+RustboroCity_EventScript_UpdateDevonGenesectState::
+	setvar VAR_0x8004, SPECIES_GENESECT
+	setvar VAR_0x8005, LAYOUT_RUSTBORO_CITY_DEVON_CORP_2F
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, RustboroCity_EventScript_DevonGenesectInactive
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 10, RustboroCity_EventScript_DevonGenesectInactive
+	setflag FLAG_HIDE_DEVON_CORP_STAFF
+	clearflag FLAG_HIDE_RUSTBORO_CITY_DEVON_GUARD
+	setvar VAR_RESULT, TRUE
+	return
+
+RustboroCity_EventScript_DevonGenesectInactive::
+	clearflag FLAG_HIDE_DEVON_CORP_STAFF
+	setflag FLAG_HIDE_RUSTBORO_CITY_DEVON_GUARD
+	setvar VAR_RESULT, FALSE
+	return
+
+RustboroCity_EventScript_DevonGuard::
+	lock
+	faceplayer
+	call RustboroCity_EventScript_DevonGuardWarning
+	release
+	end
+
+RustboroCity_EventScript_DevonGuardTrigger::
+	lockall
+	getobjectfacingdirection OBJ_EVENT_ID_PLAYER, VAR_0x8008
+	goto_if_ne VAR_0x8008, DIR_NORTH, RustboroCity_EventScript_DevonGuardTriggerEnd
+	applymovement LOCALID_RUSTBORO_DEVON_GUARD, Common_Movement_FaceRight
+	waitmovement 0
+	call RustboroCity_EventScript_DevonGuardWarning
+	goto_if_eq VAR_0x8008, TRUE, RustboroCity_EventScript_DevonGuardTriggerEnd
+	applymovement OBJ_EVENT_ID_PLAYER, RustboroCity_Movement_DevonGuardPlayerBack
+	waitmovement 0
+	releaseall
+	end
+
+RustboroCity_EventScript_DevonGuardTriggerEnd::
+	releaseall
+	end
+
+@ VAR_0x8008 = TRUE if the player chose to go in.
+RustboroCity_EventScript_DevonGuardWarning::
+	msgbox RustboroCity_Text_DevonGuardExplain, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, YES, RustboroCity_EventScript_DevonGuardGoIn
+	msgbox RustboroCity_Text_DevonGuardGetAway, MSGBOX_DEFAULT
+	setvar VAR_0x8008, FALSE
+	return
+
+RustboroCity_EventScript_DevonGuardGoIn::
+	msgbox RustboroCity_Text_DevonGuardBeCareful, MSGBOX_DEFAULT
+	setvar VAR_0x8008, TRUE
+	return
+
+RustboroCity_Movement_DevonGuardPlayerBack:
+	walk_down
+	walk_down
+	step_end
 
 RustboroCity_EventScript_FatMan::
 	lock
@@ -1131,3 +1197,19 @@ RustboroCity_Text_YouCanHave2On2Battle:
 	.string "they'll both challenge you.\p"
 	.string "Don't you think it'd be cool if you\n"
 	.string "could beat two TRAINERS by yourself?$"
+
+RustboroCity_Text_DevonGuardExplain:
+	.string "Stop! You can't go in there!\p"
+	.string "We revived a rare POKéMON from a\n"
+	.string "fossil, but it went berserk.\p"
+	.string "It was far too strong for us.\n"
+	.string "We had to evacuate the building.\p"
+	.string "Are you sure you want to go in\n"
+	.string "there?$"
+
+RustboroCity_Text_DevonGuardBeCareful:
+	.string "…I see. Please be careful in there.$"
+
+RustboroCity_Text_DevonGuardGetAway:
+	.string "Good. Get far away from here for\n"
+	.string "your own safety.$"

@@ -695,6 +695,9 @@ void Achievement_RecordPartyWipe(void);
 // is also caught.
 void Achievement_CheckFamilyMilestone(enum Species species);
 
+// Special: VAR_RESULT = legendary families with a caught member.
+void CountCaughtLegendaryFamilies(void);
+
 // HandleSetPokedexFlagBySpecies (src/pokemon.c)'s FLAG_SET_CAUGHT branch, alongside
 // Achievement_CheckFamilyMilestone. Legendary Collection (category Z). On a newly
 // caught counted legendary (restricted legendary / sub-legendary / mythical; Ultra

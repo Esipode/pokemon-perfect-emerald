@@ -26,7 +26,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_2F_EventScript_TalkToPokemonScientist",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_SCIENTIST_1",
@@ -39,7 +39,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_2F_EventScript_BallScientist",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_SCIENTIST_1",
@@ -52,7 +52,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_2F_EventScript_MapScientist",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_SCIENTIST_1",
@@ -65,7 +65,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_2F_EventScript_PokemonDreamsScientist",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "local_id": "LOCALID_FOSSIL_SCIENTIST",
@@ -79,7 +79,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_2F_EventScript_FossilScientist",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
     },
     {
       "graphics_id": "OBJ_EVENT_GFX_SCIENTIST_1",
@@ -92,7 +92,20 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "RustboroCity_DevonCorp_2F_EventScript_PhoneScientist",
-      "flag": "0"
+      "flag": "FLAG_HIDE_DEVON_CORP_STAFF"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(GENESECT)",
+      "x": 9,
+      "y": 5,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "RustboroCity_DevonCorp_2F_Genesect_Encounter",
+      "flag": "FLAG_HIDE_GENESECT"
     }
   ],
   "warp_events": [

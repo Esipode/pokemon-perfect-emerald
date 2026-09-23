@@ -1,5 +1,7 @@
 ## Genesect — The Weapon Platform
 
+### Location: Rustboro City, Devon Corp - After 10+ legendary caught
+
 Genesect fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be taken below 1 HP** until the very end, so the catch window is guaranteed

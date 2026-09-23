@@ -1,9 +1,30 @@
 RustboroCity_DevonCorp_2F_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, RustboroCity_DevonCorp_2F_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, RustboroCity_DevonCorp_2F_OnLoad
 	.byte 0
 
 RustboroCity_DevonCorp_2F_OnTransition:
 	call_if_eq VAR_FOSSIL_RESURRECTION_STATE, 1, RustboroCity_DevonCorp_2F_EventScript_SetFossilReady
+	updatelegendaryvisibility SPECIES_GENESECT, FLAG_HIDE_GENESECT
+	call RustboroCity_EventScript_UpdateDevonGenesectState
+	end
+
+RustboroCity_DevonCorp_2F_OnLoad:
+	@ Genesect spawn gate: post-game, not already owned, 10+ legendary families caught
+	call RustboroCity_EventScript_UpdateDevonGenesectState
+	goto_if_eq VAR_RESULT, FALSE, RustboroCity_DevonCorp_2F_HideGenesectArena
+	goto RustboroCity_DevonCorp_2F_ShowGenesectArena
+
+RustboroCity_DevonCorp_2F_Genesect_Encounter::
+	goto LegendaryEncounter_EventScript_Genesect
+
+RustboroCity_DevonCorp_2F_HideGenesectArena:
+	setflag FLAG_HIDE_GENESECT
+	end
+
+RustboroCity_DevonCorp_2F_ShowGenesectArena:
+	@ TODO(user): arena metatiles. One setmetatilewithelevation per tile:
+	@   setmetatilewithelevation <x>, <y>, <metatileId>, <impassable>, <elevation>
 	end
 
 RustboroCity_DevonCorp_2F_EventScript_SetFossilReady::
