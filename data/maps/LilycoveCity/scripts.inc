@@ -8,6 +8,7 @@ LilycoveCity_OnTransition:
 	setvar VAR_CONTEST_HALL_STATE, 0
 	setflag FLAG_HIDE_LILYCOVE_CONTEST_HALL_REPORTER
 	updatelegendaryvisibility SPECIES_RAIKOU, FLAG_HIDE_RAIKOU
+	updatelegendaryvisibility SPECIES_MELOETTA, FLAG_HIDE_MELOETTA, TRUE
 	call_if_set FLAG_SYS_WEATHER_CTRL, Common_EventScript_SetAbnormalWeather
 	call Common_EventScript_SetupRivalGfxId
 	end
@@ -21,14 +22,71 @@ LilycoveCity_OnLoad:
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, LilycoveCity_HideRaikou
-	end
+	goto LilycoveCity_CheckMeloetta
 
 LilycoveCity_HideRaikou:
 	setflag FLAG_HIDE_RAIKOU
-	return
+	goto LilycoveCity_CheckMeloetta
 
 LilycoveCity_Raikou_Encounter::
 	goto LegendaryEncounter_EventScript_Raikou
+
+LilycoveCity_CheckMeloetta:
+	@ Meloetta spawn gate: post-game, not already owned, 15+ legendary families caught, Raikou not active
+	setvar VAR_0x8004, SPECIES_MELOETTA
+	setvar VAR_0x8005, LAYOUT_LILYCOVE_CITY
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, LilycoveCity_HideMeloettaArena
+	goto_if_unset FLAG_HIDE_RAIKOU, LilycoveCity_HideMeloettaArena
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 15, LilycoveCity_HideMeloettaArena
+	goto LilycoveCity_ShowMeloettaArena
+
+LilycoveCity_Meloetta_Encounter::
+	goto LegendaryEncounter_EventScript_Meloetta
+
+LilycoveCity_HideMeloettaArena:
+	setflag FLAG_HIDE_MELOETTA
+	end
+
+LilycoveCity_ShowMeloettaArena:
+	@ TODO(user): arena metatiles. One setmetatilewithelevation per tile:
+	@   setmetatilewithelevation <x>, <y>, <metatileId>, <impassable>, <elevation>
+	@ Audience: object localId = map.json object index + 1. Rival and Aqua grunts are left out.
+	@ Ring around Meloetta (31, 31); (31, 33) is left open so the player can reach it.
+	setobjectxyperm 1, 29, 29
+	setobjectmovementtype 1, MOVEMENT_TYPE_FACE_DOWN
+	setobjectxyperm 2, 30, 29
+	setobjectmovementtype 2, MOVEMENT_TYPE_FACE_DOWN
+	setobjectxyperm 3, 31, 33
+	setobjectmovementtype 3, MOVEMENT_TYPE_FACE_UP
+	setobjectxyperm 4, 32, 29
+	setobjectmovementtype 4, MOVEMENT_TYPE_FACE_DOWN
+	setobjectxyperm 5, 33, 29
+	setobjectmovementtype 5, MOVEMENT_TYPE_FACE_DOWN
+	setobjectxyperm 6, 33, 30
+	setobjectmovementtype 6, MOVEMENT_TYPE_FACE_LEFT
+	setobjectxyperm 7, 33, 31
+	setobjectmovementtype 7, MOVEMENT_TYPE_FACE_LEFT
+	setobjectxyperm 8, 33, 32
+	setobjectmovementtype 8, MOVEMENT_TYPE_FACE_LEFT
+	setobjectxyperm 9, 32, 33
+	setobjectmovementtype 9, MOVEMENT_TYPE_FACE_UP
+	setobjectxyperm 16, 32, 33
+	setobjectmovementtype 16, MOVEMENT_TYPE_FACE_UP
+	setobjectxyperm 18, 30, 33
+	setobjectmovementtype 18, MOVEMENT_TYPE_FACE_UP
+	setobjectxyperm 19, 29, 30
+	setobjectmovementtype 19, MOVEMENT_TYPE_FACE_RIGHT
+	setobjectxyperm 20, 29, 31
+	setobjectmovementtype 20, MOVEMENT_TYPE_FACE_RIGHT
+	setobjectxyperm 21, 29, 32
+	setobjectmovementtype 21, MOVEMENT_TYPE_FACE_RIGHT
+	setobjectxyperm 22, 28, 31
+	setobjectmovementtype 22, MOVEMENT_TYPE_FACE_RIGHT
+	end
 
 LilycoveCity_EventScript_SetWailmerMetatiles::
 	setmetatile 76, 12, METATILE_Lilycove_Wailmer0, TRUE
@@ -46,6 +104,7 @@ LilycoveCity_EventScript_SetWailmerMetatiles::
 	return
 
 LilycoveCity_EventScript_BerryGentleman::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceBerryGentleman
 	lock
 	faceplayer
 	dotimebasedevents
@@ -64,10 +123,12 @@ LilycoveCity_EventScript_ReceivedBerry::
 	end
 
 LilycoveCity_EventScript_Man3::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceMan3
 	msgbox LilycoveCity_Text_ContestHallInTown, MSGBOX_NPC
 	end
 
 LilycoveCity_EventScript_Girl::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceGirl
 	lock
 	faceplayer
 	goto_if_set FLAG_BADGE07_GET, LilycoveCity_EventScript_GirlAquaGone
@@ -81,10 +142,12 @@ LilycoveCity_EventScript_GirlAquaGone::
 	end
 
 LilycoveCity_EventScript_RichBoy::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceRichBoy
 	msgbox LilycoveCity_Text_ImFromKanto, MSGBOX_NPC
 	end
 
 LilycoveCity_EventScript_Sailor2::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceSailor2
 	lock
 	faceplayer
 	goto_if_set FLAG_TEAM_AQUA_ESCAPED_IN_SUBMARINE, LilycoveCity_EventScript_Sailor2AquaGone
@@ -98,6 +161,7 @@ LilycoveCity_EventScript_Sailor2AquaGone::
 	end
 
 LilycoveCity_EventScript_Woman2::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceWoman2
 	lock
 	faceplayer
 	goto_if_set FLAG_TEAM_AQUA_ESCAPED_IN_SUBMARINE, LilycoveCity_EventScript_Woman2AquaGone
@@ -111,18 +175,22 @@ LilycoveCity_EventScript_Woman2AquaGone::
 	end
 
 LilycoveCity_EventScript_Man2::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceMan2
 	msgbox LilycoveCity_Text_ImArtDealer, MSGBOX_NPC
 	end
 
 LilycoveCity_EventScript_ExpertM1::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceExpertM1
 	msgbox LilycoveCity_Text_SeaRemainsForeverYoung, MSGBOX_SIGN
 	end
 
 LilycoveCity_EventScript_ExpertF::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceExpertF
 	msgbox LilycoveCity_Text_SixtyYearsAgoHusbandProposed, MSGBOX_SIGN
 	end
 
 LilycoveCity_EventScript_ExpertM2::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceExpertM2
 	lock
 	faceplayer
 	goto_if_set FLAG_BADGE07_GET, LilycoveCity_EventScript_ExpertM2AquaGone
@@ -136,20 +204,24 @@ LilycoveCity_EventScript_ExpertM2AquaGone::
 	end
 
 LilycoveCity_EventScript_Sailor1::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceSailor1
 	msgbox LilycoveCity_Text_HeardTowerCalledSkyPillar, MSGBOX_NPC
 	end
 
 LilycoveCity_EventScript_FatMan::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceFatMan
 	msgbox LilycoveCity_Text_SawTallTowerOnRoute131, MSGBOX_NPC
 	end
 
 LilycoveCity_EventScript_Man1::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceMan1
 	lockall
 	msgbox LilycoveCity_Text_JustArrivedAndSawRarePokemon, MSGBOX_NPC
 	applymovement LOCALID_LILYCOVE_MAN_1, Common_Movement_FaceOriginalDirection
 	end
 
 LilycoveCity_EventScript_Woman1::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceWoman1
 	lockall
 	msgbox LilycoveCity_Text_HoneymoonVowToSeeRarePokemon, MSGBOX_NPC
 	applymovement LOCALID_LILYCOVE_WOMAN_1, Common_Movement_FaceOriginalDirection
@@ -406,6 +478,7 @@ LilycoveCity_EventScript_RivalFlyAway::
 	end
 
 LilycoveCity_EventScript_SchoolKidM::
+	goto_if_unset FLAG_HIDE_MELOETTA, LilycoveCity_EventScript_MeloettaAudienceSchoolKidM
 	lock
 	faceplayer
 	msgbox LilycoveCity_Text_DoYouKnowAboutBerryBlender, MSGBOX_YESNO
@@ -421,6 +494,66 @@ LilycoveCity_EventScript_KnowAboutBerryBlender::
 LilycoveCity_EventScript_DontKnowAboutBerryBlender::
 	msgbox LilycoveCity_Text_ExplainBerryBlender, MSGBOX_DEFAULT
 	return
+
+LilycoveCity_EventScript_MeloettaAudienceSailor2:
+	msgbox LilycoveCity_Text_MeloettaAudienceSailor2, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceGirl:
+	msgbox LilycoveCity_Text_MeloettaAudienceGirl, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceMan3:
+	msgbox LilycoveCity_Text_MeloettaAudienceMan3, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceRichBoy:
+	msgbox LilycoveCity_Text_MeloettaAudienceRichBoy, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceMan2:
+	msgbox LilycoveCity_Text_MeloettaAudienceMan2, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceWoman2:
+	msgbox LilycoveCity_Text_MeloettaAudienceWoman2, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceExpertM1:
+	msgbox LilycoveCity_Text_MeloettaAudienceExpertM1, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceExpertF:
+	msgbox LilycoveCity_Text_MeloettaAudienceExpertF, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceExpertM2:
+	msgbox LilycoveCity_Text_MeloettaAudienceExpertM2, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceBerryGentleman:
+	msgbox LilycoveCity_Text_MeloettaAudienceBerryGentleman, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceSchoolKidM:
+	msgbox LilycoveCity_Text_MeloettaAudienceSchoolKidM, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceWoman1:
+	msgbox LilycoveCity_Text_MeloettaAudienceWoman1, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceMan1:
+	msgbox LilycoveCity_Text_MeloettaAudienceMan1, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceSailor1:
+	msgbox LilycoveCity_Text_MeloettaAudienceSailor1, MSGBOX_SIGN
+	end
+
+LilycoveCity_EventScript_MeloettaAudienceFatMan:
+	msgbox LilycoveCity_Text_MeloettaAudienceFatMan, MSGBOX_SIGN
+	end
 
 LilycoveCity_Text_MayShoppingLetsBattle:
 	.string "MAY: Oh, hey?\n"
@@ -769,3 +902,65 @@ LilycoveCity_Text_HoneymoonVowToSeeRarePokemon:
 	.string "POKéMON as soon as we arrived.\p"
 	.string "I mean, we are totally happy!$"
 
+LilycoveCity_Text_MeloettaAudienceSailor2:
+	.string "What a strange POKéMON!\n"
+	.string "I've never seen one like it.$"
+
+LilycoveCity_Text_MeloettaAudienceGirl:
+	.string "It's dancing so gracefully!\p"
+	.string "I can't look away.$"
+
+LilycoveCity_Text_MeloettaAudienceMan3:
+	.string "Is that singing coming from\n"
+	.string "that POKéMON?\p"
+	.string "It's beautiful!$"
+
+LilycoveCity_Text_MeloettaAudienceRichBoy:
+	.string "I've seen rare POKéMON all over\n"
+	.string "Kanto, but nothing like this.$"
+
+LilycoveCity_Text_MeloettaAudienceMan2:
+	.string "The way it moves is a work of art.\p"
+	.string "I could watch it all day.$"
+
+LilycoveCity_Text_MeloettaAudienceWoman2:
+	.string "Listen to that voice!\n"
+	.string "It's like a lullaby.$"
+
+LilycoveCity_Text_MeloettaAudienceExpertM1:
+	.string "The sea is calm, and so is this\n"
+	.string "song. Truly a rare sight.$"
+
+LilycoveCity_Text_MeloettaAudienceExpertF:
+	.string "My husband used to hum a tune\n"
+	.string "like that. It brings back memories.$"
+
+LilycoveCity_Text_MeloettaAudienceExpertM2:
+	.string "I've lived a long time, but I've\n"
+	.string "never heard a song this lovely.$"
+
+LilycoveCity_Text_MeloettaAudienceBerryGentleman:
+	.string "What is that POKéMON?\p"
+	.string "It sings and dances with such\n"
+	.string "elegance!$"
+
+LilycoveCity_Text_MeloettaAudienceSchoolKidM:
+	.string "Wow, it's really good at dancing!\p"
+	.string "I wonder if it would teach me.$"
+
+LilycoveCity_Text_MeloettaAudienceWoman1:
+	.string "We came all this way for a rare\n"
+	.string "POKéMON, and it's singing!$"
+
+LilycoveCity_Text_MeloettaAudienceMan1:
+	.string "Look at it spin! My wife would\n"
+	.string "love this.$"
+
+LilycoveCity_Text_MeloettaAudienceSailor1:
+	.string "That music makes me feel like\n"
+	.string "I'm sailing on a calm sea.$"
+
+LilycoveCity_Text_MeloettaAudienceFatMan:
+	.string "Oh man I can't even see.\p"
+	.string "There's too many people in\n"
+	.string "the way!$"

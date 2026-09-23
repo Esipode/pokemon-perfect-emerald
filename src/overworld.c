@@ -1329,6 +1329,27 @@ static bool8 IsLegendaryMapMusicActive(void)
     return FALSE;
 }
 
+#define MELOETTA_SING_INTERVAL 600 // 10 seconds at 60 fps
+
+// Plays SE_M_SING every 10 seconds while Meloetta's object is visible in Lilycove City.
+static void UpdateMeloettaSing(void)
+{
+    static u16 sSingTimer;
+
+    if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_LILYCOVE_CITY)
+     && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_LILYCOVE_CITY)
+     && !FlagGet(FLAG_HIDE_MELOETTA))
+    {
+        if (++sSingTimer >= MELOETTA_SING_INTERVAL)
+        {
+            sSingTimer = 0;
+            PlaySE(SE_M_SING);
+        }
+        return;
+    }
+    sSingTimer = 0;
+}
+
 u16 GetLocationMusic(struct WarpData *warp)
 {
     if (NoMusicInSootopolisWithLegendaries(warp) == TRUE)
@@ -1994,6 +2015,7 @@ u8 UpdateSpritePaletteWithTime(u8 paletteNum)
 static void OverworldBasic(void)
 {
     ScriptContext_RunScript();
+    UpdateMeloettaSing();
     RunTasks();
     AnimateSprites();
     CameraUpdate();
