@@ -395,7 +395,7 @@
 #define FLAG_HIDE_METEOR_FALLS_1F_2R_NPCS    0x165
 #define FLAG_HIDE_DEVON_CORP_STAFF           0x166
 #define FLAG_HIDE_RUSTBORO_CITY_DEVON_GUARD  0x167
-#define FLAG_UNUSED_0x168                    0x168 // Unused Flag
+#define FLAG_HIDE_ROUTE_125_NPCS             0x168
 #define FLAG_UNUSED_0x169                    0x169 // Unused Flag
 #define FLAG_UNUSED_0x16A                    0x16A // Unused Flag
 #define FLAG_UNUSED_0x16B                    0x16B // Unused Flag

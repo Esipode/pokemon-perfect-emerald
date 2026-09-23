@@ -633,7 +633,12 @@ LegendaryEncounter_EventScript_Kyurem::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_DNA_SPLICERS
+	releaseall
+	end
 
 @ Shared post-battle tail. Only a caught legendary is removed from the overworld; fainting or
 @ fleeing leaves it in place so the fight can be retried. Each host map's ON_TRANSITION runs

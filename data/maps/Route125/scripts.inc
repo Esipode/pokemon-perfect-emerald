@@ -9,11 +9,35 @@ Route125_OnTransition:
 	call_if_eq VAR_SHOULD_END_ABNORMAL_WEATHER, 1, AbnormalWeather_EventScript_HideMapNamePopup
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_125_WEST, AbnormalWeather_StartKyogreWeather
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_125_EAST, AbnormalWeather_StartKyogreWeather
+	updatelegendaryvisibility SPECIES_KYUREM, FLAG_HIDE_KYUREM
 	end
 
 Route125_OnLoad:
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_125_WEST, AbnormalWeather_EventScript_PlaceTilesRoute125West
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_125_EAST, AbnormalWeather_EventScript_PlaceTilesRoute125East
+	@ Kyurem spawn gate: post-game, not already owned, Sunday, snow
+	setvar VAR_0x8004, SPECIES_KYUREM
+	setvar VAR_0x8005, LAYOUT_ROUTE125
+	setvar VAR_0x8006, WEEKDAY_SUN
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route125_HideKyuremArena
+	getmapweather VAR_0x8008
+	goto_if_ne VAR_0x8008, WEATHER_SNOW, Route125_HideKyuremArena
+	goto Route125_ShowKyuremArena
+
+Route125_Kyurem_Encounter::
+	goto LegendaryEncounter_EventScript_Kyurem
+
+Route125_HideKyuremArena:
+	setflag FLAG_HIDE_KYUREM
+	clearflag FLAG_HIDE_ROUTE_125_NPCS
+	end
+
+Route125_ShowKyuremArena:
+	setflag FLAG_HIDE_ROUTE_125_NPCS
+	@ TODO(user): arena metatiles. One setmetatilewithelevation per tile:
+	@   setmetatilewithelevation <x>, <y>, <metatileId>, <impassable>, <elevation>
 	end
 
 Route125_OnFrame:
