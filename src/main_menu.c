@@ -1629,6 +1629,7 @@ static void Task_NewGameBirchSpeech_ChooseGender(u8 taskId)
         // "No, choose again" path (Task_NewGameBirchSpeech_ProcessNameYesNoMenu)
         // loops back here, so this must reset every time.
         memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+        memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
         NewGameBirchSpeech_ClearGenderWindow(1, 1);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_NewGameBirchSpeech_StartPlayerColors;
@@ -1637,6 +1638,7 @@ static void Task_NewGameBirchSpeech_ChooseGender(u8 taskId)
         PlaySE(SE_SELECT);
         gSaveBlock2Ptr->playerGender = gender;
         memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+        memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
         NewGameBirchSpeech_ClearGenderWindow(1, 1);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_NewGameBirchSpeech_StartPlayerColors;

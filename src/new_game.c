@@ -115,6 +115,7 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsHpDisplayPlayer = OPTIONS_HP_DISPLAY_BAR_NUMBERS + 1;
     gSaveBlock2Ptr->optionsHpDisplayOpponent = (B_HP_PERCENTAGE_DISPLAY ? OPTIONS_HP_DISPLAY_BAR_PERCENT : OPTIONS_HP_DISPLAY_BAR_ONLY) + 1;
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+    memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
     // Redundant with ClearSav2() in Sav2_ClearSetDefault(); kept alongside the
     // playerColors memset. TRADE_CODE_STATE_NONE is 0. The New Game+ path in
     // NewGameInitData never reaches this function and clears the field itself.
@@ -468,7 +469,10 @@ void NewGameInitData(void)
     memset(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags, 0, sizeof(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags));
     // New Game+ keeps playerGender and skips the Birch speech, so its colors stay valid.
     if (!isNewGamePlus)
+    {
         memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+        memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
+    }
     InitEventData();
     // Must run after InitEventData(), which memsets the whole flags array again.
     if (!isNewGamePlus)
