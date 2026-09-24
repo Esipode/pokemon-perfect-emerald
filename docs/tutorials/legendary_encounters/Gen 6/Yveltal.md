@@ -1,5 +1,7 @@
 ## Yveltal — The Destruction Pokémon
 
+### Location: Navel Rock Entrance - Sunday, night only
+
 Every point of damage dealt or denied anywhere feeds Yveltal's DESTRUCTION. The higher it climbs,
 the harder Yveltal is to hurt and the harder it hits - until it maxes out, detonates, and burns
 itself back to zero. That detonation is your one real opening.
