@@ -1,5 +1,7 @@
 ## Diancie — The Jewel Pokémon
 
+### Location: Granite Cave - Tuesday
+
 Diancie doesn't dodge your attacks. It grows a crystal lattice and lets them break against it. The
 lattice only cracks under a real blow — chip damage never adds up.
 

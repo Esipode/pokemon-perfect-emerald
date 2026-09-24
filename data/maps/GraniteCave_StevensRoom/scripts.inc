@@ -8,7 +8,6 @@ GraniteCave_StevensRoom_OnTransition:
 	end
 
 GraniteCave_StevensRoom_OnLoad:
-	@ Cobalion spawn gate: post-game, not already owned, Fridays
 	call LegendaryEncounter_EventScript_CobalionSpawnGate
 	goto_if_eq VAR_RESULT, FALSE, GraniteCave_StevensRoom_HideCobalionArena
 	goto GraniteCave_StevensRoom_ShowCobalionArena

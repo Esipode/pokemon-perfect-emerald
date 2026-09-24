@@ -761,7 +761,12 @@ LegendaryEncounter_EventScript_Diancie::
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	goto LegendaryEncounter_EventScript_FinishBattle
+	specialvar VAR_RESULT, GetBattleOutcome
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, LegendaryEncounter_EventScript_FinishBattle
+	call LegendaryEncounter_EventScript_RemoveCaughtLegendary
+	giveitem ITEM_DIANCITE
+	releaseall
+	end
 
 LegendaryEncounter_EventScript_Hoopa::
 	lock
