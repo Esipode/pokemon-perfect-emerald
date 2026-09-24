@@ -3005,10 +3005,8 @@ void SetBattleTowerLinkPlayerGfx(void)
     u8 i;
     for (i = 0; i < 2; i++)
     {
-        if (gLinkPlayers[i].gender == MALE)
-            VarSet(VAR_OBJ_GFX_ID_F - i, PLAYER_AVATAR_GFX_MALE_NORMAL);
-        else
-            VarSet(VAR_OBJ_GFX_ID_F - i, PLAYER_AVATAR_GFX_FEMALE_NORMAL);
+        // Link players are drawn with Emerald sprites, independent of the local player's style.
+        VarSet(VAR_OBJ_GFX_ID_F - i, GetPlayerAvatarGraphicsIdByStateGenderAndStyle(PLAYER_AVATAR_STATE_NORMAL, gLinkPlayers[i].gender, PLAYER_SPRITE_STYLE_EMERALD));
     }
 }
 
