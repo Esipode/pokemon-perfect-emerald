@@ -1,5 +1,7 @@
 ## Zeraora — The Thunderclap Pokémon
 
+### Location: New Mauville - Saturday, daytime
+
 A speedster that feeds on tempo. Every hit it lands, every turn it wins, every fresh face it meets
 hands it momentum - and once its momentum is high enough, it stops waiting its turn.
 

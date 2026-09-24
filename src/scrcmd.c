@@ -3936,6 +3936,18 @@ bool8 Scrcmd_screenfxpulse(struct ScriptContext *ctx)
     return FALSE;
 }
 
+bool8 Scrcmd_screenfxpulseflash(struct ScriptContext *ctx)
+{
+    ScreenFxId id = VarGet(ScriptReadHalfword(ctx));
+    OverlayId overlayId = VarGet(ScriptReadHalfword(ctx));
+    u16 peakOpacity = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    ScreenFx_SetPulseGateFlash(id, overlayId, min(peakOpacity, OVERLAY_OPACITY_MAX));
+    return FALSE;
+}
+
 bool8 Scrcmd_screenfxfade(struct ScriptContext *ctx)
 {
     ScreenFxId id = VarGet(ScriptReadHalfword(ctx));

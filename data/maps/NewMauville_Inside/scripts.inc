@@ -22,6 +22,7 @@ NewMauville_Inside_OnTransition:
 	call_if_unset FLAG_DEFEATED_VOLTORB_1_NEW_MAUVILLE, NewMauville_Inside_EventScript_ShowVoltorb1
 	call_if_unset FLAG_DEFEATED_VOLTORB_2_NEW_MAUVILLE, NewMauville_Inside_EventScript_ShowVoltorb2
 	call_if_unset FLAG_DEFEATED_VOLTORB_3_NEW_MAUVILLE, NewMauville_Inside_EventScript_ShowVoltorb3
+	updatelegendaryvisibility SPECIES_ZERAORA, FLAG_HIDE_ZERAORA
 	end
 
 NewMauville_Inside_EventScript_ShowVoltorb1::
@@ -38,6 +39,34 @@ NewMauville_Inside_EventScript_ShowVoltorb3::
 
 NewMauville_Inside_OnLoad:
 	call_if_eq VAR_NEW_MAUVILLE_STATE, 2, NewMauville_Inside_EventScript_SetGeneratorOffMetatiles
+	@ Zeraora spawn gate: post-game, not already owned, Saturday, daytime, generator quest complete
+	setvar VAR_0x8004, SPECIES_ZERAORA
+	setvar VAR_0x8005, LAYOUT_NEW_MAUVILLE_INSIDE
+	setvar VAR_0x8006, WEEKDAY_SAT
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, NewMauville_Inside_HideZeraoraArena
+	goto_if_ne VAR_NEW_MAUVILLE_STATE, 2, NewMauville_Inside_HideZeraoraArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_DAY, NewMauville_Inside_HideZeraoraArena
+	goto NewMauville_Inside_ShowZeraoraArena
+
+NewMauville_Inside_Zeraora_Encounter::
+	goto LegendaryEncounter_EventScript_Zeraora
+
+NewMauville_Inside_HideZeraoraArena:
+	setflag FLAG_HIDE_ZERAORA
+	end
+
+NewMauville_Inside_ShowZeraoraArena:
+	@ Wild encounters stay off while Zeraora is present (temp flag clears on map load)
+	setflag FLAG_TEMP_NO_WILD_ENCOUNTERS
+	@ Bolt: yellow flash (opacity 8) fades with the shake over 20 frames, thunder on the same frame,
+	@ then 420 frames of calm. The shake's pulse window drives the flash, so they cannot drift apart.
+	overlaycreate RGB(31, 30, 4), 0, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
+	screenfxshake VAR_TEMP_8, 6, 16, SCREENFX_AXIS_X | SCREENFX_AXIS_Y, 0
+	screenfxpulse VAR_TEMP_8, 20, 420, SE_THUNDER
+	screenfxpulseflash VAR_TEMP_8, VAR_TEMP_5, 8
 	end
 
 NewMauville_Inside_EventScript_BlueButton::

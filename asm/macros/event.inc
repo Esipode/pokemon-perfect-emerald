@@ -3284,6 +3284,15 @@
 	.2byte \sound
 	.endm
 
+	@ Flashes an overlay each time the effect's screenfxpulse window opens: opacity jumps to peakOpacity
+	@ (0-16), then fades to 0 over activeFrames. Create the overlay at opacity 0. Call after screenfxpulse.
+	.macro screenfxpulseflash handleVar:req, overlayVar:req, peakOpacity:req
+	callnative Scrcmd_screenfxpulseflash, requests_effects=1
+	.2byte \handleVar
+	.2byte \overlayVar
+	.2byte \peakOpacity
+	.endm
+
 	@ Fades the effect linearly to target (0-16) over frames; 0 snaps.
 	.macro screenfxfade handleVar:req, target:req, frames:req
 	callnative Scrcmd_screenfxfade, requests_effects=1

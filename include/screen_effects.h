@@ -231,6 +231,8 @@ void ScreenFx_ClearFalloff(ScreenFxId id);
 // Runs the effect in bursts of activeFrames separated by idleFrames of silence. activeFrames 0 removes the gate.
 // sound (an SE_* id, 0 = none) plays each time an active window opens.
 void ScreenFx_SetPulseGate(ScreenFxId id, u16 activeFrames, u16 idleFrames, u16 sound);
+// Flashes overlay at peakOpacity each time a pulse window opens, fading to 0 over the window. Call after SetPulseGate.
+void ScreenFx_SetPulseGateFlash(ScreenFxId id, u16 overlayId, u8 peakOpacity);
 
 // Vertical drift of a SCREENFX_TEAR band in sixteenths of a scanline per frame (negative = up).
 void ScreenFx_SetTearDrift(ScreenFxId id, s16 drift);

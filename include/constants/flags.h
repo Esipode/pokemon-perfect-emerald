@@ -1658,6 +1658,7 @@
 #define FLAG_TEMP_HIDE_MIRAGE_ISLAND_BERRY_TREE FLAG_TEMP_11
 #define FLAG_TEMP_DARKRAI_HUNT                  FLAG_TEMP_8 // Abandoned Ship hidden floor: Darkrai hunt active this visit
 #define FLAG_TEMP_HIDDEN_ITEMS_DISABLED         FLAG_TEMP_9 // Hidden item bg events do nothing while set
+#define FLAG_TEMP_NO_WILD_ENCOUNTERS            FLAG_TEMP_F // StandardWildEncounter does nothing while set
 
 // FRLG flags
 
