@@ -2585,8 +2585,8 @@
 
 	@ Sets hideFlag while the player owns speciesId and clears it otherwise, so a caught legendary's
 	@ overworld object stays gone and releasing the Pokémon brings its encounter back. Also sets
-	@ VAR_RESULT to whether the player owns one. Unless keepDefaultMusic is 1, the visible object also
-	@ switches the map's overworld music to the legendary track.
+	@ VAR_RESULT to whether the player owns one. keepDefaultMusic 0: the visible object switches the
+	@ map's overworld music to the legendary track; 1: the map keeps its own music; 2: no music.
 	.macro updatelegendaryvisibility speciesId:req, hideFlag:req, keepDefaultMusic=0
 	callnative Scrcmd_updatelegendaryvisibility, requests_effects=1
 	.2byte \speciesId
@@ -3133,6 +3133,14 @@
 	.2byte OVERLAY_ANCHOR_COORDS
 	.2byte \x
 	.2byte \y
+	.endm
+
+	@ Exempts one object on the current map from a palette overlay, so it draws untinted above it.
+	@ Replaces any previous exempt object of the overlay. The exemption follows the sprite's palette slot.
+	.macro overlayexemptobject handleVar:req, localId:req
+	callnative Scrcmd_overlayexemptobject, requests_effects=1
+	.2byte \handleVar
+	.2byte \localId
 	.endm
 
 	@ Removes the overlay's anchor.

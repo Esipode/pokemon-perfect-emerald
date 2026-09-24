@@ -140,6 +140,7 @@ void Overworld_ResetMapMusic(void);
 void Overworld_PlaySpecialMapMusic(void);
 void Overworld_ClearLegendaryHideFlags(void);
 void Overworld_AddLegendaryHideFlag(u16 flag);
+void Overworld_SetLegendaryMapSilent(void);
 void Overworld_SetSavedMusic(u16 songNum);
 void Overworld_ClearSavedMusic(void);
 void Overworld_ChangeMusicToDefault(void);

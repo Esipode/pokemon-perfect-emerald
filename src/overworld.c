@@ -1285,7 +1285,7 @@ static const u16 sNightMusicTable[END_MUS - START_MUS] =
 
 static u16 GetNightMusicFromTrack(u16 track)
 {
-    if (GetTimeOfDay() != TIME_NIGHT)
+    if (GetTimeOfDay() != TIME_NIGHT || track < START_MUS)
         return track;
     if (sNightMusicTable[track - START_MUS] >= START_MUS && sNightMusicTable[track - START_MUS] <= END_MUS)
         return sNightMusicTable[track - START_MUS];
@@ -1297,10 +1297,17 @@ static u16 GetNightMusicFromTrack(u16 track)
 
 static u16 sLegendaryHideFlags[MAX_LEGENDARY_HIDE_FLAGS];
 static u8 sNumLegendaryHideFlags;
+static bool8 sLegendaryMapSilent; // visible legendary mutes the map instead of playing the legendary track
 
 void Overworld_ClearLegendaryHideFlags(void)
 {
     sNumLegendaryHideFlags = 0;
+    sLegendaryMapSilent = FALSE;
+}
+
+void Overworld_SetLegendaryMapSilent(void)
+{
+    sLegendaryMapSilent = TRUE;
 }
 
 void Overworld_AddLegendaryHideFlag(u16 flag)
@@ -1380,7 +1387,7 @@ u16 GetCurrLocationDefaultMusic(void)
 
     music = GetLocationMusic(&gSaveBlock1Ptr->location);
     if (music != MUS_NONE && IsLegendaryMapMusicActive())
-        return MUS_VS_ELITE_FOUR;
+        return sLegendaryMapSilent ? MUS_NONE : MUS_VS_ELITE_FOUR;
     if (music != MUS_ROUTE118)
     {
         return music;

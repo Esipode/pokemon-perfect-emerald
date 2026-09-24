@@ -3204,8 +3204,10 @@ bool8 Scrcmd_updatelegendaryvisibility(struct ScriptContext *ctx)
 
     Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
 
-    if (!keepDefaultMusic)
+    if (keepDefaultMusic != 1)
         Overworld_AddLegendaryHideFlag(hideFlag);
+    if (keepDefaultMusic == 2)
+        Overworld_SetLegendaryMapSilent();
     gSpecialVar_Result = CheckPlayerOwnsSpecies(givenSpecies);
 
     if (gSpecialVar_Result == TRUE)
@@ -3701,6 +3703,20 @@ bool8 Scrcmd_overlayclearanchor(struct ScriptContext *ctx)
 
     if (Overlay_IsValid(id))
         Overlay_ClearAnchor(id);
+
+    return FALSE;
+}
+
+// Exempts one object on the current map from a palette overlay (drawn above it). Localid 0 clears nothing.
+bool8 Scrcmd_overlayexemptobject(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 localId = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_ExemptObject(id, localId, TRUE);
 
     return FALSE;
 }
