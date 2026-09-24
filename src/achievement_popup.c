@@ -477,6 +477,10 @@ static void HideAchievementPopUpWindow(void)
 {
     DestroyAchievementTierIconSprite(sAchievementPopupIconSpriteId);
 
+    // A looped description can still be scrolling on dismiss. Its heap printer
+    // outlives the window and would keep drawing into whatever window next
+    // takes this id, overrunning that window's heap buffer.
+    DeactivateSingleTextPrinter(sAchievementPopupWindowId, WINDOW_TEXT_PRINTER);
     ClearStdWindowAndFrameToTransparent(sAchievementPopupWindowId, TRUE);
     RemoveWindow(sAchievementPopupWindowId);
     UnlockPlayerFieldControls();
