@@ -28,6 +28,7 @@
 #include "contest_util.h"
 #include "decompress.h"
 #include "achievements.h"
+#include "player_customization.h"
 #include "constants/songs.h"
 #include "constants/game_stat.h"
 #include "constants/battle_frontier.h"
@@ -64,6 +65,7 @@ struct TrainerCardData
     bool8 timeColonNeedDraw;
     u8 cardType;
     bool8 isHoenn;
+    bool8 isOwnCard;
     u16 blendColor;
     MainCallback callback2;
     struct TrainerCard trainerCard;
@@ -1687,6 +1689,7 @@ void ShowPlayerTrainerCard(void (*callback)(void))
     else
         sData->isLink = FALSE;
 
+    sData->isOwnCard = TRUE;
     sData->language = GAME_LANGUAGE;
     TrainerCard_GenerateCardForPlayer(&sData->trainerCard);
     SetMainCallback2(CB2_InitTrainerCard);
@@ -1759,7 +1762,10 @@ static u8 VersionToCardType(enum GameVersion version)
 
 static void CreateTrainerCardTrainerPic(void)
 {
-    CreateTrainerCardTrainerPicSprite(FacilityClassToPicIndex(sTrainerPicFacilityClass[sData->cardType][sData->trainerCard.gender]),
+    // Only the player's own card follows the sprite style; link cards keep their sender's version pic.
+    u8 picCardType = (sData->isOwnCard && Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG) ? CARD_TYPE_FRLG : sData->cardType;
+
+    CreateTrainerCardTrainerPicSprite(FacilityClassToPicIndex(sTrainerPicFacilityClass[picCardType][sData->trainerCard.gender]),
                 TRUE,
                 sTrainerPicOffset[sData->isHoenn][sData->trainerCard.gender][0],
                 sTrainerPicOffset[sData->isHoenn][sData->trainerCard.gender][1],

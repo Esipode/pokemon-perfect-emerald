@@ -429,7 +429,7 @@ static inline const union AnimCmd *const *GetTrainerBackPicAnims(enum TrainerPic
 static inline const u16 *GetTrainerBackPicPalette(enum TrainerPicID trainerPic)
 {
     enum TrainerPicID sanitized = SanitizeBackTrainerPic(trainerPic);
-    const u16 *override = PlayerCustomization_GetTrainerPaletteOverride(sanitized);
+    const u16 *override = PlayerCustomization_GetTrainerBackPaletteOverride(sanitized);
     if (override != NULL)
         return override;
     return gTrainerPicInfo[sanitized].backPic->paletteData;

@@ -238,6 +238,9 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Lugia;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_HoOh;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedNormal;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedUnderwater;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedWatering;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedSurf;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedFieldMove;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedFish;
@@ -245,6 +248,9 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedVSSeeker
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedVSSeekerBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenNormal;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenUnderwater;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenWatering;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenSurf;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenFieldMove;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenFish;
@@ -645,9 +651,11 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_OW_MON] =                   &gObjectEventGraphicsInfo_Follower,
     [OBJ_EVENT_GFX_LIGHT_SPRITE] =             &gObjectEventGraphicsInfo_BallLight,
     [OBJ_EVENT_GFX_APRICORN_TREE] =            &gObjectEventGraphicsInfo_ApricornTree,
-#if IS_FRLG
     [OBJ_EVENT_GFX_RED_NORMAL] =               &gObjectEventGraphicsInfo_RedNormal,
     [OBJ_EVENT_GFX_RED_BIKE] =                 &gObjectEventGraphicsInfo_RedBike,
+    [OBJ_EVENT_GFX_RED_ACRO_BIKE] =            &gObjectEventGraphicsInfo_RedAcroBike,
+    [OBJ_EVENT_GFX_RED_UNDERWATER] =           &gObjectEventGraphicsInfo_RedUnderwater,
+    [OBJ_EVENT_GFX_RED_WATERING] =             &gObjectEventGraphicsInfo_RedWatering,
     [OBJ_EVENT_GFX_RED_SURF] =                 &gObjectEventGraphicsInfo_RedSurf,
     [OBJ_EVENT_GFX_RED_FIELD_MOVE] =           &gObjectEventGraphicsInfo_RedFieldMove,
     [OBJ_EVENT_GFX_RED_FISH] =                 &gObjectEventGraphicsInfo_RedFish,
@@ -655,11 +663,15 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_RED_VS_SEEKER_BIKE] =       &gObjectEventGraphicsInfo_RedVSSeekerBike,
     [OBJ_EVENT_GFX_GREEN_NORMAL] =             &gObjectEventGraphicsInfo_GreenNormal,
     [OBJ_EVENT_GFX_GREEN_BIKE] =               &gObjectEventGraphicsInfo_GreenBike,
+    [OBJ_EVENT_GFX_GREEN_ACRO_BIKE] =          &gObjectEventGraphicsInfo_GreenAcroBike,
+    [OBJ_EVENT_GFX_GREEN_UNDERWATER] =         &gObjectEventGraphicsInfo_GreenUnderwater,
+    [OBJ_EVENT_GFX_GREEN_WATERING] =           &gObjectEventGraphicsInfo_GreenWatering,
     [OBJ_EVENT_GFX_GREEN_SURF] =               &gObjectEventGraphicsInfo_GreenSurf,
     [OBJ_EVENT_GFX_GREEN_FIELD_MOVE] =         &gObjectEventGraphicsInfo_GreenFieldMove,
     [OBJ_EVENT_GFX_GREEN_FISH] =               &gObjectEventGraphicsInfo_GreenFish,
     [OBJ_EVENT_GFX_GREEN_VS_SEEKER] =          &gObjectEventGraphicsInfo_GreenVSSeeker,
     [OBJ_EVENT_GFX_GREEN_VS_SEEKER_BIKE] =     &gObjectEventGraphicsInfo_GreenVSSeekerBike,
+#if IS_FRLG
     [OBJ_EVENT_GFX_LITTLE_BOY_FRLG]          = &gObjectEventGraphicsInfo_LittleBoyFrlg,
     [OBJ_EVENT_GFX_LITTLE_GIRL_FRLG]         = &gObjectEventGraphicsInfo_LittleGirlFrlg,
     [OBJ_EVENT_GFX_YOUNGSTER_FRLG]           = &gObjectEventGraphicsInfo_YoungsterFrlg,

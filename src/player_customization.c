@@ -4,80 +4,56 @@
 #include "player_customization.h"
 #include "constants/event_objects.h"
 #include "constants/rgb.h"
-
-// Per-step brightness/saturation nudge; +/-3 steps must not crush a colour to black/white.
-#define SHADE_STEP_V 24
-#define SHADE_STEP_S 8
+#include "constants/trainers.h"
 
 #include "data/player_customization.h"
 
 static EWRAM_DATA u16 sOwPaletteBuffer[16] = {0};
 static EWRAM_DATA u16 sTrainerPaletteBuffer[16] = {0};
-static EWRAM_DATA u16 sMainMenuMugshotPaletteBuffer[16] = {0};
 
-static const u8 sBattleTransitionBgIndices[] = {0, 1, 2, 3, 4, 5};
-
-// 0x00 must decode to (hue = 0, shade = 0) so old saves stay vanilla.
-static void UnpackColorByte(u8 raw, u8 *hue, s8 *shade)
+u16 Player_GetColorSlot(u32 slot)
 {
-    s8 s = (raw >> 4) & 0xF;
-    if (s > 7)
-        s -= 16;
-    *hue = raw & 0xF;
-    *shade = s;
+    return gSaveBlock2Ptr->playerColorSlots[slot];
 }
 
-static u8 PackColorByte(u8 hue, s8 shade)
+void Player_SetColorSlot(u32 slot, u16 rgb)
 {
-    return (hue & 0xF) | ((shade & 0xF) << 4);
+    gSaveBlock2Ptr->playerColorSlots[slot] = PLAYER_COLOR_SET | rgb;
 }
 
-static void GetRegionChoice(enum PlayerColorRegion region, u8 *hue, s8 *shade)
+void Player_ClearColorSlot(u32 slot)
 {
-    UnpackColorByte(gSaveBlock2Ptr->playerColors[region], hue, shade);
+    gSaveBlock2Ptr->playerColorSlots[slot] = 0;
 }
 
-u8 Player_GetColorHue(enum PlayerColorRegion region)
+u8 Player_GetSpriteStyle(void)
 {
-    u8 hue;
-    s8 shade;
-    GetRegionChoice(region, &hue, &shade);
-    return hue;
+    return gSaveBlock2Ptr->playerSpriteStyle;
 }
 
-s8 Player_GetColorShade(enum PlayerColorRegion region)
+void Player_SetSpriteStyle(u8 style)
 {
-    u8 hue;
-    s8 shade;
-    GetRegionChoice(region, &hue, &shade);
-    return shade;
-}
-
-void Player_SetColorHue(enum PlayerColorRegion region, u8 hue)
-{
-    u8 curHue;
-    s8 curShade;
-    GetRegionChoice(region, &curHue, &curShade);
-    gSaveBlock2Ptr->playerColors[region] = PackColorByte(hue, curShade);
-}
-
-void Player_SetColorShade(enum PlayerColorRegion region, s8 shade)
-{
-    u8 curHue;
-    s8 curShade;
-    GetRegionChoice(region, &curHue, &curShade);
-    gSaveBlock2Ptr->playerColors[region] = PackColorByte(curHue, shade);
+    if (style >= PLAYER_SPRITE_STYLE_COUNT)
+        style = PLAYER_SPRITE_STYLE_EMERALD;
+    gSaveBlock2Ptr->playerSpriteStyle = style;
 }
 
 bool32 PlayerCustomization_IsDefault(void)
 {
     u32 i;
-    for (i = 0; i < PLAYER_COLOR_REGION_COUNT; i++)
+    for (i = 0; i < PLAYER_COLOR_SLOT_COUNT; i++)
     {
-        if (gSaveBlock2Ptr->playerColors[i] != 0)
+        if (gSaveBlock2Ptr->playerColorSlots[i] != 0)
             return FALSE;
     }
     return TRUE;
+}
+
+void PlayerCustomization_ResetForNewGame(void)
+{
+    Player_SetSpriteStyle(PLAYER_SPRITE_STYLE_EMERALD);
+    memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+    memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
 }
 
 // Integer RGB(8-bit)<->HSV(all 0-255) helpers.
@@ -158,73 +134,89 @@ static void HsvToRgb(u8 h, u8 s, u8 v, u8 *r, u8 *g, u8 *b)
     }
 }
 
-// Near-white/near-black entries have S close to 0, so hue rotation leaves outlines and whites alone.
-static void ApplyRegionToPalette(u16 *pal, const u8 *indices, u8 count, u8 hue, s8 shade)
+void PlayerCustomization_RgbToHsv(u16 color, u8 *h, u8 *s, u8 *v)
 {
-    u32 i;
+    u8 r = GET_R(color) * 255 / 31;
+    u8 g = GET_G(color) * 255 / 31;
+    u8 b = GET_B(color) * 255 / 31;
+    RgbToHsv(r, g, b, h, s, v);
+}
 
-    if (hue == 0 && shade == 0)
-        return;
+u16 PlayerCustomization_HsvToRgb(u8 h, u8 s, u8 v)
+{
+    u8 r, g, b;
+    HsvToRgb(h, s, v, &r, &g, &b);
+    return RGB(r * 31 / 255, g * 31 / 255, b * 31 / 255);
+}
 
-    for (i = 0; i < count; i++)
+enum PlayerPaletteAsset { PLAYER_PALETTE_ASSET_OW, PLAYER_PALETTE_ASSET_TRAINER };
+
+// For each slot with a nonzero stored value, writes it into every index that slot owns for `asset`.
+// No HSV maths -- that only runs in the menu's editing model now.
+static void ApplySlotsToPalette(u16 *pal, u8 style, u8 gender, enum PlayerPaletteAsset asset)
+{
+    u32 slot;
+
+    for (slot = 0; slot < PLAYER_COLOR_SLOT_COUNT; slot++)
     {
-        u16 color = pal[indices[i]];
-        u8 r = GET_R(color) * 255 / 31;
-        u8 g = GET_G(color) * 255 / 31;
-        u8 b = GET_B(color) * 255 / 31;
-        u8 h, s, v;
+        const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][slot];
+        u16 value = gSaveBlock2Ptr->playerColorSlots[slot];
+        const u8 *indices = (asset == PLAYER_PALETTE_ASSET_TRAINER) ? info->trainerIndices : info->owIndices;
+        u8 count = (asset == PLAYER_PALETTE_ASSET_TRAINER) ? info->numTrainerIndices : info->numOwIndices;
+        u32 i;
 
-        RgbToHsv(r, g, b, &h, &s, &v);
+        if (info->name == NULL || value == 0)
+            continue;
 
-        h += hue * (256 / PLAYER_COLOR_HUE_COUNT); // u8 add wraps mod 256, matching hue's circular range
-        v = min(max(v + shade * SHADE_STEP_V, 0), 255);
-        s = min(max(s + shade * SHADE_STEP_S, 0), 255);
-
-        HsvToRgb(h, s, v, &r, &g, &b);
-        pal[indices[i]] = RGB(r * 31 / 255, g * 31 / 255, b * 31 / 255);
+        for (i = 0; i < count; i++)
+            pal[indices[i]] = value & ~PLAYER_COLOR_SET;
     }
 }
 
-static void ApplyAllRegions(u16 *pal, u8 gender, bool32 useTrainerIndices)
+static const u16 *GetOwBasePalette(u8 style, u8 gender)
 {
-    u32 i;
-
-    for (i = 0; i < PLAYER_COLOR_REGION_COUNT; i++)
-    {
-        const struct PlayerColorRegionInfo *info = &sPlayerColorRegions[gender][i];
-        u8 hue;
-        s8 shade;
-
-        GetRegionChoice(i, &hue, &shade);
-        if (useTrainerIndices)
-            ApplyRegionToPalette(pal, info->trainerIndices, info->numTrainerIndices, hue, shade);
-        else
-            ApplyRegionToPalette(pal, info->owIndices, info->numOwIndices, hue, shade);
-    }
+    if (style == PLAYER_SPRITE_STYLE_FRLG)
+        return gObjectEventPal_PlayerFrlg; // both FRLG genders share one base palette
+    return (gender == MALE) ? gObjectEventPal_Brendan : gObjectEventPal_May;
 }
 
 const u16 *PlayerCustomization_GetOwPaletteOverride(u16 paletteTag)
 {
+    u8 style = Player_GetSpriteStyle();
     u8 gender = gSaveBlock2Ptr->playerGender;
-    u16 expectedTag = (gender == MALE) ? OBJ_EVENT_PAL_TAG_BRENDAN : OBJ_EVENT_PAL_TAG_MAY;
+    u16 expectedTag;
     const u16 *basePal;
     u32 i;
+
+    if (style == PLAYER_SPRITE_STYLE_FRLG)
+        expectedTag = (gender == MALE) ? OBJ_EVENT_PAL_TAG_PLAYER_RED : OBJ_EVENT_PAL_TAG_PLAYER_GREEN;
+    else
+        expectedTag = (gender == MALE) ? OBJ_EVENT_PAL_TAG_BRENDAN : OBJ_EVENT_PAL_TAG_MAY;
 
     if (paletteTag != expectedTag || PlayerCustomization_IsDefault())
         return NULL;
 
-    basePal = (gender == MALE) ? gObjectEventPal_Brendan : gObjectEventPal_May;
+    basePal = GetOwBasePalette(style, gender);
     for (i = 0; i < 16; i++)
         sOwPaletteBuffer[i] = basePal[i];
 
-    ApplyAllRegions(sOwPaletteBuffer, gender, FALSE);
+    ApplySlotsToPalette(sOwPaletteBuffer, style, gender, PLAYER_PALETTE_ASSET_OW);
     return sOwPaletteBuffer;
 }
 
-const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
+u32 PlayerCustomization_GetTrainerPicId(u8 style, u8 gender)
 {
+    if (style == PLAYER_SPRITE_STYLE_FRLG)
+        return (gender == MALE) ? TRAINER_PIC_RED : TRAINER_PIC_LEAF;
+    return (gender == MALE) ? TRAINER_PIC_BRENDAN : TRAINER_PIC_MAY;
+}
+
+static const u16 *GetTrainerPaletteOverride(u32 trainerPicId, bool32 isBackPic)
+{
+    u8 style = Player_GetSpriteStyle();
     u8 gender = gSaveBlock2Ptr->playerGender;
-    u32 expectedPicId = (gender == MALE) ? TRAINER_PIC_BRENDAN : TRAINER_PIC_MAY;
+    u32 expectedPicId = PlayerCustomization_GetTrainerPicId(style, gender);
+    enum PlayerPaletteAsset asset = PLAYER_PALETTE_ASSET_TRAINER;
     const u16 *basePal;
     u32 i;
 
@@ -232,74 +224,200 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
         return NULL;
 
     // Read gTrainerPicInfo directly; GetTrainerFrontPicPalette/GetTrainerBackPicPalette
-    // route through this function and would recurse.
-    basePal = gTrainerPicInfo[expectedPicId].frontPic->paletteData;
+    // route through here and would recurse.
+    if (isBackPic)
+    {
+        basePal = gTrainerPicInfo[expectedPicId].backPic->paletteData;
+        // Red/Leaf back pics use the OW palette layout (player_frlg.pal), not
+        // their front pic's. Brendan/May back pics share the front palette.
+        if (style == PLAYER_SPRITE_STYLE_FRLG)
+            asset = PLAYER_PALETTE_ASSET_OW;
+    }
+    else
+    {
+        basePal = gTrainerPicInfo[expectedPicId].frontPic->paletteData;
+    }
+
     for (i = 0; i < 16; i++)
         sTrainerPaletteBuffer[i] = basePal[i];
 
-    ApplyAllRegions(sTrainerPaletteBuffer, gender, TRUE);
+    ApplySlotsToPalette(sTrainerPaletteBuffer, style, gender, asset);
     return sTrainerPaletteBuffer;
 }
 
-u8 PlayerCustomization_GetRegionSwatchIndex(u8 gender, enum PlayerColorRegion region)
+const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId)
 {
-    return sPlayerColorRegions[gender][region].owIndices[0];
+    return GetTrainerPaletteOverride(trainerPicId, FALSE);
 }
 
-const u16 *PlayerCustomization_GetMainMenuMugshotPaletteOverride(u8 gender, const u16 *basePal)
+const u16 *PlayerCustomization_GetTrainerBackPaletteOverride(u32 trainerPicId)
 {
+    return GetTrainerPaletteOverride(trainerPicId, TRUE);
+}
+
+u8 PlayerCustomization_GetSlotSwatchIndex(u8 style, u8 gender, u8 slot)
+{
+    return sPlayerColorSlots[style][gender][slot].owIndices[0];
+}
+
+u8 PlayerCustomization_GetTrainerSlotSwatchIndex(u8 style, u8 gender, u8 slot)
+{
+    const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][slot];
+
+    if (info->numTrainerIndices == 0)
+        return info->owIndices[0];
+    return info->trainerIndices[0];
+}
+
+const struct PlayerColorSlotInfo *PlayerCustomization_GetSlotInfo(u8 style, u8 gender, u8 slot)
+{
+    return &sPlayerColorSlots[style][gender][slot];
+}
+
+const struct PlayerColorGroupInfo *PlayerCustomization_GetGroupInfo(u8 style, u8 gender, enum PlayerColorRegion group)
+{
+    return &sPlayerColorGroups[style][gender][group];
+}
+
+// FALSE if the group has no set slot. dh wraps; ds and dv are signed and clamp at the caller.
+bool32 PlayerCustomization_GetGroupHsvDelta(u8 style, u8 gender, enum PlayerColorRegion group,
+                                             s16 *dh, s16 *ds, s16 *dv)
+{
+    const struct PlayerColorGroupInfo *groupInfo = &sPlayerColorGroups[style][gender][group];
+    const u16 *basePal = GetOwBasePalette(style, gender);
     u32 i;
 
-    if (PlayerCustomization_IsDefault())
-        return NULL;
-
-    for (i = 0; i < 16; i++)
-        sMainMenuMugshotPaletteBuffer[i] = basePal[i];
-
-    for (i = 0; i < PLAYER_COLOR_REGION_COUNT; i++)
+    for (i = 0; i < groupInfo->numSlots; i++)
     {
-        const struct PlayerColorRegionInfo *info = &sMainMenuMugshotColorRegions[gender][i];
-        u8 hue;
-        s8 shade;
+        u8 slot = groupInfo->slots[i];
+        const struct PlayerColorSlotInfo *slotInfo = &sPlayerColorSlots[style][gender][slot];
+        u16 value = gSaveBlock2Ptr->playerColorSlots[slot];
+        u8 h1, s1, v1, h2, s2, v2;
 
-        GetRegionChoice(i, &hue, &shade);
-        ApplyRegionToPalette(sMainMenuMugshotPaletteBuffer, info->owIndices, info->numOwIndices, hue, shade);
+        if (slotInfo->name == NULL || value == 0)
+            continue;
+
+        PlayerCustomization_RgbToHsv(value & ~PLAYER_COLOR_SET, &h1, &s1, &v1);
+        PlayerCustomization_RgbToHsv(basePal[slotInfo->owIndices[0]], &h2, &s2, &v2);
+        *dh = (s16)h1 - (s16)h2;
+        *ds = (s16)s1 - (s16)s2;
+        *dv = (s16)v1 - (s16)v2;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+u16 PlayerCustomization_GetSlotRomColor(u8 style, u8 gender, u8 slot)
+{
+    const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][slot];
+    return GetOwBasePalette(style, gender)[info->owIndices[0]];
+}
+
+// Reimplements the pre-Stage-P1 ApplyRegionToPalette maths for a single ROM
+// colour: hue steps are circular (u8 wraps mod 256); shade nudges V/S with
+// the same step sizes the old per-frame region recolour used.
+u16 PlayerCustomization_ApplyHueShadeToRomColor(u8 style, u8 gender, u8 slot, u8 hue, s8 shade)
+{
+    u16 romColor = PlayerCustomization_GetSlotRomColor(style, gender, slot);
+    u8 h, s, v;
+    s16 ns, nv;
+
+    if (hue == 0 && shade == 0)
+        return romColor;
+
+    PlayerCustomization_RgbToHsv(romColor, &h, &s, &v);
+    h += hue * (256 / PLAYER_COLOR_HUE_COUNT);
+    nv = (s16)v + shade * 24;
+    ns = (s16)s + shade * 8;
+    if (nv < 0)
+        nv = 0;
+    else if (nv > 255)
+        nv = 255;
+    if (ns < 0)
+        ns = 0;
+    else if (ns > 255)
+        ns = 255;
+    return PlayerCustomization_HsvToRgb(h, (u8)ns, (u8)nv);
+}
+
+// Battle-transition mugshot background has no per-index art trace (flat 6-colour gradient), so it
+// gets a representative recolour: the OUTFIT group's HSV delta applied to the vanilla gradient.
+void PlayerCustomization_GetBattleTransitionMugshotBgPalette(u8 style, u8 gender, const u16 *basePal, u16 *dest)
+{
+    s16 dh, ds, dv;
+    u32 i;
+
+    if (!PlayerCustomization_GetGroupHsvDelta(style, gender, PLAYER_COLOR_REGION_OUTFIT, &dh, &ds, &dv))
+    {
+        for (i = 0; i < 6; i++)
+            dest[i] = basePal[i];
+        return;
     }
 
-    return sMainMenuMugshotPaletteBuffer;
-}
-
-void PlayerCustomization_GetBattleTransitionMugshotBgPalette(const u16 *basePal, u16 *dest)
-{
-    u8 hue;
-    s8 shade;
-    u32 i;
-
     for (i = 0; i < 6; i++)
-        dest[i] = basePal[i];
+    {
+        u8 h, s, v;
+        s16 ns, nv;
 
-    if (PlayerCustomization_IsDefault())
-        return;
-
-    GetRegionChoice(PLAYER_COLOR_REGION_OUTFIT, &hue, &shade);
-    ApplyRegionToPalette(dest, sBattleTransitionBgIndices, ARRAY_COUNT(sBattleTransitionBgIndices), hue, shade);
+        PlayerCustomization_RgbToHsv(basePal[i], &h, &s, &v);
+        h += (u8)dh;
+        ns = (s16)s + ds;
+        nv = (s16)v + dv;
+        if (ns < 0)
+            ns = 0;
+        else if (ns > 255)
+            ns = 255;
+        if (nv < 0)
+            nv = 0;
+        else if (nv > 255)
+            nv = 255;
+        dest[i] = PlayerCustomization_HsvToRgb(h, (u8)ns, (u8)nv);
+    }
 }
 
-void PlayerCustomization_BuildPreviewPalette(u8 gender, const u8 *choices, u16 *dest)
+void PlayerCustomization_BuildPreviewPalette(u8 style, u8 gender, const u16 *choices, u16 *dest)
 {
-    const u16 *basePal = (gender == MALE) ? gObjectEventPal_Brendan : gObjectEventPal_May;
+    const u16 *basePal = GetOwBasePalette(style, gender);
     u32 i;
 
     for (i = 0; i < 16; i++)
         dest[i] = basePal[i];
 
-    for (i = 0; i < PLAYER_COLOR_REGION_COUNT; i++)
+    for (i = 0; i < PLAYER_COLOR_SLOT_COUNT; i++)
     {
-        const struct PlayerColorRegionInfo *info = &sPlayerColorRegions[gender][i];
-        u8 hue;
-        s8 shade;
+        const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][i];
+        u16 value = choices[i];
+        u32 j;
 
-        UnpackColorByte(choices[i], &hue, &shade);
-        ApplyRegionToPalette(dest, info->owIndices, info->numOwIndices, hue, shade);
+        if (info->name == NULL || value == 0)
+            continue;
+
+        for (j = 0; j < info->numOwIndices; j++)
+            dest[info->owIndices[j]] = value & ~PLAYER_COLOR_SET;
+    }
+}
+
+// Same as PlayerCustomization_BuildPreviewPalette, but against the trainer front
+// pic's base palette and index list, for the Stage P8 trainer-pic preview toggle.
+void PlayerCustomization_BuildTrainerPreviewPalette(u8 style, u8 gender, const u16 *choices, u16 *dest)
+{
+    u32 picId = PlayerCustomization_GetTrainerPicId(style, gender);
+    const u16 *basePal = gTrainerPicInfo[picId].frontPic->paletteData;
+    u32 i;
+
+    for (i = 0; i < 16; i++)
+        dest[i] = basePal[i];
+
+    for (i = 0; i < PLAYER_COLOR_SLOT_COUNT; i++)
+    {
+        const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][i];
+        u16 value = choices[i];
+        u32 j;
+
+        if (info->name == NULL || value == 0)
+            continue;
+
+        for (j = 0; j < info->numTrainerIndices; j++)
+            dest[info->trainerIndices[j]] = value & ~PLAYER_COLOR_SET;
     }
 }

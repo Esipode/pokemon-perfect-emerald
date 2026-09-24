@@ -1355,8 +1355,6 @@ static const struct SpriteFrameImage sPicTable_ApricornTree[] = {
     overworld_frame(gObjectEventPic_ApricornTree, 2, 2, 0),
 };
 
-#if IS_FRLG
-
 static const struct SpriteFrameImage sPicTable_RedNormal[] = {
     overworld_frame(gObjectEventPic_RedNormal, 2, 4, 0),
     overworld_frame(gObjectEventPic_RedNormal, 2, 4, 1),
@@ -1384,6 +1382,30 @@ static const struct SpriteFrameImage sPicTable_RedBike[] = {
     overworld_ascending_frames(gObjectEventPic_RedBike, 4, 4),
 };
 
+static const struct SpriteFrameImage sPicTable_RedUnderwater[] = {
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RedUnderwater, 4, 4, 2),
+};
+
+static const struct SpriteFrameImage sPicTable_RedWatering[] = {
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 0),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 2),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 4),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 5),
+    overworld_frame(gObjectEventPic_RedWatering, 4, 4, 5),
+};
+
 static const struct SpriteFrameImage sPicTable_GreenNormal[] = {
     overworld_frame(gObjectEventPic_GreenNormal, 2, 4, 0),
     overworld_frame(gObjectEventPic_GreenNormal, 2, 4, 1),
@@ -1409,6 +1431,30 @@ static const struct SpriteFrameImage sPicTable_GreenNormal[] = {
 
 static const struct SpriteFrameImage sPicTable_GreenBike[] = {
     overworld_ascending_frames(gObjectEventPic_GreenBike, 4, 4),
+};
+
+static const struct SpriteFrameImage sPicTable_GreenUnderwater[] = {
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GreenUnderwater, 4, 4, 2),
+};
+
+static const struct SpriteFrameImage sPicTable_GreenWatering[] = {
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 0),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 2),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 4),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 1),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 3),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 5),
+    overworld_frame(gObjectEventPic_GreenWatering, 4, 4, 5),
 };
 
 static const struct SpriteFrameImage sPicTable_RedSurf[] = {
@@ -1464,6 +1510,8 @@ static const struct SpriteFrameImage sPicTable_RedVSSeekerBike[] = {
 static const struct SpriteFrameImage sPicTable_GreenVSSeekerBike[] = {
     overworld_ascending_frames(gObjectEventPic_GreenVSSeekerBike, 4, 4),
 };
+
+#if IS_FRLG
 
 static const struct SpriteFrameImage sPicTable_Policeman[] = {
     overworld_ascending_frames(gObjectEventPic_Policeman, 2, 4),

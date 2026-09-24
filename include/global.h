@@ -790,7 +790,7 @@ struct SaveBlock2
              u16 regionMapZoom:1; // whether the map is zoomed in
              u16 optionsRouteTracker:1; // show the route completion box on the start menu; 0 (off) on existing saves
              u16 optionsExpShare:1; // Gen 6 style exp share (whole party gains exp); 0 (off) on existing saves, defaulted on for new ones in SetDefaultOptions
-             //u16 padding1:2;
+             u16 playerSpriteStyle:2; // PLAYER_SPRITE_STYLE_*; 0 (Emerald) on existing saves
     /*0x16*/ u8 limitedPartySetting; // Limited Party challenge: nonzero means on. 0 means off, so old saves read as OFF.
     /*0x17*/ u8 rotationModeSetting; // Rotation Mode: nonzero means on. 0 means off, so old saves read as OFF.
     /*0x18*/ struct Pokedex pokedex;
@@ -858,6 +858,10 @@ struct SaveBlock2
     // own comment above. A genuine new field, not filler reuse (see this
     // stage's status block for why).
     struct PendingTrade pendingTrade;
+    // Per-palette-index player colours; see player_customization.h. 0 means "use the ROM colour",
+    // so a zeroed save renders vanilla. Appended at the end so no earlier offset moves. The legacy
+    // playerColors[PLAYER_COLOR_REGION_COUNT] at 0x92 stays in place -- Stage P9 migrates it once.
+    u16 playerColorSlots[PLAYER_COLOR_SLOT_COUNT];
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;

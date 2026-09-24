@@ -1,5 +1,6 @@
 #include "global.h"
 #include "constants/trainers.h"
+#include "player_customization.h"
 
 static enum TrainerPicID GetEmeraldTrainerPic(enum Gender gender)
 {
@@ -29,4 +30,13 @@ enum TrainerPicID GetPlayerTrainerPic(enum Gender gender, enum GameVersion versi
         default:
             return GetEmeraldTrainerPic(gender);
     }
+}
+
+// The player's own back pic. Link and recorded battles must keep using GetPlayerTrainerPic, so a
+// remote player's pic never follows the local sprite style.
+enum TrainerPicID GetLocalPlayerTrainerPic(void)
+{
+    if (Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG)
+        return GetKantoTrainerPic(gSaveBlock2Ptr->playerGender);
+    return GetPlayerTrainerPic(gSaveBlock2Ptr->playerGender, GAME_VERSION);
 }

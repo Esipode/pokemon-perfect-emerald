@@ -43,6 +43,7 @@
 #include "constants/pokedex.h"
 #include "pokeblock.h"
 #include "pokemon.h"
+#include "player_customization.h"
 #include "pokemon_animation.h"
 #include "pokemon_icon.h"
 #include "pokemon_summary_screen.h"
@@ -6088,6 +6089,15 @@ enum TrainerPicID PlayerGenderToFrontTrainerPicId(enum Gender playerGender)
         return FacilityClassToPicIndex(IS_FRLG ? FACILITY_CLASS_LEAF : FACILITY_CLASS_MAY);
     else
         return FacilityClassToPicIndex(IS_FRLG ? FACILITY_CLASS_RED : FACILITY_CLASS_BRENDAN);
+}
+
+// The player's own front pic. Link and recorded battles must keep using
+// PlayerGenderToFrontTrainerPicId, so a remote player's pic never follows the local sprite style.
+enum TrainerPicID GetLocalPlayerFrontTrainerPicId(void)
+{
+    if (Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG)
+        return FacilityClassToPicIndex(gSaveBlock2Ptr->playerGender != MALE ? FACILITY_CLASS_LEAF : FACILITY_CLASS_RED);
+    return PlayerGenderToFrontTrainerPicId(gSaveBlock2Ptr->playerGender);
 }
 
 // baseSpecies normalizes Unown/Spinda letters and family lookups; the flag write keeps the

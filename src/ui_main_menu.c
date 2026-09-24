@@ -2,6 +2,7 @@
 #include "ui_main_menu.h"
 #include "strings.h"
 #include "bg.h"
+#include "battle_main.h"
 #include "data.h"
 #include "decompress.h"
 #include "event_data.h"
@@ -21,7 +22,12 @@
 #include "menu_helpers.h"
 #include "palette.h"
 #include "party_menu.h"
-#include "player_customization.h"
+#include "draft_mode.h"
+#include "limited_party.h"
+#include "mono_gen.h"
+#include "mono_type.h"
+#include "recruits_mode.h"
+#include "rotation_mode.h"
 #include "scanline_effect.h"
 #include "script.h"
 #include "sound.h"
@@ -33,6 +39,8 @@
 #include "event_data.h"
 #include "constants/items.h"
 #include "constants/field_weather.h"
+#include "constants/difficulty.h"
+#include "constants/flags.h"
 #include "constants/songs.h"
 #include "constants/rgb.h"
 #include "pokemon_icon.h"
@@ -58,7 +66,6 @@ struct MainMenuResources
     u8 gfxLoadState;
     u16 iconBoxSpriteIds[6];
     u16 iconMonSpriteIds[6];
-    u16 mugshotSpriteId;
     u8 sSelectedOption;
 };
 
@@ -118,13 +125,12 @@ static void Task_MainMenuWaitFadeIn(u8 taskId);
 static void Task_MainMenuMain(u8 taskId);
 static void MainMenu_InitializeGPUWindows(void);
 
-static void CreateMugshot();
-static void DestroyMugshot();
 static void CreateIconShadow();
 static void DestroyIconShadow();
 static u32 GetHPEggCyclePercent(u32 partyIndex);
 static void CreatePartyMonIcons();
 static void DestroyMonIcons();
+static void PrintRunInfo(const u8 colors[3]);
 
 
 //==========Background and Window Data==========//
@@ -163,11 +169,11 @@ static const struct WindowTemplate sMainMenuWindowTemplates[] =
         .baseBlock = 1,     // tile start in VRAM
     },
 
-    [WINDOW_MIDDLE] = // Prints the name, dex number, and badges
+    [WINDOW_MIDDLE] = // Prints player data and current run settings
     {
         .bg = 0,                   // which bg to print text on
-        .tilemapLeft = 8,          // position from left (per 8 pixels)
-        .tilemapTop = 4,           // position from top (per 8 pixels)
+        .tilemapLeft = 3,          // position from left (per 8 pixels)
+        .tilemapTop = 3,           // position from top (per 8 pixels)
         .width = 18,               // width (per 8 pixels)
         .height = 7,               // height (per 8 pixels)
         .paletteNum = 0,           // palette index to use for text
@@ -200,7 +206,7 @@ static const struct HWWindowPosition HWinCoords[6] =
 
 
 //
-//  Graphic and Tilemap Pointers for Bgs and Mughsots
+//  Graphic and Tilemap Pointers for Backgrounds
 //
 static const u32 sMainBgTiles[] = INCBIN_U32("graphics/ui_main_menu/main_tiles.4bpp.smol");
 static const u32 sMainBgTilemap[] = INCBIN_U32("graphics/ui_main_menu/main_tiles.bin.smolTM");
@@ -220,71 +226,10 @@ static const u32 sIconBox_Gfx[] = INCBIN_U32("graphics/ui_main_menu/icon_shadow.
 static const u16 sIconBox_PalFem[] = INCBIN_U16("graphics/ui_main_menu/icon_shadow_fem.gbapal");
 static const u32 sIconBox_GfxFem[] = INCBIN_U32("graphics/ui_main_menu/icon_shadow_fem.4bpp.smol");
 
-static const u16 sBrendanMugshot_Pal[] = INCBIN_U16("graphics/ui_main_menu/brendan_mugshot.gbapal");
-static const u32 sBrendanMugshot_Gfx[] = INCBIN_U32("graphics/ui_main_menu/brendan_mugshot.4bpp.smol");
-static const u16 sMayMugshot_Pal[] = INCBIN_U16("graphics/ui_main_menu/may_mugshot.gbapal");
-static const u32 sMayMugshot_Gfx[] = INCBIN_U32("graphics/ui_main_menu/may_mugshot.4bpp.smol");
-
-
 //
-//  Sprite Data for Mugshots and Icon Shadows 
+//  Sprite Data for Icon Shadows
 //
-#define TAG_MUGSHOT 30012
 #define TAG_ICON_BOX 30006
-static const struct OamData sOamData_Mugshot =
-{
-    .size = SPRITE_SIZE(64x64),
-    .shape = SPRITE_SHAPE(64x64),
-    .priority = 1,
-};
-
-static const struct CompressedSpriteSheet sSpriteSheet_BrendanMugshot =
-{
-    .data = sBrendanMugshot_Gfx,
-    .size = 64*64*1/2,
-    .tag = TAG_MUGSHOT,
-};
-
-static const struct SpritePalette sSpritePal_BrendanMugshot =
-{
-    .data = sBrendanMugshot_Pal,
-    .tag = TAG_MUGSHOT
-};
-
-static const struct CompressedSpriteSheet sSpriteSheet_MayMugshot =
-{
-    .data = sMayMugshot_Gfx,
-    .size = 64*64*1/2,
-    .tag = TAG_MUGSHOT,
-};
-
-static const struct SpritePalette sSpritePal_MayMugshot =
-{
-    .data = sMayMugshot_Pal,
-    .tag = TAG_MUGSHOT
-};
-
-static const union AnimCmd sSpriteAnim_Mugshot[] =
-{
-    ANIMCMD_FRAME(0, 32),
-    ANIMCMD_JUMP(0),
-};
-
-static const union AnimCmd *const sSpriteAnimTable_Mugshot[] =
-{
-    sSpriteAnim_Mugshot,
-};
-
-static const struct SpriteTemplate sSpriteTemplate_Mugshot =
-{
-    .tileTag = TAG_MUGSHOT,
-    .paletteTag = TAG_MUGSHOT,
-    .oam = &sOamData_Mugshot,
-    .anims = sSpriteAnimTable_Mugshot,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy
-};
 
 static const struct OamData sOamData_IconBox =
 {
@@ -431,7 +376,6 @@ static void MainMenu_FreeResources(void)
     try_free(sBg1TilemapBuffer);
     try_free(sBg2TilemapBuffer);
     FreeAllWindowBuffers();
-    DestroyMugshot();
     DestroyIconShadow();
     DestroyMonIcons();
     DmaClearLarge16(3, (void *)VRAM, VRAM_SIZE, 0x1000);
@@ -538,7 +482,6 @@ static bool8 MainMenu_DoGfxSetup(void)
         PrintToWindow(WINDOW_HEADER, FONT_WHITE);
         CreateIconShadow();
         CreatePartyMonIcons();
-        CreateMugshot();
         CreateTask(Task_MainMenuWaitFadeIn, 0);
         BlendPalettes(0xFFFFFFFF, 16, RGB_BLACK);
         gMain.state++;
@@ -656,28 +599,14 @@ static bool8 MainMenu_LoadGraphics(void) // Load all the tilesets, tilemaps, spr
     {
         if(gSaveBlock2Ptr->playerGender == MALE)
         {
-            const u16 *mugshotPal = PlayerCustomization_GetMainMenuMugshotPaletteOverride(MALE, sBrendanMugshot_Pal);
-            struct SpritePalette spritePal = sSpritePal_BrendanMugshot;
-
             LoadCompressedSpriteSheet(&sSpriteSheet_IconBox);
             LoadSpritePalette(&sSpritePal_IconBox);
-            LoadCompressedSpriteSheet(&sSpriteSheet_BrendanMugshot);
-            if (mugshotPal != NULL)
-                spritePal.data = mugshotPal;
-            LoadSpritePalette(&spritePal);
             LoadPalette(sMainBgPalette, 0, 32);
         }
         else
         {
-            const u16 *mugshotPal = PlayerCustomization_GetMainMenuMugshotPaletteOverride(FEMALE, sMayMugshot_Pal);
-            struct SpritePalette spritePal = sSpritePal_MayMugshot;
-
             LoadCompressedSpriteSheet(&sSpriteSheet_IconBoxFem);
             LoadSpritePalette(&sSpritePal_IconBoxFem);
-            LoadCompressedSpriteSheet(&sSpriteSheet_MayMugshot);
-            if (mugshotPal != NULL)
-                spritePal.data = mugshotPal;
-            LoadSpritePalette(&spritePal);
             LoadPalette(sMainBgPaletteFem, 0, 32);
         }
         LoadPalette(sScrollBgPalette, 16, 32);
@@ -710,29 +639,11 @@ static void MainMenu_InitWindows(void) // Init Text Windows
 /*    Sprite Creation Functions     */
 
 //
-//      Mugshot Functions
-//
-static void CreateMugshot()
-{
-    sMainMenuDataPtr->mugshotSpriteId = CreateSprite(&sSpriteTemplate_Mugshot, 48, 56, 1);
-    gSprites[sMainMenuDataPtr->mugshotSpriteId].invisible = FALSE;
-    StartSpriteAnim(&gSprites[sMainMenuDataPtr->mugshotSpriteId], 0);
-    gSprites[sMainMenuDataPtr->mugshotSpriteId].oam.priority = 0;
-    return;
-}
-
-static void DestroyMugshot()
-{
-    DestroySprite(&gSprites[sMainMenuDataPtr->mugshotSpriteId]);
-    sMainMenuDataPtr->mugshotSpriteId = SPRITE_NONE;
-}
-
-//
 //  Create Mon Icon and Shadow Sprites
 //
-#define ICON_BOX_1_START_X          136 + 8
+#define ICON_BOX_1_START_X          140 + 16
 #define ICON_BOX_1_START_Y          38
-#define ICON_BOX_X_DIFFERENCE       32
+#define ICON_BOX_X_DIFFERENCE       26
 #define ICON_BOX_Y_DIFFERENCE       32
 static void CreateIconShadow()
 {
@@ -845,18 +756,111 @@ static void DestroyMonIcons()
 
 
 //
-//  Print The Text For Dex Num, Badges, Name, Playtime, Location
+//  Print the Current Run, Playtime, and Location
 //
-static const u8 sText_DexNum[] = _("Dex {STR_VAR_1}");
-static const u8 sText_Badges[] = _("Badges {STR_VAR_1}");
+static const u8 sText_DexNum[] = _("DEX:{STR_VAR_1}");
+static const u8 sText_Badges[] = _("BADGES:{STR_VAR_1}");
+static const u8 sText_DifficultyEasy[] = _("EASY");
+static const u8 sText_DifficultyNormal[] = _("NORMAL");
+static const u8 sText_DifficultyHard[] = _("HARD");
+static const u8 sText_ModeNuzlocke[] = _("NUZ");
+static const u8 sText_ModeDraft[] = _("DRAFT");
+static const u8 sText_ModeRecruits[] = _("REC");
+static const u8 sText_ModeSeparator[] = _("/");
+static const u8 sText_MonoType[] = _("TYPE:");
+static const u8 sText_MonoGen[] = _("GEN:");
+static const u8 sText_Rotation[] = _("ROTATION");
+static const u8 sText_LimitedParty[] = _("PARTY LIMIT");
+static const u8 sText_Randomization[] = _("RANDOM:");
+static const u8 sText_RandomSpecies[] = _("S");
+static const u8 sText_RandomTypes[] = _("T");
+static const u8 sText_RandomMoves[] = _("M");
+
+static void PrintRunInfoLine(u8 index, const u8 *text, const u8 colors[3])
+{
+    u8 x = (index & 1) * 66;
+    u8 y = 17 + (index / 2) * 13;
+
+    AddTextPrinterParameterized4(WINDOW_MIDDLE, FONT_SMALL, x, y, 0, 0, colors, TEXT_SKIP_DRAW, text);
+}
+
+static void PrintRunInfo(const u8 colors[3])
+{
+    u8 line = 0;
+    const u8 *difficultyText;
+
+    switch (gSaveBlock1Ptr->difficulty)
+    {
+    case DIFFICULTY_EASY:
+        difficultyText = sText_DifficultyEasy;
+        break;
+    case DIFFICULTY_HARD:
+        difficultyText = sText_DifficultyHard;
+        break;
+    case DIFFICULTY_NORMAL:
+    default:
+        difficultyText = sText_DifficultyNormal;
+        break;
+    }
+    StringCopy(gStringVar4, difficultyText);
+    if (gSaveBlock1Ptr->nuzlockeModeEnabled)
+    {
+        StringAppend(gStringVar4, sText_ModeSeparator);
+        StringAppend(gStringVar4, sText_ModeNuzlocke);
+    }
+    else if (Draft_IsEnabled())
+    {
+        StringAppend(gStringVar4, sText_ModeSeparator);
+        StringAppend(gStringVar4, sText_ModeDraft);
+    }
+    else if (Recruits_IsEnabled())
+    {
+        StringAppend(gStringVar4, sText_ModeSeparator);
+        StringAppend(gStringVar4, sText_ModeRecruits);
+    }
+    PrintRunInfoLine(line++, gStringVar4, colors);
+
+    if (MonoGen_IsEnabled())
+    {
+        u8 *end;
+
+        StringCopy(gStringVar4, sText_MonoGen);
+        end = gStringVar4 + StringLength(gStringVar4);
+        ConvertIntToDecimalStringN(end, MonoGen_GetGen(), STR_CONV_MODE_LEFT_ALIGN, 1);
+        PrintRunInfoLine(line++, gStringVar4, colors);
+    }
+
+    if (MonoType_IsEnabled())
+    {
+        StringCopy(gStringVar4, sText_MonoType);
+        StringAppend(gStringVar4, gTypesInfo[MonoType_GetType()].name);
+        PrintRunInfoLine(line++, gStringVar4, colors);
+    }
+    if (RotationMode_IsEnabled())
+        PrintRunInfoLine(line++, sText_Rotation, colors);
+    if (LimitedParty_IsEnabled())
+        PrintRunInfoLine(line++, sText_LimitedParty, colors);
+    if (FlagGet(FLAG_RANDOMIZE_MON) || FlagGet(FLAG_RANDOMIZE_TYPE) || FlagGet(FLAG_RANDOMIZE_MOVES))
+    {
+        StringCopy(gStringVar4, sText_Randomization);
+        if (FlagGet(FLAG_RANDOMIZE_MON))
+            StringAppend(gStringVar4, sText_RandomSpecies);
+        if (FlagGet(FLAG_RANDOMIZE_TYPE))
+            StringAppend(gStringVar4, sText_RandomTypes);
+        if (FlagGet(FLAG_RANDOMIZE_MOVES))
+            StringAppend(gStringVar4, sText_RandomMoves);
+        PrintRunInfoLine(line++, gStringVar4, colors);
+    }
+}
+
 static void PrintToWindow(u8 windowId, u8 colorIdx)
 {
     const u8 colors[3] = {0,  2,  3}; 
     u8 mapDisplayHeader[24];
     u8 *withoutPrefixPtr, *playTimePtr;
-    u16 dexCount = 0; u8 badgeCount = 0;
-    u32 i = 0;
-
+    u16 dexCount = 0;
+    u8 badgeCount = 0;
+    u32 i;
     FillWindowPixelBuffer(WINDOW_HEADER, PIXEL_FILL(TEXT_COLOR_TRANSPARENT));
     FillWindowPixelBuffer(WINDOW_MIDDLE, PIXEL_FILL(TEXT_COLOR_TRANSPARENT));
 
@@ -874,30 +878,30 @@ static void PrintToWindow(u8 windowId, u8 colorIdx)
     ConvertIntToDecimalStringN(playTimePtr + 1, gSaveBlock2Ptr->playTimeMinutes, STR_CONV_MODE_LEADING_ZEROS, 2);
     AddTextPrinterParameterized4(WINDOW_HEADER, FONT_NORMAL, (104 - 12) + GetStringRightAlignXOffset(FONT_NORMAL, gStringVar4, (6*8)), 1, 0, 0, colors, TEXT_SKIP_DRAW, gStringVar4);
 
-    // Print Dex Numbers if You Have It
-    if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE)
-    {
-        if (IsNationalPokedexEnabled())
-            dexCount = GetNationalPokedexCount(FLAG_GET_CAUGHT);
-        else
-            dexCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
-        ConvertIntToDecimalStringN(gStringVar1, dexCount, STR_CONV_MODE_RIGHT_ALIGN, 4);
-        StringExpandPlaceholders(gStringVar4, sText_DexNum);
-        AddTextPrinterParameterized4(WINDOW_MIDDLE, FONT_NORMAL, 8 + 8, 16 + 2, 0, 0, colors, TEXT_SKIP_DRAW, gStringVar4);
-    }
+    AddTextPrinterParameterized3(WINDOW_MIDDLE, FONT_SMALL, 0, 2, colors, TEXT_SKIP_DRAW, gSaveBlock2Ptr->playerName);
 
-    // Print Badge Numbers if You Have Them
+    // Disable displaying, we just don't have room in the UI
+    // if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE)
+    // {
+    //     if (IsNationalPokedexEnabled())
+    //         dexCount = GetNationalPokedexCount(FLAG_GET_CAUGHT);
+    //     else
+    //         dexCount = GetHoennPokedexCount(FLAG_GET_CAUGHT);
+    //     ConvertIntToDecimalStringN(gStringVar1, dexCount, STR_CONV_MODE_RIGHT_ALIGN, 4);
+    //     StringExpandPlaceholders(gStringVar4, sText_DexNum);
+    //     AddTextPrinterParameterized4(WINDOW_MIDDLE, FONT_SMALL, 32, 2, 0, 0, colors, TEXT_SKIP_DRAW, gStringVar4);
+    // }
+
     for (i = FLAG_BADGE01_GET; i < FLAG_BADGE01_GET + NUM_BADGES; i++)
     {
         if (FlagGet(i))
             badgeCount++;
-    } 
+    }
     ConvertIntToDecimalStringN(gStringVar1, badgeCount, STR_CONV_MODE_LEADING_ZEROS, 1);
     StringExpandPlaceholders(gStringVar4, sText_Badges);
-    AddTextPrinterParameterized4(WINDOW_MIDDLE, FONT_NORMAL, 16, 32 + 2, 0, 0, colors, TEXT_SKIP_DRAW, gStringVar4);
+    AddTextPrinterParameterized4(WINDOW_MIDDLE, FONT_SMALL, 66, 2, 0, 0, colors, TEXT_SKIP_DRAW, gStringVar4);
 
-    // Print Player Name
-    AddTextPrinterParameterized3(WINDOW_MIDDLE, FONT_NORMAL, 16, 2, colors, TEXT_SKIP_DRAW, gSaveBlock2Ptr->playerName);
+    PrintRunInfo(colors);
 
     PutWindowTilemap(WINDOW_HEADER);
     CopyWindowToVram(WINDOW_HEADER, 3);

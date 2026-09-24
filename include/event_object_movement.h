@@ -174,6 +174,7 @@ void FreeAndReserveObjectSpritePalettes(void);
 u8 LoadObjectEventPalette(u16 paletteTag);
 u8 LoadObjectEventPaletteCopy(u16 originalTag, u16 copyTag);
 u8 LoadPlayerObjectEventPalette(enum Gender gender);
+u8 LoadSurfBlobObjectEventPalette(enum Gender gender);
 void SetObjectEventSpritePosByLocalIdAndMap(u8 localId, u8 mapNum, u8 mapGroup, s16 x, s16 y);
 void ResetObjectSubpriority(u8 localId, u8 mapNum, u8 mapGroup);
 void SetObjectSubpriority(u8 localId, u8 mapNum, u8 mapGroup, u8 subpriority);
