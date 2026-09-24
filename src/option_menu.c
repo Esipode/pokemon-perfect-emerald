@@ -190,7 +190,7 @@ static bool32 IsNewGameSequence(void)
 
 static const u8 gText_Option[]             = _("OPTION");
 static const u8 gText_Confirm[]            = _("CONFIRM");
-static const u8 gText_PageNav[]            = _("PAGE");
+static const u8 gText_PageNav[]            = _("{L_BUTTON}{R_BUTTON} Switch page");
 static const u8 gText_SmallDot[]           = _("·");
 static const u8 gText_LargeDot[]           = _("{EMOJI_CIRCLE}");
 

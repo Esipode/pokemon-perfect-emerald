@@ -184,10 +184,6 @@ static void FieldUpdateRegionMap(void)
                 PrintTitleWindowText();
                 break;
         case MAP_INPUT_A_BUTTON:
-        case MAP_INPUT_B_BUTTON:
-                sFieldRegionMapHandler->state++;
-                break;
-        case MAP_INPUT_R_BUTTON:
                 if (sFieldRegionMapHandler->regionMap.mapSecType == MAPSECTYPE_CITY_CANFLY
                     && FlagGet(FLAG_FLY_FROM_TOWN_MAP) && Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == TRUE)
                 {
@@ -199,6 +195,10 @@ static void FieldUpdateRegionMap(void)
                     sFieldRegionMapHandler->choseFlyDestination = TRUE;
                     sFieldRegionMapHandler->state++;
                 }
+                break;
+        case MAP_INPUT_B_BUTTON:
+                sFieldRegionMapHandler->state++;
+                break;
         }
         break;
     case 5:
@@ -237,7 +237,7 @@ static void PrintRegionMapSecName(void)
 
 static void PrintTitleWindowText(void)
 {
-    static const u8 FlyPromptText[] = _("{R_BUTTON} FLY");
+    static const u8 FlyPromptText[] = _("{A_BUTTON} FLY");
     const u8 *region;
     if (IS_FRLG)
         region = gText_Kanto;

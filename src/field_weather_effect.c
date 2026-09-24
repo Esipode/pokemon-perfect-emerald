@@ -5,6 +5,7 @@
 #include "field_weather.h"
 #include "overworld.h"
 #include "random.h"
+#include "rtc.h"
 #include "script.h"
 #include "constants/region_map_sections.h"
 #include "constants/weather.h"
@@ -2658,6 +2659,7 @@ static u8 GetDynamicWeather(void)
         gSaveBlock1Ptr->location.mapNum,
         gMapHeader.mapLayoutId,
         gMapHeader.regionMapSectionId,
+        GetTimeOfDay(),
     };
 
     if (count == 0)
@@ -2701,6 +2703,19 @@ static enum OverworldWeather TranslateWeatherNum(enum OverworldWeather weather)
     }
 
     return WEATHER_NONE;
+}
+
+// Re-rolls a dynamic-weather map when the time of day changes.
+void UpdateDynamicWeatherForTimeOfDay(void)
+{
+    u8 weather;
+
+    if (gMapHeader.weather != WEATHER_DYNAMIC)
+        return;
+
+    weather = GetDynamicWeather();
+    if (weather != GetSavedWeather())
+        SetWeather(weather);
 }
 
 void UpdateWeatherPerDay(u16 increment)

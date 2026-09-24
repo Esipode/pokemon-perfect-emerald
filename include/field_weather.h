@@ -234,6 +234,7 @@ void SetSavedWeatherFromCurrMapHeader(void);
 void SetWeather(enum OverworldWeather weather);
 void DoCurrentWeather(void);
 void UpdateWeatherPerDay(u16 increment);
+void UpdateDynamicWeatherForTimeOfDay(void);
 void ResumePausedWeather(void);
 
 #endif // GUARD_WEATHER_H

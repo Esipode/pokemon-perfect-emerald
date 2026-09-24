@@ -1948,8 +1948,11 @@ static void OverworldBasic(void)
         struct TimeBlendSettings cachedBlend = gTimeBlend;
         u32 *bld0 = (u32*)&cachedBlend;
         u32 *bld1 = (u32*)&gTimeBlend;
+        u8 prevTimeOfDay = gTimeOfDay;
         gTimeUpdateCounter = (SECONDS_PER_MINUTE * 60 / FakeRtc_GetSecondsRatio());
         UpdateTimeOfDay(TRUE);
+        if (gTimeOfDay != prevTimeOfDay)
+            UpdateDynamicWeatherForTimeOfDay();
         FormChangeTimeUpdate();
         if (MapHasNaturalLight(gMapHeader.mapType) &&
            (bld0[0] != bld1[0]

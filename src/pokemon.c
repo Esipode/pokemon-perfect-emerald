@@ -971,9 +971,7 @@ static bool32 IsSpeciesLegendaryOrMythical(enum Species species)
 
     return speciesInfo->isRestrictedLegendary
         || speciesInfo->isSubLegendary
-        || speciesInfo->isMythical
-        || speciesInfo->isUltraBeast
-        || speciesInfo->isParadox;
+        || speciesInfo->isMythical;
 }
 
 // Set before a CreateMon/GetRandomizedSpecies call so the same species rolls differently per
@@ -993,12 +991,12 @@ enum Species GetRandomizedSpecies(enum Species species)
     rng_value_t rngState;
     enum Species randomSpecies;
     u32 attempts;
-    bool32 allowLegendary;
+    bool32 sourceIsLegendary;
 
     if (species == SPECIES_NONE || !FlagGet(FLAG_RANDOMIZE_MON))
         return species;
 
-    allowLegendary = IsSpeciesLegendaryOrMythical(species);
+    sourceIsLegendary = IsSpeciesLegendaryOrMythical(species);
 
     context = sRandomizationSeedContext;
     sRandomizationSeedContext = 0;
@@ -1010,7 +1008,7 @@ enum Species GetRandomizedSpecies(enum Species species)
     {
         randomSpecies = (LocalRandom(&rngState) % (NUM_SPECIES - 1)) + 1;
         if (IsSpeciesValidForRandomization(randomSpecies)
-         && (allowLegendary || !IsSpeciesLegendaryOrMythical(randomSpecies)))
+         && IsSpeciesLegendaryOrMythical(randomSpecies) == sourceIsLegendary)
             return randomSpecies;
     }
 
