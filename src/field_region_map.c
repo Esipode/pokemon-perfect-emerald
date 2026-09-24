@@ -1,9 +1,11 @@
 #include "global.h"
 #include "bg.h"
+#include "decompress.h"
 #include "event_data.h"
 #include "field_effect.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
+#include "landmark.h"
 #include "main.h"
 #include "malloc.h"
 #include "menu.h"
@@ -11,17 +13,21 @@
 #include "palette.h"
 #include "region_map.h"
 #include "sound.h"
+#include "sprite.h"
+#include "string_util.h"
 #include "strings.h"
 #include "text.h"
 #include "text_window.h"
 #include "window.h"
+#include "constants/region_map_sections.h"
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
 /*
  *  This is the type of map shown when interacting with the metatiles for
  *  a wall-mounted Region Map (on the wall of the Pokemon Centers near the PC)
- *  A zooms in/out, B zooms out or closes the map, R flies to the selected city
+ *  A zooms in/out (showing a city map or landmark list), B zooms out or closes the map,
+ *  R flies to the selected city
  *
  *  For the region map in the pokedex, see pokdex_area_screen.c/pokedex_area_region_map.c
  *  For the fly map, and utility functions all of the maps use, see region_map.c
@@ -35,6 +41,21 @@ enum {
 enum {
     TAG_PLAYER_ICON,
     TAG_CURSOR,
+    TAG_CITY_ZOOM = 6,
+    TAG_CITY_ZOOM_PAL = 11,
+};
+
+#define NUM_CITY_MAPS 22
+
+// BG1 offset of the info panel while it is off screen
+#define INFO_PANEL_HIDDEN_Y (-0xA000)
+#define INFO_PANEL_SCROLL_SPEED 0xA00
+
+struct CityMapEntry
+{
+    mapsec_u16_t mapSecId;
+    u16 index;
+    const u32 *tilemap;
 };
 
 static EWRAM_DATA struct {
@@ -43,6 +64,13 @@ static EWRAM_DATA struct {
     struct RegionMap regionMap;
     u16 state;
     bool8 choseFlyDestination;
+    bool8 zoomingIn;
+    bool8 panelScrolling;
+    bool8 cityTextHidden;
+    u8 infoWindowId;
+    struct Sprite *cityZoomTextSprites[3];
+    u8 ALIGNED(2) tilemapBuffer[BG_SCREEN_SIZE];
+    u8 ALIGNED(2) cityMapBuffer[200];
 } *sFieldRegionMapHandler = NULL;
 
 static void MCB2_InitRegionMapRegisters(void);
@@ -51,6 +79,61 @@ static void MCB2_FieldUpdateRegionMap(void);
 static void FieldUpdateRegionMap(void);
 static void PrintRegionMapSecName();
 static void PrintTitleWindowText();
+static void LoadInfoPanelGfx(void);
+static void FreeCityZoomViewGfx(void);
+static void CreateCityZoomTextSprites(void);
+static void SpriteCB_CityZoomText(struct Sprite *sprite);
+static void UpdateMapSecInfoWindow(void);
+static void StartZoom(void);
+static bool32 ScrollInfoPanel(void);
+
+static const u16 sMapSecInfoWindow_Pal[] = INCGFX_U16("graphics/region_map/info_window.pal", ".gbapal");
+static const u16 sCityZoomTiles_Pal[] = INCGFX_U16("graphics/region_map/zoom_tiles.png", ".gbapal");
+static const u32 sCityZoomTiles_Gfx[] = INCGFX_U32("graphics/region_map/zoom_tiles.png", ".4bpp.smol");
+static const u32 sCityZoomText_Gfx[] = INCGFX_U32("graphics/region_map/city_zoom_text.png", ".4bpp.smol");
+
+#include "data/region_map/city_map_tilemaps.h"
+#include "data/region_map/city_map_entries.h"
+
+static const struct CompressedSpriteSheet sCityZoomTextSpriteSheet =
+{
+    sCityZoomText_Gfx, 0x800, TAG_CITY_ZOOM
+};
+
+static const struct SpritePalette sCityZoomSpritePalette = {sCityZoomTiles_Pal, TAG_CITY_ZOOM_PAL};
+
+static const struct OamData sCityZoomTextSprite_OamData =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(32x8),
+    .x = 0,
+    .size = SPRITE_SIZE(32x8),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 0,
+};
+
+static const struct SpriteTemplate sCityZoomTextSpriteTemplate =
+{
+    .tileTag = TAG_CITY_ZOOM,
+    .paletteTag = TAG_CITY_ZOOM_PAL,
+    .oam = &sCityZoomTextSprite_OamData,
+    .callback = SpriteCB_CityZoomText,
+};
+
+static const struct WindowTemplate sMapSecInfoWindowTemplate =
+{
+    .bg = 1,
+    .tilemapLeft = 17,
+    .tilemapTop = 4,
+    .width = 12,
+    .height = 13,
+    .paletteNum = 1,
+    .baseBlock = 0x4C
+};
 
 static const struct BgTemplate sFieldRegionMapBgTemplates[] = {
     {
@@ -60,6 +143,14 @@ static const struct BgTemplate sFieldRegionMapBgTemplates[] = {
         .screenSize = 0,
         .paletteMode = 0,
         .priority = 0,
+        .baseTile = 0
+    }, {
+        .bg = 1,
+        .charBaseIndex = 1,
+        .mapBaseIndex = 30,
+        .screenSize = 0,
+        .paletteMode = 0,
+        .priority = 1,
         .baseTile = 0
     }, {
         .bg = 2,
@@ -102,6 +193,9 @@ void FieldInitRegionMap(MainCallback callback)
     sFieldRegionMapHandler->state = 0;
     sFieldRegionMapHandler->callback = callback;
     sFieldRegionMapHandler->choseFlyDestination = FALSE;
+    sFieldRegionMapHandler->zoomingIn = FALSE;
+    sFieldRegionMapHandler->panelScrolling = FALSE;
+    sFieldRegionMapHandler->cityTextHidden = TRUE;
     SetMainCallback2(MCB2_InitRegionMapRegisters);
 }
 
@@ -153,6 +247,10 @@ static void FieldUpdateRegionMap(void)
         InitRegionMap(&sFieldRegionMapHandler->regionMap, FALSE);
         CreateRegionMapPlayerIcon(TAG_PLAYER_ICON, TAG_PLAYER_ICON);
         CreateRegionMapCursor(TAG_CURSOR, TAG_CURSOR);
+        LoadCompressedSpriteSheet(&sCityZoomTextSpriteSheet);
+        LoadSpritePalette(&sCityZoomSpritePalette);
+        CreateCityZoomTextSprites();
+        LoadInfoPanelGfx();
         sFieldRegionMapHandler->state++;
         break;
     case 1:
@@ -172,7 +270,7 @@ static void FieldUpdateRegionMap(void)
         sFieldRegionMapHandler->state++;
         break;
     case 3:
-        if (!gPaletteFade.active)
+        if (!gPaletteFade.active && !FreeTempTileDataBuffersIfPossible())
         {
             sFieldRegionMapHandler->state++;
         }
@@ -183,22 +281,16 @@ static void FieldUpdateRegionMap(void)
         case MAP_INPUT_MOVE_END:
                 PrintRegionMapSecName();
                 PrintTitleWindowText();
+                if (IsRegionMapZoomed())
+                    UpdateMapSecInfoWindow();
                 break;
         case MAP_INPUT_A_BUTTON:
                 if (!IsEventIslandMapSecId(gMapHeader.regionMapSectionId))
-                {
-                    PlaySE(SE_SELECT);
-                    SetRegionMapDataForZoom();
-                    sFieldRegionMapHandler->state = 7;
-                }
+                    StartZoom();
                 break;
         case MAP_INPUT_B_BUTTON:
                 if (IsRegionMapZoomed())
-                {
-                    PlaySE(SE_SELECT);
-                    SetRegionMapDataForZoom();
-                    sFieldRegionMapHandler->state = 7;
-                }
+                    StartZoom();
                 else
                 {
                     sFieldRegionMapHandler->state++;
@@ -220,7 +312,8 @@ static void FieldUpdateRegionMap(void)
         }
         break;
     case 7:
-        if (!UpdateRegionMapZoom())
+        // Both must run every frame, so no short-circuit
+        if (!(UpdateRegionMapZoom() | ScrollInfoPanel()))
         {
             PrintRegionMapSecName();
             PrintTitleWindowText();
@@ -235,6 +328,7 @@ static void FieldUpdateRegionMap(void)
         if (!gPaletteFade.active)
         {
             FreeRegionMapIconResources();
+            FreeCityZoomViewGfx();
             if (sFieldRegionMapHandler->choseFlyDestination)
                 ReturnToFieldFromFlyMapSelect();
             else
@@ -285,4 +379,219 @@ static void PrintTitleWindowText(void)
         AddTextPrinterParameterized(WIN_TITLE, FONT_NORMAL, region, hoennOffset, 1, 0, NULL);
         CopyWindowToVram(WIN_TITLE, COPYWIN_FULL);
     }
+}
+
+static void StartZoom(void)
+{
+    PlaySE(SE_SELECT);
+    sFieldRegionMapHandler->zoomingIn = !IsRegionMapZoomed();
+    if (sFieldRegionMapHandler->zoomingIn)
+    {
+        UpdateMapSecInfoWindow();
+        ShowBg(1);
+    }
+    sFieldRegionMapHandler->panelScrolling = TRUE;
+    SetRegionMapDataForZoom();
+    sFieldRegionMapHandler->state = 7;
+}
+
+static void LoadInfoPanelGfx(void)
+{
+    u8 windowId;
+
+    BgDmaFill(1, PIXEL_FILL(0), 0x40, 1);
+    BgDmaFill(1, PIXEL_FILL(1), 0x41, 1);
+    CpuFill16(0x1040, sFieldRegionMapHandler->tilemapBuffer, BG_SCREEN_SIZE);
+    SetBgTilemapBuffer(1, sFieldRegionMapHandler->tilemapBuffer);
+    windowId = AddWindow(&sMapSecInfoWindowTemplate);
+    sFieldRegionMapHandler->infoWindowId = windowId;
+    LoadUserWindowBorderGfx_(windowId, 0x42, BG_PLTT_ID(4));
+    DrawTextBorderOuter(windowId, 0x42, 4);
+    DecompressAndCopyTileDataToVram(1, sCityZoomTiles_Gfx, 0, 0, 0);
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
+    PutWindowTilemap(windowId);
+    CopyWindowToVram(windowId, COPYWIN_FULL);
+    LoadPalette(sMapSecInfoWindow_Pal, BG_PLTT_ID(1), sizeof(sMapSecInfoWindow_Pal));
+    LoadPalette(sCityZoomTiles_Pal, BG_PLTT_ID(3), PLTT_SIZE_4BPP);
+    ChangeBgY(1, INFO_PANEL_HIDDEN_Y, BG_COORD_SET);
+    ChangeBgX(1, 0, BG_COORD_SET);
+}
+
+static void FreeCityZoomViewGfx(void)
+{
+    u32 i;
+
+    FreeSpriteTilesByTag(TAG_CITY_ZOOM);
+    FreeSpritePaletteByTag(TAG_CITY_ZOOM_PAL);
+    for (i = 0; i < ARRAY_COUNT(sFieldRegionMapHandler->cityZoomTextSprites); i++)
+        DestroySprite(sFieldRegionMapHandler->cityZoomTextSprites[i]);
+}
+
+static void SetCityZoomTextPosition(void)
+{
+    u32 i;
+    s32 y = 132 - (GetBgY(1) >> 8);
+
+    for (i = 0; i < ARRAY_COUNT(sFieldRegionMapHandler->cityZoomTextSprites); i++)
+    {
+        struct Sprite *sprite = sFieldRegionMapHandler->cityZoomTextSprites[i];
+
+        sprite->y = y;
+        sprite->invisible = sFieldRegionMapHandler->cityTextHidden || y > 160;
+    }
+}
+
+static void CreateCityZoomTextSprites(void)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sFieldRegionMapHandler->cityZoomTextSprites); i++)
+    {
+        u8 spriteId = CreateSprite(&sCityZoomTextSpriteTemplate, 152 + i * 32, 228, 8);
+        struct Sprite *sprite = &gSprites[spriteId];
+
+        sprite->invisible = TRUE;
+        sprite->data[0] = 0;
+        sprite->data[1] = i * 4;
+        sprite->data[2] = sprite->oam.tileNum;
+        sprite->data[3] = 150;
+        sprite->data[4] = i * 4;
+        sprite->oam.tileNum += i * 4;
+        sFieldRegionMapHandler->cityZoomTextSprites[i] = sprite;
+    }
+}
+
+// Slide and cycle through the text key showing what the features on the zoomed city map are
+static void SpriteCB_CityZoomText(struct Sprite *sprite)
+{
+    if (sprite->data[3])
+    {
+        sprite->data[3]--;
+        return;
+    }
+
+    if (++sprite->data[0] > 11)
+        sprite->data[0] = 0;
+
+    if (++sprite->data[1] > 60)
+        sprite->data[1] = 0;
+
+    sprite->oam.tileNum = sprite->data[2] + sprite->data[1];
+    if (sprite->data[5] < 4)
+    {
+        if (sprite->data[0] == 0)
+        {
+            sprite->data[5]++;
+            sprite->data[3] = 120;
+        }
+    }
+    else
+    {
+        if (sprite->data[1] == sprite->data[4])
+        {
+            sprite->data[5] = 0;
+            sprite->data[0] = 0;
+            sprite->data[3] = 120;
+        }
+    }
+}
+
+// Slides the info panel in or out alongside the map zoom. Returns TRUE while scrolling.
+static bool32 ScrollInfoPanel(void)
+{
+    if (!sFieldRegionMapHandler->panelScrolling)
+        return FALSE;
+
+    if (sFieldRegionMapHandler->zoomingIn)
+    {
+        if (ChangeBgY(1, INFO_PANEL_SCROLL_SPEED, BG_COORD_ADD) >= 0)
+        {
+            ChangeBgY(1, 0, BG_COORD_SET);
+            sFieldRegionMapHandler->panelScrolling = FALSE;
+        }
+    }
+    else
+    {
+        if (ChangeBgY(1, INFO_PANEL_SCROLL_SPEED, BG_COORD_SUB) <= INFO_PANEL_HIDDEN_Y)
+        {
+            ChangeBgY(1, INFO_PANEL_HIDDEN_Y, BG_COORD_SET);
+            HideBg(1);
+            sFieldRegionMapHandler->panelScrolling = FALSE;
+        }
+    }
+    SetCityZoomTextPosition();
+    return TRUE;
+}
+
+static void DrawCityMap(mapsec_u16_t mapSecId, u16 pos)
+{
+    u32 i;
+
+    for (i = 0; i < NUM_CITY_MAPS && (sCityMaps[i].mapSecId != mapSecId || sCityMaps[i].index != pos); i++)
+        ;
+
+    if (i == NUM_CITY_MAPS)
+        return;
+
+    DecompressDataWithHeaderWram(sCityMaps[i].tilemap, sFieldRegionMapHandler->cityMapBuffer);
+    FillBgTilemapBufferRect_Palette0(1, 0x1041, 17, 6, 12, 11);
+    CopyToBgTilemapBufferRect(1, sFieldRegionMapHandler->cityMapBuffer, 18, 6, 10, 10);
+}
+
+static void PrintLandmarkNames(mapsec_u16_t mapSecId, u16 pos)
+{
+    u32 i = 0;
+
+    while (1)
+    {
+        const u8 *landmarkName = GetLandmarkName(mapSecId, pos, i);
+        if (!landmarkName)
+            break;
+
+        StringCopyPadded(gStringVar1, landmarkName, CHAR_SPACE, 12);
+        AddTextPrinterParameterized(sFieldRegionMapHandler->infoWindowId, FONT_NARROW, gStringVar1, 0, i * 16 + 17, TEXT_SKIP_DRAW, NULL);
+        i++;
+    }
+}
+
+// Redraws the zoomed view's info panel: name, then a city map or landmark list for the selection
+static void UpdateMapSecInfoWindow(void)
+{
+    struct RegionMap *regionMap = &sFieldRegionMapHandler->regionMap;
+    u8 windowId = sFieldRegionMapHandler->infoWindowId;
+
+    switch (regionMap->mapSecType)
+    {
+    case MAPSECTYPE_CITY_CANFLY:
+        FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
+        PutWindowRectTilemap(windowId, 0, 0, 12, 2);
+        AddTextPrinterParameterized(windowId, FONT_NARROW, regionMap->mapSecName, 0, 1, TEXT_SKIP_DRAW, NULL);
+        DrawCityMap(regionMap->mapSecId, regionMap->posWithinMapSec);
+        CopyWindowToVram(windowId, COPYWIN_FULL);
+        sFieldRegionMapHandler->cityTextHidden = FALSE;
+        break;
+    case MAPSECTYPE_CITY_CANTFLY:
+        FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
+        PutWindowRectTilemap(windowId, 0, 0, 12, 2);
+        AddTextPrinterParameterized(windowId, FONT_NARROW, regionMap->mapSecName, 0, 1, TEXT_SKIP_DRAW, NULL);
+        FillBgTilemapBufferRect(1, 0x1041, 17, 6, 12, 11, 17);
+        CopyWindowToVram(windowId, COPYWIN_FULL);
+        sFieldRegionMapHandler->cityTextHidden = TRUE;
+        break;
+    case MAPSECTYPE_ROUTE:
+    case MAPSECTYPE_BATTLE_FRONTIER:
+        FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
+        PutWindowTilemap(windowId);
+        AddTextPrinterParameterized(windowId, FONT_NARROW, regionMap->mapSecName, 0, 1, TEXT_SKIP_DRAW, NULL);
+        PrintLandmarkNames(regionMap->mapSecId, regionMap->posWithinMapSec);
+        CopyWindowToVram(windowId, COPYWIN_FULL);
+        sFieldRegionMapHandler->cityTextHidden = TRUE;
+        break;
+    case MAPSECTYPE_NONE:
+        FillBgTilemapBufferRect(1, 0x1041, 17, 4, 12, 13, 17);
+        CopyBgTilemapBufferToVram(1);
+        sFieldRegionMapHandler->cityTextHidden = TRUE;
+        break;
+    }
+    SetCityZoomTextPosition();
 }
