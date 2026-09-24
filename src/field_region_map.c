@@ -21,7 +21,7 @@
 /*
  *  This is the type of map shown when interacting with the metatiles for
  *  a wall-mounted Region Map (on the wall of the Pokemon Centers near the PC)
- *  It does not zoom, and pressing A or B closes the map
+ *  A zooms in/out, B zooms out or closes the map, R flies to the selected city
  *
  *  For the region map in the pokedex, see pokdex_area_screen.c/pokedex_area_region_map.c
  *  For the fly map, and utility functions all of the maps use, see region_map.c
@@ -133,6 +133,7 @@ static void VBCB_FieldUpdateRegionMap(void)
     LoadOam();
     ProcessSpriteCopyRequests();
     TransferPlttBuffer();
+    UpdateRegionMapVideoRegs();
 }
 
 static void MCB2_FieldUpdateRegionMap(void)
@@ -184,8 +185,24 @@ static void FieldUpdateRegionMap(void)
                 PrintTitleWindowText();
                 break;
         case MAP_INPUT_A_BUTTON:
+                if (!IsEventIslandMapSecId(gMapHeader.regionMapSectionId))
+                {
+                    PlaySE(SE_SELECT);
+                    SetRegionMapDataForZoom();
+                    sFieldRegionMapHandler->state = 7;
+                }
+                break;
         case MAP_INPUT_B_BUTTON:
-                sFieldRegionMapHandler->state++;
+                if (IsRegionMapZoomed())
+                {
+                    PlaySE(SE_SELECT);
+                    SetRegionMapDataForZoom();
+                    sFieldRegionMapHandler->state = 7;
+                }
+                else
+                {
+                    sFieldRegionMapHandler->state++;
+                }
                 break;
         case MAP_INPUT_R_BUTTON:
                 if (sFieldRegionMapHandler->regionMap.mapSecType == MAPSECTYPE_CITY_CANFLY
@@ -199,6 +216,15 @@ static void FieldUpdateRegionMap(void)
                     sFieldRegionMapHandler->choseFlyDestination = TRUE;
                     sFieldRegionMapHandler->state++;
                 }
+                break;
+        }
+        break;
+    case 7:
+        if (!UpdateRegionMapZoom())
+        {
+            PrintRegionMapSecName();
+            PrintTitleWindowText();
+            sFieldRegionMapHandler->state = 4;
         }
         break;
     case 5:
