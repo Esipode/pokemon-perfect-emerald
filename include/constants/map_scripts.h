@@ -34,6 +34,8 @@
     x. ON_RETURN_TO_FIELD: Run exlusively upon returning to the field, shortly after ON_RESUME (as opposed to ON_RESUME, which also runs once on entering the map)
                            Used rarely, when something must only happen on reload (e.g. making sure Mew is above the grass after battling it on Faraway Island)
 
+    x. ON_STEP: Run immediately after each completed player step, on the current map. Must not use blocking commands (msgbox, waitstate, etc.).
+
 */
 
 #define MAP_SCRIPT_ON_LOAD 1
@@ -43,5 +45,6 @@
 #define MAP_SCRIPT_ON_RESUME 5
 #define MAP_SCRIPT_ON_DIVE_WARP 6
 #define MAP_SCRIPT_ON_RETURN_TO_FIELD 7
+#define MAP_SCRIPT_ON_STEP 8
 
 #endif // GUARD_CONSTANTS_MAP_SCRIPTS_H

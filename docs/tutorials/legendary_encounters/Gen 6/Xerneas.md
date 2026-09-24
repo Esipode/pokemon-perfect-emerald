@@ -1,5 +1,7 @@
 ## Xerneas — The Life Pokémon
 
+### Location: Route 117 - Thursday Morning, Cannot have poison type in party
+
 Everything alive on the field feeds Xerneas's LIFE ENERGY - the more it has, the harder it is to
 hurt. Win by making it spend that energy faster than the field can refill it.
 

@@ -3158,6 +3158,12 @@
 	.2byte \handleVar
 	.endm
 
+	@ Sets VAR_RESULT to TRUE while the overlay has a fade running.
+	.macro overlayisfading handleVar:req
+	callnative Scrcmd_overlayisfading, requests_effects=1
+	.2byte \handleVar
+	.endm
+
 	@ Destroys every map-local overlay at once. Handle variables keep their stale values.
 	.macro overlaydestroymaplocal
 	callnative Scrcmd_overlaydestroymaplocal, requests_effects=1

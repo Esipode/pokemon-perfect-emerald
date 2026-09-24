@@ -88,6 +88,7 @@ void RunOnTransitionMapScript(void);
 void RunOnResumeMapScript(void);
 void RunOnReturnToFieldMapScript(void);
 void RunOnDiveWarpMapScript(void);
+void RunOnStepMapScript(void);
 bool8 TryRunOnFrameMapScript(void);
 void TryRunOnWarpIntoMapScript(void);
 u32 CalculateRamScriptChecksum(void);

@@ -215,5 +215,6 @@ void Overlay_SetTransient(OverlayId id);
 OverlayId Overlay_Create(const struct OverlayConfig *config);
 void Overlay_Destroy(OverlayId id);
 bool32 Overlay_IsValid(OverlayId id);
+bool32 Overlay_IsFading(OverlayId id);
 
 #endif // GUARD_OVERWORLD_OVERLAY_H

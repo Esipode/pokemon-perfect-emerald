@@ -460,6 +460,11 @@ void RunOnDiveWarpMapScript(void)
     MapHeaderRunScriptType(MAP_SCRIPT_ON_DIVE_WARP);
 }
 
+void RunOnStepMapScript(void)
+{
+    MapHeaderRunScriptType(MAP_SCRIPT_ON_STEP);
+}
+
 bool8 TryRunOnFrameMapScript(void)
 {
     const u8 *ptr = MapHeaderCheckScriptTable(MAP_SCRIPT_ON_FRAME_TABLE);

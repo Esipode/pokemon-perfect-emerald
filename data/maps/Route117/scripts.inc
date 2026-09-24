@@ -3,6 +3,9 @@
 
 Route117_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, Route117_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route117_OnLoad
+	map_script MAP_SCRIPT_ON_RESUME, Route117_OnResume
+	map_script MAP_SCRIPT_ON_STEP, Route117_OnStep
 	.byte 0
 
 Route117_OnTransition:
@@ -10,10 +13,172 @@ Route117_OnTransition:
 	@ set flags for OW daycare mons
 	setflag FLAG_TEMP_1
 	setflag FLAG_TEMP_2
+	updatelegendaryvisibility SPECIES_XERNEAS, FLAG_HIDE_XERNEAS
 	getdaycaregfx VAR_OBJ_GFX_ID_0, VAR_OBJ_GFX_ID_1, VAR_TEMP_0, VAR_TEMP_1
 	switch VAR_RESULT
 	case 2, Route117_EventScript_ShowDaycareMon1
 	case 1, Route117_EventScript_ShowDaycareMon0
+	end
+
+Route117_OnLoad:
+	@ Xerneas spawn gate: post-game, not already owned, Thursday morning, no Poison-type in party
+	setvar VAR_0x8004, SPECIES_XERNEAS
+	setvar VAR_0x8005, LAYOUT_ROUTE117
+	setvar VAR_0x8006, WEEKDAY_THU
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route117_HideXerneasArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_MORNING, Route117_HideXerneasArena
+	checkpartytype TYPE_POISON
+	goto_if_eq VAR_RESULT, TRUE, Route117_HideXerneasArena
+	goto Route117_ShowXerneasArena
+
+Route117_Xerneas_Encounter::
+	goto LegendaryEncounter_EventScript_Xerneas
+
+Route117_HideXerneasArena:
+	setflag FLAG_HIDE_XERNEAS
+	end
+
+Route117_ShowXerneasArena:
+	@ Park every NPC off-map while Xerneas is active. ON_LOAD runs before objects spawn,
+	@ so unspawned objects never appear; templates reload on the next map load.
+	setobjectxyperm 1, 999, 999
+	setobjectxyperm 2, 999, 999
+	setobjectxyperm LOCALID_DAYCARE_MAN, 999, 999
+	setobjectxyperm 4, 999, 999
+	setobjectxyperm 5, 999, 999
+	setobjectxyperm 6, 999, 999
+	setobjectxyperm 7, 999, 999
+	setobjectxyperm 8, 999, 999
+	setobjectxyperm 9, 999, 999
+	setobjectxyperm 10, 999, 999
+	setobjectxyperm 17, 999, 999
+	setobjectxyperm 18, 999, 999
+	setobjectxyperm 19, 999, 999
+	setobjectxyperm 20, 999, 999
+	setobjectxyperm 21, 999, 999
+	setobjectxyperm 22, 999, 999
+	setobjectxyperm 23, 999, 999
+	setobjectxyperm 24, 999, 999
+	setobjectxyperm LOCALID_DAYCARE_MON_0, 999, 999
+	setobjectxyperm LOCALID_DAYCARE_MON_1, 999, 999
+
+	setmetatilewithelevation 39, 8, 0x129, FALSE, 3
+	setmetatilewithelevation 40, 8, 0x129, FALSE, 3
+	setmetatilewithelevation 41, 8, 0x129, FALSE, 3
+	setmetatilewithelevation 42, 8, 0x129, FALSE, 3
+	setmetatilewithelevation 43, 8, 0x129, FALSE, 3
+	setmetatilewithelevation 44, 8, 0x129, FALSE, 3
+	setmetatilewithelevation 45, 8, 0x129, FALSE, 3
+	setmetatilewithelevation 46, 8, 0x129, FALSE, 3
+
+	setmetatilewithelevation 38, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 39, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 40, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 41, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 42, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 43, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 44, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 45, 9, 0x20A, FALSE, 3
+	setmetatilewithelevation 46, 9, 0x20A, FALSE, 3
+
+	setmetatilewithelevation 37, 10, 0x20A, FALSE, 3
+	setmetatilewithelevation 38, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 39, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 40, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 41, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 42, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 43, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 44, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 45, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 46, 10, 0x001, FALSE, 3
+	setmetatilewithelevation 47, 10, 0x20A, FALSE, 3
+	setmetatilewithelevation 48, 10, 0x20A, FALSE, 3
+
+	setmetatilewithelevation 36, 11, 0x20A, FALSE, 3
+	setmetatilewithelevation 38, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 39, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 40, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 41, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 42, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 43, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 44, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 45, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 46, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 47, 11, 0x001, FALSE, 3
+	setmetatilewithelevation 49, 11, 0x20A, FALSE, 3
+
+	setmetatilewithelevation 36, 12, 0x20A, FALSE, 3
+	setmetatilewithelevation 38, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 39, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 40, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 41, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 42, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 43, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 44, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 45, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 46, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 47, 12, 0x001, FALSE, 3
+	setmetatilewithelevation 49, 12, 0x20A, FALSE, 3
+
+	setmetatilewithelevation 37, 13, 0x20A, FALSE, 3
+	setmetatilewithelevation 38, 13, 0x001, FALSE, 3
+	setmetatilewithelevation 39, 13, 0x001, FALSE, 3
+	setmetatilewithelevation 45, 13, 0x001, FALSE, 3
+	setmetatilewithelevation 46, 13, 0x001, FALSE, 3
+	setmetatilewithelevation 48, 13, 0x20A, FALSE, 3
+
+	setmetatilewithelevation 37, 14, 0x20A, FALSE, 3
+	setmetatilewithelevation 38, 14, 0x001, FALSE, 3
+	setmetatilewithelevation 39, 14, 0x001, FALSE, 3
+	setmetatilewithelevation 45, 14, 0x001, FALSE, 3
+	setmetatilewithelevation 46, 14, 0x001, FALSE, 3
+	setmetatilewithelevation 48, 14, 0x20A, FALSE, 3
+
+	setmetatilewithelevation 38, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 39, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 40, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 41, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 42, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 43, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 44, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 45, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 46, 15, 0x20A, FALSE, 3
+	setmetatilewithelevation 47, 15, 0x20A, FALSE, 3
+
+	end
+
+Route117_OnResume:
+	@ Flash overlay: VAR_TEMP_4 = handle, VAR_TEMP_5 = last flash colour (0 green, 1 pink).
+	@ Created here because map-local overlays are destroyed after ON_LOAD; the destroy clears any stale handle.
+	@ Intensity scales with distance to Xerneas; each step re-fires the flash (Route117_OnStep).
+	goto_if_set FLAG_HIDE_XERNEAS, Route117_OnResumeEnd
+	overlaydestroy VAR_TEMP_4
+	overlaycreate RGB(8, 31, 12), 0, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_4
+	overlayanchorobject VAR_TEMP_4, LOCALID_XERNEAS
+	overlayfalloff VAR_TEMP_4, 2, 14, 0, 16
+Route117_OnResumeEnd:
+	end
+
+Route117_OnStep:
+	goto_if_set FLAG_HIDE_XERNEAS, Route117_OnStepEnd
+	@ Skip the step while the last flash is still fading (15 frames = 250ms)
+	overlayisfading VAR_TEMP_4
+	goto_if_eq VAR_RESULT, TRUE, Route117_OnStepEnd
+	goto_if_eq VAR_TEMP_5, 0, Route117_XerneasFlashPink
+	setvar VAR_TEMP_5, 0
+	overlaysetcolor VAR_TEMP_4, RGB(8, 31, 12)
+	goto Route117_XerneasFlash
+
+Route117_XerneasFlashPink:
+	setvar VAR_TEMP_5, 1
+	overlaysetcolor VAR_TEMP_4, RGB(31, 14, 24)
+Route117_XerneasFlash:
+	overlaysetalpha VAR_TEMP_4, 8
+	overlayfade VAR_TEMP_4, 0, 30
+Route117_OnStepEnd:
 	end
 
 Route117_EventScript_ShowDaycareMon1:

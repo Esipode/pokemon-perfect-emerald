@@ -795,6 +795,13 @@ bool32 Overlay_IsValid(OverlayId id)
     return GetOverlay(id) != NULL;
 }
 
+bool32 Overlay_IsFading(OverlayId id)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    return overlay != NULL && overlay->fadeDuration != 0;
+}
+
 void Overlay_Enable(OverlayId id)
 {
     struct Overlay *overlay = GetOverlay(id);

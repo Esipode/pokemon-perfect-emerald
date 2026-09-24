@@ -723,6 +723,7 @@ static bool32 TrySetupDiveEmergeScript(void)
 
 bool8 TryStartStepBasedScript(struct MapPosition *position, u16 metatileBehavior, enum Direction direction)
 {
+    RunOnStepMapScript();
     if (TryStartCoordEventScript(position) == TRUE)
         return TRUE;
     if (TryStartWarpEventScript(position, metatileBehavior) == TRUE)

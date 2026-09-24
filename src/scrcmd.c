@@ -3738,6 +3738,18 @@ bool8 Scrcmd_overlaydestroy(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// VAR_RESULT = TRUE while the overlay has a fade running; FALSE on a stale or invalid handle.
+bool8 Scrcmd_overlayisfading(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(VAR_RESULT);
+
+    gSpecialVar_Result = Overlay_IsFading(id);
+    return FALSE;
+}
+
 // Destroys every map-local overlay. Handle variables keep their now-stale values.
 bool8 Scrcmd_overlaydestroymaplocal(struct ScriptContext *ctx)
 {
