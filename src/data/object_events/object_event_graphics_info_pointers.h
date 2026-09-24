@@ -248,6 +248,9 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedVSSeeker
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedVSSeekerBike;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenNormal;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenUnderwater;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenWatering;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenSurf;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenFieldMove;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GreenFish;
@@ -660,6 +663,9 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_RED_VS_SEEKER_BIKE] =       &gObjectEventGraphicsInfo_RedVSSeekerBike,
     [OBJ_EVENT_GFX_GREEN_NORMAL] =             &gObjectEventGraphicsInfo_GreenNormal,
     [OBJ_EVENT_GFX_GREEN_BIKE] =               &gObjectEventGraphicsInfo_GreenBike,
+    [OBJ_EVENT_GFX_GREEN_ACRO_BIKE] =          &gObjectEventGraphicsInfo_GreenAcroBike,
+    [OBJ_EVENT_GFX_GREEN_UNDERWATER] =         &gObjectEventGraphicsInfo_GreenUnderwater,
+    [OBJ_EVENT_GFX_GREEN_WATERING] =           &gObjectEventGraphicsInfo_GreenWatering,
     [OBJ_EVENT_GFX_GREEN_SURF] =               &gObjectEventGraphicsInfo_GreenSurf,
     [OBJ_EVENT_GFX_GREEN_FIELD_MOVE] =         &gObjectEventGraphicsInfo_GreenFieldMove,
     [OBJ_EVENT_GFX_GREEN_FISH] =               &gObjectEventGraphicsInfo_GreenFish,

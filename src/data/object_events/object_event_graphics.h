@@ -484,6 +484,8 @@ const u16 gObjectEventPic_GreenBike[] = INCGFX_U16("graphics/object_events/pics/
 const u16 gObjectEventPic_GreenSurf[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_surf.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenSurfRun[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_surf_run.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_GreenFish[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_fish.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_GreenUnderwater[] = INCGFX_U16("graphics/object_events/pics/people/leaf/underwater.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_GreenWatering[] = INCGFX_U16("graphics/object_events/pics/people/leaf/watering.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_GreenItem[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_item.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_GreenVSSeekerBike[] = INCGFX_U16("graphics/object_events/pics/people/leaf/green_vs_seeker_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
 
