@@ -26,9 +26,7 @@ NavelRock_Entrance_HideYveltalArena:
 	setflag FLAG_HIDE_YVELTAL
 	end
 
-@ Handles: VAR_TEMP_5 red overlay, VAR_TEMP_6 black overlay (half a period out of phase), VAR_TEMP_7 wave.
 NavelRock_Entrance_ShowYveltalArena:
-	@ TODO(user): tune overlay opacity/period and wave intensity/falloff on hardware
 	overlaycreate RGB(31, 0, 0), 0, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
 	overlaypulse VAR_TEMP_5, 0, 6, 240, 0
 	overlaycreate RGB(0, 0, 0), 0, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_6

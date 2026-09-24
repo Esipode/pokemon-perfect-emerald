@@ -1,5 +1,7 @@
 ## Zygarde — The Order Pokémon
 
+### Location: Underwater Route 124 - after catching Xerneas and Yveltal
+
 Zygarde corrects whoever is winning - including itself. Pull far ahead and it claws you back;
 let it run away with the fight and it will dismantle its own lead. The only losing move is
 repeating yourself.
