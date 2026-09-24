@@ -1,5 +1,7 @@
 ## Hoopa — The Mischief Pokémon
 
+### Location: Mt. Pyre Summit - Saturday night
+
 Hoopa fights from inside its own rings: immune to OHKO, fixed-damage, HP-swap and shared-KO moves,
 incoming type effectiveness capped at 2x, flat Toxic damage, and a damage reduction that never
 drops below 60%. Its ability is **Magician**.

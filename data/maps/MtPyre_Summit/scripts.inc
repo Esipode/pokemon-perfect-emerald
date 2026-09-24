@@ -1,9 +1,49 @@
 MtPyre_Summit_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, MtPyre_Summit_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, MtPyre_Summit_OnLoad
 	.byte 0
 
 MtPyre_Summit_OnTransition:
 	call_if_eq VAR_MT_PYRE_STATE, 2, MtPyre_Summit_EventScript_SetArchieMaxiePositions
+	updatelegendaryvisibility SPECIES_HOOPA, FLAG_HIDE_HOOPA
+	end
+
+MtPyre_Summit_OnLoad:
+	setvar VAR_0x8004, SPECIES_HOOPA
+	setvar VAR_0x8005, LAYOUT_MT_PYRE_SUMMIT
+	setvar VAR_0x8006, WEEKDAY_SAT
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, MtPyre_Summit_HideHoopaArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_NIGHT, MtPyre_Summit_HideHoopaArena
+	@ State 3: Archie and Maxie have returned the orbs
+	goto_if_lt VAR_MT_PYRE_STATE, 3, MtPyre_Summit_HideHoopaArena
+	goto MtPyre_Summit_ShowHoopaArena
+
+MtPyre_Summit_Hoopa_Encounter::
+	@ Ripple fires at full strength on interaction, then the battle starts
+	screenfxripple VAR_TEMP_7, 16, 0, 60
+	delay 60
+	goto LegendaryEncounter_EventScript_Hoopa
+
+MtPyre_Summit_HideHoopaArena:
+	setflag FLAG_HIDE_HOOPA
+	end
+
+@ FLAG_TEMP_1 hides the old man and old lady while Hoopa is present; warps clear it.
+MtPyre_Summit_ShowHoopaArena:
+	setflag FLAG_TEMP_1
+	@ Yellow tint, tear and wave on Hoopa, all stronger with proximity
+	overlaycreate RGB(31, 31, 0), 12, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
+	overlayanchorobject VAR_TEMP_5, LOCALID_MT_PYRE_SUMMIT_HOOPA
+	overlayfalloff VAR_TEMP_5, 2, 14, 0, 8
+	screenfxtear VAR_TEMP_6, 10, 0, SCREENFX_TEAR_CENTER_AUTO, 0
+	screenfxanchorobject VAR_TEMP_6, LOCALID_MT_PYRE_SUMMIT_HOOPA
+	screenfxfalloff VAR_TEMP_6, 2, 14, 0, 16
+	screenfxwave VAR_TEMP_8, 8, 75, 0, 0
+	screenfxanchorobject VAR_TEMP_8, LOCALID_MT_PYRE_SUMMIT_HOOPA
+	screenfxfalloff VAR_TEMP_8, 2, 14, 0, 16
 	end
 
 MtPyre_Summit_EventScript_SetArchieMaxiePositions::
