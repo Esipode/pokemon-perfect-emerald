@@ -3107,12 +3107,14 @@
 	.endm
 
 	@ Pulses the overlay between min and max opacity (0-16) with a triangle wave of periodFrames.
-	.macro overlaypulse handleVar:req, minOpacity:req, maxOpacity:req, periodFrames:req
+	@ phaseFrames starts the wave that far into its period; periodFrames / 2 starts at the maximum.
+	.macro overlaypulse handleVar:req, minOpacity:req, maxOpacity:req, periodFrames:req, phaseFrames=0
 	callnative Scrcmd_overlaypulse, requests_effects=1
 	.2byte \handleVar
 	.2byte \minOpacity
 	.2byte \maxOpacity
 	.2byte \periodFrames
+	.2byte \phaseFrames
 	.endm
 
 	@ Anchors the overlay to an object on the current map; localId 0 is the player.

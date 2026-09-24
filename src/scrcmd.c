@@ -3659,11 +3659,15 @@ bool8 Scrcmd_overlaypulse(struct ScriptContext *ctx)
     u16 minOpacity = VarGet(ScriptReadHalfword(ctx));
     u16 maxOpacity = VarGet(ScriptReadHalfword(ctx));
     u16 periodFrames = VarGet(ScriptReadHalfword(ctx));
+    u16 phaseFrames = VarGet(ScriptReadHalfword(ctx));
 
     Script_RequestEffects(SCREFF_V1);
 
     if (Overlay_IsValid(id))
+    {
         Overlay_Pulse(id, min(minOpacity, OVERLAY_OPACITY_MAX), min(maxOpacity, OVERLAY_OPACITY_MAX), periodFrames);
+        Overlay_SetPulsePhase(id, phaseFrames);
+    }
 
     return FALSE;
 }

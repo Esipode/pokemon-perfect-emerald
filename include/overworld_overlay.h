@@ -144,6 +144,8 @@ void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames);
 // Triangle-wave pulse between minOpacity and maxOpacity, starting at the minimum.
 // Multiplies the fade output; it does not replace it. Periods under 2 frames clear the pulse.
 void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames);
+// Moves a running pulse to phaseFrames into its period; period / 2 is the maximum. No-op without a pulse.
+void Overlay_SetPulsePhase(OverlayId id, u16 phaseFrames);
 // Clears the pulse only; any running fade continues.
 void Overlay_StopAnimation(OverlayId id);
 

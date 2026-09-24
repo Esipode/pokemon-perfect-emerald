@@ -1,5 +1,7 @@
 ## Volcanion — The Steam Pokémon
 
+### Location: Seafloor Cavern Room 9 - After catching Kyogre, with a Fire type and a Water type in the party
+
 Volcanion is barely dentable at rest. It vents its own built-up pressure the moment nothing stops
 it - but a vent raises a field of its own steam, and Volcanion can't vent while that field still
 stands. Push it hard enough during that window and it overloads, and that overload is your real

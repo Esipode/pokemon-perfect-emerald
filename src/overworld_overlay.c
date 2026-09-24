@@ -893,6 +893,16 @@ void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames)
     overlay->pulsePhase = 0;
 }
 
+void Overlay_SetPulsePhase(OverlayId id, u16 phaseFrames)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || overlay->pulsePeriod == 0)
+        return;
+
+    overlay->pulsePhase = phaseFrames % overlay->pulsePeriod;
+}
+
 // Clears the pulse only; the fade and currentOpacity are untouched.
 void Overlay_StopAnimation(OverlayId id)
 {

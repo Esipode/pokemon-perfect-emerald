@@ -1,5 +1,14 @@
 SeafloorCavern_Room4_MapScripts::
+	map_script MAP_SCRIPT_ON_LOAD, SeafloorCavern_Room4_OnLoad
 	.byte 0
+
+SeafloorCavern_Room4_OnLoad:
+	@ Volcanion quakes: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 8
+	setvar VAR_0x8009, 75
+	setvar VAR_0x800A, 750
+	call LegendaryEncounter_EventScript_VolcanionQuake
+	end
 
 SeafloorCavern_Room4_EventScript_Grunt3::
 	trainerbattle_single TRAINER_GRUNT_SEAFLOOR_CAVERN_3, SeafloorCavern_Room4_Text_Grunt3Intro, SeafloorCavern_Room4_Text_Grunt3Defeat

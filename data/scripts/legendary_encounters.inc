@@ -1310,3 +1310,26 @@ LegendaryEncounter_EventScript_TerrakionQuake::
 	screenfxpulse VAR_TEMP_8, VAR_0x8009, VAR_0x800A, SE_M_EARTHQUAKE
 LegendaryEncounter_EventScript_TerrakionQuakeDone:
 	return
+
+LegendaryEncounter_EventScript_VolcanionSpawnGate::
+	setvar VAR_0x8004, SPECIES_VOLCANION
+	setvar VAR_0x8005, LAYOUT_SEAFLOOR_CAVERN_ROOM9
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_VolcanionSpawnGateDone
+	getcaughtmon SPECIES_KYOGRE
+	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_VolcanionSpawnGateDone
+	checkpartytype TYPE_FIRE
+	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_VolcanionSpawnGateDone
+	checkpartytype TYPE_WATER
+LegendaryEncounter_EventScript_VolcanionSpawnGateDone:
+	return
+
+LegendaryEncounter_EventScript_VolcanionQuake::
+	call LegendaryEncounter_EventScript_VolcanionSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_VolcanionQuakeDone
+	screenfxshake VAR_TEMP_8, VAR_0x8008, 32, SCREENFX_AXIS_X | SCREENFX_AXIS_Y, 0
+	screenfxpulse VAR_TEMP_8, VAR_0x8009, VAR_0x800A, SE_M_EARTHQUAKE
+LegendaryEncounter_EventScript_VolcanionQuakeDone:
+	return

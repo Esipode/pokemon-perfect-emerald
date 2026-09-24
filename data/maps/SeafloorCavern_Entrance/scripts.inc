@@ -1,10 +1,19 @@
 SeafloorCavern_Entrance_MapScripts::
 	map_script MAP_SCRIPT_ON_RESUME, SeafloorCavern_Entrance_OnResume
+	map_script MAP_SCRIPT_ON_LOAD, SeafloorCavern_Entrance_OnLoad
 	.byte 0
 
 SeafloorCavern_Entrance_OnResume:
 	setdivewarp MAP_UNDERWATER_SEAFLOOR_CAVERN, 6, 5
 	setescapewarp MAP_UNDERWATER_SEAFLOOR_CAVERN, 6, 5
+	end
+
+SeafloorCavern_Entrance_OnLoad:
+	@ Volcanion quakes: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 3
+	setvar VAR_0x8009, 50
+	setvar VAR_0x800A, 1500
+	call LegendaryEncounter_EventScript_VolcanionQuake
 	end
 
 SeafloorCavern_Entrance_EventScript_Grunt::

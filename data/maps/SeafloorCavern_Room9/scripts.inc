@@ -1,5 +1,41 @@
 SeafloorCavern_Room9_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, SeafloorCavern_Room9_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, SeafloorCavern_Room9_OnLoad
 	.byte 0
+
+SeafloorCavern_Room9_OnTransition:
+	updatelegendaryvisibility SPECIES_VOLCANION, FLAG_HIDE_VOLCANION
+	end
+
+SeafloorCavern_Room9_OnLoad:
+	@ Volcanion spawn gate: post-game, not already owned, Kyogre caught, Fire and Water types in party
+	call LegendaryEncounter_EventScript_VolcanionSpawnGate
+	goto_if_eq VAR_RESULT, FALSE, SeafloorCavern_Room9_HideVolcanionArena
+	@ Strongest quake tier: shake intensity, active frames, idle frames
+	setvar VAR_0x8008, 16
+	setvar VAR_0x8009, 100
+	setvar VAR_0x800A, 150
+	call LegendaryEncounter_EventScript_VolcanionQuake
+	goto SeafloorCavern_Room9_ShowVolcanionArena
+
+SeafloorCavern_Room9_Volcanion_Encounter::
+	goto LegendaryEncounter_EventScript_Volcanion
+
+SeafloorCavern_Room9_HideVolcanionArena:
+	setflag FLAG_HIDE_VOLCANION
+	end
+
+SeafloorCavern_Room9_ShowVolcanionArena:
+	@ Red and blue tints pulsing out of phase, both stronger with proximity
+	overlaycreate RGB(31, 6, 2), 10, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
+	overlaypulse VAR_TEMP_5, 0, 16, 120
+	overlayanchorpos VAR_TEMP_5, 17, 38
+	overlayfalloff VAR_TEMP_5, 2, 14, 0, 16
+	overlaycreate RGB(2, 10, 31), 10, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_6
+	overlaypulse VAR_TEMP_6, 0, 16, 120, 60
+	overlayanchorpos VAR_TEMP_6, 17, 38
+	overlayfalloff VAR_TEMP_6, 2, 14, 0, 16
+	end
 
 SeafloorCavern_Room9_EventScript_ArchieAwakenKyogre::
 	lockall
