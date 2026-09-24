@@ -144,7 +144,7 @@ ALIGNED(4) const u8 gFontShortLatinGlyphWidths[] = {
     8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  3,
 };
 
-ALIGNED(4) const u16 gFontNormalLatinGlyphs[] = INCGFX_U16("graphics/fonts/latin_normal.png", ".latfont");
+ALIGNED(4) const u16 gFontNormalLatinGlyphs[] = INCGFX_U16("graphics/fonts/latin_normal_frlg_with_rse_spacing.png", ".latfont");
 ALIGNED(4) const u8 gFontNormalLatinGlyphWidths[] = {
     3,  6,  6,  6,  6,  6,  6,  6,  6,  6,  3,  6,  6,  6,  6,  6,
     8,  6,  6,  6,  6,  6,  6,  6,  3,  6,  6,  6,  6,  6,  6,  3,
