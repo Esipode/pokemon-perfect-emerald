@@ -607,3 +607,4 @@ gSpecials::
 	def_special EnableShopEvResetOption
 	def_special BufferEvResetCost
 	def_special ResetPartyMonEvs
+	def_special CanTornadusWindPushStep

@@ -4,6 +4,8 @@
 void PlayerStep(enum Direction direction, u16 newKeys, u16 heldKeys);
 bool8 TryDoMetatileBehaviorForcedMovement();
 void ClearPlayerAvatarInfo(void);
+bool32 TornadusWind_TryStartScript(void);
+u16 CanTornadusWindPushStep(void);
 void SetPlayerAvatarExtraStateTransition(u16 graphicsId, u8 transitionFlag);
 enum Gender GetPlayerAvatarGenderByGraphicsId(u16 gfxId);
 u8 TestPlayerAvatarFlags(u8 flag);

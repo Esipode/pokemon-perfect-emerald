@@ -1,6 +1,7 @@
 SkyPillar_Top_MapScripts::
 	map_script MAP_SCRIPT_ON_RESUME, SkyPillar_Top_OnResume
 	map_script MAP_SCRIPT_ON_TRANSITION, SkyPillar_Top_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, SkyPillar_Top_OnLoad
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, SkyPillar_Top_OnWarp
 	.byte 0
 
@@ -18,6 +19,7 @@ SkyPillar_Top_EventScript_TryRemoveRayquaza::
 SkyPillar_Top_OnTransition:
 	call_if_lt VAR_SKY_PILLAR_STATE, 2, SkyPillar_Top_EventScript_SetCleanLayout
 	call_if_ge VAR_SKY_PILLAR_STATE, 2, SkyPillar_Top_EventScript_TryShowRayquaza
+	updatelegendaryvisibility SPECIES_TORNADUS, FLAG_HIDE_TORNADUS
 	end
 
 SkyPillar_Top_EventScript_SetCleanLayout::
@@ -136,3 +138,67 @@ SkyPillar_Top_Movement_CameraPanDown:
 SkyPillar_Top_Text_RayquazaFlewOff:
 	.string "The awakened RAYQUAZA flew off…$"
 
+SkyPillar_Top_OnLoad:
+	@ Tornadus spawn gate: post-game, not already owned, Friday evening, Rayquaza already caught
+	setvar VAR_0x8004, SPECIES_TORNADUS
+	setvar VAR_0x8005, LAYOUT_SKY_PILLAR_TOP
+	setvar VAR_0x8006, WEEKDAY_FRI
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, SkyPillar_Top_HideTornadusArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_EVENING, SkyPillar_Top_HideTornadusArena
+	getcaughtmon SPECIES_RAYQUAZA
+	goto_if_eq VAR_RESULT, FALSE, SkyPillar_Top_HideTornadusArena
+	end
+
+SkyPillar_Top_Tornadus_Encounter::
+	goto LegendaryEncounter_EventScript_Tornadus
+
+SkyPillar_Top_HideTornadusArena:
+	setflag FLAG_HIDE_TORNADUS
+	end
+
+SkyPillar_Top_EventScript_TornadusWindWarn::
+	lockall
+	msgbox SkyPillar_Top_Text_TornadusWindWarn, MSGBOX_DEFAULT
+	releaseall
+	end
+
+SkyPillar_Top_EventScript_TornadusWindFling::
+	lockall
+	msgbox SkyPillar_Top_Text_TornadusWindFling, MSGBOX_DEFAULT
+	closemessage
+	call SkyPillar_Top_EventScript_TornadusWindMove
+	releaseall
+	end
+
+SkyPillar_Top_EventScript_TornadusWindPush::
+	lockall
+	call SkyPillar_Top_EventScript_TornadusWindMove
+	releaseall
+	end
+
+@ Moves the player south up to VAR_0x8004 tiles, keeping their facing.
+@ Rechecks the tile ahead before every step.
+SkyPillar_Top_EventScript_TornadusWindMove::
+	goto_if_eq VAR_0x8004, 0, Common_EventScript_NopReturn
+	specialvar VAR_RESULT, CanTornadusWindPushStep
+	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_NopReturn
+	applymovement LOCALID_PLAYER, SkyPillar_Top_Movement_TornadusWindStep
+	waitmovement 0
+	subvar VAR_0x8004, 1
+	goto SkyPillar_Top_EventScript_TornadusWindMove
+
+SkyPillar_Top_Movement_TornadusWindStep:
+	lock_facing_direction
+	walk_faster_down
+	unlock_facing_direction
+	step_end
+
+SkyPillar_Top_Text_TornadusWindWarn:
+	.string "A fierce wind pushes you back!$"
+
+SkyPillar_Top_Text_TornadusWindFling:
+	.string "TORNADUS exerts even more force!\n"
+	.string "The wind hurls you backward!$"

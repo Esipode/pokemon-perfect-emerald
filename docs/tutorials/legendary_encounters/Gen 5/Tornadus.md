@@ -1,5 +1,8 @@
 ## Tornadus — The Cyclone Pokémon
 
+### Location: Sky Pillar Top - Friday evenings, post-game, only after Rayquaza has been caught
+
+
 Tornadus fights behind the usual legendary package: a damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be taken below 1 HP** until the very end, so the catch window is guaranteed

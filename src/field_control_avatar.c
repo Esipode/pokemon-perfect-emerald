@@ -207,6 +207,8 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     // script (Birch's rescue, etc.) is never pre-empted.
     if (Recruits_TryStartFieldScript() == TRUE)
         return TRUE;
+    if (TornadusWind_TryStartScript() == TRUE)
+        return TRUE;
     if (Draft_TryStartFieldScript() == TRUE)
         return TRUE;
 

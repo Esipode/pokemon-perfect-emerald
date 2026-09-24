@@ -126,7 +126,7 @@ static bool8 PlayerIsAnimActive(void);
 static bool8 PlayerCheckIfAnimFinishedOrInactive(void);
 
 static void PlayerWalkSlowStairs(enum Direction direction);
-static void UNUSED PlayerWalkSlow(enum Direction direction);
+static void PlayerWalkSlow(enum Direction direction);
 static void PlayerRunSlow(enum Direction direction);
 static void PlayerRun(enum Direction);
 static void PlayerNotOnBikeCollide(enum Direction);
@@ -886,6 +886,143 @@ static void PlayerNotOnBikeTurningInPlace(enum Direction direction, u16 heldKeys
     PlayerTurnInPlace(direction);
 }
 
+#define TORNADUS_WIND_RADIUS        5
+#define TORNADUS_WIND_CLOSE_RADIUS  2
+#define TORNADUS_WIND_FLING_TILES   5
+#define TORNADUS_WIND_PUSH_FRAMES   120
+
+// Stored in VAR_TEMP_0, so it resets on every map load.
+enum TornadusWindStage
+{
+    TORNADUS_WIND_STAGE_NONE,
+    TORNADUS_WIND_STAGE_WARNED,
+    TORNADUS_WIND_STAGE_FLUNG,
+};
+
+extern const u8 SkyPillar_Top_EventScript_TornadusWindWarn[];
+extern const u8 SkyPillar_Top_EventScript_TornadusWindFling[];
+extern const u8 SkyPillar_Top_EventScript_TornadusWindPush[];
+
+// Sky Pillar Top: while Tornadus is on the map, its wind acts on the player within a Chebyshev radius.
+static bool8 GetTornadusWindDistance(s32 *distance)
+{
+    u32 i;
+    struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
+
+    if (gSaveBlock1Ptr->location.mapGroup != MAP_GROUP(MAP_SKY_PILLAR_TOP)
+     || gSaveBlock1Ptr->location.mapNum != MAP_NUM(MAP_SKY_PILLAR_TOP)
+     || FlagGet(FLAG_HIDE_TORNADUS))
+        return FALSE;
+
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+    {
+        struct ObjectEvent *objEvent = &gObjectEvents[i];
+
+        if (objEvent->active && objEvent->graphicsId == OBJ_EVENT_GFX_SPECIES(TORNADUS))
+        {
+            s32 dx = abs(player->currentCoords.x - objEvent->currentCoords.x);
+            s32 dy = abs(player->currentCoords.y - objEvent->currentCoords.y);
+
+            *distance = max(dx, dy);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static bool8 IsPlayerInTornadusWind(void)
+{
+    s32 distance;
+
+    return GetTornadusWindDistance(&distance) && distance <= TORNADUS_WIND_RADIUS;
+}
+
+static bool8 IsWarpAtCoords(s16 x, s16 y)
+{
+    u32 i;
+
+    for (i = 0; i < gMapHeader.events->warpCount; i++)
+    {
+        if (gMapHeader.events->warps[i].x == x && gMapHeader.events->warps[i].y == y)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// Number of tiles south of the player, up to maxTiles, that can be entered without a collision or warp.
+static u32 CountTornadusWindPushTiles(u32 maxTiles)
+{
+    u32 tiles;
+    struct ObjectEvent *player = &gObjectEvents[gPlayerAvatar.objectEventId];
+
+    for (tiles = 0; tiles < maxTiles; tiles++)
+    {
+        s16 x = player->currentCoords.x;
+        s16 y = player->currentCoords.y + tiles + 1;
+
+        if (GetCollisionAtCoords(player, x, y, DIR_SOUTH) != COLLISION_NONE || IsWarpAtCoords(x, y))
+            break;
+    }
+    return tiles;
+}
+
+// Rechecked by the push script before each step, using the player's live position.
+u16 CanTornadusWindPushStep(void)
+{
+    return CountTornadusWindPushTiles(1) != 0;
+}
+
+// Field hook for ProcessPlayerFieldInput (src/field_control_avatar.c).
+// Outer ring: one-time warning. Inner ring: one-time fling. After the fling, the whole outer ring gets a
+// 1-tile push every TORNADUS_WIND_PUSH_FRAMES. The timer keeps running while the player walks; an expired push
+// waits for the next frame the player is between steps.
+// gSpecialVar_0x8004 is the tile count for the script's movement loop.
+bool32 TornadusWind_TryStartScript(void)
+{
+    static u16 sPushTimer;
+    s32 distance;
+    u32 stage;
+
+    if (!GetTornadusWindDistance(&distance) || distance > TORNADUS_WIND_RADIUS)
+    {
+        sPushTimer = 0;
+        return FALSE;
+    }
+
+    stage = VarGet(VAR_TEMP_0);
+    if (stage == TORNADUS_WIND_STAGE_FLUNG && sPushTimer < TORNADUS_WIND_PUSH_FRAMES)
+        sPushTimer++;
+
+    if (gPlayerAvatar.tileTransitionState == T_TILE_TRANSITION)
+        return FALSE;
+
+    if (distance <= TORNADUS_WIND_CLOSE_RADIUS && stage < TORNADUS_WIND_STAGE_FLUNG)
+    {
+        VarSet(VAR_TEMP_0, TORNADUS_WIND_STAGE_FLUNG);
+        sPushTimer = 0;
+        gSpecialVar_0x8004 = CountTornadusWindPushTiles(TORNADUS_WIND_FLING_TILES);
+        ScriptContext_SetupScript(SkyPillar_Top_EventScript_TornadusWindFling);
+        return TRUE;
+    }
+    if (stage == TORNADUS_WIND_STAGE_NONE)
+    {
+        VarSet(VAR_TEMP_0, TORNADUS_WIND_STAGE_WARNED);
+        ScriptContext_SetupScript(SkyPillar_Top_EventScript_TornadusWindWarn);
+        return TRUE;
+    }
+    if (sPushTimer >= TORNADUS_WIND_PUSH_FRAMES)
+    {
+        sPushTimer = 0;
+        gSpecialVar_0x8004 = CountTornadusWindPushTiles(1);
+        if (gSpecialVar_0x8004 != 0)
+        {
+            ScriptContext_SetupScript(SkyPillar_Top_EventScript_TornadusWindPush);
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 static void PlayerNotOnBikeMoving(enum Direction direction, u16 heldKeys)
 {
     enum Collision collision = CheckForPlayerAvatarCollision(direction);
@@ -935,6 +1072,13 @@ static void PlayerNotOnBikeMoving(enum Direction direction, u16 heldKeys)
 
     ResetSpinTimer(); // Everything below will move the player a space, reset the timer.
     gPlayerAvatar.creeping = FALSE;
+    if (IsPlayerInTornadusWind())
+    {
+        gRunToggleBtnSet = FALSE;
+        PlayerWalkSlow(direction);
+        return;
+    }
+
     if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_SURFING)
     {
         if (FlagGet(DN_FLAG_SEARCHING) && (heldKeys & A_BUTTON))
@@ -1310,7 +1454,7 @@ static void PlayerWalkSlowStairs(enum Direction direction)
 }
 
 // slow
-static void UNUSED PlayerWalkSlow(enum Direction direction)
+static void PlayerWalkSlow(enum Direction direction)
 {
     PlayerSetAnimId(GetWalkSlowMovementAction(direction), COPY_MOVE_WALK);
 }
