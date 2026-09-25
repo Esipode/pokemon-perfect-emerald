@@ -1,5 +1,7 @@
 ## Tapu Lele — The Land Spirit Pokémon
 
+### Location: Route 127 - Saturday only, post-game
+
 A guardian that bends the battlefield around itself the longer the fight runs. The world gets
 stranger in fixed, telegraphed steps - and every step it takes is permanent.
 
