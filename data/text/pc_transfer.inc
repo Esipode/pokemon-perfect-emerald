@@ -46,8 +46,9 @@ gText_NoMoreRoomForPokemon::
 	.string "can't accept any more!$"
 
 gText_ChallengeCantAccept::
-	.string "That Pokémon doesn't meet this\n"
-	.string "game's rules and can't be accepted!$"
+	.string "You can't take that Pokémon.\p"
+	.string "It breaks the vow you took to\n"
+	.string "restrict your team.$"
 
 gText_NicknameThisPokemon::
 	.string "Do you want to give a nickname to\n"

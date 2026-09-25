@@ -1537,8 +1537,9 @@ gText_WantWhichFloor::
 	.string "Which floor do you want?$"
 
 gText_ChallengeTradeRefused::
-	.string "Sorry, that Pokémon doesn't meet\n"
-	.string "this game's rules. I can't trade for it!$"
+	.string "Oh, I can't trade that one to you.\p"
+	.string "It breaks the vow you took to\n"
+	.string "restrict your team.$"
 
 	.include "data/text/pc_transfer.inc"
 	.include "data/text/questionnaire.inc"
