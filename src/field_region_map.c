@@ -357,7 +357,7 @@ static void PrintRegionMapSecName(void)
 
 static void PrintTitleWindowText(void)
 {
-    static const u8 FlyPromptText[] = _("{A_BUTTON} FLY");
+    static const u8 FlyPromptText[] = _("{R_BUTTON} FLY");
     const u8 *region;
     if (IS_FRLG)
         region = gText_Kanto;
