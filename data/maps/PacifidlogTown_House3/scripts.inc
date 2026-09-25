@@ -5,7 +5,7 @@ PacifidlogTown_House3_EventScript_Trader::
 	lock
 	faceplayer
 	goto_if_set FLAG_PACIFIDLOG_NPC_TRADE_COMPLETED, PacifidlogTown_House3_EventScript_TradeCompleted
-	ingame_trade INGAME_TRADE_HORSEA, PacifidlogTown_House3_Text_WillingToTradeIt, PacifidlogTown_House3_EventScript_DeclineTrade, PacifidlogTown_House3_EventScript_NotRequestedMon, PacifidlogTown_House3_Text_ItsSubtlyDifferentThankYou
+	ingame_trade INGAME_TRADE_RANDOM3, PacifidlogTown_House3_Text_WillingToTradeIt, PacifidlogTown_House3_EventScript_DeclineTrade, PacifidlogTown_House3_EventScript_NotRequestedMon, PacifidlogTown_House3_Text_ItsSubtlyDifferentThankYou
 	setflag FLAG_PACIFIDLOG_NPC_TRADE_COMPLETED
 	release
 	end
@@ -22,6 +22,8 @@ PacifidlogTown_House3_EventScript_NotRequestedMon::
 	end
 
 PacifidlogTown_House3_EventScript_TradeCompleted::
+	setvar VAR_0x8005, INGAME_TRADE_RANDOM3
+	specialvar VAR_RESULT, GetInGameTradeSpeciesInfo
 	msgbox PacifidlogTown_House3_Text_ReallyWantedToGetBagon, MSGBOX_DEFAULT
 	release
 	end
@@ -58,8 +60,9 @@ PacifidlogTown_House3_Text_NotDesperateOrAnything:
 PacifidlogTown_House3_Text_ReallyWantedToGetBagon:
 	.string "I know I could go looking for one\n"
 	.string "on my own, but…\p"
-	.string "But I really wanted to get a BAGON\n"
-	.string "that another TRAINER caught…$"
+	.string "But I really wanted to get\n"
+	.string "a {STR_VAR_1} that another\l"
+	.string "TRAINER caught…$"
 
 PacifidlogTown_House3_Text_IsThatAPokedex:
 	.string "Is that a POKéDEX?\p"

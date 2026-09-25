@@ -30,8 +30,6 @@
 
 #include "data/battle_emporium.h"
 
-extern u32 GetTotalBaseStat(enum Species species);
-
 // Lobby -> battle room entry trace. Set to 0 to silence without dropping the asserts.
 #define EMPORIUM_TRACE_ENABLED  1
 #if EMPORIUM_TRACE_ENABLED
@@ -197,14 +195,7 @@ u32 GetEmporiumFillerBstCap(void)
 // the pool stores the base species.
 bool32 EmporiumMonAllowedAsFiller(const struct TrainerMon *mon)
 {
-    const struct SpeciesInfo *info = &gSpeciesInfo[mon->species];
-
-    if (info->isRestrictedLegendary || info->isSubLegendary || info->isMythical
-     || info->isUltraBeast || info->isParadox)
-        return FALSE;
-    if (GetTotalBaseStat(mon->species) > GetEmporiumFillerBstCap())
-        return FALSE;
-    return TRUE;
+    return IsSpeciesCommonWithinBst(mon->species, GetEmporiumFillerBstCap());
 }
 
 struct EmporiumPoolInfo

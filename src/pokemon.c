@@ -1016,6 +1016,50 @@ enum Species GetRandomizedSpecies(enum Species species)
     return species;
 }
 
+// National Dex species that are not legendary, mythical, Ultra Beast, Paradox or a
+// battle-only form, with a base stat total of at most maxBst.
+bool32 IsSpeciesCommonWithinBst(enum Species species, u32 maxBst)
+{
+    const struct SpeciesInfo *info;
+
+    if (species == SPECIES_NONE || species >= NUM_SPECIES)
+        return FALSE;
+
+    info = &gSpeciesInfo[species];
+    if (info->natDexNum == NATIONAL_DEX_NONE
+     || info->isRestrictedLegendary
+     || info->isSubLegendary
+     || info->isMythical
+     || info->isUltraBeast
+     || info->isParadox
+     || info->isMegaEvolution
+     || info->isPrimalReversion
+     || info->isUltraBurst
+     || info->isGigantamax
+     || info->isTeraForm
+     || info->isTotem)
+        return FALSE;
+
+    return GetSpeciesBaseStatTotal(species) <= maxBst;
+}
+
+#define RANDOM_COMMON_SPECIES_MAX_ATTEMPTS 256
+
+// Picks a base-form National Dex species passing IsSpeciesCommonWithinBst.
+// Returns SPECIES_NONE if every attempt fails.
+enum Species GetRandomCommonSpecies(rng_value_t *rng, u32 maxBst)
+{
+    for (u32 i = 0; i < RANDOM_COMMON_SPECIES_MAX_ATTEMPTS; i++)
+    {
+        enum Species species = NationalPokedexNumToSpecies(1 + LocalRandom32(rng) % NATIONAL_DEX_COUNT);
+
+        if (IsSpeciesCommonWithinBst(species, maxBst))
+            return species;
+    }
+
+    return SPECIES_NONE;
+}
+
 void CreateMon(struct Pokemon *mon, enum Species species, u16 level, u32 personality, struct OriginalTrainerId trainerId)
 {
     u32 mail;

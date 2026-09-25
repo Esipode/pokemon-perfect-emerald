@@ -4,6 +4,7 @@
 #include "battle_interface.h"
 #include "bg.h"
 #include "cable_club.h"
+#include "caps.h"
 #include "data.h"
 #include "daycare.h"
 #include "decompress.h"
@@ -19,6 +20,7 @@
 #include "main.h"
 #include "mystery_gift.h"
 #include "mystery_gift_menu.h"
+#include "new_game.h"
 #include "overworld.h"
 #include "palette.h"
 #include "party_menu.h"
@@ -157,7 +159,13 @@ struct InGameTrade {
     u8 otGender;
     u8 sheen;
     enum Species requestedSpecies;
+    // Species, IVs and personality are rolled at trade time; only the OT fields are read.
+    bool8 isRandom;
 };
+
+#define RANDOM_TRADE_MAX_BST    400
+#define RANDOM_TRADE_MIN_IV     15
+#define RANDOM_TRADE_SEED_SALT  0x54524144
 
 static EWRAM_DATA u8 *sMenuTextTileBuffer = NULL;
 
@@ -3165,7 +3173,8 @@ static void BufferTradeSceneStrings(void)
     {
         ingameTrade = &sIngameTrades[gSpecialVar_0x8005];
         StringCopy(gStringVar1, ingameTrade->otName);
-        StringCopy_Nickname(gStringVar3, ingameTrade->nickname);
+        GetMonData(&gParties[B_TRAINER_OPPONENT_A][0], MON_DATA_NICKNAME, name);
+        StringCopy_Nickname(gStringVar3, name);
         if (gSpecialVar_0x8004 == PC_MON_CHOSEN)
             GetMonData(&gParties[B_TRAINER_OPPONENT_A][TRADEMON_FROM_PC], MON_DATA_NICKNAME, name);
         else
@@ -4380,21 +4389,86 @@ bool32 IsIngameTradeOtId(u32 otId)
     return FALSE;
 }
 
+// Seeded by trainer ID, New Game+ cycle and trade ID, so a trade's pair stays fixed
+// within a cycle and rerolls on the next one.
+static void GetRandomInGameTradeSpecies(u32 tradeId, enum Species *requested, enum Species *offered)
+{
+    u32 otId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
+    rng_value_t rng = LocalRandomSeed(otId + RANDOM_TRADE_SEED_SALT + tradeId + GetNewGamePlusLevelOffset());
+    u32 i;
+
+    *requested = GetRandomCommonSpecies(&rng, RANDOM_TRADE_MAX_BST);
+    if (*requested == SPECIES_NONE)
+        *requested = SPECIES_ZIGZAGOON;
+
+    *offered = SPECIES_NONE;
+    for (i = 0; i < 16 && (*offered == SPECIES_NONE || *offered == *requested); i++)
+        *offered = GetRandomCommonSpecies(&rng, RANDOM_TRADE_MAX_BST);
+    if (*offered == SPECIES_NONE || *offered == *requested)
+        *offered = (*requested == SPECIES_POOCHYENA) ? SPECIES_ZIGZAGOON : SPECIES_POOCHYENA;
+}
+
+static enum Species GetInGameTradeRequestedSpecies(u32 tradeId)
+{
+    enum Species requested, offered;
+
+    if (!sIngameTrades[tradeId].isRandom)
+        return sIngameTrades[tradeId].requestedSpecies;
+
+    GetRandomInGameTradeSpecies(tradeId, &requested, &offered);
+    return requested;
+}
+
+static enum Species GetInGameTradeOfferedSpecies(u32 tradeId)
+{
+    enum Species requested, offered;
+
+    if (!sIngameTrades[tradeId].isRandom)
+        return sIngameTrades[tradeId].species;
+
+    GetRandomInGameTradeSpecies(tradeId, &requested, &offered);
+    return offered;
+}
+
 u16 GetInGameTradeSpeciesInfo(void)
 {
-    const struct InGameTrade *inGameTrade = &sIngameTrades[gSpecialVar_0x8005];
-    StringCopy(gStringVar1, GetSpeciesName(inGameTrade->requestedSpecies));
-    StringCopy(gStringVar2, GetSpeciesName(inGameTrade->species));
-    return inGameTrade->requestedSpecies;
+    enum Species requested = GetInGameTradeRequestedSpecies(gSpecialVar_0x8005);
+
+    StringCopy(gStringVar1, GetSpeciesName(requested));
+    StringCopy(gStringVar2, GetSpeciesName(GetInGameTradeOfferedSpecies(gSpecialVar_0x8005)));
+    return requested;
 }
 
 static void BufferInGameTradeMonName(void)
 {
     u8 nickname[max(32, POKEMON_NAME_BUFFER_SIZE)];
-    const struct InGameTrade *inGameTrade = &sIngameTrades[gSpecialVar_0x8005];
     GetMonData(&gParties[B_TRAINER_PLAYER][gSpecialVar_0x8005], MON_DATA_NICKNAME, nickname);
     StringCopy_Nickname(gStringVar1, nickname);
-    StringCopy(gStringVar2, GetSpeciesName(inGameTrade->species));
+    StringCopy(gStringVar2, GetSpeciesName(GetInGameTradeOfferedSpecies(gSpecialVar_0x8005)));
+}
+
+// No nickname, held item, mail or contest stats. CreateBoxMon is called directly so
+// FLAG_RANDOMIZE_MON can't reroll the species the NPC announced.
+static void CreateRandomInGameTradePokemon(struct Pokemon *pokemon, const struct InGameTrade *inGameTrade, u32 whichInGameTrade, u32 level)
+{
+    metloc_u8_t metLocation = METLOC_IN_GAME_TRADE;
+    u32 i;
+
+    ZeroMonData(pokemon);
+    CreateBoxMon(&pokemon->box, GetInGameTradeOfferedSpecies(whichInGameTrade), level, Random32(), OTID_STRUCT_PRESET(inGameTrade->otId));
+    SetMonData(pokemon, MON_DATA_LEVEL, &level);
+    GiveMonInitialMoveset(pokemon);
+
+    for (i = 0; i < NUM_STATS; i++)
+    {
+        u8 iv = RANDOM_TRADE_MIN_IV + Random() % (MAX_PER_STAT_IVS - RANDOM_TRADE_MIN_IV + 1);
+        SetMonData(pokemon, MON_DATA_HP_IV + i, &iv);
+    }
+
+    SetMonData(pokemon, MON_DATA_OT_NAME, inGameTrade->otName);
+    SetMonData(pokemon, MON_DATA_OT_GENDER, &inGameTrade->otGender);
+    SetMonData(pokemon, MON_DATA_MET_LOCATION, &metLocation);
+    CalculateMonStats(pokemon);
 }
 
 static void CreateInGameTradePokemonInternal(u8 whichPlayerMon, u8 whichInGameTrade)
@@ -4407,6 +4481,12 @@ static void CreateInGameTradePokemonInternal(u8 whichPlayerMon, u8 whichInGameTr
     metloc_u8_t metLocation = METLOC_IN_GAME_TRADE;
     u8 mailNum;
     struct Pokemon *pokemon = &gParties[B_TRAINER_OPPONENT_A][0];
+
+    if (inGameTrade->isRandom)
+    {
+        CreateRandomInGameTradePokemon(pokemon, inGameTrade, whichInGameTrade, level);
+        return;
+    }
 
     CreateMon(pokemon, inGameTrade->species, level, inGameTrade->personality, OTID_STRUCT_PRESET(inGameTrade->otId));
     GiveMonInitialMoveset(pokemon);

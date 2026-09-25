@@ -2096,45 +2096,13 @@ static void SpriteCB_MovePlayerDownWhileShrinking(struct Sprite *sprite)
 }
 
 #define BIRCH_SPEECH_MON_MAX_BST        399
-#define BIRCH_SPEECH_MON_MAX_ATTEMPTS   256
 
-static bool32 IsValidBirchSpeechSpecies(enum Species species)
-{
-    const struct SpeciesInfo *info;
-
-    if (species == SPECIES_NONE || species >= NUM_SPECIES)
-        return FALSE;
-
-    info = &gSpeciesInfo[species];
-    if (info->natDexNum == NATIONAL_DEX_NONE
-     || info->isRestrictedLegendary
-     || info->isSubLegendary
-     || info->isMythical
-     || info->isUltraBeast
-     || info->isParadox
-     || info->isMegaEvolution
-     || info->isPrimalReversion
-     || info->isUltraBurst
-     || info->isGigantamax
-     || info->isTeraForm
-     || info->isTotem)
-        return FALSE;
-
-    return GetSpeciesBaseStatTotal(species) <= BIRCH_SPEECH_MON_MAX_BST;
-}
-
-// Picks a random base-form species from the National Dex that passes IsValidBirchSpeechSpecies.
 static enum Species GetRandomBirchSpeechSpecies(void)
 {
-    for (u32 i = 0; i < BIRCH_SPEECH_MON_MAX_ATTEMPTS; i++)
-    {
-        enum Species species = NationalPokedexNumToSpecies(1 + Random() % NATIONAL_DEX_COUNT);
+    rng_value_t rng = LocalRandomSeed(Random32());
+    enum Species species = GetRandomCommonSpecies(&rng, BIRCH_SPEECH_MON_MAX_BST);
 
-        if (IsValidBirchSpeechSpecies(species))
-            return species;
-    }
-
-    return SPECIES_LOTAD;
+    return species != SPECIES_NONE ? species : SPECIES_LOTAD;
 }
 
 static u8 NewGameBirchSpeech_CreateRandomMonSprite(u8 x, u8 y)
