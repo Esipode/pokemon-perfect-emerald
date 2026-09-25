@@ -2895,9 +2895,10 @@ void Achievement_CheckChallengeCompletionMilestones(void)
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_SELF_IMPOSED);
 
     // Nightmare Mode: Nuzlocke, HARD, all three randomizer flags, boosts off.
+    // Boosts not yet unlocked count as off (boostsEnabled defaults TRUE).
     if (gSaveBlock1Ptr->nuzlockeModeEnabled && gSaveBlock1Ptr->difficulty == DIFFICULTY_HARD
      && FlagGet(FLAG_RANDOMIZE_MON) && FlagGet(FLAG_RANDOMIZE_TYPE) && FlagGet(FLAG_RANDOMIZE_MOVES)
-     && !gAchievementProfile.boostsEnabled)
+     && (!gAchievementProfile.boostsUnlocked || !gAchievementProfile.boostsEnabled))
         Achievement_TryComplete(ACHIEVEMENT_CHALLENGE_NIGHTMARE_MODE);
 
     if (!runData->boughtConsumableItem)
