@@ -1,5 +1,7 @@
 ## Tapu Koko — The Land Spirit Pokémon
 
+### Location: Mt. Pyre Summit - Wednesdays
+
 A trickster that reads the pace of the fight and hits back exactly as hard as you push it. The more
 it likes what it's seeing, the faster and harder it gets.
 

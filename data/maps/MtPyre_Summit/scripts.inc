@@ -6,9 +6,11 @@ MtPyre_Summit_MapScripts::
 MtPyre_Summit_OnTransition:
 	call_if_eq VAR_MT_PYRE_STATE, 2, MtPyre_Summit_EventScript_SetArchieMaxiePositions
 	updatelegendaryvisibility SPECIES_HOOPA, FLAG_HIDE_HOOPA
+	updatelegendaryvisibility SPECIES_TAPU_KOKO, FLAG_HIDE_TAPU_KOKO
 	end
 
 MtPyre_Summit_OnLoad:
+	call MtPyre_Summit_TapuKokoGate
 	setvar VAR_0x8004, SPECIES_HOOPA
 	setvar VAR_0x8005, LAYOUT_MT_PYRE_SUMMIT
 	setvar VAR_0x8006, WEEKDAY_SAT
@@ -20,6 +22,23 @@ MtPyre_Summit_OnLoad:
 	@ State 3: Archie and Maxie have returned the orbs
 	goto_if_lt VAR_MT_PYRE_STATE, 3, MtPyre_Summit_HideHoopaArena
 	goto MtPyre_Summit_ShowHoopaArena
+
+MtPyre_Summit_TapuKokoGate:
+	setvar VAR_0x8004, SPECIES_TAPU_KOKO
+	setvar VAR_0x8005, LAYOUT_MT_PYRE_SUMMIT
+	setvar VAR_0x8006, WEEKDAY_WED
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, MtPyre_Summit_HideTapuKokoArena
+	setweather WEATHER_RAIN_THUNDERSTORM
+	return
+
+MtPyre_Summit_TapuKoko_Encounter::
+	goto LegendaryEncounter_EventScript_TapuKoko
+
+MtPyre_Summit_HideTapuKokoArena:
+	setflag FLAG_HIDE_TAPU_KOKO
+	return
 
 MtPyre_Summit_Hoopa_Encounter::
 	@ Ripple fires at full strength on interaction, then the battle starts

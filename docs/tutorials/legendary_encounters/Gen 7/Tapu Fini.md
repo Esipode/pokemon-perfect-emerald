@@ -1,5 +1,6 @@
 ## Tapu Fini — The Land Spirit Pokémon
-### Location: Underwater Route 126 - Sundays, after the game is cleared
+
+### Location: Underwater Route 126 - Sundays
 
 A guardian that hides behind rising mist. The more of it there is, the harder Fini is to hit -
 and the harder it hits you when it swings blind back.

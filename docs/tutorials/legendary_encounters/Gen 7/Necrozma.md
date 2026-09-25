@@ -1,6 +1,6 @@
 ## Necrozma — The Prism Pokémon
 
-### Location: Route 129 - Tuesday nights, post-game; screen goes black within 14 tiles until caught
+### Location: Route 129 - Tuesday nights
 
 A starving light-eater. It grows stronger the more you feed it, and weaker the more you starve it.
 Two mid-fight transformations wait at 50% and 20% HP, and neither is under your control.
