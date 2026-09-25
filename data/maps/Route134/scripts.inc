@@ -1,6 +1,39 @@
 Route134_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, Route134_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route134_OnLoad
 	map_script MAP_SCRIPT_ON_RESUME, Route134_OnResume
 	.byte 0
+
+Route134_OnTransition:
+	updatelegendaryvisibility SPECIES_CALYREX, FLAG_HIDE_CALYREX
+	end
+
+Route134_OnLoad:
+	@ Calyrex spawn gate: post-game, not already owned, 30+ legendary/mythical families caught
+	setvar VAR_0x8004, SPECIES_CALYREX
+	setvar VAR_0x8005, LAYOUT_ROUTE134
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route134_HideCalyrexArena
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 30, Route134_HideCalyrexArena
+	goto Route134_ShowCalyrexArena
+
+Route134_Calyrex_Encounter::
+	goto LegendaryEncounter_EventScript_Calyrex
+
+Route134_HideCalyrexArena:
+	setflag FLAG_HIDE_CALYREX
+	end
+
+Route134_ShowCalyrexArena:
+	@ Alternating green/purple tints: same period, phases offset by half
+	overlaycreate RGB(8, 31, 12), 0, OVERLAY_LAYER_WORLD, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_0
+	overlaypulse VAR_TEMP_0, 4, 8, 240
+	overlaycreate RGB(22, 8, 31), 0, OVERLAY_LAYER_WORLD, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_1
+	overlaypulse VAR_TEMP_1, 4, 8, 240, 120
+	end
 
 Route134_OnResume:
 	setdivewarp MAP_UNDERWATER_ROUTE134, 8, 6

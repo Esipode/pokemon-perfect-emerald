@@ -1,4 +1,7 @@
 ## Calyrex — The King Pokémon
+
+### Location: Route 134 - After 30+ legendaries caught
+
 Calyrex judges you by decrees. Break them and its Authority grows, hardening its guard and stacking the last gamble against you.
 
 ### AUTHORITY — 0 to 10
