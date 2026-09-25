@@ -23,6 +23,7 @@ NewMauville_Inside_OnTransition:
 	call_if_unset FLAG_DEFEATED_VOLTORB_2_NEW_MAUVILLE, NewMauville_Inside_EventScript_ShowVoltorb2
 	call_if_unset FLAG_DEFEATED_VOLTORB_3_NEW_MAUVILLE, NewMauville_Inside_EventScript_ShowVoltorb3
 	updatelegendaryvisibility SPECIES_ZERAORA, FLAG_HIDE_ZERAORA
+	updatelegendaryvisibility SPECIES_MAGEARNA, FLAG_HIDE_MAGEARNA
 	end
 
 NewMauville_Inside_EventScript_ShowVoltorb1::
@@ -39,6 +40,7 @@ NewMauville_Inside_EventScript_ShowVoltorb3::
 
 NewMauville_Inside_OnLoad:
 	call_if_eq VAR_NEW_MAUVILLE_STATE, 2, NewMauville_Inside_EventScript_SetGeneratorOffMetatiles
+	call NewMauville_Inside_EventScript_CheckMagearnaSpawn
 	@ Zeraora spawn gate: post-game, not already owned, Saturday, daytime, generator quest complete
 	setvar VAR_0x8004, SPECIES_ZERAORA
 	setvar VAR_0x8005, LAYOUT_NEW_MAUVILLE_INSIDE
@@ -53,6 +55,22 @@ NewMauville_Inside_OnLoad:
 
 NewMauville_Inside_Zeraora_Encounter::
 	goto LegendaryEncounter_EventScript_Zeraora
+
+NewMauville_Inside_Magearna_Encounter::
+	goto LegendaryEncounter_EventScript_Magearna
+
+NewMauville_Inside_EventScript_CheckMagearnaSpawn:
+	setvar VAR_0x8004, SPECIES_MAGEARNA
+	setvar VAR_0x8005, LAYOUT_NEW_MAUVILLE_INSIDE
+	setvar VAR_0x8006, WEEKDAY_MON
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	call_if_eq VAR_RESULT, FALSE, NewMauville_Inside_EventScript_HideMagearna
+	return
+
+NewMauville_Inside_EventScript_HideMagearna:
+	setflag FLAG_HIDE_MAGEARNA
+	return
 
 NewMauville_Inside_HideZeraoraArena:
 	setflag FLAG_HIDE_ZERAORA

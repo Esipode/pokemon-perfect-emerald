@@ -1,5 +1,7 @@
 ## Magearna — The Artificial Pokémon
 
+### Location: New Mauville - Monday
+
 A machine running four systems in sequence, never more than one (two, later) at a time. Watch
 which one is live, then decide whether to break it or work around it.
 
