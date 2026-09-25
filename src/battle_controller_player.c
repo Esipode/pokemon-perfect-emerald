@@ -236,6 +236,10 @@ static enum Item GetNextBall(enum Item ballId)
     return ballId;
 }
 
+#define B_HOLD_RUN_FRAMES 120
+
+static u8 sBHoldFrames;
+
 static void HandleInputChooseAction(enum BattlerId battler)
 {
     enum Item itemId = gBattleResources->bufferA[battler][2] | (gBattleResources->bufferA[battler][3] << 8);
@@ -305,6 +309,22 @@ static void HandleInputChooseAction(enum BattlerId battler)
             }
             return;
         }
+    }
+
+    if (JOY_HELD(B_BUTTON))
+        sBHoldFrames++;
+    else
+        sBHoldFrames = 0;
+
+    // Holding B for 2 seconds attempts to run.
+    if (sBHoldFrames >= B_HOLD_RUN_FRAMES)
+    {
+        sBHoldFrames = 0;
+        PlaySE(SE_SELECT);
+        TryHideLastUsedBall();
+        BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_RUN, 0);
+        BtlController_Complete(battler);
+        return;
     }
 
     if (JOY_NEW(A_BUTTON))
