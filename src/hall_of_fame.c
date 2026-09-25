@@ -74,6 +74,7 @@ static void Task_Hof_DisplayPlayer(u8 taskId);
 static void Task_Hof_WaitAndPrintPlayerInfo(u8 taskId);
 static void Task_Hof_ExitOnKeyPressed(u8 taskId);
 static void Task_Hof_HandlePaletteOnExit(u8 taskId);
+static void Task_Hof_HandleSkipCreditsInput(u8 taskId);
 static void Task_Hof_HandleExit(u8 taskId);
 static void Task_HofPC_CopySaveData(u8 taskId);
 static void Task_HofPC_PrintDataIsCorrupted(u8 taskId);
@@ -129,6 +130,16 @@ static const struct WindowTemplate sHof_WindowTemplate = {
     .height = 6,
     .paletteNum = 14,
     .baseBlock = 1
+};
+
+static const struct WindowTemplate sHof_YesNoWindowTemplate = {
+    .bg = 0,
+    .tilemapLeft = 13,
+    .tilemapTop = 10,
+    .width = 5,
+    .height = 4,
+    .paletteNum = 14,
+    .baseBlock = 0x125
 };
 
 static const u8 sMonInfoTextColors[4] = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE, TEXT_COLOR_DARK_GRAY};
@@ -399,6 +410,7 @@ static bool8 InitHallOfFameScreen(void)
 #define tFrameCount         data[3]
 #define tPlayerSpriteID     data[4]
 #define tMonSpriteId(i)     data[i + 5]
+#define tSkipCredits        data[11]
 
 static void AllocateHoFTeams(void)
 {
@@ -731,9 +743,31 @@ static void Task_Hof_ExitOnKeyPressed(u8 taskId)
 {
     if (JOY_NEW(A_BUTTON))
     {
-        FadeOutBGM(4);
-        gTasks[taskId].func = Task_Hof_HandlePaletteOnExit;
+        DrawDialogueFrame(0, FALSE);
+        AddTextPrinterParameterized2(0, FONT_NORMAL, gText_SkipCredits, 0, NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
+        CopyWindowToVram(0, COPYWIN_FULL);
+        CreateYesNoMenu(&sHof_YesNoWindowTemplate, 0x21D, 13, 1);
+        gTasks[taskId].func = Task_Hof_HandleSkipCreditsInput;
     }
+}
+
+static void Task_Hof_HandleSkipCreditsInput(u8 taskId)
+{
+    switch (Menu_ProcessInputNoWrapClearOnChoose())
+    {
+    case 0:
+        gTasks[taskId].tSkipCredits = TRUE;
+        break;
+    case 1:
+    case MENU_B_PRESSED:
+        gTasks[taskId].tSkipCredits = FALSE;
+        break;
+    default:
+        return;
+    }
+
+    FadeOutBGM(4);
+    gTasks[taskId].func = Task_Hof_HandlePaletteOnExit;
 }
 
 static void Task_Hof_HandlePaletteOnExit(u8 taskId)
@@ -748,6 +782,7 @@ static void Task_Hof_HandleExit(u8 taskId)
     if (!gPaletteFade.active)
     {
         s32 i;
+        bool8 skipCredits = gTasks[taskId].tSkipCredits;
 
         for (i = 0; i < PARTY_SIZE; i++)
         {
@@ -769,7 +804,10 @@ static void Task_Hof_HandleExit(u8 taskId)
         ResetBgsAndClearDma3BusyFlags(0);
         DestroyTask(taskId);
         FreeAllHoFMem();
-        StartCredits();
+        if (skipCredits)
+            SoftReset(RESET_ALL);
+        else
+            StartCredits();
     }
 }
 
@@ -784,6 +822,7 @@ static void StartCredits(void)
 #undef tFrameCount
 #undef tPlayerSpriteID
 #undef tMonSpriteId
+#undef tSkipCredits
 
 #define tCurrTeamNo     data[0]
 #define tCurrPageNo     data[1]

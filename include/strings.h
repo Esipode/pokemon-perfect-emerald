@@ -1269,6 +1269,7 @@ extern const u8 gText_PkmnSentToPCAfterCatch[];
 
 // hall of fame
 extern const u8 gText_LeagueChamp[];
+extern const u8 gText_SkipCredits[];
 extern const u8 gText_HOFNumber[];
 extern const u8 gText_PickNextCancel[];
 extern const u8 gText_PickCancel[];

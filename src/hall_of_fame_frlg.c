@@ -63,6 +63,7 @@ static void Task_Hof_SpawnPlayerPic(u8 taskId);
 static void Task_Hof_WaitAndPrintPlayerInfo(u8 taskId);
 static void Task_Hof_ExitOnKeyPressed(u8 taskId);
 static void Task_Hof_HandlePaletteOnExit(u8 taskId);
+static void Task_Hof_HandleSkipCreditsInput(u8 taskId);
 static void Task_Hof_HandleExit(u8 taskId);
 static void SetWarpsToRollCredits(void);
 static void Task_HofPC_CopySaveData(u8 taskId);
@@ -122,6 +123,16 @@ static const struct WindowTemplate sWindowTemplate = {
     .height = 6,
     .paletteNum = 13,
     .baseBlock = 0x001
+};
+
+static const struct WindowTemplate sYesNoWindowTemplate = {
+    .bg = 0,
+    .tilemapLeft = 13,
+    .tilemapTop = 10,
+    .width = 5,
+    .height = 4,
+    .paletteNum = 13,
+    .baseBlock = 0x125
 };
 
 static const u8 sTextColors[][4] = {
@@ -655,9 +666,31 @@ static void Task_Hof_ExitOnKeyPressed(u8 taskId)
 {
     if (JOY_NEW(A_BUTTON))
     {
-        FadeOutBGM(4);
-        gTasks[taskId].func = Task_Hof_HandlePaletteOnExit;
+        DrawDialogueFrame(0, FALSE);
+        AddTextPrinterParameterized2(0, FONT_NORMAL, gText_SkipCredits, 0, NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
+        CopyWindowToVram(0, COPYWIN_FULL);
+        CreateYesNoMenu(&sYesNoWindowTemplate, 0x21D, 13, 1);
+        gTasks[taskId].func = Task_Hof_HandleSkipCreditsInput;
     }
+}
+
+static void Task_Hof_HandleSkipCreditsInput(u8 taskId)
+{
+    switch (Menu_ProcessInputNoWrapClearOnChoose())
+    {
+    case 0:
+        gTasks[taskId].data[11] = TRUE;
+        break;
+    case 1:
+    case MENU_B_PRESSED:
+        gTasks[taskId].data[11] = FALSE;
+        break;
+    default:
+        return;
+    }
+
+    FadeOutBGM(4);
+    gTasks[taskId].func = Task_Hof_HandlePaletteOnExit;
 }
 
 static void Task_Hof_HandlePaletteOnExit(u8 taskId)
@@ -672,6 +705,7 @@ static void Task_Hof_HandleExit(u8 taskId)
     if (!gPaletteFade.active)
     {
         s32 i;
+        bool8 skipCredits = gTasks[taskId].data[11];
 
         for (i = 0; i < PARTY_SIZE; i++)
         {
@@ -693,7 +727,10 @@ static void Task_Hof_HandleExit(u8 taskId)
         DestroyTask(taskId);
         FreeAllHoFMem();
 
-        SetWarpsToRollCredits();
+        if (skipCredits)
+            SoftReset(RESET_ALL);
+        else
+            SetWarpsToRollCredits();
     }
 }
 
