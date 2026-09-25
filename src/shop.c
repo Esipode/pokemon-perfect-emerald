@@ -5,6 +5,7 @@
 #include "decompress.h"
 #include "decoration.h"
 #include "decoration_inventory.h"
+#include "event_data.h"
 #include "event_object_movement.h"
 #include "field_player_avatar.h"
 #include "field_screen_effect.h"
@@ -52,6 +53,7 @@
 enum {
     WIN_BUY_SELL_QUIT,
     WIN_BUY_QUIT,
+    WIN_BUY_SELL_RESET_QUIT,
 };
 
 enum {
@@ -93,6 +95,7 @@ struct MartInfo
     u16 itemCount;
     u8 windowId;
     u8 martType;
+    bool8 evResetEnabled;
 };
 
 struct ShopData
@@ -114,10 +117,12 @@ static EWRAM_DATA struct ShopData *sShopData = NULL;
 static EWRAM_DATA struct ListMenuItem *sListMenuItems = NULL;
 static EWRAM_DATA u8 (*sItemNames)[ITEM_NAME_LENGTH + 2] = {0};
 static EWRAM_DATA u8 sPurchaseHistoryId = 0;
+static EWRAM_DATA bool8 sPendingEvReset = FALSE;
 EWRAM_DATA struct ItemSlot gMartPurchaseHistory[SMARTSHOPPER_NUM_ITEMS] = {0};
 
 static void Task_ShopMenu(u8 taskId);
 static void Task_HandleShopMenuQuit(u8 taskId);
+static void Task_HandleShopMenuReset(u8 taskId);
 static void CB2_InitBuyMenu(void);
 static void Task_GoToBuyOrSellMenu(u8 taskId);
 static void MapPostLoadHook_ReturnToShopMenu(void);
@@ -173,6 +178,14 @@ static const struct MenuAction sShopMenuActions_BuySellQuit[] =
     { gText_ShopQuit, {.void_u8=Task_HandleShopMenuQuit} }
 };
 
+static const struct MenuAction sShopMenuActions_BuySellResetQuit[] =
+{
+    { gText_ShopBuy, {.void_u8=Task_HandleShopMenuBuy} },
+    { gText_ShopSell, {.void_u8=Task_HandleShopMenuSell} },
+    { gText_ShopReset, {.void_u8=Task_HandleShopMenuReset} },
+    { gText_ShopQuit, {.void_u8=Task_HandleShopMenuQuit} }
+};
+
 static const struct MenuAction sShopMenuActions_BuyQuit[] =
 {
     { gText_ShopBuy, {.void_u8=Task_HandleShopMenuBuy} },
@@ -187,6 +200,15 @@ static const struct WindowTemplate sShopMenuWindowTemplates[] =
         .tilemapTop = 1,
         .width = 9,
         .height = 6,
+        .paletteNum = 15,
+        .baseBlock = 0x0008,
+    },
+    [WIN_BUY_SELL_RESET_QUIT] = {
+        .bg = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 1,
+        .width = 9,
+        .height = 8,
         .paletteNum = 15,
         .baseBlock = 0x0008,
     },
@@ -351,7 +373,15 @@ static u8 CreateShopMenu(u8 martType)
     LockPlayerFieldControls();
     sMartInfo.martType = martType;
 
-    if (martType == MART_TYPE_NORMAL)
+    if (martType == MART_TYPE_NORMAL && sMartInfo.evResetEnabled)
+    {
+        struct WindowTemplate winTemplate = sShopMenuWindowTemplates[WIN_BUY_SELL_RESET_QUIT];
+        winTemplate.width = GetMaxWidthInMenuTable(sShopMenuActions_BuySellResetQuit, ARRAY_COUNT(sShopMenuActions_BuySellResetQuit));
+        sMartInfo.windowId = AddWindow(&winTemplate);
+        sMartInfo.menuActions = sShopMenuActions_BuySellResetQuit;
+        numMenuItems = ARRAY_COUNT(sShopMenuActions_BuySellResetQuit);
+    }
+    else if (martType == MART_TYPE_NORMAL)
     {
         struct WindowTemplate winTemplate = sShopMenuWindowTemplates[WIN_BUY_SELL_QUIT];
         winTemplate.width = GetMaxWidthInMenuTable(sShopMenuActions_BuySellQuit, ARRAY_COUNT(sShopMenuActions_BuySellQuit));
@@ -458,8 +488,18 @@ static void Task_HandleShopMenuQuit(u8 taskId)
     UnlockPlayerFieldControls();
     DestroyTask(taskId);
 
+    // Script reads VAR_RESULT after pokemart: TRUE only when RESET was chosen
+    if (sMartInfo.evResetEnabled)
+        gSpecialVar_Result = FALSE;
+
     if (sMartInfo.callback)
         sMartInfo.callback();
+}
+
+static void Task_HandleShopMenuReset(u8 taskId)
+{
+    Task_HandleShopMenuQuit(taskId);
+    gSpecialVar_Result = TRUE;
 }
 
 static void Task_GoToBuyOrSellMenu(u8 taskId)
@@ -1326,8 +1366,16 @@ static void RecordItemPurchase(u8 taskId)
 #undef tCallbackHi
 #undef tCallbackLo
 
+// Adds a RESET entry (EV reset) to the next pokemart menu only
+void EnableShopEvResetOption(void)
+{
+    sPendingEvReset = TRUE;
+}
+
 void CreatePokemartMenu(const u16 *itemsForSale)
 {
+    sMartInfo.evResetEnabled = sPendingEvReset;
+    sPendingEvReset = FALSE;
     CreateShopMenu(MART_TYPE_NORMAL);
     SetShopItemsForSale(itemsForSale);
     ClearItemPurchases();
@@ -1336,6 +1384,7 @@ void CreatePokemartMenu(const u16 *itemsForSale)
 
 void CreateDecorationShop1Menu(const u16 *itemsForSale)
 {
+    sMartInfo.evResetEnabled = FALSE;
     CreateShopMenu(MART_TYPE_DECOR);
     SetShopItemsForSale(itemsForSale);
     SetShopMenuCallback(ScriptContext_Enable);
@@ -1343,6 +1392,7 @@ void CreateDecorationShop1Menu(const u16 *itemsForSale)
 
 void CreateDecorationShop2Menu(const u16 *itemsForSale)
 {
+    sMartInfo.evResetEnabled = FALSE;
     CreateShopMenu(MART_TYPE_DECOR2);
     SetShopItemsForSale(itemsForSale);
     SetShopMenuCallback(ScriptContext_Enable);

@@ -5988,3 +5988,34 @@ void SelectChampionChallengeTrainerObjEvent(void)
 {
     gSelectedObjectEvent = GetObjectEventIdByLocalId(gSpecialVar_0x8004);
 }
+
+#define EV_RESET_COST_PER_EV 10
+
+// Sums the EVs of the party mon in gSpecialVar_0x8004. Stores the fee in gSpecialVar_0x8005
+// and gStringVar1, the mon nickname in gStringVar2, and the EV total in VAR_RESULT.
+void BufferEvResetCost(void)
+{
+    struct Pokemon *mon = &gPlayerParty[gSpecialVar_0x8004];
+    u32 totalEvs = 0;
+    u32 i;
+
+    for (i = 0; i < NUM_STATS; i++)
+        totalEvs += GetMonData(mon, MON_DATA_HP_EV + i);
+
+    gSpecialVar_0x8005 = totalEvs * EV_RESET_COST_PER_EV;
+    ConvertIntToDecimalStringN(gStringVar1, gSpecialVar_0x8005, STR_CONV_MODE_LEFT_ALIGN, 5);
+    GetMonNickname(mon, gStringVar2);
+    gSpecialVar_Result = totalEvs;
+}
+
+// Zeroes all EVs of the party mon in gSpecialVar_0x8004 and recalculates its stats
+void ResetPartyMonEvs(void)
+{
+    struct Pokemon *mon = &gPlayerParty[gSpecialVar_0x8004];
+    u8 zero = 0;
+    u32 i;
+
+    for (i = 0; i < NUM_STATS; i++)
+        SetMonData(mon, MON_DATA_HP_EV + i, &zero);
+    CalculateMonStats(mon);
+}

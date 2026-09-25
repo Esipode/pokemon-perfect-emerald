@@ -723,12 +723,65 @@ SlateportCity_EventScript_TeraShardClerk::
 	lock
 	faceplayer
 	msgbox SlateportCity_Text_TeraShopIntroText, MSGBOX_DEFAULT
-	pokemart SlateportCity_TeraShop
+	goto SlateportCity_EventScript_FeatherShopMenu
+	end
+
+SlateportCity_EventScript_FeatherShopMenu::
+	closemessage
+	special EnableShopEvResetOption
+	pokemart SlateportCity_FeatherShop
+	goto_if_eq VAR_RESULT, TRUE, SlateportCity_EventScript_FeatherResetEvs
 	msgbox gText_PleaseComeAgain
+	closemessage
+	release
+	end
+
+SlateportCity_EventScript_FeatherResetEvs::
+	message SlateportCity_Text_FeatherWhichMonReset
+	waitmessage
+	special ChoosePartyMon
+	waitstate
+	goto_if_ge VAR_0x8004, PARTY_SIZE, SlateportCity_EventScript_FeatherResetCancel
+	@ Money box printing overwrites gStringVar1, so draw it before buffering the fee
+	showmoneybox 0, 0
+	special BufferEvResetCost
+	goto_if_eq VAR_RESULT, 0, SlateportCity_EventScript_FeatherResetNoEvs
+	msgbox SlateportCity_Text_FeatherResetConfirm, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, SlateportCity_EventScript_FeatherResetDeclined
+	specialvar VAR_RESULT, IsEnoughForCostInVar0x8005
+	goto_if_eq VAR_RESULT, FALSE, SlateportCity_EventScript_FeatherResetNoMoney
+	special SubtractMoneyFromVar0x8005
+	updatemoneybox
+	playse SE_SHOP
+	special ResetPartyMonEvs
+	msgbox SlateportCity_Text_FeatherResetDone, MSGBOX_DEFAULT
+	hidemoneybox
+	goto SlateportCity_EventScript_FeatherShopMenu
+	end
+
+SlateportCity_EventScript_FeatherResetCancel::
+	goto SlateportCity_EventScript_FeatherShopMenu
+	end
+
+SlateportCity_EventScript_FeatherResetNoEvs::
+	msgbox SlateportCity_Text_FeatherResetNoEvs, MSGBOX_DEFAULT
+	hidemoneybox
+	goto SlateportCity_EventScript_FeatherShopMenu
+	end
+
+SlateportCity_EventScript_FeatherResetDeclined::
+	hidemoneybox
+	goto SlateportCity_EventScript_FeatherShopMenu
+	end
+
+SlateportCity_EventScript_FeatherResetNoMoney::
+	msgbox SlateportCity_Text_FeatherResetNoMoney, MSGBOX_DEFAULT
+	hidemoneybox
+	goto SlateportCity_EventScript_FeatherShopMenu
 	end
 
 	.align 2
-SlateportCity_TeraShop::
+SlateportCity_FeatherShop::
     .2byte ITEM_HEALTH_FEATHER
     .2byte ITEM_MUSCLE_FEATHER
     .2byte ITEM_RESIST_FEATHER
@@ -1268,6 +1321,25 @@ SlateportCity_Text_TeraShopIntroText:
 	.string "Are you a POKéMON TRAINER?\p"
 	.string "Care to look at my feathers?\n"
 	.string "They'll raise your POKéMON's EVs!$"
+
+SlateportCity_Text_FeatherWhichMonReset:
+	.string "Whose EVs would you like me to\n"
+	.string "reset?$"
+
+SlateportCity_Text_FeatherResetConfirm:
+	.string "Reset all of {STR_VAR_2}'s EVs?\p"
+	.string "That will cost you ¥{STR_VAR_1}.\n"
+	.string "Are you sure?$"
+
+SlateportCity_Text_FeatherResetDone:
+	.string "There! {STR_VAR_2}'s EVs have\n"
+	.string "been reset.$"
+
+SlateportCity_Text_FeatherResetNoEvs:
+	.string "That POKéMON has no EVs to reset.$"
+
+SlateportCity_Text_FeatherResetNoMoney:
+	.string "You don't have enough money.$"
 
 SlateportCity_Text_ExchangeWhatWithIt:
 	.string "What would you like to exchange\n"

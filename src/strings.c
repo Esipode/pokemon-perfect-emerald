@@ -172,6 +172,7 @@ const u8 gText_NumberItem_HM[] = _("{CLEAR_TO 17}{STR_VAR_1}{CLEAR 5}{STR_VAR_2}
 
 const u8 gText_ShopBuy[] = _("BUY");
 const u8 gText_ShopSell[] = _("SELL");
+const u8 gText_ShopReset[] = _("RESET");
 const u8 gText_ShopQuit[] = _("QUIT");
 const u8 gText_ThatItemIsSoldOut[] = _("I'm sorry, but that item is sold out.{PAUSE_UNTIL_PRESS}");
 const u8 gText_SoldOut[] = _("SOLD OUT");

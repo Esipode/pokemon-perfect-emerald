@@ -1421,7 +1421,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_HEALTH_FEATHER] =
     {
         .name = ITEM_NAME("Health Feather"),
-        .price = 3000,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Raises the base HP\n"
             "of one Pokémon."),
@@ -1438,7 +1438,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_MUSCLE_FEATHER] =
     {
         .name = ITEM_NAME("Muscle Feather"),
-        .price = 3000,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Attack stat of one\n"
@@ -1456,7 +1456,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_RESIST_FEATHER] =
     {
         .name = ITEM_NAME("Resist Feather"),
-        .price = 3000,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Defense stat of\n"
@@ -1474,7 +1474,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_GENIUS_FEATHER] =
     {
         .name = ITEM_NAME("Genius Feather"),
-        .price = 3000,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Sp. Atk stat of one\n"
@@ -1492,7 +1492,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_CLEVER_FEATHER] =
     {
         .name = ITEM_NAME("Clever Feather"),
-        .price = 3000,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Sp. Def stat of one\n"
@@ -1510,7 +1510,7 @@ const struct ItemInfo gItemsInfo[] =
     [ITEM_SWIFT_FEATHER] =
     {
         .name = ITEM_NAME("Swift Feather"),
-        .price = 3000,
+        .price = 100,
         .description = COMPOUND_STRING(
             "Raises the base\n"
             "Speed stat of one\n"
