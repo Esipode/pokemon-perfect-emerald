@@ -1,5 +1,7 @@
 ## Galarian Zapdos — The Relentless Pursuer
 
+### Location: Route 110 - Thunderstorm Weather, Zapdos caught, 40+ legendaries caught
+
 Zapdos fights behind the usual legendary package: a damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage.

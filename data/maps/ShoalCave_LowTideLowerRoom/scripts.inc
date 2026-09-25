@@ -10,6 +10,18 @@ ShoalCave_LowTideLowerRoom_OnLoad:
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, TRUE, ShoalCave_LowTideLowerRoom_HiddenLadder
+
+	setvar VAR_0x8004, SPECIES_ARTICUNO_GALAR
+	setvar VAR_0x8005, LAYOUT_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_LAYOUT_ARTICUNO
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideLowerRoom_KeepWarpOpen
+	getcaughtmon SPECIES_ARTICUNO
+	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideLowerRoom_KeepWarpOpen
+	special CountCaughtLegendaryFamilies
+	goto_if_ge VAR_RESULT, 40, ShoalCave_LowTideLowerRoom_HiddenLadder
+ShoalCave_LowTideLowerRoom_KeepWarpOpen:
 	// Keep warp open if returning from legendary map
     setvar VAR_0x8004, MAP_GROUP(MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_ARTICUNO)
     setvar VAR_0x8005, MAP_NUM(MAP_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_ARTICUNO)

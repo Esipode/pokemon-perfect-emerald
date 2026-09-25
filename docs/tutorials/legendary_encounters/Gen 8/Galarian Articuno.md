@@ -1,5 +1,7 @@
 ## Galarian Articuno — The Cruel Pokémon
 
+### Location: Shoal Cave - Low Tide - Articuno caught and 40+ legendaries caught
+
 Articuno fights behind the usual legendary package: a damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
 damage. It also **cannot be taken below 1 HP** until the catch window opens.

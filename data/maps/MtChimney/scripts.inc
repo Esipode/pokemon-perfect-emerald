@@ -11,21 +11,43 @@ MtChimney_OnLoad:
     setvar VAR_0x8006, WEEKDAY_WED
     setvar VAR_0x8007, 1
     special CheckValidLegendaryEncounter
-	goto_if_eq VAR_RESULT, TRUE, MtChimney_ShowMoltresArena
-	goto_if_ne VAR_RESULT, TRUE, MtChimney_HideMoltresArena
-	end
+	goto_if_eq VAR_RESULT, TRUE, MtChimney_ShowMoltresOnlyArena
+	setflag FLAG_HIDE_MOLTRES
+	setvar VAR_0x8004, SPECIES_MOLTRES_GALAR
+	setvar VAR_0x8005, LAYOUT_MT_CHIMNEY
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, MtChimney_HideGalarianMoltresArena
+	getcaughtmon SPECIES_MOLTRES
+	goto_if_eq VAR_RESULT, FALSE, MtChimney_HideGalarianMoltresArena
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 40, MtChimney_HideGalarianMoltresArena
+	goto MtChimney_ShowMoltresArena
 
 MtChimney_OnTransition:
 	setvar VAR_JAGGED_PASS_ASH_WEATHER, 1
 	updatelegendaryvisibility SPECIES_MOLTRES, FLAG_HIDE_MOLTRES
+	updatelegendaryvisibility SPECIES_MOLTRES_GALAR, FLAG_HIDE_GALARIAN_MOLTRES
 	end
 
 MtChimney_Moltres_Encounter::
 	goto LegendaryEncounter_EventScript_Moltres
 
+MtChimney_GalarianMoltres_Encounter::
+	goto LegendaryEncounter_EventScript_GalarianMoltres
+
 MtChimney_HideMoltresArena::
 	setflag FLAG_HIDE_MOLTRES
 	return
+
+MtChimney_HideGalarianMoltresArena:
+	setflag FLAG_HIDE_GALARIAN_MOLTRES
+	end
+
+MtChimney_ShowMoltresOnlyArena:
+	setflag FLAG_HIDE_GALARIAN_MOLTRES
+	goto MtChimney_ShowMoltresArena
 
 MtChimney_OnResume:
 	setstepcallback STEP_CB_ASH

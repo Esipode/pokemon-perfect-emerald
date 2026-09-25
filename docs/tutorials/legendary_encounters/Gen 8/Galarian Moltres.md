@@ -1,5 +1,7 @@
 ## Galarian Moltres — The Malevolent Pokémon
 
+### Location: Mt. Chimney - Moltres caught and 40+ legendaries caught
+
 A vengeful spirit wrapped in dark flame. It doesn't just fight you — it learns to fear you less and
 you fear it more, and the fight tilts with every step of that trade.
 

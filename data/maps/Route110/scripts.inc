@@ -6,11 +6,42 @@ Route110_MapScripts::
 
 Route110_OnResume:
 	special UpdateCyclingRoadState
+	updatelegendaryvisibility SPECIES_ZAPDOS_GALAR, FLAG_HIDE_GALARIAN_ZAPDOS
+	call Route110_CheckGalarianZapdos
+	call_if_eq VAR_RESULT, FALSE, Route110_HideGalarianZapdos
+	call_if_eq VAR_RESULT, TRUE, Route110_ShowZapdos
 	updatelegendaryvisibility SPECIES_ZAPDOS, FLAG_HIDE_ZAPDOS
 	special Route110ShowZapdos
 	goto_if_eq VAR_RESULT, TRUE, Route110_ShowZapdos
 	goto_if_ne VAR_RESULT, TRUE, Route110_HideZapdos
 	end
+
+Route110_CheckGalarianZapdos:
+	setvar VAR_0x8004, SPECIES_ZAPDOS_GALAR
+	setvar VAR_0x8005, LAYOUT_ROUTE110
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route110_GalarianZapdosGateFailed
+	getmapweather VAR_0x8008
+	goto_if_ne VAR_0x8008, WEATHER_RAIN_THUNDERSTORM, Route110_GalarianZapdosGateFailed
+	getcaughtmon SPECIES_ZAPDOS
+	goto_if_eq VAR_RESULT, FALSE, Route110_GalarianZapdosGateFailed
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 40, Route110_GalarianZapdosGateFailed
+	setvar VAR_RESULT, TRUE
+	return
+
+Route110_GalarianZapdosGateFailed:
+	setvar VAR_RESULT, FALSE
+	return
+
+Route110_GalarianZapdos_Encounter::
+	goto LegendaryEncounter_EventScript_GalarianZapdos
+
+Route110_HideGalarianZapdos:
+	setflag FLAG_HIDE_GALARIAN_ZAPDOS
+	return
 
 Route110_OnTransition:
 	call Common_EventScript_SetupRivalGfxId

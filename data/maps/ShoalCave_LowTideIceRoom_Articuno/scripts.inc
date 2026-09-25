@@ -1,9 +1,38 @@
 ShoalCave_LowTideIceRoom_Articuno_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, ShoalCave_LowTideIceRoom_Articuno_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, ShoalCave_LowTideIceRoom_Articuno_OnLoad
 	.byte 0
 
 ShoalCave_LowTideIceRoom_Articuno_OnTransition:
 	updatelegendaryvisibility SPECIES_ARTICUNO, FLAG_HIDE_ARTICUNO
+	updatelegendaryvisibility SPECIES_ARTICUNO_GALAR, FLAG_HIDE_GALARIAN_ARTICUNO
+	end
+
+ShoalCave_LowTideIceRoom_Articuno_OnLoad:
+	setvar VAR_0x8004, SPECIES_ARTICUNO_GALAR
+	setvar VAR_0x8005, LAYOUT_SHOAL_CAVE_LOW_TIDE_ICE_ROOM_LAYOUT_ARTICUNO
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena
+	getcaughtmon SPECIES_ARTICUNO
+	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 40, ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena
+	goto ShoalCave_LowTideIceRoom_Articuno_ShowGalarianArticunoArena
 
 ShoalCave_LowTideIceRoom_Articuno_Encounter::
 	goto LegendaryEncounter_EventScript_Articuno
+
+ShoalCave_LowTideIceRoom_Articuno_GalarianArticuno_Encounter::
+	goto LegendaryEncounter_EventScript_GalarianArticuno
+
+ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena:
+	setflag FLAG_HIDE_GALARIAN_ARTICUNO
+	end
+
+ShoalCave_LowTideIceRoom_Articuno_ShowGalarianArticunoArena:
+	overlaycreate RGB(20, 4, 26), 4, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
+	overlaypulse VAR_TEMP_5, 2, 9, 120
+	screenfxwave VAR_TEMP_6, 16, 75, 0, 0
+	end
