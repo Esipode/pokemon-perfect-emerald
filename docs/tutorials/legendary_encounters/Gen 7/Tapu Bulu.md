@@ -1,5 +1,7 @@
 ## Tapu Bulu — The Land Spirit Pokémon
 
+### Location: Safari Zone Northeast - Thursdays, daytime
+
 A guardian that grows stronger the longer the vegetation around it is left standing. Burn it down
 and Tapu Bulu gets faster and hits harder - but loses the guard that growth built up.
 
