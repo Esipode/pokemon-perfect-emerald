@@ -2570,8 +2570,6 @@ static bool32 ReturnToFieldLocal(u8 *state)
         ResetMirageTowerAndSaveBlockPtrs();
         ResetScreenForMapLoad();
         ResumeMap(FALSE);
-        UpdateLocationHistoryForRoamer();
-        MoveAllRoamers();
         {
             bool8 roamerNearby = FALSE;
             u16 roamerSpecies = SPECIES_NONE;

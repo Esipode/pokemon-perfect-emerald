@@ -1033,9 +1033,6 @@ void OnOverworldWildEncounterDespawn(struct ObjectEvent *owe)
     if (type == OWE_NONE)
         return;
 
-    if (owe->sOverworldEncounterCategory < ROAMER_COUNT)
-        RoamerMove(owe->sOverworldEncounterCategory);
-
     owe->sOverworldEncounterLevel = 0;
     owe->sOverworldEncounterAge = 0;
     owe->sOverworldEncounterCategory = 0;
