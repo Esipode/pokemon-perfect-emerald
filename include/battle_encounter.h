@@ -1384,6 +1384,22 @@ extern const u8 EncScript_Terapagos_TurnOpen[];
 extern const u8 EncScript_Terapagos_WindowExpire[];
 extern const u8 EncScript_Terapagos_TurnClose[];
 
+// Calyrex ("The King Pokémon")
+extern const u8 EncScript_Calyrex_Intro[];
+extern const u8 EncScript_Calyrex_TurnOpen[];
+extern const u8 EncScript_Calyrex_TurnClose[];
+extern const u8 EncScript_Calyrex_WeakStreakInc[];
+extern const u8 EncScript_Calyrex_WeakStreakReset[];
+extern const u8 EncScript_Calyrex_SwitchViolation[];
+extern const u8 EncScript_Calyrex_LostKingdomStage1[];
+extern const u8 EncScript_Calyrex_LostKingdomStage2[];
+extern const u8 EncScript_Calyrex_LostKingdomStage3[];
+extern const u8 EncScript_Calyrex_MountUp[];
+extern const u8 EncScript_Calyrex_KCFailure[];
+extern const u8 EncScript_Calyrex_KingdomRestored[];
+extern const u8 EncScript_Calyrex_KingsGambit[];
+extern const u8 EncScript_Calyrex_NowIsTheMoment[];
+
 // Command tests (test/battle/encounter/commands.c).
 extern const u8 EncScript_TestChangeHpDamage[];
 extern const u8 EncScript_TestChangeHpHeal[];

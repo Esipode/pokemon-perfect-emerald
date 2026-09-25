@@ -1,0 +1,190 @@
+Encounter: Calyrex
+
+# Calyrex, "The King Pokemon". One rule:
+#   AUTHORITY, 0-10, is how much of its kingdom Calyrex has reclaimed. It rises when the player
+#   defies a Royal Decree or fails a King's Command, and it sets the odds of the final King's Gambit
+#   (success chance = 100 - Authority*10). At 3/6/9 it reshapes the field; at 9+ it also hardens
+#   Calyrex's guard by 2.
+#   Phase 0 ROYAL DECREES - a 3-turn decree alternates "do not switch" / "do not stay at or below
+#     33% HP" (two turn-ends in a row). Upholding it is free; breaking it is +1 Authority.
+#   Phase 1 THE RIDER RETURNS (<= 50% HP) - a coin flip mounts Ice or Shadow Rider and unlocks its
+#     signature move. KING'S COMMAND: keep your lead alive through three turn-ends (-2 Authority)
+#     or lose it (+2 Authority, Calyrex Attack +1).
+#   Phase 2 KINGDOM RESTORED (<= 15% HP) - guard 95, then one KING'S GAMBIT two turns later.
+#   Phase 3 the catch window (<= 10% HP, any phase).
+# ANTI-ABUSE IS NARROW (guideline 8): the decree cycle punishes switch-spam and low-HP stalling;
+#   King's Command punishes sacrificing a mon to skip the check; sloppy play makes the Gambit harder.
+Properties:
+    Level: LevelCap
+    CatchRate: 10
+    Balls: Blocked
+    DamageReduction: 90         # written absolutely by EncScript_Calyrex_ApplyGuard after the fight starts
+    Immunities: Ohko, FixedDamage, HpSwap, SharedKo
+    CapTypeEffectiveness: True  # Shadow Rider takes 4x from Ghost and Dark
+    FlatToxicDamage: True
+    Moves: MOVE_CONFUSION, MOVE_TRICK_ROOM, MOVE_GIGA_DRAIN, MOVE_EXPANDING_FORCE
+    AiFlags: AI_FLAG_SMART_TRAINER
+
+# Always-true block: pins the variable numbering the battle scripts hard-code (first appearance).
+# 0 Phase (0 Decrees / 1 Rider / 2 Kingdom Restored / 3 Spent), 1 Authority (0-10),
+# 2 DecreeType (0 no switch / 1 no weakened), 3 DecreeTimer (0 = decree resolves this turn end),
+# 4 ViolationFlag, 5 WeakStreak (consecutive turn-ends at <= 33%), 6 MountForm (0 Ice / 1 Shadow),
+# 7 KCActive, 8 KCTurns, 9 GambitCooldown, 10 TurnGuard (once-per-turn scaffold),
+# 11 WeakLatch (closes the weak-check triggers each turn), 12 GambitWon.
+Trigger: OnBattleStart
+Priority: 10
+Flags: Once
+Script: EncScript_Calyrex_Intro
+Conditions:
+    Var(Phase) >= 0
+    Var(Authority) >= 0
+    Var(DecreeType) >= 0
+    Var(DecreeTimer) >= 0
+    Var(ViolationFlag) >= 0
+    Var(WeakStreak) >= 0
+    Var(MountForm) >= 0
+    Var(KCActive) >= 0
+    Var(KCTurns) >= 0
+    Var(GambitCooldown) >= 0
+    Var(TurnGuard) >= 0
+    Var(WeakLatch) >= 0
+    Var(GambitWon) >= 0
+
+# Phase transitions, registered at both checkpoints because the blow that crosses a threshold can be
+# a move or an end-of-turn tick. Once marks at selection, so whichever fires first disables the twin.
+# All sit BELOW the turn scaffold so a crossing is seen by the ledger. A single blow spanning several
+# thresholds runs them in order (5, 6, 7).
+Trigger: OnMoveEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_MountUp
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnTurnEnd
+Priority: 5
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_MountUp
+Conditions:
+    Battler(Boss).HpPercent <= 50
+    Var(Phase) == 0
+
+Trigger: OnMoveEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_KingdomRestored
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+Trigger: OnTurnEnd
+Priority: 6
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_KingdomRestored
+Conditions:
+    Battler(Boss).HpPercent <= 15
+    Var(Phase) == 1
+
+# The catch window opens at <= 10% from any phase.
+Trigger: OnMoveEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_NowIsTheMoment
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+Trigger: OnTurnEnd
+Priority: 7
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_NowIsTheMoment
+Conditions:
+    Battler(Boss).HpPercent <= 10
+
+# Turn scaffold. TurnOpen sets TurnGuard, TurnClose clears it; nothing else re-selects in between.
+Trigger: OnTurnStart
+Priority: 20
+Script: EncScript_Calyrex_TurnOpen
+Conditions:
+    Var(TurnGuard) == 0
+
+Trigger: OnTurnEnd
+Priority: 20
+Script: EncScript_Calyrex_TurnClose
+Conditions:
+    Var(TurnGuard) == 1
+
+# "Do not stay weakened": one of these runs each turn end (WeakLatch closes it), before TurnClose
+# resolves the decree.
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_Calyrex_WeakStreakInc
+Conditions:
+    Var(TurnGuard) == 1
+    Var(Phase) == 0
+    Var(DecreeType) == 1
+    Var(WeakLatch) == 0
+    Battler(PlayerLeft).HpPercent <= 33
+
+Trigger: OnTurnEnd
+Priority: 10
+Script: EncScript_Calyrex_WeakStreakReset
+Conditions:
+    Var(TurnGuard) == 1
+    Var(Phase) == 0
+    Var(DecreeType) == 1
+    Var(WeakLatch) == 0
+    Not:
+        Battler(PlayerLeft).HpPercent <= 33
+
+# "Do not switch". TurnGuard == 1 excludes the battle-start send-out; ViolationFlag closes it.
+Trigger: OnSwitchIn
+Priority: 10
+Script: EncScript_Calyrex_SwitchViolation
+Conditions:
+    Var(TurnGuard) == 1
+    Var(Phase) == 0
+    Var(DecreeType) == 0
+    Var(ViolationFlag) == 0
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# King's Command failed. KCActive closes it.
+Trigger: OnFaint
+Priority: 10
+Script: EncScript_Calyrex_KCFailure
+Conditions:
+    Var(Phase) == 1
+    Var(KCActive) == 1
+    Event.Battler == B_POSITION_PLAYER_LEFT
+
+# Lost Kingdom stages. Below TurnClose so an Authority change made there is seen this turn end.
+Trigger: OnTurnEnd
+Priority: 30
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_LostKingdomStage1
+Conditions:
+    Var(Authority) >= 3
+
+Trigger: OnTurnEnd
+Priority: 31
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_LostKingdomStage2
+Conditions:
+    Var(Authority) >= 6
+
+Trigger: OnTurnEnd
+Priority: 32
+Flags: Once, OnEnter
+Script: EncScript_Calyrex_LostKingdomStage3
+Conditions:
+    Var(Authority) >= 9
+
+# The King's Gambit, once, after TurnOpen has ticked the cooldown to zero. Once closes it.
+Trigger: OnTurnStart
+Priority: 30
+Flags: Once
+Script: EncScript_Calyrex_KingsGambit
+Conditions:
+    Var(TurnGuard) == 1
+    Var(Phase) == 2
+    Var(GambitCooldown) == 0
