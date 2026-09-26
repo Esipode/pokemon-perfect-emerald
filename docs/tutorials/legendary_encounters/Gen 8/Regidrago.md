@@ -1,5 +1,7 @@
 # Regidrago — The Dragon Orb Pokemon
 
+### Location: MeteorFalls_RegiCave — 30+ legendaries caught opens the door in Meteor Falls - Inside are four statues, one per corner: Wyrm (TOP Left), Drake (Bottom Left), Wyvern (Bottom Right), Dragon (Top Right). Read them in that order (Wyrm, then Drake, then Wyvern, then Dragon) to open the sealed chamber
+
 An ancient, half-awake dragon running on stored power instead of its own strength. Every hit that
 lands, every Dragon move thrown, every Pokemon that faints — it all feeds the same meter, and once
 that meter is full, Regidrago stops holding back.

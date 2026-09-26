@@ -9132,6 +9132,16 @@
       "border_filepath": "data/layouts/ShoalCave_LowTideIceRoom_Layout_Articuno/border.bin",
       "blockdata_filepath": "data/layouts/ShoalCave_LowTideIceRoom_Layout_Articuno/map.bin",
       "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_METEOR_FALLS_REGI_CAVE",
+      "name": "MeteorFalls_RegiCave_Layout",
+      "width": 17,
+      "height": 33,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/MeteorFalls_RegiCave/border.bin",
+      "blockdata_filepath": "data/layouts/MeteorFalls_RegiCave/map.bin"
     }
   ]
 }

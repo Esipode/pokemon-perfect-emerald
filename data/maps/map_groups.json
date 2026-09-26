@@ -477,7 +477,8 @@
     "TerraCave_End",
     "AlteringCave",
     "MeteorFalls_StevensCave",
-    "ShoalCave_LowTideIceRoom_Articuno"
+    "ShoalCave_LowTideIceRoom_Articuno",
+    "MeteorFalls_RegiCave"
   ],
   "gMapGroup_IndoorDynamic": [
     "BattleColosseum_2P",

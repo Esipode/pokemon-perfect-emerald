@@ -273,3 +273,26 @@ Braille_Text_ForYou::
 	brailleformat 3, 0, 25, 19, 6, 3
 	.braille "FOR YOU.$"
 
+MeteorFalls_RegiCave_Braille_WakeTheDragon:
+	brailleformat 3, 0, 25, 19, 6, 3
+	.braille "WYRM, THEN\n"
+	.braille "DRAKE, THEN\n"
+	.braille "WYVERN, THEN\n"
+	.braille "DRAGON.$"
+
+MeteorFalls_RegiCave_Braille_WyrmAltar:
+	brailleformat 3, 0, 25, 19, 6, 3
+	.braille "WYRM ALTAR$"
+
+MeteorFalls_RegiCave_Braille_DrakeAltar:
+	brailleformat 3, 0, 25, 19, 6, 3
+	.braille "DRAKE ALTAR$"
+
+MeteorFalls_RegiCave_Braille_WyvernAltar:
+	brailleformat 3, 0, 25, 19, 6, 3
+	.braille "WYVERN ALTAR$"
+
+MeteorFalls_RegiCave_Braille_DragonAltar:
+	brailleformat 3, 0, 25, 19, 6, 3
+	.braille "DRAGON ALTAR$"
+
