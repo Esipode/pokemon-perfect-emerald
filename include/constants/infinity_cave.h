@@ -86,6 +86,16 @@ enum InfCaveCell
 #define INFCAVE_MARGIN              3 // solid tiles kept at every canvas edge
 #define INFCAVE_SMOOTH_PASSES       2
 
+// Mask legality. The post-pass edits the mask until it satisfies the rules the
+// autotiler and the NPC placer rely on; a mask that still fails is regenerated
+// from a shifted stream, and after INFCAVE_MASK_ATTEMPTS tries the generator
+// falls back to a plain rectangular room.
+#define INFCAVE_LEGALITY_PASSES     8   // repair sweeps before the mask is judged
+#define INFCAVE_MASK_ATTEMPTS       8
+#define INFCAVE_MIN_FLOOR_TILES     120 // a room with less walkable area is rejected
+#define INFCAVE_EMERGENCY_W         24  // fallback room, centred on the canvas
+#define INFCAVE_EMERGENCY_H         20
+
 // Tile-role key map. LAYOUT_INFINITY_CAVE_TILEKEY stores one authored block per
 // role at a fixed cell, so retheming the cave is a Porymap edit with no code
 // change. Role ids are cell indices into that layout: row * width + column.

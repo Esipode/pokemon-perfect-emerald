@@ -690,6 +690,17 @@ Debug_EventScript_HeapStats_Text::
 	.string "Heap peak used: {STR_VAR_1}\n"
 	.string "Heap size: {STR_VAR_2}$"
 
+Debug_EventScript_InfCaveMaskCheck::
+	callnative CheckInfCaveMaskLegality
+	msgbox Debug_EventScript_InfCaveMaskCheck_Text, MSGBOX_DEFAULT
+	release
+	end
+
+Debug_EventScript_InfCaveMaskCheck_Text::
+	.string "Mask failures: {STR_VAR_1} of 100\n"
+	.string "First fault: {STR_VAR_2}\l"
+	.string "Seed: {STR_VAR_3}$"
+
 Debug_EventScript_FontTest_Text_1::
 	.string "{FONT_SMALL_NARROWER}"                 @ Edit this to test your font
 	.string "Angel Adept Blind Bodice Clique\n"

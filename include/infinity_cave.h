@@ -62,4 +62,12 @@ void InfCave_LoadTileRoles(void);
 // Authored block word for a role. role < INFCAVE_ROLE_COUNT.
 u16 InfCave_GetRoleBlock(u32 role);
 
+// Legality harness. Generates count masks from baseSeed and returns how many
+// broke a rule; the first failure's seed and fault id land in firstBadSeed and
+// firstFault, either of which may be NULL. Restores the live room's seed.
+u32 InfCave_DebugValidateMask(u32 baseSeed, u32 count, u32 *firstBadSeed, u32 *firstFault);
+
+// Name of a fault id reported by InfCave_DebugValidateMask.
+const u8 *InfCave_GetMaskFaultName(u32 fault);
+
 #endif // GUARD_INFINITY_CAVE_H

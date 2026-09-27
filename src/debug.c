@@ -24,6 +24,7 @@
 #include "field_weather.h"
 #include "follower_npc.h"
 #include "international_string_util.h"
+#include "infinity_cave.h"
 #include "item.h"
 #include "item_icon.h"
 #include "item_use.h"
@@ -433,6 +434,7 @@ extern const u8 Debug_BoxFilledMessage[];
 extern const u8 Debug_ShowExpansionVersion[];
 extern const u8 Debug_EventScript_EWRAMCounters[];
 extern const u8 Debug_EventScript_HeapStats[];
+extern const u8 Debug_EventScript_InfCaveMaskCheck[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
 extern const u8 Debug_EventScript_Steven_Multi[];
@@ -642,6 +644,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("NG+ Cycle…"),                DebugAction_Util_SetNewGamePlusCycle },
     { COMPOUND_STRING("Force Draft (map)…"),        DebugAction_Util_ForceDraft },
     { COMPOUND_STRING("Heap Peak Usage…"),          DebugAction_ExecuteScript, Debug_EventScript_HeapStats },
+    { COMPOUND_STRING("InfCave Mask Check…"),      DebugAction_ExecuteScript, Debug_EventScript_InfCaveMaskCheck },
     { COMPOUND_STRING("View Trade Code…"),          DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"),        DebugAction_TradeCode_ViewSampleConfirm },
     { COMPOUND_STRING("Enter Trade Code…"),         DebugAction_TradeCode_EnterOffer },
@@ -5396,4 +5399,18 @@ void CheckHeapStats(struct ScriptContext *ctx)
 {
     ConvertIntToDecimalStringN(gStringVar1, GetHeapPeakUsed(), STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, HEAP_SIZE, STR_CONV_MODE_LEFT_ALIGN, 6);
+}
+
+// Runs the Infinity Cave mask legality rules over a block of seeds and reports
+// how many failed, naming the first offending seed and rule.
+#define DEBUG_INFCAVE_MASK_SEEDS 100
+
+void CheckInfCaveMaskLegality(struct ScriptContext *ctx)
+{
+    u32 badSeed = 0, fault = 0;
+    u32 failures = InfCave_DebugValidateMask(1, DEBUG_INFCAVE_MASK_SEEDS, &badSeed, &fault);
+
+    ConvertIntToDecimalStringN(gStringVar1, failures, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringCopy(gStringVar2, InfCave_GetMaskFaultName(fault));
+    ConvertIntToDecimalStringN(gStringVar3, badSeed, STR_CONV_MODE_LEFT_ALIGN, 10);
 }

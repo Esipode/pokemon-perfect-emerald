@@ -430,6 +430,231 @@ static void PruneToLargestComponent(void)
     ClearMaskFlags(INFCAVE_FLAG_KEEP);
 }
 
+// Why a mask was rejected. Reported by the debug harness so a bad seed names the
+// rule it broke instead of only failing.
+enum InfCaveMaskFault
+{
+    INFCAVE_FAULT_NONE,
+    INFCAVE_FAULT_MARGIN,    // floor inside the solid canvas margin
+    INFCAVE_FAULT_DIAGONAL,  // two floor regions joined only through a diagonal
+    INFCAVE_FAULT_THIN_WALL, // wall run one tile thick between two floor tiles
+    INFCAVE_FAULT_AREA,      // less walkable area than INFCAVE_MIN_FLOOR_TILES
+    INFCAVE_FAULT_SPLIT,     // more than one floor component
+};
+
+static bool32 IsFloorSafe(s32 x, s32 y)
+{
+    if (x < 0 || x >= INFCAVE_MAP_WIDTH || y < 0 || y >= INFCAVE_MAP_HEIGHT)
+        return FALSE;
+    return IsFloor(x, y);
+}
+
+static u32 CountFloor(void)
+{
+    u32 x, y, count = 0;
+
+    for (y = 0; y < INFCAVE_MAP_HEIGHT; y++)
+    {
+        for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
+        {
+            if (IsFloor(x, y))
+                count++;
+        }
+    }
+    return count;
+}
+
+// TRUE when every floor tile belongs to one component. Only the carved area is
+// walked, so a floor tile stranded in the margin reads as a split.
+static bool32 IsFloorConnected(u32 floorCount)
+{
+    u32 x, y, reached;
+
+    if (floorCount == 0)
+        return FALSE;
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+        {
+            if (!IsFloor(x, y))
+                continue;
+
+            reached = FloodFillComponent(x, y, INFCAVE_FLAG_KEEP);
+            ClearMaskFlags(INFCAVE_FLAG_KEEP);
+            return reached == floorCount;
+        }
+    }
+    return FALSE;
+}
+
+// The canvas border must stay solid: the map is rendered at MAP_OFFSET inside a
+// larger backup layout, and a floor tile on the edge would let the player walk
+// into the connecting border.
+static void ClearMarginFloor(void)
+{
+    u32 x, y;
+
+    for (y = 0; y < INFCAVE_MAP_HEIGHT; y++)
+    {
+        for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
+        {
+            if (x >= INFCAVE_AREA_MIN && x < INFCAVE_AREA_MAX_X
+             && y >= INFCAVE_AREA_MIN && y < INFCAVE_AREA_MAX_Y)
+                continue;
+            if (IsFloor(x, y))
+                SetCell(x, y, INFCAVE_CELL_VOID);
+        }
+    }
+}
+
+// Two floor tiles touching only at a corner are walkable in neither direction,
+// so the pair reads as a dead end that looks like a passage. Filling either
+// elbow turns it into a real corner; which one is a coin flip so the repairs do
+// not all lean the same way.
+static bool32 FixDiagonalLinks(rng_value_t *rng)
+{
+    u32 x, y;
+    bool32 changed = FALSE;
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y - 1; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X - 1; x++)
+        {
+            bool32 nw = IsFloor(x, y);
+            bool32 ne = IsFloor(x + 1, y);
+            bool32 sw = IsFloor(x, y + 1);
+            bool32 se = IsFloor(x + 1, y + 1);
+
+            if (nw && se && !ne && !sw)
+            {
+                if (InfCave_Rand(rng) & 1)
+                    SetCell(x + 1, y, INFCAVE_CELL_FLOOR);
+                else
+                    SetCell(x, y + 1, INFCAVE_CELL_FLOOR);
+                changed = TRUE;
+            }
+            else if (ne && sw && !nw && !se)
+            {
+                if (InfCave_Rand(rng) & 1)
+                    SetCell(x, y, INFCAVE_CELL_FLOOR);
+                else
+                    SetCell(x + 1, y + 1, INFCAVE_CELL_FLOOR);
+                changed = TRUE;
+            }
+        }
+    }
+    return changed;
+}
+
+// A wall run one tile thick cannot be drawn: the same tile would have to carry
+// the north edge, the fill and the south face at once. Opening it into floor
+// also removes the single wall tile stranded inside a floor region, which is the
+// same case with floor on all four sides.
+static bool32 OpenThinWallRuns(void)
+{
+    u32 x, y;
+    bool32 changed = FALSE;
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+        {
+            if (IsFloor(x, y))
+                continue;
+            if ((IsFloorSafe(x, y - 1) && IsFloorSafe(x, y + 1))
+             || (IsFloorSafe(x - 1, y) && IsFloorSafe(x + 1, y)))
+            {
+                SetCell(x, y, INFCAVE_CELL_FLOOR);
+                changed = TRUE;
+            }
+        }
+    }
+    return changed;
+}
+
+// Repair sweeps run to a fixed point: each sweep adds floor, which can expose a
+// fresh diagonal or thin run one tile further out.
+static void EnforceLegality(rng_value_t *rng)
+{
+    u32 pass;
+
+    ClearMarginFloor();
+
+    for (pass = 0; pass < INFCAVE_LEGALITY_PASSES; pass++)
+    {
+        bool32 changed = FALSE;
+
+        changed |= FixDiagonalLinks(rng);
+        changed |= OpenThinWallRuns();
+
+        if (!changed)
+            break;
+    }
+}
+
+// Judges the repaired mask. Returns INFCAVE_FAULT_NONE when every rule holds.
+static u32 MaskLegalityFault(void)
+{
+    u32 x, y;
+    u32 floorCount = CountFloor();
+
+    for (y = 0; y < INFCAVE_MAP_HEIGHT; y++)
+    {
+        for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
+        {
+            if (!IsFloor(x, y))
+                continue;
+            if (x < INFCAVE_AREA_MIN || x >= INFCAVE_AREA_MAX_X
+             || y < INFCAVE_AREA_MIN || y >= INFCAVE_AREA_MAX_Y)
+                return INFCAVE_FAULT_MARGIN;
+        }
+    }
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+        {
+            if (IsFloor(x, y))
+            {
+                // Both diagonals: floor reachable only through a shared corner.
+                if (IsFloorSafe(x + 1, y + 1) && !IsFloorSafe(x + 1, y) && !IsFloorSafe(x, y + 1))
+                    return INFCAVE_FAULT_DIAGONAL;
+                if (IsFloorSafe(x + 1, y - 1) && !IsFloorSafe(x + 1, y) && !IsFloorSafe(x, y - 1))
+                    return INFCAVE_FAULT_DIAGONAL;
+                continue;
+            }
+
+            if ((IsFloorSafe(x, y - 1) && IsFloorSafe(x, y + 1))
+             || (IsFloorSafe(x - 1, y) && IsFloorSafe(x + 1, y)))
+                return INFCAVE_FAULT_THIN_WALL;
+        }
+    }
+
+    if (floorCount < INFCAVE_MIN_FLOOR_TILES)
+        return INFCAVE_FAULT_AREA;
+    if (!IsFloorConnected(floorCount))
+        return INFCAVE_FAULT_SPLIT;
+
+    return INFCAVE_FAULT_NONE;
+}
+
+// Last resort when no seed produced a legal mask: one centred rectangle, which
+// satisfies every rule by construction.
+static void BuildEmergencyMask(void)
+{
+    ClearMask();
+    CarveRect((INFCAVE_MAP_WIDTH - INFCAVE_EMERGENCY_W) / 2,
+              (INFCAVE_MAP_HEIGHT - INFCAVE_EMERGENCY_H) / 2,
+              INFCAVE_EMERGENCY_W, INFCAVE_EMERGENCY_H);
+
+    sRooms[0].x = (INFCAVE_MAP_WIDTH - INFCAVE_EMERGENCY_W) / 2;
+    sRooms[0].y = (INFCAVE_MAP_HEIGHT - INFCAVE_EMERGENCY_H) / 2;
+    sRooms[0].w = INFCAVE_EMERGENCY_W;
+    sRooms[0].h = INFCAVE_EMERGENCY_H;
+    sRoomCount = 1;
+}
+
 // Wraps every floor region in INFCAVE_WALL_THICKNESS wall tiles. Anything
 // further out stays void; the autotile pass renders both as solid rock.
 static void BuildWallShell(void)
@@ -552,23 +777,111 @@ static void TraceMask(void)
 }
 #endif
 
-// The ordered generation pipeline. Every pass reads and writes sMask only;
-// nothing here knows about metatiles.
-static void BuildMask(void)
+// One generation attempt. attempt shifts the RNG salt, so a rejected mask is
+// rebuilt from a different stream while the room's stored seed is untouched.
+// Returns the fault the finished mask still has, or INFCAVE_FAULT_NONE.
+static u32 TryBuildMask(u32 attempt)
 {
-    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_MASK);
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_MASK + attempt);
 
     ClearMask();
     PlaceRooms(&rng);
     CarveCorridors(&rng);
     SmoothMask();
     PruneToLargestComponent();
+    EnforceLegality(&rng);
+
+    return MaskLegalityFault();
+}
+
+// The ordered generation pipeline. Every pass reads and writes sMask only;
+// nothing here knows about metatiles. The temporary exit access and the wall
+// shell run after the mask is judged: the access corridor deliberately breaks
+// the margin rule, and the shell only relabels void the player cannot reach.
+static void BuildMask(void)
+{
+    u32 attempt;
+
+    for (attempt = 0; attempt < INFCAVE_MASK_ATTEMPTS; attempt++)
+    {
+        u32 fault = TryBuildMask(attempt);
+
+        if (fault == INFCAVE_FAULT_NONE)
+            break;
+
+#if INFCAVE_TRACE == TRUE
+        DebugPrintf("InfCave mask attempt %d rejected, fault %d", attempt, fault);
+#endif
+    }
+
+    if (attempt == INFCAVE_MASK_ATTEMPTS)
+        BuildEmergencyMask();
+
     CarveTempExitAccess();
     BuildWallShell();
 
 #if INFCAVE_TRACE == TRUE
     TraceMask();
 #endif
+}
+
+// Debug harness for the legality rules: rebuilds count consecutive room seeds
+// from baseSeed and returns how many failed. The first failure's seed and fault
+// go to firstBadSeed / firstFault when those are non-NULL. Only the first
+// attempt of each seed is judged, so the retry path cannot hide a bad rule.
+// This leaves sMask holding the last generated room; the live room is rebuilt
+// from its seed on the next map load, so nothing on screen depends on it.
+u32 InfCave_DebugValidateMask(u32 baseSeed, u32 count, u32 *firstBadSeed, u32 *firstFault)
+{
+    u32 savedSeed = gSaveBlock1Ptr->infinityCaveRun.roomSeed;
+    u32 i, failures = 0;
+
+    for (i = 0; i < count; i++)
+    {
+        u32 fault;
+
+        gSaveBlock1Ptr->infinityCaveRun.roomSeed = baseSeed + i;
+        fault = TryBuildMask(0);
+        if (fault == INFCAVE_FAULT_NONE)
+            continue;
+
+        if (failures == 0)
+        {
+            if (firstBadSeed != NULL)
+                *firstBadSeed = baseSeed + i;
+            if (firstFault != NULL)
+                *firstFault = fault;
+        }
+        failures++;
+    }
+
+    gSaveBlock1Ptr->infinityCaveRun.roomSeed = savedSeed;
+    return failures;
+}
+
+static const u8 sMaskFaultName_None[] = _("none");
+static const u8 sMaskFaultName_Margin[] = _("margin");
+static const u8 sMaskFaultName_Diagonal[] = _("diagonal");
+static const u8 sMaskFaultName_ThinWall[] = _("thin wall");
+static const u8 sMaskFaultName_Area[] = _("area");
+static const u8 sMaskFaultName_Split[] = _("split");
+
+// Indexed by enum InfCaveMaskFault, for the debug harness's report line.
+static const u8 *const sMaskFaultNames[] =
+{
+    [INFCAVE_FAULT_NONE]      = sMaskFaultName_None,
+    [INFCAVE_FAULT_MARGIN]    = sMaskFaultName_Margin,
+    [INFCAVE_FAULT_DIAGONAL]  = sMaskFaultName_Diagonal,
+    [INFCAVE_FAULT_THIN_WALL] = sMaskFaultName_ThinWall,
+    [INFCAVE_FAULT_AREA]      = sMaskFaultName_Area,
+    [INFCAVE_FAULT_SPLIT]     = sMaskFaultName_Split,
+};
+
+const u8 *InfCave_GetMaskFaultName(u32 fault)
+{
+    if (fault >= ARRAY_COUNT(sMaskFaultNames))
+        return sMaskFaultNames[INFCAVE_FAULT_NONE];
+    return sMaskFaultNames[fault];
 }
 
 void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
