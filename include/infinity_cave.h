@@ -51,4 +51,8 @@ rng_value_t InfCave_SeedRoomRng(u32 salt);
 u32 InfCave_Rand(rng_value_t *rng);
 u32 InfCave_RandRange(rng_value_t *rng, u32 lo, u32 hi);
 
+// src/infinity_cave_map.c. Writes the current room into backupMapData and,
+// unless the position came back from a save, places the player.
+void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition);
+
 #endif // GUARD_INFINITY_CAVE_H

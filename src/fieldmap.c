@@ -5,6 +5,7 @@
 #include "fldeff.h"
 #include "fldeff_misc.h"
 #include "frontier_util.h"
+#include "infinity_cave.h"
 #include "menu.h"
 #include "mirage_tower.h"
 #include "overworld.h"
@@ -148,6 +149,12 @@ void InitBattlePyramidMap(bool8 setPlayerPosition)
 {
     CpuFastFill16(MAPGRID_UNDEFINED, sBackupMapData, sizeof(sBackupMapData));
     GenerateBattlePyramidFloorLayout(sBackupMapData, setPlayerPosition);
+}
+
+void InitInfinityCaveMap(bool8 setPlayerPosition)
+{
+    CpuFastFill16(MAPGRID_UNDEFINED, sBackupMapData, sizeof(sBackupMapData));
+    InfCave_GenerateRoom(sBackupMapData, setPlayerPosition);
 }
 
 void InitTrainerHillMap(void)

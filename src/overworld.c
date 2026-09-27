@@ -1048,6 +1048,8 @@ static void LoadMapFromWarp(bool32 a1)
     gChainFishingDexNavStreak = 0;
     if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
         InitBattlePyramidMap(FALSE);
+    else if (gMapHeader.mapLayoutId == LAYOUT_INFINITY_CAVE_ROOM)
+        InitInfinityCaveMap(FALSE);
     else if (InTrainerHill())
         InitTrainerHillMap();
     else
@@ -2425,6 +2427,8 @@ void CB2_ContinueSavedGame(void)
     UpdateMiscOverworldStates();
     if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
         InitBattlePyramidMap(TRUE);
+    else if (gMapHeader.mapLayoutId == LAYOUT_INFINITY_CAVE_ROOM)
+        InitInfinityCaveMap(TRUE);
     else if (trainerHillMapId != 0)
         InitTrainerHillMap();
     else

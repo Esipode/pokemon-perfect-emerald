@@ -18,7 +18,7 @@ InfinityCave_Entrance_EventScript_Attendant::
 	closemessage
 	special InfCave_StartRun
 	special InfCave_AdvanceDepth
-	warp MAP_INFINITY_CAVE_ROOM, 20, 20
+	warp MAP_INFINITY_CAVE_ROOM, 3, 3
 	waitstate
 	release
 	end
