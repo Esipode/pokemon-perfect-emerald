@@ -481,7 +481,8 @@
     "ShoalCave_LowTideIceRoom_Articuno",
     "MeteorFalls_RegiCave",
     "InfinityCave_Entrance",
-    "InfinityCave_Room"
+    "InfinityCave_Room",
+    "InfinityCave_TileKey"
   ],
   "gMapGroup_IndoorDynamic": [
     "BattleColosseum_2P",

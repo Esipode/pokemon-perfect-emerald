@@ -55,4 +55,11 @@ u32 InfCave_RandRange(rng_value_t *rng, u32 lo, u32 hi);
 // unless the position came back from a save, places the player.
 void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition);
 
+// Reads LAYOUT_INFINITY_CAVE_TILEKEY into the role table. Called by
+// InfCave_GenerateRoom; exposed for set-piece and decoration passes.
+void InfCave_LoadTileRoles(void);
+
+// Authored block word for a role. role < INFCAVE_ROLE_COUNT.
+u16 InfCave_GetRoleBlock(u32 role);
+
 #endif // GUARD_INFINITY_CAVE_H

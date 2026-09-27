@@ -491,6 +491,7 @@ gStdScripts_End::
 	.include "data/maps/MeteorFalls_StevensCave/scripts.inc"
 	.include "data/maps/InfinityCave_Entrance/scripts.inc"
 	.include "data/maps/InfinityCave_Room/scripts.inc"
+	.include "data/maps/InfinityCave_TileKey/scripts.inc"
 	.include "data/maps/BattleColosseum_2P/scripts.inc"
 	.include "data/maps/TradeCenter/scripts.inc"
 	.include "data/maps/RecordCorner/scripts.inc"

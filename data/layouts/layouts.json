@@ -9174,6 +9174,17 @@
       "border_filepath": "data/layouts/InfinityCave_Room/border.bin",
       "blockdata_filepath": "data/layouts/InfinityCave_Room/map.bin",
       "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_INFINITY_CAVE_TILEKEY",
+      "name": "InfinityCave_TileKey_Layout",
+      "width": 16,
+      "height": 8,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/InfinityCave_TileKey/border.bin",
+      "blockdata_filepath": "data/layouts/InfinityCave_TileKey/map.bin",
+      "layout_version": "emerald"
     }
   ]
 }
