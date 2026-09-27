@@ -3749,7 +3749,7 @@ const struct ObjectEventTemplate *GetObjectEventTemplateByLocalIdAndMap(u8 local
     if (gSaveBlock1Ptr->location.mapNum == mapNum && gSaveBlock1Ptr->location.mapGroup == mapGroup)
     {
         templates = gSaveBlock1Ptr->objectEventTemplates;
-        // The generated room's header describes only the exit crystal, so its own
+        // The generated room's header declares no objects, so the generator's own
         // count is the one that finds a trainer by local id.
         count = InfCave_InGeneratedRoom() ? InfCave_GetObjectCount() : gMapHeader.events->objectEventCount;
     }

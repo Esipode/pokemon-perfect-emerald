@@ -15,12 +15,17 @@
 #include "constants/opponents.h"
 #include "constants/trainers.h"
 #include "constants/battle_ai.h"
+#include "battle_transition.h"
 #include "trainer_pools.h"
 #include "data/infinity_cave_trainers.h"
 
 // Trainer rolls take their own RNG stream off the room seed, so the same room
 // always produces the same opponents after a reload.
 #define INFCAVE_SALT_TRNR 0x54524E52u // 'TRNR'
+
+// The boss order is drawn off the run's seed rather than a room's, so it is one
+// permutation for the whole descent.
+#define INFCAVE_SALT_BOSS 0x424F5353u // 'BOSS'
 
 // Trainer count draws its own stream, so the count a room rolls does not move
 // when a slot's identity roll changes.
@@ -295,9 +300,101 @@ bool32 InfCave_MonMatchesGimmick(const struct Trainer *trainer, const struct Tra
     }
 }
 
+u32 InfCave_GetBossIndex(void)
+{
+    rng_value_t rng = InfCave_SeedRunRng(INFCAVE_SALT_BOSS);
+    u8 order[INFCAVE_BOSS_COUNT];
+    u32 ordinal = InfCave_GetDepth() / INFCAVE_BOSS_INTERVAL;
+    u32 i;
+
+    for (i = 0; i < INFCAVE_BOSS_COUNT; i++)
+        order[i] = i;
+
+    // Shuffled rather than walked in table order, so two runs do not open on the
+    // same boss; the permutation itself is what stops a repeat inside one run.
+    for (i = INFCAVE_BOSS_COUNT - 1; i > 0; i--)
+    {
+        u32 j = InfCave_RandRange(&rng, 0, i);
+        u8 swap = order[i];
+
+        order[i] = order[j];
+        order[j] = swap;
+    }
+
+    // A boss room forced by debug at a depth the cadence does not call for reads
+    // the first entry rather than indexing off the end.
+    if (ordinal == 0)
+        ordinal = 1;
+
+    return order[(ordinal - 1) % INFCAVE_BOSS_COUNT];
+}
+
+// Fills slot 0 from a boss row. The party is the row's named trainer's authored
+// team when that team is already a full boss party, and a rolled pool team
+// otherwise, so a boss whose canon team is short still fields six. mugshotColor
+// is what gives the boss the Elite Four transition: GetTrainerBattleTransition
+// reads it straight off this struct.
+static u16 BuildBoss(u32 slot)
+{
+    u32 index = InfCave_GetBossIndex();
+    const struct InfCaveBoss *boss = &sInfCaveBosses[index];
+    const struct InfCaveTrainerSpec *spec = &sInfCaveTrainerSpec[INFCAVE_ROOM_BOSS];
+    struct Trainer *trainer = InfCave_GetTrainerSlot(slot);
+    const struct Trainer *source = NULL;
+    u32 tier = TierForRoom(InfCave_GetDepth(), spec->tierOffset);
+
+    if (trainer == NULL)
+        return OBJ_EVENT_GFX_HIKER;
+
+    if (boss->partyTrainer != TRAINER_NONE)
+        source = GetTrainerStructFromId(boss->partyTrainer);
+
+    memset(trainer, 0, sizeof(*trainer));
+    StringCopy(trainer->trainerName, boss->name);
+    trainer->trainerClass = TRAINER_CLASS_CHALLENGER;
+    trainer->trainerPic = boss->trainerPic;
+    trainer->encounterMusic = boss->encounterMusic;
+    trainer->mugshotColor = boss->mugshotColor;
+    trainer->gender = boss->gender;
+    // Doubles, weather and the other modifiers are applied in Stage 19.
+    trainer->battleType = TRAINER_BATTLE_TYPE_SINGLES;
+    trainer->aiFlags = spec->aiFlags;
+    trainer->partySize = spec->partySize;
+    trainer->overrideTrainer = TRAINER_NONE;
+
+    if (source != NULL && source->poolSize == 0 && source->partySize >= spec->partySize)
+    {
+        // poolSize 0 makes DoTrainerPartyPool take the party straight, in order.
+        trainer->party = source->party;
+    }
+    else
+    {
+        u8 poolSize = 0;
+
+        trainer->party = GetEmporiumPool(sInfCaveTierPool[tier], &poolSize);
+        trainer->poolSize = poolSize;
+        trainer->poolRuleIndex = POOL_RULESET_INFCAVE;
+        trainer->poolPickIndex = POOL_PICK_INFCAVE;
+        trainer->poolPruneIndex = POOL_PRUNE_INFCAVE;
+        assertf(trainer->party != NULL && poolSize >= spec->partySize, "boss tier %d pool too small: %d", tier, poolSize);
+    }
+    sInfCaveTrainerTier[slot] = tier;
+
+    // Narrow bitfields and table indices: catch truncation here, not at battle setup.
+    assertf(trainer->partySize == spec->partySize, "partySize %d truncated to %d", spec->partySize, trainer->partySize);
+    assertf(trainer->encounterMusic == boss->encounterMusic, "encounterMusic %d truncated to %d", boss->encounterMusic, trainer->encounterMusic);
+    assertf(trainer->mugshotColor == boss->mugshotColor, "mugshotColor %d truncated to %d", boss->mugshotColor, trainer->mugshotColor);
+    assertf(boss->mugshotColor != MUGSHOT_COLOR_NONE, "boss %d has no mugshot colour", index);
+    assertf(trainer->trainerPic < TRAINER_PIC_COUNT, "trainerPic %d out of range", trainer->trainerPic);
+    assertf(StringLength(boss->name) <= TRAINER_NAME_LENGTH, "boss name longer than %d", TRAINER_NAME_LENGTH);
+    assertf(boss->objectGfxId < NUM_OBJ_EVENT_GFX, "objectGfxId %d out of range", boss->objectGfxId);
+
+    return boss->objectGfxId;
+}
+
 // Fills one slot from an identity row and the tier's pool. Every field of the
 // struct is written here, so a slot never carries anything from the room before.
-// Returns the identity's overworld gfx id for the placer (Stage 15).
+// Returns the identity's overworld gfx id for the placer.
 static u16 BuildTrainer(u32 slot, u32 roomType, rng_value_t *rng)
 {
     const struct InfCaveIdentity *identity;
@@ -309,6 +406,11 @@ static u16 BuildTrainer(u32 slot, u32 roomType, rng_value_t *rng)
 
     if (trainer == NULL)
         return OBJ_EVENT_GFX_HIKER;
+
+    // A boss room stands exactly one trainer, and it is a named identity rather
+    // than a rolled one.
+    if (roomType == INFCAVE_ROOM_BOSS && slot == 0)
+        return BuildBoss(slot);
 
     if (roomType >= INFCAVE_ROOM_COUNT)
         roomType = INFCAVE_ROOM_BATTLE;

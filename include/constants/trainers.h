@@ -522,6 +522,11 @@ enum TrainerClassID
     TRAINER_CLASS_LADY_FRLG,
     TRAINER_CLASS_PAINTER_FRLG,
 
+    // Infinity Cave bosses. The identities are borrowed from the game's gym
+    // leaders, Elite Four and rivals, but they hold no office in the cave, so
+    // they battle under this class instead of their own.
+    TRAINER_CLASS_CHALLENGER,
+
     TRAINER_CLASS_COUNT,
 };
 

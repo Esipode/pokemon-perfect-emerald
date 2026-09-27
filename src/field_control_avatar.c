@@ -11,6 +11,7 @@
 #include "faraway_island.h"
 #include "follower_npc.h"
 #include "event_data.h"
+#include "infinity_cave.h"
 #include "event_object_movement.h"
 #include "event_scripts.h"
 #include "fieldmap.h"
@@ -73,6 +74,7 @@ static s8 GetWarpEventAtPosition(struct MapHeader *, u16, u16, u8);
 static const u8 *GetCoordEventScriptAtPosition(struct MapHeader *, u16, u16, u8);
 static const struct BgEvent *GetBackgroundEventAtPosition(struct MapHeader *, u16, u16, u8);
 static bool8 TryStartCoordEventScript(struct MapPosition *);
+static bool8 TryStartInfCaveExitScript(struct MapPosition *);
 static bool8 TryStartWarpEventScript(struct MapPosition *, u16);
 static bool8 TryStartMiscWalkingScripts(u16);
 static bool8 TryStartStepCountScript(u16);
@@ -726,6 +728,8 @@ bool8 TryStartStepBasedScript(struct MapPosition *position, u16 metatileBehavior
     RunOnStepMapScript();
     if (TryStartCoordEventScript(position) == TRUE)
         return TRUE;
+    if (TryStartInfCaveExitScript(position) == TRUE)
+        return TRUE;
     if (TryStartWarpEventScript(position, metatileBehavior) == TRUE)
         return TRUE;
     if (TryStartMiscWalkingScripts(metatileBehavior) == TRUE)
@@ -751,6 +755,22 @@ static bool8 TryStartCoordEventScript(struct MapPosition *position)
         return FALSE;
 
     ScriptContext_ContinueScript(&ctx);
+    return TRUE;
+}
+
+// The Infinity Cave's descent ladder. Its tile is generated, so the trigger cannot
+// be a coord event in the room's header; the generator hands the position back
+// instead.
+extern const u8 InfinityCave_EventScript_ExitLadder[];
+
+static bool8 TryStartInfCaveExitScript(struct MapPosition *position)
+{
+    if (!InfCave_InGeneratedRoom() || !InfCave_IsInRun())
+        return FALSE;
+    if (!InfCave_IsExitTile(position->x - MAP_OFFSET, position->y - MAP_OFFSET))
+        return FALSE;
+
+    ScriptContext_SetupScript(InfinityCave_EventScript_ExitLadder);
     return TRUE;
 }
 

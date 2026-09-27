@@ -43,6 +43,10 @@ void InfCave_SetRoom(u32 roomType, const u8 *modifiers, const u8 *modifierArgs);
 
 u32 InfCave_GetRoomType(void);
 
+// TRUE while the current room's exit must refuse to descend: a boss room whose
+// boss is still standing. Read by the ladder script with specialvar.
+u16 InfCave_IsExitLocked(void);
+
 // Modifier slot accessors. slot < INFCAVE_MAX_MODIFIERS.
 u32 InfCave_GetModifier(u32 slot);
 u32 InfCave_GetModifierArg(u32 slot);
@@ -60,6 +64,10 @@ bool32 InfCave_SpendShards(u32 amount);
 // Every generator and roller downstream draws from one of these. Seeding is
 // explicit so the same seed always reproduces the same room.
 rng_value_t InfCave_SeedRoomRng(u32 salt);
+
+// Same, off the run's own seed, for the rolls that must hold across every room
+// of a run rather than be rebuilt per room (the boss order).
+rng_value_t InfCave_SeedRunRng(u32 salt);
 u32 InfCave_Rand(rng_value_t *rng);
 u32 InfCave_RandRange(rng_value_t *rng, u32 lo, u32 hi);
 
@@ -82,9 +90,9 @@ u32 InfCave_DebugValidateMask(u32 baseSeed, u32 count, u32 *firstBadSeed, u32 *f
 // Name of a fault id reported by InfCave_DebugValidateMask.
 const u8 *InfCave_GetMaskFaultName(u32 fault);
 
-// Object event templates the generated room owns, the exit crystal included. The
-// room map's header describes the crystal alone, so the spawner reads this
-// instead of gMapHeader.events->objectEventCount.
+// Object event templates the generated room owns. The room map's header declares
+// none, so the spawner reads this instead of
+// gMapHeader.events->objectEventCount.
 u32 InfCave_GetObjectCount(void);
 
 // Trainers the placement pass actually stood in the current room, which can be
@@ -94,9 +102,18 @@ u32 InfCave_GetRoomTrainerCount(void);
 // TRUE on the generated room map, where the object count above applies.
 bool32 InfCave_InGeneratedRoom(void);
 
+// TRUE when (x, y), in layout coordinates, is the current room's exit pad. The
+// step trigger that descends reads this: the pad is a generated metatile, so the
+// map header can hold neither an object nor a coord event for it.
+bool32 InfCave_IsExitTile(u32 x, u32 y);
+
+// Trace probe: logs every active object event's local id, graphics id and tile.
+// A no-op unless INFCAVE_TRACE is on.
+void InfCave_DebugDumpObjects(void);
+
 // Reassigns the generated objects' scripts on the continue-from-save path, where
 // LoadSaveblockObjEventScripts cannot be used: it reads one script per template
-// slot out of the map header, which holds only the crystal.
+// slot out of the map header, which declares no objects.
 void LoadInfinityCaveObjectEventScripts(void);
 
 // Legality harness for the placement rules. Generates count rooms from baseSeed
@@ -127,6 +144,27 @@ struct InfCaveIdentity
     u8 encounterMusic;
     u8 gender;
 };
+
+// One boss identity. Table (sInfCaveBosses) lives in
+// src/data/infinity_cave_trainers.h. partyTrainer is the trainer whose authored
+// team the boss borrows, used only when that team is already a full boss party;
+// TRAINER_NONE, or a shorter team, rolls a pooled one at the boss tier instead.
+struct InfCaveBoss
+{
+    u16 trainerPic;
+    const u8 *name;
+    u16 objectGfxId;
+    u16 partyTrainer;
+    u8 encounterMusic;
+    u8 mugshotColor;
+    u8 gender;
+};
+
+// Which boss identity the current depth fields. Bosses come in a permutation of
+// the table fixed by the run's seed and indexed by how many boss rooms the run
+// has reached, so none repeats until the table is exhausted and a reload picks
+// the same one again.
+u32 InfCave_GetBossIndex(void);
 
 // Stub trainer id for a slot, or TRAINER_NONE when slot >= INFCAVE_MAX_TRAINERS.
 u16 InfCave_GetTrainerId(u32 slot);

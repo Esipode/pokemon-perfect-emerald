@@ -54,7 +54,7 @@ enum InfCaveEndReason
 #define INFCAVE_OPTIONS_5_DEPTH     26 // 5 options from this depth
 
 // Node cadence.
-#define INFCAVE_BOSS_INTERVAL       5 // every depth divisible by this is a boss
+#define INFCAVE_BOSS_INTERVAL       10 // every depth divisible by this is a boss
 #define INFCAVE_REST_MAX_GAP        4 // a rest node is offered at least this often
 #define INFCAVE_SHOP_MIN_GAP        6 // a shop node appears at most this often
 
@@ -223,19 +223,15 @@ enum InfCaveTileRole
 };
 
 // Entrance and exit pads. The exit sits on the walkable tile farthest from the
-// entrance by step distance, so every descent crosses the room, and the crystal
-// that takes the player one depth deeper stands on it.
+// entrance by step distance, so every descent crosses the room, and the ladder
+// that takes the player one depth deeper is drawn on it.
 #define INFCAVE_DIST_UNREACHED      255 // step distance of a tile the fill never reached
 #define INFCAVE_DIST_MAX            254 // distances saturate here; no room is this long
 
-// The exit crystal's local id. Must match the object event order in
-// data/maps/InfinityCave_Room/map.json, which owns the crystal's art and script;
-// generation only moves it.
-#define INFCAVE_LOCALID_EXIT        1
-
-// Local id of the first generated trainer. Templates are written in local id
-// order from index 0, so the crystal owns index 0 and slot n owns index n + 1.
-#define INFCAVE_LOCALID_TRAINER_0   2
+// Local id of the first generated trainer. The room map declares no objects of
+// its own, so templates are written in local id order from index 0 and slot n
+// owns index n.
+#define INFCAVE_LOCALID_TRAINER_0   1
 
 // Set to TRUE to log an ASCII picture of each generated mask over the debug
 // print handler. Off in shipped builds; generation cost is otherwise unchanged.
@@ -253,8 +249,8 @@ enum InfCaveTileRole
 // Opponent level: the player's progression level cap plus a depth-derived
 // bonus, so a deep run out-levels a shallow one without ever needing a party the
 // cap could not legally produce.
-#define INFCAVE_LEVEL_DEPTH_PER_STEP 3  // depths per +1 level
-#define INFCAVE_LEVEL_MAX_BONUS      15
+#define INFCAVE_LEVEL_DEPTH_PER_STEP 10  // depths per +1 level
+#define INFCAVE_LEVEL_MAX_BONUS      100
 #define INFCAVE_LEVEL_SURGE_BONUS    3  // INFCAVE_MOD_SURGE, matching the modifier's stated +3
 
 // Shard payout for one cleared cave battle: the room type's base reward
@@ -262,9 +258,9 @@ enum InfCaveTileRole
 // growth is a share of the base rather than a flat per-depth amount, so a boss
 // stays worth more than a gauntlet trainer at every depth.
 #define INFCAVE_SHARD_DEPTH_PERCENT   5   // added to the payout share per depth
-#define INFCAVE_SHARD_SURGE_PERCENT   50  // INFCAVE_MOD_SURGE, matching its stated +50%
-#define INFCAVE_SHARD_NO_ITEMS_PERCENT 50 // INFCAVE_MOD_NO_ITEMS, matching its stated +50%
-#define INFCAVE_SHARD_BOUNTY_PERCENT  100 // INFCAVE_MOD_BOUNTY doubles the payout
+#define INFCAVE_SHARD_SURGE_PERCENT   20  // INFCAVE_MOD_SURGE, matching its stated +20%
+#define INFCAVE_SHARD_NO_ITEMS_PERCENT 20 // INFCAVE_MOD_NO_ITEMS, matching its stated +20%
+#define INFCAVE_SHARD_BOUNTY_PERCENT  30 // INFCAVE_MOD_BOUNTY increases the payout
 
 // Species pool tiers. A tier fixes the filler base-stat band a rolled trainer
 // draws from; depth picks the tier and the room type shifts it (a gauntlet
@@ -282,6 +278,12 @@ enum InfCaveTileRole
 #define INFCAVE_NPC_FROM_ENTRANCE   6  // Chebyshev tiles kept clear of the arrival pad
 #define INFCAVE_NPC_SIGHT           4  // tiles a placed trainer sees ahead
 #define INFCAVE_NPC_TRIES_PER_SLOT  24 // candidate tiles rolled before a slot is skipped
+
+// Boss rooms. The boss stands on the stamped arena's anchor tile - the walkable
+// tile nearest the piece's centre - rather than on a rolled floor tile, and holds
+// no sight line at all: the player walks up to it and talks to start the fight.
+// The room's ladder stays sealed until it is beaten, so the arena cannot be
+// skipped.
 
 // Connectivity tests the placement pass may run. Each is one flood fill over the
 // room, so the budget is what bounds the pass's cost; the cheap per-tile

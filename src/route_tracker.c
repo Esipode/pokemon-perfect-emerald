@@ -239,7 +239,7 @@ static void CountTrainers(struct RouteProgress *progress)
     }
 }
 
-// A generated cave room's header describes only the exit crystal, so the counts come
+// A generated cave room's header declares no objects, so the counts come
 // from the run and the placement pass instead. Shards replace the species row: the
 // room's mons are rolled, not a fixed encounter table.
 static bool32 CountInfinityCaveRoom(struct RouteProgress *progress)

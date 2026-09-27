@@ -1,9 +1,11 @@
 #include "global.h"
 #include "infinity_cave.h"
+#include "battle_setup.h"
 #include "event_data.h"
 #include "random.h"
 #include "config/battle.h"
 #include "constants/flags.h"
+#include "constants/opponents.h"
 #include "constants/vars.h"
 
 static struct InfinityCaveRun *Run(void)
@@ -115,6 +117,14 @@ void InfCave_AdvanceDepth(void)
     // Derived from runSeed and depth alone, so the room is identical no matter
     // which nodes were taken to reach this depth.
     run->roomSeed = ISO_RANDOMIZE2(run->runSeed + run->depth * 2654435761u);
+
+    // Default room type for the new depth: a boss on the cadence, a battle
+    // otherwise. The node roll overwrites this with the option the player picked,
+    // and the debug room forcer overwrites it too, since both call InfCave_SetRoom
+    // after this.
+    InfCave_SetRoom((run->depth % INFCAVE_BOSS_INTERVAL) == 0 ? INFCAVE_ROOM_BOSS
+                                                             : INFCAVE_ROOM_BATTLE,
+                    NULL, NULL);
 }
 
 void InfCave_SetRoom(u32 roomType, const u8 *modifiers, const u8 *modifierArgs)
@@ -128,6 +138,23 @@ void InfCave_SetRoom(u32 roomType, const u8 *modifiers, const u8 *modifierArgs)
         run->modifier[i] = (modifiers != NULL) ? modifiers[i] : (u8)INFCAVE_MOD_NONE;
         run->modifierArg[i] = (modifierArgs != NULL) ? modifierArgs[i] : 0;
     }
+}
+
+// Descent ladder gate, read with specialvar. A boss room's ladder stays sealed
+// until the boss is beaten, so the arena fight cannot be walked past. The stub
+// id's defeat flag is cleared on every depth change, so the next room's ladder
+// is free again.
+u16 InfCave_IsExitLocked(void)
+{
+    if (Run()->roomType != INFCAVE_ROOM_BOSS)
+        return FALSE;
+
+    // A room that stood no trainer at all has no boss to beat; leaving the gate
+    // armed there would strand the player.
+    if (InfCave_GetRoomTrainerCount() == 0)
+        return FALSE;
+
+    return !HasTrainerBeenFought(TRAINER_INFCAVE_BOSS);
 }
 
 u32 InfCave_GetRoomType(void)
@@ -188,6 +215,13 @@ bool32 InfCave_SpendShards(u32 amount)
 rng_value_t InfCave_SeedRoomRng(u32 salt)
 {
     return LocalRandomSeed(Run()->roomSeed ^ salt);
+}
+
+// Rolls that must be stable for a whole run rather than rebuilt per room draw
+// from runSeed instead, so advancing the depth does not reshuffle them.
+rng_value_t InfCave_SeedRunRng(u32 salt)
+{
+    return LocalRandomSeed(Run()->runSeed ^ salt);
 }
 
 u32 InfCave_Rand(rng_value_t *rng)

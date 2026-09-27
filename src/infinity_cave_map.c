@@ -133,7 +133,7 @@ static EWRAM_DATA struct InfCaveStamp sStamp = {0};
 // entrance pass skips it: that room is wall-to-wall authored art.
 static EWRAM_DATA s8 sStampHost = 0;
 
-// Where the player arrives and where the exit crystal stands. Both are plain
+// Where the player arrives and where the descent ladder is drawn. Both are plain
 // floor tiles the pads are drawn over; the mask itself still reads as floor
 // there, so the walls around them tile normally.
 static EWRAM_DATA u8 sEntranceX = 0;
@@ -1735,7 +1735,7 @@ static bool32 FindPadTileNear(u32 cx, u32 cy, u8 *ox, u8 *oy)
 
 // Puts the entrance in a rolled room and the exit on the walkable tile farthest
 // from it by step distance, so a descent always crosses the room. Both pads and
-// the ring around the exit are closed to props and patches: the crystal stands on
+// the ring around the exit are closed to props and patches: the ladder is drawn on
 // the exit pad, and a solid prop beside it could seal it off.
 static void PlaceEntranceExit(void)
 {
@@ -1808,24 +1808,12 @@ static void PlaceEntranceExit(void)
 #endif
 }
 
-// Moves the exit crystal onto this room's exit pad. Its art and script come from
-// InfinityCave_Room's header, so only the position is generated; Stage 13's
-// template writer takes over once a room owns more than this one object.
-static void PlaceExitCrystal(void)
+// TRUE when (x, y) is this room's exit pad, in layout coordinates. The step
+// trigger that descends reads this, since the pad is a metatile rather than an
+// object or a coord event the map header could hold.
+bool32 InfCave_IsExitTile(u32 x, u32 y)
 {
-    u32 i;
-
-    for (i = 0; i < OBJECT_EVENT_TEMPLATES_COUNT; i++)
-    {
-        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i];
-
-        if (template->localId != INFCAVE_LOCALID_EXIT)
-            continue;
-
-        template->x = sExitX;
-        template->y = sExitY;
-        return;
-    }
+    return x == sExitX && y == sExitY;
 }
 
 // --- Object placement -------------------------------------------------------
@@ -1843,18 +1831,14 @@ struct InfCaveNpc
 static EWRAM_DATA struct InfCaveNpc sNpcs[INFCAVE_MAX_TRAINERS] = {0};
 static EWRAM_DATA u8 sNpcCount = 0;
 
-// Object event templates the generator wrote, the exit crystal included. The
-// spawner reads this instead of the map header's object count, which describes
-// the crystal alone.
+// Object event templates the generator wrote. The spawner reads this instead of
+// the map header's object count, which is zero: the room declares no objects of
+// its own.
 static EWRAM_DATA u8 sObjectCount = 0;
 
-// The template layout the placer and the room's scripts both assume: the crystal
-// owns index 0, trainer slot n owns index n + 1, and the whole set fits the room's
-// object budget. A Porymap edit that reorders the room map's objects breaks the
-// first of these, which is why it is checked against the generated local id.
-STATIC_ASSERT(LOCALID_INFINITY_CAVE_EXIT == INFCAVE_LOCALID_EXIT, sInfCaveExitLocalId);
-STATIC_ASSERT(INFCAVE_LOCALID_TRAINER_0 == INFCAVE_LOCALID_EXIT + 1, sInfCaveTrainerLocalIds);
-STATIC_ASSERT(INFCAVE_MAX_TRAINERS + 1 <= INFCAVE_MAX_OBJECTS, sInfCaveObjectBudget);
+// The template layout the placer and the room's scripts both assume: trainer slot
+// n owns index n, and the whole set fits the room's object budget.
+STATIC_ASSERT(INFCAVE_MAX_TRAINERS <= INFCAVE_MAX_OBJECTS, sInfCaveObjectBudget);
 STATIC_ASSERT(INFCAVE_MAX_OBJECTS <= OBJECT_EVENT_TEMPLATES_COUNT, sInfCaveTemplateBudget);
 
 // Trainer count the harness pins the pass to, or 0 to use the room's own roll.
@@ -2067,6 +2051,101 @@ static bool32 TryPlaceNpc(u32 x, u32 y, rng_value_t *rng)
     return FALSE;
 }
 
+// Index into sInfCaveFacings for the step that points from (fromX, fromY) toward
+// (toX, toY) along whichever axis separates them further.
+static u32 FacingTowards(s32 fromX, s32 fromY, s32 toX, s32 toY)
+{
+    s32 dx = toX - fromX, dy = toY - fromY;
+    s8 stepX = 0, stepY = 0;
+    u32 i;
+
+    if (abs(dx) > abs(dy))
+        stepX = dx > 0 ? 1 : -1;
+    else
+        stepY = dy > 0 ? 1 : -1;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveFacings); i++)
+    {
+        if (sInfCaveFacings[i].dx == stepX && sInfCaveFacings[i].dy == stepY)
+            return i;
+    }
+    return 0;
+}
+
+// Nearest tile to the stamped piece's centre that a boss can stand on, searched
+// outward in square rings and confined to the stamp rect, so the boss always
+// ends up on the arena rather than beside it. The arena's cells are RESERVED
+// authored art, which IsWalkable already judges from the stamped block.
+static bool32 FindArenaTileNear(u32 cx, u32 cy, u8 *ox, u8 *oy)
+{
+    u32 radius;
+
+    for (radius = 0; radius < INFCAVE_PIECE_MAX_W + INFCAVE_PIECE_MAX_H; radius++)
+    {
+        s32 dx, dy;
+
+        for (dy = -(s32)radius; dy <= (s32)radius; dy++)
+        {
+            for (dx = -(s32)radius; dx <= (s32)radius; dx++)
+            {
+                s32 x = (s32)cx + dx, y = (s32)cy + dy;
+
+                if (abs(dx) != (s32)radius && abs(dy) != (s32)radius)
+                    continue;
+                if (x < (s32)sStamp.x || x >= (s32)(sStamp.x + sStamp.w))
+                    continue;
+                if (y < (s32)sStamp.y || y >= (s32)(sStamp.y + sStamp.h))
+                    continue;
+                if (sMask[y][x] & (INFCAVE_FLAG_NO_DECOR | INFCAVE_FLAG_BLOCKED))
+                    continue;
+                if (sDecor[y][x] != 0 || !IsWalkable(x, y))
+                    continue;
+
+                *ox = x;
+                *oy = y;
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+// Stands a boss room's single trainer on its arena's anchor tile, facing the
+// entrance so it looks at the player crossing the room. The boss never notices
+// the player on its own; the fight starts when the player walks up and talks, and
+// the room's sealed ladder is what stops the arena being skipped. Returns FALSE
+// when the room stamped no arena, the arena has no tile to stand on, or the boss
+// would cut the room in two; the caller then falls back to the ordinary placer.
+static bool32 PlaceBoss(void)
+{
+    u8 bx, by;
+
+    if (sStamp.layoutId == INFCAVE_PIECE_NONE)
+        return FALSE;
+    if (sConnectChecks == 0)
+        return FALSE;
+    if (!FindArenaTileNear(sStamp.x + sStamp.w / 2, sStamp.y + sStamp.h / 2, &bx, &by))
+        return FALSE;
+
+    sMask[by][bx] |= INFCAVE_FLAG_BLOCKED;
+    sConnectChecks--;
+    if (!EntranceReachesExit())
+    {
+        sMask[by][bx] &= ~INFCAVE_FLAG_BLOCKED;
+        return FALSE;
+    }
+
+    sNpcs[0].x = bx;
+    sNpcs[0].y = by;
+    sNpcs[0].facing = FacingTowards(bx, by, sEntranceX, sEntranceY);
+    sNpcCount = 1;
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave boss at %d,%d facing %d", bx, by, sNpcs[0].facing);
+#endif
+    return TRUE;
+}
+
 // Rolls a tile inside one of the rooms that may host a trainer. Rolling per room
 // rather than over the whole canvas keeps the attempt budget meaningful in a room
 // whose floor is mostly corridor.
@@ -2106,11 +2185,15 @@ static void PlaceTrainers(void)
     sNpcCount = 0;
     sConnectChecks = INFCAVE_NPC_CONNECT_CHECKS;
 
+    // The harness pins a count to exercise the rolled placer, so it keeps taking
+    // the path below even in a boss room.
+    if (sNpcCountOverride == 0 && InfCave_GetRoomType() == INFCAVE_ROOM_BOSS && PlaceBoss())
+        return;
+
     if (wanted > INFCAVE_MAX_TRAINERS)
         wanted = INFCAVE_MAX_TRAINERS;
-    // The crystal holds one of the room's object slots.
-    if (wanted > INFCAVE_MAX_OBJECTS - 1)
-        wanted = INFCAVE_MAX_OBJECTS - 1;
+    if (wanted > INFCAVE_MAX_OBJECTS)
+        wanted = INFCAVE_MAX_OBJECTS;
 
     for (slot = 0; slot < wanted; slot++)
     {
@@ -2139,10 +2222,10 @@ static void PlaceTrainers(void)
 #endif
 }
 
-// Scripts the generated objects run. The crystal's comes from the room map's
-// header; a trainer's is per slot, because trainerbattle takes a literal stub id
-// and the sight-approach code reads that id straight out of the script.
-extern const u8 InfinityCave_EventScript_ExitCrystal[];
+// Scripts the generated objects run. A trainer's is per slot, because
+// trainerbattle takes a literal stub id and the sight-approach code reads that id
+// straight out of the script.
+extern const u8 InfinityCave_EventScript_Boss[];
 extern const u8 InfinityCave_EventScript_Trainer0[];
 extern const u8 InfinityCave_EventScript_Trainer1[];
 extern const u8 InfinityCave_EventScript_Trainer2[];
@@ -2168,18 +2251,27 @@ static const u8 *ScriptForLocalId(u32 localId)
 {
     u32 slot = localId - INFCAVE_LOCALID_TRAINER_0;
 
-    if (localId == INFCAVE_LOCALID_EXIT)
-        return InfinityCave_EventScript_ExitCrystal;
-    if (localId >= INFCAVE_LOCALID_TRAINER_0 && slot < INFCAVE_MAX_TRAINERS)
-        return sInfCaveTrainerScripts[slot];
+    if (localId < INFCAVE_LOCALID_TRAINER_0 || slot >= INFCAVE_MAX_TRAINERS)
+        return NULL;
+    // A boss room stands one trainer, in slot 0, and it runs the talk-to script
+    // rather than the plain sight battle.
+    if (slot == 0 && InfCave_GetRoomType() == INFCAVE_ROOM_BOSS)
+        return InfinityCave_EventScript_Boss;
 
-    return NULL;
+    return sInfCaveTrainerScripts[slot];
 }
 
-// Writes the placed trainers into the save block's templates. Slot n owns index
-// n + 1, since the exit crystal owns index 0, and every field is written here so
-// a template never carries anything from the room before. Templates past the
-// room's own objects are blanked: the spawner is bounded by sObjectCount, but a
+// TRUE for the slot a boss room's boss stands in. A boss does not notice the
+// player: it holds no sight line, so the fight starts only when the player walks
+// up to it and talks.
+static bool32 IsBossSlot(u32 slot)
+{
+    return slot == 0 && InfCave_GetRoomType() == INFCAVE_ROOM_BOSS;
+}
+
+// Writes the placed trainers into the save block's templates. Slot n owns index n,
+// and every field is written here so a template never carries anything from the
+// room before. Templates past the room's own objects are blanked: the spawner is bounded by sObjectCount, but a
 // stale template left addressable by local id would answer for an NPC that is no
 // longer there.
 static void WriteTrainerTemplates(void)
@@ -2188,7 +2280,7 @@ static void WriteTrainerTemplates(void)
 
     for (i = 0; i < sNpcCount; i++)
     {
-        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i + 1];
+        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i];
 
         memset(template, 0, sizeof(*template));
         template->localId = INFCAVE_LOCALID_TRAINER_0 + i;
@@ -2198,15 +2290,50 @@ static void WriteTrainerTemplates(void)
         template->y = sNpcs[i].y;
         template->elevation = FloorElevation();
         template->movementType = sInfCaveFacings[sNpcs[i].facing].movementType;
-        template->trainerType = TRAINER_TYPE_NORMAL;
-        template->trainerRange_berryTreeId = INFCAVE_NPC_SIGHT;
+        template->trainerType = IsBossSlot(i) ? TRAINER_TYPE_NONE : TRAINER_TYPE_NORMAL;
+        template->trainerRange_berryTreeId = IsBossSlot(i) ? 0 : INFCAVE_NPC_SIGHT;
         template->script = ScriptForLocalId(template->localId);
     }
 
-    sObjectCount = sNpcCount + 1;
+    sObjectCount = sNpcCount;
 
     for (i = sObjectCount; i < OBJECT_EVENT_TEMPLATES_COUNT; i++)
         memset(&gSaveBlock1Ptr->objectEventTemplates[i], 0, sizeof(struct ObjectEventTemplate));
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave wrote %d templates", sObjectCount);
+    for (i = 0; i < sObjectCount; i++)
+    {
+        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i];
+
+        DebugPrintf("InfCave template %d: localId %d gfx %d at %d,%d",
+                    i, template->localId, template->graphicsId, template->x, template->y);
+    }
+#endif
+}
+
+// Trace probe for the duplicate-NPC hunt: logs every active object event with its
+// local id, graphics id and tile, so a second object standing on a generated
+// trainer's post can be told apart from one object drawn twice. Called from the
+// boss script; a no-op unless INFCAVE_TRACE is on.
+void InfCave_DebugDumpObjects(void)
+{
+#if INFCAVE_TRACE == TRUE
+    u32 i;
+
+    DebugPrintf("InfCave objects: count %d", sObjectCount);
+    for (i = 0; i < OBJECT_EVENTS_COUNT; i++)
+    {
+        struct ObjectEvent *object = &gObjectEvents[i];
+
+        if (!object->active)
+            continue;
+
+        DebugPrintf("InfCave object %d: localId %d gfx %d at %d,%d",
+                    i, object->localId, object->graphicsId,
+                    object->currentCoords.x - MAP_OFFSET, object->currentCoords.y - MAP_OFFSET);
+    }
+#endif
 }
 
 u32 InfCave_GetObjectCount(void)
@@ -2226,7 +2353,7 @@ bool32 InfCave_InGeneratedRoom(void)
 
 // Continue-from-save counterpart to LoadSaveblockObjEventScripts, which cannot be
 // used here: it copies one script per template slot out of the map header, and the
-// room's header describes only the crystal. Script pointers are not saved, so
+// room's header declares no objects at all. Script pointers are not saved, so
 // every generated object needs its own reassigned before field control returns.
 void LoadInfinityCaveObjectEventScripts(void)
 {
@@ -2326,7 +2453,7 @@ static u32 PlacementFault(void)
 {
     u32 i, j;
 
-    if (sNpcCount + 1 > INFCAVE_MAX_OBJECTS)
+    if (sNpcCount > INFCAVE_MAX_OBJECTS)
         return INFCAVE_PLACE_FAULT_BUDGET;
 
     for (i = 0; i < sNpcCount; i++)
@@ -2463,7 +2590,6 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     origin = backupMapData + gBackupMapLayout.width * MAP_OFFSET + MAP_OFFSET;
     AutotileRoom(origin, gBackupMapLayout.width);
 
-    PlaceExitCrystal();
     WriteTrainerTemplates();
     FreeGrids();
 

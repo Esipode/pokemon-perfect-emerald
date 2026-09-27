@@ -62,6 +62,56 @@ static const struct InfCaveIdentity sInfCaveIdentities[] =
 
 #define INFCAVE_IDENTITY_COUNT ARRAY_COUNT(sInfCaveIdentities)
 
+// Boss identities. A depth divisible by INFCAVE_BOSS_INTERVAL stands one of
+// these on its arena instead of a rolled cave trainer.
+//
+// partyTrainer names the trainer whose authored team the boss fights with. The
+// team is only borrowed when it already holds a full INFCAVE_ROOM_BOSS party
+// (the gym-leader rematch entries and every Elite Four / Champion entry do); a
+// shorter one, or TRAINER_NONE, rolls a pooled team at the boss tier instead, so
+// every boss fields six regardless. Tate & Liza are left out: their entry is a
+// double battle behind a two-trainer pic, which the cave's single-battle arena
+// and one overworld sprite cannot represent.
+//
+// The class is not stored: a boss holds no office in the cave, so every row
+// battles as TRAINER_CLASS_CHALLENGER.
+static const u8 sInfCaveBossName_Roxanne[]  = _("ROXANNE");
+static const u8 sInfCaveBossName_Brawly[]   = _("BRAWLY");
+static const u8 sInfCaveBossName_Wattson[]  = _("WATTSON");
+static const u8 sInfCaveBossName_Flannery[] = _("FLANNERY");
+static const u8 sInfCaveBossName_Norman[]   = _("NORMAN");
+static const u8 sInfCaveBossName_Winona[]   = _("WINONA");
+static const u8 sInfCaveBossName_Juan[]     = _("JUAN");
+static const u8 sInfCaveBossName_Sidney[]   = _("SIDNEY");
+static const u8 sInfCaveBossName_Phoebe[]   = _("PHOEBE");
+static const u8 sInfCaveBossName_Glacia[]   = _("GLACIA");
+static const u8 sInfCaveBossName_Drake[]    = _("DRAKE");
+static const u8 sInfCaveBossName_Wallace[]  = _("WALLACE");
+static const u8 sInfCaveBossName_Steven[]   = _("STEVEN");
+static const u8 sInfCaveBossName_Brendan[]  = _("BRENDAN");
+static const u8 sInfCaveBossName_May[]      = _("MAY");
+
+static const struct InfCaveBoss sInfCaveBosses[] =
+{
+    { TRAINER_PIC_LEADER_ROXANNE,  sInfCaveBossName_Roxanne,  OBJ_EVENT_GFX_ROXANNE,  TRAINER_ROXANNE_1,  TRAINER_ENCOUNTER_MUSIC_FEMALE,     MUGSHOT_COLOR_YELLOW, TRAINER_GENDER_FEMALE },
+    { TRAINER_PIC_LEADER_BRAWLY,   sInfCaveBossName_Brawly,   OBJ_EVENT_GFX_BRAWLY,   TRAINER_BRAWLY_1,   TRAINER_ENCOUNTER_MUSIC_MALE,       MUGSHOT_COLOR_BLUE,   TRAINER_GENDER_MALE },
+    { TRAINER_PIC_LEADER_WATTSON,  sInfCaveBossName_Wattson,  OBJ_EVENT_GFX_WATTSON,  TRAINER_WATTSON_5,  TRAINER_ENCOUNTER_MUSIC_MALE,       MUGSHOT_COLOR_YELLOW, TRAINER_GENDER_MALE },
+    { TRAINER_PIC_LEADER_FLANNERY, sInfCaveBossName_Flannery, OBJ_EVENT_GFX_FLANNERY, TRAINER_FLANNERY_5, TRAINER_ENCOUNTER_MUSIC_FEMALE,     MUGSHOT_COLOR_PINK,   TRAINER_GENDER_FEMALE },
+    { TRAINER_PIC_LEADER_NORMAN,   sInfCaveBossName_Norman,   OBJ_EVENT_GFX_NORMAN,   TRAINER_NORMAN_5,   TRAINER_ENCOUNTER_MUSIC_MALE,       MUGSHOT_COLOR_PURPLE, TRAINER_GENDER_MALE },
+    { TRAINER_PIC_LEADER_WINONA,   sInfCaveBossName_Winona,   OBJ_EVENT_GFX_WINONA,   TRAINER_WINONA_5,   TRAINER_ENCOUNTER_MUSIC_FEMALE,     MUGSHOT_COLOR_GREEN,  TRAINER_GENDER_FEMALE },
+    { TRAINER_PIC_LEADER_JUAN,     sInfCaveBossName_Juan,     OBJ_EVENT_GFX_JUAN,     TRAINER_JUAN_5,     TRAINER_ENCOUNTER_MUSIC_MALE,       MUGSHOT_COLOR_BLUE,   TRAINER_GENDER_MALE },
+    { TRAINER_PIC_ELITE_FOUR_SIDNEY, sInfCaveBossName_Sidney, OBJ_EVENT_GFX_SIDNEY,   TRAINER_SIDNEY,     TRAINER_ENCOUNTER_MUSIC_ELITE_FOUR, MUGSHOT_COLOR_PURPLE, TRAINER_GENDER_MALE },
+    { TRAINER_PIC_ELITE_FOUR_PHOEBE, sInfCaveBossName_Phoebe, OBJ_EVENT_GFX_PHOEBE,   TRAINER_PHOEBE,     TRAINER_ENCOUNTER_MUSIC_ELITE_FOUR, MUGSHOT_COLOR_GREEN,  TRAINER_GENDER_FEMALE },
+    { TRAINER_PIC_ELITE_FOUR_GLACIA, sInfCaveBossName_Glacia, OBJ_EVENT_GFX_GLACIA,   TRAINER_GLACIA,     TRAINER_ENCOUNTER_MUSIC_ELITE_FOUR, MUGSHOT_COLOR_PINK,   TRAINER_GENDER_FEMALE },
+    { TRAINER_PIC_ELITE_FOUR_DRAKE,  sInfCaveBossName_Drake,  OBJ_EVENT_GFX_DRAKE,    TRAINER_DRAKE,      TRAINER_ENCOUNTER_MUSIC_ELITE_FOUR, MUGSHOT_COLOR_BLUE,   TRAINER_GENDER_MALE },
+    { TRAINER_PIC_CHAMPION_WALLACE,  sInfCaveBossName_Wallace, OBJ_EVENT_GFX_WALLACE, TRAINER_WALLACE,    TRAINER_ENCOUNTER_MUSIC_MALE,       MUGSHOT_COLOR_YELLOW, TRAINER_GENDER_MALE },
+    { TRAINER_PIC_STEVEN,            sInfCaveBossName_Steven, OBJ_EVENT_GFX_STEVEN,   TRAINER_STEVEN,     TRAINER_ENCOUNTER_MUSIC_MALE,       MUGSHOT_COLOR_BLUE,   TRAINER_GENDER_MALE },
+    { TRAINER_PIC_BRENDAN,           sInfCaveBossName_Brendan, OBJ_EVENT_GFX_BRENDAN_NORMAL, TRAINER_NONE, TRAINER_ENCOUNTER_MUSIC_MALE,      MUGSHOT_COLOR_GREEN,  TRAINER_GENDER_MALE },
+    { TRAINER_PIC_MAY,               sInfCaveBossName_May,    OBJ_EVENT_GFX_MAY_NORMAL, TRAINER_NONE,     TRAINER_ENCOUNTER_MUSIC_FEMALE,     MUGSHOT_COLOR_PINK,   TRAINER_GENDER_FEMALE },
+};
+
+#define INFCAVE_BOSS_COUNT ARRAY_COUNT(sInfCaveBosses)
+
 // Species pool per tier. The cave draws on the Battle Emporium's pools rather
 // than a second copy of them: their filler bands (base stat total <= 400 / 500 /
 // 600) are exactly the cave's tiers, and their ace rows already hold the
@@ -124,7 +174,7 @@ static const struct InfCaveTrainerSpec sInfCaveTrainerSpec[INFCAVE_ROOM_COUNT] =
     [INFCAVE_ROOM_BATTLE]   = { .partySize = 3, .tierOffset =  0, .minCount = 2, .maxCount = 3, .shardReward = 10, .aiFlags = AI_FLAG_SMART_TRAINER },
     [INFCAVE_ROOM_GAUNTLET] = { .partySize = 2, .tierOffset = -1, .minCount = 4, .maxCount = 6, .shardReward =  8, .aiFlags = AI_FLAG_SMART_TRAINER },
     [INFCAVE_ROOM_ELITE]    = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .shardReward = 25, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
-    [INFCAVE_ROOM_BOSS]     = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .shardReward = 40, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
+    [INFCAVE_ROOM_BOSS]     = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .shardReward = 40, .aiFlags = AI_FLAG_UNFAIR_TRAINER | AI_FLAG_ACE_POKEMON },
     [INFCAVE_ROOM_REST]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .shardReward =  0, .aiFlags = 0 },
     [INFCAVE_ROOM_TREASURE] = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .shardReward =  0, .aiFlags = 0 },
     [INFCAVE_ROOM_SHOP]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .shardReward =  0, .aiFlags = 0 },
