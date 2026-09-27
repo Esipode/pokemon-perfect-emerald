@@ -1761,3 +1761,5 @@ EventScript_PalletTown_PlayersHouse_2F_TurnOnPC::
 	.include "data/maps/ShoalCave_LowTideIceRoom_Articuno/scripts.inc"
 
 	.include "data/maps/MeteorFalls_RegiCave/scripts.inc"
+
+	.include "data/maps/VictoryRoad_RegiCave/scripts.inc"

@@ -1548,7 +1548,7 @@
 #define FLAG_UNUSED_0x90F                           (SYSTEM_FLAGS + 0xAF) // Unused Flag
 #define FLAG_UNUSED_0x910                           (SYSTEM_FLAGS + 0xB0) // Unused Flag
 #define FLAG_REGIDRAGO_PUZZLE_COMPLETED          (SYSTEM_FLAGS + 0xB1)
-#define FLAG_UNUSED_0x912                           (SYSTEM_FLAGS + 0xB2) // Unused Flag
+#define FLAG_REGIELEKI_PUZZLE_COMPLETED             (SYSTEM_FLAGS + 0xB2)
 #define FLAG_UNUSED_0x913                           (SYSTEM_FLAGS + 0xB3) // Unused Flag
 #define FLAG_UNUSED_0x914                           (SYSTEM_FLAGS + 0xB4) // Unused Flag
 #define FLAG_UNUSED_0x915                           (SYSTEM_FLAGS + 0xB5) // Unused Flag

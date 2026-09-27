@@ -2534,7 +2534,7 @@
 #define FLAG_UNUSED_0x90F                           0
 #define FLAG_UNUSED_0x910                           0
 #define FLAG_REGIDRAGO_PUZZLE_COMPLETED              0
-#define FLAG_UNUSED_0x912                           0
+#define FLAG_REGIELEKI_PUZZLE_COMPLETED             0
 #define FLAG_UNUSED_0x913                           0
 #define FLAG_UNUSED_0x914                           0
 #define FLAG_UNUSED_0x915                           0

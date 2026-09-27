@@ -1,4 +1,7 @@
 ## Regieleki — The Electrified Pokémon
+
+### Location: Victory Road - 30+ legendaries caught - Inside, the braille sign on the north wall says to walk the wall for fifty paces without straying: take 50 consecutive steps along the top row, without stepping down a row, to open the sealed chamber
+
 It never stops moving, and every turn it isn't hit, it gets faster.
 
 ### CHARGE — 0 to 10

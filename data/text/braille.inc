@@ -296,3 +296,9 @@ MeteorFalls_RegiCave_Braille_DragonAltar:
 	brailleformat 3, 0, 25, 19, 6, 3
 	.braille "DRAGON ALTAR$"
 
+
+VictoryRoad_RegiCave_Braille_WalkTheWall:
+	brailleformat 3, 0, 25, 19, 6, 3
+	.braille "WALK THIS WALL\n"
+	.braille "FIFTY PACES,\n"
+	.braille "DO NOT STRAY.$"

@@ -1,5 +1,25 @@
 VictoryRoad_B1F_MapScripts::
+	map_script MAP_SCRIPT_ON_LOAD, VictoryRoad_B1F_OnLoad
 	.byte 0
+
+VictoryRoad_B1F_OnLoad:
+	goto_if_unset FLAG_SYS_GAME_CLEAR, VictoryRoad_B1F_HideRegielekiDoor
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 30, VictoryRoad_B1F_HideRegielekiDoor
+	goto VictoryRoad_B1F_ShowRegielekiDoor
+
+VictoryRoad_B1F_HideRegielekiDoor:
+	end
+
+VictoryRoad_B1F_ShowRegielekiDoor:
+	setmetatilewithelevation 32, 1, 0x20B, TRUE, 0
+	setmetatilewithelevation 33, 1, 0x20C, TRUE, 0
+	setmetatilewithelevation 34, 1, 0x20D, TRUE, 0
+
+	setmetatilewithelevation 32, 2, 0x213, TRUE, 0
+	setmetatilewithelevation 33, 2, 0x214, FALSE, 3
+	setmetatilewithelevation 34, 2, 0x215, TRUE, 0
+	end
 
 VictoryRoad_B1F_EventScript_Samuel::
 	trainerbattle_single TRAINER_SAMUEL, VictoryRoad_B1F_Text_SamuelIntro, VictoryRoad_B1F_Text_SamuelDefeat
