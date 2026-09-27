@@ -122,6 +122,18 @@ u16 InfCave_BuildTrainer(u32 slot);
 // while gInfCaveBattleActive is set.
 u32 InfCave_GetBattleLevel(void);
 
+// Depth tier the slot behind trainer rolled on, 0 for anything that is not a
+// cave trainer slot.
+u32 InfCave_GetTrainerTier(const struct Trainer *trainer);
+
+// Pool rules for the cave (POOL_PRUNE_INFCAVE / POOL_PICK_INFCAVE,
+// src/trainer_pools.c). Filler legality is the tier's base-stat-total band plus
+// the INFCAVE_MOD_MONOTYPE type when applyMonotype is set; gimmick legality is
+// the tier's gimmick kind at the room's battle level.
+struct TrainerMon;
+bool32 InfCave_MonAllowedAsFiller(const struct Trainer *trainer, const struct TrainerMon *mon, bool32 applyMonotype);
+bool32 InfCave_MonMatchesGimmick(const struct Trainer *trainer, const struct TrainerMon *mon);
+
 // Debug: rolls a trainer into slot 0 off the global RNG and arms the redirect.
 void InfCave_DebugFillTrainer(void);
 

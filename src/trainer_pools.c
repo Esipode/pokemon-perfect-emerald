@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle_emporium.h"
+#include "infinity_cave.h"
 #include "data.h"
 #include "item.h"
 #include "malloc.h"
@@ -138,6 +139,52 @@ static u32 EmporiumAcePickFunction(const struct Trainer *trainer, u8 *poolIndexA
         if (poolIndex != POOL_SLOT_DISABLED
          && (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE))
          && EmporiumMonMatchesReward(&trainer->party[poolIndex]))
+        {
+            if (pick == 0)
+            {
+                monIndex = poolIndex;
+                poolIndexArray[currIndex] = POOL_SLOT_DISABLED;
+                break;
+            }
+            pick--;
+        }
+    }
+    return monIndex;
+}
+
+//  Infinity Cave ace slot. Without INFCAVE_MOD_GIMMICK the pool holds no aces at
+//  all (POOL_PRUNE_INFCAVE dropped them), so the slot falls through to the other
+//  pick and the party is all fillers. With the modifier, the slot is filled from
+//  the kept aces, picked uniformly so the same room seed still varies the ace
+//  across trainers.
+static u32 InfCaveAcePickFunction(const struct Trainer *trainer, u8 *poolIndexArray, u32 partyIndex, u32 monsCount, u32 battleTypeFlags, struct PoolRules *rules)
+{
+    u32 monIndex = POOL_SLOT_DISABLED;
+    u32 matchCount = 0;
+    u32 pick;
+
+    if (!InfCave_HasModifier(INFCAVE_MOD_GIMMICK))
+        return POOL_SLOT_DISABLED;
+    if (!((partyIndex == monsCount - 1) || (partyIndex == monsCount - 2 && battleTypeFlags & BATTLE_TYPE_DOUBLE)))
+        return POOL_SLOT_DISABLED;
+    if (!(rules->tagMaxMembers[POOL_TAG_ACE] == POOL_MEMBER_COUNT_UNLIMITED || rules->tagMaxMembers[POOL_TAG_ACE] >= 1))
+        return POOL_SLOT_DISABLED;
+
+    for (u32 currIndex = 0; currIndex < trainer->poolSize; currIndex++)
+    {
+        u32 poolIndex = poolIndexArray[currIndex];
+        if (poolIndex != POOL_SLOT_DISABLED && (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE)))
+            matchCount++;
+    }
+
+    if (matchCount == 0)
+        return POOL_SLOT_DISABLED;
+
+    pick = Random() % matchCount;
+    for (u32 currIndex = 0; currIndex < trainer->poolSize; currIndex++)
+    {
+        u32 poolIndex = poolIndexArray[currIndex];
+        if (poolIndex != POOL_SLOT_DISABLED && (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE)))
         {
             if (pick == 0)
             {
@@ -377,6 +424,11 @@ static struct PickFunctions GetPickFunctions(const struct Trainer *trainer)
         pickFunctions.AceFunction = &EmporiumAcePickFunction;
         pickFunctions.OtherFunction = &DefaultOtherPickFunction;
         break;
+    case POOL_PICK_INFCAVE:
+        pickFunctions.LeadFunction = &DefaultLeadPickFunction;
+        pickFunctions.AceFunction = &InfCaveAcePickFunction;
+        pickFunctions.OtherFunction = &DefaultOtherPickFunction;
+        break;
     default:
         pickFunctions.LeadFunction = &DefaultLeadPickFunction;
         pickFunctions.AceFunction = &DefaultAcePickFunction;
@@ -429,6 +481,55 @@ static void EmporiumPrune(const struct Trainer *trainer, u8 *poolIndexArray, con
     }
 }
 
+//  Infinity Cave depth balance. Fillers must sit inside the depth tier's base
+//  stat total band and, under INFCAVE_MOD_MONOTYPE, share the rolled type. Aces
+//  survive only under INFCAVE_MOD_GIMMICK, and only when they can actually use
+//  the tier's gimmick, so a room without the modifier fields no held gimmick item
+//  at all. Returns how many fillers the pass kept - the ace slot draws on its own
+//  survivors, so only the filler count tells the caller whether the party can
+//  still be built.
+static u32 InfCavePrunePass(const struct Trainer *trainer, u8 *poolIndexArray, bool32 applyMonotype)
+{
+    bool32 gimmick = InfCave_HasModifier(INFCAVE_MOD_GIMMICK);
+    u32 keptFillers = 0;
+
+    for (u32 i = 0; i < trainer->poolSize; i++)
+    {
+        u32 poolIndex = poolIndexArray[i];
+        if (poolIndex == POOL_SLOT_DISABLED)
+            continue;
+        if (trainer->party[poolIndex].tags & (1u << POOL_TAG_ACE))
+        {
+            if (!gimmick || !InfCave_MonMatchesGimmick(trainer, &trainer->party[poolIndex]))
+                poolIndexArray[i] = POOL_SLOT_DISABLED;
+            continue;
+        }
+        if (!InfCave_MonAllowedAsFiller(trainer, &trainer->party[poolIndex], applyMonotype))
+        {
+            poolIndexArray[i] = POOL_SLOT_DISABLED;
+            continue;
+        }
+        keptFillers++;
+    }
+    return keptFillers;
+}
+
+//  The strict pass can leave a monotype room with fewer members than the party
+//  needs, which would drop the whole pool back to the trainer's first partySize
+//  rows. Re-shuffle and run the band-only pass instead when that happens; only
+//  then give up on pruning entirely.
+static void InfCavePrune(const struct Trainer *trainer, u8 *poolIndexArray, const struct PoolRules *rules)
+{
+    if (InfCavePrunePass(trainer, poolIndexArray, TRUE) >= trainer->partySize)
+        return;
+
+    RandomizePoolIndices(trainer, poolIndexArray);
+    if (InfCavePrunePass(trainer, poolIndexArray, FALSE) >= trainer->partySize)
+        return;
+
+    RandomizePoolIndices(trainer, poolIndexArray);
+}
+
 static void PrunePool(const struct Trainer *trainer, u8 *poolIndexArray, const struct PoolRules *rules)
 {
     //  Use defined pruning functions go here
@@ -444,6 +545,9 @@ static void PrunePool(const struct Trainer *trainer, u8 *poolIndexArray, const s
         break;
     case POOL_PRUNE_EMPORIUM:
         EmporiumPrune(trainer, poolIndexArray, rules);
+        break;
+    case POOL_PRUNE_INFCAVE:
+        InfCavePrune(trainer, poolIndexArray, rules);
         break;
     default:
         break;

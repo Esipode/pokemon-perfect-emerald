@@ -73,6 +73,24 @@ static const u8 sInfCaveTierPool[INFCAVE_TIER_COUNT] =
     EMPORIUM_TERA,
 };
 
+// Base-stat-total band per tier. The maxima match the Emporium filler caps the
+// pools are authored to; the minima keep a deep room from fielding the early
+// tiers' weakest mons when a pool is shared with a shallower tier.
+// POOL_PRUNE_INFCAVE drops everything outside the band, and relaxes the minimum
+// if that would leave fewer members than the party needs.
+struct InfCaveBstBand
+{
+    u16 minBst;
+    u16 maxBst;
+};
+
+static const struct InfCaveBstBand sInfCaveTierBst[INFCAVE_TIER_COUNT] =
+{
+    { .minBst =   0, .maxBst = 400 },
+    { .minBst = 330, .maxBst = 500 },
+    { .minBst = 400, .maxBst = 600 },
+};
+
 // Lowest depth that reads each tier, ascending. Depth 0 (the lobby) reads tier 0.
 static const u8 sInfCaveTierMinDepth[INFCAVE_TIER_COUNT] =
 {

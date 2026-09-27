@@ -302,6 +302,7 @@ static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId);
 static void DebugAction_Util_ForceDraft(u8 taskId);
 static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType);
+static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -650,6 +651,32 @@ static const struct DebugMenuOption sDebugMenu_Actions_InfCaveRoom[] =
     { NULL }
 };
 
+// Pins one trainer-facing modifier on the room the player is standing in, so
+// "InfCave Test Battle" shows the pool rules' effect without waiting for a node
+// roll to offer the modifier. Monotype carries the type in its argument.
+struct DebugInfCaveModifier
+{
+    u8 modifier;
+    u8 arg;
+};
+
+static const struct DebugInfCaveModifier sDebugInfCaveModifiers[] =
+{
+    { INFCAVE_MOD_NONE,     0 },
+    { INFCAVE_MOD_MONOTYPE, TYPE_FIRE },
+    { INFCAVE_MOD_MONOTYPE, TYPE_WATER },
+    { INFCAVE_MOD_GIMMICK,  0 },
+};
+
+static const struct DebugMenuOption sDebugMenu_Actions_InfCaveModifier[] =
+{
+    { COMPOUND_STRING("Clear"),          DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[0] },
+    { COMPOUND_STRING("Monotype Fire"),  DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[1] },
+    { COMPOUND_STRING("Monotype Water"), DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[2] },
+    { COMPOUND_STRING("Gimmick"),        DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[3] },
+    { NULL }
+};
+
 static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
 {
     { COMPOUND_STRING("Fly to map…"),               DebugAction_Util_Fly },
@@ -671,6 +698,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Heap Peak Usage…"),          DebugAction_ExecuteScript, Debug_EventScript_HeapStats },
     { COMPOUND_STRING("InfCave Mask Check…"),      DebugAction_ExecuteScript, Debug_EventScript_InfCaveMaskCheck },
     { COMPOUND_STRING("InfCave Room Type…"),        DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveRoom },
+    { COMPOUND_STRING("InfCave Modifier…"),         DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveModifier },
     { COMPOUND_STRING("InfCave Test Battle"),       DebugAction_ExecuteScript, Debug_EventScript_InfCaveTestBattle },
     { COMPOUND_STRING("View Trade Code…"),          DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"),        DebugAction_TradeCode_ViewSampleConfirm },
@@ -2538,6 +2566,26 @@ static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType)
     InfCave_AdvanceDepth();
     InfCave_SetRoom(*(const u8 *)roomType, NULL, NULL);
     Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_InfCaveEnterRoom);
+}
+
+// Keeps the room type and depth: only the modifier slots change, so the room the
+// player is standing in stays valid and the next rolled trainer reads the new
+// modifier.
+static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry)
+{
+    const struct DebugInfCaveModifier *mod = entry;
+    u8 modifiers[INFCAVE_MAX_MODIFIERS] = {0};
+    u8 args[INFCAVE_MAX_MODIFIERS] = {0};
+
+    if (!InfCave_IsInRun())
+        InfCave_StartRun();
+    if (InfCave_GetDepth() == 0)
+        InfCave_AdvanceDepth();
+
+    modifiers[0] = mod->modifier;
+    args[0] = mod->arg;
+    InfCave_SetRoom(InfCave_GetRoomType(), modifiers, args);
+    Debug_DestroyMenu_Full(taskId);
 }
 
 // Runs the same callnative as the live offer flow (data/scripts/draft.inc). Ignores

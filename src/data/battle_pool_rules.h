@@ -89,4 +89,15 @@ const struct PoolRules gPoolRulesetsList[] = {
         .tagMaxMembers[POOL_TAG_ACE] = 1,
         .tagRequired[POOL_TAG_ACE] = TRUE,
     },
+    //  Infinity Cave: one filler lead and at most one ace, which POOL_PRUNE_INFCAVE
+    //  leaves in the pool only under INFCAVE_MOD_GIMMICK. No duplicate species /
+    //  Mega Stone / Z-Crystal in the generated party.
+    [POOL_RULESET_INFCAVE] = {
+        .speciesClause = TRUE,
+        .excludeForms = B_POOL_RULE_EXCLUDE_FORMS,
+        .megaStoneClause = TRUE,
+        .zCrystalClause = TRUE,
+        .tagMaxMembers[POOL_TAG_LEAD] = 1,
+        .tagMaxMembers[POOL_TAG_ACE] = 1,
+    },
 };

@@ -18,6 +18,7 @@ enum PoolRulesets {
     POOL_RULESET_WEATHER_DOUBLES,
     POOL_RULESET_SUPPORT_DOUBLES,
     POOL_RULESET_EMPORIUM,
+    POOL_RULESET_INFCAVE,
 };
 
 enum PoolPickFunctions {
@@ -26,6 +27,10 @@ enum PoolPickFunctions {
     //  Default lead/other, but the ace slot is restricted to pool members whose
     //  key matches the player's chosen Battle Emporium reward (src/trainer_pools.c).
     POOL_PICK_EMPORIUM,
+    //  Default lead/other. The ace slot is used only under INFCAVE_MOD_GIMMICK,
+    //  where it is restricted to the aces POOL_PRUNE_INFCAVE kept
+    //  (src/trainer_pools.c).
+    POOL_PICK_INFCAVE,
 };
 
 enum PoolPruneOptions {
@@ -36,6 +41,12 @@ enum PoolPruneOptions {
     //  base-stat-total cap or flagged legendary / mythical / paradox / Ultra Beast
     //  (EmporiumMonAllowedAsFiller, src/battle_emporium.c).
     POOL_PRUNE_EMPORIUM,
+    //  Infinity Cave: drops every pool member outside the depth tier's base-stat-
+    //  total band, off-type under INFCAVE_MOD_MONOTYPE, and every ace that cannot
+    //  use the tier's gimmick - all of them without INFCAVE_MOD_GIMMICK
+    //  (InfCave_MonAllowedAsFiller / InfCave_MonMatchesGimmick,
+    //  src/infinity_cave_trainers.c).
+    POOL_PRUNE_INFCAVE,
 };
 
 enum PoolTags {

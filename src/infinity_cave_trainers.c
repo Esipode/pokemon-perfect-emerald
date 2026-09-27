@@ -3,6 +3,7 @@
 #include "battle_emporium.h"
 #include "caps.h"
 #include "data.h"
+#include "item.h"
 #include "event_data.h"
 #include "random.h"
 #include "string_util.h"
@@ -27,6 +28,11 @@
 // room and its trainers from the run's seeds.
 EWRAM_DATA static struct Trainer sInfCaveTrainers[INFCAVE_MAX_TRAINERS] = {0};
 EWRAM_DATA bool8 gInfCaveBattleActive = FALSE;
+
+// Depth tier each built slot rolled on. The pool rules need it (band, gimmick
+// kind) and struct Trainer has nowhere to carry it, so it is kept beside the
+// slots and read back through the slot the trainer pointer belongs to.
+EWRAM_DATA static u8 sInfCaveTrainerTier[INFCAVE_MAX_TRAINERS] = {0};
 
 // The redirect in data.h forwards one contiguous id range, so the stub ids must
 // stay contiguous and cover every slot.
@@ -75,6 +81,7 @@ void InfCave_ClearTrainers(void)
 
     gInfCaveBattleActive = FALSE;
     memset(sInfCaveTrainers, 0, sizeof(sInfCaveTrainers));
+    memset(sInfCaveTrainerTier, 0, sizeof(sInfCaveTrainerTier));
     for (slot = 0; slot < INFCAVE_MAX_TRAINERS; slot++)
         FlagClear(TRAINER_FLAGS_START + TRAINER_INFCAVE_0 + slot);
 }
@@ -125,6 +132,104 @@ u32 InfCave_GetBattleLevel(void)
     return level;
 }
 
+// Tier a built slot rolled on, found from the slot the trainer pointer addresses.
+// Anything outside the slot array reads tier 0, so a stray pointer prunes to the
+// shallowest band instead of indexing past the table.
+u32 InfCave_GetTrainerTier(const struct Trainer *trainer)
+{
+    u32 slot;
+
+    if (trainer < &sInfCaveTrainers[0] || trainer >= &sInfCaveTrainers[INFCAVE_MAX_TRAINERS])
+        return 0;
+
+    slot = trainer - &sInfCaveTrainers[0];
+    if (sInfCaveTrainerTier[slot] >= INFCAVE_TIER_COUNT)
+        return 0;
+
+    return sInfCaveTrainerTier[slot];
+}
+
+// enum Type INFCAVE_MOD_MONOTYPE restricts the pools to, or TYPE_NONE when the
+// modifier is not active.
+static u32 MonotypeArg(void)
+{
+    u32 i;
+
+    for (i = 0; i < INFCAVE_MAX_MODIFIERS; i++)
+    {
+        if (InfCave_GetModifier(i) == INFCAVE_MOD_MONOTYPE)
+            return InfCave_GetModifierArg(i);
+    }
+    return TYPE_NONE;
+}
+
+// Filler legality for a rolled cave trainer: a common (non-legendary, non-form)
+// species inside the tier's base-stat-total band, and on-type under
+// INFCAVE_MOD_MONOTYPE. applyMonotype is FALSE on POOL_PRUNE_INFCAVE's relaxed
+// second pass, where the type restriction would leave too few members.
+bool32 InfCave_MonAllowedAsFiller(const struct Trainer *trainer, const struct TrainerMon *mon, bool32 applyMonotype)
+{
+    u32 tier = InfCave_GetTrainerTier(trainer);
+    u32 type;
+
+    if (!IsSpeciesCommonWithinBst(mon->species, sInfCaveTierBst[tier].maxBst))
+        return FALSE;
+    if (GetSpeciesBaseStatTotal(mon->species) < sInfCaveTierBst[tier].minBst)
+        return FALSE;
+
+    if (!applyMonotype)
+        return TRUE;
+
+    type = MonotypeArg();
+    if (type == TYPE_NONE)
+        return TRUE;
+
+    return GetSpeciesType(mon->species, 0) == type || GetSpeciesType(mon->species, 1) == type;
+}
+
+// TRUE if mon holds a Mega Stone its own species can use.
+static bool32 MonHoldsOwnMegaStone(const struct TrainerMon *mon)
+{
+    const struct FormChange *formChanges = GetSpeciesFormChanges(mon->species);
+    u32 i;
+
+    if (formChanges == NULL)
+        return FALSE;
+
+    for (i = 0; formChanges[i].method != FORM_CHANGE_TERMINATOR; i++)
+    {
+        if (formChanges[i].method == FORM_CHANGE_BATTLE_MEGA_EVOLUTION_ITEM
+         && formChanges[i].param1 == mon->heldItem)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// Ace legality under INFCAVE_MOD_GIMMICK: the mon must carry the gimmick its
+// tier's pool is built around and be reachable at the room's battle level. Mega
+// Stones are matched against the holder's own form-change table; a Z-Crystal's
+// move requirement is guaranteed by the pool rows themselves (see
+// src/data/battle_emporium.h).
+bool32 InfCave_MonMatchesGimmick(const struct Trainer *trainer, const struct TrainerMon *mon)
+{
+    u32 tier = InfCave_GetTrainerTier(trainer);
+
+    if (EmporiumSpeciesMinLevel(mon->species) > InfCave_GetBattleLevel())
+        return FALSE;
+
+    switch (sInfCaveTierPool[tier])
+    {
+    case EMPORIUM_ZMOVE:
+        return gItemsInfo[mon->heldItem].sortType == ITEM_TYPE_Z_CRYSTAL;
+    case EMPORIUM_MEGA:
+        return MonHoldsOwnMegaStone(mon);
+    case EMPORIUM_TERA:
+        return mon->teraType != TYPE_NONE;
+    default:
+        return FALSE;
+    }
+}
+
 // Fills one slot from an identity row and the tier's pool. Every field of the
 // struct is written here, so a slot never carries anything from the room before.
 // Returns the identity's overworld gfx id for the placer (Stage 15).
@@ -162,10 +267,11 @@ static u16 BuildTrainer(u32 slot, u32 roomType, rng_value_t *rng)
     trainer->party = pool;
     trainer->partySize = spec->partySize;
     trainer->poolSize = poolSize;
-    trainer->poolRuleIndex = POOL_RULESET_BASIC;
-    trainer->poolPickIndex = POOL_PICK_DEFAULT;
-    trainer->poolPruneIndex = POOL_PRUNE_NONE;
+    trainer->poolRuleIndex = POOL_RULESET_INFCAVE;
+    trainer->poolPickIndex = POOL_PICK_INFCAVE;
+    trainer->poolPruneIndex = POOL_PRUNE_INFCAVE;
     trainer->overrideTrainer = TRAINER_NONE;
+    sInfCaveTrainerTier[slot] = tier;
 
     // Narrow bitfields and table indices: catch truncation here, not at battle setup.
     assertf(trainer->partySize == spec->partySize, "partySize %d truncated to %d", spec->partySize, trainer->partySize);
