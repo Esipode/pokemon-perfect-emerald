@@ -519,7 +519,7 @@ ifneq ($(NODEP),1)
 endif
 
 $(C_BUILDDIR)/%.o: $(C_SUBDIR)/%.s
-	$(PREPROC) $< charmap.txt | $(CPP) $(CPPFLAGS) $(INCLUDE_SCANINC_ARGS) - | $(PREPROC) -ie $< charmap.txt | $(AS) $(ASFLAGS) -o $@
+	$(PREPROC) $< charmap.txt | $(CPP) $(CPPFLAGS) -x assembler-with-cpp $(INCLUDE_SCANINC_ARGS) - | $(PREPROC) -ie $< charmap.txt | $(AS) $(ASFLAGS) -o $@
 
 $(C_BUILDDIR)/%.d: $(C_SUBDIR)/%.s
 	$(SCANINC) -M $@ -g $(ASSETS_DIR_NAME) $(INCLUDE_SCANINC_ARGS) -I "" $<
@@ -529,7 +529,7 @@ ifneq ($(NODEP),1)
 endif
 
 $(DATA_ASM_BUILDDIR)/%.o: $(DATA_ASM_SUBDIR)/%.s
-	$(PREPROC) -s $< charmap.txt | $(CPP) $(CPPFLAGS) $(INCLUDE_SCANINC_ARGS) - | $(PREPROC) -ie $< charmap.txt | $(AS) $(ASFLAGS) -o $@
+	$(PREPROC) -s $< charmap.txt | $(CPP) $(CPPFLAGS) -x assembler-with-cpp $(INCLUDE_SCANINC_ARGS) - | $(PREPROC) -ie $< charmap.txt | $(AS) $(ASFLAGS) -o $@
 
 $(DATA_ASM_BUILDDIR)/%.d: $(DATA_ASM_SUBDIR)/%.s
 	$(SCANINC) -M $@ -g $(ASSETS_DIR_NAME) $(INCLUDE_SCANINC_ARGS) -I "" $<
