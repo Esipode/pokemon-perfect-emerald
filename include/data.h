@@ -8,6 +8,7 @@
 #include "difficulty.h"
 #include "debug.h"
 #include "battle_emporium.h"
+#include "infinity_cave.h" // gInfCaveBattleActive / InfCave_GetTrainer -- no cycle, infinity_cave.h only pulls in global.h and random.h
 #include "player_customization.h" // PlayerCustomization_GetTrainerPaletteOverride -- no cycle, player_customization.h only pulls in constants/player_customization.h
 
 #define MAX_TRAINER_ITEMS 4
@@ -282,6 +283,7 @@ static inline const struct Trainer *GetTrainerStructFromId(u16 trainerId)
 {
     if (gIsDebugBattle) return GetDebugAiTrainer();
     if (gEmporiumBattleActive && trainerId == TRAINER_EMPORIUM) return GetEmporiumTrainer();
+    if (gInfCaveBattleActive && trainerId >= TRAINER_INFCAVE_0 && trainerId <= TRAINER_INFCAVE_7) return InfCave_GetTrainer(trainerId);
     enum DifficultyLevel difficulty;
 
     if (IsPartnerTrainerId(trainerId))

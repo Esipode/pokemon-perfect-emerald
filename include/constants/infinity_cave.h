@@ -237,6 +237,11 @@ enum InfCaveTileRole
 // print handler. Off in shipped builds; generation cost is otherwise unchanged.
 #define INFCAVE_TRACE               FALSE
 
+// Trainer slots a generated room can hold, one stub trainer id each
+// (TRAINER_INFCAVE_0..7). Matches the worst case: a gauntlet's 6 trainers plus
+// INFCAVE_MOD_SWARM's +2. Trainer flag space allows no more ids than this.
+#define INFCAVE_MAX_TRAINERS        8
+
 // Object event templates the generator may write per room. Leaves room for the
 // player and a follower inside OBJECT_EVENTS_COUNT.
 #define INFCAVE_MAX_OBJECTS         12

@@ -437,6 +437,7 @@ extern const u8 Debug_EventScript_EWRAMCounters[];
 extern const u8 Debug_EventScript_HeapStats[];
 extern const u8 Debug_EventScript_InfCaveMaskCheck[];
 extern const u8 Debug_EventScript_InfCaveEnterRoom[];
+extern const u8 Debug_EventScript_InfCaveTestBattle[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
 extern const u8 Debug_EventScript_Steven_Multi[];
@@ -670,6 +671,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Heap Peak Usage…"),          DebugAction_ExecuteScript, Debug_EventScript_HeapStats },
     { COMPOUND_STRING("InfCave Mask Check…"),      DebugAction_ExecuteScript, Debug_EventScript_InfCaveMaskCheck },
     { COMPOUND_STRING("InfCave Room Type…"),        DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveRoom },
+    { COMPOUND_STRING("InfCave Test Battle"),       DebugAction_ExecuteScript, Debug_EventScript_InfCaveTestBattle },
     { COMPOUND_STRING("View Trade Code…"),          DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"),        DebugAction_TradeCode_ViewSampleConfirm },
     { COMPOUND_STRING("Enter Trade Code…"),         DebugAction_TradeCode_EnterOffer },

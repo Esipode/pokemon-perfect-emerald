@@ -861,11 +861,25 @@
 #define TRAINER_MAY_PLACEHOLDER             854
 #define TRAINER_EMPORIUM                    855 // Battle Emporium: stub entry; the real opponent is built in RAM and swapped in by GetTrainerStructFromId
 
-// NOTE: Because each Trainer uses a flag to determine when they are defeated, there is only space for 8 additional trainers before trainer flag space overflows
+// Infinity Cave: one stub entry per trainer slot a generated room can hold. The real
+// opponents are built in RAM (sInfCaveTrainers) and swapped in by GetTrainerStructFromId.
+// A boss room uses slot 0.
+#define TRAINER_INFCAVE_0                   856
+#define TRAINER_INFCAVE_1                   857
+#define TRAINER_INFCAVE_2                   858
+#define TRAINER_INFCAVE_3                   859
+#define TRAINER_INFCAVE_4                   860
+#define TRAINER_INFCAVE_5                   861
+#define TRAINER_INFCAVE_6                   862
+#define TRAINER_INFCAVE_7                   863
+#define TRAINER_INFCAVE_BOSS                TRAINER_INFCAVE_0
+
+// NOTE: Because each Trainer uses a flag to determine when they are defeated, trainer flag
+//       space is now full: TRAINERS_COUNT_EMERALD has reached MAX_TRAINERS_COUNT_EMERALD
 //       More space can be made by shifting flags around in constants/flags.h or changing how trainer flags are handled
 //       MAX_TRAINERS_COUNT can be increased but will take up additional saveblock space
 
-#define TRAINERS_COUNT_EMERALD     856
+#define TRAINERS_COUNT_EMERALD     864
 #define MAX_TRAINERS_COUNT_EMERALD 864
 
 #if IS_FRLG

@@ -1500,6 +1500,9 @@ static void CB2_EndTrainerBattle(void)
     // The TRAINER_EMPORIUM redirect is only needed while the opponent party is built. Disarm it so a
     // white-out can't leave every trainer pointed at the runtime Emporium struct.
     gEmporiumBattleActive = FALSE;
+    // Same contract for the Infinity Cave stub ids, and their defeat flags are
+    // cleared here so the next room's trainers challenge the player again.
+    InfCave_ClearTrainers();
     if (FollowerNPCIsBattlePartner())
     {
         RestorePartyAfterFollowerNPCBattle();

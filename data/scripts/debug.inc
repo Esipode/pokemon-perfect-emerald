@@ -703,6 +703,20 @@ Debug_EventScript_InfCaveEnterRoom::
 	waitstate
 	end
 
+@ Stage 12 redirect harness: hand-fills trainer slot 0, then fights it through the
+@ stub id. skipFlagCheck so the battle repeats; the redirect is disarmed by the
+@ post-battle teardown in src/battle_setup.c.
+Debug_EventScript_InfCaveTestBattle::
+	callnative InfCave_DebugFillTrainer
+	trainerbattle LOCALID_NONE, TRAINER_INFCAVE_0, Debug_Text_InfCaveTrainerIntro, Debug_Text_InfCaveTrainerDefeat, NULL, LOCALID_NONE, TRAINER_NONE, NULL, NULL, NULL, NULL, NULL, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE
+	end
+
+Debug_Text_InfCaveTrainerIntro::
+	.string "The cave tests you!$"
+
+Debug_Text_InfCaveTrainerDefeat::
+	.string "The cave holds deeper things.$"
+
 Debug_EventScript_InfCaveMaskCheck_Text::
 	.string "Mask failures: {STR_VAR_1} of 100\n"
 	.string "First fault: {STR_VAR_2}\l"

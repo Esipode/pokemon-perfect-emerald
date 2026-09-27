@@ -78,4 +78,29 @@ u32 InfCave_DebugValidateMask(u32 baseSeed, u32 count, u32 *firstBadSeed, u32 *f
 // Name of a fault id reported by InfCave_DebugValidateMask.
 const u8 *InfCave_GetMaskFaultName(u32 fault);
 
+// src/infinity_cave_trainers.c. One runtime struct Trainer per room trainer slot,
+// swapped in for the stub ids TRAINER_INFCAVE_0..7 while gInfCaveBattleActive is
+// set (redirect in GetTrainerStructFromId, data.h). Nothing here is saved: a
+// reload rebuilds the room's trainers from the run's seeds.
+struct Trainer;
+extern bool8 gInfCaveBattleActive;
+
+// Stub trainer id for a slot, or TRAINER_NONE when slot >= INFCAVE_MAX_TRAINERS.
+u16 InfCave_GetTrainerId(u32 slot);
+
+// Runtime opponent behind a stub id. Used by the data.h redirect.
+const struct Trainer *InfCave_GetTrainer(u16 trainerId);
+
+// Writable slot for the trainer roll. NULL when slot >= INFCAVE_MAX_TRAINERS.
+struct Trainer *InfCave_GetTrainerSlot(u32 slot);
+
+// Arms the redirect. Call once the slots hold built trainers.
+void InfCave_ArmTrainers(void);
+
+// Disarms the redirect, blanks every slot and clears the stub ids' defeat flags.
+void InfCave_ClearTrainers(void);
+
+// Debug: puts a fixed trainer in slot 0 and arms the redirect.
+void InfCave_DebugFillTrainer(void);
+
 #endif // GUARD_INFINITY_CAVE_H
