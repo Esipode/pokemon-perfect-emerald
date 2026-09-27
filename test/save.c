@@ -21,6 +21,9 @@
 //     grow 129 -> 136 bytes each. u8[] arrays need no padding: 7504 + 7 + 7 = 7518.
 //     Assumes the default species config (all regional-form families enabled, as in
 //     test.h); disabling a P_*_FORMS changes this number.
+//   struct InfinityCaveRun appended (20 bytes, 4-byte aligned for its two u32 seeds):
+//     7518 rounds up to 7520, + 20 = 7540. Hand-calculated -- confirm against the real
+//     build error if this mismatches.
 //
 // SaveBlock2 (starts at 3008, ends at 744):
 //   FREE_CONTESTS: contestLinkResults[5][4] (40) -> 2968.
@@ -47,7 +50,7 @@
 //     union has u32s) + boxes (N*30*80) + boxNames (N*9) + boxWallpapers (N) + fusions
 //     (4*104). Names plus wallpapers cost 10 bytes per box, so fusions' offset stays
 //     4-aligned only when N is even; 16 and 28 both are.
-#define T_SAVEBLOCK1_SIZE 7518
+#define T_SAVEBLOCK1_SIZE 7540
 #define T_SAVEBLOCK2_SIZE 776
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 67900

@@ -27,6 +27,7 @@
 #include "constants/items.h"
 #include "constants/moves.h"
 #include "constants/player_customization.h"
+#include "constants/infinity_cave.h"
 #include "config/save.h"
 
 // Prevent cross-jump optimization.
@@ -1402,6 +1403,22 @@ struct AchievementRunData
     bool8 nuzlockeRouteSkipped;      // unused -- backed Full Encounter (ACHIEVEMENT_NUZLOCKE_FULL_ENCOUNTER), now removed; left in place rather than reflowing this struct's fields
 };
 
+// Infinity Cave roguelite run. Zero means no run in progress, which is also
+// what old saves read back. Nothing about a room's layout, trainers or node
+// options is stored: they are regenerated from these seeds, so a save-and-load
+// inside a room rebuilds it exactly (see include/infinity_cave.h).
+struct InfinityCaveRun
+{
+    u32 runSeed;    // fixed for the whole run; rooms derive from it plus depth
+    u32 roomSeed;   // seed of the room the player is standing in
+    u16 depth;      // 0 while in the lobby, 1 on the first room
+    u16 shards;     // run currency, spent in the lobby shop
+    bool8 active;
+    u8 roomType;    // enum InfCaveRoomType
+    u8 modifier[INFCAVE_MAX_MODIFIERS];    // enum InfCaveModifier
+    u8 modifierArg[INFCAVE_MAX_MODIFIERS]; // meaning depends on the modifier
+};
+
 struct SaveBlock1
 {
     struct Coords16 pos;
@@ -1548,6 +1565,7 @@ struct SaveBlock1
     u8 rivalName[PLAYER_NAME_LENGTH + 1];
     struct DaycareMon route5DayCareMon;
 #endif
+    struct InfinityCaveRun infinityCaveRun;
     // Actual size: see T_SAVEBLOCK1_SIZE in test/save.c (kept in sync by the
     // "SaveBlock1 is backwards compatible" test) or the in-game debug readout
     // (CheckSaveBlock1Size, src/debug.c). Per-field offsets above are not tracked
