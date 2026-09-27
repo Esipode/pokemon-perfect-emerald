@@ -63,6 +63,29 @@ enum InfCaveEndReason
 #define INFCAVE_MAP_WIDTH           40
 #define INFCAVE_MAP_HEIGHT          40
 
+// Mask cell kinds. Generation works on a per-tile mask first; the autotile pass
+// turns the mask into metatiles, so no pass before it needs to know tile art.
+enum InfCaveCell
+{
+    INFCAVE_CELL_VOID,     // solid rock outside the cave
+    INFCAVE_CELL_WALL,     // wall shell hugging the carved floor
+    INFCAVE_CELL_FLOOR,    // walkable
+    INFCAVE_CELL_RESERVED, // owned by a set piece; later passes must not touch it
+};
+
+// Mask generation limits. Rooms are axis-aligned rectangles placed with a gap
+// between them, then chained together by corridors.
+#define INFCAVE_MIN_ROOMS           5
+#define INFCAVE_MAX_ROOMS           9
+#define INFCAVE_ROOM_MIN_W          5
+#define INFCAVE_ROOM_MAX_W          11
+#define INFCAVE_ROOM_MIN_H          5
+#define INFCAVE_ROOM_MAX_H          9
+#define INFCAVE_ROOM_GAP            2 // free tiles required between two rooms
+#define INFCAVE_CORRIDOR_WIDTH      2 // width 1 leaves walls too thin to tile
+#define INFCAVE_MARGIN              3 // solid tiles kept at every canvas edge
+#define INFCAVE_SMOOTH_PASSES       2
+
 // Tile-role key map. LAYOUT_INFINITY_CAVE_TILEKEY stores one authored block per
 // role at a fixed cell, so retheming the cave is a Porymap edit with no code
 // change. Role ids are cell indices into that layout: row * width + column.
@@ -131,6 +154,10 @@ enum InfCaveTileRole
 
     // Rows 5-7 are spare.
 };
+
+// Set to TRUE to log an ASCII picture of each generated mask over the debug
+// print handler. Off in shipped builds; generation cost is otherwise unchanged.
+#define INFCAVE_TRACE               FALSE
 
 // Object event templates the generator may write per room. Leaves room for the
 // player and a follower inside OBJECT_EVENTS_COUNT.
