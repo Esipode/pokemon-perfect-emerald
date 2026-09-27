@@ -43,4 +43,20 @@ static const struct InfCavePatch sInfCavePatch[] =
     { INFCAVE_ROLE_WATER_NW, .weight = 30, .minDepth = 2 },
 };
 
+// Set piece stamped into a generated room, by enum InfCaveRoomType.
+// INFCAVE_PIECE_NONE leaves the room fully procedural. Every piece must share the room layout's
+// tilesets, since stamping copies raw block words, and its outer ring must be
+// walkable, since that ring is what carries paths past the piece; the stamp pass
+// asserts both.
+static const u16 sInfCavePieceLayout[INFCAVE_ROOM_COUNT] =
+{
+    [INFCAVE_ROOM_BATTLE]   = INFCAVE_PIECE_NONE,
+    [INFCAVE_ROOM_GAUNTLET] = INFCAVE_PIECE_NONE,
+    [INFCAVE_ROOM_ELITE]    = INFCAVE_PIECE_NONE,
+    [INFCAVE_ROOM_BOSS]     = LAYOUT_INFINITY_CAVE_PIECE_BOSS,
+    [INFCAVE_ROOM_REST]     = LAYOUT_INFINITY_CAVE_PIECE_REST,
+    [INFCAVE_ROOM_TREASURE] = LAYOUT_INFINITY_CAVE_PIECE_TREASURE,
+    [INFCAVE_ROOM_SHOP]     = LAYOUT_INFINITY_CAVE_PIECE_SHOP,
+};
+
 #endif // GUARD_DATA_INFINITY_CAVE_H

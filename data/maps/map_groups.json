@@ -482,7 +482,11 @@
     "MeteorFalls_RegiCave",
     "InfinityCave_Entrance",
     "InfinityCave_Room",
-    "InfinityCave_TileKey"
+    "InfinityCave_TileKey",
+    "InfinityCave_PieceBoss",
+    "InfinityCave_PieceRest",
+    "InfinityCave_PieceTreasure",
+    "InfinityCave_PieceShop"
   ],
   "gMapGroup_IndoorDynamic": [
     "BattleColosseum_2P",

@@ -9185,6 +9185,50 @@
       "border_filepath": "data/layouts/InfinityCave_TileKey/border.bin",
       "blockdata_filepath": "data/layouts/InfinityCave_TileKey/map.bin",
       "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_INFINITY_CAVE_PIECE_BOSS",
+      "name": "InfinityCave_PieceBoss_Layout",
+      "width": 11,
+      "height": 9,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/InfinityCave_PieceBoss/border.bin",
+      "blockdata_filepath": "data/layouts/InfinityCave_PieceBoss/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_INFINITY_CAVE_PIECE_REST",
+      "name": "InfinityCave_PieceRest_Layout",
+      "width": 7,
+      "height": 7,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/InfinityCave_PieceRest/border.bin",
+      "blockdata_filepath": "data/layouts/InfinityCave_PieceRest/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_INFINITY_CAVE_PIECE_TREASURE",
+      "name": "InfinityCave_PieceTreasure_Layout",
+      "width": 7,
+      "height": 5,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/InfinityCave_PieceTreasure/border.bin",
+      "blockdata_filepath": "data/layouts/InfinityCave_PieceTreasure/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_INFINITY_CAVE_PIECE_SHOP",
+      "name": "InfinityCave_PieceShop_Layout",
+      "width": 7,
+      "height": 5,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/InfinityCave_PieceShop/border.bin",
+      "blockdata_filepath": "data/layouts/InfinityCave_PieceShop/map.bin",
+      "layout_version": "emerald"
     }
   ]
 }

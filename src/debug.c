@@ -301,6 +301,7 @@ static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId);
 static void DebugAction_Util_ForceDraft(u8 taskId);
+static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -435,6 +436,7 @@ extern const u8 Debug_ShowExpansionVersion[];
 extern const u8 Debug_EventScript_EWRAMCounters[];
 extern const u8 Debug_EventScript_HeapStats[];
 extern const u8 Debug_EventScript_InfCaveMaskCheck[];
+extern const u8 Debug_EventScript_InfCaveEnterRoom[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
 extern const u8 Debug_EventScript_Steven_Multi[];
@@ -625,6 +627,28 @@ static const struct DebugMenuOption sDebugMenu_Actions_FollowerNPCMenu[] =
     { NULL }
 };
 
+// Forces one Infinity Cave room type and drops the player into a freshly seeded
+// room of it, which is how a set piece is checked without walking a whole run.
+// The options carry pointers because a menu option's parameter of NULL reads as
+// "no parameter", and INFCAVE_ROOM_BATTLE is zero.
+static const u8 sDebugInfCaveRoomTypes[INFCAVE_ROOM_COUNT] =
+{
+    INFCAVE_ROOM_BATTLE, INFCAVE_ROOM_GAUNTLET, INFCAVE_ROOM_ELITE, INFCAVE_ROOM_BOSS,
+    INFCAVE_ROOM_REST, INFCAVE_ROOM_TREASURE, INFCAVE_ROOM_SHOP,
+};
+
+static const struct DebugMenuOption sDebugMenu_Actions_InfCaveRoom[] =
+{
+    { COMPOUND_STRING("Battle"),   DebugAction_InfCave_ForceRoom, &sDebugInfCaveRoomTypes[INFCAVE_ROOM_BATTLE] },
+    { COMPOUND_STRING("Gauntlet"), DebugAction_InfCave_ForceRoom, &sDebugInfCaveRoomTypes[INFCAVE_ROOM_GAUNTLET] },
+    { COMPOUND_STRING("Elite"),    DebugAction_InfCave_ForceRoom, &sDebugInfCaveRoomTypes[INFCAVE_ROOM_ELITE] },
+    { COMPOUND_STRING("Boss"),     DebugAction_InfCave_ForceRoom, &sDebugInfCaveRoomTypes[INFCAVE_ROOM_BOSS] },
+    { COMPOUND_STRING("Rest"),     DebugAction_InfCave_ForceRoom, &sDebugInfCaveRoomTypes[INFCAVE_ROOM_REST] },
+    { COMPOUND_STRING("Treasure"), DebugAction_InfCave_ForceRoom, &sDebugInfCaveRoomTypes[INFCAVE_ROOM_TREASURE] },
+    { COMPOUND_STRING("Shop"),     DebugAction_InfCave_ForceRoom, &sDebugInfCaveRoomTypes[INFCAVE_ROOM_SHOP] },
+    { NULL }
+};
+
 static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
 {
     { COMPOUND_STRING("Fly to map…"),               DebugAction_Util_Fly },
@@ -645,6 +669,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Force Draft (map)…"),        DebugAction_Util_ForceDraft },
     { COMPOUND_STRING("Heap Peak Usage…"),          DebugAction_ExecuteScript, Debug_EventScript_HeapStats },
     { COMPOUND_STRING("InfCave Mask Check…"),      DebugAction_ExecuteScript, Debug_EventScript_InfCaveMaskCheck },
+    { COMPOUND_STRING("InfCave Room Type…"),        DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveRoom },
     { COMPOUND_STRING("View Trade Code…"),          DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"),        DebugAction_TradeCode_ViewSampleConfirm },
     { COMPOUND_STRING("Enter Trade Code…"),         DebugAction_TradeCode_EnterOffer },
@@ -2499,6 +2524,18 @@ static void DebugAction_Util_CheatStart(u8 taskId)
         Debug_DestroyMenu_Full_Script(taskId, Debug_CheatStartFrlg);
     else
         Debug_DestroyMenu_Full_Script(taskId, Debug_CheatStart);
+}
+
+// Starts a run if none is open, then advances a depth so every visit generates a
+// new room, and pins the room type before the warp regenerates the map.
+static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType)
+{
+    if (!InfCave_IsInRun())
+        InfCave_StartRun();
+
+    InfCave_AdvanceDepth();
+    InfCave_SetRoom(*(const u8 *)roomType, NULL, NULL);
+    Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_InfCaveEnterRoom);
 }
 
 // Runs the same callnative as the live offer flow (data/scripts/draft.inc). Ignores

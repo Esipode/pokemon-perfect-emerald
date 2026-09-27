@@ -696,6 +696,13 @@ Debug_EventScript_InfCaveMaskCheck::
 	release
 	end
 
+@ Warps into the generated room map after the debug menu has pinned a room type.
+@ The coordinates are ignored: the generator places the player itself.
+Debug_EventScript_InfCaveEnterRoom::
+	warp MAP_INFINITY_CAVE_ROOM, 3, 3
+	waitstate
+	end
+
 Debug_EventScript_InfCaveMaskCheck_Text::
 	.string "Mask failures: {STR_VAR_1} of 100\n"
 	.string "First fault: {STR_VAR_2}\l"

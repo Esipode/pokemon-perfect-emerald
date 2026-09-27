@@ -104,6 +104,15 @@ enum InfCaveCell
 #define INFCAVE_TILEKEY_CELL(row, col) ((row) * INFCAVE_TILEKEY_WIDTH + (col))
 #define INFCAVE_ROLE_COUNT          (INFCAVE_TILEKEY_WIDTH * INFCAVE_TILEKEY_HEIGHT)
 
+// Set pieces. When a room type calls for one, an authored chunk layout is
+// stamped into the biggest generated room before the autotile pass and its cells
+// become INFCAVE_CELL_RESERVED. A piece's size is read from its layout at
+// runtime, so resizing one in Porymap needs no code change while it stays within
+// these bounds; the mask generator reserves a room large enough to host it.
+#define INFCAVE_PIECE_MAX_W         13
+#define INFCAVE_PIECE_MAX_H         11
+#define INFCAVE_PIECE_NONE          0 // no piece; generated layout ids start at 1
+
 // Floor variants rolled per tile by the autotiler. Variant 0 dominates.
 #define INFCAVE_FLOOR_VARIANT_COUNT 8
 #define INFCAVE_FLOOR_PLAIN_PERCENT 85 // share of floor tiles kept on variant 0

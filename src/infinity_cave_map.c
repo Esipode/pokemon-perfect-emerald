@@ -80,6 +80,21 @@ static EWRAM_DATA u8 sDecor[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
 // in its rectangle, which the autotiler works out from the neighbouring cells.
 static EWRAM_DATA u8 sPatch[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
 
+// The set piece this room hosts, if any. layoutId is INFCAVE_PIECE_NONE when
+// the room type stamps nothing; w and h come from the layout, and x and y are
+// filled in once the stamp pass has picked the room that hosts it. The mask
+// generator reserves a room of w by h so the piece always has somewhere to land.
+struct InfCaveStamp
+{
+    u16 layoutId;
+    u8 x;
+    u8 y;
+    u8 w;
+    u8 h;
+};
+
+static EWRAM_DATA struct InfCaveStamp sStamp = {0};
+
 // Distinct RNG streams within one room, so adding a consumer cannot shift the
 // numbers an existing pass draws.
 #define INFCAVE_SALT_MASK 0x4D41534Bu // 'MASK'
@@ -136,6 +151,54 @@ static bool32 IsFloor(u32 x, u32 y)
     return CellKind(x, y) == INFCAVE_CELL_FLOOR;
 }
 
+static bool32 IsReserved(u32 x, u32 y)
+{
+    return CellKind(x, y) == INFCAVE_CELL_RESERVED;
+}
+
+// The stamped block a reserved cell draws. Only valid inside the stamp rect,
+// which is the only place a reserved cell exists.
+static u16 StampBlockAt(u32 x, u32 y)
+{
+    const struct MapLayout *layout = GetMapLayout(sStamp.layoutId);
+
+    return layout->map[(y - sStamp.y) * layout->width + (x - sStamp.x)];
+}
+
+// Picks the set piece the current room type calls for. Runs before the mask so
+// the generator can reserve a room the piece fits in. An oversized piece is
+// dropped rather than stamped: reserving a room larger than the canvas allows
+// would corrupt the placement arithmetic.
+static void ResolveSetPiece(void)
+{
+    u32 roomType = InfCave_GetRoomType();
+    // Only the asserts read the room layout, and only a debug build has those.
+    const struct MapLayout *roomLayout UNUSED;
+    const struct MapLayout *layout;
+
+    memset(&sStamp, 0, sizeof(sStamp));
+
+    if (roomType >= INFCAVE_ROOM_COUNT || sInfCavePieceLayout[roomType] == INFCAVE_PIECE_NONE)
+        return;
+
+    layout = GetMapLayout(sInfCavePieceLayout[roomType]);
+    roomLayout = GetMapLayout(LAYOUT_INFINITY_CAVE_ROOM);
+
+    // Stamping copies raw block words, so a piece authored against other tilesets
+    // would draw unrelated art.
+    AGB_ASSERT(layout->primaryTileset == roomLayout->primaryTileset);
+    AGB_ASSERT(layout->secondaryTileset == roomLayout->secondaryTileset);
+    AGB_ASSERT(layout->width <= INFCAVE_PIECE_MAX_W);
+    AGB_ASSERT(layout->height <= INFCAVE_PIECE_MAX_H);
+
+    if (layout->width > INFCAVE_PIECE_MAX_W || layout->height > INFCAVE_PIECE_MAX_H)
+        return;
+
+    sStamp.layoutId = sInfCavePieceLayout[roomType];
+    sStamp.w = layout->width;
+    sStamp.h = layout->height;
+}
+
 // Half-open bounds of the area passes may write, i.e. the canvas minus the
 // solid margin.
 #define INFCAVE_AREA_MIN       INFCAVE_MARGIN
@@ -186,10 +249,38 @@ static bool32 RoomFits(u32 x, u32 y, u32 w, u32 h)
     return TRUE;
 }
 
+// Places the room that hosts this room's set piece, at exactly the piece's size
+// so the piece can be stamped over it whole. It goes down before any rolled
+// room, on an empty canvas, so it cannot be crowded out.
+static void PlaceStampRoom(rng_value_t *rng)
+{
+    u32 tries;
+
+    for (tries = 0; tries < INFCAVE_ROOM_TRIES; tries++)
+    {
+        u32 x = InfCave_RandRange(rng, INFCAVE_AREA_MIN, INFCAVE_AREA_MAX_X - sStamp.w);
+        u32 y = InfCave_RandRange(rng, INFCAVE_AREA_MIN, INFCAVE_AREA_MAX_Y - sStamp.h);
+
+        if (!RoomFits(x, y, sStamp.w, sStamp.h))
+            continue;
+
+        sRooms[sRoomCount].x = x;
+        sRooms[sRoomCount].y = y;
+        sRooms[sRoomCount].w = sStamp.w;
+        sRooms[sRoomCount].h = sStamp.h;
+        sRoomCount++;
+        CarveRect(x, y, sStamp.w, sStamp.h);
+        return;
+    }
+}
+
 static void PlaceRooms(rng_value_t *rng)
 {
     u32 wanted = InfCave_RandRange(rng, INFCAVE_MIN_ROOMS, INFCAVE_MAX_ROOMS);
     u32 tries;
+
+    if (sStamp.layoutId != INFCAVE_PIECE_NONE)
+        PlaceStampRoom(rng);
 
     for (tries = 0; tries < INFCAVE_ROOM_TRIES && sRoomCount < wanted; tries++)
     {
@@ -471,6 +562,16 @@ static bool32 IsFloorSafe(s32 x, s32 y)
     if (x < 0 || x >= INFCAVE_MAP_WIDTH || y < 0 || y >= INFCAVE_MAP_HEIGHT)
         return FALSE;
     return IsFloor(x, y);
+}
+
+// Open space as the autotiler sees it: carved floor, or a set piece's cell,
+// which draws its own authored art and must never read as rock to the wall
+// shapes around it.
+static bool32 IsOpenSafe(s32 x, s32 y)
+{
+    if (x < 0 || x >= INFCAVE_MAP_WIDTH || y < 0 || y >= INFCAVE_MAP_HEIGHT)
+        return FALSE;
+    return IsFloor(x, y) || IsReserved(x, y);
 }
 
 static u32 CountFloor(void)
@@ -1007,6 +1108,11 @@ static bool32 IsDecorSolid(u32 index)
 // prop on it.
 static bool32 IsWalkable(s32 x, s32 y)
 {
+    // A set piece's cells carry no prop or patch data: what the player can cross
+    // there is whatever the authored block says.
+    if (x >= 0 && x < INFCAVE_MAP_WIDTH && y >= 0 && y < INFCAVE_MAP_HEIGHT && IsReserved(x, y))
+        return !IsBlockOnFoot(StampBlockAt(x, y));
+
     if (!IsFloorSafe(x, y))
         return FALSE;
     if (sPatch[y][x] != 0 && IsPatchCellBlocked(x, y))
@@ -1300,8 +1406,8 @@ static bool32 CanPlaceDecor(u32 index, u32 x, u32 y)
     // A tall prop drawn against a wall hides the wall's face art, so it is kept
     // one tile clear of every wall on all four sides.
     if (decor->tall
-     && (!IsFloorSafe(x, y - 1) || !IsFloorSafe(x, y + 1)
-      || !IsFloorSafe(x - 1, y) || !IsFloorSafe(x + 1, y)))
+     && (!IsOpenSafe(x, y - 1) || !IsOpenSafe(x, y + 1)
+      || !IsOpenSafe(x - 1, y) || !IsOpenSafe(x + 1, y)))
         return FALSE;
 
     if (IsDecorSolid(index) && IsChokepoint(x, y))
@@ -1392,6 +1498,73 @@ static void DecorateRoom(void)
 #endif
 }
 
+// Stamps the room type's authored chunk over the largest room that can hold it,
+// centred, and marks its cells RESERVED so the patch, decoration and autotile
+// passes leave them alone. Paths survive the stamp because a piece's outer ring
+// is walkable, so every corridor that met the room still leads past the piece.
+static void StampSetPiece(void)
+{
+    // Only the ring assert reads the piece's blocks here; the stamp itself is
+    // drawn by the autotile pass straight from the layout.
+    const struct MapLayout *layout UNUSED;
+    u32 i, lx, ly;
+    u32 bestArea = 0;
+    s32 host = -1;
+
+    if (sStamp.layoutId == INFCAVE_PIECE_NONE)
+        return;
+
+    for (i = 0; i < sRoomCount; i++)
+    {
+        u32 area = sRooms[i].w * sRooms[i].h;
+
+        if (sRooms[i].w < sStamp.w || sRooms[i].h < sStamp.h)
+            continue;
+        if (host >= 0 && area <= bestArea)
+            continue;
+
+        host = i;
+        bestArea = area;
+    }
+
+    // Nothing fits only if the reserved room was crowded out, which leaves the
+    // room type without its centrepiece rather than with a broken one.
+    if (host < 0)
+    {
+#if INFCAVE_TRACE == TRUE
+        DebugPrintf("InfCave set piece %d has no host room", sStamp.layoutId);
+#endif
+        sStamp.layoutId = INFCAVE_PIECE_NONE;
+        return;
+    }
+
+    layout = GetMapLayout(sStamp.layoutId);
+    sStamp.x = sRooms[host].x + (sRooms[host].w - sStamp.w) / 2;
+    sStamp.y = sRooms[host].y + (sRooms[host].h - sStamp.h) / 2;
+
+    for (ly = 0; ly < sStamp.h; ly++)
+    {
+        for (lx = 0; lx < sStamp.w; lx++)
+        {
+            u32 x = sStamp.x + lx, y = sStamp.y + ly;
+
+            // The ring carries every path around the piece, so a blocking block
+            // there would strand whatever the interior seals off.
+            if (lx == 0 || ly == 0 || lx == sStamp.w - 1u || ly == sStamp.h - 1u)
+                AGB_ASSERT(!IsBlockOnFoot(layout->map[ly * layout->width + lx]));
+
+            SetCell(x, y, INFCAVE_CELL_RESERVED);
+            sDecor[y][x] = 0;
+            sPatch[y][x] = 0;
+        }
+    }
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave set piece %d stamped at %d,%d in room %d",
+                sStamp.layoutId, sStamp.x, sStamp.y, host);
+#endif
+}
+
 // Wall shape for a non-floor cell. The mask legality rules forbid a wall with
 // floor on two opposite sides, so the only cardinal combinations left are none,
 // one side, or two perpendicular sides; that is what collapses the 256
@@ -1399,10 +1572,10 @@ static void DecorateRoom(void)
 // floor but floor on one diagonal is a concave corner.
 static u32 WallRoleForCell(s32 x, s32 y)
 {
-    bool32 n = IsFloorSafe(x, y - 1);
-    bool32 s = IsFloorSafe(x, y + 1);
-    bool32 w = IsFloorSafe(x - 1, y);
-    bool32 e = IsFloorSafe(x + 1, y);
+    bool32 n = IsOpenSafe(x, y - 1);
+    bool32 s = IsOpenSafe(x, y + 1);
+    bool32 w = IsOpenSafe(x - 1, y);
+    bool32 e = IsOpenSafe(x + 1, y);
 
     if (s && w)
         return INFCAVE_ROLE_WALL_SW;
@@ -1421,13 +1594,13 @@ static u32 WallRoleForCell(s32 x, s32 y)
     if (e)
         return INFCAVE_ROLE_WALL_E;
 
-    if (IsFloorSafe(x - 1, y - 1))
+    if (IsOpenSafe(x - 1, y - 1))
         return INFCAVE_ROLE_WALL_INNER_NW;
-    if (IsFloorSafe(x + 1, y - 1))
+    if (IsOpenSafe(x + 1, y - 1))
         return INFCAVE_ROLE_WALL_INNER_NE;
-    if (IsFloorSafe(x - 1, y + 1))
+    if (IsOpenSafe(x - 1, y + 1))
         return INFCAVE_ROLE_WALL_INNER_SW;
-    if (IsFloorSafe(x + 1, y + 1))
+    if (IsOpenSafe(x + 1, y + 1))
         return INFCAVE_ROLE_WALL_INNER_SE;
 
     return INFCAVE_ROLE_WALL_FILL;
@@ -1458,6 +1631,12 @@ static void AutotileRoom(u16 *origin, u32 stride)
         {
             u32 role;
 
+            if (IsReserved(x, y))
+            {
+                origin[y * stride + x] = StampBlockAt(x, y);
+                continue;
+            }
+
             if (!IsFloor(x, y))
                 role = WallRoleForCell(x, y);
             else if (sPatch[y][x] != 0)
@@ -1472,14 +1651,38 @@ static void AutotileRoom(u16 *origin, u32 stride)
     }
 }
 
+// The room's generation passes, in order. Every pass works on the generator's own
+// buffers; only the autotile pass that follows them writes blocks, so a pass may
+// be added or reordered here without touching tile art.
+struct InfCavePass
+{
+    void (*run)(void);
+    const char *name;
+};
+
+static const struct InfCavePass sInfCavePasses[] =
+{
+    { ResolveSetPiece, "set piece pick" },
+    { BuildMask,       "mask" },
+    { StampSetPiece,   "set piece stamp" },
+    { PlacePatches,    "patch" },
+    { DecorateRoom,    "decor" },
+};
+
 void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
 {
     u16 *origin;
+    u32 i;
 
     InfCave_LoadTileRoles();
-    BuildMask();
-    PlacePatches();
-    DecorateRoom();
+
+    for (i = 0; i < ARRAY_COUNT(sInfCavePasses); i++)
+    {
+#if INFCAVE_TRACE == TRUE
+        DebugPrintf("InfCave pass %s", sInfCavePasses[i].name);
+#endif
+        sInfCavePasses[i].run();
+    }
 
     gBackupMapLayout.map = backupMapData;
     gBackupMapLayout.width = INFCAVE_MAP_WIDTH + MAP_OFFSET_W;
