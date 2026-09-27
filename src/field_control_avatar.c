@@ -75,6 +75,7 @@ static const u8 *GetCoordEventScriptAtPosition(struct MapHeader *, u16, u16, u8)
 static const struct BgEvent *GetBackgroundEventAtPosition(struct MapHeader *, u16, u16, u8);
 static bool8 TryStartCoordEventScript(struct MapPosition *);
 static bool8 TryStartInfCaveExitScript(struct MapPosition *);
+static bool8 TryStartInfCaveShrineScript(struct MapPosition *);
 static bool8 TryStartWarpEventScript(struct MapPosition *, u16);
 static bool8 TryStartMiscWalkingScripts(u16);
 static bool8 TryStartStepCountScript(u16);
@@ -730,6 +731,8 @@ bool8 TryStartStepBasedScript(struct MapPosition *position, u16 metatileBehavior
         return TRUE;
     if (TryStartInfCaveExitScript(position) == TRUE)
         return TRUE;
+    if (TryStartInfCaveShrineScript(position) == TRUE)
+        return TRUE;
     if (TryStartWarpEventScript(position, metatileBehavior) == TRUE)
         return TRUE;
     if (TryStartMiscWalkingScripts(metatileBehavior) == TRUE)
@@ -771,6 +774,22 @@ static bool8 TryStartInfCaveExitScript(struct MapPosition *position)
         return FALSE;
 
     ScriptContext_SetupScript(InfinityCave_EventScript_ExitLadder);
+    return TRUE;
+}
+
+// A rest room's healing shrine, on the same footing as the ladder: its pad is a
+// generated metatile rather than an object, so the trigger comes from the
+// generator's position instead of the room map's header.
+extern const u8 InfinityCave_EventScript_Shrine[];
+
+static bool8 TryStartInfCaveShrineScript(struct MapPosition *position)
+{
+    if (!InfCave_InGeneratedRoom() || !InfCave_IsInRun())
+        return FALSE;
+    if (!InfCave_IsShrineTile(position->x - MAP_OFFSET, position->y - MAP_OFFSET))
+        return FALSE;
+
+    ScriptContext_SetupScript(InfinityCave_EventScript_Shrine);
     return TRUE;
 }
 

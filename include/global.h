@@ -1417,6 +1417,7 @@ struct InfinityCaveRun
     u8 roomType;    // enum InfCaveRoomType
     u8 modifier[INFCAVE_MAX_MODIFIERS];    // enum InfCaveModifier
     u8 modifierArg[INFCAVE_MAX_MODIFIERS]; // meaning depends on the modifier
+    u8 roomFlags;   // INFCAVE_ROOMFLAG_*, cleared on every descent
 };
 
 struct SaveBlock1

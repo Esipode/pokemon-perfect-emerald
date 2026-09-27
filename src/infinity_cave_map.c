@@ -6,6 +6,7 @@
 #include "script.h"
 #include "constants/event_object_movement.h"
 #include "constants/event_objects.h"
+#include "constants/flags.h"
 #include "constants/infinity_cave.h"
 #include "constants/layouts.h"
 #include "constants/map_event_ids.h"
@@ -35,6 +36,16 @@ static const u8 sRequiredRoles[][2] =
     { INFCAVE_ROLE_PAD_ENTRANCE,     INFCAVE_ROLE_PAD_SHOP + 1 },
     { INFCAVE_ROLE_SAND_NW,          INFCAVE_ROLE_SAND_SE + 1 },
 };
+
+// Object flag the item ball in slot n owns. STD_FIND_ITEM hides an emptied ball
+// with removeobject, which sets the template's flagId, so every ball needs a
+// distinct one: a flagId left at 0 would set flag 0 instead and the spawner would
+// then skip every generated object in the room. These are temp flags, cleared on
+// every map load, which is what the room wants - what the player actually took is
+// recorded in the run struct's roomFlags, and the generator leaves those balls out
+// of the next build entirely.
+#define INFCAVE_FLAG_ITEM_BALL_0 FLAG_TEMP_8
+STATIC_ASSERT(INFCAVE_FLAG_ITEM_BALL_0 + INFCAVE_MAX_ITEM_BALLS - 1 <= TEMP_FLAGS_END, sInfCaveBallFlags);
 
 // Minimum wall run thickness. gTileset_Cave draws the face a single metatile
 // tall, but the mask still needs a solid margin behind every face.
@@ -149,6 +160,7 @@ static EWRAM_DATA u8 sExitY = 0;
 #define INFCAVE_SALT_DECO 0x4445434Fu // 'DECO'
 #define INFCAVE_SALT_PTCH 0x50544348u // 'PTCH'
 #define INFCAVE_SALT_NPCS 0x4E504353u // 'NPCS'
+#define INFCAVE_SALT_FEAT 0x46454154u // 'FEAT'
 
 // Copies the key layout's block words into sTileRole. The layout is ROM data,
 // so this is a straight copy; reloading it every room keeps a Porymap edit
@@ -1837,7 +1849,9 @@ static EWRAM_DATA u8 sNpcCount = 0;
 static EWRAM_DATA u8 sObjectCount = 0;
 
 // The template layout the placer and the room's scripts both assume: trainer slot
-// n owns index n, and the whole set fits the room's object budget.
+// n owns index n, and the whole set fits the room's object budget. Features are
+// not added to that budget: the room types that stand them roll no trainers, and
+// the feature writer stops at INFCAVE_MAX_OBJECTS whatever else is placed.
 STATIC_ASSERT(INFCAVE_MAX_TRAINERS <= INFCAVE_MAX_OBJECTS, sInfCaveObjectBudget);
 STATIC_ASSERT(INFCAVE_MAX_OBJECTS <= OBJECT_EVENT_TEMPLATES_COUNT, sInfCaveTemplateBudget);
 
@@ -2222,6 +2236,196 @@ static void PlaceTrainers(void)
 #endif
 }
 
+// --- Feature objects --------------------------------------------------------
+
+// The non-trainer objects a room stands: a treasure room's item balls and a shop
+// room's merchant. Held apart from sNpcs so a trainer's local id stays its slot
+// index whatever else the room places.
+struct InfCavePlacedFeature
+{
+    u8 x;
+    u8 y;
+    u8 kind;   // enum InfCaveFeatureKind
+    u8 localId;
+    u8 facing; // index into sInfCaveFacings
+};
+
+static EWRAM_DATA struct InfCavePlacedFeature sFeatures[INFCAVE_MAX_FEATURES] = {0};
+static EWRAM_DATA u8 sFeatureCount = 0;
+
+// A rest room's shrine pad. It stands no object: the pad is a metatile and the
+// heal is a step trigger on it, so the shrine costs nothing from the object
+// budget and cannot wall the alcove off.
+static EWRAM_DATA u8 sShrineX = 0;
+static EWRAM_DATA u8 sShrineY = 0;
+static EWRAM_DATA bool8 sHasShrine = FALSE;
+
+// Tiles a feature may take: the stamped piece's interior only. The piece's outer
+// ring is what carries the path past it, so an object standing there could seal
+// the room off; nothing inside the ring can.
+static bool32 IsFeatureTile(u32 x, u32 y)
+{
+    u32 i;
+
+    if (sStamp.layoutId == INFCAVE_PIECE_NONE)
+        return FALSE;
+    if (x <= sStamp.x || x + 1 >= (u32)(sStamp.x + sStamp.w))
+        return FALSE;
+    if (y <= sStamp.y || y + 1 >= (u32)(sStamp.y + sStamp.h))
+        return FALSE;
+    if (sMask[y][x] & (INFCAVE_FLAG_NO_DECOR | INFCAVE_FLAG_BLOCKED))
+        return FALSE;
+    if (sDecor[y][x] != 0 || !IsWalkable(x, y))
+        return FALSE;
+
+    for (i = 0; i < sFeatureCount; i++)
+    {
+        if (ChebyshevDistance(x, y, sFeatures[i].x, sFeatures[i].y) < INFCAVE_FEATURE_MIN_APART)
+            return FALSE;
+    }
+    return TRUE;
+}
+
+// Stands one feature object on the piece's interior. Candidate tiles are walked
+// from a rolled start so two rooms of the same type do not put their objects in
+// the same corner, and a candidate is taken only when the entrance still reaches
+// the exit with the object's tile blocked. The tile stays blocked on success, so
+// the test is cumulative as the room's other features go down.
+static bool32 PlaceFeature(u32 kind, u32 localId, rng_value_t *rng)
+{
+    u32 area, start, i;
+
+    if (sStamp.layoutId == INFCAVE_PIECE_NONE)
+        return FALSE;
+    if (sFeatureCount >= INFCAVE_MAX_FEATURES || sConnectChecks == 0)
+        return FALSE;
+
+    area = (u32)sStamp.w * sStamp.h;
+    start = InfCave_RandRange(rng, 0, area - 1);
+
+    for (i = 0; i < area; i++)
+    {
+        u32 cell = (start + i) % area;
+        u32 x = sStamp.x + cell % sStamp.w;
+        u32 y = sStamp.y + cell / sStamp.w;
+
+        if (!IsFeatureTile(x, y))
+            continue;
+        if (sConnectChecks == 0)
+            return FALSE;
+
+        sMask[y][x] |= INFCAVE_FLAG_BLOCKED;
+        sConnectChecks--;
+        if (!EntranceReachesExit())
+        {
+            sMask[y][x] &= ~INFCAVE_FLAG_BLOCKED;
+            continue;
+        }
+
+        sFeatures[sFeatureCount].x = x;
+        sFeatures[sFeatureCount].y = y;
+        sFeatures[sFeatureCount].kind = kind;
+        sFeatures[sFeatureCount].localId = localId;
+        // Facing the arrival pad, so a merchant looks at the player crossing the
+        // room. An item ball ignores it: its movement type is fixed.
+        sFeatures[sFeatureCount].facing = FacingTowards(x, y, sEntranceX, sEntranceY);
+        sFeatureCount++;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// Draws the shrine pad on the tile nearest the alcove's centre, the same anchor a
+// boss room stands its boss on.
+static void PlaceShrine(void)
+{
+    u8 x, y;
+
+    if (sStamp.layoutId == INFCAVE_PIECE_NONE)
+        return;
+    if (!FindArenaTileNear(sStamp.x + sStamp.w / 2, sStamp.y + sStamp.h / 2, &x, &y))
+        return;
+
+    sShrineX = x;
+    sShrineY = y;
+    sHasShrine = TRUE;
+}
+
+// The room's item balls, skipping the slots the player has already emptied. A
+// slot's local id is fixed by the slot rather than by placement order, so the
+// reload path can hand a ball its own script back from its local id alone.
+static void PlaceItemBalls(rng_value_t *rng)
+{
+    u32 wanted = InfCave_RollItemBallCount();
+    u32 slot;
+
+    if (wanted > INFCAVE_MAX_ITEM_BALLS)
+        wanted = INFCAVE_MAX_ITEM_BALLS;
+
+    for (slot = 0; slot < wanted; slot++)
+    {
+        if (InfCave_IsItemBallTaken(slot))
+            continue;
+
+        PlaceFeature(INFCAVE_FEATURE_ITEM_BALL, INFCAVE_LOCALID_FEATURE_0 + slot, rng);
+    }
+}
+
+// The room's feature objects and pads, by room type. Runs after the trainer pass,
+// so it inherits that pass's blocked tiles and whatever is left of the room's
+// connectivity budget.
+static void PlaceFeatures(void)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_FEAT);
+
+    sFeatureCount = 0;
+    sHasShrine = FALSE;
+
+    switch (InfCave_GetRoomType())
+    {
+    case INFCAVE_ROOM_REST:
+        PlaceShrine();
+        break;
+    case INFCAVE_ROOM_TREASURE:
+        PlaceItemBalls(&rng);
+        break;
+    case INFCAVE_ROOM_SHOP:
+        PlaceFeature(INFCAVE_FEATURE_MERCHANT, INFCAVE_LOCALID_MERCHANT, &rng);
+        break;
+    }
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave placed %d features, shrine %d, %d checks left",
+                sFeatureCount, sHasShrine, sConnectChecks);
+#endif
+}
+
+bool32 InfCave_IsShrineTile(u32 x, u32 y)
+{
+    return sHasShrine && x == sShrineX && y == sShrineY;
+}
+
+// The pad a feature is standing on, or INFCAVE_ROLE_COUNT where no feature is.
+// The autotiler draws this over the stamped block, so the pad shows through the
+// authored art rather than being hidden by it.
+static u32 FeaturePadRole(u32 x, u32 y)
+{
+    u32 i;
+
+    if (InfCave_IsShrineTile(x, y))
+        return INFCAVE_ROLE_PAD_SHRINE;
+
+    for (i = 0; i < sFeatureCount; i++)
+    {
+        if (sFeatures[i].x != x || sFeatures[i].y != y)
+            continue;
+
+        return sFeatures[i].kind == INFCAVE_FEATURE_MERCHANT ? INFCAVE_ROLE_PAD_SHOP
+                                                            : INFCAVE_ROLE_PAD_ITEM_BALL;
+    }
+    return INFCAVE_ROLE_COUNT;
+}
+
 // Scripts the generated objects run. A trainer's is per slot, because
 // trainerbattle takes a literal stub id and the sight-approach code reads that id
 // straight out of the script.
@@ -2234,6 +2438,22 @@ extern const u8 InfinityCave_EventScript_Trainer4[];
 extern const u8 InfinityCave_EventScript_Trainer5[];
 extern const u8 InfinityCave_EventScript_Trainer6[];
 extern const u8 InfinityCave_EventScript_Trainer7[];
+
+// A feature's is per slot too: an item ball script carries its own slot number,
+// which is how the item roll and the emptied-ball bit find the right ball.
+extern const u8 InfinityCave_EventScript_ItemBall0[];
+extern const u8 InfinityCave_EventScript_ItemBall1[];
+extern const u8 InfinityCave_EventScript_ItemBall2[];
+extern const u8 InfinityCave_EventScript_ItemBall3[];
+extern const u8 InfinityCave_EventScript_Merchant[];
+
+static const u8 *const sInfCaveItemBallScripts[INFCAVE_MAX_ITEM_BALLS] =
+{
+    InfinityCave_EventScript_ItemBall0,
+    InfinityCave_EventScript_ItemBall1,
+    InfinityCave_EventScript_ItemBall2,
+    InfinityCave_EventScript_ItemBall3,
+};
 
 static const u8 *const sInfCaveTrainerScripts[INFCAVE_MAX_TRAINERS] =
 {
@@ -2251,6 +2471,10 @@ static const u8 *ScriptForLocalId(u32 localId)
 {
     u32 slot = localId - INFCAVE_LOCALID_TRAINER_0;
 
+    if (localId == INFCAVE_LOCALID_MERCHANT)
+        return InfinityCave_EventScript_Merchant;
+    if (localId >= INFCAVE_LOCALID_FEATURE_0 && localId < INFCAVE_LOCALID_MERCHANT)
+        return sInfCaveItemBallScripts[localId - INFCAVE_LOCALID_FEATURE_0];
     if (localId < INFCAVE_LOCALID_TRAINER_0 || slot >= INFCAVE_MAX_TRAINERS)
         return NULL;
     // A boss room stands one trainer, in slot 0, and it runs the talk-to script
@@ -2271,9 +2495,7 @@ static bool32 IsBossSlot(u32 slot)
 
 // Writes the placed trainers into the save block's templates. Slot n owns index n,
 // and every field is written here so a template never carries anything from the
-// room before. Templates past the room's own objects are blanked: the spawner is bounded by sObjectCount, but a
-// stale template left addressable by local id would answer for an NPC that is no
-// longer there.
+// room before. The feature pass below continues the run and blanks the tail.
 static void WriteTrainerTemplates(void)
 {
     u32 i;
@@ -2296,6 +2518,38 @@ static void WriteTrainerTemplates(void)
     }
 
     sObjectCount = sNpcCount;
+}
+
+// Continues the template run with the room's feature objects, then blanks the
+// tail: the spawner is bounded by sObjectCount, but a stale template left
+// addressable by local id would answer for an object that is no longer there.
+// A feature's local id is fixed by what it is, so the templates are not a
+// contiguous id run - only a contiguous index run, which is all the spawner and
+// the local-id lookup need.
+static void WriteFeatureTemplates(void)
+{
+    u32 i;
+
+    for (i = 0; i < sFeatureCount && sObjectCount < INFCAVE_MAX_OBJECTS; i++)
+    {
+        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[sObjectCount];
+        bool32 isBall = sFeatures[i].kind == INFCAVE_FEATURE_ITEM_BALL;
+
+        memset(template, 0, sizeof(*template));
+        template->localId = sFeatures[i].localId;
+        template->graphicsId = isBall ? OBJ_EVENT_GFX_ITEM_BALL : OBJ_EVENT_GFX_MART_EMPLOYEE;
+        template->kind = OBJ_KIND_NORMAL;
+        template->x = sFeatures[i].x;
+        template->y = sFeatures[i].y;
+        template->elevation = FloorElevation();
+        template->movementType = isBall ? MOVEMENT_TYPE_LOOK_AROUND
+                                        : sInfCaveFacings[sFeatures[i].facing].movementType;
+        template->trainerType = TRAINER_TYPE_NONE;
+        if (isBall)
+            template->flagId = INFCAVE_FLAG_ITEM_BALL_0 + (sFeatures[i].localId - INFCAVE_LOCALID_FEATURE_0);
+        template->script = ScriptForLocalId(template->localId);
+        sObjectCount++;
+    }
 
     for (i = sObjectCount; i < OBJECT_EVENT_TEMPLATES_COUNT; i++)
         memset(&gSaveBlock1Ptr->objectEventTemplates[i], 0, sizeof(struct ObjectEventTemplate));
@@ -2388,7 +2642,16 @@ static void AutotileRoom(u16 *origin, u32 stride)
     {
         for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
         {
-            u32 role;
+            u32 role = FeaturePadRole(x, y);
+
+            // A feature's pad is drawn over the authored art it stands on, so the
+            // shrine, an item ball's alcove and the merchant's stall read as set
+            // dressing placed for them rather than as bare piece floor.
+            if (role != INFCAVE_ROLE_COUNT)
+            {
+                origin[y * stride + x] = sTileRole[role];
+                continue;
+            }
 
             if (IsReserved(x, y))
             {
@@ -2432,6 +2695,7 @@ static const struct InfCavePass sInfCavePasses[] =
     { PlacePatches,      "patch" },
     { DecorateRoom,      "decor" },
     { PlaceTrainers,     "trainers" },
+    { PlaceFeatures,     "features" },
 };
 
 enum InfCavePlacementFault
@@ -2591,6 +2855,7 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     AutotileRoom(origin, gBackupMapLayout.width);
 
     WriteTrainerTemplates();
+    WriteFeatureTemplates();
     FreeGrids();
 
     // Both the warp and the reload path reach here, so the cave's loss handling is

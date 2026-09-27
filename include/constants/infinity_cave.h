@@ -50,8 +50,8 @@ enum InfCaveEndReason
 // Node options offered per descent. Grows with depth.
 #define INFCAVE_MIN_OPTIONS         3
 #define INFCAVE_MAX_OPTIONS         5
-#define INFCAVE_OPTIONS_4_DEPTH     11 // 4 options from this depth
-#define INFCAVE_OPTIONS_5_DEPTH     26 // 5 options from this depth
+#define INFCAVE_OPTIONS_4_DEPTH     15 // 4 options from this depth
+#define INFCAVE_OPTIONS_5_DEPTH     30 // 5 options from this depth
 
 // Node cadence.
 #define INFCAVE_BOSS_INTERVAL       10 // every depth divisible by this is a boss
@@ -251,7 +251,7 @@ enum InfCaveTileRole
 // cap could not legally produce.
 #define INFCAVE_LEVEL_DEPTH_PER_STEP 10  // depths per +1 level
 #define INFCAVE_LEVEL_MAX_BONUS      100
-#define INFCAVE_LEVEL_SURGE_BONUS    3  // INFCAVE_MOD_SURGE, matching the modifier's stated +3
+#define INFCAVE_LEVEL_SURGE_BONUS    2  // INFCAVE_MOD_SURGE, matching the modifier's stated +2
 
 // Shard payout for one cleared cave battle: the room type's base reward
 // (sInfCaveTrainerSpec) grown by depth, then scaled by the room's modifiers. The
@@ -288,7 +288,67 @@ enum InfCaveTileRole
 // Depth tint. The generated room's palettes are hue-rotated further on every
 // floor: depth * this share of the full hue circle. 2% puts a full turn at
 // depth 50, so consecutive floors differ without any single step jarring.
-#define INFCAVE_HUE_PERCENT_PER_DEPTH 2
+#define INFCAVE_HUE_PERCENT_PER_DEPTH 1
+
+// Feature objects a room stands beside its trainers: a treasure room's item
+// balls and a shop room's merchant. Their local ids continue past the trainer
+// slots, and a feature's id follows from what it is rather than from placement
+// order, so the reload path can hand every object its script back from the id
+// alone.
+#define INFCAVE_MAX_ITEM_BALLS      4
+#define INFCAVE_MAX_FEATURES        (INFCAVE_MAX_ITEM_BALLS + 1)
+#define INFCAVE_LOCALID_FEATURE_0   (INFCAVE_LOCALID_TRAINER_0 + INFCAVE_MAX_TRAINERS)
+#define INFCAVE_LOCALID_MERCHANT    (INFCAVE_LOCALID_FEATURE_0 + INFCAVE_MAX_ITEM_BALLS)
+
+// Treasure rooms. Ball 0 holds the depth-scaled drop, rolled from the premium
+// table; the rest roll on the common one.
+#define INFCAVE_TREASURE_MIN_BALLS  2
+#define INFCAVE_TREASURE_MAX_BALLS  INFCAVE_MAX_ITEM_BALLS
+#define INFCAVE_FEATURE_MIN_APART   2 // Chebyshev tiles between two feature objects
+
+// Item tier the treasure and trade tables roll on, picked by depth. A row is
+// offered once the depth reaches its tier, so a deep room stops dropping the
+// shallow tiers' weakest items.
+#define INFCAVE_ITEM_TIER_COUNT     3
+#define INFCAVE_ITEM_TIER_DEPTH     12 // depths per tier step
+
+// Merchant. Every price is in shards; the menu hides a row the depth has not
+// reached and a service already bought in this room.
+#define INFCAVE_SHOP_PAGE_SIZE      6  // rows before the list scrolls
+#define INFCAVE_SHOP_NAME_WIDTH     13 // characters a row's name is padded to
+
+// What a shop row sells.
+enum InfCaveShopKind
+{
+    INFCAVE_SHOP_KIND_ITEM,      // a bag item, amount per row
+    INFCAVE_SHOP_KIND_FULL_HEAL, // heals the party; one purchase per room
+    INFCAVE_SHOP_KIND_TRADE,     // a premium item, rolled from the room's seed
+};
+
+// What InfCaveShop_Buy did, read back with switch VAR_RESULT.
+enum InfCaveBuyResult
+{
+    INFCAVE_BUY_ITEM,      // item bought; STR_VAR_1 holds its name
+    INFCAVE_BUY_HEALED,    // party healed
+    INFCAVE_BUY_NO_SHARDS,
+    INFCAVE_BUY_NO_ROOM,   // bag full; nothing was charged
+    INFCAVE_BUY_INVALID,   // the pick named no live row
+};
+
+// What a placed feature object is.
+enum InfCaveFeatureKind
+{
+    INFCAVE_FEATURE_NONE,
+    INFCAVE_FEATURE_ITEM_BALL,
+    INFCAVE_FEATURE_MERCHANT,
+};
+
+// Per-room consumed state (struct InfinityCaveRun.roomFlags), cleared on every
+// descent. A room is rebuilt from its seed on a reload, so what the player has
+// already taken out of it has to be recorded outside the generator.
+#define INFCAVE_ROOMFLAG_BALL(slot) (1 << (slot))
+#define INFCAVE_ROOMFLAG_SHRINE     (1 << INFCAVE_MAX_ITEM_BALLS)
+#define INFCAVE_ROOMFLAG_FULL_HEAL  (1 << (INFCAVE_MAX_ITEM_BALLS + 1))
 
 // Connectivity tests the placement pass may run. Each is one flood fill over the
 // room, so the budget is what bounds the pass's cost; the cheap per-tile

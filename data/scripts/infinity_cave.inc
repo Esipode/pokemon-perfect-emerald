@@ -515,3 +515,152 @@ InfinityCave_Text_BossBeaten11:
 	.string "The next floor is worse, you\n"
 	.string "know.\p"
 	.string "That wasn't a warning. Mostly.$"
+
+@ --- Rest, treasure and shop rooms -------------------------------------------
+
+@ The rest room's healing shrine. Its pad is a generated metatile, so like the
+@ ladder this is a step trigger (TryStartInfCaveShrineScript,
+@ src/field_control_avatar.c) rather than an object. One heal per room: the bit
+@ lives in the run struct, so stepping back on after a reload finds it spent.
+InfinityCave_EventScript_Shrine::
+	lockall
+	specialvar VAR_RESULT, InfCave_IsShrineUsed
+	goto_if_eq VAR_RESULT, TRUE, InfinityCave_EventScript_ShrineSpent
+	msgbox InfinityCave_Text_ShrineOffer, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, InfinityCave_EventScript_ShrineDone
+	closemessage
+	playfanfare MUS_HEAL
+	special HealPlayerParty
+	special InfCave_UseShrine
+	waitfanfare
+	msgbox InfinityCave_Text_ShrineHealed, MSGBOX_DEFAULT
+	goto InfinityCave_EventScript_ShrineDone
+
+InfinityCave_EventScript_ShrineSpent::
+	msgbox InfinityCave_Text_ShrineSpent, MSGBOX_DEFAULT
+InfinityCave_EventScript_ShrineDone::
+	closemessage
+	releaseall
+	end
+
+InfinityCave_Text_ShrineOffer:
+	.string "Warm water wells up through the\n"
+	.string "stone, and the air stops biting.\p"
+	.string "Rest here?$"
+
+InfinityCave_Text_ShrineHealed:
+	.string "Your POKéMON were restored to\n"
+	.string "full health.$"
+
+InfinityCave_Text_ShrineSpent:
+	.string "The water has drained away, and\n"
+	.string "the stone is cold again.$"
+
+@ A treasure room's item balls. Each slot carries its own copy, because the slot
+@ number is what picks the ball's item and what records the ball as emptied; the
+@ item itself is rolled from the room's seed rather than stored, so the ball holds
+@ the same thing after a reload. VAR_0x800A is free through STD_FIND_ITEM, which
+@ works in VAR_0x8000 through VAR_0x8009.
+InfinityCave_EventScript_ItemBall0::
+	setvar VAR_0x800A, 0
+	goto InfinityCave_EventScript_ItemBall
+
+InfinityCave_EventScript_ItemBall1::
+	setvar VAR_0x800A, 1
+	goto InfinityCave_EventScript_ItemBall
+
+InfinityCave_EventScript_ItemBall2::
+	setvar VAR_0x800A, 2
+	goto InfinityCave_EventScript_ItemBall
+
+InfinityCave_EventScript_ItemBall3::
+	setvar VAR_0x800A, 3
+	goto InfinityCave_EventScript_ItemBall
+
+@ VAR_0x8007 is STD_FIND_ITEM's own result: 0 means the Bag and the PC were both
+@ full and nothing was taken, so the ball stays where it is.
+InfinityCave_EventScript_ItemBall::
+	special InfCave_SetItemBallItem
+	callstd STD_FIND_ITEM
+	goto_if_eq VAR_0x8007, 0, InfinityCave_EventScript_ItemBallDone
+	special InfCave_MarkItemBallTaken
+InfinityCave_EventScript_ItemBallDone::
+	end
+
+@ The shop room's merchant. The stock, its shard prices and which rows the depth
+@ has unlocked all come from InfCaveShop_BuildList; the menu's pick goes straight
+@ back into InfCaveShop_Buy, which charges the shards and applies the row.
+InfinityCave_EventScript_Merchant::
+	lock
+	faceplayer
+	msgbox InfinityCave_Text_MerchantGreet, MSGBOX_DEFAULT
+InfinityCave_EventScript_MerchantMenu::
+	special InfCaveShop_BuildList
+	goto_if_eq VAR_RESULT, 0, InfinityCave_EventScript_MerchantNoStock
+	message InfinityCave_Text_MerchantWhat
+	waitmessage
+	dynmultistack 0, 0, FALSE, INFCAVE_SHOP_PAGE_SIZE, FALSE, 0, DYN_MULTICHOICE_CB_NONE
+	goto_if_eq VAR_RESULT, MULTI_B_PRESSED, InfinityCave_EventScript_MerchantDone
+	special InfCaveShop_Buy
+	switch VAR_RESULT
+	case INFCAVE_BUY_ITEM,      InfinityCave_EventScript_MerchantBought
+	case INFCAVE_BUY_HEALED,    InfinityCave_EventScript_MerchantHealed
+	case INFCAVE_BUY_NO_SHARDS, InfinityCave_EventScript_MerchantNoShards
+	case INFCAVE_BUY_NO_ROOM,   InfinityCave_EventScript_MerchantNoRoom
+	goto InfinityCave_EventScript_MerchantMenu
+
+InfinityCave_EventScript_MerchantBought::
+	playse SE_SHOP
+	msgbox InfinityCave_Text_MerchantBought, MSGBOX_DEFAULT
+	goto InfinityCave_EventScript_MerchantMenu
+
+InfinityCave_EventScript_MerchantHealed::
+	playfanfare MUS_HEAL
+	waitfanfare
+	msgbox InfinityCave_Text_MerchantHealed, MSGBOX_DEFAULT
+	goto InfinityCave_EventScript_MerchantMenu
+
+InfinityCave_EventScript_MerchantNoShards::
+	msgbox InfinityCave_Text_MerchantNoShards, MSGBOX_DEFAULT
+	goto InfinityCave_EventScript_MerchantMenu
+
+InfinityCave_EventScript_MerchantNoRoom::
+	msgbox InfinityCave_Text_MerchantNoRoom, MSGBOX_DEFAULT
+	goto InfinityCave_EventScript_MerchantMenu
+
+InfinityCave_EventScript_MerchantNoStock::
+	msgbox InfinityCave_Text_MerchantNoStock, MSGBOX_DEFAULT
+InfinityCave_EventScript_MerchantDone::
+	closemessage
+	release
+	end
+
+InfinityCave_Text_MerchantGreet:
+	.string "Don't look so surprised. Somebody\n"
+	.string "has to sell down here.\p"
+	.string "I take shards. Only shards.$"
+
+InfinityCave_Text_MerchantWhat:
+	.string "{STR_VAR_3} shards. What'll it be?$"
+
+InfinityCave_Text_MerchantBought:
+	.string "{STR_VAR_2} {STR_VAR_1}, then.\n"
+	.string "Pleasure doing business.$"
+
+InfinityCave_Text_MerchantHealed:
+	.string "Sit. Drink that. Don't ask what\n"
+	.string "is in it.\p"
+	.string "Your POKéMON were restored to\n"
+	.string "full health.$"
+
+InfinityCave_Text_MerchantNoShards:
+	.string "Not enough shards. The cave pays\n"
+	.string "those who fight in it.$"
+
+InfinityCave_Text_MerchantNoRoom:
+	.string "Your BAG has no room for that,\n"
+	.string "and I don't do deliveries.$"
+
+InfinityCave_Text_MerchantNoStock:
+	.string "Shelves are bare. Come back a few\n"
+	.string "floors deeper.$"

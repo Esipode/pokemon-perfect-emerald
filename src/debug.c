@@ -303,6 +303,7 @@ static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId);
 static void DebugAction_Util_ForceDraft(u8 taskId);
 static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType);
 static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry);
+static void DebugAction_InfCave_AddShards(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -702,6 +703,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("InfCave Room Type…"),        DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveRoom },
     { COMPOUND_STRING("InfCave Modifier…"),         DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveModifier },
     { COMPOUND_STRING("InfCave Test Battle"),       DebugAction_ExecuteScript, Debug_EventScript_InfCaveTestBattle },
+    { COMPOUND_STRING("InfCave Add Shards"),        DebugAction_InfCave_AddShards },
     { COMPOUND_STRING("View Trade Code…"),          DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"),        DebugAction_TradeCode_ViewSampleConfirm },
     { COMPOUND_STRING("Enter Trade Code…"),         DebugAction_TradeCode_EnterOffer },
@@ -2587,6 +2589,19 @@ static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry)
     modifiers[0] = mod->modifier;
     args[0] = mod->arg;
     InfCave_SetRoom(InfCave_GetRoomType(), modifiers, args);
+    Debug_DestroyMenu_Full(taskId);
+}
+
+// Gives a run enough shards to exercise the shop room's whole stock, including
+// the rows the cave only pays for after several cleared floors.
+#define DEBUG_INFCAVE_SHARDS 300
+
+static void DebugAction_InfCave_AddShards(u8 taskId)
+{
+    if (!InfCave_IsInRun())
+        InfCave_StartRun();
+
+    InfCave_AddShards(DEBUG_INFCAVE_SHARDS);
     Debug_DestroyMenu_Full(taskId);
 }
 

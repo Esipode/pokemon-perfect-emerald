@@ -615,3 +615,9 @@ gSpecials::
 	def_special InfCave_IsExitLocked
 	def_special InfCave_PayBattleShards
 	def_special InfCave_DebugDumpObjects
+	def_special InfCave_SetItemBallItem
+	def_special InfCave_MarkItemBallTaken
+	def_special InfCave_IsShrineUsed
+	def_special InfCave_UseShrine
+	def_special InfCaveShop_BuildList
+	def_special InfCaveShop_Buy
