@@ -595,6 +595,7 @@ enum InfCaveMaskFault
     INFCAVE_FAULT_MARGIN,    // floor inside the solid canvas margin
     INFCAVE_FAULT_DIAGONAL,  // two floor regions joined only through a diagonal
     INFCAVE_FAULT_THIN_WALL, // wall run one tile thick between two floor tiles
+    INFCAVE_FAULT_RIM_SEAM,  // wall rim shape drawn beside a wall face shape
     INFCAVE_FAULT_AREA,      // less walkable area than INFCAVE_MIN_FLOOR_TILES
     INFCAVE_FAULT_SPLIT,     // more than one floor component
 };
@@ -614,6 +615,80 @@ static bool32 IsOpenSafe(s32 x, s32 y)
     if (x < 0 || x >= INFCAVE_MAP_WIDTH || y < 0 || y >= INFCAVE_MAP_HEIGHT)
         return FALSE;
     return IsFloor(x, y) || IsReserved(x, y);
+}
+
+// Wall shape for a non-floor cell. The mask legality rules forbid a wall with
+// floor on two opposite sides, so the only cardinal combinations left are none,
+// one side, or two perpendicular sides; that is what collapses the 256
+// eight-neighbour cases onto the authored shape set. A cell with no cardinal
+// floor but floor on one diagonal is a concave corner.
+static u32 WallRoleForCell(s32 x, s32 y)
+{
+    bool32 n = IsOpenSafe(x, y - 1);
+    bool32 s = IsOpenSafe(x, y + 1);
+    bool32 w = IsOpenSafe(x - 1, y);
+    bool32 e = IsOpenSafe(x + 1, y);
+
+    if (s && w)
+        return INFCAVE_ROLE_WALL_SW;
+    if (s && e)
+        return INFCAVE_ROLE_WALL_SE;
+    if (n && w)
+        return INFCAVE_ROLE_WALL_NW;
+    if (n && e)
+        return INFCAVE_ROLE_WALL_NE;
+    if (n)
+        return INFCAVE_ROLE_WALL_N;
+    if (s)
+        return INFCAVE_ROLE_WALL_S;
+    if (w)
+        return INFCAVE_ROLE_WALL_W;
+    if (e)
+        return INFCAVE_ROLE_WALL_E;
+
+    if (IsOpenSafe(x - 1, y - 1))
+        return INFCAVE_ROLE_WALL_INNER_NW;
+    if (IsOpenSafe(x + 1, y - 1))
+        return INFCAVE_ROLE_WALL_INNER_NE;
+    if (IsOpenSafe(x - 1, y + 1))
+        return INFCAVE_ROLE_WALL_INNER_SW;
+    if (IsOpenSafe(x + 1, y + 1))
+        return INFCAVE_ROLE_WALL_INNER_SE;
+
+    return INFCAVE_ROLE_WALL_FILL;
+}
+
+// Which metatile row a wall shape draws in. The cave tileset puts the north rim
+// and the south face on different rows and has no art for the two meeting along
+// a vertical seam, so the mask legality pass rejects that pairing.
+static bool32 IsRimRole(u32 role)
+{
+    return role == INFCAVE_ROLE_WALL_NW || role == INFCAVE_ROLE_WALL_N
+        || role == INFCAVE_ROLE_WALL_NE || role == INFCAVE_ROLE_WALL_INNER_NW
+        || role == INFCAVE_ROLE_WALL_INNER_NE;
+}
+
+static bool32 IsFaceRole(u32 role)
+{
+    return role == INFCAVE_ROLE_WALL_SW || role == INFCAVE_ROLE_WALL_S
+        || role == INFCAVE_ROLE_WALL_SE || role == INFCAVE_ROLE_WALL_INNER_SW
+        || role == INFCAVE_ROLE_WALL_INNER_SE;
+}
+
+// TRUE when (x, y) and its eastern neighbour are both wall and one draws a rim
+// while the other draws a face. A wall band that steps down by one row produces
+// this, and the step needs a third wall row for the shapes to meet.
+static bool32 HasRimFaceSeam(s32 x, s32 y)
+{
+    u32 a, b;
+
+    if (IsOpenSafe(x, y) || IsOpenSafe(x + 1, y))
+        return FALSE;
+
+    a = WallRoleForCell(x, y);
+    b = WallRoleForCell(x + 1, y);
+
+    return (IsFaceRole(a) && IsRimRole(b)) || (IsRimRole(a) && IsFaceRole(b));
 }
 
 static u32 CountFloor(void)
@@ -740,10 +815,35 @@ static bool32 OpenThinWallRuns(void)
     return changed;
 }
 
+// Opens one side of every rim-next-to-face seam, which is what a wall band that
+// steps down by a single row leaves behind. Which side gives way is a coin flip
+// so the repairs do not all shave the same edge.
+static bool32 FixRimFaceSeams(rng_value_t *rng)
+{
+    u32 x, y;
+    bool32 changed = FALSE;
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X - 1; x++)
+        {
+            if (!HasRimFaceSeam(x, y))
+                continue;
+
+            if (InfCave_Rand(rng) & 1)
+                SetCell(x, y, INFCAVE_CELL_FLOOR);
+            else
+                SetCell(x + 1, y, INFCAVE_CELL_FLOOR);
+            changed = TRUE;
+        }
+    }
+    return changed;
+}
+
 // Repair sweeps run to a fixed point: each sweep adds floor, which can expose a
-// fresh diagonal or thin run one tile further out. Both sweeps only ever turn
-// wall into floor, so this can be re-run over a finished mask without undoing
-// anything a later pass carved.
+// fresh diagonal, thin run or rim seam one tile further out. Every sweep only
+// turns wall into floor, so this can be re-run over a finished mask without
+// undoing anything a later pass carved.
 static void EnforceLegality(rng_value_t *rng)
 {
     u32 pass;
@@ -754,6 +854,7 @@ static void EnforceLegality(rng_value_t *rng)
 
         changed |= FixDiagonalLinks(rng);
         changed |= OpenThinWallRuns();
+        changed |= FixRimFaceSeams(rng);
 
         if (!changed)
             break;
@@ -795,6 +896,9 @@ static u32 MaskLegalityFault(void)
             if ((IsFloorSafe(x, y - 1) && IsFloorSafe(x, y + 1))
              || (IsFloorSafe(x - 1, y) && IsFloorSafe(x + 1, y)))
                 return INFCAVE_FAULT_THIN_WALL;
+
+            if (x < INFCAVE_AREA_MAX_X - 1 && HasRimFaceSeam(x, y))
+                return INFCAVE_FAULT_RIM_SEAM;
         }
     }
 
@@ -1710,47 +1814,6 @@ static void PlaceExitCrystal(void)
     }
 }
 
-// Wall shape for a non-floor cell. The mask legality rules forbid a wall with
-// floor on two opposite sides, so the only cardinal combinations left are none,
-// one side, or two perpendicular sides; that is what collapses the 256
-// eight-neighbour cases onto the authored shape set. A cell with no cardinal
-// floor but floor on one diagonal is a concave corner.
-static u32 WallRoleForCell(s32 x, s32 y)
-{
-    bool32 n = IsOpenSafe(x, y - 1);
-    bool32 s = IsOpenSafe(x, y + 1);
-    bool32 w = IsOpenSafe(x - 1, y);
-    bool32 e = IsOpenSafe(x + 1, y);
-
-    if (s && w)
-        return INFCAVE_ROLE_WALL_SW;
-    if (s && e)
-        return INFCAVE_ROLE_WALL_SE;
-    if (n && w)
-        return INFCAVE_ROLE_WALL_NW;
-    if (n && e)
-        return INFCAVE_ROLE_WALL_NE;
-    if (n)
-        return INFCAVE_ROLE_WALL_N;
-    if (s)
-        return INFCAVE_ROLE_WALL_S;
-    if (w)
-        return INFCAVE_ROLE_WALL_W;
-    if (e)
-        return INFCAVE_ROLE_WALL_E;
-
-    if (IsOpenSafe(x - 1, y - 1))
-        return INFCAVE_ROLE_WALL_INNER_NW;
-    if (IsOpenSafe(x + 1, y - 1))
-        return INFCAVE_ROLE_WALL_INNER_NE;
-    if (IsOpenSafe(x - 1, y + 1))
-        return INFCAVE_ROLE_WALL_INNER_SW;
-    if (IsOpenSafe(x + 1, y + 1))
-        return INFCAVE_ROLE_WALL_INNER_SE;
-
-    return INFCAVE_ROLE_WALL_FILL;
-}
-
 static u32 RollFloorRole(rng_value_t *rng)
 {
     if (InfCave_RandRange(rng, 0, 99) < INFCAVE_FLOOR_PLAIN_PERCENT)
@@ -1760,11 +1823,9 @@ static u32 RollFloorRole(rng_value_t *rng)
 }
 
 // Renders the finished mask into the backup layout at the MAP_OFFSET origin, the
-// same offset arithmetic GenerateBattlePyramidFloorLayout uses. Two passes: the
-// first gives every cell its shape, the second makes the south face two tiles
-// tall, which is how the cave tileset draws it. The upper row is only written
-// where the cell's own shape would have been plain fill, so the wall shapes that
-// already answer a neighbouring floor tile survive.
+// same offset arithmetic GenerateBattlePyramidFloorLayout uses. One pass: the
+// mask legality rules leave only shapes the authored key can answer, so every
+// cell's block comes from its own eight-neighbourhood.
 static void AutotileRoom(u16 *origin, u32 stride)
 {
     rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_TILE);

@@ -1,6 +1,8 @@
 #include "global.h"
 #include "infinity_cave.h"
+#include "event_data.h"
 #include "random.h"
+#include "constants/vars.h"
 
 static struct InfinityCaveRun *Run(void)
 {
@@ -44,6 +46,39 @@ void InfCave_EndRun(enum InfCaveEndReason reason)
 void InfCave_EndRunQuit(void)
 {
     InfCave_EndRun(INFCAVE_END_QUIT);
+}
+
+// A save made inside a room only replays if the run struct still describes that
+// room. Reject anything the generator and the room scripts cannot act on: no
+// active run, the lobby depth, a zeroed room seed, or an out-of-range room type
+// or modifier.
+bool32 InfCave_IsRunConsistent(void)
+{
+    struct InfinityCaveRun *run = Run();
+    u32 i;
+
+    if (!run->active || run->depth == 0 || run->roomSeed == 0)
+        return FALSE;
+
+    if (run->roomType >= INFCAVE_ROOM_COUNT)
+        return FALSE;
+
+    for (i = 0; i < INFCAVE_MAX_MODIFIERS; i++)
+    {
+        if (run->modifier[i] >= INFCAVE_MOD_COUNT)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Room ON_LOAD special. ON_TRANSITION does not run on the continue-from-save
+// path, so the check lives in ON_LOAD, which both the warp and the reload paths
+// reach through InfCave_GenerateRoom. VAR_TEMP_1 hands the eject to the room's
+// ON_FRAME script, since a warp cannot run from ON_LOAD.
+void InfCave_ValidateRoom(void)
+{
+    VarSet(VAR_TEMP_1, InfCave_IsRunConsistent() ? 0 : 1);
 }
 
 void InfCave_AdvanceDepth(void)

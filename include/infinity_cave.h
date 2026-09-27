@@ -26,6 +26,14 @@ void InfCave_EndRun(enum InfCaveEndReason reason);
 // walking back out of the cave always closes the descent.
 void InfCave_EndRunQuit(void);
 
+// FALSE when the run struct cannot describe the room the player is standing in
+// (no run, lobby depth, zeroed room seed, out-of-range room type or modifier).
+bool32 InfCave_IsRunConsistent(void);
+
+// InfinityCave_Room's ON_LOAD special. Sets VAR_TEMP_1 to 1 when the run is
+// inconsistent; the map's ON_FRAME script then ejects the player to the lobby.
+void InfCave_ValidateRoom(void);
+
 // Advances depth and derives the new room's seed from runSeed and the new
 // depth, so a room's contents never depend on which nodes were taken.
 void InfCave_AdvanceDepth(void);
