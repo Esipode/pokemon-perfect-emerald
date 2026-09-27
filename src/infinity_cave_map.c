@@ -1,6 +1,7 @@
 #include "global.h"
 #include "fieldmap.h"
 #include "infinity_cave.h"
+#include "malloc.h"
 #include "overworld.h"
 #include "script.h"
 #include "constants/infinity_cave.h"
@@ -29,13 +30,7 @@ static const u8 sRequiredRoles[][2] =
     { INFCAVE_ROLE_DECOR_ROCK_SMALL, INFCAVE_ROLE_DECOR_BONES + 1 },
     { INFCAVE_ROLE_PAD_ENTRANCE,     INFCAVE_ROLE_PAD_SHOP + 1 },
     { INFCAVE_ROLE_SAND_NW,          INFCAVE_ROLE_SAND_SE + 1 },
-    { INFCAVE_ROLE_WATER_NW,         INFCAVE_ROLE_WATER_SE + 1 },
 };
-
-// Temporary way out until Stage 10 places the exit crystal. Must match the
-// warp event in data/maps/InfinityCave_Room/map.json.
-#define INFCAVE_TEMP_EXIT_X 20
-#define INFCAVE_TEMP_EXIT_Y 37
 
 // Minimum wall run thickness. gTileset_Cave draws the face a single metatile
 // tall, but the mask still needs a solid margin behind every face.
@@ -43,7 +38,7 @@ static const u8 sRequiredRoles[][2] =
 
 // Flags OR'd into a mask cell alongside its kind. COMPONENT and KEEP are
 // transient, owned by the connectivity passes; NO_DECOR survives for the room's
-// lifetime and marks tiles a pad or an access corridor owns.
+// lifetime and marks the tiles the entrance and exit pads own.
 #define INFCAVE_FLAG_NO_DECOR  0x20 // the decoration pass must leave this tile bare
 #define INFCAVE_FLAG_COMPONENT 0x40 // member of the component being measured
 #define INFCAVE_FLAG_KEEP      0x80 // member of the component that survives
@@ -60,25 +55,59 @@ struct InfCaveRoomRect
     u8 h;
 };
 
-// The per-tile mask every generation pass works on, and the rectangles the
-// rooms were carved from. Both are EWRAM: 1600 bytes is far too much for the
-// stack, and later passes (set pieces, entrance/exit, trainer placement) read
-// the rooms back.
-static EWRAM_DATA u8 sMask[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
+// The four per-tile grids every generation pass works on. One 40x40 grid is 1600
+// bytes, so they live on the heap for the length of a generation rather than in
+// EWRAM, which has no room for 6400 bytes of statics. Nothing outside generation
+// reads them, so the block is freed before InfCave_GenerateRoom returns.
+//
+//   mask  - the cell kinds and flags every pass reads and writes.
+//   decor - props on the mask's floor, as one plus an index into sInfCaveDecor
+//           so zero means an empty tile. The decoration pass leaves the mask
+//           itself untouched, so the autotiler still sees every prop tile as
+//           floor and tiles the walls around it normally; the prop's own block
+//           is written over the floor block.
+//   patch - terrain patches, as one plus an index into sInfCavePatch. Like props
+//           these sit beside the mask rather than in it, so the wall shapes
+//           around a patch are unaffected; unlike props a patch cell's block
+//           depends on where the cell sits in its rectangle, which the autotiler
+//           works out from the neighbouring cells.
+//   dist  - step distance in tiles from the entrance, INFCAVE_DIST_UNREACHED
+//           where the fill never arrived. Only the entrance/exit pass reads it.
+struct InfCaveGrids
+{
+    u8 mask[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH];
+    u8 decor[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH];
+    u8 patch[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH];
+    u8 dist[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH];
+};
+
+static EWRAM_DATA struct InfCaveGrids *sGrids = NULL;
+
+#define sMask  (sGrids->mask)
+#define sDecor (sGrids->decor)
+#define sPatch (sGrids->patch)
+#define sDist  (sGrids->dist)
+
+// Grabs the generation grids. Alloc is fatal on failure, so a non-NULL result is
+// the only outcome the callers see; the guard only keeps a nested call from
+// allocating a second block over the first.
+static bool32 AllocGrids(void)
+{
+    if (sGrids == NULL)
+        sGrids = AllocZeroed(sizeof(*sGrids));
+
+    return sGrids != NULL;
+}
+
+static void FreeGrids(void)
+{
+    TRY_FREE_AND_SET_NULL(sGrids);
+}
+
+// The rectangles the rooms were carved from. Small enough to stay in EWRAM, and
+// later passes (set pieces, entrance/exit, trainer placement) read them back.
 static EWRAM_DATA struct InfCaveRoomRect sRooms[INFCAVE_MAX_ROOMS] = {0};
 static EWRAM_DATA u8 sRoomCount = 0;
-
-// Props placed on the mask's floor, as one plus an index into sInfCaveDecor so
-// zero means an empty tile. The decoration pass leaves the mask itself
-// untouched, so the autotiler still sees every prop tile as floor and tiles the
-// walls around it normally; the prop's own block is written over the floor block.
-static EWRAM_DATA u8 sDecor[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
-
-// Terrain patches, as one plus an index into sInfCavePatch. Like props these sit
-// beside the mask rather than in it, so the wall shapes around a patch are
-// unaffected; unlike props a patch cell's block depends on where the cell sits
-// in its rectangle, which the autotiler works out from the neighbouring cells.
-static EWRAM_DATA u8 sPatch[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
 
 // The set piece this room hosts, if any. layoutId is INFCAVE_PIECE_NONE when
 // the room type stamps nothing; w and h come from the layout, and x and y are
@@ -94,6 +123,18 @@ struct InfCaveStamp
 };
 
 static EWRAM_DATA struct InfCaveStamp sStamp = {0};
+
+// The room the set piece was stamped into, or -1 when nothing was stamped. The
+// entrance pass skips it: that room is wall-to-wall authored art.
+static EWRAM_DATA s8 sStampHost = 0;
+
+// Where the player arrives and where the exit crystal stands. Both are plain
+// floor tiles the pads are drawn over; the mask itself still reads as floor
+// there, so the walls around them tile normally.
+static EWRAM_DATA u8 sEntranceX = 0;
+static EWRAM_DATA u8 sEntranceY = 0;
+static EWRAM_DATA u8 sExitX = 0;
+static EWRAM_DATA u8 sExitY = 0;
 
 // Distinct RNG streams within one room, so adding a consumer cannot shift the
 // numbers an existing pass draws.
@@ -177,6 +218,7 @@ static void ResolveSetPiece(void)
     const struct MapLayout *layout;
 
     memset(&sStamp, 0, sizeof(sStamp));
+    sStampHost = -1;
 
     if (roomType >= INFCAVE_ROOM_COUNT || sInfCavePieceLayout[roomType] == INFCAVE_PIECE_NONE)
         return;
@@ -817,80 +859,6 @@ static void BuildWallShell(void)
     }
 }
 
-// Temporary until Stage 10 places the exit crystal: punches a corridor from the
-// fixed warp tile up into the cave. It deliberately runs after the legality
-// passes, since a floor tile inside the canvas margin is exactly what those
-// passes forbid.
-static void CarveTempExitAccess(void)
-{
-    u32 y;
-
-    for (y = INFCAVE_TEMP_EXIT_Y; y >= INFCAVE_AREA_MIN; y--)
-    {
-        u32 x;
-        bool32 reached = FALSE;
-
-        for (x = INFCAVE_TEMP_EXIT_X; x < INFCAVE_TEMP_EXIT_X + INFCAVE_CORRIDOR_WIDTH; x++)
-        {
-            if (IsFloor(x, y))
-                reached = TRUE;
-            SetCell(x, y, INFCAVE_CELL_FLOOR);
-            sMask[y][x] |= INFCAVE_FLAG_NO_DECOR;
-        }
-
-        if (reached)
-            return;
-    }
-
-    // The column found no floor at all: cut one row straight across instead.
-    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MIN + INFCAVE_CORRIDOR_WIDTH; y++)
-    {
-        u32 x;
-
-        CarveRect(INFCAVE_AREA_MIN, y, INFCAVE_AREA_MAX_X - INFCAVE_AREA_MIN, 1);
-        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
-            sMask[y][x] |= INFCAVE_FLAG_NO_DECOR;
-    }
-}
-
-static bool32 IsWalkable(s32 x, s32 y);
-
-// Nearest tile to the canvas centre the player can stand on, searched outward in
-// square rings. Props are already placed, so a solid prop's tile is skipped.
-static void PlacePlayerOnFloor(void)
-{
-    u32 cx = INFCAVE_MAP_WIDTH / 2;
-    u32 cy = INFCAVE_MAP_HEIGHT / 2;
-    u32 radius;
-
-    for (radius = 0; radius < INFCAVE_MAP_WIDTH; radius++)
-    {
-        s32 dx, dy;
-
-        for (dy = -(s32)radius; dy <= (s32)radius; dy++)
-        {
-            for (dx = -(s32)radius; dx <= (s32)radius; dx++)
-            {
-                s32 x = (s32)cx + dx, y = (s32)cy + dy;
-
-                if (abs(dx) != (s32)radius && abs(dy) != (s32)radius)
-                    continue;
-                if (x < 0 || x >= INFCAVE_MAP_WIDTH || y < 0 || y >= INFCAVE_MAP_HEIGHT)
-                    continue;
-                if (!IsWalkable(x, y) || sDecor[y][x] != 0)
-                    continue;
-
-                gSaveBlock1Ptr->pos.x = x;
-                gSaveBlock1Ptr->pos.y = y;
-                return;
-            }
-        }
-    }
-
-    gSaveBlock1Ptr->pos.x = cx;
-    gSaveBlock1Ptr->pos.y = cy;
-}
-
 #if INFCAVE_TRACE == TRUE
 static void TraceMask(void)
 {
@@ -930,10 +898,9 @@ static u32 TryBuildMask(u32 attempt)
     return MaskLegalityFault();
 }
 
-// The ordered generation pipeline. Every pass reads and writes sMask only;
-// nothing here knows about metatiles. The temporary exit access and the wall
-// shell run after the mask is judged: the access corridor deliberately breaks
-// the margin rule, and the shell only relabels void the player cannot reach.
+// The mask pass. Every attempt reads and writes sMask only; nothing here knows
+// about metatiles. The wall shell runs after the mask is judged, since it only
+// relabels void the player cannot reach.
 static void BuildMask(void)
 {
     u32 attempt;
@@ -953,17 +920,6 @@ static void BuildMask(void)
     if (attempt == INFCAVE_MASK_ATTEMPTS)
         BuildEmergencyMask();
 
-    CarveTempExitAccess();
-
-    // The corridor cuts through walls the legality pass already signed off, so
-    // it can leave a one-tile wall run beside itself. Repairing again fixes
-    // those without ClearMarginFloor, which would delete the corridor.
-    {
-        rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_EXIT);
-
-        EnforceLegality(&rng);
-    }
-
     BuildWallShell();
 
 #if INFCAVE_TRACE == TRUE
@@ -981,6 +937,9 @@ u32 InfCave_DebugValidateMask(u32 baseSeed, u32 count, u32 *firstBadSeed, u32 *f
 {
     u32 savedSeed = gSaveBlock1Ptr->infinityCaveRun.roomSeed;
     u32 i, failures = 0;
+
+    if (!AllocGrids())
+        return 0;
 
     for (i = 0; i < count; i++)
     {
@@ -1002,6 +961,7 @@ u32 InfCave_DebugValidateMask(u32 baseSeed, u32 count, u32 *firstBadSeed, u32 *f
     }
 
     gSaveBlock1Ptr->infinityCaveRun.roomSeed = savedSeed;
+    FreeGrids();
     return failures;
 }
 
@@ -1072,28 +1032,13 @@ static u32 PatchRoleAt(s32 x, s32 y)
     return sInfCavePatch[sPatch[y][x] - 1].baseRole + PatchShapeAt(x, y);
 }
 
-// A block a walking player cannot enter: either it collides, or it sits at
-// another elevation, which is what surfable water is. Every pass here plans for
-// a player on foot, so water counts as blocked even though Surf crosses it.
+// A block a walking player cannot enter: either it collides, or it sits at an
+// elevation the floor does not reach.
 static bool32 IsBlockOnFoot(u16 block)
 {
     if ((block & MAPGRID_COLLISION_MASK) != 0)
         return TRUE;
     return (block & MAPGRID_ELEVATION_MASK) != (sTileRole[INFCAVE_ROLE_FLOOR_0] & MAPGRID_ELEVATION_MASK);
-}
-
-// Blocking is per cell, not per material: a pool's shore row is ground art the
-// player walks on even though the water beside it is not.
-static bool32 IsPatchCellBlocked(s32 x, s32 y)
-{
-    return IsBlockOnFoot(sTileRole[PatchRoleAt(x, y)]);
-}
-
-// Whether a material blocks a walking player at all, read from its fill block.
-// Only a blocking material can split the room, so only that one costs a walk.
-static bool32 IsPatchBlocking(u32 index)
-{
-    return IsBlockOnFoot(sTileRole[sInfCavePatch[index].baseRole + INFCAVE_PATCH_FILL]);
 }
 
 // Whether a prop blocks movement comes from the collision bits of its authored
@@ -1104,8 +1049,7 @@ static bool32 IsDecorSolid(u32 index)
     return IsBlockOnFoot(sTileRole[sInfCaveDecor[index].role]);
 }
 
-// A tile a walking player can stand on: carved floor with no water and no solid
-// prop on it.
+// A tile a walking player can stand on: carved floor with no solid prop on it.
 static bool32 IsWalkable(s32 x, s32 y)
 {
     // A set piece's cells carry no prop or patch data: what the player can cross
@@ -1114,8 +1058,6 @@ static bool32 IsWalkable(s32 x, s32 y)
         return !IsBlockOnFoot(StampBlockAt(x, y));
 
     if (!IsFloorSafe(x, y))
-        return FALSE;
-    if (sPatch[y][x] != 0 && IsPatchCellBlocked(x, y))
         return FALSE;
     if (sDecor[y][x] == 0)
         return TRUE;
@@ -1149,9 +1091,8 @@ static bool32 IsChokepoint(s32 x, s32 y)
     return runs > 1;
 }
 
-// Walkable tiles inside the carved area only. The temporary exit corridor pokes
-// floor into the canvas margin, which the fill below never visits, so counting
-// the whole canvas would read as a split room.
+// Walkable tiles inside the carved area only, which is the same area the fill
+// below visits.
 static u32 CountWalkable(void)
 {
     u32 x, y, count = 0;
@@ -1322,9 +1263,9 @@ static s32 RollPatch(rng_value_t *rng, u32 depth)
     return -1;
 }
 
-// Lays rectangles of a second ground material over the floor. A blocking
-// material is taken back again if it cuts the room in two, which is why each
-// rectangle goes down and is judged on its own rather than all at once.
+// Lays rectangles of a second ground material over the floor. Patches are
+// walkable, so a rectangle only has to clear the placement rules; it can never
+// cut the room in two.
 static void PlacePatches(void)
 {
     rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_PTCH);
@@ -1346,11 +1287,6 @@ static void PlacePatches(void)
             continue;
 
         FillPatchRect(x, y, w, h, index + 1);
-        if (IsPatchBlocking(index) && !IsRoomStillConnected())
-        {
-            FillPatchRect(x, y, w, h, 0);
-            continue;
-        }
         placed++;
     }
 
@@ -1539,6 +1475,7 @@ static void StampSetPiece(void)
     }
 
     layout = GetMapLayout(sStamp.layoutId);
+    sStampHost = host;
     sStamp.x = sRooms[host].x + (sRooms[host].w - sStamp.w) / 2;
     sStamp.y = sRooms[host].y + (sRooms[host].h - sStamp.h) / 2;
 
@@ -1563,6 +1500,214 @@ static void StampSetPiece(void)
     DebugPrintf("InfCave set piece %d stamped at %d,%d in room %d",
                 sStamp.layoutId, sStamp.x, sStamp.y, host);
 #endif
+}
+
+// Four-way steps, in the order the distance fill relaxes them.
+static const s8 sStepOffsets[4][2] = { { 0, -1 }, { 0, 1 }, { -1, 0 }, { 1, 0 } };
+
+// Lowers (x, y) to one step more than its nearest neighbour. Returns TRUE when
+// it changed something, which is what drives the sweeps to a fixed point.
+static bool32 RelaxDistance(u32 x, u32 y)
+{
+    u32 best = INFCAVE_DIST_UNREACHED;
+    u32 i;
+
+    if (!IsWalkable(x, y))
+        return FALSE;
+
+    for (i = 0; i < ARRAY_COUNT(sStepOffsets); i++)
+    {
+        u32 dist = sDist[y + sStepOffsets[i][1]][x + sStepOffsets[i][0]];
+
+        if (dist < best)
+            best = dist;
+    }
+
+    if (best >= INFCAVE_DIST_MAX || sDist[y][x] <= best + 1)
+        return FALSE;
+
+    sDist[y][x] = best + 1;
+    return TRUE;
+}
+
+// Step distance from (sx, sy) over every tile a walking player can cross, by the
+// same alternating sweeps the flood fills use: each sweep carries a distance one
+// row further, so this converges without a queue in EWRAM. Set-piece cells are
+// crossed, since their ring is walkable authored art.
+static void FillStepDistance(u32 sx, u32 sy)
+{
+    bool32 changed = TRUE;
+
+    memset(sDist, INFCAVE_DIST_UNREACHED, sizeof(sDist));
+    sDist[sy][sx] = 0;
+
+    while (changed)
+    {
+        u32 x, y;
+
+        changed = FALSE;
+
+        for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+        {
+            for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+            {
+                if (RelaxDistance(x, y))
+                    changed = TRUE;
+            }
+        }
+
+        for (y = INFCAVE_AREA_MAX_Y; y-- > INFCAVE_AREA_MIN; )
+        {
+            for (x = INFCAVE_AREA_MAX_X; x-- > INFCAVE_AREA_MIN; )
+            {
+                if (RelaxDistance(x, y))
+                    changed = TRUE;
+            }
+        }
+    }
+}
+
+// A tile a pad may be drawn on: plain floor the player can stand on that nothing
+// else has claimed. Set-piece cells are excluded, since a pad there would cover
+// authored art.
+static bool32 IsPadTile(u32 x, u32 y)
+{
+    if (x < INFCAVE_AREA_MIN || x >= INFCAVE_AREA_MAX_X
+     || y < INFCAVE_AREA_MIN || y >= INFCAVE_AREA_MAX_Y)
+        return FALSE;
+    if (CellKind(x, y) != INFCAVE_CELL_FLOOR)
+        return FALSE;
+    if (sDecor[y][x] != 0 || sPatch[y][x] != 0)
+        return FALSE;
+    if (sMask[y][x] & INFCAVE_FLAG_NO_DECOR)
+        return FALSE;
+
+    return IsWalkable(x, y);
+}
+
+// Nearest pad tile to (cx, cy), searched outward in square rings, so a room whose
+// middle is covered by a set piece still yields a tile beside it.
+static bool32 FindPadTileNear(u32 cx, u32 cy, u8 *ox, u8 *oy)
+{
+    u32 radius;
+
+    for (radius = 0; radius < INFCAVE_MAP_WIDTH; radius++)
+    {
+        s32 dx, dy;
+
+        for (dy = -(s32)radius; dy <= (s32)radius; dy++)
+        {
+            for (dx = -(s32)radius; dx <= (s32)radius; dx++)
+            {
+                s32 x = (s32)cx + dx, y = (s32)cy + dy;
+
+                if (abs(dx) != (s32)radius && abs(dy) != (s32)radius)
+                    continue;
+                if (x < 0 || y < 0 || !IsPadTile(x, y))
+                    continue;
+
+                *ox = x;
+                *oy = y;
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+// Puts the entrance in a rolled room and the exit on the walkable tile farthest
+// from it by step distance, so a descent always crosses the room. Both pads and
+// the ring around the exit are closed to props and patches: the crystal stands on
+// the exit pad, and a solid prop beside it could seal it off.
+static void PlaceEntranceExit(void)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_EXIT);
+    u32 cx = INFCAVE_MAP_WIDTH / 2, cy = INFCAVE_MAP_HEIGHT / 2;
+    u32 x, y, i, best = 0;
+
+    // The emergency mask carves no rooms at all, and the set piece's host room is
+    // wall-to-wall authored art; both fall back to the canvas centre, from which
+    // the ring search walks out to a tile that can host a pad.
+    if (sRoomCount != 0)
+    {
+        u32 pick = InfCave_RandRange(&rng, 0, sRoomCount - 1);
+
+        for (i = 0; i < sRoomCount; i++)
+        {
+            u32 room = (pick + i) % sRoomCount;
+
+            if ((s32)room == sStampHost)
+                continue;
+
+            cx = sRooms[room].x + sRooms[room].w / 2;
+            cy = sRooms[room].y + sRooms[room].h / 2;
+            break;
+        }
+    }
+
+    sEntranceX = sExitX = cx;
+    sEntranceY = sExitY = cy;
+
+    // No tile on the canvas can host a pad, which needs a mask with no walkable
+    // floor at all. The pads stay at the centre rather than at stale coordinates.
+    if (!FindPadTileNear(cx, cy, &sEntranceX, &sEntranceY))
+        return;
+
+    FillStepDistance(sEntranceX, sEntranceY);
+
+    // The entrance is distance 0, so it can never win this scan and the two pads
+    // only share a tile when the entrance is the room's one walkable tile.
+    sExitX = sEntranceX;
+    sExitY = sEntranceY;
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+        {
+            if (sDist[y][x] == INFCAVE_DIST_UNREACHED || sDist[y][x] <= best)
+                continue;
+            if (!IsPadTile(x, y))
+                continue;
+
+            best = sDist[y][x];
+            sExitX = x;
+            sExitY = y;
+        }
+    }
+
+    sMask[sEntranceY][sEntranceX] |= INFCAVE_FLAG_NO_DECOR;
+    sMask[sExitY][sExitX] |= INFCAVE_FLAG_NO_DECOR;
+    for (i = 0; i < ARRAY_COUNT(sRingOffsets); i++)
+    {
+        u32 nx = sExitX + sRingOffsets[i][0], ny = sExitY + sRingOffsets[i][1];
+
+        if (IsFloor(nx, ny))
+            sMask[ny][nx] |= INFCAVE_FLAG_NO_DECOR;
+    }
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave entrance %d,%d exit %d,%d distance %d",
+                sEntranceX, sEntranceY, sExitX, sExitY, best);
+#endif
+}
+
+// Moves the exit crystal onto this room's exit pad. Its art and script come from
+// InfinityCave_Room's header, so only the position is generated; Stage 13's
+// template writer takes over once a room owns more than this one object.
+static void PlaceExitCrystal(void)
+{
+    u32 i;
+
+    for (i = 0; i < OBJECT_EVENT_TEMPLATES_COUNT; i++)
+    {
+        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i];
+
+        if (template->localId != INFCAVE_LOCALID_EXIT)
+            continue;
+
+        template->x = sExitX;
+        template->y = sExitY;
+        return;
+    }
 }
 
 // Wall shape for a non-floor cell. The mask legality rules forbid a wall with
@@ -1637,7 +1782,11 @@ static void AutotileRoom(u16 *origin, u32 stride)
                 continue;
             }
 
-            if (!IsFloor(x, y))
+            if (x == sEntranceX && y == sEntranceY)
+                role = INFCAVE_ROLE_PAD_ENTRANCE;
+            else if (x == sExitX && y == sExitY)
+                role = INFCAVE_ROLE_PAD_EXIT;
+            else if (!IsFloor(x, y))
                 role = WallRoleForCell(x, y);
             else if (sPatch[y][x] != 0)
                 role = PatchRoleAt(x, y);
@@ -1662,17 +1811,21 @@ struct InfCavePass
 
 static const struct InfCavePass sInfCavePasses[] =
 {
-    { ResolveSetPiece, "set piece pick" },
-    { BuildMask,       "mask" },
-    { StampSetPiece,   "set piece stamp" },
-    { PlacePatches,    "patch" },
-    { DecorateRoom,    "decor" },
+    { ResolveSetPiece,   "set piece pick" },
+    { BuildMask,         "mask" },
+    { StampSetPiece,     "set piece stamp" },
+    { PlaceEntranceExit, "entrance and exit" },
+    { PlacePatches,      "patch" },
+    { DecorateRoom,      "decor" },
 };
 
 void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
 {
     u16 *origin;
     u32 i;
+
+    if (!AllocGrids())
+        return;
 
     InfCave_LoadTileRoles();
 
@@ -1691,13 +1844,16 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     origin = backupMapData + gBackupMapLayout.width * MAP_OFFSET + MAP_OFFSET;
     AutotileRoom(origin, gBackupMapLayout.width);
 
-    origin[gBackupMapLayout.width * INFCAVE_TEMP_EXIT_Y + INFCAVE_TEMP_EXIT_X]
-        = sTileRole[INFCAVE_ROLE_PAD_EXIT];
+    PlaceExitCrystal();
+    FreeGrids();
 
     // setPlayerPosition mirrors the Battle Pyramid's inverted sense: TRUE means
     // the position is already restored from the save and must be kept.
     if (setPlayerPosition == FALSE)
-        PlacePlayerOnFloor();
+    {
+        gSaveBlock1Ptr->pos.x = sEntranceX;
+        gSaveBlock1Ptr->pos.y = sEntranceY;
+    }
 
     RunOnLoadMapScript();
 }

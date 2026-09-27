@@ -26,10 +26,8 @@ static const struct InfCaveDecor sInfCaveDecor[] =
 };
 
 // Ground materials the patch pass lays over the floor as rectangles. Each entry
-// names the first of nine roles ordered by enum InfCavePatchShape. As with
-// props, whether a patch blocks movement is read from the collision bits of its
-// authored blocks, not stated here: sand is walkable ground, a water pool is
-// not, and both go through the same placer.
+// names the first of nine roles ordered by enum InfCavePatchShape. Every patch
+// material is walkable ground, so a patch never affects where the player can go.
 struct InfCavePatch
 {
     u8 baseRole;  // INFCAVE_PATCH_NW role; the other eight follow it
@@ -39,8 +37,7 @@ struct InfCavePatch
 
 static const struct InfCavePatch sInfCavePatch[] =
 {
-    { INFCAVE_ROLE_SAND_NW,  .weight = 70, .minDepth = 0 },
-    { INFCAVE_ROLE_WATER_NW, .weight = 30, .minDepth = 2 },
+    { INFCAVE_ROLE_SAND_NW,  .weight = 100, .minDepth = 0 },
 };
 
 // Set piece stamped into a generated room, by enum InfCaveRoomType.

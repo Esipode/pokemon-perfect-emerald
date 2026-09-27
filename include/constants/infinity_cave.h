@@ -208,9 +208,7 @@ enum InfCaveTileRole
     INFCAVE_ROLE_PAD_ITEM_BALL,
     INFCAVE_ROLE_PAD_SHOP,
 
-    // Rows 5-6 - terrain patches, in enum InfCavePatchShape order. The water
-    // row's south side is the shore block the tileset draws on the tile below a
-    // pool, which is why it is not water art.
+    // Row 5 - terrain patches, in enum InfCavePatchShape order.
     INFCAVE_ROLE_SAND_NW = INFCAVE_TILEKEY_CELL(5, 0),
     INFCAVE_ROLE_SAND_N,
     INFCAVE_ROLE_SAND_NE,
@@ -221,18 +219,19 @@ enum InfCaveTileRole
     INFCAVE_ROLE_SAND_S,
     INFCAVE_ROLE_SAND_SE,
 
-    INFCAVE_ROLE_WATER_NW = INFCAVE_TILEKEY_CELL(6, 0),
-    INFCAVE_ROLE_WATER_N,
-    INFCAVE_ROLE_WATER_NE,
-    INFCAVE_ROLE_WATER_W,
-    INFCAVE_ROLE_WATER_FILL,
-    INFCAVE_ROLE_WATER_E,
-    INFCAVE_ROLE_WATER_SW,
-    INFCAVE_ROLE_WATER_S,
-    INFCAVE_ROLE_WATER_SE,
-
-    // Row 7 is spare.
+    // Rows 6-7 are spare.
 };
+
+// Entrance and exit pads. The exit sits on the walkable tile farthest from the
+// entrance by step distance, so every descent crosses the room, and the crystal
+// that takes the player one depth deeper stands on it.
+#define INFCAVE_DIST_UNREACHED      255 // step distance of a tile the fill never reached
+#define INFCAVE_DIST_MAX            254 // distances saturate here; no room is this long
+
+// The exit crystal's local id. Must match the object event order in
+// data/maps/InfinityCave_Room/map.json, which owns the crystal's art and script;
+// generation only moves it.
+#define INFCAVE_LOCALID_EXIT        1
 
 // Set to TRUE to log an ASCII picture of each generated mask over the debug
 // print handler. Off in shipped builds; generation cost is otherwise unchanged.
