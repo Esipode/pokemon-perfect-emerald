@@ -82,6 +82,20 @@ u32 InfCave_RollNodeOptions(struct InfCaveNodeOption *options);
 // handler, then restores the live depth. Empty in NDEBUG builds.
 void InfCave_DebugDumpNodeOptions(void);
 
+// src/infinity_cave_ui.c. Node screen: shows the options InfCave_RollNodeOptions
+// offers for InfCave_GetNodeDepth and takes the player's pick. Returns to
+// gMain.savedCallback once a card is confirmed; B is refused, since the node is
+// chosen before the room behind it exists.
+void CB2_InitInfCaveNodeScreen(void);
+
+// The card the player confirmed, as an index into the option set the screen
+// rolled. Valid until the screen is opened again.
+u32 InfCave_GetChosenNodeIndex(void);
+
+// The confirmed card itself, or NULL if the screen has not run. The option set is
+// not saved, so this must be read out into the run struct before the warp.
+const struct InfCaveNodeOption *InfCave_GetChosenNode(void);
+
 // TRUE while the current room's exit must refuse to descend: a boss room whose
 // boss is still standing. Read by the ladder script with specialvar.
 u16 InfCave_IsExitLocked(void);
@@ -119,6 +133,10 @@ bool32 InfCave_ModifiersCompatible(u32 a, u32 b);
 // Argument byte for a modifier the node roll picked, drawn from the modifier's
 // own option table at the current depth. 0 for a modifier that takes none.
 u32 InfCave_RollModifierArg(u32 modifier, rng_value_t *rng);
+
+// Display name for a modifier slot's argument byte: the type, weather or terrain
+// the slot names. NULL for a modifier that takes no argument.
+const u8 *InfCave_GetModifierArgName(u32 modifier, u32 arg);
 
 // Payout share the room's active modifiers add, summed over the slots.
 u32 InfCave_GetModifierShardPercent(void);

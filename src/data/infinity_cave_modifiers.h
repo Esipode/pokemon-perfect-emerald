@@ -153,8 +153,11 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
 // INFCAVE_MOD_WEATHER's argument. startingStatus is what every trainer in the
 // room opens its battles with; fieldWeather is what the room itself runs, so the
 // overworld says what the battle will do before the player walks into it.
+// name is what the node screen prints beside the modifier's own name, so the
+// card says which weather the room runs rather than just that it runs one.
 struct InfCaveWeatherOption
 {
+    const u8 *name;
     u8 startingStatus; // enum StartingStatus
     u8 fieldWeather;   // enum OverworldWeather
     u8 weight;
@@ -163,11 +166,11 @@ struct InfCaveWeatherOption
 
 static const struct InfCaveWeatherOption sInfCaveWeathers[] =
 {
-    { STARTING_STATUS_WEATHER_SANDSTORM, WEATHER_SANDSTORM,      .weight = 22, .minDepth = 0 },
-    { STARTING_STATUS_WEATHER_RAIN,      WEATHER_RAIN,           .weight = 20, .minDepth = 0 },
-    { STARTING_STATUS_WEATHER_SUN,       WEATHER_DROUGHT,        .weight = 20, .minDepth = 0 },
-    { STARTING_STATUS_WEATHER_SNOW,      WEATHER_SNOW,           .weight = 18, .minDepth = 8 },
-    { STARTING_STATUS_WEATHER_FOG,       WEATHER_FOG_HORIZONTAL, .weight = 14, .minDepth = 12 },
+    { COMPOUND_STRING("SAND"), STARTING_STATUS_WEATHER_SANDSTORM, WEATHER_SANDSTORM,      .weight = 22, .minDepth = 0 },
+    { COMPOUND_STRING("RAIN"), STARTING_STATUS_WEATHER_RAIN,      WEATHER_RAIN,           .weight = 20, .minDepth = 0 },
+    { COMPOUND_STRING("SUN"),  STARTING_STATUS_WEATHER_SUN,       WEATHER_DROUGHT,        .weight = 20, .minDepth = 0 },
+    { COMPOUND_STRING("SNOW"), STARTING_STATUS_WEATHER_SNOW,      WEATHER_SNOW,           .weight = 18, .minDepth = 8 },
+    { COMPOUND_STRING("FOG"),  STARTING_STATUS_WEATHER_FOG,       WEATHER_FOG_HORIZONTAL, .weight = 14, .minDepth = 12 },
 };
 
 // INFCAVE_MOD_TERRAIN's argument. The terrains are permanent rather than the
@@ -175,6 +178,7 @@ static const struct InfCaveWeatherOption sInfCaveWeathers[] =
 // it is noticed on.
 struct InfCaveTerrainOption
 {
+    const u8 *name;
     u8 startingStatus; // enum StartingStatus
     u8 weight;
     u8 minDepth;
@@ -182,10 +186,10 @@ struct InfCaveTerrainOption
 
 static const struct InfCaveTerrainOption sInfCaveTerrains[] =
 {
-    { STARTING_STATUS_ELECTRIC_TERRAIN, .weight = 20, .minDepth = 0 },
-    { STARTING_STATUS_GRASSY_TERRAIN,   .weight = 20, .minDepth = 0 },
-    { STARTING_STATUS_MISTY_TERRAIN,    .weight = 18, .minDepth = 0 },
-    { STARTING_STATUS_PSYCHIC_TERRAIN,  .weight = 16, .minDepth = 10 },
+    { COMPOUND_STRING("ELECTRIC"), STARTING_STATUS_ELECTRIC_TERRAIN, .weight = 20, .minDepth = 0 },
+    { COMPOUND_STRING("GRASSY"),   STARTING_STATUS_GRASSY_TERRAIN,   .weight = 20, .minDepth = 0 },
+    { COMPOUND_STRING("MISTY"),    STARTING_STATUS_MISTY_TERRAIN,    .weight = 18, .minDepth = 0 },
+    { COMPOUND_STRING("PSYCHIC"),  STARTING_STATUS_PSYCHIC_TERRAIN,  .weight = 16, .minDepth = 10 },
 };
 
 // INFCAVE_MOD_MONOTYPE's argument. TYPE_NONE, TYPE_MYSTERY and TYPE_STELLAR are

@@ -1,5 +1,6 @@
 #include "global.h"
 #include "infinity_cave.h"
+#include "battle_main.h"
 #include "battle_setup.h"
 #include "event_data.h"
 #include "field_weather.h"
@@ -257,6 +258,40 @@ const struct InfCaveModifierInfo *InfCave_GetModifierInfo(u32 modifier)
         return NULL;
 
     return &sInfCaveModifiers[modifier];
+}
+
+// Display name for a modifier slot's argument byte: the type, weather or terrain
+// the slot names. NULL for a modifier that takes no argument, so the node screen
+// prints its name on its own.
+const u8 *InfCave_GetModifierArgName(u32 modifier, u32 arg)
+{
+    const struct InfCaveModifierInfo *info = InfCave_GetModifierInfo(modifier);
+    u32 i;
+
+    if (info == NULL)
+        return NULL;
+
+    switch (info->argKind)
+    {
+    case INFCAVE_MOD_ARG_TYPE:
+        return (arg < NUMBER_OF_MON_TYPES) ? gTypesInfo[arg].name : NULL;
+    case INFCAVE_MOD_ARG_WEATHER:
+        for (i = 0; i < ARRAY_COUNT(sInfCaveWeathers); i++)
+        {
+            if (sInfCaveWeathers[i].startingStatus == arg)
+                return sInfCaveWeathers[i].name;
+        }
+        return NULL;
+    case INFCAVE_MOD_ARG_TERRAIN:
+        for (i = 0; i < ARRAY_COUNT(sInfCaveTerrains); i++)
+        {
+            if (sInfCaveTerrains[i].startingStatus == arg)
+                return sInfCaveTerrains[i].name;
+        }
+        return NULL;
+    }
+
+    return NULL;
 }
 
 // Read from both rows, so the table only has to name a bad pair once. One

@@ -278,6 +278,7 @@ static u32 Debug_GenerateListTrainerMenu(const struct DebugMenuOption *items);
 static u32 Debug_GenerateListFlagsMenu(const struct DebugMenuOption *items);
 static u32 Debug_GenerateListOutbreakMenu(const struct DebugMenuOption *items);
 static void Debug_DestroyMenu(u8 taskId);
+static void Debug_DestroyMenu_Full(u8 taskId);
 static void DebugAction_Cancel(u8 taskId);
 static void DebugAction_DestroyExtraWindow(u8 taskId);
 static u8 DebugNativeStep_CreateDebugWindow(void);
@@ -300,11 +301,25 @@ static void DebugAction_Util_Fly(u8 taskId);
 static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId);
+// Testing aid: opens the node screen on the live run's option set. Starts a run
+// if none is open, since the options come off the run's own seed. The pick is
+// dropped - the descent does not read it until Stage 22 wires the ladder up.
+static void DebugAction_InfCave_NodeScreen(u8 taskId)
+{
+    if (!InfCave_IsInRun())
+        InfCave_StartRun();
+
+    Debug_DestroyMenu_Full(taskId);
+    gMain.savedCallback = CB2_ReturnToField;
+    SetMainCallback2(CB2_InitInfCaveNodeScreen);
+}
+
 static void DebugAction_Util_ForceDraft(u8 taskId);
 static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType);
 static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry);
 static void DebugAction_InfCave_AddShards(u8 taskId);
 static void DebugAction_InfCave_DumpNodes(u8 taskId);
+static void DebugAction_InfCave_NodeScreen(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -729,6 +744,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("InfCave Test Battle"),       DebugAction_ExecuteScript, Debug_EventScript_InfCaveTestBattle },
     { COMPOUND_STRING("InfCave Add Shards"),        DebugAction_InfCave_AddShards },
     { COMPOUND_STRING("InfCave Node Dump"),         DebugAction_InfCave_DumpNodes },
+    { COMPOUND_STRING("InfCave Node Screen"),       DebugAction_InfCave_NodeScreen },
     { COMPOUND_STRING("View Trade Code…"),          DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"),        DebugAction_TradeCode_ViewSampleConfirm },
     { COMPOUND_STRING("Enter Trade Code…"),         DebugAction_TradeCode_EnterOffer },
