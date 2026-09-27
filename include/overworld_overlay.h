@@ -24,18 +24,19 @@ enum OverlaySpritePosition
 
 struct OverlayConfig
 {
-    u16 color;      // RGB15 target colour
+    u16 color;      // OVERLAY_EFFECT_TINT: RGB15 target colour. OVERLAY_EFFECT_HUE_SHIFT: hue angle 0-255
     u8 opacity;     // 0-OVERLAY_OPACITY_MAX
     u8 layer;       // enum OverlayLayer
     u8 scope;       // enum OverlayScope
     u8 priority;    // composition order, lower applies first
     u8 spritePosition; // enum OverlaySpritePosition, sprite layer only
+    u8 effect;      // enum OverlayEffect; forced to OVERLAY_EFFECT_TINT on OVERLAY_LAYER_SPRITE
 };
 
 struct Overlay
 {
     u32 exemptPalettes;     // one bit per palette slot, set = not tinted; bits 0-15 BG, 16-31 OBJ
-    u16 color;
+    u16 color;              // tint colour, or hue angle 0-255 when effect is OVERLAY_EFFECT_HUE_SHIFT
     u16 fadeDuration;       // frames
     u16 fadeElapsed;
     u16 pulsePeriod;        // frames
@@ -68,6 +69,7 @@ struct Overlay
     u8 falloffEnabled:1;
     u8 spritePosition:2;    // enum OverlaySpritePosition
     u8 transient:1;         // not written to the save
+    u8 effect:1;            // enum OverlayEffect, fixed at creation
     u8 exemptLocalId;      // 0 = none; resolved against exemptMapNum/exemptMapGroup
     u8 exemptMapNum;
     u8 exemptMapGroup;
@@ -93,6 +95,14 @@ struct OverlaySave
 // Script ends                      survives        survives
 //
 // Ownership stays with the caller: scripts must destroy their overlays explicitly.
+//
+// Effects. OVERLAY_EFFECT_TINT blends each palette colour toward `color`. OVERLAY_EFFECT_HUE_SHIFT
+// rotates each palette colour's hue by `color` (0-255 = one full turn), preserving HSV value and
+// saturation, so greys, black and white are unchanged and a saturated colour stays saturated.
+// Opacity mixes the rotated colour over the original, matching the tint effect's meaning of opacity.
+// A zero shift is exact, and the rotation is division-free, but it still costs a few multiplies per
+// palette colour on every recomposition against one blend per colour for a tint. It is a
+// palette-backend effect only: OVERLAY_LAYER_SPRITE always uses OVERLAY_EFFECT_TINT.
 //
 // Opacity composition. Fade owns currentOpacity; pulse and falloff scale it:
 //   resolvedOpacity = (currentOpacity * pulseFactor * distanceFactor + 128) / 256
@@ -133,7 +143,10 @@ void Overlay_ApplyFadeInStep(u32 palettes, u32 y);
 
 void Overlay_Enable(OverlayId id);
 void Overlay_Disable(OverlayId id);
+// Tint effect only; ignored on OVERLAY_EFFECT_HUE_SHIFT.
 void Overlay_SetColor(OverlayId id, u16 color);
+// Hue shift effect only; ignored on OVERLAY_EFFECT_TINT. hueAngle is 0-255 over the full circle.
+void Overlay_SetHueShift(OverlayId id, u8 hueAngle);
 // Direct request, 0-OVERLAY_OPACITY_MAX.
 void Overlay_SetOpacity(OverlayId id, u8 opacity);
 u8 Overlay_GetOpacity(OverlayId id);

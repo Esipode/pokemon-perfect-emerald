@@ -3601,6 +3601,46 @@ bool8 Scrcmd_overlaycreate(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// Same as overlaycreate, but the halfword is a hue angle (0-255) instead of an RGB15 colour.
+bool8 Scrcmd_overlaycreatehue(struct ScriptContext *ctx)
+{
+    struct OverlayConfig config = {0};
+    u16 layer, scope, destVar;
+
+    config.color = VarGet(ScriptReadHalfword(ctx)) & 0xFF;
+    config.opacity = VarGet(ScriptReadHalfword(ctx));
+    layer = VarGet(ScriptReadHalfword(ctx));
+    scope = VarGet(ScriptReadHalfword(ctx));
+    destVar = ScriptReadHalfword(ctx);
+    config.layer = layer;
+    config.scope = scope;
+    config.effect = OVERLAY_EFFECT_HUE_SHIFT;
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    // The sprite backend has no hue to rotate, so it is not a valid layer here.
+    if (layer >= OVERLAY_LAYER_SPRITE || scope > OVERLAY_SCOPE_GLOBAL)
+        *GetVarPointer(destVar) = OVERLAY_ID_INVALID;
+    else
+        *GetVarPointer(destVar) = Overlay_Create(&config);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlaysethue(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 hueAngle = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_SetHueShift(id, hueAngle & 0xFF);
+
+    return FALSE;
+}
+
 bool8 Scrcmd_overlaysetcolor(struct ScriptContext *ctx)
 {
     OverlayId id = VarGet(ScriptReadHalfword(ctx));

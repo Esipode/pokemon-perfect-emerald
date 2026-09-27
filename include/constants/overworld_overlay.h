@@ -3,6 +3,15 @@
 
 #define OVERLAY_OPACITY_MAX     16
 
+// Hue angles are a full u8 turn: 128 is the opposite hue, 256 wraps to no shift.
+#define OVERLAY_HUE_FULL_TURN   256
+
+enum OverlayEffect
+{
+    OVERLAY_EFFECT_TINT,        // blends the palettes toward a colour
+    OVERLAY_EFFECT_HUE_SHIFT,   // rotates the palettes' hue, keeping brightness and saturation
+};
+
 enum OverlayLayer
 {
     OVERLAY_LAYER_WORLD,    // BG palettes only

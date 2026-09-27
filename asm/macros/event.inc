@@ -3074,14 +3074,34 @@
 	.2byte \dest
 	.endm
 
+	@ Creates a hue-shift overlay instead of a colour overlay: it rotates the palettes' hue by
+	@ hueAngle, keeping brightness, so greys stay grey. hueAngle is 0-255 over the full circle
+	@ (128 is the opposite hue); opacity is the strength of the rotation.
+	@ layer must be OVERLAY_LAYER_WORLD, _OBJECTS or _ALL -- OVERLAY_LAYER_SPRITE is rejected.
+	.macro overlaycreatehue hueAngle:req, opacity:req, layer:req, scope:req, dest:req
+	callnative Scrcmd_overlaycreatehue, requests_effects=1
+	.2byte \hueAngle
+	.2byte \opacity
+	.2byte \layer
+	.2byte \scope
+	.2byte \dest
+	.endm
+
 	@ The handleVar argument of the commands below is the variable holding an overlay handle.
 	@ Each command does nothing if the handle is stale or invalid.
 
-	@ Sets the overlay's colour (RGB15).
+	@ Sets the overlay's colour (RGB15). Does nothing on a hue-shift overlay.
 	.macro overlaysetcolor handleVar:req, color:req
 	callnative Scrcmd_overlaysetcolor, requests_effects=1
 	.2byte \handleVar
 	.2byte \color
+	.endm
+
+	@ Sets a hue-shift overlay's angle (0-255). Does nothing on a colour overlay.
+	.macro overlaysethue handleVar:req, hueAngle:req
+	callnative Scrcmd_overlaysethue, requests_effects=1
+	.2byte \handleVar
+	.2byte \hueAngle
 	.endm
 
 	@ Sets the overlay's opacity (0-16) immediately, cancelling any running fade.

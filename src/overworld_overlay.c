@@ -402,6 +402,145 @@ static u32 LayerPaletteMask(u32 layer)
     }
 }
 
+// Hue rotation in HSV terms, without the divisions an HSV round trip needs. A hue rotation leaves
+// the largest and smallest of the three channels alone and only moves the middle one, so the colour
+// is described by (max, min, sector, position in sector) and rebuilt after the sector advances.
+// Value and saturation are preserved, so a saturated colour stays saturated.
+#define HUE_SECTOR_STEPS    256                         // sub-steps per 60-degree sector
+#define HUE_SECTOR_COUNT    6
+#define HUE_WHEEL_STEPS     (HUE_SECTOR_STEPS * HUE_SECTOR_COUNT)
+
+// 65536 / delta rounded, so the position in a sector is a multiply and a shift. Index 0 is unused:
+// a zero delta is a grey and returns early.
+static const u32 sHueReciprocal[32] = {
+        0, 65536, 32768, 21845, 16384, 13107, 10923,  9362,
+     8192,  7282,  6554,  5958,  5461,  5041,  4681,  4369,
+     4096,  3855,  3641,  3449,  3277,  3121,  2979,  2849,
+     2731,  2621,  2521,  2427,  2341,  2260,  2185,  2114,
+};
+
+// Rotates one RGB15 colour's hue by shiftSteps (HUE_WHEEL_STEPS = full circle), then mixes the
+// result over the original by strength (0-OVERLAY_OPACITY_MAX), matching the tint effect's
+// "opacity is how much of the effect applies".
+static u16 RotateColorHue(u16 color, u32 shiftSteps, u32 strength)
+{
+    u32 r = GET_R(color);
+    u32 g = GET_G(color);
+    u32 b = GET_B(color);
+    u32 max = r, min = r;
+    u32 delta, sector, position, mid;
+    u32 nr, ng, nb;
+
+    if (g > max)
+        max = g;
+    if (b > max)
+        max = b;
+    if (g < min)
+        min = g;
+    if (b < min)
+        min = b;
+
+    delta = max - min;
+    if (delta == 0)
+        return color; // grey has no hue to rotate
+
+    // Sectors run R -> Y -> G -> C -> B -> M. Within a sector the middle channel ramps up on even
+    // sectors and down on odd ones, so the position is measured from whichever end is moving.
+    if (max == r)
+    {
+        if (min == b)
+            sector = 0, position = g - min;
+        else
+            sector = 5, position = max - b;
+    }
+    else if (max == g)
+    {
+        if (min == r)
+            sector = 2, position = b - min;
+        else
+            sector = 1, position = max - r;
+    }
+    else
+    {
+        if (min == g)
+            sector = 4, position = r - min;
+        else
+            sector = 3, position = max - g;
+    }
+
+    // Both conversions round, so a zero shift reproduces the colour exactly. The endpoint is exact
+    // by hand: 65536 / delta is rounded, so position == delta would land just short of the sector.
+    if (position == delta)
+        position = HUE_SECTOR_STEPS;
+    else
+        position = (position * sHueReciprocal[delta] + 128) >> 8;
+
+    // shiftSteps is under one turn and the position is under one turn, so one subtract wraps it.
+    position += sector * HUE_SECTOR_STEPS + shiftSteps;
+    if (position >= HUE_WHEEL_STEPS)
+        position -= HUE_WHEEL_STEPS;
+
+    sector = position / HUE_SECTOR_STEPS;
+    position -= sector * HUE_SECTOR_STEPS;
+
+    mid = (delta * position + 128) >> 8;
+    mid = (sector & 1) ? max - mid : min + mid;
+
+    switch (sector)
+    {
+    case 0:
+        nr = max, ng = mid, nb = min;
+        break;
+    case 1:
+        nr = mid, ng = max, nb = min;
+        break;
+    case 2:
+        nr = min, ng = max, nb = mid;
+        break;
+    case 3:
+        nr = min, ng = mid, nb = max;
+        break;
+    case 4:
+        nr = mid, ng = min, nb = max;
+        break;
+    default:
+        nr = max, ng = min, nb = mid;
+        break;
+    }
+
+    if (strength < OVERLAY_OPACITY_MAX)
+    {
+        nr = (r * (OVERLAY_OPACITY_MAX - strength) + nr * strength) / OVERLAY_OPACITY_MAX;
+        ng = (g * (OVERLAY_OPACITY_MAX - strength) + ng * strength) / OVERLAY_OPACITY_MAX;
+        nb = (b * (OVERLAY_OPACITY_MAX - strength) + nb * strength) / OVERLAY_OPACITY_MAX;
+    }
+
+    return RGB(nr, ng, nb);
+}
+
+// In-place hue rotation of the selected palettes of gPlttBufferFaded.
+static void HueShiftPalettes(u32 palettes, u8 hueAngle, u32 strength)
+{
+    u32 shiftSteps = hueAngle * (HUE_WHEEL_STEPS / 256);
+    u32 slot;
+
+    if (palettes == 0 || strength == 0 || hueAngle == 0)
+        return;
+
+    for (slot = 0; slot < 32; slot++, palettes >>= 1)
+    {
+        u16 *colors;
+        u32 i;
+
+        if (!(palettes & 1))
+            continue;
+
+        colors = &gPlttBufferFaded[slot * 16];
+        for (i = 0; i < 16; i++)
+            colors[i] = RotateColorHue(colors[i], shiftSteps, strength);
+    }
+}
+
 // Collects tinting overlays sorted by ascending priority; equal priorities keep pool order.
 static u32 GetRenderOrder(struct Overlay *order[MAX_OVERLAYS])
 {
@@ -445,7 +584,12 @@ static u32 TintPalettes(u32 palettes, u32 progress)
         u32 mask = LayerPaletteMask(order[i]->layer) & palettes & ~sEffectiveExempt[order[i] - sOverlays] & ~glowMask;
         u32 opacity = (order[i]->resolvedOpacity * progress + OVERLAY_OPACITY_MAX / 2) / OVERLAY_OPACITY_MAX;
 
-        if (opacity != 0)
+        if (opacity == 0)
+            continue;
+
+        if (order[i]->effect == OVERLAY_EFFECT_HUE_SHIFT)
+            HueShiftPalettes(mask, order[i]->color, opacity);
+        else
             BlendPalettesFine(mask, gPlttBufferFaded, gPlttBufferFaded, opacity, order[i]->color);
     }
 
@@ -760,6 +904,9 @@ OverlayId Overlay_Create(const struct OverlayConfig *config)
         overlay->enabled = TRUE;
         overlay->color = config->color;
         overlay->layer = config->layer;
+        // The sprite backend draws a fixed-colour glow, so it has no hue to rotate.
+        overlay->effect = (config->layer == OVERLAY_LAYER_SPRITE)
+                        ? OVERLAY_EFFECT_TINT : min(config->effect, OVERLAY_EFFECT_HUE_SHIFT);
         overlay->scope = config->scope;
         overlay->priority = config->priority;
         overlay->spritePosition = min(config->spritePosition, OVERLAY_SPRITE_ABOVE_ALL);
@@ -828,10 +975,21 @@ void Overlay_SetColor(OverlayId id, u16 color)
 {
     struct Overlay *overlay = GetOverlay(id);
 
-    if (overlay == NULL || overlay->color == color)
+    if (overlay == NULL || overlay->effect != OVERLAY_EFFECT_TINT || overlay->color == color)
         return;
 
     overlay->color = color;
+    sOverlayDirty = TRUE;
+}
+
+void Overlay_SetHueShift(OverlayId id, u8 hueAngle)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || overlay->effect != OVERLAY_EFFECT_HUE_SHIFT || overlay->color == hueAngle)
+        return;
+
+    overlay->color = hueAngle;
     sOverlayDirty = TRUE;
 }
 
