@@ -46,3 +46,47 @@ InfinityCave_Text_CrystalAskDescend:
 
 InfinityCave_Text_CrystalAskLeave:
 	.string "Leave the cave instead?$"
+
+@ The rolled trainers the generator stands on the room's floor. Their templates
+@ carry TRAINER_TYPE_NORMAL and a sight range, so the challenge is sight-based;
+@ trainerbattle takes a literal id and the approach code reads that id back out of
+@ the script, so every slot needs its own copy. Stage 16 adds the post-battle
+@ payout and the no-whiteout handling.
+InfinityCave_EventScript_Trainer0::
+	trainerbattle_single TRAINER_INFCAVE_0, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_EventScript_Trainer1::
+	trainerbattle_single TRAINER_INFCAVE_1, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_EventScript_Trainer2::
+	trainerbattle_single TRAINER_INFCAVE_2, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_EventScript_Trainer3::
+	trainerbattle_single TRAINER_INFCAVE_3, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_EventScript_Trainer4::
+	trainerbattle_single TRAINER_INFCAVE_4, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_EventScript_Trainer5::
+	trainerbattle_single TRAINER_INFCAVE_5, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_EventScript_Trainer6::
+	trainerbattle_single TRAINER_INFCAVE_6, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_EventScript_Trainer7::
+	trainerbattle_single TRAINER_INFCAVE_7, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	end
+
+InfinityCave_Text_TrainerIntro:
+	.string "Another one, come down to test the\n"
+	.string "dark. Show me what you brought!$"
+
+InfinityCave_Text_TrainerDefeat:
+	.string "The cave takes its own back.$"

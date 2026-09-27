@@ -31,6 +31,7 @@
 #include "follower_npc.h"
 #include "gpu_regs.h"
 #include "heal_location.h"
+#include "infinity_cave.h"
 #include "io_reg.h"
 #include "item.h"
 #include "item_icon.h"
@@ -2184,6 +2185,34 @@ void CB2_WhiteOut(void)
     }
 }
 
+// A defeat in the Infinity Cave ends the descent, not the save. The party is healed
+// and the player is put back in the lobby, whose ON_TRANSITION closes the run out.
+// Skipped in Nuzlocke mode, where a loss keeps the normal white-out consequence.
+void CB2_InfCaveRunFailed(void)
+{
+    u8 state;
+
+    if (++gMain.state >= 120)
+    {
+        FieldClearVBlankHBlankCallbacks();
+        StopMapMusic();
+        HealPlayerParty();
+        InfCave_EndRun(INFCAVE_END_DEFEAT);
+        Overworld_ResetStateAfterWhiteOut();
+        SetWarpDestination(MAP_GROUP(MAP_INFINITY_CAVE_ENTRANCE), MAP_NUM(MAP_INFINITY_CAVE_ENTRANCE), 0, -1, -1);
+        WarpIntoMap();
+        ScriptContext_Init();
+        UnlockPlayerFieldControls();
+        gFieldCallback = FieldCB_WarpExitFadeFromBlack;
+        state = 0;
+        SetFollowerNPCData(FNPC_DATA_SURF_BLOB, FNPC_SURF_BLOB_NONE);
+        DoMapLoadLoop(&state);
+        SetFieldVBlankCallback();
+        SetMainCallback1(CB1_Overworld);
+        SetMainCallback2(CB2_Overworld);
+    }
+}
+
 void CB2_LoadMap(void)
 {
     FieldClearVBlankHBlankCallbacks();
@@ -2417,6 +2446,8 @@ void CB2_ContinueSavedGame(void)
     trainerHillMapId = GetCurrentTrainerHillMapId();
     if (gMapHeader.mapLayoutId == LAYOUT_BATTLE_FRONTIER_BATTLE_PYRAMID_FLOOR)
         LoadBattlePyramidFloorObjectEventScripts();
+    else if (gMapHeader.mapLayoutId == LAYOUT_INFINITY_CAVE_ROOM)
+        LoadInfinityCaveObjectEventScripts();
     else if (trainerHillMapId != 0 && trainerHillMapId != TRAINER_HILL_ENTRANCE)
         LoadTrainerHillFloorObjectEventScripts();
     else

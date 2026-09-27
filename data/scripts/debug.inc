@@ -696,6 +696,14 @@ Debug_EventScript_InfCaveMaskCheck::
 	release
 	end
 
+@ Stage 15 harness: generates the same block of rooms with the trainer count
+@ pinned to the maximum and re-judges every placement rule on the result.
+Debug_EventScript_InfCavePlacementCheck::
+	callnative CheckInfCavePlacementLegality
+	msgbox Debug_EventScript_InfCavePlacementCheck_Text, MSGBOX_DEFAULT
+	release
+	end
+
 @ Warps into the generated room map after the debug menu has pinned a room type.
 @ The coordinates are ignored: the generator places the player itself.
 Debug_EventScript_InfCaveEnterRoom::
@@ -719,6 +727,11 @@ Debug_Text_InfCaveTrainerDefeat::
 
 Debug_EventScript_InfCaveMaskCheck_Text::
 	.string "Mask failures: {STR_VAR_1} of 100\n"
+	.string "First fault: {STR_VAR_2}\l"
+	.string "Seed: {STR_VAR_3}$"
+
+Debug_EventScript_InfCavePlacementCheck_Text::
+	.string "NPC failures: {STR_VAR_1} of 100\n"
 	.string "First fault: {STR_VAR_2}\l"
 	.string "Seed: {STR_VAR_3}$"
 

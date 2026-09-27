@@ -23,6 +23,7 @@
 #include "follower_helper.h"
 #include "gpu_regs.h"
 #include "graphics.h"
+#include "infinity_cave.h"
 #include "item.h"
 #include "mauville_old_man.h"
 #include "metatile_behavior.h"
@@ -2897,6 +2898,8 @@ void TrySpawnLightSprites(s16 camX, s16 camY)
         objectCount = GetNumBattlePyramidObjectEvents();
     else if (InTrainerHill())
         objectCount = 2;
+    else if (InfCave_InGeneratedRoom())
+        objectCount = InfCave_GetObjectCount();
     else
         objectCount = gMapHeader.events->objectEventCount;
 
@@ -2929,6 +2932,8 @@ void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
             objectCount = GetNumBattlePyramidObjectEvents();
         else if (InTrainerHill())
             objectCount = HILL_TRAINERS_PER_FLOOR;
+        else if (InfCave_InGeneratedRoom())
+            objectCount = InfCave_GetObjectCount();
         else
             objectCount = gMapHeader.events->objectEventCount;
 
@@ -3744,7 +3749,9 @@ const struct ObjectEventTemplate *GetObjectEventTemplateByLocalIdAndMap(u8 local
     if (gSaveBlock1Ptr->location.mapNum == mapNum && gSaveBlock1Ptr->location.mapGroup == mapGroup)
     {
         templates = gSaveBlock1Ptr->objectEventTemplates;
-        count = gMapHeader.events->objectEventCount;
+        // The generated room's header describes only the exit crystal, so its own
+        // count is the one that finds a trainer by local id.
+        count = InfCave_InGeneratedRoom() ? InfCave_GetObjectCount() : gMapHeader.events->objectEventCount;
     }
     else
     {

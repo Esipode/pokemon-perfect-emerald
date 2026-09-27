@@ -4,8 +4,12 @@
 #include "malloc.h"
 #include "overworld.h"
 #include "script.h"
+#include "constants/event_object_movement.h"
+#include "constants/event_objects.h"
 #include "constants/infinity_cave.h"
 #include "constants/layouts.h"
+#include "constants/map_event_ids.h"
+#include "constants/trainer_types.h"
 #include "data/infinity_cave.h"
 
 // Room generation. The room map's ROM layout is never used: every entry
@@ -39,6 +43,7 @@ static const u8 sRequiredRoles[][2] =
 // Flags OR'd into a mask cell alongside its kind. COMPONENT and KEEP are
 // transient, owned by the connectivity passes; NO_DECOR survives for the room's
 // lifetime and marks the tiles the entrance and exit pads own.
+#define INFCAVE_FLAG_BLOCKED   0x10 // a generated object stands here, or its sight line is under test
 #define INFCAVE_FLAG_NO_DECOR  0x20 // the decoration pass must leave this tile bare
 #define INFCAVE_FLAG_COMPONENT 0x40 // member of the component being measured
 #define INFCAVE_FLAG_KEEP      0x80 // member of the component that survives
@@ -143,6 +148,7 @@ static EWRAM_DATA u8 sExitY = 0;
 #define INFCAVE_SALT_EXIT 0x45584954u // 'EXIT'
 #define INFCAVE_SALT_DECO 0x4445434Fu // 'DECO'
 #define INFCAVE_SALT_PTCH 0x50544348u // 'PTCH'
+#define INFCAVE_SALT_NPCS 0x4E504353u // 'NPCS'
 
 // Copies the key layout's block words into sTileRole. The layout is ROM data,
 // so this is a straight copy; reloading it every room keeps a Porymap edit
@@ -1156,10 +1162,18 @@ static bool32 IsDecorSolid(u32 index)
 // A tile a walking player can stand on: carved floor with no solid prop on it.
 static bool32 IsWalkable(s32 x, s32 y)
 {
-    // A set piece's cells carry no prop or patch data: what the player can cross
-    // there is whatever the authored block says.
-    if (x >= 0 && x < INFCAVE_MAP_WIDTH && y >= 0 && y < INFCAVE_MAP_HEIGHT && IsReserved(x, y))
-        return !IsBlockOnFoot(StampBlockAt(x, y));
+    if (x >= 0 && x < INFCAVE_MAP_WIDTH && y >= 0 && y < INFCAVE_MAP_HEIGHT)
+    {
+        // A placed object holds its tile against the player as firmly as a wall,
+        // so every connectivity test after the placement pass has to see it.
+        if (sMask[y][x] & INFCAVE_FLAG_BLOCKED)
+            return FALSE;
+
+        // A set piece's cells carry no prop or patch data: what the player can
+        // cross there is whatever the authored block says.
+        if (IsReserved(x, y))
+            return !IsBlockOnFoot(StampBlockAt(x, y));
+    }
 
     if (!IsFloorSafe(x, y))
         return FALSE;
@@ -1814,6 +1828,418 @@ static void PlaceExitCrystal(void)
     }
 }
 
+// --- Object placement -------------------------------------------------------
+
+// Placed trainers, in local id order. Positions live here rather than in the
+// save block's templates so the legality harness can run the pass without
+// touching the live room's objects.
+struct InfCaveNpc
+{
+    u8 x;
+    u8 y;
+    u8 facing; // index into sInfCaveFacings
+};
+
+static EWRAM_DATA struct InfCaveNpc sNpcs[INFCAVE_MAX_TRAINERS] = {0};
+static EWRAM_DATA u8 sNpcCount = 0;
+
+// Object event templates the generator wrote, the exit crystal included. The
+// spawner reads this instead of the map header's object count, which describes
+// the crystal alone.
+static EWRAM_DATA u8 sObjectCount = 0;
+
+// The template layout the placer and the room's scripts both assume: the crystal
+// owns index 0, trainer slot n owns index n + 1, and the whole set fits the room's
+// object budget. A Porymap edit that reorders the room map's objects breaks the
+// first of these, which is why it is checked against the generated local id.
+STATIC_ASSERT(LOCALID_INFINITY_CAVE_EXIT == INFCAVE_LOCALID_EXIT, sInfCaveExitLocalId);
+STATIC_ASSERT(INFCAVE_LOCALID_TRAINER_0 == INFCAVE_LOCALID_EXIT + 1, sInfCaveTrainerLocalIds);
+STATIC_ASSERT(INFCAVE_MAX_TRAINERS + 1 <= INFCAVE_MAX_OBJECTS, sInfCaveObjectBudget);
+STATIC_ASSERT(INFCAVE_MAX_OBJECTS <= OBJECT_EVENT_TEMPLATES_COUNT, sInfCaveTemplateBudget);
+
+// Trainer count the harness pins the pass to, or 0 to use the room's own roll.
+static EWRAM_DATA u8 sNpcCountOverride = 0;
+
+// Connectivity tests left in this room's budget. Each is one flood fill, so this
+// is what bounds the pass's cost.
+static EWRAM_DATA u8 sConnectChecks = 0;
+
+// Facings a placed trainer may take, with the step its sight line walks. A fixed
+// facing is mandatory: a wandering NPC would drift into a corridor, where the
+// player has no way past it.
+static const struct
+{
+    u8 movementType;
+    s8 dx;
+    s8 dy;
+} sInfCaveFacings[] =
+{
+    { MOVEMENT_TYPE_FACE_DOWN,   0,  1 },
+    { MOVEMENT_TYPE_FACE_UP,     0, -1 },
+    { MOVEMENT_TYPE_FACE_LEFT,  -1,  0 },
+    { MOVEMENT_TYPE_FACE_RIGHT,  1,  0 },
+};
+
+// Elevation every generated object stands at, taken from the key layout's floor
+// block rather than a literal, so retheming the cave onto a tileset with another
+// ground elevation needs no code change.
+static u8 FloorElevation(void)
+{
+    return UNPACK_ELEVATION(sTileRole[INFCAVE_ROLE_FLOOR_0]);
+}
+
+// TRUE when the entrance pad can still reach the exit pad with every blocked tile
+// in place. One flood fill per call, spent from the room's budget by the caller.
+static bool32 EntranceReachesExit(void)
+{
+    bool32 linked;
+
+    if (!IsWalkable(sEntranceX, sEntranceY) || !IsWalkable(sExitX, sExitY))
+        return FALSE;
+
+    FloodFillWalkable(sEntranceX, sEntranceY);
+    linked = (sMask[sExitY][sExitX] & INFCAVE_FLAG_COMPONENT) != 0;
+    ClearMaskFlags(INFCAVE_FLAG_COMPONENT);
+    return linked;
+}
+
+// TRUE when the room rectangle is wide enough in both axes to hold a trainer and
+// is not the one the set piece owns, whose cells are authored art.
+static bool32 IsNpcRoom(u32 room)
+{
+    if ((s32)room == sStampHost)
+        return FALSE;
+
+    return sRooms[room].w >= INFCAVE_NPC_ROOM_MIN_SIDE
+        && sRooms[room].h >= INFCAVE_NPC_ROOM_MIN_SIDE;
+}
+
+// TRUE when (x, y) lies inside a room region rather than a corridor. Corridors
+// are carved outside every room rectangle, so the rectangles are the whole test.
+static bool32 IsInNpcRoom(u32 x, u32 y)
+{
+    u32 room;
+
+    for (room = 0; room < sRoomCount; room++)
+    {
+        if (!IsNpcRoom(room))
+            continue;
+        if (x >= sRooms[room].x && x < sRooms[room].x + sRooms[room].w
+         && y >= sRooms[room].y && y < sRooms[room].y + sRooms[room].h)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+static u32 ChebyshevDistance(s32 ax, s32 ay, s32 bx, s32 by)
+{
+    return max(abs(ax - bx), abs(ay - by));
+}
+
+// Trainers stand well apart from each other and well back from the arrival pad,
+// so the player is never dropped into a sight line on entering the room.
+static bool32 NpcSpacingOk(u32 x, u32 y)
+{
+    u32 i;
+
+    if (ChebyshevDistance(x, y, sEntranceX, sEntranceY) < INFCAVE_NPC_FROM_ENTRANCE)
+        return FALSE;
+
+    for (i = 0; i < sNpcCount; i++)
+    {
+        if (ChebyshevDistance(x, y, sNpcs[i].x, sNpcs[i].y) < INFCAVE_NPC_MIN_APART)
+            return FALSE;
+    }
+    return TRUE;
+}
+
+// Everything a candidate tile must satisfy before a connectivity test is spent on
+// it. IsChokepoint is the cheap stand-in for the articulation test: a tile whose
+// walkable neighbours form one run cannot be the only link between two halves of
+// the room, so the flood fill below only has to judge what survives this.
+static bool32 IsNpcCandidate(u32 x, u32 y)
+{
+    if (CellKind(x, y) != INFCAVE_CELL_FLOOR)
+        return FALSE;
+    // Pads, the ring around the exit and the tiles already taken by an object.
+    if (sMask[y][x] & (INFCAVE_FLAG_NO_DECOR | INFCAVE_FLAG_BLOCKED))
+        return FALSE;
+    if (sDecor[y][x] != 0)
+        return FALSE;
+    if (!IsInNpcRoom(x, y))
+        return FALSE;
+    if (!IsWalkable(x, y))
+        return FALSE;
+    if (IsChokepoint(x, y))
+        return FALSE;
+
+    return NpcSpacingOk(x, y);
+}
+
+// The tiles a trainer at (x, y) would see: the straight run ahead, stopping at
+// the first tile the player cannot cross. Emerald trainers only notice the player
+// dead ahead, so the sight cone is this line. Built into the caller's buffer
+// before anything is blocked, so the same tiles can be marked and unmarked.
+static u32 BuildSightLine(u32 x, u32 y, u32 facing, u8 *lineX, u8 *lineY)
+{
+    u32 i, count = 0;
+
+    for (i = 1; i <= INFCAVE_NPC_SIGHT; i++)
+    {
+        s32 nx = (s32)x + sInfCaveFacings[facing].dx * (s32)i;
+        s32 ny = (s32)y + sInfCaveFacings[facing].dy * (s32)i;
+
+        if (!IsWalkable(nx, ny))
+            break;
+
+        lineX[count] = nx;
+        lineY[count] = ny;
+        count++;
+    }
+    return count;
+}
+
+static void SetLineBlocked(const u8 *lineX, const u8 *lineY, u32 count, bool32 blocked)
+{
+    u32 i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (blocked)
+            sMask[lineY[i]][lineX[i]] |= INFCAVE_FLAG_BLOCKED;
+        else
+            sMask[lineY[i]][lineX[i]] &= ~INFCAVE_FLAG_BLOCKED;
+    }
+}
+
+// Tries to stand a trainer on (x, y). Facings are walked from a rolled start, and
+// one is accepted only when the room still links the entrance to the exit both
+// with the trainer's own tile blocked and with its sight line blocked on top: a
+// sight line lying across the only route would force the battle rather than offer
+// it. The trainer's tile stays blocked on success, which is what makes the test
+// cumulative as later trainers are added.
+static bool32 TryPlaceNpc(u32 x, u32 y, rng_value_t *rng)
+{
+    u32 start = InfCave_RandRange(rng, 0, ARRAY_COUNT(sInfCaveFacings) - 1);
+    u32 i;
+
+    if (sConnectChecks == 0)
+        return FALSE;
+
+    sMask[y][x] |= INFCAVE_FLAG_BLOCKED;
+    sConnectChecks--;
+    if (!EntranceReachesExit())
+    {
+        sMask[y][x] &= ~INFCAVE_FLAG_BLOCKED;
+        return FALSE;
+    }
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveFacings); i++)
+    {
+        u32 facing = (start + i) % ARRAY_COUNT(sInfCaveFacings);
+        u8 lineX[INFCAVE_NPC_SIGHT], lineY[INFCAVE_NPC_SIGHT];
+        u32 count = BuildSightLine(x, y, facing, lineX, lineY);
+        bool32 linked;
+
+        // A facing into a wall sees nothing, so the trainer could never challenge
+        // the player from it.
+        if (count == 0)
+            continue;
+        if (sConnectChecks == 0)
+            break;
+
+        SetLineBlocked(lineX, lineY, count, TRUE);
+        linked = EntranceReachesExit();
+        SetLineBlocked(lineX, lineY, count, FALSE);
+        sConnectChecks--;
+
+        if (!linked)
+            continue;
+
+        sNpcs[sNpcCount].x = x;
+        sNpcs[sNpcCount].y = y;
+        sNpcs[sNpcCount].facing = facing;
+        sNpcCount++;
+        return TRUE;
+    }
+
+    sMask[y][x] &= ~INFCAVE_FLAG_BLOCKED;
+    return FALSE;
+}
+
+// Rolls a tile inside one of the rooms that may host a trainer. Rolling per room
+// rather than over the whole canvas keeps the attempt budget meaningful in a room
+// whose floor is mostly corridor.
+static bool32 RollNpcTile(rng_value_t *rng, u32 *ox, u32 *oy)
+{
+    u32 pick;
+    u32 i;
+
+    if (sRoomCount == 0)
+        return FALSE;
+
+    pick = InfCave_RandRange(rng, 0, sRoomCount - 1);
+    for (i = 0; i < sRoomCount; i++)
+    {
+        u32 room = (pick + i) % sRoomCount;
+
+        if (!IsNpcRoom(room))
+            continue;
+
+        *ox = InfCave_RandRange(rng, sRooms[room].x, sRooms[room].x + sRooms[room].w - 1);
+        *oy = InfCave_RandRange(rng, sRooms[room].y, sRooms[room].y + sRooms[room].h - 1);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// Stands the room's rolled trainers on its floor. Slots are filled in order and
+// the pass stops at the first slot it cannot place, so a slot's local id is
+// always its index: a gap would leave the room's scripts addressing the wrong
+// NPC. A room that places fewer trainers than it rolled is still playable.
+static void PlaceTrainers(void)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_NPCS);
+    u32 wanted = sNpcCountOverride != 0 ? sNpcCountOverride : InfCave_RollTrainerCount();
+    u32 slot;
+
+    sNpcCount = 0;
+    sConnectChecks = INFCAVE_NPC_CONNECT_CHECKS;
+
+    if (wanted > INFCAVE_MAX_TRAINERS)
+        wanted = INFCAVE_MAX_TRAINERS;
+    // The crystal holds one of the room's object slots.
+    if (wanted > INFCAVE_MAX_OBJECTS - 1)
+        wanted = INFCAVE_MAX_OBJECTS - 1;
+
+    for (slot = 0; slot < wanted; slot++)
+    {
+        u32 tries;
+        bool32 placed = FALSE;
+
+        for (tries = 0; tries < INFCAVE_NPC_TRIES_PER_SLOT && !placed; tries++)
+        {
+            u32 x, y;
+
+            if (!RollNpcTile(&rng, &x, &y))
+                return;
+            if (!IsNpcCandidate(x, y))
+                continue;
+
+            placed = TryPlaceNpc(x, y, &rng);
+        }
+
+        if (!placed)
+            break;
+    }
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave placed %d of %d trainers, %d checks left",
+                sNpcCount, wanted, sConnectChecks);
+#endif
+}
+
+// Scripts the generated objects run. The crystal's comes from the room map's
+// header; a trainer's is per slot, because trainerbattle takes a literal stub id
+// and the sight-approach code reads that id straight out of the script.
+extern const u8 InfinityCave_EventScript_ExitCrystal[];
+extern const u8 InfinityCave_EventScript_Trainer0[];
+extern const u8 InfinityCave_EventScript_Trainer1[];
+extern const u8 InfinityCave_EventScript_Trainer2[];
+extern const u8 InfinityCave_EventScript_Trainer3[];
+extern const u8 InfinityCave_EventScript_Trainer4[];
+extern const u8 InfinityCave_EventScript_Trainer5[];
+extern const u8 InfinityCave_EventScript_Trainer6[];
+extern const u8 InfinityCave_EventScript_Trainer7[];
+
+static const u8 *const sInfCaveTrainerScripts[INFCAVE_MAX_TRAINERS] =
+{
+    InfinityCave_EventScript_Trainer0,
+    InfinityCave_EventScript_Trainer1,
+    InfinityCave_EventScript_Trainer2,
+    InfinityCave_EventScript_Trainer3,
+    InfinityCave_EventScript_Trainer4,
+    InfinityCave_EventScript_Trainer5,
+    InfinityCave_EventScript_Trainer6,
+    InfinityCave_EventScript_Trainer7,
+};
+
+static const u8 *ScriptForLocalId(u32 localId)
+{
+    u32 slot = localId - INFCAVE_LOCALID_TRAINER_0;
+
+    if (localId == INFCAVE_LOCALID_EXIT)
+        return InfinityCave_EventScript_ExitCrystal;
+    if (localId >= INFCAVE_LOCALID_TRAINER_0 && slot < INFCAVE_MAX_TRAINERS)
+        return sInfCaveTrainerScripts[slot];
+
+    return NULL;
+}
+
+// Writes the placed trainers into the save block's templates. Slot n owns index
+// n + 1, since the exit crystal owns index 0, and every field is written here so
+// a template never carries anything from the room before. Templates past the
+// room's own objects are blanked: the spawner is bounded by sObjectCount, but a
+// stale template left addressable by local id would answer for an NPC that is no
+// longer there.
+static void WriteTrainerTemplates(void)
+{
+    u32 i;
+
+    for (i = 0; i < sNpcCount; i++)
+    {
+        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i + 1];
+
+        memset(template, 0, sizeof(*template));
+        template->localId = INFCAVE_LOCALID_TRAINER_0 + i;
+        template->graphicsId = InfCave_BuildTrainer(i);
+        template->kind = OBJ_KIND_NORMAL;
+        template->x = sNpcs[i].x;
+        template->y = sNpcs[i].y;
+        template->elevation = FloorElevation();
+        template->movementType = sInfCaveFacings[sNpcs[i].facing].movementType;
+        template->trainerType = TRAINER_TYPE_NORMAL;
+        template->trainerRange_berryTreeId = INFCAVE_NPC_SIGHT;
+        template->script = ScriptForLocalId(template->localId);
+    }
+
+    sObjectCount = sNpcCount + 1;
+
+    for (i = sObjectCount; i < OBJECT_EVENT_TEMPLATES_COUNT; i++)
+        memset(&gSaveBlock1Ptr->objectEventTemplates[i], 0, sizeof(struct ObjectEventTemplate));
+}
+
+u32 InfCave_GetObjectCount(void)
+{
+    return sObjectCount;
+}
+
+u32 InfCave_GetRoomTrainerCount(void)
+{
+    return sNpcCount;
+}
+
+bool32 InfCave_InGeneratedRoom(void)
+{
+    return gMapHeader.mapLayoutId == LAYOUT_INFINITY_CAVE_ROOM;
+}
+
+// Continue-from-save counterpart to LoadSaveblockObjEventScripts, which cannot be
+// used here: it copies one script per template slot out of the map header, and the
+// room's header describes only the crystal. Script pointers are not saved, so
+// every generated object needs its own reassigned before field control returns.
+void LoadInfinityCaveObjectEventScripts(void)
+{
+    u32 i;
+
+    for (i = 0; i < OBJECT_EVENT_TEMPLATES_COUNT; i++)
+    {
+        struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i];
+
+        template->script = ScriptForLocalId(template->localId);
+    }
+}
+
 static u32 RollFloorRole(rng_value_t *rng)
 {
     if (InfCave_RandRange(rng, 0, 99) < INFCAVE_FLOOR_PLAIN_PERCENT)
@@ -1878,7 +2304,139 @@ static const struct InfCavePass sInfCavePasses[] =
     { PlaceEntranceExit, "entrance and exit" },
     { PlacePatches,      "patch" },
     { DecorateRoom,      "decor" },
+    { PlaceTrainers,     "trainers" },
 };
+
+enum InfCavePlacementFault
+{
+    INFCAVE_PLACE_FAULT_NONE,
+    INFCAVE_PLACE_FAULT_BUDGET,   // more objects than a room may hold
+    INFCAVE_PLACE_FAULT_CORRIDOR, // a trainer outside every room region
+    INFCAVE_PLACE_FAULT_TILE,     // a trainer on a pad, a prop or something other than floor
+    INFCAVE_PLACE_FAULT_SPACING,  // two trainers too close, or one too close to the arrival pad
+    INFCAVE_PLACE_FAULT_SPLIT,    // the trainers jointly cut the exit off
+    INFCAVE_PLACE_FAULT_SIGHT,    // a sight line lies across the only route to the exit
+};
+
+// Re-judges the placement the pass just made, from the finished grids rather than
+// from the pass's own bookkeeping, so a rule the pass applies wrongly still shows
+// up here. The trainers' tiles are already blocked in the mask, which is what
+// makes the split test cumulative.
+static u32 PlacementFault(void)
+{
+    u32 i, j;
+
+    if (sNpcCount + 1 > INFCAVE_MAX_OBJECTS)
+        return INFCAVE_PLACE_FAULT_BUDGET;
+
+    for (i = 0; i < sNpcCount; i++)
+    {
+        u32 x = sNpcs[i].x, y = sNpcs[i].y;
+
+        if (!IsInNpcRoom(x, y))
+            return INFCAVE_PLACE_FAULT_CORRIDOR;
+        if (CellKind(x, y) != INFCAVE_CELL_FLOOR || sDecor[y][x] != 0
+         || (sMask[y][x] & INFCAVE_FLAG_NO_DECOR))
+            return INFCAVE_PLACE_FAULT_TILE;
+        if (ChebyshevDistance(x, y, sEntranceX, sEntranceY) < INFCAVE_NPC_FROM_ENTRANCE)
+            return INFCAVE_PLACE_FAULT_SPACING;
+
+        for (j = 0; j < i; j++)
+        {
+            if (ChebyshevDistance(x, y, sNpcs[j].x, sNpcs[j].y) < INFCAVE_NPC_MIN_APART)
+                return INFCAVE_PLACE_FAULT_SPACING;
+        }
+    }
+
+    if (!EntranceReachesExit())
+        return INFCAVE_PLACE_FAULT_SPLIT;
+
+    for (i = 0; i < sNpcCount; i++)
+    {
+        u8 lineX[INFCAVE_NPC_SIGHT], lineY[INFCAVE_NPC_SIGHT];
+        u32 count = BuildSightLine(sNpcs[i].x, sNpcs[i].y, sNpcs[i].facing, lineX, lineY);
+        bool32 linked;
+
+        SetLineBlocked(lineX, lineY, count, TRUE);
+        linked = EntranceReachesExit();
+        SetLineBlocked(lineX, lineY, count, FALSE);
+
+        if (!linked)
+            return INFCAVE_PLACE_FAULT_SIGHT;
+    }
+
+    return INFCAVE_PLACE_FAULT_NONE;
+}
+
+// Debug harness for the placement rules: builds count consecutive room seeds from
+// baseSeed with the trainer count pinned, and returns how many placements broke a
+// rule. Placing fewer trainers than asked is not a failure — a crowded room is
+// allowed to come up short — so only rule violations are counted. This leaves the
+// grids holding the last room; the live room is rebuilt from its seed on the next
+// map load, so nothing on screen depends on it.
+u32 InfCave_DebugValidatePlacement(u32 baseSeed, u32 count, u32 trainers, u32 *firstBadSeed, u32 *firstFault)
+{
+    u32 savedSeed = gSaveBlock1Ptr->infinityCaveRun.roomSeed;
+    u32 i, failures = 0;
+
+    if (!AllocGrids())
+        return 0;
+
+    sNpcCountOverride = trainers;
+    for (i = 0; i < count; i++)
+    {
+        u32 fault, pass;
+
+        gSaveBlock1Ptr->infinityCaveRun.roomSeed = baseSeed + i;
+        for (pass = 0; pass < ARRAY_COUNT(sInfCavePasses); pass++)
+            sInfCavePasses[pass].run();
+
+        fault = PlacementFault();
+        if (fault == INFCAVE_PLACE_FAULT_NONE)
+            continue;
+
+        if (failures == 0)
+        {
+            if (firstBadSeed != NULL)
+                *firstBadSeed = baseSeed + i;
+            if (firstFault != NULL)
+                *firstFault = fault;
+        }
+        failures++;
+    }
+    sNpcCountOverride = 0;
+
+    gSaveBlock1Ptr->infinityCaveRun.roomSeed = savedSeed;
+    FreeGrids();
+    return failures;
+}
+
+static const u8 sPlaceFaultName_None[] = _("none");
+static const u8 sPlaceFaultName_Budget[] = _("budget");
+static const u8 sPlaceFaultName_Corridor[] = _("corridor");
+static const u8 sPlaceFaultName_Tile[] = _("tile");
+static const u8 sPlaceFaultName_Spacing[] = _("spacing");
+static const u8 sPlaceFaultName_Split[] = _("split");
+static const u8 sPlaceFaultName_Sight[] = _("sight");
+
+// Indexed by enum InfCavePlacementFault, for the debug harness's report line.
+static const u8 *const sPlaceFaultNames[] =
+{
+    [INFCAVE_PLACE_FAULT_NONE]     = sPlaceFaultName_None,
+    [INFCAVE_PLACE_FAULT_BUDGET]   = sPlaceFaultName_Budget,
+    [INFCAVE_PLACE_FAULT_CORRIDOR] = sPlaceFaultName_Corridor,
+    [INFCAVE_PLACE_FAULT_TILE]     = sPlaceFaultName_Tile,
+    [INFCAVE_PLACE_FAULT_SPACING]  = sPlaceFaultName_Spacing,
+    [INFCAVE_PLACE_FAULT_SPLIT]    = sPlaceFaultName_Split,
+    [INFCAVE_PLACE_FAULT_SIGHT]    = sPlaceFaultName_Sight,
+};
+
+const u8 *InfCave_GetPlacementFaultName(u32 fault)
+{
+    if (fault >= ARRAY_COUNT(sPlaceFaultNames))
+        return sPlaceFaultNames[INFCAVE_PLACE_FAULT_NONE];
+    return sPlaceFaultNames[fault];
+}
 
 void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
 {
@@ -1906,6 +2464,7 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     AutotileRoom(origin, gBackupMapLayout.width);
 
     PlaceExitCrystal();
+    WriteTrainerTemplates();
     FreeGrids();
 
     // setPlayerPosition mirrors the Battle Pyramid's inverted sense: TRUE means

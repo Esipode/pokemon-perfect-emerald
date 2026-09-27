@@ -1500,9 +1500,12 @@ static void CB2_EndTrainerBattle(void)
     // The TRAINER_EMPORIUM redirect is only needed while the opponent party is built. Disarm it so a
     // white-out can't leave every trainer pointed at the runtime Emporium struct.
     gEmporiumBattleActive = FALSE;
-    // Same contract for the Infinity Cave stub ids, and their defeat flags are
-    // cleared here so the next room's trainers challenge the player again.
-    InfCave_ClearTrainers();
+    // Same contract for the Infinity Cave stub ids, except inside a generated room:
+    // its other trainers are still standing on the floor behind their stub ids, and
+    // the defeat flag just set is what keeps the beaten one from refighting. The
+    // slots are cleared on the next descent and at the end of a run instead.
+    if (!InfCave_InGeneratedRoom())
+        InfCave_ClearTrainers();
     if (FollowerNPCIsBattlePartner())
     {
         RestorePartyAfterFollowerNPCBattle();
@@ -1542,10 +1545,23 @@ static void CB2_EndTrainerBattle(void)
     }
     else if (IsPlayerDefeated(gBattleOutcome))
     {
-        if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHillChallenge() || FlagGet(B_FLAG_NO_WHITEOUT))
+        // A cave loss ends the run and returns the player to the lobby. Handled here
+        // rather than by returning to the field, so a wiped party can never keep
+        // walking the room and re-trigger the same trainer's sight.
+        if (InfCave_InGeneratedRoom() && !gSaveBlock1Ptr->nuzlockeModeEnabled)
+        {
+            SetMainCallback2(CB2_InfCaveRunFailed);
+        }
+        else if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InTrainerHillChallenge() || FlagGet(B_FLAG_NO_WHITEOUT))
             SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
         else
+        {
+            // A Nuzlocke loss keeps the white-out, which leaves the cave behind; close
+            // the run out so the player is not still descending on the way back.
+            if (InfCave_InGeneratedRoom())
+                InfCave_EndRun(INFCAVE_END_DEFEAT);
             SetMainCallback2(CB2_WhiteOut);
+        }
     }
     else
     {

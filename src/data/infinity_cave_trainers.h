@@ -102,22 +102,27 @@ static const u8 sInfCaveTierMinDepth[INFCAVE_TIER_COUNT] =
 // Per-room-type opponent shape. tierOffset shifts the depth's tier, so a
 // gauntlet's many trainers are individually weaker and an elite is stronger than
 // the depth alone would give. partySize 0 means the room rolls no trainers.
+// minCount/maxCount are how many trainers the room places before
+// INFCAVE_MOD_SWARM; the total is clamped to INFCAVE_MAX_TRAINERS, which the
+// widest case (a swarming gauntlet) reaches exactly.
 struct InfCaveTrainerSpec
 {
     u8 partySize;
     s8 tierOffset;
+    u8 minCount;
+    u8 maxCount;
     u64 aiFlags;
 };
 
 static const struct InfCaveTrainerSpec sInfCaveTrainerSpec[INFCAVE_ROOM_COUNT] =
 {
-    [INFCAVE_ROOM_BATTLE]   = { .partySize = 3, .tierOffset =  0, .aiFlags = AI_FLAG_SMART_TRAINER },
-    [INFCAVE_ROOM_GAUNTLET] = { .partySize = 2, .tierOffset = -1, .aiFlags = AI_FLAG_SMART_TRAINER },
-    [INFCAVE_ROOM_ELITE]    = { .partySize = 6, .tierOffset =  1, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
-    [INFCAVE_ROOM_BOSS]     = { .partySize = 6, .tierOffset =  1, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
-    [INFCAVE_ROOM_REST]     = { .partySize = 0, .tierOffset =  0, .aiFlags = 0 },
-    [INFCAVE_ROOM_TREASURE] = { .partySize = 0, .tierOffset =  0, .aiFlags = 0 },
-    [INFCAVE_ROOM_SHOP]     = { .partySize = 0, .tierOffset =  0, .aiFlags = 0 },
+    [INFCAVE_ROOM_BATTLE]   = { .partySize = 3, .tierOffset =  0, .minCount = 2, .maxCount = 3, .aiFlags = AI_FLAG_SMART_TRAINER },
+    [INFCAVE_ROOM_GAUNTLET] = { .partySize = 2, .tierOffset = -1, .minCount = 4, .maxCount = 6, .aiFlags = AI_FLAG_SMART_TRAINER },
+    [INFCAVE_ROOM_ELITE]    = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
+    [INFCAVE_ROOM_BOSS]     = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
+    [INFCAVE_ROOM_REST]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .aiFlags = 0 },
+    [INFCAVE_ROOM_TREASURE] = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .aiFlags = 0 },
+    [INFCAVE_ROOM_SHOP]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .aiFlags = 0 },
 };
 
 #endif // GUARD_DATA_INFINITY_CAVE_TRAINERS_H

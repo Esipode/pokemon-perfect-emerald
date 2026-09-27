@@ -437,6 +437,7 @@ extern const u8 Debug_ShowExpansionVersion[];
 extern const u8 Debug_EventScript_EWRAMCounters[];
 extern const u8 Debug_EventScript_HeapStats[];
 extern const u8 Debug_EventScript_InfCaveMaskCheck[];
+extern const u8 Debug_EventScript_InfCavePlacementCheck[];
 extern const u8 Debug_EventScript_InfCaveEnterRoom[];
 extern const u8 Debug_EventScript_InfCaveTestBattle[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
@@ -697,6 +698,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("Force Draft (map)…"),        DebugAction_Util_ForceDraft },
     { COMPOUND_STRING("Heap Peak Usage…"),          DebugAction_ExecuteScript, Debug_EventScript_HeapStats },
     { COMPOUND_STRING("InfCave Mask Check…"),      DebugAction_ExecuteScript, Debug_EventScript_InfCaveMaskCheck },
+    { COMPOUND_STRING("InfCave NPC Check…"),        DebugAction_ExecuteScript, Debug_EventScript_InfCavePlacementCheck },
     { COMPOUND_STRING("InfCave Room Type…"),        DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveRoom },
     { COMPOUND_STRING("InfCave Modifier…"),         DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveModifier },
     { COMPOUND_STRING("InfCave Test Battle"),       DebugAction_ExecuteScript, Debug_EventScript_InfCaveTestBattle },
@@ -5499,5 +5501,18 @@ void CheckInfCaveMaskLegality(struct ScriptContext *ctx)
 
     ConvertIntToDecimalStringN(gStringVar1, failures, STR_CONV_MODE_LEFT_ALIGN, 3);
     StringCopy(gStringVar2, InfCave_GetMaskFaultName(fault));
+    ConvertIntToDecimalStringN(gStringVar3, badSeed, STR_CONV_MODE_LEFT_ALIGN, 10);
+}
+
+// Runs the placement rules over the same block of seeds with the trainer count
+// pinned to the worst case the room budget allows, which is what the connectivity
+// rules have to hold under.
+void CheckInfCavePlacementLegality(struct ScriptContext *ctx)
+{
+    u32 badSeed = 0, fault = 0;
+    u32 failures = InfCave_DebugValidatePlacement(1, DEBUG_INFCAVE_MASK_SEEDS, INFCAVE_MAX_TRAINERS, &badSeed, &fault);
+
+    ConvertIntToDecimalStringN(gStringVar1, failures, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringCopy(gStringVar2, InfCave_GetPlacementFaultName(fault));
     ConvertIntToDecimalStringN(gStringVar3, badSeed, STR_CONV_MODE_LEFT_ALIGN, 10);
 }

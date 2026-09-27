@@ -177,6 +177,9 @@ void CB2_Overworld(void);
 void SetMainCallback1(void (*cb)(void));
 void CB2_NewGame(void);
 void CB2_WhiteOut(void);
+// Infinity Cave defeat: heals the party, closes the run and returns the player to the
+// cave lobby instead of white-ing out. See CB2_EndTrainerBattle.
+void CB2_InfCaveRunFailed(void);
 void CB2_LoadMap(void);
 void CB2_ReturnToFieldContestHall(void);
 void CB2_ReturnToFieldCableClub(void);

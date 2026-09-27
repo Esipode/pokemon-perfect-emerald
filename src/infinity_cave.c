@@ -29,6 +29,7 @@ void InfCave_StartRun(void)
     struct InfinityCaveRun *run = Run();
 
     memset(run, 0, sizeof(*run));
+    InfCave_ClearTrainers();
     run->runSeed = Random32();
     run->active = TRUE;
     run->depth = 0;
@@ -40,6 +41,7 @@ void InfCave_EndRun(enum InfCaveEndReason reason)
     // reason is what the caller already acted on (payout, warp, messaging); the
     // run struct keeps no history of it.
     (void)reason;
+    InfCave_ClearTrainers();
     memset(Run(), 0, sizeof(struct InfinityCaveRun));
 }
 
@@ -84,6 +86,12 @@ void InfCave_ValidateRoom(void)
 void InfCave_AdvanceDepth(void)
 {
     struct InfinityCaveRun *run = Run();
+
+    // The next room rolls its own opponents into the same slots, so the stub ids'
+    // defeat flags have to go with the depth the player just left. Clearing them
+    // here rather than in the generator keeps a reload inside a room from
+    // resurrecting the trainers already beaten in it.
+    InfCave_ClearTrainers();
 
     run->depth++;
     // Derived from runSeed and depth alone, so the room is identical no matter

@@ -78,6 +78,32 @@ u32 InfCave_DebugValidateMask(u32 baseSeed, u32 count, u32 *firstBadSeed, u32 *f
 // Name of a fault id reported by InfCave_DebugValidateMask.
 const u8 *InfCave_GetMaskFaultName(u32 fault);
 
+// Object event templates the generated room owns, the exit crystal included. The
+// room map's header describes the crystal alone, so the spawner reads this
+// instead of gMapHeader.events->objectEventCount.
+u32 InfCave_GetObjectCount(void);
+
+// Trainers the placement pass actually stood in the current room, which can be
+// fewer than the roll asked for when no legal tile was left.
+u32 InfCave_GetRoomTrainerCount(void);
+
+// TRUE on the generated room map, where the object count above applies.
+bool32 InfCave_InGeneratedRoom(void);
+
+// Reassigns the generated objects' scripts on the continue-from-save path, where
+// LoadSaveblockObjEventScripts cannot be used: it reads one script per template
+// slot out of the map header, which holds only the crystal.
+void LoadInfinityCaveObjectEventScripts(void);
+
+// Legality harness for the placement rules. Generates count rooms from baseSeed
+// with the trainer count pinned to trainers, and returns how many broke a rule;
+// the first failure's seed and fault id land in firstBadSeed and firstFault,
+// either of which may be NULL. Restores the live room's seed.
+u32 InfCave_DebugValidatePlacement(u32 baseSeed, u32 count, u32 trainers, u32 *firstBadSeed, u32 *firstFault);
+
+// Name of a fault id reported by InfCave_DebugValidatePlacement.
+const u8 *InfCave_GetPlacementFaultName(u32 fault);
+
 // src/infinity_cave_trainers.c. One runtime struct Trainer per room trainer slot,
 // swapped in for the stub ids TRAINER_INFCAVE_0..7 while gInfCaveBattleActive is
 // set (redirect in GetTrainerStructFromId, data.h). Nothing here is saved: a
@@ -121,6 +147,10 @@ u16 InfCave_BuildTrainer(u32 slot);
 // depth bonus, plus INFCAVE_MOD_SURGE. Read by CreateNPCTrainerPartyFromTrainer
 // while gInfCaveBattleActive is set.
 u32 InfCave_GetBattleLevel(void);
+
+// Trainers the current room places: the room type's rolled count plus
+// INFCAVE_MOD_SWARM, clamped to INFCAVE_MAX_TRAINERS. Deterministic per room seed.
+u32 InfCave_RollTrainerCount(void);
 
 // Depth tier the slot behind trainer rolled on, 0 for anything that is not a
 // cave trainer slot.

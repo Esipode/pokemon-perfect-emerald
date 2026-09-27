@@ -22,6 +22,10 @@
 // always produces the same opponents after a reload.
 #define INFCAVE_SALT_TRNR 0x54524E52u // 'TRNR'
 
+// Trainer count draws its own stream, so the count a room rolls does not move
+// when a slot's identity roll changes.
+#define INFCAVE_SALT_TCNT 0x54434E54u // 'TCNT'
+
 // One runtime opponent per room trainer slot. The stub ids TRAINER_INFCAVE_0..7
 // carry no data of their own: GetTrainerStructFromId redirects them here while
 // gInfCaveBattleActive is set. Nothing is saved, because a reload rebuilds the
@@ -130,6 +134,33 @@ u32 InfCave_GetBattleLevel(void)
         level = MAX_LEVEL;
 
     return level;
+}
+
+// How many trainers the current room places: the room type's rolled count plus
+// INFCAVE_MOD_SWARM, clamped to the stub ids that exist. Deterministic off the
+// room seed, so the placer and the room's scripts agree after a reload.
+u32 InfCave_RollTrainerCount(void)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_TCNT);
+    u32 roomType = InfCave_GetRoomType();
+    const struct InfCaveTrainerSpec *spec;
+    u32 count;
+
+    if (roomType >= INFCAVE_ROOM_COUNT)
+        return 0;
+
+    spec = &sInfCaveTrainerSpec[roomType];
+    if (spec->maxCount == 0)
+        return 0;
+
+    count = InfCave_RandRange(&rng, spec->minCount, spec->maxCount);
+    if (InfCave_HasModifier(INFCAVE_MOD_SWARM))
+        count += INFCAVE_SWARM_TRAINERS;
+
+    if (count > INFCAVE_MAX_TRAINERS)
+        count = INFCAVE_MAX_TRAINERS;
+
+    return count;
 }
 
 // Tier a built slot rolled on, found from the slot the trainer pointer addresses.

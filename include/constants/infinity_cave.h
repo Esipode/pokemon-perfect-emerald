@@ -233,6 +233,10 @@ enum InfCaveTileRole
 // generation only moves it.
 #define INFCAVE_LOCALID_EXIT        1
 
+// Local id of the first generated trainer. Templates are written in local id
+// order from index 0, so the crystal owns index 0 and slot n owns index n + 1.
+#define INFCAVE_LOCALID_TRAINER_0   2
+
 // Set to TRUE to log an ASCII picture of each generated mask over the debug
 // print handler. Off in shipped builds; generation cost is otherwise unchanged.
 #define INFCAVE_TRACE               FALSE
@@ -241,6 +245,10 @@ enum InfCaveTileRole
 // (TRAINER_INFCAVE_0..7). Matches the worst case: a gauntlet's 6 trainers plus
 // INFCAVE_MOD_SWARM's +2. Trainer flag space allows no more ids than this.
 #define INFCAVE_MAX_TRAINERS        8
+
+// Trainers INFCAVE_MOD_SWARM adds over the room type's rolled count, matching
+// the modifier's stated +2.
+#define INFCAVE_SWARM_TRAINERS      2
 
 // Opponent level: the player's progression level cap plus a depth-derived
 // bonus, so a deep run out-levels a shallow one without ever needing a party the
@@ -257,5 +265,18 @@ enum InfCaveTileRole
 // Object event templates the generator may write per room. Leaves room for the
 // player and a follower inside OBJECT_EVENTS_COUNT.
 #define INFCAVE_MAX_OBJECTS         12
+
+// Trainer placement. Candidate tiles are drawn from the carved rooms only, never
+// from a corridor, so an NPC never stands where the player has no way around it.
+#define INFCAVE_NPC_ROOM_MIN_SIDE   3  // a room region narrower than this hosts nobody
+#define INFCAVE_NPC_MIN_APART       4  // Chebyshev tiles between two trainers
+#define INFCAVE_NPC_FROM_ENTRANCE   6  // Chebyshev tiles kept clear of the arrival pad
+#define INFCAVE_NPC_SIGHT           4  // tiles a placed trainer sees ahead
+#define INFCAVE_NPC_TRIES_PER_SLOT  24 // candidate tiles rolled before a slot is skipped
+
+// Connectivity tests the placement pass may run. Each is one flood fill over the
+// room, so the budget is what bounds the pass's cost; the cheap per-tile
+// chokepoint test rejects almost every bad candidate before one is spent.
+#define INFCAVE_NPC_CONNECT_CHECKS  24
 
 #endif // GUARD_CONSTANTS_INFINITY_CAVE_H
