@@ -65,6 +65,8 @@ static EWRAM_DATA u8 sRoomCount = 0;
 // Distinct RNG streams within one room, so adding a consumer cannot shift the
 // numbers an existing pass draws.
 #define INFCAVE_SALT_MASK 0x4D41534Bu // 'MASK'
+#define INFCAVE_SALT_TILE 0x54494C45u // 'TILE'
+#define INFCAVE_SALT_EXIT 0x45584954u // 'EXIT'
 
 // Copies the key layout's block words into sTileRole. The layout is ROM data,
 // so this is a straight copy; reloading it every room keeps a Porymap edit
@@ -574,12 +576,12 @@ static bool32 OpenThinWallRuns(void)
 }
 
 // Repair sweeps run to a fixed point: each sweep adds floor, which can expose a
-// fresh diagonal or thin run one tile further out.
+// fresh diagonal or thin run one tile further out. Both sweeps only ever turn
+// wall into floor, so this can be re-run over a finished mask without undoing
+// anything a later pass carved.
 static void EnforceLegality(rng_value_t *rng)
 {
     u32 pass;
-
-    ClearMarginFloor();
 
     for (pass = 0; pass < INFCAVE_LEGALITY_PASSES; pass++)
     {
@@ -789,6 +791,7 @@ static u32 TryBuildMask(u32 attempt)
     CarveCorridors(&rng);
     SmoothMask();
     PruneToLargestComponent();
+    ClearMarginFloor();
     EnforceLegality(&rng);
 
     return MaskLegalityFault();
@@ -818,6 +821,16 @@ static void BuildMask(void)
         BuildEmergencyMask();
 
     CarveTempExitAccess();
+
+    // The corridor cuts through walls the legality pass already signed off, so
+    // it can leave a one-tile wall run beside itself. Repairing again fixes
+    // those without ClearMarginFloor, which would delete the corridor.
+    {
+        rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_EXIT);
+
+        EnforceLegality(&rng);
+    }
+
     BuildWallShell();
 
 #if INFCAVE_TRACE == TRUE
@@ -884,10 +897,80 @@ const u8 *InfCave_GetMaskFaultName(u32 fault)
     return sMaskFaultNames[fault];
 }
 
+// Wall shape for a non-floor cell. The mask legality rules forbid a wall with
+// floor on two opposite sides, so the only cardinal combinations left are none,
+// one side, or two perpendicular sides; that is what collapses the 256
+// eight-neighbour cases onto the authored shape set. A cell with no cardinal
+// floor but floor on one diagonal is a concave corner.
+static u32 WallRoleForCell(s32 x, s32 y)
+{
+    bool32 n = IsFloorSafe(x, y - 1);
+    bool32 s = IsFloorSafe(x, y + 1);
+    bool32 w = IsFloorSafe(x - 1, y);
+    bool32 e = IsFloorSafe(x + 1, y);
+
+    if (s && w)
+        return INFCAVE_ROLE_WALL_SW;
+    if (s && e)
+        return INFCAVE_ROLE_WALL_SE;
+    if (n && w)
+        return INFCAVE_ROLE_WALL_NW;
+    if (n && e)
+        return INFCAVE_ROLE_WALL_NE;
+    if (n)
+        return INFCAVE_ROLE_WALL_N;
+    if (s)
+        return INFCAVE_ROLE_WALL_S;
+    if (w)
+        return INFCAVE_ROLE_WALL_W;
+    if (e)
+        return INFCAVE_ROLE_WALL_E;
+
+    if (IsFloorSafe(x - 1, y - 1))
+        return INFCAVE_ROLE_WALL_INNER_NW;
+    if (IsFloorSafe(x + 1, y - 1))
+        return INFCAVE_ROLE_WALL_INNER_NE;
+    if (IsFloorSafe(x - 1, y + 1))
+        return INFCAVE_ROLE_WALL_INNER_SW;
+    if (IsFloorSafe(x + 1, y + 1))
+        return INFCAVE_ROLE_WALL_INNER_SE;
+
+    return INFCAVE_ROLE_WALL_FILL;
+}
+
+static u32 RollFloorRole(rng_value_t *rng)
+{
+    if (InfCave_RandRange(rng, 0, 99) < INFCAVE_FLOOR_PLAIN_PERCENT)
+        return INFCAVE_ROLE_FLOOR_0;
+
+    return INFCAVE_ROLE_FLOOR_1 + InfCave_RandRange(rng, 0, INFCAVE_FLOOR_VARIANT_COUNT - 2);
+}
+
+// Renders the finished mask into the backup layout at the MAP_OFFSET origin, the
+// same offset arithmetic GenerateBattlePyramidFloorLayout uses. Two passes: the
+// first gives every cell its shape, the second makes the south face two tiles
+// tall, which is how the cave tileset draws it. The upper row is only written
+// where the cell's own shape would have been plain fill, so the wall shapes that
+// already answer a neighbouring floor tile survive.
+static void AutotileRoom(u16 *origin, u32 stride)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_TILE);
+    u32 x, y;
+
+    for (y = 0; y < INFCAVE_MAP_HEIGHT; y++)
+    {
+        for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
+        {
+            u32 role = IsFloor(x, y) ? RollFloorRole(&rng) : WallRoleForCell(x, y);
+
+            origin[y * stride + x] = sTileRole[role];
+        }
+    }
+}
+
 void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
 {
-    u32 x, y;
-    u16 *map;
+    u16 *origin;
 
     InfCave_LoadTileRoles();
     BuildMask();
@@ -896,22 +979,11 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     gBackupMapLayout.width = INFCAVE_MAP_WIDTH + MAP_OFFSET_W;
     gBackupMapLayout.height = INFCAVE_MAP_HEIGHT + MAP_OFFSET_H;
 
-    map = backupMapData + gBackupMapLayout.width * MAP_OFFSET + MAP_OFFSET;
-    for (y = 0; y < INFCAVE_MAP_HEIGHT; y++)
-    {
-        for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
-        {
-            // Stage 7 replaces this with the autotiler; until then void and
-            // wall both render as fill and floor takes the plain variant.
-            bool32 isFloor = CellKind(x, y) == INFCAVE_CELL_FLOOR;
+    origin = backupMapData + gBackupMapLayout.width * MAP_OFFSET + MAP_OFFSET;
+    AutotileRoom(origin, gBackupMapLayout.width);
 
-            map[x] = sTileRole[isFloor ? INFCAVE_ROLE_FLOOR_0 : INFCAVE_ROLE_WALL_FILL];
-        }
-        map += gBackupMapLayout.width;
-    }
-
-    backupMapData[gBackupMapLayout.width * (MAP_OFFSET + INFCAVE_TEMP_EXIT_Y)
-                + MAP_OFFSET + INFCAVE_TEMP_EXIT_X] = sTileRole[INFCAVE_ROLE_PAD_EXIT];
+    origin[gBackupMapLayout.width * INFCAVE_TEMP_EXIT_Y + INFCAVE_TEMP_EXIT_X]
+        = sTileRole[INFCAVE_ROLE_PAD_EXIT];
 
     // setPlayerPosition mirrors the Battle Pyramid's inverted sense: TRUE means
     // the position is already restored from the save and must be kept.

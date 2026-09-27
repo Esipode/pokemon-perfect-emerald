@@ -106,6 +106,7 @@ enum InfCaveCell
 
 // Floor variants rolled per tile by the autotiler. Variant 0 dominates.
 #define INFCAVE_FLOOR_VARIANT_COUNT 8
+#define INFCAVE_FLOOR_PLAIN_PERCENT 85 // share of floor tiles kept on variant 0
 
 // Wall role names state which side the floor is on, not which corner of the art
 // they draw: INFCAVE_ROLE_WALL_N is a wall with floor to its north. The INNER
@@ -137,9 +138,9 @@ enum InfCaveTileRole
     INFCAVE_ROLE_WALL_INNER_SW,
     INFCAVE_ROLE_WALL_INNER_SE,
 
-    // Row 2 - south-face pieces. gTileset_Cave draws the face a single metatile
-    // tall, so these currently duplicate the row 1 south edge; they exist so a
-    // retheme with a two-tall face has somewhere to put the second row.
+    // Row 2 - terrace step art for a wall band that reads as two stacked ledges
+    // instead of one. gTileset_Cave draws every rim one metatile deep, so the
+    // autotiler emits none of these; they exist for the Stage 9 set pieces.
     INFCAVE_ROLE_FACE_L = INFCAVE_TILEKEY_CELL(2, 0),
     INFCAVE_ROLE_FACE_M,
     INFCAVE_ROLE_FACE_R,
