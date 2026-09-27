@@ -285,6 +285,11 @@ enum InfCaveTileRole
 // The room's ladder stays sealed until it is beaten, so the arena cannot be
 // skipped.
 
+// Depth tint. The generated room's palettes are hue-rotated further on every
+// floor: depth * this share of the full hue circle. 2% puts a full turn at
+// depth 50, so consecutive floors differ without any single step jarring.
+#define INFCAVE_HUE_PERCENT_PER_DEPTH 2
+
 // Connectivity tests the placement pass may run. Each is one flood fill over the
 // room, so the budget is what bounds the pass's cost; the cheap per-tile
 // chokepoint test rejects almost every bad candidate before one is spent.

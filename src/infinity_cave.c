@@ -2,10 +2,12 @@
 #include "infinity_cave.h"
 #include "battle_setup.h"
 #include "event_data.h"
+#include "overworld_overlay.h"
 #include "random.h"
 #include "config/battle.h"
 #include "constants/flags.h"
 #include "constants/opponents.h"
+#include "constants/overworld_overlay.h"
 #include "constants/vars.h"
 
 static struct InfinityCaveRun *Run(void)
@@ -125,6 +127,30 @@ void InfCave_AdvanceDepth(void)
     InfCave_SetRoom((run->depth % INFCAVE_BOSS_INTERVAL) == 0 ? INFCAVE_ROOM_BOSS
                                                              : INFCAVE_ROOM_BATTLE,
                     NULL, NULL);
+}
+
+// Depth tint. Each floor rotates the cave's hue another
+// INFCAVE_HUE_PERCENT_PER_DEPTH of the circle, so a deep run reads as a
+// different place than a shallow one. The overlay is OVERLAY_LAYER_WORLD, so it
+// moves the map tiles only; NPCs, the player and the UI keep their own colours.
+// Called from the room generator, which both the warp and the reload path reach
+// after Overlay_ResetAll has cleared the previous floor's overlay.
+void InfCave_ApplyDepthHue(void)
+{
+    struct OverlayConfig config = {0};
+    u32 hue = (InfCave_GetDepth() * OVERLAY_HUE_FULL_TURN * INFCAVE_HUE_PERCENT_PER_DEPTH) / 100;
+
+    // The angle is a full u8 turn, so the shift wraps rather than saturating.
+    hue &= OVERLAY_HUE_FULL_TURN - 1;
+    if (hue == 0)
+        return; // depth 0, and every wrap back to it, needs no overlay
+
+    config.color = hue;
+    config.opacity = OVERLAY_OPACITY_MAX;
+    config.layer = OVERLAY_LAYER_WORLD;
+    config.scope = OVERLAY_SCOPE_MAP_LOCAL;
+    config.effect = OVERLAY_EFFECT_HUE_SHIFT;
+    Overlay_Create(&config);
 }
 
 void InfCave_SetRoom(u32 roomType, const u8 *modifiers, const u8 *modifierArgs)

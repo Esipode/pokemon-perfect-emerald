@@ -75,6 +75,11 @@ u32 InfCave_RandRange(rng_value_t *rng, u32 lo, u32 hi);
 // unless the position came back from a save, places the player.
 void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition);
 
+// Creates the current depth's hue-shift overlay over the map tiles. Called by
+// InfCave_GenerateRoom; the previous floor's overlay is already gone, since the
+// descent is a warp.
+void InfCave_ApplyDepthHue(void);
+
 // Reads LAYOUT_INFINITY_CAVE_TILEKEY into the role table. Called by
 // InfCave_GenerateRoom; exposed for set-piece and decoration passes.
 void InfCave_LoadTileRoles(void);

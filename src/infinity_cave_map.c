@@ -2597,6 +2597,8 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     // armed for every room the player can stand in.
     InfCave_ArmNoWhiteout();
 
+    InfCave_ApplyDepthHue();
+
     // setPlayerPosition mirrors the Battle Pyramid's inverted sense: TRUE means
     // the position is already restored from the save and must be kept.
     if (setPlayerPosition == FALSE)
