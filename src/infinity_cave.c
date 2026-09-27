@@ -41,6 +41,11 @@ void InfCave_EndRun(enum InfCaveEndReason reason)
     memset(Run(), 0, sizeof(struct InfinityCaveRun));
 }
 
+void InfCave_EndRunQuit(void)
+{
+    InfCave_EndRun(INFCAVE_END_QUIT);
+}
+
 void InfCave_AdvanceDepth(void)
 {
     struct InfinityCaveRun *run = Run();

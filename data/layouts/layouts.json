@@ -9152,6 +9152,28 @@
       "secondary_tileset": "gTileset_Cave",
       "border_filepath": "data/layouts/VictoryRoad_RegiCave/border.bin",
       "blockdata_filepath": "data/layouts/VictoryRoad_RegiCave/map.bin"
+    },
+    {
+      "id": "LAYOUT_INFINITY_CAVE_ENTRANCE",
+      "name": "InfinityCave_Entrance_Layout",
+      "width": 18,
+      "height": 12,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/InfinityCave_Entrance/border.bin",
+      "blockdata_filepath": "data/layouts/InfinityCave_Entrance/map.bin",
+      "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_INFINITY_CAVE_ROOM",
+      "name": "InfinityCave_Room_Layout",
+      "width": 40,
+      "height": 40,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/InfinityCave_Room/border.bin",
+      "blockdata_filepath": "data/layouts/InfinityCave_Room/map.bin",
+      "layout_version": "emerald"
     }
   ]
 }

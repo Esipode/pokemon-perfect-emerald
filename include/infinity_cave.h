@@ -22,6 +22,10 @@ void InfCave_StartRun(void);
 // this zeroes the shard count.
 void InfCave_EndRun(enum InfCaveEndReason reason);
 
+// Script-facing wrapper for INFCAVE_END_QUIT. The lobby calls this on entry, so
+// walking back out of the cave always closes the descent.
+void InfCave_EndRunQuit(void);
+
 // Advances depth and derives the new room's seed from runSeed and the new
 // depth, so a room's contents never depend on which nodes were taken.
 void InfCave_AdvanceDepth(void);

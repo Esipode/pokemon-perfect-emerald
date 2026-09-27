@@ -608,3 +608,6 @@ gSpecials::
 	def_special BufferEvResetCost
 	def_special ResetPartyMonEvs
 	def_special CanTornadusWindPushStep
+	def_special InfCave_StartRun
+	def_special InfCave_AdvanceDepth
+	def_special InfCave_EndRunQuit

@@ -1,6 +1,11 @@
 EverGrandeCity_MapScripts::
+	map_script MAP_SCRIPT_ON_RESUME, EverGrandeCity_OnResume
 	map_script MAP_SCRIPT_ON_TRANSITION, EverGrandeCity_OnTransition
 	.byte 0
+
+EverGrandeCity_OnResume:
+	call_if_set FLAG_SYS_GAME_CLEAR, InfinityCave_EventScript_OpenEntrance
+	end
 
 EverGrandeCity_OnTransition:
 	call_if_set FLAG_SYS_WEATHER_CTRL, Common_EventScript_SetAbnormalWeather

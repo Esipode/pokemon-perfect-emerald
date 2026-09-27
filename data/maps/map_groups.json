@@ -479,7 +479,9 @@
     "AlteringCave",
     "MeteorFalls_StevensCave",
     "ShoalCave_LowTideIceRoom_Articuno",
-    "MeteorFalls_RegiCave"
+    "MeteorFalls_RegiCave",
+    "InfinityCave_Entrance",
+    "InfinityCave_Room"
   ],
   "gMapGroup_IndoorDynamic": [
     "BattleColosseum_2P",
