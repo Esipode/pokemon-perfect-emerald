@@ -3,7 +3,6 @@
   "name": "InfinityCave_TileKey",
   "layout": "LAYOUT_INFINITY_CAVE_TILEKEY",
   "music": "MUS_NONE",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_DYNAMIC",
   "requires_flash": false,
   "weather": "WEATHER_NONE",
@@ -17,5 +16,6 @@
   "object_events": [],
   "warp_events": [],
   "coord_events": [],
-  "bg_events": []
+  "bg_events": [],
+  "region": "REGION_HOENN"
 }

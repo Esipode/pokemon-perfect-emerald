@@ -108,6 +108,43 @@ enum InfCaveCell
 #define INFCAVE_FLOOR_VARIANT_COUNT 8
 #define INFCAVE_FLOOR_PLAIN_PERCENT 85 // share of floor tiles kept on variant 0
 
+// Decoration pass. Prop count is a share of the room's walkable tiles, rising
+// with depth so deep rooms read as more choked, and hard-capped so a large room
+// cannot cost an unbounded number of placement attempts.
+#define INFCAVE_DECOR_PERCENT_BASE  5
+#define INFCAVE_DECOR_PERCENT_MAX   12
+#define INFCAVE_DECOR_DEPTH_PER_STEP 4  // depths per +1% density
+#define INFCAVE_DECOR_MAX_PROPS     96
+#define INFCAVE_DECOR_TRIES_PER_PROP 8
+#define INFCAVE_DECOR_MAX_DISTANCE  4   // largest minDistance in sInfCaveDecor
+
+// Terrain patch pass. Patches are rectangles of a second ground material laid
+// over the floor, so a large room is not one flat expanse of cave floor. They
+// are rectangles because the cave tileset draws no concave corner for either
+// material; a blob would need art that does not exist.
+#define INFCAVE_PATCH_MAX_COUNT     4
+#define INFCAVE_PATCH_MIN_W         3 // a smaller rectangle is all edge, no fill
+#define INFCAVE_PATCH_MAX_W         6
+#define INFCAVE_PATCH_MIN_H         3
+#define INFCAVE_PATCH_MAX_H         5
+#define INFCAVE_PATCH_TRIES         64
+
+// Cell position inside a patch rectangle. The order matches the key layout
+// columns, so a patch's nine blocks are one contiguous run of roles.
+enum InfCavePatchShape
+{
+    INFCAVE_PATCH_NW,
+    INFCAVE_PATCH_N,
+    INFCAVE_PATCH_NE,
+    INFCAVE_PATCH_W,
+    INFCAVE_PATCH_FILL,
+    INFCAVE_PATCH_E,
+    INFCAVE_PATCH_SW,
+    INFCAVE_PATCH_S,
+    INFCAVE_PATCH_SE,
+    INFCAVE_PATCH_SHAPE_COUNT,
+};
+
 // Wall role names state which side the floor is on, not which corner of the art
 // they draw: INFCAVE_ROLE_WALL_N is a wall with floor to its north. The INNER
 // roles are the concave corners, where floor touches only that diagonal.
@@ -154,7 +191,6 @@ enum InfCaveTileRole
     INFCAVE_ROLE_DECOR_RUBBLE,
     INFCAVE_ROLE_DECOR_CRYSTAL,
     INFCAVE_ROLE_DECOR_BONES,
-    INFCAVE_ROLE_DECOR_PUDDLE,
 
     // Row 4 - set-piece anchors.
     INFCAVE_ROLE_PAD_ENTRANCE = INFCAVE_TILEKEY_CELL(4, 0),
@@ -163,7 +199,30 @@ enum InfCaveTileRole
     INFCAVE_ROLE_PAD_ITEM_BALL,
     INFCAVE_ROLE_PAD_SHOP,
 
-    // Rows 5-7 are spare.
+    // Rows 5-6 - terrain patches, in enum InfCavePatchShape order. The water
+    // row's south side is the shore block the tileset draws on the tile below a
+    // pool, which is why it is not water art.
+    INFCAVE_ROLE_SAND_NW = INFCAVE_TILEKEY_CELL(5, 0),
+    INFCAVE_ROLE_SAND_N,
+    INFCAVE_ROLE_SAND_NE,
+    INFCAVE_ROLE_SAND_W,
+    INFCAVE_ROLE_SAND_FILL,
+    INFCAVE_ROLE_SAND_E,
+    INFCAVE_ROLE_SAND_SW,
+    INFCAVE_ROLE_SAND_S,
+    INFCAVE_ROLE_SAND_SE,
+
+    INFCAVE_ROLE_WATER_NW = INFCAVE_TILEKEY_CELL(6, 0),
+    INFCAVE_ROLE_WATER_N,
+    INFCAVE_ROLE_WATER_NE,
+    INFCAVE_ROLE_WATER_W,
+    INFCAVE_ROLE_WATER_FILL,
+    INFCAVE_ROLE_WATER_E,
+    INFCAVE_ROLE_WATER_SW,
+    INFCAVE_ROLE_WATER_S,
+    INFCAVE_ROLE_WATER_SE,
+
+    // Row 7 is spare.
 };
 
 // Set to TRUE to log an ASCII picture of each generated mask over the debug

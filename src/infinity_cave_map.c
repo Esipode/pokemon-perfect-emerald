@@ -5,6 +5,7 @@
 #include "script.h"
 #include "constants/infinity_cave.h"
 #include "constants/layouts.h"
+#include "data/infinity_cave.h"
 
 // Room generation. The room map's ROM layout is never used: every entry
 // rewrites sBackupMapData in place, so one static map hosts every room of a
@@ -25,8 +26,10 @@ static const u8 sRequiredRoles[][2] =
     { INFCAVE_ROLE_FLOOR_0,          INFCAVE_ROLE_FLOOR_7 + 1 },
     { INFCAVE_ROLE_WALL_NW,          INFCAVE_ROLE_WALL_INNER_SE + 1 },
     { INFCAVE_ROLE_FACE_L,           INFCAVE_ROLE_FACE_INNER_R + 1 },
-    { INFCAVE_ROLE_DECOR_ROCK_SMALL, INFCAVE_ROLE_DECOR_PUDDLE + 1 },
+    { INFCAVE_ROLE_DECOR_ROCK_SMALL, INFCAVE_ROLE_DECOR_BONES + 1 },
     { INFCAVE_ROLE_PAD_ENTRANCE,     INFCAVE_ROLE_PAD_SHOP + 1 },
+    { INFCAVE_ROLE_SAND_NW,          INFCAVE_ROLE_SAND_SE + 1 },
+    { INFCAVE_ROLE_WATER_NW,         INFCAVE_ROLE_WATER_SE + 1 },
 };
 
 // Temporary way out until Stage 10 places the exit crystal. Must match the
@@ -38,7 +41,10 @@ static const u8 sRequiredRoles[][2] =
 // tall, but the mask still needs a solid margin behind every face.
 #define INFCAVE_WALL_THICKNESS 2
 
-// Transient flags OR'd into a mask cell by the connectivity passes.
+// Flags OR'd into a mask cell alongside its kind. COMPONENT and KEEP are
+// transient, owned by the connectivity passes; NO_DECOR survives for the room's
+// lifetime and marks tiles a pad or an access corridor owns.
+#define INFCAVE_FLAG_NO_DECOR  0x20 // the decoration pass must leave this tile bare
 #define INFCAVE_FLAG_COMPONENT 0x40 // member of the component being measured
 #define INFCAVE_FLAG_KEEP      0x80 // member of the component that survives
 #define INFCAVE_CELL_KIND_MASK 0x0F
@@ -62,11 +68,25 @@ static EWRAM_DATA u8 sMask[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
 static EWRAM_DATA struct InfCaveRoomRect sRooms[INFCAVE_MAX_ROOMS] = {0};
 static EWRAM_DATA u8 sRoomCount = 0;
 
+// Props placed on the mask's floor, as one plus an index into sInfCaveDecor so
+// zero means an empty tile. The decoration pass leaves the mask itself
+// untouched, so the autotiler still sees every prop tile as floor and tiles the
+// walls around it normally; the prop's own block is written over the floor block.
+static EWRAM_DATA u8 sDecor[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
+
+// Terrain patches, as one plus an index into sInfCavePatch. Like props these sit
+// beside the mask rather than in it, so the wall shapes around a patch are
+// unaffected; unlike props a patch cell's block depends on where the cell sits
+// in its rectangle, which the autotiler works out from the neighbouring cells.
+static EWRAM_DATA u8 sPatch[INFCAVE_MAP_HEIGHT][INFCAVE_MAP_WIDTH] = {0};
+
 // Distinct RNG streams within one room, so adding a consumer cannot shift the
 // numbers an existing pass draws.
 #define INFCAVE_SALT_MASK 0x4D41534Bu // 'MASK'
 #define INFCAVE_SALT_TILE 0x54494C45u // 'TILE'
 #define INFCAVE_SALT_EXIT 0x45584954u // 'EXIT'
+#define INFCAVE_SALT_DECO 0x4445434Fu // 'DECO'
+#define INFCAVE_SALT_PTCH 0x50544348u // 'PTCH'
 
 // Copies the key layout's block words into sTileRole. The layout is ROM data,
 // so this is a straight copy; reloading it every room keeps a Porymap edit
@@ -125,6 +145,8 @@ static bool32 IsFloor(u32 x, u32 y)
 static void ClearMask(void)
 {
     memset(sMask, INFCAVE_CELL_VOID, sizeof(sMask));
+    memset(sDecor, 0, sizeof(sDecor));
+    memset(sPatch, 0, sizeof(sPatch));
     memset(sRooms, 0, sizeof(sRooms));
     sRoomCount = 0;
 }
@@ -712,6 +734,7 @@ static void CarveTempExitAccess(void)
             if (IsFloor(x, y))
                 reached = TRUE;
             SetCell(x, y, INFCAVE_CELL_FLOOR);
+            sMask[y][x] |= INFCAVE_FLAG_NO_DECOR;
         }
 
         if (reached)
@@ -720,10 +743,19 @@ static void CarveTempExitAccess(void)
 
     // The column found no floor at all: cut one row straight across instead.
     for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MIN + INFCAVE_CORRIDOR_WIDTH; y++)
+    {
+        u32 x;
+
         CarveRect(INFCAVE_AREA_MIN, y, INFCAVE_AREA_MAX_X - INFCAVE_AREA_MIN, 1);
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+            sMask[y][x] |= INFCAVE_FLAG_NO_DECOR;
+    }
 }
 
-// Nearest floor tile to the canvas centre, searched outward in square rings.
+static bool32 IsWalkable(s32 x, s32 y);
+
+// Nearest tile to the canvas centre the player can stand on, searched outward in
+// square rings. Props are already placed, so a solid prop's tile is skipped.
 static void PlacePlayerOnFloor(void)
 {
     u32 cx = INFCAVE_MAP_WIDTH / 2;
@@ -744,7 +776,7 @@ static void PlacePlayerOnFloor(void)
                     continue;
                 if (x < 0 || x >= INFCAVE_MAP_WIDTH || y < 0 || y >= INFCAVE_MAP_HEIGHT)
                     continue;
-                if (!IsFloor(x, y))
+                if (!IsWalkable(x, y) || sDecor[y][x] != 0)
                     continue;
 
                 gSaveBlock1Ptr->pos.x = x;
@@ -897,6 +929,469 @@ const u8 *InfCave_GetMaskFaultName(u32 fault)
     return sMaskFaultNames[fault];
 }
 
+static bool32 IsSamePatch(s32 x, s32 y, u32 value)
+{
+    if (x < 0 || x >= INFCAVE_MAP_WIDTH || y < 0 || y >= INFCAVE_MAP_HEIGHT)
+        return FALSE;
+    return sPatch[y][x] == value;
+}
+
+// Which of the nine blocks a patch cell draws. Patches are rectangles, so a cell
+// is named by the sides that leave the rectangle and the opposite-side cases
+// cannot arise.
+static u32 PatchShapeAt(s32 x, s32 y)
+{
+    u32 value = sPatch[y][x];
+    bool32 n = IsSamePatch(x, y - 1, value);
+    bool32 s = IsSamePatch(x, y + 1, value);
+    bool32 w = IsSamePatch(x - 1, y, value);
+    bool32 e = IsSamePatch(x + 1, y, value);
+
+    if (!n && !w)
+        return INFCAVE_PATCH_NW;
+    if (!n && !e)
+        return INFCAVE_PATCH_NE;
+    if (!n)
+        return INFCAVE_PATCH_N;
+    if (!s && !w)
+        return INFCAVE_PATCH_SW;
+    if (!s && !e)
+        return INFCAVE_PATCH_SE;
+    if (!s)
+        return INFCAVE_PATCH_S;
+    if (!w)
+        return INFCAVE_PATCH_W;
+    if (!e)
+        return INFCAVE_PATCH_E;
+    return INFCAVE_PATCH_FILL;
+}
+
+static u32 PatchRoleAt(s32 x, s32 y)
+{
+    return sInfCavePatch[sPatch[y][x] - 1].baseRole + PatchShapeAt(x, y);
+}
+
+// A block a walking player cannot enter: either it collides, or it sits at
+// another elevation, which is what surfable water is. Every pass here plans for
+// a player on foot, so water counts as blocked even though Surf crosses it.
+static bool32 IsBlockOnFoot(u16 block)
+{
+    if ((block & MAPGRID_COLLISION_MASK) != 0)
+        return TRUE;
+    return (block & MAPGRID_ELEVATION_MASK) != (sTileRole[INFCAVE_ROLE_FLOOR_0] & MAPGRID_ELEVATION_MASK);
+}
+
+// Blocking is per cell, not per material: a pool's shore row is ground art the
+// player walks on even though the water beside it is not.
+static bool32 IsPatchCellBlocked(s32 x, s32 y)
+{
+    return IsBlockOnFoot(sTileRole[PatchRoleAt(x, y)]);
+}
+
+// Whether a material blocks a walking player at all, read from its fill block.
+// Only a blocking material can split the room, so only that one costs a walk.
+static bool32 IsPatchBlocking(u32 index)
+{
+    return IsBlockOnFoot(sTileRole[sInfCavePatch[index].baseRole + INFCAVE_PATCH_FILL]);
+}
+
+// Whether a prop blocks movement comes from the collision bits of its authored
+// block, not from the table, so the placer can never disagree with what the key
+// layout actually draws.
+static bool32 IsDecorSolid(u32 index)
+{
+    return IsBlockOnFoot(sTileRole[sInfCaveDecor[index].role]);
+}
+
+// A tile a walking player can stand on: carved floor with no water and no solid
+// prop on it.
+static bool32 IsWalkable(s32 x, s32 y)
+{
+    if (!IsFloorSafe(x, y))
+        return FALSE;
+    if (sPatch[y][x] != 0 && IsPatchCellBlocked(x, y))
+        return FALSE;
+    if (sDecor[y][x] == 0)
+        return TRUE;
+    return !IsDecorSolid(sDecor[y][x] - 1);
+}
+
+// Ring order around a tile, clockwise from north. Used by the chokepoint test,
+// which needs the neighbours in adjacency order rather than as a raw 3x3 block.
+static const s8 sRingOffsets[8][2] =
+{
+    { 0, -1 }, { 1, -1 }, { 1, 0 }, { 1, 1 }, { 0, 1 }, { -1, 1 }, { -1, 0 }, { -1, -1 },
+};
+
+// TRUE when the walkable tiles around (x, y) form more than one run, i.e.
+// blocking this tile would cut the local paths apart. Solid props already down
+// count as blocked. The legality pass removed diagonal-only links, so counting
+// runs around the ring is enough; no flood fill is needed per candidate tile.
+static bool32 IsChokepoint(s32 x, s32 y)
+{
+    bool32 prev = IsWalkable(x + sRingOffsets[7][0], y + sRingOffsets[7][1]);
+    u32 i, runs = 0;
+
+    for (i = 0; i < ARRAY_COUNT(sRingOffsets); i++)
+    {
+        bool32 cur = IsWalkable(x + sRingOffsets[i][0], y + sRingOffsets[i][1]);
+
+        if (cur && !prev)
+            runs++;
+        prev = cur;
+    }
+    return runs > 1;
+}
+
+// Walkable tiles inside the carved area only. The temporary exit corridor pokes
+// floor into the canvas margin, which the fill below never visits, so counting
+// the whole canvas would read as a split room.
+static u32 CountWalkable(void)
+{
+    u32 x, y, count = 0;
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+        {
+            if (IsWalkable(x, y))
+                count++;
+        }
+    }
+    return count;
+}
+
+// Flood fill over walkable tiles only, so solid props block it. Same alternating
+// sweep as FloodFillComponent, which walks plain floor and cannot see props.
+static u32 FloodFillWalkable(u32 sx, u32 sy)
+{
+    bool32 changed = TRUE;
+    u32 x, y, count = 0;
+
+    sMask[sy][sx] |= INFCAVE_FLAG_COMPONENT;
+
+    while (changed)
+    {
+        changed = FALSE;
+
+        for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+        {
+            for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+            {
+                if (!IsWalkable(x, y) || (sMask[y][x] & INFCAVE_FLAG_COMPONENT))
+                    continue;
+                if ((sMask[y][x - 1] & INFCAVE_FLAG_COMPONENT) || (sMask[y - 1][x] & INFCAVE_FLAG_COMPONENT))
+                {
+                    sMask[y][x] |= INFCAVE_FLAG_COMPONENT;
+                    changed = TRUE;
+                }
+            }
+        }
+
+        for (y = INFCAVE_AREA_MAX_Y; y-- > INFCAVE_AREA_MIN; )
+        {
+            for (x = INFCAVE_AREA_MAX_X; x-- > INFCAVE_AREA_MIN; )
+            {
+                if (!IsWalkable(x, y) || (sMask[y][x] & INFCAVE_FLAG_COMPONENT))
+                    continue;
+                if ((sMask[y][x + 1] & INFCAVE_FLAG_COMPONENT) || (sMask[y + 1][x] & INFCAVE_FLAG_COMPONENT))
+                {
+                    sMask[y][x] |= INFCAVE_FLAG_COMPONENT;
+                    changed = TRUE;
+                }
+            }
+        }
+    }
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+        {
+            if (sMask[y][x] & INFCAVE_FLAG_COMPONENT)
+                count++;
+        }
+    }
+    return count;
+}
+
+// TRUE when every walkable tile is still reachable from every other one with the
+// solid props in place.
+static bool32 IsRoomStillConnected(void)
+{
+    u32 x, y;
+    u32 walkable = CountWalkable();
+
+    if (walkable == 0)
+        return FALSE;
+
+    for (y = INFCAVE_AREA_MIN; y < INFCAVE_AREA_MAX_Y; y++)
+    {
+        for (x = INFCAVE_AREA_MIN; x < INFCAVE_AREA_MAX_X; x++)
+        {
+            u32 reached;
+
+            if (!IsWalkable(x, y))
+                continue;
+
+            reached = FloodFillWalkable(x, y);
+            ClearMaskFlags(INFCAVE_FLAG_COMPONENT);
+            return reached == walkable;
+        }
+    }
+    return FALSE;
+}
+
+static void RemoveSolidDecor(void)
+{
+    u32 x, y;
+
+    for (y = 0; y < INFCAVE_MAP_HEIGHT; y++)
+    {
+        for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
+        {
+            if (sDecor[y][x] != 0 && IsDecorSolid(sDecor[y][x] - 1))
+                sDecor[y][x] = 0;
+        }
+    }
+}
+
+// A patch and the one-tile floor ring around it must all be plain floor: the
+// ring keeps a patch off the walls, so the wall shapes stay correct and every
+// patch edge has floor to sit against.
+static bool32 PatchRectFree(u32 x, u32 y, u32 w, u32 h)
+{
+    s32 cx, cy;
+
+    for (cy = (s32)y - 1; cy <= (s32)(y + h); cy++)
+    {
+        for (cx = (s32)x - 1; cx <= (s32)(x + w); cx++)
+        {
+            if (cx < INFCAVE_AREA_MIN || cx >= INFCAVE_AREA_MAX_X
+             || cy < INFCAVE_AREA_MIN || cy >= INFCAVE_AREA_MAX_Y)
+                return FALSE;
+            if (!IsFloor(cx, cy) || sPatch[cy][cx] != 0)
+                return FALSE;
+            if (sMask[cy][cx] & INFCAVE_FLAG_NO_DECOR)
+                return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+static void FillPatchRect(u32 x, u32 y, u32 w, u32 h, u32 value)
+{
+    u32 cx, cy;
+
+    for (cy = y; cy < y + h; cy++)
+    {
+        for (cx = x; cx < x + w; cx++)
+            sPatch[cy][cx] = value;
+    }
+}
+
+// Weighted pick among the materials unlocked at this depth, or -1 when none is.
+static s32 RollPatch(rng_value_t *rng, u32 depth)
+{
+    u32 total = 0, i;
+    u32 roll;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCavePatch); i++)
+    {
+        if (depth >= sInfCavePatch[i].minDepth)
+            total += sInfCavePatch[i].weight;
+    }
+
+    if (total == 0)
+        return -1;
+
+    roll = InfCave_RandRange(rng, 0, total - 1);
+    for (i = 0; i < ARRAY_COUNT(sInfCavePatch); i++)
+    {
+        if (depth < sInfCavePatch[i].minDepth)
+            continue;
+        if (roll < sInfCavePatch[i].weight)
+            return i;
+        roll -= sInfCavePatch[i].weight;
+    }
+    return -1;
+}
+
+// Lays rectangles of a second ground material over the floor. A blocking
+// material is taken back again if it cuts the room in two, which is why each
+// rectangle goes down and is judged on its own rather than all at once.
+static void PlacePatches(void)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_PTCH);
+    u32 depth = InfCave_GetDepth();
+    u32 tries = INFCAVE_PATCH_TRIES;
+    u32 placed = 0;
+
+    while (placed < INFCAVE_PATCH_MAX_COUNT && tries-- != 0)
+    {
+        u32 w = InfCave_RandRange(&rng, INFCAVE_PATCH_MIN_W, INFCAVE_PATCH_MAX_W);
+        u32 h = InfCave_RandRange(&rng, INFCAVE_PATCH_MIN_H, INFCAVE_PATCH_MAX_H);
+        u32 x = InfCave_RandRange(&rng, INFCAVE_AREA_MIN + 1, INFCAVE_AREA_MAX_X - w - 2);
+        u32 y = InfCave_RandRange(&rng, INFCAVE_AREA_MIN + 1, INFCAVE_AREA_MAX_Y - h - 2);
+        s32 index = RollPatch(&rng, depth);
+
+        if (index < 0)
+            return;
+        if (!PatchRectFree(x, y, w, h))
+            continue;
+
+        FillPatchRect(x, y, w, h, index + 1);
+        if (IsPatchBlocking(index) && !IsRoomStillConnected())
+        {
+            FillPatchRect(x, y, w, h, 0);
+            continue;
+        }
+        placed++;
+    }
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave patches placed %d", placed);
+#endif
+}
+
+// Spacing rule, applied from both sides: a candidate must clear its own
+// minDistance and the minDistance of every prop already down.
+static bool32 DecorSpacingOk(u32 x, u32 y, u32 minDistance)
+{
+    s32 dx, dy;
+
+    for (dy = -INFCAVE_DECOR_MAX_DISTANCE; dy <= INFCAVE_DECOR_MAX_DISTANCE; dy++)
+    {
+        for (dx = -INFCAVE_DECOR_MAX_DISTANCE; dx <= INFCAVE_DECOR_MAX_DISTANCE; dx++)
+        {
+            s32 nx = (s32)x + dx, ny = (s32)y + dy;
+            u32 distance = max(abs(dx), abs(dy));
+            u32 other;
+
+            if (nx < 0 || nx >= INFCAVE_MAP_WIDTH || ny < 0 || ny >= INFCAVE_MAP_HEIGHT)
+                continue;
+            if (sDecor[ny][nx] == 0)
+                continue;
+
+            other = sInfCaveDecor[sDecor[ny][nx] - 1].minDistance;
+            if (distance < minDistance || distance < other)
+                return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+static bool32 CanPlaceDecor(u32 index, u32 x, u32 y)
+{
+    const struct InfCaveDecor *decor = &sInfCaveDecor[index];
+
+    if (CellKind(x, y) != INFCAVE_CELL_FLOOR || sDecor[y][x] != 0)
+        return FALSE;
+
+    // A prop's block draws its own cave floor under it, so it would cut a hole
+    // in a patch's material.
+    if (sPatch[y][x] != 0)
+        return FALSE;
+
+    // Pads and access corridors own their tiles: a prop there would hide the pad
+    // art, and a solid one could seal the only way to the exit.
+    if (sMask[y][x] & INFCAVE_FLAG_NO_DECOR)
+        return FALSE;
+
+    // A tall prop drawn against a wall hides the wall's face art, so it is kept
+    // one tile clear of every wall on all four sides.
+    if (decor->tall
+     && (!IsFloorSafe(x, y - 1) || !IsFloorSafe(x, y + 1)
+      || !IsFloorSafe(x - 1, y) || !IsFloorSafe(x + 1, y)))
+        return FALSE;
+
+    if (IsDecorSolid(index) && IsChokepoint(x, y))
+        return FALSE;
+
+    return DecorSpacingOk(x, y, decor->minDistance);
+}
+
+// Share of the room's floor that becomes props, rising with depth.
+static u32 DecorTargetCount(u32 floorCount)
+{
+    u32 percent = INFCAVE_DECOR_PERCENT_BASE + InfCave_GetDepth() / INFCAVE_DECOR_DEPTH_PER_STEP;
+    u32 count;
+
+    if (percent > INFCAVE_DECOR_PERCENT_MAX)
+        percent = INFCAVE_DECOR_PERCENT_MAX;
+
+    count = floorCount * percent / 100;
+    if (count > INFCAVE_DECOR_MAX_PROPS)
+        count = INFCAVE_DECOR_MAX_PROPS;
+    return count;
+}
+
+// Weighted pick among the props unlocked at this depth. Returns the table index,
+// or -1 when nothing is available, which only happens at depth 0 if every entry
+// gains a minDepth.
+static s32 RollDecor(rng_value_t *rng, u32 depth)
+{
+    u32 total = 0, i;
+    u32 roll;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveDecor); i++)
+    {
+        if (depth >= sInfCaveDecor[i].minDepth)
+            total += sInfCaveDecor[i].weight;
+    }
+
+    if (total == 0)
+        return -1;
+
+    roll = InfCave_RandRange(rng, 0, total - 1);
+    for (i = 0; i < ARRAY_COUNT(sInfCaveDecor); i++)
+    {
+        if (depth < sInfCaveDecor[i].minDepth)
+            continue;
+        if (roll < sInfCaveDecor[i].weight)
+            return i;
+        roll -= sInfCaveDecor[i].weight;
+    }
+    return -1;
+}
+
+// Scatters props over the finished mask. Candidates are rolled rather than
+// swept, so the attempt budget bounds the cost; a prop that breaks a rule is
+// dropped instead of relocated. Solid props are cleared wholesale if the room
+// ends up split, which the per-tile chokepoint test makes rare.
+static void DecorateRoom(void)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_DECO);
+    u32 depth = InfCave_GetDepth();
+    u32 target = DecorTargetCount(CountFloor());
+    u32 tries = target * INFCAVE_DECOR_TRIES_PER_PROP;
+    u32 placed = 0;
+    bool32 anySolid = FALSE;
+
+    while (placed < target && tries-- != 0)
+    {
+        u32 x = InfCave_RandRange(&rng, INFCAVE_AREA_MIN, INFCAVE_AREA_MAX_X - 1);
+        u32 y = InfCave_RandRange(&rng, INFCAVE_AREA_MIN, INFCAVE_AREA_MAX_Y - 1);
+        s32 index = RollDecor(&rng, depth);
+
+        if (index < 0)
+            return;
+        if (!CanPlaceDecor(index, x, y))
+            continue;
+
+        sDecor[y][x] = index + 1;
+        placed++;
+        if (IsDecorSolid(index))
+            anySolid = TRUE;
+    }
+
+    if (anySolid && !IsRoomStillConnected())
+        RemoveSolidDecor();
+
+#if INFCAVE_TRACE == TRUE
+    DebugPrintf("InfCave decor placed %d of %d target", placed, target);
+#endif
+}
+
 // Wall shape for a non-floor cell. The mask legality rules forbid a wall with
 // floor on two opposite sides, so the only cardinal combinations left are none,
 // one side, or two perpendicular sides; that is what collapses the 256
@@ -961,7 +1456,16 @@ static void AutotileRoom(u16 *origin, u32 stride)
     {
         for (x = 0; x < INFCAVE_MAP_WIDTH; x++)
         {
-            u32 role = IsFloor(x, y) ? RollFloorRole(&rng) : WallRoleForCell(x, y);
+            u32 role;
+
+            if (!IsFloor(x, y))
+                role = WallRoleForCell(x, y);
+            else if (sPatch[y][x] != 0)
+                role = PatchRoleAt(x, y);
+            else if (sDecor[y][x] != 0)
+                role = sInfCaveDecor[sDecor[y][x] - 1].role;
+            else
+                role = RollFloorRole(&rng);
 
             origin[y * stride + x] = sTileRole[role];
         }
@@ -974,6 +1478,8 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
 
     InfCave_LoadTileRoles();
     BuildMask();
+    PlacePatches();
+    DecorateRoom();
 
     gBackupMapLayout.map = backupMapData;
     gBackupMapLayout.width = INFCAVE_MAP_WIDTH + MAP_OFFSET_W;
