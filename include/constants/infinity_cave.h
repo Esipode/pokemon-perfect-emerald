@@ -242,6 +242,18 @@ enum InfCaveTileRole
 // INFCAVE_MOD_SWARM's +2. Trainer flag space allows no more ids than this.
 #define INFCAVE_MAX_TRAINERS        8
 
+// Opponent level: the player's progression level cap plus a depth-derived
+// bonus, so a deep run out-levels a shallow one without ever needing a party the
+// cap could not legally produce.
+#define INFCAVE_LEVEL_DEPTH_PER_STEP 3  // depths per +1 level
+#define INFCAVE_LEVEL_MAX_BONUS      15
+#define INFCAVE_LEVEL_SURGE_BONUS    3  // INFCAVE_MOD_SURGE, matching the modifier's stated +3
+
+// Species pool tiers. A tier fixes the filler base-stat band a rolled trainer
+// draws from; depth picks the tier and the room type shifts it (a gauntlet
+// trainer is one tier weaker, an elite one stronger).
+#define INFCAVE_TIER_COUNT           3
+
 // Object event templates the generator may write per room. Leaves room for the
 // player and a follower inside OBJECT_EVENTS_COUNT.
 #define INFCAVE_MAX_OBJECTS         12

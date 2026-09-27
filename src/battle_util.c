@@ -7,6 +7,7 @@
 #include "battle_emporium.h"
 #include "battle_encounter.h"
 #include "battle_environment.h"
+#include "infinity_cave.h"
 #include "battle_pyramid.h"
 #include "battle_util.h"
 #include "battle_controllers.h"
@@ -9638,9 +9639,9 @@ void ApplyMoveRandomizationToBattleMon(enum BattlerId battler)
     u16 originalMoves[MAX_MON_MOVES];
     u16 resolvedMoves[MAX_MON_MOVES];
 
-    // The generated Emporium challenger keeps its authored moveset so the ace's reward-matching
-    // move survives. The player's team still randomizes.
-    if (gEmporiumBattleActive && GetBattlerSide(battler) != B_SIDE_PLAYER)
+    // The generated Emporium challenger and Infinity Cave opponents keep their authored movesets so
+    // the ace's reward-matching move survives. The player's team still randomizes.
+    if ((gEmporiumBattleActive || gInfCaveBattleActive) && GetBattlerSide(battler) != B_SIDE_PLAYER)
         return;
 
     for (u32 i = 0; i < MAX_MON_MOVES; i++)

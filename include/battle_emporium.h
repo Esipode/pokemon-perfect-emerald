@@ -61,6 +61,10 @@ void ClearEmporiumBattle(void);
 // Level every Emporium challenger mon is generated at: the progression level cap
 // plus a per-building offset. Read by CreateNPCTrainerPartyFromTrainer while
 // gEmporiumBattleActive is set.
+// A building's species pool, shared with the Infinity Cave's depth tiers.
+// emporium outside EMPORIUM_COUNT (or EMPORIUM_NONE) reads EMPORIUM_ZMOVE.
+const struct TrainerMon *GetEmporiumPool(u32 emporium, u8 *poolSize);
+
 u32 GetEmporiumBattleLevel(void);
 u32 GetEmporiumBattleLevelForEmporium(u32 emporium);
 

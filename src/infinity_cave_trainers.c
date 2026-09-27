@@ -1,15 +1,25 @@
 #include "global.h"
 #include "infinity_cave.h"
+#include "battle_emporium.h"
+#include "caps.h"
 #include "data.h"
 #include "event_data.h"
+#include "random.h"
 #include "string_util.h"
 #include "constants/battle.h"
+#include "constants/battle_emporium.h"
+#include "constants/event_objects.h"
 #include "constants/items.h"
 #include "constants/moves.h"
 #include "constants/opponents.h"
 #include "constants/trainers.h"
 #include "constants/battle_ai.h"
 #include "trainer_pools.h"
+#include "data/infinity_cave_trainers.h"
+
+// Trainer rolls take their own RNG stream off the room seed, so the same room
+// always produces the same opponents after a reload.
+#define INFCAVE_SALT_TRNR 0x54524E52u // 'TRNR'
 
 // One runtime opponent per room trainer slot. The stub ids TRAINER_INFCAVE_0..7
 // carry no data of their own: GetTrainerStructFromId redirects them here while
@@ -69,33 +79,125 @@ void InfCave_ClearTrainers(void)
         FlagClear(TRAINER_FLAGS_START + TRAINER_INFCAVE_0 + slot);
 }
 
-// Debug harness for the redirect, ahead of the Stage 13 roll: a fixed identity
-// and party in slot 0. Debug_EventScript_InfCaveTestBattle fights it.
-static const struct TrainerMon sInfCaveDebugParty[] =
+// Pool tier for the current depth, shifted by the room type's offset and
+// clamped to the tiers that exist.
+static u32 TierForRoom(u32 depth, s32 tierOffset)
 {
-    { .species = SPECIES_GRAVELER, .lvl = 40, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER },
-    { .species = SPECIES_SANDSLASH, .lvl = 40, .iv = TRAINER_PARTY_IVS(20, 20, 20, 20, 20, 20), .gender = TRAINER_MON_RANDOM_GENDER },
-};
+    s32 tier = 0;
+    u32 i;
 
-void InfCave_DebugFillTrainer(void)
+    for (i = 0; i < INFCAVE_TIER_COUNT; i++)
+    {
+        if (depth >= sInfCaveTierMinDepth[i])
+            tier = i;
+    }
+
+    tier += tierOffset;
+    if (tier < 0)
+        tier = 0;
+    if (tier >= INFCAVE_TIER_COUNT)
+        tier = INFCAVE_TIER_COUNT - 1;
+
+    return tier;
+}
+
+// Level every rolled cave mon is generated at: the player's progression level cap
+// (so an opponent never out-levels a legal player team by more than the depth
+// bonus) plus the depth bonus, plus INFCAVE_MOD_SURGE. Read by
+// CreateNPCTrainerPartyFromTrainer while gInfCaveBattleActive is set.
+u32 InfCave_GetBattleLevel(void)
 {
-    struct Trainer *trainer = InfCave_GetTrainerSlot(0);
+    s32 level = (s32)GetCurrentLevelCap();
+    u32 bonus = InfCave_GetDepth() / INFCAVE_LEVEL_DEPTH_PER_STEP;
+
+    if (bonus > INFCAVE_LEVEL_MAX_BONUS)
+        bonus = INFCAVE_LEVEL_MAX_BONUS;
+    level += bonus;
+
+    if (InfCave_HasModifier(INFCAVE_MOD_SURGE))
+        level += INFCAVE_LEVEL_SURGE_BONUS;
+
+    if (level < 1)
+        level = 1;
+    if (level > MAX_LEVEL)
+        level = MAX_LEVEL;
+
+    return level;
+}
+
+// Fills one slot from an identity row and the tier's pool. Every field of the
+// struct is written here, so a slot never carries anything from the room before.
+// Returns the identity's overworld gfx id for the placer (Stage 15).
+static u16 BuildTrainer(u32 slot, u32 roomType, rng_value_t *rng)
+{
+    const struct InfCaveIdentity *identity;
+    const struct InfCaveTrainerSpec *spec;
+    struct Trainer *trainer = InfCave_GetTrainerSlot(slot);
+    const struct TrainerMon *pool;
+    u8 poolSize = 0;
+    u32 tier;
+
+    if (trainer == NULL)
+        return OBJ_EVENT_GFX_HIKER;
+
+    if (roomType >= INFCAVE_ROOM_COUNT)
+        roomType = INFCAVE_ROOM_BATTLE;
+    spec = &sInfCaveTrainerSpec[roomType];
+    if (spec->partySize == 0)
+        spec = &sInfCaveTrainerSpec[INFCAVE_ROOM_BATTLE];
+
+    identity = &sInfCaveIdentities[InfCave_Rand(rng) % INFCAVE_IDENTITY_COUNT];
+    tier = TierForRoom(InfCave_GetDepth(), spec->tierOffset);
+    pool = GetEmporiumPool(sInfCaveTierPool[tier], &poolSize);
 
     memset(trainer, 0, sizeof(*trainer));
-    StringCopy(trainer->trainerName, COMPOUND_STRING("CAVER"));
-    trainer->trainerClass = TRAINER_CLASS_HIKER;
-    trainer->trainerPic = TRAINER_PIC_HIKER;
-    trainer->encounterMusic = TRAINER_ENCOUNTER_MUSIC_HIKER;
-    trainer->gender = TRAINER_GENDER_MALE;
+    StringCopy(trainer->trainerName, identity->name);
+    trainer->trainerClass = identity->trainerClass;
+    trainer->trainerPic = identity->trainerPic;
+    trainer->encounterMusic = identity->encounterMusic;
+    trainer->gender = identity->gender;
+    // Doubles, weather and the other modifiers are applied in Stage 19.
     trainer->battleType = TRAINER_BATTLE_TYPE_SINGLES;
-    trainer->aiFlags = AI_FLAG_SMART_TRAINER;
-    trainer->party = sInfCaveDebugParty;
-    trainer->partySize = ARRAY_COUNT(sInfCaveDebugParty);
-    trainer->poolSize = 0;
+    trainer->aiFlags = spec->aiFlags;
+    trainer->party = pool;
+    trainer->partySize = spec->partySize;
+    trainer->poolSize = poolSize;
     trainer->poolRuleIndex = POOL_RULESET_BASIC;
     trainer->poolPickIndex = POOL_PICK_DEFAULT;
     trainer->poolPruneIndex = POOL_PRUNE_NONE;
     trainer->overrideTrainer = TRAINER_NONE;
 
+    // Narrow bitfields and table indices: catch truncation here, not at battle setup.
+    assertf(trainer->partySize == spec->partySize, "partySize %d truncated to %d", spec->partySize, trainer->partySize);
+    assertf(trainer->encounterMusic == identity->encounterMusic, "encounterMusic %d truncated to %d", identity->encounterMusic, trainer->encounterMusic);
+    assertf(trainer->trainerPic < TRAINER_PIC_COUNT, "trainerPic %d out of range", trainer->trainerPic);
+    assertf(StringLength(identity->name) <= TRAINER_NAME_LENGTH, "identity name longer than %d", TRAINER_NAME_LENGTH);
+    assertf(identity->objectGfxId < NUM_OBJ_EVENT_GFX, "objectGfxId %d out of range", identity->objectGfxId);
+    assertf(pool != NULL && poolSize >= spec->partySize, "tier %d pool too small: %d", tier, poolSize);
+
+    return identity->objectGfxId;
+}
+
+// Rolls the opponent for one of the current room's trainer slots and arms the
+// redirect. Deterministic: the slot's stream comes from the room seed, so a
+// reload inside the room rebuilds the same trainer.
+u16 InfCave_BuildTrainer(u32 slot)
+{
+    rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_TRNR + slot);
+    u16 objectGfxId = BuildTrainer(slot, InfCave_GetRoomType(), &rng);
+
+    InfCave_ArmTrainers();
+    return objectGfxId;
+}
+
+// Debug harness: rolls slot 0 off the global RNG, so repeated uses outside a run
+// (where the room seed is 0) still give different trainers.
+// Debug_EventScript_InfCaveTestBattle fights it.
+void InfCave_DebugFillTrainer(void)
+{
+    rng_value_t rng = LocalRandomSeed(Random32());
+    u32 roomType = InfCave_IsInRun() ? InfCave_GetRoomType() : INFCAVE_ROOM_BATTLE;
+
+    BuildTrainer(0, roomType, &rng);
     InfCave_ArmTrainers();
 }

@@ -212,6 +212,20 @@ static const struct EmporiumPoolInfo sEmporiumPools[EMPORIUM_COUNT] =
     [EMPORIUM_TERA]  = { sEmporiumTeraPool, EMPORIUM_TERA_POOL_SIZE,  EMPORIUM_PARTY_SIZE_TERA  },
 };
 
+// A building's species pool. The Infinity Cave borrows these as its depth-tiered
+// pools (sInfCaveTierPool, src/data/infinity_cave_trainers.h) instead of carrying
+// a second copy of several hundred rows.
+const struct TrainerMon *GetEmporiumPool(u32 emporium, u8 *poolSize)
+{
+    if (emporium >= EMPORIUM_COUNT || emporium == EMPORIUM_NONE)
+        emporium = EMPORIUM_ZMOVE;
+
+    if (poolSize != NULL)
+        *poolSize = sEmporiumPools[emporium].poolSize;
+
+    return sEmporiumPools[emporium].party;
+}
+
 const struct Trainer *GetEmporiumTrainer(void)
 {
     return &sEmporiumTrainer;

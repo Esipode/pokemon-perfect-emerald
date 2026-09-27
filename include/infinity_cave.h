@@ -85,6 +85,19 @@ const u8 *InfCave_GetMaskFaultName(u32 fault);
 struct Trainer;
 extern bool8 gInfCaveBattleActive;
 
+// One rolled opponent identity. Table (sInfCaveIdentities) lives in
+// src/data/infinity_cave_trainers.h; InfCave_BuildTrainer copies a row into a
+// runtime struct Trainer and returns objectGfxId for the NPC's sprite.
+struct InfCaveIdentity
+{
+    u16 trainerClass;
+    u16 trainerPic;
+    const u8 *name;
+    u16 objectGfxId;
+    u8 encounterMusic;
+    u8 gender;
+};
+
 // Stub trainer id for a slot, or TRAINER_NONE when slot >= INFCAVE_MAX_TRAINERS.
 u16 InfCave_GetTrainerId(u32 slot);
 
@@ -100,7 +113,16 @@ void InfCave_ArmTrainers(void);
 // Disarms the redirect, blanks every slot and clears the stub ids' defeat flags.
 void InfCave_ClearTrainers(void);
 
-// Debug: puts a fixed trainer in slot 0 and arms the redirect.
+// Rolls the current room's opponent for one slot and arms the redirect. Returns
+// the identity's overworld gfx id. Deterministic per (room seed, slot).
+u16 InfCave_BuildTrainer(u32 slot);
+
+// Level every rolled cave mon is generated at: the progression level cap plus a
+// depth bonus, plus INFCAVE_MOD_SURGE. Read by CreateNPCTrainerPartyFromTrainer
+// while gInfCaveBattleActive is set.
+u32 InfCave_GetBattleLevel(void);
+
+// Debug: rolls a trainer into slot 0 off the global RNG and arms the redirect.
 void InfCave_DebugFillTrainer(void);
 
 #endif // GUARD_INFINITY_CAVE_H

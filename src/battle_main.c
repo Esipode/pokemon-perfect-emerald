@@ -2199,9 +2199,10 @@ void CustomTrainerPartyAssignMoves(struct Pokemon *mon, const struct TrainerMon 
     bool32 noMoveSet = TRUE;
     u32 j;
     u16 assignedMoves[MAX_MON_MOVES];
-    // Emporium challengers are authored end to end (the ace's moveset carries the reward's mechanic),
-    // so the New Game+ move upgrade is skipped, matching isNGPlus in CreateNPCTrainerPartyFromTrainer.
-    bool32 applyNewGamePlusMoves = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive;
+    // Emporium challengers and Infinity Cave opponents are authored end to end (the ace's moveset
+    // carries the reward's mechanic), so the New Game+ move upgrade is skipped, matching isNGPlus in
+    // CreateNPCTrainerPartyFromTrainer.
+    bool32 applyNewGamePlusMoves = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive && !gInfCaveBattleActive;
 
     for (j = 0; j < MAX_MON_MOVES; ++j)
     {
@@ -2777,9 +2778,9 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     u16 partySpecies[PARTY_SIZE];
     bool8 isReplaced[PARTY_SIZE] = {0};
     struct NewGamePlusFill fill = {0};
-    // Emporium challengers are authored end to end (the ace keeps the reward's mechanic), so the
-    // New Game+ replacement/item passes are skipped for them.
-    bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive;
+    // Emporium challengers and Infinity Cave opponents are authored end to end (the ace keeps the
+    // reward's mechanic), so the New Game+ replacement/item passes are skipped for them.
+    bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive && !gInfCaveBattleActive;
     u8 replaceCount = 0;
     u8 monsCount;
     u8 maxPartySize;
@@ -2800,12 +2801,13 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     if (monsCount == 0)
         return;
 
-    // Keep the randomizer off the generated Emporium opponent: a swapped species,
-    // move or Tera type would break the "ace uses the chosen reward" contract.
-    // Move randomization runs later, at battle intro - suppressed there too for
-    // the opponent side in ApplyMoveRandomizationToBattleMon.
+    // Keep the randomizer off the generated Emporium and Infinity Cave opponents: a
+    // swapped species, move or Tera type would break the "ace uses the chosen
+    // reward / rolled gimmick" contract. Move randomization runs later, at battle
+    // intro - suppressed there too for the opponent side in
+    // ApplyMoveRandomizationToBattleMon.
     bool32 restoreRandomizeMon = FALSE, restoreRandomizeType = FALSE, restoreRandomizeMoves = FALSE;
-    if (gEmporiumBattleActive)
+    if (gEmporiumBattleActive || gInfCaveBattleActive)
     {
         if (FlagGet(FLAG_RANDOMIZE_MON))   { FlagClear(FLAG_RANDOMIZE_MON);   restoreRandomizeMon = TRUE; }
         if (FlagGet(FLAG_RANDOMIZE_TYPE))  { FlagClear(FLAG_RANDOMIZE_TYPE);  restoreRandomizeType = TRUE; }
@@ -2907,6 +2909,10 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         {
             level = GetEmporiumBattleLevel();
         }
+        else if (gInfCaveBattleActive)
+        {
+            level = InfCave_GetBattleLevel();
+        }
         else
         {
             levelAdjustment = GetDifficultyLevelAdjustment(partyData[monIndex].lvl, gSaveBlock1Ptr->difficulty);
@@ -2982,11 +2988,12 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         SetMonData(&party[i], MON_DATA_FRIENDSHIP, &(partyData[monIndex].friendship));
 
         // Ball handling
-        if (gEmporiumBattleActive && partyData[monIndex].ball == BALL_STRANGE)
+        if ((gEmporiumBattleActive || gInfCaveBattleActive) && partyData[monIndex].ball == BALL_STRANGE)
         {
             // Emporium pool entries are hand-written C and leave .ball at 0
-            // (BALL_STRANGE, which the player cannot obtain). Give the challenger
-            // a plain Poke Ball instead of showing the Strange Ball.
+            // (BALL_STRANGE, which the player cannot obtain), and the Infinity Cave
+            // draws on the same pools. Give the opponent a plain Poke Ball instead
+            // of showing the Strange Ball.
             ball = BALL_POKE;
             SetMonData(&party[i], MON_DATA_POKEBALL, &ball);
         }
