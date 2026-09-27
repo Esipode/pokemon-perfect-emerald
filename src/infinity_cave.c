@@ -2,21 +2,27 @@
 #include "infinity_cave.h"
 #include "battle_setup.h"
 #include "event_data.h"
+#include "field_weather.h"
 #include "item.h"
 #include "list_menu.h"
 #include "malloc.h"
+#include "overworld.h"
 #include "overworld_overlay.h"
 #include "random.h"
 #include "script_menu.h"
 #include "script_pokemon_util.h"
 #include "string_util.h"
 #include "config/battle.h"
+#include "constants/battle.h"
 #include "constants/characters.h"
 #include "constants/flags.h"
 #include "constants/items.h"
 #include "constants/opponents.h"
 #include "constants/overworld_overlay.h"
+#include "constants/pokemon.h"
 #include "constants/vars.h"
+#include "constants/weather.h"
+#include "data/infinity_cave_modifiers.h"
 #include "data/infinity_cave_rooms.h"
 
 static struct InfinityCaveRun *Run(void)
@@ -57,6 +63,7 @@ void InfCave_EndRun(enum InfCaveEndReason reason)
     // run struct keeps no history of it.
     (void)reason;
     InfCave_ClearTrainers();
+    InfCave_ClearModifiers();
 #if B_FLAG_NO_WHITEOUT != 0
     FlagClear(B_FLAG_NO_WHITEOUT);
 #endif
@@ -78,6 +85,12 @@ void InfCave_ArmNoWhiteout(void)
 
 void InfCave_EndRunQuit(void)
 {
+    // Returning to the lobby restores the party, the same as a facility does on
+    // the way out. Gated on an active run so the lobby is not a free heal spot
+    // for a player who walks in without descending.
+    if (InfCave_IsInRun())
+        HealPlayerParty();
+
     InfCave_EndRun(INFCAVE_END_QUIT);
 }
 
@@ -230,6 +243,173 @@ bool32 InfCave_HasModifier(u32 modifier)
     return FALSE;
 }
 
+const struct InfCaveModifierInfo *InfCave_GetModifierInfo(u32 modifier)
+{
+    if (modifier == INFCAVE_MOD_NONE || modifier >= INFCAVE_MOD_COUNT)
+        return NULL;
+
+    return &sInfCaveModifiers[modifier];
+}
+
+// Read from both rows, so the table only has to name a bad pair once. One
+// modifier twice in a room is refused here too: a second slot holding it would
+// advertise an effect the room does not apply twice.
+bool32 InfCave_ModifiersCompatible(u32 a, u32 b)
+{
+    const struct InfCaveModifierInfo *rowA = InfCave_GetModifierInfo(a);
+    const struct InfCaveModifierInfo *rowB = InfCave_GetModifierInfo(b);
+
+    if (rowA == NULL || rowB == NULL)
+        return TRUE;
+    if (a == b)
+        return FALSE;
+    if (rowA->incompatible & INFCAVE_MOD_BIT(b))
+        return FALSE;
+
+    return (rowB->incompatible & INFCAVE_MOD_BIT(a)) == 0;
+}
+
+// Weighted pick over the rows the current depth has unlocked, one roller per
+// option table. Row 0 of each table is unlocked at depth 0, so the fallbacks
+// below are only reached if a table is ever authored without one.
+static u32 RollWeatherStatus(rng_value_t *rng)
+{
+    u32 depth = InfCave_GetDepth();
+    u32 total = 0, roll, i;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveWeathers); i++)
+    {
+        if (sInfCaveWeathers[i].minDepth <= depth)
+            total += sInfCaveWeathers[i].weight;
+    }
+
+    if (total == 0)
+        return sInfCaveWeathers[0].startingStatus;
+
+    roll = InfCave_RandRange(rng, 0, total - 1);
+    for (i = 0; i < ARRAY_COUNT(sInfCaveWeathers); i++)
+    {
+        if (sInfCaveWeathers[i].minDepth > depth)
+            continue;
+        if (roll < sInfCaveWeathers[i].weight)
+            return sInfCaveWeathers[i].startingStatus;
+        roll -= sInfCaveWeathers[i].weight;
+    }
+    return sInfCaveWeathers[0].startingStatus;
+}
+
+static u32 RollTerrainStatus(rng_value_t *rng)
+{
+    u32 depth = InfCave_GetDepth();
+    u32 total = 0, roll, i;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveTerrains); i++)
+    {
+        if (sInfCaveTerrains[i].minDepth <= depth)
+            total += sInfCaveTerrains[i].weight;
+    }
+
+    if (total == 0)
+        return sInfCaveTerrains[0].startingStatus;
+
+    roll = InfCave_RandRange(rng, 0, total - 1);
+    for (i = 0; i < ARRAY_COUNT(sInfCaveTerrains); i++)
+    {
+        if (sInfCaveTerrains[i].minDepth > depth)
+            continue;
+        if (roll < sInfCaveTerrains[i].weight)
+            return sInfCaveTerrains[i].startingStatus;
+        roll -= sInfCaveTerrains[i].weight;
+    }
+    return sInfCaveTerrains[0].startingStatus;
+}
+
+u32 InfCave_RollModifierArg(u32 modifier, rng_value_t *rng)
+{
+    const struct InfCaveModifierInfo *info = InfCave_GetModifierInfo(modifier);
+
+    if (info == NULL)
+        return 0;
+
+    switch (info->argKind)
+    {
+    case INFCAVE_MOD_ARG_TYPE:
+        return sInfCaveMonotypes[InfCave_RandRange(rng, 0, ARRAY_COUNT(sInfCaveMonotypes) - 1)];
+    case INFCAVE_MOD_ARG_WEATHER:
+        return RollWeatherStatus(rng);
+    case INFCAVE_MOD_ARG_TERRAIN:
+        return RollTerrainStatus(rng);
+    }
+    return 0;
+}
+
+u32 InfCave_GetModifierShardPercent(void)
+{
+    u32 percent = 0, i;
+
+    for (i = 0; i < INFCAVE_MAX_MODIFIERS; i++)
+    {
+        const struct InfCaveModifierInfo *info = InfCave_GetModifierInfo(InfCave_GetModifier(i));
+
+        if (info != NULL)
+            percent += info->shardPercent;
+    }
+    return percent;
+}
+
+// Field weather a rolled INFCAVE_MOD_WEATHER argument runs the room at, or
+// WEATHER_NONE for an argument no row claims.
+static u32 FieldWeatherForStatus(u32 startingStatus)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveWeathers); i++)
+    {
+        if (sInfCaveWeathers[i].startingStatus == startingStatus)
+            return sInfCaveWeathers[i].fieldWeather;
+    }
+    return WEATHER_NONE;
+}
+
+// Field side of the modifiers, run from the generator: both the warp and the
+// reload path reach it, and both reach it before the map load starts the weather
+// and the flash scanline effect, so what is set here is what the room opens with.
+// The room states its flash level and its weather outright rather than only when
+// a modifier asks for one, since both live in the save block and would otherwise
+// carry over from the floor before.
+void InfCave_ApplyModifiers(void)
+{
+    u32 i;
+
+    SetFlashLevel(InfCave_HasModifier(INFCAVE_MOD_DARK) ? INFCAVE_DARK_FLASH_LEVEL : 0);
+
+    for (i = 0; i < INFCAVE_MAX_MODIFIERS; i++)
+    {
+        if (InfCave_GetModifier(i) != INFCAVE_MOD_WEATHER)
+            continue;
+
+        SetSavedWeather(FieldWeatherForStatus(InfCave_GetModifierArg(i)));
+        return;
+    }
+
+    SetSavedWeatherFromCurrMapHeader();
+}
+
+void InfCave_ClearModifiers(void)
+{
+    InfCave_SetRoom(InfCave_GetRoomType(), NULL, NULL);
+    SetFlashLevel(0);
+    SetSavedWeatherFromCurrMapHeader();
+}
+
+// The Bag is refused for a cave battle in a room carrying the modifier. Keyed on
+// the trainer redirect rather than on the map, so nothing outside a cave battle
+// loses its items.
+bool32 InfCave_IsBagLocked(void)
+{
+    return gInfCaveBattleActive && InfCave_HasModifier(INFCAVE_MOD_NO_ITEMS);
+}
+
 void InfCave_AddShards(u32 amount)
 {
     struct InfinityCaveRun *run = Run();
@@ -334,12 +514,18 @@ static const struct InfCaveItemDrop *RollDrop(const struct InfCaveItemDrop *tabl
 u32 InfCave_RollItemBallCount(void)
 {
     rng_value_t rng;
+    u32 count = 0;
 
-    if (InfCave_GetRoomType() != INFCAVE_ROOM_TREASURE)
-        return 0;
+    if (InfCave_GetRoomType() == INFCAVE_ROOM_TREASURE)
+    {
+        rng = InfCave_SeedRoomRng(INFCAVE_SALT_BALLS);
+        count = InfCave_RandRange(&rng, INFCAVE_TREASURE_MIN_BALLS, INFCAVE_TREASURE_MAX_BALLS);
+    }
 
-    rng = InfCave_SeedRoomRng(INFCAVE_SALT_BALLS);
-    return InfCave_RandRange(&rng, INFCAVE_TREASURE_MIN_BALLS, INFCAVE_TREASURE_MAX_BALLS);
+    if (InfCave_HasModifier(INFCAVE_MOD_TREASURED))
+        count += INFCAVE_TREASURED_BALLS;
+
+    return count > INFCAVE_MAX_ITEM_BALLS ? INFCAVE_MAX_ITEM_BALLS : count;
 }
 
 bool32 InfCave_IsItemBallTaken(u32 slot)

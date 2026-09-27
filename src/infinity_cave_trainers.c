@@ -95,6 +95,50 @@ void InfCave_ClearTrainers(void)
         FlagClear(TRAINER_FLAGS_START + TRAINER_INFCAVE_0 + slot);
 }
 
+// Bosses the run has already put down. Descending past a boss room needs its
+// boss beaten, so every boss depth strictly below the current one is cleared.
+static u32 BossesCleared(void)
+{
+    u32 depth = InfCave_GetDepth();
+
+    if (depth == 0)
+        return 0;
+
+    return (depth - 1) / INFCAVE_BOSS_INTERVAL;
+}
+
+// Largest party the current depth lets a room type field: its spec size plus one
+// member per boss beaten, capped at a legal party.
+static u32 MaxPartySize(const struct InfCaveTrainerSpec *spec)
+{
+    u32 size = spec->partySize + BossesCleared();
+
+    if (size > PARTY_SIZE)
+        size = PARTY_SIZE;
+
+    return size;
+}
+
+// Party size one rolled cave trainer fields. The floor holds at one until
+// INFCAVE_PARTY_RAMP_STEPS bosses are down, then rises with each further boss,
+// so a deep room stops fielding short teams at all.
+static u32 RollPartySize(const struct InfCaveTrainerSpec *spec, rng_value_t *rng)
+{
+    u32 cleared = BossesCleared();
+    u32 max = MaxPartySize(spec);
+    u32 min = 1;
+
+    if (spec->fullParty)
+        return max;
+
+    if (cleared > INFCAVE_PARTY_RAMP_STEPS)
+        min += cleared - INFCAVE_PARTY_RAMP_STEPS;
+    if (min > max)
+        min = max;
+
+    return InfCave_RandRange(rng, min, max);
+}
+
 // Pool tier for the current depth, shifted by the room type's offset and
 // clamped to the tiers that exist.
 static u32 TierForRoom(u32 depth, s32 tierOffset)
@@ -185,12 +229,7 @@ u32 InfCave_GetBattleShards(void)
         return 0;
 
     percent += InfCave_GetDepth() * INFCAVE_SHARD_DEPTH_PERCENT;
-    if (InfCave_HasModifier(INFCAVE_MOD_SURGE))
-        percent += INFCAVE_SHARD_SURGE_PERCENT;
-    if (InfCave_HasModifier(INFCAVE_MOD_NO_ITEMS))
-        percent += INFCAVE_SHARD_NO_ITEMS_PERCENT;
-    if (InfCave_HasModifier(INFCAVE_MOD_BOUNTY))
-        percent += INFCAVE_SHARD_BOUNTY_PERCENT;
+    percent += InfCave_GetModifierShardPercent();
 
     return base * percent / 100;
 }
@@ -300,6 +339,43 @@ bool32 InfCave_MonMatchesGimmick(const struct Trainer *trainer, const struct Tra
     }
 }
 
+// Sets one field of a struct Trainer's startingStatus from its enum id, the same
+// mapping SetStartingStatus uses for the EWRAM copy.
+#define UNPACK_STARTING_STATUS_TO_TRAINER(_enum, _fieldName, ...) case _enum: statuses->_fieldName = TRUE; break;
+
+static void SetTrainerStartingStatus(struct StartingStatuses *statuses, u32 status)
+{
+    switch (status)
+    {
+    STARTING_STATUS_DEFINITIONS(UNPACK_STARTING_STATUS_TO_TRAINER);
+    }
+}
+
+// Battle side of the modifiers, run once the slot's own fields are written. The
+// room's weather and terrain are the permanent starting statuses, so they hold
+// for the whole battle; battle_main.c merges the opponents' statuses into
+// gStartingStatuses at setup. Doubles needs no party-size gate:
+// OW_DOUBLE_APPROACH_WITH_ONE_MON is on, so a player down to one usable mon
+// fights the double battle with it.
+void InfCave_ApplyModifiersToTrainer(struct Trainer *trainer)
+{
+    u32 i;
+
+    if (trainer == NULL)
+        return;
+
+    if (InfCave_HasModifier(INFCAVE_MOD_DOUBLES))
+        trainer->battleType = TRAINER_BATTLE_TYPE_DOUBLES;
+
+    for (i = 0; i < INFCAVE_MAX_MODIFIERS; i++)
+    {
+        u32 modifier = InfCave_GetModifier(i);
+
+        if (modifier == INFCAVE_MOD_WEATHER || modifier == INFCAVE_MOD_TERRAIN)
+            SetTrainerStartingStatus(&trainer->startingStatus, InfCave_GetModifierArg(i));
+    }
+}
+
 u32 InfCave_GetBossIndex(void)
 {
     rng_value_t rng = InfCave_SeedRunRng(INFCAVE_SALT_BOSS);
@@ -342,6 +418,7 @@ static u16 BuildBoss(u32 slot)
     struct Trainer *trainer = InfCave_GetTrainerSlot(slot);
     const struct Trainer *source = NULL;
     u32 tier = TierForRoom(InfCave_GetDepth(), spec->tierOffset);
+    u32 partySize = MaxPartySize(spec);
 
     if (trainer == NULL)
         return OBJ_EVENT_GFX_HIKER;
@@ -356,16 +433,17 @@ static u16 BuildBoss(u32 slot)
     trainer->encounterMusic = boss->encounterMusic;
     trainer->mugshotColor = boss->mugshotColor;
     trainer->gender = boss->gender;
-    // Doubles, weather and the other modifiers are applied in Stage 19.
     trainer->battleType = TRAINER_BATTLE_TYPE_SINGLES;
     trainer->aiFlags = spec->aiFlags;
-    trainer->partySize = spec->partySize;
+    trainer->partySize = partySize;
     trainer->overrideTrainer = TRAINER_NONE;
 
-    if (source != NULL && source->poolSize == 0 && source->partySize >= spec->partySize)
+    if (source != NULL && source->poolSize == 0 && source->partySize >= partySize)
     {
         // poolSize 0 makes DoTrainerPartyPool take the party straight, in order.
-        trainer->party = source->party;
+        // The tail is taken rather than the head, so a boss cut short by the ramp
+        // keeps its ace and drops its openers.
+        trainer->party = source->party + (source->partySize - partySize);
     }
     else
     {
@@ -376,12 +454,13 @@ static u16 BuildBoss(u32 slot)
         trainer->poolRuleIndex = POOL_RULESET_INFCAVE;
         trainer->poolPickIndex = POOL_PICK_INFCAVE;
         trainer->poolPruneIndex = POOL_PRUNE_INFCAVE;
-        assertf(trainer->party != NULL && poolSize >= spec->partySize, "boss tier %d pool too small: %d", tier, poolSize);
+        assertf(trainer->party != NULL && poolSize >= partySize, "boss tier %d pool too small: %d", tier, poolSize);
     }
     sInfCaveTrainerTier[slot] = tier;
+    InfCave_ApplyModifiersToTrainer(trainer);
 
     // Narrow bitfields and table indices: catch truncation here, not at battle setup.
-    assertf(trainer->partySize == spec->partySize, "partySize %d truncated to %d", spec->partySize, trainer->partySize);
+    assertf(trainer->partySize == partySize, "partySize %d truncated to %d", partySize, trainer->partySize);
     assertf(trainer->encounterMusic == boss->encounterMusic, "encounterMusic %d truncated to %d", boss->encounterMusic, trainer->encounterMusic);
     assertf(trainer->mugshotColor == boss->mugshotColor, "mugshotColor %d truncated to %d", boss->mugshotColor, trainer->mugshotColor);
     assertf(boss->mugshotColor != MUGSHOT_COLOR_NONE, "boss %d has no mugshot colour", index);
@@ -403,6 +482,7 @@ static u16 BuildTrainer(u32 slot, u32 roomType, rng_value_t *rng)
     const struct TrainerMon *pool;
     u8 poolSize = 0;
     u32 tier;
+    u32 partySize;
 
     if (trainer == NULL)
         return OBJ_EVENT_GFX_HIKER;
@@ -419,6 +499,7 @@ static u16 BuildTrainer(u32 slot, u32 roomType, rng_value_t *rng)
         spec = &sInfCaveTrainerSpec[INFCAVE_ROOM_BATTLE];
 
     identity = &sInfCaveIdentities[InfCave_Rand(rng) % INFCAVE_IDENTITY_COUNT];
+    partySize = RollPartySize(spec, rng);
     tier = TierForRoom(InfCave_GetDepth(), spec->tierOffset);
     pool = GetEmporiumPool(sInfCaveTierPool[tier], &poolSize);
 
@@ -428,25 +509,25 @@ static u16 BuildTrainer(u32 slot, u32 roomType, rng_value_t *rng)
     trainer->trainerPic = identity->trainerPic;
     trainer->encounterMusic = identity->encounterMusic;
     trainer->gender = identity->gender;
-    // Doubles, weather and the other modifiers are applied in Stage 19.
     trainer->battleType = TRAINER_BATTLE_TYPE_SINGLES;
     trainer->aiFlags = spec->aiFlags;
     trainer->party = pool;
-    trainer->partySize = spec->partySize;
+    trainer->partySize = partySize;
     trainer->poolSize = poolSize;
     trainer->poolRuleIndex = POOL_RULESET_INFCAVE;
     trainer->poolPickIndex = POOL_PICK_INFCAVE;
     trainer->poolPruneIndex = POOL_PRUNE_INFCAVE;
     trainer->overrideTrainer = TRAINER_NONE;
     sInfCaveTrainerTier[slot] = tier;
+    InfCave_ApplyModifiersToTrainer(trainer);
 
     // Narrow bitfields and table indices: catch truncation here, not at battle setup.
-    assertf(trainer->partySize == spec->partySize, "partySize %d truncated to %d", spec->partySize, trainer->partySize);
+    assertf(trainer->partySize == partySize, "partySize %d truncated to %d", partySize, trainer->partySize);
     assertf(trainer->encounterMusic == identity->encounterMusic, "encounterMusic %d truncated to %d", identity->encounterMusic, trainer->encounterMusic);
     assertf(trainer->trainerPic < TRAINER_PIC_COUNT, "trainerPic %d out of range", trainer->trainerPic);
     assertf(StringLength(identity->name) <= TRAINER_NAME_LENGTH, "identity name longer than %d", TRAINER_NAME_LENGTH);
     assertf(identity->objectGfxId < NUM_OBJ_EVENT_GFX, "objectGfxId %d out of range", identity->objectGfxId);
-    assertf(pool != NULL && poolSize >= spec->partySize, "tier %d pool too small: %d", tier, poolSize);
+    assertf(pool != NULL && poolSize >= partySize, "tier %d pool too small: %d", tier, poolSize);
 
     return identity->objectGfxId;
 }

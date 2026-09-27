@@ -47,6 +47,19 @@ enum InfCaveEndReason
 
 #define INFCAVE_MAX_MODIFIERS 2
 
+// Bit of one modifier inside an incompatibility mask (sInfCaveModifiers).
+#define INFCAVE_MOD_BIT(modifier) (1 << (modifier))
+
+// What a modifier slot's argument byte holds, so the node roll knows which table
+// the argument comes from.
+enum InfCaveModArg
+{
+    INFCAVE_MOD_ARG_NONE,
+    INFCAVE_MOD_ARG_TYPE,    // enum Type, from sInfCaveMonotypes
+    INFCAVE_MOD_ARG_WEATHER, // enum StartingStatus weather, from sInfCaveWeathers
+    INFCAVE_MOD_ARG_TERRAIN, // enum StartingStatus terrain, from sInfCaveTerrains
+};
+
 // Node options offered per descent. Grows with depth.
 #define INFCAVE_MIN_OPTIONS         3
 #define INFCAVE_MAX_OPTIONS         5
@@ -246,6 +259,13 @@ enum InfCaveTileRole
 // the modifier's stated +2.
 #define INFCAVE_SWARM_TRAINERS      2
 
+// Party-size ramp. A room type's sInfCaveTrainerSpec partySize is its size
+// before any boss has fallen; every boss beaten adds one member, to PARTY_SIZE.
+// Rolled trainers draw between a floor and that size, and the floor only starts
+// rising once INFCAVE_PARTY_RAMP_STEPS bosses are down, so deep rooms converge
+// on full parties while early ones stay short.
+#define INFCAVE_PARTY_RAMP_STEPS     3
+
 // Opponent level: the player's progression level cap plus a depth-derived
 // bonus, so a deep run out-levels a shallow one without ever needing a party the
 // cap could not legally produce.
@@ -258,9 +278,8 @@ enum InfCaveTileRole
 // growth is a share of the base rather than a flat per-depth amount, so a boss
 // stays worth more than a gauntlet trainer at every depth.
 #define INFCAVE_SHARD_DEPTH_PERCENT   5   // added to the payout share per depth
-#define INFCAVE_SHARD_SURGE_PERCENT   20  // INFCAVE_MOD_SURGE, matching its stated +20%
-#define INFCAVE_SHARD_NO_ITEMS_PERCENT 20 // INFCAVE_MOD_NO_ITEMS, matching its stated +20%
-#define INFCAVE_SHARD_BOUNTY_PERCENT  30 // INFCAVE_MOD_BOUNTY increases the payout
+// A modifier's own share is its sInfCaveModifiers row's shardPercent, so the
+// payout a node advertises and the payout it pays come from one place.
 
 // Species pool tiers. A tier fixes the filler base-stat band a rolled trainer
 // draws from; depth picks the tier and the room type shifts it (a gauntlet
@@ -282,8 +301,25 @@ enum InfCaveTileRole
 // Boss rooms. The boss stands on the stamped arena's anchor tile - the walkable
 // tile nearest the piece's centre - rather than on a rolled floor tile, and holds
 // no sight line at all: the player walks up to it and talks to start the fight.
-// The room's ladder stays sealed until it is beaten, so the arena cannot be
-// skipped.
+// The room's ladder refuses to descend until it is beaten, so the arena cannot
+// be skipped. The ladder still offers to leave the cave, so the fight is never
+// forced.
+
+// INFCAVE_MOD_DARK. Flash level the room runs at: 0 is full brightness and
+// gMaxFlashLevel is fully black, so this hides the far wall while still leaving
+// the player a workable radius.
+#define INFCAVE_DARK_FLASH_LEVEL    4
+
+// Layout bias shared by INFCAVE_MOD_DARK and INFCAVE_MOD_CRAMPED: smaller rooms
+// and more of them, so the same canvas reads as corridor rather than hall. DARK
+// carves extra links on top, which is what turns the chain into a maze.
+#define INFCAVE_CRAMPED_ROOM_MAX_W  7
+#define INFCAVE_CRAMPED_ROOM_MAX_H  6
+#define INFCAVE_CRAMPED_MIN_ROOMS   7
+#define INFCAVE_DARK_EXTRA_LINKS    3
+
+// Item balls INFCAVE_MOD_TREASURED adds, matching the modifier's stated +2.
+#define INFCAVE_TREASURED_BALLS     2
 
 // Depth tint. The generated room's palettes are hue-rotated further on every
 // floor: depth * this share of the full hue circle. 2% puts a full turn at

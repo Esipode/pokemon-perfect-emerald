@@ -54,6 +54,49 @@ u32 InfCave_GetModifierArg(u32 slot);
 // TRUE if any slot holds modifier.
 bool32 InfCave_HasModifier(u32 modifier);
 
+// One row per enum InfCaveModifier, INFCAVE_MOD_NONE excepted. The table
+// (sInfCaveModifiers) lives in src/data/infinity_cave_modifiers.h; the node roll
+// reads weight, minDepth and incompatible, the node screen reads name,
+// description and icon, and the payout reads shardPercent.
+struct InfCaveModifierInfo
+{
+    const u8 *name;
+    const u8 *description;
+    u8 icon;         // index into the node screen's modifier icon sheet
+    u8 argKind;      // enum InfCaveModArg the slot's argument byte holds
+    u8 shardPercent; // added to a cleared battle's payout share
+    u8 weight;       // relative share of one modifier roll
+    u8 minDepth;     // not offered before this depth
+    u16 incompatible; // modifiers it never shares a room with, as INFCAVE_MOD_BIT
+};
+
+// Row for a modifier, or NULL for INFCAVE_MOD_NONE and anything out of range.
+const struct InfCaveModifierInfo *InfCave_GetModifierInfo(u32 modifier);
+
+// TRUE when two modifiers may share one room. Either row naming the other is
+// enough to make the pair illegal, so the table only has to state it once.
+bool32 InfCave_ModifiersCompatible(u32 a, u32 b);
+
+// Argument byte for a modifier the node roll picked, drawn from the modifier's
+// own option table at the current depth. 0 for a modifier that takes none.
+u32 InfCave_RollModifierArg(u32 modifier, rng_value_t *rng);
+
+// Payout share the room's active modifiers add, summed over the slots.
+u32 InfCave_GetModifierShardPercent(void);
+
+// Field-side modifier effects: INFCAVE_MOD_DARK's flash level and
+// INFCAVE_MOD_WEATHER's field weather. Called by the room generator, so the
+// reload path applies them too.
+void InfCave_ApplyModifiers(void);
+
+// Empties every modifier slot and puts the field back the way an unmodified room
+// leaves it. Called when a run closes, so no dark or weather outlives the cave.
+void InfCave_ClearModifiers(void);
+
+// TRUE while INFCAVE_MOD_NO_ITEMS must refuse the Bag: a cave battle in a room
+// carrying the modifier. Read by IsAllowedToUseBag.
+bool32 InfCave_IsBagLocked(void);
+
 // Arms B_FLAG_NO_WHITEOUT for the cave (Nuzlocke excepted). Called by the room
 // generator, so a reload inside a room re-arms it.
 void InfCave_ArmNoWhiteout(void);
@@ -254,6 +297,11 @@ u32 InfCave_GetBattleShards(void);
 // Post-battle script special. Adds the battle's shards silently; the start menu's
 // route tracker box shows the run total.
 void InfCave_PayBattleShards(void);
+
+// Battle-side modifier effects on one rolled opponent: INFCAVE_MOD_DOUBLES's
+// battle type and the INFCAVE_MOD_WEATHER / INFCAVE_MOD_TERRAIN starting status.
+// Called by the trainer roll once the slot's own fields are written.
+void InfCave_ApplyModifiersToTrainer(struct Trainer *trainer);
 
 // Debug: rolls a trainer into slot 0 off the global RNG and arms the redirect.
 void InfCave_DebugFillTrainer(void);

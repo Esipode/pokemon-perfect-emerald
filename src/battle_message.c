@@ -3115,6 +3115,7 @@ const u8 *const gBattleStringsTable[STRINGID_COUNT] =
     [STRINGID_ENCCALYREXFINISHERICE]                 = COMPOUND_STRING("GLACIAL LANCE!\pIce lances down at full\nstrength!"),
     [STRINGID_ENCCALYREXNOWISMOMENT]                 = COMPOUND_STRING("Calyrex's guard is broken.\nNOW IS THE MOMENT!"),
     [STRINGID_ENCCALYREXAUTHORITY]                   = COMPOUND_STRING("Calyrex's Authority bears\ndown on the field!"),
+    [STRINGID_PLAYERGOTSHARDS]                      = COMPOUND_STRING("You got {B_BUFF1} Shards for winning!\p"),
 };
 
 const u16 gOneHitKOStringIds[] =

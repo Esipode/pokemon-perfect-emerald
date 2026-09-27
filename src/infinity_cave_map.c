@@ -334,9 +334,21 @@ static void PlaceStampRoom(rng_value_t *rng)
     }
 }
 
+// TRUE while the room's modifiers bias the layout toward corridor: more rooms,
+// each of them smaller. INFCAVE_MOD_DARK reads as a maze and INFCAVE_MOD_CRAMPED
+// as a warren, and both start from the same sizing.
+static bool32 CorridorBias(void)
+{
+    return InfCave_HasModifier(INFCAVE_MOD_CRAMPED) || InfCave_HasModifier(INFCAVE_MOD_DARK);
+}
+
 static void PlaceRooms(rng_value_t *rng)
 {
-    u32 wanted = InfCave_RandRange(rng, INFCAVE_MIN_ROOMS, INFCAVE_MAX_ROOMS);
+    bool32 cramped = CorridorBias();
+    u32 maxW = cramped ? INFCAVE_CRAMPED_ROOM_MAX_W : INFCAVE_ROOM_MAX_W;
+    u32 maxH = cramped ? INFCAVE_CRAMPED_ROOM_MAX_H : INFCAVE_ROOM_MAX_H;
+    u32 minRooms = cramped ? INFCAVE_CRAMPED_MIN_ROOMS : INFCAVE_MIN_ROOMS;
+    u32 wanted = InfCave_RandRange(rng, minRooms, INFCAVE_MAX_ROOMS);
     u32 tries;
 
     if (sStamp.layoutId != INFCAVE_PIECE_NONE)
@@ -344,8 +356,8 @@ static void PlaceRooms(rng_value_t *rng)
 
     for (tries = 0; tries < INFCAVE_ROOM_TRIES && sRoomCount < wanted; tries++)
     {
-        u32 w = InfCave_RandRange(rng, INFCAVE_ROOM_MIN_W, INFCAVE_ROOM_MAX_W);
-        u32 h = InfCave_RandRange(rng, INFCAVE_ROOM_MIN_H, INFCAVE_ROOM_MAX_H);
+        u32 w = InfCave_RandRange(rng, INFCAVE_ROOM_MIN_W, maxW);
+        u32 h = InfCave_RandRange(rng, INFCAVE_ROOM_MIN_H, maxH);
         u32 x, y;
 
         if (w >= INFCAVE_AREA_MAX_X - INFCAVE_AREA_MIN || h >= INFCAVE_AREA_MAX_Y - INFCAVE_AREA_MIN)
@@ -406,6 +418,31 @@ static void CarveCorridors(rng_value_t *rng)
             CarveCorridorV(y0, y1, x0);
             CarveCorridorH(x0, x1, y1);
         }
+    }
+
+    // INFCAVE_MOD_DARK links rolled pairs on top of the chain. The loops are what
+    // make the floor read as a maze rather than a line the player can only walk
+    // one way, which is the part that matters when the flash radius hides the
+    // room's far side.
+    if (!InfCave_HasModifier(INFCAVE_MOD_DARK) || sRoomCount < 3)
+        return;
+
+    for (i = 0; i < INFCAVE_DARK_EXTRA_LINKS; i++)
+    {
+        u32 a = InfCave_RandRange(rng, 0, sRoomCount - 1);
+        u32 b = InfCave_RandRange(rng, 0, sRoomCount - 1);
+        u32 x0, y0, x1, y1;
+
+        if (a == b)
+            continue;
+
+        x0 = sRooms[a].x + sRooms[a].w / 2;
+        y0 = sRooms[a].y + sRooms[a].h / 2;
+        x1 = sRooms[b].x + sRooms[b].w / 2;
+        y1 = sRooms[b].y + sRooms[b].h / 2;
+
+        CarveCorridorH(x0, x1, y0);
+        CarveCorridorV(y0, y1, x1);
     }
 }
 
@@ -2260,13 +2297,25 @@ static EWRAM_DATA u8 sShrineX = 0;
 static EWRAM_DATA u8 sShrineY = 0;
 static EWRAM_DATA bool8 sHasShrine = FALSE;
 
+// Feature objects stand apart from each other, so a room's balls cannot be
+// mistaken for one another and a merchant is never boxed in by them.
+static bool32 FeatureSpacingOk(u32 x, u32 y)
+{
+    u32 i;
+
+    for (i = 0; i < sFeatureCount; i++)
+    {
+        if (ChebyshevDistance(x, y, sFeatures[i].x, sFeatures[i].y) < INFCAVE_FEATURE_MIN_APART)
+            return FALSE;
+    }
+    return TRUE;
+}
+
 // Tiles a feature may take: the stamped piece's interior only. The piece's outer
 // ring is what carries the path past it, so an object standing there could seal
 // the room off; nothing inside the ring can.
 static bool32 IsFeatureTile(u32 x, u32 y)
 {
-    u32 i;
-
     if (sStamp.layoutId == INFCAVE_PIECE_NONE)
         return FALSE;
     if (x <= sStamp.x || x + 1 >= (u32)(sStamp.x + sStamp.w))
@@ -2278,12 +2327,7 @@ static bool32 IsFeatureTile(u32 x, u32 y)
     if (sDecor[y][x] != 0 || !IsWalkable(x, y))
         return FALSE;
 
-    for (i = 0; i < sFeatureCount; i++)
-    {
-        if (ChebyshevDistance(x, y, sFeatures[i].x, sFeatures[i].y) < INFCAVE_FEATURE_MIN_APART)
-            return FALSE;
-    }
-    return TRUE;
+    return FeatureSpacingOk(x, y);
 }
 
 // Stands one feature object on the piece's interior. Candidate tiles are walked
@@ -2335,6 +2379,49 @@ static bool32 PlaceFeature(u32 kind, u32 localId, rng_value_t *rng)
     return FALSE;
 }
 
+// Stands one feature object on open floor, for INFCAVE_MOD_TREASURED in a room
+// whose type stamps no piece. Candidates come from the trainer placer's rooms and
+// pass the same connectivity test, so a ball dropped in the open can no more seal
+// the room off than a trainer can.
+static bool32 PlaceLooseFeature(u32 kind, u32 localId, rng_value_t *rng)
+{
+    u32 tries;
+
+    if (sFeatureCount >= INFCAVE_MAX_FEATURES)
+        return FALSE;
+
+    for (tries = 0; tries < INFCAVE_NPC_TRIES_PER_SLOT; tries++)
+    {
+        u32 x, y;
+
+        if (!RollNpcTile(rng, &x, &y))
+            return FALSE;
+        if (sConnectChecks == 0)
+            return FALSE;
+        // IsNpcCandidate already refuses the pads, the taken tiles and the
+        // chokepoints; the feature spacing is the only rule it does not carry.
+        if (!IsNpcCandidate(x, y) || !FeatureSpacingOk(x, y))
+            continue;
+
+        sMask[y][x] |= INFCAVE_FLAG_BLOCKED;
+        sConnectChecks--;
+        if (!EntranceReachesExit())
+        {
+            sMask[y][x] &= ~INFCAVE_FLAG_BLOCKED;
+            continue;
+        }
+
+        sFeatures[sFeatureCount].x = x;
+        sFeatures[sFeatureCount].y = y;
+        sFeatures[sFeatureCount].kind = kind;
+        sFeatures[sFeatureCount].localId = localId;
+        sFeatures[sFeatureCount].facing = FacingTowards(x, y, sEntranceX, sEntranceY);
+        sFeatureCount++;
+        return TRUE;
+    }
+    return FALSE;
+}
+
 // Draws the shrine pad on the tile nearest the alcove's centre, the same anchor a
 // boss room stands its boss on.
 static void PlaceShrine(void)
@@ -2367,7 +2454,10 @@ static void PlaceItemBalls(rng_value_t *rng)
         if (InfCave_IsItemBallTaken(slot))
             continue;
 
-        PlaceFeature(INFCAVE_FEATURE_ITEM_BALL, INFCAVE_LOCALID_FEATURE_0 + slot, rng);
+        if (sStamp.layoutId != INFCAVE_PIECE_NONE)
+            PlaceFeature(INFCAVE_FEATURE_ITEM_BALL, INFCAVE_LOCALID_FEATURE_0 + slot, rng);
+        else
+            PlaceLooseFeature(INFCAVE_FEATURE_ITEM_BALL, INFCAVE_LOCALID_FEATURE_0 + slot, rng);
     }
 }
 
@@ -2393,6 +2483,11 @@ static void PlaceFeatures(void)
         PlaceFeature(INFCAVE_FEATURE_MERCHANT, INFCAVE_LOCALID_MERCHANT, &rng);
         break;
     }
+
+    // INFCAVE_MOD_TREASURED stands its own balls in a room whose type has none.
+    // A treasure room already counted the modifier into its roll.
+    if (InfCave_HasModifier(INFCAVE_MOD_TREASURED) && InfCave_GetRoomType() != INFCAVE_ROOM_TREASURE)
+        PlaceItemBalls(&rng);
 
 #if INFCAVE_TRACE == TRUE
     DebugPrintf("InfCave placed %d features, shrine %d, %d checks left",
@@ -2862,6 +2957,7 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     // armed for every room the player can stand in.
     InfCave_ArmNoWhiteout();
 
+    InfCave_ApplyModifiers();
     InfCave_ApplyDepthHue();
 
     // setPlayerPosition mirrors the Battle Pyramid's inverted sense: TRUE means

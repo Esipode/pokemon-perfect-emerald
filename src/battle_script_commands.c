@@ -3963,6 +3963,10 @@ static void Cmd_getmoneyreward(void)
             FlagClear(FLAG_MAGOST_BERRY_MONEY_BOOST);
         }
         AddMoney(&gSaveBlock1Ptr->money, money);
+        // Cave battles pay shards instead of money; the payout message reports the
+        // shard reward the post-battle script hands over.
+        if (gInfCaveBattleActive)
+            money = InfCave_GetBattleShards();
     }
     else
     {

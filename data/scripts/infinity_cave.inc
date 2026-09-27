@@ -42,12 +42,12 @@ InfinityCave_EventScript_LadderDone::
 	releaseall
 	end
 
-@ A boss room's ladder refuses both descending and leaving while the boss is
-@ standing, so the arena fight is the only way on.
+@ A boss room's ladder refuses to descend while the boss is standing, so the
+@ arena fight is the only way on. Leaving the cave stays open, so the boss is
+@ never a forced battle.
 InfinityCave_EventScript_LadderSealed::
 	msgbox InfinityCave_Text_LadderSealed, MSGBOX_DEFAULT
-	releaseall
-	end
+	goto InfinityCave_EventScript_LadderAskLeave
 
 InfinityCave_Text_LadderAskDescend:
 	.string "A ladder drops away into the dark\n"

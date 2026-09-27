@@ -10968,6 +10968,11 @@ bool32 IsBattlerInvalidForSpreadMove(enum BattlerId battlerAtk, enum BattlerId b
 
 bool32 IsAllowedToUseBag(void)
 {
+    // INFCAVE_MOD_NO_ITEMS locks the Bag for the room's battles, and pays more
+    // shards for it.
+    if (InfCave_IsBagLocked())
+        return FALSE;
+
     switch (VarGet(B_VAR_NO_BAG_USE))
     {
     case NO_BAG_RESTRICTION:

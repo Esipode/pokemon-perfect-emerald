@@ -2871,7 +2871,12 @@ BattleScript_LocalBattleWonLoseTexts::
 	printstring STRINGID_TRAINER2LOSETEXT
 BattleScript_LocalBattleWonReward::
 	getmoneyreward
+	jumpifbyte CMP_NOT_EQUAL, gInfCaveBattleActive, 0, BattleScript_LocalBattleWonShards
 	printstring STRINGID_PLAYERGOTMONEY
+	goto BattleScript_LocalBattleWonRewardWait
+BattleScript_LocalBattleWonShards::
+	printstring STRINGID_PLAYERGOTSHARDS
+BattleScript_LocalBattleWonRewardWait::
 	waitmessage B_WAIT_TIME_LONG
 BattleScript_PayDayMoneyAndPickUpItems::
 	givepaydaymoney

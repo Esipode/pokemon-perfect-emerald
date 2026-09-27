@@ -653,9 +653,10 @@ static const struct DebugMenuOption sDebugMenu_Actions_InfCaveRoom[] =
     { NULL }
 };
 
-// Pins one trainer-facing modifier on the room the player is standing in, so
-// "InfCave Test Battle" shows the pool rules' effect without waiting for a node
-// roll to offer the modifier. Monotype carries the type in its argument.
+// Pins one modifier on the room the player is standing in and re-enters it, so a
+// modifier's effect can be seen without waiting for a node roll to offer it. The
+// depth and the room type are kept, so the room rebuilds as itself. Monotype,
+// weather and terrain carry their argument.
 struct DebugInfCaveModifier
 {
     u8 modifier;
@@ -664,18 +665,40 @@ struct DebugInfCaveModifier
 
 static const struct DebugInfCaveModifier sDebugInfCaveModifiers[] =
 {
-    { INFCAVE_MOD_NONE,     0 },
-    { INFCAVE_MOD_MONOTYPE, TYPE_FIRE },
-    { INFCAVE_MOD_MONOTYPE, TYPE_WATER },
-    { INFCAVE_MOD_GIMMICK,  0 },
+    { INFCAVE_MOD_NONE,      0 },
+    { INFCAVE_MOD_MONOTYPE,  TYPE_FIRE },
+    { INFCAVE_MOD_MONOTYPE,  TYPE_WATER },
+    { INFCAVE_MOD_WEATHER,   STARTING_STATUS_WEATHER_RAIN },
+    { INFCAVE_MOD_WEATHER,   STARTING_STATUS_WEATHER_SANDSTORM },
+    { INFCAVE_MOD_TERRAIN,   STARTING_STATUS_ELECTRIC_TERRAIN },
+    { INFCAVE_MOD_DOUBLES,   0 },
+    { INFCAVE_MOD_SWARM,     0 },
+    { INFCAVE_MOD_SURGE,     0 },
+    { INFCAVE_MOD_GIMMICK,   0 },
+    { INFCAVE_MOD_NO_ITEMS,  0 },
+    { INFCAVE_MOD_BOUNTY,    0 },
+    { INFCAVE_MOD_DARK,      0 },
+    { INFCAVE_MOD_CRAMPED,   0 },
+    { INFCAVE_MOD_TREASURED, 0 },
 };
 
 static const struct DebugMenuOption sDebugMenu_Actions_InfCaveModifier[] =
 {
-    { COMPOUND_STRING("Clear"),          DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[0] },
-    { COMPOUND_STRING("Monotype Fire"),  DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[1] },
-    { COMPOUND_STRING("Monotype Water"), DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[2] },
-    { COMPOUND_STRING("Gimmick"),        DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[3] },
+    { COMPOUND_STRING("Clear"),             DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[0] },
+    { COMPOUND_STRING("Monotype Fire"),     DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[1] },
+    { COMPOUND_STRING("Monotype Water"),    DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[2] },
+    { COMPOUND_STRING("Weather Rain"),      DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[3] },
+    { COMPOUND_STRING("Weather Sandstorm"), DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[4] },
+    { COMPOUND_STRING("Terrain Electric"),  DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[5] },
+    { COMPOUND_STRING("Doubles"),           DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[6] },
+    { COMPOUND_STRING("Swarm"),             DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[7] },
+    { COMPOUND_STRING("Surge"),             DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[8] },
+    { COMPOUND_STRING("Gimmick"),           DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[9] },
+    { COMPOUND_STRING("No items"),          DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[10] },
+    { COMPOUND_STRING("Bounty"),            DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[11] },
+    { COMPOUND_STRING("Dark"),              DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[12] },
+    { COMPOUND_STRING("Cramped"),           DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[13] },
+    { COMPOUND_STRING("Treasured"),         DebugAction_InfCave_ForceModifier, &sDebugInfCaveModifiers[14] },
     { NULL }
 };
 
@@ -2573,8 +2596,9 @@ static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType)
 }
 
 // Keeps the room type and depth: only the modifier slots change, so the room the
-// player is standing in stays valid and the next rolled trainer reads the new
-// modifier.
+// player is standing in stays valid and rebuilds as itself. The room is re-entered
+// rather than left standing, since the layout bias, the flash level and the field
+// weather are all applied by the generator.
 static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry)
 {
     const struct DebugInfCaveModifier *mod = entry;
@@ -2589,7 +2613,7 @@ static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry)
     modifiers[0] = mod->modifier;
     args[0] = mod->arg;
     InfCave_SetRoom(InfCave_GetRoomType(), modifiers, args);
-    Debug_DestroyMenu_Full(taskId);
+    Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_InfCaveEnterRoom);
 }
 
 // Gives a run enough shards to exercise the shop room's whole stock, including
