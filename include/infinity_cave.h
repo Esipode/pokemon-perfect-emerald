@@ -43,6 +43,45 @@ void InfCave_SetRoom(u32 roomType, const u8 *modifiers, const u8 *modifierArgs);
 
 u32 InfCave_GetRoomType(void);
 
+// One row per enum InfCaveRoomType. The table (sInfCaveRooms) lives in
+// src/data/infinity_cave_nodes.h; the node roll reads weight, minDepth and
+// modifierMask, and the node screen reads name, description and icon.
+struct InfCaveRoomInfo
+{
+    const u8 *name;
+    const u8 *description;
+    u8 icon;          // index into the node screen's room-type icon sheet
+    u8 weight;        // relative share of one option roll; 0 is never rolled
+    u8 minDepth;      // not offered before this depth
+    u16 modifierMask; // modifiers the room type may carry, as INFCAVE_MOD_BIT
+};
+
+// Row for a room type, or NULL for anything out of range.
+const struct InfCaveRoomInfo *InfCave_GetRoomInfo(u32 roomType);
+
+// One node the player may descend into. Rolled by InfCave_RollNodeOptions and
+// never saved: the roll is a pure function of the run seed and the target depth.
+struct InfCaveNodeOption
+{
+    u8 roomType;                           // enum InfCaveRoomType
+    u8 modifier[INFCAVE_MAX_MODIFIERS];    // enum InfCaveModifier
+    u8 modifierArg[INFCAVE_MAX_MODIFIERS]; // meaning depends on the modifier
+};
+
+// Depth the offered nodes lead to: one past the depth the player stands on, so
+// the lobby's options are depth 1's.
+u32 InfCave_GetNodeDepth(void);
+
+// Fills options with the nodes offered for InfCave_GetNodeDepth and returns how
+// many were written, INFCAVE_MIN_OPTIONS..INFCAVE_MAX_OPTIONS, or 1 on a boss
+// depth. options must hold INFCAVE_MAX_OPTIONS entries. Deterministic: the same
+// run seed and depth always produce the same set, so a reload re-offers it.
+u32 InfCave_RollNodeOptions(struct InfCaveNodeOption *options);
+
+// Debug: logs the rolled option set at a spread of depths over the debug print
+// handler, then restores the live depth. Empty in NDEBUG builds.
+void InfCave_DebugDumpNodeOptions(void);
+
 // TRUE while the current room's exit must refuse to descend: a boss room whose
 // boss is still standing. Read by the ladder script with specialvar.
 u16 InfCave_IsExitLocked(void);

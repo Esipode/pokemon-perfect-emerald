@@ -304,6 +304,7 @@ static void DebugAction_Util_ForceDraft(u8 taskId);
 static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType);
 static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry);
 static void DebugAction_InfCave_AddShards(u8 taskId);
+static void DebugAction_InfCave_DumpNodes(u8 taskId);
 
 static void DebugAction_TimeMenu_ChangeTimeOfDay(u8 taskId);
 static void DebugAction_TimeMenu_ChangeWeekdays(u8 taskId);
@@ -727,6 +728,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
     { COMPOUND_STRING("InfCave Modifier…"),         DebugAction_OpenSubMenu, sDebugMenu_Actions_InfCaveModifier },
     { COMPOUND_STRING("InfCave Test Battle"),       DebugAction_ExecuteScript, Debug_EventScript_InfCaveTestBattle },
     { COMPOUND_STRING("InfCave Add Shards"),        DebugAction_InfCave_AddShards },
+    { COMPOUND_STRING("InfCave Node Dump"),         DebugAction_InfCave_DumpNodes },
     { COMPOUND_STRING("View Trade Code…"),          DebugAction_TradeCode_ViewSampleOffer },
     { COMPOUND_STRING("View Confirm Code…"),        DebugAction_TradeCode_ViewSampleConfirm },
     { COMPOUND_STRING("Enter Trade Code…"),         DebugAction_TradeCode_EnterOffer },
@@ -2631,6 +2633,18 @@ static void DebugAction_InfCave_AddShards(u8 taskId)
 
 // Runs the same callnative as the live offer flow (data/scripts/draft.inc). Ignores
 // Draft_IsEnabled()/Draft_IsAreaDraftable(), so the case UI can be tested without a fresh route.
+// Logs the node option sets a run would be offered across depths, so the roll's
+// rules can be read without descending. Starts a run if none is open, since the
+// options come off the run's own seed.
+static void DebugAction_InfCave_DumpNodes(u8 taskId)
+{
+    if (!InfCave_IsInRun())
+        InfCave_StartRun();
+
+    InfCave_DebugDumpNodeOptions();
+    Debug_DestroyMenu_Full(taskId);
+}
+
 static void DebugAction_Util_ForceDraft(u8 taskId)
 {
     struct DraftChoice pool[DRAFT_MAX_CHOICES];

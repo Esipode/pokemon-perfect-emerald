@@ -23,6 +23,7 @@
 #include "constants/vars.h"
 #include "constants/weather.h"
 #include "data/infinity_cave_modifiers.h"
+#include "data/infinity_cave_nodes.h"
 #include "data/infinity_cave_rooms.h"
 
 static struct InfinityCaveRun *Run(void)
@@ -127,6 +128,14 @@ void InfCave_ValidateRoom(void)
     VarSet(VAR_TEMP_1, InfCave_IsRunConsistent() ? 0 : 1);
 }
 
+// Seed of the room at a depth. Derived from runSeed and the depth alone, so the
+// node roll can read the next depth's copy before the descent and see the same
+// number the room itself will generate from.
+static u32 RoomSeedForDepth(u32 depth)
+{
+    return ISO_RANDOMIZE2(Run()->runSeed + depth * 2654435761u);
+}
+
 void InfCave_AdvanceDepth(void)
 {
     struct InfinityCaveRun *run = Run();
@@ -142,9 +151,8 @@ void InfCave_AdvanceDepth(void)
     run->roomFlags = 0;
 
     run->depth++;
-    // Derived from runSeed and depth alone, so the room is identical no matter
-    // which nodes were taken to reach this depth.
-    run->roomSeed = ISO_RANDOMIZE2(run->runSeed + run->depth * 2654435761u);
+    // The room is identical no matter which nodes were taken to reach this depth.
+    run->roomSeed = RoomSeedForDepth(run->depth);
 
     // Default room type for the new depth: a boss on the cadence, a battle
     // otherwise. The node roll overwrites this with the option the player picked,
@@ -272,9 +280,8 @@ bool32 InfCave_ModifiersCompatible(u32 a, u32 b)
 // Weighted pick over the rows the current depth has unlocked, one roller per
 // option table. Row 0 of each table is unlocked at depth 0, so the fallbacks
 // below are only reached if a table is ever authored without one.
-static u32 RollWeatherStatus(rng_value_t *rng)
+static u32 RollWeatherStatus(rng_value_t *rng, u32 depth)
 {
-    u32 depth = InfCave_GetDepth();
     u32 total = 0, roll, i;
 
     for (i = 0; i < ARRAY_COUNT(sInfCaveWeathers); i++)
@@ -298,9 +305,8 @@ static u32 RollWeatherStatus(rng_value_t *rng)
     return sInfCaveWeathers[0].startingStatus;
 }
 
-static u32 RollTerrainStatus(rng_value_t *rng)
+static u32 RollTerrainStatus(rng_value_t *rng, u32 depth)
 {
-    u32 depth = InfCave_GetDepth();
     u32 total = 0, roll, i;
 
     for (i = 0; i < ARRAY_COUNT(sInfCaveTerrains); i++)
@@ -324,7 +330,9 @@ static u32 RollTerrainStatus(rng_value_t *rng)
     return sInfCaveTerrains[0].startingStatus;
 }
 
-u32 InfCave_RollModifierArg(u32 modifier, rng_value_t *rng)
+// depth is the depth the argument's option tables are read at, which is the
+// target depth for a node roll rather than the depth the player stands on.
+static u32 RollModifierArgAtDepth(u32 modifier, rng_value_t *rng, u32 depth)
 {
     const struct InfCaveModifierInfo *info = InfCave_GetModifierInfo(modifier);
 
@@ -336,11 +344,16 @@ u32 InfCave_RollModifierArg(u32 modifier, rng_value_t *rng)
     case INFCAVE_MOD_ARG_TYPE:
         return sInfCaveMonotypes[InfCave_RandRange(rng, 0, ARRAY_COUNT(sInfCaveMonotypes) - 1)];
     case INFCAVE_MOD_ARG_WEATHER:
-        return RollWeatherStatus(rng);
+        return RollWeatherStatus(rng, depth);
     case INFCAVE_MOD_ARG_TERRAIN:
-        return RollTerrainStatus(rng);
+        return RollTerrainStatus(rng, depth);
     }
     return 0;
+}
+
+u32 InfCave_RollModifierArg(u32 modifier, rng_value_t *rng)
+{
+    return RollModifierArgAtDepth(modifier, rng, InfCave_GetDepth());
 }
 
 u32 InfCave_GetModifierShardPercent(void)
@@ -454,6 +467,262 @@ u32 InfCave_RandRange(rng_value_t *rng, u32 lo, u32 hi)
     if (hi <= lo)
         return lo;
     return lo + LocalRandom32(rng) % (hi - lo + 1);
+}
+
+// --- Node option roll -------------------------------------------------------
+
+// The options are rolled off the next depth's seed before the descent, on a
+// stream of their own, so nothing the room itself generates is shifted by them.
+#define INFCAVE_SALT_NODES 0x4E4F4445u // 'NODE'
+
+const struct InfCaveRoomInfo *InfCave_GetRoomInfo(u32 roomType)
+{
+    if (roomType >= INFCAVE_ROOM_COUNT)
+        return NULL;
+
+    return &sInfCaveRooms[roomType];
+}
+
+u32 InfCave_GetNodeDepth(void)
+{
+    return InfCave_GetDepth() + 1;
+}
+
+static u32 NodeOptionCount(u32 depth)
+{
+    if (depth >= INFCAVE_OPTIONS_5_DEPTH)
+        return INFCAVE_MAX_OPTIONS;
+    if (depth >= INFCAVE_OPTIONS_4_DEPTH)
+        return INFCAVE_MIN_OPTIONS + 1;
+
+    return INFCAVE_MIN_OPTIONS;
+}
+
+// The cadence gates below are depth arithmetic rather than counters in the run
+// struct: the roll then writes nothing, so reopening the screen or reloading a
+// save inside the lobby re-offers the same set.
+static bool32 IsBossDepth(u32 depth)
+{
+    return depth != 0 && (depth % INFCAVE_BOSS_INTERVAL) == 0;
+}
+
+static bool32 RoomTypeOffered(u32 roomType, u32 depth)
+{
+    const struct InfCaveRoomInfo *info = &sInfCaveRooms[roomType];
+
+    if (info->weight == 0 || depth < info->minDepth)
+        return FALSE;
+
+    // The merchant's rate limit. A shop every floor would turn shards into a
+    // vending machine rather than a decision about when to spend them.
+    if (roomType == INFCAVE_ROOM_SHOP && (depth % INFCAVE_SHOP_MIN_GAP) != 0)
+        return FALSE;
+
+    return TRUE;
+}
+
+// Weighted pick over the room types the depth offers. usedMask holds a bit per
+// room type already in the set and those are skipped on the first pass, so a set
+// reads as distinct choices; the second pass allows a repeat, which is what a
+// shallow depth with only two offered types needs to fill three cards.
+static u32 RollRoomType(u32 depth, u32 usedMask, rng_value_t *rng)
+{
+    u32 pass, total, roll, i;
+
+    for (pass = 0; pass < 2; pass++)
+    {
+        total = 0;
+        for (i = 0; i < INFCAVE_ROOM_COUNT; i++)
+        {
+            if (!RoomTypeOffered(i, depth) || (pass == 0 && (usedMask & (1 << i))))
+                continue;
+            total += sInfCaveRooms[i].weight;
+        }
+
+        if (total == 0)
+            continue;
+
+        roll = InfCave_RandRange(rng, 0, total - 1);
+        for (i = 0; i < INFCAVE_ROOM_COUNT; i++)
+        {
+            if (!RoomTypeOffered(i, depth) || (pass == 0 && (usedMask & (1 << i))))
+                continue;
+            if (roll < sInfCaveRooms[i].weight)
+                return i;
+            roll -= sInfCaveRooms[i].weight;
+        }
+    }
+
+    // INFCAVE_ROOM_BATTLE is offered at every depth, so no card is ever left
+    // without a room type.
+    return INFCAVE_ROOM_BATTLE;
+}
+
+// Modifier slots one option asks for. The deepest tier the depth reaches states
+// the weights, so a shallow node is usually plain and a deep one rarely is.
+static u32 RollModifierCount(u32 depth, rng_value_t *rng)
+{
+    const struct InfCaveModCountTier *tier = &sInfCaveModCounts[0];
+    u32 total = 0, roll, i;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveModCounts); i++)
+    {
+        if (sInfCaveModCounts[i].minDepth <= depth)
+            tier = &sInfCaveModCounts[i];
+    }
+
+    for (i = 0; i <= INFCAVE_MAX_MODIFIERS; i++)
+        total += tier->weight[i];
+
+    if (total == 0)
+        return 0;
+
+    roll = InfCave_RandRange(rng, 0, total - 1);
+    for (i = 0; i <= INFCAVE_MAX_MODIFIERS; i++)
+    {
+        if (roll < tier->weight[i])
+            return i;
+        roll -= tier->weight[i];
+    }
+    return 0;
+}
+
+// TRUE while modifier may still join the option: the room type's mask allows it,
+// the depth has unlocked it, and it shares a room with every slot already filled.
+static bool32 ModifierFitsOption(const struct InfCaveNodeOption *option, u32 modifier, u32 depth, u32 filled)
+{
+    const struct InfCaveModifierInfo *info = InfCave_GetModifierInfo(modifier);
+    u32 i;
+
+    if (info == NULL || info->weight == 0 || depth < info->minDepth)
+        return FALSE;
+    if ((sInfCaveRooms[option->roomType].modifierMask & INFCAVE_MOD_BIT(modifier)) == 0)
+        return FALSE;
+
+    for (i = 0; i < filled; i++)
+    {
+        if (!InfCave_ModifiersCompatible(option->modifier[i], modifier))
+            return FALSE;
+    }
+    return TRUE;
+}
+
+// Fills an option's modifier slots, stopping early when the rolled count asks for
+// more than the room type and the depth can legally supply.
+static void RollOptionModifiers(struct InfCaveNodeOption *option, u32 depth, rng_value_t *rng)
+{
+    u32 want = RollModifierCount(depth, rng);
+    u32 filled, total, roll, i;
+
+    for (filled = 0; filled < want; filled++)
+    {
+        total = 0;
+        for (i = 0; i < INFCAVE_MOD_COUNT; i++)
+        {
+            if (ModifierFitsOption(option, i, depth, filled))
+                total += sInfCaveModifiers[i].weight;
+        }
+
+        if (total == 0)
+            return;
+
+        roll = InfCave_RandRange(rng, 0, total - 1);
+        for (i = 0; i < INFCAVE_MOD_COUNT; i++)
+        {
+            if (!ModifierFitsOption(option, i, depth, filled))
+                continue;
+            if (roll < sInfCaveModifiers[i].weight)
+                break;
+            roll -= sInfCaveModifiers[i].weight;
+        }
+
+        if (i >= INFCAVE_MOD_COUNT)
+            return;
+
+        option->modifier[filled] = i;
+        option->modifierArg[filled] = RollModifierArgAtDepth(i, rng, depth);
+    }
+}
+
+u32 InfCave_RollNodeOptions(struct InfCaveNodeOption *options)
+{
+    u32 depth = InfCave_GetNodeDepth();
+    rng_value_t rng = LocalRandomSeed(RoomSeedForDepth(depth) ^ INFCAVE_SALT_NODES);
+    u32 count, usedMask = 0, i;
+
+    memset(options, 0, sizeof(struct InfCaveNodeOption) * INFCAVE_MAX_OPTIONS);
+
+    // A boss depth offers no choice: the one node is the arena. Its ladder still
+    // lets the player leave the cave, so the fight is not forced.
+    if (IsBossDepth(depth))
+    {
+        options[0].roomType = INFCAVE_ROOM_BOSS;
+        RollOptionModifiers(&options[0], depth, &rng);
+        return 1;
+    }
+
+    count = NodeOptionCount(depth);
+    i = 0;
+
+    // The rest guarantee takes the first card, so healing stays reachable however
+    // the weighted rolls fall.
+    if ((depth % INFCAVE_REST_MAX_GAP) == 0 && RoomTypeOffered(INFCAVE_ROOM_REST, depth))
+    {
+        options[i].roomType = INFCAVE_ROOM_REST;
+        usedMask |= 1 << INFCAVE_ROOM_REST;
+        i++;
+    }
+
+    for (; i < count; i++)
+    {
+        options[i].roomType = RollRoomType(depth, usedMask, &rng);
+        usedMask |= 1 << options[i].roomType;
+    }
+
+    // Modifiers are rolled once every room type is settled, so the forced card
+    // and the rolled ones draw from the stream in one fixed order and a modifier's
+    // legality is judged against the room type it will carry.
+    for (i = 0; i < count; i++)
+        RollOptionModifiers(&options[i], depth, &rng);
+
+    return count;
+}
+
+// Rolls the set at a spread of depths and logs it: one line per option, one more
+// per filled modifier slot. Reads the live run's seed, so the sets printed are the
+// ones that run will be offered.
+void InfCave_DebugDumpNodeOptions(void)
+{
+#ifndef NDEBUG
+    static const u8 sSampleDepths[] = { 0, 1, 2, 3, 4, 5, 7, 9, 11, 14, 19, 29, 39, 49 };
+    struct InfinityCaveRun *run = Run();
+    struct InfCaveNodeOption options[INFCAVE_MAX_OPTIONS];
+    u32 savedDepth = run->depth;
+    u32 sample, count, i, slot;
+
+    for (sample = 0; sample < ARRAY_COUNT(sSampleDepths); sample++)
+    {
+        run->depth = sSampleDepths[sample];
+        count = InfCave_RollNodeOptions(options);
+        DebugPrintf("InfCave depth %d: %d options", InfCave_GetNodeDepth(), count);
+
+        for (i = 0; i < count; i++)
+        {
+            const struct InfCaveRoomInfo *room = InfCave_GetRoomInfo(options[i].roomType);
+
+            DebugPrintf("  %d: %S", i, room->name);
+            for (slot = 0; slot < INFCAVE_MAX_MODIFIERS; slot++)
+            {
+                const struct InfCaveModifierInfo *mod = InfCave_GetModifierInfo(options[i].modifier[slot]);
+
+                if (mod != NULL)
+                    DebugPrintf("     %S arg %d", mod->name, options[i].modifierArg[slot]);
+            }
+        }
+    }
+
+    run->depth = savedDepth;
+#endif
 }
 
 // --- Rest, treasure and shop rooms ------------------------------------------
