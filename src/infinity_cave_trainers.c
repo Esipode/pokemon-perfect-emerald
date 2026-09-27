@@ -163,6 +163,40 @@ u32 InfCave_RollTrainerCount(void)
     return count;
 }
 
+// Shards one cleared battle in the current room pays: the room type's base
+// reward grown by depth, then scaled by the modifiers that advertise a richer
+// payout. 0 outside a run, so the debug test battle pays nothing.
+u32 InfCave_GetBattleShards(void)
+{
+    u32 roomType = InfCave_GetRoomType();
+    u32 percent = 100;
+    u32 base;
+
+    if (!InfCave_IsInRun() || roomType >= INFCAVE_ROOM_COUNT)
+        return 0;
+
+    base = sInfCaveTrainerSpec[roomType].shardReward;
+    if (base == 0)
+        return 0;
+
+    percent += InfCave_GetDepth() * INFCAVE_SHARD_DEPTH_PERCENT;
+    if (InfCave_HasModifier(INFCAVE_MOD_SURGE))
+        percent += INFCAVE_SHARD_SURGE_PERCENT;
+    if (InfCave_HasModifier(INFCAVE_MOD_NO_ITEMS))
+        percent += INFCAVE_SHARD_NO_ITEMS_PERCENT;
+    if (InfCave_HasModifier(INFCAVE_MOD_BOUNTY))
+        percent += INFCAVE_SHARD_BOUNTY_PERCENT;
+
+    return base * percent / 100;
+}
+
+// Post-battle script special. Pays the battle out and buffers the amount and the
+// new total for the payout message.
+void InfCave_PayBattleShards(void)
+{
+    InfCave_AddShards(InfCave_GetBattleShards());
+}
+
 // Tier a built slot rolled on, found from the slot the trainer pointer addresses.
 // Anything outside the slot array reads tier 0, so a stray pointer prunes to the
 // shallowest band instead of indexing past the table.

@@ -612,3 +612,4 @@ gSpecials::
 	def_special InfCave_AdvanceDepth
 	def_special InfCave_EndRunQuit
 	def_special InfCave_ValidateRoom
+	def_special InfCave_PayBattleShards

@@ -2467,6 +2467,10 @@ void InfCave_GenerateRoom(u16 *backupMapData, bool8 setPlayerPosition)
     WriteTrainerTemplates();
     FreeGrids();
 
+    // Both the warp and the reload path reach here, so the cave's loss handling is
+    // armed for every room the player can stand in.
+    InfCave_ArmNoWhiteout();
+
     // setPlayerPosition mirrors the Battle Pyramid's inverted sense: TRUE means
     // the position is already restored from the save and must be kept.
     if (setPlayerPosition == FALSE)

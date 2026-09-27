@@ -9,6 +9,9 @@ struct RouteProgress
     u8 itemsTotal;
     u8 trainersDefeated;
     u8 trainersTotal;
+    // Infinity Cave rooms: the run's shard total takes the species row's place.
+    u16 shards;
+    bool8 tracksShards;
 };
 
 // Fills progress with the current map's completion counts. Returns FALSE when the map tracks nothing.

@@ -2,6 +2,8 @@
 #include "infinity_cave.h"
 #include "event_data.h"
 #include "random.h"
+#include "config/battle.h"
+#include "constants/flags.h"
 #include "constants/vars.h"
 
 static struct InfinityCaveRun *Run(void)
@@ -42,7 +44,23 @@ void InfCave_EndRun(enum InfCaveEndReason reason)
     // run struct keeps no history of it.
     (void)reason;
     InfCave_ClearTrainers();
+#if B_FLAG_NO_WHITEOUT != 0
+    FlagClear(B_FLAG_NO_WHITEOUT);
+#endif
     memset(Run(), 0, sizeof(struct InfinityCaveRun));
+}
+
+// Facility-style loss handling, armed by the room generator so it also covers the
+// continue-from-save path: a cave defeat ends the descent and returns the player
+// to the lobby instead of whiting out. Skipped in Nuzlocke mode, where a loss
+// keeps the normal white-out consequence (src/battle_setup.c branches on the same
+// condition). Cleared by InfCave_EndRun.
+void InfCave_ArmNoWhiteout(void)
+{
+#if B_FLAG_NO_WHITEOUT != 0
+    if (!gSaveBlock1Ptr->nuzlockeModeEnabled)
+        FlagSet(B_FLAG_NO_WHITEOUT);
+#endif
 }
 
 void InfCave_EndRunQuit(void)

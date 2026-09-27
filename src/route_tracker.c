@@ -2,6 +2,7 @@
 #include "route_tracker.h"
 #include "battle_setup.h"
 #include "event_data.h"
+#include "infinity_cave.h"
 #include "pokedex.h"
 #include "pokemon.h"
 #include "wild_encounter.h"
@@ -238,6 +239,29 @@ static void CountTrainers(struct RouteProgress *progress)
     }
 }
 
+// A generated cave room's header describes only the exit crystal, so the counts come
+// from the run and the placement pass instead. Shards replace the species row: the
+// room's mons are rolled, not a fixed encounter table.
+static bool32 CountInfinityCaveRoom(struct RouteProgress *progress)
+{
+    u32 slot, count;
+
+    if (!InfCave_InGeneratedRoom() || !InfCave_IsInRun())
+        return FALSE;
+
+    count = InfCave_GetRoomTrainerCount();
+    progress->trainersTotal = count;
+    for (slot = 0; slot < count; slot++)
+    {
+        if (FlagGet(TRAINER_FLAGS_START + InfCave_GetTrainerId(slot)))
+            progress->trainersDefeated++;
+    }
+
+    progress->tracksShards = TRUE;
+    progress->shards = InfCave_GetShards();
+    return TRUE;
+}
+
 bool32 GetCurrentRouteProgress(struct RouteProgress *progress)
 {
     progress->speciesCaught = 0;
@@ -246,6 +270,11 @@ bool32 GetCurrentRouteProgress(struct RouteProgress *progress)
     progress->itemsTotal = 0;
     progress->trainersDefeated = 0;
     progress->trainersTotal = 0;
+    progress->shards = 0;
+    progress->tracksShards = FALSE;
+
+    if (CountInfinityCaveRoom(progress))
+        return TRUE;
 
     CountEncounters(progress);
     CountItems(progress);

@@ -257,6 +257,15 @@ enum InfCaveTileRole
 #define INFCAVE_LEVEL_MAX_BONUS      15
 #define INFCAVE_LEVEL_SURGE_BONUS    3  // INFCAVE_MOD_SURGE, matching the modifier's stated +3
 
+// Shard payout for one cleared cave battle: the room type's base reward
+// (sInfCaveTrainerSpec) grown by depth, then scaled by the room's modifiers. The
+// growth is a share of the base rather than a flat per-depth amount, so a boss
+// stays worth more than a gauntlet trainer at every depth.
+#define INFCAVE_SHARD_DEPTH_PERCENT   5   // added to the payout share per depth
+#define INFCAVE_SHARD_SURGE_PERCENT   50  // INFCAVE_MOD_SURGE, matching its stated +50%
+#define INFCAVE_SHARD_NO_ITEMS_PERCENT 50 // INFCAVE_MOD_NO_ITEMS, matching its stated +50%
+#define INFCAVE_SHARD_BOUNTY_PERCENT  100 // INFCAVE_MOD_BOUNTY doubles the payout
+
 // Species pool tiers. A tier fixes the filler base-stat band a rolled trainer
 // draws from; depth picks the tier and the room type shifts it (a gauntlet
 // trainer is one tier weaker, an elite one stronger).

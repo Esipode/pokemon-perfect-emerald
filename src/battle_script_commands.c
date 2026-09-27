@@ -37,6 +37,7 @@
 #include "string_util.h"
 #include "pokemon_icon.h"
 #include "caps.h"
+#include "infinity_cave.h"
 #include "m4a.h"
 #include "mail.h"
 #include "event_data.h"
@@ -3915,8 +3916,9 @@ static u32 GetTrainerMoneyToGive(u16 trainerId)
     u8 trainerMoney = 0;
 
     // Emporium battles charge a fixed entry fee up front (field script) and pay no prize, so the
-    // repeatable fight is not a money faucet.
-    if (gEmporiumBattleActive)
+    // repeatable fight is not a money faucet. Infinity Cave battles pay shards instead of money,
+    // so an endless descent is not one either.
+    if (gEmporiumBattleActive || gInfCaveBattleActive)
         return 0;
 
     if (trainerId == TRAINER_SECRET_BASE)

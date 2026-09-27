@@ -34,6 +34,7 @@
 #include "pokedex.h"
 #include "recruits_mode.h"
 #include "region_map.h"
+#include "infinity_cave.h"
 #include "route_tracker.h"
 #include "rtc.h"
 #include "safari_zone.h"
@@ -193,6 +194,8 @@ static const struct WindowTemplate sWindowTemplate_RouteTracker = {
 };
 
 static const u8 sText_RouteTrackerItems[] = _("ITEMS");
+static const u8 sText_RouteTrackerShards[] = _("SHARDS");
+static const u8 sText_RouteTrackerDepth[] = _("DEPTH ");
 static const u8 sText_RouteTrackerTrainers[] = _("TRAINERS");
 
 static const u8 *const sPyramidFloorNames[FRONTIER_STAGES_PER_CHALLENGE + 1] =
@@ -544,9 +547,15 @@ static void ShowPyramidFloorWindow(void)
 
 // States where the counts would be meaningless (link/union menus are already reduced,
 // facility maps are randomised) or where a Safari-style box already occupies the corner.
+// An Infinity Cave room ignores the player's option: the box is the run's only readout
+// for shards and floor progress.
 static bool32 ShouldShowRouteTracker(void)
 {
     if (IsOverworldLinkActive() || InUnionRoom())
+        return FALSE;
+    if (InfCave_InGeneratedRoom() && InfCave_IsInRun())
+        return TRUE;
+    if (!gSaveBlock2Ptr->optionsRouteTracker)
         return FALSE;
     if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE || InBattlePike() || InTrainerHill())
         return FALSE;
@@ -554,19 +563,32 @@ static bool32 ShouldShowRouteTracker(void)
     return TRUE;
 }
 
+static void PrintRouteTrackerLabelAndValue(const u8 *label, u8 y, const u8 *value)
+{
+    AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, label, 4, y, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, value, GetStringRightAlignXOffset(FONT_SMALL, value, 96), y, TEXT_SKIP_DRAW, NULL);
+}
+
 static void PrintRouteTrackerRow(const u8 *label, u8 y, u16 count, u16 total)
 {
     u8 str[16];
     u8 *end;
-
-    AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, label, 4, y, TEXT_SKIP_DRAW, NULL);
 
     end = ConvertIntToDecimalStringN(str, count, STR_CONV_MODE_LEFT_ALIGN, 2);
     *end++ = CHAR_SLASH;
     end = ConvertIntToDecimalStringN(end, total, STR_CONV_MODE_LEFT_ALIGN, 2);
     *end = EOS;
 
-    AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, str, GetStringRightAlignXOffset(FONT_SMALL, str, 96), y, TEXT_SKIP_DRAW, NULL);
+    PrintRouteTrackerLabelAndValue(label, y, str);
+}
+
+// Plain total, for a count with no ceiling to show against (cave shards).
+static void PrintRouteTrackerTotalRow(const u8 *label, u8 y, u16 count)
+{
+    u8 str[8];
+
+    ConvertIntToDecimalStringN(str, count, STR_CONV_MODE_LEFT_ALIGN, 5);
+    PrintRouteTrackerLabelAndValue(label, y, str);
 }
 
 static void ShowRouteTrackerWindow(void)
@@ -583,14 +605,30 @@ static void ShowRouteTrackerWindow(void)
     PutWindowTilemap(sRouteTrackerWindowId);
     DrawStdWindowFrame(sRouteTrackerWindowId, FALSE);
 
-    GetMapName(gStringVar4, gMapHeader.regionMapSectionId, 0);
+    // In a cave room the map name is the same on every floor, so the depth heads the box.
+    if (progress.tracksShards)
+    {
+        u8 *end = StringCopy(gStringVar4, sText_RouteTrackerDepth);
+        ConvertIntToDecimalStringN(end, InfCave_GetDepth(), STR_CONV_MODE_LEFT_ALIGN, 3);
+    }
+    else
+    {
+        GetMapName(gStringVar4, gMapHeader.regionMapSectionId, 0);
+    }
     AddTextPrinterParameterized(sRouteTrackerWindowId, FONT_SMALL, gStringVar4, 4, y, TEXT_SKIP_DRAW, NULL);
     y += lineHeight;
 
-    PrintRouteTrackerRow(gText_MenuPokemon, y, progress.speciesCaught, progress.speciesTotal);
+    if (progress.tracksShards)
+        PrintRouteTrackerTotalRow(sText_RouteTrackerShards, y, progress.shards);
+    else
+        PrintRouteTrackerRow(gText_MenuPokemon, y, progress.speciesCaught, progress.speciesTotal);
     y += lineHeight;
-    PrintRouteTrackerRow(sText_RouteTrackerItems, y, progress.itemsCollected, progress.itemsTotal);
-    y += lineHeight;
+    // The cave places no items yet; skip the row rather than print an empty 0/0.
+    if (!progress.tracksShards || progress.itemsTotal != 0)
+    {
+        PrintRouteTrackerRow(sText_RouteTrackerItems, y, progress.itemsCollected, progress.itemsTotal);
+        y += lineHeight;
+    }
     PrintRouteTrackerRow(sText_RouteTrackerTrainers, y, progress.trainersDefeated, progress.trainersTotal);
 
     CopyWindowToVram(sRouteTrackerWindowId, COPYWIN_GFX);
@@ -672,7 +710,7 @@ static bool32 InitStartMenuStep(void)
         if (CurrentBattlePyramidLocation() != PYRAMID_LOCATION_NONE)
             ShowPyramidFloorWindow();
 #endif //FREE_BATTLE_FRONTIER
-        if (gSaveBlock2Ptr->optionsRouteTracker && ShouldShowRouteTracker())
+        if (ShouldShowRouteTracker())
             ShowRouteTrackerWindow();
         sInitStartMenuData[0]++;
         break;

@@ -105,24 +105,29 @@ static const u8 sInfCaveTierMinDepth[INFCAVE_TIER_COUNT] =
 // minCount/maxCount are how many trainers the room places before
 // INFCAVE_MOD_SWARM; the total is clamped to INFCAVE_MAX_TRAINERS, which the
 // widest case (a swarming gauntlet) reaches exactly.
+// shardReward is what one of the room's trainers pays when beaten, before the
+// depth growth and the modifier scaling in InfCave_GetBattleShards. A gauntlet
+// trainer pays less than a battle-room trainer but the room fields more of them,
+// so clearing a gauntlet is still the better haul.
 struct InfCaveTrainerSpec
 {
     u8 partySize;
     s8 tierOffset;
     u8 minCount;
     u8 maxCount;
+    u8 shardReward;
     u64 aiFlags;
 };
 
 static const struct InfCaveTrainerSpec sInfCaveTrainerSpec[INFCAVE_ROOM_COUNT] =
 {
-    [INFCAVE_ROOM_BATTLE]   = { .partySize = 3, .tierOffset =  0, .minCount = 2, .maxCount = 3, .aiFlags = AI_FLAG_SMART_TRAINER },
-    [INFCAVE_ROOM_GAUNTLET] = { .partySize = 2, .tierOffset = -1, .minCount = 4, .maxCount = 6, .aiFlags = AI_FLAG_SMART_TRAINER },
-    [INFCAVE_ROOM_ELITE]    = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
-    [INFCAVE_ROOM_BOSS]     = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
-    [INFCAVE_ROOM_REST]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .aiFlags = 0 },
-    [INFCAVE_ROOM_TREASURE] = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .aiFlags = 0 },
-    [INFCAVE_ROOM_SHOP]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .aiFlags = 0 },
+    [INFCAVE_ROOM_BATTLE]   = { .partySize = 3, .tierOffset =  0, .minCount = 2, .maxCount = 3, .shardReward = 10, .aiFlags = AI_FLAG_SMART_TRAINER },
+    [INFCAVE_ROOM_GAUNTLET] = { .partySize = 2, .tierOffset = -1, .minCount = 4, .maxCount = 6, .shardReward =  8, .aiFlags = AI_FLAG_SMART_TRAINER },
+    [INFCAVE_ROOM_ELITE]    = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .shardReward = 25, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
+    [INFCAVE_ROOM_BOSS]     = { .partySize = 6, .tierOffset =  1, .minCount = 1, .maxCount = 1, .shardReward = 40, .aiFlags = AI_FLAG_SMART_TRAINER | AI_FLAG_ACE_POKEMON },
+    [INFCAVE_ROOM_REST]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .shardReward =  0, .aiFlags = 0 },
+    [INFCAVE_ROOM_TREASURE] = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .shardReward =  0, .aiFlags = 0 },
+    [INFCAVE_ROOM_SHOP]     = { .partySize = 0, .tierOffset =  0, .minCount = 0, .maxCount = 0, .shardReward =  0, .aiFlags = 0 },
 };
 
 #endif // GUARD_DATA_INFINITY_CAVE_TRAINERS_H

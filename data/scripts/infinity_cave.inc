@@ -50,38 +50,40 @@ InfinityCave_Text_CrystalAskLeave:
 @ The rolled trainers the generator stands on the room's floor. Their templates
 @ carry TRAINER_TYPE_NORMAL and a sight range, so the challenge is sight-based;
 @ trainerbattle takes a literal id and the approach code reads that id back out of
-@ the script, so every slot needs its own copy. Stage 16 adds the post-battle
-@ payout and the no-whiteout handling.
+@ the script, so every slot needs its own copy. Every slot shares one payout
+@ script: the shards a win pays come from the room, not the slot. A loss never
+@ reaches here - B_FLAG_NO_WHITEOUT is armed when the room generates, and
+@ src/battle_setup.c sends a cave defeat straight back to the lobby.
 InfinityCave_EventScript_Trainer0::
-	trainerbattle_single TRAINER_INFCAVE_0, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_0, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_EventScript_Trainer1::
-	trainerbattle_single TRAINER_INFCAVE_1, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_1, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_EventScript_Trainer2::
-	trainerbattle_single TRAINER_INFCAVE_2, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_2, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_EventScript_Trainer3::
-	trainerbattle_single TRAINER_INFCAVE_3, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_3, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_EventScript_Trainer4::
-	trainerbattle_single TRAINER_INFCAVE_4, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_4, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_EventScript_Trainer5::
-	trainerbattle_single TRAINER_INFCAVE_5, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_5, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_EventScript_Trainer6::
-	trainerbattle_single TRAINER_INFCAVE_6, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_6, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_EventScript_Trainer7::
-	trainerbattle_single TRAINER_INFCAVE_7, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat
+	trainerbattle_single TRAINER_INFCAVE_7, InfinityCave_Text_TrainerIntro, InfinityCave_Text_TrainerDefeat, InfinityCave_EventScript_TrainerPayout
 	end
 
 InfinityCave_Text_TrainerIntro:
@@ -90,3 +92,9 @@ InfinityCave_Text_TrainerIntro:
 
 InfinityCave_Text_TrainerDefeat:
 	.string "The cave takes its own back.$"
+
+@ Post-battle payout. InfCave_PayBattleShards adds the room's shard reward; no
+@ message, the start menu's tracker box carries the running total.
+InfinityCave_EventScript_TrainerPayout::
+	special InfCave_PayBattleShards
+	end

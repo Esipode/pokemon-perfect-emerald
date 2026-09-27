@@ -50,6 +50,10 @@ u32 InfCave_GetModifierArg(u32 slot);
 // TRUE if any slot holds modifier.
 bool32 InfCave_HasModifier(u32 modifier);
 
+// Arms B_FLAG_NO_WHITEOUT for the cave (Nuzlocke excepted). Called by the room
+// generator, so a reload inside a room re-arms it.
+void InfCave_ArmNoWhiteout(void);
+
 void InfCave_AddShards(u32 amount);
 bool32 InfCave_SpendShards(u32 amount);
 
@@ -163,6 +167,15 @@ u32 InfCave_GetTrainerTier(const struct Trainer *trainer);
 struct TrainerMon;
 bool32 InfCave_MonAllowedAsFiller(const struct Trainer *trainer, const struct TrainerMon *mon, bool32 applyMonotype);
 bool32 InfCave_MonMatchesGimmick(const struct Trainer *trainer, const struct TrainerMon *mon);
+
+// Shards one cleared battle in the current room pays: the room type's base
+// reward, grown by depth and scaled by INFCAVE_MOD_SURGE / NO_ITEMS / BOUNTY.
+// 0 when no run is in progress.
+u32 InfCave_GetBattleShards(void);
+
+// Post-battle script special. Adds the battle's shards silently; the start menu's
+// route tracker box shows the run total.
+void InfCave_PayBattleShards(void);
 
 // Debug: rolls a trainer into slot 0 off the global RNG and arms the redirect.
 void InfCave_DebugFillTrainer(void);
