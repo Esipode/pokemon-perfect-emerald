@@ -389,6 +389,7 @@ void NewGameInitData(void)
     void *bagPokeBallsBackup = NULL;
     void *bagTMHMsBackup = NULL;
     void *bagBerriesBackup = NULL;
+    void *gimmickBagBackup = NULL;
     void *dexCaughtBackup = NULL;
     void *dexSeenBackup = NULL;
     // Outgoing run's dexCaught, kept for the storage carry-over pre-evolution back-fill.
@@ -455,6 +456,10 @@ void NewGameInitData(void)
 
         bagBerriesBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.berries));
         memcpy(bagBerriesBackup, gSaveBlock1Ptr->bag.berries, sizeof(gSaveBlock1Ptr->bag.berries));
+
+        // Backed up here, before ClearSav3(), same as the other bag pockets above.
+        gimmickBagBackup = Alloc(sizeof(gSaveBlock3Ptr->gimmickBag));
+        memcpy(gimmickBagBackup, &gSaveBlock3Ptr->gimmickBag, sizeof(gSaveBlock3Ptr->gimmickBag));
 
         dexCaughtBackup = Alloc(sizeof(gSaveBlock1Ptr->dexCaught));
         memcpy(dexCaughtBackup, gSaveBlock1Ptr->dexCaught, sizeof(gSaveBlock1Ptr->dexCaught));
@@ -669,6 +674,10 @@ void NewGameInitData(void)
                 CpuFastFill16(0, gSaveBlock1Ptr->bag.TMsHMs, sizeof(gSaveBlock1Ptr->bag.TMsHMs));
             }
             memcpy(gSaveBlock1Ptr->bag.berries, bagBerriesBackup, sizeof(gSaveBlock1Ptr->bag.berries));
+            if (gimmickBagBackup != NULL)
+                memcpy(&gSaveBlock3Ptr->gimmickBag, gimmickBagBackup, sizeof(gSaveBlock3Ptr->gimmickBag));
+            // The restored bag.items may come from a pre-change run and still hold gimmick items.
+            MoveMisfiledBagItems();
             CopyTrainerId(gSaveBlock2Ptr->playerTrainerId, savedTrainerId);
 
             /* Restore Pokédex flags preserved across ClearSav1 */
@@ -765,6 +774,8 @@ void NewGameInitData(void)
             Free(bagTMHMsBackup);
         if (bagBerriesBackup != NULL)
             Free(bagBerriesBackup);
+        if (gimmickBagBackup != NULL)
+            Free(gimmickBagBackup);
     }
 }
 
