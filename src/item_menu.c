@@ -140,6 +140,8 @@ static void LoadBagItemListBuffers(u8);
 static void PrintPocketNames(const u8 *, const u8 *);
 static void CopyPocketNameToWindow(u32);
 static void DrawPocketIndicatorSquare(u8, bool8);
+static u8 GetPocketIndicatorColumn(enum Pocket);
+static void RedrawPocketIndicatorSquares(void);
 static void CreatePocketScrollArrowPair(void);
 static void CreatePocketSwitchArrowPair(void);
 static void DestroyPocketSwitchArrowPair(void);
@@ -234,6 +236,7 @@ static const u8 sMenuText_Tap[] = _("Tap");
 static const u8 sMenuText_Hold[] = _("Hold");
 static const u8 sText_RegisterHow[] = _("Register this\nitem by tapping or\nholding SELECT?");
 static const u8 sText_BerriesSealedInCave[] = _("You can't use or give BERRIES\nduring a descent.");
+static const u8 sText_GimmickItemsSealedInCave[] = _("You can't give that item\nduring a descent.");
 
 static void Task_LoadBagSortOptions(u8 taskId);
 static void ItemMenu_SortByName(u8 taskId);
@@ -811,7 +814,7 @@ static bool8 SetupBagMenu(void)
     case 13:
         PrintPocketNames(gPocketNamesStringsTable[gBagPosition.pocket], 0);
         CopyPocketNameToWindow(0);
-        DrawPocketIndicatorSquare(gBagPosition.pocket, TRUE);
+        RedrawPocketIndicatorSquares();
         gMain.state++;
         break;
     case 14:
@@ -1214,6 +1217,10 @@ void UpdatePocketItemList(enum Pocket pocketId)
         gBagMenu->numShownItems[pocketId] = MAX_ITEMS_SHOWN;
     else
         gBagMenu->numShownItems[pocketId] = gBagMenu->numItemStacks[pocketId];
+
+    // A pocket may have just emptied out (toss/give the last item) or filled for the
+    // first time, which shifts which pockets get a dot in the indicator row.
+    RedrawPocketIndicatorSquares();
 }
 
 static void UpdatePocketItemLists(void)
@@ -1432,6 +1439,8 @@ static bool32 IsPocketHiddenHere(enum Pocket pocket)
 
 static void ChangeBagPocketId(u8 *bagPocketId, s8 deltaBagPocketId)
 {
+    u8 stepsRemaining = POCKETS_COUNT;
+
     do
     {
         if (deltaBagPocketId == MENU_CURSOR_DELTA_RIGHT && *bagPocketId == POCKETS_COUNT - 1)
@@ -1440,7 +1449,14 @@ static void ChangeBagPocketId(u8 *bagPocketId, s8 deltaBagPocketId)
             *bagPocketId = POCKETS_COUNT - 1;
         else
             *bagPocketId += deltaBagPocketId;
-    } while (IsPocketHiddenHere(*bagPocketId));
+
+        // Every pocket empty (no items anywhere): stop skipping, land on default Items pocket.
+        if (--stepsRemaining == 0)
+        {
+            *bagPocketId = POCKET_ITEMS;
+            break;
+        }
+    } while (IsPocketHiddenHere(*bagPocketId) || !IsBagPocketNonEmpty(*bagPocketId));
 }
 
 static void SwitchBagPocket(u8 taskId, s16 deltaBagPocketId, bool16 skipEraseList)
@@ -1472,8 +1488,8 @@ static void SwitchBagPocket(u8 taskId, s16 deltaBagPocketId, bool16 skipEraseLis
         PrintPocketNames(gPocketNamesStringsTable[newPocket], gPocketNamesStringsTable[gBagPosition.pocket]);
         CopyPocketNameToWindow(8);
     }
-    DrawPocketIndicatorSquare(gBagPosition.pocket, FALSE);
-    DrawPocketIndicatorSquare(newPocket, TRUE);
+    DrawPocketIndicatorSquare(GetPocketIndicatorColumn(gBagPosition.pocket), FALSE);
+    DrawPocketIndicatorSquare(GetPocketIndicatorColumn(newPocket), TRUE);
     FillBgTilemapBufferRect_Palette0(2, 11, 14, 2, 15, 16);
     ScheduleBgCopyTilemapToVram(2);
     SetBagVisualPocketId(newPocket, TRUE);
@@ -1537,12 +1553,86 @@ static void DrawItemListBgRow(u8 y)
     ScheduleBgCopyTilemapToVram(2);
 }
 
-static void DrawPocketIndicatorSquare(u8 x, bool8 isCurrentPocket)
+// column is the dot's position among currently visible pockets, not the raw pocket id -
+// pockets hidden here (IsPocketHiddenHere) or with no items (IsBagPocketNonEmpty) get no dot.
+static void DrawPocketIndicatorSquare(u8 column, bool8 isCurrentPocket)
 {
     if (!isCurrentPocket)
-        FillBgTilemapBufferRect_Palette0(2, 0x1017, x + 5, 3, 1, 1);
+        FillBgTilemapBufferRect_Palette0(2, 0x1017, column + 5, 3, 1, 1);
     else
-        FillBgTilemapBufferRect_Palette0(2, 0x102B, x + 5, 3, 1, 1);
+        FillBgTilemapBufferRect_Palette0(2, 0x102B, column + 5, 3, 1, 1);
+    ScheduleBgCopyTilemapToVram(2);
+}
+
+static bool32 IsPocketVisibleForIndicator(enum Pocket pocket)
+{
+    return !IsPocketHiddenHere(pocket) && IsBagPocketNonEmpty(pocket);
+}
+
+static u8 GetVisiblePocketCount(void)
+{
+    enum Pocket pocket;
+    u8 count = 0;
+
+    for (pocket = 0; pocket < POCKETS_COUNT; pocket++)
+    {
+        if (IsPocketVisibleForIndicator(pocket))
+            count++;
+    }
+    // Every pocket empty: ChangeBagPocketId falls back to Items alone, so show one dot for it.
+    return count == 0 ? 1 : count;
+}
+
+// Left edge of the dot row, so the visible dots sit centred in the 8-dot span instead of
+// packed against the left.
+static u8 GetPocketIndicatorStartColumn(void)
+{
+    return (POCKETS_COUNT - GetVisiblePocketCount()) / 2;
+}
+
+static u8 GetPocketIndicatorColumn(enum Pocket pocket)
+{
+    enum Pocket i;
+    u8 column = GetPocketIndicatorStartColumn();
+
+    for (i = 0; i < pocket; i++)
+    {
+        if (IsPocketVisibleForIndicator(i))
+            column++;
+    }
+    return column;
+}
+
+// Draws one dot per visible pocket, centred with no gaps, so the dot row always matches
+// exactly what L/R can reach (ChangeBagPocketId skips the same pockets).
+static void RedrawPocketIndicatorSquares(void)
+{
+    enum Pocket pocket;
+    u8 startColumn = GetPocketIndicatorStartColumn();
+    u8 column;
+
+    for (column = 0; column < startColumn; column++)
+        FillBgTilemapBufferRect_Palette0(2, 0x0002, column + 5, 3, 1, 1);
+
+    column = startColumn;
+    for (pocket = 0; pocket < POCKETS_COUNT; pocket++)
+    {
+        if (IsPocketVisibleForIndicator(pocket))
+        {
+            DrawPocketIndicatorSquare(column, pocket == gBagPosition.pocket);
+            column++;
+        }
+    }
+
+    // Every pocket empty: ChangeBagPocketId falls back to Items alone, so show one dot for it.
+    if (column == startColumn)
+    {
+        DrawPocketIndicatorSquare(column, TRUE);
+        column++;
+    }
+
+    for (; column < POCKETS_COUNT; column++)
+        FillBgTilemapBufferRect_Palette0(2, 0x0002, column + 5, 3, 1, 1);
     ScheduleBgCopyTilemapToVram(2);
 }
 
@@ -1943,6 +2033,20 @@ static void PrintBerriesSealedInCave(u8 taskId)
     DisplayItemMessage(taskId, FONT_NORMAL, sText_BerriesSealedInCave, HandleErrorMessage);
 }
 
+// Mega Stones, Z-Crystals and Tera Shards aren't part of the Infinity Cave run
+// inventory, so unlike Berries they stay reachable mid-run - only Give is sealed.
+static bool32 IsGimmickGiveSealed(void)
+{
+    enum Pocket pocket = GetItemPocket(gSpecialVar_ItemId);
+    return (pocket == POCKET_MEGA_STONES || pocket == POCKET_Z_CRYSTALS || pocket == POCKET_TERA_SHARDS)
+        && InfCave_IsRunBagOpen();
+}
+
+static void PrintGimmickItemsSealedInCave(u8 taskId)
+{
+    DisplayItemMessage(taskId, FONT_NORMAL, sText_GimmickItemsSealedInCave, HandleErrorMessage);
+}
+
 static void ItemMenu_UseOutOfBattle(u8 taskId)
 {
     if (IsBerryUseSealed())
@@ -2168,6 +2272,10 @@ static void ItemMenu_Give(u8 taskId)
     {
         PrintBerriesSealedInCave(taskId);
     }
+    else if (IsGimmickGiveSealed())
+    {
+        PrintGimmickItemsSealedInCave(taskId);
+    }
     else if (!IsWritingMailAllowed(gSpecialVar_ItemId))
     {
         DisplayItemMessage(taskId, FONT_NORMAL, gText_CantWriteMail, HandleErrorMessage);
@@ -2262,6 +2370,10 @@ static void Task_ItemContext_GiveToParty(u8 taskId)
     {
         PrintBerriesSealedInCave(taskId);
     }
+    else if (IsGimmickGiveSealed())
+    {
+        PrintGimmickItemsSealedInCave(taskId);
+    }
     else if (!IsWritingMailAllowed(gSpecialVar_ItemId))
     {
         DisplayItemMessage(taskId, FONT_NORMAL, gText_CantWriteMail, HandleErrorMessage);
@@ -2285,7 +2397,9 @@ static void Task_ItemContext_GiveToParty(u8 taskId)
 // Selected item to give to a Pokémon in PC storage
 static void Task_ItemContext_GiveToPC(u8 taskId)
 {
-    if (ItemIsMail(gSpecialVar_ItemId) == TRUE)
+    if (IsGimmickGiveSealed())
+        PrintGimmickItemsSealedInCave(taskId);
+    else if (ItemIsMail(gSpecialVar_ItemId) == TRUE)
         DisplayItemMessage(taskId, FONT_NORMAL, gText_CantWriteMail, HandleErrorMessage);
     else if (gBagPosition.pocket != POCKET_KEY_ITEMS && !GetItemImportance(gSpecialVar_ItemId))
         gTasks[taskId].func = Task_FadeAndCloseBagMenu;
