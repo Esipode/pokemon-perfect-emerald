@@ -65,7 +65,8 @@ static void ResetMiniGamesRecords(void);
 static void ResetItemFlags(void);
 static void ResetDexNav(void);
 static void CarryStorageIntoNewGame(void);
-static void ReregisterCarriedOverDexEntries(void);
+static void ReregisterCarriedOverDexEntries(const u8 *prevDexCaught);
+static void RegisterCarriedOverPreEvolutions(u8 *ancestors, const u8 *prevDexCaught);
 
 EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
 EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
@@ -263,12 +264,39 @@ static void CarryStorageIntoNewGame(void)
     }
 }
 
+// Bit layout matches GetSetPokedexFlag()'s dexCaught/dexSeen indexing, so the same
+// helpers work on a saved copy of those arrays.
+static bool32 GetDexFlagSlotBit(const u8 *bitmap, enum Species species)
+{
+    u32 slot = SpeciesToDexFlagSlot(species);
+
+    if (slot == 0 || slot > NUM_DEX_FLAG_BYTES * 8)
+        return FALSE;
+    slot--;
+    return (bitmap[slot / 8] & (1 << (slot % 8))) != 0;
+}
+
+static void SetDexFlagSlotBit(u8 *bitmap, enum Species species)
+{
+    u32 slot = SpeciesToDexFlagSlot(species);
+
+    if (slot == 0 || slot > NUM_DEX_FLAG_BYTES * 8)
+        return;
+    slot--;
+    bitmap[slot / 8] |= 1 << (slot % 8);
+}
+
 // Must run after ClearSav1() wipes dexCaught/dexSeen.
 // Re-registers every carried-over box mon as seen + caught so the dex progress the
-// player kept storage for is visible from turn one.
-static void ReregisterCarriedOverDexEntries(void)
+// player kept storage for is visible from turn one. prevDexCaught is the outgoing run's
+// dexCaught, copied before the wipe; it gates the pre-evolution back-fill.
+static void ReregisterCarriedOverDexEntries(const u8 *prevDexCaught)
 {
     u32 boxId, boxPosition;
+    u8 *ancestors = Alloc(NUM_DEX_FLAG_BYTES);
+
+    if (ancestors != NULL)
+        memset(ancestors, 0, NUM_DEX_FLAG_BYTES);
 
     for (boxId = 0; boxId < TOTAL_BOXES_COUNT; boxId++)
     {
@@ -284,7 +312,68 @@ static void ReregisterCarriedOverDexEntries(void)
             species = GetBoxMonData(boxMon, MON_DATA_SPECIES);
             GetSetPokedexFlagBySpecies(species, FLAG_SET_SEEN);
             GetSetPokedexFlagBySpecies(species, FLAG_SET_CAUGHT);
+            if (ancestors != NULL)
+                SetDexFlagSlotBit(ancestors, species);
         }
+    }
+
+    if (ancestors != NULL)
+    {
+        if (prevDexCaught != NULL)
+            RegisterCarriedOverPreEvolutions(ancestors, prevDexCaught);
+        Free(ancestors);
+    }
+}
+
+// Grows `ancestors` into the pre-evolution closure of the carried-over species, then
+// registers each member the outgoing run had already caught. A carried Blaziken fills
+// Combusken and Torchic only if that run's dex listed them; a Blaziken traded in without
+// ever raising a Torchic fills nothing. The closure sweeps the evolution table and
+// repeats while a pass adds a member, so any chain depth is reached at a cost tied to the
+// species count rather than the box count. Terminates because closure bits are only set.
+static void RegisterCarriedOverPreEvolutions(u8 *ancestors, const u8 *prevDexCaught)
+{
+    enum Species species;
+    bool32 addedEntry;
+
+    do
+    {
+        addedEntry = FALSE;
+        for (species = SPECIES_BULBASAUR; species < NUM_SPECIES; species++)
+        {
+            const struct Evolution *evolutions;
+            u32 i;
+
+            if (!IsSpeciesEnabled(species) || GetDexFlagSlotBit(ancestors, species))
+                continue;
+
+            evolutions = GetSpeciesEvolutions(species);
+            if (evolutions == NULL)
+                continue;
+
+            for (i = 0; evolutions[i].method != EVOLUTIONS_END; i++)
+            {
+                enum Species target = SanitizeSpeciesId(evolutions[i].targetSpecies);
+
+                if (!IsSpeciesEnabled(target) || !GetDexFlagSlotBit(ancestors, target))
+                    continue;
+
+                SetDexFlagSlotBit(ancestors, species);
+                addedEntry = TRUE;
+                break;
+            }
+        }
+    } while (addedEntry);
+
+    for (species = SPECIES_BULBASAUR; species < NUM_SPECIES; species++)
+    {
+        if (!IsSpeciesEnabled(species)
+         || !GetDexFlagSlotBit(ancestors, species)
+         || !GetDexFlagSlotBit(prevDexCaught, species))
+            continue;
+
+        GetSetPokedexFlagBySpecies(species, FLAG_SET_SEEN);
+        GetSetPokedexFlagBySpecies(species, FLAG_SET_CAUGHT);
     }
 }
 
@@ -302,6 +391,8 @@ void NewGameInitData(void)
     void *bagBerriesBackup = NULL;
     void *dexCaughtBackup = NULL;
     void *dexSeenBackup = NULL;
+    // Outgoing run's dexCaught, kept for the storage carry-over pre-evolution back-fill.
+    void *prevDexCaughtBackup = NULL;
     void *flagsBackup = NULL;
     u32 aiBattlesBackup = 0;
     void *optionsBackup = NULL;
@@ -326,6 +417,14 @@ void NewGameInitData(void)
 
     if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
         RtcReset();
+
+    // Read before ResetPokedex()/ClearPokedexFlags()/ClearSav1() wipe the dex.
+    if (keepStorage)
+    {
+        prevDexCaughtBackup = Alloc(sizeof(gSaveBlock1Ptr->dexCaught));
+        if (prevDexCaughtBackup != NULL)
+            memcpy(prevDexCaughtBackup, gSaveBlock1Ptr->dexCaught, sizeof(gSaveBlock1Ptr->dexCaught));
+    }
 
     if (isNewGamePlus)
     {
@@ -481,7 +580,9 @@ void NewGameInitData(void)
     }
     // Must run after ClearSav1() wipes dexCaught/dexSeen.
     if (keepStorage)
-        ReregisterCarriedOverDexEntries();
+        ReregisterCarriedOverDexEntries(prevDexCaughtBackup);
+    if (prevDexCaughtBackup != NULL)
+        Free(prevDexCaughtBackup);
     if (!isNewGamePlus)
         ApplyPendingNewGameSettings();
     ClearTVShowData();
