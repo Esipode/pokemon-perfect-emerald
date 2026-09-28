@@ -15,9 +15,9 @@ Underwater_Route124_OnLoad:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, Underwater_Route124_HideZygardeArena
-	getcaughtmon SPECIES_XERNEAS
+	checkspeciesowned SPECIES_XERNEAS
 	goto_if_eq VAR_RESULT, FALSE, Underwater_Route124_HideZygardeArena
-	getcaughtmon SPECIES_YVELTAL
+	checkspeciesowned SPECIES_YVELTAL
 	goto_if_eq VAR_RESULT, FALSE, Underwater_Route124_HideZygardeArena
 	end
 

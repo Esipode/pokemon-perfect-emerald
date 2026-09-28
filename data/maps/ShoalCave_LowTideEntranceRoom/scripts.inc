@@ -3,17 +3,38 @@ ShoalCave_LowTideEntranceRoom_MapScripts::
 	.byte 0
 
 ShoalCave_LowTideEntranceRoom_OnTransition:
+	updatelegendaryvisibility SPECIES_GLASTRIER, FLAG_HIDE_GLASTRIER
 	special UpdateShoalTideFlag
 	goto_if_set FLAG_SYS_SHOAL_TIDE, ShoalCave_LowTideEntranceRoom_EventScript_SetHighTide
+	setflag FLAG_HIDE_GLASTRIER
 	goto ShoalCave_LowTideEntranceRoom_EventScript_SetLowTide
 
 ShoalCave_LowTideEntranceRoom_EventScript_SetHighTide::
+	@ Glastrier spawn gate: post-game, not already owned, Calyrex owned, high tide only
+	@ Runs in ON_TRANSITION: the arena layout must be set before the map loads
+	setvar VAR_0x8004, SPECIES_GLASTRIER
+	setvar VAR_0x8005, LAYOUT_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM_GLASTRIER
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideEntranceRoom_HideGlastrierArena
+	checkspeciesowned SPECIES_CALYREX
+	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideEntranceRoom_HideGlastrierArena
+	setflag FLAG_TEMP_11
+	setmaplayoutindex LAYOUT_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM_GLASTRIER
+	end
+
+ShoalCave_LowTideEntranceRoom_HideGlastrierArena:
+	setflag FLAG_HIDE_GLASTRIER
 	setmaplayoutindex LAYOUT_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM
 	end
 
 ShoalCave_LowTideEntranceRoom_EventScript_SetLowTide::
 	setmaplayoutindex LAYOUT_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM
 	end
+
+ShoalCave_LowTideEntranceRoom_Glastrier_Encounter::
+	goto LegendaryEncounter_EventScript_Glastrier
 
 ShoalCave_LowTideEntranceRoom_EventScript_ShellBellExpert::
 	lock

@@ -148,7 +148,7 @@ SkyPillar_Top_OnLoad:
 	goto_if_eq VAR_RESULT, FALSE, SkyPillar_Top_HideTornadusArena
 	gettimeofday
 	goto_if_ne VAR_0x8000, TIME_EVENING, SkyPillar_Top_HideTornadusArena
-	getcaughtmon SPECIES_RAYQUAZA
+	checkspeciesowned SPECIES_RAYQUAZA
 	goto_if_eq VAR_RESULT, FALSE, SkyPillar_Top_HideTornadusArena
 	end
 

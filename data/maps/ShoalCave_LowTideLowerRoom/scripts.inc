@@ -17,7 +17,7 @@ ShoalCave_LowTideLowerRoom_OnLoad:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideLowerRoom_KeepWarpOpen
-	getcaughtmon SPECIES_ARTICUNO
+	checkspeciesowned SPECIES_ARTICUNO
 	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideLowerRoom_KeepWarpOpen
 	special CountCaughtLegendaryFamilies
 	goto_if_ge VAR_RESULT, 40, ShoalCave_LowTideLowerRoom_HiddenLadder

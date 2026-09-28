@@ -15,15 +15,15 @@ SealedChamber_InnerRoom_OnLoad:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, SealedChamber_InnerRoom_HideRegigigasArena
-	getcaughtmon SPECIES_REGIROCK
+	checkspeciesowned SPECIES_REGIROCK
 	goto_if_eq VAR_RESULT, FALSE, SealedChamber_InnerRoom_HideRegigigasArena
-	getcaughtmon SPECIES_REGICE
+	checkspeciesowned SPECIES_REGICE
 	goto_if_eq VAR_RESULT, FALSE, SealedChamber_InnerRoom_HideRegigigasArena
-	getcaughtmon SPECIES_REGISTEEL
+	checkspeciesowned SPECIES_REGISTEEL
 	goto_if_eq VAR_RESULT, FALSE, SealedChamber_InnerRoom_HideRegigigasArena
-	getcaughtmon SPECIES_REGIDRAGO
+	checkspeciesowned SPECIES_REGIDRAGO
 	goto_if_eq VAR_RESULT, FALSE, SealedChamber_InnerRoom_HideRegigigasArena
-	getcaughtmon SPECIES_REGIELEKI
+	checkspeciesowned SPECIES_REGIELEKI
 	goto_if_eq VAR_RESULT, FALSE, SealedChamber_InnerRoom_HideRegigigasArena
 	goto SealedChamber_InnerRoom_ShowRegigigasArena
 

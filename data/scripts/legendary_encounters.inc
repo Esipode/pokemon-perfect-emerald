@@ -1363,7 +1363,7 @@ LegendaryEncounter_EventScript_VolcanionSpawnGate::
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_VolcanionSpawnGateDone
-	getcaughtmon SPECIES_KYOGRE
+	checkspeciesowned SPECIES_KYOGRE
 	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_VolcanionSpawnGateDone
 	checkpartytype TYPE_FIRE
 	goto_if_eq VAR_RESULT, FALSE, LegendaryEncounter_EventScript_VolcanionSpawnGateDone

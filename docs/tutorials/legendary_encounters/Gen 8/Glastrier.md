@@ -1,4 +1,5 @@
 ## Glastrier — The Wild Horse Pokémon
+### Location: Shoal Cave (High Tide) - After Calyrex is caught
 
 A slow, armored brute that gets colder and meaner the longer you keep attacking. Slow down
 occasionally, or it becomes unkillable and unstoppable at the same time.

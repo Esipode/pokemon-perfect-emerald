@@ -19,7 +19,7 @@ MtChimney_OnLoad:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, MtChimney_HideGalarianMoltresArena
-	getcaughtmon SPECIES_MOLTRES
+	checkspeciesowned SPECIES_MOLTRES
 	goto_if_eq VAR_RESULT, FALSE, MtChimney_HideGalarianMoltresArena
 	special CountCaughtLegendaryFamilies
 	goto_if_lt VAR_RESULT, 40, MtChimney_HideGalarianMoltresArena

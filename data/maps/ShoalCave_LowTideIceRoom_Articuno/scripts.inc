@@ -15,7 +15,7 @@ ShoalCave_LowTideIceRoom_Articuno_OnLoad:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena
-	getcaughtmon SPECIES_ARTICUNO
+	checkspeciesowned SPECIES_ARTICUNO
 	goto_if_eq VAR_RESULT, FALSE, ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena
 	special CountCaughtLegendaryFamilies
 	goto_if_lt VAR_RESULT, 40, ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena

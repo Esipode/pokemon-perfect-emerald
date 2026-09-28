@@ -13,8 +13,8 @@ MossdeepCity_OnTransition:
 	end
 
 MossdeepCity_OnLoad:
-	@ The rock stays gone once Jirachi has been caught
-	getcaughtmon SPECIES_JIRACHI
+	@ The rock stays gone while Jirachi is owned
+	checkspeciesowned SPECIES_JIRACHI
 	call_if_eq VAR_RESULT, TRUE, MossdeepCity_EventScript_RemoveWhiteRock
 	@ Jirachi spawn gate: post-game, not already owned, night only, 10% chance to spawn
 	setvar VAR_0x8004, SPECIES_JIRACHI
@@ -85,7 +85,7 @@ MossdeepCity_EventScript_Girl::
 	end
 
 MossdeepCity_EventScript_Woman::
-	getcaughtmon SPECIES_JIRACHI
+	checkspeciesowned SPECIES_JIRACHI
 	goto_if_eq VAR_RESULT, TRUE, MossdeepCity_EventScript_WomanRockGone
 	msgbox MossdeepCity_Text_SpecialSpaceCenterRock, MSGBOX_NPC
 	end
@@ -95,9 +95,9 @@ MossdeepCity_EventScript_WomanRockGone::
 	end
 
 MossdeepCity_EventScript_WhiteRock::
-	@ The rock tile is gone while Jirachi is out and permanently once it has been caught
+	@ The rock tile is gone while Jirachi is out and while it is owned
 	goto_if_unset FLAG_HIDE_JIRACHI, MossdeepCity_EventScript_WhiteRockHidden
-	getcaughtmon SPECIES_JIRACHI
+	checkspeciesowned SPECIES_JIRACHI
 	goto_if_eq VAR_RESULT, TRUE, MossdeepCity_EventScript_WhiteRockHidden
 	msgbox MossdeepCity_Text_ItsAWhiteRock, MSGBOX_SIGN
 	end

@@ -1850,6 +1850,17 @@
       "layout_version": "emerald"
     },
     {
+      "id": "LAYOUT_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM_GLASTRIER",
+      "name": "ShoalCave_HighTideEntranceRoom_Glastrier_Layout",
+      "width": 35,
+      "height": 35,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Cave",
+      "border_filepath": "data/layouts/ShoalCave_HighTideEntranceRoom_Glastrier/border.bin",
+      "blockdata_filepath": "data/layouts/ShoalCave_HighTideEntranceRoom_Glastrier/map.bin",
+      "layout_version": "emerald"
+    },
+    {
       "id": "LAYOUT_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM",
       "name": "ShoalCave_HighTideInnerRoom_Layout",
       "width": 46,

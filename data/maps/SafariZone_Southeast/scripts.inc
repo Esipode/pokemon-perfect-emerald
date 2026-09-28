@@ -16,11 +16,11 @@ SafariZone_Southeast_OnLoad:
 	goto_if_eq VAR_RESULT, FALSE, SafariZone_Southeast_HideEnamorusArena
 	gettimeofday
 	goto_if_ne VAR_0x8000, TIME_NIGHT, SafariZone_Southeast_HideEnamorusArena
-	getcaughtmon SPECIES_LANDORUS
+	checkspeciesowned SPECIES_LANDORUS
 	goto_if_eq VAR_RESULT, FALSE, SafariZone_Southeast_HideEnamorusArena
-	getcaughtmon SPECIES_THUNDURUS
+	checkspeciesowned SPECIES_THUNDURUS
 	goto_if_eq VAR_RESULT, FALSE, SafariZone_Southeast_HideEnamorusArena
-	getcaughtmon SPECIES_TORNADUS
+	checkspeciesowned SPECIES_TORNADUS
 	goto_if_eq VAR_RESULT, FALSE, SafariZone_Southeast_HideEnamorusArena
 	goto SafariZone_Southeast_ShowEnamorusArena
 

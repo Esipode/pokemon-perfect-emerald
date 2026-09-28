@@ -25,7 +25,7 @@ Route110_CheckGalarianZapdos:
 	goto_if_eq VAR_RESULT, FALSE, Route110_GalarianZapdosGateFailed
 	getmapweather VAR_0x8008
 	goto_if_ne VAR_0x8008, WEATHER_RAIN_THUNDERSTORM, Route110_GalarianZapdosGateFailed
-	getcaughtmon SPECIES_ZAPDOS
+	checkspeciesowned SPECIES_ZAPDOS
 	goto_if_eq VAR_RESULT, FALSE, Route110_GalarianZapdosGateFailed
 	special CountCaughtLegendaryFamilies
 	goto_if_lt VAR_RESULT, 40, Route110_GalarianZapdosGateFailed
