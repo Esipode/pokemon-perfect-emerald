@@ -59,12 +59,15 @@
 // The buffer for the bag item list needs to be large enough to hold the maximum
 // number of item slots that could fit in a single pocket, + 1 for Cancel.
 // This constant picks the max of the existing pocket sizes.
-// By default, the largest pocket is BAG_TMHM_COUNT at 64.
+// By default, the largest pocket is BAG_TMHM_COUNT.
 #define MAX_POCKET_ITEMS  ((max(BAG_TMHM_COUNT,              \
                             max(BAG_BERRIES_COUNT,           \
                             max(BAG_ITEMS_COUNT,             \
                             max(BAG_KEYITEMS_COUNT,          \
-                                BAG_POKEBALLS_COUNT))))) + 1)
+                            max(BAG_POKEBALLS_COUNT,         \
+                            max(BAG_MEGA_STONES_COUNT,       \
+                            max(BAG_Z_CRYSTALS_COUNT,        \
+                                BAG_TERA_SHARDS_COUNT)))))))) + 1)
 
 // Up to 8 item slots can be visible at a time
 #define MAX_ITEMS_SHOWN 8
@@ -155,6 +158,7 @@ static void ReturnToItemList(u8);
 static void PrintItemQuantity(u8, s16);
 static u8 BagMenu_AddWindow(u8);
 static u8 GetSwitchBagPocketDirection(void);
+static bool32 IsPocketHiddenHere(enum Pocket pocket);
 static void SwitchBagPocket(u8, s16, bool16);
 static bool8 CanSwapItems(void);
 static void StartItemSwap(u8 taskId);
@@ -690,6 +694,8 @@ void GoToBagMenu(u8 location, u8 pocket, MainCallback exitCallback)
             gBagPosition.exitCallback = exitCallback;
         if (pocket < POCKETS_COUNT)
             gBagPosition.pocket = pocket;
+        if (IsPocketHiddenHere(gBagPosition.pocket))
+            gBagPosition.pocket = POCKET_ITEMS;
         if (gBagPosition.location == ITEMMENULOCATION_BERRY_TREE
          || gBagPosition.location == ITEMMENULOCATION_BERRY_BLENDER_CRUSH
          || gBagPosition.location == ITEMMENULOCATION_BERRY_TREE_MULCH
@@ -1186,6 +1192,9 @@ void UpdatePocketItemList(enum Pocket pocketId)
     {
     case POCKET_TM_HM:
     case POCKET_BERRIES:
+    case POCKET_MEGA_STONES:
+    case POCKET_Z_CRYSTALS:
+    case POCKET_TERA_SHARDS:
         SortItemsInBag(pocket, SORT_BY_INDEX);
         break;
     default:
@@ -1408,18 +1417,30 @@ static u8 GetSwitchBagPocketDirection(void)
     return SWITCH_POCKET_NONE;
 }
 
+// Gimmick pockets hold nothing usable in battle, so they are skipped there and in Wally's tutorial bag.
+static bool32 IsPocketHiddenHere(enum Pocket pocket)
+{
+    if (pocket == POCKET_POKE_BALLS && IsVictoryCatch())
+        return TRUE;
+
+    if ((pocket == POCKET_MEGA_STONES || pocket == POCKET_Z_CRYSTALS || pocket == POCKET_TERA_SHARDS)
+     && (gBagPosition.location == ITEMMENULOCATION_BATTLE || gBagPosition.location == ITEMMENULOCATION_WALLY))
+        return TRUE;
+
+    return FALSE;
+}
+
 static void ChangeBagPocketId(u8 *bagPocketId, s8 deltaBagPocketId)
 {
-    if (deltaBagPocketId == MENU_CURSOR_DELTA_RIGHT && *bagPocketId == POCKETS_COUNT - 1)
-        *bagPocketId = 0;
-    else if (deltaBagPocketId == MENU_CURSOR_DELTA_LEFT && *bagPocketId == 0)
-        *bagPocketId = POCKETS_COUNT - 1;
-    else
-        *bagPocketId += deltaBagPocketId;
-
-    if (IsVictoryCatch() && *bagPocketId == POCKET_POKE_BALLS)
-        *bagPocketId += 1;
-
+    do
+    {
+        if (deltaBagPocketId == MENU_CURSOR_DELTA_RIGHT && *bagPocketId == POCKETS_COUNT - 1)
+            *bagPocketId = 0;
+        else if (deltaBagPocketId == MENU_CURSOR_DELTA_LEFT && *bagPocketId == 0)
+            *bagPocketId = POCKETS_COUNT - 1;
+        else
+            *bagPocketId += deltaBagPocketId;
+    } while (IsPocketHiddenHere(*bagPocketId));
 }
 
 static void SwitchBagPocket(u8 taskId, s16 deltaBagPocketId, bool16 skipEraseList)
@@ -1531,9 +1552,12 @@ static bool8 CanSwapItems(void)
     if (gBagPosition.location == ITEMMENULOCATION_FIELD
      || gBagPosition.location == ITEMMENULOCATION_BATTLE)
     {
-        // TMHMs and berries are numbered, and so may not be swapped
+        // TMHMs, berries and gimmick items are numbered, and so may not be swapped
         if (gBagPosition.pocket != POCKET_TM_HM
-         && gBagPosition.pocket != POCKET_BERRIES)
+         && gBagPosition.pocket != POCKET_BERRIES
+         && gBagPosition.pocket != POCKET_MEGA_STONES
+         && gBagPosition.pocket != POCKET_Z_CRYSTALS
+         && gBagPosition.pocket != POCKET_TERA_SHARDS)
             return TRUE;
     }
     return FALSE;
@@ -1749,6 +1773,12 @@ static void OpenContextMenu(u8 taskId)
             case POCKET_BERRIES:
                 gBagMenu->contextMenuItemsPtr = sContextMenuItems_BerriesPocket;
                 gBagMenu->contextMenuNumItems = ARRAY_COUNT(sContextMenuItems_BerriesPocket);
+                break;
+            case POCKET_MEGA_STONES:
+            case POCKET_Z_CRYSTALS:
+            case POCKET_TERA_SHARDS:
+                gBagMenu->contextMenuItemsPtr = sContextMenuItems_BallsPocket;
+                gBagMenu->contextMenuNumItems = ARRAY_COUNT(sContextMenuItems_BallsPocket);
                 break;
             }
         }
@@ -2909,6 +2939,9 @@ static void AddBagSortSubMenu(void)
         break;
     case POCKET_BERRIES:
     case POCKET_TM_HM:
+    case POCKET_MEGA_STONES:
+    case POCKET_Z_CRYSTALS:
+    case POCKET_TERA_SHARDS:
         gBagMenu->contextMenuItemsPtr = sBagMenuSortBerriesTMsHMs;
         memcpy(&gBagMenu->contextMenuItemsBuffer, &sBagMenuSortBerriesTMsHMs, NELEMS(sBagMenuSortBerriesTMsHMs));
         gBagMenu->contextMenuNumItems = NELEMS(sBagMenuSortBerriesTMsHMs);
@@ -3142,6 +3175,9 @@ static s32 CompareItemsByIndex(enum Pocket pocketId, struct ItemSlot item1, stru
         index2 = GetItemTMHMIndex(item2.itemId);
         break;
     case POCKET_BERRIES: // To do - requires #7305
+    case POCKET_MEGA_STONES:
+    case POCKET_Z_CRYSTALS:
+    case POCKET_TERA_SHARDS:
         index1 = item1.itemId;
         index2 = item2.itemId;
         break;
