@@ -623,3 +623,10 @@ gSpecials::
 	def_special InfCave_UseShrine
 	def_special InfCaveShop_HasStock
 	def_special InfCaveShop_OpenMart
+	def_special InfCave_BufferRunReport
+	def_special InfCave_BufferSalvageReport
+	def_special InfCave_AreMilestonesOwed
+	def_special InfCave_PrepareMilestoneItem
+	def_special InfCave_AdvanceMilestoneItem
+	def_special InfCave_ClearRunReport
+	def_special InfCaveLobby_OpenMart

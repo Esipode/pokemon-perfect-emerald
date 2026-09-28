@@ -18,27 +18,23 @@ struct InfCaveItemDrop
 
 static const struct InfCaveItemDrop sInfCaveCommonDrops[] =
 {
-    { ITEM_POTION,       .amount = 2, .weight = 16, .minTier = 0 },
-    { ITEM_SUPER_POTION, .amount = 2, .weight = 16, .minTier = 0 },
-    { ITEM_ETHER,        .amount = 1, .weight = 12, .minTier = 0 },
+    { ITEM_POTION,       .amount = 2, .weight = 20, .minTier = 0 },
+    { ITEM_SUPER_POTION, .amount = 1, .weight = 14, .minTier = 0 },
+    { ITEM_ETHER,        .amount = 2, .weight = 10, .minTier = 0 },
     { ITEM_FULL_HEAL,    .amount = 1, .weight = 10, .minTier = 0 },
-    { ITEM_REVIVE,       .amount = 1, .weight = 10, .minTier = 0 },
-    { ITEM_HYPER_POTION, .amount = 2, .weight = 14, .minTier = 1 },
-    { ITEM_ELIXIR,       .amount = 1, .weight = 10, .minTier = 1 },
-    { ITEM_MAX_POTION,   .amount = 1, .weight = 12, .minTier = 2 },
-    { ITEM_MAX_ETHER,    .amount = 1, .weight = 10, .minTier = 2 },
+    { ITEM_REVIVE,       .amount = 1, .weight =  4, .minTier = 0 },
+    { ITEM_MAX_ETHER,    .amount = 1, .weight =  8, .minTier = 1 },
+    { ITEM_HYPER_POTION, .amount = 1, .weight =  8, .minTier = 1 },
+    { ITEM_MAX_POTION,   .amount = 1, .weight =  6, .minTier = 2 },
+    { ITEM_ELIXIR,       .amount = 1, .weight =  8, .minTier = 2 },
 };
 
 static const struct InfCaveItemDrop sInfCavePremiumDrops[] =
 {
     { ITEM_MAX_POTION,   .amount = 1, .weight = 14, .minTier = 0 },
-    { ITEM_MAX_REVIVE,   .amount = 1, .weight = 12, .minTier = 0 },
-    { ITEM_RARE_CANDY,   .amount = 1, .weight = 12, .minTier = 0 },
-    { ITEM_FULL_RESTORE, .amount = 2, .weight = 12, .minTier = 1 },
-    { ITEM_MAX_ELIXIR,   .amount = 1, .weight = 12, .minTier = 1 },
-    { ITEM_PP_UP,        .amount = 1, .weight = 10, .minTier = 1 },
-    { ITEM_EXP_CANDY_L,  .amount = 2, .weight = 10, .minTier = 2 },
-    { ITEM_RARE_CANDY,   .amount = 3, .weight = 8,  .minTier = 2 },
+    { ITEM_MAX_REVIVE,   .amount = 1, .weight =  2, .minTier = 0 },
+    { ITEM_FULL_RESTORE, .amount = 2, .weight =  8, .minTier = 1 },
+    { ITEM_MAX_ELIXIR,   .amount = 1, .weight = 10, .minTier = 1 },
 };
 
 // One row of the merchant's mart.
@@ -54,12 +50,12 @@ struct InfCaveShopEntry
 // for about 25. One restock is a room or two of fighting.
 static const struct InfCaveShopEntry sInfCaveShopStock[] =
 {
-    { ITEM_SUPER_POTION, .price = 5,  .minDepth = 0 },
-    { ITEM_HYPER_POTION, .price = 9,  .minDepth = 0 },
-    { ITEM_FULL_HEAL,    .price = 5,  .minDepth = 0 },
-    { ITEM_REVIVE,       .price = 22, .minDepth = 0 },
-    { ITEM_MAX_POTION,   .price = 30, .minDepth = 8 },
-    { ITEM_MAX_ELIXIR,   .price = 38, .minDepth = 8 },
+    { ITEM_SUPER_POTION, .price = 30,  .minDepth = 0  },
+    { ITEM_HYPER_POTION, .price = 50,  .minDepth = 10 },
+    { ITEM_FULL_HEAL,    .price = 20,  .minDepth = 0  },
+    { ITEM_REVIVE,       .price = 100, .minDepth = 10 },
+    { ITEM_MAX_POTION,   .price = 75,  .minDepth = 15 },
+    { ITEM_MAX_ELIXIR,   .price = 40,  .minDepth = 15 },
 };
 
 #endif // GUARD_DATA_INFINITY_CAVE_ROOMS_H

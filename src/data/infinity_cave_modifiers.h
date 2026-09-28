@@ -43,7 +43,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .description = sInfCaveModDesc_Monotype,
         .icon = 0,
         .argKind = INFCAVE_MOD_ARG_TYPE,
-        .weight = 18,
+        .weight = 20,
         .minDepth = 2,
     },
     [INFCAVE_MOD_WEATHER] =
@@ -80,7 +80,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .name = sInfCaveModName_Swarm,
         .description = sInfCaveModDesc_Swarm,
         .icon = 4,
-        .weight = 10,
+        .weight = 8,
         .minDepth = 6,
         // Eight double battles in one room is a floor that outlasts the run it
         // belongs to.
@@ -92,7 +92,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .description = sInfCaveModDesc_Surge,
         .icon = 5,
         .shardPercent = 20,
-        .weight = 12,
+        .weight = 8,
         .minDepth = 3,
     },
     [INFCAVE_MOD_GIMMICK] =
@@ -100,7 +100,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .name = sInfCaveModName_Gimmick,
         .description = sInfCaveModDesc_Gimmick,
         .icon = 6,
-        .weight = 10,
+        .weight = 8,
         .minDepth = 6,
     },
     [INFCAVE_MOD_NO_ITEMS] =
@@ -109,7 +109,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .description = sInfCaveModDesc_NoItems,
         .icon = 7,
         .shardPercent = 20,
-        .weight = 8,
+        .weight = 6,
         .minDepth = 5,
     },
     [INFCAVE_MOD_BOUNTY] =
@@ -126,7 +126,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .name = sInfCaveModName_Dark,
         .description = sInfCaveModDesc_Dark,
         .icon = 9,
-        .weight = 8,
+        .weight = 6,
         .minDepth = 8,
     },
     [INFCAVE_MOD_CRAMPED] =
@@ -145,7 +145,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .name = sInfCaveModName_Treasured,
         .description = sInfCaveModDesc_Treasured,
         .icon = 11,
-        .weight = 6,
+        .weight = 3,
         .minDepth = 2,
     },
 };

@@ -372,4 +372,16 @@ enum InfCaveFeatureKind
 // chokepoint test rejects almost every bad candidate before one is spent.
 #define INFCAVE_NPC_CONNECT_CHECKS  24
 
+// Depth milestones (sInfCaveMilestones, src/data/infinity_cave_rewards.h). One
+// bit per row in struct InfinityCaveRecords.milestonesPaid and .milestonesOwed,
+// so the table may not outgrow 8 rows.
+#define INFCAVE_MILESTONE_MAX_ROWS  8
+#define INFCAVE_MILESTONE_MAX_ITEMS 4
+
+// Run-end salvage. Whatever is left in the run inventory is priced in money and
+// divided by this to give shards. The merchant sells at roughly one shard per 100
+// money, so a quarter of that rate keeps salvage a consolation: trading an item in
+// never beats using it, and nothing in the cave is worth more salvaged than bought.
+#define INFCAVE_SALVAGE_MONEY_PER_SHARD 400
+
 #endif // GUARD_CONSTANTS_INFINITY_CAVE_H

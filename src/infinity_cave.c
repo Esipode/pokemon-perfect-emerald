@@ -30,10 +30,41 @@
 #include "data/infinity_cave_modifiers.h"
 #include "data/infinity_cave_nodes.h"
 #include "data/infinity_cave_rooms.h"
+#include "data/infinity_cave_rewards.h"
 
 static struct InfinityCaveRun *Run(void)
 {
     return &gSaveBlock1Ptr->infinityCaveRun;
+}
+
+// What survives a run: the shard wallet, the best depth the lobby shop is gated
+// on, and the milestone bits.
+static struct InfinityCaveRecords *Records(void)
+{
+    return &gSaveBlock1Ptr->infinityCaveRecords;
+}
+
+// The player's own bag while a run owns the live pockets.
+static struct InfinityCaveStash *Stash(void)
+{
+    return &gSaveBlock1Ptr->infinityCaveStash;
+}
+
+// A save made before struct InfinityCaveRecords existed reads the appended bytes
+// back as whatever was in the sector, so the records are checked for self
+// consistency before they are acted on: a milestone bit with no row behind it or a
+// pay cursor past an item list means the struct was never written by this feature,
+// and it is reset rather than trusted. The wallet and the depths have no
+// impossible value to test, so this is what catches an unwritten struct.
+static void NormalizeRecords(void)
+{
+    struct InfinityCaveRecords *records = Records();
+    u32 rowMask = (1 << ARRAY_COUNT(sInfCaveMilestones)) - 1;
+
+    if ((records->milestonesOwed & ~rowMask)
+     || (records->milestonesPaid & ~rowMask)
+     || records->payCursor >= INFCAVE_MILESTONE_MAX_ITEMS)
+        memset(records, 0, sizeof(*records));
 }
 
 bool32 InfCave_IsInRun(void)
@@ -46,9 +77,16 @@ u32 InfCave_GetDepth(void)
     return Run()->depth;
 }
 
+// The wallet, not the run's earnings: shards are banked as they are paid, so a
+// lost descent keeps them and the lobby shop can be reached with a run closed.
 u32 InfCave_GetShards(void)
 {
-    return Run()->shards;
+    return Records()->shards;
+}
+
+u32 InfCave_GetBestDepth(void)
+{
+    return Records()->bestDepth;
 }
 
 void InfCave_StartRun(void)
@@ -61,6 +99,40 @@ void InfCave_StartRun(void)
     run->active = TRUE;
     run->depth = 0;
     run->roomSeed = run->runSeed;
+    // The descent carries nothing down: the player's own bag is put away here and
+    // the run fills the empty pockets from item balls, the merchant and the nurse.
+    InfCave_OpenRunBag();
+}
+
+// Run-end bookkeeping. Nothing is banked here - shards are banked as they are
+// earned - but the descent is recorded for the lobby report, the best depth is
+// raised, and every milestone row the run newly reached is marked owed. Run on
+// every end reason, so a lost descent still collects what it earned.
+static void RecordRunEnd(void)
+{
+    struct InfinityCaveRun *run = Run();
+    struct InfinityCaveRecords *records;
+    u32 i;
+
+    NormalizeRecords();
+    records = Records();
+
+    records->lastRunDepth = run->depth;
+    records->lastRunShards = run->shards;
+    records->reportOwed = TRUE;
+
+    if (run->depth > records->bestDepth)
+        records->bestDepth = run->depth;
+
+    // Ascending rows, so the first depth out of reach ends the walk.
+    for (i = 0; i < ARRAY_COUNT(sInfCaveMilestones); i++)
+    {
+        if (run->depth < sInfCaveMilestones[i].depth)
+            break;
+        if (records->milestonesPaid & (1 << i))
+            continue;
+        records->milestonesOwed |= 1 << i;
+    }
 }
 
 void InfCave_EndRun(enum InfCaveEndReason reason)
@@ -68,6 +140,13 @@ void InfCave_EndRun(enum InfCaveEndReason reason)
     // reason is what the caller already acted on (payout, warp, messaging); the
     // run struct keeps no history of it.
     (void)reason;
+    // Trade the run inventory in and hand the real bag back first, so the salvage
+    // is banked before the report is armed and every end reason - including the
+    // reload eject - closes the bag out exactly once.
+    InfCave_CloseRunBag();
+    // Depth 0 is a run started and abandoned in the lobby: nothing to report.
+    if (Run()->active && Run()->depth != 0)
+        RecordRunEnd();
     InfCave_ClearTrainers();
     InfCave_ClearModifiers();
 #if B_FLAG_NO_WHITEOUT != 0
@@ -98,6 +177,12 @@ void InfCave_EndRunQuit(void)
         HealPlayerParty();
 
     InfCave_EndRun(INFCAVE_END_QUIT);
+
+    // A defeat closes the run out before the warp, so the report can already be
+    // owed when the lobby is reached with no run left to end. The lobby's
+    // ON_FRAME table watches this var.
+    if (Records()->reportOwed)
+        VarSet(VAR_TEMP_1, 1);
 }
 
 // A save made inside a room only replays if the run struct still describes that
@@ -462,22 +547,34 @@ bool32 InfCave_IsBagLocked(void)
     return gInfCaveBattleActive && InfCave_HasModifier(INFCAVE_MOD_NO_ITEMS);
 }
 
+// Shards land in the wallet immediately and in the run's own tally as well. The
+// tally is only what the lobby report announces, so spending at the merchant
+// mid-run lowers the wallet without rewriting the descent's earnings.
+static void BankShards(u32 amount)
+{
+    struct InfinityCaveRecords *records = Records();
+    u32 total = records->shards + amount;
+
+    records->shards = total > 0xFFFF ? 0xFFFF : total;
+}
+
 void InfCave_AddShards(u32 amount)
 {
     struct InfinityCaveRun *run = Run();
     u32 total = run->shards + amount;
 
+    BankShards(amount);
     run->shards = total > 0xFFFF ? 0xFFFF : total;
 }
 
 bool32 InfCave_SpendShards(u32 amount)
 {
-    struct InfinityCaveRun *run = Run();
+    struct InfinityCaveRecords *records = Records();
 
-    if (run->shards < amount)
+    if (records->shards < amount)
         return FALSE;
 
-    run->shards -= amount;
+    records->shards -= amount;
     return TRUE;
 }
 
@@ -970,4 +1067,235 @@ void InfCaveShop_OpenMart(void)
     sShopMartItems[count] = ITEM_NONE;
 
     CreateShardMartMenu(sShopMartItems, sShopMartPrices);
+}
+
+// --- The run inventory -------------------------------------------------------
+
+// Pockets the cave takes over for the length of a descent. Key Items and TMs are
+// left alone: neither is usable in battle, and emptying Key Items would break the
+// script checks that read one. Adding a pocket here needs a matching array in
+// struct InfinityCaveStash and a case in StashSlots.
+static const enum Pocket sInfCaveRunPockets[] =
+{
+    POCKET_ITEMS,
+    POCKET_POKE_BALLS,
+};
+
+// Where a pocket's stashed slots live, or NULL for a pocket the cave leaves alone.
+// The swap loops skip a NULL, so a pocket added to the table without an array here
+// is simply not taken over rather than a null write.
+static struct ItemSlot *StashSlots(enum Pocket pocket)
+{
+    switch (pocket)
+    {
+    case POCKET_ITEMS:      return Stash()->items;
+    case POCKET_POKE_BALLS: return Stash()->pokeBalls;
+    default:                return NULL;
+    }
+}
+
+bool32 InfCave_IsRunBagOpen(void)
+{
+    return Stash()->stashed;
+}
+
+// Moves the player's bag out of the live pockets and leaves them empty. Called at
+// the start of a descent, before the player can reach a room.
+void InfCave_OpenRunBag(void)
+{
+    u32 i, slot;
+
+    if (Stash()->stashed)
+        return;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveRunPockets); i++)
+    {
+        struct BagPocket *pocket = &gBagPockets[sInfCaveRunPockets[i]];
+        struct ItemSlot *stash = StashSlots(sInfCaveRunPockets[i]);
+
+        if (stash == NULL)
+            continue;
+
+        for (slot = 0; slot < pocket->capacity; slot++)
+        {
+            stash[slot] = BagPocket_GetSlotData(pocket, slot);
+            BagPocket_SetSlotItemIdAndCount(pocket, slot, ITEM_NONE, 0);
+        }
+    }
+    Stash()->stashed = TRUE;
+}
+
+// What the run inventory is worth in shards. Summed in money and divided once, so
+// a stack of items each too cheap to be worth a shard on its own still pays.
+static u32 SalvageRunBag(void)
+{
+    u32 i, slot, money = 0;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveRunPockets); i++)
+    {
+        struct BagPocket *pocket = &gBagPockets[sInfCaveRunPockets[i]];
+
+        if (StashSlots(sInfCaveRunPockets[i]) == NULL)
+            continue;
+
+        for (slot = 0; slot < pocket->capacity; slot++)
+        {
+            struct ItemSlot item = BagPocket_GetSlotData(pocket, slot);
+
+            if (item.itemId != ITEM_NONE)
+                money += GetItemPrice(item.itemId) * item.quantity;
+        }
+    }
+    return money / INFCAVE_SALVAGE_MONEY_PER_SHARD;
+}
+
+// Trades the run inventory in and hands the player's own bag back. Idempotent and
+// gated on the stash, so a lobby visit with no run behind it leaves the real bag
+// alone, and a bag left stashed by a hard reset is recovered rather than salvaged
+// twice.
+void InfCave_CloseRunBag(void)
+{
+    u32 i, slot;
+
+    if (!Stash()->stashed)
+        return;
+
+    Records()->lastRunSalvage = SalvageRunBag();
+    BankShards(Records()->lastRunSalvage);
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveRunPockets); i++)
+    {
+        struct BagPocket *pocket = &gBagPockets[sInfCaveRunPockets[i]];
+        struct ItemSlot *stash = StashSlots(sInfCaveRunPockets[i]);
+
+        if (stash == NULL)
+            continue;
+
+        for (slot = 0; slot < pocket->capacity; slot++)
+        {
+            BagPocket_SetSlotData(pocket, slot, stash[slot]);
+            stash[slot] = (struct ItemSlot) { ITEM_NONE, 0 };
+        }
+    }
+    Stash()->stashed = FALSE;
+}
+
+// --- Run-end payout and the lobby shop ---------------------------------------
+
+// Lowest milestone row the player is still owed, or -1 for none.
+static s32 OwedMilestoneRow(void)
+{
+    struct InfinityCaveRecords *records = Records();
+    u32 i;
+
+    NormalizeRecords();
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveMilestones); i++)
+    {
+        if (records->milestonesOwed & (1 << i))
+            return i;
+    }
+    return -1;
+}
+
+// Buffers the descent the lobby report owes the player: depth in STR_VAR_1, the
+// shards it earned in STR_VAR_2, the wallet in STR_VAR_3.
+void InfCave_BufferRunReport(void)
+{
+    struct InfinityCaveRecords *records = Records();
+
+    ConvertIntToDecimalStringN(gStringVar1, records->lastRunDepth, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ConvertIntToDecimalStringN(gStringVar2, records->lastRunShards, STR_CONV_MODE_LEFT_ALIGN, 5);
+    ConvertIntToDecimalStringN(gStringVar3, records->shards, STR_CONV_MODE_LEFT_ALIGN, 5);
+}
+
+// The salvage line of the report, skipped when the descent ended with the run
+// inventory empty.
+void InfCave_BufferSalvageReport(void)
+{
+    ConvertIntToDecimalStringN(gStringVar1, Records()->lastRunSalvage, STR_CONV_MODE_LEFT_ALIGN, 5);
+    gSpecialVar_Result = (Records()->lastRunSalvage != 0);
+}
+
+// Read from VAR_RESULT before the report hands milestone items over.
+void InfCave_AreMilestonesOwed(void)
+{
+    gSpecialVar_Result = (OwedMilestoneRow() >= 0);
+}
+
+// One step of the milestone payout. Puts the next owed item in the vars
+// STD_OBTAIN_ITEM reads and returns TRUE, or returns FALSE once nothing is owed.
+// A row is marked paid only when its whole item list has been handed over, so a
+// payout interrupted by a full Bag and a full PC resumes where it stopped.
+void InfCave_PrepareMilestoneItem(void)
+{
+    struct InfinityCaveRecords *records = Records();
+    s32 row;
+
+    while ((row = OwedMilestoneRow()) >= 0)
+    {
+        const struct InfCaveMilestone *milestone = &sInfCaveMilestones[row];
+
+        if (records->payCursor < INFCAVE_MILESTONE_MAX_ITEMS
+         && milestone->items[records->payCursor].item != ITEM_NONE)
+        {
+            gSpecialVar_0x8000 = milestone->items[records->payCursor].item;
+            gSpecialVar_0x8001 = milestone->items[records->payCursor].amount;
+            gSpecialVar_Result = TRUE;
+            return;
+        }
+
+        records->milestonesOwed &= ~(1 << row);
+        records->milestonesPaid |= 1 << row;
+        records->payCursor = 0;
+    }
+    gSpecialVar_Result = FALSE;
+}
+
+// Called once the item InfCave_PrepareMilestoneItem offered has actually been
+// taken, so the next call moves on.
+void InfCave_AdvanceMilestoneItem(void)
+{
+    Records()->payCursor++;
+}
+
+// Closes the report out. A milestone the player had no room for keeps the report
+// owed, so the next walk into the lobby announces the same descent again and
+// retries the items; VAR_TEMP_1 goes down either way, to end this visit's loop.
+void InfCave_ClearRunReport(void)
+{
+    Records()->reportOwed = (OwedMilestoneRow() >= 0);
+    VarSet(VAR_TEMP_1, 0);
+}
+
+// The lobby shop's lists, read while the mart runs rather than while the special
+// that filled them does, so they are not allocated.
+static EWRAM_DATA u16 sLobbyMartItems[ARRAY_COUNT(sInfCaveLobbyStock) + 1] = {0};
+static EWRAM_DATA u16 sLobbyMartPrices[ARRAY_COUNT(sInfCaveLobbyStock)] = {0};
+
+// Stock is gated on best depth, not the live depth: the lobby is only reachable
+// with no run in progress.
+static bool32 LobbyRowStocked(const struct InfCaveLobbyEntry *entry)
+{
+    return InfCave_GetBestDepth() >= entry->minBestDepth;
+}
+
+void InfCaveLobby_OpenMart(void)
+{
+    u32 i, count = 0;
+
+    for (i = 0; i < ARRAY_COUNT(sInfCaveLobbyStock); i++)
+    {
+        const struct InfCaveLobbyEntry *entry = &sInfCaveLobbyStock[i];
+
+        if (!LobbyRowStocked(entry))
+            continue;
+
+        sLobbyMartItems[count] = entry->item;
+        sLobbyMartPrices[count] = entry->price;
+        count++;
+    }
+    sLobbyMartItems[count] = ITEM_NONE;
+
+    CreateShardMartMenu(sLobbyMartItems, sLobbyMartPrices);
 }

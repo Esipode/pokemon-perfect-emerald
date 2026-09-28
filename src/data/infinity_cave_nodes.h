@@ -47,7 +47,7 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Battle,
         .description = sInfCaveRoomDesc_Battle,
         .icon = 0,
-        .weight = 24,
+        .weight = 28,
         .minDepth = 0,
         .modifierMask = INFCAVE_MODS_FIELD | INFCAVE_MODS_BATTLE | INFCAVE_MOD_BIT(INFCAVE_MOD_SWARM),
     },
@@ -56,7 +56,7 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Gauntlet,
         .description = sInfCaveRoomDesc_Gauntlet,
         .icon = 1,
-        .weight = 18,
+        .weight = 22,
         .minDepth = 3,
         .modifierMask = INFCAVE_MODS_FIELD | INFCAVE_MODS_BATTLE | INFCAVE_MOD_BIT(INFCAVE_MOD_SWARM),
     },
@@ -65,7 +65,7 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Elite,
         .description = sInfCaveRoomDesc_Elite,
         .icon = 2,
-        .weight = 14,
+        .weight = 16,
         .minDepth = 5,
         // No INFCAVE_MOD_SWARM: the room type is one trainer by definition, and
         // the extra two would arrive at the elite's own tier.
@@ -85,7 +85,7 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Rest,
         .description = sInfCaveRoomDesc_Rest,
         .icon = 4,
-        .weight = 8,
+        .weight = 3,
         .minDepth = 5,
         .modifierMask = INFCAVE_MODS_BOON,
     },
@@ -94,7 +94,7 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Treasure,
         .description = sInfCaveRoomDesc_Treasure,
         .icon = 5,
-        .weight = 10,
+        .weight = 5,
         .minDepth = 0,
         // The only boon is INFCAVE_MOD_TREASURED, which adds balls to a room that
         // has none; here it would only raise a count the room type already rolls.
@@ -106,7 +106,7 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Shop,
         .description = sInfCaveRoomDesc_Shop,
         .icon = 6,
-        .weight = 8,
+        .weight = 5,
         .minDepth = 6,
         .modifierMask = INFCAVE_MODS_BOON,
     },
@@ -123,9 +123,9 @@ struct InfCaveModCountTier
 
 static const struct InfCaveModCountTier sInfCaveModCounts[] =
 {
-    { .minDepth = 0,  .weight = { 100,  0,  0 } },
-    { .minDepth = 2,  .weight = {  60, 40,  0 } },
-    { .minDepth = 6,  .weight = {  30, 55, 15 } },
+    { .minDepth = 0,  .weight = { 70,  30,  0 } },
+    { .minDepth = 5,  .weight = {  60, 40,  0 } },
+    { .minDepth = 10,  .weight = {  30, 55, 15 } },
     { .minDepth = 15, .weight = {  20, 50, 30 } },
     { .minDepth = 30, .weight = {  10, 45, 45 } },
 };

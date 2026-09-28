@@ -1420,6 +1420,36 @@ struct InfinityCaveRun
     u8 roomFlags;   // INFCAVE_ROOMFLAG_*, cleared on every descent
 };
 
+// What the cave keeps between runs. Shards survive a lost descent, so the wallet
+// lives here rather than in the run; best depth gates the lobby shop's stock, and
+// the milestone bits make each depth reward pay out once per save.
+struct InfinityCaveRecords
+{
+    u16 shards;         // banked wallet, spent by both cave shops
+    u16 bestDepth;      // deepest floor reached on this save
+    u16 lastRunDepth;   // the descent the lobby report still owes the player
+    u16 lastRunShards;  // shards that descent earned, before anything spent
+    u16 lastRunSalvage; // shards the descent's leftover supplies were traded for
+    u8 milestonesPaid;  // bit per sInfCaveMilestones row, already handed over
+    u8 milestonesOwed;  // rows the last run earned but the lobby has not paid
+    u8 payCursor;       // item index inside the lowest owed row
+    bool8 reportOwed;   // the lobby still has a descent to announce
+};
+
+// The player's own bag, held while a descent replaces it with the run inventory.
+// One array per pocket the cave takes over; the pockets not listed here are left
+// alone, so scripts that check a Key Item or a TM still work inside the cave.
+//
+// Quantities are stored decrypted. The save's encryption key is re-rolled on every
+// boot and ApplyNewEncryptionKeyToBagItems only walks the live pockets, so an
+// encrypted stash would decode against the wrong key after a reload.
+struct InfinityCaveStash
+{
+    struct ItemSlot items[BAG_ITEMS_COUNT];
+    struct ItemSlot pokeBalls[BAG_POKEBALLS_COUNT];
+    bool8 stashed;      // the live pockets are the run's, not the player's
+};
+
 struct SaveBlock1
 {
     struct Coords16 pos;
@@ -1567,6 +1597,8 @@ struct SaveBlock1
     struct DaycareMon route5DayCareMon;
 #endif
     struct InfinityCaveRun infinityCaveRun;
+    struct InfinityCaveRecords infinityCaveRecords;
+    struct InfinityCaveStash infinityCaveStash;
     // Actual size: see T_SAVEBLOCK1_SIZE in test/save.c (kept in sync by the
     // "SaveBlock1 is backwards compatible" test) or the in-game debug readout
     // (CheckSaveBlock1Size, src/debug.c). Per-field offsets above are not tracked

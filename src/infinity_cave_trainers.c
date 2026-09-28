@@ -1,6 +1,7 @@
 #include "global.h"
 #include "infinity_cave.h"
 #include "battle_emporium.h"
+#include "battle_setup.h"
 #include "caps.h"
 #include "data.h"
 #include "item.h"
@@ -234,11 +235,33 @@ u32 InfCave_GetBattleShards(void)
     return base * percent / 100;
 }
 
-// Post-battle script special. Pays the battle out and buffers the amount and the
-// new total for the payout message.
+// TRUE once every trainer the room actually stood has been beaten. A room that
+// stood none is never "cleared", so the empty-placement case pays no bonus.
+static bool32 RoomTrainersCleared(void)
+{
+    u32 count = InfCave_GetRoomTrainerCount();
+    u32 i;
+
+    if (count == 0)
+        return FALSE;
+
+    for (i = 0; i < count; i++)
+    {
+        if (!HasTrainerBeenFought(InfCave_GetTrainerId(i)))
+            return FALSE;
+    }
+    return TRUE;
+}
+
+// Post-battle script special. Pays the battle out, and one extra battle's worth on
+// top when that win emptied the room: the trainer's defeat flag is already set by
+// the time the payout line runs, so the last win in a room pays both.
 void InfCave_PayBattleShards(void)
 {
     InfCave_AddShards(InfCave_GetBattleShards());
+
+    if (RoomTrainersCleared())
+        InfCave_AddShards(InfCave_GetBattleShards());
 }
 
 // Tier a built slot rolled on, found from the slot the trainer pointer addresses.

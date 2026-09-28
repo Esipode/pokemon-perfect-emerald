@@ -18,6 +18,7 @@
 #include "battle_pyramid.h"
 #include "battle_pyramid_bag.h"
 #include "graphics.h"
+#include "infinity_cave.h"
 #include "shop_criteria.h"
 #include "constants/battle.h"
 #include "constants/items.h"
@@ -373,9 +374,11 @@ bool32 AddBagItem(enum Item itemId, u16 count)
         Achievement_CheckItemMilestones(itemId);
         Achievement_CheckPackRatMilestone();
     }
-    else
+    else if (!InfCave_IsRunBagOpen())
     {
-        // Bag pocket full - divert the item to the PC.
+        // Bag pocket full - divert the item to the PC. Not while the Infinity Cave
+        // owns the bag: the run inventory is emptied when the descent ends, so a
+        // diverted item would be the one thing that escapes the cave.
         added = AddPCItem(itemId, count);
     }
 

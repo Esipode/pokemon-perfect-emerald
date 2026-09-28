@@ -24,6 +24,10 @@
 //   struct InfinityCaveRun appended (20 bytes, 4-byte aligned for its two u32 seeds):
 //     7518 rounds up to 7520, + 20 = 7540. Hand-calculated -- confirm against the real
 //     build error if this mismatches.
+//   struct InfinityCaveRecords appended (14 bytes: five u16 then four bytes, no internal
+//     padding, 2-byte aligned): 7540 + 14 = 7554.
+//   struct InfinityCaveStash appended (186 bytes: 46 ItemSlots of 4 plus one bool8,
+//     padded to the struct's 2-byte alignment): 7554 + 186 = 7740, a multiple of 4.
 //
 // SaveBlock2 (starts at 3008, ends at 744):
 //   FREE_CONTESTS: contestLinkResults[5][4] (40) -> 2968.
@@ -50,7 +54,7 @@
 //     union has u32s) + boxes (N*30*80) + boxNames (N*9) + boxWallpapers (N) + fusions
 //     (4*104). Names plus wallpapers cost 10 bytes per box, so fusions' offset stays
 //     4-aligned only when N is even; 16 and 28 both are.
-#define T_SAVEBLOCK1_SIZE 7540
+#define T_SAVEBLOCK1_SIZE 7740
 #define T_SAVEBLOCK2_SIZE 776
 #define T_SAVEBLOCK3_SIZE 1576
 #define T_POKEMONSTORAGE_SIZE 67900

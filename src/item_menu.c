@@ -20,6 +20,7 @@
 #include "international_string_util.h"
 #include "item.h"
 #include "item_menu_icons.h"
+#include "infinity_cave.h"
 #include "item_use.h"
 #include "lilycove_lady.h"
 #include "list_menu.h"
@@ -228,6 +229,7 @@ static const u8 sText_CantStoreImportantItems[] = _("Important items\ncan't be s
 static const u8 sMenuText_Tap[] = _("Tap");
 static const u8 sMenuText_Hold[] = _("Hold");
 static const u8 sText_RegisterHow[] = _("Register this\nitem by tapping or\nholding SELECT?");
+static const u8 sText_BerriesSealedInCave[] = _("You can't use or give BERRIES\nduring a descent.");
 
 static void Task_LoadBagSortOptions(u8 taskId);
 static void ItemMenu_SortByName(u8 taskId);
@@ -1895,8 +1897,31 @@ static void RemoveContextWindow(void)
         BagMenu_RemoveWindow(ITEMWIN_2x3);
 }
 
+// The Infinity Cave's run inventory replaces the Items and Poké Balls pockets but
+// leaves Berries alone, so the Berries pocket is the one way left to carry healing
+// into a descent - used from the bag or attached to a party mon mid-run. Both are
+// sealed. A berry already held when the descent started stays held: the cave does
+// not strip held items.
+static bool32 IsBerryUseSealed(void)
+{
+    return GetItemPocket(gSpecialVar_ItemId) == POCKET_BERRIES && InfCave_IsRunBagOpen();
+}
+
+// The caller removes the context menu first where one is open.
+static void PrintBerriesSealedInCave(u8 taskId)
+{
+    DisplayItemMessage(taskId, FONT_NORMAL, sText_BerriesSealedInCave, HandleErrorMessage);
+}
+
 static void ItemMenu_UseOutOfBattle(u8 taskId)
 {
+    if (IsBerryUseSealed())
+    {
+        RemoveContextWindow();
+        PrintBerriesSealedInCave(taskId);
+        return;
+    }
+
     if (GetItemFieldFunc(gSpecialVar_ItemId))
     {
         RemoveContextWindow();
@@ -2109,7 +2134,11 @@ static void ItemMenu_CheckWhichRegister(u8 taskId)
 static void ItemMenu_Give(u8 taskId)
 {
     RemoveContextWindow();
-    if (!IsWritingMailAllowed(gSpecialVar_ItemId))
+    if (IsBerryUseSealed())
+    {
+        PrintBerriesSealedInCave(taskId);
+    }
+    else if (!IsWritingMailAllowed(gSpecialVar_ItemId))
     {
         DisplayItemMessage(taskId, FONT_NORMAL, gText_CantWriteMail, HandleErrorMessage);
     }
@@ -2178,6 +2207,12 @@ static void ItemMenu_UseInBattle(u8 taskId)
         return;
 
     RemoveContextWindow();
+    if (IsBerryUseSealed())
+    {
+        PrintBerriesSealedInCave(taskId);
+        return;
+    }
+
     if (type == ITEM_USE_BAG_MENU || (type == ITEM_USE_BATTLER && !IsDoubleBattle()))
         ItemUseInBattle_BagMenu(taskId);
     else if (type == ITEM_USE_PARTY_MENU || (type == ITEM_USE_BATTLER && IsDoubleBattle()))
@@ -2193,7 +2228,11 @@ void CB2_ReturnToBagMenuPocket(void)
 
 static void Task_ItemContext_GiveToParty(u8 taskId)
 {
-    if (!IsWritingMailAllowed(gSpecialVar_ItemId))
+    if (IsBerryUseSealed())
+    {
+        PrintBerriesSealedInCave(taskId);
+    }
+    else if (!IsWritingMailAllowed(gSpecialVar_ItemId))
     {
         DisplayItemMessage(taskId, FONT_NORMAL, gText_CantWriteMail, HandleErrorMessage);
     }

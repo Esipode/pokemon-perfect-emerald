@@ -165,8 +165,60 @@ bool32 InfCave_IsBagLocked(void);
 // generator, so a reload inside a room re-arms it.
 void InfCave_ArmNoWhiteout(void);
 
+// The shard wallet, which survives a lost run: shards are banked as they are
+// earned, so both cave shops spend the same pot.
 void InfCave_AddShards(u32 amount);
 bool32 InfCave_SpendShards(u32 amount);
+
+// Deepest floor this save has reached. Gates the lobby shop's stock.
+u32 InfCave_GetBestDepth(void);
+
+// The run inventory (src/infinity_cave.c). Descending stashes the pockets the cave
+// takes over and leaves them empty, so a descent cannot be stocked out of the
+// player's real bag: everything carried down is found, bought or paid out inside
+// the cave. InfCave_EndRun closes it out on every end reason, and the lobby's
+// ON_TRANSITION is the backstop that recovers a bag left stashed by a hard reset.
+void InfCave_OpenRunBag(void);
+void InfCave_CloseRunBag(void);
+
+// TRUE while a run owns the bag. Read by AddBagItem, which must not divert a full
+// run inventory into the player's item PC.
+bool32 InfCave_IsRunBagOpen(void);
+
+// Buffers the salvage line of the lobby report: shards in STR_VAR_1, with
+// VAR_RESULT FALSE when the descent had nothing left to trade in.
+void InfCave_BufferSalvageReport(void);
+
+// Run-end payout (src/infinity_cave.c). Every way a run ends - walking out,
+// leaving from a room, losing a battle - lands the player in the lobby, whose
+// ON_FRAME table runs the report script once InfCave_EndRunQuit raises
+// VAR_TEMP_1. The report announces the descent and hands over the depth
+// milestones it earned, so a lost run still pays.
+
+// Buffers the report's numbers: depth in STR_VAR_1, the shards the descent earned
+// in STR_VAR_2, the wallet in STR_VAR_3.
+void InfCave_BufferRunReport(void);
+
+// TRUE while a depth milestone is still owed. Leaves the answer in VAR_RESULT, so
+// the script reads it with special rather than specialvar: specialvar stores the
+// special's C return value (src/scrcmd.c), which a void special does not have.
+void InfCave_AreMilestonesOwed(void);
+
+// Milestone payout loop. InfCave_PrepareMilestoneItem puts the next owed item in
+// the vars STD_OBTAIN_ITEM reads and answers in VAR_RESULT, again through special
+// rather than specialvar; the script calls InfCave_AdvanceMilestoneItem only once
+// the item was actually taken, so a payout stopped by a full Bag and a full PC
+// resumes on the next visit.
+void InfCave_PrepareMilestoneItem(void);
+void InfCave_AdvanceMilestoneItem(void);
+
+// Ends the report. Milestones the player had no room for stay owed.
+void InfCave_ClearRunReport(void);
+
+// The lobby shop, which sells the run's real prizes for shards. Stock is gated on
+// best depth rather than the live depth, so pushing deeper unlocks purchases
+// instead of only raising what the player can afford.
+void InfCaveLobby_OpenMart(void);
 
 // Rest, treasure and shop rooms (src/infinity_cave.c). Consumed state - an
 // emptied item ball, a used heal, a bought one-off service - lives in the run
