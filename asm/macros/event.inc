@@ -3094,6 +3094,27 @@
 	.2byte \dest
 	.endm
 
+	@ Creates a saturation overlay: level is 0-OVERLAY_SATURATION_MAX (0 grey, 16 unchanged, 32 double).
+	@ opacity is 0-16 and scales the change from 16. layer must be OVERLAY_LAYER_WORLD, _OBJECTS or _ALL.
+	.macro overlaycreatesaturation level:req, opacity:req, layer:req, scope:req, dest:req
+	callnative Scrcmd_overlaycreatesaturation, requests_effects=1
+	.2byte \level
+	.2byte \opacity
+	.2byte \layer
+	.2byte \scope
+	.2byte \dest
+	.endm
+
+	@ Creates an invert (photo negative) overlay. opacity 8 flattens the scene to grey; use 16, or fade through it.
+	@ layer must be OVERLAY_LAYER_WORLD, _OBJECTS or _ALL.
+	.macro overlaycreateinvert opacity:req, layer:req, scope:req, dest:req
+	callnative Scrcmd_overlaycreateinvert, requests_effects=1
+	.2byte \opacity
+	.2byte \layer
+	.2byte \scope
+	.2byte \dest
+	.endm
+
 	@ The handleVar argument of the commands below is the variable holding an overlay handle.
 	@ Each command does nothing if the handle is stale or invalid.
 
@@ -3109,6 +3130,13 @@
 	callnative Scrcmd_overlaysethue, requests_effects=1
 	.2byte \handleVar
 	.2byte \hueAngle
+	.endm
+
+	@ Sets a saturation overlay's level (0-32). Does nothing on other overlays.
+	.macro overlaysetsaturation handleVar:req, level:req
+	callnative Scrcmd_overlaysetsaturation, requests_effects=1
+	.2byte \handleVar
+	.2byte \level
 	.endm
 
 	@ Sets the overlay's opacity (0-16) immediately, cancelling any running fade.
@@ -3133,15 +3161,17 @@
 	.2byte \durationFrames
 	.endm
 
-	@ Pulses the overlay between min and max opacity (0-16) with a triangle wave of periodFrames.
-	@ phaseFrames starts the wave that far into its period; periodFrames / 2 starts at the maximum.
-	.macro overlaypulse handleVar:req, minOpacity:req, maxOpacity:req, periodFrames:req, phaseFrames=0
+	@ Pulses the overlay between min and max opacity (0-16) with a wave of periodFrames.
+	@ phaseFrames starts the wave that far into its period. wave is OVERLAY_PULSE_*; the default is a triangle,
+	@ where periodFrames / 2 starts at the maximum.
+	.macro overlaypulse handleVar:req, minOpacity:req, maxOpacity:req, periodFrames:req, phaseFrames=0, wave=OVERLAY_PULSE_TRIANGLE
 	callnative Scrcmd_overlaypulse, requests_effects=1
 	.2byte \handleVar
 	.2byte \minOpacity
 	.2byte \maxOpacity
 	.2byte \periodFrames
 	.2byte \phaseFrames
+	.2byte \wave
 	.endm
 
 	@ Anchors the overlay to an object on the current map; localId 0 is the player.
@@ -3267,6 +3297,29 @@
 	.2byte \dest
 	.2byte \intensity
 	.2byte \radius
+	.2byte \duration
+	.endm
+
+	@ Drifting particles. style is SCREENFX_PARTICLE_*, radius is the spawn radius in tiles (0-15) around the anchor.
+	@ color is RGB15 or SCREENFX_COLOR_DEFAULT. intensity sets density. Only one particle effect at a time.
+	.macro screenfxparticles dest:req, intensity:req, style:req, color:req, radius:req, duration:req
+	callnative Scrcmd_screenfxparticles, requests_effects=1
+	.2byte \dest
+	.2byte \intensity
+	.2byte \style
+	.2byte \color
+	.2byte \radius
+	.2byte \duration
+	.endm
+
+	@ A beam of light descending onto the anchor. color is RGB15 or SCREENFX_COLOR_DEFAULT. intensity sets brightness.
+	@ descentFrames is the time to land (0 = already down). Only one pillar at a time.
+	.macro screenfxpillar dest:req, intensity:req, color:req, descentFrames:req, duration:req
+	callnative Scrcmd_screenfxpillar, requests_effects=1
+	.2byte \dest
+	.2byte \intensity
+	.2byte \color
+	.2byte \descentFrames
 	.2byte \duration
 	.endm
 

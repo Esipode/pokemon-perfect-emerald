@@ -83,6 +83,22 @@ struct ScreenFx
             u8 roll;        // amplitude table index
             u8 timer;       // frames until the next re-roll
         } tear;
+        struct              // param1 and param2 alias color, style and radius
+        {
+            u16 color;      // RGB15 or SCREENFX_COLOR_DEFAULT
+            u8 style;       // enum ScreenFxParticleStyle
+            u8 radius;      // tiles, 0 = whole screen (1 tile when anchored)
+            u16 spawnTimer; // frames until the next spawn attempt
+            u16 rng;        // random generator state
+        } particles;
+        struct PillarParams // param1 and param2 alias color and descent
+        {
+            u16 color;      // RGB15 or SCREENFX_COLOR_DEFAULT
+            u16 descent;    // frames for the beam to reach the anchor, 0 = already down
+            u16 elapsed;    // frames since start, stops at 0xFFFF
+            u8 breathPhase; // sine index of the brightness breathing
+            u8 landed;      // the descent has finished
+        } pillar;
         u8 raw[8];
     } params;               // per-kind state
 };
@@ -155,6 +171,35 @@ struct ScreenFx
 // were destroyed by a battle or a full-screen menu is rebuilt automatically. Palette overlays never
 // tint its palette.
 
+// Particles (SCREENFX_PARTICLES): small sprites that spawn, animate and die. param1 = RGB15 colour or
+// SCREENFX_COLOR_DEFAULT (the style's own colour), param2 = style (SCREENFX_PARTICLE_*) in the low byte and
+// spawn radius in tiles in the high byte. Anchored, particles spawn within radius tiles of the anchor (0 = 1
+// tile); unanchored, they spawn anywhere on screen (radius is ignored). Particles are world-anchored: they
+// scroll with the camera. Intensity is density: at most 12 * resolvedIntensity / 16 particles are alive.
+// Lower intensity only stops spawning; live particles finish their life, so a fade-out thins the effect.
+// Styles: SPARKLE stays in place; EMBER and BUBBLE rise (spawning at the bottom of the radius, or below
+// the screen when unanchored); LEAF falls and drifts sideways (spawning at the top); MOTE drifts slowly in
+// a random direction. Sway is a sideways sine offset.
+// Motion and spawning run in ScreenFx_Update, so a battle freeze holds particles exactly as drawn.
+// One OBJ palette slot and 4 tiles of OBJ VRAM. Only one particle effect exists at a time, and
+// ScreenFx_Start returns SCREENFX_ID_INVALID for an unknown style, or when no palette slot or tile space is
+// free. A particle is not spawned while fewer than 16 sprites are free, so object events, grass and weather
+// keep priority; crowded maps show fewer particles. Sprites destroyed by a battle or a full-screen menu are
+// rebuilt automatically. Palette overlays never tint the particle palette.
+
+// Pillar (SCREENFX_PILLAR): a soft vertical beam of light that descends from the top of the screen onto the
+// anchor (the player without one), with a flare at its foot once it lands. param1 = RGB15 colour or
+// SCREENFX_COLOR_DEFAULT (warm white), param2 = descent frames (0 = the beam starts already down). Intensity
+// is brightness. Like the vignette it relies on the field's fixed BLDALPHA: intensity 0 is a neutral grey that
+// leaves a mid-tone scene unchanged and rising intensity blends toward the colour, so it reads best over
+// mid-tones and is approximate over very dark or very bright ground. The palette breathes by about 12% over
+// roughly 90 frames. The sprites are world-anchored and use OBJ priority 1, so text boxes stay on top.
+// Sprites are hidden at resolved intensity 0. There is no lift animation on stop; fade out instead.
+// One OBJ palette slot and 64 tiles (2 KB) of OBJ VRAM, 4 sprites. Only one pillar exists at a time, and
+// ScreenFx_Start returns SCREENFX_ID_INVALID when no palette slot or tile space is free. A pillar whose sprites
+// were destroyed by a battle or a full-screen menu is rebuilt at its current length; a landed pillar does not
+// replay the descent. Palette overlays never tint its palette.
+
 // Presets (ScreenFx_StartPreset). A preset starts a fixed set of effects and overlays and owns their
 // handles, so one call starts the look and one call ends it.
 //   LEGENDARY_PRESENCE: wave, slow shake and a palette tint. Anchored, the members scale with the
@@ -183,7 +228,7 @@ struct ScreenFx
 // Battle transitions. BattleTransition_Start and BattleTransition_StartOnField call ScreenFx_BeginBattleFreeze, which
 // holds every effect exactly as drawn while the transition intro flash plays. When the transition's main phase
 // begins it calls ScreenFx_Suspend, so no effect runs during that phase or the battle: the scanline DMA stops, the
-// camera pan returns to pan-ahead and the vignette releases its sprites and palette slot. The pool, the presets and
+// camera pan returns to pan-ahead and the vignette, particles and pillar release their sprites and palette slot. The pool, the presets and
 // their timers are kept but frozen, and ScreenFx_Start fails while frozen or suspended. ResumeMap calls
 // ScreenFx_Resume on the return to the field, and the effects continue; a warp, whiteout or load clears them instead.
 // Encounter scripts need no screenfxstopall before a battle start; stop effects only to end them for good.
@@ -198,8 +243,8 @@ void ScreenFx_ResetAll(void);
 void ScreenFx_Update(void);
 // Builds the scanline buffer. Runs after UpdateCameraPanning.
 void ScreenFx_Render(void);
-// OBJ palette slot bit (1 << (16 + slot)) held by the vignette, 0 without one. Palette overlays exclude it.
-u32 ScreenFx_GetVignettePaletteMask(void);
+// OBJ palette slot bits (1 << (16 + slot)) held by screen-effect sprites (vignette, particles, pillar). Palette overlays exclude them.
+u32 ScreenFx_GetOwnedPaletteMask(void);
 // Installs the scanline DMA. Runs in VBlankCB_Field after FieldUpdateBgTilemapScroll.
 void ScreenFx_VBlank(void);
 

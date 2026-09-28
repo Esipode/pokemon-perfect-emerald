@@ -24,7 +24,7 @@ enum OverlaySpritePosition
 
 struct OverlayConfig
 {
-    u16 color;      // OVERLAY_EFFECT_TINT: RGB15 target colour. OVERLAY_EFFECT_HUE_SHIFT: hue angle 0-255
+    u16 color;      // meaning depends on effect: TINT = RGB15 target colour, HUE_SHIFT = hue angle 0-255, SATURATION = level 0-32
     u8 opacity;     // 0-OVERLAY_OPACITY_MAX
     u8 layer;       // enum OverlayLayer
     u8 scope;       // enum OverlayScope
@@ -36,7 +36,7 @@ struct OverlayConfig
 struct Overlay
 {
     u32 exemptPalettes;     // one bit per palette slot, set = not tinted; bits 0-15 BG, 16-31 OBJ
-    u16 color;              // tint colour, or hue angle 0-255 when effect is OVERLAY_EFFECT_HUE_SHIFT
+    u16 color;              // meaning depends on effect: TINT = RGB15 colour, HUE_SHIFT = hue angle 0-255, SATURATION = level 0-32, INVERT = unused
     u16 fadeDuration;       // frames
     u16 fadeElapsed;
     u16 pulsePeriod;        // frames
@@ -69,10 +69,11 @@ struct Overlay
     u8 falloffEnabled:1;
     u8 spritePosition:2;    // enum OverlaySpritePosition
     u8 transient:1;         // not written to the save
-    u8 effect:1;            // enum OverlayEffect, fixed at creation
+    u8 effect:3;            // enum OverlayEffect, fixed at creation
     u8 exemptLocalId;      // 0 = none; resolved against exemptMapNum/exemptMapGroup
     u8 exemptMapNum;
     u8 exemptMapGroup;
+    u8 pulseWave;           // enum OverlayPulseWave
 };
 
 // Saved in SaveBlock3. The magic byte rejects saves written before this struct existed.
@@ -103,6 +104,16 @@ struct OverlaySave
 // A zero shift is exact, and the rotation is division-free, but it still costs a few multiplies per
 // palette colour on every recomposition against one blend per colour for a tint. It is a
 // palette-backend effect only: OVERLAY_LAYER_SPRITE always uses OVERLAY_EFFECT_TINT.
+// OVERLAY_EFFECT_SATURATION moves each colour toward or away from its luma. `color` is the target
+// level 0-OVERLAY_SATURATION_MAX (Q4): 0 is grey, OVERLAY_SATURATION_NEUTRAL (16) is unchanged, 32 is
+// double saturation. Opacity is folded into the level (16 + (level - 16) * opacity / 16), which equals
+// mixing the result over the original. Above 16, clamping at 0 or 31 drifts the hue slightly toward the
+// clamped channel. Greys are unchanged. Palette-backend only, like the hue shift.
+// OVERLAY_EFFECT_INVERT turns the palettes into their photo negative; `color` is unused and stored as 0.
+// Opacity is a linear mix toward the negative, so at opacity 8 every channel lands near mid-grey and the
+// scene goes flat. Use opacity 16 held, or a fast fade or pulse through the midpoint. Invert acts on
+// whatever the lower-priority overlays already produced: an invert at a higher priority number than a
+// tint inverts the tinted scene. Palette-backend only.
 //
 // Opacity composition. Fade owns currentOpacity; pulse and falloff scale it:
 //   resolvedOpacity = (currentOpacity * pulseFactor * distanceFactor + 128) / 256
@@ -118,6 +129,8 @@ bool32 OverworldAnchor_Resolve(u8 localId, u8 mapNum, u8 mapGroup, s16 *x, s16 *
 u32 OverworldAnchor_Distance(s16 anchorX, s16 anchorY, const struct Coords16 *playerCoords);
 // Linear between maxIntensity at or inside innerRadius and minIntensity at or beyond outerRadius.
 u32 OverworldAnchor_DistanceFactor(u32 distance, u8 innerRadius, u8 outerRadius, u8 minIntensity, u8 maxIntensity);
+// Sprite-space position of an anchor (none = the player). Returns FALSE when the anchor cannot be resolved.
+bool32 OverworldAnchor_SpritePosition(u8 anchorKind, s16 anchorX, s16 anchorY, u8 localId, u8 mapNum, u8 mapGroup, s16 *x, s16 *y);
 
 // Invalidates every outstanding handle and clears the pool.
 void Overlay_ResetAll(void);
@@ -147,6 +160,8 @@ void Overlay_Disable(OverlayId id);
 void Overlay_SetColor(OverlayId id, u16 color);
 // Hue shift effect only; ignored on OVERLAY_EFFECT_TINT. hueAngle is 0-255 over the full circle.
 void Overlay_SetHueShift(OverlayId id, u8 hueAngle);
+// Saturation effect only. level is clamped to OVERLAY_SATURATION_MAX.
+void Overlay_SetSaturation(OverlayId id, u8 level);
 // Direct request, 0-OVERLAY_OPACITY_MAX.
 void Overlay_SetOpacity(OverlayId id, u8 opacity);
 u8 Overlay_GetOpacity(OverlayId id);
@@ -154,10 +169,17 @@ u8 Overlay_GetOpacity(OverlayId id);
 void Overlay_FadeTo(OverlayId id, u8 targetOpacity, u16 durationFrames);
 // Fades to 0, then destroys the overlay. Overlay_SetOpacity or Overlay_FadeTo cancels the destroy.
 void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames);
-// Triangle-wave pulse between minOpacity and maxOpacity, starting at the minimum.
-// Multiplies the fade output; it does not replace it. Periods under 2 frames clear the pulse.
+// Pulse between minOpacity and maxOpacity, starting at the minimum, in the shape set by
+// Overlay_SetPulseWave (triangle by default). Multiplies the fade output; it does not replace it.
+// Periods under 2 frames clear the pulse. Overlay_Pulse keeps the current wave.
+// Recomposition cost follows how often the resolved opacity changes: square twice per period,
+// flicker at most once per max(period / 8, 2) frames, sine and triangle up to 16 times per half period.
 void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames);
-// Moves a running pulse to phaseFrames into its period; period / 2 is the maximum. No-op without a pulse.
+// Selects the pulse shape (enum OverlayPulseWave); out-of-range values clamp to the last wave.
+// Does not reset the phase. Overlay_StopAnimation resets it to triangle.
+void Overlay_SetPulseWave(OverlayId id, u8 wave);
+// Moves a running pulse to phaseFrames into its period; for triangle and sine, period / 2 is the
+// maximum. Flicker keeps the value unwrapped as its seed position. No-op without a pulse.
 void Overlay_SetPulsePhase(OverlayId id, u16 phaseFrames);
 // Clears the pulse only; any running fade continues.
 void Overlay_StopAnimation(OverlayId id);

@@ -10,6 +10,24 @@ enum OverlayEffect
 {
     OVERLAY_EFFECT_TINT,        // blends the palettes toward a colour
     OVERLAY_EFFECT_HUE_SHIFT,   // rotates the palettes' hue, keeping brightness and saturation
+    OVERLAY_EFFECT_SATURATION,  // scales the palettes' distance from grey
+    OVERLAY_EFFECT_INVERT,      // photo negative; color is unused
+    OVERLAY_EFFECT_COUNT,
+};
+
+#define OVERLAY_SATURATION_GREY     0
+#define OVERLAY_SATURATION_NEUTRAL  16  // unchanged
+#define OVERLAY_SATURATION_MAX      32  // double saturation
+
+enum OverlayPulseWave
+{
+    OVERLAY_PULSE_TRIANGLE,     // linear up and down
+    OVERLAY_PULSE_SINE,         // eased, lingers at both ends
+    OVERLAY_PULSE_SQUARE,       // min for the first half period, max for the second
+    OVERLAY_PULSE_SAWTOOTH,     // linear min to max, then snaps back
+    OVERLAY_PULSE_HEARTBEAT,    // beat, smaller beat, long rest
+    OVERLAY_PULSE_FLICKER,      // pseudo-random levels held a few frames each
+    OVERLAY_PULSE_WAVE_COUNT,
 };
 
 enum OverlayLayer

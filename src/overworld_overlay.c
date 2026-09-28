@@ -6,10 +6,12 @@
 #include "palette.h"
 #include "screen_effects.h"
 #include "sprite.h"
+#include "trig.h"
 #include "constants/rgb.h"
 
 STATIC_ASSERT(MAX_OVERLAYS <= 8, OverlayIndexFitsHandle);
 STATIC_ASSERT(sizeof(struct Overlay) <= 40, OverlaySizeBudget);
+STATIC_ASSERT(offsetof(struct Overlay, pulseWave) == 39, OverlayPulseWaveInPadding);
 
 static EWRAM_DATA struct Overlay sOverlays[MAX_OVERLAYS] = {0};
 static EWRAM_DATA u32 sEffectiveExempt[MAX_OVERLAYS] = {0}; // exemptPalettes plus resolved player/object slots
@@ -184,16 +186,16 @@ static bool32 CreateGlow(u32 index, const struct Overlay *overlay)
     return TRUE;
 }
 
-// Sprite-space centre of the glow. Object and player anchors use the target's sprite, which
+// Sprite-space position of an anchor. Object and player anchors use the target's sprite, which
 // already includes step progress; a tile anchor is converted from map coordinates.
-static bool32 GetGlowCenter(const struct Overlay *overlay, s16 *x, s16 *y)
+bool32 OverworldAnchor_SpritePosition(u8 anchorKind, s16 anchorX, s16 anchorY, u8 localId, u8 mapNum, u8 mapGroup, s16 *x, s16 *y)
 {
     u32 objectEventId = OBJECT_EVENTS_COUNT;
 
-    if (overlay->anchorKind == OVERLAY_ANCHOR_NONE)
+    if (anchorKind == OVERLAY_ANCHOR_NONE)
         objectEventId = gPlayerAvatar.objectEventId;
-    else if (overlay->anchorKind == OVERLAY_ANCHOR_OBJECT)
-        objectEventId = GetObjectEventIdByLocalIdAndMap(overlay->anchorLocalId, overlay->anchorMapNum, overlay->anchorMapGroup);
+    else if (anchorKind == OVERLAY_ANCHOR_OBJECT)
+        objectEventId = GetObjectEventIdByLocalIdAndMap(localId, mapNum, mapGroup);
 
     if (objectEventId < OBJECT_EVENTS_COUNT && gObjectEvents[objectEventId].active
      && gObjectEvents[objectEventId].spriteId < MAX_SPRITES)
@@ -206,13 +208,19 @@ static bool32 GetGlowCenter(const struct Overlay *overlay, s16 *x, s16 *y)
         return TRUE;
     }
 
-    if (overlay->anchorKind == OVERLAY_ANCHOR_NONE)
+    if (anchorKind == OVERLAY_ANCHOR_NONE)
         return FALSE;
 
-    SetSpritePosToMapCoords(overlay->anchorX, overlay->anchorY, x, y);
+    SetSpritePosToMapCoords(anchorX, anchorY, x, y);
     *x += 8;
     *y += 8;
     return TRUE;
+}
+
+static bool32 GetGlowCenter(const struct Overlay *overlay, s16 *x, s16 *y)
+{
+    return OverworldAnchor_SpritePosition(overlay->anchorKind, overlay->anchorX, overlay->anchorY,
+                                          overlay->anchorLocalId, overlay->anchorMapNum, overlay->anchorMapGroup, x, y);
 }
 
 static void SpriteCB_OverlayGlow(struct Sprite *sprite)
@@ -343,7 +351,8 @@ static bool32 IsSavedOverlayValid(const struct Overlay *saved)
         && saved->pulseMax <= OVERLAY_OPACITY_MAX
         && saved->minIntensity <= OVERLAY_OPACITY_MAX
         && saved->maxIntensity <= OVERLAY_OPACITY_MAX
-        && saved->spritePosition <= OVERLAY_SPRITE_ABOVE_ALL;
+        && saved->spritePosition <= OVERLAY_SPRITE_ABOVE_ALL
+        && saved->effect < OVERLAY_EFFECT_COUNT;
 }
 
 // Sprite glows are re-created by Overlay_Update.
@@ -369,6 +378,9 @@ void Overlay_LoadFromBlock(void)
             continue;
 
         sOverlays[i] = *saved;
+        // Saves from before pulseWave existed hold padding here.
+        if (sOverlays[i].pulseWave >= OVERLAY_PULSE_WAVE_COUNT)
+            sOverlays[i].pulseWave = OVERLAY_PULSE_TRIANGLE;
     }
 
     sDistanceForce = TRUE;
@@ -541,6 +553,90 @@ static void HueShiftPalettes(u32 palettes, u8 hueAngle, u32 strength)
     }
 }
 
+// Moves each channel away from (level > 16) or toward (level < 16) the colour's luma. Level is Q4;
+// 16 is the identity and 0 is grey. Above 16, clamping shifts the hue slightly toward the clamped channel.
+static u16 SaturateColor(u16 color, s32 level)
+{
+    s32 r = GET_R(color);
+    s32 g = GET_G(color);
+    s32 b = GET_B(color);
+    s32 y = (r * 77 + g * 150 + b * 29) >> 8;
+
+    r = y + (((r - y) * level + 8) >> 4);
+    g = y + (((g - y) * level + 8) >> 4);
+    b = y + (((b - y) * level + 8) >> 4);
+
+    return RGB(r < 0 ? 0 : (r > 31 ? 31 : r),
+               g < 0 ? 0 : (g > 31 ? 31 : g),
+               b < 0 ? 0 : (b > 31 ? 31 : b));
+}
+
+// In-place saturation change of the selected palettes of gPlttBufferFaded. effectiveLevel already
+// includes the overlay's opacity.
+static void SaturatePalettes(u32 palettes, s32 effectiveLevel)
+{
+    u32 slot;
+
+    if (palettes == 0 || effectiveLevel == OVERLAY_SATURATION_NEUTRAL)
+        return;
+
+    for (slot = 0; slot < 32; slot++, palettes >>= 1)
+    {
+        u16 *colors;
+        u32 i;
+
+        if (!(palettes & 1))
+            continue;
+
+        colors = &gPlttBufferFaded[slot * 16];
+        for (i = 0; i < 16; i++)
+            colors[i] = SaturateColor(colors[i], effectiveLevel);
+    }
+}
+
+// In-place mix of the selected palettes of gPlttBufferFaded toward their photo negative:
+// c' = c + (31 - 2c) * opacity / 16, rounded away from zero. Opacity 16 is exactly 31 - c.
+static void InvertPalettes(u32 palettes, u32 opacity)
+{
+    u32 slot;
+
+    if (palettes == 0 || opacity == 0)
+        return;
+
+    for (slot = 0; slot < 32; slot++, palettes >>= 1)
+    {
+        u16 *colors;
+        u32 i;
+
+        if (!(palettes & 1))
+            continue;
+
+        colors = &gPlttBufferFaded[slot * 16];
+        for (i = 0; i < 16; i++)
+        {
+            if (opacity == OVERLAY_OPACITY_MAX)
+            {
+                colors[i] ^= 0x7FFF;
+            }
+            else
+            {
+                u16 color = colors[i];
+                s32 r = GET_R(color);
+                s32 g = GET_G(color);
+                s32 b = GET_B(color);
+                s32 dr = (31 - 2 * r) * (s32)opacity;
+                s32 dg = (31 - 2 * g) * (s32)opacity;
+                s32 db = (31 - 2 * b) * (s32)opacity;
+
+                r += (dr + (dr < 0 ? -OVERLAY_OPACITY_MAX / 2 : OVERLAY_OPACITY_MAX / 2)) / OVERLAY_OPACITY_MAX;
+                g += (dg + (dg < 0 ? -OVERLAY_OPACITY_MAX / 2 : OVERLAY_OPACITY_MAX / 2)) / OVERLAY_OPACITY_MAX;
+                b += (db + (db < 0 ? -OVERLAY_OPACITY_MAX / 2 : OVERLAY_OPACITY_MAX / 2)) / OVERLAY_OPACITY_MAX;
+                colors[i] = (color & 0x8000) | RGB(r, g, b);
+            }
+        }
+    }
+}
+
 // Collects tinting overlays sorted by ascending priority; equal priorities keep pool order.
 static u32 GetRenderOrder(struct Overlay *order[MAX_OVERLAYS])
 {
@@ -576,7 +672,7 @@ static u32 TintPalettes(u32 palettes, u32 progress)
 {
     struct Overlay *order[MAX_OVERLAYS];
     u32 count = GetRenderOrder(order);
-    u32 glowMask = GetGlowPaletteMask() | ScreenFx_GetVignettePaletteMask();
+    u32 glowMask = GetGlowPaletteMask() | ScreenFx_GetOwnedPaletteMask();
     u32 i;
 
     for (i = 0; i < count; i++)
@@ -587,10 +683,23 @@ static u32 TintPalettes(u32 palettes, u32 progress)
         if (opacity == 0)
             continue;
 
-        if (order[i]->effect == OVERLAY_EFFECT_HUE_SHIFT)
+        switch (order[i]->effect)
+        {
+        case OVERLAY_EFFECT_HUE_SHIFT:
             HueShiftPalettes(mask, order[i]->color, opacity);
-        else
+            break;
+        case OVERLAY_EFFECT_SATURATION:
+            // Opacity mixes the result over the original; both are linear, so it folds into the level.
+            SaturatePalettes(mask, OVERLAY_SATURATION_NEUTRAL
+                + (((s32)order[i]->color - OVERLAY_SATURATION_NEUTRAL) * (s32)opacity) / OVERLAY_OPACITY_MAX);
+            break;
+        case OVERLAY_EFFECT_INVERT:
+            InvertPalettes(mask, opacity);
+            break;
+        default:
             BlendPalettesFine(mask, gPlttBufferFaded, gPlttBufferFaded, opacity, order[i]->color);
+            break;
+        }
     }
 
     return count;
@@ -689,23 +798,69 @@ static bool32 UpdateFade(struct Overlay *overlay)
     return TRUE;
 }
 
-// Triangle wave from pulseMin to pulseMax and back over pulsePeriod frames; returns
-// OVERLAY_OPACITY_MAX when no pulse is set. Phase 0 is the minimum.
+// 0-16 shape per beat: a full beat, a smaller beat, then rest.
+static const u8 sHeartbeatShape[32] =
+{
+    0, 8, 16, 12, 8, 4, 0, 6, 10, 7, 4, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+// Biased high so the light is mostly lit and dips briefly.
+static const u8 sFlickerShape[16] = {16, 16, 15, 16, 14, 16, 12, 16, 15, 9, 16, 13, 16, 11, 16, 6};
+
+// Pulse from pulseMin to pulseMax over pulsePeriod frames in the shape of pulseWave; returns
+// OVERLAY_OPACITY_MAX when no pulse is set. Phase 0 is the minimum. Flicker is not periodic:
+// pulsePhase is a free-running counter, and the overlay index decorrelates simultaneous flickers.
 static u32 UpdatePulse(struct Overlay *overlay)
 {
     u32 period = overlay->pulsePeriod;
     u32 phase = overlay->pulsePhase;
-    u32 half, tri;
+    u32 half, shape, hold;
 
     if (period == 0)
         return OVERLAY_OPACITY_MAX;
 
-    half = period / 2;
-    tri = (phase < half ? phase * OVERLAY_OPACITY_MAX : (period - phase) * OVERLAY_OPACITY_MAX) / half;
-    tri = min(tri, OVERLAY_OPACITY_MAX); // odd periods overshoot on the turning frame
+    // Leaving flicker can leave an unwrapped counter behind.
+    if (overlay->pulseWave != OVERLAY_PULSE_FLICKER && phase >= period)
+        phase = 0;
 
-    overlay->pulsePhase = (phase + 1 >= period) ? 0 : phase + 1;
-    return overlay->pulseMin + ((overlay->pulseMax - overlay->pulseMin) * tri) / OVERLAY_OPACITY_MAX;
+    switch (overlay->pulseWave)
+    {
+    default:
+    case OVERLAY_PULSE_TRIANGLE:
+        half = period / 2;
+        shape = (phase < half ? phase * OVERLAY_OPACITY_MAX : (period - phase) * OVERLAY_OPACITY_MAX) / half;
+        shape = min(shape, OVERLAY_OPACITY_MAX); // odd periods overshoot on the turning frame
+        break;
+    case OVERLAY_PULSE_SINE:
+        // gSineTable is Q8; a quarter-turn offset puts the minimum at phase 0.
+        shape = (256 - gSineTable[(phase * 256 / period + 64) & 0xFF]) * OVERLAY_OPACITY_MAX / 512;
+        break;
+    case OVERLAY_PULSE_SQUARE:
+        shape = phase < period / 2 ? 0 : OVERLAY_OPACITY_MAX;
+        break;
+    case OVERLAY_PULSE_SAWTOOTH:
+        shape = min(phase * OVERLAY_OPACITY_MAX / (period - 1), OVERLAY_OPACITY_MAX);
+        break;
+    case OVERLAY_PULSE_HEARTBEAT:
+    {
+        u32 scaled = phase * ARRAY_COUNT(sHeartbeatShape) * 16 / period;
+        u32 i = scaled / 16, frac = scaled % 16;
+
+        shape = (sHeartbeatShape[i] * (16 - frac) + sHeartbeatShape[(i + 1) % ARRAY_COUNT(sHeartbeatShape)] * frac) / 16;
+        break;
+    }
+    case OVERLAY_PULSE_FLICKER:
+        hold = max(period / 8, 2);
+        shape = sFlickerShape[(((phase / hold) + (overlay - sOverlays) * 97) * 2654435761u) >> 28];
+        break;
+    }
+
+    if (overlay->pulseWave == OVERLAY_PULSE_FLICKER)
+        overlay->pulsePhase = phase + 1; // u16 wraps at 0xFFFF
+    else
+        overlay->pulsePhase = (phase + 1 >= period) ? 0 : phase + 1;
+    return overlay->pulseMin + ((overlay->pulseMax - overlay->pulseMin) * shape) / OVERLAY_OPACITY_MAX;
 }
 
 static u32 ResolveOpacity(u32 currentOpacity, u32 pulseFactor, u32 distanceFactor)
@@ -902,11 +1057,12 @@ OverlayId Overlay_Create(const struct OverlayConfig *config)
 
         overlay->active = TRUE;
         overlay->enabled = TRUE;
-        overlay->color = config->color;
         overlay->layer = config->layer;
-        // The sprite backend draws a fixed-colour glow, so it has no hue to rotate.
+        // The sprite backend draws a fixed-colour glow, so it has no hue to rotate, saturation to scale or colours to invert.
         overlay->effect = (config->layer == OVERLAY_LAYER_SPRITE)
-                        ? OVERLAY_EFFECT_TINT : min(config->effect, OVERLAY_EFFECT_HUE_SHIFT);
+                        ? OVERLAY_EFFECT_TINT : min(config->effect, OVERLAY_EFFECT_COUNT - 1);
+        overlay->color = (overlay->effect == OVERLAY_EFFECT_INVERT) ? 0 : config->color;
+        overlay->pulseWave = OVERLAY_PULSE_TRIANGLE;
         overlay->scope = config->scope;
         overlay->priority = config->priority;
         overlay->spritePosition = min(config->spritePosition, OVERLAY_SPRITE_ABOVE_ALL);
@@ -993,6 +1149,18 @@ void Overlay_SetHueShift(OverlayId id, u8 hueAngle)
     sOverlayDirty = TRUE;
 }
 
+void Overlay_SetSaturation(OverlayId id, u8 level)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    level = min(level, OVERLAY_SATURATION_MAX);
+    if (overlay == NULL || overlay->effect != OVERLAY_EFFECT_SATURATION || overlay->color == level)
+        return;
+
+    overlay->color = level;
+    sOverlayDirty = TRUE;
+}
+
 void Overlay_SetOpacity(OverlayId id, u8 opacity)
 {
     struct Overlay *overlay = GetOverlay(id);
@@ -1065,7 +1233,17 @@ void Overlay_SetPulsePhase(OverlayId id, u16 phaseFrames)
     if (overlay == NULL || overlay->pulsePeriod == 0)
         return;
 
-    overlay->pulsePhase = phaseFrames % overlay->pulsePeriod;
+    overlay->pulsePhase = (overlay->pulseWave == OVERLAY_PULSE_FLICKER) ? phaseFrames : phaseFrames % overlay->pulsePeriod;
+}
+
+void Overlay_SetPulseWave(OverlayId id, u8 wave)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL)
+        return;
+
+    overlay->pulseWave = min(wave, OVERLAY_PULSE_WAVE_COUNT - 1);
 }
 
 // Clears the pulse only; the fade and currentOpacity are untouched.
@@ -1080,6 +1258,7 @@ void Overlay_StopAnimation(OverlayId id)
     overlay->pulseMax = 0;
     overlay->pulsePeriod = 0;
     overlay->pulsePhase = 0;
+    overlay->pulseWave = OVERLAY_PULSE_TRIANGLE;
 }
 
 void Overlay_FadeOutAndDisable(OverlayId id, u16 durationFrames)

@@ -22,6 +22,17 @@
 #define SCREENFX_VIGNETTE_MEDIUM        1
 #define SCREENFX_VIGNETTE_TIGHT         2
 
+// Particle style (param2 low byte); the high byte is the spawn radius in tiles.
+enum ScreenFxParticleStyle
+{
+    SCREENFX_PARTICLE_SPARKLE,
+    SCREENFX_PARTICLE_EMBER,
+    SCREENFX_PARTICLE_BUBBLE,
+    SCREENFX_PARTICLE_LEAF,
+    SCREENFX_PARTICLE_MOTE,
+    SCREENFX_PARTICLE_STYLE_COUNT,
+};
+
 enum ScreenFxKind
 {
     SCREENFX_WAVE,
@@ -29,6 +40,8 @@ enum ScreenFxKind
     SCREENFX_TEAR,
     SCREENFX_SHAKE,
     SCREENFX_VIGNETTE,
+    SCREENFX_PARTICLES,
+    SCREENFX_PILLAR,
     SCREENFX_KIND_COUNT,
 };
 
@@ -58,5 +71,8 @@ enum ScreenFxAnchor
     SCREENFX_ANCHOR_COORDS,
     SCREENFX_ANCHOR_OBJECT,
 };
+
+// Particle and pillar colour operand meaning "the style's own colour". Bit 15 is outside RGB15.
+#define SCREENFX_COLOR_DEFAULT 0x8000
 
 #endif // GUARD_CONSTANTS_SCREEN_EFFECTS_H

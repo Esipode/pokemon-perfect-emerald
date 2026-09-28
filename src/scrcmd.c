@@ -3660,6 +3660,72 @@ bool8 Scrcmd_overlaysethue(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// Same as overlaycreate, but the halfword is a saturation level (0-OVERLAY_SATURATION_MAX).
+bool8 Scrcmd_overlaycreatesaturation(struct ScriptContext *ctx)
+{
+    struct OverlayConfig config = {0};
+    u16 layer, scope, destVar;
+
+    config.color = min(VarGet(ScriptReadHalfword(ctx)), OVERLAY_SATURATION_MAX);
+    config.opacity = VarGet(ScriptReadHalfword(ctx));
+    layer = VarGet(ScriptReadHalfword(ctx));
+    scope = VarGet(ScriptReadHalfword(ctx));
+    destVar = ScriptReadHalfword(ctx);
+    config.layer = layer;
+    config.scope = scope;
+    config.effect = OVERLAY_EFFECT_SATURATION;
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    // The sprite backend only tints, so it is not a valid layer here.
+    if (layer >= OVERLAY_LAYER_SPRITE || scope > OVERLAY_SCOPE_GLOBAL)
+        *GetVarPointer(destVar) = OVERLAY_ID_INVALID;
+    else
+        *GetVarPointer(destVar) = Overlay_Create(&config);
+
+    return FALSE;
+}
+
+bool8 Scrcmd_overlaysetsaturation(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 level = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_SetSaturation(id, min(level, OVERLAY_SATURATION_MAX));
+
+    return FALSE;
+}
+
+// Creates an invert (photo negative) overlay; it has no colour operand.
+bool8 Scrcmd_overlaycreateinvert(struct ScriptContext *ctx)
+{
+    struct OverlayConfig config = {0};
+    u16 layer, scope, destVar;
+
+    config.opacity = VarGet(ScriptReadHalfword(ctx));
+    layer = VarGet(ScriptReadHalfword(ctx));
+    scope = VarGet(ScriptReadHalfword(ctx));
+    destVar = ScriptReadHalfword(ctx);
+    config.layer = layer;
+    config.scope = scope;
+    config.effect = OVERLAY_EFFECT_INVERT;
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    // The sprite backend only tints, so it is not a valid layer here.
+    if (layer >= OVERLAY_LAYER_SPRITE || scope > OVERLAY_SCOPE_GLOBAL)
+        *GetVarPointer(destVar) = OVERLAY_ID_INVALID;
+    else
+        *GetVarPointer(destVar) = Overlay_Create(&config);
+
+    return FALSE;
+}
+
 bool8 Scrcmd_overlaysetcolor(struct ScriptContext *ctx)
 {
     OverlayId id = VarGet(ScriptReadHalfword(ctx));
@@ -3721,12 +3787,15 @@ bool8 Scrcmd_overlaypulse(struct ScriptContext *ctx)
     u16 maxOpacity = VarGet(ScriptReadHalfword(ctx));
     u16 periodFrames = VarGet(ScriptReadHalfword(ctx));
     u16 phaseFrames = VarGet(ScriptReadHalfword(ctx));
+    u16 wave = VarGet(ScriptReadHalfword(ctx));
 
     Script_RequestEffects(SCREFF_V1);
 
     if (Overlay_IsValid(id))
     {
         Overlay_Pulse(id, min(minOpacity, OVERLAY_OPACITY_MAX), min(maxOpacity, OVERLAY_OPACITY_MAX), periodFrames);
+        // The wave is set before the phase: the phase wrap rule depends on it.
+        Overlay_SetPulseWave(id, min(wave, OVERLAY_PULSE_WAVE_COUNT - 1));
         Overlay_SetPulsePhase(id, phaseFrames);
     }
 
@@ -3952,6 +4021,42 @@ bool8 Scrcmd_screenfxvignette(struct ScriptContext *ctx)
     Script_RequestWriteVar(destVar);
 
     StartScreenFx(destVar, SCREENFX_VIGNETTE, intensity, radius, 0, duration);
+    return FALSE;
+}
+
+// The colour operand is read raw: RGB15 and SCREENFX_COLOR_DEFAULT are at or above 0x4000, so VarGet would treat them as variables.
+bool8 Scrcmd_screenfxparticles(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
+    u16 style = VarGet(ScriptReadHalfword(ctx));
+    u16 color = ScriptReadHalfword(ctx);
+    u16 radius = min(VarGet(ScriptReadHalfword(ctx)), 15);
+    u16 duration = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    if (style >= SCREENFX_PARTICLE_STYLE_COUNT)
+        *GetVarPointer(destVar) = SCREENFX_ID_INVALID;
+    else
+        StartScreenFx(destVar, SCREENFX_PARTICLES, intensity, color, style | (radius << 8), duration);
+    return FALSE;
+}
+
+// The colour operand is read raw, as in screenfxparticles.
+bool8 Scrcmd_screenfxpillar(struct ScriptContext *ctx)
+{
+    u16 destVar = ScriptReadHalfword(ctx);
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
+    u16 color = ScriptReadHalfword(ctx);
+    u16 descentFrames = VarGet(ScriptReadHalfword(ctx));
+    u16 duration = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+    Script_RequestWriteVar(destVar);
+
+    StartScreenFx(destVar, SCREENFX_PILLAR, intensity, color, descentFrames, duration);
     return FALSE;
 }
 

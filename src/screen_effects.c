@@ -32,6 +32,11 @@
 #define VIGNETTE_FLIP_H         1
 #define VIGNETTE_FLIP_V         2
 
+#define SCREENFX_SPRITE_RESERVE 16      // free sprites particles leave to object events, grass and weather
+#define PARTICLE_TAG            0x8040  // tile and palette tag
+#define PILLAR_BEAM_TAG         0x8041  // beam tile and pillar palette tag
+#define PILLAR_FLARE_TAG        0x8042
+
 #define MAX_RIPPLES             3
 #define RIPPLE_HALF_WIDTH       32  // scanlines each side of the front; power of two keeps the scaling a shift
 #define RIPPLE_STEP             (0x10000 / RIPPLE_HALF_WIDTH) // phase per scanline: two cycles across the band
@@ -55,6 +60,8 @@
 STATIC_ASSERT(MAX_SCREEN_EFFECTS <= 8, ScreenFxIndexFitsHandle);
 STATIC_ASSERT(MAX_SCREENFX_PRESETS <= 8, ScreenFxPresetIndexFitsHandle);
 STATIC_ASSERT(sizeof(struct ScreenFx) <= 44, ScreenFxSizeBudget);
+STATIC_ASSERT((u32)SCREENFX_ANCHOR_NONE == (u32)OVERLAY_ANCHOR_NONE && (u32)SCREENFX_ANCHOR_COORDS == (u32)OVERLAY_ANCHOR_COORDS
+           && (u32)SCREENFX_ANCHOR_OBJECT == (u32)OVERLAY_ANCHOR_OBJECT, ScreenFxAnchorMatchesOverlay);
 STATIC_ASSERT(SCANLINE_COUNT * SCANLINE_REGS == ARRAY_COUNT(gScanlineEffectRegBuffers[0]), ScanlineBufferFit);
 
 struct Ripple
@@ -333,12 +340,53 @@ static bool32 CreateVignette(u32 preset)
     return TRUE;
 }
 
+// Always writes Unfaded, so screen fades and weather rebuilds keep the palette; writes Faded only outside a fade.
+static void WriteOwnedPalette(u32 slot, const u16 *palette)
+{
+    u32 offset = OBJ_PLTT_ID(slot);
+
+    CpuCopy16(palette, &gPlttBufferUnfaded[offset], PLTT_SIZE_4BPP);
+    if (!gPaletteFade.active)
+        CpuCopy16(palette, &gPlttBufferFaded[offset], PLTT_SIZE_4BPP);
+}
+
+// Entry firstIndex is color at half brightness, middle entries are color, and the last of levels
+// entries is color blended 50% toward white.
+static void BuildColorRamp(u16 color, u16 *palette, u32 firstIndex, u32 levels)
+{
+    u32 r = GET_R(color), g = GET_G(color), b = GET_B(color);
+    u32 i;
+
+    for (i = 0; i < levels; i++)
+    {
+        if (i == 0)
+            palette[firstIndex + i] = RGB(r / 2, g / 2, b / 2);
+        else if (i == levels - 1)
+            palette[firstIndex + i] = RGB((r + 31) / 2, (g + 31) / 2, (b + 31) / 2);
+        else
+            palette[firstIndex + i] = color;
+    }
+}
+
+// Counts free sprites. Call on spawn attempts only.
+static u32 CountFreeSprites(void)
+{
+    u32 i, count = 0;
+
+    for (i = 0; i < MAX_SPRITES; i++)
+    {
+        if (!gSprites[i].inUse)
+            count++;
+    }
+
+    return count;
+}
+
 // Entry n fades from neutral grey toward black as intensity rises, more so for darker entries.
 // Written to the unfaded buffer as well, so screen fades and weather rebuilds keep it.
 static void WriteVignettePalette(u32 intensity)
 {
     u16 palette[16] = {0};
-    u32 offset = OBJ_PLTT_ID(sVignette.paletteSlot);
     u32 level;
 
     for (level = 1; level <= VIGNETTE_LEVELS; level++)
@@ -349,10 +397,7 @@ static void WriteVignettePalette(u32 intensity)
         palette[level] = RGB(grey, grey, grey);
     }
 
-    CpuCopy16(palette, &gPlttBufferUnfaded[offset], PLTT_SIZE_4BPP);
-    if (!gPaletteFade.active)
-        CpuCopy16(palette, &gPlttBufferFaded[offset], PLTT_SIZE_4BPP);
-
+    WriteOwnedPalette(sVignette.paletteSlot, palette);
     sVignette.appliedIntensity = intensity;
 }
 
@@ -385,12 +430,630 @@ static void UpdateVignette(const struct ScreenFx *effect)
         gSprites[sVignette.spriteIds[i]].invisible = effect->resolvedIntensity == 0;
 }
 
-u32 ScreenFx_GetVignettePaletteMask(void)
-{
-    if (sVignette.spriteCount == 0 || !OwnsVignettePalette())
-        return 0;
+// Particles: up to MAX_PARTICLES 8x8 sprites drawn from one 4-frame sheet and one palette slot. The art
+// holds the ramp indices (1-3 = dark, base, highlight); the palette holds the colour.
 
-    return 1u << (16 + sVignette.paletteSlot);
+#define MAX_PARTICLES           12
+#define PARTICLE_FRAMES         4
+#define PARTICLE_OFFSCREEN_MARGIN 16    // pixels beyond the screen at which a particle dies
+#define PARTICLE_SPAWN_MAX_INTERVAL 32  // frames between spawns at intensity 0
+#define PARTICLE_SPAWN_MIN_INTERVAL 4
+#define PARTICLE_EDGE_INSET     4       // pixels beyond the screen edge at which edge-spawned particles appear
+
+enum ParticleSpawnEdge
+{
+    PARTICLE_EDGE_NONE,
+    PARTICLE_EDGE_TOP,      // falling styles: cross the screen from above
+    PARTICLE_EDGE_BOTTOM,   // rising styles: cross the screen from below
+};
+
+struct ParticleStyle
+{
+    s8 vx, vy;              // 1/16 pixel per frame
+    u8 vJitter;             // random 0 to +-vJitter added to vx and vy at spawn
+    u8 swayAmp;             // pixels
+    u8 swayRate;            // sine phase steps per frame (256 = one cycle)
+    u8 lifeMin;             // frames
+    u8 lifeRange;           // added life is 0 to lifeRange inclusive
+    bool8 blend;
+    u8 spawnEdge;           // enum ParticleSpawnEdge
+    u16 defaultColor;
+};
+
+struct Particle
+{
+    s16 x, y;               // sprite space, 1/16 pixel
+    s8 vx, vy;              // 1/16 pixel per frame
+    u16 age, life;          // frames
+    u8 spriteId;
+    u8 swayPhase;
+    bool8 active;
+};
+
+struct ParticleEmitter
+{
+    u8 paletteSlot;
+    u8 created;             // sheet and palette are loaded
+    u8 retryDelay;          // frames until a failed re-creation is retried
+};
+
+static EWRAM_DATA struct Particle sParticles[MAX_PARTICLES] = {0};
+static EWRAM_DATA struct ParticleEmitter sEmitter = {0}; // owned by the one SCREENFX_PARTICLES effect
+
+static const u32 sParticleGfx[] = INCGFX_U32("graphics/screen_effects/particles.png", ".4bpp");
+
+static const struct ParticleStyle sParticleStyles[SCREENFX_PARTICLE_STYLE_COUNT] = {
+    [SCREENFX_PARTICLE_SPARKLE] = { .lifeMin = 24, .lifeRange = 8, .blend = TRUE, .defaultColor = RGB(31, 31, 31) },
+    [SCREENFX_PARTICLE_EMBER] = {
+        .vy = -8, .vJitter = 2, .swayAmp = 2, .swayRate = 4, .lifeMin = 60, .lifeRange = 30,
+        .blend = TRUE, .spawnEdge = PARTICLE_EDGE_BOTTOM, .defaultColor = RGB(31, 16, 4),
+    },
+    [SCREENFX_PARTICLE_BUBBLE] = {
+        .vy = -6, .vJitter = 1, .swayAmp = 3, .swayRate = 5, .lifeMin = 70, .lifeRange = 30,
+        .blend = FALSE, .spawnEdge = PARTICLE_EDGE_BOTTOM, .defaultColor = RGB(20, 28, 31),
+    },
+    [SCREENFX_PARTICLE_LEAF] = {
+        .vx = 6, .vy = 8, .vJitter = 2, .swayAmp = 5, .swayRate = 3, .lifeMin = 90, .lifeRange = 30,
+        .blend = FALSE, .spawnEdge = PARTICLE_EDGE_TOP, .defaultColor = RGB(10, 24, 8),
+    },
+    [SCREENFX_PARTICLE_MOTE] = {
+        .vJitter = 4, .lifeMin = 120, .lifeRange = 40, .blend = TRUE, .defaultColor = RGB(28, 28, 22),
+    },
+};
+
+// OBJ priority 1 keeps the sprites under BG0 text.
+static const struct OamData sParticleOam = {
+    .shape = SPRITE_SHAPE(8x8),
+    .size = SPRITE_SIZE(8x8),
+    .priority = 1,
+};
+
+// Identity check only: motion runs in ScreenFx_Update so a battle freeze holds particles as drawn.
+static void SpriteCB_Particle(struct Sprite *sprite)
+{
+}
+
+static const struct SpriteTemplate sParticleTemplate = {
+    .tileTag = PARTICLE_TAG,
+    .paletteTag = TAG_NONE,
+    .oam = &sParticleOam,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_Particle,
+};
+
+static bool32 ParticleSpriteExists(const struct Particle *particle)
+{
+    struct Sprite *sprite = &gSprites[particle->spriteId];
+
+    return sprite->inUse && sprite->callback == SpriteCB_Particle;
+}
+
+static bool32 IsEmitterIntact(void)
+{
+    return sEmitter.created
+        && GetSpriteTileStartByTag(PARTICLE_TAG) != TAG_NONE
+        && GetSpritePaletteTagByPaletteNum(sEmitter.paletteSlot) == PARTICLE_TAG;
+}
+
+static void KillParticle(struct Particle *particle)
+{
+    // A sprite that is no longer ours may belong to another system now, so it is left alone.
+    if (ParticleSpriteExists(particle))
+        DestroySprite(&gSprites[particle->spriteId]);
+
+    particle->active = FALSE;
+}
+
+static void FreeParticles(void)
+{
+    u32 i;
+
+    for (i = 0; i < MAX_PARTICLES; i++)
+    {
+        if (sParticles[i].active)
+            KillParticle(&sParticles[i]);
+    }
+
+    FreeSpritePaletteByTag(PARTICLE_TAG);
+    FreeSpriteTilesByTag(PARTICLE_TAG);
+    memset(&sEmitter, 0, sizeof(sEmitter));
+}
+
+static u16 GetParticleColor(u32 style, u32 color)
+{
+    return color == SCREENFX_COLOR_DEFAULT ? sParticleStyles[style].defaultColor : color;
+}
+
+static bool32 CreateParticleEmitter(u32 style, u32 color)
+{
+    struct SpriteSheet sheet = {
+        .data = sParticleGfx + style * (PARTICLE_FRAMES * TILE_SIZE_4BPP / sizeof(u32)),
+        .size = PARTICLE_FRAMES * TILE_SIZE_4BPP,
+        .tag = PARTICLE_TAG,
+    };
+    struct SpritePalette spritePalette;
+    u16 palette[16] = {0};
+    u32 slot;
+
+    if (GetSpriteTileStartByTag(PARTICLE_TAG) == TAG_NONE)
+        LoadSpriteSheet(&sheet);
+    if (GetSpriteTileStartByTag(PARTICLE_TAG) == TAG_NONE)
+    {
+        FreeParticles();
+        return FALSE;
+    }
+
+    BuildColorRamp(GetParticleColor(style, color), palette, 1, 3);
+    spritePalette.data = palette;
+    spritePalette.tag = PARTICLE_TAG;
+    slot = LoadSpritePalette(&spritePalette);
+    if (slot == 0xFF)
+    {
+        FreeParticles();
+        return FALSE;
+    }
+
+    WriteOwnedPalette(slot, palette);
+    sEmitter.paletteSlot = slot;
+    sEmitter.created = TRUE;
+    sEmitter.retryDelay = 0;
+    return TRUE;
+}
+
+// 16-bit LCG kept in particles.rng; deterministic and independent of the game RNG.
+static u32 NextParticleRandom(struct ScreenFx *effect)
+{
+    effect->params.particles.rng = effect->params.particles.rng * 25173 + 13849;
+    return effect->params.particles.rng;
+}
+
+// Uniform in 0 to range - 1.
+static s32 ParticleRandomRange(struct ScreenFx *effect, u32 range)
+{
+    return (NextParticleRandom(effect) * range) >> 16;
+}
+
+static void SpawnParticle(struct ScreenFx *effect)
+{
+    const struct ParticleStyle *style = &sParticleStyles[effect->params.particles.style];
+    struct Particle *particle = NULL;
+    struct Sprite *sprite;
+    s16 x, y;
+    u32 spriteId, i;
+
+    for (i = 0; i < MAX_PARTICLES; i++)
+    {
+        if (!sParticles[i].active)
+        {
+            particle = &sParticles[i];
+            break;
+        }
+    }
+
+    if (particle == NULL)
+        return;
+
+    if (effect->anchorKind != SCREENFX_ANCHOR_NONE)
+    {
+        s32 reach = max(effect->params.particles.radius, 1) * 16;
+
+        if (!OverworldAnchor_SpritePosition(effect->anchorKind, effect->anchorX, effect->anchorY, effect->anchorLocalId,
+                                            effect->anchorMapNum, effect->anchorMapGroup, &x, &y))
+            return;
+
+        x += ParticleRandomRange(effect, reach * 2 + 1) - reach;
+        if (style->spawnEdge == PARTICLE_EDGE_TOP)
+            y -= reach;
+        else if (style->spawnEdge == PARTICLE_EDGE_BOTTOM)
+            y += reach;
+        else
+            y += ParticleRandomRange(effect, reach * 2 + 1) - reach;
+    }
+    else
+    {
+        x = ParticleRandomRange(effect, DISPLAY_WIDTH) - gSpriteCoordOffsetX;
+        if (style->spawnEdge == PARTICLE_EDGE_TOP)
+            y = -PARTICLE_EDGE_INSET - gSpriteCoordOffsetY;
+        else if (style->spawnEdge == PARTICLE_EDGE_BOTTOM)
+            y = DISPLAY_HEIGHT + PARTICLE_EDGE_INSET - gSpriteCoordOffsetY;
+        else
+            y = ParticleRandomRange(effect, DISPLAY_HEIGHT) - gSpriteCoordOffsetY;
+    }
+
+    spriteId = CreateSprite(&sParticleTemplate, x, y, 0);
+    if (spriteId == MAX_SPRITES)
+        return;
+
+    sprite = &gSprites[spriteId];
+    sprite->oam.paletteNum = sEmitter.paletteSlot;
+    sprite->oam.objMode = style->blend ? ST_OAM_OBJ_BLEND : ST_OAM_OBJ_NORMAL;
+    sprite->coordOffsetEnabled = TRUE;
+
+    particle->x = x * 16;
+    particle->y = y * 16;
+    particle->vx = style->vx + ParticleRandomRange(effect, style->vJitter * 2 + 1) - style->vJitter;
+    particle->vy = style->vy + ParticleRandomRange(effect, style->vJitter * 2 + 1) - style->vJitter;
+    particle->swayPhase = ParticleRandomRange(effect, 256);
+    particle->age = 0;
+    particle->life = style->lifeMin + ParticleRandomRange(effect, style->lifeRange + 1);
+    particle->spriteId = spriteId;
+    particle->active = TRUE;
+}
+
+// Moves and animates every particle and returns how many are alive.
+static u32 AgeParticles(const struct ParticleStyle *style)
+{
+    u32 tileStart = GetSpriteTileStartByTag(PARTICLE_TAG);
+    u32 live = 0;
+    u32 i;
+
+    for (i = 0; i < MAX_PARTICLES; i++)
+    {
+        struct Particle *particle = &sParticles[i];
+        struct Sprite *sprite;
+        s32 screenX, screenY;
+
+        if (!particle->active)
+            continue;
+
+        if (!ParticleSpriteExists(particle))
+        {
+            particle->active = FALSE;
+            continue;
+        }
+
+        sprite = &gSprites[particle->spriteId];
+        particle->age++;
+        particle->x += particle->vx;
+        particle->y += particle->vy;
+        particle->swayPhase += style->swayRate;
+        sprite->x = (particle->x >> 4) + ((gSineTable[particle->swayPhase] * style->swayAmp) >> 8);
+        sprite->y = particle->y >> 4;
+        screenX = sprite->x + gSpriteCoordOffsetX;
+        screenY = sprite->y + gSpriteCoordOffsetY;
+
+        if (particle->age >= particle->life
+         || screenX < -PARTICLE_OFFSCREEN_MARGIN || screenX > DISPLAY_WIDTH + PARTICLE_OFFSCREEN_MARGIN
+         || screenY < -PARTICLE_OFFSCREEN_MARGIN || screenY > DISPLAY_HEIGHT + PARTICLE_OFFSCREEN_MARGIN)
+        {
+            KillParticle(particle);
+            continue;
+        }
+
+        sprite->oam.tileNum = tileStart + min(particle->age * PARTICLE_FRAMES / particle->life, PARTICLE_FRAMES - 1);
+        live++;
+    }
+
+    return live;
+}
+
+static void UpdateParticles(struct ScreenFx *effect)
+{
+    u32 target, live;
+
+    if (!IsEmitterIntact())
+    {
+        if (sEmitter.retryDelay != 0)
+        {
+            sEmitter.retryDelay--;
+            return;
+        }
+
+        FreeParticles();
+        if (!CreateParticleEmitter(effect->params.particles.style, effect->params.particles.color))
+        {
+            sEmitter.retryDelay = VIGNETTE_RETRY_FRAMES;
+            return;
+        }
+    }
+
+    live = AgeParticles(&sParticleStyles[effect->params.particles.style]);
+    target = MAX_PARTICLES * effect->resolvedIntensity / SCREENFX_INTENSITY_MAX;
+
+    if (effect->params.particles.spawnTimer != 0)
+        effect->params.particles.spawnTimer--;
+
+    if (live < target && effect->params.particles.spawnTimer == 0)
+    {
+        if (CountFreeSprites() > SCREENFX_SPRITE_RESERVE)
+            SpawnParticle(effect);
+
+        effect->params.particles.spawnTimer = max(PARTICLE_SPAWN_MIN_INTERVAL,
+                                                  PARTICLE_SPAWN_MAX_INTERVAL - effect->resolvedIntensity * 2);
+    }
+}
+
+// Pillar: a 32x64 beam (up to 3 stacked segments) and a 64x32 flare, all blend-mode sprites sharing one
+// palette slot. The art holds the ramp indices (1-4, edge to core); the palette holds the light.
+
+#define PILLAR_BEAM_SEGMENTS    3
+#define PILLAR_SPRITES          (PILLAR_BEAM_SEGMENTS + 1)  // the flare is the last
+#define PILLAR_FLARE_INDEX      PILLAR_BEAM_SEGMENTS
+#define PILLAR_BEAM_WIDTH       32
+#define PILLAR_BEAM_HEIGHT      64
+#define PILLAR_FLARE_WIDTH      64
+#define PILLAR_FLARE_HEIGHT     32
+#define PILLAR_LEVELS           4       // opaque palette entries 1-4; 4 is the core
+#define PILLAR_BREATH_INTERVAL  4       // frames between palette rewrites; power of two
+#define PILLAR_BREATH_STEP      12      // sine index steps per rewrite: a cycle is about 85 frames
+#define PILLAR_BREATH_BASE      14      // sixteenths of full brightness; the breath adds +-2
+#define PILLAR_FORCE            0xFF    // applied intensity that forces a palette rewrite
+
+struct PillarState
+{
+    u8 spriteIds[PILLAR_SPRITES];
+    u8 spriteCount;
+    u8 paletteSlot;
+    u8 appliedIntensity;
+    u8 retryDelay;          // frames until a failed re-creation is retried
+};
+
+static EWRAM_DATA struct PillarState sPillar = {0}; // owned by the one SCREENFX_PILLAR effect
+
+static const u32 sPillarBeamGfx[] = INCGFX_U32("graphics/screen_effects/pillar_beam.png", ".4bpp");
+static const u32 sPillarFlareGfx[] = INCGFX_U32("graphics/screen_effects/pillar_flare.png", ".4bpp");
+
+static const struct SpriteSheet sPillarBeamSheet = { .data = sPillarBeamGfx, .size = sizeof(sPillarBeamGfx), .tag = PILLAR_BEAM_TAG };
+static const struct SpriteSheet sPillarFlareSheet = { .data = sPillarFlareGfx, .size = sizeof(sPillarFlareGfx), .tag = PILLAR_FLARE_TAG };
+
+static const struct OamData sPillarBeamOam = {
+    .objMode = ST_OAM_OBJ_BLEND, .shape = SPRITE_SHAPE(32x64), .size = SPRITE_SIZE(32x64), .priority = 1,
+};
+
+static const struct OamData sPillarFlareOam = {
+    .objMode = ST_OAM_OBJ_BLEND, .shape = SPRITE_SHAPE(64x32), .size = SPRITE_SIZE(64x32), .priority = 1,
+};
+
+// Identity check only: geometry runs in ScreenFx_Update so a battle freeze holds the pillar as drawn.
+static void SpriteCB_Pillar(struct Sprite *sprite)
+{
+}
+
+static const struct SpriteTemplate sPillarBeamTemplate = {
+    .tileTag = PILLAR_BEAM_TAG,
+    .paletteTag = TAG_NONE,
+    .oam = &sPillarBeamOam,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_Pillar,
+};
+
+static const struct SpriteTemplate sPillarFlareTemplate = {
+    .tileTag = PILLAR_FLARE_TAG,
+    .paletteTag = TAG_NONE,
+    .oam = &sPillarFlareOam,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_Pillar,
+};
+
+static bool32 PillarSpriteExists(u32 index)
+{
+    struct Sprite *sprite = &gSprites[sPillar.spriteIds[index]];
+
+    return sprite->inUse && sprite->callback == SpriteCB_Pillar;
+}
+
+static bool32 OwnsPillarPalette(void)
+{
+    return GetSpritePaletteTagByPaletteNum(sPillar.paletteSlot) == PILLAR_BEAM_TAG;
+}
+
+static bool32 IsPillarIntact(void)
+{
+    u32 i;
+
+    if (sPillar.spriteCount == 0 || !OwnsPillarPalette()
+     || GetSpriteTileStartByTag(PILLAR_BEAM_TAG) == TAG_NONE || GetSpriteTileStartByTag(PILLAR_FLARE_TAG) == TAG_NONE)
+        return FALSE;
+
+    for (i = 0; i < sPillar.spriteCount; i++)
+    {
+        if (!PillarSpriteExists(i))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void FreePillar(void)
+{
+    u32 i;
+
+    for (i = 0; i < sPillar.spriteCount; i++)
+    {
+        // A sprite that is no longer ours may belong to another system now, so it is left alone.
+        if (PillarSpriteExists(i))
+            DestroySprite(&gSprites[sPillar.spriteIds[i]]);
+    }
+
+    FreeSpritePaletteByTag(PILLAR_BEAM_TAG);
+    FreeSpriteTilesByTag(PILLAR_BEAM_TAG);
+    FreeSpriteTilesByTag(PILLAR_FLARE_TAG);
+    memset(&sPillar, 0, sizeof(sPillar));
+}
+
+static u16 GetPillarColor(u32 color)
+{
+    return color == SCREENFX_COLOR_DEFAULT ? RGB(31, 30, 24) : color;
+}
+
+// Entry n moves from neutral grey toward the colour by n / PILLAR_LEVELS of the brightness. breath is 0-256,
+// where 256 is full brightness. Written to the unfaded buffer as well, so screen fades and weather rebuilds keep it.
+static void WritePillarPalette(u32 color, u32 intensity, u32 breath)
+{
+    u16 palette[16] = {0};
+    s32 mix = intensity * breath;   // 0-16 * 256
+    u32 level;
+
+    for (level = 1; level <= PILLAR_LEVELS; level++)
+    {
+        s32 weight = mix * level;   // over SCREENFX_INTENSITY_MAX * 256 * PILLAR_LEVELS
+        s32 r = VIGNETTE_NEUTRAL + ((s32)GET_R(color) - VIGNETTE_NEUTRAL) * weight / (SCREENFX_INTENSITY_MAX * 256 * PILLAR_LEVELS);
+        s32 g = VIGNETTE_NEUTRAL + ((s32)GET_G(color) - VIGNETTE_NEUTRAL) * weight / (SCREENFX_INTENSITY_MAX * 256 * PILLAR_LEVELS);
+        s32 b = VIGNETTE_NEUTRAL + ((s32)GET_B(color) - VIGNETTE_NEUTRAL) * weight / (SCREENFX_INTENSITY_MAX * 256 * PILLAR_LEVELS);
+
+        palette[level] = RGB(r, g, b);
+    }
+
+    WriteOwnedPalette(sPillar.paletteSlot, palette);
+}
+
+static bool32 CreatePillar(void)
+{
+    struct SpritePalette spritePalette;
+    u16 palette[16] = {0};
+    u32 i, slot;
+
+    if (GetSpriteTileStartByTag(PILLAR_BEAM_TAG) == TAG_NONE)
+        LoadSpriteSheet(&sPillarBeamSheet);
+    if (GetSpriteTileStartByTag(PILLAR_FLARE_TAG) == TAG_NONE)
+        LoadSpriteSheet(&sPillarFlareSheet);
+    if (GetSpriteTileStartByTag(PILLAR_BEAM_TAG) == TAG_NONE || GetSpriteTileStartByTag(PILLAR_FLARE_TAG) == TAG_NONE)
+    {
+        FreePillar();
+        return FALSE;
+    }
+
+    spritePalette.data = palette;
+    spritePalette.tag = PILLAR_BEAM_TAG;
+    slot = LoadSpritePalette(&spritePalette);
+    if (slot == 0xFF)
+    {
+        FreePillar();
+        return FALSE;
+    }
+
+    sPillar.paletteSlot = slot;
+    sPillar.appliedIntensity = PILLAR_FORCE;
+
+    for (i = 0; i < PILLAR_SPRITES; i++)
+    {
+        u32 spriteId = CreateSprite(i == PILLAR_FLARE_INDEX ? &sPillarFlareTemplate : &sPillarBeamTemplate, 0, 0, 0);
+        struct Sprite *sprite;
+
+        if (spriteId == MAX_SPRITES)
+        {
+            FreePillar();
+            return FALSE;
+        }
+
+        sprite = &gSprites[spriteId];
+        sprite->oam.paletteNum = slot;
+        sprite->coordOffsetEnabled = TRUE;
+        sprite->invisible = TRUE; // shown by UpdatePillar once positioned
+        sPillar.spriteIds[i] = spriteId;
+        sPillar.spriteCount = i + 1;
+    }
+
+    sPillar.retryDelay = 0;
+    return TRUE;
+}
+
+// Whether a width x height sprite centred at sprite-space (x, y) overlaps the screen.
+static bool32 IsPillarSpriteOnScreen(s32 x, s32 y, u32 width, u32 height)
+{
+    s32 screenX = x + gSpriteCoordOffsetX;
+    s32 screenY = y + gSpriteCoordOffsetY;
+
+    return screenX + (s32)width / 2 > 0 && screenX - (s32)width / 2 < DISPLAY_WIDTH
+        && screenY + (s32)height / 2 > 0 && screenY - (s32)height / 2 < DISPLAY_HEIGHT;
+}
+
+// Rebuilds a pillar whose sprites or palette were reset (battle, full-screen menu), then keeps the palette
+// and the geometry current. The beam length follows elapsed, so a rebuilt pillar never replays the descent.
+static void UpdatePillar(struct ScreenFx *effect)
+{
+    struct PillarParams *pillar = &effect->params.pillar;
+    bool32 breathTick;
+    s32 top, bottom;
+    s16 footX, footY;
+    u32 i;
+
+    if (!IsPillarIntact())
+    {
+        if (sPillar.retryDelay != 0)
+        {
+            sPillar.retryDelay--;
+            return;
+        }
+
+        FreePillar();
+        if (!CreatePillar())
+        {
+            sPillar.retryDelay = VIGNETTE_RETRY_FRAMES;
+            return;
+        }
+    }
+
+    if (pillar->elapsed != 0xFFFF)
+        pillar->elapsed++;
+    if (pillar->elapsed >= pillar->descent)
+        pillar->landed = TRUE;
+
+    breathTick = (pillar->elapsed & (PILLAR_BREATH_INTERVAL - 1)) == 0;
+    if (breathTick)
+        pillar->breathPhase += PILLAR_BREATH_STEP;
+
+    if (sPillar.appliedIntensity != effect->resolvedIntensity
+     || (breathTick && effect->resolvedIntensity != 0))
+    {
+        u32 breath = (PILLAR_BREATH_BASE * 256 + gSineTable[pillar->breathPhase] * 2) / 16;
+
+        WritePillarPalette(GetPillarColor(pillar->color), effect->resolvedIntensity, breath);
+        sPillar.appliedIntensity = effect->resolvedIntensity;
+    }
+
+    if (effect->resolvedIntensity == 0)
+    {
+        for (i = 0; i < sPillar.spriteCount; i++)
+            gSprites[sPillar.spriteIds[i]].invisible = TRUE;
+        return;
+    }
+
+    // An object that cannot be resolved leaves the sprites where they were.
+    if (!OverworldAnchor_SpritePosition(effect->anchorKind, effect->anchorX, effect->anchorY, effect->anchorLocalId,
+                                        effect->anchorMapNum, effect->anchorMapGroup, &footX, &footY))
+        return;
+
+    top = -gSpriteCoordOffsetY;
+    bottom = pillar->landed ? footY : top + (footY - top) * pillar->elapsed / pillar->descent;
+
+    // Segments stack upward from the beam's lower end. Those wholly off screen are hidden, because the OAM
+    // Y field is 8 bits and a sprite far above the screen can wrap to the bottom.
+    for (i = 0; i < PILLAR_BEAM_SEGMENTS; i++)
+    {
+        struct Sprite *sprite = &gSprites[sPillar.spriteIds[i]];
+        s32 centerY = bottom - PILLAR_BEAM_HEIGHT / 2 - PILLAR_BEAM_HEIGHT * (s32)i;
+
+        sprite->x = footX;
+        sprite->y = centerY;
+        sprite->invisible = centerY + PILLAR_BEAM_HEIGHT / 2 <= top
+                         || !IsPillarSpriteOnScreen(footX, centerY, PILLAR_BEAM_WIDTH, PILLAR_BEAM_HEIGHT);
+    }
+
+    gSprites[sPillar.spriteIds[PILLAR_FLARE_INDEX]].x = footX;
+    gSprites[sPillar.spriteIds[PILLAR_FLARE_INDEX]].y = footY;
+    gSprites[sPillar.spriteIds[PILLAR_FLARE_INDEX]].invisible = !pillar->landed
+        || !IsPillarSpriteOnScreen(footX, footY, PILLAR_FLARE_WIDTH, PILLAR_FLARE_HEIGHT);
+}
+
+u32 ScreenFx_GetOwnedPaletteMask(void)
+{
+    u32 mask = 0;
+
+    if (sVignette.spriteCount != 0 && OwnsVignettePalette())
+        mask |= 1u << (16 + sVignette.paletteSlot);
+    if (sEmitter.created && GetSpritePaletteTagByPaletteNum(sEmitter.paletteSlot) == PARTICLE_TAG)
+        mask |= 1u << (16 + sEmitter.paletteSlot);
+    if (sPillar.spriteCount != 0 && OwnsPillarPalette())
+        mask |= 1u << (16 + sPillar.paletteSlot);
+
+    return mask;
 }
 
 static u8 NextGeneration(u8 generation)
@@ -411,6 +1074,10 @@ static void ReleaseSlot(struct ScreenFx *effect)
         memset(sRipples, 0, sizeof(sRipples));
     else if (effect->kind == SCREENFX_VIGNETTE)
         FreeVignette();
+    else if (effect->kind == SCREENFX_PARTICLES)
+        FreeParticles();
+    else if (effect->kind == SCREENFX_PILLAR)
+        FreePillar();
 
     memset(effect, 0, sizeof(*effect));
     effect->generation = NextGeneration(generation);
@@ -618,6 +1285,10 @@ void ScreenFx_Suspend(void)
     // Frees the sprites, tiles and palette slot; the next update after Resume rebuilds them.
     if (IsKindActive(SCREENFX_VIGNETTE))
         FreeVignette();
+    if (IsKindActive(SCREENFX_PARTICLES))
+        FreeParticles();
+    if (IsKindActive(SCREENFX_PILLAR))
+        FreePillar();
 }
 
 void ScreenFx_Resume(void)
@@ -1001,6 +1672,10 @@ void ScreenFx_Update(void)
             UpdateTear(effect);
         else if (effect->kind == SCREENFX_VIGNETTE)
             UpdateVignette(effect);
+        else if (effect->kind == SCREENFX_PARTICLES)
+            UpdateParticles(effect);
+        else if (effect->kind == SCREENFX_PILLAR)
+            UpdatePillar(effect);
     }
 }
 
@@ -1070,9 +1745,13 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
     if (config->kind >= SCREENFX_KIND_COUNT || sSuspended || sFrozen)
         return SCREENFX_ID_INVALID;
 
-    // Shake, ripple and vignette each have one shared backing store.
-    if ((config->kind == SCREENFX_SHAKE || config->kind == SCREENFX_RIPPLE || config->kind == SCREENFX_VIGNETTE)
+    // Shake, ripple, vignette, particles and pillar each have one shared backing store.
+    if ((config->kind == SCREENFX_SHAKE || config->kind == SCREENFX_RIPPLE || config->kind == SCREENFX_VIGNETTE
+      || config->kind == SCREENFX_PARTICLES || config->kind == SCREENFX_PILLAR)
      && IsKindActive(config->kind))
+        return SCREENFX_ID_INVALID;
+
+    if (config->kind == SCREENFX_PARTICLES && (config->param2 & 0xFF) >= SCREENFX_PARTICLE_STYLE_COUNT)
         return SCREENFX_ID_INVALID;
 
     for (i = 0; i < MAX_SCREEN_EFFECTS; i++)
@@ -1085,6 +1764,10 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
             continue;
 
         if (config->kind == SCREENFX_VIGNETTE && !CreateVignette(config->param1))
+            return SCREENFX_ID_INVALID;
+        if (config->kind == SCREENFX_PARTICLES && !CreateParticleEmitter(config->param2 & 0xFF, config->param1))
+            return SCREENFX_ID_INVALID;
+        if (config->kind == SCREENFX_PILLAR && !CreatePillar())
             return SCREENFX_ID_INVALID;
 
         // A never-used slot still holds generation 0.
@@ -1130,6 +1813,11 @@ ScreenFxId ScreenFx_Start(const struct ScreenFxConfig *config)
             effect->params.tear.drift = 0;
             effect->params.tear.roll = 0;
             effect->params.tear.timer = 0;
+        }
+        else if (config->kind == SCREENFX_PARTICLES)
+        {
+            effect->params.particles.spawnTimer = 0;
+            effect->params.particles.rng = (i + 1) * 0x9E37 + effect->generation;
         }
 
         return (effect->generation << 3) | i;
