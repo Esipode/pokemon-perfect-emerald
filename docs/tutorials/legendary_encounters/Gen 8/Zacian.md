@@ -1,4 +1,5 @@
 ## Zacian — The Warrior Pokemon
+### Location: Victory Road - Morning only, after 50+ legendaries caught
 Every clean hit Zacian lands on you teaches it something. Watch how it fights, and it tells you
 exactly what's coming next.
 

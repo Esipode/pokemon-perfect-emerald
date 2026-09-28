@@ -1,4 +1,5 @@
 ## Zamazenta — The Warrior Pokemon
+### Location: Victory Road - Evening only, after 50+ legendaries caught
 Zamazenta grows tougher with every blow it survives. Hit it small and safe, and it gets sturdier
 but the fight drags. Hit it hard, and you crack that sturdiness open — but it remembers, and pays
 you back.

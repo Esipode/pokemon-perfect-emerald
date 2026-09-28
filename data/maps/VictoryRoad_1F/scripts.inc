@@ -1,10 +1,79 @@
 VictoryRoad_1F_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, VictoryRoad_1F_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, VictoryRoad_1F_OnLoad
 	.byte 0
 
 VictoryRoad_1F_OnTransition:
 	call_if_eq VAR_VICTORY_ROAD_1F_STATE, 1, VictoryRoad_1F_EventScript_SetEntranceWallyPos1
 	call_if_eq VAR_VICTORY_ROAD_1F_STATE, 2, VictoryRoad_1F_EventScript_SetEntranceWallyPos2
+	updatelegendaryvisibility SPECIES_ZAMAZENTA, FLAG_HIDE_ZAMAZENTA
+	updatelegendaryvisibility SPECIES_ZACIAN, FLAG_HIDE_ZACIAN
+	end
+
+VictoryRoad_1F_OnLoad:
+	setvar VAR_0x8004, SPECIES_ZAMAZENTA
+	setvar VAR_0x8005, LAYOUT_VICTORY_ROAD_1F
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, VictoryRoad_1F_HideZamazentaArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_EVENING, VictoryRoad_1F_HideZamazentaArena
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 50, VictoryRoad_1F_HideZamazentaArena
+	goto VictoryRoad_1F_ShowZamazentaArena
+
+VictoryRoad_1F_Zamazenta_Encounter::
+	goto LegendaryEncounter_EventScript_Zamazenta
+
+VictoryRoad_1F_HideZamazentaArena:
+	setflag FLAG_HIDE_ZAMAZENTA
+	setvar VAR_0x8004, SPECIES_ZACIAN
+	setvar VAR_0x8005, LAYOUT_VICTORY_ROAD_1F
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, VictoryRoad_1F_HideZacianArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_MORNING, VictoryRoad_1F_HideZacianArena
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 50, VictoryRoad_1F_HideZacianArena
+	goto VictoryRoad_1F_ShowZacianArena
+
+VictoryRoad_1F_Zacian_Encounter::
+	goto LegendaryEncounter_EventScript_Zacian
+
+VictoryRoad_1F_HideZacianArena:
+	setflag FLAG_HIDE_ZACIAN
+	goto_if_unset FLAG_SYS_GAME_CLEAR, VictoryRoad_1F_HideZacianArena_Done
+	clearflag FLAG_HIDE_VICTORY_ROAD_EXIT_WALLY
+VictoryRoad_1F_HideZacianArena_Done:
+	end
+
+VictoryRoad_1F_ShowZamazentaArena:
+	setflag FLAG_HIDE_ZACIAN
+	setflag FLAG_TEMP_9
+	setflag FLAG_HIDE_VICTORY_ROAD_EXIT_WALLY
+	goto_if_ne VAR_TEMP_1, 0, VictoryRoad_1F_ShowZamazentaArena_ParticlesDone
+	screenfxparticles VAR_TEMP_1, 10, SCREENFX_PARTICLE_EMBER, RGB(26, 20, 12), 4, 0
+	screenfxanchorobject VAR_TEMP_1, 10
+VictoryRoad_1F_ShowZamazentaArena_ParticlesDone:
+	goto VictoryRoad_1F_StartQuake
+
+VictoryRoad_1F_ShowZacianArena:
+	setflag FLAG_TEMP_9
+	setflag FLAG_HIDE_VICTORY_ROAD_EXIT_WALLY
+	goto_if_ne VAR_TEMP_1, 0, VictoryRoad_1F_ShowZacianArena_ParticlesDone
+	screenfxparticles VAR_TEMP_1, 10, SCREENFX_PARTICLE_EMBER, RGB(31, 16, 24), 4, 0
+	screenfxanchorobject VAR_TEMP_1, 11
+VictoryRoad_1F_ShowZacianArena_ParticlesDone:
+	goto VictoryRoad_1F_StartQuake
+
+VictoryRoad_1F_StartQuake:
+	goto_if_ne VAR_TEMP_0, 0, VictoryRoad_1F_StartQuake_Done
+	screenfxshake VAR_TEMP_0, 16, 32, SCREENFX_AXIS_X | SCREENFX_AXIS_Y, 0
+	screenfxpulse VAR_TEMP_0, 100, 150, SE_M_EARTHQUAKE
+VictoryRoad_1F_StartQuake_Done:
 	end
 
 VictoryRoad_1F_EventScript_SetEntranceWallyPos1::
