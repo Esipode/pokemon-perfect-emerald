@@ -1,6 +1,7 @@
 Route113_MapScripts::
 	map_script MAP_SCRIPT_ON_RESUME, Route113_OnResume
 	map_script MAP_SCRIPT_ON_TRANSITION, Route113_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route113_OnLoad
 	.byte 0
 
 Route113_OnResume:
@@ -10,6 +11,36 @@ Route113_OnResume:
 Route113_OnTransition:
 	clearflag FLAG_FORCE_MIRAGE_TOWER_VISIBLE
 	call Route113_EventScript_CheckSetAshWeather
+	updatelegendaryvisibility SPECIES_ZARUDE, FLAG_HIDE_ZARUDE
+	end
+
+Route113_OnLoad:
+	setvar VAR_0x8004, SPECIES_ZARUDE
+	setvar VAR_0x8005, LAYOUT_ROUTE113
+	setvar VAR_0x8006, WEEKDAY_MON
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route113_HideZarudeArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_NIGHT, Route113_HideZarudeArena
+	goto Route113_ShowZarudeArena
+
+Route113_Zarude_Encounter::
+	goto LegendaryEncounter_EventScript_Zarude
+
+Route113_HideZarudeArena:
+	setflag FLAG_HIDE_ZARUDE
+	end
+
+Route113_ShowZarudeArena:
+	setflag FLAG_TEMP_9
+	goto_if_ne VAR_TEMP_2, 0, Route113_ShowZarudeArena_ParticlesDone
+	screenfxparticles VAR_TEMP_2, 10, SCREENFX_PARTICLE_LEAF, RGB(10, 26, 8), 4, 0
+	screenfxanchorobject VAR_TEMP_2, 17
+Route113_ShowZarudeArena_ParticlesDone:
+	goto_if_ne VAR_TEMP_4, 0, Route113_ShowZarudeArena_ShakeDone
+	screenfxshake VAR_TEMP_4, 2, 48, 0, 0
+Route113_ShowZarudeArena_ShakeDone:
 	end
 
 Route113_EventScript_CheckSetAshWeather::

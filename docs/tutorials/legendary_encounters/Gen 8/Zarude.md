@@ -1,5 +1,7 @@
 ## Zarude — The Rogue Monkey Pokémon
 
+### Location: Route 113 - Monday night
+
 The jungle grows against you the longer you fight carelessly. Zarude gets stronger, tankier and
 more dangerous the deeper it gets, and only your own play can hold it back.
 
