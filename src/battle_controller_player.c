@@ -236,7 +236,7 @@ static enum Item GetNextBall(enum Item ballId)
     return ballId;
 }
 
-#define B_HOLD_RUN_FRAMES 120
+#define B_HOLD_RUN_FRAMES 60
 
 static u8 sBHoldFrames;
 
@@ -316,7 +316,7 @@ static void HandleInputChooseAction(enum BattlerId battler)
     else
         sBHoldFrames = 0;
 
-    // Holding B for 2 seconds attempts to run.
+    // Holding B for 1 second attempts to run.
     if (sBHoldFrames >= B_HOLD_RUN_FRAMES)
     {
         sBHoldFrames = 0;
