@@ -704,6 +704,17 @@ Debug_EventScript_InfCavePlacementCheck::
 	release
 	end
 
+@ Runs one live descent step from the debug menu: the node screen, then the warp
+@ into the room the chosen card names. Same two specials the lobby attendant and
+@ every room's ladder use.
+Debug_EventScript_InfCaveDescend::
+	special InfCave_OpenNodeScreen
+	waitstate
+	special InfCave_TakeChosenNode
+	warp MAP_INFINITY_CAVE_ROOM, 3, 3
+	waitstate
+	end
+
 @ Warps into the generated room map after the debug menu has pinned a room type.
 @ The coordinates are ignored: the generator places the player itself.
 Debug_EventScript_InfCaveEnterRoom::

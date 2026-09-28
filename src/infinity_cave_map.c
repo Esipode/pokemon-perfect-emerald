@@ -2275,9 +2275,9 @@ static void PlaceTrainers(void)
 
 // --- Feature objects --------------------------------------------------------
 
-// The non-trainer objects a room stands: a treasure room's item balls and a shop
-// room's merchant. Held apart from sNpcs so a trainer's local id stays its slot
-// index whatever else the room places.
+// The non-trainer objects a room stands: a treasure room's item balls, a shop
+// room's merchant and a rest room's nurse. Held apart from sNpcs so a trainer's
+// local id stays its slot index whatever else the room places.
 struct InfCavePlacedFeature
 {
     u8 x;
@@ -2289,13 +2289,6 @@ struct InfCavePlacedFeature
 
 static EWRAM_DATA struct InfCavePlacedFeature sFeatures[INFCAVE_MAX_FEATURES] = {0};
 static EWRAM_DATA u8 sFeatureCount = 0;
-
-// A rest room's shrine pad. It stands no object: the pad is a metatile and the
-// heal is a step trigger on it, so the shrine costs nothing from the object
-// budget and cannot wall the alcove off.
-static EWRAM_DATA u8 sShrineX = 0;
-static EWRAM_DATA u8 sShrineY = 0;
-static EWRAM_DATA bool8 sHasShrine = FALSE;
 
 // Feature objects stand apart from each other, so a room's balls cannot be
 // mistaken for one another and a merchant is never boxed in by them.
@@ -2370,8 +2363,8 @@ static bool32 PlaceFeature(u32 kind, u32 localId, rng_value_t *rng)
         sFeatures[sFeatureCount].y = y;
         sFeatures[sFeatureCount].kind = kind;
         sFeatures[sFeatureCount].localId = localId;
-        // Facing the arrival pad, so a merchant looks at the player crossing the
-        // room. An item ball ignores it: its movement type is fixed.
+        // Facing the arrival pad, so a merchant or nurse looks at the player
+        // crossing the room. An item ball ignores it: its movement type is fixed.
         sFeatures[sFeatureCount].facing = FacingTowards(x, y, sEntranceX, sEntranceY);
         sFeatureCount++;
         return TRUE;
@@ -2422,20 +2415,17 @@ static bool32 PlaceLooseFeature(u32 kind, u32 localId, rng_value_t *rng)
     return FALSE;
 }
 
-// Draws the shrine pad on the tile nearest the alcove's centre, the same anchor a
-// boss room stands its boss on.
-static void PlaceShrine(void)
+// A rest room's nurse, who stands on the shrine pad and heals the party when the
+// player talks to her. The loose fallback runs when the alcove's interior offers
+// no tile the connectivity test accepts, so a rest room never ends up without its
+// heal.
+static void PlaceNurse(rng_value_t *rng)
 {
-    u8 x, y;
-
-    if (sStamp.layoutId == INFCAVE_PIECE_NONE)
-        return;
-    if (!FindArenaTileNear(sStamp.x + sStamp.w / 2, sStamp.y + sStamp.h / 2, &x, &y))
+    if (sStamp.layoutId != INFCAVE_PIECE_NONE
+     && PlaceFeature(INFCAVE_FEATURE_NURSE, INFCAVE_LOCALID_NURSE, rng))
         return;
 
-    sShrineX = x;
-    sShrineY = y;
-    sHasShrine = TRUE;
+    PlaceLooseFeature(INFCAVE_FEATURE_NURSE, INFCAVE_LOCALID_NURSE, rng);
 }
 
 // The room's item balls, skipping the slots the player has already emptied. A
@@ -2469,12 +2459,11 @@ static void PlaceFeatures(void)
     rng_value_t rng = InfCave_SeedRoomRng(INFCAVE_SALT_FEAT);
 
     sFeatureCount = 0;
-    sHasShrine = FALSE;
 
     switch (InfCave_GetRoomType())
     {
     case INFCAVE_ROOM_REST:
-        PlaceShrine();
+        PlaceNurse(&rng);
         break;
     case INFCAVE_ROOM_TREASURE:
         PlaceItemBalls(&rng);
@@ -2490,33 +2479,34 @@ static void PlaceFeatures(void)
         PlaceItemBalls(&rng);
 
 #if INFCAVE_TRACE == TRUE
-    DebugPrintf("InfCave placed %d features, shrine %d, %d checks left",
-                sFeatureCount, sHasShrine, sConnectChecks);
+    DebugPrintf("InfCave placed %d features, %d checks left",
+                sFeatureCount, sConnectChecks);
 #endif
 }
 
-bool32 InfCave_IsShrineTile(u32 x, u32 y)
-{
-    return sHasShrine && x == sShrineX && y == sShrineY;
-}
-
-// The pad a feature is standing on, or INFCAVE_ROLE_COUNT where no feature is.
-// The autotiler draws this over the stamped block, so the pad shows through the
-// authored art rather than being hidden by it.
+// The pad a feature is standing on, or INFCAVE_ROLE_COUNT where no feature is or
+// where the feature wants none. The autotiler draws a pad over the stamped block,
+// so the pad shows through the authored art rather than being hidden by it. An
+// item ball asks for no pad: its tile only has to be walkable, and forcing one
+// would punch a floor tile through a sand patch or a piece's art.
 static u32 FeaturePadRole(u32 x, u32 y)
 {
     u32 i;
-
-    if (InfCave_IsShrineTile(x, y))
-        return INFCAVE_ROLE_PAD_SHRINE;
 
     for (i = 0; i < sFeatureCount; i++)
     {
         if (sFeatures[i].x != x || sFeatures[i].y != y)
             continue;
 
-        return sFeatures[i].kind == INFCAVE_FEATURE_MERCHANT ? INFCAVE_ROLE_PAD_SHOP
-                                                            : INFCAVE_ROLE_PAD_ITEM_BALL;
+        switch (sFeatures[i].kind)
+        {
+        case INFCAVE_FEATURE_MERCHANT:
+            return INFCAVE_ROLE_PAD_SHOP;
+        case INFCAVE_FEATURE_NURSE:
+            return INFCAVE_ROLE_PAD_SHRINE;
+        default:
+            return INFCAVE_ROLE_COUNT;
+        }
     }
     return INFCAVE_ROLE_COUNT;
 }
@@ -2539,15 +2529,14 @@ extern const u8 InfinityCave_EventScript_Trainer7[];
 extern const u8 InfinityCave_EventScript_ItemBall0[];
 extern const u8 InfinityCave_EventScript_ItemBall1[];
 extern const u8 InfinityCave_EventScript_ItemBall2[];
-extern const u8 InfinityCave_EventScript_ItemBall3[];
 extern const u8 InfinityCave_EventScript_Merchant[];
+extern const u8 InfinityCave_EventScript_Nurse[];
 
 static const u8 *const sInfCaveItemBallScripts[INFCAVE_MAX_ITEM_BALLS] =
 {
     InfinityCave_EventScript_ItemBall0,
     InfinityCave_EventScript_ItemBall1,
     InfinityCave_EventScript_ItemBall2,
-    InfinityCave_EventScript_ItemBall3,
 };
 
 static const u8 *const sInfCaveTrainerScripts[INFCAVE_MAX_TRAINERS] =
@@ -2568,6 +2557,8 @@ static const u8 *ScriptForLocalId(u32 localId)
 
     if (localId == INFCAVE_LOCALID_MERCHANT)
         return InfinityCave_EventScript_Merchant;
+    if (localId == INFCAVE_LOCALID_NURSE)
+        return InfinityCave_EventScript_Nurse;
     if (localId >= INFCAVE_LOCALID_FEATURE_0 && localId < INFCAVE_LOCALID_MERCHANT)
         return sInfCaveItemBallScripts[localId - INFCAVE_LOCALID_FEATURE_0];
     if (localId < INFCAVE_LOCALID_TRAINER_0 || slot >= INFCAVE_MAX_TRAINERS)
@@ -2615,6 +2606,20 @@ static void WriteTrainerTemplates(void)
     sObjectCount = sNpcCount;
 }
 
+// The sprite a feature kind stands as.
+static u16 FeatureGraphicsId(u32 kind)
+{
+    switch (kind)
+    {
+    case INFCAVE_FEATURE_MERCHANT:
+        return OBJ_EVENT_GFX_MART_EMPLOYEE;
+    case INFCAVE_FEATURE_NURSE:
+        return OBJ_EVENT_GFX_NURSE;
+    default:
+        return OBJ_EVENT_GFX_ITEM_BALL;
+    }
+}
+
 // Continues the template run with the room's feature objects, then blanks the
 // tail: the spawner is bounded by sObjectCount, but a stale template left
 // addressable by local id would answer for an object that is no longer there.
@@ -2632,7 +2637,7 @@ static void WriteFeatureTemplates(void)
 
         memset(template, 0, sizeof(*template));
         template->localId = sFeatures[i].localId;
-        template->graphicsId = isBall ? OBJ_EVENT_GFX_ITEM_BALL : OBJ_EVENT_GFX_MART_EMPLOYEE;
+        template->graphicsId = FeatureGraphicsId(sFeatures[i].kind);
         template->kind = OBJ_KIND_NORMAL;
         template->x = sFeatures[i].x;
         template->y = sFeatures[i].y;
@@ -2740,8 +2745,8 @@ static void AutotileRoom(u16 *origin, u32 stride)
             u32 role = FeaturePadRole(x, y);
 
             // A feature's pad is drawn over the authored art it stands on, so the
-            // shrine, an item ball's alcove and the merchant's stall read as set
-            // dressing placed for them rather than as bare piece floor.
+            // nurse's shrine and the merchant's stall read as set dressing placed
+            // for them rather than as bare piece floor.
             if (role != INFCAVE_ROLE_COUNT)
             {
                 origin[y * stride + x] = sTileRole[role];

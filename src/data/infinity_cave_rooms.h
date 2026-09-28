@@ -41,34 +41,25 @@ static const struct InfCaveItemDrop sInfCavePremiumDrops[] =
     { ITEM_RARE_CANDY,   .amount = 3, .weight = 8,  .minTier = 2 },
 };
 
-// One row of the merchant's stock. item is the bag item an INFCAVE_SHOP_KIND_ITEM
-// row sells; the service rows carry ITEM_NONE and name themselves instead.
+// One row of the merchant's mart.
 struct InfCaveShopEntry
 {
     u16 item;
-    u16 price;      // shards
-    const u8 *name; // NULL uses the item's own name
-    u8 amount;
-    u8 kind;        // enum InfCaveShopKind
-    u8 minDepth;    // not stocked before this depth
+    u16 price;   // shards, per unit
+    u8 minDepth; // not stocked before this depth
 };
-
-static const u8 sInfCaveShopName_FullHeal[] = _("REST HERE");
-static const u8 sInfCaveShopName_Trade[] = _("CAVE FIND");
 
 // Prices are set against the shard income of the rooms that pay: a battle room's
 // trainer is worth 10 shards before the depth growth, so a shallow room clears
-// for about 25. One restock is a room or two of fighting; the trade is several.
+// for about 25. One restock is a room or two of fighting.
 static const struct InfCaveShopEntry sInfCaveShopStock[] =
 {
-    { ITEM_SUPER_POTION, .price = 10, .amount = 2, .kind = INFCAVE_SHOP_KIND_ITEM,      .minDepth = 0 },
-    { ITEM_HYPER_POTION, .price = 18, .amount = 2, .kind = INFCAVE_SHOP_KIND_ITEM,      .minDepth = 0 },
-    { ITEM_FULL_HEAL,    .price = 10, .amount = 2, .kind = INFCAVE_SHOP_KIND_ITEM,      .minDepth = 0 },
-    { ITEM_REVIVE,       .price = 22, .amount = 1, .kind = INFCAVE_SHOP_KIND_ITEM,      .minDepth = 0 },
-    { ITEM_MAX_POTION,   .price = 30, .amount = 1, .kind = INFCAVE_SHOP_KIND_ITEM,      .minDepth = 8 },
-    { ITEM_MAX_ELIXIR,   .price = 38, .amount = 1, .kind = INFCAVE_SHOP_KIND_ITEM,      .minDepth = 8 },
-    { ITEM_NONE,         .price = 60, .amount = 1, .kind = INFCAVE_SHOP_KIND_FULL_HEAL, .minDepth = 0, .name = sInfCaveShopName_FullHeal },
-    { ITEM_NONE,         .price = 90, .amount = 1, .kind = INFCAVE_SHOP_KIND_TRADE,     .minDepth = 5, .name = sInfCaveShopName_Trade },
+    { ITEM_SUPER_POTION, .price = 5,  .minDepth = 0 },
+    { ITEM_HYPER_POTION, .price = 9,  .minDepth = 0 },
+    { ITEM_FULL_HEAL,    .price = 5,  .minDepth = 0 },
+    { ITEM_REVIVE,       .price = 22, .minDepth = 0 },
+    { ITEM_MAX_POTION,   .price = 30, .minDepth = 8 },
+    { ITEM_MAX_ELIXIR,   .price = 38, .minDepth = 8 },
 };
 
 #endif // GUARD_DATA_INFINITY_CAVE_ROOMS_H

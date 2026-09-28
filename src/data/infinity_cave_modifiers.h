@@ -43,7 +43,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .description = sInfCaveModDesc_Monotype,
         .icon = 0,
         .argKind = INFCAVE_MOD_ARG_TYPE,
-        .weight = 14,
+        .weight = 18,
         .minDepth = 2,
     },
     [INFCAVE_MOD_WEATHER] =
@@ -52,7 +52,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .description = sInfCaveModDesc_Weather,
         .icon = 1,
         .argKind = INFCAVE_MOD_ARG_WEATHER,
-        .weight = 12,
+        .weight = 6,
         .minDepth = 3,
     },
     [INFCAVE_MOD_TERRAIN] =
@@ -109,7 +109,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .description = sInfCaveModDesc_NoItems,
         .icon = 7,
         .shardPercent = 20,
-        .weight = 10,
+        .weight = 8,
         .minDepth = 5,
     },
     [INFCAVE_MOD_BOUNTY] =
@@ -134,7 +134,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .name = sInfCaveModName_Cramped,
         .description = sInfCaveModDesc_Cramped,
         .icon = 10,
-        .weight = 10,
+        .weight = 12,
         .minDepth = 4,
         // Both bias the layout the same way; stacked, they leave a room that is
         // all corridor and no floor for the trainers to stand on.
@@ -145,7 +145,7 @@ static const struct InfCaveModifierInfo sInfCaveModifiers[INFCAVE_MOD_COUNT] =
         .name = sInfCaveModName_Treasured,
         .description = sInfCaveModDesc_Treasured,
         .icon = 11,
-        .weight = 10,
+        .weight = 6,
         .minDepth = 2,
     },
 };
@@ -166,11 +166,11 @@ struct InfCaveWeatherOption
 
 static const struct InfCaveWeatherOption sInfCaveWeathers[] =
 {
-    { COMPOUND_STRING("SAND"), STARTING_STATUS_WEATHER_SANDSTORM, WEATHER_SANDSTORM,      .weight = 22, .minDepth = 0 },
-    { COMPOUND_STRING("RAIN"), STARTING_STATUS_WEATHER_RAIN,      WEATHER_RAIN,           .weight = 20, .minDepth = 0 },
-    { COMPOUND_STRING("SUN"),  STARTING_STATUS_WEATHER_SUN,       WEATHER_DROUGHT,        .weight = 20, .minDepth = 0 },
-    { COMPOUND_STRING("SNOW"), STARTING_STATUS_WEATHER_SNOW,      WEATHER_SNOW,           .weight = 18, .minDepth = 8 },
-    { COMPOUND_STRING("FOG"),  STARTING_STATUS_WEATHER_FOG,       WEATHER_FOG_HORIZONTAL, .weight = 14, .minDepth = 12 },
+    { COMPOUND_STRING("SAND"), STARTING_STATUS_WEATHER_SANDSTORM, WEATHER_SANDSTORM,      .weight = 22, .minDepth = 3 },
+    { COMPOUND_STRING("RAIN"), STARTING_STATUS_WEATHER_RAIN,      WEATHER_RAIN,           .weight = 20, .minDepth = 6 },
+    { COMPOUND_STRING("SUN"),  STARTING_STATUS_WEATHER_SUN,       WEATHER_DROUGHT,        .weight = 20, .minDepth = 10 },
+    { COMPOUND_STRING("SNOW"), STARTING_STATUS_WEATHER_SNOW,      WEATHER_SNOW,           .weight = 18, .minDepth = 14 },
+    { COMPOUND_STRING("FOG"),  STARTING_STATUS_WEATHER_FOG,       WEATHER_FOG_HORIZONTAL, .weight = 14, .minDepth = 20 },
 };
 
 // INFCAVE_MOD_TERRAIN's argument. The terrains are permanent rather than the
@@ -186,10 +186,10 @@ struct InfCaveTerrainOption
 
 static const struct InfCaveTerrainOption sInfCaveTerrains[] =
 {
-    { COMPOUND_STRING("ELECTRIC"), STARTING_STATUS_ELECTRIC_TERRAIN, .weight = 20, .minDepth = 0 },
-    { COMPOUND_STRING("GRASSY"),   STARTING_STATUS_GRASSY_TERRAIN,   .weight = 20, .minDepth = 0 },
-    { COMPOUND_STRING("MISTY"),    STARTING_STATUS_MISTY_TERRAIN,    .weight = 18, .minDepth = 0 },
-    { COMPOUND_STRING("PSYCHIC"),  STARTING_STATUS_PSYCHIC_TERRAIN,  .weight = 16, .minDepth = 10 },
+    { COMPOUND_STRING("GRASSY"),   STARTING_STATUS_GRASSY_TERRAIN,   .weight = 20, .minDepth = 3 },
+    { COMPOUND_STRING("ELECTRIC"), STARTING_STATUS_ELECTRIC_TERRAIN, .weight = 20, .minDepth = 6 },
+    { COMPOUND_STRING("MISTY"),    STARTING_STATUS_MISTY_TERRAIN,    .weight = 18, .minDepth = 12 },
+    { COMPOUND_STRING("PSYCHIC"),  STARTING_STATUS_PSYCHIC_TERRAIN,  .weight = 16, .minDepth = 18 },
 };
 
 // INFCAVE_MOD_MONOTYPE's argument. TYPE_NONE, TYPE_MYSTERY and TYPE_STELLAR are

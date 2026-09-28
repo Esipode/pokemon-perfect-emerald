@@ -1792,6 +1792,25 @@ bool8 ScrCmd_yesnobox(struct ScriptContext *ctx)
     }
 }
 
+// Yes/No box whose cursor starts on NO.
+bool8 ScrCmd_yesnoboxdefaultno(struct ScriptContext *ctx)
+{
+    u8 left = ScriptReadByte(ctx);
+    u8 top = ScriptReadByte(ctx);
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
+
+    if (ScriptMenu_YesNoDefaultNo(left, top) == TRUE)
+    {
+        ScriptContext_Stop();
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
 static void DynamicMultichoiceSortList(struct ListMenuItem *items, u32 count)
 {
     u32 i,j;

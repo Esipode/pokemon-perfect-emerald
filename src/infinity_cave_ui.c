@@ -94,6 +94,7 @@ enum
 #define NODE_FOOTER_LINE1_Y  1
 #define NODE_FOOTER_LINE2_Y  11
 #define NODE_FOOTER_HINT_X   180
+#define NODE_FOOTER_HINT_Y   8   // sits above the tag row so it clears the screen edge
 
 // "MONOTYPE" plus a parenthesised type name plus the separator, twice over.
 #define NODE_TAG_BUFFER_SIZE 64
@@ -639,7 +640,7 @@ static void DrawFooter(void)
 
     BuildModifierTags();
     PrintNodeText(WIN_FOOTER, FONT_SMALL, sNodeTagBuffer, 2, NODE_FOOTER_LINE2_Y);
-    PrintNodeText(WIN_FOOTER, FONT_SMALL, sText_NodeHint, NODE_FOOTER_HINT_X, NODE_FOOTER_LINE2_Y);
+    PrintNodeText(WIN_FOOTER, FONT_SMALL, sText_NodeHint, NODE_FOOTER_HINT_X, NODE_FOOTER_HINT_Y);
 
     CopyWindowToVram(WIN_FOOTER, COPYWIN_GFX);
 }

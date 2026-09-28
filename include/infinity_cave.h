@@ -96,6 +96,13 @@ u32 InfCave_GetChosenNodeIndex(void);
 // not saved, so this must be read out into the run struct before the warp.
 const struct InfCaveNodeOption *InfCave_GetChosenNode(void);
 
+// One descent step, run by the lobby attendant and by every room's exit ladder.
+// InfCave_OpenNodeScreen hands the field to the node screen and returns through
+// waitstate; InfCave_TakeChosenNode then advances the depth and writes the
+// confirmed node into the run, so the warp that follows generates that room.
+void InfCave_OpenNodeScreen(void);
+void InfCave_TakeChosenNode(void);
+
 // TRUE while the current room's exit must refuse to descend: a boss room whose
 // boss is still standing. Read by the ladder script with specialvar.
 u16 InfCave_IsExitLocked(void);
@@ -162,7 +169,7 @@ void InfCave_AddShards(u32 amount);
 bool32 InfCave_SpendShards(u32 amount);
 
 // Rest, treasure and shop rooms (src/infinity_cave.c). Consumed state - an
-// emptied item ball, a used shrine, a bought one-off service - lives in the run
+// emptied item ball, a used heal, a bought one-off service - lives in the run
 // struct's roomFlags rather than in the generator, since the generator rebuilds
 // the room from its seed on every load.
 
@@ -180,16 +187,17 @@ bool32 InfCave_IsItemBallTaken(u32 slot);
 void InfCave_SetItemBallItem(void);
 void InfCave_MarkItemBallTaken(void);
 
-// Rest room shrine. One heal per room: the script checks InfCave_IsShrineUsed
-// with specialvar, heals with HealPlayerParty, then calls InfCave_UseShrine.
+// Rest room heal, offered by the room's nurse. One heal per room: the script
+// checks InfCave_IsShrineUsed with specialvar, heals with HealPlayerParty, then
+// calls InfCave_UseShrine.
 u16 InfCave_IsShrineUsed(void);
 void InfCave_UseShrine(void);
 
 // Merchant specials. BuildList fills the dynamic multichoice stack and returns
 // the row count in VAR_RESULT; Buy consumes the menu's pick from VAR_RESULT and
 // replaces it with an enum InfCaveBuyResult.
-void InfCaveShop_BuildList(void);
-void InfCaveShop_Buy(void);
+void InfCaveShop_HasStock(void);
+void InfCaveShop_OpenMart(void);
 
 // Every generator and roller downstream draws from one of these. Seeding is
 // explicit so the same seed always reproduces the same room.
@@ -241,11 +249,6 @@ bool32 InfCave_InGeneratedRoom(void);
 // step trigger that descends reads this: the pad is a generated metatile, so the
 // map header can hold neither an object nor a coord event for it.
 bool32 InfCave_IsExitTile(u32 x, u32 y);
-
-// TRUE when (x, y), in layout coordinates, is a rest room's shrine pad. Like the
-// exit pad the shrine is a generated metatile, so its trigger cannot be a coord
-// event in the room map's header.
-bool32 InfCave_IsShrineTile(u32 x, u32 y);
 
 // Trace probe: logs every active object event's local id, graphics id and tile.
 // A no-op unless INFCAVE_TRACE is on.

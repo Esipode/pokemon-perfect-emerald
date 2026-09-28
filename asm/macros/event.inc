@@ -937,6 +937,13 @@
 	.byte \y
 	.endm
 
+	@ Same as yesnobox, but the cursor starts on NO, so a mashed A press declines.
+	.macro yesnoboxdefaultno x:req, y:req
+	.byte SCR_OP_YESNOBOXDEFAULTNO
+	.byte \x
+	.byte \y
+	.endm
+
 	@ Displays a multichoice box from which the user can choose a selection, and blocks script execution until a selection is made.
 	@ Lists of options are predefined (sMultichoiceLists) and the one to be used is specified with multichoiceId.
 	@ If ignoreBPress is set to a non-zero value, then the user will not be allowed to back out of the multichoice with the B button.

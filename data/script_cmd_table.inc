@@ -256,6 +256,7 @@ gScriptCmdTable::
 	script_cmd_table_entry SCR_OP_GETBRAILLESTRINGWIDTH         ScrCmd_getbraillestringwidth,       requests_effects=1  @ 0xe6
 	script_cmd_table_entry SCR_OP_POKEMARTBADGEBASED            ScrCmd_pokemartbadgebased,          requests_effects=1  @ 0xe7
 	script_cmd_table_entry SCR_OP_SETBATTLEENCOUNTER            ScrCmd_setbattleencounter,          requests_effects=1  @ 0xe8
+	script_cmd_table_entry SCR_OP_YESNOBOXDEFAULTNO             ScrCmd_yesnoboxdefaultno,           requests_effects=1  @ 0xe9
 
 	.if ALLOCATE_SCRIPT_CMD_TABLE
 gScriptCmdTableEnd::

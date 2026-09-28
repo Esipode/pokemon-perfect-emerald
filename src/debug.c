@@ -301,19 +301,6 @@ static void DebugAction_Util_Fly(u8 taskId);
 static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId);
-// Testing aid: opens the node screen on the live run's option set. Starts a run
-// if none is open, since the options come off the run's own seed. The pick is
-// dropped - the descent does not read it until Stage 22 wires the ladder up.
-static void DebugAction_InfCave_NodeScreen(u8 taskId)
-{
-    if (!InfCave_IsInRun())
-        InfCave_StartRun();
-
-    Debug_DestroyMenu_Full(taskId);
-    gMain.savedCallback = CB2_ReturnToField;
-    SetMainCallback2(CB2_InitInfCaveNodeScreen);
-}
-
 static void DebugAction_Util_ForceDraft(u8 taskId);
 static void DebugAction_InfCave_ForceRoom(u8 taskId, const void *roomType);
 static void DebugAction_InfCave_ForceModifier(u8 taskId, const void *entry);
@@ -456,6 +443,7 @@ extern const u8 Debug_EventScript_HeapStats[];
 extern const u8 Debug_EventScript_InfCaveMaskCheck[];
 extern const u8 Debug_EventScript_InfCavePlacementCheck[];
 extern const u8 Debug_EventScript_InfCaveEnterRoom[];
+extern const u8 Debug_EventScript_InfCaveDescend[];
 extern const u8 Debug_EventScript_InfCaveTestBattle[];
 extern const u8 Debug_Follower_NPC_Event_Script[];
 extern const u8 Debug_Follower_NPC_Not_Enabled[];
@@ -2659,6 +2647,17 @@ static void DebugAction_InfCave_DumpNodes(u8 taskId)
 
     InfCave_DebugDumpNodeOptions();
     Debug_DestroyMenu_Full(taskId);
+}
+
+// Testing aid: runs one real descent step - node screen, then the warp into the
+// room the chosen card names. Starts a run if none is open, since the options
+// come off the run's own seed.
+static void DebugAction_InfCave_NodeScreen(u8 taskId)
+{
+    if (!InfCave_IsInRun())
+        InfCave_StartRun();
+
+    Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_InfCaveDescend);
 }
 
 static void DebugAction_Util_ForceDraft(u8 taskId)

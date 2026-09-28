@@ -17,16 +17,18 @@ static const u8 sInfCaveRoomDesc_Battle[] = _("Two or three trainers.");
 static const u8 sInfCaveRoomDesc_Gauntlet[] = _("A long line of trainers.");
 static const u8 sInfCaveRoomDesc_Elite[] = _("One trainer, full party.");
 static const u8 sInfCaveRoomDesc_Boss[] = _("A champion bars the way.");
-static const u8 sInfCaveRoomDesc_Rest[] = _("A shrine heals your team.");
+static const u8 sInfCaveRoomDesc_Rest[] = _("A nurse heals your team.");
 static const u8 sInfCaveRoomDesc_Treasure[] = _("Item balls lie unopened.");
 static const u8 sInfCaveRoomDesc_Shop[] = _("A merchant takes shards.");
 
 // Modifier groups a room type may carry. A battle modifier on a room that stands
-// no trainer would advertise an effect the room never applies, so the room types
-// without trainers carry the field ones only.
-#define INFCAVE_MODS_FIELD  (INFCAVE_MOD_BIT(INFCAVE_MOD_DARK)          \
-                           | INFCAVE_MOD_BIT(INFCAVE_MOD_CRAMPED)       \
-                           | INFCAVE_MOD_BIT(INFCAVE_MOD_TREASURED))
+// no trainer would advertise an effect the room never applies, and a hazard is
+// paid for by the shards and the fight it complicates, so a trainerless room
+// type carries the boons alone.
+#define INFCAVE_MODS_HAZARD (INFCAVE_MOD_BIT(INFCAVE_MOD_DARK)          \
+                           | INFCAVE_MOD_BIT(INFCAVE_MOD_CRAMPED))
+#define INFCAVE_MODS_BOON   (INFCAVE_MOD_BIT(INFCAVE_MOD_TREASURED))
+#define INFCAVE_MODS_FIELD  (INFCAVE_MODS_HAZARD | INFCAVE_MODS_BOON)
 #define INFCAVE_MODS_BATTLE (INFCAVE_MOD_BIT(INFCAVE_MOD_MONOTYPE)      \
                            | INFCAVE_MOD_BIT(INFCAVE_MOD_WEATHER)       \
                            | INFCAVE_MOD_BIT(INFCAVE_MOD_TERRAIN)       \
@@ -45,7 +47,7 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Battle,
         .description = sInfCaveRoomDesc_Battle,
         .icon = 0,
-        .weight = 30,
+        .weight = 24,
         .minDepth = 0,
         .modifierMask = INFCAVE_MODS_FIELD | INFCAVE_MODS_BATTLE | INFCAVE_MOD_BIT(INFCAVE_MOD_SWARM),
     },
@@ -83,29 +85,30 @@ static const struct InfCaveRoomInfo sInfCaveRooms[INFCAVE_ROOM_COUNT] =
         .name = sInfCaveRoomName_Rest,
         .description = sInfCaveRoomDesc_Rest,
         .icon = 4,
-        .weight = 14,
-        .minDepth = 2,
-        .modifierMask = INFCAVE_MODS_FIELD,
+        .weight = 8,
+        .minDepth = 5,
+        .modifierMask = INFCAVE_MODS_BOON,
     },
     [INFCAVE_ROOM_TREASURE] =
     {
         .name = sInfCaveRoomName_Treasure,
         .description = sInfCaveRoomDesc_Treasure,
         .icon = 5,
-        .weight = 16,
+        .weight = 10,
         .minDepth = 0,
-        // INFCAVE_MOD_TREASURED adds balls to a room that has none; here it would
-        // only raise a count the room type already rolls.
-        .modifierMask = INFCAVE_MODS_FIELD & ~INFCAVE_MOD_BIT(INFCAVE_MOD_TREASURED),
+        // The only boon is INFCAVE_MOD_TREASURED, which adds balls to a room that
+        // has none; here it would only raise a count the room type already rolls.
+        // Nothing is left, so the room type never carries a modifier.
+        .modifierMask = 0,
     },
     [INFCAVE_ROOM_SHOP] =
     {
         .name = sInfCaveRoomName_Shop,
         .description = sInfCaveRoomDesc_Shop,
         .icon = 6,
-        .weight = 14,
+        .weight = 8,
         .minDepth = 6,
-        .modifierMask = INFCAVE_MODS_FIELD,
+        .modifierMask = INFCAVE_MODS_BOON,
     },
 };
 

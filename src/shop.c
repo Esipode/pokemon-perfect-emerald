@@ -13,6 +13,7 @@
 #include "fieldmap.h"
 #include "gpu_regs.h"
 #include "graphics.h"
+#include "infinity_cave.h"
 #include "international_string_util.h"
 #include "item.h"
 #include "item_icon.h"
@@ -75,6 +76,7 @@ enum {
     MART_TYPE_NORMAL,
     MART_TYPE_DECOR,
     MART_TYPE_DECOR2,
+    MART_TYPE_SHARDS, // Infinity Cave merchant: an item mart charged in shards
 };
 
 // shop view window NPC info enum
@@ -92,6 +94,7 @@ struct MartInfo
     void (*callback)(void);
     const struct MenuAction *menuActions;
     const u16 *itemList;
+    const u16 *itemPrices; // MART_TYPE_SHARDS: one shard price per itemList entry
     u16 itemCount;
     u8 windowId;
     u8 martType;
@@ -164,6 +167,8 @@ static void Task_HandleShopMenuBuy(u8 taskId);
 static void Task_HandleShopMenuSell(u8 taskId);
 static void BuyMenuPrintItemDescriptionAndShowItemIcon(s32 item, bool8 onInit, struct ListMenu *list);
 static void BuyMenuPrintPriceInList(u8 windowId, u32 itemId, u8 y);
+static void MapPostLoadHook_ShardMartExit(void);
+static void Task_ShardMartExit(u8 taskId);
 
 static const struct YesNoFuncTable sShopPurchaseYesNoFuncs =
 {
@@ -365,6 +370,45 @@ static const u8 sShopBuyMenuTextColors[][3] =
 };
 
 static const enum Item sShopItemsListDummy[] = { ITEM_NONE };
+
+// Shard wordings of the mart's money lines, with no currency symbol.
+static const u8 sText_NotEnoughShards[] = _("You don't have enough SHARDS.{PAUSE_UNTIL_PRESS}");
+static const u8 sText_YouWantedVar1ThatllBeVar2Shards[] = _("You wanted {STR_VAR_1}?\nThat'll be {STR_VAR_2} SHARDS. Okay?");
+static const u8 sText_Var1AndYouWantedVar2Shards[] = _("{STR_VAR_1}? And you wanted {STR_VAR_2}?\nThat will be {STR_VAR_3} SHARDS.");
+
+// TRUE while the open mart is the Infinity Cave merchant, which prices its stock
+// in shards instead of money.
+static bool32 IsShardMart(void)
+{
+    return sMartInfo.martType == MART_TYPE_SHARDS;
+}
+
+// TRUE for the marts whose list holds item ids rather than decoration ids.
+static bool32 IsItemMart(void)
+{
+    return sMartInfo.martType == MART_TYPE_NORMAL || sMartInfo.martType == MART_TYPE_SHARDS;
+}
+
+// Shard price of one unit of itemId, from the list the shard mart opened with.
+static u32 ShardMartItemPrice(u32 itemId)
+{
+    u32 i;
+
+    for (i = 0; i < sMartInfo.itemCount; i++)
+    {
+        if (sMartInfo.itemList[i] == itemId)
+            return sMartInfo.itemPrices[i];
+    }
+    return 0;
+}
+
+static bool32 MartCanAfford(u32 cost)
+{
+    if (IsShardMart())
+        return InfCave_GetShards() >= cost;
+
+    return IsEnoughMoney(&gSaveBlock1Ptr->money, cost);
+}
 
 static u8 CreateShopMenu(u8 martType)
 {
@@ -639,7 +683,7 @@ static void BuyMenuBuildListMenuTemplate(void)
 
 static void BuyMenuSetListEntry(struct ListMenuItem *menuItem, enum Item item, u8 *name)
 {
-    if (sMartInfo.martType == MART_TYPE_NORMAL)
+    if (IsItemMart())
         CopyItemName(item, name);
     else
         StringCopy(name, gDecorations[item].name);
@@ -663,7 +707,7 @@ static void BuyMenuPrintItemDescriptionAndShowItemIcon(s32 item, bool8 onInit, s
     sShopData->iconSlot ^= 1;
     if (item != LIST_CANCEL)
     {
-        if (sMartInfo.martType == MART_TYPE_NORMAL)
+        if (IsItemMart())
             description = GetItemDescription(item);
         else
             description = gDecorations[item].description;
@@ -683,7 +727,11 @@ static void BuyMenuPrintPriceInList(u8 windowId, u32 itemId, u8 y)
 
     if (itemId != LIST_CANCEL)
     {
-        if (sMartInfo.martType == MART_TYPE_NORMAL)
+        if (IsShardMart())
+        {
+            ConvertIntToDecimalStringN(gStringVar1, ShardMartItemPrice(itemId), STR_CONV_MODE_LEFT_ALIGN, 6);
+        }
+        else if (sMartInfo.martType == MART_TYPE_NORMAL)
         {
             ConvertIntToDecimalStringN(
                 gStringVar1,
@@ -702,6 +750,8 @@ static void BuyMenuPrintPriceInList(u8 windowId, u32 itemId, u8 y)
 
         if (GetItemImportance(itemId) && (CheckBagHasItem(itemId, 1) || CheckPCHasItem(itemId, 1)))
             StringCopy(gStringVar4, gText_SoldOut);
+        else if (IsShardMart())
+            StringCopy(gStringVar4, gStringVar1);
         else
             StringExpandPlaceholders(gStringVar4, gText_PokedollarVar1);
         x = GetStringRightAlignXOffset(FONT_NARROW, gStringVar4, 120);
@@ -747,7 +797,7 @@ static void BuyMenuAddItemIcon(enum Item item, u8 iconSlot)
     if (*spriteIdPtr != SPRITE_NONE)
         return;
 
-    if (sMartInfo.martType == MART_TYPE_NORMAL || item == ITEM_LIST_END)
+    if (IsItemMart() || item == ITEM_LIST_END)
     {
         spriteId = AddItemIconSprite(iconSlot + TAG_ITEM_ICON_BASE, iconSlot + TAG_ITEM_ICON_BASE, item);
         if (spriteId != MAX_SPRITES)
@@ -824,6 +874,17 @@ static void BuyMenuPrint(u8 windowId, const u8 *text, u8 x, u8 y, s8 speed, u8 c
     AddTextPrinterParameterized4(windowId, FONT_NORMAL, x, y, 0, 0, sShopBuyMenuTextColors[colorSet], speed, text);
 }
 
+// The shard balance box. The money box's symbol and label sprite are replaced by
+// the word SHARDS, so the currency the merchant charges in is visible.
+static void ShardMartPrintBalance(u8 speed)
+{
+    u8 *tail = StringCopy(gStringVar4, COMPOUND_STRING("SHARDS "));
+
+    ConvertIntToDecimalStringN(tail, InfCave_GetShards(), STR_CONV_MODE_RIGHT_ALIGN, 5);
+    FillWindowPixelBuffer(WIN_MONEY, PIXEL_FILL(1));
+    AddTextPrinterParameterized(WIN_MONEY, FONT_NORMAL, gStringVar4, 2, 1, speed, NULL);
+}
+
 static void BuyMenuDisplayMessage(u8 taskId, const u8 *text, TaskFunc callback)
 {
     DisplayMessageAndContinueTask(taskId, WIN_MESSAGE, 10, 14, FONT_NORMAL, GetPlayerTextSpeedDelay(), text, callback);
@@ -832,8 +893,16 @@ static void BuyMenuDisplayMessage(u8 taskId, const u8 *text, TaskFunc callback)
 
 static void BuyMenuDrawGraphics(void)
 {
-    AddMoneyLabelObject(19, 11);
-    PrintMoneyAmountInMoneyBoxWithBorder(WIN_MONEY, 1, 13, GetMoney(&gSaveBlock1Ptr->money));
+    if (IsShardMart())
+    {
+        DrawStdFrameWithCustomTileAndPalette(WIN_MONEY, FALSE, 1, 13);
+        ShardMartPrintBalance(0);
+    }
+    else
+    {
+        AddMoneyLabelObject(19, 11);
+        PrintMoneyAmountInMoneyBoxWithBorder(WIN_MONEY, 1, 13, GetMoney(&gSaveBlock1Ptr->money));
+    }
     ScheduleBgCopyTilemapToVram(0);
     ScheduleBgCopyTilemapToVram(1);
     ScheduleBgCopyTilemapToVram(2);
@@ -1058,28 +1127,29 @@ static void Task_BuyMenu(u8 taskId)
             BuyMenuRemoveScrollIndicatorArrows();
             BuyMenuPrintCursor(tListTaskId, COLORID_GRAY_CURSOR);
 
-            if (sMartInfo.martType == MART_TYPE_NORMAL)
+            if (IsShardMart())
+                sShopData->totalCost = ShardMartItemPrice(itemId);
+            else if (sMartInfo.martType == MART_TYPE_NORMAL)
                 sShopData->totalCost = AchievementBoost_ApplyShopPrice(GetItemPrice(itemId) >> IsPokeNewsActive(POKENEWS_SLATEPORT));
             else
                 sShopData->totalCost = AchievementBoost_ApplyShopPrice(gDecorations[itemId].price);
 
             if (GetItemImportance(itemId) && (CheckBagHasItem(itemId, 1) || CheckPCHasItem(itemId, 1)))
                 BuyMenuDisplayMessage(taskId, gText_ThatItemIsSoldOut, BuyMenuReturnToItemList);
-            else if (!IsEnoughMoney(&gSaveBlock1Ptr->money, sShopData->totalCost))
+            else if (!MartCanAfford(sShopData->totalCost))
             {
-                BuyMenuDisplayMessage(taskId, gText_YouDontHaveMoney, BuyMenuReturnToItemList);
+                BuyMenuDisplayMessage(taskId, IsShardMart() ? sText_NotEnoughShards : gText_YouDontHaveMoney, BuyMenuReturnToItemList);
             }
             else
             {
-                if (sMartInfo.martType == MART_TYPE_NORMAL)
+                if (IsItemMart())
                 {
                     CopyItemName(itemId, gStringVar1);
                     if (GetItemImportance(itemId))
                     {
                         ConvertIntToDecimalStringN(gStringVar2, sShopData->totalCost, STR_CONV_MODE_LEFT_ALIGN, 6);
-                        StringExpandPlaceholders(gStringVar4, gText_YouWantedVar1ThatllBeVar2);
+                        StringExpandPlaceholders(gStringVar4, IsShardMart() ? sText_YouWantedVar1ThatllBeVar2Shards : gText_YouWantedVar1ThatllBeVar2);
                         tItemCount = 1;
-                        sShopData->totalCost = AchievementBoost_ApplyShopPrice(GetItemPrice(tItemId) >> IsPokeNewsActive(POKENEWS_SLATEPORT)) * tItemCount;
                         BuyMenuDisplayMessage(taskId, gStringVar4, BuyMenuConfirmPurchase);
                     }
                     else if (GetItemPocket(itemId) == POCKET_TM_HM)
@@ -1129,6 +1199,8 @@ static void Task_BuyHowManyDialogueInit(u8 taskId)
     // Avoid division by zero in-case something costs 0 pokedollars.
     if (sShopData->totalCost == 0)
         maxQuantity = MAX_BAG_ITEM_CAPACITY;
+    else if (IsShardMart())
+        maxQuantity = InfCave_GetShards() / sShopData->totalCost;
     else
         maxQuantity = GetMoney(&gSaveBlock1Ptr->money) / sShopData->totalCost;
 
@@ -1146,7 +1218,10 @@ static void Task_BuyHowManyDialogueHandleInput(u8 taskId)
 
     if (AdjustQuantityAccordingToDPadInput(&tItemCount, sShopData->maxQuantity) == TRUE)
     {
-        sShopData->totalCost = AchievementBoost_ApplyShopPrice(GetItemPrice(tItemId) >> IsPokeNewsActive(POKENEWS_SLATEPORT)) * tItemCount;
+        if (IsShardMart())
+            sShopData->totalCost = ShardMartItemPrice(tItemId) * tItemCount;
+        else
+            sShopData->totalCost = AchievementBoost_ApplyShopPrice(GetItemPrice(tItemId) >> IsPokeNewsActive(POKENEWS_SLATEPORT)) * tItemCount;
         BuyMenuPrintItemQuantityAndPrice(taskId);
     }
     else
@@ -1162,7 +1237,7 @@ static void Task_BuyHowManyDialogueHandleInput(u8 taskId)
             CopyItemName(tItemId, gStringVar1);
             ConvertIntToDecimalStringN(gStringVar2, tItemCount, STR_CONV_MODE_LEFT_ALIGN, MAX_ITEM_DIGITS);
             ConvertIntToDecimalStringN(gStringVar3, sShopData->totalCost, STR_CONV_MODE_LEFT_ALIGN, MAX_MONEY_DIGITS);
-            BuyMenuDisplayMessage(taskId, gText_Var1AndYouWantedVar2, BuyMenuConfirmPurchase);
+            BuyMenuDisplayMessage(taskId, IsShardMart() ? sText_Var1AndYouWantedVar2Shards : gText_Var1AndYouWantedVar2, BuyMenuConfirmPurchase);
         }
         else if (JOY_NEW(B_BUTTON))
         {
@@ -1187,15 +1262,24 @@ static void BuyMenuTryMakePurchase(u8 taskId)
 
     PutWindowTilemap(WIN_ITEM_LIST);
 
-    if (sMartInfo.martType == MART_TYPE_NORMAL)
+    if (IsItemMart())
     {
         // AddBagItem diverts to the PC when the Bag is full - note where it landed.
         bool32 toBag = CheckBagHasSpace(tItemId, tItemCount);
 
+        // The shard merchant sells mid-run, where an item in the PC is out of reach
+        // for the rest of the descent, so a full Bag blocks the sale instead.
+        if (IsShardMart() && !toBag)
+        {
+            BuyMenuDisplayMessage(taskId, gText_NoMoreRoomForThis, BuyMenuReturnToItemList);
+            return;
+        }
+
         if (AddBagItem(tItemId, tItemCount) == TRUE)
         {
             GetSetItemObtained(tItemId, FLAG_SET_ITEM_OBTAINED);
-            RecordItemPurchase(taskId);
+            if (!IsShardMart())
+                RecordItemPurchase(taskId);
             BuyMenuDisplayMessage(taskId, toBag ? gText_HereYouGoThankYou : gText_HereYouGoItemSentToPC, BuyMenuSubtractMoney);
         }
         else
@@ -1223,6 +1307,17 @@ static void BuyMenuSubtractMoney(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
 
+    // Shard purchases are cave resources, not shopping: they skip the money stat,
+    // the money achievements and the Smart Shopper record.
+    if (IsShardMart())
+    {
+        InfCave_SpendShards(sShopData->totalCost);
+        PlaySE(SE_SHOP);
+        ShardMartPrintBalance(0);
+        gTasks[taskId].func = Task_ReturnToItemListAfterItemPurchase;
+        return;
+    }
+
     IncrementGameStat(GAME_STAT_SHOPPED);
     RemoveMoney(&gSaveBlock1Ptr->money, sShopData->totalCost);
     Achievement_RecordMoneySpent(sShopData->totalCost);
@@ -1236,7 +1331,7 @@ static void BuyMenuSubtractMoney(u8 taskId)
     PlaySE(SE_SHOP);
     PrintMoneyAmountInMoneyBox(WIN_MONEY, GetMoney(&gSaveBlock1Ptr->money), 0);
 
-    if (sMartInfo.martType == MART_TYPE_NORMAL)
+    if (IsItemMart())
         gTasks[taskId].func = Task_ReturnToItemListAfterItemPurchase;
     else
         gTasks[taskId].func = Task_ReturnToItemListAfterDecorationPurchase;
@@ -1250,6 +1345,7 @@ static void Task_ReturnToItemListAfterItemPurchase(u8 taskId)
     {
         u16 premierBallsToAdd = tItemCount / 10;
         if (premierBallsToAdd >= 1
+         && sMartInfo.martType == MART_TYPE_NORMAL
          && ((I_PREMIER_BALL_BONUS <= GEN_7 && tItemId == ITEM_POKE_BALL)
           || (I_PREMIER_BALL_BONUS >= GEN_8 && (GetItemPocket(tItemId) == POCKET_POKE_BALLS))))
         {
@@ -1304,7 +1400,15 @@ static void BuyMenuPrintItemQuantityAndPrice(u8 taskId)
     s16 *data = gTasks[taskId].data;
 
     FillWindowPixelBuffer(WIN_QUANTITY_PRICE, PIXEL_FILL(1));
-    PrintMoneyAmount(WIN_QUANTITY_PRICE, CalculateMoneyTextHorizontalPosition(sShopData->totalCost), 1, sShopData->totalCost, TEXT_SKIP_DRAW);
+    if (IsShardMart())
+    {
+        ConvertIntToDecimalStringN(gStringVar2, sShopData->totalCost, STR_CONV_MODE_LEFT_ALIGN, 5);
+        BuyMenuPrint(WIN_QUANTITY_PRICE, gStringVar2, GetStringRightAlignXOffset(FONT_NORMAL, gStringVar2, 72), 1, TEXT_SKIP_DRAW, COLORID_NORMAL);
+    }
+    else
+    {
+        PrintMoneyAmount(WIN_QUANTITY_PRICE, CalculateMoneyTextHorizontalPosition(sShopData->totalCost), 1, sShopData->totalCost, TEXT_SKIP_DRAW);
+    }
     ConvertIntToDecimalStringN(gStringVar1, tItemCount, STR_CONV_MODE_LEADING_ZEROS, MAX_ITEM_DIGITS);
     StringExpandPlaceholders(gStringVar4, gText_xVar1);
     BuyMenuPrint(WIN_QUANTITY_PRICE, gStringVar4, 0, 1, 0, COLORID_NORMAL);
@@ -1312,7 +1416,9 @@ static void BuyMenuPrintItemQuantityAndPrice(u8 taskId)
 
 static void ExitBuyMenu(u8 taskId)
 {
-    gFieldCallback = MapPostLoadHook_ReturnToShopMenu;
+    // The shard mart opens straight into the item list, so leaving it returns to
+    // the merchant's script rather than to a BUY/QUIT menu.
+    gFieldCallback = IsShardMart() ? MapPostLoadHook_ShardMartExit : MapPostLoadHook_ReturnToShopMenu;
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_ExitBuyMenu;
 }
@@ -1321,10 +1427,28 @@ static void Task_ExitBuyMenu(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
-        RemoveMoneyLabelObject();
+        if (!IsShardMart())
+            RemoveMoneyLabelObject();
         BuyMenuFreeMemory();
         SetMainCallback2(CB2_ReturnToField);
         DestroyTask(taskId);
+    }
+}
+
+static void MapPostLoadHook_ShardMartExit(void)
+{
+    FadeInFromBlack();
+    CreateTask(Task_ShardMartExit, 8);
+}
+
+static void Task_ShardMartExit(u8 taskId)
+{
+    if (IsWeatherNotFadingIn() == TRUE)
+    {
+        DestroyTask(taskId);
+        UnlockPlayerFieldControls();
+        if (sMartInfo.callback)
+            sMartInfo.callback();
     }
 }
 
@@ -1358,6 +1482,27 @@ static void RecordItemPurchase(u8 taskId)
         gMartPurchaseHistory[sPurchaseHistoryId].quantity = tItemCount;
         sPurchaseHistoryId++;
     }
+}
+
+// Opens the buy list directly, with no BUY/SELL menu: the caller is a script that
+// resumes when the list is closed.
+void CreateShardMartMenu(const u16 *itemsForSale, const u16 *prices)
+{
+    u8 taskId;
+    s16 *data;
+
+    sMartInfo.evResetEnabled = FALSE;
+    sMartInfo.martType = MART_TYPE_SHARDS;
+    sMartInfo.itemPrices = prices;
+    SetShopItemsForSale(itemsForSale);
+    SetShopMenuCallback(ScriptContext_Enable);
+    LockPlayerFieldControls();
+
+    taskId = CreateTask(Task_GoToBuyOrSellMenu, 8);
+    data = gTasks[taskId].data;
+    tCallbackHi = (u32)CB2_InitBuyMenu >> 16;
+    tCallbackLo = (u32)CB2_InitBuyMenu;
+    FadeScreen(FADE_TO_BLACK, 0);
 }
 
 #undef tItemCount

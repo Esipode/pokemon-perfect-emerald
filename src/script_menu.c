@@ -624,6 +624,23 @@ bool8 ScriptMenu_YesNo(u8 left, u8 top)
     }
 }
 
+// Same menu as ScriptMenu_YesNo, but the cursor starts on NO so mashing A
+// through the message cannot accept the prompt.
+bool8 ScriptMenu_YesNoDefaultNo(u8 left, u8 top)
+{
+    if (FuncIsActiveTask(Task_HandleYesNoInput) == TRUE)
+    {
+        return FALSE;
+    }
+    else
+    {
+        gSpecialVar_Result = 0xFF;
+        DisplayYesNoMenuWithDefault(1);
+        CreateTask(Task_HandleYesNoInput, 0x50);
+        return TRUE;
+    }
+}
+
 static void Task_HandleYesNoInput(u8 taskId)
 {
     if (gTasks[taskId].tRight < 5)

@@ -610,6 +610,8 @@ gSpecials::
 	def_special CanTornadusWindPushStep
 	def_special InfCave_StartRun
 	def_special InfCave_AdvanceDepth
+	def_special InfCave_OpenNodeScreen
+	def_special InfCave_TakeChosenNode
 	def_special InfCave_EndRunQuit
 	def_special InfCave_ValidateRoom
 	def_special InfCave_IsExitLocked
@@ -619,5 +621,5 @@ gSpecials::
 	def_special InfCave_MarkItemBallTaken
 	def_special InfCave_IsShrineUsed
 	def_special InfCave_UseShrine
-	def_special InfCaveShop_BuildList
-	def_special InfCaveShop_Buy
+	def_special InfCaveShop_HasStock
+	def_special InfCaveShop_OpenMart

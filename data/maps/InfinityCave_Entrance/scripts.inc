@@ -17,7 +17,12 @@ InfinityCave_Entrance_EventScript_Attendant::
 	msgbox InfinityCave_Entrance_Text_GoodLuck, MSGBOX_DEFAULT
 	closemessage
 	special InfCave_StartRun
-	special InfCave_AdvanceDepth
+	@ Depth 1 is a chosen node like every other floor, so the first descent goes
+	@ through the node screen too. The coordinates are ignored: the generator
+	@ places the player itself.
+	special InfCave_OpenNodeScreen
+	waitstate
+	special InfCave_TakeChosenNode
 	warp MAP_INFINITY_CAVE_ROOM, 3, 3
 	waitstate
 	release

@@ -119,8 +119,8 @@ static const struct InfCaveBoss sInfCaveBosses[] =
 static const u8 sInfCaveTierPool[INFCAVE_TIER_COUNT] =
 {
     EMPORIUM_ZMOVE,
-    EMPORIUM_MEGA,
     EMPORIUM_TERA,
+    EMPORIUM_MEGA,
 };
 
 // Base-stat-total band per tier. The maxima match the Emporium filler caps the
@@ -144,9 +144,9 @@ static const struct InfCaveBstBand sInfCaveTierBst[INFCAVE_TIER_COUNT] =
 // Lowest depth that reads each tier, ascending. Depth 0 (the lobby) reads tier 0.
 static const u8 sInfCaveTierMinDepth[INFCAVE_TIER_COUNT] =
 {
-    0,
-    9,
-    20,
+    5,
+    15,
+    25,
 };
 
 // Per-room-type opponent shape. tierOffset shifts the depth's tier, so a
