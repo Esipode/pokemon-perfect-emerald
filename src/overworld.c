@@ -2441,6 +2441,9 @@ void CB2_ContinueSavedGame(void)
     // A save can load with the roaming legendary storyline started but no active roamer (see src/roamer.c).
     TryActivateRoamer();
 
+    // Pre-Stage-4 saves have Mega Stones/Z-Crystals/Tera Shards sitting in ITEMS.
+    MoveMisfiledBagItems();
+
     LoadSaveblockMapHeader();
     ClearDiveAndHoleWarps();
     trainerHillMapId = GetCurrentTrainerHillMapId();

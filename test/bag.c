@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "event_data.h"
+#include "item.h"
 #include "item_menu.h"
 #include "pokemon.h"
 #include "test/overworld_script.h"
@@ -162,4 +163,66 @@ TEST("Items are correctly sorted and compacted in the bag")
     EXPECT_EQ(pocket->itemSlots[4].itemId, ITEM_NONE);
     EXPECT_EQ(pocket->itemSlots[5].itemId, ITEM_NONE);
     EXPECT_EQ(pocket->itemSlots[6].itemId, ITEM_NONE);
+}
+
+TEST("Every Mega Stone, Z-Crystal and Tera Shard is in its matching pocket")
+{
+    enum Item itemId;
+    u32 megaStoneCount = 0, zCrystalCount = 0, teraShardCount = 0;
+
+    for (itemId = ITEM_NONE; itemId < ITEMS_COUNT; itemId++)
+    {
+        switch (gItemsInfo[itemId].sortType)
+        {
+        case ITEM_TYPE_MEGA_STONE:
+            EXPECT_EQ(GetItemPocket(itemId), POCKET_MEGA_STONES);
+            megaStoneCount++;
+            break;
+        case ITEM_TYPE_Z_CRYSTAL:
+            EXPECT_EQ(GetItemPocket(itemId), POCKET_Z_CRYSTALS);
+            zCrystalCount++;
+            break;
+        case ITEM_TYPE_TERA_SHARD:
+            EXPECT_EQ(GetItemPocket(itemId), POCKET_TERA_SHARDS);
+            teraShardCount++;
+            break;
+        }
+    }
+
+    // D2 guard: capacity must cover every distinct item, so these pockets can never fill up.
+    EXPECT(megaStoneCount <= BAG_MEGA_STONES_COUNT);
+    EXPECT(zCrystalCount <= BAG_Z_CRYSTALS_COUNT);
+    EXPECT(teraShardCount <= BAG_TERA_SHARDS_COUNT);
+}
+
+TEST("A Mega Stone is added to the Mega Stones pocket")
+{
+    struct BagPocket *pocket = &gBagPockets[POCKET_MEGA_STONES];
+    memset(pocket->itemSlots, 0, sizeof(gSaveBlock3Ptr->gimmickBag.megaStones));
+
+    ASSUME(GetItemPocket(ITEM_VENUSAURITE) == POCKET_MEGA_STONES);
+
+    EXPECT(AddBagItem(ITEM_VENUSAURITE, 1));
+    EXPECT(CheckBagHasItem(ITEM_VENUSAURITE, 1));
+    EXPECT_EQ(pocket->itemSlots[0].itemId, ITEM_VENUSAURITE);
+}
+
+TEST("MoveMisfiledBagItems relocates a Mega Stone out of the Items pocket")
+{
+    struct BagPocket *itemsPocket = &gBagPockets[POCKET_ITEMS];
+    struct BagPocket *megaStonesPocket = &gBagPockets[POCKET_MEGA_STONES];
+
+    memset(itemsPocket->itemSlots, 0, sizeof(gSaveBlock1Ptr->bag.items));
+    memset(megaStonesPocket->itemSlots, 0, sizeof(gSaveBlock3Ptr->gimmickBag.megaStones));
+
+    ASSUME(GetItemPocket(ITEM_VENUSAURITE) == POCKET_MEGA_STONES);
+
+    // Misfile it directly, bypassing AddBagItem, to simulate a pre-Stage-4 save.
+    BagPocket_SetSlotItemIdAndCount(itemsPocket, 0, ITEM_VENUSAURITE, 1);
+
+    MoveMisfiledBagItems();
+
+    EXPECT_EQ(itemsPocket->itemSlots[0].itemId, ITEM_NONE);
+    EXPECT_EQ(megaStonesPocket->itemSlots[0].itemId, ITEM_VENUSAURITE);
+    EXPECT_EQ(megaStonesPocket->itemSlots[0].quantity, 1);
 }

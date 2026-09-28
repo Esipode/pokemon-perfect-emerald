@@ -608,6 +608,44 @@ void ClearBag(void)
     CpuFill32(0, &gSaveBlock3Ptr->gimmickBag, sizeof(struct GimmickBag));
 }
 
+// Moves any item sitting in the wrong pocket (old saves, NGP backups, old cave stashes) to the
+// pocket its current .pocket data says it belongs in. Generic over any future .pocket change,
+// not gimmick-item-specific. Uses BagPocket_AddItem directly so a full target pocket leaves the
+// item where it is, instead of diverting to the PC or re-triggering achievement hooks.
+void MoveMisfiledBagItems(void)
+{
+    enum Pocket pocketId;
+
+    for (pocketId = 0; pocketId < POCKETS_COUNT; pocketId++)
+    {
+        struct BagPocket *pocket = &gBagPockets[pocketId];
+        bool32 compact = FALSE;
+        u32 i;
+
+        for (i = 0; i < pocket->capacity; i++)
+        {
+            struct ItemSlot slot = BagPocket_GetSlotData(pocket, i);
+            enum Pocket correctPocket;
+
+            if (slot.itemId == ITEM_NONE)
+                continue;
+
+            correctPocket = GetItemPocket(slot.itemId);
+            if (correctPocket == pocketId || correctPocket >= POCKETS_COUNT)
+                continue;
+
+            if (BagPocket_AddItem(&gBagPockets[correctPocket], slot.itemId, slot.quantity))
+            {
+                BagPocket_SetSlotItemIdAndCount(pocket, i, ITEM_NONE, 0);
+                compact = TRUE;
+            }
+        }
+
+        if (compact)
+            BagPocket_CompactItems(pocket);
+    }
+}
+
 static inline u16 NONNULL BagPocket_CountTotalItemQuantity(struct BagPocket *pocket, enum Item itemId)
 {
     u32 ownedCount = 0;

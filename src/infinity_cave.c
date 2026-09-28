@@ -1177,6 +1177,9 @@ void InfCave_CloseRunBag(void)
             stash[slot] = (struct ItemSlot) { ITEM_NONE, 0 };
         }
     }
+
+    // A stash from before Stage 4 wrote gimmick items back into ITEMS as-is.
+    MoveMisfiledBagItems();
     Stash()->stashed = FALSE;
 }
 
