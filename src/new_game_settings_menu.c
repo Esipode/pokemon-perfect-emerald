@@ -12,6 +12,7 @@
 #include "menu.h"
 #include "mono_gen.h"
 #include "mono_type.h"
+#include "option_menu.h"
 #include "palette.h"
 #include "scanline_effect.h"
 #include "sound.h"
@@ -469,7 +470,10 @@ static void Task_SettingsMenuCancel(u8 taskId)
         RemoveScrollIndicatorArrowPair(gTasks[taskId].tScrollArrowTaskId);
         DestroyTask(taskId);
         FreeAllWindowBuffers();
-        SetMainCallback2(gMain.savedCallback);
+        // B returns to the options menu that precedes this screen; keep the return
+        // callback pointed here so its CONFIRM row comes back (see keep_storage_prompt.c).
+        gMain.savedCallback = CB2_InitNewGameSettingsMenu;
+        SetMainCallback2(CB2_InitOptionMenu);
     }
 }
 

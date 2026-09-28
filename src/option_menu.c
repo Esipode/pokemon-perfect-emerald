@@ -17,6 +17,7 @@
 #include "task.h"
 #include "text.h"
 #include "text_window.h"
+#include "title_screen.h"
 #include "window.h"
 #include "gba/m4a_internal.h"
 #include "constants/rgb.h"
@@ -129,6 +130,8 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId);
 static void Task_OptionMenuFadeIn_Pg3(u8 taskId);
 static void Task_OptionMenuProcessInput_Pg3(u8 taskId);
 static void Task_OptionMenuSave(u8 taskId);
+static void Task_OptionMenuBackToTitle(u8 taskId);
+static void Task_OptionMenuFadeOutToTitle(u8 taskId);
 static void Task_OptionMenuOpenPlayerColors(u8 taskId);
 static void Task_OptionMenuFadeOut(u8 taskId);
 static void Task_OptionMenuFadeOutToPlayerColors(u8 taskId);
@@ -599,7 +602,13 @@ static void Task_OptionMenuProcessInput(u8 taskId)
         if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL)
             gTasks[taskId].func = Task_OptionMenuSave;
     }
-    else if (JOY_NEW(B_BUTTON) || (JOY_NEW(START_BUTTON) && IsNewGameSequence()))
+    else if (JOY_NEW(B_BUTTON))
+    {
+        // New game sequence: B backs out of the whole sequence instead of advancing
+        // to the settings menu. START is the confirm button there.
+        gTasks[taskId].func = IsNewGameSequence() ? Task_OptionMenuBackToTitle : Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(START_BUTTON) && IsNewGameSequence())
     {
         gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -701,7 +710,13 @@ static void Task_OptionMenuProcessInput_Pg2(u8 taskId)
         else if (gTasks[taskId].tMenuSelection == MENUITEM_PLAYER_COLORS)
             gTasks[taskId].func = Task_OptionMenuOpenPlayerColors;
     }
-    else if (JOY_NEW(B_BUTTON) || (JOY_NEW(START_BUTTON) && IsNewGameSequence()))
+    else if (JOY_NEW(B_BUTTON))
+    {
+        // New game sequence: B backs out of the whole sequence instead of advancing
+        // to the settings menu. START is the confirm button there.
+        gTasks[taskId].func = IsNewGameSequence() ? Task_OptionMenuBackToTitle : Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(START_BUTTON) && IsNewGameSequence())
     {
         gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -806,7 +821,13 @@ static void Task_OptionMenuProcessInput_Pg3(u8 taskId)
         if (gTasks[taskId].tMenuSelection == MENUITEM_CANCEL_PG3)
             gTasks[taskId].func = Task_OptionMenuSave;
     }
-    else if (JOY_NEW(B_BUTTON) || (JOY_NEW(START_BUTTON) && IsNewGameSequence()))
+    else if (JOY_NEW(B_BUTTON))
+    {
+        // New game sequence: B backs out of the whole sequence instead of advancing
+        // to the settings menu. START is the confirm button there.
+        gTasks[taskId].func = IsNewGameSequence() ? Task_OptionMenuBackToTitle : Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(START_BUTTON) && IsNewGameSequence())
     {
         gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -914,6 +935,24 @@ static void Task_OptionMenuSave(u8 taskId)
     CommitPendingOptionSettings(taskId);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
+}
+
+// B during the new game sequence: discard the pending option changes (the sequence is
+// being abandoned) and return to the title screen.
+static void Task_OptionMenuBackToTitle(u8 taskId)
+{
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+    gTasks[taskId].func = Task_OptionMenuFadeOutToTitle;
+}
+
+static void Task_OptionMenuFadeOutToTitle(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        DestroyTask(taskId);
+        FreeAllWindowBuffers();
+        SetMainCallback2(CB2_InitTitleScreen);
+    }
 }
 
 static void Task_OptionMenuFadeOut(u8 taskId)
