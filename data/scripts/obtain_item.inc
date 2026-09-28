@@ -25,6 +25,9 @@ EventScript_BufferPocketNameAndTryFanfare::
 	case POCKET_POKE_BALLS, EventScript_BufferPokeballsPocket
 	case POCKET_TM_HM,      EventScript_BufferTMHMsPocket
 	case POCKET_BERRIES,    EventScript_BufferBerriesPocket
+	case POCKET_MEGA_STONES, EventScript_BufferMegaStonesPocket
+	case POCKET_Z_CRYSTALS,  EventScript_BufferZCrystalsPocket
+	case POCKET_TERA_SHARDS, EventScript_BufferTeraShardsPocket
 	end
 
 EventScript_BufferItemsPocket::
@@ -49,6 +52,21 @@ EventScript_BufferTMHMsPocket::
 
 EventScript_BufferBerriesPocket::
 	bufferstdstring STR_VAR_3, STDSTRING_BERRIES
+	call_if_eq VAR_0x8007, TRUE, EventScript_PlayFanfareObtainedItem
+	return
+
+EventScript_BufferMegaStonesPocket::
+	bufferstdstring STR_VAR_3, STDSTRING_MEGA_STONES
+	call_if_eq VAR_0x8007, TRUE, EventScript_PlayFanfareObtainedItem
+	return
+
+EventScript_BufferZCrystalsPocket::
+	bufferstdstring STR_VAR_3, STDSTRING_Z_CRYSTALS
+	call_if_eq VAR_0x8007, TRUE, EventScript_PlayFanfareObtainedItem
+	return
+
+EventScript_BufferTeraShardsPocket::
+	bufferstdstring STR_VAR_3, STDSTRING_TERA_SHARDS
 	call_if_eq VAR_0x8007, TRUE, EventScript_PlayFanfareObtainedItem
 	return
 
@@ -297,6 +315,9 @@ EventScript_BufferPutAwayPocketName::
 	case POCKET_POKE_BALLS,  EventScript_BufferPutAwayPocketPokeBalls
 	case POCKET_TM_HM,     EventScript_BufferPutAwayPocketTMCase
 	case POCKET_BERRIES, EventScript_BufferPutAwayPocketBerryPouch
+	case POCKET_MEGA_STONES, EventScript_BufferPutAwayPocketMegaStones
+	case POCKET_Z_CRYSTALS, EventScript_BufferPutAwayPocketZCrystals
+	case POCKET_TERA_SHARDS, EventScript_BufferPutAwayPocketTeraShards
 	end
 
 EventScript_BufferPutAwayPocketItems::
@@ -317,6 +338,18 @@ EventScript_BufferPutAwayPocketTMCase::
 
 EventScript_BufferPutAwayPocketBerryPouch::
 	bufferstdstring STR_VAR_3, STDSTRING_BERRIES
+	return
+
+EventScript_BufferPutAwayPocketMegaStones::
+	bufferstdstring STR_VAR_3, STDSTRING_MEGA_STONES
+	return
+
+EventScript_BufferPutAwayPocketZCrystals::
+	bufferstdstring STR_VAR_3, STDSTRING_Z_CRYSTALS
+	return
+
+EventScript_BufferPutAwayPocketTeraShards::
+	bufferstdstring STR_VAR_3, STDSTRING_TERA_SHARDS
 	return
 
 EventScript_TryPickUpHiddenCoins::

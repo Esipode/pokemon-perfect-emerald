@@ -1335,6 +1335,9 @@ const u8 *const gStdStrings[] =
     [STDSTRING_VOLCANO_BADGE] = gText_Volcanobadge,
     [STDSTRING_EARTH_BADGE]   = gText_Earthbadge,
     [STDSTRING_COINS]         = COMPOUND_STRING("COINS"),
+    [STDSTRING_MEGA_STONES]   = COMPOUND_STRING("MEGA STONES"),
+    [STDSTRING_Z_CRYSTALS]    = COMPOUND_STRING("Z-CRYSTALS"),
+    [STDSTRING_TERA_SHARDS]   = COMPOUND_STRING("TERA SHARDS"),
 };
 
 static const u8 sLinkServicesMultichoiceIds[] =
