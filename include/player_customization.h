@@ -48,6 +48,12 @@ void Player_ClearColorSlot(u32 slot);
 const struct PlayerColorSlotInfo *PlayerCustomization_GetSlotInfo(u8 style, u8 gender, u8 slot);
 const struct PlayerColorGroupInfo *PlayerCustomization_GetGroupInfo(u8 style, u8 gender, enum PlayerColorRegion group);
 
+// Recolours `basePal`, any 16-colour palette that shares the player's
+// overworld index layout (the region map head icons do), with the player's
+// colour slots. NULL when no slot is customised; otherwise the same static
+// EWRAM buffer PlayerCustomization_GetOwPaletteOverride returns.
+const u16 *PlayerCustomization_GetOwLayoutPaletteOverride(const u16 *basePal);
+
 // Returns NULL unless paletteTag belongs to the player's own (style, gender)
 // and at least one slot is customised; otherwise returns a static EWRAM
 // u16[16] buffer holding the recoloured overworld palette. Callers must copy

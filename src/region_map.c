@@ -27,6 +27,7 @@
 #include "constants/heal_locations.h"
 #include "constants/rgb.h"
 #include "constants/weather.h"
+#include "player_customization.h"
 
 /*
  *  This file handles region maps generally, and the map used when selecting a fly destination.
@@ -1733,6 +1734,7 @@ static void UNUSED ClearUnkCursorSpriteData(void)
 void CreateRegionMapPlayerIcon(u16 tileTag, u16 paletteTag)
 {
     u8 spriteId;
+    const u16 *recolored;
     struct SpriteSheet sheet = {sRegionMapPlayerIcon_BrendanGfx, 0x80, tileTag};
     struct SpritePalette palette = {sRegionMapPlayerIcon_BrendanPal, paletteTag};
     struct SpriteTemplate template = {tileTag, paletteTag, &sRegionMapPlayerIconOam, sRegionMapPlayerIconAnimTable, NULL, gDummySpriteAffineAnimTable, SpriteCallbackDummy};
@@ -1742,21 +1744,29 @@ void CreateRegionMapPlayerIcon(u16 tileTag, u16 paletteTag)
         sRegionMap->playerIconSprite = NULL;
         return;
     }
-    if (IS_FRLG && gSaveBlock2Ptr->playerGender == FEMALE)
+    if (Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG)
     {
-        sheet.data = sRegionMapPlayerIcon_LeafGfx;
-        palette.data = sRegionMapPlayerIcon_LeafPal;
+        if (gSaveBlock2Ptr->playerGender == FEMALE)
+        {
+            sheet.data = sRegionMapPlayerIcon_LeafGfx;
+            palette.data = sRegionMapPlayerIcon_LeafPal;
+        }
+        else
+        {
+            sheet.data = sRegionMapPlayerIcon_RedGfx;
+            palette.data = sRegionMapPlayerIcon_RedPal;
+        }
     }
     else if (gSaveBlock2Ptr->playerGender == FEMALE)
     {
         sheet.data = sRegionMapPlayerIcon_MayGfx;
         palette.data = sRegionMapPlayerIcon_MayPal;
     }
-    else if (IS_FRLG)
-    {
-        sheet.data = sRegionMapPlayerIcon_RedGfx;
-        palette.data = sRegionMapPlayerIcon_RedPal;
-    }
+    // The icons share their overworld sprite's palette index layout, so the
+    // player's colour slots apply unchanged.
+    recolored = PlayerCustomization_GetOwLayoutPaletteOverride(palette.data);
+    if (recolored != NULL)
+        palette.data = recolored;
     LoadSpriteSheet(&sheet);
     LoadSpritePalette(&palette);
     spriteId = CreateSprite(&template, 0, 0, 1);

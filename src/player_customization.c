@@ -180,28 +180,36 @@ static const u16 *GetOwBasePalette(u8 style, u8 gender)
     return (gender == MALE) ? gObjectEventPal_Brendan : gObjectEventPal_May;
 }
 
+const u16 *PlayerCustomization_GetOwLayoutPaletteOverride(const u16 *basePal)
+{
+    u32 i;
+
+    if (PlayerCustomization_IsDefault())
+        return NULL;
+
+    for (i = 0; i < 16; i++)
+        sOwPaletteBuffer[i] = basePal[i];
+
+    ApplySlotsToPalette(sOwPaletteBuffer, Player_GetSpriteStyle(), gSaveBlock2Ptr->playerGender,
+                        PLAYER_PALETTE_ASSET_OW);
+    return sOwPaletteBuffer;
+}
+
 const u16 *PlayerCustomization_GetOwPaletteOverride(u16 paletteTag)
 {
     u8 style = Player_GetSpriteStyle();
     u8 gender = gSaveBlock2Ptr->playerGender;
     u16 expectedTag;
-    const u16 *basePal;
-    u32 i;
 
     if (style == PLAYER_SPRITE_STYLE_FRLG)
         expectedTag = (gender == MALE) ? OBJ_EVENT_PAL_TAG_PLAYER_RED : OBJ_EVENT_PAL_TAG_PLAYER_GREEN;
     else
         expectedTag = (gender == MALE) ? OBJ_EVENT_PAL_TAG_BRENDAN : OBJ_EVENT_PAL_TAG_MAY;
 
-    if (paletteTag != expectedTag || PlayerCustomization_IsDefault())
+    if (paletteTag != expectedTag)
         return NULL;
 
-    basePal = GetOwBasePalette(style, gender);
-    for (i = 0; i < 16; i++)
-        sOwPaletteBuffer[i] = basePal[i];
-
-    ApplySlotsToPalette(sOwPaletteBuffer, style, gender, PLAYER_PALETTE_ASSET_OW);
-    return sOwPaletteBuffer;
+    return PlayerCustomization_GetOwLayoutPaletteOverride(GetOwBasePalette(style, gender));
 }
 
 u32 PlayerCustomization_GetTrainerPicId(u8 style, u8 gender)
