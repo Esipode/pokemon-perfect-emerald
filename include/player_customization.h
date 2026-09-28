@@ -7,11 +7,15 @@
 #define PLAYER_COLOR_SHADE_MIN -3
 #define PLAYER_COLOR_SHADE_MAX  3
 
+// Slot id meaning "this slot has no master"; see PlayerColorSlotInfo.follows.
+#define PLAYER_COLOR_SLOT_NONE 0xFF
+
 // Per-(style, gender) slot table, one entry per storage slot in
 // gSaveBlock2Ptr->playerColorSlots[]. A slot is one logical colour -- it may
-// cover several palette indices that share a paint (e.g. a shading ramp),
-// per Appendix A of the plan doc. name == NULL means the slot is unused for
-// this (style, gender) and is hidden from the menu.
+// cover several palette indices that share a paint (e.g. a shading ramp).
+// name == NULL hides the slot from the menu; it then paints nothing unless
+// `follows` names a master slot, in which case it tracks that master's HSV
+// delta from its ROM colour, so a shading ramp stays consistent.
 struct PlayerColorSlotInfo
 {
     const u8 *name;
@@ -19,11 +23,14 @@ struct PlayerColorSlotInfo
     const u8 *trainerIndices;
     u8 numOwIndices;
     u8 numTrainerIndices;
+    u8 follows;
 };
 
 // A group bundles slot ids under one of the PLAYER_COLOR_REGION_* names, so
 // the menu can still offer a "hue-rotate this whole group" action alongside
-// per-slot editing. Slot ids index into sPlayerColorSlots[style][gender][].
+// per-slot editing. Slot ids index into sPlayerColorSlots[style][gender][]
+// and name visible slots only -- a hidden follower carries no choice of its
+// own. numSlots 0 means the region has no representative slot.
 struct PlayerColorGroupInfo
 {
     const u8 *name;

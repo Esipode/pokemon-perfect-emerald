@@ -151,25 +151,80 @@ u16 PlayerCustomization_HsvToRgb(u8 h, u8 s, u8 v)
 
 enum PlayerPaletteAsset { PLAYER_PALETTE_ASSET_OW, PLAYER_PALETTE_ASSET_TRAINER };
 
-// For each slot with a nonzero stored value, writes it into every index that slot owns for `asset`.
-// No HSV maths -- that only runs in the menu's editing model now.
-static void ApplySlotsToPalette(u16 *pal, u8 style, u8 gender, enum PlayerPaletteAsset asset)
+static u16 ShiftColorByHsvDelta(u16 color, s16 dh, s16 ds, s16 dv)
+{
+    u8 h, sat, v;
+    s16 ns, nv;
+
+    PlayerCustomization_RgbToHsv(color, &h, &sat, &v);
+    h += (u8)dh;
+    ns = (s16)sat + ds;
+    nv = (s16)v + dv;
+    if (ns < 0)
+        ns = 0;
+    else if (ns > 255)
+        ns = 255;
+    if (nv < 0)
+        nv = 0;
+    else if (nv > 255)
+        nv = 255;
+    return PlayerCustomization_HsvToRgb(h, (u8)ns, (u8)nv);
+}
+
+// HSV delta between master's chosen colour and master's ROM colour. FALSE when
+// master is unset, so its followers keep their ROM colours.
+static bool32 GetMasterHsvDelta(u8 style, u8 gender, const u16 *choices, u8 master,
+                                s16 *dh, s16 *ds, s16 *dv)
+{
+    u16 value = choices[master];
+    u8 h1, s1, v1, h2, s2, v2;
+
+    if (value == 0)
+        return FALSE;
+
+    PlayerCustomization_RgbToHsv(value & ~PLAYER_COLOR_SET, &h1, &s1, &v1);
+    PlayerCustomization_RgbToHsv(PlayerCustomization_GetSlotRomColor(style, gender, master), &h2, &s2, &v2);
+    *dh = (s16)h1 - (s16)h2;
+    *ds = (s16)s1 - (s16)s2;
+    *dv = (s16)v1 - (s16)v2;
+    return TRUE;
+}
+
+// Paints `choices` into `pal`, which must already hold the asset's ROM palette.
+// A named slot with a nonzero choice writes that colour flat into every index it
+// owns. A follower slot (no row of its own) instead shifts each index it owns by
+// its master's HSV delta, so ramps and outlines move with the colour they shade.
+// Each index belongs to exactly one slot, so followers still read ROM values.
+static void ApplySlotsToPalette(u16 *pal, u8 style, u8 gender, const u16 *choices,
+                                enum PlayerPaletteAsset asset)
 {
     u32 slot;
 
     for (slot = 0; slot < PLAYER_COLOR_SLOT_COUNT; slot++)
     {
         const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][slot];
-        u16 value = gSaveBlock2Ptr->playerColorSlots[slot];
         const u8 *indices = (asset == PLAYER_PALETTE_ASSET_TRAINER) ? info->trainerIndices : info->owIndices;
         u8 count = (asset == PLAYER_PALETTE_ASSET_TRAINER) ? info->numTrainerIndices : info->numOwIndices;
+        s16 dh, ds, dv;
         u32 i;
 
-        if (info->name == NULL || value == 0)
+        if (count == 0)
             continue;
 
-        for (i = 0; i < count; i++)
-            pal[indices[i]] = value & ~PLAYER_COLOR_SET;
+        if (info->follows != PLAYER_COLOR_SLOT_NONE)
+        {
+            if (!GetMasterHsvDelta(style, gender, choices, info->follows, &dh, &ds, &dv))
+                continue;
+            for (i = 0; i < count; i++)
+                pal[indices[i]] = ShiftColorByHsvDelta(pal[indices[i]], dh, ds, dv);
+        }
+        else
+        {
+            if (info->name == NULL || choices[slot] == 0)
+                continue;
+            for (i = 0; i < count; i++)
+                pal[indices[i]] = choices[slot] & ~PLAYER_COLOR_SET;
+        }
     }
 }
 
@@ -191,7 +246,7 @@ const u16 *PlayerCustomization_GetOwLayoutPaletteOverride(const u16 *basePal)
         sOwPaletteBuffer[i] = basePal[i];
 
     ApplySlotsToPalette(sOwPaletteBuffer, Player_GetSpriteStyle(), gSaveBlock2Ptr->playerGender,
-                        PLAYER_PALETTE_ASSET_OW);
+                        gSaveBlock2Ptr->playerColorSlots, PLAYER_PALETTE_ASSET_OW);
     return sOwPaletteBuffer;
 }
 
@@ -249,7 +304,7 @@ static const u16 *GetTrainerPaletteOverride(u32 trainerPicId, bool32 isBackPic)
     for (i = 0; i < 16; i++)
         sTrainerPaletteBuffer[i] = basePal[i];
 
-    ApplySlotsToPalette(sTrainerPaletteBuffer, style, gender, asset);
+    ApplySlotsToPalette(sTrainerPaletteBuffer, style, gender, gSaveBlock2Ptr->playerColorSlots, asset);
     return sTrainerPaletteBuffer;
 }
 
@@ -391,18 +446,7 @@ void PlayerCustomization_BuildPreviewPalette(u8 style, u8 gender, const u16 *cho
     for (i = 0; i < 16; i++)
         dest[i] = basePal[i];
 
-    for (i = 0; i < PLAYER_COLOR_SLOT_COUNT; i++)
-    {
-        const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][i];
-        u16 value = choices[i];
-        u32 j;
-
-        if (info->name == NULL || value == 0)
-            continue;
-
-        for (j = 0; j < info->numOwIndices; j++)
-            dest[info->owIndices[j]] = value & ~PLAYER_COLOR_SET;
-    }
+    ApplySlotsToPalette(dest, style, gender, choices, PLAYER_PALETTE_ASSET_OW);
 }
 
 // Same as PlayerCustomization_BuildPreviewPalette, but against the trainer front
@@ -416,16 +460,5 @@ void PlayerCustomization_BuildTrainerPreviewPalette(u8 style, u8 gender, const u
     for (i = 0; i < 16; i++)
         dest[i] = basePal[i];
 
-    for (i = 0; i < PLAYER_COLOR_SLOT_COUNT; i++)
-    {
-        const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][i];
-        u16 value = choices[i];
-        u32 j;
-
-        if (info->name == NULL || value == 0)
-            continue;
-
-        for (j = 0; j < info->numTrainerIndices; j++)
-            dest[info->trainerIndices[j]] = value & ~PLAYER_COLOR_SET;
-    }
+    ApplySlotsToPalette(dest, style, gender, choices, PLAYER_PALETTE_ASSET_TRAINER);
 }
