@@ -1,5 +1,7 @@
 ## Enamorus — The Love-Hate Pokémon
 
+### Location: Safari Zone - Friday nightsm after Landorus, Thundurus and Tornadus are caught
+
 Every Pokémon you send out can fall under Enamorus's spell. Let it happen and your mon gets tougher
 but less reliable. Fight through it and you can turn the charm against Enamorus itself.
 
