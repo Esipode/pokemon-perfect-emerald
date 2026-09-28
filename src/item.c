@@ -104,6 +104,9 @@ struct ItemSlot NONNULL BagPocket_GetSlotData(struct BagPocket *pocket, u32 pock
     case POCKET_POKE_BALLS:
     case POCKET_TM_HM:
     case POCKET_BERRIES:
+    case POCKET_MEGA_STONES:
+    case POCKET_Z_CRYSTALS:
+    case POCKET_TERA_SHARDS:
         return BagPocket_GetSlotDataGeneric(pocket, pocketPos);
     case POCKET_DUMMY:
         return BagPocket_GetSlotDataPC(pocket, pocketPos);
@@ -127,6 +130,9 @@ void NONNULL BagPocket_SetSlotData(struct BagPocket *pocket, u32 pocketPos, stru
     case POCKET_POKE_BALLS:
     case POCKET_TM_HM:
     case POCKET_BERRIES:
+    case POCKET_MEGA_STONES:
+    case POCKET_Z_CRYSTALS:
+    case POCKET_TERA_SHARDS:
         BagPocket_SetSlotDataGeneric(pocket, pocketPos, newSlot);
         break;
     case POCKET_DUMMY:
@@ -141,6 +147,23 @@ void ApplyNewEncryptionKeyToBagItems(u32 newKey)
     enum Item item;
     for (pocketId = 0; pocketId < POCKETS_COUNT; pocketId++)
     {
+        for (item = ITEM_NONE; item < gBagPockets[pocketId].capacity; item++)
+            ApplyNewEncryptionKeyToHword(&(gBagPockets[pocketId].itemSlots[item].quantity), newKey);
+    }
+}
+
+// The gimmick pockets (Mega Stones/Z-Crystals/Tera Shards) live in SaveBlock3, not struct Bag,
+// so they are not part of the link/cable-club bag snapshot. Re-keying them here would XOR their
+// quantities with oldKey ^ newKey and corrupt them, since they were never re-keyed on save.
+void ApplyNewEncryptionKeyToPlayerBagItems(u32 newKey)
+{
+    enum Pocket pocketId;
+    enum Item item;
+    for (pocketId = 0; pocketId < POCKETS_COUNT; pocketId++)
+    {
+        if (pocketId == POCKET_MEGA_STONES || pocketId == POCKET_Z_CRYSTALS || pocketId == POCKET_TERA_SHARDS)
+            continue;
+
         for (item = ITEM_NONE; item < gBagPockets[pocketId].capacity; item++)
             ApplyNewEncryptionKeyToHword(&(gBagPockets[pocketId].itemSlots[item].quantity), newKey);
     }
@@ -167,6 +190,18 @@ void SetBagItemsPointers(void)
     gBagPockets[POCKET_BERRIES].itemSlots = gSaveBlock1Ptr->bag.berries;
     gBagPockets[POCKET_BERRIES].capacity = BAG_BERRIES_COUNT;
     gBagPockets[POCKET_BERRIES].id = POCKET_BERRIES;
+
+    gBagPockets[POCKET_MEGA_STONES].itemSlots = gSaveBlock3Ptr->gimmickBag.megaStones;
+    gBagPockets[POCKET_MEGA_STONES].capacity = BAG_MEGA_STONES_COUNT;
+    gBagPockets[POCKET_MEGA_STONES].id = POCKET_MEGA_STONES;
+
+    gBagPockets[POCKET_Z_CRYSTALS].itemSlots = gSaveBlock3Ptr->gimmickBag.zCrystals;
+    gBagPockets[POCKET_Z_CRYSTALS].capacity = BAG_Z_CRYSTALS_COUNT;
+    gBagPockets[POCKET_Z_CRYSTALS].id = POCKET_Z_CRYSTALS;
+
+    gBagPockets[POCKET_TERA_SHARDS].itemSlots = gSaveBlock3Ptr->gimmickBag.teraShards;
+    gBagPockets[POCKET_TERA_SHARDS].capacity = BAG_TERA_SHARDS_COUNT;
+    gBagPockets[POCKET_TERA_SHARDS].id = POCKET_TERA_SHARDS;
 }
 
 u8 *CopyItemName(enum Item itemId, u8 *dst)
@@ -569,6 +604,8 @@ void ClearBag(void)
     // multiple of 32 rounds up and zeroes what follows bag in SaveBlock1 (nuzlockeModeEnabled,
     // among others). sizeof(struct Bag) isn't guaranteed to be one, so use the byte-exact fill.
     CpuFill32(0, &gSaveBlock1Ptr->bag, sizeof(struct Bag));
+    // Same byte-exact fill reasoning as above; gimmickBag is the last member of SaveBlock3.
+    CpuFill32(0, &gSaveBlock3Ptr->gimmickBag, sizeof(struct GimmickBag));
 }
 
 static inline u16 NONNULL BagPocket_CountTotalItemQuantity(struct BagPocket *pocket, enum Item itemId)

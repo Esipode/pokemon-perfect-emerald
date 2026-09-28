@@ -258,6 +258,19 @@ struct NPCFollower
 #include "overworld_overlay.h"
 #define ITEM_FLAGS_COUNT ((ITEMS_COUNT / 8) + ((ITEMS_COUNT % 8) ? 1 : 0))
 
+struct ItemSlot
+{
+    enum Item itemId;
+    u16 quantity;
+};
+
+struct GimmickBag
+{
+    struct ItemSlot megaStones[BAG_MEGA_STONES_COUNT];
+    struct ItemSlot zCrystals[BAG_Z_CRYSTALS_COUNT];
+    struct ItemSlot teraShards[BAG_TERA_SHARDS_COUNT];
+};
+
 struct SaveBlock3
 {
 #if OW_USE_FAKE_RTC
@@ -277,7 +290,8 @@ struct SaveBlock3
     u8 apricornTrees[NUM_APRICORN_TREE_BYTES];
 #endif
     struct OverlaySave overlaySave;
-}; /* max size 1624 bytes */
+    struct GimmickBag gimmickBag;
+}; /* size checked against T_SAVEBLOCK3_SIZE, test/save.c */
 
 extern struct SaveBlock3 *gSaveBlock3Ptr;
 
@@ -911,12 +925,6 @@ struct WarpData
     s8 warpId;
     //u8 padding;
     s16 x, y;
-};
-
-struct ItemSlot
-{
-    enum Item itemId;
-    u16 quantity;
 };
 
 struct Pokeblock

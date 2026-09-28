@@ -29,6 +29,12 @@
 //   struct InfinityCaveStash appended (186 bytes: 46 ItemSlots of 4 plus one bool8,
 //     padded to the struct's 2-byte alignment): 7554 + 186 = 7740, a multiple of 4.
 //
+// SaveBlock3 (ends at 1576, then 2216):
+//   struct GimmickBag appended (160 ItemSlots of 4 bytes, no internal padding since
+//     ItemSlot is 4-byte aligned and all three arrays are ItemSlot[]): 640 bytes.
+//     1576 + 640 = 2216. Hand-calculated -- confirm against the real build error if this
+//     mismatches.
+//
 // SaveBlock2 (starts at 3008, ends at 744):
 //   FREE_CONTESTS: contestLinkResults[5][4] (40) -> 2968.
 //   FREE_BATTLE_FRONTIER: struct BattleFrontier (~2172), apprentices[4] (272) and
@@ -56,7 +62,7 @@
 //     4-aligned only when N is even; 16 and 28 both are.
 #define T_SAVEBLOCK1_SIZE 7740
 #define T_SAVEBLOCK2_SIZE 776
-#define T_SAVEBLOCK3_SIZE 1576
+#define T_SAVEBLOCK3_SIZE 2216
 #define T_POKEMONSTORAGE_SIZE 67900
 
 TEST("SaveBlock1 is backwards compatible")

@@ -292,7 +292,9 @@ void SavePlayerBag(void)
 
     encryptionKeyBackup = gSaveBlock2Ptr->encryptionKey;
     gSaveBlock2Ptr->encryptionKey = gLastEncryptionKey;
-    ApplyNewEncryptionKeyToBagItems(encryptionKeyBackup);
+    // Gimmick pockets are not part of this snapshot (see ApplyNewEncryptionKeyToPlayerBagItems); a
+    // full re-key here would corrupt them since they were never re-keyed when the snapshot was saved.
+    ApplyNewEncryptionKeyToPlayerBagItems(encryptionKeyBackup);
     gSaveBlock2Ptr->encryptionKey = encryptionKeyBackup; // updated twice?
 }
 
