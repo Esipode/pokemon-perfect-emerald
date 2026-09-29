@@ -12,6 +12,28 @@
 	- Player can earn achievements by completing certain tasks (Total: 250 Achievements)
 	- Achievements persist across all playthroughs (Even if you start a new game)
 	- Once the first playthrough is completed (Elite 4 defeated), the player can spend points earned from achievements on "boosts". These are bonuses/tweaks than can be used on any subsequent playthroughs.
+- Upgraded Trainer Card
+	- Card earns stars and changes colour as you complete achievements: Bronze (50), Copper (100), Silver (150), Gold (200), and Diamond (all achievements)
+	- Back of the card tracks stats across all playthroughs: achievements earned, achievement points, trainer battles, shinies found, best win streak, and runs cleared (Nuzlocke, Randomizer, and NG+)
+- Legendary Boss Encounters
+	- New "Encounters" system extends the battle engine for scripted battles
+	- Encounters react to battle events (battle start, turn start/end, after a move, switch-ins, faints) to run custom scripts: multi-phase fights, form changes, damage reduction, stat changes, weather/terrain control, and more
+	- Legendary Pokémon from all generations are now hand-crafted boss battles, each with their own unique mechanics to learn in order to defeat and capture them
+	- Bosses are scaled to your level cap, and Poké Balls won't work until you've worn them down to their final phase
+	- Some legendaries only appear under certain conditions (weather, time of day, day of the week, etc.)
+- Infinity Cave (Endgame rogue-lite mode)
+	- Unlocked after becoming Champion, via a new cave entrance in Ever Grande City
+	- An endless descent through procedurally generated cave floors, filled with trainers
+	- Before each floor, choose 1 of multiple paths, each showing its room type and modifiers
+		- Modifiers can change a room's rules, such as mono-type trainers, weather, terrain, double battles, extra trainers, higher levels, Mega/Z-Move/Tera trainers, no items in battle, etc.
+	- Your bag is set aside for the run, so you start each descent with an empty bag and build it up as you go
+	- Opponents scale with your level cap and get stronger (and have larger parties) the deeper you go
+	- Losing a battle ends the run and returns you to the entrance (except in Nuzlocke Mode)
+	- Rewards
+		- Winning battles earns "Shards" (more for harder rooms and modifiers), which are kept even if you lose the run
+		- Leftover items at the end of a run are traded in for Shards
+		- Shards can be spent at the entrance shop on rare items (Better stock unlocks the deeper you've reached)
+		- Reaching depth milestones awards rare items once per save
 - Difficulty Settings (Easy/Normal/Hard)
 	- Easy: Trainers use lower level Pokémon and have simpler AI
 	- Normal: Intended experience, simple basic trainer AI for random trainers and more complex AI for story battles
@@ -25,8 +47,9 @@
 	- Doubled Pokémon PC space, from 420 slots to 840. Not enough for a living dex, but enough to have every final evolution for every Pokémon in gens 1-9, with room for at least the next 2 generations (10 & 11, possibly 12).
 	- When starting a new playthrough, you can carry your Pokemon over to the next playthrough, where they will not be withdrawable until you complete the Elite 4 in the new playthrough.
 - Player customization
-	- You can customize the colours of various aspects of your player character
-	- This is visible in the overworld, as well as in battles
+	- Choose between the Hoenn (Brendan/May) and Kanto (Red/Leaf) player styles
+	- You can customize the colours of various aspects of your player character (hair, hat, shirt, bag, etc.) by adjusting their hue, saturation, and brightness
+	- This is visible in the overworld, in battles, and on your trainer card
 - Revamped trainer AI
 	- By default trainers now don't pick moves with no advantage to them
 	- Smarter trainer options for story encounters that are more aware of the current state of the battle and their options
@@ -89,9 +112,16 @@
 	- Available from pause menu after receiving Pokédex
 	- Allows target-farming specific Pokémon on a route for specific moves/abilities
 	- Increases shiny encounter chance as chain increases (Max chain = 250)
-- In-Battle HP Display Customization
-	- The player can independently set how your team and your opponent's team HP is displayed in battle
-	- Options include: `Bar + Number` (Default), `Bar + %`, `Only Bar`, `Only %`, `only Number`, or `Hidden`
+- New Battle HP Box UI
+	- New sleek, minimal HP box style that also shows stat changes (Attack, Defense, Sp. Atk, Sp. Def, Speed) at a glance
+	- Customizable from the settings menu, with a live preview
+	- Your team's and your opponent's HP boxes are set independently
+	- Quick presets for each side: `Minimal`, `Standard`, or `Full`
+	- Background can be `Solid` or `None`
+	- the original HP box style can still be selected with `Classic` mode
+- Replaced the PokéNav with a dedicated Map
+	- Received from Mr. Stone in place of the PokéNav, and opened from the pause menu
+	- Once Fly is unlocked, press `R` on a city or town to fly there directly from the map
 - Add critical capture chance when throwing Pokéball
 - Add second item register slot (one for button push, and one for button hold)
 
