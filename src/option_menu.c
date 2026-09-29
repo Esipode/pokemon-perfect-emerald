@@ -610,6 +610,115 @@ static void CommitAllOptions(void)
     }
 }
 
+// Menu levels. Item indices are raw positions within the current level's list, hidden
+// items included:
+//   LEVEL_CATEGORIES: 0..CATEGORIES_COUNT-1 = categories, then RESET ALL, then
+//                     CANCEL (CONFIRM in the new-game sequence).
+//   LEVEL_SETTINGS:   0..optionCount-1 = the category's options, then RESET <CATEGORY>.
+// sCursor holds a raw item index; sScrollOffset is in visible-row units (hidden items
+// don't occupy a row).
+#define LEVEL_CATEGORIES 0
+#define LEVEL_SETTINGS   1
+
+#define CATEGORY_ITEM_RESET_ALL CATEGORIES_COUNT
+#define CATEGORY_ITEM_CANCEL    (CATEGORIES_COUNT + 1)
+
+EWRAM_DATA static u8 sMenuLevel = LEVEL_CATEGORIES;
+EWRAM_DATA static u8 sCurrentCategory = 0;
+EWRAM_DATA static u8 sCursor[2] = {0};
+EWRAM_DATA static u8 sScrollOffset[2] = {0};
+
+static u8 GetItemCount(void)
+{
+    if (sMenuLevel == LEVEL_CATEGORIES)
+        return CATEGORIES_COUNT + 2;
+    return sCategories[sCurrentCategory].optionCount + 1;
+}
+
+static bool8 IsItemHidden(u8 item)
+{
+    const struct OptionCategory *category;
+    bool8 (*isHidden)(void);
+
+    if (sMenuLevel != LEVEL_SETTINGS)
+        return FALSE;
+    category = &sCategories[sCurrentCategory];
+    if (item >= category->optionCount)
+        return FALSE;
+    isHidden = sOptions[category->optionIds[item]].isHidden;
+    return isHidden != NULL && isHidden();
+}
+
+static u8 GetVisibleCount(void)
+{
+    u8 i, count = 0;
+    u8 total = GetItemCount();
+
+    for (i = 0; i < total; i++)
+    {
+        if (!IsItemHidden(i))
+            count++;
+    }
+    return count;
+}
+
+// Returns the raw item index of the nth visible row; 0 if n is out of range.
+static u8 GetNthVisibleItem(u8 n)
+{
+    u8 i;
+    u8 total = GetItemCount();
+
+    for (i = 0; i < total; i++)
+    {
+        if (IsItemHidden(i))
+            continue;
+        if (n == 0)
+            return i;
+        n--;
+    }
+    return 0;
+}
+
+// Returns the visible-row position of a raw item index (hidden items before it are skipped).
+static u8 GetVisibleIndexOf(u8 item)
+{
+    u8 i, row = 0;
+
+    for (i = 0; i < item; i++)
+    {
+        if (!IsItemHidden(i))
+            row++;
+    }
+    return row;
+}
+
+static void ClampScroll(void)
+{
+    u8 row = GetVisibleIndexOf(sCursor[sMenuLevel]);
+    u8 count = GetVisibleCount();
+    u8 maxOffset = count > VISIBLE_ROWS ? count - VISIBLE_ROWS : 0;
+    u8 *offset = &sScrollOffset[sMenuLevel];
+
+    if (row < *offset)
+        *offset = row;
+    else if (row > *offset + VISIBLE_ROWS - 1)
+        *offset = row - (VISIBLE_ROWS - 1);
+    if (*offset > maxOffset)
+        *offset = maxOffset;
+}
+
+static UNUSED void MoveCursor(s8 delta)
+{
+    s16 row = GetVisibleIndexOf(sCursor[sMenuLevel]);
+    s16 count = GetVisibleCount();
+
+    row = (row + delta) % count;
+    if (row < 0)
+        row += count;
+    sCursor[sMenuLevel] = GetNthVisibleItem(row);
+    ClampScroll();
+}
+
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
 {
     [WIN_HEADER] = {
