@@ -159,3 +159,49 @@ u32 HealthboxOptions_GetHpValue(u32 side)
     HealthboxOptions_Get(&o);
     return (side == HB_SIDE_PLAYER) ? o.playerHpValue : o.foeHpValue;
 }
+
+static void SetFoeToggles(struct HealthboxOptions *o, bool32 nick, bool32 level, bool32 bar, u32 value,
+                          bool32 status, bool32 caught, bool32 types, bool32 stages)
+{
+    o->foeNick = nick;
+    o->foeLevel = level;
+    o->foeStatus = status;
+    o->foeCaught = caught;
+    o->foeTypes = types;
+    o->foeStatStages = stages;
+    HealthboxOptions_SetHpToggles(o, HB_SIDE_FOE, bar, value);
+}
+
+void HealthboxOptions_ApplyFoePreset(struct HealthboxOptions *options, u32 preset)
+{
+    switch (preset)
+    {
+    case HB_FOE_PRESET_MINIMAL:
+        SetFoeToggles(options, FALSE, FALSE, TRUE, HB_HPVAL_NONE, FALSE, FALSE, FALSE, FALSE);
+        break;
+    case HB_FOE_PRESET_STANDARD:
+        SetFoeToggles(options, TRUE, TRUE, TRUE, HB_HPVAL_NONE, TRUE, TRUE, FALSE, FALSE);
+        break;
+    case HB_FOE_PRESET_FULL:
+        SetFoeToggles(options, TRUE, TRUE, TRUE, HB_HPVAL_PERCENT, TRUE, TRUE, TRUE, TRUE);
+        break;
+    }
+}
+
+u32 HealthboxOptions_GetFoePreset(const struct HealthboxOptions *options)
+{
+    u32 preset;
+
+    for (preset = 0; preset < HB_FOE_PRESET_CUSTOM; preset++)
+    {
+        struct HealthboxOptions probe = *options;
+
+        HealthboxOptions_ApplyFoePreset(&probe, preset);
+        if (probe.foeNick == options->foeNick && probe.foeLevel == options->foeLevel
+         && probe.foeHpBar == options->foeHpBar && probe.foeHpValue == options->foeHpValue
+         && probe.foeStatus == options->foeStatus && probe.foeCaught == options->foeCaught
+         && probe.foeTypes == options->foeTypes && probe.foeStatStages == options->foeStatStages)
+            return preset;
+    }
+    return HB_FOE_PRESET_CUSTOM;
+}

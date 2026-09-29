@@ -36,7 +36,7 @@ enum
 {
     ROW_STYLE,
     ROW_BACKGROUND,
-    ROW_FOE_PRESET, // Placeholder until the preset lands.
+    ROW_FOE_PRESET, // Derived from the foe toggles; not stored.
     ROW_NAME,
     ROW_LEVEL,
     ROW_HP_BAR,
@@ -154,6 +154,14 @@ static const u8 *const sBackgroundNames[] =
 {
     [HB_BG_SOLID] = COMPOUND_STRING("SOLID"),
     [HB_BG_NONE]  = COMPOUND_STRING("NONE"),
+};
+
+static const u8 *const sFoePresetNames[HB_FOE_PRESET_COUNT] =
+{
+    [HB_FOE_PRESET_MINIMAL]  = COMPOUND_STRING("MINIMAL"),
+    [HB_FOE_PRESET_STANDARD] = COMPOUND_STRING("STANDARD"),
+    [HB_FOE_PRESET_FULL]     = COMPOUND_STRING("FULL"),
+    [HB_FOE_PRESET_CUSTOM]   = COMPOUND_STRING("CUSTOM"),
 };
 
 static const u8 *const sHpValueNames[] =
@@ -287,8 +295,6 @@ static bool32 IsPerSideRow(u32 row)
 // Classic only honours HP BAR / HP VALUE; the rest are greyed out.
 static bool32 IsRowActive(u32 row)
 {
-    if (row == ROW_FOE_PRESET)
-        return FALSE;
     if (row == ROW_STYLE || row == ROW_HP_BAR || row == ROW_HP_VALUE)
         return TRUE;
     return sSettings.options.style == HEALTHBOX_STYLE_NEW;
@@ -308,7 +314,8 @@ static u32 GetValueCount(u32 row)
     switch (row)
     {
     case ROW_HP_VALUE:
-        return 3;
+    case ROW_FOE_PRESET:
+        return 3; // CUSTOM is display only.
     default:
         return 2;
     }
@@ -323,6 +330,7 @@ static u32 GetValue(u32 row, u32 side)
     {
     case ROW_STYLE:       return o->style;
     case ROW_BACKGROUND:  return o->background;
+    case ROW_FOE_PRESET:  return HealthboxOptions_GetFoePreset(o);
     case ROW_NAME:        return player ? o->playerNick : o->foeNick;
     case ROW_LEVEL:       return player ? o->playerLevel : o->foeLevel;
     case ROW_HP_BAR:      return player ? o->playerHpBar : o->foeHpBar;
@@ -345,6 +353,7 @@ static void SetValue(u32 row, u32 side, u32 value)
     {
     case ROW_STYLE:       o->style = value; break;
     case ROW_BACKGROUND:  o->background = value; break;
+    case ROW_FOE_PRESET:  HealthboxOptions_ApplyFoePreset(o, value); break;
     case ROW_NAME:        if (player) o->playerNick = value; else o->foeNick = value; break;
     case ROW_LEVEL:       if (player) o->playerLevel = value; else o->foeLevel = value; break;
     case ROW_HP_BAR:      if (player) o->playerHpBar = value; else o->foeHpBar = value; break;
@@ -364,6 +373,7 @@ static const u8 *GetValueText(u32 row, u32 value)
     case ROW_STYLE:      return sStyleNames[value];
     case ROW_BACKGROUND: return sBackgroundNames[value];
     case ROW_HP_VALUE:   return sHpValueNames[value];
+    case ROW_FOE_PRESET: return sFoePresetNames[value];
     default:             return sOnOffNames[value];
     }
 }
@@ -433,10 +443,6 @@ static void DrawList(void)
             DrawCell(row, HB_SIDE_PLAYER, COLUMN_YOU_X, y);
             DrawCell(row, HB_SIDE_FOE, COLUMN_FOE_X, y);
         }
-        else if (row == ROW_FOE_PRESET)
-        {
-            DrawCentred(WIN_LIST, sColorDisabled, COLUMN_SHARED_X, y, sText_Dash);
-        }
         else
         {
             DrawCell(row, HB_SIDE_PLAYER, COLUMN_SHARED_X, y);
@@ -485,7 +491,10 @@ static void ChangeValue(s32 dir)
 
     if (!IsRowActive(row) || !IsCellApplicable(row, sSettings.side))
         return;
-    SetValue(row, sSettings.side, (GetValue(row, sSettings.side) + count + dir) % count);
+    if (row == ROW_FOE_PRESET && GetValue(row, sSettings.side) == HB_FOE_PRESET_CUSTOM)
+        SetValue(row, sSettings.side, dir > 0 ? HB_FOE_PRESET_MINIMAL : HB_FOE_PRESET_FULL);
+    else
+        SetValue(row, sSettings.side, (GetValue(row, sSettings.side) + count + dir) % count);
 }
 
 static void DrawPreviewBox(const struct PreviewBox *box, const struct HealthboxResolvedOpts *opts, u32 slot)
@@ -516,7 +525,7 @@ static void DrawPreviewBox(const struct PreviewBox *box, const struct HealthboxR
         HealthboxRender_PrintText(sprites, layout, &rects[HB_RECT_HP_VALUE], text, TRUE, opts->background);
     }
     if (rects[HB_RECT_HP_BAR].w != 0)
-        HealthboxRender_DrawHpBar(sprites->bar, HB_HP_BAR_W * SAMPLE_HP / SAMPLE_MAX_HP, SAMPLE_HP_COLOUR);
+        HealthboxRender_DrawHpBar(sprites->bar, HB_HP_BAR_W * SAMPLE_HP / SAMPLE_MAX_HP, 0, SAMPLE_HP_COLOUR);
     if (rects[HB_RECT_EXP].w != 0)
         HealthboxRender_DrawExpBar(sprites, layout, &rects[HB_RECT_EXP], rects[HB_RECT_EXP].w / 2);
     if (rects[HB_RECT_STATUS].w != 0)

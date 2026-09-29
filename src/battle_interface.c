@@ -2431,11 +2431,31 @@ static void MoveBattleBarGraphically(enum BattlerId battler, u8 whichBar)
         if (Healthbox_IsNewStyle())
         {
             u32 fillPx = 0;
+            u32 trailPx = 0;
+            u32 colourLevel = barElementId == HEALTHBOX_GFX_HP_BAR_GREEN ? 0 : barElementId == HEALTHBOX_GFX_HP_BAR_YELLOW ? 1 : 2;
 
             for (i = 0; i < B_HEALTHBAR_PIXELS / 8; i++)
                 fillPx += array[i];
-            HealthboxBattle_DrawHpBar(gBattleSpritesDataPtr->battleBars[battler].healthboxSpriteId, fillPx,
-                                      barElementId == HEALTHBOX_GFX_HP_BAR_GREEN ? 0 : barElementId == HEALTHBOX_GFX_HP_BAR_YELLOW ? 1 : 2);
+            // While draining, the fill snaps to the target HP and the trail covers target to animated value.
+            if (B_HEALTHBOX_DAMAGE_TRAIL && gBattleSpritesDataPtr->battleBars[battler].receivedValue > 0)
+            {
+                s32 target = SubtractClamped(HP_EMPTY, gBattleSpritesDataPtr->battleBars[battler].maxValue,
+                                             gBattleSpritesDataPtr->battleBars[battler].oldValue,
+                                             gBattleSpritesDataPtr->battleBars[battler].receivedValue);
+                u32 targetLevel;
+                u32 targetPx = SAFE_DIV(target * B_HEALTHBAR_PIXELS, gBattleSpritesDataPtr->battleBars[battler].maxValue);
+
+                if (targetPx == 0 && target > 0)
+                    targetPx = 1;
+                if (targetPx < fillPx)
+                {
+                    trailPx = fillPx;
+                    fillPx = targetPx;
+                }
+                targetLevel = GetHPBarLevel(target, gBattleSpritesDataPtr->battleBars[battler].maxValue);
+                colourLevel = targetLevel == HP_BAR_RED ? 2 : targetLevel == HP_BAR_YELLOW ? 1 : 0;
+            }
+            HealthboxBattle_DrawHpBar(gBattleSpritesDataPtr->battleBars[battler].healthboxSpriteId, fillPx, trailPx, colourLevel);
             break;
         }
 

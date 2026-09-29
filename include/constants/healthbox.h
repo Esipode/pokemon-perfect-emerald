@@ -5,7 +5,7 @@
 #define HEALTHBOX_STYLE_NEW     1
 
 // Style used by saves that predate the healthbox options.
-#define HEALTHBOX_STYLE_DEFAULT HEALTHBOX_STYLE_CLASSIC
+#define HEALTHBOX_STYLE_DEFAULT HEALTHBOX_STYLE_NEW
 
 #define HB_HPVAL_NONE    0
 #define HB_HPVAL_NUMBERS 1
@@ -13,6 +13,16 @@
 
 #define HB_BG_SOLID 0
 #define HB_BG_NONE  1
+
+// Foe detail presets; CUSTOM means the foe toggles match none of the others.
+enum
+{
+    HB_FOE_PRESET_MINIMAL,
+    HB_FOE_PRESET_STANDARD,
+    HB_FOE_PRESET_FULL,
+    HB_FOE_PRESET_CUSTOM,
+    HB_FOE_PRESET_COUNT,
+};
 
 #define HB_SIDE_PLAYER 0
 #define HB_SIDE_FOE    1
@@ -37,6 +47,7 @@
 #define HB_HP_BAR_TILES (HB_HP_BAR_W / 8)
 #define HB_HP_BAR_ROW   2 // First bar row inside each 8x8 tile.
 #define HB_PAL_BAR_TROUGH 1
+#define HB_PAL_BAR_TRAIL  2 // Damage trail.
 #define HB_BAR_DATA6_NEW  3 // Bar sprite follows the box main sprite's centre.
 
 // Status colours; sStatusIconColors in battle_interface.c is indexed by these.

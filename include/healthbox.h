@@ -4,8 +4,6 @@
 #include "global.h"
 #include "constants/healthbox.h"
 
-// TRUE forces the New style everywhere it is allowed, ignoring the saved option.
-#define HEALTHBOX_DEV_FORCE_NEW FALSE
 #define HB_HP_TEXT_LEN 12
 
 struct Pokemon;
@@ -22,6 +20,10 @@ u32 HealthboxOptions_GetStyle(void);
 u32 HealthboxOptions_GetBackground(void);
 bool32 HealthboxOptions_Shows(u32 side, enum HealthboxElement elem);
 u32 HealthboxOptions_GetHpValue(u32 side);
+
+// Foe detail preset (HB_FOE_PRESET_*) derived from the foe toggles; applying writes them.
+u32 HealthboxOptions_GetFoePreset(const struct HealthboxOptions *options);
+void HealthboxOptions_ApplyFoePreset(struct HealthboxOptions *options, u32 preset);
 
 // Classic HP display mapping (OPTIONS_HP_DISPLAY_*) <-> per-side bar/value toggles.
 u32 HealthboxOptions_ModeFromToggles(bool32 bar, u32 value);
@@ -115,7 +117,8 @@ void HealthboxRender_DrawStatusPill(const struct HealthboxSprites *sprites, cons
 void HealthboxRender_DrawStatStrip(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                    const struct HealthboxRect *rect, const u8 stages[5], u32 background);
 // colourLevel: 0 green, 1 yellow, 2 red.
-void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel);
+// trailPx is the end of the damage trail; values <= fillPx draw no trail.
+void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 trailPx, u32 colourLevel);
 
 // Full-screen settings screen for the healthbox options. The caller sets gMain.savedCallback to the
 // return screen before switching to it; changes are committed on A, B or START.
@@ -138,7 +141,7 @@ s32 HealthboxBattle_GetCentreShift(u32 battler);
 bool32 HealthboxBattle_HasHpBar(u32 battler);
 bool32 HealthboxBattle_HasCaughtIcons(u32 battler);
 const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler);
-void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 colourLevel);
+void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 trailPx, u32 colourLevel);
 void HealthboxBattle_DrawExpBar(u8 healthboxSpriteId, u32 fillPx);
 // Redraws the stat strip when the battler's stages changed; called every frame by the bar sprite.
 void HealthboxBattle_PollStatStrip(u8 healthboxSpriteId);

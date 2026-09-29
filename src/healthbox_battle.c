@@ -36,7 +36,7 @@ bool32 Healthbox_IsNewStyle(void)
 {
     if (gBattleTypeFlags & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_FIRST_BATTLE | BATTLE_TYPE_CATCH_TUTORIAL))
         return FALSE;
-    return HEALTHBOX_DEV_FORCE_NEW || HealthboxOptions_GetStyle() == HEALTHBOX_STYLE_NEW;
+    return HealthboxOptions_GetStyle() == HEALTHBOX_STYLE_NEW;
 }
 
 void HealthboxBattle_LoadPalette(void)
@@ -258,9 +258,9 @@ void HealthboxBattle_DrawHpValue(u8 healthboxSpriteId, s16 currHp, s16 maxHp)
     HealthboxRender_PrintText(&sprites, layout, &layout->rects[HB_RECT_HP_VALUE], text, TRUE, HealthboxOptions_GetBackground());
 }
 
-void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 colourLevel)
+void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 trailPx, u32 colourLevel)
 {
-    HealthboxRender_DrawHpBar(gSprites[healthboxSpriteId].data[5], fillPx, colourLevel);
+    HealthboxRender_DrawHpBar(gSprites[healthboxSpriteId].data[5], fillPx, trailPx, colourLevel);
 }
 
 void HealthboxBattle_DrawExpBar(u8 healthboxSpriteId, u32 fillPx)

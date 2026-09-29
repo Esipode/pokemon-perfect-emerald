@@ -269,7 +269,7 @@ void HealthboxRender_DrawStatStrip(const struct HealthboxSprites *sprites, const
     }
 }
 
-void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel)
+void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 trailPx, u32 colourLevel)
 {
     static const u8 sFillPal[][2] = { {10, 11}, {12, 13}, {14, 15} };
     u32 tile, row, px;
@@ -294,6 +294,8 @@ void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel)
                     continue; // rounded ends
                 if (x < fillPx)
                     idx = sFillPal[colourLevel][row < HB_HP_BAR_H / 2 ? 0 : 1];
+                else if (x < trailPx)
+                    idx = HB_PAL_BAR_TRAIL;
                 else
                     idx = HB_PAL_BAR_TROUGH;
                 data[row + HB_HP_BAR_ROW] |= idx << (px * 4);

@@ -265,3 +265,20 @@ TEST("(Healthbox) Stat signature differs per slot and per stage")
     EXPECT_NE(Healthbox_PackStages(b), Healthbox_PackStages(c));
     EXPECT_EQ(Healthbox_PackStages(a), Healthbox_PackStages(a));
 }
+
+TEST("(Healthbox) Foe presets round trip and unmatched toggles read as custom")
+{
+    struct HealthboxOptions o;
+    u32 preset;
+
+    ClearHealthboxSave();
+    HealthboxOptions_Get(&o);
+    for (preset = HB_FOE_PRESET_MINIMAL; preset < HB_FOE_PRESET_CUSTOM; preset++)
+    {
+        HealthboxOptions_ApplyFoePreset(&o, preset);
+        EXPECT_EQ(HealthboxOptions_GetFoePreset(&o), preset);
+    }
+    HealthboxOptions_ApplyFoePreset(&o, HB_FOE_PRESET_STANDARD);
+    o.foeTypes = TRUE;
+    EXPECT_EQ(HealthboxOptions_GetFoePreset(&o), HB_FOE_PRESET_CUSTOM);
+}

@@ -345,6 +345,7 @@
 #define B_FAST_INTRO_PKMN_TEXT              TRUE       // If set to TRUE, battle intro text prints at the same time as the animation of Pokémon, as opposing to waiting for the animation to end.
 #define B_FAST_INTRO_NO_SLIDE               TRUE       // If set to TRUE, the slide animation that happens at the beginning of battles is skipped.
 #define B_FAST_HP_DRAIN                     TRUE       // If set to TRUE, HP bars will move faster.
+#define B_HEALTHBOX_DAMAGE_TRAIL            TRUE       // If set to TRUE, the New healthbox HP bar shows a white trail from the new HP to the draining value.
 #define B_FAST_EXP_GROW                     TRUE       // If set to TRUE, EXP bars will move faster.
 #define B_SHOW_TARGETS                      TRUE       // If set to TRUE, all available targets will be shown before selecting a move in Double Battles.
 #define B_SHOW_CATEGORY_ICON                TRUE       // If set to TRUE, an icon in the summary and move relearner will show a move's category.
