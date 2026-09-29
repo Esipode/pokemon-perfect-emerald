@@ -272,6 +272,228 @@ static const u8 *const sOptionMenuItemsNames_Pg3[MENUITEM_COUNT_PG3] =
     [MENUITEM_CANCEL_PG3]    = COMPOUND_STRING("CANCEL"),
 };
 
+enum OptionId
+{
+    OPTION_TEXT_SPEED,
+    OPTION_SOUND,
+    OPTION_FRAME,
+    OPTION_AUTOSAVE,
+    OPTION_AUTO_SCROLL,
+    OPTION_BATTLE_SCENE,
+    OPTION_BATTLE_STYLE,
+    OPTION_BATTLE_SPEED,
+    OPTION_AI_TRAINER,
+    OPTION_AI_WILD,
+    OPTION_EXP_SHARE,
+    OPTION_ACHIEVEMENT_BOOSTS,
+    OPTION_ROUTE_TRACKER,
+    OPTION_PLAYER_COLOURS,
+    OPTION_HEALTHBOX,
+    OPTIONS_COUNT,
+};
+
+enum CategoryId
+{
+    CATEGORY_GENERAL,
+    CATEGORY_BATTLE,
+    CATEGORY_GAMEPLAY,
+    CATEGORY_DISPLAY,
+    CATEGORIES_COUNT,
+};
+
+struct OptionEntry
+{
+    const u8 *name;
+    const u8 *description;       // Sentence case, auto-wrapped at runtime.
+    u8 type;                     // enum OptionType
+    u8 valueCount;               // 1 for submenu rows
+    u8 defaultValue;
+    const u8 *const *valueTexts; // NULL for numeric / submenu
+    bool8 (*isHidden)(void);     // NULL = always visible
+};
+
+struct OptionCategory
+{
+    const u8 *name;
+    const u8 *description;
+    const u8 *optionIds;         // enum OptionId, in display order
+    u8 optionCount;
+};
+
+static const u8 *const sValueTexts_TextSpeed[] = {gText_TextSpeedSlow, gText_TextSpeedMid, gText_TextSpeedFast};
+static const u8 *const sValueTexts_Sound[] = {gText_SoundMono, gText_SoundStereo};
+static const u8 *const sValueTexts_Autosave[] = {gText_AutosaveOff, gText_AutosaveOn};
+static const u8 *const sValueTexts_AutoScroll[] = {gText_AutoScrollOff, gText_AutoScrollOn};
+static const u8 *const sValueTexts_BattleScene[] = {gText_BattleSceneOn, gText_BattleSceneOff};
+static const u8 *const sValueTexts_BattleStyle[] = {gText_BattleStyleShift, gText_BattleStyleSet};
+static const u8 *const sValueTexts_BattleSpeed[OPTIONS_BATTLE_SPEED_COUNT] =
+{
+    [OPTIONS_BATTLE_SPEED_1X]   = gText_BattleSpeed1x,
+    [OPTIONS_BATTLE_SPEED_1_5X] = gText_BattleSpeed1_5x,
+    [OPTIONS_BATTLE_SPEED_2X]   = gText_BattleSpeed2x,
+    [OPTIONS_BATTLE_SPEED_3X]   = gText_BattleSpeed3x,
+    [OPTIONS_BATTLE_SPEED_4X]   = gText_BattleSpeed4x,
+    [OPTIONS_BATTLE_SPEED_5X]   = gText_BattleSpeed5x,
+};
+static const u8 *const sValueTexts_AiBattles[] = {gText_AIBattlesOff, gText_AIBattlesOn};
+static const u8 *const sValueTexts_ExpShare[] = {gText_ExpShareOptionOff, gText_ExpShareOptionOn};
+static const u8 *const sValueTexts_AchievementBoosts[] = {gText_AchievementBoostsOff, gText_AchievementBoostsOn};
+static const u8 *const sValueTexts_RouteTracker[] = {gText_RouteTrackerOff, gText_RouteTrackerOn};
+
+static const struct OptionEntry sOptions[OPTIONS_COUNT] =
+{
+    [OPTION_TEXT_SPEED] = {
+        .name = COMPOUND_STRING("TEXT SPEED"),
+        .description = COMPOUND_STRING("How fast dialogue and battle text is printed."),
+        .type = OPTION_TYPE_ENUM,
+        .valueCount = ARRAY_COUNT(sValueTexts_TextSpeed),
+        .defaultValue = OPTIONS_TEXT_SPEED_FAST,
+        .valueTexts = sValueTexts_TextSpeed,
+    },
+    [OPTION_SOUND] = {
+        .name = COMPOUND_STRING("SOUND"),
+        .description = COMPOUND_STRING("Plays audio in mono or stereo. Stereo sounds best on headphones."),
+        .type = OPTION_TYPE_ENUM,
+        .valueCount = ARRAY_COUNT(sValueTexts_Sound),
+        .defaultValue = OPTIONS_SOUND_STEREO,
+        .valueTexts = sValueTexts_Sound,
+    },
+    [OPTION_FRAME] = {
+        .name = COMPOUND_STRING("FRAME"),
+        .description = COMPOUND_STRING("Changes the border style of text boxes and menus."),
+        .type = OPTION_TYPE_NUMERIC,
+        .valueCount = WINDOW_FRAMES_COUNT,
+        .defaultValue = 0,
+    },
+    [OPTION_AUTOSAVE] = {
+        .name = COMPOUND_STRING("AUTOSAVE"),
+        .description = COMPOUND_STRING("Saves the game automatically at key moments, such as after healing or entering a new area."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_Autosave),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_Autosave,
+        .isHidden = IsAutosaveHidden,
+    },
+    [OPTION_AUTO_SCROLL] = {
+        .name = COMPOUND_STRING("AUTO SCROLL"),
+        .description = COMPOUND_STRING("Advances dialogue automatically once a message has finished printing."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_AutoScroll),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_AutoScroll,
+    },
+    [OPTION_BATTLE_SCENE] = {
+        .name = COMPOUND_STRING("BATTLE SCENE"),
+        .description = COMPOUND_STRING("Turns move and status animations in battle on or off."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_BattleScene),
+        .defaultValue = 0, // ON
+        .valueTexts = sValueTexts_BattleScene,
+    },
+    [OPTION_BATTLE_STYLE] = {
+        .name = COMPOUND_STRING("BATTLE STYLE"),
+        .description = COMPOUND_STRING("Shift offers a free switch after the opponent's Pokémon faints. Set does not."),
+        .type = OPTION_TYPE_ENUM,
+        .valueCount = ARRAY_COUNT(sValueTexts_BattleStyle),
+        .defaultValue = OPTIONS_BATTLE_STYLE_SHIFT,
+        .valueTexts = sValueTexts_BattleStyle,
+    },
+    [OPTION_BATTLE_SPEED] = {
+        .name = COMPOUND_STRING("BATTLE SPEED"),
+        .description = COMPOUND_STRING("Speeds up battle animations and text. Higher values make battles finish faster."),
+        .type = OPTION_TYPE_ENUM,
+        .valueCount = OPTIONS_BATTLE_SPEED_COUNT,
+        .defaultValue = OPTIONS_BATTLE_SPEED_1X,
+        .valueTexts = sValueTexts_BattleSpeed,
+    },
+    [OPTION_AI_TRAINER] = {
+        .name = COMPOUND_STRING("AI TRAINER BATTLES"),
+        .description = COMPOUND_STRING("Lets the game control your side in trainer battles."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_AiBattles),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_AiBattles,
+    },
+    [OPTION_AI_WILD] = {
+        .name = COMPOUND_STRING("AI WILD BATTLES"),
+        .description = COMPOUND_STRING("Lets the game control your side in wild battles."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_AiBattles),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_AiBattles,
+    },
+    [OPTION_EXP_SHARE] = {
+        .name = COMPOUND_STRING("EXP SHARE"),
+        .description = COMPOUND_STRING("Shares Exp. Points with every Pokémon in your party, not only those that battled."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_ExpShare),
+        .defaultValue = TRUE,
+        .valueTexts = sValueTexts_ExpShare,
+    },
+    [OPTION_ACHIEVEMENT_BOOSTS] = {
+        .name = COMPOUND_STRING("ACHIEVEMENT BOOSTS"),
+        .description = COMPOUND_STRING("Enables the bonuses earned from completed achievements."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_AchievementBoosts),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_AchievementBoosts,
+        .isHidden = IsAchievementBoostsHidden,
+    },
+    [OPTION_ROUTE_TRACKER] = {
+        .name = COMPOUND_STRING("ROUTE TRACKER"),
+        .description = COMPOUND_STRING("Shows which Pokémon you have encountered on the current route."),
+        .type = OPTION_TYPE_BOOL,
+        .valueCount = ARRAY_COUNT(sValueTexts_RouteTracker),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_RouteTracker,
+    },
+    [OPTION_PLAYER_COLOURS] = {
+        .name = COMPOUND_STRING("PLAYER COLOURS"),
+        .description = COMPOUND_STRING("Opens the menu for customising your character's hat, outfit, and other colours."),
+        .type = OPTION_TYPE_SUBMENU,
+        .valueCount = 1,
+    },
+    [OPTION_HEALTHBOX] = {
+        .name = COMPOUND_STRING("HEALTHBOX"),
+        .description = COMPOUND_STRING("Opens the menu for customising how HP boxes look in battle."),
+        .type = OPTION_TYPE_SUBMENU,
+        .valueCount = 1,
+    },
+};
+
+static const u8 sCategoryOptions_General[] = {OPTION_TEXT_SPEED, OPTION_SOUND, OPTION_FRAME, OPTION_AUTOSAVE, OPTION_AUTO_SCROLL};
+static const u8 sCategoryOptions_Battle[] = {OPTION_BATTLE_SCENE, OPTION_BATTLE_STYLE, OPTION_BATTLE_SPEED, OPTION_AI_TRAINER, OPTION_AI_WILD};
+static const u8 sCategoryOptions_Gameplay[] = {OPTION_EXP_SHARE, OPTION_ACHIEVEMENT_BOOSTS, OPTION_ROUTE_TRACKER};
+static const u8 sCategoryOptions_Display[] = {OPTION_PLAYER_COLOURS, OPTION_HEALTHBOX};
+
+static const struct OptionCategory sCategories[CATEGORIES_COUNT] =
+{
+    [CATEGORY_GENERAL] = {
+        .name = COMPOUND_STRING("GENERAL"),
+        .description = COMPOUND_STRING("Text, sound, saving, and other everyday settings."),
+        .optionIds = sCategoryOptions_General,
+        .optionCount = ARRAY_COUNT(sCategoryOptions_General),
+    },
+    [CATEGORY_BATTLE] = {
+        .name = COMPOUND_STRING("BATTLE"),
+        .description = COMPOUND_STRING("Battle animations, style, speed, and AI control."),
+        .optionIds = sCategoryOptions_Battle,
+        .optionCount = ARRAY_COUNT(sCategoryOptions_Battle),
+    },
+    [CATEGORY_GAMEPLAY] = {
+        .name = COMPOUND_STRING("GAMEPLAY"),
+        .description = COMPOUND_STRING("Rules and helpers that change how the game plays."),
+        .optionIds = sCategoryOptions_Gameplay,
+        .optionCount = ARRAY_COUNT(sCategoryOptions_Gameplay),
+    },
+    [CATEGORY_DISPLAY] = {
+        .name = COMPOUND_STRING("DISPLAY"),
+        .description = COMPOUND_STRING("Player colours and the battle HP box style."),
+        .optionIds = sCategoryOptions_Display,
+        .optionCount = ARRAY_COUNT(sCategoryOptions_Display),
+    },
+};
+
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
 {
     [WIN_HEADER] = {

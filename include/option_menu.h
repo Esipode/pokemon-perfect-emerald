@@ -1,6 +1,15 @@
 #ifndef GUARD_OPTION_MENU_H
 #define GUARD_OPTION_MENU_H
 
+enum OptionType
+{
+    OPTION_TYPE_BOOL,
+    OPTION_TYPE_ENUM,
+    OPTION_TYPE_NUMERIC,
+    OPTION_TYPE_SUBMENU,
+    OPTION_TYPE_ACTION,
+};
+
 void CB2_InitOptionMenu(void);
 
 #endif // GUARD_OPTION_MENU_H
