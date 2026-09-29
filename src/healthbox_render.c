@@ -99,6 +99,40 @@ void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const str
     right->data[1] = savedRight1;
 }
 
+void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel)
+{
+    static const u8 sFillPal[][2] = { {10, 11}, {12, 13}, {14, 15} };
+    u32 tile, row, px;
+    u32 tileNum = gSprites[barSpriteId].oam.tileNum;
+
+    if (colourLevel >= ARRAY_COUNT(sFillPal))
+        colourLevel = ARRAY_COUNT(sFillPal) - 1;
+
+    // The bar occupies rows 2-5 of each 8x8 tile; the rest stays transparent.
+    for (tile = 0; tile < HB_HP_BAR_TILES; tile++)
+    {
+        u32 data[8] = {0};
+
+        for (row = 0; row < HB_HP_BAR_H; row++)
+        {
+            for (px = 0; px < 8; px++)
+            {
+                u32 x = tile * 8 + px;
+                u32 idx;
+
+                if ((x == 0 || x == HB_HP_BAR_W - 1) && (row == 0 || row == HB_HP_BAR_H - 1))
+                    continue; // rounded ends
+                if (x < fillPx)
+                    idx = sFillPal[colourLevel][row < HB_HP_BAR_H / 2 ? 0 : 1];
+                else
+                    idx = HB_PAL_BAR_TROUGH;
+                data[row + HB_HP_BAR_ROW] |= idx << (px * 4);
+            }
+        }
+        CpuCopy32(data, (void *)(OBJ_VRAM0 + (tileNum + tile) * TILE_SIZE_4BPP), TILE_SIZE_4BPP);
+    }
+}
+
 static bool32 IsInsideFrame(s32 x, s32 y, s32 w, s32 h)
 {
     s32 dy, inset;

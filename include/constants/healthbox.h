@@ -31,6 +31,14 @@
 #define HB_PAL_SPATK  11 // Also the male gender colour.
 #define HB_PAL_STATUS_FIRST 12
 
+// New-style HP bar sprite (uses the shared bar palette, not sHealthboxNewPal).
+#define HB_HP_BAR_W     48
+#define HB_HP_BAR_H     4
+#define HB_HP_BAR_TILES (HB_HP_BAR_W / 8)
+#define HB_HP_BAR_ROW   2 // First bar row inside each 8x8 tile.
+#define HB_PAL_BAR_TROUGH 1
+#define HB_BAR_DATA6_NEW  3 // Bar sprite follows the box main sprite's centre.
+
 enum HealthboxElement
 {
     HB_ELEM_NICK,

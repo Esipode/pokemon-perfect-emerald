@@ -9,6 +9,7 @@
 
 struct Pokemon;
 struct Sprite;
+struct SubspriteTable;
 
 // Effective (default-resolved) options; see struct HealthboxOptions in global.h.
 void HealthboxOptions_Get(struct HealthboxOptions *out);
@@ -83,6 +84,8 @@ void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const str
                                const struct HealthboxRect *rect, const u8 *str, bool32 rightAlign, u32 background);
 void HealthboxRender_DrawFrame(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                u32 background);
+// colourLevel: 0 green, 1 yellow, 2 red.
+void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel);
 
 // Battle glue.
 bool32 Healthbox_IsNewStyle(void);
@@ -94,6 +97,10 @@ void HealthboxBattle_DrawNick(u8 healthboxSpriteId, struct Pokemon *mon);
 void HealthboxBattle_DrawHpValue(u8 healthboxSpriteId, s16 currHp, s16 maxHp);
 // Gimmick indicator offsets from the main sprite centre.
 void HealthboxBattle_GetIndicatorPos(u32 battler, s16 *x, s16 *y);
+bool32 HealthboxBattle_HasHpBar(u32 battler);
+bool32 HealthboxBattle_HasCaughtIcons(u32 battler);
+const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler);
+void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 colourLevel);
 void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elementId);
 
 #endif // GUARD_HEALTHBOX_H

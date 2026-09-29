@@ -28,6 +28,14 @@
 
 static EWRAM_DATA struct HealthboxLayout sLayouts[MAX_BATTLERS_COUNT] = {0};
 
+// Bar sprite tiles: 0-5 HP fill, 8-9 opponent icon slots (caught ball, can/cannot catch).
+#define HB_BAR_TILE_ICON_CAUGHT 8
+#define HB_BAR_TILE_ICON_CATCH  9
+#define HB_BAR_SUBSPRITES_MAX   4
+
+static EWRAM_DATA struct Subsprite sBarSubsprites[MAX_BATTLERS_COUNT][HB_BAR_SUBSPRITES_MAX] = {0};
+static EWRAM_DATA struct SubspriteTable sBarSubspriteTables[MAX_BATTLERS_COUNT] = {0};
+
 static const struct OamData sOamData_HealthboxBox =
 {
     .affineMode = ST_OAM_AFFINE_OFF,
@@ -106,6 +114,56 @@ bool32 HealthboxBattle_LoadBoxSheet(u8 state)
     return TRUE;
 }
 
+static void AddBarSubsprite(u32 battler, const struct HealthboxRect *rect, s32 dx, s32 dy, u32 shape, u32 size, u32 tile)
+{
+    struct SubspriteTable *table = &sBarSubspriteTables[battler];
+    struct Subsprite *sub = &sBarSubsprites[battler][table->subspriteCount++];
+
+    // Offsets are from the bar sprite origin, which sits on the box main sprite's centre.
+    sub->x = rect->x + dx - HB_BOX_CENTER_X;
+    sub->y = rect->y + dy - HB_BOX_CENTER_Y;
+    sub->shape = shape;
+    sub->size = size;
+    sub->tileOffset = tile;
+    sub->priority = 1;
+}
+
+static void BuildBarSubsprites(u32 battler, const struct HealthboxLayout *layout)
+{
+    const struct HealthboxRect *bar = &layout->rects[HB_RECT_HP_BAR];
+    const struct HealthboxRect *caught = &layout->rects[HB_RECT_CAUGHT];
+    struct SubspriteTable *table = &sBarSubspriteTables[battler];
+
+    table->subspriteCount = 0;
+    table->subsprites = sBarSubsprites[battler];
+
+    if (bar->w != 0)
+    {
+        AddBarSubsprite(battler, bar, 0, -HB_HP_BAR_ROW, SPRITE_SHAPE(32x8), SPRITE_SIZE(32x8), 0);
+        AddBarSubsprite(battler, bar, 32, -HB_HP_BAR_ROW, SPRITE_SHAPE(16x8), SPRITE_SIZE(16x8), 4);
+    }
+    if (caught->w != 0)
+    {
+        AddBarSubsprite(battler, caught, 0, 0, SPRITE_SHAPE(8x8), SPRITE_SIZE(8x8), HB_BAR_TILE_ICON_CAUGHT);
+        AddBarSubsprite(battler, caught, 8, 0, SPRITE_SHAPE(8x8), SPRITE_SIZE(8x8), HB_BAR_TILE_ICON_CATCH);
+    }
+}
+
+const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler)
+{
+    return &sBarSubspriteTables[battler];
+}
+
+bool32 HealthboxBattle_HasHpBar(u32 battler)
+{
+    return sLayouts[battler].rects[HB_RECT_HP_BAR].w != 0;
+}
+
+bool32 HealthboxBattle_HasCaughtIcons(u32 battler)
+{
+    return sLayouts[battler].rects[HB_RECT_CAUGHT].w != 0;
+}
+
 // Creates the two box-half sprites and wires them together; the caller creates the bar sprite.
 u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sprite *), s16 *barData6)
 {
@@ -120,6 +178,7 @@ u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sp
 
     Healthbox_ResolveOpts(player ? HB_SIDE_PLAYER : HB_SIDE_FOE, &opts);
     Healthbox_ComputeLayout(&opts, opts.side, doubles, GetBattlerPosition(battler), layout);
+    BuildBarSubsprites(battler, layout);
 
     templates = player ? sPlayerBoxTemplates : sOpponentBoxTemplates;
     sprites.left = CreateSprite(&templates[tagIdx], DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
@@ -140,7 +199,7 @@ u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sp
 
     HealthboxRender_Clear(&sprites, layout);
 
-    *barData6 = player ? (doubles ? 1 : 0) : 2;
+    *barData6 = HB_BAR_DATA6_NEW;
     return sprites.left;
 }
 
@@ -272,10 +331,16 @@ void HealthboxBattle_DrawHpValue(u8 healthboxSpriteId, s16 currHp, s16 maxHp)
     HealthboxRender_PrintText(&sprites, layout, &layout->rects[HB_RECT_HP_VALUE], text, TRUE, HealthboxOptions_GetBackground());
 }
 
+void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 colourLevel)
+{
+    HealthboxRender_DrawHpBar(gSprites[healthboxSpriteId].data[5], fillPx, colourLevel);
+}
+
 void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elementId)
 {
     struct HealthboxSprites sprites;
     const struct HealthboxLayout *layout;
+    enum BattlerId battler = gSprites[healthboxSpriteId].data[6];
     bool32 all = elementId == HEALTHBOX_ALL;
 
     GetBoxSprites(healthboxSpriteId, &sprites, &layout);
@@ -291,4 +356,11 @@ void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elemen
         DrawLevel(healthboxSpriteId, GetMonData(mon, MON_DATA_LEVEL));
     if (all || elementId == HEALTHBOX_CURRENT_HP || elementId == HEALTHBOX_MAX_HP)
         HealthboxBattle_DrawHpValue(healthboxSpriteId, GetMonData(mon, MON_DATA_HP), GetMonData(mon, MON_DATA_MAX_HP));
+    if (all || elementId == HEALTHBOX_HEALTH_BAR)
+    {
+        SetBattleBarStruct(battler, healthboxSpriteId, GetMonData(mon, MON_DATA_MAX_HP), GetMonData(mon, MON_DATA_HP), 0);
+        MoveBattleBar(battler, healthboxSpriteId, HEALTH_BAR, 0);
+    }
+    if (all)
+        TryAddPokeballIconToHealthbox(healthboxSpriteId, TRUE);
 }

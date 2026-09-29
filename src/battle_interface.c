@@ -706,11 +706,14 @@ u8 CreateBattlerHealthboxSprites(enum BattlerId battler)
 
     healthbarSpriteId = CreateSpriteAtEnd(&sHealthbarSpriteTemplates[gBattlerPositions[battler]], 140, 60, 0);
     healthBarSpritePtr = &gSprites[healthbarSpriteId];
-    SetSubspriteTables(healthBarSpritePtr, &sHealthBar_SubspriteTables[GetBattlerSide(battler)]);
+    if (Healthbox_IsNewStyle())
+        SetSubspriteTables(healthBarSpritePtr, HealthboxBattle_GetBarSubspriteTable(battler));
+    else
+        SetSubspriteTables(healthBarSpritePtr, &sHealthBar_SubspriteTables[GetBattlerSide(battler)]);
     healthBarSpritePtr->subspriteMode = SUBSPRITES_IGNORE_PRIORITY;
     healthBarSpritePtr->oam.priority = 1;
 
-    if (ShouldShowHealthbar(battler))
+    if (!Healthbox_IsNewStyle() && ShouldShowHealthbar(battler))
         CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_1), (void *)(OBJ_VRAM0 + healthBarSpritePtr->oam.tileNum * TILE_SIZE_4BPP), 64);
 
     gSprites[healthboxLeftSpriteId].hMain_HealthBarSpriteId = healthbarSpriteId;
@@ -770,6 +773,10 @@ static void SpriteCB_HealthBar(struct Sprite *sprite)
         break;
     case 1:
         sprite->x = gSprites[healthboxSpriteId].x + 16;
+        sprite->y = gSprites[healthboxSpriteId].y;
+        break;
+    case HB_BAR_DATA6_NEW:
+        sprite->x = gSprites[healthboxSpriteId].x;
         sprite->y = gSprites[healthboxSpriteId].y;
         break;
     case 2:
@@ -1234,6 +1241,8 @@ static void HideHpBarInHealthbox(u32 healthboxSpriteId)
 // The live mode already folds in the START toggle.
 static bool32 ShouldShowHealthbar(enum BattlerId battler)
 {
+    if (Healthbox_IsNewStyle())
+        return HealthboxBattle_HasHpBar(battler);
     return HpDisplay_ShowsBar(battler);
 }
 
@@ -1994,6 +2003,13 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
         return;
     if (GetBattlerSide(battler) == B_SIDE_OPPONENT && IsGhostBattleWithoutScope())
         return;
+    if (Healthbox_IsNewStyle())
+    {
+        // The icon slots are drawn only when the caught band exists; status has its own pill.
+        if (!HealthboxBattle_HasCaughtIcons(battler))
+            return;
+        noStatus = TRUE;
+    }
 
     species = GetMonData(GetBattlerMon(battler), MON_DATA_SPECIES);
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
@@ -2409,6 +2425,17 @@ static void MoveBattleBarGraphically(enum BattlerId battler, u8 whichBar)
                 barElementId = HEALTHBOX_GFX_HP_BAR_RED;
             else
                 barElementId = HEALTHBOX_GFX_HP_BAR_GREEN;
+            break;
+        }
+
+        if (Healthbox_IsNewStyle())
+        {
+            u32 fillPx = 0;
+
+            for (i = 0; i < B_HEALTHBAR_PIXELS / 8; i++)
+                fillPx += array[i];
+            HealthboxBattle_DrawHpBar(gBattleSpritesDataPtr->battleBars[battler].healthboxSpriteId, fillPx,
+                                      barElementId == HEALTHBOX_GFX_HP_BAR_GREEN ? 0 : barElementId == HEALTHBOX_GFX_HP_BAR_YELLOW ? 1 : 2);
             break;
         }
 
