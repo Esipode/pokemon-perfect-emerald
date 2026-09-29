@@ -1020,6 +1020,24 @@ static void UpdatePillar(struct ScreenFx *effect)
                                         effect->anchorMapNum, effect->anchorMapGroup, &footX, &footY))
         return;
 
+    // An object anchor draws the pillar just behind that object's sprite.
+    if (effect->anchorKind == OVERLAY_ANCHOR_OBJECT)
+    {
+        u32 objectEventId = GetObjectEventIdByLocalIdAndMap(effect->anchorLocalId, effect->anchorMapNum, effect->anchorMapGroup);
+
+        if (objectEventId < OBJECT_EVENTS_COUNT && gObjectEvents[objectEventId].active
+         && gObjectEvents[objectEventId].spriteId < MAX_SPRITES)
+        {
+            struct Sprite *target = &gSprites[gObjectEvents[objectEventId].spriteId];
+
+            for (i = 0; i < sPillar.spriteCount; i++)
+            {
+                gSprites[sPillar.spriteIds[i]].oam.priority = target->oam.priority;
+                gSprites[sPillar.spriteIds[i]].subpriority = min(target->subpriority + 1, 0xFF);
+            }
+        }
+    }
+
     top = -gSpriteCoordOffsetY;
     bottom = pillar->landed ? footY : top + (footY - top) * pillar->elapsed / pillar->descent;
 

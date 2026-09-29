@@ -193,7 +193,8 @@ struct ScreenFx
 // is brightness. Like the vignette it relies on the field's fixed BLDALPHA: intensity 0 is a neutral grey that
 // leaves a mid-tone scene unchanged and rising intensity blends toward the colour, so it reads best over
 // mid-tones and is approximate over very dark or very bright ground. The palette breathes by about 12% over
-// roughly 90 frames. The sprites are world-anchored and use OBJ priority 1, so text boxes stay on top.
+// roughly 90 frames. The sprites are world-anchored and use OBJ priority 1, so text boxes stay on top; with an
+// object anchor they instead take that object's priority and draw one subpriority behind it.
 // Sprites are hidden at resolved intensity 0. There is no lift animation on stop; fade out instead.
 // One OBJ palette slot and 64 tiles (2 KB) of OBJ VRAM, 4 sprites. Only one pillar exists at a time, and
 // ScreenFx_Start returns SCREENFX_ID_INVALID when no palette slot or tile space is free. A pillar whose sprites

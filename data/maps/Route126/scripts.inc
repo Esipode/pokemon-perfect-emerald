@@ -13,7 +13,7 @@ Route126_OnTransition:
 	call_if_eq VAR_RESULT, FALSE, Route126_EventScript_ArceusInactive
 	end
 
-@ Arceus spawn gate: post-game, not already owned, 2% daily-seed chance. Result in VAR_RESULT
+@ Arceus spawn gate: post-game, not already owned, 70 legendary/mythical families caught, 2% daily-seed chance. Result in VAR_RESULT
 Route126_EventScript_CheckArceusActive:
 	setvar VAR_0x8004, SPECIES_ARCEUS
 	setvar VAR_0x8005, LAYOUT_ROUTE126
@@ -21,8 +21,14 @@ Route126_EventScript_CheckArceusActive:
 	setvar VAR_0x8007, 1
 	special CheckValidLegendaryEncounter
 	goto_if_eq VAR_RESULT, FALSE, Route126_EventScript_CheckArceusActiveDone
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 70, Route126_EventScript_ArceusGateFailed
 	checkdailyseedchance 2, SPECIES_ARCEUS
 Route126_EventScript_CheckArceusActiveDone:
+	return
+
+Route126_EventScript_ArceusGateFailed:
+	setvar VAR_RESULT, FALSE
 	return
 
 Route126_EventScript_ArceusActive:

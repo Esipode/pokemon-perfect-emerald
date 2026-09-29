@@ -3,7 +3,6 @@
   "name": "EverGrandeCity",
   "layout": "LAYOUT_EVER_GRANDE_CITY",
   "music": "MUS_EVER_GRANDE",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_EVER_GRANDE_CITY",
   "requires_flash": false,
   "weather": "WEATHER_DYNAMIC",
@@ -33,6 +32,20 @@
       "trainer_sight_or_berry_tree_id": "LIGHT_TYPE_PKMN_CENTER_SIGN",
       "script": "NULL",
       "flag": "0"
+    },
+    {
+      "local_id": "LOCALID_EVER_GRANDE_CITY_ETERNATUS",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(ETERNATUS)",
+      "x": 19,
+      "y": 24,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "EverGrandeCity_Eternatus_Encounter",
+      "flag": "FLAG_HIDE_ETERNATUS"
     }
   ],
   "warp_events": [
@@ -214,5 +227,6 @@
       "player_facing_dir": "BG_EVENT_PLAYER_FACING_NORTH",
       "script": "Common_EventScript_ShowPokemonCenterSign"
     }
-  ]
+  ],
+  "region": "REGION_HOENN"
 }

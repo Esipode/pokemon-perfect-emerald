@@ -9240,6 +9240,17 @@
       "border_filepath": "data/layouts/InfinityCave_PieceShop/border.bin",
       "blockdata_filepath": "data/layouts/InfinityCave_PieceShop/map.bin",
       "layout_version": "emerald"
+    },
+    {
+      "id": "LAYOUT_EVER_GRANDE_CITY_ETERNATUS",
+      "name": "EverGrandeCity_Eternatus_Layout",
+      "width": 40,
+      "height": 80,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_EverGrande",
+      "border_filepath": "data/layouts/EverGrandeCity_Eternatus/border.bin",
+      "blockdata_filepath": "data/layouts/EverGrandeCity_Eternatus/map.bin",
+      "layout_version": "emerald"
     }
   ]
 }
