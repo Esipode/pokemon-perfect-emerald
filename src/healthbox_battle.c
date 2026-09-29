@@ -27,6 +27,8 @@
 // Indicator centre inset from the box's right edge, used when the level rect is absent.
 #define HB_INDICATOR_X_FROM_BOX_RIGHT 4
 
+#define SAFARI_BOX_EXTRA_H 4
+
 static EWRAM_DATA struct HealthboxLayout sLayouts[MAX_BATTLERS_COUNT] = {0};
 
 static EWRAM_DATA struct Subsprite sBarSubsprites[MAX_BATTLERS_COUNT][HB_BAR_SUBSPRITES_MAX] = {0};
@@ -161,6 +163,12 @@ u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sp
 
     ResolveBattleOpts(battler, &opts);
     Healthbox_ComputeLayout(&opts, opts.side, doubles, GetBattlerPosition(battler), layout);
+    if (IsSafariPlayerBox(battler))
+    {
+        // The ball count text fills its band; add rows below it so the frame does not clip it.
+        layout->boxH += SAFARI_BOX_EXTRA_H;
+        layout->screenY -= SAFARI_BOX_EXTRA_H;
+    }
     HealthboxRender_BuildBarSubsprites(layout, sBarSubsprites[battler], &sBarSubspriteTables[battler]);
 
     HealthboxRender_CreateBox(player, tagIdx, layout->rightSpriteW, &sprites);
