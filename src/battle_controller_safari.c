@@ -128,12 +128,9 @@ static void HandleInputChooseAction(enum BattlerId battler)
             BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_SAFARI_BALL, 0);
             break;
         case 1:
-            BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_SAFARI_POKEBLOCK, 0);
-            break;
-        case 2:
             BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_SAFARI_GO_NEAR, 0);
             break;
-        case 3:
+        case 2:
             BtlController_EmitTwoReturnValues(battler, B_COMM_TO_ENGINE, B_ACTION_SAFARI_RUN, 0);
             break;
         }
@@ -151,7 +148,8 @@ static void HandleInputChooseAction(enum BattlerId battler)
     }
     else if (JOY_NEW(DPAD_RIGHT))
     {
-        if (!(gActionSelectionCursor[battler] & 1))
+        // Bottom-right slot is empty.
+        if (!(gActionSelectionCursor[battler] & 1) && gActionSelectionCursor[battler] != 2)
         {
             PlaySE(SE_SELECT);
             ActionSelectionDestroyCursorAt(gActionSelectionCursor[battler]);
@@ -171,7 +169,8 @@ static void HandleInputChooseAction(enum BattlerId battler)
     }
     else if (JOY_NEW(DPAD_DOWN))
     {
-        if (!(gActionSelectionCursor[battler] & 2))
+        // Bottom-right slot is empty.
+        if (!(gActionSelectionCursor[battler] & 2) && gActionSelectionCursor[battler] != 1)
         {
             PlaySE(SE_SELECT);
             ActionSelectionDestroyCursorAt(gActionSelectionCursor[battler]);
@@ -183,7 +182,7 @@ static void HandleInputChooseAction(enum BattlerId battler)
     {
         PlaySE(SE_SELECT);
         ActionSelectionDestroyCursorAt(gActionSelectionCursor[battler]);
-        gActionSelectionCursor[battler] = 3;
+        gActionSelectionCursor[battler] = 2;
         ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
     }
 }
