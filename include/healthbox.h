@@ -99,6 +99,10 @@ void HealthboxRender_DrawStatStrip(const struct HealthboxSprites *sprites, const
 // colourLevel: 0 green, 1 yellow, 2 red.
 void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel);
 
+// Full-screen settings screen for the healthbox options. The caller sets gMain.savedCallback to the
+// return screen before switching to it; changes are committed on A, B or START.
+void CB2_InitHealthboxSettings(void);
+
 // Battle glue.
 bool32 Healthbox_IsNewStyle(void);
 void HealthboxBattle_LoadPalette(void);
