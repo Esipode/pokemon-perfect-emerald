@@ -1,5 +1,7 @@
 ## Spectrier — The Swift Horse Pokémon
 
+### Location: Mt. Pyre - After Calyrex is caught
+
 A shadow that learns your fear. The longer you play it safe, the harder it gets to hit — and the
 worse things get from there.
 

@@ -3,10 +3,9 @@
   "name": "MtPyre_Exterior",
   "layout": "LAYOUT_MT_PYRE_EXTERIOR",
   "music": "MUS_MT_PYRE_EXTERIOR",
-  "region": "REGION_HOENN",
   "region_map_section": "MAPSEC_MT_PYRE",
   "requires_flash": false,
-  "weather": "WEATHER_DYNAMIC",
+  "weather": "WEATHER_NONE",
   "map_type": "MAP_TYPE_ROUTE",
   "allow_cycling": true,
   "allow_escaping": false,
@@ -40,6 +39,20 @@
       "trainer_sight_or_berry_tree_id": "ITEM_TM_SKILL_SWAP",
       "script": "Common_EventScript_FindItem",
       "flag": "FLAG_ITEM_MT_PYRE_EXTERIOR_TM_SKILL_SWAP"
+    },
+    {
+      "local_id": "LOCALID_MT_PYRE_EXTERIOR_SPECTRIER",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(SPECTRIER)",
+      "x": 14,
+      "y": 18,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "MtPyre_Exterior_Spectrier_Encounter",
+      "flag": "FLAG_HIDE_SPECTRIER"
     }
   ],
   "warp_events": [
@@ -129,5 +142,6 @@
       "item": "ITEM_MAX_ETHER",
       "flag": "FLAG_HIDDEN_ITEM_MT_PYRE_EXTERIOR_MAX_ETHER"
     }
-  ]
+  ],
+  "region": "REGION_HOENN"
 }
