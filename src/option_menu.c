@@ -95,8 +95,12 @@ enum
 enum
 {
     WIN_HEADER,
-    WIN_OPTIONS
+    WIN_OPTIONS,
+    WIN_DESC
 };
+
+#define VISIBLE_ROWS 5
+#define ROW_PITCH    16
 
 //Pg 1
 #define YPOS_TEXTSPEED    (MENUITEM_TEXTSPEED * 16)
@@ -622,9 +626,18 @@ static const struct WindowTemplate sOptionMenuWinTemplates[] =
         .tilemapLeft = 2,
         .tilemapTop = 5,
         .width = 26,
-        .height = 14,
+        .height = 10,
         .paletteNum = 1,
         .baseBlock = 0x36
+    },
+    [WIN_DESC] = {
+        .bg = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 16,
+        .width = 26,
+        .height = 4,
+        .paletteNum = 1,
+        .baseBlock = 0x13A
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -656,6 +669,7 @@ static const u16 sOptionMenuBg_Pal[] = {RGB(17, 18, 31)};
 static void MainCB2(void)
 {
     RunTasks();
+    RunTextPrinters();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
@@ -805,6 +819,9 @@ void CB2_InitOptionMenu(void)
         break;
     case 8:
         PutWindowTilemap(WIN_OPTIONS);
+        PutWindowTilemap(WIN_DESC);
+        FillWindowPixelBuffer(WIN_DESC, PIXEL_FILL(1));
+        CopyWindowToVram(WIN_DESC, COPYWIN_FULL);
         DrawOptionMenuTexts();
         gMain.state++;
         break;
@@ -1812,11 +1829,11 @@ static void DrawBgWindowFrames(void)
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 18,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 18,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 10,  7);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 10,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 15,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 15, 26,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 15,  1,  1,  7);
 
     CopyBgTilemapBufferToVram(1);
 }
