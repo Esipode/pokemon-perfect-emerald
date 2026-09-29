@@ -8,6 +8,7 @@
 #include "battle_z_move.h"
 #include "battle_setup.h"
 #include "battle_util.h"
+#include "healthbox.h"
 #include "item.h"
 #include "palette.h"
 #include "pokemon.h"
@@ -391,13 +392,16 @@ void CreateIndicatorSprite(enum BattlerId battler)
 {
     enum BattlerPosition position;
     u32 spriteId;
-    s16 xHealthbox = 0, x = 0, y = 0;
+    s16 xHealthbox = 0, x = 0, y = 0, yOffset;
 
     position = GetBattlerPosition(battler);
     GetBattlerHealthboxCoords(battler, &xHealthbox, &y);
 
     x = sIndicatorPositions[position][0];
-    y += sIndicatorPositions[position][1];
+    yOffset = sIndicatorPositions[position][1];
+    if (Healthbox_IsNewStyle())
+        HealthboxBattle_GetIndicatorPos(battler, &x, &yOffset);
+    y += yOffset;
 
     LoadSpriteSheet(&sBattler_GimmickSpritesheets[battler]);
     spriteId = CreateSprite(&(sSpriteTemplate_BattlerIndicators[battler]), 0, y, 0);

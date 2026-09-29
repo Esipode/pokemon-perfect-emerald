@@ -77,6 +77,10 @@ void HealthboxRender_PutPixel(const struct HealthboxSprites *sprites, const stru
 void HealthboxRender_FillRect(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                               s32 x, s32 y, s32 w, s32 h, u8 palIndex);
 void HealthboxRender_Clear(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout);
+// Prints str inside rect after clearing it, shrinking the font to fit rect->w. Text crossing the
+// left/right sprite seam is handled.
+void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                               const struct HealthboxRect *rect, const u8 *str, bool32 rightAlign, u32 background);
 void HealthboxRender_DrawFrame(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                u32 background);
 
@@ -86,6 +90,10 @@ void HealthboxBattle_LoadPalette(void);
 bool32 HealthboxBattle_LoadBoxSheet(u8 state);
 u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sprite *), s16 *barData6);
 void HealthboxBattle_GetCoords(u32 battler, s16 *x, s16 *y);
+void HealthboxBattle_DrawNick(u8 healthboxSpriteId, struct Pokemon *mon);
+void HealthboxBattle_DrawHpValue(u8 healthboxSpriteId, s16 currHp, s16 maxHp);
+// Gimmick indicator offsets from the main sprite centre.
+void HealthboxBattle_GetIndicatorPos(u32 battler, s16 *x, s16 *y);
 void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elementId);
 
 #endif // GUARD_HEALTHBOX_H

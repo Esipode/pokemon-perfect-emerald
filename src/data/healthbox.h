@@ -1,3 +1,5 @@
+#include "text.h"
+
 // Bands stack top to bottom; a band is dropped when none of its elements is shown.
 enum HealthboxBand
 {
@@ -105,3 +107,14 @@ static const u16 sHealthboxNewPal[16] =
 
 // Horizontal inset of the box's top and bottom rows; the corner radius is the table length.
 static const u8 sHealthboxCornerInset[] = { 3, 1, 1 };
+
+static const union TextColor sHealthboxTextColor =
+{
+    .background = 0,
+    .foreground = HB_PAL_TEXT,
+    .shadow = HB_PAL_SHADOW,
+    .accent = 0,
+};
+
+// FONT_SMALL glyph ink starts this many rows below the print y.
+#define HB_TEXT_INK_OFFSET 3

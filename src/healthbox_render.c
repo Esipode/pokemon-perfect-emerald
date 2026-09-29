@@ -1,6 +1,7 @@
 #include "global.h"
 #include "healthbox.h"
 #include "sprite.h"
+#include "text.h"
 #include "constants/healthbox.h"
 #include "constants/rgb.h"
 #include "data/healthbox.h"
@@ -57,6 +58,45 @@ void HealthboxRender_Clear(const struct HealthboxSprites *sprites, const struct 
               (HB_LEFT_W / 8) * (HB_SPRITE_H / 8) * TILE_SIZE_4BPP);
     CpuFill32(0, (void *)(OBJ_VRAM0 + gSprites[sprites->right].oam.tileNum * TILE_SIZE_4BPP),
               (layout->rightSpriteW / 8) * (HB_SPRITE_H / 8) * TILE_SIZE_4BPP);
+}
+
+void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                               const struct HealthboxRect *rect, const u8 *str, bool32 rightAlign, u32 background)
+{
+    struct Sprite *left = &gSprites[sprites->left];
+    struct Sprite *right = &gSprites[sprites->right];
+    u32 fontId = GetFontIdToFit(str, FONT_SMALL, 0, rect->w);
+    s32 x = rect->x;
+    s32 top = rect->y - HB_TEXT_INK_OFFSET;
+    s32 clearH = rect->h;
+    s16 savedLeft1, savedRight1;
+
+    if (rightAlign)
+        x += rect->w - GetStringWidth(fontId, str, 0);
+    if (x < 0)
+        x = 0;
+    if (top < 0)
+    {
+        // The print y is unsigned; the ink sits lower, so clear the extra rows too.
+        clearH -= top;
+        top = 0;
+    }
+
+    HealthboxRender_FillRect(sprites, layout, rect->x, rect->y, rect->w, clearH, background == HB_BG_NONE ? 0 : HB_PAL_FILL);
+
+    // The text printer spills into the sprite named by data[1].
+    savedLeft1 = left->data[1];
+    savedRight1 = right->data[1];
+    left->data[1] = sprites->right;
+    right->data[1] = SPRITE_NONE;
+
+    if (x >= HB_LEFT_W)
+        AddSpriteTextPrinterParameterized6(sprites->right, fontId, x - HB_LEFT_W, top, 0, 0, sHealthboxTextColor, 0, str);
+    else
+        AddSpriteTextPrinterParameterized6(sprites->left, fontId, x, top, 0, 0, sHealthboxTextColor, 0, str);
+
+    left->data[1] = savedLeft1;
+    right->data[1] = savedRight1;
 }
 
 static bool32 IsInsideFrame(s32 x, s32 y, s32 w, s32 h)

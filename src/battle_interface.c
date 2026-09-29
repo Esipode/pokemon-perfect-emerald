@@ -1239,6 +1239,12 @@ static bool32 ShouldShowHealthbar(enum BattlerId battler)
 
 void UpdateHpTextInHealthbox(u32 healthboxSpriteId, u32 maxOrCurrent, s16 currHp, s16 maxHp)
 {
+    if (Healthbox_IsNewStyle())
+    {
+        HealthboxBattle_DrawHpValue(healthboxSpriteId, currHp, maxHp);
+        return;
+    }
+
     enum BattlerId battler = gSprites[healthboxSpriteId].hMain_Battler;
     switch (GetBattlerCoordsIndex(battler))
     {
@@ -1895,6 +1901,12 @@ static void SpriteCB_StatusSummaryBalls_OnSwitchout(struct Sprite *sprite)
 
 void UpdateNickInHealthbox(u8 healthboxSpriteId, struct Pokemon *mon)
 {
+    if (Healthbox_IsNewStyle())
+    {
+        HealthboxBattle_DrawNick(healthboxSpriteId, mon);
+        return;
+    }
+
     u32 healthboxSpriteId2 = gSprites[healthboxSpriteId].oam.affineParam;
     u8 nickname[POKEMON_NAME_LENGTH + 1];
     void *ptr;
