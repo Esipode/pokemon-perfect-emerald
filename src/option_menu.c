@@ -142,6 +142,7 @@ static void HighlightOptionMenuItem(u8 selection);
 static void Task_CategoryMenuFadeIn(u8 taskId);
 static void Task_CategoryMenuProcessInput(u8 taskId);
 static void DrawCategoryList(void);
+static void Task_SettingsMenuFadeIn(u8 taskId);
 static void Task_SettingsMenuProcessInput(u8 taskId);
 static void DrawSettingsList(void);
 static u8 TextSpeed_ProcessInput(u8 selection);
@@ -189,6 +190,9 @@ EWRAM_DATA static u8 sCurrPage = 0;
 // savedCallback points back here). Restored into gMain.savedCallback by CB2_InitOptionMenu;
 // NULL otherwise.
 EWRAM_DATA static MainCallback sSavedCallback = NULL;
+// Set when hopping to a submenu; makes CB2_InitOptionMenu re-enter the settings list
+// at the preserved category and cursor.
+EWRAM_DATA static bool8 sReturningFromSubmenu = FALSE;
 
 // The new-game sequence is the only flow that hands this menu CB2_InitNewGameSettingsMenu
 // as its return callback (see keep_storage_prompt.c).
@@ -950,8 +954,7 @@ void CB2_InitOptionMenu(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
-        // Returning from the player-colors screen; restore the caller stashed by
-        // Task_OptionMenuOpenPlayerColors.
+        // Returning from a submenu; restore the caller stashed by the fade-out task.
         if (sSavedCallback != NULL)
         {
             gMain.savedCallback = sSavedCallback;
@@ -1032,10 +1035,21 @@ void CB2_InitOptionMenu(void)
     {
         taskId = CreateTask(Task_CategoryMenuFadeIn, 0);
         LoadAllOptions();
-        sMenuLevel = LEVEL_CATEGORIES;
-        sCursor[LEVEL_CATEGORIES] = 0;
-        sScrollOffset[LEVEL_CATEGORIES] = 0;
-        DrawCategoryList();
+        if (sReturningFromSubmenu)
+        {
+            sReturningFromSubmenu = FALSE;
+            gTasks[taskId].func = Task_SettingsMenuFadeIn;
+            sMenuLevel = LEVEL_SETTINGS;
+            DrawHeaderText();
+            DrawSettingsList();
+        }
+        else
+        {
+            sMenuLevel = LEVEL_CATEGORIES;
+            sCursor[LEVEL_CATEGORIES] = 0;
+            sScrollOffset[LEVEL_CATEGORIES] = 0;
+            DrawCategoryList();
+        }
         gMain.state++;
         break;
     }
@@ -1466,7 +1480,7 @@ static void Task_OptionMenuFadeOut(u8 taskId)
 // option menu for good it hops to CB2_InitPlayerPaletteMenu and back.
 static void Task_OptionMenuOpenPlayerColors(u8 taskId)
 {
-    CommitPendingOptionSettings(taskId);
+    CommitAllOptions();
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOutToPlayerColors;
 }
@@ -1478,8 +1492,8 @@ static void Task_OptionMenuFadeOutToPlayerColors(u8 taskId)
         DestroyTask(taskId);
         StopOptionDescription();
         FreeAllWindowBuffers();
-        // sCurrPage (EWRAM) is untouched, so CB2_InitOptionMenu redraws page 2
-        // on return; sSavedCallback carries the real caller across the trip.
+        // sSavedCallback carries the real caller across the trip.
+        sReturningFromSubmenu = TRUE;
         sSavedCallback = gMain.savedCallback;
         gMain.savedCallback = CB2_InitOptionMenu;
         SetMainCallback2(CB2_InitPlayerPaletteMenu);
@@ -1489,7 +1503,7 @@ static void Task_OptionMenuFadeOutToPlayerColors(u8 taskId)
 // HEALTHBOX is an action row like PLAYER COLOURS: it hops to CB2_InitHealthboxSettings and back.
 static void Task_OptionMenuOpenHealthbox(u8 taskId)
 {
-    CommitPendingOptionSettings(taskId);
+    CommitAllOptions();
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOutToHealthbox;
 }
@@ -1501,6 +1515,7 @@ static void Task_OptionMenuFadeOutToHealthbox(u8 taskId)
         DestroyTask(taskId);
         StopOptionDescription();
         FreeAllWindowBuffers();
+        sReturningFromSubmenu = TRUE;
         sSavedCallback = gMain.savedCallback;
         gMain.savedCallback = CB2_InitOptionMenu;
         SetMainCallback2(CB2_InitHealthboxSettings);
@@ -2209,9 +2224,33 @@ static void EditSettingsRow(void)
     }
 }
 
+static void Task_SettingsMenuFadeIn(u8 taskId)
+{
+    if (!gPaletteFade.active)
+        gTasks[taskId].func = Task_SettingsMenuProcessInput;
+}
+
 static void Task_SettingsMenuProcessInput(u8 taskId)
 {
-    if (JOY_NEW(B_BUTTON))
+    if (JOY_NEW(A_BUTTON))
+    {
+        const struct OptionCategory *category = &sCategories[sCurrentCategory];
+        u8 item = sCursor[LEVEL_SETTINGS];
+
+        if (item < category->optionCount)
+        {
+            switch (category->optionIds[item])
+            {
+            case OPTION_PLAYER_COLOURS:
+                gTasks[taskId].func = Task_OptionMenuOpenPlayerColors;
+                break;
+            case OPTION_HEALTHBOX:
+                gTasks[taskId].func = Task_OptionMenuOpenHealthbox;
+                break;
+            }
+        }
+    }
+    else if (JOY_NEW(B_BUTTON))
     {
         sMenuLevel = LEVEL_CATEGORIES;
         DrawHeaderText();
