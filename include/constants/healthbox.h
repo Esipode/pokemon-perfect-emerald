@@ -14,14 +14,14 @@
 #define HB_BG_SOLID 0
 #define HB_BG_NONE  1
 
-// Foe detail presets; CUSTOM means the foe toggles match none of the others.
+// Per-side detail presets; CUSTOM means that side's toggles match none of the others.
 enum
 {
-    HB_FOE_PRESET_MINIMAL,
-    HB_FOE_PRESET_STANDARD,
-    HB_FOE_PRESET_FULL,
-    HB_FOE_PRESET_CUSTOM,
-    HB_FOE_PRESET_COUNT,
+    HB_PRESET_MINIMAL,
+    HB_PRESET_STANDARD,
+    HB_PRESET_FULL,
+    HB_PRESET_CUSTOM,
+    HB_PRESET_COUNT,
 };
 
 #define HB_SIDE_PLAYER 0
@@ -83,6 +83,7 @@ enum HealthboxElement
     HB_ELEM_TYPES,
     HB_ELEM_CAUGHT,      // foe side only
     HB_ELEM_STAT_STAGES,
+    HB_ELEM_CATCHABLE,   // foe side only
     HB_ELEM_COUNT,
 };
 
@@ -97,6 +98,7 @@ enum HealthboxRectId
     HB_RECT_STATUS,
     HB_RECT_STRIP,
     HB_RECT_CAUGHT,
+    HB_RECT_CATCHABLE,
     HB_RECT_COUNT,
 };
 

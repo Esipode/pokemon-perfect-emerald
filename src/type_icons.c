@@ -10,7 +10,7 @@
 #include "sprite.h"
 #include "type_icons.h"
 
-static void LoadTypeSpritesAndPalettes(void);
+static void LoadTypeSpritesAndPalettes(bool32 useNewIcons);
 static void LoadTypeIconsPerBattler(enum BattlerId, u32);
 
 static bool32 UseDoubleBattleCoords(u32);
@@ -201,6 +201,33 @@ const struct OamData sOamData_TypeIcons =
     .priority = 1,
 };
 
+// New healthbox style set: same frame layout and palette tags as the classic set.
+const struct SpritePalette sTypeIconPalNew1 =
+{
+    .data = gBattleIconsNew_Pal1,
+    .tag = TYPE_ICON_TAG
+};
+
+const struct SpritePalette sTypeIconPalNew2 =
+{
+    .data = gBattleIconsNew_Pal2,
+    .tag = TYPE_ICON_TAG_2
+};
+
+const struct CompressedSpriteSheet sSpriteSheet_TypeIconsNew1 =
+{
+    .data = gBattleIconsNew_Gfx1,
+    .size = (8*16) * 10,
+    .tag = TYPE_ICON_TAG,
+};
+
+const struct CompressedSpriteSheet sSpriteSheet_TypeIconsNew2 =
+{
+    .data = gBattleIconsNew_Gfx2,
+    .size = (8*16) * 9,
+    .tag = TYPE_ICON_TAG_2,
+};
+
 const struct CompressedSpriteSheet sSpriteSheet_TypeIcons2 =
 {
     .data = gBattleIcons_Gfx2,
@@ -244,21 +271,21 @@ void LoadTypeIcons(enum BattlerId battler)
         || (B_SHOW_TYPES == SHOW_TYPES_SEEN && !GetSetPokedexFlagBySpecies(species, FLAG_GET_SEEN)))
         return;
 
-    LoadTypeSpritesAndPalettes();
+    LoadTypeSpritesAndPalettes(Healthbox_IsNewStyle());
 
     for (position = 0; position < gBattlersCount; ++position)
         LoadTypeIconsPerBattler(battler, position);
 }
 
-static void LoadTypeSpritesAndPalettes(void)
+static void LoadTypeSpritesAndPalettes(bool32 useNewIcons)
 {
     if (IndexOfSpritePaletteTag(TYPE_ICON_TAG) != UCHAR_MAX)
         return;
 
-    LoadCompressedSpriteSheet(&sSpriteSheet_TypeIcons1);
-    LoadCompressedSpriteSheet(&sSpriteSheet_TypeIcons2);
-    LoadSpritePalette(&sTypeIconPal1);
-    LoadSpritePalette(&sTypeIconPal2);
+    LoadCompressedSpriteSheet(useNewIcons ? &sSpriteSheet_TypeIconsNew1 : &sSpriteSheet_TypeIcons1);
+    LoadCompressedSpriteSheet(useNewIcons ? &sSpriteSheet_TypeIconsNew2 : &sSpriteSheet_TypeIcons2);
+    LoadSpritePalette(useNewIcons ? &sTypeIconPalNew1 : &sTypeIconPal1);
+    LoadSpritePalette(useNewIcons ? &sTypeIconPalNew2 : &sTypeIconPal2);
 }
 
 static void LoadTypeIconsPerBattler(enum BattlerId battler, u32 position)
@@ -399,7 +426,8 @@ static void SetNewTypeIconXY(s32 *x, s32 *y, u32 position, bool32 useDoubleBattl
 
     HealthboxBattle_GetBoxBounds(GetBattlerAtPosition(position), &left, &top, &right, &bottom);
     *x = edgeIsRight ? right - TYPE_ICON_EDGE_INSET : left + TYPE_ICON_EDGE_INSET;
-    // Two stacked icons span 27 px; centre them on the box.
+    *x += IsOnPlayerSide(GetBattlerAtPosition(position)) ? -1 : 1;
+    // Two stacked icons span 23 px; centre them on the box.
     *y = top + (bottom - top) / 2 - 6 + 11 * typeNum;
 }
 
@@ -413,6 +441,24 @@ static void SetTypeIconXY(s32* x, s32* y, u32 position, bool32 useDoubleBattleCo
 
     *x = sTypeIconPositions[position][useDoubleBattleCoords].x;
     *y = sTypeIconPositions[position][useDoubleBattleCoords].y + (11 * typeNum);
+}
+
+u32 TypeIcons_CreatePreviewIcon(enum Type type, s32 boxLeft, s32 boxRight, s32 boxTop, s32 boxBottom, bool32 rightEdge, u32 typeNum)
+{
+    const struct SpriteTemplate *spriteTemplate = gTypesInfo[type].useSecondTypeIconPalette ? &sSpriteTemplate_TypeIcons2 : &sSpriteTemplate_TypeIcons1;
+    // Battle slides icons 10 px from their start inset.
+    s32 x = rightEdge ? boxRight - TYPE_ICON_EDGE_INSET + 10 : boxLeft + TYPE_ICON_EDGE_INSET - 10;
+    s32 y = boxTop + (boxBottom - boxTop) / 2 - 6 + 11 * typeNum;
+    u32 spriteId;
+
+    LoadTypeSpritesAndPalettes(TRUE);
+    spriteId = CreateSpriteAtEnd(spriteTemplate, x, y, UCHAR_MAX);
+    if (spriteId == MAX_SPRITES)
+        return SPRITE_NONE;
+
+    gSprites[spriteId].callback = SpriteCallbackDummy;
+        StartSpriteAnim(&gSprites[spriteId], type);
+    return spriteId;
 }
 
 static void CreateSpriteAndSetTypeSpriteAttributes(enum Type type, u32 x, u32 y, u32 position, enum BattlerId battler, bool32 useDoubleBattleCoords)
@@ -437,7 +483,13 @@ static void CreateSpriteAndSetTypeSpriteAttributes(enum Type type, u32 x, u32 y,
 
 static bool32 ShouldFlipTypeIcon(bool32 useDoubleBattleCoords, u32 position, enum Type typeId)
 {
-    enum BattleSide side = (useDoubleBattleCoords) ? B_SIDE_OPPONENT : B_SIDE_PLAYER;
+    enum BattleSide side;
+
+    // New icons carry glyphs that must not be mirrored.
+    if (Healthbox_IsNewStyle())
+        return FALSE;
+
+    side = (useDoubleBattleCoords) ? B_SIDE_OPPONENT : B_SIDE_PLAYER;
 
     if (GetBattlerSide(GetBattlerAtPosition(position)) != side)
         return FALSE;

@@ -788,7 +788,7 @@ struct PendingTrade
 
 // Healthbox style and per-side element toggles; accessors in healthbox_options.c.
 // initialized == 0 means a pre-feature save: readers fall back to defaults and the legacy
-// optionsHpDisplay* fields. The Exp toggle is player-only and the Caught toggle foe-only.
+// optionsHpDisplay* fields. The Exp toggle is player-only; the Caught and Catchable toggles are foe-only.
 struct HealthboxOptions
 {
     u32 initialized:1;
@@ -810,7 +810,8 @@ struct HealthboxOptions
     u32 foeTypes:1;
     u32 foeStatStages:1;
     u32 foeCaught:1;
-    //u32 padding:11;
+    u32 foeCatchable:1; // Can/cannot-catch icon
+    //u32 padding:10;
 };
 
 struct SaveBlock2

@@ -68,6 +68,29 @@ static const struct SpriteTemplate sSpriteTemplate_GimmickTrigger =
     .callback = SpriteCb_GimmickTrigger,
 };
 
+// New healthbox style: the trigger is a text badge rendered at runtime, so the sheet only reserves
+// the tiles. It shares the healthbox palette, which battle loads before any trigger is created.
+static const u8 ALIGNED(4) sGimmickBadgeBlankGfx[HB_BADGE_TILES * TILE_SIZE_4BPP] = {0};
+
+static const struct SpriteSheet sSpriteSheet_GimmickBadge =
+    {sGimmickBadgeBlankGfx, sizeof(sGimmickBadgeBlankGfx), TAG_GIMMICK_TRIGGER_TILE};
+
+static const struct OamData sOamData_GimmickBadge =
+{
+    .shape = SPRITE_SHAPE(32x16),
+    .size = SPRITE_SIZE(32x16),
+    .priority = 1,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_GimmickBadge =
+{
+    .tileTag = TAG_GIMMICK_TRIGGER_TILE,
+    .paletteTag = TAG_HEALTHBOX_PAL,
+    .oam = &sOamData_GimmickBadge,
+    .anims = gDummySpriteAnimTable,
+    .callback = SpriteCb_GimmickTrigger,
+};
+
 // indicator data
 static const u8 ALIGNED(4) sMegaIndicatorGfx[] = INCGFX_U8("graphics/battle_interface/mega_indicator.png", ".4bpp");
 static const u8 ALIGNED(4) sAlphaIndicatorGfx[] = INCGFX_U8("graphics/battle_interface/alpha_indicator.png", ".4bpp");

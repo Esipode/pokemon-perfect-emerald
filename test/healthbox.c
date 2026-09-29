@@ -67,6 +67,8 @@ TEST("(Healthbox) Pre-feature save shows every applicable element in the default
     EXPECT(HealthboxOptions_Shows(HB_SIDE_PLAYER, HB_ELEM_EXP));
     EXPECT(!HealthboxOptions_Shows(HB_SIDE_PLAYER, HB_ELEM_CAUGHT));
     EXPECT(HealthboxOptions_Shows(HB_SIDE_FOE, HB_ELEM_CAUGHT));
+    EXPECT(!HealthboxOptions_Shows(HB_SIDE_PLAYER, HB_ELEM_CATCHABLE));
+    EXPECT(HealthboxOptions_Shows(HB_SIDE_FOE, HB_ELEM_CATCHABLE));
     EXPECT(!HealthboxOptions_Shows(HB_SIDE_FOE, HB_ELEM_EXP));
 }
 
@@ -118,10 +120,10 @@ static void AllOnOpts(struct HealthboxResolvedOpts *o, u32 side)
     if (side == HB_SIDE_PLAYER)
         o->exp = TRUE;
     else
-        o->caught = TRUE;
+        o->caught = o->catchable = TRUE;
 }
 
-TEST("(Healthbox) Layout: all-on singles is 104x32, doubles is 96x24")
+TEST("(Healthbox) Layout: all-on singles is 104x32, doubles is 96x26")
 {
     struct HealthboxResolvedOpts o;
     struct HealthboxLayout l;
@@ -132,11 +134,11 @@ TEST("(Healthbox) Layout: all-on singles is 104x32, doubles is 96x24")
     EXPECT_EQ(l.boxH, 32);
     EXPECT_EQ(l.rightSpriteW, 64);
     EXPECT_EQ(l.screenX, 127);
-    EXPECT_EQ(l.screenY, 58);
+    EXPECT_EQ(l.screenY, 74); // bottom-anchored at y 106
 
     Healthbox_ComputeLayout(&o, HB_SIDE_PLAYER, TRUE, B_POSITION_PLAYER_LEFT, &l);
     EXPECT_EQ(l.boxW, 96);
-    EXPECT_EQ(l.boxH, 24);
+    EXPECT_EQ(l.boxH, 26);
     EXPECT_EQ(l.rightSpriteW, 32);
 }
 
@@ -150,9 +152,10 @@ TEST("(Healthbox) Layout: foe is left-anchored and has no EXP rect")
     Healthbox_ComputeLayout(&o, HB_SIDE_FOE, FALSE, B_POSITION_OPPONENT_LEFT, &l);
     EXPECT_EQ(l.rects[HB_RECT_EXP].w, 0);
     EXPECT_NE(l.rects[HB_RECT_CAUGHT].w, 0);
+    EXPECT_NE(l.rects[HB_RECT_CATCHABLE].w, 0);
     EXPECT(!l.rightAnchored);
     EXPECT_EQ(l.screenX, 13);
-    EXPECT_EQ(l.screenY, 16);
+    EXPECT_EQ(l.screenY, 4);
 }
 
 TEST("(Healthbox) Layout: empty bands are dropped")
@@ -175,6 +178,39 @@ TEST("(Healthbox) Layout: empty bands are dropped")
     EXPECT_EQ(l.rects[HB_RECT_HP_BAR].y, 2);
 }
 
+TEST("(Healthbox) Layout: doubles draw the HP value with the compact glyphs")
+{
+    struct HealthboxResolvedOpts o;
+    struct HealthboxLayout l;
+
+    AllOnOpts(&o, HB_SIDE_PLAYER);
+    o.hpBar = FALSE;
+    Healthbox_ComputeLayout(&o, HB_SIDE_PLAYER, TRUE, B_POSITION_PLAYER_LEFT, &l);
+    EXPECT(l.compactHpValue);
+    EXPECT(l.rects[HB_RECT_HP_VALUE].w != 0);
+    // The compact glyphs must fit the band; FONT_SMALL would bleed onto the status pill below.
+    EXPECT(l.rects[HB_RECT_HP_VALUE].h >= 5);
+    EXPECT(l.rects[HB_RECT_HP_VALUE].y + l.rects[HB_RECT_HP_VALUE].h <= l.rects[HB_RECT_STATUS].y);
+
+    Healthbox_ComputeLayout(&o, HB_SIDE_PLAYER, FALSE, B_POSITION_PLAYER_LEFT, &l);
+    EXPECT(!l.compactHpValue);
+}
+
+TEST("(Healthbox) Layout: doubles drop the HP band when neither HP element is shown")
+{
+    struct HealthboxResolvedOpts o;
+    struct HealthboxLayout l;
+
+    AllOnOpts(&o, HB_SIDE_PLAYER);
+    o.hpBar = FALSE;
+    o.hpValue = HB_HPVAL_NONE;
+    Healthbox_ComputeLayout(&o, HB_SIDE_PLAYER, TRUE, B_POSITION_PLAYER_LEFT, &l);
+    EXPECT_EQ(l.boxH, 20);
+    // The strip shares the status band, so it cannot hold the HP band open.
+    EXPECT(l.rects[HB_RECT_STRIP].w != 0);
+    EXPECT_EQ(l.rects[HB_RECT_STRIP].y, l.rects[HB_RECT_STATUS].y);
+}
+
 TEST("(Healthbox) Layout: every toggle combination stays inside the size limits")
 {
     u32 mask, hpValue, config;
@@ -187,9 +223,9 @@ TEST("(Healthbox) Layout: every toggle combination stays inside the size limits"
         u32 side = config & 1;
         bool32 doubles = config >> 1;
         u32 maxRight = doubles ? 96 : 128;
-        u32 maxH = doubles ? 24 : 32;
+        u32 maxH = doubles ? 26 : 32;
 
-        for (mask = 0; mask < 128; mask++)
+        for (mask = 0; mask < 256; mask++)
         {
             for (hpValue = HB_HPVAL_NONE; hpValue <= HB_HPVAL_PERCENT; hpValue++)
             {
@@ -202,6 +238,7 @@ TEST("(Healthbox) Layout: every toggle combination stays inside the size limits"
                 o.status = (mask >> 4) & 1;
                 o.statStages = (mask >> 5) & 1;
                 o.caught = (mask >> 6) & 1;
+                o.catchable = (mask >> 7) & 1;
                 o.hpValue = hpValue;
                 Healthbox_ComputeLayout(&o, side, doubles, doubles ? B_POSITION_PLAYER_RIGHT : B_POSITION_PLAYER_LEFT, &l);
 
@@ -228,9 +265,11 @@ TEST("(Healthbox) ResolveOpts keeps the player-only and foe-only toggles on thei
     Healthbox_ResolveOpts(HB_SIDE_PLAYER, &o);
     EXPECT(o.exp);
     EXPECT(!o.caught);
+    EXPECT(!o.catchable);
     Healthbox_ResolveOpts(HB_SIDE_FOE, &o);
     EXPECT(!o.exp);
     EXPECT(o.caught);
+    EXPECT(o.catchable);
 }
 
 TEST("(Healthbox) Stat stage maps to the right glyph")
@@ -266,19 +305,40 @@ TEST("(Healthbox) Stat signature differs per slot and per stage")
     EXPECT_EQ(Healthbox_PackStages(a), Healthbox_PackStages(a));
 }
 
-TEST("(Healthbox) Foe presets round trip and unmatched toggles read as custom")
+TEST("(Healthbox) Presets round trip and unmatched toggles read as custom")
 {
     struct HealthboxOptions o;
-    u32 preset;
+    u32 preset, side;
 
     ClearHealthboxSave();
     HealthboxOptions_Get(&o);
-    for (preset = HB_FOE_PRESET_MINIMAL; preset < HB_FOE_PRESET_CUSTOM; preset++)
+    for (side = HB_SIDE_PLAYER; side <= HB_SIDE_FOE; side++)
     {
-        HealthboxOptions_ApplyFoePreset(&o, preset);
-        EXPECT_EQ(HealthboxOptions_GetFoePreset(&o), preset);
+        for (preset = HB_PRESET_MINIMAL; preset < HB_PRESET_CUSTOM; preset++)
+        {
+            HealthboxOptions_ApplyPreset(&o, side, preset);
+            EXPECT_EQ(HealthboxOptions_GetPreset(&o, side), preset);
+        }
     }
-    HealthboxOptions_ApplyFoePreset(&o, HB_FOE_PRESET_STANDARD);
+    HealthboxOptions_ApplyPreset(&o, HB_SIDE_FOE, HB_PRESET_STANDARD);
     o.foeTypes = TRUE;
-    EXPECT_EQ(HealthboxOptions_GetFoePreset(&o), HB_FOE_PRESET_CUSTOM);
+    EXPECT_EQ(HealthboxOptions_GetPreset(&o, HB_SIDE_FOE), HB_PRESET_CUSTOM);
+    HealthboxOptions_ApplyPreset(&o, HB_SIDE_PLAYER, HB_PRESET_STANDARD);
+    o.playerTypes = TRUE;
+    EXPECT_EQ(HealthboxOptions_GetPreset(&o, HB_SIDE_PLAYER), HB_PRESET_CUSTOM);
+}
+
+TEST("(Healthbox) A preset only writes its own side")
+{
+    struct HealthboxOptions o, before;
+
+    ClearHealthboxSave();
+    HealthboxOptions_Get(&o);
+    HealthboxOptions_ApplyPreset(&o, HB_SIDE_FOE, HB_PRESET_FULL);
+    before = o;
+    HealthboxOptions_ApplyPreset(&o, HB_SIDE_PLAYER, HB_PRESET_MINIMAL);
+    EXPECT_EQ(HealthboxOptions_GetPreset(&o, HB_SIDE_FOE), HB_PRESET_FULL);
+    EXPECT_EQ(o.foeNick, before.foeNick);
+    EXPECT_EQ(o.foeTypes, before.foeTypes);
+    EXPECT_EQ(o.foeHpValue, before.foeHpValue);
 }

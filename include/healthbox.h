@@ -21,9 +21,9 @@ u32 HealthboxOptions_GetBackground(void);
 bool32 HealthboxOptions_Shows(u32 side, enum HealthboxElement elem);
 u32 HealthboxOptions_GetHpValue(u32 side);
 
-// Foe detail preset (HB_FOE_PRESET_*) derived from the foe toggles; applying writes them.
-u32 HealthboxOptions_GetFoePreset(const struct HealthboxOptions *options);
-void HealthboxOptions_ApplyFoePreset(struct HealthboxOptions *options, u32 preset);
+// Detail preset (HB_PRESET_*) derived from one side's toggles; applying writes them.
+u32 HealthboxOptions_GetPreset(const struct HealthboxOptions *options, u32 side);
+void HealthboxOptions_ApplyPreset(struct HealthboxOptions *options, u32 side, u32 preset);
 
 // Classic HP display mapping (OPTIONS_HP_DISPLAY_*) <-> per-side bar/value toggles.
 u32 HealthboxOptions_ModeFromToggles(bool32 bar, u32 value);
@@ -50,15 +50,17 @@ struct HealthboxResolvedOpts
     u8 types;
     u8 statStages;
     u8 caught;     // foe only
+    u8 catchable;  // foe only
 };
 
 struct HealthboxLayout
 {
     u8 boxW, boxH;
     u8 rightSpriteW;   // 64 (singles) or 32 (doubles); the left sprite is always 64 wide
+    bool8 compactHpValue; // doubles: the HP value band is too short for FONT_SMALL
     struct HealthboxRect rects[HB_RECT_COUNT];
     s16 anchorX;       // screen edge the box is pinned to
-    s16 anchorY;       // screen top
+    s16 anchorY;       // screen top, or bottom for player boxes (they grow upward)
     bool8 rightAnchored;
     s16 screenX;       // resolved top-left
     s16 screenY;
@@ -109,13 +111,27 @@ void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const str
                                const struct HealthboxRect *rect, const u8 *str, bool32 rightAlign, u32 background);
 void HealthboxRender_DrawFrame(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                u32 background);
+// Draws str (digits, '/', '%') left-aligned in rect with the compact 4x5 glyphs, after clearing it.
+void HealthboxRender_DrawHpValue(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                                 const struct HealthboxRect *rect, const u8 *str, u32 background);
 void HealthboxRender_DrawExpBar(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                 const struct HealthboxRect *rect, u32 fillPx);
 // A NULL label clears the pill. palIndex is the box palette slot holding the status colour.
+// The label is drawn with the pill's own A-Z glyphs; other characters render blank.
 void HealthboxRender_DrawStatusPill(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                     const struct HealthboxRect *rect, u32 palIndex, const u8 *label, u32 background);
 void HealthboxRender_DrawStatStrip(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                    const struct HealthboxRect *rect, const u8 stages[5], u32 background);
+// Gimmick badge sprite: a 32x16 OBJ holding a label pill. The pill is 9 px tall, so it stays
+// shorter than the shortest box any preset produces.
+#define HB_BADGE_W        32
+#define HB_BADGE_H        16
+#define HB_BADGE_TILES    ((HB_BADGE_W / 8) * (HB_BADGE_H / 8))
+#define HB_BADGE_PILL_H   9
+#define HB_BADGE_PILL_PAD 2 // Horizontal inset of the label inside the pill.
+// Plots the badge into the sprite's tiles; selected inverts the pill fill and rim.
+void HealthboxRender_DrawGimmickBadge(u32 tileNum, const u8 *label, bool32 selected);
+
 // colourLevel: 0 green, 1 yellow, 2 red.
 // trailPx is the end of the damage trail; values <= fillPx draw no trail.
 void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 trailPx, u32 colourLevel);
@@ -123,10 +139,25 @@ void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 trailPx, u32 colo
 // Full-screen settings screen for the healthbox options. The caller sets gMain.savedCallback to the
 // return screen before switching to it; changes are committed on A, B or START.
 void CB2_InitHealthboxSettings(void);
+// Settings preview: fill the caught-ball / can-catch slots of a bar sprite.
+void HealthboxPreview_LoadCaughtIcon(u8 healthBarSpriteId);
+void HealthboxPreview_LoadCatchIcon(u8 healthBarSpriteId);
+void HealthboxPreview_ApplyClassicPalette(void);
+// Settings preview: shifts the tiles of boxes and bars created next by this many tiles, so a refresh can
+// draw into a spare half of the sheet while the previous box stays on screen. Battle leaves both at 0.
+void HealthboxPreview_SetTileOffsets(u32 boxTiles, u32 barTiles);
+u32 HealthboxPreview_GetBoxTileOffset(void);
+u32 HealthboxPreview_GetBarTileOffset(void);
+// Settings preview: creates a Classic box (sprites and art) with its left sprite's bounding art centred
+// vertically in [areaTop, areaTop + areaH) and its art starting at screen x. The caller applies the palette first.
+// The box sheets for tag slot must hold the largest Classic box per buffer half (128 tiles for slot 0, 64 for slot 1).
+void HealthboxPreview_CreateClassic(struct HealthboxSprites *out, u32 side, bool32 doubles, u32 slot,
+                                    bool32 showBar, u32 hpValue, s32 x, s32 areaTop, s32 areaH);
 
 // Battle glue.
 bool32 Healthbox_IsNewStyle(void);
 void HealthboxBattle_LoadPalette(void);
+void HealthboxBattle_ApplyPalette(void);
 bool32 HealthboxBattle_LoadBoxSheet(u8 state);
 u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sprite *), s16 *barData6);
 void HealthboxBattle_GetCoords(u32 battler, s16 *x, s16 *y);
@@ -140,6 +171,7 @@ void HealthboxBattle_GetBoxBounds(u32 battler, s16 *left, s16 *top, s16 *right, 
 s32 HealthboxBattle_GetCentreShift(u32 battler);
 bool32 HealthboxBattle_HasHpBar(u32 battler);
 bool32 HealthboxBattle_HasCaughtIcons(u32 battler);
+bool32 HealthboxBattle_HasCatchIcon(u32 battler);
 const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler);
 void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 trailPx, u32 colourLevel);
 void HealthboxBattle_DrawExpBar(u8 healthboxSpriteId, u32 fillPx);

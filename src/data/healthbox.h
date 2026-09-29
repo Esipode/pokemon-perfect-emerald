@@ -6,8 +6,8 @@
 enum HealthboxBand
 {
     HB_BAND_A, // nick, level
-    HB_BAND_B, // HP bar, HP value (doubles: also the stat strip)
-    HB_BAND_C, // status pill, caught icons (singles: also the stat strip)
+    HB_BAND_B, // HP bar, HP value
+    HB_BAND_C, // status pill, stat strip, caught / can-catch icons
     HB_BAND_D, // EXP bar (singles player)
     HB_BAND_COUNT,
 };
@@ -43,51 +43,55 @@ static const struct HealthboxLayoutSpec sHealthboxSinglesSpec =
         [HB_RECT_HP_BAR]   = { HB_BAND_B,  5, 2, 48, 4 },
         [HB_RECT_HP_VALUE] = { HB_BAND_B, 58, 0, 40, 8 },
         [HB_RECT_EXP]      = { HB_BAND_D, 34, 1, 64, 2 },
-        [HB_RECT_STATUS]   = { HB_BAND_C,  5, 0, 24, 7 },
+        [HB_RECT_STATUS]   = { HB_BAND_C,  5, 0, 24, 8 },
         [HB_RECT_STRIP]    = { HB_BAND_C, 32, 1, 40, 6 },
-        [HB_RECT_CAUGHT]   = { HB_BAND_C, 82, 0, 16, 8 },
+        [HB_RECT_CAUGHT]   = { HB_BAND_C, 82, 0, 8, 8 },
+        [HB_RECT_CATCHABLE] = { HB_BAND_C, 90, 0, 8, 8 },
     },
 };
 
-// The 24 px height is a hard limit (stacked boxes and the textbox at y 112).
+// The 26 px height is a hard limit (stacked boxes and the textbox at y 112); the anchors below
+// leave exactly one spare row between the two boxes of a side.
 static const struct HealthboxLayoutSpec sHealthboxDoublesSpec =
 {
     .topPad = 2,
     .rightMargin = 4,
     .rightSpriteW = 32,
-    .bandH = { 9, 6, 7, 0 },
+    .bandH = { 10, 7, 7, 0 },
     .elems =
     {
         [HB_RECT_NICK]     = { HB_BAND_A,  4, 0, 48, 8 },
         [HB_RECT_LEVEL]    = { HB_BAND_A, 59, 0, 32, 8 },
         [HB_RECT_HP_BAR]   = { HB_BAND_B,  4, 1, 48, 4 },
         [HB_RECT_HP_VALUE] = { HB_BAND_B,  4, 0, 48, 6 },
-        [HB_RECT_STRIP]    = { HB_BAND_B, 52, 0, 40, 6 },
         [HB_RECT_STATUS]   = { HB_BAND_C,  4, 0, 24, 7 },
-        [HB_RECT_CAUGHT]   = { HB_BAND_C, 76, 0, 16, 7 },
+        [HB_RECT_STRIP]    = { HB_BAND_C, 32, 0, 40, 6 },
+        [HB_RECT_CAUGHT]   = { HB_BAND_C, 76, 0, 8, 7 },
+        [HB_RECT_CATCHABLE] = { HB_BAND_C, 84, 0, 8, 7 },
     },
 };
 
 struct HealthboxAnchor
 {
     s16 x;
-    s16 y;
+    s16 y;              // top edge, or bottom edge when bottomAnchored
     bool8 rightAnchored;
+    bool8 bottomAnchored;
 };
 
 // Indexed by B_POSITION_*; singles use the first two entries (player, foe).
 static const struct HealthboxAnchor sHealthboxSinglesAnchors[] =
 {
-    [B_POSITION_PLAYER_LEFT]   = { 231, 58, TRUE },
-    [B_POSITION_OPPONENT_LEFT] = {  13, 16, FALSE },
+    [B_POSITION_PLAYER_LEFT]   = { 231, 106, TRUE,  TRUE },
+    [B_POSITION_OPPONENT_LEFT] = {  13,   4, FALSE, FALSE },
 };
 
 static const struct HealthboxAnchor sHealthboxDoublesAnchors[] =
 {
-    [B_POSITION_PLAYER_LEFT]    = { 228, 62, TRUE },
-    [B_POSITION_OPPONENT_LEFT]  = {  13,  5, FALSE },
-    [B_POSITION_PLAYER_RIGHT]   = { 240, 87, TRUE },
-    [B_POSITION_OPPONENT_RIGHT] = {   1, 30, FALSE },
+    [B_POSITION_PLAYER_LEFT]    = { 228,  85, TRUE,  TRUE },
+    [B_POSITION_OPPONENT_LEFT]  = {  13,   5, FALSE, FALSE },
+    [B_POSITION_PLAYER_RIGHT]   = { 240, 112, TRUE,  TRUE },
+    [B_POSITION_OPPONENT_RIGHT] = {   1,  32, FALSE, FALSE },
 };
 
 // Indexed by HB_PAL_*. Slots 12-15 are status colours written at runtime.
@@ -98,7 +102,7 @@ static const u16 sHealthboxNewPal[16] =
     [HB_PAL_FILL]    = RGB(5, 6, 9),
     [HB_PAL_SHADOW]  = RGB(2, 3, 5),
     [HB_PAL_RIM]     = RGB(14, 16, 20),
-    [HB_PAL_EXP]     = RGB(6, 14, 28),
+    [HB_PAL_EXP]     = RGB(11, 20, 31),
     [HB_PAL_TROUGH]  = RGB(10, 13, 12),
     [HB_PAL_ATK]     = RGB(29, 12, 6),
     [HB_PAL_DEF]     = RGB(29, 25, 5),
@@ -139,9 +143,64 @@ static const struct HealthboxStatusSpec sHealthboxStatusSpecs[] =
     { STATUS1_PARALYSIS,  PAL_STATUS_PAR, COMPOUND_STRING("PAR") },
 };
 
-// Status pill label font; its ink is this many rows tall.
-#define HB_PILL_FONT     FONT_SMALL_NARROW
-#define HB_PILL_INK_H    6
+// Status pill labels use their own glyphs; the text fonts' 8-row capitals do not fit the pill.
+#define HB_PILL_GLYPH_W   5
+#define HB_PILL_GLYPH_H   5
+#define HB_PILL_GLYPH_GAP 1
+
+// Indexed by letter, CHAR_A-relative. One byte per row; bit 4 is the leftmost pixel.
+// Only the letters used by sHealthboxStatusSpecs and the gimmick badge labels are drawn; the rest
+// render blank.
+static const u8 sPillGlyphs[26][HB_PILL_GLYPH_H] =
+{
+    [0]  = { 0x0E, 0x11, 0x1F, 0x11, 0x11 }, // A
+    [1]  = { 0x1E, 0x11, 0x1E, 0x11, 0x1E }, // B
+    [3]  = { 0x1E, 0x11, 0x11, 0x11, 0x1E }, // D
+    [4]  = { 0x1F, 0x10, 0x1E, 0x10, 0x1F }, // E
+    [5]  = { 0x1F, 0x10, 0x1E, 0x10, 0x10 }, // F
+    [6]  = { 0x0F, 0x10, 0x13, 0x11, 0x0F }, // G
+    [11] = { 0x10, 0x10, 0x10, 0x10, 0x1F }, // L
+    [12] = { 0x11, 0x1B, 0x15, 0x11, 0x11 }, // M
+    [13] = { 0x11, 0x19, 0x15, 0x13, 0x11 }, // N
+    [14] = { 0x0E, 0x11, 0x11, 0x11, 0x0E }, // O
+    [15] = { 0x1E, 0x11, 0x1E, 0x10, 0x10 }, // P
+    [17] = { 0x1E, 0x11, 0x1E, 0x12, 0x11 }, // R
+    [18] = { 0x0F, 0x10, 0x0E, 0x01, 0x1E }, // S
+    [19] = { 0x1F, 0x04, 0x04, 0x04, 0x04 }, // T
+    [21] = { 0x11, 0x11, 0x11, 0x0A, 0x04 }, // V
+    [23] = { 0x11, 0x0A, 0x04, 0x0A, 0x11 }, // X
+    [25] = { 0x1F, 0x02, 0x04, 0x08, 0x1F }, // Z
+};
+
+// Compact HP-value glyphs. FONT_SMALL ink is 8 rows tall; the doubles HP value band is 6, so the
+// font bleeds onto the status pill below it. Doubles draw the value with these instead.
+#define HB_NUM_GLYPH_W   4
+#define HB_NUM_GLYPH_H   5
+#define HB_NUM_GLYPH_GAP 1
+
+enum
+{
+    HB_NUM_SLASH = 10,
+    HB_NUM_PERCENT,
+    HB_NUM_COUNT,
+};
+
+// One byte per row; bit 3 is the leftmost pixel.
+static const u8 sHpValueGlyphs[HB_NUM_COUNT][HB_NUM_GLYPH_H] =
+{
+    [0]              = { 0x6, 0x9, 0x9, 0x9, 0x6 },
+    [1]              = { 0x2, 0x6, 0x2, 0x2, 0x7 },
+    [2]              = { 0x6, 0x9, 0x2, 0x4, 0xF },
+    [3]              = { 0xE, 0x1, 0x6, 0x1, 0xE },
+    [4]              = { 0x9, 0x9, 0xF, 0x1, 0x1 },
+    [5]              = { 0xF, 0x8, 0xE, 0x1, 0xE },
+    [6]              = { 0x6, 0x8, 0xE, 0x9, 0x6 },
+    [7]              = { 0xF, 0x1, 0x2, 0x4, 0x4 },
+    [8]              = { 0x6, 0x9, 0x6, 0x9, 0x6 },
+    [9]              = { 0x6, 0x9, 0x7, 0x1, 0x6 },
+    [HB_NUM_SLASH]   = { 0x1, 0x2, 0x2, 0x4, 0x8 },
+    [HB_NUM_PERCENT] = { 0x9, 0x1, 0x2, 0x4, 0x9 },
+};
 
 #define HB_STRIP_SLOTS   5
 #define HB_STRIP_SLOT_W  8

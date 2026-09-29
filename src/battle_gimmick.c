@@ -130,17 +130,29 @@ void SetGimmickAsActivated(enum BattlerId battler, enum Gimmick gimmick)
 #define DOUBLES_GIMMICK_TRIGGER_POS_X_SLIDE (15)
 #define DOUBLES_GIMMICK_TRIGGER_POS_Y_DIFF (-2)
 
+// New healthbox style: the badge is a 32x16 sprite docked to the box's centre-side edge. Offsets
+// are from the box main sprite's origin, which sits HB_BOX_CENTER_X right of the box's left edge,
+// so the box's left edge is at -HB_BOX_CENTER_X whatever the preset's box size.
+#define NEW_GIMMICK_BADGE_POS_X_OPTIMAL  (47) // Pill 3 px clear of the box.
+#define NEW_GIMMICK_BADGE_POS_X_PRIORITY (46) // Behind the box from the first pixel the pill could overlap it.
+// Tucked under the box: the sprite's left edge clears the frame's 3 px corner inset, so no part of
+// the badge shows past the panel at any box height.
+#define NEW_GIMMICK_BADGE_POS_X_SLIDE    (13)
+
 #define tBattler    data[0]
 #define tHide       data[1]
 
-// The New healthbox can be shorter than the Classic 32 px box; keep the trigger on its centre.
-static s32 GetTriggerYShift(enum BattlerId battler)
-{
-    return Healthbox_IsNewStyle() ? HealthboxBattle_GetCentreShift(battler) : 0;
-}
-
 void ChangeGimmickTriggerSprite(u32 spriteId, u32 animId)
 {
+    if (Healthbox_IsNewStyle())
+    {
+        // The badge has no second frame; selection re-renders the pill inverted.
+        enum Gimmick gimmick = gBattleStruct->gimmick.usableGimmick[gSprites[spriteId].tBattler];
+
+        HealthboxRender_DrawGimmickBadge(gSprites[spriteId].oam.tileNum, gGimmicksInfo[gimmick].triggerLabelNew, animId != 0);
+        return;
+    }
+
     StartSpriteAnim(&gSprites[spriteId], animId);
 }
 
@@ -157,6 +169,23 @@ void CreateGimmickTriggerSprite(enum BattlerId battler)
         return;
     }
 
+    if (Healthbox_IsNewStyle())
+    {
+        if (GetSpriteTileStartByTag(TAG_GIMMICK_TRIGGER_TILE) == 0xFFFF)
+            LoadSpriteSheet(&sSpriteSheet_GimmickBadge);
+
+        if (gBattleStruct->gimmick.triggerSpriteId == 0xFF)
+            gBattleStruct->gimmick.triggerSpriteId = CreateSprite(&sSpriteTemplate_GimmickBadge,
+                                                                  gSprites[gHealthboxSpriteIds[battler]].x - NEW_GIMMICK_BADGE_POS_X_SLIDE,
+                                                                  gSprites[gHealthboxSpriteIds[battler]].y + HealthboxBattle_GetCentreShift(battler), 0);
+
+        gSprites[gBattleStruct->gimmick.triggerSpriteId].tBattler = battler;
+        gSprites[gBattleStruct->gimmick.triggerSpriteId].tHide = FALSE;
+
+        ChangeGimmickTriggerSprite(gBattleStruct->gimmick.triggerSpriteId, 0);
+        return;
+    }
+
     LoadSpritePalette(gimmick->triggerPal);
     if (GetSpriteTileStartByTag(TAG_GIMMICK_TRIGGER_TILE) == 0xFFFF)
         LoadSpriteSheet(gimmick->triggerSheet);
@@ -166,11 +195,11 @@ void CreateGimmickTriggerSprite(enum BattlerId battler)
         if (GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES)
             gBattleStruct->gimmick.triggerSpriteId = CreateSprite(gimmick->triggerTemplate,
                                                                   gSprites[gHealthboxSpriteIds[battler]].x - DOUBLES_GIMMICK_TRIGGER_POS_X_SLIDE,
-                                                                  gSprites[gHealthboxSpriteIds[battler]].y - DOUBLES_GIMMICK_TRIGGER_POS_Y_DIFF + GetTriggerYShift(battler), 0);
+                                                                  gSprites[gHealthboxSpriteIds[battler]].y - DOUBLES_GIMMICK_TRIGGER_POS_Y_DIFF, 0);
         else
             gBattleStruct->gimmick.triggerSpriteId = CreateSprite(gimmick->triggerTemplate,
                                                                   gSprites[gHealthboxSpriteIds[battler]].x - SINGLES_GIMMICK_TRIGGER_POS_X_SLIDE,
-                                                                  gSprites[gHealthboxSpriteIds[battler]].y - SINGLES_GIMMICK_TRIGGER_POS_Y_DIFF + GetTriggerYShift(battler), 0);
+                                                                  gSprites[gHealthboxSpriteIds[battler]].y - SINGLES_GIMMICK_TRIGGER_POS_Y_DIFF, 0);
     }
 
     gSprites[gBattleStruct->gimmick.triggerSpriteId].tBattler = battler;
@@ -183,6 +212,10 @@ bool32 IsGimmickTriggerSpriteActive(void)
 {
     if (GetSpriteTileStartByTag(TAG_GIMMICK_TRIGGER_TILE) == 0xFFFF)
         return FALSE;
+
+    // The badge shares the healthbox palette, so its tiles are the only liveness signal.
+    if (Healthbox_IsNewStyle())
+        return TRUE;
 
     if (IndexOfSpritePaletteTag(TAG_GIMMICK_TRIGGER_PAL) != 0xFF)
         return TRUE;
@@ -209,7 +242,9 @@ void HideGimmickTriggerSprite(void)
 
 void DestroyGimmickTriggerSprite(void)
 {
-    FreeSpritePaletteByTag(TAG_GIMMICK_TRIGGER_PAL);
+    // The badge borrows the healthbox palette; freeing it would strip the boxes.
+    if (!Healthbox_IsNewStyle())
+        FreeSpritePaletteByTag(TAG_GIMMICK_TRIGGER_PAL);
     FreeSpriteTilesByTag(TAG_GIMMICK_TRIGGER_TILE);
     if (gBattleStruct->gimmick.triggerSpriteId != 0xFF)
         DestroySprite(&gSprites[gBattleStruct->gimmick.triggerSpriteId]);
@@ -219,7 +254,7 @@ void DestroyGimmickTriggerSprite(void)
 static void SpriteCb_GimmickTrigger(struct Sprite *sprite)
 {
     s32 xSlide, xPriority, xOptimal;
-    s32 yDiff;
+    s32 yDiff, y2Diff;
     s32 xHealthbox = gSprites[gHealthboxSpriteIds[sprite->tBattler]].x;
 
     if (GetBattlerCoordsIndex(sprite->tBattler) == BATTLE_COORDS_DOUBLES)
@@ -236,7 +271,17 @@ static void SpriteCb_GimmickTrigger(struct Sprite *sprite)
         xOptimal = SINGLES_GIMMICK_TRIGGER_POS_X_OPTIMAL;
         yDiff = SINGLES_GIMMICK_TRIGGER_POS_Y_DIFF;
     }
-    yDiff -= GetTriggerYShift(sprite->tBattler);
+    // The Classic offsets are applied to y and y2 both, so they land twice by design.
+    y2Diff = yDiff;
+    if (Healthbox_IsNewStyle())
+    {
+        xSlide = NEW_GIMMICK_BADGE_POS_X_SLIDE;
+        xPriority = NEW_GIMMICK_BADGE_POS_X_PRIORITY;
+        xOptimal = NEW_GIMMICK_BADGE_POS_X_OPTIMAL;
+        // The New box can be shorter than the Classic 32 px box; centre the badge on it exactly once.
+        yDiff = -HealthboxBattle_GetCentreShift(sprite->tBattler);
+        y2Diff = 0;
+    }
 
     if (sprite->tHide)
     {
@@ -249,7 +294,7 @@ static void SpriteCb_GimmickTrigger(struct Sprite *sprite)
             sprite->oam.priority = 1;
 
         sprite->y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y - yDiff;
-        sprite->y2 = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y2 - yDiff;
+        sprite->y2 = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y2 - y2Diff;
         if (sprite->x == xHealthbox - xSlide)
             DestroyGimmickTriggerSprite();
     }
@@ -268,7 +313,7 @@ static void SpriteCb_GimmickTrigger(struct Sprite *sprite)
             sprite->oam.priority = 1;
 
         sprite->y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y - yDiff;
-        sprite->y2 = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y2 - yDiff;
+        sprite->y2 = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y2 - y2Diff;
     }
 }
 

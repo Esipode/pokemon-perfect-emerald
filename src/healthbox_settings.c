@@ -18,6 +18,7 @@
 #include "task.h"
 #include "text.h"
 #include "text_window.h"
+#include "type_icons.h"
 #include "window.h"
 #include "constants/battle.h"
 #include "constants/characters.h"
@@ -36,7 +37,7 @@ enum
 {
     ROW_STYLE,
     ROW_BACKGROUND,
-    ROW_FOE_PRESET, // Derived from the foe toggles; not stored.
+    ROW_PRESET, // Derived from that side's toggles; not stored.
     ROW_NAME,
     ROW_LEVEL,
     ROW_HP_BAR,
@@ -45,6 +46,7 @@ enum
     ROW_STATUS,
     ROW_TYPES,
     ROW_CAUGHT,     // Foe only.
+    ROW_CATCHABLE,  // Foe only.
     ROW_STAT_STAGES,
     ROW_COUNT,
 };
@@ -60,17 +62,18 @@ enum
 #define COLUMN_YOU_X   122
 #define COLUMN_FOE_X   176
 #define COLUMN_SHARED_X 149
+#define SWITCH_HINT_X  190 // L/R glyphs after the FOE caption
+#define LIST_TEXT_Y_SHIFT 3 // List text sits this many px above its row top
 
 // Tile rows: the header frame takes 0-3, the preview 4-8, the list frame 9-19.
 #define PREVIEW_TILE_TOP  4
 #define PREVIEW_TILE_ROWS 5
 #define PREVIEW_PIXEL_TOP (PREVIEW_TILE_TOP * 8)
 #define PREVIEW_PIXEL_H   (PREVIEW_TILE_ROWS * 8)
-#define PREVIEW_PIXEL_W   (26 * 8) // WIN_PREVIEW width
 #define LIST_TILE_TOP  10
 #define LIST_PIXEL_TOP (LIST_TILE_TOP * 8)
 
-// Preview boxes; each slot fits the largest box of its kind (104 and 96 px wide).
+// Preview boxes; each slot fits the largest box of its kind (104 and 96 px wide) plus a type icon on its outer side.
 enum
 {
     PREVIEW_SINGLES,
@@ -78,13 +81,17 @@ enum
     PREVIEW_COUNT,
 };
 
-static const u8 sPreviewX[PREVIEW_COUNT] = { 12, 124 };
+static const u8 sPreviewX[PREVIEW_COUNT] = { 12, 132 };
 
 // Sample mon shown in the preview.
 #define SAMPLE_LEVEL      50
 #define SAMPLE_HP         120
 #define SAMPLE_MAX_HP     200
 #define SAMPLE_HP_COLOUR  0 // green
+#define SAMPLE_TYPE       TYPE_ELECTRIC
+
+// Bar sprite tiles: 8 for the HP bar plus the two icon slots.
+#define HB_PREVIEW_BAR_TILES 10
 
 // Frame tile ids within the frame gfx loaded at init.
 #define TILE_TOP_CORNER_L 0x1A2
@@ -102,6 +109,7 @@ struct PreviewBox
     struct HealthboxLayout layout;
     struct Subsprite subsprites[HB_BAR_SUBSPRITES_MAX];
     struct SubspriteTable subspriteTable;
+    u8 typeIcon; // SPRITE_NONE when absent
 };
 
 static EWRAM_DATA struct
@@ -111,14 +119,15 @@ static EWRAM_DATA struct
     u8 row;
     u8 top;  // First visible row.
     u8 side; // HB_SIDE_*; the column the cursor is in.
+    u8 buffer; // Half of each sprite sheet the on-screen boxes use.
 } sSettings = {0};
 
 static const u8 sText_Header[]   = _("HEALTHBOX");
 static const u8 sText_You[]      = _("YOU");
 static const u8 sText_Foe[]      = _("FOE");
 static const u8 sText_Scroll[]   = _("{UP_ARROW}{DOWN_ARROW}");
+static const u8 sText_SwitchHint[] = _("{L_BUTTON}{R_BUTTON}");
 static const u8 sText_Dash[]     = _("-");
-static const u8 sText_Classic[]  = _("Classic");
 static const u8 sText_SampleNick[] = _("Pikachu");
 static const u8 sText_SamplePsn[]  = _("PSN");
 
@@ -132,7 +141,7 @@ static const u8 *const sRowNames[ROW_COUNT] =
 {
     [ROW_STYLE]       = COMPOUND_STRING("STYLE"),
     [ROW_BACKGROUND]  = COMPOUND_STRING("BACKGROUND"),
-    [ROW_FOE_PRESET]  = COMPOUND_STRING("FOE PRESET"),
+    [ROW_PRESET]      = COMPOUND_STRING("PRESET"),
     [ROW_NAME]        = COMPOUND_STRING("NAME"),
     [ROW_LEVEL]       = COMPOUND_STRING("LEVEL"),
     [ROW_HP_BAR]      = COMPOUND_STRING("HP BAR"),
@@ -141,6 +150,7 @@ static const u8 *const sRowNames[ROW_COUNT] =
     [ROW_STATUS]      = COMPOUND_STRING("STATUS"),
     [ROW_TYPES]       = COMPOUND_STRING("TYPES"),
     [ROW_CAUGHT]      = COMPOUND_STRING("CAUGHT"),
+    [ROW_CATCHABLE]   = COMPOUND_STRING("CAN CATCH"),
     [ROW_STAT_STAGES] = COMPOUND_STRING("STAT CHANGES"),
 };
 
@@ -156,12 +166,12 @@ static const u8 *const sBackgroundNames[] =
     [HB_BG_NONE]  = COMPOUND_STRING("NONE"),
 };
 
-static const u8 *const sFoePresetNames[HB_FOE_PRESET_COUNT] =
+static const u8 *const sPresetNames[HB_PRESET_COUNT] =
 {
-    [HB_FOE_PRESET_MINIMAL]  = COMPOUND_STRING("MINIMAL"),
-    [HB_FOE_PRESET_STANDARD] = COMPOUND_STRING("STANDARD"),
-    [HB_FOE_PRESET_FULL]     = COMPOUND_STRING("FULL"),
-    [HB_FOE_PRESET_CUSTOM]   = COMPOUND_STRING("CUSTOM"),
+    [HB_PRESET_MINIMAL]  = COMPOUND_STRING("MINIMAL"),
+    [HB_PRESET_STANDARD] = COMPOUND_STRING("STANDARD"),
+    [HB_PRESET_FULL]     = COMPOUND_STRING("FULL"),
+    [HB_PRESET_CUSTOM]   = COMPOUND_STRING("CUSTOM"),
 };
 
 static const u8 *const sHpValueNames[] =
@@ -182,7 +192,6 @@ static const u8 sColorLabel[]    = {TEXT_COLOR_WHITE, TEXT_COLOR_DARK_GRAY, TEXT
 static const u8 sColorValue[]    = {TEXT_COLOR_WHITE, TEXT_COLOR_GREEN, TEXT_COLOR_LIGHT_GREEN};
 static const u8 sColorSelected[] = {TEXT_COLOR_WHITE, TEXT_COLOR_RED, TEXT_COLOR_LIGHT_RED};
 static const u8 sColorDisabled[] = {TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GREEN, TEXT_COLOR_LIGHT_GREEN};
-static const u8 sColorPreview[]  = {TEXT_COLOR_TRANSPARENT, TEXT_COLOR_WHITE, TEXT_COLOR_DARK_GRAY};
 
 static const struct WindowTemplate sWinTemplates[] =
 {
@@ -232,13 +241,17 @@ static const struct SpriteTemplate sPreviewBarTemplates[PREVIEW_COUNT] =
     { .tileTag = TAG_HEALTHBAR_PLAYER2_TILE, .paletteTag = TAG_HEALTHBAR_PAL, .oam = &sOamData_PreviewBar },
 };
 
-// Blank sheets sized like the battle ones: singles 2x 64x32, doubles 64x32 + 32x32, bars 8 tiles + 2 icon slots.
+// Blank sheets sized for the largest box of either style: Classic singles 2x 64x64, Classic doubles
+// 2x 64x32 (New needs less); bars 8 tiles + 2 icon slots. Each sheet holds two of those, so a refresh
+// draws into the half that is not on screen.
+static const u16 sBoxBufferTiles[PREVIEW_COUNT] = { 128, 64 };
+
 static const struct CompressedSpriteSheet sPreviewSheets[] =
 {
-    { gBlankGfxCompressed, 64 * TILE_SIZE_4BPP, TAG_HEALTHBOX_PLAYER1_TILE },
-    { gBlankGfxCompressed, 48 * TILE_SIZE_4BPP, TAG_HEALTHBOX_PLAYER2_TILE },
-    { gBlankGfxCompressed, 10 * TILE_SIZE_4BPP, TAG_HEALTHBAR_PLAYER1_TILE },
-    { gBlankGfxCompressed, 10 * TILE_SIZE_4BPP, TAG_HEALTHBAR_PLAYER2_TILE },
+    { gBlankGfxCompressed, 2 * 128 * TILE_SIZE_4BPP, TAG_HEALTHBOX_PLAYER1_TILE },
+    { gBlankGfxCompressed, 2 * 64 * TILE_SIZE_4BPP, TAG_HEALTHBOX_PLAYER2_TILE },
+    { gBlankGfxCompressed, 2 * HB_PREVIEW_BAR_TILES * TILE_SIZE_4BPP, TAG_HEALTHBAR_PLAYER1_TILE },
+    { gBlankGfxCompressed, 2 * HB_PREVIEW_BAR_TILES * TILE_SIZE_4BPP, TAG_HEALTHBAR_PLAYER2_TILE },
 };
 
 static const struct SpritePalette sPreviewBarPalette = { gBattleInterface_BallDisplayPal, TAG_HEALTHBAR_PAL };
@@ -287,9 +300,10 @@ static void VBlankCB(void)
     TransferPlttBuffer();
 }
 
+// The preset row holds a separate value per side, so it joins the per-side rows.
 static bool32 IsPerSideRow(u32 row)
 {
-    return row >= FIRST_PER_SIDE_ROW;
+    return row >= FIRST_PER_SIDE_ROW || row == ROW_PRESET;
 }
 
 // Classic only honours HP BAR / HP VALUE; the rest are greyed out.
@@ -304,7 +318,7 @@ static bool32 IsCellApplicable(u32 row, u32 side)
 {
     if (row == ROW_EXP)
         return side == HB_SIDE_PLAYER;
-    if (row == ROW_CAUGHT)
+    if (row == ROW_CAUGHT || row == ROW_CATCHABLE)
         return side == HB_SIDE_FOE;
     return TRUE;
 }
@@ -314,7 +328,7 @@ static u32 GetValueCount(u32 row)
     switch (row)
     {
     case ROW_HP_VALUE:
-    case ROW_FOE_PRESET:
+    case ROW_PRESET:
         return 3; // CUSTOM is display only.
     default:
         return 2;
@@ -330,7 +344,7 @@ static u32 GetValue(u32 row, u32 side)
     {
     case ROW_STYLE:       return o->style;
     case ROW_BACKGROUND:  return o->background;
-    case ROW_FOE_PRESET:  return HealthboxOptions_GetFoePreset(o);
+    case ROW_PRESET:      return HealthboxOptions_GetPreset(o, side);
     case ROW_NAME:        return player ? o->playerNick : o->foeNick;
     case ROW_LEVEL:       return player ? o->playerLevel : o->foeLevel;
     case ROW_HP_BAR:      return player ? o->playerHpBar : o->foeHpBar;
@@ -339,6 +353,7 @@ static u32 GetValue(u32 row, u32 side)
     case ROW_STATUS:      return player ? o->playerStatus : o->foeStatus;
     case ROW_TYPES:       return player ? o->playerTypes : o->foeTypes;
     case ROW_CAUGHT:      return o->foeCaught;
+    case ROW_CATCHABLE:   return o->foeCatchable;
     case ROW_STAT_STAGES: return player ? o->playerStatStages : o->foeStatStages;
     default:              return 0;
     }
@@ -353,7 +368,7 @@ static void SetValue(u32 row, u32 side, u32 value)
     {
     case ROW_STYLE:       o->style = value; break;
     case ROW_BACKGROUND:  o->background = value; break;
-    case ROW_FOE_PRESET:  HealthboxOptions_ApplyFoePreset(o, value); break;
+    case ROW_PRESET:      HealthboxOptions_ApplyPreset(o, side, value); break;
     case ROW_NAME:        if (player) o->playerNick = value; else o->foeNick = value; break;
     case ROW_LEVEL:       if (player) o->playerLevel = value; else o->foeLevel = value; break;
     case ROW_HP_BAR:      if (player) o->playerHpBar = value; else o->foeHpBar = value; break;
@@ -362,6 +377,7 @@ static void SetValue(u32 row, u32 side, u32 value)
     case ROW_STATUS:      if (player) o->playerStatus = value; else o->foeStatus = value; break;
     case ROW_TYPES:       if (player) o->playerTypes = value; else o->foeTypes = value; break;
     case ROW_CAUGHT:      o->foeCaught = value; break;
+    case ROW_CATCHABLE:   o->foeCatchable = value; break;
     case ROW_STAT_STAGES: if (player) o->playerStatStages = value; else o->foeStatStages = value; break;
     }
 }
@@ -373,7 +389,7 @@ static const u8 *GetValueText(u32 row, u32 value)
     case ROW_STYLE:      return sStyleNames[value];
     case ROW_BACKGROUND: return sBackgroundNames[value];
     case ROW_HP_VALUE:   return sHpValueNames[value];
-    case ROW_FOE_PRESET: return sFoePresetNames[value];
+    case ROW_PRESET:     return sPresetNames[value];
     default:             return sOnOffNames[value];
     }
 }
@@ -410,11 +426,11 @@ static void DrawHeader(void)
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, sText_Header, 8, 1, TEXT_SKIP_DRAW, NULL);
     if (sSettings.top > 0 || sSettings.top + VISIBLE_ROWS < ROW_COUNT)
         AddTextPrinterParameterized3(WIN_HEADER, FONT_NORMAL, 84, 1, sColorValue, TEXT_SKIP_DRAW, sText_Scroll);
-    if (IsPerSideRow(sSettings.row))
-    {
-        DrawCentred(WIN_HEADER, youColor, COLUMN_YOU_X, 3, sText_You);
-        DrawCentred(WIN_HEADER, foeColor, COLUMN_FOE_X, 3, sText_Foe);
-    }
+    if (!IsPerSideRow(sSettings.row))
+        youColor = foeColor = sColorDisabled;
+    DrawCentred(WIN_HEADER, youColor, COLUMN_YOU_X, 0, sText_You);
+    DrawCentred(WIN_HEADER, foeColor, COLUMN_FOE_X, 0, sText_Foe);
+    AddTextPrinterParameterized3(WIN_HEADER, FONT_SMALL_NARROW, SWITCH_HINT_X, 0, sColorLabel, TEXT_SKIP_DRAW, sText_SwitchHint);
     CopyWindowToVram(WIN_HEADER, COPYWIN_GFX);
 }
 
@@ -426,28 +442,33 @@ static void HighlightSelectedRow(void)
     SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(y, y + ROW_PITCH));
 }
 
+static void DrawListRow(u32 i, s32 y)
+{
+    u32 row = sSettings.top + i;
+
+    AddTextPrinterParameterized3(WIN_LIST, FONT_SMALL_NARROW, LABEL_X, y,
+                                 IsRowActive(row) ? sColorLabel : sColorDisabled, TEXT_SKIP_DRAW, sRowNames[row]);
+    if (IsPerSideRow(row))
+    {
+        DrawCell(row, HB_SIDE_PLAYER, COLUMN_YOU_X, y);
+        DrawCell(row, HB_SIDE_FOE, COLUMN_FOE_X, y);
+    }
+    else
+    {
+        DrawCell(row, HB_SIDE_PLAYER, COLUMN_SHARED_X, y);
+    }
+}
+
 static void DrawList(void)
 {
     u32 i;
 
     FillWindowPixelBuffer(WIN_LIST, PIXEL_FILL(1));
-    for (i = 0; i < VISIBLE_ROWS; i++)
-    {
-        u32 row = sSettings.top + i;
-        s32 y = i * ROW_PITCH + 1;
-
-        AddTextPrinterParameterized3(WIN_LIST, FONT_SMALL_NARROW, LABEL_X, y,
-                                     IsRowActive(row) ? sColorLabel : sColorDisabled, TEXT_SKIP_DRAW, sRowNames[row]);
-        if (IsPerSideRow(row))
-        {
-            DrawCell(row, HB_SIDE_PLAYER, COLUMN_YOU_X, y);
-            DrawCell(row, HB_SIDE_FOE, COLUMN_FOE_X, y);
-        }
-        else
-        {
-            DrawCell(row, HB_SIDE_PLAYER, COLUMN_SHARED_X, y);
-        }
-    }
+    for (i = 0; i < VISIBLE_ROWS - 1; i++)
+        DrawListRow(i, i * ROW_PITCH + 1);
+    ScrollWindow(WIN_LIST, 0, LIST_TEXT_Y_SHIFT, PIXEL_FILL(1));
+    // The last row is drawn after the shift; at its unshifted y the window edge clips its glyphs.
+    DrawListRow(VISIBLE_ROWS - 1, (VISIBLE_ROWS - 1) * ROW_PITCH + 1 - LIST_TEXT_Y_SHIFT);
     CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
     HighlightSelectedRow();
 }
@@ -488,13 +509,14 @@ static void ChangeValue(s32 dir)
 {
     u32 row = sSettings.row;
     u32 count = GetValueCount(row);
+    u32 side = sSettings.side;
 
-    if (!IsRowActive(row) || !IsCellApplicable(row, sSettings.side))
+    if (!IsRowActive(row) || !IsCellApplicable(row, side))
         return;
-    if (row == ROW_FOE_PRESET && GetValue(row, sSettings.side) == HB_FOE_PRESET_CUSTOM)
-        SetValue(row, sSettings.side, dir > 0 ? HB_FOE_PRESET_MINIMAL : HB_FOE_PRESET_FULL);
+    if (row == ROW_PRESET && GetValue(row, side) == HB_PRESET_CUSTOM)
+        SetValue(row, side, dir > 0 ? HB_PRESET_MINIMAL : HB_PRESET_FULL);
     else
-        SetValue(row, sSettings.side, (GetValue(row, sSettings.side) + count + dir) % count);
+        SetValue(row, side, (GetValue(row, side) + count + dir) % count);
 }
 
 static void DrawPreviewBox(const struct PreviewBox *box, const struct HealthboxResolvedOpts *opts, u32 slot)
@@ -522,7 +544,10 @@ static void DrawPreviewBox(const struct PreviewBox *box, const struct HealthboxR
     if (rects[HB_RECT_HP_VALUE].w != 0)
     {
         HealthboxRender_FormatHpValue(text, opts->hpValue, SAMPLE_HP, SAMPLE_MAX_HP);
-        HealthboxRender_PrintText(sprites, layout, &rects[HB_RECT_HP_VALUE], text, TRUE, opts->background);
+        if (layout->compactHpValue)
+            HealthboxRender_DrawHpValue(sprites, layout, &rects[HB_RECT_HP_VALUE], text, opts->background);
+        else
+            HealthboxRender_PrintText(sprites, layout, &rects[HB_RECT_HP_VALUE], text, TRUE, opts->background);
     }
     if (rects[HB_RECT_HP_BAR].w != 0)
         HealthboxRender_DrawHpBar(sprites->bar, HB_HP_BAR_W * SAMPLE_HP / SAMPLE_MAX_HP, 0, SAMPLE_HP_COLOUR);
@@ -536,6 +561,22 @@ static void DrawPreviewBox(const struct PreviewBox *box, const struct HealthboxR
     }
     if (rects[HB_RECT_STRIP].w != 0)
         HealthboxRender_DrawStatStrip(sprites, layout, &rects[HB_RECT_STRIP], sSampleStages, opts->background);
+    if (rects[HB_RECT_CAUGHT].w != 0)
+        HealthboxPreview_LoadCaughtIcon(sprites->bar);
+    if (rects[HB_RECT_CATCHABLE].w != 0)
+        HealthboxPreview_LoadCatchIcon(sprites->bar);
+}
+
+// Types pop out beside the outer edge: left of the singles box, right of the doubles box.
+static void RefreshTypeIcon(struct PreviewBox *box, u32 slot, bool32 show)
+{
+    if (!show)
+        return;
+
+    box->typeIcon = TypeIcons_CreatePreviewIcon(SAMPLE_TYPE, sPreviewX[slot], sPreviewX[slot] + box->layout.boxW,
+                                                gSprites[box->sprites.left].y - HB_BOX_CENTER_Y,
+                                                gSprites[box->sprites.left].y - HB_BOX_CENTER_Y + box->layout.boxH,
+                                                slot == PREVIEW_DOUBLES, 0);
 }
 
 static void PlacePreviewBox(const struct PreviewBox *box, u32 slot)
@@ -554,58 +595,107 @@ static void PlacePreviewBox(const struct PreviewBox *box, u32 slot)
     bar->y = left->y;
 }
 
-static void SetPreviewVisible(bool32 visible)
+static void DestroyPreviewSprites(struct HealthboxSprites *sprites)
 {
-    u32 slot;
+    u8 *ids[] = { &sprites->left, &sprites->right, &sprites->bar };
+    u32 i;
 
-    for (slot = 0; slot < PREVIEW_COUNT; slot++)
+    for (i = 0; i < ARRAY_COUNT(ids); i++)
     {
-        const struct HealthboxSprites *sprites = &sSettings.preview[slot].sprites;
-
-        gSprites[sprites->left].invisible = !visible;
-        gSprites[sprites->right].invisible = !visible;
-        gSprites[sprites->bar].invisible = !visible;
+        if (*ids[i] != SPRITE_NONE)
+        {
+            DestroySprite(&gSprites[*ids[i]]);
+            *ids[i] = SPRITE_NONE;
+        }
     }
 }
 
-// Recomputes both layouts for the selected column and redraws. Sprite shapes never change (only the
-// pixels drawn into them), so nothing is recreated.
+static void CreateNewPreviewBox(struct PreviewBox *box, u32 slot)
+{
+    struct Sprite *bar;
+
+    HealthboxRender_CreateBox(TRUE, slot, box->layout.rightSpriteW, &box->sprites);
+    box->sprites.bar = CreateSpriteAtEnd(&sPreviewBarTemplates[slot], 0, 0, 0);
+    bar = &gSprites[box->sprites.bar];
+    bar->oam.tileNum += HealthboxPreview_GetBarTileOffset();
+    bar->subspriteMode = SUBSPRITES_IGNORE_PRIORITY;
+    bar->oam.priority = 1;
+    // Blank any Classic bar or icon art left in the shared bar tiles.
+    CpuFill32(0, (void *)(OBJ_VRAM0 + bar->oam.tileNum * TILE_SIZE_4BPP), HB_PREVIEW_BAR_TILES * TILE_SIZE_4BPP);
+}
+
+// Rebuilds both boxes for the selected column. Classic and New use different sprite shapes and art, so
+// the sprites are recreated on every refresh.
+//
+// A rebuild writes box tiles pixel by pixel and runs over several frames, so it is kept off screen:
+// the new sprites draw into the sheet half the displayed ones do not use, the palette transfer is held
+// until the art is complete, and the old sprites are destroyed only at the end. OAM is rebuilt once per
+// frame from the main loop, so the swap lands in a single frame.
 static void RefreshPreview(void)
 {
+    struct HealthboxSprites oldSprites[PREVIEW_COUNT];
+    u8 oldTypeIcon[PREVIEW_COUNT];
     u32 slot;
+    u32 side = sSettings.side;
     bool32 classic = sSettings.options.style == HEALTHBOX_STYLE_CLASSIC;
 
-    FillWindowPixelBuffer(WIN_PREVIEW, PIXEL_FILL(0));
-    if (classic)
-    {
-        s32 width = GetStringWidth(FONT_NORMAL, sText_Classic, 0);
+    gPaletteFade.bufferTransferDisabled = TRUE;
+    sSettings.buffer ^= 1;
 
-        AddTextPrinterParameterized3(WIN_PREVIEW, FONT_NORMAL, (PREVIEW_PIXEL_W - width) / 2,
-                                     (PREVIEW_PIXEL_H - 14) / 2, sColorPreview, TEXT_SKIP_DRAW, sText_Classic);
-    }
+    FillWindowPixelBuffer(WIN_PREVIEW, PIXEL_FILL(0));
     CopyWindowToVram(WIN_PREVIEW, COPYWIN_GFX);
 
-    SetPreviewVisible(!classic);
+    // Both boxes share one palette slot, so it is switched once per refresh.
     if (classic)
-        return;
+        HealthboxPreview_ApplyClassicPalette();
+    else
+        HealthboxBattle_ApplyPalette();
 
     for (slot = 0; slot < PREVIEW_COUNT; slot++)
     {
         struct PreviewBox *box = &sSettings.preview[slot];
         struct HealthboxResolvedOpts opts;
-        struct Sprite *bar = &gSprites[box->sprites.bar];
 
-        Healthbox_ResolveOptsFrom(&sSettings.options, sSettings.side, &opts);
-        Healthbox_ComputeLayout(&opts, sSettings.side, slot == PREVIEW_DOUBLES,
-                                sSettings.side == HB_SIDE_PLAYER ? B_POSITION_PLAYER_LEFT : B_POSITION_OPPONENT_LEFT,
+        oldSprites[slot] = box->sprites;
+        oldTypeIcon[slot] = box->typeIcon;
+        box->sprites.left = box->sprites.right = box->sprites.bar = SPRITE_NONE;
+        box->typeIcon = SPRITE_NONE;
+
+        HealthboxPreview_SetTileOffsets(sSettings.buffer ? sBoxBufferTiles[slot] : 0,
+                                        sSettings.buffer ? HB_PREVIEW_BAR_TILES : 0);
+        Healthbox_ResolveOptsFrom(&sSettings.options, side, &opts);
+
+        if (classic)
+        {
+            HealthboxPreview_CreateClassic(&box->sprites, side, slot == PREVIEW_DOUBLES, slot,
+                                           opts.hpBar, opts.hpValue, sPreviewX[slot],
+                                           PREVIEW_PIXEL_TOP, PREVIEW_PIXEL_H);
+            continue;
+        }
+
+        Healthbox_ComputeLayout(&opts, side, slot == PREVIEW_DOUBLES,
+                                side == HB_SIDE_PLAYER ? B_POSITION_PLAYER_LEFT : B_POSITION_OPPONENT_LEFT,
                                 &box->layout);
+        CreateNewPreviewBox(box, slot);
         HealthboxRender_BuildBarSubsprites(&box->layout, box->subsprites, &box->subspriteTable);
-        SetSubspriteTables(bar, &box->subspriteTable);
-        bar->invisible = box->subspriteTable.subspriteCount == 0;
+        SetSubspriteTables(&gSprites[box->sprites.bar], &box->subspriteTable);
+        gSprites[box->sprites.bar].invisible = box->subspriteTable.subspriteCount == 0;
 
         PlacePreviewBox(box, slot);
         DrawPreviewBox(box, &opts, slot);
+        RefreshTypeIcon(box, slot, opts.types);
     }
+
+    HealthboxPreview_SetTileOffsets(0, 0);
+
+    for (slot = 0; slot < PREVIEW_COUNT; slot++)
+    {
+        DestroyPreviewSprites(&oldSprites[slot]);
+        if (oldTypeIcon[slot] != SPRITE_NONE)
+            DestroySprite(&gSprites[oldTypeIcon[slot]]);
+    }
+
+    gPaletteFade.bufferTransferDisabled = FALSE;
 }
 
 static void CreatePreview(void)
@@ -620,18 +710,9 @@ static void CreatePreview(void)
     for (slot = 0; slot < PREVIEW_COUNT; slot++)
     {
         struct PreviewBox *box = &sSettings.preview[slot];
-        struct HealthboxResolvedOpts opts;
-        struct Sprite *bar;
 
-        // Only the sprite size matters here; RefreshPreview computes the real layout.
-        Healthbox_ResolveOptsFrom(&sSettings.options, HB_SIDE_PLAYER, &opts);
-        Healthbox_ComputeLayout(&opts, HB_SIDE_PLAYER, slot == PREVIEW_DOUBLES, B_POSITION_PLAYER_LEFT, &box->layout);
-
-        HealthboxRender_CreateBox(TRUE, slot, box->layout.rightSpriteW, &box->sprites);
-        box->sprites.bar = CreateSpriteAtEnd(&sPreviewBarTemplates[slot], 0, 0, 0);
-        bar = &gSprites[box->sprites.bar];
-        bar->subspriteMode = SUBSPRITES_IGNORE_PRIORITY;
-        bar->oam.priority = 1;
+        box->sprites.left = box->sprites.right = box->sprites.bar = SPRITE_NONE;
+        box->typeIcon = SPRITE_NONE;
     }
     RefreshPreview();
 }
@@ -727,6 +808,7 @@ void CB2_InitHealthboxSettings(void)
         PutWindowTilemap(WIN_LIST);
         PutWindowTilemap(WIN_PREVIEW);
         DrawBgWindowFrames();
+        CopyBgTilemapBufferToVram(0);
         Redraw();
         CreatePreview();
         gMain.state++;

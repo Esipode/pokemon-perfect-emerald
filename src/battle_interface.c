@@ -730,6 +730,9 @@ u8 CreateSafariPlayerHealthboxSprites(void)
 {
     u8 healthboxLeftSpriteId, healthboxRightSpriteId;
 
+    if (Healthbox_IsNewStyle())
+        return CreateBattlerHealthboxSprites(GetBattlerAtPosition(B_POSITION_PLAYER_LEFT));
+
     healthboxLeftSpriteId = CreateSprite(&sHealthboxSafariSpriteTemplate, DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
     healthboxRightSpriteId = CreateSpriteAtEnd(&sHealthboxSafariSpriteTemplate, DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
 
@@ -2000,8 +2003,8 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
         return;
     if (Healthbox_IsNewStyle())
     {
-        // The icon slots are drawn only when the caught band exists; status has its own pill.
-        if (!HealthboxBattle_HasCaughtIcons(battler))
+        // Each icon slot is drawn only when its rect exists; status has its own pill.
+        if (!HealthboxBattle_HasCaughtIcons(battler) && !HealthboxBattle_HasCatchIcon(battler))
             return;
         noStatus = TRUE;
     }
@@ -2025,10 +2028,10 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
 
     if (noStatus)
     {
-        if (GetSetPokedexFlagBySpecies(species, FLAG_GET_CAUGHT))
+        if (GetSetPokedexFlagBySpecies(species, FLAG_GET_CAUGHT) && (!Healthbox_IsNewStyle() || HealthboxBattle_HasCaughtIcons(battler)))
             caughtGfx = GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT);
 
-        if (nuzlockeOn || monoOn || genOn)
+        if ((nuzlockeOn || monoOn || genOn) && (!Healthbox_IsNewStyle() || HealthboxBattle_HasCatchIcon(battler)))
         {
             bool8 canCatch = (!monoOn || MonoType_IsSpeciesAllowed(species))
                            && (!genOn || MonoGen_IsSpeciesAllowed(species))
@@ -2041,6 +2044,208 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
 
     SetHealthbarIconTile(healthBarSpriteId, HEALTHBAR_TILE_CAUGHT_ICON, caughtGfx);
     SetHealthbarIconTile(healthBarSpriteId, HEALTHBAR_TILE_CATCH_STATUS_ICON, catchStatusGfx);
+}
+
+// Settings preview: fills the caught-ball slot of a healthbar sprite.
+void HealthboxPreview_LoadCaughtIcon(u8 healthBarSpriteId)
+{
+    SetHealthbarIconTile(healthBarSpriteId, HEALTHBAR_TILE_CAUGHT_ICON, GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT));
+}
+
+// Settings preview: fills the can-catch slot of a healthbar sprite.
+void HealthboxPreview_LoadCatchIcon(u8 healthBarSpriteId)
+{
+    SetHealthbarIconTile(healthBarSpriteId, HEALTHBAR_TILE_CATCH_STATUS_ICON, GetHealthboxElementGfxPtr(HEALTHBOX_GFX_NUZLOCKE_CAN_CATCH));
+}
+
+// Sample mon shown in the Classic preview.
+#define PREVIEW_LEVEL   50
+#define PREVIEW_HP      120
+#define PREVIEW_MAX_HP  200
+
+static const u8 sText_PreviewNick[] = _("Pikachu");
+
+static void PrintClassicPreviewText(u8 leftId, u8 rightId, bool32 player, bool32 doubles, u32 hpValue, bool32 showBar)
+{
+    struct Sprite *left = &gSprites[leftId];
+    struct Sprite *right = &gSprites[rightId];
+    s16 savedLeft1 = left->data[1], savedRight1 = right->data[1];
+    u8 text[24];
+    u32 fontId, width;
+
+    // The text printer spills into the sprite named by data[1].
+    left->data[1] = rightId;
+    right->data[1] = SPRITE_NONE;
+
+    StringCopy(StringCopy(text, sText_PreviewNick), gText_HealthboxGender_Male);
+    fontId = GetFontIdToFit(text, FONT_SMALL, 0, 55);
+    FillSpriteRectColor(leftId, player ? 16 : 8, 5, 55, 11, HEALTHBOX_BG_INDEX);
+    AddSpriteTextPrinterParameterized6(leftId, fontId, player ? 16 : 8, 3, 0, 0, sHealthBoxTextColor, 0, text);
+
+    text[0] = CHAR_EXTRA_SYMBOL;
+    text[1] = CHAR_LV_2;
+    ConvertIntToDecimalStringN(text + 2, PREVIEW_LEVEL, STR_CONV_MODE_LEFT_ALIGN, 4);
+    fontId = GetFontIdToFit(text, FONT_SMALL, 0, 24);
+    width = GetStringWidth(fontId, text, 0);
+    FillSpriteRectColor(rightId, player ? 8 : 0, 5, 24, 11, HEALTHBOX_BG_INDEX);
+    AddSpriteTextPrinterParameterized6(rightId, fontId, (player ? 32 : 24) - width, 3, 0, 0, sHealthBoxTextColor, 0, text);
+
+    left->data[1] = savedLeft1;
+    right->data[1] = savedRight1;
+
+    // Doubles boxes show a value only in place of the bar; the player's singles box always has a value row.
+    if (doubles)
+    {
+        if (hpValue != HB_HPVAL_NONE && !showBar)
+        {
+            if (hpValue == HB_HPVAL_PERCENT)
+                PrintHPPercentageOnHealthbox(leftId, PREVIEW_HP, PREVIEW_MAX_HP, HEALTHBOX_BG_INDEX, player ? 0 : -8, 8);
+            else
+                PrintHpOnHealthbox(leftId, PREVIEW_HP, PREVIEW_MAX_HP, HEALTHBOX_BG_INDEX, player ? 0 : -8, 8);
+        }
+    }
+    else if (hpValue != HB_HPVAL_NONE)
+    {
+        if (hpValue == HB_HPVAL_PERCENT)
+            PrintHPPercentageOnHealthbox(leftId, PREVIEW_HP, PREVIEW_MAX_HP, HEALTHBOX_BG_INDEX, player ? 0 : -8, 16);
+        else
+            PrintHpOnHealthbox(leftId, PREVIEW_HP, PREVIEW_MAX_HP, HEALTHBOX_BG_INDEX, player ? 0 : -8, 16);
+    }
+    else if (player)
+    {
+        ClearHpValueOnHealthbox(leftId, 16);
+    }
+}
+
+static void DrawClassicPreviewBar(u8 barId, bool32 showBar)
+{
+    u32 tileNum = gSprites[barId].oam.tileNum;
+    u32 i, fillPx = HB_HP_BAR_W * PREVIEW_HP / PREVIEW_MAX_HP;
+
+    // Also blanks the icon slots, which may hold the other style's icons.
+    FillHealthboxObject((void *)(OBJ_VRAM0 + tileNum * TILE_SIZE_4BPP), 0, OPPONENT_HEALTHBAR_TILE_COUNT);
+    if (!showBar)
+        return;
+
+    CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_1), (void *)(OBJ_VRAM0 + tileNum * TILE_SIZE_4BPP), 64);
+    for (i = 0; i < HB_HP_BAR_W / 8; i++)
+    {
+        u32 px = fillPx > i * 8 ? fillPx - i * 8 : 0;
+
+        if (px > 8)
+            px = 8;
+
+        CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_HP_BAR_GREEN) + px * TILE_SIZE_4BPP,
+                  (void *)(OBJ_VRAM0 + (tileNum + 2 + i) * TILE_SIZE_4BPP), TILE_SIZE_4BPP);
+    }
+}
+
+// Mirrors the in-battle PSN icon placement of UpdateStatusIconInHealthbox.
+static void DrawClassicPreviewStatus(u8 leftId, u8 barId, u32 slot, bool32 player, bool32 doubles, bool32 large, bool32 showBar)
+{
+    u32 tileNumAdder = player ? (doubles ? 0x12 : 0x1A) : (large ? 0x19 : 0x11);
+    u32 tileNum = gSprites[leftId].oam.tileNum;
+    u32 barTile = gSprites[barId].oam.tileNum;
+
+    LoadHealthboxStatusColor(leftId, slot, PAL_STATUS_PSN);
+    CpuCopy32(GetHealthboxElementGfxPtr(GetStatusIconForBattlerId(HEALTHBOX_GFX_STATUS_PSN_BATTLER0, slot)),
+              (void *)(OBJ_VRAM0 + (tileNum + tileNumAdder) * TILE_SIZE_4BPP), 3 * TILE_SIZE_4BPP);
+    // The bar's end pieces make room for the shorter status box.
+    if (showBar && ((!player && !large) || doubles))
+    {
+        CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_0), (void *)(OBJ_VRAM0 + barTile * TILE_SIZE_4BPP), TILE_SIZE_4BPP);
+        CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_65), (void *)(OBJ_VRAM0 + (barTile + 1) * TILE_SIZE_4BPP), TILE_SIZE_4BPP);
+    }
+}
+
+// Rewrites the shared healthbox palette with the Classic colours.
+void HealthboxPreview_ApplyClassicPalette(void)
+{
+    LoadPalette(gBattleInterface_BallStatusBarPal, OBJ_PLTT_ID(IndexOfSpritePaletteTag(TAG_HEALTHBOX_PAL)), PLTT_SIZE_4BPP);
+}
+
+void HealthboxPreview_CreateClassic(struct HealthboxSprites *out, u32 side, bool32 doubles, u32 slot,
+                                    bool32 showBar, u32 hpValue, s32 x, s32 areaTop, s32 areaH)
+{
+    // Rows of the box art below the sprite top (art starts 2 rows down).
+    static const u8 sVisibleHeights[] = { 36, 28, 36, 25 }; // player singles, small foe, large foe, doubles
+    bool32 player = side == HB_SIDE_PLAYER;
+    bool32 large = !doubles && (player || hpValue != HB_HPVAL_NONE); // 64x64 halves
+    const u32 *gfx;
+    u32 visibleH;
+    struct Sprite *left, *right, *bar;
+    s32 top;
+
+    if (doubles)
+    {
+        gfx = player ? gHealthboxDoublesPlayerGfx : gHealthboxDoublesOpponentGfx;
+        visibleH = sVisibleHeights[3];
+    }
+    else if (player)
+    {
+        gfx = showBar ? gHealthboxSinglesPlayerGfx : gHealthboxSinglesPlayerNoBarGfx;
+        visibleH = sVisibleHeights[0];
+    }
+    else if (large)
+    {
+        gfx = showBar ? gHealthboxSinglesOpponentLargeGfx : gHealthboxSinglesOpponentLargeNoBarGfx;
+        visibleH = sVisibleHeights[2];
+    }
+    else
+    {
+        gfx = showBar ? gHealthboxSinglesOpponentGfx : gHealthboxSinglesOpponentNoBarGfx;
+        visibleH = sVisibleHeights[1];
+    }
+
+    out->left = CreateSprite(&sHealthboxPlayerSpriteTemplates[slot], DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
+    out->right = CreateSpriteAtEnd(&sHealthboxPlayerSpriteTemplates[slot], DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
+    out->bar = CreateSpriteAtEnd(&sHealthbarSpriteTemplates[slot * 2], 0, 0, 0);
+    left = &gSprites[out->left];
+    right = &gSprites[out->right];
+    bar = &gSprites[out->bar];
+    left->oam.tileNum += HealthboxPreview_GetBoxTileOffset();
+    right->oam.tileNum += HealthboxPreview_GetBoxTileOffset();
+    bar->oam.tileNum += HealthboxPreview_GetBarTileOffset();
+
+    DecompressDataWithHeaderVram(gfx, (void *)(OBJ_VRAM0 + left->oam.tileNum * TILE_SIZE_4BPP));
+    if (large)
+    {
+        left->oam.shape = ST_OAM_SQUARE;
+        right->oam.shape = ST_OAM_SQUARE;
+        right->oam.tileNum += 64;
+    }
+    else
+    {
+        right->oam.tileNum += 32;
+    }
+    left->oam.affineParam = out->right;
+    right->hOther_HealthBoxSpriteId = out->left;
+    right->hOther_XAdjust = 0;
+    right->callback = SpriteCB_HealthBoxOther;
+
+    SetSubspriteTables(bar, &sHealthBar_SubspriteTables[player ? B_SIDE_PLAYER : B_SIDE_OPPONENT]);
+    bar->subspriteMode = SUBSPRITES_IGNORE_PRIORITY;
+    bar->oam.priority = 1;
+    bar->hBar_HealthBoxSpriteId = out->left;
+    bar->hBar_Data6 = player ? (doubles ? 1 : 0) : 2;
+
+    // Sprite origins sit on the centre of a 64x32 frame, also for the 64x64 halves.
+    top = areaTop + (areaH - (s32)visibleH) / 2 - 2;
+    left->x = x + 32;
+    left->y = top + 16;
+    SpriteCB_HealthBoxOther(right);
+    SpriteCB_HealthBar(bar);
+
+    PrintClassicPreviewText(out->left, out->right, player, doubles, hpValue, showBar);
+    DrawClassicPreviewBar(out->bar, showBar);
+    DrawClassicPreviewStatus(out->left, out->bar, slot, player, doubles, large, showBar);
+    if (!player && large)
+        HealthboxPreview_LoadCaughtIcon(out->bar);
+    if (!showBar && doubles)
+    {
+        CpuCopy32(GetHealthboxElementGfxPtr(player ? HEALTHBOX_GFX_PLAYER_FRAME_END : HEALTHBOX_GFX_OPPONENT_FRAME_END),
+                  (void *)(OBJ_VRAM0 + (player ? 0x680 : 0x660)) + left->oam.tileNum * TILE_SIZE_4BPP, 0x20);
+    }
 }
 
 // Writes the status colour into palette slot battler + 12, in both the faded and unfaded buffers.

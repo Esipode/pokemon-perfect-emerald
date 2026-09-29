@@ -73,7 +73,7 @@ static void FillDefaults(struct HealthboxOptions *o, u32 playerHpMode, u32 foeHp
     o->background = HB_BG_SOLID;
 
     o->playerNick = o->playerLevel = o->playerStatus = o->playerTypes = o->playerStatStages = o->playerExp = TRUE;
-    o->foeNick = o->foeLevel = o->foeStatus = o->foeTypes = o->foeStatStages = o->foeCaught = TRUE;
+    o->foeNick = o->foeLevel = o->foeStatus = o->foeTypes = o->foeStatStages = o->foeCaught = o->foeCatchable = TRUE;
 
     HealthboxOptions_TogglesFromMode(playerHpMode, &bar, &value);
     HealthboxOptions_SetHpToggles(o, HB_SIDE_PLAYER, bar, value);
@@ -147,6 +147,7 @@ bool32 HealthboxOptions_Shows(u32 side, enum HealthboxElement elem)
     case HB_ELEM_STATUS:      return o.foeStatus;
     case HB_ELEM_TYPES:       return o.foeTypes;
     case HB_ELEM_CAUGHT:      return o.foeCaught;
+    case HB_ELEM_CATCHABLE:   return o.foeCatchable;
     case HB_ELEM_STAT_STAGES: return o.foeStatStages;
     default:                  return FALSE;
     }
@@ -160,6 +161,18 @@ u32 HealthboxOptions_GetHpValue(u32 side)
     return (side == HB_SIDE_PLAYER) ? o.playerHpValue : o.foeHpValue;
 }
 
+static void SetPlayerToggles(struct HealthboxOptions *o, bool32 nick, bool32 level, bool32 bar, u32 value,
+                             bool32 status, bool32 exp, bool32 types, bool32 stages)
+{
+    o->playerNick = nick;
+    o->playerLevel = level;
+    o->playerStatus = status;
+    o->playerExp = exp;
+    o->playerTypes = types;
+    o->playerStatStages = stages;
+    HealthboxOptions_SetHpToggles(o, HB_SIDE_PLAYER, bar, value);
+}
+
 static void SetFoeToggles(struct HealthboxOptions *o, bool32 nick, bool32 level, bool32 bar, u32 value,
                           bool32 status, bool32 caught, bool32 types, bool32 stages)
 {
@@ -167,41 +180,73 @@ static void SetFoeToggles(struct HealthboxOptions *o, bool32 nick, bool32 level,
     o->foeLevel = level;
     o->foeStatus = status;
     o->foeCaught = caught;
+    o->foeCatchable = caught;
     o->foeTypes = types;
     o->foeStatStages = stages;
     HealthboxOptions_SetHpToggles(o, HB_SIDE_FOE, bar, value);
 }
 
-void HealthboxOptions_ApplyFoePreset(struct HealthboxOptions *options, u32 preset)
+// The player keeps exact HP where the foe gets a percentage; the side-only toggles (exp, caught/catchable)
+// follow their side's preset.
+void HealthboxOptions_ApplyPreset(struct HealthboxOptions *options, u32 side, u32 preset)
 {
+    if (side == HB_SIDE_PLAYER)
+    {
+        switch (preset)
+        {
+        case HB_PRESET_MINIMAL:
+            SetPlayerToggles(options, FALSE, FALSE, TRUE, HB_HPVAL_NONE, FALSE, FALSE, FALSE, FALSE);
+            break;
+        case HB_PRESET_STANDARD:
+            SetPlayerToggles(options, TRUE, TRUE, TRUE, HB_HPVAL_NUMBERS, TRUE, TRUE, FALSE, FALSE);
+            break;
+        case HB_PRESET_FULL:
+            SetPlayerToggles(options, TRUE, TRUE, TRUE, HB_HPVAL_NUMBERS, TRUE, TRUE, TRUE, TRUE);
+            break;
+        }
+        return;
+    }
     switch (preset)
     {
-    case HB_FOE_PRESET_MINIMAL:
+    case HB_PRESET_MINIMAL:
         SetFoeToggles(options, FALSE, FALSE, TRUE, HB_HPVAL_NONE, FALSE, FALSE, FALSE, FALSE);
         break;
-    case HB_FOE_PRESET_STANDARD:
+    case HB_PRESET_STANDARD:
         SetFoeToggles(options, TRUE, TRUE, TRUE, HB_HPVAL_NONE, TRUE, TRUE, FALSE, FALSE);
         break;
-    case HB_FOE_PRESET_FULL:
+    case HB_PRESET_FULL:
         SetFoeToggles(options, TRUE, TRUE, TRUE, HB_HPVAL_PERCENT, TRUE, TRUE, TRUE, TRUE);
         break;
     }
 }
 
-u32 HealthboxOptions_GetFoePreset(const struct HealthboxOptions *options)
+static bool32 SideTogglesMatch(const struct HealthboxOptions *a, const struct HealthboxOptions *b, u32 side)
+{
+    if (side == HB_SIDE_PLAYER)
+    {
+        return a->playerNick == b->playerNick && a->playerLevel == b->playerLevel
+            && a->playerHpBar == b->playerHpBar && a->playerHpValue == b->playerHpValue
+            && a->playerStatus == b->playerStatus && a->playerExp == b->playerExp
+            && a->playerTypes == b->playerTypes && a->playerStatStages == b->playerStatStages;
+    }
+    return a->foeNick == b->foeNick && a->foeLevel == b->foeLevel
+        && a->foeHpBar == b->foeHpBar && a->foeHpValue == b->foeHpValue
+        && a->foeStatus == b->foeStatus && a->foeCaught == b->foeCaught
+        && a->foeCatchable == b->foeCatchable
+        && a->foeTypes == b->foeTypes && a->foeStatStages == b->foeStatStages;
+}
+
+u32 HealthboxOptions_GetPreset(const struct HealthboxOptions *options, u32 side)
 {
     u32 preset;
 
-    for (preset = 0; preset < HB_FOE_PRESET_CUSTOM; preset++)
+    for (preset = 0; preset < HB_PRESET_CUSTOM; preset++)
     {
         struct HealthboxOptions probe = *options;
 
-        HealthboxOptions_ApplyFoePreset(&probe, preset);
-        if (probe.foeNick == options->foeNick && probe.foeLevel == options->foeLevel
-         && probe.foeHpBar == options->foeHpBar && probe.foeHpValue == options->foeHpValue
-         && probe.foeStatus == options->foeStatus && probe.foeCaught == options->foeCaught
-         && probe.foeTypes == options->foeTypes && probe.foeStatStages == options->foeStatStages)
+        HealthboxOptions_ApplyPreset(&probe, side, preset);
+        if (SideTogglesMatch(&probe, options, side))
             return preset;
     }
-    return HB_FOE_PRESET_CUSTOM;
+    return HB_PRESET_CUSTOM;
 }

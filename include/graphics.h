@@ -3417,6 +3417,10 @@ extern const u32 gBattleIcons_Gfx1[];
 extern const u32 gBattleIcons_Gfx2[];
 extern const u16 gBattleIcons_Pal1[];
 extern const u16 gBattleIcons_Pal2[];
+extern const u32 gBattleIconsNew_Gfx1[];
+extern const u32 gBattleIconsNew_Gfx2[];
+extern const u16 gBattleIconsNew_Pal1[];
+extern const u16 gBattleIconsNew_Pal2[];
 
 extern const u32 gGhostFrontPic[];
 extern const u16 gGhostPalette[];

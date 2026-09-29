@@ -2,6 +2,8 @@
 #define GUARD_TYPE_ICONS_H
 
 void LoadTypeIcons(enum BattlerId battler);
+// Settings preview: creates a static icon in its slid-out position beside a box. Returns the sprite id.
+u32 TypeIcons_CreatePreviewIcon(enum Type type, s32 boxLeft, s32 boxRight, s32 boxTop, s32 boxBottom, bool32 rightEdge, u32 typeNum);
 
 #define TYPE_ICON_TAG 0x2720
 #define TYPE_ICON_TAG_2 0x2721

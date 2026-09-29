@@ -3,11 +3,14 @@
 #include "battle_gimmick.h"
 #include "battle_interface.h"
 #include "battle_main.h"
+#include "battle_message.h"
 #include "battle_util.h"
 #include "decompress.h"
 #include "graphics.h"
 #include "healthbox.h"
+#include "palette.h"
 #include "pokemon.h"
+#include "safari_zone.h"
 #include "strings.h"
 #include "string_util.h"
 #include "sprite.h"
@@ -21,6 +24,8 @@
 
 // Indicator centre sits this far left of the level's right edge (fits a 2-digit level).
 #define HB_INDICATOR_X_FROM_RIGHT 15
+// Indicator centre inset from the box's right edge, used when the level rect is absent.
+#define HB_INDICATOR_X_FROM_BOX_RIGHT 4
 
 static EWRAM_DATA struct HealthboxLayout sLayouts[MAX_BATTLERS_COUNT] = {0};
 
@@ -34,14 +39,54 @@ static const struct SpritePalette sNewHealthboxPalette = { sHealthboxNewPal, TAG
 
 bool32 Healthbox_IsNewStyle(void)
 {
-    if (gBattleTypeFlags & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_FIRST_BATTLE | BATTLE_TYPE_CATCH_TUTORIAL))
-        return FALSE;
     return HealthboxOptions_GetStyle() == HEALTHBOX_STYLE_NEW;
+}
+
+// Safari and the old-man tutorial force the vanilla HP display: the player shows bar and numbers, the foe bar only.
+static bool32 UsesForcedHpDisplay(void)
+{
+    return (gBattleTypeFlags & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_FIRST_BATTLE)) != 0;
+}
+
+static u32 GetBattleHpValue(enum BattlerId battler)
+{
+    if (UsesForcedHpDisplay())
+        return IsOnPlayerSide(battler) ? HB_HPVAL_NUMBERS : HB_HPVAL_NONE;
+    return HealthboxOptions_GetHpValue(IsOnPlayerSide(battler) ? HB_SIDE_PLAYER : HB_SIDE_FOE);
+}
+
+// The Safari player box has no Pokémon: only the ball label (nick rect) and count (HP value rect).
+static bool32 IsSafariPlayerBox(enum BattlerId battler)
+{
+    return (gBattleTypeFlags & BATTLE_TYPE_SAFARI) && IsOnPlayerSide(battler);
+}
+
+static void ResolveBattleOpts(enum BattlerId battler, struct HealthboxResolvedOpts *opts)
+{
+    bool32 player = IsOnPlayerSide(battler);
+
+    Healthbox_ResolveOpts(player ? HB_SIDE_PLAYER : HB_SIDE_FOE, opts);
+    if (IsSafariPlayerBox(battler))
+    {
+        *opts = (struct HealthboxResolvedOpts){ .side = opts->side, .background = opts->background,
+                                                .nick = TRUE, .hpValue = HB_HPVAL_NUMBERS };
+    }
+    else if (UsesForcedHpDisplay())
+    {
+        opts->hpBar = TRUE;
+        opts->hpValue = GetBattleHpValue(battler);
+    }
 }
 
 void HealthboxBattle_LoadPalette(void)
 {
     LoadSpritePalette(&sNewHealthboxPalette);
+}
+
+// Rewrites an already loaded healthbox palette with the New colours.
+void HealthboxBattle_ApplyPalette(void)
+{
+    LoadPalette(sHealthboxNewPal, OBJ_PLTT_ID(IndexOfSpritePaletteTag(TAG_HEALTHBOX_PAL)), PLTT_SIZE_4BPP);
 }
 
 static u32 GetBoxTileCount(enum BattlerId battler)
@@ -98,6 +143,11 @@ bool32 HealthboxBattle_HasCaughtIcons(u32 battler)
     return sLayouts[battler].rects[HB_RECT_CAUGHT].w != 0;
 }
 
+bool32 HealthboxBattle_HasCatchIcon(u32 battler)
+{
+    return sLayouts[battler].rects[HB_RECT_CATCHABLE].w != 0;
+}
+
 // Creates the two box-half sprites and wires them together; the caller creates the bar sprite.
 u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sprite *), s16 *barData6)
 {
@@ -109,7 +159,7 @@ u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sp
     u32 tagIdx = doubles ? GetBattlerPosition(battler) / 2 : 0;
     struct Sprite *right;
 
-    Healthbox_ResolveOpts(player ? HB_SIDE_PLAYER : HB_SIDE_FOE, &opts);
+    ResolveBattleOpts(battler, &opts);
     Healthbox_ComputeLayout(&opts, opts.side, doubles, GetBattlerPosition(battler), layout);
     HealthboxRender_BuildBarSubsprites(layout, sBarSubsprites[battler], &sBarSubspriteTables[battler]);
 
@@ -144,7 +194,16 @@ static void GetBoxSprites(u8 healthboxSpriteId, struct HealthboxSprites *sprites
 
 void HealthboxBattle_GetIndicatorPos(u32 battler, s16 *x, s16 *y)
 {
-    const struct HealthboxRect *level = &sLayouts[battler].rects[HB_RECT_LEVEL];
+    const struct HealthboxLayout *layout = &sLayouts[battler];
+    const struct HealthboxRect *level = &layout->rects[HB_RECT_LEVEL];
+
+    // Presets that hide the level leave its rect zeroed; fall back to the box's right edge.
+    if (level->w == 0)
+    {
+        *x = layout->boxW - HB_INDICATOR_X_FROM_BOX_RIGHT - HB_BOX_CENTER_X;
+        *y = layout->boxH / 2 - HB_BOX_CENTER_Y;
+        return;
+    }
 
     *x = level->x + level->w - HB_BOX_CENTER_X - HB_INDICATOR_X_FROM_RIGHT;
     *y = level->y + 1 - HB_BOX_CENTER_Y;
@@ -253,9 +312,12 @@ void HealthboxBattle_DrawHpValue(u8 healthboxSpriteId, s16 currHp, s16 maxHp)
     if (layout->rects[HB_RECT_HP_VALUE].w == 0)
         return;
 
-    HealthboxRender_FormatHpValue(text, HealthboxOptions_GetHpValue(IsOnPlayerSide(battler) ? HB_SIDE_PLAYER : HB_SIDE_FOE), currHp, maxHp);
+    HealthboxRender_FormatHpValue(text, GetBattleHpValue(battler), currHp, maxHp);
 
-    HealthboxRender_PrintText(&sprites, layout, &layout->rects[HB_RECT_HP_VALUE], text, TRUE, HealthboxOptions_GetBackground());
+    if (layout->compactHpValue)
+        HealthboxRender_DrawHpValue(&sprites, layout, &layout->rects[HB_RECT_HP_VALUE], text, HealthboxOptions_GetBackground());
+    else
+        HealthboxRender_PrintText(&sprites, layout, &layout->rects[HB_RECT_HP_VALUE], text, TRUE, HealthboxOptions_GetBackground());
 }
 
 void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 trailPx, u32 colourLevel)
@@ -349,12 +411,35 @@ static void UpdateExp(u8 healthboxSpriteId, struct Pokemon *mon, enum BattlerId 
     MoveBattleBar(battler, healthboxSpriteId, EXP_BAR, 0);
 }
 
+static void DrawSafariText(u8 healthboxSpriteId, u8 elementId)
+{
+    struct HealthboxSprites sprites;
+    const struct HealthboxLayout *layout;
+    u8 text[16];
+
+    GetBoxSprites(healthboxSpriteId, &sprites, &layout);
+    if (elementId == HEALTHBOX_SAFARI_ALL_TEXT)
+    {
+        HealthboxRender_Clear(&sprites, layout);
+        HealthboxRender_DrawFrame(&sprites, layout, HealthboxOptions_GetBackground());
+        HealthboxRender_PrintText(&sprites, layout, &layout->rects[HB_RECT_NICK], gText_SafariBalls, FALSE, HealthboxOptions_GetBackground());
+    }
+    ConvertIntToDecimalStringN(StringCopy(text, gText_SafariBallLeft), gNumSafariBalls, STR_CONV_MODE_LEFT_ALIGN, 2);
+    HealthboxRender_PrintText(&sprites, layout, &layout->rects[HB_RECT_HP_VALUE], text, TRUE, HealthboxOptions_GetBackground());
+}
+
 void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elementId)
 {
     struct HealthboxSprites sprites;
     const struct HealthboxLayout *layout;
     enum BattlerId battler = gSprites[healthboxSpriteId].data[6];
     bool32 all = elementId == HEALTHBOX_ALL;
+
+    if (elementId == HEALTHBOX_SAFARI_ALL_TEXT || elementId == HEALTHBOX_SAFARI_BALLS_TEXT)
+    {
+        DrawSafariText(healthboxSpriteId, elementId);
+        return;
+    }
 
     GetBoxSprites(healthboxSpriteId, &sprites, &layout);
 

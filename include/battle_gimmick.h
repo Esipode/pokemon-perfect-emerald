@@ -19,6 +19,7 @@ struct GimmickInfo
     const struct SpritePalette *triggerPal;        // trigger gfx data
     const struct SpriteSheet *triggerSheet;
     const struct SpriteTemplate *triggerTemplate;
+    const u8 *triggerLabelNew;                     // New healthbox style: badge label, 4 letters
     const u32 indicatorPalTag;
     const u8 *indicatorData;
     bool32 (*CanActivate)(enum BattlerId battler);

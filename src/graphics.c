@@ -2111,6 +2111,10 @@ const u32 gBattleIcons_Gfx1[] = INCGFX_U32("graphics/types/battle_icons1.png", "
 const u32 gBattleIcons_Gfx2[] = INCGFX_U32("graphics/types/battle_icons2.png", ".4bpp.smol");
 const u16 gBattleIcons_Pal1[] = INCGFX_U16("graphics/types/battle_icons1.pal", ".gbapal");
 const u16 gBattleIcons_Pal2[] = INCGFX_U16("graphics/types/battle_icons2.pal", ".gbapal");
+const u32 gBattleIconsNew_Gfx1[] = INCGFX_U32("graphics/types/battle_icons_new1.png", ".4bpp.smol");
+const u32 gBattleIconsNew_Gfx2[] = INCGFX_U32("graphics/types/battle_icons_new2.png", ".4bpp.smol");
+const u16 gBattleIconsNew_Pal1[] = INCGFX_U16("graphics/types/battle_icons_new1.pal", ".gbapal");
+const u16 gBattleIconsNew_Pal2[] = INCGFX_U16("graphics/types/battle_icons_new2.pal", ".gbapal");
 
 const u16 gGhostPalette[] = INCGFX_U16("graphics/pokemon/ghost/front.png", ".gbapal");
 const u32 gGhostFrontPic[] = INCGFX_U32("graphics/pokemon/ghost/front.png", ".4bpp.smol");

@@ -7,6 +7,8 @@
 
 #define HB_MIN_BOX_W 64
 #define HB_ROUND_UP_8(n) (((n) + 7) & ~7)
+// The height is only rounded to an even number; the doubles box has no spare rows for tile alignment.
+#define HB_ROUND_UP_2(n) (((n) + 1) & ~1)
 
 void Healthbox_ResolveOptsFrom(const struct HealthboxOptions *o, u32 side, struct HealthboxResolvedOpts *out)
 {
@@ -34,6 +36,7 @@ void Healthbox_ResolveOptsFrom(const struct HealthboxOptions *o, u32 side, struc
         out->types = o->foeTypes;
         out->statStages = o->foeStatStages;
         out->caught = o->foeCaught;
+        out->catchable = o->foeCatchable;
     }
 }
 
@@ -64,6 +67,7 @@ void Healthbox_ComputeLayout(const struct HealthboxResolvedOpts *opts, u32 side,
     shown[HB_RECT_STATUS]   = opts->status;
     shown[HB_RECT_STRIP]    = opts->statStages;
     shown[HB_RECT_CAUGHT]   = side == HB_SIDE_FOE && opts->caught;
+    shown[HB_RECT_CATCHABLE] = side == HB_SIDE_FOE && opts->catchable;
 
     for (i = 0; i < HB_RECT_COUNT; i++)
     {
@@ -82,6 +86,7 @@ void Healthbox_ComputeLayout(const struct HealthboxResolvedOpts *opts, u32 side,
 
     *out = (struct HealthboxLayout){0};
     out->rightSpriteW = spec->rightSpriteW;
+    out->compactHpValue = doubles;
     for (i = 0; i < HB_RECT_COUNT; i++)
     {
         const struct HealthboxElemSpec *elem = &spec->elems[i];
@@ -93,17 +98,34 @@ void Healthbox_ComputeLayout(const struct HealthboxResolvedOpts *opts, u32 side,
             right = elem->x + elem->w;
     }
 
-    out->boxH = y ? HB_ROUND_UP_8(y) : 8;
+    out->boxH = y ? HB_ROUND_UP_2(y) : 8;
     out->boxW = right ? HB_ROUND_UP_8(right + spec->rightMargin) : HB_MIN_BOX_W;
     if (out->boxW < HB_MIN_BOX_W)
         out->boxW = HB_MIN_BOX_W;
+
+    // A lone HP bar is centred on the box.
+    if (out->rects[HB_RECT_HP_BAR].w != 0)
+    {
+        bool32 alone = TRUE;
+
+        for (i = 0; i < HB_RECT_COUNT; i++)
+        {
+            if (i != HB_RECT_HP_BAR && out->rects[i].w != 0)
+                alone = FALSE;
+        }
+        if (alone)
+        {
+            out->rects[HB_RECT_HP_BAR].x = (out->boxW - out->rects[HB_RECT_HP_BAR].w) / 2;
+            out->rects[HB_RECT_HP_BAR].y = (out->boxH - out->rects[HB_RECT_HP_BAR].h) / 2;
+        }
+    }
 
     anchor = doubles ? &sHealthboxDoublesAnchors[position] : &sHealthboxSinglesAnchors[position & 1];
     out->anchorX = anchor->x;
     out->anchorY = anchor->y;
     out->rightAnchored = anchor->rightAnchored;
     out->screenX = anchor->rightAnchored ? anchor->x - out->boxW : anchor->x;
-    out->screenY = anchor->y;
+    out->screenY = anchor->bottomAnchored ? anchor->y - out->boxH : anchor->y;
 }
 
 u32 Healthbox_StageToGlyph(u8 stage)
