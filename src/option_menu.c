@@ -141,6 +141,8 @@ static void HighlightOptionMenuItem(u8 selection);
 static void Task_CategoryMenuFadeIn(u8 taskId);
 static void Task_CategoryMenuProcessInput(u8 taskId);
 static void DrawCategoryList(void);
+static void Task_SettingsMenuProcessInput(u8 taskId);
+static void DrawSettingsList(void);
 static u8 TextSpeed_ProcessInput(u8 selection);
 static void TextSpeed_DrawChoices(u8 selection, bool8 isActive);
 static u8 BattleScene_ProcessInput(u8 selection);
@@ -197,6 +199,8 @@ static bool32 IsNewGameSequence(void)
 static const u8 gText_Option[]             = _("OPTION");
 static const u8 gText_Confirm[]            = _("CONFIRM");
 static const u8 gText_ResetAll[]           = _("RESET ALL");
+static const u8 gText_ResetPrefix[]        = _("RESET ");
+static const u8 gText_HintBack[]           = _("{B_BUTTON} BACK");
 static const u8 gText_HintSelectExit[]     = _("{A_BUTTON} SELECT  {B_BUTTON} EXIT");
 static const u8 gText_HintSelectConfirm[]  = _("{A_BUTTON} SELECT  {START_BUTTON} CONFIRM");
 
@@ -1789,10 +1793,16 @@ static void BattleSpeed_DrawChoices(u8 selection, bool8 isActive)
 
 static void DrawHeaderText(void)
 {
+    const u8 *title = gText_Option;
     const u8 *hint = IsNewGameSequence() ? gText_HintSelectConfirm : gText_HintSelectExit;
 
+    if (sMenuLevel == LEVEL_SETTINGS)
+    {
+        title = sCategories[sCurrentCategory].name;
+        hint = gText_HintBack;
+    }
     FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
-    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, gText_Option, 8, 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, title, 8, 1, TEXT_SKIP_DRAW, NULL);
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, hint, GetStringRightAlignXOffset(FONT_NORMAL, hint, 198), 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);
 }
@@ -1926,7 +1936,15 @@ static void Task_CategoryMenuProcessInput(u8 taskId)
     if (JOY_NEW(A_BUTTON))
     {
         if (item < CATEGORIES_COUNT)
+        {
             sCurrentCategory = item;
+            sMenuLevel = LEVEL_SETTINGS;
+            sCursor[LEVEL_SETTINGS] = 0;
+            sScrollOffset[LEVEL_SETTINGS] = 0;
+            DrawHeaderText();
+            DrawSettingsList();
+            gTasks[taskId].func = Task_SettingsMenuProcessInput;
+        }
         else if (item == CATEGORY_ITEM_CANCEL)
             gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -1948,6 +1966,110 @@ static void Task_CategoryMenuProcessInput(u8 taskId)
     {
         MoveCursor(1);
         DrawCategoryList();
+    }
+}
+
+static const u8 *GetOptionValueText(u8 optionId, u8 value)
+{
+    static u8 sNumberText[16];
+    u8 n = value + 1;
+    u16 i;
+
+    if (sOptions[optionId].type != OPTION_TYPE_NUMERIC)
+        return sOptions[optionId].valueTexts[value];
+
+    for (i = 0; gText_FrameTypeNumber[i] != EOS && i <= 5; i++)
+        sNumberText[i] = gText_FrameTypeNumber[i];
+    if (n / 10 != 0)
+        sNumberText[i++] = n / 10 + CHAR_0;
+    sNumberText[i++] = n % 10 + CHAR_0;
+    sNumberText[i] = EOS;
+    return sNumberText;
+}
+
+// Draws one settings-level row (label plus value column) at a visible row position.
+static void DrawSettingsRow(u8 row, u8 item, bool8 isActive)
+{
+    const struct OptionCategory *category = &sCategories[sCurrentCategory];
+    const u8 *name;
+    u8 resetName[24];
+    u8 y = row * ROW_PITCH;
+
+    FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), 0, y, 208, ROW_PITCH);
+    if (item >= category->optionCount)
+    {
+        StringCopy(resetName, gText_ResetPrefix);
+        StringAppend(resetName, category->name);
+        AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, resetName, 8, y + 1, TEXT_SKIP_DRAW, NULL);
+        return;
+    }
+
+    u8 optionId = category->optionIds[item];
+
+    name = sOptions[optionId].name;
+    AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, name, 8, y + 1, TEXT_SKIP_DRAW, NULL);
+    if (sOptions[optionId].type == OPTION_TYPE_SUBMENU)
+        DrawOptionMenuValue(sText_ChevronRight, y, FALSE);
+    else
+        DrawOptionMenuValue(GetOptionValueText(optionId, sPendingValues[optionId]), y, isActive);
+}
+
+static void DrawSettingsList(void)
+{
+    u8 row;
+    u8 count = GetVisibleCount();
+    u8 offset = sScrollOffset[LEVEL_SETTINGS];
+    u8 cursorItem = sCursor[LEVEL_SETTINGS];
+
+    for (row = 0; row < VISIBLE_ROWS && offset + row < count; row++)
+    {
+        u8 item = GetNthVisibleItem(offset + row);
+
+        DrawSettingsRow(row, item, item == cursorItem);
+    }
+    // Clear any rows below the last visible item.
+    if (row < VISIBLE_ROWS)
+        FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), 0, row * ROW_PITCH, 208, (VISIBLE_ROWS - row) * ROW_PITCH);
+    CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
+    HighlightOptionMenuItem(GetVisibleIndexOf(cursorItem) - offset);
+}
+
+static void MoveSettingsCursor(s8 delta)
+{
+    u8 oldItem = sCursor[LEVEL_SETTINGS];
+    u8 oldOffset = sScrollOffset[LEVEL_SETTINGS];
+    u8 newItem, newRow;
+
+    MoveCursor(delta);
+    newItem = sCursor[LEVEL_SETTINGS];
+    if (sScrollOffset[LEVEL_SETTINGS] != oldOffset)
+    {
+        DrawSettingsList();
+        return;
+    }
+    newRow = GetVisibleIndexOf(newItem) - oldOffset;
+    DrawSettingsRow(GetVisibleIndexOf(oldItem) - oldOffset, oldItem, FALSE);
+    DrawSettingsRow(newRow, newItem, TRUE);
+    CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
+    HighlightOptionMenuItem(newRow);
+}
+
+static void Task_SettingsMenuProcessInput(u8 taskId)
+{
+    if (JOY_NEW(B_BUTTON))
+    {
+        sMenuLevel = LEVEL_CATEGORIES;
+        DrawHeaderText();
+        DrawCategoryList();
+        gTasks[taskId].func = Task_CategoryMenuProcessInput;
+    }
+    else if (JOY_NEW(DPAD_UP))
+    {
+        MoveSettingsCursor(-1);
+    }
+    else if (JOY_NEW(DPAD_DOWN))
+    {
+        MoveSettingsCursor(1);
     }
 }
 
