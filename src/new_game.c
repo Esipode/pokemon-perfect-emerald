@@ -1,6 +1,7 @@
 #include "global.h"
 #include "achievements.h"
 #include "ai_battles.h"
+#include "healthbox.h"
 #include "clock.h"
 #include "new_game.h"
 #include "new_game_settings_menu.h"
@@ -112,9 +113,7 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->regionMapZoom = FALSE;
     gSaveBlock2Ptr->optionsExpShare = TRUE;
     gSaveBlock2Ptr->optionsBattleSpeed = OPTIONS_BATTLE_SPEED_1X;
-    // Stored as mode + 1; 0 is reserved for "unset" on pre-change saves.
-    gSaveBlock2Ptr->optionsHpDisplayPlayer = OPTIONS_HP_DISPLAY_BAR_NUMBERS + 1;
-    gSaveBlock2Ptr->optionsHpDisplayOpponent = (B_HP_PERCENTAGE_DISPLAY ? OPTIONS_HP_DISPLAY_BAR_PERCENT : OPTIONS_HP_DISPLAY_BAR_ONLY) + 1;
+    HealthboxOptions_SetDefaults();
     memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
     memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
     // Redundant with ClearSav2() in Sav2_ClearSetDefault(); kept alongside the

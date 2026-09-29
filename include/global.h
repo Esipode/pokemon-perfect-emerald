@@ -786,6 +786,33 @@ struct PendingTrade
 #define NUM_NUZLOCKE_ZONE_FLAG_BYTES ((MAPSEC_COUNT + 7) / 8)
 #define NUM_NUZLOCKE_ZONE_FLAGS      (NUM_NUZLOCKE_ZONE_FLAG_BYTES * 8)
 
+// Healthbox style and per-side element toggles; accessors in healthbox_options.c.
+// initialized == 0 means a pre-feature save: readers fall back to defaults and the legacy
+// optionsHpDisplay* fields. The Exp toggle is player-only and the Caught toggle foe-only.
+struct HealthboxOptions
+{
+    u32 initialized:1;
+    u32 style:1;      // HEALTHBOX_STYLE_*
+    u32 background:1; // HB_BG_*
+    u32 playerNick:1;
+    u32 playerLevel:1;
+    u32 playerHpBar:1;
+    u32 playerHpValue:2; // HB_HPVAL_*
+    u32 playerStatus:1;
+    u32 playerTypes:1;
+    u32 playerStatStages:1;
+    u32 playerExp:1;
+    u32 foeNick:1;
+    u32 foeLevel:1;
+    u32 foeHpBar:1;
+    u32 foeHpValue:2; // HB_HPVAL_*
+    u32 foeStatus:1;
+    u32 foeTypes:1;
+    u32 foeStatStages:1;
+    u32 foeCaught:1;
+    //u32 padding:11;
+};
+
 struct SaveBlock2
 {
     /*0x00*/ u8 playerName[PLAYER_NAME_LENGTH + 1];
@@ -816,6 +843,7 @@ struct SaveBlock2
              // Share this byte's previously-zero upper bits rather than inserting a new field,
              // which would shift every SaveBlock2 offset after it. 0 means "unset" so old saves
              // read as each side's original default; the stored value is the OPTIONS_HP_DISPLAY_* mode + 1.
+             // Legacy: read only to migrate saves whose healthboxOptions.initialized is 0.
              u8 optionsHpDisplayPlayer:3;   // 0 = unset (BAR + HP)
              u8 optionsHpDisplayOpponent:3; // 0 = unset (BAR, or BAR + % when B_HP_PERCENTAGE_DISPLAY)
              //u8 padding3:1;
@@ -877,6 +905,7 @@ struct SaveBlock2
     // so a zeroed save renders vanilla. Appended at the end so no earlier offset moves. The legacy
     // playerColors[PLAYER_COLOR_REGION_COUNT] at 0x92 stays in place -- Stage P9 migrates it once.
     u16 playerColorSlots[PLAYER_COLOR_SLOT_COUNT];
+    struct HealthboxOptions healthboxOptions; // appended so no earlier offset moves
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;

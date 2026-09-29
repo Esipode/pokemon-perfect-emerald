@@ -4,6 +4,7 @@
 #include "pokemon.h"
 #include "battle_controllers.h"
 #include "battle_interface.h"
+#include "healthbox.h"
 #include "battle_z_move.h"
 #include "graphics.h"
 #include "sprite.h"
@@ -1100,17 +1101,9 @@ u32 GetHpDisplayMode(enum BattlerId battler)
     if (gBattleTypeFlags & (BATTLE_TYPE_SAFARI | BATTLE_TYPE_FIRST_BATTLE))
         return IsOnPlayerSide(battler) ? OPTIONS_HP_DISPLAY_BAR_NUMBERS : OPTIONS_HP_DISPLAY_BAR_ONLY;
 
-    bool32 isPlayer = IsOnPlayerSide(battler);
-    // Stored as the mode + 1; 0 is "unset" on a pre-change save and reads back as the side's default.
-    u32 stored = isPlayer ? gSaveBlock2Ptr->optionsHpDisplayPlayer : gSaveBlock2Ptr->optionsHpDisplayOpponent;
+    u32 side = IsOnPlayerSide(battler) ? HB_SIDE_PLAYER : HB_SIDE_FOE;
 
-    if (stored == 0 || stored - 1 >= OPTIONS_HP_DISPLAY_COUNT)
-    {
-        if (isPlayer)
-            return OPTIONS_HP_DISPLAY_BAR_NUMBERS;
-        return B_HP_PERCENTAGE_DISPLAY ? OPTIONS_HP_DISPLAY_BAR_PERCENT : OPTIONS_HP_DISPLAY_BAR_ONLY;
-    }
-    return stored - 1;
+    return HealthboxOptions_ModeFromToggles(HealthboxOptions_Shows(side, HB_ELEM_HP_BAR), HealthboxOptions_GetHpValue(side));
 }
 
 static bool32 ModeShowsBar(u32 mode)

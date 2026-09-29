@@ -49,6 +49,9 @@
 //   playerColorSlots[PLAYER_COLOR_SLOT_COUNT] (u16[15], 30 bytes) appended after pendingTrade:
 //     744 + 30 = 774, rounded up to 776 for 4-byte struct alignment. Hand-calculated -- confirm
 //     against the real build error if this mismatches.
+//   struct HealthboxOptions (one u32 bitfield, 21 bits used) appended after playerColorSlots:
+//     776 + 4 = 780. Hand-calculated -- confirm against the real build error if this
+//     mismatches.
 //
 // PokemonStorage (starts at 40944, ends at 67900):
 //   TOTAL_BOXES_COUNT 14 -> 16: +2 * (30 * sizeof(BoxPokemon) + BOX_NAME_LENGTH + 1 + 1
@@ -61,7 +64,7 @@
 //     (4*104). Names plus wallpapers cost 10 bytes per box, so fusions' offset stays
 //     4-aligned only when N is even; 16 and 28 both are.
 #define T_SAVEBLOCK1_SIZE 7740
-#define T_SAVEBLOCK2_SIZE 776
+#define T_SAVEBLOCK2_SIZE 780
 #define T_SAVEBLOCK3_SIZE 2216
 #define T_POKEMONSTORAGE_SIZE 67900
 

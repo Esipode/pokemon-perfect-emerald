@@ -5,6 +5,7 @@
 #include "battle_util.h"
 #include "bg.h"
 #include "gpu_regs.h"
+#include "healthbox.h"
 #include "international_string_util.h"
 #include "main.h"
 #include "menu.h"
@@ -345,18 +346,9 @@ static void VBlankCB(void)
     TransferPlttBuffer();
 }
 
-// The save fields hold the OPTIONS_HP_DISPLAY_* mode + 1; 0 is "unset" on a pre-change
-// save and resolves to that side's own default (players keep BAR + HP; the opponent
-// default follows B_HP_PERCENTAGE_DISPLAY, matching SetDefaultOptions()).
-static u8 HpDisplayModeFromSave(u8 stored, bool8 isFoe)
+static u8 HpDisplayModeFromSide(u32 side)
 {
-    if (stored == 0 || stored - 1 >= OPTIONS_HP_DISPLAY_COUNT)
-    {
-        if (isFoe)
-            return B_HP_PERCENTAGE_DISPLAY ? OPTIONS_HP_DISPLAY_BAR_PERCENT : OPTIONS_HP_DISPLAY_BAR_ONLY;
-        return OPTIONS_HP_DISPLAY_BAR_NUMBERS;
-    }
-    return stored - 1;
+    return HealthboxOptions_ModeFromToggles(HealthboxOptions_Shows(side, HB_ELEM_HP_BAR), HealthboxOptions_GetHpValue(side));
 }
 
 static void ReadAllCurrentSettings(u8 taskId)
@@ -368,8 +360,8 @@ static void ReadAllCurrentSettings(u8 taskId)
     // The save field holds 3 bits but only 6 are valid values; keep the draw in range.
     gTasks[taskId].tBattleSpeed = (gSaveBlock2Ptr->optionsBattleSpeed < OPTIONS_BATTLE_SPEED_COUNT)
                                 ? gSaveBlock2Ptr->optionsBattleSpeed : OPTIONS_BATTLE_SPEED_1X;
-    gTasks[taskId].tHpDisplayPlayer = HpDisplayModeFromSave(gSaveBlock2Ptr->optionsHpDisplayPlayer, FALSE);
-    gTasks[taskId].tHpDisplayFoe = HpDisplayModeFromSave(gSaveBlock2Ptr->optionsHpDisplayOpponent, TRUE);
+    gTasks[taskId].tHpDisplayPlayer = HpDisplayModeFromSide(HB_SIDE_PLAYER);
+    gTasks[taskId].tHpDisplayFoe = HpDisplayModeFromSide(HB_SIDE_FOE);
     gTasks[taskId].tAIBattles = (AiBattles_GetSetting(AI_BATTLES_SETTING_TRAINER) ? 1 : 0) | (AiBattles_GetSetting(AI_BATTLES_SETTING_WILD) ? 2 : 0);
     gTasks[taskId].tPackedFlags = 0;
     if (gSaveBlock2Ptr->optionsBattleSceneOff)     SET_FLAG(BATTLE_SCENE, 1); else SET_FLAG(BATTLE_SCENE, 0);
@@ -925,9 +917,18 @@ static void CommitPendingOptionSettings(u8 taskId)
     // Same field the Exp. Share key item toggles (IsGen6ExpShareEnabled), so both controls stay in sync.
     gSaveBlock2Ptr->optionsExpShare = GET_FLAG(EXP_SHARE);
     gSaveBlock2Ptr->optionsBattleSpeed = gTasks[taskId].tBattleSpeed;
-    // Stored as mode + 1; 0 stays reserved for "unset" on pre-change saves (see HpDisplayModeFromSave).
-    gSaveBlock2Ptr->optionsHpDisplayPlayer = gTasks[taskId].tHpDisplayPlayer + 1;
-    gSaveBlock2Ptr->optionsHpDisplayOpponent = gTasks[taskId].tHpDisplayFoe + 1;
+    {
+        struct HealthboxOptions healthbox;
+        bool32 bar;
+        u32 value;
+
+        HealthboxOptions_Get(&healthbox);
+        HealthboxOptions_TogglesFromMode(gTasks[taskId].tHpDisplayPlayer, &bar, &value);
+        HealthboxOptions_SetHpToggles(&healthbox, HB_SIDE_PLAYER, bar, value);
+        HealthboxOptions_TogglesFromMode(gTasks[taskId].tHpDisplayFoe, &bar, &value);
+        HealthboxOptions_SetHpToggles(&healthbox, HB_SIDE_FOE, bar, value);
+        HealthboxOptions_Commit(&healthbox);
+    }
 }
 
 static void Task_OptionMenuSave(u8 taskId)
