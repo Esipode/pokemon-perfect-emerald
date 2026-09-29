@@ -143,6 +143,7 @@ static void Task_CategoryMenuFadeIn(u8 taskId);
 static void Task_CategoryMenuProcessInput(u8 taskId);
 static void DrawCategoryList(void);
 static void Task_SettingsMenuFadeIn(u8 taskId);
+static void Task_OptionMenuConfirmReset(u8 taskId);
 static void Task_SettingsMenuProcessInput(u8 taskId);
 static void DrawSettingsList(void);
 static u8 TextSpeed_ProcessInput(u8 selection);
@@ -2049,6 +2050,8 @@ static void Task_CategoryMenuProcessInput(u8 taskId)
             DrawSettingsList();
             gTasks[taskId].func = Task_SettingsMenuProcessInput;
         }
+        else if (item == CATEGORY_ITEM_RESET_ALL)
+            StartResetPrompt(taskId, CATEGORIES_COUNT);
         else if (item == CATEGORY_ITEM_CANCEL)
             gTasks[taskId].func = Task_OptionMenuSave;
     }
@@ -2160,6 +2163,21 @@ static void MoveSettingsCursor(s8 delta)
     UpdateDescription();
 }
 
+// Live preview of options that take effect before commit.
+static void ApplyOptionSideEffect(u8 optionId, u8 value)
+{
+    switch (optionId)
+    {
+    case OPTION_SOUND:
+        SetPokemonCryStereo(value);
+        break;
+    case OPTION_FRAME:
+        LoadBgTiles(1, GetWindowFrameTilesPal(value)->tiles, 0x120, 0x1A2);
+        LoadPalette(GetWindowFrameTilesPal(value)->pal, BG_PLTT_ID(7), PLTT_SIZE_4BPP);
+        break;
+    }
+}
+
 // Left/Right on the highlighted row. Applies the change to sPendingValues and any live
 // side effect; returns TRUE if the value changed.
 static bool8 ProcessOptionInput(u8 optionId)
@@ -2179,19 +2197,114 @@ static bool8 ProcessOptionInput(u8 optionId)
 
     sPendingValues[optionId] = value;
     sArrowPressed = TRUE;
-
-    switch (optionId)
-    {
-    case OPTION_SOUND:
-        SetPokemonCryStereo(value);
-        break;
-    case OPTION_FRAME:
-        LoadBgTiles(1, GetWindowFrameTilesPal(value)->tiles, 0x120, 0x1A2);
-        LoadPalette(GetWindowFrameTilesPal(value)->pal, BG_PLTT_ID(7), PLTT_SIZE_4BPP);
-        break;
-    }
+    ApplyOptionSideEffect(optionId, value);
     return TRUE;
 }
+
+// Submenu rows own their storage (Healthbox, Player Colours) and are not reset here.
+// Options absent from SetDefaultOptions() (Autosave, Auto Scroll, Achievement Boosts,
+// Route Tracker, AI Trainer, AI Wild) take their default from sOptions.
+static void ResetOptionToDefault(u8 optionId)
+{
+    if (sOptions[optionId].type == OPTION_TYPE_SUBMENU)
+        return;
+    sPendingValues[optionId] = sOptions[optionId].defaultValue;
+    ApplyOptionSideEffect(optionId, sOptions[optionId].defaultValue);
+}
+
+static void ResetCategory(u8 categoryId)
+{
+    const struct OptionCategory *category = &sCategories[categoryId];
+    u8 i;
+
+    for (i = 0; i < category->optionCount; i++)
+        ResetOptionToDefault(category->optionIds[i]);
+}
+
+static void ResetAllOptions(void)
+{
+    u8 i;
+
+    for (i = 0; i < CATEGORIES_COUNT; i++)
+        ResetCategory(i);
+}
+
+#define tResetTarget data[0] // Category id, or CATEGORIES_COUNT for reset-all
+#define tConfirmSel  data[1] // 0 = NO, 1 = YES
+
+static const u8 sText_ConfirmNo[]  = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}NO");
+static const u8 sText_ConfirmYes[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}YES");
+static const u8 sText_ConfirmResetAll[]      = _("Reset every setting to its default value?");
+static const u8 sText_ConfirmResetCategory[] = _("Reset this category's settings to their default values?");
+
+static u8 GetConfirmRowY(void)
+{
+    u8 item = sCursor[sMenuLevel];
+
+    return (GetVisibleIndexOf(item) - sScrollOffset[sMenuLevel]) * ROW_PITCH;
+}
+
+static void DrawConfirmChoice(u8 sel)
+{
+    DrawOptionMenuValue(sel ? sText_ConfirmYes : sText_ConfirmNo, GetConfirmRowY(), TRUE);
+    CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
+}
+
+// YES/NO is drawn in the highlighted reset row's value column; the question uses WIN_DESC.
+static void StartResetPrompt(u8 taskId, u8 target)
+{
+    gTasks[taskId].tResetTarget = target;
+    gTasks[taskId].tConfirmSel = 0;
+    PrintOptionDescription(target == CATEGORIES_COUNT ? sText_ConfirmResetAll : sText_ConfirmResetCategory);
+    DrawConfirmChoice(0);
+    gTasks[taskId].func = Task_OptionMenuConfirmReset;
+}
+
+static void Task_OptionMenuConfirmReset(u8 taskId)
+{
+    bool8 done = FALSE;
+    u8 target = gTasks[taskId].tResetTarget;
+
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        gTasks[taskId].tConfirmSel ^= 1;
+        DrawConfirmChoice(gTasks[taskId].tConfirmSel);
+        return;
+    }
+    if (JOY_NEW(A_BUTTON))
+    {
+        if (gTasks[taskId].tConfirmSel)
+        {
+            if (target == CATEGORIES_COUNT)
+                ResetAllOptions();
+            else
+                ResetCategory(target);
+        }
+        done = TRUE;
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        done = TRUE;
+    }
+    if (!done)
+        return;
+
+    // Visibility may have changed; rebuild the list, which also re-prints the description.
+    if (target == CATEGORIES_COUNT)
+    {
+        DrawCategoryList();
+        gTasks[taskId].func = Task_CategoryMenuProcessInput;
+    }
+    else
+    {
+        ClampScroll();
+        DrawSettingsList();
+        gTasks[taskId].func = Task_SettingsMenuProcessInput;
+    }
+}
+
+#undef tResetTarget
+#undef tConfirmSel
 
 static void EditSettingsRow(void)
 {
@@ -2249,6 +2362,8 @@ static void Task_SettingsMenuProcessInput(u8 taskId)
                 break;
             }
         }
+        else
+            StartResetPrompt(taskId, sCurrentCategory);
     }
     else if (JOY_NEW(B_BUTTON))
     {
