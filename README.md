@@ -39,13 +39,13 @@
 	- Normal: Intended experience, simple basic trainer AI for random trainers and more complex AI for story battles
 	- Hard: Trainers use higher level Pokémon and have more complex AI
 - New Game + mode unlocked upon completing the post Elite Four "Champion Challenge" battles
-	- Restarts the game with all your party, stored Pokémon, and non-unique items (TMs/HMs & Key Items)
+	- Restarts the game with all your party, stored Pokémon, and non-unique items (HMs & Key Items)
 	- Both wild and trainer Pokémon are higher levels per NG+ cycle
 	- Trainer parties get updated per NG+ cycle to have more Pokémon (Or if the party is already full, sometimes Legendary Pokémon)
 	- Level cap increases by 75 per NG+ cycle (Up to a max of 1000)
-- Pokemon Storage
+- Pokémon Storage
 	- Doubled Pokémon PC space, from 420 slots to 840. Not enough for a living dex, but enough to have every final evolution for every Pokémon in gens 1-9, with room for at least the next 2 generations (10 & 11, possibly 12).
-	- When starting a new playthrough, you can carry your Pokemon over to the next playthrough, where they will not be withdrawable until you complete the Elite 4 in the new playthrough.
+	- When starting a new playthrough, you can carry your Pokémon over to the next playthrough, where they will not be withdrawable until you complete the Elite 4 in the new playthrough.
 - Player customization
 	- Choose between the Hoenn (Brendan/May) and Kanto (Red/Leaf) player styles
 	- You can customize the colours of various aspects of your player character (hair, hat, shirt, bag, etc.) by adjusting their hue, saturation, and brightness
@@ -66,17 +66,21 @@
 - Keep Storage between New Games
 	- When selecting "New Game", player is prompted to keep the Pokémon in their storage
 	- Pokémon transferred to the New Game will be "locked" (Not withdrawable) until after defeating the Elite 4
-- Nuzlocke Mode
+- Nuzlocke Mode (Mutually exclusive with Draft and Recruits mode)
 	- Can only catch first encountered Pokémon in a route, and no more after that
 	- If a Pokémon faints, it is immediately removed from the party after battle
-	- Upon Whiteout with an empty party, the save file is wiped immediately (achievements/boosts are unaffected), and the player is asked whether to begin a new run or return to the title screen
+	- Upon Whiteout with an empty party, the save file is wiped immediately (achievements/boosts are preserved), and the player is asked whether to begin a new run or return to the title screen
 	- Players are forced to give nicknames to their Pokémon (You cannot pick the default name either)
 	- Breeding Pokémon is disabled in this mode
-- Draft Mode (mutually exclusive with Nuzlocke Mode)
+- Draft Mode (Mutually exclusive with Nuzlocke and Recruits mode)
 	- You never catch Pokémon. Each new area offers a one-time pick from the Pokémon that naturally live in that area.
 	- Take the pick into an empty party slot, or swap it with a party member you release forever - either way the area is spent
 	- The PC is completely locked; nothing is ever boxed
 	- Breeding Pokémon is disabled in this mode
+- Recruits Mode (Mutually exclusive with Nuzlocke and Draft mode)
+	- Each Pokémon you catch has a number attached to it in your party menu
+	- Starting at 10, each trainer battle you win that the Pokémon participates in lowers the number
+	- Once the number reaches 0, the Pokémon is removed from the party forever
 - Randomizer Mode
 	- Every starter choice, wild encounter, and trainer battle can be randomized
 	- You can also randomize moves and types (separately)
@@ -84,8 +88,8 @@
 	- Commit to a single Pokémon type for the whole playthrough
 	- Obtaining any Pokémon not matching the set type is disabled
 - Mono Gen Mode
-	- Commit to a single Pokémon generation (1-9) for the whole playthrough
-	- Obtaining any Pokémon not introduced in that generation is disabled, including evolutions
+	- Commit to a single Pokémon generation for the whole playthrough
+	- Obtaining any Pokémon not a part of that generation is disabled, including evolutions
 - Limited Party Mode
 	- Party starts capped at 3 Pokémon; extra slots (up to the normal 6) are earned back from Gym Badges
 	- Does not restrict which Pokémon you may obtain, only how many you may carry at once
@@ -97,7 +101,7 @@
 - Auto-skip dialogue
 	- When enabled, message boxes automatically continue without player input
 - Stat Tracker
-	- When enabled in the options menu, the pause menu now shows a list of pokedex completion, items found, and trainers battled on the current route
+	- When enabled in the options menu, the pause menu now shows a list of the following for the current route: Pokédex completion/items found/trainer battles for the current route
 
 ## Minor features
 - Sort Pokémon in storage
