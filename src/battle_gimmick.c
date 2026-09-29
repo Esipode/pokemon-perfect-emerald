@@ -133,6 +133,12 @@ void SetGimmickAsActivated(enum BattlerId battler, enum Gimmick gimmick)
 #define tBattler    data[0]
 #define tHide       data[1]
 
+// The New healthbox can be shorter than the Classic 32 px box; keep the trigger on its centre.
+static s32 GetTriggerYShift(enum BattlerId battler)
+{
+    return Healthbox_IsNewStyle() ? HealthboxBattle_GetCentreShift(battler) : 0;
+}
+
 void ChangeGimmickTriggerSprite(u32 spriteId, u32 animId)
 {
     StartSpriteAnim(&gSprites[spriteId], animId);
@@ -160,11 +166,11 @@ void CreateGimmickTriggerSprite(enum BattlerId battler)
         if (GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES)
             gBattleStruct->gimmick.triggerSpriteId = CreateSprite(gimmick->triggerTemplate,
                                                                   gSprites[gHealthboxSpriteIds[battler]].x - DOUBLES_GIMMICK_TRIGGER_POS_X_SLIDE,
-                                                                  gSprites[gHealthboxSpriteIds[battler]].y - DOUBLES_GIMMICK_TRIGGER_POS_Y_DIFF, 0);
+                                                                  gSprites[gHealthboxSpriteIds[battler]].y - DOUBLES_GIMMICK_TRIGGER_POS_Y_DIFF + GetTriggerYShift(battler), 0);
         else
             gBattleStruct->gimmick.triggerSpriteId = CreateSprite(gimmick->triggerTemplate,
                                                                   gSprites[gHealthboxSpriteIds[battler]].x - SINGLES_GIMMICK_TRIGGER_POS_X_SLIDE,
-                                                                  gSprites[gHealthboxSpriteIds[battler]].y - SINGLES_GIMMICK_TRIGGER_POS_Y_DIFF, 0);
+                                                                  gSprites[gHealthboxSpriteIds[battler]].y - SINGLES_GIMMICK_TRIGGER_POS_Y_DIFF + GetTriggerYShift(battler), 0);
     }
 
     gSprites[gBattleStruct->gimmick.triggerSpriteId].tBattler = battler;
@@ -230,6 +236,7 @@ static void SpriteCb_GimmickTrigger(struct Sprite *sprite)
         xOptimal = SINGLES_GIMMICK_TRIGGER_POS_X_OPTIMAL;
         yDiff = SINGLES_GIMMICK_TRIGGER_POS_Y_DIFF;
     }
+    yDiff -= GetTriggerYShift(sprite->tBattler);
 
     if (sprite->tHide)
     {

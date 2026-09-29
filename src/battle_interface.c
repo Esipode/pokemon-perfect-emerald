@@ -1375,6 +1375,9 @@ UNUSED static void PrintSafariMonInfo(u8 healthboxSpriteId, struct Pokemon *mon)
 // is nothing to swap. Either side is eligible whenever its box exists.
 void SwapHpBarsWithHpText(void)
 {
+    if (Healthbox_IsNewStyle())
+        return;
+
     for (enum BattlerId i = 0; i < gBattlersCount; i++)
     {
         struct Pokemon *mon = GetBattlerMon(i);

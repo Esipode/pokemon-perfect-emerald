@@ -226,6 +226,22 @@ void HealthboxBattle_GetIndicatorPos(u32 battler, s16 *x, s16 *y)
     *y = level->y + 1 - HB_BOX_CENTER_Y;
 }
 
+void HealthboxBattle_GetBoxBounds(u32 battler, s16 *left, s16 *top, s16 *right, s16 *bottom)
+{
+    const struct HealthboxLayout *layout = &sLayouts[battler];
+
+    *left = layout->screenX;
+    *top = layout->screenY;
+    *right = layout->screenX + layout->boxW;
+    *bottom = layout->screenY + layout->boxH;
+}
+
+// Classic trigger offsets assume a 32 px box centred on the main sprite.
+s32 HealthboxBattle_GetCentreShift(u32 battler)
+{
+    return sLayouts[battler].boxH / 2 - HB_BOX_CENTER_Y;
+}
+
 void HealthboxBattle_DrawNick(u8 healthboxSpriteId, struct Pokemon *mon)
 {
     struct HealthboxSprites sprites;

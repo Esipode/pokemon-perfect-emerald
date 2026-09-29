@@ -5,6 +5,7 @@
 #include "battle_gimmick.h"
 #include "decompress.h"
 #include "graphics.h"
+#include "healthbox.h"
 #include "pokedex.h"
 #include "sprite.h"
 #include "type_icons.h"
@@ -32,7 +33,7 @@ static void DestroyTypeIcon(struct Sprite*);
 static void FreeAllTypeIconResources(void);
 static bool32 ShouldHideTypeIcon(enum BattlerId);
 static s32 GetTypeIconHideMovement(bool32, u32);
-static s32 GetTypeIconSlideMovement(bool32, u32, s32);
+static s32 GetTypeIconSlideMovement(bool32, u32, s32, s32);
 static s32 GetTypeIconBounceMovement(s32, u32);
 
 const struct Coords16 sTypeIconPositions[][2] =
@@ -270,6 +271,9 @@ static void LoadTypeIconsPerBattler(enum BattlerId battler, u32 position)
     if (!IsBattlerAlive(battlerId))
         return;
 
+    if (Healthbox_IsNewStyle() && !HealthboxOptions_Shows(IsOnPlayerSide(battlerId) ? HB_SIDE_PLAYER : HB_SIDE_FOE, HB_ELEM_TYPES))
+        return;
+
     for (typeNum = 0; typeNum < 2; ++typeNum)
         types[typeNum] = GetMonPublicType(battlerId, typeNum);
 
@@ -385,8 +389,28 @@ static bool32 ShouldSkipSecondType(enum Type types[], u32 typeNum)
     return TRUE;
 }
 
+// The icons slide out from inside the box edge and stop just past it: the screen-side edge in
+// singles (player right, foe left), the centre-side edge in doubles (player left, foe right).
+static void SetNewTypeIconXY(s32 *x, s32 *y, u32 position, bool32 useDoubleBattleCoords, u32 typeNum)
+{
+    s16 left, top, right, bottom;
+    bool32 edgeIsRight = useDoubleBattleCoords ? !IsOnPlayerSide(GetBattlerAtPosition(position))
+                                               : IsOnPlayerSide(GetBattlerAtPosition(position));
+
+    HealthboxBattle_GetBoxBounds(GetBattlerAtPosition(position), &left, &top, &right, &bottom);
+    *x = edgeIsRight ? right - TYPE_ICON_EDGE_INSET : left + TYPE_ICON_EDGE_INSET;
+    // Two stacked icons span 27 px; centre them on the box.
+    *y = top + (bottom - top) / 2 - 6 + 11 * typeNum;
+}
+
 static void SetTypeIconXY(s32* x, s32* y, u32 position, bool32 useDoubleBattleCoords, u32 typeNum)
 {
+    if (Healthbox_IsNewStyle())
+    {
+        SetNewTypeIconXY(x, y, position, useDoubleBattleCoords, typeNum);
+        return;
+    }
+
     *x = sTypeIconPositions[position][useDoubleBattleCoords].x;
     *y = sTypeIconPositions[position][useDoubleBattleCoords].y + (11 * typeNum);
 }
@@ -404,6 +428,7 @@ static void CreateSpriteAndSetTypeSpriteAttributes(enum Type type, u32 x, u32 y,
     sprite->tMonPosition = position;
     sprite->tBattlerId = battler;
     sprite->tVerticalPosition = y;
+    sprite->tStartX = x;
 
     sprite->hFlip = ShouldFlipTypeIcon(useDoubleBattleCoords, position, type);
 
@@ -439,7 +464,7 @@ static void SpriteCB_TypeIcon(struct Sprite *sprite)
         return;
     }
 
-    sprite->x += GetTypeIconSlideMovement(useDoubleBattleCoords,position, sprite->x);
+    sprite->x += GetTypeIconSlideMovement(useDoubleBattleCoords, position, sprite->x, sprite->tStartX);
     sprite->y = GetTypeIconBounceMovement(sprite->tVerticalPosition,position);
 }
 
@@ -523,7 +548,7 @@ static s32 GetTypeIconHideMovement(bool32 useDoubleBattleCoords, u32 position)
         return 1;
 }
 
-static s32 GetTypeIconSlideMovement(bool32 useDoubleBattleCoords, u32 position, s32 xPos)
+static s32 GetTypeIconSlideMovement(bool32 useDoubleBattleCoords, u32 position, s32 xPos, s32 startX)
 {
     if (useDoubleBattleCoords)
     {
@@ -531,13 +556,13 @@ static s32 GetTypeIconSlideMovement(bool32 useDoubleBattleCoords, u32 position, 
         {
         case B_POSITION_PLAYER_LEFT:
         case B_POSITION_PLAYER_RIGHT:
-            if (xPos > sTypeIconPositions[position][useDoubleBattleCoords].x - 10)
+            if (xPos > startX - 10)
                 return -1;
             break;
         default:
         case B_POSITION_OPPONENT_LEFT:
         case B_POSITION_OPPONENT_RIGHT:
-            if (xPos < sTypeIconPositions[position][useDoubleBattleCoords].x + 10)
+            if (xPos < startX + 10)
                 return 1;
             break;
         }
@@ -546,12 +571,12 @@ static s32 GetTypeIconSlideMovement(bool32 useDoubleBattleCoords, u32 position, 
 
     if (position == B_POSITION_PLAYER_LEFT)
     {
-        if (xPos < sTypeIconPositions[position][useDoubleBattleCoords].x + 10)
+        if (xPos < startX + 10)
             return 1;
     }
     else
     {
-        if (xPos > sTypeIconPositions[position][useDoubleBattleCoords].x - 10)
+        if (xPos > startX - 10)
             return -1;
     }
     return 0;

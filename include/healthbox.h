@@ -109,6 +109,10 @@ void HealthboxBattle_DrawNick(u8 healthboxSpriteId, struct Pokemon *mon);
 void HealthboxBattle_DrawHpValue(u8 healthboxSpriteId, s16 currHp, s16 maxHp);
 // Gimmick indicator offsets from the main sprite centre.
 void HealthboxBattle_GetIndicatorPos(u32 battler, s16 *x, s16 *y);
+// Screen-space box rect; right and bottom are exclusive.
+void HealthboxBattle_GetBoxBounds(u32 battler, s16 *left, s16 *top, s16 *right, s16 *bottom);
+// Vertical offset of the box centre from the main sprite centre (<= 0).
+s32 HealthboxBattle_GetCentreShift(u32 battler);
 bool32 HealthboxBattle_HasHpBar(u32 battler);
 bool32 HealthboxBattle_HasCaughtIcons(u32 battler);
 const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler);
