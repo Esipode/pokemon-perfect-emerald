@@ -32,7 +32,6 @@ static void DrawOptionsPg2(u8 taskId);
 static void DrawOptionsPg3(u8 taskId);
 
 #define tMenuSelection    data[0]
-#define tButtonMode       data[1]
 #define tWindowFrameType  data[2]
 #define tAIBattles        data[3]  // bit0 = trainer AI, bit1 = wild AI
 #define tBattleSpeed      data[4]  // OPTIONS_BATTLE_SPEED_*; multi-valued, so it can't live in tPackedFlags
@@ -63,7 +62,6 @@ enum
     MENUITEM_BATTLESCENE,
     MENUITEM_BATTLESTYLE,
     MENUITEM_SOUND,
-    MENUITEM_BUTTONMODE,
     MENUITEM_FRAMETYPE,
     MENUITEM_CANCEL,
     MENUITEM_COUNT,
@@ -100,7 +98,7 @@ enum
     WIN_DESC
 };
 
-#define VISIBLE_ROWS 5
+#define VISIBLE_ROWS 4
 #define ROW_PITCH    16
 
 //Pg 1
@@ -108,7 +106,6 @@ enum
 #define YPOS_BATTLESCENE  (MENUITEM_BATTLESCENE * 16)
 #define YPOS_BATTLESTYLE  (MENUITEM_BATTLESTYLE * 16)
 #define YPOS_SOUND        (MENUITEM_SOUND * 16)
-#define YPOS_BUTTONMODE   (MENUITEM_BUTTONMODE * 16)
 #define YPOS_FRAMETYPE    (MENUITEM_FRAMETYPE * 16)
 
 //Pg2
@@ -144,6 +141,7 @@ static void Task_CategoryMenuProcessInput(u8 taskId);
 static void DrawCategoryList(void);
 static void Task_SettingsMenuFadeIn(u8 taskId);
 static void Task_OptionMenuConfirmReset(u8 taskId);
+static void StartResetPrompt(u8 taskId, u8 target);
 static void Task_SettingsMenuProcessInput(u8 taskId);
 static void DrawSettingsList(void);
 static u8 TextSpeed_ProcessInput(u8 selection);
@@ -171,8 +169,6 @@ static u8 Sound_ProcessInput(u8 selection);
 static void Sound_DrawChoices(u8 selection, bool8 isActive);
 static u8 FrameType_ProcessInput(u8 selection);
 static void FrameType_DrawChoices(u8 selection, bool8 isActive);
-static u8 ButtonMode_ProcessInput(u8 selection);
-static void ButtonMode_DrawChoices(u8 selection, bool8 isActive);
 static bool8 IsAutosaveHidden(void);
 static bool8 IsAchievementBoostsHidden(void);
 static bool8 IsPg2ItemHidden(u8 item);
@@ -221,9 +217,6 @@ static const u8 gText_SoundMono[]          = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_SoundStereo[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}STEREO");
 static const u8 gText_FrameType[]          = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}TYPE");
 static const u8 gText_FrameTypeNumber[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}");
-static const u8 gText_ButtonTypeNormal[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}NORMAL");
-static const u8 gText_ButtonTypeLR[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}LR");
-static const u8 gText_ButtonTypeLEqualsA[] = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}L=A");
 
 // Page 2 strings
 static const u8 gText_AIBattlesTrainer[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}TRAINER");
@@ -264,7 +257,6 @@ static const u8 *const sOptionMenuItemsNames[MENUITEM_COUNT] =
     [MENUITEM_BATTLESCENE] = COMPOUND_STRING("BATTLE SCENE"),
     [MENUITEM_BATTLESTYLE] = COMPOUND_STRING("BATTLE STYLE"),
     [MENUITEM_SOUND]       = COMPOUND_STRING("SOUND"),
-    [MENUITEM_BUTTONMODE]  = COMPOUND_STRING("BUTTON MODE"),
     [MENUITEM_FRAMETYPE]   = COMPOUND_STRING("FRAME"),
     [MENUITEM_CANCEL]      = COMPOUND_STRING("CANCEL"),
 };
@@ -748,18 +740,18 @@ static const struct WindowTemplate sOptionMenuWinTemplates[] =
         .tilemapLeft = 2,
         .tilemapTop = 5,
         .width = 26,
-        .height = 10,
+        .height = 8,
         .paletteNum = 1,
         .baseBlock = 0x36
     },
     [WIN_DESC] = {
-        .bg = 0,
+        .bg = 1, // BG0 is darkened outside the cursor window; BG1 is not
         .tilemapLeft = 2,
-        .tilemapTop = 16,
+        .tilemapTop = 15,
         .width = 26,
         .height = 4,
         .paletteNum = 1,
-        .baseBlock = 0x13A
+        .baseBlock = 0x106
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -890,7 +882,6 @@ static void ReadAllCurrentSettings(u8 taskId)
 {
     gTasks[taskId].tMenuSelection = 0;
     gTasks[taskId].tTextSpeed = gSaveBlock2Ptr->optionsTextSpeed;
-    gTasks[taskId].tButtonMode = gSaveBlock2Ptr->optionsButtonMode;
     gTasks[taskId].tWindowFrameType = gSaveBlock2Ptr->optionsWindowFrameType;
     // The save field holds 3 bits but only 6 are valid values; keep the draw in range.
     gTasks[taskId].tBattleSpeed = (gSaveBlock2Ptr->optionsBattleSpeed < OPTIONS_BATTLE_SPEED_COUNT)
@@ -915,7 +906,6 @@ static void DrawOptionsPg1(u8 taskId)
     BattleScene_DrawChoices(GET_FLAG(BATTLE_SCENE), sel == MENUITEM_BATTLESCENE);
     BattleStyle_DrawChoices(GET_FLAG(BATTLE_STYLE), sel == MENUITEM_BATTLESTYLE);
     Sound_DrawChoices(GET_FLAG(SOUND), sel == MENUITEM_SOUND);
-    ButtonMode_DrawChoices(gTasks[taskId].tButtonMode, sel == MENUITEM_BUTTONMODE);
     FrameType_DrawChoices(gTasks[taskId].tWindowFrameType, sel == MENUITEM_FRAMETYPE);
     HighlightOptionMenuItem(sel);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
@@ -955,6 +945,8 @@ void CB2_InitOptionMenu(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
+        // Button Mode is no longer configurable; normalise old saves.
+        gSaveBlock2Ptr->optionsButtonMode = OPTIONS_BUTTON_MODE_NORMAL;
         // Returning from a submenu; restore the caller stashed by the fade-out task.
         if (sSavedCallback != NULL)
         {
@@ -1187,13 +1179,6 @@ static void Task_OptionMenuProcessInput(u8 taskId)
             if (previousOption != GET_FLAG(SOUND))
                 Sound_DrawChoices(GET_FLAG(SOUND), TRUE);
             break;
-        case MENUITEM_BUTTONMODE:
-            previousOption = gTasks[taskId].tButtonMode;
-            gTasks[taskId].tButtonMode = ButtonMode_ProcessInput(gTasks[taskId].tButtonMode);
-
-            if (previousOption != gTasks[taskId].tButtonMode)
-                ButtonMode_DrawChoices(gTasks[taskId].tButtonMode, TRUE);
-            break;
         case MENUITEM_FRAMETYPE:
             previousOption = gTasks[taskId].tWindowFrameType;
             gTasks[taskId].tWindowFrameType = FrameType_ProcessInput(gTasks[taskId].tWindowFrameType);
@@ -1421,7 +1406,6 @@ static void CommitPendingOptionSettings(u8 taskId)
     gSaveBlock2Ptr->optionsBattleSceneOff = GET_FLAG(BATTLE_SCENE);
     gSaveBlock2Ptr->optionsBattleStyle = GET_FLAG(BATTLE_STYLE);
     gSaveBlock2Ptr->optionsSound = GET_FLAG(SOUND);
-    gSaveBlock2Ptr->optionsButtonMode = gTasks[taskId].tButtonMode;
     gSaveBlock2Ptr->optionsWindowFrameType = gTasks[taskId].tWindowFrameType;
     /* Save trainer and wild AI flags from the bitmask */
     AiBattles_SetSetting(AI_BATTLES_SETTING_TRAINER, (gTasks[taskId].tAIBattles & 1) != 0);
@@ -1711,35 +1695,6 @@ static void FrameType_DrawChoices(u8 selection, bool8 isActive)
     DrawOptionMenuValue(text, YPOS_FRAMETYPE, isActive);
 }
 
-static u8 ButtonMode_ProcessInput(u8 selection)
-{
-    if (JOY_NEW(DPAD_RIGHT))
-    {
-        if (selection <= 1)
-            selection++;
-        else
-            selection = 0;
-
-        sArrowPressed = TRUE;
-    }
-    if (JOY_NEW(DPAD_LEFT))
-    {
-        if (selection != 0)
-            selection--;
-        else
-            selection = 2;
-
-        sArrowPressed = TRUE;
-    }
-    return selection;
-}
-
-static void ButtonMode_DrawChoices(u8 selection, bool8 isActive)
-{
-    static const u8 *const sTexts[3] = {gText_ButtonTypeNormal, gText_ButtonTypeLR, gText_ButtonTypeLEqualsA};
-
-    DrawOptionMenuValue(sTexts[selection], YPOS_BUTTONMODE, isActive);
-}
 static u8 AIBattles_ProcessInput(u8 selection)
 {
     if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
@@ -2412,11 +2367,21 @@ static void DrawBgWindowFrames(void)
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1,  4,  1,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2,  4, 26,  1,  7);
     FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28,  4,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1, 10,  7);
-    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1, 10,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 15,  1,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 15, 26,  1,  7);
-    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 15,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1,  5,  1,  8,  7);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28,  5,  1,  8,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 13,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 13, 26,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 13,  1,  1,  7);
+
+    // Draw description window frame
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_L,  1, 14,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_EDGE,      2, 14, 26,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_TOP_CORNER_R, 28, 14,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_LEFT_EDGE,     1, 15,  1,  4,  7);
+    FillBgTilemapBufferRect(1, TILE_RIGHT_EDGE,   28, 15,  1,  4,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_L,  1, 19,  1,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_EDGE,      2, 19, 26,  1,  7);
+    FillBgTilemapBufferRect(1, TILE_BOT_CORNER_R, 28, 19,  1,  1,  7);
 
     CopyBgTilemapBufferToVram(1);
 }
