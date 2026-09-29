@@ -336,6 +336,58 @@ void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 colourLevel
     HealthboxRender_DrawHpBar(gSprites[healthboxSpriteId].data[5], fillPx, colourLevel);
 }
 
+void HealthboxBattle_DrawExpBar(u8 healthboxSpriteId, u32 fillPx)
+{
+    struct HealthboxSprites sprites;
+    const struct HealthboxLayout *layout;
+
+    GetBoxSprites(healthboxSpriteId, &sprites, &layout);
+    if (layout->rects[HB_RECT_EXP].w == 0)
+        return;
+
+    HealthboxRender_DrawExpBar(&sprites, layout, &layout->rects[HB_RECT_EXP], fillPx);
+}
+
+static void DrawStatus(u8 healthboxSpriteId, struct Pokemon *mon)
+{
+    struct HealthboxSprites sprites;
+    const struct HealthboxLayout *layout;
+    enum BattlerId battler = gSprites[healthboxSpriteId].data[6];
+    u32 status = GetMonData(mon, MON_DATA_STATUS);
+    const struct HealthboxStatusSpec *spec = NULL;
+    u32 i;
+
+    GetBoxSprites(healthboxSpriteId, &sprites, &layout);
+    if (layout->rects[HB_RECT_STATUS].w == 0)
+        return;
+
+    for (i = 0; i < ARRAY_COUNT(sHealthboxStatusSpecs); i++)
+    {
+        if (status & sHealthboxStatusSpecs[i].mask)
+        {
+            spec = &sHealthboxStatusSpecs[i];
+            break;
+        }
+    }
+
+    if (spec != NULL)
+        LoadHealthboxStatusColor(healthboxSpriteId, battler, spec->palId);
+    HealthboxRender_DrawStatusPill(&sprites, layout, &layout->rects[HB_RECT_STATUS], HB_PAL_STATUS_FIRST + battler,
+                                   spec != NULL ? spec->label : NULL, HealthboxOptions_GetBackground());
+}
+
+static void UpdateExp(u8 healthboxSpriteId, struct Pokemon *mon, enum BattlerId battler)
+{
+    enum Species species = GetMonData(mon, MON_DATA_SPECIES);
+    u32 level = GetMonData(mon, MON_DATA_LEVEL);
+    u32 currLevelExp = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level);
+    s32 currExp = GetMonData(mon, MON_DATA_EXP) - currLevelExp;
+    s32 maxExp = GetExperienceAtLevel(gSpeciesInfo[species].growthRate, level + 1) - currLevelExp;
+
+    SetBattleBarStruct(battler, healthboxSpriteId, maxExp, currExp, 0);
+    MoveBattleBar(battler, healthboxSpriteId, EXP_BAR, 0);
+}
+
 void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elementId)
 {
     struct HealthboxSprites sprites;
@@ -361,6 +413,10 @@ void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elemen
         SetBattleBarStruct(battler, healthboxSpriteId, GetMonData(mon, MON_DATA_MAX_HP), GetMonData(mon, MON_DATA_HP), 0);
         MoveBattleBar(battler, healthboxSpriteId, HEALTH_BAR, 0);
     }
+    if ((all || elementId == HEALTHBOX_EXP_BAR) && IsOnPlayerSide(battler) && layout->rects[HB_RECT_EXP].w != 0)
+        UpdateExp(healthboxSpriteId, mon, battler);
+    if (all || elementId == HEALTHBOX_STATUS_ICON)
+        DrawStatus(healthboxSpriteId, mon);
     if (all)
         TryAddPokeballIconToHealthbox(healthboxSpriteId, TRUE);
 }

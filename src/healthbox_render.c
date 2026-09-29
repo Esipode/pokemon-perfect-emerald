@@ -60,16 +60,33 @@ void HealthboxRender_Clear(const struct HealthboxSprites *sprites, const struct 
               (layout->rightSpriteW / 8) * (HB_SPRITE_H / 8) * TILE_SIZE_4BPP);
 }
 
-void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
-                               const struct HealthboxRect *rect, const u8 *str, bool32 rightAlign, u32 background)
+// Box-local x, sprite-local print y; handles text crossing the sprite seam.
+static void PrintTextAt(const struct HealthboxSprites *sprites, u32 fontId, s32 x, s32 top, const u8 *str)
 {
     struct Sprite *left = &gSprites[sprites->left];
     struct Sprite *right = &gSprites[sprites->right];
+    s16 savedLeft1 = left->data[1], savedRight1 = right->data[1];
+
+    // The text printer spills into the sprite named by data[1].
+    left->data[1] = sprites->right;
+    right->data[1] = SPRITE_NONE;
+
+    if (x >= HB_LEFT_W)
+        AddSpriteTextPrinterParameterized6(sprites->right, fontId, x - HB_LEFT_W, top, 0, 0, sHealthboxTextColor, 0, str);
+    else
+        AddSpriteTextPrinterParameterized6(sprites->left, fontId, x, top, 0, 0, sHealthboxTextColor, 0, str);
+
+    left->data[1] = savedLeft1;
+    right->data[1] = savedRight1;
+}
+
+void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                               const struct HealthboxRect *rect, const u8 *str, bool32 rightAlign, u32 background)
+{
     u32 fontId = GetFontIdToFit(str, FONT_SMALL, 0, rect->w);
     s32 x = rect->x;
     s32 top = rect->y - HB_TEXT_INK_OFFSET;
     s32 clearH = rect->h;
-    s16 savedLeft1, savedRight1;
 
     if (rightAlign)
         x += rect->w - GetStringWidth(fontId, str, 0);
@@ -84,19 +101,41 @@ void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const str
 
     HealthboxRender_FillRect(sprites, layout, rect->x, rect->y, rect->w, clearH, background == HB_BG_NONE ? 0 : HB_PAL_FILL);
 
-    // The text printer spills into the sprite named by data[1].
-    savedLeft1 = left->data[1];
-    savedRight1 = right->data[1];
-    left->data[1] = sprites->right;
-    right->data[1] = SPRITE_NONE;
+    PrintTextAt(sprites, fontId, x, top, str);
+}
 
-    if (x >= HB_LEFT_W)
-        AddSpriteTextPrinterParameterized6(sprites->right, fontId, x - HB_LEFT_W, top, 0, 0, sHealthboxTextColor, 0, str);
-    else
-        AddSpriteTextPrinterParameterized6(sprites->left, fontId, x, top, 0, 0, sHealthboxTextColor, 0, str);
+void HealthboxRender_DrawExpBar(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                                const struct HealthboxRect *rect, u32 fillPx)
+{
+    if (fillPx > rect->w)
+        fillPx = rect->w;
 
-    left->data[1] = savedLeft1;
-    right->data[1] = savedRight1;
+    HealthboxRender_FillRect(sprites, layout, rect->x, rect->y, fillPx, rect->h, HB_PAL_EXP);
+    HealthboxRender_FillRect(sprites, layout, rect->x + fillPx, rect->y, rect->w - fillPx, rect->h, HB_PAL_TROUGH);
+}
+
+void HealthboxRender_DrawStatusPill(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                                    const struct HealthboxRect *rect, u32 palIndex, const u8 *label, u32 background)
+{
+    u8 backdrop = background == HB_BG_NONE ? 0 : HB_PAL_FILL;
+    s32 x, top;
+
+    HealthboxRender_FillRect(sprites, layout, rect->x, rect->y, rect->w, rect->h, backdrop);
+    if (label == NULL)
+        return;
+
+    HealthboxRender_FillRect(sprites, layout, rect->x, rect->y, rect->w, rect->h, palIndex);
+    // Round the corners.
+    HealthboxRender_PutPixel(sprites, layout, rect->x, rect->y, backdrop);
+    HealthboxRender_PutPixel(sprites, layout, rect->x + rect->w - 1, rect->y, backdrop);
+    HealthboxRender_PutPixel(sprites, layout, rect->x, rect->y + rect->h - 1, backdrop);
+    HealthboxRender_PutPixel(sprites, layout, rect->x + rect->w - 1, rect->y + rect->h - 1, backdrop);
+
+    x = rect->x + (rect->w - GetStringWidth(HB_PILL_FONT, label, 0)) / 2;
+    top = rect->y + (rect->h - HB_PILL_INK_H) / 2 - HB_TEXT_INK_OFFSET;
+    if (top < 0)
+        top = 0;
+    PrintTextAt(sprites, HB_PILL_FONT, x, top, label);
 }
 
 void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel)

@@ -563,15 +563,6 @@ static const struct SpriteTemplate sStatusSummaryBallsSpriteTemplates[2] =
 static const u8 sEmptyWhiteText_GrayHighlight[] = __("{COLOR WHITE}{BACKGROUND DARK_GRAY}{ACCENT DARK_GRAY}              ");
 static const u8 sEmptyWhiteText_TransparentHighlight[] = __("{COLOR WHITE}{BACKGROUND TRANSPARENT}{ACCENT TRANSPARENT}              ");
 
-enum
-{
-    PAL_STATUS_PSN,
-    PAL_STATUS_PAR,
-    PAL_STATUS_SLP,
-    PAL_STATUS_FRZ,
-    PAL_STATUS_BRN
-};
-
 static const u16 sStatusIconColors[] =
 {
     [PAL_STATUS_PSN] = RGB(24, 12, 24),
@@ -2048,12 +2039,21 @@ void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     SetHealthbarIconTile(healthBarSpriteId, HEALTHBAR_TILE_CATCH_STATUS_ICON, catchStatusGfx);
 }
 
+// Writes the status colour into palette slot battler + 12, in both the faded and unfaded buffers.
+void LoadHealthboxStatusColor(u8 healthboxSpriteId, enum BattlerId battler, u32 statusPalId)
+{
+    u32 pltAdder = PLTT_ID(gSprites[healthboxSpriteId].oam.paletteNum) + battler + HB_PAL_STATUS_FIRST;
+
+    FillPalette(sStatusIconColors[statusPalId], OBJ_PLTT_OFFSET + pltAdder, PLTT_SIZEOF(1));
+    CpuCopy16(&gPlttBufferUnfaded[OBJ_PLTT_OFFSET + pltAdder], (u16 *)OBJ_PLTT + pltAdder, PLTT_SIZEOF(1));
+}
+
 static void UpdateStatusIconInHealthbox(u8 healthboxSpriteId)
 {
     s32 i;
     enum BattlerId battler;
     u8 healthBarSpriteId;
-    u32 status, pltAdder;
+    u32 status;
     const u8 *statusGfxPtr;
     s16 tileNumAdder;
     u8 statusPalId;
@@ -2125,11 +2125,7 @@ static void UpdateStatusIconInHealthbox(u8 healthboxSpriteId)
         return;
     }
 
-    pltAdder = PLTT_ID(gSprites[healthboxSpriteId].oam.paletteNum);
-    pltAdder += battler + 12;
-
-    FillPalette(sStatusIconColors[statusPalId], OBJ_PLTT_OFFSET + pltAdder, PLTT_SIZEOF(1));
-    CpuCopy16(&gPlttBufferUnfaded[OBJ_PLTT_OFFSET + pltAdder], (u16 *)OBJ_PLTT + pltAdder, PLTT_SIZEOF(1));
+    LoadHealthboxStatusColor(healthboxSpriteId, battler, statusPalId);
     CpuCopy32(statusGfxPtr, (void *)(OBJ_VRAM0 + (gSprites[healthboxSpriteId].oam.tileNum + tileNumAdder) * TILE_SIZE_4BPP), 96);
     if ((!HpDisplay_UsesLargeOpponentBox() && !IsOnPlayerSide(battler)) || GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES)
     {
@@ -2461,6 +2457,15 @@ static void MoveBattleBarGraphically(enum BattlerId battler, u8 whichBar)
         {
             for (i = 0; i < 8; i++)
                 array[i] = 0;
+        }
+        if (Healthbox_IsNewStyle())
+        {
+            u32 fillPx = 0;
+
+            for (i = 0; i < B_EXPBAR_PIXELS / 8; i++)
+                fillPx += array[i];
+            HealthboxBattle_DrawExpBar(gBattleSpritesDataPtr->battleBars[battler].healthboxSpriteId, fillPx);
+            break;
         }
         for (i = 0; i < 8; i++)
         {

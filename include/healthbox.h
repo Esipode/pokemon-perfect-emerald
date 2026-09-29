@@ -84,6 +84,11 @@ void HealthboxRender_PrintText(const struct HealthboxSprites *sprites, const str
                                const struct HealthboxRect *rect, const u8 *str, bool32 rightAlign, u32 background);
 void HealthboxRender_DrawFrame(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                u32 background);
+void HealthboxRender_DrawExpBar(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                                const struct HealthboxRect *rect, u32 fillPx);
+// A NULL label clears the pill. palIndex is the box palette slot holding the status colour.
+void HealthboxRender_DrawStatusPill(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                                    const struct HealthboxRect *rect, u32 palIndex, const u8 *label, u32 background);
 // colourLevel: 0 green, 1 yellow, 2 red.
 void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel);
 
@@ -101,6 +106,7 @@ bool32 HealthboxBattle_HasHpBar(u32 battler);
 bool32 HealthboxBattle_HasCaughtIcons(u32 battler);
 const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler);
 void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 colourLevel);
+void HealthboxBattle_DrawExpBar(u8 healthboxSpriteId, u32 fillPx);
 void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elementId);
 
 #endif // GUARD_HEALTHBOX_H

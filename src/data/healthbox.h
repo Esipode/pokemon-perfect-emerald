@@ -1,4 +1,5 @@
 #include "text.h"
+#include "constants/battle.h"
 
 // Bands stack top to bottom; a band is dropped when none of its elements is shown.
 enum HealthboxBand
@@ -118,3 +119,25 @@ static const union TextColor sHealthboxTextColor =
 
 // FONT_SMALL glyph ink starts this many rows below the print y.
 #define HB_TEXT_INK_OFFSET 3
+
+struct HealthboxStatusSpec
+{
+    u32 mask;
+    u8 palId; // PAL_STATUS_*
+    const u8 *label;
+};
+
+// Checked in order; the first match is shown (same priority as Classic).
+static const struct HealthboxStatusSpec sHealthboxStatusSpecs[] =
+{
+    { STATUS1_SLEEP,      PAL_STATUS_SLP, COMPOUND_STRING("SLP") },
+    { STATUS1_PSN_ANY,    PAL_STATUS_PSN, COMPOUND_STRING("PSN") },
+    { STATUS1_BURN,       PAL_STATUS_BRN, COMPOUND_STRING("BRN") },
+    { STATUS1_FREEZE,     PAL_STATUS_FRZ, COMPOUND_STRING("FRZ") },
+    { STATUS1_FROSTBITE,  PAL_STATUS_FRZ, COMPOUND_STRING("FRB") },
+    { STATUS1_PARALYSIS,  PAL_STATUS_PAR, COMPOUND_STRING("PAR") },
+};
+
+// Status pill label font; its ink is this many rows tall.
+#define HB_PILL_FONT     FONT_SMALL_NARROW
+#define HB_PILL_INK_H    6

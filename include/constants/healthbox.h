@@ -39,6 +39,16 @@
 #define HB_PAL_BAR_TROUGH 1
 #define HB_BAR_DATA6_NEW  3 // Bar sprite follows the box main sprite's centre.
 
+// Status colours; sStatusIconColors in battle_interface.c is indexed by these.
+enum
+{
+    PAL_STATUS_PSN,
+    PAL_STATUS_PAR,
+    PAL_STATUS_SLP,
+    PAL_STATUS_FRZ,
+    PAL_STATUS_BRN
+};
+
 enum HealthboxElement
 {
     HB_ELEM_NICK,
