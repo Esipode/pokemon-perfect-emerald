@@ -2054,6 +2054,70 @@ static void MoveSettingsCursor(s8 delta)
     HighlightOptionMenuItem(newRow);
 }
 
+// Left/Right on the highlighted row. Applies the change to sPendingValues and any live
+// side effect; returns TRUE if the value changed.
+static bool8 ProcessOptionInput(u8 optionId)
+{
+    const struct OptionEntry *option = &sOptions[optionId];
+    u8 value = sPendingValues[optionId];
+
+    if (option->type == OPTION_TYPE_SUBMENU || option->type == OPTION_TYPE_ACTION)
+        return FALSE;
+
+    if (JOY_NEW(DPAD_RIGHT))
+        value = (value + 1 >= option->valueCount) ? 0 : value + 1;
+    else if (JOY_NEW(DPAD_LEFT))
+        value = (value == 0) ? option->valueCount - 1 : value - 1;
+    else
+        return FALSE;
+
+    sPendingValues[optionId] = value;
+    sArrowPressed = TRUE;
+
+    switch (optionId)
+    {
+    case OPTION_SOUND:
+        SetPokemonCryStereo(value);
+        break;
+    case OPTION_FRAME:
+        LoadBgTiles(1, GetWindowFrameTilesPal(value)->tiles, 0x120, 0x1A2);
+        LoadPalette(GetWindowFrameTilesPal(value)->pal, BG_PLTT_ID(7), PLTT_SIZE_4BPP);
+        break;
+    }
+    return TRUE;
+}
+
+static void EditSettingsRow(void)
+{
+    const struct OptionCategory *category = &sCategories[sCurrentCategory];
+    u8 item = sCursor[LEVEL_SETTINGS];
+    u8 countBefore, row;
+
+    if (item >= category->optionCount)
+        return;
+
+    countBefore = GetVisibleCount();
+    if (!ProcessOptionInput(category->optionIds[item]))
+        return;
+
+    // A change that shows or hides other rows needs a full rebuild.
+    if (GetVisibleCount() != countBefore)
+    {
+        ClampScroll();
+        DrawSettingsList();
+    }
+    else
+    {
+        row = GetVisibleIndexOf(item) - sScrollOffset[LEVEL_SETTINGS];
+        DrawSettingsRow(row, item, TRUE);
+    }
+    if (sArrowPressed)
+    {
+        sArrowPressed = FALSE;
+        CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
+    }
+}
+
 static void Task_SettingsMenuProcessInput(u8 taskId)
 {
     if (JOY_NEW(B_BUTTON))
@@ -2070,6 +2134,10 @@ static void Task_SettingsMenuProcessInput(u8 taskId)
     else if (JOY_NEW(DPAD_DOWN))
     {
         MoveSettingsCursor(1);
+    }
+    else if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        EditSettingsRow();
     }
 }
 
