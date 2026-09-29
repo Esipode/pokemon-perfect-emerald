@@ -1,6 +1,7 @@
 #include "global.h"
 #include "healthbox.h"
 #include "config/battle.h"
+#include "constants/battle.h"
 #include "constants/global.h"
 #include "test/test.h"
 
@@ -106,4 +107,128 @@ TEST("(Healthbox) Commit stores the options and marks them initialized")
     EXPECT(!HealthboxOptions_Shows(HB_SIDE_FOE, HB_ELEM_HP_BAR));
     EXPECT_EQ(HealthboxOptions_GetHpValue(HB_SIDE_FOE), HB_HPVAL_PERCENT);
     EXPECT(HealthboxOptions_Shows(HB_SIDE_PLAYER, HB_ELEM_NICK));
+}
+
+static void AllOnOpts(struct HealthboxResolvedOpts *o, u32 side)
+{
+    *o = (struct HealthboxResolvedOpts){0};
+    o->side = side;
+    o->nick = o->level = o->hpBar = o->status = o->types = o->statStages = TRUE;
+    o->hpValue = HB_HPVAL_NUMBERS;
+    if (side == HB_SIDE_PLAYER)
+        o->exp = TRUE;
+    else
+        o->caught = TRUE;
+}
+
+TEST("(Healthbox) Layout: all-on singles is 104x32, doubles is 96x24")
+{
+    struct HealthboxResolvedOpts o;
+    struct HealthboxLayout l;
+
+    AllOnOpts(&o, HB_SIDE_PLAYER);
+    Healthbox_ComputeLayout(&o, HB_SIDE_PLAYER, FALSE, B_POSITION_PLAYER_LEFT, &l);
+    EXPECT_EQ(l.boxW, 104);
+    EXPECT_EQ(l.boxH, 32);
+    EXPECT_EQ(l.rightSpriteW, 64);
+    EXPECT_EQ(l.screenX, 127);
+    EXPECT_EQ(l.screenY, 58);
+
+    Healthbox_ComputeLayout(&o, HB_SIDE_PLAYER, TRUE, B_POSITION_PLAYER_LEFT, &l);
+    EXPECT_EQ(l.boxW, 96);
+    EXPECT_EQ(l.boxH, 24);
+    EXPECT_EQ(l.rightSpriteW, 32);
+}
+
+TEST("(Healthbox) Layout: foe is left-anchored and has no EXP rect")
+{
+    struct HealthboxResolvedOpts o;
+    struct HealthboxLayout l;
+
+    AllOnOpts(&o, HB_SIDE_FOE);
+    o.exp = TRUE;
+    Healthbox_ComputeLayout(&o, HB_SIDE_FOE, FALSE, B_POSITION_OPPONENT_LEFT, &l);
+    EXPECT_EQ(l.rects[HB_RECT_EXP].w, 0);
+    EXPECT_NE(l.rects[HB_RECT_CAUGHT].w, 0);
+    EXPECT(!l.rightAnchored);
+    EXPECT_EQ(l.screenX, 13);
+    EXPECT_EQ(l.screenY, 16);
+}
+
+TEST("(Healthbox) Layout: empty bands are dropped")
+{
+    struct HealthboxResolvedOpts o;
+    struct HealthboxLayout l;
+
+    AllOnOpts(&o, HB_SIDE_PLAYER);
+    o.status = o.statStages = FALSE;
+    Healthbox_ComputeLayout(&o, HB_SIDE_PLAYER, FALSE, B_POSITION_PLAYER_LEFT, &l);
+    EXPECT_EQ(l.boxH, 24);
+    EXPECT_EQ(l.rects[HB_RECT_STATUS].w, 0);
+    EXPECT_EQ(l.rects[HB_RECT_STRIP].w, 0);
+
+    AllOnOpts(&o, HB_SIDE_FOE);
+    o.nick = o.level = FALSE;
+    Healthbox_ComputeLayout(&o, HB_SIDE_FOE, FALSE, B_POSITION_OPPONENT_LEFT, &l);
+    EXPECT_EQ(l.rects[HB_RECT_NICK].w, 0);
+    EXPECT_EQ(l.rects[HB_RECT_LEVEL].w, 0);
+    EXPECT_EQ(l.rects[HB_RECT_HP_BAR].y, 2);
+}
+
+TEST("(Healthbox) Layout: every toggle combination stays inside the size limits")
+{
+    u32 mask, hpValue, config;
+    struct HealthboxResolvedOpts o;
+    struct HealthboxLayout l;
+    u32 i;
+
+    for (config = 0; config < 4; config++)
+    {
+        u32 side = config & 1;
+        bool32 doubles = config >> 1;
+        u32 maxRight = doubles ? 96 : 128;
+        u32 maxH = doubles ? 24 : 32;
+
+        for (mask = 0; mask < 128; mask++)
+        {
+            for (hpValue = HB_HPVAL_NONE; hpValue <= HB_HPVAL_PERCENT; hpValue++)
+            {
+                o = (struct HealthboxResolvedOpts){0};
+                o.side = side;
+                o.nick = mask & 1;
+                o.level = (mask >> 1) & 1;
+                o.hpBar = (mask >> 2) & 1;
+                o.exp = (mask >> 3) & 1;
+                o.status = (mask >> 4) & 1;
+                o.statStages = (mask >> 5) & 1;
+                o.caught = (mask >> 6) & 1;
+                o.hpValue = hpValue;
+                Healthbox_ComputeLayout(&o, side, doubles, doubles ? B_POSITION_PLAYER_RIGHT : B_POSITION_PLAYER_LEFT, &l);
+
+                EXPECT_GE(l.boxW, 64);
+                EXPECT_LE(l.boxW, maxRight);
+                EXPECT_LE(l.boxH, maxH);
+                for (i = 0; i < HB_RECT_COUNT; i++)
+                {
+                    if (l.rects[i].w == 0)
+                        continue;
+                    EXPECT_LE(l.rects[i].x + l.rects[i].w, l.boxW);
+                    EXPECT_LE(l.rects[i].y + l.rects[i].h, l.boxH);
+                }
+            }
+        }
+    }
+}
+
+TEST("(Healthbox) ResolveOpts keeps the player-only and foe-only toggles on their own side")
+{
+    struct HealthboxResolvedOpts o;
+
+    ClearHealthboxSave();
+    Healthbox_ResolveOpts(HB_SIDE_PLAYER, &o);
+    EXPECT(o.exp);
+    EXPECT(!o.caught);
+    Healthbox_ResolveOpts(HB_SIDE_FOE, &o);
+    EXPECT(!o.exp);
+    EXPECT(o.caught);
 }

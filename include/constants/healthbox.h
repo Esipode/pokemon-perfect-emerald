@@ -30,4 +30,18 @@ enum HealthboxElement
     HB_ELEM_COUNT,
 };
 
+// Layout rects; types has no rect because the type icons are separate sprites.
+enum HealthboxRectId
+{
+    HB_RECT_NICK,
+    HB_RECT_LEVEL,
+    HB_RECT_HP_BAR,
+    HB_RECT_HP_VALUE,
+    HB_RECT_EXP,
+    HB_RECT_STATUS,
+    HB_RECT_STRIP,
+    HB_RECT_CAUGHT,
+    HB_RECT_COUNT,
+};
+
 #endif // GUARD_CONSTANTS_HEALTHBOX_H
