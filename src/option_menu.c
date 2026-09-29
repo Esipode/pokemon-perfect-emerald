@@ -7,6 +7,7 @@
 #include "gpu_regs.h"
 #include "healthbox.h"
 #include "international_string_util.h"
+#include "line_break.h"
 #include "main.h"
 #include "menu.h"
 #include "new_game_settings_menu.h"
@@ -782,10 +783,92 @@ static const struct BgTemplate sOptionMenuBgTemplates[] =
 
 static const u16 sOptionMenuBg_Pal[] = {RGB(17, 18, 31)};
 
+#define DESC_MAX_WIDTH      190
+#define DESC_RESTART_DELAY  120
+
+static const u8 sText_DescResetAll[]  = _("Resets every setting to its default value.");
+static const u8 sText_DescResetCategory[] = _("Resets the settings in this category to their default values.");
+static const u8 sText_DescCancel[]    = _("Saves your changes and leaves the settings menu.");
+static const u8 sText_DescConfirm[]   = _("Confirms your settings and continues.");
+static const u8 sDescTextColors[3]    = {1, 2, 3};
+
+EWRAM_DATA static u8 sDescBuffer[0x100] = {0};
+EWRAM_DATA static bool8 sDescScrolling = FALSE;
+EWRAM_DATA static u16 sDescRestartTimer = 0;
+
+// True if BreakStringAutomatic inserted a CHAR_PROMPT_SCROLL, i.e. the text
+// does not fit the 2-line description window.
+static bool8 StringHasScrollPrompt(const u8 *str)
+{
+    u32 i;
+
+    for (i = 0; str[i] != EOS; i++)
+    {
+        if (str[i] == CHAR_PROMPT_SCROLL)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+// Overlong text auto-scrolls; MainCB2 restarts it once it finishes.
+static void PrintOptionDescription(const u8 *description)
+{
+    bool8 needsScroll;
+
+    FillWindowPixelBuffer(WIN_DESC, PIXEL_FILL(1));
+    DeactivateSingleTextPrinter(WIN_DESC, WINDOW_TEXT_PRINTER);
+
+    StringCopy(sDescBuffer, description);
+    StripLineBreaks(sDescBuffer);
+    BreakStringAutomatic(sDescBuffer, DESC_MAX_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
+    needsScroll = StringHasScrollPrompt(sDescBuffer);
+
+    gTextFlags.autoScroll = needsScroll;
+    AddTextPrinterParameterized3(WIN_DESC, FONT_NORMAL, 8, 1, sDescTextColors,
+        needsScroll ? GetPlayerTextSpeedDelay() : TEXT_SKIP_DRAW, sDescBuffer);
+
+    sDescScrolling = needsScroll;
+    sDescRestartTimer = 0;
+    CopyWindowToVram(WIN_DESC, COPYWIN_GFX);
+}
+
+static void StopOptionDescription(void)
+{
+    DeactivateSingleTextPrinter(WIN_DESC, WINDOW_TEXT_PRINTER);
+    gTextFlags.autoScroll = FALSE;
+    sDescScrolling = FALSE;
+}
+
+// Shows the description for the highlighted item at the current menu level.
+static void UpdateDescription(void)
+{
+    u8 item = sCursor[sMenuLevel];
+    const u8 *text;
+
+    if (sMenuLevel == LEVEL_CATEGORIES)
+    {
+        if (item < CATEGORIES_COUNT)
+            text = sCategories[item].description;
+        else if (item == CATEGORY_ITEM_RESET_ALL)
+            text = sText_DescResetAll;
+        else
+            text = IsNewGameSequence() ? sText_DescConfirm : sText_DescCancel;
+    }
+    else
+    {
+        const struct OptionCategory *category = &sCategories[sCurrentCategory];
+
+        text = item < category->optionCount ? sOptions[category->optionIds[item]].description : sText_DescResetCategory;
+    }
+    PrintOptionDescription(text);
+}
+
 static void MainCB2(void)
 {
     RunTasks();
     RunTextPrinters();
+    if (sDescScrolling && !IsTextPrinterActiveOnWindow(WIN_DESC) && ++sDescRestartTimer >= DESC_RESTART_DELAY)
+        UpdateDescription();
     AnimateSprites();
     BuildOamBuffer();
     UpdatePaletteFade();
@@ -938,6 +1021,7 @@ void CB2_InitOptionMenu(void)
         PutWindowTilemap(WIN_DESC);
         FillWindowPixelBuffer(WIN_DESC, PIXEL_FILL(1));
         CopyWindowToVram(WIN_DESC, COPYWIN_FULL);
+        sDescScrolling = FALSE;
         gMain.state++;
         break;
     case 9:
@@ -1361,6 +1445,7 @@ static void Task_OptionMenuFadeOutToTitle(u8 taskId)
     if (!gPaletteFade.active)
     {
         DestroyTask(taskId);
+        StopOptionDescription();
         FreeAllWindowBuffers();
         SetMainCallback2(CB2_InitTitleScreen);
     }
@@ -1371,6 +1456,7 @@ static void Task_OptionMenuFadeOut(u8 taskId)
     if (!gPaletteFade.active)
     {
         DestroyTask(taskId);
+        StopOptionDescription();
         FreeAllWindowBuffers();
         SetMainCallback2(gMain.savedCallback);
     }
@@ -1390,6 +1476,7 @@ static void Task_OptionMenuFadeOutToPlayerColors(u8 taskId)
     if (!gPaletteFade.active)
     {
         DestroyTask(taskId);
+        StopOptionDescription();
         FreeAllWindowBuffers();
         // sCurrPage (EWRAM) is untouched, so CB2_InitOptionMenu redraws page 2
         // on return; sSavedCallback carries the real caller across the trip.
@@ -1412,6 +1499,7 @@ static void Task_OptionMenuFadeOutToHealthbox(u8 taskId)
     if (!gPaletteFade.active)
     {
         DestroyTask(taskId);
+        StopOptionDescription();
         FreeAllWindowBuffers();
         sSavedCallback = gMain.savedCallback;
         gMain.savedCallback = CB2_InitOptionMenu;
@@ -1921,6 +2009,7 @@ static void DrawCategoryList(void)
     }
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
     HighlightOptionMenuItem(GetVisibleIndexOf(sCursor[LEVEL_CATEGORIES]) - offset);
+    UpdateDescription();
 }
 
 static void Task_CategoryMenuFadeIn(u8 taskId)
@@ -2032,6 +2121,7 @@ static void DrawSettingsList(void)
         FillWindowPixelRect(WIN_OPTIONS, PIXEL_FILL(1), 0, row * ROW_PITCH, 208, (VISIBLE_ROWS - row) * ROW_PITCH);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
     HighlightOptionMenuItem(GetVisibleIndexOf(cursorItem) - offset);
+    UpdateDescription();
 }
 
 static void MoveSettingsCursor(s8 delta)
@@ -2052,6 +2142,7 @@ static void MoveSettingsCursor(s8 delta)
     DrawSettingsRow(newRow, newItem, TRUE);
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_GFX);
     HighlightOptionMenuItem(newRow);
+    UpdateDescription();
 }
 
 // Left/Right on the highlighted row. Applies the change to sPendingValues and any live
