@@ -138,6 +138,9 @@ static void Task_OptionMenuFadeOut(u8 taskId);
 static void Task_OptionMenuFadeOutToPlayerColors(u8 taskId);
 static void Task_OptionMenuFadeOutToHealthbox(u8 taskId);
 static void HighlightOptionMenuItem(u8 selection);
+static void Task_CategoryMenuFadeIn(u8 taskId);
+static void Task_CategoryMenuProcessInput(u8 taskId);
+static void DrawCategoryList(void);
 static u8 TextSpeed_ProcessInput(u8 selection);
 static void TextSpeed_DrawChoices(u8 selection, bool8 isActive);
 static u8 BattleScene_ProcessInput(u8 selection);
@@ -193,9 +196,9 @@ static bool32 IsNewGameSequence(void)
 
 static const u8 gText_Option[]             = _("OPTION");
 static const u8 gText_Confirm[]            = _("CONFIRM");
-static const u8 gText_PageNav[]            = _("{L_BUTTON}{R_BUTTON} Switch page");
-static const u8 gText_SmallDot[]           = _("·");
-static const u8 gText_LargeDot[]           = _("{EMOJI_CIRCLE}");
+static const u8 gText_ResetAll[]           = _("RESET ALL");
+static const u8 gText_HintSelectExit[]     = _("{A_BUTTON} SELECT  {B_BUTTON} EXIT");
+static const u8 gText_HintSelectConfirm[]  = _("{A_BUTTON} SELECT  {START_BUTTON} CONFIRM");
 
 static const u8 gText_TextSpeedSlow[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}SLOW");
 static const u8 gText_TextSpeedMid[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MID");
@@ -707,7 +710,7 @@ static void ClampScroll(void)
         *offset = maxOffset;
 }
 
-static UNUSED void MoveCursor(s8 delta)
+static void MoveCursor(s8 delta)
 {
     s16 row = GetVisibleIndexOf(sCursor[sMenuLevel]);
     s16 count = GetVisibleCount();
@@ -931,7 +934,6 @@ void CB2_InitOptionMenu(void)
         PutWindowTilemap(WIN_DESC);
         FillWindowPixelBuffer(WIN_DESC, PIXEL_FILL(1));
         CopyWindowToVram(WIN_DESC, COPYWIN_FULL);
-        DrawOptionMenuTexts();
         gMain.state++;
         break;
     case 9:
@@ -940,23 +942,12 @@ void CB2_InitOptionMenu(void)
         break;
     case 10:
     {
-        taskId = CreateTask(Task_OptionMenuFadeIn, 0);
-        ReadAllCurrentSettings(taskId);
-        switch(sCurrPage)
-        {
-        case 0:
-            DrawOptionsPg1(taskId);
-            gTasks[taskId].func = Task_OptionMenuFadeIn;
-            break;
-        case 1:
-            DrawOptionsPg2(taskId);
-            gTasks[taskId].func = Task_OptionMenuFadeIn_Pg2;
-            break;
-        case 2:
-            DrawOptionsPg3(taskId);
-            gTasks[taskId].func = Task_OptionMenuFadeIn_Pg3;
-            break;
-        }
+        taskId = CreateTask(Task_CategoryMenuFadeIn, 0);
+        LoadAllOptions();
+        sMenuLevel = LEVEL_CATEGORIES;
+        sCursor[LEVEL_CATEGORIES] = 0;
+        sScrollOffset[LEVEL_CATEGORIES] = 0;
+        DrawCategoryList();
         gMain.state++;
         break;
     }
@@ -1348,7 +1339,7 @@ static void CommitPendingOptionSettings(u8 taskId)
 
 static void Task_OptionMenuSave(u8 taskId)
 {
-    CommitPendingOptionSettings(taskId);
+    CommitAllOptions();
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
 }
@@ -1798,24 +1789,11 @@ static void BattleSpeed_DrawChoices(u8 selection, bool8 isActive)
 
 static void DrawHeaderText(void)
 {
-    u32 i, widthOptions, xMid;
-    u8 pageDots[9] = _("");  // Array size should be at least (2 * PAGE_COUNT) -1
-    widthOptions = GetStringWidth(FONT_NORMAL, gText_Option, 0);
+    const u8 *hint = IsNewGameSequence() ? gText_HintSelectConfirm : gText_HintSelectExit;
 
-    for (i = 0; i < PAGE_COUNT; i++)
-    {
-        if (i == sCurrPage)
-            StringAppend(pageDots, gText_LargeDot);
-        else
-            StringAppend(pageDots, gText_SmallDot);
-        if (i < PAGE_COUNT - 1)
-            StringAppend(pageDots, gText_Space);            
-    }
-    xMid = (8 + widthOptions + 5);
     FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, gText_Option, 8, 1, TEXT_SKIP_DRAW, NULL);
-    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, pageDots, xMid, 1, TEXT_SKIP_DRAW, NULL);
-    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, gText_PageNav, GetStringRightAlignXOffset(FONT_NORMAL, gText_PageNav, 198), 1, TEXT_SKIP_DRAW, NULL);
+    AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, hint, GetStringRightAlignXOffset(FONT_NORMAL, hint, 198), 1, TEXT_SKIP_DRAW, NULL);
     CopyWindowToVram(WIN_HEADER, COPYWIN_FULL);
 }
 
@@ -1910,6 +1888,67 @@ static void DrawOptionMenuTexts(void)
         break;
     }
     CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
+}
+
+static void DrawCategoryList(void)
+{
+    u8 row, item;
+    u8 count = GetVisibleCount();
+    u8 offset = sScrollOffset[LEVEL_CATEGORIES];
+    const u8 *name;
+
+    FillWindowPixelBuffer(WIN_OPTIONS, PIXEL_FILL(1));
+    for (row = 0; row < VISIBLE_ROWS && offset + row < count; row++)
+    {
+        item = GetNthVisibleItem(offset + row);
+        if (item < CATEGORIES_COUNT)
+            name = sCategories[item].name;
+        else if (item == CATEGORY_ITEM_RESET_ALL)
+            name = gText_ResetAll;
+        else
+            name = GetCancelOrItemName(gText_Cancel, TRUE);
+        AddTextPrinterParameterized(WIN_OPTIONS, FONT_NARROW, name, 8, row * ROW_PITCH + 1, TEXT_SKIP_DRAW, NULL);
+    }
+    CopyWindowToVram(WIN_OPTIONS, COPYWIN_FULL);
+    HighlightOptionMenuItem(GetVisibleIndexOf(sCursor[LEVEL_CATEGORIES]) - offset);
+}
+
+static void Task_CategoryMenuFadeIn(u8 taskId)
+{
+    if (!gPaletteFade.active)
+        gTasks[taskId].func = Task_CategoryMenuProcessInput;
+}
+
+static void Task_CategoryMenuProcessInput(u8 taskId)
+{
+    u8 item = sCursor[LEVEL_CATEGORIES];
+
+    if (JOY_NEW(A_BUTTON))
+    {
+        if (item < CATEGORIES_COUNT)
+            sCurrentCategory = item;
+        else if (item == CATEGORY_ITEM_CANCEL)
+            gTasks[taskId].func = Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(B_BUTTON))
+    {
+        // New game sequence: B backs out of the whole sequence; START confirms.
+        gTasks[taskId].func = IsNewGameSequence() ? Task_OptionMenuBackToTitle : Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(START_BUTTON) && IsNewGameSequence())
+    {
+        gTasks[taskId].func = Task_OptionMenuSave;
+    }
+    else if (JOY_NEW(DPAD_UP))
+    {
+        MoveCursor(-1);
+        DrawCategoryList();
+    }
+    else if (JOY_NEW(DPAD_DOWN))
+    {
+        MoveCursor(1);
+        DrawCategoryList();
+    }
 }
 
 #define TILE_TOP_CORNER_L 0x1A2
