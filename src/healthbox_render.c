@@ -1,13 +1,116 @@
 #include "global.h"
+#include "battle.h"
+#include "battle_interface.h"
 #include "healthbox.h"
 #include "sprite.h"
+#include "string_util.h"
 #include "text.h"
+#include "constants/characters.h"
 #include "constants/healthbox.h"
 #include "constants/rgb.h"
 #include "data/healthbox.h"
 
 #define HB_LEFT_W   64
 #define HB_SPRITE_H 32
+
+// Bar sprite tiles: 0-5 HP fill, 8-9 opponent icon slots (caught ball, can/cannot catch).
+#define HB_BAR_TILE_ICON_CAUGHT 8
+#define HB_BAR_TILE_ICON_CATCH  9
+
+static const struct OamData sOamData_HealthboxBox =
+{
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(64x32),
+    .size = SPRITE_SIZE(64x32),
+    .priority = 1,
+};
+
+static const struct SpriteTemplate sPlayerBoxTemplates[2] =
+{
+    { .tileTag = TAG_HEALTHBOX_PLAYER1_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
+    { .tileTag = TAG_HEALTHBOX_PLAYER2_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
+};
+
+static const struct SpriteTemplate sOpponentBoxTemplates[2] =
+{
+    { .tileTag = TAG_HEALTHBOX_OPPONENT1_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
+    { .tileTag = TAG_HEALTHBOX_OPPONENT2_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
+};
+
+void HealthboxRender_CreateBox(bool32 player, u32 tagIdx, u32 rightSpriteW, struct HealthboxSprites *out)
+{
+    const struct SpriteTemplate *template = (player ? sPlayerBoxTemplates : sOpponentBoxTemplates) + tagIdx;
+    struct Sprite *right;
+
+    out->left = CreateSprite(template, DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
+    out->right = CreateSpriteAtEnd(template, DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
+    out->bar = SPRITE_NONE;
+
+    right = &gSprites[out->right];
+    right->oam.tileNum += HB_BOX_TILES_LEFT;
+    if (rightSpriteW == 32)
+    {
+        right->oam.shape = SPRITE_SHAPE(32x32);
+        right->oam.size = SPRITE_SIZE(32x32);
+    }
+    gSprites[out->left].oam.affineParam = out->right;
+}
+
+static void AddBarSubsprite(struct Subsprite *subsprites, struct SubspriteTable *table, const struct HealthboxRect *rect,
+                            s32 dx, s32 dy, u32 shape, u32 size, u32 tile)
+{
+    struct Subsprite *sub = &subsprites[table->subspriteCount++];
+
+    // Offsets are from the bar sprite origin, which sits on the box main sprite's centre.
+    sub->x = rect->x + dx - HB_BOX_CENTER_X;
+    sub->y = rect->y + dy - HB_BOX_CENTER_Y;
+    sub->shape = shape;
+    sub->size = size;
+    sub->tileOffset = tile;
+    sub->priority = 1;
+}
+
+void HealthboxRender_BuildBarSubsprites(const struct HealthboxLayout *layout, struct Subsprite *subsprites,
+                                        struct SubspriteTable *table)
+{
+    const struct HealthboxRect *bar = &layout->rects[HB_RECT_HP_BAR];
+    const struct HealthboxRect *caught = &layout->rects[HB_RECT_CAUGHT];
+
+    table->subspriteCount = 0;
+    table->subsprites = subsprites;
+
+    if (bar->w != 0)
+    {
+        AddBarSubsprite(subsprites, table, bar, 0, -HB_HP_BAR_ROW, SPRITE_SHAPE(32x8), SPRITE_SIZE(32x8), 0);
+        AddBarSubsprite(subsprites, table, bar, 32, -HB_HP_BAR_ROW, SPRITE_SHAPE(16x8), SPRITE_SIZE(16x8), 4);
+    }
+    if (caught->w != 0)
+    {
+        AddBarSubsprite(subsprites, table, caught, 0, 0, SPRITE_SHAPE(8x8), SPRITE_SIZE(8x8), HB_BAR_TILE_ICON_CAUGHT);
+        AddBarSubsprite(subsprites, table, caught, 8, 0, SPRITE_SHAPE(8x8), SPRITE_SIZE(8x8), HB_BAR_TILE_ICON_CATCH);
+    }
+}
+
+u8 *HealthboxRender_FormatHpValue(u8 *dst, u32 mode, s32 currHp, s32 maxHp)
+{
+    if (mode == HB_HPVAL_PERCENT)
+    {
+        s32 percent = currHp == 0 || maxHp <= 0 ? 0 : max((currHp * 100) / maxHp, 1);
+
+        dst = ConvertIntToDecimalStringN(dst, percent, STR_CONV_MODE_LEFT_ALIGN, 3);
+        *dst++ = CHAR_PERCENT;
+    }
+    else
+    {
+        dst = ConvertIntToDecimalStringN(dst, currHp, STR_CONV_MODE_LEFT_ALIGN, 4);
+        *dst++ = CHAR_SLASH;
+        dst = ConvertIntToDecimalStringN(dst, maxHp, STR_CONV_MODE_LEFT_ALIGN, 4);
+    }
+    *dst = EOS;
+    return dst;
+}
 
 void HealthboxRender_PutPixel(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                               s32 x, s32 y, u8 palIndex)

@@ -6,9 +6,11 @@
 
 // TRUE forces the New style everywhere it is allowed, ignoring the saved option.
 #define HEALTHBOX_DEV_FORCE_NEW FALSE
+#define HB_HP_TEXT_LEN 12
 
 struct Pokemon;
 struct Sprite;
+struct Subsprite;
 struct SubspriteTable;
 
 // Effective (default-resolved) options; see struct HealthboxOptions in global.h.
@@ -61,6 +63,7 @@ struct HealthboxLayout
 };
 
 void Healthbox_ResolveOpts(u32 side, struct HealthboxResolvedOpts *out);
+void Healthbox_ResolveOptsFrom(const struct HealthboxOptions *o, u32 side, struct HealthboxResolvedOpts *out);
 void Healthbox_ComputeLayout(const struct HealthboxResolvedOpts *opts, u32 side, bool32 doubles,
                              u32 position, struct HealthboxLayout *out);
 
@@ -76,6 +79,21 @@ struct HealthboxSprites
     u8 right;
     u8 bar;
 };
+
+// Box sprite geometry: the main sprite is 64x32 and its origin is its centre.
+#define HB_BOX_TILES_LEFT 32
+#define HB_BOX_CENTER_X   32
+#define HB_BOX_CENTER_Y   16
+#define HB_BAR_SUBSPRITES_MAX 4
+
+// Creates the left/right box sprites (bar is left as SPRITE_NONE) at the screen corner. tagIdx is 0 for
+// singles, 0-1 for doubles; the sprite sheets for the tags must already be loaded.
+void HealthboxRender_CreateBox(bool32 player, u32 tagIdx, u32 rightSpriteW, struct HealthboxSprites *out);
+// Fills table (backed by subsprites[HB_BAR_SUBSPRITES_MAX]) with the HP bar and caught-icon pieces of layout.
+void HealthboxRender_BuildBarSubsprites(const struct HealthboxLayout *layout, struct Subsprite *subsprites,
+                                        struct SubspriteTable *table);
+// Writes "cur/max" or "N%" into dst and returns the end; dst needs HB_HP_TEXT_LEN bytes.
+u8 *HealthboxRender_FormatHpValue(u8 *dst, u32 mode, s32 currHp, s32 maxHp);
 
 // Box-local pixel coordinates; pixels outside the box sprites are ignored.
 void HealthboxRender_PutPixel(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,

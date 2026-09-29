@@ -8,36 +8,41 @@
 #define HB_MIN_BOX_W 64
 #define HB_ROUND_UP_8(n) (((n) + 7) & ~7)
 
+void Healthbox_ResolveOptsFrom(const struct HealthboxOptions *o, u32 side, struct HealthboxResolvedOpts *out)
+{
+    *out = (struct HealthboxResolvedOpts){0};
+    out->side = side;
+    out->background = o->background;
+    if (side == HB_SIDE_PLAYER)
+    {
+        out->nick = o->playerNick;
+        out->level = o->playerLevel;
+        out->hpBar = o->playerHpBar;
+        out->hpValue = o->playerHpValue;
+        out->exp = o->playerExp;
+        out->status = o->playerStatus;
+        out->types = o->playerTypes;
+        out->statStages = o->playerStatStages;
+    }
+    else
+    {
+        out->nick = o->foeNick;
+        out->level = o->foeLevel;
+        out->hpBar = o->foeHpBar;
+        out->hpValue = o->foeHpValue;
+        out->status = o->foeStatus;
+        out->types = o->foeTypes;
+        out->statStages = o->foeStatStages;
+        out->caught = o->foeCaught;
+    }
+}
+
 void Healthbox_ResolveOpts(u32 side, struct HealthboxResolvedOpts *out)
 {
     struct HealthboxOptions o;
 
     HealthboxOptions_Get(&o);
-    *out = (struct HealthboxResolvedOpts){0};
-    out->side = side;
-    out->background = o.background;
-    if (side == HB_SIDE_PLAYER)
-    {
-        out->nick = o.playerNick;
-        out->level = o.playerLevel;
-        out->hpBar = o.playerHpBar;
-        out->hpValue = o.playerHpValue;
-        out->exp = o.playerExp;
-        out->status = o.playerStatus;
-        out->types = o.playerTypes;
-        out->statStages = o.playerStatStages;
-    }
-    else
-    {
-        out->nick = o.foeNick;
-        out->level = o.foeLevel;
-        out->hpBar = o.foeHpBar;
-        out->hpValue = o.foeHpValue;
-        out->status = o.foeStatus;
-        out->types = o.foeTypes;
-        out->statStages = o.foeStatStages;
-        out->caught = o.foeCaught;
-    }
+    Healthbox_ResolveOptsFrom(&o, side, out);
 }
 
 void Healthbox_ComputeLayout(const struct HealthboxResolvedOpts *opts, u32 side, bool32 doubles,

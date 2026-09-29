@@ -17,10 +17,6 @@
 #include "constants/rgb.h"
 #include "data/healthbox.h"
 
-#define HB_BOX_TILES_LEFT 32
-#define HB_BOX_CENTER_X   32
-#define HB_BOX_CENTER_Y   16
-#define HB_HP_TEXT_LEN    12
 #define HB_NIDORAN_GENDER 100 // Suppresses the gender symbol.
 
 // Indicator centre sits this far left of the level's right edge (fits a 2-digit level).
@@ -28,35 +24,8 @@
 
 static EWRAM_DATA struct HealthboxLayout sLayouts[MAX_BATTLERS_COUNT] = {0};
 
-// Bar sprite tiles: 0-5 HP fill, 8-9 opponent icon slots (caught ball, can/cannot catch).
-#define HB_BAR_TILE_ICON_CAUGHT 8
-#define HB_BAR_TILE_ICON_CATCH  9
-#define HB_BAR_SUBSPRITES_MAX   4
-
 static EWRAM_DATA struct Subsprite sBarSubsprites[MAX_BATTLERS_COUNT][HB_BAR_SUBSPRITES_MAX] = {0};
 static EWRAM_DATA struct SubspriteTable sBarSubspriteTables[MAX_BATTLERS_COUNT] = {0};
-
-static const struct OamData sOamData_HealthboxBox =
-{
-    .affineMode = ST_OAM_AFFINE_OFF,
-    .objMode = ST_OAM_OBJ_NORMAL,
-    .bpp = ST_OAM_4BPP,
-    .shape = SPRITE_SHAPE(64x32),
-    .size = SPRITE_SIZE(64x32),
-    .priority = 1,
-};
-
-static const struct SpriteTemplate sPlayerBoxTemplates[2] =
-{
-    { .tileTag = TAG_HEALTHBOX_PLAYER1_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
-    { .tileTag = TAG_HEALTHBOX_PLAYER2_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
-};
-
-static const struct SpriteTemplate sOpponentBoxTemplates[2] =
-{
-    { .tileTag = TAG_HEALTHBOX_OPPONENT1_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
-    { .tileTag = TAG_HEALTHBOX_OPPONENT2_TILE, .paletteTag = TAG_HEALTHBOX_PAL, .oam = &sOamData_HealthboxBox },
-};
 
 static const struct SpritePalette sNewHealthboxPalette = { sHealthboxNewPal, TAG_HEALTHBOX_PAL };
 
@@ -114,41 +83,6 @@ bool32 HealthboxBattle_LoadBoxSheet(u8 state)
     return TRUE;
 }
 
-static void AddBarSubsprite(u32 battler, const struct HealthboxRect *rect, s32 dx, s32 dy, u32 shape, u32 size, u32 tile)
-{
-    struct SubspriteTable *table = &sBarSubspriteTables[battler];
-    struct Subsprite *sub = &sBarSubsprites[battler][table->subspriteCount++];
-
-    // Offsets are from the bar sprite origin, which sits on the box main sprite's centre.
-    sub->x = rect->x + dx - HB_BOX_CENTER_X;
-    sub->y = rect->y + dy - HB_BOX_CENTER_Y;
-    sub->shape = shape;
-    sub->size = size;
-    sub->tileOffset = tile;
-    sub->priority = 1;
-}
-
-static void BuildBarSubsprites(u32 battler, const struct HealthboxLayout *layout)
-{
-    const struct HealthboxRect *bar = &layout->rects[HB_RECT_HP_BAR];
-    const struct HealthboxRect *caught = &layout->rects[HB_RECT_CAUGHT];
-    struct SubspriteTable *table = &sBarSubspriteTables[battler];
-
-    table->subspriteCount = 0;
-    table->subsprites = sBarSubsprites[battler];
-
-    if (bar->w != 0)
-    {
-        AddBarSubsprite(battler, bar, 0, -HB_HP_BAR_ROW, SPRITE_SHAPE(32x8), SPRITE_SIZE(32x8), 0);
-        AddBarSubsprite(battler, bar, 32, -HB_HP_BAR_ROW, SPRITE_SHAPE(16x8), SPRITE_SIZE(16x8), 4);
-    }
-    if (caught->w != 0)
-    {
-        AddBarSubsprite(battler, caught, 0, 0, SPRITE_SHAPE(8x8), SPRITE_SIZE(8x8), HB_BAR_TILE_ICON_CAUGHT);
-        AddBarSubsprite(battler, caught, 8, 0, SPRITE_SHAPE(8x8), SPRITE_SIZE(8x8), HB_BAR_TILE_ICON_CATCH);
-    }
-}
-
 const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler)
 {
     return &sBarSubspriteTables[battler];
@@ -170,7 +104,6 @@ u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sp
     struct HealthboxResolvedOpts opts;
     struct HealthboxLayout *layout = &sLayouts[battler];
     struct HealthboxSprites sprites;
-    const struct SpriteTemplate *templates;
     bool32 doubles = GetBattlerCoordsIndex(battler) == BATTLE_COORDS_DOUBLES;
     bool32 player = IsOnPlayerSide(battler);
     u32 tagIdx = doubles ? GetBattlerPosition(battler) / 2 : 0;
@@ -178,22 +111,13 @@ u8 HealthboxBattle_CreateBoxSprites(u32 battler, void (*otherCallback)(struct Sp
 
     Healthbox_ResolveOpts(player ? HB_SIDE_PLAYER : HB_SIDE_FOE, &opts);
     Healthbox_ComputeLayout(&opts, opts.side, doubles, GetBattlerPosition(battler), layout);
-    BuildBarSubsprites(battler, layout);
+    HealthboxRender_BuildBarSubsprites(layout, sBarSubsprites[battler], &sBarSubspriteTables[battler]);
 
-    templates = player ? sPlayerBoxTemplates : sOpponentBoxTemplates;
-    sprites.left = CreateSprite(&templates[tagIdx], DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
-    sprites.right = CreateSpriteAtEnd(&templates[tagIdx], DISPLAY_WIDTH, DISPLAY_HEIGHT, 1);
-
+    HealthboxRender_CreateBox(player, tagIdx, layout->rightSpriteW, &sprites);
     right = &gSprites[sprites.right];
-    right->oam.tileNum += HB_BOX_TILES_LEFT;
     if (layout->rightSpriteW == 32)
-    {
-        right->oam.shape = SPRITE_SHAPE(32x32);
-        right->oam.size = SPRITE_SIZE(32x32);
         right->hOther_XAdjust = -16;
-    }
 
-    gSprites[sprites.left].oam.affineParam = sprites.right;
     right->data[5] = sprites.left;
     right->callback = otherCallback;
 
@@ -323,26 +247,13 @@ void HealthboxBattle_DrawHpValue(u8 healthboxSpriteId, s16 currHp, s16 maxHp)
     struct HealthboxSprites sprites;
     const struct HealthboxLayout *layout;
     enum BattlerId battler = gSprites[healthboxSpriteId].data[6];
-    u8 text[HB_HP_TEXT_LEN], *ptr;
+    u8 text[HB_HP_TEXT_LEN];
 
     GetBoxSprites(healthboxSpriteId, &sprites, &layout);
     if (layout->rects[HB_RECT_HP_VALUE].w == 0)
         return;
 
-    if (HealthboxOptions_GetHpValue(IsOnPlayerSide(battler) ? HB_SIDE_PLAYER : HB_SIDE_FOE) == HB_HPVAL_PERCENT)
-    {
-        s32 percent = currHp == 0 || maxHp <= 0 ? 0 : max((currHp * 100) / maxHp, 1);
-
-        ptr = ConvertIntToDecimalStringN(text, percent, STR_CONV_MODE_LEFT_ALIGN, 3);
-        *ptr++ = CHAR_PERCENT;
-        *ptr = EOS;
-    }
-    else
-    {
-        ptr = ConvertIntToDecimalStringN(text, currHp, STR_CONV_MODE_LEFT_ALIGN, 4);
-        *ptr++ = CHAR_SLASH;
-        ConvertIntToDecimalStringN(ptr, maxHp, STR_CONV_MODE_LEFT_ALIGN, 4);
-    }
+    HealthboxRender_FormatHpValue(text, HealthboxOptions_GetHpValue(IsOnPlayerSide(battler) ? HB_SIDE_PLAYER : HB_SIDE_FOE), currHp, maxHp);
 
     HealthboxRender_PrintText(&sprites, layout, &layout->rects[HB_RECT_HP_VALUE], text, TRUE, HealthboxOptions_GetBackground());
 }
