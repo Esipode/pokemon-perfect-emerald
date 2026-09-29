@@ -186,7 +186,7 @@ static const u8 *const sGameModeDescriptions[GAME_MODE_COUNT] =
                                 "No catching, no storage."),
     [GAME_MODE_RECRUITS] = COMPOUND_STRING(
                                 "{COLOR GREEN}{SHADOW LIGHT_GREEN}A participating Pokémon retires after\n"
-                                "10 won trainer battles. No storage."),
+                                "10 won trainer battles."),
 };
 
 static const u8 *const sGameModeTexts[GAME_MODE_COUNT] =
