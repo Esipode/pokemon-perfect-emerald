@@ -232,3 +232,36 @@ TEST("(Healthbox) ResolveOpts keeps the player-only and foe-only toggles on thei
     EXPECT(!o.exp);
     EXPECT(o.caught);
 }
+
+TEST("(Healthbox) Stat stage maps to the right glyph")
+{
+    EXPECT_EQ(Healthbox_StageToGlyph(0), HB_GLYPH_DOWN3);
+    EXPECT_EQ(Healthbox_StageToGlyph(3), HB_GLYPH_DOWN3);
+    EXPECT_EQ(Healthbox_StageToGlyph(4), HB_GLYPH_DOWN2);
+    EXPECT_EQ(Healthbox_StageToGlyph(5), HB_GLYPH_DOWN1);
+    EXPECT_EQ(Healthbox_StageToGlyph(6), HB_GLYPH_NONE);
+    EXPECT_EQ(Healthbox_StageToGlyph(7), HB_GLYPH_UP1);
+    EXPECT_EQ(Healthbox_StageToGlyph(8), HB_GLYPH_UP2);
+    EXPECT_EQ(Healthbox_StageToGlyph(9), HB_GLYPH_UP3);
+    EXPECT_EQ(Healthbox_StageToGlyph(12), HB_GLYPH_UP3);
+}
+
+TEST("(Healthbox) Stat strip order is Atk, Def, SpA, SpD, Spe")
+{
+    EXPECT_EQ(Healthbox_StripStat(0), STAT_ATK);
+    EXPECT_EQ(Healthbox_StripStat(1), STAT_DEF);
+    EXPECT_EQ(Healthbox_StripStat(2), STAT_SPATK);
+    EXPECT_EQ(Healthbox_StripStat(3), STAT_SPDEF);
+    EXPECT_EQ(Healthbox_StripStat(4), STAT_SPEED);
+}
+
+TEST("(Healthbox) Stat signature differs per slot and per stage")
+{
+    u8 a[5] = { 6, 6, 6, 6, 6 };
+    u8 b[5] = { 6, 6, 6, 6, 7 };
+    u8 c[5] = { 7, 6, 6, 6, 6 };
+
+    EXPECT_NE(Healthbox_PackStages(a), Healthbox_PackStages(b));
+    EXPECT_NE(Healthbox_PackStages(b), Healthbox_PackStages(c));
+    EXPECT_EQ(Healthbox_PackStages(a), Healthbox_PackStages(a));
+}

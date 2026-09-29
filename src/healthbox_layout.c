@@ -100,3 +100,26 @@ void Healthbox_ComputeLayout(const struct HealthboxResolvedOpts *opts, u32 side,
     out->screenX = anchor->rightAnchored ? anchor->x - out->boxW : anchor->x;
     out->screenY = anchor->y;
 }
+
+u32 Healthbox_StageToGlyph(u8 stage)
+{
+    if (stage == DEFAULT_STAT_STAGE)
+        return HB_GLYPH_NONE;
+    if (stage > DEFAULT_STAT_STAGE)
+        return min(stage - DEFAULT_STAT_STAGE, 3) - 1 + HB_GLYPH_UP1;
+    return min(DEFAULT_STAT_STAGE - stage, 3) - 1 + HB_GLYPH_DOWN1;
+}
+
+u32 Healthbox_PackStages(const u8 stages[HB_STRIP_SLOTS])
+{
+    u32 sig = 0, i;
+
+    for (i = 0; i < HB_STRIP_SLOTS; i++)
+        sig |= (stages[i] & 0xF) << (i * 4);
+    return sig;
+}
+
+u32 Healthbox_StripStat(u32 slot)
+{
+    return sStatStripStats[slot];
+}

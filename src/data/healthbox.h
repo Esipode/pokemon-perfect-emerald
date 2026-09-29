@@ -1,5 +1,6 @@
 #include "text.h"
 #include "constants/battle.h"
+#include "constants/pokemon.h"
 
 // Bands stack top to bottom; a band is dropped when none of its elements is shown.
 enum HealthboxBand
@@ -141,3 +142,24 @@ static const struct HealthboxStatusSpec sHealthboxStatusSpecs[] =
 // Status pill label font; its ink is this many rows tall.
 #define HB_PILL_FONT     FONT_SMALL_NARROW
 #define HB_PILL_INK_H    6
+
+#define HB_STRIP_SLOTS   5
+#define HB_STRIP_SLOT_W  8
+#define HB_GLYPH_W       5
+#define HB_GLYPH_H       6
+
+// Strip order is not the STAT_* enum order.
+static const u8 sStatStripStats[HB_STRIP_SLOTS] = { STAT_ATK, STAT_DEF, STAT_SPATK, STAT_SPDEF, STAT_SPEED };
+
+static const u8 sStatStripHue[HB_STRIP_SLOTS] = { HB_PAL_ATK, HB_PAL_DEF, HB_PAL_SPATK, HB_PAL_SPDEF, HB_PAL_SPE };
+
+// Indexed by HB_GLYPH_*. One byte per row; bit 4 is the leftmost pixel.
+static const u8 sStatGlyphs[HB_GLYPH_COUNT][HB_GLYPH_H] =
+{
+    [HB_GLYPH_UP1]   = { 0x00, 0x00, 0x04, 0x0A, 0x00, 0x00 },
+    [HB_GLYPH_UP2]   = { 0x00, 0x04, 0x0A, 0x04, 0x0A, 0x00 },
+    [HB_GLYPH_UP3]   = { 0x04, 0x0A, 0x04, 0x0A, 0x04, 0x0A },
+    [HB_GLYPH_DOWN1] = { 0x00, 0x00, 0x0A, 0x04, 0x00, 0x00 },
+    [HB_GLYPH_DOWN2] = { 0x00, 0x0A, 0x04, 0x0A, 0x04, 0x00 },
+    [HB_GLYPH_DOWN3] = { 0x0A, 0x04, 0x0A, 0x04, 0x0A, 0x04 },
+};

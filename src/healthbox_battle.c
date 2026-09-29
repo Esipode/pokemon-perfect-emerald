@@ -376,6 +376,40 @@ static void DrawStatus(u8 healthboxSpriteId, struct Pokemon *mon)
                                    spec != NULL ? spec->label : NULL, HealthboxOptions_GetBackground());
 }
 
+static void DrawStatStrip(u8 healthboxSpriteId, enum BattlerId battler)
+{
+    struct HealthboxSprites sprites;
+    const struct HealthboxLayout *layout;
+    u8 stages[HB_STRIP_SLOTS];
+    u32 i;
+
+    GetBoxSprites(healthboxSpriteId, &sprites, &layout);
+    if (layout->rects[HB_RECT_STRIP].w == 0)
+        return;
+
+    for (i = 0; i < HB_STRIP_SLOTS; i++)
+        stages[i] = gBattleMons[battler].statStages[Healthbox_StripStat(i)];
+
+    gBattleSpritesDataPtr->healthBoxesData[battler].statStripSig = Healthbox_PackStages(stages);
+    HealthboxRender_DrawStatStrip(&sprites, layout, &layout->rects[HB_RECT_STRIP], stages, HealthboxOptions_GetBackground());
+}
+
+void HealthboxBattle_PollStatStrip(u8 healthboxSpriteId)
+{
+    enum BattlerId battler = gSprites[healthboxSpriteId].data[6];
+    u8 stages[HB_STRIP_SLOTS];
+    u32 i;
+
+    if (sLayouts[battler].rects[HB_RECT_STRIP].w == 0)
+        return;
+
+    for (i = 0; i < HB_STRIP_SLOTS; i++)
+        stages[i] = gBattleMons[battler].statStages[Healthbox_StripStat(i)];
+
+    if (Healthbox_PackStages(stages) != gBattleSpritesDataPtr->healthBoxesData[battler].statStripSig)
+        DrawStatStrip(healthboxSpriteId, battler);
+}
+
 static void UpdateExp(u8 healthboxSpriteId, struct Pokemon *mon, enum BattlerId battler)
 {
     enum Species species = GetMonData(mon, MON_DATA_SPECIES);
@@ -418,5 +452,8 @@ void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elemen
     if (all || elementId == HEALTHBOX_STATUS_ICON)
         DrawStatus(healthboxSpriteId, mon);
     if (all)
+    {
+        DrawStatStrip(healthboxSpriteId, battler);
         TryAddPokeballIconToHealthbox(healthboxSpriteId, TRUE);
+    }
 }

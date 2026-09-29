@@ -138,6 +138,34 @@ void HealthboxRender_DrawStatusPill(const struct HealthboxSprites *sprites, cons
     PrintTextAt(sprites, HB_PILL_FONT, x, top, label);
 }
 
+void HealthboxRender_DrawStatStrip(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                                   const struct HealthboxRect *rect, const u8 stages[HB_STRIP_SLOTS], u32 background)
+{
+    u8 backdrop = background == HB_BG_NONE ? 0 : HB_PAL_FILL;
+    u32 slot;
+    s32 row, col;
+
+    HealthboxRender_FillRect(sprites, layout, rect->x, rect->y, rect->w, rect->h, backdrop);
+
+    for (slot = 0; slot < HB_STRIP_SLOTS; slot++)
+    {
+        u32 glyph = Healthbox_StageToGlyph(stages[slot]);
+        s32 x0 = rect->x + slot * HB_STRIP_SLOT_W + (HB_STRIP_SLOT_W - HB_GLYPH_W) / 2;
+
+        if (glyph == HB_GLYPH_NONE)
+            continue;
+
+        for (row = 0; row < HB_GLYPH_H; row++)
+        {
+            for (col = 0; col < HB_GLYPH_W; col++)
+            {
+                if (sStatGlyphs[glyph][row] & (1 << (HB_GLYPH_W - 1 - col)))
+                    HealthboxRender_PutPixel(sprites, layout, x0 + col, rect->y + row, sStatStripHue[slot]);
+            }
+        }
+    }
+}
+
 void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel)
 {
     static const u8 sFillPal[][2] = { {10, 11}, {12, 13}, {14, 15} };

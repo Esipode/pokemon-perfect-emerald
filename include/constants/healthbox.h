@@ -49,6 +49,19 @@ enum
     PAL_STATUS_BRN
 };
 
+// Stat strip glyphs; HB_GLYPH_NONE draws nothing (stage 6).
+enum HealthboxGlyph
+{
+    HB_GLYPH_UP1,
+    HB_GLYPH_UP2,
+    HB_GLYPH_UP3,
+    HB_GLYPH_DOWN1,
+    HB_GLYPH_DOWN2,
+    HB_GLYPH_DOWN3,
+    HB_GLYPH_COUNT,
+    HB_GLYPH_NONE = HB_GLYPH_COUNT,
+};
+
 enum HealthboxElement
 {
     HB_ELEM_NICK,

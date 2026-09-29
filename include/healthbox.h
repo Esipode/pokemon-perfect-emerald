@@ -64,6 +64,11 @@ void Healthbox_ResolveOpts(u32 side, struct HealthboxResolvedOpts *out);
 void Healthbox_ComputeLayout(const struct HealthboxResolvedOpts *opts, u32 side, bool32 doubles,
                              u32 position, struct HealthboxLayout *out);
 
+// Stat strip: stages[] is in strip order (Atk, Def, SpA, SpD, Spe). HB_GLYPH_NONE means nothing is drawn.
+u32 Healthbox_StageToGlyph(u8 stage);
+u32 Healthbox_PackStages(const u8 stages[5]);
+u32 Healthbox_StripStat(u32 slot); // STAT_* shown in a strip slot
+
 // The three sprites of one healthbox: left box half, right box half, HP bar.
 struct HealthboxSprites
 {
@@ -89,6 +94,8 @@ void HealthboxRender_DrawExpBar(const struct HealthboxSprites *sprites, const st
 // A NULL label clears the pill. palIndex is the box palette slot holding the status colour.
 void HealthboxRender_DrawStatusPill(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
                                     const struct HealthboxRect *rect, u32 palIndex, const u8 *label, u32 background);
+void HealthboxRender_DrawStatStrip(const struct HealthboxSprites *sprites, const struct HealthboxLayout *layout,
+                                   const struct HealthboxRect *rect, const u8 stages[5], u32 background);
 // colourLevel: 0 green, 1 yellow, 2 red.
 void HealthboxRender_DrawHpBar(u8 barSpriteId, u32 fillPx, u32 colourLevel);
 
@@ -107,6 +114,8 @@ bool32 HealthboxBattle_HasCaughtIcons(u32 battler);
 const struct SubspriteTable *HealthboxBattle_GetBarSubspriteTable(u32 battler);
 void HealthboxBattle_DrawHpBar(u8 healthboxSpriteId, u32 fillPx, u32 colourLevel);
 void HealthboxBattle_DrawExpBar(u8 healthboxSpriteId, u32 fillPx);
+// Redraws the stat strip when the battler's stages changed; called every frame by the bar sprite.
+void HealthboxBattle_PollStatStrip(u8 healthboxSpriteId);
 void HealthboxBattle_Update(u8 healthboxSpriteId, struct Pokemon *mon, u8 elementId);
 
 #endif // GUARD_HEALTHBOX_H

@@ -769,6 +769,7 @@ static void SpriteCB_HealthBar(struct Sprite *sprite)
     case HB_BAR_DATA6_NEW:
         sprite->x = gSprites[healthboxSpriteId].x;
         sprite->y = gSprites[healthboxSpriteId].y;
+        HealthboxBattle_PollStatStrip(healthboxSpriteId);
         break;
     case 2:
     default:
