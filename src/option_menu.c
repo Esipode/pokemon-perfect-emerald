@@ -494,6 +494,118 @@ static const struct OptionCategory sCategories[CATEGORIES_COUNT] =
     },
 };
 
+EWRAM_DATA static u8 sPendingValues[OPTIONS_COUNT] = {0};
+
+static u8 LoadOptionValue(u8 optionId)
+{
+    switch (optionId)
+    {
+    case OPTION_TEXT_SPEED:
+        return gSaveBlock2Ptr->optionsTextSpeed;
+    case OPTION_SOUND:
+        return gSaveBlock2Ptr->optionsSound;
+    case OPTION_FRAME:
+        return gSaveBlock2Ptr->optionsWindowFrameType;
+    case OPTION_AUTOSAVE:
+        return gSaveBlock1Ptr->autosaveModeEnabled ? 1 : 0;
+    case OPTION_AUTO_SCROLL:
+        return FlagGet(FLAG_AUTO_SCROLL_TEXT) ? 1 : 0;
+    case OPTION_BATTLE_SCENE:
+        return gSaveBlock2Ptr->optionsBattleSceneOff ? 1 : 0;
+    case OPTION_BATTLE_STYLE:
+        return gSaveBlock2Ptr->optionsBattleStyle ? 1 : 0;
+    case OPTION_BATTLE_SPEED:
+        // The save field holds 3 bits but only 6 are valid values; keep it in range.
+        return (gSaveBlock2Ptr->optionsBattleSpeed < OPTIONS_BATTLE_SPEED_COUNT)
+             ? gSaveBlock2Ptr->optionsBattleSpeed : OPTIONS_BATTLE_SPEED_1X;
+    case OPTION_AI_TRAINER:
+        return AiBattles_GetSetting(AI_BATTLES_SETTING_TRAINER) ? 1 : 0;
+    case OPTION_AI_WILD:
+        return AiBattles_GetSetting(AI_BATTLES_SETTING_WILD) ? 1 : 0;
+    case OPTION_EXP_SHARE:
+        return IsGen6ExpShareEnabled() ? 1 : 0;
+    case OPTION_ACHIEVEMENT_BOOSTS:
+        return Achievement_BoostsEnabled() ? 1 : 0;
+    case OPTION_ROUTE_TRACKER:
+        return gSaveBlock2Ptr->optionsRouteTracker ? 1 : 0;
+    default:
+        return 0;
+    }
+}
+
+static void StoreOptionValue(u8 optionId, u8 value)
+{
+    switch (optionId)
+    {
+    case OPTION_TEXT_SPEED:
+        gSaveBlock2Ptr->optionsTextSpeed = value;
+        break;
+    case OPTION_SOUND:
+        gSaveBlock2Ptr->optionsSound = value;
+        break;
+    case OPTION_FRAME:
+        gSaveBlock2Ptr->optionsWindowFrameType = value;
+        break;
+    case OPTION_AUTOSAVE:
+        gSaveBlock1Ptr->autosaveModeEnabled = value ? 1 : 0;
+        break;
+    case OPTION_AUTO_SCROLL:
+        if (value)
+            FlagSet(FLAG_AUTO_SCROLL_TEXT);
+        else
+            FlagClear(FLAG_AUTO_SCROLL_TEXT);
+        break;
+    case OPTION_BATTLE_SCENE:
+        gSaveBlock2Ptr->optionsBattleSceneOff = value;
+        break;
+    case OPTION_BATTLE_STYLE:
+        gSaveBlock2Ptr->optionsBattleStyle = value;
+        break;
+    case OPTION_BATTLE_SPEED:
+        gSaveBlock2Ptr->optionsBattleSpeed = value;
+        break;
+    case OPTION_AI_TRAINER:
+        AiBattles_SetSetting(AI_BATTLES_SETTING_TRAINER, value != 0);
+        break;
+    case OPTION_AI_WILD:
+        AiBattles_SetSetting(AI_BATTLES_SETTING_WILD, value != 0);
+        break;
+    case OPTION_EXP_SHARE:
+        // Same field the Exp. Share key item toggles (IsGen6ExpShareEnabled), so both controls stay in sync.
+        gSaveBlock2Ptr->optionsExpShare = value;
+        break;
+    case OPTION_ACHIEVEMENT_BOOSTS:
+        Achievement_SetBoostsEnabled(value);
+        Achievement_FlushProfile();
+        break;
+    case OPTION_ROUTE_TRACKER:
+        gSaveBlock2Ptr->optionsRouteTracker = value;
+        break;
+    }
+}
+
+static void LoadAllOptions(void)
+{
+    u8 i;
+
+    for (i = 0; i < OPTIONS_COUNT; i++)
+        sPendingValues[i] = LoadOptionValue(i);
+}
+
+static void CommitAllOptions(void)
+{
+    u8 i;
+
+    for (i = 0; i < OPTIONS_COUNT; i++)
+    {
+        if (sOptions[i].type == OPTION_TYPE_SUBMENU)
+            continue;
+        if (sOptions[i].isHidden != NULL && sOptions[i].isHidden())
+            continue;
+        StoreOptionValue(i, sPendingValues[i]);
+    }
+}
+
 static const struct WindowTemplate sOptionMenuWinTemplates[] =
 {
     [WIN_HEADER] = {
