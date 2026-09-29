@@ -17,6 +17,20 @@
 #define HB_SIDE_PLAYER 0
 #define HB_SIDE_FOE    1
 
+// New-style healthbox palette slots (see sHealthboxNewPal).
+#define HB_PAL_TEXT   1
+#define HB_PAL_FILL   2
+#define HB_PAL_SHADOW 3
+#define HB_PAL_RIM    4
+#define HB_PAL_EXP    5
+#define HB_PAL_TROUGH 6 // Shared with the enemy shadow sprite; must not change.
+#define HB_PAL_ATK    7
+#define HB_PAL_DEF    8
+#define HB_PAL_SPDEF  9
+#define HB_PAL_SPE    10 // Also the female gender colour.
+#define HB_PAL_SPATK  11 // Also the male gender colour.
+#define HB_PAL_STATUS_FIRST 12
+
 enum HealthboxElement
 {
     HB_ELEM_NICK,

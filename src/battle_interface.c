@@ -612,6 +612,7 @@ static const union TextColor sHealthBoxTextColor =
 
 // data fields for healthboxRight
 #define hOther_HealthBoxSpriteId    data[5]
+#define hOther_XAdjust              data[6] // New style: offset from the default main.x + 64
 
 // data fields for healthbar
 #define hBar_HealthBoxSpriteId      data[5]
@@ -638,8 +639,12 @@ u8 CreateBattlerHealthboxSprites(enum BattlerId battler)
     u8 healthbarSpriteId;
     struct Sprite *healthBarSpritePtr;
 
-    switch (GetBattlerCoordsIndex(battler))
+    switch (Healthbox_IsNewStyle() ? BATTLE_COORDS_COUNT : GetBattlerCoordsIndex(battler))
     {
+    case BATTLE_COORDS_COUNT: // New style
+        healthboxLeftSpriteId = HealthboxBattle_CreateBoxSprites(battler, SpriteCB_HealthBoxOther, &data6);
+        healthboxRightSpriteId = gSprites[healthboxLeftSpriteId].oam.affineParam;
+        break;
     default:
     case BATTLE_COORDS_SINGLES:
     {
@@ -782,7 +787,7 @@ static void SpriteCB_HealthBoxOther(struct Sprite *sprite)
 {
     u8 healthboxMainSpriteId = sprite->hOther_HealthBoxSpriteId;
 
-    sprite->x = gSprites[healthboxMainSpriteId].x + 64;
+    sprite->x = gSprites[healthboxMainSpriteId].x + 64 + sprite->hOther_XAdjust;
     sprite->y = gSprites[healthboxMainSpriteId].y;
 
     sprite->x2 = gSprites[healthboxMainSpriteId].x2;
@@ -881,6 +886,12 @@ void GetBattlerHealthboxCoords(enum BattlerId battler, s16 *x, s16 *y)
 {
     enum BattlerPosition position = GetBattlerPosition(battler);
     enum BattleCoordTypes index = GetBattlerCoordsIndex(battler);
+
+    if (Healthbox_IsNewStyle())
+    {
+        HealthboxBattle_GetCoords(battler, x, y);
+        return;
+    }
 
     *x = sBattlerHealthboxCoords[index][position][0];
     *y = sBattlerHealthboxCoords[index][position][1];
@@ -2216,6 +2227,12 @@ void UpdateHealthboxAttribute(u8 healthboxSpriteId, struct Pokemon *mon, u8 elem
     enum BattlerId battler = gSprites[healthboxSpriteId].hMain_Battler;
     s32 maxHp = GetMonData(mon, MON_DATA_MAX_HP);
     s32 currHp = GetMonData(mon, MON_DATA_HP);
+
+    if (Healthbox_IsNewStyle())
+    {
+        HealthboxBattle_Update(healthboxSpriteId, mon, elementId);
+        return;
+    }
 
     if (IsOnPlayerSide(battler))
     {

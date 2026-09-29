@@ -85,3 +85,23 @@ static const struct HealthboxAnchor sHealthboxDoublesAnchors[] =
     [B_POSITION_PLAYER_RIGHT]   = { 240, 87, TRUE },
     [B_POSITION_OPPONENT_RIGHT] = {   1, 30, FALSE },
 };
+
+// Indexed by HB_PAL_*. Slots 12-15 are status colours written at runtime.
+static const u16 sHealthboxNewPal[16] =
+{
+    [0]              = RGB_BLACK,
+    [HB_PAL_TEXT]    = RGB(31, 31, 31),
+    [HB_PAL_FILL]    = RGB(5, 6, 9),
+    [HB_PAL_SHADOW]  = RGB(2, 3, 5),
+    [HB_PAL_RIM]     = RGB(14, 16, 20),
+    [HB_PAL_EXP]     = RGB(6, 14, 28),
+    [HB_PAL_TROUGH]  = RGB(10, 13, 12),
+    [HB_PAL_ATK]     = RGB(29, 12, 6),
+    [HB_PAL_DEF]     = RGB(29, 25, 5),
+    [HB_PAL_SPDEF]   = RGB(9, 26, 10),
+    [HB_PAL_SPE]     = RGB(31, 19, 18),
+    [HB_PAL_SPATK]   = RGB(8, 25, 31),
+};
+
+// Horizontal inset of the box's top and bottom rows; the corner radius is the table length.
+static const u8 sHealthboxCornerInset[] = { 3, 1, 1 };

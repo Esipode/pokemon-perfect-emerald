@@ -5,6 +5,7 @@
 #include "battle_anim.h"
 #include "constants/battle_anim.h"
 #include "battle_interface.h"
+#include "healthbox.h"
 #include "main.h"
 #include "menu.h"
 #include "dma3.h"
@@ -734,9 +735,15 @@ bool8 BattleLoadAllHealthBoxesGfx(u8 state)
     {
         if (state == 1)
         {
-            LoadSpritePalette(&sSpritePalettes_HealthBoxHealthBar[0]);
+            if (Healthbox_IsNewStyle())
+                HealthboxBattle_LoadPalette();
+            else
+                LoadSpritePalette(&sSpritePalettes_HealthBoxHealthBar[0]);
             LoadSpritePalette(&sSpritePalettes_HealthBoxHealthBar[1]);
             CategoryIcons_LoadSpritesGfx();
+        }
+        else if (Healthbox_IsNewStyle() && HealthboxBattle_LoadBoxSheet(state))
+        {
         }
         else if (!IsDoubleBattle())
         {

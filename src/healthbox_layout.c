@@ -2,6 +2,7 @@
 #include "healthbox.h"
 #include "constants/battle.h"
 #include "constants/healthbox.h"
+#include "constants/rgb.h"
 #include "data/healthbox.h"
 
 #define HB_MIN_BOX_W 64

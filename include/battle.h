@@ -1054,6 +1054,7 @@ struct BattleHealthboxInfo
     u8 introEndDelay;
     u8 field_A;
     u8 field_B;
+    u32 statStripSig; // New healthbox style: last drawn stat-stage signature.
 };
 
 struct BattleBarInfo
