@@ -621,6 +621,8 @@ static void RefreshPartyMenu(void) //Refreshes the party menu without restarting
 
 static void CB2_UpdatePartyMenu(void)
 {
+    if (IsPartyDashboard())
+        PartyDashboard_Update();
     RunTasks();
     AnimateSprites();
     BuildOamBuffer();

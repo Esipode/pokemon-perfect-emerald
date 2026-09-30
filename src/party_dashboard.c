@@ -29,6 +29,7 @@
 #include "window.h"
 #include "constants/flags.h"
 #include "constants/party_menu.h"
+#include "constants/rgb.h"
 
 #include "data/party_dashboard.h"
 
@@ -38,6 +39,10 @@ struct PartyDashboard
     u8 selectedSlot;
     bool8 hasSelection;
     u8 tab;
+    bool8 pendingBody;
+    u8 pulseTimer;
+    u8 pulseStep;
+    u8 slotRow[PARTY_DASH_MAX_SLOTS];
     u8 hintWindowId;
     u8 statusSpriteId;
     u8 itemSpriteId;
@@ -396,6 +401,7 @@ void PartyDashboard_SetSlotPalette(u32 slot, u32 palFlags)
     else
         row = selected ? PAL_ROW_SLOT_SELECTED : PAL_ROW_SLOT_NORMAL;
 
+    sDashboard->slotRow[slot] = row;
     LoadSlotPaletteRow(slot, row);
 }
 
@@ -784,6 +790,7 @@ static void DrawBody(void)
     struct PartyDashboardMon *mon = &sDashboard->mon;
     bool32 showItemIcon = !mon->isEgg && sDashboard->tab == PARTY_DASH_TAB_INFO;
 
+    sDashboard->pendingBody = FALSE;
     FillWindowPixelBuffer(WIN_DASH_BODY, PIXEL_FILL(0));
     FillBgTilemapBufferRect(3, BG3_TILE_BLANK, BODY_X, BODY_Y + INFO_MOVES_Y / TILE_HEIGHT, 1, INFO_MOVE_STEP * MAX_MON_MOVES / TILE_HEIGHT, 0);
 
@@ -799,15 +806,25 @@ static void DrawBody(void)
     ScheduleBgCopyTilemapToVram(3);
 }
 
-void PartyDashboard_Select(u32 slot, struct Pokemon *mon)
+// With animate, the identity block draws now and the tab body one frame later (see PartyDashboard_Update).
+static void SelectMon(u32 slot, struct Pokemon *mon, bool32 animate)
 {
+    animate = animate && sDashboard->hasSelection;
     sDashboard->selectedSlot = slot;
     sDashboard->hasSelection = TRUE;
     PartyDashboard_BuildMonData(mon, slot, &sDashboard->mon);
     DrawIdentity();
     DrawTabs();
     CopyWindowToVram(WIN_DASH_TABS, COPYWIN_GFX);
-    DrawBody();
+    if (animate)
+        sDashboard->pendingBody = TRUE;
+    else
+        DrawBody();
+}
+
+void PartyDashboard_Select(u32 slot, struct Pokemon *mon)
+{
+    SelectMon(slot, mon, TRUE);
 }
 
 // Returns FALSE when there is no tab to switch to (eggs).
@@ -827,7 +844,7 @@ bool32 PartyDashboard_SetTab(s32 delta)
 void PartyDashboard_RefreshSlot(u32 slot, struct Pokemon *mon)
 {
     if (sDashboard->hasSelection && sDashboard->selectedSlot == slot)
-        PartyDashboard_Select(slot, mon);
+        SelectMon(slot, mon, FALSE);
 }
 
 // HP tick: redraws the slot bar and, for the selected slot, only the identity block.
@@ -875,6 +892,30 @@ void PartyDashboard_ClearHint(void)
     CopyWindowToVram(sDashboard->hintWindowId, COPYWIN_GFX);
 }
 
+// Cycles the frame colour of every slot drawn in a selected palette row.
+static void UpdatePulse(void)
+{
+    if (gPaletteFade.active || ++sDashboard->pulseTimer < PULSE_FRAMES)
+        return;
+
+    sDashboard->pulseTimer = 0;
+    sDashboard->pulseStep = (sDashboard->pulseStep + 1) % ARRAY_COUNT(sPulseColors);
+    for (u32 slot = 0; slot < PARTY_DASH_MAX_SLOTS; slot++)
+    {
+        u32 row = sDashboard->slotRow[slot];
+
+        if (row == PAL_ROW_SLOT_SELECTED || row == PAL_ROW_SLOT_FAINTED_SELECTED)
+            LoadPalette(&sPulseColors[sDashboard->pulseStep], BG_PLTT_ID(PARTY_DASH_PAL_SLOT_FIRST + slot) + SLOT_PIX_FRAME, sizeof(u16));
+    }
+}
+
+// Runs at the start of each frame, before the tasks that change the selection.
 void PartyDashboard_Update(void)
 {
+    if (sDashboard == NULL)
+        return;
+
+    if (sDashboard->pendingBody)
+        DrawBody();
+    UpdatePulse();
 }

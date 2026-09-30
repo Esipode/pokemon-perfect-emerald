@@ -131,6 +131,11 @@ enum PartyDashPalRow
 #define BG3_TILE_COUNT   41
 #define BG3_SHEET_TILES  20
 
+// Selected slot frame (palette entry 2) pulse.
+#define SLOT_PIX_FRAME   2
+#define PULSE_FRAMES     8
+static const u16 sPulseColors[] = {RGB(31, 26, 8), RGB(31, 28, 14), RGB(31, 30, 20), RGB(31, 28, 14)};
+
 // Layout in tiles. Slot = 4x6; grid = 3x2 slots.
 #define SLOT_W_TILES 4
 #define SLOT_H_TILES 6
