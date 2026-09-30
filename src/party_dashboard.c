@@ -257,6 +257,23 @@ void PartyDashboard_LoadGfx(void)
         LoadSlotPaletteRow(slot, PAL_ROW_SLOT_NORMAL);
 }
 
+// The active tab is underlined and drawn in the text colour; eggs have no tabs to switch, so all labels dim.
+static void DrawTabs(void)
+{
+    const bool32 locked = sDashboard->mon.isEgg;
+
+    FillWindowPixelBuffer(WIN_DASH_TABS, PIXEL_FILL(0));
+    for (u32 tab = 0; tab < PARTY_DASH_TAB_COUNT; tab++)
+    {
+        const bool32 active = !locked && tab == sDashboard->tab;
+
+        AddTextPrinterParameterized3(WIN_DASH_TABS, FONT_SMALL, sDashTabX[tab], TAB_LABEL_Y, active ? sIdentTextColors : sIdentLabelColors,
+                                     TEXT_SKIP_DRAW, sDashTabLabels[tab]);
+        if (active)
+            FillWindowPixelRect(WIN_DASH_TABS, INFO_PIX_ACCENT, sDashTabX[tab], TAB_UNDERLINE_Y, GetStringWidth(FONT_SMALL, sDashTabLabels[tab], 0), TAB_UNDERLINE_H);
+    }
+}
+
 // Creates the dashboard windows (slot windows use ids 0-5, WIN_MSG is id 6) and draws the tab labels.
 void PartyDashboard_InitWindows(void)
 {
@@ -269,8 +286,7 @@ void PartyDashboard_InitWindows(void)
         FillWindowPixelBuffer(id, PIXEL_FILL(0));
     FillWindowPixelBuffer(sDashboard->hintWindowId, PIXEL_FILL(0));
 
-    AddTextPrinterParameterized3(WIN_DASH_TABS, FONT_SMALL, 8, 1, sDashTabColors, TEXT_SKIP_DRAW, sText_DashTabInfo);
-    AddTextPrinterParameterized3(WIN_DASH_TABS, FONT_SMALL, 48, 1, sDashTabColors, TEXT_SKIP_DRAW, sText_DashTabStats);
+    DrawTabs();
 
     for (id = WIN_DASH_IDENT; id <= WIN_DASH_BODY; id++)
     {
@@ -662,6 +678,87 @@ static void DrawInfoMoves(struct PartyDashboardMon *mon)
     }
 }
 
+static void PrintStatsRight(u32 fontId, u32 rightX, u32 y, const u8 *colors, const u8 *str)
+{
+    PrintBody(fontId, rightX - GetStringWidth(fontId, str, 0), y, colors, str);
+}
+
+// Stat label colour follows the mint-adjusted nature when P_SUMMARY_SCREEN_NATURE_COLORS is on.
+static const u8 *GetStatLabelColors(struct PartyDashboardMon *mon, enum Stat stat)
+{
+    if (!P_SUMMARY_SCREEN_NATURE_COLORS || gNaturesInfo[mon->mintNature].statUp == gNaturesInfo[mon->mintNature].statDown)
+        return sIdentLabelColors;
+    if (stat == gNaturesInfo[mon->mintNature].statUp)
+        return sInfoUpColors;
+    if (stat == gNaturesInfo[mon->mintNature].statDown)
+        return sInfoDownColors;
+    return sIdentLabelColors;
+}
+
+static void DrawStatsHeader(bool32 showIv, bool32 showEv, u32 valueRightX)
+{
+    PrintBody(FONT_SMALL, INFO_LABEL_X, STATS_HEADER_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashStatHeader);
+    PrintStatsRight(FONT_SMALL, valueRightX, STATS_HEADER_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashValueHeader);
+    if (showIv)
+        PrintStatsRight(FONT_SMALL, STATS_IV_RIGHT_X, STATS_HEADER_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashIvHeader);
+    if (showEv)
+        PrintStatsRight(FONT_SMALL, STATS_EV_RIGHT_X, STATS_HEADER_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashEvHeader);
+}
+
+static void DrawBodyStats(struct PartyDashboardMon *mon)
+{
+    bool32 showIv, showEv;
+    u32 barWidth, valueRightX;
+
+    SummaryScreen_ShowIvEv(FALSE, &showIv, &showEv);
+    barWidth = (showIv || showEv) ? STATS_BAR_W : STATS_BAR_W_WIDE;
+    valueRightX = (showIv || showEv) ? STATS_VALUE_RIGHT_X : STATS_VALUE_WIDE_X;
+    DrawStatsHeader(showIv, showEv, valueRightX);
+
+    for (u32 i = 0; i < PARTY_DASH_STAT_COUNT; i++)
+    {
+        u32 y = STATS_ROWS_Y + i * STATS_ROW_STEP;
+        enum Stat stat = sPartyDashStatOrder[i];
+
+        PrintBody(FONT_SMALL, INFO_LABEL_X, y + INFO_LABEL_DY, GetStatLabelColors(mon, stat), sDashStatLabels[stat]);
+
+        FillWindowPixelRect(WIN_DASH_BODY, INFO_PIX_TRACK, STATS_BAR_X, y + STATS_BAR_DY, barWidth, STATS_BAR_H);
+        FillWindowPixelRect(WIN_DASH_BODY, INFO_PIX_STAT_BAR, STATS_BAR_X, y + STATS_BAR_DY,
+                            PartyDashboard_StatBarWidth(mon->stats[i], i, mon->level, barWidth), STATS_BAR_H);
+
+        ConvertIntToDecimalStringN(gStringVar1, mon->stats[i], STR_CONV_MODE_LEFT_ALIGN, 4);
+        PrintStatsRight(FONT_NORMAL, valueRightX, y, sIdentTextColors, gStringVar1);
+
+        if (showIv)
+        {
+            if (P_SUMMARY_SCREEN_IV_EV_VALUES)
+            {
+                ConvertIntToDecimalStringN(gStringVar1, mon->ivs[i], STR_CONV_MODE_LEFT_ALIGN, 2);
+                PrintStatsRight(FONT_SMALL, STATS_IV_RIGHT_X, y + INFO_LABEL_DY, sIdentTextColors, gStringVar1);
+            }
+            else
+            {
+                PrintStatsRight(FONT_SMALL, STATS_IV_RIGHT_X, y + INFO_LABEL_DY, sIdentTextColors, GetIvLetterGrade(mon->ivs[i]));
+            }
+        }
+        if (showEv)
+        {
+            ConvertIntToDecimalStringN(gStringVar1, mon->evs[i], STR_CONV_MODE_LEFT_ALIGN, 3);
+            PrintStatsRight(FONT_SMALL, STATS_EV_RIGHT_X, y + INFO_LABEL_DY, sIdentTextColors, gStringVar1);
+        }
+    }
+
+    if (showEv)
+    {
+        PrintBody(FONT_SMALL, INFO_LABEL_X, STATS_EV_TOTAL_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashEvTotal);
+        ConvertIntToDecimalStringN(gStringVar1, mon->evTotal, STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringAppend(gStringVar1, sText_DashSlash);
+        ConvertIntToDecimalStringN(gStringVar2, MAX_TOTAL_EVS, STR_CONV_MODE_LEFT_ALIGN, 3);
+        StringAppend(gStringVar1, gStringVar2);
+        PrintStatsRight(FONT_SMALL, STATS_EV_RIGHT_X, STATS_EV_TOTAL_Y + INFO_LABEL_DY, sIdentTextColors, gStringVar1);
+    }
+}
+
 // The whole body shows the egg state text instead of the tab content.
 static void DrawBodyEgg(struct PartyDashboardMon *mon)
 {
@@ -688,6 +785,8 @@ static void DrawBody(void)
         DrawBodyEgg(mon);
     else if (sDashboard->tab == PARTY_DASH_TAB_INFO)
         DrawBodyInfo(mon);
+    else
+        DrawBodyStats(mon);
 
     UpdateItemIcon(showItemIcon ? mon->heldItem : ITEM_NONE);
     CopyWindowToVram(WIN_DASH_BODY, COPYWIN_GFX);
@@ -700,13 +799,22 @@ void PartyDashboard_Select(u32 slot, struct Pokemon *mon)
     sDashboard->hasSelection = TRUE;
     PartyDashboard_BuildMonData(mon, slot, &sDashboard->mon);
     DrawIdentity();
+    DrawTabs();
+    CopyWindowToVram(WIN_DASH_TABS, COPYWIN_GFX);
     DrawBody();
 }
 
-void PartyDashboard_SetTab(s32 delta)
+// Returns FALSE when there is no tab to switch to (eggs).
+bool32 PartyDashboard_SetTab(s32 delta)
 {
-    sDashboard->tab = PartyDashboard_WrapTab(sDashboard->tab, delta, sDashboard->mon.isEgg);
+    if (sDashboard->mon.isEgg || !sDashboard->hasSelection)
+        return FALSE;
+
+    sDashboard->tab = PartyDashboard_WrapTab(sDashboard->tab, delta, FALSE);
+    DrawTabs();
+    CopyWindowToVram(WIN_DASH_TABS, COPYWIN_GFX);
     DrawBody();
+    return TRUE;
 }
 
 // Redraws the info area when the changed slot is the selected one.

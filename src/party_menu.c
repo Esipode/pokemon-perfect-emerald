@@ -1890,6 +1890,14 @@ static u16 PartyMenuButtonHandler(s8 *slotPtr)
         return 0;
     }
 
+    // L acts as A in L_EQUALS_A mode, so only R switches tabs there.
+    if (IsPartyDashboard() && (JOY_NEW(R_BUTTON) || (JOY_NEW(L_BUTTON) && gSaveBlock2Ptr->optionsButtonMode != OPTIONS_BUTTON_MODE_L_EQUALS_A)))
+    {
+        if (PartyDashboard_SetTab(JOY_NEW(R_BUTTON) ? 1 : -1))
+            PlaySE(SE_SELECT);
+        return 0;
+    }
+
     // Pressed Cancel
     if (JOY_NEW(A_BUTTON) && *slotPtr == PARTY_SIZE + 1)
         return B_BUTTON;

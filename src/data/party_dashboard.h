@@ -94,6 +94,8 @@ enum PartyDashPalRow
 #define INFO_PIX_EXP         10
 #define INFO_PIX_HATCH       11
 #define INFO_PIX_TRACK       12
+#define INFO_PIX_STAT_BAR    13
+#define INFO_PIX_ACCENT      15
 
 // Identity window (12x8 tiles) geometry in pixels.
 #define IDENT_TEXT_X         2
@@ -287,7 +289,17 @@ static const u8 sIdentHpBarPix[] =
     [HP_BAR_FULL]   = INFO_PIX_HP_GREEN,
 };
 
-static const u8 sDashTabColors[3] = {TEXT_COLOR_TRANSPARENT, 2, 3}; // Palette 12: text, shadow.
+static const u8 *const sDashTabLabels[PARTY_DASH_TAB_COUNT] =
+{
+    [PARTY_DASH_TAB_INFO]  = sText_DashTabInfo,
+    [PARTY_DASH_TAB_STATS] = sText_DashTabStats,
+};
+static const u8 sDashTabX[PARTY_DASH_TAB_COUNT] = {8, 48};
+
+// Tab strip window (144x16 px): label row and the underline of the active tab.
+#define TAB_LABEL_Y      1
+#define TAB_UNDERLINE_Y  12
+#define TAB_UNDERLINE_H  2
 
 // Item icon sprite (INFO tab): one tile tag and one palette tag, the spare OBJ palette.
 #define TAG_DASH_ITEM_ICON 55130
@@ -317,15 +329,17 @@ static const u8 sText_DashAbility[] = _("ABILITY");
 static const u8 sText_DashItem[] = _("ITEM");
 static const u8 sText_DashNatureUp[] = _("+");
 static const u8 sText_DashNatureDown[] = _("-");
+static const u8 sText_DashStatHp[] = _("HP");
 static const u8 sText_DashStatAtk[] = _("ATK");
 static const u8 sText_DashStatDef[] = _("DEF");
 static const u8 sText_DashStatSpe[] = _("SPE");
 static const u8 sText_DashStatSpa[] = _("SPA");
 static const u8 sText_DashStatSpd[] = _("SPD");
 
-// Indexed by enum Stat. HP is never raised or lowered by a nature.
+// Indexed by enum Stat.
 static const u8 *const sDashStatLabels[NUM_STATS] =
 {
+    [STAT_HP]    = sText_DashStatHp,
     [STAT_ATK]   = sText_DashStatAtk,
     [STAT_DEF]   = sText_DashStatDef,
     [STAT_SPEED] = sText_DashStatSpe,
@@ -336,3 +350,24 @@ static const u8 *const sDashStatLabels[NUM_STATS] =
 static const u8 sInfoUpColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_NATURE_UP, INFO_PIX_SHADOW};
 static const u8 sInfoDownColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_NATURE_DOWN, INFO_PIX_SHADOW};
 static const u8 sInfoPpLowColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_HP_YELLOW, INFO_PIX_SHADOW};
+
+// STATS tab geometry in pixels (body window). Columns are right-aligned to the given x.
+#define STATS_HEADER_Y      0
+#define STATS_ROWS_Y        14
+#define STATS_ROW_STEP      16
+#define STATS_BAR_X         28
+#define STATS_BAR_W         56
+#define STATS_BAR_W_WIDE    80 // No IV/EV columns.
+#define STATS_BAR_H         4
+#define STATS_BAR_DY        5
+#define STATS_VALUE_RIGHT_X 104
+#define STATS_VALUE_WIDE_X  140
+#define STATS_IV_RIGHT_X    122
+#define STATS_EV_RIGHT_X    142
+#define STATS_EV_TOTAL_Y    112
+
+static const u8 sText_DashStatHeader[] = _("STAT");
+static const u8 sText_DashValueHeader[] = _("VALUE");
+static const u8 sText_DashIvHeader[] = _("IV");
+static const u8 sText_DashEvHeader[] = _("EV");
+static const u8 sText_DashEvTotal[] = _("EV TOTAL");
