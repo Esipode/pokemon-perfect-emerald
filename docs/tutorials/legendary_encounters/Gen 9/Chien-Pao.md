@@ -1,5 +1,7 @@
 ## Chien-Pao — The Ruinous Sword Pokémon
 
+### Location: Route 105 - Regice caught, during snowy weather
+
 Chien-Pao hunts. Everything it does gets faster and harder as it grows more aggressive - and it
 grows more aggressive when you let it dictate the pace.
 
