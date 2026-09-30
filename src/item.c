@@ -33,8 +33,10 @@
     .itemSlots = gSaveBlock1Ptr->pcItems,   \
 }
 
+#if FREE_BATTLE_FRONTIER == FALSE
 static bool32 CheckPyramidBagHasItem(enum Item itemId, u16 count);
 static bool32 CheckPyramidBagHasSpace(enum Item itemId, u16 count);
+#endif //FREE_BATTLE_FRONTIER
 static const u8 *GetItemPluralName(enum Item);
 static bool32 DoesItemHavePluralName(enum Item);
 static void NONNULL BagPocket_CompactItems(struct BagPocket *pocket);

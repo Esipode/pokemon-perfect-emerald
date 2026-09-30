@@ -35,6 +35,9 @@
 
 #define HILL_MAX_TIME 215999 // 60 * 60 * 60 - 1
 
+EWRAM_DATA u32 *gTrainerHillVBlankCounter = NULL;
+
+#if FREE_BATTLE_FRONTIER == FALSE
 struct FloorTrainers
 {
     u8 name[HILL_TRAINERS_PER_FLOOR][TRAINER_NAME_LENGTH + 1];
@@ -48,7 +51,6 @@ static EWRAM_DATA struct {
 } *sHillData = NULL;
 
 static EWRAM_DATA struct FloorTrainers *sFloorTrainers = NULL;
-EWRAM_DATA u32 *gTrainerHillVBlankCounter = NULL;
 
 // This file's functions.
 static void TrainerHillStartChallenge(void);
@@ -81,7 +83,6 @@ static void SetTrainerHillMonLevel(struct Pokemon *mon, u16 level);
 static enum Item GetPrizeItemId(void);
 #endif //FREE_TRAINER_HILL
 
-#if FREE_BATTLE_FRONTIER == FALSE
 // const data
 #include "data/battle_frontier/trainer_hill.h"
 

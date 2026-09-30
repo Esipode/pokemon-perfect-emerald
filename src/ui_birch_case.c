@@ -929,7 +929,7 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
 
     // Personality survives evolution, unlike species. Read it back from the party
     // slot because ScriptGiveMonParameterized returns a slot/result code.
-    Achievement_RecordStarterPersonality(GetMonData(&gPlayerParty[0], MON_DATA_PERSONALITY));
+    Achievement_RecordStarterPersonality(GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_PERSONALITY));
     Achievement_CheckMonoStarterMilestones();
 
     if (wasRandomizeMonForMoves)
@@ -1393,7 +1393,7 @@ static void Task_WaitForFadeAndOpenNamingScreen(u8 taskId)
         SetMainCallback2(sBirchCaseDataPtr->savedCallback);
         BirchCaseFreeResources();
         DestroyTask(taskId);
-        VarSet(VAR_0x8004, gPlayerPartyCount - 1);
+        VarSet(VAR_0x8004, gPartiesCount[B_TRAINER_PLAYER] - 1);
         ChangePokemonNickname();
     }
 }

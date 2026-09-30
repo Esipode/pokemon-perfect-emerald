@@ -30,8 +30,8 @@ void FillPartnerParty(u16 trainerId)
     s32 j;
     u32 ivs, level;
     u16 monId;
-#endif //FREE_BATTLE_FRONTIER
     u8 trainerName[(PLAYER_NAME_LENGTH * 3) + 1];
+#endif //FREE_BATTLE_FRONTIER
     SetFacilityPtrsGetLevel();
     ZeroPartyMons(gParties[B_TRAINER_PARTNER]);
 
@@ -52,7 +52,6 @@ void FillPartnerParty(u16 trainerId)
     else if (trainerId == TRAINER_EREADER)
     {
         // Scrapped, lol.
-        trainerName[0] = gGameLanguage;
     }
 #if FREE_BATTLE_FRONTIER == FALSE
     else if (trainerId < FRONTIER_TRAINERS_COUNT)

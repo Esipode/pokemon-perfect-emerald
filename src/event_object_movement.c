@@ -3802,15 +3802,6 @@ void OverrideTemplateCoordsForObjectEvent(const struct ObjectEvent *objectEvent)
     }
 }
 
-static void OverrideObjectEventTemplateScript(const struct ObjectEvent *objectEvent, const u8 *script)
-{
-    struct ObjectEventTemplate *objectEventTemplate;
-
-    objectEventTemplate = GetBaseTemplateForObjectEvent(objectEvent);
-    if (objectEventTemplate)
-        objectEventTemplate->script = script;
-}
-
 void TryOverrideTemplateCoordsForObjectEvent(const struct ObjectEvent *objectEvent, u8 movementType)
 {
     struct ObjectEventTemplate *objectEventTemplate;

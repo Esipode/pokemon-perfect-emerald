@@ -116,7 +116,9 @@ static void Mailbox_DoGiveMailPokeMenu(u8);
 static void Mailbox_NoPokemonForMail(u8);
 
 static void Mailbox_FadeAndReadMail(u8);
+#if FREE_MAIL == FALSE
 static void Mailbox_ReturnToFieldFromReadMail(void);
+#endif //FREE_MAIL
 static void Mailbox_ReshowAfterMail(void);
 static void Mailbox_HandleReturnToProcessInput(u8);
 static void Mailbox_UpdateMailListAfterDeposit(void);
@@ -814,11 +816,13 @@ static void Mailbox_FadeAndReadMail(u8 taskId)
     }
 }
 
+#if FREE_MAIL == FALSE
 static void Mailbox_ReturnToFieldFromReadMail(void)
 {
     gFieldCallback = Mailbox_ReshowAfterMail;
     SetMainCallback2(CB2_ReturnToField);
 }
+#endif //FREE_MAIL
 
 static void Mailbox_ReshowAfterMail(void)
 {

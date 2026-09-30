@@ -397,7 +397,9 @@ void NewGameInitData(void)
     u32 aiBattlesBackup = 0;
     void *optionsBackup = NULL;
     void *playerSettingsBackup = NULL;
+#if OW_SHOW_ITEM_DESCRIPTIONS == OW_ITEM_DESCRIPTIONS_FIRST_TIME
     void *itemFlagsBackup = NULL;
+#endif
     u8 savedTrainerId[TRAINER_ID_LENGTH];
     u32 moneyBackup = 0;
     u16 coinsBackup = 0;

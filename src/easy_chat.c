@@ -1420,9 +1420,11 @@ static void ExitEasyChatScreen(MainCallback callback)
 
 void ShowEasyChatScreen(void)
 {
+#if FREE_OLD_MAN == FALSE
     int i;
-    u16 *words;
     struct MauvilleManBard *bard;
+#endif //FREE_OLD_MAN
+    u16 *words;
     u8 displayedPersonType = EASY_CHAT_PERSON_DISPLAY_NONE;
     switch (gSpecialVar_0x8004)
     {
@@ -5348,6 +5350,7 @@ static u8 UNUSED *UnusedConvertEasyChatWordsToString(u8 *dest, const u16 *src, u
     return dest;
 }
 
+#if FREE_EASY_CHAT_PROFILE == FALSE
 static u16 GetEasyChatWordStringLength(u16 easyChatWord)
 {
     if (easyChatWord == EC_EMPTY_WORD)
@@ -5381,6 +5384,7 @@ static bool8 CanPhraseFitInXRowsYCols(const u16 *easyChatWords, u8 numRows, u8 n
 
     return FALSE;
 }
+#endif //FREE_EASY_CHAT_PROFILE
 
 u16 GetRandomEasyChatWordFromGroup(u16 groupId)
 {

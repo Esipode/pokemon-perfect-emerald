@@ -480,9 +480,9 @@ static bool32 PlayerOwnsRewardItem(enum Item item)
 
     for (i = 0; i < PARTY_SIZE; i++)
     {
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) == SPECIES_NONE)
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
             continue;
-        if (GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM) == item)
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HELD_ITEM) == item)
             return TRUE;
     }
 
