@@ -59,5 +59,11 @@ void ShowPokemonSummaryScreen(u8 mode, void *mons, u8 monIndex, u8 maxMonIndex, 
 void ShowSelectMovePokemonSummaryScreen(struct Pokemon *mons, u8 monIndex, void (*callback)(void), u16 newMove);
 u8 GetMoveSlotToReplace(void);
 void SummaryScreen_SetAnimDelayTaskId(u8 taskId);
+u32 GetAdjustedIvData(struct Pokemon *mon, u32 stat);
+const u8 *GetIvLetterGrade(u32 iv);
+enum Type GetMonDisplayMoveType(struct Pokemon *mon, enum Move move, enum Type type, u32 partyIndex);
+void SummaryScreen_ShowIvEv(bool32 inBox, bool32 *showIv, bool32 *showEv);
+const u8 *GetEggStateText(struct Pokemon *mon);
+bool32 CanRenamePartyMon(struct Pokemon *mon);
 
 #endif // GUARD_POKEMON_SUMMARY_SCREEN_H

@@ -1179,6 +1179,21 @@ bool32 CanBoxMonRelearnMoves(struct BoxPokemon *boxMon, enum MoveRelearnerStates
     return sRelearnTypes[state].hasMoveToRelearn(boxMon);
 }
 
+// Sets gMoveRelearnerState to the first category, starting from the current one, with a relearnable move.
+bool32 FindRelearnableState(struct BoxPokemon *boxMon)
+{
+    for (u32 i = 0; i < MOVE_RELEARNER_COUNT; i++)
+    {
+        u32 state = (gMoveRelearnerState + i) % MOVE_RELEARNER_COUNT;
+        if (CanBoxMonRelearnMoves(boxMon, state))
+        {
+            gMoveRelearnerState = state;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 bool32 HasMoveToRelearn(struct BoxPokemon *boxMon, enum MoveRelearnerStates state)
 {
     return sRelearnTypes[state].hasMoveToRelearn(boxMon);

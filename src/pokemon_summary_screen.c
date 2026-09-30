@@ -350,7 +350,6 @@ void ExtractMonSkillIvData(struct Pokemon *mon, struct PokeSummary *sum);
 void ExtractMonSkillEvData(struct Pokemon *mon, struct PokeSummary *sum);
 static void PrintTextOnWindow(u8 windowId, const u8 *string, u8 x, u8 y, u8 lineSpacing, u8 colorId);
 static void PrintTextOnWindowWithFont(u8 windowId, const u8 *string, u8 x, u8 y, u8 lineSpacing, u8 colorId, u32 fontId);
-static const u8 *GetLetterGrade(u32 stat);
 static u8 AddWindowFromTemplateList(const struct WindowTemplate *template, u8 templateId);
 static u8 IncrementSkillsStatsMode(u8 mode);
 static void ClearStatLabel(u32 length, u32 statsCoordX, u32 statsCoordY);
@@ -3834,21 +3833,28 @@ static void PrintEggOTID(void)
     PrintTextOnWindow(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ID), gStringVar1, x, 1, 0, 1);
 }
 
+static const u8 *GetEggStateTextFromData(bool32 isBadEgg, u32 friendship)
+{
+    if (isBadEgg)
+        return gText_EggWillTakeALongTime;
+    else if (friendship <= 5)
+        return gText_EggAboutToHatch;
+    else if (friendship <= 10)
+        return gText_EggWillHatchSoon;
+    else if (friendship <= 40)
+        return gText_EggWillTakeSomeTime;
+    return gText_EggWillTakeALongTime;
+}
+
+const u8 *GetEggStateText(struct Pokemon *mon)
+{
+    return GetEggStateTextFromData(GetMonData(mon, MON_DATA_SANITY_IS_BAD_EGG), GetMonData(mon, MON_DATA_FRIENDSHIP));
+}
+
 static void PrintEggState(void)
 {
-    const u8 *text;
     struct PokeSummary *sum = &sMonSummaryScreen->summary;
-
-    if (sMonSummaryScreen->summary.sanity == TRUE)
-        text = gText_EggWillTakeALongTime;
-    else if (sum->friendship <= 5)
-        text = gText_EggAboutToHatch;
-    else if (sum->friendship <= 10)
-        text = gText_EggWillHatchSoon;
-    else if (sum->friendship <= 40)
-        text = gText_EggWillTakeSomeTime;
-    else
-        text = gText_EggWillTakeALongTime;
+    const u8 *text = GetEggStateTextFromData(sum->sanity == TRUE, sum->friendship);
 
     PrintTextOnWindow(AddWindowFromTemplateList(sPageInfoTemplate, PSS_DATA_WINDOW_INFO_ABILITY), text, 0, 1, 0, 0);
 }
@@ -3992,14 +3998,14 @@ static void BufferStat(u8 *dst, enum Stat statIndex, u32 stat, u32 strId, u32 n)
 
     if (!P_SUMMARY_SCREEN_IV_EV_VALUES
         && sMonSummaryScreen->skillsPageMode == SUMMARY_SKILLS_MODE_IVS)
-        StringAppend(dst, GetLetterGrade(stat));
+        StringAppend(dst, GetIvLetterGrade(stat));
     else
         ConvertIntToDecimalStringN(txtPtr, stat, STR_CONV_MODE_RIGHT_ALIGN, n);
 
     DynamicPlaceholderTextUtil_SetPlaceholderPtr(strId, dst);
 }
 
-static const u8 *GetLetterGrade(u32 stat)
+const u8 *GetIvLetterGrade(u32 stat)
 {
     static const u8 gText_GradeF[] = _("F");
     static const u8 gText_GradeD[] = _("D");
@@ -4580,7 +4586,7 @@ static enum BattlerId GetCurrentBattlerFromSumIndex(u32 sumIndex)
     return B_BATTLER_0;
 }
 
-static enum Type SummaryScreen_GetDynamicMoveType(struct Pokemon *mon, enum Move move, enum Type type)
+enum Type GetMonDisplayMoveType(struct Pokemon *mon, enum Move move, enum Type type, u32 partyIndex)
 {
     if (!P_SHOW_DYNAMIC_TYPES)
         return type;
@@ -4588,13 +4594,12 @@ static enum Type SummaryScreen_GetDynamicMoveType(struct Pokemon *mon, enum Move
     if (gBattleStruct == NULL)
         return CheckDynamicMoveType(mon, move, 0, MON_OUTSIDE_BATTLE);
 
-    u32 partyIndex = sMonSummaryScreen->curMonIndex;
     bool32 isDouble = IsDoubleBattle();
 
     if ((isDouble && partyIndex > 1) || (!isDouble && partyIndex > 0))
         return CheckDynamicMoveType(mon, move, 0, MON_OUTSIDE_BATTLE);
 
-    return CheckDynamicMoveType(mon, move, GetCurrentBattlerFromSumIndex(sMonSummaryScreen->curMonIndex), MON_IN_BATTLE);
+    return CheckDynamicMoveType(mon, move, GetCurrentBattlerFromSumIndex(partyIndex), MON_IN_BATTLE);
 }
 
 static void SetMoveTypeIcons(void)
@@ -4609,7 +4614,7 @@ static void SetMoveTypeIcons(void)
         if (summary->moves[i] != MOVE_NONE)
         {
             type = GetMoveType(summary->moves[i]);
-            type = SummaryScreen_GetDynamicMoveType(mon, summary->moves[i], type);
+            type = GetMonDisplayMoveType(mon, summary->moves[i], type, sMonSummaryScreen->curMonIndex);
             // Type randomization applies after dynamic type, for box and party alike.
             type = GetResolvedMoveType(summary->moves[i], type);
             SetTypeSpritePosAndPal(type, 85, 32 + (i * 16), i + SPRITE_ARR_ID_TYPE);
@@ -4641,7 +4646,7 @@ static void SetNewMoveTypeIcon(void)
     struct Pokemon *mon = &sMonSummaryScreen->currentMon;
     enum Move move = GetDisplayedNewMove();
     enum Type type = GetMoveType(move);
-    type = SummaryScreen_GetDynamicMoveType(mon, move, type);
+    type = GetMonDisplayMoveType(mon, move, type, sMonSummaryScreen->curMonIndex);
 
     // Type randomization overrides dynamic type; see SetMoveTypeIcons.
     type = GetResolvedMoveType(move, type);
@@ -4973,18 +4978,33 @@ static inline bool32 ShouldShowRename(void)
          && GetPlayerIDAsU32() == sMonSummaryScreen->summary.OTID);
 }
 
-static inline bool32 ShouldShowIvEvPrompt(void)
+static inline bool32 ShouldShowIvEvInfo(bool32 inBox)
 {
     if (P_SUMMARY_SCREEN_IV_EV_BOX_ONLY)
-    {
-        return (P_SUMMARY_SCREEN_IV_EV_INFO || FlagGet(P_FLAG_SUMMARY_SCREEN_IV_EV_INFO))
-            && (sMonSummaryScreen->mode == SUMMARY_MODE_BOX || sMonSummaryScreen->mode == SUMMARY_MODE_BOX_CURSOR);
-    }
-    else if (!P_SUMMARY_SCREEN_IV_EV_BOX_ONLY)
-    {
-        return (P_SUMMARY_SCREEN_IV_EV_INFO || FlagGet(P_FLAG_SUMMARY_SCREEN_IV_EV_INFO));
-    }
-    return FALSE;
+        return (P_SUMMARY_SCREEN_IV_EV_INFO || FlagGet(P_FLAG_SUMMARY_SCREEN_IV_EV_INFO)) && inBox;
+    return (P_SUMMARY_SCREEN_IV_EV_INFO || FlagGet(P_FLAG_SUMMARY_SCREEN_IV_EV_INFO));
+}
+
+static inline bool32 ShouldShowIvEvPrompt(void)
+{
+    return ShouldShowIvEvInfo(sMonSummaryScreen->mode == SUMMARY_MODE_BOX || sMonSummaryScreen->mode == SUMMARY_MODE_BOX_CURSOR);
+}
+
+void SummaryScreen_ShowIvEv(bool32 inBox, bool32 *showIv, bool32 *showEv)
+{
+    bool32 show = ShouldShowIvEvInfo(inBox);
+
+    *showIv = show && !P_SUMMARY_SCREEN_EV_ONLY;
+    *showEv = show && !P_SUMMARY_SCREEN_IV_ONLY;
+}
+
+bool32 CanRenamePartyMon(struct Pokemon *mon)
+{
+    return (P_SUMMARY_SCREEN_RENAME
+         && !GetMonData(mon, MON_DATA_IS_EGG)
+         && !InBattleFactory()
+         && !InSlateportBattleTent()
+         && GetPlayerIDAsU32() == GetMonData(mon, MON_DATA_OT_ID));
 }
 
 static inline void ShowUtilityPrompt(s16 mode)

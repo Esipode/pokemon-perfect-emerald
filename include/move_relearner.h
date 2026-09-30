@@ -10,6 +10,7 @@ s32 MoveRelearnerGetResolvedListMove(s32 originalMove);
 void CB2_InitLearnMove(void);
 bool32 CanBoxMonRelearnMoves(struct BoxPokemon *boxMon, enum MoveRelearnerStates state);
 bool32 HasMoveToRelearn(struct BoxPokemon *boxMon, enum MoveRelearnerStates state);
+bool32 FindRelearnableState(struct BoxPokemon *boxMon);
 
 extern enum MoveRelearnerStates gMoveRelearnerState;
 extern enum RelearnMode gRelearnMode;
