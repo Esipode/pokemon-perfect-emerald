@@ -59,8 +59,11 @@ void AllocateBattleResources(void)
     gBattleResources->battleCallbackStack = AllocZeroed(sizeof(*gBattleResources->battleCallbackStack));
     gBattleResources->beforeLvlUp = AllocZeroed(sizeof(*gBattleResources->beforeLvlUp));
 
-    gLinkBattleSendBuffer = AllocZeroed(BATTLE_BUFFER_LINK_SIZE);
-    gLinkBattleRecvBuffer = AllocZeroed(BATTLE_BUFFER_LINK_SIZE);
+    if (gBattleTypeFlags & BATTLE_TYPE_LINK)
+    {
+        gLinkBattleSendBuffer = AllocZeroed(BATTLE_BUFFER_LINK_SIZE);
+        gLinkBattleRecvBuffer = AllocZeroed(BATTLE_BUFFER_LINK_SIZE);
+    }
 
     AllocateBattleGfxResources();
 
@@ -96,8 +99,11 @@ void FreeBattleResources(void)
         FREE_AND_SET_NULL(gBattleResources->beforeLvlUp);
         FREE_AND_SET_NULL(gBattleResources);
 
-        FREE_AND_SET_NULL(gLinkBattleSendBuffer);
-        FREE_AND_SET_NULL(gLinkBattleRecvBuffer);
+        if (gBattleTypeFlags & BATTLE_TYPE_LINK)
+        {
+            FREE_AND_SET_NULL(gLinkBattleSendBuffer);
+            FREE_AND_SET_NULL(gLinkBattleRecvBuffer);
+        }
 
         FreeBattleGfxResources();
     }
