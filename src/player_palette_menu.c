@@ -7,6 +7,7 @@
 #include "international_string_util.h"
 #include "list_menu.h"
 #include "main.h"
+#include "malloc.h"
 #include "menu_helpers.h"
 #include "palette.h"
 #include "player_customization.h"
@@ -157,7 +158,7 @@ enum
 // Working copy of gSaveBlock2Ptr->playerColorSlots, committed only on
 // CONFIRM. rows/items are rebuilt by BuildRowMap() whenever style or gender
 // changes (only on init for now; Stage 11 rebuilds them on a style change).
-static EWRAM_DATA struct
+struct PaletteMenuState
 {
     u16 choices[PLAYER_COLOR_SLOT_COUNT];
     u8 gender;
@@ -181,7 +182,10 @@ static EWRAM_DATA struct
     u8 styleRowText[16]; // "STYLE" + current value; rebuilt by BuildRowMap
     struct PaletteMenuRow rows[PALETTE_MENU_MAX_ROWS];
     struct ListMenuItem items[PALETTE_MENU_MAX_ROWS];
-} sPaletteMenu = {0};
+};
+
+// Allocated for the lifetime of the menu.
+static struct PaletteMenuState *sPaletteMenu;
 
 static const u8 sText_Title[] = _("COLOURS");
 static const u8 sText_ControlHintPrefix[] = _("{SELECT_BUTTON}");
@@ -291,14 +295,14 @@ static void VBlankCB(void)
     TransferPlttBuffer();
 }
 
-// Builds sPaletteMenu.rows/items/rowCount for the active (style, gender):
+// Builds sPaletteMenu->rows/items/rowCount for the active (style, gender):
 // slot rows, then STYLE, then RESET, then CONFIRM. Slots with no name for
 // this (style, gender) are skipped, so a protagonist with fewer colours
 // shows fewer rows instead of blank ones.
 static void BuildRowMap(void)
 {
-    u8 style = sPaletteMenu.style;
-    u8 gender = sPaletteMenu.gender;
+    u8 style = sPaletteMenu->style;
+    u8 gender = sPaletteMenu->gender;
     u8 count = 0;
     u32 i;
 
@@ -308,31 +312,31 @@ static void BuildRowMap(void)
 
         if (slot->name == NULL)
             continue;
-        sPaletteMenu.rows[count].kind = ROW_KIND_SLOT;
-        sPaletteMenu.rows[count].id = i;
-        sPaletteMenu.items[count].name = slot->name;
-        sPaletteMenu.items[count].id = count;
+        sPaletteMenu->rows[count].kind = ROW_KIND_SLOT;
+        sPaletteMenu->rows[count].id = i;
+        sPaletteMenu->items[count].name = slot->name;
+        sPaletteMenu->items[count].id = count;
         count++;
     }
 
-    StringCopy(sPaletteMenu.styleRowText, sText_StyleLabel);
-    StringAppend(sPaletteMenu.styleRowText, style == PLAYER_SPRITE_STYLE_FRLG ? sText_StyleKanto : sText_StyleEmerald);
-    sPaletteMenu.rows[count].kind = ROW_KIND_STYLE;
-    sPaletteMenu.items[count].name = sPaletteMenu.styleRowText;
-    sPaletteMenu.items[count].id = count;
+    StringCopy(sPaletteMenu->styleRowText, sText_StyleLabel);
+    StringAppend(sPaletteMenu->styleRowText, style == PLAYER_SPRITE_STYLE_FRLG ? sText_StyleKanto : sText_StyleEmerald);
+    sPaletteMenu->rows[count].kind = ROW_KIND_STYLE;
+    sPaletteMenu->items[count].name = sPaletteMenu->styleRowText;
+    sPaletteMenu->items[count].id = count;
     count++;
 
-    sPaletteMenu.rows[count].kind = ROW_KIND_RESET;
-    sPaletteMenu.items[count].name = sText_ResetToDefault;
-    sPaletteMenu.items[count].id = count;
+    sPaletteMenu->rows[count].kind = ROW_KIND_RESET;
+    sPaletteMenu->items[count].name = sText_ResetToDefault;
+    sPaletteMenu->items[count].id = count;
     count++;
 
-    sPaletteMenu.rows[count].kind = ROW_KIND_CONFIRM;
-    sPaletteMenu.items[count].name = sText_Confirm;
-    sPaletteMenu.items[count].id = count;
+    sPaletteMenu->rows[count].kind = ROW_KIND_CONFIRM;
+    sPaletteMenu->items[count].name = sText_Confirm;
+    sPaletteMenu->items[count].id = count;
     count++;
 
-    sPaletteMenu.rowCount = count;
+    sPaletteMenu->rowCount = count;
 }
 
 // Shared by init (case 9) and ApplyStyleChange, which rebuilds the list
@@ -341,10 +345,10 @@ static u8 CreatePaletteListMenu(void)
 {
     struct ListMenuTemplate template = {0};
 
-    template.items = sPaletteMenu.items;
+    template.items = sPaletteMenu->items;
     template.moveCursorFunc = PaletteMenu_MoveCursorCallback;
     template.itemPrintFunc = NULL;
-    template.totalItems = sPaletteMenu.rowCount;
+    template.totalItems = sPaletteMenu->rowCount;
     template.maxShowed = PALETTE_MENU_VISIBLE_ROWS;
     template.windowId = WIN_LIST;
     template.header_X = 0;
@@ -371,9 +375,15 @@ void CB2_InitPlayerPaletteMenu(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
-        sPaletteMenu.gender = gSaveBlock2Ptr->playerGender;
-        sPaletteMenu.style = Player_GetSpriteStyle();
-        memcpy(sPaletteMenu.choices, gSaveBlock2Ptr->playerColorSlots, sizeof(sPaletteMenu.choices));
+        sPaletteMenu = AllocZeroed(sizeof(*sPaletteMenu));
+        if (sPaletteMenu == NULL)
+        {
+            SetMainCallback2(gMain.savedCallback);
+            return;
+        }
+        sPaletteMenu->gender = gSaveBlock2Ptr->playerGender;
+        sPaletteMenu->style = Player_GetSpriteStyle();
+        memcpy(sPaletteMenu->choices, gSaveBlock2Ptr->playerColorSlots, sizeof(sPaletteMenu->choices));
         BuildRowMap();
         gMain.state++;
         break;
@@ -436,12 +446,12 @@ void CB2_InitPlayerPaletteMenu(void)
         gMain.state++;
         break;
     case 9:
-        sPaletteMenu.previewMode = PREVIEW_MODE_OW;
+        sPaletteMenu->previewMode = PREVIEW_MODE_OW;
         CreateOwPreviewSprites();
 
         taskId = CreateTask(Task_PaletteMenuFadeIn, 0);
         gTasks[taskId].tListTaskId = CreatePaletteListMenu();
-        sPaletteMenu.listTaskId = gTasks[taskId].tListTaskId;
+        sPaletteMenu->listTaskId = gTasks[taskId].tListTaskId;
         RefreshPreviewPalette();
         CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
         gMain.state++;
@@ -463,8 +473,8 @@ static void Task_PaletteMenuFadeIn(u8 taskId)
 static void ConfirmAndExit(u8 taskId)
 {
     PlaySE(SE_SELECT);
-    Player_SetSpriteStyle(sPaletteMenu.style);
-    memcpy(gSaveBlock2Ptr->playerColorSlots, sPaletteMenu.choices, sizeof(sPaletteMenu.choices));
+    Player_SetSpriteStyle(sPaletteMenu->style);
+    memcpy(gSaveBlock2Ptr->playerColorSlots, sPaletteMenu->choices, sizeof(sPaletteMenu->choices));
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
     gTasks[taskId].func = Task_PaletteMenuFadeOut;
 }
@@ -473,7 +483,7 @@ static u16 GetSelectedRowIndex(void)
 {
     u16 scrollOffset, selectedRow;
 
-    ListMenuGetScrollAndRow(sPaletteMenu.listTaskId, &scrollOffset, &selectedRow);
+    ListMenuGetScrollAndRow(sPaletteMenu->listTaskId, &scrollOffset, &selectedRow);
     return scrollOffset + selectedRow;
 }
 
@@ -485,17 +495,17 @@ static void AdjustSlot(u8 slot, u8 axis, s8 dir)
     u8 h, s, v;
     s16 n;
 
-    if (sPaletteMenu.choices[slot] == 0)
+    if (sPaletteMenu->choices[slot] == 0)
     {
-        u16 rgb = PlayerCustomization_GetSlotRomColor(sPaletteMenu.style, sPaletteMenu.gender, slot);
+        u16 rgb = PlayerCustomization_GetSlotRomColor(sPaletteMenu->style, sPaletteMenu->gender, slot);
         PlayerCustomization_RgbToHsv(rgb, &h, &s, &v);
-        sPaletteMenu.slotHsv[slot][0] = h;
-        sPaletteMenu.slotHsv[slot][1] = s;
-        sPaletteMenu.slotHsv[slot][2] = v;
+        sPaletteMenu->slotHsv[slot][0] = h;
+        sPaletteMenu->slotHsv[slot][1] = s;
+        sPaletteMenu->slotHsv[slot][2] = v;
     }
-    h = sPaletteMenu.slotHsv[slot][0];
-    s = sPaletteMenu.slotHsv[slot][1];
-    v = sPaletteMenu.slotHsv[slot][2];
+    h = sPaletteMenu->slotHsv[slot][0];
+    s = sPaletteMenu->slotHsv[slot][1];
+    v = sPaletteMenu->slotHsv[slot][2];
 
     switch (axis % 3)
     {
@@ -511,10 +521,10 @@ static void AdjustSlot(u8 slot, u8 axis, s8 dir)
         v = (u8)(n < 0 ? 0 : (n > 255 ? 255 : n));
         break;
     }
-    sPaletteMenu.slotHsv[slot][0] = h;
-    sPaletteMenu.slotHsv[slot][1] = s;
-    sPaletteMenu.slotHsv[slot][2] = v;
-    sPaletteMenu.choices[slot] = PLAYER_COLOR_SET | PlayerCustomization_HsvToRgb(h, s, v);
+    sPaletteMenu->slotHsv[slot][0] = h;
+    sPaletteMenu->slotHsv[slot][1] = s;
+    sPaletteMenu->slotHsv[slot][2] = v;
+    sPaletteMenu->choices[slot] = PLAYER_COLOR_SET | PlayerCustomization_HsvToRgb(h, s, v);
 }
 
 // Style ids mean different garments on different protagonists (Stage P9),
@@ -524,7 +534,7 @@ static void StartStyleChangeConfirm(u8 taskId, u8 newStyle)
 {
     static const struct YesNoFuncTable sStyleChangeYesNo = {Task_StyleChangeYes, Task_StyleChangeNo};
 
-    sPaletteMenu.pendingStyle = newStyle;
+    sPaletteMenu->pendingStyle = newStyle;
     SetPreviewSpritesInvisible(TRUE);
     FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, sText_ConfirmStyleChange, 8, 1, TEXT_SKIP_DRAW, NULL);
@@ -554,16 +564,16 @@ static void Task_StyleChangeNo(u8 taskId)
 // them, Stage P7).
 static void ApplyStyleChange(u8 taskId)
 {
-    sPaletteMenu.style = sPaletteMenu.pendingStyle;
-    memset(sPaletteMenu.choices, 0, sizeof(sPaletteMenu.choices));
-    memset(sPaletteMenu.slotHsv, 0, sizeof(sPaletteMenu.slotHsv));
+    sPaletteMenu->style = sPaletteMenu->pendingStyle;
+    memset(sPaletteMenu->choices, 0, sizeof(sPaletteMenu->choices));
+    memset(sPaletteMenu->slotHsv, 0, sizeof(sPaletteMenu->slotHsv));
     BuildRowMap();
 
-    DestroyListMenuTask(sPaletteMenu.listTaskId, NULL, NULL);
+    DestroyListMenuTask(sPaletteMenu->listTaskId, NULL, NULL);
     gTasks[taskId].tListTaskId = CreatePaletteListMenu();
-    sPaletteMenu.listTaskId = gTasks[taskId].tListTaskId;
+    sPaletteMenu->listTaskId = gTasks[taskId].tListTaskId;
 
-    if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+    if (sPaletteMenu->previewMode == PREVIEW_MODE_TRAINER)
     {
         DestroyTrainerPreviewSprite();
         CreateTrainerPreviewSprite();
@@ -596,7 +606,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
     case LIST_NOTHING_CHOSEN:
     {
         u16 selected = GetSelectedRowIndex();
-        const struct PaletteMenuRow *row = &sPaletteMenu.rows[selected];
+        const struct PaletteMenuRow *row = &sPaletteMenu->rows[selected];
 
         if (JOY_NEW(START_BUTTON))
         {
@@ -609,16 +619,16 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             // Only one preview asset is loaded at a time -- free the old
             // one before creating the other (see CreateTrainerPreviewSprite).
             PlaySE(SE_SELECT);
-            if (sPaletteMenu.previewMode == PREVIEW_MODE_OW)
+            if (sPaletteMenu->previewMode == PREVIEW_MODE_OW)
             {
                 DestroyOwPreviewSprites();
-                sPaletteMenu.previewMode = PREVIEW_MODE_TRAINER;
+                sPaletteMenu->previewMode = PREVIEW_MODE_TRAINER;
                 CreateTrainerPreviewSprite();
             }
             else
             {
                 DestroyTrainerPreviewSprite();
-                sPaletteMenu.previewMode = PREVIEW_MODE_OW;
+                sPaletteMenu->previewMode = PREVIEW_MODE_OW;
                 CreateOwPreviewSprites();
             }
             RefreshPreviewPalette();
@@ -628,7 +638,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             // Axis is global, so SELECT works from any row -- it's shown once
             // in the header, not per row.
             PlaySE(SE_SELECT);
-            sPaletteMenu.axis = (sPaletteMenu.axis + 1) % 3;
+            sPaletteMenu->axis = (sPaletteMenu->axis + 1) % 3;
             DrawHeaderText();
             RedrawListMenu(gTasks[taskId].tListTaskId);
             CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
@@ -636,7 +646,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         else if (row->kind == ROW_KIND_STYLE && (JOY_NEW(DPAD_LEFT) || JOY_NEW(DPAD_RIGHT)))
         {
             s8 dir = JOY_NEW(DPAD_RIGHT) ? 1 : -1;
-            u8 newStyle = (sPaletteMenu.style + dir + PLAYER_SPRITE_STYLE_COUNT) % PLAYER_SPRITE_STYLE_COUNT;
+            u8 newStyle = (sPaletteMenu->style + dir + PLAYER_SPRITE_STYLE_COUNT) % PLAYER_SPRITE_STYLE_COUNT;
 
             PlaySE(SE_SELECT);
             StartStyleChangeConfirm(taskId, newStyle);
@@ -652,20 +662,20 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
 
             if (fire)
             {
-                sPaletteMenu.dpadHoldTimer = PALETTE_MENU_DPAD_HOLD_START_DELAY;
+                sPaletteMenu->dpadHoldTimer = PALETTE_MENU_DPAD_HOLD_START_DELAY;
             }
-            else if (sPaletteMenu.dpadHoldDir == dirId && --sPaletteMenu.dpadHoldTimer == 0)
+            else if (sPaletteMenu->dpadHoldDir == dirId && --sPaletteMenu->dpadHoldTimer == 0)
             {
                 fire = TRUE;
-                sPaletteMenu.dpadHoldTimer = PALETTE_MENU_DPAD_HOLD_REPEAT_DELAY;
+                sPaletteMenu->dpadHoldTimer = PALETTE_MENU_DPAD_HOLD_REPEAT_DELAY;
             }
-            sPaletteMenu.dpadHoldDir = dirId;
+            sPaletteMenu->dpadHoldDir = dirId;
 
             if (fire)
             {
                 s8 dir = dirId == 2 ? 1 : -1;
 
-                AdjustSlot(row->id, sPaletteMenu.axis, dir);
+                AdjustSlot(row->id, sPaletteMenu->axis, dir);
                 PlaySE(SE_SELECT);
                 RedrawListMenu(gTasks[taskId].tListTaskId);
                 CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
@@ -674,7 +684,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         }
         else
         {
-            sPaletteMenu.dpadHoldDir = 0;
+            sPaletteMenu->dpadHoldDir = 0;
         }
         break;
     }
@@ -684,22 +694,22 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         gTasks[taskId].func = Task_PaletteMenuFadeOut;
         break;
     default:
-        switch (sPaletteMenu.rows[itemId].kind)
+        switch (sPaletteMenu->rows[itemId].kind)
         {
         case ROW_KIND_SLOT:
         {
-            u8 slot = sPaletteMenu.rows[itemId].id;
+            u8 slot = sPaletteMenu->rows[itemId].id;
 
             PlaySE(SE_SELECT);
-            if (sPaletteMenu.choices[slot] != 0)
+            if (sPaletteMenu->choices[slot] != 0)
             {
-                sPaletteMenu.choices[slot] = 0;
+                sPaletteMenu->choices[slot] = 0;
             }
             else
             {
-                u16 rgb = PlayerCustomization_GetSlotRomColor(sPaletteMenu.style, sPaletteMenu.gender, slot);
-                sPaletteMenu.choices[slot] = PLAYER_COLOR_SET | rgb;
-                PlayerCustomization_RgbToHsv(rgb, &sPaletteMenu.slotHsv[slot][0], &sPaletteMenu.slotHsv[slot][1], &sPaletteMenu.slotHsv[slot][2]);
+                u16 rgb = PlayerCustomization_GetSlotRomColor(sPaletteMenu->style, sPaletteMenu->gender, slot);
+                sPaletteMenu->choices[slot] = PLAYER_COLOR_SET | rgb;
+                PlayerCustomization_RgbToHsv(rgb, &sPaletteMenu->slotHsv[slot][0], &sPaletteMenu->slotHsv[slot][1], &sPaletteMenu->slotHsv[slot][2]);
             }
             RedrawListMenu(gTasks[taskId].tListTaskId);
             CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
@@ -708,8 +718,8 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         }
         case ROW_KIND_RESET:
             PlaySE(SE_SELECT);
-            memset(sPaletteMenu.choices, 0, sizeof(sPaletteMenu.choices));
-            memset(sPaletteMenu.slotHsv, 0, sizeof(sPaletteMenu.slotHsv));
+            memset(sPaletteMenu->choices, 0, sizeof(sPaletteMenu->choices));
+            memset(sPaletteMenu->slotHsv, 0, sizeof(sPaletteMenu->slotHsv));
             RedrawListMenu(gTasks[taskId].tListTaskId);
             CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
             RefreshPreviewPalette();
@@ -717,7 +727,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         case ROW_KIND_STYLE:
             // A cycles forward, same as DPAD_RIGHT.
             PlaySE(SE_SELECT);
-            StartStyleChangeConfirm(taskId, (sPaletteMenu.style + 1) % PLAYER_SPRITE_STYLE_COUNT);
+            StartStyleChangeConfirm(taskId, (sPaletteMenu->style + 1) % PLAYER_SPRITE_STYLE_COUNT);
             break;
         case ROW_KIND_CONFIRM:
             ConfirmAndExit(taskId);
@@ -734,12 +744,14 @@ static void Task_PaletteMenuFadeOut(u8 taskId)
     if (!gPaletteFade.active)
     {
         DestroyListMenuTask(gTasks[taskId].tListTaskId, NULL, NULL);
-        if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+        if (sPaletteMenu->previewMode == PREVIEW_MODE_TRAINER)
             DestroyTrainerPreviewSprite();
         else
             DestroyOwPreviewSprites();
         DestroyTask(taskId);
         FreeAllWindowBuffers();
+        Free(sPaletteMenu);
+        sPaletteMenu = NULL;
         SetMainCallback2(gMain.savedCallback);
     }
 }
@@ -775,18 +787,18 @@ static void RedrawSwatches(void)
     u16 scrollOffset;
     u32 i;
 
-    ListMenuGetScrollAndRow(sPaletteMenu.listTaskId, &scrollOffset, NULL);
+    ListMenuGetScrollAndRow(sPaletteMenu->listTaskId, &scrollOffset, NULL);
     FillWindowPixelBuffer(WIN_SWATCH, PIXEL_FILL(15));
 
-    for (i = 0; i < PALETTE_MENU_VISIBLE_ROWS && scrollOffset + i < sPaletteMenu.rowCount; i++)
+    for (i = 0; i < PALETTE_MENU_VISIBLE_ROWS && scrollOffset + i < sPaletteMenu->rowCount; i++)
     {
-        const struct PaletteMenuRow *row = &sPaletteMenu.rows[scrollOffset + i];
+        const struct PaletteMenuRow *row = &sPaletteMenu->rows[scrollOffset + i];
 
         if (row->kind == ROW_KIND_SLOT)
         {
-            u8 index = (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
-                ? PlayerCustomization_GetTrainerSlotSwatchIndex(sPaletteMenu.style, sPaletteMenu.gender, row->id)
-                : PlayerCustomization_GetSlotSwatchIndex(sPaletteMenu.style, sPaletteMenu.gender, row->id);
+            u8 index = (sPaletteMenu->previewMode == PREVIEW_MODE_TRAINER)
+                ? PlayerCustomization_GetTrainerSlotSwatchIndex(sPaletteMenu->style, sPaletteMenu->gender, row->id)
+                : PlayerCustomization_GetSlotSwatchIndex(sPaletteMenu->style, sPaletteMenu->gender, row->id);
             u8 y = i * 16 + SWATCH_Y_OFFSET;
 
             FillWindowPixelRect(WIN_SWATCH, PIXEL_FILL(index), SWATCH_X, y, SWATCH_SIZE, SWATCH_SIZE);
@@ -805,15 +817,15 @@ static void CreateOwPreviewSprites(void)
 {
     // Not GetPlayerAvatarGraphicsIdByStateIdAndGender -- that reads the
     // committed save's style, so it would keep showing the old gfx while
-    // sPaletteMenu.style is only a pending, uncommitted choice.
-    u16 graphicsId = GetPlayerAvatarGraphicsIdByStateGenderAndStyle(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu.gender, sPaletteMenu.style);
+    // sPaletteMenu->style is only a pending, uncommitted choice.
+    u16 graphicsId = GetPlayerAvatarGraphicsIdByStateGenderAndStyle(PLAYER_AVATAR_STATE_NORMAL, sPaletteMenu->gender, sPaletteMenu->style);
     u32 i;
 
     for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
     {
-        sPaletteMenu.previewSpriteIds[i] = CreateObjectGraphicsSprite(
+        sPaletteMenu->previewSpriteIds[i] = CreateObjectGraphicsSprite(
             graphicsId, SpriteCallbackDummy, sPreviewSpriteX[i], sPreviewSpriteY[i], 0);
-        StartSpriteAnim(&gSprites[sPaletteMenu.previewSpriteIds[i]], sPreviewSpriteAnim[i]);
+        StartSpriteAnim(&gSprites[sPaletteMenu->previewSpriteIds[i]], sPreviewSpriteAnim[i]);
     }
 }
 
@@ -822,7 +834,7 @@ static void DestroyOwPreviewSprites(void)
     u32 i;
 
     for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
-        DestroySprite(&gSprites[sPaletteMenu.previewSpriteIds[i]]);
+        DestroySprite(&gSprites[sPaletteMenu->previewSpriteIds[i]]);
 }
 
 // CreateTrainerPicSprite loads the *committed* save's trainer palette as a
@@ -832,15 +844,15 @@ static void DestroyOwPreviewSprites(void)
 // as the OW sprites.
 static void CreateTrainerPreviewSprite(void)
 {
-    u32 picId = PlayerCustomization_GetTrainerPicId(sPaletteMenu.style, sPaletteMenu.gender);
+    u32 picId = PlayerCustomization_GetTrainerPicId(sPaletteMenu->style, sPaletteMenu->gender);
 
-    sPaletteMenu.trainerPreviewSpriteId = CreateTrainerPicSprite(
+    sPaletteMenu->trainerPreviewSpriteId = CreateTrainerPicSprite(
         picId, TRUE, TRAINER_PREVIEW_X, TRAINER_PREVIEW_Y, TRAINER_PREVIEW_PAL_SLOT, TAG_NONE);
 }
 
 static void DestroyTrainerPreviewSprite(void)
 {
-    FreeAndDestroyTrainerPicSprite(sPaletteMenu.trainerPreviewSpriteId);
+    FreeAndDestroyTrainerPicSprite(sPaletteMenu->trainerPreviewSpriteId);
 }
 
 // Hides whichever preview asset is currently shown, so a style-change
@@ -848,16 +860,16 @@ static void DestroyTrainerPreviewSprite(void)
 // drawn over. Only touches the active previewMode's sprite(s).
 static void SetPreviewSpritesInvisible(bool8 invisible)
 {
-    if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+    if (sPaletteMenu->previewMode == PREVIEW_MODE_TRAINER)
     {
-        gSprites[sPaletteMenu.trainerPreviewSpriteId].invisible = invisible;
+        gSprites[sPaletteMenu->trainerPreviewSpriteId].invisible = invisible;
     }
     else
     {
         u32 i;
 
         for (i = 0; i < PREVIEW_SPRITE_COUNT; i++)
-            gSprites[sPaletteMenu.previewSpriteIds[i]].invisible = invisible;
+            gSprites[sPaletteMenu->previewSpriteIds[i]].invisible = invisible;
     }
 }
 
@@ -867,23 +879,23 @@ static void RefreshPreviewPalette(void)
     u16 swatchBuf[16];
     u8 paletteNum;
 
-    if (sPaletteMenu.previewMode == PREVIEW_MODE_TRAINER)
+    if (sPaletteMenu->previewMode == PREVIEW_MODE_TRAINER)
     {
-        PlayerCustomization_BuildTrainerPreviewPalette(sPaletteMenu.style, sPaletteMenu.gender, sPaletteMenu.choices, buf);
-        paletteNum = gSprites[sPaletteMenu.trainerPreviewSpriteId].oam.paletteNum;
+        PlayerCustomization_BuildTrainerPreviewPalette(sPaletteMenu->style, sPaletteMenu->gender, sPaletteMenu->choices, buf);
+        paletteNum = gSprites[sPaletteMenu->trainerPreviewSpriteId].oam.paletteNum;
         LoadPalette(buf, OBJ_PLTT_ID(paletteNum), PLTT_SIZE_4BPP);
     }
     else
     {
-        PlayerCustomization_BuildPreviewPalette(sPaletteMenu.style, sPaletteMenu.gender, sPaletteMenu.choices, buf);
-        paletteNum = gSprites[sPaletteMenu.previewSpriteIds[0]].oam.paletteNum;
+        PlayerCustomization_BuildPreviewPalette(sPaletteMenu->style, sPaletteMenu->gender, sPaletteMenu->choices, buf);
+        paletteNum = gSprites[sPaletteMenu->previewSpriteIds[0]].oam.paletteNum;
         // All four sprites share one palette tag, so one LoadPalette recolours
         // all four. AGB_ASSERT catches the tag setup breaking (e.g. from a
         // future per-facing gfx change) instead of silently recolouring only
         // one sprite.
-        AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[1]].oam.paletteNum == paletteNum);
-        AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[2]].oam.paletteNum == paletteNum);
-        AGB_ASSERT(gSprites[sPaletteMenu.previewSpriteIds[3]].oam.paletteNum == paletteNum);
+        AGB_ASSERT(gSprites[sPaletteMenu->previewSpriteIds[1]].oam.paletteNum == paletteNum);
+        AGB_ASSERT(gSprites[sPaletteMenu->previewSpriteIds[2]].oam.paletteNum == paletteNum);
+        AGB_ASSERT(gSprites[sPaletteMenu->previewSpriteIds[3]].oam.paletteNum == paletteNum);
         LoadPalette(buf, OBJ_PLTT_ID(paletteNum), PLTT_SIZE_4BPP);
     }
 
@@ -903,7 +915,7 @@ static void DrawHeaderText(void)
     s32 hintX;
 
     StringCopy(hint, sText_ControlHintPrefix);
-    StringAppend(hint, sSlotAxisNames[sPaletteMenu.axis % 3]);
+    StringAppend(hint, sSlotAxisNames[sPaletteMenu->axis % 3]);
     StringAppend(hint, sText_ControlHintSuffix);
     hintX = GetStringRightAlignXOffset(FONT_NARROW, hint, 198);
 

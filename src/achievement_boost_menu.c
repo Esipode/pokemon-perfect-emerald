@@ -91,8 +91,14 @@ enum
 // Longest real content is a boost name, capped at BOOST_NAME_LENGTH.
 #define BOOST_MENU_NAME_BUFFER_SIZE (BOOST_NAME_LENGTH + 8)
 
-EWRAM_DATA static u8 sBoostMenuNameBuffers[BOOST_MENU_ITEM_COUNT][BOOST_MENU_NAME_BUFFER_SIZE] = {0};
-EWRAM_DATA static struct ListMenuItem sBoostMenuListItems[BOOST_MENU_ITEM_COUNT] = {0};
+struct BoostMenuListBuffers
+{
+    u8 names[BOOST_MENU_ITEM_COUNT][BOOST_MENU_NAME_BUFFER_SIZE];
+    struct ListMenuItem items[BOOST_MENU_ITEM_COUNT];
+};
+
+// Allocated at CB2 init and freed in Task_BoostMenuCancel.
+static struct BoostMenuListBuffers *sBoostMenuLists;
 
 EWRAM_DATA static struct
 {
@@ -289,6 +295,12 @@ void CB2_InitAchievementBoostMenu(void)
     case 0:
         SetVBlankCallback(NULL);
         memset(&sBoostMenu, 0, sizeof(sBoostMenu));
+        sBoostMenuLists = AllocZeroed(sizeof(*sBoostMenuLists));
+        if (sBoostMenuLists == NULL)
+        {
+            SetMainCallback2(gMain.savedCallback);
+            return;
+        }
         gMain.state++;
         break;
     case 1:
@@ -379,6 +391,8 @@ static void Task_BoostMenuCancel(u8 taskId)
         FreeAllWindowBuffers();
         Free(sBoostMenuBg1Tilemap);
         sBoostMenuBg1Tilemap = NULL;
+        Free(sBoostMenuLists);
+        sBoostMenuLists = NULL;
         SetMainCallback2(gMain.savedCallback);
     }
 }
@@ -390,7 +404,7 @@ static void EnterBoostMenuLevel(u8 taskId)
     DrawHeaderText();
     BuildBoostMenuListItems();
 
-    template.items = sBoostMenuListItems;
+    template.items = sBoostMenuLists->items;
     template.moveCursorFunc = BoostMenu_MoveCursorCallback;
     template.itemPrintFunc = BoostMenu_ItemPrintCallback;
     template.totalItems = BOOST_MENU_ITEM_COUNT;
@@ -478,7 +492,7 @@ static void TryPurchaseOrToggleBoost(u8 taskId, u16 boostId)
 // item set is unchanged.
 static void TryChangeHighlightedBoostActiveLevel(u8 taskId)
 {
-    u16 boostId = sBoostMenuListItems[sBoostMenu.scrollOffset + sBoostMenu.selectedRow].id;
+    u16 boostId = sBoostMenuLists->items[sBoostMenu.scrollOffset + sBoostMenu.selectedRow].id;
     s8 delta;
 
     if (boostId == BOOST_MENU_ITEM_RESET)
@@ -639,17 +653,17 @@ static void BuildBoostMenuListItems(void)
     for (id = BOOST_NONE + 1; id < BOOSTS_COUNT; id++)
     {
         const struct AchievementBoost *info = AchievementBoost_GetInfo(id);
-        u8 *buffer = sBoostMenuNameBuffers[index];
+        u8 *buffer = sBoostMenuLists->names[index];
 
         StringCopy(buffer, info->name);
-        sBoostMenuListItems[index].name = buffer;
-        sBoostMenuListItems[index].id = id;
+        sBoostMenuLists->items[index].name = buffer;
+        sBoostMenuLists->items[index].id = id;
         index++;
     }
 
-    StringCopy(sBoostMenuNameBuffers[index], sText_ResetBoostsRowLabel);
-    sBoostMenuListItems[index].name = sBoostMenuNameBuffers[index];
-    sBoostMenuListItems[index].id = BOOST_MENU_ITEM_RESET;
+    StringCopy(sBoostMenuLists->names[index], sText_ResetBoostsRowLabel);
+    sBoostMenuLists->items[index].name = sBoostMenuLists->names[index];
+    sBoostMenuLists->items[index].id = BOOST_MENU_ITEM_RESET;
 }
 
 // Wraps the description into the window's two lines (StripLineBreaks +

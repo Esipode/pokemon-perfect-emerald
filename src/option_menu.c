@@ -9,6 +9,7 @@
 #include "international_string_util.h"
 #include "line_break.h"
 #include "main.h"
+#include "malloc.h"
 #include "menu.h"
 #include "new_game_settings_menu.h"
 #include "palette.h"
@@ -623,6 +624,7 @@ static const u16 sOptionMenuBg_Pal[] = {RGB(17, 18, 31)};
 
 #define DESC_MAX_WIDTH      190
 #define DESC_RESTART_DELAY  120
+#define DESC_BUFFER_SIZE    0x100
 
 static const u8 sText_DescResetAll[]  = _("Resets every setting to its default value.");
 static const u8 sText_DescResetCategory[] = _("Resets the settings in this category to their default values.");
@@ -630,7 +632,8 @@ static const u8 sText_DescCancel[]    = _("Saves your changes and leaves the set
 static const u8 sText_DescConfirm[]   = _("Confirms your settings and continues.");
 static const u8 sDescTextColors[3]    = {1, 2, 3};
 
-EWRAM_DATA static u8 sDescBuffer[0x100] = {0};
+// Allocated on first print, freed by StopOptionDescription.
+static u8 *sDescBuffer = NULL;
 EWRAM_DATA static bool8 sDescScrolling = FALSE;
 EWRAM_DATA static u16 sDescRestartTimer = 0;
 
@@ -656,6 +659,11 @@ static void PrintOptionDescription(const u8 *description)
     FillWindowPixelBuffer(WIN_DESC, PIXEL_FILL(1));
     DeactivateSingleTextPrinter(WIN_DESC, WINDOW_TEXT_PRINTER);
 
+    if (sDescBuffer == NULL)
+        sDescBuffer = Alloc(DESC_BUFFER_SIZE);
+    if (sDescBuffer == NULL)
+        return;
+
     StringCopy(sDescBuffer, description);
     StripLineBreaks(sDescBuffer);
     BreakStringAutomatic(sDescBuffer, DESC_MAX_WIDTH, 2, FONT_NORMAL, SHOW_SCROLL_PROMPT);
@@ -675,6 +683,7 @@ static void StopOptionDescription(void)
     DeactivateSingleTextPrinter(WIN_DESC, WINDOW_TEXT_PRINTER);
     gTextFlags.autoScroll = FALSE;
     sDescScrolling = FALSE;
+    TRY_FREE_AND_SET_NULL(sDescBuffer);
 }
 
 // Shows the description for the highlighted item at the current menu level.

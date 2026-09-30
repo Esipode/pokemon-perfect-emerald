@@ -8,6 +8,7 @@
 #include "graphics.h"
 #include "international_string_util.h"
 #include "main.h"
+#include "malloc.h"
 #include "menu.h"
 #include "palette.h"
 #include "scanline_effect.h"
@@ -112,7 +113,7 @@ struct PreviewBox
     u8 typeIcon; // SPRITE_NONE when absent
 };
 
-static EWRAM_DATA struct
+struct SettingsState
 {
     struct HealthboxOptions options; // Working copy; committed on exit.
     struct PreviewBox preview[PREVIEW_COUNT];
@@ -120,7 +121,10 @@ static EWRAM_DATA struct
     u8 top;  // First visible row.
     u8 side; // HB_SIDE_*; the column the cursor is in.
     u8 buffer; // Half of each sprite sheet the on-screen boxes use.
-} sSettings = {0};
+};
+
+// Allocated for the lifetime of the screen.
+static struct SettingsState *sSettings;
 
 static const u8 sText_Header[]   = _("HEALTHBOX");
 static const u8 sText_You[]      = _("YOU");
@@ -311,7 +315,7 @@ static bool32 IsRowActive(u32 row)
 {
     if (row == ROW_STYLE || row == ROW_HP_BAR || row == ROW_HP_VALUE)
         return TRUE;
-    return sSettings.options.style == HEALTHBOX_STYLE_NEW;
+    return sSettings->options.style == HEALTHBOX_STYLE_NEW;
 }
 
 static bool32 IsCellApplicable(u32 row, u32 side)
@@ -337,7 +341,7 @@ static u32 GetValueCount(u32 row)
 
 static u32 GetValue(u32 row, u32 side)
 {
-    const struct HealthboxOptions *o = &sSettings.options;
+    const struct HealthboxOptions *o = &sSettings->options;
     bool32 player = side == HB_SIDE_PLAYER;
 
     switch (row)
@@ -361,7 +365,7 @@ static u32 GetValue(u32 row, u32 side)
 
 static void SetValue(u32 row, u32 side, u32 value)
 {
-    struct HealthboxOptions *o = &sSettings.options;
+    struct HealthboxOptions *o = &sSettings->options;
     bool32 player = side == HB_SIDE_PLAYER;
 
     switch (row)
@@ -405,7 +409,7 @@ static const u8 *GetCellColor(u32 row, u32 side)
 {
     if (!IsRowActive(row) || !IsCellApplicable(row, side))
         return sColorDisabled;
-    if (row == sSettings.row && (!IsPerSideRow(row) || side == sSettings.side))
+    if (row == sSettings->row && (!IsPerSideRow(row) || side == sSettings->side))
         return sColorSelected;
     return sColorValue;
 }
@@ -419,14 +423,14 @@ static void DrawCell(u32 row, u32 side, s32 centreX, s32 y)
 
 static void DrawHeader(void)
 {
-    const u8 *youColor = sSettings.side == HB_SIDE_PLAYER ? sColorSelected : sColorValue;
-    const u8 *foeColor = sSettings.side == HB_SIDE_FOE ? sColorSelected : sColorValue;
+    const u8 *youColor = sSettings->side == HB_SIDE_PLAYER ? sColorSelected : sColorValue;
+    const u8 *foeColor = sSettings->side == HB_SIDE_FOE ? sColorSelected : sColorValue;
 
     FillWindowPixelBuffer(WIN_HEADER, PIXEL_FILL(1));
     AddTextPrinterParameterized(WIN_HEADER, FONT_NORMAL, sText_Header, 8, 1, TEXT_SKIP_DRAW, NULL);
-    if (sSettings.top > 0 || sSettings.top + VISIBLE_ROWS < ROW_COUNT)
+    if (sSettings->top > 0 || sSettings->top + VISIBLE_ROWS < ROW_COUNT)
         AddTextPrinterParameterized3(WIN_HEADER, FONT_NORMAL, 84, 1, sColorValue, TEXT_SKIP_DRAW, sText_Scroll);
-    if (!IsPerSideRow(sSettings.row))
+    if (!IsPerSideRow(sSettings->row))
         youColor = foeColor = sColorDisabled;
     DrawCentred(WIN_HEADER, youColor, COLUMN_YOU_X, 0, sText_You);
     DrawCentred(WIN_HEADER, foeColor, COLUMN_FOE_X, 0, sText_Foe);
@@ -436,7 +440,7 @@ static void DrawHeader(void)
 
 static void HighlightSelectedRow(void)
 {
-    u32 y = LIST_PIXEL_TOP + (sSettings.row - sSettings.top) * ROW_PITCH;
+    u32 y = LIST_PIXEL_TOP + (sSettings->row - sSettings->top) * ROW_PITCH;
 
     SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(16, DISPLAY_WIDTH - 16));
     SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(y, y + ROW_PITCH));
@@ -444,7 +448,7 @@ static void HighlightSelectedRow(void)
 
 static void DrawListRow(u32 i, s32 y)
 {
-    u32 row = sSettings.top + i;
+    u32 row = sSettings->top + i;
 
     AddTextPrinterParameterized3(WIN_LIST, FONT_SMALL_NARROW, LABEL_X, y,
                                  IsRowActive(row) ? sColorLabel : sColorDisabled, TEXT_SKIP_DRAW, sRowNames[row]);
@@ -481,16 +485,16 @@ static void Redraw(void)
 
 static void ScrollToRow(void)
 {
-    if (sSettings.row < sSettings.top)
-        sSettings.top = sSettings.row;
-    else if (sSettings.row >= sSettings.top + VISIBLE_ROWS)
-        sSettings.top = sSettings.row - VISIBLE_ROWS + 1;
+    if (sSettings->row < sSettings->top)
+        sSettings->top = sSettings->row;
+    else if (sSettings->row >= sSettings->top + VISIBLE_ROWS)
+        sSettings->top = sSettings->row - VISIBLE_ROWS + 1;
 }
 
 // Moves the cursor to the next active row in dir (+1 or -1), wrapping.
 static void MoveRow(s32 dir)
 {
-    u32 row = sSettings.row;
+    u32 row = sSettings->row;
     u32 i;
 
     for (i = 0; i < ROW_COUNT; i++)
@@ -498,7 +502,7 @@ static void MoveRow(s32 dir)
         row = (row + ROW_COUNT + dir) % ROW_COUNT;
         if (IsRowActive(row))
         {
-            sSettings.row = row;
+            sSettings->row = row;
             break;
         }
     }
@@ -507,9 +511,9 @@ static void MoveRow(s32 dir)
 
 static void ChangeValue(s32 dir)
 {
-    u32 row = sSettings.row;
+    u32 row = sSettings->row;
     u32 count = GetValueCount(row);
-    u32 side = sSettings.side;
+    u32 side = sSettings->side;
 
     if (!IsRowActive(row) || !IsCellApplicable(row, side))
         return;
@@ -636,11 +640,11 @@ static void RefreshPreview(void)
     struct HealthboxSprites oldSprites[PREVIEW_COUNT];
     u8 oldTypeIcon[PREVIEW_COUNT];
     u32 slot;
-    u32 side = sSettings.side;
-    bool32 classic = sSettings.options.style == HEALTHBOX_STYLE_CLASSIC;
+    u32 side = sSettings->side;
+    bool32 classic = sSettings->options.style == HEALTHBOX_STYLE_CLASSIC;
 
     gPaletteFade.bufferTransferDisabled = TRUE;
-    sSettings.buffer ^= 1;
+    sSettings->buffer ^= 1;
 
     FillWindowPixelBuffer(WIN_PREVIEW, PIXEL_FILL(0));
     CopyWindowToVram(WIN_PREVIEW, COPYWIN_GFX);
@@ -653,7 +657,7 @@ static void RefreshPreview(void)
 
     for (slot = 0; slot < PREVIEW_COUNT; slot++)
     {
-        struct PreviewBox *box = &sSettings.preview[slot];
+        struct PreviewBox *box = &sSettings->preview[slot];
         struct HealthboxResolvedOpts opts;
 
         oldSprites[slot] = box->sprites;
@@ -661,9 +665,9 @@ static void RefreshPreview(void)
         box->sprites.left = box->sprites.right = box->sprites.bar = SPRITE_NONE;
         box->typeIcon = SPRITE_NONE;
 
-        HealthboxPreview_SetTileOffsets(sSettings.buffer ? sBoxBufferTiles[slot] : 0,
-                                        sSettings.buffer ? HB_PREVIEW_BAR_TILES : 0);
-        Healthbox_ResolveOptsFrom(&sSettings.options, side, &opts);
+        HealthboxPreview_SetTileOffsets(sSettings->buffer ? sBoxBufferTiles[slot] : 0,
+                                        sSettings->buffer ? HB_PREVIEW_BAR_TILES : 0);
+        Healthbox_ResolveOptsFrom(&sSettings->options, side, &opts);
 
         if (classic)
         {
@@ -709,7 +713,7 @@ static void CreatePreview(void)
 
     for (slot = 0; slot < PREVIEW_COUNT; slot++)
     {
-        struct PreviewBox *box = &sSettings.preview[slot];
+        struct PreviewBox *box = &sSettings->preview[slot];
 
         box->sprites.left = box->sprites.right = box->sprites.bar = SPRITE_NONE;
         box->typeIcon = SPRITE_NONE;
@@ -749,10 +753,16 @@ void CB2_InitHealthboxSettings(void)
     default:
     case 0:
         SetVBlankCallback(NULL);
-        HealthboxOptions_Get(&sSettings.options);
-        sSettings.row = ROW_STYLE;
-        sSettings.top = 0;
-        sSettings.side = HB_SIDE_PLAYER;
+        sSettings = AllocZeroed(sizeof(*sSettings));
+        if (sSettings == NULL)
+        {
+            SetMainCallback2(gMain.savedCallback);
+            return;
+        }
+        HealthboxOptions_Get(&sSettings->options);
+        sSettings->row = ROW_STYLE;
+        sSettings->top = 0;
+        sSettings->side = HB_SIDE_PLAYER;
         gMain.state++;
         break;
     case 1:
@@ -832,13 +842,13 @@ static void Task_ProcessInput(u8 taskId)
 {
     if (JOY_NEW(A_BUTTON | B_BUTTON | START_BUTTON))
     {
-        HealthboxOptions_Commit(&sSettings.options);
+        HealthboxOptions_Commit(&sSettings->options);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_FadeOut;
     }
     else if (JOY_NEW(L_BUTTON | R_BUTTON))
     {
-        sSettings.side ^= 1;
+        sSettings->side ^= 1;
         PlaySE(SE_SELECT);
         Redraw();
         RefreshPreview();
@@ -866,8 +876,19 @@ static void Task_FadeOut(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
+        u32 slot;
+
+        for (slot = 0; slot < PREVIEW_COUNT; slot++)
+        {
+            // The sprites' subsprite tables live in sSettings.
+            DestroyPreviewSprites(&sSettings->preview[slot].sprites);
+            if (sSettings->preview[slot].typeIcon != SPRITE_NONE)
+                DestroySprite(&gSprites[sSettings->preview[slot].typeIcon]);
+        }
         DestroyTask(taskId);
         FreeAllWindowBuffers();
+        Free(sSettings);
+        sSettings = NULL;
         SetMainCallback2(gMain.savedCallback);
     }
 }
