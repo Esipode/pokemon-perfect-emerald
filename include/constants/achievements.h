@@ -86,7 +86,7 @@
 //        Achievement_RecordPartyWipe                 the two IsPartyEmpty()-gated sites
 //                                                    RemoveFaintedMonsFromParty/FldEff_PokecenterHeal
 //        Achievement_CheckFamilyMilestone            HandleSetPokedexFlag (Family Reunion)
-//        Achievement_RecordTMTaught/_RecordCenterHeal  Task_LearnedMove/FldEff_PokecenterHeal
+//        Achievement_RecordTMTaught/_RecordCenterHeal  Task_LearnedMove/FldEff_PokecenterHeal, FieldChansey_RecordHeal
 //      The other backfills (steps, total battles, hatched eggs) read an existing
 //      GAME_STAT_* value live.
 //   Q. ACHIEVEMENT_PROFILE_WELL_ROUNDED .. ACHIEVEMENT_MASTERY_DIAMOND_STANDARD

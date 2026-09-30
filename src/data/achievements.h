@@ -1341,7 +1341,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_CHALLENGE_WHO_NEEDS_CENTERS] = {
         .name        = ACHIEVEMENT_NAME("Who Needs Centers?"),
-        .description = COMPOUND_STRING("Reach the fifth Badge without ever using a Pokémon Center."),
+        .description = COMPOUND_STRING("Reach the fifth Badge without ever healing at a Pokémon Center or a Chansey."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_RUN,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
@@ -1350,7 +1350,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_CHALLENGE_NO_CENTERS] = {
         .name        = ACHIEVEMENT_NAME("No Centers"),
-        .description = COMPOUND_STRING("Complete the story without ever using a Pokémon Center."),
+        .description = COMPOUND_STRING("Complete the story without ever healing at a Pokémon Center or a Chansey."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_CHALLENGE,
@@ -1836,7 +1836,7 @@ static const struct Achievement gAchievements[ACHIEVEMENTS_COUNT] =
     },
     [ACHIEVEMENT_RECORD_NURSES_NIGHTMARE] = {
         .name        = ACHIEVEMENT_NAME("Nurse's Nightmare"),
-        .description = COMPOUND_STRING("Visit a Pokémon Center 200 times."),
+        .description = COMPOUND_STRING("Heal at a Pokémon Center or a Chansey 200 times."),
         .tier        = ACHIEVEMENT_TIER_GOLD,
         .scope       = ACHIEVEMENT_SCOPE_CURRENT_PLAYTHROUGH,
         .category    = ACHIEVEMENT_CATEGORY_RECORDS,
