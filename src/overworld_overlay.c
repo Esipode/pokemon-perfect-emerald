@@ -850,6 +850,15 @@ static u32 UpdatePulse(struct Overlay *overlay)
         shape = (sHeartbeatShape[i] * (16 - frac) + sHeartbeatShape[(i + 1) % ARRAY_COUNT(sHeartbeatShape)] * frac) / 16;
         break;
     }
+    case OVERLAY_PULSE_SINE_QUARTER:
+    {
+        u32 window = max(period / 4, 2);
+
+        // gSineTable is Q8; indices 0-127 trace one half-turn, 0 up to 256 and back.
+        shape = phase < window ? gSineTable[phase * 128 / window] * OVERLAY_OPACITY_MAX / 256 : 0;
+        shape = min(shape, OVERLAY_OPACITY_MAX);
+        break;
+    }
     case OVERLAY_PULSE_FLICKER:
         hold = max(period / 8, 2);
         shape = sFlickerShape[(((phase / hold) + (overlay - sOverlays) * 97) * 2654435761u) >> 28];

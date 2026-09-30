@@ -442,6 +442,9 @@ static const u8 *GetInteractedObjectEventScript(struct MapPosition *position, u8
             return NULL;
     }
 
+    if (Overworld_ShouldHideObjectForLegendary(gObjectEvents[objectEventId].localId, gObjectEvents[objectEventId].isPlayer))
+        return NULL;
+
     gSelectedObjectEvent = objectEventId;
     gSpecialVar_LastTalked = gObjectEvents[objectEventId].localId;
 

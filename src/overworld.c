@@ -1301,11 +1301,14 @@ static u16 GetNightMusicFromTrack(u16 track)
 static u16 sLegendaryHideFlags[MAX_LEGENDARY_HIDE_FLAGS];
 static u8 sNumLegendaryHideFlags;
 static bool8 sLegendaryMapSilent; // visible legendary mutes the map instead of playing the legendary track
+static u16 sLegendaryHideObjectsFlag; // 0 when unset
+static u8 sLegendaryHideObjectsExemptId;
 
 void Overworld_ClearLegendaryHideFlags(void)
 {
     sNumLegendaryHideFlags = 0;
     sLegendaryMapSilent = FALSE;
+    sLegendaryHideObjectsFlag = 0;
 }
 
 void Overworld_SetLegendaryMapSilent(void)
@@ -1337,6 +1340,23 @@ static bool8 IsLegendaryMapMusicActive(void)
             return TRUE;
     }
     return FALSE;
+}
+
+// While the legendary behind hideFlag is visible, every object except the player, the follower
+// and exemptLocalId is drawn invisible, ignored by collision, interaction and trainer sight.
+void Overworld_SetLegendaryHidesObjects(u16 flag, u8 exemptLocalId)
+{
+    sLegendaryHideObjectsFlag = flag;
+    sLegendaryHideObjectsExemptId = exemptLocalId;
+}
+
+bool8 Overworld_ShouldHideObjectForLegendary(u8 localId, bool8 isPlayer)
+{
+    if (sLegendaryHideObjectsFlag == 0 || isPlayer)
+        return FALSE;
+    if (localId == sLegendaryHideObjectsExemptId || localId == OBJ_EVENT_ID_FOLLOWER)
+        return FALSE;
+    return !FlagGet(sLegendaryHideObjectsFlag);
 }
 
 #define MELOETTA_SING_INTERVAL 600 // 10 seconds at 60 fps

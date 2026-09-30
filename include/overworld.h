@@ -141,6 +141,8 @@ void Overworld_PlaySpecialMapMusic(void);
 void Overworld_ClearLegendaryHideFlags(void);
 void Overworld_AddLegendaryHideFlag(u16 flag);
 void Overworld_SetLegendaryMapSilent(void);
+void Overworld_SetLegendaryHidesObjects(u16 flag, u8 exemptLocalId);
+bool8 Overworld_ShouldHideObjectForLegendary(u8 localId, bool8 isPlayer);
 void Overworld_SetSavedMusic(u16 songNum);
 void Overworld_ClearSavedMusic(void);
 void Overworld_ChangeMusicToDefault(void);

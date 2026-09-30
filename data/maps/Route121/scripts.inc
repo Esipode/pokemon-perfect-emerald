@@ -1,5 +1,50 @@
 Route121_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, Route121_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route121_OnLoad
+	map_script MAP_SCRIPT_ON_RESUME, Route121_OnResume
 	.byte 0
+
+Route121_OnTransition:
+	updatelegendaryvisibility SPECIES_OGERPON, FLAG_HIDE_OGERPON
+	legendaryhideobjects FLAG_HIDE_OGERPON, LOCALID_ROUTE121_OGERPON
+	end
+
+Route121_OnLoad:
+	setvar VAR_0x8004, SPECIES_OGERPON
+	setvar VAR_0x8005, LAYOUT_ROUTE121
+	setvar VAR_0x8006, WEEKDAY_WED
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route121_HideOgerponArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_DAY, Route121_HideOgerponArena
+	goto Route121_ShowOgerponArena
+
+Route121_Ogerpon_Encounter::
+	goto LegendaryEncounter_EventScript_Ogerpon
+
+Route121_HideOgerponArena:
+	setflag FLAG_HIDE_OGERPON
+	end
+
+Route121_ShowOgerponArena:
+	end
+
+Route121_OnResume:
+	goto_if_set FLAG_HIDE_OGERPON, Route121_OnResume_End
+	goto_if_ne VAR_TEMP_5, 0, Route121_OnResume_End
+	overlaycreate RGB(6, 24, 8), 8, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_5
+	overlaypulse VAR_TEMP_5, 0, 16, 480, 0, OVERLAY_PULSE_SINE_QUARTER
+	overlaycreate RGB(28, 6, 6), 8, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_6
+	overlaypulse VAR_TEMP_6, 0, 16, 480, 360, OVERLAY_PULSE_SINE_QUARTER
+	overlaycreate RGB(6, 12, 28), 8, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_7
+	overlaypulse VAR_TEMP_7, 0, 16, 480, 240, OVERLAY_PULSE_SINE_QUARTER
+	overlaycreate RGB(22, 12, 4), 8, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_8
+	overlaypulse VAR_TEMP_8, 0, 16, 480, 120, OVERLAY_PULSE_SINE_QUARTER
+	screenfxparticles VAR_TEMP_9, 10, SCREENFX_PARTICLE_LEAF, SCREENFX_COLOR_DEFAULT, 3, 0
+	screenfxanchorpos VAR_TEMP_9, 68, 9
+Route121_OnResume_End:
+	end
 
 Route121_EventScript_Woman::
 	msgbox Route121_Text_AheadLoomsMtPyre, MSGBOX_NPC

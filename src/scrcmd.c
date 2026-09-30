@@ -3237,6 +3237,18 @@ bool8 Scrcmd_updatelegendaryvisibility(struct ScriptContext *ctx)
     return FALSE;
 }
 
+// Hides every other object on the map while the legendary behind hideFlag is visible.
+bool8 Scrcmd_legendaryhideobjects(struct ScriptContext *ctx)
+{
+    u16 hideFlag = ScriptReadHalfword(ctx);
+    u8 exemptLocalId = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    Overworld_SetLegendaryHidesObjects(hideFlag, exemptLocalId);
+    return FALSE;
+}
+
 bool8 Scrcmd_checkspecies_choose(struct ScriptContext *ctx)
 {
     enum Species givenSpecies = VarGet(ScriptReadHalfword(ctx));

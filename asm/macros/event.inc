@@ -2601,6 +2601,14 @@
 	.2byte \keepDefaultMusic
 	.endm
 
+	@ While the legendary behind hideFlag is visible, draws every object except the player, the
+	@ follower and exemptLocalId invisible. Call from ON_TRANSITION, after updatelegendaryvisibility.
+	.macro legendaryhideobjects hideFlag:req, exemptLocalId:req
+	callnative Scrcmd_legendaryhideobjects, requests_effects=1
+	.2byte \hideFlag
+	.2byte \exemptLocalId
+	.endm
+
 	@ Stores the map's resolved overworld weather (WEATHER_*) in the variable dest. Dynamic and
 	@ cycling map weathers are already resolved, so this is the weather the visit will show.
 	.macro getmapweather dest:req

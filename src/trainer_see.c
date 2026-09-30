@@ -6,6 +6,7 @@
 #include "field_effect.h"
 #include "field_player_avatar.h"
 #include "follower_npc.h"
+#include "overworld.h"
 #include "pokemon.h"
 #include "script.h"
 #include "script_movement.h"
@@ -451,6 +452,8 @@ bool8 CheckForTrainersWantingBattle(void)
         if (!gObjectEvents[i].active)
             continue;
         if (gObjectEvents[i].trainerType != TRAINER_TYPE_NORMAL && gObjectEvents[i].trainerType != TRAINER_TYPE_SEE_ALL_DIRECTIONS && gObjectEvents[i].trainerType != TRAINER_TYPE_BURIED)
+            continue;
+        if (Overworld_ShouldHideObjectForLegendary(gObjectEvents[i].localId, gObjectEvents[i].isPlayer))
             continue;
         trainerObjects[trainerObjectsCount++] = i;
     }

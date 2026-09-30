@@ -1,5 +1,7 @@
 ## Ogerpon — The Masked Guardian Pokémon
 
+### Location: Route 121 -  Wednesday daytime
+
 Ogerpon reads how you fight it. Lean on physical attacks and it answers with a mask built to shrug
 them off; lean on special attacks and it answers with something else. Land a big hit right after it
 switches masks, though, and the mask breaks before it can do anything with it.
