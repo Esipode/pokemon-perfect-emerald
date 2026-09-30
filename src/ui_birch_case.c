@@ -791,6 +791,43 @@ static u16 GetLearnsetDamageMove(u16 species, u16 level)
     return (fallback != MOVE_NONE) ? fallback : MOVE_TACKLE;
 }
 
+static bool8 IsDamagingMove(u16 move)
+{
+    return GetMovePower(move) > 0 && !IsBattleMoveStatus(move);
+}
+
+// FLAG_RANDOMIZE_MOVES remaps each stored move at battle time. If no stored move
+// remaps to a damaging one, swap in a source move that does.
+static void EnsureResolvedDamagingMove(u16 species, enum Move *moves)
+{
+    u32 candidate;
+    u8 slot = MAX_MON_MOVES - 1;
+
+    for (u8 i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (moves[i] != MOVE_NONE && IsDamagingMove(GetEffectiveMove(moves[i], species)))
+            return;
+    }
+
+    for (u8 i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (moves[i] == MOVE_NONE)
+        {
+            slot = i;
+            break;
+        }
+    }
+
+    for (candidate = 1; candidate < MOVES_COUNT; candidate++)
+    {
+        if (IsDamagingMove(GetEffectiveMove(candidate, species)))
+        {
+            moves[slot] = (enum Move)candidate;
+            return;
+        }
+    }
+}
+
 static void BirchCase_GiveMon() // Function that calls the GiveMon function pulled from Expansion by Lunos and Ghoulslash
 {
     VarSet(VAR_0x8004, 0);
@@ -888,6 +925,9 @@ static void BirchCase_GiveMon() // Function that calls the GiveMon function pull
         for (u8 i = numMoves; i < MAX_MON_MOVES; i++)
             moves[i] = MOVE_NONE;
     }
+
+    if (FlagGet(FLAG_RANDOMIZE_MOVES))
+        EnsureResolvedDamagingMove(choice->species, moves);
 
     FlagSet(FLAG_SYS_POKEMON_GET);
 
