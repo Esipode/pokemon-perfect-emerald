@@ -792,6 +792,8 @@ static bool8 ReloadPartyMenu(void)
         break;
     case 4:
         FreeAllSpritePalettes();
+        if (IsPartyDashboard())
+            PartyDashboard_ResetSprites();
         gMain.state++;
         break;
     case 5:
@@ -842,6 +844,8 @@ static bool8 ReloadPartyMenu(void)
         break;
     case 15:
         CreateCancelConfirmPokeballSprites();
+        if (IsPartyDashboard() && gPartyMenu.slotId < PARTY_SIZE && gPartiesCount[B_TRAINER_PLAYER] != 0)
+            PartyDashboard_Select(gPartyMenu.slotId, GetPartyMonFromPartyMenuId(gPartyMenu.slotId));
         gMain.state++;
         break;
     case 16:
@@ -2367,11 +2371,18 @@ static void Task_PartyMenuModifyHP(u8 taskId)
     GetPartyAndSlotFromPartyMenuId(tPartyId, &party, &partySlot);
 
     SetMonData(&party[partySlot], MON_DATA_HP, &tHP);
-    DisplayPartyPokemonHPCheck(&party[partySlot], &sPartyMenuBoxes[partySlot], 1);
-    // The HP text clear spans the tile holding the "/" separator and leading Max HP
-    // digit, so redraw Max HP each step to keep it from vanishing during the animation.
-    DisplayPartyPokemonMaxHPCheck(&party[partySlot], &sPartyMenuBoxes[partySlot], 0);
-    DisplayPartyPokemonHPBarCheck(&party[partySlot], &sPartyMenuBoxes[partySlot]);
+    if (IsPartyDashboard())
+    {
+        PartyDashboard_RefreshHp(partySlot, &party[partySlot]);
+    }
+    else
+    {
+        DisplayPartyPokemonHPCheck(&party[partySlot], &sPartyMenuBoxes[partySlot], 1);
+        // The HP text clear spans the tile holding the "/" separator and leading Max HP
+        // digit, so redraw Max HP each step to keep it from vanishing during the animation.
+        DisplayPartyPokemonMaxHPCheck(&party[partySlot], &sPartyMenuBoxes[partySlot], 0);
+        DisplayPartyPokemonHPBarCheck(&party[partySlot], &sPartyMenuBoxes[partySlot]);
+    }
     if (tHPToAdd == 0 || tHP == 0 || tHP == tMaxHP)
     {
         // If HP was recovered, buffer the amount recovered
@@ -5393,7 +5404,8 @@ void ItemUseCB_Medicine(u8 taskId, TaskFunc task)
             PlaySE(SE_GLASS_FLUTE);
         }
         SetPartyMonAilmentGfx(mon, &sPartyMenuBoxes[gPartyMenu.slotId]);
-        DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[gPartyMenu.slotId], 1);
+        if (!IsPartyDashboard())
+            DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[gPartyMenu.slotId], 1);
         if (canHeal == TRUE)
         {
             if (hp == 0)
@@ -5404,6 +5416,8 @@ void ItemUseCB_Medicine(u8 taskId, TaskFunc task)
         }
         else
         {
+            if (IsPartyDashboard())
+                PartyDashboard_RefreshSlot(gPartyMenu.slotId, mon);
             GetMonNickname(mon, gStringVar1);
             GetMedicineItemEffectMessage(item, oldStatus);
             DisplayPartyMenuMessage(gStringVar4, TRUE);
@@ -5975,6 +5989,8 @@ static void TryUseItemOnMove(u8 taskId)
         {
             gPartyMenuUseExitCallback = TRUE;
             PlaySE(SE_USE_ITEM);
+            if (IsPartyDashboard())
+                PartyDashboard_RefreshSlot(ptr->slotId, mon);
             if (AchievementBoost_ShouldConsumeItem(item)) // BOOST_CONSUMABLE_SAVE
                 RemoveBagItem(item, 1);
             move = GetMonData(mon, MON_DATA_MOVE1 + *moveSlot);
@@ -6136,6 +6152,8 @@ static void Task_LearnedMove(u8 taskId)
         if (!GetItemImportance(item))
             RemoveBagItem(item, 1);
     }
+    if (IsPartyDashboard())
+        PartyDashboard_RefreshSlot(gPartyMenu.slotId, mon);
     GetMonNickname(mon, gStringVar1);
     StringCopy(gStringVar2, GetMoveName(GetResolvedMove(GetMonData(mon, MON_DATA_SPECIES), gPartyMenu.data1)));
     StringExpandPlaceholders(gStringVar4, gText_PkmnLearnedMove3);
@@ -6444,10 +6462,18 @@ void ItemUseCB_RareCandy(u8 taskId, TaskFunc task)
 static void UpdateMonDisplayInfoAfterRareCandy(u8 slot, struct Pokemon *mon)
 {
     SetPartyMonAilmentGfx(mon, &sPartyMenuBoxes[slot]);
-    // Re-blit the whole box background before redrawing its text fields, rather than
-    // patching individual fixed-size erase rects, so a level/HP digit count change
-    // (e.g. 9 -> 10, 99 -> 100) can never leave a remnant of the old value behind.
-    DisplayPartyPokemonData(slot);
+    if (IsPartyDashboard())
+    {
+        PartyDashboard_DrawSlot(slot, mon);
+        PartyDashboard_RefreshSlot(slot, mon);
+    }
+    else
+    {
+        // Re-blit the whole box background before redrawing its text fields, rather than
+        // patching individual fixed-size erase rects, so a level/HP digit count change
+        // (e.g. 9 -> 10, 99 -> 100) can never leave a remnant of the old value behind.
+        DisplayPartyPokemonData(slot);
+    }
     UpdatePartyMonHPBar(sPartyMenuBoxes[slot].monSpriteId, mon);
     AnimatePartySlot(slot, 1);
     ScheduleBgCopyTilemapToVram(0);
@@ -6726,7 +6752,8 @@ static void UseSacredAsh(u8 taskId)
 
     PlaySE(SE_USE_ITEM);
     SetPartyMonAilmentGfx(mon, &sPartyMenuBoxes[gPartyMenu.slotId]);
-    DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[gPartyMenu.slotId], 1);
+    if (!IsPartyDashboard())
+        DisplayPartyPokemonLevelCheck(mon, &sPartyMenuBoxes[gPartyMenu.slotId], 1);
     AnimatePartySlot(sPartyMenuInternal->tLastSlotUsed, 0);
     AnimatePartySlot(gPartyMenu.slotId, 1);
     PartyMenuModifyHP(taskId, gPartyMenu.slotId, 1, GetMonData(mon, MON_DATA_HP) - hp, Task_SacredAshDisplayHPRestored);
@@ -7298,6 +7325,8 @@ static void Task_TryItemUseFormChange(u8 taskId)
         {
             FreeAndDestroyMonIconSprite(icon);
             CreatePartyMonIconSpriteParameterized(gTasks[taskId].tTargetSpecies, GetMonData(mon, MON_DATA_PERSONALITY), FALSE, &sPartyMenuBoxes[gPartyMenu.slotId], 1);
+            if (IsPartyDashboard())
+                PartyDashboard_RefreshSlot(gPartyMenu.slotId, mon);
             icon->oam.mosaic = TRUE;
             icon->data[0] = 10;
             icon->data[1] = 1;

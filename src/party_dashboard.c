@@ -830,6 +830,32 @@ void PartyDashboard_RefreshSlot(u32 slot, struct Pokemon *mon)
         PartyDashboard_Select(slot, mon);
 }
 
+// HP tick: redraws the slot bar and, for the selected slot, only the identity block.
+void PartyDashboard_RefreshHp(u32 slot, struct Pokemon *mon)
+{
+    struct PartyDashboardMon *dashMon = &sDashboard->mon;
+
+    PartyDashboard_DrawSlot(slot, mon);
+    if (!sDashboard->hasSelection || sDashboard->selectedSlot != slot || dashMon->isEgg)
+        return;
+
+    dashMon->hp = GetMonData(mon, MON_DATA_HP);
+    dashMon->maxHp = GetMonData(mon, MON_DATA_MAX_HP);
+    dashMon->hpLevel = GetHPBarLevel(dashMon->hp, dashMon->maxHp);
+    dashMon->ailment = GetMonAilment(mon);
+    DrawIdentity();
+}
+
+// ResetSpriteData destroys the status chip and item icon; forget their ids.
+void PartyDashboard_ResetSprites(void)
+{
+    sDashboard->statusSpriteId = SPRITE_NONE;
+    sDashboard->itemSpriteId = SPRITE_NONE;
+    sDashboard->itemIconItem = ITEM_NONE;
+    FreeSpriteTilesByTag(TAG_DASH_ITEM_ICON);
+    FreeSpritePaletteByTag(TAG_DASH_ITEM_ICON);
+}
+
 // Prints a prompt in the hint bar; NULL prints the idle key hints.
 void PartyDashboard_ShowHint(const u8 *text)
 {

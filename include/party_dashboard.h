@@ -109,6 +109,8 @@ void PartyDashboard_SetSlotPalette(u32 slot, u32 palFlags);
 void PartyDashboard_Select(u32 slot, struct Pokemon *mon);
 bool32 PartyDashboard_SetTab(s32 delta);
 void PartyDashboard_RefreshSlot(u32 slot, struct Pokemon *mon);
+void PartyDashboard_RefreshHp(u32 slot, struct Pokemon *mon);
+void PartyDashboard_ResetSprites(void);
 void PartyDashboard_ShowHint(const u8 *text);
 void PartyDashboard_ClearHint(void);
 void PartyDashboard_Update(void);
