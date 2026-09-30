@@ -6,6 +6,7 @@
 #include "event_data.h"
 #include "event_scripts.h"
 #include "field_screen_effect.h"
+#include "infinity_cave.h"
 #include "overworld.h"
 #include "party_menu.h"
 #include "pokemon.h"
@@ -37,7 +38,7 @@ u32 Recruits_GetBattlesLeft(struct Pokemon *mon)
 
 static bool32 Recruits_BattleCounts(void)
 {
-    if (!Recruits_IsActive())
+    if (!Recruits_IsActive() || InfCave_IsInRun())
         return FALSE;
     if (!(gBattleTypeFlags & BATTLE_TYPE_TRAINER))
         return FALSE;
@@ -85,7 +86,8 @@ bool32 Recruits_TryStartFieldScript(void)
 {
     u32 i;
 
-    if (!Recruits_IsActive())
+    // Retirement is suspended during an Infinity Cave run; no wins are tallied there.
+    if (!Recruits_IsActive() || InfCave_IsInRun())
         return FALSE;
 
     for (i = 0; i < PARTY_SIZE; i++)
