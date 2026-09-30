@@ -3,6 +3,7 @@
 #include "achievements.h"
 #include "event_data.h"
 #include "constants/flags.h"
+#include "constants/vars.h"
 #include "constants/maps.h"
 #include "data/field_chansey_sites.h"
 
