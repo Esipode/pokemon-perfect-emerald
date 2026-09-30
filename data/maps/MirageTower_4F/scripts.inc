@@ -1,5 +1,34 @@
 MirageTower_4F_MapScripts::
+	map_script MAP_SCRIPT_ON_TRANSITION, MirageTower_4F_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, MirageTower_4F_OnLoad
 	.byte 0
+
+MirageTower_4F_OnTransition:
+	updatelegendaryvisibility SPECIES_TING_LU, FLAG_HIDE_TING_LU
+	end
+
+MirageTower_4F_OnLoad:
+	setvar VAR_0x8004, SPECIES_TING_LU
+	setvar VAR_0x8005, LAYOUT_MIRAGE_TOWER_4F
+	setvar VAR_0x8006, WEEKDAY_THU
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, MirageTower_4F_HideTingLuArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_DAY, MirageTower_4F_HideTingLuArena
+	goto_if_set FLAG_CHOSE_ROOT_FOSSIL, MirageTower_4F_ShowTingLuArena
+	goto_if_unset FLAG_CHOSE_CLAW_FOSSIL, MirageTower_4F_HideTingLuArena
+	goto MirageTower_4F_ShowTingLuArena
+
+MirageTower_4F_TingLu_Encounter::
+	goto LegendaryEncounter_EventScript_TingLu
+
+MirageTower_4F_HideTingLuArena:
+	setflag FLAG_HIDE_TING_LU
+	end
+
+MirageTower_4F_ShowTingLuArena:
+	end
 
 MirageTower_4F_EventScript_RootFossil::
 	lock

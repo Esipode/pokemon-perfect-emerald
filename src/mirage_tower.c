@@ -9,6 +9,8 @@
 #include "gpu_regs.h"
 #include "menu.h"
 #include "random.h"
+#include "rtc.h"
+#include "field_specials.h"
 #include "palette.h"
 #include "palette_util.h"
 #include "script.h"
@@ -17,7 +19,11 @@
 #include "task.h"
 #include "window.h"
 #include "constants/event_objects.h"
+#include "constants/flags.h"
 #include "constants/rgb.h"
+#include "constants/rtc.h"
+#include "constants/siirtc.h"
+#include "constants/species.h"
 #include "constants/songs.h"
 #include "constants/metatile_labels.h"
 
@@ -302,7 +308,20 @@ void SetMirageTowerVisibility(void)
 
     if (VarGet(VAR_MIRAGE_TOWER_STATE))
     {
-        // Mirage Tower event has already been completed, hide it
+        // Mirage Tower event has already been completed. State 1 is the collapse
+        // cutscene, which draws its own temporary tower. After it, the tower
+        // returns only while Ting-Lu can spawn (Thursday daytime).
+        if (VarGet(VAR_MIRAGE_TOWER_STATE) > 1
+         && FlagGet(FLAG_SYS_GAME_CLEAR)
+         && !CheckPlayerOwnsSpecies(SPECIES_TING_LU)
+         && GetRealDayOfWeek() == WEEKDAY_THU
+         && GetTimeOfDay() == TIME_DAY)
+        {
+            FlagSet(FLAG_MIRAGE_TOWER_VISIBLE);
+            TryStartMirageTowerPulseBlendEffect();
+            return;
+        }
+
         FlagClear(FLAG_MIRAGE_TOWER_VISIBLE);
         return;
     }

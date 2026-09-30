@@ -1,5 +1,7 @@
 ## Ting-Lu — The Ruinous Vessel Pokémon
 
+### Location: Mirage Tower 4F - Thursday daytime, after taking the Root or Claw Fossil
+
 A boss that just... stands there and gets heavier. Every hit you land is stored as **Ruin Energy**,
 and enough of it banked pushes its **Weight** up a notch — permanently. Heavier means it hits and
 survives more, but its own footing gets worse too.
