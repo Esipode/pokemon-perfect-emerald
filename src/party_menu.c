@@ -3006,7 +3006,11 @@ void DisplayPartyMenuStdMessage(u32 stringId)
         PartyMenuRemoveWindow(windowPtr);
 
     if (IsPartyDashboard() && IsDashboardPromptMessage(stringId))
+    {
+        // Presents the tilemap change that cleared a previous message window.
+        ScheduleBgCopyTilemapToVram(2);
         return;
+    }
 
     if (stringId != PARTY_MSG_NONE)
     {
@@ -4710,6 +4714,8 @@ static void CreatePartyMonHeldItemSpriteParameterized(enum Species species, enum
 static void UpdatePartyMonHeldItemSprite(struct Pokemon *mon, struct PartyMenuBox *menuBox)
 {
     ShowOrHideHeldItemSprite(GetMonData(mon, MON_DATA_HELD_ITEM), menuBox);
+    if (IsPartyDashboard())
+        PartyDashboard_RefreshSlot(menuBox->windowId, mon);
 }
 
 static void ShowOrHideHeldItemSprite(enum Item item, struct PartyMenuBox *menuBox)

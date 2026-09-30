@@ -288,3 +288,51 @@ static const u8 sIdentHpBarPix[] =
 };
 
 static const u8 sDashTabColors[3] = {TEXT_COLOR_TRANSPARENT, 2, 3}; // Palette 12: text, shadow.
+
+// Item icon sprite (INFO tab): one tile tag and one palette tag, the spare OBJ palette.
+#define TAG_DASH_ITEM_ICON 55130
+
+// Body window (144x128 px) geometry in pixels. BODY_X/BODY_Y are in tiles, so pixel offsets are added to them.
+#define INFO_LABEL_X       2
+#define INFO_VALUE_X       50
+#define INFO_RIGHT_X       142
+#define INFO_NATURE_Y      0
+#define INFO_ABILITY_Y     13
+#define INFO_ITEM_Y        26
+// Small-font glyphs sit one row higher in their cell than normal-font glyphs, so labels drop 1 px to share a baseline.
+#define INFO_LABEL_DY      1
+#define INFO_DIVIDER_Y     58
+#define INFO_MOVES_Y       64
+#define INFO_MOVE_STEP     16
+#define INFO_MOVE_NAME_X   12
+#define INFO_MOVE_NAME_W   90
+#define INFO_VALUE_W       90
+#define INFO_ITEM_NAME_W   64
+#define INFO_ITEM_ICON_X   (BODY_X * TILE_WIDTH + 128)
+#define INFO_ITEM_ICON_Y   (BODY_Y * TILE_HEIGHT + 36)
+#define INFO_EGG_TEXT_Y    44
+
+static const u8 sText_DashNature[] = _("NATURE");
+static const u8 sText_DashAbility[] = _("ABILITY");
+static const u8 sText_DashItem[] = _("ITEM");
+static const u8 sText_DashNatureUp[] = _("+");
+static const u8 sText_DashNatureDown[] = _("-");
+static const u8 sText_DashStatAtk[] = _("ATK");
+static const u8 sText_DashStatDef[] = _("DEF");
+static const u8 sText_DashStatSpe[] = _("SPE");
+static const u8 sText_DashStatSpa[] = _("SPA");
+static const u8 sText_DashStatSpd[] = _("SPD");
+
+// Indexed by enum Stat. HP is never raised or lowered by a nature.
+static const u8 *const sDashStatLabels[NUM_STATS] =
+{
+    [STAT_ATK]   = sText_DashStatAtk,
+    [STAT_DEF]   = sText_DashStatDef,
+    [STAT_SPEED] = sText_DashStatSpe,
+    [STAT_SPATK] = sText_DashStatSpa,
+    [STAT_SPDEF] = sText_DashStatSpd,
+};
+
+static const u8 sInfoUpColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_NATURE_UP, INFO_PIX_SHADOW};
+static const u8 sInfoDownColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_NATURE_DOWN, INFO_PIX_SHADOW};
+static const u8 sInfoPpLowColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_HP_YELLOW, INFO_PIX_SHADOW};

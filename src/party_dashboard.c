@@ -2,12 +2,15 @@
 #include "battle.h"
 #include "battle_factory.h"
 #include "battle_interface.h"
+#include "battle_message.h"
 #include "battle_tent.h"
 #include "bg.h"
 #include "decompress.h"
 #include "event_data.h"
 #include "graphics.h"
 #include "healthbox.h"
+#include "item.h"
+#include "item_icon.h"
 #include "malloc.h"
 #include "menu.h"
 #include "move.h"
@@ -33,9 +36,12 @@ struct PartyDashboard
 {
     struct PartyDashboardMon mon;
     u8 selectedSlot;
+    bool8 hasSelection;
     u8 tab;
     u8 hintWindowId;
     u8 statusSpriteId;
+    u8 itemSpriteId;
+    enum Item itemIconItem;
     // DMA sources: must outlive the queued VRAM copies.
     u8 chromeTiles[CHROME_TILE_COUNT * TILE_SIZE_4BPP];
     u8 iconTiles[BG3_TILE_COUNT * TILE_SIZE_4BPP];
@@ -64,6 +70,7 @@ bool32 PartyDashboard_Alloc(void)
         return FALSE;
 
     sDashboard->statusSpriteId = SPRITE_NONE;
+    sDashboard->itemSpriteId = SPRITE_NONE;
     return TRUE;
 }
 
@@ -519,20 +526,194 @@ static void DrawIdentity(void)
     UpdateIdentityStatusChip(mon);
 }
 
+static void PrintBody(u32 fontId, u32 x, u32 y, const u8 *colors, const u8 *str)
+{
+    AddTextPrinterParameterized3(WIN_DASH_BODY, fontId, x, y, colors, TEXT_SKIP_DRAW, str);
+}
+
+static void PrintBodyRight(u32 fontId, u32 y, const u8 *colors, const u8 *str)
+{
+    PrintBody(fontId, INFO_RIGHT_X - GetStringWidth(fontId, str, 0), y, colors, str);
+}
+
+// Fits the value into the space right of the label column.
+static void PrintInfoValue(u32 y, u32 maxWidth, const u8 *str)
+{
+    PrintBody(GetFontIdToFit(str, FONT_NORMAL, 0, maxWidth), INFO_VALUE_X, y, sIdentTextColors, str);
+}
+
+static void DestroyItemIcon(void)
+{
+    if (sDashboard->itemSpriteId == SPRITE_NONE)
+        return;
+
+    DestroySprite(&gSprites[sDashboard->itemSpriteId]);
+    FreeSpriteTilesByTag(TAG_DASH_ITEM_ICON);
+    FreeSpritePaletteByTag(TAG_DASH_ITEM_ICON);
+    sDashboard->itemSpriteId = SPRITE_NONE;
+    sDashboard->itemIconItem = ITEM_NONE;
+}
+
+// Keeps the icon of an unchanged item; otherwise replaces it.
+static void UpdateItemIcon(enum Item item)
+{
+    u32 spriteId;
+
+    if (item == ITEM_NONE)
+    {
+        DestroyItemIcon();
+        return;
+    }
+    if (sDashboard->itemSpriteId != SPRITE_NONE && sDashboard->itemIconItem == item)
+        return;
+
+    DestroyItemIcon();
+    spriteId = AddItemIconSprite(TAG_DASH_ITEM_ICON, TAG_DASH_ITEM_ICON, item);
+    if (spriteId == MAX_SPRITES)
+        return;
+
+    gSprites[spriteId].x = INFO_ITEM_ICON_X;
+    gSprites[spriteId].y = INFO_ITEM_ICON_Y;
+    gSprites[spriteId].oam.priority = 1;
+    sDashboard->itemSpriteId = spriteId;
+    sDashboard->itemIconItem = item;
+}
+
+// Raised and lowered stat of the mint-adjusted nature, right-aligned. Neutral natures print nothing.
+static void DrawNatureStats(struct PartyDashboardMon *mon)
+{
+    enum Stat up = gNaturesInfo[mon->mintNature].statUp;
+    enum Stat down = gNaturesInfo[mon->mintNature].statDown;
+    u32 downWidth;
+
+    if (up == down)
+        return;
+
+    StringCopy(gStringVar1, sText_DashNatureDown);
+    StringAppend(gStringVar1, sDashStatLabels[down]);
+    downWidth = GetStringWidth(FONT_SMALL_NARROW, gStringVar1, 0);
+    PrintBodyRight(FONT_SMALL_NARROW, INFO_NATURE_Y + INFO_LABEL_DY, P_SUMMARY_SCREEN_NATURE_COLORS ? sInfoDownColors : sIdentTextColors, gStringVar1);
+
+    StringCopy(gStringVar1, sText_DashNatureUp);
+    StringAppend(gStringVar1, sDashStatLabels[up]);
+    PrintBody(FONT_SMALL_NARROW, INFO_RIGHT_X - downWidth - 4 - GetStringWidth(FONT_SMALL_NARROW, gStringVar1, 0), INFO_NATURE_Y + INFO_LABEL_DY,
+              P_SUMMARY_SCREEN_NATURE_COLORS ? sInfoUpColors : sIdentTextColors, gStringVar1);
+}
+
+static void DrawInfoRows(struct PartyDashboardMon *mon)
+{
+    const u8 *itemName;
+
+    PrintBody(FONT_SMALL, INFO_LABEL_X, INFO_NATURE_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashNature);
+    PrintInfoValue(INFO_NATURE_Y, INFO_VALUE_W / 2, gNaturesInfo[mon->nature].name);
+    DrawNatureStats(mon);
+
+    PrintBody(FONT_SMALL, INFO_LABEL_X, INFO_ABILITY_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashAbility);
+    PrintInfoValue(INFO_ABILITY_Y, INFO_VALUE_W, gAbilitiesInfo[mon->ability].name);
+
+    PrintBody(FONT_SMALL, INFO_LABEL_X, INFO_ITEM_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashItem);
+    if (mon->heldItem == ITEM_NONE)
+    {
+        itemName = gText_None;
+    }
+    else
+    {
+        CopyItemName(mon->heldItem, gStringVar1);
+        itemName = gStringVar1;
+    }
+    PrintInfoValue(INFO_ITEM_Y, INFO_ITEM_NAME_W, itemName);
+}
+
+static const u8 *GetPpColors(u32 pp, u32 maxPp)
+{
+    switch (GetCurrentPPToMaxPPState(pp, maxPp))
+    {
+    case 2:
+        return sIdentFaintedColors;
+    case 1:
+    case 0:
+        return sInfoPpLowColors;
+    default:
+        return sIdentTextColors;
+    }
+}
+
+static void DrawInfoMoves(struct PartyDashboardMon *mon)
+{
+    for (u32 i = 0; i < MAX_MON_MOVES; i++)
+    {
+        u32 y = INFO_MOVES_Y + i * INFO_MOVE_STEP;
+        enum Move move = mon->moves[i];
+
+        if (move == MOVE_NONE)
+        {
+            PrintBody(FONT_NORMAL, INFO_MOVE_NAME_X, y + 1, sIdentTextColors, gText_OneDash);
+            continue;
+        }
+
+        PlaceTypeIcon(mon->moveTypes[i], BODY_X, BODY_Y + y / TILE_HEIGHT);
+        PrintBody(GetFontIdToFit(GetMoveName(move), FONT_NORMAL, 0, INFO_MOVE_NAME_W), INFO_MOVE_NAME_X, y + 1, sIdentTextColors, GetMoveName(move));
+
+        ConvertIntToDecimalStringN(gStringVar1, mon->pp[i], STR_CONV_MODE_LEFT_ALIGN, 2);
+        StringAppend(gStringVar1, sText_DashSlash);
+        ConvertIntToDecimalStringN(gStringVar2, mon->maxPp[i], STR_CONV_MODE_LEFT_ALIGN, 2);
+        StringAppend(gStringVar1, gStringVar2);
+        PrintBodyRight(FONT_NORMAL, y + 1, GetPpColors(mon->pp[i], mon->maxPp[i]), gStringVar1);
+    }
+}
+
+// The whole body shows the egg state text instead of the tab content.
+static void DrawBodyEgg(struct PartyDashboardMon *mon)
+{
+    PrintBody(FONT_SMALL_NARROW, INFO_LABEL_X, INFO_EGG_TEXT_Y, sIdentTextColors, mon->eggText);
+}
+
+static void DrawBodyInfo(struct PartyDashboardMon *mon)
+{
+    DrawInfoRows(mon);
+    FillWindowPixelRect(WIN_DASH_BODY, INFO_PIX_TRACK, INFO_LABEL_X, INFO_DIVIDER_Y, BODY_W * TILE_WIDTH - 2 * INFO_LABEL_X, 1);
+    DrawInfoMoves(mon);
+}
+
+// Redraws the tab body. Move type icons live on BG3 in the body's first column.
+static void DrawBody(void)
+{
+    struct PartyDashboardMon *mon = &sDashboard->mon;
+    bool32 showItemIcon = !mon->isEgg && sDashboard->tab == PARTY_DASH_TAB_INFO;
+
+    FillWindowPixelBuffer(WIN_DASH_BODY, PIXEL_FILL(0));
+    FillBgTilemapBufferRect(3, BG3_TILE_BLANK, BODY_X, BODY_Y + INFO_MOVES_Y / TILE_HEIGHT, 1, INFO_MOVE_STEP * MAX_MON_MOVES / TILE_HEIGHT, 0);
+
+    if (mon->isEgg)
+        DrawBodyEgg(mon);
+    else if (sDashboard->tab == PARTY_DASH_TAB_INFO)
+        DrawBodyInfo(mon);
+
+    UpdateItemIcon(showItemIcon ? mon->heldItem : ITEM_NONE);
+    CopyWindowToVram(WIN_DASH_BODY, COPYWIN_GFX);
+    ScheduleBgCopyTilemapToVram(3);
+}
+
 void PartyDashboard_Select(u32 slot, struct Pokemon *mon)
 {
     sDashboard->selectedSlot = slot;
+    sDashboard->hasSelection = TRUE;
     PartyDashboard_BuildMonData(mon, slot, &sDashboard->mon);
     DrawIdentity();
+    DrawBody();
 }
 
 void PartyDashboard_SetTab(s32 delta)
 {
     sDashboard->tab = PartyDashboard_WrapTab(sDashboard->tab, delta, sDashboard->mon.isEgg);
+    DrawBody();
 }
 
-void PartyDashboard_RefreshSlot(u32 slot)
+// Redraws the info area when the changed slot is the selected one.
+void PartyDashboard_RefreshSlot(u32 slot, struct Pokemon *mon)
 {
+    if (sDashboard->hasSelection && sDashboard->selectedSlot == slot)
+        PartyDashboard_Select(slot, mon);
 }
 
 void PartyDashboard_ShowHint(u32 stringId)
