@@ -5995,7 +5995,7 @@ void SelectChampionChallengeTrainerObjEvent(void)
 // and gStringVar1, the mon nickname in gStringVar2, and the EV total in VAR_RESULT.
 void BufferEvResetCost(void)
 {
-    struct Pokemon *mon = &gPlayerParty[gSpecialVar_0x8004];
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004];
     u32 totalEvs = 0;
     u32 i;
 
@@ -6011,7 +6011,7 @@ void BufferEvResetCost(void)
 // Zeroes all EVs of the party mon in gSpecialVar_0x8004 and recalculates its stats
 void ResetPartyMonEvs(void)
 {
-    struct Pokemon *mon = &gPlayerParty[gSpecialVar_0x8004];
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gSpecialVar_0x8004];
     u8 zero = 0;
     u32 i;
 

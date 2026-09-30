@@ -283,7 +283,6 @@ static void RedrawPartyWindow(u8);
 static void Task_DrawSelectionSummary(u8);
 static void Task_DrawSelectionTrade(u8);
 static void QueueAction(u16, u8);
-static u32 GetNumQueuedActions(void);
 static void DoQueuedActions(void);
 static void PrintTradeMessage(u8);
 static bool8 LoadUISpriteGfx(void);
@@ -2048,19 +2047,6 @@ static void QueueAction(u16 delay, u8 actionId)
             break;
         }
     }
-}
-
-static u32 GetNumQueuedActions(void)
-{
-    u32 numActions = 0;
-    int i;
-
-    for (i = 0; i < (int)ARRAY_COUNT(sTradeMenu->queuedActions); i++)
-    {
-        numActions += sTradeMenu->queuedActions[i].active;
-    }
-
-    return numActions;
 }
 
 static void DoQueuedActions(void)

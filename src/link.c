@@ -124,7 +124,6 @@ static bool32 InitBlockSend(const void *, size_t);
 static void LinkCB_BlockSendBegin(void);
 static void LinkCB_BlockSend(void);
 static void LinkCB_BlockSendEnd(void);
-static void SetBlockReceivedFlag(u8);
 static u16 LinkTestCalcBlockChecksum(const u16 *, u16);
 static void LinkTest_PrintHex(u32, u8, u8, u8);
 static void LinkCB_RequestPlayerDataExchange(void);
@@ -831,11 +830,6 @@ bool8 IsLinkTaskFinished(void)
 u8 GetBlockReceivedStatus(void)
 {
     return (gBlockReceivedStatus[3] << 3) | (gBlockReceivedStatus[2] << 2) | (gBlockReceivedStatus[1] << 1) | (gBlockReceivedStatus[0] << 0);
-}
-
-static void SetBlockReceivedFlag(u8 who)
-{
-    gBlockReceivedStatus[who] = TRUE;
 }
 
 void ResetBlockReceivedFlags(void)

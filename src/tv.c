@@ -76,7 +76,9 @@ static void ClearPokeNews(void);
 static u8 GetTVGroupByShowId(u8);
 static void SetTVMetatilesOnMap(int, int, u16);
 static u8 FindAnyPokeNewsOnTheAir(void);
+#if FREE_GABBY_AND_TY == FALSE
 static void TakeGabbyAndTyOffTheAir(void);
+#endif //FREE_GABBY_AND_TY
 static s8 FindFirstEmptyRecordMixTVShowSlot(TVShow *);
 static bool8 IsRecordMixShowAlreadySpawned(u8, bool8);
 static void StorePlayerIdInRecordMixShow(TVShow *);
@@ -115,7 +117,9 @@ static void InterviewAfter_FanClubLetter(void);
 static void InterviewAfter_RecentHappenings(void);
 static void InterviewAfter_PkmnFanClubOpinions(void);
 static void InterviewAfter_BravoTrainerPokemonProfile(void);
+#if FREE_BATTLE_FRONTIER == FALSE
 static void InterviewAfter_BravoTrainerBattleTowerProfile(void);
+#endif //FREE_BATTLE_FRONTIER
 static void InterviewAfter_ContestLiveUpdates(void);
 static void InitWorldOfMastersShowAttempt(void);
 static void TryPutPokemonTodayFailedOnTheAir(void);
@@ -893,12 +897,12 @@ void GabbyAndTyAfterInterview(void)
     IncrementGameStat(GAME_STAT_GOT_INTERVIEWED);
 }
 
+#if FREE_GABBY_AND_TY == FALSE
 static void TakeGabbyAndTyOffTheAir(void)
 {
-#if FREE_GABBY_AND_TY == FALSE
     gSaveBlock1Ptr->gabbyAndTyData.onAir = FALSE;
-#endif //FREE_GABBY_AND_TY
 }
+#endif //FREE_GABBY_AND_TY
 
 // See gabby_and_ty.inc for details
 u8 GabbyAndTyGetBattleNum(void)

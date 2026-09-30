@@ -200,7 +200,6 @@ static void InitBtlControllersInternal(void)
     bool32 isMulti = (gBattleTypeFlags & BATTLE_TYPE_MULTI);
     bool32 isInGamePartner = (gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER);
     bool32 isPlayerAiControlled = IsPlayerAiControlled();
-    bool32 isAIvsAI = isPlayerAiControlled && (gBattleTypeFlags & BATTLE_TYPE_TRAINER);
 
     if (!isLink || isMaster)
         gBattleMainFunc = BeginBattleIntro;

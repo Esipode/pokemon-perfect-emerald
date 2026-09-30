@@ -212,7 +212,6 @@ static void ItemMenu_CheckWhichRegister(u8);
 static void ItemMenu_Give(u8);
 static void ItemMenu_Cancel(u8);
 static void ItemMenu_UseInBattle(u8);
-static void ItemMenu_CheckTag(u8);
 static void ItemMenu_Show(u8);
 static void ItemMenu_GiveFavorLady(u8);
 static void ItemMenu_ConfirmQuizLady(u8);
@@ -2317,12 +2316,6 @@ static void HandleErrorMessage(u8 taskId)
         PlaySE(SE_SELECT);
         CloseItemMessage(taskId);
     }
-}
-
-static void ItemMenu_CheckTag(u8 taskId)
-{
-    gBagMenu->newScreenCallback = DoBerryTagScreen;
-    Task_FadeAndCloseBagMenu(taskId);
 }
 
 static void ItemMenu_Cancel(u8 taskId)

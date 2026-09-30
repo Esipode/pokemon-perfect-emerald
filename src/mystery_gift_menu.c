@@ -523,20 +523,6 @@ void MG_DrawCheckerboardPattern(u32 bg)
     }
 }
 
-static void ClearScreenInBg0(bool32 ignoreTopTwoRows)
-{
-    switch (ignoreTopTwoRows)
-    {
-    case 0:
-        FillBgTilemapBufferRect(0, 0, 0, 0, 32, 32, 17);
-        break;
-    case 1:
-        FillBgTilemapBufferRect(0, 0, 0, 2, 32, 30, 17);
-        break;
-    }
-    CopyBgTilemapBufferToVram(0);
-}
-
 void MG_AddMessageTextPrinter(const u8 *str)
 {
     StringExpandPlaceholders(gStringVar4, str);
@@ -607,23 +593,6 @@ static bool32 UNUSED HideDownArrowAndWaitButton(u8 *textState)
         return TRUE;
     }
     return FALSE;
-}
-
-static bool32 PrintStringAndWait2Seconds(u8 *counter, const u8 *str)
-{
-    if (*counter == 0)
-        MG_AddMessageTextPrinter(str);
-
-    if (++(*counter) > 120)
-    {
-        *counter = 0;
-        ClearMessage();
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
 }
 
 static u32 MysteryGift_HandleThreeOptionMenu(u8 *unused0, u16 *unused1, u8 whichMenu)
@@ -769,14 +738,6 @@ static s32 HandleGiftSelectMenu(u8 *textState, u16 *windowId, bool32 cannotToss,
     }
 
     return LIST_NOTHING_CHOSEN;
-}
-
-static bool32 ValidateCardOrNews(bool32 isWonderNews)
-{
-    if (!isWonderNews)
-        return ValidateSavedWonderCard();
-    else
-        return ValidateSavedWonderNews();
 }
 
 static bool32 HandleLoadWonderCardOrNews(u8 *state, bool32 isWonderNews)

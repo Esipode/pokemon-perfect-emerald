@@ -356,14 +356,20 @@ static void Task_GiveHoldItem(u8);
 static void Task_SwitchItemsYesNo(u8);
 static void Task_HandleSwitchItemsYesNoInput(u8);
 static void Task_WriteMailToGiveMonAfterText(u8);
+#if FREE_MAIL == FALSE
 static void CB2_ReturnToPartyMenuFromWritingMail(void);
+#endif //FREE_MAIL
+#if FREE_MAIL == FALSE
 static void Task_DisplayGaveMailFromPartyMessage(u8);
+#endif //FREE_MAIL
 static void UpdatePartyMonHeldItemSprite(struct Pokemon *, struct PartyMenuBox *);
 static void Task_TossHeldItemYesNo(u8 taskId);
 static void Task_HandleTossHeldItemYesNoInput(u8);
 static void Task_TossHeldItem(u8);
 static void CB2_ReadHeldMail(void);
+#if FREE_MAIL == FALSE
 static void CB2_ReturnToPartyMenuFromReadingMail(void);
+#endif //FREE_MAIL
 static void Task_SendMailToPCYesNo(u8);
 static void Task_HandleSendMailToPCYesNoInput(u8);
 static void Task_LoseMailMessageYesNo(u8);
@@ -432,9 +438,13 @@ static void Task_SwitchItemsFromBagYesNo(u8);
 static void CB2_WriteMailToGiveMonFromBag(void);
 static void GiveItemToSelectedMon(u8);
 static void Task_UpdateHeldItemSpriteAndClosePartyMenu(u8);
+#if FREE_MAIL == FALSE
 static void CB2_ReturnToPartyOrBagMenuFromWritingMail(void);
+#endif //FREE_MAIL
 static bool8 ReturnGiveItemToBagOrPC(enum Item);
+#if FREE_MAIL == FALSE
 static void Task_DisplayGaveMailFromBagMessage(u8);
+#endif //FREE_MAIL
 static void Task_HandleSwitchItemsFromBagYesNoInput(u8);
 static void Task_ValidateChosenHalfParty(u8);
 static bool8 GetBattleEntryEligibility(struct Pokemon *);
@@ -3675,6 +3685,7 @@ static void CB2_WriteMailToGiveMon(void)
 #endif //FREE_MAIL
 }
 
+#if FREE_MAIL == FALSE
 static void CB2_ReturnToPartyMenuFromWritingMail(void)
 {
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
@@ -3695,8 +3706,10 @@ static void CB2_ReturnToPartyMenuFromWritingMail(void)
         InitPartyMenu(gPartyMenu.menuType, KEEP_PARTY_LAYOUT, gPartyMenu.action, TRUE, PARTY_MSG_NONE, Task_DisplayGaveMailFromPartyMessage, gPartyMenu.exitCallback);
     }
 }
+#endif //FREE_MAIL
 
 // Nearly redundant with Task_DisplayGaveMailFromBagMessgae
+#if FREE_MAIL == FALSE
 static void Task_DisplayGaveMailFromPartyMessage(u8 taskId)
 {
     if (!gPaletteFade.active)
@@ -3708,6 +3721,7 @@ static void Task_DisplayGaveMailFromPartyMessage(u8 taskId)
         gTasks[taskId].func = Task_UpdateHeldItemSprite;
     }
 }
+#endif //FREE_MAIL
 
 static void Task_UpdateHeldItemSprite(u8 taskId)
 {
@@ -3849,11 +3863,13 @@ static void CB2_ReadHeldMail(void)
 #endif //FREE_MAIL
 }
 
+#if FREE_MAIL == FALSE
 static void CB2_ReturnToPartyMenuFromReadingMail(void)
 {
     gPaletteFade.bufferTransferDisabled = TRUE;
     InitPartyMenu(gPartyMenu.menuType, KEEP_PARTY_LAYOUT, gPartyMenu.action, TRUE, PARTY_MSG_DO_WHAT_WITH_MON, Task_TryCreateSelectionWindow, gPartyMenu.exitCallback);
 }
+#endif //FREE_MAIL
 
 static void CursorCb_TakeMail(u8 taskId)
 {
@@ -7402,6 +7418,7 @@ static void CB2_WriteMailToGiveMonFromBag(void)
 #endif //FREE_MAIL
 }
 
+#if FREE_MAIL == FALSE
 static void CB2_ReturnToPartyOrBagMenuFromWritingMail(void)
 {
     struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][gPartyMenu.slotId];
@@ -7422,7 +7439,9 @@ static void CB2_ReturnToPartyOrBagMenuFromWritingMail(void)
         InitPartyMenu(gPartyMenu.menuType, KEEP_PARTY_LAYOUT, gPartyMenu.action, TRUE, PARTY_MSG_NONE, Task_DisplayGaveMailFromBagMessage, gPartyMenu.exitCallback);
     }
 }
+#endif //FREE_MAIL
 
+#if FREE_MAIL == FALSE
 static void Task_DisplayGaveMailFromBagMessage(u8 taskId)
 {
     if (!gPaletteFade.active)
@@ -7434,6 +7453,7 @@ static void Task_DisplayGaveMailFromBagMessage(u8 taskId)
         gTasks[taskId].func = Task_UpdateHeldItemSpriteAndClosePartyMenu;
     }
 }
+#endif //FREE_MAIL
 
 static void Task_SwitchItemsFromBagYesNo(u8 taskId)
 {

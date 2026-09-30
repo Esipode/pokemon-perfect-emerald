@@ -310,7 +310,9 @@ static void BuildBattlePikeStartMenu(void);
 static void BuildBattlePyramidStartMenu(void);
 static void BuildMultiPartnerRoomStartMenu(void);
 static void ShowSafariBallsWindow(void);
+#if FREE_BATTLE_FRONTIER == FALSE
 static void ShowPyramidFloorWindow(void);
+#endif //FREE_BATTLE_FRONTIER
 static bool32 ShouldShowRouteTracker(void);
 static void ShowRouteTrackerWindow(void);
 static void RemoveExtraStartMenuWindows(void);

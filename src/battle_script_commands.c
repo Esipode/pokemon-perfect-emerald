@@ -4707,7 +4707,7 @@ void BufferMoveToLearnIntoBattleTextBuff2(void)
 
     // NEW LOGIC - MIGHT BE RESPONSIBLE FOR 2-TURN move crashing bug - Need to investigate
     u16 move = gMoveToLearn;
-    u16 species = GetMonData(&gPlayerParty[gBattleStruct->expGetterMonId], MON_DATA_SPECIES, NULL);
+    u16 species = GetMonData(&gParties[B_TRAINER_PLAYER][gBattleStruct->expGetterMonId], MON_DATA_SPECIES, NULL);
 
     move = GetResolvedMove(species, move);
     PREPARE_MOVE_BUFFER(gBattleTextBuff2, move);

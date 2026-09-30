@@ -2353,15 +2353,6 @@ static s8 GetDifficultyLevelAdjustment(u16 baseLevel, u8 difficulty)
 }
 
 // Linear scaling: 30 at level 1, 252 at level 60
-static u16 GetMaxRandomizedEVForLevel(u16 level)
-{
-    if (level < 1)
-        level = 1;
-    if (level > 60)
-        level = 60;
-    return 30 + ((level - 1) * (252 - 30)) / (60 - 1);
-}
-
 static void SetTrainerMonEVsByHighestBaseStats(struct Pokemon *mon, u16 species)
 {
     const struct SpeciesInfo *speciesInfo = &gSpeciesInfo[species];
