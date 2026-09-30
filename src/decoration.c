@@ -77,7 +77,6 @@ EWRAM_DATA u8 gCurDecorationIndex = 0;
 EWRAM_DATA static u8 sCurDecorationCategory = DECORCAT_DESK;
 EWRAM_DATA static u8 sDecorMenuWindowIds[WINDOW_COUNT] = {};
 EWRAM_DATA static struct DecorationItemsMenu *sDecorationItemsMenu = NULL;
-EWRAM_DATA static struct PlaceDecorationGraphicsDataBuffer sPlaceDecorationGraphicsDataBuffer = {};
 EWRAM_DATA static struct OamData sDecorSelectorOam = {};
 
 static u8 AddDecorationWindow(u8 windowIndex);
@@ -311,7 +310,7 @@ static const union AnimCmd sDecorSelectorAnimCmd0[] =
 static const union AnimCmd *const sDecorSelectorAnimCmds[] = { sDecorSelectorAnimCmd0 };
 
 // Generic sprite template used to display a decoration icon rendered into
-// sPlaceDecorationGraphicsDataBuffer (see AddDecorationIconObjectFromObjectEvent).
+// a PlaceDecorationGraphicsDataBuffer (see AddDecorationIconObjectFromObjectEvent).
 static const struct SpriteTemplate sDecorWhilePlacingSpriteTemplate =
 {
     0x0000,
@@ -933,20 +932,24 @@ static u8 AddDecorationIconObjectFromObjectEvent(u16 tilesTag, u16 paletteTag, u
     struct SpriteSheet sheet;
     struct SpritePalette palette;
     struct SpriteTemplate *template;
+    struct PlaceDecorationGraphicsDataBuffer *buffer = Alloc(sizeof(*buffer));
 
-    ClearPlaceDecorationGraphicsDataBuffer(&sPlaceDecorationGraphicsDataBuffer);
-    sPlaceDecorationGraphicsDataBuffer.decoration = &gDecorations[decor];
-    if (sPlaceDecorationGraphicsDataBuffer.decoration->permission != DECORPERM_SPRITE)
+    if (buffer == NULL)
+        return MAX_SPRITES;
+
+    ClearPlaceDecorationGraphicsDataBuffer(buffer);
+    buffer->decoration = &gDecorations[decor];
+    if (buffer->decoration->permission != DECORPERM_SPRITE)
     {
-        SetDecorSelectionMetatiles(&sPlaceDecorationGraphicsDataBuffer);
-        SetDecorSelectionBoxOamAttributes(sPlaceDecorationGraphicsDataBuffer.decoration->shape);
-        SetDecorSelectionBoxTiles(&sPlaceDecorationGraphicsDataBuffer);
-        CopyPalette(sPlaceDecorationGraphicsDataBuffer.palette, gTilesetPointer_SecretBaseRedCave->metatiles[(sPlaceDecorationGraphicsDataBuffer.decoration->tiles[0] * NUM_TILES_PER_METATILE) + 7] >> 12);
-        sheet.data = sPlaceDecorationGraphicsDataBuffer.image;
-        sheet.size = sDecorShapes[sPlaceDecorationGraphicsDataBuffer.decoration->shape].size * TILE_SIZE_4BPP;
+        SetDecorSelectionMetatiles(buffer);
+        SetDecorSelectionBoxOamAttributes(buffer->decoration->shape);
+        SetDecorSelectionBoxTiles(buffer);
+        CopyPalette(buffer->palette, gTilesetPointer_SecretBaseRedCave->metatiles[(buffer->decoration->tiles[0] * NUM_TILES_PER_METATILE) + 7] >> 12);
+        sheet.data = buffer->image;
+        sheet.size = sDecorShapes[buffer->decoration->shape].size * TILE_SIZE_4BPP;
         sheet.tag = tilesTag;
         LoadSpriteSheet(&sheet);
-        palette.data = sPlaceDecorationGraphicsDataBuffer.palette;
+        palette.data = buffer->palette;
         palette.tag = paletteTag;
         LoadSpritePalette(&palette);
         template = Alloc(sizeof(struct SpriteTemplate));
@@ -958,8 +961,9 @@ static u8 AddDecorationIconObjectFromObjectEvent(u16 tilesTag, u16 paletteTag, u
     }
     else
     {
-        spriteId = CreateObjectGraphicsSpriteWithTag(sPlaceDecorationGraphicsDataBuffer.decoration->tiles[0], SpriteCallbackDummy, 0, 0, 1, paletteTag);
+        spriteId = CreateObjectGraphicsSpriteWithTag(buffer->decoration->tiles[0], SpriteCallbackDummy, 0, 0, 1, paletteTag);
     }
+    Free(buffer);
     return spriteId;
 }
 
