@@ -1,6 +1,7 @@
 #include "global.h"
 #include "script.h"
 #include "event_data.h"
+#include "field_chansey.h"
 #include "field_screen_effect.h"
 #include "mystery_gift.h"
 #include "random.h"
@@ -442,6 +443,7 @@ void RunOnLoadMapScript(void)
 
 void RunOnTransitionMapScript(void)
 {
+    FieldChansey_RefreshVisibility();
     MapHeaderRunScriptType(MAP_SCRIPT_ON_TRANSITION);
 }
 
