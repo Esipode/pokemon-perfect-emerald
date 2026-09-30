@@ -103,12 +103,14 @@ void PartyDashboard_InitWindows(void);
 const u8 *PartyDashboard_GetSpriteCoords(u32 slot);
 void PartyDashboard_DrawSlot(u32 slot, struct Pokemon *mon);
 void PartyDashboard_DrawSlotDescription(u32 slot, const u8 *text);
+void PartyDashboard_ClearSlotText(u32 slot);
 void PartyDashboard_DrawEmptySlot(u32 slot, bool32 locked);
 void PartyDashboard_SetSlotPalette(u32 slot, u32 palFlags);
 void PartyDashboard_Select(u32 slot, struct Pokemon *mon);
 bool32 PartyDashboard_SetTab(s32 delta);
 void PartyDashboard_RefreshSlot(u32 slot, struct Pokemon *mon);
-void PartyDashboard_ShowHint(u32 stringId);
+void PartyDashboard_ShowHint(const u8 *text);
+void PartyDashboard_ClearHint(void);
 void PartyDashboard_Update(void);
 
 #endif // GUARD_PARTY_DASHBOARD_H

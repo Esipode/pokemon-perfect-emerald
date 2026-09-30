@@ -157,6 +157,10 @@ enum PartyDashPalRow
 // no permanent window may extend past 0x21F. The hint window is allocated dynamically above the
 // item/mail submenu block.
 #define HINT_BASE_BLOCK 0x3CE
+#define HINT_TEXT_X     4
+#define HINT_TEXT_Y     1
+
+static const u8 sText_DashIdleHint[] = _("{A_BUTTON}Actions {B_BUTTON}Back {L_BUTTON}{R_BUTTON}Tab");
 
 enum
 {

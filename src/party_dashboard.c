@@ -313,6 +313,12 @@ static void CommitSlotWindow(u32 slot)
     CopyWindowToVram(slot, COPYWIN_FULL);
 }
 
+void PartyDashboard_ClearSlotText(u32 slot)
+{
+    ClearSlotWindow(slot);
+    CommitSlotWindow(slot);
+}
+
 // Thin bar on a track, in the slot window's bar row.
 static void DrawSlotBar(u32 slot, u32 width, u32 fill, u32 pix)
 {
@@ -824,8 +830,23 @@ void PartyDashboard_RefreshSlot(u32 slot, struct Pokemon *mon)
         PartyDashboard_Select(slot, mon);
 }
 
-void PartyDashboard_ShowHint(u32 stringId)
+// Prints a prompt in the hint bar; NULL prints the idle key hints.
+void PartyDashboard_ShowHint(const u8 *text)
 {
+    if (text == NULL)
+        text = sText_DashIdleHint;
+
+    PartyDashboard_ClearHint();
+    StringExpandPlaceholders(gStringVar4, text);
+    AddTextPrinterParameterized3(sDashboard->hintWindowId, GetFontIdToFit(gStringVar4, FONT_NORMAL, 0, HINT_W * TILE_WIDTH - 2 * HINT_TEXT_X),
+                                 HINT_TEXT_X, HINT_TEXT_Y, sIdentTextColors, TEXT_SKIP_DRAW, gStringVar4);
+    CopyWindowToVram(sDashboard->hintWindowId, COPYWIN_GFX);
+}
+
+void PartyDashboard_ClearHint(void)
+{
+    FillWindowPixelBuffer(sDashboard->hintWindowId, PIXEL_FILL(0));
+    CopyWindowToVram(sDashboard->hintWindowId, COPYWIN_GFX);
 }
 
 void PartyDashboard_Update(void)

@@ -2983,13 +2983,24 @@ static void PartyMenuRemoveWindow(u8 *ptr)
     }
 }
 
-// One-line prompts that the dashboard layout omits to keep the screen free; error messages still show.
+static u32 ResolveChooseMonMessage(void)
+{
+    if (gPartiesCount[B_TRAINER_PLAYER] == 0)
+        return PARTY_MSG_NO_POKEMON;
+    if (sPartyMenuInternal->chooseHalf)
+        return PARTY_MSG_CHOOSE_MON_AND_CONFIRM;
+    if (!ShouldUseChooseMonText())
+        return PARTY_MSG_CHOOSE_MON_OR_CANCEL;
+    return PARTY_MSG_CHOOSE_MON;
+}
+
+// One-line prompts print in the dashboard hint bar; other messages keep the bottom message window.
 static bool32 IsDashboardPromptMessage(u32 stringId)
 {
     switch (stringId)
     {
+    case PARTY_MSG_NO_POKEMON:
     case PARTY_MSG_CHOOSE_MON:
-        return gPartiesCount[B_TRAINER_PLAYER] != 0;
     case PARTY_MSG_CHOOSE_MON_OR_CANCEL:
     case PARTY_MSG_CHOOSE_MON_AND_CONFIRM:
     case PARTY_MSG_CHOOSE_MON_2:
@@ -3013,11 +3024,29 @@ void DisplayPartyMenuStdMessage(u32 stringId)
     if (*windowPtr != WINDOW_NONE)
         PartyMenuRemoveWindow(windowPtr);
 
-    if (IsPartyDashboard() && IsDashboardPromptMessage(stringId))
+    if (IsPartyDashboard())
     {
-        // Presents the tilemap change that cleared a previous message window.
-        ScheduleBgCopyTilemapToVram(2);
-        return;
+        if (stringId == PARTY_MSG_CHOOSE_MON)
+            stringId = ResolveChooseMonMessage();
+
+        if (IsDashboardPromptMessage(stringId))
+        {
+            // Field menu idle state shows the key hints instead of a prompt.
+            if (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD && gPartyMenu.action == PARTY_ACTION_CHOOSE_MON
+             && (stringId == PARTY_MSG_CHOOSE_MON || stringId == PARTY_MSG_CHOOSE_MON_OR_CANCEL))
+            {
+                PartyDashboard_ShowHint(NULL);
+            }
+            else
+            {
+                StringExpandPlaceholders(gStringVar4, sActionStringTable[stringId]);
+                PartyDashboard_ShowHint(gStringVar4);
+            }
+            // Presents the tilemap change that cleared a previous message window.
+            ScheduleBgCopyTilemapToVram(2);
+            return;
+        }
+        PartyDashboard_ClearHint();
     }
 
     if (stringId != PARTY_MSG_NONE)
@@ -3049,15 +3078,7 @@ void DisplayPartyMenuStdMessage(u32 stringId)
         }
 
         if (stringId == PARTY_MSG_CHOOSE_MON)
-        {
-            if (sPartyMenuInternal->chooseHalf)
-                stringId = PARTY_MSG_CHOOSE_MON_AND_CONFIRM;
-            else if (!ShouldUseChooseMonText())
-                stringId = PARTY_MSG_CHOOSE_MON_OR_CANCEL;
-
-            if (gPartiesCount[B_TRAINER_PLAYER] == 0)
-                stringId = PARTY_MSG_NO_POKEMON;
-        }
+            stringId = ResolveChooseMonMessage();
         DrawStdFrameWithCustomTileAndPalette(*windowPtr, FALSE, 0x4F, 13);
         StringExpandPlaceholders(gStringVar4, sActionStringTable[stringId]);
         AddTextPrinterParameterized(*windowPtr, FONT_NORMAL, gStringVar4, 0, 1, 0, 0);
@@ -3111,6 +3132,15 @@ static u8 DisplaySelectionWindow(u8 windowType)
     default: // SELECTWINDOW_MOVES
         window = sMoveSelectWindowTemplate;
         break;
+    }
+
+    if (IsPartyDashboard())
+    {
+        // Keep the grid and the hint bar (rows 18-19) uncovered: the frame's bottom edge lands on row 17.
+        if (windowType == SELECTWINDOW_ACTIONS)
+            window.tilemapTop = max(17 - window.height, 1);
+        else
+            window.tilemapTop -= 2;
     }
 
     sPartyMenuInternal->windowId[0] = AddWindow(&window);
@@ -3437,6 +3467,74 @@ static void CursorCb_Switch(u8 taskId)
 #define tSlot2BaseBlock data[13]
 #define count           data[14]
 
+#define DASH_SWITCH_FRAMES 14
+#define tDashFrame data[0]
+#define tDashDx    data[1]
+#define tDashDy    data[2]
+
+static void MovePartyMenuBoxSpritesBy(struct PartyMenuBox *menuBox, s32 dx, s32 dy)
+{
+    u8 spriteIds[] = {menuBox->pokeballSpriteId, menuBox->itemSpriteId, menuBox->monSpriteId, menuBox->statusSpriteId};
+
+    for (u32 i = 0; i < ARRAY_COUNT(spriteIds); i++)
+    {
+        gSprites[spriteIds[i]].x += dx;
+        gSprites[spriteIds[i]].y += dy;
+    }
+}
+
+// Smoothstep of the travelled distance; frame 0 gives 0, DASH_SWITCH_FRAMES gives the full distance.
+static s32 GetDashboardSwitchOffset(s32 distance, s32 frame)
+{
+    s32 t = frame * 256 / DASH_SWITCH_FRAMES;
+
+    return distance * ((t * t * (768 - 2 * t)) >> 16) / 256;
+}
+
+// Dashboard swap: the two slots' sprites glide to each other's cell, then the data and sprite ids swap.
+static void Task_DashboardSwitchSlots(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    s32 dx, dy;
+
+    tDashFrame++;
+    dx = GetDashboardSwitchOffset(tDashDx, tDashFrame) - GetDashboardSwitchOffset(tDashDx, tDashFrame - 1);
+    dy = GetDashboardSwitchOffset(tDashDy, tDashFrame) - GetDashboardSwitchOffset(tDashDy, tDashFrame - 1);
+    MovePartyMenuBoxSpritesBy(&sPartyMenuBoxes[gPartyMenu.slotId], dx, dy);
+    MovePartyMenuBoxSpritesBy(&sPartyMenuBoxes[gPartyMenu.slotId2], -dx, -dy);
+
+    if (tDashFrame < DASH_SWITCH_FRAMES)
+        return;
+
+    SwitchPartyMon();
+    RenderPartyMenuBox(gPartyMenu.slotId);
+    RenderPartyMenuBox(gPartyMenu.slotId2);
+    // The cursor moves to slotId2, which now holds the mon that was picked first.
+    PartyDashboard_Select(gPartyMenu.slotId2, GetPartyMonFromPartyMenuId(gPartyMenu.slotId2));
+    FinishTwoMonAction(taskId);
+}
+
+static void StartDashboardSwitch(u8 taskId)
+{
+    s16 *data = gTasks[taskId].data;
+    const u8 *coords1 = PartyDashboard_GetSpriteCoords(gPartyMenu.slotId);
+    const u8 *coords2 = PartyDashboard_GetSpriteCoords(gPartyMenu.slotId2);
+
+    tDashFrame = 0;
+    tDashDx = coords2[0] - coords1[0];
+    tDashDy = coords2[1] - coords1[1];
+    gPartyMenu.action = PARTY_ACTION_SWITCHING;
+    AnimatePartySlot(gPartyMenu.slotId, 1);
+    AnimatePartySlot(gPartyMenu.slotId2, 1);
+    PartyDashboard_ClearSlotText(gPartyMenu.slotId);
+    PartyDashboard_ClearSlotText(gPartyMenu.slotId2);
+    gTasks[taskId].func = Task_DashboardSwitchSlots;
+}
+
+#undef tDashFrame
+#undef tDashDx
+#undef tDashDy
+
 static void SwitchSelectedMons(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
@@ -3445,6 +3543,10 @@ static void SwitchSelectedMons(u8 taskId)
     if (gPartyMenu.slotId2 == gPartyMenu.slotId)
     {
         FinishTwoMonAction(taskId);
+    }
+    else if (IsPartyDashboard())
+    {
+        StartDashboardSwitch(taskId);
     }
     else
     {
@@ -3624,6 +3726,9 @@ static void SwitchMenuBoxSprites(u8 *spriteIdPtr1, u8 *spriteIdPtr2)
 
     *spriteIdPtr1 = *spriteIdPtr2;
     *spriteIdPtr2 = spriteIdBuffer;
+    // Dashboard sprites already glided to each other's cell.
+    if (IsPartyDashboard())
+        return;
     xBuffer1 = gSprites[*spriteIdPtr1].x;
     yBuffer1 = gSprites[*spriteIdPtr1].y;
     xBuffer2 = gSprites[*spriteIdPtr1].x2;
