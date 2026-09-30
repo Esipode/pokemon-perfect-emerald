@@ -1094,10 +1094,12 @@ static void PlayerNotOnBikeMoving(enum Direction direction, u16 heldKeys)
         return;
     }
 
-    if (!(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_UNDERWATER) && (gRunToggleBtnSet || FlagGet(FLAG_RUNNING_SHOES_TOGGLE) || (heldKeys & B_BUTTON))
+    // In hold-to-run mode, running follows the held B button only; any leftover toggle state is ignored.
+    if (!(gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_UNDERWATER)
+     && ((gSaveBlock2Ptr->optionsToggleRun && (gRunToggleBtnSet || FlagGet(FLAG_RUNNING_SHOES_TOGGLE))) || (heldKeys & B_BUTTON))
      && FlagGet(FLAG_SYS_B_DASH) && IsRunningDisallowed(gObjectEvents[gPlayerAvatar.objectEventId].currentMetatileBehavior) == 0  && !FollowerNPCComingThroughDoor())
     {
-        if (gRunToggleBtnSet)
+        if (gRunToggleBtnSet && gSaveBlock2Ptr->optionsToggleRun)
         {
             gRunToggleBtnSet = FALSE;
             if (FlagGet(FLAG_RUNNING_SHOES_TOGGLE) == FALSE)

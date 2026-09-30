@@ -847,7 +847,7 @@ struct SaveBlock2
              // Legacy: read only to migrate saves whose healthboxOptions.initialized is 0.
              u8 optionsHpDisplayPlayer:3;   // 0 = unset (BAR + HP)
              u8 optionsHpDisplayOpponent:3; // 0 = unset (BAR, or BAR + % when B_HP_PERCENTAGE_DISPLAY)
-             //u8 padding3:1;
+             u8 optionsToggleRun:1; // 1 = B press toggles running; 0 = run only while B is held (also the value on existing saves)
     /*0x97*/ u8 newGamePlus; // New Game+ counter (0-255)
     /*0x98*/ struct Time localTimeOffset;
     /*0xA0*/ struct Time lastBerryTreeUpdate;

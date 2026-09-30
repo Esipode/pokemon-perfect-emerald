@@ -167,7 +167,8 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
         input->dpadDirection = DIR_EAST;
 
     // If B is pressed, field controls are allowed, and the player is either running or walking.
-    if ((newKeys & B_BUTTON) && (!ArePlayerFieldControlsLocked())
+    // Hold-to-run mode (default) never arms the toggle.
+    if ((newKeys & B_BUTTON) && gSaveBlock2Ptr->optionsToggleRun && (!ArePlayerFieldControlsLocked())
     && (gPlayerAvatar.flags & (PLAYER_AVATAR_FLAG_DASH | PLAYER_AVATAR_FLAG_ON_FOOT)))
     {
         gRunToggleBtnSet = TRUE;

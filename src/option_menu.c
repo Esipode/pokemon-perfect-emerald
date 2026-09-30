@@ -116,7 +116,10 @@ static const u8 gText_BattleSpeed3x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_BattleSpeed4x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}4x");
 static const u8 gText_BattleSpeed5x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}5x");
 
-static const u8 sText_ChevronLeft[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
+static const u8 gText_RunModeToggle[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}TOGGLE");
+static const u8 gText_RunModeHold[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HOLD");
+
+static const u8 sText_ChevronLeft[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
 
 static const u16 sOptionMenuText_Pal[] = INCGFX_U16("graphics/interface/option_menu_text.pal", ".gbapal");
@@ -138,6 +141,7 @@ enum OptionId
     OPTION_EXP_SHARE,
     OPTION_ACHIEVEMENT_BOOSTS,
     OPTION_ROUTE_TRACKER,
+    OPTION_RUN_MODE,
     OPTION_PLAYER_COLOURS,
     OPTION_HEALTHBOX,
     OPTIONS_COUNT,
@@ -190,6 +194,7 @@ static const u8 *const sValueTexts_AiBattles[] = {gText_AIBattlesOff, gText_AIBa
 static const u8 *const sValueTexts_ExpShare[] = {gText_ExpShareOptionOff, gText_ExpShareOptionOn};
 static const u8 *const sValueTexts_AchievementBoosts[] = {gText_AchievementBoostsOff, gText_AchievementBoostsOn};
 static const u8 *const sValueTexts_RouteTracker[] = {gText_RouteTrackerOff, gText_RouteTrackerOn};
+static const u8 *const sValueTexts_RunMode[] = {gText_RunModeHold, gText_RunModeToggle};
 
 static const struct OptionEntry sOptions[OPTIONS_COUNT] =
 {
@@ -298,6 +303,14 @@ static const struct OptionEntry sOptions[OPTIONS_COUNT] =
         .defaultValue = FALSE,
         .valueTexts = sValueTexts_RouteTracker,
     },
+    [OPTION_RUN_MODE] = {
+        .name = COMPOUND_STRING("RUN MODE"),
+        .description = COMPOUND_STRING("Hold runs only while B is held. Toggle switches between walking and running each time B is pressed."),
+        .type = OPTION_TYPE_ENUM,
+        .valueCount = ARRAY_COUNT(sValueTexts_RunMode),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_RunMode,
+    },
     [OPTION_PLAYER_COLOURS] = {
         .name = COMPOUND_STRING("PLAYER COLOURS"),
         .description = COMPOUND_STRING("Opens the menu for customising your character's hat, outfit, and other colours."),
@@ -314,7 +327,7 @@ static const struct OptionEntry sOptions[OPTIONS_COUNT] =
 
 static const u8 sCategoryOptions_General[] = {OPTION_TEXT_SPEED, OPTION_SOUND, OPTION_FRAME, OPTION_AUTOSAVE, OPTION_AUTO_SCROLL};
 static const u8 sCategoryOptions_Battle[] = {OPTION_BATTLE_SCENE, OPTION_BATTLE_STYLE, OPTION_BATTLE_SPEED, OPTION_AI_TRAINER, OPTION_AI_WILD};
-static const u8 sCategoryOptions_Gameplay[] = {OPTION_EXP_SHARE, OPTION_ACHIEVEMENT_BOOSTS, OPTION_ROUTE_TRACKER};
+static const u8 sCategoryOptions_Gameplay[] = {OPTION_EXP_SHARE, OPTION_ACHIEVEMENT_BOOSTS, OPTION_ROUTE_TRACKER, OPTION_RUN_MODE};
 static const u8 sCategoryOptions_Display[] = {OPTION_PLAYER_COLOURS, OPTION_HEALTHBOX};
 
 static const struct OptionCategory sCategories[CATEGORIES_COUNT] =
@@ -379,6 +392,8 @@ static u8 LoadOptionValue(u8 optionId)
         return Achievement_BoostsEnabled() ? 1 : 0;
     case OPTION_ROUTE_TRACKER:
         return gSaveBlock2Ptr->optionsRouteTracker ? 1 : 0;
+    case OPTION_RUN_MODE:
+        return gSaveBlock2Ptr->optionsToggleRun ? 1 : 0;
     default:
         return 0;
     }
@@ -431,6 +446,9 @@ static void StoreOptionValue(u8 optionId, u8 value)
         break;
     case OPTION_ROUTE_TRACKER:
         gSaveBlock2Ptr->optionsRouteTracker = value;
+        break;
+    case OPTION_RUN_MODE:
+        gSaveBlock2Ptr->optionsToggleRun = value;
         break;
     }
 }
