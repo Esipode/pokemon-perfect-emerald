@@ -27,6 +27,15 @@ static const struct BgTemplate sPartyMenuBgTemplates[] =
         .priority = 0,
         .baseTile = 0
     },
+    { // Dashboard type icons; only initialised when IsPartyDashboard()
+        .bg = 3,
+        .charBaseIndex = 2,
+        .mapBaseIndex = 27,
+        .screenSize = 0,
+        .paletteMode = 0,
+        .priority = 1,
+        .baseTile = 0
+    },
 };
 
 static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =

@@ -48,6 +48,7 @@
 #include "move_relearner.h"
 #include "overworld.h"
 #include "palette.h"
+#include "party_dashboard.h"
 #include "party_menu.h"
 #include "player_pc.h"
 #include "pokemon.h"
@@ -160,15 +161,6 @@ enum {
 };
 
 #define TAG_HELD_ITEM 55120
-
-#define PARTY_PAL_SELECTED     (1 << 0)
-#define PARTY_PAL_FAINTED      (1 << 1)
-#define PARTY_PAL_TO_SWITCH    (1 << 2)
-#define PARTY_PAL_MULTI_ALT    (1 << 3)
-#define PARTY_PAL_SWITCHING    (1 << 4)
-#define PARTY_PAL_TO_SOFTBOIL  (1 << 5)
-#define PARTY_PAL_NO_MON       (1 << 6)
-#define PARTY_PAL_UNUSED       (1 << 7)
 
 #define MENU_DIR_DOWN     1
 #define MENU_DIR_UP      -1
@@ -902,9 +894,13 @@ static bool8 AllocPartyMenuBg(void)
     if (sPartyBgTilemapBuffer == NULL)
         return FALSE;
 
+    if (IsPartyDashboard() && !PartyDashboard_Alloc())
+        return FALSE;
+
     memset(sPartyBgTilemapBuffer, 0, 0x800);
     ResetBgsAndClearDma3BusyFlags(0);
-    InitBgsFromTemplates(0, sPartyMenuBgTemplates, ARRAY_COUNT(sPartyMenuBgTemplates));
+    // The last template is the dashboard's BG3 (type icons).
+    InitBgsFromTemplates(0, sPartyMenuBgTemplates, IsPartyDashboard() ? ARRAY_COUNT(sPartyMenuBgTemplates) : ARRAY_COUNT(sPartyMenuBgTemplates) - 1);
     SetBgTilemapBuffer(1, sPartyBgTilemapBuffer);
     ResetAllBgsCoordinates();
     ScheduleBgCopyTilemapToVram(1);
@@ -913,12 +909,20 @@ static bool8 AllocPartyMenuBg(void)
     ShowBg(0);
     ShowBg(1);
     ShowBg(2);
+    if (IsPartyDashboard())
+        PartyDashboard_InitBgs();
     return TRUE;
 }
 
 static bool8 AllocPartyMenuBgGfx(void)
 {
     u32 sizeout;
+
+    if (IsPartyDashboard())
+    {
+        PartyDashboard_LoadGfx();
+        return TRUE;
+    }
 
     switch (sPartyMenuInternal->data[0])
     {
@@ -982,6 +986,7 @@ static void FreePartyPointers(void)
         Free(sPartyBgGfxTilemap);
     if (sPartyMenuBoxes)
         Free(sPartyMenuBoxes);
+    PartyDashboard_Free();
     FreeAllWindowBuffers();
 }
 
@@ -1000,7 +1005,7 @@ static void LoadPartyMenuBoxes(enum PartyMenuLayout layout)
         sPartyMenuBoxes[i].infoRects = &sPartyBoxInfoRects[PARTY_BOX_RIGHT_COLUMN];
         if (layout == PARTY_LAYOUT_SINGLE)  //Custom party menu
             sPartyMenuBoxes[i].infoRects = &sPartyBoxInfoRects[PARTY_BOX_EQUAL_COLUMN];
-        sPartyMenuBoxes[i].spriteCoords = sPartyMenuSpriteCoords[layout][i];
+        sPartyMenuBoxes[i].spriteCoords = IsPartyDashboard() ? PartyDashboard_GetSpriteCoords(i) : sPartyMenuSpriteCoords[layout][i];
         sPartyMenuBoxes[i].windowId = i;
         sPartyMenuBoxes[i].monSpriteId = SPRITE_NONE;
         sPartyMenuBoxes[i].itemSpriteId = SPRITE_NONE;
@@ -1036,8 +1041,27 @@ static void TryDisplayPartySlotLockedText(u8 slot)
                                   sFontColorTable[0], 0, sText_PartySlotLocked);
 }
 
+static void RenderPartyDashboardBox(u8 slot)
+{
+    if (gPartiesCount[B_TRAINER_PLAYER] == 0)
+        return;
+
+    PartyDashboard_DrawSlot(slot);
+    if (GetMonData(GetPartyMonFromPartyMenuId(slot), MON_DATA_SPECIES) == SPECIES_NONE)
+        PartyDashboard_SetSlotPalette(slot, PARTY_PAL_NO_MON);
+    else
+        AnimatePartySlot(slot, gPartyMenu.slotId == slot);
+    ScheduleBgCopyTilemapToVram(0);
+}
+
 static void RenderPartyMenuBox(u8 slot)
 {
+    if (IsPartyDashboard())
+    {
+        RenderPartyDashboardBox(slot);
+        return;
+    }
+
     if (gPartyMenu.menuType == PARTY_MENU_TYPE_MULTI_FULL_SHOWCASE && gPartyMenu.layout == PARTY_LAYOUT_MULTI_FULL_SHOWCASE_PARTNER)
     {
         DisplayPartyPokemonDataForMultiBattle(slot);
@@ -1337,6 +1361,9 @@ static bool8 CreatePartyMonSpritesLoop(void)
 
 static void CreateCancelConfirmPokeballSprites(void)
 {
+    if (IsPartyDashboard())
+        return;
+
     if (gPartyMenu.menuType == PARTY_MENU_TYPE_MULTI_SHOWCASE
      || gPartyMenu.menuType == PARTY_MENU_TYPE_MULTI_FULL_SHOWCASE)
     {
@@ -1363,12 +1390,19 @@ void AnimatePartySlot(u8 slot, u8 animNum)
 {
     u8 spriteId;
 
+    // The dashboard has no Cancel/Confirm buttons to animate.
+    if (IsPartyDashboard() && slot >= PARTY_SIZE)
+        return;
+
     switch (slot)
     {
     default:
         if (GetMonData(GetPartyMonFromPartyMenuId(slot), MON_DATA_SPECIES) != SPECIES_NONE)
         {
-            LoadPartyBoxPalette(&sPartyMenuBoxes[slot], GetPartyBoxPaletteFlags(slot, animNum));
+            if (IsPartyDashboard())
+                PartyDashboard_SetSlotPalette(slot, GetPartyBoxPaletteFlags(slot, animNum));
+            else
+                LoadPartyBoxPalette(&sPartyMenuBoxes[slot], GetPartyBoxPaletteFlags(slot, animNum));
             AnimateSelectedPartyIcon(sPartyMenuBoxes[slot].monSpriteId, animNum);
             PartyMenuStartSpriteAnim(sPartyMenuBoxes[slot].pokeballSpriteId, animNum);
         }
@@ -2366,6 +2400,13 @@ static enum CanMoveBeLearned CanTeachMove(struct Pokemon *mon, enum Move move)
 
 static void InitPartyMenuWindows(enum PartyMenuLayout layout)
 {
+    if (IsPartyDashboard())
+    {
+        PartyDashboard_InitWindows();
+        LoadPartyMenuWindows();
+        return;
+    }
+
     switch (layout)
     {
     case PARTY_LAYOUT_MULTI_SHOWCASE:
@@ -2401,6 +2442,9 @@ static void CreateCancelConfirmWindows(bool8 chooseHalf)
     u8 cancelWindowId;
     u8 offset;
     u8 mainOffset;
+
+    if (IsPartyDashboard())
+        return;
 
     if (gPartyMenu.menuType != PARTY_MENU_TYPE_MULTI_SHOWCASE
      && gPartyMenu.menuType != PARTY_MENU_TYPE_MULTI_FULL_SHOWCASE)

@@ -3,28 +3,41 @@
 #include "battle_factory.h"
 #include "battle_interface.h"
 #include "battle_tent.h"
+#include "bg.h"
+#include "decompress.h"
 #include "event_data.h"
+#include "graphics.h"
+#include "healthbox.h"
 #include "malloc.h"
+#include "menu.h"
 #include "move.h"
 #include "move_relearner.h"
 #include "party_dashboard.h"
 #include "pokemon.h"
 #include "pokemon_summary_screen.h"
 #include "randomization.h"
+#include "palette.h"
 #include "recruits_mode.h"
+#include "text.h"
+#include "window.h"
 #include "constants/flags.h"
 #include "constants/party_menu.h"
+
+#include "data/party_dashboard.h"
 
 struct PartyDashboard
 {
     struct PartyDashboardMon mon;
     u8 selectedSlot;
     u8 tab;
+    u8 hintWindowId;
+    // DMA sources: must outlive the queued VRAM copies.
+    u8 chromeTiles[CHROME_TILE_COUNT * TILE_SIZE_4BPP];
+    u8 iconTiles[BG3_TILE_COUNT * TILE_SIZE_4BPP];
+    u16 bg3Tilemap[BG_SCREEN_SIZE / sizeof(u16)];
 };
 
 static EWRAM_DATA struct PartyDashboard *sDashboard = NULL;
-
-#include "data/party_dashboard.h"
 
 static bool32 CanMonRelearn(struct Pokemon *mon)
 {
@@ -39,9 +52,10 @@ static bool32 CanMonRelearn(struct Pokemon *mon)
     return FALSE;
 }
 
-void PartyDashboard_Alloc(void)
+bool32 PartyDashboard_Alloc(void)
 {
     sDashboard = AllocZeroed(sizeof(*sDashboard));
+    return sDashboard != NULL;
 }
 
 void PartyDashboard_Free(void)
@@ -135,31 +149,165 @@ void PartyDashboard_BuildMonData(struct Pokemon *mon, u32 slot, struct PartyDash
     }
 }
 
-// Rendering entry points. Implemented in later stages.
+static u32 GetChromePixel(u32 tile, u32 x, u32 y)
+{
+    u32 edges = sChromeTileEdges[tile];
+
+    switch (tile)
+    {
+    case CHROME_TILE_BLANK:
+        return 0;
+    case CHROME_TILE_TAB_FILL:
+        return CHROME_PIX_EDGE;
+    case CHROME_TILE_HINT_FILL:
+        return CHROME_PIX_HINT;
+    }
+
+    if (((edges & CHROME_EDGE_TOP) && y < CHROME_EDGE_PX)
+     || ((edges & CHROME_EDGE_BOTTOM) && y >= TILE_HEIGHT - CHROME_EDGE_PX)
+     || ((edges & CHROME_EDGE_LEFT) && x < CHROME_EDGE_PX)
+     || ((edges & CHROME_EDGE_RIGHT) && x >= TILE_WIDTH - CHROME_EDGE_PX))
+        return CHROME_PIX_EDGE;
+    return CHROME_PIX_FILL;
+}
+
+static void GenerateChromeTiles(void)
+{
+    u32 tile, x, y;
+
+    for (tile = 0; tile < CHROME_TILE_COUNT; tile++)
+    {
+        u8 *dst = &sDashboard->chromeTiles[tile * TILE_SIZE_4BPP];
+
+        for (y = 0; y < TILE_HEIGHT; y++)
+        {
+            for (x = 0; x < TILE_WIDTH; x += 2)
+                *dst++ = GetChromePixel(tile, x, y) | (GetChromePixel(tile, x + 1, y) << 4);
+        }
+    }
+}
+
+static void DrawSlotFrame(u32 slot)
+{
+    static const u8 sFrameTiles[3][3] =
+    {
+        {CHROME_TILE_TOP_LEFT,    CHROME_TILE_TOP,  CHROME_TILE_TOP_RIGHT},
+        {CHROME_TILE_LEFT,        CHROME_TILE_FILL, CHROME_TILE_RIGHT},
+        {CHROME_TILE_BOTTOM_LEFT, CHROME_TILE_BOTTOM, CHROME_TILE_BOTTOM_RIGHT},
+    };
+    u32 left = (slot % PARTY_DASH_COLUMNS) * SLOT_W_TILES;
+    u32 top = (slot / PARTY_DASH_COLUMNS) * SLOT_H_TILES;
+    u32 x, y;
+
+    for (y = 0; y < SLOT_H_TILES; y++)
+    {
+        u32 tileRow = (y == 0) ? 0 : (y == SLOT_H_TILES - 1) ? 2 : 1;
+
+        for (x = 0; x < SLOT_W_TILES; x++)
+        {
+            u32 tileCol = (x == 0) ? 0 : (x == SLOT_W_TILES - 1) ? 2 : 1;
+
+            FillBgTilemapBufferRect(1, sFrameTiles[tileRow][tileCol], left + x, top + y, 1, 1, PARTY_DASH_PAL_SLOT_FIRST + slot);
+        }
+    }
+}
+
+static void LoadSlotPaletteRow(u32 slot, enum PartyDashPalRow row)
+{
+    LoadPalette(&gPartyDashboard_Pal[row * 16], BG_PLTT_ID(PARTY_DASH_PAL_SLOT_FIRST + slot), PLTT_SIZE_4BPP);
+}
+
 void PartyDashboard_InitBgs(void)
 {
+    SetBgTilemapBuffer(3, sDashboard->bg3Tilemap);
+    ShowBg(3);
 }
 
+// Loads chrome tiles, palettes and type-icon tiles, and draws the static BG1 layout.
 void PartyDashboard_LoadGfx(void)
 {
+    const bool32 newIcons = Healthbox_IsNewStyle();
+    u32 slot;
+
+    GenerateChromeTiles();
+    LoadBgTiles(1, sDashboard->chromeTiles, sizeof(sDashboard->chromeTiles), 0);
+
+    FillBgTilemapBufferRect(1, CHROME_TILE_BLANK, 0, 0, 32, 32, PARTY_DASH_PAL_CHROME);
+    for (slot = 0; slot < PARTY_DASH_MAX_SLOTS; slot++)
+        DrawSlotFrame(slot);
+    FillBgTilemapBufferRect(1, CHROME_TILE_FILL, IDENT_X, IDENT_Y, IDENT_W, IDENT_H, PARTY_DASH_PAL_CHROME);
+    FillBgTilemapBufferRect(1, CHROME_TILE_TAB_FILL, TABS_X, TABS_Y, TABS_W, TABS_H, PARTY_DASH_PAL_CHROME);
+    FillBgTilemapBufferRect(1, CHROME_TILE_FILL, BODY_X, BODY_Y, BODY_W, BODY_H, PARTY_DASH_PAL_CHROME);
+    FillBgTilemapBufferRect(1, CHROME_TILE_HINT_FILL, HINT_X, HINT_Y, HINT_W, HINT_H, PARTY_DASH_PAL_CHROME);
+    ScheduleBgCopyTilemapToVram(1);
+
+    // Type icons: both sheets of the active healthbox style go to BG3 char base 2.
+    DecompressDataWithHeaderWram(newIcons ? gBattleIconsNew_Gfx1 : gBattleIcons_Gfx1, &sDashboard->iconTiles[BG3_TILE_SHEET_1 * TILE_SIZE_4BPP]);
+    DecompressDataWithHeaderWram(newIcons ? gBattleIconsNew_Gfx2 : gBattleIcons_Gfx2, &sDashboard->iconTiles[BG3_TILE_SHEET_2 * TILE_SIZE_4BPP]);
+    LoadBgTiles(3, sDashboard->iconTiles, sizeof(sDashboard->iconTiles), 0);
+    ScheduleBgCopyTilemapToVram(3);
+
+    LoadPalette(&gPartyDashboard_Pal[PAL_ROW_CHROME * 16], BG_PLTT_ID(PARTY_DASH_PAL_CHROME), PLTT_SIZE_4BPP);
+    LoadPalette(&gPartyDashboard_Pal[PAL_ROW_INFO * 16], BG_PLTT_ID(PARTY_DASH_PAL_INFO), PLTT_SIZE_4BPP);
+    LoadPalette(newIcons ? gBattleIconsNew_Pal1 : gBattleIcons_Pal1, BG_PLTT_ID(PARTY_DASH_PAL_TYPE_1), PLTT_SIZE_4BPP);
+    LoadPalette(newIcons ? gBattleIconsNew_Pal2 : gBattleIcons_Pal2, BG_PLTT_ID(PARTY_DASH_PAL_TYPE_2), PLTT_SIZE_4BPP);
+    for (slot = 0; slot < PARTY_DASH_MAX_SLOTS; slot++)
+        LoadSlotPaletteRow(slot, PAL_ROW_SLOT_NORMAL);
 }
 
+// Creates the dashboard windows (slot windows use ids 0-5, WIN_MSG is id 6) and draws the tab labels.
 void PartyDashboard_InitWindows(void)
 {
+    u32 id;
+
+    InitWindows(sPartyDashboardWindowTemplate);
+    sDashboard->hintWindowId = AddWindow(&sPartyDashboardHintWindowTemplate);
+
+    for (id = WIN_DASH_IDENT; id <= WIN_DASH_BODY; id++)
+        FillWindowPixelBuffer(id, PIXEL_FILL(0));
+    FillWindowPixelBuffer(sDashboard->hintWindowId, PIXEL_FILL(0));
+
+    AddTextPrinterParameterized3(WIN_DASH_TABS, FONT_SMALL, 8, 1, sDashTabColors, TEXT_SKIP_DRAW, sText_DashTabInfo);
+    AddTextPrinterParameterized3(WIN_DASH_TABS, FONT_SMALL, 48, 1, sDashTabColors, TEXT_SKIP_DRAW, sText_DashTabStats);
+
+    for (id = WIN_DASH_IDENT; id <= WIN_DASH_BODY; id++)
+    {
+        PutWindowTilemap(id);
+        CopyWindowToVram(id, COPYWIN_FULL);
+    }
+    PutWindowTilemap(sDashboard->hintWindowId);
+    CopyWindowToVram(sDashboard->hintWindowId, COPYWIN_FULL);
 }
 
-void PartyDashboard_GetSpriteCoords(u32 slot, s16 *x, s16 *y)
+const u8 *PartyDashboard_GetSpriteCoords(u32 slot)
 {
-    *x = 0;
-    *y = 0;
+    return sPartyDashSpriteCoords[slot];
 }
 
+// Stage 2 placeholder: the slot window is blank; content arrives with the grid stage.
 void PartyDashboard_DrawSlot(u32 slot)
 {
+    FillWindowPixelBuffer(slot, PIXEL_FILL(0));
+    PutWindowTilemap(slot);
+    CopyWindowToVram(slot, COPYWIN_FULL);
 }
 
+// Recolours the slot's BG palette only; frame and fill tiles never redraw.
 void PartyDashboard_SetSlotPalette(u32 slot, u32 palFlags)
 {
+    bool32 selected = (palFlags & PARTY_PAL_SELECTED) != 0;
+    enum PartyDashPalRow row;
+
+    if (palFlags & PARTY_PAL_NO_MON)
+        row = PAL_ROW_SLOT_EMPTY;
+    else if (palFlags & (PARTY_PAL_TO_SOFTBOIL | PARTY_PAL_TO_SWITCH | PARTY_PAL_SWITCHING))
+        row = selected ? PAL_ROW_SLOT_SELECTED : PAL_ROW_SLOT_ACTION;
+    else if (palFlags & PARTY_PAL_FAINTED)
+        row = selected ? PAL_ROW_SLOT_FAINTED_SELECTED : PAL_ROW_SLOT_FAINTED;
+    else
+        row = selected ? PAL_ROW_SLOT_SELECTED : PAL_ROW_SLOT_NORMAL;
+
+    LoadSlotPaletteRow(slot, row);
 }
 
 void PartyDashboard_Select(u32 slot)

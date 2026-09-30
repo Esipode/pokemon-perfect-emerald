@@ -1837,6 +1837,7 @@ extern const u32 gIntroFlygon_Gfx[];
 extern const u32 gPartyMenuBg_Gfx[];
 extern const u32 gPartyMenuBg_Tilemap[];
 extern const u16 gPartyMenuBg_Pal[];
+extern const u16 gPartyDashboard_Pal[];
 
 // berry pics
 extern const u32 gBerryPic_Cheri[];

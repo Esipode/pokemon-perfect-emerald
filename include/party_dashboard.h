@@ -94,13 +94,13 @@ static inline bool32 IsPartyDashboard(void)
     return P_PARTY_DASHBOARD && gPartyMenu.layout == PARTY_LAYOUT_SINGLE;
 }
 
-void PartyDashboard_Alloc(void);
+bool32 PartyDashboard_Alloc(void);
 void PartyDashboard_Free(void);
 void PartyDashboard_BuildMonData(struct Pokemon *mon, u32 slot, struct PartyDashboardMon *out);
 void PartyDashboard_InitBgs(void);
 void PartyDashboard_LoadGfx(void);
 void PartyDashboard_InitWindows(void);
-void PartyDashboard_GetSpriteCoords(u32 slot, s16 *x, s16 *y);
+const u8 *PartyDashboard_GetSpriteCoords(u32 slot);
 void PartyDashboard_DrawSlot(u32 slot);
 void PartyDashboard_SetSlotPalette(u32 slot, u32 palFlags);
 void PartyDashboard_Select(u32 slot);

@@ -14,6 +14,16 @@
 #define AILMENT_FNT   7
 #define AILMENT_FRB   8
 
+// Party slot palette states (see LoadPartyBoxPalette, PartyDashboard_SetSlotPalette)
+#define PARTY_PAL_SELECTED     (1 << 0)
+#define PARTY_PAL_FAINTED      (1 << 1)
+#define PARTY_PAL_TO_SWITCH    (1 << 2)
+#define PARTY_PAL_MULTI_ALT    (1 << 3)
+#define PARTY_PAL_SWITCHING    (1 << 4)
+#define PARTY_PAL_TO_SOFTBOIL  (1 << 5)
+#define PARTY_PAL_NO_MON       (1 << 6)
+#define PARTY_PAL_UNUSED       (1 << 7)
+
 #define PARTY_ACTION_CHOOSE_MON         0
 #define PARTY_ACTION_SEND_OUT           1
 #define PARTY_ACTION_CANT_SWITCH        2
