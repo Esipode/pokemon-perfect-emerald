@@ -23,22 +23,11 @@
 
 static void ApplyNewEncryptionKeyToAllEncryptedData(u32 encryptionKey);
 
-struct LoadedSaveData
-{
- /*0x0000*/ struct Bag bag;
-#if FREE_MAIL == FALSE
- /*0x02E8*/ struct Mail mail[MAIL_COUNT];
-#endif //FREE_MAIL
-};
-
 // EWRAM DATA
 EWRAM_DATA struct SaveBlock3 gSaveblock3 = {};
 EWRAM_DATA struct SaveBlock2 gSaveblock2 = {0};
 EWRAM_DATA struct SaveBlock1 gSaveblock1 = {0};
 EWRAM_DATA struct PokemonStorage gPokemonStorage = {0};
-
-EWRAM_DATA struct LoadedSaveData gLoadedSaveData = {0};
-EWRAM_DATA u32 gLastEncryptionKey = 0;
 
 // IWRAM common
 COMMON_DATA bool32 gFlashMemoryPresent = 0;
@@ -225,45 +214,14 @@ void CopyPartyAndObjectsFromSave(void)
     LoadObjectEvents();
 }
 
+// The link-room bag snapshot is gone: link cannot connect, so these specials never have a snapshot to
+// take or restore. Kept as no-ops because the special table and cable club code still reference them.
 void LoadPlayerBag(void)
 {
-    // load player bag.
-    memcpy(&gLoadedSaveData.bag, &gSaveBlock1Ptr->bag, sizeof(struct Bag));
-
-    // load mail.
-#if FREE_MAIL == FALSE
-    {
-        int i;
-        for (i = 0; i < MAIL_COUNT; i++)
-            gLoadedSaveData.mail[i] = gSaveBlock1Ptr->mail[i];
-    }
-#endif //FREE_MAIL
-
-    gLastEncryptionKey = gSaveBlock2Ptr->encryptionKey;
 }
 
 void SavePlayerBag(void)
 {
-    u32 encryptionKeyBackup;
-
-    // save player bag.
-    memcpy(&gSaveBlock1Ptr->bag, &gLoadedSaveData.bag, sizeof(struct Bag));
-
-    // save mail.
-#if FREE_MAIL == FALSE
-    {
-        int i;
-        for (i = 0; i < MAIL_COUNT; i++)
-            gSaveBlock1Ptr->mail[i] = gLoadedSaveData.mail[i];
-    }
-#endif //FREE_MAIL
-
-    encryptionKeyBackup = gSaveBlock2Ptr->encryptionKey;
-    gSaveBlock2Ptr->encryptionKey = gLastEncryptionKey;
-    // Gimmick pockets are not part of this snapshot (see ApplyNewEncryptionKeyToPlayerBagItems); a
-    // full re-key here would corrupt them since they were never re-keyed when the snapshot was saved.
-    ApplyNewEncryptionKeyToPlayerBagItems(encryptionKeyBackup);
-    gSaveBlock2Ptr->encryptionKey = encryptionKeyBackup; // updated twice?
 }
 
 void ApplyNewEncryptionKeyToHword(u16 *hWord, u32 newKey)

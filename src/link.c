@@ -99,7 +99,8 @@ COMMON_DATA u16 gLinkSavedIme = 0;
 
 static EWRAM_DATA u8 sLinkTestDebugValuesEnabled = 0;
 EWRAM_DATA u32 gBerryBlenderKeySendAttempts = 0;
-EWRAM_DATA u16 gBlockRecvBuffer[MAX_RFU_PLAYERS][BLOCK_BUFFER_SIZE / 2] = {};
+// Nothing writes received blocks now that the link engine is gutted, so this stays all-zero in ROM.
+const u16 gBlockRecvBuffer[MAX_RFU_PLAYERS][BLOCK_BUFFER_SIZE / 2] = {};
 EWRAM_DATA u8 gBlockSendBuffer[BLOCK_BUFFER_SIZE] = {};
 EWRAM_DATA u16 gLinkType = 0;
 static EWRAM_DATA u16 sTimeOutCounter = 0;

@@ -241,7 +241,7 @@ extern u16 ALIGNED(4) gRecvCmds[MAX_RFU_PLAYERS][CMD_LENGTH];
 extern u8 gBlockSendBuffer[BLOCK_BUFFER_SIZE];
 extern u16 gLinkType;
 extern u32 gLinkStatus;
-extern u16 gBlockRecvBuffer[MAX_RFU_PLAYERS][BLOCK_BUFFER_SIZE / 2];
+extern const u16 gBlockRecvBuffer[MAX_RFU_PLAYERS][BLOCK_BUFFER_SIZE / 2];
 extern u16 gSendCmd[CMD_LENGTH];
 extern struct LinkPlayer gLinkPlayers[MAX_RFU_PLAYERS];
 extern bool8 gReceivedRemoteLinkPlayers;
