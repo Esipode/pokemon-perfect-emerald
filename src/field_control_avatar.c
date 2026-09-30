@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "dexnav.h"
 #include "draft_mode.h"
+#include "roamer.h"
 #include "recruits_mode.h"
 #include "faraway_island.h"
 #include "follower_npc.h"
@@ -213,6 +214,8 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     if (TornadusWind_TryStartScript() == TRUE)
         return TRUE;
     if (Draft_TryStartFieldScript() == TRUE)
+        return TRUE;
+    if (RoamerCatch_TryStartFieldScript() == TRUE)
         return TRUE;
 
     if (input->pressedBButton && TrySetupDiveEmergeScript() == TRUE)

@@ -809,6 +809,7 @@ extern const u8 EventScript_Indigo_HighestAuthority[];
 // src/field_control_avatar.c's ProcessPlayerFieldInput.
 extern const u8 Draft_EventScript_RouteDraft[];
 extern const u8 Draft_EventScript_ResolvePending[];
+extern const u8 Roamer_EventScript_GiveCatchItems[];
 extern const u8 Recruits_EventScript_Retire[];
 
 #endif // GUARD_EVENT_SCRIPTS_H

@@ -4812,6 +4812,29 @@ bool32 DoesMonMeetAdditionalConditions(struct Pokemon *mon, const struct Evoluti
     return TRUE;
 }
 
+static bool32 PlayerHasSpecies(enum Species species)
+{
+    u32 i, j;
+    u32 partyCount = CalculatePlayerPartyCount();
+
+    for (i = 0; i < partyCount; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == species)
+            return TRUE;
+    }
+
+    for (i = 0; i < TOTAL_BOXES_COUNT; i++)
+    {
+        for (j = 0; j < IN_BOX_COUNT; j++)
+        {
+            if (GetBoxMonDataAt(i, j, MON_DATA_SPECIES) == species)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode mode, enum Item evolutionItem, struct Pokemon *tradePartner, bool32 *canStopEvo, enum EvoState evoState)
 {
     int i;
@@ -5012,6 +5035,15 @@ enum Species GetEvolutionTargetSpecies(struct Pokemon *mon, enum EvolutionMode m
      && GetGMaxTargetSpecies(targetSpecies) == targetSpecies)
     {
         return SPECIES_NONE;
+    }
+
+    // Cosmoem never duplicates a final form: the other one replaces an already-owned target
+    if (species == SPECIES_COSMOEM && (targetSpecies == SPECIES_SOLGALEO || targetSpecies == SPECIES_LUNALA))
+    {
+        enum Species otherSpecies = (targetSpecies == SPECIES_SOLGALEO) ? SPECIES_LUNALA : SPECIES_SOLGALEO;
+
+        if (PlayerHasSpecies(targetSpecies) && !PlayerHasSpecies(otherSpecies))
+            targetSpecies = otherSpecies;
     }
 
     // Mono Gen blocks cross-generation evolutions. Single choke point for every evolution path,

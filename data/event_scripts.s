@@ -137,6 +137,7 @@ gStdScripts_End::
 	.include "data/scripts/level_cap.inc"
 	.include "data/scripts/roamer_message.inc"
 	.include "data/scripts/draft.inc"
+	.include "data/scripts/roamer_catch.inc"
 	.include "data/scripts/recruits.inc"
 	.include "data/scripts/battle_emporium.inc"
 	.include "data/scripts/infinity_cave.inc"

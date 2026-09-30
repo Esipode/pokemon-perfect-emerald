@@ -1,15 +1,19 @@
 #include "global.h"
 #include "achievements.h"
 #include "event_data.h"
+#include "event_scripts.h"
+#include "item.h"
 #include "ow_abilities.h"
 #include "pokemon.h"
 #include "pokemon_storage_system.h"
 #include "random.h"
+#include "script.h"
 #include "roamer.h"
 #include "pokedex.h"
 #include "string_util.h"
 #include "caps.h"
 #include "constants/global.h"
+#include "constants/items.h"
 #include "constants/species.h"
 #include "constants/characters.h"
 
@@ -357,14 +361,112 @@ const u16 gRoamableSpecies[] = {
     SPECIES_MARSHADOW,
     SPECIES_MELTAN,
     SPECIES_KUBFU,
-    SPECIES_KUBFU,
-    SPECIES_OGERPON,
-    SPECIES_HYDRAPPLE,
-    SPECIES_TERAPAGOS,
     SPECIES_PECHARUNT,
 };
 
 #define NUM_ROAMABLE_SPECIES ARRAY_COUNT(gRoamableSpecies)
+
+struct RoamerCatchItem
+{
+    enum Species species;
+    enum Item item;
+    bool8 oneItemPerCatch; // Stop after granting this row, so later rows wait for another catch
+};
+
+static const struct RoamerCatchItem sRoamerCatchItems[] = {
+    { SPECIES_LATIAS, ITEM_LATIASITE, FALSE },
+    { SPECIES_LATIOS, ITEM_LATIOSITE, FALSE },
+    { SPECIES_MARSHADOW, ITEM_MARSHADIUM_Z, FALSE },
+    // Cosmog is roamable twice; each catch grants the first of these the player lacks
+    { SPECIES_COSMOG, ITEM_SOLGANIUM_Z, TRUE },
+    { SPECIES_COSMOG, ITEM_LUNALIUM_Z, TRUE },
+    { SPECIES_TYPE_NULL, ITEM_FIGHTING_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_FLYING_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_POISON_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_GROUND_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_ROCK_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_BUG_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_GHOST_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_STEEL_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_FIRE_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_WATER_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_GRASS_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_ELECTRIC_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_PSYCHIC_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_ICE_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_DRAGON_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_DARK_MEMORY, FALSE },
+    { SPECIES_TYPE_NULL, ITEM_FAIRY_MEMORY, FALSE },
+};
+
+static bool32 PlayerOwnsItem(enum Item item)
+{
+    return CheckBagHasItem(item, 1) || CheckPCHasItem(item, 1);
+}
+
+// Items still owed to the player after a roamer catch, handed out by
+// Roamer_EventScript_GiveCatchItems once the field is active.
+static enum Item sPendingCatchItems[ARRAY_COUNT(sRoamerCatchItems)];
+static u8 sPendingCatchItemCount = 0;
+
+// Collects the items `species` grants for one catch, skipping any the player already owns in the
+// Bag or PC. Returns the number written to `items`.
+static u32 CollectCatchItems(enum Species species, enum Item *items)
+{
+    u32 i;
+    u32 count = 0;
+
+    for (i = 0; i < ARRAY_COUNT(sRoamerCatchItems); i++)
+    {
+        if (sRoamerCatchItems[i].species != species || PlayerOwnsItem(sRoamerCatchItems[i].item))
+            continue;
+
+        items[count++] = sRoamerCatchItems[i].item;
+        if (sRoamerCatchItems[i].oneItemPerCatch)
+            break;
+    }
+
+    return count;
+}
+
+// Called as a roamer is added to the player's collection. A single item is held by the caught
+// mon; several (or a single one when the mon already holds something) are queued for the
+// overworld pickup script.
+void RoamerCatch_PrepareItems(struct Pokemon *mon)
+{
+    enum Item items[ARRAY_COUNT(sRoamerCatchItems)];
+    u32 count = CollectCatchItems(GetMonData(mon, MON_DATA_SPECIES), items);
+
+    if (count == 0)
+        return;
+
+    if (count == 1 && GetMonData(mon, MON_DATA_HELD_ITEM) == ITEM_NONE)
+    {
+        SetMonData(mon, MON_DATA_HELD_ITEM, &items[0]);
+        return;
+    }
+
+    memcpy(sPendingCatchItems, items, count * sizeof(items[0]));
+    sPendingCatchItemCount = count;
+}
+
+bool32 RoamerCatch_TryStartFieldScript(void)
+{
+    if (sPendingCatchItemCount == 0)
+        return FALSE;
+
+    ScriptContext_SetupScript(Roamer_EventScript_GiveCatchItems);
+    return TRUE;
+}
+
+// Script native: VAR_RESULT = next queued item, or ITEM_NONE once the queue is empty.
+void RoamerCatch_PopPendingItem(void)
+{
+    if (sPendingCatchItemCount == 0)
+        gSpecialVar_Result = ITEM_NONE;
+    else
+        gSpecialVar_Result = sPendingCatchItems[--sPendingCatchItemCount];
+}
 
 EWRAM_DATA u8 gRoamerNearbyIndexOverride = 0;
 
@@ -381,9 +483,10 @@ static void MarkRoamableSpecies(bool8 *owned, u16 species)
     if (species == SPECIES_NONE)
         return;
 
+    // A species listed twice needs two owned copies to fill both slots
     for (i = 0; i < NUM_ROAMABLE_SPECIES; i++)
     {
-        if (gRoamableSpecies[i] == species)
+        if (gRoamableSpecies[i] == species && !owned[i])
         {
             owned[i] = TRUE;
             return;

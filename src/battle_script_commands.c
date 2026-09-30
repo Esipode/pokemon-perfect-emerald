@@ -85,6 +85,7 @@
 #include "follower_npc.h"
 #include "load_save.h"
 #include "battle_main.h"
+#include "roamer.h"
 
 // Helper for accessing command arguments and advancing gBattlescriptCurrInstr.
 //
@@ -8396,6 +8397,9 @@ static void Cmd_givecaughtmon(void)
             if (lostItem != ITEM_NONE && GetItemPocket(lostItem) != POCKET_BERRIES)
                 SetMonData(caughtMon, MON_DATA_HELD_ITEM, &lostItem);  // Restore non-berry items
         }
+
+        if (gBattleTypeFlags & BATTLE_TYPE_ROAMER)
+            RoamerCatch_PrepareItems(caughtMon);
 
         u32 emptySlot;
         for (emptySlot = 0; emptySlot < PARTY_SIZE; emptySlot++)
