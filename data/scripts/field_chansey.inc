@@ -15,13 +15,13 @@ FieldChansey_EventScript_Menu::
 	goto FieldChansey_EventScript_Done
 
 FieldChansey_EventScript_Heal::
-	fadescreen FADE_TO_BLACK
+	fadescreenswapbuffers FADE_TO_BLACK
 	playfanfare MUS_HEAL
 	special HealPlayerParty
 	callnative FieldChansey_RecordHeal
 	waitfanfare
 	callnative UpdateFollowingPokemon
-	fadescreen FADE_FROM_BLACK
+	fadescreenswapbuffers FADE_FROM_BLACK
 	msgbox FieldChansey_Text_Healed, MSGBOX_DEFAULT
 	goto FieldChansey_EventScript_Menu
 

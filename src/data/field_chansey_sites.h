@@ -5,7 +5,6 @@ static const struct FieldChanseySite sFieldChanseySites[] =
     // Story
     { .map = MAP_ROUTE103,                    .blockingFlag = FLAG_DEFEATED_RIVAL_ROUTE103 },
     { .map = MAP_PETALBURG_WOODS,             .blockingFlag = FLAG_BEAT_FIRST_GRUNT },
-    { .map = MAP_ROUTE104,                    .blockingFlag = FLAG_DEFEATED_RIVAL_ROUTE_104 },
     { .map = MAP_ROUTE110,                    .var = VAR_ROUTE110_STATE, .varMin = 0, .varMax = 0 },
     { .map = MAP_MT_CHIMNEY,                  .blockingFlag = FLAG_DEFEATED_EVIL_TEAM_MT_CHIMNEY },
     { .map = MAP_ROUTE119,                    .var = VAR_ROUTE119_STATE, .varMin = 0, .varMax = 0 },
