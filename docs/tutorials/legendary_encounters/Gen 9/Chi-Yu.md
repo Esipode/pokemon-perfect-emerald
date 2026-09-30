@@ -1,5 +1,7 @@
 ## Chi-Yu — The Ruinous Bead Pokémon
 
+### Location: Route 114 - Monday evening
+
 A boss that turns everything into fuel for its own fire. Every Fire move it lands, every burn it
 inflicts, and every turn you let its windups finish feeds one meter — and that meter decides how
 hard it hits back.

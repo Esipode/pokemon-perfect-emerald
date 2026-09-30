@@ -5,6 +5,7 @@ Route114_MapScripts::
 	.byte 0
 
 Route114_OnTransition:
+	updatelegendaryvisibility SPECIES_CHI_YU, FLAG_HIDE_CHI_YU
 	call_if_eq VAR_SHOULD_END_ABNORMAL_WEATHER, 1, AbnormalWeather_EventScript_HideMapNamePopup
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_114_NORTH, AbnormalWeather_StartGroudonWeather
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_114_SOUTH, AbnormalWeather_StartGroudonWeather
@@ -13,6 +14,30 @@ Route114_OnTransition:
 Route114_OnLoad:
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_114_NORTH, AbnormalWeather_EventScript_PlaceTilesRoute114North
 	call_if_eq VAR_ABNORMAL_WEATHER_LOCATION, ABNORMAL_WEATHER_ROUTE_114_SOUTH, AbnormalWeather_EventScript_PlaceTilesRoute114South
+	setvar VAR_0x8004, SPECIES_CHI_YU
+	setvar VAR_0x8005, LAYOUT_ROUTE114
+	setvar VAR_0x8006, WEEKDAY_MON
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route114_HideChiYuArena
+	gettimeofday
+	goto_if_ne VAR_0x8000, TIME_EVENING, Route114_HideChiYuArena
+	goto Route114_ShowChiYuArena
+
+Route114_ChiYu_Encounter::
+	goto LegendaryEncounter_EventScript_ChiYu
+
+Route114_HideChiYuArena:
+	setflag FLAG_HIDE_CHI_YU
+	end
+
+Route114_ShowChiYuArena:
+	setweather WEATHER_DROUGHT
+	doweather
+	goto_if_ne VAR_TEMP_1, 0, Route114_ShowChiYuArena_ParticlesDone
+	screenfxparticles VAR_TEMP_1, 10, SCREENFX_PARTICLE_EMBER, SCREENFX_COLOR_DEFAULT, 4, 0
+	screenfxanchorobject VAR_TEMP_1, 28
+Route114_ShowChiYuArena_ParticlesDone:
 	end
 
 Route114_OnFrame:
