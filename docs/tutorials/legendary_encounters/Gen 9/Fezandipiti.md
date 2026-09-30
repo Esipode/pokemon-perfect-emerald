@@ -1,5 +1,7 @@
 ## Fezandipiti — The Retainer Pokémon
 
+### Location: Altering Cave - Saturday morning
+
 Fezandipiti loves being watched. It punishes you for looking away and rewards you for hitting back —
 but it also punishes you for hitting it while it's showing off.
 
