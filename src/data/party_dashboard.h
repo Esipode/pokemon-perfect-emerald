@@ -64,6 +64,24 @@ enum PartyDashPalRow
     PAL_ROW_INFO,
 };
 
+// Slot palette entries (rows PAL_ROW_SLOT_*): 1 fill, 2 frame, then text and bar colours.
+#define SLOT_PIX_TEXT       3
+#define SLOT_PIX_SHADOW     4
+#define SLOT_PIX_HP_GREEN   5
+#define SLOT_PIX_HP_YELLOW  6
+#define SLOT_PIX_HP_RED     7
+#define SLOT_PIX_HP_TRACK   8
+#define SLOT_PIX_HATCH      9
+
+// Slot window (4x1 tiles, bottom row of the slot): bar and label geometry in pixels.
+#define SLOT_BAR_X          2
+#define SLOT_BAR_Y          3
+#define SLOT_BAR_W          28
+#define SLOT_BAR_H          3
+#define SLOT_BAR_RECRUIT_W  15 // Narrowed to leave room for the battles-left label.
+#define SLOT_LABEL_X        19
+#define SLOT_WIN_W          (SLOT_W_TILES * TILE_WIDTH)
+
 #define PARTY_DASH_PAL_CHROME     0
 #define PARTY_DASH_PAL_SLOT_FIRST 3 // Slot 0 must keep BG palette 3 (first-battle fade masks).
 #define PARTY_DASH_PAL_TYPE_1     9
@@ -183,10 +201,10 @@ static const struct WindowTemplate sPartyDashboardHintWindowTemplate =
 // Sprite coordinates per slot: icon, held-item marker, status chip, ball (x, y centres).
 #define SLOT_SPRITE_COORDS(col, row)                                          \
     {                                                                         \
-        (col) * 32 + 16, (row) * 48 + 14,                                     \
-        (col) * 32 + 28, (row) * 48 + 4,                                      \
+        (col) * 32 + 16, (row) * 48 + 18,                                     \
+        (col) * 32 + 28, (row) * 48 + 6,                                      \
         (col) * 32 + 16, (row) * 48 + 38,                                     \
-        (col) * 32 + 16, (row) * 48 + 16,                                     \
+        (col) * 32 + 16, (row) * 48 + 18,                                     \
     }
 
 static const u8 sPartyDashSpriteCoords[PARTY_DASH_MAX_SLOTS][8] =
@@ -201,4 +219,16 @@ static const u8 sPartyDashSpriteCoords[PARTY_DASH_MAX_SLOTS][8] =
 
 static const u8 sText_DashTabInfo[] = _("INFO");
 static const u8 sText_DashTabStats[] = _("STATS");
+static const u8 sText_DashLocked[] = _("LOCKED");
+static const u8 sSlotTextColors[3] = {TEXT_COLOR_TRANSPARENT, SLOT_PIX_TEXT, SLOT_PIX_SHADOW};
+static const u8 sSlotRecruitColors[3] = {TEXT_COLOR_TRANSPARENT, SLOT_PIX_HP_RED, SLOT_PIX_SHADOW};
+static const u8 sSlotHpBarPix[] =
+{
+    [HP_BAR_EMPTY]  = SLOT_PIX_HP_RED,
+    [HP_BAR_RED]    = SLOT_PIX_HP_RED,
+    [HP_BAR_YELLOW] = SLOT_PIX_HP_YELLOW,
+    [HP_BAR_GREEN]  = SLOT_PIX_HP_GREEN,
+    [HP_BAR_FULL]   = SLOT_PIX_HP_GREEN,
+};
+
 static const u8 sDashTabColors[3] = {TEXT_COLOR_TRANSPARENT, 2, 3}; // Palette 12: text, shadow.

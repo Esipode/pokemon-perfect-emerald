@@ -324,6 +324,7 @@ static void Task_HandleCancelChooseMonYesNoInput(u8);
 static void Task_ReturnToChooseMonAfterText(u8);
 static void UpdateCurrentPartySelection(s8 *, s8);
 static void UpdatePartySelectionSingleLayout(s8 *, s8);
+static void UpdatePartySelectionDashboard(s8 *, s8);
 static void UpdatePartySelectionDoubleLayout(s8 *, s8);
 static s8 GetNewSlotDoubleLayout(s8, s8);
 static void PrintMessage(const u8 *);
@@ -1026,13 +1027,18 @@ static void LoadPartyMenuBoxes(enum PartyMenuLayout layout)
 // Limited Party: label empty slots at or above the current cap as LOCKED, reusing the
 // description text region (where "NO USE" prints). No-op when the mode is off, since
 // GetMaxPartySize() then returns PARTY_SIZE.
-static void TryDisplayPartySlotLockedText(u8 slot)
+static bool32 IsPartySlotLocked(u8 slot)
 {
     struct Pokemon *party;
     s8 partySlot;
 
     GetPartyAndSlotFromPartyMenuId(slot, &party, &partySlot);
-    if (party != gParties[B_TRAINER_PLAYER] || partySlot < LimitedParty_GetMaxPartySize())
+    return party == gParties[B_TRAINER_PLAYER] && partySlot >= LimitedParty_GetMaxPartySize();
+}
+
+static void TryDisplayPartySlotLockedText(u8 slot)
+{
+    if (!IsPartySlotLocked(slot))
         return;
 
     AddTextPrinterParameterized3(sPartyMenuBoxes[slot].windowId, FONT_NORMAL,
@@ -1046,11 +1052,26 @@ static void RenderPartyDashboardBox(u8 slot)
     if (gPartiesCount[B_TRAINER_PLAYER] == 0)
         return;
 
-    PartyDashboard_DrawSlot(slot);
     if (GetMonData(GetPartyMonFromPartyMenuId(slot), MON_DATA_SPECIES) == SPECIES_NONE)
+    {
+        PartyDashboard_DrawEmptySlot(slot, IsPartySlotLocked(slot));
         PartyDashboard_SetSlotPalette(slot, PARTY_PAL_NO_MON);
+    }
     else
+    {
+        if (gPartyMenu.menuType == PARTY_MENU_TYPE_MOVE_RELEARNER)
+            DisplayPartyPokemonDataForRelearner(slot);
+        else if (gPartyMenu.menuType == PARTY_MENU_TYPE_CONTEST)
+            DisplayPartyPokemonDataForContest(slot);
+        else if (gPartyMenu.menuType == PARTY_MENU_TYPE_CHOOSE_HALF)
+            DisplayPartyPokemonDataForChooseHalf(slot);
+        else if (gPartyMenu.menuType == PARTY_MENU_TYPE_STORE_PYRAMID_HELD_ITEMS)
+            DisplayPartyPokemonDataForBattlePyramidHeldItem(slot);
+        else if (!DisplayPartyPokemonDataForMoveTutorOrEvolutionItem(slot))
+            PartyDashboard_DrawSlot(slot, GetPartyMonFromPartyMenuId(slot));
+
         AnimatePartySlot(slot, gPartyMenu.slotId == slot);
+    }
     ScheduleBgCopyTilemapToVram(0);
 }
 
@@ -1142,6 +1163,12 @@ static void DisplayPartyPokemonData(u8 slot)
 static void DisplayPartyPokemonDescriptionData(u8 slot, u8 stringID)
 {
     struct Pokemon *mon = GetPartyMonFromPartyMenuId(slot);
+
+    if (IsPartyDashboard())
+    {
+        PartyDashboard_DrawSlotDescription(slot, sDescriptionStringTable[stringID]);
+        return;
+    }
 
     sPartyMenuBoxes[slot].infoRects->blitFunc(sPartyMenuBoxes[slot].windowId, 0, 0, 0, 0, TRUE);
     DisplayPartyPokemonNickname(mon, &sPartyMenuBoxes[slot], 0);
@@ -1824,6 +1851,12 @@ static u16 PartyMenuButtonHandler(s8 *slotPtr)
         movementDir = MENU_DIR_RIGHT;
         break;
     default:
+        // Dashboard: L/R are reserved for tabs.
+        if (IsPartyDashboard())
+        {
+            movementDir = 0;
+            break;
+        }
         switch (GetLRKeysPressedAndHeld())
         {
         case MENU_L_PRESSED:
@@ -1867,7 +1900,11 @@ static void UpdateCurrentPartySelection(s8 *slotPtr, s8 movementDir)
     s8 newSlotId = *slotPtr;
     enum PartyMenuLayout layout = gPartyMenu.layout;
 
-    if (layout == PARTY_LAYOUT_SINGLE
+    if (IsPartyDashboard())
+    {
+        UpdatePartySelectionDashboard(slotPtr, movementDir);
+    }
+    else if (layout == PARTY_LAYOUT_SINGLE
      || layout == PARTY_LAYOUT_MULTI_FULL
      || layout == PARTY_LAYOUT_MULTI_FULL_PARTNER)
     {
@@ -1883,7 +1920,39 @@ static void UpdateCurrentPartySelection(s8 *slotPtr, s8 movementDir)
         PlaySE(SE_SELECT);
         AnimatePartySlot(newSlotId, 0);
         AnimatePartySlot(*slotPtr, 1);
+        if (IsPartyDashboard() && *slotPtr < PARTY_SIZE)
+            PartyDashboard_Select(*slotPtr);
     }
+}
+
+// Grid navigation. B cancels, so there is no Cancel slot; Confirm (choose-half) is reached with START.
+static void UpdatePartySelectionDashboard(s8 *slotPtr, s8 movementDir)
+{
+    enum PartyDashboardDir dir;
+
+    // Any d-pad press on Confirm returns to the slot it left.
+    if (*slotPtr >= PARTY_SIZE)
+    {
+        *slotPtr = sPartyMenuInternal->lastSelectedSlot;
+        return;
+    }
+
+    switch (movementDir)
+    {
+    case MENU_DIR_UP:
+        dir = PARTY_DASH_DIR_UP;
+        break;
+    case MENU_DIR_DOWN:
+        dir = PARTY_DASH_DIR_DOWN;
+        break;
+    case MENU_DIR_LEFT:
+        dir = PARTY_DASH_DIR_LEFT;
+        break;
+    default:
+        dir = PARTY_DASH_DIR_RIGHT;
+        break;
+    }
+    *slotPtr = PartyDashboard_NextSlot(*slotPtr, dir, gPartiesCount[B_TRAINER_PLAYER]);
 }
 
 static void UpdatePartySelectionSingleLayout(s8 *slotPtr, s8 movementDir)
@@ -2876,6 +2945,13 @@ static void DisplayPartyPokemonHPBar(u16 hp, u16 maxhp, struct PartyMenuBox *men
 
 static void DisplayPartyPokemonDescriptionText(u8 stringID, struct PartyMenuBox *menuBox, u8 c)
 {
+    if (IsPartyDashboard())
+    {
+        if (c != 2)
+            PartyDashboard_DrawSlotDescription(menuBox->windowId, sDescriptionStringTable[stringID]);
+        return;
+    }
+
     if (c)
     {
         int width = ((menuBox->infoRects->descTextLeft % 8) + menuBox->infoRects->descTextWidth + 7) / 8 - 1;
@@ -4069,6 +4145,7 @@ static void CursorCb_Enter(u8 taskId)
 
 static void MoveCursorToConfirm(void)
 {
+    sPartyMenuInternal->lastSelectedSlot = gPartyMenu.slotId;
     AnimatePartySlot(gPartyMenu.slotId, 0);
     gPartyMenu.slotId = PARTY_SIZE;
     AnimatePartySlot(gPartyMenu.slotId, 1);

@@ -18,6 +18,8 @@
 #include "randomization.h"
 #include "palette.h"
 #include "recruits_mode.h"
+#include "string_util.h"
+#include "strings.h"
 #include "text.h"
 #include "window.h"
 #include "constants/flags.h"
@@ -187,29 +189,15 @@ static void GenerateChromeTiles(void)
     }
 }
 
+// Top and bottom lines only: the 32 px ball sprite spans the slot width, so side edges would be covered.
 static void DrawSlotFrame(u32 slot)
 {
-    static const u8 sFrameTiles[3][3] =
-    {
-        {CHROME_TILE_TOP_LEFT,    CHROME_TILE_TOP,  CHROME_TILE_TOP_RIGHT},
-        {CHROME_TILE_LEFT,        CHROME_TILE_FILL, CHROME_TILE_RIGHT},
-        {CHROME_TILE_BOTTOM_LEFT, CHROME_TILE_BOTTOM, CHROME_TILE_BOTTOM_RIGHT},
-    };
     u32 left = (slot % PARTY_DASH_COLUMNS) * SLOT_W_TILES;
     u32 top = (slot / PARTY_DASH_COLUMNS) * SLOT_H_TILES;
-    u32 x, y;
 
-    for (y = 0; y < SLOT_H_TILES; y++)
-    {
-        u32 tileRow = (y == 0) ? 0 : (y == SLOT_H_TILES - 1) ? 2 : 1;
-
-        for (x = 0; x < SLOT_W_TILES; x++)
-        {
-            u32 tileCol = (x == 0) ? 0 : (x == SLOT_W_TILES - 1) ? 2 : 1;
-
-            FillBgTilemapBufferRect(1, sFrameTiles[tileRow][tileCol], left + x, top + y, 1, 1, PARTY_DASH_PAL_SLOT_FIRST + slot);
-        }
-    }
+    FillBgTilemapBufferRect(1, CHROME_TILE_FILL, left, top, SLOT_W_TILES, SLOT_H_TILES, PARTY_DASH_PAL_SLOT_FIRST + slot);
+    FillBgTilemapBufferRect(1, CHROME_TILE_TOP, left, top, SLOT_W_TILES, 1, PARTY_DASH_PAL_SLOT_FIRST + slot);
+    FillBgTilemapBufferRect(1, CHROME_TILE_BOTTOM, left, top + SLOT_H_TILES - 1, SLOT_W_TILES, 1, PARTY_DASH_PAL_SLOT_FIRST + slot);
 }
 
 static void LoadSlotPaletteRow(u32 slot, enum PartyDashPalRow row)
@@ -284,12 +272,77 @@ const u8 *PartyDashboard_GetSpriteCoords(u32 slot)
     return sPartyDashSpriteCoords[slot];
 }
 
-// Stage 2 placeholder: the slot window is blank; content arrives with the grid stage.
-void PartyDashboard_DrawSlot(u32 slot)
+static void ClearSlotWindow(u32 slot)
 {
     FillWindowPixelBuffer(slot, PIXEL_FILL(0));
+}
+
+static void CommitSlotWindow(u32 slot)
+{
     PutWindowTilemap(slot);
     CopyWindowToVram(slot, COPYWIN_FULL);
+}
+
+// Thin bar on a track, in the slot window's bar row.
+static void DrawSlotBar(u32 slot, u32 width, u32 fill, u32 pix)
+{
+    FillWindowPixelRect(slot, SLOT_PIX_HP_TRACK, SLOT_BAR_X, SLOT_BAR_Y, width, SLOT_BAR_H);
+    if (fill != 0)
+        FillWindowPixelRect(slot, pix, SLOT_BAR_X, SLOT_BAR_Y, fill, SLOT_BAR_H);
+}
+
+// Recruits mode: battles left before retirement, as a red "-N" label right of the bar.
+static void DrawSlotRecruitLabel(u32 slot, struct Pokemon *mon)
+{
+    ConvertIntToDecimalStringN(gStringVar2, Recruits_GetBattlesLeft(mon), STR_CONV_MODE_LEFT_ALIGN, 2);
+    StringCopy(gStringVar1, gText_Dash);
+    StringAppend(gStringVar1, gStringVar2);
+    AddTextPrinterParameterized3(slot, FONT_SMALL_NARROWER, SLOT_LABEL_X, 0, sSlotRecruitColors, TEXT_SKIP_DRAW, gStringVar1);
+}
+
+// HP line (or egg hatch line) plus the Recruits label.
+void PartyDashboard_DrawSlot(u32 slot, struct Pokemon *mon)
+{
+    ClearSlotWindow(slot);
+
+    if (GetMonData(mon, MON_DATA_SANITY_IS_BAD_EGG) || GetMonData(mon, MON_DATA_IS_EGG))
+    {
+        u32 species = GetMonData(mon, MON_DATA_SPECIES);
+        u32 percent = PartyDashboard_HatchPercent(GetMonData(mon, MON_DATA_FRIENDSHIP), gSpeciesInfo[species].eggCycles,
+                                                  GetMonData(mon, MON_DATA_SANITY_IS_BAD_EGG));
+
+        DrawSlotBar(slot, SLOT_BAR_W, percent * SLOT_BAR_W / 100, SLOT_PIX_HATCH);
+    }
+    else
+    {
+        u32 hp = GetMonData(mon, MON_DATA_HP);
+        u32 maxHp = GetMonData(mon, MON_DATA_MAX_HP);
+        u32 width = Recruits_IsActive() ? SLOT_BAR_RECRUIT_W : SLOT_BAR_W;
+
+        DrawSlotBar(slot, width, GetScaledHPFraction(hp, maxHp, width), sSlotHpBarPix[GetHPBarLevel(hp, maxHp)]);
+        if (Recruits_IsActive())
+            DrawSlotRecruitLabel(slot, mon);
+    }
+    CommitSlotWindow(slot);
+}
+
+// Replaces the bar with a short status word (LEARNED, ABLE, FIRST...), centred.
+void PartyDashboard_DrawSlotDescription(u32 slot, const u8 *text)
+{
+    s32 width = GetStringWidth(FONT_SMALL_NARROWER, text, 0);
+
+    ClearSlotWindow(slot);
+    AddTextPrinterParameterized3(slot, FONT_SMALL_NARROWER, max(0, (SLOT_WIN_W - width) / 2), 0, sSlotTextColors, TEXT_SKIP_DRAW, text);
+    CommitSlotWindow(slot);
+}
+
+void PartyDashboard_DrawEmptySlot(u32 slot, bool32 locked)
+{
+    ClearSlotWindow(slot);
+    if (locked)
+        PartyDashboard_DrawSlotDescription(slot, sText_DashLocked);
+    else
+        CommitSlotWindow(slot);
 }
 
 // Recolours the slot's BG palette only; frame and fill tiles never redraw.
