@@ -5,6 +5,7 @@
 #include "battle_message.h"
 #include "battle_tent.h"
 #include "bg.h"
+#include "caps.h"
 #include "decompress.h"
 #include "event_data.h"
 #include "graphics.h"
@@ -348,13 +349,18 @@ static void DrawSlotBar(u32 slot, u32 width, u32 fill, u32 pix)
         FillWindowPixelRect(slot, pix, SLOT_BAR_X, SLOT_BAR_Y, fill, SLOT_BAR_H);
 }
 
-// Recruits mode: battles left before retirement, as a red "-N" label right of the bar.
+// Recruits mode: battles left before retirement, as a red "-N" label right of the bar, in the slot's BG3 label window.
 static void DrawSlotRecruitLabel(u32 slot, struct Pokemon *mon)
 {
+    u32 windowId = WIN_DASH_LABEL_FIRST + slot;
+
     ConvertIntToDecimalStringN(gStringVar2, Recruits_GetBattlesLeft(mon), STR_CONV_MODE_LEFT_ALIGN, 2);
     StringCopy(gStringVar1, gText_Dash);
     StringAppend(gStringVar1, gStringVar2);
-    AddTextPrinterParameterized3(slot, FONT_SMALL_NARROWER, SLOT_LABEL_X, 0, sSlotRecruitColors, TEXT_SKIP_DRAW, gStringVar1);
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
+    AddTextPrinterParameterized3(windowId, FONT_SMALL_NARROWER, SLOT_LABEL_X, RECRUIT_TEXT_Y, sSlotRecruitColors, TEXT_SKIP_DRAW, gStringVar1);
+    PutWindowTilemap(windowId);
+    CopyWindowToVram(windowId, COPYWIN_FULL);
 }
 
 // HP line (or egg hatch line) plus the Recruits label.
@@ -436,10 +442,17 @@ void PartyDashboard_DrawSlotDescription(u32 slot, const u8 *text)
 void PartyDashboard_DrawEmptySlot(u32 slot, bool32 locked)
 {
     ClearSlotWindow(slot);
+    CommitSlotWindow(slot);
     if (locked)
-        PartyDashboard_DrawSlotDescription(slot, sText_DashLocked);
-    else
-        CommitSlotWindow(slot);
+    {
+        u32 windowId = WIN_DASH_LABEL_FIRST + slot;
+        s32 width = GetStringWidth(FONT_SMALL_NARROWER, sText_DashLocked, 0);
+
+        FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
+        AddTextPrinterParameterized3(windowId, FONT_SMALL_NARROWER, max(0, (SLOT_WIN_W - width) / 2), LOCKED_TEXT_Y, sSlotTextColors, TEXT_SKIP_DRAW, sText_DashLocked);
+        PutWindowTilemap(windowId);
+        CopyWindowToVram(windowId, COPYWIN_FULL);
+    }
 }
 
 // Recolours the slot's BG palette only; frame and fill tiles never redraw.
@@ -821,7 +834,7 @@ static void DrawBodyStats(struct PartyDashboardMon *mon)
         PrintBody(FONT_SMALL, INFO_LABEL_X, STATS_EV_TOTAL_Y + INFO_LABEL_DY, sIdentLabelColors, sText_DashEvTotal);
         ConvertIntToDecimalStringN(gStringVar1, mon->evTotal, STR_CONV_MODE_LEFT_ALIGN, 3);
         StringAppend(gStringVar1, sText_DashSlash);
-        ConvertIntToDecimalStringN(gStringVar2, MAX_TOTAL_EVS, STR_CONV_MODE_LEFT_ALIGN, 3);
+        ConvertIntToDecimalStringN(gStringVar2, GetCurrentEVCap(), STR_CONV_MODE_LEFT_ALIGN, 3);
         StringAppend(gStringVar1, gStringVar2);
         PrintStatsRight(FONT_SMALL, STATS_EV_RIGHT_X, STATS_EV_TOTAL_Y + INFO_LABEL_DY, sIdentTextColors, gStringVar1);
     }

@@ -183,6 +183,7 @@ enum
     WIN_DASH_IDENT = PARTY_SIZE + 1,
     WIN_DASH_TABS,
     WIN_DASH_BODY,
+    WIN_DASH_LABEL_FIRST, // One per slot; ids up to WIN_DASH_LABEL_FIRST + PARTY_SIZE - 1.
 };
 
 #define SLOT_WINDOW(slot, base)                                       \
@@ -195,6 +196,20 @@ enum
         .paletteNum = PARTY_DASH_PAL_SLOT_FIRST + (slot),             \
         .baseBlock = (base),                                          \
     }
+
+// Label window per slot (LOCKED text, Recruits battles-left): 4x3 tiles on BG3 (own tiles after the icon sheets), ending on the slot's bar row.
+#define LABEL_WINDOW(slot)                                                                 \
+    [WIN_DASH_LABEL_FIRST + (slot)] = {                                                    \
+        .bg = 3,                                                                            \
+        .tilemapLeft = ((slot) % PARTY_DASH_COLUMNS) * SLOT_W_TILES,                        \
+        .tilemapTop = ((slot) / PARTY_DASH_COLUMNS) * SLOT_H_TILES + SLOT_H_TILES - 3,      \
+        .width = SLOT_W_TILES,                                                              \
+        .height = 3,                                                                        \
+        .paletteNum = PARTY_DASH_PAL_SLOT_FIRST + (slot),                                   \
+        .baseBlock = BG3_TILE_COUNT + (slot) * SLOT_W_TILES * 3,                            \
+    }
+#define LOCKED_TEXT_Y 4  // 12 px above the bar row.
+#define RECRUIT_TEXT_Y 10 // 6 px above the bar row.
 
 static const struct WindowTemplate sPartyDashboardWindowTemplate[] =
 {
@@ -240,6 +255,12 @@ static const struct WindowTemplate sPartyDashboardWindowTemplate[] =
         .paletteNum = PARTY_DASH_PAL_INFO,
         .baseBlock = 0xFD,
     },
+    LABEL_WINDOW(0),
+    LABEL_WINDOW(1),
+    LABEL_WINDOW(2),
+    LABEL_WINDOW(3),
+    LABEL_WINDOW(4),
+    LABEL_WINDOW(5),
     DUMMY_WIN_TEMPLATE
 };
 
