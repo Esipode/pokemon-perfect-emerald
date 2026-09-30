@@ -1,5 +1,7 @@
 ## Terapagos — The Terastal Pokémon
 
+### Location: Route 130 (Mirage Island) - only while Mirage Island is visible and 70+ legendary/mythical families are caught
+
 Terapagos hardens against whatever keeps hitting it. Vary your attack types, and punish its
 periodic exposed windows with a strong hit before its stored charge becomes a last-stand attack.
 

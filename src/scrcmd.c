@@ -3816,6 +3816,20 @@ bool8 Scrcmd_overlaypulse(struct ScriptContext *ctx)
     return FALSE;
 }
 
+bool8 Scrcmd_overlayhuecycle(struct ScriptContext *ctx)
+{
+    OverlayId id = VarGet(ScriptReadHalfword(ctx));
+    u16 framesPerStep = VarGet(ScriptReadHalfword(ctx));
+    u16 stepAngle = VarGet(ScriptReadHalfword(ctx));
+
+    Script_RequestEffects(SCREFF_V1);
+
+    if (Overlay_IsValid(id))
+        Overlay_HueCycle(id, framesPerStep, stepAngle & (OVERLAY_HUE_FULL_TURN - 1));
+
+    return FALSE;
+}
+
 // Anchors to an object (a = local id, 0 = player, on the current map) or to map coordinates (a, b = x, y).
 bool8 Scrcmd_overlayanchor(struct ScriptContext *ctx)
 {

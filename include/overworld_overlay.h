@@ -160,6 +160,8 @@ void Overlay_Disable(OverlayId id);
 void Overlay_SetColor(OverlayId id, u16 color);
 // Hue shift effect only; ignored on OVERLAY_EFFECT_TINT. hueAngle is 0-255 over the full circle.
 void Overlay_SetHueShift(OverlayId id, u8 hueAngle);
+// Hue shift effect only. Adds stepAngle (0-255 = one turn) to the hue every framesPerStep frames; 0 for either stops it.
+void Overlay_HueCycle(OverlayId id, u16 framesPerStep, u8 stepAngle);
 // Saturation effect only. level is clamped to OVERLAY_SATURATION_MAX.
 void Overlay_SetSaturation(OverlayId id, u8 level);
 // Direct request, 0-OVERLAY_OPACITY_MAX.

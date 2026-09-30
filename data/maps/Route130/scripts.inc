@@ -1,8 +1,10 @@
 Route130_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, Route130_OnTransition
+	map_script MAP_SCRIPT_ON_LOAD, Route130_OnLoad
 	.byte 0
 
 Route130_OnTransition:
+	updatelegendaryvisibility SPECIES_TERAPAGOS, FLAG_HIDE_TERAPAGOS
 	call_if_ge VAR_SOOTOPOLIS_CITY_STATE, 4, Route130_EventScript_CheckSetAbnormalWeather
 	specialvar VAR_RESULT, IsMirageIslandPresent
 	goto_if_eq VAR_RESULT, TRUE, Route130_EventScript_SetMirageIslandLayout
@@ -27,6 +29,32 @@ Route130_OnTransition:
 
 Route130_EventScript_SetMirageIslandLayout::
 	setmaplayoutindex LAYOUT_ROUTE130_MIRAGE_ISLAND
+	end
+
+Route130_OnLoad:
+	setvar VAR_0x8004, SPECIES_TERAPAGOS
+	setvar VAR_0x8005, LAYOUT_ROUTE130_MIRAGE_ISLAND
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, Route130_HideTerapagosArena
+	special CountCaughtLegendaryFamilies
+	goto_if_lt VAR_RESULT, 70, Route130_HideTerapagosArena
+	goto Route130_ShowTerapagosArena
+
+Route130_Terapagos_Encounter::
+	goto LegendaryEncounter_EventScript_Terapagos
+
+Route130_HideTerapagosArena:
+	setflag FLAG_HIDE_TERAPAGOS
+	end
+
+Route130_ShowTerapagosArena:
+	@ Hue cycle: 1 hue step (of 256) every 3 frames
+	overlaycreatehue 0, 16, OVERLAY_LAYER_ALL, OVERLAY_SCOPE_MAP_LOCAL, VAR_TEMP_0
+	overlayhuecycle VAR_TEMP_0, 3, 1
+	@ TODO(user): arena metatiles. One setmetatilewithelevation per tile:
+	@   setmetatilewithelevation <x>, <y>, <metatileId>, <impassable>, <elevation>
 	end
 
 Route130_EventScript_CheckSetAbnormalWeather::

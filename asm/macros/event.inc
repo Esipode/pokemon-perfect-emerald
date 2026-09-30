@@ -3182,6 +3182,15 @@
 	.2byte \wave
 	.endm
 
+	@ Cycles a hue-shift overlay: adds stepAngle (0-255 = one full turn) to its hue every framesPerStep frames.
+	@ Replaces any pulse. Does nothing on a non-hue overlay; 0 for either argument stops the cycle.
+	.macro overlayhuecycle handleVar:req, framesPerStep:req, stepAngle=1
+	callnative Scrcmd_overlayhuecycle, requests_effects=1
+	.2byte \handleVar
+	.2byte \framesPerStep
+	.2byte \stepAngle
+	.endm
+
 	@ Anchors the overlay to an object on the current map; localId 0 is the player.
 	.macro overlayanchorobject handleVar:req, localId:req
 	callnative Scrcmd_overlayanchor, requests_effects=1

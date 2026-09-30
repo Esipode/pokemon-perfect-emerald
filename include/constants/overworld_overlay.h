@@ -28,6 +28,7 @@ enum OverlayPulseWave
     OVERLAY_PULSE_HEARTBEAT,    // beat, smaller beat, long rest
     OVERLAY_PULSE_FLICKER,      // pseudo-random levels held a few frames each
     OVERLAY_PULSE_SINE_QUARTER, // one eased hump in the first quarter period, min for the rest
+    OVERLAY_PULSE_HUE_CYCLE,    // hue-shift overlays only: advances the hue angle, never modulates opacity
     OVERLAY_PULSE_WAVE_COUNT,
 };
 

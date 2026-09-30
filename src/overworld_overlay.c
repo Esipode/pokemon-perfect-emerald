@@ -820,6 +820,19 @@ static u32 UpdatePulse(struct Overlay *overlay)
     if (period == 0)
         return OVERLAY_OPACITY_MAX;
 
+    // Hue cycle: pulsePeriod = frames per step, pulseMin = hue angle added per step.
+    if (overlay->pulseWave == OVERLAY_PULSE_HUE_CYCLE)
+    {
+        if (++phase >= period)
+        {
+            phase = 0;
+            overlay->color = (overlay->color + overlay->pulseMin) & (OVERLAY_HUE_FULL_TURN - 1);
+            sOverlayDirty = TRUE;
+        }
+        overlay->pulsePhase = phase;
+        return OVERLAY_OPACITY_MAX;
+    }
+
     // Leaving flicker can leave an unwrapped counter behind.
     if (overlay->pulseWave != OVERLAY_PULSE_FLICKER && phase >= period)
         phase = 0;
@@ -1233,6 +1246,27 @@ void Overlay_Pulse(OverlayId id, u8 minOpacity, u8 maxOpacity, u16 periodFrames)
     overlay->pulseMax = max(minOpacity, maxOpacity);
     overlay->pulsePeriod = periodFrames;
     overlay->pulsePhase = 0;
+}
+
+// Advances a hue-shift overlay's angle by stepAngle every framesPerStep frames. Replaces any opacity pulse.
+void Overlay_HueCycle(OverlayId id, u16 framesPerStep, u8 stepAngle)
+{
+    struct Overlay *overlay = GetOverlay(id);
+
+    if (overlay == NULL || overlay->effect != OVERLAY_EFFECT_HUE_SHIFT)
+        return;
+
+    if (framesPerStep == 0 || stepAngle == 0)
+    {
+        Overlay_StopAnimation(id);
+        return;
+    }
+
+    overlay->pulseMin = stepAngle;
+    overlay->pulseMax = 0;
+    overlay->pulsePeriod = framesPerStep;
+    overlay->pulsePhase = 0;
+    overlay->pulseWave = OVERLAY_PULSE_HUE_CYCLE;
 }
 
 void Overlay_SetPulsePhase(OverlayId id, u16 phaseFrames)
