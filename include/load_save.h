@@ -4,32 +4,10 @@
 #include "pokemon_storage_system.h"
 #include "save.h"
 
-#define SAVEBLOCK_MOVE_RANGE    128
-
-/**
- * These structs are to prevent them from being reordered on newer or modern
- * toolchains. If this is not done, the ClearSav functions will end up erasing
- * the wrong memory leading to various glitches.
- */
-struct SaveBlock2ASLR {
-    struct SaveBlock2 block;
-    u8 aslr[SAVEBLOCK_MOVE_RANGE];
-};
-
-struct SaveBlock1ASLR {
-    struct SaveBlock1 block;
-    u8 aslr[SAVEBLOCK_MOVE_RANGE];
-};
-
-struct PokemonStorageASLR {
-    struct PokemonStorage block;
-    u8 aslr[SAVEBLOCK_MOVE_RANGE];
-};
-
-extern struct SaveBlock1ASLR gSaveblock1;
-extern struct SaveBlock2ASLR gSaveblock2;
+extern struct SaveBlock1 gSaveblock1;
+extern struct SaveBlock2 gSaveblock2;
 extern struct SaveBlock3 gSaveblock3;
-extern struct PokemonStorageASLR gPokemonStorage;
+extern struct PokemonStorage gPokemonStorage;
 
 extern bool32 gFlashMemoryPresent;
 extern struct SaveBlock1 *gSaveBlock1Ptr;
@@ -40,7 +18,7 @@ void CheckForFlashMemory(void);
 void ClearSav3(void);
 void ClearSav2(void);
 void ClearSav1(void);
-void SetSaveBlocksPointers(u16 offset);
+void SetSaveBlocksPointers(void);
 void MoveSaveBlocks_ResetHeap(void);
 u32 UseContinueGameWarp(void);
 void ClearContinueGameWarpStatus(void);
