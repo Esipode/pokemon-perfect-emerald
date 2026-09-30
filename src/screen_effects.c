@@ -650,6 +650,11 @@ static void SpawnParticle(struct ScreenFx *effect)
             y += reach;
         else
             y += ParticleRandomRange(effect, reach * 2 + 1) - reach;
+
+        // OAM coordinates wrap, so a spawn past the kill margin would flash on-screen for one frame.
+        if (x + gSpriteCoordOffsetX < -PARTICLE_OFFSCREEN_MARGIN || x + gSpriteCoordOffsetX > DISPLAY_WIDTH + PARTICLE_OFFSCREEN_MARGIN
+         || y + gSpriteCoordOffsetY < -PARTICLE_OFFSCREEN_MARGIN || y + gSpriteCoordOffsetY > DISPLAY_HEIGHT + PARTICLE_OFFSCREEN_MARGIN)
+            return;
     }
     else
     {

@@ -1,5 +1,7 @@
 ## Wo-Chien — The Ruinous Tablet Pokemon
 
+### Location: Petalburg Woods - Wednesday night
+
 A rotting stone tablet that punishes patience. Every turn you stall, every point of damage you take,
 and every point of HP you heal feeds a decay that never reverses. The fastest, most aggressive line
 through this fight is also the safest one.

@@ -3665,8 +3665,10 @@ bool8 Scrcmd_overlaycreatesaturation(struct ScriptContext *ctx)
 {
     struct OverlayConfig config = {0};
     u16 layer, scope, destVar;
+    // Read before clamping: min() evaluates its arguments twice.
+    u16 level = VarGet(ScriptReadHalfword(ctx));
 
-    config.color = min(VarGet(ScriptReadHalfword(ctx)), OVERLAY_SATURATION_MAX);
+    config.color = min(level, OVERLAY_SATURATION_MAX);
     config.opacity = VarGet(ScriptReadHalfword(ctx));
     layer = VarGet(ScriptReadHalfword(ctx));
     scope = VarGet(ScriptReadHalfword(ctx));
@@ -3963,10 +3965,13 @@ bool8 Scrcmd_screenfxwave(struct ScriptContext *ctx)
 bool8 Scrcmd_screenfxripple(struct ScriptContext *ctx)
 {
     u16 destVar = ScriptReadHalfword(ctx);
-    u16 intensity = min(VarGet(ScriptReadHalfword(ctx)), SCREENFX_INTENSITY_MAX);
+    // Read before clamping: min() evaluates its arguments twice.
+    u16 intensity = VarGet(ScriptReadHalfword(ctx));
     u16 speed = VarGet(ScriptReadHalfword(ctx));
     u16 duration = VarGet(ScriptReadHalfword(ctx));
     ScreenFxId id = VarGet(destVar);
+
+    intensity = min(intensity, SCREENFX_INTENSITY_MAX);
 
     Script_RequestEffects(SCREFF_V1);
     Script_RequestWriteVar(destVar);
@@ -4031,9 +4036,11 @@ bool8 Scrcmd_screenfxparticles(struct ScriptContext *ctx)
     u16 intensity = VarGet(ScriptReadHalfword(ctx));
     u16 style = VarGet(ScriptReadHalfword(ctx));
     u16 color = ScriptReadHalfword(ctx);
-    u16 radius = min(VarGet(ScriptReadHalfword(ctx)), 15);
+    // Read before clamping: min() evaluates its arguments twice.
+    u16 radius = VarGet(ScriptReadHalfword(ctx));
     u16 duration = VarGet(ScriptReadHalfword(ctx));
 
+    radius = min(radius, 15);
     Script_RequestEffects(SCREFF_V1);
     Script_RequestWriteVar(destVar);
 
