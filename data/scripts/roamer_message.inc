@@ -2,7 +2,7 @@ Text_RoamerNearby::
 	.string "A powerful entity is nearby!$"
 
 EventScript_RoamerNearby::
-	lock
+	lockall
 	delay 40
 	applymovement LOCALID_PLAYER, Common_Movement_ExclamationMark
 	delay 40

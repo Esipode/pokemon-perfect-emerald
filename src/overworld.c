@@ -894,6 +894,21 @@ bool8 SetDiveWarpDive(u16 x, u16 y)
     return SetDiveWarp(CONNECTION_DIVE, x, y);
 }
 
+// Frames the field must stay idle before the roamer alert may start.
+#define ROAMER_MESSAGE_IDLE_FRAMES 8
+
+// True only when free-roaming on the overworld: no script (running or paused),
+// no menu or cutscene holding field controls, no fade, message box or map popup.
+static bool8 IsRoamerMessageSafeToShow(void)
+{
+    return (gMain.callback2 == CB2_Overworld
+         && ScriptContext_IsShutdown()
+         && !ArePlayerFieldControlsLocked()
+         && !gPaletteFade.active
+         && IsFieldMessageBoxHidden()
+         && !FuncIsActiveTask(Task_MapNamePopUpWindow));
+}
+
 void Task_ShowRoamerMessageDelayed(u8 taskId)
 {
     struct Task *task = &gTasks[taskId];
@@ -901,25 +916,35 @@ void Task_ShowRoamerMessageDelayed(u8 taskId)
 
     switch (data[0])
     {
-    case 0: // waiting for map popup / transitions to finish
-        if (!FuncIsActiveTask(Task_MapNamePopUpWindow) && IsFieldMessageBoxHidden() && !gPaletteFade.active && !ScriptContext_IsEnabled())
+    case 0: // waiting for the field to be idle
+        // Drop the alert if the player left the map or the roamer moved/was caught.
+        if (!IsRoamerAt(data[2], gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum)
+         || !gSaveBlock1Ptr->roamer[data[2]].active)
+        {
+            DestroyTask(taskId);
+            break;
+        }
+
+        if (!IsRoamerMessageSafeToShow())
+        {
+            data[3] = 0;
+            break;
+        }
+
+        if (++data[3] >= ROAMER_MESSAGE_IDLE_FRAMES)
         {
             data[0] = 1;
             s8 pan = (Random() % 88) + 212;
             u16 species = data[1];
             if (species != SPECIES_NONE)
                 PlayCry_NormalNoDucking(species, pan, CRY_VOLUME, CRY_PRIORITY_AMBIENT);
-            // start script; the script itself handles locking/release and wait-for-input
+            // The script owns locking and releasing the field.
             ScriptContext_SetupScript(EventScript_RoamerNearby);
         }
         break;
-    case 1: // wait for script to finish and message box to be closed
-        if (!ScriptContext_IsEnabled() && IsFieldMessageBoxHidden())
-        {
-            UnfreezeObjectEvents();
-            UnlockPlayerFieldControls();
+    case 1: // wait for the script to end
+        if (ScriptContext_IsShutdown())
             DestroyTask(taskId);
-        }
         break;
     }
 }

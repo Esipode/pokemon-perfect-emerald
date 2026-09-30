@@ -279,6 +279,13 @@ bool8 ScriptContext_IsEnabled(void)
         return FALSE;
 }
 
+// Checks if the global script context holds no script. Unlike ScriptContext_IsEnabled,
+// a script paused by a wait* call (waitstate, yes/no, battle) counts as active.
+bool8 ScriptContext_IsShutdown(void)
+{
+    return sGlobalScriptContextStatus == CONTEXT_SHUTDOWN;
+}
+
 // Re-initializes the global script context to zero.
 void ScriptContext_Init(void)
 {
