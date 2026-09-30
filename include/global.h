@@ -861,7 +861,8 @@ struct SaveBlock2
     // is exactly full and this needs 3 bits. Old saves read 0 (1x) either way, since
     // these bits were zeroed padding.
     u8 optionsBattleSpeed:3; // OPTIONS_BATTLE_SPEED_*; how much faster battles play out
-             //u8 padding:2;
+             u8 optionsFollowerOff:1; // 1 = overworld follower Pokémon hidden; 0 = shown (also the value on existing saves)
+             //u8 padding:1;
     // Debug-menu scratch: which party mons were picked for a debug in-game-partner test battle
     // (src/debug.c writes it, src/battle_setup.c's CB2_EndDebugBattle reads it back). This was
     // squatting on struct BattleFrontier's selectedPartyMons purely for storage convenience, not

@@ -142,6 +142,7 @@ enum OptionId
     OPTION_ACHIEVEMENT_BOOSTS,
     OPTION_ROUTE_TRACKER,
     OPTION_RUN_MODE,
+    OPTION_FOLLOWER,
     OPTION_PLAYER_COLOURS,
     OPTION_HEALTHBOX,
     OPTIONS_COUNT,
@@ -195,6 +196,7 @@ static const u8 *const sValueTexts_ExpShare[] = {gText_ExpShareOptionOff, gText_
 static const u8 *const sValueTexts_AchievementBoosts[] = {gText_AchievementBoostsOff, gText_AchievementBoostsOn};
 static const u8 *const sValueTexts_RouteTracker[] = {gText_RouteTrackerOff, gText_RouteTrackerOn};
 static const u8 *const sValueTexts_RunMode[] = {gText_RunModeHold, gText_RunModeToggle};
+static const u8 *const sValueTexts_Follower[] = {gText_RouteTrackerOn, gText_RouteTrackerOff};
 
 static const struct OptionEntry sOptions[OPTIONS_COUNT] =
 {
@@ -311,6 +313,14 @@ static const struct OptionEntry sOptions[OPTIONS_COUNT] =
         .defaultValue = FALSE,
         .valueTexts = sValueTexts_RunMode,
     },
+    [OPTION_FOLLOWER] = {
+        .name = COMPOUND_STRING("FOLLOWER"),
+        .description = COMPOUND_STRING("Shows or hides your lead Pokémon walking behind you in the overworld."),
+        .type = OPTION_TYPE_ENUM,
+        .valueCount = ARRAY_COUNT(sValueTexts_Follower),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_Follower,
+    },
     [OPTION_PLAYER_COLOURS] = {
         .name = COMPOUND_STRING("PLAYER COLOURS"),
         .description = COMPOUND_STRING("Opens the menu for customising your character's hat, outfit, and other colours."),
@@ -327,7 +337,7 @@ static const struct OptionEntry sOptions[OPTIONS_COUNT] =
 
 static const u8 sCategoryOptions_General[] = {OPTION_TEXT_SPEED, OPTION_SOUND, OPTION_FRAME, OPTION_AUTOSAVE, OPTION_AUTO_SCROLL};
 static const u8 sCategoryOptions_Battle[] = {OPTION_BATTLE_SCENE, OPTION_BATTLE_STYLE, OPTION_BATTLE_SPEED, OPTION_AI_TRAINER, OPTION_AI_WILD};
-static const u8 sCategoryOptions_Gameplay[] = {OPTION_EXP_SHARE, OPTION_ACHIEVEMENT_BOOSTS, OPTION_ROUTE_TRACKER, OPTION_RUN_MODE};
+static const u8 sCategoryOptions_Gameplay[] = {OPTION_EXP_SHARE, OPTION_ACHIEVEMENT_BOOSTS, OPTION_ROUTE_TRACKER, OPTION_RUN_MODE, OPTION_FOLLOWER};
 static const u8 sCategoryOptions_Display[] = {OPTION_PLAYER_COLOURS, OPTION_HEALTHBOX};
 
 static const struct OptionCategory sCategories[CATEGORIES_COUNT] =
@@ -394,6 +404,8 @@ static u8 LoadOptionValue(u8 optionId)
         return gSaveBlock2Ptr->optionsRouteTracker ? 1 : 0;
     case OPTION_RUN_MODE:
         return gSaveBlock2Ptr->optionsToggleRun ? 1 : 0;
+    case OPTION_FOLLOWER:
+        return gSaveBlock2Ptr->optionsFollowerOff ? 1 : 0;
     default:
         return 0;
     }
@@ -449,6 +461,9 @@ static void StoreOptionValue(u8 optionId, u8 value)
         break;
     case OPTION_RUN_MODE:
         gSaveBlock2Ptr->optionsToggleRun = value;
+        break;
+    case OPTION_FOLLOWER:
+        gSaveBlock2Ptr->optionsFollowerOff = value;
         break;
     }
 }
@@ -1227,7 +1242,7 @@ static bool8 ProcessOptionInput(u8 optionId)
 
 // Submenu rows own their storage (Healthbox, Player Colours) and are not reset here.
 // Options absent from SetDefaultOptions() (Autosave, Auto Scroll, Achievement Boosts,
-// Route Tracker, AI Trainer, AI Wild) take their default from sOptions.
+// Route Tracker, Run Mode, Follower, AI Trainer, AI Wild) take their default from sOptions.
 static void ResetOptionToDefault(u8 optionId)
 {
     if (sOptions[optionId].type == OPTION_TYPE_SUBMENU)
