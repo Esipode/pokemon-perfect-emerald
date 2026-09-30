@@ -22,7 +22,6 @@ EventScript_PkmnCenterNurse_Frlg::
 	end
 
 EventScript_PkmnCenterNurse_HealPkmn_Frlg::
-	incrementgamestat GAME_STAT_USED_POKECENTER
 	message Text_TakeYourPkmnForFewSeconds_Frlg
 	waitmessage
 	call EventScript_PkmnCenterNurse_TakeAndHealPkmn_Frlg

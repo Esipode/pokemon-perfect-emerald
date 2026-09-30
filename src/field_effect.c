@@ -1132,10 +1132,7 @@ bool8 FldEff_PokecenterHeal(void)
     // FieldCB_NuzlockeRunFailed screen, before the player regains control),
     // so this field effect can never run with an empty party under Nuzlocke
     // rules -- there's nowhere left to walk to a Pokémon Center from.
-    IncrementGameStat(GAME_STAT_USED_POKECENTER);
-    // Nurse's Nightmare, same
-    // already-incremented count.
-    Achievement_CheckPokecenterMilestone();
+    Achievement_RecordCenterHeal();
     nPokemon = (OW_IGNORE_EGGS_ON_HEAL <= GEN_3) ? CalculatePlayerPartyCount() : CountPartyNonEggMons();
     task = &gTasks[CreateTask(Task_PokecenterHeal, 0xff)];
     task->tNumMons = nPokemon;

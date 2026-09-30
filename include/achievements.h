@@ -718,9 +718,9 @@ void Achievement_BackfillLegendaryFamilies(void);
 // rather than an HM. Move Tutor (backfill).
 void Achievement_RecordTMTaught(void);
 
-// FldEff_PokecenterHeal (src/field_effect.c), right after
-// IncrementGameStat(GAME_STAT_USED_POKECENTER). Nurse's Nightmare (backfill).
-void Achievement_CheckPokecenterMilestone(void);
+// FldEff_PokecenterHeal (src/field_effect.c) and the field Chansey heal.
+// Increments GAME_STAT_USED_POKECENTER, then checks Nurse's Nightmare.
+void Achievement_RecordCenterHeal(void);
 
 // ---- Profile Meta, Mastery & Prestige (category Q) ----------------------
 // No declarations: every entry is a meta-achievement over state the system already

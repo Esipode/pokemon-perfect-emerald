@@ -2693,8 +2693,8 @@ void Achievement_CheckEconomyCompletionMilestones(void)
 
 // ---- Challenge Runs & Nuzlocke (category N) -----------------------------
 //
-// GAME_STAT_USED_POKECENTER is incremented at FldEff_PokecenterHeal
-// (src/field_effect.c); gBattleResults.numHealingItemsUsed at BS_ItemRestoreHP
+// GAME_STAT_USED_POKECENTER is written only by Achievement_RecordCenterHeal
+// (Center field effect and Chansey heal); gBattleResults.numHealingItemsUsed at BS_ItemRestoreHP
 // (src/battle_script_commands.c). Vanilla declares both but never writes them.
 
 // The ten New Game Settings that make a run harder. Debug Mode, Stat Editor
@@ -3644,11 +3644,18 @@ void Achievement_RecordTMTaught(void)
         Achievement_TryComplete(ACHIEVEMENT_RECORD_MOVE_TUTOR);
 }
 
-// Called from FldEff_PokecenterHeal (src/field_effect.c).
-void Achievement_CheckPokecenterMilestone(void)
+// Called from Achievement_RecordCenterHeal.
+static void Achievement_CheckPokecenterMilestone(void)
 {
     if (GetGameStat(GAME_STAT_USED_POKECENTER) >= 200)
         Achievement_TryComplete(ACHIEVEMENT_RECORD_NURSES_NIGHTMARE);
+}
+
+// Sole writer of GAME_STAT_USED_POKECENTER: Center field effect and Chansey heal.
+void Achievement_RecordCenterHeal(void)
+{
+    IncrementGameStat(GAME_STAT_USED_POKECENTER);
+    Achievement_CheckPokecenterMilestone();
 }
 
 // ---- Profile Meta, Mastery & Prestige (category Q) ----------------------

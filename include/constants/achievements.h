@@ -65,8 +65,8 @@
 //      Achievement_CheckChallengeMilestones/Achievement_CheckNuzlockeMilestones
 //      (HandleEndTurn_BattleWon) and Achievement_CheckChallengeCompletionMilestones/
 //      Achievement_CheckNuzlockeCompletionMilestones (GameClear).
-//      GAME_STAT_USED_POKECENTER is incremented at FldEff_PokecenterHeal
-//      (src/field_effect.c). No Freebies is narrowed to the starter (tracked by
+//      GAME_STAT_USED_POKECENTER is written only by Achievement_RecordCenterHeal
+//      (Center field effect, Chansey heal). No Freebies is narrowed to the starter (tracked by
 //      personality so it survives evolution): there is no single funnel point for
 //      "this Pokemon was a gift".
 //   O. ACHIEVEMENT_RANDOMIZER_CHAOS_BEGINS .. ACHIEVEMENT_RANDOMIZER_ROOKIE
@@ -86,7 +86,7 @@
 //        Achievement_RecordPartyWipe                 the two IsPartyEmpty()-gated sites
 //                                                    RemoveFaintedMonsFromParty/FldEff_PokecenterHeal
 //        Achievement_CheckFamilyMilestone            HandleSetPokedexFlag (Family Reunion)
-//        Achievement_RecordTMTaught/_CheckPokecenterMilestone  Task_LearnedMove/FldEff_PokecenterHeal
+//        Achievement_RecordTMTaught/_RecordCenterHeal  Task_LearnedMove/FldEff_PokecenterHeal
 //      The other backfills (steps, total battles, hatched eggs) read an existing
 //      GAME_STAT_* value live.
 //   Q. ACHIEVEMENT_PROFILE_WELL_ROUNDED .. ACHIEVEMENT_MASTERY_DIAMOND_STANDARD
