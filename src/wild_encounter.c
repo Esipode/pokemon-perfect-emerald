@@ -720,8 +720,96 @@ static enum Species GetWildEncounterVariant(enum Species species)
     return species;
 }
 
+#define ALTERING_CAVE_RARE_SLOT_MAX_LEVEL 10
+
+static const enum Species sAlteringCaveUltraBeastsA[] =
+{
+    SPECIES_NIHILEGO,
+    SPECIES_PHEROMOSA,
+    SPECIES_XURKITREE,
+    SPECIES_KARTANA,
+    SPECIES_BLACEPHALON,
+};
+
+static const enum Species sAlteringCaveUltraBeastsB[] =
+{
+    SPECIES_BUZZWOLE,
+    SPECIES_STAKATAKA,
+    SPECIES_CELESTEELA,
+    SPECIES_GUZZLORD,
+};
+
+static const enum Species sAlteringCavePastParadox[] =
+{
+    SPECIES_GREAT_TUSK,
+    SPECIES_SCREAM_TAIL,
+    SPECIES_BRUTE_BONNET,
+    SPECIES_FLUTTER_MANE,
+    SPECIES_SLITHER_WING,
+    SPECIES_SANDY_SHOCKS,
+    SPECIES_ROARING_MOON,
+    SPECIES_WALKING_WAKE,
+    SPECIES_RAGING_BOLT,
+    SPECIES_GOUGING_FIRE,
+};
+
+static const enum Species sAlteringCaveFutureParadox[] =
+{
+    SPECIES_IRON_TREADS,
+    SPECIES_IRON_BUNDLE,
+    SPECIES_IRON_HANDS,
+    SPECIES_IRON_JUGULIS,
+    SPECIES_IRON_MOTH,
+    SPECIES_IRON_THORNS,
+    SPECIES_IRON_VALIANT,
+    SPECIES_IRON_LEAVES,
+    SPECIES_IRON_CROWN,
+    SPECIES_IRON_BOULDER,
+};
+
+static const struct
+{
+    const enum Species *pool;
+    u8 count;
+    u32 salt;
+} sAlteringCaveDailyPools[] =
+{
+    { sAlteringCaveUltraBeastsA,  ARRAY_COUNT(sAlteringCaveUltraBeastsA),  0xA17E0001 },
+    { sAlteringCavePastParadox,   ARRAY_COUNT(sAlteringCavePastParadox),   0xA17E0002 },
+    { sAlteringCaveUltraBeastsB,  ARRAY_COUNT(sAlteringCaveUltraBeastsB),  0xA17E0003 },
+    { sAlteringCaveFutureParadox, ARRAY_COUNT(sAlteringCaveFutureParadox), 0xA17E0004 },
+};
+
+// Replaces a full-level Altering Cave slot with the day's single pick from that slot's pool.
+// Rare low-level slots are left alone.
+static enum Species GetAlteringCaveDailySpecies(enum Species species, u16 level)
+{
+    u32 i, j;
+
+    if (level < ALTERING_CAVE_RARE_SLOT_MAX_LEVEL
+     || gSaveBlock1Ptr->location.mapGroup != MAP_GROUP(MAP_ALTERING_CAVE)
+     || gSaveBlock1Ptr->location.mapNum != MAP_NUM(MAP_ALTERING_CAVE))
+        return species;
+
+    for (i = 0; i < ARRAY_COUNT(sAlteringCaveDailyPools); i++)
+    {
+        for (j = 0; j < sAlteringCaveDailyPools[i].count; j++)
+        {
+            if (sAlteringCaveDailyPools[i].pool[j] == species)
+            {
+                rng_value_t rng = LocalRandomSeed(gSaveBlock1Ptr->dailySeed ^ sAlteringCaveDailyPools[i].salt);
+                return sAlteringCaveDailyPools[i].pool[LocalRandom32(&rng) % sAlteringCaveDailyPools[i].count];
+            }
+        }
+    }
+
+    return species;
+}
+
 void CreateWildMon(enum Species species, u16 level)
 {
+    species = GetAlteringCaveDailySpecies(species, level);
+
     /* Apply New Game+ level offset */
     level = min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 

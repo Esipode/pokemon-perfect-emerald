@@ -42064,16 +42064,6 @@
               {
                 "min_level": 65,
                 "max_level": 65,
-                "species": "SPECIES_PHEROMOSA"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_NIHILEGO"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
                 "species": "SPECIES_KARTANA"
               },
               {
@@ -42081,40 +42071,6 @@
                 "max_level": 65,
                 "species": "SPECIES_BLACEPHALON"
               },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_BUZZWOLE"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_STAKATAKA"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_CELESTEELA"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_GUZZLORD"
-              },
-              {
-                "min_level": 5,
-                "max_level": 5,
-                "species": "SPECIES_POIPOLE"
-              }
-            ]
-          }
-        },
-        {
-          "map": "MAP_ALTERING_CAVE",
-          "base_label": "gAlteringCave1_Day",
-          "land_mons": {
-            "encounter_rate": 1,
-            "mons": [
               {
                 "min_level": 65,
                 "max_level": 65,
@@ -42133,16 +42089,6 @@
               {
                 "min_level": 65,
                 "max_level": 65,
-                "species": "SPECIES_PHEROMOSA"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_NIHILEGO"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
                 "species": "SPECIES_KARTANA"
               },
               {
@@ -42153,22 +42099,7 @@
               {
                 "min_level": 65,
                 "max_level": 65,
-                "species": "SPECIES_BUZZWOLE"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_STAKATAKA"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_CELESTEELA"
-              },
-              {
-                "min_level": 65,
-                "max_level": 65,
-                "species": "SPECIES_GUZZLORD"
+                "species": "SPECIES_NIHILEGO"
               },
               {
                 "min_level": 5,
@@ -42180,7 +42111,7 @@
         },
         {
           "map": "MAP_ALTERING_CAVE",
-          "base_label": "gAlteringCave1_Evening",
+          "base_label": "gAlteringCave1_Day",
           "land_mons": {
             "encounter_rate": 1,
             "mons": [
@@ -42243,6 +42174,75 @@
                 "min_level": 5,
                 "max_level": 5,
                 "species": "SPECIES_SCREAM_TAIL"
+              }
+            ]
+          }
+        },
+        {
+          "map": "MAP_ALTERING_CAVE",
+          "base_label": "gAlteringCave1_Evening",
+          "land_mons": {
+            "encounter_rate": 1,
+            "mons": [
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_BUZZWOLE"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_STAKATAKA"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_CELESTEELA"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_GUZZLORD"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_BUZZWOLE"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_STAKATAKA"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_CELESTEELA"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_GUZZLORD"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_BUZZWOLE"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_STAKATAKA"
+              },
+              {
+                "min_level": 65,
+                "max_level": 65,
+                "species": "SPECIES_CELESTEELA"
+              },
+              {
+                "min_level": 5,
+                "max_level": 5,
+                "species": "SPECIES_POIPOLE"
               }
             ]
           }
