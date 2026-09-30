@@ -688,7 +688,8 @@ Debug_EventScript_HeapStats::
 
 Debug_EventScript_HeapStats_Text::
 	.string "Heap peak used: {STR_VAR_1}\n"
-	.string "Heap size: {STR_VAR_2}$"
+	.string "Heap size: {STR_VAR_2}\n"
+	.string "Stack peak: {STR_VAR_3}$"
 
 Debug_EventScript_InfCaveMaskCheck::
 	callnative CheckInfCaveMaskLegality

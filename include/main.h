@@ -56,6 +56,8 @@ extern u8 gLinkVSyncDisabled;
 extern s8 gPcmDmaCounter;
 
 void AgbMain(void);
+u32 GetStackPeakUsed(void);
+u32 GetStackFreeBytes(void);
 void AgbMainLoop(void);
 void SetMainCallback2(MainCallback callback);
 void InitKeys(void);

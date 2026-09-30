@@ -5556,6 +5556,7 @@ void CheckHeapStats(struct ScriptContext *ctx)
 {
     ConvertIntToDecimalStringN(gStringVar1, GetHeapPeakUsed(), STR_CONV_MODE_LEFT_ALIGN, 6);
     ConvertIntToDecimalStringN(gStringVar2, HEAP_SIZE, STR_CONV_MODE_LEFT_ALIGN, 6);
+    ConvertIntToDecimalStringN(gStringVar3, GetStackPeakUsed(), STR_CONV_MODE_LEFT_ALIGN, 5);
 }
 
 // Runs the Infinity Cave mask legality rules over a block of seeds and reports

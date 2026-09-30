@@ -48,6 +48,8 @@ SECTIONS {
         src/*.o(COMMON);
         *libc.a:*.o(COMMON);
         *libnosys.a:*.o(COMMON);
+        . = ALIGN(4);
+        __iwram_bss_end = .;
     } > IWRAM
 
     /* BEGIN ROM DATA */

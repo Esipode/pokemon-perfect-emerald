@@ -87,8 +87,55 @@ void EnableVCountIntrAtLine150(void);
 
 #define B_START_SELECT (B_BUTTON | START_BUTTON | SELECT_BUTTON)
 
+#define STACK_PAINT_WORD 0xDEADBEEF
+#define STACK_PAINT_MARGIN 0x40
+
+#if !defined(NDEBUG) && !TESTING && !defined(__INTELLISENSE__)
+#define STACK_MEASURE 1
+extern u8 __iwram_bss_end[];
+#endif
+
+#ifdef STACK_MEASURE
+// Fills the free gap between .bss and the live stack frame with a known pattern.
+static void PaintStack(void)
+{
+    vu32 *p = (vu32 *)__iwram_bss_end;
+    vu32 *end = (vu32 *)((u32)__builtin_frame_address(0) - STACK_PAINT_MARGIN);
+
+    while (p < end)
+        *p++ = STACK_PAINT_WORD;
+}
+#endif
+
+// Bytes of system stack used at the deepest point so far, from the top of sp_sys.
+u32 GetStackPeakUsed(void)
+{
+#ifdef STACK_MEASURE
+    vu32 *p = (vu32 *)__iwram_bss_end;
+
+    while (*p == STACK_PAINT_WORD)
+        p++;
+    return (IWRAM_END - 0x1C0) - (u32)p;
+#else
+    return 0;
+#endif
+}
+
+// Bytes between the end of .bss and the deepest stack point reached.
+u32 GetStackFreeBytes(void)
+{
+#ifdef STACK_MEASURE
+    return (IWRAM_END - 0x1C0) - (u32)__iwram_bss_end - GetStackPeakUsed();
+#else
+    return 0;
+#endif
+}
+
 void AgbMain(void)
 {
+#ifdef STACK_MEASURE
+    PaintStack();
+#endif
     *(vu16 *)BG_PLTT = RGB_WHITE; // Set the backdrop to white on startup
     InitGpuRegManager();
     REG_WAITCNT = WAITCNT_PREFETCH_ENABLE
