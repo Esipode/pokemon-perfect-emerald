@@ -1,5 +1,7 @@
 ## Okidogi — The Retaliatory Brawler Pokémon
 
+### Location: Safari Zone Northwest - Friday night
+
 Hitting Okidogi hard doesn't wear it down — it makes it angrier, and an angry Okidogi hits harder
 and moves faster. The way through is provoking it into a full-blown rage, then punishing the
 collapse that follows.

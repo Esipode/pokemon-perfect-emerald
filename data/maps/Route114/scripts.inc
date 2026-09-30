@@ -32,6 +32,7 @@ Route114_HideChiYuArena:
 	end
 
 Route114_ShowChiYuArena:
+	setflag FLAG_TEMP_9
 	setweather WEATHER_DROUGHT
 	doweather
 	goto_if_ne VAR_TEMP_1, 0, Route114_ShowChiYuArena_ParticlesDone
