@@ -36,10 +36,13 @@ STATIC_ASSERT(sizeof(struct RecordedBattleSave) <= SECTOR_COUNTER_OFFSET * 2, Re
 
 EWRAM_DATA rng_value_t gRecordedBattleRngSeed = RNG_VALUE_EMPTY;
 EWRAM_DATA rng_value_t gBattlePalaceMoveSelectionRngValue = RNG_VALUE_EMPTY;
+// Recorded-battle storage is only read by playback and the test runner; the ROM build stubs it out.
+#if TESTING
 EWRAM_DATA static u8 sBattleRecords[MAX_BATTLERS_COUNT][BATTLER_RECORD_SIZE] = {0};
 EWRAM_DATA static u16 sBattlerRecordSizes[MAX_BATTLERS_COUNT] = {0};
 EWRAM_DATA static u16 sBattlerPrevRecordSizes[MAX_BATTLERS_COUNT] = {0};
 EWRAM_DATA static u16 sBattlerSavedRecordSizes[MAX_BATTLERS_COUNT] = {0};
+#endif
 EWRAM_DATA static u8 sRecordMode = 0;
 EWRAM_DATA static u8 sFrontierFacility = 0;
 EWRAM_DATA static u8 sFrontierBrainSymbol = 0;
@@ -47,10 +50,12 @@ EWRAM_DATA u8 gRecordedBattleMultiplayerId = 0;
 EWRAM_DATA static u8 sFrontierPassFlag = 0;
 EWRAM_DATA static u8 sBattleScene = 0;
 EWRAM_DATA static u8 sTextSpeed = 0;
+#if TESTING
 EWRAM_DATA static u32 sBattleFlags = 0;
 EWRAM_DATA static u64 sAI_Scripts[MAX_BATTLERS_COUNT] = {0};
 EWRAM_DATA static u16 sPlayerMonMoves[MAX_BATTLERS_COUNT / 2][MAX_MON_MOVES] = {0};
 EWRAM_DATA static struct PlayerInfo sPlayers[MAX_LINK_PLAYERS] = {0};
+#endif
 EWRAM_DATA static bool8 sIsPlaybackFinished = 0;
 EWRAM_DATA static u8 sRecordMixFriendName[PLAYER_NAME_LENGTH + 1] = {0};
 EWRAM_DATA static u8 sRecordMixFriendClass = 0;
@@ -60,8 +65,11 @@ EWRAM_DATA static u16 sEasyChatSpeech[EASY_CHAT_BATTLE_WORDS_COUNT] = {0};
 static u8 sRecordMixFriendLanguage;
 static u8 sApprenticeLanguage;
 
+#if TESTING
 static u8 GetNextRecordedDataByte(u8 *, u8 *, u8 *);
+#endif
 
+#if TESTING
 void RecordedBattle_Init(u8 mode)
 {
     s32 i, j;
@@ -479,6 +487,59 @@ void SetVariablesForRecordedBattle(struct RecordedBattleSave *src)
         for (j = 0; j < BATTLER_RECORD_SIZE; j++)
             sBattleRecords[i][j] = src->battleRecord[i][j];
 }
+#else
+void RecordedBattle_Init(u8 mode)
+{
+    sRecordMode = mode;
+    sIsPlaybackFinished = FALSE;
+}
+
+void RecordedBattle_SetTrainerInfo(void)
+{
+}
+
+void RecordedBattle_SetBattlerAction(enum BattlerId battler, u8 action)
+{
+}
+
+void RecordedBattle_ClearBattlerAction(enum BattlerId battler, u8 bytesToClear)
+{
+}
+
+u8 RecordedBattle_GetBattlerAction(u32 actionType, enum BattlerId battler)
+{
+    return B_ACTION_NONE;
+}
+
+u8 RecordedBattle_BufferNewBattlerData(u8 *dst)
+{
+    return 0;
+}
+
+void RecordedBattle_RecordAllBattlerData(u8 *src)
+{
+}
+
+bool32 MoveRecordedBattleToSaveData(void)
+{
+    return FALSE;
+}
+
+void SetPartiesFromRecordedSave(struct RecordedBattleSave *src)
+{
+    for (enum BattleTrainer trainer = B_TRAINER_PLAYER; trainer < MAX_BATTLE_TRAINERS; trainer++)
+    {
+        ZeroPartyMons(gParties[trainer]);
+        for (s32 i = 0; i < PARTY_SIZE; i++)
+            gParties[trainer][i] = src->parties[trainer][i];
+    }
+}
+
+void SetVariablesForRecordedBattle(struct RecordedBattleSave *src)
+{
+}
+
+#endif
 
 u8 GetRecordedBattleFrontierFacility(void)
 {
@@ -532,6 +593,7 @@ u8 GetTextSpeedInRecordedBattle(void)
     return sTextSpeed;
 }
 
+#if TESTING
 void RecordedBattle_CopyBattlerMoves(enum BattlerId battler)
 {
     s32 i;
@@ -660,6 +722,20 @@ u64 GetAiScriptsInRecordedBattle(enum BattlerId battler)
 {
     return sAI_Scripts[battler];
 }
+#else
+void RecordedBattle_CopyBattlerMoves(enum BattlerId battler)
+{
+}
+
+void RecordedBattle_CheckMovesetChanges(u8 mode)
+{
+}
+
+u64 GetAiScriptsInRecordedBattle(enum BattlerId battler)
+{
+    return 0;
+}
+#endif
 
 // Used to determine when the player is allowed to press B to end a recorded battle's playback
 void RecordedBattle_SetPlaybackFinished(void)
