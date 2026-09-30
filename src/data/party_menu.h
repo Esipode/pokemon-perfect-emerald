@@ -951,6 +951,8 @@ struct
 {
     [MENU_SUMMARY]         = {COMPOUND_STRING("SUMMARY"),         CursorCb_Summary},
     [MENU_STAT_EDIT]       = {COMPOUND_STRING("EDIT STAT"),       CursorCb_StatEdit},
+    [MENU_RENAME]          = {COMPOUND_STRING("RENAME"),          CursorCb_Rename},
+    [MENU_RELEARN]         = {COMPOUND_STRING("RELEARN"),         CursorCb_Relearn},
     [MENU_SWITCH]          = {COMPOUND_STRING("SWITCH"),          CursorCb_Switch},
     [MENU_CANCEL1]         = {gText_Cancel2,                      CursorCb_Cancel1},
     [MENU_ITEM]            = {COMPOUND_STRING("ITEM"),            CursorCb_Item},

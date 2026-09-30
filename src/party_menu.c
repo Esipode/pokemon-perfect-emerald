@@ -5,11 +5,13 @@
 #include "battle.h"
 #include "battle_anim.h"
 #include "battle_controllers.h"
+#include "battle_factory.h"
 #include "battle_gfx_sfx_util.h"
 #include "battle_interface.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
 #include "battle_pyramid_bag.h"
+#include "battle_tent.h"
 #include "bg.h"
 #include "contest.h"
 #include "data.h"
@@ -89,6 +91,8 @@
 enum {
     MENU_SUMMARY,
     MENU_STAT_EDIT,
+    MENU_RENAME,
+    MENU_RELEARN,
     MENU_SWITCH,
     MENU_CANCEL1,
     MENU_ITEM,
@@ -182,6 +186,9 @@ struct PartyMenuBoxInfoRects
     u8 descTextHeight;
 };
 
+// Worst case field list: MAX_MON_MOVES field moves + SWITCH, ITEM, RENAME, RELEARN, EDIT STAT, SUMMARY, CANCEL
+#define MAX_PARTY_ACTIONS (MAX_MON_MOVES + 7)
+
 struct PartyMenuInternal
 {
     TaskFunc task;
@@ -192,8 +199,9 @@ struct PartyMenuInternal
     u32 spriteIdCancelPokeball:7;
     u32 messageId:14;
     u8 windowId[3];
-    u8 actions[9];
+    u8 actions[MAX_PARTY_ACTIONS];
     u8 numActions;
+    u8 actionScroll; // Index of the first action shown when the list scrolls
     // In vanilla Emerald, only the first 0xB0 hwords (0x160 bytes) are actually used.
     // However, a full 0x100 hwords (0x200 bytes) are allocated.
     // It is likely that the 0x160 value used below is a constant defined by
@@ -467,6 +475,8 @@ static void BlitBitmapToPartyWindow_LeftColumn(u8, u8, u8, u8, u8, bool8);
 static void BlitBitmapToPartyWindow_RightColumn(u8, u8, u8, u8, u8, bool8);
 static void BlitBitmapToPartyWindow_Equal(u8, u8, u8, u8, u8, u8); //Custom party menu
 static void CursorCb_Summary(u8);
+static void CursorCb_Rename(u8);
+static void CursorCb_Relearn(u8);
 static void CursorCb_StatEdit(u8);
 static void CursorCb_Switch(u8);
 static void CursorCb_Cancel1(u8);
@@ -3116,17 +3126,103 @@ static bool8 ShouldUseChooseMonText(void)
     return FALSE;
 }
 
+// The dashboard's frame must stay above the hint bar, which leaves 8 rows
+static u8 GetVisibleActionCount(void)
+{
+    return min(sPartyMenuInternal->numActions, IsPartyDashboard() ? 8 : 9);
+}
+
+static void PrintActionRows(u8 windowId)
+{
+    u8 cursorDimension = GetMenuCursorDimensionByFont(FONT_NORMAL, 0);
+    u8 letterSpacing = GetFontAttribute(FONT_NORMAL, FONTATTR_LETTER_SPACING);
+    u8 visible = GetVisibleActionCount();
+    u8 scroll = sPartyMenuInternal->actionScroll;
+    u8 i;
+
+    for (i = 0; i < visible; i++)
+    {
+        u8 action = sPartyMenuInternal->actions[scroll + i];
+        const u8 *text;
+        u8 fontColorsId = 3;
+
+        if (action >= MENU_FIELD_MOVES)
+        {
+            fontColorsId = 4;
+            text = GetMoveName(FieldMove_GetMoveId(action - MENU_FIELD_MOVES));
+        }
+        else
+        {
+            text = sCursorOptions[action].text;
+        }
+
+        AddTextPrinterParameterized4(windowId, FONT_NORMAL, cursorDimension, (i * 16) + 1, letterSpacing, 0, sFontColorTable[fontColorsId], 0, text);
+    }
+
+    if (visible < sPartyMenuInternal->numActions)
+    {
+        u8 arrowX = GetWindowAttribute(windowId, WINDOW_WIDTH) * 8 - 10;
+
+        if (scroll > 0)
+            AddTextPrinterParameterized4(windowId, FONT_NORMAL, arrowX, 1, 0, 0, sFontColorTable[3], 0, COMPOUND_STRING("{UP_ARROW}"));
+        if (scroll + visible < sPartyMenuInternal->numActions)
+            AddTextPrinterParameterized4(windowId, FONT_NORMAL, arrowX, ((visible - 1) * 16) + 1, 0, 0, sFontColorTable[3], 0, COMPOUND_STRING("{DOWN_ARROW}"));
+    }
+}
+
+// Index into actions[] of the highlighted entry
+static u8 GetSelectedActionIndex(void)
+{
+    return sPartyMenuInternal->actionScroll + Menu_GetCursorPos();
+}
+
+// Menu input for action lists taller than the window: wraps over the whole list and scrolls
+static s8 ProcessScrollingActionsInput(void)
+{
+    u8 total = sPartyMenuInternal->numActions;
+    u8 visible = GetVisibleActionCount();
+    s32 delta = 0;
+    s32 index;
+    u8 scroll;
+    u8 windowId = sPartyMenuInternal->windowId[0];
+
+    if (JOY_NEW(A_BUTTON))
+        return GetSelectedActionIndex();
+    if (JOY_NEW(B_BUTTON))
+        return MENU_B_PRESSED;
+
+    if (JOY_REPEAT(DPAD_UP))
+        delta = -1;
+    else if (JOY_REPEAT(DPAD_DOWN))
+        delta = 1;
+    if (delta == 0)
+        return MENU_NOTHING_CHOSEN;
+
+    index = (GetSelectedActionIndex() + delta + total) % total;
+    scroll = sPartyMenuInternal->actionScroll;
+    if (index < scroll)
+        scroll = index;
+    else if (index >= scroll + visible)
+        scroll = index - visible + 1;
+    sPartyMenuInternal->actionScroll = scroll;
+
+    PlaySE(SE_SELECT);
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(0));
+    PrintActionRows(windowId);
+    InitMenuInUpperLeftCorner(windowId, visible, index - scroll, TRUE);
+    CopyWindowToVram(windowId, COPYWIN_GFX);
+    return MENU_NOTHING_CHOSEN;
+}
+
 static u8 DisplaySelectionWindow(u8 windowType)
 {
     struct WindowTemplate window;
-    u8 cursorDimension;
-    u8 letterSpacing;
-    u8 i;
 
+    sPartyMenuInternal->actionScroll = 0;
     switch (windowType)
     {
     case SELECTWINDOW_ACTIONS:
-        SetWindowTemplateFields(&window, 2, 19, 19 - (sPartyMenuInternal->numActions * 2), 10, sPartyMenuInternal->numActions * 2, 14, 0x2E9);
+        SetWindowTemplateFields(&window, 2, 19, 19 - (GetVisibleActionCount() * 2), 10, GetVisibleActionCount() * 2, 14, 0x2E9);
         break;
     case SELECTWINDOW_ITEM:
         window = sItemGiveTakeWindowTemplate;
@@ -3158,26 +3254,8 @@ static u8 DisplaySelectionWindow(u8 windowType)
     DrawStdFrameWithCustomTileAndPalette(sPartyMenuInternal->windowId[0], FALSE, 0x4F, 13);
     if (windowType == SELECTWINDOW_MOVES)
         return sPartyMenuInternal->windowId[0];
-    cursorDimension = GetMenuCursorDimensionByFont(FONT_NORMAL, 0);
-    letterSpacing = GetFontAttribute(FONT_NORMAL, FONTATTR_LETTER_SPACING);
-
-    for (i = 0; i < sPartyMenuInternal->numActions; i++)
-    {
-        const u8 *text;
-        u8 fontColorsId = 3;
-
-        if (sPartyMenuInternal->actions[i] >= MENU_FIELD_MOVES)
-            fontColorsId = 4;
-
-        if (sPartyMenuInternal->actions[i] >= MENU_FIELD_MOVES)
-            text = GetMoveName(FieldMove_GetMoveId(sPartyMenuInternal->actions[i] - MENU_FIELD_MOVES));
-        else
-            text = sCursorOptions[sPartyMenuInternal->actions[i]].text;
-
-        AddTextPrinterParameterized4(sPartyMenuInternal->windowId[0], FONT_NORMAL, cursorDimension, (i * 16) + 1, letterSpacing, 0, sFontColorTable[fontColorsId], 0, text);
-    }
-
-    InitMenuInUpperLeftCorner(sPartyMenuInternal->windowId[0], sPartyMenuInternal->numActions, 0, TRUE);
+    PrintActionRows(sPartyMenuInternal->windowId[0]);
+    InitMenuInUpperLeftCorner(sPartyMenuInternal->windowId[0], GetVisibleActionCount(), 0, TRUE);
     ScheduleBgCopyTilemapToVram(2);
 
     return sPartyMenuInternal->windowId[0];
@@ -3229,10 +3307,6 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
     u8 i, j;
 
     sPartyMenuInternal->numActions = 0;
-    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_SUMMARY);
-    if (FlagGet(FLAG_ALLOW_STAT_EDITOR))
-        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_STAT_EDIT);
-
 
     // Add field moves to action list
     for (i = 0; i < MAX_MON_MOVES; i++)
@@ -3259,6 +3333,19 @@ static void SetPartyMonFieldSelectionActions(struct Pokemon *mons, u8 slotId)
         else
             AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_ITEM);
     }
+
+    if (gPartyMenu.menuType == PARTY_MENU_TYPE_FIELD && gPartyMenu.action == PARTY_ACTION_CHOOSE_MON && !InMultiPartnerRoom())
+    {
+        if (CanRenamePartyMon(&mons[slotId]))
+            AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RENAME);
+        if (P_SUMMARY_SCREEN_MOVE_RELEARNER && !InBattleFactory() && !InSlateportBattleTent()
+         && FindRelearnableState(&mons[slotId].box))
+            AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_RELEARN);
+    }
+
+    if (FlagGet(FLAG_ALLOW_STAT_EDITOR))
+        AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_STAT_EDIT);
+    AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_SUMMARY);
     AppendToList(sPartyMenuInternal->actions, &sPartyMenuInternal->numActions, MENU_CANCEL1);
 }
 
@@ -3370,12 +3457,14 @@ static void Task_HandleSelectionMenuInput(u8 taskId)
         s8 input;
         s16 *data = gTasks[taskId].data;
 
-        if (sPartyMenuInternal->numActions <= 3)
+        if (sPartyMenuInternal->numActions > GetVisibleActionCount())
+            input = ProcessScrollingActionsInput();
+        else if (sPartyMenuInternal->numActions <= 3)
             input = Menu_ProcessInputNoWrapAround_other();
         else
             input = ProcessMenuInput_other();
 
-        data[0] = Menu_GetCursorPos();
+        data[0] = GetSelectedActionIndex();
         switch (input)
         {
         case MENU_NOTHING_CHOSEN:
@@ -4432,7 +4521,7 @@ static void Task_HandleSpinTradeYesNoInput(u8 taskId)
 
 static void CursorCb_FieldMove(u8 taskId)
 {
-    u8 fieldMove = sPartyMenuInternal->actions[Menu_GetCursorPos()] - MENU_FIELD_MOVES;
+    u8 fieldMove = sPartyMenuInternal->actions[GetSelectedActionIndex()] - MENU_FIELD_MOVES;
     const struct MapHeader *mapHeader;
 
     PlaySE(SE_SELECT);
@@ -5140,6 +5229,40 @@ static void CursorCb_StatEdit(u8 taskId)
     PlaySE(SE_SELECT);
     gSpecialVar_0x8004 = gPartyMenu.slotId;
     sPartyMenuInternal->exitCallback = ChangePokemonStatsPartyScreen;
+    Task_ClosePartyMenu(taskId);
+}
+
+// Reopens the field party menu on the same slot after leaving it for rename/relearn
+void CB2_ReturnToPartyMenuFromRelearner(void)
+{
+    InitPartyMenu(PARTY_MENU_TYPE_FIELD, PARTY_LAYOUT_SINGLE, PARTY_ACTION_CHOOSE_MON, TRUE, PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, gPartyMenu.exitCallback);
+}
+
+static void CB2_ReturnToPartyMenuFromNaming(void)
+{
+    SetBoxMonData(GetSelectedBoxMonFromPcOrParty(), MON_DATA_NICKNAME, gStringVar2);
+    CB2_ReturnToPartyMenuFromRelearner();
+}
+
+static void CB2_PartyMenuRename(void)
+{
+    ChangePokemonNicknameWithCallback(CB2_ReturnToPartyMenuFromNaming);
+}
+
+static void CursorCb_Rename(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    gSpecialVar_0x8004 = gPartyMenu.slotId;
+    sPartyMenuInternal->exitCallback = CB2_PartyMenuRename;
+    Task_ClosePartyMenu(taskId);
+}
+
+static void CursorCb_Relearn(u8 taskId)
+{
+    PlaySE(SE_SELECT);
+    gSpecialVar_0x8004 = gPartyMenu.slotId;
+    gRelearnMode = RELEARN_MODE_PARTY_MENU;
+    sPartyMenuInternal->exitCallback = CB2_InitLearnMove;
     Task_ClosePartyMenu(taskId);
 }
 

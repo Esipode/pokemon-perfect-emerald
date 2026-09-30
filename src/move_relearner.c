@@ -595,7 +595,12 @@ static void Task_MoveRelearner_Quit(u8 taskId)
     if (gPaletteFade.active)
         return;
 
-    if (gInitialSummaryScreenCallback != NULL)
+    // gInitialSummaryScreenCallback can be stale here, so check the party menu entry first
+    if (gRelearnMode == RELEARN_MODE_PARTY_MENU)
+    {
+        SetMainCallback2(CB2_ReturnToPartyMenuFromRelearner);
+    }
+    else if (gInitialSummaryScreenCallback != NULL)
     {
 #if FREE_CONTESTS == FALSE
         if (gRelearnMode == RELEARN_MODE_PSS_PAGE_CONTEST_MOVES)
