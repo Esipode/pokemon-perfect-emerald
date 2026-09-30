@@ -1,5 +1,7 @@
 ## Miraidon — The Iron Serpent Pokémon
 
+### Location: Route 110 - Sunday night, needs 50+ legendaries caught
+
 Everything you do is information. Repeat yourself, sit on a resisted hit, or let a big shot land
 clean, and Miraidon's Analysis Network gets sharper. Break the pattern and it starves.
 

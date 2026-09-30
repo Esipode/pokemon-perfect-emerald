@@ -1,5 +1,7 @@
 ## Koraidon — The Winged King Pokémon
 
+### Location: Route 110 - Sunday daytime, needs 50+ legendaries caught
+
 Koraidon fights to a rhythm. Every landed hit, every read of your patterns, and every turn its Sun
 holds feeds that rhythm - and the stronger it gets, the bigger the payload it can unleash on you.
 Starve the rhythm and the fight stays survivable. Feed it and Koraidon starts hitting back harder

@@ -540,6 +540,32 @@
       "trainer_sight_or_berry_tree_id": "0",
       "script": "Common_EventScript_FieldChansey",
       "flag": "FLAG_HIDE_FIELD_CHANSEY"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(KORAIDON)",
+      "x": 26,
+      "y": 7,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_PATROL",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route110_Koraidon_Encounter",
+      "flag": "FLAG_HIDE_KORAIDON"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(MIRAIDON)",
+      "x": 29,
+      "y": 91,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_PATROL",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "Route110_Miraidon_Encounter",
+      "flag": "FLAG_HIDE_MIRAIDON"
     }
   ],
   "warp_events": [

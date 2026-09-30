@@ -369,6 +369,7 @@ static void (*const sMovementTypeCallbacks[])(struct Sprite *) =
     [MOVEMENT_TYPE_WATCH_PLAYER_OWE] = MovementType_OverworldWildEncounter_WatchPlayer,
     [MOVEMENT_TYPE_APPROACH_PLAYER_OWE] = MovementType_OverworldWildEncounter_ApproachPlayer,
     [MOVEMENT_TYPE_DESPAWN_OWE] = MovementType_OverworldWildEncounter_Despawn,
+    [MOVEMENT_TYPE_PATROL] = MovementType_Patrol,
 };
 
 static const bool8 sMovementTypeHasRange[NUM_MOVEMENT_TYPES] = {
@@ -504,6 +505,7 @@ const u8 gInitialMovementTypeFacingDirections[NUM_MOVEMENT_TYPES] = {
     [MOVEMENT_TYPE_WATCH_PLAYER_OWE] = DIR_SOUTH,
     [MOVEMENT_TYPE_APPROACH_PLAYER_OWE] = DIR_SOUTH,
     [MOVEMENT_TYPE_DESPAWN_OWE] = DIR_SOUTH,
+    [MOVEMENT_TYPE_PATROL] = DIR_SOUTH,
 };
 
 #include "data/object_events/object_event_graphics_info_pointers.h"
@@ -820,6 +822,15 @@ static const s16 sMovementDelaysShort[] =  {32, 48,  64,  80};
 static const s16 sMovementDelaysOWE[] =    {64, 80,  96, 128};
 
 #include "data/object_events/movement_type_func_tables.h"
+
+struct PatrolPath
+{
+    u16 graphicsId;
+    u8 count;
+    const struct Coords16 *points;
+};
+
+#include "data/object_events/patrol_paths.h"
 
 static const u8 sFaceDirectionAnimNums[] = {
     [DIR_NONE] = ANIM_STD_FACE_SOUTH,
@@ -2944,8 +2955,13 @@ void TrySpawnObjectEvents(s16 cameraX, s16 cameraY)
             struct ObjectEventTemplate *template = &gSaveBlock1Ptr->objectEventTemplates[i];
             s16 npcX = template->x + MAP_OFFSET;
             s16 npcY = template->y + MAP_OFFSET;
+            bool32 isPatrol = template->movementType == MOVEMENT_TYPE_PATROL;
 
-            if (top <= npcY && bottom >= npcY && left <= npcX && right >= npcX && !FlagGet(template->flagId))
+            if (isPatrol == FALSE && FlagGet(FLAG_TEMP_HIDE_ALL_NPCS))
+                continue;
+
+            // Patrol objects spawn regardless of view so they keep walking while offscreen.
+            if ((isPatrol || (top <= npcY && bottom >= npcY && left <= npcX && right >= npcX)) && !FlagGet(template->flagId))
             {
                 if (template->graphicsId == OBJ_EVENT_GFX_LIGHT_SPRITE)
                     SpawnLightSprite(npcX, npcY, cameraX, cameraY, template->trainerRange_berryTreeId); // light sprite instead
@@ -2981,6 +2997,8 @@ void RemoveObjectEventsOutsideView(void)
             if (objectEvent->localId == OBJ_EVENT_ID_NPC_FOLLOWER || objectEvent->localId == OBJ_EVENT_ID_FOLLOWER)
                 continue;
             if (IsOWEDespawnExempt(objectEvent))
+                continue;
+            if (objectEvent->movementType == MOVEMENT_TYPE_PATROL)
                 continue;
 
             RemoveObjectEventIfOutsideView(objectEvent);
@@ -5117,6 +5135,68 @@ bool8 MovementType_WalkSequence_Step2(struct ObjectEvent *objectEvent, struct Sp
         sprite->sTypeFuncId = 1;
     }
     return FALSE;
+}
+
+movement_type_def(MovementType_Patrol, gMovementTypeFuncs_Patrol)
+
+static const struct PatrolPath *GetPatrolPath(u16 graphicsId)
+{
+    u32 i;
+
+    for (i = 0; i < ARRAY_COUNT(sPatrolPaths); i++)
+    {
+        if (sPatrolPaths[i].graphicsId == graphicsId)
+            return &sPatrolPaths[i];
+    }
+    return NULL;
+}
+
+// Targets are numbered 1..2 * (count - 1): forward through the points, then back down to the first.
+static const struct Coords16 *GetPatrolTarget(const struct PatrolPath *path, u8 targetIndex)
+{
+    u32 last = path->count - 1;
+
+    return &path->points[targetIndex <= last ? targetIndex : 2 * last - targetIndex];
+}
+
+u8 MovementType_Patrol_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    const struct PatrolPath *path = GetPatrolPath(objectEvent->graphicsId);
+    const struct Coords16 *target;
+    enum Direction direction;
+    u8 movementActionId;
+
+    if (path == NULL)
+        return FALSE;
+
+    if (objectEvent->directionSequenceIndex == 0)
+        objectEvent->directionSequenceIndex = 1;
+    target = GetPatrolTarget(path, objectEvent->directionSequenceIndex);
+    if (objectEvent->currentCoords.x == target->x + MAP_OFFSET && objectEvent->currentCoords.y == target->y + MAP_OFFSET)
+    {
+        if (objectEvent->directionSequenceIndex >= 2 * (path->count - 1))
+            objectEvent->directionSequenceIndex = 1;
+        else
+            objectEvent->directionSequenceIndex++;
+        target = GetPatrolTarget(path, objectEvent->directionSequenceIndex);
+    }
+
+    if (objectEvent->currentCoords.x != target->x + MAP_OFFSET)
+        direction = objectEvent->currentCoords.x < target->x + MAP_OFFSET ? DIR_EAST : DIR_WEST;
+    else
+        direction = objectEvent->currentCoords.y < target->y + MAP_OFFSET ? DIR_SOUTH : DIR_NORTH;
+
+    SetObjectEventDirection(objectEvent, direction);
+    // Terrain never blocks the patrol; only another object (the player) does.
+    if (GetCollisionInDirection(objectEvent, direction) == COLLISION_OBJECT_EVENT)
+        movementActionId = GetWalkInPlaceNormalMovementAction(objectEvent->facingDirection);
+    else
+        movementActionId = GetWalkFastMovementAction(direction);
+
+    ObjectEventSetSingleMovement(objectEvent, sprite, movementActionId);
+    objectEvent->singleMovementActive = TRUE;
+    sprite->sTypeFuncId = 2;
+    return TRUE;
 }
 
 movement_type_def(MovementType_WalkSequenceUpRightLeftDown, gMovementTypeFuncs_WalkSequenceUpRightLeftDown)

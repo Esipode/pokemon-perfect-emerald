@@ -1660,6 +1660,7 @@
 #define FLAG_TEMP_DARKRAI_HUNT                  FLAG_TEMP_8 // Abandoned Ship hidden floor: Darkrai hunt active this visit
 #define FLAG_TEMP_HIDDEN_ITEMS_DISABLED         FLAG_TEMP_9 // Hidden item bg events do nothing while set
 #define FLAG_TEMP_NO_WILD_ENCOUNTERS            FLAG_TEMP_F // StandardWildEncounter does nothing while set
+#define FLAG_TEMP_HIDE_ALL_NPCS                 FLAG_TEMP_D // Only MOVEMENT_TYPE_PATROL objects spawn while set
 #define FLAG_TEMP_HIDE_SAFARI_NW_NPC            FLAG_TEMP_10 // Safari Zone Northwest: hides the NPC while Okidogi is present
 
 // FRLG flags
