@@ -13,6 +13,7 @@
 #include "script.h"
 #include "trainer_hill.h"
 #include "tv.h"
+#include "constants/infinity_cave.h"
 #include "constants/rgb.h"
 #include "constants/layouts.h"
 #include "constants/metatile_behaviors.h"
@@ -26,6 +27,8 @@ struct ConnectionFlags
     u8 west:1;
     u8 east:1;
 };
+
+STATIC_ASSERT((INFCAVE_MAP_WIDTH + MAP_OFFSET_W) * (INFCAVE_MAP_HEIGHT + MAP_OFFSET_H) <= MAX_MAP_DATA_SIZE, InfCaveMapFitsBackupMapData);
 
 EWRAM_DATA u16 ALIGNED(4) sBackupMapData[MAX_MAP_DATA_SIZE] = {0};
 EWRAM_DATA struct MapHeader gMapHeader = {0};
