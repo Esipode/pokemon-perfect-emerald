@@ -82,6 +82,40 @@ enum PartyDashPalRow
 #define SLOT_LABEL_X        19
 #define SLOT_WIN_W          (SLOT_W_TILES * TILE_WIDTH)
 
+// Info palette (BG palette 12) entries (0 transparent, 1 panel fill), shared by every info-area window.
+#define INFO_PIX_TEXT        2
+#define INFO_PIX_SHADOW      3
+#define INFO_PIX_LABEL       4
+#define INFO_PIX_NATURE_UP   5
+#define INFO_PIX_NATURE_DOWN 6
+#define INFO_PIX_HP_GREEN    7
+#define INFO_PIX_HP_YELLOW   8
+#define INFO_PIX_HP_RED      9
+#define INFO_PIX_EXP         10
+#define INFO_PIX_HATCH       11
+#define INFO_PIX_TRACK       12
+
+// Identity window (12x8 tiles) geometry in pixels.
+#define IDENT_TEXT_X         2
+#define IDENT_RIGHT_X        94
+#define IDENT_NAME_Y         2
+#define IDENT_NAME_MAX_W     76
+#define IDENT_LEVEL_Y        16
+#define IDENT_HP_Y           28
+#define IDENT_HP_BAR_Y       42
+#define IDENT_HP_BAR_H       4
+#define IDENT_EXP_Y          44
+#define IDENT_EXP_BAR_Y      58
+#define IDENT_EXP_BAR_H      3
+#define IDENT_BAR_X          4
+
+// BG3 tile cells for the type icons (identity rows 16-31) and the status chip sprite centre.
+#define IDENT_ICON_COL       5
+#define IDENT_ICON_ROW       (IDENT_Y + 2)
+#define IDENT_TERA_COL       7
+#define IDENT_CHIP_X         78
+#define IDENT_CHIP_Y         (IDENT_Y * TILE_HEIGHT + 24)
+
 #define PARTY_DASH_PAL_CHROME     0
 #define PARTY_DASH_PAL_SLOT_FIRST 3 // Slot 0 must keep BG palette 3 (first-battle fade masks).
 #define PARTY_DASH_PAL_TYPE_1     9
@@ -204,7 +238,7 @@ static const struct WindowTemplate sPartyDashboardHintWindowTemplate =
         (col) * 32 + 16, (row) * 48 + 18,                                     \
         (col) * 32 + 28, (row) * 48 + 6,                                      \
         (col) * 32 + 16, (row) * 48 + 38,                                     \
-        (col) * 32 + 16, (row) * 48 + 18,                                     \
+        (col) * 32 + 20, (row) * 48 + 18,                                     \
     }
 
 static const u8 sPartyDashSpriteCoords[PARTY_DASH_MAX_SLOTS][8] =
@@ -229,6 +263,28 @@ static const u8 sSlotHpBarPix[] =
     [HP_BAR_YELLOW] = SLOT_PIX_HP_YELLOW,
     [HP_BAR_GREEN]  = SLOT_PIX_HP_GREEN,
     [HP_BAR_FULL]   = SLOT_PIX_HP_GREEN,
+};
+
+static const u8 sText_DashEgg[] = _("EGG");
+static const u8 sText_DashHp[] = _("HP");
+static const u8 sText_DashExp[] = _("EXP");
+static const u8 sText_DashHatch[] = _("HATCH");
+static const u8 sText_DashMax[] = _("MAX");
+static const u8 sText_DashToNext[] = _(" to next");
+static const u8 sText_DashSlash[] = _("/");
+static const u8 sText_DashPercent[] = _("%");
+static const u8 sIdentTextColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_TEXT, INFO_PIX_SHADOW};
+static const u8 sIdentLabelColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_LABEL, INFO_PIX_SHADOW};
+static const u8 sIdentFaintedColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_HP_RED, INFO_PIX_SHADOW};
+static const u8 sIdentMaleColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_NATURE_DOWN, INFO_PIX_SHADOW};
+static const u8 sIdentFemaleColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_NATURE_UP, INFO_PIX_SHADOW};
+static const u8 sIdentHpBarPix[] =
+{
+    [HP_BAR_EMPTY]  = INFO_PIX_HP_RED,
+    [HP_BAR_RED]    = INFO_PIX_HP_RED,
+    [HP_BAR_YELLOW] = INFO_PIX_HP_YELLOW,
+    [HP_BAR_GREEN]  = INFO_PIX_HP_GREEN,
+    [HP_BAR_FULL]   = INFO_PIX_HP_GREEN,
 };
 
 static const u8 sDashTabColors[3] = {TEXT_COLOR_TRANSPARENT, 2, 3}; // Palette 12: text, shadow.

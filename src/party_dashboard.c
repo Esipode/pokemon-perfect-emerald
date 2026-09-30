@@ -17,10 +17,12 @@
 #include "pokemon_summary_screen.h"
 #include "randomization.h"
 #include "palette.h"
+#include "sprite.h"
 #include "recruits_mode.h"
 #include "string_util.h"
 #include "strings.h"
 #include "text.h"
+#include "type_icons.h"
 #include "window.h"
 #include "constants/flags.h"
 #include "constants/party_menu.h"
@@ -33,6 +35,7 @@ struct PartyDashboard
     u8 selectedSlot;
     u8 tab;
     u8 hintWindowId;
+    u8 statusSpriteId;
     // DMA sources: must outlive the queued VRAM copies.
     u8 chromeTiles[CHROME_TILE_COUNT * TILE_SIZE_4BPP];
     u8 iconTiles[BG3_TILE_COUNT * TILE_SIZE_4BPP];
@@ -57,7 +60,11 @@ static bool32 CanMonRelearn(struct Pokemon *mon)
 bool32 PartyDashboard_Alloc(void)
 {
     sDashboard = AllocZeroed(sizeof(*sDashboard));
-    return sDashboard != NULL;
+    if (sDashboard == NULL)
+        return FALSE;
+
+    sDashboard->statusSpriteId = SPRITE_NONE;
+    return TRUE;
 }
 
 void PartyDashboard_Free(void)
@@ -363,9 +370,160 @@ void PartyDashboard_SetSlotPalette(u32 slot, u32 palFlags)
     LoadSlotPaletteRow(slot, row);
 }
 
-void PartyDashboard_Select(u32 slot)
+static void PrintIdentRight(u32 fontId, u32 y, const u8 *colors, const u8 *str)
+{
+    AddTextPrinterParameterized3(WIN_DASH_IDENT, fontId, IDENT_RIGHT_X - GetStringWidth(fontId, str, 0), y, colors, TEXT_SKIP_DRAW, str);
+}
+
+// Bar on a track; a zero fill leaves the track empty.
+static void DrawIdentBar(u32 y, u32 height, u32 fill, u32 pix)
+{
+    FillWindowPixelRect(WIN_DASH_IDENT, INFO_PIX_TRACK, IDENT_BAR_X, y, PARTY_DASH_HP_BAR_W, height);
+    if (fill != 0)
+        FillWindowPixelRect(WIN_DASH_IDENT, pix, IDENT_BAR_X, y, fill, height);
+}
+
+static bool32 ShouldShowGender(struct PartyDashboardMon *mon)
+{
+    if (mon->gender != MON_MALE && mon->gender != MON_FEMALE)
+        return FALSE;
+    // A Nidoran keeping its default name already shows its gender in the name.
+    if ((mon->species == SPECIES_NIDORAN_M || mon->species == SPECIES_NIDORAN_F)
+     && StringCompare(mon->nickname, GetSpeciesName(mon->species)) == 0)
+        return FALSE;
+    return TRUE;
+}
+
+static void DrawIdentityEgg(struct PartyDashboardMon *mon)
+{
+    AddTextPrinterParameterized3(WIN_DASH_IDENT, FONT_NORMAL, IDENT_TEXT_X, IDENT_NAME_Y, sIdentTextColors, TEXT_SKIP_DRAW, sText_DashEgg);
+
+    AddTextPrinterParameterized3(WIN_DASH_IDENT, FONT_SMALL_NARROW, IDENT_TEXT_X, IDENT_EXP_Y, sIdentLabelColors, TEXT_SKIP_DRAW, sText_DashHatch);
+    ConvertIntToDecimalStringN(gStringVar1, mon->hatchPercent, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringAppend(gStringVar1, sText_DashPercent);
+    PrintIdentRight(FONT_SMALL_NARROW, IDENT_EXP_Y, sIdentTextColors, gStringVar1);
+    DrawIdentBar(IDENT_EXP_BAR_Y, IDENT_EXP_BAR_H, mon->hatchPercent * PARTY_DASH_EXP_BAR_W / 100, INFO_PIX_HATCH);
+}
+
+static void DrawIdentityMon(struct PartyDashboardMon *mon)
+{
+    const bool32 fainted = mon->hp == 0;
+    u32 nameFont = GetFontIdToFit(mon->nickname, FONT_NORMAL, 0, IDENT_NAME_MAX_W);
+
+    AddTextPrinterParameterized3(WIN_DASH_IDENT, nameFont, IDENT_TEXT_X, IDENT_NAME_Y, sIdentTextColors, TEXT_SKIP_DRAW, mon->nickname);
+    if (ShouldShowGender(mon))
+        PrintIdentRight(FONT_SMALL, IDENT_NAME_Y, mon->gender == MON_MALE ? sIdentMaleColors : sIdentFemaleColors,
+                        mon->gender == MON_MALE ? gText_MaleSymbol : gText_FemaleSymbol);
+
+    StringCopy(gStringVar1, gText_LevelSymbol);
+    ConvertIntToDecimalStringN(gStringVar2, mon->level, STR_CONV_MODE_LEFT_ALIGN, 3);
+    StringAppend(gStringVar1, gStringVar2);
+    AddTextPrinterParameterized3(WIN_DASH_IDENT, FONT_SMALL, IDENT_TEXT_X, IDENT_LEVEL_Y, sIdentTextColors, TEXT_SKIP_DRAW, gStringVar1);
+
+    AddTextPrinterParameterized3(WIN_DASH_IDENT, FONT_SMALL_NARROW, IDENT_TEXT_X, IDENT_HP_Y, sIdentLabelColors, TEXT_SKIP_DRAW, sText_DashHp);
+    ConvertIntToDecimalStringN(gStringVar1, mon->hp, STR_CONV_MODE_LEFT_ALIGN, 4);
+    StringAppend(gStringVar1, sText_DashSlash);
+    ConvertIntToDecimalStringN(gStringVar2, mon->maxHp, STR_CONV_MODE_LEFT_ALIGN, 4);
+    StringAppend(gStringVar1, gStringVar2);
+    PrintIdentRight(FONT_SMALL_NARROW, IDENT_HP_Y, fainted ? sIdentFaintedColors : sIdentTextColors, gStringVar1);
+    DrawIdentBar(IDENT_HP_BAR_Y, IDENT_HP_BAR_H, GetScaledHPFraction(mon->hp, mon->maxHp, PARTY_DASH_HP_BAR_W), sIdentHpBarPix[mon->hpLevel]);
+
+    AddTextPrinterParameterized3(WIN_DASH_IDENT, FONT_SMALL_NARROW, IDENT_TEXT_X, IDENT_EXP_Y, sIdentLabelColors, TEXT_SKIP_DRAW, sText_DashExp);
+    if (mon->level >= MAX_LEVEL)
+    {
+        StringCopy(gStringVar1, sText_DashMax);
+    }
+    else
+    {
+        ConvertIntToDecimalStringN(gStringVar1, mon->expToNext, STR_CONV_MODE_LEFT_ALIGN, 7);
+        StringAppend(gStringVar1, sText_DashToNext);
+    }
+    PrintIdentRight(FONT_SMALL_NARROW, IDENT_EXP_Y, sIdentTextColors, gStringVar1);
+    DrawIdentBar(IDENT_EXP_BAR_Y, IDENT_EXP_BAR_H, mon->expTicks, INFO_PIX_EXP);
+}
+
+// Icons are two BG3 tiles (8x16) from the active style's sheets. Stellar reuses the Mystery icon, as in battle.
+static void PlaceTypeIcon(enum Type type, u32 col, u32 row)
+{
+    u32 tile, pal;
+
+    if (type == TYPE_STELLAR)
+        type = TYPE_MYSTERY;
+    if (type == TYPE_NONE || type >= NUMBER_OF_MON_TYPES)
+        return;
+
+    if (gTypesInfo[type].useSecondTypeIconPalette)
+    {
+        tile = BG3_TILE_SHEET_2 + TYPE_ICON_2_FRAME(type);
+        pal = PARTY_DASH_PAL_TYPE_2;
+    }
+    else
+    {
+        tile = BG3_TILE_SHEET_1 + TYPE_ICON_1_FRAME(type);
+        pal = PARTY_DASH_PAL_TYPE_1;
+    }
+    FillBgTilemapBufferRect(3, tile, col, row, 1, 1, pal);
+    FillBgTilemapBufferRect(3, tile + 1, col, row + 1, 1, 1, pal);
+}
+
+static void DrawIdentityTypeIcons(struct PartyDashboardMon *mon)
+{
+    FillBgTilemapBufferRect(3, BG3_TILE_BLANK, IDENT_ICON_COL, IDENT_ICON_ROW, IDENT_TERA_COL - IDENT_ICON_COL + 1, 2, 0);
+    if (!mon->isEgg)
+    {
+        PlaceTypeIcon(mon->type1, IDENT_ICON_COL, IDENT_ICON_ROW);
+        if (mon->type2 != mon->type1)
+            PlaceTypeIcon(mon->type2, IDENT_ICON_COL + 1, IDENT_ICON_ROW);
+        if (mon->showTera)
+            PlaceTypeIcon(mon->teraType, IDENT_TERA_COL, IDENT_ICON_ROW);
+    }
+    ScheduleBgCopyTilemapToVram(3);
+}
+
+// The chip is created on first use and reused; it is hidden when there is no status to show.
+static void UpdateIdentityStatusChip(struct PartyDashboardMon *mon)
+{
+    struct Sprite *sprite;
+
+    if (sDashboard->statusSpriteId == SPRITE_NONE)
+    {
+        u32 spriteId = CreateSprite(&gSpriteTemplate_StatusIcons, IDENT_CHIP_X, IDENT_CHIP_Y, 0);
+
+        if (spriteId == MAX_SPRITES)
+            return;
+        sDashboard->statusSpriteId = spriteId;
+    }
+
+    sprite = &gSprites[sDashboard->statusSpriteId];
+    if (mon->isEgg || mon->ailment == AILMENT_NONE || mon->ailment == AILMENT_PKRS)
+    {
+        sprite->invisible = TRUE;
+        return;
+    }
+    StartSpriteAnim(sprite, mon->ailment - 1);
+    sprite->invisible = FALSE;
+}
+
+static void DrawIdentity(void)
+{
+    struct PartyDashboardMon *mon = &sDashboard->mon;
+
+    FillWindowPixelBuffer(WIN_DASH_IDENT, PIXEL_FILL(0));
+    if (mon->isEgg)
+        DrawIdentityEgg(mon);
+    else
+        DrawIdentityMon(mon);
+    CopyWindowToVram(WIN_DASH_IDENT, COPYWIN_GFX);
+
+    DrawIdentityTypeIcons(mon);
+    UpdateIdentityStatusChip(mon);
+}
+
+void PartyDashboard_Select(u32 slot, struct Pokemon *mon)
 {
     sDashboard->selectedSlot = slot;
+    PartyDashboard_BuildMonData(mon, slot, &sDashboard->mon);
+    DrawIdentity();
 }
 
 void PartyDashboard_SetTab(s32 delta)

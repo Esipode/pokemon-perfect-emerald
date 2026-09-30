@@ -735,6 +735,8 @@ static bool8 ShowPartyMenu(void)
         break;
     case 17:
         CreateCancelConfirmPokeballSprites();
+        if (IsPartyDashboard() && gPartyMenu.slotId < PARTY_SIZE && gPartiesCount[B_TRAINER_PLAYER] != 0)
+            PartyDashboard_Select(gPartyMenu.slotId, GetPartyMonFromPartyMenuId(gPartyMenu.slotId));
         gMain.state++;
         break;
     case 18:
@@ -1921,7 +1923,7 @@ static void UpdateCurrentPartySelection(s8 *slotPtr, s8 movementDir)
         AnimatePartySlot(newSlotId, 0);
         AnimatePartySlot(*slotPtr, 1);
         if (IsPartyDashboard() && *slotPtr < PARTY_SIZE)
-            PartyDashboard_Select(*slotPtr);
+            PartyDashboard_Select(*slotPtr, GetPartyMonFromPartyMenuId(*slotPtr));
     }
 }
 
@@ -2973,12 +2975,38 @@ static void PartyMenuRemoveWindow(u8 *ptr)
     }
 }
 
+// One-line prompts that the dashboard layout omits to keep the screen free; error messages still show.
+static bool32 IsDashboardPromptMessage(u32 stringId)
+{
+    switch (stringId)
+    {
+    case PARTY_MSG_CHOOSE_MON:
+        return gPartiesCount[B_TRAINER_PLAYER] != 0;
+    case PARTY_MSG_CHOOSE_MON_OR_CANCEL:
+    case PARTY_MSG_CHOOSE_MON_AND_CONFIRM:
+    case PARTY_MSG_CHOOSE_MON_2:
+    case PARTY_MSG_CHOOSE_MON_FOR_BOX:
+    case PARTY_MSG_MOVE_TO_WHERE:
+    case PARTY_MSG_MOVE_ITEM_WHERE:
+    case PARTY_MSG_TEACH_WHICH_MON:
+    case PARTY_MSG_USE_ON_WHICH_MON:
+    case PARTY_MSG_GIVE_TO_WHICH_MON:
+    case PARTY_MSG_DO_WHAT_WITH_MON:
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
 void DisplayPartyMenuStdMessage(u32 stringId)
 {
     u8 *windowPtr = &sPartyMenuInternal->windowId[1];
 
     if (*windowPtr != WINDOW_NONE)
         PartyMenuRemoveWindow(windowPtr);
+
+    if (IsPartyDashboard() && IsDashboardPromptMessage(stringId))
+        return;
 
     if (stringId != PARTY_MSG_NONE)
     {
