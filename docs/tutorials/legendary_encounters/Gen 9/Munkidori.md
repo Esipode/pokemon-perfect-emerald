@@ -1,5 +1,7 @@
 ## Munkidori — The Manipulative Trickster Pokémon
 
+### Location: Mt. Pyre - Tuesday evening
+
 Munkidori reads you. Every time it guesses right, it learns more; every time you break the
 pattern, it loses ground. Stop feeding it information.
 
