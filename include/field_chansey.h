@@ -17,4 +17,7 @@ struct FieldChanseySite
 // share a map, the first match wins.
 void FieldChansey_RefreshVisibility(void);
 
+// Script hook: a Chansey heal counts as a Pokémon Center visit.
+void FieldChansey_RecordHeal(void);
+
 #endif // GUARD_FIELD_CHANSEY_H

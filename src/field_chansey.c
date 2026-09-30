@@ -1,5 +1,6 @@
 #include "global.h"
 #include "field_chansey.h"
+#include "achievements.h"
 #include "event_data.h"
 #include "constants/flags.h"
 #include "constants/maps.h"
@@ -34,4 +35,9 @@ void FieldChansey_RefreshVisibility(void)
             FlagClear(FLAG_HIDE_FIELD_CHANSEY);
         return;
     }
+}
+
+void FieldChansey_RecordHeal(void)
+{
+    Achievement_RecordCenterHeal();
 }
