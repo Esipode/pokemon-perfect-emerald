@@ -638,12 +638,7 @@ static void LoadWallClockGraphics(void)
     DmaClear16(3, (void *)PLTT, PLTT_SIZE);
     DecompressDataWithHeaderVram(gWallClock_Gfx, (void *)VRAM);
 
-    u8 gender = gSpecialVar_0x8004;
-
-    if (gender != MALE && gender != FEMALE)
-        gender = gSaveBlock2Ptr->playerGender;
-
-    if (gender == MALE)
+    if (gSaveBlock2Ptr->playerGender == MALE)
         LoadPalette(gWallClockMale_Pal, BG_PLTT_ID(0), PLTT_SIZE_4BPP);
     else
         LoadPalette(gWallClockFemale_Pal, BG_PLTT_ID(0), PLTT_SIZE_4BPP);
