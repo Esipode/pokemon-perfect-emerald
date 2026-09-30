@@ -65,6 +65,7 @@ enum PartyDashPalRow
 };
 
 // Slot palette entries (rows PAL_ROW_SLOT_*): 1 fill, 2 frame, then text and bar colours.
+#define SLOT_PIX_FILL       1
 #define SLOT_PIX_TEXT       3
 #define SLOT_PIX_SHADOW     4
 #define SLOT_PIX_HP_GREEN   5
@@ -72,6 +73,16 @@ enum PartyDashPalRow
 #define SLOT_PIX_HP_RED     7
 #define SLOT_PIX_HP_TRACK   8
 #define SLOT_PIX_HATCH      9
+
+// Slot fill recolour for choose-half / eligibility states; index 1 = selected.
+enum PartyDashSlotState
+{
+    SLOT_STATE_NONE,
+    SLOT_STATE_DIM,
+    SLOT_STATE_PICKED,
+};
+static const u16 sSlotDimFill[2] = {RGB(2, 3, 4), RGB(4, 5, 8)};
+static const u16 sSlotPickedFill[2] = {RGB(6, 16, 10), RGB(11, 22, 14)};
 
 // Slot window (4x1 tiles, bottom row of the slot): bar and label geometry in pixels.
 #define SLOT_BAR_X          2
@@ -276,6 +287,7 @@ static const u8 sSlotHpBarPix[] =
     [HP_BAR_FULL]   = SLOT_PIX_HP_GREEN,
 };
 
+static const u8 sText_DashActive[] = _("ACTIVE");
 static const u8 sText_DashEgg[] = _("EGG");
 static const u8 sText_DashHp[] = _("HP");
 static const u8 sText_DashExp[] = _("EXP");
@@ -309,6 +321,7 @@ static const u8 sDashTabX[PARTY_DASH_TAB_COUNT] = {8, 48};
 #define TAB_LABEL_Y      1
 #define TAB_UNDERLINE_Y  12
 #define TAB_UNDERLINE_H  2
+#define TAB_ACTIVE_RIGHT_X 138 // Right edge of the doubles ACTIVE tag.
 
 // Item icon sprite (INFO tab): one tile tag and one palette tag, the spare OBJ palette.
 #define TAG_DASH_ITEM_ICON 55130

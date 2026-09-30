@@ -43,6 +43,7 @@ struct PartyDashboard
     u8 pulseTimer;
     u8 pulseStep;
     u8 slotRow[PARTY_DASH_MAX_SLOTS];
+    u8 slotState[PARTY_DASH_MAX_SLOTS];
     u8 hintWindowId;
     u8 statusSpriteId;
     u8 itemSpriteId;
@@ -219,9 +220,19 @@ static void DrawSlotFrame(u32 slot)
     FillBgTilemapBufferRect(1, CHROME_TILE_BOTTOM, left, top + SLOT_H_TILES - 1, SLOT_W_TILES, 1, PARTY_DASH_PAL_SLOT_FIRST + slot);
 }
 
+// Loads the row, then recolours the slot fill for its eligibility state.
 static void LoadSlotPaletteRow(u32 slot, enum PartyDashPalRow row)
 {
-    LoadPalette(&gPartyDashboard_Pal[row * 16], BG_PLTT_ID(PARTY_DASH_PAL_SLOT_FIRST + slot), PLTT_SIZE_4BPP);
+    u32 pal = BG_PLTT_ID(PARTY_DASH_PAL_SLOT_FIRST + slot);
+    bool32 selected = row == PAL_ROW_SLOT_SELECTED || row == PAL_ROW_SLOT_FAINTED_SELECTED;
+
+    LoadPalette(&gPartyDashboard_Pal[row * 16], pal, PLTT_SIZE_4BPP);
+    if (row == PAL_ROW_SLOT_EMPTY)
+        return;
+    if (sDashboard->slotState[slot] == SLOT_STATE_DIM)
+        LoadPalette(&sSlotDimFill[selected], pal + SLOT_PIX_FILL, sizeof(u16));
+    else if (sDashboard->slotState[slot] == SLOT_STATE_PICKED)
+        LoadPalette(&sSlotPickedFill[selected], pal + SLOT_PIX_FILL, sizeof(u16));
 }
 
 void PartyDashboard_InitBgs(void)
@@ -277,6 +288,11 @@ static void DrawTabs(void)
         if (active)
             FillWindowPixelRect(WIN_DASH_TABS, INFO_PIX_ACCENT, sDashTabX[tab], TAB_UNDERLINE_Y, GetStringWidth(FONT_SMALL, sDashTabLabels[tab], 0), TAB_UNDERLINE_H);
     }
+
+    // Doubles: the first two party slots are the battlers on the field.
+    if (sDashboard->hasSelection && gPartyMenu.layout == PARTY_LAYOUT_DOUBLE && sDashboard->selectedSlot < 2)
+        AddTextPrinterParameterized3(WIN_DASH_TABS, FONT_SMALL, TAB_ACTIVE_RIGHT_X - GetStringWidth(FONT_SMALL, sText_DashActive, 0), TAB_LABEL_Y,
+                                     sIdentLabelColors, TEXT_SKIP_DRAW, sText_DashActive);
 }
 
 // Creates the dashboard windows (slot windows use ids 0-5, WIN_MSG is id 6) and draws the tab labels.
@@ -365,6 +381,46 @@ void PartyDashboard_DrawSlot(u32 slot, struct Pokemon *mon)
             DrawSlotRecruitLabel(slot, mon);
     }
     CommitSlotWindow(slot);
+}
+
+static void SetSlotState(u32 slot, u32 state)
+{
+    if (sDashboard->slotState[slot] == state)
+        return;
+
+    sDashboard->slotState[slot] = state;
+    if (sDashboard->slotRow[slot] != PAL_ROW_CHROME)
+        LoadSlotPaletteRow(slot, sDashboard->slotRow[slot]);
+}
+
+void PartyDashboard_ClearSlotState(u32 slot)
+{
+    SetSlotState(slot, SLOT_STATE_NONE);
+}
+
+// Shows a description as a slot colour instead of text: dim = unavailable, green = chosen. The bar stays.
+void PartyDashboard_SetSlotDescription(u32 slot, u32 descId, struct Pokemon *mon)
+{
+    switch (descId)
+    {
+    case PARTYBOX_DESC_NO_USE:
+    case PARTYBOX_DESC_NOT_ABLE:
+    case PARTYBOX_DESC_NOT_ABLE_2:
+    case PARTYBOX_DESC_LEARNED:
+        SetSlotState(slot, SLOT_STATE_DIM);
+        break;
+    case PARTYBOX_DESC_FIRST:
+    case PARTYBOX_DESC_SECOND:
+    case PARTYBOX_DESC_THIRD:
+    case PARTYBOX_DESC_FOURTH:
+    case PARTYBOX_DESC_HAVE:
+        SetSlotState(slot, SLOT_STATE_PICKED);
+        break;
+    default:
+        SetSlotState(slot, SLOT_STATE_NONE);
+        break;
+    }
+    PartyDashboard_DrawSlot(slot, mon);
 }
 
 // Replaces the bar with a short status word (LEARNED, ABLE, FIRST...), centred.

@@ -1077,6 +1077,7 @@ static void RenderPartyDashboardBox(u8 slot)
     }
     else
     {
+        PartyDashboard_ClearSlotState(slot);
         if (gPartyMenu.menuType == PARTY_MENU_TYPE_MOVE_RELEARNER)
             DisplayPartyPokemonDataForRelearner(slot);
         else if (gPartyMenu.menuType == PARTY_MENU_TYPE_CONTEST)
@@ -1184,7 +1185,7 @@ static void DisplayPartyPokemonDescriptionData(u8 slot, u8 stringID)
 
     if (IsPartyDashboard())
     {
-        PartyDashboard_DrawSlotDescription(slot, sDescriptionStringTable[stringID]);
+        PartyDashboard_SetSlotDescription(slot, stringID, mon);
         return;
     }
 
@@ -1600,6 +1601,8 @@ void Task_HandleChooseMonInput(u8 taskId)
             {
                 PlaySE(SE_SELECT);
                 MoveCursorToConfirm();
+                if (IsPartyDashboard())
+                    DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
             }
             break;
         case R_BUTTON: // Only used in full-team multis to cycle player/partner parties
@@ -1948,6 +1951,9 @@ static void UpdateCurrentPartySelection(s8 *slotPtr, s8 movementDir)
         AnimatePartySlot(*slotPtr, 1);
         if (IsPartyDashboard() && *slotPtr < PARTY_SIZE)
             PartyDashboard_Select(*slotPtr, GetPartyMonFromPartyMenuId(*slotPtr));
+        // Leaving Confirm restores the hint that mentions it.
+        if (IsPartyDashboard() && sPartyMenuInternal->chooseHalf && newSlotId >= PARTY_SIZE)
+            DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
     }
 }
 
@@ -2981,7 +2987,7 @@ static void DisplayPartyPokemonDescriptionText(u8 stringID, struct PartyMenuBox 
     if (IsPartyDashboard())
     {
         if (c != 2)
-            PartyDashboard_DrawSlotDescription(menuBox->windowId, sDescriptionStringTable[stringID]);
+            PartyDashboard_SetSlotDescription(menuBox->windowId, stringID, GetPartyMonFromPartyMenuId(menuBox->windowId));
         return;
     }
 
@@ -3015,6 +3021,34 @@ static u32 ResolveChooseMonMessage(void)
     if (!ShouldUseChooseMonText())
         return PARTY_MSG_CHOOSE_MON_OR_CANCEL;
     return PARTY_MSG_CHOOSE_MON;
+}
+
+static const u8 sText_ChooseHalfNeedMore[] = _("Pick {STR_VAR_1} more {B_BUTTON}Back");
+static const u8 sText_ChooseHalfReady[] = _("{START_BUTTON}Confirm {B_BUTTON}Back");
+static const u8 sText_ChooseHalfConfirmFocused[] = _("{A_BUTTON}Confirm team {B_BUTTON}Back");
+
+// Choose-half hint: tells whether the team is complete and where Confirm is.
+static void BuildChooseHalfHint(u8 *dst)
+{
+    u32 needed = GetMinBattleEntries();
+    u32 picked = 0;
+
+    while (picked < needed && gSelectedOrderFromParty[picked] != 0)
+        picked++;
+
+    if (picked < needed)
+    {
+        ConvertIntToDecimalStringN(gStringVar1, needed - picked, STR_CONV_MODE_LEFT_ALIGN, 1);
+        StringExpandPlaceholders(dst, sText_ChooseHalfNeedMore);
+    }
+    else if (gPartyMenu.slotId == PARTY_SIZE)
+    {
+        StringCopy(dst, sText_ChooseHalfConfirmFocused);
+    }
+    else
+    {
+        StringCopy(dst, sText_ChooseHalfReady);
+    }
 }
 
 // One-line prompts print in the dashboard hint bar; other messages keep the bottom message window.
@@ -3059,6 +3093,11 @@ void DisplayPartyMenuStdMessage(u32 stringId)
              && (stringId == PARTY_MSG_CHOOSE_MON || stringId == PARTY_MSG_CHOOSE_MON_OR_CANCEL))
             {
                 PartyDashboard_ShowHint(NULL);
+            }
+            else if (stringId == PARTY_MSG_CHOOSE_MON_AND_CONFIRM)
+            {
+                BuildChooseHalfHint(gStringVar4);
+                PartyDashboard_ShowHint(gStringVar4);
             }
             else
             {

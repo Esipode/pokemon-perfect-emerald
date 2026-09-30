@@ -53,7 +53,7 @@ static const struct PartyMenuBoxInfoRects sPartyBoxInfoRects[] =
             24, 35, 48,  3, // HP bar
             65, 30, 35,  18  // Recruits battles left (left of Gender)
         },
-        12, 34, 64, 16      // Description text (e.g. NO USE)
+        12, 28, 64, 16      // Description text (e.g. NO USE)
     },
     [PARTY_BOX_RIGHT_COLUMN] =
     {

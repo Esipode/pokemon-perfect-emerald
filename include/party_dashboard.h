@@ -91,7 +91,7 @@ u32 PartyDashboard_WrapTab(u32 tab, s32 delta, bool32 isEgg);
 // Rendering (src/party_dashboard.c).
 static inline bool32 IsPartyDashboard(void)
 {
-    return P_PARTY_DASHBOARD && gPartyMenu.layout == PARTY_LAYOUT_SINGLE;
+    return P_PARTY_DASHBOARD && (gPartyMenu.layout == PARTY_LAYOUT_SINGLE || gPartyMenu.layout == PARTY_LAYOUT_DOUBLE);
 }
 
 bool32 PartyDashboard_Alloc(void);
@@ -103,6 +103,8 @@ void PartyDashboard_InitWindows(void);
 const u8 *PartyDashboard_GetSpriteCoords(u32 slot);
 void PartyDashboard_DrawSlot(u32 slot, struct Pokemon *mon);
 void PartyDashboard_DrawSlotDescription(u32 slot, const u8 *text);
+void PartyDashboard_SetSlotDescription(u32 slot, u32 descId, struct Pokemon *mon);
+void PartyDashboard_ClearSlotState(u32 slot);
 void PartyDashboard_ClearSlotText(u32 slot);
 void PartyDashboard_DrawEmptySlot(u32 slot, bool32 locked);
 void PartyDashboard_SetSlotPalette(u32 slot, u32 palFlags);
