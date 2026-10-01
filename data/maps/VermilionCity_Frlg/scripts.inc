@@ -4,12 +4,7 @@ VermilionCity_Frlg_MapScripts::
 
 VermilionCity_OnTransition::
 	setworldmapflag FLAG_WORLD_MAP_VERMILION_CITY
-	call_if_set FLAG_TALKED_TO_OAKS_AIDE_IN_VERMILION, VermilionCity_EventScript_HideOaksAide
 	end
-
-VermilionCity_EventScript_HideOaksAide::
-	setflag FLAG_HIDE_VERMILION_CITY_OAKS_AIDE
-	return
 
 VermilionCity_EventScript_Woman::
 	msgbox VermilionCity_Text_GrimerMultipliesInSludge, MSGBOX_NPC
@@ -136,14 +131,6 @@ VermilionCity_EventScript_TidalBoard::
 
 VermilionCity_EventScript_TidalCancel::
 	msgbox VermilionCity_Text_TidalSailAnotherTime, MSGBOX_DEFAULT
-	release
-	end
-
-VermilionCity_EventScript_OaksAide::
-	lock
-	faceplayer
-	setflag FLAG_TALKED_TO_OAKS_AIDE_IN_VERMILION
-	msgbox VermilionCity_Text_Route2AideHasPackageForYou
 	release
 	end
 
@@ -295,19 +282,6 @@ VermilionCity_Text_Seagallop12Departing::
 	.string "to board a special ferry.\p"
 	.string "SEAGALLOP HI-SPEED 12 will be\n"
 	.string "departing immediately.$"
-
-VermilionCity_Text_Route2AideHasPackageForYou::
-	.string "Oh, hello, {PLAYER}!\n"
-	.string "How are you doing?\p"
-	.string "It's me, one of PROF. OAK's AIDES.\p"
-	.string "Did you meet the other AIDE?\p"
-	.string "He had a package from PROF. OAK\n"
-	.string "for you, {PLAYER}.\p"
-	.string "He said he'd look for you around\n"
-	.string "ROUTE 2, {PLAYER}.\p"
-	.string "If you're in the ROUTE 2 area,\n"
-	.string "please look for him.$"
-
 
 VermilionCity_Text_TidalBoundForHoenn::
 	.string "Welcome aboard the S.S. TIDAL!\p"

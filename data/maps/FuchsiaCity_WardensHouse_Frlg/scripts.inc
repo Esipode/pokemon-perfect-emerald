@@ -23,7 +23,7 @@ FuchsiaCity_WardensHouse_EventScript_GiveGoldTeeth::
 	checkplayergender
 	call_if_eq VAR_RESULT, MALE, FuchsiaCity_WardensHouse_EventScript_WardenThanksMale
 	call_if_eq VAR_RESULT, FEMALE, FuchsiaCity_WardensHouse_EventScript_WardenThanksFemale
-	giveitem_msg FuchsiaCity_WardensHouse_Text_ReceivedHM04FromWarden, ITEM_HM04
+	giveitem_msg FuchsiaCity_WardensHouse_Text_ReceivedRewardFromWarden, ITEM_RARE_CANDY
 	setflag FLAG_GOT_HM04
 	removeitem ITEM_GOLD_TEETH
 	release
@@ -98,15 +98,13 @@ FuchsiaCity_WardensHouse_Text_ThanksLassieGiveYouSomething::
 	.string "Let me give you something for your\n"
 	.string "trouble.$"
 
-FuchsiaCity_WardensHouse_Text_ReceivedHM04FromWarden::
-	.string "{PLAYER} received HM04\n"
+FuchsiaCity_WardensHouse_Text_ReceivedRewardFromWarden::
+	.string "{PLAYER} received a RARE CANDY\n"
 	.string "from the WARDEN.$"
 
 FuchsiaCity_WardensHouse_Text_ExplainStrength::
-	.string "WARDEN: Inside HM04 you'll find\n"
-	.string "STRENGTH.\p"
-	.string "It lets POKéMON move boulders when\n"
-	.string "you're outside of battle.\p"
+	.string "WARDEN: I'm glad to have my teeth\n"
+	.string "back. Thanks again!\p"
 	.string "Oh yes, did you find the SECRET\n"
 	.string "HOUSE in the SAFARI ZONE?$"
 

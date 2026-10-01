@@ -1,5 +1,3 @@
-.equ REQUIRED_CAUGHT_MONS, 40
-
 Route16_NorthEntrance_2F_Frlg_MapScripts::
 	.byte 0
 
@@ -22,16 +20,9 @@ Route16_NorthEntrance_2F_EventScript_RightBinoculars::
 Route16_NorthEntrance_2F_EventScript_Aide::
 	lock
 	faceplayer
-	call Route16_NorthEntrance_2F_EventScript_GetAideRequestInfo
 	goto_if_set FLAG_GOT_AMULET_COIN_FROM_OAKS_AIDE, Route16_NorthEntrance_2F_EventScript_AlreadyGotAmuletCoin
-	msgbox Route16_NorthEntrance_2F_Text_GiveAmuletCoinIfCaught40, MSGBOX_YESNO
-	goto_if_eq VAR_RESULT, NO, Aide_EventScript_DeclineCheckMons
-	setvar VAR_0x8004, 0
-	specialvar VAR_RESULT, GetFrlgPokedexCount
-	buffernumberstring STR_VAR_3, VAR_0x8006
-	call Route16_NorthEntrance_2F_EventScript_GetAideRequestInfo
-	goto_if_lt VAR_0x8006, REQUIRED_CAUGHT_MONS, Aide_EventScript_HaventCaughtEnough
-	msgbox Route16_NorthEntrance_2F_Text_GreatHereYouGo
+	msgbox Route16_NorthEntrance_2F_Text_GiveAmuletCoin
+	bufferitemname STR_VAR_2, ITEM_AMULET_COIN
 	checkitemspace ITEM_AMULET_COIN
 	goto_if_eq VAR_RESULT, FALSE, Aide_EventScript_NoRoomForItem
 	giveitem_msg Route16_NorthEntrance_2F_Text_ReceivedAmuletCoinFromAide, ITEM_AMULET_COIN
@@ -44,11 +35,6 @@ Route16_NorthEntrance_2F_EventScript_AlreadyGotAmuletCoin::
 	msgbox Route16_NorthEntrance_2F_Text_ExplainAmuletCoin
 	release
 	end
-
-Route16_NorthEntrance_2F_EventScript_GetAideRequestInfo::
-	buffernumberstring STR_VAR_1, REQUIRED_CAUGHT_MONS
-	bufferitemname STR_VAR_2, ITEM_AMULET_COIN
-	return
 
 Route16_NorthEntrance_2F_Text_OnBikeRideWithGirlfriend::
 	.string "I'm on a relaxing ride on my new\n"
@@ -69,22 +55,12 @@ Route16_NorthEntrance_2F_Text_LongPathOverWater::
 	.string "There's a long path over water far\n"
 	.string "away.$"
 
-Route16_NorthEntrance_2F_Text_GiveAmuletCoinIfCaught40::
-	.string "Hi! Remember me?\n"
+Route16_NorthEntrance_2F_Text_GiveAmuletCoin::
+	.string "Oh… {PLAYER}!\n"
+	.string "I've been looking for you!\p"
 	.string "I'm one of PROF. OAK's AIDES.\p"
-	.string "If your POKéDEX has complete data\n"
-	.string "on 40 species, I'm supposed to\l"
-	.string "give you a reward.\p"
-	.string "PROF. OAK entrusted me with an\n"
+	.string "He entrusted me with this\n"
 	.string "AMULET COIN for you.\p"
-	.string "So, {PLAYER}, let me ask you.\p"
-	.string "Have you gathered data on at least\n"
-	.string "40 kinds of POKéMON?$"
-
-Route16_NorthEntrance_2F_Text_GreatHereYouGo::
-	.string "Great! You have caught or owned\n"
-	.string "{STR_VAR_3} kinds of POKéMON!\p"
-	.string "Congratulations!\n"
 	.string "Here you go!$"
 
 Route16_NorthEntrance_2F_Text_ReceivedAmuletCoinFromAide::

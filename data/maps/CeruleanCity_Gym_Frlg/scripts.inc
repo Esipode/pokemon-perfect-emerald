@@ -11,6 +11,7 @@ CeruleanCity_Gym_EventScript_Misty::
 CeruleanCity_Gym_EventScript_MistyDefeated::
 	setflag FLAG_DEFEATED_MISTY
 	setflag FLAG_BADGE02_GET_FRLG
+	call Common_EventScript_CheckLevelCapIncrease
 	specialvar VAR_RESULT, IsLimitedPartyEnabled
 	call_if_eq VAR_RESULT, TRUE, CeruleanCity_Gym_EventScript_LimitedPartySlotUnlocked
 	setrespawn HEAL_LOCATION_CERULEAN_CITY

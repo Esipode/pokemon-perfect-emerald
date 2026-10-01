@@ -209,16 +209,12 @@ VermilionCity_Gym_EventScript_LtSurge::
 	end
 
 VermilionCity_Gym_EventScript_DefeatedLtSurge::
-	call_if_unset FLAG_GOT_HM05, VermilionCity_Gym_EventScript_ShowOaksAide
 	setflag FLAG_DEFEATED_LT_SURGE
 	setflag FLAG_BADGE03_GET_FRLG
+	call Common_EventScript_CheckLevelCapIncrease
 	set_gym_trainers_frlg 3
 	goto VermilionCity_Gym_EventScript_GiveTM34
 	end
-
-VermilionCity_Gym_EventScript_ShowOaksAide::
-	clearflag FLAG_HIDE_VERMILION_CITY_OAKS_AIDE
-	return
 
 VermilionCity_Gym_EventScript_GiveTM34::
 	msgbox VermilionCity_Gym_Text_ExplainThunderBadgeTakeThis

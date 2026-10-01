@@ -11,6 +11,7 @@ CeladonCity_Gym_EventScript_Erika::
 CeladonCity_Gym_EventScript_DefeatedErika::
 	setflag FLAG_DEFEATED_ERIKA
 	setflag FLAG_BADGE04_GET_FRLG
+	call Common_EventScript_CheckLevelCapIncrease
 	specialvar VAR_RESULT, IsLimitedPartyEnabled
 	call_if_eq VAR_RESULT, TRUE, CeladonCity_Gym_EventScript_LimitedPartySlotUnlocked
 	set_gym_trainers_frlg 4

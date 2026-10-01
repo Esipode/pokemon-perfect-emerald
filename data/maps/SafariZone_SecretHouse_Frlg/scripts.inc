@@ -6,10 +6,10 @@ SafariZone_SecretHouse_EventScript_Attendant::
 	faceplayer
 	goto_if_set FLAG_GOT_HM03, SafariZone_SecretHouse_EventScript_ExplainSurf
 	msgbox SafariZone_SecretHouse_Text_CongratsYouveWon
-	checkitemspace ITEM_HM03
+	checkitemspace ITEM_RARE_CANDY
 	goto_if_eq VAR_RESULT, FALSE, SafariZone_SecretHouse_EventScript_NoRoomForHM03
-	giveitem_msg SafariZone_SecretHouse_Text_ReceivedHM03FromAttendant, ITEM_HM03
-	msgbox SafariZone_SecretHouse_Text_ExplainSurf
+	giveitem_msg SafariZone_SecretHouse_Text_ReceivedPrizeFromAttendant, ITEM_RARE_CANDY
+	msgbox SafariZone_SecretHouse_Text_ExplainPrize
 	setflag FLAG_GOT_HM03
 	release
 	end
@@ -20,7 +20,7 @@ SafariZone_SecretHouse_EventScript_NoRoomForHM03::
 	end
 
 SafariZone_SecretHouse_EventScript_ExplainSurf::
-	msgbox SafariZone_SecretHouse_Text_ExplainSurf
+	msgbox SafariZone_SecretHouse_Text_ExplainPrize
 	release
 	end
 
@@ -35,16 +35,13 @@ SafariZone_SecretHouse_Text_CongratsYouveWon::
 	.string "Congratulations!\n"
 	.string "You have won!$"
 
-SafariZone_SecretHouse_Text_ReceivedHM03FromAttendant::
-	.string "{PLAYER} received HM03\n"
+SafariZone_SecretHouse_Text_ReceivedPrizeFromAttendant::
+	.string "{PLAYER} received a RARE CANDY\n"
 	.string "from the attendant!$"
 
-SafariZone_SecretHouse_Text_ExplainSurf::
-	.string "HM03 is SURF.\p"
-	.string "POKéMON will be able to ferry you\n"
-	.string "across water using it.\p"
-	.string "And, this HM isn't disposable, so\n"
-	.string "you can use it over and over.\p"
+SafariZone_SecretHouse_Text_ExplainPrize::
+	.string "A RARE CANDY raises a POKéMON's\n"
+	.string "level by one.\p"
 	.string "You're super lucky for winning this\n"
 	.string "fabulous prize!$"
 

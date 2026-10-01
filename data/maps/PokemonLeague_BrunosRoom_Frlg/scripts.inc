@@ -50,8 +50,8 @@ PokemonLeague_BrunosRoom_EventScript_Bruno::
 	call_if_set FLAG_KANTO_CHAMPION, PokemonLeague_BrunosRoom_EventScript_RematchIntro
 	setflag FLAG_TEMP_3
 	setflag FLAG_TEMP_5
-	call_if_unset FLAG_KANTO_CHAMPION, PokemonLeague_BrunosRoom_EventScript_Battle
-	call_if_set FLAG_KANTO_CHAMPION, PokemonLeague_BrunosRoom_EventScript_Rematch
+	call_if_unset FLAG_KANTO_HOENN_LINKED, PokemonLeague_BrunosRoom_EventScript_Battle
+	call_if_set FLAG_KANTO_HOENN_LINKED, PokemonLeague_BrunosRoom_EventScript_Rematch
 	clearflag FLAG_TEMP_5
 	goto PokemonLeague_BrunosRoom_EventScript_DefeatedBruno
 	end

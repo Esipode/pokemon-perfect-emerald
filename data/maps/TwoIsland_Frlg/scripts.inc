@@ -9,7 +9,7 @@ TwoIsland_OnTransition::
 	end
 
 TwoIsland_EventScript_SetShopState::
-	goto_if_set FLAG_KANTO_CHAMPION, TwoIsland_EventScript_SetShopStateAfterHoennLink
+	goto_if_set FLAG_KANTO_HOENN_LINKED, TwoIsland_EventScript_SetShopStateAfterHoennLink
 	goto_if_set FLAG_KANTO_CHAMPION, TwoIsland_EventScript_SetShopStateAfterChampion
 	goto_if_set FLAG_RESCUED_LOSTELLE, TwoIsland_EventScript_SetShopStateAfterLostelleRescue
 	goto TwoIsland_EventScript_SetShopStateDefault

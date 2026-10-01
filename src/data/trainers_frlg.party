@@ -4421,7 +4421,7 @@ Level: 0
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 
 === TRAINER_RIVAL_OAKS_LAB_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4436,7 +4436,7 @@ IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Tail Whip
 
 === TRAINER_RIVAL_OAKS_LAB_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4451,7 +4451,7 @@ IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Growl
 
 === TRAINER_RIVAL_OAKS_LAB_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4466,7 +4466,7 @@ IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 - Growl
 
 === TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4487,7 +4487,7 @@ IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
 - Tail Whip
 
 === TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4508,7 +4508,7 @@ IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
 - Growl
 
 === TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4529,7 +4529,7 @@ IVs: 6 HP / 6 Atk / 6 Def / 6 SpA / 6 SpD / 6 Spe
 - Growl
 
 === TRAINER_RIVAL_CERULEAN_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4566,7 +4566,7 @@ IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 - Water Gun
 
 === TRAINER_RIVAL_CERULEAN_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -4603,7 +4603,7 @@ IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 - Leech Seed
 
 === TRAINER_RIVAL_CERULEAN_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Rival Early Frlg
 Pic: Rival Early Frlg
 Gender: Male
@@ -7346,7 +7346,7 @@ Level: 0
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 
 === TRAINER_RIVAL_SS_ANNE_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7371,7 +7371,7 @@ Level: 4
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 
 === TRAINER_RIVAL_SS_ANNE_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7396,7 +7396,7 @@ Level: 4
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 
 === TRAINER_RIVAL_SS_ANNE_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7421,7 +7421,7 @@ Level: 4
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 
 === TRAINER_RIVAL_POKEMON_TOWER_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7450,7 +7450,7 @@ Level: 5
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 
 === TRAINER_RIVAL_POKEMON_TOWER_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7479,7 +7479,7 @@ Level: 5
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 
 === TRAINER_RIVAL_POKEMON_TOWER_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7508,7 +7508,7 @@ Level: 5
 IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
 
 === TRAINER_RIVAL_SILPH_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7537,7 +7537,7 @@ Level: 5
 IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
 === TRAINER_RIVAL_SILPH_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7566,7 +7566,7 @@ Level: 5
 IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
 === TRAINER_RIVAL_SILPH_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7595,7 +7595,7 @@ Level: 5
 IVs: 18 HP / 18 Atk / 18 Def / 18 SpA / 18 SpD / 18 Spe
 
 === TRAINER_RIVAL_ROUTE22_LATE_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7652,7 +7652,7 @@ IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Rapid Spin
 
 === TRAINER_RIVAL_ROUTE22_LATE_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7709,7 +7709,7 @@ IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Synthesis
 
 === TRAINER_RIVAL_ROUTE22_LATE_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Rival Late Frlg
 Pic: Rival Late Frlg
 Gender: Male
@@ -7766,7 +7766,7 @@ IVs: 30 HP / 30 Atk / 30 Def / 30 SpA / 30 SpD / 30 Spe
 - Scary Face
 
 === TRAINER_CHAMPION_FIRST_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Champion Frlg
 Pic: Champion Rival Frlg
 Gender: Male
@@ -7825,7 +7825,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 - Bite
 
 === TRAINER_CHAMPION_FIRST_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Champion Frlg
 Pic: Champion Rival Frlg
 Gender: Male
@@ -7884,7 +7884,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 - Growth
 
 === TRAINER_CHAMPION_FIRST_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Champion Frlg
 Pic: Champion Rival Frlg
 Gender: Male
@@ -13587,7 +13587,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 - Ice Beam
 
 === TRAINER_CHAMPION_REMATCH_SQUIRTLE ===
-Name: TERRY
+Name: BLUE
 Class: Champion Frlg
 Pic: Champion Rival Frlg
 Gender: Male
@@ -13646,7 +13646,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 - Rain Dance
 
 === TRAINER_CHAMPION_REMATCH_BULBASAUR ===
-Name: TERRY
+Name: BLUE
 Class: Champion Frlg
 Pic: Champion Rival Frlg
 Gender: Male
@@ -13705,7 +13705,7 @@ IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
 - Sunny Day
 
 === TRAINER_CHAMPION_REMATCH_CHARMANDER ===
-Name: TERRY
+Name: BLUE
 Class: Champion Frlg
 Pic: Champion Rival Frlg
 Gender: Male

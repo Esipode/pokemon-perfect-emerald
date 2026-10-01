@@ -40,10 +40,11 @@ CeruleanCity_EventScript_Rival::
 	addobject LOCALID_CERULEAN_RIVAL
 	applymovement LOCALID_CERULEAN_RIVAL, CeruleanCity_Movement_RivalEnter
 	waitmovement 0
+	call EventScript_BlueFirstMeeting
 	msgbox CeruleanCity_Text_RivalIntro
 	setvar VAR_LAST_TALKED, LOCALID_CERULEAN_RIVAL
-	call_if_eq VAR_STARTER_MON, 2, CeruleanCity_EventScript_RivalSquirtle
-	call_if_eq VAR_STARTER_MON, 1, CeruleanCity_EventScript_RivalBulbasaur
+	call_if_eq VAR_STARTER_MON, 1, CeruleanCity_EventScript_RivalSquirtle
+	call_if_eq VAR_STARTER_MON, 2, CeruleanCity_EventScript_RivalBulbasaur
 	call_if_eq VAR_STARTER_MON, 0, CeruleanCity_EventScript_RivalCharmander
 	msgbox CeruleanCity_Text_RivalPostBattle
 	closemessage
@@ -51,11 +52,7 @@ CeruleanCity_EventScript_Rival::
 	call_if_eq VAR_TEMP_1, 0, CeruleanCity_EventScript_RivalStartExit
 	call_if_eq VAR_TEMP_1, 1, CeruleanCity_EventScript_RivalStartExit
 	call_if_eq VAR_TEMP_1, 2, CeruleanCity_EventScript_RivalStartExitRight
-	msgbox CeruleanCity_Text_OhRightLittlePresentAsFavor
 	setvar VAR_MAP_SCENE_CERULEAN_CITY_RIVAL, 1
-	giveitem ITEM_FAME_CHECKER
-	msgbox CeruleanCity_Text_ExplainFameCheckerSmellYa
-	closemessage
 	applymovement LOCALID_CERULEAN_RIVAL, CeruleanCity_Movement_RivalExit
 	waitmovement 0
 	fadedefaultbgm
@@ -356,8 +353,6 @@ CeruleanCity_EventScript_GymSign::
 
 CeruleanCity_Text_RivalIntro::
 	.string "BLUE: Yo! {PLAYER}!\p"
-	.string "You're still struggling along back\n"
-	.string "here?\p"
 	.string "I'm doing great! I caught a bunch\n"
 	.string "of strong and smart POKéMON!\p"
 	.string "Here, let me see what you caught,\n"
@@ -382,21 +377,6 @@ CeruleanCity_Text_RivalPostBattle::
 	.string "you should go thank him.\p"
 	.string "Well, I better get rolling!\n"
 	.string "Smell ya later!$"
-
-CeruleanCity_Text_OhRightLittlePresentAsFavor::
-	.string "Oh, yeah, right.\p"
-	.string "I feel sorry for you. No, really.\n"
-	.string "You're always plodding behind me.\p"
-	.string "So here, I'll give you a little\n"
-	.string "present as a favor.$"
-
-CeruleanCity_Text_ExplainFameCheckerSmellYa::
-	.string "A chatty gossip like you…\n"
-	.string "That thing's perfect.\p"
-	.string "I don't need it because I don't\n"
-	.string "give a hoot about others.\p"
-	.string "All right, this time I really am\n"
-	.string "gone. Smell ya!$"
 
 CeruleanCity_Text_GruntIntro::
 	.string "Hey! Stay out!\n"

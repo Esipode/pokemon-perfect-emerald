@@ -56,21 +56,6 @@
       "trainer_sight_or_berry_tree_id": "0",
       "script": "PalletTown_EventScript_FatMan",
       "flag": "0"
-    },
-    {
-      "local_id": "LOCALID_PALLET_PROF_OAK",
-      "type": "object",
-      "graphics_id": "OBJ_EVENT_GFX_PROF_OAK",
-      "x": 10,
-      "y": 8,
-      "elevation": 3,
-      "movement_type": "MOVEMENT_TYPE_FACE_UP",
-      "movement_range_x": 1,
-      "movement_range_y": 1,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "0",
-      "script": "0x0",
-      "flag": "FLAG_HIDE_OAK_IN_PALLET_TOWN"
     }
   ],
   "warp_events": [
@@ -97,24 +82,6 @@
     }
   ],
   "coord_events": [
-    {
-      "type": "trigger",
-      "x": 12,
-      "y": 1,
-      "elevation": 3,
-      "var": "VAR_MAP_SCENE_PALLET_TOWN_OAK",
-      "var_value": "0",
-      "script": "PalletTown_EventScript_OakTriggerLeft"
-    },
-    {
-      "type": "trigger",
-      "x": 13,
-      "y": 1,
-      "elevation": 3,
-      "var": "VAR_MAP_SCENE_PALLET_TOWN_OAK",
-      "var_value": "0",
-      "script": "PalletTown_EventScript_OakTriggerRight"
-    },
     {
       "type": "trigger",
       "x": 13,

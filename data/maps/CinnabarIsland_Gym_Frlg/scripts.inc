@@ -55,6 +55,7 @@ CinnabarIsland_Gym_EventScript_Blaine::
 CinnabarIsland_Gym_EventScript_DefeatedBlaine::
 	setflag FLAG_DEFEATED_BLAINE
 	setflag FLAG_BADGE07_GET_FRLG
+	call Common_EventScript_CheckLevelCapIncrease
 	specialvar VAR_RESULT, IsLimitedPartyEnabled
 	call_if_eq VAR_RESULT, TRUE, CinnabarIsland_Gym_EventScript_LimitedPartySlotUnlocked
 	setrespawn HEAL_LOCATION_CINNABAR_ISLAND

@@ -29,10 +29,12 @@ Route22_EventScript_EarlyRival::
 	call_if_eq VAR_TEMP_1, 1, Route22_EventScript_EarlyRivalApproach
 	call_if_eq VAR_TEMP_1, 2, Route22_EventScript_EarlyRivalApproachBottom
 	delay 6
+	call EventScript_BlueFirstMeeting
 	msgbox Route22_Text_EarlyRivalIntro
-	call_if_eq VAR_STARTER_MON, 2, Route22_EventScript_EarlyRivalSquirtle
-	call_if_eq VAR_STARTER_MON, 1, Route22_EventScript_EarlyRivalBulbasaur
-	call_if_eq VAR_STARTER_MON, 0, Route22_EventScript_EarlyRivalCharmander
+	call EventScript_GetBlueStarter
+	call_if_eq VAR_RESULT, BLUE_STARTER_SQUIRTLE, Route22_EventScript_EarlyRivalSquirtle
+	call_if_eq VAR_RESULT, BLUE_STARTER_BULBASAUR, Route22_EventScript_EarlyRivalBulbasaur
+	call_if_eq VAR_RESULT, BLUE_STARTER_CHARMANDER, Route22_EventScript_EarlyRivalCharmander
 	msgbox Route22_Text_EarlyRivalPostBattle
 	closemessage
 	delay 10
@@ -179,11 +181,13 @@ Route22_EventScript_LateRival::
 	call_if_eq VAR_TEMP_1, 0, Route22_EventScript_LateRivalApproach
 	call_if_eq VAR_TEMP_1, 1, Route22_EventScript_LateRivalApproach
 	call_if_eq VAR_TEMP_1, 2, Route22_EventScript_LateRivalApproachBottom
+	call EventScript_BlueFirstMeeting
 	msgbox Route22_Text_LateRivalIntro
 	setvar VAR_LAST_TALKED, LOCALID_ROUTE22_RIVAL
-	call_if_eq VAR_STARTER_MON, 2, Route22_EventScript_LateRivalSquirtle
-	call_if_eq VAR_STARTER_MON, 1, Route22_EventScript_LateRivalBulbasaur
-	call_if_eq VAR_STARTER_MON, 0, Route22_EventScript_LateRivalCharmander
+	call EventScript_GetBlueStarter
+	call_if_eq VAR_RESULT, BLUE_STARTER_SQUIRTLE, Route22_EventScript_LateRivalSquirtle
+	call_if_eq VAR_RESULT, BLUE_STARTER_BULBASAUR, Route22_EventScript_LateRivalBulbasaur
+	call_if_eq VAR_RESULT, BLUE_STARTER_CHARMANDER, Route22_EventScript_LateRivalCharmander
 	msgbox Route22_Text_LateRivalPostBattle
 	closemessage
 	delay 10
@@ -237,8 +241,8 @@ Route22_Text_EarlyRivalIntro::
 	.string "BLUE: Hey! {PLAYER}!\p"
 	.string "You're off to the POKéMON LEAGUE?\n"
 	.string "Forget about it!\p"
-	.string "You probably don't have any\n"
-	.string "BADGES, do you?\p"
+	.string "You'll need every KANTO BADGE\n"
+	.string "first, you know.\p"
 	.string "The guard won't let you through\n"
 	.string "without them.\p"
 	.string "By the way, did your POKéMON get\n"
@@ -269,8 +273,8 @@ Route22_Text_LateRivalIntro::
 	.string "What a surprise to see you here!\p"
 	.string "So you're going to the POKéMON\n"
 	.string "LEAGUE?\p"
-	.string "You collected all the BADGES, too?\n"
-	.string "That's cool!\p"
+	.string "You collected all the KANTO\n"
+	.string "BADGES, too? That's cool!\p"
 	.string "Then I'll whip you, {PLAYER}, as a\n"
 	.string "warm-up for the POKéMON LEAGUE!\p"
 	.string "Come on!$"

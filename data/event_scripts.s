@@ -17,6 +17,7 @@
 #include "constants/battle_tent.h"
 #include "constants/battle_tower.h"
 #include "constants/berry.h"
+#include "constants/blue_starter.h"
 #include "constants/cable_club.h"
 #include "constants/coins.h"
 #include "constants/comparison_operators.h"

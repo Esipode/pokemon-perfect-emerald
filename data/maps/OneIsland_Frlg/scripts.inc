@@ -77,7 +77,7 @@ OneIsland_Movement_BillEnterPokeCenter::
 OneIsland_EventScript_OldMan::
 	lock
 	faceplayer
-	goto_if_set FLAG_KANTO_CHAMPION, OneIsland_EventScript_OldManLinkHoenn
+	goto_if_set FLAG_KANTO_HOENN_LINKED, OneIsland_EventScript_OldManLinkHoenn
 	goto_if_set FLAG_SEVII_DETOUR_FINISHED, OneIsland_EventScript_OldManLinkKanto
 	msgbox OneIsland_Text_LuckyToHaveCelioHere
 	release

@@ -127,7 +127,7 @@ FourIsland_EventScript_CheckOnTwoMons::
 FourIsland_EventScript_OldWoman::
 	lock
 	faceplayer
-	goto_if_set FLAG_KANTO_CHAMPION, FourIsland_EventScript_OldWomanLoreleiLeft
+	goto_if_set FLAG_KANTO_HOENN_LINKED, FourIsland_EventScript_OldWomanLoreleiLeft
 	msgbox FourIsland_Text_LoreleiHasReturned
 	release
 	end

@@ -18,6 +18,7 @@ SilphCo_11F_EventScript_President::
 	giveitem_msg SilphCo_11F_Text_ObtainedMasterBallFromPresident, ITEM_MASTER_BALL, 1, MUS_RG_OBTAIN_KEY_ITEM
 	msgbox SilphCo_11F_Text_ThatsOurSecretPrototype
 	setflag FLAG_GOT_MASTER_BALL_FROM_SILPH
+	call Common_EventScript_CheckLevelCapIncrease
 	release
 	end
 

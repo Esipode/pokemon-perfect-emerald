@@ -11,6 +11,7 @@ FuchsiaCity_Gym_EventScript_Koga::
 FuchsiaCity_Gym_EventScript_DefeatedKoga::
 	setflag FLAG_DEFEATED_KOGA
 	setflag FLAG_BADGE05_GET_FRLG
+	call Common_EventScript_CheckLevelCapIncrease
 	set_gym_trainers_frlg 5
 	goto FuchsiaCity_Gym_EventScript_GiveTM06
 	end

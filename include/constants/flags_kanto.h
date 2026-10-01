@@ -124,6 +124,8 @@
 #define FLAG_SYS_GOT_BERRY_POUCH                                           (KANTO_FLAGS_START + 0x073)
 #define FLAG_SYS_UNLOCKED_TANOBY_RUINS                                     (KANTO_FLAGS_START + 0x074)
 #define FLAG_ARRIVED_IN_KANTO                                              (KANTO_FLAGS_START + 0x075)
+#define FLAG_MET_BLUE_KANTO                                                (KANTO_FLAGS_START + 0x076)
+#define FLAG_KANTO_HOENN_LINKED                                            (KANTO_FLAGS_START + 0x077)
 
 // Object hide flags (0x1080-0x10F0)
 #define FLAG_HIDE_BULBASAUR_BALL                                           (KANTO_FLAGS_START + 0x080)

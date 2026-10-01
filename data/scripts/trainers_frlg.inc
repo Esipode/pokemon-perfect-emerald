@@ -1157,3 +1157,46 @@ SevenIsland_TanobyRuins_EventScript_Clifford::
 	trainerbattle_single TRAINER_GENTLEMAN_CLIFFORD, SevenIsland_TanobyRuins_Text_CliffordIntro, SevenIsland_TanobyRuins_Text_CliffordDefeat
 	msgbox SevenIsland_TanobyRuins_Text_CliffordPostBattle, MSGBOX_AUTOCLOSE
 	end
+
+@ Introduces BLUE at the first Kanto rival fight the player reaches, whichever map that is.
+EventScript_BlueFirstMeeting::
+	goto_if_set FLAG_MET_BLUE_KANTO, Common_EventScript_NopReturn
+	msgbox Text_BlueFirstMeeting
+	setflag FLAG_MET_BLUE_KANTO
+	return
+
+@ Sets VAR_RESULT to BLUE's starter, matching the type of the HOENN rival's starter.
+@ VAR_STARTER_MON is the player's slot (0 grass, 1 fire, 2 water); the HOENN rival takes the next slot.
+EventScript_GetBlueStarter::
+	switch VAR_STARTER_MON
+	case 0, EventScript_BlueStarterCharmander
+	case 1, EventScript_BlueStarterSquirtle
+	case 2, EventScript_BlueStarterBulbasaur
+	end
+
+EventScript_BlueStarterCharmander::
+	setvar VAR_RESULT, BLUE_STARTER_CHARMANDER
+	return
+
+EventScript_BlueStarterSquirtle::
+	setvar VAR_RESULT, BLUE_STARTER_SQUIRTLE
+	return
+
+EventScript_BlueStarterBulbasaur::
+	setvar VAR_RESULT, BLUE_STARTER_BULBASAUR
+	return
+
+Text_BlueFirstMeeting::
+	.string "BLUE: Hold it!\p"
+	.string "You're {PLAYER}, the HOENN\n"
+	.string "CHAMPION, aren't you?\p"
+	.string "I'm BLUE, from PALLET TOWN.\p"
+	.string "I've been tearing through KANTO\n"
+	.string "with my POKéMON. I won't let some\l"
+	.string "visitor outshine me!\p"
+	.string "From now on, consider me your\n"
+	.string "rival!$"
+
+Text_RivalVictory::
+	.string "BLUE: Yeah!\n"
+	.string "Am I great or what?$"

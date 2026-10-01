@@ -34,12 +34,10 @@ PokemonLeague_HallOfFame_EventScript_EnterRoom::
 	waitfieldeffect FLDEFF_HALL_OF_FAME_RECORD_FRLG
 	delay 40
 	setvar VAR_TEMP_1, 1
-	call EventScript_SetDefeatedEliteFourFlagsVars
-	setrespawn HEAL_LOCATION_PALLET_TOWN
-	fadescreenspeed FADE_TO_BLACK, 24
-	special EnterHallOfFame
-	waitstate
-	releaseall
+	call EventScript_SetKantoGameClearFlags
+	checkplayergender
+	goto_if_eq VAR_RESULT, MALE, EverGrandeCity_HallOfFame_EventScript_GameClearMale
+	goto_if_eq VAR_RESULT, FEMALE, EverGrandeCity_HallOfFame_EventScript_GameClearFemale
 	end
 
 PokemonLeague_HallOfFame_Movement_EnterRoom::

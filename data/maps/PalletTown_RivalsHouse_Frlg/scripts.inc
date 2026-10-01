@@ -24,18 +24,7 @@ PalletTown_RivalsHouse_EventScript_Daisy::
 	goto_if_set FLAG_KANTO_CHAMPION, PalletTown_RivalsHouse_EventScript_GroomMon
 	goto_if_eq RECEIVED_TOWN_MAP, TRUE, PalletTown_RivalsHouse_EventScript_PleaseGiveMonsRest
 	goto_if_eq VAR_MAP_SCENE_PALLET_TOWN_RIVALS_HOUSE, 2, PalletTown_RivalsHouse_EventScript_ExplainTownMap
-	goto_if_eq VAR_MAP_SCENE_PALLET_TOWN_RIVALS_HOUSE, 1, PalletTown_RivalsHouse_EventScript_GiveTownMap
-	goto_if_ge VAR_MAP_SCENE_PALLET_TOWN_PROFESSOR_OAKS_LAB, 1, PalletTown_RivalsHouse_EventScript_HeardBattledRival
-	msgbox PalletTown_RivalsHouse_Text_HiBrothersAtLab
-	closemessage
-	applymovement LOCALID_DAISY, Common_Movement_FaceOriginalDirection
-	waitmovement 0
-	release
-	end
-
-PalletTown_RivalsHouse_EventScript_HeardBattledRival::
-	msgbox PalletTown_RivalsHouse_Text_HeardYouBattledRival
-	release
+	goto PalletTown_RivalsHouse_EventScript_GiveTownMap
 	end
 
 PalletTown_RivalsHouse_EventScript_GroomMon::
@@ -163,21 +152,11 @@ PalletTown_RivalsHouse_EventScript_Picture::
 	msgbox PalletTown_RivalsHouse_Text_LovelyAndSweetClefairy, MSGBOX_SIGN
 	end
 
-PalletTown_RivalsHouse_Text_HiBrothersAtLab::
-	.string "DAISY: Hi, {PLAYER}!\p"
-	.string "My brother, BLUE, is out at\n"
-	.string "Grandpa's LAB.$"
-
-PalletTown_RivalsHouse_Text_HeardYouBattledRival::
-	.string "DAISY: {PLAYER}, I heard you had\n"
-	.string "a battle against BLUE.\p"
-	.string "I wish I'd seen that!$"
-
 PalletTown_RivalsHouse_Text_ErrandForGrandpaThisWillHelp::
-	.string "Grandpa asked you to run an\n"
-	.string "errand?\p"
-	.string "Gee, that's lazy of him.\n"
-	.string "Here, this will help you.$"
+	.string "DAISY: Oh, {PLAYER}!\n"
+	.string "You came all the way from HOENN?\p"
+	.string "Here, take this TOWN MAP.\n"
+	.string "It will help you get around.$"
 
 PalletTown_RivalsHouse_Text_ReceivedTownMapFromDaisy::
 	.string "{PLAYER} received a TOWN MAP\n"
@@ -288,4 +267,3 @@ PalletTown_RivalsHouse_Text_WhyWouldMonHateYouSoMuch::
 PalletTown_RivalsHouse_Text_LovelyAndSweetClefairy::
 	.string "“The lovely and sweet\n"
 	.string "CLEFAIRY”$"
-

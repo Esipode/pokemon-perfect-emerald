@@ -3,7 +3,7 @@ SSAnne_CaptainsOffice_Frlg_MapScripts::
 
 SSAnne_CaptainsOffice_EventScript_Captain::
 	lock
-	goto_if_set FLAG_GOT_HM01, SSAnne_CaptainsOffice_EventScript_AlreadyGotCut
+	goto_if_set FLAG_GOT_HM01, SSAnne_CaptainsOffice_EventScript_AlreadyGotReward
 	msgbox SSAnne_CaptainsOffice_Text_CaptainIFeelSeasick
 	textcolor NPC_TEXT_COLOR_NEUTRAL
 	message SSAnne_CaptainsOffice_Text_RubbedCaptainsBack
@@ -14,9 +14,8 @@ SSAnne_CaptainsOffice_EventScript_Captain::
 	delay 50
 	applymovement LOCALID_SS_ANNE_CAPTAIN, Common_Movement_FacePlayer
 	waitmovement 0
-	msgbox SSAnne_CaptainsOffice_Text_ThankYouHaveHMForCut
-	giveitem_msg SSAnne_CaptainsOffice_Text_ObtainedHM01FromCaptain, ITEM_HM01, 1, MUS_RG_OBTAIN_KEY_ITEM
-	msgbox SSAnne_CaptainsOffice_Text_ExplainCut
+	msgbox SSAnne_CaptainsOffice_Text_ThankYouTakeThis
+	giveitem_msg SSAnne_CaptainsOffice_Text_ObtainedRareCandyFromCaptain, ITEM_RARE_CANDY
 	setflag FLAG_GOT_HM01
 	release
 	end
@@ -30,10 +29,10 @@ SSAnne_CaptainsOffice_EventScript_NoRoomForCut::
 	release
 	end
 
-SSAnne_CaptainsOffice_EventScript_AlreadyGotCut::
+SSAnne_CaptainsOffice_EventScript_AlreadyGotReward::
 	applymovement LOCALID_SS_ANNE_CAPTAIN, Common_Movement_FacePlayer
 	waitmovement 0
-	msgbox SSAnne_CaptainsOffice_Text_SSAnneWillSetSailSoon
+	msgbox SSAnne_CaptainsOffice_Text_FeelingMuchBetter
 	release
 	end
 
@@ -56,35 +55,22 @@ SSAnne_CaptainsOffice_Text_RubbedCaptainsBack::
 	.string "Rub-rub…\n"
 	.string "Rub-rub…$"
 
-SSAnne_CaptainsOffice_Text_ThankYouHaveHMForCut::
+SSAnne_CaptainsOffice_Text_ThankYouTakeThis::
 	.string "CAPTAIN: Whew! Thank you!\n"
 	.string "I'm feeling much better now.\p"
-	.string "You want to see my hidden CUT\n"
-	.string "technique?\p"
-	.string "I could show you my prized CUT\n"
-	.string "technique if I weren't so ill…\p"
-	.string "I know! You can have this!\n"
-	.string "This HIDDEN MACHINE!\p"
-	.string "Teach CUT to your POKéMON, and\n"
-	.string "you can see it CUT anytime!$"
+	.string "I'd like to thank you properly.\n"
+	.string "Please, take this!$"
 
-SSAnne_CaptainsOffice_Text_ObtainedHM01FromCaptain::
-	.string "{PLAYER} obtained HM01\n"
+SSAnne_CaptainsOffice_Text_ObtainedRareCandyFromCaptain::
+	.string "{PLAYER} obtained a RARE CANDY\n"
 	.string "from the CAPTAIN!$"
 
-SSAnne_CaptainsOffice_Text_ExplainCut::
-	.string "Using CUT, you can chop down\n"
-	.string "small trees.\p"
-	.string "Why not try it with the trees\n"
-	.string "around VERMILION CITY?$"
-
-SSAnne_CaptainsOffice_Text_SSAnneWillSetSailSoon::
+SSAnne_CaptainsOffice_Text_FeelingMuchBetter::
 	.string "CAPTAIN: …Whew!\p"
 	.string "Now that I'm not sick anymore,\n"
-	.string "I guess it's time.\p"
-	.string "The S.S. ANNE will set sail soon!\p"
-	.string "Farewell, until our return to\n"
-	.string "VERMILION CITY!$"
+	.string "I can enjoy the sea air again.\p"
+	.string "The S.S. ANNE is always welcome\n"
+	.string "in VERMILION CITY!$"
 
 SSAnne_CaptainsOffice_Text_YouHaveNoRoomForThis::
 	.string "Oh, no!\n"

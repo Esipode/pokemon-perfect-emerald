@@ -561,10 +561,7 @@ gSpecials::
 	def_special IsNationalPokedexEnabled
 	def_special SetPostgameFlags
 	def_special BrailleCursorToggle
-	def_special EnterHallOfFame
-	def_special CB2_StartCreditsSequence
 	def_special DoPokemonLeagueLightingEffect
-	def_special GetStarterPokemon
 	def_special SetIcefallCaveCrackedIceMetatiles
 	def_special UpdateLoreleiDollCollection
 	def_special SampleResortGorgeousMonAndReward
