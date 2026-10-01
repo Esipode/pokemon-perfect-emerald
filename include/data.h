@@ -247,6 +247,11 @@ static inline bool8 IsPartnerTrainerId(u16 trainerId)
     return FALSE;
 }
 
+static inline bool32 IsKantoTrainerId(u16 trainerId)
+{
+    return trainerId >= KANTO_TRAINERS_START && trainerId < KANTO_TRAINERS_START + MAX_KANTO_TRAINERS_COUNT;
+}
+
 static inline bool32 IsSpecialTrainer(u16 trainerId)
 {
     if (trainerId == TRAINER_SECRET_BASE ||

@@ -2,6 +2,7 @@
 #include "achievements.h"
 #include "battle_emporium.h"
 #include "battle_main.h"
+#include "battle_setup.h"
 #include "data.h"
 #include "event_data.h"
 #include "event_object_movement.h"
@@ -332,7 +333,7 @@ void ClearEmporiumBattle(void)
     gEmporiumBattleActive = FALSE;
     VarSet(VAR_EMPORIUM_ID, EMPORIUM_NONE);
     VarSet(VAR_EMPORIUM_REWARD, 0);
-    FlagClear(TRAINER_FLAGS_START + TRAINER_EMPORIUM);
+    FlagClear(GetTrainerFlagId(TRAINER_EMPORIUM));
 #if B_FLAG_NO_WHITEOUT != 0
     FlagClear(B_FLAG_NO_WHITEOUT);
 #endif
@@ -343,7 +344,7 @@ void ClearEmporiumBattle(void)
 void EmporiumLobbyOnTransition(void)
 {
     gEmporiumBattleActive = FALSE;
-    FlagClear(TRAINER_FLAGS_START + TRAINER_EMPORIUM);
+    FlagClear(GetTrainerFlagId(TRAINER_EMPORIUM));
 #if B_FLAG_NO_WHITEOUT != 0
     FlagClear(B_FLAG_NO_WHITEOUT);
 #endif

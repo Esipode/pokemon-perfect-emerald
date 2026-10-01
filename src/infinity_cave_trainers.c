@@ -93,7 +93,7 @@ void InfCave_ClearTrainers(void)
     memset(sInfCaveTrainers, 0, sizeof(sInfCaveTrainers));
     memset(sInfCaveTrainerTier, 0, sizeof(sInfCaveTrainerTier));
     for (slot = 0; slot < INFCAVE_MAX_TRAINERS; slot++)
-        FlagClear(TRAINER_FLAGS_START + TRAINER_INFCAVE_0 + slot);
+        FlagClear(GetTrainerFlagId(TRAINER_INFCAVE_0 + slot));
 }
 
 // Bosses the run has already put down. Descending past a boss room needs its

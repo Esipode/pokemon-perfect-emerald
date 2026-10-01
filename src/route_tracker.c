@@ -234,7 +234,7 @@ static void CountTrainers(struct RouteProgress *progress)
             continue;
 
         progress->trainersTotal++;
-        if (FlagGet(TRAINER_FLAGS_START + trainerId))
+        if (FlagGet(GetTrainerFlagId(trainerId)))
             progress->trainersDefeated++;
     }
 }
@@ -253,7 +253,7 @@ static bool32 CountInfinityCaveRoom(struct RouteProgress *progress)
     progress->trainersTotal = count;
     for (slot = 0; slot < count; slot++)
     {
-        if (FlagGet(TRAINER_FLAGS_START + InfCave_GetTrainerId(slot)))
+        if (FlagGet(GetTrainerFlagId(InfCave_GetTrainerId(slot))))
             progress->trainersDefeated++;
     }
 

@@ -3,636 +3,637 @@
 
 #include "constants/battle_partner.h"
 
-#define TRAINER_NONE                               0
-#define TRAINER_YOUNGSTER_BEN                      1
-#define TRAINER_YOUNGSTER_CALVIN                   2
-#define TRAINER_YOUNGSTER_JOSH                     3
-#define TRAINER_YOUNGSTER_TIMMY                    4
-#define TRAINER_YOUNGSTER_JOEY                     5
-#define TRAINER_YOUNGSTER_DAN                      6
-#define TRAINER_YOUNGSTER_CHAD                     7
-#define TRAINER_YOUNGSTER_TYLER                    8
-#define TRAINER_YOUNGSTER_EDDIE                    9
-#define TRAINER_YOUNGSTER_DILLON                   10
-#define TRAINER_YOUNGSTER_YASU                     11
-#define TRAINER_YOUNGSTER_DAVE                     12
-#define TRAINER_YOUNGSTER_BEN_2                    13
-#define TRAINER_BUG_CATCHER_RICK                   14
-#define TRAINER_BUG_CATCHER_DOUG                   15
-#define TRAINER_BUG_CATCHER_SAMMY                  16
-#define TRAINER_BUG_CATCHER_COLTON                 17
-#define TRAINER_BUG_CATCHER_GREG                   18
-#define TRAINER_BUG_CATCHER_JAMES                  19
-#define TRAINER_BUG_CATCHER_KENT                   20
-#define TRAINER_BUG_CATCHER_ROBBY                  21
-#define TRAINER_BUG_CATCHER_CALE                   22
-#define TRAINER_BUG_CATCHER_KEIGO                  23
-#define TRAINER_BUG_CATCHER_ELIJAH                 24
-#define TRAINER_BUG_CATCHER_BRENT                  25
-#define TRAINER_BUG_CATCHER_CONNER                 26
-#define TRAINER_LASS_JANICE                        27
-#define TRAINER_LASS_SALLY                         28
-#define TRAINER_LASS_ROBIN                         29
-#define TRAINER_LASS_CRISSY                        30
-#define TRAINER_LASS_MIRIAM                        31
-#define TRAINER_LASS_IRIS                          32
-#define TRAINER_LASS_RELI                          33
-#define TRAINER_LASS_ALI                           34
-#define TRAINER_LASS_HALEY                         35
-#define TRAINER_LASS_ANN                           36
-#define TRAINER_LASS_DAWN                          37
-#define TRAINER_LASS_PAIGE                         38
-#define TRAINER_LASS_ANDREA                        39
-#define TRAINER_LASS_MEGAN                         40
-#define TRAINER_LASS_JULIA                         41
-#define TRAINER_LASS_KAY                           42
-#define TRAINER_LASS_LISA                          43
-#define TRAINER_SAILOR_EDMOND                      44
-#define TRAINER_SAILOR_TREVOR                      45
-#define TRAINER_SAILOR_LEONARD                     46
-#define TRAINER_SAILOR_DUNCAN                      47
-#define TRAINER_SAILOR_HUEY                        48
-#define TRAINER_SAILOR_DYLAN                       49
-#define TRAINER_SAILOR_PHILLIP                     50
-#define TRAINER_SAILOR_DWAYNE                      51
-#define TRAINER_CAMPER_LIAM                        52
-#define TRAINER_CAMPER_SHANE                       53
-#define TRAINER_CAMPER_ETHAN                       54
-#define TRAINER_CAMPER_RICKY                       55
-#define TRAINER_CAMPER_JEFF                        56
-#define TRAINER_CAMPER_CHRIS                       57
-#define TRAINER_CAMPER_DREW                        58
-#define TRAINER_PICNICKER_DIANA                    59
-#define TRAINER_PICNICKER_NANCY                    60
-#define TRAINER_PICNICKER_ISABELLE                 61
-#define TRAINER_PICNICKER_KELSEY                   62
-#define TRAINER_PICNICKER_ALICIA                   63
-#define TRAINER_PICNICKER_CAITLIN                  64
-#define TRAINER_PICNICKER_HEIDI                    65
-#define TRAINER_PICNICKER_CAROL                    66
-#define TRAINER_PICNICKER_SOFIA                    67
-#define TRAINER_PICNICKER_MARTHA                   68
-#define TRAINER_PICNICKER_TINA                     69
-#define TRAINER_PICNICKER_HANNAH                   70
-#define TRAINER_POKEMANIAC_MARK                    71
-#define TRAINER_POKEMANIAC_HERMAN                  72
-#define TRAINER_POKEMANIAC_COOPER                  73
-#define TRAINER_POKEMANIAC_STEVE                   74
-#define TRAINER_POKEMANIAC_WINSTON                 75
-#define TRAINER_POKEMANIAC_DAWSON                  76
-#define TRAINER_POKEMANIAC_ASHTON                  77
-#define TRAINER_SUPER_NERD_JOVAN                   78
-#define TRAINER_SUPER_NERD_MIGUEL                  79
-#define TRAINER_SUPER_NERD_AIDAN                   80
-#define TRAINER_SUPER_NERD_GLENN                   81
-#define TRAINER_SUPER_NERD_LESLIE                  82
-#define TRAINER_SUPER_NERD_ERIK                    83
-#define TRAINER_SUPER_NERD_AVERY                   84
-#define TRAINER_SUPER_NERD_DEREK                   85
-#define TRAINER_SUPER_NERD_ZAC                     86
-#define TRAINER_HIKER_MARCOS                       87
-#define TRAINER_HIKER_FRANKLIN                     88
-#define TRAINER_HIKER_NOB                          89
-#define TRAINER_HIKER_WAYNE                        90
-#define TRAINER_HIKER_ALAN                         91
-#define TRAINER_HIKER_BRICE                        92
-#define TRAINER_HIKER_CLARK                        93
-#define TRAINER_HIKER_TRENT                        94
-#define TRAINER_HIKER_DUDLEY                       95
-#define TRAINER_HIKER_ALLEN                        96
-#define TRAINER_HIKER_ERIC                         97
-#define TRAINER_HIKER_LENNY                        98
-#define TRAINER_HIKER_OLIVER                       99
-#define TRAINER_HIKER_LUCAS                        100
-#define TRAINER_BIKER_JARED                        101
-#define TRAINER_BIKER_MALIK                        102
-#define TRAINER_BIKER_ERNEST                       103
-#define TRAINER_BIKER_ALEX                         104
-#define TRAINER_BIKER_LAO                          105
-#define TRAINER_BIKER_HIDEO                        106
-#define TRAINER_BIKER_RUBEN                        107
-#define TRAINER_BIKER_BILLY                        108
-#define TRAINER_BIKER_NIKOLAS                      109
-#define TRAINER_BIKER_JAXON                        110
-#define TRAINER_BIKER_WILLIAM                      111
-#define TRAINER_BIKER_LUKAS                        112
-#define TRAINER_BIKER_ISAAC                        113
-#define TRAINER_BIKER_GERALD                       114
-#define TRAINER_BURGLAR_QUINN                      115
-#define TRAINER_BURGLAR_RAMON                      116
-#define TRAINER_BURGLAR_DUSTY                      117
-#define TRAINER_BURGLAR_ARNIE                      118
-#define TRAINER_BURGLAR_SIMON                      119
-#define TRAINER_BURGLAR_LEWIS                      120
-#define TRAINER_ENGINEER_BAILY                     121
-#define TRAINER_ENGINEER_BRAXTON                   122
-#define TRAINER_ENGINEER_BERNIE                    123
-#define TRAINER_FISHERMAN_DALE                     124
-#define TRAINER_FISHERMAN_BARNY                    125
-#define TRAINER_FISHERMAN_NED                      126
-#define TRAINER_FISHERMAN_CHIP                     127
-#define TRAINER_FISHERMAN_HANK                     128
-#define TRAINER_FISHERMAN_ELLIOT                   129
-#define TRAINER_FISHERMAN_RONALD                   130
-#define TRAINER_FISHERMAN_CLAUDE                   131
-#define TRAINER_FISHERMAN_WADE                     132
-#define TRAINER_FISHERMAN_NOLAN                    133
-#define TRAINER_FISHERMAN_ANDREW                   134
-#define TRAINER_SWIMMER_MALE_LUIS                  135
-#define TRAINER_SWIMMER_MALE_RICHARD               136
-#define TRAINER_SWIMMER_MALE_REECE                 137
-#define TRAINER_SWIMMER_MALE_MATTHEW               138
-#define TRAINER_SWIMMER_MALE_DOUGLAS               139
-#define TRAINER_SWIMMER_MALE_DAVID                 140
-#define TRAINER_SWIMMER_MALE_TONY                  141
-#define TRAINER_SWIMMER_MALE_AXLE                  142
-#define TRAINER_SWIMMER_MALE_BARRY                 143
-#define TRAINER_SWIMMER_MALE_DEAN                  144
-#define TRAINER_SWIMMER_MALE_DARRIN                145
-#define TRAINER_SWIMMER_MALE_SPENCER               146
-#define TRAINER_SWIMMER_MALE_JACK                  147
-#define TRAINER_SWIMMER_MALE_JEROME                148
-#define TRAINER_SWIMMER_MALE_ROLAND                149
-#define TRAINER_CUE_BALL_KOJI                      150
-#define TRAINER_CUE_BALL_LUKE                      151
-#define TRAINER_CUE_BALL_CAMRON                    152
-#define TRAINER_CUE_BALL_RAUL                      153
-#define TRAINER_CUE_BALL_ISAIAH                    154
-#define TRAINER_CUE_BALL_ZEEK                      155
-#define TRAINER_CUE_BALL_JAMAL                     156
-#define TRAINER_CUE_BALL_COREY                     157
-#define TRAINER_CUE_BALL_CHASE                     158
-#define TRAINER_GAMER_HUGO                         159
-#define TRAINER_GAMER_JASPER                       160
-#define TRAINER_GAMER_DIRK                         161
-#define TRAINER_GAMER_DARIAN                       162
-#define TRAINER_GAMER_STAN                         163
-#define TRAINER_GAMER_RICH                         164
-#define TRAINER_BEAUTY_BRIDGET                     165
-#define TRAINER_BEAUTY_TAMIA                       166
-#define TRAINER_BEAUTY_LORI                        167
-#define TRAINER_BEAUTY_LOLA                        168
-#define TRAINER_BEAUTY_SHEILA                      169
-#define TRAINER_SWIMMER_FEMALE_TIFFANY             170
-#define TRAINER_SWIMMER_FEMALE_NORA                171
-#define TRAINER_SWIMMER_FEMALE_MELISSA             172
-#define TRAINER_BEAUTY_GRACE                       173
-#define TRAINER_BEAUTY_OLIVIA                      174
-#define TRAINER_BEAUTY_LAUREN                      175
-#define TRAINER_SWIMMER_FEMALE_ANYA                176
-#define TRAINER_SWIMMER_FEMALE_ALICE               177
-#define TRAINER_SWIMMER_FEMALE_CONNIE              178
-#define TRAINER_SWIMMER_FEMALE_SHIRLEY             179
-#define TRAINER_PSYCHIC_JOHAN                      180
-#define TRAINER_PSYCHIC_TYRON                      181
-#define TRAINER_PSYCHIC_CAMERON                    182
-#define TRAINER_PSYCHIC_PRESTON                    183
-#define TRAINER_ROCKER_RANDALL                     184
-#define TRAINER_ROCKER_LUCA                        185
-#define TRAINER_JUGGLER_DALTON                     186
-#define TRAINER_JUGGLER_NELSON                     187
-#define TRAINER_JUGGLER_KIRK                       188
-#define TRAINER_JUGGLER_SHAWN                      189
-#define TRAINER_JUGGLER_GREGORY                    190
-#define TRAINER_JUGGLER_EDWARD                     191
-#define TRAINER_JUGGLER_KAYDEN                     192
-#define TRAINER_JUGGLER_NATE                       193
-#define TRAINER_TAMER_PHIL                         194
-#define TRAINER_TAMER_EDGAR                        195
-#define TRAINER_TAMER_JASON                        196
-#define TRAINER_TAMER_COLE                         197
-#define TRAINER_TAMER_VINCENT                      198
-#define TRAINER_TAMER_JOHN                         199
-#define TRAINER_BIRD_KEEPER_SEBASTIAN              200
-#define TRAINER_BIRD_KEEPER_PERRY                  201
-#define TRAINER_BIRD_KEEPER_ROBERT                 202
-#define TRAINER_BIRD_KEEPER_DONALD                 203
-#define TRAINER_BIRD_KEEPER_BENNY                  204
-#define TRAINER_BIRD_KEEPER_EDWIN                  205
-#define TRAINER_BIRD_KEEPER_CHESTER                206
-#define TRAINER_BIRD_KEEPER_WILTON                 207
-#define TRAINER_BIRD_KEEPER_RAMIRO                 208
-#define TRAINER_BIRD_KEEPER_JACOB                  209
-#define TRAINER_BIRD_KEEPER_ROGER                  210
-#define TRAINER_BIRD_KEEPER_REED                   211
-#define TRAINER_BIRD_KEEPER_KEITH                  212
-#define TRAINER_BIRD_KEEPER_CARTER                 213
-#define TRAINER_BIRD_KEEPER_MITCH                  214
-#define TRAINER_BIRD_KEEPER_BECK                   215
-#define TRAINER_BIRD_KEEPER_MARLON                 216
-#define TRAINER_BLACK_BELT_KOICHI                  217
-#define TRAINER_BLACK_BELT_MIKE                    218
-#define TRAINER_BLACK_BELT_HIDEKI                  219
-#define TRAINER_BLACK_BELT_AARON                   220
-#define TRAINER_BLACK_BELT_HITOSHI                 221
-#define TRAINER_BLACK_BELT_ATSUSHI                 222
-#define TRAINER_BLACK_BELT_KIYO                    223
-#define TRAINER_BLACK_BELT_TAKASHI                 224
-#define TRAINER_BLACK_BELT_DAISUKE                 225
-#define TRAINER_RIVAL_OAKS_LAB_SQUIRTLE            226
-#define TRAINER_RIVAL_OAKS_LAB_BULBASAUR           227
-#define TRAINER_RIVAL_OAKS_LAB_CHARMANDER          228
-#define TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE       229
-#define TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR      230
-#define TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER     231
-#define TRAINER_RIVAL_CERULEAN_SQUIRTLE            232
-#define TRAINER_RIVAL_CERULEAN_BULBASAUR           233
-#define TRAINER_RIVAL_CERULEAN_CHARMANDER          234
-#define TRAINER_SCIENTIST_TED                      235
-#define TRAINER_SCIENTIST_CONNOR                   236
-#define TRAINER_SCIENTIST_JERRY                    237
-#define TRAINER_SCIENTIST_JOSE                     238
-#define TRAINER_SCIENTIST_RODNEY                   239
-#define TRAINER_SCIENTIST_BEAU                     240
-#define TRAINER_SCIENTIST_TAYLOR                   241
-#define TRAINER_SCIENTIST_JOSHUA                   242
-#define TRAINER_SCIENTIST_PARKER                   243
-#define TRAINER_SCIENTIST_ED                       244
-#define TRAINER_SCIENTIST_TRAVIS                   245
-#define TRAINER_SCIENTIST_BRAYDON                  246
-#define TRAINER_SCIENTIST_IVAN                     247
-#define TRAINER_BOSS_GIOVANNI                      248
-#define TRAINER_BOSS_GIOVANNI_2                    249
-#define TRAINER_LEADER_GIOVANNI                    250
-#define TRAINER_TEAM_ROCKET_GRUNT                  251
-#define TRAINER_TEAM_ROCKET_GRUNT_2                252
-#define TRAINER_TEAM_ROCKET_GRUNT_3                253
-#define TRAINER_TEAM_ROCKET_GRUNT_4                254
-#define TRAINER_TEAM_ROCKET_GRUNT_5                255
-#define TRAINER_TEAM_ROCKET_GRUNT_6                256
-#define TRAINER_TEAM_ROCKET_GRUNT_7                257
-#define TRAINER_TEAM_ROCKET_GRUNT_8                258
-#define TRAINER_TEAM_ROCKET_GRUNT_9                259
-#define TRAINER_TEAM_ROCKET_GRUNT_10               260
-#define TRAINER_TEAM_ROCKET_GRUNT_11               261
-#define TRAINER_TEAM_ROCKET_GRUNT_12               262
-#define TRAINER_TEAM_ROCKET_GRUNT_13               263
-#define TRAINER_TEAM_ROCKET_GRUNT_14               264
-#define TRAINER_TEAM_ROCKET_GRUNT_15               265
-#define TRAINER_TEAM_ROCKET_GRUNT_16               266
-#define TRAINER_TEAM_ROCKET_GRUNT_17               267
-#define TRAINER_TEAM_ROCKET_GRUNT_18               268
-#define TRAINER_TEAM_ROCKET_GRUNT_19               269
-#define TRAINER_TEAM_ROCKET_GRUNT_20               270
-#define TRAINER_TEAM_ROCKET_GRUNT_21               271
-#define TRAINER_TEAM_ROCKET_GRUNT_22               272
-#define TRAINER_TEAM_ROCKET_GRUNT_23               273
-#define TRAINER_TEAM_ROCKET_GRUNT_24               274
-#define TRAINER_TEAM_ROCKET_GRUNT_25               275
-#define TRAINER_TEAM_ROCKET_GRUNT_26               276
-#define TRAINER_TEAM_ROCKET_GRUNT_27               277
-#define TRAINER_TEAM_ROCKET_GRUNT_28               278
-#define TRAINER_TEAM_ROCKET_GRUNT_29               279
-#define TRAINER_TEAM_ROCKET_GRUNT_30               280
-#define TRAINER_TEAM_ROCKET_GRUNT_31               281
-#define TRAINER_TEAM_ROCKET_GRUNT_32               282
-#define TRAINER_TEAM_ROCKET_GRUNT_33               283
-#define TRAINER_TEAM_ROCKET_GRUNT_34               284
-#define TRAINER_TEAM_ROCKET_GRUNT_35               285
-#define TRAINER_TEAM_ROCKET_GRUNT_36               286
-#define TRAINER_TEAM_ROCKET_GRUNT_37               287
-#define TRAINER_TEAM_ROCKET_GRUNT_38               288
-#define TRAINER_TEAM_ROCKET_GRUNT_39               289
-#define TRAINER_TEAM_ROCKET_GRUNT_40               290
-#define TRAINER_TEAM_ROCKET_GRUNT_41               291
-#define TRAINER_COOLTRAINER_SAMUEL                 292
-#define TRAINER_COOLTRAINER_GEORGE                 293
-#define TRAINER_COOLTRAINER_COLBY                  294
-#define TRAINER_COOLTRAINER_PAUL                   295
-#define TRAINER_COOLTRAINER_ROLANDO                296
-#define TRAINER_COOLTRAINER_GILBERT                297
-#define TRAINER_COOLTRAINER_OWEN                   298
-#define TRAINER_COOLTRAINER_BERKE                  299
-#define TRAINER_COOLTRAINER_YUJI                   300
-#define TRAINER_COOLTRAINER_WARREN                 301
-#define TRAINER_COOLTRAINER_MARY                   302
-#define TRAINER_COOLTRAINER_CAROLINE               303
-#define TRAINER_COOLTRAINER_ALEXA                  304
-#define TRAINER_COOLTRAINER_SHANNON                305
-#define TRAINER_COOLTRAINER_NAOMI                  306
-#define TRAINER_COOLTRAINER_BROOKE                 307
-#define TRAINER_COOLTRAINER_AUSTINA                308
-#define TRAINER_COOLTRAINER_JULIE                  309
-#define TRAINER_ELITE_FOUR_LORELEI                 310
-#define TRAINER_ELITE_FOUR_BRUNO                   311
-#define TRAINER_ELITE_FOUR_AGATHA                  312
-#define TRAINER_ELITE_FOUR_LANCE                   313
-#define TRAINER_LEADER_BROCK                       314
-#define TRAINER_LEADER_MISTY                       315
-#define TRAINER_LEADER_LT_SURGE                    316
-#define TRAINER_LEADER_ERIKA                       317
-#define TRAINER_LEADER_KOGA                        318
-#define TRAINER_LEADER_BLAINE                      319
-#define TRAINER_LEADER_SABRINA                     320
-#define TRAINER_GENTLEMAN_THOMAS                   321
-#define TRAINER_GENTLEMAN_ARTHUR                   322
-#define TRAINER_GENTLEMAN_TUCKER                   323
-#define TRAINER_GENTLEMAN_NORTON                   324
-#define TRAINER_GENTLEMAN_WALTER                   325
-#define TRAINER_RIVAL_SS_ANNE_SQUIRTLE             326
-#define TRAINER_RIVAL_SS_ANNE_BULBASAUR            327
-#define TRAINER_RIVAL_SS_ANNE_CHARMANDER           328
-#define TRAINER_RIVAL_POKEMON_TOWER_SQUIRTLE       329
-#define TRAINER_RIVAL_POKEMON_TOWER_BULBASAUR      330
-#define TRAINER_RIVAL_POKEMON_TOWER_CHARMANDER     331
-#define TRAINER_RIVAL_SILPH_SQUIRTLE               332
-#define TRAINER_RIVAL_SILPH_BULBASAUR              333
-#define TRAINER_RIVAL_SILPH_CHARMANDER             334
-#define TRAINER_RIVAL_ROUTE22_LATE_SQUIRTLE        335
-#define TRAINER_RIVAL_ROUTE22_LATE_BULBASAUR       336
-#define TRAINER_RIVAL_ROUTE22_LATE_CHARMANDER      337
-#define TRAINER_CHAMPION_FIRST_SQUIRTLE            338
-#define TRAINER_CHAMPION_FIRST_BULBASAUR           339
-#define TRAINER_CHAMPION_FIRST_CHARMANDER          340
-#define TRAINER_CHANNELER_PATRICIA                 341
-#define TRAINER_CHANNELER_CARLY                    342
-#define TRAINER_CHANNELER_HOPE                     343
-#define TRAINER_CHANNELER_PAULA                    344
-#define TRAINER_CHANNELER_LAUREL                   345
-#define TRAINER_CHANNELER_JODY                     346
-#define TRAINER_CHANNELER_TAMMY                    347
-#define TRAINER_CHANNELER_RUTH                     348
-#define TRAINER_CHANNELER_KARINA                   349
-#define TRAINER_CHANNELER_JANAE                    350
-#define TRAINER_CHANNELER_ANGELICA                 351
-#define TRAINER_CHANNELER_EMILIA                   352
-#define TRAINER_CHANNELER_JENNIFER                 353
-#define TRAINER_CHANNELER_AMANDA                   354
-#define TRAINER_CHANNELER_STACY                    355
-#define TRAINER_CHANNELER_TASHA                    356
-#define TRAINER_HIKER_JEREMY                       357
-#define TRAINER_PICNICKER_ALMA                     358
-#define TRAINER_PICNICKER_SUSIE                    359
-#define TRAINER_PICNICKER_VALERIE                  360
-#define TRAINER_PICNICKER_GWEN                     361
-#define TRAINER_BIKER_VIRGIL                       362
-#define TRAINER_CAMPER_FLINT                       363
-#define TRAINER_PICNICKER_MISSY                    364
-#define TRAINER_PICNICKER_IRENE                    365
-#define TRAINER_PICNICKER_DANA                     366
-#define TRAINER_PICNICKER_ARIANA                   367
-#define TRAINER_PICNICKER_LEAH                     368
-#define TRAINER_CAMPER_JUSTIN                      369
-#define TRAINER_PICNICKER_YAZMIN                   370
-#define TRAINER_PICNICKER_KINDRA                   371
-#define TRAINER_PICNICKER_BECKY                    372
-#define TRAINER_PICNICKER_CELIA                    373
-#define TRAINER_GENTLEMAN_BROOKS                   374
-#define TRAINER_GENTLEMAN_LAMAR                    375
-#define TRAINER_TWINS_ELI_ANNE                     376
-#define TRAINER_COOL_COUPLE_RAY_TYRA               377
-#define TRAINER_YOUNG_COUPLE_GIA_JES               378
-#define TRAINER_TWINS_KIRI_JAN                     379
-#define TRAINER_CRUSH_KIN_RON_MYA                  380
-#define TRAINER_YOUNG_COUPLE_LEA_JED               381
-#define TRAINER_SIS_AND_BRO_LIA_LUC                382
-#define TRAINER_SIS_AND_BRO_LIL_IAN                383
-#define TRAINER_YOUNGSTER_BEN_3                    384
-#define TRAINER_YOUNGSTER_BEN_4                    385
-#define TRAINER_YOUNGSTER_CHAD_2                   386
-#define TRAINER_LASS_RELI_2                        387
-#define TRAINER_LASS_RELI_3                        388
-#define TRAINER_YOUNGSTER_TIMMY_2                  389
-#define TRAINER_YOUNGSTER_TIMMY_3                  390
-#define TRAINER_YOUNGSTER_TIMMY_4                  391
-#define TRAINER_YOUNGSTER_CHAD_3                   392
-#define TRAINER_LASS_JANICE_2                      393
-#define TRAINER_LASS_JANICE_3                      394
-#define TRAINER_YOUNGSTER_CHAD_4                   395
-#define TRAINER_HIKER_FRANKLIN_2                   396
-#define TRAINER_PKMN_PROF_PROF_OAK                 397
-#define TRAINER_TEAM_ROCKET_GRUNT_42               398
-#define TRAINER_PSYCHIC_JACLYN                     399
-#define TRAINER_CRUSH_GIRL_SHARON                  400
-#define TRAINER_TUBER_AMIRA                        401
-#define TRAINER_PKMN_BREEDER_ALIZE                 402
-#define TRAINER_PKMN_RANGER_NICOLAS                403
-#define TRAINER_PKMN_RANGER_MADELINE               404
-#define TRAINER_AROMA_LADY_NIKKI                   405
-#define TRAINER_RUIN_MANIAC_STANLY                 406
-#define TRAINER_LADY_JACKI                         407
-#define TRAINER_PAINTER_DAISY                      408
-#define TRAINER_BIKER_GOON                         409
-#define TRAINER_BIKER_GOON_2                       410
-#define TRAINER_BIKER_GOON_3                       411
-#define TRAINER_BUG_CATCHER_ANTHONY                412
-#define TRAINER_BUG_CATCHER_CHARLIE                413
-#define TRAINER_TWINS_ELI_ANNE_2                   414
-#define TRAINER_YOUNGSTER_JOHNSON                  415
-#define TRAINER_BIKER_RICARDO                      416
-#define TRAINER_BIKER_JAREN                        417
-#define TRAINER_TEAM_ROCKET_GRUNT_43               418
-#define TRAINER_TEAM_ROCKET_GRUNT_44               419
-#define TRAINER_TEAM_ROCKET_GRUNT_45               420
-#define TRAINER_TEAM_ROCKET_GRUNT_46               421
-#define TRAINER_TEAM_ROCKET_GRUNT_47               422
-#define TRAINER_TEAM_ROCKET_GRUNT_48               423
-#define TRAINER_TEAM_ROCKET_ADMIN                  424
-#define TRAINER_TEAM_ROCKET_ADMIN_2                425
-#define TRAINER_SCIENTIST_GIDEON                   426
-#define TRAINER_SWIMMER_FEMALE_AMARA               427
-#define TRAINER_SWIMMER_FEMALE_MARIA               428
-#define TRAINER_SWIMMER_FEMALE_ABIGAIL             429
-#define TRAINER_SWIMMER_MALE_FINN                  430
-#define TRAINER_SWIMMER_MALE_GARRETT               431
-#define TRAINER_FISHERMAN_TOMMY                    432
-#define TRAINER_CRUSH_GIRL_TANYA                   433
-#define TRAINER_BLACK_BELT_SHEA                    434
-#define TRAINER_BLACK_BELT_HUGH                    435
-#define TRAINER_CAMPER_BRYCE                       436
-#define TRAINER_PICNICKER_CLAIRE                   437
-#define TRAINER_CRUSH_KIN_MIK_KIA                  438
-#define TRAINER_AROMA_LADY_VIOLET                  439
-#define TRAINER_TUBER_ALEXIS                       440
-#define TRAINER_TWINS_JOY_MEG                      441
-#define TRAINER_SWIMMER_FEMALE_TISHA               442
-#define TRAINER_PAINTER_CELINA                     443
-#define TRAINER_PAINTER_RAYNA                      444
-#define TRAINER_LADY_GILLIAN                       445
-#define TRAINER_YOUNGSTER_DESTIN                   446
-#define TRAINER_SWIMMER_MALE_TOBY                  447
-#define TRAINER_TEAM_ROCKET_GRUNT_49               448
-#define TRAINER_TEAM_ROCKET_GRUNT_50               449
-#define TRAINER_TEAM_ROCKET_GRUNT_51               450
-#define TRAINER_BIRD_KEEPER_MILO                   451
-#define TRAINER_BIRD_KEEPER_CHAZ                   452
-#define TRAINER_BIRD_KEEPER_HAROLD                 453
-#define TRAINER_FISHERMAN_TYLOR                    454
-#define TRAINER_SWIMMER_MALE_MYMO                  455
-#define TRAINER_SWIMMER_FEMALE_NICOLE              456
-#define TRAINER_SIS_AND_BRO_AVA_GEB                457
-#define TRAINER_AROMA_LADY_ROSE                    458
-#define TRAINER_SWIMMER_MALE_SAMIR                 459
-#define TRAINER_SWIMMER_FEMALE_DENISE              460
-#define TRAINER_TWINS_MIU_MIA                      461
-#define TRAINER_HIKER_EARL                         462
-#define TRAINER_RUIN_MANIAC_FOSTER                 463
-#define TRAINER_RUIN_MANIAC_LARRY                  464
-#define TRAINER_HIKER_DARYL                        465
-#define TRAINER_POKEMANIAC_HECTOR                  466
-#define TRAINER_PSYCHIC_DARIO                      467
-#define TRAINER_PSYCHIC_RODETTE                    468
-#define TRAINER_AROMA_LADY_MIAH                    469
-#define TRAINER_YOUNG_COUPLE_EVE_JON               470
-#define TRAINER_JUGGLER_MASON                      471
-#define TRAINER_CRUSH_GIRL_CYNDY                   472
-#define TRAINER_CRUSH_GIRL_JOCELYN                 473
-#define TRAINER_TAMER_EVAN                         474
-#define TRAINER_POKEMANIAC_MARK_2                  475
-#define TRAINER_PKMN_RANGER_LOGAN                  476
-#define TRAINER_PKMN_RANGER_JACKSON                477
-#define TRAINER_PKMN_RANGER_BETH                   478
-#define TRAINER_PKMN_RANGER_KATELYN                479
-#define TRAINER_COOLTRAINER_LEROY                  480
-#define TRAINER_COOLTRAINER_MICHELLE               481
-#define TRAINER_COOL_COUPLE_LEX_NYA                482
-#define TRAINER_RUIN_MANIAC_BRANDON                483
-#define TRAINER_RUIN_MANIAC_BENJAMIN               484
-#define TRAINER_PAINTER_EDNA                       485
-#define TRAINER_GENTLEMAN_CLIFFORD                 486
-#define TRAINER_LADY_SELPHY                        487
-#define TRAINER_RUIN_MANIAC_LAWSON                 488
-#define TRAINER_PSYCHIC_LAURA                      489
-#define TRAINER_PKMN_BREEDER_BETHANY               490
-#define TRAINER_PKMN_BREEDER_ALLISON               491
-#define TRAINER_BUG_CATCHER_GARRET                 492
-#define TRAINER_BUG_CATCHER_JONAH                  493
-#define TRAINER_BUG_CATCHER_VANCE                  494
-#define TRAINER_YOUNGSTER_NASH                     495
-#define TRAINER_YOUNGSTER_CORDELL                  496
-#define TRAINER_LASS_DALIA                         497
-#define TRAINER_LASS_JOANA                         498
-#define TRAINER_CAMPER_RILEY                       499
-#define TRAINER_PICNICKER_MARCY                    500
-#define TRAINER_RUIN_MANIAC_LAYTON                 501
-#define TRAINER_PICNICKER_KELSEY_2                 502
-#define TRAINER_PICNICKER_KELSEY_3                 503
-#define TRAINER_PICNICKER_KELSEY_4                 504
-#define TRAINER_CAMPER_RICKY_2                     505
-#define TRAINER_CAMPER_RICKY_3                     506
-#define TRAINER_CAMPER_RICKY_4                     507
-#define TRAINER_CAMPER_JEFF_2                      508
-#define TRAINER_CAMPER_JEFF_3                      509
-#define TRAINER_CAMPER_JEFF_4                      510
-#define TRAINER_PICNICKER_ISABELLE_2               511
-#define TRAINER_PICNICKER_ISABELLE_3               512
-#define TRAINER_PICNICKER_ISABELLE_4               513
-#define TRAINER_YOUNGSTER_YASU_2                   514
-#define TRAINER_YOUNGSTER_YASU_3                   515
-#define TRAINER_ENGINEER_BERNIE_2                  516
-#define TRAINER_GAMER_DARIAN_2                     517
-#define TRAINER_CAMPER_CHRIS_2                     518
-#define TRAINER_CAMPER_CHRIS_3                     519
-#define TRAINER_CAMPER_CHRIS_4                     520
-#define TRAINER_PICNICKER_ALICIA_2                 521
-#define TRAINER_PICNICKER_ALICIA_3                 522
-#define TRAINER_PICNICKER_ALICIA_4                 523
-#define TRAINER_HIKER_JEREMY_2                     524
-#define TRAINER_POKEMANIAC_MARK_3                  525
-#define TRAINER_POKEMANIAC_HERMAN_2                526
-#define TRAINER_POKEMANIAC_HERMAN_3                527
-#define TRAINER_HIKER_TRENT_2                      528
-#define TRAINER_LASS_MEGAN_2                       529
-#define TRAINER_LASS_MEGAN_3                       530
-#define TRAINER_SUPER_NERD_GLENN_2                 531
-#define TRAINER_GAMER_RICH_2                       532
-#define TRAINER_BIKER_JAREN_2                      533
-#define TRAINER_FISHERMAN_ELLIOT_2                 534
-#define TRAINER_ROCKER_LUCA_2                      535
-#define TRAINER_BEAUTY_SHEILA_2                    536
-#define TRAINER_BIRD_KEEPER_ROBERT_2               537
-#define TRAINER_BIRD_KEEPER_ROBERT_3               538
-#define TRAINER_PICNICKER_SUSIE_2                  539
-#define TRAINER_PICNICKER_SUSIE_3                  540
-#define TRAINER_PICNICKER_SUSIE_4                  541
-#define TRAINER_BIKER_LUKAS_2                      542
-#define TRAINER_BIRD_KEEPER_BENNY_2                543
-#define TRAINER_BIRD_KEEPER_BENNY_3                544
-#define TRAINER_BIRD_KEEPER_MARLON_2               545
-#define TRAINER_BIRD_KEEPER_MARLON_3               546
-#define TRAINER_BEAUTY_GRACE_2                     547
-#define TRAINER_BIRD_KEEPER_CHESTER_2              548
-#define TRAINER_BIRD_KEEPER_CHESTER_3              549
-#define TRAINER_PICNICKER_BECKY_2                  550
-#define TRAINER_PICNICKER_BECKY_3                  551
-#define TRAINER_PICNICKER_BECKY_4                  552
-#define TRAINER_CRUSH_KIN_RON_MYA_2                553
-#define TRAINER_CRUSH_KIN_RON_MYA_3                554
-#define TRAINER_CRUSH_KIN_RON_MYA_4                555
-#define TRAINER_BIKER_RUBEN_2                      556
-#define TRAINER_CUE_BALL_CAMRON_2                  557
-#define TRAINER_BIKER_JAXON_2                      558
-#define TRAINER_CUE_BALL_ISAIAH_2                  559
-#define TRAINER_CUE_BALL_COREY_2                   560
-#define TRAINER_BIRD_KEEPER_JACOB_2                561
-#define TRAINER_BIRD_KEEPER_JACOB_3                562
-#define TRAINER_SWIMMER_FEMALE_ALICE_2             563
-#define TRAINER_SWIMMER_MALE_DARRIN_2              564
-#define TRAINER_PICNICKER_MISSY_2                  565
-#define TRAINER_PICNICKER_MISSY_3                  566
-#define TRAINER_FISHERMAN_WADE_2                   567
-#define TRAINER_SWIMMER_MALE_JACK_2                568
-#define TRAINER_SIS_AND_BRO_LIL_IAN_2              569
-#define TRAINER_SIS_AND_BRO_LIL_IAN_3              570
-#define TRAINER_SWIMMER_MALE_FINN_2                571
-#define TRAINER_CRUSH_GIRL_SHARON_2                572
-#define TRAINER_CRUSH_GIRL_SHARON_3                573
-#define TRAINER_CRUSH_GIRL_TANYA_2                 574
-#define TRAINER_CRUSH_GIRL_TANYA_3                 575
-#define TRAINER_BLACK_BELT_SHEA_2                  576
-#define TRAINER_BLACK_BELT_SHEA_3                  577
-#define TRAINER_BLACK_BELT_HUGH_2                  578
-#define TRAINER_BLACK_BELT_HUGH_3                  579
-#define TRAINER_CRUSH_KIN_MIK_KIA_2                580
-#define TRAINER_CRUSH_KIN_MIK_KIA_3                581
-#define TRAINER_TUBER_AMIRA_2                      582
-#define TRAINER_TWINS_JOY_MEG_2                    583
-#define TRAINER_PAINTER_RAYNA_2                    584
-#define TRAINER_YOUNGSTER_DESTIN_2                 585
-#define TRAINER_PKMN_BREEDER_ALIZE_2               586
-#define TRAINER_YOUNG_COUPLE_GIA_JES_2             587
-#define TRAINER_YOUNG_COUPLE_GIA_JES_3             588
-#define TRAINER_BIRD_KEEPER_MILO_2                 589
-#define TRAINER_BIRD_KEEPER_CHAZ_2                 590
-#define TRAINER_BIRD_KEEPER_HAROLD_2               591
-#define TRAINER_SWIMMER_FEMALE_NICOLE_2            592
-#define TRAINER_PSYCHIC_JACLYN_2                   593
-#define TRAINER_SWIMMER_MALE_SAMIR_2               594
-#define TRAINER_HIKER_EARL_2                       595
-#define TRAINER_RUIN_MANIAC_LARRY_2                596
-#define TRAINER_POKEMANIAC_HECTOR_2                597
-#define TRAINER_PSYCHIC_DARIO_2                    598
-#define TRAINER_PSYCHIC_RODETTE_2                  599
-#define TRAINER_JUGGLER_MASON_2                    600
-#define TRAINER_PKMN_RANGER_NICOLAS_2              601
-#define TRAINER_PKMN_RANGER_MADELINE_2             602
-#define TRAINER_CRUSH_GIRL_CYNDY_2                 603
-#define TRAINER_TAMER_EVAN_2                       604
-#define TRAINER_PKMN_RANGER_JACKSON_2              605
-#define TRAINER_PKMN_RANGER_KATELYN_2              606
-#define TRAINER_COOLTRAINER_LEROY_2                607
-#define TRAINER_COOLTRAINER_MICHELLE_2             608
-#define TRAINER_COOL_COUPLE_LEX_NYA_2              609
-#define TRAINER_BUG_CATCHER_COLTON_2               610
-#define TRAINER_BUG_CATCHER_COLTON_3               611
-#define TRAINER_BUG_CATCHER_COLTON_4               612
-#define TRAINER_SWIMMER_MALE_MATTHEW_2             613
-#define TRAINER_SWIMMER_MALE_TONY_2                614
-#define TRAINER_SWIMMER_FEMALE_MELISSA_2           615
-#define TRAINER_ELITE_FOUR_LORELEI_2               616
-#define TRAINER_ELITE_FOUR_BRUNO_2                 617
-#define TRAINER_ELITE_FOUR_AGATHA_2                618
-#define TRAINER_ELITE_FOUR_LANCE_2                 619
-#define TRAINER_CHAMPION_REMATCH_SQUIRTLE          620
-#define TRAINER_CHAMPION_REMATCH_BULBASAUR         621
-#define TRAINER_CHAMPION_REMATCH_CHARMANDER        622
-#define TRAINER_CUE_BALL_PAXTON                    623
+// Kanto trainer ids start after the Hoenn block; KANTO_TRAINERS_START is defined in opponents.h.
 
-// NOTE: Because each Trainer uses a flag to determine when they are defeated, there is
-//       only space for 25 additional trainers before trainer flag space overflows.
-//       MAX_TRAINERS_COUNT_FRLG can be increased but will take up additional saveblock space
+#define TRAINER_YOUNGSTER_BEN                      (KANTO_TRAINERS_START + 1)
+#define TRAINER_YOUNGSTER_CALVIN                   (KANTO_TRAINERS_START + 2)
+#define TRAINER_YOUNGSTER_JOSH                     (KANTO_TRAINERS_START + 3)
+#define TRAINER_YOUNGSTER_TIMMY                    (KANTO_TRAINERS_START + 4)
+#define TRAINER_YOUNGSTER_JOEY                     (KANTO_TRAINERS_START + 5)
+#define TRAINER_YOUNGSTER_DAN                      (KANTO_TRAINERS_START + 6)
+#define TRAINER_YOUNGSTER_CHAD                     (KANTO_TRAINERS_START + 7)
+#define TRAINER_YOUNGSTER_TYLER                    (KANTO_TRAINERS_START + 8)
+#define TRAINER_YOUNGSTER_EDDIE                    (KANTO_TRAINERS_START + 9)
+#define TRAINER_YOUNGSTER_DILLON                   (KANTO_TRAINERS_START + 10)
+#define TRAINER_YOUNGSTER_YASU                     (KANTO_TRAINERS_START + 11)
+#define TRAINER_YOUNGSTER_DAVE                     (KANTO_TRAINERS_START + 12)
+#define TRAINER_YOUNGSTER_BEN_2                    (KANTO_TRAINERS_START + 13)
+#define TRAINER_BUG_CATCHER_RICK                   (KANTO_TRAINERS_START + 14)
+#define TRAINER_BUG_CATCHER_DOUG                   (KANTO_TRAINERS_START + 15)
+#define TRAINER_BUG_CATCHER_SAMMY                  (KANTO_TRAINERS_START + 16)
+#define TRAINER_BUG_CATCHER_COLTON                 (KANTO_TRAINERS_START + 17)
+#define TRAINER_BUG_CATCHER_GREG                   (KANTO_TRAINERS_START + 18)
+#define TRAINER_BUG_CATCHER_JAMES                  (KANTO_TRAINERS_START + 19)
+#define TRAINER_BUG_CATCHER_KENT                   (KANTO_TRAINERS_START + 20)
+#define TRAINER_BUG_CATCHER_ROBBY                  (KANTO_TRAINERS_START + 21)
+#define TRAINER_BUG_CATCHER_CALE                   (KANTO_TRAINERS_START + 22)
+#define TRAINER_BUG_CATCHER_KEIGO                  (KANTO_TRAINERS_START + 23)
+#define TRAINER_BUG_CATCHER_ELIJAH                 (KANTO_TRAINERS_START + 24)
+#define TRAINER_BUG_CATCHER_BRENT                  (KANTO_TRAINERS_START + 25)
+#define TRAINER_BUG_CATCHER_CONNER                 (KANTO_TRAINERS_START + 26)
+#define TRAINER_LASS_JANICE                        (KANTO_TRAINERS_START + 27)
+#define TRAINER_LASS_SALLY                         (KANTO_TRAINERS_START + 28)
+#define TRAINER_LASS_ROBIN                         (KANTO_TRAINERS_START + 29)
+#define TRAINER_LASS_CRISSY                        (KANTO_TRAINERS_START + 30)
+#define TRAINER_LASS_MIRIAM                        (KANTO_TRAINERS_START + 31)
+#define TRAINER_LASS_IRIS                          (KANTO_TRAINERS_START + 32)
+#define TRAINER_LASS_RELI                          (KANTO_TRAINERS_START + 33)
+#define TRAINER_LASS_ALI                           (KANTO_TRAINERS_START + 34)
+#define TRAINER_LASS_HALEY                         (KANTO_TRAINERS_START + 35)
+#define TRAINER_LASS_ANN                           (KANTO_TRAINERS_START + 36)
+#define TRAINER_LASS_DAWN                          (KANTO_TRAINERS_START + 37)
+#define TRAINER_LASS_PAIGE                         (KANTO_TRAINERS_START + 38)
+#define TRAINER_LASS_ANDREA                        (KANTO_TRAINERS_START + 39)
+#define TRAINER_LASS_MEGAN                         (KANTO_TRAINERS_START + 40)
+#define TRAINER_LASS_JULIA                         (KANTO_TRAINERS_START + 41)
+#define TRAINER_LASS_KAY                           (KANTO_TRAINERS_START + 42)
+#define TRAINER_LASS_LISA                          (KANTO_TRAINERS_START + 43)
+#define TRAINER_SAILOR_EDMOND                      (KANTO_TRAINERS_START + 44)
+#define TRAINER_SAILOR_TREVOR                      (KANTO_TRAINERS_START + 45)
+#define TRAINER_SAILOR_LEONARD                     (KANTO_TRAINERS_START + 46)
+#define TRAINER_SAILOR_DUNCAN                      (KANTO_TRAINERS_START + 47)
+#define TRAINER_SAILOR_HUEY                        (KANTO_TRAINERS_START + 48)
+#define TRAINER_SAILOR_DYLAN                       (KANTO_TRAINERS_START + 49)
+#define TRAINER_SAILOR_PHILLIP                     (KANTO_TRAINERS_START + 50)
+#define TRAINER_SAILOR_DWAYNE                      (KANTO_TRAINERS_START + 51)
+#define TRAINER_CAMPER_LIAM                        (KANTO_TRAINERS_START + 52)
+#define TRAINER_CAMPER_SHANE                       (KANTO_TRAINERS_START + 53)
+#define TRAINER_CAMPER_ETHAN                       (KANTO_TRAINERS_START + 54)
+#define TRAINER_CAMPER_RICKY                       (KANTO_TRAINERS_START + 55)
+#define TRAINER_CAMPER_JEFF                        (KANTO_TRAINERS_START + 56)
+#define TRAINER_CAMPER_CHRIS                       (KANTO_TRAINERS_START + 57)
+#define TRAINER_CAMPER_DREW                        (KANTO_TRAINERS_START + 58)
+#define TRAINER_PICNICKER_DIANA                    (KANTO_TRAINERS_START + 59)
+#define TRAINER_PICNICKER_NANCY                    (KANTO_TRAINERS_START + 60)
+#define TRAINER_PICNICKER_ISABELLE                 (KANTO_TRAINERS_START + 61)
+#define TRAINER_PICNICKER_KELSEY                   (KANTO_TRAINERS_START + 62)
+#define TRAINER_PICNICKER_ALICIA                   (KANTO_TRAINERS_START + 63)
+#define TRAINER_PICNICKER_CAITLIN                  (KANTO_TRAINERS_START + 64)
+#define TRAINER_PICNICKER_HEIDI                    (KANTO_TRAINERS_START + 65)
+#define TRAINER_PICNICKER_CAROL                    (KANTO_TRAINERS_START + 66)
+#define TRAINER_PICNICKER_SOFIA                    (KANTO_TRAINERS_START + 67)
+#define TRAINER_PICNICKER_MARTHA                   (KANTO_TRAINERS_START + 68)
+#define TRAINER_PICNICKER_TINA                     (KANTO_TRAINERS_START + 69)
+#define TRAINER_PICNICKER_HANNAH                   (KANTO_TRAINERS_START + 70)
+#define TRAINER_POKEMANIAC_MARK                    (KANTO_TRAINERS_START + 71)
+#define TRAINER_POKEMANIAC_HERMAN                  (KANTO_TRAINERS_START + 72)
+#define TRAINER_POKEMANIAC_COOPER                  (KANTO_TRAINERS_START + 73)
+#define TRAINER_POKEMANIAC_STEVE                   (KANTO_TRAINERS_START + 74)
+#define TRAINER_POKEMANIAC_WINSTON                 (KANTO_TRAINERS_START + 75)
+#define TRAINER_POKEMANIAC_DAWSON                  (KANTO_TRAINERS_START + 76)
+#define TRAINER_POKEMANIAC_ASHTON                  (KANTO_TRAINERS_START + 77)
+#define TRAINER_SUPER_NERD_JOVAN                   (KANTO_TRAINERS_START + 78)
+#define TRAINER_SUPER_NERD_MIGUEL                  (KANTO_TRAINERS_START + 79)
+#define TRAINER_SUPER_NERD_AIDAN                   (KANTO_TRAINERS_START + 80)
+#define TRAINER_SUPER_NERD_GLENN                   (KANTO_TRAINERS_START + 81)
+#define TRAINER_SUPER_NERD_LESLIE                  (KANTO_TRAINERS_START + 82)
+#define TRAINER_SUPER_NERD_ERIK                    (KANTO_TRAINERS_START + 83)
+#define TRAINER_SUPER_NERD_AVERY                   (KANTO_TRAINERS_START + 84)
+#define TRAINER_SUPER_NERD_DEREK                   (KANTO_TRAINERS_START + 85)
+#define TRAINER_SUPER_NERD_ZAC                     (KANTO_TRAINERS_START + 86)
+#define TRAINER_HIKER_MARCOS                       (KANTO_TRAINERS_START + 87)
+#define TRAINER_HIKER_FRANKLIN                     (KANTO_TRAINERS_START + 88)
+#define TRAINER_HIKER_NOB                          (KANTO_TRAINERS_START + 89)
+#define TRAINER_HIKER_WAYNE                        (KANTO_TRAINERS_START + 90)
+#define TRAINER_HIKER_ALAN                         (KANTO_TRAINERS_START + 91)
+#define TRAINER_HIKER_BRICE                        (KANTO_TRAINERS_START + 92)
+#define TRAINER_HIKER_CLARK                        (KANTO_TRAINERS_START + 93)
+#define TRAINER_HIKER_TRENT                        (KANTO_TRAINERS_START + 94)
+#define TRAINER_HIKER_DUDLEY                       (KANTO_TRAINERS_START + 95)
+#define TRAINER_HIKER_ALLEN                        (KANTO_TRAINERS_START + 96)
+#define TRAINER_HIKER_ERIC                         (KANTO_TRAINERS_START + 97)
+#define TRAINER_HIKER_LENNY                        (KANTO_TRAINERS_START + 98)
+#define TRAINER_HIKER_OLIVER                       (KANTO_TRAINERS_START + 99)
+#define TRAINER_HIKER_LUCAS                        (KANTO_TRAINERS_START + 100)
+#define TRAINER_BIKER_JARED                        (KANTO_TRAINERS_START + 101)
+#define TRAINER_BIKER_MALIK                        (KANTO_TRAINERS_START + 102)
+#define TRAINER_BIKER_ERNEST                       (KANTO_TRAINERS_START + 103)
+#define TRAINER_BIKER_ALEX                         (KANTO_TRAINERS_START + 104)
+#define TRAINER_BIKER_LAO                          (KANTO_TRAINERS_START + 105)
+#define TRAINER_BIKER_HIDEO                        (KANTO_TRAINERS_START + 106)
+#define TRAINER_BIKER_RUBEN                        (KANTO_TRAINERS_START + 107)
+#define TRAINER_BIKER_BILLY                        (KANTO_TRAINERS_START + 108)
+#define TRAINER_BIKER_NIKOLAS                      (KANTO_TRAINERS_START + 109)
+#define TRAINER_BIKER_JAXON                        (KANTO_TRAINERS_START + 110)
+#define TRAINER_BIKER_WILLIAM                      (KANTO_TRAINERS_START + 111)
+#define TRAINER_BIKER_LUKAS                        (KANTO_TRAINERS_START + 112)
+#define TRAINER_BIKER_ISAAC                        (KANTO_TRAINERS_START + 113)
+#define TRAINER_BIKER_GERALD                       (KANTO_TRAINERS_START + 114)
+#define TRAINER_BURGLAR_QUINN                      (KANTO_TRAINERS_START + 115)
+#define TRAINER_BURGLAR_RAMON                      (KANTO_TRAINERS_START + 116)
+#define TRAINER_BURGLAR_DUSTY                      (KANTO_TRAINERS_START + 117)
+#define TRAINER_BURGLAR_ARNIE                      (KANTO_TRAINERS_START + 118)
+#define TRAINER_BURGLAR_SIMON                      (KANTO_TRAINERS_START + 119)
+#define TRAINER_BURGLAR_LEWIS                      (KANTO_TRAINERS_START + 120)
+#define TRAINER_ENGINEER_BAILY                     (KANTO_TRAINERS_START + 121)
+#define TRAINER_ENGINEER_BRAXTON                   (KANTO_TRAINERS_START + 122)
+#define TRAINER_ENGINEER_BERNIE                    (KANTO_TRAINERS_START + 123)
+#define TRAINER_FISHERMAN_DALE                     (KANTO_TRAINERS_START + 124)
+#define TRAINER_FISHERMAN_BARNY                    (KANTO_TRAINERS_START + 125)
+#define TRAINER_FISHERMAN_NED                      (KANTO_TRAINERS_START + 126)
+#define TRAINER_FISHERMAN_CHIP                     (KANTO_TRAINERS_START + 127)
+#define TRAINER_FISHERMAN_HANK                     (KANTO_TRAINERS_START + 128)
+#define TRAINER_FISHERMAN_ELLIOT                   (KANTO_TRAINERS_START + 129)
+#define TRAINER_FISHERMAN_RONALD                   (KANTO_TRAINERS_START + 130)
+#define TRAINER_FISHERMAN_CLAUDE                   (KANTO_TRAINERS_START + 131)
+#define TRAINER_FISHERMAN_WADE                     (KANTO_TRAINERS_START + 132)
+#define TRAINER_FISHERMAN_NOLAN                    (KANTO_TRAINERS_START + 133)
+#define TRAINER_FISHERMAN_ANDREW                   (KANTO_TRAINERS_START + 134)
+#define TRAINER_SWIMMER_MALE_LUIS                  (KANTO_TRAINERS_START + 135)
+#define TRAINER_SWIMMER_MALE_RICHARD               (KANTO_TRAINERS_START + 136)
+#define TRAINER_SWIMMER_MALE_REECE                 (KANTO_TRAINERS_START + 137)
+#define TRAINER_SWIMMER_MALE_MATTHEW               (KANTO_TRAINERS_START + 138)
+#define TRAINER_SWIMMER_MALE_DOUGLAS               (KANTO_TRAINERS_START + 139)
+#define TRAINER_SWIMMER_MALE_DAVID                 (KANTO_TRAINERS_START + 140)
+#define TRAINER_SWIMMER_MALE_TONY                  (KANTO_TRAINERS_START + 141)
+#define TRAINER_SWIMMER_MALE_AXLE                  (KANTO_TRAINERS_START + 142)
+#define TRAINER_SWIMMER_MALE_BARRY                 (KANTO_TRAINERS_START + 143)
+#define TRAINER_SWIMMER_MALE_DEAN                  (KANTO_TRAINERS_START + 144)
+#define TRAINER_SWIMMER_MALE_DARRIN                (KANTO_TRAINERS_START + 145)
+#define TRAINER_SWIMMER_MALE_SPENCER               (KANTO_TRAINERS_START + 146)
+#define TRAINER_SWIMMER_MALE_JACK                  (KANTO_TRAINERS_START + 147)
+#define TRAINER_SWIMMER_MALE_JEROME                (KANTO_TRAINERS_START + 148)
+#define TRAINER_SWIMMER_MALE_ROLAND                (KANTO_TRAINERS_START + 149)
+#define TRAINER_CUE_BALL_KOJI                      (KANTO_TRAINERS_START + 150)
+#define TRAINER_CUE_BALL_LUKE                      (KANTO_TRAINERS_START + 151)
+#define TRAINER_CUE_BALL_CAMRON                    (KANTO_TRAINERS_START + 152)
+#define TRAINER_CUE_BALL_RAUL                      (KANTO_TRAINERS_START + 153)
+#define TRAINER_CUE_BALL_ISAIAH                    (KANTO_TRAINERS_START + 154)
+#define TRAINER_CUE_BALL_ZEEK                      (KANTO_TRAINERS_START + 155)
+#define TRAINER_CUE_BALL_JAMAL                     (KANTO_TRAINERS_START + 156)
+#define TRAINER_CUE_BALL_COREY                     (KANTO_TRAINERS_START + 157)
+#define TRAINER_CUE_BALL_CHASE                     (KANTO_TRAINERS_START + 158)
+#define TRAINER_GAMER_HUGO                         (KANTO_TRAINERS_START + 159)
+#define TRAINER_GAMER_JASPER                       (KANTO_TRAINERS_START + 160)
+#define TRAINER_GAMER_DIRK                         (KANTO_TRAINERS_START + 161)
+#define TRAINER_GAMER_DARIAN                       (KANTO_TRAINERS_START + 162)
+#define TRAINER_GAMER_STAN                         (KANTO_TRAINERS_START + 163)
+#define TRAINER_GAMER_RICH                         (KANTO_TRAINERS_START + 164)
+#define TRAINER_BEAUTY_BRIDGET                     (KANTO_TRAINERS_START + 165)
+#define TRAINER_BEAUTY_TAMIA                       (KANTO_TRAINERS_START + 166)
+#define TRAINER_BEAUTY_LORI                        (KANTO_TRAINERS_START + 167)
+#define TRAINER_BEAUTY_LOLA                        (KANTO_TRAINERS_START + 168)
+#define TRAINER_BEAUTY_SHEILA                      (KANTO_TRAINERS_START + 169)
+#define TRAINER_SWIMMER_FEMALE_TIFFANY             (KANTO_TRAINERS_START + 170)
+#define TRAINER_SWIMMER_FEMALE_NORA                (KANTO_TRAINERS_START + 171)
+#define TRAINER_SWIMMER_FEMALE_MELISSA             (KANTO_TRAINERS_START + 172)
+#define TRAINER_BEAUTY_GRACE                       (KANTO_TRAINERS_START + 173)
+#define TRAINER_BEAUTY_OLIVIA                      (KANTO_TRAINERS_START + 174)
+#define TRAINER_BEAUTY_LAUREN                      (KANTO_TRAINERS_START + 175)
+#define TRAINER_SWIMMER_FEMALE_ANYA                (KANTO_TRAINERS_START + 176)
+#define TRAINER_SWIMMER_FEMALE_ALICE               (KANTO_TRAINERS_START + 177)
+#define TRAINER_SWIMMER_FEMALE_CONNIE              (KANTO_TRAINERS_START + 178)
+#define TRAINER_SWIMMER_FEMALE_SHIRLEY             (KANTO_TRAINERS_START + 179)
+#define TRAINER_PSYCHIC_JOHAN                      (KANTO_TRAINERS_START + 180)
+#define TRAINER_PSYCHIC_TYRON                      (KANTO_TRAINERS_START + 181)
+#define TRAINER_PSYCHIC_CAMERON                    (KANTO_TRAINERS_START + 182)
+#define TRAINER_PSYCHIC_PRESTON                    (KANTO_TRAINERS_START + 183)
+#define TRAINER_ROCKER_RANDALL                     (KANTO_TRAINERS_START + 184)
+#define TRAINER_ROCKER_LUCA                        (KANTO_TRAINERS_START + 185)
+#define TRAINER_JUGGLER_DALTON                     (KANTO_TRAINERS_START + 186)
+#define TRAINER_JUGGLER_NELSON                     (KANTO_TRAINERS_START + 187)
+#define TRAINER_JUGGLER_KIRK                       (KANTO_TRAINERS_START + 188)
+#define TRAINER_JUGGLER_SHAWN                      (KANTO_TRAINERS_START + 189)
+#define TRAINER_JUGGLER_GREGORY                    (KANTO_TRAINERS_START + 190)
+#define TRAINER_JUGGLER_EDWARD                     (KANTO_TRAINERS_START + 191)
+#define TRAINER_JUGGLER_KAYDEN                     (KANTO_TRAINERS_START + 192)
+#define TRAINER_JUGGLER_NATE                       (KANTO_TRAINERS_START + 193)
+#define TRAINER_TAMER_PHIL                         (KANTO_TRAINERS_START + 194)
+#define TRAINER_TAMER_EDGAR                        (KANTO_TRAINERS_START + 195)
+#define TRAINER_TAMER_JASON                        (KANTO_TRAINERS_START + 196)
+#define TRAINER_TAMER_COLE                         (KANTO_TRAINERS_START + 197)
+#define TRAINER_TAMER_VINCENT                      (KANTO_TRAINERS_START + 198)
+#define TRAINER_TAMER_JOHN                         (KANTO_TRAINERS_START + 199)
+#define TRAINER_BIRD_KEEPER_SEBASTIAN              (KANTO_TRAINERS_START + 200)
+#define TRAINER_BIRD_KEEPER_PERRY                  (KANTO_TRAINERS_START + 201)
+#define TRAINER_BIRD_KEEPER_ROBERT                 (KANTO_TRAINERS_START + 202)
+#define TRAINER_BIRD_KEEPER_DONALD                 (KANTO_TRAINERS_START + 203)
+#define TRAINER_BIRD_KEEPER_BENNY                  (KANTO_TRAINERS_START + 204)
+#define TRAINER_BIRD_KEEPER_EDWIN                  (KANTO_TRAINERS_START + 205)
+#define TRAINER_BIRD_KEEPER_CHESTER                (KANTO_TRAINERS_START + 206)
+#define TRAINER_BIRD_KEEPER_WILTON                 (KANTO_TRAINERS_START + 207)
+#define TRAINER_BIRD_KEEPER_RAMIRO                 (KANTO_TRAINERS_START + 208)
+#define TRAINER_BIRD_KEEPER_JACOB                  (KANTO_TRAINERS_START + 209)
+#define TRAINER_BIRD_KEEPER_ROGER                  (KANTO_TRAINERS_START + 210)
+#define TRAINER_BIRD_KEEPER_REED                   (KANTO_TRAINERS_START + 211)
+#define TRAINER_BIRD_KEEPER_KEITH                  (KANTO_TRAINERS_START + 212)
+#define TRAINER_BIRD_KEEPER_CARTER                 (KANTO_TRAINERS_START + 213)
+#define TRAINER_BIRD_KEEPER_MITCH                  (KANTO_TRAINERS_START + 214)
+#define TRAINER_BIRD_KEEPER_BECK                   (KANTO_TRAINERS_START + 215)
+#define TRAINER_BIRD_KEEPER_MARLON                 (KANTO_TRAINERS_START + 216)
+#define TRAINER_BLACK_BELT_KOICHI                  (KANTO_TRAINERS_START + 217)
+#define TRAINER_BLACK_BELT_MIKE                    (KANTO_TRAINERS_START + 218)
+#define TRAINER_BLACK_BELT_HIDEKI                  (KANTO_TRAINERS_START + 219)
+#define TRAINER_BLACK_BELT_AARON                   (KANTO_TRAINERS_START + 220)
+#define TRAINER_BLACK_BELT_HITOSHI                 (KANTO_TRAINERS_START + 221)
+#define TRAINER_BLACK_BELT_ATSUSHI                 (KANTO_TRAINERS_START + 222)
+#define TRAINER_BLACK_BELT_KIYO                    (KANTO_TRAINERS_START + 223)
+#define TRAINER_BLACK_BELT_TAKASHI                 (KANTO_TRAINERS_START + 224)
+#define TRAINER_BLACK_BELT_DAISUKE                 (KANTO_TRAINERS_START + 225)
+#define TRAINER_RIVAL_OAKS_LAB_SQUIRTLE            (KANTO_TRAINERS_START + 226)
+#define TRAINER_RIVAL_OAKS_LAB_BULBASAUR           (KANTO_TRAINERS_START + 227)
+#define TRAINER_RIVAL_OAKS_LAB_CHARMANDER          (KANTO_TRAINERS_START + 228)
+#define TRAINER_RIVAL_ROUTE22_EARLY_SQUIRTLE       (KANTO_TRAINERS_START + 229)
+#define TRAINER_RIVAL_ROUTE22_EARLY_BULBASAUR      (KANTO_TRAINERS_START + 230)
+#define TRAINER_RIVAL_ROUTE22_EARLY_CHARMANDER     (KANTO_TRAINERS_START + 231)
+#define TRAINER_RIVAL_CERULEAN_SQUIRTLE            (KANTO_TRAINERS_START + 232)
+#define TRAINER_RIVAL_CERULEAN_BULBASAUR           (KANTO_TRAINERS_START + 233)
+#define TRAINER_RIVAL_CERULEAN_CHARMANDER          (KANTO_TRAINERS_START + 234)
+#define TRAINER_SCIENTIST_TED                      (KANTO_TRAINERS_START + 235)
+#define TRAINER_SCIENTIST_CONNOR                   (KANTO_TRAINERS_START + 236)
+#define TRAINER_SCIENTIST_JERRY                    (KANTO_TRAINERS_START + 237)
+#define TRAINER_SCIENTIST_JOSE                     (KANTO_TRAINERS_START + 238)
+#define TRAINER_SCIENTIST_RODNEY                   (KANTO_TRAINERS_START + 239)
+#define TRAINER_SCIENTIST_BEAU                     (KANTO_TRAINERS_START + 240)
+#define TRAINER_SCIENTIST_TAYLOR                   (KANTO_TRAINERS_START + 241)
+#define TRAINER_SCIENTIST_JOSHUA                   (KANTO_TRAINERS_START + 242)
+#define TRAINER_SCIENTIST_PARKER                   (KANTO_TRAINERS_START + 243)
+#define TRAINER_SCIENTIST_ED                       (KANTO_TRAINERS_START + 244)
+#define TRAINER_SCIENTIST_TRAVIS                   (KANTO_TRAINERS_START + 245)
+#define TRAINER_SCIENTIST_BRAYDON                  (KANTO_TRAINERS_START + 246)
+#define TRAINER_SCIENTIST_IVAN                     (KANTO_TRAINERS_START + 247)
+#define TRAINER_BOSS_GIOVANNI                      (KANTO_TRAINERS_START + 248)
+#define TRAINER_BOSS_GIOVANNI_2                    (KANTO_TRAINERS_START + 249)
+#define TRAINER_LEADER_GIOVANNI                    (KANTO_TRAINERS_START + 250)
+#define TRAINER_TEAM_ROCKET_GRUNT                  (KANTO_TRAINERS_START + 251)
+#define TRAINER_TEAM_ROCKET_GRUNT_2                (KANTO_TRAINERS_START + 252)
+#define TRAINER_TEAM_ROCKET_GRUNT_3                (KANTO_TRAINERS_START + 253)
+#define TRAINER_TEAM_ROCKET_GRUNT_4                (KANTO_TRAINERS_START + 254)
+#define TRAINER_TEAM_ROCKET_GRUNT_5                (KANTO_TRAINERS_START + 255)
+#define TRAINER_TEAM_ROCKET_GRUNT_6                (KANTO_TRAINERS_START + 256)
+#define TRAINER_TEAM_ROCKET_GRUNT_7                (KANTO_TRAINERS_START + 257)
+#define TRAINER_TEAM_ROCKET_GRUNT_8                (KANTO_TRAINERS_START + 258)
+#define TRAINER_TEAM_ROCKET_GRUNT_9                (KANTO_TRAINERS_START + 259)
+#define TRAINER_TEAM_ROCKET_GRUNT_10               (KANTO_TRAINERS_START + 260)
+#define TRAINER_TEAM_ROCKET_GRUNT_11               (KANTO_TRAINERS_START + 261)
+#define TRAINER_TEAM_ROCKET_GRUNT_12               (KANTO_TRAINERS_START + 262)
+#define TRAINER_TEAM_ROCKET_GRUNT_13               (KANTO_TRAINERS_START + 263)
+#define TRAINER_TEAM_ROCKET_GRUNT_14               (KANTO_TRAINERS_START + 264)
+#define TRAINER_TEAM_ROCKET_GRUNT_15               (KANTO_TRAINERS_START + 265)
+#define TRAINER_TEAM_ROCKET_GRUNT_16               (KANTO_TRAINERS_START + 266)
+#define TRAINER_TEAM_ROCKET_GRUNT_17               (KANTO_TRAINERS_START + 267)
+#define TRAINER_TEAM_ROCKET_GRUNT_18               (KANTO_TRAINERS_START + 268)
+#define TRAINER_TEAM_ROCKET_GRUNT_19               (KANTO_TRAINERS_START + 269)
+#define TRAINER_TEAM_ROCKET_GRUNT_20               (KANTO_TRAINERS_START + 270)
+#define TRAINER_TEAM_ROCKET_GRUNT_21               (KANTO_TRAINERS_START + 271)
+#define TRAINER_TEAM_ROCKET_GRUNT_22               (KANTO_TRAINERS_START + 272)
+#define TRAINER_TEAM_ROCKET_GRUNT_23               (KANTO_TRAINERS_START + 273)
+#define TRAINER_TEAM_ROCKET_GRUNT_24               (KANTO_TRAINERS_START + 274)
+#define TRAINER_TEAM_ROCKET_GRUNT_25               (KANTO_TRAINERS_START + 275)
+#define TRAINER_TEAM_ROCKET_GRUNT_26               (KANTO_TRAINERS_START + 276)
+#define TRAINER_TEAM_ROCKET_GRUNT_27               (KANTO_TRAINERS_START + 277)
+#define TRAINER_TEAM_ROCKET_GRUNT_28               (KANTO_TRAINERS_START + 278)
+#define TRAINER_TEAM_ROCKET_GRUNT_29               (KANTO_TRAINERS_START + 279)
+#define TRAINER_TEAM_ROCKET_GRUNT_30               (KANTO_TRAINERS_START + 280)
+#define TRAINER_TEAM_ROCKET_GRUNT_31               (KANTO_TRAINERS_START + 281)
+#define TRAINER_TEAM_ROCKET_GRUNT_32               (KANTO_TRAINERS_START + 282)
+#define TRAINER_TEAM_ROCKET_GRUNT_33               (KANTO_TRAINERS_START + 283)
+#define TRAINER_TEAM_ROCKET_GRUNT_34               (KANTO_TRAINERS_START + 284)
+#define TRAINER_TEAM_ROCKET_GRUNT_35               (KANTO_TRAINERS_START + 285)
+#define TRAINER_TEAM_ROCKET_GRUNT_36               (KANTO_TRAINERS_START + 286)
+#define TRAINER_TEAM_ROCKET_GRUNT_37               (KANTO_TRAINERS_START + 287)
+#define TRAINER_TEAM_ROCKET_GRUNT_38               (KANTO_TRAINERS_START + 288)
+#define TRAINER_TEAM_ROCKET_GRUNT_39               (KANTO_TRAINERS_START + 289)
+#define TRAINER_TEAM_ROCKET_GRUNT_40               (KANTO_TRAINERS_START + 290)
+#define TRAINER_TEAM_ROCKET_GRUNT_41               (KANTO_TRAINERS_START + 291)
+#define TRAINER_COOLTRAINER_SAMUEL                 (KANTO_TRAINERS_START + 292)
+#define TRAINER_COOLTRAINER_GEORGE                 (KANTO_TRAINERS_START + 293)
+#define TRAINER_COOLTRAINER_COLBY                  (KANTO_TRAINERS_START + 294)
+#define TRAINER_COOLTRAINER_PAUL                   (KANTO_TRAINERS_START + 295)
+#define TRAINER_COOLTRAINER_ROLANDO                (KANTO_TRAINERS_START + 296)
+#define TRAINER_COOLTRAINER_GILBERT                (KANTO_TRAINERS_START + 297)
+#define TRAINER_COOLTRAINER_OWEN                   (KANTO_TRAINERS_START + 298)
+#define TRAINER_COOLTRAINER_BERKE                  (KANTO_TRAINERS_START + 299)
+#define TRAINER_COOLTRAINER_YUJI                   (KANTO_TRAINERS_START + 300)
+#define TRAINER_COOLTRAINER_WARREN                 (KANTO_TRAINERS_START + 301)
+#define TRAINER_COOLTRAINER_MARY                   (KANTO_TRAINERS_START + 302)
+#define TRAINER_COOLTRAINER_CAROLINE               (KANTO_TRAINERS_START + 303)
+#define TRAINER_COOLTRAINER_ALEXA                  (KANTO_TRAINERS_START + 304)
+#define TRAINER_COOLTRAINER_SHANNON                (KANTO_TRAINERS_START + 305)
+#define TRAINER_COOLTRAINER_NAOMI                  (KANTO_TRAINERS_START + 306)
+#define TRAINER_COOLTRAINER_BROOKE                 (KANTO_TRAINERS_START + 307)
+#define TRAINER_COOLTRAINER_AUSTINA                (KANTO_TRAINERS_START + 308)
+#define TRAINER_COOLTRAINER_JULIE                  (KANTO_TRAINERS_START + 309)
+#define TRAINER_ELITE_FOUR_LORELEI                 (KANTO_TRAINERS_START + 310)
+#define TRAINER_ELITE_FOUR_BRUNO                   (KANTO_TRAINERS_START + 311)
+#define TRAINER_ELITE_FOUR_AGATHA                  (KANTO_TRAINERS_START + 312)
+#define TRAINER_ELITE_FOUR_LANCE                   (KANTO_TRAINERS_START + 313)
+#define TRAINER_LEADER_BROCK                       (KANTO_TRAINERS_START + 314)
+#define TRAINER_LEADER_MISTY                       (KANTO_TRAINERS_START + 315)
+#define TRAINER_LEADER_LT_SURGE                    (KANTO_TRAINERS_START + 316)
+#define TRAINER_LEADER_ERIKA                       (KANTO_TRAINERS_START + 317)
+#define TRAINER_LEADER_KOGA                        (KANTO_TRAINERS_START + 318)
+#define TRAINER_LEADER_BLAINE                      (KANTO_TRAINERS_START + 319)
+#define TRAINER_LEADER_SABRINA                     (KANTO_TRAINERS_START + 320)
+#define TRAINER_GENTLEMAN_THOMAS                   (KANTO_TRAINERS_START + 321)
+#define TRAINER_GENTLEMAN_ARTHUR                   (KANTO_TRAINERS_START + 322)
+#define TRAINER_GENTLEMAN_TUCKER                   (KANTO_TRAINERS_START + 323)
+#define TRAINER_GENTLEMAN_NORTON                   (KANTO_TRAINERS_START + 324)
+#define TRAINER_GENTLEMAN_WALTER                   (KANTO_TRAINERS_START + 325)
+#define TRAINER_RIVAL_SS_ANNE_SQUIRTLE             (KANTO_TRAINERS_START + 326)
+#define TRAINER_RIVAL_SS_ANNE_BULBASAUR            (KANTO_TRAINERS_START + 327)
+#define TRAINER_RIVAL_SS_ANNE_CHARMANDER           (KANTO_TRAINERS_START + 328)
+#define TRAINER_RIVAL_POKEMON_TOWER_SQUIRTLE       (KANTO_TRAINERS_START + 329)
+#define TRAINER_RIVAL_POKEMON_TOWER_BULBASAUR      (KANTO_TRAINERS_START + 330)
+#define TRAINER_RIVAL_POKEMON_TOWER_CHARMANDER     (KANTO_TRAINERS_START + 331)
+#define TRAINER_RIVAL_SILPH_SQUIRTLE               (KANTO_TRAINERS_START + 332)
+#define TRAINER_RIVAL_SILPH_BULBASAUR              (KANTO_TRAINERS_START + 333)
+#define TRAINER_RIVAL_SILPH_CHARMANDER             (KANTO_TRAINERS_START + 334)
+#define TRAINER_RIVAL_ROUTE22_LATE_SQUIRTLE        (KANTO_TRAINERS_START + 335)
+#define TRAINER_RIVAL_ROUTE22_LATE_BULBASAUR       (KANTO_TRAINERS_START + 336)
+#define TRAINER_RIVAL_ROUTE22_LATE_CHARMANDER      (KANTO_TRAINERS_START + 337)
+#define TRAINER_CHAMPION_FIRST_SQUIRTLE            (KANTO_TRAINERS_START + 338)
+#define TRAINER_CHAMPION_FIRST_BULBASAUR           (KANTO_TRAINERS_START + 339)
+#define TRAINER_CHAMPION_FIRST_CHARMANDER          (KANTO_TRAINERS_START + 340)
+#define TRAINER_CHANNELER_PATRICIA                 (KANTO_TRAINERS_START + 341)
+#define TRAINER_CHANNELER_CARLY                    (KANTO_TRAINERS_START + 342)
+#define TRAINER_CHANNELER_HOPE                     (KANTO_TRAINERS_START + 343)
+#define TRAINER_CHANNELER_PAULA                    (KANTO_TRAINERS_START + 344)
+#define TRAINER_CHANNELER_LAUREL                   (KANTO_TRAINERS_START + 345)
+#define TRAINER_CHANNELER_JODY                     (KANTO_TRAINERS_START + 346)
+#define TRAINER_CHANNELER_TAMMY                    (KANTO_TRAINERS_START + 347)
+#define TRAINER_CHANNELER_RUTH                     (KANTO_TRAINERS_START + 348)
+#define TRAINER_CHANNELER_KARINA                   (KANTO_TRAINERS_START + 349)
+#define TRAINER_CHANNELER_JANAE                    (KANTO_TRAINERS_START + 350)
+#define TRAINER_CHANNELER_ANGELICA                 (KANTO_TRAINERS_START + 351)
+#define TRAINER_CHANNELER_EMILIA                   (KANTO_TRAINERS_START + 352)
+#define TRAINER_CHANNELER_JENNIFER                 (KANTO_TRAINERS_START + 353)
+#define TRAINER_CHANNELER_AMANDA                   (KANTO_TRAINERS_START + 354)
+#define TRAINER_CHANNELER_STACY                    (KANTO_TRAINERS_START + 355)
+#define TRAINER_CHANNELER_TASHA                    (KANTO_TRAINERS_START + 356)
+#define TRAINER_HIKER_JEREMY                       (KANTO_TRAINERS_START + 357)
+#define TRAINER_PICNICKER_ALMA                     (KANTO_TRAINERS_START + 358)
+#define TRAINER_PICNICKER_SUSIE                    (KANTO_TRAINERS_START + 359)
+#define TRAINER_PICNICKER_VALERIE                  (KANTO_TRAINERS_START + 360)
+#define TRAINER_PICNICKER_GWEN                     (KANTO_TRAINERS_START + 361)
+#define TRAINER_BIKER_VIRGIL                       (KANTO_TRAINERS_START + 362)
+#define TRAINER_CAMPER_FLINT                       (KANTO_TRAINERS_START + 363)
+#define TRAINER_PICNICKER_MISSY                    (KANTO_TRAINERS_START + 364)
+#define TRAINER_PICNICKER_IRENE                    (KANTO_TRAINERS_START + 365)
+#define TRAINER_PICNICKER_DANA                     (KANTO_TRAINERS_START + 366)
+#define TRAINER_PICNICKER_ARIANA                   (KANTO_TRAINERS_START + 367)
+#define TRAINER_PICNICKER_LEAH                     (KANTO_TRAINERS_START + 368)
+#define TRAINER_CAMPER_JUSTIN                      (KANTO_TRAINERS_START + 369)
+#define TRAINER_PICNICKER_YAZMIN                   (KANTO_TRAINERS_START + 370)
+#define TRAINER_PICNICKER_KINDRA                   (KANTO_TRAINERS_START + 371)
+#define TRAINER_PICNICKER_BECKY                    (KANTO_TRAINERS_START + 372)
+#define TRAINER_PICNICKER_CELIA                    (KANTO_TRAINERS_START + 373)
+#define TRAINER_GENTLEMAN_BROOKS                   (KANTO_TRAINERS_START + 374)
+#define TRAINER_GENTLEMAN_LAMAR                    (KANTO_TRAINERS_START + 375)
+#define TRAINER_TWINS_ELI_ANNE                     (KANTO_TRAINERS_START + 376)
+#define TRAINER_COOL_COUPLE_RAY_TYRA               (KANTO_TRAINERS_START + 377)
+#define TRAINER_YOUNG_COUPLE_GIA_JES               (KANTO_TRAINERS_START + 378)
+#define TRAINER_TWINS_KIRI_JAN                     (KANTO_TRAINERS_START + 379)
+#define TRAINER_CRUSH_KIN_RON_MYA                  (KANTO_TRAINERS_START + 380)
+#define TRAINER_YOUNG_COUPLE_LEA_JED               (KANTO_TRAINERS_START + 381)
+#define TRAINER_SIS_AND_BRO_LIA_LUC                (KANTO_TRAINERS_START + 382)
+#define TRAINER_SIS_AND_BRO_LIL_IAN                (KANTO_TRAINERS_START + 383)
+#define TRAINER_YOUNGSTER_BEN_3                    (KANTO_TRAINERS_START + 384)
+#define TRAINER_YOUNGSTER_BEN_4                    (KANTO_TRAINERS_START + 385)
+#define TRAINER_YOUNGSTER_CHAD_2                   (KANTO_TRAINERS_START + 386)
+#define TRAINER_LASS_RELI_2                        (KANTO_TRAINERS_START + 387)
+#define TRAINER_LASS_RELI_3                        (KANTO_TRAINERS_START + 388)
+#define TRAINER_YOUNGSTER_TIMMY_2                  (KANTO_TRAINERS_START + 389)
+#define TRAINER_YOUNGSTER_TIMMY_3                  (KANTO_TRAINERS_START + 390)
+#define TRAINER_YOUNGSTER_TIMMY_4                  (KANTO_TRAINERS_START + 391)
+#define TRAINER_YOUNGSTER_CHAD_3                   (KANTO_TRAINERS_START + 392)
+#define TRAINER_LASS_JANICE_2                      (KANTO_TRAINERS_START + 393)
+#define TRAINER_LASS_JANICE_3                      (KANTO_TRAINERS_START + 394)
+#define TRAINER_YOUNGSTER_CHAD_4                   (KANTO_TRAINERS_START + 395)
+#define TRAINER_HIKER_FRANKLIN_2                   (KANTO_TRAINERS_START + 396)
+#define TRAINER_PKMN_PROF_PROF_OAK                 (KANTO_TRAINERS_START + 397)
+#define TRAINER_TEAM_ROCKET_GRUNT_42               (KANTO_TRAINERS_START + 398)
+#define TRAINER_PSYCHIC_JACLYN                     (KANTO_TRAINERS_START + 399)
+#define TRAINER_CRUSH_GIRL_SHARON                  (KANTO_TRAINERS_START + 400)
+#define TRAINER_TUBER_AMIRA                        (KANTO_TRAINERS_START + 401)
+#define TRAINER_PKMN_BREEDER_ALIZE                 (KANTO_TRAINERS_START + 402)
+#define TRAINER_PKMN_RANGER_NICOLAS                (KANTO_TRAINERS_START + 403)
+#define TRAINER_PKMN_RANGER_MADELINE               (KANTO_TRAINERS_START + 404)
+#define TRAINER_AROMA_LADY_NIKKI                   (KANTO_TRAINERS_START + 405)
+#define TRAINER_RUIN_MANIAC_STANLY                 (KANTO_TRAINERS_START + 406)
+#define TRAINER_LADY_JACKI                         (KANTO_TRAINERS_START + 407)
+#define TRAINER_PAINTER_DAISY                      (KANTO_TRAINERS_START + 408)
+#define TRAINER_BIKER_GOON                         (KANTO_TRAINERS_START + 409)
+#define TRAINER_BIKER_GOON_2                       (KANTO_TRAINERS_START + 410)
+#define TRAINER_BIKER_GOON_3                       (KANTO_TRAINERS_START + 411)
+#define TRAINER_BUG_CATCHER_ANTHONY                (KANTO_TRAINERS_START + 412)
+#define TRAINER_BUG_CATCHER_CHARLIE                (KANTO_TRAINERS_START + 413)
+#define TRAINER_TWINS_ELI_ANNE_2                   (KANTO_TRAINERS_START + 414)
+#define TRAINER_YOUNGSTER_JOHNSON                  (KANTO_TRAINERS_START + 415)
+#define TRAINER_BIKER_RICARDO                      (KANTO_TRAINERS_START + 416)
+#define TRAINER_BIKER_JAREN                        (KANTO_TRAINERS_START + 417)
+#define TRAINER_TEAM_ROCKET_GRUNT_43               (KANTO_TRAINERS_START + 418)
+#define TRAINER_TEAM_ROCKET_GRUNT_44               (KANTO_TRAINERS_START + 419)
+#define TRAINER_TEAM_ROCKET_GRUNT_45               (KANTO_TRAINERS_START + 420)
+#define TRAINER_TEAM_ROCKET_GRUNT_46               (KANTO_TRAINERS_START + 421)
+#define TRAINER_TEAM_ROCKET_GRUNT_47               (KANTO_TRAINERS_START + 422)
+#define TRAINER_TEAM_ROCKET_GRUNT_48               (KANTO_TRAINERS_START + 423)
+#define TRAINER_TEAM_ROCKET_ADMIN                  (KANTO_TRAINERS_START + 424)
+#define TRAINER_TEAM_ROCKET_ADMIN_2                (KANTO_TRAINERS_START + 425)
+#define TRAINER_SCIENTIST_GIDEON                   (KANTO_TRAINERS_START + 426)
+#define TRAINER_SWIMMER_FEMALE_AMARA               (KANTO_TRAINERS_START + 427)
+#define TRAINER_SWIMMER_FEMALE_MARIA               (KANTO_TRAINERS_START + 428)
+#define TRAINER_SWIMMER_FEMALE_ABIGAIL             (KANTO_TRAINERS_START + 429)
+#define TRAINER_SWIMMER_MALE_FINN                  (KANTO_TRAINERS_START + 430)
+#define TRAINER_SWIMMER_MALE_GARRETT               (KANTO_TRAINERS_START + 431)
+#define TRAINER_FISHERMAN_TOMMY                    (KANTO_TRAINERS_START + 432)
+#define TRAINER_CRUSH_GIRL_TANYA                   (KANTO_TRAINERS_START + 433)
+#define TRAINER_BLACK_BELT_SHEA                    (KANTO_TRAINERS_START + 434)
+#define TRAINER_BLACK_BELT_HUGH                    (KANTO_TRAINERS_START + 435)
+#define TRAINER_CAMPER_BRYCE                       (KANTO_TRAINERS_START + 436)
+#define TRAINER_PICNICKER_CLAIRE                   (KANTO_TRAINERS_START + 437)
+#define TRAINER_CRUSH_KIN_MIK_KIA                  (KANTO_TRAINERS_START + 438)
+#define TRAINER_AROMA_LADY_VIOLET                  (KANTO_TRAINERS_START + 439)
+#define TRAINER_TUBER_ALEXIS                       (KANTO_TRAINERS_START + 440)
+#define TRAINER_TWINS_JOY_MEG                      (KANTO_TRAINERS_START + 441)
+#define TRAINER_SWIMMER_FEMALE_TISHA               (KANTO_TRAINERS_START + 442)
+#define TRAINER_PAINTER_CELINA                     (KANTO_TRAINERS_START + 443)
+#define TRAINER_PAINTER_RAYNA                      (KANTO_TRAINERS_START + 444)
+#define TRAINER_LADY_GILLIAN                       (KANTO_TRAINERS_START + 445)
+#define TRAINER_YOUNGSTER_DESTIN                   (KANTO_TRAINERS_START + 446)
+#define TRAINER_SWIMMER_MALE_TOBY                  (KANTO_TRAINERS_START + 447)
+#define TRAINER_TEAM_ROCKET_GRUNT_49               (KANTO_TRAINERS_START + 448)
+#define TRAINER_TEAM_ROCKET_GRUNT_50               (KANTO_TRAINERS_START + 449)
+#define TRAINER_TEAM_ROCKET_GRUNT_51               (KANTO_TRAINERS_START + 450)
+#define TRAINER_BIRD_KEEPER_MILO                   (KANTO_TRAINERS_START + 451)
+#define TRAINER_BIRD_KEEPER_CHAZ                   (KANTO_TRAINERS_START + 452)
+#define TRAINER_BIRD_KEEPER_HAROLD                 (KANTO_TRAINERS_START + 453)
+#define TRAINER_FISHERMAN_TYLOR                    (KANTO_TRAINERS_START + 454)
+#define TRAINER_SWIMMER_MALE_MYMO                  (KANTO_TRAINERS_START + 455)
+#define TRAINER_SWIMMER_FEMALE_NICOLE              (KANTO_TRAINERS_START + 456)
+#define TRAINER_SIS_AND_BRO_AVA_GEB                (KANTO_TRAINERS_START + 457)
+#define TRAINER_AROMA_LADY_ROSE                    (KANTO_TRAINERS_START + 458)
+#define TRAINER_SWIMMER_MALE_SAMIR                 (KANTO_TRAINERS_START + 459)
+#define TRAINER_SWIMMER_FEMALE_DENISE              (KANTO_TRAINERS_START + 460)
+#define TRAINER_TWINS_MIU_MIA                      (KANTO_TRAINERS_START + 461)
+#define TRAINER_HIKER_EARL                         (KANTO_TRAINERS_START + 462)
+#define TRAINER_RUIN_MANIAC_FOSTER                 (KANTO_TRAINERS_START + 463)
+#define TRAINER_RUIN_MANIAC_LARRY                  (KANTO_TRAINERS_START + 464)
+#define TRAINER_HIKER_DARYL                        (KANTO_TRAINERS_START + 465)
+#define TRAINER_POKEMANIAC_HECTOR                  (KANTO_TRAINERS_START + 466)
+#define TRAINER_PSYCHIC_DARIO                      (KANTO_TRAINERS_START + 467)
+#define TRAINER_PSYCHIC_RODETTE                    (KANTO_TRAINERS_START + 468)
+#define TRAINER_AROMA_LADY_MIAH                    (KANTO_TRAINERS_START + 469)
+#define TRAINER_YOUNG_COUPLE_EVE_JON               (KANTO_TRAINERS_START + 470)
+#define TRAINER_JUGGLER_MASON                      (KANTO_TRAINERS_START + 471)
+#define TRAINER_CRUSH_GIRL_CYNDY                   (KANTO_TRAINERS_START + 472)
+#define TRAINER_CRUSH_GIRL_JOCELYN                 (KANTO_TRAINERS_START + 473)
+#define TRAINER_TAMER_EVAN                         (KANTO_TRAINERS_START + 474)
+#define TRAINER_POKEMANIAC_MARK_2                  (KANTO_TRAINERS_START + 475)
+#define TRAINER_PKMN_RANGER_LOGAN                  (KANTO_TRAINERS_START + 476)
+#define TRAINER_PKMN_RANGER_JACKSON                (KANTO_TRAINERS_START + 477)
+#define TRAINER_PKMN_RANGER_BETH                   (KANTO_TRAINERS_START + 478)
+#define TRAINER_PKMN_RANGER_KATELYN                (KANTO_TRAINERS_START + 479)
+#define TRAINER_COOLTRAINER_LEROY                  (KANTO_TRAINERS_START + 480)
+#define TRAINER_COOLTRAINER_MICHELLE               (KANTO_TRAINERS_START + 481)
+#define TRAINER_COOL_COUPLE_LEX_NYA                (KANTO_TRAINERS_START + 482)
+#define TRAINER_RUIN_MANIAC_BRANDON                (KANTO_TRAINERS_START + 483)
+#define TRAINER_RUIN_MANIAC_BENJAMIN               (KANTO_TRAINERS_START + 484)
+#define TRAINER_PAINTER_EDNA                       (KANTO_TRAINERS_START + 485)
+#define TRAINER_GENTLEMAN_CLIFFORD                 (KANTO_TRAINERS_START + 486)
+#define TRAINER_LADY_SELPHY                        (KANTO_TRAINERS_START + 487)
+#define TRAINER_RUIN_MANIAC_LAWSON                 (KANTO_TRAINERS_START + 488)
+#define TRAINER_PSYCHIC_LAURA                      (KANTO_TRAINERS_START + 489)
+#define TRAINER_PKMN_BREEDER_BETHANY               (KANTO_TRAINERS_START + 490)
+#define TRAINER_PKMN_BREEDER_ALLISON               (KANTO_TRAINERS_START + 491)
+#define TRAINER_BUG_CATCHER_GARRET                 (KANTO_TRAINERS_START + 492)
+#define TRAINER_BUG_CATCHER_JONAH                  (KANTO_TRAINERS_START + 493)
+#define TRAINER_BUG_CATCHER_VANCE                  (KANTO_TRAINERS_START + 494)
+#define TRAINER_YOUNGSTER_NASH                     (KANTO_TRAINERS_START + 495)
+#define TRAINER_YOUNGSTER_CORDELL                  (KANTO_TRAINERS_START + 496)
+#define TRAINER_LASS_DALIA                         (KANTO_TRAINERS_START + 497)
+#define TRAINER_LASS_JOANA                         (KANTO_TRAINERS_START + 498)
+#define TRAINER_CAMPER_RILEY                       (KANTO_TRAINERS_START + 499)
+#define TRAINER_PICNICKER_MARCY                    (KANTO_TRAINERS_START + 500)
+#define TRAINER_RUIN_MANIAC_LAYTON                 (KANTO_TRAINERS_START + 501)
+#define TRAINER_PICNICKER_KELSEY_2                 (KANTO_TRAINERS_START + 502)
+#define TRAINER_PICNICKER_KELSEY_3                 (KANTO_TRAINERS_START + 503)
+#define TRAINER_PICNICKER_KELSEY_4                 (KANTO_TRAINERS_START + 504)
+#define TRAINER_CAMPER_RICKY_2                     (KANTO_TRAINERS_START + 505)
+#define TRAINER_CAMPER_RICKY_3                     (KANTO_TRAINERS_START + 506)
+#define TRAINER_CAMPER_RICKY_4                     (KANTO_TRAINERS_START + 507)
+#define TRAINER_CAMPER_JEFF_2                      (KANTO_TRAINERS_START + 508)
+#define TRAINER_CAMPER_JEFF_3                      (KANTO_TRAINERS_START + 509)
+#define TRAINER_CAMPER_JEFF_4                      (KANTO_TRAINERS_START + 510)
+#define TRAINER_PICNICKER_ISABELLE_2               (KANTO_TRAINERS_START + 511)
+#define TRAINER_PICNICKER_ISABELLE_3               (KANTO_TRAINERS_START + 512)
+#define TRAINER_PICNICKER_ISABELLE_4               (KANTO_TRAINERS_START + 513)
+#define TRAINER_YOUNGSTER_YASU_2                   (KANTO_TRAINERS_START + 514)
+#define TRAINER_YOUNGSTER_YASU_3                   (KANTO_TRAINERS_START + 515)
+#define TRAINER_ENGINEER_BERNIE_2                  (KANTO_TRAINERS_START + 516)
+#define TRAINER_GAMER_DARIAN_2                     (KANTO_TRAINERS_START + 517)
+#define TRAINER_CAMPER_CHRIS_2                     (KANTO_TRAINERS_START + 518)
+#define TRAINER_CAMPER_CHRIS_3                     (KANTO_TRAINERS_START + 519)
+#define TRAINER_CAMPER_CHRIS_4                     (KANTO_TRAINERS_START + 520)
+#define TRAINER_PICNICKER_ALICIA_2                 (KANTO_TRAINERS_START + 521)
+#define TRAINER_PICNICKER_ALICIA_3                 (KANTO_TRAINERS_START + 522)
+#define TRAINER_PICNICKER_ALICIA_4                 (KANTO_TRAINERS_START + 523)
+#define TRAINER_HIKER_JEREMY_2                     (KANTO_TRAINERS_START + 524)
+#define TRAINER_POKEMANIAC_MARK_3                  (KANTO_TRAINERS_START + 525)
+#define TRAINER_POKEMANIAC_HERMAN_2                (KANTO_TRAINERS_START + 526)
+#define TRAINER_POKEMANIAC_HERMAN_3                (KANTO_TRAINERS_START + 527)
+#define TRAINER_HIKER_TRENT_2                      (KANTO_TRAINERS_START + 528)
+#define TRAINER_LASS_MEGAN_2                       (KANTO_TRAINERS_START + 529)
+#define TRAINER_LASS_MEGAN_3                       (KANTO_TRAINERS_START + 530)
+#define TRAINER_SUPER_NERD_GLENN_2                 (KANTO_TRAINERS_START + 531)
+#define TRAINER_GAMER_RICH_2                       (KANTO_TRAINERS_START + 532)
+#define TRAINER_BIKER_JAREN_2                      (KANTO_TRAINERS_START + 533)
+#define TRAINER_FISHERMAN_ELLIOT_2                 (KANTO_TRAINERS_START + 534)
+#define TRAINER_ROCKER_LUCA_2                      (KANTO_TRAINERS_START + 535)
+#define TRAINER_BEAUTY_SHEILA_2                    (KANTO_TRAINERS_START + 536)
+#define TRAINER_BIRD_KEEPER_ROBERT_2               (KANTO_TRAINERS_START + 537)
+#define TRAINER_BIRD_KEEPER_ROBERT_3               (KANTO_TRAINERS_START + 538)
+#define TRAINER_PICNICKER_SUSIE_2                  (KANTO_TRAINERS_START + 539)
+#define TRAINER_PICNICKER_SUSIE_3                  (KANTO_TRAINERS_START + 540)
+#define TRAINER_PICNICKER_SUSIE_4                  (KANTO_TRAINERS_START + 541)
+#define TRAINER_BIKER_LUKAS_2                      (KANTO_TRAINERS_START + 542)
+#define TRAINER_BIRD_KEEPER_BENNY_2                (KANTO_TRAINERS_START + 543)
+#define TRAINER_BIRD_KEEPER_BENNY_3                (KANTO_TRAINERS_START + 544)
+#define TRAINER_BIRD_KEEPER_MARLON_2               (KANTO_TRAINERS_START + 545)
+#define TRAINER_BIRD_KEEPER_MARLON_3               (KANTO_TRAINERS_START + 546)
+#define TRAINER_BEAUTY_GRACE_2                     (KANTO_TRAINERS_START + 547)
+#define TRAINER_BIRD_KEEPER_CHESTER_2              (KANTO_TRAINERS_START + 548)
+#define TRAINER_BIRD_KEEPER_CHESTER_3              (KANTO_TRAINERS_START + 549)
+#define TRAINER_PICNICKER_BECKY_2                  (KANTO_TRAINERS_START + 550)
+#define TRAINER_PICNICKER_BECKY_3                  (KANTO_TRAINERS_START + 551)
+#define TRAINER_PICNICKER_BECKY_4                  (KANTO_TRAINERS_START + 552)
+#define TRAINER_CRUSH_KIN_RON_MYA_2                (KANTO_TRAINERS_START + 553)
+#define TRAINER_CRUSH_KIN_RON_MYA_3                (KANTO_TRAINERS_START + 554)
+#define TRAINER_CRUSH_KIN_RON_MYA_4                (KANTO_TRAINERS_START + 555)
+#define TRAINER_BIKER_RUBEN_2                      (KANTO_TRAINERS_START + 556)
+#define TRAINER_CUE_BALL_CAMRON_2                  (KANTO_TRAINERS_START + 557)
+#define TRAINER_BIKER_JAXON_2                      (KANTO_TRAINERS_START + 558)
+#define TRAINER_CUE_BALL_ISAIAH_2                  (KANTO_TRAINERS_START + 559)
+#define TRAINER_CUE_BALL_COREY_2                   (KANTO_TRAINERS_START + 560)
+#define TRAINER_BIRD_KEEPER_JACOB_2                (KANTO_TRAINERS_START + 561)
+#define TRAINER_BIRD_KEEPER_JACOB_3                (KANTO_TRAINERS_START + 562)
+#define TRAINER_SWIMMER_FEMALE_ALICE_2             (KANTO_TRAINERS_START + 563)
+#define TRAINER_SWIMMER_MALE_DARRIN_2              (KANTO_TRAINERS_START + 564)
+#define TRAINER_PICNICKER_MISSY_2                  (KANTO_TRAINERS_START + 565)
+#define TRAINER_PICNICKER_MISSY_3                  (KANTO_TRAINERS_START + 566)
+#define TRAINER_FISHERMAN_WADE_2                   (KANTO_TRAINERS_START + 567)
+#define TRAINER_SWIMMER_MALE_JACK_2                (KANTO_TRAINERS_START + 568)
+#define TRAINER_SIS_AND_BRO_LIL_IAN_2              (KANTO_TRAINERS_START + 569)
+#define TRAINER_SIS_AND_BRO_LIL_IAN_3              (KANTO_TRAINERS_START + 570)
+#define TRAINER_SWIMMER_MALE_FINN_2                (KANTO_TRAINERS_START + 571)
+#define TRAINER_CRUSH_GIRL_SHARON_2                (KANTO_TRAINERS_START + 572)
+#define TRAINER_CRUSH_GIRL_SHARON_3                (KANTO_TRAINERS_START + 573)
+#define TRAINER_CRUSH_GIRL_TANYA_2                 (KANTO_TRAINERS_START + 574)
+#define TRAINER_CRUSH_GIRL_TANYA_3                 (KANTO_TRAINERS_START + 575)
+#define TRAINER_BLACK_BELT_SHEA_2                  (KANTO_TRAINERS_START + 576)
+#define TRAINER_BLACK_BELT_SHEA_3                  (KANTO_TRAINERS_START + 577)
+#define TRAINER_BLACK_BELT_HUGH_2                  (KANTO_TRAINERS_START + 578)
+#define TRAINER_BLACK_BELT_HUGH_3                  (KANTO_TRAINERS_START + 579)
+#define TRAINER_CRUSH_KIN_MIK_KIA_2                (KANTO_TRAINERS_START + 580)
+#define TRAINER_CRUSH_KIN_MIK_KIA_3                (KANTO_TRAINERS_START + 581)
+#define TRAINER_TUBER_AMIRA_2                      (KANTO_TRAINERS_START + 582)
+#define TRAINER_TWINS_JOY_MEG_2                    (KANTO_TRAINERS_START + 583)
+#define TRAINER_PAINTER_RAYNA_2                    (KANTO_TRAINERS_START + 584)
+#define TRAINER_YOUNGSTER_DESTIN_2                 (KANTO_TRAINERS_START + 585)
+#define TRAINER_PKMN_BREEDER_ALIZE_2               (KANTO_TRAINERS_START + 586)
+#define TRAINER_YOUNG_COUPLE_GIA_JES_2             (KANTO_TRAINERS_START + 587)
+#define TRAINER_YOUNG_COUPLE_GIA_JES_3             (KANTO_TRAINERS_START + 588)
+#define TRAINER_BIRD_KEEPER_MILO_2                 (KANTO_TRAINERS_START + 589)
+#define TRAINER_BIRD_KEEPER_CHAZ_2                 (KANTO_TRAINERS_START + 590)
+#define TRAINER_BIRD_KEEPER_HAROLD_2               (KANTO_TRAINERS_START + 591)
+#define TRAINER_SWIMMER_FEMALE_NICOLE_2            (KANTO_TRAINERS_START + 592)
+#define TRAINER_PSYCHIC_JACLYN_2                   (KANTO_TRAINERS_START + 593)
+#define TRAINER_SWIMMER_MALE_SAMIR_2               (KANTO_TRAINERS_START + 594)
+#define TRAINER_HIKER_EARL_2                       (KANTO_TRAINERS_START + 595)
+#define TRAINER_RUIN_MANIAC_LARRY_2                (KANTO_TRAINERS_START + 596)
+#define TRAINER_POKEMANIAC_HECTOR_2                (KANTO_TRAINERS_START + 597)
+#define TRAINER_PSYCHIC_DARIO_2                    (KANTO_TRAINERS_START + 598)
+#define TRAINER_PSYCHIC_RODETTE_2                  (KANTO_TRAINERS_START + 599)
+#define TRAINER_JUGGLER_MASON_2                    (KANTO_TRAINERS_START + 600)
+#define TRAINER_PKMN_RANGER_NICOLAS_2              (KANTO_TRAINERS_START + 601)
+#define TRAINER_PKMN_RANGER_MADELINE_2             (KANTO_TRAINERS_START + 602)
+#define TRAINER_CRUSH_GIRL_CYNDY_2                 (KANTO_TRAINERS_START + 603)
+#define TRAINER_TAMER_EVAN_2                       (KANTO_TRAINERS_START + 604)
+#define TRAINER_PKMN_RANGER_JACKSON_2              (KANTO_TRAINERS_START + 605)
+#define TRAINER_PKMN_RANGER_KATELYN_2              (KANTO_TRAINERS_START + 606)
+#define TRAINER_COOLTRAINER_LEROY_2                (KANTO_TRAINERS_START + 607)
+#define TRAINER_COOLTRAINER_MICHELLE_2             (KANTO_TRAINERS_START + 608)
+#define TRAINER_COOL_COUPLE_LEX_NYA_2              (KANTO_TRAINERS_START + 609)
+#define TRAINER_BUG_CATCHER_COLTON_2               (KANTO_TRAINERS_START + 610)
+#define TRAINER_BUG_CATCHER_COLTON_3               (KANTO_TRAINERS_START + 611)
+#define TRAINER_BUG_CATCHER_COLTON_4               (KANTO_TRAINERS_START + 612)
+#define TRAINER_SWIMMER_MALE_MATTHEW_2             (KANTO_TRAINERS_START + 613)
+#define TRAINER_SWIMMER_MALE_TONY_2                (KANTO_TRAINERS_START + 614)
+#define TRAINER_SWIMMER_FEMALE_MELISSA_2           (KANTO_TRAINERS_START + 615)
+#define TRAINER_ELITE_FOUR_LORELEI_2               (KANTO_TRAINERS_START + 616)
+#define TRAINER_ELITE_FOUR_BRUNO_2                 (KANTO_TRAINERS_START + 617)
+#define TRAINER_ELITE_FOUR_AGATHA_2                (KANTO_TRAINERS_START + 618)
+#define TRAINER_ELITE_FOUR_LANCE_2                 (KANTO_TRAINERS_START + 619)
+#define TRAINER_CHAMPION_REMATCH_SQUIRTLE          (KANTO_TRAINERS_START + 620)
+#define TRAINER_CHAMPION_REMATCH_BULBASAUR         (KANTO_TRAINERS_START + 621)
+#define TRAINER_CHAMPION_REMATCH_CHARMANDER        (KANTO_TRAINERS_START + 622)
+#define TRAINER_CUE_BALL_PAXTON                    (KANTO_TRAINERS_START + 623)
+
+// NOTE: Each Kanto trainer's defeat flag is KANTO_TRAINER_FLAGS_START + (id - KANTO_TRAINERS_START),
+//       so MAX_KANTO_TRAINERS_COUNT is bounded by the Kanto flag range (constants/flags.h).
+//       Offset 0 (the old TRAINER_NONE slot) is unused.
 
 #define TRAINERS_COUNT_FRLG                      624
-#define MAX_TRAINERS_COUNT_FRLG                  768
+#define MAX_KANTO_TRAINERS_COUNT                 768
 
 #endif  // GUARD_CONSTANTS_OPPONENTS_FRLG_H

@@ -215,6 +215,7 @@ u16 VarGetObjectEventGraphicsId(u8 id)
 STATIC_ASSERT(FLAGS_COUNT <= KANTO_FLAGS_START, KantoFlagsOverlapFlags);
 STATIC_ASSERT(KANTO_FLAGS_END < SPECIAL_FLAGS_START, KantoFlagsOverlapSpecialFlags);
 STATIC_ASSERT(KANTO_FLAGS_START % 8 == 0, KantoFlagsByteAligned);
+STATIC_ASSERT(MAX_KANTO_TRAINERS_COUNT <= KANTO_FLAGS_END + 1 - KANTO_TRAINER_FLAGS_START, KantoTrainerFlagsOverflow);
 
 u8 *GetFlagPointer(u16 id)
 {
