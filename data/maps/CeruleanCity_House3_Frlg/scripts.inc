@@ -8,7 +8,7 @@ CeruleanCity_House3_EventScript_OldWoman::
 CeruleanCity_House3_EventScript_Dontae::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_JYNX
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM6
 	call EventScript_GetInGameTradeSpeciesInfo
 	callnative CheckChallengeTradeBlocked
 	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused

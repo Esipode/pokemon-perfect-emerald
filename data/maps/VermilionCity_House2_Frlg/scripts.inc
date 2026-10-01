@@ -4,7 +4,7 @@ VermilionCity_House2_Frlg_MapScripts::
 VermilionCity_House2_EventScript_Elyssa::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_FARFETCHD
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM8
 	call EventScript_GetInGameTradeSpeciesInfo
 	callnative CheckChallengeTradeBlocked
 	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused

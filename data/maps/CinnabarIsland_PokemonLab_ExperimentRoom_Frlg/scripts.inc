@@ -8,7 +8,7 @@ CinnabarIsland_PokemonLab_ExperimentRoom_Frlg_MapScripts::
 CinnabarIsland_PokemonLab_ExperimentRoom_EventScript_Garett::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_SEEL
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM13
 	call EventScript_GetInGameTradeSpeciesInfo
 	callnative CheckChallengeTradeBlocked
 	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused

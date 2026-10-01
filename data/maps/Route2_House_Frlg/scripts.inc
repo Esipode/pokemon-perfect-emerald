@@ -8,7 +8,7 @@ Route2_House_EventScript_Scientist::
 Route2_House_EventScript_Reyley::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_MR_MIME
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM5
 	call EventScript_GetInGameTradeSpeciesInfo
 	callnative CheckChallengeTradeBlocked
 	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused

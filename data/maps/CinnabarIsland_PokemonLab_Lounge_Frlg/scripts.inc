@@ -8,7 +8,7 @@ CinnabarIsland_PokemonLab_Lounge_EventScript_Scientist::
 CinnabarIsland_PokemonLab_Lounge_EventScript_Clifton::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_ELECTRODE
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM11
 	call EventScript_GetInGameTradeSpeciesInfo
 	callnative CheckChallengeTradeBlocked
 	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused
@@ -44,7 +44,7 @@ CinnabarIsland_PokemonLab_Lounge_EventScript_CliftonAlreadyTraded::
 CinnabarIsland_PokemonLab_Lounge_EventScript_Norma::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_TANGELA
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM12
 	copyvar VAR_0x8004, VAR_0x8008
 	specialvar VAR_RESULT, GetInGameTradeSpeciesInfo
 	copyvar VAR_0x8009, VAR_RESULT

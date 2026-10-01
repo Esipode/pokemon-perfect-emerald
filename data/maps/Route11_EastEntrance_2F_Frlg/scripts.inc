@@ -20,7 +20,7 @@ Route11_EastEntrance_2F_EventScript_RightBinoculars::
 Route11_EastEntrance_2F_EventScript_Turner::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_NIDORINOA
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM9
 	call EventScript_GetInGameTradeSpeciesInfo
 	callnative CheckChallengeTradeBlocked
 	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused

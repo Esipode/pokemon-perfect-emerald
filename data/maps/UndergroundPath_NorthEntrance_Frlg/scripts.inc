@@ -4,7 +4,7 @@ UndergroundPath_NorthEntrance_Frlg_MapScripts::
 UndergroundPath_NorthEntrance_EventScript_Saige::
 	lock
 	faceplayer
-	setvar VAR_0x8008, INGAME_TRADE_NIDORAN
+	setvar VAR_0x8008, INGAME_TRADE_RANDOM7
 	call EventScript_GetInGameTradeSpeciesInfo
 	callnative CheckChallengeTradeBlocked
 	goto_if_eq VAR_RESULT, 1, Common_EventScript_ChallengeTradeRefused
