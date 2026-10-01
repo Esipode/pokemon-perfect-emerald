@@ -50,7 +50,6 @@ FiveIsland_RocketWarehouse_EventScript_Gideon::
 	end
 
 FiveIsland_RocketWarehouse_EventScript_MentionGiovannisKid::
-	famechecker FAMECHECKER_GIOVANNI, 5
 	msgbox FiveIsland_RocketWarehouse_Text_GiovannisKidHasRedHair, MSGBOX_AUTOCLOSE
 	end
 

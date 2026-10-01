@@ -40,8 +40,6 @@ gBattlescriptsForSafariActions::
 	.4byte BattleScript_ActionGetNear
 	.4byte BattleScript_ActionThrowPokeblock
 	.4byte BattleScript_ActionWallyThrow
-	.4byte BattleScript_ActionThrowRock
-	.4byte BattleScript_ActionThrowBait
 
 BattleScript_ItemEnd:
 	end
@@ -347,9 +345,6 @@ BattleScript_RunByUsingItem::
 BattleScript_ActionWatchesCarefully:
 	printfromtable gSafariReactionStringIds
 	waitmessage B_WAIT_TIME_LONG
-#if IS_FRLG
-	playanimation BS_OPPONENT1, B_ANIM_SAFARI_REACTION
-#endif
 	end
 
 BattleScript_ActionGetNear:
@@ -429,15 +424,3 @@ BattleScript_GhostBallDodge::
 	printstring STRINGID_ITDODGEDBALL
 	waitmessage B_WAIT_TIME_LONG
 	finishaction
-
-BattleScript_ActionThrowRock::
-	printstring STRINGID_THREWROCK
-	waitmessage B_WAIT_TIME_LONG
-	playanimation BS_ATTACKER, B_ANIM_ROCK_THROW
-	end
-
-BattleScript_ActionThrowBait::
-	printstring STRINGID_THREWBAIT
-	waitmessage B_WAIT_TIME_LONG
-	playanimation BS_ATTACKER, B_ANIM_POKEBLOCK_THROW
-	end

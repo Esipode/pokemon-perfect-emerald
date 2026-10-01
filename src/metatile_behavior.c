@@ -1583,11 +1583,3 @@ bool8 MetatileBehavior_IsBurglary(u8 metatileBehavior)
         return FALSE;
 }
 
-bool8 MetatileBehavior_IsTrainerTowerMonitor(u8 metatileBehavior)
-{
-    if (metatileBehavior == MB_TRAINER_TOWER_MONITOR)
-        return TRUE;
-    else
-        return FALSE;
-}
-

@@ -28,7 +28,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "CeladonCity_Condominiums_2F_EventScript_PokemonJournalErika",
-      "flag": "FLAG_HIDE_FAME_CHECKER_ERIKA_JOURNALS"
+      "flag": "0"
     },
     {
       "type": "object",
@@ -42,7 +42,7 @@
       "trainer_type": "TRAINER_TYPE_NONE",
       "trainer_sight_or_berry_tree_id": "0",
       "script": "CeladonCity_Condominiums_2F_EventScript_PokemonJournalErika",
-      "flag": "FLAG_HIDE_FAME_CHECKER_ERIKA_JOURNALS"
+      "flag": "0"
     }
   ],
   "warp_events": [

@@ -396,7 +396,6 @@ gSpecials::
 	def_special StartPlayerDescendMirageTower, waitstate=1
 	def_special BufferTMHMMoveName
 	def_special IsWirelessAdapterConnected
-	def_special WonderNews_GetRewardInfo
 	def_special IsBadEggInParty
 	def_special ValidateSavedWonderCard
 	def_special HasAtLeastOneBerry
@@ -520,11 +519,8 @@ gSpecials::
 	def_special GetFrlgPokedexCount
 	def_special HasAllMons
 	def_special GetProfOaksRatingMessage
-	def_special UpdatePickStateFromSpecialVar8005
-	def_special SetFlavorTextFlagFromSpecialVars
 	def_special DisableMsgBoxWalkaway
 	def_special SetWalkingIntoSignVars
-	def_special StartOldManTutorialBattle
 	def_special DaisyMassageServices
 	def_special GetLeadMonFriendship
 	def_special OpenMuseumFossilPic
@@ -534,18 +530,12 @@ gSpecials::
 	def_special SetSeenMon
 	def_special AnimateTeleporterHousing
 	def_special AnimateTeleporterCable
-	def_special IsThereMonInRoute5Daycare
-	def_special PutMonInRoute5Daycare
-	def_special GetNumLevelsGainedForRoute5DaycareMon
-	def_special TakePokemonFromRoute5Daycare
-	def_special GetCostToWithdrawRoute5DaycareMon
 	def_special DrawSeagallopDestinationMenu
 	def_special GetSelectedSeagallopDestination
 	def_special GetSeagallopNumber
 	def_special DoSeagallopFerryScene
 	def_special IsPlayerLeftOfVermilionSailor
 	def_special SetVermilionTrashCans
-	def_special DoSSAnneDepartureCutscene
 	def_special StartMarowakBattle
 	def_special DoesPlayerPartyContainSpecies
 	def_special GetMagikarpSizeRecordInfo
@@ -570,7 +560,6 @@ gSpecials::
 	def_special Script_TryGainNewFanFromCounterFrlg
 	def_special IsNationalPokedexEnabled
 	def_special SetPostgameFlags
-	def_special IsPlayerNotInTrainerTowerLobby
 	def_special BrailleCursorToggle
 	def_special EnterHallOfFame
 	def_special CB2_StartCreditsSequence
@@ -581,11 +570,8 @@ gSpecials::
 	def_special SampleResortGorgeousMonAndReward
 	def_special PlayerPartyContainsSpeciesWithPlayerID
 	def_special ShakeScreen
-	def_special CallTrainerTowerFunc
 	def_special ForcePlayerToStartSurfing
 	def_special SeafoamIslandsB4F_CurrentDumpsPlayerOnLand
-	def_special UpdateTrainerCardPhotoIcons
-	def_special StickerManGetBragFlags
 	def_special CheckAddCoins
 	def_special PushChampionChallengeMenuEntries
 	def_special SelectChampionChallengeTrainerObjEvent
@@ -630,3 +616,4 @@ gSpecials::
 	def_special InfCave_AdvanceMilestoneItem
 	def_special InfCave_ClearRunReport
 	def_special InfCaveLobby_OpenMart
+	def_special IsPlayerInKanto

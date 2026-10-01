@@ -3055,13 +3055,6 @@
 	msgreceiveditem \msg, \item, \amount, \fanfare
 	.endm
 
-	@ Depends on the provided function. With the default argument, unlocks the specified entry in the Fame Checker.
-	.macro famechecker person:req, index:req, function=SetFlavorTextFlagFromSpecialVars
-	setvar VAR_0x8004, \person
-	setvar VAR_0x8005, \index
-	special \function
-	.endm
-
 	@ Sets the 'defeated' flag for all trainers in the specified gym.
 	.macro set_gym_trainers_frlg gym:req
 	setvar VAR_0x8008, \gym

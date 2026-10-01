@@ -475,31 +475,6 @@ void BtlController_HandleSwitchInTryShinyAnim(enum BattlerId battler);
 void BtlController_HandleSwitchInSoundAndEnd(enum BattlerId battler);
 void BtlController_HandleSwitchInShowSubstitute(enum BattlerId battler);
 
-// oak and old man controller
-void SetControllerToOakOrOldMan(enum BattlerId battler);
-void OakOldManBufferExecCompleted(enum BattlerId battler);
-
-// These flags are set to signal that the indicated message
-// was already emitted
-
-// Inflicting damage is key
-#define FIRST_BATTLE_MSG_FLAG_INFLICT_DMG    0x1
-// Lowering stats is advantageous
-#define FIRST_BATTLE_MSG_FLAG_STAT_CHG       0x2
-// Keep an eye on your HP
-#define FIRST_BATTLE_MSG_FLAG_HP_RESTORE     0x4
-//
-#define FIRST_BATTLE_MSG_FLAG_PARTY_MENU     0x8
-
-bool8 BtlCtrl_OakOldMan_TestState2Flag(u8 mask);
-void BtlCtrl_OakOldMan_SetState2Flag(u8 mask);
-void PrintOakText_InflictingDamageIsKey(enum BattlerId battler);
-void PrintOakText_HowDisappointing(enum BattlerId battler);
-void PrintOakText_OakNoRunningFromATrainer(enum BattlerId battler);
-void OakOldManHandleInputChooseMove(enum BattlerId battler);
-void BtlCtrl_DrawVoiceoverMessageFrame(void);
-void BtlCtrl_RemoveVoiceoverMessageFrame(void);
-
 bool32 ShouldBattleRestrictionsApply(enum BattlerId battler);
 void FreeShinyStars(void);
 enum BattleTrainer GetBattlerTrainer(enum BattlerId battler);
@@ -508,31 +483,5 @@ bool32 BattleSideHasTwoTrainers(enum BattleSide side);
 bool32 BattlersShareParty(enum BattlerId battler1, enum BattlerId battler2);
 bool32 TrainerHasParty(enum BattleTrainer trainer);
 void SetFinalChosenTarget(enum BattlerId battler, bool32 checkPartner);
-
-
-// oak and old man controller
-void SetControllerToOakOrOldMan(enum BattlerId battler);
-void OakOldManBufferExecCompleted(enum BattlerId battler);
-
-// These flags are set to signal that the indicated message
-// was already emitted
-
-// Inflicting damage is key
-#define FIRST_BATTLE_MSG_FLAG_INFLICT_DMG    0x1
-// Lowering stats is advantageous
-#define FIRST_BATTLE_MSG_FLAG_STAT_CHG       0x2
-// Keep an eye on your HP
-#define FIRST_BATTLE_MSG_FLAG_HP_RESTORE     0x4
-//
-#define FIRST_BATTLE_MSG_FLAG_PARTY_MENU     0x8
-
-bool8 BtlCtrl_OakOldMan_TestState2Flag(u8 mask);
-void BtlCtrl_OakOldMan_SetState2Flag(u8 mask);
-void PrintOakText_InflictingDamageIsKey(enum BattlerId battler);
-void PrintOakText_HowDisappointing(enum BattlerId battler);
-void PrintOakText_OakNoRunningFromATrainer(enum BattlerId battler);
-void OakOldManHandleInputChooseMove(enum BattlerId battler);
-void BtlCtrl_DrawVoiceoverMessageFrame(void);
-void BtlCtrl_RemoveVoiceoverMessageFrame(void);
 
 #endif // GUARD_BATTLE_CONTROLLERS_H

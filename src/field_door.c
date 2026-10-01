@@ -179,8 +179,6 @@ static const u8 sDoorAnimTiles_FourIslandDayCare[] = INCGFX_U8("graphics/door_an
 static const u8 sDoorAnimTiles_RocketWarehouse[] = INCGFX_U8("graphics/door_anims/rocket_warehouse.png", ".4bpp");
 static const u8 sDoorAnimTiles_Sevii67[] = INCGFX_U8("graphics/door_anims/sevii_67.png", ".4bpp");
 static const u8 sDoorAnimTiles_Teleporter[] = INCGFX_U8("graphics/door_anims/teleporter.png", ".4bpp");
-static const u8 sDoorAnimTiles_TrainerTowerLobbyElevator[] = INCGFX_U8("graphics/door_anims/trainer_tower_lobby_elevator.png", ".4bpp");
-static const u8 sDoorAnimTiles_TrainerTowerRoofElevator[] = INCGFX_U8("graphics/door_anims/trainer_tower_roof_elevator.png", ".4bpp");
 
 static const struct DoorAnimFrame sDoorAnimFrames_Open1x1[] = {
     {4, -1},
@@ -338,8 +336,6 @@ static const u8 sDoorAnimPalettes_FourIslandDayCare[] = {3, 3, 3, 3, 3, 3, 3, 3}
 static const u8 sDoorAnimPalettes_RocketWarehouse[] = {10, 10, 10, 10, 10, 10, 10, 10};
 static const u8 sDoorAnimPalettes_Sevii67[] = {5, 5, 5, 5, 5, 5, 5, 5};
 static const u8 sDoorAnimPalettes_Teleporter[] = {8, 8, 8, 8, 8, 8, 8, 8};
-static const u8 sDoorAnimPalettes_TrainerTowerLobbyElevator[] = {8, 8, 2, 2, 2, 2, 2, 2};
-static const u8 sDoorAnimPalettes_TrainerTowerRoofElevator[] = {11, 11, 2, 2, 2, 2, 2, 2};
 
 static const struct DoorGraphics sDoorAnimGraphicsTable[] =
 {
@@ -997,22 +993,6 @@ static const struct DoorGraphics sDoorAnimGraphicsTable[] =
         .size = DOOR_SIZE_1x2,
         .tiles = sDoorAnimTiles_Teleporter,
         .palettes = sDoorAnimPalettes_Teleporter
-    },
-    {
-        .metatileNum = METATILE_TrainerTower_LobbyElevatorDoor,
-        .tileset = &gTileset_TrainerTower,
-        .sound = DOOR_SOUND_SLIDING,
-        .size = DOOR_SIZE_1x2,
-        .tiles = sDoorAnimTiles_TrainerTowerLobbyElevator,
-        .palettes = sDoorAnimPalettes_TrainerTowerLobbyElevator
-    },
-    {
-        .metatileNum = METATILE_TrainerTower_RoofElevatorDoor,
-        .tileset = &gTileset_TrainerTower,
-        .sound = DOOR_SOUND_SLIDING,
-        .size = DOOR_SIZE_1x2,
-        .tiles = sDoorAnimTiles_TrainerTowerRoofElevator,
-        .palettes = sDoorAnimPalettes_TrainerTowerRoofElevator
     },
     {},
 };

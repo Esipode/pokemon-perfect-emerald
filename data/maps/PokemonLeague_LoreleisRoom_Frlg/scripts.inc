@@ -50,10 +50,7 @@ PokemonLeague_LoreleisRoom_EventScript_EnterRoom::
 PokemonLeague_LoreleisRoom_EventScript_Lorelei::
 	lock
 	faceplayer
-	famechecker FAMECHECKER_LORELEI, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
 	goto_if_set FLAG_DEFEATED_LORELEI, PokemonLeague_LoreleisRoom_EventScript_PostBattle
-	famechecker FAMECHECKER_LORELEI, 0
-	famechecker FAMECHECKER_LORELEI, 1
 	call_if_unset FLAG_KANTO_CHAMPION, PokemonLeague_LoreleisRoom_EventScript_Intro
 	call_if_set FLAG_KANTO_CHAMPION, PokemonLeague_LoreleisRoom_EventScript_RematchIntro
 	setflag FLAG_TEMP_3

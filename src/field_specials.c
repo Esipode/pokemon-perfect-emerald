@@ -44,6 +44,7 @@
 #include "random.h"
 #include "rayquaza_scene.h"
 #include "region_map.h"
+#include "regions.h"
 #include "rtc.h"
 #include "script.h"
 #include "script_menu.h"
@@ -1109,7 +1110,7 @@ static void PCTurnOnEffect_SetMetatile(s16 isScreenOn, s8 dx, s8 dy)
     {
         // Screen is on, set it off
         if (gSpecialVar_0x8004 == PC_LOCATION_OTHER)
-            metatileId = IS_FRLG ? METATILE_BuildingFrlg_PCOff : METATILE_Building_PC_Off;
+            metatileId = IsKantoArtLayout(gMapHeader.mapLayout) ? METATILE_BuildingFrlg_PCOff : METATILE_Building_PC_Off;
         else if (gSpecialVar_0x8004 == PC_LOCATION_BRENDANS_HOUSE)
             metatileId = METATILE_BrendansMaysHouse_BrendanPC_Off;
         else if (gSpecialVar_0x8004 == PC_LOCATION_MAYS_HOUSE)
@@ -1121,7 +1122,7 @@ static void PCTurnOnEffect_SetMetatile(s16 isScreenOn, s8 dx, s8 dy)
     {
         // Screen is off, set it on
         if (gSpecialVar_0x8004 == PC_LOCATION_OTHER)
-            metatileId = IS_FRLG ? METATILE_BuildingFrlg_PCOn : METATILE_Building_PC_On;
+            metatileId = IsKantoArtLayout(gMapHeader.mapLayout) ? METATILE_BuildingFrlg_PCOn : METATILE_Building_PC_On;
         else if (gSpecialVar_0x8004 == PC_LOCATION_BRENDANS_HOUSE)
             metatileId = METATILE_BrendansMaysHouse_BrendanPC_On;
         else if (gSpecialVar_0x8004 == PC_LOCATION_MAYS_HOUSE)
@@ -1168,7 +1169,7 @@ static void PCTurnOffEffect(void)
     }
 
     if (gSpecialVar_0x8004 == PC_LOCATION_OTHER)
-        metatileId = IS_FRLG ? METATILE_BuildingFrlg_PCOff : METATILE_Building_PC_Off;
+        metatileId = IsKantoArtLayout(gMapHeader.mapLayout) ? METATILE_BuildingFrlg_PCOff : METATILE_Building_PC_Off;
     else if (gSpecialVar_0x8004 == PC_LOCATION_BRENDANS_HOUSE)
         metatileId = METATILE_BrendansMaysHouse_BrendanPC_Off;
     else if (gSpecialVar_0x8004 == PC_LOCATION_MAYS_HOUSE)
@@ -5263,26 +5264,6 @@ void GetElevatorFloor(void)
             break;
         }
     }
-    if (gSaveBlock1Ptr->dynamicWarp.mapGroup == MAP_GROUP(MAP_TRAINER_TOWER_1F))
-    {
-        switch (gSaveBlock1Ptr->dynamicWarp.mapNum)
-        {
-        case MAP_NUM(MAP_TRAINER_TOWER_1F):
-        case MAP_NUM(MAP_TRAINER_TOWER_2F):
-        case MAP_NUM(MAP_TRAINER_TOWER_3F):
-        case MAP_NUM(MAP_TRAINER_TOWER_4F):
-        case MAP_NUM(MAP_TRAINER_TOWER_5F):
-        case MAP_NUM(MAP_TRAINER_TOWER_6F):
-        case MAP_NUM(MAP_TRAINER_TOWER_7F):
-        case MAP_NUM(MAP_TRAINER_TOWER_8F):
-        case MAP_NUM(MAP_TRAINER_TOWER_ROOF):
-            floor = 15;
-            break;
-        case MAP_NUM(MAP_TRAINER_TOWER_LOBBY):
-            floor = 3;
-            break;
-        }
-    }
     VarSet(VAR_ELEVATOR_FLOOR, floor);
 }
 
@@ -5376,28 +5357,6 @@ u16 InitElevatorFloorSelectMenuPos(void)
         case MAP_NUM(MAP_CELADON_CITY_DEPARTMENT_STORE_1F):
             sElevatorScroll = 0;
             sElevatorCursorPos = 4;
-            break;
-        }
-    }
-    if (gSaveBlock1Ptr->dynamicWarp.mapGroup == MAP_GROUP(MAP_TRAINER_TOWER_1F))
-    {
-        switch (gSaveBlock1Ptr->dynamicWarp.mapNum)
-        {
-        case MAP_NUM(MAP_TRAINER_TOWER_1F):
-        case MAP_NUM(MAP_TRAINER_TOWER_2F):
-        case MAP_NUM(MAP_TRAINER_TOWER_3F):
-        case MAP_NUM(MAP_TRAINER_TOWER_4F):
-        case MAP_NUM(MAP_TRAINER_TOWER_5F):
-        case MAP_NUM(MAP_TRAINER_TOWER_6F):
-        case MAP_NUM(MAP_TRAINER_TOWER_7F):
-        case MAP_NUM(MAP_TRAINER_TOWER_8F):
-        case MAP_NUM(MAP_TRAINER_TOWER_ROOF):
-            sElevatorScroll = 0;
-            sElevatorCursorPos = 0;
-            break;
-        case MAP_NUM(MAP_TRAINER_TOWER_LOBBY):
-            sElevatorScroll = 0;
-            sElevatorCursorPos = 1;
             break;
         }
     }
@@ -5522,16 +5481,13 @@ void ForcePlayerOntoBike(void)
 {
     if (gPlayerAvatar.flags & PLAYER_AVATAR_FLAG_ON_FOOT)
         SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_BIKE);
-    Overworld_SetSavedMusic(IS_FRLG ? MUS_RG_CYCLING : MUS_CYCLING);
-    Overworld_ChangeMusicTo(IS_FRLG ? MUS_RG_CYCLING : MUS_CYCLING);
+    Overworld_SetSavedMusic(GetCyclingMusic());
+    Overworld_ChangeMusicTo(GetCyclingMusic());
 }
 
-bool8 IsPlayerNotInTrainerTowerLobby(void)
+bool8 IsPlayerInKanto(void)
 {
-    if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_TRAINER_TOWER_LOBBY) && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_TRAINER_TOWER_LOBBY))
-        return FALSE;
-    else
-        return TRUE;
+    return GetCurrentRegion() == REGION_KANTO;
 }
 
 void BrailleCursorToggle(void)
@@ -5840,49 +5796,6 @@ void CutMoveOpenDottedHoleDoor(void)
 void ForcePlayerToStartSurfing(void)
 {
     SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_SURFING);
-}
-
-void UpdateTrainerCardPhotoIcons(void)
-{
-    enum Species species[PARTY_SIZE];
-    u32 personality[PARTY_SIZE];
-    u8 i;
-    u8 partyCount;
-    for (i = 0; i < PARTY_SIZE; i++)
-        species[i] = SPECIES_NONE;
-    partyCount = CalculatePlayerPartyCount();
-    for (i = 0; i < partyCount; i++)
-    {
-        species[i] = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES_OR_EGG, NULL);
-        personality[i] = GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_PERSONALITY, NULL);
-    }
-    VarSet(VAR_TRAINER_CARD_MON_ICON_1, SpeciesToMailSpecies(species[0], personality[0]));
-    VarSet(VAR_TRAINER_CARD_MON_ICON_2, SpeciesToMailSpecies(species[1], personality[1]));
-    VarSet(VAR_TRAINER_CARD_MON_ICON_3, SpeciesToMailSpecies(species[2], personality[2]));
-    VarSet(VAR_TRAINER_CARD_MON_ICON_4, SpeciesToMailSpecies(species[3], personality[3]));
-    VarSet(VAR_TRAINER_CARD_MON_ICON_5, SpeciesToMailSpecies(species[4], personality[4]));
-    VarSet(VAR_TRAINER_CARD_MON_ICON_6, SpeciesToMailSpecies(species[5], personality[5]));
-    VarSet(VAR_TRAINER_CARD_MON_ICON_TINT_IDX, gSpecialVar_0x8004);
-}
-
-u16 StickerManGetBragFlags(void)
-{
-    u16 result = 0;
-    u32 numEggs;
-    gSpecialVar_0x8004 = GetGameStat(GAME_STAT_ENTERED_HOF);
-    numEggs = GetGameStat(GAME_STAT_HATCHED_EGGS);
-    gSpecialVar_0x8006 = GetGameStat(GAME_STAT_LINK_BATTLE_WINS);
-    if (numEggs > 0xFFFF)
-        gSpecialVar_0x8005 = 0xFFFF;
-    else
-        gSpecialVar_0x8005 = numEggs;
-    if (gSpecialVar_0x8004 != 0)
-        result |= 1 << 0;
-    if (gSpecialVar_0x8005 != 0)
-        result |= 1 << 1;
-    if (gSpecialVar_0x8006 != 0)
-        result |= 1 << 2;
-    return result;
 }
 
 void Route110ShowZapdos(void)

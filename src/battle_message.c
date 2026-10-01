@@ -18,13 +18,13 @@
 #include "palette.h"
 #include "random.h"
 #include "recorded_battle.h"
+#include "regions.h"
 #include "string_util.h"
 #include "strings.h"
 #include "test_runner.h"
 #include "text.h"
 #include "trainer_hill.h"
 #include "trainer_slide.h"
-#include "trainer_tower.h"
 #include "window.h"
 #include "line_break.h"
 #include "constants/abilities.h"
@@ -3693,7 +3693,6 @@ const u8 gText_WhatWillWallyDo[] = _("What will\nWALLY do?");
 const u8 gText_LinkStandby[] = _("{PAUSE 16}Link standby…");
 const u8 gText_BattleMenu[] = _("Battle{CLEAR_TO 56}Bag\nPokémon{CLEAR_TO 56}Run");
 const u8 gText_SafariZoneMenu[] = _("Ball{CLEAR_TO 56}Go Near\nRun");
-const u8 gText_SafariZoneMenuFrlg[] = _("{PALETTE 5}{COLOR_HIGHLIGHT_SHADOW 13 14 15}BALL{CLEAR_TO 56}ROCK\nRUN");
 const u8 gText_MoveInterfacePP[] = _("PP ");
 const u8 gText_MoveInterfaceType[] = _("TYPE/");
 const u8 gText_MoveInterfacePPType[] = _("{PALETTE 5}{BACKGROUND DYNAMIC_COLOR5}{TEXT_COLORS DYNAMIC_COLOR4 DYNAMIC_COLOR6 DYNAMIC_COLOR5}PP\nTYPE/");
@@ -5098,6 +5097,12 @@ void BufferStringBattle(enum StringID stringID, enum BattlerId battler)
     case STRINGID_TRAINERSLIDE:
         stringPtr = gBattleStruct->trainerSlideMsg;
         break;
+    case STRINGID_PKMNTRANSFERREDLANETTESPC:
+        stringPtr = GetCurrentRegion() == REGION_KANTO ? gText_PkmnTransferredBillsPC : gText_PkmnTransferredLanettesPC;
+        break;
+    case STRINGID_PKMNBOXLANETTESPCFULL:
+        stringPtr = GetCurrentRegion() == REGION_KANTO ? gText_PkmnTransferredBillsPCBoxFull : gText_PkmnTransferredLanettesPCBoxFull;
+        break;
     default: // load a string from the table
         stringID = GetVariedStringId(stringID);
         // Also guard against StringIDs with no gBattleStringsTable entry, which would expand NULL as text.
@@ -5242,11 +5247,6 @@ static const u8 *BattleStringGetOpponentNameByTrainerId(u16 trainerId, u8 *text,
         GetFrontierTrainerName(text, trainerId);
         toCpy = text;
     }
-    else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_TOWER && gMapHeader.regionMapSectionId == MAPSEC_TRAINER_TOWER_2)
-    {
-        GetTrainerTowerOpponentName(text);
-        toCpy = text;
-    }
     else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
     {
         GetTrainerHillTrainerName(text, trainerId);
@@ -5356,8 +5356,6 @@ static const u8 *BattleStringGetOpponentClassByTrainerId(u16 trainerId)
         toCpy = gTrainerClasses[GetFrontierBrainTrainerClass()].name;
     else if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
         toCpy = gTrainerClasses[GetFrontierOpponentClass(trainerId)].name;
-    else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_TOWER && gMapHeader.regionMapSectionId == MAPSEC_TRAINER_TOWER_2)
-        toCpy = gTrainerClasses[GetTrainerTowerOpponentClass()].name;
     else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
         toCpy = gTrainerClasses[GetTrainerHillOpponentClass(trainerId)].name;
     else if (gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER)
@@ -5638,11 +5636,6 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                     CopyFrontierTrainerText(FRONTIER_PLAYER_WON_TEXT, TRAINER_BATTLE_PARAM.opponentA);
                     toCpy = gStringVar4;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_TOWER && gMapHeader.regionMapSectionId == MAPSEC_TRAINER_TOWER_2)
-                {
-                    GetTrainerTowerOpponentLoseText(gStringVar4, 0);
-                    toCpy = gStringVar4;
-                }
                 else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
                     CopyTrainerHillTrainerText(TRAINER_HILL_TEXT_PLAYER_WON, TRAINER_BATTLE_PARAM.opponentA);
@@ -5657,11 +5650,6 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                 {
                     CopyFrontierTrainerText(FRONTIER_PLAYER_LOST_TEXT, TRAINER_BATTLE_PARAM.opponentA);
-                    toCpy = gStringVar4;
-                }
-                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_TOWER && gMapHeader.regionMapSectionId == MAPSEC_TRAINER_TOWER_2)
-                {
-                    GetTrainerTowerOpponentWinText(gStringVar4, 0);
                     toCpy = gStringVar4;
                 }
                 else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
@@ -5694,7 +5682,7 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 break;
             case B_TXT_PC_CREATOR_NAME: // lanette pc
                 if (FlagGet(FLAG_SYS_PC_LANETTE))
-                    toCpy = IS_FRLG ? sText_Bills : sText_Lanettes;
+                    toCpy = GetCurrentRegion() == REGION_KANTO ? sText_Bills : sText_Lanettes;
                 else
                     toCpy = sText_Someones;
                 break;
@@ -5767,11 +5755,6 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                     CopyFrontierTrainerText(FRONTIER_PLAYER_WON_TEXT, TRAINER_BATTLE_PARAM.opponentB);
                     toCpy = gStringVar4;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_TOWER && gMapHeader.regionMapSectionId == MAPSEC_TRAINER_TOWER_2)
-                {
-                    GetTrainerTowerOpponentLoseText(gStringVar4, 1);
-                    toCpy = gStringVar4;
-                }
                 else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
                     CopyTrainerHillTrainerText(TRAINER_HILL_TEXT_PLAYER_WON, TRAINER_BATTLE_PARAM.opponentB);
@@ -5786,11 +5769,6 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                 {
                     CopyFrontierTrainerText(FRONTIER_PLAYER_LOST_TEXT, TRAINER_BATTLE_PARAM.opponentB);
-                    toCpy = gStringVar4;
-                }
-                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_TOWER && gMapHeader.regionMapSectionId == MAPSEC_TRAINER_TOWER_2)
-                {
-                    GetTrainerTowerOpponentWinText(gStringVar4, 1);
                     toCpy = gStringVar4;
                 }
                 else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
@@ -5853,10 +5831,7 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst, u32 dstSize)
                 toCpy = textStart;
                 if (gBattleTypeFlags & BATTLE_TYPE_CATCH_TUTORIAL)
                 {
-                    if (IS_FRLG)
-                        textStart = StringCopy(textStart, COMPOUND_STRING("The old man"));
-                    else
-                        textStart = StringCopy(textStart, COMPOUND_STRING("WALLY"));
+                    textStart = StringCopy(textStart, COMPOUND_STRING("WALLY"));
                 }
                 else if (GetBattlerPosition(gBattlerAttacker) == B_POSITION_PLAYER_LEFT)
                 {

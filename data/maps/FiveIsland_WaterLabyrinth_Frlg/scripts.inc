@@ -14,7 +14,6 @@ FiveIsland_WaterLabyrinth_EventScript_EggGentleman::
 	end
 
 FiveIsland_WaterLabyrinth_EventScript_MonDaisyComment::
-	famechecker FAMECHECKER_DAISY, 2
 	msgbox FiveIsland_WaterLabyrinth_Text_CuteMonRemindsMeOfDaisy
 	release
 	end

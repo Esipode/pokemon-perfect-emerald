@@ -8,7 +8,6 @@ FuchsiaCity_House1_EventScript_Woman::
 FuchsiaCity_House1_EventScript_OldMan::
 	lock
 	faceplayer
-	famechecker FAMECHECKER_BILL, 2
 	msgbox FuchsiaCity_House1_Text_BillIsMyGrandson
 	release
 	end

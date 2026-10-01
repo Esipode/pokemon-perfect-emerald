@@ -16,8 +16,6 @@ extern const u8 gText_ExpandedPlaceholder_Kyogre[];
 extern const u8 gText_ExpandedPlaceholder_Groudon[];
 extern const u8 gText_ExpandedPlaceholder_Brendan[];
 extern const u8 gText_ExpandedPlaceholder_May[];
-extern const u8 gText_ExpandedPlaceholder_Red[];
-extern const u8 gText_ExpandedPlaceholder_Green[];
 
 extern const u8 gText_Lv50[];
 extern const u8 gText_OpenLevel[];
@@ -166,7 +164,6 @@ extern const u8 gText_Floor6[];
 extern const u8 gText_Floor7[];
 extern const u8 gText_Peak[];
 extern const u8 gText_SafariBallStock[];
-extern const u8 gText_MenuSafariStats[];
 extern const u8 gText_BattlePyramidFloor[];
 
 extern const u8 gText_MenuOptionPokedex[];
@@ -1263,8 +1260,10 @@ extern const u8 gText_Love[];
 // battle message
 extern const u8 gText_PkmnTransferredSomeonesPCBoxFull[];
 extern const u8 gText_PkmnTransferredLanettesPCBoxFull[];
+extern const u8 gText_PkmnTransferredBillsPCBoxFull[];
 extern const u8 gText_PkmnTransferredSomeonesPC[];
 extern const u8 gText_PkmnTransferredLanettesPC[];
+extern const u8 gText_PkmnTransferredBillsPC[];
 extern const u8 gText_PkmnSentToPCAfterCatch[];
 
 // hall of fame
@@ -1799,8 +1798,6 @@ extern const u8 gText_Soulbadge[];
 extern const u8 gText_Marshbadge[];
 extern const u8 gText_Volcanobadge[];
 extern const u8 gText_Earthbadge[];
-extern const u8 gText_OakImportantToGetToKnowPokemonThroughly[];
-extern const u8 gText_OakThisIsListOfPokemon[];
 
 extern const u8 gText_Boy[];
 extern const u8 gText_Girl[];

@@ -1453,18 +1453,17 @@ static const union AnimCmd *const sAnimTable_BrendanMayNormal[] = {
     [ANIM_STD_GO_FASTEST_NORTH] = sAnim_GoFastestNorth,
     [ANIM_STD_GO_FASTEST_WEST] = sAnim_GoFastestWest,
     [ANIM_STD_GO_FASTEST_EAST] = sAnim_GoFastestEast,
-    [ANIM_RUN_SOUTH] = (IS_FRLG ? sAnim_RunSouthFrlg : sAnim_RunSouth),
-    [ANIM_RUN_NORTH] = (IS_FRLG ? sAnim_RunNorthFrlg : sAnim_RunNorth),
-    [ANIM_RUN_WEST] = (IS_FRLG ? sAnim_RunWestFrlg : sAnim_RunWest),
-    [ANIM_RUN_EAST] = (IS_FRLG ? sAnim_RunEastFrlg : sAnim_RunEast),
+    [ANIM_RUN_SOUTH] = sAnim_RunSouth,
+    [ANIM_RUN_NORTH] = sAnim_RunNorth,
+    [ANIM_RUN_WEST] = sAnim_RunWest,
+    [ANIM_RUN_EAST] = sAnim_RunEast,
     [ANIM_SPIN_SOUTH] = sAnim_SpinSouth,
     [ANIM_SPIN_NORTH] = sAnim_SpinNorth,
     [ANIM_SPIN_WEST] = sAnim_SpinWest,
     [ANIM_SPIN_EAST] = sAnim_SpinEast,
 };
 
-// Red/Green run frames (sPicTable_RedNormal/GreenNormal 9-17) are laid out
-// FRLG-style regardless of build, so the run anims can't follow IS_FRLG.
+// Red/Green run frames (sPicTable_RedNormal/GreenNormal 9-17) use the FRLG layout.
 static const union AnimCmd *const sAnimTable_RedGreenNormal[] = {
     [ANIM_STD_FACE_SOUTH] = sAnim_FaceSouth,
     [ANIM_STD_FACE_NORTH] = sAnim_FaceNorth,

@@ -45,11 +45,7 @@ PokemonLeague_AgathasRoom_EventScript_EnterRoom::
 PokemonLeague_AgathasRoom_EventScript_Agatha::
 	lock
 	faceplayer
-	famechecker FAMECHECKER_AGATHA, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
 	goto_if_set FLAG_DEFEATED_AGATHA, PokemonLeague_AgathasRoom_EventScript_PostBattle
-	famechecker FAMECHECKER_AGATHA, 0
-	famechecker FAMECHECKER_AGATHA, 4
-	famechecker FAMECHECKER_OAK, 4
 	call_if_unset FLAG_KANTO_CHAMPION, PokemonLeague_AgathasRoom_EventScript_Intro
 	call_if_set FLAG_KANTO_CHAMPION, PokemonLeague_AgathasRoom_EventScript_RematchIntro
 	setflag FLAG_TEMP_3

@@ -513,17 +513,6 @@ static void GetPartyAndSlotFromPartyMenuId(s8 menuId, struct Pokemon **party, s8
 static struct Pokemon *GetPartyMonFromPartyMenuId(s8 menuId);
 static void GetMultiPartyForSummaryScreen(void);
 static void RestoreMultiPartyFromSummaryScreen(void);
-static void Task_FirstBattleEnterParty_WaitFadeIn(u8 taskId);
-static void Task_FirstBattleEnterParty_DarkenScreen(u8 taskId);
-static void Task_FirstBattleEnterParty_WaitDarken(u8 taskId);
-static void Task_FirstBattleEnterParty_CreatePrinter(u8 taskId);
-static void Task_FirstBattleEnterParty_RunPrinterMsg1(u8 taskId);
-static void Task_FirstBattleEnterParty_LightenFirstMonIcon(u8 taskId);
-static void Task_FirstBattleEnterParty_WaitLightenFirstMonIcon(u8 taskId);
-static void Task_FirstBattleEnterParty_StartPrintMsg2(u8 taskId);
-static void Task_FirstBattleEnterParty_RunPrinterMsg2(u8 taskId);
-static void Task_FirstBattleEnterParty_FadeNormal(u8 taskId);
-static void Task_FirstBattleEnterParty_WaitFadeNormal(u8 taskId);
 static u8 CombinedToIndividualPartyId(u8 index);
 static u8 IndividualToCombinedPartyId(u8 index, enum BattlerId battler);
 
@@ -8210,18 +8199,10 @@ static u8 GetPartyLayoutFromBattleType(void)
 
 void OpenPartyMenuInBattle(u8 partyAction)
 {
-    if (IS_FRLG && !BtlCtrl_OakOldMan_TestState2Flag(FIRST_BATTLE_MSG_FLAG_PARTY_MENU) && (gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE))
-    {
-        InitPartyMenu(PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), partyAction, FALSE, PARTY_MSG_NONE, Task_FirstBattleEnterParty_WaitFadeIn, CB2_SetUpReshowBattleScreenAfterMenu);
-        BtlCtrl_OakOldMan_SetState2Flag(FIRST_BATTLE_MSG_FLAG_PARTY_MENU);
-    }
+    if (partyAction == PARTY_ACTION_SEND_MON_TO_BOX)
+        InitPartyMenu(PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), partyAction, FALSE, PARTY_MSG_CHOOSE_MON_FOR_BOX, Task_HandleChooseMonInput, ReshowBlankBattleScreenAfterMenu);
     else
-    {
-        if (partyAction == PARTY_ACTION_SEND_MON_TO_BOX)
-            InitPartyMenu(PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), partyAction, FALSE, PARTY_MSG_CHOOSE_MON_FOR_BOX, Task_HandleChooseMonInput, ReshowBlankBattleScreenAfterMenu);
-        else
-            InitPartyMenu(PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), partyAction, FALSE, PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, CB2_SetUpReshowBattleScreenAfterMenu);
-    }
+        InitPartyMenu(PARTY_MENU_TYPE_IN_BATTLE, GetPartyLayoutFromBattleType(), partyAction, FALSE, PARTY_MSG_CHOOSE_MON, Task_HandleChooseMonInput, CB2_SetUpReshowBattleScreenAfterMenu);
     ReshowBattleScreenDummy();
     UpdatePartyToBattleOrder();
 }
@@ -9200,114 +9181,6 @@ static void RestoreMultiPartyFromSummaryScreen(void)
     for (u32 i = MULTI_PARTY_SIZE; i < PARTY_SIZE; i++)
     {
         ZeroMonData(&gParties[B_TRAINER_PLAYER][i]);
-    }
-}
-
-static void PartyMenu_Oak_PrintText(u8 windowId, const u8 *str)
-{
-    StringExpandPlaceholders(gStringVar4, str);
-    gTextFlags.canABSpeedUpPrint = TRUE;
-    AddTextPrinterParameterized2(windowId, FONT_NORMAL, gStringVar4, GetPlayerTextSpeedDelay(), NULL, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY);
-}
-
-static bool8 FirstBattleEnterParty_CreateWindowAndMsg1Printer(void)
-{
-    u8 windowId = AddWindow(&sWindowTemplate_FirstBattleOakVoiceover);
-
-    LoadMessageBoxGfx(windowId, 0x4F, BG_PLTT_ID(14));
-    DrawDialogFrameWithCustomTileAndPalette(windowId, 1, 0x4F, 0xE);
-    PartyMenu_Oak_PrintText(windowId, gText_OakImportantToGetToKnowPokemonThroughly);
-    return windowId;
-}
-
-static void FirstBattleEnterParty_DestroyVoiceoverWindow(u8 windowId)
-{
-    ClearWindowTilemap(windowId);
-    ClearDialogWindowAndFrameToTransparent(windowId, FALSE);
-    RemoveWindow(windowId);
-    ScheduleBgCopyTilemapToVram(2);
-}
-
-static void Task_FirstBattleEnterParty_WaitFadeIn(u8 taskId)
-{
-    if (!gPaletteFade.active)
-        gTasks[taskId].func = Task_FirstBattleEnterParty_DarkenScreen;
-}
-
-static void Task_FirstBattleEnterParty_DarkenScreen(u8 taskId)
-{
-    BeginNormalPaletteFade(0xFFFF1FFF, 4, 0, 6, RGB_BLACK);
-    gTasks[taskId].func = Task_FirstBattleEnterParty_WaitDarken;
-}
-
-static void Task_FirstBattleEnterParty_WaitDarken(u8 taskId)
-{
-    if (!gPaletteFade.active)
-        gTasks[taskId].func = Task_FirstBattleEnterParty_CreatePrinter;
-}
-
-static void Task_FirstBattleEnterParty_CreatePrinter(u8 taskId)
-{
-    gTasks[taskId].data[0] = FirstBattleEnterParty_CreateWindowAndMsg1Printer();
-    gTasks[taskId].func = Task_FirstBattleEnterParty_RunPrinterMsg1;
-}
-
-static void Task_FirstBattleEnterParty_RunPrinterMsg1(u8 taskId)
-{
-    s16 *data = gTasks[taskId].data;
-
-    if (RunTextPrintersRetIsActive((u8)data[0]) != TRUE)
-        gTasks[taskId].func = Task_FirstBattleEnterParty_LightenFirstMonIcon;
-}
-
-static void Task_FirstBattleEnterParty_LightenFirstMonIcon(u8 taskId)
-{
-    BeginNormalPaletteFade(0xFFFF0008, 4, 6, 0, RGB_BLACK);
-    gTasks[taskId].func = Task_FirstBattleEnterParty_WaitLightenFirstMonIcon;
-}
-
-static void Task_FirstBattleEnterParty_WaitLightenFirstMonIcon(u8 taskId)
-{
-    if (!gPaletteFade.active)
-        gTasks[taskId].func = Task_FirstBattleEnterParty_StartPrintMsg2;
-}
-
-static void Task_FirstBattleEnterParty_StartPrintMsg2(u8 taskId)
-{
-    s16 *data = gTasks[taskId].data;
-
-    PartyMenu_Oak_PrintText(data[0], gText_OakThisIsListOfPokemon);
-    gTasks[taskId].func = Task_FirstBattleEnterParty_RunPrinterMsg2;
-}
-
-static void Task_FirstBattleEnterParty_RunPrinterMsg2(u8 taskId)
-{
-    s16 *data = gTasks[taskId].data;
-
-    if (RunTextPrintersRetIsActive((u8)data[0]) != TRUE)
-    {
-        FirstBattleEnterParty_DestroyVoiceoverWindow((u8)data[0]);
-        gTasks[taskId].func = Task_FirstBattleEnterParty_FadeNormal;
-    }
-}
-
-static void Task_FirstBattleEnterParty_FadeNormal(u8 taskId)
-{
-    BeginNormalPaletteFade(0x0000FFF7, 4, 6, 0, RGB_BLACK);
-    gTasks[taskId].func = Task_FirstBattleEnterParty_WaitFadeNormal;
-}
-
-static void Task_FirstBattleEnterParty_WaitFadeNormal(u8 taskId)
-{
-    if (!gPaletteFade.active)
-    {
-        LoadUserWindowBorderGfx(0, 0x4F, BG_PLTT_ID(13));
-        LoadUserWindowBorderGfx_(0, 0x58, BG_PLTT_ID(13));
-        if (gPartyMenu.action == PARTY_ACTION_USE_ITEM)
-            DisplayPartyMenuStdMessage(PARTY_MSG_USE_ON_WHICH_MON);
-        else
-            DisplayPartyMenuStdMessage(PARTY_MSG_CHOOSE_MON);
-        gTasks[taskId].func = Task_HandleChooseMonInput;
     }
 }
 

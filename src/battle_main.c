@@ -5330,11 +5330,8 @@ static void HandleTurnActionSelectionState(void)
                     }
                     break;
                 case B_ACTION_SAFARI_POKEBLOCK:
-                    if (!IS_FRLG)
-                    {
-                        BtlController_EmitChooseItem(battler, B_COMM_TO_CONTROLLER, gBattleStruct->battlerPartyOrders[battler]);
-                        MarkBattlerForControllerExec(battler);
-                    }
+                    BtlController_EmitChooseItem(battler, B_COMM_TO_CONTROLLER, gBattleStruct->battlerPartyOrders[battler]);
+                    MarkBattlerForControllerExec(battler);
                     break;
                 case B_ACTION_CANCEL_PARTNER:
                     gBattleCommunication[battler] = STATE_WAIT_SET_BEFORE_ACTION;
@@ -5544,17 +5541,10 @@ static void HandleTurnActionSelectionState(void)
                     gBattleCommunication[battler]++;
                     break;
                 case B_ACTION_SAFARI_POKEBLOCK:
-                    if (IS_FRLG)
-                    {
+                    if ((gBattleResources->bufferB[battler][1] | (gBattleResources->bufferB[battler][2] << 8)) != 0)
                         gBattleCommunication[battler]++;
-                    }
                     else
-                    {
-                        if ((gBattleResources->bufferB[battler][1] | (gBattleResources->bufferB[battler][2] << 8)) != 0)
-                            gBattleCommunication[battler]++;
-                        else
-                            gBattleCommunication[battler] = STATE_BEFORE_ACTION_CHOSEN;
-                    }
+                        gBattleCommunication[battler] = STATE_BEFORE_ACTION_CHOSEN;
                     break;
                 case B_ACTION_SAFARI_GO_NEAR:
                     gBattleCommunication[battler]++;

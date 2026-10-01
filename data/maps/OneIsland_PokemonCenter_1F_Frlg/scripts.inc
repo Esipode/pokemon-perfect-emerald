@@ -219,19 +219,16 @@ OneIsland_PokemonCenter_1F_EventScript_CelioGiveBillFact::
 	random 3
 	goto_if_eq VAR_RESULT, 0, OneIsland_PokemonCenter_1F_EventScript_BillFact1
 	goto_if_eq VAR_RESULT, 1, OneIsland_PokemonCenter_1F_EventScript_BillFact2
-	famechecker FAMECHECKER_BILL, 5
 	msgbox OneIsland_PokemonCenter_1F_Text_BillCantStomachMilk
 	release
 	end
 
 OneIsland_PokemonCenter_1F_EventScript_BillFact1::
-	famechecker FAMECHECKER_BILL, 3
 	msgbox OneIsland_PokemonCenter_1F_Text_BillsFirstMonWasAbra
 	release
 	end
 
 OneIsland_PokemonCenter_1F_EventScript_BillFact2::
-	famechecker FAMECHECKER_BILL, 4
 	msgbox OneIsland_PokemonCenter_1F_Text_BillsHometownInGoldenrod
 	release
 	end
@@ -277,7 +274,6 @@ OneIsland_PokemonCenter_1F_EventScript_GiveCelioSapphire::
 	setflag FLAG_HIDE_CERULEAN_CAVE_GUARD
 	setflag FLAG_HIDE_LORELEI_IN_HER_HOUSE
 	setvar VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 6
-	special InitRoamer
 	release
 	end
 

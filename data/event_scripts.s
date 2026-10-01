@@ -27,7 +27,6 @@
 #include "constants/easy_chat.h"
 #include "constants/event_objects.h"
 #include "constants/event_object_movement.h"
-#include "constants/fame_checker.h"
 #include "constants/field_effects.h"
 #include "constants/field_move.h"
 #include "constants/field_poison.h"
@@ -72,7 +71,6 @@
 #include "constants/species.h"
 #include "constants/trade.h"
 #include "constants/trainer_hill.h"
-#include "constants/trainer_tower.h"
 #include "constants/trainers.h"
 #include "constants/trainer_card.h"
 #include "constants/tv.h"
@@ -1043,17 +1041,13 @@ gStdScripts_End::
 	.include "data/maps/SixIsland_WaterPath_House2_Frlg/scripts.inc"
 	.include "data/maps/SevenIsland_SevaultCanyon_House_Frlg/scripts.inc"
 
-	.include "data/scripts/trainer_tower.inc"
 	.include "data/scripts/fame_checker_frlg.inc"
 	.include "data/text/fame_checker_frlg.inc"
 	.include "data/scripts/item_ball_scripts_frlg.inc"
 	.include "data/scripts/silphco_doors.inc"
 	.include "data/scripts/move_tutors_frlg.inc"
 	.include "data/scripts/cable_club_frlg.inc"
-	.include "data/scripts/trainer_card_frlg.inc"
-	.include "data/text/trainer_card_frlg.inc"
 	.include "data/scripts/mystery_event_club.inc"
-	.include "data/scripts/day_care_frlg.inc"
 	.include "data/text/day_care_frlg.inc"
 	.include "data/scripts/seagallop.inc"
 	.include "data/scripts/static_pokemon.inc"
@@ -1065,11 +1059,11 @@ gStdScripts_End::
 	.include "data/scripts/trainers_frlg.inc"
 	.include "data/text/trainers_frlg.inc"
 	.include "data/text/ingame_trade_frlg.inc"
-	.include "data/scripts/pkmn_center_nurse_frlg.inc"
 
 .endif
 
 	.include "data/scripts/flavor_text.inc"
+	.include "data/scripts/pkmn_center_nurse_frlg.inc"
 	.include "data/scripts/std_msgbox.inc"
 	.include "data/scripts/trainer_battle.inc"
 	.include "data/scripts/new_game.inc"
@@ -1619,27 +1613,15 @@ EventScript_CableClub_SetVarResult0::
 	return
 
 Common_EventScript_UnionRoomAttendant::
-#if IS_FRLG
-	call CableClub_EventScript_UnionRoomAttendant_Frlg
-#else
 	call CableClub_EventScript_UnionRoomAttendant
-#endif
 	end
 
 Common_EventScript_WirelessClubAttendant::
-#if IS_FRLG
-	call CableClub_EventScript_WirelessClubAttendant_Frlg
-#else
 	call CableClub_EventScript_WirelessClubAttendant
-#endif
 	end
 
 Common_EventScript_DirectCornerAttendant::
-#if IS_FRLG
-	call CableClub_EventScript_DirectCornerAttendant_Frlg
-#else
 	call CableClub_EventScript_DirectCornerAttendant
-#endif
 	end
 
 Common_EventScript_RemoveStaticPokemon::

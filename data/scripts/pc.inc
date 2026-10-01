@@ -44,11 +44,13 @@ EventScript_AccessSomeonesPC::
 	return
 
 EventScript_AccessLanettesPC::
-#if IS_FRLG
-	msgbox gText_AccessedBillsPC, MSGBOX_DEFAULT
-#else
+	specialvar VAR_RESULT, IsPlayerInKanto
+	goto_if_eq VAR_RESULT, TRUE, EventScript_AccessBillsPC
 	msgbox gText_AccessedLanettesPC, MSGBOX_DEFAULT
-#endif
+	return
+
+EventScript_AccessBillsPC::
+	msgbox gText_AccessedBillsPC, MSGBOX_DEFAULT
 	return
 
 EventScript_TurnOffPC::

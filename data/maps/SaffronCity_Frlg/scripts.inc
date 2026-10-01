@@ -94,7 +94,6 @@ SaffronCity_EventScript_DojoSign::
 
 SaffronCity_EventScript_GymSign::
 	lockall
-	famechecker FAMECHECKER_SABRINA, 0
 	msgbox SaffronCity_Text_GymSign
 	releaseall
 	end

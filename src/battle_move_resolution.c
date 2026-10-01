@@ -2472,25 +2472,6 @@ static bool32 ShouldSkipAccuracyCalcPastFirstHit(enum BattlerId battlerAtk, enum
     return TRUE; // multiHitOn is set so skip Acc check for everything else
 }
 
-static bool32 ShouldSkipFRLGAccuracyCheck(void)
-{
-    if (!IS_FRLG)
-        return FALSE;
-
-    if ((gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE
-     && (!BtlCtrl_OakOldMan_TestState2Flag(1) || !BtlCtrl_OakOldMan_TestState2Flag(2))
-     && GetMovePower(gCurrentMove) != 0
-     && GetBattlerSide(gBattlerAttacker) == B_SIDE_PLAYER))
-    {
-        return TRUE;
-    }
-
-    if (gBattleTypeFlags & BATTLE_TYPE_POKEDUDE)
-        return TRUE;
-
-    return FALSE;
-}
-
 static enum CancelerResult CancelerAccuracyCheck(struct BattleCalcValues *cv)
 {
     if (IsStatChangeMove(cv->move))
@@ -2505,8 +2486,7 @@ static enum CancelerResult CancelerAccuracyCheck(struct BattleCalcValues *cv)
         TRY_SECOND_TARGET,
     };
 
-    if (ShouldSkipFRLGAccuracyCheck()
-     || ShouldSkipAccuracyCalcPastFirstHit(cv->battlerAtk, cv->abilities[cv->battlerAtk], cv->holdEffects[cv->battlerAtk], cv->moveEffect)
+    if (ShouldSkipAccuracyCalcPastFirstHit(cv->battlerAtk, cv->abilities[cv->battlerAtk], cv->holdEffects[cv->battlerAtk], cv->moveEffect)
      || IsMaxMove(cv->move)
      || IsZMove(cv->move))
         return CANCELER_RESULT_SUCCESS;

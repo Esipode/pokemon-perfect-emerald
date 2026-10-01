@@ -1117,10 +1117,7 @@ void HandleMoveSwitching(enum BattlerId battler)
             }
         }
 
-        if (IS_FRLG && gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE)
-            gBattlerControllerFuncs[battler] = OakOldManHandleInputChooseMove;
-        else
-            gBattlerControllerFuncs[battler] = HandleInputChooseMove;
+        gBattlerControllerFuncs[battler] = HandleInputChooseMove;
         gMoveSelectionCursor[battler] = gMultiUsePlayerCursor;
         MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
         if (B_SHOW_EFFECTIVENESS)
@@ -1137,10 +1134,7 @@ void HandleMoveSwitching(enum BattlerId battler)
         MoveSelectionDestroyCursorAt(gMultiUsePlayerCursor);
         MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
 
-        if (gBattleTypeFlags & BATTLE_TYPE_FIRST_BATTLE)
-            gBattlerControllerFuncs[battler] = OakOldManHandleInputChooseMove;
-        else
-            gBattlerControllerFuncs[battler] = HandleInputChooseMove;
+        gBattlerControllerFuncs[battler] = HandleInputChooseMove;
 
         if (B_SHOW_EFFECTIVENESS)
             MoveSelectionDisplayMoveEffectiveness(CheckTargetTypeEffectiveness(battler), battler);

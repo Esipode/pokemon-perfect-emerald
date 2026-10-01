@@ -134,8 +134,6 @@ ViridianCity_EventScript_WatchToLearnBasics::
 @ Unused. Starts battle after the post battle text, which is odd.
 ViridianCity_EventScript_TutorialUnused::
 	msgbox ViridianCity_Text_ThatWasEducationalTakeThis
-	special StartOldManTutorialBattle
-	waitstate
 	release
 	end
 
@@ -222,8 +220,6 @@ ViridianCity_EventScript_TutorialTriggerRight::
 ViridianCity_EventScript_DoTutorialBattle::
 	msgbox ViridianCity_Text_ShowYouHowToCatchMons
 	closemessage
-	special StartOldManTutorialBattle
-	waitstate
 	lock
 	faceplayer
 	msgbox ViridianCity_Text_ThatWasEducationalTakeThis

@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "dexnav.h"
 #include "draft_mode.h"
+#include "regions.h"
 #include "roamer.h"
 #include "recruits_mode.h"
 #include "faraway_island.h"
@@ -519,7 +520,7 @@ static const u8 *GetInteractedMetatileScript(struct MapPosition *position, u8 me
 {
     if (MetatileBehavior_IsPlayerFacingTVScreen(metatileBehavior, direction) == TRUE)
     {
-        if (IS_FRLG)
+        if (GetCurrentRegion() == REGION_KANTO)
             return EventScript_PlayerFacingTVScreen;
         else
             return EventScript_TV;

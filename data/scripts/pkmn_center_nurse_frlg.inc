@@ -50,17 +50,6 @@ EventScript_PkmnCenterNurse_ReturnPkmn_Frlg::
 	msgbox Text_WeHopeToSeeYouAgain_Frlg
 	return
 
-EventScript_PkmnCenterNurse_PlayerWaitingInUnionRoom_Frlg::
-	goto_if_set FLAG_NURSE_UNION_ROOM_REMINDER, EventScript_PkmnCenterNurse_ReturnPkmn_Frlg
-	msgbox Text_RestoredPkmnToFullHealth_Frlg
-	setflag FLAG_NURSE_UNION_ROOM_REMINDER
-	message Text_PlayerIsPlayingRightNowGoForIt_Frlg
-	waitmessage
-	applymovement VAR_LAST_TALKED, Movement_Bow
-	waitmovement 0
-	msgbox Text_WeHopeToSeeYouAgain_Frlg
-	return
-
 EventScript_PkmnCenterNurse_Goodbye_Frlg::
 	msgbox Text_WeHopeToSeeYouAgain_Frlg
 	return

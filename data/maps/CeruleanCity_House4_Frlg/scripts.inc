@@ -6,15 +6,7 @@ CeruleanCity_House4_Frlg_MapScripts::
 
 CeruleanCity_House4_EventScript_WonderNewsBerryMan::
 	lock
-	specialvar REWARD_TYPE, WonderNews_GetRewardInfo
-	copyvar REWARD_ITEM, VAR_RESULT
-	goto_if_eq REWARD_TYPE, NEWS_REWARD_NONE,       CeruleanCity_House4_EventScript_NoNews
-	goto_if_eq REWARD_TYPE, NEWS_REWARD_RECV_SMALL, CeruleanCity_House4_EventScript_Reward_RecvSmall
-	goto_if_eq REWARD_TYPE, NEWS_REWARD_RECV_BIG,   CeruleanCity_House4_EventScript_Reward_RecvBig
-	goto_if_eq REWARD_TYPE, NEWS_REWARD_WAITING,    CeruleanCity_House4_EventScript_Waiting
-	goto_if_eq REWARD_TYPE, NEWS_REWARD_SENT_SMALL, CeruleanCity_House4_EventScript_Reward_SentSmall
-	goto_if_eq REWARD_TYPE, NEWS_REWARD_SENT_BIG,   CeruleanCity_House4_EventScript_Reward_SentBig
-	goto_if_eq REWARD_TYPE, NEWS_REWARD_AT_MAX,     CeruleanCity_House4_EventScript_AtMax
+	goto CeruleanCity_House4_EventScript_NoNews
 	end
 
 @ Mystery Gift is not enabled, or the player has no saved Wonder News

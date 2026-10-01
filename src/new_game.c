@@ -24,7 +24,6 @@
 #include "event_data.h"
 #include "money.h"
 #include "trainer_hill.h"
-#include "trainer_tower.h"
 #include "tv.h"
 #include "coins.h"
 #include "text.h"
@@ -147,10 +146,7 @@ static void ClearFrontierRecord(void)
 
 static void WarpToTruck(void)
 {
-    if (IS_FRLG)
-        SetWarpDestination(MAP_GROUP(MAP_PALLET_TOWN_PLAYERS_HOUSE_2F), MAP_NUM(MAP_PALLET_TOWN_PLAYERS_HOUSE_2F), WARP_ID_NONE, 6, 6);
-    else
-        SetWarpDestination(MAP_GROUP(MAP_INSIDE_OF_TRUCK), MAP_NUM(MAP_INSIDE_OF_TRUCK), WARP_ID_NONE, -1, -1);
+    SetWarpDestination(MAP_GROUP(MAP_INSIDE_OF_TRUCK), MAP_NUM(MAP_INSIDE_OF_TRUCK), WARP_ID_NONE, -1, -1);
     WarpIntoMap();
 }
 
@@ -412,9 +408,6 @@ void NewGameInitData(void)
     // New Game so Auto-Scroll Text stays on (New Game+ restores it separately).
     bool8 autoScrollTextBackup = FlagGet(FLAG_AUTO_SCROLL_TEXT);
 
-#if IS_FRLG
-    u8 rivalName[PLAYER_NAME_LENGTH + 1];
-#endif
     gKeepStorageOnNewGame = FALSE; // consume, same as gIsNewGamePlus below
 
     if (gSaveFileStatus == SAVE_STATUS_EMPTY || gSaveFileStatus == SAVE_STATUS_CORRUPT)
@@ -509,9 +502,6 @@ void NewGameInitData(void)
         gIsNewGamePlus = FALSE; // consume flag
     }
 
-#if IS_FRLG
-    StringCopy(rivalName, gSaveBlock1Ptr->rivalName);
-#endif
     gDifferentSaveFile = TRUE;
     /* Keep existing encryptionKey when doing New Game+ to avoid re-encryption issues */
     if (!isNewGamePlus)
@@ -635,16 +625,12 @@ void NewGameInitData(void)
         RunScriptImmediately(EventScript_ResetAllMapFlagsFrlg);
     else
         RunScriptImmediately(EventScript_ResetAllMapFlags);
-#if IS_FRLG
-        StringCopy(gSaveBlock1Ptr->rivalName, rivalName);
-#endif
     ResetMiniGamesRecords();
     InitLilycoveLady();
     ResetAllApprenticeData();
     ClearRankingHallRecords();
     ClearMysteryGift();
     ResetTrainerHillResults();
-    ResetTrainerTowerResults();
     ResetContestLinkResults();
     ClearFollowerNPCData();
 

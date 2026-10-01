@@ -46,7 +46,6 @@ CinnabarIsland_Gym_OnLoadOpenDoor6::
 	return
 
 CinnabarIsland_Gym_EventScript_Blaine::
-	famechecker FAMECHECKER_BLAINE, FCPICKSTATE_COLORED, UpdatePickStateFromSpecialVar8005
 	trainerbattle_single TRAINER_LEADER_BLAINE, CinnabarIsland_Gym_Text_BlaineIntro, CinnabarIsland_Gym_Text_BlaineDefeat, CinnabarIsland_Gym_EventScript_DefeatedBlaine, NO_MUSIC
 	goto_if_unset FLAG_GOT_TM38_FROM_BLAINE, CinnabarIsland_Gym_EventScript_GiveTM38
 	msgbox CinnabarIsland_Gym_Text_BlainePostBattle
@@ -54,7 +53,6 @@ CinnabarIsland_Gym_EventScript_Blaine::
 	end
 
 CinnabarIsland_Gym_EventScript_DefeatedBlaine::
-	famechecker FAMECHECKER_BLAINE, 1
 	setflag FLAG_DEFEATED_BLAINE
 	setflag FLAG_BADGE07_GET_FRLG
 	specialvar VAR_RESULT, IsLimitedPartyEnabled
@@ -106,7 +104,6 @@ CinnabarIsland_Gym_EventScript_Quiz2CompleteTrainer::
 
 CinnabarIsland_Gym_EventScript_Derek::
 	trainerbattle_single TRAINER_SUPER_NERD_DEREK, CinnabarIsland_Gym_Text_DerekIntro, CinnabarIsland_Gym_Text_DerekDefeat, CinnabarIsland_Gym_EventScript_DefeatedDerek
-	famechecker FAMECHECKER_BLAINE, 2
 	msgbox CinnabarIsland_Gym_Text_DerekPostBattle, MSGBOX_AUTOCLOSE
 	end
 

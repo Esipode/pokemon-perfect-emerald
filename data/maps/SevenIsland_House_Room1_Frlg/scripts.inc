@@ -6,8 +6,6 @@ SevenIsland_House_Room1_Frlg_MapScripts::
 	.byte 0
 
 SevenIsland_House_Room1_OnTransition::
-	special ValidateEReaderTrainer
-	call_if_eq VAR_RESULT, 0, SevenIsland_House_Room1_EventScript_SetTrainerVisitingLayout
 	call_if_ne VAR_MAP_SCENE_SEVEN_ISLAND_HOUSE_ROOM1, 0, SevenIsland_House_Room1_EventScript_MoveOldWomanToDoor
 	end
 
@@ -69,13 +67,7 @@ SevenIsland_House_Room1_Movement_OldWomanWalkBehindPlayer::
 	step_end
 
 SevenIsland_House_Room1_EventScript_OldWoman::
-	lock
-	faceplayer
-	special ValidateEReaderTrainer
-	call_if_eq VAR_RESULT, 1, SevenIsland_House_Room1_EventScript_InvalidVisitingTrainer
-	goto_if_eq TRAINER_VISITING, TRUE, SevenIsland_House_Room1_EventScript_TrainerVisiting
-	msgbox SevenIsland_House_Room1_Text_OnlyEnjoymentWatchingBattles
-	release
+	msgbox SevenIsland_House_Room1_Text_OnlyEnjoymentWatchingBattles, MSGBOX_NPC
 	end
 
 SevenIsland_House_Room1_EventScript_InvalidVisitingTrainer::

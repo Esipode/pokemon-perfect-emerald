@@ -4,7 +4,6 @@
 #include "credits.h"
 #include "event_data.h"
 #include "hall_of_fame.h"
-#include "hall_of_fame_frlg.h"
 #include "load_save.h"
 #include "overworld.h"
 #include "script_pokemon_util.h"
@@ -146,6 +145,6 @@ bool8 EnterHallOfFame(void)
         IncrementGameStat(GAME_STAT_RECEIVED_RIBBONS);
         FlagSet(FLAG_SYS_RIBBON_GET);
     }
-    SetMainCallback2(CB2_DoHallOfFameScreenFrlg);
+    SetMainCallback2(CB2_DoHallOfFameScreen);
     return FALSE;
 }

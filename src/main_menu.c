@@ -18,7 +18,6 @@
 #include "list_menu.h"
 #include "mystery_event_menu.h"
 #include "naming_screen.h"
-#include "oak_speech.h"
 #include "option_menu.h"
 #include "overworld.h"
 #include "palette.h"
@@ -1101,18 +1100,6 @@ static void Task_HandleMainMenuAPressed(u8 taskId)
         {
         case ACTION_NEW_GAME:
         default:
-            if (IS_FRLG)
-            {
-                DestroyTask(taskId);
-                FreeAllWindowBuffers();
-                if (action != ACTION_OPTION)
-                    sCurrItemAndOptionMenuCheck = 0;
-                else
-                    sCurrItemAndOptionMenuCheck |= OPTION_MENU_FLAG;  // entering the options menu
-                StartNewGameSceneFrlg();
-                return;
-            }
-
             gPlttBufferUnfaded[0] = RGB_BLACK;
             gPlttBufferFaded[0] = RGB_BLACK;
             gTasks[taskId].func = Task_NewGameBirchSpeech_Init;
