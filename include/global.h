@@ -908,6 +908,8 @@ struct SaveBlock2
     // playerColors[PLAYER_COLOR_REGION_COUNT] at 0x92 stays in place -- Stage P9 migrates it once.
     u16 playerColorSlots[PLAYER_COLOR_SLOT_COUNT];
     struct HealthboxOptions healthboxOptions; // appended so no earlier offset moves
+    u8 kantoFlags[NUM_KANTO_FLAG_BYTES];      // KANTO_FLAGS_START..KANTO_FLAGS_END
+    u16 kantoVars[KANTO_VARS_COUNT];          // KANTO_VARS_START..KANTO_VARS_END
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;

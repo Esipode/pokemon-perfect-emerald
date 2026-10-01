@@ -1638,6 +1638,14 @@
 
 #define FLAGS_COUNT (DAILY_FLAGS_END + 1)
 
+// Kanto Flags (Stored in SaveBlock2 kantoFlags)
+// 0x1000-0x13FF story/hide/items, 0x1400-0x16FF trainers, 0x1700-0x19FF spare.
+// 0x2000-0x29FF is reserved for Johto.
+#define KANTO_FLAGS_START                       0x1000
+#define KANTO_TRAINER_FLAGS_START               0x1400
+#define KANTO_FLAGS_END                         0x19FF
+#define NUM_KANTO_FLAG_BYTES                    ((KANTO_FLAGS_END - KANTO_FLAGS_START + 1) / 8)
+
 // Special Flags (Stored in EWRAM (sSpecialFlags), not in the SaveBlock)
 #define SPECIAL_FLAGS_START                     0x4000
 #define FLAG_HIDE_MAP_NAME_POPUP                (SPECIAL_FLAGS_START + 0x0)

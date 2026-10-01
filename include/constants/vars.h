@@ -279,6 +279,11 @@
 #define VARS_END                                         0x40FF
 #define VARS_COUNT                                       (VARS_END - VARS_START + 1)
 
+// Kanto vars (Stored in SaveBlock2 kantoVars). 0x4200-0x42FF is reserved for Johto.
+#define KANTO_VARS_START                                 0x4100
+#define KANTO_VARS_END                                   0x41FF
+#define KANTO_VARS_COUNT                                 (KANTO_VARS_END - KANTO_VARS_START + 1)
+
 #define SPECIAL_VARS_START            0x8000
 // special vars
 // They are commonly used as parameters to commands, or return values from commands.

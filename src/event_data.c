@@ -160,18 +160,26 @@ bool32 CanResetRTC(void)
         return FALSE;
 }
 
+STATIC_ASSERT(VARS_END < KANTO_VARS_START, KantoVarsOverlapVars);
+STATIC_ASSERT(KANTO_VARS_END < SPECIAL_VARS_START, KantoVarsOverlapSpecialVars);
+
+// Ids outside every range return NULL, so VarGet passes them through as literals.
 u16 *GetVarPointer(u16 id)
 {
     if (id < VARS_START)
         return NULL;
-    else if (id < SPECIAL_VARS_START)
+    else if (id <= VARS_END)
         return &gSaveBlock1Ptr->vars[id - VARS_START];
+    else if (id >= KANTO_VARS_START && id <= KANTO_VARS_END)
+        return &gSaveBlock2Ptr->kantoVars[id - KANTO_VARS_START];
+    else if (id >= SPECIAL_VARS_START && id <= SPECIAL_VARS_END)
+        return gSpecialVars[id - SPECIAL_VARS_START];
 #if TESTING
     else if (id >= TESTING_VARS_START)
         return &sTestVars[id - TESTING_VARS_START];
 #endif // TESTING
     else
-        return gSpecialVars[id - SPECIAL_VARS_START];
+        return NULL;
 }
 
 u16 VarGet(u16 id)
@@ -204,18 +212,27 @@ u16 VarGetObjectEventGraphicsId(u8 id)
     return VarGet(VAR_OBJ_GFX_ID_0 + id);
 }
 
+STATIC_ASSERT(FLAGS_COUNT <= KANTO_FLAGS_START, KantoFlagsOverlapFlags);
+STATIC_ASSERT(KANTO_FLAGS_END < SPECIAL_FLAGS_START, KantoFlagsOverlapSpecialFlags);
+STATIC_ASSERT(KANTO_FLAGS_START % 8 == 0, KantoFlagsByteAligned);
+
 u8 *GetFlagPointer(u16 id)
 {
     if (id == 0)
         return NULL;
-    else if (id < SPECIAL_FLAGS_START)
+    else if (id < FLAGS_COUNT)
         return &gSaveBlock1Ptr->flags[id / 8];
+    else if (id >= KANTO_FLAGS_START && id <= KANTO_FLAGS_END)
+        return &gSaveBlock2Ptr->kantoFlags[(id - KANTO_FLAGS_START) / 8];
+    else if (id >= SPECIAL_FLAGS_START && id <= SPECIAL_FLAGS_END)
+        return &sSpecialFlags[(id - SPECIAL_FLAGS_START) / 8];
 #if TESTING
     else if (id >= TESTING_FLAGS_START)
         return &sTestFlags[(id - TESTING_FLAGS_START) / 8];
 #endif // TESTING
-    else
-        return &sSpecialFlags[(id - SPECIAL_FLAGS_START) / 8];
+
+    DebugPrintf("GetFlagPointer: flag 0x%x is outside every flag range", id);
+    return NULL;
 }
 
 u8 FlagSet(u16 id)

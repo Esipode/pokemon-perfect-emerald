@@ -3499,13 +3499,21 @@ static const struct DebugSelection sStaticMassOutbreakSelection = {
 // *******************************
 // Actions Flags and Vars
 
+// Ids between the SaveBlock1 flags and the Kanto range have no storage.
+static bool32 DebugIsFlagInRangeGap(u32 flag)
+{
+    return flag >= FLAGS_COUNT && flag < KANTO_FLAGS_START;
+}
+
 static void DebugSelectionStep_UpdateFlag(u8 taskId, u8 digits, u32 min, u32 max)
 {
     u32 flag = gTasks[taskId].tInput;
     ConvertIntToDecimalStringN(gStringVar1, flag, STR_CONV_MODE_LEADING_ZEROS, digits);
-    ConvertIntToHexStringN(gStringVar3, flag, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ConvertIntToHexStringN(gStringVar3, flag, STR_CONV_MODE_LEFT_ALIGN, 4);
     StringExpandPlaceholders(gStringVar2, COMPOUND_STRING("0x{STR_VAR_3}"));
-    if (FlagGet(flag))
+    if (DebugIsFlagInRangeGap(flag))
+        StringCopy(gStringVar3, COMPOUND_STRING("NONE"));
+    else if (FlagGet(flag))
         StringCopy(gStringVar3, sDebugText_True);
     else
         StringCopy(gStringVar3, sDebugText_False);
@@ -3514,7 +3522,8 @@ static void DebugSelectionStep_UpdateFlag(u8 taskId, u8 digits, u32 min, u32 max
 
 static bool32 DebugSelection_ToggleFlag_Complete(u8 taskId)
 {
-    FlagToggle(gTasks[taskId].tInput);
+    if (!DebugIsFlagInRangeGap(gTasks[taskId].tInput))
+        FlagToggle(gTasks[taskId].tInput);
     gTasks[taskId].tStep = 0;
     gTasks[taskId].tStepsDataIndex = 0;
     return FALSE;
@@ -3524,7 +3533,7 @@ static const struct DebugSelectionStep sFlagSelectionStep = {
     .stepUpdate = DebugSelectionStep_UpdateFlag,
     .stepConfirm = DebugSelectionStep_GenericInputConfirm,
     .minValue = FLAG_TEMP_1,
-    .maxValue = FLAGS_COUNT - 1,
+    .maxValue = KANTO_FLAGS_END,
     .digits = 4
 };
 
@@ -3576,7 +3585,7 @@ static const struct DebugSelectionStep sVarIdSelectionStep = {
     .stepUpdate = DebugSelectionStep_UpdateVarId,
     .stepConfirm = DebugSelectionStep_GenericInputConfirm,
     .minValue = VARS_START,
-    .maxValue = VARS_END,
+    .maxValue = KANTO_VARS_END,
     .digits = 4
 };
 

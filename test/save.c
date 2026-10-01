@@ -52,6 +52,8 @@
 //   struct HealthboxOptions (one u32 bitfield, 21 bits used) appended after playerColorSlots:
 //     776 + 4 = 780. Hand-calculated -- confirm against the real build error if this
 //     mismatches.
+//   kantoFlags[320] (u8) then kantoVars[256] (u16) appended: 780 + 320 = 1100 (even, so
+//     kantoVars needs no pad) + 512 = 1612, already a multiple of 4.
 //
 // PokemonStorage (starts at 40944, ends at 67900):
 //   TOTAL_BOXES_COUNT 14 -> 16: +2 * (30 * sizeof(BoxPokemon) + BOX_NAME_LENGTH + 1 + 1
@@ -64,7 +66,7 @@
 //     (4*104). Names plus wallpapers cost 10 bytes per box, so fusions' offset stays
 //     4-aligned only when N is even; 16 and 28 both are.
 #define T_SAVEBLOCK1_SIZE 7740
-#define T_SAVEBLOCK2_SIZE 780
+#define T_SAVEBLOCK2_SIZE 1612
 #define T_SAVEBLOCK3_SIZE 2216
 #define T_POKEMONSTORAGE_SIZE 67900
 
