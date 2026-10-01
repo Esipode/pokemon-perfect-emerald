@@ -107,7 +107,19 @@ static const u16 sSlotPickedFill[2] = {RGB(6, 16, 10), RGB(11, 22, 14)};
 #define INFO_PIX_HATCH       11
 #define INFO_PIX_TRACK       12
 #define INFO_PIX_STAT_BAR    13
+#define INFO_PIX_SPEED_BAR   14
 #define INFO_PIX_ACCENT      15
+
+// Stat bar colours, indexed by PARTY_DASH_STAT_*. They match the healthbox stat-change arrow hues.
+static const u8 sStatBarPix[PARTY_DASH_STAT_COUNT] =
+{
+    [PARTY_DASH_STAT_HP]    = INFO_PIX_STAT_BAR,
+    [PARTY_DASH_STAT_ATK]   = INFO_PIX_HP_RED,
+    [PARTY_DASH_STAT_DEF]   = INFO_PIX_HP_YELLOW,
+    [PARTY_DASH_STAT_SPATK] = INFO_PIX_EXP,
+    [PARTY_DASH_STAT_SPDEF] = INFO_PIX_HP_GREEN,
+    [PARTY_DASH_STAT_SPEED] = INFO_PIX_SPEED_BAR,
+};
 
 // Identity window (12x8 tiles) geometry in pixels.
 #define IDENT_TEXT_X         2

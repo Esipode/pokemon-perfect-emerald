@@ -806,7 +806,7 @@ static void DrawBodyStats(struct PartyDashboardMon *mon)
         PrintBody(FONT_SMALL, INFO_LABEL_X, y + INFO_LABEL_DY, GetStatLabelColors(mon, stat), sDashStatLabels[stat]);
 
         FillWindowPixelRect(WIN_DASH_BODY, INFO_PIX_TRACK, STATS_BAR_X, y + STATS_BAR_DY, barWidth, STATS_BAR_H);
-        FillWindowPixelRect(WIN_DASH_BODY, INFO_PIX_STAT_BAR, STATS_BAR_X, y + STATS_BAR_DY,
+        FillWindowPixelRect(WIN_DASH_BODY, sStatBarPix[i], STATS_BAR_X, y + STATS_BAR_DY,
                             PartyDashboard_StatBarWidth(mon->stats[i], i, mon->level, barWidth), STATS_BAR_H);
 
         ConvertIntToDecimalStringN(gStringVar1, mon->stats[i], STR_CONV_MODE_LEFT_ALIGN, 4);
