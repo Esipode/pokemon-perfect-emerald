@@ -1622,6 +1622,182 @@
       "y": 4,
       "width": 1,
       "height": 1
+    },
+    {
+      "id": "MAPSEC_NEW_BARK_TOWN",
+      "name": "NEW BARK TOWN"
+    },
+    {
+      "id": "MAPSEC_CHERRYGROVE_CITY",
+      "name": "CHERRYGROVE CITY"
+    },
+    {
+      "id": "MAPSEC_VIOLET_CITY",
+      "name": "VIOLET CITY"
+    },
+    {
+      "id": "MAPSEC_AZALEA_TOWN",
+      "name": "AZALEA TOWN"
+    },
+    {
+      "id": "MAPSEC_GOLDENROD_CITY",
+      "name": "GOLDENROD CITY"
+    },
+    {
+      "id": "MAPSEC_ECRUTEAK_CITY",
+      "name": "ECRUTEAK CITY"
+    },
+    {
+      "id": "MAPSEC_OLIVINE_CITY",
+      "name": "OLIVINE CITY"
+    },
+    {
+      "id": "MAPSEC_CIANWOOD_CITY",
+      "name": "CIANWOOD CITY"
+    },
+    {
+      "id": "MAPSEC_MAHOGANY_TOWN",
+      "name": "MAHOGANY TOWN"
+    },
+    {
+      "id": "MAPSEC_BLACKTHORN_CITY",
+      "name": "BLACKTHORN CITY"
+    },
+    {
+      "id": "MAPSEC_ROUTE_26",
+      "name": "ROUTE 26"
+    },
+    {
+      "id": "MAPSEC_ROUTE_27",
+      "name": "ROUTE 27"
+    },
+    {
+      "id": "MAPSEC_ROUTE_28",
+      "name": "ROUTE 28"
+    },
+    {
+      "id": "MAPSEC_ROUTE_29",
+      "name": "ROUTE 29"
+    },
+    {
+      "id": "MAPSEC_ROUTE_30",
+      "name": "ROUTE 30"
+    },
+    {
+      "id": "MAPSEC_ROUTE_31",
+      "name": "ROUTE 31"
+    },
+    {
+      "id": "MAPSEC_ROUTE_32",
+      "name": "ROUTE 32"
+    },
+    {
+      "id": "MAPSEC_ROUTE_33",
+      "name": "ROUTE 33"
+    },
+    {
+      "id": "MAPSEC_ROUTE_34",
+      "name": "ROUTE 34"
+    },
+    {
+      "id": "MAPSEC_ROUTE_35",
+      "name": "ROUTE 35"
+    },
+    {
+      "id": "MAPSEC_ROUTE_36",
+      "name": "ROUTE 36"
+    },
+    {
+      "id": "MAPSEC_ROUTE_37",
+      "name": "ROUTE 37"
+    },
+    {
+      "id": "MAPSEC_ROUTE_38",
+      "name": "ROUTE 38"
+    },
+    {
+      "id": "MAPSEC_ROUTE_39",
+      "name": "ROUTE 39"
+    },
+    {
+      "id": "MAPSEC_ROUTE_40",
+      "name": "ROUTE 40"
+    },
+    {
+      "id": "MAPSEC_ROUTE_41",
+      "name": "ROUTE 41"
+    },
+    {
+      "id": "MAPSEC_ROUTE_42",
+      "name": "ROUTE 42"
+    },
+    {
+      "id": "MAPSEC_ROUTE_43",
+      "name": "ROUTE 43"
+    },
+    {
+      "id": "MAPSEC_ROUTE_44",
+      "name": "ROUTE 44"
+    },
+    {
+      "id": "MAPSEC_ROUTE_45",
+      "name": "ROUTE 45"
+    },
+    {
+      "id": "MAPSEC_ROUTE_46",
+      "name": "ROUTE 46"
+    },
+    {
+      "id": "MAPSEC_ROUTE_47",
+      "name": "ROUTE 47"
+    },
+    {
+      "id": "MAPSEC_ROUTE_48",
+      "name": "ROUTE 48"
+    },
+    {
+      "id": "MAPSEC_RUINS_OF_ALPH",
+      "name": "RUINS OF ALPH"
+    },
+    {
+      "id": "MAPSEC_UNION_CAVE",
+      "name": "UNION CAVE"
+    },
+    {
+      "id": "MAPSEC_ILEX_FOREST",
+      "name": "ILEX FOREST"
+    },
+    {
+      "id": "MAPSEC_MT_MORTAR",
+      "name": "MT. MORTAR"
+    },
+    {
+      "id": "MAPSEC_LAKE_OF_RAGE",
+      "name": "LAKE OF RAGE"
+    },
+    {
+      "id": "MAPSEC_ICE_PATH",
+      "name": "ICE PATH"
+    },
+    {
+      "id": "MAPSEC_WHIRL_ISLANDS",
+      "name": "WHIRL ISLANDS"
+    },
+    {
+      "id": "MAPSEC_DARK_CAVE",
+      "name": "DARK CAVE"
+    },
+    {
+      "id": "MAPSEC_MT_SILVER",
+      "name": "MT. SILVER"
+    },
+    {
+      "id": "MAPSEC_VICTORY_ROAD_JOHTO",
+      "name": "VICTORY ROAD"
+    },
+    {
+      "id": "MAPSEC_JOHTO_LEAGUE",
+      "name": "JOHTO LEAGUE"
     }
   ]
 }

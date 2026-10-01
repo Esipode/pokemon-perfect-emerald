@@ -786,6 +786,9 @@ struct PendingTrade
 #define NUM_NUZLOCKE_ZONE_FLAG_BYTES ((MAPSEC_COUNT + 7) / 8)
 #define NUM_NUZLOCKE_ZONE_FLAGS      (NUM_NUZLOCKE_ZONE_FLAG_BYTES * 8)
 
+// MAPSECs are stored in u8 fields (mapsec_u8_t, metLocation); 0xFD-0xFF are METLOC_* ids.
+STATIC_ASSERT(MAPSEC_NONE < METLOC_SPECIAL_EGG, MapsecFitsBelowMetLocIds);
+
 // Healthbox style and per-side element toggles; accessors in healthbox_options.c.
 // initialized == 0 means a pre-feature save: readers fall back to defaults and the legacy
 // optionsHpDisplay* fields. The Exp toggle is player-only; the Caught and Catchable toggles are foe-only.
