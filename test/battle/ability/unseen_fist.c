@@ -15,7 +15,7 @@ ASSUMPTIONS
 
 TO_DO_BATTLE_TEST("TODO: Write Unseen Fist (Ability) test titles")
 
-SINGLE_BATTLE_TEST("Unseen Fist ignores Protect when user has Protective Pads, but not with Punching Glove", s16 damage)
+SINGLE_BATTLE_TEST("Unseen Fist ignores Protect when user has Protective Pads, but not with Punching Glove", s32 damage)
 {
     enum Item item;
 
@@ -151,7 +151,7 @@ SINGLE_BATTLE_TEST("Unseen Fist no longer bypasses the contact effects of protec
     }
 }
 
-SINGLE_BATTLE_TEST("Unseen Fist deals 25% of the damage dealt to protected targets (Champions)", s16 damage)
+SINGLE_BATTLE_TEST("Unseen Fist deals 25% of the damage dealt to protected targets (Champions)", s32 damage)
 {
     u32 genConfig;
     PARAMETRIZE { genConfig = GEN_9; }
@@ -172,7 +172,7 @@ SINGLE_BATTLE_TEST("Unseen Fist deals 25% of the damage dealt to protected targe
     }
 }
 
-SINGLE_BATTLE_TEST("Unseen Fist still deals 100% of the damage dealt with Phantom Force (Champions)", s16 damage)
+SINGLE_BATTLE_TEST("Unseen Fist still deals 100% of the damage dealt with Phantom Force (Champions)", s32 damage)
 {
     u32 genConfig;
     PARAMETRIZE { genConfig = GEN_9; }

@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Fire Mane increases Fire-type move damage", s16 damage[2])
+SINGLE_BATTLE_TEST("Fire Mane increases Fire-type move damage", s32 damage[2])
 {
     enum Move move;
 

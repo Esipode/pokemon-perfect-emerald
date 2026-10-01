@@ -1,7 +1,7 @@
 #include "global.h"
 #include "test/battle.h"
 
-SINGLE_BATTLE_TEST("Sky Plate doesn't boost Flying Press' power", s16 damage)
+SINGLE_BATTLE_TEST("Sky Plate doesn't boost Flying Press' power", s32 damage)
 {
     enum Item item;
 

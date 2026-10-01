@@ -161,7 +161,7 @@ AI_DOUBLE_BATTLE_TEST("Both player Pokemon gain experience in double battles")
     } WHEN {
         TURN { }
     } THEN {
-        EXPECT(GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_EXP) > gExperienceTables[gSpeciesInfo[SPECIES_WOBBUFFET].growthRate][99]);
+        EXPECT(GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_EXP) > GetExperienceAtLevel(gSpeciesInfo[SPECIES_WOBBUFFET].growthRate, 99));
         EXPECT(GetMonData(&gParties[B_TRAINER_PLAYER][1], MON_DATA_LEVEL) > 1);
     }
 }

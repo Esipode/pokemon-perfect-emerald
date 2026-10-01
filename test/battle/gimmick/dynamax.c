@@ -1805,7 +1805,7 @@ DOUBLE_BATTLE_TEST("Dynamax: G-Max Volt Crash paralyzes other opponent even if i
     }
 }
 
-SINGLE_BATTLE_TEST("Dynamax: Max Move power is based on the base move", s16 damage)
+SINGLE_BATTLE_TEST("Dynamax: Max Move power is based on the base move", s32 damage)
 {
     u32 move;
 

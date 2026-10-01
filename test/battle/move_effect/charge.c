@@ -157,7 +157,7 @@ SINGLE_BATTLE_TEST("Charge will expire if user flinches while using an electric 
 
 SINGLE_BATTLE_TEST("Charge does not apply its damage boost to Electro Shot on its second turn charge")
 {
-    s16 dmgBefore, dmgAfter;
+    s32 dmgBefore, dmgAfter;
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);

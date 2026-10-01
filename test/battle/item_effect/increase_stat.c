@@ -133,7 +133,7 @@ SINGLE_BATTLE_TEST("X Speed sharply raises battler's Speed stat", s32 damage)
     }
 }
 
-SINGLE_BATTLE_TEST("B_X_ITEMS_BUFF only boost battler by one stage prior to gen 7", s16 damage)
+SINGLE_BATTLE_TEST("B_X_ITEMS_BUFF only boost battler by one stage prior to gen 7", s32 damage)
 {
     u16 genConfig = 0;
     PARAMETRIZE { genConfig = GEN_6; }

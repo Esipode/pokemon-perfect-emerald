@@ -821,7 +821,7 @@ ONE_VS_TWO_BATTLE_TEST("(Z-MOVE) Every battler can use Z-Moves - 1v2")
     }
 }
 
-SINGLE_BATTLE_TEST("(Z-MOVE) Z-Move power is based on the base move", s16 damage)
+SINGLE_BATTLE_TEST("(Z-MOVE) Z-Move power is based on the base move", s32 damage)
 {
     enum Move move;
 

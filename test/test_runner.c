@@ -994,7 +994,7 @@ static s32 MgbaVPrintf_(const char *fmt, va_list va)
                     u8 c = *pokeS++;
                     if (CHAR_a <= c && c <= CHAR_z)
                     {
-                        i = MgbaPutchar_(i, mini_pchar_decode(gCaseToggleTable[c]));
+                        i = MgbaPutchar_(i, mini_pchar_decode(CHAR_A + (c - CHAR_a)));
                         wasUnderscore = FALSE;
                     }
                     else if (CHAR_A <= c && c <= CHAR_Z)

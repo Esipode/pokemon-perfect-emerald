@@ -141,7 +141,7 @@ TEST("ENC_OP_VAR reads a variable an earlier script set")
 
     EXPECT(TryRunEncounterCheckpoint(ENC_ON_TURN_START) == NULL); // vars[0] defaults to 0
 
-    battleStruct->encounter.vars[0] = 1; // stand-in for an earlier script's SET_VARIABLE
+    gEncounterVars[0] = 1; // stand-in for an earlier script's SET_VARIABLE
     EXPECT(TryRunEncounterCheckpoint(ENC_ON_TURN_START) == sScriptA);
 
     EndEncounterTest(battleStruct);

@@ -37,7 +37,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if False Swipe connected but didn
 
 DOUBLE_BATTLE_TEST("Assurance does not double in power if the target's damage is blocked by Substitute")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_SUBSTITUTE) == EFFECT_SUBSTITUTE);
@@ -68,7 +68,7 @@ DOUBLE_BATTLE_TEST("Assurance does not double in power if the target's damage is
 
 SINGLE_BATTLE_TEST("Assurance does not double in power if the target took damage from confusion")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_CONFUSE_RAY) == EFFECT_CONFUSE);
@@ -115,7 +115,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Recoil")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveRecoil(MOVE_TAKE_DOWN) > 0);
@@ -137,7 +137,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Crash")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_JUMP_KICK) == EFFECT_RECOIL_IF_MISS);
@@ -163,7 +163,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Rocky Helmet")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(gItemsInfo[ITEM_ROCKY_HELMET].holdEffect == HOLD_EFFECT_ROCKY_HELMET);
@@ -186,7 +186,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Rough Skin")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -209,7 +209,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Iron Barbs")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { MaxHP(999); HP(999); };
@@ -232,7 +232,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Liquid Ooze")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(MoveHasAdditionalEffect(MOVE_ABSORB, MOVE_EFFECT_ABSORB));
@@ -255,7 +255,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Aftermath")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -283,7 +283,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Innards Out")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET);
@@ -311,7 +311,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Jaboca Berry")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(gItemsInfo[ITEM_JABOCA_BERRY].holdEffect == HOLD_EFFECT_JABOCA_BERRY);
@@ -335,7 +335,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Rowap Berry")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveCategory(MOVE_SWIFT) == DAMAGE_CATEGORY_SPECIAL);
@@ -360,7 +360,7 @@ SINGLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Spiky Shield")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_SPIKY_SHIELD) == EFFECT_PROTECT);
@@ -390,7 +390,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if Ice Face has been broken by attacker")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_HAIL) == EFFECT_WEATHER);
@@ -430,7 +430,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if Ice Face has been broken by at
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if Disguise has been broken")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         PLAYER(SPECIES_MIMIKYU_DISGUISED) { Speed(1); Ability(ABILITY_DISGUISE); }
@@ -463,7 +463,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if Disguise has been broken")
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Powder")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_POWDER) == EFFECT_POWDER);
@@ -494,7 +494,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by Flame Burst residual damage")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(MoveHasAdditionalEffect(MOVE_EMBER, MOVE_EFFECT_BURN));
@@ -523,7 +523,7 @@ DOUBLE_BATTLE_TEST("Assurance doubles in power if the target has been damaged by
 
 SINGLE_BATTLE_TEST("Assurance does not double in power if HP was reduced by Belly Drum")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_BELLY_DRUM) == EFFECT_BELLY_DRUM);
@@ -545,7 +545,7 @@ SINGLE_BATTLE_TEST("Assurance does not double in power if HP was reduced by Bell
 
 SINGLE_BATTLE_TEST("Assurance does not double in power if the target was damaged Pain Split")
 {
-    s16 hits[2];
+    s32 hits[2];
 
     GIVEN {
         ASSUME(GetMoveEffect(MOVE_PAIN_SPLIT) == EFFECT_PAIN_SPLIT);
