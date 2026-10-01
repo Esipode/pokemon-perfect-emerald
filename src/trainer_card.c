@@ -57,6 +57,7 @@ struct TrainerCardData
     bool8 hasAchievementStats;
     bool8 unused_F;
     u8 badgeCount[NUM_BADGES];
+    u8 kantoBadgeCount[NUM_BADGES];
     u8 easyChatProfile[TRAINER_CARD_PROFILE_LENGTH][13];
     u8 textPlayersCard[70];
     u8 textAchievementStat[6][48];
@@ -73,6 +74,7 @@ struct TrainerCardData
     u16 backTilemap[600];
     u16 bgTilemap[600];
     u8 badgeTiles[0x80 * NUM_BADGES];
+    u8 kantoBadgeTiles[0x80 * NUM_BADGES];
     u8 stickerTiles[0x200];
     u8 cardTiles[0x2300];
     u16 cardTilemapBuffer[0x1000];
@@ -241,7 +243,7 @@ static const struct WindowTemplate sTrainerCardWindowTemplates[] =
     [WIN_TRAINER_PIC] = {
         .bg = 3,
         .tilemapLeft = 19,
-        .tilemapTop = 5,
+        .tilemapTop = 4,
         .width = 9,
         .height = 10,
         .paletteNum = 8,
@@ -278,8 +280,8 @@ static const u8 sTrainerPicOffset[2][GENDER_COUNT][2] =
 {
     // Kanto
     {
-        [MALE]   = {13, 4},
-        [FEMALE] = {13, 4}
+        [MALE]   = {13, 12},
+        [FEMALE] = {13, 12}
     },
     // Hoenn
     {
@@ -561,6 +563,8 @@ static bool8 LoadCardGfx(void)
     case 5:
         if (sData->cardType == CARD_TYPE_FRLG)
             DecompressDataWithHeaderWram(sTrainerCardStickers_Gfx, sData->stickerTiles);
+        else
+            DecompressDataWithHeaderWram(sKantoTrainerCardBadges_Gfx, sData->kantoBadgeTiles);
         break;
     default:
         sData->gfxLoadState = 0;
@@ -837,6 +841,7 @@ static void SetDataFromTrainerCard(void)
     sData->hasAchievementStats = (sData->cardType == CARD_TYPE_EMERALD);
     sData->unused_F = FALSE;
     memset(sData->badgeCount, 0, sizeof(sData->badgeCount));
+    memset(sData->kantoBadgeCount, 0, sizeof(sData->kantoBadgeCount));
     if (sData->trainerCard.hasPokedex)
         sData->hasPokedex++;
 
@@ -844,6 +849,8 @@ static void SetDataFromTrainerCard(void)
     {
         if (FlagGet(badgeFlag))
             sData->badgeCount[i]++;
+        if (FlagGet(FLAG_BADGE01_GET_FRLG + i))
+            sData->kantoBadgeCount[i]++;
     }
 }
 
@@ -1016,7 +1023,7 @@ static void PrintNameOnCardFront(void)
     if (sData->cardType == CARD_TYPE_FRLG)
         AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 20, 28, sTrainerCardTextColors, TEXT_SKIP_DRAW, buffer);
     else
-        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 33, sTrainerCardTextColors, TEXT_SKIP_DRAW, buffer);
+        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 25, sTrainerCardTextColors, TEXT_SKIP_DRAW, buffer);
 }
 
 static void PrintIdOnCard(void)
@@ -1049,7 +1056,7 @@ static void PrintMoneyOnCard(void)
     if (!sData->isHoenn)
         AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 20, 56, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardMoney);
     else
-        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 57, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardMoney);
+        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 49, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardMoney);
 
     ConvertIntToDecimalStringN(gStringVar1, sData->trainerCard.money, STR_CONV_MODE_LEFT_ALIGN, MAX_MONEY_DIGITS);
     StringExpandPlaceholders(gStringVar4, gText_PokedollarVar1);
@@ -1061,7 +1068,7 @@ static void PrintMoneyOnCard(void)
     else
     {
         xOffset = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar4, 128);
-        top = 57;
+        top = 49;
     }
     AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, xOffset, top, sTrainerCardTextColors, TEXT_SKIP_DRAW, gStringVar4);
 }
@@ -1083,7 +1090,7 @@ static void PrintPokedexOnCard(void)
         if (!sData->isHoenn)
             AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 20, 72, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardPokedex);
         else
-            AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 73, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardPokedex);
+            AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 65, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardPokedex);
         StringCopy(ConvertIntToDecimalStringN(gStringVar4, sData->trainerCard.caughtMonsCount, STR_CONV_MODE_LEFT_ALIGN, 4), gText_EmptyString6);
         if (!sData->isHoenn)
         {
@@ -1093,7 +1100,7 @@ static void PrintPokedexOnCard(void)
         else
         {
             xOffset = GetStringRightAlignXOffset(FONT_NORMAL, gStringVar4, 128);
-            top = 73;
+            top = 65;
         }
         AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, xOffset, top, sTrainerCardTextColors, TEXT_SKIP_DRAW, gStringVar4);
     }
@@ -1111,7 +1118,7 @@ static void PrintTimeOnCard(void)
     if (!sData->isHoenn)
         AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 20, 88, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardTime);
     else
-        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 89, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardTime);
+        AddTextPrinterParameterized3(WIN_CARD_TEXT, FONT_NORMAL, 16, 81, sTrainerCardTextColors, TEXT_SKIP_DRAW, gText_TrainerCardTime);
 
     if (sData->isLink)
     {
@@ -1138,7 +1145,7 @@ static void PrintTimeOnCard(void)
     else
     {
         x = 128;
-        y = 89;
+        y = 81;
     }
     totalWidth = width + 30;
     x -= totalWidth;
@@ -1155,8 +1162,8 @@ static void PrintTimeOnCard(void)
 
 static void PrintProfilePhraseOnCard(void)
 {
-    static const u8 yOffsetsLine1[] = {113, 104};
-    static const u8 yOffsetsLine2[] = {129, 120};
+    static const u8 yOffsetsLine1[] = {113, 96};
+    static const u8 yOffsetsLine2[] = {129, 112};
 
     if (sData->isLink)
     {
@@ -1325,11 +1332,14 @@ static void PrintStickersOnCard(void)
 
 static void LoadStickerGfx(void)
 {
-    LoadPalette(sTrainerCardSticker1_Pal, BG_PLTT_ID(11), PLTT_SIZE_4BPP);
+    if (sData->cardType == CARD_TYPE_FRLG)
+        LoadPalette(sTrainerCardSticker1_Pal, BG_PLTT_ID(11), PLTT_SIZE_4BPP);
+    else
+        LoadPalette(sKantoTrainerCardBadges_Pal, BG_PLTT_ID(11), PLTT_SIZE_4BPP);
     LoadPalette(sTrainerCardSticker2_Pal, BG_PLTT_ID(12), PLTT_SIZE_4BPP);
     LoadPalette(sTrainerCardSticker3_Pal, BG_PLTT_ID(13), PLTT_SIZE_4BPP);
     LoadPalette(sTrainerCardSticker4_Pal, BG_PLTT_ID(14), PLTT_SIZE_4BPP);
-    LoadBgTiles(3, sData->stickerTiles, 1024, 128);
+    LoadBgTiles(3, sData->cardType == CARD_TYPE_FRLG ? sData->stickerTiles : sData->kantoBadgeTiles, 1024, 128);
 }
 
 static void DrawTrainerCardWindow(u8 windowId)
@@ -1416,31 +1426,38 @@ static void DrawCardFrontOrBack(u16 *ptr)
     CopyBgTilemapBufferToVram(0);
 }
 
+static void DrawBadgeRow(const u8 *earned, u16 tileNum, u8 palNum, s16 y)
+{
+    s16 i, x = 4;
+
+    for (i = 0; i < NUM_BADGES; i++, tileNum += 2, x += 3)
+    {
+        if (earned[i])
+        {
+            FillBgTilemapBufferRect(3, tileNum, x, y, 1, 1, palNum);
+            FillBgTilemapBufferRect(3, tileNum + 1, x + 1, y, 1, 1, palNum);
+            FillBgTilemapBufferRect(3, tileNum + 16, x, y + 1, 1, 1, palNum);
+            FillBgTilemapBufferRect(3, tileNum + 17, x + 1, y + 1, 1, 1, palNum);
+        }
+    }
+}
+
 static void DrawStarsAndBadgesOnCard(void)
 {
-    static const u8 yOffsets[] = {7, 7};
+    static const u8 yOffsets[] = {7, 6};
 
-    s16 i, x, y;
-    u16 tileNum = 192;
-    u8 palNum = 3;
+    s16 y;
 
     u8 numStars = min(sData->trainerCard.stars, TRAINER_CARD_MAX_STARS);
 
     FillBgTilemapBufferRect(3, 143, 3, yOffsets[sData->isHoenn], numStars, 1, 4);
     if (!sData->isLink)
     {
-        x = 4;
-        y = IS_FRLG ? 16 : 15;
-        for (i = 0; i < NUM_BADGES; i++, tileNum += 2, x += 3)
-        {
-            if (sData->badgeCount[i])
-            {
-                FillBgTilemapBufferRect(3, tileNum, x, y, 1, 1, palNum);
-                FillBgTilemapBufferRect(3, tileNum + 1, x + 1, y, 1, 1, palNum);
-                FillBgTilemapBufferRect(3, tileNum + 16, x, y + 1, 1, 1, palNum);
-                FillBgTilemapBufferRect(3, tileNum + 17, x + 1, y + 1, 1, 1, palNum);
-            }
-        }
+        // Hoenn badges fill the first strip row. Kanto badges use the second row with the sticker tiles and palette.
+        y = sData->cardType == CARD_TYPE_FRLG ? 16 : 14;
+        DrawBadgeRow(sData->badgeCount, 192, 3, y);
+        if (sData->cardType != CARD_TYPE_FRLG)
+            DrawBadgeRow(sData->kantoBadgeCount, 320, 11, y + 2);
     }
     CopyBgTilemapBufferToVram(3);
 }
