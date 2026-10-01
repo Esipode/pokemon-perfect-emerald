@@ -68,7 +68,11 @@ void ClearTempFieldEventData(void)
 
 void ClearDailyFlags(void)
 {
+    u16 flag;
+
     memset(&gSaveBlock1Ptr->flags[DAILY_FLAGS_START / 8], 0, DAILY_FLAGS_SIZE);
+    for (flag = JOHTO_DAILY_FLAGS_START; flag <= JOHTO_DAILY_FLAGS_END; flag++)
+        FlagClear(flag);
 }
 
 void DisableNationalPokedex(void)
@@ -164,6 +168,7 @@ STATIC_ASSERT(VARS_END < KANTO_VARS_START, KantoVarsOverlapVars);
 STATIC_ASSERT(KANTO_VARS_END < SPECIAL_VARS_START, KantoVarsOverlapSpecialVars);
 STATIC_ASSERT(KANTO_VARS_END < JOHTO_VARS_START, KantoVarsOverlapJohtoVars);
 STATIC_ASSERT(JOHTO_VARS_END < SPECIAL_VARS_START, JohtoVarsOverlapSpecialVars);
+STATIC_ASSERT(VAR_ROUTE28_SCIENTIST <= JOHTO_VARS_END, JohtoVarsOverflow);
 
 // Ids outside every range return NULL, so VarGet passes them through as literals.
 u16 *GetVarPointer(u16 id)
@@ -225,6 +230,9 @@ STATIC_ASSERT(JOHTO_FLAGS_END < SPECIAL_FLAGS_START, JohtoFlagsOverlapSpecialFla
 STATIC_ASSERT(JOHTO_FLAGS_START % 8 == 0, JohtoFlagsByteAligned);
 STATIC_ASSERT(JOHTO_HIDDEN_ITEMS_END <= FLAG_HIDDEN_ITEMS_START + 0x1FFF, JohtoHiddenItemsOverflow);
 STATIC_ASSERT(JOHTO_HIDDEN_ITEMS_END < JOHTO_TRAINER_FLAGS_START, JohtoHiddenItemsOverlapTrainers);
+STATIC_ASSERT(FLAG_HIDDEN_ITEM_ROUTE47_PEARL <= JOHTO_HIDDEN_ITEMS_END, JohtoHiddenItemFlagsOverflow);
+STATIC_ASSERT(FLAG_VISITED_SAFARI_ZONE_GATE < JOHTO_TRAINER_FLAGS_START, JohtoStoryFlagsOverlapTrainers);
+STATIC_ASSERT(JOHTO_DAILY_FLAGS_START >= JOHTO_FLAGS_START + 0x200 && JOHTO_DAILY_FLAGS_END < JOHTO_TRAINER_FLAGS_START, JohtoDailyFlagsRange);
 
 u8 *GetFlagPointer(u16 id)
 {

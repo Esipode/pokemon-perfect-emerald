@@ -289,6 +289,8 @@
 #define JOHTO_VARS_END                                   0x42FF
 #define JOHTO_VARS_COUNT                                 (JOHTO_VARS_END - JOHTO_VARS_START + 1)
 
+#include "constants/vars_johto.h"
+
 #define SPECIAL_VARS_START            0x8000
 // special vars
 // They are commonly used as parameters to commands, or return values from commands.

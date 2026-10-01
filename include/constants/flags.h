@@ -1651,6 +1651,12 @@
 #define JOHTO_FLAGS_END                         0x29FF
 #define NUM_JOHTO_FLAG_BYTES                    ((JOHTO_FLAGS_END - JOHTO_FLAGS_START + 1) / 8)
 
+#include "constants/flags_johto.h"
+
+// Johto daily flags are cleared by ClearDailyFlags (the SaveBlock1 daily range does not cover them).
+#define JOHTO_DAILY_FLAGS_START                 FLAG_DAILY_BEAT_SILVER
+#define JOHTO_DAILY_FLAGS_END                   FLAG_DAILY_FLOWER_SHOP_RECEIVED_BERRY_JOHTO
+
 // Special Flags (Stored in EWRAM (sSpecialFlags), not in the SaveBlock)
 #define SPECIAL_FLAGS_START                     0x4000
 #define FLAG_HIDE_MAP_NAME_POPUP                (SPECIAL_FLAGS_START + 0x0)
