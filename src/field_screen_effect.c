@@ -1429,8 +1429,16 @@ static void Task_RushInjuredPokemonToCenter(u8 taskId)
             DestroyTask(taskId);
             if (gTasks[taskId].tIsPlayerHouse)
             {
-                StringCopy(gStringVar1, COMPOUND_STRING("PROF. BIRCH"));
-                ScriptContext_SetupScript(EventScript_AfterWhiteOutMomHeal);
+                if (GetCurrentRegion() == REGION_KANTO)
+                {
+                    StringCopy(gStringVar1, COMPOUND_STRING("PROF. OAK"));
+                    ScriptContext_SetupScript(EventScript_AfterWhiteOutMomHeal_Frlg);
+                }
+                else
+                {
+                    StringCopy(gStringVar1, COMPOUND_STRING("PROF. BIRCH"));
+                    ScriptContext_SetupScript(EventScript_AfterWhiteOutMomHeal);
+                }
             }
             else if (GetCurrentRegion() == REGION_KANTO)
             {

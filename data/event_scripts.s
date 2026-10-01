@@ -1030,7 +1030,9 @@ gStdScripts_End::
 	.include "data/scripts/debug.inc"
 
 EventScript_WhiteOut::
-	call EverGrandeCity_HallOfFame_EventScript_ResetEliteFour
+	specialvar VAR_RESULT, IsPlayerInKanto
+	call_if_eq VAR_RESULT, TRUE, EventScript_ResetEliteFour
+	call_if_eq VAR_RESULT, FALSE, EverGrandeCity_HallOfFame_EventScript_ResetEliteFour
 	goto EventScript_ResetMrBriney
 	end
 

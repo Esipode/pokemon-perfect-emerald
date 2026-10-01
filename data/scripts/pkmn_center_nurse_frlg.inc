@@ -11,6 +11,18 @@ EventScript_AfterWhiteOutHeal_Frlg::
 	releaseall
 	end
 
+EventScript_AfterWhiteOutMomHeal_Frlg::
+	lockall
+	textcolor NPC_TEXT_COLOR_FEMALE
+	applymovement LOCALID_PALLET_PLAYERS_HOUSE_1F_MOM, Common_Movement_WalkInPlaceFasterDown
+	waitmovement 0
+	msgbox gText_HadQuiteAnExperienceTakeRest
+	call Common_EventScript_OutOfCenterPartyHeal
+	msgbox gText_MomExplainHPGetPotions
+	fadedefaultbgm
+	releaseall
+	end
+
 EventScript_PkmnCenterNurse_Frlg::
 	message Text_WelcomeWantToHealPkmn_Frlg
 	waitmessage
