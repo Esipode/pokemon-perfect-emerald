@@ -1065,11 +1065,11 @@ gStdScripts_End::
 	.include "data/scripts/trainers_frlg.inc"
 	.include "data/text/trainers_frlg.inc"
 	.include "data/text/ingame_trade_frlg.inc"
-	.include "data/scripts/flavor_text.inc"
 	.include "data/scripts/pkmn_center_nurse_frlg.inc"
 
 .endif
 
+	.include "data/scripts/flavor_text.inc"
 	.include "data/scripts/std_msgbox.inc"
 	.include "data/scripts/trainer_battle.inc"
 	.include "data/scripts/new_game.inc"
@@ -1662,7 +1662,7 @@ Common_EventScript_LegendaryFlewAway::
 
 EventScript_SetExitingCyclingRoad::
 	lockall
-	clearflag FLAG_SYS_ON_CYCLING_ROAD
+	clearflag FLAG_SYS_CYCLING_ROAD
 	setvar VAR_MAP_SCENE_ROUTE16, 0
 	releaseall
 	end

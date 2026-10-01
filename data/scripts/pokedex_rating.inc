@@ -38,7 +38,7 @@ PokedexRating_EventScript_Rate::
 	buffernumberstring STR_VAR_1, VAR_0x8008 @ Num Kanto Seen
 	buffernumberstring STR_VAR_2, VAR_0x8009 @ Num Kanto Caught
 	msgbox PokedexRating_Text_SeenXOwnedY
-	call_if_unset FLAG_OAKS_RATING_IS_VIA_PC, PokedexRating_EventScript_SetTextColor
+	call PokedexRating_EventScript_SetTextColor
 	call PokedexRating_EventScript_ShowRatingMsg
 	goto_if_eq VAR_0x800A, FALSE, PokedexRating_EventScript_EndRating  @ National Dex not enabled
 	setvar VAR_0x8004, 1
