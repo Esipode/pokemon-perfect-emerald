@@ -172,6 +172,10 @@ static const u16 sHoennTrainerCardFemaleBg_Pal[] = INCGFX_U16("graphics/trainer_
 static const u16 sKantoTrainerCardFemaleBg_Pal[] = INCGFX_U16("graphics/trainer_card/frlg/female_bg.pal", ".gbapal");
 static const u16 sHoennTrainerCardBadges_Pal[]   = INCGFX_U16("graphics/trainer_card/badges_color.png", ".gbapal");
 static const u16 sKantoTrainerCardBadges_Pal[]   = INCGFX_U16("graphics/trainer_card/frlg/badges.png", ".gbapal");
+static const u16 sKantoTrainerCardBadgeColor1_Pal[] = INCGFX_U16("graphics/trainer_card/frlg/badges_color_1.png", ".gbapal");
+static const u16 sKantoTrainerCardBadgeColor2_Pal[] = INCGFX_U16("graphics/trainer_card/frlg/badges_color_2.png", ".gbapal");
+static const u16 sKantoTrainerCardBadgeColor3_Pal[] = INCGFX_U16("graphics/trainer_card/frlg/badges_color_3.png", ".gbapal");
+static const u16 sKantoTrainerCardBadgeColor4_Pal[] = INCGFX_U16("graphics/trainer_card/frlg/badges_color_4.png", ".gbapal");
 static const u16 sTrainerCardStar_Pal[]          = INCGFX_U16("graphics/trainer_card/star.pal", ".gbapal");
 static const u16 sTrainerCardSticker1_Pal[]      = INCGFX_U16("graphics/trainer_card/frlg/stickers1.pal", ".gbapal");
 static const u16 sTrainerCardSticker2_Pal[]      = INCGFX_U16("graphics/trainer_card/frlg/stickers2.pal", ".gbapal");
@@ -179,6 +183,18 @@ static const u16 sTrainerCardSticker3_Pal[]      = INCGFX_U16("graphics/trainer_
 static const u16 sTrainerCardSticker4_Pal[]      = INCGFX_U16("graphics/trainer_card/frlg/stickers4.pal", ".gbapal");
 static const u32 sHoennTrainerCardBadges_Gfx[]   = INCGFX_U32("graphics/trainer_card/badges_color.png", ".4bpp.smol");
 static const u32 sKantoTrainerCardBadges_Gfx[]   = INCGFX_U32("graphics/trainer_card/frlg/badges.png", ".4bpp.smol");
+static const u32 sKantoTrainerCardBadgeColor1_Gfx[] = INCGFX_U32("graphics/trainer_card/frlg/badges_color_1.png", ".4bpp.smol");
+static const u32 sKantoTrainerCardBadgeColor2_Gfx[] = INCGFX_U32("graphics/trainer_card/frlg/badges_color_2.png", ".4bpp.smol");
+static const u32 sKantoTrainerCardBadgeColor3_Gfx[] = INCGFX_U32("graphics/trainer_card/frlg/badges_color_3.png", ".4bpp.smol");
+static const u32 sKantoTrainerCardBadgeColor4_Gfx[] = INCGFX_U32("graphics/trainer_card/frlg/badges_color_4.png", ".4bpp.smol");
+
+// Kanto row on the Hoenn card: each badge_color PNG is 32x16 (two badges, one palette bank).
+// Tiles per PNG: 8 (top row of both badges, then bottom row), so the row stride is 4.
+#define KANTO_BADGE_TILE_STRIDE 4
+static const u16 sHoennBadgeTileNums[NUM_BADGES] = {192, 194, 196, 198, 200, 202, 204, 206};
+static const u16 sKantoBadgeTileNums[NUM_BADGES] = {320, 328, 330, 322, 336, 344, 338, 346};
+static const u8 sHoennBadgePalNums[NUM_BADGES] = {3, 3, 3, 3, 3, 3, 3, 3};
+static const u8 sKantoBadgePalNums[NUM_BADGES] = {11, 12, 12, 11, 13, 14, 13, 14};
 
 static const struct BgTemplate sTrainerCardBgTemplates[4] =
 {
@@ -564,7 +580,12 @@ static bool8 LoadCardGfx(void)
         if (sData->cardType == CARD_TYPE_FRLG)
             DecompressDataWithHeaderWram(sTrainerCardStickers_Gfx, sData->stickerTiles);
         else
-            DecompressDataWithHeaderWram(sKantoTrainerCardBadges_Gfx, sData->kantoBadgeTiles);
+        {
+            DecompressDataWithHeaderWram(sKantoTrainerCardBadgeColor1_Gfx, sData->kantoBadgeTiles);
+            DecompressDataWithHeaderWram(sKantoTrainerCardBadgeColor2_Gfx, sData->kantoBadgeTiles + 0x100);
+            DecompressDataWithHeaderWram(sKantoTrainerCardBadgeColor3_Gfx, sData->kantoBadgeTiles + 0x200);
+            DecompressDataWithHeaderWram(sKantoTrainerCardBadgeColor4_Gfx, sData->kantoBadgeTiles + 0x300);
+        }
         break;
     default:
         sData->gfxLoadState = 0;
@@ -1333,12 +1354,19 @@ static void PrintStickersOnCard(void)
 static void LoadStickerGfx(void)
 {
     if (sData->cardType == CARD_TYPE_FRLG)
+    {
         LoadPalette(sTrainerCardSticker1_Pal, BG_PLTT_ID(11), PLTT_SIZE_4BPP);
+        LoadPalette(sTrainerCardSticker2_Pal, BG_PLTT_ID(12), PLTT_SIZE_4BPP);
+        LoadPalette(sTrainerCardSticker3_Pal, BG_PLTT_ID(13), PLTT_SIZE_4BPP);
+        LoadPalette(sTrainerCardSticker4_Pal, BG_PLTT_ID(14), PLTT_SIZE_4BPP);
+    }
     else
-        LoadPalette(sKantoTrainerCardBadges_Pal, BG_PLTT_ID(11), PLTT_SIZE_4BPP);
-    LoadPalette(sTrainerCardSticker2_Pal, BG_PLTT_ID(12), PLTT_SIZE_4BPP);
-    LoadPalette(sTrainerCardSticker3_Pal, BG_PLTT_ID(13), PLTT_SIZE_4BPP);
-    LoadPalette(sTrainerCardSticker4_Pal, BG_PLTT_ID(14), PLTT_SIZE_4BPP);
+    {
+        LoadPalette(sKantoTrainerCardBadgeColor1_Pal, BG_PLTT_ID(11), PLTT_SIZE_4BPP);
+        LoadPalette(sKantoTrainerCardBadgeColor2_Pal, BG_PLTT_ID(12), PLTT_SIZE_4BPP);
+        LoadPalette(sKantoTrainerCardBadgeColor3_Pal, BG_PLTT_ID(13), PLTT_SIZE_4BPP);
+        LoadPalette(sKantoTrainerCardBadgeColor4_Pal, BG_PLTT_ID(14), PLTT_SIZE_4BPP);
+    }
     LoadBgTiles(3, sData->cardType == CARD_TYPE_FRLG ? sData->stickerTiles : sData->kantoBadgeTiles, 1024, 128);
 }
 
@@ -1426,18 +1454,20 @@ static void DrawCardFrontOrBack(u16 *ptr)
     CopyBgTilemapBufferToVram(0);
 }
 
-static void DrawBadgeRow(const u8 *earned, u16 tileNum, u8 palNum, s16 y)
+static void DrawBadgeRow(const u8 *earned, const u16 *tileNums, u8 tileStride, const u8 *palNums, s16 y)
 {
     s16 i, x = 4;
 
-    for (i = 0; i < NUM_BADGES; i++, tileNum += 2, x += 3)
+    for (i = 0; i < NUM_BADGES; i++, x += 3)
     {
         if (earned[i])
         {
-            FillBgTilemapBufferRect(3, tileNum, x, y, 1, 1, palNum);
-            FillBgTilemapBufferRect(3, tileNum + 1, x + 1, y, 1, 1, palNum);
-            FillBgTilemapBufferRect(3, tileNum + 16, x, y + 1, 1, 1, palNum);
-            FillBgTilemapBufferRect(3, tileNum + 17, x + 1, y + 1, 1, 1, palNum);
+            u16 tileNum = tileNums[i];
+
+            FillBgTilemapBufferRect(3, tileNum, x, y, 1, 1, palNums[i]);
+            FillBgTilemapBufferRect(3, tileNum + 1, x + 1, y, 1, 1, palNums[i]);
+            FillBgTilemapBufferRect(3, tileNum + tileStride, x, y + 1, 1, 1, palNums[i]);
+            FillBgTilemapBufferRect(3, tileNum + tileStride + 1, x + 1, y + 1, 1, 1, palNums[i]);
         }
     }
 }
@@ -1453,11 +1483,11 @@ static void DrawStarsAndBadgesOnCard(void)
     FillBgTilemapBufferRect(3, 143, 3, yOffsets[sData->isHoenn], numStars, 1, 4);
     if (!sData->isLink)
     {
-        // Hoenn badges fill the first strip row. Kanto badges use the second row with the sticker tiles and palette.
+        // Hoenn badges fill the first strip row. Kanto badges use the second row with the sticker tiles and palette banks 11-14.
         y = sData->cardType == CARD_TYPE_FRLG ? 16 : 14;
-        DrawBadgeRow(sData->badgeCount, 192, 3, y);
+        DrawBadgeRow(sData->badgeCount, sHoennBadgeTileNums, 16, sHoennBadgePalNums, y);
         if (sData->cardType != CARD_TYPE_FRLG)
-            DrawBadgeRow(sData->kantoBadgeCount, 320, 11, y + 2);
+            DrawBadgeRow(sData->kantoBadgeCount, sKantoBadgeTileNums, KANTO_BADGE_TILE_STRIDE, sKantoBadgePalNums, y + 2);
     }
     CopyBgTilemapBufferToVram(3);
 }
