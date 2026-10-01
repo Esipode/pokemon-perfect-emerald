@@ -1,6 +1,6 @@
 ## Articuno — The Frozen Battlefield
 
-### Location: Shoal Cave - Low Tide - Monday Only
+### Location: Seafoam Islands
 
 Articuno fights behind a heavy damage reduction, a full set of one-hit-KO/fixed-damage immunities,
 a cap on incoming type effectiveness (its Ice/Flying typing is quad-weak to Rock, but a Rock move

@@ -4,7 +4,6 @@ ShoalCave_LowTideIceRoom_Articuno_MapScripts::
 	.byte 0
 
 ShoalCave_LowTideIceRoom_Articuno_OnTransition:
-	updatelegendaryvisibility SPECIES_ARTICUNO, FLAG_HIDE_ARTICUNO
 	updatelegendaryvisibility SPECIES_ARTICUNO_GALAR, FLAG_HIDE_GALARIAN_ARTICUNO
 	end
 
@@ -20,9 +19,6 @@ ShoalCave_LowTideIceRoom_Articuno_OnLoad:
 	special CountCaughtLegendaryFamilies
 	goto_if_lt VAR_RESULT, 40, ShoalCave_LowTideIceRoom_Articuno_HideGalarianArticunoArena
 	goto ShoalCave_LowTideIceRoom_Articuno_ShowGalarianArticunoArena
-
-ShoalCave_LowTideIceRoom_Articuno_Encounter::
-	goto LegendaryEncounter_EventScript_Articuno
 
 ShoalCave_LowTideIceRoom_Articuno_GalarianArticuno_Encounter::
 	goto LegendaryEncounter_EventScript_GalarianArticuno

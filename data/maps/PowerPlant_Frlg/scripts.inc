@@ -1,17 +1,7 @@
 PowerPlant_Frlg_MapScripts::
-	map_script MAP_SCRIPT_ON_RESUME, PowerPlant_OnResume
+	map_script MAP_SCRIPT_ON_LOAD, PowerPlant_OnLoad
 	map_script MAP_SCRIPT_ON_TRANSITION, PowerPlant_OnTransition
 	.byte 0
-
-PowerPlant_OnResume::
-	call_if_set FLAG_SYS_CTRL_OBJ_DELETE, PowerPlant_EventScript_TryRemoveStaticMon
-	end
-
-PowerPlant_EventScript_TryRemoveStaticMon::
-	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, Common_EventScript_NopReturn
-	removeobject VAR_LAST_TALKED
-	return
 
 PowerPlant_OnTransition::
 	setworldmapflag FLAG_WORLD_MAP_POWER_PLANT
@@ -28,30 +18,21 @@ PowerPlant_EventScript_ShowElectrode2::
 	clearflag FLAG_HIDE_POWER_PLANT_ELECTRODE_2
 	return
 
-PowerPlant_EventScript_Zapdos::
-	lock
-	faceplayer
-	setwildbattle SPECIES_ZAPDOS, 50
-	waitse
-	playmoncry SPECIES_ZAPDOS, CRY_MODE_ENCOUNTER
-	message Text_Gyaoo
-	waitmessage
-	waitmoncry
-	delay 10
-	playbgm MUS_RG_ENCOUNTER_GYM_LEADER, 0
-	waitbuttonpress
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, PowerPlant_EventScript_CaughtZapdos
-	release
+PowerPlant_OnLoad:
+	setvar VAR_0x8004, SPECIES_ZAPDOS
+	setvar VAR_0x8005, LAYOUT_POWER_PLANT
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, PowerPlant_HideZapdosArena
 	end
 
-@ Only catching Zapdos removes it for good; any other outcome leaves it here to be rechallenged.
-PowerPlant_EventScript_CaughtZapdos::
-	setflag FLAG_FOUGHT_ZAPDOS
-	return
+PowerPlant_Zapdos_Encounter::
+	goto LegendaryEncounter_EventScript_Zapdos
+
+PowerPlant_HideZapdosArena:
+	setflag FLAG_HIDE_ZAPDOS
+	end
 
 PowerPlant_EventScript_Electrode1::
 	lock

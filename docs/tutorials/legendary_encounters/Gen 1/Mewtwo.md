@@ -1,6 +1,6 @@
 ## Mewtwo — The Perfect Weapon
 
-### Location: Aqua Hideout - Tuesday
+### Location: Cerulean Cave
 
 Mewtwo fights behind a heavy damage reduction, the standard one-hit-KO/fixed-damage immunities, a 2x
 cap on incoming type effectiveness, and flat Toxic damage. It can't be caught until its final,

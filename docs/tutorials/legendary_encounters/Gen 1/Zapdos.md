@@ -1,6 +1,6 @@
 ## Zapdos — Storm Overload
 
-### Location: Route 110 - Thunderstorm Weather
+### Location: Power Plant
 
 Zapdos fights behind a heavy damage reduction, the standard one-hit-KO/fixed-damage immunities, a
 2x cap on incoming type effectiveness, and flat Toxic damage, and it can't be caught until its

@@ -585,7 +585,6 @@ gSpecials::
 	def_special CountCaughtLegendaryFamilies
 	def_special IsLastUsedWarp
 	def_special IsLastUsedWarpMap
-	def_special Route110ShowZapdos
 	def_special GetProgressionLevelCapSpecial
 	def_special EnableShopEvResetOption
 	def_special BufferEvResetCost

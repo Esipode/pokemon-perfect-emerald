@@ -11,10 +11,6 @@ Route110_OnResume:
 	call Route110_CheckGalarianZapdos
 	call_if_eq VAR_RESULT, FALSE, Route110_HideGalarianZapdos
 	call_if_eq VAR_RESULT, TRUE, Route110_ShowZapdos
-	updatelegendaryvisibility SPECIES_ZAPDOS, FLAG_HIDE_ZAPDOS
-	special Route110ShowZapdos
-	goto_if_eq VAR_RESULT, TRUE, Route110_ShowZapdos
-	goto_if_ne VAR_RESULT, TRUE, Route110_HideZapdos
 	end
 
 Route110_CheckGalarianZapdos:
@@ -59,7 +55,7 @@ Route110_OnLoad:
 	end
 
 Route110_CheckKoraidonSpawn:
-	@ Koraidon spawn gate: post-game, not already owned, Sunday daytime, no Zapdos encounter, 50+ legendary families caught
+	@ Koraidon spawn gate: post-game, not already owned, Sunday daytime, no Galarian Zapdos encounter, 50+ legendary families caught
 	setvar VAR_0x8004, SPECIES_KORAIDON
 	setvar VAR_0x8005, LAYOUT_ROUTE110
 	setvar VAR_0x8006, WEEKDAY_SUN
@@ -68,7 +64,7 @@ Route110_CheckKoraidonSpawn:
 	goto_if_eq VAR_RESULT, FALSE, Route110_HideKoraidon
 	gettimeofday
 	goto_if_ne VAR_0x8000, TIME_DAY, Route110_HideKoraidon
-	call Route110_IsZapdosEncounterActive
+	call Route110_CheckGalarianZapdos
 	goto_if_eq VAR_RESULT, TRUE, Route110_HideKoraidon
 	special CountCaughtLegendaryFamilies
 	goto_if_lt VAR_RESULT, 50, Route110_HideKoraidon
@@ -76,7 +72,7 @@ Route110_CheckKoraidonSpawn:
 	return
 
 Route110_CheckMiraidonSpawn:
-	@ Miraidon spawn gate: post-game, not already owned, Sunday night, no Zapdos encounter, 50+ legendary families caught
+	@ Miraidon spawn gate: post-game, not already owned, Sunday night, no Galarian Zapdos encounter, 50+ legendary families caught
 	setvar VAR_0x8004, SPECIES_MIRAIDON
 	setvar VAR_0x8005, LAYOUT_ROUTE110
 	setvar VAR_0x8006, WEEKDAY_SUN
@@ -85,7 +81,7 @@ Route110_CheckMiraidonSpawn:
 	goto_if_eq VAR_RESULT, FALSE, Route110_HideMiraidon
 	gettimeofday
 	goto_if_ne VAR_0x8000, TIME_NIGHT, Route110_HideMiraidon
-	call Route110_IsZapdosEncounterActive
+	call Route110_CheckGalarianZapdos
 	goto_if_eq VAR_RESULT, TRUE, Route110_HideMiraidon
 	special CountCaughtLegendaryFamilies
 	goto_if_lt VAR_RESULT, 50, Route110_HideMiraidon
@@ -104,30 +100,6 @@ Route110_HideKoraidon:
 
 Route110_HideMiraidon:
 	setflag FLAG_HIDE_MIRAIDON
-	return
-
-@ Mirrors the Zapdos / Galarian Zapdos spawn gates, which resolve in ON_RESUME (after ON_LOAD). Result in VAR_RESULT.
-Route110_IsZapdosEncounterActive:
-	call Route110_CheckGalarianZapdos
-	goto_if_eq VAR_RESULT, TRUE, Route110_IsZapdosEncounterActive_Done
-	getmapweather VAR_0x8008
-	goto_if_ne VAR_0x8008, WEATHER_RAIN_THUNDERSTORM, Route110_ZapdosEncounterInactive
-	goto_if_unset FLAG_SYS_GAME_CLEAR, Route110_ZapdosEncounterInactive
-	checkspeciesowned SPECIES_ZAPDOS
-	goto_if_eq VAR_RESULT, TRUE, Route110_ZapdosEncounterInactive
-	setvar VAR_RESULT, TRUE
-Route110_IsZapdosEncounterActive_Done:
-	return
-
-Route110_ZapdosEncounterInactive:
-	setvar VAR_RESULT, FALSE
-	return
-
-Route110_Zapdos_Encounter::
-	goto LegendaryEncounter_EventScript_Zapdos
-
-Route110_HideZapdos:
-	setflag FLAG_HIDE_ZAPDOS
 	return
 
 Route110_ShowZapdos:

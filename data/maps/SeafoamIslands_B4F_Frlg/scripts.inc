@@ -2,21 +2,10 @@
 
 SeafoamIslands_B4F_Frlg_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, SeafoamIslands_B4F_OnTransition
-	map_script MAP_SCRIPT_ON_RESUME, SeafoamIslands_B4F_OnResume
 	map_script MAP_SCRIPT_ON_LOAD, SeafoamIslands_B4F_OnLoad
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, SeafoamIslands_B4F_OnWarp
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, SeafoamIslands_B4F_OnFrame
 	.byte 0
-
-SeafoamIslands_B4F_OnResume::
-	call_if_set FLAG_SYS_CTRL_OBJ_DELETE, SeafoamIslands_B4F_EventScript_TryRemoveArticuno
-	end
-
-SeafoamIslands_B4F_EventScript_TryRemoveArticuno::
-	specialvar VAR_RESULT, GetBattleOutcome
-	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, Common_EventScript_NopReturn
-	removeobject VAR_LAST_TALKED
-	return
 
 SeafoamIslands_B4F_OnTransition::
 	updatelegendaryvisibility SPECIES_ARTICUNO, FLAG_HIDE_ARTICUNO
@@ -40,6 +29,7 @@ SeafoamIslands_B4F_EventScript_SetNoCurrentLayout::
 	return
 
 SeafoamIslands_B4F_OnLoad::
+	call SeafoamIslands_B4F_CheckArticunoSpawn
 	setvar NUM_BOULDERS_PRESENT, 0
 	call_if_unset FLAG_HIDE_SEAFOAM_B4F_BOULDER_1, SeafoamIslands_B4F_EventScript_AddBoulderPresent
 	call_if_unset FLAG_HIDE_SEAFOAM_B4F_BOULDER_2, SeafoamIslands_B4F_EventScript_AddBoulderPresent
@@ -147,29 +137,20 @@ SeafoamIslands_B4F_Movement_WalkUp::
 	walk_up
 	step_end
 
-SeafoamIslands_B4F_EventScript_Articuno::
-	lock
-	faceplayer
-	setwildbattle SPECIES_ARTICUNO, 50
-	waitse
-	playmoncry SPECIES_ARTICUNO, CRY_MODE_ENCOUNTER
-	message Text_Gyaoo
-	waitmessage
-	waitmoncry
-	delay 10
-	playbgm MUS_RG_ENCOUNTER_GYM_LEADER, 0
-	waitbuttonpress
-	setflag FLAG_SYS_CTRL_OBJ_DELETE
-	special BattleSetup_StartLegendaryBattle
-	clearflag FLAG_SYS_CTRL_OBJ_DELETE
-	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, SeafoamIslands_B4F_EventScript_CaughtArticuno
-	release
+SeafoamIslands_B4F_CheckArticunoSpawn:
+	setvar VAR_0x8004, SPECIES_ARTICUNO
+	setvar VAR_0x8005, LAYOUT_SEAFOAM_ISLANDS_B4F
+	setvar VAR_0x8006, WEEKDAY_ANY
+	setvar VAR_0x8007, 1
+	special CheckValidLegendaryEncounter
+	goto_if_eq VAR_RESULT, FALSE, SeafoamIslands_B4F_HideArticunoArena
 	end
 
-@ Only catching Articuno removes it for good; any other outcome leaves it here to be rechallenged.
-SeafoamIslands_B4F_EventScript_CaughtArticuno::
-	setflag FLAG_FOUGHT_ARTICUNO
+SeafoamIslands_B4F_Articuno_Encounter::
+	goto LegendaryEncounter_EventScript_Articuno
+
+SeafoamIslands_B4F_HideArticunoArena:
+	setflag FLAG_HIDE_ARTICUNO
 	return
 
 SeafoamIslands_B4F_EventScript_BoulderHintSign::

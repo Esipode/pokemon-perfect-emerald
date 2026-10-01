@@ -43,7 +43,6 @@ bool8 CutMoveRuinValleyCheck(void);
 void CutMoveOpenDottedHoleDoor(void);
 void PushChampionChallengeMenuEntries(void);
 void SelectChampionChallengeTrainerObjEvent(void);
-void Route110ShowZapdos(void);
 void SetBirchRescueMonGfx(void);
 void SetBirchRescueWildBattle(void);
 

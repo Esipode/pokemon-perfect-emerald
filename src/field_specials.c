@@ -5793,24 +5793,6 @@ void ForcePlayerToStartSurfing(void)
     SetPlayerAvatarTransitionFlags(PLAYER_AVATAR_FLAG_SURFING);
 }
 
-void Route110ShowZapdos(void)
-{
-    // If the weather is thunderstorms and the player has beat the Elite 4 and has not caught Zapdos
-    if (
-        gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(MAP_ROUTE110)
-        && gSaveBlock1Ptr->location.mapNum == MAP_NUM(MAP_ROUTE110)
-        && GetCurrentWeather() == WEATHER_RAIN_THUNDERSTORM
-        && FlagGet(FLAG_SYS_GAME_CLEAR)
-        && !CheckPlayerOwnsSpecies(SPECIES_ZAPDOS)
-    )
-    {
-        gSpecialVar_Result = TRUE;
-    }
-    else {
-        gSpecialVar_Result = FALSE;
-    }
-}
-
 void Route110_SetZapdosIslandElevation(void)
 {
     // Update elevation of tiles
