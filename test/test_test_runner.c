@@ -2,6 +2,12 @@
 #include "test/battle.h"
 #include "test/test.h"
 #include "test/battle.h"
+#include "constants/characters.h"
+
+TEST("Tests initialize a terminated player name")
+{
+    EXPECT(memchr(gSaveBlock2Ptr->playerName, EOS, sizeof(gSaveBlock2Ptr->playerName)) != NULL);
+}
 
 TEST("Tests resume after CRASH")
 {

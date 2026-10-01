@@ -498,8 +498,17 @@ static void HandleSetEffectBugBite(struct BattleCalcValues *cv, struct SetEffect
 
 static void HandleSetEffectRecoilHp25(struct BattleCalcValues *cv, struct SetEffect *se)
 {
-    s32 recoil = (gBattleMons[se->effectBattler].maxHP) / 4;
-    if (B_UPDATED_MOVE_DATA >= GEN_5 && (gBattleMons[se->effectBattler].maxHP % 4) >= 2) // Account for standard rounding (Gen5+)
+    s32 recoil;
+    if (GetConfig(B_STRUGGLE_RECOIL) < GEN_4)
+    {
+        u32 recoilPercentage = GetConfig(B_STRUGGLE_RECOIL) == GEN_1 ? 50 : 25;
+        recoil = gBattleStruct->moveDamage[gBattlerTarget] * recoilPercentage / 100;
+    }
+    else
+    {
+        recoil = (gBattleMons[se->effectBattler].maxHP) / 4;
+    }
+    if (GetConfig(B_STRUGGLE_RECOIL) >= GEN_5 && (gBattleMons[se->effectBattler].maxHP % 4) >= 2) // Account for standard rounding (Gen5+)
         recoil++;
     if (recoil == 0)
         recoil = 1;
@@ -933,7 +942,7 @@ static void HandleSetEffectWeather(struct BattleCalcValues *cv, struct SetEffect
         msg = B_MSG_STARTED_SANDSTORM;
         break;
     case MOVE_EFFECT_HAIL:
-        if (B_PREFERRED_ICE_WEATHER == B_ICE_WEATHER_SNOW)
+        if (GetConfig(B_PREFERRED_ICE_WEATHER) == B_ICE_WEATHER_SNOW)
         {
             weather = BATTLE_WEATHER_SNOW;
             msg = B_MSG_STARTED_SNOW;
@@ -1235,6 +1244,7 @@ static void HandleSetEffectBreakScreen(struct BattleCalcValues *cv, struct SetEf
 
         if (!failed)
         {
+            gBattleCommunication[MULTISTRING_CHOOSER] = 0;
             if (gSideTimers[side].reflectTimer)
                 gBattleCommunication[MULTISTRING_CHOOSER] |= 1 << 0;
             if (gSideTimers[side].lightscreenTimer)
@@ -1242,6 +1252,9 @@ static void HandleSetEffectBreakScreen(struct BattleCalcValues *cv, struct SetEf
             if (gSideTimers[side].auroraVeilTimer)
                 gBattleCommunication[MULTISTRING_CHOOSER] |= 1 << 2;
 
+            gSideTimers[side].reflectTimer = 0;
+            gSideTimers[side].lightscreenTimer = 0;
+            gSideTimers[side].auroraVeilTimer = 0;
             gSideStatuses[side] &= ~SIDE_STATUS_SCREEN_ANY;
             gBattleScripting.animTurn = 1;
             gBattleScripting.animTargetsHit = 1;
@@ -1434,6 +1447,7 @@ void SetMoveEffect(struct BattleCalcValues *cv, struct SetEffect *se)
     if (!se->primary && !affectsUser && IsMoveEffectBlockedByTarget(cv->abilities[se->effectBattler]))
         se->moveEffect = MOVE_EFFECT_NONE;
     else if (!se->primary
+          && !se->bypassSheerForce
           && IsSheerForceAffected(cv->move, cv->abilities[cv->battlerAtk])
           && !(se->moveEffect == MOVE_EFFECT_ORDER_UP && gBattleStruct->battlerState[cv->battlerAtk].commanderSpecies != SPECIES_NONE))
         se->moveEffect = MOVE_EFFECT_NONE;
@@ -1464,8 +1478,9 @@ void SetMoveEffectHelper(enum BattlerId battlerAtk, enum BattlerId effectBattler
     se.moveEffect = moveEffect;
     se.script = battleScript;
     se.effectBattler = effectBattler;
-    se.primary = effectFlags & EFFECT_PRIMARY;
-    se.certain = effectFlags & EFFECT_CERTAIN;
+    se.primary = (effectFlags & EFFECT_PRIMARY) != 0;
+    se.certain = (effectFlags & EFFECT_CERTAIN) != 0;
+    se.bypassSheerForce = (effectFlags & EFFECT_BYPASS_SHEER_FORCE) != 0;
 
     SetMoveEffect(&cv, &se);
 }
@@ -1547,4 +1562,3 @@ static bool32 IsFinalStrikeEffect(enum MoveEffect moveEffect)
         return FALSE;
     }
 }
-
