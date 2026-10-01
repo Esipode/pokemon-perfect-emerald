@@ -1642,6 +1642,15 @@
 
 #include "constants/flags_kanto.h"
 
+// Johto Flags (Stored in SaveBlock2 johtoFlags)
+// 0x2000-0x21F3 hidden items/item balls, 0x2200-0x23FF story/hide, 0x2400-0x25FF trainers, 0x2600-0x29FF spare.
+// Hidden-item ids are offsets from FLAG_HIDDEN_ITEMS_START in a 13-bit field, so they end at 0x21F3.
+#define JOHTO_FLAGS_START                       0x2000
+#define JOHTO_TRAINER_FLAGS_START               0x2400
+#define JOHTO_HIDDEN_ITEMS_END                  0x21F3
+#define JOHTO_FLAGS_END                         0x29FF
+#define NUM_JOHTO_FLAG_BYTES                    ((JOHTO_FLAGS_END - JOHTO_FLAGS_START + 1) / 8)
+
 // Special Flags (Stored in EWRAM (sSpecialFlags), not in the SaveBlock)
 #define SPECIAL_FLAGS_START                     0x4000
 #define FLAG_HIDE_MAP_NAME_POPUP                (SPECIAL_FLAGS_START + 0x0)

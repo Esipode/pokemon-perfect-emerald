@@ -152,7 +152,7 @@
 
 	@ Changes the value of destination to value.
 	.macro setvar destination:req, value:req, warn=TRUE
-	.if \warn && ((\value >= VARS_START && \value <= VARS_END) || (\value >= KANTO_VARS_START && \value <= KANTO_VARS_END) || (\value >= SPECIAL_VARS_START && \value <= SPECIAL_VARS_END))
+	.if \warn && ((\value >= VARS_START && \value <= VARS_END) || (\value >= KANTO_VARS_START && \value <= KANTO_VARS_END) || (\value >= JOHTO_VARS_START && \value <= JOHTO_VARS_END) || (\value >= SPECIAL_VARS_START && \value <= SPECIAL_VARS_END))
 	.warning "setvar with a value that might be a VAR_ constant; did you mean copyvar instead?"
 	.endif
 	.byte SCR_OP_SETVAR
@@ -176,7 +176,7 @@
 
 	@ Copies the value of source into destination.
 	.macro copyvar destination:req, source:req, warn=TRUE
-	.if \warn && !((\source >= VARS_START && \source <= VARS_END) || (\source >= KANTO_VARS_START && \source <= KANTO_VARS_END) || (\source >= SPECIAL_VARS_START && \source <= SPECIAL_VARS_END))
+	.if \warn && !((\source >= VARS_START && \source <= VARS_END) || (\source >= KANTO_VARS_START && \source <= KANTO_VARS_END) || (\source >= JOHTO_VARS_START && \source <= JOHTO_VARS_END) || (\source >= SPECIAL_VARS_START && \source <= SPECIAL_VARS_END))
 	.warning "copyvar with a value that is not a VAR_ constant; did you mean setvar instead?"
 	.endif
 	.byte SCR_OP_COPYVAR
@@ -256,7 +256,7 @@
 	.endm
 
 	@ Generic compare macro which attempts to deduce argument types based on their values
-	@ Any values between VARS_START to VARS_END, KANTO_VARS_START to KANTO_VARS_END and SPECIAL_VARS_START to SPECIAL_VARS_END are considered event variable identifiers
+	@ Any values between VARS_START to VARS_END, KANTO_VARS_START to KANTO_VARS_END, JOHTO_VARS_START to JOHTO_VARS_END and SPECIAL_VARS_START to SPECIAL_VARS_END are considered event variable identifiers
 	.macro compare var:req, arg:req
 		.if ((\arg >= VARS_START && \arg <= VARS_END) || (\arg >= KANTO_VARS_START && \arg <= KANTO_VARS_END) || (\arg >= SPECIAL_VARS_START && \arg <= SPECIAL_VARS_END))
 			compare_var_to_var \var, \arg

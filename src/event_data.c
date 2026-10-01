@@ -162,6 +162,8 @@ bool32 CanResetRTC(void)
 
 STATIC_ASSERT(VARS_END < KANTO_VARS_START, KantoVarsOverlapVars);
 STATIC_ASSERT(KANTO_VARS_END < SPECIAL_VARS_START, KantoVarsOverlapSpecialVars);
+STATIC_ASSERT(KANTO_VARS_END < JOHTO_VARS_START, KantoVarsOverlapJohtoVars);
+STATIC_ASSERT(JOHTO_VARS_END < SPECIAL_VARS_START, JohtoVarsOverlapSpecialVars);
 
 // Ids outside every range return NULL, so VarGet passes them through as literals.
 u16 *GetVarPointer(u16 id)
@@ -172,6 +174,8 @@ u16 *GetVarPointer(u16 id)
         return &gSaveBlock1Ptr->vars[id - VARS_START];
     else if (id >= KANTO_VARS_START && id <= KANTO_VARS_END)
         return &gSaveBlock2Ptr->kantoVars[id - KANTO_VARS_START];
+    else if (id >= JOHTO_VARS_START && id <= JOHTO_VARS_END)
+        return &gSaveBlock2Ptr->johtoVars[id - JOHTO_VARS_START];
     else if (id >= SPECIAL_VARS_START && id <= SPECIAL_VARS_END)
         return gSpecialVars[id - SPECIAL_VARS_START];
 #if TESTING
@@ -216,6 +220,11 @@ STATIC_ASSERT(FLAGS_COUNT <= KANTO_FLAGS_START, KantoFlagsOverlapFlags);
 STATIC_ASSERT(KANTO_FLAGS_END < SPECIAL_FLAGS_START, KantoFlagsOverlapSpecialFlags);
 STATIC_ASSERT(KANTO_FLAGS_START % 8 == 0, KantoFlagsByteAligned);
 STATIC_ASSERT(MAX_KANTO_TRAINERS_COUNT <= KANTO_FLAGS_END + 1 - KANTO_TRAINER_FLAGS_START, KantoTrainerFlagsOverflow);
+STATIC_ASSERT(KANTO_FLAGS_END < JOHTO_FLAGS_START, KantoFlagsOverlapJohtoFlags);
+STATIC_ASSERT(JOHTO_FLAGS_END < SPECIAL_FLAGS_START, JohtoFlagsOverlapSpecialFlags);
+STATIC_ASSERT(JOHTO_FLAGS_START % 8 == 0, JohtoFlagsByteAligned);
+STATIC_ASSERT(JOHTO_HIDDEN_ITEMS_END <= FLAG_HIDDEN_ITEMS_START + 0x1FFF, JohtoHiddenItemsOverflow);
+STATIC_ASSERT(JOHTO_HIDDEN_ITEMS_END < JOHTO_TRAINER_FLAGS_START, JohtoHiddenItemsOverlapTrainers);
 
 u8 *GetFlagPointer(u16 id)
 {
@@ -225,6 +234,8 @@ u8 *GetFlagPointer(u16 id)
         return &gSaveBlock1Ptr->flags[id / 8];
     else if (id >= KANTO_FLAGS_START && id <= KANTO_FLAGS_END)
         return &gSaveBlock2Ptr->kantoFlags[(id - KANTO_FLAGS_START) / 8];
+    else if (id >= JOHTO_FLAGS_START && id <= JOHTO_FLAGS_END)
+        return &gSaveBlock2Ptr->johtoFlags[(id - JOHTO_FLAGS_START) / 8];
     else if (id >= SPECIAL_FLAGS_START && id <= SPECIAL_FLAGS_END)
         return &sSpecialFlags[(id - SPECIAL_FLAGS_START) / 8];
 #if TESTING

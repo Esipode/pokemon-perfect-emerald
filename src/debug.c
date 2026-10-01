@@ -3494,10 +3494,11 @@ static const struct DebugSelection sStaticMassOutbreakSelection = {
 // *******************************
 // Actions Flags and Vars
 
-// Ids between the SaveBlock1 flags and the Kanto range have no storage.
+// Ids between the flag storage ranges have none.
 static bool32 DebugIsFlagInRangeGap(u32 flag)
 {
-    return flag >= FLAGS_COUNT && flag < KANTO_FLAGS_START;
+    return (flag >= FLAGS_COUNT && flag < KANTO_FLAGS_START)
+        || (flag > KANTO_FLAGS_END && flag < JOHTO_FLAGS_START);
 }
 
 static void DebugSelectionStep_UpdateFlag(u8 taskId, u8 digits, u32 min, u32 max)
@@ -3528,7 +3529,7 @@ static const struct DebugSelectionStep sFlagSelectionStep = {
     .stepUpdate = DebugSelectionStep_UpdateFlag,
     .stepConfirm = DebugSelectionStep_GenericInputConfirm,
     .minValue = FLAG_TEMP_1,
-    .maxValue = KANTO_FLAGS_END,
+    .maxValue = JOHTO_FLAGS_END,
     .digits = 4
 };
 
@@ -3580,7 +3581,7 @@ static const struct DebugSelectionStep sVarIdSelectionStep = {
     .stepUpdate = DebugSelectionStep_UpdateVarId,
     .stepConfirm = DebugSelectionStep_GenericInputConfirm,
     .minValue = VARS_START,
-    .maxValue = KANTO_VARS_END,
+    .maxValue = JOHTO_VARS_END,
     .digits = 4
 };
 

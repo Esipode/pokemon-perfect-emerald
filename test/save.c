@@ -59,6 +59,8 @@
 //   Measured 1580 before the Johto MAPSEC block (the hand-calculated chain above is 32 high).
 //   44 Johto MAPSECs (MAPSEC_COUNT 209 -> 253) grow both nuzlockeZone*Flags arrays 27 -> 32
 //     bytes (+10); 2 bytes come out of existing padding: measured 1588.
+//   johtoFlags[320] (u8) then johtoVars[256] (u16) appended: 1588 + 320 + 512 = 2420, already a
+//     multiple of 4.
 //
 // PokemonStorage (starts at 40944, ends at 67900):
 //   TOTAL_BOXES_COUNT 14 -> 16: +2 * (30 * sizeof(BoxPokemon) + BOX_NAME_LENGTH + 1 + 1
@@ -71,7 +73,7 @@
 //     (4*104). Names plus wallpapers cost 10 bytes per box, so fusions' offset stays
 //     4-aligned only when N is even; 16 and 28 both are.
 #define T_SAVEBLOCK1_SIZE 7740
-#define T_SAVEBLOCK2_SIZE 1588
+#define T_SAVEBLOCK2_SIZE 2420
 #define T_SAVEBLOCK3_SIZE 2888
 #define T_POKEMONSTORAGE_SIZE 67900
 

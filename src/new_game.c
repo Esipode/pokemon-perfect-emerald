@@ -564,6 +564,8 @@ void NewGameInitData(void)
     memset(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags, 0, sizeof(gSaveBlock2Ptr->nuzlockeZoneCaughtFlags));
     memset(gSaveBlock2Ptr->kantoFlags, 0, sizeof(gSaveBlock2Ptr->kantoFlags));
     memset(gSaveBlock2Ptr->kantoVars, 0, sizeof(gSaveBlock2Ptr->kantoVars));
+    memset(gSaveBlock2Ptr->johtoFlags, 0, sizeof(gSaveBlock2Ptr->johtoFlags));
+    memset(gSaveBlock2Ptr->johtoVars, 0, sizeof(gSaveBlock2Ptr->johtoVars));
     // Style and colour slots are not reset here: this runs after the Birch speech's
     // colours menu. PlayerCustomization_ResetForNewGame() clears them where the
     // protagonist is picked; paths that skip that step keep the current look.

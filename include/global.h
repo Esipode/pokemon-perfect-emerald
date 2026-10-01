@@ -913,6 +913,8 @@ struct SaveBlock2
     struct HealthboxOptions healthboxOptions; // appended so no earlier offset moves
     u8 kantoFlags[NUM_KANTO_FLAG_BYTES];      // KANTO_FLAGS_START..KANTO_FLAGS_END
     u16 kantoVars[KANTO_VARS_COUNT];          // KANTO_VARS_START..KANTO_VARS_END
+    u8 johtoFlags[NUM_JOHTO_FLAG_BYTES];      // JOHTO_FLAGS_START..JOHTO_FLAGS_END
+    u16 johtoVars[JOHTO_VARS_COUNT];          // JOHTO_VARS_START..JOHTO_VARS_END
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
