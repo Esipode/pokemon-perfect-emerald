@@ -75,13 +75,14 @@ enum PartyDashPalRow
 #define SLOT_PIX_HATCH      9
 
 // Slot fill recolour for choose-half / eligibility states; index 1 = selected.
+// DIM = ineligible (red), PICKED = eligible or chosen (green).
 enum PartyDashSlotState
 {
     SLOT_STATE_NONE,
     SLOT_STATE_DIM,
     SLOT_STATE_PICKED,
 };
-static const u16 sSlotDimFill[2] = {RGB(2, 3, 4), RGB(4, 5, 8)};
+static const u16 sSlotDimFill[2] = {RGB(14, 3, 3), RGB(20, 6, 6)};
 static const u16 sSlotPickedFill[2] = {RGB(6, 16, 10), RGB(11, 22, 14)};
 
 // Slot window (4x1 tiles, bottom row of the slot): bar and label geometry in pixels.

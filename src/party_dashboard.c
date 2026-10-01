@@ -420,6 +420,8 @@ void PartyDashboard_SetSlotDescription(u32 slot, u32 descId, struct Pokemon *mon
     case PARTYBOX_DESC_THIRD:
     case PARTYBOX_DESC_FOURTH:
     case PARTYBOX_DESC_HAVE:
+    case PARTYBOX_DESC_ABLE:
+    case PARTYBOX_DESC_ABLE_2:
         SetSlotState(slot, SLOT_STATE_PICKED);
         break;
     default:
