@@ -45,6 +45,7 @@ Route22_EventScript_EarlyRival::
 	fadedefaultbgm
 	removeobject LOCALID_ROUTE22_RIVAL
 	setvar VAR_MAP_SCENE_ROUTE22, 2
+	call EventScript_TryReadyRoute22LateRival
 	releaseall
 	end
 

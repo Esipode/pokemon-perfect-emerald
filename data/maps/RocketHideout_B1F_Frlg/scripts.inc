@@ -4,7 +4,11 @@ RocketHideout_B1F_Frlg_MapScripts::
 	.byte 0
 
 RocketHideout_B1F_OnLoad::
+	goto_if_set FLAG_HIDE_MISC_KANTO_ROCKETS, RocketHideout_B1F_EventScript_EndOnLoad
 	call_if_not_defeated TRAINER_TEAM_ROCKET_GRUNT_12, RocketHideout_B1F_EventScript_SetBarrier
+	end
+
+RocketHideout_B1F_EventScript_EndOnLoad::
 	end
 
 RocketHideout_B1F_OnTransition::

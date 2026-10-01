@@ -1165,6 +1165,20 @@ EventScript_BlueFirstMeeting::
 	setflag FLAG_MET_BLUE_KANTO
 	return
 
+@ The leftover Kanto Rockets leave once both the Hideout and Viridian Gym Giovanni are beaten.
+EventScript_TryHideMiscKantoRockets::
+	goto_if_unset FLAG_DEFEATED_LEADER_GIOVANNI, Common_EventScript_NopReturn
+	goto_if_not_defeated TRAINER_BOSS_GIOVANNI, Common_EventScript_NopReturn
+	setflag FLAG_HIDE_MISC_KANTO_ROCKETS
+	return
+
+@ Route 22's late Blue fight waits for both the early fight and the Earth Badge.
+EventScript_TryReadyRoute22LateRival::
+	goto_if_unset FLAG_DEFEATED_LEADER_GIOVANNI, Common_EventScript_NopReturn
+	goto_if_ne VAR_MAP_SCENE_ROUTE22, 2, Common_EventScript_NopReturn
+	setvar VAR_MAP_SCENE_ROUTE22, 3
+	return
+
 @ Sets VAR_RESULT to BLUE's starter, matching the type of the HOENN rival's starter.
 @ VAR_STARTER_MON is the player's slot (0 grass, 1 fire, 2 water); the HOENN rival takes the next slot.
 EventScript_GetBlueStarter::

@@ -98,10 +98,19 @@ CinnabarIsland_EventScript_BillScene::
 	call_if_unset FLAG_TEMP_2, CinnabarIsland_EventScript_BillApproachPlayer1
 	call_if_set FLAG_TEMP_2, CinnabarIsland_EventScript_BillApproachPlayer2
 	msgbox CinnabarIsland_Text_HeyIfItIsntPlayer
-	msgbox CinnabarIsland_Text_ComeWithMeToOneIsland, MSGBOX_YESNO
+	call_if_set FLAG_HELPED_BILL_IN_SEA_COTTAGE, CinnabarIsland_EventScript_BillAskKnown
+	call_if_unset FLAG_HELPED_BILL_IN_SEA_COTTAGE, CinnabarIsland_EventScript_BillAskStranger
 	goto_if_eq VAR_RESULT, YES, CinnabarIsland_EventScript_AgreeSailToOneIsland
 	goto_if_eq VAR_RESULT, NO, CinnabarIsland_EventScript_DeclineSailToOneIsland
 	end
+
+CinnabarIsland_EventScript_BillAskKnown::
+	msgbox CinnabarIsland_Text_ComeWithMeToOneIsland, MSGBOX_YESNO
+	return
+
+CinnabarIsland_EventScript_BillAskStranger::
+	msgbox CinnabarIsland_Text_ComeWithMeToOneIslandFirstMeeting, MSGBOX_YESNO
+	return
 
 CinnabarIsland_EventScript_BillFacePlayer1::
 	applymovement LOCALID_CINNABAR_BILL, Common_Movement_WalkInPlaceFasterUp
@@ -385,6 +394,20 @@ CinnabarIsland_Text_ComeWithMeToOneIsland::
 	.string "Long time no see!\p"
 	.string "I hope you're still using my\n"
 	.string "PC system.\p"
+	.string "Well, listen, since we met up here,\n"
+	.string "how about spending time with me?\p"
+	.string "There's this little island in the far\n"
+	.string "south called ONE ISLAND.\p"
+	.string "A friend invited me, so I'm on my\n"
+	.string "way out there.\p"
+	.string "How about it?\n"
+	.string "Do you feel like coming with me?$"
+
+CinnabarIsland_Text_ComeWithMeToOneIslandFirstMeeting::
+	.string "We haven't met, have we?\n"
+	.string "I'm BILL.\p"
+	.string "I created the PC system that\n"
+	.string "stores POKéMON.\p"
 	.string "Well, listen, since we met up here,\n"
 	.string "how about spending time with me?\p"
 	.string "There's this little island in the far\n"

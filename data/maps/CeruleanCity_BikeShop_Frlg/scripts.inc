@@ -4,6 +4,8 @@ CeruleanCity_BikeShop_Frlg_MapScripts::
 CeruleanCity_BikeShop_EventScript_Clerk::
 	lock
 	faceplayer
+	checkitem ITEM_BIKE_VOUCHER
+	goto_if_eq VAR_RESULT, TRUE, CeruleanCity_BikeShop_EventScript_TradeVoucher
 	goto_if_set FLAG_RECEIVED_BIKE, CeruleanCity_BikeShop_EventScript_AlreadyGotBicycle
 	goto_if_set FLAG_GOT_BIKE_VOUCHER, CeruleanCity_BikeShop_EventScript_ExchangeBikeVoucher
 	showmoneybox 0, 0
@@ -37,6 +39,20 @@ CeruleanCity_BikeShop_EventScript_ExchangeBikeVoucher::
 	additem ITEM_BICYCLE
 	removeitem ITEM_BIKE_VOUCHER
 	msgbox CeruleanCity_BikeShop_Text_ThankYouComeAgain
+	release
+	end
+
+@ Placeholder reward until the final item is chosen.
+CeruleanCity_BikeShop_EventScript_TradeVoucher::
+	msgbox CeruleanCity_BikeShop_Text_AlreadyHaveBicycleTakeThisInstead
+	giveitem ITEM_RARE_CANDY
+	goto_if_eq VAR_RESULT, FALSE, CeruleanCity_BikeShop_EventScript_VoucherKept
+	removeitem ITEM_BIKE_VOUCHER
+	msgbox CeruleanCity_BikeShop_Text_ThankYouComeAgain
+	release
+	end
+
+CeruleanCity_BikeShop_EventScript_VoucherKept::
 	release
 	end
 
@@ -87,6 +103,12 @@ CeruleanCity_BikeShop_Text_OhBikeVoucherHereYouGo::
 	.string "A BIKE VOUCHER!\p"
 	.string "Okay!\n"
 	.string "Here you go!$"
+
+CeruleanCity_BikeShop_Text_AlreadyHaveBicycleTakeThisInstead::
+	.string "Oh, that's…\p"
+	.string "A BIKE VOUCHER!\p"
+	.string "But you already have a BICYCLE?\n"
+	.string "Then take this instead!$"
 
 CeruleanCity_BikeShop_Text_ExchangedVoucherForBicycle::
 	.string "{PLAYER} exchanged the\n"

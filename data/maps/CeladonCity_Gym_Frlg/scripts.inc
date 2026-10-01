@@ -12,15 +12,9 @@ CeladonCity_Gym_EventScript_DefeatedErika::
 	setflag FLAG_DEFEATED_ERIKA
 	setflag FLAG_BADGE04_GET_FRLG
 	call Common_EventScript_CheckLevelCapIncrease
-	specialvar VAR_RESULT, IsLimitedPartyEnabled
-	call_if_eq VAR_RESULT, TRUE, CeladonCity_Gym_EventScript_LimitedPartySlotUnlocked
 	set_gym_trainers_frlg 4
 	goto CeladonCity_Gym_EventScript_GiveTM19
 	end
-
-CeladonCity_Gym_EventScript_LimitedPartySlotUnlocked::
-	msgbox CeladonCity_Gym_Text_LimitedPartySlotUnlocked, MSGBOX_DEFAULT
-	return
 
 CeladonCity_Gym_EventScript_GiveTM19::
 	msgbox CeladonCity_Gym_Text_ExplainRainbowBadgeTakeThis
@@ -123,10 +117,6 @@ CeladonCity_Gym_Text_ExplainRainbowBadgeTakeThis::
 CeladonCity_Gym_Text_ReceivedTM19FromErika::
 	.string "{PLAYER} received TM115\n"
 	.string "from ERIKA.$"
-
-CeladonCity_Gym_Text_LimitedPartySlotUnlocked::
-	.string "You can now carry one more\n"
-	.string "POKéMON in your party!$"
 
 CeladonCity_Gym_Text_ExplainTM19::
 	.string "TM115 contains LEAF STORM.\p"

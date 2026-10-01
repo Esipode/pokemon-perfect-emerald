@@ -253,73 +253,6 @@ PewterCity_Movement_GymGuideExit::
 	walk_left
 	step_end
 
-PewterCity_EventScript_GymGuideTriggerTop::
-	lockall
-	setvar VAR_TEMP_1, 0
-	goto PewterCity_EventScript_GymGuideTrigger
-	end
-
-PewterCity_EventScript_GymGuideTriggerMid::
-	lockall
-	setvar VAR_TEMP_1, 1
-	goto PewterCity_EventScript_GymGuideTrigger
-	end
-
-PewterCity_EventScript_GymGuideTriggerBottom::
-	lockall
-	setvar VAR_TEMP_1, 2
-	goto PewterCity_EventScript_GymGuideTrigger
-	end
-
-@ This trigger is inaccessible and its corresponding movement script isnt linked
-PewterCity_EventScript_GymGuideTriggerRight::
-	lockall
-	setvar VAR_TEMP_1, 3
-	goto PewterCity_EventScript_GymGuideTrigger
-	end
-
-PewterCity_EventScript_GymGuideTrigger::
-	textcolor NPC_TEXT_COLOR_MALE
-	msgbox PewterCity_Text_BrocksLookingForChallengersFollowMe
-	closemessage
-	playbgm MUS_FOLLOW_ME, 0
-	call_if_eq VAR_TEMP_1, 0, PewterCity_EventScript_WalkToGymTop
-	call_if_eq VAR_TEMP_1, 1, PewterCity_EventScript_WalkToGymMid
-	call_if_eq VAR_TEMP_1, 2, PewterCity_EventScript_WalkToGymBottom
-	msgbox PewterCity_Text_GoTakeOnBrock
-	closemessage
-	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GymGuideExit
-	waitmovement 0
-	fadedefaultbgm
-	removeobject LOCALID_PEWTER_GYM_GUIDE
-	clearflag FLAG_HIDE_PEWTER_CITY_GYM_GUIDE
-	releaseall
-	end
-
-PewterCity_EventScript_WalkToGymTop::
-	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideMoveToLeadTop
-	waitmovement 0
-	applymovement LOCALID_PLAYER, PewterCity_Movement_PlayerWalkToGymTop
-	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideWalkToGymTop
-	waitmovement 0
-	return
-
-PewterCity_EventScript_WalkToGymMid::
-	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideMoveToLeadMid
-	waitmovement 0
-	applymovement LOCALID_PLAYER, PewterCity_Movement_PlayerWalkToGymMid
-	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideWalkToGymMid
-	waitmovement 0
-	return
-
-PewterCity_EventScript_WalkToGymBottom::
-	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideMoveToLeadBottom
-	waitmovement 0
-	applymovement LOCALID_PLAYER, PewterCity_Movement_PlayerWalkToGymBottom
-	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideWalkToGymBottom
-	waitmovement 0
-	return
-
 @ Unused
 PewterCity_EventScript_WalkToGymRight::
 	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideApproachPlayerRight
@@ -328,24 +261,6 @@ PewterCity_EventScript_WalkToGymRight::
 	applymovement LOCALID_PEWTER_GYM_GUIDE, PewterCity_Movement_GuideWalkToGymRight
 	waitmovement 0
 	return
-
-PewterCity_Movement_PlayerWalkToGymTop::
-	walk_left
-	walk_to_gym
-	step_end
-
-PewterCity_Movement_PlayerWalkToGymMid::
-	walk_up
-	walk_left
-	walk_to_gym
-	step_end
-
-PewterCity_Movement_PlayerWalkToGymBottom::
-	walk_up
-	walk_up
-	walk_left
-	walk_to_gym
-	step_end
 
 PewterCity_Movement_PlayerWalkToGymRight::
 	walk_left
@@ -361,24 +276,6 @@ PewterCity_Movement_PlayerWalkToGymRight::
 	walk_to_gym_alt
 	step_end
 
-PewterCity_Movement_GuideMoveToLeadTop::
-	walk_left
-	walk_down
-	walk_in_place_faster_right
-	walk_in_place_right
-	step_end
-
-PewterCity_Movement_GuideMoveToLeadMid::
-	walk_down
-	walk_in_place_down
-	step_end
-
-PewterCity_Movement_GuideMoveToLeadBottom::
-	walk_down
-	walk_down
-	walk_in_place_down
-	step_end
-
 PewterCity_Movement_GuideApproachPlayerRight::
 	walk_down
 	walk_down
@@ -386,27 +283,6 @@ PewterCity_Movement_GuideApproachPlayerRight::
 	walk_down
 	walk_right
 	walk_in_place_right
-	step_end
-
-PewterCity_Movement_GuideWalkToGymTop::
-	walk_to_gym
-	walk_right
-	walk_in_place_faster_left
-	step_end
-
-PewterCity_Movement_GuideWalkToGymMid::
-	walk_left
-	walk_to_gym
-	walk_right
-	walk_in_place_faster_left
-	step_end
-
-PewterCity_Movement_GuideWalkToGymBottom::
-	walk_up
-	walk_left
-	walk_to_gym
-	walk_right
-	walk_in_place_faster_left
 	step_end
 
 PewterCity_Movement_GuideWalkToGymRight::

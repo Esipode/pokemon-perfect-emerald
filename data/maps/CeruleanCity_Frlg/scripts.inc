@@ -4,14 +4,7 @@ CeruleanCity_Frlg_MapScripts::
 
 CeruleanCity_OnTransition::
 	setworldmapflag FLAG_WORLD_MAP_CERULEAN_CITY
-	call_if_unset FLAG_GOT_SS_TICKET, CeruleanCity_EventScript_BlockExits
 	end
-
-CeruleanCity_EventScript_BlockExits::
-	setobjectxyperm LOCALID_CERULEAN_POLICEMAN, 30, 12
-	setobjectxyperm LOCALID_CERULEAN_SLOWBRO, 26, 31
-	setobjectxyperm LOCALID_CERULEAN_LASS, 27, 31
-	return
 
 CeruleanCity_EventScript_RivalTriggerLeft::
 	lockall
@@ -35,7 +28,6 @@ CeruleanCity_EventScript_RivalTriggerRight::
 
 CeruleanCity_EventScript_Rival::
 	textcolor NPC_TEXT_COLOR_MALE
-	setvar VAR_MAP_SCENE_ROUTE22, 2
 	playbgm MUS_RG_ENCOUNTER_RIVAL, 0
 	addobject LOCALID_CERULEAN_RIVAL
 	applymovement LOCALID_CERULEAN_RIVAL, CeruleanCity_Movement_RivalEnter
@@ -231,12 +223,6 @@ CeruleanCity_EventScript_Policeman::
 CeruleanCity_EventScript_LittleBoy::
 	lock
 	faceplayer
-	goto_if_set FLAG_GOT_SS_TICKET, CeruleanCity_EventScript_LittleBoySlowbroMoved
-	msgbox CeruleanCity_Text_IfSlowbroWasntThereCouldCutTree
-	release
-	end
-
-CeruleanCity_EventScript_LittleBoySlowbroMoved::
 	msgbox CeruleanCity_Text_YouCanCutDownSmallTrees
 	release
 	end
@@ -416,14 +402,6 @@ CeruleanCity_Text_YouCanCutDownSmallTrees::
 	.string "small trees?\p"
 	.string "Even that small tree in front of\n"
 	.string "the shop can be CUT down.\p"
-	.string "I think there's a way around it,\n"
-	.string "though.$"
-
-CeruleanCity_Text_IfSlowbroWasntThereCouldCutTree::
-	.string "If that SLOWBRO wasn't there, you\n"
-	.string "could CUT down the small tree.\p"
-	.string "That way, you could get to the\n"
-	.string "other side.\p"
 	.string "I think there's a way around it,\n"
 	.string "though.$"
 

@@ -165,44 +165,7 @@
       "dest_warp_id": "1"
     }
   ],
-  "coord_events": [
-    {
-      "type": "trigger",
-      "x": 42,
-      "y": 21,
-      "elevation": 3,
-      "var": "VAR_MAP_SCENE_PEWTER_CITY",
-      "var_value": "0",
-      "script": "PewterCity_EventScript_GymGuideTriggerTop"
-    },
-    {
-      "type": "trigger",
-      "x": 42,
-      "y": 22,
-      "elevation": 3,
-      "var": "VAR_MAP_SCENE_PEWTER_CITY",
-      "var_value": "0",
-      "script": "PewterCity_EventScript_GymGuideTriggerMid"
-    },
-    {
-      "type": "trigger",
-      "x": 42,
-      "y": 23,
-      "elevation": 3,
-      "var": "VAR_MAP_SCENE_PEWTER_CITY",
-      "var_value": "0",
-      "script": "PewterCity_EventScript_GymGuideTriggerBottom"
-    },
-    {
-      "type": "trigger",
-      "x": 43,
-      "y": 23,
-      "elevation": 3,
-      "var": "VAR_MAP_SCENE_PEWTER_CITY",
-      "var_value": "0",
-      "script": "PewterCity_EventScript_GymGuideTriggerRight"
-    }
-  ],
+  "coord_events": [],
   "bg_events": [
     {
       "type": "sign",

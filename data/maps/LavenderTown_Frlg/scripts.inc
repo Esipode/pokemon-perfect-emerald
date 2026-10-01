@@ -4,8 +4,6 @@ LavenderTown_Frlg_MapScripts::
 
 LavenderTown_OnTransition::
 	setworldmapflag FLAG_WORLD_MAP_LAVENDER_TOWN
-	setvar VAR_MAP_SCENE_S_S_ANNE_2F_CORRIDOR, 1
-	setflag FLAG_HIDE_SS_ANNE_RIVAL
 	end
 
 LavenderTown_EventScript_LittleGirl::
