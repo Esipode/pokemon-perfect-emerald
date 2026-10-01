@@ -26,11 +26,9 @@ u32 GetNewGamePlusExpCandyBonusPercent(void)
     return ngpRuns * 15;
 }
 
-// The level cap as dictated by story/badge progression. The flag ladder below ignores
-// FLAG_LEVEL_CAP_OFF entirely, so this still tracks progression for a player who disabled their own
-// cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL just because the player
-// turned their cap off). Only the post-game value reads that flag - see below.
-u32 GetProgressionLevelCap(void)
+// Hoenn story ladder: the value of the first unset rung, without the New Game Plus offset.
+// Past the last rung it stays at 75, the ceiling for opponents with the cap enabled.
+u32 GetHoennLadderLevel(void)
 {
     static const u32 sLevelCapFlagMap[][2] =
     {
@@ -63,10 +61,56 @@ u32 GetProgressionLevelCap(void)
 
     u32 i;
 
-    // The post-game cap, reached once every flag below is set. 75 continues the ladder's last rung
-    // (74) without a gap. A player who turned their own cap off gets 100 instead: their team is free
-    // to outlevel the ladder, so the bosses and roamers reading this need the extra headroom.
-    // One New Game Plus cycle is worth a full cap span, so the terminal value scales with it too.
+    for (i = 0; i < ARRAY_COUNT(sLevelCapFlagMap); i++)
+    {
+        if (!FlagGet(sLevelCapFlagMap[i][0]))
+            return sLevelCapFlagMap[i][1];
+    }
+
+    return 75;
+}
+
+// Kanto is free order: the bonus is the sum of every set rung, not a first-unset scan.
+// All eight badges, Silph Co and the Champion total 24 + 1 + 1 = 26.
+u32 GetKantoLadderBonus(void)
+{
+    static const u32 sKantoLevelCapFlagMap[][2] =
+    {
+        {FLAG_BADGE01_GET_FRLG, 3},
+        {FLAG_BADGE02_GET_FRLG, 3},
+        {FLAG_BADGE03_GET_FRLG, 3},
+        {FLAG_BADGE04_GET_FRLG, 3},
+        {FLAG_BADGE05_GET_FRLG, 3},
+        {FLAG_BADGE06_GET_FRLG, 3},
+        {FLAG_BADGE07_GET_FRLG, 3},
+        {FLAG_BADGE08_GET_FRLG, 3},
+        {FLAG_GOT_MASTER_BALL_FROM_SILPH, 1},
+        {FLAG_KANTO_CHAMPION, 1},
+    };
+
+    u32 i;
+    u32 bonus = 0;
+
+    for (i = 0; i < ARRAY_COUNT(sKantoLevelCapFlagMap); i++)
+    {
+        if (FlagGet(sKantoLevelCapFlagMap[i][0]))
+            bonus += sKantoLevelCapFlagMap[i][1];
+    }
+
+    return bonus;
+}
+
+// The level cap as dictated by story/badge progression. The flag ladder below ignores
+// FLAG_LEVEL_CAP_OFF entirely, so this still tracks progression for a player who disabled their own
+// cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL just because the player
+// turned their cap off). Only the post-game value reads that flag - see below.
+// Kanto only opens after the Hoenn Champion, so its bonus is zero until then.
+u32 GetProgressionLevelCap(void)
+{
+    // The post-game cap for non-flag-list cap types. A player who turned their own cap off gets 100
+    // instead: their team is free to outlevel the ladder, so the bosses and roamers reading this
+    // need the extra headroom. One New Game Plus cycle is worth a full cap span, so the terminal
+    // value scales with it too.
     u32 playerLevelCap = (FlagGet(FLAG_LEVEL_CAP_OFF) ? 100 : 75) + GetNewGamePlusLevelOffset();
 
     if (playerLevelCap > MAX_LEVEL) {
@@ -75,25 +119,7 @@ u32 GetProgressionLevelCap(void)
 
     if (B_LEVEL_CAP_TYPE == LEVEL_CAP_FLAG_LIST)
     {
-        for (i = 0; i < ARRAY_COUNT(sLevelCapFlagMap); i++)
-        {
-            if (!FlagGet(sLevelCapFlagMap[i][0]))
-            {
-                u32 baseCap = sLevelCapFlagMap[i][1];
-                baseCap += GetNewGamePlusLevelOffset();
-
-                if (baseCap > MAX_LEVEL) {
-                    return MAX_LEVEL;
-                }
-
-                return baseCap;
-            }
-        }
-
-        // Every progression milestone cleared: opponents (and the player's own
-        // capped team) top out at 75, plus the New Game Plus offset the flag
-        // list already applies to each milestone.
-        return min(75 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+        return min(GetHoennLadderLevel() + GetKantoLadderBonus() + GetNewGamePlusLevelOffset(), MAX_LEVEL);
     }
     else if (B_LEVEL_CAP_TYPE == LEVEL_CAP_VARIABLE)
     {
@@ -106,9 +132,10 @@ u32 GetProgressionLevelCap(void)
 u32 GetCurrentLevelCap(void)
 {
     // Level cap disabled in the New Game settings: the player's team may climb to
-    // 100 (plus the New Game Plus offset), not all the way to MAX_LEVEL.
+    // 100 (plus the New Game Plus offset), not all the way to MAX_LEVEL. Kanto progress
+    // can lift the ladder past 100, so the ceiling never drops below it.
     if (FlagGet(FLAG_LEVEL_CAP_OFF))
-        return min(100 + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+        return min(max(100, GetHoennLadderLevel() + GetKantoLadderBonus()) + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
     return GetProgressionLevelCap();
 }

@@ -19,6 +19,8 @@
 #endif
 
 u32 GetCurrentLevelCap(void);
+u32 GetHoennLadderLevel(void);
+u32 GetKantoLadderBonus(void);
 u32 GetProgressionLevelCap(void);
 u32 GetNewGamePlusLevelOffset(void);
 u32 GetNewGamePlusExpCandyBonusPercent(void);
