@@ -19,6 +19,8 @@ TEST("TMs and HMs are sorted correctly in the bag")
     ASSUME(GetItemPocket(ITEM_TM05) == POCKET_TM_HM);
     ASSUME(GetItemPocket(ITEM_TM01) == POCKET_TM_HM);
     ASSUME(GetItemPocket(ITEM_HM02) == POCKET_TM_HM);
+    ASSUME(GetItemPocket(ITEM_TM101) == POCKET_TM_HM);
+    ASSUME(GetItemPocket(ITEM_TM160) == POCKET_TM_HM);
 
     /*
      * Note: I would add a test to make sure that TMs are sorted correctly by move name,
@@ -34,6 +36,8 @@ TEST("TMs and HMs are sorted correctly in the bag")
         additem ITEM_TM05;
         additem ITEM_TM01;
         additem ITEM_HM02;
+        additem ITEM_TM160;
+        additem ITEM_TM101;
     );
 
     SortItemsInBag(&gBagPockets[POCKET_TM_HM], SORT_BY_INDEX);
@@ -43,10 +47,12 @@ TEST("TMs and HMs are sorted correctly in the bag")
     EXPECT_EQ(pocket->itemSlots[2].itemId, ITEM_TM14);
     EXPECT_EQ(pocket->itemSlots[3].itemId, ITEM_TM25);
     EXPECT_EQ(pocket->itemSlots[4].itemId, ITEM_TM42);
-    EXPECT_EQ(pocket->itemSlots[5].itemId, ITEM_HM02);
-    EXPECT_EQ(pocket->itemSlots[6].itemId, ITEM_HM05);
-    EXPECT_EQ(pocket->itemSlots[7].itemId, ITEM_HM07);
-    EXPECT_EQ(pocket->itemSlots[8].itemId, ITEM_NONE);
+    EXPECT_EQ(pocket->itemSlots[5].itemId, ITEM_TM101);
+    EXPECT_EQ(pocket->itemSlots[6].itemId, ITEM_TM160);
+    EXPECT_EQ(pocket->itemSlots[7].itemId, ITEM_HM02);
+    EXPECT_EQ(pocket->itemSlots[8].itemId, ITEM_HM05);
+    EXPECT_EQ(pocket->itemSlots[9].itemId, ITEM_HM07);
+    EXPECT_EQ(pocket->itemSlots[10].itemId, ITEM_NONE);
 }
 
 TEST("Berries are sorted correctly in the bag")

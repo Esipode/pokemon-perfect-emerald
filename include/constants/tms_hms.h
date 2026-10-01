@@ -101,7 +101,67 @@
     F(STEALTH_ROCK) \
     F(PAIN_SPLIT) \
     F(AGILITY) \
-    F(SWORDS_DANCE)
+    F(SWORDS_DANCE) \
+    F(STORED_POWER) \
+    F(STONE_EDGE) \
+    F(METEOR_BEAM) \
+    F(ALLURING_VOICE) \
+    F(MUD_SHOT) \
+    F(HYDRO_PUMP) \
+    F(KNOCK_OFF) \
+    F(LOW_SWEEP) \
+    F(LEECH_LIFE) \
+    F(SNARL) \
+    F(SCALE_SHOT) \
+    F(FLIP_TURN) \
+    F(WILD_CHARGE) \
+    F(ELECTROWEB) \
+    F(LEAF_STORM) \
+    F(CHILLING_WATER) \
+    F(HELPING_HAND) \
+    F(IRON_DEFENSE) \
+    F(CRUNCH) \
+    F(FOUL_PLAY) \
+    F(THROAT_CHOP) \
+    F(GIGA_IMPACT) \
+    F(ENCORE) \
+    F(HEAVY_SLAM) \
+    F(BRAVE_BIRD) \
+    F(TOXIC_SPIKES) \
+    F(BODY_PRESS) \
+    F(HIGH_HORSEPOWER) \
+    F(SEED_BOMB) \
+    F(X_SCISSOR) \
+    F(MUDDY_WATER) \
+    F(IRON_HEAD) \
+    F(FLASH_CANNON) \
+    F(TRICK) \
+    F(FUTURE_SIGHT) \
+    F(PSYSHOCK) \
+    F(CHARGE_BEAM) \
+    F(SUPERCELL_SLAM) \
+    F(WILL_O_WISP) \
+    F(POLTERGEIST) \
+    F(FLARE_BLITZ) \
+    F(DRAIN_PUNCH) \
+    F(EARTH_POWER) \
+    F(CLOSE_COMBAT) \
+    F(OUTRAGE) \
+    F(DRAGON_PULSE) \
+    F(FOCUS_BLAST) \
+    F(TRIPLE_AXEL) \
+    F(ENDEAVOR) \
+    F(TRICK_ROOM) \
+    F(HURRICANE) \
+    F(SLUDGE_WAVE) \
+    F(SHADOW_CLAW) \
+    F(ICICLE_SPEAR) \
+    F(GRASS_KNOT) \
+    F(AMNESIA) \
+    F(BATON_PASS) \
+    F(FLAME_CHARGE) \
+    F(STOMPING_TANTRUM) \
+    F(POISON_JAB)
 
 #define FOREACH_HM(F) \
     F(CUT) \
