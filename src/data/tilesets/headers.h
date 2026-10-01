@@ -28,7 +28,6 @@ const struct Tileset gTileset_SecretBaseRedCave =
 const struct Tileset *const gTilesetPointer_SecretBase = &gTileset_SecretBase;
 const struct Tileset *const gTilesetPointer_SecretBaseRedCave = &gTileset_SecretBaseRedCave;
 
-#if !IS_FRLG
 
 const struct Tileset gTileset_General =
 {
@@ -831,28 +830,27 @@ const struct Tileset gTileset_MysteryEventsHouse =
     .callback = NULL,
 };
 
-#else
 
-// FRLG tilesets
-const struct Tileset gTileset_BuildingFrlg =
+// Kanto tilesets
+const struct Tileset gTileset_BuildingKanto =
 {
     .isCompressed = TRUE,
     .isSecondary = FALSE,
-    .tiles = gTilesetTiles_Building_Frlg,
-    .palettes = gTilesetPalettes_Building_Frlg,
-    .metatiles = gMetatiles_Building_Frlg,
-    .metatileAttributes = gMetatileAttributes_Building_Frlg,
+    .tiles = gTilesetTiles_BuildingKanto,
+    .palettes = gTilesetPalettes_BuildingKanto,
+    .metatiles = gMetatiles_BuildingKanto,
+    .metatileAttributes = gMetatileAttributes_BuildingKanto,
     .callback = NULL,
 };
 
-const struct Tileset gTileset_General_Frlg =
+const struct Tileset gTileset_GeneralKanto =
 {
     .isCompressed = TRUE,
     .isSecondary = FALSE,
-    .tiles = gTilesetTiles_General_Frlg,
-    .palettes = gTilesetPalettes_General_Frlg,
-    .metatiles = gMetatiles_General_Frlg,
-    .metatileAttributes = gMetatileAttributes_General_Frlg,
+    .tiles = gTilesetTiles_GeneralKanto,
+    .palettes = gTilesetPalettes_GeneralKanto,
+    .metatiles = gMetatiles_GeneralKanto,
+    .metatileAttributes = gMetatileAttributes_GeneralKanto,
     .callback = InitTilesetAnim_General_Frlg,
 };
 
@@ -1241,6 +1239,17 @@ const struct Tileset gTileset_SeafoamIslands =
     .callback = NULL,
 };
 
+const struct Tileset gTileset_SeafoamIslandsBuilding =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_SeafoamIslandsBuilding,
+    .palettes = gTilesetPalettes_SeafoamIslandsBuilding,
+    .metatiles = gMetatiles_SeafoamIslandsBuilding,
+    .metatileAttributes = gMetatileAttributes_SeafoamIslandsBuilding,
+    .callback = NULL,
+};
+
 const struct Tileset gTileset_UnusedGatehouse2 =
 {
     .isCompressed = TRUE,
@@ -1538,4 +1547,3 @@ const struct Tileset gTileset_HallOfFame =
     .callback = NULL,
 };
 
-#endif // IS_FRLG

@@ -1004,7 +1004,7 @@ static bool32 IsBuildingPCTile(u32 tileId)
 static bool32 IsBuildingPCTileFrlg(u32 tileId)
 {
     if (IS_FRLG)
-        return gMapHeader.mapLayout->primaryTileset == &gTileset_BuildingFrlg && (tileId == METATILE_BuildingFrlg_PCOn || tileId == METATILE_BuildingFrlg_PCOff);
+        return gMapHeader.mapLayout->primaryTileset == &gTileset_BuildingKanto && (tileId == METATILE_BuildingFrlg_PCOn || tileId == METATILE_BuildingFrlg_PCOff);
 
     return FALSE;
 }

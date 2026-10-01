@@ -1190,11 +1190,11 @@ static void BlendAnimPalette_BattleDome_FloorLightsNoBlend(u16 timer)
 // FRLG anims
 
 // palette: general 00
-static const u16 sTilesetAnims_General_Flower_Frame0[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/flower/0.png", ".4bpp");
-static const u16 sTilesetAnims_General_Flower_Frame1[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/flower/1.png", ".4bpp");
-static const u16 sTilesetAnims_General_Flower_Frame2[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/flower/2.png", ".4bpp");
-static const u16 sTilesetAnims_General_Flower_Frame3[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/flower/3.png", ".4bpp");
-static const u16 sTilesetAnims_General_Flower_Frame4[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/flower/4.png", ".4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame0[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/flower/0.png", ".4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame1[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/flower/1.png", ".4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame2[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/flower/2.png", ".4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame3[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/flower/3.png", ".4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame4[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/flower/4.png", ".4bpp");
 
 static const u16 *const sTilesetAnims_General_Flower[] = {
     sTilesetAnims_General_Flower_Frame0,
@@ -1205,14 +1205,14 @@ static const u16 *const sTilesetAnims_General_Flower[] = {
 };
 
 // palette: general 04
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame0[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/0.png", ".4bpp");
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame1[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/1.png", ".4bpp");
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame2[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/2.png", ".4bpp");
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame3[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/3.png", ".4bpp");
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame4[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/4.png", ".4bpp");
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame5[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/5.png", ".4bpp");
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame6[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/6.png", ".4bpp");
-static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame7[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/water_current_landwatersedge/7.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame0[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/0.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame1[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/1.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame2[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/2.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame3[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/3.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame4[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/4.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame5[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/5.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame6[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/6.png", ".4bpp");
+static const u16 sTilesetAnims_General_Water_Current_LandWatersEdge_Frame7[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/water_current_landwatersedge/7.png", ".4bpp");
 
 static const u16 *const sTilesetAnims_General_Water_Current_LandWatersEdge[] = {
     sTilesetAnims_General_Water_Current_LandWatersEdge_Frame0,
@@ -1226,14 +1226,14 @@ static const u16 *const sTilesetAnims_General_Water_Current_LandWatersEdge[] = {
 };
 
 // palette: general 04
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame0[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/0.png", ".4bpp");
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame1[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/1.png", ".4bpp");
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame2[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/2.png", ".4bpp");
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame3[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/3.png", ".4bpp");
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame4[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/4.png", ".4bpp");
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame5[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/5.png", ".4bpp");
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame6[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/6.png", ".4bpp");
-static const u16 sTilesetAnims_General_SandWatersEdge_Frame7[] = INCGFX_U16("data/tilesets/primary/general_frlg/anim/sandwatersedge/7.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame0[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/0.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame1[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/1.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame2[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/2.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame3[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/3.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame4[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/4.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame5[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/5.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame6[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/6.png", ".4bpp");
+static const u16 sTilesetAnims_General_SandWatersEdge_Frame7[] = INCGFX_U16("data/tilesets/primary/general_kanto/anim/sandwatersedge/7.png", ".4bpp");
 
 static const u16 *const sTilesetAnims_General_SandWatersEdge[] = {
     sTilesetAnims_General_SandWatersEdge_Frame0,

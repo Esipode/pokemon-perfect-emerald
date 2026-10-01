@@ -778,7 +778,7 @@ static const struct DoorGraphics sDoorAnimGraphicsTable[] =
 #else
     {
         .metatileNum = METATILE_GeneralFrlg_Door,
-        .tileset = &gTileset_General_Frlg,
+        .tileset = &gTileset_GeneralKanto,
         .sound = DOOR_SOUND_NORMAL,
         .size = DOOR_SIZE_1x1,
         .tiles = sDoorAnimTiles_GeneralFrlg,
@@ -786,7 +786,7 @@ static const struct DoorGraphics sDoorAnimGraphicsTable[] =
     },
     {
         .metatileNum = METATILE_GeneralFrlg_SlidingSingleDoor,
-        .tileset = &gTileset_General_Frlg,
+        .tileset = &gTileset_GeneralKanto,
         .sound = DOOR_SOUND_SLIDING,
         .size = DOOR_SIZE_1x1,
         .tiles = sDoorAnimTiles_SlidingSingle,
@@ -794,7 +794,7 @@ static const struct DoorGraphics sDoorAnimGraphicsTable[] =
     },
     {
         .metatileNum = METATILE_GeneralFrlg_SlidingDoubleDoor,
-        .tileset = &gTileset_General_Frlg,
+        .tileset = &gTileset_GeneralKanto,
         .sound = DOOR_SOUND_SLIDING,
         .size = DOOR_SIZE_1x1,
         .tiles = sDoorAnimTiles_SlidingDouble,
