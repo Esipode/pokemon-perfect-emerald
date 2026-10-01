@@ -7,7 +7,6 @@
 #include "malloc.h"
 #include "random.h"
 #include "task.h"
-#include "union_room_chat.h"
 #include "constants/characters.h"
 #include "test_runner.h"
 #include "test/test.h"
