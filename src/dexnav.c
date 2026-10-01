@@ -1481,6 +1481,7 @@ static u16 GetEncounterLevelFromMapData(enum Species species, enum EncounterType
     enum TimeOfDay timeOfDay;
     u16 min = MAX_LEVEL;
     u16 max = 0;
+    u32 slotMin, slotMax;
     u8 i;
 
     if (headerId == HEADER_NONE)
@@ -1501,8 +1502,9 @@ static u16 GetEncounterLevelFromMapData(enum Species species, enum EncounterType
             if (GetRandomizedSpecies(landMonsInfo->wildPokemon[i].species) == species)
             {
                 sDexNavSearchDataPtr->baseSpecies = landMonsInfo->wildPokemon[i].species;
-                min = (min < landMonsInfo->wildPokemon[i].minLevel) ? min : landMonsInfo->wildPokemon[i].minLevel;
-                max = (max > landMonsInfo->wildPokemon[i].maxLevel) ? max : landMonsInfo->wildPokemon[i].maxLevel;
+                GetWildMonLevelRange(&gWildMonHeaders[headerId], &landMonsInfo->wildPokemon[i], &slotMin, &slotMax);
+                min = (min < slotMin) ? min : slotMin;
+                max = (max > slotMax) ? max : slotMax;
             }
         }
         break;
@@ -1519,8 +1521,9 @@ static u16 GetEncounterLevelFromMapData(enum Species species, enum EncounterType
             if (GetRandomizedSpecies(waterMonsInfo->wildPokemon[i].species) == species)
             {
                 sDexNavSearchDataPtr->baseSpecies = waterMonsInfo->wildPokemon[i].species;
-                min = (min < waterMonsInfo->wildPokemon[i].minLevel) ? min : waterMonsInfo->wildPokemon[i].minLevel;
-                max = (max > waterMonsInfo->wildPokemon[i].maxLevel) ? max : waterMonsInfo->wildPokemon[i].maxLevel;
+                GetWildMonLevelRange(&gWildMonHeaders[headerId], &waterMonsInfo->wildPokemon[i], &slotMin, &slotMax);
+                min = (min < slotMin) ? min : slotMin;
+                max = (max > slotMax) ? max : slotMax;
             }
         }
         break;
@@ -1537,8 +1540,9 @@ static u16 GetEncounterLevelFromMapData(enum Species species, enum EncounterType
             if (GetRandomizedSpecies(hiddenMonsInfo->wildPokemon[i].species) == species)
             {
                 sDexNavSearchDataPtr->baseSpecies = hiddenMonsInfo->wildPokemon[i].species;
-                min = (min < hiddenMonsInfo->wildPokemon[i].minLevel) ? min : hiddenMonsInfo->wildPokemon[i].minLevel;
-                max = (max > hiddenMonsInfo->wildPokemon[i].maxLevel) ? max : hiddenMonsInfo->wildPokemon[i].maxLevel;
+                GetWildMonLevelRange(&gWildMonHeaders[headerId], &hiddenMonsInfo->wildPokemon[i], &slotMin, &slotMax);
+                min = (min < slotMin) ? min : slotMin;
+                max = (max > slotMax) ? max : slotMax;
             }
         }
 

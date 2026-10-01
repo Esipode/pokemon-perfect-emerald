@@ -848,6 +848,12 @@ static void CreateLilycoveSSTidalMultichoice(void)
         sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_SLATEPORT;
         selectionCount++;
 
+        if (FlagGet(FLAG_IS_CHAMPION))
+        {
+            sLilycoveSSTidalSelections[selectionCount] = SSTIDAL_SELECTION_VERMILION;
+            selectionCount++;
+        }
+
 #if FREE_BATTLE_FRONTIER == FALSE
         if (FlagGet(FLAG_MET_SCOTT_ON_SS_TIDAL) == TRUE)
         {
@@ -949,7 +955,7 @@ static void CreateLilycoveSSTidalMultichoice(void)
         }
 
         width = ConvertPixelWidthToTileWidth(pixelWidth);
-        windowId = CreateWindowFromRect(MAX_MULTICHOICE_WIDTH - width, (6 - count) * 2, width, count * 2);
+        windowId = CreateWindowFromRect(MAX_MULTICHOICE_WIDTH - width, count > 6 ? 0 : (6 - count) * 2, width, count * 2);
         SetStandardWindowBorderStyle(windowId, FALSE);
 
         for (selectionCount = 0, i = 0; i < SSTIDAL_SELECTION_COUNT; i++)

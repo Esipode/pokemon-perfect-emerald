@@ -1,24 +1,6 @@
 VermilionCity_Frlg_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, VermilionCity_OnTransition
-	map_script MAP_SCRIPT_ON_FRAME_TABLE, VermilionCity_OnFrame
 	.byte 0
-
-VermilionCity_OnFrame::
-	map_script_2 VAR_MAP_SCENE_VERMILION_CITY, 2, VermilionCity_EventScript_ExitSSAnne
-	.2byte 0
-
-VermilionCity_EventScript_ExitSSAnne::
-	lockall
-	applymovement LOCALID_PLAYER, VermilionCity_Movement_ExitSSAnne
-	waitmovement 0
-	setvar VAR_MAP_SCENE_VERMILION_CITY, 3
-	releaseall
-	end
-
-VermilionCity_Movement_ExitSSAnne::
-	walk_up
-	walk_up
-	step_end
 
 VermilionCity_OnTransition::
 	setworldmapflag FLAG_WORLD_MAP_VERMILION_CITY
@@ -34,31 +16,16 @@ VermilionCity_EventScript_Woman::
 	end
 
 VermilionCity_EventScript_OldMan1::
-	lock
-	faceplayer
-	goto_if_eq VAR_MAP_SCENE_VERMILION_CITY, 3, VermilionCity_EventScript_OldMan1SSAnneLeft
-	msgbox VermilionCity_Text_DidYouSeeSSAnneInHarbor
-	release
-	end
-
-VermilionCity_EventScript_OldMan1SSAnneLeft::
-	msgbox VermilionCity_Text_SSAnneHasDepartedForYear
-	release
+	msgbox VermilionCity_Text_DidYouSeeSSAnneInHarbor, MSGBOX_NPC
 	end
 
 VermilionCity_EventScript_FerrySailor::
 	lock
 	faceplayer
-	goto_if_eq VAR_MAP_SCENE_VERMILION_CITY, 3, VermilionCity_EventScript_CheckSeagallopPresent
-	msgbox VermilionCity_Text_WelcomeToTheSSAnne
-	release
-	end
-
-VermilionCity_EventScript_CheckSeagallopPresent::
 	setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY
 	goto_if_ge VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5, VermilionCity_EventScript_ChooseSeagallopDestRainbowPass
 	goto_if_ge VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 1, VermilionCity_EventScript_ChooseSeagallopDestTriPass
-	msgbox VermilionCity_Text_TheShipSetSail
+	msgbox VermilionCity_Text_WelcomeToTheSSAnne
 	release
 	end
 
@@ -108,7 +75,6 @@ VermilionCity_EventScript_CheckTicket::
 	applymovement LOCALID_VERMILION_FERRY_SAILOR, Common_Movement_WalkInPlaceFasterLeft
 	applymovement LOCALID_PLAYER, Common_Movement_WalkInPlaceFasterRight
 	waitmovement 0
-	goto_if_eq VAR_MAP_SCENE_VERMILION_CITY, 3, VermilionCity_EventScript_CheckSeagallopPresentTrigger
 	msgbox VermilionCity_Text_DoYouHaveATicket
 	goto_if_unset FLAG_GOT_SS_TICKET, VermilionCity_EventScript_DontHaveSSTicket
 	msgbox VermilionCity_Text_FlashedSSTicket
@@ -122,17 +88,55 @@ VermilionCity_EventScript_DontHaveSSTicket::
 	goto VermilionCity_EventScript_WalkUpPier
 	end
 
-VermilionCity_EventScript_CheckSeagallopPresentTrigger::
-	setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY
-	goto_if_ge VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5, VermilionCity_EventScript_ChooseSeagallopDestRainbowPass
-	goto_if_ge VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 1, VermilionCity_EventScript_ChooseSeagallopDestTriPass
-	msgbox VermilionCity_Text_TheShipSetSail
-	closemessage
-	goto VermilionCity_EventScript_WalkUpPier
-	end
-
 VermilionCity_EventScript_Sailor::
 	msgbox VermilionCity_Text_SSAnneVisitsOnceAYear, MSGBOX_NPC
+	end
+
+VermilionCity_EventScript_TidalAttendant::
+	lock
+	faceplayer
+	msgbox VermilionCity_Text_TidalBoundForHoenn, MSGBOX_DEFAULT
+	goto VermilionCity_EventScript_TidalChooseDestination
+	end
+
+VermilionCity_EventScript_TidalChooseDestination::
+	message VermilionCity_Text_TidalWhereTo
+	waitmessage
+	multichoicedefault 17, 6, MULTI_SSTIDAL_BATTLE_FRONTIER, 2, FALSE
+	switch VAR_RESULT
+	case 0, VermilionCity_EventScript_TidalToSlateport
+	case 1, VermilionCity_EventScript_TidalToLilycove
+	case 2, VermilionCity_EventScript_TidalCancel
+	case MULTI_B_PRESSED, VermilionCity_EventScript_TidalCancel
+	end
+
+@ The corridor's BOARD_LILYCOVE leg ends in Slateport and BOARD_SLATEPORT in Lilycove.
+VermilionCity_EventScript_TidalToSlateport::
+	msgbox VermilionCity_Text_SlateportItIs, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, VermilionCity_EventScript_TidalChooseDestination
+	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_BOARD_LILYCOVE
+	goto VermilionCity_EventScript_TidalBoard
+	end
+
+VermilionCity_EventScript_TidalToLilycove::
+	msgbox VermilionCity_Text_LilycoveItIs, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, VermilionCity_EventScript_TidalChooseDestination
+	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_BOARD_SLATEPORT
+	goto VermilionCity_EventScript_TidalBoard
+	end
+
+VermilionCity_EventScript_TidalBoard::
+	msgbox VermilionCity_Text_TidalPleaseBoard, MSGBOX_DEFAULT
+	closemessage
+	delay 30
+	warp MAP_SS_TIDAL_CORRIDOR, 1, 10
+	waitstate
+	release
+	end
+
+VermilionCity_EventScript_TidalCancel::
+	msgbox VermilionCity_Text_TidalSailAnotherTime, MSGBOX_DEFAULT
+	release
 	end
 
 VermilionCity_EventScript_OaksAide::
@@ -189,11 +193,6 @@ VermilionCity_Text_DidYouSeeSSAnneInHarbor::
 	.string "Did you see the S.S. ANNE moored\n"
 	.string "in the harbor?$"
 
-VermilionCity_Text_SSAnneHasDepartedForYear::
-	.string "So, the S.S. ANNE has departed?\p"
-	.string "She'll be back in VERMILION about\n"
-	.string "this time next year.$"
-
 VermilionCity_Text_BuildingOnThisLand::
 	.string "I'm putting up a building on this\n"
 	.string "plot of land. I own it all.\p"
@@ -209,7 +208,8 @@ VermilionCity_Text_MachopStompingLandFlat::
 VermilionCity_Text_SSAnneVisitsOnceAYear::
 	.string "The S.S. ANNE is a famous luxury\n"
 	.string "cruise ship.\p"
-	.string "It visits VERMILION once a year.$"
+	.string "It's moored here in VERMILION\n"
+	.string "all year round.$"
 
 VermilionCity_Text_CitySign::
 	.string "VERMILION CITY\n"
@@ -252,9 +252,6 @@ VermilionCity_Text_DontHaveNeededSSTicket::
 	.string "S.S. TICKET.\p"
 	.string "{FONT_MALE}Sorry!\p"
 	.string "You need a ticket to get aboard.$"
-
-VermilionCity_Text_TheShipSetSail::
-	.string "The ship set sail.$"
 
 VermilionCity_Text_BoardSeagallopTriPass::
 	.string "Ah, you have a TRI-PASS.\p"
@@ -311,3 +308,23 @@ VermilionCity_Text_Route2AideHasPackageForYou::
 	.string "If you're in the ROUTE 2 area,\n"
 	.string "please look for him.$"
 
+
+VermilionCity_Text_TidalBoundForHoenn::
+	.string "Welcome aboard the S.S. TIDAL!\p"
+	.string "This ferry sails back to HOENN.$"
+
+VermilionCity_Text_TidalWhereTo::
+	.string "Where would you like to go?$"
+
+VermilionCity_Text_SlateportItIs::
+	.string "SLATEPORT CITY it is, then!$"
+
+VermilionCity_Text_LilycoveItIs::
+	.string "LILYCOVE CITY it is, then!$"
+
+VermilionCity_Text_TidalPleaseBoard::
+	.string "Please board the ferry and wait for\n"
+	.string "departure.$"
+
+VermilionCity_Text_TidalSailAnotherTime::
+	.string "Please sail with us another time.$"

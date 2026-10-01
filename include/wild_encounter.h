@@ -53,6 +53,7 @@ extern bool8 gIsFishingEncounter;
 extern bool8 gIsSurfingEncounter;
 extern u8 gChainFishingDexNavStreak;
 
+void GetWildMonLevelRange(const struct WildPokemonHeader *header, const struct WildPokemon *mon, u32 *min, u32 *max);
 u16 ChooseWildMonLevel(const struct WildPokemon *wildPokemon, u8 wildMonIndex, enum WildPokemonArea area);
 void DisableWildEncounters(bool8 disabled);
 bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior);

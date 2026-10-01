@@ -5,7 +5,7 @@
 // Each block starts on a 0x10 boundary. Ids inside a block keep the FireRed order, so
 // FireRed range loops (badges, hidden items) stay valid.
 
-// Story and scene state (0x1000-0x1074)
+// Story and scene state (0x1000-0x1075)
 #define FLAG_HELPED_BILL_IN_SEA_COTTAGE                                    (KANTO_FLAGS_START + 0x000)
 #define FLAG_RESCUED_MR_FUJI                                               (KANTO_FLAGS_START + 0x001)
 #define FLAG_DID_MIMIEN_TRADE                                              (KANTO_FLAGS_START + 0x002)
@@ -123,6 +123,7 @@
 #define FLAG_SYS_SEVII_MAP_4567                                            (KANTO_FLAGS_START + 0x072)
 #define FLAG_SYS_GOT_BERRY_POUCH                                           (KANTO_FLAGS_START + 0x073)
 #define FLAG_SYS_UNLOCKED_TANOBY_RUINS                                     (KANTO_FLAGS_START + 0x074)
+#define FLAG_ARRIVED_IN_KANTO                                              (KANTO_FLAGS_START + 0x075)
 
 // Object hide flags (0x1080-0x10F0)
 #define FLAG_HIDE_BULBASAUR_BALL                                           (KANTO_FLAGS_START + 0x080)

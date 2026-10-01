@@ -45,7 +45,8 @@ LilycoveCity_Harbor_EventScript_FerryRegularLocationSelect::
 	case 3, LilycoveCity_Harbor_EventScript_GoToNavelRock
 	case 4, LilycoveCity_Harbor_EventScript_GoToBirthIsland
 	case 5, LilycoveCity_Harbor_EventScript_GoToFarawayIsland
-	case 6, LilycoveCity_Harbor_EventScript_ExitSailSelect
+	case 6, LilycoveCity_Harbor_EventScript_GoToVermilion
+	case 7, LilycoveCity_Harbor_EventScript_ExitSailSelect
 	case MULTI_B_PRESSED, LilycoveCity_Harbor_EventScript_ExitSailSelect
 	end
 
@@ -81,6 +82,16 @@ LilycoveCity_Harbor_EventScript_GoToSlateport::
 	msgbox LilycoveCity_Harbor_Text_SlateportItIs, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, LilycoveCity_Harbor_EventScript_FerryDestinationChangeMind
 	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_BOARD_LILYCOVE
+	call LilycoveCity_Harbor_EventScript_BoardFerry
+	warp MAP_SS_TIDAL_CORRIDOR, 1, 10
+	waitstate
+	release
+	end
+
+LilycoveCity_Harbor_EventScript_GoToVermilion::
+	msgbox LilycoveCity_Harbor_Text_VermilionItIs, MSGBOX_YESNO
+	goto_if_eq VAR_RESULT, NO, LilycoveCity_Harbor_EventScript_FerryDestinationChangeMind
+	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_BOARD_VERMILION
 	call LilycoveCity_Harbor_EventScript_BoardFerry
 	warp MAP_SS_TIDAL_CORRIDOR, 1, 10
 	waitstate
@@ -290,7 +301,7 @@ LilycoveCity_Harbor_EventScript_MultipleEventTicketsFirstTime::
 	case 3, LilycoveCity_Harbor_EventScript_GoToNavelRockFirstTime
 	case 4, LilycoveCity_Harbor_EventScript_GoToBirthIslandFirstTime
 	case 5, LilycoveCity_Harbor_EventScript_GoToFarawayIslandFirstTime
-	case 6, LilycoveCity_Harbor_EventScript_ExitFirstTimeTicketSailSelect
+	case 7, LilycoveCity_Harbor_EventScript_ExitFirstTimeTicketSailSelect
 	case MULTI_B_PRESSED, LilycoveCity_Harbor_EventScript_ExitFirstTimeTicketSailSelect
 	release
 	end
@@ -560,6 +571,9 @@ LilycoveCity_Harbor_Text_SailAnotherTime:
 
 LilycoveCity_Harbor_Text_SlateportItIs:
 	.string "SLATEPORT CITY it is, then!$"
+
+LilycoveCity_Harbor_Text_VermilionItIs:
+	.string "VERMILION CITY it is, then!$"
 
 LilycoveCity_Harbor_Text_BattleFrontierItIs:
 	.string "BATTLE FRONTIER it is, then!$"

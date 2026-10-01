@@ -84,7 +84,7 @@ static bool32 InfoAlreadyVisited(const struct WildPokemonInfo *info, const struc
     return FALSE;
 }
 
-static void AccumulateWildInfo(const struct WildPokemonInfo *info, u32 wildCount, struct DraftChoice *scratch, u32 *count,
+static void AccumulateWildInfo(const struct WildPokemonHeader *header, const struct WildPokemonInfo *info, u32 wildCount, struct DraftChoice *scratch, u32 *count,
                                 const struct WildPokemonInfo **visited, u32 *visitedCount)
 {
     u32 i;
@@ -96,7 +96,12 @@ static void AccumulateWildInfo(const struct WildPokemonInfo *info, u32 wildCount
         return;
 
     for (i = 0; i < wildCount; i++)
-        AddSpeciesToScratch(scratch, count, info->wildPokemon[i].species, info->wildPokemon[i].minLevel, info->wildPokemon[i].maxLevel);
+    {
+        u32 minLevel, maxLevel;
+
+        GetWildMonLevelRange(header, &info->wildPokemon[i], &minLevel, &maxLevel);
+        AddSpeciesToScratch(scratch, count, info->wildPokemon[i].species, minLevel, maxLevel);
+    }
 }
 
 static void SortIndicesAscending(u8 *indices, u32 n)
@@ -165,8 +170,8 @@ static u32 BuildRawPool(struct DraftChoice *scratch)
     {
         const struct WildEncounterTypes *types = &gWildMonHeaders[headerId].encounterTypes[t];
 
-        AccumulateWildInfo(types->landMonsInfo, NUM_LAND_MONS_ENCOUNTER_SLOTS, scratch, &count, visited, &visitedCount);
-        AccumulateWildInfo(types->waterMonsInfo, NUM_WATER_MONS_ENCOUNTER_SLOTS, scratch, &count, visited, &visitedCount);
+        AccumulateWildInfo(&gWildMonHeaders[headerId], types->landMonsInfo, NUM_LAND_MONS_ENCOUNTER_SLOTS, scratch, &count, visited, &visitedCount);
+        AccumulateWildInfo(&gWildMonHeaders[headerId], types->waterMonsInfo, NUM_WATER_MONS_ENCOUNTER_SLOTS, scratch, &count, visited, &visitedCount);
     }
 
     return count;

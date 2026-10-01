@@ -8,11 +8,22 @@ SSTidalCorridor_OnFrame:
 	map_script_2 VAR_SS_TIDAL_STATE, SS_TIDAL_BOARD_LILYCOVE, SSTidalCorridor_EventScript_DepartLilycoveForSlateport
 	map_script_2 VAR_SS_TIDAL_STATE, SS_TIDAL_EXIT_CURRENTS_RIGHT, SSTidalCorridor_EventScript_HalfwayToLilycove
 	map_script_2 VAR_SS_TIDAL_STATE, SS_TIDAL_EXIT_CURRENTS_LEFT, SSTidalCorridor_EventScript_ArrivedInSlateport
+	map_script_2 VAR_SS_TIDAL_STATE, SS_TIDAL_BOARD_VERMILION, SSTidalCorridor_EventScript_DepartForVermilion
+	map_script_2 VAR_SS_TIDAL_STATE, SS_TIDAL_EXIT_CURRENTS_VERMILION, SSTidalCorridor_EventScript_ArrivedInVermilion
 	.2byte 0
 
 SSTidalCorridor_EventScript_DepartSlateportForLilycove::
 	special SetSSTidalFlag
 	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_DEPART_SLATEPORT
+	lockall
+	playse SE_DING_DONG
+	msgbox SSTidal_Text_FastCurrentsHopeYouEnjoyVoyage, MSGBOX_DEFAULT
+	releaseall
+	end
+
+SSTidalCorridor_EventScript_DepartForVermilion::
+	special SetSSTidalFlag
+	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_DEPART_VERMILION
 	lockall
 	playse SE_DING_DONG
 	msgbox SSTidal_Text_FastCurrentsHopeYouEnjoyVoyage, MSGBOX_DEFAULT
@@ -43,6 +54,7 @@ SSTidalRooms_EventScript_ArrivedInLilycove::
 
 SSTidalCorridor_EventScript_ReachedStepCount::
 	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_DEPART_SLATEPORT, SSTidalCorridor_EventScript_HalfwayToLilycove
+	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_DEPART_VERMILION, SSTidalCorridor_EventScript_ArrivedInVermilion
 	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_HALFWAY_SLATEPORT, SSTidalCorridor_EventScript_ArrivedInSlateport
 	end
 
@@ -71,12 +83,29 @@ SSTidalRooms_EventScript_ArrivedInSlateport::
 	msgbox SSTidal_Text_MadeLandInSlateport, MSGBOX_DEFAULT
 	return
 
+SSTidalCorridor_EventScript_ArrivedInVermilion::
+	special ResetSSTidalFlag
+	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_LAND_VERMILION
+	lockall
+	playse SE_DING_DONG
+	msgbox SSTidal_Text_MadeLandInVermilion, MSGBOX_DEFAULT
+	releaseall
+	end
+
+SSTidalRooms_EventScript_ArrivedInVermilion::
+	special ResetSSTidalFlag
+	setvar VAR_SS_TIDAL_STATE, SS_TIDAL_LAND_VERMILION
+	playse SE_DING_DONG
+	msgbox SSTidal_Text_MadeLandInVermilion, MSGBOX_DEFAULT
+	return
+
 SSTidalRooms_EventScript_ProgessCruiseAfterBed::
 	switch VAR_SS_TIDAL_STATE
 	case SS_TIDAL_DEPART_SLATEPORT, SSTidalRooms_EventScript_ArrivedInLilycove
 	case SS_TIDAL_HALFWAY_LILYCOVE, SSTidalRooms_EventScript_ArrivedInLilycove
 	case SS_TIDAL_DEPART_LILYCOVE, SSTidalRooms_EventScript_HalfwayToSlateport
 	case SS_TIDAL_HALFWAY_SLATEPORT, SSTidalRooms_EventScript_ArrivedInSlateport
+	case SS_TIDAL_DEPART_VERMILION, SSTidalRooms_EventScript_ArrivedInVermilion
 	return
 
 SSTidalCorridor_EventScript_Briney::
@@ -114,6 +143,7 @@ SSTidalCorridor_EventScript_ExitSailor::
 	faceplayer
 	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_LAND_LILYCOVE, SSTidalCorridor_EventScript_ExitLilycove
 	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_LAND_SLATEPORT, SSTidalCorridor_EventScript_ExitSlateport
+	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_LAND_VERMILION, SSTidalCorridor_EventScript_ExitVermilion
 	msgbox SSTidalCorridor_Text_CanRestInCabin2, MSGBOX_DEFAULT
 	release
 	end
@@ -136,6 +166,16 @@ SSTidalCorridor_EventScript_ExitSlateport::
 	release
 	end
 
+SSTidalCorridor_EventScript_ExitVermilion::
+	setrespawn HEAL_LOCATION_VERMILION_CITY
+	setflag FLAG_ARRIVED_IN_KANTO
+	msgbox SSTidalCorridor_Text_WeveArrived, MSGBOX_DEFAULT
+	call_if_set FLAG_RECEIVED_TM_SNATCH, SSTidalCorridor_EventScript_HideSnatchGiver
+	warp MAP_VERMILION_CITY, 23, 32
+	waitstate
+	release
+	end
+
 SSTidalCorridor_EventScript_HideSnatchGiver::
 	setflag FLAG_HIDE_SS_TIDAL_ROOMS_SNATCH_GIVER
 	return
@@ -144,6 +184,7 @@ SSTidalCorridor_EventScript_Porthole::
 	lockall
 	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_DEPART_SLATEPORT, SSTidalCorridor_EventScript_LookThroughPorthole
 	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_HALFWAY_SLATEPORT, SSTidalCorridor_EventScript_LookThroughPorthole
+	goto_if_eq VAR_SS_TIDAL_STATE, SS_TIDAL_DEPART_VERMILION, SSTidalCorridor_EventScript_LookThroughPorthole
 	msgbox SSTidalCorridor_Text_HorizonSpreadsBeyondPorthole, MSGBOX_DEFAULT
 	releaseall
 	end
@@ -285,6 +326,10 @@ SSTidal_Text_MadeLandInSlateport:
 
 SSTidal_Text_MadeLandInLilycove:
 	.string "We have made land in LILYCOVE CITY.\n"
+	.string "Thank you for sailing with us.$"
+
+SSTidal_Text_MadeLandInVermilion:
+	.string "We have made land in VERMILION CITY.\n"
 	.string "Thank you for sailing with us.$"
 
 SSTidalCorridor_Text_CanRestInCabin2:

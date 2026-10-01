@@ -276,6 +276,7 @@ static const struct MenuAction MultichoiceList_HowsFishing[] =
 };
 
 const u8 gText_LilycoveCity[] = _("LILYCOVE CITY");
+const u8 gText_VermilionCity[] = _("VERMILION CITY");
 
 static const struct MenuAction MultichoiceList_SSTidalSlateportWithBF[] =
 {
@@ -299,6 +300,13 @@ static const struct MenuAction MultichoiceList_RightLeft[] =
 static const struct MenuAction MultichoiceList_SSTidalSlateportNoBF[] =
 {
     {gText_LilycoveCity},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_SSTidalSlateportKanto[] =
+{
+    {gText_LilycoveCity},
+    {gText_VermilionCity},
     {gText_Exit},
 };
 
@@ -1180,6 +1188,7 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_RIGHTLEFT]                  = MULTICHOICE(MultichoiceList_RightLeft),
     [MULTI_GAME_CORNER_TMS]            = MULTICHOICE(MultichoiceList_GameCornerTMs),
     [MULTI_SSTIDAL_SLATEPORT_NO_BF]    = MULTICHOICE(MultichoiceList_SSTidalSlateportNoBF),
+    [MULTI_SSTIDAL_SLATEPORT_KANTO]    = MULTICHOICE(MultichoiceList_SSTidalSlateportKanto),
     [MULTI_FLOORS]                     = MULTICHOICE(MultichoiceList_Floors),
     [MULTI_SHARDS_R]                   = MULTICHOICE(MultichoiceList_ShardsR),
     [MULTI_SHARDS_Y]                   = MULTICHOICE(MultichoiceList_ShardsY),
@@ -1357,6 +1366,7 @@ static const u8 *const sLilycoveSSTidalDestinations[SSTIDAL_SELECTION_COUNT] =
     [SSTIDAL_SELECTION_NAVEL_ROCK]      = gText_NavelRock,
     [SSTIDAL_SELECTION_BIRTH_ISLAND]    = gText_BirthIsland,
     [SSTIDAL_SELECTION_FARAWAY_ISLAND]  = gText_FarawayIsland,
+    [SSTIDAL_SELECTION_VERMILION]       = gText_VermilionCity,
     [SSTIDAL_SELECTION_EXIT]            = gText_Exit,
 };
 

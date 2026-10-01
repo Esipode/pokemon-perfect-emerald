@@ -356,6 +356,9 @@ enum SSTidalLocation GetSSTidalLocation(s8 *mapGroup, s8 *mapNum, s16 *x, s16 *y
         return SS_TIDAL_LOCATION_SLATEPORT;
     case SS_TIDAL_HALFWAY_LILYCOVE:
     case SS_TIDAL_EXIT_CURRENTS_RIGHT:
+    case SS_TIDAL_BOARD_VERMILION:
+    case SS_TIDAL_EXIT_CURRENTS_VERMILION:
+    case SS_TIDAL_LAND_VERMILION:
         return SS_TIDAL_LOCATION_ROUTE131;
     case SS_TIDAL_LAND_LILYCOVE:
     case SS_TIDAL_BOARD_LILYCOVE:
@@ -364,6 +367,7 @@ enum SSTidalLocation GetSSTidalLocation(s8 *mapGroup, s8 *mapNum, s16 *x, s16 *y
     case SS_TIDAL_EXIT_CURRENTS_LEFT:
         return SS_TIDAL_LOCATION_ROUTE124;
     case SS_TIDAL_DEPART_SLATEPORT:
+    case SS_TIDAL_DEPART_VERMILION:
         if (*varCruiseStepCount < 60)
         {
             *mapNum = MAP_NUM(MAP_ROUTE134);

@@ -28,6 +28,7 @@
 #include "battle_pike.h"
 #include "battle_pyramid.h"
 #include "caps.h"
+#include "regions.h"
 #include "constants/abilities.h"
 #include "constants/game_stat.h"
 #include "constants/item.h"
@@ -52,7 +53,7 @@ static u16 FeebasRandom(void);
 static void FeebasSeedRng(u16 seed);
 static void ApplyFluteEncounterRateMod(u32 *encRate);
 static void ApplyCleanseTagEncounterRateMod(u32 *encRate);
-static u16 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemon *wildMon, enum Species species, enum WildPokemonArea area);
+static u16 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemonHeader *header, const struct WildPokemon *wildMon, enum Species species, enum WildPokemonArea area);
 #ifdef BUGFIX
 static bool8 TryGetAbilityInfluencedWildMonIndex(const struct WildPokemon *wildMon, enum Type type, enum Ability ability, u8 *monIndex, u32 size);
 #else
@@ -377,26 +378,59 @@ static u32 ChooseWildMonIndex_Fishing(u8 rod)
     return wildMonIndex;
 }
 
+// Kanto tables store levels as offsets below the progression cap; Hoenn tables store absolute levels.
+void GetWildMonLevelRange(const struct WildPokemonHeader *header, const struct WildPokemon *mon, u32 *min, u32 *max)
+{
+    u32 lo = mon->minLevel;
+    u32 hi = mon->maxLevel;
+
+    if (lo > hi)
+    {
+        u32 temp = lo;
+        lo = hi;
+        hi = temp;
+    }
+
+    if (header != NULL
+     && GetRegionForSectionId(Overworld_GetMapHeaderByGroupAndId(header->mapGroup, header->mapNum)->regionMapSectionId) == REGION_KANTO)
+    {
+        u32 cap = GetProgressionLevelCap();
+
+        // Smaller offset is the higher level.
+        *min = (hi < cap) ? cap - hi : MIN_LEVEL;
+        *max = (lo < cap) ? cap - lo : MIN_LEVEL;
+        if (*min < MIN_LEVEL)
+            *min = MIN_LEVEL;
+        if (*max < MIN_LEVEL)
+            *max = MIN_LEVEL;
+        return;
+    }
+
+    *min = lo;
+    *max = hi;
+}
+
+static const struct WildPokemonHeader *GetCurrentMapWildMonHeader(void)
+{
+    u16 headerId = GetCurrentMapWildMonHeaderId();
+
+    if (headerId == HEADER_NONE)
+        return NULL;
+
+    return &gWildMonHeaders[headerId];
+}
+
 u16 ChooseWildMonLevel(const struct WildPokemon *wildPokemon, u8 wildMonIndex, enum WildPokemonArea area)
 {
-    u16 min;
-    u16 max;
-    u16 range;
+    u32 min;
+    u32 max;
+    u32 range;
     u8 rand;
+    const struct WildPokemonHeader *header = GetCurrentMapWildMonHeader();
 
     if (LURE_STEP_COUNT == 0)
     {
-        // Make sure minimum level is less than maximum level
-        if (wildPokemon[wildMonIndex].maxLevel >= wildPokemon[wildMonIndex].minLevel)
-        {
-            min = wildPokemon[wildMonIndex].minLevel;
-            max = wildPokemon[wildMonIndex].maxLevel;
-        }
-        else
-        {
-            min = wildPokemon[wildMonIndex].maxLevel;
-            max = wildPokemon[wildMonIndex].minLevel;
-        }
+        GetWildMonLevelRange(header, &wildPokemon[wildMonIndex], &min, &max);
         range = max - min + 1;
         rand = Random() % range;
 
@@ -418,11 +452,13 @@ u16 ChooseWildMonLevel(const struct WildPokemon *wildPokemon, u8 wildMonIndex, e
     else
     {
         // Looks for the max level of all slots that share the same species as the selected slot.
-        max = GetMaxLevelOfSpeciesInWildTable(wildPokemon, wildPokemon[wildMonIndex].species, area);
+        max = GetMaxLevelOfSpeciesInWildTable(header, wildPokemon, wildPokemon[wildMonIndex].species, area);
         if (max > 0)
             return max + 1;
-        else // Failsafe
-            return wildPokemon[wildMonIndex].maxLevel + 1;
+
+        // Failsafe
+        GetWildMonLevelRange(header, &wildPokemon[wildMonIndex], &min, &max);
+        return max + 1;
     }
 }
 
@@ -1466,10 +1502,10 @@ static bool8 TryGetRandomWildMonIndexByType(const struct WildPokemon *wildMon, e
 
 #include "data.h"
 
-static u16 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemon *wildMon, enum Species species, enum WildPokemonArea area)
+static u16 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemonHeader *header, const struct WildPokemon *wildMon, enum Species species, enum WildPokemonArea area)
 {
     u8 i, numMon = 0;
-    u16 maxLevel = 0;
+    u32 maxLevel = 0;
 
     switch (area)
     {
@@ -1490,8 +1526,14 @@ static u16 GetMaxLevelOfSpeciesInWildTable(const struct WildPokemon *wildMon, en
 
     for (i = 0; i < numMon; i++)
     {
-        if (wildMon[i].species == species && wildMon[i].maxLevel > maxLevel)
-            maxLevel = wildMon[i].maxLevel;
+        u32 slotMin, slotMax;
+
+        if (wildMon[i].species != species)
+            continue;
+
+        GetWildMonLevelRange(header, &wildMon[i], &slotMin, &slotMax);
+        if (slotMax > maxLevel)
+            maxLevel = slotMax;
     }
 
     return maxLevel;
