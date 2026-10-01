@@ -338,7 +338,7 @@ TEST("(Healthbox) A preset only writes its own side")
     before = o;
     HealthboxOptions_ApplyPreset(&o, HB_SIDE_PLAYER, HB_PRESET_MINIMAL);
     EXPECT_EQ(HealthboxOptions_GetPreset(&o, HB_SIDE_FOE), HB_PRESET_FULL);
-    EXPECT_EQ(o.foeNick, before.foeNick);
-    EXPECT_EQ(o.foeTypes, before.foeTypes);
-    EXPECT_EQ(o.foeHpValue, before.foeHpValue);
+    EXPECT_EQ((u32)o.foeNick, (u32)before.foeNick);
+    EXPECT_EQ((u32)o.foeTypes, (u32)before.foeTypes);
+    EXPECT_EQ((u32)o.foeHpValue, (u32)before.foeHpValue);
 }
