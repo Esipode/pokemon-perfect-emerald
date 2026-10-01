@@ -23,7 +23,7 @@ SevenIsland_PokemonCenter_1F_EventScript_Sailor::
 	end
 
 SevenIsland_PokemonCenter_1F_EventScript_Beauty::
-	msgbox SevenIsland_PokemonCenter_1F_Text_CheckOutTrainerTower, MSGBOX_NPC
+	msgbox SevenIsland_PokemonCenter_1F_Text_RareMonsOnIslands, MSGBOX_NPC
 	end
 
 SevenIsland_PokemonCenter_1F_Text_EventsDependingOnConnections::
@@ -41,7 +41,8 @@ SevenIsland_PokemonCenter_1F_Text_DidYouRideSeagallopHere::
 	.string "I don't know where they all go,\n"
 	.string "though.$"
 
-SevenIsland_PokemonCenter_1F_Text_CheckOutTrainerTower::
-	.string "If you're confident, you should\n"
-	.string "check out TRAINER TOWER.$"
+SevenIsland_PokemonCenter_1F_Text_RareMonsOnIslands::
+	.string "The islands here are home to\n"
+	.string "some very rare POKéMON.\p"
+	.string "Keep your eyes open as you explore!$"
 

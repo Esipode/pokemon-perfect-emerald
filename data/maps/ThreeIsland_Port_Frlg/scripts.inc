@@ -3,7 +3,6 @@ ThreeIsland_Port_Frlg_MapScripts::
 	.byte 0
 
 ThreeIsland_Port_OnTransition::
-	clearflag FLAG_SYS_PC_STORAGE_DISABLED
 	setflag FLAG_SEVII_DETOUR_FINISHED
 	end
 
