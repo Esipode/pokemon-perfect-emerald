@@ -16,11 +16,6 @@
   "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
   "connections": [
     {
-      "map": "MAP_SEVEN_ISLAND_TRAINER_TOWER",
-      "offset": -48,
-      "direction": "up"
-    },
-    {
       "map": "MAP_SEVEN_ISLAND_SEVAULT_CANYON_ENTRANCE",
       "offset": 0,
       "direction": "down"

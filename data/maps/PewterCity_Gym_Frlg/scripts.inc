@@ -190,11 +190,11 @@ PewterCity_Gym_Text_GymStatue::
 	.string "PEWTER POKéMON GYM\n"
 	.string "LEADER: BROCK\p"
 	.string "WINNING TRAINERS:\n"
-	.string "{RIVAL}$"
+	.string "BLUE$"
 
 PewterCity_Gym_Text_GymStatuePlayerWon::
 	.string "PEWTER POKéMON GYM\n"
 	.string "LEADER: BROCK\p"
 	.string "WINNING TRAINERS:\n"
-	.string "{RIVAL}, {PLAYER}$"
+	.string "BLUE, {PLAYER}$"
 

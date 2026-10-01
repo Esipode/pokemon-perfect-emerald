@@ -354,9 +354,6 @@ const u16 gMetatileAttributes_PokemonMansion[] = INCBIN_U16("data/tilesets/secon
 const u16 gMetatiles_Museum[] = INCBIN_U16("data/tilesets/secondary/museum_frlg/metatiles.bin");
 const u16 gMetatileAttributes_Museum[] = INCBIN_U16("data/tilesets/secondary/museum_frlg/metatile_attributes.bin");
 
-const u16 gMetatiles_CableClub_Frlg[] = INCBIN_U16("data/tilesets/secondary/cable_club_frlg/metatiles.bin");
-const u16 gMetatileAttributes_CableClub_Frlg[] = INCBIN_U16("data/tilesets/secondary/cable_club_frlg/metatile_attributes.bin");
-
 const u16 gMetatiles_RestaurantHotel[] = INCBIN_U16("data/tilesets/secondary/restaurant_hotel_frlg/metatiles.bin");
 const u16 gMetatileAttributes_RestaurantHotel[] = INCBIN_U16("data/tilesets/secondary/restaurant_hotel_frlg/metatile_attributes.bin");
 

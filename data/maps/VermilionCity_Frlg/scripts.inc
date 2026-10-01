@@ -54,20 +54,6 @@ VermilionCity_EventScript_FerrySailor::
 	release
 	end
 
-VermilionCity_EventScript_CheckHasMysticTicket::
-	goto_if_unset FLAG_ENABLE_SHIP_NAVEL_ROCK, EventScript_SetResultFalse
-	checkitem ITEM_MYSTIC_TICKET
-	goto_if_eq VAR_RESULT, FALSE, EventScript_SetResultFalse
-	goto EventScript_SetResultTrue
-	end
-
-VermilionCity_EventScript_CheckHasAuroraTicket::
-	goto_if_unset FLAG_ENABLE_SHIP_BIRTH_ISLAND, EventScript_SetResultFalse
-	checkitem ITEM_AURORA_TICKET
-	goto_if_eq VAR_RESULT, FALSE, EventScript_SetResultFalse
-	goto EventScript_SetResultTrue
-	end
-
 VermilionCity_EventScript_CheckSeagallopPresent::
 	setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY
 	goto_if_ge VAR_MAP_SCENE_ONE_ISLAND_POKEMON_CENTER_1F, 5, VermilionCity_EventScript_ChooseSeagallopDestRainbowPass
@@ -77,78 +63,10 @@ VermilionCity_EventScript_CheckSeagallopPresent::
 	end
 
 VermilionCity_EventScript_ChooseSeagallopDestRainbowPass::
-	call VermilionCity_EventScript_CheckHasMysticTicket
-	goto_if_eq VAR_RESULT, TRUE, VermilionCity_EventScript_HasMysticTicket
-	call VermilionCity_EventScript_CheckHasAuroraTicket
-	goto_if_eq VAR_RESULT, TRUE, VermilionCity_EventScript_HasAuroraTicket
 	setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY
 	message VermilionCity_Text_BoardSeagallopRainbowPass
 	waitmessage
 	goto EventScript_SeviiDestinationsPage1
-	end
-
-VermilionCity_EventScript_HasMysticTicket::
-	call VermilionCity_EventScript_CheckHasAuroraTicket
-	goto_if_eq VAR_RESULT, TRUE, VermilionCity_EventScript_HasMysticAndAuroraTickets
-	call_if_unset FLAG_SHOWN_MYSTIC_TICKET, VermilionCity_EventScript_ShowMysticTicket
-	message VermilionCity_Text_BoardSeagallopFerry
-	waitmessage
-	multichoice 17, 6, MULTI_SEVII_NAVEL, FALSE
-	switch VAR_RESULT
-	case 0, EventScript_SeviiDestinationsPage1
-	case 1, EventScript_SailToNavelRock
-	case 2, EventScript_CancelSail
-	case 127, EventScript_CancelSail
-	end
-
-VermilionCity_EventScript_ShowMysticTicket::
-	setflag FLAG_SHOWN_MYSTIC_TICKET
-	msgbox VermilionCity_Text_OhMysticTicketTakeYouToNavelRock
-	return
-
-VermilionCity_EventScript_HasAuroraTicket::
-	call_if_unset FLAG_SHOWN_AURORA_TICKET, VermilionCity_EventScript_ShowAuroraTicket
-	message VermilionCity_Text_BoardSeagallopFerry
-	waitmessage
-	multichoice 13, 6, MULTI_SEVII_BIRTH, FALSE
-	switch VAR_RESULT
-	case 0, EventScript_SeviiDestinationsPage1
-	case 1, EventScript_SailToBirthIsland
-	case 2, EventScript_CancelSail
-	case 127, EventScript_CancelSail
-	end
-
-VermilionCity_EventScript_ShowAuroraTicket::
-	setflag FLAG_SHOWN_AURORA_TICKET
-	msgbox VermilionCity_Text_OhAuroraTicketTakeYouToBirthIsland
-	return
-
-VermilionCity_EventScript_HasMysticAndAuroraTickets::
-	call_if_unset FLAG_SHOWN_MYSTIC_TICKET, VermilionCity_EventScript_ShowMysticTicket
-	call_if_unset FLAG_SHOWN_AURORA_TICKET, VermilionCity_EventScript_ShowAuroraTicket
-	message VermilionCity_Text_BoardSeagallopFerry
-	waitmessage
-	multichoice 13, 5, MULTI_SEVII_NAVEL_BIRTH, FALSE
-	switch VAR_RESULT
-	case 0, EventScript_SeviiDestinationsPage1
-	case 1, EventScript_SailToNavelRock
-	case 2, EventScript_SailToBirthIsland
-	case 3, EventScript_CancelSail
-	case 127, EventScript_CancelSail
-	end
-
-EventScript_SailToNavelRock::
-	msgbox VermilionCity_Text_Seagallop10Departing
-	setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY
-	setvar VAR_0x8006, SEAGALLOP_NAVEL_ROCK
-	goto EventScript_SetSail
-	end
-
-EventScript_SailToBirthIsland::
-	msgbox VermilionCity_Text_Seagallop12Departing
-	setvar VAR_0x8004, SEAGALLOP_VERMILION_CITY
-	setvar VAR_0x8006, SEAGALLOP_BIRTH_ISLAND
-	goto EventScript_SetSail
 	end
 
 VermilionCity_EventScript_ChooseSeagallopDestTriPass::

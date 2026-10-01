@@ -18,7 +18,7 @@ gFameCheckerFlavorText_ProfOak2:: @ 0x81AD1BB
 gFameCheckerFlavorText_ProfOak3:: @ 0x81AD258
 	.string "{COLOR BLUE}{SHADOW LIGHT_BLUE}Family and friends?\p"
 	.string "{COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}PROF. OAK reportedly lives with his\n"
-	.string "grandchildren, DAISY and {RIVAL}.$"
+	.string "grandchildren, DAISY and BLUE.$"
 
 gFameCheckerFlavorText_ProfOak4:: @ 0x81AD2B9
 	.string "{COLOR BLUE}{SHADOW LIGHT_BLUE}Family and friends?\p"
@@ -58,7 +58,7 @@ gFameCheckerFlavorText_Daisy2:: @ 0x81AD516
 gFameCheckerFlavorText_Daisy3:: @ 0x81AD5A7
 	.string "{COLOR BLUE}{SHADOW LIGHT_BLUE}Family and friends?\p"
 	.string "{COLOR DARK_GRAY}{SHADOW LIGHT_GRAY}PROF. OAK reportedly lives with his\n"
-	.string "grandchildren, DAISY and {RIVAL}.$"
+	.string "grandchildren, DAISY and BLUE.$"
 
 gFameCheckerFlavorText_Daisy4:: @ 0x81AD608
 	.string "{COLOR BLUE}{SHADOW LIGHT_BLUE}What is this person like?\p"
@@ -1320,7 +1320,7 @@ gFameCheckerFlavorTextOriginObjectName_Lance5::
 	.string "YOUNG MAN$"
 
 gFameCheckerFlavorTextOriginObjectName_Bill0::
-	.string "{RIVAL}$"
+	.string "BLUE$"
 
 gFameCheckerFlavorTextOriginObjectName_Bill1::
 	.string "LITTLE BOY$"
@@ -1466,7 +1466,7 @@ PokemonJournal_Text_SpecialFeatureProfOak::
 	.string "Special Feature: PROF. OAK,\n"
 	.string "the POKéMON Researcher!\p"
 	.string "PROF. OAK reportedly lives with his\n"
-	.string "grandchildren DAISY and {RIVAL}.$"
+	.string "grandchildren DAISY and BLUE.$"
 
 PokemonJournal_Text_SpecialFeatureDaisyOak::
 	.string "This is a POKéMON JOURNAL from\n"

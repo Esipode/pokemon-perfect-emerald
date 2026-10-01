@@ -2,7 +2,6 @@ TwoIsland_JoyfulGameCorner_Frlg_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, TwoIsland_JoyfulGameCorner_OnTransition
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, TwoIsland_JoyfulGameCorner_OnWarp
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, TwoIsland_JoyfulGameCorner_OnFrame
-	map_script MAP_SCRIPT_ON_LOAD, CableClub_OnLoad_Frlg
 	.byte 0
 
 TwoIsland_JoyfulGameCorner_OnTransition::
@@ -18,7 +17,6 @@ TwoIsland_JoyfulGameCorner_EventScript_SetLostelleReturnedPos::
 
 TwoIsland_JoyfulGameCorner_OnWarp::
 	map_script_2 VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER, 2, TwoIsland_JoyfulGameCorner_EventScript_TurnPlayerNorth
-	map_script_2 VAR_CABLE_CLUB_STATE, USING_MINIGAME, EventScript_CheckTurnAttendant_Frlg
 	.2byte 0
 
 TwoIsland_JoyfulGameCorner_EventScript_TurnPlayerNorth::
@@ -28,7 +26,6 @@ TwoIsland_JoyfulGameCorner_EventScript_TurnPlayerNorth::
 TwoIsland_JoyfulGameCorner_OnFrame::
 	map_script_2 VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER, 0, TwoIsland_JoyfulGameCorner_EventScript_HelpFindLostelleScene
 	map_script_2 VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER, 2, TwoIsland_JoyfulGameCorner_EventScript_FoundLostelleScene
-	map_script_2 VAR_CABLE_CLUB_STATE, USING_MINIGAME, CableClub_EventScript_ExitMinigameRoom
 	.2byte 0
 
 TwoIsland_JoyfulGameCorner_EventScript_FoundLostelleScene::
@@ -124,7 +121,6 @@ TwoIsland_JoyfulGameCorner_Movement_BikerLookAround::
 TwoIsland_JoyfulGameCorner_EventScript_InfoMan::
 	lock
 	faceplayer
-	goto_if_eq VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER, 4, JoyfulGameCorner_EventScript_InfoMan2_Frlg
 	goto_if_set FLAG_RESCUED_LOSTELLE, TwoIsland_JoyfulGameCorner_EventScript_GetGamesGoingSoon
 	msgbox TwoIsland_JoyfulGameCorner_Text_NotRunningAnyGamesToday
 	release
@@ -139,7 +135,6 @@ TwoIsland_JoyfulGameCorner_EventScript_GetGamesGoingSoon::
 TwoIsland_JoyfulGameCorner_EventScript_LostellesDaddy::
 	lock
 	faceplayer
-	goto_if_eq VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER, 4, JoyfulGameCorner_EventScript_MinigameAttendant_Frlg
 	goto_if_set FLAG_GOT_MOON_STONE_FROM_JOYFUL_GAME_CORNER, TwoIsland_JoyfulGameCorner_EventScript_GetGameCornerRunning
 	goto_if_eq VAR_MAP_SCENE_TWO_ISLAND_JOYFUL_GAME_CORNER, 3, TwoIsland_JoyfulGameCorner_EventScript_GiveDaddyMeteorite
 	msgbox TwoIsland_JoyfulGameCorner_Text_PleaseGoToThreeIsland

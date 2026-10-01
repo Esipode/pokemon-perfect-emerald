@@ -1019,17 +1019,6 @@ const struct Tileset gTileset_Museum =
     .callback = NULL,
 };
 
-const struct Tileset gTileset_CableClub_Frlg =
-{
-    .isCompressed = FALSE,
-    .isSecondary = TRUE,
-    .tiles = gTilesetTiles_CableClub_Frlg,
-    .palettes = gTilesetPalettes_CableClub_Frlg,
-    .metatiles = gMetatiles_CableClub_Frlg,
-    .metatileAttributes = gMetatileAttributes_CableClub_Frlg,
-    .callback = NULL,
-};
-
 const struct Tileset gTileset_BikeShop_Frlg =
 {
     .isCompressed = TRUE,

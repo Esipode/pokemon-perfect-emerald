@@ -34,7 +34,6 @@
     "gMapGroup_IndoorRoute123",
     "gMapGroup_IndoorRoute119",
     "gMapGroup_IndoorRoute124",
-    "gMapGroup_Link_Frlg",
     "gMapGroup_Dungeons_Frlg",
     "gMapGroup_SpecialArea_Frlg",
     "gMapGroup_TownsAndRoutes_Frlg",
@@ -655,12 +654,6 @@
   "gMapGroup_IndoorRoute124": [
     "Route124_DivingTreasureHuntersHouse"
   ],
-  "gMapGroup_Link_Frlg": [
-    "BattleColosseum_2P_Frlg",
-    "TradeCenter_Frlg",
-    "RecordCorner_Frlg",
-    "BattleColosseum_4P_Frlg"
-  ],
   "gMapGroup_Dungeons_Frlg": [
     "ViridianForest_Frlg",
     "MtMoon_1F_Frlg",
@@ -787,18 +780,6 @@
     "SixIsland_AlteringCave_Frlg"
   ],
   "gMapGroup_SpecialArea_Frlg": [
-    "NavelRock_Exterior_Frlg",
-    "TrainerTower_1F_Frlg",
-    "TrainerTower_2F_Frlg",
-    "TrainerTower_3F_Frlg",
-    "TrainerTower_4F_Frlg",
-    "TrainerTower_5F_Frlg",
-    "TrainerTower_6F_Frlg",
-    "TrainerTower_7F_Frlg",
-    "TrainerTower_8F_Frlg",
-    "TrainerTower_Roof_Frlg",
-    "TrainerTower_Lobby_Frlg",
-    "TrainerTower_Elevator_Frlg",
     "FiveIsland_LostCave_Entrance_Frlg",
     "FiveIsland_LostCave_Room1_Frlg",
     "FiveIsland_LostCave_Room2_Frlg",
@@ -823,30 +804,7 @@
     "SevenIsland_TanobyRuins_ViapoisChamber_Frlg",
     "ThreeIsland_DunsparceTunnel_Frlg",
     "SevenIsland_SevaultCanyon_TanobyKey_Frlg",
-    "NavelRock_1F_Frlg",
-    "NavelRock_Summit_Frlg",
-    "NavelRock_Base_Frlg",
-    "NavelRock_SummitPath_2F_Frlg",
-    "NavelRock_SummitPath_3F_Frlg",
-    "NavelRock_SummitPath_4F_Frlg",
-    "NavelRock_SummitPath_5F_Frlg",
-    "NavelRock_BasePath_B1F_Frlg",
-    "NavelRock_BasePath_B2F_Frlg",
-    "NavelRock_BasePath_B3F_Frlg",
-    "NavelRock_BasePath_B4F_Frlg",
-    "NavelRock_BasePath_B5F_Frlg",
-    "NavelRock_BasePath_B6F_Frlg",
-    "NavelRock_BasePath_B7F_Frlg",
-    "NavelRock_BasePath_B8F_Frlg",
-    "NavelRock_BasePath_B9F_Frlg",
-    "NavelRock_BasePath_B10F_Frlg",
-    "NavelRock_BasePath_B11F_Frlg",
-    "NavelRock_B1F_Frlg",
-    "NavelRock_Fork_Frlg",
-    "BirthIsland_Exterior_Frlg",
-    "OneIsland_KindleRoad_EmberSpa_Frlg",
-    "BirthIsland_Harbor_Frlg",
-    "NavelRock_Harbor_Frlg"
+    "OneIsland_KindleRoad_EmberSpa_Frlg"
   ],
   "gMapGroup_TownsAndRoutes_Frlg": [
     "PalletTown_Frlg",
@@ -907,7 +865,6 @@
     "SixIsland_GreenPath_Frlg",
     "SixIsland_WaterPath_Frlg",
     "SixIsland_RuinValley_Frlg",
-    "SevenIsland_TrainerTower_Frlg",
     "SevenIsland_SevaultCanyon_Entrance_Frlg",
     "SevenIsland_SevaultCanyon_Frlg",
     "SevenIsland_TanobyRuins_Frlg"

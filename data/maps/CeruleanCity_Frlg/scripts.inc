@@ -355,7 +355,7 @@ CeruleanCity_EventScript_GymSign::
 	end
 
 CeruleanCity_Text_RivalIntro::
-	.string "{RIVAL}: Yo! {PLAYER}!\p"
+	.string "BLUE: Yo! {PLAYER}!\p"
 	.string "You're still struggling along back\n"
 	.string "here?\p"
 	.string "I'm doing great! I caught a bunch\n"
@@ -369,7 +369,7 @@ CeruleanCity_Text_RivalDefeat::
 	.string "You won already!$"
 
 CeruleanCity_Text_RivalPostBattle::
-	.string "{RIVAL}: Hey, guess what?\p"
+	.string "BLUE: Hey, guess what?\p"
 	.string "I went to BILL's and got him to\n"
 	.string "show me his rare POKéMON.\p"
 	.string "That added a lot of pages to my\n"

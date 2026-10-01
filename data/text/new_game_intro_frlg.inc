@@ -229,11 +229,11 @@ gOakSpeech_Text_YourRivalsNameWhatWasIt::
 	.string "Your rival's name, what was it now?$"
 
 gOakSpeech_Text_ConfirmRivalName::
-	.string "…Er, was it {RIVAL}?$"
+	.string "…Er, was it BLUE?$"
 
 gOakSpeech_Text_RememberRivalsName::
 	.string "That's right! I remember now!\n"
-	.string "His name is {RIVAL}!\p$"
+	.string "His name is BLUE!\p$"
 
 gOakSpeech_Text_LetsGo::
 	.string "{PLAYER}!\p"

@@ -234,7 +234,7 @@ Route22_EventScript_LeagueGateSign::
 	end
 
 Route22_Text_EarlyRivalIntro::
-	.string "{RIVAL}: Hey! {PLAYER}!\p"
+	.string "BLUE: Hey! {PLAYER}!\p"
 	.string "You're off to the POKéMON LEAGUE?\n"
 	.string "Forget about it!\p"
 	.string "You probably don't have any\n"
@@ -256,16 +256,16 @@ Route22_Text_EarlyRivalPostBattle::
 	.string "You should quit dawdling and get a\n"
 	.string "move on!$"
 
-@ Translated in RB as "{RIVAL}: What? Why do I have 2 POKéMON? You should catch some more too!"
+@ Translated in RB as "BLUE: What? Why do I have 2 POKéMON? You should catch some more too!"
 Route22_Text_RivalShouldCatchSomeMons::
-	.string "{RIVAL}“なんだ？\n"
+	.string "BLUE“なんだ？\n"
 	.string "ポケモン　2ひきも\l"
 	.string "もってるの　なぜか　だって？\p"
 	.string "おまえも\n"
 	.string "つかまえれば　いい　じゃん！$"
 
 Route22_Text_LateRivalIntro::
-	.string "{RIVAL}: What? {PLAYER}!\n"
+	.string "BLUE: What? {PLAYER}!\n"
 	.string "What a surprise to see you here!\p"
 	.string "So you're going to the POKéMON\n"
 	.string "LEAGUE?\p"
@@ -286,9 +286,9 @@ Route22_Text_LateRivalPostBattle::
 	.string "But hey, you know that!\n"
 	.string "I'm out of here. Smell ya!$"
 
-@ Translated in RB as "{RIVAL}: Hahaha! {PLAYER}! That's your best? You're nowhere near as good as me, pal! Go train some more! You loser!"
+@ Translated in RB as "BLUE: Hahaha! {PLAYER}! That's your best? You're nowhere near as good as me, pal! Go train some more! You loser!"
 Route22_Text_LateRivalVictory::
-	.string "{RIVAL}“ひゃははッ　{PLAYER}ー！\n"
+	.string "BLUE“ひゃははッ　{PLAYER}ー！\n"
 	.string "それで　がんばってるのかよ！\l"
 	.string "おれの　さいのうに　くらべりゃ\l"
 	.string "{PLAYER}は　まだまだ　だな！\p"

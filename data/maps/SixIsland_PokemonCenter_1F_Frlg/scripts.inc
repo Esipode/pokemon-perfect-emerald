@@ -93,7 +93,7 @@ SixIsland_PokemonCenter_1F_Text_SomeMonsEvolveByTradingWithHeldItem::
 	.string "traded while holding specific items.$"
 
 SixIsland_PokemonCenter_1F_Text_RivalImpossibleToGetAllMonsAroundHere::
-	.string "{RIVAL}: Hey, {PLAYER}!\n"
+	.string "BLUE: Hey, {PLAYER}!\n"
 	.string "How's your POKéDEX filling up?\p"
 	.string "It looks like it's impossible to get\n"
 	.string "all the POKéMON by hanging around\l"

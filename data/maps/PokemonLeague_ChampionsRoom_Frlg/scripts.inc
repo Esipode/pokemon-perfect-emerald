@@ -225,7 +225,7 @@ PokemonLeague_ChampionsRoom_Movement_RivalWatchOakEnter::
 	step_end
 
 PokemonLeague_ChampionsRoom_Text_Intro::
-	.string "{RIVAL}: Hey, {PLAYER}!\p"
+	.string "BLUE: Hey, {PLAYER}!\p"
 	.string "I was looking forward to seeing\n"
 	.string "you, {PLAYER}.\p"
 	.string "My rival should be strong to keep\n"
@@ -243,7 +243,7 @@ PokemonLeague_ChampionsRoom_Text_Intro::
 	.string "the world!$"
 
 PokemonLeague_ChampionsRoom_Text_RematchIntro::
-	.string "{RIVAL}: Hey, {PLAYER}!\p"
+	.string "BLUE: Hey, {PLAYER}!\p"
 	.string "You came back, {PLAYER}!\n"
 	.string "Hahah, that is so great!\p"
 	.string "My rival should be strong to keep\n"
@@ -275,7 +275,7 @@ PokemonLeague_ChampionsRoom_Text_Victory::
 	.string "{PLAYER}に　まける　ような\n"
 	.string "おれさま　では　なーい！\p"
 	.string "ま！　ポケモンの\n"
-	.string "てんさい　{RIVAL}さま　あいてに\l"
+	.string "てんさい　BLUEさま　あいてに\l"
 	.string "ここまで　よく　がんばった！\p"
 	.string "ほめて　つかわす！\n"
 	.string "はーッ！　はーはッはッ！$"
@@ -303,13 +303,13 @@ PokemonLeague_ChampionsRoom_Text_OakCongratulations::
 	.string "{PLAYER}, you have come of age!$"
 
 PokemonLeague_ChampionsRoom_Text_OakImDisappointedRival::
-	.string "OAK: {RIVAL}…\n"
+	.string "OAK: BLUE…\n"
 	.string "I'm disappointed in you.\p"
 	.string "I came when I heard you'd beaten\n"
 	.string "the ELITE FOUR.\p"
 	.string "But, when I got here, you had\n"
 	.string "already lost!\p"
-	.string "{RIVAL}, do you understand why\n"
+	.string "BLUE, do you understand why\n"
 	.string "you lost?\p"
 	.string "You have forgotten to treat your\n"
 	.string "POKéMON with love and trust.\p"
