@@ -378,7 +378,14 @@ static u32 ChooseWildMonIndex_Fishing(u8 rod)
     return wildMonIndex;
 }
 
-// Kanto tables store levels as offsets below the progression cap; Hoenn tables store absolute levels.
+// Both Altering Caves share the Ultra Beast / Paradox encounter design and use absolute levels.
+static bool32 IsAlteringCaveMap(u32 mapGroup, u32 mapNum)
+{
+    return (mapGroup == MAP_GROUP(MAP_ALTERING_CAVE) && mapNum == MAP_NUM(MAP_ALTERING_CAVE))
+        || (mapGroup == MAP_GROUP(MAP_SIX_ISLAND_ALTERING_CAVE) && mapNum == MAP_NUM(MAP_SIX_ISLAND_ALTERING_CAVE));
+}
+
+// Kanto tables store levels as offsets below the progression cap (except the Altering Cave); Hoenn tables store absolute levels.
 void GetWildMonLevelRange(const struct WildPokemonHeader *header, const struct WildPokemon *mon, u32 *min, u32 *max)
 {
     u32 lo = mon->minLevel;
@@ -392,6 +399,7 @@ void GetWildMonLevelRange(const struct WildPokemonHeader *header, const struct W
     }
 
     if (header != NULL
+     && !IsAlteringCaveMap(header->mapGroup, header->mapNum)
      && GetRegionForSectionId(Overworld_GetMapHeaderByGroupAndId(header->mapGroup, header->mapNum)->regionMapSectionId) == REGION_KANTO)
     {
         u32 cap = GetProgressionLevelCap();
@@ -823,8 +831,7 @@ static enum Species GetAlteringCaveDailySpecies(enum Species species, u16 level)
     u32 i, j;
 
     if (level < ALTERING_CAVE_RARE_SLOT_MAX_LEVEL
-     || gSaveBlock1Ptr->location.mapGroup != MAP_GROUP(MAP_ALTERING_CAVE)
-     || gSaveBlock1Ptr->location.mapNum != MAP_NUM(MAP_ALTERING_CAVE))
+     || !IsAlteringCaveMap(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum))
         return species;
 
     for (i = 0; i < ARRAY_COUNT(sAlteringCaveDailyPools); i++)
