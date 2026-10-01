@@ -192,6 +192,8 @@ TEST("Every Mega Stone, Z-Crystal and Tera Shard is in its matching pocket")
             EXPECT_EQ(GetItemPocket(itemId), POCKET_TERA_SHARDS);
             teraShardCount++;
             break;
+        default:
+            break;
         }
     }
 
