@@ -49,7 +49,7 @@
 #define TAG_ITEM_ICON_BASE 9110 // immune to time blending
 
 #define MAX_ITEMS_SHOWN 8
-#define SHOP_MENU_PALETTE_ID (IsKantoArtLayout(gMapHeader.mapLayout) ? 11 : 12)
+#define SHOP_MENU_PALETTE_ID 12 // Must match palette bits baked into graphics/shop/*.bin
 
 enum {
     WIN_BUY_SELL_QUIT,
