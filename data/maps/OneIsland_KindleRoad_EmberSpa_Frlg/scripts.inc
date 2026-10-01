@@ -27,16 +27,16 @@ OneIsland_KindleRoad_EmberSpa_EventScript_BlackBelt::
 OneIsland_KindleRoad_EmberSpa_EventScript_RockSmashMan::
 	lock
 	faceplayer
-	goto_if_set FLAG_GOT_HM06, OneIsland_KindleRoad_EmberSpa_EventScript_AlreadyGotHM06
+	goto_if_set FLAG_GOT_HM06, OneIsland_KindleRoad_EmberSpa_EventScript_AlreadyGotReward
 	msgbox OneIsland_KindleRoad_EmberSpa_Text_UsedThisToMakeEmberSpa
-	giveitem ITEM_HM06
+	giveitem ITEM_RARE_CANDY
 	setflag FLAG_GOT_HM06
-	msgbox OneIsland_KindleRoad_EmberSpa_Text_ExplainHM06
+	msgbox OneIsland_KindleRoad_EmberSpa_Text_ExplainRareCandy
 	release
 	end
 
-OneIsland_KindleRoad_EmberSpa_EventScript_AlreadyGotHM06::
-	msgbox OneIsland_KindleRoad_EmberSpa_Text_ExplainHM06
+OneIsland_KindleRoad_EmberSpa_EventScript_AlreadyGotReward::
+	msgbox OneIsland_KindleRoad_EmberSpa_Text_ExplainRareCandy
 	release
 	end
 
@@ -97,10 +97,11 @@ OneIsland_KindleRoad_EmberSpa_Text_UsedThisToMakeEmberSpa::
 	.string "I made it years ago.\p"
 	.string "I hewed the pool right out of a\n"
 	.string "gigantic boulder by hand.\p"
-	.string "I was using this at the time.\n"
+	.string "I turned this up while chipping\n"
+	.string "away at the rock.\p"
 	.string "I suppose I can part with it.$"
 
-OneIsland_KindleRoad_EmberSpa_Text_ExplainHM06::
-	.string "That shatters boulders as if they\n"
-	.string "were made of crackers.$"
+OneIsland_KindleRoad_EmberSpa_Text_ExplainRareCandy::
+	.string "It's a rare find. Put it to good\n"
+	.string "use on one of your POKéMON.$"
 
