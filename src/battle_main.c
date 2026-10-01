@@ -2760,6 +2760,68 @@ static u8 AddNewGamePlusExtraMons(struct Pokemon *party, const struct Trainer *t
     return extraCount;
 }
 
+// Kanto trainers sit at an offset from the player's Kanto progression by role.
+static s8 GetKantoTrainerRoleOffset(u16 trainerId, enum TrainerClassID trainerClass)
+{
+    static const u16 sGymTrainers[] =
+    {
+        TRAINER_PICNICKER_DIANA, TRAINER_SWIMMER_MALE_LUIS,
+        TRAINER_CAMPER_LIAM,
+        TRAINER_ENGINEER_BAILY, TRAINER_GENTLEMAN_TUCKER, TRAINER_SAILOR_DWAYNE,
+        TRAINER_BEAUTY_BRIDGET, TRAINER_BEAUTY_LORI, TRAINER_BEAUTY_TAMIA, TRAINER_COOLTRAINER_MARY,
+        TRAINER_LASS_KAY, TRAINER_LASS_LISA, TRAINER_PICNICKER_TINA,
+        TRAINER_JUGGLER_KAYDEN, TRAINER_JUGGLER_KIRK, TRAINER_JUGGLER_NATE, TRAINER_JUGGLER_SHAWN,
+        TRAINER_TAMER_EDGAR, TRAINER_TAMER_PHIL,
+        TRAINER_CHANNELER_AMANDA, TRAINER_CHANNELER_STACY, TRAINER_CHANNELER_TASHA,
+        TRAINER_PSYCHIC_CAMERON, TRAINER_PSYCHIC_JOHAN, TRAINER_PSYCHIC_PRESTON, TRAINER_PSYCHIC_TYRON,
+        TRAINER_BURGLAR_DUSTY, TRAINER_BURGLAR_QUINN, TRAINER_BURGLAR_RAMON,
+        TRAINER_SUPER_NERD_AVERY, TRAINER_SUPER_NERD_DEREK, TRAINER_SUPER_NERD_ERIK, TRAINER_SUPER_NERD_ZAC,
+        TRAINER_BLACK_BELT_ATSUSHI, TRAINER_BLACK_BELT_KIYO, TRAINER_BLACK_BELT_TAKASHI,
+        TRAINER_COOLTRAINER_SAMUEL, TRAINER_COOLTRAINER_WARREN, TRAINER_COOLTRAINER_YUJI,
+        TRAINER_TAMER_COLE, TRAINER_TAMER_JASON,
+    };
+    u32 i;
+
+    switch (trainerClass)
+    {
+    case TRAINER_CLASS_CHAMPION_FRLG:
+        return 4;
+    case TRAINER_CLASS_ELITE_FOUR_FRLG:
+        return 2;
+    case TRAINER_CLASS_LEADER_FRLG:
+    case TRAINER_CLASS_BOSS_FRLG:
+    case TRAINER_CLASS_RIVAL_EARLY_FRLG:
+    case TRAINER_CLASS_RIVAL_LATE_FRLG:
+        return 0;
+    default:
+        break;
+    }
+
+    for (i = 0; i < ARRAY_COUNT(sGymTrainers); i++)
+    {
+        if (sGymTrainers[i] == trainerId)
+            return -2;
+    }
+
+    return -3;
+}
+
+// Returns the Kanto trainer id of a gTrainers entry, or TRAINER_NONE for any other trainer.
+static u16 GetKantoTrainerIdFromStruct(const struct Trainer *trainer)
+{
+    u32 difficulty;
+
+    for (difficulty = 0; difficulty < DIFFICULTY_COUNT; difficulty++)
+    {
+        const struct Trainer *kantoStart = &gTrainers[difficulty][KANTO_TRAINERS_START];
+
+        if (trainer >= kantoStart && trainer < kantoStart + MAX_KANTO_TRAINERS_COUNT)
+            return KANTO_TRAINERS_START + (trainer - kantoStart);
+    }
+
+    return TRAINER_NONE;
+}
+
 void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer)
 {
     // Identifies the trainer for FLAG_RANDOMIZE_MON's per-mon seed context. Hashed from the
@@ -2773,6 +2835,8 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     // Emporium challengers and Infinity Cave opponents are authored end to end (the ace keeps the
     // reward's mechanic), so the New Game+ replacement/item passes are skipped for them.
     bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive && !gInfCaveBattleActive;
+    u16 kantoTrainerId = GetKantoTrainerIdFromStruct(trainer);
+    s32 kantoBaseLevel = 0;
     u8 replaceCount = 0;
     u8 monsCount;
     u8 maxPartySize;
@@ -2807,6 +2871,19 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     }
 
     DoTrainerPartyPool(trainer, monIndices, monsCount, gBattleTypeFlags);
+
+    // Kanto party levels are spreads above a base set by player progress and trainer role.
+    if (kantoTrainerId != TRAINER_NONE && !gEmporiumBattleActive && !gInfCaveBattleActive)
+    {
+        kantoBaseLevel = GetHoennLadderLevel() + 3 * GetKantoBadgeCount()
+                       + GetKantoTrainerRoleOffset(kantoTrainerId, trainer->trainerClass);
+        if (kantoBaseLevel < 1)
+            kantoBaseLevel = 1;
+    }
+    else
+    {
+        kantoTrainerId = TRAINER_NONE;
+    }
 
     if (gEmporiumBattleActive)
     {
@@ -2872,7 +2949,7 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         else
         {
             species = partyData[monIndex].species;
-            if (isNGPlus)
+            if (isNGPlus || kantoTrainerId != TRAINER_NONE)
                 species = GetFinalEvolution(species);
         }
 
@@ -2904,6 +2981,14 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         else if (gInfCaveBattleActive)
         {
             level = InfCave_GetBattleLevel();
+        }
+        else if (kantoTrainerId != TRAINER_NONE)
+        {
+            s32 kantoLevel;
+
+            levelAdjustment = GetDifficultyLevelAdjustment(kantoBaseLevel, gSaveBlock1Ptr->difficulty);
+            kantoLevel = kantoBaseLevel + partyData[monIndex].lvl + levelAdjustment;
+            level = min((u32)max(kantoLevel, 1) + GetNewGamePlusLevelOffset(), MAX_LEVEL);
         }
         else
         {
