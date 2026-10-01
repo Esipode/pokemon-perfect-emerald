@@ -24,9 +24,9 @@ CeladonCity_Gym_EventScript_LimitedPartySlotUnlocked::
 
 CeladonCity_Gym_EventScript_GiveTM19::
 	msgbox CeladonCity_Gym_Text_ExplainRainbowBadgeTakeThis
-	checkitemspace ITEM_TM19
+	checkitemspace ITEM_TM_LEAF_STORM
 	goto_if_eq VAR_RESULT, FALSE, CeladonCity_Gym_EventScript_NoRoomForTM19
-	giveitem_msg CeladonCity_Gym_Text_ReceivedTM19FromErika, ITEM_TM19
+	giveitem_msg CeladonCity_Gym_Text_ReceivedTM19FromErika, ITEM_TM_LEAF_STORM
 	setflag FLAG_GOT_TM19_FROM_ERIKA
 	msgbox CeladonCity_Gym_Text_ExplainTM19
 	release
@@ -121,7 +121,7 @@ CeladonCity_Gym_Text_ExplainRainbowBadgeTakeThis::
 	.string "Please also take this with you.$"
 
 CeladonCity_Gym_Text_ReceivedTM19FromErika::
-	.string "{PLAYER} received TM19\n"
+	.string "{PLAYER} received TM115\n"
 	.string "from ERIKA.$"
 
 CeladonCity_Gym_Text_LimitedPartySlotUnlocked::
@@ -129,9 +129,9 @@ CeladonCity_Gym_Text_LimitedPartySlotUnlocked::
 	.string "POKéMON in your party!$"
 
 CeladonCity_Gym_Text_ExplainTM19::
-	.string "TM19 contains GIGA DRAIN.\p"
-	.string "Half the damage it inflicts is\n"
-	.string "drained to heal your POKéMON.\p"
+	.string "TM115 contains LEAF STORM.\p"
+	.string "It whips up a storm of leaves, but\n"
+	.string "sharply lowers the user's SP. ATK.\p"
 	.string "Wouldn't you agree that it's a\n"
 	.string "wonderful move?$"
 

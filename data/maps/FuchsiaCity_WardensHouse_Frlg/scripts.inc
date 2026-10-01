@@ -23,7 +23,7 @@ FuchsiaCity_WardensHouse_EventScript_GiveGoldTeeth::
 	checkplayergender
 	call_if_eq VAR_RESULT, MALE, FuchsiaCity_WardensHouse_EventScript_WardenThanksMale
 	call_if_eq VAR_RESULT, FEMALE, FuchsiaCity_WardensHouse_EventScript_WardenThanksFemale
-	giveitem_msg FuchsiaCity_WardensHouse_Text_ReceivedRewardFromWarden, ITEM_RARE_CANDY
+	giveitem_msg FuchsiaCity_WardensHouse_Text_ReceivedRewardFromWarden, ITEM_TM_BODY_PRESS
 	setflag FLAG_GOT_HM04
 	removeitem ITEM_GOLD_TEETH
 	release
@@ -99,7 +99,7 @@ FuchsiaCity_WardensHouse_Text_ThanksLassieGiveYouSomething::
 	.string "trouble.$"
 
 FuchsiaCity_WardensHouse_Text_ReceivedRewardFromWarden::
-	.string "{PLAYER} received a RARE CANDY\n"
+	.string "{PLAYER} received TM127\n"
 	.string "from the WARDEN.$"
 
 FuchsiaCity_WardensHouse_Text_ExplainStrength::

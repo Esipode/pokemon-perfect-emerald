@@ -15,7 +15,7 @@ SSAnne_CaptainsOffice_EventScript_Captain::
 	applymovement LOCALID_SS_ANNE_CAPTAIN, Common_Movement_FacePlayer
 	waitmovement 0
 	msgbox SSAnne_CaptainsOffice_Text_ThankYouTakeThis
-	giveitem_msg SSAnne_CaptainsOffice_Text_ObtainedRareCandyFromCaptain, ITEM_RARE_CANDY
+	giveitem_msg SSAnne_CaptainsOffice_Text_ObtainedRareCandyFromCaptain, ITEM_TM_FLIP_TURN
 	setflag FLAG_GOT_HM01
 	release
 	end
@@ -62,7 +62,7 @@ SSAnne_CaptainsOffice_Text_ThankYouTakeThis::
 	.string "Please, take this!$"
 
 SSAnne_CaptainsOffice_Text_ObtainedRareCandyFromCaptain::
-	.string "{PLAYER} obtained a RARE CANDY\n"
+	.string "{PLAYER} received TM112\n"
 	.string "from the CAPTAIN!$"
 
 SSAnne_CaptainsOffice_Text_FeelingMuchBetter::

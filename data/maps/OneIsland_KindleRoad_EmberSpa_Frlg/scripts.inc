@@ -29,7 +29,7 @@ OneIsland_KindleRoad_EmberSpa_EventScript_RockSmashMan::
 	faceplayer
 	goto_if_set FLAG_GOT_HM06, OneIsland_KindleRoad_EmberSpa_EventScript_AlreadyGotReward
 	msgbox OneIsland_KindleRoad_EmberSpa_Text_UsedThisToMakeEmberSpa
-	giveitem ITEM_RARE_CANDY
+	giveitem ITEM_TM_DRAIN_PUNCH
 	setflag FLAG_GOT_HM06
 	msgbox OneIsland_KindleRoad_EmberSpa_Text_ExplainRareCandy
 	release
@@ -102,6 +102,6 @@ OneIsland_KindleRoad_EmberSpa_Text_UsedThisToMakeEmberSpa::
 	.string "I suppose I can part with it.$"
 
 OneIsland_KindleRoad_EmberSpa_Text_ExplainRareCandy::
-	.string "It's a rare find. Put it to good\n"
-	.string "use on one of your POKéMON.$"
+	.string "That's TM142, DRAIN PUNCH.\n"
+	.string "It restores HP by hitting the foe.$"
 

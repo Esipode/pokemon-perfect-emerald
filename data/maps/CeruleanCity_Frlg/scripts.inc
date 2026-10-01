@@ -171,9 +171,9 @@ CeruleanCity_EventScript_Grunt::
 
 CeruleanCity_EventScript_GruntDefeated::
 	msgbox CeruleanCity_Text_OkayIllReturnStolenTM
-	checkitemspace ITEM_TM28
+	checkitemspace ITEM_TM_KNOCK_OFF
 	goto_if_eq VAR_RESULT, FALSE, CeruleanCity_EventScript_NoRoomForTM28
-	giveitem_msg CeruleanCity_Text_RecoveredTM28FromGrunt, ITEM_TM28
+	giveitem_msg CeruleanCity_Text_RecoveredTM28FromGrunt, ITEM_TM_KNOCK_OFF
 	msgbox CeruleanCity_Text_BetterGetMovingBye
 	closemessage
 	fadescreenswapbuffers FADE_TO_BLACK
@@ -395,7 +395,7 @@ CeruleanCity_Text_OkayIllReturnStolenTM::
 	.string "I'll return the TM I stole.$"
 
 CeruleanCity_Text_RecoveredTM28FromGrunt::
-	.string "{PLAYER} recovered TM28 from\n"
+	.string "{PLAYER} recovered TM107 from\n"
 	.string "the TEAM ROCKET GRUNT.$"
 
 CeruleanCity_Text_BetterGetMovingBye::

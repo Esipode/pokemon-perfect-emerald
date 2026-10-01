@@ -19,9 +19,9 @@ SaffronCity_Gym_EventScript_DefeatedSabrina::
 
 SaffronCity_Gym_EventScript_GiveTM04::
 	msgbox SaffronCity_Gym_Text_ExplainMarshBadgeTakeThis
-	checkitemspace ITEM_TM04
+	checkitemspace ITEM_TM_PSYSHOCK
 	goto_if_eq VAR_RESULT, FALSE, SaffronCity_Gym_EventScript_NoRoomForTM04
-	giveitem_msg SaffronCity_Gym_Text_ReceivedTM04FromSabrina, ITEM_TM04
+	giveitem_msg SaffronCity_Gym_Text_ReceivedTM04FromSabrina, ITEM_TM_PSYSHOCK
 	setflag FLAG_GOT_TM04_FROM_SABRINA
 	msgbox SaffronCity_Gym_Text_SabrinaPostBattle
 	release
@@ -125,13 +125,13 @@ SaffronCity_Gym_Text_ExplainMarshBadgeTakeThis::
 	.string "Wait, please take this TM with you.$"
 
 SaffronCity_Gym_Text_ReceivedTM04FromSabrina::
-	.string "{PLAYER} received TM04 from\n"
+	.string "{PLAYER} received TM136 from\n"
 	.string "SABRINA.$"
 
 SaffronCity_Gym_Text_ExplainTM04::
-	.string "TM04 is CALM MIND.\p"
-	.string "It makes the POKéMON concentrate\n"
-	.string "to raise both SP. ATK and SP. DEF.$"
+	.string "TM136 is PSYSHOCK.\p"
+	.string "It strikes with psychic energy, but\n"
+	.string "hits the foe's DEFENSE.$"
 
 SaffronCity_Gym_Text_BagFullOfOtherItems::
 	.string "Your BAG is full of other items.$"

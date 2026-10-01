@@ -111,7 +111,7 @@ CeladonCity_DepartmentStore_Roof_EventScript_AskGiveAllDrinks::
 
 CeladonCity_DepartmentStore_Roof_EventScript_GiveFreshWater::
 	setvar VAR_0x8008, ITEM_FRESH_WATER
-	setvar VAR_0x8009, ITEM_TM16
+	setvar VAR_0x8009, ITEM_TM_CHILLING_WATER
 	goto_if_set FLAG_GOT_TM16_FROM_THIRSTY_GIRL, CeladonCity_DepartmentStore_Roof_EventScript_NotThirstyAfterAll
 	msgbox CeladonCity_DepartmentStore_Roof_Text_YayFreshWaterHaveThis
 	goto CeladonCity_DepartmentStore_Roof_EventScript_GiveDrink
@@ -119,7 +119,7 @@ CeladonCity_DepartmentStore_Roof_EventScript_GiveFreshWater::
 
 CeladonCity_DepartmentStore_Roof_EventScript_GiveSodaPop::
 	setvar VAR_0x8008, ITEM_SODA_POP
-	setvar VAR_0x8009, ITEM_TM20
+	setvar VAR_0x8009, ITEM_TM_HELPING_HAND
 	goto_if_set FLAG_GOT_TM20_FROM_THIRSTY_GIRL, CeladonCity_DepartmentStore_Roof_EventScript_NotThirstyAfterAll
 	msgbox CeladonCity_DepartmentStore_Roof_Text_YaySodaPopHaveThis
 	goto CeladonCity_DepartmentStore_Roof_EventScript_GiveDrink
@@ -127,7 +127,7 @@ CeladonCity_DepartmentStore_Roof_EventScript_GiveSodaPop::
 
 CeladonCity_DepartmentStore_Roof_EventScript_GiveLemonade::
 	setvar VAR_0x8008, ITEM_LEMONADE
-	setvar VAR_0x8009, ITEM_TM33
+	setvar VAR_0x8009, ITEM_TM_IRON_DEFENSE
 	goto_if_set FLAG_GOT_TM33_FROM_THIRSTY_GIRL, CeladonCity_DepartmentStore_Roof_EventScript_NotThirstyAfterAll
 	msgbox CeladonCity_DepartmentStore_Roof_Text_YayLemonadeHaveThis
 	goto CeladonCity_DepartmentStore_Roof_EventScript_GiveDrink
@@ -299,9 +299,9 @@ Text_ReceivedItemFromLittleGirl::
 	.string "from the little girl.$"
 
 CeladonCity_DepartmentStore_Roof_Text_ExplainTM16::
-	.string "TM16 contains LIGHT SCREEN.\p"
-	.string "It's a move that weakens the power\n"
-	.string "of special attacks by your foe.$"
+	.string "TM116 contains CHILLING WATER.\p"
+	.string "It's a move that drenches the foe\n"
+	.string "in icy water and lowers ATTACK.$"
 
 CeladonCity_DepartmentStore_Roof_Text_YaySodaPopHaveThis::
 	.string "Yay!\p"
@@ -310,9 +310,9 @@ CeladonCity_DepartmentStore_Roof_Text_YaySodaPopHaveThis::
 	.string "You can have this from me!$"
 
 CeladonCity_DepartmentStore_Roof_Text_ExplainTM20::
-	.string "TM20 contains SAFEGUARD.\p"
-	.string "It's a move that prevents status\n"
-	.string "problems among your POKéMON.$"
+	.string "TM117 contains HELPING HAND.\p"
+	.string "It's a move that boosts the power\n"
+	.string "of your partner's attack.$"
 
 CeladonCity_DepartmentStore_Roof_Text_YayLemonadeHaveThis::
 	.string "Yay!\p"
@@ -321,9 +321,9 @@ CeladonCity_DepartmentStore_Roof_Text_YayLemonadeHaveThis::
 	.string "You can have this from me!$"
 
 CeladonCity_DepartmentStore_Roof_Text_ExplainTM33::
-	.string "TM33 contains REFLECT.\p"
-	.string "It's a move that weakens the power\n"
-	.string "of physical attacks by your foe.$"
+	.string "TM118 contains IRON DEFENSE.\p"
+	.string "It's a move that sharply raises\n"
+	.string "the user's DEFENSE.$"
 
 CeladonCity_DepartmentStore_Roof_Text_DontHaveSpaceForThis::
 	.string "You don't have space for this!$"

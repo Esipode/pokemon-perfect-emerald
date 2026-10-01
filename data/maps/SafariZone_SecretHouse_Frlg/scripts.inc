@@ -6,9 +6,9 @@ SafariZone_SecretHouse_EventScript_Attendant::
 	faceplayer
 	goto_if_set FLAG_GOT_HM03, SafariZone_SecretHouse_EventScript_ExplainSurf
 	msgbox SafariZone_SecretHouse_Text_CongratsYouveWon
-	checkitemspace ITEM_RARE_CANDY
+	checkitemspace ITEM_TM_MUDDY_WATER
 	goto_if_eq VAR_RESULT, FALSE, SafariZone_SecretHouse_EventScript_NoRoomForHM03
-	giveitem_msg SafariZone_SecretHouse_Text_ReceivedPrizeFromAttendant, ITEM_RARE_CANDY
+	giveitem_msg SafariZone_SecretHouse_Text_ReceivedPrizeFromAttendant, ITEM_TM_MUDDY_WATER
 	msgbox SafariZone_SecretHouse_Text_ExplainPrize
 	setflag FLAG_GOT_HM03
 	release
@@ -36,12 +36,12 @@ SafariZone_SecretHouse_Text_CongratsYouveWon::
 	.string "You have won!$"
 
 SafariZone_SecretHouse_Text_ReceivedPrizeFromAttendant::
-	.string "{PLAYER} received a RARE CANDY\n"
+	.string "{PLAYER} received TM131\n"
 	.string "from the attendant!$"
 
 SafariZone_SecretHouse_Text_ExplainPrize::
-	.string "A RARE CANDY raises a POKéMON's\n"
-	.string "level by one.\p"
+	.string "TM131 contains MUDDY WATER.\n"
+	.string "It may lower the foe's accuracy.\p"
 	.string "You're super lucky for winning this\n"
 	.string "fabulous prize!$"
 

@@ -71,9 +71,9 @@ CinnabarIsland_Gym_EventScript_LimitedPartySlotUnlocked::
 
 CinnabarIsland_Gym_EventScript_GiveTM38::
 	msgbox CinnabarIsland_Gym_Text_ExplainVolcanoBadge
-	checkitemspace ITEM_TM38
+	checkitemspace ITEM_TM_FLARE_BLITZ
 	goto_if_eq VAR_RESULT, FALSE, CinnabarIsland_Gym_EventScript_NoRoomForTM38
-	giveitem_msg CinnabarIsland_Gym_Text_ReceivedTM38FromBlaine, ITEM_TM38
+	giveitem_msg CinnabarIsland_Gym_Text_ReceivedTM38FromBlaine, ITEM_TM_FLARE_BLITZ
 	setflag FLAG_GOT_TM38_FROM_BLAINE
 	msgbox CinnabarIsland_Gym_Text_FireBlastIsUltimateFireMove
 	release
@@ -740,7 +740,7 @@ CinnabarIsland_Gym_Text_ExplainVolcanoBadge::
 	.string "Here, you can have this, too!$"
 
 CinnabarIsland_Gym_Text_ReceivedTM38FromBlaine::
-	.string "{PLAYER} received TM38\n"
+	.string "{PLAYER} received TM141\n"
 	.string "from BLAINE.$"
 
 CinnabarIsland_Gym_Text_LimitedPartySlotUnlocked::
@@ -748,7 +748,7 @@ CinnabarIsland_Gym_Text_LimitedPartySlotUnlocked::
 	.string "POKéMON in your party!$"
 
 CinnabarIsland_Gym_Text_BlainePostBattle::
-	.string "TM38 contains FIRE BLAST.\n"
+	.string "TM141 contains FLARE BLITZ.\n"
 	.string "Teach it to FIRE-type POKéMON.\p"
 	.string "VULPIX or CHARMELEON would be\n"
 	.string "ideal for that move.$"

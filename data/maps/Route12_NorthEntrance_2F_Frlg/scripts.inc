@@ -16,9 +16,9 @@ Route12_NorthEntrance_2F_EventScript_Lass::
 	checkplayergender
 	call_if_eq VAR_RESULT, MALE, Route12_NorthEntrance_2F_EventScript_TakeTMMale
 	call_if_eq VAR_RESULT, FEMALE, Route12_NorthEntrance_2F_EventScript_TakeTMFemale
-	checkitemspace ITEM_TM27
+	checkitemspace ITEM_TM_GIGA_IMPACT
 	goto_if_eq VAR_RESULT, FALSE, Route12_NorthEntrance_2F_EventScript_NoRoomForTM27
-	giveitem_msg Route12_NorthEntrance_2F_Text_ReceivedTM27FromLittleGirl, ITEM_TM27
+	giveitem_msg Route12_NorthEntrance_2F_Text_ReceivedTM27FromLittleGirl, ITEM_TM_GIGA_IMPACT
 	msgbox Route12_NorthEntrance_2F_Text_ExplainTM27
 	setflag FLAG_GOT_TM27
 	release
@@ -56,14 +56,13 @@ Route12_NorthEntrance_2F_Text_TakeTMDontNeedAnymoreFemale::
 	.string "I don't need it anymore…$"
 
 Route12_NorthEntrance_2F_Text_ReceivedTM27FromLittleGirl::
-	.string "{PLAYER} received TM27\n"
+	.string "{PLAYER} received TM122\n"
 	.string "from the little girl.$"
 
 Route12_NorthEntrance_2F_Text_ExplainTM27::
-	.string "TM27 is a move called RETURN…\p"
-	.string "If you treat your POKéMON good,\n"
-	.string "it will return your love by working\l"
-	.string "its hardest in battle.$"
+	.string "TM122 is a move called GIGA IMPACT…\p"
+	.string "It's an all-out tackle, but the user\n"
+	.string "must rest on the next turn.$"
 
 Route12_NorthEntrance_2F_Text_DontHaveRoomForThis::
 	.string "You don't have room for this.$"

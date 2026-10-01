@@ -1114,7 +1114,7 @@ enum __attribute__((packed)) Item
     ITEM_TATSUGIRINITE = 872,
     ITEM_GLIMMORANITE = 873,
 
-    ITEMS_COUNT,
+    ITEMS_COUNT = ITEM_TM160 + 1, // Kanto TMs are declared earlier, so the enum would not count them
     ITEM_FIELD_ARROW = ITEMS_COUNT,
 };
 

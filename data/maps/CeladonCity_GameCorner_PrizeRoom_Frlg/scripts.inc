@@ -201,37 +201,37 @@ CeladonCity_GameCorner_PrizeRoom_EventScript_ChoosePrizeTM::
 	end
 
 CeladonCity_GameCorner_PrizeRoom_EventScript_TM13::
-	setvar VAR_TEMP_1, ITEM_TM13
+	setvar VAR_TEMP_1, ITEM_TM_HURRICANE
 	setvar VAR_TEMP_2, 4000
-	buffermovename STR_VAR_2, MOVE_ICE_BEAM
+	buffermovename STR_VAR_2, MOVE_HURRICANE
 	goto CeladonCity_GameCorner_PrizeRoom_EventScript_ConfirmPrizeTM
 	end
 
 CeladonCity_GameCorner_PrizeRoom_EventScript_TM23::
-	setvar VAR_TEMP_1, ITEM_TM23
+	setvar VAR_TEMP_1, ITEM_TM_SLUDGE_WAVE
 	setvar VAR_TEMP_2, 3500
-	buffermovename STR_VAR_2, MOVE_IRON_TAIL
+	buffermovename STR_VAR_2, MOVE_SLUDGE_WAVE
 	goto CeladonCity_GameCorner_PrizeRoom_EventScript_ConfirmPrizeTM
 	end
 
 CeladonCity_GameCorner_PrizeRoom_EventScript_TM24::
-	setvar VAR_TEMP_1, ITEM_TM24
+	setvar VAR_TEMP_1, ITEM_TM_SHADOW_CLAW
 	setvar VAR_TEMP_2, 4000
-	buffermovename STR_VAR_2, MOVE_THUNDERBOLT
+	buffermovename STR_VAR_2, MOVE_SHADOW_CLAW
 	goto CeladonCity_GameCorner_PrizeRoom_EventScript_ConfirmPrizeTM
 	end
 
 CeladonCity_GameCorner_PrizeRoom_EventScript_TM30::
-	setvar VAR_TEMP_1, ITEM_TM30
+	setvar VAR_TEMP_1, ITEM_TM_ICICLE_SPEAR
 	setvar VAR_TEMP_2, 4500
-	buffermovename STR_VAR_2, MOVE_SHADOW_BALL
+	buffermovename STR_VAR_2, MOVE_ICICLE_SPEAR
 	goto CeladonCity_GameCorner_PrizeRoom_EventScript_ConfirmPrizeTM
 	end
 
 CeladonCity_GameCorner_PrizeRoom_EventScript_TM35::
-	setvar VAR_TEMP_1, ITEM_TM35
+	setvar VAR_TEMP_1, ITEM_TM_GRASS_KNOT
 	setvar VAR_TEMP_2, 4000
-	buffermovename STR_VAR_2, MOVE_FLAMETHROWER
+	buffermovename STR_VAR_2, MOVE_GRASS_KNOT
 	goto CeladonCity_GameCorner_PrizeRoom_EventScript_ConfirmPrizeTM
 	end
 
