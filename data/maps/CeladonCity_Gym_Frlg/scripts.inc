@@ -14,7 +14,7 @@ CeladonCity_Gym_EventScript_DefeatedErika::
 	famechecker FAMECHECKER_ERIKA, 1
 	clearflag FLAG_HIDE_FAME_CHECKER_ERIKA_JOURNALS
 	setflag FLAG_DEFEATED_ERIKA
-	setflag FLAG_BADGE04_GET
+	setflag FLAG_BADGE04_GET_FRLG
 	specialvar VAR_RESULT, IsLimitedPartyEnabled
 	call_if_eq VAR_RESULT, TRUE, CeladonCity_Gym_EventScript_LimitedPartySlotUnlocked
 	set_gym_trainers_frlg 4
@@ -79,7 +79,7 @@ CeladonCity_Gym_EventScript_Mary::
 
 CeladonCity_Gym_EventScript_GymStatue::
 	lockall
-	goto_if_set FLAG_BADGE04_GET, CeladonCity_Gym_EventScript_GymStatuePostVictory
+	goto_if_set FLAG_BADGE04_GET_FRLG, CeladonCity_Gym_EventScript_GymStatuePostVictory
 	msgbox CeladonCity_Gym_Text_GymStatue
 	releaseall
 	end

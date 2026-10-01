@@ -4,7 +4,7 @@ CeruleanCity_BikeShop_Frlg_MapScripts::
 CeruleanCity_BikeShop_EventScript_Clerk::
 	lock
 	faceplayer
-	goto_if_set FLAG_GOT_BICYCLE, CeruleanCity_BikeShop_EventScript_AlreadyGotBicycle
+	goto_if_set FLAG_RECEIVED_BIKE, CeruleanCity_BikeShop_EventScript_AlreadyGotBicycle
 	goto_if_set FLAG_GOT_BIKE_VOUCHER, CeruleanCity_BikeShop_EventScript_ExchangeBikeVoucher
 	showmoneybox 0, 0
 	message CeruleanCity_BikeShop_Text_WelcomeToBikeShop
@@ -33,7 +33,7 @@ CeruleanCity_BikeShop_EventScript_ClerkGoodbye::
 CeruleanCity_BikeShop_EventScript_ExchangeBikeVoucher::
 	msgbox CeruleanCity_BikeShop_Text_OhBikeVoucherHereYouGo
 	msgreceiveditem CeruleanCity_BikeShop_Text_ExchangedVoucherForBicycle, ITEM_BICYCLE, 1, MUS_RG_OBTAIN_KEY_ITEM
-	setflag FLAG_GOT_BICYCLE
+	setflag FLAG_RECEIVED_BIKE
 	additem ITEM_BICYCLE
 	removeitem ITEM_BIKE_VOUCHER
 	msgbox CeruleanCity_BikeShop_Text_ThankYouComeAgain
@@ -58,7 +58,7 @@ CeruleanCity_BikeShop_EventScript_Woman::
 CeruleanCity_BikeShop_EventScript_Youngster::
 	lock
 	faceplayer
-	goto_if_set FLAG_GOT_BICYCLE, CeruleanCity_BikeShop_EventScript_YoungsterHaveBike
+	goto_if_set FLAG_RECEIVED_BIKE, CeruleanCity_BikeShop_EventScript_YoungsterHaveBike
 	msgbox CeruleanCity_BikeShop_Text_BikesCoolButExpensive
 	release
 	end

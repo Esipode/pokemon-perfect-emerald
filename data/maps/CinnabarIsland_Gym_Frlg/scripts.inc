@@ -56,7 +56,7 @@ CinnabarIsland_Gym_EventScript_Blaine::
 CinnabarIsland_Gym_EventScript_DefeatedBlaine::
 	famechecker FAMECHECKER_BLAINE, 1
 	setflag FLAG_DEFEATED_BLAINE
-	setflag FLAG_BADGE07_GET
+	setflag FLAG_BADGE07_GET_FRLG
 	specialvar VAR_RESULT, IsLimitedPartyEnabled
 	call_if_eq VAR_RESULT, TRUE, CinnabarIsland_Gym_EventScript_LimitedPartySlotUnlocked
 	setrespawn HEAL_LOCATION_CINNABAR_ISLAND
@@ -190,7 +190,7 @@ CinnabarIsland_Gym_EventScript_GymGuyPostVictory::
 
 CinnabarIsland_Gym_EventScript_GymStatue::
 	lockall
-	goto_if_set FLAG_BADGE07_GET, CinnabarIsland_Gym_EventScript_GymStatuePostVictory
+	goto_if_set FLAG_BADGE07_GET_FRLG, CinnabarIsland_Gym_EventScript_GymStatuePostVictory
 	msgbox CinnabarIsland_Gym_Text_GymStatue
 	releaseall
 	end

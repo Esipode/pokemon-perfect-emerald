@@ -3,8 +3,8 @@ Route18_EastEntrance_1F_Frlg_MapScripts::
 	.byte 0
 
 Route18_EastEntrance_1F_OnTransition::
-	clearflag FLAG_SYS_ON_CYCLING_ROAD
-	call_if_set FLAG_GOT_BICYCLE, Route18_EastEntrance_1F_EventScript_DisableNeedBikeTrigger
+	clearflag FLAG_SYS_CYCLING_ROAD
+	call_if_set FLAG_RECEIVED_BIKE, Route18_EastEntrance_1F_EventScript_DisableNeedBikeTrigger
 	end
 
 Route18_EastEntrance_1F_EventScript_DisableNeedBikeTrigger::

@@ -17,7 +17,7 @@ Route16_OnTransition::
 	end
 
 Route16_OnTransitionCyclingRoad::
-	setflag FLAG_SYS_ON_CYCLING_ROAD
+	setflag FLAG_SYS_CYCLING_ROAD
 	return
 
 Route16_OnWarp::

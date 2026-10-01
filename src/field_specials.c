@@ -998,7 +998,7 @@ static bool32 IsBuildingPCTile(u32 tileId)
     if (IS_FRLG)
         return FALSE;
 
-    return (MetatileBehavior_IsPC(GetAttributeByMetatileIdAndMapLayout(tileId, METATILE_ATTRIBUTE_BEHAVIOR, FALSE)));
+    return (MetatileBehavior_IsPC(GetAttributeByMetatileIdAndMapLayout(tileId, METATILE_ATTRIBUTE_BEHAVIOR)));
 }
 
 static bool32 IsBuildingPCTileFrlg(u32 tileId)

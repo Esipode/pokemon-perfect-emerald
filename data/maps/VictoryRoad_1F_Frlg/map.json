@@ -150,7 +150,7 @@
       "y": 12,
       "elevation": 0,
       "item": "ITEM_ULTRA_BALL",
-      "flag": "FLAG_HIDDEN_ITEM_VICTORY_ROAD_1F_ULTRA_BALL",
+      "flag": "FLAG_HIDDEN_ITEM_VICTORY_ROAD_1F_ULTRA_BALL_FRLG",
       "quantity": 1,
       "underfoot": false
     },

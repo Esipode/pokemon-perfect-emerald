@@ -12,7 +12,7 @@ CeruleanCity_Gym_EventScript_Misty::
 CeruleanCity_Gym_EventScript_MistyDefeated::
 	famechecker FAMECHECKER_MISTY, 1
 	setflag FLAG_DEFEATED_MISTY
-	setflag FLAG_BADGE02_GET
+	setflag FLAG_BADGE02_GET_FRLG
 	specialvar VAR_RESULT, IsLimitedPartyEnabled
 	call_if_eq VAR_RESULT, TRUE, CeruleanCity_Gym_EventScript_LimitedPartySlotUnlocked
 	setrespawn HEAL_LOCATION_CERULEAN_CITY
@@ -65,7 +65,7 @@ CeruleanCity_Gym_EventScript_GymGuyPostVictory::
 
 CeruleanCity_Gym_EventScript_GymStatue::
 	lockall
-	goto_if_set FLAG_BADGE02_GET, CeruleanCity_Gym_EventScript_GymStatuePostVictory
+	goto_if_set FLAG_BADGE02_GET_FRLG, CeruleanCity_Gym_EventScript_GymStatuePostVictory
 	msgbox CeruleanCity_Gym_Text_GymStatue
 	releaseall
 	end

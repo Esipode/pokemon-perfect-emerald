@@ -40,10 +40,6 @@ enum
 #define METATILE_ATTR_LAYER_MASK    0xF000 // Bits 12-15
 #define METATILE_ATTR_BEHAVIOR_SHIFT 0
 #define METATILE_ATTR_LAYER_SHIFT   12
-#define METATILE_ATTR_BEHAVIOR_MASK_FRLG  0x000001ff // Bits 0-8
-#define METATILE_ATTR_LAYER_MASK_FRLG     0x60000000 // Bits 29-30
-#define METATILE_ATTR_BEHAVIOR_SHIFT_FRLG 0
-#define METATILE_ATTR_LAYER_SHIFT_FRLG    29
 
 #define PACK_BEHAVIOR(behavior) PACK(behavior, METATILE_ATTR_BEHAVIOR_SHIFT, METATILE_ATTR_BEHAVIOR_MASK)
 #define PACK_LAYER_TYPE(layerType) PACK(layerType, METATILE_ATTR_LAYER_SHIFT, METATILE_ATTR_LAYER_MASK)
@@ -116,10 +112,9 @@ struct MapLayout
     /*0x0C*/ const u16 *map;
     /*0x10*/ const struct Tileset *primaryTileset;
     /*0x14*/ const struct Tileset *secondaryTileset;
-    bool8 isFrlg;
-    u8 borderWidth;
-    u8 borderHeight;
-    u8 padding;
+    /*0x18*/ u8 borderWidth;
+    /*0x19*/ u8 borderHeight;
+    /*0x1A*/ u16 padding;
 };
 
 struct BackupMapLayout

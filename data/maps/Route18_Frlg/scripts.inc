@@ -8,7 +8,7 @@ Route18_OnTransition::
 	end
 
 Route18_OnTransitionCyclingRoad::
-	setflag FLAG_SYS_ON_CYCLING_ROAD
+	setflag FLAG_SYS_CYCLING_ROAD
 	return
 
 Route18_OnWarp::

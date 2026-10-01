@@ -297,8 +297,8 @@ EventScript_NoRoomForHiddenItemInPC::
 	setvar VAR_RESULT, 0
 	return
 
+@ Text color is not used in Emerald.
 EventScript_RestorePrevTextColor::
-	copyvar VAR_TEXT_COLOR, VAR_PREV_TEXT_COLOR
 	return
 
 Std_PutItemAway::

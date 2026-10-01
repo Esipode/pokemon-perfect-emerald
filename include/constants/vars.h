@@ -1,8 +1,6 @@
 #ifndef GUARD_CONSTANTS_VARS_H
 #define GUARD_CONSTANTS_VARS_H
 
-#include "constants/vars_frlg.h"
-
 #define VARS_START 0x4000
 
 // temporary vars
@@ -284,6 +282,8 @@
 #define KANTO_VARS_END                                   0x41FF
 #define KANTO_VARS_COUNT                                 (KANTO_VARS_END - KANTO_VARS_START + 1)
 
+#include "constants/vars_kanto.h"
+
 #define SPECIAL_VARS_START            0x8000
 // special vars
 // They are commonly used as parameters to commands, or return values from commands.
@@ -317,6 +317,13 @@
 // global script context. This means it will run faster, but cannot do any
 // cutscenes nor call a wait command. Used for weather effects in vanilla.
 #define TRIGGER_RUN_IMMEDIATELY   0
+
+// Color ids for the textcolor script command, which does nothing in Emerald.
+#define NPC_TEXT_COLOR_MALE      0 // Blue, for male NPCs
+#define NPC_TEXT_COLOR_FEMALE    1 // Red, for female NPCs
+#define NPC_TEXT_COLOR_MON       2 // Black, for Pokémon
+#define NPC_TEXT_COLOR_NEUTRAL   3 // Black, for inanimate objects and messages from the game
+#define NPC_TEXT_COLOR_DEFAULT 255 // If an NPC is selected, use the color specified by GetColorFromTextColorTable, otherwise use Neutral.
 
 // Temp var aliases
 #define VAR_TEMP_CHALLENGE_STATUS  VAR_TEMP_0

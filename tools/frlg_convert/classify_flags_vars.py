@@ -2,7 +2,9 @@
 """Classify every flag/var name that FRLG content uses into Shared, Kanto or Dropped.
 
 Writes a Markdown review table (name, Emerald/FRLG values, bucket, final name, final id, uses).
-Standard library only. Run from the repo root:
+Reads `flags_frlg.h` / `vars_frlg.h` and the `flags.h` stub block, which Stage 6 removed, so it
+only runs on a tree before that change (e.g. b3b48a3e60). Standard library only. Run from the
+repo root:
 
     python3 tools/frlg_convert/classify_flags_vars.py --out "<path>/FRLG - Flag Classification.md"
 """
