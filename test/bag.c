@@ -226,3 +226,34 @@ TEST("MoveMisfiledBagItems relocates a Mega Stone out of the Items pocket")
     EXPECT_EQ(megaStonesPocket->itemSlots[0].itemId, ITEM_VENUSAURITE);
     EXPECT_EQ(megaStonesPocket->itemSlots[0].quantity, 1);
 }
+
+TEST("MoveMisfiledBagItems migrates the legacy TM array into the TM pocket")
+{
+    struct BagPocket *pocket = &gBagPockets[POCKET_TM_HM];
+
+    memset(pocket->itemSlots, 0, sizeof(gSaveBlock3Ptr->TMsHMs));
+    memset(gSaveBlock1Ptr->bag.legacyTMsHMs, 0, sizeof(gSaveBlock1Ptr->bag.legacyTMsHMs));
+
+    ASSUME(GetItemPocket(ITEM_TM01) == POCKET_TM_HM);
+    ASSUME(GetItemPocket(ITEM_TM50) == POCKET_TM_HM);
+    ASSUME(GetItemPocket(ITEM_HM03) == POCKET_TM_HM);
+
+    // Garbage quantities: the migration must not depend on the legacy encryption.
+    gSaveBlock1Ptr->bag.legacyTMsHMs[0] = (struct ItemSlot){ITEM_TM01, 0x1234};
+    gSaveBlock1Ptr->bag.legacyTMsHMs[1] = (struct ItemSlot){ITEM_TM50, 0xBEEF};
+    gSaveBlock1Ptr->bag.legacyTMsHMs[2] = (struct ItemSlot){ITEM_HM03, 0x0042};
+
+    MoveMisfiledBagItems();
+
+    EXPECT(CheckBagHasItem(ITEM_TM01, 1));
+    EXPECT(CheckBagHasItem(ITEM_TM50, 1));
+    EXPECT(CheckBagHasItem(ITEM_HM03, 1));
+    EXPECT_EQ(CountTotalItemQuantityInBag(ITEM_TM01), 1);
+    EXPECT_EQ(CountTotalItemQuantityInBag(ITEM_TM50), 1);
+    EXPECT_EQ(CountTotalItemQuantityInBag(ITEM_HM03), 1);
+    for (u32 i = 0; i < BAG_TMHM_LEGACY_COUNT; i++)
+    {
+        EXPECT_EQ(gSaveBlock1Ptr->bag.legacyTMsHMs[i].itemId, ITEM_NONE);
+        EXPECT_EQ(gSaveBlock1Ptr->bag.legacyTMsHMs[i].quantity, 0);
+    }
+}

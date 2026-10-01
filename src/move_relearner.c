@@ -89,6 +89,9 @@ static EWRAM_DATA struct
     u8 categoryArrowSpriteIds[2];
 } *sMoveRelearnerStruct = {0};
 
+STATIC_ASSERT(MAX_RELEARNER_MOVES >= NUM_ALL_MACHINES, MaxRelearnerMovesBelowMachineCount);
+STATIC_ASSERT(MAX_RELEARNER_MOVES < 255, MaxRelearnerMovesOverflowsU8);
+
 static EWRAM_DATA struct {
     u16 listOffset;
     u16 listRow;
@@ -1035,7 +1038,7 @@ static u32 GetRelearnerLevelUpMoves(struct BoxPokemon *mon, u16 *moves, u16 *res
                 if (effectiveMove == resolvedMoves[j])
                     alreadyInList = TRUE;
             }
-            if (!alreadyInList)
+            if (!alreadyInList && numMoves < MAX_RELEARNER_MOVES)
             {
                 moves[numMoves] = learnset[i].move;
                 resolvedMoves[numMoves] = effectiveMove;
@@ -1077,7 +1080,7 @@ static u32 GetRelearnerEggMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolve
                 if (effectiveMove == resolvedMoves[j])
                     alreadyInList = TRUE;
             }
-            if (!alreadyInList)
+            if (!alreadyInList && numMoves < MAX_RELEARNER_MOVES)
             {
                 moves[numMoves] = eggMoves[i];
                 resolvedMoves[numMoves] = effectiveMove;
@@ -1119,7 +1122,7 @@ static u32 GetRelearnerTMMoves(struct BoxPokemon *mon, u16 *moves, u16 *resolved
                 if (effectiveMove == resolvedMoves[j])
                     alreadyInList = TRUE;
             }
-            if (!alreadyInList)
+            if (!alreadyInList && numMoves < MAX_RELEARNER_MOVES)
             {
                 moves[numMoves] = move;
                 resolvedMoves[numMoves] = effectiveMove;
@@ -1154,7 +1157,7 @@ static u32 GetRelearnerTutorMoves(struct BoxPokemon *mon, u16 *moves, u16 *resol
                 if (effectiveMove == resolvedMoves[j])
                     alreadyInList = TRUE;
             }
-            if (!alreadyInList)
+            if (!alreadyInList && numMoves < MAX_RELEARNER_MOVES)
             {
                 moves[numMoves] = move;
                 resolvedMoves[numMoves] = effectiveMove;

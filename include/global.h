@@ -290,6 +290,7 @@ struct SaveBlock3
 #endif
     struct OverlaySave overlaySave;
     struct GimmickBag gimmickBag;
+    struct ItemSlot TMsHMs[BAG_TMHM_COUNT];
 }; /* size checked against T_SAVEBLOCK3_SIZE, test/save.c */
 
 extern struct SaveBlock3 *gSaveBlock3Ptr;
@@ -1358,7 +1359,7 @@ struct Bag
     struct ItemSlot items[BAG_ITEMS_COUNT];
     struct ItemSlot keyItems[BAG_KEYITEMS_COUNT];
     struct ItemSlot pokeBalls[BAG_POKEBALLS_COUNT];
-    struct ItemSlot TMsHMs[BAG_TMHM_COUNT];
+    struct ItemSlot legacyTMsHMs[BAG_TMHM_LEGACY_COUNT]; // Layout placeholder; MigrateLegacyTMPocket empties it
     struct ItemSlot berries[BAG_BERRIES_COUNT];
 };
 

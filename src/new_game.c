@@ -445,8 +445,8 @@ void NewGameInitData(void)
         bagPokeBallsBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.pokeBalls));
         memcpy(bagPokeBallsBackup, gSaveBlock1Ptr->bag.pokeBalls, sizeof(gSaveBlock1Ptr->bag.pokeBalls));
 
-        bagTMHMsBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.TMsHMs));
-        memcpy(bagTMHMsBackup, gSaveBlock1Ptr->bag.TMsHMs, sizeof(gSaveBlock1Ptr->bag.TMsHMs));
+        bagTMHMsBackup = Alloc(sizeof(gSaveBlock3Ptr->TMsHMs));
+        memcpy(bagTMHMsBackup, gSaveBlock3Ptr->TMsHMs, sizeof(gSaveBlock3Ptr->TMsHMs));
 
         bagBerriesBackup = Alloc(sizeof(gSaveBlock1Ptr->bag.berries));
         memcpy(bagBerriesBackup, gSaveBlock1Ptr->bag.berries, sizeof(gSaveBlock1Ptr->bag.berries));
@@ -651,14 +651,14 @@ void NewGameInitData(void)
                 {
                     enum Item itemId = backupSlots[i].itemId;
                     if (itemId != ITEM_NONE && GetItemTMHMIndex(itemId) <= NUM_TECHNICAL_MACHINES)
-                        gSaveBlock1Ptr->bag.TMsHMs[i] = backupSlots[i];
+                        gSaveBlock3Ptr->TMsHMs[i] = backupSlots[i];
                     else
-                        gSaveBlock1Ptr->bag.TMsHMs[i] = (struct ItemSlot){ITEM_NONE, 0};
+                        gSaveBlock3Ptr->TMsHMs[i] = (struct ItemSlot){ITEM_NONE, 0};
                 }
             }
             else
             {
-                CpuFastFill16(0, gSaveBlock1Ptr->bag.TMsHMs, sizeof(gSaveBlock1Ptr->bag.TMsHMs));
+                CpuFill32(0, gSaveBlock3Ptr->TMsHMs, sizeof(gSaveBlock3Ptr->TMsHMs));
             }
             memcpy(gSaveBlock1Ptr->bag.berries, bagBerriesBackup, sizeof(gSaveBlock1Ptr->bag.berries));
             if (gimmickBagBackup != NULL)

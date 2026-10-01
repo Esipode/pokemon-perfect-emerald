@@ -185,7 +185,7 @@ void SetBagItemsPointers(void)
     gBagPockets[POCKET_POKE_BALLS].capacity = BAG_POKEBALLS_COUNT;
     gBagPockets[POCKET_POKE_BALLS].id = POCKET_POKE_BALLS;
 
-    gBagPockets[POCKET_TM_HM].itemSlots = gSaveBlock1Ptr->bag.TMsHMs;
+    gBagPockets[POCKET_TM_HM].itemSlots = gSaveBlock3Ptr->TMsHMs;
     gBagPockets[POCKET_TM_HM].capacity = BAG_TMHM_COUNT;
     gBagPockets[POCKET_TM_HM].id = POCKET_TM_HM;
 
@@ -606,8 +606,28 @@ void ClearBag(void)
     // multiple of 32 rounds up and zeroes what follows bag in SaveBlock1 (nuzlockeModeEnabled,
     // among others). sizeof(struct Bag) isn't guaranteed to be one, so use the byte-exact fill.
     CpuFill32(0, &gSaveBlock1Ptr->bag, sizeof(struct Bag));
-    // Same byte-exact fill reasoning as above; gimmickBag is the last member of SaveBlock3.
+    // Same byte-exact fill reasoning as above; gimmickBag and TMsHMs are the last members of SaveBlock3.
     CpuFill32(0, &gSaveBlock3Ptr->gimmickBag, sizeof(struct GimmickBag));
+    CpuFill32(0, gSaveBlock3Ptr->TMsHMs, sizeof(gSaveBlock3Ptr->TMsHMs));
+}
+
+STATIC_ASSERT(BAG_TMHM_COUNT >= NUM_ALL_MACHINES, TMHMPocketTooSmallForMachineList);
+
+// Moves the SaveBlock1 TM/HM array into the SaveBlock3 pocket. Every machine is reusable, so
+// quantity 1 is used instead of decrypting the legacy slot. No-op once the array is empty.
+static void MigrateLegacyTMPocket(void)
+{
+    struct ItemSlot *legacy = gSaveBlock1Ptr->bag.legacyTMsHMs;
+
+    for (u32 i = 0; i < BAG_TMHM_LEGACY_COUNT; i++)
+    {
+        if (legacy[i].itemId == ITEM_NONE)
+            continue;
+
+        BagPocket_AddItem(&gBagPockets[POCKET_TM_HM], legacy[i].itemId, 1);
+        legacy[i].itemId = ITEM_NONE;
+        legacy[i].quantity = 0;
+    }
 }
 
 // Moves any item sitting in the wrong pocket (old saves, NGP backups, old cave stashes) to the
@@ -617,6 +637,8 @@ void ClearBag(void)
 void MoveMisfiledBagItems(void)
 {
     enum Pocket pocketId;
+
+    MigrateLegacyTMPocket();
 
     for (pocketId = 0; pocketId < POCKETS_COUNT; pocketId++)
     {
