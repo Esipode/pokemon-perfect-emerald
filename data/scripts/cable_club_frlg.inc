@@ -1463,7 +1463,7 @@ CableClub_Text_ExplainWirelessClubFirstTime_Frlg::
 CableClub_Text_AskAboutLinking_Frlg::
 	.string "Hello, {PLAYER}!\p"
 	.string "It's me, TEALA, the POKéMON\n"
-	.string "CENTER 2F attendant.\p"
+	.string "CENTER attendant.\p"
 	.string "Is there something you needed to\n"
 	.string "ask me about linking?$"
 
