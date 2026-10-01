@@ -30,6 +30,7 @@
 #include "malloc.h"
 #include "mass_outbreak.h"
 #include "region_map.h"
+#include "regions.h"
 #include "decoration.h"
 #include "tv.h"
 #include "pokeball.h"
@@ -760,6 +761,10 @@ u8 FindAnyTVShowOnTheAir(void)
 void UpdateTVScreensOnMap(int width, int height)
 {
     FlagSet(FLAG_SYS_TV_WATCH);
+    // Kanto TVs only show movie text; no on-air flashing.
+    if (GetCurrentRegion() == REGION_KANTO)
+        return;
+
     switch (CheckForPlayersHouseNews())
     {
     case PLAYERS_HOUSE_TV_LATI:
@@ -789,6 +794,10 @@ static void SetTVMetatilesOnMap(int width, int height, u16 metatileId)
 {
     int x;
     int y;
+
+    // Callers pass Hoenn metatile ids; Kanto maps use their own TV tiles.
+    if (GetCurrentRegion() == REGION_KANTO)
+        metatileId = (metatileId == METATILE_Building_TV_On) ? METATILE_GeneralFrlg_TV_On : METATILE_GeneralFrlg_TV_Off;
 
     for (y = 0; y < height; y++)
     {

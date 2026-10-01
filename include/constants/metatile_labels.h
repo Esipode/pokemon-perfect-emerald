@@ -1061,6 +1061,8 @@
 // Other
 #define METATILE_GeneralFrlg_CalmWater               0x12B
 #define METATILE_GeneralFrlg_Door                    0x03D
+#define METATILE_GeneralFrlg_TV_Off                 0x03D
+#define METATILE_GeneralFrlg_TV_On                  0x061
 #define METATILE_GeneralFrlg_Plain_Grass             0x00D
 #define METATILE_GeneralFrlg_Plain_Mowed             0x001
 #define METATILE_GeneralFrlg_SlidingDoubleDoor       0x15B
