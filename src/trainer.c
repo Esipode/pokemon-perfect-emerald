@@ -36,7 +36,5 @@ enum TrainerPicID GetPlayerTrainerPic(enum Gender gender, enum GameVersion versi
 // remote player's pic never follows the local sprite style.
 enum TrainerPicID GetLocalPlayerTrainerPic(void)
 {
-    if (Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG)
-        return GetKantoTrainerPic(gSaveBlock2Ptr->playerGender);
-    return GetPlayerTrainerPic(gSaveBlock2Ptr->playerGender, GAME_VERSION);
+    return PlayerCustomization_GetTrainerPicId(Player_GetSpriteStyle(), gSaveBlock2Ptr->playerGender);
 }

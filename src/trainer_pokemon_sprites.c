@@ -360,12 +360,7 @@ u16 PlayerGenderToFrontTrainerPicId_Debug(enum Gender gender, bool8 getClass)
 {
     if (getClass == TRUE)
     {
-        if (Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG)
-            return gFacilityClassToPicIndex[gender != MALE ? FACILITY_CLASS_LEAF : FACILITY_CLASS_RED];
-        if (gender != MALE)
-            return gFacilityClassToPicIndex[FACILITY_CLASS_MAY];
-        else
-            return gFacilityClassToPicIndex[FACILITY_CLASS_BRENDAN];
+        return PlayerCustomization_GetTrainerPicId(Player_GetSpriteStyle(), gender);
     }
     return gender;
 }

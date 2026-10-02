@@ -1843,9 +1843,11 @@ static u8 VersionToCardType(enum GameVersion version)
 static void CreateTrainerCardTrainerPic(void)
 {
     // Only the player's own card follows the sprite style; link cards keep their sender's version pic.
-    u8 picCardType = (sData->isOwnCard && Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG) ? CARD_TYPE_FRLG : sData->cardType;
+    enum TrainerPicID picId = sData->isOwnCard
+        ? PlayerCustomization_GetTrainerPicId(Player_GetSpriteStyle(), sData->trainerCard.gender)
+        : FacilityClassToPicIndex(sTrainerPicFacilityClass[sData->cardType][sData->trainerCard.gender]);
 
-    CreateTrainerCardTrainerPicSprite(FacilityClassToPicIndex(sTrainerPicFacilityClass[picCardType][sData->trainerCard.gender]),
+    CreateTrainerCardTrainerPicSprite(picId,
                 TRUE,
                 sTrainerPicOffset[sData->isHoenn][sData->trainerCard.gender][0],
                 sTrainerPicOffset[sData->isHoenn][sData->trainerCard.gender][1],

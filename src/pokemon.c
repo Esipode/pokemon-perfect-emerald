@@ -6165,9 +6165,7 @@ enum TrainerPicID PlayerGenderToFrontTrainerPicId(enum Gender playerGender)
 // PlayerGenderToFrontTrainerPicId, so a remote player's pic never follows the local sprite style.
 enum TrainerPicID GetLocalPlayerFrontTrainerPicId(void)
 {
-    if (Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG)
-        return FacilityClassToPicIndex(gSaveBlock2Ptr->playerGender != MALE ? FACILITY_CLASS_LEAF : FACILITY_CLASS_RED);
-    return PlayerGenderToFrontTrainerPicId(gSaveBlock2Ptr->playerGender);
+    return PlayerCustomization_GetTrainerPicId(Player_GetSpriteStyle(), gSaveBlock2Ptr->playerGender);
 }
 
 // baseSpecies normalizes Unown/Spinda letters and family lookups; the flag write keeps the
