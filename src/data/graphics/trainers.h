@@ -577,6 +577,16 @@ const u16 gTrainerPalette_TwinsJohto[] = INCGFX_U16("graphics/trainers/palettes/
 const u32 gTrainerFrontPic_YoungsterJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/youngster_johto.png", ".4bpp.smol");
 const u16 gTrainerPalette_YoungsterJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/youngster_johto.pal", ".gbapal");
 
+const u32 gTrainerFrontPic_Gold[] = INCGFX_U32("graphics/trainers/front_pics/gold.png", ".4bpp.smol");
+const u16 gTrainerPalette_Gold[] = INCGFX_U16("graphics/trainers/palettes/gold.pal", ".gbapal");
+const u8 gTrainerBackPic_Gold[] = INCGFX_U8("graphics/trainers/back_pics/gold.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Gold[] = INCGFX_U16("graphics/trainers/back_pics/gold.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_Kris[] = INCGFX_U32("graphics/trainers/front_pics/kris.png", ".4bpp.smol");
+const u16 gTrainerPalette_Kris[] = INCGFX_U16("graphics/trainers/palettes/kris.pal", ".gbapal");
+const u8 gTrainerBackPic_Kris[] = INCGFX_U8("graphics/trainers/back_pics/kris.png", ".4bpp");
+const u16 gTrainerBackPicPalette_Kris[] = INCGFX_U16("graphics/trainers/back_pics/kris.pal", ".gbapal");
+
 static const u8 gTrainerBackPic_None[] = INCGFX_U8("graphics/trainers/back_pics/none.png", ".4bpp");
 const u8 gTrainerBackPic_Brendan[] = INCGFX_U8("graphics/trainers/back_pics/brendan.png", ".4bpp");
 const u8 gTrainerBackPic_May[] = INCGFX_U8("graphics/trainers/back_pics/may.png", ".4bpp");
@@ -1477,5 +1487,15 @@ const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT] =
     [TRAINER_PIC_YOUNGSTER_JOHTO] =
     {
         .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_YoungsterJohto, gTrainerPalette_YoungsterJohto),
+    },
+    [TRAINER_PIC_GOLD] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Gold, gTrainerPalette_Gold),
+        .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_Gold, gTrainerBackPicPalette_Gold, sBackAnims_Hoenn),
+    },
+    [TRAINER_PIC_KRIS] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_Kris, gTrainerPalette_Kris),
+        .backPic = TRAINER_BACK_PIC(4, gTrainerBackPic_Kris, gTrainerBackPicPalette_Kris, sBackAnims_Hoenn),
     },
 };

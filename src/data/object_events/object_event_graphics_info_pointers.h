@@ -507,6 +507,18 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Woman3_Joht
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_WorkerF_Johto;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_WorkerM_Johto;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Youngster_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldNormal;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldMachBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldSurfing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFieldMove;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GoldFishing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisNormal;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisMachBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisAcroBike;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisSurfing;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisFieldMove;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KrisFishing;
 
 const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM_OBJ_EVENT_GFX] = {
     [OBJ_EVENT_GFX_BRENDAN_NORMAL] =           &gObjectEventGraphicsInfo_BrendanNormal,
@@ -1003,6 +1015,18 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_WORKER_F_JOHTO] = &gObjectEventGraphicsInfo_WorkerF_Johto,
     [OBJ_EVENT_GFX_WORKER_M_JOHTO] = &gObjectEventGraphicsInfo_WorkerM_Johto,
     [OBJ_EVENT_GFX_YOUNGSTER_JOHTO] = &gObjectEventGraphicsInfo_Youngster_Johto,
+    [OBJ_EVENT_GFX_GOLD_NORMAL] = &gObjectEventGraphicsInfo_GoldNormal,
+    [OBJ_EVENT_GFX_GOLD_MACH_BIKE] = &gObjectEventGraphicsInfo_GoldMachBike,
+    [OBJ_EVENT_GFX_GOLD_ACRO_BIKE] = &gObjectEventGraphicsInfo_GoldAcroBike,
+    [OBJ_EVENT_GFX_GOLD_SURFING] = &gObjectEventGraphicsInfo_GoldSurfing,
+    [OBJ_EVENT_GFX_GOLD_FIELD_MOVE] = &gObjectEventGraphicsInfo_GoldFieldMove,
+    [OBJ_EVENT_GFX_GOLD_FISHING] = &gObjectEventGraphicsInfo_GoldFishing,
+    [OBJ_EVENT_GFX_KRIS_NORMAL] = &gObjectEventGraphicsInfo_KrisNormal,
+    [OBJ_EVENT_GFX_KRIS_MACH_BIKE] = &gObjectEventGraphicsInfo_KrisMachBike,
+    [OBJ_EVENT_GFX_KRIS_ACRO_BIKE] = &gObjectEventGraphicsInfo_KrisAcroBike,
+    [OBJ_EVENT_GFX_KRIS_SURFING] = &gObjectEventGraphicsInfo_KrisSurfing,
+    [OBJ_EVENT_GFX_KRIS_FIELD_MOVE] = &gObjectEventGraphicsInfo_KrisFieldMove,
+    [OBJ_EVENT_GFX_KRIS_FISHING] = &gObjectEventGraphicsInfo_KrisFishing,
 };
 
 const struct ObjectEventGraphicsInfo *const gMauvilleOldManGraphicsInfoPointers[] = {

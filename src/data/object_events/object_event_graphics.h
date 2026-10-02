@@ -729,3 +729,21 @@ const u16 gObjectEventPal_Train_Johto[] = INCGFX_U16("graphics/object_events/pal
 const u16 gObjectEventPal_Whirlpool_Johto[] = INCGFX_U16("graphics/object_events/palettes/johto/whirlpool.pal", ".gbapal");
 const u16 gObjectEventPal_Whitney_Johto[] = INCGFX_U16("graphics/object_events/palettes/johto/whitney.pal", ".gbapal");
 const u16 gObjectEventPal_Will_Johto[] = INCGFX_U16("graphics/object_events/palettes/johto/will.pal", ".gbapal");
+
+// Gold / Kris player sprites; selected at runtime by the player sprite style.
+const u16 gObjectEventPic_GoldWalking[] = INCGFX_U16("graphics/object_events/pics/people/gold/walking.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPic_GoldRunning[] = INCGFX_U16("graphics/object_events/pics/people/gold/running.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPic_GoldFieldMove[] = INCGFX_U16("graphics/object_events/pics/people/gold/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_GoldSurfing[] = INCGFX_U16("graphics/object_events/pics/people/gold/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_GoldMachBike[] = INCGFX_U16("graphics/object_events/pics/people/gold/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_GoldAcroBike[] = INCGFX_U16("graphics/object_events/pics/people/gold/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_GoldFishing[] = INCGFX_U16("graphics/object_events/pics/people/gold/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPal_Gold[] = INCGFX_U16("graphics/object_events/palettes/gold.pal", ".gbapal");
+const u16 gObjectEventPic_KrisWalking[] = INCGFX_U16("graphics/object_events/pics/people/kris/walking.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPic_KrisRunning[] = INCGFX_U16("graphics/object_events/pics/people/kris/running.png", ".4bpp", "-mwidth 2 -mheight 4");
+const u16 gObjectEventPic_KrisFieldMove[] = INCGFX_U16("graphics/object_events/pics/people/kris/field_move.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_KrisSurfing[] = INCGFX_U16("graphics/object_events/pics/people/kris/surfing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_KrisMachBike[] = INCGFX_U16("graphics/object_events/pics/people/kris/mach_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_KrisAcroBike[] = INCGFX_U16("graphics/object_events/pics/people/kris/acro_bike.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPic_KrisFishing[] = INCGFX_U16("graphics/object_events/pics/people/kris/fishing.png", ".4bpp", "-mwidth 4 -mheight 4");
+const u16 gObjectEventPal_Kris[] = INCGFX_U16("graphics/object_events/palettes/kris.pal", ".gbapal");
