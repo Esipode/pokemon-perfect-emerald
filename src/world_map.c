@@ -1,6 +1,7 @@
 #include "global.h"
 #include "bg.h"
 #include "decompress.h"
+#include "event_data.h"
 #include "gpu_regs.h"
 #include "main.h"
 #include "malloc.h"
@@ -16,6 +17,7 @@
 #include "window.h"
 #include "util.h"
 #include "world_map.h"
+#include "constants/flags.h"
 #include "constants/rgb.h"
 
 #include "data/region_map/world_map_layout.h"
@@ -26,6 +28,8 @@
  *  tools/gs_convert/build_world_map.py; scrolled with BG offsets, no zoom.
  *  Each region owns its palette banks, so a locked region is dimmed by blending only those.
  *  The cursor moves one cell at a time; leaving a panel jumps to the neighbouring panel.
+ *  Locked panels are not enterable. A bank group is dimmed when none of its panels is unlocked;
+ *  Sevii panels share banks, so 4-5 and 6-7 are only blocked (not dimmed) while 1-2-3 is open.
  *  BG1 holds the text windows (palette bank 15).
  */
 
@@ -74,6 +78,9 @@ enum
     PANEL_JOHTO,
     PANEL_KANTO,
     PANEL_HOENN,
+    PANEL_SEVII123,
+    PANEL_SEVII45,
+    PANEL_SEVII67,
 };
 
 enum
@@ -235,7 +242,8 @@ static void CB2_ExitWorldMap(void);
 static void VBlankCB_WorldMap(void);
 static void ClampScroll(void);
 static void FollowCursor(bool32 center);
-static void ApplyGroupDimming(void);
+static void DimLockedGroups(void);
+static bool32 IsPanelUnlocked(u32 panel);
 static void ApplyScroll(void);
 static void CreateCursor(void);
 static void UpdateCursorSprite(void);
@@ -243,6 +251,48 @@ static void DestroyCursor(void);
 static void UpdateWindows(void);
 static bool32 TryMoveCursor(s32 dx, s32 dy);
 static void SetCursorToPanel(u32 panel);
+static u32 NextUnlockedPanel(u32 panel, s32 step);
+
+static bool32 IsPanelUnlocked(u32 panel)
+{
+    u32 flag;
+
+    switch (panel)
+    {
+    case PANEL_JOHTO:
+        return FlagGet(FLAG_VISITED_JOHTO);
+    case PANEL_KANTO:
+        if (FlagGet(FLAG_KANTO_HOENN_LINKED))
+            return TRUE;
+        // Any Kanto town visited (Pallet Town to Saffron City flags are contiguous).
+        for (flag = FLAG_WORLD_MAP_PALLET_TOWN; flag <= FLAG_WORLD_MAP_SAFFRON_CITY; flag++)
+        {
+            if (FlagGet(flag))
+                return TRUE;
+        }
+        return FALSE;
+    case PANEL_SEVII123:
+        return FlagGet(FLAG_SYS_SEVII_MAP_123);
+    case PANEL_SEVII45:
+    case PANEL_SEVII67:
+        return FlagGet(FLAG_SYS_SEVII_MAP_4567);
+    default:
+        return TRUE;
+    }
+}
+
+static u32 NextUnlockedPanel(u32 panel, s32 step)
+{
+    u32 i;
+
+    for (i = 0; i < NUM_PANELS; i++)
+    {
+        panel = (panel + NUM_PANELS + step) % NUM_PANELS;
+        if (IsPanelUnlocked(panel))
+            return panel;
+    }
+    return panel;
+}
 
 mapsec_u16_t GetWorldMapSecIdAt(u16 x, u16 y)
 {
@@ -303,6 +353,8 @@ static bool32 TryMoveCursor(s32 dx, s32 dy)
 
     if (panel >= 0)
     {
+        if (panel != sWorldMap->panel && !IsPanelUnlocked(panel))
+            return FALSE;
         sWorldMap->cursorX = x;
         sWorldMap->cursorY = y;
         sWorldMap->panel = panel;
@@ -314,7 +366,7 @@ static bool32 TryMoveCursor(s32 dx, s32 dy)
         u32 dir = dy < 0 ? DIR_UP : dy > 0 ? DIR_DOWN : dx < 0 ? DIR_LEFT : DIR_RIGHT;
         s32 next = sPanelNeighbours[sWorldMap->panel][dir];
 
-        if (next < 0)
+        if (next < 0 || !IsPanelUnlocked(next))
             return FALSE;
         x = x < sPanels[next].x ? sPanels[next].x : min(x, sPanels[next].x + sPanels[next].w - 1);
         y = y < sPanels[next].y ? sPanels[next].y : min(y, sPanels[next].y + sPanels[next].h - 1);
@@ -353,6 +405,7 @@ void CB2_OpenWorldMap(void)
         SetCursorToPanel(PANEL_HOENN);
         FollowCursor(TRUE);
         ApplyScroll();
+        DimLockedGroups();
         DecompressDataWithHeaderWram(sCursor_Gfx, sWorldMap->cursorGfx);
         CreateCursor();
         sWorldMap->shownPanel = 0xFF;
@@ -478,9 +531,19 @@ static void UpdateWindows(void)
     }
 }
 
-static void ApplyGroupDimming(void)
+// Bakes the dimming into the unfaded buffer so palette fades keep it.
+static void DimLockedGroups(void)
 {
-    u32 group;
+    u32 panel, group;
+
+    sWorldMap->dimmedGroups = 0;
+    for (group = 0; group < NUM_BANK_GROUPS; group++)
+        sWorldMap->dimmedGroups |= 1 << group;
+    for (panel = 0; panel < NUM_PANELS; panel++)
+    {
+        if (IsPanelUnlocked(panel))
+            sWorldMap->dimmedGroups &= ~(1 << sPanelGroup[panel]);
+    }
 
     for (group = 0; group < NUM_BANK_GROUPS; group++)
     {
@@ -488,9 +551,10 @@ static void ApplyGroupDimming(void)
         u32 count = sBankGroups[group].count * 16;
 
         if (sWorldMap->dimmedGroups & (1 << group))
+        {
             BlendPalette(offset, count, DIM_COEFF, RGB_BLACK);
-        else
-            CpuCopy16(&gPlttBufferUnfaded[offset], &gPlttBufferFaded[offset], count * sizeof(u16));
+            CpuCopy16(&gPlttBufferFaded[offset], &gPlttBufferUnfaded[offset], count * sizeof(u16));
+        }
     }
 }
 
@@ -508,18 +572,13 @@ static void CB2_WorldMap(void)
         }
         if (JOY_NEW(R_BUTTON))
         {
-            SetCursorToPanel((sWorldMap->panel + 1) % NUM_PANELS);
+            SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, 1));
             FollowCursor(TRUE);
         }
         else if (JOY_NEW(L_BUTTON))
         {
-            SetCursorToPanel((sWorldMap->panel + NUM_PANELS - 1) % NUM_PANELS);
+            SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, -1));
             FollowCursor(TRUE);
-        }
-        if (JOY_NEW(SELECT_BUTTON))
-        {
-            sWorldMap->dimmedGroups ^= 1 << sPanelGroup[sWorldMap->panel];
-            ApplyGroupDimming();
         }
 
         if (sWorldMap->moveDelay != 0)
