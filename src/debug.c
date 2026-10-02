@@ -49,6 +49,7 @@
 #include "random.h"
 #include "random_mon_generation.h"
 #include "region_map.h"
+#include "world_map.h"
 #include "rtc.h"
 #include "script.h"
 #include "script_pokemon_util.h"
@@ -297,6 +298,7 @@ static void DebugAction_Selection_StepUpdate(u8 taskId);
 static void DebugAction_Selection_NextStep(u8 taskId);
 
 static void DebugAction_Util_Fly(u8 taskId);
+static void DebugAction_Util_WorldMap(u8 taskId);
 static void DebugAction_Util_WatchCredits(u8 taskId);
 static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_SetNewGamePlusCycle(u8 taskId);
@@ -707,6 +709,7 @@ static const struct DebugMenuOption sDebugMenu_Actions_InfCaveModifier[] =
 static const struct DebugMenuOption sDebugMenu_Actions_Utilities[] =
 {
     { COMPOUND_STRING("Fly to map…"),               DebugAction_Util_Fly },
+    { COMPOUND_STRING("World map…"),                DebugAction_Util_WorldMap },
     { COMPOUND_STRING("Warp to map warp…"),         DebugAction_Selection_Init, &sWarpSelection},
     { COMPOUND_STRING("Set weather…"),              DebugAction_Selection_Init, &sSetWeatherSelection },
     { COMPOUND_STRING("Font Test…"),                DebugAction_ExecuteScript, Debug_EventScript_FontTest },
@@ -1863,6 +1866,12 @@ static void DebugAction_Util_Fly(u8 taskId)
 {
     Debug_DestroyMenu(taskId);
     SetMainCallback2(CB2_OpenFlyMap);
+}
+
+static void DebugAction_Util_WorldMap(u8 taskId)
+{
+    Debug_DestroyMenu(taskId);
+    SetMainCallback2(CB2_OpenWorldMap);
 }
 
 static void DebugSelectionStep_UpdateMapGroup(u8 taskId, u8 digits, u32 min, u32 max)

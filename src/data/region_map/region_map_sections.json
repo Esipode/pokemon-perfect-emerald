@@ -1625,179 +1625,355 @@
     },
     {
       "id": "MAPSEC_NEW_BARK_TOWN",
-      "name": "NEW BARK TOWN"
+      "name": "NEW BARK TOWN",
+      "x": 19,
+      "y": 10,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_CHERRYGROVE_CITY",
-      "name": "CHERRYGROVE CITY"
+      "name": "CHERRYGROVE CITY",
+      "x": 14,
+      "y": 10,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_VIOLET_CITY",
-      "name": "VIOLET CITY"
+      "name": "VIOLET CITY",
+      "x": 12,
+      "y": 3,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_AZALEA_TOWN",
-      "name": "AZALEA TOWN"
+      "name": "AZALEA TOWN",
+      "x": 10,
+      "y": 12,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_GOLDENROD_CITY",
-      "name": "GOLDENROD CITY"
+      "name": "GOLDENROD CITY",
+      "x": 8,
+      "y": 8,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_ECRUTEAK_CITY",
-      "name": "ECRUTEAK CITY"
+      "name": "ECRUTEAK CITY",
+      "x": 9,
+      "y": 1,
+      "width": 2,
+      "height": 2
     },
     {
       "id": "MAPSEC_OLIVINE_CITY",
-      "name": "OLIVINE CITY"
+      "name": "OLIVINE CITY",
+      "x": 6,
+      "y": 4,
+      "width": 2,
+      "height": 1
     },
     {
       "id": "MAPSEC_CIANWOOD_CITY",
-      "name": "CIANWOOD CITY"
+      "name": "CIANWOOD CITY",
+      "x": 4,
+      "y": 11,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_MAHOGANY_TOWN",
-      "name": "MAHOGANY TOWN"
+      "name": "MAHOGANY TOWN",
+      "x": 15,
+      "y": 2,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_BLACKTHORN_CITY",
-      "name": "BLACKTHORN CITY"
+      "name": "BLACKTHORN CITY",
+      "x": 18,
+      "y": 1,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_ROUTE_26",
-      "name": "ROUTE 26"
+      "name": "ROUTE 26",
+      "x": 24,
+      "y": 6,
+      "width": 1,
+      "height": 5
     },
     {
       "id": "MAPSEC_ROUTE_27",
-      "name": "ROUTE 27"
+      "name": "ROUTE 27",
+      "x": 20,
+      "y": 9,
+      "width": 4,
+      "height": 2
     },
     {
       "id": "MAPSEC_ROUTE_28",
-      "name": "ROUTE 28"
+      "name": "ROUTE 28",
+      "x": 21,
+      "y": 5,
+      "width": 3,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_29",
-      "name": "ROUTE 29"
+      "name": "ROUTE 29",
+      "x": 15,
+      "y": 10,
+      "width": 4,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_30",
-      "name": "ROUTE 30"
+      "name": "ROUTE 30",
+      "x": 14,
+      "y": 5,
+      "width": 1,
+      "height": 5
     },
     {
       "id": "MAPSEC_ROUTE_31",
-      "name": "ROUTE 31"
+      "name": "ROUTE 31",
+      "x": 13,
+      "y": 4,
+      "width": 2,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_32",
-      "name": "ROUTE 32"
+      "name": "ROUTE 32",
+      "x": 12,
+      "y": 5,
+      "width": 1,
+      "height": 6
     },
     {
       "id": "MAPSEC_ROUTE_33",
-      "name": "ROUTE 33"
+      "name": "ROUTE 33",
+      "x": 11,
+      "y": 13,
+      "width": 2,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_34",
-      "name": "ROUTE 34"
+      "name": "ROUTE 34",
+      "x": 8,
+      "y": 10,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_ROUTE_35",
-      "name": "ROUTE 35"
+      "name": "ROUTE 35",
+      "x": 8,
+      "y": 4,
+      "width": 1,
+      "height": 4
     },
     {
       "id": "MAPSEC_ROUTE_36",
-      "name": "ROUTE 36"
+      "name": "ROUTE 36",
+      "x": 9,
+      "y": 4,
+      "width": 3,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_37",
-      "name": "ROUTE 37"
+      "name": "ROUTE 37",
+      "x": 10,
+      "y": 3,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_38",
-      "name": "ROUTE 38"
+      "name": "ROUTE 38",
+      "x": 7,
+      "y": 2,
+      "width": 3,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_39",
-      "name": "ROUTE 39"
+      "name": "ROUTE 39",
+      "x": 6,
+      "y": 2,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_ROUTE_40",
-      "name": "ROUTE 40"
+      "name": "ROUTE 40",
+      "x": 5,
+      "y": 4,
+      "width": 1,
+      "height": 5
     },
     {
       "id": "MAPSEC_ROUTE_41",
-      "name": "ROUTE 41"
+      "name": "ROUTE 41",
+      "x": 5,
+      "y": 9,
+      "width": 1,
+      "height": 3
     },
     {
       "id": "MAPSEC_ROUTE_42",
-      "name": "ROUTE 42"
+      "name": "ROUTE 42",
+      "x": 11,
+      "y": 2,
+      "width": 4,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_43",
-      "name": "ROUTE 43"
+      "name": "ROUTE 43",
+      "x": 15,
+      "y": 1,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_44",
-      "name": "ROUTE 44"
+      "name": "ROUTE 44",
+      "x": 16,
+      "y": 2,
+      "width": 2,
+      "height": 1
     },
     {
       "id": "MAPSEC_ROUTE_45",
-      "name": "ROUTE 45"
+      "name": "ROUTE 45",
+      "x": 18,
+      "y": 3,
+      "width": 1,
+      "height": 4
     },
     {
       "id": "MAPSEC_ROUTE_46",
-      "name": "ROUTE 46"
+      "name": "ROUTE 46",
+      "x": 17,
+      "y": 6,
+      "width": 1,
+      "height": 4
     },
     {
       "id": "MAPSEC_ROUTE_47",
-      "name": "ROUTE 47"
+      "name": "ROUTE 47",
+      "x": 1,
+      "y": 10,
+      "width": 3,
+      "height": 2
     },
     {
       "id": "MAPSEC_ROUTE_48",
-      "name": "ROUTE 48"
+      "name": "ROUTE 48",
+      "x": 2,
+      "y": 9,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_RUINS_OF_ALPH",
-      "name": "RUINS OF ALPH"
+      "name": "RUINS OF ALPH",
+      "x": 10,
+      "y": 5,
+      "width": 2,
+      "height": 2
     },
     {
       "id": "MAPSEC_UNION_CAVE",
-      "name": "UNION CAVE"
+      "name": "UNION CAVE",
+      "x": 12,
+      "y": 11,
+      "width": 1,
+      "height": 2
     },
     {
       "id": "MAPSEC_ILEX_FOREST",
-      "name": "ILEX FOREST"
+      "name": "ILEX FOREST",
+      "x": 8,
+      "y": 12,
+      "width": 2,
+      "height": 2
     },
     {
       "id": "MAPSEC_MT_MORTAR",
-      "name": "MT. MORTAR"
+      "name": "MT. MORTAR",
+      "x": 12,
+      "y": 1,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_LAKE_OF_RAGE",
-      "name": "LAKE OF RAGE"
+      "name": "LAKE OF RAGE",
+      "x": 15,
+      "y": 0,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_ICE_PATH",
-      "name": "ICE PATH"
+      "name": "ICE PATH",
+      "x": 17,
+      "y": 1,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_WHIRL_ISLANDS",
-      "name": "WHIRL ISLANDS"
+      "name": "WHIRL ISLANDS",
+      "x": 6,
+      "y": 11,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_DARK_CAVE",
-      "name": "DARK CAVE"
+      "name": "DARK CAVE",
+      "x": 15,
+      "y": 4,
+      "width": 3,
+      "height": 2
     },
     {
       "id": "MAPSEC_MT_SILVER",
-      "name": "MT. SILVER"
+      "name": "MT. SILVER",
+      "x": 20,
+      "y": 5,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_VICTORY_ROAD_JOHTO",
-      "name": "VICTORY ROAD"
+      "name": "VICTORY ROAD",
+      "x": 24,
+      "y": 5,
+      "width": 1,
+      "height": 1
     },
     {
       "id": "MAPSEC_JOHTO_LEAGUE",
-      "name": "JOHTO LEAGUE"
+      "name": "JOHTO LEAGUE",
+      "x": 24,
+      "y": 3,
+      "width": 1,
+      "height": 2
     }
   ]
 }
