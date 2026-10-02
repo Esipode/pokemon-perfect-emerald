@@ -228,11 +228,30 @@ static void ApplySlotsToPalette(u16 *pal, u8 style, u8 gender, const u16 *choice
     }
 }
 
+static const u16 *const sOwBasePalettes[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT] =
+{
+    [PLAYER_SPRITE_STYLE_EMERALD] = {gObjectEventPal_Brendan,     gObjectEventPal_May},
+    [PLAYER_SPRITE_STYLE_FRLG]    = {gObjectEventPal_PlayerFrlg,  gObjectEventPal_PlayerFrlg}, // genders share one base palette
+    [PLAYER_SPRITE_STYLE_JOHTO]   = {gObjectEventPal_Gold,        gObjectEventPal_Kris},
+};
+
+static const u16 sOwPaletteTags[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT] =
+{
+    [PLAYER_SPRITE_STYLE_EMERALD] = {OBJ_EVENT_PAL_TAG_BRENDAN,      OBJ_EVENT_PAL_TAG_MAY},
+    [PLAYER_SPRITE_STYLE_FRLG]    = {OBJ_EVENT_PAL_TAG_PLAYER_RED,   OBJ_EVENT_PAL_TAG_PLAYER_GREEN},
+    [PLAYER_SPRITE_STYLE_JOHTO]   = {OBJ_EVENT_PAL_TAG_GOLD,         OBJ_EVENT_PAL_TAG_KRIS},
+};
+
+static const u8 sTrainerPicIds[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT] =
+{
+    [PLAYER_SPRITE_STYLE_EMERALD] = {TRAINER_PIC_BRENDAN, TRAINER_PIC_MAY},
+    [PLAYER_SPRITE_STYLE_FRLG]    = {TRAINER_PIC_RED,     TRAINER_PIC_LEAF},
+    [PLAYER_SPRITE_STYLE_JOHTO]   = {TRAINER_PIC_GOLD,    TRAINER_PIC_KRIS},
+};
+
 static const u16 *GetOwBasePalette(u8 style, u8 gender)
 {
-    if (style == PLAYER_SPRITE_STYLE_FRLG)
-        return gObjectEventPal_PlayerFrlg; // both FRLG genders share one base palette
-    return (gender == MALE) ? gObjectEventPal_Brendan : gObjectEventPal_May;
+    return sOwBasePalettes[style][gender];
 }
 
 const u16 *PlayerCustomization_GetOwLayoutPaletteOverride(const u16 *basePal)
@@ -254,14 +273,8 @@ const u16 *PlayerCustomization_GetOwPaletteOverride(u16 paletteTag)
 {
     u8 style = Player_GetSpriteStyle();
     u8 gender = gSaveBlock2Ptr->playerGender;
-    u16 expectedTag;
 
-    if (style == PLAYER_SPRITE_STYLE_FRLG)
-        expectedTag = (gender == MALE) ? OBJ_EVENT_PAL_TAG_PLAYER_RED : OBJ_EVENT_PAL_TAG_PLAYER_GREEN;
-    else
-        expectedTag = (gender == MALE) ? OBJ_EVENT_PAL_TAG_BRENDAN : OBJ_EVENT_PAL_TAG_MAY;
-
-    if (paletteTag != expectedTag)
+    if (paletteTag != sOwPaletteTags[style][gender])
         return NULL;
 
     return PlayerCustomization_GetOwLayoutPaletteOverride(GetOwBasePalette(style, gender));
@@ -269,9 +282,7 @@ const u16 *PlayerCustomization_GetOwPaletteOverride(u16 paletteTag)
 
 u32 PlayerCustomization_GetTrainerPicId(u8 style, u8 gender)
 {
-    if (style == PLAYER_SPRITE_STYLE_FRLG)
-        return (gender == MALE) ? TRAINER_PIC_RED : TRAINER_PIC_LEAF;
-    return (gender == MALE) ? TRAINER_PIC_BRENDAN : TRAINER_PIC_MAY;
+    return sTrainerPicIds[style][gender];
 }
 
 static const u16 *GetTrainerPaletteOverride(u32 trainerPicId, bool32 isBackPic)

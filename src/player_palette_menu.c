@@ -199,6 +199,15 @@ static const u8 *const sSlotAxisNames[3] = {sText_AxisHue, sText_AxisSat, sText_
 static const u8 sText_StyleLabel[] = _("STYLE:  ");
 static const u8 sText_StyleEmerald[] = _("HOENN");
 static const u8 sText_StyleKanto[] = _("KANTO");
+static const u8 sText_StyleJohto[] = _("JOHTO");
+
+static const u8 *const sStyleNames[PLAYER_SPRITE_STYLE_COUNT] =
+{
+    [PLAYER_SPRITE_STYLE_EMERALD] = sText_StyleEmerald,
+    [PLAYER_SPRITE_STYLE_FRLG]    = sText_StyleKanto,
+    [PLAYER_SPRITE_STYLE_JOHTO]   = sText_StyleJohto,
+};
+
 static const u8 sText_ConfirmStyleChange[] = _("CHANGE STYLE? COLOURS RESET.");
 
 static const struct WindowTemplate sPaletteMenuWinTemplates[] =
@@ -320,7 +329,7 @@ static void BuildRowMap(void)
     }
 
     StringCopy(sPaletteMenu->styleRowText, sText_StyleLabel);
-    StringAppend(sPaletteMenu->styleRowText, style == PLAYER_SPRITE_STYLE_FRLG ? sText_StyleKanto : sText_StyleEmerald);
+    StringAppend(sPaletteMenu->styleRowText, sStyleNames[style]);
     sPaletteMenu->rows[count].kind = ROW_KIND_STYLE;
     sPaletteMenu->items[count].name = sPaletteMenu->styleRowText;
     sPaletteMenu->items[count].id = count;
