@@ -86,10 +86,12 @@ const u16 *PlayerCustomization_GetBagPaletteOverride(const u16 *basePal);
 // TRUE if every slot is still at its vanilla (zeroed) value.
 bool32 PlayerCustomization_IsDefault(void);
 
-// Emerald style, every colour slot cleared. Run where a new game begins picking
-// the protagonist (Birch speech, quickstart), so an existing save's look does
-// not carry into it.
-void PlayerCustomization_ResetForNewGame(void);
+// Snapshots the loaded save's colours and gender where a new game begins, so the look
+// carries over. Sprite style is left untouched.
+void PlayerCustomization_BeginNewGame(void);
+// Restores the snapshot colours if the chosen gender matches the old save's, else clears
+// them (slot meanings are per gender).
+void PlayerCustomization_ApplyForGender(u8 gender);
 
 // Renders a candidate overworld palette for (style, gender) from `choices`
 // (a PLAYER_COLOR_SLOT_COUNT array, same raw encoding as

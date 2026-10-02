@@ -49,11 +49,29 @@ bool32 PlayerCustomization_IsDefault(void)
     return TRUE;
 }
 
-void PlayerCustomization_ResetForNewGame(void)
+static u8 sPrevGender;
+static u8 sPrevColors[PLAYER_COLOR_REGION_COUNT];
+static u16 sPrevColorSlots[PLAYER_COLOR_SLOT_COUNT];
+
+void PlayerCustomization_BeginNewGame(void)
 {
-    Player_SetSpriteStyle(PLAYER_SPRITE_STYLE_EMERALD);
-    memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
-    memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
+    sPrevGender = gSaveBlock2Ptr->playerGender;
+    memcpy(sPrevColors, gSaveBlock2Ptr->playerColors, sizeof(sPrevColors));
+    memcpy(sPrevColorSlots, gSaveBlock2Ptr->playerColorSlots, sizeof(sPrevColorSlots));
+}
+
+void PlayerCustomization_ApplyForGender(u8 gender)
+{
+    if (gender == sPrevGender)
+    {
+        memcpy(gSaveBlock2Ptr->playerColors, sPrevColors, sizeof(sPrevColors));
+        memcpy(gSaveBlock2Ptr->playerColorSlots, sPrevColorSlots, sizeof(sPrevColorSlots));
+    }
+    else
+    {
+        memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
+        memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
+    }
 }
 
 // Integer RGB(8-bit)<->HSV(all 0-255) helpers.

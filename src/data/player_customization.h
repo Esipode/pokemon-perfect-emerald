@@ -203,7 +203,7 @@ static const struct PlayerColorSlotInfo
             [5] = {COMPOUND_STRING("HIGHLIGHT"), sColorIdx_Leaf_HatBand_Ow, sColorIdx_Leaf_HatBand_Trainer, ARRAY_COUNT(sColorIdx_Leaf_HatBand_Ow), ARRAY_COUNT(sColorIdx_Leaf_HatBand_Trainer), PLAYER_COLOR_SLOT_NONE},
             [6] = {NULL, sColorIdx_Leaf_HatLogo_Ow, NULL, ARRAY_COUNT(sColorIdx_Leaf_HatLogo_Ow), 0, 5},
             [7] = {NULL, sColorIdx_Leaf_TopShade_Ow, sColorIdx_Leaf_TopShade_Trainer, ARRAY_COUNT(sColorIdx_Leaf_TopShade_Ow), ARRAY_COUNT(sColorIdx_Leaf_TopShade_Trainer), 8},
-            [8] = {COMPOUND_STRING("SHIRT"), sColorIdx_Leaf_Top_Ow, sColorIdx_Leaf_Top_Trainer, ARRAY_COUNT(sColorIdx_Leaf_Top_Ow), ARRAY_COUNT(sColorIdx_Leaf_Top_Trainer), PLAYER_COLOR_SLOT_NONE},
+            [8] = {COMPOUND_STRING("SHIRT & BAG"), sColorIdx_Leaf_Top_Ow, sColorIdx_Leaf_Top_Trainer, ARRAY_COUNT(sColorIdx_Leaf_Top_Ow), ARRAY_COUNT(sColorIdx_Leaf_Top_Trainer), PLAYER_COLOR_SLOT_NONE},
             [9] = {COMPOUND_STRING("BAG"), sColorIdx_Leaf_Bag_Ow, sColorIdx_Leaf_Bag_Trainer, ARRAY_COUNT(sColorIdx_Leaf_Bag_Ow), ARRAY_COUNT(sColorIdx_Leaf_Bag_Trainer), PLAYER_COLOR_SLOT_NONE},
             [10] = {NULL, sColorIdx_Leaf_BagShade_Ow, NULL, ARRAY_COUNT(sColorIdx_Leaf_BagShade_Ow), 0, 9},
         },

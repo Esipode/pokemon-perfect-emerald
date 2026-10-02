@@ -74,8 +74,9 @@ static void CB2_SkipToNewGame(void)
 
     if (!UpdatePaletteFade())
     {
+        PlayerCustomization_BeginNewGame();
         gSaveBlock2Ptr->playerGender = SetQuickstartPlayerGender();
-        PlayerCustomization_ResetForNewGame();
+        PlayerCustomization_ApplyForGender(gSaveBlock2Ptr->playerGender);
         const u8* textPtr = gSaveBlock2Ptr->playerGender == FEMALE ? sText_PlayerFemale : sText_PlayerMale;
         StringCopy_PlayerName(gSaveBlock2Ptr->playerName, textPtr);
 

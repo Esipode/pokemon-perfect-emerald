@@ -1327,8 +1327,7 @@ static void Task_NewGameBirchSpeech_Init(u8 taskId)
     FreeAllSpritePalettes();
     ResetAllPicSprites();
     sBirchSpeechMonSpecies = SPECIES_NONE;
-    // Before AddBirchSpeechObjects, which reads the style for the protagonist pics.
-    PlayerCustomization_ResetForNewGame();
+    PlayerCustomization_BeginNewGame();
     AddBirchSpeechObjects(taskId);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
     gTasks[taskId].tBG1HOFS = 0;
@@ -1379,8 +1378,7 @@ void CB2_NewGameBirchSpeech_FromNewMainMenu(void) // Combination of the Above fu
     FreeAllSpritePalettes();
     ResetAllPicSprites();
     sBirchSpeechMonSpecies = SPECIES_NONE;
-    // Before AddBirchSpeechObjects, which reads the style for the protagonist pics.
-    PlayerCustomization_ResetForNewGame();
+    PlayerCustomization_BeginNewGame();
     AddBirchSpeechObjects(taskId);
     PlayBGM(MUS_ROUTE122);
     BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
@@ -1615,11 +1613,10 @@ static void Task_NewGameBirchSpeech_ChooseGender(u8 taskId)
     case MALE:
         PlaySE(SE_SELECT);
         gSaveBlock2Ptr->playerGender = gender;
-        // A gender change invalidates the previous region meanings, and the
+        // A gender change invalidates the previous colour meanings, and the
         // "No, choose again" path (Task_NewGameBirchSpeech_ProcessNameYesNoMenu)
-        // loops back here, so this must reset every time.
-        memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
-        memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
+        // loops back here, so this must run every time.
+        PlayerCustomization_ApplyForGender(gender);
         NewGameBirchSpeech_ClearGenderWindow(1, 1);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_NewGameBirchSpeech_StartPlayerColors;
@@ -1627,8 +1624,7 @@ static void Task_NewGameBirchSpeech_ChooseGender(u8 taskId)
     case FEMALE:
         PlaySE(SE_SELECT);
         gSaveBlock2Ptr->playerGender = gender;
-        memset(gSaveBlock2Ptr->playerColors, 0, sizeof(gSaveBlock2Ptr->playerColors));
-        memset(gSaveBlock2Ptr->playerColorSlots, 0, sizeof(gSaveBlock2Ptr->playerColorSlots));
+        PlayerCustomization_ApplyForGender(gender);
         NewGameBirchSpeech_ClearGenderWindow(1, 1);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_NewGameBirchSpeech_StartPlayerColors;

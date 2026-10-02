@@ -568,7 +568,7 @@ void NewGameInitData(void)
     memset(gSaveBlock2Ptr->johtoFlags, 0, sizeof(gSaveBlock2Ptr->johtoFlags));
     memset(gSaveBlock2Ptr->johtoVars, 0, sizeof(gSaveBlock2Ptr->johtoVars));
     // Style and colour slots are not reset here: this runs after the Birch speech's
-    // colours menu. PlayerCustomization_ResetForNewGame() clears them where the
+    // colours menu. PlayerCustomization_ApplyForGender() decides them where the
     // protagonist is picked; paths that skip that step keep the current look.
     InitEventData();
     // Must run after InitEventData(), which memsets the whole flags array again.
