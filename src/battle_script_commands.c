@@ -37,6 +37,7 @@
 #include "string_util.h"
 #include "pokemon_icon.h"
 #include "caps.h"
+#include "regions.h"
 #include "infinity_cave.h"
 #include "m4a.h"
 #include "mail.h"
@@ -8036,21 +8037,23 @@ static u32 ComputeCaptureOdds(u32 wildMonBattler, u32 playerBattler)
     if (catchRate <= 0)
         catchRate = catchRate + ball.flatBonus;
 
-    // Adjust for New Game Plus level offset
+    // Rate HP at the natural level: strip the New Game Plus offset and, in Kanto/Johto, the ladder bonus from those regions.
     u32 offset = GetNewGamePlusLevelOffset();
-    s32 effective_maxHP = gBattleMons->maxHP;
-    s32 effective_hp = gBattleMons->hp;
+    if (GetCurrentRegion() != REGION_HOENN)
+        offset += GetKantoLadderBonus() + GetJohtoLadderBonus();
+    s32 effective_maxHP = battleMon->maxHP;
+    s32 effective_hp = battleMon->hp;
 
     if (offset > 0)
     {
-        s32 effective_level = gBattleMons->level - offset;
+        s32 effective_level = battleMon->level - offset;
         if (effective_level < 1)
             effective_level = 1;
 
-        struct Pokemon *mon = GetBattlerMon(gBattlerTarget);
+        struct Pokemon *mon = GetBattlerMon(wildMonBattler);
         s32 hpIV = GetMonData(mon, MON_DATA_HP_IV, NULL);
         s32 hpEV = GetMonData(mon, MON_DATA_HP_EV, NULL);
-        u16 species = gBattleMons->species;
+        u16 species = battleMon->species;
         s32 baseHP = gSpeciesInfo[species].baseHP;
         s32 n = 2 * baseHP + hpIV;
         s32 levelScaled;
@@ -8068,7 +8071,7 @@ static u32 ComputeCaptureOdds(u32 wildMonBattler, u32 playerBattler)
         else
             effective_maxHP = (((n + hpEV / 4) * levelScaled) / 100000) + (levelScaled / 1000) + 10;
 
-        effective_hp = effective_maxHP * gBattleMons->hp / gBattleMons->maxHP;
+        effective_hp = effective_maxHP * battleMon->hp / battleMon->maxHP;
     }
 
     odds = (catchRate * (effective_maxHP * 3 - effective_hp * 2))
