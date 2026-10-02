@@ -40,6 +40,9 @@ struct WorldMapCluster
 #include "data/region_map/world_map_layout.h"
 #include "data/region_map/region_map_layout_world.h"
 
+STATIC_ASSERT(WORLD_MAP_DEX_W == WORLD_MAP_CELLS_W && WORLD_MAP_DEX_H == WORLD_MAP_CELLS_H, WorldMapDexSizeMismatch);
+STATIC_ASSERT(WORLD_MAP_DEX_BANKS == WORLD_MAP_BANK_LOCKED + 1, WorldMapDexBankCountMismatch);
+
 /*
  *  Combined Johto / Kanto / Hoenn / Sevii map. Text-mode BG0 (64x64 tiles, 4bpp) built by
  *  tools/gs_convert/build_world_map2.py; scrolled with BG offsets, no zoom.
@@ -513,6 +516,7 @@ static void UpdateCursorSprite(void);
 static void DestroyCursor(void);
 static void CreatePlayerIcon(void);
 static void LocatePlayer(void);
+static bool32 FindPlayerCell(u32 *outRegion, bool32 *outSevii4567, u32 *outX, u32 *outY);
 static void UpdateWindows(void);
 static void SetBarRegs(void);
 static void ClearBarRegs(void);
@@ -527,21 +531,25 @@ static void SetCursorToRegion(u32 region);
 static u32 NextUnlockedRegion(u32 region, s32 step);
 static bool32 CanSwitchRegions(void);
 
+static bool32 IsSeviiUnitUnlockedByFlag(bool32 is4567)
+{
+    return FlagGet(is4567 ? FLAG_SYS_SEVII_MAP_4567 : FLAG_SYS_SEVII_MAP_123);
+}
+
 static bool32 IsSeviiUnitUnlocked(bool32 is4567)
 {
     if (sWorldMap->flyMode)
         return TRUE;
     if (sWorldMap->playerRegion == WORLD_MAP_REGION_SEVII && sWorldMap->playerInSevii4567 == is4567)
         return TRUE;
-    return FlagGet(is4567 ? FLAG_SYS_SEVII_MAP_4567 : FLAG_SYS_SEVII_MAP_123);
+    return IsSeviiUnitUnlockedByFlag(is4567);
 }
 
-static bool32 IsRegionUnlocked(u32 region)
+// Region unlock state from save flags alone.
+static bool32 IsRegionUnlockedByFlag(u32 region)
 {
     u32 flag;
 
-    if (sWorldMap->flyMode || region == sWorldMap->playerRegion)
-        return TRUE;
     switch (region)
     {
     case WORLD_MAP_REGION_JOHTO:
@@ -557,10 +565,19 @@ static bool32 IsRegionUnlocked(u32 region)
         }
         return FALSE;
     case WORLD_MAP_REGION_SEVII:
-        return IsSeviiUnitUnlocked(FALSE) || IsSeviiUnitUnlocked(TRUE);
+        return IsSeviiUnitUnlockedByFlag(FALSE) || IsSeviiUnitUnlockedByFlag(TRUE);
     default:
         return TRUE;
     }
+}
+
+static bool32 IsRegionUnlocked(u32 region)
+{
+    if (sWorldMap->flyMode || region == sWorldMap->playerRegion)
+        return TRUE;
+    if (region == WORLD_MAP_REGION_SEVII)
+        return IsSeviiUnitUnlocked(FALSE) || IsSeviiUnitUnlocked(TRUE);
+    return IsRegionUnlockedByFlag(region);
 }
 
 // L/R needs at least two reachable regions; Fly mode can always scroll to every region.
@@ -596,6 +613,126 @@ mapsec_u16_t GetWorldMapSecIdAt(u16 x, u16 y)
     if (x >= WORLD_MAP_CELLS_W || y >= WORLD_MAP_CELLS_H)
         return MAPSEC_NONE;
     return sWorldMapSections[y][x];
+}
+
+/*
+ *  Backend for the Pokédex area screen, which draws the same world art on its own BGs.
+ *  Lock state here comes from save flags and the current map only (no sWorldMap needed).
+ */
+
+static bool32 IsSevii4567MapSec(mapsec_u16_t mapSec)
+{
+    u32 subregion = GetKantoSubregion(mapSec);
+
+    return subregion == KANTO_SUBREGION_SEVII45 || subregion == KANTO_SUBREGION_SEVII67;
+}
+
+static bool32 IsGroupUnlockedForDex(u32 group, bool32 is4567)
+{
+    mapsec_u16_t here = gMapHeader.regionMapSectionId;
+
+    if (group == GetMapSecGroup(here) && (group != GROUP_SEVII || IsSevii4567MapSec(here) == is4567))
+        return TRUE;
+    if (group == GROUP_SEVII)
+        return IsSeviiUnitUnlockedByFlag(is4567);
+    return IsRegionUnlockedByFlag(group + 1);
+}
+
+u32 GetWorldMapSecGroup(mapsec_u16_t mapSec)
+{
+    return GetMapSecGroup(mapSec);
+}
+
+bool32 IsWorldMapSecUnlocked(mapsec_u16_t mapSec)
+{
+    u32 group = GetMapSecGroup(mapSec);
+
+    return IsGroupUnlockedForDex(group, group == GROUP_SEVII && IsSevii4567MapSec(mapSec));
+}
+
+// Loads the map art for a screen that reserves BG tile data at charBase and a 64x64 tilemap at
+// mapBase. The map's palette banks go to WORLD_MAP_DEX_BANKS banks starting at firstBank; only
+// the unfaded buffer is written, so the caller's palette fade brings the map in.
+void LoadWorldMapForDex(u32 charBase, u32 mapBase, u32 firstBank)
+{
+    u16 *tilemap = (u16 *)BG_SCREEN_ADDR(mapBase);
+    u32 i, bank, group;
+
+    DecompressDataWithHeaderVram(sWorldMap_Gfx, (u16 *)BG_CHAR_ADDR(charBase));
+    DecompressDataWithHeaderVram(sWorldMap_Tilemap, tilemap);
+    for (i = 0; i < 64 * 64; i++)
+        tilemap[i] += firstBank << 12;
+
+    for (bank = 0; bank < WORLD_MAP_DEX_BANKS; bank++)
+    {
+        u32 offset = BG_PLTT_ID(firstBank + bank);
+
+        CpuCopy16(&sWorldMap_Pal[bank * 16], &gPlttBufferUnfaded[offset], PLTT_SIZE_4BPP);
+    }
+    for (group = 0; group < NUM_BANK_GROUPS; group++)
+    {
+        for (i = 0; i < sBankGroups[group].count; i++)
+        {
+            u32 groupBank = sBankGroups[group].first + i;
+            bool32 is4567 = group == GROUP_SEVII && groupBank == WORLD_MAP_BANK_SEVII4567;
+
+            if (!IsGroupUnlockedForDex(group, is4567))
+            {
+                u32 offset = BG_PLTT_ID(firstBank + groupBank);
+
+                CpuCopy16(&sWorldMap_Pal[WORLD_MAP_BANK_LOCKED * 16], &gPlttBufferUnfaded[offset], PLTT_SIZE_4BPP);
+            }
+        }
+    }
+}
+
+// Pixel position of the player's icon.
+bool32 GetWorldMapPlayerPos(s32 *x, s32 *y)
+{
+    u32 region, cellX, cellY;
+    bool32 sevii4567;
+
+    if (!FindPlayerCell(&region, &sevii4567, &cellX, &cellY))
+        return FALSE;
+    *x = cellX * 8 + 4;
+    *y = cellY * 8 + 4;
+    return TRUE;
+}
+
+// Pixel centre of the cells a MAPSEC covers (bounding box centre).
+bool32 GetWorldMapSecCenter(mapsec_u16_t mapSec, s32 *x, s32 *y)
+{
+    s32 cx, cy;
+    s32 minX = WORLD_MAP_CELLS_W, minY = WORLD_MAP_CELLS_H, maxX = -1, maxY = -1;
+
+    for (cy = 0; cy < WORLD_MAP_CELLS_H; cy++)
+    {
+        for (cx = 0; cx < WORLD_MAP_CELLS_W; cx++)
+        {
+            if (sWorldMapSections[cy][cx] != mapSec)
+                continue;
+            if (cx < minX)
+                minX = cx;
+            if (cx > maxX)
+                maxX = cx;
+            if (cy < minY)
+                minY = cy;
+            if (cy > maxY)
+                maxY = cy;
+        }
+    }
+    if (maxX < 0)
+        return FALSE;
+    *x = (minX + maxX) * 4 + 4;
+    *y = (minY + maxY) * 4 + 4;
+    return TRUE;
+}
+
+// Pixel position of a region group's cursor start cell.
+void GetWorldMapGroupAnchor(u32 group, s32 *x, s32 *y)
+{
+    *x = sWorldMapRegionAnchors[group + 1].x * 8 + 4;
+    *y = sWorldMapRegionAnchors[group + 1].y * 8 + 4;
 }
 
 // Open sea is always enterable; a region's cells need the region unlocked, and Sevii 4-7 cells
@@ -846,16 +983,15 @@ static void FollowCursor(bool32 center, bool32 snap)
 }
 
 // Finds the player's world cell from their panel-local region map position.
-static void LocatePlayer(void)
+static bool32 FindPlayerCell(u32 *outRegion, bool32 *outSevii4567, u32 *outX, u32 *outY)
 {
     struct PlayerRegionMapPos pos;
     u32 src, i, region;
     s32 x, y;
     bool32 found = FALSE;
 
-    sWorldMap->playerRegion = NO_REGION;
     if (IsEventIslandMapSecId(gMapHeader.regionMapSectionId))
-        return;
+        return FALSE;
 
     GetPlayerPositionOnRegionMap(&pos);
     switch (GetRegionForSectionId(pos.mapSecId))
@@ -921,11 +1057,26 @@ static void LocatePlayer(void)
             }
         }
         if (!found)
-            return;
+            return FALSE;
         y--;
     }
+    *outRegion = region;
+    *outSevii4567 = src == WORLD_MAP_SRC_SEVII45 || src == WORLD_MAP_SRC_SEVII67;
+    *outX = x;
+    *outY = y;
+    return TRUE;
+}
+
+static void LocatePlayer(void)
+{
+    u32 region, x, y;
+    bool32 sevii4567;
+
+    sWorldMap->playerRegion = NO_REGION;
+    if (!FindPlayerCell(&region, &sevii4567, &x, &y))
+        return;
     sWorldMap->playerRegion = region;
-    sWorldMap->playerInSevii4567 = src == WORLD_MAP_SRC_SEVII45 || src == WORLD_MAP_SRC_SEVII67;
+    sWorldMap->playerInSevii4567 = sevii4567;
     sWorldMap->playerCellX = x;
     sWorldMap->playerCellY = y;
 }

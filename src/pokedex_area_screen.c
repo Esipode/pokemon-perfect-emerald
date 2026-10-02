@@ -24,6 +24,7 @@
 #include "pokedex_area_region_map.h"
 #include "wild_encounter.h"
 #include "window.h"
+#include "world_map.h"
 #include "constants/region_map_sections.h"
 #include "constants/rgb.h"
 #include "constants/songs.h"
@@ -32,10 +33,12 @@
 // There are two types of indicators for the area screen to show where a Pokémon can occur:
 // - Area glows, which highlight any of the maps in MAP_GROUP_TOWNS_AND_ROUTES that have the species.
 //   These are a tilemap with colored rectangular areas that blends in and out. The positions of the
-//   rectangles is determined by the positions of the matching MAPSEC values on the region map layout.
+//   rectangles is determined by the positions of the matching MAPSEC values on the world map layout.
 // - Area markers, which highlight any of the maps in MAP_GROUP_DUNGEONS or MAP_GROUP_SPECIAL_AREA that
 //   have the species. These are circular sprites that flash twice. The positions of the sprites is
-//   determined by the data for the corresponding MAPSEC in gRegionMapEntries.
+//   the centre of the corresponding MAPSEC's cells on the world map.
+// The map is the scrolling world map (Hoenn, Kanto, Johto, Sevii); regions the player has not
+// reached are drawn grey and their encounters are not shown.
 
 // Only maps in the following map groups have their encounters considered for the area screen
 #define MAP_GROUP_TOWNS_AND_ROUTES MAP_GROUP(MAP_PETALBURG_CITY)
@@ -44,9 +47,14 @@
 #define MAP_GROUP_DUNGEONS_FRLG MAP_GROUP(MAP_VIRIDIAN_FOREST)
 #define MAP_GROUP_SPECIAL_AREA MAP_GROUP(MAP_SAFARI_ZONE_NORTHWEST)
 #define MAP_GROUP_SPECIAL_AREA_FRLG MAP_GROUP(MAP_FIVE_ISLAND_LOST_CAVE_ENTRANCE)
+#define MAP_GROUP_TOWNS_AND_ROUTES_JOHTO MAP_GROUP(MAP_NEW_BARK_TOWN)
+#define MAP_GROUP_DUNGEONS_JOHTO MAP_GROUP(MAP_DARK_CAVE_SOUTH_SIDE)
+#define MAP_GROUP_SPECIAL_AREA_JOHTO MAP_GROUP(MAP_SAFARI_ZONE_TOP_LEFT)
 
-#define AREA_SCREEN_WIDTH 32
-#define AREA_SCREEN_HEIGHT 20
+#define AREA_SCREEN_WIDTH WORLD_MAP_DEX_W
+#define AREA_SCREEN_HEIGHT WORLD_MAP_DEX_H
+#define GLOW_MAP_ENTRIES (64 * 64) // 64x64 tile BG, stored in screenblock order
+#define GLOW_BASE_TILE 128 // First tile of area_glow.png in BG2's charblock; the world art uses the start
 
 #define GLOW_FULL      0xFFFF
 #define GLOW_EDGE_R    (1 << 0)
@@ -58,21 +66,29 @@
 #define GLOW_CORNER_TR (1 << 6)
 #define GLOW_CORNER_BR (1 << 7)
 
-#define GLOW_PALETTE 10
+#define GLOW_PALETTE AREA_MAP_GLOW_PALETTE
+#define PAN_SPEED 4
+#define NO_GROUP 0xFF
 
 #define TAG_AREA_MARKER 2
 #define TAG_AREA_UNKNOWN 3
+#define TAG_PLAYER_ICON 1
 
-#define MAX_AREA_HIGHLIGHTS 64 // Maximum number of rectangular route highlights
-#define MAX_AREA_MARKERS 32 // Maximum number of circular spot highlights
+#define SPRITE_MARGIN 16
+
+#define sFlashHidden data[0] // Marker sprites: hidden by the flash cycle
+
+#define MAX_AREA_HIGHLIGHTS 192 // Maximum number of rectangular route highlights
+#define MAX_AREA_MARKERS 64 // Maximum number of circular spot highlights
 
 #define LABEL_WINDOW_BG 1
-#define NUM_LABEL_WINDOWS 2
+#define NUM_LABEL_WINDOWS 3
 
 enum PokedexAreaLabels
 {
     DEX_AREA_LABEL_TIME_OF_DAY,
-    DEX_AREA_LABEL_AREA_UNKNOWN
+    DEX_AREA_LABEL_AREA_UNKNOWN,
+    DEX_AREA_LABEL_MAP_HINT
 };
 
 struct OverworldArea
@@ -84,34 +100,38 @@ struct OverworldArea
 
 struct
 {
-    /*0x000*/ void (*callback)(void); // unused
-    /*0x004*/ MainCallback prev; // unused
-    /*0x008*/ MainCallback next; // unused
-    /*0x00C*/ u16 state; // unused
-    /*0x00E*/ enum Species species;
-    /*0x010*/ struct OverworldArea overworldAreasWithMons[MAX_AREA_HIGHLIGHTS];
-    /*0x110*/ u16 numOverworldAreas;
-    /*0x112*/ u16 numSpecialAreas;
-    /*0x114*/ u16 drawAreaGlowState;
-    /*0x116*/ u16 areaGlowTilemap[AREA_SCREEN_WIDTH * AREA_SCREEN_HEIGHT];
-    /*0x616*/ u16 markerTimer;
-    /*0x618*/ u16 glowTimer;
-    /*0x61A*/ u16 areaShadeBldArgLo;
-    /*0x61C*/ u16 areaShadeBldArgHi;
-    /*0x61E*/ bool8 showingMarkers;
-    /*0x61F*/ u8 markerFlashCounter;
-    /*0x620*/ mapsec_u16_t specialAreaRegionMapSectionIds[MAX_AREA_MARKERS];
-    /*0x660*/ struct Sprite *areaMarkerSprites[MAX_AREA_MARKERS];
-    /*0x6E0*/ u16 numAreaMarkerSprites;
-    /*0x6E2*/ u16 alteringCaveCounter;
-    /*0x6E4*/ u16 alteringCaveId;
-    /*0x6E8*/ u8 *screenSwitchState;
-    /*0x6EC*/ struct RegionMap regionMap;
-    /*0xF70*/ u8 charBuffer[64];
-    /*0xFB0*/ struct Sprite *areaUnknownSprites[3];
-    /*0xFBC*/ u8 areaUnknownGraphicsBuffer[0x600];
-    /*0xFC0*/ u8 areaScreenLabelIds[NUM_LABEL_WINDOWS];
-    /*0xFC8*/ u8 areaState;
+    void (*callback)(void); // unused
+    MainCallback prev; // unused
+    MainCallback next; // unused
+    u16 state; // unused
+    enum Species species;
+    struct OverworldArea overworldAreasWithMons[MAX_AREA_HIGHLIGHTS];
+    u16 numOverworldAreas;
+    u16 numSpecialAreas;
+    u16 drawAreaGlowState;
+    u16 areaGlowTilemap[GLOW_MAP_ENTRIES];
+    u16 markerTimer;
+    u16 glowTimer;
+    u16 areaShadeBldArgLo;
+    u16 areaShadeBldArgHi;
+    bool8 showingMarkers;
+    u8 markerFlashCounter;
+    mapsec_u16_t specialAreaRegionMapSectionIds[MAX_AREA_MARKERS];
+    struct Sprite *areaMarkerSprites[MAX_AREA_MARKERS];
+    s16 areaMarkerX[MAX_AREA_MARKERS]; // World pixel position, same order as areaMarkerSprites
+    s16 areaMarkerY[MAX_AREA_MARKERS];
+    u16 numAreaMarkerSprites;
+    u16 alteringCaveCounter;
+    u16 alteringCaveId;
+    u8 *screenSwitchState;
+    struct Sprite *playerIconSprite;
+    s16 playerIconX; // World pixel position
+    s16 playerIconY;
+    u8 charBuffer[64];
+    struct Sprite *areaUnknownSprites[3];
+    u8 areaUnknownGraphicsBuffer[0x600];
+    u8 areaScreenLabelIds[NUM_LABEL_WINDOWS];
+    u8 areaState;
 } static EWRAM_DATA *sPokedexAreaScreen = NULL;
 
 EWRAM_DATA u8 gAreaTimeOfDay = 0;
@@ -130,7 +150,10 @@ static void CreateAreaMarkerSprites(void);
 static void LoadAreaUnknownGraphics(void);
 static void CreateAreaUnknownSprites(void);
 static void Task_HandlePokedexAreaScreenInput(u8);
-static void ResetPokedexAreaMapBg(void);
+static void CreateAreaPlayerIcon(void);
+static void UpdateAreaSprites(void);
+static void FrameAreasOnMap(void);
+static void ShowMapHintLabel(void);
 static void DestroyAreaScreenSprites(void);
 static void AddTimeOfDayLabels(void);
 static void ShowEncounterInfoLabel(void);
@@ -244,7 +267,17 @@ static const struct WindowTemplate sTimeOfDayWindowLabelTemplates[] =
         .width = 10,
         .height = 2,
         .paletteNum = 0,
-        .baseBlock = 0x240
+        .baseBlock = 0x17C
+    },
+    [DEX_AREA_LABEL_MAP_HINT] =
+    {
+        .bg = LABEL_WINDOW_BG,
+        .tilemapLeft = 0,
+        .tilemapTop = 18,
+        .width = 11,
+        .height = 2,
+        .paletteNum = 0,
+        .baseBlock = 0x192
     }
 };
 
@@ -264,7 +297,7 @@ static bool8 DrawAreaGlow(void)
         BuildAreaGlowTilemap();
         break;
     case 2:
-        DecompressAndCopyTileDataToVram(2, sAreaGlow_Gfx, 0, 0, 0);
+        DecompressAndCopyTileDataToVram(2, sAreaGlow_Gfx, 0, GLOW_BASE_TILE, 0);
         LoadBgTilemap(2, sPokedexAreaScreen->areaGlowTilemap, sizeof(sPokedexAreaScreen->areaGlowTilemap), 0);
         break;
     case 3:
@@ -274,9 +307,6 @@ static bool8 DrawAreaGlow(void)
             sPokedexAreaScreen->drawAreaGlowState++;
         }
         return TRUE;
-    case 4:
-        ChangeBgY(2, -BG_SCREEN_SIZE, BG_COORD_SET);
-        break;
     default:
         return FALSE;
     }
@@ -287,7 +317,6 @@ static bool8 DrawAreaGlow(void)
 
 static void FindMapsWithMon(enum Species species)
 {
-    enum RegionMapType currentRegionMapType;
     u16 i;
     struct Roamer *roamer;
 
@@ -331,13 +360,12 @@ static void FindMapsWithMon(enum Species species)
         }
     }
 
-    currentRegionMapType = GetRegionMapType(gMapHeader.regionMapSectionId);
     // Add regular species to the area map
     for (i = 0; gWildMonHeaders[i].mapGroup != MAP_GROUP(MAP_UNDEFINED); i++)
     {
         u32 headerSectionId = Overworld_GetMapHeaderByGroupAndId(gWildMonHeaders[i].mapGroup, gWildMonHeaders[i].mapNum)->regionMapSectionId;
 
-        if (GetRegionMapType(headerSectionId) != currentRegionMapType)
+        if (!IsWorldMapSecUnlocked(headerSectionId))
             continue;
 
         if (MapHasSpecies(&gWildMonHeaders[i].encounterTypes[gAreaTimeOfDay], headerSectionId, species))
@@ -346,12 +374,15 @@ static void FindMapsWithMon(enum Species species)
             {
             case MAP_GROUP_TOWNS_AND_ROUTES:
             case MAP_GROUP_TOWNS_AND_ROUTES_FRLG:
+            case MAP_GROUP_TOWNS_AND_ROUTES_JOHTO:
                 SetAreaHasMon(gWildMonHeaders[i].mapGroup, gWildMonHeaders[i].mapNum);
                 break;
             case MAP_GROUP_DUNGEONS:
             case MAP_GROUP_DUNGEONS_FRLG:
+            case MAP_GROUP_DUNGEONS_JOHTO:
             case MAP_GROUP_SPECIAL_AREA:
             case MAP_GROUP_SPECIAL_AREA_FRLG:
+            case MAP_GROUP_SPECIAL_AREA_JOHTO:
                 SetSpecialMapHasMon(gWildMonHeaders[i].mapGroup, gWildMonHeaders[i].mapNum);
                 break;
             }
@@ -368,6 +399,8 @@ static void FindMapsWithMon(enum Species species)
             struct OverworldArea *roamerLocation = &sPokedexAreaScreen->overworldAreasWithMons[sPokedexAreaScreen->numOverworldAreas];
             GetRoamerLocation(i, &roamerLocation->mapGroup, &roamerLocation->mapNum);
             roamerLocation->regionMapSectionId = Overworld_GetMapHeaderByGroupAndId(roamerLocation->mapGroup, roamerLocation->mapNum)->regionMapSectionId;
+            if (!IsWorldMapSecUnlocked(roamerLocation->regionMapSectionId))
+                continue;
             sPokedexAreaScreen->numOverworldAreas++;
         }
     }
@@ -470,91 +503,99 @@ static bool8 MonListHasSpecies(const struct WildPokemonInfo *info, enum Species 
     return FALSE;
 }
 
+// Index of a cell in the 64x64 BG tilemap, which is stored as four 32x32 screenblocks.
+static u32 GlowIndex(u32 x, u32 y)
+{
+    return ((y >> 5) << 11) | ((x >> 5) << 10) | ((y & 31) << 5) | (x & 31);
+}
+
 static void BuildAreaGlowTilemap(void)
 {
-    u16 i, y, x, j;
+    u16 *tilemap = sPokedexAreaScreen->areaGlowTilemap;
+    u32 areaBits[256 / 32] = {0};
+    u32 i, y, x;
 
     // Reset tilemap
-    for (i = 0; i < ARRAY_COUNT(sPokedexAreaScreen->areaGlowTilemap); i++)
-        sPokedexAreaScreen->areaGlowTilemap[i] = 0;
+    for (i = 0; i < GLOW_MAP_ENTRIES; i++)
+        tilemap[i] = 0;
 
-    // For each area with this species, scan the region map layout and find any locations that have a matching mapsec.
-    // Add a "full glow" indicator for these matching spaces.
     for (i = 0; i < sPokedexAreaScreen->numOverworldAreas; i++)
     {
-        j = 0;
-        for (y = 0; y < AREA_SCREEN_HEIGHT; y++)
-        {
-            for (x = 0; x < AREA_SCREEN_WIDTH; x++)
-            {
-                if (GetRegionMapSecIdAt(x, y) == sPokedexAreaScreen->overworldAreasWithMons[i].regionMapSectionId)
-                    sPokedexAreaScreen->areaGlowTilemap[j] = GLOW_FULL;
-                j++;
-            }
-        }
+        mapsec_u16_t mapSec = sPokedexAreaScreen->overworldAreasWithMons[i].regionMapSectionId;
+
+        if (mapSec < 256)
+            areaBits[mapSec / 32] |= 1u << (mapSec % 32);
     }
 
-    // Scan the tilemap. For every "full glow" indicator added above, fill in its edges and corners.
-    j = 0;
+    // For each world cell whose MAPSEC has this species, add a "full glow" indicator.
     for (y = 0; y < AREA_SCREEN_HEIGHT; y++)
     {
         for (x = 0; x < AREA_SCREEN_WIDTH; x++)
         {
-            if (sPokedexAreaScreen->areaGlowTilemap[j] == GLOW_FULL)
-            {
-                // The "tile != GLOW_FULL" check is pointless in all of these conditionals,
-                // since there's no harm in OR'ing 0xFFFF with anything else.
+            mapsec_u16_t mapSec = GetWorldMapSecIdAt(x, y);
 
-                // Edges
-                if (x != 0 && sPokedexAreaScreen->areaGlowTilemap[j - 1] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j - 1] |= GLOW_EDGE_L;
-                if (x != AREA_SCREEN_WIDTH - 1 && sPokedexAreaScreen->areaGlowTilemap[j + 1] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j + 1] |= GLOW_EDGE_R;
-                if (y != 0 && sPokedexAreaScreen->areaGlowTilemap[j - AREA_SCREEN_WIDTH] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j - AREA_SCREEN_WIDTH] |= GLOW_EDGE_T;
-                if (y != AREA_SCREEN_HEIGHT - 1 && sPokedexAreaScreen->areaGlowTilemap[j + AREA_SCREEN_WIDTH] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j + AREA_SCREEN_WIDTH] |= GLOW_EDGE_B;
-
-                // Corners
-                if (x != 0 && y != 0 && sPokedexAreaScreen->areaGlowTilemap[j - AREA_SCREEN_WIDTH - 1] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j - AREA_SCREEN_WIDTH - 1] |= GLOW_CORNER_TL;
-                if (x != AREA_SCREEN_WIDTH - 1 && y != 0 && sPokedexAreaScreen->areaGlowTilemap[j - AREA_SCREEN_WIDTH + 1] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j - AREA_SCREEN_WIDTH + 1] |= GLOW_CORNER_TR;
-                if (x != 0 && y != AREA_SCREEN_HEIGHT - 1 && sPokedexAreaScreen->areaGlowTilemap[j + AREA_SCREEN_WIDTH - 1] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j + AREA_SCREEN_WIDTH - 1] |= GLOW_CORNER_BL;
-                if (x != AREA_SCREEN_WIDTH - 1 && y != AREA_SCREEN_HEIGHT - 1 && sPokedexAreaScreen->areaGlowTilemap[j + AREA_SCREEN_WIDTH + 1] != GLOW_FULL)
-                    sPokedexAreaScreen->areaGlowTilemap[j + AREA_SCREEN_WIDTH + 1] |= GLOW_CORNER_BR;
-            }
-
-            j++;
+            if (mapSec < 256 && (areaBits[mapSec / 32] & (1u << (mapSec % 32))))
+                tilemap[GlowIndex(x, y)] = GLOW_FULL;
         }
     }
 
-    // Scan the tilemap again. Replace the "full tile" indicators with the actual tile id,
-    // and remove corner flags when they're overlapped by an edge.
-    for (i = 0; i < ARRAY_COUNT(sPokedexAreaScreen->areaGlowTilemap); i++)
+    // Scan the tilemap. For every "full glow" indicator added above, fill in its edges and corners.
+    for (y = 0; y < AREA_SCREEN_HEIGHT; y++)
     {
-        if (sPokedexAreaScreen->areaGlowTilemap[i] == GLOW_FULL)
+        for (x = 0; x < AREA_SCREEN_WIDTH; x++)
         {
-            sPokedexAreaScreen->areaGlowTilemap[i] = GLOW_TILE_FULL;
-            sPokedexAreaScreen->areaGlowTilemap[i] |= (GLOW_PALETTE << 12);
+            if (tilemap[GlowIndex(x, y)] != GLOW_FULL)
+                continue;
+            // Edges
+            if (x != 0 && tilemap[GlowIndex(x - 1, y)] != GLOW_FULL)
+                tilemap[GlowIndex(x - 1, y)] |= GLOW_EDGE_L;
+            if (x != AREA_SCREEN_WIDTH - 1 && tilemap[GlowIndex(x + 1, y)] != GLOW_FULL)
+                tilemap[GlowIndex(x + 1, y)] |= GLOW_EDGE_R;
+            if (y != 0 && tilemap[GlowIndex(x, y - 1)] != GLOW_FULL)
+                tilemap[GlowIndex(x, y - 1)] |= GLOW_EDGE_T;
+            if (y != AREA_SCREEN_HEIGHT - 1 && tilemap[GlowIndex(x, y + 1)] != GLOW_FULL)
+                tilemap[GlowIndex(x, y + 1)] |= GLOW_EDGE_B;
+            // Corners
+            if (x != 0 && y != 0 && tilemap[GlowIndex(x - 1, y - 1)] != GLOW_FULL)
+                tilemap[GlowIndex(x - 1, y - 1)] |= GLOW_CORNER_TL;
+            if (x != AREA_SCREEN_WIDTH - 1 && y != 0 && tilemap[GlowIndex(x + 1, y - 1)] != GLOW_FULL)
+                tilemap[GlowIndex(x + 1, y - 1)] |= GLOW_CORNER_TR;
+            if (x != 0 && y != AREA_SCREEN_HEIGHT - 1 && tilemap[GlowIndex(x - 1, y + 1)] != GLOW_FULL)
+                tilemap[GlowIndex(x - 1, y + 1)] |= GLOW_CORNER_BL;
+            if (x != AREA_SCREEN_WIDTH - 1 && y != AREA_SCREEN_HEIGHT - 1 && tilemap[GlowIndex(x + 1, y + 1)] != GLOW_FULL)
+                tilemap[GlowIndex(x + 1, y + 1)] |= GLOW_CORNER_BR;
         }
-        else if (sPokedexAreaScreen->areaGlowTilemap[i])
+    }
+
+    // Scan the tilemap again. Replace the flags with the actual tile id (offset to where
+    // area_glow.png is loaded), and remove corner flags when they're overlapped by an edge.
+    // Cells without a glow point at the empty tile, as tile 0 of this charblock is not blank.
+    for (i = 0; i < GLOW_MAP_ENTRIES; i++)
+    {
+        if (tilemap[i] == GLOW_FULL)
+        {
+            tilemap[i] = GLOW_BASE_TILE + GLOW_TILE_FULL;
+            tilemap[i] |= (GLOW_PALETTE << 12);
+        }
+        else if (tilemap[i])
         {
             // Get rid of overlapping flags.
             // This is pointless, as sAreaGlowTilemapMapping can handle overlaps.
-            if (sPokedexAreaScreen->areaGlowTilemap[i] & GLOW_EDGE_L)
-                sPokedexAreaScreen->areaGlowTilemap[i] &= ~(GLOW_CORNER_TL | GLOW_CORNER_BL);
-            if (sPokedexAreaScreen->areaGlowTilemap[i] & GLOW_EDGE_R)
-                sPokedexAreaScreen->areaGlowTilemap[i] &= ~(GLOW_CORNER_TR | GLOW_CORNER_BR);
-            if (sPokedexAreaScreen->areaGlowTilemap[i] & GLOW_EDGE_T)
-                sPokedexAreaScreen->areaGlowTilemap[i] &= ~(GLOW_CORNER_TR | GLOW_CORNER_TL);
-            if (sPokedexAreaScreen->areaGlowTilemap[i] & GLOW_EDGE_B)
-                sPokedexAreaScreen->areaGlowTilemap[i] &= ~(GLOW_CORNER_BR | GLOW_CORNER_BL);
-
+            if (tilemap[i] & GLOW_EDGE_L)
+                tilemap[i] &= ~(GLOW_CORNER_TL | GLOW_CORNER_BL);
+            if (tilemap[i] & GLOW_EDGE_R)
+                tilemap[i] &= ~(GLOW_CORNER_TR | GLOW_CORNER_BR);
+            if (tilemap[i] & GLOW_EDGE_T)
+                tilemap[i] &= ~(GLOW_CORNER_TR | GLOW_CORNER_TL);
+            if (tilemap[i] & GLOW_EDGE_B)
+                tilemap[i] &= ~(GLOW_CORNER_BR | GLOW_CORNER_BL);
             // Assign tile id
-            sPokedexAreaScreen->areaGlowTilemap[i] = sAreaGlowTilemapMapping[sPokedexAreaScreen->areaGlowTilemap[i]];
-            sPokedexAreaScreen->areaGlowTilemap[i] |= (GLOW_PALETTE << 12);
+            tilemap[i] = GLOW_BASE_TILE + sAreaGlowTilemapMapping[tilemap[i]];
+            tilemap[i] |= (GLOW_PALETTE << 12);
+        }
+        else
+        {
+            tilemap[i] = GLOW_BASE_TILE + GLOW_TILE_EMPTY;
         }
     }
 }
@@ -618,8 +659,8 @@ static void DoAreaGlow(void)
             // Flash the marker
             // With a max of 4, the marker will disappear twice
             sPokedexAreaScreen->markerFlashCounter++;
-            for (i = 0; i < sPokedexAreaScreen->numSpecialAreas; i++)
-                sPokedexAreaScreen->areaMarkerSprites[i]->invisible = sPokedexAreaScreen->markerFlashCounter & 1;
+            for (i = 0; i < sPokedexAreaScreen->numAreaMarkerSprites; i++)
+                sPokedexAreaScreen->areaMarkerSprites[i]->sFlashHidden = sPokedexAreaScreen->markerFlashCounter & 1;
 
             if (sPokedexAreaScreen->markerFlashCounter > 4)
             {
@@ -683,6 +724,14 @@ static void ShowAreaUnknownLabel(void)
     PrintAreaLabelText(gText_AreaUnknown, DEX_AREA_LABEL_AREA_UNKNOWN, stringXPos);
 }
 
+static void ShowMapHintLabel(void)
+{
+    static const u8 gText_PanMap[] = _("{A_BUTTON}+{DPAD_NONE} MAP");
+    int stringXPos = GetStringCenterAlignXOffset(FONT_NORMAL, gText_PanMap, 88);
+
+    PrintAreaLabelText(gText_PanMap, DEX_AREA_LABEL_MAP_HINT, stringXPos);
+}
+
 static void ClearAreaWindowLabel(enum PokedexAreaLabels labelId)
 {
     FillWindowPixelBuffer(sPokedexAreaScreen->areaScreenLabelIds[labelId], PIXEL_FILL(0));
@@ -739,14 +788,12 @@ static void Task_ShowPokedexAreaScreen(u8 taskId)
         HideBg(0);
         break;
     case 1:
-        SetBgAttribute(3, BG_ATTR_CHARBASEINDEX, 3);
         LoadPokedexAreaMapGfx();
         StringFill(sPokedexAreaScreen->charBuffer, CHAR_SPACE, 16);
         break;
     case 2:
         if (TryShowPokedexAreaMap() == TRUE)
             return;
-        PokedexAreaMapChangeBgY(-8);
         break;
     case 3:
         ResetDrawAreaGlowState();
@@ -756,12 +803,12 @@ static void Task_ShowPokedexAreaScreen(u8 taskId)
             return;
         break;
     case 5:
-        ShowRegionMapForPokedexAreaScreen(&sPokedexAreaScreen->regionMap);
-        CreateRegionMapPlayerIcon(1, 1);
-        PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(0, -8);
+        CreateAreaPlayerIcon();
+        FrameAreasOnMap();
         break;
     case 6:
         CreateAreaMarkerSprites();
+        UpdateAreaSprites();
         break;
     case 7:
         if (!OW_TIME_OF_DAY_ENCOUNTERS)
@@ -781,6 +828,7 @@ static void Task_ShowPokedexAreaScreen(u8 taskId)
         {
             AddTimeOfDayLabels();
             ShowEncounterInfoLabel();
+            ShowMapHintLabel();
             if (ShouldShowAreaUnknownLabel())
                 ShowAreaUnknownLabel();
             DoScheduledBgTilemapCopiesToVram();
@@ -814,9 +862,7 @@ static void Task_UpdatePokedexAreaScreen(u8 taskId)
         HideBg(0);
         break;
     case 1:
-        SetBgAttribute(3, BG_ATTR_CHARBASEINDEX, 3);
-        LoadPokedexAreaMapGfx();
-        PokedexAreaMapChangeBgY(-8);
+        SetUpPokedexAreaMapBgs();
         StringFill(sPokedexAreaScreen->charBuffer, CHAR_SPACE, 16);
         break;
     case 2:
@@ -828,16 +874,16 @@ static void Task_UpdatePokedexAreaScreen(u8 taskId)
             return;
         break;
     case 4:
-        ShowRegionMapForPokedexAreaScreen(&sPokedexAreaScreen->regionMap);
-        CreateRegionMapPlayerIcon(1, 1);
-        PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(0, -8);
+        CreateAreaPlayerIcon();
         CreateAreaMarkerSprites();
+        UpdateAreaSprites();
         break;
     case 5:
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG0 | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_BG0 | BLDCNT_TGT2_ALL);
         StartAreaGlow();
         AddTimeOfDayLabels();
         ShowEncounterInfoLabel();
+        ShowMapHintLabel();
         if (ShouldShowAreaUnknownLabel())
             ShowAreaUnknownLabel();
         ShowBg(2);
@@ -855,6 +901,8 @@ static void Task_UpdatePokedexAreaScreen(u8 taskId)
 static void Task_HandlePokedexAreaScreenInput(u8 taskId)
 {
     DoAreaGlow();
+    PokedexAreaMapUpdateScroll();
+    UpdateAreaSprites();
     switch (gTasks[taskId].tState)
     {
     default:
@@ -865,7 +913,24 @@ static void Task_HandlePokedexAreaScreenInput(u8 taskId)
             return;
         break;
     case 1:
-        if (JOY_NEW(B_BUTTON))
+        if (JOY_HELD(A_BUTTON))
+        {
+            // Holding A turns the D-pad into map panning
+            s32 dx = 0, dy = 0;
+
+            if (JOY_HELD(DPAD_LEFT))
+                dx -= PAN_SPEED;
+            if (JOY_HELD(DPAD_RIGHT))
+                dx += PAN_SPEED;
+            if (JOY_HELD(DPAD_UP))
+                dy -= PAN_SPEED;
+            if (JOY_HELD(DPAD_DOWN))
+                dy += PAN_SPEED;
+            PokedexAreaMapPan(dx, dy);
+            sPokedexAreaScreen->areaState = DEX_SHOW_AREA_SCREEN;
+            return;
+        }
+        else if (JOY_NEW(B_BUTTON))
         {
             gTasks[taskId].data[1] = 1;
             PlaySE(SE_DEX_PAGE);
@@ -918,6 +983,7 @@ static void Task_HandlePokedexAreaScreenInput(u8 taskId)
         {
             ClearAreaWindowLabel(DEX_AREA_LABEL_TIME_OF_DAY);
             ClearAreaWindowLabel(DEX_AREA_LABEL_AREA_UNKNOWN);
+            ClearAreaWindowLabel(DEX_AREA_LABEL_MAP_HINT);
             RemoveAllWindowsOnBg(LABEL_WINDOW_BG);
         }
 
@@ -931,41 +997,139 @@ static void Task_HandlePokedexAreaScreenInput(u8 taskId)
     gTasks[taskId].tState++;
 }
 
-static void ResetPokedexAreaMapBg(void)
-{
-    SetBgAttribute(3, BG_ATTR_CHARBASEINDEX, 0);
-    SetBgAttribute(3, BG_ATTR_PALETTEMODE, 0);
-}
-
-// Creates the circular sprites to highlight special areas (like caves) where a Pokémon can be found
+// Creates the circular sprites to highlight special areas (like caves) where a Pokémon can be found.
+// They stay hidden until the marker flash starts; UpdateAreaSprites positions them on the scrolling map.
 static void CreateAreaMarkerSprites(void)
 {
     u8 spriteId;
-    s16 x;
-    s16 y;
+    s32 x;
+    s32 y;
     s16 i;
     mapsec_u16_t mapSecId;
     s16 numSprites;
 
     LoadSpriteSheet(&sAreaMarkerSpriteSheet);
     LoadSpritePalette(&sAreaMarkerSpritePalette);
+
     numSprites = 0;
     for (i = 0; i < sPokedexAreaScreen->numSpecialAreas; i++)
     {
         mapSecId = sPokedexAreaScreen->specialAreaRegionMapSectionIds[i];
-        x = 8 * (gRegionMapEntries[mapSecId].x + 1) + 4;
-        y = 8 * (gRegionMapEntries[mapSecId].y) + 28;
-        x += 4 * (gRegionMapEntries[mapSecId].width - 1);
-        y += 4 * (gRegionMapEntries[mapSecId].height - 1);
+        if (!GetWorldMapSecCenter(mapSecId, &x, &y))
+            continue;
         spriteId = CreateSpriteUnchecked(&sAreaMarkerSpriteTemplate, x, y, 0);
         if (spriteId != MAX_SPRITES)
         {
             gSprites[spriteId].invisible = TRUE;
+            gSprites[spriteId].sFlashHidden = TRUE;
+            sPokedexAreaScreen->areaMarkerX[numSprites] = x;
+            sPokedexAreaScreen->areaMarkerY[numSprites] = y;
             sPokedexAreaScreen->areaMarkerSprites[numSprites++] = &gSprites[spriteId];
         }
     }
-
     sPokedexAreaScreen->numAreaMarkerSprites = numSprites;
+}
+
+static void CreateAreaPlayerIcon(void)
+{
+    s32 x, y;
+
+    sPokedexAreaScreen->playerIconSprite = NULL;
+    if (!GetWorldMapPlayerPos(&x, &y))
+        return;
+    sPokedexAreaScreen->playerIconSprite = CreatePlayerIconSprite(TAG_PLAYER_ICON, TAG_PLAYER_ICON);
+    // Keep the icon above the glow
+    sPokedexAreaScreen->playerIconSprite->oam.priority = 1;
+    sPokedexAreaScreen->playerIconX = x;
+    sPokedexAreaScreen->playerIconY = y;
+}
+
+// Sprites live in world pixels; hide them when they leave the screen, since OAM coordinates wrap.
+static bool32 SetSpriteScreenPos(struct Sprite *sprite, s32 worldX, s32 worldY, s32 scrollX, s32 scrollY)
+{
+    s32 x = worldX - scrollX;
+    s32 y = worldY - scrollY;
+
+    sprite->x = x;
+    sprite->y = y;
+    return x < -SPRITE_MARGIN || x > DISPLAY_WIDTH + SPRITE_MARGIN || y < -SPRITE_MARGIN || y > DISPLAY_HEIGHT + SPRITE_MARGIN;
+}
+
+static void UpdateAreaSprites(void)
+{
+    s32 scrollX, scrollY;
+    u32 i;
+
+    PokedexAreaMapGetScroll(&scrollX, &scrollY);
+    if (sPokedexAreaScreen->playerIconSprite != NULL)
+    {
+        sPokedexAreaScreen->playerIconSprite->invisible = SetSpriteScreenPos(sPokedexAreaScreen->playerIconSprite,
+            sPokedexAreaScreen->playerIconX, sPokedexAreaScreen->playerIconY, scrollX, scrollY);
+    }
+    for (i = 0; i < sPokedexAreaScreen->numAreaMarkerSprites; i++)
+    {
+        struct Sprite *marker = sPokedexAreaScreen->areaMarkerSprites[i];
+        bool32 offScreen = SetSpriteScreenPos(marker, sPokedexAreaScreen->areaMarkerX[i], sPokedexAreaScreen->areaMarkerY[i], scrollX, scrollY);
+
+        marker->invisible = offScreen || marker->sFlashHidden;
+    }
+}
+
+static mapsec_u16_t GetAreaMapSec(u32 i)
+{
+    if (i < sPokedexAreaScreen->numOverworldAreas)
+        return sPokedexAreaScreen->overworldAreasWithMons[i].regionMapSectionId;
+    return sPokedexAreaScreen->specialAreaRegionMapSectionIds[i - sPokedexAreaScreen->numOverworldAreas];
+}
+
+// Centres the camera on the species' areas in one region: the player's region if the species
+// occurs there, else the region of the first area. With no areas it centres on the player.
+static void FrameAreasOnMap(void)
+{
+    u32 total = sPokedexAreaScreen->numOverworldAreas + sPokedexAreaScreen->numSpecialAreas;
+    u32 playerGroup = GetWorldMapSecGroup(gMapHeader.regionMapSectionId);
+    u32 group = NO_GROUP;
+    s32 x, y, minX = 0x7FFF, minY = 0x7FFF, maxX = -1, maxY = -1;
+    u32 i;
+
+    for (i = 0; i < total; i++)
+    {
+        u32 areaGroup = GetWorldMapSecGroup(GetAreaMapSec(i));
+
+        if (areaGroup == playerGroup)
+        {
+            group = areaGroup;
+            break;
+        }
+        if (group == NO_GROUP)
+            group = areaGroup;
+    }
+
+    for (i = 0; i < total && group != NO_GROUP; i++)
+    {
+        mapsec_u16_t mapSec = GetAreaMapSec(i);
+
+        if (GetWorldMapSecGroup(mapSec) != group || !GetWorldMapSecCenter(mapSec, &x, &y))
+            continue;
+        if (x < minX)
+            minX = x;
+        if (x > maxX)
+            maxX = x;
+        if (y < minY)
+            minY = y;
+        if (y > maxY)
+            maxY = y;
+    }
+
+    if (maxX >= 0)
+        PokedexAreaMapCenterOn((minX + maxX) / 2, (minY + maxY) / 2, TRUE);
+    else if (GetWorldMapPlayerPos(&x, &y))
+        PokedexAreaMapCenterOn(x, y, TRUE);
+    else
+    {
+        GetWorldMapGroupAnchor(playerGroup, &x, &y);
+        PokedexAreaMapCenterOn(x, y, TRUE);
+    }
 }
 
 static void DestroyAreaScreenSprites(void)
@@ -977,6 +1141,15 @@ static void DestroyAreaScreenSprites(void)
     FreeSpritePaletteByTag(TAG_AREA_MARKER);
     for (i = 0; i < sPokedexAreaScreen->numAreaMarkerSprites; i++)
         DestroySprite(sPokedexAreaScreen->areaMarkerSprites[i]);
+
+    // Destroy player icon
+    if (sPokedexAreaScreen->playerIconSprite != NULL)
+    {
+        FreeSpriteTilesByTag(TAG_PLAYER_ICON);
+        FreeSpritePaletteByTag(TAG_PLAYER_ICON);
+        DestroySprite(sPokedexAreaScreen->playerIconSprite);
+        sPokedexAreaScreen->playerIconSprite = NULL;
+    }
 
     if (!OW_TIME_OF_DAY_ENCOUNTERS)
     {

@@ -34,7 +34,7 @@
  *  The fly map itself is the world map in world_map.c.
  *  Specific features of other region map uses are handled elsewhere
  *
- *  For the region map in the pokedex, see pokdex_area_screen.c/pokedex_area_region_map.c
+ *  The Pokédex area screen uses the world map; see pokedex_area_screen.c/pokedex_area_region_map.c
  *  For the region map that can be viewed on the wall of pokemon centers, see field_region_map.c
  *
  */
@@ -249,35 +249,18 @@ static const mapsec_u8_t sMapSecIdsOffMap[] =
     MAPSEC_NAVEL_ROCK
 };
 
-
-static const u16 ALIGNED(4) sPokedexAreaMap_Pal[] = INCGFX_U16("graphics/pokedex/region_map.pal", ".gbapal");
-static const u32 sPokedexAreaMap_Gfx[] = INCGFX_U32("graphics/pokedex/region_map.png", ".8bpp.smol", "-num_tiles 232 -Wnum_tiles");
-static const u32 sPokedexAreaMap_Tilemap[] = INCGFX_U32("graphics/pokedex/region_map.bin", ".smolTM");
-
-static const u16 ALIGNED(4) sPokedexAreaMapKanto_Pal[] = INCGFX_U16("graphics/pokedex/region_map_kanto.pal", ".gbapal");
-static const u32 sPokedexAreaMapKanto_Gfx[] = INCGFX_U32("graphics/pokedex/region_map_kanto.png", ".8bpp.smol");
-static const u32 sPokedexAreaMapKanto_Tilemap[] = INCGFX_U32("graphics/pokedex/region_map_kanto.bin", ".smolTM");
 static const u16 ALIGNED(4) sRegionMapKanto_Pal[] = INCGFX_U16("graphics/region_map/map_kanto.pal", ".gbapal");
 static const u32 sRegionMapKanto_Gfx[] = INCGFX_U32("graphics/region_map/map_kanto.png", ".8bpp.smol");
 static const u32 sRegionMapKanto_Tilemap[] = INCGFX_U32("graphics/region_map/map_kanto.bin", ".smolTM");
 
-static const u16 ALIGNED(4) sPokedexAreaMapSevii123_Pal[] = INCGFX_U16("graphics/pokedex/region_map_sevii123.pal", ".gbapal");
-static const u32 sPokedexAreaMapSevii123_Gfx[] = INCGFX_U32("graphics/pokedex/region_map_sevii123.png", ".8bpp.smol");
-static const u32 sPokedexAreaMapSevii123_Tilemap[] = INCGFX_U32("graphics/pokedex/region_map_sevii123.bin", ".smolTM");
 static const u16 ALIGNED(4) sRegionMapSevii123_Pal[] = INCGFX_U16("graphics/region_map/map_sevii_123.pal", ".gbapal");
 static const u32 sRegionMapSevii123_Gfx[] = INCGFX_U32("graphics/region_map/map_sevii_123.png", ".8bpp.smol");
 static const u32 sRegionMapSevii123_Tilemap[] = INCGFX_U32("graphics/region_map/map_sevii_123.bin", ".smolTM");
 
-static const u16 ALIGNED(4) sPokedexAreaMapSevii45_Pal[] = INCGFX_U16("graphics/pokedex/region_map_sevii45.pal", ".gbapal");
-static const u32 sPokedexAreaMapSevii45_Gfx[] = INCGFX_U32("graphics/pokedex/region_map_sevii45.png", ".8bpp.smol");
-static const u32 sPokedexAreaMapSevii45_Tilemap[] = INCGFX_U32("graphics/pokedex/region_map_sevii45.bin", ".smolTM");
 static const u16 ALIGNED(4) sRegionMapSevii45_Pal[] = INCGFX_U16("graphics/region_map/map_sevii_45.pal", ".gbapal");
 static const u32 sRegionMapSevii45_Gfx[] = INCGFX_U32("graphics/region_map/map_sevii_45.png", ".8bpp.smol");
 static const u32 sRegionMapSevii45_Tilemap[] = INCGFX_U32("graphics/region_map/map_sevii_45.bin", ".smolTM");
 
-static const u16 ALIGNED(4) sPokedexAreaMapSevii67_Pal[] = INCGFX_U16("graphics/pokedex/region_map_sevii67.pal", ".gbapal");
-static const u32 sPokedexAreaMapSevii67_Gfx[] = INCGFX_U32("graphics/pokedex/region_map_sevii67.png", ".8bpp.smol");
-static const u32 sPokedexAreaMapSevii67_Tilemap[] = INCGFX_U32("graphics/pokedex/region_map_sevii67.bin", ".smolTM");
 static const u16 ALIGNED(4) sRegionMapSevii67_Pal[] = INCGFX_U16("graphics/region_map/map_sevii_67.pal", ".gbapal");
 static const u32 sRegionMapSevii67_Gfx[] = INCGFX_U32("graphics/region_map/map_sevii_67.png", ".8bpp.smol");
 static const u32 sRegionMapSevii67_Tilemap[] = INCGFX_U32("graphics/region_map/map_sevii_67.bin", ".smolTM");
@@ -286,50 +269,30 @@ const struct RegionMapInfo gRegionMapInfos[] =
 {
     [REGION_MAP_HOENN]    =
     {
-        .dexMapPalette = sPokedexAreaMap_Pal,
-        .dexMapGfx = sPokedexAreaMap_Gfx,
-        .dexMapTilemap = sPokedexAreaMap_Tilemap,
-        .dexMapPaletteSize = sizeof(sPokedexAreaMap_Pal),
         .regionMapPalette = sRegionMapBg_Pal,
         .regionMapGfx = sRegionMapBg_GfxLZ,
         .regionMapTilemap = sRegionMapBg_TilemapLZ,
     },
     [REGION_MAP_KANTO]    =
     {
-        .dexMapPalette = sPokedexAreaMapKanto_Pal,
-        .dexMapGfx = sPokedexAreaMapKanto_Gfx,
-        .dexMapTilemap = sPokedexAreaMapKanto_Tilemap,
-        .dexMapPaletteSize = sizeof(sPokedexAreaMapKanto_Pal),
         .regionMapPalette = sRegionMapKanto_Pal,
         .regionMapGfx = sRegionMapKanto_Gfx,
         .regionMapTilemap = sRegionMapKanto_Tilemap,
     },
     [REGION_MAP_SEVII123] =
     {
-        .dexMapPalette = sPokedexAreaMapSevii123_Pal,
-        .dexMapGfx = sPokedexAreaMapSevii123_Gfx,
-        .dexMapTilemap = sPokedexAreaMapSevii123_Tilemap,
-        .dexMapPaletteSize = sizeof(sPokedexAreaMapSevii123_Pal),
         .regionMapPalette = sRegionMapSevii123_Pal,
         .regionMapGfx = sRegionMapSevii123_Gfx,
         .regionMapTilemap = sRegionMapSevii123_Tilemap,
     },
     [REGION_MAP_SEVII45]  =
     {
-        .dexMapPalette = sPokedexAreaMapSevii45_Pal,
-        .dexMapGfx = sPokedexAreaMapSevii45_Gfx,
-        .dexMapTilemap = sPokedexAreaMapSevii45_Tilemap,
-        .dexMapPaletteSize = sizeof(sPokedexAreaMapSevii45_Pal),
         .regionMapPalette = sRegionMapSevii45_Pal,
         .regionMapGfx = sRegionMapSevii45_Gfx,
         .regionMapTilemap = sRegionMapSevii45_Tilemap,
     },
     [REGION_MAP_SEVII67]  =
     {
-        .dexMapPalette = sPokedexAreaMapSevii67_Pal,
-        .dexMapGfx = sPokedexAreaMapSevii67_Gfx,
-        .dexMapTilemap = sPokedexAreaMapSevii67_Tilemap,
-        .dexMapPaletteSize = sizeof(sPokedexAreaMapSevii67_Pal),
         .regionMapPalette = sRegionMapSevii67_Pal,
         .regionMapGfx = sRegionMapSevii67_Gfx,
         .regionMapTilemap = sRegionMapSevii67_Tilemap,
@@ -534,14 +497,6 @@ void InitRegionMapData(struct RegionMap *regionMap, const struct BgTemplate *tem
         sRegionMap->mapBaseIdx = 28;
         sRegionMap->bgManaged = FALSE;
     }
-}
-
-void ShowRegionMapForPokedexAreaScreen(struct RegionMap *regionMap)
-{
-    sRegionMap = regionMap;
-    InitMapBasedOnPlayerLocation();
-    sRegionMap->playerIconSpritePosX = sRegionMap->cursorPosX;
-    sRegionMap->playerIconSpritePosY = sRegionMap->cursorPosY;
 }
 
 bool8 LoadRegionMapGfx(void)
@@ -955,17 +910,6 @@ void UpdateRegionMapVideoRegs(void)
         SetGpuReg(REG_OFFSET_BG2Y_L, sRegionMap->bg2y);
         SetGpuReg(REG_OFFSET_BG2Y_H, sRegionMap->bg2y >> 16);
         sRegionMap->needUpdateVideoRegs = FALSE;
-    }
-}
-
-void PokedexAreaScreen_UpdateRegionMapVariablesAndVideoRegs(s16 x, s16 y)
-{
-    CalcZoomScrollParams(x, y, 0x38, 0x48, 0x100, 0x100, 0);
-    UpdateRegionMapVideoRegs();
-    if (sRegionMap->playerIconSprite != NULL)
-    {
-        sRegionMap->playerIconSprite->x2 = -x;
-        sRegionMap->playerIconSprite->y2 = -y;
     }
 }
 
