@@ -131,12 +131,9 @@ Route39_Text_FarmerFHealedMiltank:
 	.string "Here's somethin' fer your trouble.$"
 
 Route39_Text_FarmerFSnatchSpeech:
-	.string "That there's SNATCH.\p"
-	.string "It's a tricky move that lets\n"
-	.string "a POKéMON steal a foe's move\l"
-	.string "right before it's used.\p"
-	.string "If more than one POKéMON use\n"
-	.string "SNATCH, only the slowest one\l"
-	.string "will end up stealing the move.\p"
+	.string "That there's HEAL BELL.\p"
+	.string "It's a soothing chime that cures\n"
+	.string "status problems for your whole\l"
+	.string "party.\p"
 	.string "Use it smart, hon. Timing is\n"
 	.string "everything.$"

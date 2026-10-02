@@ -122,26 +122,6 @@ SafariZoneGate_Pokemart_Incenses:
 	end
 
 
-SafariZoneGate_EventScript_IncenseClerkFinite::
-	lock
-	faceplayer
-	message gText_HowMayIServeYou
-	waitmessage
-	pokemart SafariZoneGate_Pokemart_Incenses2
-	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
-	release
-	end
-
-	.align 2
-SafariZoneGate_Pokemart_Incenses2:
-	.2byte ITEM_TM_HIDDEN_POWER
-	.2byte ITEM_TM_SECRET_POWER
-	.2byte ITEM_SEA_INCENSE
-	.2byte ITEM_LAX_INCENSE
-	.2byte ITEM_NONE
-	release
-	end
-
 SafariZoneGate_EventScript_VitaminGuru::
 	lock
 	faceplayer

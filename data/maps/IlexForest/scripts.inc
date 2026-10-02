@@ -674,11 +674,11 @@ IlexForest_Text_CharcoalMasterIntro:
 	.string "I know! Here, take this.$"
 
 IlexForest_Text_CharcoalMasterOutro:
-	.string "That's the CUT HM.\n"
-	.string "Teach that to a POKéMON to clear\l"
-	.string "small trees.\p"
-	.string "Of course, you have to have the\n"
-	.string "GYM BADGE from AZALEA to use it.$"
+	.string "That's LEAF BLADE.\n"
+	.string "It slashes with a sharp leaf and\l"
+	.string "often lands critical hits.\p"
+	.string "Teach it to a POKéMON and put it\n"
+	.string "to work!$"
 
 IlexForest_Text_CharcoalMasterTalkAfter:
 	.string "Do you want to apprentice as a\n"

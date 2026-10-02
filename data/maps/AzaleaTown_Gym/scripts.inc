@@ -698,10 +698,9 @@ AzaleaTown_Gym_Text_HiveBadgeSpeech:
 	.string "have this.$"
 
 AzaleaTown_Gym_Text_FuryCutterSpeech:
-	.string "TM89 contains U-TURN.\p"
-	.string "U-TURN lets you do damage and\n"
-	.string "switch your POKéMON in the same\l"
-	.string "turn!\p"
+	.string "TM168 contains LUNGE.\p"
+	.string "LUNGE hits hard and lowers the\n"
+	.string "foe's ATTACK.\p"
 	.string "Isn't that great?\n"
 	.string "I discovered it!$"
 

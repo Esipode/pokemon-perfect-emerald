@@ -537,9 +537,9 @@ Route32_Text_RoarIntro:
 	.string "THAT PLEASES ME! NOW TAKE THIS!$"
 
 Route32_Text_RoarOutro:
-	.string "WROOOOAR! IT'S ROAR!\p"
-	.string "EVEN POKéMON RUN FROM A GOOD\n"
-	.string "ROAR!$"
+	.string "WROOOOAR! IT'S PSYCHIC FANGS!\p"
+	.string "IT SHATTERS REFLECT AND LIGHT\n"
+	.string "SCREEN WITH A PSYCHIC BITE!$"
 
 Route32_Text_MeetFrieda:
 	.string "FRIEDA: Yahoo!\p"

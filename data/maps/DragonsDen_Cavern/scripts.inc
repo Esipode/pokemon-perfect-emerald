@@ -146,11 +146,11 @@ DragonsDen_Cavern_Text_Clair_GiveTM:
     .string "Here, take this as my apology.$"
 
 DragonsDen_Cavern_Text_Clair_ExplainTM:
-    .string "DRAGON PULSE is a kind of er...\n"
-	.string "never mind!\p"
-	.string "It's a huge energy of some kind.\p"
-	.string "If you don't want it, you don't have\n"
-	.string "to take it.$"
+    .string "DRAGON RUSH is a kind of er...\n"
+    .string "never mind!\p"
+    .string "It's a ferocious charge of some kind.\p"
+    .string "If you don't want it, you don't have\n"
+    .string "to take it.$"
 
 DragonsDen_Cavern_Text_ClairWhatsTheMatter:
     .string "What's the matter? Aren't\n"

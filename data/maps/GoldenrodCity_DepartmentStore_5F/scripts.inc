@@ -91,8 +91,8 @@ GoldenrodDeptStore_Text_5FPokefanM:
     .string "original trainer's feelings for it.$"
 
 GoldenrodDeptStore_Text_Girl:
-	.string "The lady gave me RETURN!\n"
-    .string "My POKéMON must really like me!$"
+	.string "The lady gave me WISH!\n"
+	.string "My POKéMON must really like me!$"
 
 GoldenrodDeptStore5_EventScript_Clerk::
 	lock
@@ -106,10 +106,10 @@ GoldenrodDeptStore5_EventScript_Clerk::
 
 	.align 2
 GoldenrodDeptStore5_Pokemart:
+	.2byte ITEM_TM_BREAKING_SWIPE
 	.2byte ITEM_TM_ANCIENT_POWER
 	.2byte ITEM_TM_MEGAHORN
 	.2byte ITEM_TM_MOONBLAST
-	.2byte ITEM_TM_BREAKING_SWIPE
 	.2byte ITEM_TM_FREEZE_DRY
 	.2byte ITEM_TM_ZAP_CANNON
 	.2byte ITEM_TM_VACUUM_WAVE

@@ -100,12 +100,12 @@ CianwoodCity_Text_ChucksWifeBeatChuck:
 
 CianwoodCity_Text_ChucksWifeGiveHM:
 	.string "That's CIANWOOD's GYM BADGE!\p"
-	.string "Then you should take this HM.$"
+	.string "Then you should take this TM.$"
 
 CianwoodCity_Text_ChucksWifeFlySpeech:
-	.string "Teach FLY to your POKéMON.\p"
-	.string "You will be able to FLY instantly\n"
-	.string "to anywhere you have visited.$"
+	.string "That's DUAL WINGBEAT.\p"
+	.string "It beats the foe with its wings\n"
+	.string "twice in a single turn.$"
 
 CianwoodCity_Text_ChucksWifeChubby:
 	.string "My husband lost to you, so he needs\n"

@@ -58,7 +58,7 @@ SproutTower_Text_SageChow_AfterBattle:
 
 SproutTower_Text_1F_Sage1:
 	.string "Only if you reach the top will\n"
-	.string "you obtain an HM.$"
+	.string "you obtain a TM.$"
 
 SproutTower_Text_1F_Sage2:
 	.string "SPROUT TOWER was built long ago\n"

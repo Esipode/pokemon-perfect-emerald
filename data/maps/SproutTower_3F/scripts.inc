@@ -161,7 +161,7 @@ SproutTower_3F_Movement_EscapeRope:
 SproutTower_Text_ElderLecturesRival:
 	.string "ELDER: You are indeed skilled\n"
 	.string "as a trainer.\p"
-	.string "As promised, here is your HM.\p"
+	.string "As promised, here is your TM.\p"
 	.string "But let me say this: You should\n"
 	.string "treat your POKéMON better.\p"
 	.string "The way you battle is far too\n"
@@ -201,13 +201,13 @@ SproutTower_Text_SageLi_Beaten:
 SproutTower_Text_SageLi_TakeFlash:
 	.string "You and your POKéMON should\n"
 	.string "have no problem using this move.\p"
-	.string "Take this FLASH HM.$"
+	.string "Take this HYPNOSIS TM.$"
 
 SproutTower_Text_SageLi_FlashExplain:
-	.string "FLASH illuminates even the\n"
-	.string "darkest of all places.\p"
-	.string "But to use it out of battle, you\n"
-	.string "need the BADGE from VIOLET's GYM.$"
+	.string "HYPNOSIS lulls a foe into a deep\n"
+	.string "sleep.\p"
+	.string "It is not always accurate, so stay\n"
+	.string "calm and try again if it fails.$"
 
 SproutTower_Text_SageLi_AfterBattle:
 	.string "I hope you learn and grow from\n"
@@ -238,8 +238,8 @@ SproutTower_Text_SageTroy_AfterBattle:
 	.string "It is not far to the ELDER.$"
 
 SproutTower_Text_SageNeal_Seen:
-	.string "The ELDER's HM lights even\n"
-	.string "pitch-black darkness.$"
+	.string "The ELDER's TM can put even the\n"
+	.string "most restless POKéMON to sleep.$"
 
 SproutTower_Text_SageNeal_Beaten:
 	.string "It is my head that is bright!$"

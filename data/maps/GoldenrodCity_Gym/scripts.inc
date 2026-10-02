@@ -158,8 +158,8 @@ GoldenrodCity_Gym_Text_WhitneyPlainBadge:
     .string "Oh, you can have this too!$"
 
 GoldenrodCity_Gym_Text_WhitneyAttract:
-    .string "It's ATTRACT! It makes full use of a\n"
-    .string "POKéMON's charm.\p"
+    .string "It's FAKE OUT! It makes the foe\n"
+    .string "flinch, but only on the first turn.\p"
     .string "Isn't it just perfect for a cutie\n"
     .string "like me?$"
 

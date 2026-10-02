@@ -160,11 +160,11 @@ Route31_Text_ReadingMail:
 
 Route31_Text_DescribeRest:
 	.string "...Zzz...\p"
-	.string "...Umm... Rest!\p"
-	.string "The phrase 'recover fast' became\n"
-	.string "shortened to 'Rest,' you see?\p"
-	.string "This is a move to sleep and recover\n"
-	.string "some HP.$"
+	.string "...Umm... Headbutt!\p"
+	.string "I bonked my head on the bed and\n"
+	.string "got the idea, you see?\p"
+	.string "This is a move that may make the\n"
+	.string "foe flinch.$"
 
 Route31_Text_WrongMail:
 	.string "This MAIL isn't for me.$"

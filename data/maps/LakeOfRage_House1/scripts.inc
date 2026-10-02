@@ -27,11 +27,11 @@ HiddenPowerGuy_Text_Intro:
     .string "POKéMON. Take this, child.$"
 
 HiddenPowerGuy_Text_Explanation:
-    .string "Do you see it? It is HIDDEN POWER!\p"
-    .string "It draws out the power of POKéMON\n"
-    .string "for attacking.\p"
+    .string "Do you see it? It is WEATHER BALL!\p"
+    .string "It gathers the energy of the sky\n"
+    .string "into a sphere.\p"
     .string "Remember this: its type and power\n"
-    .string "depend on the POKéMON using it.$"
+    .string "change with the weather.$"
 
 HiddenPowerGuy_Text_Meditating:
     .string "I am meditating…$"

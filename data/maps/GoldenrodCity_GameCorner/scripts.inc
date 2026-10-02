@@ -240,7 +240,7 @@ GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize::
 	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ChooseTMPrize
 
 GoldenrodCity_GameCorner_PrizeRoom_EventScript_ChooseTMPrize::
-	dynmultichoice 12, 0, FALSE, 6, 0, DYN_MULTICHOICE_CB_NONE, GoldenrodCity_GameCorner_PrizeRoom_Text_TM44, GoldenrodCity_GameCorner_PrizeRoom_Text_TM90, GoldenrodCity_GameCorner_PrizeRoom_Text_TM75, GoldenrodCity_GameCorner_PrizeRoom_Text_TM13, GoldenrodCity_GameCorner_PrizeRoom_Text_TM24, GoldenrodCity_GameCorner_PrizeRoom_Text_TM35, GoldenrodCity_GameCorner_PrizeRoom_Text_Cancel
+	dynmultichoice 12, 0, FALSE, 6, 0, DYN_MULTICHOICE_CB_NONE, GoldenrodCity_GameCorner_PrizeRoom_Text_TM222, GoldenrodCity_GameCorner_PrizeRoom_Text_TM224, GoldenrodCity_GameCorner_PrizeRoom_Text_TM223, GoldenrodCity_GameCorner_PrizeRoom_Text_TM219, GoldenrodCity_GameCorner_PrizeRoom_Text_TM221, GoldenrodCity_GameCorner_PrizeRoom_Text_TM220, GoldenrodCity_GameCorner_PrizeRoom_Text_Cancel
 	switch VAR_RESULT
 	case 0, GoldenrodCity_GameCorner_PrizeRoom_EventScript_TMRest
 	case 1, GoldenrodCity_GameCorner_PrizeRoom_EventScript_TMSubstitute
@@ -293,14 +293,6 @@ GoldenrodCity_GameCorner_PrizeRoom_EventScript_ConfirmTMPrize::
 	msgbox GoldenrodCity_GameCorner_PrizeRoom_Text_SoYourChoiceIsTM, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, NO, GoldenrodCity_GameCorner_PrizeRoom_EventScript_CancelTMSelect
 	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ConfirmTMPrizeInfinite
-	switch VAR_TEMP_1
-	case 1, GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMIceBeam
-	case 2, GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMFlamethrower
-	case 3, GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMRest
-	case 4, GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMSwordsDance
-	case 5, GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMSubstitute
-	case 6, GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMThunderbolt
-	end
 
 GoldenrodCity_GameCorner_PrizeRoom_EventScript_ConfirmTMPrizeInfinite::
 	switch VAR_TEMP_1
@@ -390,91 +382,8 @@ GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMSubstituteInfinite::
 	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
 	end
 
-GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMIceBeam::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, TM_ICE_BEAM_COINS, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NotEnoughCoinsForTM
-	checkitemspace ITEM_TM_BELLY_DRUM
-	goto_if_eq VAR_RESULT, FALSE, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NoRoomForTM
-	removecoins TM_ICE_BEAM_COINS
-	additem ITEM_TM_BELLY_DRUM
-	updatecoinsbox
-	playse SE_SHOP
-	msgbox GoldenrodCity_GameCorner_Text_PrizeVendorHereYouGo, MSGBOX_DEFAULT
-	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
-	end
-
-GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMFlamethrower::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, TM_FLAMETHROWER_COINS, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NotEnoughCoinsForTM
-	checkitemspace ITEM_TM_QUIVER_DANCE
-	goto_if_eq VAR_RESULT, FALSE, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NoRoomForTM
-	removecoins TM_FLAMETHROWER_COINS
-	additem ITEM_TM_QUIVER_DANCE
-	updatecoinsbox
-	playse SE_SHOP
-	msgbox GoldenrodCity_GameCorner_Text_PrizeVendorHereYouGo, MSGBOX_DEFAULT
-	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
-	end
-
-GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMThunderbolt::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, TM_THUNDERBOLT_COINS, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NotEnoughCoinsForTM
-	checkitemspace ITEM_TM_COIL
-	goto_if_eq VAR_RESULT, FALSE, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NoRoomForTM
-	removecoins TM_THUNDERBOLT_COINS
-	additem ITEM_TM_COIL
-	updatecoinsbox
-	playse SE_SHOP
-	msgbox GoldenrodCity_GameCorner_Text_PrizeVendorHereYouGo, MSGBOX_DEFAULT
-	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
-	end
-
-GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMRest::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, TM_REST_COINS, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NotEnoughCoinsForTM
-	checkitemspace ITEM_TM_LOVELY_KISS
-	goto_if_eq VAR_RESULT, FALSE, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NoRoomForTM
-	removecoins TM_REST_COINS
-	additem ITEM_TM_LOVELY_KISS
-	updatecoinsbox
-	playse SE_SHOP
-	msgbox GoldenrodCity_GameCorner_Text_PrizeVendorHereYouGo, MSGBOX_DEFAULT
-	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
-	end
-
-GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMSwordsDance::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, TM_SWORDS_DANCE_COINS, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NotEnoughCoinsForTM
-	checkitemspace ITEM_TM_PERISH_SONG
-	goto_if_eq VAR_RESULT, FALSE, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NoRoomForTM
-	removecoins TM_SWORDS_DANCE_COINS
-	additem ITEM_TM_PERISH_SONG
-	updatecoinsbox
-	playse SE_SHOP
-	msgbox GoldenrodCity_GameCorner_Text_PrizeVendorHereYouGo, MSGBOX_DEFAULT
-	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
-	end
-
-GoldenrodCity_GameCorner_PrizeRoom_EventScript_BuyTMSubstitute::
-	checkcoins VAR_TEMP_2
-	goto_if_lt VAR_TEMP_2, TM_SUBSTITUTE_COINS, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NotEnoughCoinsForTM
-	checkitemspace ITEM_TM_DESTINY_BOND
-	goto_if_eq VAR_RESULT, FALSE, GoldenrodCity_GameCorner_PrizeRoom_EventScript_NoRoomForTM
-	removecoins TM_SUBSTITUTE_COINS
-	additem ITEM_TM_DESTINY_BOND
-	updatecoinsbox
-	playse SE_SHOP
-	msgbox GoldenrodCity_GameCorner_Text_PrizeVendorHereYouGo, MSGBOX_DEFAULT
-	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
-	end
-
 GoldenrodCity_GameCorner_PrizeRoom_EventScript_NotEnoughCoinsForTM::
 	msgbox GoldenrodCity_GameCorner_Text_PrizeVendorNeedMoreCoins, MSGBOX_DEFAULT
-	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
-	end
-
-GoldenrodCity_GameCorner_PrizeRoom_EventScript_NoRoomForTM::
-	call Common_EventScript_BagIsFull
 	goto GoldenrodCity_GameCorner_PrizeRoom_EventScript_ReturnToChooseTMPrize
 	end
 
@@ -489,23 +398,23 @@ GoldenrodCity_GameCorner_PrizeRoom_EventScript_CancelTMSelect::
 	release
 	end
 
-GoldenrodCity_GameCorner_PrizeRoom_Text_TM44:
-	.string "REST{CLEAR_TO 0x58}2,000 C.$"
+GoldenrodCity_GameCorner_PrizeRoom_Text_TM222:
+	.string "LOVELY KISS{CLEAR_TO 0x58}2,000 C.$"
 
-GoldenrodCity_GameCorner_PrizeRoom_Text_TM90:
-	.string "SUBSTITUTE{CLEAR_TO 0x58}2,000 C.$"
+GoldenrodCity_GameCorner_PrizeRoom_Text_TM224:
+	.string "DESTINY BOND{CLEAR_TO 0x58}2,000 C.$"
 
-GoldenrodCity_GameCorner_PrizeRoom_Text_TM75:
-	.string "SWORDS DANCE{CLEAR_TO 0x58}3,000 C.$"
+GoldenrodCity_GameCorner_PrizeRoom_Text_TM223:
+	.string "PERISH SONG{CLEAR_TO 0x58}3,000 C.$"
 
-GoldenrodCity_GameCorner_PrizeRoom_Text_TM13:
-	.string "ICE BEAM{CLEAR_TO 0x58}4,000 C.$"
+GoldenrodCity_GameCorner_PrizeRoom_Text_TM219:
+	.string "BELLY DRUM{CLEAR_TO 0x58}4,000 C.$"
 
-GoldenrodCity_GameCorner_PrizeRoom_Text_TM24:
-	.string "THUNDERBOLT{CLEAR_TO 0x58}4,000 C.$"
+GoldenrodCity_GameCorner_PrizeRoom_Text_TM221:
+	.string "COIL{CLEAR_TO 0x58}4,000 C.$"
 
-GoldenrodCity_GameCorner_PrizeRoom_Text_TM35:
-	.string "FLAMETHROWER{CLEAR_TO 0x58}4,000 C.$"
+GoldenrodCity_GameCorner_PrizeRoom_Text_TM220:
+	.string "QUIVER DANCE{CLEAR_TO 0x58}4,000 C.$"
 
 GoldenrodCity_GameCorner_PrizeRoom_Text_Cancel:
 	.string "EXIT$"

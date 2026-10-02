@@ -154,9 +154,9 @@ MahoganyTown_Gym_Text_GlacierBadgeSpeech:
     .string "And this… This is a gift from me!$"
 
 MahoganyTown_Gym_Text_HailSpeech:
-    .string "That TM contains HAIL.\p"
-    .string "It inflicts damage every\n"
-    .string "turn for 5 turns.\p"
+    .string "That TM contains ICICLE CRASH.\p"
+    .string "It hurls huge icicles at the foe\n"
+    .string "and may make it flinch.\p"
     .string "It demonstrates the harshness\n"
     .string "of winter.$"
 

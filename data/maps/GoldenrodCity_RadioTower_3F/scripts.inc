@@ -178,9 +178,9 @@ GoldenrodCity_RadioTower_3F_Text_CooltrainerFHeroGift:
 	.string "This is a token of my appreciation.$"
 
 GoldenrodCity_RadioTower_3F_Text_CooltrainerFSunnyDay:
-	.string "It's SUNNY DAY.\p"
-	.string "It powers up fire-type moves\n"
-	.string "for a while.$"
+	.string "It's MORNING SUN.\p"
+	.string "It restores HP, and restores more\n"
+	.string "in harsh sunlight.$"
 
 GoldenrodCity_RadioTower_3F_Text_CooltrainerFMarvelous:
 	.string "You were simply marvelous!$"

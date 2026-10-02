@@ -248,11 +248,11 @@ Route36_Text_RockSmashGuy2:
 	.string "I want you to have this.$"
 
 Route36_Text_RockSmashGuy3:
-	.string "That happens to be ROCK SMASH.\p"
-	.string "You can shatter rocks with just a\n"
-	.string "single well-aimed smack.\p"
-	.string "If any rocks are in your way,\n"
-	.string "just smash 'em up!$"
+	.string "That happens to be ROCK CLIMB.\p"
+	.string "It rams the foe while scaling the\n"
+	.string "roughest terrain.\p"
+	.string "It may confuse the foe, so use it\n"
+	.string "with care!$"
 
 Route36_Text_OddTree:
 	.string "A weird tree is blocking the way.$"

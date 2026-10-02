@@ -301,7 +301,7 @@ OlivineCity_Gym_Text_JasmineBadgeSpeech:
 
 OlivineCity_Gym_Text_JasmineIronTailSpeech:
 	.string "…You could use that TM to teach\n"
-	.string "IRON TAIL.$"
+	.string "SMART STRIKE.$"
 
 OlivineCity_Gym_Text_JasmineGoodLuck:
 	.string "Um… I don't know how to say this,\n"

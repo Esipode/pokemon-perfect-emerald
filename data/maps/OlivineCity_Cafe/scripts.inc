@@ -56,10 +56,10 @@ OlivineCity_EventScript_SailorB::
 OlivineCity_Text_CafeSailorStrength:
 	.string "Hah! Your POKéMON sure look like\n"
 	.string "lightweights!\p"
-	.string "They don't have the power to\n"
-	.string "move boulders aside.\p"
+	.string "They don't have the power to throw\n"
+	.string "a proper punch.\p"
 	.string "Here, use this and teach them\n"
-	.string "STRENGTH!$"
+	.string "BULLET PUNCH!$"
 
 OlivineCity_Text_CafeSailorGotStrength:
 	.string "On the sea, the only thing you\n"

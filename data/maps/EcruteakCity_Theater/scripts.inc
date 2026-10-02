@@ -414,9 +414,9 @@ EcruteakCity_Theater_Text_SurfGuyGiveSurf:
 	.string "Don't be shy--take it!$"
 
 EcruteakCity_Theater_Text_SurfGuyGaveSurf:
-	.string "That's SURF.\n"
-	.string "It's a move that lets POKéMON\l"
-	.string "swim across water with ease.$"
+	.string "That's AQUA JET.\n"
+	.string "It's a swift water attack that\l"
+	.string "always strikes first.$"
 
 EcruteakCity_Theater_Text_SurfGuyAfter:
 	.string "Not only are the KIMONO GIRLS\n"

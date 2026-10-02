@@ -161,9 +161,9 @@ CianwoodGym_Text_ChuckBadgeSpeech:
 	.string "Here, take this too!$"
 
 CianwoodGym_Text_ChuckTMSpeech:
-	.string "That is FOCUS PUNCH.\p"
-	.string "It moves slow but deals huge\n"
-	.string "damage. Just don't get hit first!$"
+	.string "That is CROSS CHOP.\p"
+	.string "It deals big damage and lands\n"
+	.string "critical hits more often.$"
 
 CianwoodGym_Text_ChuckAfter:
 	.string "WAHAHAH! I enjoyed battling you!\p"

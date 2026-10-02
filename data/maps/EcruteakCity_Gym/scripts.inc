@@ -118,9 +118,9 @@ MortyText_FogBadgeSpeech:
 	.string "I want you to have this too.$"
 
 MortyText_ShadowBallSpeech:
-	.string "That's SHADOW BALL.\n"
-	.string "It causes damage and may\l"
-	.string "lower SP. DEF.\p"
+	.string "That's SHADOW SNEAK.\n"
+	.string "It strikes from the shadows and\l"
+	.string "always goes first.\p"
 	.string "Use it if it suits you.$"
 
 MortyFightDoneText:
