@@ -18,6 +18,11 @@ classified water (blue dominant) or land, per cluster rect, then pasted at the c
 destination. Without --seed-mask the existing file is read, never written. Writes
 mask_preview.png (mask + MAPSEC cell outlines) to the staging dir and lists suspect MAPSECs.
 
+R3: renderer and tile builder (world_map_render.py). Draws the flat-style map from land.png, the
+MAPSEC grid and the layout data, builds 4bpp tiles with H/V flip dedupe, and writes tiles.png,
+map.pal, map.bin, preview.png (1x), preview_2x.png and crop_1x.png (240x160) to the staging dir.
+Nothing under graphics/ is touched.
+
 Usage: build_world_map2.py [--print] [--seed-mask] [--hns PATH]
 """
 
@@ -34,6 +39,7 @@ import zlib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import ROOT, OUT_DIR, add_hns_arg  # noqa: E402
 import world_map_layout as L  # noqa: E402
+import world_map_render as R  # noqa: E402
 
 sys.path.insert(0, os.path.join(ROOT, "tools", "frlg_convert"))
 import png4  # noqa: E402
@@ -503,6 +509,32 @@ def write_mask_preview(mask, world, unit, terr, water, path):
     write_rgb_png(path, img)
 
 
+def render_stage(mask, world, unit, terr):
+    """R3: render, build tiles, write the staging outputs, print the report."""
+    cv, rep = R.render(mask, world, unit, terr)
+    tiles, entries, banks = R.build_tiles(cv, unit, terr, rep["bank_override"])
+    pal = R.palette()
+    with open(os.path.join(STAGE, "tiles.png"), "wb") as f:
+        f.write(png4.write_tiles_png(tiles, bytes(c for col in pal[0] for c in col)))
+    R.write_jasc(pal, os.path.join(STAGE, "map.pal"))
+    R.write_tilemap(entries, os.path.join(STAGE, "map.bin"))
+    bank_of_cell = [e >> 12 for e in entries]
+    img = R.truecolour(cv, bank_of_cell, pal)
+    write_rgb_png(os.path.join(STAGE, "preview.png"), img)
+    write_rgb_png(os.path.join(STAGE, "preview_2x.png"), R.scaled(img, 2))
+    cx, cy = 0, 0
+    write_rgb_png(os.path.join(STAGE, "crop_1x.png"), [r[cx:cx + 240] for r in img[cy:cy + 160]])
+    raw = R.tiles_4bpp(tiles)
+    print("render: %d tiles (budget 600, CB0 holds 512), %d raw bytes, %d zlib" % (
+        len(tiles), len(raw), len(zlib.compress(raw, 9))))
+    print("  cells per bank: %s" % ", ".join("%d=%d" % kv for kv in sorted(banks.items())))
+    print("  %d route segments, %d stub land px dropped in open-sea cells" % (rep["edges"], rep["dropped_stub_px"]))
+    print("  sea MAPSECs (dotted routes): %s" % ", ".join(rep["sea_mapsecs"]))
+    for w in rep["warnings"]:
+        print("  " + w)
+    return len(tiles)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--print", action="store_true", help="print the world and region grids")
@@ -554,6 +586,8 @@ def main():
         print("MAPSECs with no land (sea routes expected): %s" % ", ".join(t[7:] for t in water))
         for t, f in sparse:
             print("warning: %s has only %d%% land under its cells" % (t, f * 100))
+        if render_stage(mask, world, unit, terr) > 1024:
+            errors.append("tile count exceeds 1024")
     else:
         print("no land.png yet; run with --seed-mask")
     print("wrote", STAGE)
