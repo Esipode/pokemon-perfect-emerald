@@ -13,6 +13,9 @@
 #define DOOR_SOUND_SLIDING 1
 #define DOOR_SOUND_ARENA   2
 
+// Johto primaries leave tiles 434-441 free; the top of VRAM can hold Johto secondary tiles.
+#define DOOR_TILE_START_JOHTO 434
+
 enum DoorSize
 {
     DOOR_SIZE_1x1,
@@ -30,6 +33,7 @@ struct DoorGraphics
     enum DoorSize size:8;
     const void *tiles;
     const void *palettes;
+    u16 tileStart; // 0 = default VRAM slot for the door size
 };
 
 struct DoorAnimFrame
@@ -179,6 +183,26 @@ static const u8 sDoorAnimTiles_FourIslandDayCare[] = INCGFX_U8("graphics/door_an
 static const u8 sDoorAnimTiles_RocketWarehouse[] = INCGFX_U8("graphics/door_anims/rocket_warehouse.png", ".4bpp");
 static const u8 sDoorAnimTiles_Sevii67[] = INCGFX_U8("graphics/door_anims/sevii_67.png", ".4bpp");
 static const u8 sDoorAnimTiles_Teleporter[] = INCGFX_U8("graphics/door_anims/teleporter.png", ".4bpp");
+
+// Johto doors (GS Stage 8)
+static const u8 sDoorAnimTiles_JohtoGeneral[] = INCGFX_U8("graphics/door_anims/johtogeneral.png", ".4bpp");
+static const u8 sDoorAnimTiles_JohtoGym[] = INCGFX_U8("graphics/door_anims/johtogym.png", ".4bpp");
+static const u8 sDoorAnimTiles_JohtoPokeCenter[] = INCGFX_U8("graphics/door_anims/johtopokecenter.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_BlackthornCity[] = INCGFX_U8("graphics/door_anims/blackthorn_city_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_Cianwood[] = INCGFX_U8("graphics/door_anims/cianwood_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_DojoDoor[] = INCGFX_U8("graphics/door_anims/dojo_door_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_DojoDoorEcruteak[] = INCGFX_U8("graphics/door_anims/dojo_door_ecruteak_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_Goldenrod[] = INCGFX_U8("graphics/door_anims/goldenrod_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_HnsCerulean[] = INCGFX_U8("graphics/door_anims/cerulean_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_HnsDeptStoreElevator[] = INCGFX_U8("graphics/door_anims/dept_store_elevator_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_HnsSafariZone[] = INCGFX_U8("graphics/door_anims/safari_zone_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_HnsVermilion[] = INCGFX_U8("graphics/door_anims/vermilion_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_HnsViridian[] = INCGFX_U8("graphics/door_anims/viridian_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_NewBarkTownRed[] = INCGFX_U8("graphics/door_anims/NewBarkTown_Door_Red_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_NewBarkTownYellow[] = INCGFX_U8("graphics/door_anims/NewBarkTown_Door_Yellow_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_Olivine[] = INCGFX_U8("graphics/door_anims/olivine_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_RocketElevator[] = INCGFX_U8("graphics/door_anims/rocket_elevator_johto.png", ".4bpp");
+static const u8 sDoorAnimTiles_Johto_SSAqua[] = INCGFX_U8("graphics/door_anims/ssaqua_johto.png", ".4bpp");
 
 static const struct DoorAnimFrame sDoorAnimFrames_Open1x1[] = {
     {4, -1},
@@ -336,6 +360,28 @@ static const u8 sDoorAnimPalettes_FourIslandDayCare[] = {3, 3, 3, 3, 3, 3, 3, 3}
 static const u8 sDoorAnimPalettes_RocketWarehouse[] = {10, 10, 10, 10, 10, 10, 10, 10};
 static const u8 sDoorAnimPalettes_Sevii67[] = {5, 5, 5, 5, 5, 5, 5, 5};
 static const u8 sDoorAnimPalettes_Teleporter[] = {8, 8, 8, 8, 8, 8, 8, 8};
+
+static const u8 sDoorAnimPalettes_JohtoGeneral[] = {2, 2, 2, 2, 2, 2, 2, 2};
+static const u8 sDoorAnimPalettes_JohtoGym[] = {3, 3, 3, 3, 3, 3, 3, 3};
+static const u8 sDoorAnimPalettes_JohtoPokeCenter[] = {3, 3, 3, 3, 3, 3, 3, 3};
+static const u8 sDoorAnimPalettes_JohtoSafariZone[] = {9, 9, 9, 9, 9, 9, 9, 9};
+static const u8 sDoorAnimPalettes_Johto_Azalea[] = {5, 5, 5, 5, 5, 5, 5, 5};
+static const u8 sDoorAnimPalettes_Johto_Blackthorn[] = {7, 7, 7, 7, 7, 7, 7, 7};
+static const u8 sDoorAnimPalettes_Johto_CherrygroveRed[] = {8, 8, 8, 8, 8, 8, 8, 8};
+static const u8 sDoorAnimPalettes_Johto_Cianwood[] = {11, 11, 11, 11, 11, 11, 11, 11};
+static const u8 sDoorAnimPalettes_Johto_DeptStoreHns[] = {8, 8, 8, 8, 8, 8, 8, 8};
+static const u8 sDoorAnimPalettes_Johto_DragonsDenShrine[] = {12, 12, 12, 12, 12, 12, 12, 12};
+static const u8 sDoorAnimPalettes_Johto_EcruteakDojo[] = {10, 10, 10, 10, 10, 10, 10, 10};
+static const u8 sDoorAnimPalettes_Johto_Goldenrod[] = {10, 10, 10, 10, 10, 10, 10, 10};
+static const u8 sDoorAnimPalettes_Johto_NewBarkTownBlue[] = {7, 7, 7, 7, 7, 7, 7, 7};
+static const u8 sDoorAnimPalettes_Johto_NewBarkTownRed[] = {8, 8, 8, 8, 8, 8, 8, 8};
+static const u8 sDoorAnimPalettes_Johto_NewBarkTownYellow[] = {5, 5, 5, 5, 5, 5, 5, 5};
+static const u8 sDoorAnimPalettes_Johto_Olivine[] = {11, 11, 11, 11, 11, 11, 11, 11};
+static const u8 sDoorAnimPalettes_Johto_RocketElevator[] = {2, 2, 2, 2, 2, 2, 2, 2};
+static const u8 sDoorAnimPalettes_Johto_SSAqua[] = {7, 7, 7, 7, 7, 7, 7, 7};
+static const u8 sDoorAnimPalettes_Johto_VermilionHns[] = {9, 9, 9, 9, 9, 9, 9, 9};
+static const u8 sDoorAnimPalettes_Johto_VioletDojo[] = {12, 12, 12, 12, 12, 12, 12, 12};
+static const u8 sDoorAnimPalettes_Johto_ViridianHns[] = {8, 8, 8, 8, 8, 8, 8, 8};
 
 static const struct DoorGraphics sDoorAnimGraphicsTable[] =
 {
@@ -994,6 +1040,420 @@ static const struct DoorGraphics sDoorAnimGraphicsTable[] =
         .tiles = sDoorAnimTiles_Teleporter,
         .palettes = sDoorAnimPalettes_Teleporter
     },
+    {
+        .metatileNum = METATILE_Johto_General_Door,
+        .tileset = &gTileset_JohtoGeneral,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGeneral,
+        .palettes = sDoorAnimPalettes_JohtoGeneral,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Sliding,
+        .tileset = &gTileset_JohtoGeneral,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoPokeCenter,
+        .palettes = sDoorAnimPalettes_JohtoPokeCenter,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Gym,
+        .tileset = &gTileset_JohtoGeneral,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGym,
+        .palettes = sDoorAnimPalettes_JohtoGym,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door,
+        .tileset = &gTileset_JohtoSouth,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGeneral,
+        .palettes = sDoorAnimPalettes_JohtoGeneral,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Sliding,
+        .tileset = &gTileset_JohtoSouth,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoPokeCenter,
+        .palettes = sDoorAnimPalettes_JohtoPokeCenter,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Gym,
+        .tileset = &gTileset_JohtoSouth,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGym,
+        .palettes = sDoorAnimPalettes_JohtoGym,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door,
+        .tileset = &gTileset_JohtoNorthEast,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGeneral,
+        .palettes = sDoorAnimPalettes_JohtoGeneral,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Sliding,
+        .tileset = &gTileset_JohtoNorthEast,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoPokeCenter,
+        .palettes = sDoorAnimPalettes_JohtoPokeCenter,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Gym,
+        .tileset = &gTileset_JohtoNorthEast,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGym,
+        .palettes = sDoorAnimPalettes_JohtoGym,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door,
+        .tileset = &gTileset_JohtoNorthWest,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGeneral,
+        .palettes = sDoorAnimPalettes_JohtoGeneral,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Sliding,
+        .tileset = &gTileset_JohtoNorthWest,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoPokeCenter,
+        .palettes = sDoorAnimPalettes_JohtoPokeCenter,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Gym,
+        .tileset = &gTileset_JohtoNorthWest,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGym,
+        .palettes = sDoorAnimPalettes_JohtoGym,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door,
+        .tileset = &gTileset_JohtoBuilding,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGeneral,
+        .palettes = sDoorAnimPalettes_JohtoGeneral,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Sliding,
+        .tileset = &gTileset_JohtoBuilding,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoPokeCenter,
+        .palettes = sDoorAnimPalettes_JohtoPokeCenter,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Gym,
+        .tileset = &gTileset_JohtoBuilding,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGym,
+        .palettes = sDoorAnimPalettes_JohtoGym,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door,
+        .tileset = &gTileset_JohtoKantoGeneral,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGeneral,
+        .palettes = sDoorAnimPalettes_JohtoGeneral,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Sliding,
+        .tileset = &gTileset_JohtoKantoGeneral,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoPokeCenter,
+        .palettes = sDoorAnimPalettes_JohtoPokeCenter,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Johto_General_Door_Gym,
+        .tileset = &gTileset_JohtoKantoGeneral,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_JohtoGym,
+        .palettes = sDoorAnimPalettes_JohtoGym,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Goldenrod_Door,
+        .tileset = &gTileset_Goldenrod_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_Goldenrod,
+        .palettes = sDoorAnimPalettes_Johto_Goldenrod,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_NewBarkTown_Door_Yellow,
+        .tileset = &gTileset_NewBarkTown_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_NewBarkTownYellow,
+        .palettes = sDoorAnimPalettes_Johto_NewBarkTownYellow,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_NewBarkTown_Door_Red,
+        .tileset = &gTileset_NewBarkTown_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_NewBarkTownRed,
+        .palettes = sDoorAnimPalettes_Johto_NewBarkTownRed,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_NewBarkTown_Door_Blue,
+        .tileset = &gTileset_NewBarkTown_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_HnsCerulean,
+        .palettes = sDoorAnimPalettes_Johto_NewBarkTownBlue,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_AzaleaTown_Door,
+        .tileset = &gTileset_AzaleaTown_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_NewBarkTownYellow,
+        .palettes = sDoorAnimPalettes_Johto_Azalea,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_MahoganyTown_Door,
+        .tileset = &gTileset_MahoganyTown_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_NewBarkTownYellow,
+        .palettes = sDoorAnimPalettes_Johto_Azalea,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_CianwoodCity_Door,
+        .tileset = &gTileset_CianwoodCity_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_Cianwood,
+        .palettes = sDoorAnimPalettes_Johto_Cianwood,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_ViridianCity_Door_Johto,
+        .tileset = &gTileset_ViridianCity_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_HnsViridian,
+        .palettes = sDoorAnimPalettes_Johto_ViridianHns,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_ViridianCity_Door_Johto,
+        .tileset = &gTileset_ViridianCity_NorthEast_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_HnsViridian,
+        .palettes = sDoorAnimPalettes_Johto_ViridianHns,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_OlivineCity_Door_Vermilion,
+        .tileset = &gTileset_OlivineCity_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_HnsVermilion,
+        .palettes = sDoorAnimPalettes_Johto_VermilionHns,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_SafariZoneJohto_Door,
+        .tileset = &gTileset_SafariZoneJohto_General_Johto,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_HnsSafariZone,
+        .palettes = sDoorAnimPalettes_JohtoSafariZone,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_SafariZoneJohto_Door,
+        .tileset = &gTileset_SafariZoneJohto_Johto,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_HnsSafariZone,
+        .palettes = sDoorAnimPalettes_JohtoSafariZone,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_CherrygroveCity_Door_Red,
+        .tileset = &gTileset_CherrygroveCity_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_NewBarkTownRed,
+        .palettes = sDoorAnimPalettes_Johto_CherrygroveRed,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_CherrygroveCity_Door_Red,
+        .tileset = &gTileset_CherrygroveCity_NorthEast_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_NewBarkTownRed,
+        .palettes = sDoorAnimPalettes_Johto_CherrygroveRed,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_VioletCity_Dojo_Door,
+        .tileset = &gTileset_VioletCity_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_DojoDoor,
+        .palettes = sDoorAnimPalettes_Johto_VioletDojo,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_EcruteakCity_Door,
+        .tileset = &gTileset_Ecruteak_City_General_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_DojoDoorEcruteak,
+        .palettes = sDoorAnimPalettes_Johto_EcruteakDojo,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_EcruteakCity_Door,
+        .tileset = &gTileset_Ecruteak_City_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_DojoDoorEcruteak,
+        .palettes = sDoorAnimPalettes_Johto_EcruteakDojo,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_BellchimeTrail_Door,
+        .tileset = &gTileset_BellchimeTrail_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_DojoDoorEcruteak,
+        .palettes = sDoorAnimPalettes_Johto_EcruteakDojo,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_OlivineCity_Door,
+        .tileset = &gTileset_OlivineCity_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_Olivine,
+        .palettes = sDoorAnimPalettes_Johto_Olivine,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Blackthorn_Door,
+        .tileset = &gTileset_Blackthorn_General_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_BlackthornCity,
+        .palettes = sDoorAnimPalettes_Johto_Blackthorn,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_Blackthorn_Door,
+        .tileset = &gTileset_Blackthorn_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_BlackthornCity,
+        .palettes = sDoorAnimPalettes_Johto_Blackthorn,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_DepartmentStore_Door,
+        .tileset = &gTileset_DepartmentStore_Johto,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_HnsDeptStoreElevator,
+        .palettes = sDoorAnimPalettes_Johto_DeptStoreHns,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_GoldenrodUnderground_Elevator,
+        .tileset = &gTileset_GoldenrodUndergroundTunnel_Johto,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_RocketElevator,
+        .palettes = sDoorAnimPalettes_Johto_RocketElevator,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_GoldenrodUnderground_Elevator,
+        .tileset = &gTileset_Goldenrod_Underground_Storage_Johto,
+        .sound = DOOR_SOUND_SLIDING,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_RocketElevator,
+        .palettes = sDoorAnimPalettes_Johto_RocketElevator,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_SSAqua_Door,
+        .tileset = &gTileset_ssaqua_General_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_SSAqua,
+        .palettes = sDoorAnimPalettes_Johto_SSAqua,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_SSAqua_Door,
+        .tileset = &gTileset_ssaqua_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_SSAqua,
+        .palettes = sDoorAnimPalettes_Johto_SSAqua,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_DragonDen_Shrine_Door,
+        .tileset = &gTileset_Cave_DragonsDen_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_DojoDoor,
+        .palettes = sDoorAnimPalettes_Johto_DragonsDenShrine,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
+    {
+        .metatileNum = METATILE_DragonDen_Shrine_Door,
+        .tileset = &gTileset_Cave_DragonsDen_NorthEast_Johto,
+        .sound = DOOR_SOUND_NORMAL,
+        .size = DOOR_SIZE_1x1,
+        .tiles = sDoorAnimTiles_Johto_DojoDoor,
+        .palettes = sDoorAnimPalettes_Johto_DragonsDenShrine,
+        .tileStart = DOOR_TILE_START_JOHTO
+    },
     {},
 };
 
@@ -1002,13 +1462,19 @@ static const struct DoorGraphics sDoorAnimGraphicsTable[] =
 //       animation is played they will be overwritten.
 #define DOOR_TILE_START_SIZE1 (NUM_TILES_TOTAL - 8)
 #define DOOR_TILE_START_SIZE2 (NUM_TILES_TOTAL - 16)
+static u16 GetDoorTileStart(const struct DoorGraphics *gfx)
+{
+    if (gfx->tileStart != 0)
+        return gfx->tileStart;
+    if (gfx->size == DOOR_SIZE_2x2_LEFT || gfx->size == DOOR_SIZE_2x2_RIGHT)
+        return DOOR_TILE_START_SIZE2;
+    return DOOR_TILE_START_SIZE1;
+}
 
 static void CopyDoorTilesToVram(const struct DoorGraphics *gfx, const struct DoorAnimFrame *frame)
 {
-    if (gfx->size == DOOR_SIZE_2x2_LEFT || gfx->size == DOOR_SIZE_2x2_RIGHT)
-        CpuFastCopy(gfx->tiles + frame->offset, (void *)(VRAM + TILE_OFFSET_4BPP(DOOR_TILE_START_SIZE2)), 16 * TILE_SIZE_4BPP);
-    else
-        CpuFastCopy(gfx->tiles + frame->offset, (void *)(VRAM + TILE_OFFSET_4BPP(DOOR_TILE_START_SIZE1)), 8 * TILE_SIZE_4BPP);
+    u32 tileCount = (gfx->size == DOOR_SIZE_2x2_LEFT || gfx->size == DOOR_SIZE_2x2_RIGHT) ? 16 : 8;
+    CpuFastCopy(gfx->tiles + frame->offset, (void *)(VRAM + TILE_OFFSET_4BPP(GetDoorTileStart(gfx))), tileCount * TILE_SIZE_4BPP);
 }
 
 static void BuildDoorTiles(u16 *tiles, u16 tileNum, const u8 *paletteNums)
@@ -1034,55 +1500,56 @@ static void BuildDoorTiles(u16 *tiles, u16 tileNum, const u8 *paletteNums)
 static void DrawCurrentDoorAnimFrame(const struct DoorGraphics *gfx, u32 x, u32 y, const u8 *paletteNums)
 {
     u16 tiles[24];
+    u16 tileStart = GetDoorTileStart(gfx);
 
     switch (gfx->size)
     {
     case DOOR_SIZE_2x2_LEFT:
         // Top left metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 0, &paletteNums[0]);
+        BuildDoorTiles(&tiles[8], tileStart + 0, &paletteNums[0]);
         DrawDoorMetatileAt(x, y - 1, &tiles[8]);
 
         // Bottom left metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 4, &paletteNums[4]);
+        BuildDoorTiles(&tiles[8], tileStart + 4, &paletteNums[4]);
         DrawDoorMetatileAt(x, y, &tiles[8]);
 
         // Top right metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 8, &paletteNums[8]);
+        BuildDoorTiles(&tiles[8], tileStart + 8, &paletteNums[8]);
         DrawDoorMetatileAt(x + 1, y - 1, &tiles[8]);
 
         // Bottom right metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 12, &paletteNums[12]);
+        BuildDoorTiles(&tiles[8], tileStart + 12, &paletteNums[12]);
         DrawDoorMetatileAt(x + 1, y, &tiles[8]);
         break;
     case DOOR_SIZE_2x2_RIGHT:
         // Top left metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 0, &paletteNums[0]);
+        BuildDoorTiles(&tiles[8], tileStart + 0, &paletteNums[0]);
         DrawDoorMetatileAt(x - 1, y - 1, &tiles[8]);
 
         // Bottom left metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 4, &paletteNums[4]);
+        BuildDoorTiles(&tiles[8], tileStart + 4, &paletteNums[4]);
         DrawDoorMetatileAt(x - 1, y, &tiles[8]);
 
         // Top right metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 8, &paletteNums[8]);
+        BuildDoorTiles(&tiles[8], tileStart + 8, &paletteNums[8]);
         DrawDoorMetatileAt(x, y - 1, &tiles[8]);
 
         // Bottom right metatile
-        BuildDoorTiles(&tiles[8], DOOR_TILE_START_SIZE2 + 12, &paletteNums[12]);
+        BuildDoorTiles(&tiles[8], tileStart + 12, &paletteNums[12]);
         DrawDoorMetatileAt(x, y, &tiles[8]);
         break;
     case DOOR_SIZE_1x2:
         // Top metatile
-        BuildDoorTiles(&tiles[0], DOOR_TILE_START_SIZE1 + 0, &paletteNums[0]);
+        BuildDoorTiles(&tiles[0], tileStart + 0, &paletteNums[0]);
         DrawDoorMetatileAt(x, y - 1, &tiles[0]);
 
         // Bottom metatile
-        BuildDoorTiles(&tiles[0], DOOR_TILE_START_SIZE1 + 4, &paletteNums[4]);
+        BuildDoorTiles(&tiles[0], tileStart + 4, &paletteNums[4]);
         DrawDoorMetatileAt(x, y, &tiles[0]);
         break;
     default:
     case DOOR_SIZE_1x1:
-        BuildDoorTiles(&tiles[0], DOOR_TILE_START_SIZE1 + 0, &paletteNums[0]);
+        BuildDoorTiles(&tiles[0], tileStart + 0, &paletteNums[0]);
         DrawDoorMetatileAt(x, y, &tiles[0]);
         break;
     }

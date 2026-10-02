@@ -1082,4 +1082,31 @@
 #define METATILE_RSMossdeepGym_Switch_Down           0x239
 #define METATILE_RSMossdeepGym_Switch_Up             0x238
 
+
+// Johto metatile labels (GS Stage 8)
+#define METATILE_AzaleaTown_Door                                     0x2A2
+#define METATILE_BellchimeTrail_Door                                 0x333
+#define METATILE_Blackthorn_Door                                     0x291
+#define METATILE_CherrygroveCity_Door_Red                            0x2EB
+#define METATILE_CianwoodCity_Door                                   0x29A
+#define METATILE_DepartmentStore_Door                                0x28D
+#define METATILE_DragonDen_Shrine_Door                               0x2FF
+#define METATILE_EcruteakCity_Door                                   0x333
+#define METATILE_GoldenrodUnderground_Elevator                       0x2AB
+#define METATILE_Goldenrod_Door                                      0x284
+#define METATILE_Johto_General_Door                                  0x03D
+#define METATILE_Johto_General_Door_Gym                              0x15B
+#define METATILE_Johto_General_Door_Sliding                          0x062
+#define METATILE_MahoganyTown_Door                                   0x2A2
+#define METATILE_NewBarkTown_Door_Blue                               0x2CB
+#define METATILE_NewBarkTown_Door_Red                                0x2BD
+#define METATILE_NewBarkTown_Door_Yellow                             0x309
+#define METATILE_OlivineCity_Door                                    0x312
+#define METATILE_OlivineCity_Door_Vermilion                          0x29E
+#define METATILE_R26_21_Broken_Window                                0x32B
+#define METATILE_SSAqua_Door                                         0x281
+#define METATILE_SafariZoneJohto_Door                                0x2D2
+#define METATILE_VioletCity_Dojo_Door                                0x32B
+#define METATILE_ViridianCity_Door_Johto                             0x31B
+
 #endif // GUARD_METATILE_LABELS_H

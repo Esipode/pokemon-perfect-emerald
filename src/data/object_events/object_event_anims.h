@@ -1689,3 +1689,50 @@ static const union AnimCmd *const sAnimTable_RedGreenVSSeeker[] = {
 static const union AnimCmd *const sAnimTable_RedGreenVSSeekerBike[] = {
     sAnim_VSSeekerBike,
 };
+
+// Johto overworld sprites (Stage 9)
+static const union AnimCmd *const sAnimTable_TowerBeam_Johto[] = {
+    [ANIM_STD_FACE_SOUTH] = sAnim_RayquazaFaceSouth,
+    [ANIM_STD_FACE_NORTH] = sAnim_RayquazaFaceNorth,
+    [ANIM_STD_FACE_WEST] = sAnim_RayquazaFaceWest,
+    [ANIM_STD_FACE_EAST] = sAnim_RayquazaFaceEast,
+    [ANIM_STD_GO_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_WEST] = sAnim_RayquazaCoiledMouthOpen,
+    [ANIM_STD_GO_EAST] = sAnim_RayquazaNormal,
+    [ANIM_STD_GO_FAST_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_FAST_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_FAST_WEST] = sAnim_RayquazaCoiledAwake,
+    [ANIM_STD_GO_FAST_EAST] = sAnim_RayquazaNormal,
+    [ANIM_STD_GO_FASTER_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_FASTER_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_FASTER_WEST] = sAnim_RayquazaCoiledMouthOpen,
+    [ANIM_STD_GO_FASTER_EAST] = sAnim_RayquazaNormal,
+    [ANIM_STD_GO_FASTEST_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_FASTEST_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_FASTEST_WEST] = sAnim_RayquazaCoiledMouthOpen,
+    [ANIM_STD_GO_FASTEST_EAST] = sAnim_RayquazaNormal,
+};
+
+static const union AnimCmd *const sAnimTable_Whirlpool_Johto[] = {
+    [ANIM_STD_FACE_SOUTH] = sAnim_RayquazaFaceSouth,
+    [ANIM_STD_FACE_NORTH] = sAnim_RayquazaFaceNorth,
+    [ANIM_STD_FACE_WEST] = sAnim_RayquazaFaceWest,
+    [ANIM_STD_FACE_EAST] = sAnim_RayquazaFaceEast,
+    [ANIM_STD_GO_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_WEST] = sAnim_RayquazaCoiledMouthOpen,
+    [ANIM_STD_GO_EAST] = sAnim_RayquazaNormal,
+    [ANIM_STD_GO_FAST_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_FAST_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_FAST_WEST] = sAnim_RayquazaCoiledAwake,
+    [ANIM_STD_GO_FAST_EAST] = sAnim_RayquazaNormal,
+    [ANIM_STD_GO_FASTER_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_FASTER_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_FASTER_WEST] = sAnim_RayquazaCoiledMouthOpen,
+    [ANIM_STD_GO_FASTER_EAST] = sAnim_RayquazaNormal,
+    [ANIM_STD_GO_FASTEST_SOUTH] = sAnim_RayquazaCoiledAsleep,
+    [ANIM_STD_GO_FASTEST_NORTH] = sAnim_RayquazaFlyUp,
+    [ANIM_STD_GO_FASTEST_WEST] = sAnim_RayquazaCoiledMouthOpen,
+    [ANIM_STD_GO_FASTEST_EAST] = sAnim_RayquazaNormal,
+};

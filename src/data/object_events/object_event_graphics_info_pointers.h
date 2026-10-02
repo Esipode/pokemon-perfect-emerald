@@ -406,6 +406,106 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Giddy;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_UnusedMauvilleOldMan1;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_UnusedMauvilleOldMan2;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_ApricornTree;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Archer_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Ariana_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_AttendantF_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_AttendantM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_BaldingMan_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_BattleGirl_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Beauty_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Bill_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_BlackBelt_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Boy2_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_BreakableRock_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Bruno_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Bugsy_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_BugCatcher_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Burglar_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Camper_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Captain_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Channeler_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Chuck_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Clair_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_CooltrainerF_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_CooltrainerM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_CuttableTree_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Elm_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Engineer_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Eusine_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Falkner_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_FatMan_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Firebreather_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Fisherman_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Fossil_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GameboyKid_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Gentleman_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Giovanni_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Girl1_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_GymGuy_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Hiker_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_ItemBall_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Janine_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Jasmine_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Juggler_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Karen_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Kimono_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Koga_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Kurt_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_KurtLyingDown_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Lance_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Lass_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LegendaryShadow_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LinkReceptionist_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_LittleBoy_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MartEmployee_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Mom_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Morty_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_MysteryEventDeliveryman_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_NoTailSlowpoke_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_NurseChansey_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Nurse_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Officer_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_OldMan2_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_OldMan_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_OldWoman_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Petrel_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Picnicker_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_ProfOak_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Proton_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Pryce_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_PsychicM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_PushableBoulder_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RedNormal_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Rocker_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RocketF_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_RocketM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Sabrina_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SageElder_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Sage_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Sailor_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_ScientistF_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_ScientistM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_ShinyGyarados_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Silver_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SkierF_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SkierM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SsAqua_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SuperNerd_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SwimmerF_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SwimmerM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SwimmingLapras_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_TowerBeam_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_TrainEast_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Twin_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Whirlpool_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Whitney_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Will_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Woman1_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Woman2_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Woman3_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_WorkerF_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_WorkerM_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Youngster_Johto;
 
 const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM_OBJ_EVENT_GFX] = {
     [OBJ_EVENT_GFX_BRENDAN_NORMAL] =           &gObjectEventGraphicsInfo_BrendanNormal,
@@ -801,6 +901,106 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_DEOXYS_A]                 = &gObjectEventGraphicsInfo_DeoxysA,
     [OBJ_EVENT_GFX_DEOXYS_N]                 = &gObjectEventGraphicsInfo_DeoxysN,
     [OBJ_EVENT_GFX_SS_ANNE]                  = &gObjectEventGraphicsInfo_SSAnne,
+    [OBJ_EVENT_GFX_ARCHER_JOHTO] = &gObjectEventGraphicsInfo_Archer_Johto,
+    [OBJ_EVENT_GFX_ARIANA_JOHTO] = &gObjectEventGraphicsInfo_Ariana_Johto,
+    [OBJ_EVENT_GFX_ATTENDANT_F_JOHTO] = &gObjectEventGraphicsInfo_AttendantF_Johto,
+    [OBJ_EVENT_GFX_ATTENDANT_M_JOHTO] = &gObjectEventGraphicsInfo_AttendantM_Johto,
+    [OBJ_EVENT_GFX_BALDING_MAN_JOHTO] = &gObjectEventGraphicsInfo_BaldingMan_Johto,
+    [OBJ_EVENT_GFX_BATTLE_GIRL_JOHTO] = &gObjectEventGraphicsInfo_BattleGirl_Johto,
+    [OBJ_EVENT_GFX_BEAUTY_JOHTO] = &gObjectEventGraphicsInfo_Beauty_Johto,
+    [OBJ_EVENT_GFX_BILL_JOHTO] = &gObjectEventGraphicsInfo_Bill_Johto,
+    [OBJ_EVENT_GFX_BLACK_BELT_JOHTO] = &gObjectEventGraphicsInfo_BlackBelt_Johto,
+    [OBJ_EVENT_GFX_BOY_2_JOHTO] = &gObjectEventGraphicsInfo_Boy2_Johto,
+    [OBJ_EVENT_GFX_BREAKABLE_ROCK_JOHTO] = &gObjectEventGraphicsInfo_BreakableRock_Johto,
+    [OBJ_EVENT_GFX_BRUNO_JOHTO] = &gObjectEventGraphicsInfo_Bruno_Johto,
+    [OBJ_EVENT_GFX_BUGSY_JOHTO] = &gObjectEventGraphicsInfo_Bugsy_Johto,
+    [OBJ_EVENT_GFX_BUG_CATCHER_JOHTO] = &gObjectEventGraphicsInfo_BugCatcher_Johto,
+    [OBJ_EVENT_GFX_BURGLAR_JOHTO] = &gObjectEventGraphicsInfo_Burglar_Johto,
+    [OBJ_EVENT_GFX_CAMPER_JOHTO] = &gObjectEventGraphicsInfo_Camper_Johto,
+    [OBJ_EVENT_GFX_CAPTAIN_JOHTO] = &gObjectEventGraphicsInfo_Captain_Johto,
+    [OBJ_EVENT_GFX_CHANNELER_JOHTO] = &gObjectEventGraphicsInfo_Channeler_Johto,
+    [OBJ_EVENT_GFX_CHUCK_JOHTO] = &gObjectEventGraphicsInfo_Chuck_Johto,
+    [OBJ_EVENT_GFX_CLAIR_JOHTO] = &gObjectEventGraphicsInfo_Clair_Johto,
+    [OBJ_EVENT_GFX_COOLTRAINER_F_JOHTO] = &gObjectEventGraphicsInfo_CooltrainerF_Johto,
+    [OBJ_EVENT_GFX_COOLTRAINER_M_JOHTO] = &gObjectEventGraphicsInfo_CooltrainerM_Johto,
+    [OBJ_EVENT_GFX_CUTTABLE_TREE_JOHTO] = &gObjectEventGraphicsInfo_CuttableTree_Johto,
+    [OBJ_EVENT_GFX_ELM_JOHTO] = &gObjectEventGraphicsInfo_Elm_Johto,
+    [OBJ_EVENT_GFX_ENGINEER_JOHTO] = &gObjectEventGraphicsInfo_Engineer_Johto,
+    [OBJ_EVENT_GFX_EUSINE_JOHTO] = &gObjectEventGraphicsInfo_Eusine_Johto,
+    [OBJ_EVENT_GFX_FALKNER_JOHTO] = &gObjectEventGraphicsInfo_Falkner_Johto,
+    [OBJ_EVENT_GFX_FAT_MAN_JOHTO] = &gObjectEventGraphicsInfo_FatMan_Johto,
+    [OBJ_EVENT_GFX_FIREBREATHER_JOHTO] = &gObjectEventGraphicsInfo_Firebreather_Johto,
+    [OBJ_EVENT_GFX_FISHERMAN_JOHTO] = &gObjectEventGraphicsInfo_Fisherman_Johto,
+    [OBJ_EVENT_GFX_FOSSIL_JOHTO] = &gObjectEventGraphicsInfo_Fossil_Johto,
+    [OBJ_EVENT_GFX_GAMEBOY_KID_JOHTO] = &gObjectEventGraphicsInfo_GameboyKid_Johto,
+    [OBJ_EVENT_GFX_GENTLEMAN_JOHTO] = &gObjectEventGraphicsInfo_Gentleman_Johto,
+    [OBJ_EVENT_GFX_GIOVANNI_JOHTO] = &gObjectEventGraphicsInfo_Giovanni_Johto,
+    [OBJ_EVENT_GFX_GIRL_1_JOHTO] = &gObjectEventGraphicsInfo_Girl1_Johto,
+    [OBJ_EVENT_GFX_GYM_GUY_JOHTO] = &gObjectEventGraphicsInfo_GymGuy_Johto,
+    [OBJ_EVENT_GFX_HIKER_JOHTO] = &gObjectEventGraphicsInfo_Hiker_Johto,
+    [OBJ_EVENT_GFX_ITEM_BALL_JOHTO] = &gObjectEventGraphicsInfo_ItemBall_Johto,
+    [OBJ_EVENT_GFX_JANINE_JOHTO] = &gObjectEventGraphicsInfo_Janine_Johto,
+    [OBJ_EVENT_GFX_JASMINE_JOHTO] = &gObjectEventGraphicsInfo_Jasmine_Johto,
+    [OBJ_EVENT_GFX_JUGGLER_JOHTO] = &gObjectEventGraphicsInfo_Juggler_Johto,
+    [OBJ_EVENT_GFX_KAREN_JOHTO] = &gObjectEventGraphicsInfo_Karen_Johto,
+    [OBJ_EVENT_GFX_KIMONO_JOHTO] = &gObjectEventGraphicsInfo_Kimono_Johto,
+    [OBJ_EVENT_GFX_KOGA_JOHTO] = &gObjectEventGraphicsInfo_Koga_Johto,
+    [OBJ_EVENT_GFX_KURT_JOHTO] = &gObjectEventGraphicsInfo_Kurt_Johto,
+    [OBJ_EVENT_GFX_KURT_LYING_DOWN_JOHTO] = &gObjectEventGraphicsInfo_KurtLyingDown_Johto,
+    [OBJ_EVENT_GFX_LANCE_JOHTO] = &gObjectEventGraphicsInfo_Lance_Johto,
+    [OBJ_EVENT_GFX_LASS_JOHTO] = &gObjectEventGraphicsInfo_Lass_Johto,
+    [OBJ_EVENT_GFX_LEGENDARY_SHADOW_JOHTO] = &gObjectEventGraphicsInfo_LegendaryShadow_Johto,
+    [OBJ_EVENT_GFX_LINK_RECEPTIONIST_JOHTO] = &gObjectEventGraphicsInfo_LinkReceptionist_Johto,
+    [OBJ_EVENT_GFX_LITTLE_BOY_JOHTO] = &gObjectEventGraphicsInfo_LittleBoy_Johto,
+    [OBJ_EVENT_GFX_MART_EMPLOYEE_JOHTO] = &gObjectEventGraphicsInfo_MartEmployee_Johto,
+    [OBJ_EVENT_GFX_MOM_JOHTO] = &gObjectEventGraphicsInfo_Mom_Johto,
+    [OBJ_EVENT_GFX_MORTY_JOHTO] = &gObjectEventGraphicsInfo_Morty_Johto,
+    [OBJ_EVENT_GFX_MYSTERY_EVENT_DELIVERYMAN_JOHTO] = &gObjectEventGraphicsInfo_MysteryEventDeliveryman_Johto,
+    [OBJ_EVENT_GFX_NO_TAIL_SLOWPOKE_JOHTO] = &gObjectEventGraphicsInfo_NoTailSlowpoke_Johto,
+    [OBJ_EVENT_GFX_NURSE_CHANSEY_JOHTO] = &gObjectEventGraphicsInfo_NurseChansey_Johto,
+    [OBJ_EVENT_GFX_NURSE_JOHTO] = &gObjectEventGraphicsInfo_Nurse_Johto,
+    [OBJ_EVENT_GFX_OFFICER_JOHTO] = &gObjectEventGraphicsInfo_Officer_Johto,
+    [OBJ_EVENT_GFX_OLD_MAN_2_JOHTO] = &gObjectEventGraphicsInfo_OldMan2_Johto,
+    [OBJ_EVENT_GFX_OLD_MAN_JOHTO] = &gObjectEventGraphicsInfo_OldMan_Johto,
+    [OBJ_EVENT_GFX_OLD_WOMAN_JOHTO] = &gObjectEventGraphicsInfo_OldWoman_Johto,
+    [OBJ_EVENT_GFX_PETREL_JOHTO] = &gObjectEventGraphicsInfo_Petrel_Johto,
+    [OBJ_EVENT_GFX_PICNICKER_JOHTO] = &gObjectEventGraphicsInfo_Picnicker_Johto,
+    [OBJ_EVENT_GFX_PROF_OAK_JOHTO] = &gObjectEventGraphicsInfo_ProfOak_Johto,
+    [OBJ_EVENT_GFX_PROTON_JOHTO] = &gObjectEventGraphicsInfo_Proton_Johto,
+    [OBJ_EVENT_GFX_PRYCE_JOHTO] = &gObjectEventGraphicsInfo_Pryce_Johto,
+    [OBJ_EVENT_GFX_PSYCHIC_M_JOHTO] = &gObjectEventGraphicsInfo_PsychicM_Johto,
+    [OBJ_EVENT_GFX_PUSHABLE_BOULDER_JOHTO] = &gObjectEventGraphicsInfo_PushableBoulder_Johto,
+    [OBJ_EVENT_GFX_RED_NORMAL_JOHTO] = &gObjectEventGraphicsInfo_RedNormal_Johto,
+    [OBJ_EVENT_GFX_ROCKER_JOHTO] = &gObjectEventGraphicsInfo_Rocker_Johto,
+    [OBJ_EVENT_GFX_ROCKET_F_JOHTO] = &gObjectEventGraphicsInfo_RocketF_Johto,
+    [OBJ_EVENT_GFX_ROCKET_M_JOHTO] = &gObjectEventGraphicsInfo_RocketM_Johto,
+    [OBJ_EVENT_GFX_SABRINA_JOHTO] = &gObjectEventGraphicsInfo_Sabrina_Johto,
+    [OBJ_EVENT_GFX_SAGE_ELDER_JOHTO] = &gObjectEventGraphicsInfo_SageElder_Johto,
+    [OBJ_EVENT_GFX_SAGE_JOHTO] = &gObjectEventGraphicsInfo_Sage_Johto,
+    [OBJ_EVENT_GFX_SAILOR_JOHTO] = &gObjectEventGraphicsInfo_Sailor_Johto,
+    [OBJ_EVENT_GFX_SCIENTIST_F_JOHTO] = &gObjectEventGraphicsInfo_ScientistF_Johto,
+    [OBJ_EVENT_GFX_SCIENTIST_M_JOHTO] = &gObjectEventGraphicsInfo_ScientistM_Johto,
+    [OBJ_EVENT_GFX_SHINY_GYARADOS_JOHTO] = &gObjectEventGraphicsInfo_ShinyGyarados_Johto,
+    [OBJ_EVENT_GFX_SILVER_JOHTO] = &gObjectEventGraphicsInfo_Silver_Johto,
+    [OBJ_EVENT_GFX_SKIER_F_JOHTO] = &gObjectEventGraphicsInfo_SkierF_Johto,
+    [OBJ_EVENT_GFX_SKIER_M_JOHTO] = &gObjectEventGraphicsInfo_SkierM_Johto,
+    [OBJ_EVENT_GFX_SS_AQUA_JOHTO] = &gObjectEventGraphicsInfo_SsAqua_Johto,
+    [OBJ_EVENT_GFX_SUPER_NERD_JOHTO] = &gObjectEventGraphicsInfo_SuperNerd_Johto,
+    [OBJ_EVENT_GFX_SWIMMER_F_JOHTO] = &gObjectEventGraphicsInfo_SwimmerF_Johto,
+    [OBJ_EVENT_GFX_SWIMMER_M_JOHTO] = &gObjectEventGraphicsInfo_SwimmerM_Johto,
+    [OBJ_EVENT_GFX_SWIMMING_LAPRAS_JOHTO] = &gObjectEventGraphicsInfo_SwimmingLapras_Johto,
+    [OBJ_EVENT_GFX_TOWER_BEAM_JOHTO] = &gObjectEventGraphicsInfo_TowerBeam_Johto,
+    [OBJ_EVENT_GFX_TRAIN_EAST_JOHTO] = &gObjectEventGraphicsInfo_TrainEast_Johto,
+    [OBJ_EVENT_GFX_TWIN_JOHTO] = &gObjectEventGraphicsInfo_Twin_Johto,
+    [OBJ_EVENT_GFX_WHIRLPOOL_JOHTO] = &gObjectEventGraphicsInfo_Whirlpool_Johto,
+    [OBJ_EVENT_GFX_WHITNEY_JOHTO] = &gObjectEventGraphicsInfo_Whitney_Johto,
+    [OBJ_EVENT_GFX_WILL_JOHTO] = &gObjectEventGraphicsInfo_Will_Johto,
+    [OBJ_EVENT_GFX_WOMAN_1_JOHTO] = &gObjectEventGraphicsInfo_Woman1_Johto,
+    [OBJ_EVENT_GFX_WOMAN_2_JOHTO] = &gObjectEventGraphicsInfo_Woman2_Johto,
+    [OBJ_EVENT_GFX_WOMAN_3_JOHTO] = &gObjectEventGraphicsInfo_Woman3_Johto,
+    [OBJ_EVENT_GFX_WORKER_F_JOHTO] = &gObjectEventGraphicsInfo_WorkerF_Johto,
+    [OBJ_EVENT_GFX_WORKER_M_JOHTO] = &gObjectEventGraphicsInfo_WorkerM_Johto,
+    [OBJ_EVENT_GFX_YOUNGSTER_JOHTO] = &gObjectEventGraphicsInfo_Youngster_Johto,
 };
 
 const struct ObjectEventGraphicsInfo *const gMauvilleOldManGraphicsInfoPointers[] = {

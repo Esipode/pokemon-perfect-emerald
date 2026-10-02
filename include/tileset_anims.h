@@ -40,4 +40,11 @@ void InitTilesetAnim_CeladonGym(void);
 void InitTilesetAnim_SilphCo(void);
 void InitTilesetAnim_MtEmber(void);
 
+// Johto
+void InitTilesetAnim_JohtoGeneral(void);
+void InitTilesetAnim_NationalPark(void);
+void InitTilesetAnim_EcruteakTheater(void);
+void InitTilesetAnim_AzaleaTownGym(void);
+void InitTilesetAnim_BlackthornGym(void);
+
 #endif // GUARD_TILESET_ANIMS_H
