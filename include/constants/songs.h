@@ -547,6 +547,74 @@
 #define PH_NURSE_HELD               608
 #define PH_NURSE_SOLO               609
 
+// HGSS music (Johto)
+#define HG_MUSIC_START             (PH_NURSE_SOLO + 1)
+
+#define MUS_HG_HALL_OF_FAME          (HG_MUSIC_START + 0x00)  // The Hall of Fame
+#define MUS_HG_NEW_BARK              (HG_MUSIC_START + 0x01)  // New Bark Town
+#define MUS_HG_CHERRYGROVE           (HG_MUSIC_START + 0x02)  // Cherrygrove City
+#define MUS_HG_VIOLET                (HG_MUSIC_START + 0x03)  // Violet City
+#define MUS_HG_AZALEA                (HG_MUSIC_START + 0x04)  // Azalea Town
+#define MUS_HG_GOLDENROD             (HG_MUSIC_START + 0x05)  // Goldenrod City
+#define MUS_HG_ECRUTEAK              (HG_MUSIC_START + 0x06)  // Ecruteak City
+#define MUS_HG_CIANWOOD              (HG_MUSIC_START + 0x07)  // Cianwood City
+#define MUS_HG_ROUTE29               (HG_MUSIC_START + 0x08)  // Route 29
+#define MUS_HG_ROUTE30               (HG_MUSIC_START + 0x09)  // Route 30
+#define MUS_HG_ROUTE34               (HG_MUSIC_START + 0x0A)  // Route 34
+#define MUS_HG_ROUTE38               (HG_MUSIC_START + 0x0B)  // Route 38
+#define MUS_HG_ROUTE42               (HG_MUSIC_START + 0x0C)  // Route 42
+#define MUS_HG_ROUTE26               (HG_MUSIC_START + 0x0D)  // Route 26
+#define MUS_HG_POKE_CENTER           (HG_MUSIC_START + 0x0E)  // Pokémon Center
+#define MUS_HG_POKE_MART             (HG_MUSIC_START + 0x0F)  // Poké Mart
+#define MUS_HG_GYM                   (HG_MUSIC_START + 0x10)  // Pokémon Gym
+#define MUS_HG_ELM_LAB               (HG_MUSIC_START + 0x11)  // Elm Pokémon Lab
+#define MUS_HG_OAK                   (HG_MUSIC_START + 0x12)  // Professor Oak
+#define MUS_HG_DANCE_THEATER         (HG_MUSIC_START + 0x13)  // Ecruteak Dance Theater
+#define MUS_HG_GAME_CORNER           (HG_MUSIC_START + 0x14)  // Goldenrod Game Corner
+#define MUS_HG_SPROUT_TOWER          (HG_MUSIC_START + 0x15)  // Sprout Tower
+#define MUS_HG_UNION_CAVE            (HG_MUSIC_START + 0x16)  // Union Cave
+#define MUS_HG_RUINS_OF_ALPH         (HG_MUSIC_START + 0x17)  // Ruins of Alph
+#define MUS_HG_NATIONAL_PARK         (HG_MUSIC_START + 0x18)  // National Park
+#define MUS_HG_BURNED_TOWER          (HG_MUSIC_START + 0x19)  // Burned Tower
+#define MUS_HG_BELL_TOWER            (HG_MUSIC_START + 0x1A)  // Bell Tower
+#define MUS_HG_LIGHTHOUSE            (HG_MUSIC_START + 0x1B)  // Olivine Lighthouse
+#define MUS_HG_TEAM_ROCKET_HQ        (HG_MUSIC_START + 0x1C)  // Team Rocket HQ
+#define MUS_HG_ICE_PATH              (HG_MUSIC_START + 0x1D)  // Ice Path
+#define MUS_HG_DRAGONS_DEN           (HG_MUSIC_START + 0x1E)  // Dragon's Den
+#define MUS_HG_VICTORY_ROAD          (HG_MUSIC_START + 0x1F)  // Victory Road
+#define MUS_HG_POKEMON_LEAGUE        (HG_MUSIC_START + 0x20)  // The Pokémon League
+#define MUS_HG_FOLLOW_ME_1           (HG_MUSIC_START + 0x21)  // Hurry Along
+#define MUS_HG_FOLLOW_ME_2           (HG_MUSIC_START + 0x22)  // Hurry Along 2
+#define MUS_HG_ENCOUNTER_RIVAL       (HG_MUSIC_START + 0x23)  // A Rival Appears!
+#define MUS_HG_RIVAL_EXIT            (HG_MUSIC_START + 0x24)  // A Rival Appears! (Version 2)
+#define MUS_HG_BUG_CONTEST_PREP      (HG_MUSIC_START + 0x25)  // The Bug-Catching Contest Begins!
+#define MUS_HG_BUG_CATCHING_CONTEST  (HG_MUSIC_START + 0x26)  // The Bug-Catching Contest
+#define MUS_HG_RADIO_ROCKET          (HG_MUSIC_START + 0x27)  // Radio Transmission
+#define MUS_HG_ROCKET_TAKEOVER       (HG_MUSIC_START + 0x28)  // Radio Tower Occupied!
+#define MUS_HG_MAGNET_TRAIN          (HG_MUSIC_START + 0x29)  // Magnet Train
+#define MUS_HG_SS_AQUA               (HG_MUSIC_START + 0x2A)  // S.S. Aqua
+#define MUS_HG_EUSINE                (HG_MUSIC_START + 0x2B)  // Eusine
+#define MUS_HG_CLAIR                 (HG_MUSIC_START + 0x2C)  // Clair
+#define MUS_HG_ENCOUNTER_GIRL_1      (HG_MUSIC_START + 0x2D)  // Trainers' Eyes Meet (Girl 1)
+#define MUS_HG_ENCOUNTER_BOY_1       (HG_MUSIC_START + 0x2E)  // Trainers' Eyes Meet (Boy 1)
+#define MUS_HG_ENCOUNTER_SUSPICIOUS_1 (HG_MUSIC_START + 0x2F)  // Trainers' Eyes Meet (Suspicious Figure 1)
+#define MUS_HG_ENCOUNTER_SAGE        (HG_MUSIC_START + 0x30)  // Trainers' Eyes Meet (Sage)
+#define MUS_HG_ENCOUNTER_KIMONO_GIRL (HG_MUSIC_START + 0x31)  // Trainers' Eyes Meet (Kimono Girl)
+#define MUS_HG_ENCOUNTER_ROCKET      (HG_MUSIC_START + 0x32)  // Trainers' Eyes Meet (Team Rocket)
+#define MUS_HG_ENCOUNTER_GIRL_2      (HG_MUSIC_START + 0x33)  // Trainers' Eyes Meet (Girl 2)
+#define MUS_HG_ENCOUNTER_BOY_2       (HG_MUSIC_START + 0x34)  // Trainers' Eyes Meet (Boy 2)
+#define MUS_HG_ENCOUNTER_SUSPICIOUS_2 (HG_MUSIC_START + 0x35)  // Trainers' Eyes Meet (Suspicious Figure 2)
+#define MUS_HG_VS_GYM_LEADER         (HG_MUSIC_START + 0x36)  // Battle! (Gym Leader - Johto Version)
+#define MUS_HG_VS_CHAMPION           (HG_MUSIC_START + 0x37)  // Battle! (Champion)
+#define MUS_HG_VS_HO_OH              (HG_MUSIC_START + 0x38)  // Battle! (Ho-Oh)
+#define MUS_HG_VS_LUGIA              (HG_MUSIC_START + 0x39)  // Battle! (Lugia)
+#define MUS_HG_ROUTE47               (HG_MUSIC_START + 0x3A)  // Route 47
+#define MUS_HG_SAFARI_ZONE_GATE      (HG_MUSIC_START + 0x3B)  // Safari Zone Gate
+#define MUS_HG_SAFARI_ZONE           (HG_MUSIC_START + 0x3C)  // Safari Zone
+#define MUS_HG_KIMONO_GIRL_DANCE     (HG_MUSIC_START + 0x3D)  // The Dance of Ecruteak
+#define MUS_HG_KIMONO_GIRL           (HG_MUSIC_START + 0x3E)  // Kimono Girl
+#define MUS_HG_OBTAIN_EGG            (HG_MUSIC_START + 0x3F)  // Received a Pokémon Egg!
+
 #define MUS_ROUTE118                0x7FFF  // Map is split into 2 music sections. controlled by GetCurrLocationDefaultMusic().
 
 #define MUS_NONE                    0xFFFF

@@ -34,6 +34,7 @@
 #include "gpu_regs.h"
 #include "item.h"
 #include "lilycove_lady.h"
+#include "limited_party.h"
 #include "main.h"
 #include "map_preview_screen.h"
 #include "menu.h"
@@ -68,6 +69,7 @@
 #include "screen_effects.h"
 #include "battle.h"
 #include "constants/comparison_operators.h"
+#include "constants/easy_chat.h"
 #include "constants/event_objects.h"
 #include "constants/map_types.h"
 #include "constants/party_menu.h"
@@ -4269,5 +4271,397 @@ bool8 Scrcmd_checkdailyseedchance(struct ScriptContext *ctx)
     rng_value_t localRngState = LocalRandomSeed(gSaveBlock1Ptr->dailySeed ^ salt);
     gSpecialVar_Result = (LocalRandom32(&localRngState) % 100) < percent;
 
+    return FALSE;
+}
+
+// Same as applymovement, but never hides the follower.
+bool8 Scrcmd_applymovementnofollower(struct ScriptContext *ctx)
+{
+    u16 localId = VarGet(ScriptReadHalfword(ctx));
+    const u8 *movementScript = (const u8 *)ScriptReadWord(ctx);
+    struct ObjectEvent *objEvent;
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_HARDWARE);
+
+    if ((localId == OBJ_EVENT_ID_FOLLOWER && (objEvent = GetFollowerObject()) && objEvent->frozen)
+            || ((objEvent = &gObjectEvents[GetObjectEventIdByLocalId(localId)]) && IS_OW_MON_OBJ(objEvent)))
+    {
+        ClearObjectEventMovement(objEvent, &gSprites[objEvent->spriteId]);
+        gSprites[objEvent->spriteId].animCmdIndex = 0;
+    }
+
+    gObjectEvents[GetObjectEventIdByLocalId(localId)].directionOverwrite = DIR_NONE;
+    ScriptMovement_StartObjectMovementScript(localId, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup, movementScript);
+    sMovingNpcId = localId;
+    return FALSE;
+}
+
+enum NamedMonGift
+{
+    NAMED_MON_NONE,
+    NAMED_MON_KENYA,
+    NAMED_MON_SHUCKIE,
+    NAMED_MON_EEVEE,
+    NAMED_MON_DRATINI,
+};
+
+#define NAMED_MON_SHUCKIE_REFUSED 3 // removenamedmon: Shuckie is too friendly to hand back
+
+static const u8 sKenyaNickname[] = _("KENYA");
+static const u8 sKenyaOtName[] = _("RUDY");
+static const u8 sShuckieNickname[] = _("SHUCKIE");
+static const u8 sShuckieOtName[] = _("KIRK");
+static const u8 sEeveeOtName[] = _("BILL");
+
+#if FREE_MAIL == FALSE
+static const u16 sKenyaMailWords[MAIL_WORDS_COUNT] = {
+    EC_WORD_YUP, EC_WORD_MAIL, EC_WORD_TIME, EC_WORD_TAKE, EC_WORD_THIS,
+    EC_WORD_POKEMON, EC_WORD_DON_T, EC_WORD_LOSE, EC_WORD_IT
+};
+#endif
+
+// Smallest personality with the given nature whose TID/SID xor makes it shiny.
+static u32 MakeShinyPidWithNature(u16 tid, u16 sid, u8 nature)
+{
+    u16 shinyXor = tid ^ sid;
+
+    for (u32 lo = 0; lo < 0x10000; lo++)
+    {
+        u32 pid = ((u32)(shinyXor ^ lo) << 16) | lo;
+        if (GetNatureFromPersonality(pid) == nature)
+            return pid;
+    }
+    return (u32)shinyXor << 16;
+}
+
+// Gives a fixed gift Pokemon directly to the party (never the PC). VAR_RESULT: MON_GIVEN_TO_PARTY or MON_CANT_GIVE.
+bool8 Scrcmd_givenamedmon(struct ScriptContext *ctx)
+{
+    u16 giftId = ScriptReadHalfword(ctx);
+    enum Species species;
+    u8 level;
+    enum Item item;
+    u32 personality;
+    u32 otId;
+    const u8 *nickname = NULL;
+    const u8 *otName;
+    u8 heldItem[2];
+#if FREE_MAIL == FALSE
+    u8 mailIndex = 0;
+#endif
+    u8 maxSize = LimitedParty_GetMaxPartySize();
+    struct Pokemon *mon = NULL;
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    switch (giftId)
+    {
+    case NAMED_MON_KENYA:
+        species = SPECIES_SPEAROW;
+        level = 20;
+        item = ITEM_RETRO_MAIL;
+        nickname = sKenyaNickname;
+        otName = sKenyaOtName;
+        otId = 61225;
+        personality = Random32();
+        break;
+    case NAMED_MON_SHUCKIE:
+        species = SPECIES_SHUCKLE;
+        level = 20;
+        item = ITEM_BERRY_JUICE;
+        nickname = sShuckieNickname;
+        otName = sShuckieOtName;
+        otId = 4336;
+        personality = Random32();
+        break;
+    case NAMED_MON_EEVEE:
+        species = SPECIES_EEVEE;
+        level = 20;
+        item = ITEM_NONE;
+        otName = sEeveeOtName;
+        otId = 5231;
+        personality = Random32();
+        break;
+    case NAMED_MON_DRATINI: // Shiny, Adamant, OT is the player
+        species = SPECIES_DRATINI;
+        level = 15;
+        item = ITEM_NONE;
+        otName = gSaveBlock2Ptr->playerName;
+        otId = T1_READ_32(gSaveBlock2Ptr->playerTrainerId);
+        personality = MakeShinyPidWithNature(LOHALF(otId), HIHALF(otId), NATURE_ADAMANT);
+        break;
+    default:
+        gSpecialVar_Result = MON_CANT_GIVE;
+        return FALSE;
+    }
+
+    for (u32 i = 0; i < maxSize; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
+        {
+            mon = &gParties[B_TRAINER_PLAYER][i];
+            break;
+        }
+    }
+    if (mon == NULL)
+    {
+        gSpecialVar_Result = MON_CANT_GIVE;
+        return FALSE;
+    }
+
+    ZeroMonData(mon);
+    CreateBoxMon(&mon->box, species, level, personality, OTID_STRUCT_PRESET(otId));
+    SetBoxMonIVs(&mon->box, USE_RANDOM_IVS);
+    GiveBoxMonInitialMoveset(&mon->box);
+    if (nickname != NULL)
+        SetMonData(mon, MON_DATA_NICKNAME, nickname);
+    SetMonData(mon, MON_DATA_OT_NAME, otName);
+    heldItem[0] = item & 0xFF;
+    heldItem[1] = item >> 8;
+    SetMonData(mon, MON_DATA_HELD_ITEM, heldItem);
+
+#if FREE_MAIL == FALSE
+    if (giftId == NAMED_MON_KENYA)
+    {
+        struct Mail *mail = &gSaveBlock1Ptr->mail[mailIndex];
+
+        memset(mail, 0, sizeof(*mail));
+        memcpy(mail->words, sKenyaMailWords, sizeof(sKenyaMailWords));
+        StringCopy(mail->playerName, sKenyaOtName);
+        mail->trainerId[0] = otId & 0xFF;
+        mail->trainerId[1] = (otId >> 8) & 0xFF;
+        mail->trainerId[2] = (otId >> 16) & 0xFF;
+        mail->trainerId[3] = otId >> 24;
+        mail->species = species;
+        mail->itemId = item;
+        SetMonData(mon, MON_DATA_MAIL, &mailIndex);
+    }
+    else
+#endif
+    if (giftId == NAMED_MON_DRATINI)
+    {
+        enum Move move = MOVE_EXTREME_SPEED;
+        u8 pp = GetMovePP(move);
+
+        SetMonData(mon, MON_DATA_MOVE1, &move);
+        SetMonData(mon, MON_DATA_PP1, &pp);
+    }
+
+    CalculateMonStats(mon);
+    HandleSetPokedexFlagBySpecies(species, FLAG_SET_SEEN, personality);
+    HandleSetPokedexFlagBySpecies(species, FLAG_SET_CAUGHT, personality);
+    gSpecialVar_Result = MON_GIVEN_TO_PARTY;
+    return FALSE;
+}
+
+// Takes back KENYA (must hold its Retro Mail) or SHUCKIE (friendship <= 200). VAR_RESULT: MON_GIVEN_TO_PARTY on success,
+// MON_CANT_GIVE on failure, NAMED_MON_SHUCKIE_REFUSED if SHUCKIE is too friendly. The last party member is never taken.
+bool8 Scrcmd_removenamedmon(struct ScriptContext *ctx)
+{
+    u16 giftId = ScriptReadHalfword(ctx);
+    const u8 *targetNickname;
+    u32 partyCount = 0;
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    if (giftId == NAMED_MON_KENYA)
+        targetNickname = sKenyaNickname;
+    else if (giftId == NAMED_MON_SHUCKIE)
+        targetNickname = sShuckieNickname;
+    else
+    {
+        gSpecialVar_Result = MON_CANT_GIVE;
+        return FALSE;
+    }
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE)
+            partyCount++;
+    }
+    gSpecialVar_Result = MON_CANT_GIVE;
+    if (partyCount <= 1)
+        return FALSE;
+
+    for (u32 i = 0; i < PARTY_SIZE; i++)
+    {
+        u8 nickname[POKEMON_NAME_LENGTH + 1];
+
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) == SPECIES_NONE)
+            continue;
+        GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_NICKNAME, nickname);
+        if (StringCompare(nickname, targetNickname) != 0)
+            continue;
+
+        if (giftId == NAMED_MON_KENYA && GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_HELD_ITEM) != ITEM_RETRO_MAIL)
+            return FALSE;
+        if (giftId == NAMED_MON_SHUCKIE && GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_FRIENDSHIP) > 200)
+        {
+            gSpecialVar_Result = NAMED_MON_SHUCKIE_REFUSED;
+            return FALSE;
+        }
+
+        ZeroMonData(&gParties[B_TRAINER_PLAYER][i]);
+        CompactPartySlots();
+        gSpecialVar_Result = MON_GIVEN_TO_PARTY;
+        return FALSE;
+    }
+    return FALSE;
+}
+
+// Removes every party member except the first. VAR_RESULT: MON_CANT_GIVE if the lead is fainted or an egg.
+bool8 Scrcmd_remove5mons(struct ScriptContext *ctx)
+{
+    bool32 removed = FALSE;
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    if (GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_HP) == 0
+     || GetMonData(&gParties[B_TRAINER_PLAYER][0], MON_DATA_SPECIES_OR_EGG) == SPECIES_EGG)
+    {
+        gSpecialVar_Result = MON_CANT_GIVE;
+        return FALSE;
+    }
+
+    for (u32 i = 1; i < PARTY_SIZE; i++)
+    {
+        if (GetMonData(&gParties[B_TRAINER_PLAYER][i], MON_DATA_SPECIES) != SPECIES_NONE)
+        {
+            ZeroMonData(&gParties[B_TRAINER_PLAYER][i]);
+            removed = TRUE;
+        }
+    }
+    if (removed)
+        CompactPartySlots();
+
+    gSpecialVar_Result = MON_GIVEN_TO_PARTY;
+    return FALSE;
+}
+
+// Removes the party member at VAR_0x8004 if it is the given species. VAR_RESULT: FALSE on mismatch,
+// MON_SATISFACTORY for a level 100 Magikarp, otherwise MON_UNSATISFACTORY.
+bool8 Scrcmd_removegenericmon(struct ScriptContext *ctx)
+{
+    enum Species targetSpecies = ScriptReadHalfword(ctx);
+    u32 monIndex = VarGet(VAR_0x8004);
+    struct Pokemon *mon;
+    enum Species species;
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    gSpecialVar_Result = FALSE;
+    if (monIndex >= PARTY_SIZE)
+        return FALSE;
+
+    mon = &gParties[B_TRAINER_PLAYER][monIndex];
+    species = GetMonData(mon, MON_DATA_SPECIES);
+    if (species == SPECIES_NONE || species != targetSpecies)
+        return FALSE;
+
+    gSpecialVar_Result = (species == SPECIES_MAGIKARP && GetMonData(mon, MON_DATA_LEVEL) == MAX_LEVEL)
+                       ? MON_SATISFACTORY : MON_UNSATISFACTORY;
+    ZeroMonData(mon);
+    CompactPartySlots();
+    return FALSE;
+}
+
+static const u16 sOddEggSpecies[] =
+{
+    SPECIES_NONE,
+    SPECIES_PICHU,
+    SPECIES_CLEFFA,
+    SPECIES_IGGLYBUFF,
+    SPECIES_TYROGUE,
+    SPECIES_SMOOCHUM,
+    SPECIES_ELEKID,
+    SPECIES_MAGBY,
+    SPECIES_MANTYKE,
+    SPECIES_BONSLY,
+    SPECIES_HAPPINY,
+    SPECIES_MIME_JR,
+};
+
+#define ODD_EGG_SHINY_PERCENT 14
+#define ODD_EGG_START_CYCLES 2
+
+// Gives the Odd Egg for the sOddEggSpecies index. Has a 14% chance of being shiny and always knows Dizzy Punch.
+// VAR_RESULT: MON_GIVEN_TO_PARTY or MON_CANT_GIVE.
+bool8 Scrcmd_giveoddegg(struct ScriptContext *ctx)
+{
+    u32 which = VarGet(ScriptReadHalfword(ctx));
+    enum Species species;
+    u32 otId = T1_READ_32(gSaveBlock2Ptr->playerTrainerId);
+    u16 tid = LOHALF(otId);
+    u16 sid = HIHALF(otId);
+    u32 personality;
+    u8 maxSize = LimitedParty_GetMaxPartySize();
+
+    Script_RequestEffects(SCREFF_V1 | SCREFF_SAVE);
+
+    gSpecialVar_Result = MON_CANT_GIVE;
+    if (which == 0 || which >= ARRAY_COUNT(sOddEggSpecies))
+        return FALSE;
+    species = sOddEggSpecies[which];
+
+    for (u32 i = 0; i < maxSize; i++)
+    {
+        struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][i];
+        bool32 isEgg = TRUE;
+        u8 cycles;
+
+        if (GetMonData(mon, MON_DATA_SPECIES) != SPECIES_NONE)
+            continue;
+
+        if (Random() % 100 < ODD_EGG_SHINY_PERCENT)
+        {
+            u16 hi = Random();
+            personality = ((u32)hi << 16) | (tid ^ sid ^ hi ^ (Random() % SHINY_ODDS));
+        }
+        else
+        {
+            do
+            {
+                personality = Random32();
+            } while ((tid ^ sid ^ HIHALF(personality) ^ LOHALF(personality)) < SHINY_ODDS);
+        }
+
+        ZeroMonData(mon);
+        CreateBoxMon(&mon->box, species, 5, personality, OTID_STRUCT_PLAYER_ID);
+        SetBoxMonIVs(&mon->box, USE_RANDOM_IVS);
+        GiveBoxMonInitialMoveset(&mon->box);
+        SetMonData(mon, MON_DATA_IS_EGG, &isEgg);
+        cycles = min(gSpeciesInfo[species].eggCycles, ODD_EGG_START_CYCLES);
+        SetMonData(mon, MON_DATA_FRIENDSHIP, &cycles);
+        SetMonMoveSlot(mon, MOVE_DIZZY_PUNCH, 1);
+        CalculateMonStats(mon);
+        gSpecialVar_Result = MON_GIVEN_TO_PARTY;
+        break;
+    }
+    return FALSE;
+}
+
+// Writes the species' Pokedex category (e.g. "Mouse") to the given string buffer.
+bool8 Scrcmd_buffermoncategory(struct ScriptContext *ctx)
+{
+    u8 stringVarIndex = ScriptReadByte(ctx);
+    enum Species species = VarGet(ScriptReadHalfword(ctx)) & OBJ_EVENT_MON_SPECIES_MASK;
+
+    Script_RequestEffects(SCREFF_V1);
+
+    StringCopy(GetStringVar(stringVarIndex), GetSpeciesCategory(species));
+    return FALSE;
+}
+
+// Same as setwildbattle for a single wild Pokemon, but the Pokemon is always shiny.
+bool8 Scrcmd_setwildbattleshiny(struct ScriptContext *ctx)
+{
+    enum Species species = ScriptReadHalfword(ctx);
+    u16 level = ScriptReadByte(ctx);
+    enum Item item = ScriptReadHalfword(ctx);
+
+    Script_RequestEffects(SCREFF_V1);
+
+    CreateShinyScriptedMon(species, level, item);
+    sIsScriptedWildDouble = FALSE;
     return FALSE;
 }

@@ -171,6 +171,10 @@ enum OtIdMethod
 #define MON_GIVEN_TO_PC         1
 #define MON_CANT_GIVE           2
 
+// removegenericmon results
+#define MON_UNSATISFACTORY      1
+#define MON_SATISFACTORY        2
+
 #define PLAYER_HAS_TWO_USABLE_MONS     0
 #define PLAYER_HAS_ONE_MON             1
 #define PLAYER_HAS_ONE_USABLE_MON      2
@@ -200,6 +204,8 @@ enum OtIdMethod
 #define FRIENDSHIP_EVENT_FAINT_FIELD_PSN  7
 #define FRIENDSHIP_EVENT_FAINT_LARGE      8 // If opponent was >= 30 levels higher. See AdjustFriendshipOnBattleFaint
 #define FRIENDSHIP_EVENT_MASSAGE          9
+#define FRIENDSHIP_EVENT_HAIRCUT1         10
+#define FRIENDSHIP_EVENT_HAIRCUT2         11
 
 // Constants for GetLeadMonFriendshipScore
 #define FRIENDSHIP_NONE        0

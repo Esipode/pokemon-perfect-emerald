@@ -3441,3 +3441,62 @@
 	.2byte \handleVar
 	.2byte \frames
 	.endm
+
+	@ Same as applymovement, but never hides the follower.
+	.macro applymovement2 localId:req, movements:req
+	callnative Scrcmd_applymovementnofollower, requests_effects=1
+	.2byte \localId
+	.4byte \movements
+	.endm
+
+	@ Gives a fixed Johto gift Pokemon to the party. 1 = KENYA, 2 = SHUCKIE, 3 = EEVEE, 4 = shiny DRATINI.
+	@ VAR_RESULT is MON_GIVEN_TO_PARTY or MON_CANT_GIVE.
+	.macro givenamedmon number:req
+	callnative Scrcmd_givenamedmon, requests_effects=1
+	.2byte \number
+	.endm
+
+	@ Takes back KENYA (1, must hold mail) or SHUCKIE (2). VAR_RESULT is MON_GIVEN_TO_PARTY, MON_CANT_GIVE,
+	@ or 3 if SHUCKIE is too friendly.
+	.macro removenamedmon number:req
+	callnative Scrcmd_removenamedmon, requests_effects=1
+	.2byte \number
+	.endm
+
+	@ Removes every party member except the first. VAR_RESULT is MON_CANT_GIVE if the lead is fainted or an egg.
+	.macro remove5mons
+	callnative Scrcmd_remove5mons, requests_effects=1
+	.endm
+
+	@ Removes the party member at VAR_0x8004 if it is the given species. VAR_RESULT is FALSE on a mismatch,
+	@ MON_SATISFACTORY for a level 100 Magikarp, else MON_UNSATISFACTORY.
+	.macro removegenericmon species:req
+	callnative Scrcmd_removegenericmon, requests_effects=1
+	.2byte \species
+	.endm
+
+	@ Gives the Odd Egg for the given index (1 = Pichu ... 11 = Mime Jr.). VAR_RESULT is MON_GIVEN_TO_PARTY or MON_CANT_GIVE.
+	.macro giveoddegg number:req
+	callnative Scrcmd_giveoddegg, requests_effects=1
+	.2byte \number
+	.endm
+
+	@ Writes the Pokedex category of a species to the given string buffer.
+	.macro buffermoncategory stringVarId:req, species:req
+	callnative Scrcmd_buffermoncategory, requests_effects=1
+	stringvar \stringVarId
+	.2byte \species
+	.endm
+
+	@ Same as setwildbattle for one Pokemon, but it is always shiny.
+	.macro setwildbattleshiny species:req, level:req, item=ITEM_NONE
+	callnative Scrcmd_setwildbattleshiny, requests_effects=1
+	.2byte \species
+	.byte \level
+	.2byte \item
+	.endm
+
+	@ HnS randomizer check; the target has none, so VAR_RESULT is always FALSE.
+	.macro checkrandomizer
+	setvar VAR_RESULT, FALSE
+	.endm

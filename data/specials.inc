@@ -613,3 +613,22 @@ gSpecials::
 	def_special InfCave_ClearRunReport
 	def_special InfCaveLobby_OpenMart
 	def_special IsPlayerInKanto
+	@ Johto
+	def_special IsNuzlockeNicknamingActive
+	def_special IsPokecenterChallengeActivated
+	def_special IsRandomMovesActivated
+	def_special IsPartyLimitChallengeActive
+	def_special GetMaxPartySize
+	def_special HaircutBrother1
+	def_special HaircutBrother2
+	def_special GivePartyMonChampionRibbon
+	def_special GivePartyMonLandRibbon
+	def_special GivePartyMonNationalRibbon
+	def_special EnterBugContestMode
+	def_special ExitBugContestMode
+	def_special BugContestRetirePrompt
+	def_special TransferBugContestMon
+	def_special JudgeBugContestMon
+	def_special RemoveSportBalls
+	def_special ShowBugContestChosenMon
+	def_special DoSlidingPuzzle

@@ -179,6 +179,45 @@ void CreateScriptedWildMon(enum Species species, u16 level, enum Item item)
         SetMonData(&gParties[B_TRAINER_OPPONENT_A][0], MON_DATA_HELD_ITEM, heldItem);
     }
 }
+// Builds a personality that is shiny for otId and honours Synchronize/Cute Charm. The upper half is
+// derived from the lower half so every candidate is shiny; only nature/gender are rerolled.
+static u32 GenerateShinyPersonalityForOtId(u32 otId, enum Species species, u8 gender, u8 nature)
+{
+    u32 otXor = HIHALF(otId) ^ LOHALF(otId);
+    u32 personality;
+
+    do
+    {
+        u32 lo = Random();
+        u32 hi = (otXor ^ lo ^ (Random() % SHINY_ODDS)) & 0xFFFF;
+        personality = (hi << 16) | lo;
+    } while ((nature != NATURE_RANDOM && nature != GetNatureFromPersonality(personality))
+          || (gender != MON_GENDER_RANDOM && gender != GetGenderFromSpeciesAndPersonality(species, personality)));
+
+    return personality;
+}
+
+// Same as CreateScriptedWildMon, but the Pokemon is shiny.
+void CreateShinyScriptedMon(enum Species species, u16 level, enum Item item)
+{
+    u8 heldItem[2];
+    u32 otId = T1_READ_32(gSaveBlock2Ptr->playerTrainerId);
+
+    ZeroEnemyPartyMons();
+    level = min(level + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+    u32 personality = GenerateShinyPersonalityForOtId(otId, species,
+        GetSynchronizedGender(STATIC_WILDMON_ORIGIN, species),
+        GetSynchronizedNature(STATIC_WILDMON_ORIGIN, species));
+    CreateMonWithIVs(&gParties[B_TRAINER_OPPONENT_A][0], species, level, personality, OTID_STRUCT_PLAYER_ID, USE_RANDOM_IVS);
+    GiveMonInitialMoveset(&gParties[B_TRAINER_OPPONENT_A][0]);
+    if (item)
+    {
+        heldItem[0] = item;
+        heldItem[1] = item >> 8;
+        SetMonData(&gParties[B_TRAINER_OPPONENT_A][0], MON_DATA_HELD_ITEM, heldItem);
+    }
+}
+
 void CreateScriptedDoubleWildMon(enum Species species1, u16 level1, enum Item item1, enum Species species2, u16 level2, enum Item item2)
 {
     u8 heldItem1[2];

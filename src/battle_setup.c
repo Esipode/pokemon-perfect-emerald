@@ -33,6 +33,7 @@
 #include "mirage_tower.h"
 #include "palette.h"
 #include "random.h"
+#include "bug_contest.h"
 #include "safari_zone.h"
 #include "script.h"
 #include "script_pokemon_util.h"
@@ -71,6 +72,7 @@ enum TransitionType
 // this file's functions
 static void DoBattlePikeWildBattle(void);
 static void DoSafariBattle(void);
+static void DoBugContestBattle(void);
 static void DoGhostBattle(void);
 static void DoStandardWildBattle(bool32 isDouble);
 static void CB2_EndWildBattle(void);
@@ -242,6 +244,8 @@ void BattleSetup_StartWildBattle(void)
 {
     if (GetSafariZoneFlag())
         DoSafariBattle();
+    else if (GetBugContestFlag())
+        DoBugContestBattle();
     else if (CheckSilphScopeInPokemonTower(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum))
         DoGhostBattle();
     else
@@ -344,6 +348,19 @@ void BattleSetup_StartRoamerBattle(void)
     StopPlayerAvatar();
     gMain.savedCallback = CB2_EndWildBattle;
     gBattleTypeFlags = BATTLE_TYPE_ROAMER;
+    CreateBattleStartTask(GetWildBattleTransition(), 0);
+    IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
+    IncrementGameStat(GAME_STAT_WILD_BATTLES);
+    IncrementDailyWildBattles();
+}
+
+static void DoBugContestBattle(void)
+{
+    LockPlayerFieldControls();
+    FreezeObjectEvents();
+    StopPlayerAvatar();
+    gMain.savedCallback = CB2_EndBugContestBattle;
+    gBattleTypeFlags = 0;
     CreateBattleStartTask(GetWildBattleTransition(), 0);
     IncrementGameStat(GAME_STAT_TOTAL_BATTLES);
     IncrementGameStat(GAME_STAT_WILD_BATTLES);
@@ -1698,40 +1715,40 @@ void PlayTrainerEncounterMusic(void)
         music = MUS_ENCOUNTER_RICH;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_CHAMPION:
-        music = MUS_ENCOUNTER_ELITE_FOUR;
+        music = MUS_HG_VS_CHAMPION;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_ELITE_FOUR:
-        music = MUS_ENCOUNTER_ELITE_FOUR;
+        music = MUS_HG_VS_GYM_LEADER;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_BOY_1:
-        music = MUS_ENCOUNTER_MALE;
+        music = MUS_HG_ENCOUNTER_BOY_1;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_BOY_2:
-        music = MUS_RG_ENCOUNTER_BOY;
+        music = MUS_HG_ENCOUNTER_BOY_2;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_GIRL_1:
-        music = MUS_ENCOUNTER_FEMALE;
+        music = MUS_HG_ENCOUNTER_GIRL_1;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_GIRL_2:
-        music = MUS_ENCOUNTER_GIRL;
+        music = MUS_HG_ENCOUNTER_GIRL_2;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_SUSPICIOUS_1:
-        music = MUS_ENCOUNTER_SUSPICIOUS;
+        music = MUS_HG_ENCOUNTER_SUSPICIOUS_1;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_SUSPICIOUS_2:
-        music = MUS_ENCOUNTER_SUSPICIOUS;
+        music = MUS_HG_ENCOUNTER_SUSPICIOUS_2;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_SAGE:
-        music = MUS_ENCOUNTER_INTENSE;
+        music = MUS_HG_ENCOUNTER_SAGE;
         break;
     case TRAINER_ENCOUNTER_MUSIC_ROCKET:
-        music = MUS_RG_ENCOUNTER_ROCKET;
+        music = MUS_HG_ENCOUNTER_ROCKET;
         break;
     case TRAINER_ENCOUNTER_MUSIC_SILVER:
-        music = MUS_RG_ENCOUNTER_RIVAL;
+        music = MUS_HG_ENCOUNTER_RIVAL;
         break;
     case TRAINER_ENCOUNTER_MUSIC_HG_KIMONO_GIRL:
-        music = MUS_ENCOUNTER_FEMALE;
+        music = MUS_HG_ENCOUNTER_KIMONO_GIRL;
         break;
     default:
         music = MUS_ENCOUNTER_SUSPICIOUS;

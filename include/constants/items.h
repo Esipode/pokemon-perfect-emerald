@@ -1114,7 +1114,20 @@ enum __attribute__((packed)) Item
     ITEM_TATSUGIRINITE = 872,
     ITEM_GLIMMORANITE = 873,
 
-    ITEMS_COUNT = ITEM_TM160 + 1, // Kanto TMs are declared earlier, so the enum would not count them
+    // Johto key items. Ids 934-997 are reserved for the Johto TMs, so these are explicit.
+    ITEM_SQUIRT_BOTTLE = 998,
+    ITEM_SECRET_POTION = 999,
+    ITEM_RED_SCALE = 1000,
+    ITEM_CLEAR_BELL = 1001,
+    ITEM_RAINBOW_WING = 1002,
+    ITEM_SILVER_WING = 1003,
+    ITEM_MYSTERY_EGG = 1004,
+    ITEM_PASS = 1005,
+    ITEM_GS_BALL = 1006,
+    ITEM_BASEMENT_KEY_JOHTO = 1007,
+    ITEM_CARD_KEY_JOHTO = 1008,
+
+    ITEMS_COUNT = ITEM_CARD_KEY_JOHTO + 1, // Kanto/Johto items are declared out of enum order, so the enum would not count them
     ITEM_FIELD_ARROW = ITEMS_COUNT,
 };
 

@@ -1125,6 +1125,102 @@ static const struct MenuAction MultichoiceList_Exit[] =
     {gText_Exit},
 };
 
+// Johto multichoice lists
+static const struct MenuAction MultichoiceList_DaysOfWeek[] =
+{
+    {COMPOUND_STRING("SUNDAY")},
+    {COMPOUND_STRING("MONDAY")},
+    {COMPOUND_STRING("TUESDAY")},
+    {COMPOUND_STRING("WEDNESDAY")},
+    {COMPOUND_STRING("THURSDAY")},
+    {COMPOUND_STRING("FRIDAY")},
+    {COMPOUND_STRING("SATURDAY")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_PrizeMons[] =
+{
+    {COMPOUND_STRING("ABRA{CLEAR_TO 0x61}120 C.")},
+    {COMPOUND_STRING("CLEFAIRY{CLEAR_TO 0x61}500 C.")},
+    {COMPOUND_STRING("MUNCHLAX{CLEAR_TO 0x58}2,800 C.")},
+    {COMPOUND_STRING("DRATINI{CLEAR_TO 0x58}5,500 C.")},
+    {COMPOUND_STRING("PORYGON{CLEAR_TO 0x58}6,500 C.")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_7Floors[] =
+{
+    {COMPOUND_STRING("Floor 6")},
+    {COMPOUND_STRING("Floor 5")},
+    {COMPOUND_STRING("Floor 4")},
+    {COMPOUND_STRING("Floor 3")},
+    {COMPOUND_STRING("Floor 2")},
+    {COMPOUND_STRING("Floor 1")},
+    {COMPOUND_STRING("Floor 0")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_5Floors[] =
+{
+    {COMPOUND_STRING("Floor 5")},
+    {COMPOUND_STRING("Floor 4")},
+    {COMPOUND_STRING("Floor 3")},
+    {COMPOUND_STRING("Floor 2")},
+    {COMPOUND_STRING("Floor 1")},
+    {gText_Exit},
+};
+
+static const struct MenuAction MultichoiceList_GoldSilver[] =
+{
+    {COMPOUND_STRING("GOLD")},
+    {COMPOUND_STRING("SILVER")},
+};
+
+static const struct MenuAction MultichoiceList_ElderQuiz1[] =
+{
+    {COMPOUND_STRING("Pal")},
+    {COMPOUND_STRING("Underling")},
+    {COMPOUND_STRING("Friend")},
+};
+
+static const struct MenuAction MultichoiceList_ElderQuiz2[] =
+{
+    {COMPOUND_STRING("Strategy")},
+    {COMPOUND_STRING("Training")},
+    {COMPOUND_STRING("Cheating")},
+};
+
+static const struct MenuAction MultichoiceList_ElderQuiz3[] =
+{
+    {COMPOUND_STRING("Weak person")},
+    {COMPOUND_STRING("Tough person")},
+    {COMPOUND_STRING("Anybody")},
+};
+
+static const struct MenuAction MultichoiceList_ElderQuiz4[] =
+{
+    {COMPOUND_STRING("Love")},
+    {COMPOUND_STRING("Violence")},
+    {COMPOUND_STRING("Knowledge")},
+};
+
+static const struct MenuAction MultichoiceList_ElderQuiz5[] =
+{
+    {COMPOUND_STRING("Tough")},
+    {COMPOUND_STRING("Weak")},
+    {COMPOUND_STRING("Both")},
+};
+
+static const struct MenuAction MultichoiceList_FossilJohto[] =
+{
+    {COMPOUND_STRING("CLAW FOSSIL")},
+    {COMPOUND_STRING("ROOT FOSSIL")},
+    {COMPOUND_STRING("HELIX FOSSIL")},
+    {COMPOUND_STRING("DOME FOSSIL")},
+    {COMPOUND_STRING("OLD AMBER")},
+    {gText_Exit},
+};
+
 struct MultichoiceListStruct
 {
     const struct MenuAction *list;
@@ -1293,6 +1389,17 @@ static const struct MultichoiceListStruct sMultichoiceLists[] =
     [MULTI_EGGS_VICTORIES_QUIT]                        = MULTICHOICE(sMultichoiceList_Eggs_Victories_Quit),
     [MULTI_HOF_EGGS_VICTORIES_QUIT]                    = MULTICHOICE(sMultichoiceList_HOF_Eggs_Victories_Quit),
     [STARTER_GEN_OPTIONS]              = MULTICHOICE(MultiChoiceList_Starter_Gen_Options),
+    [MULTI_DAYS_OF_WEEK]               = MULTICHOICE(MultichoiceList_DaysOfWeek),
+    [MULTI_PRIZE_MONS]                 = MULTICHOICE(MultichoiceList_PrizeMons),
+    [MULTI_7FLOORS]                    = MULTICHOICE(MultichoiceList_7Floors),
+    [MULTI_5FLOORS]                    = MULTICHOICE(MultichoiceList_5Floors),
+    [MULTI_GOLDSILVER]                 = MULTICHOICE(MultichoiceList_GoldSilver),
+    [MULTI_ELDERQUIIZ1]                = MULTICHOICE(MultichoiceList_ElderQuiz1),
+    [MULTI_ELDERQUIIZ2]                = MULTICHOICE(MultichoiceList_ElderQuiz2),
+    [MULTI_ELDERQUIIZ3]                = MULTICHOICE(MultichoiceList_ElderQuiz3),
+    [MULTI_ELDERQUIIZ4]                = MULTICHOICE(MultichoiceList_ElderQuiz4),
+    [MULTI_ELDERQUIIZ5]                = MULTICHOICE(MultichoiceList_ElderQuiz5),
+    [MULTI_FOSSIL_JOHTO]               = MULTICHOICE(MultichoiceList_FossilJohto),
 };
 
 const u8 *const gStdStrings[] =

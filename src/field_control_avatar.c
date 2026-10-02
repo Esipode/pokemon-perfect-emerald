@@ -32,6 +32,7 @@
 #include "metatile_behavior.h"
 #include "overworld.h"
 #include "pokemon.h"
+#include "bug_contest.h"
 #include "safari_zone.h"
 #include "script.h"
 #include "sound.h"
@@ -852,6 +853,8 @@ static bool8 TryStartStepCountScript(u16 metatileBehavior)
     }
 
     if (SafariZoneTakeStep() == TRUE)
+        return TRUE;
+    if (BugContestCheckTimeLimit() == TRUE)
         return TRUE;
     if (CountSSTidalStep(1) == TRUE)
     {

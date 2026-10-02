@@ -2112,3 +2112,31 @@ const u16 gItemIconPalette_SwapSnack[] = INCGFX_U16("graphics/items/icon_palette
 
 const u32 gItemIcon_TwiceSpicedRadish[] = INCGFX_U32("graphics/items/icons/twice_spiced_radish.png", ".4bpp.smol");
 const u16 gItemIconPalette_TwiceSpicedRadish[] = INCGFX_U16("graphics/items/icon_palettes/twice_spiced_radish.pal", ".gbapal");
+
+// Johto key items
+const u32 gItemIcon_ClearBell[] = INCGFX_U32("graphics/items/icons/clearbell.png", ".4bpp.smol");
+const u16 gItemIconPalette_ClearBell[] = INCGFX_U16("graphics/items/icon_palettes/clearbell.pal", ".gbapal");
+
+const u32 gItemIcon_GSBall[] = INCGFX_U32("graphics/items/icons/gs_ball.png", ".4bpp.smol");
+const u16 gItemIconPalette_GSBall[] = INCGFX_U16("graphics/items/icon_palettes/gs_ball.pal", ".gbapal");
+
+const u32 gItemIcon_MysteryEgg[] = INCGFX_U32("graphics/items/icons/mysteryegg.png", ".4bpp.smol");
+const u16 gItemIconPalette_MysteryEgg[] = INCGFX_U16("graphics/items/icon_palettes/mysteryegg.pal", ".gbapal");
+
+const u32 gItemIcon_JohtoPass[] = INCGFX_U32("graphics/items/icons/pass.png", ".4bpp.smol");
+const u16 gItemIconPalette_JohtoPass[] = INCGFX_U16("graphics/items/icon_palettes/pass.pal", ".gbapal");
+
+const u32 gItemIcon_RainbowWing[] = INCGFX_U32("graphics/items/icons/rainbowwing.png", ".4bpp.smol");
+const u16 gItemIconPalette_RainbowWing[] = INCGFX_U16("graphics/items/icon_palettes/rainbowwing.pal", ".gbapal");
+
+const u32 gItemIcon_RedScale[] = INCGFX_U32("graphics/items/icons/redscale.png", ".4bpp.smol");
+const u16 gItemIconPalette_RedScale[] = INCGFX_U16("graphics/items/icon_palettes/redscale.pal", ".gbapal");
+
+const u32 gItemIcon_SecretPotion[] = INCGFX_U32("graphics/items/icons/secretpotion.png", ".4bpp.smol");
+const u16 gItemIconPalette_SecretPotion[] = INCGFX_U16("graphics/items/icon_palettes/secretpotion.pal", ".gbapal");
+
+const u32 gItemIcon_SilverWing[] = INCGFX_U32("graphics/items/icons/silverwing.png", ".4bpp.smol");
+const u16 gItemIconPalette_SilverWing[] = INCGFX_U16("graphics/items/icon_palettes/silverwing.pal", ".gbapal");
+
+const u32 gItemIcon_SquirtBottle[] = INCGFX_U32("graphics/items/icons/squirt_bottle.png", ".4bpp.smol");
+const u16 gItemIconPalette_SquirtBottle[] = INCGFX_U16("graphics/items/icon_palettes/squirt_bottle.pal", ".gbapal");

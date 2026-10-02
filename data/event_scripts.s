@@ -60,6 +60,7 @@
 #include "constants/pokemon_size_record.h"
 #include "constants/random_mon_generation.h"
 #include "constants/rgb.h"
+#include "constants/sliding_puzzles.h"
 #include "constants/rtc.h"
 #include "constants/roulette.h"
 #include "constants/screen_effects.h"
@@ -1026,6 +1027,7 @@ gStdScripts_End::
 	.include "data/scripts/new_game.inc"
 	.include "data/scripts/hall_of_fame.inc"
 	.include "data/scripts/hall_of_fame_frlg.inc"
+	.include "data/scripts/johto_common.inc"
 
 	.include "data/scripts/config.inc"
 	.include "data/scripts/debug.inc"

@@ -17211,6 +17211,183 @@ const struct ItemInfo gItemsInfo[] =
         .iconPic = gItemIcon_PokeshiDoll,
         .iconPalette = gItemIconPalette_PokeshiDoll,
     },
+
+    // Johto key items
+    [ITEM_SQUIRT_BOTTLE] =
+    {
+        .name = ITEM_NAME("Squirt Bottle"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A bottle for\n"
+            "watering plants\n"
+            "and Sudowoodo."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_SquirtBottle,
+        .iconPalette = gItemIconPalette_SquirtBottle,
+    },
+
+    [ITEM_SECRET_POTION] =
+    {
+        .name = ITEM_NAME("Secret Potion"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A secret medicine\n"
+            "made in Cianwood\n"
+            "City pharmacy."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_SecretPotion,
+        .iconPalette = gItemIconPalette_SecretPotion,
+    },
+
+    [ITEM_RED_SCALE] =
+    {
+        .name = ITEM_NAME("Red Scale"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A scale from the\n"
+            "red Gyarados at\n"
+            "the Lake of Rage."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_RedScale,
+        .iconPalette = gItemIconPalette_RedScale,
+    },
+
+    [ITEM_CLEAR_BELL] =
+    {
+        .name = ITEM_NAME("Clear Bell"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A bell that makes a\n"
+            "clear, pure sound.\n"
+            "It calms Pokémon."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_ClearBell,
+        .iconPalette = gItemIconPalette_ClearBell,
+    },
+
+    [ITEM_RAINBOW_WING] =
+    {
+        .name = ITEM_NAME("Rainbow Wing"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A mystical feather\n"
+            "of rainbow colors.\n"
+            "It is sacred."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_RainbowWing,
+        .iconPalette = gItemIconPalette_RainbowWing,
+    },
+
+    [ITEM_SILVER_WING] =
+    {
+        .name = ITEM_NAME("Silver Wing"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A mystical silver\n"
+            "feather. It is said\n"
+            "to summon Lugia."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_SilverWing,
+        .iconPalette = gItemIconPalette_SilverWing,
+    },
+
+    [ITEM_MYSTERY_EGG] =
+    {
+        .name = ITEM_NAME("Mystery Egg"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "An Egg obtained\n"
+            "from Mr. Pokémon.\n"
+            "Give it to Elm."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_MysteryEgg,
+        .iconPalette = gItemIconPalette_MysteryEgg,
+    },
+
+    [ITEM_PASS] =
+    {
+        .name = ITEM_NAME("Pass"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A pass for the\n"
+            "Magnet Train between\n"
+            "Goldenrod and Saffron."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_JohtoPass,
+        .iconPalette = gItemIconPalette_JohtoPass,
+    },
+
+    [ITEM_GS_BALL] =
+    {
+        .name = ITEM_NAME("GS Ball"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A strange Poké Ball\n"
+            "with a gold and\n"
+            "silver design."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_GSBall,
+        .iconPalette = gItemIconPalette_GSBall,
+    },
+
+    [ITEM_BASEMENT_KEY_JOHTO] =
+    {
+        .name = ITEM_NAME("Basement Key"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "The key to the\n"
+            "underground of\n"
+            "Goldenrod City."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_BasementKey,
+        .iconPalette = gItemIconPalette_OldKey,
+    },
+
+    [ITEM_CARD_KEY_JOHTO] =
+    {
+        .name = ITEM_NAME("Card Key"),
+        .price = 0,
+        .description = COMPOUND_STRING(
+            "A card-type door\n"
+            "key used in the\n"
+            "Radio Tower."),
+        .importance = 1,
+        .pocket = POCKET_KEY_ITEMS,
+        .type = ITEM_USE_BAG_MENU,
+        .fieldUseFunc = ItemUseOutOfBattle_CannotUse,
+        .iconPic = gItemIcon_CardKey,
+        .iconPalette = gItemIconPalette_CardKey,
+    },
 };
 
 #undef ITEM_NAME
