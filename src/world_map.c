@@ -63,6 +63,7 @@ struct WorldMapCluster
 #define MAP_ART_SHIFT_X 0
 #define SCROLL_MARGIN (3 * 8)
 #define CURSOR_REPEAT_DELAY 4
+#define SCROLL_EASE_DIV 3 // Camera covers 1/3 of the remaining distance per frame, at least 1 px
 #define UI_TAG 0 // Tile and palette tag of ui_sprites.png (brackets, rings, halo)
 #define PLAYER_ICON_TAG 1
 #define NO_REGION 0xFF
@@ -95,6 +96,8 @@ struct WorldMap
 {
     s16 scrollX;
     s16 scrollY;
+    s16 targetX; // Scroll position the camera eases toward
+    s16 targetY;
     u8 cursorX;
     u8 cursorY;
     u8 region;
@@ -499,7 +502,8 @@ static void CB2_WorldMap(void);
 static void CB2_ExitWorldMap(void);
 static void VBlankCB_WorldMap(void);
 static void ClampScroll(void);
-static void FollowCursor(bool32 center);
+static void EaseScroll(void);
+static void FollowCursor(bool32 center, bool32 snap);
 static void DimLockedGroups(void);
 static bool32 IsRegionUnlocked(u32 region);
 static void ApplyScroll(void);
@@ -655,7 +659,7 @@ static bool32 TryMoveCursor(s32 dx, s32 dy)
     // Open sea keeps the region the cursor came from.
     if (sWorldMapRegions[y][x] != WORLD_MAP_REGION_SEA)
         sWorldMap->region = sWorldMapRegions[y][x];
-    FollowCursor(FALSE);
+    FollowCursor(FALSE, FALSE);
     return TRUE;
 }
 
@@ -704,7 +708,7 @@ static void OpenWorldMap(void)
         {
             SetCursorToRegion(WORLD_MAP_REGION_HOENN);
         }
-        FollowCursor(TRUE);
+        FollowCursor(TRUE, TRUE);
         ApplyScroll();
         DimLockedGroups();
         LoadUiSprites();
@@ -784,38 +788,61 @@ static void ApplyScroll(void)
 
 static void ClampScroll(void)
 {
-    if (sWorldMap->scrollX < 0)
-        sWorldMap->scrollX = 0;
-    if (sWorldMap->scrollX > SCROLL_MAX_X)
-        sWorldMap->scrollX = SCROLL_MAX_X;
-    if (sWorldMap->scrollY < 0)
-        sWorldMap->scrollY = 0;
-    if (sWorldMap->scrollY > SCROLL_MAX_Y)
-        sWorldMap->scrollY = SCROLL_MAX_Y;
+    if (sWorldMap->targetX < 0)
+        sWorldMap->targetX = 0;
+    if (sWorldMap->targetX > SCROLL_MAX_X)
+        sWorldMap->targetX = SCROLL_MAX_X;
+    if (sWorldMap->targetY < 0)
+        sWorldMap->targetY = 0;
+    if (sWorldMap->targetY > SCROLL_MAX_Y)
+        sWorldMap->targetY = SCROLL_MAX_Y;
 }
 
-static void FollowCursor(bool32 center)
+static s16 EaseAxis(s16 cur, s16 target)
+{
+    s32 d = target - cur;
+    s32 step = d / SCROLL_EASE_DIV;
+
+    if (step == 0)
+        step = (d > 0) - (d < 0);
+    return cur + step;
+}
+
+// Sprites and BG share scrollX/Y, so they always move together.
+static void EaseScroll(void)
+{
+    sWorldMap->scrollX = EaseAxis(sWorldMap->scrollX, sWorldMap->targetX);
+    sWorldMap->scrollY = EaseAxis(sWorldMap->scrollY, sWorldMap->targetY);
+}
+
+// Sets the scroll target; the camera eases there unless snap is set.
+static void FollowCursor(bool32 center, bool32 snap)
 {
     s32 x = sWorldMap->cursorX * 8;
     s32 y = sWorldMap->cursorY * 8;
 
     if (center)
     {
-        sWorldMap->scrollX = x + 4 - DISPLAY_WIDTH / 2;
-        sWorldMap->scrollY = y + 4 - DISPLAY_HEIGHT / 2;
+        sWorldMap->targetX = x + 4 - DISPLAY_WIDTH / 2;
+        sWorldMap->targetY = y + 4 - DISPLAY_HEIGHT / 2;
     }
     else
     {
-        if (x - sWorldMap->scrollX < SCROLL_MARGIN)
-            sWorldMap->scrollX = x - SCROLL_MARGIN;
-        if (x + 8 - sWorldMap->scrollX > DISPLAY_WIDTH - SCROLL_MARGIN)
-            sWorldMap->scrollX = x + 8 - DISPLAY_WIDTH + SCROLL_MARGIN;
-        if (y - sWorldMap->scrollY < SCROLL_MARGIN)
-            sWorldMap->scrollY = y - SCROLL_MARGIN;
-        if (y + 8 - sWorldMap->scrollY > DISPLAY_HEIGHT - SCROLL_MARGIN)
-            sWorldMap->scrollY = y + 8 - DISPLAY_HEIGHT + SCROLL_MARGIN;
+        if (x - sWorldMap->targetX < SCROLL_MARGIN)
+            sWorldMap->targetX = x - SCROLL_MARGIN;
+        if (x + 8 - sWorldMap->targetX > DISPLAY_WIDTH - SCROLL_MARGIN)
+            sWorldMap->targetX = x + 8 - DISPLAY_WIDTH + SCROLL_MARGIN;
+        if (y - sWorldMap->targetY < SCROLL_MARGIN)
+            sWorldMap->targetY = y - SCROLL_MARGIN;
+        if (y + 8 - sWorldMap->targetY > DISPLAY_HEIGHT - SCROLL_MARGIN)
+            sWorldMap->targetY = y + 8 - DISPLAY_HEIGHT + SCROLL_MARGIN;
     }
     ClampScroll();
+    if (snap)
+    {
+        sWorldMap->scrollX = sWorldMap->targetX;
+        sWorldMap->scrollY = sWorldMap->targetY;
+    }
 }
 
 // Finds the player's world cell from their panel-local region map position.
@@ -1190,12 +1217,12 @@ static void CB2_WorldMap(void)
             if (JOY_NEW(R_BUTTON))
             {
                 SetCursorToRegion(NextUnlockedRegion(sWorldMap->region, 1));
-                FollowCursor(TRUE);
+                FollowCursor(TRUE, FALSE);
             }
             else if (JOY_NEW(L_BUTTON))
             {
                 SetCursorToRegion(NextUnlockedRegion(sWorldMap->region, -1));
-                FollowCursor(TRUE);
+                FollowCursor(TRUE, FALSE);
             }
         }
 
@@ -1214,6 +1241,7 @@ static void CB2_WorldMap(void)
         else if (dx == 0 && dy == 0)
             sWorldMap->moveDelay = 0;
 
+        EaseScroll();
         ApplyScroll();
         UpdateCursorSprite();
         UpdateWindows();
