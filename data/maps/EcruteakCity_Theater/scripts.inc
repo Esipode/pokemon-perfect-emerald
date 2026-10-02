@@ -47,7 +47,7 @@ EcruteakCity_Theater_EventScript_RocketEventTrigger::
 	special RemoveCameraObject
 	setobjectmovementtype LOCALID_ECRUTEAK_ROCKET, MOVEMENT_TYPE_TOWER_BEAM
 	setobjectxyperm LOCALID_ECRUTEAK_ZUKI, 10, 2
-	setvar VAR_ECRUTEAK_CITY_THEATER, 1
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 1
 	releaseall
 	end
 
@@ -143,7 +143,7 @@ EcruteakCity_Theater_EventScript_Rocket::
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_NORTH
 	msgbox EcruteakCity_Theater_Text_KimonoRocket3, MSGBOX_DEFAULT
 	closemessage	
-	setvar VAR_ECRUTEAK_CITY_THEATER, 2
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 2
 	release
 	end
 	
@@ -270,7 +270,7 @@ EcruteakCity_Theater_EventScript_SurfGuy_GiveSurf::
 	msgbox EcruteakCity_Theater_Text_SurfGuyGaveSurf
 	closemessage
 	setflag FLAG_JOHTO_RECEIVED_SURF
-	setvar VAR_ECRUTEAK_CITY_THEATER, 3
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 3
 	release
 	end
 
@@ -291,7 +291,7 @@ EcruteakCity_Theater_EventScript_TriggerSurfGuy::
 	msgbox EcruteakCity_Theater_Text_SurfGuyGaveSurf
 	closemessage
 	setflag FLAG_JOHTO_RECEIVED_SURF
-	setvar VAR_ECRUTEAK_CITY_THEATER, 3
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 3
 	applymovement LOCALID_SURF_GUY, EcruteakCity_Theater_Movement_SurfGuy2
 	waitmovement 0 
 	release
@@ -681,6 +681,7 @@ EcruteakCity_Theater_EventScript_HoohBuffer::
 	bufferspeciesname STR_VAR_1, SPECIES_HO_OH
 	return
 EcruteakCity_Theater_EventScript_LegendaryCutscene::
+	call Johto_EventScript_EnsureLegendChoice
 	call_if_eq VAR_LUGIA_OR_HOOH, 1, EcruteakCity_Theater_EventScript_LugiaBuffer
 	call_if_eq VAR_LUGIA_OR_HOOH, 2, EcruteakCity_Theater_EventScript_HoohBuffer 
 	msgbox EcruteakCity_Theater_Text_ZukiSeen, MSGBOX_DEFAULT
@@ -689,7 +690,7 @@ EcruteakCity_Theater_EventScript_LegendaryCutscene::
 	playse SE_M_PETAL_DANCE
 	applymovement2 LOCALID_ECRUTEAK_ZUKI, EcruteakCity_Theater_Movement_KimonoSpin
 	waitmovement 0
-	setvar VAR_ECRUTEAK_CITY_THEATER, 6
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 6
 EcruteakCity_Theater_EventScript_ZukiBattle::
 	msgbox EcruteakCity_Theater_Text_ZukiSeenAgain, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, FALSE, EcruteakCity_Theater_EventScript_LegendaryDenied
@@ -824,8 +825,8 @@ EcruteakCity_Theater_EventScript_Lugia::
 	setflag FLAG_HIDE_WHIRL_ISLANDS_TENTACRUEL
 	setflag FLAG_HIDE_ECRUTEAK_CITY_THEATER_ZUKI
 	setflag FLAG_HIDE_ECRUTEAK_CITY_THEATER_KIMONOS
-	setvar VAR_NEWBARKTOWN_LABSTATE, 9
-	setvar VAR_ECRUTEAK_CITY_THEATER, 7
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 9
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 7
 	release
 	end
 EcruteakCity_Theater_EventScript_Hooh::
@@ -870,8 +871,8 @@ EcruteakCity_Theater_EventScript_Hooh::
 	setvar VAR_COMPLETED_LUGIA, 3
 	setflag FLAG_HIDE_ECRUTEAK_CITY_THEATER_ZUKI
 	setflag FLAG_HIDE_ECRUTEAK_CITY_THEATER_KIMONOS
-	setvar VAR_NEWBARKTOWN_LABSTATE, 9
-	setvar VAR_ECRUTEAK_CITY_THEATER, 7
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 9
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 7
 	release
 	end
 

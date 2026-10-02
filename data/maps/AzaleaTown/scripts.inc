@@ -19,7 +19,7 @@ AzaleaTown_MapScript_Hide_Silver:
 
 AzaleaTown_EventScript_FirstVisit::
 	setflag FLAG_VISITED_AZALEA_TOWN
-	setvar VAR_AZALEA_TOWN_STATE, 1
+	setvar_min VAR_AZALEA_TOWN_STATE, 1
 	return
 
 AzaleaTown_EventScript_Rocket1::
@@ -144,7 +144,7 @@ AzaleaTown_EventScript_SilverTriggerTop::
 	playse SE_EXIT
 	setflag FLAG_HIDE_AZALEA_TOWN_SILVER
 	removeobject LOCALID_AZALEA_TOWN_SILVER
-	setvar VAR_AZALEA_TOWN_STATE, 6
+	setvar_min VAR_AZALEA_TOWN_STATE, 6
 	fadedefaultbgm
 	release
 	end
@@ -172,7 +172,7 @@ AzaleaTown_EventScript_SilverTriggerBot::
 	playse SE_EXIT
 	setflag FLAG_HIDE_AZALEA_TOWN_SILVER
 	removeobject LOCALID_AZALEA_TOWN_SILVER
-	setvar VAR_AZALEA_TOWN_STATE, 6
+	setvar_min VAR_AZALEA_TOWN_STATE, 6
 	fadedefaultbgm
 	release
 	end
@@ -228,7 +228,7 @@ AzaleaTown_EventScript_GSBall::
 	removeobject LOCALID_AZALEA_TOWN_KURT_GS
 	closedoor 19, 11
 	waitdooranim
-	setvar VAR_AZALEA_TOWN_STATE, 9
+	setvar_min VAR_AZALEA_TOWN_STATE, 9
 	release
 	end
 

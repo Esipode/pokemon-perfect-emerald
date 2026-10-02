@@ -31,7 +31,7 @@ BurnedTower_1F_EventScript_MeetEusine::
 	closemessage
 	applymovement LOCALID_BURNED_TOWER_EUSINE, BurnedTower_Movement_Eusine2
 	waitmovement 0
-	setvar VAR_ECRUTEAK_CITY_STATE, 2
+	setvar_min VAR_ECRUTEAK_CITY_STATE, 2
 	release
 	end
 
@@ -131,7 +131,7 @@ BurnedTower_1F_EventScript_Silver::
 	msgbox BurnedTowerSilver_AfterText2, MSGBOX_AUTOCLOSE
 	waitmessage
 	warphole MAP_BURNED_TOWER_B1F
-	setvar VAR_ECRUTEAK_CITY_STATE, 3
+	setvar_min VAR_ECRUTEAK_CITY_STATE, 3
 	waitstate
 	release
 	end

@@ -3,7 +3,7 @@ SafariZoneGate_MapScripts::
 
 SafariZoneGate_EventScript_Trigger::
 	setflag FLAG_VISITED_SAFARI_ZONE_GATE
-	setvar VAR_SAFARI_ZONE_GATE_STATE, 3
+	setvar_min VAR_SAFARI_ZONE_GATE_STATE, 3
 	end
 
 SafariZoneGate_EventScript_BackupTrigger::

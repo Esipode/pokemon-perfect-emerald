@@ -106,7 +106,7 @@ LakeOfRage_EventScript_Defeated_Gyarados::
 	addobject LOCALID_LAKEOFRAGE_LANCE
 	giveitem ITEM_RED_SCALE
 	setobjectxyperm LOCALID_LAKEOFRAGE_OLDMAN, 32, 38
-	setvar VAR_MAHOGANY_TOWN_STATE, 2
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 2
 	release
 	end
 
@@ -144,7 +144,7 @@ LakeOfRage_EventScript_Lance::
 	faceplayer
 	turnobject LOCALID_LAKEOFRAGE_OLDMAN, DIR_WEST
 	msgbox LakeOfRage_Text_LanceIntro2, MSGBOX_DEFAULT
-	setvar VAR_MAHOGANY_TOWN_STATE, 3
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 3
 	msgbox LakeOfRage_Text_LanceIntro3, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, FALSE, LakeOfRage_EventScript_LancDeclined
 LakeOfRage_EventScript_LanceAccept::
@@ -160,7 +160,7 @@ LakeOfRage_EventScript_EndScene::
 	setflag FLAG_HIDE_LAKE_OF_RAGE_LANCE
 	removeobject LOCALID_LAKEOFRAGE_LANCE
 	removeobject LOCALID_LAKEOFRAGE_DRAGONITE
-	setvar VAR_MAHOGANY_TOWN_STATE, 4
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 4
 	clearflag FLAG_HIDE_MAHOGANY_TOWN_SHOP_NPCS
 	release
 	end

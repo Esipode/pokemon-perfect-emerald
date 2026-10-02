@@ -52,7 +52,8 @@ EcruteakCity_Gym_EventScript_Morty::
 	call Common_EventScript_SetGymTrainers_Johto
 	giveitem ITEM_TM_SHADOW_SNEAK
 	msgbox MortyText_ShadowBallSpeech, MSGBOX_DEFAULT
-	setvar VAR_ECRUTEAK_CITY_STATE, 4
+	setvar_min VAR_ECRUTEAK_CITY_STATE, 4
+	call Johto_EventScript_TryRadioTowerTakeover
 	closemessage
 	release
 	end

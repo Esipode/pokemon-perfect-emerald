@@ -1,6 +1,40 @@
 Route28_MapScripts::
 	map_script MAP_SCRIPT_ON_TRANSITION, Route28_OnTransition
+	map_script MAP_SCRIPT_ON_FRAME_TABLE, Route28_OnFrame
 	.byte 0
+
+Route28_OnFrame::
+	map_script_2 VAR_TEMP_0, 0, Route28_EventScript_CheckAccess
+	.2byte 0
+
+@ Route 28 / Mt. Silver open after the Johto League and all eight Kanto badges.
+Route28_EventScript_CheckAccess::
+	setvar VAR_TEMP_0, 1
+	goto_if_unset FLAG_JOHTO_CHAMPION, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE01_GET_FRLG, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE02_GET_FRLG, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE03_GET_FRLG, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE04_GET_FRLG, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE05_GET_FRLG, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE06_GET_FRLG, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE07_GET_FRLG, Route28_EventScript_AccessDenied
+	goto_if_unset FLAG_BADGE08_GET_FRLG, Route28_EventScript_AccessDenied
+	end
+
+Route28_EventScript_AccessDenied::
+	lockall
+	msgbox Route28_Text_AccessDenied, MSGBOX_DEFAULT
+	closemessage
+	warp MAP_RECEPTION_GATE, 3
+	waitstate
+	end
+
+Route28_Text_AccessDenied:
+	.string "A fierce blizzard blocks the way\n"
+	.string "ahead.\p"
+	.string "Only a trainer who has conquered\n"
+	.string "the JOHTO LEAGUE and holds all\l"
+	.string "eight KANTO BADGES may pass.$"
 
 Route28_OnTransition: 
 	end

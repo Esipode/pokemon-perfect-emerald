@@ -58,16 +58,6 @@
       "dest_warp_id": "0"
     }
   ],
-  "coord_events": [
-    {
-      "type": "trigger",
-      "x": 1,
-      "y": 5,
-      "elevation": 0,
-      "var": "VAR_VIOLET_CITY_STATE",
-      "var_value": "0",
-      "script": "VioletCity_EventScript_Trigger"
-    }
-  ],
+  "coord_events": [],
   "bg_events": []
 }

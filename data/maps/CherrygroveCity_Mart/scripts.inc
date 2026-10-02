@@ -36,7 +36,7 @@ Cherrygrove_Pokemart_EventScript_Bugcatcher2::
 	end
 
 Cherrygrove_Pokemart_EventScript_Clerk2::
-	pokemart 0
+	pokemart Cherrygrove_Pokemart_Pokemart2
 	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
 	release
 	end
@@ -64,3 +64,14 @@ Cherrygrove_Pokemart_Text_Youngster:
 	.string "POKéMON fainted.\p"
 	.string "You should keep an ANTIDOTE\n"
 	.string "with you.$"
+
+	.align 2
+Cherrygrove_Pokemart_Pokemart2:
+	.2byte ITEM_POKE_BALL
+	.2byte ITEM_POTION
+	.2byte ITEM_ANTIDOTE
+	.2byte ITEM_PARALYZE_HEAL
+	.2byte ITEM_AWAKENING
+	.2byte ITEM_NONE
+	release
+	end

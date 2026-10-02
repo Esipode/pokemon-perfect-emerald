@@ -280,7 +280,7 @@ DragonsDen_Shrine_EventScript_ClairEnter::
 	setflag FLAG_HIDE_DRAGONS_DEN_SHRINE_CLAIR
 	removeobject LOCALID_DRAGONSDEN3_CLAIR
 	clearflag FLAG_HIDE_DRAGONS_DEN_CAVERN_CLAIR
-	setvar VAR_BLACKTHORN_CITY_STATE, 3
+	setvar_min VAR_BLACKTHORN_CITY_STATE, 3
 	release
 	end
 

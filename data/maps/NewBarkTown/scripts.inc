@@ -13,8 +13,8 @@ NewBarkTown_EventScript_ElmCallAfterLeague::
 	pokenavcall BlackthornCity_Text_ElmCall
 	waitmessage
 	delay 30
-	setvar VAR_NEWBARK_TOWN_STATE, 7
-	setvar VAR_NEWBARKTOWN_LABSTATE, 10
+	setvar_min VAR_NEWBARK_TOWN_STATE, 7
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 10
 	release
 	end
 

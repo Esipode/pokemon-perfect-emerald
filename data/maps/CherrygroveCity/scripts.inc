@@ -123,7 +123,7 @@ CherryGroveCity_EventScript_GentTour::
 	
 	clearflag FLAG_HIDE_CHERRYGROVE_GUIDE_GENT_HOUSE
 	setflag FLAG_HIDE_GUIDE_GENT_CHERRYGROVE
-	setvar VAR_CHERRYGROVE_CITY_STATE, 1
+	setvar_min VAR_CHERRYGROVE_CITY_STATE, 1
 	fadedefaultbgm
 	release
 	end
@@ -270,7 +270,7 @@ CherryGroveCity_Silver_AfterBattle::
 	waitmovement 0
 	removeobject LOCALID_CHERRYGROVE_SILVER
 	setflag FLAG_HIDE_SILVER_CHERRYGROVE
-	setvar VAR_CHERRYGROVE_CITY_STATE, 4
+	setvar_min VAR_CHERRYGROVE_CITY_STATE, 4
 	fadedefaultbgm
 	release
 	end

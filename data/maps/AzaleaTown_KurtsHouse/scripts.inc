@@ -23,7 +23,7 @@ AzaleaTown_KurtsHouse_EventScript_KurtBefore::
 	removeobject LOCALID_AZALEA_TOWN_KURT_BEFORE
 	setflag FLAG_HIDE_KURT_1
 	setflag FLAG_HIDE_AZALEA_TOWN_WELL_ROCKET
-	setvar VAR_AZALEA_TOWN_STATE, 2
+	setvar_min VAR_AZALEA_TOWN_STATE, 2
 	release
 	end
 
@@ -92,7 +92,7 @@ AzaleaTown_KurtsHouse_EventScript_ReturnFromWell::
 	msgbox KurtsHouse_Text_KurtBallsFromApricorns, MSGBOX_DEFAULT
 	closemessage
 	turnobject LOCALID_AZALEA_TOWN_KURT, DIR_NORTH
-	setvar VAR_AZALEA_TOWN_STATE, 4
+	setvar_min VAR_AZALEA_TOWN_STATE, 4
 	release
 	end
 
@@ -196,7 +196,7 @@ AzaleaTown_KurtsHouse_EventScript_KurtGsBall::
 	waitmovement 0
 AzaleaTown_KurtsHouse_EventScript_KurtGsBall2::
 	msgbox KurtsHouse_Text_Kurt_Whatwasthat, MSGBOX_DEFAULT
-	setvar VAR_AZALEA_TOWN_STATE, 8
+	setvar_min VAR_AZALEA_TOWN_STATE, 8
 	closemessage
 	release
 	end

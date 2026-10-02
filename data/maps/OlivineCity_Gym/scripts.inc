@@ -31,7 +31,7 @@ OlivineCity_Gym_TriggerRow1::
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_EAST
 	msgbox OlivineCity_Gym_Text_Gent, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_OLIVINE_CITY_STATE, 6
+	setvar_min VAR_OLIVINE_CITY_STATE, 6
 	release
 	end
 
@@ -114,7 +114,7 @@ OlivineCity_Gym_TriggerRow2::
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_WEST
 	msgbox OlivineCity_Gym_Text_Lass, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_OLIVINE_CITY_STATE, 7
+	setvar_min VAR_OLIVINE_CITY_STATE, 7
 	release
 	end
 
@@ -240,9 +240,9 @@ OlivineCity_Gym_EventScript_JasmineVictory::
 	call Common_EventScript_SetGymTrainers_Johto
 	giveitem ITEM_TM_SMART_STRIKE
 	msgbox OlivineCity_Gym_Text_JasmineIronTailSpeech, MSGBOX_DEFAULT
-	setvar VAR_OLIVINE_CITY_STATE, 8
+	setvar_min VAR_OLIVINE_CITY_STATE, 8
 	setrespawn HEAL_LOCATION_OLIVINE_CITY
-    call_if_eq VAR_NUM_BADGES, 7, MahoganyTown_Gym_EventScript_SetupElmRocketCall
+	call Johto_EventScript_TryRadioTowerTakeover
 	closemessage
 	release
 	end

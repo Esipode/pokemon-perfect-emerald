@@ -35,7 +35,7 @@ VictoryRoadKanto_1F_Trigger::
 	removeobject LOCALID_VICTORYROAD_SILVER
 	fadedefaultbgm
 	release
-	setvar VAR_ROUTE27_STATE, 3
+	setvar_min VAR_ROUTE27_STATE, 3
 	end
 
 VictoryRoadKanto_1F_EventScript_SilverEnterLeft::

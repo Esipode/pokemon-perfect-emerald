@@ -17,7 +17,7 @@ EcruteakCity_Test_League::
 
 EcruteakCity_EventScript_FirstVisit::
 	setflag FLAG_VISITED_ECRUTEAK_CITY
-	setvar VAR_ECRUTEAK_CITY_STATE, 1
+	setvar_min VAR_ECRUTEAK_CITY_STATE, 1
 	return
 
 EcruteakCity_Trigger_Silver::
@@ -56,7 +56,7 @@ EcruteakCity_Trigger_Silver::
 	removeobject LOCALID_ECRUTEK_SILVER
 	fadedefaultbgm
 
-	setvar VAR_ECRUTEAK_CITY_THEATER, 5
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 5
 	releaseall
 	end
 

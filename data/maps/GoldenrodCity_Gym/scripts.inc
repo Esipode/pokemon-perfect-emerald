@@ -41,13 +41,13 @@ GoldenrodCity_Gym_EventScript_Gym_Guy_After::
 GoldenrodCity_Gym_EventScript_Whitney::
 	lock
 	faceplayer
-	goto_if_eq VAR_GOLDENROD_CITY_STATE, 3, GoldenrodCity_Gym_EventScript_WhitneyCrying
-	goto_if_eq VAR_GOLDENROD_CITY_STATE, 4, GoldenrodCity_Gym_EventScript_WhitneyBadge
+	goto_if_eq VAR_GOLDENROD_GYM_STATE, 1, GoldenrodCity_Gym_EventScript_WhitneyCrying
+	goto_if_eq VAR_GOLDENROD_GYM_STATE, 2, GoldenrodCity_Gym_EventScript_WhitneyBadge
 	goto_if_set FLAG_DEFEATED_GOLDENROD_CITY_GYM, GoldenrodCity_Gym_EventScript_WhitneyDefeated
 	msgbox GoldenrodCity_Gym_Text_WhitneyBefore, MSGBOX_DEFAULT
 	trainerbattle_no_intro TRAINER_WHITNEY_1_JOHTO, GoldenrodCity_Gym_Text_WhitneyShouldntBeSoSerious
 	msgbox GoldenrodCity_Gym_Text_WhitneyYouMeanie, MSGBOX_DEFAULT
-	setvar VAR_GOLDENROD_CITY_STATE, 3
+	setvar VAR_GOLDENROD_GYM_STATE, 1
 	closemessage
 	release
 	end
@@ -77,7 +77,8 @@ GoldenrodCity_Gym_EventScript_WhitneyBadge::
 	call Common_EventScript_SetGymTrainers_Johto
 	giveitem ITEM_TM_FAKE_OUT
 	msgbox GoldenrodCity_Gym_Text_WhitneyAttract, MSGBOX_DEFAULT
-	setvar VAR_GOLDENROD_CITY_STATE, 5
+	setvar VAR_GOLDENROD_GYM_STATE, 3
+	call Johto_EventScript_TryRadioTowerTakeover
 	closemessage
 	release
 	end
@@ -95,7 +96,7 @@ GoldenrodCity_Gym_EventScript_Trigger::
 	msgbox GoldenrodCity_Gym_Text_BridgetWhitneyCries, MSGBOX_DEFAULT
 	applymovement OBJ_EVENT_ID_PLAYER, Common_Movement_WalkUp1
 	waitmovement 0
-	setvar VAR_GOLDENROD_CITY_STATE, 4
+	setvar VAR_GOLDENROD_GYM_STATE, 2
 	closemessage
 	release
 	end

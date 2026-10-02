@@ -209,7 +209,7 @@ BlackthornGym_EventScript_Clair::
 	setflag FLAG_DEFEATED_BLACKTHORN_GYM
 	setvar VAR_0x8008, 8
 	call Common_EventScript_SetGymTrainers_Johto
-	setvar VAR_BLACKTHORN_CITY_STATE, 2
+	setvar_min VAR_BLACKTHORN_CITY_STATE, 2
 	closemessage
 	release
 	end

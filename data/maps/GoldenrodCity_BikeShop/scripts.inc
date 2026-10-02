@@ -4,6 +4,8 @@ GoldenrodCity_BikeShop_MapScripts::
 GoldenrodCity_BikeShop_EventScript_Clerk::
 	lock
 	faceplayer
+	checkitem ITEM_BICYCLE
+	goto_if_eq VAR_RESULT, TRUE, GoldenrodCity_BikeShop_EventScript_Clerk_BikeReceived
 	goto_if_set FLAG_RECEIVED_BIKE, GoldenrodCity_BikeShop_EventScript_Clerk_BikeReceived
 	msgbox GoldenrodCity_BikeShop_Text_ClerkIntro, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, TRUE, GoldenrodCity_BikeShop_EventScript_Clerk_BikeAgreed

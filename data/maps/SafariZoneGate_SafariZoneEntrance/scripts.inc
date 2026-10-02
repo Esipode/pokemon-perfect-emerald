@@ -47,7 +47,7 @@ SafariZoneGate_SafariZoneEntrance_MeetBaoba::
 	closemessage
 	applymovement LOCALID_SAFARIZONEGATE_BAOBA, SafariZoneGate_SafariZoneEntrance_Movement_ReturnToTable
 	waitmovement 0
-	setvar VAR_SAFARI_ZONE_GATE_STATE, 4
+	setvar_min VAR_SAFARI_ZONE_GATE_STATE, 4
 	release
 	end
 

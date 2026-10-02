@@ -258,7 +258,7 @@ OlivineLighthouse_EventScript_Jasmine::
 	msgbox OlivineLighthouse_Text_JasmineCianwoodPharmacy, MSGBOX_DEFAULT
 	msgbox OlivineLighthouse_Text_JasmineGetMedicine, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_OLIVINE_CITY_STATE, 3
+	setvar_min VAR_OLIVINE_CITY_STATE, 3
 	release
 	end
 OlivineLighthouse_EventScript_JasmineGoGetPotion::
@@ -354,8 +354,8 @@ OlivineLighthouse_EventScript_JasmineDeliverPotion::
 	waitse
 	delay 50
 	fadescreen FADE_FROM_BLACK
-	setvar VAR_SAFARI_ZONE_GATE_STATE, 1
-	setvar VAR_OLIVINE_CITY_STATE, 5
+	setvar_min VAR_SAFARI_ZONE_GATE_STATE, 1
+	setvar_min VAR_OLIVINE_CITY_STATE, 5
 	setflag FLAG_AMPHAROS_HEALED
 	clearflag FLAG_HIDE_OLIVINE_CITY_GYM_JASMINE
 	release

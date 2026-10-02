@@ -110,8 +110,8 @@
       "x": 15,
       "y": 11,
       "elevation": 0,
-      "var": "VAR_GOLDENROD_CITY_STATE",
-      "var_value": "3",
+      "var": "VAR_GOLDENROD_GYM_STATE",
+      "var_value": "1",
       "script": "GoldenrodCity_Gym_EventScript_Trigger"
     },
     {
@@ -119,8 +119,8 @@
       "x": 15,
       "y": 11,
       "elevation": 0,
-      "var": "VAR_GOLDENROD_CITY_STATE",
-      "var_value": "4",
+      "var": "VAR_GOLDENROD_GYM_STATE",
+      "var_value": "2",
       "script": "GoldenrodCity_Gym_EventScript_Trigger"
     }
   ],

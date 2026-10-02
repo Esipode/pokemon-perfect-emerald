@@ -104,16 +104,14 @@ OlivinePort_EventScript_Youngster::
 	end
 
 OlivinePort_EventScript_Sailor::
-	lock
-	faceplayer
-	msgbox OlivinePort_Text_AskBoard, MSGBOX_YESNO
-	goto_if_eq VAR_RESULT, FALSE, OlivinePort_EventScript_Sailor_Refused
-	checkitem ITEM_SS_TICKET
-	goto_if_eq VAR_RESULT, TRUE, OlivinePort_EventScript_Sailor_MaidenVoyage
-	msgbox OlivinePort_Text_NoTicket, MSGBOX_DEFAULT
-	closemessage
-	release
+	msgbox OlivinePort_Text_FerrySuspended, MSGBOX_NPC
 	end
+
+OlivinePort_Text_FerrySuspended:
+	.string "The ferries from this port are not\n"
+	.string "running right now.\p"
+	.string "The only way to HOENN and KANTO is\n"
+	.string "by the MAGNET TRAIN from GOLDENROD.$"
 
 OlivinePort_EventScript_Sailor_AfterKanto::
 	message OlivinePort_Text_WhereSail

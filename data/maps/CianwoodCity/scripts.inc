@@ -209,15 +209,15 @@ CianwoodCity_EventScript_SuicuneTrigger::
 	setflag FLAG_HIDE_CIANWOOD_SUICUNE
 	removeobject LOCALID_CIANWOOD_SUICUNE
 	removeobject LOCALID_CIANWOOD_EUSINE
-	setvar VAR_SUICUNE_ENCOUNTERS, 2
-	setvar VAR_CIANWOOD_CITY_STATE, 2
+	setvar_min VAR_SUICUNE_ENCOUNTERS, 2
+	setvar_min VAR_CIANWOOD_CITY_STATE, 2
 	fadedefaultbgm
 	call_if_set FLAG_HIDE_ROUTE42_SUICUNE, CianwoodCity_EventScript_DoneJohtoSuicune
 	release
 	end
 
 CianwoodCity_EventScript_DoneJohtoSuicune::
-	setvar VAR_SUICUNE_ENCOUNTERS, 3
+	setvar_min VAR_SUICUNE_ENCOUNTERS, 3
 	return
 
 CianwoodCity_Movement_Suicune1:

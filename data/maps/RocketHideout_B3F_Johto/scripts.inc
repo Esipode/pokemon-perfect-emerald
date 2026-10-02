@@ -42,7 +42,7 @@ RocketHideout_B3F_Johto_EventScript_LancePassword::
 	setflag FLAG_HIDE_ROCKETHIDEOUT3_LANCE_DRAGONITE
 	removeobject LOCALID_ROCKETHIDEOUT3_DRAGONITE
 	removeobject LOCALID_ROCKETHIDEOUT3_LANCE
-	setvar VAR_MAHOGANY_TOWN_STATE, 7
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 7
 	release
 	end
 
@@ -115,7 +115,7 @@ RocketHideout_B3F_Johto_Trigger_MurkrowStairs::
 	setflag FLAG_HIDE_ROCKETHIDEOUT3_MURKROWSTAIRS
 	removeobject LOCALID_ROCKETHIDEOUT3_MURKROWSTAIRS
 	clearflag FLAG_HIDE_ROCKETHIDEOUT2_MURKROWGATE
-	setvar VAR_MAHOGANY_TOWN_STATE, 11
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 11
 	release
 	end
 
@@ -156,7 +156,7 @@ RocketHideout_B3F_Johto_Trigger_Silver::
 	waitmovement 0
 	setflag FLAG_HIDE_ROCKETHIDEOUT3_SILVER
 	removeobject LOCALID_ROCKETHIDEOUT3_SILVER
-	setvar VAR_MAHOGANY_TOWN_STATE, 8
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 8
 	fadedefaultbgm
 	release
 	end
@@ -355,7 +355,7 @@ RocketHideout_B3F_Johto_EventScript_Giovanni::
 	setflag FLAG_HIDE_ROCKETHIDEOUT3_MURKROWSTAIRS
 	setflag FLAG_HIDE_ROCKETHIDEOUT2_ARIANA_AND_GRUNT
 	setvar VAR_ROCKET_PASSWORD, 3
-	setvar VAR_MAHOGANY_TOWN_STATE, 9
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 9
 	release
 	end
 

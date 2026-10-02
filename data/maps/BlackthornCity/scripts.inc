@@ -28,8 +28,8 @@ BlackthornCity_EventScript_Call::
 	pokenavcall BlackthornCity_Text_ElmCall
 	waitmessage
 	delay 30
-	setvar VAR_BLACKTHORN_CITY_STATE, 5
-	setvar VAR_NEWBARKTOWN_LABSTATE, 7
+	setvar_min VAR_BLACKTHORN_CITY_STATE, 5
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 7
 	release
 	end
 

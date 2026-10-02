@@ -43,8 +43,9 @@ VioletCity_Gym_EventScript_Falkner::
 	call Common_EventScript_SetGymTrainers_Johto
 	giveitem ITEM_TM_ROOST
 	msgbox VioletGym_Text_Falkner_TMExplain, MSGBOX_DEFAULT
-	setvar VAR_VIOLET_CITY_STATE, 3
+	setvar_min VAR_VIOLET_CITY_STATE, 3
 	setrespawn HEAL_LOCATION_VIOLET_CITY
+	call Johto_EventScript_TryRadioTowerTakeover
 	closemessage
 	release
 	end

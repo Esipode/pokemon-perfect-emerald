@@ -15,7 +15,7 @@ CianwoodCity_EventScript_Kirk::
 	givenamedmon 2
 	call Common_EventScript_GiftMonNamed
 
-	setvar VAR_SHUCKIE, 1
+	setvar_min VAR_SHUCKIE, 1
 	release
 	end
 
@@ -41,7 +41,7 @@ CianwoodCity_EventScript_KirkReturnShuckie::
 	msgbox CianwoodCity_Text_ManiacReturnedMon, MSGBOX_DEFAULT
 	waitse
 	msgbox CianwoodCity_Text_ManiacThankYou, MSGBOX_DEFAULT
-	setvar VAR_SHUCKIE, 3
+	setvar_min VAR_SHUCKIE, 3
 	release
 	end
 
@@ -60,7 +60,7 @@ CianwoodCity_EventScript_KirkNotRight::
 CianwoodCity_EventScript_KirkKeepShuckie::
 	msgbox CianwoodCity_Text_ManiacShuckleLikesYou, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_SHUCKIE, 3
+	setvar_min VAR_SHUCKIE, 3
 	release
 	end
 

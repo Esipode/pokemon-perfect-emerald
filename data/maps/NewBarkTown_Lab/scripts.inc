@@ -73,6 +73,9 @@ NewBarkTown_Lab_EventScript_Elm::
 	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 9, NewBarkTown_Lab_EventScript_ElmLeague
 	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 10, NewBarkTown_Lab_EventScript_ElmSSTicket
 
+	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 1, NewBarkTown_Lab_EventScript_ElmStarterPending
+	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 2, CopNewBarkTown_Lab_EventScript_ElmState2
+	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 3, CopNewBarkTown_Lab_EventScript_ElmState2
 	goto_if_unset FLAG_RECEIVED_TOGEPI_EGG, NewBarkTown_Lab_EventScript_Elm_AfterEggCheck
 	goto_if_set FLAG_SHOWN_ELM_TOGEPI, NewBarkTown_Lab_EventScript_Elm_CallMe
 	call_if_unset FLAG_SHOWN_ELM_TOGEPI, NewBarkTown_Lab_EventScript_Elm_Check_Togepi
@@ -83,9 +86,11 @@ NewBarkTown_Lab_EventScript_Elm_AfterEggCheck:
 	goto_if_ge VAR_NEWBARKTOWN_LABSTATE, 6, NewBarkTown_Lab_EventScript_ElmState5
 	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 2, CopNewBarkTown_Lab_EventScript_ElmState2
 	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 3, CopNewBarkTown_Lab_EventScript_ElmState2
-	goto_if_set FLAG_SYS_POKEMON_GET, NewBarkTown_Lab_EventScript_MrPokemon
-	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 1, NewBarkTown_Lab_EventScript_ElmChoosePokemon
 	end
+
+NewBarkTown_Lab_EventScript_ElmStarterPending::
+	goto_if_set FLAG_JOHTO_STARTER_CHOSEN, NewBarkTown_Lab_EventScript_MrPokemon
+	goto NewBarkTown_Lab_EventScript_ElmChoosePokemon
 
 NewBarkTown_Lab_EventScript_ElmAideIsWaiting::
 	msgbox NewBarkTown_Lab_Text_ElmAideIsWaiting, MSGBOX_DEFAULT
@@ -161,7 +166,7 @@ NewBarkTown_Lab_EventScript_ShouldntTouch::
 
 NewBarkTown_Lab_EventScript_ChikoritaBall::
 	lock
-	goto_if_set FLAG_SYS_POKEMON_GET, NewBarkTown_Lab_EventScript_ShouldntTouch
+	goto_if_set FLAG_JOHTO_STARTER_CHOSEN, NewBarkTown_Lab_EventScript_ShouldntTouch
 	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 1, NewBarkTown_Lab_EventScript_ChikoritaBall_Choice
 	msgbox NewBarkTown_Lab_Text_ShouldntTouch, MSGBOX_DEFAULT
 	release
@@ -183,7 +188,7 @@ NewBarkTown_Lab_EventScript_ChikoritaBall_Choice::
 
 NewBarkTown_Lab_EventScript_CyndaquilBall::
 	lock
-	goto_if_set FLAG_SYS_POKEMON_GET, NewBarkTown_Lab_EventScript_ShouldntTouch
+	goto_if_set FLAG_JOHTO_STARTER_CHOSEN, NewBarkTown_Lab_EventScript_ShouldntTouch
 	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 1, NewBarkTown_Lab_EventScript_CyndaquilBall_Choice
 	msgbox NewBarkTown_Lab_Text_ShouldntTouch, MSGBOX_DEFAULT
 	closemessage
@@ -205,7 +210,7 @@ NewBarkTown_Lab_EventScript_CyndaquilBall_Choice::
 
 NewBarkTown_Lab_EventScript_TotodileBall::
 	lock
-	goto_if_set FLAG_SYS_POKEMON_GET, NewBarkTown_Lab_EventScript_ShouldntTouch
+	goto_if_set FLAG_JOHTO_STARTER_CHOSEN, NewBarkTown_Lab_EventScript_ShouldntTouch
 	goto_if_eq VAR_NEWBARKTOWN_LABSTATE, 1, NewBarkTown_Lab_EventScript_TotodileBall_Choice
 	msgbox NewBarkTown_Lab_Text_ShouldntTouch, MSGBOX_DEFAULT
 	release
@@ -236,6 +241,7 @@ NewBarkTown_Lab_EventScript_DeclinedStarter::
 NewBarkTown_Lab_EventScript_ChoseStarter::
 	@callnative EnableStaticRandomizer
 	hidemonpic
+	setflag FLAG_JOHTO_STARTER_CHOSEN
 	removeobject VAR_LAST_TALKED
 	msgbox NewBarkTown_Lab_Text_ChoseStarter, MSGBOX_DEFAULT
 	call_if_eq VAR_JOHTO_STARTER_MON, 0, NewBarkTown_Lab_EventScript_GiveStarter_Chikorita
@@ -288,8 +294,8 @@ NewBarkTown_Lab_EventScript_ChoseStarter_NicknameStarter_Nuzlocke::
 	end
 
 NewBarkTown_Lab_EventScript_MrPokemon::
-	setvar VAR_NEWBARKTOWN_LABSTATE, 2
-	setvar VAR_NEWBARK_TOWN_STATE, 3
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 2
+	setvar_min VAR_NEWBARK_TOWN_STATE, 3
 	msgbox NewBarkTown_Lab_Text_ElmDirections1_Register, MSGBOX_DEFAULT
 	playfanfare MUS_REGISTER_MATCH_CALL
 	msgbox NewBarkTown_Lab_Text_RegisteredElm, MSGBOX_DEFAULT
@@ -300,7 +306,7 @@ NewBarkTown_Lab_EventScript_MrPokemon::
 	applymovement LOCALID_ELM, NewBarkTown_Lab_Movement_CheckEmailSlow
 	waitmovement 0
 	clearflag FLAG_RECEIVED_FIRST_POTION
-	setvar VAR_NEWBARK_TOWN_STATE, 3
+	setvar_min VAR_NEWBARK_TOWN_STATE, 3
 	setflag FLAG_ENABLE_CONDITION
 	release
 	end
@@ -309,7 +315,7 @@ NewBarkTown_Lab_EventScript_MrPokemonMovementSafe::
 	applymovement LOCALID_ELM, NewBarkTown_Lab_Movement_GotoComputerSafe
 	waitmovement 0
 	clearflag FLAG_RECEIVED_FIRST_POTION
-	setvar VAR_NEWBARK_TOWN_STATE, 3
+	setvar_min VAR_NEWBARK_TOWN_STATE, 3
 	release
 	end
 
@@ -347,7 +353,7 @@ NewBarkTown_Lab_EventScript_TriggerAideGivePotion::
 	giveitem ITEM_POTION
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
 	setflag FLAG_RECEIVED_FIRST_POTION
-	setvar VAR_NEWBARKTOWN_LABSTATE, 3
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 3
 	applymovement LOCALID_AIDE1, NewBarkTown_Lab_Movement_Aide1LeavePlayer
 	waitmovement 0
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_SOUTH
@@ -413,8 +419,8 @@ NewBarkTown_Lab_EventScript_PoliceYes::
 	waitmovement 0
 	msgbox NewBarkTown_Lab_Text_ElmAfterTheft4, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_NEWBARKTOWN_LABSTATE, 5
-	setvar VAR_NEWBARK_TOWN_STATE, 4
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 5
+	setvar_min VAR_NEWBARK_TOWN_STATE, 4
 	setflag FLAG_HIDE_MOMS_FRIEND
 	clearflag FLAG_HIDE_MOMS_FRIEND2
 	setflag FLAG_JOHTO_ADVENTURE_STARTED
@@ -445,8 +451,8 @@ NewBarkTown_Lab_EventScript_ElmMasterBall::
 	waitmovement LOCALID_ELM
 	msgbox NewBarkTown_Lab_Text_KimonoGirls, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_NEWBARKTOWN_LABSTATE, 8
-	setvar VAR_ECRUTEAK_CITY_THEATER, 4
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 8
+	setvar_min VAR_ECRUTEAK_CITY_THEATER, 4
 	setflag FLAG_HIDE_ECRUTEAK_SILVER
 	setflag FLAG_HIDE_ECRUTEAK_CITY_THEATER_NPCS
 	clearflag FLAG_HIDE_ECRUTEAK_CITY_THEATER_KIMONOS
@@ -471,11 +477,10 @@ NewBarkTown_Lab_EventScript_ElmLeague::
 
 NewBarkTown_Lab_EventScript_ElmSSTicket::
 	msgbox NewBarkTown_Lab_Text_ElmGiveTicket1, MSGBOX_DEFAULT
-	giveitem ITEM_SS_TICKET
+	giveitem ITEM_RARE_CANDY, 5
 	msgbox NewBarkTown_Lab_Text_ElmGiveTicket2, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_NEWBARKTOWN_LABSTATE, 11
-	clearflag FLAG_HIDE_OLIVINE_PORT_OAK
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 11
 	release
 	end
 
@@ -488,7 +493,7 @@ NewBarkTown_Lab_EventScript_TriggerAideGiveBalls::
 	closemessage
 	giveitem ITEM_POKE_BALL, 5
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
-	setvar VAR_NEWBARKTOWN_LABSTATE, 6
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 6
 	applymovement LOCALID_AIDE1, NewBarkTown_Lab_Movement_Aide1LeavePlayer
 	waitmovement 0
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_SOUTH
@@ -941,19 +946,13 @@ NewBarkTown_Lab_Text_ElmGiveTicket1:
 	.string "ELM: {PLAYER}! There you are!\p"
 	.string "I called because I have\n"
 	.string "something for you.\p"
-	.string "See? It's an S.S.TICKET.\p"
-	.string "Now you can catch POKéMON in\n"
-	.string "KANTO.$"
+	.string "Please take these RARE CANDIES\n"
+	.string "as thanks for all your help.$"
 
 NewBarkTown_Lab_Text_ElmGiveTicket2:
-	.string "The ship departs from OLIVINE\n"
-	.string "CITY.\p"
-	.string "But you knew that already,\n"
-	.string "{PLAYER}.\p"
-	.string "After all, you've traveled all\n"
-	.string "over with your POKéMON.\p"
-	.string "Give my regards to PROF.OAK in\n"
-	.string "KANTO!$"
+	.string "You've traveled all over with\n"
+	.string "your POKéMON, {PLAYER}.\p"
+	.string "Keep up the good work!$"
 
 NewBarkTown_Lab_Text_LabMonEgg:
 	.string "It's the POKéMON EGG being\n"

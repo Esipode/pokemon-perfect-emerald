@@ -19,7 +19,7 @@ Gate_GoldenrodCity_Route35_EventScript_Randy::
 	givenamedmon 1
 	call Common_EventScript_GiftMonNamed
 
-	setvar VAR_KENYA, 1
+	setvar_min VAR_KENYA, 1
 	release
 	end
 
@@ -42,7 +42,7 @@ Gate_GoldenrodCity_Route35_EventScript_RandyDeliveredKenya::
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_BagIsFull
 	msgbox Route35GoldenrodGate_Text_RandyMyPalSnoozing, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_KENYA, 3
+	setvar_min VAR_KENYA, 3
 	release
 	end
 

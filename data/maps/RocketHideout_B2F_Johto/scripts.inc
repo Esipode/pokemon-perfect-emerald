@@ -92,7 +92,7 @@ RocketHideout_B2F_Johto_Trigger_MurkrowStairs::
 	setflag FLAG_HIDE_ROCKETHIDEOUT2_MURKROWSTAIRS
 	removeobject LOCALID_ROCKETHIDEOUT2_MURKROWSTAIRS
 	clearflag FLAG_HIDE_ROCKETHIDEOUT3_MURKROWSTAIRS
-	setvar VAR_MAHOGANY_TOWN_STATE, 10
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 10
 	release
 	end
 
@@ -137,7 +137,7 @@ RocketHideout_B2F_Johto_Trigger_MurkrowGate::
 	waitmovement 0
 	setflag FLAG_HIDE_ROCKETHIDEOUT2_MURKROWGATE
 	removeobject LOCALID_ROCKETHIDEOUT2_MURKROWGATE
-	setvar VAR_MAHOGANY_TOWN_STATE, 12
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 12
 	release
 	end
 RocketHideout_B2F_Johto_Movement_MurkrowGate1:
@@ -361,7 +361,7 @@ RocketHideout_B2F_Johto_EventScript_DefeatedAriana::
 	setobjectxyperm LOCALID_ROCKETHIDEOUT2_LANCE, 19, 16
 	setobjectmovementtype LOCALID_ROCKETHIDEOUT2_DRAGONITE, MOVEMENT_TYPE_WALK_IN_PLACE_UP
 	setobjectmovementtype LOCALID_ROCKETHIDEOUT2_LANCE, MOVEMENT_TYPE_FACE_UP
-	setvar VAR_MAHOGANY_TOWN_STATE, 13
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 13
 	release
 	end
 
@@ -515,7 +515,7 @@ RocketHideout_B2F_Johto_EventScript_ElectrodeDone::
 	removeobject LOCALID_ROCKETHIDEOUT2_DRAGONITE
 	removeobject LOCALID_ROCKETHIDEOUT2_LANCE
 	setvar VAR_ELECTRODES_FAINTED, 4
-	setvar VAR_MAHOGANY_TOWN_STATE, 14
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 14
 	clearflag FLAG_HIDE_MAHOGANY_COP
 	setflag FLAG_HIDE_MAHOGANY_TOWN_FATMAN
 	setvar VAR_ROCKET_HIDEOUT_STATUE_1, 2
@@ -705,7 +705,7 @@ RocketHideout_B2F_Johto_EventScript_Lance::
 	waitmovement LOCALID_ROCKETHIDEOUT2_DRAGONITE
 	setflag FLAG_HIDE_ROCKETHIDEOUT2_LANCE_DRAGONITE
 	removeobject LOCALID_ROCKETHIDEOUT2_LANCE
-	setvar VAR_MAHOGANY_TOWN_STATE, 6
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 6
 	removeobject LOCALID_ROCKETHIDEOUT2_DRAGONITE
 	release
 	end

@@ -2,7 +2,7 @@ CianwoodShop_MapScripts::
 	.byte 0
 
 CianwoodShop_EventScriptMan::	
-	setvar VAR_OLIVINE_CITY_STATE, 4
+	setvar_min VAR_OLIVINE_CITY_STATE, 4
 	giveitem ITEM_SECRET_POTION
 	end
 
@@ -15,7 +15,7 @@ CianwoodCity_EventScript_Pharmacist::
 	msgbox CianwoodCity_Text_PharmacistGivePotion, MSGBOX_DEFAULT
 	giveitem ITEM_SECRET_POTION
 	closemessage
-	setvar VAR_OLIVINE_CITY_STATE, 4
+	setvar_min VAR_OLIVINE_CITY_STATE, 4
 	release
 	end
 

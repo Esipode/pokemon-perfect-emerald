@@ -60,7 +60,7 @@ PokemonLeague_HallOfFame_Johto_EventScript_SetFirstGameClearFlags::
 	setflag FLAG_JOHTO_CHAMPION
 	call Common_EventScript_CheckLevelCapIncrease
 	setvar VAR_LEAGUE_STATE, 1
-	setvar VAR_NEWBARK_TOWN_STATE, 6
+	setvar_min VAR_NEWBARK_TOWN_STATE, 6
 	return
 
 PokemonLeague_HallOfFame_Johto_EventScript_SetGameClearFlags::

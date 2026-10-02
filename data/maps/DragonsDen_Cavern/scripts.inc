@@ -41,7 +41,7 @@ DragonsDen_Cavern_Trigger_ClairLeft::
 	removeobject LOCALID_DRAGONSDEN2_CLAIR
 	playse SE_EXIT
 	fadedefaultbgm
-	setvar VAR_BLACKTHORN_CITY_STATE, 4
+	setvar_min VAR_BLACKTHORN_CITY_STATE, 4
 	setrespawn HEAL_LOCATION_BLACKTHORN_CITY
 	releaseall
 	end
@@ -61,7 +61,7 @@ DragonsDen_Cavern_Trigger_ClairMid::
 	removeobject LOCALID_DRAGONSDEN2_CLAIR
 	playse SE_EXIT
 	fadedefaultbgm
-	setvar VAR_BLACKTHORN_CITY_STATE, 4
+	setvar_min VAR_BLACKTHORN_CITY_STATE, 4
 	release
 	end
 
@@ -82,7 +82,7 @@ DragonsDen_Cavern_Trigger_ClairRight::
 	removeobject LOCALID_DRAGONSDEN2_CLAIR
 	playse SE_EXIT
 	fadedefaultbgm
-	setvar VAR_BLACKTHORN_CITY_STATE, 4
+	setvar_min VAR_BLACKTHORN_CITY_STATE, 4
 	release
 	end
 

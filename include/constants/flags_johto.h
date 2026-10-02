@@ -572,4 +572,7 @@
 // Set at New Game; hides object events whose HnS hide flag belonged to cut content (0x2340)
 #define FLAG_JOHTO_ALWAYS_HIDDEN                                 (JOHTO_FLAGS_START + 0x340)
 
+// Story-pass additions (0x2341+)
+#define FLAG_JOHTO_STARTER_CHOSEN                                (JOHTO_FLAGS_START + 0x341) // Elm's lab starter taken
+
 #endif // GUARD_CONSTANTS_FLAGS_JOHTO_H

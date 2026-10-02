@@ -33,7 +33,7 @@ GoldenrodCity_RadioTower_5F_EventScript_Petrel::
 	trainerbattle_no_intro TRAINER_PETREL_2_JOHTO, GoldenrodCity_RadioTower_5F_Text_FakeDirectorWin
 	msgbox GoldenrodCity_RadioTower_5F_Text_FakeDirectorAfter, MSGBOX_DEFAULT
 	giveitem ITEM_BASEMENT_KEY_JOHTO
-	setvar VAR_GOLDENROD_CITY_STATE, 7
+	setvar_min VAR_GOLDENROD_CITY_STATE, 7
 	clearflag FLAG_HIDE_GOLDENROD_UNDERGROUND_KIMONO
 	closemessage
 	release
@@ -157,7 +157,7 @@ GoldenrodCity_RadioTower_5F_EventScript_Archer::
 	fadescreen FADE_TO_BLACK
 	setflag FLAG_HIDE_GOLDENROD_ROCKETS
 	playse SE_EXIT
-	setvar VAR_GOLDENROD_CITY_STATE, 10
+	setvar_min VAR_GOLDENROD_CITY_STATE, 10
 	removeobject LOCALID_GOLDENROD_ARCHER
 	removeobject LOCALID_GOLDENROD_ARIANA
 	setflag FLAG_HIDE_GOLDENROD_RADIOTOWER_PETREL
@@ -179,6 +179,7 @@ GoldenrodCity_RadioTower_5F_EventScript_WingTop::
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_EAST
 	msgbox GoldenrodCity_RadioTower_5F_Text_DirectorThanks, MSGBOX_DEFAULT
 	closemessage
+	call Johto_EventScript_EnsureLegendChoice
 	call_if_eq VAR_LUGIA_OR_HOOH, 1,  GoldenrodCity_RadioTower_5F_EventScript_GiveTidalWing
 	call_if_eq VAR_LUGIA_OR_HOOH, 2, GoldenrodCity_RadioTower_5F_EventScript_GiveClearWing
 	applymovement LOCALID_DIRECTOR_STUDIO, GoldenrodCity_RadioTower_5F_Movement_LeaveTop
@@ -192,6 +193,7 @@ GoldenrodCity_RadioTower_5F_EventScript_WingMid::
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_EAST
 	msgbox GoldenrodCity_RadioTower_5F_Text_DirectorThanks, MSGBOX_DEFAULT
 	closemessage
+	call Johto_EventScript_EnsureLegendChoice
 	call_if_eq VAR_LUGIA_OR_HOOH, 1,  GoldenrodCity_RadioTower_5F_EventScript_GiveTidalWing
 	call_if_eq VAR_LUGIA_OR_HOOH, 2, GoldenrodCity_RadioTower_5F_EventScript_GiveClearWing
 	applymovement LOCALID_DIRECTOR_STUDIO, GoldenrodCity_RadioTower_5F_Movement_LeaveMid
@@ -205,6 +207,7 @@ GoldenrodCity_RadioTower_5F_EventScript_WingBot::
 	turnobject OBJ_EVENT_ID_PLAYER, DIR_EAST
 	msgbox GoldenrodCity_RadioTower_5F_Text_DirectorThanks, MSGBOX_DEFAULT
 	closemessage
+	call Johto_EventScript_EnsureLegendChoice
 	call_if_eq VAR_LUGIA_OR_HOOH, 1,  GoldenrodCity_RadioTower_5F_EventScript_GiveTidalWing
 	call_if_eq VAR_LUGIA_OR_HOOH, 2, GoldenrodCity_RadioTower_5F_EventScript_GiveClearWing
 	applymovement LOCALID_DIRECTOR_STUDIO, GoldenrodCity_RadioTower_5F_Movement_LeaveBot
@@ -245,13 +248,13 @@ GoldenrodCity_RadioTower_5F_Fakeout::
 	waitmovement 0
 	setflag FLAG_HIDE_GOLDENROD_RADIOTOWER_DIRECTOR_2
 	removeobject LOCALID_DIRECTOR_STUDIO
-	setvar VAR_MAHOGANY_TOWN_STATE, 17
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 17
 	release
 	end
 
 GoldenrodCity_RadioTower_5F_EventScript_Trigger_NPCS::
 	clearflag FLAG_HIDE_GOLDENROD_NPCS
-	setvar VAR_GOLDENROD_CITY_STATE, 11
+	setvar_min VAR_GOLDENROD_CITY_STATE, 11
 	end
 
 GoldenrodCity_RadioTower_5F_Movement_WalkToPlayerTop:

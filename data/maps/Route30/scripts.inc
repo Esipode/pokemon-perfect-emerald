@@ -85,7 +85,7 @@ Route30_EventScript_ElmCall_Trigger::
 	pokenavcall Route30_Text_Elm_Disaster
 	waitmessage
 	delay 30
-	setvar VAR_CHERRYGROVE_CITY_STATE, 3
+	setvar_min VAR_CHERRYGROVE_CITY_STATE, 3
 	release
 	end
 

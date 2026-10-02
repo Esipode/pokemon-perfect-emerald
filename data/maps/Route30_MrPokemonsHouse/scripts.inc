@@ -33,9 +33,6 @@ MrPokemonHouse_EventScript_GiveEgg::
 	msgbox MrPokemonHouse_Text_OakIntro, MSGBOX_DEFAULT
 	
 
-	playfanfare MUS_OBTAIN_ITEM
-	message MrPokemonHouse_Text_GetDex
-	waitfanfare
 
 	
 	msgbox MrPokemonHouse_Text_OakParting, MSGBOX_DEFAULT
@@ -57,22 +54,16 @@ MrPokemonHouse_EventScript_GiveEgg::
 	clearflag FLAG_HIDE_MRPOKEMON
 	addobject LOCALID_MRPOKEMON2
 	
-	setvar VAR_NEWBARKTOWN_LABSTATE, 4
+	setvar_min VAR_NEWBARKTOWN_LABSTATE, 4
 	setflag FLAG_HIDE_SILVER_NEWBARKTOWN
-	checkrandomizer
-	call_if_eq VAR_RESULT, TRUE, MrPokemonHouse_EventScript_GiveNatDexRandomizer
 	clearflag FLAG_HIDE_LAB_POLICEMAN
-	setvar VAR_CHERRYGROVE_CITY_STATE, 2
+	setvar_min VAR_CHERRYGROVE_CITY_STATE, 2
 	setrespawn HEAL_LOCATION_CHERRYGROVE_CITY
 	clearflag FLAG_HIDE_SILVER_CHERRYGROVE
 	setflag FLAG_HIDE_GUIDE_GENT_CHERRYGROVE
 	clearflag FLAG_HIDE_CHERRYGROVE_GUIDE_GENT_HOUSE
 	release
 	end
-
-MrPokemonHouse_EventScript_GiveNatDexRandomizer::
-	special EnableNationalPokedex
-	return
 
 MrPokemonHouse_EventScript_MrPokemon::
 	lock
@@ -93,8 +84,9 @@ MrPokemonHouse_EventScript_MrPokemon_RedScale::
 	end	
 
 MrPokemonHouse_EventScript_MrPokemon_RedScale_Accepted::
-	removeitem ITEM_RED_SCALE
+	giveitem ITEM_RARE_CANDY, 3
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
+	removeitem ITEM_RED_SCALE
 	release
 	end
 
@@ -215,9 +207,6 @@ MrPokemonHouse_Text_OakIntro:
 	.string "It shows their habitats, how\n"
 	.string "they evolve, and their moves.$"
 
-MrPokemonHouse_Text_GetDex:
-	.string "{PLAYER} received POKéDEX!$"
-
 MrPokemonHouse_Text_OakParting:
 	.string "Go meet many kinds of POKéMON and\n"
 	.string "complete that POKéDEX!\p"
@@ -232,7 +221,7 @@ MrPokemonHouse_Text_GimmeTheScale:
 	.string "That's rare! I, I want it…\p"
 	.string "{PLAYER}, would you care to\n"
 	.string "trade it?\p"
-	.string "I can offer this EXP.SHARE\n"
+	.string "I can offer some RARE CANDIES\n"
 	.string "that I got from PROF.OAK.$"
 
 MrPokemonHouse_Text_Disappointed:

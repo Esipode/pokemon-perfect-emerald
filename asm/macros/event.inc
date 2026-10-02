@@ -167,6 +167,14 @@
 	.2byte \value
 	.endm
 
+	@ Changes the value of destination to value only if it is currently lower. Never rewinds a story var.
+	.macro setvar_min destination:req, value:req
+	compare \destination, \value
+	goto_if_ge .Lsetvar_min_\@
+	setvar \destination, \value
+.Lsetvar_min_\@:
+	.endm
+
 	@ Changes the value of destination by subtracting value to it. Overflow is not prevented (0x0000 - 1 = 0xFFFF).
 	.macro subvar destination:req, value:req
 	.byte SCR_OP_SUBVAR

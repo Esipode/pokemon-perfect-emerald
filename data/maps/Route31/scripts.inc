@@ -68,7 +68,7 @@ Route31_EventScript_SleepyMan_GiveKenya::
 	giveitem ITEM_TM_HEADBUTT
 	msgbox Route31_Text_DescribeRest, MSGBOX_DEFAULT
 	closemessage
-	setvar VAR_KENYA, 2
+	setvar_min VAR_KENYA, 2
 	release
 	end
 

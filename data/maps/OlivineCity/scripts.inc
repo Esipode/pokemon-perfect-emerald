@@ -4,6 +4,7 @@ OlivineCity_MapScripts::
 	.byte 0
 
 OlivineCity_MapScript_OnTransition::
+	call_if_eq VAR_OLIVINE_CITY_STATE, 0, OlivineCity_EventScript_FirstVisit
 	goto_if_ge VAR_OLIVINE_CITY_STATE, 5, OlivineCity_MapScript_ClearWeather
 	end
 
@@ -22,7 +23,7 @@ OlivineCity_EventScript_BaobaCall::
 	pokenavcall OlivineCity_Text_Baoba
 	waitmessage
 	delay 30
-	setvar VAR_SAFARI_ZONE_GATE_STATE, 2
+	setvar_min VAR_SAFARI_ZONE_GATE_STATE, 2
 	release
 	end
 
@@ -44,22 +45,10 @@ OlivineCity_Text_Baoba:
 	.string "We're a little out of the way, but\n"
 	.string "please come visit!$"
 
-OlivineCity_EventScript_CityTrigger:: @FLAGHEAP
-	setflag FLAG_HIDE_OLIVINE_CITY_GYM_JASMINE
-	setflag FLAG_HIDE_OLIVINE_SILVER
+OlivineCity_EventScript_FirstVisit::
 	setflag FLAG_VISITED_OLIVINE_CITY
-	clearflag FLAG_HIDE_LIGHTHOUSE_JASMINE
-	clearflag FLAG_HIDE_WHIRL_ISLANDS_TENTACRUEL
-	setvar VAR_GETFLY, 0
-	
 	setvar VAR_OLIVINE_CITY_STATE, 1
-
-	@cianwood flags
-	setvar VAR_SUICUNE_ENCOUNTERS, 1
-	clearflag FLAG_HIDE_CIANWOOD_SUICUNE
-	setflag FLAG_HIDE_CIANWOOD_EUSINE
-	setvar VAR_CIANWOOD_CITY_STATE, 1
-	end
+	return
 
 OlivineCity_EventScript_SilverTrigger::
 	lock
@@ -80,7 +69,7 @@ OlivineCity_EventScript_SilverTrigger::
 	call_if_eq VAR_TEMP_1, 30, OlivineCity_EventScript_SilverLeaveAdjust2
 	applymovement LOCALID_OLIVINE_SILVER, OlivineCity_Movement_SilverLeave
 	waitmovement 0
-	setvar VAR_OLIVINE_CITY_STATE, 2
+	setvar_min VAR_OLIVINE_CITY_STATE, 2
 	setflag FLAG_HIDE_OLIVINE_SILVER
 	removeobject LOCALID_OLIVINE_SILVER
 	fadedefaultbgm

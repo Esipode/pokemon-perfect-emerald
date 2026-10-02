@@ -5,6 +5,7 @@ CianwoodHouse1_EventScript_Hermit::
 	lock
 	faceplayer
 	msgbox CianwoodCity_Text_OldManIntro, MSGBOX_DEFAULT
+	call Johto_EventScript_EnsureLegendChoice
 	goto_if_eq VAR_LUGIA_OR_HOOH, 2, CianwoodHouse1_EventScript_HermitHooh
 	goto_if_eq VAR_RESULT, TRUE, CianwoodHouse1_EventScript_HermitTidalBell
 	msgbox CianwoodCity_Text_WhirlIslandsStory, MSGBOX_DEFAULT

@@ -86,16 +86,12 @@ MahoganyTown_Gym_EventScript_PryceVictory::
 	call Common_EventScript_SetGymTrainers_Johto
 	giveitem ITEM_TM_ICICLE_CRASH
 	msgbox MahoganyTown_Gym_Text_HailSpeech, MSGBOX_DEFAULT
-	setvar VAR_MAHOGANY_TOWN_STATE, 15
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 15
     setrespawn HEAL_LOCATION_MAHOGANY_TOWN
-    call_if_eq VAR_NUM_BADGES, 7, MahoganyTown_Gym_EventScript_SetupElmRocketCall
+	call Johto_EventScript_TryRadioTowerTakeover
 	closemessage
 	release
 	end
-
-MahoganyTown_Gym_EventScript_SetupElmRocketCall::
-    setvar VAR_TRIGGER_ELM_ROCKET_CALL, 1
-    return
 
 MahoganyTown_Gym_EventScript_OlivineCheckCianwood::
 	goto_if_set FLAG_DEFEATED_CIANWOOD_GYM, MahoganyTown_Gym_EventScript_Pryce_Battle3

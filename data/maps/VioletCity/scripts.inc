@@ -9,40 +9,13 @@ VioletCity_OnFrame::
 	.2byte 0
 
 VioletCity_OnTransition::
+	call_if_eq VAR_VIOLET_CITY_STATE, 0, VioletCity_EventScript_FirstVisit
 	end
 
-VioletCity_EventScript_Trigger::
-	@LOCAL FLAGHEAP
-	clearflag FLAG_RECEIVED_TOGEPI_EGG
-	clearflag FLAG_VIOLET_NPC_TRADE_COMPLETED
-	clearflag FLAG_HIDE_SPROUT_TOWER_SILVER
-	clearflag FLAG_HIDE_JOHTO_GYM_LEADERS
-	clearflag FLAG_HOOH_BROUGHT
-	clearflag FLAG_OMANYTE_BROUGHT
-	clearflag FLAG_AERODACTYL_BROUGHT
-	clearflag FLAG_KABUTO_BROUGHT
-	clearflag FLAG_HIDE_SUDOWOODO
-	clearflag FLAG_GOT_HARD_STONE
-	clearflag FLAG_GOT_POISON_BARB
-	clearflag FLAG_HIDE_UNION_CAVE_LAPRAS
-	clearflag FLAG_GOT_BLACK_GLASSES
-	
-	setvar VAR_SLOWPOKE_TAIL, 0
-	setvar VAR_VIOLET_CITY_KIMONO_GIRL, 0
-	setvar VAR_RUINSOFALPH_STATE, 0
-	
-	setflag FLAG_ITEM_GS_BALL
-	setflag FLAG_ITEM_DOME_FOSSIL
-	setflag FLAG_ITEM_HELIX_FOSSIL
-	setflag FLAG_ITEM_OLD_AMBER
-	setflag FLAG_HIDE_TRAINER_SCHOOL_EARL
-	setflag FLAG_HIDE_VIOLET_CITY_AIDE
+VioletCity_EventScript_FirstVisit::
 	setflag FLAG_VISITED_VIOLET_CITY
-	setflag FLAG_HIDE_VIOLET_CITY_KIMONO_GIRL
-	
-	setvar VAR_SPROUT_TOWER, 0
 	setvar VAR_VIOLET_CITY_STATE, 1
-	end
+	return
 
 VioletCity_EventScript_Earl::
 	lock
@@ -181,7 +154,7 @@ VioletCity_EventScript_ElmCall_Trigger::
 	delay 30
 	clearflag FLAG_HIDE_VIOLET_CITY_AIDE
 	setflag FLAG_HIDE_NEWBARKTOWN_LAB_AIDE
-	setvar VAR_VIOLET_CITY_STATE, 4
+	setvar_min VAR_VIOLET_CITY_STATE, 4
 	release
 	end
 

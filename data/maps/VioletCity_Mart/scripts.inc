@@ -6,7 +6,7 @@ VioletCity_Mart_EventScript_Clerk::
 	faceplayer
 	message gText_HowMayIServeYou
 	waitmessage
-	pokemart 0
+	pokemart VioletCity_Mart_Pokemart
 	msgbox gText_PleaseComeAgain, MSGBOX_DEFAULT
 	release
 	end
@@ -40,3 +40,17 @@ VioletCity_Mart_Text_CooltrainerM:
 	.string "POTION and ANTIDOTE.\p"
 	.string "But they don't appear to know\n"
 	.string "how to use man-made items.$"
+
+	.align 2
+VioletCity_Mart_Pokemart:
+	.2byte ITEM_POKE_BALL
+	.2byte ITEM_POTION
+	.2byte ITEM_SUPER_POTION
+	.2byte ITEM_ANTIDOTE
+	.2byte ITEM_PARALYZE_HEAL
+	.2byte ITEM_AWAKENING
+	.2byte ITEM_ESCAPE_ROPE
+	.2byte ITEM_REPEL
+	.2byte ITEM_NONE
+	release
+	end

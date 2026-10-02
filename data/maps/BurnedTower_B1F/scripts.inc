@@ -115,7 +115,7 @@ BurnedTower_B1F_EventScript_ReleaseBeasts::
 	setflag FLAG_HIDE_BURNED_TOWER_NPCS
 	setflag FLAG_HIDE_ECRUTEAK_CITY_SAGE
 	setflag FLAG_RELEASED_BEASTS
-	setvar VAR_ECRUTEAK_CITY_STATE, 4
+	setvar_min VAR_ECRUTEAK_CITY_STATE, 4
 	release
 	end
 

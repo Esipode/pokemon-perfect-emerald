@@ -76,7 +76,7 @@ Route42_EventScript_Suicune_Trigger::
 	end
 
 Route42_EventScript_DoneJohtoSuicune::
-	setvar VAR_SUICUNE_ENCOUNTERS, 3
+	setvar_min VAR_SUICUNE_ENCOUNTERS, 3
 	return
 
 Route42_Movement_Suicune1:

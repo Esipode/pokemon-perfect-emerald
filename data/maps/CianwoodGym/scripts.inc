@@ -65,7 +65,7 @@ CianwoodGym_EventScript_ChuckVictory::
 	msgbox CianwoodGym_Text_ChuckTMSpeech, MSGBOX_DEFAULT
 	setvar VAR_GETFLY, 1
 	setrespawn HEAL_LOCATION_CIANWOOD_CITY
-    call_if_eq VAR_NUM_BADGES, 7, MahoganyTown_Gym_EventScript_SetupElmRocketCall
+	call Johto_EventScript_TryRadioTowerTakeover
 	closemessage
 	release
 	end

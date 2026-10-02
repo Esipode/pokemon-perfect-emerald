@@ -38,7 +38,7 @@ ReceptionGate_Trigger::
     goto_if_unset FLAG_JOHTO_BADGE08_GET, ReceptionGate_EventScript_NotEnough
     msgbox VictoryRoadGate_Text_EightBadges, MSGBOX_DEFAULT
     closemessage
-    setvar VAR_ROUTE27_STATE, 2
+    setvar_min VAR_ROUTE27_STATE, 2
     release
     end
 

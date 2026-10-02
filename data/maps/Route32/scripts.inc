@@ -262,7 +262,7 @@ Route32_EventScript_BaldingManCheck::
 	giveitem ITEM_MIRACLE_SEED
 	goto_if_eq VAR_RESULT, FALSE, Common_EventScript_ShowBagIsFull
 	closemessage
-	setvar VAR_VIOLET_CITY_STATE, 5
+	setvar_min VAR_VIOLET_CITY_STATE, 5
 	release
 	end
 Route32_EventScript_BaldingManTower::

@@ -103,7 +103,7 @@ MahoganyTown_Shop_EventScript_Raid::
 	setflag FLAG_HIDE_MAHOGANY_TOWN_SHOP_NPCS
 
 
-	setvar VAR_MAHOGANY_TOWN_STATE, 5
+	setvar_min VAR_MAHOGANY_TOWN_STATE, 5
 	release
 	end
 
