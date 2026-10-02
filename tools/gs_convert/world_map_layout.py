@@ -20,6 +20,19 @@ SOURCES = {
     "SEVII67": ("region_map_layout_sevii67.h", "SEVII"),
 }
 
+# Source art per grid: (path stem relative to the repo, or to the HnS clone when True).
+# Each is a 128-px-wide affine sheet (.png) + 64x64 byte tilemap (.bin); the playable grid
+# starts at tile (1, 2).
+SOURCE_ART = {
+    "JOHTO": ("graphics/pokenav/region_map/map_johto", True),
+    "KANTO": ("graphics/region_map/map_kanto", False),
+    "HOENN": ("graphics/region_map/map", False),
+    "SEVII123": ("graphics/region_map/map_sevii_123", False),
+    "SEVII45": ("graphics/region_map/map_sevii_45", False),
+    "SEVII67": ("graphics/region_map/map_sevii_67", False),
+}
+ART_GRID_X, ART_GRID_Y = 1, 2
+
 # Sevii islands and their world origin (top-left cell of the archipelago box, 22x15).
 SEVII_X, SEVII_Y = 32, 19
 
@@ -47,3 +60,7 @@ TOUCHING = {("johto", "kanto")}
 # Sea cells within this many cells (Chebyshev) of a region's MAPSEC cells belong to that region;
 # the rest is open sea, which the cursor can always cross.
 TERRITORY_MARGIN = 1
+
+# Source cells beyond a cluster rect that still seed land pixels (coast around the rect).
+# Margin cells inside another cluster's world rect are skipped.
+MASK_MARGIN = 1

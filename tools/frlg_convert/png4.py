@@ -1,7 +1,7 @@
 """Minimal indexed-PNG codec (standard library only) for 8x8 tile sheets.
 
-Reads palette-indexed PNGs at bit depth 4 or 8 (non-interlaced) and writes
-4-bit indexed PNGs. Tiles are flat 64-byte sequences of colour indices,
+Reads palette-indexed PNGs at bit depth 1, 2, 4 or 8 and 8-bit grayscale / RGB / RGBA
+PNGs (non-interlaced), and writes 4-bit or 8-bit indexed PNGs. Tiles are flat 64-byte sequences of colour indices,
 ordered row-major across the sheet.
 """
 
@@ -97,7 +97,7 @@ def read_png(data):
     width, height, depth, ctype, _, _, interlace = ihdr
     if ctype != 3:
         raise PngError(f"colour type {ctype} is not indexed")
-    if depth not in (4, 8):
+    if depth not in (1, 2, 4, 8):
         raise PngError(f"unsupported bit depth {depth}")
     if interlace:
         raise PngError("interlaced PNG not supported")
@@ -106,15 +106,60 @@ def read_png(data):
     if depth == 8:
         pixels = bytes(raw)
     else:
+        mask = (1 << depth) - 1
+        per_byte = 8 // depth
         pixels = bytearray(width * height)
         for y in range(height):
             row = raw[y * stride:(y + 1) * stride]
             base = y * width
             for x in range(width):
-                byte = row[x >> 1]
-                pixels[base + x] = (byte >> 4) if (x & 1) == 0 else (byte & 0xF)
+                shift = 8 - depth * (x % per_byte + 1)
+                pixels[base + x] = (row[x // per_byte] >> shift) & mask
         pixels = bytes(pixels)
     return IndexedImage(width, height, pixels, plte)
+
+
+_CHANNELS = {0: 1, 2: 3, 4: 2, 6: 4}
+
+
+def read_rgba(data):
+    """Decode any non-interlaced PNG (indexed, or 8-bit gray / RGB / RGBA) to (width, height, pixels).
+
+    pixels is a row-major list of (r, g, b, a) tuples.
+    """
+    ihdr = None
+    idat = bytearray()
+    for ctype, body in _chunks(data):
+        if ctype == b"IHDR":
+            ihdr = struct.unpack(">IIBBBBB", body)
+        elif ctype == b"IDAT":
+            idat += body
+        elif ctype == b"IEND":
+            break
+    if ihdr is None:
+        raise PngError("missing IHDR")
+    width, height, depth, ctype, _, _, interlace = ihdr
+    if ctype == 3:
+        img = read_png(data)
+        plte = img.plte
+        return width, height, [(plte[3 * i], plte[3 * i + 1], plte[3 * i + 2], 255) for i in img.pixels]
+    if ctype not in _CHANNELS or depth != 8:
+        raise PngError(f"colour type {ctype} at bit depth {depth} is not supported")
+    if interlace:
+        raise PngError("interlaced PNG not supported")
+    bpp = _CHANNELS[ctype]
+    raw = _unfilter(zlib.decompress(bytes(idat)), height, width * bpp, bpp)
+    out = []
+    for i in range(0, len(raw), bpp):
+        if ctype == 0:
+            out.append((raw[i], raw[i], raw[i], 255))
+        elif ctype == 2:
+            out.append((raw[i], raw[i + 1], raw[i + 2], 255))
+        elif ctype == 4:
+            out.append((raw[i], raw[i], raw[i], raw[i + 1]))
+        else:
+            out.append((raw[i], raw[i + 1], raw[i + 2], raw[i + 3]))
+    return width, height, out
 
 
 def image_to_tiles(img):
@@ -166,4 +211,15 @@ def write_tiles_png(tiles, plte, tiles_per_row=16):
         plte = bytes(16 * 3)
     ihdr = struct.pack(">IIBBBBB", width, height, 4, 3, 0, 0, 0)
     return (PNG_SIGNATURE + _chunk(b"IHDR", ihdr) + _chunk(b"PLTE", plte)
+            + _chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + _chunk(b"IEND", b""))
+
+
+def write_indexed_png(width, height, pixels, plte):
+    """Encode row-major colour indices as an 8-bit indexed PNG."""
+    raw = bytearray()
+    for y in range(height):
+        raw.append(0)
+        raw += pixels[y * width:(y + 1) * width]
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 3, 0, 0, 0)
+    return (PNG_SIGNATURE + _chunk(b"IHDR", ihdr) + _chunk(b"PLTE", bytes(plte))
             + _chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + _chunk(b"IEND", b""))
