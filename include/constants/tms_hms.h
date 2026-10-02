@@ -161,7 +161,71 @@
     F(BATON_PASS) \
     F(FLAME_CHARGE) \
     F(STOMPING_TANTRUM) \
-    F(POISON_JAB)
+    F(POISON_JAB) \
+    F(HEADBUTT) \
+    F(PSYCHIC_FANGS) \
+    F(MAGICAL_LEAF) \
+    F(HYPNOSIS) \
+    F(ROOST) \
+    F(ROCK_POLISH) \
+    F(AQUA_TAIL) \
+    F(LUNGE) \
+    F(LEAF_BLADE) \
+    F(FALSE_SWIPE) \
+    F(EMBARGO) \
+    F(FAKE_OUT) \
+    F(WISH) \
+    F(PAYBACK) \
+    F(SIGNAL_BEAM) \
+    F(ROCK_CLIMB) \
+    F(LAVA_PLUME) \
+    F(AQUA_JET) \
+    F(SHADOW_SNEAK) \
+    F(MACH_PUNCH) \
+    F(HEAL_BELL) \
+    F(SPARK) \
+    F(DISCHARGE) \
+    F(BULLET_PUNCH) \
+    F(PLUCK) \
+    F(CROSS_CHOP) \
+    F(DUAL_WINGBEAT) \
+    F(SMART_STRIKE) \
+    F(PSYCHO_CUT) \
+    F(RAPID_SPIN) \
+    F(BOUNCE) \
+    F(WEATHER_BALL) \
+    F(POISON_FANG) \
+    F(SUCKER_PUNCH) \
+    F(SKY_ATTACK) \
+    F(ICICLE_CRASH) \
+    F(MORNING_SUN) \
+    F(EXTRASENSORY) \
+    F(ICE_SHARD) \
+    F(AVALANCHE) \
+    F(DRAGON_RUSH) \
+    F(DRILL_RUN) \
+    F(SAND_TOMB) \
+    F(PURSUIT) \
+    F(HEAT_CRASH) \
+    F(BLAZE_KICK) \
+    F(MIRROR_COAT) \
+    F(EXTREME_SPEED) \
+    F(BREAKING_SWIPE) \
+    F(ANCIENT_POWER) \
+    F(MEGAHORN) \
+    F(MOONBLAST) \
+    F(FREEZE_DRY) \
+    F(ZAP_CANNON) \
+    F(VACUUM_WAVE) \
+    F(SYNTHESIS) \
+    F(STUN_SPORE) \
+    F(TRI_ATTACK) \
+    F(BELLY_DRUM) \
+    F(QUIVER_DANCE) \
+    F(COIL) \
+    F(LOVELY_KISS) \
+    F(PERISH_SONG) \
+    F(DESTINY_BOND)
 
 #define FOREACH_HM(F) \
     F(CUT) \

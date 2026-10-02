@@ -114,7 +114,7 @@ enum Language
 #define BAG_KEYITEMS_COUNT 30
 #define BAG_POKEBALLS_COUNT 16
 #define BAG_TMHM_LEGACY_COUNT 108 // SaveBlock1 array size; never change
-#define BAG_TMHM_COUNT 168 // SaveBlock3 pocket: 160 TMs + 8 HMs
+#define BAG_TMHM_COUNT 232 // SaveBlock3 pocket: 224 TMs + 8 HMs
 #define BAG_BERRIES_COUNT 46
 #define BAG_MEGA_STONES_COUNT 100
 #define BAG_Z_CRYSTALS_COUNT 40

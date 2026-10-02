@@ -3,7 +3,7 @@
 
 // Max number of moves shown by the move relearner.
 // Must be at least NUM_ALL_MACHINES so Mew can display all TMs/HMs.
-#define MAX_RELEARNER_MOVES 200
+#define MAX_RELEARNER_MOVES 240
 
 // Move Relearner menu change constants
 enum MoveRelearnerStates
