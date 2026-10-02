@@ -693,6 +693,7 @@ const u16 gObjectEventPic_SkierM_Johto[] = INCGFX_U16("graphics/object_events/pi
 const u16 gObjectEventPic_SwimmingLapras_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/swimming_lapras.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_TowerBeam_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/tower_beam.png", ".4bpp", "-mwidth 8 -mheight 8");
 const u16 gObjectEventPic_TrainEast_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/train_east.png", ".4bpp", "-mwidth 8 -mheight 8");
+const u16 gObjectEventPic_TrainWest_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/train_west.png", ".4bpp", "-mwidth 8 -mheight 8");
 const u16 gObjectEventPic_Twin_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/twin.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Whirlpool_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/whirlpool.png", ".4bpp", "-mwidth 8 -mheight 8");
 const u16 gObjectEventPic_Whitney_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/whitney.png", ".4bpp", "-mwidth 2 -mheight 4");

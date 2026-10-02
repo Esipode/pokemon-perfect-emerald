@@ -11808,6 +11808,18 @@
       "secondary_tileset": "gTileset_SafariZone_Entrance_Johto",
       "border_filepath": "data/layouts/SafariZoneIndoor/border.bin",
       "blockdata_filepath": "data/layouts/SafariZoneIndoor/map.bin"
+    },
+    {
+      "id": "LAYOUT_SAFFRON_CITY_TRAIN_STATION",
+      "name": "SaffronCity_TrainStation_Layout",
+      "width": 154,
+      "height": 28,
+      "border_width": 2,
+      "border_height": 2,
+      "primary_tileset": "gTileset_JohtoBuilding",
+      "secondary_tileset": "gTileset_GoldenrodCity_TrainStation_Johto",
+      "border_filepath": "data/layouts/SaffronCity_TrainStation/border.bin",
+      "blockdata_filepath": "data/layouts/SaffronCity_TrainStation/map.bin"
     }
   ]
 }

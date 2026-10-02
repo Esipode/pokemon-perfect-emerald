@@ -567,6 +567,7 @@
 #define FLAG_VISITED_MT_SILVER                                   (JOHTO_FLAGS_START + 0x33C)
 #define FLAG_VISITED_RECEPTION_GATE                              (JOHTO_FLAGS_START + 0x33D)
 #define FLAG_VISITED_SAFARI_ZONE_GATE                            (JOHTO_FLAGS_START + 0x33E)
+#define FLAG_VISITED_JOHTO                                       (JOHTO_FLAGS_START + 0x33F) // Set on the first Johto map load
 
 // Set at New Game; hides object events whose HnS hide flag belonged to cut content (0x2340)
 #define FLAG_JOHTO_ALWAYS_HIDDEN                                 (JOHTO_FLAGS_START + 0x340)

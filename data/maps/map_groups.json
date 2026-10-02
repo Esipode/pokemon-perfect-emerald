@@ -997,7 +997,8 @@
     "SaffronCity_PokemonCenter_1F_Frlg",
     "SaffronCity_PokemonCenter_2F_Frlg",
     "SaffronCity_MrPsychicsHouse_Frlg",
-    "SaffronCity_PokemonTrainerFanClub_Frlg"
+    "SaffronCity_PokemonTrainerFanClub_Frlg",
+    "SaffronCity_TrainStation_Frlg"
   ],
   "gMapGroup_IndoorRoute2_Frlg": [
     "Route2_ViridianForest_SouthEntrance_Frlg",

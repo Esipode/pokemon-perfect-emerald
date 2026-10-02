@@ -942,6 +942,12 @@ void Task_ShowRoamerMessageDelayed(u8 taskId)
     }
 }
 
+static void SetRegionVisitedFlags(void)
+{
+    if (GetCurrentRegion() == REGION_JOHTO)
+        FlagSet(FLAG_VISITED_JOHTO);
+}
+
 void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
 {
     SetWarpDestination(mapGroup, mapNum, WARP_ID_NONE, -1, -1);
@@ -964,6 +970,7 @@ void LoadMapFromCameraTransition(u8 mapGroup, u8 mapNum)
     ChooseAmbientCrySpecies();
     SetDefaultFlashLevel();
     Overworld_ClearSavedMusic();
+    SetRegionVisitedFlags();
     RunOnTransitionMapScript();
     InitMap();
     TransitionLegendaryMapMusic();
@@ -1061,6 +1068,7 @@ static void LoadMapFromWarp(bool32 a1)
         FlagClear(FLAG_SYS_USE_FLASH);
     SetDefaultFlashLevel();
     Overworld_ClearSavedMusic();
+    SetRegionVisitedFlags();
     RunOnTransitionMapScript();
     UpdateLocationHistoryForRoamer();
     MoveAllRoamersToOtherLocationSets();

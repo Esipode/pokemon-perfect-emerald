@@ -925,6 +925,7 @@ gStdScripts_End::
 	.include "data/maps/SaffronCity_PokemonCenter_2F_Frlg/scripts.inc"
 	.include "data/maps/SaffronCity_MrPsychicsHouse_Frlg/scripts.inc"
 	.include "data/maps/SaffronCity_PokemonTrainerFanClub_Frlg/scripts.inc"
+	.include "data/maps/SaffronCity_TrainStation_Frlg/scripts.inc"
 	.include "data/maps/Route2_ViridianForest_SouthEntrance_Frlg/scripts.inc"
 	.include "data/maps/Route2_House_Frlg/scripts.inc"
 	.include "data/maps/Route2_EastBuilding_Frlg/scripts.inc"

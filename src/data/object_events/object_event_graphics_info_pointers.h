@@ -496,6 +496,7 @@ extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SwimmerM_Jo
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_SwimmingLapras_Johto;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_TowerBeam_Johto;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_TrainEast_Johto;
+extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_TrainWest_Johto;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Twin_Johto;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Whirlpool_Johto;
 extern const struct ObjectEventGraphicsInfo gObjectEventGraphicsInfo_Whitney_Johto;
@@ -991,6 +992,7 @@ const struct ObjectEventGraphicsInfo *const gObjectEventGraphicsInfoPointers[NUM
     [OBJ_EVENT_GFX_SWIMMING_LAPRAS_JOHTO] = &gObjectEventGraphicsInfo_SwimmingLapras_Johto,
     [OBJ_EVENT_GFX_TOWER_BEAM_JOHTO] = &gObjectEventGraphicsInfo_TowerBeam_Johto,
     [OBJ_EVENT_GFX_TRAIN_EAST_JOHTO] = &gObjectEventGraphicsInfo_TrainEast_Johto,
+    [OBJ_EVENT_GFX_TRAIN_WEST_JOHTO] = &gObjectEventGraphicsInfo_TrainWest_Johto,
     [OBJ_EVENT_GFX_TWIN_JOHTO] = &gObjectEventGraphicsInfo_Twin_Johto,
     [OBJ_EVENT_GFX_WHIRLPOOL_JOHTO] = &gObjectEventGraphicsInfo_Whirlpool_Johto,
     [OBJ_EVENT_GFX_WHITNEY_JOHTO] = &gObjectEventGraphicsInfo_Whitney_Johto,

@@ -11,13 +11,6 @@ GoldenrodCity_TrainStation_EventScript_Attendant::
 	faceplayer
 	checkitem ITEM_PASS
 	goto_if_eq VAR_RESULT, TRUE, GoldenrodCity_TrainStation_EventScript_BoardTrain
-	goto_if_set FLAG_RETURNED_MACHINE_PART, GoldenrodCity_TrainStation_EventScript_Attendant2
-	msgbox GoldenrodMagnetTrainStation_Text_OfficerTrainHasntComeIn, MSGBOX_DEFAULT
-	closemessage
-	release
-	end
-
-GoldenrodCity_TrainStation_EventScript_Attendant2::
 	msgbox GoldenrodMagnetTrainStation_Text_OfficerNoRailPass, MSGBOX_DEFAULT
 	closemessage
 	release
@@ -58,6 +51,7 @@ GoldenrodCity_TrainStation_EventScript_BoardTrain::
 	special RemoveCameraObject
 	setvar VAR_TRAIN, 1
 	delay 60
+	warp MAP_SAFFRON_CITY_TRAIN_STATION, 140, 16
 	waitstate
 	delay 60
 	end
@@ -293,12 +287,6 @@ GoldenrodCity_TrainStation_Movement_SlideRight:
 	slide_right
 	slide_right
 	step_end
-
-GoldenrodMagnetTrainStation_Text_OfficerTrainHasntComeIn:
-    .string "The train hasn't come in…\p"
-    .string "I know! I'll carry the passengers\n"
-    .string "on my back!\p"
-    .string "That won't work.$"
 
 GoldenrodMagnetTrainStation_Text_OfficerRightThisWay:
     .string "May I see your rail PASS, please?\p"

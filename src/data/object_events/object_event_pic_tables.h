@@ -3566,6 +3566,10 @@ static const struct SpriteFrameImage sPicTable_TrainEast_Johto[] = {
     obj_frame_tiles(gObjectEventPic_TrainEast_Johto),
 };
 
+static const struct SpriteFrameImage sPicTable_TrainWest_Johto[] = {
+    obj_frame_tiles(gObjectEventPic_TrainWest_Johto),
+};
+
 static const struct SpriteFrameImage sPicTable_Twin_Johto[] = {
     overworld_frame(gObjectEventPic_Twin_Johto, 2, 4, 0),
     overworld_frame(gObjectEventPic_Twin_Johto, 2, 4, 1),

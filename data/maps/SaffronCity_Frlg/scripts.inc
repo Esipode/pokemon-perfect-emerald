@@ -237,3 +237,54 @@ SaffronCity_Text_HowCanClubNotRecognizeLance::
 	.string "He's cool, and yet passionate!\l"
 	.string "He's the greatest, LANCE!$"
 
+
+SaffronCity_EventScript_RailPassOfficer::
+	lock
+	faceplayer
+	checkitem ITEM_PASS
+	goto_if_eq VAR_RESULT, TRUE, SaffronCity_EventScript_RailPassOfficerHasPass
+	goto_if_unset FLAG_KANTO_CHAMPION, SaffronCity_EventScript_RailPassOfficerNotChampion
+	msgbox SaffronCity_Text_RailPassOfficerChampion, MSGBOX_DEFAULT
+	giveitem ITEM_PASS
+	goto_if_eq VAR_RESULT, FALSE, SaffronCity_EventScript_RailPassOfficerNoRoom
+	msgbox SaffronCity_Text_RailPassOfficerGivenPass, MSGBOX_DEFAULT
+	release
+	end
+
+SaffronCity_EventScript_RailPassOfficerHasPass::
+	msgbox SaffronCity_Text_RailPassOfficerHasPass, MSGBOX_DEFAULT
+	release
+	end
+
+SaffronCity_EventScript_RailPassOfficerNotChampion::
+	msgbox SaffronCity_Text_RailPassOfficerNotChampion, MSGBOX_DEFAULT
+	release
+	end
+
+SaffronCity_EventScript_RailPassOfficerNoRoom::
+	msgbox SaffronCity_Text_RailPassOfficerNoRoom, MSGBOX_DEFAULT
+	release
+	end
+
+SaffronCity_Text_RailPassOfficerNotChampion:
+	.string "The new MAGNET TRAIN station is\n"
+	.string "open to KANTO's top TRAINERS only.\p"
+	.string "Come back as the KANTO CHAMPION and\n"
+	.string "I'll issue you a rail PASS.$"
+
+SaffronCity_Text_RailPassOfficerChampion:
+	.string "You're the KANTO CHAMPION!\p"
+	.string "The MAGNET TRAIN to GOLDENROD in\n"
+	.string "JOHTO is open to you.\p"
+	.string "Please accept this rail PASS.$"
+
+SaffronCity_Text_RailPassOfficerGivenPass:
+	.string "Show that PASS to the attendant at\n"
+	.string "the station to board the train.$"
+
+SaffronCity_Text_RailPassOfficerHasPass:
+	.string "Enjoy your trip to JOHTO!$"
+
+SaffronCity_Text_RailPassOfficerNoRoom:
+	.string "Your BAG is full. Make some room\n"
+	.string "and talk to me again.$"
