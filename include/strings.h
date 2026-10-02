@@ -1371,6 +1371,7 @@ extern const u8 gText_TrainerCardMoney[];
 extern const u8 gText_PokedollarVar1[];
 extern const u8 gText_EmptyString6[];
 extern const u8 gText_TrainerCardPokedex[];
+extern const u8 gText_TrainerCardDex[];
 extern const u8 gText_TrainerCardTime[];
 extern const u8 gText_Colon2[];
 extern const u8 gText_Var1sTrainerCard[];
