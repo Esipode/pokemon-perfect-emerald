@@ -149,7 +149,7 @@ u16 PlayerCustomization_HsvToRgb(u8 h, u8 s, u8 v)
     return RGB(r * 31 / 255, g * 31 / 255, b * 31 / 255);
 }
 
-enum PlayerPaletteAsset { PLAYER_PALETTE_ASSET_OW, PLAYER_PALETTE_ASSET_TRAINER };
+enum PlayerPaletteAsset { PLAYER_PALETTE_ASSET_OW, PLAYER_PALETTE_ASSET_TRAINER, PLAYER_PALETTE_ASSET_BACK };
 
 static u16 ShiftColorByHsvDelta(u16 color, s16 dh, s16 ds, s16 dv)
 {
@@ -203,10 +203,26 @@ static void ApplySlotsToPalette(u16 *pal, u8 style, u8 gender, const u16 *choice
     for (slot = 0; slot < PLAYER_COLOR_SLOT_COUNT; slot++)
     {
         const struct PlayerColorSlotInfo *info = &sPlayerColorSlots[style][gender][slot];
-        const u8 *indices = (asset == PLAYER_PALETTE_ASSET_TRAINER) ? info->trainerIndices : info->owIndices;
-        u8 count = (asset == PLAYER_PALETTE_ASSET_TRAINER) ? info->numTrainerIndices : info->numOwIndices;
+        const u8 *indices;
+        u8 count;
         s16 dh, ds, dv;
         u32 i;
+
+        switch (asset)
+        {
+        case PLAYER_PALETTE_ASSET_TRAINER:
+            indices = info->trainerIndices;
+            count = info->numTrainerIndices;
+            break;
+        case PLAYER_PALETTE_ASSET_BACK:
+            indices = info->backIndices;
+            count = info->numBackIndices;
+            break;
+        default:
+            indices = info->owIndices;
+            count = info->numOwIndices;
+            break;
+        }
 
         if (count == 0)
             continue;
@@ -227,6 +243,14 @@ static void ApplySlotsToPalette(u16 *pal, u8 style, u8 gender, const u16 *choice
         }
     }
 }
+
+// Which slot index list matches each style's back pic palette layout.
+static const u8 sBackPicAsset[PLAYER_SPRITE_STYLE_COUNT] =
+{
+    [PLAYER_SPRITE_STYLE_EMERALD] = PLAYER_PALETTE_ASSET_TRAINER,
+    [PLAYER_SPRITE_STYLE_FRLG]    = PLAYER_PALETTE_ASSET_OW,
+    [PLAYER_SPRITE_STYLE_JOHTO]   = PLAYER_PALETTE_ASSET_BACK,
+};
 
 static const u16 *const sOwBasePalettes[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT] =
 {
@@ -302,10 +326,7 @@ static const u16 *GetTrainerPaletteOverride(u32 trainerPicId, bool32 isBackPic)
     if (isBackPic)
     {
         basePal = gTrainerPicInfo[expectedPicId].backPic->paletteData;
-        // Red/Leaf back pics use the OW palette layout (player_frlg.pal), not
-        // their front pic's. Brendan/May back pics share the front palette.
-        if (style == PLAYER_SPRITE_STYLE_FRLG)
-            asset = PLAYER_PALETTE_ASSET_OW;
+        asset = sBackPicAsset[style];
     }
     else
     {

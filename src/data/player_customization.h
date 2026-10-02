@@ -97,6 +97,70 @@ static const u8 sGroupSlots_Leaf_Hat[] = {3, 5};
 static const u8 sGroupSlots_Leaf_Outfit[] = {8};
 static const u8 sGroupSlots_Leaf_Accent[] = {9};
 
+// Johto male (Gold). Slot ids: 0 Cap, 1 Cap shade, 2 Jacket, 3 Jacket light,
+// 4 Cap stripe + shorts, 5 Stripe shade, 6 Bag + shoes, 7 Bag shade.
+// Johto front, back and OW palettes each use a different index layout, so every
+// list is per asset. OW 7 (cap outline) and 15 are outlines, 2-4 are skin, 1 is head-only hair: no slot.
+// The cap logo shares OW 12 with the jacket, and the bike frames reuse the cap,
+// stripe and bag indices.
+static const u8 sColorIdx_Gold_Cap_Ow[] = {5};
+static const u8 sColorIdx_Gold_Cap_Back[] = {5};
+static const u8 sColorIdx_Gold_CapShade_Ow[] = {6};
+static const u8 sColorIdx_Gold_CapShade_Back[] = {3};
+static const u8 sColorIdx_Gold_Jacket_Ow[] = {12};
+static const u8 sColorIdx_Gold_Jacket_Trainer[] = {11};
+static const u8 sColorIdx_Gold_Jacket_Back[] = {7};
+static const u8 sColorIdx_Gold_JacketLight_Ow[] = {11};
+static const u8 sColorIdx_Gold_JacketLight_Trainer[] = {14};
+static const u8 sColorIdx_Gold_JacketLight_Back[] = {6};
+static const u8 sColorIdx_Gold_Stripe_Ow[] = {13};
+static const u8 sColorIdx_Gold_Stripe_Trainer[] = {4};
+static const u8 sColorIdx_Gold_Stripe_Back[] = {4};
+static const u8 sColorIdx_Gold_StripeShade_Ow[] = {14};
+static const u8 sColorIdx_Gold_StripeShade_Trainer[] = {5};
+static const u8 sColorIdx_Gold_Bag_Ow[] = {9};
+static const u8 sColorIdx_Gold_Bag_Trainer[] = {13};
+static const u8 sColorIdx_Gold_BagShade_Ow[] = {10};
+static const u8 sColorIdx_Gold_BagShade_Trainer[] = {15};
+
+// Johto female (Kris). Slot ids: 0 Hat, 1 Hat shade, 2 Jacket + hat band,
+// 3 Jacket shade, 4 Hair, 5 Hair dark, 6 Hair light, 7 Shirt + bag, 8 Shirt light.
+// Front 6/1 also colour the shorts. The acro-bike frames draw the bike with OW
+// 4/5/7/8/10/11, so HAIR, JACKET and SHIRT recolour it there.
+static const u8 sColorIdx_Kris_Hat_Ow[] = {13};
+static const u8 sColorIdx_Kris_Hat_Trainer[] = {6};
+static const u8 sColorIdx_Kris_Hat_Back[] = {2};
+static const u8 sColorIdx_Kris_HatShade_Ow[] = {14};
+static const u8 sColorIdx_Kris_HatShade_Trainer[] = {1};
+static const u8 sColorIdx_Kris_HatShade_Back[] = {1};
+static const u8 sColorIdx_Kris_Jacket_Ow[] = {9};
+static const u8 sColorIdx_Kris_Jacket_Trainer[] = {10};
+static const u8 sColorIdx_Kris_Jacket_Back[] = {4};
+static const u8 sColorIdx_Kris_JacketShade_Ow[] = {10};
+static const u8 sColorIdx_Kris_JacketShade_Trainer[] = {14};
+static const u8 sColorIdx_Kris_JacketShade_Back[] = {3};
+static const u8 sColorIdx_Kris_Hair_Ow[] = {5};
+static const u8 sColorIdx_Kris_Hair_Trainer[] = {13};
+static const u8 sColorIdx_Kris_Hair_Back[] = {7};
+static const u8 sColorIdx_Kris_HairDark_Ow[] = {6};
+static const u8 sColorIdx_Kris_HairDark_Trainer[] = {8};
+static const u8 sColorIdx_Kris_HairDark_Back[] = {6};
+static const u8 sColorIdx_Kris_HairLight_Ow[] = {8};
+static const u8 sColorIdx_Kris_HairLight_Back[] = {8};
+static const u8 sColorIdx_Kris_Shirt_Ow[] = {12};
+static const u8 sColorIdx_Kris_Shirt_Trainer[] = {5};
+static const u8 sColorIdx_Kris_Shirt_Back[] = {14};
+static const u8 sColorIdx_Kris_ShirtLight_Ow[] = {11};
+static const u8 sColorIdx_Kris_ShirtLight_Trainer[] = {11};
+static const u8 sColorIdx_Kris_ShirtLight_Back[] = {13};
+static const u8 sGroupSlots_Gold_Hat[] = {0};
+static const u8 sGroupSlots_Gold_Outfit[] = {2};
+static const u8 sGroupSlots_Gold_Accent[] = {4};
+static const u8 sGroupSlots_Kris_Hair[] = {4};
+static const u8 sGroupSlots_Kris_Hat[] = {0};
+static const u8 sGroupSlots_Kris_Outfit[] = {7};
+static const u8 sGroupSlots_Kris_Accent[] = {2};
+
 static const struct PlayerColorSlotInfo
     sPlayerColorSlots[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT][PLAYER_COLOR_SLOT_COUNT] =
 {
@@ -144,6 +208,29 @@ static const struct PlayerColorSlotInfo
             [10] = {NULL, sColorIdx_Leaf_BagShade_Ow, NULL, ARRAY_COUNT(sColorIdx_Leaf_BagShade_Ow), 0, 9},
         },
     },
+    [PLAYER_SPRITE_STYLE_JOHTO] = {
+        [MALE] = {
+            [0] = {COMPOUND_STRING("CAP"), sColorIdx_Gold_Cap_Ow, NULL, ARRAY_COUNT(sColorIdx_Gold_Cap_Ow), 0, PLAYER_COLOR_SLOT_NONE, sColorIdx_Gold_Cap_Back, ARRAY_COUNT(sColorIdx_Gold_Cap_Back)},
+            [1] = {NULL, sColorIdx_Gold_CapShade_Ow, NULL, ARRAY_COUNT(sColorIdx_Gold_CapShade_Ow), 0, 0, sColorIdx_Gold_CapShade_Back, ARRAY_COUNT(sColorIdx_Gold_CapShade_Back)},
+            [2] = {COMPOUND_STRING("JACKET"), sColorIdx_Gold_Jacket_Ow, sColorIdx_Gold_Jacket_Trainer, ARRAY_COUNT(sColorIdx_Gold_Jacket_Ow), ARRAY_COUNT(sColorIdx_Gold_Jacket_Trainer), PLAYER_COLOR_SLOT_NONE, sColorIdx_Gold_Jacket_Back, ARRAY_COUNT(sColorIdx_Gold_Jacket_Back)},
+            [3] = {NULL, sColorIdx_Gold_JacketLight_Ow, sColorIdx_Gold_JacketLight_Trainer, ARRAY_COUNT(sColorIdx_Gold_JacketLight_Ow), ARRAY_COUNT(sColorIdx_Gold_JacketLight_Trainer), 2, sColorIdx_Gold_JacketLight_Back, ARRAY_COUNT(sColorIdx_Gold_JacketLight_Back)},
+            [4] = {COMPOUND_STRING("STRIPE & SHORTS"), sColorIdx_Gold_Stripe_Ow, sColorIdx_Gold_Stripe_Trainer, ARRAY_COUNT(sColorIdx_Gold_Stripe_Ow), ARRAY_COUNT(sColorIdx_Gold_Stripe_Trainer), PLAYER_COLOR_SLOT_NONE, sColorIdx_Gold_Stripe_Back, ARRAY_COUNT(sColorIdx_Gold_Stripe_Back)},
+            [5] = {NULL, sColorIdx_Gold_StripeShade_Ow, sColorIdx_Gold_StripeShade_Trainer, ARRAY_COUNT(sColorIdx_Gold_StripeShade_Ow), ARRAY_COUNT(sColorIdx_Gold_StripeShade_Trainer), 4, NULL, 0},
+            [6] = {COMPOUND_STRING("BAG & SHOES"), sColorIdx_Gold_Bag_Ow, sColorIdx_Gold_Bag_Trainer, ARRAY_COUNT(sColorIdx_Gold_Bag_Ow), ARRAY_COUNT(sColorIdx_Gold_Bag_Trainer), PLAYER_COLOR_SLOT_NONE, NULL, 0},
+            [7] = {NULL, sColorIdx_Gold_BagShade_Ow, sColorIdx_Gold_BagShade_Trainer, ARRAY_COUNT(sColorIdx_Gold_BagShade_Ow), ARRAY_COUNT(sColorIdx_Gold_BagShade_Trainer), 6, NULL, 0},
+        },
+        [FEMALE] = {
+            [0] = {COMPOUND_STRING("HAT"), sColorIdx_Kris_Hat_Ow, sColorIdx_Kris_Hat_Trainer, ARRAY_COUNT(sColorIdx_Kris_Hat_Ow), ARRAY_COUNT(sColorIdx_Kris_Hat_Trainer), PLAYER_COLOR_SLOT_NONE, sColorIdx_Kris_Hat_Back, ARRAY_COUNT(sColorIdx_Kris_Hat_Back)},
+            [1] = {NULL, sColorIdx_Kris_HatShade_Ow, sColorIdx_Kris_HatShade_Trainer, ARRAY_COUNT(sColorIdx_Kris_HatShade_Ow), ARRAY_COUNT(sColorIdx_Kris_HatShade_Trainer), 0, sColorIdx_Kris_HatShade_Back, ARRAY_COUNT(sColorIdx_Kris_HatShade_Back)},
+            [2] = {COMPOUND_STRING("JACKET"), sColorIdx_Kris_Jacket_Ow, sColorIdx_Kris_Jacket_Trainer, ARRAY_COUNT(sColorIdx_Kris_Jacket_Ow), ARRAY_COUNT(sColorIdx_Kris_Jacket_Trainer), PLAYER_COLOR_SLOT_NONE, sColorIdx_Kris_Jacket_Back, ARRAY_COUNT(sColorIdx_Kris_Jacket_Back)},
+            [3] = {NULL, sColorIdx_Kris_JacketShade_Ow, sColorIdx_Kris_JacketShade_Trainer, ARRAY_COUNT(sColorIdx_Kris_JacketShade_Ow), ARRAY_COUNT(sColorIdx_Kris_JacketShade_Trainer), 2, sColorIdx_Kris_JacketShade_Back, ARRAY_COUNT(sColorIdx_Kris_JacketShade_Back)},
+            [4] = {COMPOUND_STRING("HAIR"), sColorIdx_Kris_Hair_Ow, sColorIdx_Kris_Hair_Trainer, ARRAY_COUNT(sColorIdx_Kris_Hair_Ow), ARRAY_COUNT(sColorIdx_Kris_Hair_Trainer), PLAYER_COLOR_SLOT_NONE, sColorIdx_Kris_Hair_Back, ARRAY_COUNT(sColorIdx_Kris_Hair_Back)},
+            [5] = {NULL, sColorIdx_Kris_HairDark_Ow, sColorIdx_Kris_HairDark_Trainer, ARRAY_COUNT(sColorIdx_Kris_HairDark_Ow), ARRAY_COUNT(sColorIdx_Kris_HairDark_Trainer), 4, sColorIdx_Kris_HairDark_Back, ARRAY_COUNT(sColorIdx_Kris_HairDark_Back)},
+            [6] = {NULL, sColorIdx_Kris_HairLight_Ow, NULL, ARRAY_COUNT(sColorIdx_Kris_HairLight_Ow), 0, 4, sColorIdx_Kris_HairLight_Back, ARRAY_COUNT(sColorIdx_Kris_HairLight_Back)},
+            [7] = {COMPOUND_STRING("SHIRT"), sColorIdx_Kris_Shirt_Ow, sColorIdx_Kris_Shirt_Trainer, ARRAY_COUNT(sColorIdx_Kris_Shirt_Ow), ARRAY_COUNT(sColorIdx_Kris_Shirt_Trainer), PLAYER_COLOR_SLOT_NONE, sColorIdx_Kris_Shirt_Back, ARRAY_COUNT(sColorIdx_Kris_Shirt_Back)},
+            [8] = {NULL, sColorIdx_Kris_ShirtLight_Ow, sColorIdx_Kris_ShirtLight_Trainer, ARRAY_COUNT(sColorIdx_Kris_ShirtLight_Ow), ARRAY_COUNT(sColorIdx_Kris_ShirtLight_Trainer), 7, sColorIdx_Kris_ShirtLight_Back, ARRAY_COUNT(sColorIdx_Kris_ShirtLight_Back)},
+        },
+    },
 };
 
 static const struct PlayerColorGroupInfo
@@ -175,6 +262,20 @@ static const struct PlayerColorGroupInfo
             [PLAYER_COLOR_REGION_HAT] = {COMPOUND_STRING("HAT"), sGroupSlots_Leaf_Hat, ARRAY_COUNT(sGroupSlots_Leaf_Hat)},
             [PLAYER_COLOR_REGION_OUTFIT] = {COMPOUND_STRING("OUTFIT"), sGroupSlots_Leaf_Outfit, ARRAY_COUNT(sGroupSlots_Leaf_Outfit)},
             [PLAYER_COLOR_REGION_ACCENT] = {COMPOUND_STRING("ACCENT"), sGroupSlots_Leaf_Accent, ARRAY_COUNT(sGroupSlots_Leaf_Accent)},
+        },
+    },
+    [PLAYER_SPRITE_STYLE_JOHTO] = {
+        [MALE] = {
+            [PLAYER_COLOR_REGION_HAIR] = {COMPOUND_STRING("HAIR"), NULL, 0}, // Gold has no hair row
+            [PLAYER_COLOR_REGION_HAT] = {COMPOUND_STRING("HAT"), sGroupSlots_Gold_Hat, ARRAY_COUNT(sGroupSlots_Gold_Hat)},
+            [PLAYER_COLOR_REGION_OUTFIT] = {COMPOUND_STRING("OUTFIT"), sGroupSlots_Gold_Outfit, ARRAY_COUNT(sGroupSlots_Gold_Outfit)},
+            [PLAYER_COLOR_REGION_ACCENT] = {COMPOUND_STRING("ACCENT"), sGroupSlots_Gold_Accent, ARRAY_COUNT(sGroupSlots_Gold_Accent)},
+        },
+        [FEMALE] = {
+            [PLAYER_COLOR_REGION_HAIR] = {COMPOUND_STRING("HAIR"), sGroupSlots_Kris_Hair, ARRAY_COUNT(sGroupSlots_Kris_Hair)},
+            [PLAYER_COLOR_REGION_HAT] = {COMPOUND_STRING("HAT"), sGroupSlots_Kris_Hat, ARRAY_COUNT(sGroupSlots_Kris_Hat)},
+            [PLAYER_COLOR_REGION_OUTFIT] = {COMPOUND_STRING("OUTFIT"), sGroupSlots_Kris_Outfit, ARRAY_COUNT(sGroupSlots_Kris_Outfit)},
+            [PLAYER_COLOR_REGION_ACCENT] = {COMPOUND_STRING("ACCENT"), sGroupSlots_Kris_Accent, ARRAY_COUNT(sGroupSlots_Kris_Accent)},
         },
     },
 };

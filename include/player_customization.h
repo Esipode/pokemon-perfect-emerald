@@ -24,6 +24,8 @@ struct PlayerColorSlotInfo
     u8 numOwIndices;
     u8 numTrainerIndices;
     u8 follows;
+    const u8 *backIndices;  // Back pic layout, for styles whose back pic matches neither front nor OW
+    u8 numBackIndices;
 };
 
 // A group bundles slot ids under one of the PLAYER_COLOR_REGION_* names, so
@@ -73,7 +75,8 @@ const u16 *PlayerCustomization_GetOwPaletteOverride(u16 paletteTag);
 const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId);
 
 // Back-pic counterpart. Emerald back pics share the front palette; FRLG back
-// pics use the OW palette layout, so they take owIndices instead.
+// pics use the OW palette layout, so they take owIndices instead. Johto back
+// pics have their own layout and take backIndices.
 const u16 *PlayerCustomization_GetTrainerBackPaletteOverride(u32 trainerPicId);
 
 // TRUE if every slot is still at its vanilla (zeroed) value.

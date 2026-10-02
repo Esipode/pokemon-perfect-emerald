@@ -139,7 +139,8 @@ static void DestroyOwPreviewSprites(void);
 static void CreateTrainerPreviewSprite(void);
 static void DestroyTrainerPreviewSprite(void);
 static void SetPreviewSpritesInvisible(bool8 invisible);
-static u8 CreatePaletteListMenu(void);
+static u8 CreatePaletteListMenu(u32 selectedRow);
+static void RequestStyleChange(u8 taskId, u8 newStyle);
 static void StartStyleChangeConfirm(u8 taskId, u8 newStyle);
 static void Task_StyleChangeYes(u8 taskId);
 static void Task_StyleChangeNo(u8 taskId);
@@ -350,9 +351,11 @@ static void BuildRowMap(void)
 
 // Shared by init (case 9) and ApplyStyleChange, which rebuilds the list
 // menu from scratch after a style change resizes the row map.
-static u8 CreatePaletteListMenu(void)
+static u8 CreatePaletteListMenu(u32 selectedRow)
 {
     struct ListMenuTemplate template = {0};
+    u32 maxScroll = sPaletteMenu->rowCount > PALETTE_MENU_VISIBLE_ROWS ? sPaletteMenu->rowCount - PALETTE_MENU_VISIBLE_ROWS : 0;
+    u32 scroll = selectedRow < maxScroll ? selectedRow : maxScroll;
 
     template.items = sPaletteMenu->items;
     template.moveCursorFunc = PaletteMenu_MoveCursorCallback;
@@ -373,7 +376,7 @@ static u8 CreatePaletteListMenu(void)
     template.fontId = FONT_NORMAL;
     template.cursorKind = CURSOR_BLACK_ARROW;
 
-    return ListMenuInit(&template, 0, 0);
+    return ListMenuInit(&template, scroll, selectedRow - scroll);
 }
 
 void CB2_InitPlayerPaletteMenu(void)
@@ -459,7 +462,7 @@ void CB2_InitPlayerPaletteMenu(void)
         CreateOwPreviewSprites();
 
         taskId = CreateTask(Task_PaletteMenuFadeIn, 0);
-        gTasks[taskId].tListTaskId = CreatePaletteListMenu();
+        gTasks[taskId].tListTaskId = CreatePaletteListMenu(0);
         sPaletteMenu->listTaskId = gTasks[taskId].tListTaskId;
         RefreshPreviewPalette();
         CopyWindowToVram(WIN_LIST, COPYWIN_GFX);
@@ -551,6 +554,25 @@ static void StartStyleChangeConfirm(u8 taskId, u8 newStyle)
     CreateYesNoMenuWithCallbacks(taskId, &sStyleConfirmYesNoWinTemplate, 0, 0, 0, TILE_TOP_CORNER_L, 7, &sStyleChangeYesNo);
 }
 
+// Prompts only when a slot is customised; default colours have nothing to lose.
+static void RequestStyleChange(u8 taskId, u8 newStyle)
+{
+    u32 i;
+
+    for (i = 0; i < PLAYER_COLOR_SLOT_COUNT; i++)
+    {
+        if (sPaletteMenu->choices[i] != 0)
+        {
+            StartStyleChangeConfirm(taskId, newStyle);
+            return;
+        }
+    }
+
+    sPaletteMenu->pendingStyle = newStyle;
+    ApplyStyleChange(taskId);
+    DrawHeaderText();
+}
+
 static void Task_StyleChangeYes(u8 taskId)
 {
     // ApplyStyleChange destroys and re-creates the preview sprite(s), which
@@ -573,13 +595,21 @@ static void Task_StyleChangeNo(u8 taskId)
 // them, Stage P7).
 static void ApplyStyleChange(u8 taskId)
 {
+    u32 styleRow;
+
     sPaletteMenu->style = sPaletteMenu->pendingStyle;
     memset(sPaletteMenu->choices, 0, sizeof(sPaletteMenu->choices));
     memset(sPaletteMenu->slotHsv, 0, sizeof(sPaletteMenu->slotHsv));
     BuildRowMap();
 
     DestroyListMenuTask(sPaletteMenu->listTaskId, NULL, NULL);
-    gTasks[taskId].tListTaskId = CreatePaletteListMenu();
+    // Keep the STYLE row selected; its position differs per style.
+    for (styleRow = 0; styleRow < sPaletteMenu->rowCount; styleRow++)
+    {
+        if (sPaletteMenu->rows[styleRow].kind == ROW_KIND_STYLE)
+            break;
+    }
+    gTasks[taskId].tListTaskId = CreatePaletteListMenu(styleRow);
     sPaletteMenu->listTaskId = gTasks[taskId].tListTaskId;
 
     if (sPaletteMenu->previewMode == PREVIEW_MODE_TRAINER)
@@ -658,7 +688,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
             u8 newStyle = (sPaletteMenu->style + dir + PLAYER_SPRITE_STYLE_COUNT) % PLAYER_SPRITE_STYLE_COUNT;
 
             PlaySE(SE_SELECT);
-            StartStyleChangeConfirm(taskId, newStyle);
+            RequestStyleChange(taskId, newStyle);
         }
         else if (row->kind == ROW_KIND_SLOT && (JOY_HELD(DPAD_LEFT) ^ JOY_HELD(DPAD_RIGHT)))
         {
@@ -736,7 +766,7 @@ static void Task_PaletteMenuProcessInput(u8 taskId)
         case ROW_KIND_STYLE:
             // A cycles forward, same as DPAD_RIGHT.
             PlaySE(SE_SELECT);
-            StartStyleChangeConfirm(taskId, (sPaletteMenu->style + 1) % PLAYER_SPRITE_STYLE_COUNT);
+            RequestStyleChange(taskId, (sPaletteMenu->style + 1) % PLAYER_SPRITE_STYLE_COUNT);
             break;
         case ROW_KIND_CONFIRM:
             ConfirmAndExit(taskId);
