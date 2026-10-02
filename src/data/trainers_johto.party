@@ -1,0 +1,7227 @@
+/* ==================== Johto Trainers ==================== */
+
+=== TRAINER_ROSS_JOHTO ===
+Name: ROSS
+Class: Collector
+Pic: Collector
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Koffing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Raichu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MITCH_JOHTO ===
+Name: MITCH
+Class: Collector
+Pic: Collector
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Electrode
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JED_JOHTO ===
+Name: JED
+Class: Collector
+Pic: Collector
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Magnemite
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Porygon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MARC_JOHTO ===
+Name: MARC
+Class: Collector
+Pic: Collector
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Omastar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RICH_JOHTO ===
+Name: RICH
+Class: Collector
+Pic: Collector
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Porygon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JOEY_JOHTO ===
+Name: JOEY
+Class: Youngster
+Pic: Youngster Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Rattata
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MIKEY_JOHTO ===
+Name: MIKEY
+Class: Youngster
+Pic: Youngster Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Hoothoot
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Sentret
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ALBERT_JOHTO ===
+Name: ALBERT
+Class: Youngster
+Pic: Youngster Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Sentret
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Zubat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GORDON_JOHTO ===
+Name: GORDON
+Class: Youngster
+Pic: Youngster Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Wooper
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SAMUEL_JOHTO ===
+Name: SAMUEL
+Class: Youngster
+Pic: Youngster Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Teddiursa
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Sandshrew
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Spearow
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_IAN_JOHTO ===
+Name: IAN
+Class: Youngster
+Pic: Youngster Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Mankey
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Diglett
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JACK_JOHTO ===
+Name: JACK
+Class: School Kid
+Pic: School Kid M
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Sunflora
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Voltorb
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ALAN_JOHTO ===
+Name: ALAN
+Class: School Kid
+Pic: School Kid M
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Tangela
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Growlithe
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CHAD_JOHTO ===
+Name: CHAD
+Class: School Kid
+Pic: School Kid M
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Mr Mime
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magnemite
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NATE_JOHTO ===
+Name: NATE
+Class: School Kid
+Pic: School Kid M
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Ledian
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Exeggutor
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RICKY_JOHTO ===
+Name: RICKY
+Class: School Kid
+Pic: School Kid M
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Aipom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ditto
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ROD_JOHTO ===
+Name: ROD
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Pidgey
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Natu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ABE_JOHTO ===
+Name: ABE
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Spearow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BRYAN_JOHTO ===
+Name: BRYAN
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Pidgey
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pidgeotto
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Spearow
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_THEO_JOHTO ===
+Name: THEO
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Murkrow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TOBY_JOHTO ===
+Name: TOBY
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Doduo
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Doduo
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DENIS_JOHTO ===
+Name: DENIS
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Pidgeotto
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Fearow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_VANCE_JOHTO ===
+Name: VANCE
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Pidgeot
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Murkrow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Xatu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Skarmory
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JOSE_JOHTO ===
+Name: JOSE
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Fearow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Farfetchd
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pidgeot
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dodrio
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PETER_JOHTO ===
+Name: PETER
+Class: Bird Keeper
+Pic: Bird Keeper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Spearow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Natu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CARRIE_JOHTO ===
+Name: CARRIE
+Class: Lass
+Pic: Lass
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Happiny
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BRIDGET_JOHTO ===
+Name: BRIDGET
+Class: Lass
+Pic: Lass
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Aipom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Munchlax
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KRISE_JOHTO ===
+Name: KRISE
+Class: Lass
+Pic: Lass
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Skiploom
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Cubone
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CONNIE_JOHTO ===
+Name: CONNIE
+Class: Lass
+Pic: Lass
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Ponyta
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Weepinbell
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DANA_JOHTO ===
+Name: DANA
+Class: Lass
+Pic: Lass
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Flaaffy
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Psyduck
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NICK_JOHTO ===
+Name: NICK
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Charmander
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Squirtle
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bulbasaur
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_AARON_JOHTO ===
+Name: AARON
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Ivysaur
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Charmeleon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Wartortle
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PAUL_JOHTO ===
+Name: PAUL
+Class: Dragon Tamer
+Pic: Dragon Tamer
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Dratini
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 6
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 6
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 6
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CODY_JOHTO ===
+Name: CODY
+Class: Dragon Tamer
+Pic: Dragon Tamer
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Seadra
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golduck
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MIKE_JOHTO ===
+Name: MIKE
+Class: Dragon Tamer
+Pic: Dragon Tamer
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Vaporeon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GAVEN_JOHTO ===
+Name: GAVEN
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Victreebel
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Kingler
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Flareon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Donphan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RYAN_JOHTO ===
+Name: RYAN
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Pidgeot
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Electabuzz
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JAKE_JOHTO ===
+Name: JAKE
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Cloyster
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pidgeot
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Alakazam
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Arcanine
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Jolteon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BLAKE_JOHTO ===
+Name: BLAKE
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Magneton
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Quagsire
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Exeggutor
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Piloswine
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BRIAN_JOHTO ===
+Name: BRIAN
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Sandslash
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Scizor
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Sneasel
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ursaring
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SEAN_JOHTO ===
+Name: SEAN
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Flareon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tangela
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tauros
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ALLEN_JOHTO ===
+Name: ALLEN
+Class: Cooltrainer
+Pic: Cooltrainer M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Charmeleon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Electabuzz
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DARIN_JOHTO ===
+Name: DARIN
+Class: Dragon Tamer
+Pic: Dragon Tamer
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GWEN_JOHTO ===
+Name: GWEN
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Eevee
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Flareon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Vaporeon
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Jolteon
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LOIS_JOHTO ===
+Name: LOIS
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Skiploom
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ninetales
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_FRAN_JOHTO ===
+Name: FRAN
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Seadra
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LOLA_JOHTO ===
+Name: LOLA
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Mantine
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Lanturn
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KATE_JOHTO ===
+Name: KATE
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Shellder
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Cloyster
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_IRENE_JOHTO ===
+Name: IRENE
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Goldeen
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seaking
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KELLY_JOHTO ===
+Name: KELLY
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Togetic
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ampharos
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tangela
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Blastoise
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JOYCE_JOHTO ===
+Name: JOYCE
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Blastoise
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Raichu
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tauros
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Rhydon
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Jumpluff
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BETH_JOHTO ===
+Name: BETH
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Rapidash
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ampharos
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Miltank
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Lanturn
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gengar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_REENA_JOHTO ===
+Name: REENA
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Starmie
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Nidoqueen
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Vileplume
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Electrode
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Starmie
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MEGAN_JOHTO ===
+Name: MEGAN
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Tangela
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Venusaur
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Victreebel
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellossom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CAROL_JOHTO ===
+Name: CAROL
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Electrode
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Starmie
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ninetales
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_EMMA_JOHTO ===
+Name: EMMA
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Poliwhirl
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CYBIL_JOHTO ===
+Name: CYBIL
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Butterfree
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellossom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Quagsire
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JENN_JOHTO ===
+Name: JENN
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Staryu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Starmie
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CARA_JOHTO ===
+Name: CARA
+Class: Cooltrainer
+Pic: Cooltrainer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Seadra
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seadra
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_VICTORIA_JOHTO ===
+Name: VICTORIA
+Class: Beauty
+Pic: Beauty
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Teddiursa
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Furret
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SAMANTHA_JOHTO ===
+Name: SAMANTHA
+Class: Beauty
+Pic: Beauty
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Meowth
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CASSIE_JOHTO ===
+Name: CASSIE
+Class: Beauty
+Pic: Beauty
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Vileplume
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Jynx
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_VALERIE_JOHTO ===
+Name: VALERIE
+Class: Beauty
+Pic: Beauty
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Skiploom
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Miltank
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_OLIVIA_JOHTO ===
+Name: OLIVIA
+Class: Beauty
+Pic: Beauty
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Corsola
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LARRY_JOHTO ===
+Name: LARRY
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Larvitar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ANDREW_JOHTO ===
+Name: ANDREW
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Marowak
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Marowak
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CALVIN_JOHTO ===
+Name: CALVIN
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Kangaskhan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SHANE_JOHTO ===
+Name: SHANE
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Nidorino
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Nidoking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BEN_JOHTO ===
+Name: BEN
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Slowbro
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Wartortle
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BRENT_JOHTO ===
+Name: BRENT
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Lickitung
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ivysaur
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RON_JOHTO ===
+Name: RON
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Nidoking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Charmeleon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ETHAN_JOHTO ===
+Name: ETHAN
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Haunter
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Rhydon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ISSAC_JOHTO ===
+Name: ISSAC
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Lickitung
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DONALD_JOHTO ===
+Name: DONALD
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Slowpoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Slowpoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ZACH_JOHTO ===
+Name: ZACH
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Rhydon
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pupitar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Heracross
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MILLER_JOHTO ===
+Name: MILLER
+Class: Pokemaniac
+Pic: Pokemaniac
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Nidoking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Nidoqueen
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_2_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Raticate
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Raticate
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Raticate
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_3_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Weezing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Muk
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_4_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Aipom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Koffing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Aipom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_5_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Gligar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Hypno
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_6_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Aipom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Murkrow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Forretress
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_7_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Muk
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Venomoth
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_8_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Tauros
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Slowbro
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_9_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Exeggutor
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Electrode
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Electabuzz
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_10_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Muk
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_11_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Weezing
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_12_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Weezing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gligar
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Hypno
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_13_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Kangaskhan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_14_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_15_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Raticate
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Grimer
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_16_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Venomoth
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_17_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Drowzee
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gligar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_18_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ariados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Raticate
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_19_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Weezing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_20_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Arbok
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_21_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Rattata
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Rattata
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_22_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt F Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Rattata
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Zubat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_23_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Arbok
+Level: 5
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_26_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt F Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Arbok
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gloom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_27_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Vileplume
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pinsir
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Arbok
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Murkrow
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_28_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt F Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Arbok
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gloom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ariados
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Vileplume
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_29_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt F Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Arbok
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Sneasel
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRUNT_33_JOHTO ===
+Name: GRUNT
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Basic Trainer
+Items: Full Restore / Full Restore
+
+Koffing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ETO_JOHTO ===
+Name: ETO
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Elekid
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magby
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Smoochum
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ETO_2_JOHTO ===
+Name: ETO
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Jynx
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Poliwhirl
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Electabuzz
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ETO_3_JOHTO ===
+Name: ETO
+Class: Team Rocket Johto
+Pic: Rocket Grunt M Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+
+Poliwrath
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Jynx
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Electabuzz
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Rhydon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PRESTON_JOHTO ===
+Name: PRESTON
+Class: Gentleman
+Pic: Gentleman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Growlithe
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Vulpix
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_EDWARD_JOHTO ===
+Name: EDWARD
+Class: Gentleman
+Pic: Gentleman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Persian
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ALFRED_JOHTO ===
+Name: ALFRED
+Class: Gentleman
+Pic: Gentleman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Noctowl
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ROXANNE_JOHTO ===
+Name: ROXANNE
+Class: Skier Johto
+Pic: Skier F Johto
+Gender: Female
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Jynx
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CLARISSA_JOHTO ===
+Name: CLARISSA
+Class: Skier Johto
+Pic: Skier F Johto
+Gender: Female
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Dewgong
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SHIRLEY_JOHTO ===
+Name: SHIRLEY
+Class: Expert
+Pic: Expert F
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Jigglypuff
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Wigglytuff
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DON_JOHTO ===
+Name: DON
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Ledyba
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Spinarak
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_WADE_JOHTO ===
+Name: WADE
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Weedle
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pineco
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BENNY_JOHTO ===
+Name: BENNY
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Kakuna
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Beedrill
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_AL_JOHTO ===
+Name: AL
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Metapod
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Butterfree
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JOSH_JOHTO ===
+Name: JOSH
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Yanma
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ARNIE_JOHTO ===
+Name: ARNIE
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Yanma
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Venonat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KEN_JOHTO ===
+Name: KEN
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Ariados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pinsir
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_WAYNE_JOHTO ===
+Name: WAYNE
+Class: Bug Catcher
+Pic: Bug Catcher
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Paras
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Oddish
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JUSTIN_JOHTO ===
+Name: JUSTIN
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Tentacool
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RALPH_JOHTO ===
+Name: RALPH
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Goldeen
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_HENRY_JOHTO ===
+Name: HENRY
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Marill
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Poliwag
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MARVIN_JOHTO ===
+Name: MARVIN
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TULLY_JOHTO ===
+Name: TULLY
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Qwilfish
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ANDRE_JOHTO ===
+Name: ANDRE
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RAYMOND_JOHTO ===
+Name: RAYMOND
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Vaporeon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_WILTON_JOHTO ===
+Name: WILTON
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Qwilfish
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Octillery
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seaking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_EDGAR_JOHTO ===
+Name: EDGAR
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Octillery
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seaking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JONAH_JOHTO ===
+Name: JONAH
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Shellder
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Octillery
+Level: 4
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Remoraid
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Cloyster
+Level: 4
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SCOTT_JOHTO ===
+Name: SCOTT
+Class: Fisherman
+Pic: Fisherman
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Qwilfish
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seaking
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Quagsire
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SIMON_JOHTO ===
+Name: SIMON
+Class: Swimmer M
+Pic: Swimmer M
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Tentacool
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tentacool
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RANDALL_JOHTO ===
+Name: RANDALL
+Class: Swimmer M
+Pic: Swimmer M
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Shellder
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Wartortle
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CHARLIE_JOHTO ===
+Name: CHARLIE
+Class: Swimmer M
+Pic: Swimmer M
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Cloyster
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tentacruel
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GEORGE_JOHTO ===
+Name: GEORGE
+Class: Swimmer M
+Pic: Swimmer M
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Tentacool
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Remoraid
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Staryu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BERKE_JOHTO ===
+Name: BERKE
+Class: Swimmer M
+Pic: Swimmer M
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Qwilfish
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KIRK_JOHTO ===
+Name: KIRK
+Class: Swimmer M
+Pic: Swimmer M
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MATHEW_JOHTO ===
+Name: MATHEW
+Class: Swimmer M
+Pic: Swimmer M
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Krabby
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Qwilfish
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ELAINE_JOHTO ===
+Name: ELAINE
+Class: Swimmer F
+Pic: Swimmer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Starmie
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PAULA_JOHTO ===
+Name: PAULA
+Class: Swimmer F
+Pic: Swimmer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Staryu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Shellder
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KAYLEE_JOHTO ===
+Name: KAYLEE
+Class: Swimmer F
+Pic: Swimmer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Seaking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Lanturn
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Quagsire
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SUSIE_JOHTO ===
+Name: SUSIE
+Class: Swimmer F
+Pic: Swimmer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Psyduck
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seaking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DENISE_JOHTO ===
+Name: DENISE
+Class: Swimmer F
+Pic: Swimmer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Lapras
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KARA_JOHTO ===
+Name: KARA
+Class: Swimmer F
+Pic: Swimmer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Horsea
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Starmie
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_WENDY_JOHTO ===
+Name: WENDY
+Class: Swimmer F
+Pic: Swimmer F
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Horsea
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seadra
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_EUGENE_JOHTO ===
+Name: EUGENE
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Poliwhirl
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tauros
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_HUEY_JOHTO ===
+Name: HUEY
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Poliwhirl
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machop
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TERRELL_JOHTO ===
+Name: TERRELL
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Poliwhirl
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KENT_JOHTO ===
+Name: KENT
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Shellder
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Chinchou
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ERNEST_JOHTO ===
+Name: ERNEST
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Machop
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Poliwhirl
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Quagsire
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JEFF_JOHTO ===
+Name: JEFF
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Raticate
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Furret
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GARRETT_JOHTO ===
+Name: GARRETT
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Kingler
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KENNETH_JOHTO ===
+Name: KENNETH
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Machop
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Poliwrath
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machamp
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_STANLY_JOHTO ===
+Name: STANLY
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Qwilfish
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golduck
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_HARRY_JOHTO ===
+Name: HARRY
+Class: Sailor
+Pic: Sailor
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Quagsire
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_STAN_JOHTO ===
+Name: STAN
+Class: Super Nerd Johto
+Pic: Super Nerd Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Grimer
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ERIC_JOHTO ===
+Name: ERIC
+Class: Super Nerd Johto
+Pic: Super Nerd Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Grimer
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Cubone
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TERU_JOHTO ===
+Name: TERU
+Class: Super Nerd Johto
+Pic: Super Nerd Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Voltorb
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magnemite
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Porygon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_HUGH_JOHTO ===
+Name: HUGH
+Class: Super Nerd Johto
+Pic: Super Nerd Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Seadra
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MARKUS_JOHTO ===
+Name: MARKUS
+Class: Super Nerd Johto
+Pic: Super Nerd Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Slowpoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CLYDE_JOHTO ===
+Name: CLYDE
+Class: Guitarist
+Pic: Guitarist
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Electabuzz
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ANTHONY_JOHTO ===
+Name: ANTHONY
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Geodude
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machop
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RUSSELL_JOHTO ===
+Name: RUSSELL
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Geodude
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Cubone
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PHILLIP_JOHTO ===
+Name: PHILLIP
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Geodude
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Geodude
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Graveler
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LEONARD_JOHTO ===
+Name: LEONARD
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Geodude
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machop
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BENJAMIN_JOHTO ===
+Name: BENJAMIN
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Graveler
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dugtrio
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ERIK_JOHTO ===
+Name: ERIK
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Machoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golem
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Kangaskhan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MICHAEL_JOHTO ===
+Name: MICHAEL
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Rhyhorn
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Donphan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golem
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PARRY_JOHTO ===
+Name: PARRY
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Piloswine
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dugtrio
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Steelix
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TIMOTHY_JOHTO ===
+Name: TIMOTHY
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Dugtrio
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gligar
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Graveler
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dugtrio
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BAILEY_JOHTO ===
+Name: BAILEY
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Golem
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golem
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golem
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golem
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golem
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NOLAND_JOHTO ===
+Name: NOLAND
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Sandslash
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golem
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DEVIN_JOHTO ===
+Name: DEVIN
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Dunsparce
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dunsparce
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dudunsparce
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DANIEL_JOHTO ===
+Name: DANIEL
+Class: Hiker
+Pic: Hiker
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Onix
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DUNCAN_JOHTO ===
+Name: DUNCAN
+Class: Burglar Johto
+Pic: Burglar Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Delibird
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_EDDIE_JOHTO ===
+Name: EDDIE
+Class: Burglar Johto
+Pic: Burglar Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Arcanine
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Weezing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RICHARDO_JOHTO ===
+Name: RICHARDO
+Class: Burglar Johto
+Pic: Burglar Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Koffing
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Growlithe
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NARD_JOHTO ===
+Name: NARD
+Class: Firebreather Johto
+Pic: Firebreather Johto
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Charmeleon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_COREY_JOHTO ===
+Name: COREY
+Class: Firebreather Johto
+Pic: Firebreather Johto
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Koffing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Koffing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Koffing
+Level: 5
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BILL_JOHTO ===
+Name: BILL
+Class: Firebreather Johto
+Pic: Firebreather Johto
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Growlithe
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_WALT_JOHTO ===
+Name: WALT
+Class: Firebreather Johto
+Pic: Firebreather Johto
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RAY_JOHTO ===
+Name: RAY
+Class: Firebreather Johto
+Pic: Firebreather Johto
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Vulpix
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LYLE_JOHTO ===
+Name: LYLE
+Class: Firebreather Johto
+Pic: Firebreather Johto
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Weezing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Flareon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ninetales
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_IRWIN_JOHTO ===
+Name: IRWIN
+Class: Juggler Johto
+Pic: Juggler Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Voltorb
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Pineco
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Voltorb
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_FRITZ_JOHTO ===
+Name: FRITZ
+Class: Juggler Johto
+Pic: Juggler Johto
+Gender: Male
+Music: Hg Suspicious 1
+Double Battle: No
+AI: Check Bad Move
+
+Mr Mime
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machoke
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KENJI_JOHTO ===
+Name: KENJI
+Class: Black Belt
+Pic: Black Belt
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Onix
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machamp
+Level: 5
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Steelix
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Hitmonlee
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_YOSHI_JOHTO ===
+Name: YOSHI
+Class: Black Belt
+Pic: Black Belt
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Hitmonlee
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LAO_JOHTO ===
+Name: LAO
+Class: Black Belt
+Pic: Black Belt
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Hitmonchan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NOB_JOHTO ===
+Name: NOB
+Class: Black Belt
+Pic: Black Belt
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Machop
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KIYO_JOHTO ===
+Name: KIYO
+Class: Black Belt
+Pic: Black Belt
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Hitmonlee
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Hitmonchan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LUNG_JOHTO ===
+Name: LUNG
+Class: Black Belt
+Pic: Black Belt
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Mankey
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Primeape
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_WAI_JOHTO ===
+Name: WAI
+Class: Black Belt
+Pic: Black Belt
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Machamp
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machoke
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Machamp
+Level: 4
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NATHAN_JOHTO ===
+Name: NATHAN
+Class: Psychic
+Pic: Psychic M Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Girafarig
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GREG_JOHTO ===
+Name: GREG
+Class: Psychic
+Pic: Psychic M Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Stantler
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NORMAN_JOHTO ===
+Name: NORMAN
+Class: Psychic
+Pic: Psychic M Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Slowpoke
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Slowpoke
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MARK_JOHTO ===
+Name: MARK
+Class: Psychic
+Pic: Psychic M Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Abra
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Abra
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Kadabra
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PHIL_JOHTO ===
+Name: PHIL
+Class: Psychic
+Pic: Psychic M Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Xatu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Kadabra
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Girafarig
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RICHARD_JOHTO ===
+Name: RICHARD
+Class: Psychic
+Pic: Psychic M Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Espeon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Mr Mime
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Slowking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GILBERT_JOHTO ===
+Name: GILBERT
+Class: Psychic
+Pic: Psychic M Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Xatu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Exeggutor
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Girafarig
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LIZ_JOHTO ===
+Name: LIZ
+Class: Picnicker
+Pic: Picnicker
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Nidoran F
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GINA_JOHTO ===
+Name: GINA
+Class: Picnicker
+Pic: Picnicker
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Skiploom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bulbasaur
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BROOKE_JOHTO ===
+Name: BROOKE
+Class: Picnicker
+Pic: Picnicker
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Pikachu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KIM_JOHTO ===
+Name: KIM
+Class: Picnicker
+Pic: Picnicker
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Vulpix
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DEBRA_JOHTO ===
+Name: DEBRA
+Class: Picnicker
+Pic: Picnicker
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Seaking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ERIN_JOHTO ===
+Name: ERIN
+Class: Picnicker
+Pic: Picnicker
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Rapidash
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Nidoqueen
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Raichu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Rapidash
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TIFFANY_JOHTO ===
+Name: TIFFANY
+Class: Picnicker
+Pic: Picnicker
+Gender: Male
+Music: Hg Girl 2
+Double Battle: No
+AI: Check Bad Move
+
+Clefairy
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Wigglytuff
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ROLAND_JOHTO ===
+Name: ROLAND
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Nidoran M
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TODD_JOHTO ===
+Name: TODD
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Azumarill
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_IVAN_JOHTO ===
+Name: IVAN
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Eevee
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Diglett
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ELLIOT_JOHTO ===
+Name: ELLIOT
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Sandshrew
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Marill
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TED_JOHTO ===
+Name: TED
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Ursaring
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Primeape
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Nidoking
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRANT_JOHTO ===
+Name: GRANT
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Skiploom
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Marill
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_SPENCER_JOHTO ===
+Name: SPENCER
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Sandslash
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_QUENTIN_JOHTO ===
+Name: QUENTIN
+Class: Camper
+Pic: Camper
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Check Bad Move
+
+Fearow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Primeape
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Tauros
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Raichu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_CHOW_JOHTO ===
+Name: CHOW
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Sunkern
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NICO_JOHTO ===
+Name: NICO
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Hoppip
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JIN_JOHTO ===
+Name: JIN
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_TROY_JOHTO ===
+Name: TROY
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Hoppip
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JEFFREY_JOHTO ===
+Name: JEFFREY
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Gastly
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Haunter
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Murkrow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PING_JOHTO ===
+Name: PING
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Misdreavus
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_EDMOND_JOHTO ===
+Name: EDMOND
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NEAL_JOHTO ===
+Name: NEAL
+Class: Sage Johto
+Pic: Sage Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Bellsprout
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LI_JOHTO ===
+Name: LI
+Class: Sage Johto
+Pic: Sage Leader Johto
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Oddish
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Sunkern
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Bellsprout
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MARTHA_JOHTO ===
+Name: MARTHA
+Class: Hex Maniac
+Pic: Hex Maniac
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Haunter
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Houndour
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_GRACE_JOHTO ===
+Name: GRACE
+Class: Hex Maniac
+Pic: Hex Maniac
+Gender: Male
+Music: Hg Sage
+Double Battle: No
+AI: Check Bad Move
+
+Haunter
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Murkrow
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RONALD_JOHTO ===
+Name: RONALD
+Class: Skier Johto
+Pic: Skier M Johto
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Dewgong
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Delibird
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BRAD_JOHTO ===
+Name: BRAD
+Class: Skier Johto
+Pic: Skier M Johto
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Swinub
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Sneasel
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DOUGLAS_JOHTO ===
+Name: DOUGLAS
+Class: Skier Johto
+Pic: Skier M Johto
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Shellder
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Seel
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Cloyster
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_WILLIAM_JOHTO ===
+Name: WILLIAM
+Class: Pokefan
+Pic: Pokefan M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Raichu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DEREK_JOHTO ===
+Name: DEREK
+Class: Pokefan
+Pic: Pokefan M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Pikachu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Ponyta
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BRANDON_JOHTO ===
+Name: BRANDON
+Class: Pokefan
+Pic: Pokefan M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Snubbull
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_COLIN_JOHTO ===
+Name: COLIN
+Class: Pokefan
+Pic: Pokefan M
+Gender: Male
+Music: Hg Suspicious 2
+Double Battle: No
+AI: Check Bad Move
+
+Delibird
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_NAOKO_JOHTO ===
+Name: NAOKO
+Class: Kimono Girl Johto
+Pic: Kimono Girl Johto
+Gender: Male
+Music: Hg Kimono Girl
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Pink
+
+Espeon
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Psych Up
+- Swift
+- Last Resort
+
+=== TRAINER_SAYO_JOHTO ===
+Name: SAYO
+Class: Kimono Girl Johto
+Pic: Kimono Girl Johto
+Gender: Male
+Music: Hg Kimono Girl
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Yellow
+
+Jolteon
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Double Team
+- Thunder Wave
+- Last Resort
+
+=== TRAINER_ZUKI_JOHTO ===
+Name: ZUKI
+Class: Kimono Girl Johto
+Pic: Kimono Girl Johto
+Gender: Male
+Music: Hg Kimono Girl
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Purple
+
+Umbreon
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dark Pulse
+- Confuse Ray
+- Shadow Ball
+- Last Resort
+
+=== TRAINER_KUNI_JOHTO ===
+Name: KUNI
+Class: Kimono Girl Johto
+Pic: Kimono Girl Johto
+Gender: Male
+Music: Hg Kimono Girl
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Light Blue
+
+Vaporeon
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Quick Attack
+- Aurora Beam
+- Last Resort
+
+=== TRAINER_MIKI_JOHTO ===
+Name: MIKI
+Class: Kimono Girl Johto
+Pic: Kimono Girl Johto
+Gender: Male
+Music: Hg Kimono Girl
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+
+Flareon
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Quick Attack
+- Will O Wisp
+- Last Resort
+
+=== TRAINER_AMY_AND_MAY_JOHTO ===
+Name: AMY&MAY
+Class: Twins
+Pic: Twins Johto
+Gender: Male
+Music: Hg Girl 2
+Double Battle: Yes
+AI: Check Bad Move
+
+Ledyba
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Spinarak
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_ANN_AND_ANNE_JOHTO ===
+Name: ANN&ANNE
+Class: Twins
+Pic: Twins Johto
+Gender: Male
+Music: Hg Girl 2
+Double Battle: Yes
+AI: Check Bad Move
+
+Clefairy
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Furret
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_MEG_AND_PEG_JOHTO ===
+Name: MEG&PEG
+Class: Twins
+Pic: Twins Johto
+Gender: Male
+Music: Hg Girl 2
+Double Battle: Yes
+AI: Check Bad Move
+
+Ursaring
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Donphan
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_LEA_AND_PIA_JOHTO ===
+Name: LEA&PIA
+Class: Twins
+Pic: Twins Johto
+Gender: Male
+Music: Hg Girl 2
+Double Battle: Yes
+AI: Check Bad Move
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Dragonair
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Gyarados
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_BEVERLY_JOHTO ===
+Name: BEVERLY
+Class: Parasol Lady
+Pic: Parasol Lady
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Snubbull
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RUTH_JOHTO ===
+Name: RUTH
+Class: Parasol Lady
+Pic: Parasol Lady
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Pikachu
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_JAMIE_JOHTO ===
+Name: JAIME
+Class: Parasol Lady
+Pic: Parasol Lady
+Gender: Male
+Music: Hg Girl 1
+Double Battle: No
+AI: Check Bad Move
+
+Umbreon
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_KEITH_JOHTO ===
+Name: KEITH
+Class: Officer Johto
+Pic: Officer Johto
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Growlithe
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DIRK_JOHTO ===
+Name: DIRK
+Class: Officer Johto
+Pic: Officer Johto
+Gender: Male
+Music: Hg Boy 2
+Double Battle: No
+AI: Check Bad Move
+
+Growlithe
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Houndour
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_THOM_AND_KAE_JOHTO ===
+Name: THOM & KAE
+Class: Young Couple
+Pic: Young Couple
+Gender: Male
+Music: Hg Girl 1
+Double Battle: Yes
+AI: Check Bad Move
+
+Electabuzz
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Magmar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_DUFF_AND_EDA_JOHTO ===
+Name: DUFF & EDA
+Class: Young Couple
+Pic: Young Couple
+Gender: Male
+Music: Hg Girl 1
+Double Battle: Yes
+AI: Check Bad Move
+
+Onix
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Cloyster
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_FALKNER_1_JOHTO ===
+Name: FALKNER
+Class: Leader Johto
+Pic: Leader Falkner Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Light Blue
+
+Pidgey
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Tackle
+- Sand Attack
+- Quick Attack
+
+Noctowl @ Sitrus Berry
+Level: 3
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Tackle
+- Mud Slap
+- Peck
+
+=== TRAINER_BUGSY_1_JOHTO ===
+Name: BUGSY
+Class: Leader Johto
+Pic: Leader Bugsy Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Green
+Items: Potion / Potion
+
+Pineco
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Pin Missile
+- Headbutt
+- Rollout
+- Harden
+
+Ledian
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Thunder Punch
+- Comet Punch
+- Supersonic
+- Reflect
+
+Scyther @ Berry Juice
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Quick Attack
+- Fury Cutter
+- U Turn 
+- Pursuit
+
+=== TRAINER_WHITNEY_1_JOHTO ===
+Name: WHITNEY
+Class: Leader Johto
+Pic: Leader Whitney Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Pink
+Items: Super Potion / Potion
+
+Clefairy
+Level: 0
+IVs: 2 HP / 2 Atk / 2 Def / 2 SpA / 2 SpD / 2 Spe
+- Headbutt
+- Charm
+- Sweet Kiss
+- Metronome
+
+Teddiursa
+Level: 0
+IVs: 2 HP / 2 Atk / 2 Def / 2 SpA / 2 SpD / 2 Spe
+- Fury Swipes
+- Fake Tears
+- Lick
+- Mud Slap
+
+Miltank @ Sitrus Berry
+Level: 1
+IVs: 2 HP / 2 Atk / 2 Def / 2 SpA / 2 SpD / 2 Spe
+- Rollout
+- Attract
+- Stomp
+- Milk Drink
+
+=== TRAINER_MORTY_1_JOHTO ===
+Name: MORTY
+Class: Leader Johto
+Pic: Leader Morty Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Purple
+Items: Super Potion / Super Potion
+
+Haunter
+Ability: Levitate
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Hypnosis
+- Nightmare
+- Curse
+- Night Shade
+
+Stantler
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Swift
+- Hypnosis
+- Nightmare
+- Leer
+
+Misdreavus
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Shadow Ball
+- Pain Split
+- Perish Song
+- Psywave
+
+Gengar @ Sitrus Berry
+Ability: Levitate
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Hypnosis
+- Shadow Ball
+- Mean Look
+- Dream Eater
+
+=== TRAINER_PRYCE_1_JOHTO ===
+Name: PRYCE
+Class: Leader Johto
+Pic: Leader Pryce Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Light Blue
+Items: Super Potion / Super Potion
+
+Dewgong
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Aqua Ring
+- Aurora Beam
+- Rain Dance
+- Aqua Jet
+
+Sneasel
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Faint Attack
+- Metal Claw
+- Hone Claws
+- Avalanche
+
+Jynx
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Ice Punch
+- Psychic
+- Rain Dance
+- Lovely Kiss
+
+Piloswine @ Sitrus Berry
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Headbutt
+- Earthquake
+- Ancient Power
+- Ice Fang
+
+=== TRAINER_PRYCE_1_2_JOHTO ===
+Name: PRYCE
+Class: Leader Johto
+Pic: Leader Pryce Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Light Blue
+Items: Full Restore / Full Restore
+
+Cloyster
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Surf
+- Spikes
+- Aurora Beam
+- Rain Dance
+
+Sneasel
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Faint Attack
+- Metal Claw
+- Reflect
+- Ice Punch
+
+Jynx
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Ice Punch
+- Psychic
+- Rain Dance
+- Lovely Kiss
+
+Dewgong
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Brine
+- Aurora Beam
+- Snore
+- Rest
+
+Piloswine @ Sitrus Berry
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Headbutt
+- Earthquake
+- Ancient Power
+- Ice Fang
+
+=== TRAINER_PRYCE_1_3_JOHTO ===
+Name: PRYCE
+Class: Leader Johto
+Pic: Leader Pryce Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Light Blue
+Items: Full Restore / Full Restore
+
+Cloyster
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Surf
+- Spikes
+- Aurora Beam
+- Rain Dance
+
+Sneasel
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Faint Attack
+- Metal Claw
+- Reflect
+- Blizzard
+
+Jynx
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Ice Punch
+- Psychic
+- Shadow Ball
+- Lovely Kiss
+
+Dewgong
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Aqua Tail
+- Aurora Beam
+- Snore
+- Rest
+
+Mamoswine @ Sitrus Berry
+Level: 1
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Take Down
+- Earthquake
+- Ancient Power
+- Ice Fang
+
+=== TRAINER_JASMINE_1_JOHTO ===
+Name: JASMINE
+Class: Leader Johto
+Pic: Leader Jasmine Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Yellow
+Items: Super Potion / Super Potion
+
+Skarmory
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Spikes
+- Drill Peck
+- Swagger
+- Steel Wing
+
+Corsola
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Rain Dance
+- Brine
+- Recover
+- Ancient Power
+
+Magneton
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Thunderbolt
+- Tri Attack
+- Rain Dance
+- Thunder
+
+Scizor @ Focus Band
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Bullet Punch
+- Metal Claw
+- Agility
+- Swords Dance
+
+Steelix @ Quick Claw
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Crunch
+- Earthquake
+- Rock Slide
+- Iron Tail
+
+=== TRAINER_JASMINE_1_2_JOHTO ===
+Name: JASMINE
+Class: Leader Johto
+Pic: Leader Jasmine Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Yellow
+Items: Full Restore / Full Restore
+
+Skarmory
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Spikes
+- Drill Peck
+- Swagger
+- Steel Wing
+
+Corsola
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Rain Dance
+- Brine
+- Aqua Ring
+- Ancient Power
+
+Magneton
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Thunderbolt
+- Tri Attack
+- Rain Dance
+- Thunder
+
+Scizor @ Focus Band
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Bullet Punch
+- Metal Claw
+- Agility
+- Swords Dance
+
+Steelix @ Quick Claw
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Crunch
+- Earthquake
+- Rock Slide
+- Iron Tail
+
+=== TRAINER_JASMINE_1_3_JOHTO ===
+Name: JASMINE
+Class: Leader Johto
+Pic: Leader Jasmine Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Yellow
+Items: Full Restore / Full Restore
+
+Skarmory
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Spikes
+- Drill Peck
+- Swagger
+- Steel Wing
+
+Corsola
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Rain Dance
+- Surf
+- Aqua Ring
+- Ancient Power
+
+Magnezone
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Thunderbolt
+- Tri Attack
+- Rain Dance
+- Gyro Ball
+
+Scizor @ Focus Band
+Level: 1
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- X Scissor
+- Metal Claw
+- Agility
+- Swords Dance
+
+Steelix @ Quick Claw
+Level: 1
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Crunch
+- Earthquake
+- Rock Slide
+- Iron Tail
+
+=== TRAINER_CHUCK_1_JOHTO ===
+Name: CHUCK
+Class: Leader Johto
+Pic: Leader Chuck Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Orange
+Items: Super Potion / Super Potion
+
+Hitmontop
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Triple Kick
+- Rolling Kick
+- Dig
+- Pursuit
+
+Primeape
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Low Kick
+- Karate Chop
+- Ice Punch
+- Rage
+
+Sudowoodo
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Rock Slide
+- Wood Hammer
+- Low Kick
+- Faint Attack
+
+Poliwrath @ Black Belt
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Hypnosis
+- Mind Reader
+- Surf
+- Dynamic Punch
+
+=== TRAINER_CHUCK_1_2_JOHTO ===
+Name: CHUCK
+Class: Leader Johto
+Pic: Leader Chuck Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Orange
+Items: Full Restore / Full Restore
+
+Hitmontop
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Triple Kick
+- Rolling Kick
+- Dig
+- Pursuit
+
+Sudowoodo
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Rock Slide
+- Wood Hammer
+- Low Kick
+- Faint Attack
+
+Primeape
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Low Kick
+- Karate Chop
+- Ice Punch
+- Rage Fist
+
+Pinsir
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Brick Break
+- X Scissor
+- Vice Grip
+- Harden
+
+Poliwrath @ Black Belt
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Hypnosis
+- Mind Reader
+- Surf
+- Dynamic Punch
+
+=== TRAINER_CHUCK_1_3_JOHTO ===
+Name: CHUCK
+Class: Leader Johto
+Pic: Leader Chuck Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Orange
+Items: Full Restore / Full Restore
+
+Hitmontop
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Triple Kick
+- Rolling Kick
+- Dig
+- Pursuit
+
+Sudowoodo
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Rock Slide
+- Wood Hammer
+- Low Kick
+- Faint Attack
+
+Annihilape
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Shadow Punch
+- Brick Break
+- Ice Punch
+- Rage Fist
+
+Pinsir
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Submission
+- X Scissor
+- Strength
+- Swords Dance
+
+Poliwrath @ Black Belt
+Level: 1
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Ice Punch
+- Hypnosis
+- Waterfall
+- Dynamic Punch
+
+=== TRAINER_CLAIR_1_JOHTO ===
+Name: CLAIR
+Class: Leader Johto
+Pic: Leader Clair Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Blue
+Items: Full Restore / Full Restore
+
+Dragonair
+Level: 0
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Thunder Wave
+- Thunderbolt
+- Flamethrower
+- Dragon Tail
+
+Gyarados @ Focus Band
+Level: 1
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Bite
+- Waterfall
+- Fly
+- Ice Fang
+
+Lapras @ Chesto Berry
+Level: 1
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Brine
+- Ice Beam
+- Body Slam
+- Rest
+
+Dudunsparce @ Sitrus Berry
+Level: 2
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Glare
+- Ancient Power
+- Rest
+- Poison Jab
+
+Kingdra @ Leftovers
+Level: 3
+IVs: 24 HP / 24 Atk / 24 Def / 24 SpA / 24 SpD / 24 Spe
+- Agility
+- Surf
+- Hyper Beam
+- Dragon Pulse
+
+=== TRAINER_WILL_1_JOHTO ===
+Name: WILL
+Class: Elite Four Johto
+Pic: Elite Four Will Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Pink
+Items: Full Restore / Full Restore
+
+Girafarig
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Zen Headbutt
+- Nasty Plot
+- Agility
+- Baton Pass
+
+Slowking
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Amnesia
+- Fire Punch
+- Surf
+- Psychic
+
+Espeon
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Shadow Ball
+- Reflect
+- Headbutt
+
+Slowbro @ Quick Claw
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Curse
+- Rock Smash
+- Body Slam
+- Zen Headbutt
+
+Xatu @ Twisted Spoon
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Recover
+- Confuse Ray
+- Psychic
+
+=== TRAINER_WILL_2_JOHTO ===
+Name: WILL
+Class: Elite Four Johto
+Pic: Elite Four Will Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Pink
+Items: Full Restore / Full Restore
+
+Gardevoir
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Hyper Voice
+- Moonblast
+- Reflect
+
+Jynx
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Blizzard
+- Psychic
+- Perish Song
+- Sing
+
+Exeggutor @ Sitrus Berry
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ancient Power
+- Sleep Powder
+- Dream Eater
+- Soft Boiled
+
+Grumpig
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Teeter Dance
+- Power Gem
+- Snore
+- Rest
+
+Slowbro @ Quick Claw
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Punch
+- Curse
+- Earthquake
+- Zen Headbutt
+
+Xatu @ Leftovers
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Future Sight
+- Air Slash
+- Confuse Ray
+- Protect
+
+=== TRAINER_BRUNO_1_JOHTO ===
+Name: BRUNO
+Class: Elite Four Johto
+Pic: Elite Four Bruno Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Orange
+Items: Full Restore / Full Restore
+
+Hitmonchan @ Scope Lens
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Close Combat
+- Pursuit
+- Dizzy Punch
+- Thunder Punch
+
+Heracross
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Close Combat
+- Megahorn
+- Take Down
+- Earthquake
+
+Hitmonlee @ Silk Scarf
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Blaze Kick
+- Meditate
+- Reversal
+- Hi Jump Kick
+
+Steelix
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Earthquake
+- Stone Edge
+- Iron Tail
+
+Machamp @ Black Belt
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Fire Punch
+- Vital Throw
+- Cross Chop
+
+=== TRAINER_BRUNO_2_JOHTO ===
+Name: BRUNO
+Class: Elite Four Johto
+Pic: Elite Four Bruno Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Orange
+Items: Full Restore / Full Restore
+
+Steelix @ Quick Claw
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Earthquake
+- Explosion
+- Iron Tail
+
+Poliwrath @ Scope Lens
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Submission
+- Blizzard
+- Hydro Pump
+- Psychic
+
+Heracross @ Quick Claw
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Close Combat
+- Megahorn
+- Reversal
+- Earthquake
+
+Hariyama
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Belly Drum
+- SmellingSalt
+- Focus Punch
+- Seismic Toss
+
+Hitmontop @ Scope Lens
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Triple Kick
+- Double Kick
+- Dig
+- Pursuit
+
+Machamp @ Leftovers
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Earthquake
+- Body Slam
+- Cross Chop
+
+=== TRAINER_KAREN_1_JOHTO ===
+Name: KAREN
+Class: Elite Four Johto
+Pic: Elite Four Karen Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Yellow
+Items: Full Restore / Full Restore
+
+Umbreon @ Sitrus Berry
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Faint Attack
+- Double Team
+- Baton Pass
+- Moonlight
+
+Gengar
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Shadow Ball
+- Hypnosis
+- Dream Eater
+- Confuse Ray
+
+Vileplume @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sleep Powder
+- Giga Drain
+- Leech Seed
+- Substitute
+
+Honchkrow @ Sharp Beak
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Faint Attack
+- Steel Wing
+- Haze
+
+Houndoom @ Black Glasses
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Crunch
+- Iron Tail
+- Reversal
+
+=== TRAINER_KAREN_2_JOHTO ===
+Name: KAREN
+Class: Elite Four Johto
+Pic: Elite Four Karen Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Yellow
+Items: Full Restore / Full Restore
+
+Umbreon @ Sitrus Berry
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Growth
+- Shadow Ball
+- Hidden Power
+- Baton Pass
+
+Weavile
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hone Claws
+- Metal Claw
+- Night Slash
+- Avalanche
+
+Persian @ Scope Lens
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Slash
+- Assurance
+- Iron Tail
+- Play Rough
+
+Honchkrow @ Sharp Beak
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Dark Pulse
+- Swagger
+- Nasty Plot
+
+Absol @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psycho Cut
+- Shadow Claw
+- Perish Song
+- Slash
+
+Houndoom @ Charcoal
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Crunch
+- Iron Tail
+- Hidden Power
+
+=== TRAINER_KOGA_1_JOHTO ===
+Name: KOGA
+Class: Elite Four Johto
+Pic: Elite Four Koga Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Purple
+Items: Full Restore / Full Restore
+
+Ariados @ Kings Rock
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Megahorn
+- Giga Drain
+- Double Team
+- Toxic
+
+Qwilfish
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Aqua Tail
+- Toxic
+- Protect
+- Poison Jab
+
+Muk @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Minimize
+- Fire Blast
+- Gunk Shot
+- Toxic
+
+Venomoth
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leech Life
+- Psychic
+- Poison Fang
+- Sleep Powder
+
+Crobat @ Bright Powder
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Double Team
+- Toxic
+- Bite
+- Confuse Ray
+
+=== TRAINER_KOGA_2_JOHTO ===
+Name: KOGA
+Class: Elite Four Johto
+Pic: Elite Four Koga Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Purple
+Items: Full Restore / Full Restore
+
+Tentacruel @ Chesto Berry
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Waterfall
+- Blizzard
+- Sludge Wave
+- Rest
+
+Muk @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Minimize
+- Fire Blast
+- Gunk Shot
+- Toxic
+
+Swalot
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Swallow
+- Stockpile
+- Amnesia
+- Spit Up
+
+Nidoking @ Quick Claw
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Lovely Kiss
+- Fire Blast
+- Surf
+- Earthquake
+
+Venomoth @ Bright Powder
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Silver Wind
+- Signal Beam
+- Psychic
+- Supersonic
+
+Crobat @ Leftovers
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Cross Poison
+- Air Slash
+- Toxic
+- Confuse Ray
+
+=== TRAINER_LANCE_1_JOHTO ===
+Name: LANCE
+Class: Champion Johto
+Pic: Champion Lance Johto
+Gender: Male
+Music: Hg Champion
+Double Battle: No
+AI: Basic Trainer
+Items: Full Restore / Full Restore
+Mugshot: Blue
+
+Gyarados @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Waterfall
+- Dragon Dance
+- Hyper Beam
+- Earthquake
+
+Dragonite @ Sitrus Berry
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Blizzard
+- Fire Blast
+- Thunder
+- Extreme Speed
+
+Charizard @ Charcoal
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Flamethrower
+- Wing Attack
+- Double Team
+- Steel Wing
+
+Dragonite
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Bounce
+- Dragon Claw
+- Waterfall
+- Dragon Dance
+
+Aerodactyl @ Silk Scarf
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Aerial Ace
+- Rock Slide
+- Hyper Beam
+- Earthquake
+
+Dragonite @ Sitrus Berry
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder
+- Safeguard
+- Outrage
+- Hyper Beam
+
+=== TRAINER_LANCE_2_JOHTO ===
+Name: LANCE
+Class: Champion Johto
+Pic: Champion Lance Johto
+Gender: Male
+Music: Hg Champion
+Double Battle: No
+AI: Basic Trainer
+Items: Full Restore / Full Restore
+Mugshot: Blue
+
+Salamence
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dragon Claw
+- Air Slash
+- Double Edge
+- Thunderbolt
+
+Dragonite @ Sitrus Berry
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Iron Tail
+- Ice Punch
+- Dragon Rush
+- Dragon Dance
+
+Gyarados @ Quick Claw
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Waterfall
+- Hyper Beam
+- Crunch
+- Earthquake
+
+Charizard @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Crunch
+- Earthquake
+- Swords Dance
+
+Aerodactyl @ Scope Lens
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sky Attack
+- Rock Slide
+- Earthquake
+- Iron Tail
+
+Altaria @ Silk Scarf
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dragon Dance
+- MoonBlast
+- Dragon Pulse
+- Hurricane
+
+=== TRAINER_RIVAL_CHIKORITA_1_JOHTO ===
+Name: ???
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+
+Chikorita
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RIVAL_CHIKORITA_2_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Potion
+
+Zubat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Absorb
+- Supersonic
+- Poison Sting
+- Astonish
+
+Larvitar
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Rock Throw
+- Screech
+- Sandstorm
+
+Bayleef
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Razor Leaf
+- Reflect
+- Poison Powder
+- Tackle
+
+=== TRAINER_RIVAL_CHIKORITA_3_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Super Potion
+
+Larvitar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Rock Throw
+- Screech
+- Sandstorm
+
+Remoraid
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bubble Beam
+- Aurora Beam
+- Psybeam
+- Lock On
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Confuse Ray
+- Poison Sting
+- Air Cutter
+
+Bayleef
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Mega Drain
+- Magical Leaf
+- Tackle
+- Leech Seed
+
+=== TRAINER_RIVAL_CHIKORITA_4_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Hyper Potion
+
+Pupitar
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Thrash
+- Rock Slide
+- Screech
+- Bite
+
+Houndoom
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Flamethrower
+- Iron Tail
+- Bite
+- Nasty Plot
+
+Octillery
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Octazooka
+- Psybeam
+- Aurora Beam
+- Signal Beam
+
+Golbat
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Poison Fang
+- Double Team
+- Confuse Ray
+- Air Cutter
+
+Meganium
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Synthesis
+- Magical Leaf
+- Sunny Day
+- Body Slam
+
+=== TRAINER_RIVAL_CHIKORITA_5_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Hyper Potion
+
+Ursaring @ Chesto Berry
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Slash
+- Faint Attack
+- Rock Smash
+- Rest
+
+Golbat
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Venoshock
+- Aerial Ace
+- Double Team
+- Confuse Ray
+
+Octillery @ Quick Claw
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Surf
+- Ice Beam
+- Psybeam
+- Signal Beam
+
+Houndoom
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Flamethrower
+- Iron Tail
+- Crunch
+- Sunny Day
+
+Meganium @ Miracle Seed
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Play Rough
+- Petal Dance
+- Petal Blizzard
+- Poison Powder
+
+Tyranitar
+Level: 3
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Crunch
+- Earthquake
+- Rock Slide
+- Fire Fang
+
+=== TRAINER_RIVAL_CHIKORITA_7_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Ursaluna Bloodmoon @ Chesto Berry
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hammer Arm
+- Moonblast
+- Ancient Power
+- Rest
+
+Crobat @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Venoshock
+- Dark Pulse
+- Facade
+
+Octillery @ Never Melt Ice
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Ice Beam
+- Psybeam
+- Signal Beam
+
+Houndoom @ Charcoal
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Iron Tail
+- Crunch
+- Sunny Day
+
+Meganium @ Miracle Seed
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Reflect
+- Giga Drain
+- Solar Beam
+- Body Slam
+
+Tyranitar @ Quick Claw
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Earthquake
+- Stone Edge
+- Fire Fang
+
+=== TRAINER_RIVAL_CYNDAQUIL_1_JOHTO ===
+Name: ???
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+
+Cyndaquil
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RIVAL_CYNDAQUIL_2_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Potion
+
+Zubat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Absorb
+- Supersonic
+- Poison Sting
+- Astonish
+
+Larvitar
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Rock Throw
+- Screech
+- Sandstorm
+
+Quilava
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Leer
+- Smokescreen
+- Ember
+- Tackle
+
+=== TRAINER_RIVAL_CYNDAQUIL_3_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Super Potion
+
+Larvitar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Rock Throw
+- Screech
+- Sandstorm
+
+Weepinbell
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Razor Leaf
+- Growth
+- Sleep Powder
+- Stun Spore
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Confuse Ray
+- Poison Sting
+- Air Cutter
+
+Quilava
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Flame Wheel
+- Dig
+- Quick Attack
+- Smokescreen
+
+=== TRAINER_RIVAL_CYNDAQUIL_4_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Super Potion
+
+Pupitar
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Thrash
+- Rock Slide
+- Screech
+- Bite
+
+Victreebel
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Sludge
+- Razor Leaf
+- Sleep Powder
+- Growth
+
+Octillery
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Octazooka
+- Psybeam
+- Aurora Beam
+- Signal Beam
+
+Golbat
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Poison Fang
+- Double Team
+- Confuse Ray
+- Air Cutter
+
+Typhlosion
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Thunder Punch
+- Flamethrower
+- Quick Attack
+- Iron Tail
+
+=== TRAINER_RIVAL_CYNDAQUIL_5_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Hyper Potion
+
+Ursaring @ Chesto Berry
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Slash
+- Faint Attack
+- Rock Smash
+- Rest
+
+Golbat
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Venoshock
+- Aerial Ace
+- Double Team
+- Confuse Ray
+
+Octillery @ Quick Claw
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Surf
+- Ice Beam
+- Psybeam
+- Signal Beam
+
+Victreebel
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Sludge Bomb
+- Giga Drain
+- Sleep Powder
+- Growth
+
+Typhlosion @ Charcoal
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Flamethrower
+- Quick Attack
+- Iron Tail
+- Thunder Punch
+
+Tyranitar
+Level: 3
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Crunch
+- Earthquake
+- Rock Slide
+- Fire Fang
+
+=== TRAINER_RIVAL_CYNDAQUIL_7_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Ursaluna Bloodmoon @ Chesto Berry
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hammer Arm
+- Moonblast
+- Ancient Power
+- Rest
+
+Crobat @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Venoshock
+- Dark Pulse
+- Facade
+
+Octillery @ Never Melt Ice
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Surf
+- Ice Beam
+- Psybeam
+- Signal Beam
+
+Victreebel @ Scope Lens
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leaf Blade
+- Sludge Bomb
+- Sleep Powder
+- Growth
+
+Typhlosion @ Charcoal
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Earthquake
+- Iron Tail
+- Thunder Punch
+
+Tyranitar @ Quick Claw
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Earthquake
+- Stone Edge
+- Fire Fang
+
+=== TRAINER_RIVAL_TOTODILE_1_JOHTO ===
+Name: ???
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+
+Totodile
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_RIVAL_TOTODILE_2_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Potion
+
+Zubat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Absorb
+- Supersonic
+- Poison Sting
+- Astonish
+
+Larvitar
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Rock Throw
+- Screech
+- Sandstorm
+
+Croconaw
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Scratch
+- Rage
+- Bubble Beam
+- Leer
+
+=== TRAINER_RIVAL_TOTODILE_3_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Super Potion
+
+Larvitar
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Rock Throw
+- Screech
+- Sandstorm
+
+Houndour
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Ember
+- Bite
+- Smog
+- Roar
+
+Golbat
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Confuse Ray
+- Poison Sting
+- Air Cutter
+
+Croconaw
+Level: 2
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+- Bite
+- Ice Punch
+- Bubble Beam
+- Mud Slap
+
+=== TRAINER_RIVAL_TOTODILE_4_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Super Potion
+
+Pupitar
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Thrash
+- Rock Slide
+- Screech
+- Bite
+
+Victreebel
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Sludge
+- Razor Leaf
+- Sleep Powder
+- Growth
+
+Houndoom
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Flamethrower
+- Iron Tail
+- Bite
+- Nasty Plot
+
+Golbat
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Poison Fang
+- Double Team
+- Confuse Ray
+- Air Cutter
+
+Feraligatr
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Ice Punch
+- Surf
+- Slash
+- Bite
+
+=== TRAINER_RIVAL_TOTODILE_5_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Hyper Potion
+
+Ursaring @ Chesto Berry
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Slash
+- Faint Attack
+- Rock Smash
+- Rest
+
+Golbat
+Level: 0
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Venoshock
+- Aerial Ace
+- Double Team
+- Confuse Ray
+
+Victreebel @ Quick Claw
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Sludge Bomb
+- Giga Drain
+- Sleep Powder
+- Growth
+
+Houndoom
+Level: 1
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Flamethrower
+- Iron Tail
+- Crunch
+- Double Team
+
+Feraligatr @ Mystic Water
+Level: 2
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Ice Punch
+- Surf
+- Slash
+- Bite
+
+Tyranitar
+Level: 3
+IVs: 12 HP / 12 Atk / 12 Def / 12 SpA / 12 SpD / 12 Spe
+- Crunch
+- Earthquake
+- Rock Slide
+- Fire Fang
+
+=== TRAINER_RIVAL_TOTODILE_7_JOHTO ===
+Name: SILVER
+Class: Rival Johto
+Pic: Silver Johto
+Gender: Male
+Music: Silver
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Ursaluna Bloodmoon @ Chesto Berry
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Hammer Arm
+- Moonblast
+- Ancient Power
+- Rest
+
+Crobat @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Air Slash
+- Venoshock
+- Dark Pulse
+- Facade
+
+Victreebel @ Scope Lens
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leaf Blade
+- Sludge Bomb
+- Sleep Powder
+- Growth
+
+Houndoom @ Charcoal
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Iron Tail
+- Crunch
+- Double Team
+
+Feraligatr @ Scope Lens
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Surf
+- Slash
+- Earthquake
+
+Tyranitar @ Quick Claw
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Earthquake
+- Stone Edge
+- Fire Fang
+
+=== TRAINER_RED_JOHTO ===
+Name: RED
+Class: Pkmn Trainer 1 Johto
+Pic: Red Johto
+Gender: Male
+Music: Hg Champion
+Double Battle: No
+AI: Basic Trainer
+Items: Full Restore / Full Restore
+
+Pikachu-Starter @ Light Ball
+Level: 16
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunderbolt
+- Surf
+- Iron Tail
+- Double Team
+
+Snorlax @ Leftovers
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Belly Drum
+- Curse
+- Heavy Slam
+- Earthquake
+
+Charizard @ Charcoal
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Fire Blast
+- Aerial Ace
+- Outrage
+- Steel Wing
+
+Venusaur @ Miracle Seed
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Petal Blizzard
+- Double Edge
+- Sleep Powder
+- Leech Seed
+
+Blastoise @ Quick Claw
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Hydro Pump
+- Skull Bash
+- Earthquake
+
+Espeon @ Sitrus Berry
+Level: 3
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Psychic
+- Shadow Ball
+- Hidden Power
+- Morning Sun
+
+=== TRAINER_EUSINE_JOHTO ===
+Name: EUSINE
+Class: Mystery Man Johto
+Pic: Eusine Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Yellow
+Items: Full Restore / Full Restore
+
+Politoed
+Level: 0
+IVs: 2 HP / 2 Atk / 2 Def / 2 SpA / 2 SpD / 2 Spe
+- Bubble Beam
+- Rain Dance
+- Hypnosis
+- Icy Wind
+
+Hypno
+Level: 0
+IVs: 2 HP / 2 Atk / 2 Def / 2 SpA / 2 SpD / 2 Spe
+- Hypnosis
+- Disable
+- Confusion
+- Dream Eater
+
+Electrode
+Level: 0
+IVs: 2 HP / 2 Atk / 2 Def / 2 SpA / 2 SpD / 2 Spe
+- Thunder Wave
+- Sonic Boom
+- Body Slam
+- Thunderbolt
+
+=== TRAINER_GIOVANNI_JOHTO ===
+Name: GIOVANNI
+Class: Rocket Admin Johto
+Pic: Giovanni Johto
+Gender: Male
+Music: Hg Boy 1
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Kangaskhan
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dizzy Punch
+- Fire Punch
+- Safeguard
+- Mega Punch
+
+Honchkrow
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Dark Pulse
+- Air Slash
+- Thief
+- Double Team
+
+Nidoqueen
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Punch
+- Cross Poison
+- Bulldoze
+- Body Slam
+
+Persian
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Faint Attack
+- Swagger
+- Screech
+- Slash
+
+Ursaluna
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Headlong Rush
+- Sandstorm
+- Play Rough
+- Double Edge
+
+Nidoking
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Thunder Punch
+- Earthquake
+- Rock Slide
+- Thrash
+
+=== TRAINER_PROTON_1_JOHTO ===
+Name: PROTON
+Class: Rocket Admin Johto
+Pic: Proton Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Check Bad Move
+Mugshot: Dark Red
+
+Koffing
+Level: 0
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Slowpoke
+Level: 1
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+Houndour
+Level: 3
+IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
+
+=== TRAINER_PROTON_2_JOHTO ===
+Name: PROTON
+Class: Rocket Admin Johto
+Pic: Proton Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Muk
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sludge Wave
+- Mud Bomb
+- Acid Armor
+- Minimize
+
+Nidoqueen
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Cross Poison
+- Double Kick
+- Thunder Punch
+- Body Slam
+
+Weezing
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sludge Bomb
+- Self Destruct
+- Haze
+- Gyro Ball
+
+Nidoking
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Cross Poison
+- Double Kick
+- Ice Punch
+- Thrash
+
+Rhydon
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Earthquake
+- Drill Run
+- Fissure
+- Rock Slide
+
+=== TRAINER_ARCHER_JOHTO ===
+Name: ARCHER
+Class: Rocket Admin Johto
+Pic: Archer Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Porygon Z
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Tri Attack
+- Zap Cannon
+- Flamethrower
+- Ice Beam
+
+Tauros
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Headbutt
+- Earthquake
+- Pursuit
+- Frustration
+
+Gyarados
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Bounce
+- Twister
+- Aqua Tail
+
+Houndoom
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Crunch
+- Smog
+- Roar
+- Flamethrower
+
+Slowbro
+Level: 2
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Zen Headbutt
+- Curse
+- Amnesia
+- Waterfall
+
+=== TRAINER_PETREL_1_JOHTO ===
+Name: PETREL
+Class: Rocket Admin Johto
+Pic: Petrel Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Pineco
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Pin Missile
+- Explosion
+- Spikes
+- Spike Cannon
+
+Larvitar
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Screech
+- Bite
+- Thrash
+
+Magcargo
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Smog
+- Flamethrower
+- Ancient Power
+- Curse
+
+Cloyster
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Clamp
+- Spike Cannon
+- Surf
+
+=== TRAINER_PETREL_2_JOHTO ===
+Name: PETREL
+Class: Rocket Admin Johto
+Pic: Petrel Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Forretress
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Pin Missile
+- Explosion
+- Spikes
+- Spike Cannon
+
+Pupitar
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Rock Slide
+- Screech
+- Bite
+- Thrash
+
+Magcargo
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Smog
+- Flamethrower
+- Ancient Power
+- Curse
+
+Cloyster
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Ice Beam
+- Clamp
+- Spike Cannon
+- Surf
+
+=== TRAINER_ARIANA_1_JOHTO ===
+Name: ARIANA
+Class: Rocket Admin Johto
+Pic: Ariana Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Arbok
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Leer
+- Poison Fang
+- Bite
+- Wrap
+
+Persian
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Faint Attack
+- Pay Day
+- Mud Slap
+- Slash
+
+Vileplume
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sweet Scent
+- Sleep Powder
+- Sludge Bomb
+- Giga Drain
+
+=== TRAINER_ARIANA_2_JOHTO ===
+Name: ARIANA
+Class: Rocket Admin Johto
+Pic: Ariana Johto
+Gender: Male
+Music: Rocket
+Double Battle: No
+AI: Basic Trainer
+Mugshot: Dark Red
+Items: Full Restore / Full Restore
+
+Arbok
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Screech
+- Crunch
+- Glare
+- Poison Fang
+
+Persian
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Bite
+- Screech
+- Charm
+- Slash
+
+Vileplume
+Level: 0
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Sleep Powder
+- Sludge Bomb
+- Stun Spore
+- Giga Drain
+
+Gyarados
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Strength
+- Twister
+- Bounce
+- Surf
+
+Murkrow
+Level: 1
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+- Pursuit
+- Toxic
+- Faint Attack
+- Air Slash
+
+=== TRAINER_WILL_POSTOBC_JOHTO ===
+Name: WILL
+Class: Elite Four Johto
+Pic: Elite Four Will Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Smart Trainer / Prediction
+Mugshot: Pink
+Items: Full Restore / Full Restore
+
+Gardevoir @ Light Clay  
+Ability: Trace  
+Level: 74 
+IVs: 0 Atk  
+- Psyshock  
+- Moonblast  
+- Reflect  
+- Vacuum Wave  
+
+Jynx @ Never-Melt Ice  
+Ability: Dry Skin  
+Level: 75 
+IVs: 0 Atk  
+- Lovely Kiss  
+- Sweet Kiss  
+- Ice Beam  
+- Psychic  
+
+Slowking-Galar @ Black Sludge  
+Ability: Own Tempo  
+Level: 76 
+IVs: 0 Atk  
+- Eerie Spell  
+- Trick Room  
+- Calm Mind  
+- Sludge Wave  
+
+Grumpig @ Leftovers  
+Ability: Thick Fat  
+Level: 77  
+IVs: 0 Atk  
+- Teeter Dance  
+- Power Gem  
+- Snore  
+- Rest  
+
+Slowbro  
+Ability: Oblivious  
+Level: 77  
+- Fire Punch  
+- Curse  
+- Earthquake  
+- Zen Headbutt  
+
+Xatu  
+Ability: Magic Bounce  
+Level: 79 
+IVs: 0 Atk  
+- Future Sight  
+- Air Slash  
+- Confuse Ray  
+- Protect  
+
+=== TRAINER_KOGA_POSTOBC_JOHTO ===
+Name: KOGA
+Class: Elite Four Johto
+Pic: Elite Four Koga Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Smart Trainer / Prediction
+Mugshot: Purple
+Items: Full Restore / Full Restore
+
+Clodsire  
+Ability: Water Absorb  
+Level: 74 
+- Toxic Spikes  
+- Earthquake  
+- Gunk Shot  
+- Curse  
+
+Overqwil @ Black Sludge  
+Ability: Poison Point  
+Level: 0
+- Barb Barrage  
+- Lash Out  
+- Swords Dance  
+- Aqua Jet  
+
+Ariados @ Blunder Policy  
+Ability: Sniper  
+Level: 1
+EVs: 252 Spe  
+Jolly Nature  
+- Sticky Web  
+- Megahorn  
+- Cross Poison  
+- Disable  
+
+Nidoking @ Life Orb  
+Ability: Sheer Force  
+Level: 77   
+IVs: 0 Atk  
+- Fire Blast  
+- Ice Beam  
+- Earth Power  
+- Noble Roar  
+
+Venomoth @ Bright Powder  
+Ability: Shield Dust  
+Level: 77  
+IVs: 0 Atk  
+- Venoshock  
+- Bug Buzz  
+- Double Team  
+- Disable  
+
+Crobat  
+Ability: Inner Focus  
+Level: 79  
+- Acrobatics  
+- Cross Poison  
+- Toxic  
+- Confuse Ray  
+
+=== TRAINER_BRUNO_POSTOBC_JOHTO ===
+Name: BRUNO
+Class: Elite Four Johto
+Pic: Elite Four Bruno Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Smart Trainer / Prediction
+Mugshot: Orange
+Items: Full Restore / Full Restore
+
+Steelix @ Assault Vest  
+Ability: Rock Head  
+Level: 74 
+EVs: 252 SpD  
+Sassy Nature  
+- Heavy Slam  
+- Earthquake  
+- Crunch  
+- Aqua Tail  
+
+Tauros-Paldea-Blaze  
+Ability: Intimidate  
+Level: 75 
+- Raging Bull  
+- Close Combat  
+- Rock Slide  
+- Bulk Up  
+
+Heracross @ Loaded Dice  
+Ability: Moxie  
+Level: 76 
+- Pin Missile  
+- Close Combat  
+- Earthquake  
+- Knock Off  
+
+Hariyama @ Sitrus Berry  
+Ability: Thick Fat  
+Level: 77  
+- Fake Out  
+- Belly Drum  
+- Cross Chop  
+- Body Slam  
+
+Hitmontop @ Expert Belt  
+Ability: Technician  
+Level: 77 
+- Triple Kick  
+- Victory Dance  
+- Bullet Punch  
+- Pursuit  
+
+Machamp @ Flame Orb  
+Ability: Guts  
+Level: 79  
+- Facade  
+- Cross Chop  
+- Earthquake  
+- Rock Slide  
+
+=== TRAINER_KAREN_POSTOBC_JOHTO ===
+Name: KAREN
+Class: Elite Four Johto
+Pic: Elite Four Karen Johto
+Gender: Male
+Music: Hg Elite Four
+Double Battle: No
+AI: Smart Trainer / Prediction
+Mugshot: Yellow
+Items: Full Restore / Full Restore
+
+Umbreon @ Black Glasses  
+Ability: Synchronize  
+Level: 74  
+IVs: 0 Atk  
+- Lunar Blessing  
+- Foul Play  
+- Shadow Ball  
+- Calm Mind  
+
+Weavile @ Razor Claw  
+Ability: Pressure  
+Level: 75  
+- Hone Claws  
+- Night Slash  
+- Icicle Crash  
+- Low Kick  
+
+Persian-Alola @ Charcoal  
+Ability: Fur Coat  
+Level: 76 
+- Fake Out  
+- Dark Pulse  
+- Nasty Plot  
+- Burning Jealousy  
+
+Honchkrow  
+Ability: Moxie  
+Level: 77 
+- Night Slash  
+- Brave Bird  
+- Roost  
+- Taunt  
+
+Obstagoon @ Flame Orb  
+Ability: Guts  
+Level: 77 
+- Close Combat  
+- Double-Edge  
+- Fling  
+- Cross Chop  
+
+Houndoom  
+Ability: Unnerve  
+Level: 79  
+- Fire Blast  
+- Crunch  
+- Iron Tail  
+- Destiny Bond  
+
+=== TRAINER_LANCE_POSTOBC_JOHTO ===
+Name: LANCE
+Class: Champion Johto
+Pic: Champion Lance Johto
+Gender: Male
+Music: Hg Champion
+Double Battle: No
+AI: Smart Trainer / Prediction
+Items: Full Restore / Full Restore
+Mugshot: Blue
+
+Salamence @ Assault Vest  
+Ability: Intimidate  
+Level: 77 
+- Draco Meteor  
+- Iron Head  
+- Double-Edge  
+- Fly  
+
+Gyarados @ Eject Button  
+Ability: Intimidate  
+Level: 77 
+- Waterfall  
+- Hyper Beam  
+- Crunch  
+- Scary Face  
+
+Charizard  
+Ability: Blaze  
+Level: 78 
+- Fire Blast  
+- Earthquake  
+- Acrobatics  
+- Swords Dance  
+
+Noivern @ Silk Scarf  
+Ability: Infiltrator  
+Level: 78 
+IVs: 0 Atk  
+- Boomburst  
+- Dragon Pulse  
+- Moonlight  
+- Super Fang  
+
+Aerodactyl @ Scope Lens  
+Ability: Rock Head  
+Level: 0
+- Rock Slide  
+- Earthquake  
+- Sky Attack  
+- Dragon Dance  
+
+Dragonite @ Leftovers  
+Ability: Multiscale  
+Level: 79 
+- Iron Head  
+- Fire Punch  
+- Dragon Rush  
+- Dragon Dance  
+
+=== TRAINER_RED_POSTOBC_JOHTO ===
+Name: RED
+Class: Pkmn Trainer 1 Johto
+Pic: Red Johto
+Gender: Male
+Music: Hg Champion
+Double Battle: No
+AI: Smart Trainer / Prediction
+Items: Full Restore / Full Restore
+
+Pikachu-Starter @ Light Ball  
+Ability: Lightning Rod
+Level: 10
+- Volt Tackle  
+- Surf  
+- Iron Tail  
+- Double Team  
+
+Snorlax @ Chesto Berry  
+Ability: Immunity  
+Level: 0
+- Belly Drum  
+- Earthquake  
+- Rest  
+- Heavy Slam  
+
+Charizard  
+Ability: Blaze  
+Level: 87  
+- Fire Blast  
+- Seismic Toss  
+- Outrage  
+- Steel Wing  
+
+Venusaur @ Blunder Policy  
+Ability: Chlorophyll  
+Level: 87  
+Tera Type: Grass  
+EVs: 252 Spe  
+IVs: 0 Atk  
+- Sunny Day  
+- Solar Beam  
+- Earth Power  
+- Sleep Powder 
+
+Blastoise @ Leftovers  
+Ability: Torrent  
+Level: 1
+- Hydro Cannon  
+- Skull Bash  
+- Ice Beam  
+- Flash Cannon  
+
+Tauros-Paldea-Combat @ Sitrus Berry  
+Ability: Cud Chew  
+Level: 85  
+Tera Type: Fighting  
+- Raging Bull  
+- Wild Charge  
+- Bulk Up  
+- Throat Chop

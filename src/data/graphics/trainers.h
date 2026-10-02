@@ -469,6 +469,114 @@ const u16 gTrainerPalette_LadyFrlg[] = INCGFX_U16("graphics/trainers/palettes/la
 const u32 gTrainerFrontPic_PainterFrlg[] = INCGFX_U32("graphics/trainers/front_pics/painter_frlg.png", ".4bpp.smol");
 const u16 gTrainerPalette_PainterFrlg[] = INCGFX_U16("graphics/trainers/palettes/painter_frlg.pal", ".gbapal");
 
+const u32 gTrainerFrontPic_ArcherJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/archer_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_ArcherJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/archer_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_ArianaJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/ariana_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_ArianaJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/ariana_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_BurglarJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/burglar_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_BurglarJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/burglar_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_ChampionLanceJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/champion_lance_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_ChampionLanceJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/champion_lance_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_EliteFourBrunoJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/elite_four_bruno_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_EliteFourBrunoJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/elite_four_bruno_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_EliteFourKarenJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/elite_four_karen_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_EliteFourKarenJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/elite_four_karen_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_EliteFourKogaJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/elite_four_koga_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_EliteFourKogaJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/elite_four_koga_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_EliteFourWillJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/elite_four_will_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_EliteFourWillJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/elite_four_will_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_EusineJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/eusine_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_EusineJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/eusine_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_FirebreatherJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/firebreather_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_FirebreatherJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/firebreather_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_GiovanniJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/giovanni_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_GiovanniJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/giovanni_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_JugglerJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/juggler_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_JugglerJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/juggler_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_KimonoGirlJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/kimono_girl_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_KimonoGirlJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/kimono_girl_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderBugsyJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_bugsy_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderBugsyJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_bugsy_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderChuckJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_chuck_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderChuckJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_chuck_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderClairJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_clair_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderClairJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_clair_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderFalknerJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_falkner_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderFalknerJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_falkner_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderJasmineJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_jasmine_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderJasmineJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_jasmine_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderMortyJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_morty_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderMortyJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_morty_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderPryceJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_pryce_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderPryceJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_pryce_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_LeaderWhitneyJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/leader_whitney_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_LeaderWhitneyJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/leader_whitney_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_OfficerJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/officer_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_OfficerJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/officer_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_PetrelJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/petrel_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_PetrelJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/petrel_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_ProtonJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/proton_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_ProtonJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/proton_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_PsychicMJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/psychic_m_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_PsychicMJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/psychic_m_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_RedJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/red_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_RedJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/red_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_RocketGruntFJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/rocket_grunt_f_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_RocketGruntFJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/rocket_grunt_f_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_RocketGruntMJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/rocket_grunt_m_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_RocketGruntMJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/rocket_grunt_m_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_SageJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/sage_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_SageJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/sage_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_SageLeaderJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/sage_leader_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_SageLeaderJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/sage_leader_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_SilverJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/silver_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_SilverJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/silver_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_SkierFJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/skier_f_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_SkierFJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/skier_f_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_SkierMJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/skier_m_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_SkierMJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/skier_m_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_SuperNerdJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/super_nerd_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_SuperNerdJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/super_nerd_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_TwinsJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/twins_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_TwinsJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/twins_johto.pal", ".gbapal");
+
+const u32 gTrainerFrontPic_YoungsterJohto[] = INCGFX_U32("graphics/trainers/front_pics/johto/youngster_johto.png", ".4bpp.smol");
+const u16 gTrainerPalette_YoungsterJohto[] = INCGFX_U16("graphics/trainers/palettes/johto/youngster_johto.pal", ".gbapal");
+
 static const u8 gTrainerBackPic_None[] = INCGFX_U8("graphics/trainers/back_pics/none.png", ".4bpp");
 const u8 gTrainerBackPic_Brendan[] = INCGFX_U8("graphics/trainers/back_pics/brendan.png", ".4bpp");
 const u8 gTrainerBackPic_May[] = INCGFX_U8("graphics/trainers/back_pics/may.png", ".4bpp");
@@ -1225,5 +1333,149 @@ const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT] =
     [TRAINER_PIC_PAINTER_FRLG] =
     {
         .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_PainterFrlg, gTrainerPalette_PainterFrlg),
+    },
+    [TRAINER_PIC_ARCHER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_ArcherJohto, gTrainerPalette_ArcherJohto),
+    },
+    [TRAINER_PIC_ARIANA_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_ArianaJohto, gTrainerPalette_ArianaJohto),
+    },
+    [TRAINER_PIC_BURGLAR_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_BurglarJohto, gTrainerPalette_BurglarJohto),
+    },
+    [TRAINER_PIC_CHAMPION_LANCE_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_ChampionLanceJohto, gTrainerPalette_ChampionLanceJohto),
+    },
+    [TRAINER_PIC_ELITE_FOUR_BRUNO_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_EliteFourBrunoJohto, gTrainerPalette_EliteFourBrunoJohto),
+    },
+    [TRAINER_PIC_ELITE_FOUR_KAREN_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_EliteFourKarenJohto, gTrainerPalette_EliteFourKarenJohto),
+    },
+    [TRAINER_PIC_ELITE_FOUR_KOGA_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_EliteFourKogaJohto, gTrainerPalette_EliteFourKogaJohto),
+    },
+    [TRAINER_PIC_ELITE_FOUR_WILL_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_EliteFourWillJohto, gTrainerPalette_EliteFourWillJohto),
+    },
+    [TRAINER_PIC_EUSINE_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_EusineJohto, gTrainerPalette_EusineJohto),
+    },
+    [TRAINER_PIC_FIREBREATHER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_FirebreatherJohto, gTrainerPalette_FirebreatherJohto),
+    },
+    [TRAINER_PIC_GIOVANNI_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_GiovanniJohto, gTrainerPalette_GiovanniJohto),
+    },
+    [TRAINER_PIC_JUGGLER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_JugglerJohto, gTrainerPalette_JugglerJohto),
+    },
+    [TRAINER_PIC_KIMONO_GIRL_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_KimonoGirlJohto, gTrainerPalette_KimonoGirlJohto),
+    },
+    [TRAINER_PIC_LEADER_BUGSY_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderBugsyJohto, gTrainerPalette_LeaderBugsyJohto),
+    },
+    [TRAINER_PIC_LEADER_CHUCK_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderChuckJohto, gTrainerPalette_LeaderChuckJohto),
+    },
+    [TRAINER_PIC_LEADER_CLAIR_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderClairJohto, gTrainerPalette_LeaderClairJohto),
+    },
+    [TRAINER_PIC_LEADER_FALKNER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderFalknerJohto, gTrainerPalette_LeaderFalknerJohto),
+    },
+    [TRAINER_PIC_LEADER_JASMINE_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderJasmineJohto, gTrainerPalette_LeaderJasmineJohto),
+    },
+    [TRAINER_PIC_LEADER_MORTY_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderMortyJohto, gTrainerPalette_LeaderMortyJohto),
+    },
+    [TRAINER_PIC_LEADER_PRYCE_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderPryceJohto, gTrainerPalette_LeaderPryceJohto),
+    },
+    [TRAINER_PIC_LEADER_WHITNEY_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_LeaderWhitneyJohto, gTrainerPalette_LeaderWhitneyJohto),
+    },
+    [TRAINER_PIC_OFFICER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_OfficerJohto, gTrainerPalette_OfficerJohto),
+    },
+    [TRAINER_PIC_PETREL_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_PetrelJohto, gTrainerPalette_PetrelJohto),
+    },
+    [TRAINER_PIC_PROTON_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_ProtonJohto, gTrainerPalette_ProtonJohto),
+    },
+    [TRAINER_PIC_PSYCHIC_M_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_PsychicMJohto, gTrainerPalette_PsychicMJohto),
+    },
+    [TRAINER_PIC_RED_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_RedJohto, gTrainerPalette_RedJohto),
+    },
+    [TRAINER_PIC_ROCKET_GRUNT_F_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_RocketGruntFJohto, gTrainerPalette_RocketGruntFJohto),
+    },
+    [TRAINER_PIC_ROCKET_GRUNT_M_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_RocketGruntMJohto, gTrainerPalette_RocketGruntMJohto),
+    },
+    [TRAINER_PIC_SAGE_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_SageJohto, gTrainerPalette_SageJohto),
+    },
+    [TRAINER_PIC_SAGE_LEADER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_SageLeaderJohto, gTrainerPalette_SageLeaderJohto),
+    },
+    [TRAINER_PIC_SILVER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_SilverJohto, gTrainerPalette_SilverJohto),
+    },
+    [TRAINER_PIC_SKIER_F_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_SkierFJohto, gTrainerPalette_SkierFJohto),
+    },
+    [TRAINER_PIC_SKIER_M_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_SkierMJohto, gTrainerPalette_SkierMJohto),
+    },
+    [TRAINER_PIC_SUPER_NERD_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_SuperNerdJohto, gTrainerPalette_SuperNerdJohto),
+    },
+    [TRAINER_PIC_TWINS_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_TwinsJohto, gTrainerPalette_TwinsJohto),
+    },
+    [TRAINER_PIC_YOUNGSTER_JOHTO] =
+    {
+        .frontPic = TRAINER_FRONT_PIC(gTrainerFrontPic_YoungsterJohto, gTrainerPalette_YoungsterJohto),
     },
 };

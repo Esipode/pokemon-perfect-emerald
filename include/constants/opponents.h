@@ -885,8 +885,12 @@
 
 #include "constants/opponents_frlg.h"
 
-#define TRAINERS_COUNT                      (KANTO_TRAINERS_START + TRAINERS_COUNT_FRLG)
-#define MAX_TRAINERS_COUNT                  (KANTO_TRAINERS_START + MAX_KANTO_TRAINERS_COUNT)
+#define JOHTO_TRAINERS_START       (KANTO_TRAINERS_START + MAX_KANTO_TRAINERS_COUNT)
+
+#include "constants/opponents_johto.h"
+
+#define TRAINERS_COUNT                      (JOHTO_TRAINERS_START + TRAINERS_COUNT_JOHTO)
+#define MAX_TRAINERS_COUNT                  (JOHTO_TRAINERS_START + MAX_JOHTO_TRAINERS_COUNT)
 #define TRAINER_PARTNER(partner)           (MAX_TRAINERS_COUNT + partner)
 
 #endif  // GUARD_CONSTANTS_OPPONENTS_H

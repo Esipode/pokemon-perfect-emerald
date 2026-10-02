@@ -634,6 +634,6 @@
 //       Offset 0 (the old TRAINER_NONE slot) is unused.
 
 #define TRAINERS_COUNT_FRLG                      624
-#define MAX_KANTO_TRAINERS_COUNT                 768
+#define MAX_KANTO_TRAINERS_COUNT                 644
 
 #endif  // GUARD_CONSTANTS_OPPONENTS_FRLG_H

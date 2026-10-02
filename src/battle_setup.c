@@ -969,13 +969,15 @@ static void CB2_EndFirstBattle(void)
     SetMainCallback2(CB2_ReturnToFieldContinueScriptPlayMapMusic);
 }
 
-// Returns 0 (no flag) for ids outside the Hoenn and Kanto trainer blocks.
+// Returns 0 (no flag) for ids outside the Hoenn, Kanto and Johto trainer blocks.
 u16 GetTrainerFlagId(u16 trainerId)
 {
     if (trainerId < TRAINERS_COUNT_EMERALD)
         return TRAINER_FLAGS_START + trainerId;
     if (IsKantoTrainerId(trainerId))
         return KANTO_TRAINER_FLAGS_START + (trainerId - KANTO_TRAINERS_START);
+    if (IsJohtoTrainerId(trainerId))
+        return JOHTO_TRAINER_FLAGS_START + (trainerId - JOHTO_TRAINERS_START);
     return 0;
 }
 
@@ -1694,6 +1696,42 @@ void PlayTrainerEncounterMusic(void)
         break;
     case TRAINER_ENCOUNTER_MUSIC_RICH:
         music = MUS_ENCOUNTER_RICH;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_CHAMPION:
+        music = MUS_ENCOUNTER_ELITE_FOUR;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_ELITE_FOUR:
+        music = MUS_ENCOUNTER_ELITE_FOUR;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_BOY_1:
+        music = MUS_ENCOUNTER_MALE;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_BOY_2:
+        music = MUS_RG_ENCOUNTER_BOY;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_GIRL_1:
+        music = MUS_ENCOUNTER_FEMALE;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_GIRL_2:
+        music = MUS_ENCOUNTER_GIRL;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_SUSPICIOUS_1:
+        music = MUS_ENCOUNTER_SUSPICIOUS;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_SUSPICIOUS_2:
+        music = MUS_ENCOUNTER_SUSPICIOUS;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_SAGE:
+        music = MUS_ENCOUNTER_INTENSE;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_ROCKET:
+        music = MUS_RG_ENCOUNTER_ROCKET;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_SILVER:
+        music = MUS_RG_ENCOUNTER_RIVAL;
+        break;
+    case TRAINER_ENCOUNTER_MUSIC_HG_KIMONO_GIRL:
+        music = MUS_ENCOUNTER_FEMALE;
         break;
     default:
         music = MUS_ENCOUNTER_SUSPICIOUS;

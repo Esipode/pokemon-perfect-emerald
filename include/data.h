@@ -134,13 +134,12 @@ struct Trainer
     enum Item items[MAX_TRAINER_ITEMS];
     struct StartingStatuses startingStatus; // this trainer starts a battle with a given status. see include/constants/battle.h for values
     u8 trainerClass;
-    u16 encounterMusic:4;
+    u16 encounterMusic:5;
     u16 multiTeamSize:1;
     u16 gender:1;
     u16 battleType:2;
-    u16 mugshotColor:3;
+    u16 mugshotColor:4;
     u16 partySize:3;
-    u16 padding:2;
     enum TrainerPicID trainerPic;
     u8 trainerName[TRAINER_NAME_LENGTH + 1];
     u8 poolSize;
@@ -250,6 +249,11 @@ static inline bool8 IsPartnerTrainerId(u16 trainerId)
 static inline bool32 IsKantoTrainerId(u16 trainerId)
 {
     return trainerId >= KANTO_TRAINERS_START && trainerId < KANTO_TRAINERS_START + MAX_KANTO_TRAINERS_COUNT;
+}
+
+static inline bool32 IsJohtoTrainerId(u16 trainerId)
+{
+    return trainerId >= JOHTO_TRAINERS_START && trainerId < JOHTO_TRAINERS_START + MAX_JOHTO_TRAINERS_COUNT;
 }
 
 static inline bool32 IsSpecialTrainer(u16 trainerId)
