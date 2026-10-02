@@ -39,6 +39,10 @@
 #define LOG_HANDLER (LOG_HANDLER_MGBA_PRINT)
 #endif
 
+// Set to TRUE to build the Japanese glyph sets used by Japanese-language strings.
+// FALSE saves ROM; such strings render with Latin glyphs. FONT_BOLD keeps its own glyph set.
+#define JAPANESE_GLYPHS FALSE
+
 // Uncomment to fix some identified minor bugs
 #define BUGFIX
 

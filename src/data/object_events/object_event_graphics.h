@@ -644,14 +644,14 @@ const u16 gObjectEventPic_Archer_Johto[] = INCGFX_U16("graphics/object_events/pi
 const u16 gObjectEventPic_Ariana_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/ariana.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_AttendantM_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/attendant_m.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Beauty_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/beauty.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_BreakableRock_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/breakable_rock.png", ".4bpp", "-mwidth 2 -mheight 2");
+#define gObjectEventPic_BreakableRock_Johto gObjectEventPic_BreakableRockFrlg
 const u16 gObjectEventPic_Bugsy_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/bugsy.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Burglar_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/burglar.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Camper_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/camper.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_Captain_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/captain.png", ".4bpp", "-mwidth 2 -mheight 4");
+#define gObjectEventPic_Captain_Johto gObjectEventPic_Captain
 const u16 gObjectEventPic_Chuck_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/chuck.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Clair_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/clair.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_CuttableTree_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/cuttable_tree.png", ".4bpp", "-mwidth 2 -mheight 2");
+#define gObjectEventPic_CuttableTree_Johto gObjectEventPic_CuttableTreeFrlg
 const u16 gObjectEventPic_Elm_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/elm.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Engineer_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/engineer.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Eusine_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/eusine.png", ".4bpp", "-mwidth 2 -mheight 4");
@@ -668,22 +668,22 @@ const u16 gObjectEventPic_Kurt_Johto[] = INCGFX_U16("graphics/object_events/pics
 const u16 gObjectEventPic_KurtLyingDown_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/kurt_lying_down.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_Lance_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/lance.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_LegendaryShadow_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/legendary_shadow.png", ".4bpp", "-mwidth 11 -mheight 4");
-const u16 gObjectEventPic_LinkReceptionist_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/link_receptionist.png", ".4bpp", "-mwidth 2 -mheight 4");
+#define gObjectEventPic_LinkReceptionist_Johto gObjectEventPic_LinkReceptionist
 const u16 gObjectEventPic_LittleBoy_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/little_boy.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Mom_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/mom.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Morty_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/morty.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_NoTailSlowpoke_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/no_tail_slowpoke.png", ".4bpp", "-mwidth 4 -mheight 4");
 const u16 gObjectEventPic_NurseChansey_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/nurse_chansey.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_Officer_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/officer.png", ".4bpp", "-mwidth 2 -mheight 4");
+#define gObjectEventPic_Officer_Johto gObjectEventPic_Policeman
 const u16 gObjectEventPic_Petrel_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/petrel.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_Picnicker_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/picnicker.png", ".4bpp", "-mwidth 2 -mheight 4");
+#define gObjectEventPic_Picnicker_Johto gObjectEventPic_PicnickerFrlg
 const u16 gObjectEventPic_Proton_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/proton.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Pryce_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/pryce.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_PsychicM_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/psychic_m.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_PushableBoulder_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/pushable_boulder.png", ".4bpp", "-mwidth 2 -mheight 2");
-const u16 gObjectEventPic_RocketF_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/rocket_f.png", ".4bpp", "-mwidth 2 -mheight 4");
+#define gObjectEventPic_PushableBoulder_Johto gObjectEventPic_PushableBoulderFrlg
+#define gObjectEventPic_RocketF_Johto gObjectEventPic_RocketF
 const u16 gObjectEventPic_Sabrina_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/sabrina.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_SageElder_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/sage_elder.png", ".4bpp", "-mwidth 2 -mheight 4");
+#define gObjectEventPic_SageElder_Johto gObjectEventPic_MrFuji
 const u16 gObjectEventPic_Sage_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/sage.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_ScientistF_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/scientist_f.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_ShinyGyarados_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/shiny_gyarados.png", ".4bpp", "-mwidth 4 -mheight 4");
@@ -698,7 +698,7 @@ const u16 gObjectEventPic_Twin_Johto[] = INCGFX_U16("graphics/object_events/pics
 const u16 gObjectEventPic_Whirlpool_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/whirlpool.png", ".4bpp", "-mwidth 8 -mheight 8");
 const u16 gObjectEventPic_Whitney_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/whitney.png", ".4bpp", "-mwidth 2 -mheight 4");
 const u16 gObjectEventPic_Will_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/will.png", ".4bpp", "-mwidth 2 -mheight 4");
-const u16 gObjectEventPic_WorkerM_Johto[] = INCGFX_U16("graphics/object_events/pics/people/johto/worker_m.png", ".4bpp", "-mwidth 2 -mheight 4");
+#define gObjectEventPic_WorkerM_Johto gObjectEventPic_WorkerM
 const u16 gObjectEventPal_Rocket2_Johto[] = INCGFX_U16("graphics/object_events/palettes/johto/rocket_2.pal", ".gbapal");
 const u16 gObjectEventPal_Rocket3_Johto[] = INCGFX_U16("graphics/object_events/palettes/johto/rocket_3.pal", ".gbapal");
 const u16 gObjectEventPal_Bugsy_Johto[] = INCGFX_U16("graphics/object_events/palettes/johto/bugsy.pal", ".gbapal");

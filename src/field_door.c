@@ -202,7 +202,6 @@ static const u8 sDoorAnimTiles_Johto_NewBarkTownRed[] = INCGFX_U8("graphics/door
 static const u8 sDoorAnimTiles_Johto_NewBarkTownYellow[] = INCGFX_U8("graphics/door_anims/NewBarkTown_Door_Yellow_johto.png", ".4bpp");
 static const u8 sDoorAnimTiles_Johto_Olivine[] = INCGFX_U8("graphics/door_anims/olivine_johto.png", ".4bpp");
 static const u8 sDoorAnimTiles_Johto_RocketElevator[] = INCGFX_U8("graphics/door_anims/rocket_elevator_johto.png", ".4bpp");
-static const u8 sDoorAnimTiles_Johto_SSAqua[] = INCGFX_U8("graphics/door_anims/ssaqua_johto.png", ".4bpp");
 
 static const struct DoorAnimFrame sDoorAnimFrames_Open1x1[] = {
     {4, -1},
@@ -378,7 +377,6 @@ static const u8 sDoorAnimPalettes_Johto_NewBarkTownRed[] = {8, 8, 8, 8, 8, 8, 8,
 static const u8 sDoorAnimPalettes_Johto_NewBarkTownYellow[] = {5, 5, 5, 5, 5, 5, 5, 5};
 static const u8 sDoorAnimPalettes_Johto_Olivine[] = {11, 11, 11, 11, 11, 11, 11, 11};
 static const u8 sDoorAnimPalettes_Johto_RocketElevator[] = {2, 2, 2, 2, 2, 2, 2, 2};
-static const u8 sDoorAnimPalettes_Johto_SSAqua[] = {7, 7, 7, 7, 7, 7, 7, 7};
 static const u8 sDoorAnimPalettes_Johto_VermilionHns[] = {9, 9, 9, 9, 9, 9, 9, 9};
 static const u8 sDoorAnimPalettes_Johto_VioletDojo[] = {12, 12, 12, 12, 12, 12, 12, 12};
 static const u8 sDoorAnimPalettes_Johto_ViridianHns[] = {8, 8, 8, 8, 8, 8, 8, 8};
@@ -1416,24 +1414,6 @@ static const struct DoorGraphics sDoorAnimGraphicsTable[] =
         .size = DOOR_SIZE_1x1,
         .tiles = sDoorAnimTiles_Johto_RocketElevator,
         .palettes = sDoorAnimPalettes_Johto_RocketElevator,
-        .tileStart = DOOR_TILE_START_JOHTO
-    },
-    {
-        .metatileNum = METATILE_SSAqua_Door,
-        .tileset = &gTileset_ssaqua_General_Johto,
-        .sound = DOOR_SOUND_NORMAL,
-        .size = DOOR_SIZE_1x1,
-        .tiles = sDoorAnimTiles_Johto_SSAqua,
-        .palettes = sDoorAnimPalettes_Johto_SSAqua,
-        .tileStart = DOOR_TILE_START_JOHTO
-    },
-    {
-        .metatileNum = METATILE_SSAqua_Door,
-        .tileset = &gTileset_ssaqua_Johto,
-        .sound = DOOR_SOUND_NORMAL,
-        .size = DOOR_SIZE_1x1,
-        .tiles = sDoorAnimTiles_Johto_SSAqua,
-        .palettes = sDoorAnimPalettes_Johto_SSAqua,
         .tileStart = DOOR_TILE_START_JOHTO
     },
     {

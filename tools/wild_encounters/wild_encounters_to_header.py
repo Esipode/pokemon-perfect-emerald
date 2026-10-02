@@ -70,6 +70,8 @@ class WildEncounterAssembler:
         self.output_file = output_file
         self.json_data = json_data
         self.config = config
+        self.emitted_mons = {}
+        self.emitted_infos = {}
     
     def WriteLine(self, line="", indents = 0):
         self.output_file.write(4 * indents * " " + line + "\n")
@@ -119,21 +121,35 @@ class WildEncounterAssembler:
                     macro_total_name = macro_base + group_name_mapping[-1] + "_TOTAL"
                     self.WriteLine()
     
-    def WriteMonInfos(self, name, mons, encounter_rate):
+    def WriteMonInfos(self, name, mons, encounter_rate, version):
+        """Emit a mon array and its Info struct, reusing identical ones already emitted for this version. Returns the Info symbol."""
         info_name = name + "Info"
-        self.WriteLine(f"const struct WildPokemon {name}[] =")
-        self.WriteLine("{")
-        for mon in mons:
-            species = mon["species"]
-            min_level = 2 if "min_level" not in mon else mon["min_level"]
-            max_level = 100 if "max_level" not in mon else mon["max_level"]
-            self.WriteLine(f"{{ {min_level}, {max_level}, {species} }},", 1)
+        mon_entries = tuple(
+            (2 if "min_level" not in mon else mon["min_level"],
+             100 if "max_level" not in mon else mon["max_level"],
+             mon["species"])
+            for mon in mons)
 
-        self.WriteLine("};")
-        self.WriteLine()
+        mons_key = (version, mon_entries)
+        if mons_key in self.emitted_mons:
+            name = self.emitted_mons[mons_key]
+        else:
+            self.emitted_mons[mons_key] = name
+            self.WriteLine(f"const struct WildPokemon {name}[] =")
+            self.WriteLine("{")
+            for min_level, max_level, species in mon_entries:
+                self.WriteLine(f"{{ {min_level}, {max_level}, {species} }},", 1)
+            self.WriteLine("};")
+            self.WriteLine()
+
+        info_key = (version, encounter_rate, name)
+        if info_key in self.emitted_infos:
+            return self.emitted_infos[info_key]
+        self.emitted_infos[info_key] = info_name
         self.WriteLine(f"const struct WildPokemonInfo {info_name} = {{ {encounter_rate}, {name} }};")
         self.WriteLine()
-    
+        return info_name
+
     def WriteTerminator(self):
         self.WriteLine("{", 1)
         self.WriteLine(".mapGroup = MAP_GROUP(MAP_UNDEFINED),", 2)
@@ -252,8 +268,7 @@ class WildEncounterAssembler:
                     mons = mons_entry["mons"]
 
                     mon_array_name = base_label + "_" + mon_type.title().replace("_", "")
-                    self.WriteMonInfos(mon_array_name, mons, encounter_rate)
-                    headers["data"][shared_label][time][mon_type] = mon_array_name + "Info"
+                    headers["data"][shared_label][time][mon_type] = self.WriteMonInfos(mon_array_name, mons, encounter_rate, version)
                 self.WriteLine(f"#endif")
 
             self.WritePokemonHeaders(headers)

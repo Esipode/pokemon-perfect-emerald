@@ -219,8 +219,17 @@ extern const union AnimCmd *const gAnims_MonPic[];
 extern const union AnimCmd *const gAnims_Trainer[];
 extern const struct TrainerPicInfo gTrainerPicInfo[TRAINER_PIC_COUNT];
 
-extern const struct Trainer gTrainers[DIFFICULTY_COUNT][TRAINERS_COUNT];
-extern const struct Trainer gBattlePartners[DIFFICULTY_COUNT][PARTNER_COUNT];
+#if B_TRAINER_DIFFICULTY_VARIANTS
+#define TRAINER_DIFFICULTY_TABLES          DIFFICULTY_COUNT
+#define TRAINER_DIFFICULTY_INDEX(d)        (d)
+#else
+#define TRAINER_DIFFICULTY_TABLES          1
+// -1 makes any authored non-Normal entry fail to compile instead of overwriting Normal data.
+#define TRAINER_DIFFICULTY_INDEX(d)        ((d) == DIFFICULTY_NORMAL ? 0 : -1)
+#endif
+
+extern const struct Trainer gTrainers[TRAINER_DIFFICULTY_TABLES][TRAINERS_COUNT];
+extern const struct Trainer gBattlePartners[TRAINER_DIFFICULTY_TABLES][PARTNER_COUNT];
 
 extern const struct TrainerClass gTrainerClasses[TRAINER_CLASS_COUNT];
 
@@ -298,12 +307,12 @@ static inline const struct Trainer *GetTrainerStructFromId(u16 trainerId)
     if (IsPartnerTrainerId(trainerId))
     {
         difficulty = GetBattlePartnerDifficultyLevel(trainerId);
-        return &gBattlePartners[difficulty][GetPartnerIdFromTrainerId(trainerId)];
+        return &gBattlePartners[TRAINER_DIFFICULTY_INDEX(difficulty)][GetPartnerIdFromTrainerId(trainerId)];
     }
     else
     {
         difficulty = GetTrainerDifficultyLevel(trainerId);
-        return &gTrainers[difficulty][SanitizeTrainerId(trainerId)];
+        return &gTrainers[TRAINER_DIFFICULTY_INDEX(difficulty)][SanitizeTrainerId(trainerId)];
     }
 }
 

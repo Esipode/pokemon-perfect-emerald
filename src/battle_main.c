@@ -2814,7 +2814,7 @@ static u16 GetKantoTrainerIdFromStruct(const struct Trainer *trainer)
 {
     u32 difficulty;
 
-    for (difficulty = 0; difficulty < DIFFICULTY_COUNT; difficulty++)
+    for (difficulty = 0; difficulty < TRAINER_DIFFICULTY_TABLES; difficulty++)
     {
         const struct Trainer *kantoStart = &gTrainers[difficulty][KANTO_TRAINERS_START];
 
@@ -2870,7 +2870,7 @@ static u16 GetJohtoTrainerIdFromStruct(const struct Trainer *trainer)
 {
     u32 difficulty;
 
-    for (difficulty = 0; difficulty < DIFFICULTY_COUNT; difficulty++)
+    for (difficulty = 0; difficulty < TRAINER_DIFFICULTY_TABLES; difficulty++)
     {
         const struct Trainer *johtoStart = &gTrainers[difficulty][JOHTO_TRAINERS_START];
 

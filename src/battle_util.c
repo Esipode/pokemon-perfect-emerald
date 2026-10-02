@@ -10022,10 +10022,10 @@ bool32 AreMultiPartiesFullTeams(void)
 
     if (TRAINER_BATTLE_PARAM.opponentA == TRAINER_LINK_OPPONENT
      || gBattleTypeFlags & BATTLE_TYPE_TOWER_LINK_MULTI
-     || (gTrainers[difficulty][TRAINER_BATTLE_PARAM.opponentA].multiTeamSize == MULTI_TEAM_SIZE_HALF)
+     || (gTrainers[TRAINER_DIFFICULTY_INDEX(difficulty)][TRAINER_BATTLE_PARAM.opponentA].multiTeamSize == MULTI_TEAM_SIZE_HALF)
      // opponentB is 0xFFFF in 2 vs 1 multi battles, which would index past gTrainers.
      || (TRAINER_BATTLE_PARAM.opponentB < TRAINERS_COUNT
-      && gTrainers[difficulty][TRAINER_BATTLE_PARAM.opponentB].multiTeamSize == MULTI_TEAM_SIZE_HALF))
+      && gTrainers[TRAINER_DIFFICULTY_INDEX(difficulty)][TRAINER_BATTLE_PARAM.opponentB].multiTeamSize == MULTI_TEAM_SIZE_HALF))
     {
         gSpecialVar_Result = FALSE;
         return FALSE;

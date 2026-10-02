@@ -203,7 +203,7 @@ static enum TrainerPicID PlayerPartnerGetTrainerBackPicId(enum DifficultyLevel d
     enum TrainerPicID trainerPicId;
 
     if (gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER)
-        trainerPicId = gBattlePartners[difficulty][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic;
+        trainerPicId = gBattlePartners[TRAINER_DIFFICULTY_INDEX(difficulty)][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic;
     else
         trainerPicId = GetLocalPlayerTrainerPic();
 
@@ -346,7 +346,7 @@ static void PlayerPartnerHandleIntroTrainerBallThrow(enum BattlerId battler)
     enum DifficultyLevel difficulty = GetBattlePartnerDifficultyLevel(gPartnerTrainerId);
 
     if (gPartnerTrainerId > TRAINER_PARTNER(PARTNER_NONE))
-        trainerPal = GetTrainerBackPicPalette(gBattlePartners[difficulty][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic);
+        trainerPal = GetTrainerBackPicPalette(gBattlePartners[TRAINER_DIFFICULTY_INDEX(difficulty)][gPartnerTrainerId - TRAINER_PARTNER(PARTNER_NONE)].trainerPic);
     else if (IsAiVsAiBattle() || IsPlayerAiControlled())
     {
         if (gBattlerBattleController[battler] != BATTLE_CONTROLLER_OPPONENT && gBattlerBattleController[battler] != BATTLE_CONTROLLER_RECORDED_OPPONENT)

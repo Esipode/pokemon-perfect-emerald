@@ -15,7 +15,7 @@
 #include "constants/battle_ai.h"
 
 #if !TESTING
-const struct Trainer gBattlePartners[DIFFICULTY_COUNT][PARTNER_COUNT] =
+const struct Trainer gBattlePartners[TRAINER_DIFFICULTY_TABLES][PARTNER_COUNT] =
 {
 #include "data/battle_partners.h"
 };

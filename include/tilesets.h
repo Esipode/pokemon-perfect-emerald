@@ -134,13 +134,10 @@ extern const struct Tileset gTileset_SafariZoneJohto_Johto;
 extern const struct Tileset gTileset_SafariZone_Entrance_Johto;
 extern const struct Tileset gTileset_ShopRooftop_Johto;
 extern const struct Tileset gTileset_SootopolisGym_Johto;
-extern const struct Tileset gTileset_TrainerHill_Courtyard_Johto;
 extern const struct Tileset gTileset_TrainerSchool_Johto;
 extern const struct Tileset gTileset_VioletCity_Johto;
 extern const struct Tileset gTileset_ViridianCity_Johto;
 extern const struct Tileset gTileset_ViridianCity_NorthEast_Johto;
 extern const struct Tileset gTileset_WhirlIslands_Johto;
-extern const struct Tileset gTileset_ssaqua_General_Johto;
-extern const struct Tileset gTileset_ssaqua_Johto;
 
 #endif //GUARD_tilesets_H

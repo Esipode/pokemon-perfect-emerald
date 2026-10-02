@@ -1486,24 +1486,16 @@ static const u16 *const sJohtoGeneral_SandWatersEdge[] = {
     sJohtoGeneral_SandWatersEdge_Frame7
 };
 
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame0[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/0.png", ".4bpp");
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame1[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/1.png", ".4bpp");
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame2[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/2.png", ".4bpp");
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame3[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/3.png", ".4bpp");
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame4[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/4.png", ".4bpp");
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame5[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/5.png", ".4bpp");
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame6[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/6.png", ".4bpp");
-static const u16 sJohtoGeneral_WaterCurrentLandWatersEdge_Frame7[] = INCGFX_U16("data/tilesets/primary/johto_general/anim/water_current_landwatersedge/7.png", ".4bpp");
 
 static const u16 *const sJohtoGeneral_WaterCurrentLandWatersEdge[] = {
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame0,
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame1,
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame2,
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame3,
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame4,
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame5,
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame6,
-    sJohtoGeneral_WaterCurrentLandWatersEdge_Frame7
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame0,
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame1,
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame2,
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame3,
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame4,
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame5,
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame6,
+    sTilesetAnims_General_Water_Current_LandWatersEdge_Frame7
 };
 
 static const u16 sNationalPark_LargeFountain_Frame0[] = INCGFX_U16("data/tilesets/secondary/national_park_johto/anim/large_fountain/0.png", ".4bpp");

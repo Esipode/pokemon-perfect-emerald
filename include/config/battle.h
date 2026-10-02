@@ -297,6 +297,8 @@
                                           // This var should never remain non-zero long enough for the player to save.
                                           // For better wild AI handling, edit GetWildAiFlags() in src/battle_ai_main.c
 
+#define B_TRAINER_DIFFICULTY_VARIANTS FALSE // If FALSE, only DIFFICULTY_NORMAL trainer and partner data is stored. Authoring a non-Normal "Difficulty:" in a .party file then fails to compile.
+
 #define B_VAR_DIFFICULTY            0     // If not 0, you can use this var to control which difficulty version of a Trainer is loaded. This should be manually set by the developer using Script_SetDifficulty AFTER NewGameInitData has run.
 
 // No Bag settings

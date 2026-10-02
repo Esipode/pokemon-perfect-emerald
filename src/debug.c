@@ -5523,20 +5523,20 @@ enum DebugTrainerIds
     DEBUG_TRAINERS_COUNT
 };
 
-const struct Trainer sDebugTrainers[DIFFICULTY_COUNT][DEBUG_TRAINERS_COUNT] =
+const struct Trainer sDebugTrainers[TRAINER_DIFFICULTY_TABLES][DEBUG_TRAINERS_COUNT] =
 {
 #include "data/debug_trainers.h"
 };
 
 const struct Trainer* GetDebugAiTrainer(void)
 {
-    return &sDebugTrainers[DIFFICULTY_NORMAL][DEBUG_TRAINER_AI];
+    return &sDebugTrainers[TRAINER_DIFFICULTY_INDEX(DIFFICULTY_NORMAL)][DEBUG_TRAINER_AI];
 }
 
 static void DebugAction_Party_SetParty(u8 taskId)
 {
     ZeroPlayerPartyMons();
-    CreateNPCTrainerPartyFromTrainer(gParties[B_TRAINER_PLAYER], &sDebugTrainers[DIFFICULTY_NORMAL][DEBUG_TRAINER_PLAYER]);
+    CreateNPCTrainerPartyFromTrainer(gParties[B_TRAINER_PLAYER], &sDebugTrainers[TRAINER_DIFFICULTY_INDEX(DIFFICULTY_NORMAL)][DEBUG_TRAINER_PLAYER]);
     ScriptContext_Enable();
     Debug_DestroyMenu_Full(taskId);
 }
@@ -5546,13 +5546,13 @@ static void DebugAction_Party_BattleSingle(u8 taskId)
     ZeroPlayerPartyMons();
     ZeroEnemyPartyMons();
 
-    CreateNPCTrainerPartyFromTrainer(gParties[B_TRAINER_PLAYER], &sDebugTrainers[DIFFICULTY_NORMAL][DEBUG_TRAINER_PLAYER]);
+    CreateNPCTrainerPartyFromTrainer(gParties[B_TRAINER_PLAYER], &sDebugTrainers[TRAINER_DIFFICULTY_INDEX(DIFFICULTY_NORMAL)][DEBUG_TRAINER_PLAYER]);
     CreateNPCTrainerPartyFromTrainer(gParties[B_TRAINER_OPPONENT_A], GetDebugAiTrainer());
 
     gBattleTypeFlags = BATTLE_TYPE_TRAINER;
-    if (sDebugTrainers[DIFFICULTY_NORMAL][DEBUG_TRAINER_AI].battleType == TRAINER_BATTLE_TYPE_DOUBLES)
+    if (sDebugTrainers[TRAINER_DIFFICULTY_INDEX(DIFFICULTY_NORMAL)][DEBUG_TRAINER_AI].battleType == TRAINER_BATTLE_TYPE_DOUBLES)
         gBattleTypeFlags |= BATTLE_TYPE_DOUBLE;
-    gDebugAIFlags = sDebugTrainers[DIFFICULTY_NORMAL][DEBUG_TRAINER_AI].aiFlags;
+    gDebugAIFlags = sDebugTrainers[TRAINER_DIFFICULTY_INDEX(DIFFICULTY_NORMAL)][DEBUG_TRAINER_AI].aiFlags;
     gIsDebugBattle = TRUE;
     gBattleEnvironment = BattleSetup_GetEnvironmentId();
     CalculateEnemyPartyCount();

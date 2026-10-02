@@ -1817,8 +1817,9 @@ static void fprint_trainers(const char *output_path, FILE *f, struct Parsed *par
             trainer->difficulty = literal_string("Normal");
         else
             fprintf(f, "#line %d\n", trainer->difficulty_line);
-        fprint_constant(f, "    [DIFFICULTY",trainer->difficulty);
-        fprintf(f, "]");
+        fprintf(f, "    [TRAINER_DIFFICULTY_INDEX(");
+        fprint_constant(f, "DIFFICULTY",trainer->difficulty);
+        fprintf(f, ")]");
 
         fprintf(f, "[");
         fprint_string(f, trainer->id);

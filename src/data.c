@@ -227,7 +227,7 @@ const union AnimCmd *const gAnims_Trainer[] ={
 };
 
 #if !TESTING
-const struct Trainer gTrainers[DIFFICULTY_COUNT][TRAINERS_COUNT] =
+const struct Trainer gTrainers[TRAINER_DIFFICULTY_TABLES][TRAINERS_COUNT] =
 {
 #include "data/trainers.h"
 #include "data/trainers_frlg.h"
