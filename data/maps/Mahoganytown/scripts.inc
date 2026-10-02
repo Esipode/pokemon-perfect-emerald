@@ -31,7 +31,6 @@ Mahoganytown_EventScript_RocketTrigger::
 	setflag FLAG_HIDE_GOLDENROD_ROCKET_SCOUT
 	setflag FLAG_HIDE_GOLDENROD_NPCS
 	clearflag FLAG_HIDE_ROCKET_GOLDENROD_RADIOTOWER_1
-	setvar_min VAR_MAHOGANY_TOWN_STATE, 16
 	setvar VAR_TRIGGER_ELM_ROCKET_CALL, 2
 	delay 10
 	release
@@ -83,7 +82,7 @@ MahoganyTown_EventScript_WalkUp2::
 MahoganyTown_EventScript_Merchant::
 	lock
 	faceplayer
-	goto_if_eq VAR_MAHOGANY_TOWN_STATE, 17, MahoganyTown_EventScript_MerchantAfter
+	goto_if_eq VAR_MAHOGANY_MERCHANT, 1, MahoganyTown_EventScript_MerchantAfter
 	showmoneybox 0, 0
 	msgbox MahoganyTown_Text_RageCandyBarMerchantTryOne, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, FALSE, MahoganyTown_EventScript_MerchantRefused

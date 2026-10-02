@@ -56,5 +56,6 @@
 #define VAR_WHICH_FOSSIL_REVIVED_JOHTO      (JOHTO_VARS_START + 0x031)
 #define VAR_ROUTE28_SCIENTIST               (JOHTO_VARS_START + 0x032)
 #define VAR_GOLDENROD_GYM_STATE             (JOHTO_VARS_START + 0x033) // Whitney phases: 1 crying, 2 badge ready
+#define VAR_MAHOGANY_MERCHANT               (JOHTO_VARS_START + 0x034) // 1 once the Rage Candy Bar merchant has left
 
 #endif // GUARD_CONSTANTS_VARS_JOHTO_H

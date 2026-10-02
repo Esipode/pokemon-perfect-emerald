@@ -139,7 +139,6 @@ Johto_EventScript_TryRadioTowerTakeover::
 	setflag FLAG_HIDE_GOLDENROD_ROCKET_SCOUT
 	setflag FLAG_HIDE_GOLDENROD_NPCS
 	clearflag FLAG_HIDE_ROCKET_GOLDENROD_RADIOTOWER_1
-	setvar_min VAR_MAHOGANY_TOWN_STATE, 16
 	setvar VAR_TRIGGER_ELM_ROCKET_CALL, 2
 	delay 10
 Johto_EventScript_RadioTowerTakeoverNo::

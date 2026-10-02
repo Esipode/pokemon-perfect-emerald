@@ -86,7 +86,6 @@ MahoganyTown_Gym_EventScript_PryceVictory::
 	call Common_EventScript_SetGymTrainers_Johto
 	giveitem ITEM_TM_ICICLE_CRASH
 	msgbox MahoganyTown_Gym_Text_HailSpeech, MSGBOX_DEFAULT
-	setvar_min VAR_MAHOGANY_TOWN_STATE, 15
     setrespawn HEAL_LOCATION_MAHOGANY_TOWN
 	call Johto_EventScript_TryRadioTowerTakeover
 	closemessage
