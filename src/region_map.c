@@ -89,6 +89,10 @@ static const u16 sRegionMapPlayerIcon_RedPal[] = INCGFX_U16("graphics/region_map
 static const u8 sRegionMapPlayerIcon_RedGfx[] = INCGFX_U8("graphics/region_map/red_icon.png", ".4bpp");
 static const u16 sRegionMapPlayerIcon_LeafPal[] = INCGFX_U16("graphics/region_map/leaf_icon.pal", ".gbapal");
 static const u8 sRegionMapPlayerIcon_LeafGfx[] = INCGFX_U8("graphics/region_map/leaf_icon.png", ".4bpp");
+static const u16 sRegionMapPlayerIcon_GoldPal[] = INCGFX_U16("graphics/region_map/gold_icon.png", ".gbapal");
+static const u8 sRegionMapPlayerIcon_GoldGfx[] = INCGFX_U8("graphics/region_map/gold_icon.png", ".4bpp");
+static const u16 sRegionMapPlayerIcon_KrisPal[] = INCGFX_U16("graphics/region_map/kris_icon.png", ".gbapal");
+static const u8 sRegionMapPlayerIcon_KrisGfx[] = INCGFX_U8("graphics/region_map/kris_icon.png", ".4bpp");
 
 #include "data/region_map/region_map_layout.h"
 #include "data/region_map/region_map_layout_kanto.h"
@@ -1550,29 +1554,30 @@ static void UNUSED ClearUnkCursorSpriteData(void)
 
 struct Sprite *CreatePlayerIconSprite(u16 tileTag, u16 paletteTag)
 {
+    static const struct {
+        const u8 *gfx;
+        const u16 *pal;
+    } sIcons[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT] =
+    {
+        [PLAYER_SPRITE_STYLE_EMERALD] = {
+            [MALE]   = {sRegionMapPlayerIcon_BrendanGfx, sRegionMapPlayerIcon_BrendanPal},
+            [FEMALE] = {sRegionMapPlayerIcon_MayGfx, sRegionMapPlayerIcon_MayPal},
+        },
+        [PLAYER_SPRITE_STYLE_FRLG] = {
+            [MALE]   = {sRegionMapPlayerIcon_RedGfx, sRegionMapPlayerIcon_RedPal},
+            [FEMALE] = {sRegionMapPlayerIcon_LeafGfx, sRegionMapPlayerIcon_LeafPal},
+        },
+        [PLAYER_SPRITE_STYLE_JOHTO] = {
+            [MALE]   = {sRegionMapPlayerIcon_GoldGfx, sRegionMapPlayerIcon_GoldPal},
+            [FEMALE] = {sRegionMapPlayerIcon_KrisGfx, sRegionMapPlayerIcon_KrisPal},
+        },
+    };
     const u16 *recolored;
-    struct SpriteSheet sheet = {sRegionMapPlayerIcon_BrendanGfx, 0x80, tileTag};
-    struct SpritePalette palette = {sRegionMapPlayerIcon_BrendanPal, paletteTag};
+    u8 gender = gSaveBlock2Ptr->playerGender == FEMALE ? FEMALE : MALE;
+    struct SpriteSheet sheet = {sIcons[Player_GetSpriteStyle()][gender].gfx, 0x80, tileTag};
+    struct SpritePalette palette = {sIcons[Player_GetSpriteStyle()][gender].pal, paletteTag};
     struct SpriteTemplate template = {tileTag, paletteTag, &sRegionMapPlayerIconOam, sRegionMapPlayerIconAnimTable, NULL, gDummySpriteAffineAnimTable, SpriteCallbackDummy};
 
-    if (Player_GetSpriteStyle() == PLAYER_SPRITE_STYLE_FRLG)
-    {
-        if (gSaveBlock2Ptr->playerGender == FEMALE)
-        {
-            sheet.data = sRegionMapPlayerIcon_LeafGfx;
-            palette.data = sRegionMapPlayerIcon_LeafPal;
-        }
-        else
-        {
-            sheet.data = sRegionMapPlayerIcon_RedGfx;
-            palette.data = sRegionMapPlayerIcon_RedPal;
-        }
-    }
-    else if (gSaveBlock2Ptr->playerGender == FEMALE)
-    {
-        sheet.data = sRegionMapPlayerIcon_MayGfx;
-        palette.data = sRegionMapPlayerIcon_MayPal;
-    }
     // The icons share their overworld sprite's palette index layout, so the
     // player's colour slots apply unchanged.
     recolored = PlayerCustomization_GetOwLayoutPaletteOverride(palette.data);
