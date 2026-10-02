@@ -44,6 +44,7 @@
 #include "random.h"
 #include "rayquaza_scene.h"
 #include "region_map.h"
+#include "world_map.h"
 #include "regions.h"
 #include "rtc.h"
 #include "script.h"
@@ -996,6 +997,11 @@ static void CB2_FieldShowRegionMap(void)
 void FieldShowRegionMap(void)
 {
     SetMainCallback2(CB2_FieldShowRegionMap);
+}
+
+void FieldShowWorldMap(void)
+{
+    FieldInitWorldMap(CB2_ReturnToFieldContinueScriptPlayMapMusic);
 }
 
 static bool32 IsBuildingPCTile(u32 tileId)

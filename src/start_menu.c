@@ -34,6 +34,7 @@
 #include "pokedex.h"
 #include "recruits_mode.h"
 #include "region_map.h"
+#include "world_map.h"
 #include "infinity_cave.h"
 #include "route_tracker.h"
 #include "rtc.h"
@@ -915,7 +916,7 @@ static bool8 StartMenuMapCallback(void)
         PlayRainStoppingSoundEffect();
         RemoveExtraStartMenuWindows();
         CleanupOverworldWindowsAndTilemaps();
-        FieldInitRegionMap(CB2_ReturnToFieldWithOpenMenu);  // Display region map
+        FieldInitWorldMap(CB2_ReturnToFieldWithOpenMenu);
 
         return TRUE;
     }

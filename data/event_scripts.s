@@ -1481,6 +1481,13 @@ EventScript_RegionMap::
 	releaseall
 	end
 
+EventScript_TownMapItem::
+	lockall
+	fadescreen FADE_TO_BLACK
+	special FieldShowWorldMap
+	releaseall
+	end
+
 Common_EventScript_PlayBrineysBoatMusic::
 	setflag FLAG_DONT_TRANSITION_MUSIC
 	playbgm MUS_SAILING, FALSE

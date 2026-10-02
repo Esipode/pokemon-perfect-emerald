@@ -1656,7 +1656,7 @@ void ItemUseOutOfBattle_PokeFlute(u8 taskId)
 static void ItemUseOnFieldCB_TownMap(u8 taskId)
 {
     LockPlayerFieldControls();
-    ScriptContext_SetupScript(EventScript_RegionMap);
+    ScriptContext_SetupScript(EventScript_TownMapItem);
     DestroyTask(taskId);
 }
 

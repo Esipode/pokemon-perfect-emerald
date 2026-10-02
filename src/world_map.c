@@ -131,6 +131,7 @@ enum
 
 static EWRAM_DATA struct WorldMap *sWorldMap = NULL;
 static bool8 sOpenInFlyMode;
+static MainCallback sReturnCallback;
 
 static const u16 sWorldMap_Pal[] = INCGFX_U16("graphics/world_map/map.pal", ".gbapal");
 static const u32 sWorldMap_Gfx[] = INCGFX_U32("graphics/world_map/tiles.png", ".4bpp.smol");
@@ -636,6 +637,13 @@ void CB2_OpenWorldMap(void)
     OpenWorldMap();
 }
 
+void FieldInitWorldMap(MainCallback callback)
+{
+    SetVBlankCallback(NULL);
+    sReturnCallback = callback;
+    SetMainCallback2(CB2_OpenWorldMap);
+}
+
 void CB2_OpenFlyMap(void)
 {
     sOpenInFlyMode = TRUE;
@@ -940,7 +948,10 @@ static void CB2_ExitWorldMap(void)
         TRY_FREE_AND_SET_NULL(sWorldMap);
         if (!flyMode)
         {
-            SetMainCallback2(CB2_ReturnToField);
+            MainCallback callback = sReturnCallback != NULL ? sReturnCallback : CB2_ReturnToField;
+
+            sReturnCallback = NULL;
+            SetMainCallback2(callback);
         }
         else if (chose)
         {
