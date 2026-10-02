@@ -119,6 +119,9 @@ static const u8 gText_BattleSpeed5x[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN
 static const u8 gText_RunModeToggle[]      = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}TOGGLE");
 static const u8 gText_RunModeHold[]        = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}HOLD");
 
+static const u8 gText_MapCursorModern[]    = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}MODERN");
+static const u8 gText_MapCursorClassic[]   = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}CLASSIC");
+
 static const u8 sText_ChevronLeft[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{LEFT_ARROW}");
 static const u8 sText_ChevronRight[]       = _("{COLOR GREEN}{SHADOW LIGHT_GREEN}{RIGHT_ARROW}");
 
@@ -145,6 +148,7 @@ enum OptionId
     OPTION_FOLLOWER,
     OPTION_PLAYER_COLOURS,
     OPTION_HEALTHBOX,
+    OPTION_MAP_CURSOR,
     OPTIONS_COUNT,
 };
 
@@ -196,6 +200,7 @@ static const u8 *const sValueTexts_ExpShare[] = {gText_ExpShareOptionOff, gText_
 static const u8 *const sValueTexts_AchievementBoosts[] = {gText_AchievementBoostsOff, gText_AchievementBoostsOn};
 static const u8 *const sValueTexts_RouteTracker[] = {gText_RouteTrackerOff, gText_RouteTrackerOn};
 static const u8 *const sValueTexts_RunMode[] = {gText_RunModeHold, gText_RunModeToggle};
+static const u8 *const sValueTexts_MapCursor[] = {gText_MapCursorModern, gText_MapCursorClassic};
 static const u8 *const sValueTexts_Follower[] = {gText_RouteTrackerOn, gText_RouteTrackerOff};
 
 static const struct OptionEntry sOptions[OPTIONS_COUNT] =
@@ -333,12 +338,20 @@ static const struct OptionEntry sOptions[OPTIONS_COUNT] =
         .type = OPTION_TYPE_SUBMENU,
         .valueCount = 1,
     },
+    [OPTION_MAP_CURSOR] = {
+        .name = COMPOUND_STRING("MAP CURSOR"),
+        .description = COMPOUND_STRING("Modern outlines the whole area under the cursor on the world map. Classic shows a single tile."),
+        .type = OPTION_TYPE_ENUM,
+        .valueCount = ARRAY_COUNT(sValueTexts_MapCursor),
+        .defaultValue = FALSE,
+        .valueTexts = sValueTexts_MapCursor,
+    },
 };
 
 static const u8 sCategoryOptions_General[] = {OPTION_TEXT_SPEED, OPTION_SOUND, OPTION_FRAME, OPTION_AUTOSAVE, OPTION_AUTO_SCROLL};
 static const u8 sCategoryOptions_Battle[] = {OPTION_BATTLE_SCENE, OPTION_BATTLE_STYLE, OPTION_BATTLE_SPEED, OPTION_AI_TRAINER, OPTION_AI_WILD};
 static const u8 sCategoryOptions_Gameplay[] = {OPTION_EXP_SHARE, OPTION_ACHIEVEMENT_BOOSTS, OPTION_ROUTE_TRACKER, OPTION_RUN_MODE, OPTION_FOLLOWER};
-static const u8 sCategoryOptions_Display[] = {OPTION_PLAYER_COLOURS, OPTION_HEALTHBOX};
+static const u8 sCategoryOptions_Display[] = {OPTION_PLAYER_COLOURS, OPTION_HEALTHBOX, OPTION_MAP_CURSOR};
 
 static const struct OptionCategory sCategories[CATEGORIES_COUNT] =
 {
@@ -362,7 +375,7 @@ static const struct OptionCategory sCategories[CATEGORIES_COUNT] =
     },
     [CATEGORY_DISPLAY] = {
         .name = COMPOUND_STRING("DISPLAY"),
-        .description = COMPOUND_STRING("Player colours and the battle HP box style."),
+        .description = COMPOUND_STRING("Player colours, battle HP boxes, and the world map cursor."),
         .optionIds = sCategoryOptions_Display,
         .optionCount = ARRAY_COUNT(sCategoryOptions_Display),
     },
@@ -406,6 +419,8 @@ static u8 LoadOptionValue(u8 optionId)
         return gSaveBlock2Ptr->optionsToggleRun ? 1 : 0;
     case OPTION_FOLLOWER:
         return gSaveBlock2Ptr->optionsFollowerOff ? 1 : 0;
+    case OPTION_MAP_CURSOR:
+        return gSaveBlock2Ptr->optionsClassicMapCursor ? 1 : 0;
     default:
         return 0;
     }
@@ -464,6 +479,9 @@ static void StoreOptionValue(u8 optionId, u8 value)
         break;
     case OPTION_FOLLOWER:
         gSaveBlock2Ptr->optionsFollowerOff = value;
+        break;
+    case OPTION_MAP_CURSOR:
+        gSaveBlock2Ptr->optionsClassicMapCursor = value;
         break;
     }
 }

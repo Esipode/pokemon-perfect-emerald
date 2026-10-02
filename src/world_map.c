@@ -63,20 +63,33 @@ struct WorldMapCluster
 #define MAP_ART_SHIFT_X 0
 #define SCROLL_MARGIN (3 * 8)
 #define CURSOR_REPEAT_DELAY 4
-#define CURSOR_TAG 0
+#define UI_TAG 0 // Tile and palette tag of ui_sprites.png (brackets, rings, halo)
 #define PLAYER_ICON_TAG 1
 #define NO_REGION 0xFF
 #define NUM_BANK_GROUPS 4
 #define SEA_COLOR RGB(2, 4, 8) // WORLD_MAP_BANK_SEA ocean colour
 #define FLY_DIM_COEFF 5
-#define FLY_ICON_TAG 2
-#define FLY_OUTLINE_ANIM 6
-#define FLY_ICON_MARGIN 16
+#define SPRITE_MARGIN 32
+#define HALO_OFFSET_Y 2
+#define CURSOR_PULSE_SHIFT 4
 #define BAR_HEIGHT 16
 #define BAR_DARKEN 8
 #define BAR_TEXT_PAD 2
 #define PIP_PAL_FIRST 3 // Text palette index of the open-sea pip; regions follow in id order
 #define HINT_NONE 0xFF
+
+// Tile offsets of the frames in graphics/world_map/ui_sprites.png (tools/gs_convert/build_world_map_ui.py).
+#define UI_TILE_BRACKET     0
+#define UI_TILE_RING        1  // 16x16 bright, then faint
+#define UI_TILE_RING_FAINT  5
+#define UI_TILE_WIDE        9  // 32x16 bright, then faint
+#define UI_TILE_WIDE_FAINT  17
+#define UI_TILE_TALL        25 // 16x32 bright, then faint
+#define UI_TILE_TALL_FAINT  33
+#define UI_TILE_FRONTIER    41 // 16x16 Battle Frontier outline
+#define UI_TILE_HALO_SMALL  45
+#define UI_TILE_HALO_LARGE  49
+#define UI_TILE_COUNT       53
 
 struct WorldMap
 {
@@ -86,7 +99,14 @@ struct WorldMap
     u8 cursorY;
     u8 region;
     u8 moveDelay;
-    u8 cursorSpriteId;
+    u8 cursorSpriteIds[4]; // Corner brackets: top-left, top-right, bottom-left, bottom-right
+    u8 cursorRectX; // MAPSEC cell rect under the cursor
+    u8 cursorRectY;
+    u8 cursorRectW;
+    u8 cursorRectH;
+    u8 rectForX; // Cursor cell the rect was computed for
+    u8 rectForY;
+    u8 haloSpriteId;
     u8 playerRegion; // NO_REGION when the player has no icon
     bool8 playerInSevii4567;
     u8 playerIconSpriteId;
@@ -100,8 +120,6 @@ struct WorldMap
     bool8 canSwitchRegions;
     u8 flyGroup;
     bool8 choseFlyLocation;
-    u8 cursorGfx[0x100];
-    u8 flyIconGfx[0x1c0];
 };
 
 struct BankGroup
@@ -136,11 +154,8 @@ static const u16 sWorldMap_Pal[] = INCGFX_U16("graphics/world_map/map.pal", ".gb
 static const u32 sWorldMap_Gfx[] = INCGFX_U32("graphics/world_map/tiles.png", ".4bpp.smol");
 static const u32 sWorldMap_Tilemap[] = INCGFX_U32("graphics/world_map/map.bin", ".smolTM");
 
-static const u16 sFlyIcons_Pal[] = INCGFX_U16("graphics/region_map/fly_target_icons.png", ".gbapal");
-static const u32 sFlyIcons_Gfx[] = INCGFX_U32("graphics/region_map/fly_target_icons.png", ".4bpp.smol");
-
-static const u16 sCursor_Pal[] = INCGFX_U16("graphics/region_map/cursor.pal", ".gbapal");
-static const u32 sCursor_Gfx[] = INCGFX_U32("graphics/region_map/cursor_small.png", ".4bpp.smol");
+static const u16 sUiSprites_Pal[] = INCGFX_U16("graphics/world_map/ui_sprites.png", ".gbapal");
+static const u32 sUiSprites_Gfx[] = INCGFX_U32("graphics/world_map/ui_sprites.png", ".4bpp");
 
 static const u8 sText_Johto[] = _("JOHTO");
 static const u8 sText_Sevii[] = _("SEVII ISLANDS");
@@ -234,40 +249,83 @@ static const struct WindowTemplate sWorldMapWindowTemplates[WIN_COUNT + 1] =
     DUMMY_WIN_TEMPLATE
 };
 
-static const struct OamData sCursorOam =
+static const struct SpritePalette sUiSpritePalette =
 {
-    .shape = SPRITE_SHAPE(16x16),
-    .size = SPRITE_SIZE(16x16),
+    .data = sUiSprites_Pal,
+    .tag = UI_TAG
+};
+
+static const struct SpriteSheet sUiSpriteSheet =
+{
+    .data = sUiSprites_Gfx,
+    .size = UI_TILE_COUNT * TILE_SIZE_4BPP,
+    .tag = UI_TAG
+};
+
+static const struct OamData sBracketOam =
+{
+    .shape = SPRITE_SHAPE(8x8),
+    .size = SPRITE_SIZE(8x8),
     .priority = 0
 };
 
-static const union AnimCmd sCursorAnim[] =
+// One anim per corner, flipping the top-left bracket.
+static const union AnimCmd sBracketAnim_TopLeft[] = { ANIMCMD_FRAME(UI_TILE_BRACKET, 1, FALSE, FALSE), ANIMCMD_END };
+static const union AnimCmd sBracketAnim_TopRight[] = { ANIMCMD_FRAME(UI_TILE_BRACKET, 1, TRUE, FALSE), ANIMCMD_END };
+static const union AnimCmd sBracketAnim_BottomLeft[] = { ANIMCMD_FRAME(UI_TILE_BRACKET, 1, FALSE, TRUE), ANIMCMD_END };
+static const union AnimCmd sBracketAnim_BottomRight[] = { ANIMCMD_FRAME(UI_TILE_BRACKET, 1, TRUE, TRUE), ANIMCMD_END };
+
+static const union AnimCmd *const sBracketAnims[] =
 {
-    ANIMCMD_FRAME(0, 20),
-    ANIMCMD_FRAME(4, 20),
+    sBracketAnim_TopLeft,
+    sBracketAnim_TopRight,
+    sBracketAnim_BottomLeft,
+    sBracketAnim_BottomRight
+};
+
+static void SpriteCB_Bracket(struct Sprite *sprite);
+
+static const struct SpriteTemplate sBracketSpriteTemplate =
+{
+    .tileTag = UI_TAG,
+    .paletteTag = UI_TAG,
+    .oam = &sBracketOam,
+    .anims = sBracketAnims,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_Bracket
+};
+
+static const struct OamData sHaloOam =
+{
+    .shape = SPRITE_SHAPE(16x16),
+    .size = SPRITE_SIZE(16x16),
+    .priority = 1
+};
+
+static const union AnimCmd sHaloAnim[] =
+{
+    ANIMCMD_FRAME(UI_TILE_HALO_SMALL, 20),
+    ANIMCMD_FRAME(UI_TILE_HALO_LARGE, 20),
     ANIMCMD_JUMP(0)
 };
 
-static const union AnimCmd *const sCursorAnimTable[] =
+static const union AnimCmd *const sHaloAnims[] =
 {
-    sCursorAnim
+    sHaloAnim
 };
 
-static const struct SpritePalette sCursorSpritePalette =
-{
-    .data = sCursor_Pal,
-    .tag = CURSOR_TAG
-};
+static void SpriteCB_Halo(struct Sprite *sprite);
 
-static const struct SpriteTemplate sCursorSpriteTemplate =
+static const struct SpriteTemplate sHaloSpriteTemplate =
 {
-    .tileTag = CURSOR_TAG,
-    .paletteTag = CURSOR_TAG,
-    .oam = &sCursorOam,
-    .anims = sCursorAnimTable,
+    .tileTag = UI_TAG,
+    .paletteTag = UI_TAG,
+    .oam = &sHaloOam,
+    .anims = sHaloAnims,
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy
+    .callback = SpriteCB_Halo
 };
 
 struct FlyLocation
@@ -331,49 +389,94 @@ static const struct FlyLocation sFlyLocations[] =
     { MAPSEC_ROUTE_48, FLAG_VISITED_SAFARI_ZONE_GATE },
 };
 
-static const struct OamData sFlyIconOam =
+enum
 {
-    .shape = SPRITE_SHAPE(8x8),
-    .size = SPRITE_SIZE(8x8),
+    RING_ANIM_BRIGHT,
+    RING_ANIM_FAINT,
+    RING_ANIM_FRONTIER,
+};
+
+static const struct OamData sRingOam =
+{
+    .shape = SPRITE_SHAPE(16x16),
+    .size = SPRITE_SIZE(16x16),
     .priority = 1
 };
 
-// Frames: 0-4 selectable (8x8, 16x8, -, 8x16), 5-9 not yet visited, 10 red outline.
-static const union AnimCmd sFlyIconAnim_8x8Can[] = { ANIMCMD_FRAME(0, 5), ANIMCMD_END };
-static const union AnimCmd sFlyIconAnim_16x8Can[] = { ANIMCMD_FRAME(1, 5), ANIMCMD_END };
-static const union AnimCmd sFlyIconAnim_8x16Can[] = { ANIMCMD_FRAME(3, 5), ANIMCMD_END };
-static const union AnimCmd sFlyIconAnim_8x8Cant[] = { ANIMCMD_FRAME(5, 5), ANIMCMD_END };
-static const union AnimCmd sFlyIconAnim_16x8Cant[] = { ANIMCMD_FRAME(6, 5), ANIMCMD_END };
-static const union AnimCmd sFlyIconAnim_8x16Cant[] = { ANIMCMD_FRAME(8, 5), ANIMCMD_END };
-static const union AnimCmd sFlyIconAnim_RedOutline[] = { ANIMCMD_FRAME(10, 5), ANIMCMD_END };
-
-// Indexed by SPRITE_SHAPE, +3 for not selectable.
-static const union AnimCmd *const sFlyIconAnims[] =
+static const struct OamData sRingWideOam =
 {
-    [SPRITE_SHAPE(8x8)]       = sFlyIconAnim_8x8Can,
-    [SPRITE_SHAPE(16x8)]      = sFlyIconAnim_16x8Can,
-    [SPRITE_SHAPE(8x16)]      = sFlyIconAnim_8x16Can,
-    [SPRITE_SHAPE(8x8) + 3]   = sFlyIconAnim_8x8Cant,
-    [SPRITE_SHAPE(16x8) + 3]  = sFlyIconAnim_16x8Cant,
-    [SPRITE_SHAPE(8x16) + 3]  = sFlyIconAnim_8x16Cant,
-    [FLY_OUTLINE_ANIM]        = sFlyIconAnim_RedOutline
+    .shape = SPRITE_SHAPE(32x16),
+    .size = SPRITE_SIZE(32x16),
+    .priority = 1
 };
 
-static const struct SpritePalette sFlyIconSpritePalette =
+static const struct OamData sRingTallOam =
 {
-    .data = sFlyIcons_Pal,
-    .tag = FLY_ICON_TAG
+    .shape = SPRITE_SHAPE(16x32),
+    .size = SPRITE_SIZE(16x32),
+    .priority = 1
 };
 
-static const struct SpriteTemplate sFlyIconSpriteTemplate =
+static const union AnimCmd sRingAnim_Bright[] = { ANIMCMD_FRAME(UI_TILE_RING, 5), ANIMCMD_END };
+static const union AnimCmd sRingAnim_Faint[] = { ANIMCMD_FRAME(UI_TILE_RING_FAINT, 5), ANIMCMD_END };
+static const union AnimCmd sRingAnim_Frontier[] = { ANIMCMD_FRAME(UI_TILE_FRONTIER, 5), ANIMCMD_END };
+static const union AnimCmd sRingWideAnim_Bright[] = { ANIMCMD_FRAME(UI_TILE_WIDE, 5), ANIMCMD_END };
+static const union AnimCmd sRingWideAnim_Faint[] = { ANIMCMD_FRAME(UI_TILE_WIDE_FAINT, 5), ANIMCMD_END };
+static const union AnimCmd sRingTallAnim_Bright[] = { ANIMCMD_FRAME(UI_TILE_TALL, 5), ANIMCMD_END };
+static const union AnimCmd sRingTallAnim_Faint[] = { ANIMCMD_FRAME(UI_TILE_TALL_FAINT, 5), ANIMCMD_END };
+
+static const union AnimCmd *const sRingAnims[] =
 {
-    .tileTag = FLY_ICON_TAG,
-    .paletteTag = FLY_ICON_TAG,
-    .oam = &sFlyIconOam,
-    .anims = sFlyIconAnims,
+    [RING_ANIM_BRIGHT]   = sRingAnim_Bright,
+    [RING_ANIM_FAINT]    = sRingAnim_Faint,
+    [RING_ANIM_FRONTIER] = sRingAnim_Frontier
+};
+
+static const union AnimCmd *const sRingWideAnims[] =
+{
+    [RING_ANIM_BRIGHT] = sRingWideAnim_Bright,
+    [RING_ANIM_FAINT]  = sRingWideAnim_Faint
+};
+
+static const union AnimCmd *const sRingTallAnims[] =
+{
+    [RING_ANIM_BRIGHT] = sRingTallAnim_Bright,
+    [RING_ANIM_FAINT]  = sRingTallAnim_Faint
+};
+
+static void SpriteCB_FlyRing(struct Sprite *sprite);
+
+static const struct SpriteTemplate sRingSpriteTemplate =
+{
+    .tileTag = UI_TAG,
+    .paletteTag = UI_TAG,
+    .oam = &sRingOam,
+    .anims = sRingAnims,
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCallbackDummy
+    .callback = SpriteCB_FlyRing
+};
+
+static const struct SpriteTemplate sRingWideSpriteTemplate =
+{
+    .tileTag = UI_TAG,
+    .paletteTag = UI_TAG,
+    .oam = &sRingWideOam,
+    .anims = sRingWideAnims,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_FlyRing
+};
+
+static const struct SpriteTemplate sRingTallSpriteTemplate =
+{
+    .tileTag = UI_TAG,
+    .paletteTag = UI_TAG,
+    .oam = &sRingTallOam,
+    .anims = sRingTallAnims,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_FlyRing
 };
 
 static const u8 *const sRegionNames[WORLD_MAP_NUM_REGIONS + 1] =
@@ -400,6 +503,7 @@ static void FollowCursor(bool32 center);
 static void DimLockedGroups(void);
 static bool32 IsRegionUnlocked(u32 region);
 static void ApplyScroll(void);
+static void LoadUiSprites(void);
 static void CreateCursor(void);
 static void UpdateCursorSprite(void);
 static void DestroyCursor(void);
@@ -603,7 +707,7 @@ static void OpenWorldMap(void)
         FollowCursor(TRUE);
         ApplyScroll();
         DimLockedGroups();
-        DecompressDataWithHeaderWram(sCursor_Gfx, sWorldMap->cursorGfx);
+        LoadUiSprites();
         CreatePlayerIcon();
         if (sWorldMap->flyMode)
             CreateFlyIcons();
@@ -804,6 +908,7 @@ static void CreatePlayerIcon(void)
     struct Sprite *sprite;
 
     sWorldMap->playerIconSpriteId = SPRITE_NONE;
+    sWorldMap->haloSpriteId = SPRITE_NONE;
     if (sWorldMap->playerRegion == NO_REGION)
         return;
     sprite = CreatePlayerIconSprite(PLAYER_ICON_TAG, PLAYER_ICON_TAG);
@@ -812,22 +917,101 @@ static void CreatePlayerIcon(void)
     sprite->x = sWorldMap->playerCellX * 8 + 4;
     sprite->y = sWorldMap->playerCellY * 8 + 4;
     sWorldMap->playerIconSpriteId = sprite - gSprites;
+
+    // Subpriority 2 draws the halo behind the icon (subpriority 1).
+    sWorldMap->haloSpriteId = CreateSprite(&sHaloSpriteTemplate, 0, 0, 2);
+}
+
+static void LoadUiSprites(void)
+{
+    LoadSpriteSheet(&sUiSpriteSheet);
+    LoadSpritePalette(&sUiSpritePalette);
+}
+
+// Cells of the MAPSEC under the cursor, clipped to the actual cells along the cursor's row and column.
+static void UpdateCursorRect(void)
+{
+    s32 cx = sWorldMap->cursorX;
+    s32 cy = sWorldMap->cursorY;
+    mapsec_u16_t mapSec = GetWorldMapSecIdAt(cx, cy);
+    s32 maxW = 1, maxH = 1, x0 = cx, y0 = cy, w = 1, h = 1;
+
+    if (mapSec < MAPSEC_NONE)
+    {
+        maxW = gRegionMapEntries[mapSec].width;
+        maxH = gRegionMapEntries[mapSec].height;
+    }
+    if (gSaveBlock2Ptr->optionsClassicMapCursor)
+        maxW = maxH = 1;
+    while (cx - x0 < maxW - 1 && GetWorldMapSecIdAt(x0 - 1, cy) == mapSec)
+        x0--;
+    while (cy - y0 < maxH - 1 && GetWorldMapSecIdAt(cx, y0 - 1) == mapSec)
+        y0--;
+    while (w < maxW && GetWorldMapSecIdAt(x0 + w, cy) == mapSec)
+        w++;
+    while (h < maxH && GetWorldMapSecIdAt(cx, y0 + h) == mapSec)
+        h++;
+    sWorldMap->cursorRectX = x0;
+    sWorldMap->cursorRectY = y0;
+    sWorldMap->cursorRectW = w;
+    sWorldMap->cursorRectH = h;
+    sWorldMap->rectForX = cx;
+    sWorldMap->rectForY = cy;
+}
+
+static bool32 IsOffScreen(s32 x, s32 y)
+{
+    return x < -SPRITE_MARGIN || x > DISPLAY_WIDTH + SPRITE_MARGIN || y < -SPRITE_MARGIN || y > DISPLAY_HEIGHT + SPRITE_MARGIN;
+}
+
+// Sprite data for SpriteCB_Bracket
+#define sCorner data[0] // Bit 0: right, bit 1: bottom
+#define sPulse  data[1]
+
+static void SpriteCB_Bracket(struct Sprite *sprite)
+{
+    s32 pulse = (++sprite->sPulse >> CURSOR_PULSE_SHIFT) & 1;
+    s32 left = sWorldMap->cursorRectX * 8;
+    s32 top = sWorldMap->cursorRectY * 8;
+    s32 right = left + sWorldMap->cursorRectW * 8;
+    s32 bottom = top + sWorldMap->cursorRectH * 8;
+    s32 x = (sprite->sCorner & 1) ? right - 4 + pulse : left + 4 - pulse;
+    s32 y = (sprite->sCorner & 2) ? bottom - 4 + pulse : top + 4 - pulse;
+
+    sprite->x = x - sWorldMap->scrollX;
+    sprite->y = y - sWorldMap->scrollY;
+    // OAM coordinates wrap, so sprites outside the screen are hidden explicitly.
+    sprite->invisible = IsOffScreen(sprite->x, sprite->y);
+}
+
+static void SpriteCB_Halo(struct Sprite *sprite)
+{
+    sprite->x = sWorldMap->playerCellX * 8 + 4 - sWorldMap->scrollX;
+    sprite->y = sWorldMap->playerCellY * 8 + 4 - sWorldMap->scrollY + HALO_OFFSET_Y;
+    sprite->invisible = IsOffScreen(sprite->x, sprite->y);
 }
 
 static void CreateCursor(void)
 {
-    struct SpriteSheet sheet = { .data = sWorldMap->cursorGfx, .size = sizeof(sWorldMap->cursorGfx), .tag = CURSOR_TAG };
+    u32 i;
 
-    LoadSpriteSheet(&sheet);
-    LoadSpritePalette(&sCursorSpritePalette);
-    sWorldMap->cursorSpriteId = CreateSprite(&sCursorSpriteTemplate, 0, 0, 0);
+    UpdateCursorRect();
+    for (i = 0; i < ARRAY_COUNT(sWorldMap->cursorSpriteIds); i++)
+    {
+        u32 spriteId = CreateSprite(&sBracketSpriteTemplate, 0, 0, 0);
+
+        gSprites[spriteId].sCorner = i;
+        StartSpriteAnim(&gSprites[spriteId], i);
+        sWorldMap->cursorSpriteIds[i] = spriteId;
+    }
     UpdateCursorSprite();
 }
 
+#undef sCorner
+#undef sPulse
+
 static void UpdateCursorSprite(void)
 {
-    struct Sprite *sprite = &gSprites[sWorldMap->cursorSpriteId];
-
     if (sWorldMap->playerIconSpriteId != SPRITE_NONE)
     {
         struct Sprite *icon = &gSprites[sWorldMap->playerIconSpriteId];
@@ -836,21 +1020,25 @@ static void UpdateCursorSprite(void)
         icon->y = sWorldMap->playerCellY * 8 + 4 - sWorldMap->scrollY;
     }
 
-    sprite->x = sWorldMap->cursorX * 8 + 4 - sWorldMap->scrollX;
-    sprite->y = sWorldMap->cursorY * 8 + 4 - sWorldMap->scrollY;
+    if (sWorldMap->cursorX != sWorldMap->rectForX || sWorldMap->cursorY != sWorldMap->rectForY)
+        UpdateCursorRect();
 }
 
 static void DestroyCursor(void)
 {
+    u32 i;
+
     if (sWorldMap->playerIconSpriteId != SPRITE_NONE)
     {
         DestroySprite(&gSprites[sWorldMap->playerIconSpriteId]);
+        DestroySprite(&gSprites[sWorldMap->haloSpriteId]);
         FreeSpriteTilesByTag(PLAYER_ICON_TAG);
         FreeSpritePaletteByTag(PLAYER_ICON_TAG);
     }
-    DestroySprite(&gSprites[sWorldMap->cursorSpriteId]);
-    FreeSpriteTilesByTag(CURSOR_TAG);
-    FreeSpritePaletteByTag(CURSOR_TAG);
+    for (i = 0; i < ARRAY_COUNT(sWorldMap->cursorSpriteIds); i++)
+        DestroySprite(&gSprites[sWorldMap->cursorSpriteIds[i]]);
+    FreeSpriteTilesByTag(UI_TAG);
+    FreeSpritePaletteByTag(UI_TAG);
 }
 
 static void PrintRightAligned(u32 windowId, const u8 *str)
@@ -1118,28 +1306,19 @@ static bool32 CanFlyFromCell(void)
     return FALSE;
 }
 
-// Sprite data for SpriteCB_FlyIcon
-#define sCellX      data[0]
-#define sCellY      data[1]
+// Sprite data for SpriteCB_FlyRing
+#define sCenterX    data[0]
+#define sCenterY    data[1]
 #define sIconMapSec data[2]
 #define sFlicker    data[3]
-#define sOutline    data[4]
 
-static void SpriteCB_FlyIcon(struct Sprite *sprite)
+static void SpriteCB_FlyRing(struct Sprite *sprite)
 {
-    s32 x = sprite->sCellX * 8 + 4 - sWorldMap->scrollX;
-    s32 y = sprite->sCellY * 8 + 4 - sWorldMap->scrollY;
-
-    if (sprite->sOutline)
-    {
-        x -= 4;
-        y -= 4;
-    }
-    sprite->x = x;
-    sprite->y = y;
+    sprite->x = sprite->sCenterX - sWorldMap->scrollX;
+    sprite->y = sprite->sCenterY - sWorldMap->scrollY;
 
     // OAM coordinates wrap, so sprites outside the screen are hidden explicitly.
-    if (x < -FLY_ICON_MARGIN || x > DISPLAY_WIDTH + FLY_ICON_MARGIN || y < -FLY_ICON_MARGIN || y > DISPLAY_HEIGHT + FLY_ICON_MARGIN)
+    if (IsOffScreen(sprite->x, sprite->y))
     {
         sprite->invisible = TRUE;
         return;
@@ -1160,24 +1339,23 @@ static void SpriteCB_FlyIcon(struct Sprite *sprite)
     }
 }
 
+// Visited Fly points get a ring: bright when selectable, faint when in another region.
 static void CreateFlyIcons(void)
 {
-    struct SpriteSheet sheet = { .data = sWorldMap->flyIconGfx, .size = sizeof(sWorldMap->flyIconGfx), .tag = FLY_ICON_TAG };
     u32 i;
-
-    DecompressDataWithHeaderWram(sFlyIcons_Gfx, sWorldMap->flyIconGfx);
-    LoadSpriteSheet(&sheet);
-    LoadSpritePalette(&sFlyIconSpritePalette);
 
     for (i = 0; i < ARRAY_COUNT(sFlyLocations); i++)
     {
         mapsec_u16_t mapSec = sFlyLocations[i].mapsec;
-        bool32 visited = FlagGet(sFlyLocations[i].flag);
         u32 width = gRegionMapEntries[mapSec].width;
         u32 height = gRegionMapEntries[mapSec].height;
-        u32 shape, spriteId, region = GetMapSecGroup(mapSec) + 1;
+        u32 spriteId, anim, region = GetMapSecGroup(mapSec) + 1;
+        const struct SpriteTemplate *template;
         s32 x, y;
         bool32 found = FALSE;
+
+        if (!FlagGet(sFlyLocations[i].flag))
+            continue;
 
         // First cell in row-major order is the MAPSEC's top-left.
         for (y = 0; y < WORLD_MAP_CELLS_H && !found; y++)
@@ -1195,37 +1373,28 @@ static void CreateFlyIcons(void)
         if (!found)
             continue;
 
-        if (width == 2)
-            shape = SPRITE_SHAPE(16x8);
-        else if (height == 2)
-            shape = SPRITE_SHAPE(8x16);
+        if (mapSec == MAPSEC_BATTLE_FRONTIER)
+            template = &sRingSpriteTemplate;
+        else if (width >= 2)
+            template = &sRingWideSpriteTemplate;
+        else if (height >= 2)
+            template = &sRingTallSpriteTemplate;
         else
-            shape = SPRITE_SHAPE(8x8);
+            template = &sRingSpriteTemplate;
 
-        spriteId = CreateSpriteUnchecked(&sFlyIconSpriteTemplate, 0, 0, 10);
+        spriteId = CreateSpriteUnchecked(template, 0, 0, 10);
         if (spriteId == MAX_SPRITES)
             continue;
 
-        gSprites[spriteId].sCellX = x;
-        gSprites[spriteId].sCellY = y;
+        gSprites[spriteId].sCenterX = x * 8 + width * 4;
+        gSprites[spriteId].sCenterY = y * 8 + height * 4;
         gSprites[spriteId].sIconMapSec = mapSec;
         gSprites[spriteId].sFlicker = 16;
-        gSprites[spriteId].callback = SpriteCB_FlyIcon;
         if (mapSec == MAPSEC_BATTLE_FRONTIER)
-        {
-            // Battle Frontier has no icon of its own, only a red outline once discovered.
-            if (!visited)
-            {
-                DestroySprite(&gSprites[spriteId]);
-                continue;
-            }
-            gSprites[spriteId].oam.size = SPRITE_SIZE(16x16);
-            gSprites[spriteId].sOutline = TRUE;
-            StartSpriteAnim(&gSprites[spriteId], FLY_OUTLINE_ANIM);
-            continue;
-        }
-        gSprites[spriteId].oam.shape = shape;
-        StartSpriteAnim(&gSprites[spriteId], visited ? shape : shape + 3);
+            anim = RING_ANIM_FRONTIER;
+        else
+            anim = GetMapSecGroup(mapSec) == sWorldMap->flyGroup ? RING_ANIM_BRIGHT : RING_ANIM_FAINT;
+        StartSpriteAnim(&gSprites[spriteId], anim);
     }
 }
 
@@ -1235,15 +1404,12 @@ static void DestroyFlyIcons(void)
 
     for (i = 0; i < MAX_SPRITES; i++)
     {
-        if (gSprites[i].inUse && gSprites[i].callback == SpriteCB_FlyIcon)
+        if (gSprites[i].inUse && gSprites[i].callback == SpriteCB_FlyRing)
             DestroySprite(&gSprites[i]);
     }
-    FreeSpriteTilesByTag(FLY_ICON_TAG);
-    FreeSpritePaletteByTag(FLY_ICON_TAG);
 }
 
-#undef sCellX
-#undef sCellY
+#undef sCenterX
+#undef sCenterY
 #undef sIconMapSec
 #undef sFlicker
-#undef sOutline
