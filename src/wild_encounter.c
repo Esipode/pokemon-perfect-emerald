@@ -385,7 +385,12 @@ static bool32 IsAlteringCaveMap(u32 mapGroup, u32 mapNum)
         || (mapGroup == MAP_GROUP(MAP_SIX_ISLAND_ALTERING_CAVE) && mapNum == MAP_NUM(MAP_SIX_ISLAND_ALTERING_CAVE));
 }
 
-// Kanto tables store levels as offsets below the progression cap (except the Altering Cave); Hoenn tables store absolute levels.
+static bool32 IsOffsetLevelRegion(enum Region region)
+{
+    return region == REGION_KANTO || region == REGION_JOHTO;
+}
+
+// Kanto and Johto tables store levels as offsets below the progression cap (except the Altering Cave); Hoenn tables store absolute levels.
 void GetWildMonLevelRange(const struct WildPokemonHeader *header, const struct WildPokemon *mon, u32 *min, u32 *max)
 {
     u32 lo = mon->minLevel;
@@ -400,7 +405,7 @@ void GetWildMonLevelRange(const struct WildPokemonHeader *header, const struct W
 
     if (header != NULL
      && !IsAlteringCaveMap(header->mapGroup, header->mapNum)
-     && GetRegionForSectionId(Overworld_GetMapHeaderByGroupAndId(header->mapGroup, header->mapNum)->regionMapSectionId) == REGION_KANTO)
+     && IsOffsetLevelRegion(GetRegionForSectionId(Overworld_GetMapHeaderByGroupAndId(header->mapGroup, header->mapNum)->regionMapSectionId)))
     {
         u32 cap = GetProgressionLevelCap();
 

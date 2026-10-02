@@ -2825,6 +2825,62 @@ static u16 GetKantoTrainerIdFromStruct(const struct Trainer *trainer)
     return TRAINER_NONE;
 }
 
+// Johto trainers sit at an offset from the player's Johto progression by role.
+static s8 GetJohtoTrainerRoleOffset(u16 trainerId, enum TrainerClassID trainerClass)
+{
+    static const u16 sGymTrainers[] =
+    {
+        TRAINER_ABE_JOHTO, TRAINER_AL_JOHTO, TRAINER_AMY_AND_MAY_JOHTO, TRAINER_BENNY_JOHTO,
+        TRAINER_BRAD_JOHTO, TRAINER_BRIDGET_JOHTO, TRAINER_CARRIE_JOHTO, TRAINER_CLARISSA_JOHTO,
+        TRAINER_CODY_JOHTO, TRAINER_DOUGLAS_JOHTO, TRAINER_FRAN_JOHTO, TRAINER_GRACE_JOHTO,
+        TRAINER_JEFFREY_JOHTO, TRAINER_JOSH_JOHTO, TRAINER_LAO_JOHTO, TRAINER_LOLA_JOHTO,
+        TRAINER_LUNG_JOHTO, TRAINER_MARTHA_JOHTO, TRAINER_MIKE_JOHTO, TRAINER_NOB_JOHTO,
+        TRAINER_PAUL_JOHTO, TRAINER_PING_JOHTO, TRAINER_ROD_JOHTO, TRAINER_RONALD_JOHTO,
+        TRAINER_SAMANTHA_JOHTO, TRAINER_VICTORIA_JOHTO, TRAINER_YOSHI_JOHTO,
+    };
+    u32 i;
+
+    switch (trainerClass)
+    {
+    case TRAINER_CLASS_PKMN_TRAINER_1_JOHTO: // Red
+        return 6;
+    case TRAINER_CLASS_CHAMPION_JOHTO:
+        return 4;
+    case TRAINER_CLASS_ELITE_FOUR_JOHTO:
+        return 2;
+    case TRAINER_CLASS_LEADER_JOHTO:
+    case TRAINER_CLASS_ROCKET_ADMIN_JOHTO:
+    case TRAINER_CLASS_RIVAL_JOHTO:
+        return 0;
+    default:
+        break;
+    }
+
+    for (i = 0; i < ARRAY_COUNT(sGymTrainers); i++)
+    {
+        if (sGymTrainers[i] == trainerId)
+            return -2;
+    }
+
+    return -3;
+}
+
+// Returns the Johto trainer id of a gTrainers entry, or TRAINER_NONE for any other trainer.
+static u16 GetJohtoTrainerIdFromStruct(const struct Trainer *trainer)
+{
+    u32 difficulty;
+
+    for (difficulty = 0; difficulty < DIFFICULTY_COUNT; difficulty++)
+    {
+        const struct Trainer *johtoStart = &gTrainers[difficulty][JOHTO_TRAINERS_START];
+
+        if (trainer >= johtoStart && trainer < johtoStart + MAX_JOHTO_TRAINERS_COUNT)
+            return JOHTO_TRAINERS_START + (trainer - johtoStart);
+    }
+
+    return TRAINER_NONE;
+}
+
 void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Trainer *trainer)
 {
     // Identifies the trainer for FLAG_RANDOMIZE_MON's per-mon seed context. Hashed from the
@@ -2839,6 +2895,7 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
     // reward's mechanic), so the New Game+ replacement/item passes are skipped for them.
     bool32 isNGPlus = gSaveBlock2Ptr->newGamePlus > 0 && !gEmporiumBattleActive && !gInfCaveBattleActive;
     u16 kantoTrainerId = GetKantoTrainerIdFromStruct(trainer);
+    u16 johtoTrainerId = GetJohtoTrainerIdFromStruct(trainer);
     s32 kantoBaseLevel = 0;
     u8 replaceCount = 0;
     u8 monsCount;
@@ -2875,18 +2932,25 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
 
     DoTrainerPartyPool(trainer, monIndices, monsCount, gBattleTypeFlags);
 
-    // Kanto party levels are spreads above a base set by player progress and trainer role.
-    if (kantoTrainerId != TRAINER_NONE && !gEmporiumBattleActive && !gInfCaveBattleActive)
+    // Kanto and Johto party levels are spreads above a base set by player progress and trainer role.
+    // kantoBaseLevel holds the base for either region; the Johto base sits on top of the Kanto ladder.
+    if (gEmporiumBattleActive || gInfCaveBattleActive)
+    {
+        kantoTrainerId = TRAINER_NONE;
+        johtoTrainerId = TRAINER_NONE;
+    }
+    else if (kantoTrainerId != TRAINER_NONE)
     {
         kantoBaseLevel = GetHoennLadderLevel() + 3 * GetKantoBadgeCount()
                        + GetKantoTrainerRoleOffset(kantoTrainerId, trainer->trainerClass);
-        if (kantoBaseLevel < 1)
-            kantoBaseLevel = 1;
     }
-    else
+    else if (johtoTrainerId != TRAINER_NONE)
     {
-        kantoTrainerId = TRAINER_NONE;
+        kantoBaseLevel = GetHoennLadderLevel() + GetKantoLadderBonus() + 3 * GetJohtoBadgeCount()
+                       + GetJohtoTrainerRoleOffset(johtoTrainerId, trainer->trainerClass);
     }
+    if (kantoBaseLevel < 1 && (kantoTrainerId != TRAINER_NONE || johtoTrainerId != TRAINER_NONE))
+        kantoBaseLevel = 1;
 
     if (gEmporiumBattleActive)
     {
@@ -2952,7 +3016,7 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         else
         {
             species = partyData[monIndex].species;
-            if (isNGPlus || kantoTrainerId != TRAINER_NONE)
+            if (isNGPlus || kantoTrainerId != TRAINER_NONE || johtoTrainerId != TRAINER_NONE)
                 species = GetFinalEvolution(species);
         }
 
@@ -2985,7 +3049,7 @@ void CreateNPCTrainerPartyFromTrainer(struct Pokemon *party, const struct Traine
         {
             level = InfCave_GetBattleLevel();
         }
-        else if (kantoTrainerId != TRAINER_NONE)
+        else if (kantoTrainerId != TRAINER_NONE || johtoTrainerId != TRAINER_NONE)
         {
             s32 kantoLevel;
 

@@ -58,6 +58,7 @@ PokemonLeague_HallOfFame_Johto_EventScript_SetFirstGameClearFlags::
 	clearflag FLAG_HIDE_AZALEA_TOWN_TAILED_SLOWPOKES
 	clearflag FLAG_HIDE_LEAGUE_BLACKBELT
 	setflag FLAG_JOHTO_CHAMPION
+	call Common_EventScript_CheckLevelCapIncrease
 	setvar VAR_LEAGUE_STATE, 1
 	setvar VAR_NEWBARK_TOWN_STATE, 6
 	return

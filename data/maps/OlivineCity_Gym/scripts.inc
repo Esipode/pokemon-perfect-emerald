@@ -233,6 +233,7 @@ OlivineCity_Gym_EventScript_JasmineVictory::
 	call Common_EventScript_PlayGymBadgeFanfare
 	msgbox OlivineCity_Gym_Text_JasmineBadgeSpeech, MSGBOX_DEFAULT
 	setflag FLAG_JOHTO_BADGE06_GET
+	call Common_EventScript_CheckLevelCapIncrease
 	setflag FLAG_DEFEATED_OLIVINE_CITY_GYM
 	addvar VAR_NUM_BADGES, 1
 	setvar VAR_0x8008, 6

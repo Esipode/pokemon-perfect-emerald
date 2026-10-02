@@ -100,6 +100,36 @@ u32 GetKantoLadderBonus(void)
     return bonus;
 }
 
+// Johto is free order too and only opens after the Kanto Champion. Eight badges, the Johto
+// Champion and Red total 24 + 2 + 2 = 28.
+u32 GetJohtoLadderBonus(void)
+{
+    static const u32 sJohtoLevelCapFlagMap[][2] =
+    {
+        {FLAG_JOHTO_BADGE01_GET, 3},
+        {FLAG_JOHTO_BADGE02_GET, 3},
+        {FLAG_JOHTO_BADGE03_GET, 3},
+        {FLAG_JOHTO_BADGE04_GET, 3},
+        {FLAG_JOHTO_BADGE05_GET, 3},
+        {FLAG_JOHTO_BADGE06_GET, 3},
+        {FLAG_JOHTO_BADGE07_GET, 3},
+        {FLAG_JOHTO_BADGE08_GET, 3},
+        {FLAG_JOHTO_CHAMPION, 2},
+        {FLAG_DEFEATED_RED, 2},
+    };
+
+    u32 i;
+    u32 bonus = 0;
+
+    for (i = 0; i < ARRAY_COUNT(sJohtoLevelCapFlagMap); i++)
+    {
+        if (FlagGet(sJohtoLevelCapFlagMap[i][0]))
+            bonus += sJohtoLevelCapFlagMap[i][1];
+    }
+
+    return bonus;
+}
+
 u32 GetKantoBadgeCount(void)
 {
     u32 i;
@@ -132,7 +162,7 @@ u32 GetJohtoBadgeCount(void)
 // FLAG_LEVEL_CAP_OFF entirely, so this still tracks progression for a player who disabled their own
 // cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL just because the player
 // turned their cap off). Only the post-game value reads that flag - see below.
-// Kanto only opens after the Hoenn Champion, so its bonus is zero until then.
+// Kanto only opens after the Hoenn Champion and Johto after the Kanto Champion, so their bonuses are zero until then.
 u32 GetProgressionLevelCap(void)
 {
     // The post-game cap for non-flag-list cap types. A player who turned their own cap off gets 100
@@ -147,7 +177,7 @@ u32 GetProgressionLevelCap(void)
 
     if (B_LEVEL_CAP_TYPE == LEVEL_CAP_FLAG_LIST)
     {
-        return min(GetHoennLadderLevel() + GetKantoLadderBonus() + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+        return min(GetHoennLadderLevel() + GetKantoLadderBonus() + GetJohtoLadderBonus() + GetNewGamePlusLevelOffset(), MAX_LEVEL);
     }
     else if (B_LEVEL_CAP_TYPE == LEVEL_CAP_VARIABLE)
     {
@@ -160,10 +190,10 @@ u32 GetProgressionLevelCap(void)
 u32 GetCurrentLevelCap(void)
 {
     // Level cap disabled in the New Game settings: the player's team may climb to
-    // 100 (plus the New Game Plus offset), not all the way to MAX_LEVEL. Kanto progress
+    // 100 (plus the New Game Plus offset), not all the way to MAX_LEVEL. Kanto/Johto progress
     // can lift the ladder past 100, so the ceiling never drops below it.
     if (FlagGet(FLAG_LEVEL_CAP_OFF))
-        return min(max(100, GetHoennLadderLevel() + GetKantoLadderBonus()) + GetNewGamePlusLevelOffset(), MAX_LEVEL);
+        return min(max(100, GetHoennLadderLevel() + GetKantoLadderBonus() + GetJohtoLadderBonus()) + GetNewGamePlusLevelOffset(), MAX_LEVEL);
 
     return GetProgressionLevelCap();
 }

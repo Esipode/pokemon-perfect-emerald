@@ -53,6 +53,7 @@ MtSilver_SummitDay_EventScript_RedOnDefeat::
 	delay 180
 	fadescreenspeed FADE_TO_BLACK, 24
 	setflag FLAG_DEFEATED_RED
+	call Common_EventScript_CheckLevelCapIncrease
 	clearflag FLAG_HIDE_MTSILVER_RED
 	special GameClear
 	releaseall
