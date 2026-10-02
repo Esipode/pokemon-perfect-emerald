@@ -48,7 +48,9 @@ struct WorldMapCluster
  *  Open sea (region 0) is always crossable; the cursor stops only at locked regions and the edge.
  *  Each lock unit owns a palette bank, so a locked one gets the grey ramp (bank 6) copied over it.
  *  The Sevii region has two lock units: islands 1-3 and islands 4-7.
- *  BG1 holds the text windows (palette bank 15).
+ *  BG1 holds the text windows (palette bank 15) on transparent backgrounds. Hardware windows
+ *  WIN0 (top bar) and WIN1 (bottom bar) darken BG0 and OBJ behind the text; BG1 is not a blend
+ *  target, so the text stays crisp.
  *  Fly mode (CB2_OpenFlyMap): every region can be scrolled to, but only fly points in the player's
  *  current region are selectable; other regions are blended lightly toward the sea colour.
  */
@@ -58,7 +60,7 @@ struct WorldMapCluster
 #define SCROLL_MAX_X (WORLD_MAP_PX_W - DISPLAY_WIDTH)
 #define SCROLL_MAX_Y (WORLD_MAP_PX_H - DISPLAY_HEIGHT)
 // The art is drawn this many px left of the cell grid; sprites and scroll limits use the grid.
-#define MAP_ART_SHIFT_X 1
+#define MAP_ART_SHIFT_X 0
 #define SCROLL_MARGIN (3 * 8)
 #define CURSOR_REPEAT_DELAY 4
 #define CURSOR_TAG 0
@@ -70,6 +72,11 @@ struct WorldMapCluster
 #define FLY_ICON_TAG 2
 #define FLY_OUTLINE_ANIM 6
 #define FLY_ICON_MARGIN 16
+#define BAR_HEIGHT 16
+#define BAR_DARKEN 8
+#define BAR_TEXT_PAD 2
+#define PIP_PAL_FIRST 3 // Text palette index of the open-sea pip; regions follow in id order
+#define HINT_NONE 0xFF
 
 struct WorldMap
 {
@@ -88,6 +95,7 @@ struct WorldMap
     u8 shownRegion;
     mapsec_u16_t shownMapSec;
     u8 shownPos;
+    u8 shownHint;
     bool8 flyMode;
     bool8 canSwitchRegions;
     u8 flyGroup;
@@ -136,8 +144,33 @@ static const u32 sCursor_Gfx[] = INCGFX_U32("graphics/region_map/cursor_small.pn
 
 static const u8 sText_Johto[] = _("JOHTO");
 static const u8 sText_Sevii[] = _("SEVII ISLANDS");
-static const u8 sText_RegionHint[] = _("L/R: REGION");
-static const u8 sTextColors[] = {1, 2, 3};
+static const u8 sText_HintBack[] = _("{B_BUTTON}BACK");
+static const u8 sText_HintRegionBack[] = _("{L_BUTTON}{R_BUTTON}REGION {B_BUTTON}BACK");
+static const u8 sText_HintFlyBack[] = _("{A_BUTTON}FLY {B_BUTTON}BACK");
+static const u8 sText_HintFlyRegionBack[] = _("{A_BUTTON}FLY {L_BUTTON}{R_BUTTON}REGION {B_BUTTON}BACK");
+
+// Indexed by (A usable ? 2 : 0) + (L/R usable ? 1 : 0).
+static const u8 *const sHintTexts[] =
+{
+    sText_HintBack,
+    sText_HintRegionBack,
+    sText_HintFlyBack,
+    sText_HintFlyRegionBack,
+};
+static const u8 sTextColors[] = {0, 1, 2}; // transparent, text, shadow
+
+// Bar text palette: white text on the darkened map, then one pip colour per region (land tints).
+static const u16 sBarText_Pal[16] =
+{
+    [0] = RGB_BLACK,
+    [1] = RGB_WHITE,
+    [2] = RGB(5, 5, 7),
+    [PIP_PAL_FIRST + WORLD_MAP_REGION_SEA] = RGB(14, 14, 16),
+    [PIP_PAL_FIRST + WORLD_MAP_REGION_JOHTO] = RGB(22, 22, 13),
+    [PIP_PAL_FIRST + WORLD_MAP_REGION_KANTO] = RGB(11, 22, 17),
+    [PIP_PAL_FIRST + WORLD_MAP_REGION_HOENN] = RGB(13, 24, 10),
+    [PIP_PAL_FIRST + WORLD_MAP_REGION_SEVII] = RGB(27, 25, 18),
+};
 
 static const struct BgTemplate sWorldMapBgTemplates[] =
 {
@@ -159,40 +192,41 @@ static const struct BgTemplate sWorldMapBgTemplates[] =
     },
 };
 
+// Top bar: region (left) and MAPSEC name (right). Bottom bar: Fly prompt (left) and hints (right).
 static const struct WindowTemplate sWorldMapWindowTemplates[WIN_COUNT + 1] =
 {
     [WIN_MAPSEC_NAME] = {
         .bg = 1,
-        .tilemapLeft = 0,
-        .tilemapTop = 18,
-        .width = 15,
+        .tilemapLeft = 14,
+        .tilemapTop = 0,
+        .width = 16,
         .height = 2,
         .paletteNum = 15,
-        .baseBlock = 0x01
+        .baseBlock = 0x1D
     },
     [WIN_REGION_NAME] = {
-        .bg = 1,
-        .tilemapLeft = 19,
-        .tilemapTop = 0,
-        .width = 11,
-        .height = 2,
-        .paletteNum = 15,
-        .baseBlock = 0x21
-    },
-    [WIN_FLY_PROMPT] = {
         .bg = 1,
         .tilemapLeft = 0,
         .tilemapTop = 0,
         .width = 14,
         .height = 2,
         .paletteNum = 15,
-        .baseBlock = 0x37
+        .baseBlock = 0x01
+    },
+    [WIN_FLY_PROMPT] = {
+        .bg = 1,
+        .tilemapLeft = 0,
+        .tilemapTop = 18,
+        .width = 11,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x3D
     },
     [WIN_HINT] = {
         .bg = 1,
-        .tilemapLeft = 19,
+        .tilemapLeft = 11,
         .tilemapTop = 18,
-        .width = 11,
+        .width = 19,
         .height = 2,
         .paletteNum = 15,
         .baseBlock = 0x53
@@ -372,6 +406,9 @@ static void DestroyCursor(void);
 static void CreatePlayerIcon(void);
 static void LocatePlayer(void);
 static void UpdateWindows(void);
+static void SetBarRegs(void);
+static void ClearBarRegs(void);
+static void PrintRightAligned(u32 windowId, const u8 *str);
 static void CreateFlyIcons(void);
 static void DestroyFlyIcons(void);
 static u32 GetMapSecGroup(mapsec_u16_t mapSec);
@@ -547,7 +584,7 @@ static void OpenWorldMap(void)
         DecompressDataWithHeaderVram(sWorldMap_Gfx, (u16 *)BG_CHAR_ADDR(0));
         DecompressDataWithHeaderVram(sWorldMap_Tilemap, (u16 *)BG_SCREEN_ADDR(28));
         LoadPalette(sWorldMap_Pal, BG_PLTT_ID(0), 15 * PLTT_SIZE_4BPP);
-        LoadPalette(gStandardMenuPalette, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
+        LoadPalette(sBarText_Pal, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
         LocatePlayer();
         if (sWorldMap->playerRegion != NO_REGION)
         {
@@ -573,23 +610,18 @@ static void OpenWorldMap(void)
         CreateCursor();
         sWorldMap->shownRegion = 0xFF;
         sWorldMap->shownMapSec = 0xFFFF;
+        sWorldMap->shownHint = HINT_NONE;
         PutWindowTilemap(WIN_MAPSEC_NAME);
         PutWindowTilemap(WIN_REGION_NAME);
+        PutWindowTilemap(WIN_HINT);
         if (sWorldMap->flyMode)
         {
             PutWindowTilemap(WIN_FLY_PROMPT);
-            FillWindowPixelBuffer(WIN_FLY_PROMPT, PIXEL_FILL(1));
-            AddTextPrinterParameterized3(WIN_FLY_PROMPT, FONT_NORMAL, 2, 1, sTextColors, 0, gText_FlyToWhere);
+            FillWindowPixelBuffer(WIN_FLY_PROMPT, PIXEL_FILL(0));
+            AddTextPrinterParameterized3(WIN_FLY_PROMPT, FONT_NORMAL, BAR_TEXT_PAD, 1, sTextColors, 0, gText_FlyToWhere);
             CopyWindowToVram(WIN_FLY_PROMPT, COPYWIN_FULL);
         }
         sWorldMap->canSwitchRegions = CanSwitchRegions();
-        if (sWorldMap->canSwitchRegions)
-        {
-            PutWindowTilemap(WIN_HINT);
-            FillWindowPixelBuffer(WIN_HINT, PIXEL_FILL(1));
-            AddTextPrinterParameterized3(WIN_HINT, FONT_NORMAL, 2, 1, sTextColors, 0, sText_RegionHint);
-            CopyWindowToVram(WIN_HINT, COPYWIN_FULL);
-        }
         UpdateWindows();
         gMain.state++;
         break;
@@ -599,7 +631,8 @@ static void OpenWorldMap(void)
         gMain.state++;
         break;
     case 4:
-        SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_OBJ_1D_MAP | DISPCNT_OBJ_ON);
+        SetBarRegs();
+        SetGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_OBJ_1D_MAP | DISPCNT_OBJ_ON | DISPCNT_WIN0_ON | DISPCNT_WIN1_ON);
         ShowBg(0);
         ShowBg(1);
         BeginNormalPaletteFade(PALETTES_ALL, 0, 16, 0, RGB_BLACK);
@@ -820,18 +853,25 @@ static void DestroyCursor(void)
     FreeSpritePaletteByTag(CURSOR_TAG);
 }
 
+static void PrintRightAligned(u32 windowId, const u8 *str)
+{
+    s32 x = GetWindowAttribute(windowId, WINDOW_WIDTH) * 8 - GetStringWidth(FONT_NORMAL, str, 0) - BAR_TEXT_PAD;
+
+    AddTextPrinterParameterized3(windowId, FONT_NORMAL, x, 1, sTextColors, 0, str);
+}
+
 // Redraws only the windows whose content changed.
 static void UpdateWindows(void)
 {
     mapsec_u16_t mapSec = GetWorldMapSecIdAt(sWorldMap->cursorX, sWorldMap->cursorY);
-
     u32 pos = mapSec == MAPSEC_EVER_GRANDE_CITY ? GetCursorPosWithinMapSec() : 0;
+    u32 hint = (sWorldMap->flyMode && CanFlyFromCell() ? 2 : 0) + (sWorldMap->canSwitchRegions ? 1 : 0);
 
     if (mapSec != sWorldMap->shownMapSec || pos != sWorldMap->shownPos)
     {
         sWorldMap->shownMapSec = mapSec;
         sWorldMap->shownPos = pos;
-        FillWindowPixelBuffer(WIN_MAPSEC_NAME, PIXEL_FILL(1));
+        FillWindowPixelBuffer(WIN_MAPSEC_NAME, PIXEL_FILL(0));
         if (mapSec < MAPSEC_NONE)
         {
             const u8 *name = gRegionMapEntries[mapSec].name;
@@ -839,17 +879,55 @@ static void UpdateWindows(void)
             // Ever Grande's second cell is the Pokemon Center once the League is unlocked.
             if (sWorldMap->flyMode && mapSec == MAPSEC_EVER_GRANDE_CITY && FlagGet(FLAG_LANDMARK_POKEMON_LEAGUE))
                 name = pos == 0 ? gText_PokemonLeague : gText_PokemonCenter;
-            AddTextPrinterParameterized3(WIN_MAPSEC_NAME, FONT_NORMAL, 2, 1, sTextColors, 0, name);
+            PrintRightAligned(WIN_MAPSEC_NAME, name);
         }
         CopyWindowToVram(WIN_MAPSEC_NAME, COPYWIN_FULL);
     }
     if (sWorldMap->region != sWorldMap->shownRegion)
     {
         sWorldMap->shownRegion = sWorldMap->region;
-        FillWindowPixelBuffer(WIN_REGION_NAME, PIXEL_FILL(1));
-        AddTextPrinterParameterized3(WIN_REGION_NAME, FONT_NORMAL, 2, 1, sTextColors, 0, sRegionNames[sWorldMap->region]);
+        FillWindowPixelBuffer(WIN_REGION_NAME, PIXEL_FILL(0));
+        // White rim, then the region's land tint.
+        FillWindowPixelRect(WIN_REGION_NAME, 1, BAR_TEXT_PAD, 4, 8, 8);
+        FillWindowPixelRect(WIN_REGION_NAME, PIP_PAL_FIRST + sWorldMap->region, BAR_TEXT_PAD + 1, 5, 6, 6);
+        AddTextPrinterParameterized3(WIN_REGION_NAME, FONT_NORMAL, BAR_TEXT_PAD + 12, 1, sTextColors, 0, sRegionNames[sWorldMap->region]);
         CopyWindowToVram(WIN_REGION_NAME, COPYWIN_FULL);
     }
+    if (hint != sWorldMap->shownHint)
+    {
+        sWorldMap->shownHint = hint;
+        FillWindowPixelBuffer(WIN_HINT, PIXEL_FILL(0));
+        PrintRightAligned(WIN_HINT, sHintTexts[hint]);
+        CopyWindowToVram(WIN_HINT, COPYWIN_FULL);
+    }
+}
+
+// WIN0 = top bar, WIN1 = bottom bar; BG0 and OBJ are darkened inside them, BG1 text is not.
+static void SetBarRegs(void)
+{
+    SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0, DISPLAY_WIDTH));
+    SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(0, BAR_HEIGHT));
+    SetGpuReg(REG_OFFSET_WIN1H, WIN_RANGE(0, DISPLAY_WIDTH));
+    SetGpuReg(REG_OFFSET_WIN1V, WIN_RANGE(DISPLAY_HEIGHT - BAR_HEIGHT, DISPLAY_HEIGHT));
+    SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_ALL | WININ_WIN1_ALL);
+    SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_BG_ALL | WINOUT_WIN01_OBJ);
+    SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG0 | BLDCNT_TGT1_OBJ | BLDCNT_EFFECT_DARKEN);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, BAR_DARKEN);
+}
+
+static void ClearBarRegs(void)
+{
+    ClearGpuRegBits(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON | DISPCNT_WIN1_ON);
+    SetGpuReg(REG_OFFSET_WIN0H, 0);
+    SetGpuReg(REG_OFFSET_WIN0V, 0);
+    SetGpuReg(REG_OFFSET_WIN1H, 0);
+    SetGpuReg(REG_OFFSET_WIN1V, 0);
+    SetGpuReg(REG_OFFSET_WININ, 0);
+    SetGpuReg(REG_OFFSET_WINOUT, 0);
+    SetGpuReg(REG_OFFSET_BLDCNT, 0);
+    SetGpuReg(REG_OFFSET_BLDALPHA, 0);
+    SetGpuReg(REG_OFFSET_BLDY, 0);
 }
 
 // Blends toward the sea colour so a dimmed region stays readable against the ocean.
@@ -970,6 +1048,7 @@ static void CB2_ExitWorldMap(void)
         if (flyMode)
             DestroyFlyIcons();
         DestroyCursor();
+        ClearBarRegs();
         FreeAllWindowBuffers();
         TRY_FREE_AND_SET_NULL(sWorldMap);
         if (!flyMode)
