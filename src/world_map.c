@@ -75,6 +75,7 @@ struct WorldMap
     mapsec_u16_t shownMapSec;
     u8 shownPos;
     bool8 flyMode;
+    bool8 canSwitchPanels;
     u8 flyGroup;
     bool8 choseFlyLocation;
     u8 cursorGfx[0x100];
@@ -126,6 +127,7 @@ enum
     WIN_MAPSEC_NAME,
     WIN_REGION_NAME,
     WIN_FLY_PROMPT,
+    WIN_HINT,
     WIN_COUNT,
 };
 
@@ -145,6 +147,7 @@ static const u32 sCursor_Gfx[] = INCGFX_U32("graphics/region_map/cursor_small.pn
 
 static const u8 sText_Johto[] = _("JOHTO");
 static const u8 sText_Sevii[] = _("SEVII ISLANDS");
+static const u8 sText_RegionHint[] = _("L/R: REGION");
 static const u8 sTextColors[] = {1, 2, 3};
 
 static const struct BgTemplate sWorldMapBgTemplates[] =
@@ -195,6 +198,15 @@ static const struct WindowTemplate sWorldMapWindowTemplates[WIN_COUNT + 1] =
         .height = 2,
         .paletteNum = 15,
         .baseBlock = 0x37
+    },
+    [WIN_HINT] = {
+        .bg = 1,
+        .tilemapLeft = 19,
+        .tilemapTop = 18,
+        .width = 11,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x53
     },
     DUMMY_WIN_TEMPLATE
 };
@@ -422,6 +434,7 @@ static u32 GetCursorPosWithinMapSec(void);
 static bool32 TryMoveCursor(s32 dx, s32 dy);
 static void SetCursorToPanel(u32 panel);
 static u32 NextUnlockedPanel(u32 panel, s32 step);
+static bool32 CanSwitchPanels(void);
 
 static bool32 IsPanelUnlocked(u32 panel)
 {
@@ -451,6 +464,21 @@ static bool32 IsPanelUnlocked(u32 panel)
     default:
         return TRUE;
     }
+}
+
+// L/R needs at least two reachable panels; Fly mode can always scroll to every panel.
+static bool32 CanSwitchPanels(void)
+{
+    u32 i, count = 0;
+
+    if (sWorldMap->flyMode)
+        return TRUE;
+    for (i = 0; i < NUM_PANELS; i++)
+    {
+        if (IsPanelUnlocked(i))
+            count++;
+    }
+    return count > 1;
 }
 
 static u32 NextUnlockedPanel(u32 panel, s32 step)
@@ -578,6 +606,8 @@ static void OpenWorldMap(void)
         DecompressDataWithHeaderVram(sWorldMap_Tilemap, (u16 *)BG_SCREEN_ADDR(28));
         LoadPalette(sWorldMap_Pal, BG_PLTT_ID(0), 15 * PLTT_SIZE_4BPP);
         LoadPalette(gStandardMenuPalette, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
+        // Backdrop colour (ocean) shows through the transparent index 0 of every bank.
+        gPlttBufferUnfaded[0] = gPlttBufferFaded[0] = RGB(5, 16, 28);
         LocatePlayer();
         if (sWorldMap->playerPanel != NO_PANEL)
         {
@@ -611,6 +641,14 @@ static void OpenWorldMap(void)
             FillWindowPixelBuffer(WIN_FLY_PROMPT, PIXEL_FILL(1));
             AddTextPrinterParameterized3(WIN_FLY_PROMPT, FONT_NORMAL, 2, 1, sTextColors, 0, gText_FlyToWhere);
             CopyWindowToVram(WIN_FLY_PROMPT, COPYWIN_FULL);
+        }
+        sWorldMap->canSwitchPanels = CanSwitchPanels();
+        if (sWorldMap->canSwitchPanels)
+        {
+            PutWindowTilemap(WIN_HINT);
+            FillWindowPixelBuffer(WIN_HINT, PIXEL_FILL(1));
+            AddTextPrinterParameterized3(WIN_HINT, FONT_NORMAL, 2, 1, sTextColors, 0, sText_RegionHint);
+            CopyWindowToVram(WIN_HINT, COPYWIN_FULL);
         }
         UpdateWindows();
         gMain.state++;
@@ -896,15 +934,18 @@ static void CB2_WorldMap(void)
             SetMainCallback2(CB2_ExitWorldMap);
             return;
         }
-        if (JOY_NEW(R_BUTTON))
+        if (sWorldMap->canSwitchPanels)
         {
-            SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, 1));
-            FollowCursor(TRUE);
-        }
-        else if (JOY_NEW(L_BUTTON))
-        {
-            SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, -1));
-            FollowCursor(TRUE);
+            if (JOY_NEW(R_BUTTON))
+            {
+                SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, 1));
+                FollowCursor(TRUE);
+            }
+            else if (JOY_NEW(L_BUTTON))
+            {
+                SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, -1));
+                FollowCursor(TRUE);
+            }
         }
 
         if (sWorldMap->moveDelay != 0)
@@ -1070,25 +1111,34 @@ static void CreateFlyIcons(void)
         bool32 visited = FlagGet(sFlyLocations[i].flag);
         u32 width = gRegionMapEntries[mapSec].width;
         u32 height = gRegionMapEntries[mapSec].height;
-        u32 shape, spriteId;
+        u32 shape, spriteId, panel;
         s32 x, y;
         bool32 found = FALSE;
 
-        // First cell in row-major order is the MAPSEC's top-left.
-        for (y = 0; y < WORLD_MAP_CELLS_H && !found; y++)
+        // First cell in row-major order is the MAPSEC's top-left; only the MAPSEC's own panels are scanned.
+        x = y = 0;
+        for (panel = 0; panel < NUM_PANELS && !found; panel++)
         {
-            for (x = 0; x < WORLD_MAP_CELLS_W; x++)
+            s32 px, py;
+
+            if (sPanelGroup[panel] != GetMapSecGroup(mapSec))
+                continue;
+            for (py = sPanels[panel].y; py < sPanels[panel].y + sPanels[panel].h && !found; py++)
             {
-                if (sWorldMapSections[y][x] == mapSec)
+                for (px = sPanels[panel].x; px < sPanels[panel].x + sPanels[panel].w; px++)
                 {
-                    found = TRUE;
-                    break;
+                    if (sWorldMapSections[py][px] == mapSec)
+                    {
+                        found = TRUE;
+                        x = px;
+                        y = py;
+                        break;
+                    }
                 }
             }
         }
         if (!found)
             continue;
-        y--;
 
         if (width == 2)
             shape = SPRITE_SHAPE(16x8);
