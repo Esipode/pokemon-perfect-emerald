@@ -112,11 +112,9 @@ Text_ReceivedFogBadge:
 	.string "{PLAYER} received the FOGBADGE.$"
 
 MortyText_FogBadgeSpeech:
-	.string "With the FOGBADGE, POKéMON up\n"
-	.string "to Level 50 will obey you.\p"
-	.string "Also, any POKéMON that knows\n"
-	.string "SURF will be able to use it\l"
-	.string "anytime.\p"
+	.string "With the FOGBADGE, any POKéMON\n"
+	.string "that knows SURF will be able to\l"
+	.string "use it anytime.\p"
 	.string "I want you to have this too.$"
 
 MortyText_ShadowBallSpeech:

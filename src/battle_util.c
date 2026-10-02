@@ -5600,6 +5600,8 @@ enum Obedience GetAttackerObedienceForAction(void)
         return OBEYS;
     if (FlagGet(FLAG_BADGE08_GET)) // Rain Badge, ignore obedience altogether
         return OBEYS;
+    if (FlagGet(FLAG_LEVEL_CAP_OFF))
+        return OBEYS;
 
     u32 currentLevelCap = GetCurrentLevelCap();
     obedienceLevel = (u16)currentLevelCap;

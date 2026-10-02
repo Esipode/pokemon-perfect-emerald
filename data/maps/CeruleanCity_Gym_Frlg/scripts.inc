@@ -81,12 +81,8 @@ CeruleanCity_Gym_Text_ExplainTM03::
 	.string "Use it on an aquatic POKéMON!$"
 
 CeruleanCity_Gym_Text_ExplainCascadeBadge::
-	.string "The CASCADEBADGE makes all\n"
-	.string "POKéMON up to Lv. 30 obey.\p"
-	.string "That includes even outsiders you\n"
-	.string "got in trades.\p"
-	.string "There's more. You can now use CUT\n"
-	.string "anytime, even out of battle.\p"
+	.string "With the CASCADEBADGE, you can now\n"
+	.string "use CUT anytime, even out of battle.\p"
 	.string "You can CUT down small trees to\n"
 	.string "open new pathways.\p"
 	.string "You can also have my favorite TM.$"

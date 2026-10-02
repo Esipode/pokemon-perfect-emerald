@@ -155,10 +155,8 @@ CianwoodGym_Text_GetStormBadge:
 	.string "{PLAYER} received STORMBADGE.$"
 
 CianwoodGym_Text_ChuckBadgeSpeech:
-	.string "STORMBADGE makes all POKéMON up to\n"
-	.string "L70 obey, even traded ones.\p"
-	.string "It also lets your POKéMON use FLY\n"
-	.string "when you're not in a battle.\p"
+	.string "STORMBADGE lets your POKéMON use\n"
+	.string "FLY when you're not in a battle.\p"
 	.string "Here, take this too!$"
 
 CianwoodGym_Text_ChuckTMSpeech:

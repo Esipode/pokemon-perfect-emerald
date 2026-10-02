@@ -691,11 +691,9 @@ AzaleaTown_Gym_Text_ReceivedHiveBadge:
 AzaleaTown_Gym_Text_HiveBadgeSpeech:
 	.string "Do you know the benefits\n"
 	.string "of HIVEBADGE?\p"
-	.string "If you have it, POKéMON up\n"
-	.string "to L30 will obey you,\l"
-	.string "even traded ones.\p"
-	.string "POKéMON that know CUT will be able\n"
-	.string "to use it outside of battle too.\p"
+	.string "If you have it, POKéMON that know\n"
+	.string "CUT will be able to use it\l"
+	.string "outside of battle.\p"
 	.string "Here, I also want you to\n"
 	.string "have this.$"
 
