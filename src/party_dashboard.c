@@ -522,7 +522,7 @@ static void DrawIdentityMon(struct PartyDashboardMon *mon)
                         mon->gender == MON_MALE ? gText_MaleSymbol : gText_FemaleSymbol);
 
     StringCopy(gStringVar1, gText_LevelSymbol);
-    ConvertIntToDecimalStringN(gStringVar2, mon->level, STR_CONV_MODE_LEFT_ALIGN, 3);
+    ConvertIntToDecimalStringN(gStringVar2, mon->level, STR_CONV_MODE_LEFT_ALIGN, 4);
     StringAppend(gStringVar1, gStringVar2);
     AddTextPrinterParameterized3(WIN_DASH_IDENT, FONT_SMALL, IDENT_TEXT_X, IDENT_LEVEL_Y, sIdentTextColors, TEXT_SKIP_DRAW, gStringVar1);
 
