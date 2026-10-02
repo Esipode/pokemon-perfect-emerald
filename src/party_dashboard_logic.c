@@ -2,17 +2,18 @@
 #include "party_dashboard.h"
 #include "pokemon.h"
 
-// Reference stat: base 160, 31 IV, 252 EV, nature-boosted.
+// Reference stat: base 160, 31 IV, 252 EV, nature-boosted, at the soft-capped stat level.
 #define STAT_BAR_REF_BASE     160
 #define STAT_BAR_REF_IV       31
 #define STAT_BAR_REF_EV_QUART 63
 
 static u32 GetStatBarReference(enum PartyDashboardStat statIndex, u32 level)
 {
-    u32 core = (2 * STAT_BAR_REF_BASE + STAT_BAR_REF_IV + STAT_BAR_REF_EV_QUART) * level / 100;
+    u32 levelScaled = GetScaledStatLevel(level);
+    u32 core = (2 * STAT_BAR_REF_BASE + STAT_BAR_REF_IV + STAT_BAR_REF_EV_QUART) * levelScaled / 100000;
 
     if (statIndex == PARTY_DASH_STAT_HP)
-        return core + level + 10;
+        return core + levelScaled / 1000 + 10;
     return (core + 5) * 110 / 100;
 }
 

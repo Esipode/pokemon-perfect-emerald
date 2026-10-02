@@ -1591,7 +1591,7 @@ static u16 CalculateBoxMonChecksumReencrypt(struct BoxPokemon *boxMon)
 }
 
 // Soft-caps stat level scaling above level 100 to give diminishing returns.
-static s32 GetScaledStatLevel(s32 level)
+s32 GetScaledStatLevel(s32 level)
 {
     if (level <= 100)
         return level * 1000;
