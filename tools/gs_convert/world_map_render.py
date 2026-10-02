@@ -366,9 +366,14 @@ def write_jasc(banks, path):
 
 
 def write_tilemap(entries, path):
+    """Entries are 64x64 row-major; a 64x64 text BG is stored as four 32x32 screenblocks (TL, TR, BL, BR)."""
     with open(path, "wb") as f:
-        for e in entries:
-            f.write(bytes((e & 0xFF, e >> 8)))
+        for by in (0, 32):
+            for bx in (0, 32):
+                for y in range(by, by + 32):
+                    for x in range(bx, bx + 32):
+                        e = entries[y * 64 + x]
+                        f.write(bytes((e & 0xFF, e >> 8)))
 
 
 def tiles_4bpp(tiles):

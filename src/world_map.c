@@ -25,31 +25,45 @@
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
+// A rect of a panel-local region map grid that moves as one piece to the world grid.
+struct WorldMapCluster
+{
+    u8 src;
+    u8 x;
+    u8 y;
+    u8 w;
+    u8 h;
+    s8 offsetX;
+    s8 offsetY;
+};
+
 #include "data/region_map/world_map_layout.h"
 #include "data/region_map/region_map_layout_world.h"
 
 /*
- *  Combined Hoenn / Kanto / Sevii / Johto map. Text-mode BG0 (64x64 tiles, 4bpp) built by
- *  tools/gs_convert/build_world_map.py; scrolled with BG offsets, no zoom.
- *  Each region owns its palette banks, so a locked region is dimmed by blending only those.
- *  The cursor moves one cell at a time; leaving a panel jumps to the neighbouring panel.
- *  Locked panels are not enterable. A bank group is dimmed when none of its panels is unlocked;
- *  Sevii panels share banks, so 4-5 and 6-7 are only blocked (not dimmed) while 1-2-3 is open.
+ *  Combined Johto / Kanto / Hoenn / Sevii map. Text-mode BG0 (64x64 tiles, 4bpp) built by
+ *  tools/gs_convert/build_world_map2.py; scrolled with BG offsets, no zoom.
+ *  The world is one continuous grid of MAPSEC cells (sWorldMapSections) plus a region grid
+ *  (sWorldMapRegions) that says which region owns each cell, including the sea around it.
+ *  Open sea (region 0) is always crossable; the cursor stops only at locked regions and the edge.
+ *  Each lock unit owns a palette bank, so a locked one is dimmed by blending only that bank.
+ *  The Sevii region has two lock units: islands 1-3 and islands 4-7.
  *  BG1 holds the text windows (palette bank 15).
- *  Fly mode (CB2_OpenFlyMap): every panel can be scrolled to, but only fly points in the player's
- *  current bank group are selectable; other groups are dimmed lightly so they stay readable.
+ *  Fly mode (CB2_OpenFlyMap): every region can be scrolled to, but only fly points in the player's
+ *  current region are selectable; other regions are dimmed lightly so they stay readable.
  */
 
-#define WORLD_MAP_PX_W (56 * 8)
-#define WORLD_MAP_PX_H (45 * 8)
+#define WORLD_MAP_PX_W (WORLD_MAP_CELLS_W * 8)
+#define WORLD_MAP_PX_H (WORLD_MAP_CELLS_H * 8)
 #define SCROLL_MAX_X (WORLD_MAP_PX_W - DISPLAY_WIDTH)
 #define SCROLL_MAX_Y (WORLD_MAP_PX_H - DISPLAY_HEIGHT)
+// The art is drawn this many px left of the cell grid; sprites and scroll limits use the grid.
+#define MAP_ART_SHIFT_X 1
 #define SCROLL_MARGIN (3 * 8)
 #define CURSOR_REPEAT_DELAY 4
 #define CURSOR_TAG 0
 #define PLAYER_ICON_TAG 1
-#define NO_PANEL 0xFF
-#define NUM_PANELS 6
+#define NO_REGION 0xFF
 #define NUM_BANK_GROUPS 4
 #define DIM_COEFF 8
 #define FLY_DIM_COEFF 5
@@ -63,31 +77,23 @@ struct WorldMap
     s16 scrollY;
     u8 cursorX;
     u8 cursorY;
-    u8 panel;
-    u8 dimmedGroups;
+    u8 region;
     u8 moveDelay;
     u8 cursorSpriteId;
-    u8 playerPanel; // NO_PANEL when the player has no icon
+    u8 playerRegion; // NO_REGION when the player has no icon
+    bool8 playerInSevii4567;
     u8 playerIconSpriteId;
     u8 playerCellX;
     u8 playerCellY;
-    u8 shownPanel;
+    u8 shownRegion;
     mapsec_u16_t shownMapSec;
     u8 shownPos;
     bool8 flyMode;
-    bool8 canSwitchPanels;
+    bool8 canSwitchRegions;
     u8 flyGroup;
     bool8 choseFlyLocation;
     u8 cursorGfx[0x100];
     u8 flyIconGfx[0x1c0];
-};
-
-struct Panel
-{
-    u8 x;
-    u8 y;
-    u8 w;
-    u8 h;
 };
 
 struct BankGroup
@@ -96,30 +102,13 @@ struct BankGroup
     u8 count;
 };
 
-enum
-{
-    PANEL_JOHTO,
-    PANEL_KANTO,
-    PANEL_HOENN,
-    PANEL_SEVII123,
-    PANEL_SEVII45,
-    PANEL_SEVII67,
-};
-
+// Bank groups are the regions, in WORLD_MAP_REGION_* order minus one.
 enum
 {
     GROUP_JOHTO,
     GROUP_KANTO,
     GROUP_HOENN,
     GROUP_SEVII,
-};
-
-enum
-{
-    DIR_UP,
-    DIR_DOWN,
-    DIR_LEFT,
-    DIR_RIGHT,
 };
 
 enum
@@ -353,63 +342,20 @@ static const struct SpriteTemplate sFlyIconSpriteTemplate =
     .callback = SpriteCallbackDummy
 };
 
-static const struct Panel sPanels[NUM_PANELS] =
+static const u8 *const sRegionNames[WORLD_MAP_NUM_REGIONS + 1] =
 {
-    { WORLD_MAP_JOHTO_X,    WORLD_MAP_JOHTO_Y,    WORLD_MAP_JOHTO_W,    WORLD_MAP_JOHTO_H },
-    { WORLD_MAP_KANTO_X,    WORLD_MAP_KANTO_Y,    WORLD_MAP_KANTO_W,    WORLD_MAP_KANTO_H },
-    { WORLD_MAP_HOENN_X,    WORLD_MAP_HOENN_Y,    WORLD_MAP_HOENN_W,    WORLD_MAP_HOENN_H },
-    { WORLD_MAP_SEVII123_X, WORLD_MAP_SEVII123_Y, WORLD_MAP_SEVII123_W, WORLD_MAP_SEVII123_H },
-    { WORLD_MAP_SEVII45_X,  WORLD_MAP_SEVII45_Y,  WORLD_MAP_SEVII45_W,  WORLD_MAP_SEVII45_H },
-    { WORLD_MAP_SEVII67_X,  WORLD_MAP_SEVII67_Y,  WORLD_MAP_SEVII67_W,  WORLD_MAP_SEVII67_H },
-};
-
-static const u8 *const sPanelNames[NUM_PANELS] =
-{
-    sText_Johto, gText_Kanto, gText_Hoenn, sText_Sevii, sText_Sevii, sText_Sevii,
-};
-
-// Neighbouring panel per direction (up, down, left, right); -1 = none.
-static const s8 sPanelNeighbours[NUM_PANELS][4] =
-{
-    { -1,  2, -1,  1 },
-    { -1,  3,  0, -1 },
-    {  0,  4, -1,  3 },
-    {  1,  5,  2, -1 },
-    {  2, -1, -1,  5 },
-    {  3, -1,  4, -1 },
-};
-
-// Panel crop offset inside the 28x15 source grid.
-static const struct { u8 x; u8 y; } sPanelSrc[NUM_PANELS] =
-{
-    { WORLD_MAP_JOHTO_SRC_X,    WORLD_MAP_JOHTO_SRC_Y },
-    { WORLD_MAP_KANTO_SRC_X,    WORLD_MAP_KANTO_SRC_Y },
-    { WORLD_MAP_HOENN_SRC_X,    WORLD_MAP_HOENN_SRC_Y },
-    { WORLD_MAP_SEVII123_SRC_X, WORLD_MAP_SEVII123_SRC_Y },
-    { WORLD_MAP_SEVII45_SRC_X,  WORLD_MAP_SEVII45_SRC_Y },
-    { WORLD_MAP_SEVII67_SRC_X,  WORLD_MAP_SEVII67_SRC_Y },
-};
-
-// First panel of each bank group; the Sevii group starts at 1-2-3.
-static const u8 sFlyGroupPanel[NUM_BANK_GROUPS] =
-{
-    [GROUP_JOHTO] = PANEL_JOHTO,
-    [GROUP_KANTO] = PANEL_KANTO,
-    [GROUP_HOENN] = PANEL_HOENN,
-    [GROUP_SEVII] = PANEL_SEVII123,
-};
-
-static const u8 sPanelGroup[NUM_PANELS] =
-{
-    GROUP_JOHTO, GROUP_KANTO, GROUP_HOENN, GROUP_SEVII, GROUP_SEVII, GROUP_SEVII,
+    [WORLD_MAP_REGION_JOHTO] = sText_Johto,
+    [WORLD_MAP_REGION_KANTO] = gText_Kanto,
+    [WORLD_MAP_REGION_HOENN] = gText_Hoenn,
+    [WORLD_MAP_REGION_SEVII] = sText_Sevii,
 };
 
 static const struct BankGroup sBankGroups[NUM_BANK_GROUPS] =
 {
-    [GROUP_JOHTO] = { WORLD_MAP_BANK_JOHTO_FIRST, WORLD_MAP_BANK_JOHTO_COUNT },
-    [GROUP_KANTO] = { WORLD_MAP_BANK_KANTO_FIRST, WORLD_MAP_BANK_KANTO_COUNT },
-    [GROUP_HOENN] = { WORLD_MAP_BANK_HOENN_FIRST, WORLD_MAP_BANK_HOENN_COUNT },
-    [GROUP_SEVII] = { WORLD_MAP_BANK_SEVII_FIRST, WORLD_MAP_BANK_SEVII_COUNT },
+    [GROUP_JOHTO] = { WORLD_MAP_BANK_JOHTO, 1 },
+    [GROUP_KANTO] = { WORLD_MAP_BANK_KANTO, 1 },
+    [GROUP_HOENN] = { WORLD_MAP_BANK_HOENN, 1 },
+    [GROUP_SEVII] = { WORLD_MAP_BANK_SEVII123, 2 },
 };
 
 static void CB2_WorldMap(void);
@@ -418,7 +364,7 @@ static void VBlankCB_WorldMap(void);
 static void ClampScroll(void);
 static void FollowCursor(bool32 center);
 static void DimLockedGroups(void);
-static bool32 IsPanelUnlocked(u32 panel);
+static bool32 IsRegionUnlocked(u32 region);
 static void ApplyScroll(void);
 static void CreateCursor(void);
 static void UpdateCursorSprite(void);
@@ -432,21 +378,30 @@ static u32 GetMapSecGroup(mapsec_u16_t mapSec);
 static bool32 CanFlyFromCell(void);
 static u32 GetCursorPosWithinMapSec(void);
 static bool32 TryMoveCursor(s32 dx, s32 dy);
-static void SetCursorToPanel(u32 panel);
-static u32 NextUnlockedPanel(u32 panel, s32 step);
-static bool32 CanSwitchPanels(void);
+static void SetCursorToRegion(u32 region);
+static u32 NextUnlockedRegion(u32 region, s32 step);
+static bool32 CanSwitchRegions(void);
 
-static bool32 IsPanelUnlocked(u32 panel)
+static bool32 IsSeviiUnitUnlocked(bool32 is4567)
+{
+    if (sWorldMap->flyMode)
+        return TRUE;
+    if (sWorldMap->playerRegion == WORLD_MAP_REGION_SEVII && sWorldMap->playerInSevii4567 == is4567)
+        return TRUE;
+    return FlagGet(is4567 ? FLAG_SYS_SEVII_MAP_4567 : FLAG_SYS_SEVII_MAP_123);
+}
+
+static bool32 IsRegionUnlocked(u32 region)
 {
     u32 flag;
 
-    if (sWorldMap->flyMode || panel == sWorldMap->playerPanel)
+    if (sWorldMap->flyMode || region == sWorldMap->playerRegion)
         return TRUE;
-    switch (panel)
+    switch (region)
     {
-    case PANEL_JOHTO:
+    case WORLD_MAP_REGION_JOHTO:
         return FlagGet(FLAG_VISITED_JOHTO);
-    case PANEL_KANTO:
+    case WORLD_MAP_REGION_KANTO:
         if (FlagGet(FLAG_KANTO_HOENN_LINKED))
             return TRUE;
         // Any Kanto town visited (Pallet Town to Saffron City flags are contiguous).
@@ -456,42 +411,39 @@ static bool32 IsPanelUnlocked(u32 panel)
                 return TRUE;
         }
         return FALSE;
-    case PANEL_SEVII123:
-        return FlagGet(FLAG_SYS_SEVII_MAP_123);
-    case PANEL_SEVII45:
-    case PANEL_SEVII67:
-        return FlagGet(FLAG_SYS_SEVII_MAP_4567);
+    case WORLD_MAP_REGION_SEVII:
+        return IsSeviiUnitUnlocked(FALSE) || IsSeviiUnitUnlocked(TRUE);
     default:
         return TRUE;
     }
 }
 
-// L/R needs at least two reachable panels; Fly mode can always scroll to every panel.
-static bool32 CanSwitchPanels(void)
+// L/R needs at least two reachable regions; Fly mode can always scroll to every region.
+static bool32 CanSwitchRegions(void)
 {
-    u32 i, count = 0;
+    u32 region, count = 0;
 
     if (sWorldMap->flyMode)
         return TRUE;
-    for (i = 0; i < NUM_PANELS; i++)
+    for (region = 1; region <= WORLD_MAP_NUM_REGIONS; region++)
     {
-        if (IsPanelUnlocked(i))
+        if (IsRegionUnlocked(region))
             count++;
     }
     return count > 1;
 }
 
-static u32 NextUnlockedPanel(u32 panel, s32 step)
+static u32 NextUnlockedRegion(u32 region, s32 step)
 {
     u32 i;
 
-    for (i = 0; i < NUM_PANELS; i++)
+    for (i = 0; i < WORLD_MAP_NUM_REGIONS; i++)
     {
-        panel = (panel + NUM_PANELS + step) % NUM_PANELS;
-        if (IsPanelUnlocked(panel))
-            return panel;
+        region = (region - 1 + WORLD_MAP_NUM_REGIONS + step) % WORLD_MAP_NUM_REGIONS + 1;
+        if (IsRegionUnlocked(region))
+            return region;
     }
-    return panel;
+    return region;
 }
 
 mapsec_u16_t GetWorldMapSecIdAt(u16 x, u16 y)
@@ -501,33 +453,38 @@ mapsec_u16_t GetWorldMapSecIdAt(u16 x, u16 y)
     return sWorldMapSections[y][x];
 }
 
-static s32 PanelAt(s32 x, s32 y)
+// Open sea is always enterable; a region's cells need the region unlocked, and Sevii 4-7 cells
+// need their own unit.
+static bool32 IsCellEnterable(s32 x, s32 y)
 {
-    u32 i;
+    u32 region = sWorldMapRegions[y][x];
+    mapsec_u16_t mapSec;
 
-    for (i = 0; i < NUM_PANELS; i++)
-    {
-        if (x >= sPanels[i].x && x < sPanels[i].x + sPanels[i].w
-         && y >= sPanels[i].y && y < sPanels[i].y + sPanels[i].h)
-            return i;
-    }
-    return -1;
+    if (region == WORLD_MAP_REGION_SEA)
+        return TRUE;
+    if (!IsRegionUnlocked(region))
+        return FALSE;
+    mapSec = sWorldMapSections[y][x];
+    if (region != WORLD_MAP_REGION_SEVII || mapSec == MAPSEC_NONE)
+        return TRUE;
+    return IsSeviiUnitUnlocked(GetKantoSubregion(mapSec) != KANTO_SUBREGION_SEVII123);
 }
 
-// Moves the cursor to the MAPSEC cell of the panel nearest to (targetX, targetY).
-static void SnapCursorToPanelMapSec(u32 panel, s32 targetX, s32 targetY)
+// Moves the cursor to the enterable MAPSEC cell of the region nearest to (targetX, targetY).
+static void SnapCursorToRegionMapSec(u32 region, s32 targetX, s32 targetY)
 {
     s32 x, y;
     s32 bestDist = 0x7FFF;
-    s32 bestX = targetX, bestY = targetY;
+    s32 bestX = sWorldMap->cursorX, bestY = sWorldMap->cursorY;
 
-    for (y = sPanels[panel].y; y < sPanels[panel].y + sPanels[panel].h; y++)
+    for (y = 0; y < WORLD_MAP_CELLS_H; y++)
     {
-        for (x = sPanels[panel].x; x < sPanels[panel].x + sPanels[panel].w; x++)
+        for (x = 0; x < WORLD_MAP_CELLS_W; x++)
         {
             s32 dist = abs(x - targetX) + abs(y - targetY);
 
-            if (sWorldMapSections[y][x] != MAPSEC_NONE && dist < bestDist)
+            if (sWorldMapRegions[y][x] == region && sWorldMapSections[y][x] != MAPSEC_NONE
+             && dist < bestDist && IsCellEnterable(x, y))
             {
                 bestDist = dist;
                 bestX = x;
@@ -537,43 +494,28 @@ static void SnapCursorToPanelMapSec(u32 panel, s32 targetX, s32 targetY)
     }
     sWorldMap->cursorX = bestX;
     sWorldMap->cursorY = bestY;
-    sWorldMap->panel = panel;
+    sWorldMap->region = region;
 }
 
-static void SetCursorToPanel(u32 panel)
+static void SetCursorToRegion(u32 region)
 {
-    SnapCursorToPanelMapSec(panel, sPanels[panel].x + sPanels[panel].w / 2, sPanels[panel].y + sPanels[panel].h / 2);
+    SnapCursorToRegionMapSec(region, sWorldMapRegionAnchors[region].x, sWorldMapRegionAnchors[region].y);
 }
 
 static bool32 TryMoveCursor(s32 dx, s32 dy)
 {
     s32 x = sWorldMap->cursorX + dx;
     s32 y = sWorldMap->cursorY + dy;
-    s32 panel = PanelAt(x, y);
 
-    if (panel >= 0)
-    {
-        if (panel != sWorldMap->panel && !IsPanelUnlocked(panel))
-            return FALSE;
-        sWorldMap->cursorX = x;
-        sWorldMap->cursorY = y;
-        sWorldMap->panel = panel;
-        FollowCursor(FALSE);
-        return TRUE;
-    }
-    else
-    {
-        u32 dir = dy < 0 ? DIR_UP : dy > 0 ? DIR_DOWN : dx < 0 ? DIR_LEFT : DIR_RIGHT;
-        s32 next = sPanelNeighbours[sWorldMap->panel][dir];
-
-        if (next < 0 || !IsPanelUnlocked(next))
-            return FALSE;
-        x = x < sPanels[next].x ? sPanels[next].x : min(x, sPanels[next].x + sPanels[next].w - 1);
-        y = y < sPanels[next].y ? sPanels[next].y : min(y, sPanels[next].y + sPanels[next].h - 1);
-        SnapCursorToPanelMapSec(next, x, y);
-        FollowCursor(TRUE);
-        return TRUE;
-    }
+    if (x < 0 || y < 0 || x >= WORLD_MAP_CELLS_W || y >= WORLD_MAP_CELLS_H || !IsCellEnterable(x, y))
+        return FALSE;
+    sWorldMap->cursorX = x;
+    sWorldMap->cursorY = y;
+    // Open sea keeps the region the cursor came from.
+    if (sWorldMapRegions[y][x] != WORLD_MAP_REGION_SEA)
+        sWorldMap->region = sWorldMapRegions[y][x];
+    FollowCursor(FALSE);
+    return TRUE;
 }
 
 static void OpenWorldMap(void)
@@ -606,22 +548,20 @@ static void OpenWorldMap(void)
         DecompressDataWithHeaderVram(sWorldMap_Tilemap, (u16 *)BG_SCREEN_ADDR(28));
         LoadPalette(sWorldMap_Pal, BG_PLTT_ID(0), 15 * PLTT_SIZE_4BPP);
         LoadPalette(gStandardMenuPalette, BG_PLTT_ID(15), PLTT_SIZE_4BPP);
-        // Backdrop colour (ocean) shows through the transparent index 0 of every bank.
-        gPlttBufferUnfaded[0] = gPlttBufferFaded[0] = RGB(5, 16, 28);
         LocatePlayer();
-        if (sWorldMap->playerPanel != NO_PANEL)
+        if (sWorldMap->playerRegion != NO_REGION)
         {
             sWorldMap->cursorX = sWorldMap->playerCellX;
             sWorldMap->cursorY = sWorldMap->playerCellY;
-            sWorldMap->panel = sWorldMap->playerPanel;
+            sWorldMap->region = sWorldMap->playerRegion;
         }
         else if (sWorldMap->flyMode)
         {
-            SetCursorToPanel(sFlyGroupPanel[sWorldMap->flyGroup]);
+            SetCursorToRegion(sWorldMap->flyGroup + 1);
         }
         else
         {
-            SetCursorToPanel(PANEL_HOENN);
+            SetCursorToRegion(WORLD_MAP_REGION_HOENN);
         }
         FollowCursor(TRUE);
         ApplyScroll();
@@ -631,7 +571,7 @@ static void OpenWorldMap(void)
         if (sWorldMap->flyMode)
             CreateFlyIcons();
         CreateCursor();
-        sWorldMap->shownPanel = 0xFF;
+        sWorldMap->shownRegion = 0xFF;
         sWorldMap->shownMapSec = 0xFFFF;
         PutWindowTilemap(WIN_MAPSEC_NAME);
         PutWindowTilemap(WIN_REGION_NAME);
@@ -642,8 +582,8 @@ static void OpenWorldMap(void)
             AddTextPrinterParameterized3(WIN_FLY_PROMPT, FONT_NORMAL, 2, 1, sTextColors, 0, gText_FlyToWhere);
             CopyWindowToVram(WIN_FLY_PROMPT, COPYWIN_FULL);
         }
-        sWorldMap->canSwitchPanels = CanSwitchPanels();
-        if (sWorldMap->canSwitchPanels)
+        sWorldMap->canSwitchRegions = CanSwitchRegions();
+        if (sWorldMap->canSwitchRegions)
         {
             PutWindowTilemap(WIN_HINT);
             FillWindowPixelBuffer(WIN_HINT, PIXEL_FILL(1));
@@ -701,7 +641,7 @@ static void ApplyScroll(void)
     // BG1 holds the fixed text windows; clear any offset left by the previous screen.
     SetGpuReg(REG_OFFSET_BG1HOFS, 0);
     SetGpuReg(REG_OFFSET_BG1VOFS, 0);
-    SetGpuReg(REG_OFFSET_BG0HOFS, sWorldMap->scrollX);
+    SetGpuReg(REG_OFFSET_BG0HOFS, sWorldMap->scrollX + MAP_ART_SHIFT_X);
     SetGpuReg(REG_OFFSET_BG0VOFS, sWorldMap->scrollY);
 }
 
@@ -745,10 +685,11 @@ static void FollowCursor(bool32 center)
 static void LocatePlayer(void)
 {
     struct PlayerRegionMapPos pos;
-    u32 panel;
+    u32 src, i, region;
     s32 x, y;
+    bool32 found = FALSE;
 
-    sWorldMap->playerPanel = NO_PANEL;
+    sWorldMap->playerRegion = NO_REGION;
     if (IsEventIslandMapSecId(gMapHeader.regionMapSectionId))
         return;
 
@@ -756,35 +697,71 @@ static void LocatePlayer(void)
     switch (GetRegionForSectionId(pos.mapSecId))
     {
     case REGION_JOHTO:
-        panel = PANEL_JOHTO;
+        src = WORLD_MAP_SRC_JOHTO;
+        region = WORLD_MAP_REGION_JOHTO;
         break;
     case REGION_KANTO:
+        region = WORLD_MAP_REGION_KANTO;
         switch (GetKantoSubregion(pos.mapSecId))
         {
         case KANTO_SUBREGION_SEVII123:
-            panel = PANEL_SEVII123;
+            src = WORLD_MAP_SRC_SEVII123;
+            region = WORLD_MAP_REGION_SEVII;
             break;
         case KANTO_SUBREGION_SEVII45:
-            panel = PANEL_SEVII45;
+            src = WORLD_MAP_SRC_SEVII45;
+            region = WORLD_MAP_REGION_SEVII;
             break;
         case KANTO_SUBREGION_SEVII67:
-            panel = PANEL_SEVII67;
+            src = WORLD_MAP_SRC_SEVII67;
+            region = WORLD_MAP_REGION_SEVII;
             break;
         default:
-            panel = PANEL_KANTO;
+            src = WORLD_MAP_SRC_KANTO;
             break;
         }
         break;
     default:
-        panel = PANEL_HOENN;
+        src = WORLD_MAP_SRC_HOENN;
+        region = WORLD_MAP_REGION_HOENN;
         break;
     }
 
-    x = pos.cursorPosX - MAPCURSOR_X_MIN - sPanelSrc[panel].x + sPanels[panel].x;
-    y = pos.cursorPosY - MAPCURSOR_Y_MIN - sPanelSrc[panel].y + sPanels[panel].y;
-    if (PanelAt(x, y) != (s32)panel)
-        return;
-    sWorldMap->playerPanel = panel;
+    x = pos.cursorPosX - MAPCURSOR_X_MIN;
+    y = pos.cursorPosY - MAPCURSOR_Y_MIN;
+    for (i = 0; i < ARRAY_COUNT(sWorldMapClusters); i++)
+    {
+        const struct WorldMapCluster *cluster = &sWorldMapClusters[i];
+
+        if (cluster->src == src && x >= cluster->x && x < cluster->x + cluster->w
+         && y >= cluster->y && y < cluster->y + cluster->h)
+        {
+            x += cluster->offsetX;
+            y += cluster->offsetY;
+            found = TRUE;
+            break;
+        }
+    }
+    if (!found)
+    {
+        // Position lies outside every cluster: use the first cell of the player's MAPSEC.
+        for (y = 0; y < WORLD_MAP_CELLS_H && !found; y++)
+        {
+            for (x = 0; x < WORLD_MAP_CELLS_W; x++)
+            {
+                if (sWorldMapSections[y][x] == pos.mapSecId)
+                {
+                    found = TRUE;
+                    break;
+                }
+            }
+        }
+        if (!found)
+            return;
+        y--;
+    }
+    sWorldMap->playerRegion = region;
+    sWorldMap->playerInSevii4567 = src == WORLD_MAP_SRC_SEVII45 || src == WORLD_MAP_SRC_SEVII67;
     sWorldMap->playerCellX = x;
     sWorldMap->playerCellY = y;
 }
@@ -794,7 +771,7 @@ static void CreatePlayerIcon(void)
     struct Sprite *sprite;
 
     sWorldMap->playerIconSpriteId = SPRITE_NONE;
-    if (sWorldMap->playerPanel == NO_PANEL)
+    if (sWorldMap->playerRegion == NO_REGION)
         return;
     sprite = CreatePlayerIconSprite(PLAYER_ICON_TAG, PLAYER_ICON_TAG);
     // Sprites share priority with BG0; keep the icon above the map, below the cursor.
@@ -866,48 +843,45 @@ static void UpdateWindows(void)
         }
         CopyWindowToVram(WIN_MAPSEC_NAME, COPYWIN_FULL);
     }
-    if (sWorldMap->panel != sWorldMap->shownPanel)
+    if (sWorldMap->region != sWorldMap->shownRegion)
     {
-        sWorldMap->shownPanel = sWorldMap->panel;
+        sWorldMap->shownRegion = sWorldMap->region;
         FillWindowPixelBuffer(WIN_REGION_NAME, PIXEL_FILL(1));
-        AddTextPrinterParameterized3(WIN_REGION_NAME, FONT_NORMAL, 2, 1, sTextColors, 0, sPanelNames[sWorldMap->panel]);
+        AddTextPrinterParameterized3(WIN_REGION_NAME, FONT_NORMAL, 2, 1, sTextColors, 0, sRegionNames[sWorldMap->region]);
         CopyWindowToVram(WIN_REGION_NAME, COPYWIN_FULL);
     }
+}
+
+static void DimBanks(u32 first, u32 count, u32 coeff)
+{
+    u32 offset = BG_PLTT_ID(first);
+
+    BlendPalette(offset, count * 16, coeff, RGB_BLACK);
+    CpuCopy16(&gPlttBufferFaded[offset], &gPlttBufferUnfaded[offset], count * 16 * sizeof(u16));
 }
 
 // Bakes the dimming into the unfaded buffer so palette fades keep it.
 static void DimLockedGroups(void)
 {
-    u32 panel, group;
+    u32 group;
 
-    u32 coeff = DIM_COEFF;
-
-    sWorldMap->dimmedGroups = 0;
     for (group = 0; group < NUM_BANK_GROUPS; group++)
-        sWorldMap->dimmedGroups |= 1 << group;
-    if (sWorldMap->flyMode)
     {
-        sWorldMap->dimmedGroups &= ~(1 << sWorldMap->flyGroup);
-        coeff = FLY_DIM_COEFF;
-    }
-    else
-    {
-        for (panel = 0; panel < NUM_PANELS; panel++)
+        if (sWorldMap->flyMode)
         {
-            if (IsPanelUnlocked(panel))
-                sWorldMap->dimmedGroups &= ~(1 << sPanelGroup[panel]);
+            if (group != sWorldMap->flyGroup)
+                DimBanks(sBankGroups[group].first, sBankGroups[group].count, FLY_DIM_COEFF);
         }
-    }
-
-    for (group = 0; group < NUM_BANK_GROUPS; group++)
-    {
-        u32 offset = BG_PLTT_ID(sBankGroups[group].first);
-        u32 count = sBankGroups[group].count * 16;
-
-        if (sWorldMap->dimmedGroups & (1 << group))
+        else if (group == GROUP_SEVII)
         {
-            BlendPalette(offset, count, coeff, RGB_BLACK);
-            CpuCopy16(&gPlttBufferFaded[offset], &gPlttBufferUnfaded[offset], count * sizeof(u16));
+            if (!IsSeviiUnitUnlocked(FALSE))
+                DimBanks(WORLD_MAP_BANK_SEVII123, 1, DIM_COEFF);
+            if (!IsSeviiUnitUnlocked(TRUE))
+                DimBanks(WORLD_MAP_BANK_SEVII4567, 1, DIM_COEFF);
+        }
+        else if (!IsRegionUnlocked(group + 1))
+        {
+            DimBanks(sBankGroups[group].first, sBankGroups[group].count, DIM_COEFF);
         }
     }
 }
@@ -934,16 +908,16 @@ static void CB2_WorldMap(void)
             SetMainCallback2(CB2_ExitWorldMap);
             return;
         }
-        if (sWorldMap->canSwitchPanels)
+        if (sWorldMap->canSwitchRegions)
         {
             if (JOY_NEW(R_BUTTON))
             {
-                SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, 1));
+                SetCursorToRegion(NextUnlockedRegion(sWorldMap->region, 1));
                 FollowCursor(TRUE);
             }
             else if (JOY_NEW(L_BUTTON))
             {
-                SetCursorToPanel(NextUnlockedPanel(sWorldMap->panel, -1));
+                SetCursorToRegion(NextUnlockedRegion(sWorldMap->region, -1));
                 FollowCursor(TRUE);
             }
         }
@@ -1026,9 +1000,9 @@ static u32 GetCursorPosWithinMapSec(void)
     u32 pos = 0;
     s32 x, y;
 
-    for (y = sPanels[sWorldMap->panel].y; y <= sWorldMap->cursorY; y++)
+    for (y = 0; y <= sWorldMap->cursorY; y++)
     {
-        for (x = sPanels[sWorldMap->panel].x; x < sPanels[sWorldMap->panel].x + sPanels[sWorldMap->panel].w; x++)
+        for (x = 0; x < WORLD_MAP_CELLS_W; x++)
         {
             if (y == sWorldMap->cursorY && x >= sWorldMap->cursorX)
                 break;
@@ -1111,32 +1085,23 @@ static void CreateFlyIcons(void)
         bool32 visited = FlagGet(sFlyLocations[i].flag);
         u32 width = gRegionMapEntries[mapSec].width;
         u32 height = gRegionMapEntries[mapSec].height;
-        u32 shape, spriteId, panel;
+        u32 shape, spriteId, region = GetMapSecGroup(mapSec) + 1;
         s32 x, y;
         bool32 found = FALSE;
 
-        // First cell in row-major order is the MAPSEC's top-left; only the MAPSEC's own panels are scanned.
-        x = y = 0;
-        for (panel = 0; panel < NUM_PANELS && !found; panel++)
+        // First cell in row-major order is the MAPSEC's top-left.
+        for (y = 0; y < WORLD_MAP_CELLS_H && !found; y++)
         {
-            s32 px, py;
-
-            if (sPanelGroup[panel] != GetMapSecGroup(mapSec))
-                continue;
-            for (py = sPanels[panel].y; py < sPanels[panel].y + sPanels[panel].h && !found; py++)
+            for (x = 0; x < WORLD_MAP_CELLS_W; x++)
             {
-                for (px = sPanels[panel].x; px < sPanels[panel].x + sPanels[panel].w; px++)
+                if (sWorldMapSections[y][x] == mapSec && sWorldMapRegions[y][x] == region)
                 {
-                    if (sWorldMapSections[py][px] == mapSec)
-                    {
-                        found = TRUE;
-                        x = px;
-                        y = py;
-                        break;
-                    }
+                    found = TRUE;
+                    break;
                 }
             }
         }
+        y--;
         if (!found)
             continue;
 
