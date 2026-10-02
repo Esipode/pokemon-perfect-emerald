@@ -470,6 +470,53 @@ void PlayerCustomization_GetBattleTransitionMugshotBgPalette(u8 style, u8 gender
     }
 }
 
+// The bag sprite palette is Emerald green and has no OW index layout. Its body ramp (indices 1-10)
+// shifts by the HSV delta from BAG_PAL_REF_INDEX to the style's bag slot colour: the player's choice,
+// else the slot's ROM colour, so non-Emerald styles default to their own bag colour.
+#define BAG_PAL_REF_INDEX 4
+
+const u16 *PlayerCustomization_GetBagPaletteOverride(const u16 *basePal)
+{
+    u8 style = Player_GetSpriteStyle();
+    u8 gender = gSaveBlock2Ptr->playerGender;
+    u8 slot = sBagSlots[style][gender];
+    u16 value = gSaveBlock2Ptr->playerColorSlots[slot];
+    u8 h1, s1, v1, h2, s2, v2;
+    s16 dh, ds, dv;
+    u32 i;
+
+    if (value == 0)
+    {
+        if (style == PLAYER_SPRITE_STYLE_EMERALD)
+            return NULL;
+        value = PlayerCustomization_GetSlotRomColor(style, gender, slot);
+    }
+
+    PlayerCustomization_RgbToHsv(value & ~PLAYER_COLOR_SET, &h1, &s1, &v1);
+    PlayerCustomization_RgbToHsv(basePal[BAG_PAL_REF_INDEX], &h2, &s2, &v2);
+    dh = (s16)h1 - (s16)h2;
+    ds = (s16)s1 - (s16)s2;
+    dv = (s16)v1 - (s16)v2;
+
+    for (i = 0; i < 16; i++)
+        sOwPaletteBuffer[i] = basePal[i];
+
+    for (i = 1; i <= 10; i++)
+    {
+        u8 h, s, v;
+        s16 ns, nv;
+
+        PlayerCustomization_RgbToHsv(basePal[i], &h, &s, &v);
+        h += (u8)dh;
+        ns = (s16)s + ds;
+        nv = (s16)v + dv;
+        ns = ns < 0 ? 0 : (ns > 255 ? 255 : ns);
+        nv = nv < 0 ? 0 : (nv > 255 ? 255 : nv);
+        sOwPaletteBuffer[i] = PlayerCustomization_HsvToRgb(h, (u8)ns, (u8)nv);
+    }
+    return sOwPaletteBuffer;
+}
+
 void PlayerCustomization_BuildPreviewPalette(u8 style, u8 gender, const u16 *choices, u16 *dest)
 {
     const u16 *basePal = GetOwBasePalette(style, gender);

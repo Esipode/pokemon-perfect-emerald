@@ -33,6 +33,7 @@
 #include "overworld.h"
 #include "palette.h"
 #include "party_menu.h"
+#include "player_customization.h"
 #include "player_pc.h"
 #include "pokemon.h"
 #include "pokemon_summary_screen.h"
@@ -904,7 +905,20 @@ static bool8 LoadBagMenu_Graphics(void)
         gBagMenu->graphicsLoadState++;
         break;
     case 4:
-        LoadSpritePalette(&gBagPaletteTable);
+        {
+            const u16 *bagPal = IsWallysBag() ? NULL : PlayerCustomization_GetBagPaletteOverride(gBagPalette);
+
+            if (bagPal != NULL)
+            {
+                struct SpritePalette pal = {bagPal, gBagPaletteTable.tag};
+
+                LoadSpritePalette(&pal);
+            }
+            else
+            {
+                LoadSpritePalette(&gBagPaletteTable);
+            }
+        }
         gBagMenu->graphicsLoadState++;
         break;
     default:

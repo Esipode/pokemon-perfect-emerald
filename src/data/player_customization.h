@@ -233,6 +233,14 @@ static const struct PlayerColorSlotInfo
     },
 };
 
+// Slot that colours the Bag screen's bag sprite, per (style, gender).
+static const u8 sBagSlots[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT] =
+{
+    [PLAYER_SPRITE_STYLE_EMERALD] = {[MALE] = 2, [FEMALE] = 1},
+    [PLAYER_SPRITE_STYLE_FRLG] = {[MALE] = 7, [FEMALE] = 9},
+    [PLAYER_SPRITE_STYLE_JOHTO] = {[MALE] = 6, [FEMALE] = 7},
+};
+
 static const struct PlayerColorGroupInfo
     sPlayerColorGroups[PLAYER_SPRITE_STYLE_COUNT][GENDER_COUNT][PLAYER_COLOR_REGION_COUNT] =
 {

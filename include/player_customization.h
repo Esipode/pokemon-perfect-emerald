@@ -79,6 +79,10 @@ const u16 *PlayerCustomization_GetTrainerPaletteOverride(u32 trainerPicId);
 // pics have their own layout and take backIndices.
 const u16 *PlayerCustomization_GetTrainerBackPaletteOverride(u32 trainerPicId);
 
+// Recolours the Bag screen's bag sprite palette `basePal` from the style's bag slot colour. NULL only
+// for an Emerald style with that slot unset (the palette is already right); otherwise the static buffer shared with PlayerCustomization_GetOwPaletteOverride.
+const u16 *PlayerCustomization_GetBagPaletteOverride(const u16 *basePal);
+
 // TRUE if every slot is still at its vanilla (zeroed) value.
 bool32 PlayerCustomization_IsDefault(void);
 
