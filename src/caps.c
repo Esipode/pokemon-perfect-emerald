@@ -114,6 +114,20 @@ u32 GetKantoBadgeCount(void)
     return count;
 }
 
+u32 GetJohtoBadgeCount(void)
+{
+    u32 i;
+    u32 count = 0;
+
+    for (i = 0; i < NUM_BADGES; i++)
+    {
+        if (FlagGet(FLAG_JOHTO_BADGE01_GET + i))
+            count++;
+    }
+
+    return count;
+}
+
 // The level cap as dictated by story/badge progression. The flag ladder below ignores
 // FLAG_LEVEL_CAP_OFF entirely, so this still tracks progression for a player who disabled their own
 // cap (e.g. roaming legendaries, which should never jump to MAX_LEVEL just because the player

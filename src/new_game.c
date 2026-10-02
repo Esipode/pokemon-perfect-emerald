@@ -58,6 +58,7 @@
 
 extern const u8 EventScript_ResetAllMapFlags[];
 extern const u8 EventScript_ResetAllMapFlagsFrlg[];
+extern const u8 EventScript_ResetAllMapFlagsJohto[];
 
 static void ClearFrontierRecord(void);
 static void WarpToTruck(void);
@@ -625,6 +626,7 @@ void NewGameInitData(void)
     WarpToTruck();
     RunScriptImmediately(EventScript_ResetAllMapFlags);
     RunScriptImmediately(EventScript_ResetAllMapFlagsFrlg);
+    RunScriptImmediately(EventScript_ResetAllMapFlagsJohto);
     ResetMiniGamesRecords();
     InitLilycoveLady();
     ResetAllApprenticeData();

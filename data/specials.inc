@@ -632,3 +632,5 @@ gSpecials::
 	def_special RemoveSportBalls
 	def_special ShowBugContestChosenMon
 	def_special DoSlidingPuzzle
+	def_special CheckCelebi
+	def_special GetJohtoBadgeCount

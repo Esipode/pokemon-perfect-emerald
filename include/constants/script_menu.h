@@ -248,6 +248,7 @@ enum
 #define STDSTRING_MEGA_STONES      39
 #define STDSTRING_Z_CRYSTALS       40
 #define STDSTRING_TERA_SHARDS      41
+#define STDSTRING_MEDICINE         42
 
 // Dynamic Multichoice Callbacks
 

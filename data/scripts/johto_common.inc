@@ -134,10 +134,3 @@ Johto_Mart_KurtBalls::
 	.2byte ITEM_FAST_BALL
 	.2byte ITEM_LEVEL_BALL
 	pokemartlistend
-
-@ Bug-Catching Contest end scripts. Replaced by the imported contest script file at Stage 13.
-BugContest_EventScript_TimesUp::
-	end
-
-BugContest_EventScript_WhiteOut::
-	end

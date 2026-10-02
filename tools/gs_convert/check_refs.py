@@ -55,7 +55,6 @@ SPECIALS_HANDLED = {
     "Special_MomOpenDepositInput": ("removed", "F12"),
     "Special_MomOpenWithdrawInput": ("removed", "F12"),
     "Special_ViewVoltorbFlip": ("removed", "F11"),
-    "CheckCelebi": ("deferred", "Stage 25 (Celebi shrine)"),
 }
 
 # callnative targets the rename tool deletes.
@@ -100,10 +99,64 @@ def target_native_functions():
     return names
 
 
+def check_maps():
+    """Stage 13 map-level checks on the imported Johto folders: warps, connections, layouts and assets."""
+    groups = json.load(open(os.path.join(ROOT, "data/maps/map_groups.json")))
+    all_maps = {}
+    for g in groups["group_order"]:
+        for folder in groups[g]:
+            path = os.path.join(ROOT, "data/maps", folder, "map.json")
+            if os.path.exists(path):
+                all_maps[json.load(open(path))["id"]] = (g, folder, json.load(open(path)))
+    layouts = {l["id"]: l for l in json.load(open(os.path.join(ROOT, "data/layouts/layouts.json")))["layouts"]}
+    problems = []
+    johto = [(i, v) for i, v in all_maps.items() if v[0].endswith("_Johto")]
+    for mid, (_, folder, data) in johto:
+        for n, w in enumerate(data.get("warp_events") or []):
+            dest = w["dest_map"]
+            if dest == "MAP_DYNAMIC":
+                continue
+            if dest not in all_maps:
+                problems.append("%s warp %d -> missing map %s" % (folder, n, dest))
+            elif int(w["dest_warp_id"]) >= len(all_maps[dest][2].get("warp_events") or []):
+                problems.append("%s warp %d -> %s warp %s out of range" % (folder, n, dest, w["dest_warp_id"]))
+            elif not all_maps[dest][0].endswith("_Johto"):
+                problems.append("%s warp %d leaves Johto for %s" % (folder, n, dest))
+        for c in data.get("connections") or []:
+            if c["map"] not in all_maps:
+                problems.append("%s connection -> missing map %s" % (folder, c["map"]))
+            elif not all_maps[c["map"]][0].endswith("_Johto"):
+                problems.append("%s connection leaves Johto for %s" % (folder, c["map"]))
+        lay = layouts.get(data["layout"])
+        if not lay:
+            problems.append("%s layout %s missing" % (folder, data["layout"]))
+            continue
+        for key in ("border_filepath", "blockdata_filepath"):
+            if not os.path.exists(os.path.join(ROOT, lay[key])):
+                problems.append("%s: %s missing" % (folder, lay[key]))
+        for key in ("primary_tileset", "secondary_tileset"):
+            if not re.search(r"\b%s\b" % lay[key], read(os.path.join(ROOT, "src/data/tilesets/headers.h"))):
+                problems.append("%s: tileset %s has no header" % (folder, lay[key]))
+    # Warps from outside Johto into a Johto map.
+    for mid, (g, folder, data) in all_maps.items():
+        if g.endswith("_Johto"):
+            continue
+        for n, w in enumerate(data.get("warp_events") or []):
+            if w["dest_map"] in all_maps and all_maps[w["dest_map"]][0].endswith("_Johto"):
+                problems.append("%s warp %d enters Johto (%s)" % (folder, n, w["dest_map"]))
+    for p in problems:
+        print(p)
+    print("maps checked: %d Johto, %d total; problems: %d" % (len(johto), len(all_maps), len(problems)))
+    return 1 if problems else 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     add_hns_arg(parser)
+    parser.add_argument("--maps", action="store_true", help="check the imported Johto maps instead of the HnS scripts")
     args = parser.parse_args()
+    if args.maps:
+        return check_maps()
 
     rename = json.load(open(os.path.join(OUT_DIR, "rename_map.json")))
     macros = target_macros()

@@ -568,4 +568,7 @@
 #define FLAG_VISITED_RECEPTION_GATE                              (JOHTO_FLAGS_START + 0x33D)
 #define FLAG_VISITED_SAFARI_ZONE_GATE                            (JOHTO_FLAGS_START + 0x33E)
 
+// Set at New Game; hides object events whose HnS hide flag belonged to cut content (0x2340)
+#define FLAG_JOHTO_ALWAYS_HIDDEN                                 (JOHTO_FLAGS_START + 0x340)
+
 #endif // GUARD_CONSTANTS_FLAGS_JOHTO_H

@@ -145,6 +145,28 @@ enum __attribute__((__packed__)) Flavor
 
 // Remainder are unused
 
+// Johto
+#define BERRY_TREE_ROUTE_30_ORAN      90
+#define BERRY_TREE_ROUTE_26_SITRUS    91
+#define BERRY_TREE_CHERI_1            92
+#define BERRY_TREE_CHERI_2            93
+#define BERRY_TREE_CHESTO_1           94
+#define BERRY_TREE_CHESTO_2           95
+#define BERRY_TREE_PECHA_1            96
+#define BERRY_TREE_PECHA_2            97
+#define BERRY_TREE_RAWST_1            98
+#define BERRY_TREE_RAWST_2            99
+#define BERRY_TREE_ASPEAR_1           100
+#define BERRY_TREE_ASPEAR_2           101
+#define BERRY_TREE_LEPPA_1            102
+#define BERRY_TREE_LEPPA_2            103
+#define BERRY_TREE_ORAN_1             104
+#define BERRY_TREE_ORAN_2             105
+#define BERRY_TREE_PERSIM_1           106
+#define BERRY_TREE_PERSIM_2           107
+#define BERRY_TREE_LUM_1              108
+#define BERRY_TREE_SITRUS_1           109
+
 #define BERRY_TREES_COUNT 128
 
 #endif // GUARD_CONSTANTS_BERRY_H

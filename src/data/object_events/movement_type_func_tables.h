@@ -472,3 +472,11 @@ u8 (*const gMovementTypeFuncs_Patrol[])(struct ObjectEvent *, struct Sprite *) =
     MovementType_Patrol_Step1,
     MovementType_WalkSequence_Step2,
 };
+
+u8 (*const gMovementTypeFuncs_TowerBeam[])(struct ObjectEvent *, struct Sprite *) = {
+    MovementType_TowerBeam_Step0,
+    MovementType_TowerBeam_Step1,
+    MovementType_TowerBeam_Step2,
+    MovementType_TowerBeam_Step3,
+    MovementType_TowerBeam_Step4,
+};

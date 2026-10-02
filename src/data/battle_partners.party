@@ -42,3 +42,41 @@ EVs: 252 Atk / 252 SpA / 6 SpD
 - Protect
 - Solar Beam
 - Dragon Claw
+
+=== PARTNER_LANCE_JOHTO ===
+Name: LANCE
+Class: Champion Johto
+Pic: Champion Lance Johto
+Gender: Male
+Music: Hg Champion
+AI: Basic Trainer
+
+Dragonite
+Adamant Nature
+Level: 42
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 0 HP / 252 Atk / 252 Def / 0 SpA / 6 SpD / 0 Spe
+- Hyper Beam
+- Thunder
+- Safeguard
+- Outrage
+
+Dragonair
+Adamant Nature
+Level: 35
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 252 HP / 0 Atk / 0 Def / 0 SpA / 6 SpD / 252 Spe
+- Blizzard
+- Thunder Wave
+- Flamethrower
+- Quick Attack
+
+Charizard
+Adamant Nature
+Level: 36
+IVs: 31 HP / 31 Atk / 31 Def / 31 SpA / 31 SpD / 31 Spe
+EVs: 0 HP / 252 Atk / 0 Def / 0 SpA / 252 SpD / 6 Spe
+- Flamethrower
+- Wing Attack
+- Double Team
+- Steel Wing

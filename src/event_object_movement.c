@@ -370,6 +370,7 @@ static void (*const sMovementTypeCallbacks[])(struct Sprite *) =
     [MOVEMENT_TYPE_APPROACH_PLAYER_OWE] = MovementType_OverworldWildEncounter_ApproachPlayer,
     [MOVEMENT_TYPE_DESPAWN_OWE] = MovementType_OverworldWildEncounter_Despawn,
     [MOVEMENT_TYPE_PATROL] = MovementType_Patrol,
+    [MOVEMENT_TYPE_TOWER_BEAM] = MovementType_TowerBeam,
 };
 
 static const bool8 sMovementTypeHasRange[NUM_MOVEMENT_TYPES] = {
@@ -506,6 +507,7 @@ const u8 gInitialMovementTypeFacingDirections[NUM_MOVEMENT_TYPES] = {
     [MOVEMENT_TYPE_APPROACH_PLAYER_OWE] = DIR_SOUTH,
     [MOVEMENT_TYPE_DESPAWN_OWE] = DIR_SOUTH,
     [MOVEMENT_TYPE_PATROL] = DIR_SOUTH,
+    [MOVEMENT_TYPE_TOWER_BEAM] = DIR_SOUTH,
 };
 
 #include "data/object_events/object_event_graphics_info_pointers.h"
@@ -5177,6 +5179,62 @@ bool8 MovementType_WalkSequence_Step2(struct ObjectEvent *objectEvent, struct Sp
 }
 
 movement_type_def(MovementType_Patrol, gMovementTypeFuncs_Patrol)
+
+// Tin Tower beam: cycles through four in-place animations.
+movement_type_def(MovementType_TowerBeam, gMovementTypeFuncs_TowerBeam)
+
+static const u8 sTowerBeamActions[] = {
+    MOVEMENT_ACTION_WALK_IN_PLACE_FAST_LEFT,
+    MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_LEFT,
+    MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_RIGHT,
+    MOVEMENT_ACTION_WALK_IN_PLACE_NORMAL_DOWN,
+};
+
+u8 MovementType_TowerBeam_Step0(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    ClearObjectEventMovement(objectEvent, sprite);
+    ObjectEventSetSingleMovement(objectEvent, sprite, sTowerBeamActions[0]);
+    sprite->sTypeFuncId = 1;
+    return TRUE;
+}
+
+// Steps 1-3 play the next action once the previous one ends; step 4 loops.
+u8 MovementType_TowerBeam_Step1(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (ObjectEventExecSingleMovementAction(objectEvent, sprite))
+    {
+        ObjectEventSetSingleMovement(objectEvent, sprite, sTowerBeamActions[1]);
+        sprite->sTypeFuncId = 2;
+    }
+    return FALSE;
+}
+
+u8 MovementType_TowerBeam_Step2(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (ObjectEventExecSingleMovementAction(objectEvent, sprite))
+    {
+        ObjectEventSetSingleMovement(objectEvent, sprite, sTowerBeamActions[2]);
+        sprite->sTypeFuncId = 3;
+    }
+    return FALSE;
+}
+
+u8 MovementType_TowerBeam_Step3(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (ObjectEventExecSingleMovementAction(objectEvent, sprite))
+    {
+        ObjectEventSetSingleMovement(objectEvent, sprite, sTowerBeamActions[3]);
+        sprite->sTypeFuncId = 4;
+    }
+    return FALSE;
+}
+
+u8 MovementType_TowerBeam_Step4(struct ObjectEvent *objectEvent, struct Sprite *sprite)
+{
+    if (ObjectEventExecSingleMovementAction(objectEvent, sprite))
+        sprite->sTypeFuncId = 0;
+    return FALSE;
+}
 
 static const struct PatrolPath *GetPatrolPath(u16 graphicsId)
 {

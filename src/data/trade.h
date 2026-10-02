@@ -1058,7 +1058,42 @@ static const struct InGameTrade sIngameTrades[] =
         .otId = 9853,
         .otName = _("GARETT"),
         .otGender = MALE,
-    }
+    },
+    [INGAME_TRADE_RANDOM14] =
+    {
+        .isRandom = TRUE,
+        .otId = 44312,
+        .otName = _("JOSE"),
+        .otGender = MALE,
+    },
+    [INGAME_TRADE_RANDOM15] =
+    {
+        .isRandom = TRUE,
+        .otId = 29189,
+        .otName = _("TIM"),
+        .otGender = MALE,
+    },
+    [INGAME_TRADE_RANDOM16] =
+    {
+        .isRandom = TRUE,
+        .otId = 1985,
+        .otName = _("REYLEY"),
+        .otGender = MALE,
+    },
+    [INGAME_TRADE_RANDOM17] =
+    {
+        .isRandom = TRUE,
+        .otId = 48926,
+        .otName = _("RUDY"),
+        .otGender = MALE,
+    },
+    [INGAME_TRADE_RANDOM18] =
+    {
+        .isRandom = TRUE,
+        .otId = 26491,
+        .otName = _("JASMINE"),
+        .otGender = MALE,
+    },
 };
 
 static const u16 sIngameTradeMail[][MAIL_WORDS_COUNT + 1] =

@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "event_data.h"
+#include "event_object_movement.h"
 #include "limited_party.h"
 #include "overworld.h"
 #include "pokemon.h"
@@ -77,4 +78,19 @@ void GivePartyMonLandRibbon(void)
 void GivePartyMonNationalRibbon(void)
 {
     GivePartyRibbon(MON_DATA_NATIONAL_RIBBON);
+}
+
+// True when a full-HP Celebi leads the party and is visible as the follower.
+bool8 CheckCelebi(void)
+{
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][0];
+    struct ObjectEvent *follower;
+
+    if (GetMonData(mon, MON_DATA_SPECIES_OR_EGG) != SPECIES_CELEBI)
+        return FALSE;
+    if (GetMonData(mon, MON_DATA_HP) != GetMonData(mon, MON_DATA_MAX_HP))
+        return FALSE;
+
+    follower = GetFollowerObject();
+    return follower != NULL && !follower->invisible;
 }

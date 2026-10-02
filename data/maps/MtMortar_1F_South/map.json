@@ -1,0 +1,217 @@
+{
+  "id": "MAP_MT_MORTAR_1F_SOUTH",
+  "name": "MtMortar_1F_South",
+  "layout": "LAYOUT_MT_MORTAR_1F_SOUTH",
+  "music": "MUS_HG_UNION_CAVE",
+  "region_map_section": "MAPSEC_MT_MORTAR",
+  "requires_flash": false,
+  "weather": "WEATHER_NONE",
+  "map_type": "MAP_TYPE_UNDERGROUND",
+  "allow_cycling": true,
+  "allow_escaping": true,
+  "allow_running": true,
+  "show_map_name": true,
+  "battle_scene": "MAP_BATTLE_SCENE_NORMAL",
+  "region": "REGION_JOHTO",
+  "connections": [],
+  "object_events": [
+    {
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 65,
+      "y": 25,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_NONE",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "MtMortar_1F_South_EventScript_Item_Elixir",
+      "flag": "FLAG_ITEM_MTMORTAR1_ELIXIR"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_POKE_BALL",
+      "x": 24,
+      "y": 14,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_NONE",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "MtMortar_1F_South_EventScript_Item_Aerial_Ace",
+      "flag": "FLAG_ITEM_MTMORTAR1_TM_AERIAL_ACE"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(GEODUDE)",
+      "x": 29,
+      "y": 39,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(GOLBAT)",
+      "x": 53,
+      "y": 36,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(MACHOP)",
+      "x": 54,
+      "y": 14,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(CUBONE)",
+      "x": 63,
+      "y": 42,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(RHYHORN)",
+      "x": 12,
+      "y": 28,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(RHYHORN)",
+      "x": 17,
+      "y": 27,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WANDER_AROUND",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    },
+    {
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(ZUBAT)",
+      "x": 14,
+      "y": 35,
+      "elevation": 0,
+      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
+      "movement_range_x": 0,
+      "movement_range_y": 0,
+      "trainer_type": "TRAINER_TYPE_NONE",
+      "trainer_sight_or_berry_tree_id": "0",
+      "script": "NULL",
+      "flag": "0"
+    }
+  ],
+  "warp_events": [
+    {
+      "x": 16,
+      "y": 40,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE42",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 42,
+      "y": 46,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE42",
+      "dest_warp_id": "2"
+    },
+    {
+      "x": 66,
+      "y": 43,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE42",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 30,
+      "y": 26,
+      "elevation": 0,
+      "dest_map": "MAP_MT_MORTAR_1F_NORTH",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 54,
+      "y": 26,
+      "elevation": 0,
+      "dest_map": "MAP_MT_MORTAR_1F_NORTH",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 41,
+      "y": 2,
+      "elevation": 0,
+      "dest_map": "MAP_MT_MORTAR_2F",
+      "dest_warp_id": "0"
+    },
+    {
+      "x": 64,
+      "y": 11,
+      "elevation": 0,
+      "dest_map": "MAP_MT_MORTAR_1F_NORTH",
+      "dest_warp_id": "4"
+    },
+    {
+      "x": 22,
+      "y": 10,
+      "elevation": 0,
+      "dest_map": "MAP_MT_MORTAR_1F_NORTH",
+      "dest_warp_id": "3"
+    },
+    {
+      "x": 42,
+      "y": 41,
+      "elevation": 0,
+      "dest_map": "MAP_MT_MORTAR_B1F",
+      "dest_warp_id": "1"
+    },
+    {
+      "x": 56,
+      "y": 46,
+      "elevation": 0,
+      "dest_map": "MAP_ROUTE42",
+      "dest_warp_id": "4"
+    },
+    {
+      "x": 77,
+      "y": 27,
+      "elevation": 0,
+      "dest_map": "MAP_MT_MORTAR_1F_NORTH",
+      "dest_warp_id": "6"
+    }
+  ],
+  "coord_events": [],
+  "bg_events": []
+}
