@@ -2874,7 +2874,8 @@ static u16 GetJohtoTrainerIdFromStruct(const struct Trainer *trainer)
     {
         const struct Trainer *johtoStart = &gTrainers[difficulty][JOHTO_TRAINERS_START];
 
-        if (trainer >= johtoStart && trainer < johtoStart + MAX_JOHTO_TRAINERS_COUNT)
+        // gTrainers rows hold TRAINERS_COUNT entries, so a MAX_JOHTO_TRAINERS_COUNT bound would run into the next row's Hoenn trainers.
+        if (trainer >= johtoStart && trainer < johtoStart + TRAINERS_COUNT_JOHTO)
             return JOHTO_TRAINERS_START + (trainer - johtoStart);
     }
 
