@@ -1,6 +1,6 @@
 ## Lugia — The Storm Beneath the Sea
 
-### Location: Navel Rock
+### Location: Whirl Islands (Lugia Chamber) - Johto story, Silver Wing
 
 Lugia fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic

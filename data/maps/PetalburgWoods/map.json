@@ -186,19 +186,6 @@
       "flag": "FLAG_TEMP_13"
     },
     {
-      "graphics_id": "OBJ_EVENT_GFX_SPECIES(CELEBI)",
-      "x": 38,
-      "y": 15,
-      "elevation": 0,
-      "movement_type": "MOVEMENT_TYPE_WALK_IN_PLACE_DOWN",
-      "movement_range_x": 0,
-      "movement_range_y": 0,
-      "trainer_type": "TRAINER_TYPE_NONE",
-      "trainer_sight_or_berry_tree_id": "0",
-      "script": "PetalburgWoods_Celebi_Encounter",
-      "flag": "FLAG_HIDE_CELEBI"
-    },
-    {
       "graphics_id": "OBJ_EVENT_GFX_SPECIES(CHANSEY)",
       "x": 27,
       "y": 26,

@@ -15,21 +15,8 @@ PetalburgWoods_OnLoad:
 	goto_if_ne VAR_0x8000, TIME_NIGHT, PetalburgWoods_HideWoChienArena
 	goto PetalburgWoods_ShowWoChienArena
 
-PetalburgWoods_CelebiGate:
-    setvar VAR_0x8004, SPECIES_CELEBI
-    setvar VAR_0x8005, LAYOUT_PETALBURG_WOODS
-    setvar VAR_0x8006, WEEKDAY_SUN
-    setvar VAR_0x8007, 1
-    special CheckValidLegendaryEncounter
-	goto_if_ne VAR_RESULT, TRUE, PetalburgWoods_HideCelebiArena
-	gettimeofday
-	goto_if_ne VAR_0x8000, TIME_MORNING, PetalburgWoods_HideCelebiArena
-	goto PetalburgWoods_ShowCelebiArena
-	end
-
 PetalburgWoods_OnTransition:
 	setvar VAR_JAGGED_PASS_ASH_WEATHER, 1
-	updatelegendaryvisibility SPECIES_CELEBI, FLAG_HIDE_CELEBI
 	updatelegendaryvisibility SPECIES_WO_CHIEN, FLAG_HIDE_WO_CHIEN
 	end
 
@@ -38,7 +25,7 @@ PetalburgWoods_WoChien_Encounter::
 
 PetalburgWoods_HideWoChienArena:
 	setflag FLAG_HIDE_WO_CHIEN
-	goto PetalburgWoods_CelebiGate
+	end
 
 PetalburgWoods_ShowWoChienArena:
 	setflag FLAG_TEMP_13
@@ -143,108 +130,7 @@ PetalburgWoods_ShowWoChienArena_ParticlesDone:
 	setmetatilewithelevation 22, 25, 0x001, FALSE, 3
 	setmetatilewithelevation 23, 25, 0x001, FALSE, 3
 	setmetatilewithelevation 24, 25, 0x001, FALSE, 3
-	goto PetalburgWoods_CelebiGate
-
-PetalburgWoods_Celebi_Encounter::
-	goto LegendaryEncounter_EventScript_Celebi
-
-PetalburgWoods_HideCelebiArena:
-	setflag FLAG_HIDE_CELEBI
-	return
-
-PetalburgWoods_ShowCelebiArena:
-	setflag FLAG_TEMP_13
-	setmetatilewithelevation 34, 11, 0x00D, FALSE, 3
-	setmetatilewithelevation 35, 11, 0x00D, FALSE, 3
-	setmetatilewithelevation 36, 11, 0x00D, FALSE, 3
-	setmetatilewithelevation 37, 11, 0x00D, FALSE, 3
-	setmetatilewithelevation 38, 11, 0x001, FALSE, 3
-	setmetatilewithelevation 39, 11, 0x001, FALSE, 3
-
-	setmetatilewithelevation 34, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 35, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 36, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 37, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 38, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 39, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 40, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 41, 12, 0x004, FALSE, 3
-	setmetatilewithelevation 42, 12, 0x004, FALSE, 3
-
-	setmetatilewithelevation 33, 13, 0x1E7, TRUE, 0
-	setmetatilewithelevation 34, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 35, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 36, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 37, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 38, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 39, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 40, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 41, 13, 0x004, FALSE, 3
-	setmetatilewithelevation 42, 13, 0x004, FALSE, 3
-
-	setmetatilewithelevation 33, 14, 0x001, FALSE, 3
-	setmetatilewithelevation 34, 14, 0x004, FALSE, 3
-	setmetatilewithelevation 35, 14, 0x004, FALSE, 3
-	setmetatilewithelevation 36, 14, 0x001, FALSE, 3
-	setmetatilewithelevation 37, 14, 0x001, FALSE, 3
-	setmetatilewithelevation 38, 14, 0x001, FALSE, 3
-	setmetatilewithelevation 39, 14, 0x001, FALSE, 3
-	setmetatilewithelevation 40, 14, 0x001, FALSE, 3
-	setmetatilewithelevation 41, 14, 0x004, FALSE, 3
-	setmetatilewithelevation 42, 14, 0x004, FALSE, 3
-
-	setmetatilewithelevation 33, 15, 0x1CF, FALSE, 3
-	setmetatilewithelevation 34, 15, 0x004, FALSE, 3
-	setmetatilewithelevation 35, 15, 0x004, FALSE, 3
-	setmetatilewithelevation 36, 15, 0x001, FALSE, 3
-	setmetatilewithelevation 37, 15, 0x001, FALSE, 3
-	setmetatilewithelevation 38, 15, 0x001, FALSE, 3
-	setmetatilewithelevation 39, 15, 0x001, FALSE, 3
-	setmetatilewithelevation 40, 15, 0x001, FALSE, 3
-	setmetatilewithelevation 41, 15, 0x004, FALSE, 3
-	setmetatilewithelevation 42, 15, 0x004, FALSE, 3
-
-	setmetatilewithelevation 34, 16, 0x004, FALSE, 3
-	setmetatilewithelevation 35, 16, 0x004, FALSE, 3
-	setmetatilewithelevation 36, 16, 0x001, FALSE, 3
-	setmetatilewithelevation 37, 16, 0x001, FALSE, 3
-	setmetatilewithelevation 38, 16, 0x001, FALSE, 3
-	setmetatilewithelevation 39, 16, 0x001, FALSE, 3
-	setmetatilewithelevation 40, 16, 0x001, FALSE, 3
-	setmetatilewithelevation 41, 16, 0x004, FALSE, 3
-	setmetatilewithelevation 42, 16, 0x004, FALSE, 3
-
-	setmetatilewithelevation 34, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 35, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 36, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 37, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 38, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 39, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 40, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 41, 17, 0x004, FALSE, 3
-	setmetatilewithelevation 42, 17, 0x004, FALSE, 3
-
-	setmetatilewithelevation 34, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 35, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 36, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 37, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 38, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 39, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 40, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 41, 18, 0x004, FALSE, 3
-	setmetatilewithelevation 42, 18, 0x004, FALSE, 3
-
-	setmetatilewithelevation 34, 19, 0x001, FALSE, 3
-	setmetatilewithelevation 35, 19, 0x001, FALSE, 3
-	setmetatilewithelevation 36, 19, 0x1CE, FALSE, 3
-	setmetatilewithelevation 37, 19, 0x1CF, FALSE, 3
-	setmetatilewithelevation 38, 19, 0x1CE, FALSE, 3
-	setmetatilewithelevation 39, 19, 0x1CF, FALSE, 3
-	setmetatilewithelevation 40, 19, 0x1CE, FALSE, 3
-	setmetatilewithelevation 41, 19, 0x1CF, FALSE, 3
-	setmetatilewithelevation 42, 19, 0x001, FALSE, 3
-	return
-
+	end
 
 PetalburgWoods_EventScript_DevonResearcherLeft::
 	lockall

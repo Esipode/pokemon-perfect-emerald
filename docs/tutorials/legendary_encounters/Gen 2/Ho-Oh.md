@@ -1,6 +1,6 @@
 ## Ho-Oh — The Rainbow Above the Ashes
 
-### Location: Navel Rock
+### Location: Tin Tower roof - Johto story, Rainbow Wing / Clear Bell
 
 Ho-Oh fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic

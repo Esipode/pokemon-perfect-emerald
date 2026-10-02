@@ -227,6 +227,7 @@ IlexForest_EventScript_Celebi_Event::
 	msgbox IlexForest_Text_ShrineCelebiEvent, MSGBOX_YESNO
 	goto_if_eq VAR_RESULT, FALSE, IlexForest_EventScript_Shrine_Cancel
 	msgbox IlexForest_Text_InsertGSBall, MSGBOX_DEFAULT
+	clearflag FLAG_HIDE_CELEBI
 	addobject LOCALID_ILEX_FOREST_CELEBI
 	playse SE_M_PETAL_DANCE
 	applymovement LOCALID_ILEX_FOREST_CELEBI, IlexForest_Movement_Celebi1
@@ -242,12 +243,17 @@ IlexForest_EventScript_Celebi_Event::
 	playmoncry SPECIES_CELEBI, CRY_MODE_ENCOUNTER
 	delay 40
 	waitmoncry
-	seteventmon SPECIES_CELEBI, 40
+	setbattleencounter ENCOUNTER_CELEBI
+	setwildbattle SPECIES_CELEBI, 70        @ level is overridden by Level: LevelCap
+	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
+	clearflag FLAG_SYS_CTRL_OBJ_DELETE
 	specialvar VAR_RESULT, GetBattleOutcome
-	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, IlexForest_EventScript_Shrine_Caught
+	goto_if_ne VAR_RESULT, B_OUTCOME_CAUGHT, IlexForest_EventScript_Shrine_CelebiGone
+	call IlexForest_EventScript_Shrine_Caught
 	fadescreenswapbuffers FADE_TO_BLACK
 	removeobject LOCALID_ILEX_FOREST_CELEBI
+	setflag FLAG_HIDE_CELEBI
 	special GivePartyMonNationalRibbon
 	fadescreenswapbuffers FADE_FROM_BLACK
 IlexForest_EventScript_Kurt::
@@ -269,6 +275,15 @@ IlexForest_EventScript_Kurt::
 IlexForest_EventScript_Shrine_Caught::
 	setflag FLAG_CAUGHT_CELEBI
 	return
+
+@ Only catching Celebi ends the chain; the shrine stays at state 9 so it can be challenged again.
+IlexForest_EventScript_Shrine_CelebiGone::
+	fadescreenswapbuffers FADE_TO_BLACK
+	removeobject LOCALID_ILEX_FOREST_CELEBI
+	setflag FLAG_HIDE_CELEBI
+	fadescreenswapbuffers FADE_FROM_BLACK
+	release
+	end
 
 IlexForest_EventScript_Shrine_Cancel::
 	closemessage

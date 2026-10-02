@@ -23,10 +23,12 @@ TinTower_RoofDay_MapScript_HoohStory::
 
 TinTower_RoofDay_MapScript_HoohPostStoryGone::
 	setflag FLAG_HIDE_TIN_TOWER_KIMONO_GIRLS
+	setflag FLAG_HIDE_HO_OH
 	end
 
 TinTower_RoofDay_MapScript_HoohPostStoryEncounter::
 	setflag FLAG_HIDE_TIN_TOWER_KIMONO_GIRLS
+	updatelegendaryvisibility SPECIES_HO_OH, FLAG_HIDE_HO_OH
 	setobjectxyperm LOCALID_HO_OH, 10, 6
 	end
 
@@ -171,7 +173,8 @@ TinTower_RoofDay_EventScript_HoOh::
 	delay 30
 	waitmoncry
 	playbgm MUS_HG_VS_HO_OH, 0
-	seteventmon SPECIES_HO_OH, 50
+	setbattleencounter ENCOUNTER_HO_OH
+	setwildbattle SPECIES_HO_OH, 70        @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
@@ -197,7 +200,8 @@ TinTower_RoofDay_EventScript_HoOhPostgame::
 	delay 30
 	waitmoncry
 	playbgm MUS_HG_VS_HO_OH, 0
-	seteventmon SPECIES_HO_OH, 70
+	setbattleencounter ENCOUNTER_HO_OH
+	setwildbattle SPECIES_HO_OH, 70        @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
@@ -207,7 +211,6 @@ TinTower_RoofDay_EventScript_HoOhPostgame::
 	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, TinTower_RoofDay_EventScript_RanFromHoOh
 	call_if_eq VAR_RESULT, B_OUTCOME_WON, TinTower_RoofDay_EventScript_HoohFlewAway
 	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, TinTower_RoofDay_EventScript_CaughtHooh
-	setvar VAR_COMPLETED_HO_OH, 3
 	releaseall
 	end
 
@@ -222,6 +225,8 @@ TinTower_RoofDay_EventScript_HoohFlewAway::
 	return
 
 TinTower_RoofDay_EventScript_CaughtHooh::
+	setflag FLAG_CAUGHT_HO_OH
+	setvar VAR_COMPLETED_HO_OH, 3
 	fadescreenswapbuffers FADE_TO_BLACK
 	removeobject LOCALID_HO_OH
 	setweather WEATHER_NONE

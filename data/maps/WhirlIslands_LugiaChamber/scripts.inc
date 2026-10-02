@@ -13,10 +13,12 @@ WhirlIslands_LugiaChamber_MapScript_LugiaStory::
 
 WhirlIslands_LugiaChamber_MapScript_LugiaPostStoryGone::
 	setflag FLAG_HIDE_WHIRL_ISLANDS_KIMONO_GIRLS
+	setflag FLAG_HIDE_LUGIA
 	end
 
 WhirlIslands_LugiaChamber_MapScript_LugiaPostStoryEncounter::
 	setflag FLAG_HIDE_WHIRL_ISLANDS_KIMONO_GIRLS
+	updatelegendaryvisibility SPECIES_LUGIA, FLAG_HIDE_LUGIA
 	setobjectxyperm LOCALID_LUGIA, 29, 12
 	end
 
@@ -174,7 +176,8 @@ WhirlIslands_LugiaChamber_EventScript_Lugia::
 	delay 30
 	waitmoncry
 	playbgm MUS_HG_VS_LUGIA, 0
-	seteventmon SPECIES_LUGIA, 50
+	setbattleencounter ENCOUNTER_LUGIA
+	setwildbattle SPECIES_LUGIA, 70        @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
@@ -200,7 +203,8 @@ WhirlIslands_LugiaChamber_EventScript_LugiaPostgame::
 	delay 30
 	waitmoncry
 	playbgm MUS_HG_VS_LUGIA, 0
-	seteventmon SPECIES_LUGIA, 70
+	setbattleencounter ENCOUNTER_LUGIA
+	setwildbattle SPECIES_LUGIA, 70        @ level is overridden by Level: LevelCap
 	setflag FLAG_SYS_CTRL_OBJ_DELETE
 	special BattleSetup_StartLegendaryBattle
 	clearflag FLAG_SYS_CTRL_OBJ_DELETE
@@ -210,7 +214,6 @@ WhirlIslands_LugiaChamber_EventScript_LugiaPostgame::
 	goto_if_eq VAR_RESULT, B_OUTCOME_PLAYER_TELEPORTED, WhirlIslands_LugiaChamber_EventScript_RanFromLugia
 	call_if_eq VAR_RESULT, B_OUTCOME_WON, WhirlIslands_LugiaChamber_EventScript_LugiaFlewAway
 	call_if_eq VAR_RESULT, B_OUTCOME_CAUGHT, WhirlIslands_LugiaChamber_EventScript_CaughtLugia
-	setvar VAR_COMPLETED_LUGIA, 3
 	releaseall
 	end
 
@@ -225,6 +228,8 @@ WhirlIslands_LugiaChamber_EventScript_LugiaFlewAway::
 	return
 
 WhirlIslands_LugiaChamber_EventScript_CaughtLugia::
+	setflag FLAG_CAUGHT_LUGIA
+	setvar VAR_COMPLETED_LUGIA, 3
 	fadescreenswapbuffers FADE_TO_BLACK
 	removeobject LOCALID_LUGIA
 	setweather WEATHER_NONE

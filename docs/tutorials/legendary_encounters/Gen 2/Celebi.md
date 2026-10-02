@@ -1,6 +1,6 @@
 ## Celebi — The Guardian of Time
 
-### Location: Petalburg Woods - Sunday
+### Location: Ilex Forest shrine - GS Ball chain
 
 Celebi fights behind the usual legendary package: a heavy damage reduction, immunity to OHKO,
 fixed-damage, HP-swap and shared-KO moves, incoming type effectiveness capped at 2x, and flat Toxic
