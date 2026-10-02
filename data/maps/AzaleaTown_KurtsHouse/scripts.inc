@@ -113,54 +113,6 @@ AzaleaTown_KurtsHouse_EventScript_Kurt2::
 	pokemart Johto_Mart_KurtBalls
 	waitstate
 	goto AzaleaTown_KurtsHouse_EventScript_KurtCancel
-	playse SE_BANG
-	applymovement LOCALID_AZALEA_TOWN_KURT, AzaleaTownKurt_Movement_Making_Ball
-	waitmovement 0
-	playse SE_BANG
-	applymovement LOCALID_AZALEA_TOWN_KURT, AzaleaTownKurt_Movement_Making_Ball
-	waitmovement 0
-	call_if_eq VAR_FACING, DIR_EAST, AzaleaTown_KurtsHouse_EventScript_TurnWest
-	call_if_eq VAR_FACING, DIR_WEST, AzaleaTown_KurtsHouse_EventScript_TurnEast
-	call_if_eq VAR_FACING, DIR_NORTH, AzaleaTown_KurtsHouse_EventScript_TurnSouth
-	goto_if_eq VAR_0x8005, 1, AzaleaTown_KurtsHouse_EventScript_SingularBall
-	bufferitemname STR_VAR_1, VAR_0x8004
-	buffernumberstring STR_VAR_2, VAR_0x8005
-	msgbox KurtsHouse_Text_KurtFinishedPlural, MSGBOX_DEFAULT
-	message KurtsHouse_Text_KurtObtainedPlural
-	waitmessage
-	playfanfare MUS_OBTAIN_ITEM
-	waitfanfare
-	additem VAR_0x8004, VAR_0x8005
-	msgbox KurtsHouse_Text_KurtTurnedOutGreat, MSGBOX_DEFAULT
-	closemessage
-	turnobject LOCALID_AZALEA_TOWN_KURT, DIR_NORTH
-	release
-	end
-
-AzaleaTown_KurtsHouse_EventScript_TurnSouth::
-	turnobject LOCALID_AZALEA_TOWN_KURT, DIR_SOUTH
-	return
-AzaleaTown_KurtsHouse_EventScript_TurnWest::
-	turnobject LOCALID_AZALEA_TOWN_KURT, DIR_WEST
-	return
-AzaleaTown_KurtsHouse_EventScript_TurnEast::
-	turnobject LOCALID_AZALEA_TOWN_KURT, DIR_EAST
-	return
-
-
-AzaleaTown_KurtsHouse_EventScript_SingularBall::
-	bufferitemname STR_VAR_1, VAR_0x8004
-	msgbox KurtsHouse_Text_KurtFinishedSingular, MSGBOX_DEFAULT
-	message KurtsHouse_Text_KurtObtainedSingular
-	waitmessage
-	playfanfare MUS_OBTAIN_ITEM
-	waitfanfare
-	additem VAR_0x8004, VAR_0x8005
-	msgbox KurtsHouse_Text_KurtTurnedOutGreat, MSGBOX_DEFAULT
-	closemessage
-	turnobject LOCALID_AZALEA_TOWN_KURT, DIR_NORTH
-	release
-	end
 
 AzaleaTown_KurtsHouse_EventScript_KurtCancel::
 	closemessage
@@ -293,37 +245,14 @@ KurtsHouse_Text_KurtHonoredToMakeBalls:
 	.string "but take it.$"
 
 KurtsHouse_Text_KurtBallsFromApricorns:
-	.string "KURT: I make BALLS from BERRIES.\p"
-	.string "Collect them from trees and bring\n"
-	.string "'em to me.\p"
-	.string "I'll make POKé BALLS out of them.$"
+	.string "KURT: I make special BALLS.\p"
+	.string "Come see me any time you need\n"
+	.string "some.$"
 
 KurtsHouse_Text_KurtAskYouHaveAnApricorn:
-	.string "KURT: You have BERRIES for me?\p"
-	.string "Fine! I'll turn them into POKé BALLS.$"
-
-KurtsHouse_Text_KurtThatsALetdown:
-	.string "KURT: I don't see any {STR_VAR_1}s!$"
-
-KurtsHouse_Text_KurtFinishedPlural:
-	.string "KURT: {PLAYER}!\n"
-	.string "Your {STR_VAR_1}s are done. Here!$"
-
-KurtsHouse_Text_KurtObtainedPlural:
-	.string "{PLAYER} obtained\n"
-	.string "{STR_VAR_2} {STR_VAR_1}s!$"
-
-KurtsHouse_Text_KurtFinishedSingular:
-	.string "KURT: {PLAYER}!\n"
-	.string "Your {STR_VAR_1} is done. Here!$"
-
-KurtsHouse_Text_KurtObtainedSingular:
-	.string "{PLAYER} obtained\n"
-	.string "the {STR_VAR_1}!$"
-
-KurtsHouse_Text_KurtTurnedOutGreat:
-	.string "KURT: That turned out great.\p"
-	.string "Try catching POKéMON with it.$"
+	.string "KURT: Looking for special BALLS?\p"
+	.string "Fine! Take a look at what I've\n"
+	.string "made.$"
 
 KurtsHouse_Text_KurtWhatIsThat:
 	.string "Wh-what is that?\p"

@@ -153,6 +153,7 @@ GoldenrodUnderground_EventScript_Brother_Haircut1::
 	msgbox GoldenrodUnderground_Text_OlderBrotherThatsAShame, MSGBOX_DEFAULT
 	hidemoneybox
 	closemessage
+	release
 	end
 
 GoldenrodUnderground_EventScript_Haircut1::
@@ -174,7 +175,7 @@ GoldenrodUnderground_EventScript_Haircut1::
 	fadescreen FADE_TO_BLACK
 	playfanfare MUS_HEAL
 	waitfanfare
-	special HaircutBrother2
+	special HaircutBrother1
 	fadescreen FADE_FROM_BLACK
 	special BufferMonNickname
 	msgbox GoldenrodUnderground_Text_OlderBrotherAllDone
@@ -214,6 +215,7 @@ GoldenrodUnderground_EventScript_Brother_Haircut2::
 	msgbox GoldenrodUnderground_Text_YoungerBrotherDisappointed, MSGBOX_DEFAULT
 	hidemoneybox
 	closemessage
+	release
 	end
 
 GoldenrodUnderground_EventScript_Haircut2::
@@ -235,7 +237,7 @@ GoldenrodUnderground_EventScript_Haircut2::
 	fadescreen FADE_TO_BLACK
 	playfanfare MUS_HEAL
 	waitfanfare
-	special HaircutBrother1
+	special HaircutBrother2
 	fadescreen FADE_FROM_BLACK
 	special BufferMonNickname
 	msgbox GoldenrodUnderground_Text_YoungerBrotherAllDone

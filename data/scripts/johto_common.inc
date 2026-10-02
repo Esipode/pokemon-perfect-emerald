@@ -114,6 +114,7 @@ Common_EventScript_ReceiveMonPartyNamed::
 Common_EventScript_PartyIsFull::
 	msgbox Common_Text_PartyIsFull, MSGBOX_DEFAULT
 	closemessage
+	release
 	end
 
 Common_Text_ReceivedMon:

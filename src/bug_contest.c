@@ -84,17 +84,20 @@ static const u16 sThirdPlaceRewards[] =
     ITEM_PECHA_BERRY, ITEM_RAWST_BERRY, ITEM_ASPEAR_BERRY, ITEM_CHESTO_BERRY
 };
 
-// Ranks the party member at VAR_0x8004 by max HP. VAR_RESULT: placement 1-3. VAR_0x8005: reward item.
+// Ranks the party member at VAR_0x8004 by IV total (max 186); max HP scales with the level cap. VAR_RESULT: placement 1-3. VAR_0x8005: reward item.
 bool8 JudgeBugContestMon(void)
 {
-    u32 maxHP = GetMonData(&gParties[B_TRAINER_PLAYER][VarGet(VAR_0x8004)], MON_DATA_MAX_HP);
+    struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][VarGet(VAR_0x8004)];
+    u32 ivTotal = GetMonData(mon, MON_DATA_HP_IV) + GetMonData(mon, MON_DATA_ATK_IV)
+                + GetMonData(mon, MON_DATA_DEF_IV) + GetMonData(mon, MON_DATA_SPEED_IV)
+                + GetMonData(mon, MON_DATA_SPATK_IV) + GetMonData(mon, MON_DATA_SPDEF_IV);
     u32 roll = Random() % 100;
 
-    if (maxHP < 41)
+    if (ivTotal < 80)
         gSpecialVar_Result = 3;
-    else if (maxHP <= 46)
+    else if (ivTotal < 110)
         gSpecialVar_Result = (roll < 50) ? 2 : 3;
-    else if (maxHP <= 47)
+    else if (ivTotal < 140)
         gSpecialVar_Result = (roll < 75) ? 1 : 2;
     else
         gSpecialVar_Result = 1;

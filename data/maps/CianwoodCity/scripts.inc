@@ -53,12 +53,6 @@ CianwoodCity_Movement_ChucksWife:
 	face_up
 	step_end
 
-CianwoodCity_EventScript_Test::
-	lock
-	random 2
-	release
-	end
-
 CianwoodCity_EventScript_ChucksWife::
 	lock
 	faceplayer

@@ -613,6 +613,7 @@ gSpecials::
 	def_special InfCave_ClearRunReport
 	def_special InfCaveLobby_OpenMart
 	def_special IsPlayerInKanto
+	def_special IsPlayerInJohto
 	@ Johto
 	def_special IsNuzlockeNicknamingActive
 	def_special IsPokecenterChallengeActivated

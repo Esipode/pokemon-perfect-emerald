@@ -5485,6 +5485,11 @@ bool8 IsPlayerInKanto(void)
     return GetCurrentRegion() == REGION_KANTO;
 }
 
+bool8 IsPlayerInJohto(void)
+{
+    return GetCurrentRegion() == REGION_JOHTO;
+}
+
 void BrailleCursorToggle(void)
 {
     // 8004 = x - 27

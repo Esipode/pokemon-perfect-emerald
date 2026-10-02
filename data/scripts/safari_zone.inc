@@ -1,4 +1,6 @@
 SafariZone_EventScript_OutOfBallsMidBattle::
+	specialvar VAR_RESULT, IsPlayerInJohto
+	goto_if_eq VAR_RESULT, TRUE, SafariZone_EventScript_OutOfBallsMidBattleJohto
 	specialvar VAR_RESULT, IsPlayerInKanto
 	goto_if_eq VAR_RESULT, TRUE, SafariZone_EventScript_OutOfBallsMidBattleKanto
 	setvar VAR_SAFARI_ZONE_STATE, 1
@@ -12,12 +14,27 @@ SafariZone_EventScript_OutOfBallsMidBattleKanto::
 	setwarp MAP_FUCHSIA_CITY_SAFARI_ZONE_ENTRANCE, 4, 1
 	end
 
+SafariZone_EventScript_OutOfBallsMidBattleJohto::
+	setvar VAR_SAFARI_ZONE_STATE, 1
+	special ExitSafariMode
+	setwarp MAP_SAFARI_ZONE_GATE_SAFARI_ZONE_ENTRANCE, 9, 3
+	end
+
 SafariZone_EventScript_Exit::
+	specialvar VAR_RESULT, IsPlayerInJohto
+	goto_if_eq VAR_RESULT, TRUE, SafariZone_EventScript_ExitJohto
 	specialvar VAR_RESULT, IsPlayerInKanto
 	goto_if_eq VAR_RESULT, TRUE, SafariZone_EventScript_ExitKanto
 	setvar VAR_SAFARI_ZONE_STATE, 1
 	special ExitSafariMode
 	warp MAP_ROUTE121_SAFARI_ZONE_ENTRANCE, 2, 5
+	waitstate
+	end
+
+SafariZone_EventScript_ExitJohto::
+	setvar VAR_SAFARI_ZONE_STATE, 1
+	special ExitSafariMode
+	warp MAP_SAFARI_ZONE_GATE_SAFARI_ZONE_ENTRANCE, 9, 3
 	waitstate
 	end
 
