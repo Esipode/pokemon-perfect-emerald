@@ -46,11 +46,11 @@ struct WorldMapCluster
  *  The world is one continuous grid of MAPSEC cells (sWorldMapSections) plus a region grid
  *  (sWorldMapRegions) that says which region owns each cell, including the sea around it.
  *  Open sea (region 0) is always crossable; the cursor stops only at locked regions and the edge.
- *  Each lock unit owns a palette bank, so a locked one is dimmed by blending only that bank.
+ *  Each lock unit owns a palette bank, so a locked one gets the grey ramp (bank 6) copied over it.
  *  The Sevii region has two lock units: islands 1-3 and islands 4-7.
  *  BG1 holds the text windows (palette bank 15).
  *  Fly mode (CB2_OpenFlyMap): every region can be scrolled to, but only fly points in the player's
- *  current region are selectable; other regions are dimmed lightly so they stay readable.
+ *  current region are selectable; other regions are blended lightly toward the sea colour.
  */
 
 #define WORLD_MAP_PX_W (WORLD_MAP_CELLS_W * 8)
@@ -65,7 +65,7 @@ struct WorldMapCluster
 #define PLAYER_ICON_TAG 1
 #define NO_REGION 0xFF
 #define NUM_BANK_GROUPS 4
-#define DIM_COEFF 8
+#define SEA_COLOR RGB(2, 4, 8) // WORLD_MAP_BANK_SEA ocean colour
 #define FLY_DIM_COEFF 5
 #define FLY_ICON_TAG 2
 #define FLY_OUTLINE_ANIM 6
@@ -852,18 +852,28 @@ static void UpdateWindows(void)
     }
 }
 
+// Blends toward the sea colour so a dimmed region stays readable against the ocean.
 static void DimBanks(u32 first, u32 count, u32 coeff)
 {
     u32 offset = BG_PLTT_ID(first);
 
-    BlendPalette(offset, count * 16, coeff, RGB_BLACK);
+    BlendPalette(offset, count * 16, coeff, SEA_COLOR);
     CpuCopy16(&gPlttBufferFaded[offset], &gPlttBufferUnfaded[offset], count * 16 * sizeof(u16));
 }
 
-// Bakes the dimming into the unfaded buffer so palette fades keep it.
+// Swaps in the grey ramp: details and the region label take land/sea colours, `???` shows.
+static void LockBank(u32 bank)
+{
+    u32 offset = BG_PLTT_ID(bank);
+
+    CpuCopy16(&gPlttBufferUnfaded[BG_PLTT_ID(WORLD_MAP_BANK_LOCKED)], &gPlttBufferUnfaded[offset], PLTT_SIZE_4BPP);
+    CpuCopy16(&gPlttBufferUnfaded[offset], &gPlttBufferFaded[offset], PLTT_SIZE_4BPP);
+}
+
+// Bakes the lock/dim looks into the unfaded buffer so palette fades keep them.
 static void DimLockedGroups(void)
 {
-    u32 group;
+    u32 group, i;
 
     for (group = 0; group < NUM_BANK_GROUPS; group++)
     {
@@ -875,13 +885,14 @@ static void DimLockedGroups(void)
         else if (group == GROUP_SEVII)
         {
             if (!IsSeviiUnitUnlocked(FALSE))
-                DimBanks(WORLD_MAP_BANK_SEVII123, 1, DIM_COEFF);
+                LockBank(WORLD_MAP_BANK_SEVII123);
             if (!IsSeviiUnitUnlocked(TRUE))
-                DimBanks(WORLD_MAP_BANK_SEVII4567, 1, DIM_COEFF);
+                LockBank(WORLD_MAP_BANK_SEVII4567);
         }
         else if (!IsRegionUnlocked(group + 1))
         {
-            DimBanks(sBankGroups[group].first, sBankGroups[group].count, DIM_COEFF);
+            for (i = 0; i < sBankGroups[group].count; i++)
+                LockBank(sBankGroups[group].first + i);
         }
     }
 }

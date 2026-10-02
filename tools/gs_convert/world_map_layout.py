@@ -73,7 +73,8 @@ BANKS = {None: 0, "JOHTO": 1, "KANTO": 2, "HOENN": 3, "SEVII123": 4, "SEVII4567"
 LOCK_BANK = 6
 
 # Colour roles (palette indices). Same pixel data in every bank; only the colours differ.
-(C_SEA, C_SHALLOW, C_LAND, C_COAST, C_RELIEF, C_ROUTE, C_NODE, C_RIM, C_LABEL, C_BORDER) = range(10)
+(C_SEA, C_SHALLOW, C_LAND, C_COAST, C_RELIEF, C_ROUTE, C_NODE, C_RIM, C_LABEL, C_BORDER,
+ C_UNKNOWN) = range(11)
 
 SEA_RGB = (20, 32, 64)
 SHALLOW_RGB = (36, 58, 108)
@@ -91,6 +92,8 @@ LAND_RGB = {
     5: (208, 182, 132),           # Sevii 4-7: darker sand
 }
 GREY_LAND_RGB = (108, 110, 120)
+# Placeholder text under each label: sea-coloured until the region is locked (grey ramp shows it).
+UNKNOWN_TEXT = "???"
 
 # MAPSECs that read as routes (no node) besides ROUTE_*.
 ROUTE_LIKE = {"KINDLE_ROAD", "CAPE_BRINK", "BOND_BRIDGE", "GREEN_PATH", "WATER_PATH",

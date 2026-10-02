@@ -293,6 +293,25 @@ def render(mask, world, unit, terr):
         for cy in range(best[2] // 8, (best[2] + GLYPH_H - 1) // 8 + 1):
             for cx in range(best[1] // 8, (best[1] + tw - 1) // 8 + 1):
                 rep["bank_override"][(cx, cy)] = unit_bank[region]
+        qw = text_width(L.UNKNOWN_TEXT)
+        qx = best[1] + (tw - qw) // 2
+        spots = sorted(((dy, dx) for dy in range(-GLYPH_H - 12, GLYPH_H + 13) for dx in range(-24, 25, 2)
+                        if abs(dy) >= GLYPH_H + 3 or abs(dx) >= tw // 2 + qw // 2 + 3),
+                       key=lambda d: abs(d[0]) + abs(d[1]))
+        for dy, dx in spots:
+            qy, qx = best[2] + dy, best[1] + (tw - qw) // 2 + dx
+            if qx < 2 or qy < 2 or qx + qw + 2 > W or qy + GLYPH_H + 2 > H:
+                continue
+            if all(cv.get(px, py) == L.C_SEA for px in range(qx - 2, qx + qw + 2)
+                   for py in range(qy - 2, qy + GLYPH_H + 2)):
+                for px, py in glyph_pixels(L.UNKNOWN_TEXT, qx, qy):
+                    cv.put(px, py, L.C_UNKNOWN)
+                for cy in range(qy // 8, (qy + GLYPH_H - 1) // 8 + 1):
+                    for cx in range(qx // 8, (qx + qw - 1) // 8 + 1):
+                        rep["bank_override"][(cx, cy)] = unit_bank[region]
+                break
+        else:
+            rep["warnings"].append("label %s: no spot for %s" % (text, L.UNKNOWN_TEXT))
         rep["warnings"].append("label %s at px (%d,%d)" % (text, best[1], best[2]))
     return cv, rep
 
@@ -341,10 +360,10 @@ def ramp(bank_rgb_land, grey=False):
     coast = tuple(q5(min(255, c + (255 - c) * 55 // 100)) for c in land)
     relief = tuple(q5(c * 72 // 100) for c in land)
     cols = [L.SEA_RGB, L.SHALLOW_RGB, land, coast, relief, L.ROUTE_RGB, L.NODE_RGB, L.RIM_RGB,
-            L.LABEL_RGB, L.BORDER_RGB]
+            L.LABEL_RGB, L.BORDER_RGB, L.SEA_RGB]
     if grey:
         # Locked look: route, node, rim and border read as land; the label reads as sea.
-        cols = [L.SEA_RGB, L.SHALLOW_RGB, land, coast, land, land, land, land, L.SEA_RGB, land]
+        cols = [L.SEA_RGB, L.SHALLOW_RGB, land, coast, land, land, land, land, L.SEA_RGB, land, L.LABEL_RGB]
     cols = [tuple(q5(c) for c in col) for col in cols]
     return cols + [(0, 0, 0)] * (16 - len(cols))
 
