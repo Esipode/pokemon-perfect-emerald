@@ -168,7 +168,7 @@ static const struct PlayerColorSlotInfo
         [MALE] = {
             [0] = {COMPOUND_STRING("SHIRT PRIMARY"), sColorIdx_Brendan_Hair, NULL, ARRAY_COUNT(sColorIdx_Brendan_Hair), 0, PLAYER_COLOR_SLOT_NONE},
             [1] = {COMPOUND_STRING("HAT"), sColorIdx_Brendan_BandanaWhite, sColorIdx_Brendan_BandanaWhite, ARRAY_COUNT(sColorIdx_Brendan_BandanaWhite), ARRAY_COUNT(sColorIdx_Brendan_BandanaWhite), PLAYER_COLOR_SLOT_NONE},
-            [2] = {COMPOUND_STRING("HAT TRIM"), sColorIdx_Brendan_BandanaGreen, sColorIdx_Brendan_BandanaGreen, ARRAY_COUNT(sColorIdx_Brendan_BandanaGreen), ARRAY_COUNT(sColorIdx_Brendan_BandanaGreen), PLAYER_COLOR_SLOT_NONE},
+            [2] = {COMPOUND_STRING("HAT & BAG"), sColorIdx_Brendan_BandanaGreen, sColorIdx_Brendan_BandanaGreen, ARRAY_COUNT(sColorIdx_Brendan_BandanaGreen), ARRAY_COUNT(sColorIdx_Brendan_BandanaGreen), PLAYER_COLOR_SLOT_NONE},
             [3] = {NULL, sColorIdx_Brendan_Jacket, sColorIdx_Brendan_Jacket, ARRAY_COUNT(sColorIdx_Brendan_Jacket), ARRAY_COUNT(sColorIdx_Brendan_Jacket), PLAYER_COLOR_SLOT_NONE},
             [4] = {NULL, sColorIdx_Brendan_CapOutline, sColorIdx_Brendan_CapOutline, ARRAY_COUNT(sColorIdx_Brendan_CapOutline), ARRAY_COUNT(sColorIdx_Brendan_CapOutline), PLAYER_COLOR_SLOT_NONE},
             [5] = {COMPOUND_STRING("GLOVES & BOOTS"), sColorIdx_Brendan_Bag, sColorIdx_Brendan_Bag, ARRAY_COUNT(sColorIdx_Brendan_Bag), ARRAY_COUNT(sColorIdx_Brendan_Bag), PLAYER_COLOR_SLOT_NONE},
