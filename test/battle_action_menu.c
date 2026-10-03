@@ -1,9 +1,13 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_action_menu.h"
+#include "battle_util.h"
+#include "event_data.h"
 #include "constants/battle.h"
+#include "constants/flags.h"
 #include "constants/rgb.h"
 #include "test/test.h"
+#include "string_util.h"
 #include "text.h"
 
 #define B_WIN_YESNO_BASE_BLOCK_END 0x10C // B_WIN_YESNO occupies 0x100-0x10B
@@ -124,7 +128,83 @@ TEST("(Action menu) Base palette loads from the generated asset")
 
     ActionMenu_BuildPalette(ACTION_MENU_STANDARD, FALSE, pal);
     EXPECT_EQ(pal[0], RGB_BLACK);
-    EXPECT_EQ(pal[1], RGB(3, 4, 7));
+    EXPECT_EQ(pal[1], RGB(5, 6, 9));
     EXPECT_EQ(pal[4], RGB_WHITE);
-    EXPECT_EQ(pal[7], RGB(10, 12, 16));
+    EXPECT_EQ(pal[7], RGB(14, 16, 20));
+}
+
+TEST("(Action menu) Safari ball label fits at the maximum ball count")
+{
+    u8 buffer[16];
+
+    ConvertIntToDecimalStringN(StringCopy(buffer, COMPOUND_STRING("Ball ×")), 30, STR_CONV_MODE_LEFT_ALIGN, 3);
+    EXPECT_LE(GetStringWidth(FONT_NARROW, buffer, 0), ACTION_LABEL_WIDTH);
+}
+
+TEST("(Action menu) Bag lock follows battle type, restrictions and Sky Drop")
+{
+    u32 savedFlags = gBattleTypeFlags;
+    u32 savedVar = VarGet(B_VAR_NO_BAG_USE);
+    enum SemiInvulnerableState savedState = gBattleMons[0].volatiles.semiInvulnerable;
+
+    gBattleMons[0].volatiles.semiInvulnerable = STATE_NONE;
+    gBattleTypeFlags = 0;
+    // The restriction var and flag are disabled (0) in this config.
+    if (B_VAR_NO_BAG_USE != 0)
+    {
+        VarSet(B_VAR_NO_BAG_USE, NO_BAG_RESTRICTION);
+        EXPECT(!ActionMenu_IsBagLocked(0, TRUE));
+
+        VarSet(B_VAR_NO_BAG_USE, NO_BAG_IN_BATTLE);
+        EXPECT(ActionMenu_IsBagLocked(0, TRUE));
+        EXPECT(!ActionMenu_IsBagLocked(0, FALSE));
+
+        VarSet(B_VAR_NO_BAG_USE, NO_BAG_AGAINST_TRAINER);
+        EXPECT(!ActionMenu_IsBagLocked(0, TRUE));
+        gBattleTypeFlags = BATTLE_TYPE_TRAINER;
+        EXPECT(ActionMenu_IsBagLocked(0, TRUE));
+    }
+
+    gBattleTypeFlags = BATTLE_TYPE_FRONTIER_NO_PYRAMID;
+    EXPECT(ActionMenu_IsBagLocked(0, FALSE));
+    gBattleTypeFlags = BATTLE_TYPE_PYRAMID;
+    EXPECT(!ActionMenu_IsBagLocked(0, FALSE));
+
+    gBattleTypeFlags = 0;
+    gBattleMons[0].volatiles.semiInvulnerable = STATE_SKY_DROP_TARGET;
+    EXPECT(ActionMenu_IsBagLocked(0, FALSE));
+
+    gBattleMons[0].volatiles.semiInvulnerable = savedState;
+    gBattleTypeFlags = savedFlags;
+    if (B_VAR_NO_BAG_USE != 0)
+        VarSet(B_VAR_NO_BAG_USE, savedVar);
+}
+
+TEST("(Action menu) Run lock follows trainer battles and the no-running flag")
+{
+    u32 savedFlags = gBattleTypeFlags;
+
+    gBattleTypeFlags = 0;
+    FlagClear(WE_FLAG_NO_RUNNING);
+    EXPECT(!ActionMenu_IsRunLocked());
+
+    gBattleTypeFlags = BATTLE_TYPE_TRAINER;
+    EXPECT_EQ(ActionMenu_IsRunLocked(), !B_RUN_TRAINER_BATTLE);
+
+    gBattleTypeFlags = 0;
+    if (WE_FLAG_NO_RUNNING != 0)
+    {
+        FlagSet(WE_FLAG_NO_RUNNING);
+        EXPECT(ActionMenu_IsRunLocked());
+    }
+
+    FlagClear(WE_FLAG_NO_RUNNING);
+    gBattleTypeFlags = savedFlags;
+}
+
+TEST("(Action menu) Empty cells report EMPTY")
+{
+    EXPECT_EQ(ActionMenu_GetSlotState(0, ACTION_MENU_SAFARI, 3), ACTION_SLOT_EMPTY);
+    EXPECT_EQ(ActionMenu_GetSlotState(0, ACTION_MENU_SAFARI, 0), ACTION_SLOT_ENABLED);
+    EXPECT_EQ(ActionMenu_GetSlotState(0, ACTION_MENU_TUTORIAL, 3), ACTION_SLOT_ENABLED);
 }

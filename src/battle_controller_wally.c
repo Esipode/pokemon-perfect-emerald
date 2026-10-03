@@ -309,7 +309,7 @@ static void WallyHandleChooseAction(enum BattlerId battler)
 {
 #if ACTION_MENU_NEW
     gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
-    ActionMenu_Show(battler, ACTION_MENU_STANDARD, COMPOUND_STRING("WALLY do?"));
+    ActionMenu_Show(battler, ACTION_MENU_TUTORIAL, COMPOUND_STRING("WALLY do?"));
 #else
     s32 i;
 

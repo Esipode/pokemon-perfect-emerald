@@ -11,6 +11,7 @@ enum ActionMenuId
 {
     ACTION_MENU_STANDARD,
     ACTION_MENU_SAFARI,
+    ACTION_MENU_TUTORIAL,   // Standard slots for the scripted tutorial
     ACTION_MENU_COUNT,
 };
 
@@ -20,6 +21,13 @@ enum ActionMenuDirection
     ACTION_DIR_DOWN,
     ACTION_DIR_LEFT,
     ACTION_DIR_RIGHT,
+};
+
+enum ActionSlotState
+{
+    ACTION_SLOT_ENABLED,
+    ACTION_SLOT_UNAVAILABLE,    // Greyed with a lock badge; still selectable so the engine can explain
+    ACTION_SLOT_EMPTY,
 };
 
 enum ActionMenuIcon
@@ -101,6 +109,9 @@ u32 ActionMenu_GetNextSlot(enum ActionMenuId menuId, u32 slot, enum ActionMenuDi
 struct ActionMenuRect ActionMenu_GetChipPixelRect(u32 slot);
 struct ActionMenuRect ActionMenu_GetChipTileRect(u32 slot);
 void ActionMenu_BuildPalette(enum ActionMenuId menuId, bool32 lit, u16 *dest);
+bool32 ActionMenu_IsBagLocked(enum BattlerId battler, bool32 restrictionsApply);
+bool32 ActionMenu_IsRunLocked(void);
+enum ActionSlotState ActionMenu_GetSlotState(enum BattlerId battler, enum ActionMenuId menuId, u32 slot);
 
 void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId, const u8 *line2Template);
 void ActionMenu_Redraw(enum BattlerId battler);

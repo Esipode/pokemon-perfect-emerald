@@ -4,6 +4,7 @@ static const u8 sText_ActionPokemon[] = _("Pokémon");
 static const u8 sText_ActionRun[] = _("Run");
 static const u8 sText_ActionBall[] = _("Ball");
 static const u8 sText_ActionGoNear[] = _("Go Near");
+static const u8 sText_ActionBallPrefix[] = _("Ball ×");
 
 static const u16 sActionMenuLitOutline = RGB(31, 29, 20);
 
@@ -37,6 +38,13 @@ static const struct ActionMenuSlot sActionMenus[ACTION_MENU_COUNT][ACTION_MENU_S
         ACTION_SLOT(sText_ActionGoNear, ACTION_ICON_GO_NEAR, B_ACTION_SAFARI_GO_NEAR, ACTION_HUE_GREEN),
         ACTION_SLOT(sText_ActionRun, ACTION_ICON_RUN, B_ACTION_SAFARI_RUN, ACTION_HUE_BLUE),
         { .navigable = FALSE },
+    },
+    [ACTION_MENU_TUTORIAL] =
+    {
+        ACTION_SLOT(sText_ActionBattle, ACTION_ICON_BATTLE, B_ACTION_USE_MOVE, ACTION_HUE_RED),
+        ACTION_SLOT(sText_ActionBag, ACTION_ICON_BAG, B_ACTION_USE_ITEM, ACTION_HUE_AMBER),
+        ACTION_SLOT(sText_ActionPokemon, ACTION_ICON_POKEMON, B_ACTION_SWITCH, ACTION_HUE_GREEN),
+        ACTION_SLOT(sText_ActionRun, ACTION_ICON_RUN, B_ACTION_RUN, ACTION_HUE_BLUE),
     },
 };
 

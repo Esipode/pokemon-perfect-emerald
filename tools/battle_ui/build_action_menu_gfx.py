@@ -24,13 +24,13 @@ OUT_DIR = os.path.join(ROOT, "graphics", "battle_interface")
 # Panel base colours as 5-bit RGB; mirrors the old inline table (indices 0-7, see §1.3).
 BASE_PALETTE = [
     (0, 0, 0),      # 0 transparent
-    (3, 4, 7),      # 1 panel background
+    (5, 6, 9),      # 1 panel background (HP box fill)
     (8, 9, 11),     # 2 disabled chip fill, empty cell dots
     (22, 24, 28),   # 3 accent stripe
     (31, 31, 31),   # 4 white text, icon light
-    (6, 7, 9),      # 5 text shadow, icon dark
+    (2, 3, 5),      # 5 text shadow (HP box shadow), icon dark
     (17, 19, 22),   # 6 muted text
-    (10, 12, 16),   # 7 chip outline, divider
+    (14, 16, 20),   # 7 chip outline, divider (HP box rim)
 ]
 
 GLYPH_BG = 4
