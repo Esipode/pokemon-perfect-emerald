@@ -83,3 +83,44 @@ TEST("Start menu order: swap across a hidden id leaves it in place")
             EXPECT_EQ(order[i], i);
     }
 }
+
+TEST("Start menu hidden: any item can be hidden with a zero mask")
+{
+    u32 i;
+
+    for (i = 0; i < START_MENU_ITEM_COUNT; i++)
+        EXPECT(StartMenuHidden_CanHide(0, i));
+}
+
+TEST("Start menu hidden: the last unhidden always-shown item cannot be hidden")
+{
+    u16 mask = (1u << START_MENU_ITEM_BAG)
+             | (1u << START_MENU_ITEM_PLAYER)
+             | (1u << START_MENU_ITEM_SAVE)
+             | (1u << START_MENU_ITEM_OPTION);
+
+    EXPECT(!StartMenuHidden_CanHide(mask, START_MENU_ITEM_ACHIEVEMENTS));
+    // Gated items do not count toward the guard, so they can still be hidden.
+    EXPECT(StartMenuHidden_CanHide(mask, START_MENU_ITEM_MAP));
+}
+
+TEST("Start menu hidden: an already hidden item can be unhidden")
+{
+    u16 mask = (1u << START_MENU_ITEM_BAG)
+             | (1u << START_MENU_ITEM_PLAYER)
+             | (1u << START_MENU_ITEM_SAVE)
+             | (1u << START_MENU_ITEM_OPTION)
+             | (1u << START_MENU_ITEM_ACHIEVEMENTS);
+
+    EXPECT(StartMenuHidden_CanHide(mask, START_MENU_ITEM_SAVE));
+}
+
+TEST("Start menu hidden: toggle flips one bit only")
+{
+    u16 mask = (1u << START_MENU_ITEM_POKEDEX) | (1u << START_MENU_ITEM_OPTION);
+
+    mask = StartMenuHidden_Toggle(mask, START_MENU_ITEM_MAP);
+    EXPECT_EQ(mask, (1u << START_MENU_ITEM_POKEDEX) | (1u << START_MENU_ITEM_OPTION) | (1u << START_MENU_ITEM_MAP));
+    mask = StartMenuHidden_Toggle(mask, START_MENU_ITEM_POKEDEX);
+    EXPECT_EQ(mask, (1u << START_MENU_ITEM_OPTION) | (1u << START_MENU_ITEM_MAP));
+}

@@ -306,6 +306,7 @@ struct StartMenuOrderEntry
 };
 
 STATIC_ASSERT(START_MENU_ITEM_COUNT <= START_MENU_ORDER_SLOTS, StartMenuOrderSlotsTooSmall);
+STATIC_ASSERT(START_MENU_ITEM_COUNT <= 16, StartMenuHiddenMaskTooSmall);
 
 // Normal start menu items, indexed by START_MENU_ITEM_*.
 static const struct StartMenuOrderEntry sStartMenuOrderEntries[START_MENU_ITEM_COUNT] =
@@ -523,19 +524,54 @@ void StartMenuOrder_Store(const u8 *order)
         gSaveBlock2Ptr->startMenuOrder[i] = (i < START_MENU_ITEM_COUNT) ? order[i] + 1 : 0;
 }
 
-static void BuildNormalStartMenu(void)
+// FALSE if hiding item would leave every always-shown item hidden. Unhiding is always allowed.
+bool32 StartMenuHidden_CanHide(u16 mask, u8 item)
+{
+    u32 i;
+
+    if (mask & (1u << item))
+        return TRUE;
+
+    mask |= 1u << item;
+    for (i = 0; i < START_MENU_ITEM_COUNT; i++)
+    {
+        if (sStartMenuOrderEntries[i].isVisible == NULL && !(mask & (1u << i)))
+            return TRUE;
+    }
+    return FALSE;
+}
+
+u16 StartMenuHidden_Toggle(u16 mask, u8 item)
+{
+    return mask ^ (1u << item);
+}
+
+static void AddNormalStartMenuItems(bool32 includeHidden)
 {
     u32 i;
     u8 order[START_MENU_ITEM_COUNT];
+    u16 hidden = includeHidden ? 0 : gSaveBlock2Ptr->startMenuHidden;
 
     StartMenuOrder_Load(order);
     for (i = 0; i < START_MENU_ITEM_COUNT; i++)
     {
         const struct StartMenuOrderEntry *entry = &sStartMenuOrderEntries[order[i]];
 
+        if (hidden & (1u << order[i]))
+            continue;
         if (entry->isVisible == NULL || entry->isVisible())
             AddStartMenuAction(entry->action);
     }
+}
+
+static void BuildNormalStartMenu(void)
+{
+    u32 count = sNumStartMenuActions;
+
+    AddNormalStartMenuItems(FALSE);
+    // A mask that hides every shown item would leave the menu empty.
+    if (sNumStartMenuActions == count)
+        AddNormalStartMenuItems(TRUE);
 }
 
 static void BuildDebugStartMenu(void)

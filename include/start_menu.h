@@ -35,5 +35,7 @@ void StartMenuOrder_Normalize(const u8 *saved, u8 *order);
 void StartMenuOrder_Swap(u8 *order, u8 itemA, u8 itemB);
 void StartMenuOrder_Load(u8 *order);
 void StartMenuOrder_Store(const u8 *order);
+bool32 StartMenuHidden_CanHide(u16 mask, u8 item);
+u16 StartMenuHidden_Toggle(u16 mask, u8 item);
 
 #endif // GUARD_START_MENU_H

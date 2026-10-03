@@ -916,6 +916,7 @@ struct SaveBlock2
     u8 johtoFlags[NUM_JOHTO_FLAG_BYTES];      // JOHTO_FLAGS_START..JOHTO_FLAGS_END
     u16 johtoVars[JOHTO_VARS_COUNT];          // JOHTO_VARS_START..JOHTO_VARS_END
     u8 startMenuOrder[START_MENU_ORDER_SLOTS]; // START_MENU_ITEM_* + 1 per slot, 0 = empty; all 0 = default order
+    u16 startMenuHidden;                      // bit n = START_MENU_ITEM_n hidden; 0 = nothing hidden
 }; // sizeof=0xF2C - Pretty sure this size is no longer accurate
 
 extern struct SaveBlock2 *gSaveBlock2Ptr;
