@@ -964,7 +964,7 @@ static bool8 HandleStartMenuInput(void)
     return FALSE;
 }
 
-static const u8 sStartMenuReorderArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_RED, TEXT_COLOR_LIGHT_RED};
+static const u8 sStartMenuReorderArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_BLUE, TEXT_COLOR_LIGHT_BLUE};
 
 // DEBUG stays pinned at row 0.
 static u32 GetStartMenuFirstReorderRow(void)
