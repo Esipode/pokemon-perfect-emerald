@@ -169,14 +169,18 @@ static const u8 sText_HintBack[] = _("{B_BUTTON}BACK");
 static const u8 sText_HintRegionBack[] = _("{L_BUTTON}{R_BUTTON}REGION {B_BUTTON}BACK");
 static const u8 sText_HintFlyBack[] = _("{A_BUTTON}FLY {B_BUTTON}BACK");
 static const u8 sText_HintFlyRegionBack[] = _("{A_BUTTON}FLY {L_BUTTON}{R_BUTTON}REGION {B_BUTTON}BACK");
+static const u8 sText_HintTownFlyBack[] = _("{R_BUTTON}FLY {B_BUTTON}BACK");
+static const u8 sText_HintTownFlyRegionBack[] = _("{R_BUTTON}FLY {L_BUTTON}REGION {B_BUTTON}BACK");
 
-// Indexed by (A usable ? 2 : 0) + (L/R usable ? 1 : 0).
+// Indexed by (R Fly usable ? 4 : A Fly usable ? 2 : 0) + (L/R usable ? 1 : 0).
 static const u8 *const sHintTexts[] =
 {
     sText_HintBack,
     sText_HintRegionBack,
     sText_HintFlyBack,
     sText_HintFlyRegionBack,
+    sText_HintTownFlyBack,
+    sText_HintTownFlyRegionBack,
 };
 static const u8 sTextColors[] = {0, 1, 2}; // transparent, text, shadow
 
@@ -525,6 +529,7 @@ static void CreateFlyIcons(void);
 static void DestroyFlyIcons(void);
 static u32 GetMapSecGroup(mapsec_u16_t mapSec);
 static bool32 CanFlyFromCell(void);
+static bool32 CanTownMapFly(void);
 static u32 GetCursorPosWithinMapSec(void);
 static bool32 TryMoveCursor(s32 dx, s32 dy);
 static void SetCursorToRegion(u32 region);
@@ -1231,7 +1236,7 @@ static void UpdateWindows(void)
 {
     mapsec_u16_t mapSec = GetWorldMapSecIdAt(sWorldMap->cursorX, sWorldMap->cursorY);
     u32 pos = mapSec == MAPSEC_EVER_GRANDE_CITY ? GetCursorPosWithinMapSec() : 0;
-    u32 hint = (sWorldMap->flyMode && CanFlyFromCell() ? 2 : 0) + (sWorldMap->canSwitchRegions ? 1 : 0);
+    u32 hint = (sWorldMap->flyMode && CanFlyFromCell() ? 2 : CanTownMapFly() ? 4 : 0) + (sWorldMap->canSwitchRegions ? 1 : 0);
 
     if (mapSec != sWorldMap->shownMapSec || pos != sWorldMap->shownPos)
     {
@@ -1355,9 +1360,12 @@ static void CB2_WorldMap(void)
             SetMainCallback2(CB2_ExitWorldMap);
             return;
         }
-        if (sWorldMap->flyMode && JOY_NEW(A_BUTTON) && CanFlyFromCell())
+        if ((sWorldMap->flyMode && JOY_NEW(A_BUTTON) && CanFlyFromCell())
+         || (JOY_NEW(R_BUTTON) && CanTownMapFly()))
         {
             PlaySE(SE_SELECT);
+            if (!sWorldMap->flyMode)
+                gSkipShowMonAnim = TRUE;
             sWorldMap->choseFlyLocation = TRUE;
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
             SetMainCallback2(CB2_ExitWorldMap);
@@ -1418,7 +1426,7 @@ static void CB2_ExitWorldMap(void)
         ClearBarRegs();
         FreeAllWindowBuffers();
         TRY_FREE_AND_SET_NULL(sWorldMap);
-        if (!flyMode)
+        if (!flyMode && !chose)
         {
             MainCallback callback = sReturnCallback != NULL ? sReturnCallback : CB2_ReturnToField;
 
@@ -1427,6 +1435,7 @@ static void CB2_ExitWorldMap(void)
         }
         else if (chose)
         {
+            sReturnCallback = NULL;
             SetFlyDestinationToMapSec(mapSec, pos);
             ReturnToFieldFromFlyMapSelect();
         }
@@ -1483,6 +1492,15 @@ static bool32 CanFlyFromCell(void)
             return FlagGet(sFlyLocations[i].flag);
     }
     return FALSE;
+}
+
+// Start menu map: R flies once the Fly-from-map flag is set, from a visited Fly point in the current region.
+static bool32 CanTownMapFly(void)
+{
+    return !sWorldMap->flyMode
+        && FlagGet(FLAG_FLY_FROM_TOWN_MAP)
+        && Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == TRUE
+        && CanFlyFromCell();
 }
 
 // Sprite data for SpriteCB_FlyRing
