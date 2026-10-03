@@ -1,5 +1,6 @@
 #include "global.h"
 #include "bg.h"
+#include "event_data.h"
 #include "field_name_box.h"
 #include "main.h"
 #include "menu.h"
@@ -182,7 +183,8 @@ static bool32 PhoneCall_PrintIntro(u8 taskId)
 static bool32 PhoneCall_PrintMessage(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
-    if (!RunPhoneCallTextPrinter(tWindowId) && !IsSEPlaying() && JOY_NEW(A_BUTTON | B_BUTTON))
+    if (!RunPhoneCallTextPrinter(tWindowId) && !IsSEPlaying()
+     && (JOY_NEW(A_BUTTON | B_BUTTON) || FlagGet(FLAG_AUTO_SCROLL_TEXT)))
     {
         FillWindowPixelBuffer(tWindowId, PIXEL_FILL(8));
         CopyWindowToVram(tWindowId, COPYWIN_GFX);
