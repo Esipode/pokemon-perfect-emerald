@@ -83,6 +83,10 @@ STATIC_ASSERT(WORLD_MAP_DEX_BANKS == WORLD_MAP_BANK_LOCKED + 1, WorldMapDexBankC
 #define BAR_TEXT_PAD 2
 #define PIP_PAL_FIRST 3 // Text palette index of the open-sea pip; regions follow in id order
 #define HINT_NONE 0xFF
+#define FLY_BANK_FIRST 8 // Palette banks 8-12 copy map banks 1-5 with fly points recoloured
+#define NUM_FLY_BANKS 5
+#define FLY_NODE_COLOR_INDEX 6 // Palette index of the city/town dots
+#define FLY_COLOR RGB(6, 22, 31)
 
 // Tile offsets of the frames in graphics/world_map/ui_sprites.png (tools/gs_convert/build_world_map_ui.py).
 #define UI_TILE_BRACKET     0
@@ -401,96 +405,6 @@ static const struct FlyLocation sFlyLocations[] =
     { MAPSEC_ROUTE_48, FLAG_VISITED_SAFARI_ZONE_GATE },
 };
 
-enum
-{
-    RING_ANIM_BRIGHT,
-    RING_ANIM_FAINT,
-    RING_ANIM_FRONTIER,
-};
-
-static const struct OamData sRingOam =
-{
-    .shape = SPRITE_SHAPE(16x16),
-    .size = SPRITE_SIZE(16x16),
-    .priority = 1
-};
-
-static const struct OamData sRingWideOam =
-{
-    .shape = SPRITE_SHAPE(32x16),
-    .size = SPRITE_SIZE(32x16),
-    .priority = 1
-};
-
-static const struct OamData sRingTallOam =
-{
-    .shape = SPRITE_SHAPE(16x32),
-    .size = SPRITE_SIZE(16x32),
-    .priority = 1
-};
-
-static const union AnimCmd sRingAnim_Bright[] = { ANIMCMD_FRAME(UI_TILE_RING, 5), ANIMCMD_END };
-static const union AnimCmd sRingAnim_Faint[] = { ANIMCMD_FRAME(UI_TILE_RING_FAINT, 5), ANIMCMD_END };
-static const union AnimCmd sRingAnim_Frontier[] = { ANIMCMD_FRAME(UI_TILE_FRONTIER, 5), ANIMCMD_END };
-static const union AnimCmd sRingWideAnim_Bright[] = { ANIMCMD_FRAME(UI_TILE_WIDE, 5), ANIMCMD_END };
-static const union AnimCmd sRingWideAnim_Faint[] = { ANIMCMD_FRAME(UI_TILE_WIDE_FAINT, 5), ANIMCMD_END };
-static const union AnimCmd sRingTallAnim_Bright[] = { ANIMCMD_FRAME(UI_TILE_TALL, 5), ANIMCMD_END };
-static const union AnimCmd sRingTallAnim_Faint[] = { ANIMCMD_FRAME(UI_TILE_TALL_FAINT, 5), ANIMCMD_END };
-
-static const union AnimCmd *const sRingAnims[] =
-{
-    [RING_ANIM_BRIGHT]   = sRingAnim_Bright,
-    [RING_ANIM_FAINT]    = sRingAnim_Faint,
-    [RING_ANIM_FRONTIER] = sRingAnim_Frontier
-};
-
-static const union AnimCmd *const sRingWideAnims[] =
-{
-    [RING_ANIM_BRIGHT] = sRingWideAnim_Bright,
-    [RING_ANIM_FAINT]  = sRingWideAnim_Faint
-};
-
-static const union AnimCmd *const sRingTallAnims[] =
-{
-    [RING_ANIM_BRIGHT] = sRingTallAnim_Bright,
-    [RING_ANIM_FAINT]  = sRingTallAnim_Faint
-};
-
-static void SpriteCB_FlyRing(struct Sprite *sprite);
-
-static const struct SpriteTemplate sRingSpriteTemplate =
-{
-    .tileTag = UI_TAG,
-    .paletteTag = UI_TAG,
-    .oam = &sRingOam,
-    .anims = sRingAnims,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCB_FlyRing
-};
-
-static const struct SpriteTemplate sRingWideSpriteTemplate =
-{
-    .tileTag = UI_TAG,
-    .paletteTag = UI_TAG,
-    .oam = &sRingWideOam,
-    .anims = sRingWideAnims,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCB_FlyRing
-};
-
-static const struct SpriteTemplate sRingTallSpriteTemplate =
-{
-    .tileTag = UI_TAG,
-    .paletteTag = UI_TAG,
-    .oam = &sRingTallOam,
-    .anims = sRingTallAnims,
-    .images = NULL,
-    .affineAnims = gDummySpriteAffineAnimTable,
-    .callback = SpriteCB_FlyRing
-};
-
 static const u8 *const sRegionNames[WORLD_MAP_NUM_REGIONS + 1] =
 {
     [WORLD_MAP_REGION_JOHTO] = sText_Johto,
@@ -527,8 +441,7 @@ static void UpdateWindows(void);
 static void SetBarRegs(void);
 static void ClearBarRegs(void);
 static void PrintRightAligned(u32 windowId, const u8 *str);
-static void CreateFlyIcons(void);
-static void DestroyFlyIcons(void);
+static void ApplyFlyColors(void);
 static u32 GetMapSecGroup(mapsec_u16_t mapSec);
 static bool32 CanFlyFromCell(void);
 static bool32 CanTownMapFly(void);
@@ -859,8 +772,9 @@ static void OpenWorldMap(void)
         DimLockedGroups();
         LoadUiSprites();
         CreatePlayerIcon();
-        if (sWorldMap->flyMode)
-            CreateFlyIcons();
+        if (sWorldMap->flyMode
+         || (FlagGet(FLAG_FLY_FROM_TOWN_MAP) && Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == TRUE))
+            ApplyFlyColors();
         CreateCursor();
         sWorldMap->shownRegion = 0xFF;
         sWorldMap->shownMapSec = 0xFFFF;
@@ -1412,8 +1326,6 @@ static void CB2_ExitWorldMap(void)
         mapsec_u16_t mapSec = GetWorldMapSecIdAt(sWorldMap->cursorX, sWorldMap->cursorY);
         u32 pos = GetCursorPosWithinMapSec();
 
-        if (flyMode)
-            DestroyFlyIcons();
         DestroyCursor();
         ClearBarRegs();
         FreeAllWindowBuffers();
@@ -1493,110 +1405,46 @@ static bool32 CanTownMapFly(void)
         && CanFlyFromCell();
 }
 
-// Sprite data for SpriteCB_FlyRing
-#define sCenterX    data[0]
-#define sCenterY    data[1]
-#define sIconMapSec data[2]
-#define sFlicker    data[3]
-
-static void SpriteCB_FlyRing(struct Sprite *sprite)
+// Fly points keep a normal map tile but switch to a copy of its bank with the node colour changed.
+static void ApplyFlyColors(void)
 {
-    sprite->x = sprite->sCenterX - sWorldMap->scrollX;
-    sprite->y = sprite->sCenterY - sWorldMap->scrollY;
+    u16 *tilemap = (u16 *)BG_SCREEN_ADDR(28);
+    u32 i, x, y;
+    bool8 bankUsed[NUM_FLY_BANKS] = {FALSE};
 
-    // OAM coordinates wrap, so sprites outside the screen are hidden explicitly.
-    if (IsOffScreen(sprite->x, sprite->y))
+    for (y = 0; y < WORLD_MAP_CELLS_H; y++)
     {
-        sprite->invisible = TRUE;
-        return;
-    }
-
-    if (GetWorldMapSecIdAt(sWorldMap->cursorX, sWorldMap->cursorY) == sprite->sIconMapSec)
-    {
-        if (++sprite->sFlicker > 16)
+        for (x = 0; x < WORLD_MAP_CELLS_W; x++)
         {
-            sprite->sFlicker = 0;
-            sprite->invisible = !sprite->invisible;
-        }
-    }
-    else
-    {
-        sprite->sFlicker = 16;
-        sprite->invisible = FALSE;
-    }
-}
+            mapsec_u16_t mapSec = sWorldMapSections[y][x];
+            u32 group = GetMapSecGroup(mapSec);
+            u32 entryId = ((y / 32) * 2 + x / 32) * 32 * 32 + (y % 32) * 32 + x % 32;
+            u32 bank = tilemap[entryId] >> 12;
 
-// Visited Fly points get a ring: bright when selectable, faint when in another region.
-static void CreateFlyIcons(void)
-{
-    u32 i;
-
-    for (i = 0; i < ARRAY_COUNT(sFlyLocations); i++)
-    {
-        mapsec_u16_t mapSec = sFlyLocations[i].mapsec;
-        u32 width = gRegionMapEntries[mapSec].width;
-        u32 height = gRegionMapEntries[mapSec].height;
-        u32 spriteId, anim, region = GetMapSecGroup(mapSec) + 1;
-        const struct SpriteTemplate *template;
-        s32 x, y;
-        bool32 found = FALSE;
-
-        if (!FlagGet(sFlyLocations[i].flag))
-            continue;
-
-        // First cell in row-major order is the MAPSEC's top-left.
-        for (y = 0; y < WORLD_MAP_CELLS_H && !found; y++)
-        {
-            for (x = 0; x < WORLD_MAP_CELLS_W; x++)
+            if (mapSec == MAPSEC_NONE || sWorldMapRegions[y][x] != group + 1 || bank == 0 || bank > NUM_FLY_BANKS)
+                continue;
+            if (sWorldMap->flyMode && group != sWorldMap->flyGroup)
+                continue;
+            for (i = 0; i < ARRAY_COUNT(sFlyLocations); i++)
             {
-                if (sWorldMapSections[y][x] == mapSec && sWorldMapRegions[y][x] == region)
+                if (sFlyLocations[i].mapsec == mapSec && FlagGet(sFlyLocations[i].flag))
                 {
-                    found = TRUE;
+                    tilemap[entryId] = (tilemap[entryId] & 0x0FFF) | ((FLY_BANK_FIRST + bank - 1) << 12);
+                    bankUsed[bank - 1] = TRUE;
                     break;
                 }
             }
         }
-        y--;
-        if (!found)
-            continue;
-
-        if (mapSec == MAPSEC_BATTLE_FRONTIER)
-            template = &sRingSpriteTemplate;
-        else if (width >= 2)
-            template = &sRingWideSpriteTemplate;
-        else if (height >= 2)
-            template = &sRingTallSpriteTemplate;
-        else
-            template = &sRingSpriteTemplate;
-
-        spriteId = CreateSpriteUnchecked(template, 0, 0, 10);
-        if (spriteId == MAX_SPRITES)
-            continue;
-
-        gSprites[spriteId].sCenterX = x * 8 + width * 4;
-        gSprites[spriteId].sCenterY = y * 8 + height * 4;
-        gSprites[spriteId].sIconMapSec = mapSec;
-        gSprites[spriteId].sFlicker = 16;
-        if (mapSec == MAPSEC_BATTLE_FRONTIER)
-            anim = RING_ANIM_FRONTIER;
-        else
-            anim = RING_ANIM_BRIGHT;
-        StartSpriteAnim(&gSprites[spriteId], anim);
     }
-}
 
-static void DestroyFlyIcons(void)
-{
-    u32 i;
-
-    for (i = 0; i < MAX_SPRITES; i++)
+    for (i = 0; i < NUM_FLY_BANKS; i++)
     {
-        if (gSprites[i].inUse && gSprites[i].callback == SpriteCB_FlyRing)
-            DestroySprite(&gSprites[i]);
+        u32 offset = BG_PLTT_ID(FLY_BANK_FIRST + i);
+
+        if (!bankUsed[i])
+            continue;
+        CpuCopy16(&gPlttBufferUnfaded[BG_PLTT_ID(i + 1)], &gPlttBufferUnfaded[offset], PLTT_SIZE_4BPP);
+        gPlttBufferUnfaded[offset + FLY_NODE_COLOR_INDEX] = FLY_COLOR;
+        CpuCopy16(&gPlttBufferUnfaded[offset], &gPlttBufferFaded[offset], PLTT_SIZE_4BPP);
     }
 }
-
-#undef sCenterX
-#undef sCenterY
-#undef sIconMapSec
-#undef sFlicker
