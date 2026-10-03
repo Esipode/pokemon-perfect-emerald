@@ -89,6 +89,7 @@ enum
 
 // sStartMenuReorderState bits
 #define START_MENU_REORDER_ALLOWED (1 << 0) // Menu came from the normal or debug builder
+#define START_MENU_REORDER_HOLDING (1 << 1) // Item under the reorder arrow is picked up
 
 // Save status
 enum
@@ -1001,10 +1002,82 @@ static void MoveStartMenuReorderArrow(s32 delta)
     CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
 }
 
+// Redraws a row's label; a held item uses the reorder arrow's colours. Caller copies to VRAM.
+static void DrawStartMenuReorderLabel(u32 row, bool32 held)
+{
+    u8 windowId = GetStartMenuWindowId();
+    u8 height = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
+    u8 top = 9 + row * height;
+
+    FillWindowPixelRect(windowId, PIXEL_FILL(1), 8, top, GetWindowAttribute(windowId, WINDOW_WIDTH) * 8 - 8, height);
+    StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[row]].text);
+    if (held)
+        AddTextPrinterParameterized3(windowId, FONT_SMALL, 8, top, sStartMenuReorderArrowColors, TEXT_SKIP_DRAW, gStringVar4);
+    else
+        AddTextPrinterParameterized(windowId, FONT_SMALL, gStringVar4, 8, top, TEXT_SKIP_DRAW, NULL);
+}
+
+static void SetStartMenuReorderHolding(bool32 holding)
+{
+    if (holding)
+        sStartMenuReorderState |= START_MENU_REORDER_HOLDING;
+    else
+        sStartMenuReorderState &= ~START_MENU_REORDER_HOLDING;
+
+    PlaySE(SE_SELECT);
+    DrawStartMenuReorderLabel(sStartMenuCursorPos, holding);
+    CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
+}
+
+static u32 GetStartMenuOrderItemByAction(u32 action)
+{
+    u32 i;
+
+    for (i = 0; i < START_MENU_ITEM_COUNT; i++)
+    {
+        if (sStartMenuOrderEntries[i].action == action)
+            break;
+    }
+    return i;
+}
+
+// Swaps the held item with its visible neighbour and saves the order. No wrap.
+static void MoveStartMenuReorderItem(s32 delta)
+{
+    s32 pos = sStartMenuCursorPos + delta;
+    u8 order[START_MENU_ITEM_COUNT];
+    u8 temp;
+
+    if (pos < (s32)GetStartMenuFirstReorderRow() || pos >= sNumStartMenuActions)
+        return;
+
+    StartMenuOrder_Load(order);
+    StartMenuOrder_Swap(order,
+                        GetStartMenuOrderItemByAction(sCurrentStartMenuActions[sStartMenuCursorPos]),
+                        GetStartMenuOrderItemByAction(sCurrentStartMenuActions[pos]));
+    StartMenuOrder_Store(order);
+    SWAP(sCurrentStartMenuActions[sStartMenuCursorPos], sCurrentStartMenuActions[pos], temp);
+
+    PlaySE(SE_SELECT);
+    DrawStartMenuReorderArrow(sStartMenuCursorPos, FALSE);
+    DrawStartMenuReorderLabel(sStartMenuCursorPos, FALSE);
+    sStartMenuCursorPos = pos;
+    DrawStartMenuReorderArrow(sStartMenuCursorPos, TRUE);
+    DrawStartMenuReorderLabel(sStartMenuCursorPos, TRUE);
+    CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
+}
+
 static bool8 HandleStartMenuReorderInput(void)
 {
-    if (JOY_NEW(SELECT_BUTTON | B_BUTTON))
+    bool32 holding = (sStartMenuReorderState & START_MENU_REORDER_HOLDING) != 0;
+
+    if (JOY_NEW(SELECT_BUTTON) || (!holding && JOY_NEW(B_BUTTON)))
     {
+        if (holding)
+        {
+            sStartMenuReorderState &= ~START_MENU_REORDER_HOLDING;
+            DrawStartMenuReorderLabel(sStartMenuCursorPos, FALSE);
+        }
         // InitMenuNormal clears the arrow cell, draws the normal cursor and resyncs the menu state.
         PlaySE(SE_SELECT);
         sStartMenuCursorPos = InitMenuNormal(GetStartMenuWindowId(), FONT_SMALL, 0, 9, GetMenuCursorDimensionByFont(FONT_SMALL, 1), sNumStartMenuActions, sStartMenuCursorPos);
@@ -1012,10 +1085,26 @@ static bool8 HandleStartMenuReorderInput(void)
         return FALSE;
     }
 
+    if (JOY_NEW(A_BUTTON | B_BUTTON))
+    {
+        SetStartMenuReorderHolding(!holding);
+        return FALSE;
+    }
+
     if (JOY_NEW(DPAD_UP))
-        MoveStartMenuReorderArrow(-1);
+    {
+        if (holding)
+            MoveStartMenuReorderItem(-1);
+        else
+            MoveStartMenuReorderArrow(-1);
+    }
     else if (JOY_NEW(DPAD_DOWN))
-        MoveStartMenuReorderArrow(1);
+    {
+        if (holding)
+            MoveStartMenuReorderItem(1);
+        else
+            MoveStartMenuReorderArrow(1);
+    }
 
     return FALSE;
 }
