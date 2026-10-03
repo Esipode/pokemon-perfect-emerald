@@ -3,6 +3,12 @@
 #include "battle_action_menu.h"
 #include "constants/rgb.h"
 
+// Icon sheet: 16 px wide, see tools/battle_ui/build_action_menu_gfx.py for the layout.
+const u32 gActionMenuIconsGfx[] = INCGFX_U32("graphics/battle_interface/action_menu_icons.png", ".4bpp");
+
+// Panel base colours, indices 0-7 (indices 8-15 are filled from the menu hues).
+static const u16 sActionMenuBasePalette[] = INCGFX_U16("graphics/battle_interface/action_menu.pal", ".gbapal");
+
 #include "data/battle_action_menu.h"
 
 const struct ActionMenuSlot *ActionMenu_GetSlot(enum ActionMenuId menuId, u32 slot)
@@ -52,7 +58,7 @@ void ActionMenu_BuildPalette(enum ActionMenuId menuId, bool32 lit, u16 *dest)
 {
     u32 i;
 
-    for (i = 0; i < ARRAY_COUNT(sActionMenuBasePalette); i++)
+    for (i = 0; i < ACTION_PALETTE_BASE_COLORS; i++)
         dest[i] = sActionMenuBasePalette[i];
     if (lit)
         dest[7] = sActionMenuLitOutline;

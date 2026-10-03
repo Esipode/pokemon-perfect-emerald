@@ -2,6 +2,7 @@
 #include "battle.h"
 #include "battle_action_menu.h"
 #include "constants/battle.h"
+#include "constants/rgb.h"
 #include "test/test.h"
 #include "text.h"
 
@@ -115,4 +116,15 @@ TEST("(Action menu) Lit palette differs from idle only in indices 7-15")
             EXPECT_NE(idle[8 + i * 2], lit[8 + i * 2]);
         }
     }
+}
+
+TEST("(Action menu) Base palette loads from the generated asset")
+{
+    u16 pal[16];
+
+    ActionMenu_BuildPalette(ACTION_MENU_STANDARD, FALSE, pal);
+    EXPECT_EQ(pal[0], RGB_BLACK);
+    EXPECT_EQ(pal[1], RGB(3, 4, 7));
+    EXPECT_EQ(pal[4], RGB_WHITE);
+    EXPECT_EQ(pal[7], RGB(10, 12, 16));
 }

@@ -55,6 +55,22 @@ enum ActionMenuIcon
 #define ACTION_PALETTE_IDLE       12
 #define ACTION_PALETTE_LIT        13
 
+// Palette indices 0-6 are shared by idle and lit; 7 is the outline; 8-15 are the slot hues.
+#define ACTION_PALETTE_BASE_COLORS 8
+
+// Icon sheet (action_menu_icons.png): 16x16 icons in ActionMenuIcon order starting at ACTION_ICON_BATTLE,
+// then 8x8 keypad glyphs, two per 8 px row.
+#define ACTION_ICON_SIZE          16
+#define ACTION_ICON_TILES         4
+#define ACTION_ICON_COUNT         7
+#define ACTION_GLYPH_FIRST_TILE   (ACTION_ICON_COUNT * ACTION_ICON_TILES)
+enum ActionMenuGlyph
+{
+    ACTION_GLYPH_R,
+    ACTION_GLYPH_B,
+    ACTION_GLYPH_START,
+};
+
 #define ACTION_CHIP_WIDTH         64
 #define ACTION_CHIP_HEIGHT        19
 #define ACTION_LABEL_WIDTH        40
@@ -76,6 +92,8 @@ struct ActionMenuRect
     u8 right;               // inclusive
     u8 bottom;              // inclusive
 };
+
+extern const u32 gActionMenuIconsGfx[];
 
 const struct ActionMenuSlot *ActionMenu_GetSlot(enum ActionMenuId menuId, u32 slot);
 u32 ActionMenu_GetNextSlot(enum ActionMenuId menuId, u32 slot, enum ActionMenuDirection direction);

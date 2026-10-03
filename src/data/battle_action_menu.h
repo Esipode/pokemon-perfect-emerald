@@ -5,19 +5,6 @@ static const u8 sText_ActionRun[] = _("Run");
 static const u8 sText_ActionBall[] = _("Ball");
 static const u8 sText_ActionGoNear[] = _("Go Near");
 
-// Palette indices 0-7; see ActionMenu_BuildPalette.
-static const u16 sActionMenuBasePalette[8] =
-{
-    [0] = RGB_BLACK,
-    [1] = RGB(3, 4, 7),         // panel background
-    [2] = RGB(8, 9, 11),        // disabled chip fill, empty cell dots
-    [3] = RGB(22, 24, 28),      // accent stripe
-    [4] = RGB_WHITE,
-    [5] = RGB(6, 7, 9),         // text shadow, icon dark
-    [6] = RGB(17, 19, 22),      // muted text
-    [7] = RGB(10, 12, 16),      // chip outline, divider
-};
-
 static const u16 sActionMenuLitOutline = RGB(31, 29, 20);
 
 #define ACTION_HUE_RED(lit)   { RGB(lit ? 27 : 21, lit ? 7 : 6, lit ? 6 : 5), RGB(lit ? 16 : 11, 2, 2) }
