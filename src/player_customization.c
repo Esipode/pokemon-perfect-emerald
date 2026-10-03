@@ -492,6 +492,9 @@ void PlayerCustomization_GetBattleTransitionMugshotBgPalette(u8 style, u8 gender
 // shifts by the HSV delta from BAG_PAL_REF_INDEX to the style's bag slot colour: the player's choice,
 // else the slot's ROM colour, so non-Emerald styles default to their own bag colour.
 #define BAG_PAL_REF_INDEX 4
+// Brightness shift limits (0-255 V scale) keep very dark or very bright picks from crushing or washing out the ramp.
+#define BAG_PAL_MAX_DARKEN 60
+#define BAG_PAL_MAX_BRIGHTEN 40
 
 const u16 *PlayerCustomization_GetBagPaletteOverride(const u16 *basePal)
 {
@@ -515,6 +518,7 @@ const u16 *PlayerCustomization_GetBagPaletteOverride(const u16 *basePal)
     dh = (s16)h1 - (s16)h2;
     ds = (s16)s1 - (s16)s2;
     dv = (s16)v1 - (s16)v2;
+    dv = dv < -BAG_PAL_MAX_DARKEN ? -BAG_PAL_MAX_DARKEN : (dv > BAG_PAL_MAX_BRIGHTEN ? BAG_PAL_MAX_BRIGHTEN : dv);
 
     for (i = 0; i < 16; i++)
         sOwPaletteBuffer[i] = basePal[i];
