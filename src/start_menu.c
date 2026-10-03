@@ -87,6 +87,9 @@ enum
     NUM_MENU_ACTIONS,
 };
 
+// sStartMenuReorderState bits
+#define START_MENU_REORDER_ALLOWED (1 << 0) // Menu came from the normal or debug builder
+
 // Save status
 enum
 {
@@ -114,6 +117,7 @@ EWRAM_DATA static u8 sSaveDialogTimer = 0;
 EWRAM_DATA static bool8 sSavingComplete = FALSE;
 EWRAM_DATA static u8 sSaveInfoWindowId = 0;
 EWRAM_DATA static bool8 sNewGamePlusPromptActive = FALSE;
+EWRAM_DATA static u8 sStartMenuReorderState = 0;
 
 // Menu action callbacks
 static bool8 StartMenuPokedexCallback(void);
@@ -146,6 +150,9 @@ static bool8 BattlePyramidRetireStartCallback(void);
 static bool8 BattlePyramidRetireReturnCallback(void);
 static bool8 BattlePyramidRetireCallback(void);
 static bool8 HandleStartMenuInput(void);
+static bool8 HandleStartMenuReorderInput(void);
+static u32 GetStartMenuFirstReorderRow(void);
+static void DrawStartMenuReorderArrow(u32 row, bool32 show);
 
 // Save dialog callbacks
 static u8 SaveConfirmSaveCallback(void);
@@ -395,6 +402,7 @@ static void HideStartMenuDebug(void);
 static void BuildStartMenuActions(void)
 {
     sNumStartMenuActions = 0;
+    sStartMenuReorderState = 0;
 
     if (IsOverworldLinkActive() == TRUE)
     {
@@ -426,6 +434,7 @@ static void BuildStartMenuActions(void)
             BuildDebugStartMenu();
         else
             BuildNormalStartMenu();
+        sStartMenuReorderState = START_MENU_REORDER_ALLOWED;
     }
 }
 
@@ -889,6 +898,21 @@ void ShowStartMenu(void)
 
 static bool8 HandleStartMenuInput(void)
 {
+    if (JOY_NEW(SELECT_BUTTON))
+    {
+        if ((sStartMenuReorderState & START_MENU_REORDER_ALLOWED)
+         && sNumStartMenuActions > GetStartMenuFirstReorderRow())
+        {
+            PlaySE(SE_SELECT);
+            DrawStartMenuReorderArrow(sStartMenuCursorPos, FALSE);
+            sStartMenuCursorPos = GetStartMenuFirstReorderRow();
+            DrawStartMenuReorderArrow(sStartMenuCursorPos, TRUE);
+            CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
+            gMenuCallback = HandleStartMenuReorderInput;
+        }
+        return FALSE;
+    }
+
     if (JOY_NEW(DPAD_UP))
     {
         PlaySE(SE_SELECT);
@@ -934,6 +958,64 @@ static bool8 HandleStartMenuInput(void)
         HideStartMenu();
         return TRUE;
     }
+
+    return FALSE;
+}
+
+static const u8 sStartMenuReorderArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_RED, TEXT_COLOR_LIGHT_RED};
+
+// DEBUG stays pinned at row 0.
+static u32 GetStartMenuFirstReorderRow(void)
+{
+    return (sCurrentStartMenuActions[0] == MENU_ACTION_DEBUG) ? 1 : 0;
+}
+
+// Clears the cursor cell of a row and optionally draws the reorder arrow there. Caller copies to VRAM.
+static void DrawStartMenuReorderArrow(u32 row, bool32 show)
+{
+    u8 windowId = GetStartMenuWindowId();
+    u8 width = GetMenuCursorDimensionByFont(FONT_SMALL, 0);
+    u8 height = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
+    u8 top = 9 + row * height;
+
+    FillWindowPixelRect(windowId, PIXEL_FILL(1), 0, top, width, height);
+    if (show)
+        AddTextPrinterParameterized3(windowId, FONT_SMALL, 0, top, sStartMenuReorderArrowColors, TEXT_SKIP_DRAW, gText_SelectorArrow3);
+}
+
+// Moves the reorder arrow with wrap, skipping the pinned DEBUG row.
+static void MoveStartMenuReorderArrow(s32 delta)
+{
+    s32 first = GetStartMenuFirstReorderRow();
+    s32 pos = sStartMenuCursorPos + delta;
+
+    if (pos < first)
+        pos = sNumStartMenuActions - 1;
+    else if (pos >= sNumStartMenuActions)
+        pos = first;
+
+    PlaySE(SE_SELECT);
+    DrawStartMenuReorderArrow(sStartMenuCursorPos, FALSE);
+    sStartMenuCursorPos = pos;
+    DrawStartMenuReorderArrow(sStartMenuCursorPos, TRUE);
+    CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
+}
+
+static bool8 HandleStartMenuReorderInput(void)
+{
+    if (JOY_NEW(SELECT_BUTTON | B_BUTTON))
+    {
+        // InitMenuNormal clears the arrow cell, draws the normal cursor and resyncs the menu state.
+        PlaySE(SE_SELECT);
+        sStartMenuCursorPos = InitMenuNormal(GetStartMenuWindowId(), FONT_SMALL, 0, 9, GetMenuCursorDimensionByFont(FONT_SMALL, 1), sNumStartMenuActions, sStartMenuCursorPos);
+        gMenuCallback = HandleStartMenuInput;
+        return FALSE;
+    }
+
+    if (JOY_NEW(DPAD_UP))
+        MoveStartMenuReorderArrow(-1);
+    else if (JOY_NEW(DPAD_DOWN))
+        MoveStartMenuReorderArrow(1);
 
     return FALSE;
 }
