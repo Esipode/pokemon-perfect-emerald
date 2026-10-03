@@ -268,10 +268,39 @@ def opener_pixels(rows):
     return pixels + [0] * (32 * 6)
 
 
+# Last-used-ball window sprites. Idx 13 is the fill (the cycle arrows fade to it at runtime);
+# idx 11 / 10 are the shown arrow body / outline, idx 11 also the frame outline.
+BALL_SHEETS = ("last_used_ball_l", "last_used_ball_l_cycle", "last_used_ball_r", "last_used_ball_r_cycle")
+BALL_FILL_INDEX = 13
+BALL_ARROW_OUTLINE = (8, 9, 11)
+BALL_OUTLINE = (17, 19, 22)
+
+
+def ball_pixels(width, height, src):
+    """Remap a ball sheet to panel indices; also accepts an already remapped sheet."""
+    def at(x, y):
+        return src[y * width + x] if 0 <= x < width and 0 <= y < height else 0
+
+    out = bytearray()
+    for y in range(height):
+        for x in range(width):
+            v = at(x, y)
+            if v in (10, 11):
+                frame = v == 11 or any(at(x + dx, y + dy) in (0, 11, 14)
+                                       for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+                v = OPENER_OUTLINE_INDEX if frame else BALL_FILL_INDEX
+            elif v == 14:
+                v = OPENER_ACCENT_INDEX
+            out.append(v)
+    return bytes(out)
+
+
 def update_opener_palette():
     with open(OPENER_PAL, newline="") as f:
         lines = f.read().split("\r\n")
-    for index, rgb in ((OPENER_BG_INDEX, OPENER_BG), (OPENER_ACCENT_INDEX, OPENER_ACCENT)):
+    for index, rgb in ((OPENER_BG_INDEX, OPENER_BG), (OPENER_ACCENT_INDEX, OPENER_ACCENT),
+                       (BALL_FILL_INDEX, OPENER_BG), (OPENER_OUTLINE_INDEX, BALL_OUTLINE),
+                       (10, BALL_ARROW_OUTLINE)):
         lines[3 + index] = " ".join(str(c * 8) for c in rgb)
     with open(OPENER_PAL, "w", newline="") as f:
         f.write("\r\n".join(lines))
@@ -286,6 +315,12 @@ def write_openers():
     for suffix, rows in (("l", MOVE_INFO_OPENER_L), ("r", MOVE_INFO_OPENER_R)):
         with open(os.path.join(OUT_DIR, f"move_info_window_{suffix}.png"), "wb") as f:
             f.write(png4.write_indexed_png(32, 32, bytes(opener_pixels(rows)), plte))
+    for name in BALL_SHEETS:
+        path = os.path.join(OUT_DIR, f"{name}.png")
+        with open(path, "rb") as f:
+            img = png4.read_png(f.read())
+        with open(path, "wb") as f:
+            f.write(png4.write_indexed_png(img.width, img.height, ball_pixels(img.width, img.height, img.pixels), plte))
 
 
 def main():
