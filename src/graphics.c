@@ -1,8 +1,13 @@
 #include "global.h"
 #include "graphics.h"
+#include "battle_action_menu.h"
 
 const u32 gBattleTextboxTiles[] = INCGFX_U32("graphics/battle_interface/textbox.png", ".4bpp.smol");
+#if ACTION_MENU_NEW
+const u16 gBattleTextboxPalette[] = INCBIN_U16("graphics/battle_interface/textbox_panel.gbapal");
+#else
 const u16 gBattleTextboxPalette[] = INCBIN_U16("graphics/battle_interface/textbox.gbapal");
+#endif
 const u32 gBattleTextboxTilemap[] = INCGFX_U32("graphics/battle_interface/textbox_map.bin", ".smolTM");
 
 const u32 gUnusedGfx_OldCharmap[] = INCGFX_U32("graphics/unused/old_charmap.png", ".4bpp.smol"); // japanese table and bunch of stuff
