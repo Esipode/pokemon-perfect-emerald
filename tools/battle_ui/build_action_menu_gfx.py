@@ -2,8 +2,8 @@
 """Build the battle action menu art (Battle UI Revamp, Stage 2).
 
 Writes:
-  graphics/battle_interface/action_menu_icons.png  16 px wide sheet: seven 16x16 icons, then 8x8
-                                                   keypad glyphs for the hint row (two per row)
+  graphics/battle_interface/action_menu_icons.png  16 px wide sheet of 8x8 tiles, two per row: seven
+                                                   icons, then the keypad glyphs for the hint row
   graphics/battle_interface/action_menu.pal        panel base colours, indices 0-7
 
 Icon pixels use index 4 (light) and 5 (dark) only; the chip fill behind them is the slot hue.
@@ -36,133 +36,77 @@ BASE_PALETTE = [
 GLYPH_BG = 4
 GLYPH_FG = 5
 
-# '.' transparent, 'W' index 4, 'D' index 5.
+# '.' transparent, 'W' index 4, 'D' index 5. Icons are 8x8 (one tile each).
 ICONS = {
     "battle": [
-        "..............WW",
-        ".............WWD",
-        "............WWD.",
-        "...........WWD..",
-        "..........WWD...",
-        ".........WWD....",
-        "..W.....WWD.....",
-        "..WW...WWD......",
-        "...WW.WWD.......",
-        "....WWWD........",
-        ".....WWD........",
-        "....WWWWW.......",
-        "...DD.WWWW......",
-        "..DDD...DD......",
-        "..DD............",
-        "................",
+        "......WW",
+        ".....WW.",
+        "....WW..",
+        "...WW...",
+        "W.WW....",
+        ".WW.....",
+        ".WWW....",
+        "W..W....",
     ],
     "bag": [
-        "................",
-        ".....WWWWWW.....",
-        "....WD....DW....",
-        "....W......W....",
-        "...WWWWWWWWWW...",
-        "..WWWWWWWWWWWW..",
-        "..WWDDDDDDDDWW..",
-        "..WWWWWDDWWWWW..",
-        "..WWWWWDDWWWWW..",
-        "..WWWWWWWWWWWW..",
-        "..WWWWWWWWWWWW..",
-        "..WWWWWWWWWWWW..",
-        "..WWWWWWWWWWWW..",
-        "...WWWWWWWWWW...",
-        "................",
-        "................",
+        "..WWWW..",
+        "..W..W..",
+        ".WWWWWW.",
+        "WWWDDWWW",
+        "WWWWWWWW",
+        "WWWWWWWW",
+        "WWWWWWWW",
+        ".WWWWWW.",
     ],
     "pokemon": [
-        "................",
-        "......WWWW......",
-        "....WWWWWWWW....",
-        "...WWWWWWWWWW...",
-        "..WWWWWWWWWWWW..",
-        "..WWWWWDDWWWWW..",
-        "..DDDDDWWDDDDD..",
-        "..DDDDDWWDDDDD..",
-        "..WWWWWDDWWWWW..",
-        "..WWWWWWWWWWWW..",
-        "...WWWWWWWWWW...",
-        "....WWWWWWWW....",
-        "......WWWW......",
-        "................",
-        "................",
-        "................",
+        "..WWWW..",
+        ".WWWWWW.",
+        "WWWWWWWW",
+        "DDDWWDDD",
+        "DDDWWDDD",
+        "WWWWWWWW",
+        ".WWWWWW.",
+        "..WWWW..",
     ],
     "run": [
-        "................",
-        "................",
-        "........W.......",
-        ".W.......WW.....",
-        "..W.......WW....",
-        "WWWWWWWWWWWWW...",
-        "WWWWWWWWWWWWWW..",
-        "WWWWWWWWWWWWW...",
-        "..W.......WW....",
-        ".W.......WW.....",
-        "........W.......",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
+        "....W...",
+        "....WW..",
+        "WWWWWWW.",
+        "WWWWWWWW",
+        "WWWWWWW.",
+        "....WW..",
+        "....W...",
+        "........",
     ],
     "safari_ball": [
-        "................",
-        "......WWWW......",
-        "....WWDWWDWW....",
-        "...WWDWWWWDWW...",
-        "..WWDWWWWWWDWW..",
-        "..WDWWWDDWWWDW..",
-        "..WWWWDWWDWWWW..",
-        "..WWWWDWWDWWWW..",
-        "..WDWWWDDWWWDW..",
-        "..WWDWWWWWWDWW..",
-        "...WWDWWWWDWW...",
-        "....WWDWWDWW....",
-        "......WWWW......",
-        "................",
-        "................",
-        "................",
+        "..WWWW..",
+        ".WWDDWW.",
+        "WWDWWDWW",
+        "WDWWWWDW",
+        "WDWWWWDW",
+        "WWDWWDWW",
+        ".WWDDWW.",
+        "..WWWW..",
     ],
     "go_near": [
-        "................",
-        "...WW....WW.....",
-        "..WWWW..WWWW....",
-        "..WWWW..WWWW....",
-        "..WWWW..WWWW....",
-        "...WW....WW.....",
-        "................",
-        ".....WW....WW...",
-        "....WWWW..WWWW..",
-        "....WWWW..WWWW..",
-        "....WWWW..WWWW..",
-        ".....WW....WW...",
-        "................",
-        "................",
-        "................",
-        "................",
+        ".WW.....",
+        "WWWW....",
+        "WWWW....",
+        ".WW.....",
+        "....WW..",
+        "...WWWW.",
+        "...WWWW.",
+        "....WW..",
     ],
     "lock": [
-        "................",
-        "......WWWW......",
-        ".....WW..WW.....",
-        ".....W....W.....",
-        ".....W....W.....",
-        "....WWWWWWWW....",
-        "....WWWWWWWW....",
-        "....WWWDDWWW....",
-        "....WWWDDWWW....",
-        "....WWWDDWWW....",
-        "....WWWWWWWW....",
-        "....WWWWWWWW....",
-        "................",
-        "................",
-        "................",
-        "................",
+        "..WWWW..",
+        ".W....W.",
+        ".W....W.",
+        "WWWWWWWW",
+        "WWWDDWWW",
+        "WWWDDWWW",
+        "WWWWWWWW",
+        "........",
     ],
 }
 ICON_ORDER = ["battle", "bag", "pokemon", "run", "safari_ball", "go_near", "lock"]
@@ -177,7 +121,7 @@ GLYPH_ORDER = ["R", "B", "S"]  # R, B on the first row; S (Start) on the second
 
 
 def icon_pixels(rows):
-    assert len(rows) == 16 and all(len(r) == 16 for r in rows), "icon must be 16x16"
+    assert len(rows) == 8 and all(len(r) == 8 for r in rows), "icon must be 8x8"
     table = {".": 0, "W": 4, "D": 5}
     return [table[c] for r in rows for c in r]
 
@@ -204,17 +148,15 @@ def glyph_pixels(letter):
 
 
 def build_sheet():
+    """16 px wide sheet of 8x8 tiles, two per row: icons in ICON_ORDER, then the keypad glyphs."""
     width = 16
+    tiles = [icon_pixels(ICONS[name]) for name in ICON_ORDER] + [glyph_pixels(c) for c in GLYPH_ORDER]
+    if len(tiles) % 2:
+        tiles.append([0] * 64)
     pixels = []
-    for name in ICON_ORDER:
-        pixels += icon_pixels(ICONS[name])
-    # Glyph rows: two 8x8 glyphs per 8 px row.
-    glyphs = [glyph_pixels(c) for c in GLYPH_ORDER]
-    while len(glyphs) % 2:
-        glyphs.append([0] * 64)
-    for i in range(0, len(glyphs), 2):
+    for i in range(0, len(tiles), 2):
         for y in range(8):
-            pixels += glyphs[i][y * 8:(y + 1) * 8] + glyphs[i + 1][y * 8:(y + 1) * 8]
+            pixels += tiles[i][y * 8:(y + 1) * 8] + tiles[i + 1][y * 8:(y + 1) * 8]
     return width, len(pixels) // width, pixels
 
 

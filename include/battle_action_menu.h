@@ -2,6 +2,7 @@
 #define GUARD_BATTLE_ACTION_MENU_H
 
 #include "global.h"
+#include "constants/battle.h"
 
 // TRUE draws the styled action panel; FALSE keeps the classic prompt + menu windows.
 #define ACTION_MENU_NEW TRUE
@@ -58,12 +59,12 @@ enum ActionMenuIcon
 // Palette indices 0-6 are shared by idle and lit; 7 is the outline; 8-15 are the slot hues.
 #define ACTION_PALETTE_BASE_COLORS 8
 
-// Icon sheet (action_menu_icons.png): 16x16 icons in ActionMenuIcon order starting at ACTION_ICON_BATTLE,
-// then 8x8 keypad glyphs, two per 8 px row.
-#define ACTION_ICON_SIZE          16
-#define ACTION_ICON_TILES         4
+// Icon sheet (action_menu_icons.png): 16 px wide, 8x8 tiles two per row, in ActionMenuIcon order starting at
+// ACTION_ICON_BATTLE, followed by the keypad glyphs.
+#define ACTION_ICON_SIZE          8
 #define ACTION_ICON_COUNT         7
-#define ACTION_GLYPH_FIRST_TILE   (ACTION_ICON_COUNT * ACTION_ICON_TILES)
+#define ACTION_GLYPH_FIRST_TILE   ACTION_ICON_COUNT
+#define ACTION_SHEET_HEIGHT       40
 enum ActionMenuGlyph
 {
     ACTION_GLYPH_R,
@@ -100,5 +101,10 @@ u32 ActionMenu_GetNextSlot(enum ActionMenuId menuId, u32 slot, enum ActionMenuDi
 struct ActionMenuRect ActionMenu_GetChipPixelRect(u32 slot);
 struct ActionMenuRect ActionMenu_GetChipTileRect(u32 slot);
 void ActionMenu_BuildPalette(enum ActionMenuId menuId, bool32 lit, u16 *dest);
+
+void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId);
+void ActionMenu_SetPromptText(const u8 *line1, const u8 *line2);
+void ActionMenu_SetHighlight(u32 slot);
+void ActionMenu_ClearHighlight(u32 slot);
 
 #endif // GUARD_BATTLE_ACTION_MENU_H

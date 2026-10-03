@@ -43,8 +43,8 @@ static const struct ActionMenuSlot sActionMenus[ACTION_MENU_COUNT][ACTION_MENU_S
 // Chip rects in chip grid window pixels (inclusive); slots go left-to-right, top-to-bottom.
 static const struct ActionMenuRect sActionChipRects[ACTION_MENU_SLOT_COUNT] =
 {
-    { 4,  3, 67, 21 },
-    { 72, 3, 135, 21 },
-    { 4,  25, 67, 43 },
-    { 72, 25, 135, 43 },
+    { 4,  5, 67, 23 },
+    { 72, 5, 135, 23 },
+    { 4,  27, 67, 45 },
+    { 72, 27, 135, 45 },
 };

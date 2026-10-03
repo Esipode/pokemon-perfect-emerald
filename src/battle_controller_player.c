@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_action_menu.h"
 #include "battle_anim.h"
 #include "battle_arena.h"
 #include "battle_controllers.h"
@@ -349,6 +350,29 @@ static void HandleInputChooseAction(enum BattlerId battler)
         }
         BtlController_Complete(battler);
     }
+#if ACTION_MENU_NEW
+    else if (JOY_NEW(DPAD_ANY))
+    {
+        enum ActionMenuDirection direction = ACTION_DIR_DOWN;
+        u32 next;
+
+        if (JOY_NEW(DPAD_LEFT))
+            direction = ACTION_DIR_LEFT;
+        else if (JOY_NEW(DPAD_RIGHT))
+            direction = ACTION_DIR_RIGHT;
+        else if (JOY_NEW(DPAD_UP))
+            direction = ACTION_DIR_UP;
+
+        next = ActionMenu_GetNextSlot(ACTION_MENU_STANDARD, gActionSelectionCursor[battler], direction);
+        if (next != gActionSelectionCursor[battler])
+        {
+            PlaySE(SE_SELECT);
+            ActionSelectionDestroyCursorAt(gActionSelectionCursor[battler]);
+            gActionSelectionCursor[battler] = next;
+            ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
+        }
+    }
+#else
     else if (JOY_NEW(DPAD_LEFT))
     {
         if (gActionSelectionCursor[battler] & 1) // if is B_ACTION_USE_ITEM or B_ACTION_RUN
@@ -389,6 +413,7 @@ static void HandleInputChooseAction(enum BattlerId battler)
             ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
         }
     }
+#endif
     else if (JOY_NEW(B_BUTTON) || gPlayerDpadHoldFrames > 59)
     {
         if (IsDoubleBattle()
@@ -1833,22 +1858,30 @@ void MoveSelectionDestroyCursorAt(u8 cursorPosition)
 
 void ActionSelectionCreateCursorAt(u8 cursorPosition, u8 baseTileNum)
 {
+#if ACTION_MENU_NEW
+    ActionMenu_SetHighlight(cursorPosition);
+#else
     u16 src[2];
     src[0] = 1;
     src[1] = 2;
 
     CopyToBgTilemapBufferRect_ChangePalette(0, src, 7 * (cursorPosition & 1) + 16, 35 + (cursorPosition & 2), 1, 2, 0x11);
     CopyBgTilemapBufferToVram(0);
+#endif
 }
 
 void ActionSelectionDestroyCursorAt(u8 cursorPosition)
 {
+#if ACTION_MENU_NEW
+    ActionMenu_ClearHighlight(cursorPosition);
+#else
     u16 src[2];
     src[0] = 0x1016;
     src[1] = 0x1016;
 
     CopyToBgTilemapBufferRect_ChangePalette(0, src, 7 * (cursorPosition & 1) + 16, 35 + (cursorPosition & 2), 1, 2, 0x11);
     CopyBgTilemapBufferToVram(0);
+#endif
 }
 
 void CB2_SetUpReshowBattleScreenAfterMenu(void)
@@ -1995,6 +2028,17 @@ static void HandleChooseActionAfterDma3(enum BattlerId battler)
         {
             if (DEBUG_AI_DELAY_TIMER)
             {
+#if ACTION_MENU_NEW
+                static const u8 sFramesText[] = _(" frames thinking");
+                static const u8 sCyclesText[] = _(" cycles");
+                u8 *end = ConvertIntToDecimalStringN(gStringVar1, gBattleStruct->aiDelayFrames, STR_CONV_MODE_RIGHT_ALIGN, 3);
+                StringAppend(end, sFramesText);
+                end = ConvertIntToDecimalStringN(gStringVar2, gBattleStruct->aiDelayCycles, STR_CONV_MODE_RIGHT_ALIGN, 8);
+                // Clear old result once read out
+                gBattleStruct->aiDelayCycles = 0;
+                StringAppend(end, sCyclesText);
+                ActionMenu_SetPromptText(gStringVar1, gStringVar2);
+#else
                 static const u8 sFramesText[] = _(" frames thinking\n");
                 static const u8 sCyclesText[] = _(" cycles");
                 ConvertIntToDecimalStringN(gDisplayedStringBattle, gBattleStruct->aiDelayFrames, STR_CONV_MODE_RIGHT_ALIGN, 3);
@@ -2004,6 +2048,7 @@ static void HandleChooseActionAfterDma3(enum BattlerId battler)
                 gBattleStruct->aiDelayCycles = 0;
                 StringAppend(gDisplayedStringBattle, sCyclesText);
                 BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_ACTION_PROMPT);
+#endif
             }
             gBattleStruct->aiDelayTimer = 0;
             gBattleStruct->aiDelayFrames = 0;
@@ -2014,7 +2059,9 @@ static void HandleChooseActionAfterDma3(enum BattlerId battler)
 
 static void PlayerHandleChooseAction(enum BattlerId battler)
 {
+#if !ACTION_MENU_NEW
     s32 i;
+#endif
 
     // If AI is controlling the player, skip the action menu entirely and let the AI decide
     // the action, same as OpponentHandleChooseAction does for AI-controlled opponents. This
@@ -2030,6 +2077,10 @@ static void PlayerHandleChooseAction(enum BattlerId battler)
 
     gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
     BattleTv_ClearExplosionFaintCause();
+#if ACTION_MENU_NEW
+    ActionMenu_Show(battler, ACTION_MENU_STANDARD);
+    TryRestoreLastUsedBall();
+#else
     BattlePutTextOnWindow(gText_BattleMenu, B_WIN_ACTION_MENU);
 
     for (i = 0; i < 4; i++)
@@ -2039,13 +2090,18 @@ static void PlayerHandleChooseAction(enum BattlerId battler)
     ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
     PREPARE_MON_NICK_BUFFER(gBattleTextBuff1, battler, gBattlerPartyIndexes[battler]);
     BattleStringExpandPlaceholdersToDisplayedString(gText_WhatWillPkmnDo);
+#endif
 
     enum BattlerId partner = GetBattlerAtPosition(B_POSITION_PLAYER_RIGHT);
     if (B_SHOW_PARTNER_TARGET && gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER && IsBattlerAlive(partner))
     {
-        StringCopy(gStringVar1, COMPOUND_STRING("Partner will use:\n"));
         enum Move move = GetBattlerChosenMove(partner);
+#if ACTION_MENU_NEW
+        StringCopy(gStringVar1, GetMoveName(move));
+#else
+        StringCopy(gStringVar1, COMPOUND_STRING("Partner will use:\n"));
         StringAppend(gStringVar1, GetMoveName(move));
+#endif
         enum MoveTarget moveTarget = GetBattlerMoveSelectionTargetType(partner, move);
         if (moveTarget == TARGET_SELECTED || moveTarget == TARGET_SMART)
         {
@@ -2074,12 +2130,18 @@ static void PlayerHandleChooseAction(enum BattlerId battler)
         {
             StringAppend(gStringVar1, COMPOUND_STRING(" {V_D_ARROW}{V_D_ARROW}"));
         }
+#if ACTION_MENU_NEW
+        ActionMenu_SetPromptText(COMPOUND_STRING("Partner will use:"), gStringVar1);
+#else
         BattlePutTextOnWindow(gStringVar1, B_WIN_ACTION_PROMPT);
+#endif
     }
+#if !ACTION_MENU_NEW
     else
     {
         BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_ACTION_PROMPT);
     }
+#endif
 }
 
 static void PlayerHandleYesNoBox(enum BattlerId battler)

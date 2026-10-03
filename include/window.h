@@ -65,6 +65,7 @@ void ClearWindowTilemap(u32 windowId);
 void PutWindowRectTilemap(u32 windowId, u8 x, u8 y, u8 width, u8 height);
 void BlitBitmapToWindow(u32 windowId, const u8 *pixels, u16 x, u16 y, u16 width, u16 height);
 void BlitBitmapRectToWindow(u32 windowId, const u8 *pixels, u16 srcX, u16 srcY, u16 srcWidth, int srcHeight, u16 destX, u16 destY, u16 rectWidth, u16 rectHeight);
+void BlitBitmapRectToWindowWithColorKey(u32 windowId, const u8 *pixels, u16 srcX, u16 srcY, u16 srcWidth, int srcHeight, u16 destX, u16 destY, u16 rectWidth, u16 rectHeight, u8 colorKey);
 void FillWindowPixelRect(u32 windowId, u8 fillValue, u16 x, u16 y, u16 width, u16 height);
 void CopyToWindowPixelBuffer(u32 windowId, const void *src, u16 size, u16 tileOffset);
 void FillWindowPixelBuffer(u32 windowId, u8 fillValue);
