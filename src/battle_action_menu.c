@@ -7,6 +7,7 @@
 #include "battle_util.h"
 #include "bg.h"
 #include "event_data.h"
+#include "fpmath.h"
 #include "main.h"
 #include "palette.h"
 #include "safari_zone.h"
@@ -119,6 +120,104 @@ enum ActionSlotState ActionMenu_GetSlotState(enum BattlerId battler, enum Action
     if (info->action == B_ACTION_RUN && ActionMenu_IsRunLocked())
         return ACTION_SLOT_UNAVAILABLE;
     return ACTION_SLOT_ENABLED;
+}
+
+// Same bounded 2x2 rules as the classic move menu: a step onto a slot past moveCount is refused.
+u32 MoveMenu_GetNextSlot(u32 moveCount, u32 slot, enum MoveMenuDirection direction)
+{
+    u32 next = slot;
+
+    switch (direction)
+    {
+    case MOVE_DIR_UP:
+        if (slot & 2)
+            next = slot ^ 2;
+        break;
+    case MOVE_DIR_DOWN:
+        if (!(slot & 2))
+            next = slot ^ 2;
+        break;
+    case MOVE_DIR_LEFT:
+        if (slot & 1)
+            next = slot ^ 1;
+        break;
+    default:
+        if (!(slot & 1))
+            next = slot ^ 1;
+        break;
+    }
+
+    return next < moveCount ? next : slot;
+}
+
+enum MovePpTier MoveMenu_GetPpTier(u32 currentPp, u32 maxPp)
+{
+    if (maxPp == 0)
+        return MOVE_PP_NORMAL;
+    if (currentPp == 0)
+        return MOVE_PP_EMPTY;
+    if (currentPp * 4 <= maxPp)
+        return MOVE_PP_RED;
+    if (currentPp * 2 <= maxPp)
+        return MOVE_PP_AMBER;
+    return MOVE_PP_NORMAL;
+}
+
+// modifier is the type multiplier in UQ_4_12; status moves never show a badge.
+enum MoveEffBadge MoveMenu_GetEffectivenessBadge(u32 modifier, bool32 isStatus)
+{
+    if (isStatus)
+        return MOVE_EFF_NONE;
+    if (modifier == UQ_4_12(0.0))
+        return MOVE_EFF_IMMUNE;
+    if (modifier <= UQ_4_12(0.25))
+        return MOVE_EFF_MOSTLY_RESISTED;
+    if (modifier <= UQ_4_12(0.5))
+        return MOVE_EFF_RESISTED;
+    if (modifier >= UQ_4_12(4.0))
+        return MOVE_EFF_EXTREME;
+    if (modifier >= UQ_4_12(2.0))
+        return MOVE_EFF_SUPER;
+    return MOVE_EFF_NONE;
+}
+
+struct ActionMenuRect MoveMenu_GetCellPixelRect(u32 slot)
+{
+    return sMoveCellRects[slot];
+}
+
+struct ActionMenuRect MoveMenu_GetCellTileRect(u32 slot)
+{
+    struct ActionMenuRect px = sMoveCellRects[slot];
+    struct ActionMenuRect tiles = { px.left / 8, px.top / 8, px.right / 8, px.bottom / 8 };
+
+    return tiles;
+}
+
+static u16 ScaleMoveColor(const u8 *rgb, u32 numerator, u32 denominator)
+{
+    return RGB(rgb[0] * numerator / denominator, rgb[1] * numerator / denominator, rgb[2] * numerator / denominator);
+}
+
+// Indices 0-7 match the action palettes; each slot's pair is that move's type colour (idle is 3/4 strength).
+// Types[] entries of TYPE_NONE (unused slots) take the neutral grey.
+void MoveMenu_BuildPalette(const enum Type types[MOVE_MENU_SLOT_COUNT], bool32 lit, u16 *dest)
+{
+    u32 i;
+
+    for (i = 0; i < ACTION_PALETTE_BASE_COLORS; i++)
+        dest[i] = sActionMenuBasePalette[i];
+    if (lit)
+        dest[7] = sActionMenuLitOutline;
+
+    for (i = 0; i < MOVE_MENU_SLOT_COUNT; i++)
+    {
+        const u8 *rgb = sMoveTypeColors[types[i] < NUMBER_OF_MON_TYPES ? types[i] : TYPE_NONE];
+        u32 strength = lit ? 4 : 3;
+
+        dest[8 + i * 2] = ScaleMoveColor(rgb, strength, 4);
+        dest[9 + i * 2] = ScaleMoveColor(rgb, strength * 5, 4 * 9);
+    }
 }
 
 // Prompt plate geometry in plate window pixels (see §1.2).

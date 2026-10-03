@@ -3,8 +3,11 @@
 #include "battle_action_menu.h"
 #include "battle_util.h"
 #include "event_data.h"
+#include "fpmath.h"
+#include "move.h"
 #include "constants/battle.h"
 #include "constants/flags.h"
+#include "constants/moves.h"
 #include "constants/rgb.h"
 #include "test/test.h"
 #include "string_util.h"
@@ -207,4 +210,145 @@ TEST("(Action menu) Empty cells report EMPTY")
     EXPECT_EQ(ActionMenu_GetSlotState(0, ACTION_MENU_SAFARI, 3), ACTION_SLOT_EMPTY);
     EXPECT_EQ(ActionMenu_GetSlotState(0, ACTION_MENU_SAFARI, 0), ACTION_SLOT_ENABLED);
     EXPECT_EQ(ActionMenu_GetSlotState(0, ACTION_MENU_TUTORIAL, 3), ACTION_SLOT_ENABLED);
+}
+
+TEST("(Action menu) Move navigation never selects a slot past the move count")
+{
+    u32 count, slot, dir, next;
+
+    for (count = 1; count <= MOVE_MENU_SLOT_COUNT; count++)
+    {
+        for (slot = 0; slot < count; slot++)
+        {
+            for (dir = MOVE_DIR_UP; dir <= MOVE_DIR_RIGHT; dir++)
+            {
+                next = MoveMenu_GetNextSlot(count, slot, dir);
+                EXPECT_LT(next, count);
+            }
+        }
+    }
+}
+
+TEST("(Action menu) Move navigation matches the 2x2 grid with four moves")
+{
+    u32 slot;
+
+    for (slot = 0; slot < MOVE_MENU_SLOT_COUNT; slot++)
+    {
+        EXPECT_EQ(MoveMenu_GetNextSlot(4, slot, MOVE_DIR_UP), (slot & 2) ? slot ^ 2 : slot);
+        EXPECT_EQ(MoveMenu_GetNextSlot(4, slot, MOVE_DIR_DOWN), (slot & 2) ? slot : slot ^ 2);
+        EXPECT_EQ(MoveMenu_GetNextSlot(4, slot, MOVE_DIR_LEFT), (slot & 1) ? slot ^ 1 : slot);
+        EXPECT_EQ(MoveMenu_GetNextSlot(4, slot, MOVE_DIR_RIGHT), (slot & 1) ? slot : slot ^ 1);
+    }
+}
+
+TEST("(Action menu) Move navigation refuses steps onto missing moves")
+{
+    // Two moves: only the top row exists.
+    EXPECT_EQ(MoveMenu_GetNextSlot(2, 0, MOVE_DIR_DOWN), 0);
+    EXPECT_EQ(MoveMenu_GetNextSlot(2, 1, MOVE_DIR_DOWN), 1);
+    EXPECT_EQ(MoveMenu_GetNextSlot(2, 0, MOVE_DIR_RIGHT), 1);
+    // Three moves: slot 3 is missing.
+    EXPECT_EQ(MoveMenu_GetNextSlot(3, 1, MOVE_DIR_DOWN), 1);
+    EXPECT_EQ(MoveMenu_GetNextSlot(3, 2, MOVE_DIR_RIGHT), 2);
+    EXPECT_EQ(MoveMenu_GetNextSlot(3, 2, MOVE_DIR_UP), 0);
+    // One move: nowhere to go.
+    EXPECT_EQ(MoveMenu_GetNextSlot(1, 0, MOVE_DIR_RIGHT), 0);
+    EXPECT_EQ(MoveMenu_GetNextSlot(1, 0, MOVE_DIR_DOWN), 0);
+}
+
+TEST("(Action menu) Move cells never share an 8x8 tile")
+{
+    u32 a, b;
+
+    for (a = 0; a < MOVE_MENU_SLOT_COUNT; a++)
+    {
+        for (b = a + 1; b < MOVE_MENU_SLOT_COUNT; b++)
+            EXPECT(!RectsOverlap(MoveMenu_GetCellTileRect(a), MoveMenu_GetCellTileRect(b)));
+    }
+}
+
+TEST("(Action menu) Move cells have the cell size and fit the move grid window")
+{
+    u32 slot;
+
+    for (slot = 0; slot < MOVE_MENU_SLOT_COUNT; slot++)
+    {
+        struct ActionMenuRect px = MoveMenu_GetCellPixelRect(slot);
+        struct ActionMenuRect tiles = MoveMenu_GetCellTileRect(slot);
+
+        EXPECT_EQ(px.right - px.left + 1, MOVE_CELL_WIDTH);
+        EXPECT_EQ(px.bottom - px.top + 1, MOVE_CELL_HEIGHT);
+        EXPECT_LT(tiles.right, MOVE_GRID_WIDTH_TILES);
+        EXPECT_LT(tiles.bottom, MOVE_PANEL_HEIGHT_TILES);
+    }
+}
+
+TEST("(Action menu) PP tiers switch at 50 percent, 25 percent and zero")
+{
+    EXPECT_EQ(MoveMenu_GetPpTier(15, 15), MOVE_PP_NORMAL);
+    EXPECT_EQ(MoveMenu_GetPpTier(8, 15), MOVE_PP_NORMAL);
+    EXPECT_EQ(MoveMenu_GetPpTier(7, 15), MOVE_PP_AMBER);
+    EXPECT_EQ(MoveMenu_GetPpTier(10, 20), MOVE_PP_AMBER);
+    EXPECT_EQ(MoveMenu_GetPpTier(5, 20), MOVE_PP_RED);
+    EXPECT_EQ(MoveMenu_GetPpTier(1, 5), MOVE_PP_RED);
+    EXPECT_EQ(MoveMenu_GetPpTier(0, 20), MOVE_PP_EMPTY);
+    EXPECT_EQ(MoveMenu_GetPpTier(0, 0), MOVE_PP_NORMAL);
+}
+
+TEST("(Action menu) Effectiveness badge follows the type multiplier")
+{
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(1.0), FALSE), MOVE_EFF_NONE);
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(2.0), FALSE), MOVE_EFF_SUPER);
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(4.0), FALSE), MOVE_EFF_EXTREME);
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(0.5), FALSE), MOVE_EFF_RESISTED);
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(0.25), FALSE), MOVE_EFF_MOSTLY_RESISTED);
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(0.0), FALSE), MOVE_EFF_IMMUNE);
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(0.0), TRUE), MOVE_EFF_NONE);
+    EXPECT_EQ(MoveMenu_GetEffectivenessBadge(UQ_4_12(2.0), TRUE), MOVE_EFF_NONE);
+}
+
+TEST("(Action menu) Move palette keeps the base colours and tints each slot by type")
+{
+    static const enum Type types[MOVE_MENU_SLOT_COUNT] = { TYPE_FIRE, TYPE_WATER, TYPE_NONE, TYPE_GRASS };
+    u16 idle[16], lit[16];
+    u32 i;
+
+    MoveMenu_BuildPalette(types, FALSE, idle);
+    MoveMenu_BuildPalette(types, TRUE, lit);
+    for (i = 0; i < 7; i++)
+        EXPECT_EQ(idle[i], lit[i]);
+    EXPECT_NE(idle[7], lit[7]);
+    for (i = 0; i < MOVE_MENU_SLOT_COUNT; i++)
+    {
+        EXPECT_NE(idle[8 + i * 2], lit[8 + i * 2]);
+        EXPECT_NE(lit[8 + i * 2], lit[9 + i * 2]);
+    }
+    EXPECT_NE(lit[8], lit[10]);
+    EXPECT_NE(lit[10], lit[14]);
+}
+
+TEST("(Action menu) Move panel windows fit between the action panel and the Move Info window")
+{
+    EXPECT_GE(MOVE_PLATE_BASE_BLOCK, ACTION_PANEL_TILE_LIMIT);
+    EXPECT_EQ(MOVE_GRID_BASE_BLOCK, MOVE_PLATE_BASE_BLOCK + MOVE_PLATE_TILE_COUNT);
+    EXPECT_LE(MOVE_STUB_BASE_BLOCK + MOVE_STUB_COUNT, MOVE_PANEL_TILE_LIMIT);
+    EXPECT_EQ(MOVE_PLATE_WIDTH_TILES + MOVE_GRID_WIDTH_TILES, DISPLAY_WIDTH / 8);
+    EXPECT_EQ(MOVE_PANEL_TOP_TILE + MOVE_PANEL_HEIGHT_TILES, 60);
+}
+
+TEST("(Action menu) Every move name fits a move cell with the narrowest font")
+{
+    enum Move move;
+    enum Move firstMisfit = MOVE_NONE;
+
+    for (move = 1; move < MOVES_COUNT; move++)
+    {
+        const u8 *name = GetMoveName(move);
+        u32 font = GetFontIdToFit(name, FONT_NARROW, 0, MOVE_NAME_WIDTH);
+
+        if (firstMisfit == MOVE_NONE && GetStringWidth(font, name, 0) > MOVE_NAME_WIDTH)
+            firstMisfit = move;
+    }
+    EXPECT_EQ(firstMisfit, MOVE_NONE);
 }

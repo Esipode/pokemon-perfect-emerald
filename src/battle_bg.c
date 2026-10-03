@@ -152,6 +152,56 @@ const struct BgTemplate gBattleBgTemplates[] =
     },
 };
 
+#if ACTION_MENU_NEW
+// Move view: the plate and cell windows take the first two move-name ids. The other move windows
+// shrink to 1x1 stubs parked below the visible rows, so a stray print cannot touch the panel.
+#define MOVE_MENU_STUB(id, block) \
+    [id] = { \
+        .bg = 0, \
+        .tilemapLeft = 0, \
+        .tilemapTop = MOVE_STUB_TOP_TILE, \
+        .width = 1, \
+        .height = 1, \
+        .paletteNum = 5, \
+        .baseBlock = block, \
+    }
+
+#define MOVE_MENU_WINDOW_TEMPLATES \
+    [B_WIN_MOVE_NAME_1] = { \
+        .bg = 0, \
+        .tilemapLeft = MOVE_PLATE_LEFT_TILE, \
+        .tilemapTop = MOVE_PANEL_TOP_TILE, \
+        .width = MOVE_PLATE_WIDTH_TILES, \
+        .height = MOVE_PANEL_HEIGHT_TILES, \
+        .paletteNum = ACTION_PALETTE_IDLE, \
+        .baseBlock = MOVE_PLATE_BASE_BLOCK, \
+    }, \
+    [B_WIN_MOVE_NAME_2] = { \
+        .bg = 0, \
+        .tilemapLeft = MOVE_GRID_LEFT_TILE, \
+        .tilemapTop = MOVE_PANEL_TOP_TILE, \
+        .width = MOVE_GRID_WIDTH_TILES, \
+        .height = MOVE_PANEL_HEIGHT_TILES, \
+        .paletteNum = ACTION_PALETTE_IDLE, \
+        .baseBlock = MOVE_GRID_BASE_BLOCK, \
+    }, \
+    MOVE_MENU_STUB(B_WIN_MOVE_NAME_3, MOVE_STUB_BASE_BLOCK + 0), \
+    MOVE_MENU_STUB(B_WIN_MOVE_NAME_4, MOVE_STUB_BASE_BLOCK + 1), \
+    MOVE_MENU_STUB(B_WIN_PP, MOVE_STUB_BASE_BLOCK + 2), \
+    [B_WIN_DUMMY] = { \
+        .bg = 0, \
+        .tilemapLeft = 21, \
+        .tilemapTop = 57, \
+        .width = 0, \
+        .height = 0, \
+        .paletteNum = 5, \
+        .baseBlock = MOVE_STUB_BASE_BLOCK + 3, \
+    }, \
+    MOVE_MENU_STUB(B_WIN_PP_REMAINING, MOVE_STUB_BASE_BLOCK + 3), \
+    MOVE_MENU_STUB(B_WIN_MOVE_TYPE, MOVE_STUB_BASE_BLOCK + 4), \
+    MOVE_MENU_STUB(B_WIN_SWITCH_PROMPT, MOVE_STUB_BASE_BLOCK + 5),
+#endif
+
 static const struct WindowTemplate sStandardBattleWindowTemplates[] =
 {
     [B_WIN_MSG] = {
@@ -202,6 +252,9 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
         .baseBlock = 0x0190,
     },
 #endif
+#if ACTION_MENU_NEW
+    MOVE_MENU_WINDOW_TEMPLATES
+#else
     [B_WIN_MOVE_NAME_1] = {
         .bg = 0,
         .tilemapLeft = 2,
@@ -283,6 +336,7 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x02b0,
     },
+#endif
     [B_WIN_YESNO] = {
         .bg = 0,
         .tilemapLeft = 26,
@@ -462,6 +516,9 @@ static const struct WindowTemplate sKantoTutorialBattleWindowTemplates[] =
         .baseBlock = 0x0190,
     },
 #endif
+#if ACTION_MENU_NEW
+    MOVE_MENU_WINDOW_TEMPLATES
+#else
     [B_WIN_MOVE_NAME_1] = {
         .bg = 0,
         .tilemapLeft = 2,
@@ -543,6 +600,7 @@ static const struct WindowTemplate sKantoTutorialBattleWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x02b0,
     },
+#endif
     [B_WIN_YESNO] = {
         .bg = 0,
         .tilemapLeft = 26,
@@ -722,6 +780,9 @@ static const struct WindowTemplate sBattleArenaWindowTemplates[] =
         .baseBlock = 0x0190,
     },
 #endif
+#if ACTION_MENU_NEW
+    MOVE_MENU_WINDOW_TEMPLATES
+#else
     [B_WIN_MOVE_NAME_1] = {
         .bg = 0,
         .tilemapLeft = 2,
@@ -803,6 +864,7 @@ static const struct WindowTemplate sBattleArenaWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x02b0,
     },
+#endif
     [B_WIN_YESNO] = {
         .bg = 0,
         .tilemapLeft = 26,

@@ -3,6 +3,7 @@
 
 #include "global.h"
 #include "constants/battle.h"
+#include "constants/pokemon.h"
 
 // TRUE draws the styled action panel; FALSE keeps the classic prompt + menu windows.
 #define ACTION_MENU_NEW TRUE
@@ -102,6 +103,65 @@ struct ActionMenuRect
     u8 bottom;              // inclusive
 };
 
+// Move view (BG0 rows 54-59 at BG0_Y = 320): a plate window with the selected move's details and a grid
+// window with the four move cells. Tiles stay above the action panel's 0x10C-0x1BF and below the Move Info
+// window at 0x350.
+#define MOVE_PANEL_TOP_TILE       54
+#define MOVE_PANEL_HEIGHT_TILES   ACTION_PANEL_HEIGHT_TILES
+
+#define MOVE_PLATE_LEFT_TILE      0
+#define MOVE_PLATE_WIDTH_TILES    ACTION_PROMPT_WIDTH_TILES
+#define MOVE_PLATE_BASE_BLOCK     0x290
+#define MOVE_PLATE_TILE_COUNT     (MOVE_PLATE_WIDTH_TILES * MOVE_PANEL_HEIGHT_TILES)
+
+#define MOVE_GRID_LEFT_TILE       (MOVE_PLATE_LEFT_TILE + MOVE_PLATE_WIDTH_TILES)
+#define MOVE_GRID_WIDTH_TILES     ACTION_GRID_WIDTH_TILES
+#define MOVE_GRID_BASE_BLOCK      (MOVE_PLATE_BASE_BLOCK + MOVE_PLATE_TILE_COUNT)
+#define MOVE_GRID_TILE_COUNT      (MOVE_GRID_WIDTH_TILES * MOVE_PANEL_HEIGHT_TILES)
+
+// Unused move windows shrink to 1x1 stubs on tilemap row 62 (off screen at the move view).
+#define MOVE_STUB_BASE_BLOCK      (MOVE_GRID_BASE_BLOCK + MOVE_GRID_TILE_COUNT)
+#define MOVE_STUB_COUNT           6
+#define MOVE_STUB_TOP_TILE        62
+
+// First tile of the Move Info window (B_WIN_MOVE_DESCRIPTION); the move view must stay below it.
+#define MOVE_PANEL_TILE_LIMIT     0x350
+
+#define MOVE_MENU_SLOT_COUNT      4
+#define MOVE_CELL_WIDTH           72
+#define MOVE_CELL_HEIGHT          22
+// Cell contents, left to right: pointer (x 0-4), type pip (x 6-9), name (x 11 to the cell edge).
+#define MOVE_POINTER_X            0
+#define MOVE_PIP_X                6
+#define MOVE_NAME_X               11
+#define MOVE_NAME_WIDTH           (MOVE_CELL_WIDTH - MOVE_NAME_X)
+
+enum MovePpTier
+{
+    MOVE_PP_NORMAL,
+    MOVE_PP_AMBER,      // <= 50 %
+    MOVE_PP_RED,        // <= 25 %
+    MOVE_PP_EMPTY,
+};
+
+enum MoveEffBadge
+{
+    MOVE_EFF_NONE,      // Normal damage, status move or unknown matchup
+    MOVE_EFF_SUPER,
+    MOVE_EFF_EXTREME,
+    MOVE_EFF_RESISTED,
+    MOVE_EFF_MOSTLY_RESISTED,
+    MOVE_EFF_IMMUNE,
+};
+
+enum MoveMenuDirection
+{
+    MOVE_DIR_UP,
+    MOVE_DIR_DOWN,
+    MOVE_DIR_LEFT,
+    MOVE_DIR_RIGHT,
+};
+
 extern const u32 gActionMenuIconsGfx[];
 
 const struct ActionMenuSlot *ActionMenu_GetSlot(enum ActionMenuId menuId, u32 slot);
@@ -112,6 +172,13 @@ void ActionMenu_BuildPalette(enum ActionMenuId menuId, bool32 lit, u16 *dest);
 bool32 ActionMenu_IsBagLocked(enum BattlerId battler, bool32 restrictionsApply);
 bool32 ActionMenu_IsRunLocked(void);
 enum ActionSlotState ActionMenu_GetSlotState(enum BattlerId battler, enum ActionMenuId menuId, u32 slot);
+
+u32 MoveMenu_GetNextSlot(u32 moveCount, u32 slot, enum MoveMenuDirection direction);
+enum MovePpTier MoveMenu_GetPpTier(u32 currentPp, u32 maxPp);
+enum MoveEffBadge MoveMenu_GetEffectivenessBadge(u32 modifier, bool32 isStatus);
+struct ActionMenuRect MoveMenu_GetCellPixelRect(u32 slot);
+struct ActionMenuRect MoveMenu_GetCellTileRect(u32 slot);
+void MoveMenu_BuildPalette(const enum Type types[MOVE_MENU_SLOT_COUNT], bool32 lit, u16 *dest);
 
 void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId, const u8 *line2Template);
 void ActionMenu_Redraw(enum BattlerId battler);
