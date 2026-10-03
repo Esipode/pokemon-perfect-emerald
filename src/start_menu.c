@@ -906,7 +906,8 @@ static bool8 HandleStartMenuInput(void)
         {
             PlaySE(SE_SELECT);
             DrawStartMenuReorderArrow(sStartMenuCursorPos, FALSE);
-            sStartMenuCursorPos = GetStartMenuFirstReorderRow();
+            if (sStartMenuCursorPos < GetStartMenuFirstReorderRow())
+                sStartMenuCursorPos = GetStartMenuFirstReorderRow();
             DrawStartMenuReorderArrow(sStartMenuCursorPos, TRUE);
             CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
             gMenuCallback = HandleStartMenuReorderInput;
