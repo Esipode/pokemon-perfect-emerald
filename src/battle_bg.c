@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_action_menu.h"
 #include "battle_anim.h"
 #include "battle_bg.h"
 #include "battle_main.h"
@@ -162,6 +163,26 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
         .paletteNum = 0,
         .baseBlock = 0x0090,
     },
+#if ACTION_MENU_NEW
+    [B_WIN_ACTION_PROMPT] = {
+        .bg = 0,
+        .tilemapLeft = ACTION_PROMPT_LEFT_TILE,
+        .tilemapTop = ACTION_PANEL_TOP_TILE,
+        .width = ACTION_PROMPT_WIDTH_TILES,
+        .height = ACTION_PANEL_HEIGHT_TILES,
+        .paletteNum = ACTION_PALETTE_IDLE,
+        .baseBlock = ACTION_PROMPT_BASE_BLOCK,
+    },
+    [B_WIN_ACTION_MENU] = {
+        .bg = 0,
+        .tilemapLeft = ACTION_GRID_LEFT_TILE,
+        .tilemapTop = ACTION_PANEL_TOP_TILE,
+        .width = ACTION_GRID_WIDTH_TILES,
+        .height = ACTION_PANEL_HEIGHT_TILES,
+        .paletteNum = ACTION_PALETTE_IDLE,
+        .baseBlock = ACTION_GRID_BASE_BLOCK,
+    },
+#else
     [B_WIN_ACTION_PROMPT] = {
         .bg = 0,
         .tilemapLeft = 1,
@@ -180,6 +201,7 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x0190,
     },
+#endif
     [B_WIN_MOVE_NAME_1] = {
         .bg = 0,
         .tilemapLeft = 2,
@@ -401,6 +423,26 @@ static const struct WindowTemplate sKantoTutorialBattleWindowTemplates[] =
         .paletteNum = 0,
         .baseBlock = 0x0090,
     },
+#if ACTION_MENU_NEW
+    [B_WIN_ACTION_PROMPT] = {
+        .bg = 0,
+        .tilemapLeft = ACTION_PROMPT_LEFT_TILE,
+        .tilemapTop = ACTION_PANEL_TOP_TILE,
+        .width = ACTION_PROMPT_WIDTH_TILES,
+        .height = ACTION_PANEL_HEIGHT_TILES,
+        .paletteNum = ACTION_PALETTE_IDLE,
+        .baseBlock = ACTION_PROMPT_BASE_BLOCK,
+    },
+    [B_WIN_ACTION_MENU] = {
+        .bg = 0,
+        .tilemapLeft = ACTION_GRID_LEFT_TILE,
+        .tilemapTop = ACTION_PANEL_TOP_TILE,
+        .width = ACTION_GRID_WIDTH_TILES,
+        .height = ACTION_PANEL_HEIGHT_TILES,
+        .paletteNum = ACTION_PALETTE_IDLE,
+        .baseBlock = ACTION_GRID_BASE_BLOCK,
+    },
+#else
     [B_WIN_ACTION_PROMPT] = {
         .bg = 0,
         .tilemapLeft = 1,
@@ -419,6 +461,7 @@ static const struct WindowTemplate sKantoTutorialBattleWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x0190,
     },
+#endif
     [B_WIN_MOVE_NAME_1] = {
         .bg = 0,
         .tilemapLeft = 2,
@@ -640,6 +683,26 @@ static const struct WindowTemplate sBattleArenaWindowTemplates[] =
         .paletteNum = 0,
         .baseBlock = 0x0090,
     },
+#if ACTION_MENU_NEW
+    [B_WIN_ACTION_PROMPT] = {
+        .bg = 0,
+        .tilemapLeft = ACTION_PROMPT_LEFT_TILE,
+        .tilemapTop = ACTION_PANEL_TOP_TILE,
+        .width = ACTION_PROMPT_WIDTH_TILES,
+        .height = ACTION_PANEL_HEIGHT_TILES,
+        .paletteNum = ACTION_PALETTE_IDLE,
+        .baseBlock = ACTION_PROMPT_BASE_BLOCK,
+    },
+    [B_WIN_ACTION_MENU] = {
+        .bg = 0,
+        .tilemapLeft = ACTION_GRID_LEFT_TILE,
+        .tilemapTop = ACTION_PANEL_TOP_TILE,
+        .width = ACTION_GRID_WIDTH_TILES,
+        .height = ACTION_PANEL_HEIGHT_TILES,
+        .paletteNum = ACTION_PALETTE_IDLE,
+        .baseBlock = ACTION_GRID_BASE_BLOCK,
+    },
+#else
     [B_WIN_ACTION_PROMPT] = {
         .bg = 0,
         .tilemapLeft = 1,
@@ -658,6 +721,7 @@ static const struct WindowTemplate sBattleArenaWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x0190,
     },
+#endif
     [B_WIN_MOVE_NAME_1] = {
         .bg = 0,
         .tilemapLeft = 2,

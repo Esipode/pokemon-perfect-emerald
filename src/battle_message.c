@@ -1,5 +1,6 @@
 #include "global.h"
 #include "battle.h"
+#include "battle_action_menu.h"
 #include "battle_anim.h"
 #include "battle_ai_record.h"
 #include "battle_controllers.h"
@@ -3807,6 +3808,30 @@ static const struct BattleWindowText sTextOnWindowsInfo_Normal[] =
         .color.accent = 15,
         .color.shadow = 6,
     },
+#if ACTION_MENU_NEW
+    [B_WIN_ACTION_PROMPT] = {
+        .fillValue = PIXEL_FILL(1),
+        .fontId = FONT_NORMAL,
+        .x = 0,
+        .y = 0,
+        .speed = 0,
+        .color.foreground = 4,
+        .color.background = 1,
+        .color.accent = 1,
+        .color.shadow = 5,
+    },
+    [B_WIN_ACTION_MENU] = {
+        .fillValue = PIXEL_FILL(1),
+        .fontId = FONT_NARROW,
+        .x = 0,
+        .y = 0,
+        .speed = 0,
+        .color.foreground = 4,
+        .color.background = 1,
+        .color.accent = 1,
+        .color.shadow = 5,
+    },
+#else
     [B_WIN_ACTION_PROMPT] = {
         .fillValue = PIXEL_FILL(0xF),
         .fontId = FONT_NORMAL,
@@ -3829,6 +3854,7 @@ static const struct BattleWindowText sTextOnWindowsInfo_Normal[] =
         .color.accent = 14,
         .color.shadow = 15,
     },
+#endif
     [B_WIN_MOVE_NAME_1] = {
         .fillValue = PIXEL_FILL(0xE),
         .fontId = FONT_NARROW,
@@ -4091,6 +4117,30 @@ static const struct BattleWindowText sTextOnWindowsInfo_KantoTutorial[] =
         .color.accent = 15,
         .color.shadow = 6,
     },
+#if ACTION_MENU_NEW
+    [B_WIN_ACTION_PROMPT] = {
+        .fillValue = PIXEL_FILL(1),
+        .fontId = FONT_NORMAL,
+        .x = 0,
+        .y = 0,
+        .speed = 0,
+        .color.foreground = 4,
+        .color.background = 1,
+        .color.accent = 1,
+        .color.shadow = 5,
+    },
+    [B_WIN_ACTION_MENU] = {
+        .fillValue = PIXEL_FILL(1),
+        .fontId = FONT_NARROW,
+        .x = 0,
+        .y = 0,
+        .speed = 0,
+        .color.foreground = 4,
+        .color.background = 1,
+        .color.accent = 1,
+        .color.shadow = 5,
+    },
+#else
     [B_WIN_ACTION_PROMPT] = {
         .fillValue = PIXEL_FILL(0xF),
         .fontId = FONT_NORMAL,
@@ -4113,6 +4163,7 @@ static const struct BattleWindowText sTextOnWindowsInfo_KantoTutorial[] =
         .color.accent = 14,
         .color.shadow = 15,
     },
+#endif
     [B_WIN_MOVE_NAME_1] = {
         .fillValue = PIXEL_FILL(0xE),
         .fontId = FONT_NARROW,
@@ -4377,6 +4428,30 @@ static const struct BattleWindowText sTextOnWindowsInfo_Arena[] =
         .color.accent = 15,
         .color.shadow = 6,
     },
+#if ACTION_MENU_NEW
+    [B_WIN_ACTION_PROMPT] = {
+        .fillValue = PIXEL_FILL(1),
+        .fontId = FONT_NORMAL,
+        .x = 0,
+        .y = 0,
+        .speed = 0,
+        .color.foreground = 4,
+        .color.background = 1,
+        .color.accent = 1,
+        .color.shadow = 5,
+    },
+    [B_WIN_ACTION_MENU] = {
+        .fillValue = PIXEL_FILL(1),
+        .fontId = FONT_NARROW,
+        .x = 0,
+        .y = 0,
+        .speed = 0,
+        .color.foreground = 4,
+        .color.background = 1,
+        .color.accent = 1,
+        .color.shadow = 5,
+    },
+#else
     [B_WIN_ACTION_PROMPT] = {
         .fillValue = PIXEL_FILL(0xF),
         .fontId = FONT_NORMAL,
@@ -4399,6 +4474,7 @@ static const struct BattleWindowText sTextOnWindowsInfo_Arena[] =
         .color.accent = 14,
         .color.shadow = 15,
     },
+#endif
     [B_WIN_MOVE_NAME_1] = {
         .fillValue = PIXEL_FILL(0xE),
         .fontId = FONT_NARROW,
