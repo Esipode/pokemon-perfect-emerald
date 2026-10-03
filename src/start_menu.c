@@ -1003,7 +1003,7 @@ static bool8 HandleStartMenuInput(void)
 }
 
 static const u8 sStartMenuReorderArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_BLUE, TEXT_COLOR_LIGHT_BLUE};
-static const u8 sStartMenuHideArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_GREEN, TEXT_COLOR_LIGHT_GREEN};
+static const u8 sStartMenuHideArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_RED, TEXT_COLOR_LIGHT_RED};
 static const u8 sStartMenuHiddenLabelColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE};
 
 enum StartMenuRowStyle
@@ -1191,6 +1191,24 @@ static void EnterStartMenuHideMode(void)
     gMenuCallback = HandleStartMenuHideInput;
 }
 
+// Toggles hidden on the arrow's row and saves the mask. Refused if it would hide the last always-shown item.
+static void ToggleStartMenuRowHidden(void)
+{
+    u32 item = GetStartMenuOrderItemByAction(sCurrentStartMenuActions[sStartMenuCursorPos]);
+    u16 mask = gSaveBlock2Ptr->startMenuHidden;
+
+    if (item >= START_MENU_ITEM_COUNT || !StartMenuHidden_CanHide(mask, item))
+    {
+        PlaySE(SE_FAILURE);
+        return;
+    }
+
+    PlaySE(SE_SELECT);
+    gSaveBlock2Ptr->startMenuHidden = StartMenuHidden_Toggle(mask, item);
+    DrawStartMenuRowLabel(sStartMenuCursorPos, IsStartMenuRowHidden(sStartMenuCursorPos) ? START_MENU_ROW_HIDDEN : START_MENU_ROW_NORMAL);
+    CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
+}
+
 // Hide mode never closes the menu, so the normal list and window are back before any close path runs.
 static bool8 HandleStartMenuHideInput(void)
 {
@@ -1206,7 +1224,9 @@ static bool8 HandleStartMenuHideInput(void)
         return FALSE;
     }
 
-    if (JOY_NEW(DPAD_UP))
+    if (JOY_NEW(A_BUTTON))
+        ToggleStartMenuRowHidden();
+    else if (JOY_NEW(DPAD_UP))
         MoveStartMenuReorderArrow(-1);
     else if (JOY_NEW(DPAD_DOWN))
         MoveStartMenuReorderArrow(1);
