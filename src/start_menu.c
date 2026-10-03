@@ -90,6 +90,7 @@ enum
 // sStartMenuReorderState bits
 #define START_MENU_REORDER_ALLOWED (1 << 0) // Menu came from the normal or debug builder
 #define START_MENU_REORDER_HOLDING (1 << 1) // Item under the reorder arrow is picked up
+#define START_MENU_REORDER_HIDE_MODE (1 << 2) // Hide mode: hidden items are listed
 
 // Save status
 enum
@@ -152,6 +153,7 @@ static bool8 BattlePyramidRetireReturnCallback(void);
 static bool8 BattlePyramidRetireCallback(void);
 static bool8 HandleStartMenuInput(void);
 static bool8 HandleStartMenuReorderInput(void);
+static bool8 HandleStartMenuHideInput(void);
 static u32 GetStartMenuFirstReorderRow(void);
 static void DrawStartMenuReorderArrow(u32 row, bool32 show);
 
@@ -1001,6 +1003,15 @@ static bool8 HandleStartMenuInput(void)
 }
 
 static const u8 sStartMenuReorderArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_BLUE, TEXT_COLOR_LIGHT_BLUE};
+static const u8 sStartMenuHideArrowColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_GREEN, TEXT_COLOR_LIGHT_GREEN};
+static const u8 sStartMenuHiddenLabelColors[] = {TEXT_COLOR_WHITE, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_WHITE};
+
+enum StartMenuRowStyle
+{
+    START_MENU_ROW_NORMAL,
+    START_MENU_ROW_HELD,   // Reorder arrow colours
+    START_MENU_ROW_HIDDEN, // Light grey, hide mode only
+};
 
 // DEBUG stays pinned at row 0.
 static u32 GetStartMenuFirstReorderRow(void)
@@ -1008,17 +1019,18 @@ static u32 GetStartMenuFirstReorderRow(void)
     return (sCurrentStartMenuActions[0] == MENU_ACTION_DEBUG) ? 1 : 0;
 }
 
-// Clears the cursor cell of a row and optionally draws the reorder arrow there. Caller copies to VRAM.
+// Clears the cursor cell of a row and optionally draws the reorder or hide mode arrow there. Caller copies to VRAM.
 static void DrawStartMenuReorderArrow(u32 row, bool32 show)
 {
     u8 windowId = GetStartMenuWindowId();
     u8 width = GetMenuCursorDimensionByFont(FONT_SMALL, 0);
     u8 height = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
     u8 top = 9 + row * height;
+    const u8 *colors = (sStartMenuReorderState & START_MENU_REORDER_HIDE_MODE) ? sStartMenuHideArrowColors : sStartMenuReorderArrowColors;
 
     FillWindowPixelRect(windowId, PIXEL_FILL(1), 0, top, width, height);
     if (show)
-        AddTextPrinterParameterized3(windowId, FONT_SMALL, 0, top, sStartMenuReorderArrowColors, TEXT_SKIP_DRAW, gText_SelectorArrow3);
+        AddTextPrinterParameterized3(windowId, FONT_SMALL, 0, top, colors, TEXT_SKIP_DRAW, gText_SelectorArrow3);
 }
 
 // Moves the reorder arrow with wrap, skipping the pinned DEBUG row.
@@ -1039,8 +1051,8 @@ static void MoveStartMenuReorderArrow(s32 delta)
     CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
 }
 
-// Redraws a row's label; a held item uses the reorder arrow's colours. Caller copies to VRAM.
-static void DrawStartMenuReorderLabel(u32 row, bool32 held)
+// Redraws a row's label in the given enum StartMenuRowStyle. Caller copies to VRAM.
+static void DrawStartMenuRowLabel(u32 row, u32 style)
 {
     u8 windowId = GetStartMenuWindowId();
     u8 height = GetMenuCursorDimensionByFont(FONT_SMALL, 1);
@@ -1048,8 +1060,10 @@ static void DrawStartMenuReorderLabel(u32 row, bool32 held)
 
     FillWindowPixelRect(windowId, PIXEL_FILL(1), 8, top, GetWindowAttribute(windowId, WINDOW_WIDTH) * 8 - 8, height);
     StringExpandPlaceholders(gStringVar4, sStartMenuItems[sCurrentStartMenuActions[row]].text);
-    if (held)
+    if (style == START_MENU_ROW_HELD)
         AddTextPrinterParameterized3(windowId, FONT_SMALL, 8, top, sStartMenuReorderArrowColors, TEXT_SKIP_DRAW, gStringVar4);
+    else if (style == START_MENU_ROW_HIDDEN)
+        AddTextPrinterParameterized3(windowId, FONT_SMALL, 8, top, sStartMenuHiddenLabelColors, TEXT_SKIP_DRAW, gStringVar4);
     else
         AddTextPrinterParameterized(windowId, FONT_SMALL, gStringVar4, 8, top, TEXT_SKIP_DRAW, NULL);
 }
@@ -1062,7 +1076,7 @@ static void SetStartMenuReorderHolding(bool32 holding)
         sStartMenuReorderState &= ~START_MENU_REORDER_HOLDING;
 
     PlaySE(SE_SELECT);
-    DrawStartMenuReorderLabel(sStartMenuCursorPos, holding);
+    DrawStartMenuRowLabel(sStartMenuCursorPos, holding ? START_MENU_ROW_HELD : START_MENU_ROW_NORMAL);
     CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
 }
 
@@ -1097,24 +1111,121 @@ static void MoveStartMenuReorderItem(s32 delta)
 
     PlaySE(SE_SELECT);
     DrawStartMenuReorderArrow(sStartMenuCursorPos, FALSE);
-    DrawStartMenuReorderLabel(sStartMenuCursorPos, FALSE);
+    DrawStartMenuRowLabel(sStartMenuCursorPos, START_MENU_ROW_NORMAL);
     sStartMenuCursorPos = pos;
     DrawStartMenuReorderArrow(sStartMenuCursorPos, TRUE);
-    DrawStartMenuReorderLabel(sStartMenuCursorPos, TRUE);
+    DrawStartMenuRowLabel(sStartMenuCursorPos, START_MENU_ROW_HELD);
     CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_GFX);
+}
+
+static bool32 IsStartMenuRowHidden(u32 row)
+{
+    u32 item = GetStartMenuOrderItemByAction(sCurrentStartMenuActions[row]);
+
+    return item < START_MENU_ITEM_COUNT && (gSaveBlock2Ptr->startMenuHidden & (1u << item));
+}
+
+// Rebuilds the normal list with or without hidden items, resizes the window and reprints every row.
+// The cursor follows its item; if that item is dropped, it goes to the next kept item below, with wrap.
+// Caller draws the cursor and copies to VRAM.
+static void RebuildStartMenuForHideMode(bool32 includeHidden)
+{
+    u32 i, row;
+    u32 first = GetStartMenuFirstReorderRow();
+    u32 count = sNumStartMenuActions;
+    u32 target = MENU_ACTION_DEBUG;
+    u8 windowId;
+
+    for (i = 0; i < count - first; i++)
+    {
+        row = first + (sStartMenuCursorPos - first + i) % (count - first);
+        if (includeHidden || !IsStartMenuRowHidden(row))
+        {
+            target = sCurrentStartMenuActions[row];
+            break;
+        }
+    }
+
+    sNumStartMenuActions = 0;
+    if (includeHidden)
+    {
+        if (first != 0)
+            AddStartMenuAction(MENU_ACTION_DEBUG);
+        AddNormalStartMenuItems(TRUE);
+    }
+    else if (first != 0)
+    {
+        BuildDebugStartMenu();
+    }
+    else
+    {
+        BuildNormalStartMenu();
+    }
+
+    sStartMenuCursorPos = first;
+    for (row = first; row < sNumStartMenuActions; row++)
+    {
+        if (sCurrentStartMenuActions[row] == target)
+        {
+            sStartMenuCursorPos = row;
+            break;
+        }
+    }
+
+    ClearStdWindowAndFrame(GetStartMenuWindowId(), FALSE);
+    RemoveStartMenuWindow();
+    windowId = AddStartMenuWindow(sNumStartMenuActions, GetStartMenuTextWidth());
+    DrawStdWindowFrame(windowId, FALSE);
+    for (row = 0; row < sNumStartMenuActions; row++)
+        DrawStartMenuRowLabel(row, (includeHidden && IsStartMenuRowHidden(row)) ? START_MENU_ROW_HIDDEN : START_MENU_ROW_NORMAL);
+}
+
+static void EnterStartMenuHideMode(void)
+{
+    PlaySE(SE_SELECT);
+    sStartMenuReorderState &= ~START_MENU_REORDER_HOLDING;
+    sStartMenuReorderState |= START_MENU_REORDER_HIDE_MODE;
+    RebuildStartMenuForHideMode(TRUE);
+    DrawStartMenuReorderArrow(sStartMenuCursorPos, TRUE);
+    CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_FULL);
+    gMenuCallback = HandleStartMenuHideInput;
+}
+
+// Hide mode never closes the menu, so the normal list and window are back before any close path runs.
+static bool8 HandleStartMenuHideInput(void)
+{
+    if (JOY_NEW(SELECT_BUTTON | B_BUTTON))
+    {
+        PlaySE(SE_SELECT);
+        sStartMenuReorderState &= ~START_MENU_REORDER_HIDE_MODE;
+        RebuildStartMenuForHideMode(FALSE);
+        // InitMenuNormal draws the normal cursor and resyncs the menu state to the new window.
+        sStartMenuCursorPos = InitMenuNormal(GetStartMenuWindowId(), FONT_SMALL, 0, 9, GetMenuCursorDimensionByFont(FONT_SMALL, 1), sNumStartMenuActions, sStartMenuCursorPos);
+        CopyWindowToVram(GetStartMenuWindowId(), COPYWIN_FULL);
+        gMenuCallback = HandleStartMenuInput;
+        return FALSE;
+    }
+
+    if (JOY_NEW(DPAD_UP))
+        MoveStartMenuReorderArrow(-1);
+    else if (JOY_NEW(DPAD_DOWN))
+        MoveStartMenuReorderArrow(1);
+
+    return FALSE;
 }
 
 static bool8 HandleStartMenuReorderInput(void)
 {
     bool32 holding = (sStartMenuReorderState & START_MENU_REORDER_HOLDING) != 0;
 
-    if (JOY_NEW(SELECT_BUTTON) || (!holding && JOY_NEW(B_BUTTON)))
+    if (JOY_NEW(SELECT_BUTTON))
     {
-        if (holding)
-        {
-            sStartMenuReorderState &= ~START_MENU_REORDER_HOLDING;
-            DrawStartMenuReorderLabel(sStartMenuCursorPos, FALSE);
-        }
+        EnterStartMenuHideMode();
+        return FALSE;
+    }
+
+    if (!holding && JOY_NEW(B_BUTTON))
+    {
         // InitMenuNormal clears the arrow cell, draws the normal cursor and resyncs the menu state.
         PlaySE(SE_SELECT);
         sStartMenuCursorPos = InitMenuNormal(GetStartMenuWindowId(), FONT_SMALL, 0, 9, GetMenuCursorDimensionByFont(FONT_SMALL, 1), sNumStartMenuActions, sStartMenuCursorPos);
