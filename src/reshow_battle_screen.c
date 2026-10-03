@@ -15,6 +15,7 @@
 #include "constants/trainers.h"
 #include "battle_interface.h"
 #include "battle_anim.h"
+#include "battle_action_menu.h"
 #include "data.h"
 
 // this file's functions
@@ -153,7 +154,11 @@ static void CB2_ReshowBattleScreenAfterMenu(void)
                 SetBattlerShadowSpriteCallback(opponentBattler, species);
             }
 
+#if ACTION_MENU_NEW
+            ActionMenu_Redraw(gBattlerInMenuId);
+#else
             ActionSelectionCreateCursorAt(gActionSelectionCursor[gBattlerInMenuId], 0);
+#endif
         }
         break;
     default:

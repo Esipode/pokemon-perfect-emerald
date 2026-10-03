@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_anim.h"
+#include "battle_action_menu.h"
 #include "battle_controllers.h"
 #include "battle_interface.h"
 #include "battle_message.h"
@@ -306,6 +307,10 @@ static void HandleChooseActionAfterDma3(enum BattlerId battler)
 
 static void WallyHandleChooseAction(enum BattlerId battler)
 {
+#if ACTION_MENU_NEW
+    gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
+    ActionMenu_Show(battler, ACTION_MENU_STANDARD, COMPOUND_STRING("WALLY do?"));
+#else
     s32 i;
 
     gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
@@ -317,6 +322,7 @@ static void WallyHandleChooseAction(enum BattlerId battler)
     ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
     BattleStringExpandPlaceholdersToDisplayedString(gText_WhatWillWallyDo);
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_ACTION_PROMPT);
+#endif
 }
 
 static void WallyHandleChooseMove(enum BattlerId battler)

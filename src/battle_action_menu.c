@@ -91,6 +91,7 @@ void ActionMenu_BuildPalette(enum ActionMenuId menuId, bool32 lit, u16 *dest)
 #define PLATE_STRIPE_HEIGHT 2
 
 #define PIX_BACKGROUND      1
+#define PIX_DISABLED        2
 #define PIX_ACCENT          3
 #define PIX_TEXT            4
 #define PIX_SHADOW          5
@@ -106,6 +107,7 @@ static const u8 sText_ActionPromptLine1[] = _("What will");
 static const u8 sText_ActionPromptLine2[] = _("{B_BUFF1} do?");
 
 static enum ActionMenuId sMenuId;
+static const u8 *sPromptLine2;
 
 static void PrintActionText(u32 windowId, u32 fontId, const u8 *text, u32 x, u32 y, u32 fgColor)
 {
@@ -150,6 +152,24 @@ static void DrawActionPlate(const u8 *line1, const u8 *line2)
     }
 }
 
+// Dotted index-2 outline marking a slot with no action.
+static void DrawEmptyCell(u32 slot)
+{
+    struct ActionMenuRect r = ActionMenu_GetChipPixelRect(slot);
+    u32 x, y;
+
+    for (x = r.left + 2; x <= r.right - 2; x += 2)
+    {
+        FillWindowPixelRect(B_WIN_ACTION_MENU, PIXEL_FILL(PIX_DISABLED), x, r.top, 1, 1);
+        FillWindowPixelRect(B_WIN_ACTION_MENU, PIXEL_FILL(PIX_DISABLED), x, r.bottom, 1, 1);
+    }
+    for (y = r.top + 2; y <= r.bottom - 2; y += 2)
+    {
+        FillWindowPixelRect(B_WIN_ACTION_MENU, PIXEL_FILL(PIX_DISABLED), r.left, y, 1, 1);
+        FillWindowPixelRect(B_WIN_ACTION_MENU, PIXEL_FILL(PIX_DISABLED), r.right, y, 1, 1);
+    }
+}
+
 // Rounded chip: outline, hue fill, darker bottom row. Corner pixels keep the panel background.
 static void DrawActionChip(enum ActionMenuId menuId, u32 slot)
 {
@@ -160,7 +180,10 @@ static void DrawActionChip(enum ActionMenuId menuId, u32 slot)
     u32 fill = 8 + slot * 2;
 
     if (info->label == NULL)
+    {
+        DrawEmptyCell(slot);
         return;
+    }
 
     FillWindowPixelRect(B_WIN_ACTION_MENU, PIXEL_FILL(PIX_OUTLINE), r.left + 1, r.top, w - 2, h);
     FillWindowPixelRect(B_WIN_ACTION_MENU, PIXEL_FILL(PIX_OUTLINE), r.left, r.top + 1, w, h - 2);
@@ -201,12 +224,10 @@ void ActionMenu_SetPromptText(const u8 *line1, const u8 *line2)
     CopyWindowToVram(B_WIN_ACTION_PROMPT, COPYWIN_GFX);
 }
 
-void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId)
+static void DrawActionPanel(enum BattlerId battler, enum ActionMenuId menuId)
 {
     u16 palette[16];
     u32 slot;
-
-    sMenuId = menuId;
 
     ActionMenu_BuildPalette(menuId, FALSE, palette);
     LoadPalette(palette, BG_PLTT_ID(ACTION_PALETTE_IDLE), PLTT_SIZE_4BPP);
@@ -214,7 +235,7 @@ void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId)
     LoadPalette(palette, BG_PLTT_ID(ACTION_PALETTE_LIT), PLTT_SIZE_4BPP);
 
     PREPARE_MON_NICK_BUFFER(gBattleTextBuff1, battler, gBattlerPartyIndexes[battler]);
-    BattleStringExpandPlaceholdersToDisplayedString(sText_ActionPromptLine2);
+    BattleStringExpandPlaceholdersToDisplayedString(sPromptLine2);
     DrawActionPlate(sText_ActionPromptLine1, gDisplayedStringBattle);
 
     FillWindowPixelBuffer(B_WIN_ACTION_MENU, PIXEL_FILL(PIX_BACKGROUND));
@@ -227,4 +248,20 @@ void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId)
     ActionMenu_SetHighlight(gActionSelectionCursor[battler]);
     CopyWindowToVram(B_WIN_ACTION_PROMPT, COPYWIN_FULL);
     CopyWindowToVram(B_WIN_ACTION_MENU, COPYWIN_FULL);
+}
+
+// line2Template: prompt second line with placeholders; NULL uses the battler nickname prompt.
+void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId, const u8 *line2Template)
+{
+    sMenuId = menuId;
+    sPromptLine2 = line2Template != NULL ? line2Template : sText_ActionPromptLine2;
+    DrawActionPanel(battler, menuId);
+}
+
+// Redraws the last shown panel; the Bag/party screen overwrites its VRAM and palettes.
+void ActionMenu_Redraw(enum BattlerId battler)
+{
+    if (sPromptLine2 == NULL)
+        sPromptLine2 = sText_ActionPromptLine2;
+    DrawActionPanel(battler, sMenuId);
 }

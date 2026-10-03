@@ -2078,7 +2078,7 @@ static void PlayerHandleChooseAction(enum BattlerId battler)
     gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
     BattleTv_ClearExplosionFaintCause();
 #if ACTION_MENU_NEW
-    ActionMenu_Show(battler, ACTION_MENU_STANDARD);
+    ActionMenu_Show(battler, ACTION_MENU_STANDARD, NULL);
     TryRestoreLastUsedBall();
 #else
     BattlePutTextOnWindow(gText_BattleMenu, B_WIN_ACTION_MENU);

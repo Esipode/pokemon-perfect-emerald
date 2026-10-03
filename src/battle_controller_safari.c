@@ -1,6 +1,7 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_anim.h"
+#include "battle_action_menu.h"
 #include "battle_controllers.h"
 #include "battle_interface.h"
 #include "battle_message.h"
@@ -136,6 +137,29 @@ static void HandleInputChooseAction(enum BattlerId battler)
         }
         BtlController_Complete(battler);
     }
+#if ACTION_MENU_NEW
+    else if (JOY_NEW(DPAD_ANY))
+    {
+        enum ActionMenuDirection direction = ACTION_DIR_DOWN;
+        u32 next;
+
+        if (JOY_NEW(DPAD_LEFT))
+            direction = ACTION_DIR_LEFT;
+        else if (JOY_NEW(DPAD_RIGHT))
+            direction = ACTION_DIR_RIGHT;
+        else if (JOY_NEW(DPAD_UP))
+            direction = ACTION_DIR_UP;
+
+        next = ActionMenu_GetNextSlot(ACTION_MENU_SAFARI, gActionSelectionCursor[battler], direction);
+        if (next != gActionSelectionCursor[battler])
+        {
+            PlaySE(SE_SELECT);
+            ActionSelectionDestroyCursorAt(gActionSelectionCursor[battler]);
+            gActionSelectionCursor[battler] = next;
+            ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
+        }
+    }
+#else
     else if (JOY_NEW(DPAD_LEFT))
     {
         if (gActionSelectionCursor[battler] & 1)
@@ -178,6 +202,7 @@ static void HandleInputChooseAction(enum BattlerId battler)
             ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
         }
     }
+#endif
     else if (B_QUICK_MOVE_CURSOR_TO_RUN && JOY_NEW(B_BUTTON))
     {
         PlaySE(SE_SELECT);
@@ -294,6 +319,10 @@ static void HandleChooseActionAfterDma3(enum BattlerId battler)
 
 static void SafariHandleChooseAction(enum BattlerId battler)
 {
+#if ACTION_MENU_NEW
+    gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
+    ActionMenu_Show(battler, ACTION_MENU_SAFARI, COMPOUND_STRING("{B_PLAYER_NAME} do?"));
+#else
     s32 i;
 
     gBattlerControllerFuncs[battler] = HandleChooseActionAfterDma3;
@@ -305,6 +334,7 @@ static void SafariHandleChooseAction(enum BattlerId battler)
     ActionSelectionCreateCursorAt(gActionSelectionCursor[battler], 0);
     BattleStringExpandPlaceholdersToDisplayedString(gText_WhatWillPkmnDo2);
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_ACTION_PROMPT);
+#endif
 }
 
 static void SafariHandleChooseItem(enum BattlerId battler)

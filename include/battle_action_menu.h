@@ -102,7 +102,8 @@ struct ActionMenuRect ActionMenu_GetChipPixelRect(u32 slot);
 struct ActionMenuRect ActionMenu_GetChipTileRect(u32 slot);
 void ActionMenu_BuildPalette(enum ActionMenuId menuId, bool32 lit, u16 *dest);
 
-void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId);
+void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId, const u8 *line2Template);
+void ActionMenu_Redraw(enum BattlerId battler);
 void ActionMenu_SetPromptText(const u8 *line1, const u8 *line2);
 void ActionMenu_SetHighlight(u32 slot);
 void ActionMenu_ClearHighlight(u32 slot);
