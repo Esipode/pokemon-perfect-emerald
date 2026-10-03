@@ -261,6 +261,60 @@ static const struct MenuAction sStartMenuItems[] =
     [MENU_ACTION_ACHIEVEMENTS]    = {sText_Achievements,    {.u8_void = StartMenuAchievementsCallback}},
 };
 
+static bool32 IsStartMenuPokemonVisible(void)
+{
+    return FlagGet(FLAG_SYS_POKEMON_GET) == TRUE || gSaveBlock2Ptr->newGamePlus;
+}
+
+static bool32 IsStartMenuPokedexVisible(void)
+{
+    return FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE || gSaveBlock2Ptr->newGamePlus;
+}
+
+static bool32 IsStartMenuDexNavVisible(void)
+{
+    return DN_FLAG_DEXNAV_GET != 0 && FlagGet(DN_FLAG_DEXNAV_GET);
+}
+
+static bool32 IsStartMenuMapVisible(void)
+{
+    return FlagGet(FLAG_SYS_MAP_GET) == TRUE;
+}
+
+static bool32 IsStartMenuChangeTimeVisible(void)
+{
+    return FlagGet(FLAG_SYS_CLOCK_SET);
+}
+
+static bool32 IsStartMenuNewGamePlusVisible(void)
+{
+    return FlagGet(FLAG_BEAT_CHAMPION_CHALLENGER_9) == TRUE;
+}
+
+struct StartMenuOrderEntry
+{
+    u8 action;                 // MENU_ACTION_*
+    bool32 (*isVisible)(void); // NULL = always shown
+};
+
+STATIC_ASSERT(START_MENU_ITEM_COUNT <= START_MENU_ORDER_SLOTS, StartMenuOrderSlotsTooSmall);
+
+// Normal start menu items, indexed by START_MENU_ITEM_*.
+static const struct StartMenuOrderEntry sStartMenuOrderEntries[START_MENU_ITEM_COUNT] =
+{
+    [START_MENU_ITEM_POKEMON]       = {MENU_ACTION_POKEMON,       IsStartMenuPokemonVisible},
+    [START_MENU_ITEM_POKEDEX]       = {MENU_ACTION_POKEDEX,       IsStartMenuPokedexVisible},
+    [START_MENU_ITEM_DEXNAV]        = {MENU_ACTION_DEXNAV,        IsStartMenuDexNavVisible},
+    [START_MENU_ITEM_BAG]           = {MENU_ACTION_BAG,           NULL},
+    [START_MENU_ITEM_MAP]           = {MENU_ACTION_MAP,           IsStartMenuMapVisible},
+    [START_MENU_ITEM_PLAYER]        = {MENU_ACTION_PLAYER,        NULL},
+    [START_MENU_ITEM_SAVE]          = {MENU_ACTION_SAVE,          NULL},
+    [START_MENU_ITEM_CHANGE_TIME]   = {MENU_ACTION_CHANGE_TIME,   IsStartMenuChangeTimeVisible},
+    [START_MENU_ITEM_OPTION]        = {MENU_ACTION_OPTION,        NULL},
+    [START_MENU_ITEM_ACHIEVEMENTS]  = {MENU_ACTION_ACHIEVEMENTS,  NULL},
+    [START_MENU_ITEM_NEW_GAME_PLUS] = {MENU_ACTION_NEW_GAME_PLUS, IsStartMenuNewGamePlusVisible},
+};
+
 static const struct BgTemplate sBgTemplates_LinkBattleSave[] =
 {
     {
@@ -399,39 +453,79 @@ static u8 GetStartMenuTextWidth(void)
     return maxWidth;
 }
 
+// saved: START_MENU_ORDER_SLOTS slots of id + 1 (0 = empty). order: every START_MENU_ITEM_* once.
+// Valid saved ids keep their saved order; missing ids follow in table order.
+void StartMenuOrder_Normalize(const u8 *saved, u8 *order)
+{
+    u32 i, id;
+    u32 count = 0;
+    u32 usedMask = 0;
+
+    for (i = 0; i < START_MENU_ORDER_SLOTS; i++)
+    {
+        if (saved[i] == 0)
+            continue;
+        id = saved[i] - 1;
+        if (id < START_MENU_ITEM_COUNT && !(usedMask & (1u << id)))
+        {
+            usedMask |= 1u << id;
+            order[count++] = id;
+        }
+    }
+
+    for (id = 0; id < START_MENU_ITEM_COUNT; id++)
+    {
+        if (!(usedMask & (1u << id)))
+            order[count++] = id;
+    }
+}
+
+// Swaps the positions of two ids in a full order; ids between them stay put.
+void StartMenuOrder_Swap(u8 *order, u8 itemA, u8 itemB)
+{
+    u32 i;
+    u8 temp;
+    u32 posA = START_MENU_ITEM_COUNT;
+    u32 posB = START_MENU_ITEM_COUNT;
+
+    for (i = 0; i < START_MENU_ITEM_COUNT; i++)
+    {
+        if (order[i] == itemA)
+            posA = i;
+        else if (order[i] == itemB)
+            posB = i;
+    }
+
+    if (posA < START_MENU_ITEM_COUNT && posB < START_MENU_ITEM_COUNT)
+        SWAP(order[posA], order[posB], temp);
+}
+
+void StartMenuOrder_Load(u8 *order)
+{
+    StartMenuOrder_Normalize(gSaveBlock2Ptr->startMenuOrder, order);
+}
+
+void StartMenuOrder_Store(const u8 *order)
+{
+    u32 i;
+
+    for (i = 0; i < START_MENU_ORDER_SLOTS; i++)
+        gSaveBlock2Ptr->startMenuOrder[i] = (i < START_MENU_ITEM_COUNT) ? order[i] + 1 : 0;
+}
+
 static void BuildNormalStartMenu(void)
 {
-    if (FlagGet(FLAG_SYS_POKEMON_GET) == TRUE || gSaveBlock2Ptr->newGamePlus)
-        AddStartMenuAction(MENU_ACTION_POKEMON);
+    u32 i;
+    u8 order[START_MENU_ITEM_COUNT];
 
-    if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE || gSaveBlock2Ptr->newGamePlus)
-        AddStartMenuAction(MENU_ACTION_POKEDEX);
-
-    if (DN_FLAG_DEXNAV_GET != 0 && FlagGet(DN_FLAG_DEXNAV_GET))
-        AddStartMenuAction(MENU_ACTION_DEXNAV);
-
-    AddStartMenuAction(MENU_ACTION_BAG);
-
-    if (FlagGet(FLAG_SYS_MAP_GET) == TRUE)
-        AddStartMenuAction(MENU_ACTION_MAP);
-
-    AddStartMenuAction(MENU_ACTION_PLAYER);
-    AddStartMenuAction(MENU_ACTION_SAVE);
-
-    if (FlagGet(FLAG_SYS_CLOCK_SET))
-    {   
-        AddStartMenuAction(MENU_ACTION_CHANGE_TIME);
-    }
-
-    AddStartMenuAction(MENU_ACTION_OPTION);
-    AddStartMenuAction(MENU_ACTION_ACHIEVEMENTS);
-
-    if (FlagGet(FLAG_BEAT_CHAMPION_CHALLENGER_9) == TRUE)
+    StartMenuOrder_Load(order);
+    for (i = 0; i < START_MENU_ITEM_COUNT; i++)
     {
-        AddStartMenuAction(MENU_ACTION_NEW_GAME_PLUS);
-    }
+        const struct StartMenuOrderEntry *entry = &sStartMenuOrderEntries[order[i]];
 
-    // AddStartMenuAction(MENU_ACTION_EXIT);
+        if (entry->isVisible == NULL || entry->isVisible())
+            AddStartMenuAction(entry->action);
+    }
 }
 
 static void BuildDebugStartMenu(void)

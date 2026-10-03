@@ -177,6 +177,8 @@ enum ContestCategories
 
 #define MAX_STAMP_CARD_STAMPS 7
 
+#define START_MENU_ORDER_SLOTS 16 // SaveBlock2.startMenuOrder capacity
+
 enum Gender
 {
     MALE,
