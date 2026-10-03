@@ -201,10 +201,14 @@ MossdeepCity_Gym_EventScript_ClearSwitch4::
 	end
 
 MossdeepCity_Gym_EventScript_WarpToEntrance::
+	goto_if_unset FLAG_DEFEATED_MOSSDEEP_GYM, MossdeepCity_Gym_EventScript_WarpLocked
 	lockall
 	warpmossdeepgym MAP_MOSSDEEP_CITY_GYM, 7, 30
 	waitstate
 	releaseall
+	end
+
+MossdeepCity_Gym_EventScript_WarpLocked::
 	end
 
 MossdeepCity_Gym_EventScript_Preston::
