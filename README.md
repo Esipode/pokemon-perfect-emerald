@@ -1,4 +1,7 @@
 ## Major features
+- Hoenn, Kanto, and Johto regions
+	- All fully developed and explorable with their original stories
+	- World map shows all regions and you can fly to any location (Once unlocked)
 - All Pokémon from Gen 1 to Gen 9 obtainable
 - Evolution-Methods/Moves/Abilities/Types from Gen 1 to Gen 9 added
 - Physical/Special/Status move categories added
@@ -47,7 +50,7 @@
 	- Doubled Pokémon PC space, from 420 slots to 840. Not enough for a living dex, but enough to have every final evolution for every Pokémon in gens 1-9, with room for at least the next 2 generations (10 & 11, possibly 12).
 	- When starting a new playthrough, you can carry your Pokémon over to the next playthrough, where they will not be withdrawable until you complete the Elite 4 in the new playthrough.
 - Player customization
-	- Choose between the Hoenn (Brendan/May) and Kanto (Red/Leaf) player styles
+	- Choose between the Hoenn (Brendan/May), Kanto (Red/Leaf), and Johto (Gold/Kris) player styles
 	- You can customize the colours of various aspects of your player character (hair, hat, shirt, bag, etc.) by adjusting their hue, saturation, and brightness
 	- This is visible in the overworld, in battles, and on your trainer card
 - Revamped trainer AI
@@ -55,7 +58,7 @@
 	- Smarter trainer options for story encounters that are more aware of the current state of the battle and their options
 	- Story event trainers have been hand-crafted to be more challenging and engaging
 - Level caps based on story progress (Never over-level for content - Can be toggled off in options)
-- First (non-fainted) Pokémon in party follows player in overworld
+- First (non-fainted) Pokémon in party follows player in overworld (Can be toggled off in options)
 - Upgraded Pokédex
 	- Show evolution requirements for each (seen) Pokémon
 	- Show compatible moves and how they can be learned (Level, TM/HM, Move Tutor, Egg)
@@ -63,21 +66,21 @@
 	- Show partial caught status (for regional forms)
 
 ## Optional Features
-- Keep Storage between New Games
+- Keep stored Pokémon between New Games
 	- When selecting "New Game", player is prompted to keep the Pokémon in their storage
 	- Pokémon transferred to the New Game will be "locked" (Not withdrawable) until after defeating the Elite 4
-- Nuzlocke Mode (Mutually exclusive with Draft and Recruits mode)
+- Nuzlocke Mode (Mutually exclusive from Draft and Recruits mode)
 	- Can only catch first encountered Pokémon in a route, and no more after that
 	- If a Pokémon faints, it is immediately removed from the party after battle
 	- Upon Whiteout with an empty party, the save file is wiped immediately (achievements/boosts are preserved), and the player is asked whether to begin a new run or return to the title screen
 	- Players are forced to give nicknames to their Pokémon (You cannot pick the default name either)
 	- Breeding Pokémon is disabled in this mode
-- Draft Mode (Mutually exclusive with Nuzlocke and Recruits mode)
+- Draft Mode (Mutually exclusive from Nuzlocke and Recruits mode)
 	- You never catch Pokémon. Each new area offers a one-time pick from the Pokémon that naturally live in that area.
 	- Take the pick into an empty party slot, or swap it with a party member you release forever - either way the area is spent
 	- The PC is completely locked; nothing is ever boxed
 	- Breeding Pokémon is disabled in this mode
-- Recruits Mode (Mutually exclusive with Nuzlocke and Draft mode)
+- Recruits Mode (Mutually exclusive from Nuzlocke and Draft mode)
 	- Each Pokémon you catch has a number attached to it in your party menu
 	- Starting at 10, each trainer battle you win that the Pokémon participates in lowers the number
 	- Once the number reaches 0, the Pokémon is removed from the party forever
@@ -116,7 +119,7 @@
 	- Available from pause menu after receiving Pokédex
 	- Allows target-farming specific Pokémon on a route for specific moves/abilities
 	- Increases shiny encounter chance as chain increases (Max chain = 250)
-- New Battle HP Box UI
+- New Battle UI
 	- New sleek, minimal HP box style that also shows stat changes (Attack, Defense, Sp. Atk, Sp. Def, Speed) at a glance
 	- Customizable from the settings menu, with a live preview
 	- Your team's and your opponent's HP boxes are set independently
@@ -130,6 +133,9 @@
 - Add second item register slot (one for button push, and one for button hold)
 
 ## Quality of life improvements
+- Customize the pause menu to show only the items you want and in what order
+	- Change the order or hide elements of the pause menu UI
+	- `SELECT` changes the mode between normal, re-order (BLUE), and hide (RED)
 - TM/HM changes
 	- Do not need to teach HM moves to party, only need badge/story requirement to use them in overworld
 	- Fly is accessed from the map upon getting the 6th gym badge
