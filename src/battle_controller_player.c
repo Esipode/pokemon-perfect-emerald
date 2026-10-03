@@ -170,6 +170,9 @@ void SetControllerToPlayer(enum BattlerId battler)
 
 void PlayerBufferExecCompleted(enum BattlerId battler)
 {
+#if ACTION_MENU_NEW
+    ActionMenu_Hide();
+#endif
     gBattlerControllerFuncs[battler] = PlayerBufferRunCommand;
     if (gBattleTypeFlags & BATTLE_TYPE_LINK)
     {
@@ -2023,7 +2026,12 @@ static void HandleChooseActionAfterDma3(enum BattlerId battler)
     if (!IsDma3ManagerBusyWithBgCopy())
     {
         gBattle_BG0_X = 0;
+#if ACTION_MENU_NEW
+        if (!ActionMenu_RunEntrance())
+            return;
+#else
         gBattle_BG0_Y = DISPLAY_HEIGHT;
+#endif
         if (gBattleStruct->aiDelayTimer != 0)
         {
             if (DEBUG_AI_DELAY_TIMER)

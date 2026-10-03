@@ -284,6 +284,9 @@ static void WaitForMonSelection(enum BattlerId battler)
 
 void SafariBufferExecCompleted(enum BattlerId battler)
 {
+#if ACTION_MENU_NEW
+    ActionMenu_Hide();
+#endif
     gBattlerControllerFuncs[battler] = SafariBufferRunCommand;
     if (gBattleTypeFlags & BATTLE_TYPE_LINK)
     {
@@ -312,7 +315,12 @@ static void HandleChooseActionAfterDma3(enum BattlerId battler)
     if (!IsDma3ManagerBusyWithBgCopy())
     {
         gBattle_BG0_X = 0;
+#if ACTION_MENU_NEW
+        if (!ActionMenu_RunEntrance())
+            return;
+#else
         gBattle_BG0_Y = DISPLAY_HEIGHT;
+#endif
         gBattlerControllerFuncs[battler] = HandleInputChooseAction;
     }
 }

@@ -118,5 +118,7 @@ void ActionMenu_Redraw(enum BattlerId battler);
 void ActionMenu_SetPromptText(const u8 *line1, const u8 *line2);
 void ActionMenu_SetHighlight(u32 slot);
 void ActionMenu_ClearHighlight(u32 slot);
+void ActionMenu_Hide(void);
+bool32 ActionMenu_RunEntrance(void);
 
 #endif // GUARD_BATTLE_ACTION_MENU_H

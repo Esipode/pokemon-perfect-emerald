@@ -2,14 +2,18 @@
 #include "battle.h"
 #include "battle_action_menu.h"
 #include "battle_controllers.h"
+#include "battle_main.h"
 #include "battle_message.h"
 #include "battle_util.h"
 #include "bg.h"
 #include "event_data.h"
+#include "main.h"
 #include "palette.h"
 #include "safari_zone.h"
 #include "string_util.h"
+#include "task.h"
 #include "text.h"
+#include "trig.h"
 #include "window.h"
 #include "constants/flags.h"
 #include "constants/rgb.h"
@@ -145,8 +149,18 @@ enum ActionSlotState ActionMenu_GetSlotState(enum BattlerId battler, enum Action
 static const u8 sText_ActionPromptLine1[] = _("What will");
 static const u8 sText_ActionPromptLine2[] = _("{B_BUFF1} do?");
 
+#define ENTRANCE_FRAMES     6
+#define ENTRANCE_DISTANCE   48  // px the panel falls into place
+#define PULSE_PERIOD        48  // frames per sine cycle
+#define PULSE_MAX_BLEND     80  // out of 256: 5/16 toward white
+
+#define tFrame data[0]
+
 static enum ActionMenuId sMenuId;
 static const u8 *sPromptLine2;
+static u8 sEntranceStep;
+
+static void StartPulse(void);
 
 static void PrintActionText(u32 windowId, u32 fontId, const u8 *text, u32 x, u32 y, u32 fgColor)
 {
@@ -318,6 +332,8 @@ void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId, const u8 
 {
     sMenuId = menuId;
     sPromptLine2 = line2Template != NULL ? line2Template : sText_ActionPromptLine2;
+    // Already on screen (partner cancel): no entrance.
+    sEntranceStep = gBattle_BG0_Y == DISPLAY_HEIGHT ? ENTRANCE_FRAMES : 0;
     DrawActionPanel(battler, menuId);
 }
 
@@ -327,4 +343,73 @@ void ActionMenu_Redraw(enum BattlerId battler)
     if (sPromptLine2 == NULL)
         sPromptLine2 = sText_ActionPromptLine2;
     DrawActionPanel(battler, sMenuId);
+    StartPulse();
+}
+
+// Blends the lit slot hues toward white. Writes only the faded buffer, so any palette fade or reload overrides it.
+static void Task_ActionMenuPulse(u8 taskId)
+{
+    u16 lit[16];
+    u32 i, blend;
+
+    if (gBattle_BG0_Y != DISPLAY_HEIGHT)
+    {
+        ActionMenu_Hide();
+        return;
+    }
+    if (gPaletteFade.active || gMain.callback2 != BattleMainCB2)
+        return;
+
+    blend = Sin(gTasks[taskId].tFrame * 256 / PULSE_PERIOD, PULSE_MAX_BLEND / 2) + PULSE_MAX_BLEND / 2;
+    gTasks[taskId].tFrame = (gTasks[taskId].tFrame + 1) % PULSE_PERIOD;
+
+    ActionMenu_BuildPalette(sMenuId, TRUE, lit);
+    for (i = ACTION_PALETTE_BASE_COLORS; i < 16; i++)
+    {
+        u32 r = GET_R(lit[i]);
+        u32 g = GET_G(lit[i]);
+        u32 b = GET_B(lit[i]);
+
+        r += (31 - r) * blend / 256;
+        g += (31 - g) * blend / 256;
+        b += (31 - b) * blend / 256;
+        gPlttBufferFaded[BG_PLTT_ID(ACTION_PALETTE_LIT) + i] = RGB(r, g, b);
+    }
+}
+
+static void StartPulse(void)
+{
+    if (!FuncIsActiveTask(Task_ActionMenuPulse))
+        CreateTask(Task_ActionMenuPulse, 80);
+}
+
+// Stops the pulse and restores the lit palette.
+void ActionMenu_Hide(void)
+{
+    u8 taskId = FindTaskIdByFunc(Task_ActionMenuPulse);
+
+    if (taskId == TASK_NONE)
+        return;
+    DestroyTask(taskId);
+    if (!gPaletteFade.active)
+    {
+        CpuCopy16(&gPlttBufferUnfaded[BG_PLTT_ID(ACTION_PALETTE_LIT)], &gPlttBufferFaded[BG_PLTT_ID(ACTION_PALETTE_LIT)], PLTT_SIZE_4BPP);
+    }
+}
+
+// Scrolls the panel into view, called each frame once its graphics are in VRAM. TRUE when input may start.
+bool32 ActionMenu_RunEntrance(void)
+{
+    u32 remaining;
+
+    if (sEntranceStep >= ENTRANCE_FRAMES)
+    {
+        gBattle_BG0_Y = DISPLAY_HEIGHT;
+        StartPulse();
+        return TRUE;
+    }
+
+    remaining = ENTRANCE_FRAMES - sEntranceStep++;
+    gBattle_BG0_Y = DISPLAY_HEIGHT + ENTRANCE_DISTANCE * remaining * remaining / (ENTRANCE_FRAMES * ENTRANCE_FRAMES);
+    return FALSE;
 }
