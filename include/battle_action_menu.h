@@ -180,6 +180,28 @@ struct MoveMenuView
     bool8 switching;                        // move rearrange mode: plate shows a prompt
 };
 
+// Move Info modal (B_WIN_MOVE_DESCRIPTION) above the move view, drawn in the idle move palette.
+// The category icon is an OBJ; its centre is the window's screen origin (x 8, y 48 at BG0_Y = 320) plus the offsets.
+#define MOVE_INFO_LEFT_TILE       1
+#define MOVE_INFO_TOP_TILE        46
+#define MOVE_INFO_WIDTH_TILES     18
+#define MOVE_INFO_HEIGHT_TILES    7
+#define MOVE_INFO_CATEGORY_X      (MOVE_INFO_LEFT_TILE * 8 + 128)
+#define MOVE_INFO_CATEGORY_Y      (MOVE_INFO_TOP_TILE * 8 - 320 + 10)
+
+struct MoveInfoView
+{
+    const u8 *name;
+    const u8 *description;
+    u8 type;                // enum Type
+    u8 slot;                // move slot whose hue colours the type icon
+    u16 power;              // < 2 prints "-"
+    u16 accuracy;           // < 2 prints "-"
+    u8 currentPp;
+    u8 maxPp;
+    bool8 showPp;
+};
+
 extern const u32 gActionMenuIconsGfx[];
 
 const struct ActionMenuSlot *ActionMenu_GetSlot(enum ActionMenuId menuId, u32 slot);
@@ -196,6 +218,8 @@ enum MovePpTier MoveMenu_GetPpTier(u32 currentPp, u32 maxPp);
 enum MoveEffBadge MoveMenu_GetEffectivenessBadge(u32 modifier, bool32 isStatus);
 struct ActionMenuRect MoveMenu_GetCellPixelRect(u32 slot);
 struct ActionMenuRect MoveMenu_GetCellTileRect(u32 slot);
+void MoveInfo_Show(const struct MoveInfoView *view);
+void MoveInfo_Hide(void);
 void MoveMenu_BuildPalette(const enum Type types[MOVE_MENU_SLOT_COUNT], bool32 lit, u16 *dest);
 
 void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId, const u8 *line2Template);
@@ -207,6 +231,7 @@ void ActionMenu_Hide(void);
 bool32 ActionMenu_RunEntrance(void);
 
 void MoveMenu_Show(const struct MoveMenuView *view);
+bool32 MoveMenu_TypesMatchShown(const struct MoveMenuView *view);
 void MoveMenu_SetDetails(const struct MoveMenuView *view);
 void MoveMenu_SetHighlight(u32 slot);
 void MoveMenu_SetMarker(u32 slot);

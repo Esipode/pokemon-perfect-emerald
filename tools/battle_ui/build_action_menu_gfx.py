@@ -176,6 +176,118 @@ def write_pal(path, plte):
         f.write("\r\n".join(lines) + "\r\n")
 
 
+# Move Info opener sprites (32x32 OBJ, shared ability pop-up palette). Rows keep the original art's
+# palette indices; MOVE_INFO_REMAP recolours them to the panel. Indices 12 and 15 are unused by every
+# sprite on that palette, so they carry the panel background and accent.
+MOVE_INFO_OPENER_L = [
+    "00bbbbbbbbbbbbbbbbbbbbbbbbbbbb00",
+    "0baaeeeeeeeeeeeeeeeeeeeeeeeeaab0",
+    "baaeddddd777777777777addddddeaab",
+    "baeddddd77777a77777777addddddeab",
+    "bedddddd77777a77777777adddddddeb",
+    "bedddddd77777a77777777adddddddeb",
+    "bedddddd77777a77777777adddddddeb",
+    "bedddddd77777aaaa77777adddddddeb",
+    "bedddddda777777777777aadddddddeb",
+    "bedddddddaaaaaaaaaaaaaddddddddeb",
+    "beddddddddddddddddddddddddddddeb",
+    "beddddd5ddd5dd55dd5d5d555dddddeb",
+    "beddddd55d55d5dd5d5d5d5dddddddeb",
+    "beddddd5d5d5d5dd5d5d5d55ddddddeb",
+    "beddddd5ddd5d5dd5d5d5d5dddddddeb",
+    "beddddd5ddd5dd55ddd5dd555dddddeb",
+    "beddddddddddddddddddddddddddddeb",
+    "bedddddd5d5dd5d555dd55ddddddddeb",
+    "bedddddd5d55d5d5ddd5dd5dddddddeb",
+    "bedddddd5d5d55d55dd5dd5dddddddeb",
+    "bedddddd5d5dd5d5ddd5dd5dddddddeb",
+    "bedddddd5d5dd5d5dddd55ddddddddeb",
+    "beddddddddddddddddddddddddddddeb",
+    "baeddddddddddddddddddddddddddeab",
+    "baaeddddddddddddddddddddddddeaab",
+    "0baaeeeeeeeeeeeeeeeeeeeeeeeeaab0",
+]
+
+MOVE_INFO_OPENER_R = [
+    "00bbbbbbbbbbbbbbbbbbbbbbbbbbbb00",
+    "0baaeeeeeeeeeeeeeeeeeeeeeeeeaab0",
+    "baaeddddd777777777777addddddeaab",
+    "baeddddd77777aaa777777addddddeab",
+    "bedddddd77777a77a77777adddddddeb",
+    "bedddddd77777aaa777777adddddddeb",
+    "bedddddd77777a77a77777adddddddeb",
+    "bedddddd77777a77a77777adddddddeb",
+    "bedddddda777777777777aadddddddeb",
+    "bedddddddaaaaaaaaaaaaaddddddddeb",
+    "beddddddddddddddddddddddddddddeb",
+    "beddddd5ddd5dd55dd5d5d555dddddeb",
+    "beddddd55d55d5dd5d5d5d5dddddddeb",
+    "beddddd5d5d5d5dd5d5d5d55ddddddeb",
+    "beddddd5ddd5d5dd5d5d5d5dddddddeb",
+    "beddddd5ddd5dd55ddd5dd555dddddeb",
+    "beddddddddddddddddddddddddddddeb",
+    "bedddddd5d5dd5d555dd55ddddddddeb",
+    "bedddddd5d55d5d5ddd5dd5dddddddeb",
+    "bedddddd5d5d55d55dd5dd5dddddddeb",
+    "bedddddd5d5dd5d5ddd5dd5dddddddeb",
+    "bedddddd5d5dd5d5dddd55ddddddddeb",
+    "beddddddddddddddddddddddddddddeb",
+    "baeddddddddddddddddddddddddddeab",
+    "baaeddddddddddddddddddddddddeaab",
+    "0baaeeeeeeeeeeeeeeeeeeeeeeeeaab0",
+]
+
+OPENER_PAL = os.path.join(OUT_DIR, "ability_pop_up.pal")
+OPENER_BG = (5, 6, 9)       # panel background
+OPENER_ACCENT = (22, 24, 28)  # accent stripe
+OPENER_BG_INDEX = 12
+OPENER_ACCENT_INDEX = 15
+OPENER_OUTLINE_INDEX = 11
+OPENER_WHITE_INDEX = 7
+OPENER_BORDER_INSET = 3     # pixels from the edge that belong to the frame
+
+
+def opener_pixels(rows):
+    pixels = []
+    for y, row in enumerate(rows):
+        for x, c in enumerate(row):
+            v = int(c, 16)
+            frame = (x < OPENER_BORDER_INSET or x >= 32 - OPENER_BORDER_INSET
+                     or y < OPENER_BORDER_INSET or y >= 26 - OPENER_BORDER_INSET)
+            if v == 0:
+                out = 0
+            elif frame and v in (0xA, 0xB):
+                out = OPENER_OUTLINE_INDEX
+            elif v == 0xE:
+                out = OPENER_ACCENT_INDEX
+            elif v == 7 or v == 5:
+                out = OPENER_WHITE_INDEX   # key cap and "MOVE INFO" text
+            else:
+                out = OPENER_BG_INDEX      # panel fill and the key letter
+            pixels.append(out)
+    return pixels + [0] * (32 * 6)
+
+
+def update_opener_palette():
+    with open(OPENER_PAL, newline="") as f:
+        lines = f.read().split("\r\n")
+    for index, rgb in ((OPENER_BG_INDEX, OPENER_BG), (OPENER_ACCENT_INDEX, OPENER_ACCENT)):
+        lines[3 + index] = " ".join(str(c * 8) for c in rgb)
+    with open(OPENER_PAL, "w", newline="") as f:
+        f.write("\r\n".join(lines))
+    plte = bytearray()
+    for line in lines[3:19]:
+        plte += bytes(int(v) for v in line.split())
+    return bytes(plte)
+
+
+def write_openers():
+    plte = update_opener_palette()
+    for suffix, rows in (("l", MOVE_INFO_OPENER_L), ("r", MOVE_INFO_OPENER_R)):
+        with open(os.path.join(OUT_DIR, f"move_info_window_{suffix}.png"), "wb") as f:
+            f.write(png4.write_indexed_png(32, 32, bytes(opener_pixels(rows)), plte))
+
+
 def main():
     width, height, pixels = build_sheet()
     plte = palette_bytes()
@@ -183,6 +295,7 @@ def main():
         f.write(png4.write_tiles_png(
             png4.image_to_tiles(png4.IndexedImage(width, height, bytes(pixels), plte)), plte, tiles_per_row=2))
     write_pal(os.path.join(OUT_DIR, "action_menu.pal"), plte)
+    write_openers()
     print(f"icons: {width}x{height}, {len(ICON_ORDER)} icons, {len(GLYPH_ORDER)} glyphs")
 
 

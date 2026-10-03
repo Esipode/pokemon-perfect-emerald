@@ -990,9 +990,13 @@ void HandleInputChooseMove(enum BattlerId battler)
                 gCategoryIconSpriteId = 0xFF;
             }
 
+#if ACTION_MENU_NEW
+            MoveInfo_Hide();
+#else
             FillWindowPixelBuffer(B_WIN_MOVE_DESCRIPTION, PIXEL_FILL(0));
             ClearStdWindowAndFrame(B_WIN_MOVE_DESCRIPTION, FALSE);
             CopyWindowToVram(B_WIN_MOVE_DESCRIPTION, COPYWIN_GFX);
+#endif
             PlaySE(SE_SELECT);
             if (B_SHOW_EFFECTIVENESS)
                 MoveSelectionDisplayMoveEffectiveness(CheckTargetTypeEffectiveness(battler), battler);
@@ -1031,6 +1035,23 @@ static void ReloadMoveNames(enum BattlerId battler)
     else
     {
         gBattleStruct->zmove.viewing = FALSE;
+#if ACTION_MENU_NEW
+        // Only Dynamax renames moves; a Tera toggle with unchanged types needs just the plate.
+        if (gBattleStruct->gimmick.usableGimmick[battler] != GIMMICK_DYNAMAX)
+        {
+            struct MoveMenuView view;
+
+            FillMoveMenuView(battler, &view);
+            if (MoveMenu_TypesMatchShown(&view))
+            {
+                if (B_SHOW_EFFECTIVENESS)
+                    MoveSelectionDisplayMoveEffectiveness(CheckTargetTypeEffectiveness(battler), battler);
+                else
+                    MoveMenu_SetDetails(&view);
+                return;
+            }
+        }
+#endif
         MoveSelectionDestroyCursorAt(battler);
         MoveSelectionDisplayMoveNames(battler);
         MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
@@ -1952,6 +1973,20 @@ static void MoveSelectionDisplayMoveDescription(enum BattlerId battler)
         acc = 0;
     }
 
+#if ACTION_MENU_NEW
+    struct MoveInfoView view;
+
+    view.name = GetMoveName(move);
+    view.description = GetMoveDescription(move);
+    view.type = GetDisplayedMoveType(battler, moveInfo->moves[gMoveSelectionCursor[battler]]);
+    view.slot = gMoveSelectionCursor[battler];
+    view.power = pwr;
+    view.accuracy = acc;
+    view.currentPp = moveInfo->currentPP[gMoveSelectionCursor[battler]];
+    view.maxPp = moveInfo->maxPP[gMoveSelectionCursor[battler]];
+    view.showPp = gBattleResources->bufferA[battler][2] != TRUE;
+    MoveInfo_Show(&view);
+#else
     u8 pwr_num[3], acc_num[3];
     u8 cat_desc[7] = _("CAT: ");
     u8 pwr_desc[7] = _("PWR: ");
@@ -1982,12 +2017,17 @@ static void MoveSelectionDisplayMoveDescription(enum BattlerId battler)
     WrapFontIdToFit(descStart, descEnd, FONT_NORMAL, WindowWidthPx(B_WIN_MOVE_DESCRIPTION));
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_DESCRIPTION);
 
+    CopyWindowToVram(B_WIN_MOVE_DESCRIPTION, COPYWIN_FULL);
+#endif
+
     if (gCategoryIconSpriteId == 0xFF)
+#if ACTION_MENU_NEW
+        gCategoryIconSpriteId = CreateSprite(&gSpriteTemplate_CategoryIcons, MOVE_INFO_CATEGORY_X, MOVE_INFO_CATEGORY_Y, 1);
+#else
         gCategoryIconSpriteId = CreateSprite(&gSpriteTemplate_CategoryIcons, 38, 64, 1);
+#endif
 
     StartSpriteAnim(&gSprites[gCategoryIconSpriteId], cat);
-
-    CopyWindowToVram(B_WIN_MOVE_DESCRIPTION, COPYWIN_FULL);
 }
 
 void MoveSelectionCreateCursorAt(u8 cursorPosition, u8 baseTileNum)

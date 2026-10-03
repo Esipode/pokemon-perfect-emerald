@@ -166,6 +166,17 @@ const struct BgTemplate gBattleBgTemplates[] =
         .baseBlock = block, \
     }
 
+#define MOVE_INFO_WINDOW_TEMPLATE \
+    [B_WIN_MOVE_DESCRIPTION] = { \
+        .bg = 0, \
+        .tilemapLeft = MOVE_INFO_LEFT_TILE, \
+        .tilemapTop = MOVE_INFO_TOP_TILE, \
+        .width = MOVE_INFO_WIDTH_TILES, \
+        .height = MOVE_INFO_HEIGHT_TILES, \
+        .paletteNum = ACTION_PALETTE_IDLE, \
+        .baseBlock = MOVE_PANEL_TILE_LIMIT, \
+    }
+
 #define MOVE_MENU_WINDOW_TEMPLATES \
     [B_WIN_MOVE_NAME_1] = { \
         .bg = 0, \
@@ -445,6 +456,9 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
         .paletteNum = 0,
         .baseBlock = 0x00b0,
     },
+#if ACTION_MENU_NEW
+    MOVE_INFO_WINDOW_TEMPLATE,
+#else
     [B_WIN_MOVE_DESCRIPTION] = {
         .bg = 0,
         .tilemapLeft = 1,
@@ -454,6 +468,7 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x0350,
     },
+#endif
     [B_CATCH_OR_NOT] = {
         .bg = 0,
         .tilemapLeft = 21,
@@ -709,6 +724,9 @@ static const struct WindowTemplate sKantoTutorialBattleWindowTemplates[] =
         .paletteNum = 0,
         .baseBlock = 0x00b0,
     },
+#if ACTION_MENU_NEW
+    MOVE_INFO_WINDOW_TEMPLATE,
+#else
     [B_WIN_MOVE_DESCRIPTION] = {
         .bg = 0,
         .tilemapLeft = 1,
@@ -718,6 +736,7 @@ static const struct WindowTemplate sKantoTutorialBattleWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x0350,
     },
+#endif
     [B_WIN_OAK_OLD_MAN] = {
         .bg = 0,
         .tilemapLeft = 2,
@@ -964,6 +983,9 @@ static const struct WindowTemplate sBattleArenaWindowTemplates[] =
         .paletteNum = 7,
         .baseBlock = 0x0090,
     },
+#if ACTION_MENU_NEW
+    MOVE_INFO_WINDOW_TEMPLATE,
+#else
     [B_WIN_MOVE_DESCRIPTION] = {
         .bg = 0,
         .tilemapLeft = 1,
@@ -973,6 +995,7 @@ static const struct WindowTemplate sBattleArenaWindowTemplates[] =
         .paletteNum = 5,
         .baseBlock = 0x0350,
     },
+#endif
     DUMMY_WIN_TEMPLATE
 };
 

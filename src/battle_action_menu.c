@@ -757,6 +757,19 @@ void MoveMenu_FlushTilemap(void)
     }
 }
 
+// TRUE when every slot's type equals the one last passed to MoveMenu_Show.
+bool32 MoveMenu_TypesMatchShown(const struct MoveMenuView *view)
+{
+    u32 slot;
+
+    for (slot = 0; slot < MOVE_MENU_SLOT_COUNT; slot++)
+    {
+        if (sMoveTypes[slot] != view->types[slot])
+            return FALSE;
+    }
+    return TRUE;
+}
+
 void MoveMenu_Show(const struct MoveMenuView *view)
 {
     u16 palette[16];
@@ -782,4 +795,101 @@ void MoveMenu_Show(const struct MoveMenuView *view)
     CopyWindowToVram(B_WIN_MOVE_NAME_1, COPYWIN_FULL);
     CopyWindowToVram(B_WIN_MOVE_NAME_2, COPYWIN_FULL);
     sMoveTilemapDirty = FALSE;
+}
+
+// Move Info modal. Window pixels: 2 px accent stripe on top, 1 px outline on the other edges.
+#define INFO_WIDTH_PX       (MOVE_INFO_WIDTH_TILES * 8)
+#define INFO_HEIGHT_PX      (MOVE_INFO_HEIGHT_TILES * 8)
+#define INFO_TEXT_X         6
+#define INFO_NAME_Y         2
+#define INFO_NAME_WIDTH     76
+#define INFO_TYPE_X         88
+#define INFO_TYPE_Y         4
+#define INFO_STAT_Y         16
+#define INFO_STAT_PWR_X     INFO_TEXT_X
+#define INFO_STAT_ACC_X     50
+#define INFO_STAT_PP_X      94
+#define INFO_DESC_Y         27
+#define INFO_DESC_STEP      9
+#define INFO_DESC_LINES     3
+#define INFO_DESC_WIDTH     (INFO_WIDTH_PX - INFO_TEXT_X * 2)
+
+static const u8 sText_InfoPower[] = _("PWR");
+static const u8 sText_InfoAccuracy[] = _("ACC");
+static const u8 sText_InfoDash[] = _("-");
+
+static void PrintInfoStat(u32 x, const u8 *label, const u8 *value, u32 valueColor)
+{
+    PrintActionText(B_WIN_MOVE_DESCRIPTION, FONT_SMALL, label, x, INFO_STAT_Y, PIX_MUTED);
+    PrintActionText(B_WIN_MOVE_DESCRIPTION, FONT_SMALL, value, x + GetStringWidth(FONT_SMALL, label, 0) + 3, INFO_STAT_Y, valueColor);
+}
+
+static void PrintInfoNumber(u32 x, const u8 *label, u32 value)
+{
+    u8 text[8];
+
+    if (value < 2)
+        StringCopy(text, sText_InfoDash);
+    else
+        ConvertIntToDecimalStringN(text, value, STR_CONV_MODE_LEFT_ALIGN, 3);
+    PrintInfoStat(x, label, text, PIX_TEXT);
+}
+
+// The authored description already breaks lines; each is printed on its own so the line step stays tight.
+static void PrintInfoDescription(const u8 *description)
+{
+    u32 lineCount;
+
+    for (lineCount = 0; lineCount < INFO_DESC_LINES && *description != EOS; lineCount++)
+    {
+        u8 line[48];
+        u32 length = 0;
+
+        while (*description != EOS && *description != CHAR_NEWLINE && length < sizeof(line) - 1)
+            line[length++] = *description++;
+        line[length] = EOS;
+        if (*description == CHAR_NEWLINE)
+            description++;
+        PrintActionText(B_WIN_MOVE_DESCRIPTION, GetFontIdToFit(line, FONT_SMALL_NARROW, 0, INFO_DESC_WIDTH), line,
+                        INFO_TEXT_X, INFO_DESC_Y + lineCount * INFO_DESC_STEP, PIX_TEXT);
+    }
+}
+
+void MoveInfo_Show(const struct MoveInfoView *view)
+{
+    u32 id = B_WIN_MOVE_DESCRIPTION;
+
+    FillWindowPixelBuffer(id, PIXEL_FILL(PIX_BACKGROUND));
+    FillWindowPixelRect(id, PIXEL_FILL(PIX_OUTLINE), 0, 0, 1, INFO_HEIGHT_PX);
+    FillWindowPixelRect(id, PIXEL_FILL(PIX_OUTLINE), INFO_WIDTH_PX - 1, 0, 1, INFO_HEIGHT_PX);
+    FillWindowPixelRect(id, PIXEL_FILL(PIX_OUTLINE), 0, INFO_HEIGHT_PX - 1, INFO_WIDTH_PX, 1);
+    FillWindowPixelRect(id, PIXEL_FILL(PIX_ACCENT), 0, 0, INFO_WIDTH_PX, PLATE_STRIPE_HEIGHT);
+
+    PrintActionText(id, GetFontIdToFit(view->name, FONT_NORMAL, 0, INFO_NAME_WIDTH), view->name,
+                    INFO_TEXT_X, INFO_NAME_Y, PIX_TEXT);
+    DrawMoveTypeIcon(id, view->type, INFO_TYPE_X, INFO_TYPE_Y, 8 + view->slot * 2);
+
+    PrintInfoNumber(INFO_STAT_PWR_X, sText_InfoPower, view->power);
+    PrintInfoNumber(INFO_STAT_ACC_X, sText_InfoAccuracy, view->accuracy);
+    if (view->showPp)
+    {
+        u8 text[8];
+        u8 *end = ConvertIntToDecimalStringN(text, view->currentPp, STR_CONV_MODE_LEFT_ALIGN, 3);
+
+        *end++ = CHAR_SLASH;
+        ConvertIntToDecimalStringN(end, view->maxPp, STR_CONV_MODE_LEFT_ALIGN, 3);
+        PrintInfoStat(INFO_STAT_PP_X, gText_MoveInterfacePP, text, GetPpColor(MoveMenu_GetPpTier(view->currentPp, view->maxPp)));
+    }
+
+    PrintInfoDescription(view->description);
+
+    PutWindowTilemap(id);
+    CopyWindowToVram(id, COPYWIN_FULL);
+}
+
+void MoveInfo_Hide(void)
+{
+    FillWindowPixelBuffer(B_WIN_MOVE_DESCRIPTION, PIXEL_FILL(0));
+    ClearWindowTilemap(B_WIN_MOVE_DESCRIPTION);
+    CopyWindowToVram(B_WIN_MOVE_DESCRIPTION, COPYWIN_FULL);
 }
