@@ -322,8 +322,10 @@ TEST("(Action menu) Move palette keeps the base colours and tints each slot by t
     for (i = 0; i < MOVE_MENU_SLOT_COUNT; i++)
     {
         EXPECT_NE(idle[8 + i * 2], lit[8 + i * 2]);
-        EXPECT_NE(lit[8 + i * 2], lit[9 + i * 2]);
     }
+    EXPECT_EQ(idle[MOVE_COLOR_AMBER], lit[MOVE_COLOR_AMBER]);
+    EXPECT_NE(lit[MOVE_COLOR_AMBER], lit[MOVE_COLOR_RED]);
+    EXPECT_NE(lit[MOVE_COLOR_RED], lit[MOVE_COLOR_GREEN]);
     EXPECT_NE(lit[8], lit[10]);
     EXPECT_NE(lit[10], lit[14]);
 }

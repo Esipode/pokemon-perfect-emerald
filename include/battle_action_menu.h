@@ -130,10 +130,15 @@ struct ActionMenuRect
 #define MOVE_MENU_SLOT_COUNT      4
 #define MOVE_CELL_WIDTH           72
 #define MOVE_CELL_HEIGHT          22
-// Cell contents, left to right: pointer (x 0-4), type pip (x 6-9), name (x 11 to the cell edge).
+// Cell contents, left to right: pointer (x 0-2), type icon (x 3-10, its outer pixels are dark), name (x 11 to the cell edge).
 #define MOVE_POINTER_X            0
-#define MOVE_PIP_X                6
+#define MOVE_ICON_X               3
 #define MOVE_NAME_X               11
+
+// Move palette indices 9/11/13 are status colours; hues sit at 8/10/12/14.
+#define MOVE_COLOR_AMBER          9
+#define MOVE_COLOR_RED            11
+#define MOVE_COLOR_GREEN          13
 #define MOVE_NAME_WIDTH           (MOVE_CELL_WIDTH - MOVE_NAME_X)
 
 enum MovePpTier
@@ -172,6 +177,7 @@ struct MoveMenuView
     u8 maxPp;
     bool8 showPp;
     u8 effBadge;                            // enum MoveEffBadge
+    bool8 switching;                        // move rearrange mode: plate shows a prompt
 };
 
 extern const u32 gActionMenuIconsGfx[];
@@ -203,6 +209,8 @@ bool32 ActionMenu_RunEntrance(void);
 void MoveMenu_Show(const struct MoveMenuView *view);
 void MoveMenu_SetDetails(const struct MoveMenuView *view);
 void MoveMenu_SetHighlight(u32 slot);
+void MoveMenu_SetMarker(u32 slot);
+void MoveMenu_FlushTilemap(void);
 void MoveMenu_ClearHighlight(u32 slot);
 
 #endif // GUARD_BATTLE_ACTION_MENU_H

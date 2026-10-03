@@ -6,6 +6,7 @@
 #include "decompress.h"
 #include "graphics.h"
 #include "healthbox.h"
+#include "malloc.h"
 #include "pokedex.h"
 #include "sprite.h"
 #include "type_icons.h"
@@ -638,4 +639,25 @@ static s32 GetTypeIconBounceMovement(s32 originalY, u32 position)
 {
     struct Sprite *healthbox = &gSprites[gHealthboxSpriteIds[GetBattlerAtPosition(position)]];
     return originalY + healthbox->y2;
+}
+
+void TypeIcons_GetPixels(enum Type type, u8 *dest)
+{
+    bool32 useNew = Healthbox_IsNewStyle();
+    const struct CompressedSpriteSheet *sheet;
+    u32 frame;
+    u8 *buffer;
+
+    if (type > TYPE_STELLAR)
+        type = TYPE_MYSTERY;
+    if (gTypesInfo[type].useSecondTypeIconPalette)
+        sheet = useNew ? &sSpriteSheet_TypeIconsNew2 : &sSpriteSheet_TypeIcons2;
+    else
+        sheet = useNew ? &sSpriteSheet_TypeIconsNew1 : &sSpriteSheet_TypeIcons1;
+    frame = sSpriteAnimTable_TypeIcons[type][0].frame.imageValue;
+
+    buffer = Alloc(sheet->size);
+    DecompressDataWithHeaderWram(sheet->data, buffer);
+    memcpy(dest, buffer + frame * TILE_SIZE_4BPP, TYPE_ICON_PIXEL_BYTES);
+    Free(buffer);
 }

@@ -15,6 +15,7 @@
 #include "task.h"
 #include "text.h"
 #include "trig.h"
+#include "type_icons.h"
 #include "window.h"
 #include "constants/flags.h"
 #include "constants/rgb.h"
@@ -199,7 +200,8 @@ static u16 ScaleMoveColor(const u8 *rgb, u32 numerator, u32 denominator)
     return RGB(rgb[0] * numerator / denominator, rgb[1] * numerator / denominator, rgb[2] * numerator / denominator);
 }
 
-// Indices 0-7 match the action palettes; each slot's pair is that move's type colour (idle is 3/4 strength).
+// Indices 0-7 match the action palettes; even indices 8-14 are the slots' type colours (idle is 3/4 strength),
+// odd indices 9/11/13 are fixed amber / red / green for PP and effectiveness text.
 // Types[] entries of TYPE_NONE (unused slots) take the neutral grey.
 void MoveMenu_BuildPalette(const enum Type types[MOVE_MENU_SLOT_COUNT], bool32 lit, u16 *dest)
 {
@@ -216,8 +218,11 @@ void MoveMenu_BuildPalette(const enum Type types[MOVE_MENU_SLOT_COUNT], bool32 l
         u32 strength = lit ? 4 : 3;
 
         dest[8 + i * 2] = ScaleMoveColor(rgb, strength, 4);
-        dest[9 + i * 2] = ScaleMoveColor(rgb, strength * 5, 4 * 9);
     }
+    dest[MOVE_COLOR_AMBER] = RGB(31, 23, 5);
+    dest[MOVE_COLOR_RED] = RGB(31, 9, 9);
+    dest[MOVE_COLOR_GREEN] = RGB(9, 27, 11);
+    dest[15] = dest[1];
 }
 
 // Prompt plate geometry in plate window pixels (see §1.2).
@@ -431,8 +436,8 @@ void ActionMenu_Show(enum BattlerId battler, enum ActionMenuId menuId, const u8 
 {
     sMenuId = menuId;
     sPromptLine2 = line2Template != NULL ? line2Template : sText_ActionPromptLine2;
-    // Already on screen (partner cancel): no entrance.
-    sEntranceStep = gBattle_BG0_Y == DISPLAY_HEIGHT ? ENTRANCE_FRAMES : 0;
+    // Already on screen (partner cancel) or returning from the move view: no entrance.
+    sEntranceStep = (gBattle_BG0_Y == DISPLAY_HEIGHT || gBattle_BG0_Y == DISPLAY_HEIGHT * 2) ? ENTRANCE_FRAMES : 0;
     DrawActionPanel(battler, menuId);
 }
 
@@ -515,23 +520,21 @@ bool32 ActionMenu_RunEntrance(void)
 
 // Move view geometry. The plate shares the action plate's stripe and divider.
 #define MOVE_TEXT_Y          3
-#define MOVE_PIP_Y           4
-#define MOVE_PIP_WIDTH       4
-#define MOVE_PIP_HEIGHT      8
+#define MOVE_ICON_Y          4
+#define MOVE_ICON_HEIGHT     12
 #define MOVE_UNDERLINE_Y     18
-#define MOVE_POINTER_HEIGHT  7
-#define MOVE_POINTER_Y       7
+#define MOVE_POINTER_HEIGHT  5
+#define MOVE_POINTER_Y       8
 
 #define MOVE_PLATE_NAME_Y    4
 #define MOVE_PLATE_TYPE_Y    17
-#define MOVE_PLATE_PP_Y      27
-#define MOVE_PLATE_HINT_Y    37
-#define MOVE_PLATE_TYPE_X    13
+#define MOVE_PLATE_PP_Y      31
+#define MOVE_PLATE_BADGE_Y   29
+#define MOVE_PLATE_PROMPT_Y  37
+#define MOVE_PLATE_TYPE_X    16
 #define MOVE_PLATE_BADGE_X   66
 
-static const u8 sText_MovePpAmber[] = _("!");
-static const u8 sText_MovePpRed[] = _("!!");
-static const u8 sText_MoveHint[] = _("A: Use  B: Back");
+static const u8 sText_MoveSwitchPrompt[] = _("Swap with?");
 
 static const u8 sText_MoveBadgeSuper[] = _("{UP_ARROW}");
 static const u8 sText_MoveBadgeExtreme[] = _("{STAR}");
@@ -544,11 +547,39 @@ static enum Type sMoveTypes[MOVE_MENU_SLOT_COUNT];
 static void DrawMovePointer(u32 slot, u32 color)
 {
     struct ActionMenuRect r = MoveMenu_GetCellPixelRect(slot);
-    static const u8 widths[MOVE_POINTER_HEIGHT] = { 1, 2, 3, 4, 3, 2, 1 };
+    static const u8 widths[MOVE_POINTER_HEIGHT] = { 1, 2, 3, 2, 1 };
     u32 i;
 
     for (i = 0; i < MOVE_POINTER_HEIGHT; i++)
         FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(color), r.left + MOVE_POINTER_X, r.top + MOVE_POINTER_Y + i, widths[i], 1);
+}
+
+// The battle type icon recoloured to the panel: border = shadow, glyph = text, body = fillColor.
+static void DrawMoveTypeIcon(u32 windowId, enum Type type, u32 x, u32 y, u32 fillColor)
+{
+    u8 pixels[TYPE_ICON_PIXEL_BYTES];
+    u32 i, nibble;
+
+    TypeIcons_GetPixels(type, pixels);
+    for (i = 0; i < TYPE_ICON_PIXEL_BYTES; i++)
+    {
+        u8 pair = 0;
+
+        for (nibble = 0; nibble < 2; nibble++)
+        {
+            u32 pixel = (pixels[i] >> (nibble * 4)) & 0xF;
+
+            if (pixel == 1)
+                pixel = PIX_SHADOW;
+            else if (pixel == 2)
+                pixel = PIX_TEXT;
+            else if (pixel != 0)
+                pixel = fillColor;
+            pair |= pixel << (nibble * 4);
+        }
+        pixels[i] = pair;
+    }
+    BlitBitmapRectToWindowWithColorKey(windowId, pixels, 0, 0, 8, 16, x, y, 8, MOVE_ICON_HEIGHT, 0);
 }
 
 static void DrawMoveCell(const struct MoveMenuView *view, u32 slot)
@@ -560,10 +591,10 @@ static void DrawMoveCell(const struct MoveMenuView *view, u32 slot)
     if (name == NULL || name[0] == EOS)
         return;
 
-    FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(hue), r.left + MOVE_PIP_X, r.top + MOVE_PIP_Y, MOVE_PIP_WIDTH, MOVE_PIP_HEIGHT);
+    DrawMoveTypeIcon(B_WIN_MOVE_NAME_2, view->types[slot], r.left + MOVE_ICON_X, r.top + MOVE_ICON_Y, hue);
     PrintActionText(B_WIN_MOVE_NAME_2, GetFontIdToFit(name, FONT_NARROWER, 0, MOVE_NAME_WIDTH), name,
                     r.left + MOVE_NAME_X, r.top + MOVE_TEXT_Y, PIX_OUTLINE);
-    FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(hue + 1), r.left + MOVE_NAME_X, r.top + MOVE_UNDERLINE_Y, MOVE_NAME_WIDTH - 2, 2);
+    FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(hue), r.left + MOVE_ICON_X, r.top + MOVE_UNDERLINE_Y, MOVE_CELL_WIDTH - MOVE_ICON_X - 2, 2);
 }
 
 static const u8 *GetMoveBadgeText(enum MoveEffBadge badge)
@@ -582,6 +613,36 @@ static const u8 *GetMoveBadgeText(enum MoveEffBadge badge)
         return sText_MoveBadgeImmune;
     default:
         return NULL;
+    }
+}
+
+static u32 GetPpColor(enum MovePpTier tier)
+{
+    switch (tier)
+    {
+    case MOVE_PP_AMBER:
+        return MOVE_COLOR_AMBER;
+    case MOVE_PP_RED:
+        return MOVE_COLOR_RED;
+    case MOVE_PP_EMPTY:
+        return PIX_MUTED;
+    default:
+        return PIX_TEXT;
+    }
+}
+
+static u32 GetBadgeColor(enum MoveEffBadge badge)
+{
+    switch (badge)
+    {
+    case MOVE_EFF_SUPER:
+    case MOVE_EFF_EXTREME:
+        return MOVE_COLOR_GREEN;
+    case MOVE_EFF_RESISTED:
+    case MOVE_EFF_MOSTLY_RESISTED:
+        return MOVE_COLOR_RED;
+    default:
+        return PIX_MUTED;
     }
 }
 
@@ -604,7 +665,7 @@ static void DrawMovePlate(const struct MoveMenuView *view)
     {
         PrintActionText(B_WIN_MOVE_NAME_1, GetFontIdToFit(name, FONT_NORMAL, 0, PLATE_TEXT_WIDTH), name,
                         PLATE_TEXT_X, MOVE_PLATE_NAME_Y, PIX_TEXT);
-        FillWindowPixelRect(B_WIN_MOVE_NAME_1, PIXEL_FILL(8 + view->cursor * 2), PLATE_TEXT_X, MOVE_PLATE_TYPE_Y + 1, MOVE_PIP_WIDTH, MOVE_PIP_HEIGHT);
+        DrawMoveTypeIcon(B_WIN_MOVE_NAME_1, view->types[view->cursor], PLATE_TEXT_X, MOVE_PLATE_TYPE_Y - 1, 8 + view->cursor * 2);
         PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, gTypesInfo[view->types[view->cursor]].name,
                         MOVE_PLATE_TYPE_X, MOVE_PLATE_TYPE_Y, PIX_MUTED);
     }
@@ -619,18 +680,14 @@ static void DrawMovePlate(const struct MoveMenuView *view)
         end = ConvertIntToDecimalStringN(end, view->currentPp, STR_CONV_MODE_LEFT_ALIGN, 3);
         *end++ = CHAR_SLASH;
         end = ConvertIntToDecimalStringN(end, view->maxPp, STR_CONV_MODE_LEFT_ALIGN, 3);
-        if (tier == MOVE_PP_AMBER)
-            StringCopy(end, sText_MovePpAmber);
-        else if (tier == MOVE_PP_RED)
-            StringCopy(end, sText_MovePpRed);
-        PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, text, PLATE_TEXT_X, MOVE_PLATE_PP_Y,
-                        tier == MOVE_PP_EMPTY ? PIX_MUTED : PIX_TEXT);
+        PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, text, PLATE_TEXT_X, MOVE_PLATE_PP_Y, GetPpColor(tier));
     }
 
     if (badge != NULL)
-        PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, badge, MOVE_PLATE_BADGE_X, MOVE_PLATE_PP_Y, PIX_TEXT);
+        PrintActionText(B_WIN_MOVE_NAME_1, FONT_NORMAL, badge, MOVE_PLATE_BADGE_X, MOVE_PLATE_BADGE_Y, GetBadgeColor(view->effBadge));
 
-    PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, sText_MoveHint, PLATE_TEXT_X, MOVE_PLATE_HINT_Y, PIX_MUTED);
+    if (view->switching)
+        PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, sText_MoveSwitchPrompt, PLATE_TEXT_X, MOVE_PLATE_PROMPT_Y, PIX_MUTED);
 }
 
 void MoveMenu_SetDetails(const struct MoveMenuView *view)
@@ -639,22 +696,45 @@ void MoveMenu_SetDetails(const struct MoveMenuView *view)
     CopyWindowToVram(B_WIN_MOVE_NAME_1, COPYWIN_GFX);
 }
 
+static bool8 sMoveTilemapDirty;
+
 static void SetMoveCellPalette(u32 slot, u32 palette)
 {
     struct ActionMenuRect t = MoveMenu_GetCellTileRect(slot);
 
     PutWindowRectTilemapOverridePalette(B_WIN_MOVE_NAME_2, t.left, t.top, t.right - t.left + 1, t.bottom - t.top + 1, palette);
-    CopyBgTilemapBufferToVram(0);
 }
 
-// The pointer is pixels in the cell and the lit palette brightens the name, so a move redraws the grid.
+// Uploads only the tiles the pointer covers instead of the whole cell grid.
+static void CopyMovePointerTiles(u32 slot)
+{
+    struct ActionMenuRect r = MoveMenu_GetCellPixelRect(slot);
+    u32 top = (r.top + MOVE_POINTER_Y) / 8;
+    u32 bottom = (r.top + MOVE_POINTER_Y + MOVE_POINTER_HEIGHT - 1) / 8;
+
+    CopyWindowRectToVram(B_WIN_MOVE_NAME_2, COPYWIN_GFX, (r.left + MOVE_POINTER_X) / 8, top, 1, bottom - top + 1);
+}
+
+// The pointer is pixels in the cell and the lit palette brightens the name.
+// A clear is paired with a set in the same step, so only the set uploads the tilemap.
 void MoveMenu_SetHighlight(u32 slot)
 {
     if (slot >= MOVE_MENU_SLOT_COUNT)
         return;
     DrawMovePointer(slot, PIX_OUTLINE);
-    CopyWindowToVram(B_WIN_MOVE_NAME_2, COPYWIN_GFX);
+    CopyMovePointerTiles(slot);
     SetMoveCellPalette(slot, ACTION_PALETTE_LIT);
+    CopyBgTilemapBufferToVram(0);
+    sMoveTilemapDirty = FALSE;
+}
+
+// Pointer only, no palette swap: the rearrange source stays dim while the destination is lit.
+void MoveMenu_SetMarker(u32 slot)
+{
+    if (slot >= MOVE_MENU_SLOT_COUNT)
+        return;
+    DrawMovePointer(slot, PIX_OUTLINE);
+    CopyMovePointerTiles(slot);
 }
 
 void MoveMenu_ClearHighlight(u32 slot)
@@ -662,8 +742,19 @@ void MoveMenu_ClearHighlight(u32 slot)
     if (slot >= MOVE_MENU_SLOT_COUNT)
         return;
     DrawMovePointer(slot, PIX_BACKGROUND);
-    CopyWindowToVram(B_WIN_MOVE_NAME_2, COPYWIN_GFX);
+    CopyMovePointerTiles(slot);
     SetMoveCellPalette(slot, ACTION_PALETTE_IDLE);
+    sMoveTilemapDirty = TRUE;
+}
+
+// Uploads a tilemap left pending by a clear that no set followed.
+void MoveMenu_FlushTilemap(void)
+{
+    if (sMoveTilemapDirty)
+    {
+        CopyBgTilemapBufferToVram(0);
+        sMoveTilemapDirty = FALSE;
+    }
 }
 
 void MoveMenu_Show(const struct MoveMenuView *view)
@@ -690,4 +781,5 @@ void MoveMenu_Show(const struct MoveMenuView *view)
     MoveMenu_SetHighlight(view->cursor);
     CopyWindowToVram(B_WIN_MOVE_NAME_1, COPYWIN_FULL);
     CopyWindowToVram(B_WIN_MOVE_NAME_2, COPYWIN_FULL);
+    sMoveTilemapDirty = FALSE;
 }

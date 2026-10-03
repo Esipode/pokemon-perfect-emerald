@@ -417,6 +417,7 @@ void ActionSelectionDestroyCursorAt(u8 cursorPosition);
 void InitMoveSelectionsVarsAndStrings(enum BattlerId battler);
 void MoveSelectionCreateCursorAt(u8 cursorPos, u8 arg1);
 void MoveSelectionDestroyCursorAt(u8 cursorPosition);
+void MoveSelectionShowZView(enum BattlerId battler, const u8 *name, const u8 *detail, enum Type type);
 void PlayerHandleChooseMove(enum BattlerId battler);
 void HandleInputChooseMove(enum BattlerId battler);
 void HandleInputChooseTarget(enum BattlerId battler);

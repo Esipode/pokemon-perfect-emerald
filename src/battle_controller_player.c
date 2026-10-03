@@ -101,6 +101,16 @@ static void ReloadMoveNames(enum BattlerId battler);
 static u32 CheckTypeEffectiveness(enum BattlerId battlerAtk, enum BattlerId battlerDef);
 static u32 CheckTargetTypeEffectiveness(enum BattlerId battler);
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler);
+static enum Type GetDisplayedMoveType(enum BattlerId battler, enum Move move);
+#if ACTION_MENU_NEW
+static void FillMoveMenuView(enum BattlerId battler, struct MoveMenuView *view);
+static void RedrawMoveDetails(enum BattlerId battler);
+static void MoveSelectionMoveCursor(enum BattlerId battler, u32 next);
+
+static enum MoveEffBadge sMoveBadge;
+static bool8 sMoveSwitching;
+static bool8 sMoveDetailsDeferred;
+#endif
 
 static void (*const sPlayerBufferCommands[CONTROLLER_CMDS_COUNT])(enum BattlerId battler) =
 {
@@ -465,6 +475,9 @@ static void HandleInputChooseAction(enum BattlerId battler)
 
 void HandleInputChooseTarget(enum BattlerId battler)
 {
+#if ACTION_MENU_NEW
+    MoveMenu_FlushTilemap();
+#endif
     enum BattlerId i;
     static const enum BattlerPosition identities[MAX_BATTLERS_COUNT] =
     {
@@ -732,6 +745,9 @@ void HandleInputChooseMove(enum BattlerId battler)
     u32 canSelectTarget = 0;
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
 
+#if ACTION_MENU_NEW
+    MoveMenu_FlushTilemap();
+#endif
     // If AI is controlling the player, emit the AI's chosen move directly instead of waiting for manual input
     if (IsPlayerAiControlled())
     {
@@ -857,6 +873,24 @@ void HandleInputChooseMove(enum BattlerId battler)
             TryToHideMoveInfoWindow();
         }
     }
+#if ACTION_MENU_NEW
+    else if (JOY_NEW(DPAD_ANY) && !gBattleStruct->zmove.viewing)
+    {
+        enum MoveMenuDirection direction = MOVE_DIR_DOWN;
+        u32 next;
+
+        if (JOY_NEW(DPAD_LEFT))
+            direction = MOVE_DIR_LEFT;
+        else if (JOY_NEW(DPAD_RIGHT))
+            direction = MOVE_DIR_RIGHT;
+        else if (JOY_NEW(DPAD_UP))
+            direction = MOVE_DIR_UP;
+
+        next = MoveMenu_GetNextSlot(gNumberOfMovesToChoose, gMoveSelectionCursor[battler], direction);
+        if (next != gMoveSelectionCursor[battler])
+            MoveSelectionMoveCursor(battler, next);
+    }
+#else
     else if (JOY_NEW(DPAD_LEFT) && !gBattleStruct->zmove.viewing)
     {
         if (gMoveSelectionCursor[battler] & 1)
@@ -923,6 +957,7 @@ void HandleInputChooseMove(enum BattlerId battler)
             TryChangeZTrigger(battler, gMoveSelectionCursor[battler]);
         }
     }
+#endif
     else if (B_MOVE_REARRANGEMENT_IN_BATTLE < GEN_4 && JOY_NEW(SELECT_BUTTON) && !gBattleStruct->zmove.viewing && !gBattleStruct->descriptionSubmenu)
     {
         if (gNumberOfMovesToChoose > 1 && !(gBattleTypeFlags & BATTLE_TYPE_LINK))
@@ -935,7 +970,12 @@ void HandleInputChooseMove(enum BattlerId battler)
                 gMultiUsePlayerCursor = gMoveSelectionCursor[battler] + 1;
 
             MoveSelectionCreateCursorAt(gMultiUsePlayerCursor, 27);
+#if ACTION_MENU_NEW
+            sMoveSwitching = TRUE;
+            RedrawMoveDetails(battler);
+#else
             BattlePutTextOnWindow(gText_BattleSwitchWhich, B_WIN_SWITCH_PROMPT);
+#endif
             gBattlerControllerFuncs[battler] = HandleMoveSwitching;
         }
     }
@@ -1057,6 +1097,9 @@ void HandleMoveSwitching(enum BattlerId battler)
     struct ChooseMoveStruct moveStruct;
     u8 totalPPBonuses;
 
+#if ACTION_MENU_NEW
+    MoveMenu_FlushTilemap();
+#endif
     if (JOY_NEW(A_BUTTON | SELECT_BUTTON))
     {
         struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
@@ -1147,6 +1190,9 @@ void HandleMoveSwitching(enum BattlerId battler)
 
         gBattlerControllerFuncs[battler] = HandleInputChooseMove;
         gMoveSelectionCursor[battler] = gMultiUsePlayerCursor;
+#if ACTION_MENU_NEW
+        sMoveSwitching = FALSE;
+#endif
         MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
         if (B_SHOW_EFFECTIVENESS)
             MoveSelectionDisplayMoveEffectiveness(CheckTargetTypeEffectiveness(battler), battler);
@@ -1163,6 +1209,9 @@ void HandleMoveSwitching(enum BattlerId battler)
         MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
 
         gBattlerControllerFuncs[battler] = HandleInputChooseMove;
+#if ACTION_MENU_NEW
+        sMoveSwitching = FALSE;
+#endif
 
         if (B_SHOW_EFFECTIVENESS)
             MoveSelectionDisplayMoveEffectiveness(CheckTargetTypeEffectiveness(battler), battler);
@@ -1694,6 +1743,20 @@ static void MoveSelectionDisplayMoveNames(enum BattlerId battler)
 
     for (i = 0; i < MAX_MON_MOVES; i++)
     {
+#if ACTION_MENU_NEW
+        if (moveInfo->moves[i] != MOVE_NONE)
+            gNumberOfMovesToChoose++;
+    }
+
+    {
+        struct MoveMenuView view;
+
+        FillMoveMenuView(battler, &view);
+        MoveMenu_Show(&view);
+        MoveMenu_ClearHighlight(view.cursor);
+    }
+}
+#else
         MoveSelectionDestroyCursorAt(i);
         if (IsGimmickSelected(battler, GIMMICK_DYNAMAX) || GetActiveGimmick(battler) == GIMMICK_DYNAMAX)
             StringCopy(gDisplayedStringBattle, GetMoveName(GetMaxMove(battler, moveInfo->moves[i])));
@@ -1705,9 +1768,13 @@ static void MoveSelectionDisplayMoveNames(enum BattlerId battler)
             gNumberOfMovesToChoose++;
     }
 }
+#endif
 
 static void MoveSelectionDisplayPPString(enum BattlerId battler)
 {
+#if ACTION_MENU_NEW
+    return; // PP is always on the plate
+#endif
     StringCopy(gDisplayedStringBattle, gText_MoveInterfacePP);
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_PP);
 }
@@ -1720,6 +1787,9 @@ static void MoveSelectionDisplayPPNumber(enum BattlerId battler)
     if (gBattleResources->bufferA[battler][2] == TRUE) // check if we didn't want to display PP number
         return;
 
+#if ACTION_MENU_NEW
+    return; // PP is read from the move list when the plate is drawn
+#endif
     SetPPNumbersPaletteInMoveSelection(battler);
     moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
     txtPtr = ConvertIntToDecimalStringN(gDisplayedStringBattle, moveInfo->currentPP[gMoveSelectionCursor[battler]], STR_CONV_MODE_RIGHT_ALIGN, 2);
@@ -1729,13 +1799,9 @@ static void MoveSelectionDisplayPPNumber(enum BattlerId battler)
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_PP_REMAINING);
 }
 
-static void MoveSelectionDisplayMoveType(enum BattlerId battler)
+static enum Type GetDisplayedMoveType(enum BattlerId battler, enum Move move)
 {
-    u8 *txtPtr, *end;
     enum Species speciesId = gBattleMons[battler].species;
-    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
-    txtPtr = StringCopy(gDisplayedStringBattle, gText_MoveInterfaceType);
-    enum Move move = moveInfo->moves[gMoveSelectionCursor[battler]];
     enum Type type = GetMoveType(move);
     enum BattleMoveEffects effect = GetMoveEffect(move);
 
@@ -1769,12 +1835,97 @@ static void MoveSelectionDisplayMoveType(enum BattlerId battler)
     }
 
     // Resolve type through the shared resolver (after dynamic type to override it)
-    type = GetResolvedMoveType(move, type);
+    return GetResolvedMoveType(move, type);
+}
+
+#if ACTION_MENU_NEW
+static void FillMoveMenuView(enum BattlerId battler, struct MoveMenuView *view)
+{
+    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
+    bool32 dynamax = IsGimmickSelected(battler, GIMMICK_DYNAMAX) || GetActiveGimmick(battler) == GIMMICK_DYNAMAX;
+    u32 i;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        enum Move move = moveInfo->moves[i];
+
+        if (move == MOVE_NONE)
+        {
+            view->names[i] = NULL;
+            view->types[i] = TYPE_NORMAL;
+            continue;
+        }
+        view->names[i] = GetMoveName(dynamax ? GetMaxMove(battler, move) : move);
+        view->types[i] = GetDisplayedMoveType(battler, move);
+    }
+    view->cursor = gMoveSelectionCursor[battler];
+    view->currentPp = moveInfo->currentPP[view->cursor];
+    view->maxPp = moveInfo->maxPP[view->cursor];
+    view->showPp = gBattleResources->bufferA[battler][2] != TRUE;
+    view->effBadge = sMoveBadge;
+    view->switching = sMoveSwitching;
+}
+
+static void RedrawMoveDetails(enum BattlerId battler)
+{
+    struct MoveMenuView view;
+
+    FillMoveMenuView(battler, &view);
+    MoveMenu_SetDetails(&view);
+}
+
+// Z-Move view: slot 0 shows the Z-Move, slot 2 its effect or power.
+void MoveSelectionShowZView(enum BattlerId battler, const u8 *name, const u8 *detail, enum Type type)
+{
+    struct MoveMenuView view = {0};
+    u32 i;
+
+    view.names[0] = name;
+    view.names[2] = detail;
+    for (i = 0; i < MOVE_MENU_SLOT_COUNT; i++)
+        view.types[i] = type;
+    view.currentPp = 1;
+    view.maxPp = 1;
+    view.showPp = gBattleResources->bufferA[battler][2] != TRUE;
+    MoveMenu_Show(&view);
+}
+
+static void MoveSelectionMoveCursor(enum BattlerId battler, u32 next)
+{
+    MoveSelectionDestroyCursorAt(gMoveSelectionCursor[battler]);
+    gMoveSelectionCursor[battler] = next;
+    PlaySE(SE_SELECT);
+    MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
+    // Effectiveness and type each redraw the plate; one upload per step avoids VRAM overload flicker.
+    sMoveDetailsDeferred = TRUE;
+    if (B_SHOW_EFFECTIVENESS)
+        MoveSelectionDisplayMoveEffectiveness(CheckTargetTypeEffectiveness(battler), battler);
+    MoveSelectionDisplayPPNumber(battler);
+    MoveSelectionDisplayMoveType(battler);
+    sMoveDetailsDeferred = FALSE;
+    RedrawMoveDetails(battler);
+    TryMoveSelectionDisplayMoveDescription(battler);
+    TryChangeZTrigger(battler, gMoveSelectionCursor[battler]);
+}
+#endif
+
+static void MoveSelectionDisplayMoveType(enum BattlerId battler)
+{
+#if ACTION_MENU_NEW
+    if (!sMoveDetailsDeferred)
+        RedrawMoveDetails(battler);
+#else
+    u8 *txtPtr, *end;
+    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
+    txtPtr = StringCopy(gDisplayedStringBattle, gText_MoveInterfaceType);
+    enum Move move = moveInfo->moves[gMoveSelectionCursor[battler]];
+    enum Type type = GetDisplayedMoveType(battler, move);
 
     end = StringCopy(txtPtr, gTypesInfo[type].name);
 
     PrependFontIdToFit(txtPtr, end, FONT_NORMAL, WindowWidthPx(B_WIN_MOVE_TYPE) - 25);
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_TYPE);
+#endif
 }
 
 static void TryMoveSelectionDisplayMoveDescription(enum BattlerId battler)
@@ -1842,7 +1993,10 @@ static void MoveSelectionDisplayMoveDescription(enum BattlerId battler)
 void MoveSelectionCreateCursorAt(u8 cursorPosition, u8 baseTileNum)
 {
 #if ACTION_MENU_NEW
-    MoveMenu_SetHighlight(cursorPosition);
+    if (baseTileNum == 29) // rearrange source: pointer without the lit palette
+        MoveMenu_SetMarker(cursorPosition);
+    else
+        MoveMenu_SetHighlight(cursorPosition);
 #else
     u16 src[2];
     src[0] = baseTileNum + 1;
@@ -2241,6 +2395,10 @@ void PlayerHandleChooseMove(enum BattlerId battler)
 void InitMoveSelectionsVarsAndStrings(enum BattlerId battler)
 {
     LoadTypeIcons(battler);
+#if ACTION_MENU_NEW
+    sMoveBadge = MOVE_EFF_NONE;
+    sMoveSwitching = FALSE;
+#endif
     MoveSelectionDisplayMoveNames(battler);
     gMultiUsePlayerCursor = 0xFF;
     MoveSelectionCreateCursorAt(gMoveSelectionCursor[battler], 0);
@@ -2587,6 +2745,35 @@ static u32 CheckTargetTypeEffectiveness(enum BattlerId battler)
 
 static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum BattlerId battler)
 {
+#if ACTION_MENU_NEW
+    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleResources->bufferA[battler][4]);
+
+    switch (foeEffectiveness)
+    {
+    case EFFECTIVENESS_EXTREMELY_EFFECTIVE:
+        sMoveBadge = MOVE_EFF_EXTREME;
+        break;
+    case EFFECTIVENESS_SUPER_EFFECTIVE:
+        sMoveBadge = MOVE_EFF_SUPER;
+        break;
+    case EFFECTIVENESS_NOT_VERY_EFFECTIVE:
+        sMoveBadge = MOVE_EFF_RESISTED;
+        break;
+    case EFFECTIVENESS_MOSTLY_INEFFECTIVE:
+        sMoveBadge = MOVE_EFF_MOSTLY_RESISTED;
+        break;
+    case EFFECTIVENESS_NO_EFFECT:
+        sMoveBadge = MOVE_EFF_IMMUNE;
+        break;
+    default:
+        sMoveBadge = MOVE_EFF_NONE;
+        break;
+    }
+    if (IsBattleMoveStatus(moveInfo->moves[gMoveSelectionCursor[battler]]))
+        sMoveBadge = MOVE_EFF_NONE;
+    if (!gBattleStruct->zmove.viewing && !sMoveDetailsDeferred)  // the Z view cells have no plate data to refresh
+        RedrawMoveDetails(battler);
+#else
     static const u8 noIcon[] =  _("");
     static const u8 effectiveIcon[] =  _("");
     static const u8 extremeleyEffectiveIcon[] =  _("{COLOR CUSTOM_GREEN}{STAR}");
@@ -2629,4 +2816,5 @@ static void MoveSelectionDisplayMoveEffectiveness(u32 foeEffectiveness, enum Bat
     }
 
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_PP);
+#endif
 }

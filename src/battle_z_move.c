@@ -5,6 +5,7 @@
 #include "battle_ai_record.h"
 #include "battle_controllers.h"
 #include "battle_interface.h"
+#include "battle_action_menu.h"
 #include "battle_message.h"
 #include "battle_z_move.h"
 #include "battle_scripts.h"
@@ -44,9 +45,28 @@
 #define STAT_STAGE(battler, stat) (gBattleMons[battler].statStages[stat - 1])
 
 // Function Declarations
+#if !ACTION_MENU_NEW
 static void ZMoveSelectionDisplayPpNumber(enum BattlerId battler);
+#endif
 static void ZMoveSelectionDisplayPower(enum Move move, enum Move zMove);
+#if !ACTION_MENU_NEW
 static void ZMoveSelectionDisplayMoveType(enum Move zMove, enum BattlerId battler);
+#endif
+
+#if ACTION_MENU_NEW
+// Z view cell text: [0] = move name, [1] = effect / power line.
+static u8 sZViewText[2][40];
+#endif
+
+static void ZMovePutText(const u8 *text, u32 windowId)
+{
+#if ACTION_MENU_NEW
+    StringCopyN(sZViewText[windowId == B_WIN_MOVE_NAME_3], text, sizeof(sZViewText[0]) - 1);
+    sZViewText[windowId == B_WIN_MOVE_NAME_3][sizeof(sZViewText[0]) - 1] = EOS;
+#else
+    BattlePutTextOnWindow(text, windowId);
+#endif
+}
 
 // Const Data
 static const struct SignatureZMove sSignatureZMoves[] =
@@ -273,9 +293,15 @@ bool32 MoveSelectionDisplayZMove(enum Move zmove, enum BattlerId battler)
         for (i = 0; i < MAX_MON_MOVES; ++i)
         {
             MoveSelectionDestroyCursorAt(i);
+#if !ACTION_MENU_NEW
             StringCopy(gDisplayedStringBattle, gText_EmptyString2);
             BattlePutTextOnWindow(gDisplayedStringBattle, i + 3);
+#endif
         }
+#if ACTION_MENU_NEW
+        sZViewText[0][0] = EOS;
+        sZViewText[1][0] = EOS;
+#endif
 
         if (IsBattleMoveStatus(move))
         {
@@ -359,7 +385,7 @@ bool32 MoveSelectionDisplayZMove(enum Move zmove, enum BattlerId battler)
                 break;
             }
 
-            BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_NAME_3);
+            ZMovePutText(gDisplayedStringBattle, B_WIN_MOVE_NAME_3);
             gDisplayedStringBattle[0] = CHAR_Z;
             gDisplayedStringBattle[1] = CHAR_HYPHEN;
             StringCopy(gDisplayedStringBattle + 2, GetMoveName(move));
@@ -367,7 +393,7 @@ bool32 MoveSelectionDisplayZMove(enum Move zmove, enum BattlerId battler)
         else if (GetMoveEffect(zmove) == EFFECT_EXTREME_EVOBOOST)
         {
             StringCopy(gDisplayedStringBattle, sText_StatsPlus2);
-            BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_NAME_3);
+            ZMovePutText(gDisplayedStringBattle, B_WIN_MOVE_NAME_3);
             StringCopy(gDisplayedStringBattle, GetMoveName(zmove));
         }
         else
@@ -375,10 +401,14 @@ bool32 MoveSelectionDisplayZMove(enum Move zmove, enum BattlerId battler)
             ZMoveSelectionDisplayPower(move, zmove);
             StringCopy(gDisplayedStringBattle, GetMoveName(zmove));
         }
-        BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_NAME_1);
+        ZMovePutText(gDisplayedStringBattle, B_WIN_MOVE_NAME_1);
 
+#if ACTION_MENU_NEW
+        MoveSelectionShowZView(battler, sZViewText[0], sZViewText[1], GetBattleMoveType(zmove));
+#else
         ZMoveSelectionDisplayPpNumber(battler);
         ZMoveSelectionDisplayMoveType(zmove, battler);
+#endif
         MoveSelectionCreateCursorAt(0, 0);
         return TRUE;
     }
@@ -398,10 +428,11 @@ static void ZMoveSelectionDisplayPower(enum Move move, enum Move zMove)
     {
         txtPtr = StringCopy(gDisplayedStringBattle, sText_PowerColon);
         ConvertIntToDecimalStringN(txtPtr, power, STR_CONV_MODE_LEFT_ALIGN, 3);
-        BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_NAME_3);
+        ZMovePutText(gDisplayedStringBattle, B_WIN_MOVE_NAME_3);
     }
 }
 
+#if !ACTION_MENU_NEW
 static void ZMoveSelectionDisplayPpNumber(enum BattlerId battler)
 {
     u8 *txtPtr;
@@ -430,6 +461,7 @@ static void ZMoveSelectionDisplayMoveType(enum Move zMove, enum BattlerId battle
     PrependFontIdToFit(txtPtr, end, FONT_NORMAL, WindowWidthPx(B_WIN_MOVE_TYPE) - 25);
     BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_TYPE);
 }
+#endif
 
 #define Z_EFFECT_BS_LENGTH  5
 // This function kinda cheats by setting a return battle script to after the setzeffect various command

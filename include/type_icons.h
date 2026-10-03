@@ -5,6 +5,10 @@ void LoadTypeIcons(enum BattlerId battler);
 // Settings preview: creates a static icon in its slid-out position beside a box. Returns the sprite id.
 u32 TypeIcons_CreatePreviewIcon(enum Type type, s32 boxLeft, s32 boxRight, s32 boxTop, s32 boxBottom, bool32 rightEdge, u32 typeNum);
 
+// Copies a type's 8x16 battle icon (4bpp, linear rows; 0 transparent, 1 border, 2 glyph, other = type fill) for blitting onto a window.
+#define TYPE_ICON_PIXEL_BYTES 64
+void TypeIcons_GetPixels(enum Type type, u8 *dest);
+
 #define TYPE_ICON_TAG 0x2720
 #define TYPE_ICON_TAG_2 0x2721
 #define NUM_FRAMES_HIDE_TYPE_ICON 10
