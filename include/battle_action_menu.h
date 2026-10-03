@@ -162,6 +162,18 @@ enum MoveMenuDirection
     MOVE_DIR_RIGHT,
 };
 
+// Everything the move view draws; the controller fills it so names and types already reflect Z-Move and Dynamax.
+struct MoveMenuView
+{
+    const u8 *names[MOVE_MENU_SLOT_COUNT];  // NULL or empty on an unused slot
+    u8 types[MOVE_MENU_SLOT_COUNT];         // enum Type of each move as displayed
+    u8 cursor;
+    u8 currentPp;
+    u8 maxPp;
+    bool8 showPp;
+    u8 effBadge;                            // enum MoveEffBadge
+};
+
 extern const u32 gActionMenuIconsGfx[];
 
 const struct ActionMenuSlot *ActionMenu_GetSlot(enum ActionMenuId menuId, u32 slot);
@@ -187,5 +199,10 @@ void ActionMenu_SetHighlight(u32 slot);
 void ActionMenu_ClearHighlight(u32 slot);
 void ActionMenu_Hide(void);
 bool32 ActionMenu_RunEntrance(void);
+
+void MoveMenu_Show(const struct MoveMenuView *view);
+void MoveMenu_SetDetails(const struct MoveMenuView *view);
+void MoveMenu_SetHighlight(u32 slot);
+void MoveMenu_ClearHighlight(u32 slot);
 
 #endif // GUARD_BATTLE_ACTION_MENU_H

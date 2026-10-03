@@ -512,3 +512,182 @@ bool32 ActionMenu_RunEntrance(void)
     gBattle_BG0_Y = DISPLAY_HEIGHT + ENTRANCE_DISTANCE * remaining * remaining / (ENTRANCE_FRAMES * ENTRANCE_FRAMES);
     return FALSE;
 }
+
+// Move view geometry. The plate shares the action plate's stripe and divider.
+#define MOVE_TEXT_Y          3
+#define MOVE_PIP_Y           4
+#define MOVE_PIP_WIDTH       4
+#define MOVE_PIP_HEIGHT      8
+#define MOVE_UNDERLINE_Y     18
+#define MOVE_POINTER_HEIGHT  7
+#define MOVE_POINTER_Y       7
+
+#define MOVE_PLATE_NAME_Y    4
+#define MOVE_PLATE_TYPE_Y    17
+#define MOVE_PLATE_PP_Y      27
+#define MOVE_PLATE_HINT_Y    37
+#define MOVE_PLATE_TYPE_X    13
+#define MOVE_PLATE_BADGE_X   66
+
+static const u8 sText_MovePpAmber[] = _("!");
+static const u8 sText_MovePpRed[] = _("!!");
+static const u8 sText_MoveHint[] = _("A: Use  B: Back");
+
+static const u8 sText_MoveBadgeSuper[] = _("{UP_ARROW}");
+static const u8 sText_MoveBadgeExtreme[] = _("{STAR}");
+static const u8 sText_MoveBadgeResisted[] = _("{DOWN_ARROW}");
+static const u8 sText_MoveBadgeMostlyResisted[] = _("{TRIANGLE_UPSIDE_DOWN}");
+static const u8 sText_MoveBadgeImmune[] = _("{BIG_MULT_X}");
+
+static enum Type sMoveTypes[MOVE_MENU_SLOT_COUNT];
+
+static void DrawMovePointer(u32 slot, u32 color)
+{
+    struct ActionMenuRect r = MoveMenu_GetCellPixelRect(slot);
+    static const u8 widths[MOVE_POINTER_HEIGHT] = { 1, 2, 3, 4, 3, 2, 1 };
+    u32 i;
+
+    for (i = 0; i < MOVE_POINTER_HEIGHT; i++)
+        FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(color), r.left + MOVE_POINTER_X, r.top + MOVE_POINTER_Y + i, widths[i], 1);
+}
+
+static void DrawMoveCell(const struct MoveMenuView *view, u32 slot)
+{
+    struct ActionMenuRect r = MoveMenu_GetCellPixelRect(slot);
+    const u8 *name = view->names[slot];
+    u32 hue = 8 + slot * 2;
+
+    if (name == NULL || name[0] == EOS)
+        return;
+
+    FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(hue), r.left + MOVE_PIP_X, r.top + MOVE_PIP_Y, MOVE_PIP_WIDTH, MOVE_PIP_HEIGHT);
+    PrintActionText(B_WIN_MOVE_NAME_2, GetFontIdToFit(name, FONT_NARROWER, 0, MOVE_NAME_WIDTH), name,
+                    r.left + MOVE_NAME_X, r.top + MOVE_TEXT_Y, PIX_OUTLINE);
+    FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(hue + 1), r.left + MOVE_NAME_X, r.top + MOVE_UNDERLINE_Y, MOVE_NAME_WIDTH - 2, 2);
+}
+
+static const u8 *GetMoveBadgeText(enum MoveEffBadge badge)
+{
+    switch (badge)
+    {
+    case MOVE_EFF_SUPER:
+        return sText_MoveBadgeSuper;
+    case MOVE_EFF_EXTREME:
+        return sText_MoveBadgeExtreme;
+    case MOVE_EFF_RESISTED:
+        return sText_MoveBadgeResisted;
+    case MOVE_EFF_MOSTLY_RESISTED:
+        return sText_MoveBadgeMostlyResisted;
+    case MOVE_EFF_IMMUNE:
+        return sText_MoveBadgeImmune;
+    default:
+        return NULL;
+    }
+}
+
+static void DrawMovePlate(const struct MoveMenuView *view)
+{
+    u32 y, x;
+    const u8 *name = view->names[view->cursor];
+    const u8 *badge = GetMoveBadgeText(view->effBadge);
+
+    FillWindowPixelBuffer(B_WIN_MOVE_NAME_1, PIXEL_FILL(PIX_BACKGROUND));
+    FillWindowPixelRect(B_WIN_MOVE_NAME_1, PIXEL_FILL(PIX_ACCENT), 0, 0, PLATE_WIDTH_PX, PLATE_STRIPE_HEIGHT);
+
+    for (y = PLATE_STRIPE_HEIGHT; y < PLATE_HEIGHT_PX; y++)
+    {
+        x = PLATE_DIVIDER_X - ((y - PLATE_STRIPE_HEIGHT) * PLATE_DIVIDER_SLOPE) / (PLATE_HEIGHT_PX - PLATE_STRIPE_HEIGHT);
+        FillWindowPixelRect(B_WIN_MOVE_NAME_1, PIXEL_FILL(PIX_OUTLINE), x, y, 2, 1);
+    }
+
+    if (name != NULL && name[0] != EOS)
+    {
+        PrintActionText(B_WIN_MOVE_NAME_1, GetFontIdToFit(name, FONT_NORMAL, 0, PLATE_TEXT_WIDTH), name,
+                        PLATE_TEXT_X, MOVE_PLATE_NAME_Y, PIX_TEXT);
+        FillWindowPixelRect(B_WIN_MOVE_NAME_1, PIXEL_FILL(8 + view->cursor * 2), PLATE_TEXT_X, MOVE_PLATE_TYPE_Y + 1, MOVE_PIP_WIDTH, MOVE_PIP_HEIGHT);
+        PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, gTypesInfo[view->types[view->cursor]].name,
+                        MOVE_PLATE_TYPE_X, MOVE_PLATE_TYPE_Y, PIX_MUTED);
+    }
+
+    if (view->showPp)
+    {
+        u8 text[24];
+        u8 *end;
+        enum MovePpTier tier = MoveMenu_GetPpTier(view->currentPp, view->maxPp);
+
+        end = StringCopy(text, gText_MoveInterfacePP);
+        end = ConvertIntToDecimalStringN(end, view->currentPp, STR_CONV_MODE_LEFT_ALIGN, 3);
+        *end++ = CHAR_SLASH;
+        end = ConvertIntToDecimalStringN(end, view->maxPp, STR_CONV_MODE_LEFT_ALIGN, 3);
+        if (tier == MOVE_PP_AMBER)
+            StringCopy(end, sText_MovePpAmber);
+        else if (tier == MOVE_PP_RED)
+            StringCopy(end, sText_MovePpRed);
+        PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, text, PLATE_TEXT_X, MOVE_PLATE_PP_Y,
+                        tier == MOVE_PP_EMPTY ? PIX_MUTED : PIX_TEXT);
+    }
+
+    if (badge != NULL)
+        PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, badge, MOVE_PLATE_BADGE_X, MOVE_PLATE_PP_Y, PIX_TEXT);
+
+    PrintActionText(B_WIN_MOVE_NAME_1, FONT_SMALL, sText_MoveHint, PLATE_TEXT_X, MOVE_PLATE_HINT_Y, PIX_MUTED);
+}
+
+void MoveMenu_SetDetails(const struct MoveMenuView *view)
+{
+    DrawMovePlate(view);
+    CopyWindowToVram(B_WIN_MOVE_NAME_1, COPYWIN_GFX);
+}
+
+static void SetMoveCellPalette(u32 slot, u32 palette)
+{
+    struct ActionMenuRect t = MoveMenu_GetCellTileRect(slot);
+
+    PutWindowRectTilemapOverridePalette(B_WIN_MOVE_NAME_2, t.left, t.top, t.right - t.left + 1, t.bottom - t.top + 1, palette);
+    CopyBgTilemapBufferToVram(0);
+}
+
+// The pointer is pixels in the cell and the lit palette brightens the name, so a move redraws the grid.
+void MoveMenu_SetHighlight(u32 slot)
+{
+    if (slot >= MOVE_MENU_SLOT_COUNT)
+        return;
+    DrawMovePointer(slot, PIX_OUTLINE);
+    CopyWindowToVram(B_WIN_MOVE_NAME_2, COPYWIN_GFX);
+    SetMoveCellPalette(slot, ACTION_PALETTE_LIT);
+}
+
+void MoveMenu_ClearHighlight(u32 slot)
+{
+    if (slot >= MOVE_MENU_SLOT_COUNT)
+        return;
+    DrawMovePointer(slot, PIX_BACKGROUND);
+    CopyWindowToVram(B_WIN_MOVE_NAME_2, COPYWIN_GFX);
+    SetMoveCellPalette(slot, ACTION_PALETTE_IDLE);
+}
+
+void MoveMenu_Show(const struct MoveMenuView *view)
+{
+    u16 palette[16];
+    u32 slot;
+
+    for (slot = 0; slot < MOVE_MENU_SLOT_COUNT; slot++)
+        sMoveTypes[slot] = view->types[slot];
+    MoveMenu_BuildPalette(sMoveTypes, FALSE, palette);
+    LoadPalette(palette, BG_PLTT_ID(ACTION_PALETTE_IDLE), PLTT_SIZE_4BPP);
+    MoveMenu_BuildPalette(sMoveTypes, TRUE, palette);
+    LoadPalette(palette, BG_PLTT_ID(ACTION_PALETTE_LIT), PLTT_SIZE_4BPP);
+
+    DrawMovePlate(view);
+
+    FillWindowPixelBuffer(B_WIN_MOVE_NAME_2, PIXEL_FILL(PIX_BACKGROUND));
+    FillWindowPixelRect(B_WIN_MOVE_NAME_2, PIXEL_FILL(PIX_ACCENT), 0, 0, MOVE_GRID_WIDTH_TILES * 8, PLATE_STRIPE_HEIGHT);
+    for (slot = 0; slot < MOVE_MENU_SLOT_COUNT; slot++)
+        DrawMoveCell(view, slot);
+
+    PutWindowTilemap(B_WIN_MOVE_NAME_1);
+    PutWindowTilemap(B_WIN_MOVE_NAME_2);
+    MoveMenu_SetHighlight(view->cursor);
+    CopyWindowToVram(B_WIN_MOVE_NAME_1, COPYWIN_FULL);
+    CopyWindowToVram(B_WIN_MOVE_NAME_2, COPYWIN_FULL);
+}
