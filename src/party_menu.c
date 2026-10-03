@@ -5873,6 +5873,61 @@ void ItemUseCB_Mint(u8 taskId, TaskFunc task)
 #undef tNewNature
 #undef tOldFunc
 
+#define tState      data[0]
+#define tMonId      data[1]
+
+void Task_PokeBall(u8 taskId)
+{
+    static const u8 sText_doneText[] = _("{STR_VAR_1} is now held in\n{STR_VAR_2}!{PAUSE_UNTIL_PRESS}");
+    s16 *data = gTasks[taskId].data;
+
+    switch (tState)
+    {
+    case 0:
+        gPartyMenuUseExitCallback = TRUE;
+        GetMonNickname(&gParties[B_TRAINER_PLAYER][tMonId], gStringVar1);
+        CopyItemName(gSpecialVar_ItemId, gStringVar2);
+        StringExpandPlaceholders(gStringVar4, sText_doneText);
+        PlaySE(SE_USE_ITEM);
+        DisplayPartyMenuMessage(gStringVar4, 1);
+        ScheduleBgCopyTilemapToVram(2);
+        tState++;
+        break;
+    case 1:
+        if (!IsPartyMenuTextPrinterActive())
+            tState++;
+        break;
+    case 2:
+        {
+            u32 ball = ItemIdToBallId(gSpecialVar_ItemId);
+            SetMonData(&gParties[B_TRAINER_PLAYER][tMonId], MON_DATA_POKEBALL, &ball);
+        }
+        gTasks[taskId].func = Task_ClosePartyMenu;
+        break;
+    }
+}
+
+void ItemUseCB_PokeBall(u8 taskId, TaskFunc task)
+{
+    s16 *data = gTasks[taskId].data;
+
+    tState = 0;
+    tMonId = gPartyMenu.slotId;
+    if (GetMonData(&gParties[B_TRAINER_PLAYER][tMonId], MON_DATA_POKEBALL) == ItemIdToBallId(gSpecialVar_ItemId))
+    {
+        gPartyMenuUseExitCallback = FALSE;
+        PlaySE(SE_SELECT);
+        DisplayPartyMenuMessage(gText_WontHaveEffect, 1);
+        ScheduleBgCopyTilemapToVram(2);
+        gTasks[taskId].func = Task_ClosePartyMenuAfterText;
+        return;
+    }
+    gTasks[taskId].func = Task_PokeBall;
+}
+
+#undef tState
+#undef tMonId
+
 static void Task_DisplayHPRestoredMessage(u8 taskId)
 {
     struct Pokemon *party = NULL;

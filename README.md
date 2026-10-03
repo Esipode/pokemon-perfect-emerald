@@ -144,6 +144,7 @@
 - Quick Pokéball selection in wild battles
 	- Hold `R` to change selection with the D-Pad.
 	- Press `R` to use last selected Poké Ball.
+- From your bag, you can use any ball on a Pokémon to change the appearance of the ball it was caught with
 - Added `Battle Speed` setting, the player can make battles progress up to 5x faster
 - Combined `Acro` and `Mach` Bikes together
 - When the bag is full, items you pick up go straight to your PC

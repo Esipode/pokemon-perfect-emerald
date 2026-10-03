@@ -871,6 +871,13 @@ void ItemUseOutOfBattle_Mint(u8 taskId)
     SetUpItemUseCallback(taskId);
 }
 
+void ItemUseOutOfBattle_PokeBall(u8 taskId)
+{
+    gItemUseCB = ItemUseCB_PokeBall;
+    gBagMenu->newScreenCallback = CB2_ShowPartyMenuForItemUse;
+    Task_FadeAndCloseBagMenu(taskId);
+}
+
 void ItemUseOutOfBattle_ResetEVs(u8 taskId)
 {
     gItemUseCB = ItemUseCB_ResetEVs;
