@@ -32,8 +32,11 @@
 #define DEX_BG2_CHAR_BASE 2
 #define DEX_BG2_MAP_BASE 14
 
-#define SCROLL_MAX_X (WORLD_MAP_DEX_W * 8 - DISPLAY_WIDTH)
-#define SCROLL_MAX_Y (WORLD_MAP_DEX_H * 8 - DISPLAY_HEIGHT)
+#define SCROLL_OVER (2 * 8) // The camera may scroll this far past each map edge
+#define SCROLL_MIN_X (-SCROLL_OVER)
+#define SCROLL_MIN_Y (-SCROLL_OVER)
+#define SCROLL_MAX_X (WORLD_MAP_DEX_W * 8 - DISPLAY_WIDTH + SCROLL_OVER)
+#define SCROLL_MAX_Y (WORLD_MAP_DEX_H * 8 - DISPLAY_HEIGHT + SCROLL_OVER)
 #define SCROLL_EASE_DIV 3 // Camera covers 1/3 of the remaining distance per frame, at least 1 px
 
 static s32 sScrollX;
@@ -84,12 +87,12 @@ void ResetPokedexAreaMapBg(void)
 
 static void ClampTarget(void)
 {
-    if (sTargetX < 0)
-        sTargetX = 0;
+    if (sTargetX < SCROLL_MIN_X)
+        sTargetX = SCROLL_MIN_X;
     if (sTargetX > SCROLL_MAX_X)
         sTargetX = SCROLL_MAX_X;
-    if (sTargetY < 0)
-        sTargetY = 0;
+    if (sTargetY < SCROLL_MIN_Y)
+        sTargetY = SCROLL_MIN_Y;
     if (sTargetY > SCROLL_MAX_Y)
         sTargetY = SCROLL_MAX_Y;
 }

@@ -20,6 +20,7 @@ u16 GetRandomBaseSpecies(rng_value_t *rngState);
 // Reads a canonical starter straight out of sStarterChoices for Mono Gen.
 // gen is 1-9, slot is 0-2 (the 3 starters of that generation's set).
 u16 GetCanonicalStarterSpecies(u8 gen, u8 slot);
+bool32 IsCanonicalStarterSpecies(enum Species species);
 
 // Move/type randomization primitives. These are the RNG source-of-truth,
 // but gameplay/UI code should not call them directly - go through the

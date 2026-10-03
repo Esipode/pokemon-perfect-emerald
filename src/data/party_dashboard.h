@@ -411,11 +411,12 @@ static const u8 sInfoPpLowColors[3] = {TEXT_COLOR_TRANSPARENT, INFO_PIX_HP_YELLO
 #define STATS_HEADER_Y      0
 #define STATS_ROWS_Y        14
 #define STATS_ROW_STEP      16
-#define STATS_BAR_X         28
-#define STATS_BAR_W         56
-#define STATS_BAR_W_WIDE    80 // No IV/EV columns.
+#define STATS_BAR_X         24
+#define STATS_BAR_W         52
+#define STATS_BAR_W_WIDE    76 // No IV/EV columns.
 #define STATS_BAR_H         4
-#define STATS_BAR_DY        5
+#define STATS_BAR_DY        7
+#define STATS_VALUE_DY      2
 #define STATS_VALUE_RIGHT_X 104
 #define STATS_VALUE_WIDE_X  140
 #define STATS_IV_RIGHT_X    122

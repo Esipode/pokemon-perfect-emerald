@@ -21,5 +21,7 @@ void LinkTradeDrawWindow(void);
 void LoadTradeAnimGfx(void);
 void DrawTextOnTradeWindow(u8 windowId, const u8 *str, u8 speed);
 bool32 IsIngameTradeOtId(u32 otId);
+u16 GetInGameTradeSpeciesInfo(void);
+bool32 IsRandomInGameTradeSpeciesAllowed(enum Species species, bool32 speciesRandomizationEnabled);
 
 #endif //GUARD_TRADE_H

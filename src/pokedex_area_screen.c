@@ -82,6 +82,7 @@
 #define MAX_AREA_MARKERS 64 // Maximum number of circular spot highlights
 
 #define LABEL_WINDOW_BG 1
+#define HINT_PALETTE 14 // Dex palette 0 with colour 2 darkened so the A icon's letter reads against its white disc
 #define NUM_LABEL_WINDOWS 3
 
 enum PokedexAreaLabels
@@ -276,7 +277,7 @@ static const struct WindowTemplate sTimeOfDayWindowLabelTemplates[] =
         .tilemapTop = 18,
         .width = 11,
         .height = 2,
-        .paletteNum = 0,
+        .paletteNum = HINT_PALETTE,
         .baseBlock = 0x192
     }
 };
@@ -728,6 +729,10 @@ static void ShowMapHintLabel(void)
 {
     static const u8 gText_PanMap[] = _("{A_BUTTON}+{DPAD_NONE} MAP");
     int stringXPos = GetStringCenterAlignXOffset(FONT_NORMAL, gText_PanMap, 88);
+
+    CpuCopy16(&gPlttBufferUnfaded[BG_PLTT_ID(0)], &gPlttBufferUnfaded[BG_PLTT_ID(HINT_PALETTE)], PLTT_SIZE_4BPP);
+    gPlttBufferUnfaded[BG_PLTT_ID(HINT_PALETTE) + 2] = RGB(6, 6, 8);
+    CpuCopy16(&gPlttBufferUnfaded[BG_PLTT_ID(HINT_PALETTE)], &gPlttBufferFaded[BG_PLTT_ID(HINT_PALETTE)], PLTT_SIZE_4BPP);
 
     PrintAreaLabelText(gText_PanMap, DEX_AREA_LABEL_MAP_HINT, stringXPos);
 }

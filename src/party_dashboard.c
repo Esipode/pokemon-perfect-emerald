@@ -810,7 +810,7 @@ static void DrawBodyStats(struct PartyDashboardMon *mon)
                             PartyDashboard_StatBarWidth(mon->stats[i], i, mon->level, barWidth), STATS_BAR_H);
 
         ConvertIntToDecimalStringN(gStringVar1, mon->stats[i], STR_CONV_MODE_LEFT_ALIGN, 4);
-        PrintStatsRight(FONT_NORMAL, valueRightX, y, sIdentTextColors, gStringVar1);
+        PrintStatsRight(FONT_NORMAL, valueRightX, y + STATS_VALUE_DY, sIdentTextColors, gStringVar1);
 
         if (showIv)
         {

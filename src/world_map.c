@@ -60,8 +60,11 @@ STATIC_ASSERT(WORLD_MAP_DEX_BANKS == WORLD_MAP_BANK_LOCKED + 1, WorldMapDexBankC
 
 #define WORLD_MAP_PX_W (WORLD_MAP_CELLS_W * 8)
 #define WORLD_MAP_PX_H (WORLD_MAP_CELLS_H * 8)
-#define SCROLL_MAX_X (WORLD_MAP_PX_W - DISPLAY_WIDTH)
-#define SCROLL_MAX_Y (WORLD_MAP_PX_H - DISPLAY_HEIGHT)
+#define SCROLL_OVER (2 * 8) // The camera may scroll this far past each map edge
+#define SCROLL_MIN_X (-SCROLL_OVER)
+#define SCROLL_MIN_Y (-SCROLL_OVER)
+#define SCROLL_MAX_X (WORLD_MAP_PX_W - DISPLAY_WIDTH + SCROLL_OVER)
+#define SCROLL_MAX_Y (WORLD_MAP_PX_H - DISPLAY_HEIGHT + SCROLL_OVER)
 // The art is drawn this many px left of the cell grid; sprites and scroll limits use the grid.
 #define MAP_ART_SHIFT_X 0
 #define SCROLL_MARGIN (3 * 8)
@@ -72,7 +75,6 @@ STATIC_ASSERT(WORLD_MAP_DEX_BANKS == WORLD_MAP_BANK_LOCKED + 1, WorldMapDexBankC
 #define NO_REGION 0xFF
 #define NUM_BANK_GROUPS 4
 #define SEA_COLOR RGB(2, 4, 8) // WORLD_MAP_BANK_SEA ocean colour
-#define FLY_DIM_COEFF 5
 #define SPRITE_MARGIN 32
 #define HALO_OFFSET_Y 2
 #define CURSOR_PULSE_SHIFT 4
@@ -169,8 +171,8 @@ static const u8 sText_HintBack[] = _("{B_BUTTON}BACK");
 static const u8 sText_HintRegionBack[] = _("{L_BUTTON}{R_BUTTON}REGION {B_BUTTON}BACK");
 static const u8 sText_HintFlyBack[] = _("{A_BUTTON}FLY {B_BUTTON}BACK");
 static const u8 sText_HintFlyRegionBack[] = _("{A_BUTTON}FLY {L_BUTTON}{R_BUTTON}REGION {B_BUTTON}BACK");
-static const u8 sText_HintTownFlyBack[] = _("{R_BUTTON}FLY {B_BUTTON}BACK");
-static const u8 sText_HintTownFlyRegionBack[] = _("{R_BUTTON}FLY {L_BUTTON}REGION {B_BUTTON}BACK");
+static const u8 sText_HintTownFlyBack[] = _("{A_BUTTON}FLY {B_BUTTON}BACK");
+static const u8 sText_HintTownFlyRegionBack[] = _("{A_BUTTON}FLY {L_BUTTON}{R_BUTTON}REGION {B_BUTTON}BACK");
 
 // Indexed by (R Fly usable ? 4 : A Fly usable ? 2 : 0) + (L/R usable ? 1 : 0).
 static const u8 *const sHintTexts[] =
@@ -665,6 +667,8 @@ void LoadWorldMapForDex(u32 charBase, u32 mapBase, u32 firstBank)
 
     DecompressDataWithHeaderVram(sWorldMap_Gfx, (u16 *)BG_CHAR_ADDR(charBase));
     DecompressDataWithHeaderVram(sWorldMap_Tilemap, tilemap);
+    // Sea pixels are transparent colour 0, so the backdrop has to be the sea colour.
+    gPlttBufferUnfaded[0] = sWorldMap_Pal[0];
     for (i = 0; i < 64 * 64; i++)
         tilemap[i] += firstBank << 12;
 
@@ -930,12 +934,12 @@ static void ApplyScroll(void)
 
 static void ClampScroll(void)
 {
-    if (sWorldMap->targetX < 0)
-        sWorldMap->targetX = 0;
+    if (sWorldMap->targetX < SCROLL_MIN_X)
+        sWorldMap->targetX = SCROLL_MIN_X;
     if (sWorldMap->targetX > SCROLL_MAX_X)
         sWorldMap->targetX = SCROLL_MAX_X;
-    if (sWorldMap->targetY < 0)
-        sWorldMap->targetY = 0;
+    if (sWorldMap->targetY < SCROLL_MIN_Y)
+        sWorldMap->targetY = SCROLL_MIN_Y;
     if (sWorldMap->targetY > SCROLL_MAX_Y)
         sWorldMap->targetY = SCROLL_MAX_Y;
 }
@@ -1301,15 +1305,6 @@ static void ClearBarRegs(void)
     SetGpuReg(REG_OFFSET_BLDY, 0);
 }
 
-// Blends toward the sea colour so a dimmed region stays readable against the ocean.
-static void DimBanks(u32 first, u32 count, u32 coeff)
-{
-    u32 offset = BG_PLTT_ID(first);
-
-    BlendPalette(offset, count * 16, coeff, SEA_COLOR);
-    CpuCopy16(&gPlttBufferFaded[offset], &gPlttBufferUnfaded[offset], count * 16 * sizeof(u16));
-}
-
 // Swaps in the grey ramp: details and the region label take land/sea colours, `???` shows.
 static void LockBank(u32 bank)
 {
@@ -1327,11 +1322,8 @@ static void DimLockedGroups(void)
     for (group = 0; group < NUM_BANK_GROUPS; group++)
     {
         if (sWorldMap->flyMode)
-        {
-            if (group != sWorldMap->flyGroup)
-                DimBanks(sBankGroups[group].first, sBankGroups[group].count, FLY_DIM_COEFF);
-        }
-        else if (group == GROUP_SEVII)
+            continue;
+        if (group == GROUP_SEVII)
         {
             if (!IsSeviiUnitUnlocked(FALSE))
                 LockBank(WORLD_MAP_BANK_SEVII123);
@@ -1360,8 +1352,8 @@ static void CB2_WorldMap(void)
             SetMainCallback2(CB2_ExitWorldMap);
             return;
         }
-        if ((sWorldMap->flyMode && JOY_NEW(A_BUTTON) && CanFlyFromCell())
-         || (JOY_NEW(R_BUTTON) && CanTownMapFly()))
+        if (JOY_NEW(A_BUTTON)
+         && (sWorldMap->flyMode ? CanFlyFromCell() : CanTownMapFly()))
         {
             PlaySE(SE_SELECT);
             if (!sWorldMap->flyMode)
@@ -1484,8 +1476,6 @@ static bool32 CanFlyFromCell(void)
     mapsec_u16_t mapSec = GetWorldMapSecIdAt(sWorldMap->cursorX, sWorldMap->cursorY);
     u32 i;
 
-    if (GetMapSecGroup(mapSec) != sWorldMap->flyGroup)
-        return FALSE;
     for (i = 0; i < ARRAY_COUNT(sFlyLocations); i++)
     {
         if (sFlyLocations[i].mapsec == mapSec)
@@ -1590,7 +1580,7 @@ static void CreateFlyIcons(void)
         if (mapSec == MAPSEC_BATTLE_FRONTIER)
             anim = RING_ANIM_FRONTIER;
         else
-            anim = GetMapSecGroup(mapSec) == sWorldMap->flyGroup ? RING_ANIM_BRIGHT : RING_ANIM_FAINT;
+            anim = RING_ANIM_BRIGHT;
         StartSpriteAnim(&gSprites[spriteId], anim);
     }
 }

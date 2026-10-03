@@ -40,9 +40,11 @@
 #include "text_window.h"
 #include "trainer_card.h"
 #include "trade.h"
+#include "ui_birch_case.h"
 #include "util.h"
 #include "window.h"
 #include "constants/contest.h"
+#include "constants/flags.h"
 #include "constants/items.h"
 #include "constants/moves.h"
 #include "constants/party_menu.h"
@@ -166,6 +168,7 @@ struct InGameTrade {
 #define RANDOM_TRADE_MAX_BST    400
 #define RANDOM_TRADE_MIN_IV     15
 #define RANDOM_TRADE_SEED_SALT  0x54524144
+#define RANDOM_TRADE_SPECIES_MAX_ATTEMPTS 16
 
 static EWRAM_DATA u8 *sMenuTextTileBuffer = NULL;
 
@@ -4375,21 +4378,37 @@ bool32 IsIngameTradeOtId(u32 otId)
     return FALSE;
 }
 
+bool32 IsRandomInGameTradeSpeciesAllowed(enum Species species, bool32 speciesRandomizationEnabled)
+{
+    return speciesRandomizationEnabled || !IsCanonicalStarterSpecies(species);
+}
+
 // Seeded by trainer ID, New Game+ cycle and trade ID, so a trade's pair stays fixed
 // within a cycle and rerolls on the next one.
 static void GetRandomInGameTradeSpecies(u32 tradeId, enum Species *requested, enum Species *offered)
 {
     u32 otId = GetTrainerId(gSaveBlock2Ptr->playerTrainerId);
     rng_value_t rng = LocalRandomSeed(otId + RANDOM_TRADE_SEED_SALT + tradeId + GetNewGamePlusLevelOffset());
+    bool32 speciesRandomizationEnabled = FlagGet(FLAG_RANDOMIZE_MON);
     u32 i;
 
-    *requested = GetRandomCommonSpecies(&rng, RANDOM_TRADE_MAX_BST);
+    *requested = SPECIES_NONE;
+    for (i = 0; i < RANDOM_TRADE_SPECIES_MAX_ATTEMPTS && *requested == SPECIES_NONE; i++)
+    {
+        *requested = GetRandomCommonSpecies(&rng, RANDOM_TRADE_MAX_BST);
+        if (!IsRandomInGameTradeSpeciesAllowed(*requested, speciesRandomizationEnabled))
+            *requested = SPECIES_NONE;
+    }
     if (*requested == SPECIES_NONE)
         *requested = SPECIES_ZIGZAGOON;
 
     *offered = SPECIES_NONE;
-    for (i = 0; i < 16 && (*offered == SPECIES_NONE || *offered == *requested); i++)
+    for (i = 0; i < RANDOM_TRADE_SPECIES_MAX_ATTEMPTS && (*offered == SPECIES_NONE || *offered == *requested); i++)
+    {
         *offered = GetRandomCommonSpecies(&rng, RANDOM_TRADE_MAX_BST);
+        if (!IsRandomInGameTradeSpeciesAllowed(*offered, speciesRandomizationEnabled))
+            *offered = SPECIES_NONE;
+    }
     if (*offered == SPECIES_NONE || *offered == *requested)
         *offered = (*requested == SPECIES_POOCHYENA) ? SPECIES_ZIGZAGOON : SPECIES_POOCHYENA;
 }

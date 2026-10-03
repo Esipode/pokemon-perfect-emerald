@@ -417,6 +417,22 @@ u16 GetCanonicalStarterSpecies(u8 gen, u8 slot)
     return sStarterChoices[setIndex][baseSlot + slot].species;
 }
 
+bool32 IsCanonicalStarterSpecies(enum Species species)
+{
+    u8 gen, slot;
+
+    for (gen = 1; gen <= 9; gen++)
+    {
+        for (slot = 0; slot < 3; slot++)
+        {
+            if (GetCanonicalStarterSpecies(gen, slot) == species)
+                return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 u16 GetRandomBaseSpecies(rng_value_t *rngState)
 {
     u16 species;

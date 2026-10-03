@@ -4546,6 +4546,11 @@ bool32 CheckPlayerOwnsSpecies(enum Species givenSpecies)
     u32 partyIndex, box, slot;
     enum Species baseSpecies = GET_BASE_SPECIES_ID(givenSpecies);
 
+    // Owning a species implies it was registered as caught; skips the 840-slot box walk
+    // that map transition scripts would otherwise repeat for every unowned legendary.
+    if (!GetSetPokedexFlagBySpecies(baseSpecies, FLAG_GET_CAUGHT))
+        return FALSE;
+
     for (partyIndex = 0; partyIndex < CalculatePlayerPartyCount(); partyIndex++)
     {
         struct Pokemon *mon = &gParties[B_TRAINER_PLAYER][partyIndex];
